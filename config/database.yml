@@ -2,8 +2,7 @@ default: &default
   adapter: postgresql
   encoding: unicode
   # https://guides.rubyonrails.org/configuring.html#database-pooling
-  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 20 } %>
 
 development:
   <<: *default
