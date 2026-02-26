@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class TreeSpecies < ApplicationRecord
+class TreeFamily < ApplicationRecord
   has_many :trees, dependent: :restrict_with_error
 
   # name: рядок (напр., "Quercus robur" або "Дуб звичайний")

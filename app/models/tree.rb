@@ -3,7 +3,7 @@
 class Tree < ApplicationRecord
   belongs_to :cluster, optional: true
   belongs_to :tiny_ml_model
-  belongs_to :tree_species
+  belongs_to :tree_family
   # Гаманець знищується разом з деревом, якщо воно вмирає/спилюється
   has_one :wallet, dependent: :destroy
   has_one :device_calibration, dependent: :destroy

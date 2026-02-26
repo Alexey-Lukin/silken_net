@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tree: one
+  user: one
+  action_taken: MyText
+  performed_at: 2026-02-26 18:44:54
+
+two:
+  tree: two
+  user: two
+  action_taken: MyText
+  performed_at: 2026-02-26 18:44:54

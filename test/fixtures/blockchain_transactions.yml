@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  wallet: one
+  amount: 9.99
+  token_type: 1
+  status: 1
+  tx_hash: MyString
+  notes: MyText
+
+two:
+  wallet: two
+  amount: 9.99
+  token_type: 1
+  status: 1
+  tx_hash: MyString
+  notes: MyText

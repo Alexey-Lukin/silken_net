@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  gateway: one
+  battery_level: 9.99
+  signal_strength: 1
+
+two:
+  gateway: two
+  battery_level: 9.99
+  signal_strength: 1

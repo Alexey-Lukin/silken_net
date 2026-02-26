@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  uid: MyString
+  ip_address: MyString
+  latitude: 9.99
+  longitude: 9.99
+  altitude: 9.99
+  last_seen_at: 2026-02-26 18:44:46
+  cluster: one
+
+two:
+  uid: MyString
+  ip_address: MyString
+  latitude: 9.99
+  longitude: 9.99
+  altitude: 9.99
+  last_seen_at: 2026-02-26 18:44:46
+  cluster: two

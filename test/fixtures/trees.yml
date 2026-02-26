@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  did: MyString
+  latitude: 9.99
+  longitude: 9.99
+  altitude: 9.99
+  cluster: one
+  tree_family: one
+
+two:
+  did: MyString
+  latitude: 9.99
+  longitude: 9.99
+  altitude: 9.99
+  cluster: two
+  tree_family: two

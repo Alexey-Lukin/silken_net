@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tree: one
+  temp_offset: 9.99
+  acoustic_offset: 1
+
+two:
+  tree: two
+  temp_offset: 9.99
+  acoustic_offset: 1

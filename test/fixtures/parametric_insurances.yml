@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  organization: one
+  cluster: one
+  status: 1
+  trigger_event: 1
+  payout_amount: 9.99
+  threshold_value: 9.99
+
+two:
+  organization: two
+  cluster: two
+  status: 1
+  trigger_event: 1
+  payout_amount: 9.99
+  threshold_value: 9.99

@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  organization: one
+  cluster: one
+  total_funding: 9.99
+  start_date: 2026-02-26 18:44:50
+  end_date: 2026-02-26 18:44:50
+  status: 1
+
+two:
+  organization: two
+  cluster: two
+  total_funding: 9.99
+  start_date: 2026-02-26 18:44:50
+  end_date: 2026-02-26 18:44:50
+  status: 1

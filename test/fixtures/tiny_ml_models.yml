@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  version: MyString
+  target_pest: MyString
+  binary_weights_payload: MyText
+
+two:
+  version: MyString
+  target_pest: MyString
+  binary_weights_payload: MyText

@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tree: one
+  temperature_c: 9.99
+  acoustic_events: 1
+  growth_points: 9.99
+  bio_status: 1
+  piezo_voltage_mv: 1
+  tamper_detected: false
+  z_value: 9.99
+
+two:
+  tree: two
+  temperature_c: 9.99
+  acoustic_events: 1
+  growth_points: 9.99
+  bio_status: 1
+  piezo_voltage_mv: 1
+  tamper_detected: false
+  z_value: 9.99
