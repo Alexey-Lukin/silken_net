@@ -48,6 +48,9 @@ class TelemetryUnpackerService
 
     # 3. Розшифровуємо (Нульова довіра / Zero-Trust)
     begin
+      # УВАГА: Для безпечного використання одного екземпляра cipher у циклі,
+      # необхідно викликати reset перед кожною розшифровкою.
+      @cipher.reset 
       decrypted = @cipher.update(encrypted_payload) + @cipher.final
     rescue OpenSSL::Cipher::CipherError => e
       Rails.logger.error "🛑 Помилка розшифровки пакета від Королеви #{queen_uid.to_s(16)}: #{e.message}"
@@ -80,19 +83,49 @@ class TelemetryUnpackerService
     # Накладаємо маску 00111111 (0x3F), щоб ізолювати 6 молодших бітів росту
     growth_points = bio_contract & 0x3F
 
-    # 6. Валідація та Збереження (Тут згодом буде запис у БД)
+    # 6. Валідація та Збереження (Тут запис у БД)
     hex_did = did.to_s(16).upcase
+    hex_queen_uid = queen_uid.to_s(16).upcase
 
     Rails.logger.info(
       "🌲 Дерево [DID: #{hex_did}] | " \
-      "Сигнал: #{actual_rssi}dBm (Від: #{queen_uid.to_s(16).upcase}) | " \
+      "Сигнал: #{actual_rssi}dBm (Від: #{hex_queen_uid}) | " \
       "Temp: #{temp_celsius}°C | Vcap: #{vcap_voltage}mV | " \
       "Метаболізм: #{delta_t}s | Акустика: #{acoustic} | " \
       "Статус: #{status_name(status_code)} | Бали: #{growth_points}"
     )
 
-    # TODO: Tree.find_by(did: hex_did)
-    # TODO: TelemetryLog.create!(...)
+    # Знаходимо дерево за його криптографічним ідентифікатором
+    tree = Tree.find_by(did: hex_did)
+
+    unless tree
+      Rails.logger.warn("⚠️ [СИСТЕМНИЙ ШУМ] Дерево з DID #{hex_did} не знайдено в базі. Телеметрія проігнорована.")
+      return
+    end
+
+    begin
+      TelemetryLog.create!(
+        tree: tree,
+        queen_uid: hex_queen_uid,
+        rssi: actual_rssi,
+        temperature: temp_celsius,
+        vcap_voltage: vcap_voltage,
+        acoustic: acoustic,
+        delta_t: delta_t,
+        status_code: status_code,
+        growth_points: growth_points,
+        ttl: ttl
+      )
+
+      # Якщо апаратний Edge AI (TinyML) передав статус критичної аномалії (напр., бензопила або пожежа)
+      if status_code == 2
+        Rails.logger.warn("🔥 [NAM-TAR] Виявлено критичну аномалію для дерева #{hex_did}! Диспетчеризація AlertDispatchService.")
+        AlertDispatchService.call(tree, :critical_anomaly, acoustic_level: acoustic)
+      end
+
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.error("🛑 Помилка збереження телеметрії для дерева #{hex_did}: #{e.message}")
+    end
   end
 
   # Допоміжний метод для перекладу цифрового статусу в людську мову
