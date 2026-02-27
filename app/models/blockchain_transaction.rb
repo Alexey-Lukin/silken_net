@@ -2,27 +2,26 @@
 
 class BlockchainTransaction < ApplicationRecord
   belongs_to :wallet
+  
+  # Поліморфний зв'язок для аудиту (Напр. AiInsight або ParametricInsurance)
+  belongs_to :sourceable, polymorphic: true, optional: true
 
-  # Типи токенів (з вашого Мастер-Плану)
-  enum :token_type, {
-    carbon_coin: 0, # За поглинання CO2 (розраховується з метаболізму)
-    forest_coin: 1  # За біорізноманіття та підтримку гомеостазу
-  }, prefix: true
+  enum :token_type, { carbon_coin: 0, forest_coin: 1 }, prefix: true
 
-  # Життєвий цикл транзакції в мережі Polygon/Solana
   enum :status, {
-    pending: 0,   # Відправлено в чергу на підпис
-    confirmed: 1, # Успішно замінчено на блокчейні (tx_hash отримано)
-    failed: 2     # Помилка мережі або газу (потребує повернення балів у Wallet)
+    pending: 0,   # В черзі (MintCarbonCoinWorker)
+    confirmed: 1, # В Polygon (tx_hash отримано)
+    failed: 2     # Rollback потрібен
   }, prefix: true
 
   validates :amount, presence: true, numericality: { greater_than: 0 }
-
-  # tx_hash з'явиться тільки після підтвердження від RPC-ноди
   validates :tx_hash, presence: true, uniqueness: true, if: :status_confirmed?
 
-  # Метод для запису успішного хешу транзакції
+  # Захист від подвійного запису хешу
   def confirm_minting!(hash)
-    update!(tx_hash: hash, status: :confirmed)
+    transaction do
+      update!(tx_hash: hash, status: :confirmed)
+      # Додаткова логіка: сповіщення власника організації через Push
+    end
   end
 end
