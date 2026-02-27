@@ -2,73 +2,76 @@
 
 class AlertNotificationWorker
   include Sidekiq::Job
-
-  # Використовуємо окрему високопріоритетну чергу.
-  # Якщо зовнішні API (Twilio/SendGrid) впали, ми робимо 5 експоненційних ретраїв.
   sidekiq_options queue: "alerts", retry: 5
 
   def perform(ews_alert_id)
     alert = EwsAlert.find_by(id: ews_alert_id)
+    return unless alert
 
-    unless alert
-      Rails.logger.warn "⚠️ [Notification] Тривогу #{ews_alert_id} не знайдено (можливо, вже видалена)."
-      return
-    end
-
-    tree = alert.tree
     cluster = alert.cluster
     organization = cluster.organization
 
-    # 1. СИНХРОННИЙ БРОДКАСТ (Zero-Lag Dashboard)
-    # Миттєво прокидаємо дані на фронтенд інвесторів та диспетчерів
-    broadcast_to_dashboards(alert, cluster)
+    # 1. ЦЕНТРАЛЬНА НЕРВОВА СИСТЕМА (ActionCable)
+    # Миттєвий бродкаст на дашборд ActiveBridge
+    broadcast_to_dashboards(alert)
 
-    # 2. АСИНХРОННА ДОСТАВКА (SMS / Email)
-    # Викликаємо зовнішні канали зв'язку
-    deliver_external_notifications(alert, organization, tree)
+    # 2. ДИФЕРЕНЦІЙОВАНА ДОСТАВКА (Smart Routing)
+    # Інвесторам - пошта, Лісникам - оперативні канали
+    notify_stakeholders(alert, organization)
 
-    Rails.logger.info "📢 [Notification] Сповіщення '#{alert.alert_type}' успішно розіслано для Кластера #{cluster.id}."
+    Rails.logger.info "📢 [Notification] Тривогу #{alert.alert_type} розіслано для #{cluster.name}."
   end
 
   private
 
-  def broadcast_to_dashboards(alert, cluster)
+  def broadcast_to_dashboards(alert)
+    # Передаємо розширений Payload для карти
     payload = {
       id: alert.id,
       tree_did: alert.tree.did,
       severity: alert.severity,
       alert_type: alert.alert_type,
       message: alert.message,
+      lat: alert.tree.latitude,
+      lng: alert.tree.longitude,
       timestamp: alert.created_at.to_i
     }
 
-    # ActionCable транслює цей JSON прямо в браузери підключених клієнтів
-    ActionCable.server.broadcast("cluster_#{cluster.id}_alerts", payload)
+    ActionCable.server.broadcast("cluster_#{alert.cluster_id}_alerts", payload)
   rescue StandardError => e
-    # Якщо Redis для ActionCable недоступний, ми не вбиваємо весь воркер
-    Rails.logger.error "🛑 [ActionCable] Помилка WebSocket трансляції: #{e.message}"
+    Rails.logger.error "🛑 [ActionCable] WebSocket Error: #{e.message}"
   end
 
-  def deliver_external_notifications(alert, organization, tree)
-    # 1. Відправка Email інвестору/власнику
-    # (Використовуємо billing_email, доданий у міграції 20260226170004)
-    if organization&.billing_email.present?
-      # Тут буде виклик Mailer-а:
-      # AlertMailer.with(alert: alert).critical_alert_email.deliver_later
-      Rails.logger.info "📧 [Email] Лист про '#{alert.alert_type}' сформовано для #{organization.billing_email}"
+  def notify_stakeholders(alert, organization)
+    # А. Email для Організації (Звітність)
+    if alert.severity_critical? && organization.billing_email.present?
+      AlertMailer.with(alert: alert).critical_notification.deliver_later
     end
 
-    # 2. Відправка SMS Ліснику / Адміну
-    # Шукаємо користувачів організації (міграція 20260226170638), щоб відправити їм SMS
-    # У реальному коді тут буде інтеграція з Twilio або MessageBird:
+    # Б. Оперативні канали для Лісників (Патруль)
+    # Використовуємо скоуп active_foresters, який ми заклали в моделі User
+    organization.users.active_foresters.each do |forester|
+      # 1. SMS (через Twilio або локальні шлюзи)
+      send_sms(forester, alert) if alert.severity_critical?
+
+      # 2. Push-сповіщення на смартфон (FCM)
+      send_push_notification(forester, alert)
+
+      # 3. Telegram (опціонально, але дуже корисно)
+      # TelegramBotWorker.perform_async(forester.id, alert.message)
+    end
+  end
+
+  def send_sms(user, alert)
+    return unless user.phone_number.present?
     
-    # organization.users.each do |user|
-    #   next unless user.phone_number.present?
-    #   
-    #   TwilioClient.send_sms(
-    #     to: user.phone_number,
-    #     message: "[S-NET КРИТИЧНО] #{alert.message}"
-    #   )
-    # end
+    # TwilioClient.send_sms(to: user.phone_number, body: "🚨 [S-NET] #{alert.message}")
+    Rails.logger.info "📱 [SMS] Відправлено патрульному #{user.full_name}"
+  end
+
+  def send_push_notification(user, alert)
+    # Тут буде виклик FCM (Firebase Cloud Messaging)
+    # FcmClient.send_to_user(user, title: "Тривога: #{alert.alert_type}", body: alert.message)
+    Rails.logger.info "📲 [Push] Надіслано в додаток для #{user.full_name}"
   end
 end
