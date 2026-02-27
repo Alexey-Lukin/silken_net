@@ -3,97 +3,88 @@
 class AlertDispatchService
   # Фізичні пороги
   FIRE_TEMP_THRESHOLD_C = 60
-  SEISMIC_ACOUSTIC_THRESHOLD = 200 # Використовуємо акустичне насичення мікрофона (0-255) як маркер ударної хвилі
+  SEISMIC_ACOUSTIC_THRESHOLD = 200 
   PEST_ACOUSTIC_THRESHOLD = 50
 
   def self.analyze_and_trigger!(telemetry_log)
     tree = telemetry_log.tree
     cluster = tree.cluster
+    family = tree.tree_family
 
-    # 1. ВАНДАЛІЗМ (Tamper Detection - Найвищий пріоритет)
-    # [ЗМІНА]: Використовуємо нове поле tamper_detected та voltage_mv
+    # 1. ВАНДАЛІЗМ (Найвищий пріоритет)
     if telemetry_log.tamper_detected? || telemetry_log.voltage_mv < 100
       create_and_dispatch_alert!(
-        cluster: cluster,
-        tree: tree,
-        severity: :critical,
+        cluster: cluster, tree: tree, severity: :critical, 
         alert_type: :vandalism_breach,
-        message: "КРИТИЧНО: Зафіксовано відкриття титанового корпусу S-NET або втрату живлення! Можливе викрадення. Дерево DID: #{tree.did}"
+        message: "КРИТИЧНО: Зафіксовано втручання або втрату живлення! DID: #{tree.did}"
       )
-      return # Зупиняємо подальший аналіз, бо датчики можуть брехати
+      return 
     end
 
-    # 2. ПОЖЕЖА або РОБОТА ПИЛКОЮ (bio_status :anomaly від TinyML)
-    # [ЗМІНА]: Використовуємо temperature_c та bio_status_anomaly?
+    # 2. ПОЖЕЖА або РОБОТА ПИЛКОЮ
     if telemetry_log.temperature_c >= FIRE_TEMP_THRESHOLD_C || telemetry_log.bio_status_anomaly?
       create_and_dispatch_alert!(
-        cluster: cluster,
-        tree: tree,
-        severity: :critical,
+        cluster: cluster, tree: tree, severity: :critical, 
         alert_type: :fire_detected,
-        message: "КАТАСТРОФА: Термістор фіксує #{telemetry_log.temperature_c}°C або TinyML виявив бензопилу (Аномалія). Ризик пожежі/вирубки!"
+        message: "КАТАСТРОФА: Термістор фіксує #{telemetry_log.temperature_c}°C або аномалію ксилеми. Ризик пожежі/вирубки!"
       )
+      return # При пожежі інші алерти не мають сенсу
     end
 
-    # 3. ПОСУХА (bio_status :stress)
-    # [ЗМІНА]: Використовуємо bio_status_stress?
-    if telemetry_log.bio_status_stress?
-      create_and_dispatch_alert!(
-        cluster: cluster,
-        tree: tree,
-        severity: :high,
-        alert_type: :severe_drought,
-        message: "ПОПЕРЕДЖЕННЯ: Дерево у стані глибокого гідрологічного стресу. Атрактор Лоренца вийшов за межі гомеостазу."
-      )
-    end
-
-    # 4. ЗЕМЛЕТРУС (Сейсмічний метаматеріал)
-    # [ЗМІНА]: Використовуємо acoustic_events
+    # 3. ЗЕМЛЕТРУС (Сейсмічний резонанс)
     if telemetry_log.acoustic_events >= SEISMIC_ACOUSTIC_THRESHOLD
       create_and_dispatch_alert!(
-        cluster: cluster,
-        tree: tree,
-        severity: :critical,
+        cluster: cluster, tree: tree, severity: :critical, 
         alert_type: :seismic_anomaly,
-        message: "СЕЙСМІКА: Аномальний акустично-п'єзо резонанс (Рівень: #{telemetry_log.acoustic_events}/255). Можливий тектонічний зсув."
+        message: "СЕЙСМІКА: Аномальний резонанс (#{telemetry_log.acoustic_events}/255). Можливий тектонічний зсув."
       )
     end
 
-    # 5. ШКІДНИКИ (Короїд - Edge AI)
-    # [ЗМІНА]: Використовуємо acoustic_events та bio_status_stress?
-    if telemetry_log.acoustic_events > PEST_ACOUSTIC_THRESHOLD && telemetry_log.acoustic_events < SEISMIC_ACOUSTIC_THRESHOLD && telemetry_log.bio_status_stress?
+    # 4. ПОСУХА ТА АТРАКТОР ЛОРЕНЦА
+    # [НОВЕ]: Додаємо математичну перевірку гомеостазу через Z-value
+    is_out_of_homeostasis = !SilkenNet::Attractor.homeostatic?(telemetry_log.z_value, family)
+    
+    if telemetry_log.bio_status_stress? || is_out_of_homeostasis
+      msg = if is_out_of_homeostasis && !telemetry_log.bio_status_stress?
+              "ПОПЕРЕДЖЕННЯ: Атрактор вийшов за межі (Z:#{telemetry_log.z_value}). Рання ознака стресу."
+            else
+              "ПОСУХА: Дерево у стані гідрологічного стресу."
+            end
+
       create_and_dispatch_alert!(
-        cluster: cluster,
-        tree: tree,
-        severity: :high,
+        cluster: cluster, tree: tree, severity: :high, 
+        alert_type: :severe_drought, message: msg
+      )
+    end
+
+    # 5. ШКІДНИКИ (Короїд)
+    if telemetry_log.acoustic_events > PEST_ACOUSTIC_THRESHOLD && 
+       telemetry_log.acoustic_events < SEISMIC_ACOUSTIC_THRESHOLD && 
+       telemetry_log.bio_status_stress?
+       
+      create_and_dispatch_alert!(
+        cluster: cluster, tree: tree, severity: :high, 
         alert_type: :insect_epidemic,
-        message: "БІО-ЗАГРОЗА: Периферійний ШІ зафіксував акустичну емісію, характерну для личинок короїда."
+        message: "БІО-ЗАГРОЗА: Акустична емісія характерна для личинок короїда."
       )
     end
   end
 
   private_class_method def self.create_and_dispatch_alert!(cluster:, tree:, severity:, alert_type:, message:)
-    # Захист від спаму: не створюємо новий алерт, якщо такий самий вже активний останні 5 хвилин
     recent_alert = EwsAlert.where(tree: tree, alert_type: alert_type)
                            .where("created_at > ?", 5.minutes.ago)
                            .exists?
     return if recent_alert
 
-    # 1. Записуємо загрозу в базу даних
     alert = EwsAlert.create!(
-      cluster: cluster,
-      tree: tree,
-      severity: severity,
-      alert_type: alert_type,
-      message: message
+      cluster: cluster, tree: tree, severity: severity, 
+      alert_type: alert_type, message: message
     )
 
-    Rails.logger.warn "🚨 [ALERT DISPATCHER] Згенеровано тривогу: #{alert_type} для Дерева #{tree.did}"
+    Rails.logger.warn "🚨 [ALERT] #{alert_type} для #{tree.did}"
 
-    # 2. ЗАМКНЕНИЙ ЦИКЛ: Миттєво передаємо тривогу в Центр Прийняття Рішень
+    # Передаємо керування актуаторам
     EmergencyResponseService.call(alert)
-
-    # 3. Сповіщення людей
     notify_stakeholders(alert)
   end
 
