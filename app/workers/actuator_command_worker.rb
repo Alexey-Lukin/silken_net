@@ -5,56 +5,65 @@ require "timeout"
 
 class ActuatorCommandWorker
   include Sidekiq::Job
-  # Downlink черга, 3 спроби. Якщо ліс не на зв'язку, ми не спамимо ефір вічно.
   sidekiq_options queue: "downlink", retry: 3
 
   def perform(actuator_id, command_code, duration_seconds)
     actuator = Actuator.find(actuator_id)
     gateway = actuator.gateway
+    
+    # [НОВЕ]: Знаходимо запис команди для оновлення статусу
+    # Ми беремо останню команду в статусі :issued або :sent
+    command_record = ActuatorCommand.where(actuator: actuator, status: [:issued, :sent]).last
 
-    # 1. Формуємо базовий Payload.
-    # Наприклад: "CMD:OPEN_VALVE:7200:12"
+    # 1. ШИФРУВАННЯ (Zero-Trust)
+    # Дістаємо унікальний ключ Королеви
+    key_record = HardwareKey.find_by(device_uid: gateway.uid)
+    unless key_record
+      Rails.logger.error "🛑 [Downlink] Ключ для Королеви #{gateway.uid} не знайдено! Відміна."
+      command_record&.update!(status: :failed)
+      return
+    end
+
     raw_payload = "CMD:#{command_code}:#{duration_seconds}:#{actuator.id}"
-
-    # 2. ШИФРУВАННЯ DOWNLINK (Zero-Trust Architecture)
-    # Королева має розшифрувати це своїм апаратним AES-модулем
-    encrypted_payload = encrypt_payload(raw_payload)
+    encrypted_payload = encrypt_payload(raw_payload, key_record.binary_key)
 
     begin
-      # 3. Фізичний запит із жорстким тайм-аутом (5 секунд)
-      # Якщо Starlink або LTE-M модем Королеви поза зоною, ми не блокуємо Sidekiq
+      # 2. ФІЗИЧНИЙ ЗАПИТ
+      command_record&.update!(status: :sent)
+      
       Timeout.timeout(5) do
+        # Відправляємо шифрований батч на IP шлюзу
         CoapClient.put("coap://#{gateway.ip_address}/actuator", encrypted_payload)
       end
 
-      # 4. ТІЛЬКИ ПІСЛЯ УСПІХУ фіксуємо Істину в базі
-      actuator.update!(state: :active)
+      # 3. УСПІХ
+      ActiveRecord::Base.transaction do
+        actuator.update!(state: :active)
+        command_record&.update!(status: :acknowledged) # Якщо CoAP повернув 2.04 Changed
+      end
 
-      Rails.logger.info "⚡ [Downlink] Команда #{command_code} успішно відправлена на шлюз #{gateway.uid}"
+      Rails.logger.info "⚡ [Downlink] Команда #{command_code} активована на #{gateway.uid}"
 
-      # 5. Плануємо зворотну дію
+      # 4. ПЛАНУВАННЯ ЗАВЕРШЕННЯ
       ResetActuatorStateWorker.perform_in(duration_seconds.seconds, actuator_id)
 
     rescue Timeout::Error, StandardError => e
-      Rails.logger.error "🛑 [Downlink Error] Мережевий збій при зв'язку з Королевою #{gateway.uid}: #{e.message}"
+      Rails.logger.error "🛑 [Downlink Error] Шлюз #{gateway.uid} недоступний: #{e.message}"
       
-      # Перекидаємо помилку далі. Sidekiq сам зробить retry. 
-      # Актуатор при цьому залишиться у статусі :pending (встановленому у EmergencyResponseService)
-      raise e
+      # Оновлюємо статус для аудиту, але дозволяємо Sidekiq зробити retry
+      command_record&.update!(status: :failed)
+      raise e 
     end
   end
 
   private
 
-  # Метод симетричного шифрування, сумісний з апаратним CRYP_AES_ECB у STM32WLE5JC
-  def encrypt_payload(payload)
+  def encrypt_payload(payload, binary_key)
     cipher = OpenSSL::Cipher.new("aes-256-ecb")
     cipher.encrypt
-    # Використовуємо той самий ключ, що й для розпакування телеметрії
-    cipher.key = TelemetryUnpackerService::RAW_AES_KEY
-    cipher.padding = 0 # Контролюємо паддінг вручну для C-сумісності
+    cipher.key = binary_key # Використовуємо індивідуальний ключ пристрою
+    cipher.padding = 0 
 
-    # Доповнюємо рядок нуль-байтами (\x00) до кратності 16 (вимога блоку AES)
     block_size = 16
     padding_length = (block_size - (payload.bytesize % block_size)) % block_size
     padded_payload = payload + ("\x00" * padding_length)
