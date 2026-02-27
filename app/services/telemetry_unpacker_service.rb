@@ -117,6 +117,10 @@ class TelemetryUnpackerService
         ttl: ttl
       )
 
+      # Фізично додаємо зароблені бали на баланс гаманця дерева
+      tree.wallet.increment!(:balance, growth_points) if growth_points > 0
+
+      # Далі йде виклик AlertDispatchService...
       # ВЕСЬ аналіз делегуємо спеціалізованому сервісу:
       AlertDispatchService.analyze_and_trigger!(log)
 
