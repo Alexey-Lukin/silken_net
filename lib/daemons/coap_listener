@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative "../config/environment"
+# Оскільки файл лежить у lib/daemons/, ми піднімаємося на два рівні вгору
+require_relative "../../config/environment"
 require "socket"
 require "base64"
 
@@ -13,36 +14,51 @@ socket.bind("0.0.0.0", PORT)
 
 Rails.logger.info "🌳 [Sanctum] UDP/CoAP Слухач запущено на порту #{PORT}. Тертя відсутнє."
 
-loop do
-  begin
-    # 1. Ловимо пакет (блокується до появи даних)
-    data, sender = socket.recvfrom(MAX_PACKET_SIZE)
-
-    # 2. Мікро-парсер CoAP
-    header = data.unpack("CCn")
-    type = (header[0] >> 4) & 0x03
-
-    # 3. Миттєвий ACK (якщо пакет Confirmable)
-    if type == 0
-      ack_packet = [ 0x60, 0x44, header[2] ].pack("CCn")
-      socket.send(ack_packet, 0, sender[3], sender[1])
-    end
-
-    # 4. Витягування корисного навантаження
-    payload_marker_index = data.index("\xFF".b)
-    if payload_marker_index
-      binary_payload = data[(payload_marker_index + 1)..-1]
-
-      # 5. MAX SPEED: Кодуємо бінарник у текст і кидаємо в Redis (Sidekiq)
-      # strict_encode64 не додає символів переносу рядка (\n), що робить його ще швидшим
-      encoded_payload = Base64.strict_encode64(binary_payload)
-
-      # Миттєвий запис в оперативну пам'ять (O(1))
-      UnpackTelemetryWorker.perform_async(encoded_payload, sender[3])
-    end
-
-  rescue StandardError => e
-    # Єдиний лог, який нам потрібен — це лог фатальної помилки
-    Rails.logger.error "🛑 Crash: #{e.message}"
+# ПРОТОКОЛ ПРАВИЛЬНОГО ЗАВЕРШЕННЯ (Graceful Shutdown)
+running = true
+%w[INT TERM].each do |signal|
+  trap(signal) do
+    Rails.logger.info "🛑 [Sanctum] Отримано сигнал #{signal}. Закриваємо ефір..."
+    running = false
   end
 end
+
+while running
+  begin
+    # Використовуємо IO.select з таймаутом 1 секунда. 
+    # Це дозволяє циклу перевіряти змінну `running` і зупинятися без зависання.
+    if IO.select([socket], nil, nil, 1)
+      data, sender = socket.recvfrom_nonblock(MAX_PACKET_SIZE)
+
+      # 1. Мікро-парсер CoAP
+      header = data.unpack("CCn")
+      type = (header[0] >> 4) & 0x03
+
+      # 2. Миттєвий ACK (якщо пакет Confirmable)
+      if type == 0
+        ack_packet = [ 0x60, 0x44, header[2] ].pack("CCn")
+        socket.send(ack_packet, 0, sender[3], sender[1])
+      end
+
+      # 3. Витягування корисного навантаження
+      payload_marker_index = data.index("\xFF".b)
+      if payload_marker_index
+        binary_payload = data[(payload_marker_index + 1)..-1]
+
+        # 4. MAX SPEED: Кодуємо бінарник у текст і кидаємо в Redis (Sidekiq)
+        encoded_payload = Base64.strict_encode64(binary_payload)
+
+        # Миттєвий запис в оперативну пам'ять (O(1))
+        UnpackTelemetryWorker.perform_async(encoded_payload, sender[3])
+      end
+    end
+  rescue Errno::EAGAIN, Errno::EWOULDBLOCK
+    # Ці помилки є нормальними для nonblock сокетів, просто ігноруємо і йдемо на наступне коло
+    retry
+  rescue StandardError => e
+    Rails.logger.error "🛑 [Sanctum] Crash: #{e.message}"
+  end
+end
+
+socket.close
+Rails.logger.info "🌳 [Sanctum] Слухач успішно зупинено. Посудина закрита."
