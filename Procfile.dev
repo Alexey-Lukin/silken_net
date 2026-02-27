@@ -1,2 +1,4 @@
-web: bin/rails server
+web: env RUBY_DEBUG_OPEN=true bin/rails server
 css: bin/rails tailwindcss:watch
+worker: bundle exec sidekiq -C config/sidekiq.yml
+coap: bundle exec ruby lib/daemons/coap_listener
