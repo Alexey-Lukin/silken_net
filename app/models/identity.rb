@@ -8,4 +8,7 @@ class Identity < ApplicationRecord
 
   validates :provider, presence: true
   validates :uid, presence: true, uniqueness: { scope: :provider }
+
+  # Скоуп для швидкої перевірки типу входу
+  scope :by_provider, ->(p) { where(provider: p) }
 end
