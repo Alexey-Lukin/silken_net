@@ -18,6 +18,7 @@ gem "puma"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 gem "sidekiq"
+gem "sidekiq-scheduler"
 gem "solid_cable"
 gem "solid_cache"
 gem "solid_queue"
