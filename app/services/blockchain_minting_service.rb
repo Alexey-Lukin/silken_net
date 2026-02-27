@@ -21,8 +21,13 @@ class BlockchainMintingService
   end
 
   def call
-    # Захист від подвійного мінтингу
+    # Захист від подвійного мінтингу. 
+    # Працюємо ТІЛЬКИ якщо транзакція в очікуванні.
     return unless @transaction.status_pending?
+
+    # БЛОКУВАННЯ: Миттєво переводимо в статус processing, щоб Sidekiq 
+    # при випадковому ретраї не запустив паралельний мінтинг.
+    @transaction.update!(status: :processing)
 
     # 1. Підключення до ноди (через Alchemy) та ініціалізація Оракула
     client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
@@ -37,19 +42,23 @@ class BlockchainMintingService
       contract_address = ENV.fetch("FOREST_COIN_CONTRACT_ADDRESS")
       identifier = "CLUSTER_#{@tree.cluster.id}" # Для біорізноманіття звітуємо за ліс
     else
+      # Якщо сталась архітектурна помилка, повертаємо статус і зупиняємось
+      @transaction.update!(status: :failed)
       raise ArgumentError, "Невідомий тип токена: #{@transaction.token_type}"
     end
 
     contract = Eth::Contract.from_abi(name: "SilkenCoin", address: contract_address, abi: CONTRACT_ABI)
 
     # 3. Підготовка даних (1 токен = 1 * 10^18 wei)
-    amount_in_wei = @transaction.amount * (10**18)
+    # ВАЖЛИВО: .to_i гарантує відсутність Float-значень, які крашать EVM-транзакції
+    amount_in_wei = (@transaction.amount * (10**18)).to_i
     investor_address = @wallet.crypto_public_address
 
     begin
       Rails.logger.info "⏳ [Web3] Ініціація мінтингу #{@transaction.amount} #{@transaction.token_type.upcase} для #{identifier}..."
 
       # 4. Формування, підпис (ECDSA) та відправка транзакції
+      # client.transact_and_wait блокує потік до підтвердження блоку мережею
       tx_hash = client.transact_and_wait(
         contract,
         "mint",
