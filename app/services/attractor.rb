@@ -10,17 +10,12 @@ module SilkenNet
     DT = 0.01
     ITERATIONS = 250
 
-    # Метод генерує масив з 250 точок {x, y, z} для 3D графіка на фронтенді
+    # =========================================================================
+    # МЕТОД ДЛЯ ФРОНТЕНДУ (Візуалізація)
+    # Викликається рідко, лише коли юзер/інвестор відкриває 3D графік дерева
+    # =========================================================================
     def self.generate_trajectory(seed, temp, acoustic)
-      # Ініціалізація початкової точки хаосу з DID дерева (seed)
-      x = ((seed % 1000) / 500.0) - 1.0
-      y = (((seed >> 4) % 1000) / 500.0) - 1.0
-      z = (((seed >> 8) % 1000) / 500.0) - 1.0
-
-      # Пертурбація системи фізичними даними з лісу
-      local_sigma = BASE_SIGMA + (acoustic * 0.1)
-      local_rho = BASE_RHO + (temp * 0.2)
-
+      x, y, z, local_sigma, local_rho = initialize_state(seed, temp, acoustic)
       trajectory = []
 
       ITERATIONS.times do
@@ -38,10 +33,38 @@ module SilkenNet
       trajectory
     end
 
-    # Метод-дублер: дозволяє серверу швидко перевірити,
-    # чи правильно мікроконтролер порахував бали
+    # =========================================================================
+    # МЕТОД ДЛЯ БЕКЕНДУ (Верифікація Оракулом) - ZERO ALLOCATION
+    # Викликається тисячі разів на секунду. Рахує лише математику.
+    # =========================================================================
     def self.verify_z_axis(seed, temp, acoustic)
-      generate_trajectory(seed, temp, acoustic).last[:z]
+      x, y, z, local_sigma, local_rho = initialize_state(seed, temp, acoustic)
+
+      ITERATIONS.times do
+        dx = local_sigma * (y - x)
+        dy = x * (local_rho - z) - y
+        dz = (x * y) - (BASE_BETA * z)
+
+        x += dx * DT
+        y += dy * DT
+        z += dz * DT
+      end
+
+      z.round(4)
+    end
+
+    # Інкапсульована ініціалізація (DRY)
+    private_class_method def self.initialize_state(seed, temp, acoustic)
+      # Ініціалізація початкової точки хаосу з DID дерева (seed)
+      x = ((seed % 1000) / 500.0) - 1.0
+      y = (((seed >> 4) % 1000) / 500.0) - 1.0
+      z = (((seed >> 8) % 1000) / 500.0) - 1.0
+
+      # Пертурбація системи фізичними даними з лісу
+      local_sigma = BASE_SIGMA + (acoustic * 0.1)
+      local_rho = BASE_RHO + (temp * 0.2)
+
+      [x, y, z, local_sigma, local_rho]
     end
   end
 end
