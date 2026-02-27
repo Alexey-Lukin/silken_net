@@ -73,16 +73,10 @@ class BlockchainMintingService
       Rails.logger.info "✅ [Web3] Успішний мінтинг! Хеш: #{tx_hash}"
 
     rescue StandardError => e
-      # 6. Обробка аварій (Немає грошей на газ, Alchemy впав, RPC відхилив)
-      Rails.logger.error "🛑 [Web3] Помилка мінтингу: #{e.message}. Виконуємо Rollback."
-
-      ActiveRecord::Base.transaction do
-        @transaction.update!(status: :failed)
-
-        # Повертаємо чесно зароблені бали назад на баланс дерева
-        @wallet.increment!(:balance, @transaction.amount)
-      end
-
+      # Ми БІЛЬШЕ НЕ робимо Rollback тут. 
+      # Ми просто логуємо удар і прокидаємо помилку у Воркер, 
+      # який вирішить: робити retry чи остаточно ховати транзакцію.
+      Rails.logger.error "🛑 [Web3] Помилка мінтингу RPC: #{e.message}."
       raise e
     end
   end
