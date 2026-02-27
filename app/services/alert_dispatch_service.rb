@@ -96,8 +96,6 @@ class AlertDispatchService
   end
 
   private_class_method def self.notify_stakeholders(alert)
-    # Інтеграція з каналами зв'язку (Twilio, ActionCable для Web-дашборда, Firebase Push)
-    # SmsNotificationWorker.perform_async(alert.id)
-    # ActionCable.server.broadcast("cluster_#{alert.cluster_id}_alerts", { alert: alert.as_json })
+    AlertNotificationWorker.perform_async(alert.id)
   end
 end
