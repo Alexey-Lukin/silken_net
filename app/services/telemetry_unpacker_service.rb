@@ -14,7 +14,7 @@ class TelemetryUnpackerService
     @cipher = OpenSSL::Cipher.new("aes-256-ecb")
     @cipher.decrypt
     @cipher.padding = 0 
-    @keys_cache = {} # [НОВЕ] Мемоізація ключів для швидкості батчу
+    @keys_cache = {}
   end
 
   def perform
@@ -33,7 +33,6 @@ class TelemetryUnpackerService
     inverted_rssi = chunk[4].unpack("C").first
     actual_rssi = -inverted_rssi
     
-    # [ОПТИМІЗАЦІЯ]: Шукаємо ключ або беремо з кешу
     key_record = @keys_cache[queen_uid_hex] ||= HardwareKey.find_by(device_uid: queen_uid_hex)
     
     unless key_record
@@ -63,9 +62,7 @@ class TelemetryUnpackerService
       return
     end
 
-    # [НОВЕ]: Витягуємо версію прошивки з padding-байт (перші 2 байти з a4)
     firmware_id = parsed_data[7].unpack("n").first
-
     calibration = tree.device_calibration || DeviceCalibration.new(temperature_offset_c: 0, impedance_offset_ohms: 0, vcap_coefficient: 1.0)
     
     status_byte = parsed_data[5]
@@ -80,13 +77,13 @@ class TelemetryUnpackerService
       metabolism_s: parsed_data[4],
       growth_points: status_byte & 0x3F,
       mesh_ttl: parsed_data[6],
-      firmware_version_id: (firmware_id.positive? ? firmware_id : nil) # [НОВЕ]
+      firmware_version_id: (firmware_id.positive? ? firmware_id : nil)
     }
 
-    # [НОВЕ]: Математика Атрактора (Z-Value)
-    # Розраховуємо z_value на основі метаболізму та акустики для валідації гомеостазу
-    log_attributes[:z_value] = Attractor.calculate_z(
-      log_attributes[:metabolism_s], 
+    # [ВИПРАВЛЕНО]: Додано Seed (parsed_data[0]) для детермінованого хаосу
+    log_attributes[:z_value] = SilkenNet::Attractor.calculate_z(
+      parsed_data[0], # Seed з DID дерева
+      log_attributes[:temperature_c],
       log_attributes[:acoustic_events]
     )
 
@@ -98,11 +95,17 @@ class TelemetryUnpackerService
     end
 
     ActiveRecord::Base.transaction do
-      # [НОВЕ]: Оновлюємо статус Королеви
+      # Помічаємо Королеву "онлайн"
       Gateway.find_by(uid: queen_uid_hex)&.mark_seen!
 
       log = tree.telemetry_logs.create!(log_attributes)
-      tree.wallet.increment!(:balance, log.growth_points) if log.growth_points > 0
+      
+      # Робота з економікою росту
+      if log.growth_points > 0
+        tree.wallet.credit!(log.growth_points)
+      end
+      
+      # Виклик Оракула Трівог
       AlertDispatchService.analyze_and_trigger!(log)
     end
 
