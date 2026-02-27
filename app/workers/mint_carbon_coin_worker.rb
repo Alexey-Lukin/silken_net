@@ -2,42 +2,46 @@
 
 class MintCarbonCoinWorker
   include Sidekiq::Job
-
-  # Ізолюємо повільні блокчейн-запити в окремій черзі 'web3'.
   sidekiq_options queue: "web3", retry: 5
 
-  # МЕ NAM-TAR: Цей блок виконається ТІЛЬКИ якщо всі 5 спроб провалилися
+  # МЕ NAM-TAR: Фінальний Ролбек
   sidekiq_retries_exhausted do |msg, _ex|
     transaction_id = msg["args"].first
-    transaction = BlockchainTransaction.find_by(id: transaction_id)
+    tx = BlockchainTransaction.find_by(id: transaction_id)
 
-    if transaction
-      Rails.logger.fatal "☠️ [Web3] Всі 5 спроб мінтингу вичерпано. Транзакція ##{transaction_id} мертва. Виконуємо Rollback."
+    if tx
+      Rails.logger.fatal "☠️ [Web3] Капітуляція. Транзакція ##{transaction_id} скасована. Повернення активів..."
 
       ActiveRecord::Base.transaction do
-        transaction.update!(status: :failed)
+        tx.update!(status: :failed, notes: "Rollback: Вичерпано спроби підключення до Polygon.")
         
-        # Повертаємо чесно зароблені бали назад на баланс дерева ТІЛЬКИ після повної поразки
-        transaction.wallet.increment!(:balance, transaction.amount)
+        # [ВИПРАВЛЕНО]: Конвертуємо токени назад у бали росту
+        # Використовуємо константу з EvaluatorWorker для точності
+        refund_points = (tx.amount * TokenomicsEvaluatorWorker::EMISSION_THRESHOLD).to_i
+        tx.wallet.increment!(:balance, refund_points)
       end
     end
   end
 
   def perform(blockchain_transaction_id)
-    Rails.logger.info "🚀 [Web3 Worker] Старт процесу мінтингу. Transaction ID: #{blockchain_transaction_id}"
+    tx = BlockchainTransaction.find_by(id: blockchain_transaction_id)
+    return unless tx
+    
+    # Захист від повторного запуску підтверджених транзакцій
+    return if tx.status_confirmed?
 
-    # Делегуємо всю складну криптографію нашому сервісу
+    Rails.logger.info "🚀 [Web3] Старт мінтингу для #{tx.token_type}: #{tx.amount} одиниць."
+
+    # Виклик сервісу, який тепер підтримує стан :processing
     BlockchainMintingService.call(blockchain_transaction_id)
 
   rescue ActiveRecord::RecordNotFound
-    Rails.logger.warn "⚠️ [Web3 Worker] Транзакцію ##{blockchain_transaction_id} не знайдено. Скасування."
+    Rails.logger.warn "⚠️ [Web3] Транзакцію ##{blockchain_transaction_id} не знайдено."
   rescue StandardError => e
-    # Якщо Alchemy "чхнув", транзакція зависла у статусі :processing.
-    # Ми маємо повернути її в :pending, щоб наступний retry зміг її підхопити!
-    transaction = BlockchainTransaction.find_by(id: blockchain_transaction_id)
-    transaction&.update!(status: :pending)
+    # Повертаємо в :pending, щоб наступний retry міг спробувати знову
+    BlockchainTransaction.find_by(id: blockchain_transaction_id)&.update!(status: :pending)
 
-    Rails.logger.error "🚨 [Web3 Worker] Помилка: #{e.message}. Sidekiq планує retry."
+    Rails.logger.error "🚨 [Web3] Помилка RPC: #{e.message}. Sidekiq планує переповтор."
     raise e
   end
 end
