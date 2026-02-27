@@ -13,10 +13,10 @@ class Wallet < ApplicationRecord
 
   # Метод для автоматичної емісії (викликається воркером)
   def lock_and_mint!(points_to_lock, threshold)
-    # Адреса гаманця береться з організації, якій належить дерево
-    target_address = tree.cluster&.organization&.crypto_public_address
+    # [ЗМІНА]: Гнучка адресація. Пріоритет - гаманець дерева, потім - гаманець організації.
+    target_address = crypto_public_address.presence || tree.cluster&.organization&.crypto_public_address
     
-    raise "Відсутня адреса організації" if target_address.blank?
+    raise "Відсутня крипто-адреса для мінтингу (Wallet або Organization)" if target_address.blank?
 
     transaction do
       lock! # Row-level lock для запобігання Race Condition
@@ -30,9 +30,10 @@ class Wallet < ApplicationRecord
         amount: tokens_to_mint, # Записуємо кількість токенів, а не балів
         token_type: :carbon_coin,
         status: :pending,
-        notes: "Конвертація #{points_to_lock} балів росту."
+        notes: "Конвертація #{points_to_lock} балів росту на адресу #{target_address}."
       )
 
+      # Вистрілюємо задачу в Redis для фізичного мінтингу в Polygon
       MintCarbonCoinWorker.perform_async(tx.id)
       tx
     end
