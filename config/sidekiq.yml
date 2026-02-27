@@ -18,3 +18,8 @@
     daily_telemetry_aggregation:
       cron: '0 1 * * *'
       class: DailyAggregationWorker
+
+    # D-MRV Арбітраж: перевірка здоров'я лісу раз на добу о 02:00
+    cluster_health_arbitration:
+      cron: '0 2 * * *'
+      class: ClusterHealthCheckWorker
