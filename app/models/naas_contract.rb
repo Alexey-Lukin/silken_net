@@ -1,18 +1,19 @@
 # frozen_string_literal: true
 
 class NaasContract < ApplicationRecord
-  # Сторона 1: Інвестор / Клієнт
+  # --- ЗВ'ЯЗКИ ---
   belongs_to :organization
-  # Сторона 2: Фізичний ліс
   belongs_to :cluster
 
+  # --- СТАТУСИ (The Lifecycle of Trust) ---
   enum :status, {
-    draft: 0,       # Контракт готується, інвестор ще не переказав фінансування
-    active: 1,      # Спонсорування йде, дерева здорові, мінтинг токенів дозволено
-    fulfilled: 2,   # Термін дії (напр., 10 років) успішно завершено
-    breached: 3     # Контракт розірвано (ліс згорів / вирубаний) - Slashing Protocol
+    draft: 0,      # Підготовка, очікування транзакції інвестора
+    active: 1,     # Контракт у силі, емісія токенів дозволена
+    fulfilled: 2,  # Успішне завершення (напр. через 10 років)
+    breached: 3    # ПОРУШЕНО (Slashing Protocol активовано)
   }, prefix: true
 
+  # --- ВАЛІДАЦІЇ ---
   validates :total_funding, presence: true, numericality: { greater_than: 0 }
   validates :start_date, :end_date, presence: true
   validate :end_date_after_start_date
@@ -22,47 +23,45 @@ class NaasContract < ApplicationRecord
   # =========================================================================
   # THE SLASHING PROTOCOL (D-MRV Арбітраж)
   # =========================================================================
-  # Цей метод має викликатися щоденним cron-job.
+  # Викликається щоночі після роботи InsightGeneratorService
   def check_cluster_health!
     return unless status_active?
 
-    total_trees = cluster.trees.count
-    return if total_trees.zero?
+    total_trees_count = cluster.trees.count
+    return if total_trees_count.zero?
 
-    # [ЗМІНА]: Використовуємо status_code (2 - Аномалія/Пожежа, 3 - Вандалізм)
-    # Це синхронізовано з нашим TelemetryUnpackerService та AlertDispatchService.
-    anomalous_trees = cluster.trees
-                             .joins(:telemetry_logs)
-                             .where(telemetry_logs: { 
-                               status_code: [2, 3], 
-                               created_at: 24.hours.ago..Time.current 
-                             })
-                             .distinct
-                             .count
+    # [ОПТИМІЗАЦІЯ]: Замість мільйонів логів, ми опитуємо "Оракула" (AiInsight)
+    # Шукаємо дерева, які вчора мали статус Аномалії (2) або Вандалізму (3)
+    critical_insights_count = AiInsight.where(
+      analyzable: cluster.trees,
+      analyzed_date: Date.yesterday,
+      stress_index: 1.0 # Наш показник повної аномалії/смерті
+    ).count
 
-    # Жорстке правило Web3 екології: якщо більше 20% кластера знищено,
-    # контракт вважається порушеним (Breached).
-    if anomalous_trees > (total_trees * 0.20)
-      transaction do
-        update!(status: :breached)
-
-        # Залишаємо лог для системи та інвесторів
-        Rails.logger.warn "🚨 [D-MRV] NaasContract #{id} порушено! Втрата понад 20% дерев."
-
-        # [ЗМІНА]: Активуємо воркер для спалювання токенів (Slashing Protocol)
-        # Це змусить інвестора відчути фізичну втрату лісу через блокчейн.
-        BurnCarbonTokensWorker.perform_async(self.organization_id, self.id)
-      end
+    # Математична межа порушення контракту
+    # $$ \text{anomalous\_ratio} = \frac{\text{critical\_insights}}{\text{total\_trees}} $$
+    if critical_insights_count > (total_trees_count * 0.20)
+      activate_slashing_protocol!
     end
   end
 
   private
 
+  def activate_slashing_protocol!
+    transaction do
+      update!(status: :breached)
+
+      # Залишаємо відбиток для аудиторів
+      Rails.logger.warn "🚨 [D-MRV] NaasContract #{id} РОЗІРВАНО. Критичне пошкодження сектору."
+
+      # Активуємо воркер для спалювання токенів (Slashing)
+      # Це фізично зменшує баланс інвестора в Polygon, відображаючи реальну втрату біомаси
+      BurnCarbonTokensWorker.perform_async(self.organization_id, self.id)
+    end
+  end
+
   def end_date_after_start_date
     return if end_date.blank? || start_date.blank?
-
-    if end_date < start_date
-      errors.add(:end_date, "повинна бути пізніше дати початку")
-    end
+    errors.add(:end_date, "повинна бути пізніше дати початку") if end_date < start_date
   end
 end
