@@ -1,5 +1,20 @@
 :concurrency: 15
 :queues:
-  - [telemetry, 3] # Високий пріоритет: швидка розпаковка AES
-  - [default, 2]   # Середній пріоритет: email, скидання паролів
-  - [web3, 1]      # Низький пріоритет: повільні запити до блокчейну
+  - [telemetry, 5] # Uplink: розпаковка даних (Critical)
+  - [alerts, 4]    # Сповіщення про пожежі/браконьєрів
+  - [downlink, 3]  # Команди актуаторам та OTA прошивки
+  - [default, 2]   # Стандартні задачі
+  - [web3, 1]      # Повільні транзакції блокчейну
+  - [low, 1]       # Нічна агрегація (InsightGenerator)
+
+:scheduler:
+  :schedule:
+    # Емісійний центр: перевірка балансів кожну годину
+    tokenomics_evaluation:
+      cron: '0 * * * *'
+      class: TokenomicsEvaluatorWorker
+    
+    # Хронометрист: агрегація даних за минулу добу о 01:00 ночі
+    daily_telemetry_aggregation:
+      cron: '0 1 * * *'
+      class: DailyAggregationWorker
