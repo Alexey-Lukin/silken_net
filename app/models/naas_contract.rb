@@ -22,19 +22,21 @@ class NaasContract < ApplicationRecord
   # =========================================================================
   # THE SLASHING PROTOCOL (D-MRV Арбітраж)
   # =========================================================================
-  # Цей метод має викликатися щоденним cron-job (наприклад, через Sidekiq Scheduler).
-  # Він перевіряє, чи живий ліс, за який платить інвестор.
+  # Цей метод має викликатися щоденним cron-job.
   def check_cluster_health!
     return unless status_active?
 
     total_trees = cluster.trees.count
     return if total_trees.zero?
 
-    # Знаходимо кількість дерев у кластері, які зараз фіксують критичний стрес
-    # (пожежа, критична посуха, пилка) за останні 24 години
+    # [ЗМІНА]: Використовуємо status_code (2 - Аномалія/Пожежа, 3 - Вандалізм)
+    # Це синхронізовано з нашим TelemetryUnpackerService та AlertDispatchService.
     anomalous_trees = cluster.trees
                              .joins(:telemetry_logs)
-                             .where(telemetry_logs: { bio_status: :anomaly, created_at: 24.hours.ago..Time.current })
+                             .where(telemetry_logs: { 
+                               status_code: [2, 3], 
+                               created_at: 24.hours.ago..Time.current 
+                             })
                              .distinct
                              .count
 
@@ -47,9 +49,9 @@ class NaasContract < ApplicationRecord
         # Залишаємо лог для системи та інвесторів
         Rails.logger.warn "🚨 [D-MRV] NaasContract #{id} порушено! Втрата понад 20% дерев."
 
-        # TODO: Запустити фонову задачу, яка звернеться до смарт-контракту SilkenCarbonCoin
-        # і викличе функцію burn(), щоб спалити токени організації.
-        # BurnCarbonTokensWorker.perform_async(self.organization_id, self.id)
+        # [ЗМІНА]: Активуємо воркер для спалювання токенів (Slashing Protocol)
+        # Це змусить інвестора відчути фізичну втрату лісу через блокчейн.
+        BurnCarbonTokensWorker.perform_async(self.organization_id, self.id)
       end
     end
   end
