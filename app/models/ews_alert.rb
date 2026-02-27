@@ -2,34 +2,25 @@
 
 class EwsAlert < ApplicationRecord
   belongs_to :tree
+  # Рівень критичності
+  enum :severity, { low: 0, medium: 1, critical: 2 }, prefix: true
 
-  # Рівень критичності інциденту
-  enum :severity, {
-    low: 0,      # Потребує уваги при наступному обході
-    medium: 1,   # Прогресуюча посуха або хвороба
-    critical: 2  # Миттєва реакція (вандалізм, пожежа, спилювання)
-  }, prefix: true
-
-  # Тип загрози, який бекенд класифікує на основі даних телеметрії
+  # [СИНХРОНІЗОВАНО] Типи загроз, які приходять з AlertDispatchService
   enum :alert_type, {
-    drought: 0,    # Падіння вологості / зміна метаболізму
-    pest: 1,       # Специфічна кавітація (Жук-короїд)
-    vandalism: 2,  # Вібрація від бензопили (Акустика = 0xFF)
-    system_fault: 3 # Анкер перестав виходити на зв'язок (впала напруга Vcap)
+    severe_drought: 0,    # Гідрологічний стрес
+    insect_epidemic: 1,   # Короїд (TinyML)
+    vandalism_breach: 2,  # Відкриття корпусу / Пил
+    fire_detected: 3,     # Пожежа
+    seismic_anomaly: 4,   # Землетрус (П'єзо)
+    system_fault: 5       # Втрата зв'язку
   }, prefix: true
 
   validates :severity, :alert_type, :description, presence: true
 
-  # Скоупи для панелі управління лісника
   scope :unresolved, -> { where(resolved_at: nil) }
-  scope :resolved, -> { where.not(resolved_at: nil) }
+  scope :critical, -> { severity_critical.unresolved }
 
-  # Метод для "закриття" інциденту після фізичного огляду дерева
   def resolve!
     update!(resolved_at: Time.current)
-  end
-
-  def resolved?
-    resolved_at.present?
   end
 end
