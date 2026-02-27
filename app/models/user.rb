@@ -9,10 +9,15 @@ class User < ApplicationRecord
   has_many :sessions, dependent: :destroy
   has_many :identities, dependent: :destroy
   belongs_to :organization, optional: true
+  
+  # [НОВЕ]: Зв'язок з журналом робіт
+  has_many :maintenance_records, dependent: :restrict_with_error
 
   # --- НОРМАЛІЗАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  # Додаємо нормалізацію телефону для SMS-шлюзів
+  normalizes :phone_number, with: ->(p) { p.gsub(/\D/, "") }
 
   # --- РОЛЬОВА МОДЕЛЬ (RBAC) ---
   enum :role, {
@@ -24,6 +29,8 @@ class User < ApplicationRecord
   # --- СКОУПИ ДЛЯ ВОРКЕРІВ ---
   scope :notifiable, -> { where.not(phone_number: [nil, ""]) }
   scope :active_foresters, -> { forester_role.notifiable }
+  # [НОВЕ]: Скоуп для тих, хто реально в полі
+  scope :online, -> { where("last_seen_at >= ?", 30.minutes.ago) }
 
   # --- ТОКЕНИ (Rails 8.0) ---
   generates_token_for :password_reset, expires_in: 15.minutes do
@@ -34,11 +41,16 @@ class User < ApplicationRecord
     email_address
   end
 
-  # Token для мобільного додатка лісника (Bearer Auth)
   generates_token_for :api_access
 
+  # --- МЕТОДИ ---
   def forest_commander?
     role_admin? || role_forester?
+  end
+
+  # Зручний хелпер для фронтенду
+  def full_name
+    "#{first_name} #{last_name}".strip.presence || email_address
   end
 
   private
