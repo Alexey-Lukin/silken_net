@@ -11,8 +11,8 @@ class AlertDispatchService
     cluster = tree.cluster
 
     # 1. ВАНДАЛІЗМ (Tamper Detection - Найвищий пріоритет)
-    # Згідно з нашим протоколом, якщо status_code == 3 (зарезервовано) або напруга впала до 0 при живому пінг-у
-    if telemetry_log.status_code == 3 || telemetry_log.vcap_voltage < 100
+    # [ЗМІНА]: Використовуємо нове поле tamper_detected та voltage_mv
+    if telemetry_log.tamper_detected? || telemetry_log.voltage_mv < 100
       create_and_dispatch_alert!(
         cluster: cluster,
         tree: tree,
@@ -23,19 +23,21 @@ class AlertDispatchService
       return # Зупиняємо подальший аналіз, бо датчики можуть брехати
     end
 
-    # 2. ПОЖЕЖА або РОБОТА ПИЛКОЮ (status_code == 2 від TinyML)
-    if telemetry_log.temperature >= FIRE_TEMP_THRESHOLD_C || telemetry_log.status_code == 2
+    # 2. ПОЖЕЖА або РОБОТА ПИЛКОЮ (bio_status :anomaly від TinyML)
+    # [ЗМІНА]: Використовуємо temperature_c та bio_status_anomaly?
+    if telemetry_log.temperature_c >= FIRE_TEMP_THRESHOLD_C || telemetry_log.bio_status_anomaly?
       create_and_dispatch_alert!(
         cluster: cluster,
         tree: tree,
         severity: :critical,
         alert_type: :fire_detected,
-        message: "КАТАСТРОФА: Термістор фіксує #{telemetry_log.temperature}°C або TinyML виявив бензопилу (Аномалія). Ризик пожежі/вирубки!"
+        message: "КАТАСТРОФА: Термістор фіксує #{telemetry_log.temperature_c}°C або TinyML виявив бензопилу (Аномалія). Ризик пожежі/вирубки!"
       )
     end
 
-    # 3. ПОСУХА (status_code == 1)
-    if telemetry_log.status_code == 1
+    # 3. ПОСУХА (bio_status :stress)
+    # [ЗМІНА]: Використовуємо bio_status_stress?
+    if telemetry_log.bio_status_stress?
       create_and_dispatch_alert!(
         cluster: cluster,
         tree: tree,
@@ -46,20 +48,20 @@ class AlertDispatchService
     end
 
     # 4. ЗЕМЛЕТРУС (Сейсмічний метаматеріал)
-    # Оскільки п'єзо безпосередньо будить процесор, ударна хвиля (землетрус) дасть максимальне значення акустики (255)
-    if telemetry_log.acoustic >= SEISMIC_ACOUSTIC_THRESHOLD
+    # [ЗМІНА]: Використовуємо acoustic_events
+    if telemetry_log.acoustic_events >= SEISMIC_ACOUSTIC_THRESHOLD
       create_and_dispatch_alert!(
         cluster: cluster,
         tree: tree,
         severity: :critical,
         alert_type: :seismic_anomaly,
-        message: "СЕЙСМІКА: Аномальний акустично-п'єзо резонанс (Рівень: #{telemetry_log.acoustic}/255). Можливий тектонічний зсув."
+        message: "СЕЙСМІКА: Аномальний акустично-п'єзо резонанс (Рівень: #{telemetry_log.acoustic_events}/255). Можливий тектонічний зсув."
       )
     end
 
     # 5. ШКІДНИКИ (Короїд - Edge AI)
-    # Якщо нейромережа не дала "Аномалію 2", але є стрес (1) і підвищений акустичний шум (хрускіт личинок)
-    if telemetry_log.acoustic > PEST_ACOUSTIC_THRESHOLD && telemetry_log.acoustic < SEISMIC_ACOUSTIC_THRESHOLD && telemetry_log.status_code == 1
+    # [ЗМІНА]: Використовуємо acoustic_events та bio_status_stress?
+    if telemetry_log.acoustic_events > PEST_ACOUSTIC_THRESHOLD && telemetry_log.acoustic_events < SEISMIC_ACOUSTIC_THRESHOLD && telemetry_log.bio_status_stress?
       create_and_dispatch_alert!(
         cluster: cluster,
         tree: tree,
