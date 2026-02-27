@@ -11,4 +11,12 @@ class HardwareKey < ApplicationRecord
   def binary_key
     [ aes_key_hex ].pack("H*")
   end
+
+  # [НОВЕ]: Метод для генерації нового ключа прямо в Rails
+  def self.generate_for(device_uid)
+    create!(
+      device_uid: device_uid.to_s.upcase,
+      aes_key_hex: SecureRandom.hex(32).upcase
+    )
+  end
 end
