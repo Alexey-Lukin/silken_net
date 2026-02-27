@@ -7,51 +7,54 @@ class ActuatorCommandWorker
   include Sidekiq::Job
   sidekiq_options queue: "downlink", retry: 3
 
-  def perform(actuator_id, command_code, duration_seconds)
-    actuator = Actuator.find(actuator_id)
+  # Приймаємо лише ID наказу. Це унеможливлює Race Conditions.
+  def perform(command_id)
+    command = ActuatorCommand.find(command_id)
+    actuator = command.actuator
     gateway = actuator.gateway
-    
-    # [НОВЕ]: Знаходимо запис команди для оновлення статусу
-    # Ми беремо останню команду в статусі :issued або :sent
-    command_record = ActuatorCommand.where(actuator: actuator, status: [:issued, :sent]).last
+
+    # Якщо команда вже успішно виконана (наприклад, випадковий дубль Sidekiq)
+    return if command.status_acknowledged?
 
     # 1. ШИФРУВАННЯ (Zero-Trust)
-    # Дістаємо унікальний ключ Королеви
     key_record = HardwareKey.find_by(device_uid: gateway.uid)
     unless key_record
-      Rails.logger.error "🛑 [Downlink] Ключ для Королеви #{gateway.uid} не знайдено! Відміна."
-      command_record&.update!(status: :failed)
+      Rails.logger.error "🛑 [Downlink] Ключ для Королеви #{gateway.uid} не знайдено!"
+      command.update!(status: :failed)
       return
     end
 
-    raw_payload = "CMD:#{command_code}:#{duration_seconds}:#{actuator.id}"
+    raw_payload = "CMD:#{command.command_payload}:#{command.duration_seconds}:#{actuator.id}"
     encrypted_payload = encrypt_payload(raw_payload, key_record.binary_key)
 
     begin
       # 2. ФІЗИЧНИЙ ЗАПИТ
-      command_record&.update!(status: :sent)
+      command.update!(status: :sent)
       
       Timeout.timeout(5) do
-        # Відправляємо шифрований батч на IP шлюзу
-        CoapClient.put("coap://#{gateway.ip_address}/actuator", encrypted_payload)
+        # Використовуємо endpoint актуатора (напр. /actuator/valve_1)
+        url = "coap://#{gateway.ip_address}/actuator/#{actuator.endpoint}"
+        CoapClient.put(url, encrypted_payload)
       end
 
-      # 3. УСПІХ
+      # 3. УСПІХ (Синхронізація станів)
       ActiveRecord::Base.transaction do
-        actuator.update!(state: :active)
-        command_record&.update!(status: :acknowledged) # Якщо CoAP повернув 2.04 Changed
+        actuator.mark_active! # Використовуємо наш новий метод з моделі Actuator
+        command.update!(status: :acknowledged)
       end
 
-      Rails.logger.info "⚡ [Downlink] Команда #{command_code} активована на #{gateway.uid}"
+      Rails.logger.info "⚡ [Downlink] Наказ #{command.id} активовано на #{gateway.uid} (#{actuator.endpoint})"
 
       # 4. ПЛАНУВАННЯ ЗАВЕРШЕННЯ
-      ResetActuatorStateWorker.perform_in(duration_seconds.seconds, actuator_id)
+      # Через вказаний час воркер переведе актуатор назад у стан :idle
+      ResetActuatorStateWorker.perform_in(command.duration_seconds.seconds, actuator.id)
 
     rescue Timeout::Error, StandardError => e
-      Rails.logger.error "🛑 [Downlink Error] Шлюз #{gateway.uid} недоступний: #{e.message}"
+      Rails.logger.error "🛑 [Downlink Error] Шлюз #{gateway.uid} не відповів: #{e.message}"
       
-      # Оновлюємо статус для аудиту, але дозволяємо Sidekiq зробити retry
-      command_record&.update!(status: :failed)
+      # Оновлюємо статус, але кидаємо помилку далі, щоб Sidekiq зробив retry.
+      # Оскільки ми шукаємо по find(command_id), наступний retry успішно знайде цю команду.
+      command.update!(status: :failed)
       raise e 
     end
   end
@@ -61,7 +64,7 @@ class ActuatorCommandWorker
   def encrypt_payload(payload, binary_key)
     cipher = OpenSSL::Cipher.new("aes-256-ecb")
     cipher.encrypt
-    cipher.key = binary_key # Використовуємо індивідуальний ключ пристрою
+    cipher.key = binary_key 
     cipher.padding = 0 
 
     block_size = 16
