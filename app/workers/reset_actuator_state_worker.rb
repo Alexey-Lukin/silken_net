@@ -3,28 +3,34 @@
 class ResetActuatorStateWorker
   include Sidekiq::Job
   
-  # Використовуємо чергу downlink, оскільки це частина життєвого циклу управління лісом.
-  # retry: 3 гарантує, що якщо БД тимчасово заблокована, стан все одно відновиться.
+  # Використовуємо чергу downlink. Це гарантує, що цикли управління
+  # не будуть заблоковані важкими фоновими розрахунками.
   sidekiq_options queue: "downlink", retry: 3
 
   def perform(actuator_id)
-    # Використовуємо find_by, щоб уникнути Exception, якщо актуатор (або дерево) 
-    # фізично знищили і видалили з бази під час його роботи.
+    # Безпечний пошук. Якщо дерево зрубали або актуатор демонтували — ми просто йдемо далі.
     actuator = Actuator.find_by(id: actuator_id)
 
     unless actuator
-      Rails.logger.warn "⚠️ [Actuator Lifecycle] Актуатор #{actuator_id} не знайдено. Можливо, вузол було демонтовано."
+      Rails.logger.warn "⚠️ [Actuator Lifecycle] Актуатор #{actuator_id} не знайдено. Можливо, вузол було демонтовано під час виконання."
       return
     end
 
     # ПЕРЕВІРКА ІСТИНИ (Кенозис стану)
-    # Ми переводимо в idle ТІЛЬКИ якщо він дійсно був active. 
-    # Якщо лісник вручну перевів його в maintenance (обслуговування) або pending, ми не ламаємо цей стан.
-    if actuator.state == "active"
-      actuator.update!(state: :idle)
-      Rails.logger.info "♻️ [Actuator Lifecycle] Механізм #{actuator.id} (Шлюз: #{actuator.gateway.uid}) завершив роботу і повернутий у стан :idle."
+    # Використовуємо предикат енума для чистоти коду.
+    if actuator.state_active?
+      ActiveRecord::Base.transaction do
+        actuator.update!(state: :idle)
+        
+        # [ЗШИВКА З АУДИТОМ]: Позначаємо останню команду як завершену (якщо ми впровадили ActuatorCommand)
+        # Це дозволяє закрити часовий проміжок виконання в звіті інвестору.
+        actuator.actuator_commands.where(status: :acknowledged).update_all(status: :confirmed)
+      end
+
+      Rails.logger.info "♻️ [Actuator Lifecycle] Механізм #{actuator.name} (ID: #{actuator.id}) завершив цикл і повернувся у гомеостаз (:idle)."
     else
-      Rails.logger.info "ℹ️ [Actuator Lifecycle] Механізм #{actuator.id} має стан '#{actuator.state}', а не 'active'. Скидання проігноровано."
+      # Якщо стан вже змінився (наприклад, лісник перевів у maintenance_needed), ми не втручаємось.
+      Rails.logger.info "ℹ️ [Actuator Lifecycle] Механізм #{actuator.id} перебуває у стані '#{actuator.state}'. Автоматичне скидання скасовано."
     end
   end
 end
