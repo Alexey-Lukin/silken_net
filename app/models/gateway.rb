@@ -3,6 +3,9 @@
 class Gateway < ApplicationRecord
   belongs_to :cluster, optional: true
   
+  # Zero-Trust: Унікальний ключ для розшифровки батчів саме цієї Королеви
+  has_one :hardware_key, foreign_key: :device_uid, primary_key: :uid, dependent: :destroy
+  
   has_many :telemetry_logs, foreign_key: :queen_uid, primary_key: :uid, dependent: :nullify
   has_many :gateway_telemetry_logs, foreign_key: :queen_uid, primary_key: :uid, dependent: :destroy
   has_many :maintenance_records, as: :maintainable, dependent: :destroy
