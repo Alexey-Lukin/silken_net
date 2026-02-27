@@ -5,19 +5,31 @@ class MaintenanceRecord < ApplicationRecord
   belongs_to :user
   # До чого застосовувались роботи (Tree або Gateway)
   belongs_to :maintainable, polymorphic: true
+  # (Опційно) Посилання на тривогу, яка спричинила виїзд
+  belongs_to :ews_alert, optional: true
 
-  # Типи фізичного втручання
   enum :action_type, {
-    installation: 0, # Встановлення анкера / шлюзу
-    inspection: 1,   # Плановий або позаплановий (EWS) огляд
-    cleaning: 2,     # Очищення від моху, бруду, снігу (особливо для сонячних панелей)
-    repair: 3,       # Заміна компонентів (напр., антени)
-    decommissioning: 4 # Зняття пристрою
+    installation: 0, 
+    inspection: 1,   
+    cleaning: 2,     
+    repair: 3,       
+    decommissioning: 4 
   }, prefix: true
 
   validates :action_type, :performed_at, presence: true
-  # notes: текст (опис того, що було зроблено)
   validates :notes, presence: true, length: { minimum: 10 }
 
   scope :recent, -> { order(performed_at: :desc) }
+
+  # [НОВЕ]: Після обслуговування "освіжаємо" пристрій
+  after_create :refresh_maintainable_status
+
+  private
+
+  def refresh_maintainable_status
+    # Якщо ми обслужили шлюз, оновлюємо його last_seen_at
+    if maintainable.respond_to?(:mark_seen!)
+      maintainable.mark_seen!
+    end
+  end
 end
