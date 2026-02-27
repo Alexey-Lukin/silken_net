@@ -25,6 +25,7 @@ class BlockchainBurningService
                           .where(status: :confirmed)
                           .sum(:amount)
 
+    # Якщо нічого не було замінтіно, немає чого спалювати
     return if total_minted_amount.zero?
 
     investor_address = @organization.crypto_public_address
@@ -35,7 +36,8 @@ class BlockchainBurningService
     contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
     contract = Eth::Contract.from_abi(name: "SilkenCarbonCoin", address: contract_address, abi: CONTRACT_ABI)
 
-    amount_in_wei = total_minted_amount * (10**18)
+    # ВАЖЛИВО: .to_i для EVM сумісності (запобігає Float формату)
+    amount_in_wei = (total_minted_amount * (10**18)).to_i
 
     begin
       Rails.logger.warn "🔥 [Web3] Спалювання #{total_minted_amount} SCC з гаманця #{investor_address}..."
@@ -49,9 +51,13 @@ class BlockchainBurningService
         sender_key: oracle_key
       )
 
+      # Знаходимо будь-який активний гаманець у кластері для прив'язки історії.
+      # Використовуємо find_by для уникнення NoMethodError, якщо дерева видалені.
+      fallback_wallet = @cluster.trees.first&.wallet
+
       # 4. Записуємо цю подію в базу як нову транзакцію, щоб інвестор бачив це в історії
       BlockchainTransaction.create!(
-        wallet_id: @cluster.trees.first.wallet.id, # Прив'язуємо до одного з дерев кластера
+        wallet_id: fallback_wallet&.id, # Може бути nil, якщо схема дозволяє, або прив'язуємо до системного гаманця
         amount: total_minted_amount,
         token_type: :carbon_coin,
         status: :confirmed,
