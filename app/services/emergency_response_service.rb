@@ -4,55 +4,56 @@ class EmergencyResponseService
   def self.call(ews_alert)
     cluster = ews_alert.cluster
 
-    # Знаходимо всі робочі механізми в цьому лісі, які готові прийняти команду
+    # Знаходимо всі робочі механізми в цьому лісі
+    # Ми шукаємо і idle, і ті, що вже працюють (active), щоб потенційно продовжити дію
     available_actuators = Actuator.joins(:gateway)
                                   .where(gateways: { cluster_id: cluster.id })
-                                  .where(state: :idle)
+                                  .where(state: [:idle, :active])
 
     if available_actuators.empty?
-      Rails.logger.warn "⚠️ [Emergency] Немає доступних актуаторів (idle) для кластера #{cluster.id}! Фізичне пом'якшення неможливе."
+      Rails.logger.warn "⚠️ [Emergency] Кластер #{cluster.id}: Актуатори недоступні."
       return
     end
 
     case ews_alert.alert_type.to_sym
-
-    # СЦЕНАРІЙ: КРИТИЧНА ПОСУХА (Атрактор Лоренца падає)
+    # СИНХРОНІЗАЦІЯ: Використовуємо символи з AlertDispatchService
     when :severe_drought
-      valves = available_actuators.where(device_type: :water_valve)
-      dispatch_commands(valves, "OPEN_VALVE", 7200)
+      valves = available_actuators.water_valve
+      dispatch_commands(valves, "OPEN_VALVE", 7200, ews_alert)
 
-    # СЦЕНАРІЙ: ПОЖЕЖА АБО БРАКОНЬЄРИ (Термістори > 60°C або TinyML зловив бензопилу)
-    when :biological_threat, :fire_detected
-      valves = available_actuators.where(device_type: :water_valve)
-      sirens = available_actuators.where(device_type: :fire_siren)
+    when :insect_epidemic, :fire_detected
+      valves = available_actuators.water_valve
+      sirens = available_actuators.fire_siren
+      
+      dispatch_commands(valves, "OPEN_VALVE", 14400, ews_alert)
+      dispatch_commands(sirens, "ACTIVATE_SIREN", 3600, ews_alert)
 
-      # Відкриваємо воду на максимум і вмикаємо сирени для відлякування
-      dispatch_commands(valves, "OPEN_VALVE", 14400)
-      dispatch_commands(sirens, "ACTIVATE_SIREN", 3600)
-
-    # СЦЕНАРІЙ: ЗЕМЛЕТРУС (Сейсмічний метаматеріал зловив резонанс > 1500 mV)
     when :seismic_anomaly
-      beacons = available_actuators.where(device_type: :seismic_beacon)
-      dispatch_commands(beacons, "ACTIVATE_BEACON", 3600)
+      beacons = available_actuators.seismic_beacon
+      dispatch_commands(beacons, "ACTIVATE_BEACON", 3600, ews_alert)
       
     else
-      Rails.logger.info "ℹ️ [Emergency] Тип тривоги #{ews_alert.alert_type} не потребує фізичного втручання актуаторів."
+      Rails.logger.info "ℹ️ [Emergency] Тип тривоги #{ews_alert.alert_type} не вимагає активації актуаторів."
     end
   end
 
-  # =========================================================================
-  # ІНКАПСУЛЬОВАНА ЛОГІКА ДИСПЕТЧЕРИЗАЦІЇ
-  # =========================================================================
-  private_class_method def self.dispatch_commands(actuators, command, duration_seconds)
+  private_class_method def self.dispatch_commands(actuators, command_code, duration, alert)
     actuators.each do |actuator|
-      Rails.logger.info "⚡ [Mitigation] Відправка команди #{command} (#{duration_seconds}s) на актуатор #{actuator.id}"
-      
-      # Миттєво змінюємо стан на :pending, щоб наступний алерт не створив дублікат команди.
-      # Справжній стан :active або :idle повернеться через зворотну телеметрію від Королеви.
+      # 1. Створюємо запис команди для історії та аудиту
+      # Це дозволить інвестору бачити: "Система врятувала дерево №42 о 14:00"
+      ActuatorCommand.create!(
+        actuator: actuator,
+        ews_alert: alert,
+        command_payload: command_code,
+        duration_seconds: duration,
+        status: :issued
+      )
+
+      # 2. Змінюємо стан на :pending (черга на відправку через CoAP)
       actuator.update!(state: :pending)
       
-      # Делегуємо виконання асинхронному воркеру (який звернеться до CoAP Client)
-      ActuatorCommandWorker.perform_async(actuator.id, command, duration_seconds)
+      # 3. Асинхронний запуск фізичного процесу
+      ActuatorCommandWorker.perform_async(actuator.id, command_code, duration)
     end
   end
 end
