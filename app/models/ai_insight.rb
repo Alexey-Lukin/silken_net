@@ -13,10 +13,20 @@ class AiInsight < ApplicationRecord
 
   # probability_score: відсоток впевненості ШІ (0.0 - 100.0)
   # target_date: дата, на яку робиться прогноз
-  # reasoning: JSON або текст (чому ШІ зробив такий висновок, важливо для аудиту)
+  # reasoning: JSONB для глибокого аудиту висновків ШІ
 
   validates :insight_type, :probability_score, :target_date, presence: true
   validates :probability_score, inclusion: { in: 0.0..100.0 }
 
   scope :highly_probable, -> { where("probability_score > ?", 80.0) }
+  scope :upcoming, -> { where("target_date >= ?", Date.current) }
+
+  # Допоміжний метод для візуалізації впевненості
+  def confidence_level
+    case probability_score
+    when 0..40 then :low
+    when 40..75 then :medium
+    else :high
+    end
+  end
 end
