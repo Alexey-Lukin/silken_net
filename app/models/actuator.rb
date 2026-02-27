@@ -17,7 +17,13 @@ class Actuator < ApplicationRecord
   validates :name, :device_type, presence: true
 
   # Метод-хелпер для перевірки, чи пристрій готовий до роботи
+  # Враховуємо "свіжість" зв'язку з Королевою
   def ready_for_deployment?
-    state_idle? && gateway.last_seen_at > 1.hour.ago
+    state_idle? && gateway.last_seen_at.present? && gateway.last_seen_at > 1.hour.ago
+  end
+
+  # [ПОРАДА]: Додати метод для логування останньої активації
+  def mark_active!
+    update!(state: :active, last_activated_at: Time.current)
   end
 end
