@@ -104,7 +104,7 @@ class TelemetryUnpackerService
     end
 
     begin
-      TelemetryLog.create!(
+      log = TelemetryLog.create!(
         tree: tree,
         queen_uid: hex_queen_uid,
         rssi: actual_rssi,
@@ -117,14 +117,11 @@ class TelemetryUnpackerService
         ttl: ttl
       )
 
-      # Якщо апаратний Edge AI (TinyML) передав статус критичної аномалії (напр., бензопила або пожежа)
-      if status_code == 2
-        Rails.logger.warn("🔥 [NAM-TAR] Виявлено критичну аномалію для дерева #{hex_did}! Диспетчеризація AlertDispatchService.")
-        AlertDispatchService.call(tree, :critical_anomaly, acoustic_level: acoustic)
-      end
+      # ВЕСЬ аналіз делегуємо спеціалізованому сервісу:
+      AlertDispatchService.analyze_and_trigger!(log)
 
     rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error("🛑 Помилка збереження телеметрії для дерева #{hex_did}: #{e.message}")
+      Rails.logger.error("🛑 Помилка збереження телеметрії: #{e.message}")
     end
   end
 
