@@ -1,35 +1,46 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-// Імпортуємо перевірені часом стандарти від OpenZeppelin
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title Silken Carbon Coin (SCC)
  * @dev ERC20 Токен для D-MRV системи Silken Net.
- * Мінтити та конфісковувати токени може ТІЛЬКИ авторизований Оракул (наш Rails сервер).
+ * Версія 2.0: Багаторівневий контроль доступу (AccessControl) та Аварійна зупинка (Pausable).
  */
-contract SilkenCarbonCoin is ERC20, Ownable {
+contract SilkenCarbonCoin is ERC20, AccessControl, Pausable {
 
     // =========================================================================
-    // ПОДІЇ (EVENTS) ДЛЯ ПУБЛІЧНОГО АУДИТУ
+    // РОЛІ СИСТЕМИ (ZERO-TRUST АРХІТЕКТУРА)
     // =========================================================================
+    
+    // Роль для нашого Rails-сервера (нарахування балів)
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    
+    // Роль для арбітражу/D-MRV (каральне спалювання при вирубці/пожежі)
+    bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
-    // Фіксує, яке саме дерево згенерувало конкретний об'єм вуглецю
+    // =========================================================================
+    // ПОДІЇ ДЛЯ ПУБЛІЧНОГО АУДИТУ
+    // =========================================================================
     event CarbonMinted(address indexed investor, uint256 amount, string treeDid);
-
-    // Фіксує факт застосування Slashing Protocol (знищення лісу)
     event TokenSlashed(address indexed investor, uint256 amount);
 
     /**
-     * @dev Конструктор. Встановлює назву токена, символ та адресу Оракула.
-     * @param initialOracle Адреса гаманця нашого Rails-сервера
+     * @dev Конструктор.
+     * @param admin Адреса холодного гаманця співзасновників (Ledger/Trezor)
+     * @param oracle Адреса гаманця нашого Rails-сервера (гарячий гаманець)
      */
-    constructor(address initialOracle)
-        ERC20("Silken Carbon Coin", "SCC")
-        Ownable(initialOracle) 
-    {}
+    constructor(address admin, address oracle) ERC20("Silken Carbon Coin", "SCC") {
+        // DEFAULT_ADMIN_ROLE може призначати та забирати інші ролі
+        _grantRole(DEFAULT_ADMIN_ROLE, admin); 
+        
+        // Надаємо Rails-серверу права на емісію та спалювання
+        _grantRole(MINTER_ROLE, oracle);
+        _grantRole(SLASHER_ROLE, oracle);
+    }
 
     // =========================================================================
     // ЛОГІКА ОРАКУЛА (Дії, доступні лише серверу)
@@ -37,45 +48,65 @@ contract SilkenCarbonCoin is ERC20, Ownable {
 
     /**
      * @dev Головна функція мінтингу.
-     * Модифікатор `onlyOwner` гарантує, що викликати її може лише сервер.
-     * @param to Адреса гаманця інвестора (Organization.crypto_public_address)
+     * @param to Адреса гаманця інвестора
      * @param amount Кількість токенів (у wei)
-     * @param treeDid Унікальний ідентифікатор дерева, що згенерувало бали
+     * @param treeDid Унікальний ідентифікатор дерева
      */
-    function mint(address to, uint256 amount, string calldata treeDid) public onlyOwner {
-        // Випускаємо токени на адресу інвестора
+    function mint(address to, uint256 amount, string calldata treeDid) public onlyRole(MINTER_ROLE) {
         _mint(to, amount);
-
-        // Випромінюємо подію для публічного D-MRV аудиту
         emit CarbonMinted(to, amount, treeDid);
     }
 
     /**
      * @dev Функція карального спалювання (Slashing Protocol).
-     * Дозволяє Оракулу конфіскувати та знищити токени інвестора,
-     * якщо ліс (NaasContract) був знищений або розірваний.
      * @param investor Адреса інвестора, чиї токени конфіскуються
      * @param amount Кількість токенів для знищення
      */
-    function slash(address investor, uint256 amount) public onlyOwner {
+    function slash(address investor, uint256 amount) public onlyRole(SLASHER_ROLE) {
         _burn(investor, amount);
-
-        // Фіксуємо факт покарання в блокчейні назавжди
         emit TokenSlashed(investor, amount);
     }
 
     // =========================================================================
-    // ПУБЛІЧНА ЛОГІКА (Дії, доступні інвесторам)
+    // ПУБЛІЧНА ЛОГІКА ТА АДМІНІСТРУВАННЯ
     // =========================================================================
 
     /**
      * @dev Функція для добровільного спалювання токенів (Carbon Offsetting).
-     * Коли компанія хоче офіційно "погасити" свій вуглецевий слід за рік,
-     * вона викликає цю функцію, назавжди виводячи токени з власного обігу.
-     * Будь-хто може спалити СВОЇ ВЛАСНІ токени.
-     * @param amount Кількість токенів для погашення
      */
     function burn(uint256 amount) public {
         _burn(_msgSender(), amount);
+    }
+
+    /**
+     * @dev Аварійна зупинка контракту.
+     * Викликається холодним гаманцем, якщо сервер Оракула був скомпрометований.
+     */
+    function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    /**
+     * @dev Відновлення роботи контракту.
+     */
+    function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
+    }
+
+    // =========================================================================
+    // ПЕРЕВИЗНАЧЕННЯ ВНУТРІШНІХ ФУНКЦІЙ (ERC20 Hook)
+    // =========================================================================
+
+    /**
+     * @dev Цей хук (hook) викликається перед БУДЬ-ЯКИМ переміщенням токенів 
+     * (переказ, мінтинг, спалювання). 
+     * Модифікатор `whenNotPaused` гарантує, що при паузі всі фінансові потоки завмирають.
+     */
+    function _update(address from, address to, uint256 value)
+        internal
+        override
+        whenNotPaused
+    {
+        super._update(from, to, value);
     }
 }
