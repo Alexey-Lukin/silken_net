@@ -35,13 +35,14 @@ class InsightGeneratorService
     return if logs.empty?
 
     # ZERO-ALLOCATION MATH: Делегуємо всі обчислення базі даних PostgreSQL.
-    # Це працює за мілісекунди і не створює тисячі Ruby-об'єктів.
+    # [ЗМІНА]: Оновлено назви полів згідно з моделлю TelemetryLog
+    # Додано CASE для врахування tamper_detected (статус 3)
     stats = logs.select(
-      "AVG(temperature) as avg_temp",
-      "AVG(vcap_voltage) as avg_vcap",
-      "MAX(acoustic) as max_acoustic",
+      "AVG(temperature_c) as avg_temp",
+      "AVG(voltage_mv) as avg_vcap",
+      "MAX(acoustic_events) as max_acoustic",
       "SUM(growth_points) as total_growth",
-      "MAX(status_code) as max_status"
+      "MAX(CASE WHEN tamper_detected THEN 3 ELSE bio_status END) as max_status"
     ).take
 
     # Переконуємось, що дані існують
@@ -73,6 +74,7 @@ class InsightGeneratorService
 
   def calculate_stress_index(max_status, avg_temp, max_acoustic)
     # 1.0 - Мертве/Знищене, 0.0 - Ідеальний гомеостаз
+    # max_status відповідає bio_status: 0 (homeostasis), 1 (stress), 2 (anomaly) або 3 (vandalism)
     return 1.0 if max_status == 2 || max_status == 3 # Пожежа або Вандалізм
     return 0.7 if max_status == 1 # Посуха (Сигнал від TinyML)
 
@@ -97,7 +99,6 @@ class InsightGeneratorService
   def cleanup_old_logs!
     # ВИДАЛЕННЯ БЕЗ ЕҐО: Ми не тримаємо сирі дані вічно.
     # Залишаємо телеметрію лише за останні 7 днів для глибинного дебагу (якщо щось зламалося).
-    # Використання .delete_all (замість destroy_all) працює безпосередньо в SQL і не тригерить колбеки.
     threshold = 7.days.ago.end_of_day
     deleted_count = TelemetryLog.where("created_at <= ?", threshold).delete_all
     
