@@ -6,7 +6,6 @@ class TokenomicsEvaluatorWorker
   sidekiq_options queue: "default", retry: 3
 
   # Константа конвертації: 10,000 балів емісії (growth_points) = 1 SCC (Carbon Coin)
-  # Це значення можна буде винести в ENV або налаштування Організації
   EMISSION_THRESHOLD = 10_000
 
   def perform
@@ -24,33 +23,20 @@ class TokenomicsEvaluatorWorker
   private
 
   def evaluate_wallet(wallet)
+    # Розраховуємо, скільки цілих токенів ми можемо випустити
+    tokens_to_mint = wallet.balance / EMISSION_THRESHOLD
+    return if tokens_to_mint.zero?
+
+    points_to_lock = tokens_to_mint * EMISSION_THRESHOLD
+
     # ТРАНЗАКЦІЙНІСТЬ (Абсолютна Істина):
-    # Ми не можемо списати бали з дерева, якщо транзакція не записалась у базу.
-    ActiveRecord::Base.transaction do
-      # Рахуємо, скільки токенів дерево заслужило (цілочисельне ділення)
-      tokens_to_mint = wallet.balance / EMISSION_THRESHOLD
-      points_to_burn = tokens_to_mint * EMISSION_THRESHOLD
+    # Ми викликаємо інкапсульований метод моделі Wallet, який використовує .lock! 
+    # Це гарантує, що бали не будуть списані двічі при паралельних запитах.
+    wallet.lock_and_mint!(points_to_lock, EMISSION_THRESHOLD)
 
-      # 1. Віднімаємо бали (Кенозис локального балансу)
-      wallet.update!(balance: wallet.balance - points_to_burn)
+    Rails.logger.info "🌱 [Емісія] Дерево #{wallet.tree.did} конвертувало #{points_to_lock} балів у #{tokens_to_mint} SCC."
 
-      # 2. Створюємо намір (Декрет) для блокчейну
-      tx = BlockchainTransaction.create!(
-        wallet: wallet,
-        amount: tokens_to_mint,
-        token_type: :carbon_coin, # Silken Carbon Coin
-        status: :pending,
-        notes: "Автоматична емісія. Конвертовано #{points_to_burn} балів росту."
-      )
-
-      # 3. Передаємо у Web3 чергу для фізичного мінтингу (наш ідеальний воркер)
-      MintCarbonCoinWorker.perform_async(tx.id)
-
-      Rails.logger.info "🌱 [Емісія] Дерево #{wallet.tree.did} конвертувало #{points_to_burn} балів у #{tokens_to_mint} SCC. Транзакція ##{tx.id}."
-    end
   rescue StandardError => e
     Rails.logger.error "🛑 [Емісія] Збій конвертації для гаманця #{wallet.id}: #{e.message}"
-    # Якщо з одним гаманцем сталась база-даних-помилка, ми логуємо її і йдемо до наступного,
-    # не вбиваючи весь процес генерації для лісу.
   end
 end
