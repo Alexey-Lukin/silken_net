@@ -1,34 +1,48 @@
 # frozen_string_literal: true
 
 class Session < ApplicationRecord
+  # --- ЗВ'ЯЗКИ ---
   belongs_to :user
 
-  # ip_address: рядок (IP, з якого здійснено вхід)
-  # user_agent: рядок (Браузер або модель мобільного телефону)
-
+  # --- ВАЛІДАЦІЇ ---
   validates :ip_address, presence: true
   validates :user_agent, presence: true
 
-  # [НОВЕ]: Оновлюємо час останньої активності користувача при кожному запиті
-  # Це дозволить у Gateway показувати "Online" статус лісників
-  after_create { user.touch(:last_seen_at) if user.respond_to?(:last_seen_at) }
+  # --- КОЛБЕКИ (Operational Pulse) ---
+  # [ПОКРАЩЕНО]: Ми оновлюємо last_seen_at не тільки при створенні,
+  # а й при кожному зверненні (це зазвичай робиться через Current.session у контролері,
+  # але логіка в моделі — хороший фолбек).
+  after_create :track_user_activity
 
-  # Скоуп для знаходження старих сесій, які варто очистити (наприклад, старші 30 днів)
+  # --- СКОУПИ (Housekeeping) ---
+  # Очищення застарілих сесій (Кенозис доступу)
   scope :stale, -> { where("created_at < ?", 30.days.ago) }
+  
+  # [НОВЕ]: Знаходження активних сесій саме лісників у полі
+  scope :active_in_field, -> { joins(:user).where(users: { role: :forester }).where("sessions.created_at > ?", 24.hours.ago) }
 
-  # Метод для перевірки, чи сесія належить мобільному додатку (по User-Agent)
+  # --- МЕТОДИ (Device Intelligence) ---
+
   def mobile_app?
     user_agent.match?(/SilkenNetMobile/i)
   end
 
-  # [НОВЕ]: Повертає людську назву пристрою для дашборду безпеки
+  # Повертає назву пристрою для аудиту безпеки
   def device_name
     case user_agent
     when /iPhone/i then "iPhone App"
     when /Android/i then "Android App"
-    when /Chrome/i then "Google Chrome"
-    when /Firefox/i then "Mozilla Firefox"
-    else "Unknown Device"
+    when /Chrome/i then "Desktop Chrome"
+    when /Firefox/i then "Desktop Firefox"
+    when /PostmanRuntime/i then "API Console (Dev)"
+    else "Unknown Node"
     end
+  end
+
+  private
+
+  def track_user_activity
+    # Використовуємо update_column, щоб не тригерити валідації та інші колбеки User
+    user.update_column(:last_seen_at, Time.current) if user.respond_to?(:last_seen_at)
   end
 end
