@@ -3,16 +3,19 @@
 require "securerandom"
 
 class HardwareKeyService
-  # Довжина ключа для AES-256
-  KEY_SIZE = 32 
+  # 32 байти = 256 біт для AES-256
+  KEY_SIZE_BYTES = 32 
 
-  def self.provision(device, manual_key = nil)
-    new(device).provision(manual_key)
+  def self.provision(device, manual_key_hex = nil)
+    new(device).provision(manual_key_hex)
   end
 
   def self.rotate(device_uid)
-    key = HardwareKey.find_by!(device_uid: device_uid)
-    new(key.device_identity).rotate!
+    # Знаходимо пристрій (Солдата або Королеву)
+    device = Tree.find_by(did: device_uid) || Gateway.find_by(uid: device_uid)
+    raise "Пристрій #{device_uid} не знайдено" unless device
+
+    new(device).rotate!
   end
 
   def initialize(device)
@@ -21,52 +24,51 @@ class HardwareKeyService
   end
 
   # =========================================================================
-  # 1. ПРОПИСКА (Key Minting)
+  # 1. ПРОПИСКА (The Initial Handshake)
   # =========================================================================
-  def provision(manual_key = nil)
-    # Якщо ключ не передано (напр. при монтажі через мобільний додаток),
-    # генеруємо нову порцію ентропії.
-    raw_key = manual_key || SecureRandom.random_bytes(KEY_SIZE)
+  def provision(manual_key_hex = nil)
+    # Використовуємо HEX для консистентності з нашою моделлю HardwareKey
+    hex_key = manual_key_hex || SecureRandom.hex(KEY_SIZE_BYTES).upcase
 
     HardwareKey.transaction do
-      # Видаляємо старий ключ, якщо він був (перевстановлення)
-      HardwareKey.where(device_uid: @device_uid).destroy_all
-
-      HardwareKey.create!(
-        device_uid: @device_uid,
-        binary_key: raw_key,
-        key_type: :aes_256_ecb,
-        status: :active
+      key_record = HardwareKey.find_or_initialize_by(device_uid: @device_uid)
+      key_record.update!(
+        aes_key_hex: hex_key
       )
     end
 
-    Rails.logger.info "🔐 [Zero-Trust] Сформовано новий якір для пристрою #{@device_uid}."
-    raw_key
+    Rails.logger.info "🔐 [Zero-Trust] Якір для #{@device_uid} зафіксовано."
+    hex_key
   end
 
   # =========================================================================
-  # 2. РОТАЦІЯ (Entropy Refresh)
+  # 2. РОТАЦІЯ (The Entropy Pulse)
   # =========================================================================
   def rotate!
-    new_key = SecureRandom.random_bytes(KEY_SIZE)
-    
+    # Використовуємо метод моделі для генерації та збереження
     key_record = HardwareKey.find_by!(device_uid: @device_uid)
-    key_record.update!(binary_key: new_key, rotated_at: Time.current)
+    new_hex_key = key_record.rotate_key!
 
-    # ПЛАН: Тут ми маємо ініціювати Downlink-команду через CoAP,
-    # щоб дерево дізналося про свій новий ключ.
-    # CoapClient.put(@device.gateway.ip_address, "key_update", new_key)
+    # [СИНХРОНІЗАЦІЯ]: Сповіщаємо пристрій про зміну ключа.
+    # Це має бути Downlink команда, зашифрована ЩЕ СТАРИМ КЛЮЧЕМ,
+    # або через спеціальний OTA-канал.
+    trigger_key_update_downlink(new_hex_key)
 
-    Rails.logger.warn "🔄 [Zero-Trust] Ключ пристрою #{@device_uid} ротовано."
-    new_key
+    Rails.logger.warn "🔄 [Zero-Trust] Ключ #{@device_uid} оновлено. Ефір сповіщено."
+    new_hex_key
   end
 
-  # =========================================================================
-  # 3. ВАЛІДАЦІЯ (Handshake)
-  # =========================================================================
-  def self.fetch_binary_key(device_uid)
-    # Отримуємо ключ безпосередньо для TelemetryUnpackerService.
-    # Нагадаю: у моделі HardwareKey поле binary_key МАЄ бути зашифрованим (Rails 7+ encrypts).
-    HardwareKey.find_by(device_uid: device_uid, status: :active)&.binary_key
+  private
+
+  def trigger_key_update_downlink(new_key_hex)
+    # Якщо пристрій — Солдат, команда йде через його Королеву
+    # Якщо Королева — напряму.
+    # ActuatorCommandWorker.perform_async(...) або специфічний воркер
+    return unless @device.respond_to?(:ip_address) || @device.respond_to?(:gateway)
+
+    target_ip = @device.respond_to?(:ip_address) ? @device.ip_address : @device.gateway.ip_address
+    
+    # ПЛАН: Відправляємо нативний CoAP PUT запит на ендпоінт /sys/key
+    # CoapClient.put("coap://#{target_ip}/sys/key", new_key_hex)
   end
 end
