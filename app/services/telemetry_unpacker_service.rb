@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 class TelemetryUnpackerService
-  CHUNK_SIZE = 21 # [DID:4][RSSI:1][DecryptedPayload:16]
+  # [DID:4][RSSI:1][Payload:16] = 21 байт
+  CHUNK_SIZE = 21 
 
   def self.call(binary_batch, gateway_id = nil)
     new(binary_batch, gateway_id).perform
@@ -13,7 +14,9 @@ class TelemetryUnpackerService
   end
 
   def perform
-    # Розрізаємо бінарний моноліт на 21-байтні чанки (Протокол Королеви)
+    return if @binary_batch.blank?
+
+    # Розрізаємо бінарний моноліт на 21-байтні чанки
     chunks = @binary_batch.b.scan(/.{1,#{CHUNK_SIZE}}/m)
     
     chunks.each do |chunk|
@@ -25,49 +28,49 @@ class TelemetryUnpackerService
   private
 
   def process_chunk(chunk)
-    # 1. МАРШРУТИЗАЦІЯ (Дані додані Королевою)
-    # Перші 4 байти — це DID самого дерева (Солдата), а не шлюзу!
+    # 1. МАРШРУТИЗАЦІЯ (L2 Header від Королеви)
+    # DID Солдата, який відправив пакет через LoRa
     hex_did = chunk[0..3].unpack1("N").to_s(16).upcase
     
-    # RSSI інвертовано на Королеві для уникнення проблем зі знаком
+    # RSSI (якість сигналу в точці прийому Королевою)
     inverted_rssi = chunk[4].unpack1("C")
     actual_rssi = -inverted_rssi
     
-    # 2. РОЗПАКОВКА БІО-МЕТРИКИ (16 байт ЧИСТОГО пейлоаду від Солдата)
-    # N(DID), n(Vcap), c(Temp), C(Acoustic), n(Metabolism), C(Status), C(TTL), a4(Pad)
+    # 2. РОЗПАКОВКА БІО-МЕТРИКИ (L3 Payload)
+    # Формат: DID(N), Vcap(n), Temp(c), Acoustic(C), Metabolism(n), Status(C), TTL(C), Pad(a4)
     payload = chunk[5..20]
     parsed_data = payload.unpack("N n c C n C C a4")
     
     tree = Tree.find_by(did: hex_did)
     unless tree
-      Rails.logger.warn "⚠️ [Uplink] DID #{hex_did} не знайдено в реєстрі Черкаського бору."
+      Rails.logger.warn "⚠️ [Uplink] DID #{hex_did} не знайдено в реєстрі."
       return
     end
 
     # 3. КАЛІБРУВАННЯ ТА НОРМАЛІЗАЦІЯ
-    calibration = tree.device_calibration || DeviceCalibration.new
+    calibration = tree.device_calibration || tree.build_device_calibration
     status_byte = parsed_data[5]
-    firmware_id = parsed_data[7].unpack1("n")
+    
+    # firmware_id лежить у перших двох байтах Pad (a4)
+    firmware_id = parsed_data[7][0..1].unpack1("n")
 
     log_attributes = {
-      # Використовуємо UID відомої Королеви (якщо вона знайдена)
       queen_uid: @gateway&.uid, 
       rssi: actual_rssi,
-      # Використовуємо метод normalize_voltage, який ми викували раніше
       voltage_mv: calibration.normalize_voltage(parsed_data[1]),
       temperature_c: calibration.normalize_temperature(parsed_data[2]),
       acoustic_events: parsed_data[3],
       metabolism_s: parsed_data[4],
-      growth_points: status_byte & 0x3F,
+      growth_points: status_byte & 0x3F, # Нижні 6 біт — бали росту
       mesh_ttl: parsed_data[6],
       firmware_version_id: (firmware_id.positive? ? firmware_id : nil),
-      bio_status: interpret_status(status_byte >> 6)
+      bio_status: interpret_status(status_byte >> 6) # Верхні 2 біти — статус
     }
 
     # 4. МАТЕМАТИКА АТРАКТОРА (The Chaos Engine)
-    # z_value = f(DID, temp, acoustic)
+    # Використовуємо DID як насіння для розрахунку стабільності Z
     log_attributes[:z_value] = SilkenNet::Attractor.calculate_z(
-      parsed_data[0], # Використовуємо DID з самого пейлоаду як насіння (Seed)
+      parsed_data[0], 
       log_attributes[:temperature_c],
       log_attributes[:acoustic_events]
     )
@@ -76,10 +79,11 @@ class TelemetryUnpackerService
     commit_telemetry(tree, log_attributes)
 
   rescue StandardError => e
-    Rails.logger.error "🛑 [Telemetry Error] Критичний збій чанка для DID #{hex_did}: #{e.message}"
+    Rails.logger.error "🛑 [Telemetry Error] DID #{hex_did || 'UNKNOWN'}: #{e.message}"
   end
 
   def interpret_status(code)
+    # Відповідає enum :bio_status у моделі TelemetryLog
     case code
     when 0 then :homeostasis
     when 1 then :stress
@@ -89,12 +93,14 @@ class TelemetryUnpackerService
   end
 
   def commit_telemetry(tree, attributes)
+    # Транзакція гарантує, що ми не нарахуємо бали без лога (або навпаки)
     ActiveRecord::Base.transaction do
-      # Створення лога та нарахування балів
       log = tree.telemetry_logs.create!(attributes)
+      
+      # Нарахування балів у гаманець Солдата
       tree.wallet.credit!(log.growth_points) if log.growth_points.positive?
       
-      # Запуск Оракула Тривог
+      # Аналіз аномалій Оракулом тривог
       AlertDispatchService.analyze_and_trigger!(log)
     end
   end
