@@ -1,15 +1,15 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  cluster: one
-  tree: one
+drought_alert:
+  cluster: north_sector
+  tree: pine_alpha
   severity: 1
-  alert_type: 1
-  message: MyText
+  alert_type: 0
+  status: 0
+  message: "Severe drought detected in Pine Alpha. Z-value exceeded critical bounds."
 
-two:
-  cluster: two
-  tree: two
-  severity: 1
-  alert_type: 1
-  message: MyText
+fire_alert:
+  cluster: south_sector
+  tree: oak_beta
+  severity: 2
+  alert_type: 3
+  status: 0
+  message: "Fire detected near Oak Beta. Temperature spike above 60C threshold."

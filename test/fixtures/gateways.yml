@@ -1,19 +1,21 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+queen_north:
+  uid: QUEEN-NORTH-001
+  ip_address: 192.168.1.100
+  latitude: 49.4280
+  longitude: 32.0610
+  altitude: 150.0
+  last_seen_at: <%= 10.minutes.ago.to_fs(:db) %>
+  cluster: north_sector
+  config_sleep_interval_s: 300
+  state: 1
 
-one:
-  uid: MyString
-  ip_address: MyString
-  latitude: 9.99
-  longitude: 9.99
-  altitude: 9.99
-  last_seen_at: 2026-02-26 18:44:46
-  cluster: one
-
-two:
-  uid: MyString
-  ip_address: MyString
-  latitude: 9.99
-  longitude: 9.99
-  altitude: 9.99
-  last_seen_at: 2026-02-26 18:44:46
-  cluster: two
+queen_south:
+  uid: QUEEN-SOUTH-002
+  ip_address: 192.168.1.101
+  latitude: 49.4295
+  longitude: 32.0640
+  altitude: 158.0
+  last_seen_at: <%= 2.hours.ago.to_fs(:db) %>
+  cluster: south_sector
+  config_sleep_interval_s: 300
+  state: 0

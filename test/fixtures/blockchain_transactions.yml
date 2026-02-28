@@ -1,17 +1,17 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+mint_pine:
+  wallet: pine_wallet
+  amount: 1.0
+  token_type: 0
+  status: 2
+  tx_hash: "0xabc123def456789012345678901234567890123456789012345678901234abcd"
+  to_address: "0xaaaa567890abcdef1234567890abcdef12345678"
+  notes: Minted 1 SCC for Pine Alpha
 
-one:
-  wallet: one
-  amount: 9.99
-  token_type: 1
-  status: 1
-  tx_hash: MyString
-  notes: MyText
-
-two:
-  wallet: two
-  amount: 9.99
-  token_type: 1
-  status: 1
-  tx_hash: MyString
-  notes: MyText
+pending_oak:
+  wallet: oak_wallet
+  amount: 2.0
+  token_type: 0
+  status: 0
+  tx_hash: ""
+  to_address: "0xbbbb567890abcdef1234567890abcdef12345678"
+  notes: Pending mint for Oak Beta

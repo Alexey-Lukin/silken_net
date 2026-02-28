@@ -1,17 +1,15 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  organization: one
-  cluster: one
-  total_funding: 9.99
-  start_date: 2026-02-26 18:44:50
-  end_date: 2026-02-26 18:44:50
+north_contract:
+  organization: forest_fund
+  cluster: north_sector
+  total_funding: 50000.0
+  start_date: <%= 1.year.ago.to_fs(:db) %>
+  end_date: <%= 9.years.from_now.to_fs(:db) %>
   status: 1
 
-two:
-  organization: two
-  cluster: two
-  total_funding: 9.99
-  start_date: 2026-02-26 18:44:50
-  end_date: 2026-02-26 18:44:50
-  status: 1
+south_contract:
+  organization: green_capital
+  cluster: south_sector
+  total_funding: 75000.0
+  start_date: <%= 6.months.ago.to_fs(:db) %>
+  end_date: <%= 5.years.from_now.to_fs(:db) %>
+  status: 0

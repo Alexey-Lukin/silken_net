@@ -1,13 +1,13 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+water_valve_north:
+  gateway: queen_north
+  name: Water Valve North-1
+  device_type: 0
+  state: 0
+  endpoint: /actuator/valve/1
 
-one:
-  gateway: one
-  name: MyString
+fire_siren_south:
+  gateway: queen_south
+  name: Fire Siren South-1
   device_type: 1
-  state: 1
-
-two:
-  gateway: two
-  name: MyString
-  device_type: 1
-  state: 1
+  state: 0
+  endpoint: /actuator/siren/1

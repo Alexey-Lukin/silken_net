@@ -1,11 +1,9 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+pine_wallet:
+  tree: pine_alpha
+  balance: 5000.0
+  crypto_public_address: "0xaaaa567890abcdef1234567890abcdef12345678"
 
-one:
-  tree: one
-  balance: 9.99
-  crypto_public_address: MyString
-
-two:
-  tree: two
-  balance: 9.99
-  crypto_public_address: MyString
+oak_wallet:
+  tree: oak_beta
+  balance: 12000.0
+  crypto_public_address: "0xbbbb567890abcdef1234567890abcdef12345678"

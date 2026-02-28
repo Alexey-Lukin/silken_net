@@ -1,11 +1,9 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+olena_session:
+  user: admin_olena
+  ip_address: "192.168.1.50"
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
 
-one:
-  user: one
-  ip_address: MyString
-  user_agent: MyString
-
-two:
-  user: two
-  ip_address: MyString
-  user_agent: MyString
+dmytro_session:
+  user: forester_dmytro
+  ip_address: "10.0.0.42"
+  user_agent: "SilkenNet-Mobile/1.0 (Android 14)"

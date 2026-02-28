@@ -1,11 +1,13 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+bark_beetle_v1:
+  version: v1.0.0-bark-beetle
+  target_pest: bark_beetle
+  binary_weights_payload: DEADBEEF
+  is_active: true
+  tree_family: scots_pine
 
-one:
-  version: MyString
-  target_pest: MyString
-  binary_weights_payload: MyText
-
-two:
-  version: MyString
-  target_pest: MyString
-  binary_weights_payload: MyText
+moth_v1:
+  version: v1.0.0-moth
+  target_pest: gypsy_moth
+  binary_weights_payload: CAFEBABE
+  is_active: false
+  tree_family: common_oak

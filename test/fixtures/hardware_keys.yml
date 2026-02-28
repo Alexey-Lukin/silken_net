@@ -1,9 +1,7 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+pine_key:
+  device_uid: SNET-A1B2C3D4
+  aes_key_hex: AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344
 
-one:
-  tree: one
-  aes_key: MyString
-
-two:
-  tree: two
-  aes_key: MyString
+oak_key:
+  device_uid: SNET-E5F6G7H8
+  aes_key_hex: 11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD

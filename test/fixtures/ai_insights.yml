@@ -1,11 +1,15 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+pine_health:
+  analyzable_type: Tree
+  analyzable_id: 1
+  insight_type: 0
+  target_date: <%= Date.yesterday %>
+  stress_index: 0.2
+  probability_score: 15.0
 
-one:
-  cluster: one
-  insight_type: 1
-  prediction_data: 
-
-two:
-  cluster: two
-  insight_type: 1
-  prediction_data: 
+oak_stress:
+  analyzable_type: Tree
+  analyzable_id: 2
+  insight_type: 0
+  target_date: <%= Date.yesterday %>
+  stress_index: 0.7
+  probability_score: 60.0
