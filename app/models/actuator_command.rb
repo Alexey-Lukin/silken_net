@@ -2,7 +2,6 @@
 
 class ActuatorCommand < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
-  # [ВИПРАВЛЕНО]: В однині, як вимагає конвенція Rails
   belongs_to :actuator 
   # Команда може бути згенерована автоматично (від Оракула) або ручною (від Патрульного)
   belongs_to :ews_alert, optional: true 
@@ -11,8 +10,9 @@ class ActuatorCommand < ApplicationRecord
   enum :status, {
     issued: 0,       # Створено в БД, очікує захоплення воркером
     sent: 1,         # Вистрілено через CoapClient на IP Королеви
-    acknowledged: 2, # Отримано ACK від модема SIM7070G
-    failed: 3        # Мережевий таймаут або помилка шифрування
+    acknowledged: 2, # Отримано ACK від модема (початок роботи)
+    failed: 3,       # Мережевий таймаут або помилка шифрування
+    confirmed: 4     # [НОВЕ]: Успішно завершено за таймером (ResetActuatorStateWorker)
   }, prefix: true
 
   # --- ВАЛІДАЦІЇ ---
