@@ -15,9 +15,16 @@ class Cluster < ApplicationRecord
   # Поліморфні прогнози та підсумки (Daily Health Summary)
   has_many :ai_insights, as: :analyzable, dependent: :destroy
 
-  # --- ВАЛІДАЦІЇ ---
+  # --- ВАЛІДАЦІЇ ТА НОРМАЛІЗАЦІЯ ---
   validates :name, presence: true, uniqueness: true
   validates :region, presence: true
+  
+  # Гарантуємо, що GeoJSON не містить сміття
+  normalizes :geojson_polygon, with: ->(json) { json.is_a?(Hash) ? json.deep_stringify_keys : json }
+
+  # --- СКОУПИ ---
+  scope :alphabetical, -> { order(name: :asc) }
+  scope :under_threat, -> { joins(:ews_alerts).where(ews_alerts: { status: :active, severity: :critical }).distinct }
 
   # --- МЕТОДИ (Sector Intelligence) ---
 
@@ -26,32 +33,39 @@ class Cluster < ApplicationRecord
   end
 
   def mapped?
-    geojson_polygon.present?
+    geojson_polygon.present? && geojson_polygon["coordinates"].present?
   end
 
-  # [ВИПРАВЛЕНО]: Агрегований індекс стресу (Health Index)
-  # Беремо останній добовий інсайт, згенерований InsightGeneratorService
+  # Агрегований індекс життєздатності (Vitality Score)
+  # $$V = 1.0 - S$$ де $S$ - stress_index з добового звіту ШІ
   def health_index
-    insight = ai_insights.daily_health_summary
-                         .where(target_date: Date.yesterday)
-                         .first
-    
-    # Повертаємо інвертований індекс (1.0 - стрес = здоров'я)
-    insight ? (1.0 - insight.stress_index).round(2) : 1.0
+    @health_index ||= begin
+      insight = ai_insights.daily_health_summary.for_date(Date.yesterday).first
+      insight ? (1.0 - insight.stress_index.to_f).round(2) : 1.0
+    end
   end
 
-  # [ВИПРАВЛЕНО]: Чи є критичні загрози?
-  # Припускаємо, що unresolved - це алерти без зафіксованого часу вирішення
+  # Чи є критичні загрози в секторі?
   def active_threats?
-    ews_alerts.where(resolved_at: nil).critical.exists?
+    ews_alerts.unresolved.critical.exists?
   end
 
-  # Допоміжний метод для карти: центр кластера
-  # (Корисно для фокусування камери в мобільному додатку)
+  # Розрахунок центроїда для фокусування карти
   def geo_center
     return nil unless mapped?
-    # Логіка парсингу geojson_polygon для знаходження центроїда
-    # Наразі повертаємо першу точку для прикладу
-    geojson_polygon["coordinates"]&.first&.first
+    
+    # Витягуємо всі пари [long, lat] з полігону
+    coords = geojson_polygon["coordinates"].flatten(1)
+    return nil if coords.empty?
+
+    avg_lat = coords.map(&:last).sum / coords.size
+    avg_lng = coords.map(&:first).sum / coords.size
+    
+    { lat: avg_lat, lng: avg_lng }
+  end
+
+  # Повертає поточний активний NaaS-контракт
+  def active_contract
+    naas_contracts.active.first
   end
 end
