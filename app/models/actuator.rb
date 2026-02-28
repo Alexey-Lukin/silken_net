@@ -3,14 +3,15 @@
 class Actuator < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
   belongs_to :gateway
+  has_one :cluster, through: :gateway
   has_many :commands, class_name: "ActuatorCommand", dependent: :destroy
 
   # --- ТИПИ ПРИСТРОЇВ (The Arsenal) ---
   enum :device_type, {
     water_valve: 0,     # Електромагнітний клапан (Посуха / Пожежа)
-    fire_siren: 1,      # Звукова сирена (Вандалізм)
+    fire_siren: 1,      # Звукова сирена (Вандалізм / Пожежа)
     seismic_beacon: 2,  # Світлозвуковий маяк
-    drone_launcher: 3   # Док-станція дрона-розвідника
+    drone_launcher: 3   # Док-станція дрона
   }, prefix: true
 
   # --- СТАНИ (The Readiness) ---
@@ -23,43 +24,54 @@ class Actuator < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :name, :device_type, presence: true
-  # endpoint - це шлях на CoAP сервері Королеви (напр. "valve_a", "siren_1")
+  # endpoint - унікальний шлях CoAP на конкретній Королеві
   validates :endpoint, presence: true, uniqueness: { scope: :gateway_id }
+
+  # --- СКОУПИ ---
+  scope :operational, -> { where(state: :idle) }
 
   # =========================================================================
   # ЖИТТЄВИЙ ЦИКЛ ТА СТАТУСИ
   # =========================================================================
 
-  # Перевірка, чи пристрій фізично та мережево готовий до виконання наказу
+  # Перевірка, чи пристрій готовий до негайного розгортання
   def ready_for_deployment?
-    state_idle? && gateway.last_seen_at.present? && gateway.last_seen_at > 1.hour.ago
+    return false unless state_idle?
+    
+    # [СИНХРОНІЗОВАНО]: Шлюз має бути в мережі ТА не перебувати в стані оновлення
+    gateway.online? && !gateway.state_updating?
   end
 
-  # Фіксація початку роботи
+  # Фіксація початку роботи (The Pulse of Action)
   def mark_active!
-    update!(state: :active, last_activated_at: Time.current)
-    Rails.logger.info "⚙️ [ACTUATOR] #{name} переведено в режим ACTIVE."
+    transaction do
+      update!(state: :active, last_activated_at: Time.current)
+      # Оновлюємо пульс шлюзу, оскільки активація актуатора — це теж мережева активність
+      gateway.touch(:last_seen_at)
+    end
+    Rails.logger.info "⚙️ [ACTUATOR] #{name} на шлюзі #{gateway.uid} АКТИВОВАНО."
   end
 
-  # Повернення в режим очікування (викликається після підтвердження від Королеви)
+  # Повернення в режим очікування (The Reset)
   def mark_idle!
     update!(state: :idle)
-    Rails.logger.info "⚙️ [ACTUATOR] #{name} завершив роботу і повернувся в IDLE."
+    Rails.logger.info "⚙️ [ACTUATOR] #{name} повернувся в стан спокою."
   end
 
-  # Переведення в сервісний режим (викликається, якщо CoAP-команда провалилася)
-  def require_maintenance!
-    update!(state: :maintenance_needed)
-    
-    # [АВТОНОМНА РЕАКЦІЯ]: Створення системної тривоги
-    EwsAlert.create!(
-      cluster: gateway.cluster,
-      tree: nil, # Системна тривога не прив'язана до конкретного дерева
-      alert_type: "hardware_fault",
-      severity: :warning, # Або :critical, якщо це пожежна сирена
-      message: "Актуатор '#{name}' (#{endpoint}) на шлюзі #{gateway.uid} не відповідає на команди. Потрібне фізичне втручання."
-    )
+  # Критичний збій (The Hardware Fault)
+  def require_maintenance!(reason = "Невідома помилка CoAP")
+    transaction do
+      update!(state: :maintenance_needed)
+      
+      # [СИНХРОНІЗОВАНО]: Створюємо системну тривогу через EwsAlert
+      EwsAlert.create!(
+        cluster: cluster,
+        alert_type: :system_fault,
+        severity: :critical,
+        message: "Збій актуатора '#{name}' (#{endpoint}). Причина: #{reason}. Потрібен виїзд патруля."
+      )
+    end
 
-    Rails.logger.warn "🛠️ [ACTUATOR] #{name} потребує технічного обслуговування! Згенеровано системну тривогу."
+    Rails.logger.error "🛠️ [ACTUATOR] #{name} ВИЙШОВ З ЛАДУ. Система EWS сповіщена."
   end
 end
