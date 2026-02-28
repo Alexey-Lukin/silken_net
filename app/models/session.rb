@@ -9,22 +9,26 @@ class Session < ApplicationRecord
   validates :user_agent, presence: true
 
   # --- КОЛБЕКИ (Operational Pulse) ---
-  # [ПОКРАЩЕНО]: Ми оновлюємо last_seen_at не тільки при створенні,
-  # а й при кожному зверненні (це зазвичай робиться через Current.session у контролері,
-  # але логіка в моделі — хороший фолбек).
+  # Оновлюємо пульс користувача при створенні сесії
   after_create :track_user_activity
+  # При кожному оновленні (touch) сесії — оновлюємо і користувача
+  after_touch :track_user_activity
 
   # --- СКОУПИ (Housekeeping) ---
   # Очищення застарілих сесій (Кенозис доступу)
-  scope :stale, -> { where("created_at < ?", 30.days.ago) }
+  scope :stale, -> { where("updated_at < ?", 30.days.ago) }
   
-  # [НОВЕ]: Знаходження активних сесій саме лісників у полі
-  scope :active_in_field, -> { joins(:user).where(users: { role: :forester }).where("sessions.created_at > ?", 24.hours.ago) }
+  # [ВИПРАВЛЕНО]: Знаходження активних сесій лісників за останньою активністю (updated_at)
+  scope :active_in_field, -> { 
+    joins(:user)
+      .where(users: { role: :forester })
+      .where("sessions.updated_at > ?", 24.hours.ago) 
+  }
 
   # --- МЕТОДИ (Device Intelligence) ---
 
   def mobile_app?
-    user_agent.match?(/SilkenNetMobile/i)
+    user_agent.to_s.match?(/SilkenNetMobile/i)
   end
 
   # Повертає назву пристрою для аудиту безпеки
@@ -35,8 +39,15 @@ class Session < ApplicationRecord
     when /Chrome/i then "Desktop Chrome"
     when /Firefox/i then "Desktop Firefox"
     when /PostmanRuntime/i then "API Console (Dev)"
+    when /Insomnia/i then "API Debugger"
     else "Unknown Node"
     end
+  end
+
+  # [НОВЕ]: Метод для оновлення активності, який буде викликатися в BaseController
+  def touch_activity!
+    touch
+    user.update_column(:last_seen_at, Time.current)
   end
 
   private
