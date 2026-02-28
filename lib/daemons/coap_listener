@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Оскільки файл лежить у lib/daemons/, ми піднімаємося на два рівні вгору
 require_relative "../../config/environment"
 require "socket"
 require "base64"
@@ -12,32 +11,38 @@ MAX_PACKET_SIZE = 2048
 socket = UDPSocket.new
 socket.bind("0.0.0.0", PORT)
 
-Rails.logger.info "🌳 [Sanctum] UDP/CoAP Слухач запущено на порту #{PORT}. Тертя відсутнє."
+Rails.logger.info "🌳 [Sanctum] UDP/CoAP Брама відкрита на порту #{PORT}. Слухаємо дихання лісу..."
 
 # ПРОТОКОЛ ПРАВИЛЬНОГО ЗАВЕРШЕННЯ (Graceful Shutdown)
 running = true
 %w[INT TERM].each do |signal|
   trap(signal) do
-    Rails.logger.info "🛑 [Sanctum] Отримано сигнал #{signal}. Закриваємо ефір..."
+    Rails.logger.info "🛑 [Sanctum] Отримано сигнал #{signal}. Ефір закривається..."
     running = false
   end
 end
 
 while running
   begin
-    # Використовуємо IO.select з таймаутом 1 секунда. 
-    # Це дозволяє циклу перевіряти змінну `running` і зупинятися без зависання.
     if IO.select([socket], nil, nil, 1)
       data, sender = socket.recvfrom_nonblock(MAX_PACKET_SIZE)
+      gateway_ip = sender[3]
 
-      # 1. Мікро-парсер CoAP
+      # 1. Мікро-парсер CoAP (Розбираємо 4 байти заголовка)
       header = data.unpack("CCn")
+      version = header[0] >> 6
       type = (header[0] >> 4) & 0x03
+      tkl = header[0] & 0x0F
+      code = header[1]
+      msg_id = header[2]
 
-      # 2. Миттєвий ACK (якщо пакет Confirmable)
+      # 2. МИТТЄВИЙ ACK (Якщо модем SIM7070G надіслав Confirmable пакет)
       if type == 0
-        ack_packet = [ 0x60, 0x44, header[2] ].pack("CCn")
-        socket.send(ack_packet, 0, sender[3], sender[1])
+        # Формуємо відповідь: Type 2 (ACK), Code 0x44 (2.04 Changed)
+        ack_header = [ (1 << 6) | (2 << 4) | tkl, 0x44, msg_id ].pack("CCn")
+        # Якщо був Token, повертаємо його
+        ack_packet = ack_header + (tkl > 0 ? data[4...(4+tkl)] : "".b)
+        socket.send(ack_packet, 0, gateway_ip, sender[1])
       end
 
       # 3. Витягування корисного навантаження
@@ -45,18 +50,26 @@ while running
       if payload_marker_index
         binary_payload = data[(payload_marker_index + 1)..-1]
 
-        # 4. MAX SPEED: Кодуємо бінарник у текст і кидаємо в Redis (Sidekiq)
-        encoded_payload = Base64.strict_encode64(binary_payload)
+        # 4. МАРШРУТИЗАЦІЯ (Читаємо Uri-Options)
+        # Опції знаходяться між заголовком (і токеном) та маркером 0xFF
+        options_block = data[(4+tkl)...payload_marker_index]
+        
+        # Швидка перевірка, чи це шлях "telemetry/batch"
+        if options_block.include?("telemetry") && options_block.include?("batch")
+          # Кодуємо в Base64 для безпечної подорожі через Redis
+          encoded_payload = Base64.strict_encode64(binary_payload)
 
-        # Миттєвий запис в оперативну пам'ять (O(1))
-        UnpackTelemetryWorker.perform_async(encoded_payload, sender[3])
+          # Передаємо IP-адресу, щоб воркер міг знайти шлюз (Королеву) у базі
+          UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip)
+        else
+          Rails.logger.debug "⚠️ [Sanctum] Невідомий CoAP маршрут від #{gateway_ip}"
+        end
       end
     end
   rescue Errno::EAGAIN, Errno::EWOULDBLOCK
-    # Ці помилки є нормальними для nonblock сокетів, просто ігноруємо і йдемо на наступне коло
     retry
   rescue StandardError => e
-    Rails.logger.error "🛑 [Sanctum] Crash: #{e.message}"
+    Rails.logger.error "🛑 [Sanctum] Збій у матриці: #{e.message}"
   end
 end
 
