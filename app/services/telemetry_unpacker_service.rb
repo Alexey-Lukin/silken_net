@@ -1,20 +1,15 @@
 # frozen_string_literal: true
 
-require "openssl"
-
 class TelemetryUnpackerService
-  CHUNK_SIZE = 21 # [DID:4][RSSI:1][EncryptedPayload:16]
+  CHUNK_SIZE = 21 # [DID:4][RSSI:1][DecryptedPayload:16]
 
-  def self.call(binary_batch)
-    new(binary_batch).perform
+  def self.call(binary_batch, gateway_id = nil)
+    new(binary_batch, gateway_id).perform
   end
 
-  def initialize(binary_batch)
+  def initialize(binary_batch, gateway_id)
     @binary_batch = binary_batch
-    @cipher = OpenSSL::Cipher.new("aes-256-ecb")
-    @cipher.decrypt
-    @cipher.padding = 0 
-    @keys_cache = {} 
+    @gateway = Gateway.find_by(id: gateway_id)
   end
 
   def perform
@@ -30,49 +25,36 @@ class TelemetryUnpackerService
   private
 
   def process_chunk(chunk)
-    # 1. ІДЕНТИФІКАЦІЯ ШЛЮЗУ (Королеви)
-    queen_uid_hex = chunk[0..3].unpack1("N").to_s(16).upcase
+    # 1. МАРШРУТИЗАЦІЯ (Дані додані Королевою)
+    # Перші 4 байти — це DID самого дерева (Солдата), а не шлюзу!
+    hex_did = chunk[0..3].unpack1("N").to_s(16).upcase
+    
+    # RSSI інвертовано на Королеві для уникнення проблем зі знаком
     inverted_rssi = chunk[4].unpack1("C")
     actual_rssi = -inverted_rssi
     
-    # [ZERO-TRUST]: Шукаємо індивідуальний ключ шифрування Королеви
-    key_record = @keys_cache[queen_uid_hex] ||= HardwareKey.find_by(device_uid: queen_uid_hex)
-    
-    unless key_record
-      Rails.logger.error "🛑 [Zero-Trust] Ключ для Королеви #{queen_uid_hex} не знайдено!"
-      return
-    end
-
-    # 2. ДЕКРИПТ ПЕЙЛОАДУ (AES-256-ECB)
-    begin
-      @cipher.reset
-      @cipher.key = key_record.binary_key
-      decrypted = @cipher.update(chunk[5..20]) + @cipher.final
-    rescue OpenSSL::Cipher::CipherError => e
-      Rails.logger.error "🛑 [AES] Помилка дешифрування для Королеви #{queen_uid_hex}: #{e.message}"
-      return
-    end
-
-    # 3. РОЗПАКОВКА БІО-МЕТРИКИ (16 байт Солдата)
+    # 2. РОЗПАКОВКА БІО-МЕТРИКИ (16 байт ЧИСТОГО пейлоаду від Солдата)
     # N(DID), n(Vcap), c(Temp), C(Acoustic), n(Metabolism), C(Status), C(TTL), a4(Pad)
-    parsed_data = decrypted.unpack("N n c C n C C a4")
-    hex_did = parsed_data[0].to_s(16).upcase
+    payload = chunk[5..20]
+    parsed_data = payload.unpack("N n c C n C C a4")
     
     tree = Tree.find_by(did: hex_did)
     unless tree
-      Rails.logger.warn "⚠️ [Uplink] DID #{hex_did} не знайдено в реєстрі."
+      Rails.logger.warn "⚠️ [Uplink] DID #{hex_did} не знайдено в реєстрі Черкаського бору."
       return
     end
 
-    # 4. КАЛІБРУВАННЯ ТА НОРМАЛІЗАЦІЯ
+    # 3. КАЛІБРУВАННЯ ТА НОРМАЛІЗАЦІЯ
     calibration = tree.device_calibration || DeviceCalibration.new
     status_byte = parsed_data[5]
     firmware_id = parsed_data[7].unpack1("n")
 
     log_attributes = {
-      queen_uid: queen_uid_hex,
+      # Використовуємо UID відомої Королеви (якщо вона знайдена)
+      queen_uid: @gateway&.uid, 
       rssi: actual_rssi,
-      voltage_mv: (parsed_data[1] * calibration.vcap_coefficient).to_i,
+      # Використовуємо метод normalize_voltage, який ми викували раніше
+      voltage_mv: calibration.normalize_voltage(parsed_data[1]),
       temperature_c: calibration.normalize_temperature(parsed_data[2]),
       acoustic_events: parsed_data[3],
       metabolism_s: parsed_data[4],
@@ -82,19 +64,19 @@ class TelemetryUnpackerService
       bio_status: interpret_status(status_byte >> 6)
     }
 
-    # 5. МАТЕМАТИКА АТРАКТОРА (The Chaos Engine)
-    # $z_{value} = f(DID, temp, acoustic)$
+    # 4. МАТЕМАТИКА АТРАКТОРА (The Chaos Engine)
+    # z_value = f(DID, temp, acoustic)
     log_attributes[:z_value] = SilkenNet::Attractor.calculate_z(
-      parsed_data[0], # Використовуємо DID як насіння (Seed)
+      parsed_data[0], # Використовуємо DID з самого пейлоаду як насіння (Seed)
       log_attributes[:temperature_c],
       log_attributes[:acoustic_events]
     )
 
-    # 6. ФІКСАЦІЯ ТА ЕКОНОМІЧНИЙ ВІДГУК
-    commit_telemetry(tree, queen_uid_hex, log_attributes)
+    # 5. ФІКСАЦІЯ ТА ЕКОНОМІЧНИЙ ВІДГУК
+    commit_telemetry(tree, log_attributes)
 
   rescue StandardError => e
-    Rails.logger.error "🛑 [Telemetry Error] Критичний збій чанка: #{e.message}"
+    Rails.logger.error "🛑 [Telemetry Error] Критичний збій чанка для DID #{hex_did}: #{e.message}"
   end
 
   def interpret_status(code)
@@ -106,16 +88,13 @@ class TelemetryUnpackerService
     end
   end
 
-  def commit_telemetry(tree, queen_uid, attributes)
+  def commit_telemetry(tree, attributes)
     ActiveRecord::Base.transaction do
-      # Пульс Королеви
-      Gateway.find_by(uid: queen_uid)&.mark_seen!
-
       # Створення лога та нарахування балів
       log = tree.telemetry_logs.create!(attributes)
       tree.wallet.credit!(log.growth_points) if log.growth_points.positive?
       
-      # Запуск Оракула Трівог
+      # Запуск Оракула Тривог
       AlertDispatchService.analyze_and_trigger!(log)
     end
   end
