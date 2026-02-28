@@ -1,10 +1,11 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative "../../config/environment"
+require_relative "../config/environment"
 require "socket"
 require "base64"
 
+# Порт за замовчуванням для CoAP
 PORT = 5683
 MAX_PACKET_SIZE = 2048
 
@@ -13,7 +14,7 @@ socket.bind("0.0.0.0", PORT)
 
 Rails.logger.info "🌳 [Sanctum] UDP/CoAP Брама відкрита на порту #{PORT}. Слухаємо дихання лісу..."
 
-# ПРОТОКОЛ ПРАВИЛЬНОГО ЗАВЕРШЕННЯ (Graceful Shutdown)
+# ПРОТОКОЛ ПРАВИЛЬНОГО ЗАВЕРШЕННЯ
 running = true
 %w[INT TERM].each do |signal|
   trap(signal) do
@@ -24,45 +25,53 @@ end
 
 while running
   begin
+    # Очікуємо дані (таймаут 1с для можливості виходу)
     if IO.select([socket], nil, nil, 1)
       data, sender = socket.recvfrom_nonblock(MAX_PACKET_SIZE)
       gateway_ip = sender[3]
 
-      # 1. Мікро-парсер CoAP (Розбираємо 4 байти заголовка)
+      # 1. ПАРСЕР ЗАГОЛОВКА CoAP (RFC 7252)
+      # [Ver:2][T:2][TKL:4] | [Code:8] | [Message ID:16]
       header = data.unpack("CCn")
-      version = header[0] >> 6
-      type = (header[0] >> 4) & 0x03
-      tkl = header[0] & 0x0F
-      code = header[1]
+      first_byte = header[0]
+      type = (first_byte >> 4) & 0x03 # 0: CON, 1: NON, 2: ACK, 3: RST
+      tkl  = first_byte & 0x0F        # Token Length
+      code = header[1]                # Method/Response Code
       msg_id = header[2]
 
-      # 2. МИТТЄВИЙ ACK (Якщо модем SIM7070G надіслав Confirmable пакет)
+      # 2. МИТТЄВИЙ ACK (Для Confirmable пакетів)
+      # Якщо Королева хоче підтвердження (Type 0), ми відправляємо ACK (Type 2)
       if type == 0
-        # Формуємо відповідь: Type 2 (ACK), Code 0x44 (2.04 Changed)
-        ack_header = [ (1 << 6) | (2 << 4) | tkl, 0x44, msg_id ].pack("CCn")
-        # Якщо був Token, повертаємо його
-        ack_packet = ack_header + (tkl > 0 ? data[4...(4+tkl)] : "".b)
-        socket.send(ack_packet, 0, gateway_ip, sender[1])
+        # 0x44 = 2.04 Changed (Успішний PUT)
+        # Формуємо заголовок ACK з тим самим Token Length та Message ID
+        ack_header = [(1 << 6) | (2 << 4) | tkl, 0x44, msg_id].pack("CCn")
+        # Додаємо токен, якщо він був у вхідному пакеті
+        token = tkl > 0 ? data[4...(4 + tkl)] : "".b
+        socket.send(ack_header + token, 0, gateway_ip, sender[1])
       end
 
-      # 3. Витягування корисного навантаження
+      # 3. ПОШУК ПЕЙЛОАДА
+      # Шукаємо маркер 0xFF, який відокремлює опції від тіла
       payload_marker_index = data.index("\xFF".b)
+      
       if payload_marker_index
         binary_payload = data[(payload_marker_index + 1)..-1]
-
-        # 4. МАРШРУТИЗАЦІЯ (Читаємо Uri-Options)
-        # Опції знаходяться між заголовком (і токеном) та маркером 0xFF
-        options_block = data[(4+tkl)...payload_marker_index]
         
-        # Швидка перевірка, чи це шлях "telemetry/batch"
+        # 4. МАРШРУТИЗАЦІЯ (Uri-Path аналіз)
+        # Опції Uri-Path мають номер 11. Перевіряємо блок опцій.
+        options_block = data[(4 + tkl)...payload_marker_index]
+        
+        # [СИНХРОНІЗАЦІЯ]: Перевіряємо шлях, який закладений у прошивку main.c
         if options_block.include?("telemetry") && options_block.include?("batch")
-          # Кодуємо в Base64 для безпечної подорожі через Redis
+          # Кодуємо в Base64 для безпечної передачі в Redis/Sidekiq
           encoded_payload = Base64.strict_encode64(binary_payload)
 
-          # Передаємо IP-адресу, щоб воркер міг знайти шлюз (Королеву) у базі
+          # Передаємо IP-адресу як "мережевий якір" для ідентифікації Королеви
           UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip)
+          
+          Rails.logger.debug "🛰️ [Sanctum] Батч від #{gateway_ip} прийнято. Довжина: #{binary_payload.bytesize}б."
         else
-          Rails.logger.debug "⚠️ [Sanctum] Невідомий CoAP маршрут від #{gateway_ip}"
+          Rails.logger.debug "⚠️ [Sanctum] Пакет від #{gateway_ip} відхилено: невідомий маршрут."
         end
       end
     end
@@ -74,4 +83,4 @@ while running
 end
 
 socket.close
-Rails.logger.info "🌳 [Sanctum] Слухач успішно зупинено. Посудина закрита."
+Rails.logger.info "🌳 [Sanctum] Слухач зупинено. Посудина порожня."
