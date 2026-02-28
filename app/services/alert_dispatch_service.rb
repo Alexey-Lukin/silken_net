@@ -12,7 +12,8 @@ class AlertDispatchService
     family = tree.tree_family
 
     # 1. ВАНДАЛІЗМ (Найвищий пріоритет)
-    if telemetry_log.tamper_detected? || telemetry_log.voltage_mv < 100
+    # [ВИПРАВЛЕНО]: Використовуємо правильний префікс енума (bio_status_)
+    if telemetry_log.bio_status_tamper_detected? || telemetry_log.voltage_mv < 100
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical, 
         alert_type: :vandalism_breach,
@@ -41,7 +42,7 @@ class AlertDispatchService
     end
 
     # 4. ПОСУХА ТА АТРАКТОР ЛОРЕНЦА
-    # [НОВЕ]: Додаємо математичну перевірку гомеостазу через Z-value
+    # Математична перевірка гомеостазу через Z-value
     is_out_of_homeostasis = !SilkenNet::Attractor.homeostatic?(telemetry_log.z_value, family)
     
     if telemetry_log.bio_status_stress? || is_out_of_homeostasis
@@ -51,8 +52,9 @@ class AlertDispatchService
               "ПОСУХА: Дерево у стані гідрологічного стресу."
             end
 
+      # [ВИПРАВЛЕНО]: Замінено неіснуючий :high на :medium
       create_and_dispatch_alert!(
-        cluster: cluster, tree: tree, severity: :high, 
+        cluster: cluster, tree: tree, severity: :medium, 
         alert_type: :severe_drought, message: msg
       )
     end
@@ -62,8 +64,9 @@ class AlertDispatchService
        telemetry_log.acoustic_events < SEISMIC_ACOUSTIC_THRESHOLD && 
        telemetry_log.bio_status_stress?
        
+      # [ВИПРАВЛЕНО]: Замінено неіснуючий :high на :medium
       create_and_dispatch_alert!(
-        cluster: cluster, tree: tree, severity: :high, 
+        cluster: cluster, tree: tree, severity: :medium, 
         alert_type: :insect_epidemic,
         message: "БІО-ЗАГРОЗА: Акустична емісія характерна для личинок короїда."
       )
@@ -71,6 +74,7 @@ class AlertDispatchService
   end
 
   private_class_method def self.create_and_dispatch_alert!(cluster:, tree:, severity:, alert_type:, message:)
+    # Захист від спаму: не створюємо дублікат, якщо такий самий алерт був створений менше 5 хвилин тому
     recent_alert = EwsAlert.where(tree: tree, alert_type: alert_type)
                            .where("created_at > ?", 5.minutes.ago)
                            .exists?
@@ -83,8 +87,10 @@ class AlertDispatchService
 
     Rails.logger.warn "🚨 [ALERT] #{alert_type} для #{tree.did}"
 
-    # Передаємо керування актуаторам
-    EmergencyResponseService.call(alert)
+    # Передаємо керування актуаторам (Клапани / Сирени)
+    EmergencyResponseService.call(alert) if defined?(EmergencyResponseService)
+    
+    # Сповіщаємо людей (SMS / Push)
     notify_stakeholders(alert)
   end
 
