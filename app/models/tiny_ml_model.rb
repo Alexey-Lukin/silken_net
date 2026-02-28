@@ -1,24 +1,52 @@
 # frozen_string_literal: true
 
 class TinyMlModel < ApplicationRecord
-  # Кластери або дерева, які зараз використовують цю версію нейромережі
+  # --- ЗВ'ЯЗКИ ---
+  # Дерева, які зараз використовують ці ваги нейромережі
   has_many :trees, dependent: :nullify
-
-  # version: рядок (напр. "v2.1.0-bark-beetle")
-  # target_species: посилання на TreeFamily (для корекції акустичних сигналів)
+  # Модель специфічна для родини (напр. акустичний профіль Сосни відрізняється від Дуба)
   belongs_to :tree_family, optional: true
-  
-  # binary_weights_payload: двійковий блок (ваги моделі TFLite Micro)
+
+  # --- ВАЛІДАЦІЇ ---
   validates :version, presence: true, uniqueness: true
   validates :binary_weights_payload, presence: true
+  
+  # Обмеження для LoRa/CoAP OTA: зазвичай TinyML моделі для мікроконтролерів 
+  # вкладаються в 256KB. Більше — ризик для стабільності мережі.
+  validates :binary_weights_payload, length: { maximum: 256.kilobytes }
 
-  # Розмір у байтах для розбивки на чанки при радіопередачі
+  # --- СКОУПИ ---
+  scope :active, -> { where(is_active: true) }
+  scope :for_family, ->(family_id) { where(tree_family_id: family_id) }
+
+  # --- МЕТОДИ (The Binary Bridge) ---
+
+  # Розмір у байтах для розбивки на чанки в OtaTransmissionWorker
   def payload_size
     binary_weights_payload.bytesize
   end
 
-  # [НОВЕ]: Перевірка цілісності перед відправкою у ліс
+  # Аліас для уніфікації з OtaTransmissionWorker
+  def binary_payload
+    binary_weights_payload
+  end
+
+  # Перевірка цілісності (використовується для верифікації після завантаження)
   def checksum
     Digest::SHA256.hexdigest(binary_weights_payload)
+  end
+
+  # =========================================================================
+  # ДЕПЛОЙМЕНТ (The Awakening)
+  # =========================================================================
+  
+  def activate!
+    transaction do
+      # Деактивуємо попередні моделі для цієї родини дерев
+      self.class.where(tree_family_id: tree_family_id).active.update_all(is_active: false)
+      update!(is_active: true)
+    end
+    
+    Rails.logger.info "🧠 [TinyML] Модель #{version} активована для родини #{tree_family&.name}."
   end
 end
