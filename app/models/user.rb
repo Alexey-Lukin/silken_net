@@ -1,42 +1,37 @@
 # frozen_string_literal: true
 
 class User < ApplicationRecord
-  # --- АВТЕНТИФІКАЦІЯ ---
-  has_secure_password validations: false
-  validates :password, presence: true, length: { minimum: 8 }, if: :password_required?
-
+  # --- АВТЕНТИФІКАЦІЯ (Rails 8 Standard) ---
+  has_secure_password
+  
   # --- ЗВ'ЯЗКИ ---
   has_many :sessions, dependent: :destroy
   has_many :identities, dependent: :destroy
   belongs_to :organization, optional: true
   
-  # Зв'язок з журналом робіт (не даємо видалити лісника, якщо він ремонтував шлюзи)
+  # Зв'язок з журналом робіт: фіксуємо відповідальність за залізо
   has_many :maintenance_records, dependent: :restrict_with_error
 
-  # --- НОРМАЛІЗАЦІЯ ---
+  # --- НОРМАЛІЗАЦІЯ ТА ВАЛІДАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   
-  # [ВИПРАВЛЕНО]: Зберігаємо цифри ТА знак плюса для E.164 формату
+  # Строгий E.164 для SMS-шлюзів (напр. Twilio)
   normalizes :phone_number, with: ->(p) { p.to_s.gsub(/[^0-9+]/, "") }
+  validates :phone_number, format: { with: /\A\+?[1-9]\d{1,14}\z/ }, allow_blank: true
 
   # --- РОЛЬОВА МОДЕЛЬ (RBAC) ---
   enum :role, {
-    investor: 0, # Дашборд, фінанси
-    forester: 1, # Мобільний додаток, тривоги
-    admin: 2     # Повний доступ
+    investor: 0, # Тільки читання, фінансові звіти
+    forester: 1, # Доступ до актуаторів, мобільний додаток
+    admin: 2     # Повний контроль системи
   }, prefix: true
 
-  # --- СКОУПИ ДЛЯ ВОРКЕРІВ ---
-  scope :notifiable, -> { where.not(phone_number: [nil, ""]) }
-  
-  # [ВИПРАВЛЕНО]: Використовуємо правильний префікс role_forester
-  scope :active_foresters, -> { role_forester.notifiable }
-  
-  # Скоуп для тих, хто реально в полі (перевіряємо їхній пульс)
-  scope :online, -> { where("last_seen_at >= ?", 30.minutes.ago) }
+  # --- СКОУПИ ---
+  scope :notifiable, -> { where.not(phone_number: [nil, ""]).or(where.not(telegram_chat_id: nil)) }
+  scope :active_foresters, -> { role_forester.where("last_seen_at >= ?", 1.hour.ago) }
 
-  # --- ТОКЕНИ (Rails 8.0) ---
+  # --- ТОКЕНИ (The Magic of Rails 8) ---
   generates_token_for :password_reset, expires_in: 15.minutes do
     password_salt&.last(10)
   end
@@ -45,22 +40,28 @@ class User < ApplicationRecord
     email_address
   end
 
-  # Токен для довготривалих API-сесій (мобільний додаток)
+  # Для "Remember Me" або безпарольного доступу з мобільного додатка
   generates_token_for :api_access
 
-  # --- МЕТОДИ ---
+  # --- МЕТОДИ (The Identity) ---
+
   def forest_commander?
     role_admin? || role_forester?
   end
 
-  # Зручний хелпер для фронтенду
   def full_name
-    "#{first_name} #{last_name}".strip.presence || email_address
+    [first_name, last_name].compact_blank.join(" ").presence || email_address
+  end
+
+  # Оновлення активності (викликається в BaseController)
+  def touch_visit!
+    update_columns(last_seen_at: Time.current)
   end
 
   private
 
+  # Пароль не потрібен, якщо ми заходимо через Google/Apple ID (Identities)
   def password_required?
-    new_record? ? identities.empty? : password.present?
+    identities.none? || password.present?
   end
 end
