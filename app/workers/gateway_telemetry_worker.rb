@@ -2,15 +2,15 @@
 
 class GatewayTelemetryWorker
   include Sidekiq::Job
+  # Шлюзи оновлюються рідше за дерева, тому використовуємо чергу за замовчуванням
   sidekiq_options queue: "default", retry: 2
 
   def perform(queen_uid, stats = {})
-    # 1. Знаходимо Королеву (Синхронізація регістру DID/UID)
+    # 1. Знаходимо Королеву
     gateway = Gateway.find_by!(uid: queen_uid.to_s.strip.upcase)
 
-    # 2. ТРАНЗАКЦІЙНІСТЬ (System Integrity)
+    # 2. ТРАНЗАКЦІЙНІСТЬ (The Integrity Loop)
     ActiveRecord::Base.transaction do
-      # Створюємо лог стану (Використовуємо символи для доступу до Hash, якщо це Sidekiq JSON)
       stats = stats.with_indifferent_access
       
       log = gateway.gateway_telemetry_logs.create!(
@@ -19,45 +19,54 @@ class GatewayTelemetryWorker
         cellular_signal_csq: stats[:cellular_signal_csq]
       )
 
-      # Оновлюємо пульс та IP-адресу (якщо прийшла в stats)
+      # Оновлюємо пульс та IP-адресу Starlink/LTE модема
       gateway.mark_seen!(stats[:ip_address])
 
-      # 3. АНАЛІЗ (Self-Preservation)
-      # Використовуємо логіку, яку ми зашліфували в моделі лога
+      # 3. АНАЛІЗ (The Diagnostic Lens)
       check_system_health(gateway, log)
     end
 
-    Rails.logger.info "👑 [Gateway] Шлюз #{gateway.uid} оновлено. V: #{stats[:voltage_mv]}mV, CSQ: #{stats[:cellular_signal_csq]}"
+    Rails.logger.info "👑 [Gateway] #{gateway.uid} Sync: #{stats[:voltage_mv]}mV, Sig: #{stats[:cellular_signal_csq]}/31"
   rescue ActiveRecord::RecordNotFound
-    Rails.logger.error "🛑 [Gateway] Спроба оновити невідомий шлюз: #{queen_uid}"
+    Rails.logger.error "🛑 [Gateway] Спроба оновити фантомний шлюз: #{queen_uid}"
   rescue StandardError => e
-    Rails.logger.error "🛑 [Gateway Error] #{gateway&.uid}: #{e.message}"
+    Rails.logger.error "🛑 [Gateway Error] Збій у матриці #{gateway&.uid}: #{e.message}"
     raise e
   end
 
   private
 
   def check_system_health(gateway, log)
-    # Якщо модель зафіксувала критичний стан (батарея або температура)
-    return unless log.critical_fault?
+    # [СИНХРОНІЗОВАНО]: Використовуємо метод моделі для визначення деградації заліза
+    return unless log.respond_to?(:critical_fault?) && log.critical_fault?
 
-    message = if log.voltage_mv < 3300
-                "КРИТИЧНО: Низький заряд батареї Королеви #{gateway.uid} (#{log.voltage_mv}mV). Ризик вимкнення!"
-              elsif log.temperature_c > 65
-                "УВАГА: Перегрів Королеви #{gateway.uid} (#{log.temperature_c}°C). Системна деградація!"
-              else
-                "Аномальний стан заліза Королеви #{gateway.uid}."
-              end
+    # Формуємо вердикт для патрульного
+    message = format_health_message(gateway, log)
 
     # Створюємо тривогу (EwsAlert)
+    # Переконуємося, що шлюз прив'язаний до кластера, інакше тривога піде "в нікуди"
+    return unless gateway.cluster_id
+
     alert = EwsAlert.create!(
-      cluster: gateway.cluster,
+      cluster_id: gateway.cluster_id,
       severity: :critical,
-      alert_type: :system_fault,
+      alert_type: :system_fault, # [СИНХРОНІЗОВАНО] з нашою моделлю EwsAlert
       message: message
     )
     
-    # Запускаємо сповіщення Патрульних (The Patrolman's Voice)
+    # Викликаємо "Голос Патрульних" (SMS/Telegram)
     AlertNotificationWorker.perform_async(alert.id)
+  end
+
+  def format_health_message(gateway, log)
+    if log.voltage_mv < 3300
+      "🔋 КРИТИЧНО: Королева #{gateway.uid} виснажена (#{log.voltage_mv}mV). Скоро відключення!"
+    elsif log.temperature_c > 65
+      "🔥 УВАГА: Королева #{gateway.uid} перегріта (#{log.temperature_c}°C). Можлива деформація корпусу."
+    elsif log.cellular_signal_csq.to_i < 5
+      "📡 ЗВ'ЯЗОК: Слабкий сигнал на #{gateway.uid} (CSQ: #{log.cellular_signal_csq}). Ризик втрати батчів."
+    else
+      "🛠️ Апаратний збій Королеви #{gateway.uid}. Потрібен огляд."
+    end
   end
 end
