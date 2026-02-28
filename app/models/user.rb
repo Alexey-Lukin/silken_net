@@ -10,26 +10,30 @@ class User < ApplicationRecord
   has_many :identities, dependent: :destroy
   belongs_to :organization, optional: true
   
-  # [НОВЕ]: Зв'язок з журналом робіт
+  # Зв'язок з журналом робіт (не даємо видалити лісника, якщо він ремонтував шлюзи)
   has_many :maintenance_records, dependent: :restrict_with_error
 
   # --- НОРМАЛІЗАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  # Додаємо нормалізацію телефону для SMS-шлюзів
-  normalizes :phone_number, with: ->(p) { p.gsub(/\D/, "") }
+  
+  # [ВИПРАВЛЕНО]: Зберігаємо цифри ТА знак плюса для E.164 формату
+  normalizes :phone_number, with: ->(p) { p.to_s.gsub(/[^0-9+]/, "") }
 
   # --- РОЛЬОВА МОДЕЛЬ (RBAC) ---
   enum :role, {
-    investor: 0,
-    forester: 1, # Отримує тривоги через AlertNotificationWorker
-    admin: 2
+    investor: 0, # Дашборд, фінанси
+    forester: 1, # Мобільний додаток, тривоги
+    admin: 2     # Повний доступ
   }, prefix: true
 
   # --- СКОУПИ ДЛЯ ВОРКЕРІВ ---
   scope :notifiable, -> { where.not(phone_number: [nil, ""]) }
-  scope :active_foresters, -> { forester_role.notifiable }
-  # [НОВЕ]: Скоуп для тих, хто реально в полі
+  
+  # [ВИПРАВЛЕНО]: Використовуємо правильний префікс role_forester
+  scope :active_foresters, -> { role_forester.notifiable }
+  
+  # Скоуп для тих, хто реально в полі (перевіряємо їхній пульс)
   scope :online, -> { where("last_seen_at >= ?", 30.minutes.ago) }
 
   # --- ТОКЕНИ (Rails 8.0) ---
@@ -41,6 +45,7 @@ class User < ApplicationRecord
     email_address
   end
 
+  # Токен для довготривалих API-сесій (мобільний додаток)
   generates_token_for :api_access
 
   # --- МЕТОДИ ---
