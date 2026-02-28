@@ -13,16 +13,18 @@ class MaintenanceRecord < ApplicationRecord
 
   # --- ТИПИ РОБІТ (The Intervention) ---
   enum :action_type, {
-    installation: 0,   # Первинне встановлення (мінтинг ключа)
-    inspection: 1,     # Плановий обхід
-    cleaning: 2,       # Очищення сонячної панелі або контактів
-    repair: 3,         # Заміна плати / пайка в полі
-    decommissioning: 4 # Демонтаж вбитого дерева / шлюзу
+    installation: 0,    # Первинне встановлення (мінтинг ключа)
+    inspection: 1,      # Плановий обхід
+    cleaning: 2,        # Очищення сонячної панелі або контактів
+    repair: 3,          # Заміна плати / пайка в полі
+    decommissioning: 4  # Демонтаж вбитого дерева / шлюзу
   }, prefix: true
 
   # --- ВАЛІДАЦІЇ ---
   validates :action_type, :performed_at, presence: true
   validates :notes, presence: true, length: { minimum: 10 }
+  # performed_at не може бути в майбутньому (Захист від помилок інтерфейсу)
+  validates :performed_at, comparison: { less_than_or_equal_to: -> { Time.current } }
 
   # --- СКОУПИ ---
   scope :recent, -> { order(performed_at: :desc) }
@@ -36,37 +38,38 @@ class MaintenanceRecord < ApplicationRecord
   private
 
   def heal_ecosystem!
-    # Використовуємо транзакцію для групового оновлення
+    # Оскільки after_commit поза основною транзакцією, створюємо нову для цілісності відновлення
     ActiveRecord::Base.transaction do
       
       # 1. ОСВІЖЕННЯ ПУЛЬСУ
-      # Якщо це Шлюз (Gateway) або він має метод mark_seen!
-      if maintainable.respond_to?(:mark_seen!)
-        maintainable.mark_seen!
-      end
+      # Якщо об'єкт підтримує mark_seen! (Gateway/Tree), оновлюємо його timestamp
+      maintainable.mark_seen! if maintainable.respond_to?(:mark_seen!)
 
-      # 2. РЕАНІМАЦІЯ АКТУАТОРІВ
-      # Якщо ми відремонтували Актуатор, повертаємо його в стрій
-      if maintainable.is_a?(Actuator) && maintainable.state_maintenance_needed? && action_type_repair?
+      # 2. РЕАНІМАЦІЯ ПЕРИФЕРІЇ
+      # Якщо відремонтували Актуатор — повертаємо його в стрій (IDLE)
+      if maintainable.is_a?(Actuator) && action_type_repair?
         maintainable.update!(state: :idle)
-        Rails.logger.info "⚙️ [MAINTENANCE] Актуатор #{maintainable.name} успішно відремонтовано та переведено в IDLE."
+        Rails.logger.info "⚙️ [MAINTENANCE] Актуатор #{maintainable.name} повернуто до життя."
       end
 
-      # 3. ЗАКРИТТЯ ІНЦИДЕНТУ (EWS Alert)
-      # Якщо ремонт був прив'язаний до тривоги, і тривога ще активна
+      # 3. ЖИТТЄВИЙ ЦИКЛ ОБ'ЄКТА
+      # Якщо демонтували дерево — міняємо його статус
+      if maintainable.is_a?(Tree) && action_type_decommissioning?
+        maintainable.update!(status: :removed)
+      end
+
+      # 4. ЗАКРИТТЯ ІНЦИДЕНТУ (EWS Alert)
+      # [СИНХРОНІЗОВАНО]: Викликаємо метод resolve!, який ми написали в моделі EwsAlert
       if ews_alert.present? && !ews_alert.resolved?
-        ews_alert.update!(
-          status: :resolved, 
-          resolved_at: Time.current,
-          resolved_by: user.id,
-          resolution_notes: "Автоматично закрито після #{action_type} (#{self.id}). Нотатки: #{notes}"
-        )
-        Rails.logger.info "🚨 [EWS] Тривогу ##{ews_alert.id} закрито завдяки втручанню патрульного #{user.email_address}."
+        resolution_msg = "Відновлено через #{action_type} (Запис ##{id}). Нотатки: #{notes}"
+        ews_alert.resolve!(user: user, notes: resolution_msg)
       end
       
     end
   rescue StandardError => e
-    Rails.logger.error "🛑 [MAINTENANCE] Помилка протоколу відновлення: #{e.message}"
+    Rails.logger.error "🛑 [MAINTENANCE] Помилка протоколу відновлення ##{id}: #{e.message}"
+    # У after_commit raise не скасує створення MaintenanceRecord, 
+    # але сповістить розробника про збій у "загоєнні"
     raise e
   end
 end
