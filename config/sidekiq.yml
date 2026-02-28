@@ -1,25 +1,36 @@
+# frozen_string_literal: true
+
 :concurrency: 15
 :queues:
-  - [telemetry, 5] # Uplink: розпаковка даних (Critical)
-  - [alerts, 4]    # Сповіщення про пожежі/браконьєрів
-  - [downlink, 3]  # Команди актуаторам та OTA прошивки
-  - [default, 2]   # Стандартні задачі
-  - [web3, 1]      # Повільні транзакції блокчейну
-  - [low, 1]       # Нічна агрегація (InsightGenerator)
+  # [КРИТИЧНО]: Вхідний потік від Sanctum. Кожна мс на рахунку.
+  - [uplink, 5]    
+  # [ОПЕРАТИВНО]: Сповіщення патрульних та SMS-шлюзи.
+  - [alerts, 4]    
+  # [КЕРУВАННЯ]: Команди актуаторам (Downlink) та OTA-прошивки.
+  - [downlink, 3]  
+  # [СТАНДАРТ]: Звичайні системні задачі та листи.
+  - [default, 2]   
+  # [ФІНАНСИ]: Повільні транзакції Polygon (Slashing/Minting).
+  - [web3, 1]      
+  # [АНАЛІТИКА]: Важка нічна агрегація (InsightGenerator).
+  - [low, 1]       
 
 :scheduler:
   :schedule:
-    # Емісійний центр: перевірка балансів кожну годину
+    # --- ЕКОНОМІЧНИЙ ЦИКЛ (The Heartbeat) ---
+    # Перевірка балансів дерев та підготовка наказів на емісію SCC.
     tokenomics_evaluation:
-      cron: '0 * * * *'
+      cron: '0 * * * *' # Щогодини
       class: TokenomicsEvaluatorWorker
     
-    # Хронометрист: агрегація даних за минулу добу о 01:00 ночі
+    # --- ЦИКЛ ХРОНОМЕТРИСТА (The Daily Reset) ---
+    # Стиснення телеметрії в AiInsight. Має завершитися до початку аудиту.
     daily_telemetry_aggregation:
-      cron: '0 1 * * *'
+      cron: '0 1 * * *' # О 01:00 за сервером (Kyiv Time в коді)
       class: DailyAggregationWorker
 
-    # D-MRV Арбітраж: перевірка здоров'я лісу раз на добу о 02:00
+    # --- ЦИКЛ АРБІТРАЖУ (The Justice Execution) ---
+    # Перевірка NaaS контрактів та запуск Slashing Protocol (BurnCarbonTokens).
     cluster_health_arbitration:
-      cron: '0 2 * * *'
+      cron: '0 2 * * *' # О 02:00, одразу після агрегації
       class: ClusterHealthCheckWorker
