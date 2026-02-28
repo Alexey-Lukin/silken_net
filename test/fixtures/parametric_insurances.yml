@@ -1,17 +1,15 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+fire_insurance_north:
+  organization: forest_fund
+  cluster: north_sector
+  status: 0
+  trigger_event: 0
+  payout_amount: 10000.0
+  threshold_value: 30.0
 
-one:
-  organization: one
-  cluster: one
-  status: 1
+drought_insurance_south:
+  organization: green_capital
+  cluster: south_sector
+  status: 0
   trigger_event: 1
-  payout_amount: 9.99
-  threshold_value: 9.99
-
-two:
-  organization: two
-  cluster: two
-  status: 1
-  trigger_event: 1
-  payout_amount: 9.99
-  threshold_value: 9.99
+  payout_amount: 5000.0
+  threshold_value: 25.0

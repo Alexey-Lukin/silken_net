@@ -1,13 +1,11 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+scots_pine:
+  name: Scots Pine
+  baseline_impedance: 1200
+  critical_z_min: 5.0
+  critical_z_max: 45.0
 
-one:
-  name: MyString
-  base_resistance: 1
-  critical_z_min: 9.99
-  critical_z_max: 9.99
-
-two:
-  name: MyString
-  base_resistance: 1
-  critical_z_min: 9.99
-  critical_z_max: 9.99
+common_oak:
+  name: Common Oak
+  baseline_impedance: 1800
+  critical_z_min: 8.0
+  critical_z_max: 40.0

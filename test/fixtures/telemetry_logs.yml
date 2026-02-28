@@ -1,21 +1,27 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  tree: one
-  temperature_c: 9.99
-  acoustic_events: 1
-  growth_points: 9.99
-  bio_status: 1
-  piezo_voltage_mv: 1
+pine_log:
+  tree: pine_alpha
+  queen_uid: QUEEN-NORTH-001
+  voltage_mv: 3800
+  temperature_c: 22.5
+  acoustic_events: 3
+  growth_points: 1.0
+  bio_status: 0
+  piezo_voltage_mv: 50
   tamper_detected: false
-  z_value: 9.99
+  z_value: 25.5
+  mesh_ttl: 3
+  metabolism_s: 60
 
-two:
-  tree: two
-  temperature_c: 9.99
-  acoustic_events: 1
-  growth_points: 9.99
+oak_log:
+  tree: oak_beta
+  queen_uid: QUEEN-SOUTH-002
+  voltage_mv: 3600
+  temperature_c: 28.0
+  acoustic_events: 15
+  growth_points: 0.5
   bio_status: 1
-  piezo_voltage_mv: 1
+  piezo_voltage_mv: 120
   tamper_detected: false
-  z_value: 9.99
+  z_value: 42.0
+  mesh_ttl: 2
+  metabolism_s: 45

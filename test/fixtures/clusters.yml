@@ -1,9 +1,9 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+north_sector:
+  name: North Sector Alpha
+  region: Cherkasy Oblast
+  organization: forest_fund
 
-one:
-  name: MyString
-  region: MyString
-
-two:
-  name: MyString
-  region: MyString
+south_sector:
+  name: South Sector Beta
+  region: Cherkasy Oblast
+  organization: green_capital

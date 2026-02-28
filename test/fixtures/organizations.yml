@@ -1,9 +1,9 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+forest_fund:
+  name: Cherkasy Forest Fund
+  billing_email: billing@cherkasyforest.org
+  crypto_public_address: "0x1234567890abcdef1234567890abcdef12345678"
 
-one:
-  name: MyString
-  crypto_public_address: MyString
-
-two:
-  name: MyString
-  crypto_public_address: MyString
+green_capital:
+  name: Green Capital Investments
+  billing_email: finance@greencapital.io
+  crypto_public_address: "0xabcdef1234567890abcdef1234567890abcdef12"

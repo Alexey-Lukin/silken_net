@@ -18,7 +18,7 @@ class FinalizeSilkenNetArchitecture < ActiveRecord::Migration[8.1]
     # --- 3. TELEMETRY LOGS (Синхронізація з UnpackerService) ---
     add_column :telemetry_logs, :rssi, :integer
     # Переконуємось, що назви полів збігаються з воркерами
-    rename_column :telemetry_logs, :piezo_voltage_mv, :piezo_voltage_mv # залишаємо як є, але додаємо індекс
+    # piezo_voltage_mv already correct — no rename needed
     add_index :telemetry_logs, [:tree_id, :created_at]
     add_index :telemetry_logs, :status_code if column_exists?(:telemetry_logs, :status_code)
 

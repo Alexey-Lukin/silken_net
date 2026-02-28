@@ -1,11 +1,9 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+olena_google:
+  user: admin_olena
+  provider: google_oauth2
+  uid: "117234567890123456789"
 
-one:
-  user: one
-  provider: MyString
-  uid: MyString
-
-two:
-  user: two
-  provider: MyString
-  uid: MyString
+maria_apple:
+  user: investor_maria
+  provider: apple
+  uid: "001234.abcdef1234567890.5678"

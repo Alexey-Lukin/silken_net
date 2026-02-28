@@ -1,13 +1,15 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+pine_installation:
+  user: forester_dmytro
+  maintainable_type: Tree
+  maintainable_id: 1
+  action_type: 0
+  notes: "Initial installation of S-NET Anchor and Head module on Pine Alpha. All sensors calibrated."
+  performed_at: <%= 1.month.ago.to_fs(:db) %>
 
-one:
-  tree: one
-  user: one
-  action_taken: MyText
-  performed_at: 2026-02-26 18:44:54
-
-two:
-  tree: two
-  user: two
-  action_taken: MyText
-  performed_at: 2026-02-26 18:44:54
+oak_inspection:
+  user: forester_dmytro
+  maintainable_type: Tree
+  maintainable_id: 2
+  action_type: 1
+  notes: "Quarterly inspection of Oak Beta. Piezo sensor cleaned. Supercapacitor voltage nominal."
+  performed_at: <%= 1.week.ago.to_fs(:db) %>

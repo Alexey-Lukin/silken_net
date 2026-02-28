@@ -1,11 +1,11 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+pine_calibration:
+  tree: pine_alpha
+  temperature_offset_c: 0.5
+  impedance_offset_ohms: -10
+  vcap_coefficient: 1.02
 
-one:
-  tree: one
-  temp_offset: 9.99
-  acoustic_offset: 1
-
-two:
-  tree: two
-  temp_offset: 9.99
-  acoustic_offset: 1
+oak_calibration:
+  tree: oak_beta
+  temperature_offset_c: -0.3
+  impedance_offset_ohms: 15
+  vcap_coefficient: 0.98

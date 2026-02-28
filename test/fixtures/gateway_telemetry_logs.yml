@@ -1,11 +1,13 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+queen_north_log:
+  gateway_id: <%= ActiveRecord::FixtureSet.identify(:queen_north) %>
+  queen_uid: QUEEN-NORTH-001
+  voltage_mv: 4100.0
+  cellular_signal_csq: 25
+  temperature_c: 30.5
 
-one:
-  gateway: one
-  battery_level: 9.99
-  signal_strength: 1
-
-two:
-  gateway: two
-  battery_level: 9.99
-  signal_strength: 1
+queen_south_log:
+  gateway_id: <%= ActiveRecord::FixtureSet.identify(:queen_south) %>
+  queen_uid: QUEEN-SOUTH-002
+  voltage_mv: 3200.0
+  cellular_signal_csq: 15
+  temperature_c: 35.0

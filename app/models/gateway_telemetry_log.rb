@@ -11,7 +11,7 @@ class GatewayTelemetryLog < ApplicationRecord
   validates :voltage_mv, :temperature_c, :cellular_signal_csq, :queen_uid, presence: true
   
   # CSQ 0-31 — це нормальний діапазон, 99 — сигнал відсутній/невизначений
-  validates :cellular_signal_csq, inclusion: { in: 0..31.union([99]) }
+  validates :cellular_signal_csq, inclusion: { in: [*0..31, 99] }
 
   # --- СКОУПИ ---
   scope :recent, -> { order(created_at: :desc) }

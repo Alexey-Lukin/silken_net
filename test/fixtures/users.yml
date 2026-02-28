@@ -1,11 +1,23 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+admin_olena:
+  email_address: olena@cherkasyforest.org
+  password_digest: <%= BCrypt::Password.create("password123") %>
+  role: 2
+  first_name: Olena
+  last_name: Kovalenko
+  organization: forest_fund
 
-one:
-  email: MyString
-  password_digest: MyString
+forester_dmytro:
+  email_address: dmytro@cherkasyforest.org
+  password_digest: <%= BCrypt::Password.create("password123") %>
   role: 1
+  first_name: Dmytro
+  last_name: Bondarenko
+  organization: forest_fund
 
-two:
-  email: MyString
-  password_digest: MyString
-  role: 1
+investor_maria:
+  email_address: maria@greencapital.io
+  password_digest: <%= BCrypt::Password.create("password123") %>
+  role: 0
+  first_name: Maria
+  last_name: Shevchenko
+  organization: green_capital
