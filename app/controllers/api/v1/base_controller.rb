@@ -7,8 +7,6 @@ module Api
 
       # --- ПОРЯДОК ЗАХИСТУ ---
       before_action :authenticate_user!
-      before_action :set_paper_trail_whodunnit # Якщо використовуємо гем paper_trail для аудиту
-      
       # --- ОБРОБКА ПОМИЛОК (The Safety Net) ---
       # Ми не даємо хакеру зрозуміти природу помилки, але даємо розробнику чіткий JSON
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found

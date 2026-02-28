@@ -5,6 +5,8 @@ class NaasContract < ApplicationRecord
   belongs_to :organization
   belongs_to :cluster
 
+  alias_attribute :total_value, :total_funding
+
   # --- СТАТУСИ (The Lifecycle of Trust) ---
   enum :status, {
     draft: 0,      # Підготовка, очікування транзакції інвестора
