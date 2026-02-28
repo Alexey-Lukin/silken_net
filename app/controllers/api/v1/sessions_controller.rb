@@ -14,7 +14,7 @@ module Api
         if user&.authenticate(params[:password])
           # Генеруємо токен доступу (використовуємо Rails 8 generates_token_for)
           token = user.generate_token_for(:api_access)
-          
+
           # Оновлюємо сесію для Web-дашборду
           session[:user_id] = user.id
           user.touch_visit!
@@ -38,10 +38,10 @@ module Api
       def destroy
         # Очищуємо сесію
         session[:user_id] = nil
-        
-        # В API-світі клієнт просто видаляє токен у себе, 
+
+        # В API-світі клієнт просто видаляє токен у себе,
         # але ми можемо додати логіку відкликання токена, якщо це необхідно.
-        
+
         render json: { message: "Вихід успішний. Брама закрита." }, status: :ok
       end
     end

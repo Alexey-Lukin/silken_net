@@ -3,7 +3,7 @@
 class BlockchainTransaction < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
   belongs_to :wallet
-  
+
   # Поліморфний зв'язок для аудиту (Напр. AiInsight, EwsAlert або NaasContract)
   belongs_to :sourceable, polymorphic: true, optional: true
 
@@ -20,13 +20,13 @@ class BlockchainTransaction < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :amount, presence: true, numericality: { greater_than: 0 }
-  
+
   # [НОВЕ]: Валідація адреси призначення (0x...)
-  validates :to_address, presence: true, format: { 
-    with: /\A0x[a-fA-F0-9]{40}\z/, 
-    message: "має бути валідною 0x адресою" 
+  validates :to_address, presence: true, format: {
+    with: /\A0x[a-fA-F0-9]{40}\z/,
+    message: "має бути валідною 0x адресою"
   }
-  
+
   # tx_hash має бути унікальним і присутнім лише для підтверджених транзакцій
   validates :tx_hash, presence: true, uniqueness: true, if: :status_confirmed?
 

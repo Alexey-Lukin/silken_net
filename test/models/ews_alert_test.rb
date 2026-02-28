@@ -17,7 +17,7 @@ class EwsAlertTest < ActiveSupport::TestCase
   test "coordinates returns tree coordinates when tree present" do
     alert = ews_alerts(:drought_alert)
     coords = alert.coordinates
-    assert_equal [alert.tree.latitude, alert.tree.longitude], coords
+    assert_equal [ alert.tree.latitude, alert.tree.longitude ], coords
   end
 
   test "actionable? returns true for critical fire" do

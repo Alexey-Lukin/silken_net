@@ -33,15 +33,15 @@ class OtaTransmissionWorker
         Timeout.timeout(20) do
           # Формуємо URL з метаданими для шлюзу
           url = "coap://#{gateway.ip_address}/ota/#{firmware_type}?ch=#{index}&ttl=#{total_chunks}&id=#{record_id}"
-          
+
           # [СИНХРОНІЗАЦІЯ]: Використовуємо блокуючий PUT
           response = CoapClient.put(url, encrypted_chunk)
-          
+
           raise "NACK: Шлюз відхилив чанк #{index}" unless response&.success?
         end
 
         # Pacing: даємо STM32 час на HAL_FLASH_Program
-        sleep 0.4 
+        sleep 0.4
 
       rescue Timeout::Error, StandardError => e
         handle_chunk_failure(queen_uid, firmware_type, record_id, index, retry_count, e.message)
@@ -60,7 +60,7 @@ class OtaTransmissionWorker
     if retry_count < MAX_CHUNK_RETRIES
       wait_time = (retry_count + 1) * 10 # Експоненціальна пауза
       Rails.logger.warn "⏳ [OTA] Помилка чанка #{index} для #{uid}: #{error}. Ретрай #{retry_count + 1}/#{MAX_CHUNK_RETRIES} через #{wait_time}с."
-      
+
       self.class.perform_in(wait_time.seconds, uid, type, record_id, index, retry_count + 1)
     else
       Rails.logger.error "🛑 [OTA] Капітуляція. Чанк #{index} не доставлено після #{MAX_CHUNK_RETRIES} спроб."

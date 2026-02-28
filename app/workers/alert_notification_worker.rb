@@ -27,10 +27,10 @@ class AlertNotificationWorker
   def broadcast_to_dashboards(alert)
     # [БЕЗПЕКА]: Використовуємо дані дерева або шлюзу для локації
     source = alert.tree || alert.cluster.gateways.first
-    
+
     payload = {
       id: alert.id,
-      target_did: alert.tree&.did || "SYSTEM_GATEWAY", 
+      target_did: alert.tree&.did || "SYSTEM_GATEWAY",
       severity: alert.severity,
       alert_type: alert.alert_type,
       message: alert.message,
@@ -41,7 +41,7 @@ class AlertNotificationWorker
 
     # Канал для конкретного кластера (для патрульних на місці)
     ActionCable.server.broadcast("cluster_#{alert.cluster_id}_alerts", payload)
-    
+
     # Канал для всієї організації (для центрального офісу)
     ActionCable.server.broadcast("org_#{alert.organization_id}_alerts", payload)
   rescue StandardError => e
@@ -56,7 +56,7 @@ class AlertNotificationWorker
 
     # Б. Оперативні канали (Патруль та Адміни)
     # [ВИПРАВЛЕНО]: Охоплюємо і адмінів, і патрульних (foresters)
-    stakeholders = organization.users.where(role: [:admin, :forester])
+    stakeholders = organization.users.where(role: [ :admin, :forester ])
 
     stakeholders.each do |user|
       # SMS лише для критичних ситуацій (Пожежа / Вандалізм)
@@ -71,7 +71,7 @@ class AlertNotificationWorker
 
   def send_sms(user, alert)
     return unless user.respond_to?(:phone_number) && user.phone_number.present?
-    
+
     # [LOGIC]: Викликаємо зовнішній API (напр. Twilio)
     # TwilioClient.send_sms(to: user.phone_number, body: "🚨 [S-NET] #{alert.message}")
     Rails.logger.info "📱 [SMS] Надіслано патрульному: #{user.full_name} (#{user.phone_number})"

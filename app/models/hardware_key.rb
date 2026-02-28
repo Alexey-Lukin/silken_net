@@ -14,11 +14,11 @@ class HardwareKey < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :device_uid, presence: true, uniqueness: true
-  
+
   # Строго 64 HEX символи = 32 байти = AES-256
   # Додаємо формат HEX для впевненості
-  validates :aes_key_hex, presence: true, 
-                          length: { is: 64 }, 
+  validates :aes_key_hex, presence: true,
+                          length: { is: 64 },
                           format: { with: /\A[0-9A-F]+\z/i }
 
   # =========================================================================
@@ -28,7 +28,7 @@ class HardwareKey < ApplicationRecord
   # Перетворення HEX на сирі байти для OpenSSL / CoapClient
   # Використовуємо мемоізацію для оптимізації продуктивності
   def binary_key
-    @binary_key ||= [aes_key_hex].pack("H*")
+    @binary_key ||= [ aes_key_hex ].pack("H*")
   end
 
   # Генерація нового ключа (Provisioning)
@@ -44,16 +44,16 @@ class HardwareKey < ApplicationRecord
   # Повертає сирий бінарний ключ для негайної відправки через CoapClient
   def rotate_key!
     new_key_hex = SecureRandom.hex(32).upcase
-    
+
     transaction do
       update!(aes_key_hex: new_key_hex)
       # Очищуємо кешований бінарний ключ
       @binary_key = nil
-      
+
       # Створюємо запис про подію безпеки
       Rails.logger.warn "🔐 [Zero-Trust] Ключ для пристрою #{device_uid} ротовано. Попередня версія анульована."
     end
-    
+
     binary_key
   end
 end

@@ -20,10 +20,10 @@ module Api
 
         render json: @alerts.as_json(
           include: {
-            cluster: { only: [:id, :name] },
-            tree: { only: [:id, :did, :latitude, :longitude] }
+            cluster: { only: [ :id, :name ] },
+            tree: { only: [ :id, :did, :latitude, :longitude ] }
           },
-          methods: [:coordinates, :actionable?]
+          methods: [ :coordinates, :actionable? ]
         )
       end
 
@@ -38,12 +38,12 @@ module Api
       # PATCH /api/v1/alerts/:id/resolve
       def resolve
         @alert = EwsAlert.find(params[:id])
-        
+
         # Використовуємо метод моделі, який ми зашліфували раніше
         if @alert.resolve!(user: current_user, notes: params[:notes])
-          render json: { 
+          render json: {
             message: "Тривогу ##{@alert.id} втихомирено.",
-            alert: @alert 
+            alert: @alert
           }, status: :ok
         else
           render json: { error: "Не вдалося закрити тривогу." }, status: :unprocessable_entity

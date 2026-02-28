@@ -22,8 +22,8 @@ module Api
 
         render json: @records.as_json(
           include: {
-            user: { only: [:id, :first_name, :last_name] },
-            maintainable: { only: [:id, :did, :uid] }
+            user: { only: [ :id, :first_name, :last_name ] },
+            maintainable: { only: [ :id, :did, :uid ] }
           }
         )
       end
@@ -38,7 +38,7 @@ module Api
           # [СИНХРОНІЗАЦІЯ]: Колбек heal_ecosystem! у моделі вже запустив:
           # 1. Оновлення статусу пристрою.
           # 2. Закриття EwsAlert (якщо ews_alert_id передано).
-          
+
           render json: {
             message: "Запис про зцілення зафіксовано. Екосистема оновлена.",
             record: @record
@@ -59,11 +59,11 @@ module Api
 
       def maintenance_params
         params.require(:maintenance_record).permit(
-          :maintainable_id, 
-          :maintainable_type, 
+          :maintainable_id,
+          :maintainable_type,
           :ews_alert_id,
-          :action_type, 
-          :notes, 
+          :action_type,
+          :notes,
           :performed_at
         )
       end

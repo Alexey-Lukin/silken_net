@@ -2,7 +2,7 @@
 
 class DailyAggregationWorker
   include Sidekiq::Job
-  
+
   # Пріоритет "low" для фонових задач, але сувора унікальність за датою.
   # lock: :until_executed гарантує, що ми не почнемо "стискати" той самий день двічі.
   sidekiq_options queue: "low", retry: 3, lock: :until_executed
@@ -11,9 +11,9 @@ class DailyAggregationWorker
     # 1. ВИЗНАЧЕННЯ ЦІЛЬОВОЇ ДАТИ (The Project Pulse)
     target_date = if date_string.present?
                     Date.parse(date_string)
-                  else
+    else
                     Time.use_zone("Kyiv") { Date.yesterday }
-                  end
+    end
 
     Rails.logger.info "🕒 [Хронометрист] Початок великої агрегації за #{target_date}..."
 
@@ -28,7 +28,7 @@ class DailyAggregationWorker
       # Це гарантує, що Slashing Protocol та перевірка контрактів
       # відбудуться саме для тих даних, які ми щойно згенерували.
       ClusterHealthCheckWorker.perform_async(target_date.to_s)
-      
+
       # Також варто перевірити параметричне страхування
       # ParametricInsuranceWorker.perform_async(target_date.to_s)
 
@@ -40,7 +40,7 @@ class DailyAggregationWorker
   rescue Date::Error => e
     Rails.logger.error "🛑 [Хронометрист] Невірний формат дати: #{date_string}"
   rescue StandardError => e
-    # Ми не використовуємо raise тут, якщо не хочемо, щоб Sidekiq нескінченно 
+    # Ми не використовуємо raise тут, якщо не хочемо, щоб Sidekiq нескінченно
     # намагався перерахувати день, який "зламався" (залежить від політики ретраїв).
     # Але для критичних збоїв — raise необхідний.
     Rails.logger.error "🛑 [Хронометрист] Критичний збій циклу агрегації: #{e.message}"

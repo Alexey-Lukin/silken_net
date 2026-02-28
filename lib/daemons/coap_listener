@@ -26,7 +26,7 @@ end
 while running
   begin
     # Очікуємо дані (таймаут 1с для можливості виходу)
-    if IO.select([socket], nil, nil, 1)
+    if IO.select([ socket ], nil, nil, 1)
       data, sender = socket.recvfrom_nonblock(MAX_PACKET_SIZE)
       gateway_ip = sender[3]
 
@@ -44,7 +44,7 @@ while running
       if type == 0
         # 0x44 = 2.04 Changed (Успішний PUT)
         # Формуємо заголовок ACK з тим самим Token Length та Message ID
-        ack_header = [(1 << 6) | (2 << 4) | tkl, 0x44, msg_id].pack("CCn")
+        ack_header = [ (1 << 6) | (2 << 4) | tkl, 0x44, msg_id ].pack("CCn")
         # Додаємо токен, якщо він був у вхідному пакеті
         token = tkl > 0 ? data[4...(4 + tkl)] : "".b
         socket.send(ack_header + token, 0, gateway_ip, sender[1])
@@ -53,14 +53,14 @@ while running
       # 3. ПОШУК ПЕЙЛОАДА
       # Шукаємо маркер 0xFF, який відокремлює опції від тіла
       payload_marker_index = data.index("\xFF".b)
-      
+
       if payload_marker_index
         binary_payload = data[(payload_marker_index + 1)..-1]
-        
+
         # 4. МАРШРУТИЗАЦІЯ (Uri-Path аналіз)
         # Опції Uri-Path мають номер 11. Перевіряємо блок опцій.
         options_block = data[(4 + tkl)...payload_marker_index]
-        
+
         # [СИНХРОНІЗАЦІЯ]: Перевіряємо шлях, який закладений у прошивку main.c
         if options_block.include?("telemetry") && options_block.include?("batch")
           # Кодуємо в Base64 для безпечної передачі в Redis/Sidekiq
@@ -68,7 +68,7 @@ while running
 
           # Передаємо IP-адресу як "мережевий якір" для ідентифікації Королеви
           UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip)
-          
+
           Rails.logger.debug "🛰️ [Sanctum] Батч від #{gateway_ip} прийнято. Довжина: #{binary_payload.bytesize}б."
         else
           Rails.logger.debug "⚠️ [Sanctum] Пакет від #{gateway_ip} відхилено: невідомий маршрут."

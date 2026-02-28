@@ -13,10 +13,10 @@ module Api
         ActiveRecord::Base.transaction do
           # 1. Визначаємо сутність (Солдат або Королева)
           @device = build_device(provisioning_params)
-          
+
           # 2. Генеруємо DID на основі hardware_uid (якщо не передано)
           @device.did ||= "SNET-#{provisioning_params[:hardware_uid].last(8).upcase}"
-          
+
           if @device.save
             # 3. КРИПТОГРАФІЧНА ПРОПИСКА
             # Використовуємо сервіс для створення HardwareKey (Zero-Trust якір)
@@ -73,7 +73,7 @@ module Api
 
       def provisioning_params
         params.require(:provisioning).permit(
-          :hardware_uid, :device_type, :cluster_id, 
+          :hardware_uid, :device_type, :cluster_id,
           :family_id, :latitude, :longitude
         )
       end

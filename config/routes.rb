@@ -13,14 +13,14 @@ Rails.application.routes.draw do
       delete "logout", to: "sessions#destroy"
 
       get "users/me", to: "users#me"
-      resources :users, only: [:index]
+      resources :users, only: [ :index ]
 
-      resources :clusters, only: [:index, :show] do
-        resources :trees, only: [:index]
-        resources :actuators, only: [:index]
+      resources :clusters, only: [ :index, :show ] do
+        resources :trees, only: [ :index ]
+        resources :actuators, only: [ :index ]
       end
 
-      resources :trees, only: [:show] do
+      resources :trees, only: [ :show ] do
         get :telemetry, to: "telemetry#tree_history", on: :member
       end
 
@@ -28,9 +28,9 @@ Rails.application.routes.draw do
         get :telemetry, to: "telemetry#gateway_history", on: :member
       end
 
-      resources :organizations, only: [:index, :show]
+      resources :organizations, only: [ :index, :show ]
 
-      resources :alerts, only: [:index, :show] do
+      resources :alerts, only: [ :index, :show ] do
         patch :resolve, on: :member
       end
 
@@ -39,18 +39,18 @@ Rails.application.routes.draw do
       end
       get "actuator_commands/:id", to: "actuators#command_status"
 
-      resources :contracts, only: [:index, :show] do
+      resources :contracts, only: [ :index, :show ] do
         get :stats, on: :collection
       end
 
-      resources :firmwares, only: [:index, :create] do
+      resources :firmwares, only: [ :index, :create ] do
         get  :inventory, on: :collection
         post :deploy, on: :member
       end
 
-      resources :maintenance_records, only: [:index, :create, :show]
+      resources :maintenance_records, only: [ :index, :create, :show ]
 
-      resources :oracle_visions, only: [:index] do
+      resources :oracle_visions, only: [ :index ] do
         post :simulate,      on: :collection
         get  :stream_config,  on: :collection
       end

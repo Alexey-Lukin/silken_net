@@ -2,11 +2,11 @@
 
 class ActuatorCommand < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
-  belongs_to :actuator 
+  belongs_to :actuator
   # Команда може бути частиною автоматичної відповіді на тривогу
-  belongs_to :ews_alert, optional: true 
+  belongs_to :ews_alert, optional: true
   # Також фіксуємо, який саме адміністратор/лісник віддав наказ вручну
-  belongs_to :user, optional: true 
+  belongs_to :user, optional: true
 
   # --- СТАТУСИ (The Lifecycle of a Command) ---
   enum :status, {
@@ -19,7 +19,7 @@ class ActuatorCommand < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :command_payload, presence: true
-  validates :duration_seconds, presence: true, 
+  validates :duration_seconds, presence: true,
                                numericality: { greater_than: 0, less_than_or_equal_to: 3600 }
 
   # --- КОЛБЕКИ (The Spark of Action) ---
@@ -28,7 +28,7 @@ class ActuatorCommand < ApplicationRecord
 
   # --- СКОУПИ ---
   scope :recent, -> { order(created_at: :desc).limit(10) }
-  scope :pending, -> { where(status: [:issued, :sent]) }
+  scope :pending, -> { where(status: [ :issued, :sent ]) }
 
   # =========================================================================
   # БІЗНЕС-ЛОГІКА

@@ -5,12 +5,12 @@ class Tree < ApplicationRecord
   belongs_to :cluster, optional: true
   belongs_to :tiny_ml_model, optional: true
   belongs_to :tree_family
-  
+
   has_one :wallet, dependent: :destroy
-  
+
   # Zero-Trust: DID дерева є ключем до його апаратного шифру
   has_one :hardware_key, foreign_key: :device_uid, primary_key: :did, dependent: :destroy
-  
+
   has_one :device_calibration, dependent: :destroy
   has_many :telemetry_logs, dependent: :destroy
   has_many :ews_alerts, dependent: :destroy
@@ -36,13 +36,13 @@ class Tree < ApplicationRecord
   # --- СКОУПИ (The Watchers) ---
   scope :active, -> { where(status: :active) }
   scope :geolocated, -> { where.not(latitude: nil, longitude: nil) }
-  
+
   # [ОПТИМІЗАЦІЯ]: Використовуємо окрему колонку для швидкодії
   scope :silent, -> { where("last_seen_at < ?", 24.hours.ago) }
-  scope :critical_stress, -> { 
+  scope :critical_stress, -> {
     joins(:ai_insights)
       .where(ai_insights: { insight_type: :daily_health_summary, target_date: Date.yesterday })
-      .where("ai_insights.stress_index > 0.8") 
+      .where("ai_insights.stress_index > 0.8")
   }
 
   # --- МЕТОДИ (Intelligence) ---

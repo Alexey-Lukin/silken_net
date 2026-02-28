@@ -11,8 +11,8 @@ module Api
       def index
         @firmwares = Firmware.order(version: :desc)
         render json: @firmwares.as_json(
-          only: [:id, :version, :target_hardware, :file_size, :created_at, :checksum],
-          methods: [:deployment_count]
+          only: [ :id, :version, :target_hardware, :file_size, :created_at, :checksum ],
+          methods: [ :deployment_count ]
         )
       end
 
@@ -20,11 +20,11 @@ module Api
       # POST /api/v1/firmwares
       def create
         @firmware = Firmware.new(firmware_params)
-        
+
         if @firmware.save
-          render json: { 
+          render json: {
             message: "Нову еволюцію v#{@firmware.version} завантажено в Океан.",
-            firmware: @firmware 
+            firmware: @firmware
           }, status: :created
         else
           render_validation_error(@firmware)
@@ -47,16 +47,16 @@ module Api
       # Параметри: { cluster_id: 5 } або { target_type: 'Tree' }
       def deploy
         @firmware = Firmware.find(params[:id])
-        
+
         # Запускаємо масове оновлення через воркер
         # [СИНХРОНІЗОВАНО]: OtaTransmissionWorker обробить чергу завантажень
         OtaTransmissionWorker.perform_async(
-          @firmware.id, 
-          params[:cluster_id], 
+          @firmware.id,
+          params[:cluster_id],
           params[:target_type]
         )
 
-        render json: { 
+        render json: {
           message: "Наказ на еволюцію v#{@firmware.version} відправлено в ефір.",
           target: params[:cluster_id] ? "Кластер ##{params[:cluster_id]}" : "Весь ліс"
         }, status: :accepted

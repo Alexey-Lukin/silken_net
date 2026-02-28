@@ -80,7 +80,7 @@ class CompleteSilkenNetSchema < ActiveRecord::Migration[8.1]
       t.string :sourceable_type
     end
 
-    add_index :blockchain_transactions, [:sourceable_type, :sourceable_id],
+    add_index :blockchain_transactions, [ :sourceable_type, :sourceable_id ],
               name: "index_blockchain_transactions_on_sourceable"
 
     # =====================================================================

@@ -3,19 +3,19 @@
 class User < ApplicationRecord
   # --- АВТЕНТИФІКАЦІЯ (Rails 8 Standard) ---
   has_secure_password
-  
+
   # --- ЗВ'ЯЗКИ ---
   has_many :sessions, dependent: :destroy
   has_many :identities, dependent: :destroy
   belongs_to :organization, optional: true
-  
+
   # Зв'язок з журналом робіт: фіксуємо відповідальність за залізо
   has_many :maintenance_records, dependent: :restrict_with_error
 
   # --- НОРМАЛІЗАЦІЯ ТА ВАЛІДАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  
+
   # Строгий E.164 для SMS-шлюзів (напр. Twilio)
   normalizes :phone_number, with: ->(p) { p.to_s.gsub(/[^0-9+]/, "") }
   validates :phone_number, format: { with: /\A\+?[1-9]\d{1,14}\z/ }, allow_blank: true
@@ -28,7 +28,7 @@ class User < ApplicationRecord
   }, prefix: true
 
   # --- СКОУПИ ---
-  scope :notifiable, -> { where.not(phone_number: [nil, ""]).or(where.not(telegram_chat_id: nil)) }
+  scope :notifiable, -> { where.not(phone_number: [ nil, "" ]).or(where.not(telegram_chat_id: nil)) }
   scope :active_foresters, -> { role_forester.where("last_seen_at >= ?", 1.hour.ago) }
 
   # --- ТОКЕНИ (The Magic of Rails 8) ---
@@ -50,7 +50,7 @@ class User < ApplicationRecord
   end
 
   def full_name
-    [first_name, last_name].compact_blank.join(" ").presence || email_address
+    [ first_name, last_name ].compact_blank.join(" ").presence || email_address
   end
 
   # Оновлення активності (викликається в BaseController)

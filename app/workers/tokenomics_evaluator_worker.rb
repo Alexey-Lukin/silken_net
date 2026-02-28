@@ -10,7 +10,7 @@ class TokenomicsEvaluatorWorker
 
   def perform
     Rails.logger.info "⚖️ [NAM-ŠID] Початок аудиту емісії..."
-    
+
     stats = { wallets_scanned: 0, minted_count: 0, errors: 0 }
 
     # Вибираємо тільки тих Солдатів, які накопичили достатньо "життя" для емісії
@@ -20,7 +20,7 @@ class TokenomicsEvaluatorWorker
 
     eligible_wallets.find_each do |wallet|
       stats[:wallets_scanned] += 1
-      
+
       begin
         # Атомарна операція всередині моделі Wallet
         tokens_to_mint = (wallet.balance / EMISSION_THRESHOLD).to_i
@@ -28,7 +28,7 @@ class TokenomicsEvaluatorWorker
 
         points_to_lock = tokens_to_mint * EMISSION_THRESHOLD
 
-        # [LOCKING]: Виклик lock_and_mint! має обгортати списання балів 
+        # [LOCKING]: Виклик lock_and_mint! має обгортати списання балів
         # та створення BlockchainTransaction в одну БД-транзакцію.
         wallet.lock_and_mint!(points_to_lock, EMISSION_THRESHOLD)
 

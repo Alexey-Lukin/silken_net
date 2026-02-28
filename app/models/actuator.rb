@@ -15,11 +15,11 @@ class Actuator < ApplicationRecord
   }, prefix: true
 
   # --- СТАНИ (The Readiness) ---
-  enum :state, { 
-    idle: 0, 
-    active: 1, 
-    offline: 2, 
-    maintenance_needed: 3 
+  enum :state, {
+    idle: 0,
+    active: 1,
+    offline: 2,
+    maintenance_needed: 3
   }
 
   # --- ВАЛІДАЦІЇ ---
@@ -37,7 +37,7 @@ class Actuator < ApplicationRecord
   # Перевірка, чи пристрій готовий до негайного розгортання
   def ready_for_deployment?
     return false unless state_idle?
-    
+
     # [СИНХРОНІЗОВАНО]: Шлюз має бути в мережі ТА не перебувати в стані оновлення
     gateway.online? && !gateway.state_updating?
   end
@@ -62,7 +62,7 @@ class Actuator < ApplicationRecord
   def require_maintenance!(reason = "Невідома помилка CoAP")
     transaction do
       update!(state: :maintenance_needed)
-      
+
       # [СИНХРОНІЗОВАНО]: Створюємо системну тривогу через EwsAlert
       EwsAlert.create!(
         cluster: cluster,

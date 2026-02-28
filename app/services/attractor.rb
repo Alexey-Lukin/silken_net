@@ -69,13 +69,13 @@ module SilkenNet
       y = (((seed >> 4) % 1000) / 500.0) - 1.0
       z = (((seed >> 8) % 1000) / 500.0) - 1.0
 
-      # Фізична пертурбація: 
+      # Фізична пертурбація:
       # Акустика (шум/комахи) впливає на зв'язність (Sigma)
       # Температура впливає на енергію системи (Rho)
       local_sigma = BASE_SIGMA + (acoustic * 0.1)
       local_rho   = BASE_RHO + (temp * 0.2)
 
-      [x, y, z, local_sigma, local_rho]
+      [ x, y, z, local_sigma, local_rho ]
     end
   end
 end

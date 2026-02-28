@@ -7,14 +7,14 @@ class TreeFamily < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :name, presence: true, uniqueness: true
-  validates :baseline_impedance, :critical_z_min, :critical_z_max, 
+  validates :baseline_impedance, :critical_z_min, :critical_z_max,
             presence: true, numericality: true
 
   # --- JSONB PROPERTIES (The TinyML Support) ---
   # Гнучкі властивості для специфічного аналізу кожної породи
-  store_accessor :biological_properties, 
-                 :sap_flow_index, 
-                 :bark_thickness, 
+  store_accessor :biological_properties,
+                 :sap_flow_index,
+                 :bark_thickness,
                  :foliage_density,
                  :fire_resistance_rating
 

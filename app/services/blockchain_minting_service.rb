@@ -18,11 +18,11 @@ class BlockchainMintingService
 
   def call
     return if @transaction.confirmed? || @transaction.tx_hash.present?
-    
+
     # 1. ПІДКЛЮЧЕННЯ (The Alchemy Link)
     client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
     oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
-    
+
     # [SAFETY]: Перевірка палива
     balance = client.get_balance(oracle_key.address)
     raise "🚨 [Web3] Критично низький баланс Оракула: #{balance}" if balance < 0.05 * (10**18)
@@ -42,19 +42,19 @@ class BlockchainMintingService
     # 3. ПІДГОТОВКА КОНТРАКТУ
     contract = Eth::Contract.from_abi(name: "SilkenCoin", address: contract_address, abi: CONTRACT_ABI)
     amount_in_wei = (@transaction.amount.to_f * (10**18)).to_i
-    
+
     # 4. АТОМАРНИЙ МІНТИНГ З REDIS-LOCK
     lock_key = "lock:web3:oracle:#{oracle_key.address}"
-    
+
     begin
       tx_hash = nil
-      
+
       # Чекаємо вільного вікна для Nonce
       Kredis.lock(lock_key, expires_in: 60.seconds, after_timeout: :raise) do
         @transaction.update!(status: :processing)
-        
+
         Rails.logger.info "⏳ [Web3] Мінтинг #{@transaction.amount} для #{identifier}..."
-        
+
         # Використовуємо пріоритетну комісію для Polygon
         tx_hash = client.transact_and_wait(
           contract,

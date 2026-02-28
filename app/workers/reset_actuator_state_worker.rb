@@ -2,7 +2,7 @@
 
 class ResetActuatorStateWorker
   include Sidekiq::Job
-  
+
   # Пріоритет downlink: завершення дії так само важливе, як і її початок.
   sidekiq_options queue: "downlink", retry: 3
 
@@ -23,7 +23,7 @@ class ResetActuatorStateWorker
       ActiveRecord::Base.transaction do
         # 1. Повертаємо фізичний об'єкт у гомеостаз (IDLE)
         actuator.mark_idle!
-        
+
         # 2. Закриваємо наказ у базі даних
         command.update!(status: :confirmed, completed_at: Time.current)
       end
@@ -32,7 +32,7 @@ class ResetActuatorStateWorker
     else
       # Якщо стан уже не active (наприклад, :maintenance_needed або :offline)
       Rails.logger.info "ℹ️ [Actuator Lifecycle] Скидання скасовано. Механізм #{actuator.name} у стані '#{actuator.state}'."
-      
+
       # Ми все одно маркуємо команду як завершену, навіть якщо стан змінився ззовні
       command.update!(status: :confirmed) if command.status_acknowledged?
     end

@@ -19,14 +19,14 @@ class FinalizeSilkenNetArchitecture < ActiveRecord::Migration[8.1]
     add_column :telemetry_logs, :rssi, :integer
     # Переконуємось, що назви полів збігаються з воркерами
     # piezo_voltage_mv already correct — no rename needed
-    add_index :telemetry_logs, [:tree_id, :created_at]
+    add_index :telemetry_logs, [ :tree_id, :created_at ]
     add_index :telemetry_logs, :status_code if column_exists?(:telemetry_logs, :status_code)
 
     # --- 4. AI INSIGHTS (Перехід на Поліморфізм та Прогнози) ---
     # Тепер інсайт може належати як Дереву, так і Кластеру
     remove_reference :ai_insights, :cluster, foreign_key: true
     add_reference :ai_insights, :analyzable, polymorphic: true, index: true
-    
+
     # Додаємо поля для добової аналітики та прогнозів
     add_column :ai_insights, :analyzed_date, :date
     add_column :ai_insights, :average_temperature, :decimal

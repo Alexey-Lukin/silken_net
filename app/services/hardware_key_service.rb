@@ -4,7 +4,7 @@ require "securerandom"
 
 class HardwareKeyService
   # 32 байти = 256 біт для AES-256
-  KEY_SIZE_BYTES = 32 
+  KEY_SIZE_BYTES = 32
 
   def self.provision(device, manual_key_hex = nil)
     new(device).provision(manual_key_hex)
@@ -67,7 +67,7 @@ class HardwareKeyService
     return unless @device.respond_to?(:ip_address) || @device.respond_to?(:gateway)
 
     target_ip = @device.respond_to?(:ip_address) ? @device.ip_address : @device.gateway.ip_address
-    
+
     # ПЛАН: Відправляємо нативний CoAP PUT запит на ендпоінт /sys/key
     # CoapClient.put("coap://#{target_ip}/sys/key", new_key_hex)
   end

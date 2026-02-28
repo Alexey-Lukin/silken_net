@@ -20,11 +20,11 @@ class AiInsight < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :insight_type, :target_date, presence: true
-  
+
   # Унікальність: Один звіт про здоров'я на об'єкт на день
-  validates :target_date, uniqueness: { 
-    scope: [:analyzable_id, :analyzable_type, :insight_type],
-    message: "вже зафіксовано для цього об'єкта" 
+  validates :target_date, uniqueness: {
+    scope: [ :analyzable_id, :analyzable_type, :insight_type ],
+    message: "вже зафіксовано для цього об'єкта"
   }, if: :daily_health_summary?
 
   validates :probability_score, numericality: { in: 0.0..100.0 }, allow_nil: true
@@ -54,7 +54,7 @@ class AiInsight < ApplicationRecord
     else :high
     end
   end
-  
+
   def forecast?
     !daily_health_summary?
   end

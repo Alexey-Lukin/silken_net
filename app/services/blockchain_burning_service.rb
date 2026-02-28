@@ -37,7 +37,7 @@ class BlockchainBurningService
 
     # 3. ВИКОНАННЯ (The Judgment)
     lock_key = "lock:web3:oracle:#{oracle_key.address}"
-    
+
     begin
       tx_hash = nil
       Rails.logger.warn "🔥 [Slashing] Вилучення #{total_minted_amount} SCC у #{@organization.name}..."
@@ -61,17 +61,17 @@ class BlockchainBurningService
 
         # Створюємо фінальний запис про спалення для прозорості
         create_audit_transaction(tx_hash, total_minted_amount)
-        
+
         Rails.logger.info "✅ [Slashing] Виконано. Контракт ##{@naas_contract.id} анульовано. TX: #{tx_hash}"
       end
 
     rescue StandardError => e
-      # Навіть якщо транзакція впала (напр. недостатньо токенів на гаманці), 
+      # Навіть якщо транзакція впала (напр. недостатньо токенів на гаманці),
       # ми все одно маркуємо контракт як розірваний.
       @naas_contract.update!(status: :breached)
-      
+
       handle_slashing_failure(e.message, total_minted_amount)
-      raise e 
+      raise e
     end
   end
 
@@ -95,7 +95,7 @@ class BlockchainBurningService
 
   def handle_slashing_failure(error_msg, amount)
     Rails.logger.error "🛑 [Web3 Slashing Error] ##{@naas_contract.id}: #{error_msg}"
-    
+
     EwsAlert.create!(
       cluster: @cluster,
       severity: :critical,

@@ -3,7 +3,7 @@
 class ParametricInsurance < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
   # Організація-страховик (напр. Swiss Re або децентралізований пул)
-  belongs_to :organization 
+  belongs_to :organization
   belongs_to :cluster      # Лісовий масив під захистом Aegis
 
   # --- СТАТУСИ ТА ТРИГЕРИ ---
@@ -55,7 +55,7 @@ class ParametricInsurance < ApplicationRecord
   def activate_payout!(percentage)
     transaction do
       update!(status: :triggered)
-      
+
       # Створюємо системний запис для аудиторів та патрульних
       Rails.logger.warn "💸 [INSURANCE] Тригер ##{id} активовано! Пошкодження сектора: #{percentage}%."
 

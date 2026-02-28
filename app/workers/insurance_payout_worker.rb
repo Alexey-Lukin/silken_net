@@ -6,17 +6,17 @@ class InsurancePayoutWorker
 
   def perform(insurance_id)
     insurance = ParametricInsurance.find(insurance_id)
-    
+
     # Виконуємо лише якщо тригер активовано, але виплата ще не проведена
     return unless insurance.status_triggered?
 
     organization = insurance.cluster.organization
-    
+
     # 1. ПІДГОТОВКА ТРАНЗАКЦІЇ (Internal Ledger)
-    # Шукаємо гаманець-якір (напр. гаманець першого дерева в кластері) 
+    # Шукаємо гаманець-якір (напр. гаманець першого дерева в кластері)
     # або системний гаманець для аудиту.
     audit_wallet = insurance.cluster.trees.first&.wallet
-    
+
     unless audit_wallet
       Rails.logger.error "🛑 [Insurance] Спроба виплати ##{insurance_id} без валідного гаманця в кластері."
       return
@@ -40,10 +40,10 @@ class InsurancePayoutWorker
       # 2. ЗАПУСК ВЕБ3-КОНВЕЄРА
       # Викликаємо спеціалізований сервіс для переказу стейблкоїнів/токенів
       # BlockchainInsuranceService.call(tx.id)
-      
+
       # Оновлюємо статус страховки (вона тепер в процесі виплати)
       insurance.status_paid!
-      
+
       Rails.logger.info "💳 [Insurance] Виплата ##{tx.id} ініційована для #{organization.name}."
     end
 

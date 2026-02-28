@@ -7,11 +7,11 @@ class BioContractFirmware < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :version, presence: true, uniqueness: true
-  
+
   # Строга HEX-валідація (Case-insensitive)
-  validates :bytecode_payload, presence: true, format: { 
-    with: /\A[a-fA-F0-9]+\z/, 
-    message: "має бути чистим HEX-рядком" 
+  validates :bytecode_payload, presence: true, format: {
+    with: /\A[a-fA-F0-9]+\z/,
+    message: "має бути чистим HEX-рядком"
   }
 
   # --- СКОУПИ ---
@@ -24,7 +24,7 @@ class BioContractFirmware < ApplicationRecord
 
   # Перетворення HEX у бінарний потік з мемоізацією
   def binary_payload
-    @binary_payload ||= [bytecode_payload].pack("H*").freeze
+    @binary_payload ||= [ bytecode_payload ].pack("H*").freeze
   end
 
   def payload_size
@@ -35,14 +35,14 @@ class BioContractFirmware < ApplicationRecord
   # Наприклад, для 512 байт: N = ceil(Size / 512)
   def chunks(chunk_size = 512)
     return [] if payload_size.zero?
-    
+
     binary_payload.b.scan(/.{1,#{chunk_size}}/m)
   end
 
   # Скільки всього чанків у даній еволюції
   def total_chunks(chunk_size = 512)
     return 0 if payload_size.zero?
-    
+
     (payload_size.to_f / chunk_size).ceil
   end
 
@@ -54,7 +54,7 @@ class BioContractFirmware < ApplicationRecord
     transaction do
       # 1. Кенозис старих версій
       self.class.active.where.not(id: id).update_all(is_active: false)
-      
+
       # 2. Активація нової істини
       update!(is_active: true)
 

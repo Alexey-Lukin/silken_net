@@ -22,7 +22,7 @@ class CoapClient
     # Ver: 1, Type: CON (0), TKL: 0 => 0x40
     # Code: 0.03 (PUT) => 0x03
     message_id = rand(1..65535)
-    header = [0x40, 0x03, message_id].pack("CCn")
+    header = [ 0x40, 0x03, message_id ].pack("CCn")
 
     # 2. МАРШРУТИЗАЦІЯ (Uri-Options)
     # Опції МАЮТЬ бути відсортовані за номером
@@ -30,7 +30,7 @@ class CoapClient
     current_opt_number = 0
 
     # Uri-Path (Опція №11)
-    paths = uri.path.split('/').reject(&:empty?)
+    paths = uri.path.split("/").reject(&:empty?)
     paths.each do |segment|
       options_payload += encode_option(11 - current_opt_number, segment)
       current_opt_number = 11
@@ -38,7 +38,7 @@ class CoapClient
 
     # Uri-Query (Опція №15)
     if uri.query
-      queries = uri.query.split('&')
+      queries = uri.query.split("&")
       queries.each do |q|
         options_payload += encode_option(15 - current_opt_number, q)
         current_opt_number = 15
@@ -55,7 +55,7 @@ class CoapClient
       Rails.logger.debug "📡 [CoapClient] CON PUT #{uri.path} -> #{host} [MID: #{message_id}]"
 
       # 5. ОЧІКУВАННЯ ACK (Confirmable Loop)
-      if IO.select([socket], nil, nil, timeout)
+      if IO.select([ socket ], nil, nil, timeout)
         response_data, _sender = socket.recvfrom(MAX_PACKET_SIZE)
         parse_response(response_data, message_id)
       else
@@ -74,18 +74,18 @@ class CoapClient
   def self.encode_option(delta, value)
     buffer = "".b
     val_len = value.bytesize
-    
+
     # Спрощена логіка для невеликих дельт та довжин (до 12 байт)
     # Coap використовує 4 біти для дельти та 4 біти для довжини
     d_header = delta < 13 ? delta : 13
     l_header = val_len < 13 ? val_len : 13
-    
-    buffer += [(d_header << 4) | l_header].pack("C")
-    
+
+    buffer += [ (d_header << 4) | l_header ].pack("C")
+
     # Додаткові байти для розширених дельт/довжин (якщо потрібно)
-    buffer += [delta - 13].pack("C") if delta >= 13
-    buffer += [val_len - 13].pack("C") if val_len >= 13
-    
+    buffer += [ delta - 13 ].pack("C") if delta >= 13
+    buffer += [ val_len - 13 ].pack("C") if val_len >= 13
+
     buffer + value.b
   end
 
@@ -101,7 +101,7 @@ class CoapClient
     if type == 2 && msg_id == expected_message_id
       # Коди успіху 2.xx (від 64 до 95)
       success = code >= 64 && code < 96
-      
+
       Response.new(
         success?: success,
         code: code,

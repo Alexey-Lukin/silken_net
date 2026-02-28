@@ -4,24 +4,24 @@ module Api
   module V1
     class ContractsController < BaseController
       # Тільки автентифіковані користувачі (Інвестори бачать свої, Адміни — всі)
-      
+
       # --- ПОРТФЕЛЬ КОНТРАКТІВ ---
       # GET /api/v1/contracts
       def index
         # Якщо користувач не адмін — показуємо лише контракти його організації
         @contracts = if current_user.role_admin?
                        NaasContract.includes(:organization, :cluster)
-                     else
+        else
                        current_user.organization.naas_contracts.includes(:cluster)
-                     end
+        end
 
         render json: @contracts.as_json(
-          only: [:id, :status, :total_value, :emitted_tokens, :signed_at],
+          only: [ :id, :status, :total_value, :emitted_tokens, :signed_at ],
           include: {
-            cluster: { only: [:id, :name] },
-            organization: { only: [:id, :name] }
+            cluster: { only: [ :id, :name ] },
+            organization: { only: [ :id, :name ] }
           },
-          methods: [:current_yield_performance]
+          methods: [ :current_yield_performance ]
         )
       end
 
@@ -31,7 +31,7 @@ module Api
         @contract = find_contract(params[:id])
 
         render json: {
-          contract: @contract.as_json(methods: [:current_yield_performance]),
+          contract: @contract.as_json(methods: [ :current_yield_performance ]),
           # Статистика випуску токенів по цьому контракту
           emission_history: @contract.blockchain_transactions.confirmed.limit(10),
           # Стан кластера, який забезпечує контракт

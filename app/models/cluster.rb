@@ -3,11 +3,11 @@
 class Cluster < ApplicationRecord
   # --- ЗВ'ЯЗКИ (The Fabric of the Forest) ---
   belongs_to :organization
-  
+
   has_many :trees, dependent: :nullify
   has_many :gateways, dependent: :nullify
   has_many :naas_contracts, dependent: :destroy
-  
+
   # Прямий доступ до тривог усього сектора
   has_many :ews_alerts, dependent: :destroy
   # Страхові поліси, прив'язані до конкретної локації
@@ -18,7 +18,7 @@ class Cluster < ApplicationRecord
   # --- ВАЛІДАЦІЇ ТА НОРМАЛІЗАЦІЯ ---
   validates :name, presence: true, uniqueness: true
   validates :region, presence: true
-  
+
   # Гарантуємо, що GeoJSON не містить сміття
   normalizes :geojson_polygon, with: ->(json) { json.is_a?(Hash) ? json.deep_stringify_keys : json }
 
@@ -53,14 +53,14 @@ class Cluster < ApplicationRecord
   # Розрахунок центроїда для фокусування карти
   def geo_center
     return nil unless mapped?
-    
+
     # Витягуємо всі пари [long, lat] з полігону
     coords = geojson_polygon["coordinates"].flatten(1)
     return nil if coords.empty?
 
     avg_lat = coords.map(&:last).sum / coords.size
     avg_lng = coords.map(&:first).sum / coords.size
-    
+
     { lat: avg_lat, lng: avg_lng }
   end
 

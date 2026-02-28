@@ -15,7 +15,7 @@ class UnpackTelemetryWorker
     # 2. ІДЕНТИФІКАЦІЯ ШЛЮЗУ (The Queen Node)
     # Знаходимо Королеву за її поточною мережевою адресою
     gateway = Gateway.find_by(ip_address: sender_ip)
-    
+
     if gateway
       # Оновлюємо пульс та підтверджуємо IP (через наш зашліфований метод)
       gateway.mark_seen!(sender_ip)
@@ -34,9 +34,9 @@ class UnpackTelemetryWorker
   rescue ArgumentError => e
     # Обробка пошкоджених Base64 даних (шум в ефірі)
     Rails.logger.warn "🛑 [Uplink] Корупція даних від #{sender_ip}: #{e.message}"
-    
+
   rescue StandardError => e
-    # Ретрай для системних помилок (DB/Redis). 
+    # Ретрай для системних помилок (DB/Redis).
     # Sidekiq спробує обробити цей батч знову.
     Rails.logger.error "🚨 [Uplink Critical] Збій обробки батча: #{e.message}"
     raise e

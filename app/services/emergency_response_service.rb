@@ -9,7 +9,7 @@ class EmergencyResponseService
     available_actuators = Actuator.joins(:gateway)
                                   .where(gateways: { cluster_id: cluster.id })
                                   .where(gateways: { last_seen_at: 1.hour.ago..Time.current })
-                                  .where(state: [:idle, :active])
+                                  .where(state: [ :idle, :active ])
 
     if available_actuators.empty?
       Rails.logger.warn "⚠️ [Emergency] Кластер #{cluster.name}: Не знайдено доступних інструментів відгуку."
@@ -34,7 +34,7 @@ class EmergencyResponseService
     when :seismic_anomaly
       # Активація маяків для візуального позначення зони небезпеки
       dispatch_commands(available_actuators.device_type_seismic_beacon, "ACTIVATE_BEACON", 1800, ews_alert)
-      
+
     else
       Rails.logger.info "ℹ️ [Emergency] Тип тривоги #{ews_alert.alert_type} обробляється лише сповіщенням людей."
     end

@@ -9,7 +9,7 @@ module Api
       def tree_history
         @tree = Tree.find(params[:tree_id])
         days = (params[:days] || 7).to_i
-        
+
         # Агрегуємо дані, щоб фронтенд не "впав" від 10,000 точок
         # Використовуємо середнє значення за годину (hourly average)
         logs = @tree.telemetry_logs

@@ -12,7 +12,7 @@ class GatewayTelemetryWorker
     # 2. ТРАНЗАКЦІЙНІСТЬ (The Integrity Loop)
     ActiveRecord::Base.transaction do
       stats = stats.with_indifferent_access
-      
+
       log = gateway.gateway_telemetry_logs.create!(
         voltage_mv: stats[:voltage_mv],
         temperature_c: stats[:temperature_c],
@@ -53,7 +53,7 @@ class GatewayTelemetryWorker
       alert_type: :system_fault, # [СИНХРОНІЗОВАНО] з нашою моделлю EwsAlert
       message: message
     )
-    
+
     # Викликаємо "Голос Патрульних" (SMS/Telegram)
     AlertNotificationWorker.perform_async(alert.id)
   end

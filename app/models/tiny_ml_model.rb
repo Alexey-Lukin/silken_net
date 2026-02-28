@@ -16,7 +16,7 @@ class TinyMlModel < ApplicationRecord
   # --- ВАЛІДАЦІЇ ---
   validates :version, presence: true, uniqueness: true
   validates :binary_weights_payload, presence: true
-  
+
   # 256KB — це межа для стабільного OTA-циклу в складних погодних умовах
   validates :binary_weights_payload, length: { maximum: 256.kilobytes }
 
@@ -59,7 +59,7 @@ class TinyMlModel < ApplicationRecord
       # Деактивуємо застарілі знання для цієї породи
       self.class.where(tree_family_id: tree_family_id).active.update_all(is_active: false)
       update!(is_active: true)
-      
+
       Rails.logger.info "🧠 [TinyML] Модель #{version} активована. Готовність до OTA-дифузії."
     end
   end

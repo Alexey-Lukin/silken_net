@@ -47,11 +47,11 @@ class EwsAlert < ApplicationRecord
 
   # Точка на мапі для десанту Патрульних
   def coordinates
-    return [tree.latitude, tree.longitude] if tree.present?
-    
+    return [ tree.latitude, tree.longitude ] if tree.present?
+
     # Якщо тривога системна для шлюзу, беремо центр кластера (geojson_polygon)
     # або координати першого ліпшого шлюзу кластера.
-    cluster.gateways.first&.then { |g| [g.latitude, g.longitude] }
+    cluster.gateways.first&.then { |g| [ g.latitude, g.longitude ] }
   end
 
   # Чи потребує цей інцидент негайного втручання актуаторів?

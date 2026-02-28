@@ -5,7 +5,7 @@ require "timeout"
 
 class ActuatorCommandWorker
   include Sidekiq::Job
-  # Черга downlink має вищий пріоритет, ніж телеметрія, 
+  # Черга downlink має вищий пріоритет, ніж телеметрія,
   # бо наказ має бути доставлений миттєво.
   sidekiq_options queue: "downlink", retry: 3
 
@@ -16,7 +16,7 @@ class ActuatorCommandWorker
 
     # 1. ЗАХИСТ ТА ПЕРЕВІРКА ГОТОВНОСТІ
     return if command.status_acknowledged?
-    
+
     unless gateway.ip_address.present?
       Rails.logger.error "🛑 [Downlink] Шлюз #{gateway.uid} не має IP! Наказ скасовано."
       command.update!(status: :failed, error_message: "Gateway IP missing")
@@ -26,7 +26,7 @@ class ActuatorCommandWorker
     # Якщо Королева зайнята оновленням, ми відкладаємо наказ (Sidekiq retry)
     if gateway.state_updating?
       Rails.logger.warn "⏳ [Downlink] Шлюз #{gateway.uid} оновлюється. Відтермінування наказу..."
-      raise "Gateway Busy: Updating" 
+      raise "Gateway Busy: Updating"
     end
 
     # 2. ШИФРУВАННЯ (Zero-Trust Anchor)
@@ -45,13 +45,13 @@ class ActuatorCommandWorker
     begin
       # 3. ФІЗИЧНА ПЕРЕДАЧА (CoAP Protocol)
       command.update!(status: :sent)
-      
+
       # Оновлюємо пульс Королеви перед відправкою
       gateway.mark_seen!
 
       Timeout.timeout(7) do # Трохи збільшили таймаут для LoRa-затримок
         url = "coap://#{gateway.ip_address}/actuator/#{actuator.endpoint}"
-        
+
         # Виклик нашого CoapClient (враховуємо, що він може викинути виключення)
         CoapClient.put(url, encrypted_payload)
       end
@@ -86,8 +86,8 @@ class ActuatorCommandWorker
   def encrypt_payload(payload, binary_key)
     cipher = OpenSSL::Cipher.new("aes-256-ecb")
     cipher.encrypt
-    cipher.key = binary_key 
-    cipher.padding = 0 
+    cipher.key = binary_key
+    cipher.padding = 0
 
     # Прошивка очікує вирівнювання по 16 байт (AES block size)
     block_size = 16

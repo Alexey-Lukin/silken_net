@@ -17,12 +17,12 @@ class Session < ApplicationRecord
   # --- СКОУПИ (Housekeeping) ---
   # Очищення застарілих сесій (Кенозис доступу)
   scope :stale, -> { where("updated_at < ?", 30.days.ago) }
-  
+
   # [ВИПРАВЛЕНО]: Знаходження активних сесій лісників за останньою активністю (updated_at)
-  scope :active_in_field, -> { 
+  scope :active_in_field, -> {
     joins(:user)
       .where(users: { role: :forester })
-      .where("sessions.updated_at > ?", 24.hours.ago) 
+      .where("sessions.updated_at > ?", 24.hours.ago)
   }
 
   # --- МЕТОДИ (Device Intelligence) ---

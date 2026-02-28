@@ -20,10 +20,10 @@ class MintCarbonCoinWorker
           # Відновлюємо внутрішній баланс Солдата (бали)
           threshold = TokenomicsEvaluatorWorker::EMISSION_THRESHOLD
           refund_points = (tx.amount * threshold).to_i
-          
+
           tx.wallet.increment!(:balance, refund_points)
           tx.update!(
-            status: :failed, 
+            status: :failed,
             notes: "Rollback: RPC Failure. Повернено #{refund_points} балів на баланс DID: #{tx.wallet.tree.did}"
           )
         end
@@ -55,7 +55,7 @@ class MintCarbonCoinWorker
   rescue StandardError => e
     # Повертаємо в pending, щоб наступний retry міг почати з чистого листа
     tx&.update!(status: :pending, notes: "Retry: #{e.message.truncate(200)}")
-    
+
     Rails.logger.error "🚨 [Web3] RPC Error: #{e.message}. Планується ретрай..."
     raise e # Sidekiq перехопить і запланує повтор
   end

@@ -23,7 +23,7 @@ class BurnCarbonTokensWorker
     # Поєднуємо зміну статусу та створення "надгробного каменю" в журналі.
     ActiveRecord::Base.transaction do
       naas_contract.update!(status: :breached)
-      
+
       # Шукаємо системного користувача або адміна для запису
       executioner = User.find_by(role: :admin) || User.first
 
@@ -32,8 +32,8 @@ class BurnCarbonTokensWorker
         user: executioner,
         action_type: :decommissioning, # "Фінансове списання" сектора
         notes: <<~NOTES
-          🚨 SLASHING COMPLETED: Контракт ##{naas_contract_id} анульовано. 
-          Вуглецеві активи спалено через критичну деградацію екосистеми. 
+          🚨 SLASHING COMPLETED: Контракт ##{naas_contract_id} анульовано.#{' '}
+          Вуглецеві активи спалено через критичну деградацію екосистеми.#{' '}
           Вердикт Оракула: BREACHED.
         NOTES
       )
@@ -46,7 +46,7 @@ class BurnCarbonTokensWorker
   rescue StandardError => e
     Rails.logger.error "🚨 [Slashing Error] Провал місії для контракту ##{naas_contract_id}: #{e.message}"
     # Sidekiq перехопить це і запланує наступну спробу (retry 5)
-    raise e 
+    raise e
   end
 
   private
@@ -61,7 +61,7 @@ class BurnCarbonTokensWorker
       message: "Критичне порушення! Контракт розірвано, активи інвестора вилучено.",
       timestamp: Time.current.to_i
     }
-    
+
     # Синхронізована назва каналу з AlertNotificationWorker
     ActionCable.server.broadcast("org_#{contract.organization_id}_alerts", payload)
   end

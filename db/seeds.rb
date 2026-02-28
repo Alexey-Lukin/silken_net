@@ -5,8 +5,8 @@ require "securerandom"
 puts "🔥 Очищення старого світу (Кенозис)..."
 # Порядок враховує залежності (Foreign Keys)
 [
-  Session, TelemetryLog, AiInsight, EwsAlert, BlockchainTransaction, 
-  Wallet, ActuatorCommand, Actuator, HardwareKey, Tree, TinyMlModel, 
+  Session, TelemetryLog, AiInsight, EwsAlert, BlockchainTransaction,
+  Wallet, ActuatorCommand, Actuator, HardwareKey, Tree, TinyMlModel,
   TreeFamily, ParametricInsurance, NaasContract, Cluster, User, Organization
 ].each do |model|
   model.delete_all if ActiveRecord::Base.connection.table_exists?(model.table_name)
@@ -46,13 +46,13 @@ cherkasy_forest = Cluster.create!(
   name: "Черкаський бір",
   region: "Центральна Україна",
   organization: active_bridge,
-  geojson_polygon: { type: "Polygon", coordinates: [[[31.9, 49.4], [32.0, 49.4], [32.0, 49.5], [31.9, 49.5], [31.9, 49.4]]] }
+  geojson_polygon: { type: "Polygon", coordinates: [ [ [ 31.9, 49.4 ], [ 32.0, 49.4 ], [ 32.0, 49.5 ], [ 31.9, 49.5 ], [ 31.9, 49.4 ] ] ] }
 )
 
 # Синхронізація з межами Атрактора Лоренца
 pine = TreeFamily.create!(name: "Сосна звичайна", baseline_impedance: 1500, critical_z_min: -2.5, critical_z_max: 2.5)
 oak = TreeFamily.create!(name: "Дуб звичайний", baseline_impedance: 2200, critical_z_min: -3.0, critical_z_max: 3.0)
-tree_families = [pine, oak]
+tree_families = [ pine, oak ]
 
 bark_beetle_model = TinyMlModel.create!(
   version: "v1.0.4-bark-beetle",
@@ -76,7 +76,7 @@ ParametricInsurance.create!(
   organization: eco_future_fund,
   cluster: cherkasy_forest,
   payout_amount: 150_000.0,
-  threshold_value: 20.0, 
+  threshold_value: 20.0,
   status: :active,
   trigger_event: :critical_fire
 )
@@ -89,17 +89,17 @@ gateways = []
 3.times do |i|
   uid = "QUEEN-SIM7070G-#{format('%03d', i+1)}"
   gw = Gateway.create!(
-    uid: uid, 
+    uid: uid,
     ip_address: "10.0.0.#{5+i}",
-    latitude: 49.4678 + (i * 0.01), 
+    latitude: 49.4678 + (i * 0.01),
     longitude: 31.9753 + (i * 0.01),
-    cluster: cherkasy_forest, 
+    cluster: cherkasy_forest,
     config_sleep_interval_s: 3600,
     last_seen_at: Time.current
   )
   # [СИНХРОНІЗОВАНО]: HardwareKey використовує aes_key_hex
   HardwareKey.create!(device_uid: uid, aes_key_hex: SecureRandom.hex(32).upcase)
-  
+
   Actuator.create!(
     gateway: gw,
     name: "Система зрошення Сектор #{i+1}",
@@ -132,14 +132,14 @@ puts "🌳 Висаджуємо 100 Солдатів..."
 
   # Wallet створюється через after_create в Tree, тут лише оновлюємо
   tree.wallet.update!(
-    balance: rand(5000..15000), 
+    balance: rand(5000..15000),
     crypto_public_address: "0x#{SecureRandom.hex(20)}"
   )
 
   # Симуляція стану
   is_anomaly = rand < 0.05
   status = is_anomaly ? :anomaly : :homeostasis
-  
+
   # [СИНХРОНІЗОВАНО]: Сира телеметрія (Uplink Pulse)
   TelemetryLog.create!(
     tree: tree,

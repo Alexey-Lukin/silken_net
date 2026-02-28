@@ -7,7 +7,7 @@ class MaintenanceRecord < ApplicationRecord
   belongs_to :ews_alert, optional: true
 
   # Фотодокази для аудиту інвесторами (Silken Net Trust Protocol)
-  # has_many_attached :photos 
+  # has_many_attached :photos
 
   # --- ТИПИ РОБІТ (The Intervention) ---
   enum :action_type, {
@@ -37,7 +37,6 @@ class MaintenanceRecord < ApplicationRecord
   def heal_ecosystem!
     # Використовуємо ізольовану транзакцію для фіналізації станів
     ActiveRecord::Base.transaction do
-      
       # 1. ОСВІЖЕННЯ ПУЛЬСУ
       # Актуалізуємо час останньої активності об'єкта
       maintainable.mark_seen! if maintainable.respond_to?(:mark_seen!)
@@ -60,7 +59,6 @@ class MaintenanceRecord < ApplicationRecord
         resolution_msg = "🔧 Відновлено: #{action_type.humanize}. Запис ##{id}. Нотатки: #{notes.truncate(100)}"
         ews_alert.resolve!(user: user, notes: resolution_msg)
       end
-      
     end
   rescue StandardError => e
     Rails.logger.error "🛑 [MAINTENANCE FAILURE] Помилка зцілення ##{id}: #{e.message}"

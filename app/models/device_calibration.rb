@@ -11,9 +11,9 @@ class DeviceCalibration < ApplicationRecord
   MAX_VCAP_TOLERANCE = 0.2 # 20% відхилення
 
   # --- ВАЛІДАЦІЇ ---
-  validates :temperature_offset_c, :impedance_offset_ohms, 
+  validates :temperature_offset_c, :impedance_offset_ohms,
             presence: true, numericality: true
-  validates :vcap_coefficient, 
+  validates :vcap_coefficient,
             presence: true, numericality: { greater_than: 0, less_than: 2.0 }
 
   # --- КОЛБЕКИ ---
@@ -21,9 +21,9 @@ class DeviceCalibration < ApplicationRecord
   after_save :check_for_hardware_fault, if: :saved_changes?
 
   # --- СКОУПИ ---
-  scope :critical_drift, -> { 
-    where("ABS(temperature_offset_c) > ? OR ABS(impedance_offset_ohms) > ?", 
-          MAX_TEMP_DRIFT, MAX_IMPEDANCE_DRIFT) 
+  scope :critical_drift, -> {
+    where("ABS(temperature_offset_c) > ? OR ABS(impedance_offset_ohms) > ?",
+          MAX_TEMP_DRIFT, MAX_IMPEDANCE_DRIFT)
   }
 
   # =========================================================================
@@ -48,8 +48,8 @@ class DeviceCalibration < ApplicationRecord
   # =========================================================================
 
   def sensor_drift_critical?
-    temperature_offset_c.abs > MAX_TEMP_DRIFT || 
-    impedance_offset_ohms.abs > MAX_IMPEDANCE_DRIFT || 
+    temperature_offset_c.abs > MAX_TEMP_DRIFT ||
+    impedance_offset_ohms.abs > MAX_IMPEDANCE_DRIFT ||
     (vcap_coefficient - 1.0).abs > MAX_VCAP_TOLERANCE
   end
 

@@ -5,7 +5,7 @@ module Api
     class ClustersController < BaseController
       # Дозволяємо перегляд усім автентифікованим користувачам
       # (Інвестори бачать фінанси, Патрульні — загрози)
-      
+
       # --- СПИСОК СЕКТОРІВ (The Map View) ---
       # GET /api/v1/clusters
       def index
@@ -13,8 +13,8 @@ module Api
 
         # Передаємо дані, оптимізовані для рендерингу мапи (Leaflet/MapLibre)
         render json: @clusters.as_json(
-          only: [:id, :name, :region, :geojson_polygon],
-          methods: [:health_index, :total_active_trees, :geo_center, :active_threats?]
+          only: [ :id, :name, :region, :geojson_polygon ],
+          methods: [ :health_index, :total_active_trees, :geo_center, :active_threats? ]
         )
       end
 
@@ -25,14 +25,14 @@ module Api
 
         render json: @cluster.as_json(
           include: {
-            gateways: { 
-              only: [:uid, :state, :last_seen_at, :latitude, :longitude] 
+            gateways: {
+              only: [ :uid, :state, :last_seen_at, :latitude, :longitude ]
             },
             naas_contracts: {
-              only: [:id, :status, :total_value, :emitted_tokens]
+              only: [ :id, :status, :total_value, :emitted_tokens ]
             }
           },
-          methods: [:health_index, :total_active_trees, :geo_center]
+          methods: [ :health_index, :total_active_trees, :geo_center ]
         )
       end
     end

@@ -32,7 +32,7 @@ class InsightGeneratorService
     cleanup_old_logs!
 
     Rails.logger.info "✅ [Insight Generator] Цикл завершено. Оброблено вузлів: #{@processed_count}"
-    
+
     # Повертаємо результат для DailyAggregationWorker
     { processed_count: @processed_count, date: @date }
   end
@@ -47,19 +47,19 @@ class InsightGeneratorService
     stats = logs.select(
       "AVG(temperature_c) as avg_temp",
       "AVG(voltage_mv) as avg_vcap",
-      "AVG(z_value) as avg_z", 
+      "AVG(z_value) as avg_z",
       "MAX(acoustic_events) as max_acoustic",
       "SUM(growth_points) as total_growth",
-      "MAX(bio_status) as max_status" 
+      "MAX(bio_status) as max_status"
     ).take
 
     return false unless stats&.avg_temp
 
     # Розраховуємо індекс стресу (враховуючи відхилення Z Атрактора)
     stress_index = calculate_stress_index(
-      stats.max_status.to_i, 
-      stats.avg_temp.to_f, 
-      stats.max_acoustic.to_i, 
+      stats.max_status.to_i,
+      stats.avg_temp.to_f,
+      stats.max_acoustic.to_i,
       stats.avg_z.to_f
     )
 
@@ -71,8 +71,8 @@ class InsightGeneratorService
       stress_index: stress_index,
       total_growth_points: stats.total_growth.to_i,
       summary: generate_summary(stats.max_status.to_i, stats.avg_temp.to_f),
-      reasoning: { 
-        avg_z: stats.avg_z.to_f.round(4), 
+      reasoning: {
+        avg_z: stats.avg_z.to_f.round(4),
         max_acoustic: stats.max_acoustic.to_i,
         avg_vcap: stats.avg_vcap.to_i
       }
@@ -85,30 +85,30 @@ class InsightGeneratorService
 
   def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z)
     # Якщо зафіксовано статус 2 (Аномалія) або 3 (Вандалізм) — стрес максимальний
-    return 1.0 if max_status >= 2 
-    
+    return 1.0 if max_status >= 2
+
     base_stress = (max_status == 1 ? 0.6 : 0.0)
-    
+
     # [МАТЕМАТИКА ХАОСУ]: Якщо Z-index виходить за межі стабільної орбіти (abs > 2.0)
     # це ознака того, що система втрачає гомеостаз.
     base_stress += 0.2 if avg_z.abs > 2.0
-    
+
     # Температурний стрес (екстремальні умови Черкаського бору)
     base_stress += 0.1 if avg_temp > 35.0 || avg_temp < -5.0
-    
+
     # Максимальний стрес для "живого" дерева обмежений 0.99, 1.0 — це термінальний стан
-    [base_stress, 0.99].min
+    [ base_stress, 0.99 ].min
   end
 
   def aggregate_clusters!
     Cluster.find_each do |cluster|
       # Збираємо вердикти всіх дерев кластера за вказану дату
       tree_insights = AiInsight.where(
-        analyzable: cluster.trees, 
-        insight_type: :daily_health_summary, 
+        analyzable: cluster.trees,
+        insight_type: :daily_health_summary,
         target_date: @date
       )
-      
+
       next if tree_insights.empty?
 
       AiInsight.create!(
