@@ -14,7 +14,7 @@ class InsightGeneratorService
   def perform
     Rails.logger.info "🧠 [Insight Generator] Початок агрегації за #{@date}..."
 
-    # Обробляємо дерева батчами
+    # Обробляємо дерева батчами (мінімізація пам'яті)
     Tree.find_each do |tree|
       generate_for_tree(tree)
     end
@@ -33,13 +33,14 @@ class InsightGeneratorService
     return if logs.empty?
 
     # [АЛІГНЕМЕНТ]: Додаємо середнє z_value для аналізу Атрактора
+    # [ВИПРАВЛЕНО]: bio_status — це вже integer в БД (0..3), тому MAX(bio_status) працює ідеально
     stats = logs.select(
       "AVG(temperature_c) as avg_temp",
       "AVG(voltage_mv) as avg_vcap",
       "AVG(z_value) as avg_z", 
       "MAX(acoustic_events) as max_acoustic",
       "SUM(growth_points) as total_growth",
-      "MAX(CASE WHEN tamper_detected THEN 3 ELSE bio_status END) as max_status"
+      "MAX(bio_status) as max_status" 
     ).take
 
     return unless stats&.avg_temp
@@ -49,7 +50,8 @@ class InsightGeneratorService
 
     AiInsight.create!(
       analyzable: tree,
-      analyzed_date: @date,
+      insight_type: :daily_health_summary, # [СИНХРОНІЗАЦІЯ]: Обов'язкове поле моделі
+      target_date: @date,                  # [СИНХРОНІЗАЦІЯ]: Відповідає валідації моделі
       average_temperature: stats.avg_temp.to_f.round(2),
       stress_index: stress_index,
       total_growth_points: stats.total_growth.to_i,
@@ -79,12 +81,18 @@ class InsightGeneratorService
   def aggregate_clusters!
     Cluster.find_each do |cluster|
       # Збираємо середній стрес по всіх інсайтах дерев кластера за сьогодні
-      tree_insights = AiInsight.where(analyzable: cluster.trees, analyzed_date: @date)
+      tree_insights = AiInsight.where(
+        analyzable: cluster.trees, 
+        insight_type: :daily_health_summary, 
+        target_date: @date
+      )
+      
       next if tree_insights.empty?
 
       AiInsight.create!(
         analyzable: cluster,
-        analyzed_date: @date,
+        insight_type: :daily_health_summary, # [СИНХРОНІЗАЦІЯ]
+        target_date: @date,                  # [СИНХРОНІЗАЦІЯ]
         stress_index: tree_insights.average(:stress_index),
         total_growth_points: tree_insights.sum(:total_growth_points),
         summary: "Кластер #{cluster.name}: Оброблено #{tree_insights.count} вузлів."
