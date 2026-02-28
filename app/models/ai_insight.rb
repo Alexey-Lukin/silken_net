@@ -2,35 +2,49 @@
 
 class AiInsight < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
-  # Прогноз/Звіт може стосуватися цілого лісу (Cluster) або конкретного Дерева (Tree)
+  # Прогноз/Звіт може стосуватися Cluster (Кластер), Tree (Дерево) або Organization
   belongs_to :analyzable, polymorphic: true
 
   # --- ТИПИ ІНСАЙТІВ (Ретроспектива та Прогноз) ---
   enum :insight_type, {
-    daily_health_summary: 0,  # [РЕАЛЬНІСТЬ]: Вчорашній звіт (для Страховки та D-MRV)
-    drought_probability: 1,   # [ПРОГНОЗ]: Ймовірність посухи в наступні 30 днів
-    carbon_yield_forecast: 2, # [ПРОГНОЗ]: Генерація токенів на наступний квартал
-    biodiversity_trend: 3     # [ПРОГНОЗ]: Тренд стабільності Атрактора Лоренца
+    daily_health_summary: 0,  # [РЕАЛЬНІСТЬ]: Вчорашній звіт (база для D-MRV)
+    drought_probability: 1,   # [ПРОГНОЗ]: Ймовірність посухи
+    carbon_yield_forecast: 2, # [ПРОГНОЗ]: Емісія токенів
+    biodiversity_trend: 3    # [ПРОГНОЗ]: Стабільність Атрактора Лоренца
   }, prefix: true
+
+  # --- СТРУКТУРОВАНІ ДАНІ (The Reasoning Engine) ---
+  # Використовуємо JSONB для гнучкого пояснення логіки ШІ
+  store_accessor :reasoning, :avg_z, :max_temp, :anomaly_vector
+  store_accessor :recommendation, :action_required, :priority
 
   # --- ВАЛІДАЦІЇ ---
   validates :insight_type, :target_date, presence: true
   
-  # Для прогнозів: відсоток впевненості ШІ (0.0 - 100.0)
-  validates :probability_score, numericality: { in: 0.0..100.0 }, allow_nil: true
-  
-  # Для ретроспективи: індекс стресу (0.0 - 1.0, де 1.0 - це смерть/критика)
-  validates :stress_index, numericality: { in: 0.0..1.0 }, allow_nil: true
+  # Унікальність: Один звіт про здоров'я на об'єкт на день
+  validates :target_date, uniqueness: { 
+    scope: [:analyzable_id, :analyzable_type, :insight_type],
+    message: "вже зафіксовано для цього об'єкта" 
+  }, if: :daily_health_summary?
 
-  # reasoning / recommendation: JSONB або Text для текстового/структурованого висновку
+  validates :probability_score, numericality: { in: 0.0..100.0 }, allow_nil: true
+  validates :stress_index, numericality: { in: 0.0..1.0 }, allow_nil: true
 
   # --- СКОУПИ ---
   scope :highly_probable, -> { where("probability_score > ?", 80.0) }
   scope :upcoming, -> { where("target_date >= ?", Date.current) }
-  scope :critical_stress, -> { insight_type_daily_health_summary.where("stress_index >= ?", 0.8) }
+  scope :critical_stress, -> { daily_health_summary.where("stress_index >= ?", 0.8) }
+  scope :for_date, ->(date) { where(target_date: date) }
 
-  # --- МЕТОДИ ---
-  # Візуалізація впевненості (для UI)
+  # --- МЕТОДИ (The Lens of Truth) ---
+
+  # Чи вважається цей стан порушенням умов контракту?
+  # Використовується в Slashing Protocol
+  def contract_breach?
+    daily_health_summary? && stress_index.to_f >= 0.8
+  end
+
+  # Візуалізація впевненості для Патрульного
   def confidence_level
     return :n_a unless probability_score
 
@@ -41,8 +55,13 @@ class AiInsight < ApplicationRecord
     end
   end
   
-  # Зручний предикат для перевірки, чи є цей запис фактом, чи лише передбаченням
   def forecast?
-    !insight_type_daily_health_summary?
+    !daily_health_summary?
+  end
+
+  # Швидка перевірка стану
+  def status_label
+    return "Forecast" if forecast?
+    stress_index.to_f < 0.3 ? "Stable" : "Stressed"
   end
 end
