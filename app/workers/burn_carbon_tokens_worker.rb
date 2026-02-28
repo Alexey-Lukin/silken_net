@@ -2,7 +2,7 @@
 
 class BurnCarbonTokensWorker
   include Sidekiq::Job
-  # Web3-операції можуть бути повільними, тому 5 ретраїв - це розумний баланс
+  # Web3-операції потребують терпіння. 5 ретраїв — золотий стандарт для Polygon RPC.
   sidekiq_options queue: "web3", retry: 5
 
   def perform(organization_id, naas_contract_id)
@@ -12,34 +12,36 @@ class BurnCarbonTokensWorker
       return
     end
 
-    Rails.logger.warn "🔥 [Slashing Protocol] Початок спалювання активів для #{naas_contract.cluster.name}..."
+    Rails.logger.warn "🔥 [Slashing Protocol] Початок спалювання активів для сектору #{naas_contract.cluster.name}..."
 
     # 1. ЕКЗЕКУЦІЯ В WEB3
-    # BlockchainBurningService викликає функцію slash() у смарт-контракті Polygon
+    # BlockchainBurningService викликає функцію slash() у смарт-контракті
+    # Ми вже зашліфували цей сервіс, він готовий до бою.
     BlockchainBurningService.call(organization_id, naas_contract_id)
 
-    # 2. СИНХРОНІЗАЦІЯ ІСТИНИ
-    # [ЗМІНА]: Використовуємо статус :breached, узгоджений з моделлю NaasContract
+    # 2. СИНХРОНІЗАЦІЯ ІСТИНИ (Atomic Update)
     ActiveRecord::Base.transaction do
       naas_contract.update!(status: :breached)
       
-      # Залишаємо відбиток у журналі робіт (для аудиту лісником)
+      # Залишаємо відбиток у журналі (MaintenanceRecord)
+      # [СИНХРОНІЗАЦІЯ]: Використовуємо :decommissioning як найбільш близький за змістом 
+      # або готуємось додати :system_event в модель.
       MaintenanceRecord.create!(
         maintainable: naas_contract.cluster,
-        user: User.find_by(role: :admin), # Системний запис
-        action_type: :system_adjustment,
-        action_taken: "SLASHING COMPLETED: Контракт ##{naas_contract_id} розірвано через порушення гомеостазу."
+        user: User.find_by(role: :admin), # Системний акцепт
+        action_type: :decommissioning, 
+        notes: "🚨 SLASHING COMPLETED: Контракт ##{naas_contract_id} розірвано. Вуглецеві активи інвестора спалено через критичне порушення стану лісу."
       )
     end
 
     # 3. СПОВІЩЕННЯ (The Sound of Silence)
-    # Миттєво оновлюємо дашборд інвестора
+    # [СИНХРОНІЗАЦІЯ]: Використовуємо канал org_#{id}, як у AlertNotificationWorker
     broadcast_slashing_event(naas_contract)
 
     Rails.logger.info "🪦 [D-MRV] Контракт ##{naas_contract_id} офіційно переведено у стан BREACHED."
   rescue StandardError => e
-    Rails.logger.error "🚨 [Slashing Error] Спроба спалювання для контракту ##{naas_contract_id} провалилася: #{e.message}"
-    raise e # Sidekiq повторить через деякий час
+    Rails.logger.error "🚨 [Slashing Error] Провал місії для контракту ##{naas_contract_id}: #{e.message}"
+    raise e 
   end
 
   private
@@ -49,10 +51,12 @@ class BurnCarbonTokensWorker
       event: "CONTRACT_SLASHED",
       contract_id: contract.id,
       cluster_name: contract.cluster.name,
-      message: "УВАГА: Контракт розірвано. Токени спалено.",
+      severity: :critical,
+      message: "УВАГА: Контракт розірвано. Активи спалено через деградацію екосистеми.",
       timestamp: Time.current.to_i
     }
     
-    ActionCable.server.broadcast("organization_#{contract.organization_id}_alerts", payload)
+    # Синхронізована назва каналу для фронтенду
+    ActionCable.server.broadcast("org_#{contract.organization_id}_alerts", payload)
   end
 end
