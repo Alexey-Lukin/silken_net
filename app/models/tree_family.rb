@@ -2,21 +2,29 @@
 
 class TreeFamily < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
-  # Ми не дозволяємо видаляти породу, якщо в лісі ще є хоч одне таке дерево
+  # Захист цілісності: не можна видалити геном, поки живий хоч один його носій
   has_many :trees, dependent: :restrict_with_error
 
   # --- ВАЛІДАЦІЇ ---
   validates :name, presence: true, uniqueness: true
-  validates :baseline_impedance, :critical_z_min, :critical_z_max, presence: true, numericality: true
+  validates :baseline_impedance, :critical_z_min, :critical_z_max, 
+            presence: true, numericality: true
 
-  # [НОВЕ]: Підтримка гнучких біологічних властивостей через JSONB
-  # Це дозволить нам зберігати специфічні дані для TinyML моделей без міграцій
-  # Наприклад: sap_flow_index, bark_thickness, foliage_density
-  # store_accessor :biological_properties, :sap_flow_index, :fire_resistance_rating
+  # --- JSONB PROPERTIES (The TinyML Support) ---
+  # Гнучкі властивості для специфічного аналізу кожної породи
+  store_accessor :biological_properties, 
+                 :sap_flow_index, 
+                 :bark_thickness, 
+                 :foliage_density,
+                 :fire_resistance_rating
+
+  # --- СКОУПИ ---
+  scope :alphabetical, -> { order(name: :asc) }
 
   # --- МЕТОДИ (The Lens of Truth) ---
 
-  # Повертає параметри для математичної моделі Атрактора
+  # Повертає параметри для математичної моделі Атрактора Лоренца
+  # Використовується в SilkenNet::Attractor та InsightGeneratorService
   def attractor_thresholds
     {
       min: critical_z_min.to_f,
@@ -25,20 +33,28 @@ class TreeFamily < ApplicationRecord
     }
   end
 
-  # [НОВЕ]: Розрахунок "Межі Смерті"
-  # Якщо імпеданс падає нижче 30% від базового — дерево фізично мертве (немає сокоруху)
+  # "Межа Смерті": Якщо імпеданс падає нижче 30% від базового,
+  # дерево втратило провідні тканини (фізична загибель або зруб).
   def death_threshold_impedance
     baseline_impedance * 0.3
   end
 
-  # [НОВЕ]: Опис для UI/Мобільного додатка
+  # Назва для відображення в UI (напр. "Quercus robur (Дуб звичайний)")
   def display_name
-    # Можна додати логіку перекладу або виводу латини поруч із народною назвою
     name
   end
 
-  # Допоміжний метод для швидкої перевірки, чи вписується Z-значення в межі породи
+  # Перевірка гомеостазу: чи вписується Z-значення в межі стабільності даної породи
   def healthy_z?(z_value)
-    z_value.between?(critical_z_min, critical_z_max)
+    z_value.to_f.between?(critical_z_min, critical_z_max)
+  end
+
+  # [НОВЕ]: Повертає статус стресу на основі імпедансу
+  # Допомагає AI-Оракулу класифікувати рівень загрози
+  def stress_level(current_impedance)
+    return :dead if current_impedance <= death_threshold_impedance
+    return :critical if current_impedance <= baseline_impedance * 0.6
+    return :warning if current_impedance <= baseline_impedance * 0.8
+    :normal
   end
 end
