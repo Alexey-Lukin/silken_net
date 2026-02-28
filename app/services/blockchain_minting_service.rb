@@ -3,7 +3,7 @@
 require "eth"
 
 class BlockchainMintingService
-  # ABI нашого смарт-контракту SilkenCoin
+  # ABI для нашого D-MRV контракту
   CONTRACT_ABI = '[{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"string","name":"identifier","type":"string"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
 
   def self.call(blockchain_transaction_id)
@@ -17,20 +17,17 @@ class BlockchainMintingService
   end
 
   def call
-    # 1. ЗАХИСТ ВІД ПОДВІЙНОГО МІНТИНГУ
-    # Якщо транзакція вже має хеш або не в статусі pending/failed/processing — виходимо.
-    # Ми дозволяємо повторний запуск для processing лише якщо впевнені, що минула спроба не пішла в мережу.
-    return unless @transaction.status_pending? || @transaction.status_failed? || @transaction.status_processing?
-    return if @transaction.tx_hash.present?
-
-    # Переводимо в статус processing для блокування інших Sidekiq-воркерів
-    @transaction.update!(status: :processing)
-
-    # 2. ПІДКЛЮЧЕННЯ ДО ПОЛІГОНУ
+    return if @transaction.confirmed? || @transaction.tx_hash.present?
+    
+    # 1. ПІДКЛЮЧЕННЯ (The Alchemy Link)
     client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
     oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
+    
+    # [SAFETY]: Перевірка палива
+    balance = client.get_balance(oracle_key.address)
+    raise "🚨 [Web3] Критично низький баланс Оракула: #{balance}" if balance < 0.05 * (10**18)
 
-    # 3. МАРШРУТИЗАЦІЯ (Carbon vs Forest)
+    # 2. МАРШРУТИЗАЦІЯ (The Sovereign Tokens)
     case @transaction.token_type
     when "carbon_coin"
       contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
@@ -39,54 +36,47 @@ class BlockchainMintingService
       contract_address = ENV.fetch("FOREST_COIN_CONTRACT_ADDRESS")
       identifier = "CLUSTER_#{@tree.cluster_id}"
     else
-      @transaction.fail!("Невідомий тип токена")
       raise ArgumentError, "Невідомий тип токена: #{@transaction.token_type}"
     end
 
-    # Підготовка контракту та суми
+    # 3. ПІДГОТОВКА КОНТРАКТУ
     contract = Eth::Contract.from_abi(name: "SilkenCoin", address: contract_address, abi: CONTRACT_ABI)
-    amount_in_wei = (@transaction.amount * (10**18)).to_i
-    target_address = @transaction.to_address # Використовуємо поле, яке ми зашліфували в моделі
-
-    # 4. АТОМАРНА ЕМІСІЯ З ЗАХИСТОМ NONCE
-    # Використовуємо Redis-замок, щоб транзакції Оракула не конфліктували
+    amount_in_wei = (@transaction.amount.to_f * (10**18)).to_i
+    
+    # 4. АТОМАРНИЙ МІНТИНГ З REDIS-LOCK
     lock_key = "lock:web3:oracle:#{oracle_key.address}"
     
     begin
-      Rails.logger.info "⏳ [Web3] Спроба мінтингу #{@transaction.amount} SCC для #{identifier}..."
-
-      # [СИНХРОНІЗАЦІЯ]: Використовуємо блок для гарантії послідовності Nonce
       tx_hash = nil
       
-      # Ми чекаємо замка максимум 30 секунд
+      # Чекаємо вільного вікна для Nonce
       Kredis.lock(lock_key, expires_in: 60.seconds, after_timeout: :raise) do
+        @transaction.update!(status: :processing)
+        
+        Rails.logger.info "⏳ [Web3] Мінтинг #{@transaction.amount} для #{identifier}..."
+        
+        # Використовуємо пріоритетну комісію для Polygon
         tx_hash = client.transact_and_wait(
           contract,
           "mint",
-          target_address,
+          @transaction.to_address,
           amount_in_wei,
           identifier,
           sender_key: oracle_key,
-          legacy: false, # EIP-1559
-          gas_limit: 150_000 # Стандартний ліміт для мінтингу
+          legacy: false # Використовуємо EIP-1559 (Dynamic Fees)
         )
       end
 
-      # 5. ФІНАЛІЗАЦІЯ
+      # 5. ПІДТВЕРДЖЕННЯ
       if tx_hash.present?
         @transaction.confirm!(tx_hash)
-        Rails.logger.info "✅ [Web3] Успіх! TX: #{tx_hash}"
-      else
-        raise "Транзакція не повернула хеш"
+        Rails.logger.info "✅ [Web3] Виконано. DID: #{identifier} | TX: #{tx_hash}"
       end
 
     rescue StandardError => e
-      # Якщо транзакція впала — логуємо помилку і відкочуємо статус
-      # Sidekiq спробує ще раз через кілька хвилин
       @transaction.fail!(e.message.truncate(200))
-      
-      Rails.logger.error "🛑 [Web3 Error] Провал мінтингу для #{@transaction.id}: #{e.message}"
-      raise e 
+      Rails.logger.error "🛑 [Web3 Failure] #{@transaction.id}: #{e.message}"
+      raise e # Дозволяємо Sidekiq зробити retry
     end
   end
 end
