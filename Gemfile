@@ -14,6 +14,7 @@ gem "jbuilder"
 # Deploy this application anywhere as a Docker container [https://kamal-deploy.org]
 gem "kamal", require: false
 gem "pg"
+gem "phlex-rails"
 gem "puma"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
