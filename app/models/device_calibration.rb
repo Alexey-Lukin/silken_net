@@ -4,13 +4,17 @@ class DeviceCalibration < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
   belongs_to :tree
 
+  # --- КОНСТАНТИ КРИТИЧНОГО ЗСУВУ (Hardware Decay Thresholds) ---
+  MAX_TEMP_DRIFT = 5.0
+  MAX_IMPEDANCE_DRIFT = 500.0
+  MAX_VCAP_TOLERANCE = 0.2 # 20% відхилення від еталону
+
   # --- ВАЛІДАЦІЇ ---
-  # temperature_offset_c: похибка в градусах (доданок)
-  # impedance_offset_ohms: похибка опору (доданок)
   validates :temperature_offset_c, :impedance_offset_ohms, presence: true, numericality: true
-  
-  # vcap_coefficient: множник. Він не може бути <= 0.
   validates :vcap_coefficient, presence: true, numericality: { greater_than: 0 }
+
+  # --- ДЕФОЛТНІ ЗНАЧЕННЯ (The Clean Start) ---
+  after_initialize :set_defaults, if: :new_record?
 
   # =========================================================================
   # НОРМАЛІЗАЦІЯ СИГНАЛУ (The Signal Purifier)
@@ -35,11 +39,18 @@ class DeviceCalibration < ApplicationRecord
   # =========================================================================
 
   # Перевірка на фізичну смерть сенсора.
-  # Якщо термістор бреше більше ніж на 5 градусів, а опір зсунуто на 500 Ом —
-  # калібрування не врятує, потрібен MaintenanceRecord.
+  # Якщо калібрування виходить за межі розумного — потрібен ремонт (MaintenanceRecord).
   def sensor_drift_critical?
-    temperature_offset_c.abs > 5.0 || 
-    impedance_offset_ohms.abs > 500.0 || 
-    (vcap_coefficient - 1.0).abs > 0.2
+    temperature_offset_c.abs > MAX_TEMP_DRIFT || 
+    impedance_offset_ohms.abs > MAX_IMPEDANCE_DRIFT || 
+    (vcap_coefficient - 1.0).abs > MAX_VCAP_TOLERANCE
+  end
+
+  private
+
+  def set_defaults
+    self.temperature_offset_c ||= 0.0
+    self.impedance_offset_ohms ||= 0.0
+    self.vcap_coefficient ||= 1.0
   end
 end
