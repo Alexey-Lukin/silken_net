@@ -2,8 +2,9 @@
 
 class ParametricInsurance < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
-  belongs_to :organization # Страхова компанія (напр. Swiss Re або децентралізований пул)
-  belongs_to :cluster      # Лісовий масив, що знаходиться під моніторингом
+  # Організація-страховик (напр. Swiss Re або децентралізований пул)
+  belongs_to :organization 
+  belongs_to :cluster      # Лісовий масив під захистом Aegis
 
   # --- СТАТУСИ ТА ТРИГЕРИ ---
   enum :status, { active: 0, triggered: 1, paid: 2, expired: 3 }, prefix: true
@@ -13,33 +14,40 @@ class ParametricInsurance < ApplicationRecord
   validates :payout_amount, :threshold_value, presence: true
   validates :threshold_value, numericality: { greater_than: 0, less_than_or_equal_to: 100 }
 
-  # Поліморфний зв'язок: виплата буде зафіксована в блокчейні як джерело (sourceable)
+  # Поліморфний зв'язок: виплата буде зафіксована в блокчейні
   has_one :blockchain_transaction, as: :sourceable
 
   # =========================================================================
   # АВТОНОМНИЙ ОРАКУЛ (D-MRV Integration)
   # =========================================================================
-  # Цей метод викликається воркером DailyAggregationWorker після стиснення телеметрії.
+  # Цей метод викликається воркером DailyAggregationWorker
   def evaluate_daily_health!(target_date = Date.yesterday)
     return unless status_active?
 
     # 1. Отримуємо вердикт від нашого ШІ-Оракула (AiInsight)
-    # Рахуємо відсоток дерев у кластері, які вчора мали статус :anomaly або :stress
-    total_trees = cluster.trees.count
-    return if total_trees.zero?
+    total_trees_count = cluster.trees.count
+    return if total_trees_count.zero?
 
-    anomalous_insights = AiInsight.where(
+    # [СИНХРОНІЗОВАНО]: Використовуємо target_date та insight_type
+    anomalous_insights = AiInsight.daily_health_summary.where(
       analyzable: cluster.trees,
-      analyzed_date: target_date,
-      stress_index: 0.8..1.0 # Поріг критичного стану
+      target_date: target_date,
+      stress_index: 0.8..1.0 # Поріг критичного стану / пожежі
     ).count
 
-    current_anomalous_percentage = (anomalous_insights.to_f / total_trees * 100).round(2)
+    # Математика тригера:
+    # $$ \text{damage\_ratio} = \frac{\text{anomalous\_insights}}{\text{total\_trees}} \times 100 $$
+    current_anomalous_percentage = (anomalous_insights.to_f / total_trees_count * 100).round(2)
 
     # 2. Перевірка тригера
     if current_anomalous_percentage >= threshold_value
       activate_payout!(current_anomalous_percentage)
     end
+  end
+
+  # [НОВЕ]: Визначаємо гаманець отримувача (Власника лісу)
+  def recipient_wallet_address
+    cluster.organization.crypto_public_address
   end
 
   private
@@ -48,11 +56,11 @@ class ParametricInsurance < ApplicationRecord
     transaction do
       update!(status: :triggered)
       
-      # Створюємо системне повідомлення для всіх стейкхолдерів
-      Rails.logger.warn "💸 [INSURANCE] Тригер активовано! Пошкодження: #{percentage}%. Очікується виплата."
+      # Створюємо системний запис для аудиторів та патрульних
+      Rails.logger.warn "💸 [INSURANCE] Тригер ##{id} активовано! Пошкодження сектора: #{percentage}%."
 
       # ЗАПУСК WEB3 ВОРКЕРА
-      # Він виконає переказ стейблкоїнів (USDC/USDT) на гаманець організації-власника
+      # Він виконає переказ USDC/USDT на адресу recipient_wallet_address
       InsurancePayoutWorker.perform_async(self.id)
     end
   end
