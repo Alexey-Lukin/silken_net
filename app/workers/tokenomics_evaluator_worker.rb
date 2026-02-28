@@ -2,47 +2,55 @@
 
 class TokenomicsEvaluatorWorker
   include Sidekiq::Job
+  # Використовуємо чергу за замовчуванням, але з низьким пріоритетом відносно телеметрії
   sidekiq_options queue: "default", retry: 3
 
-  # [СИНХРОНІЗОВАНО]: Центральна константа емісії. 
-  # Використовується також у MintCarbonCoinWorker для розрахунку ролбеку.
+  # [СИНХРОНІЗОВАНО]: 1 SCC = 10,000 балів гомеостазу
   EMISSION_THRESHOLD = 10_000
 
   def perform
-    Rails.logger.info "⚖️ [NAM-ŠID] Запуск Емісійного Центру..."
+    Rails.logger.info "⚖️ [NAM-ŠID] Початок аудиту емісії..."
     
-    stats = { processed_wallets: 0, total_minted: 0 }
+    stats = { wallets_scanned: 0, minted_count: 0, errors: 0 }
 
-    # [ОПТИМІЗАЦІЯ]: Шукаємо гаманці тільки АКТИВНИХ дерев. 
-    # Використовуємо find_each для стабільності RAM при масштабуванні до мільйонів вузлів.
-    active_wallets_scope = Wallet.joins(:tree)
-                                 .where(trees: { status: :active })
-                                 .where("balance >= ?", EMISSION_THRESHOLD)
+    # Вибираємо тільки тих Солдатів, які накопичили достатньо "життя" для емісії
+    eligible_wallets = Wallet.joins(:tree)
+                             .where(trees: { status: :active })
+                             .where("balance >= ?", EMISSION_THRESHOLD)
 
-    active_wallets_scope.find_each do |wallet|
+    eligible_wallets.find_each do |wallet|
+      stats[:wallets_scanned] += 1
+      
       begin
-        # Розраховуємо кількість цілих токенів
+        # Атомарна операція всередині моделі Wallet
         tokens_to_mint = (wallet.balance / EMISSION_THRESHOLD).to_i
         next if tokens_to_mint.zero?
 
         points_to_lock = tokens_to_mint * EMISSION_THRESHOLD
 
-        # Виклик моделі з Row-level lock! (Pessimistic Locking всередині)
-        # Передаємо поріг для верифікації розрахунків всередині моделі
+        # [LOCKING]: Виклик lock_and_mint! має обгортати списання балів 
+        # та створення BlockchainTransaction в одну БД-транзакцію.
         wallet.lock_and_mint!(points_to_lock, EMISSION_THRESHOLD)
 
-        stats[:processed_wallets] += 1
-        stats[:total_minted] += tokens_to_mint
-
-        Rails.logger.debug "🌱 [Емісія] Tree #{wallet.tree.did}: Сформовано наказ на мінтинг #{tokens_to_mint} SCC."
+        stats[:minted_count] += tokens_to_mint
       rescue StandardError => e
-        # Якщо один гаманець збійнув (наприклад, через Lock Timeout), 
-        # ми логуємо це, але не зупиняємо обробку всього лісу.
-        Rails.logger.error "🛑 [Емісія] Збій для гаманця ##{wallet.id}: #{e.message}"
-        next 
+        stats[:errors] += 1
+        Rails.logger.error "🛑 [NAM-ŠID] Помилка гаманця Tree #{wallet.tree&.did}: #{e.message}"
+        # Ми продовжуємо обробку лісу, незважаючи на падіння одного вузла
       end
     end
 
-    Rails.logger.info "✅ [NAM-ŠID] Цикл завершено. Оброблено гаманців: #{stats[:processed_wallets]}, Випущено: #{stats[:total_minted]} SCC."
+    log_final_stats(stats)
+  end
+
+  private
+
+  def log_final_stats(stats)
+    Rails.logger.info <<~LOG
+      ✅ [NAM-ŠID] Аудит завершено.
+      - Перевірено гаманців: #{stats[:wallets_scanned]}
+      - Випущено токенів: #{stats[:minted_count]} SCC
+      - Збоїв: #{stats[:errors]}
+    LOG
   end
 end
