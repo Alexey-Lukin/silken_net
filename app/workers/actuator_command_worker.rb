@@ -47,7 +47,7 @@ class ActuatorCommandWorker
 
       # 4. ПЛАНУВАННЯ ЗАВЕРШЕННЯ
       # Через вказаний час воркер переведе актуатор назад у стан :idle
-      ResetActuatorStateWorker.perform_in(command.duration_seconds.seconds, actuator.id)
+      ResetActuatorStateWorker.perform_in(command.duration_seconds.seconds, command.id)
 
     rescue Timeout::Error, StandardError => e
       Rails.logger.error "🛑 [Downlink Error] Шлюз #{gateway.uid} не відповів: #{e.message}"
