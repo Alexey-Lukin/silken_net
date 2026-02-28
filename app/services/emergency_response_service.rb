@@ -41,6 +41,11 @@ class EmergencyResponseService
     actuators.each do |actuator|
       # 1. Створюємо запис команди для історії та аудиту
       # Це дозволить інвестору бачити: "Система врятувала дерево №42 о 14:00"
+      # 
+      # [ДЗЕРКАЛЬНА СИНХРОНІЗАЦІЯ]:
+      # Завдяки колбеку after_commit у моделі ActuatorCommand, 
+      # саме створення цього запису АВТОМАТИЧНО запустить ActuatorCommandWorker 
+      # і передасть йому правильний command.id. Магія інкапсульована.
       ActuatorCommand.create!(
         actuator: actuator,
         ews_alert: alert,
@@ -48,12 +53,6 @@ class EmergencyResponseService
         duration_seconds: duration,
         status: :issued
       )
-
-      # 2. Змінюємо стан на :pending (черга на відправку через CoAP)
-      actuator.update!(state: :pending)
-      
-      # 3. Асинхронний запуск фізичного процесу
-      ActuatorCommandWorker.perform_async(actuator.id, command_code, duration)
     end
   end
 end
