@@ -3,15 +3,9 @@
 require "securerandom"
 
 class HardwareKeyService
-  # 32 байти = 256 біт для AES-256
   KEY_SIZE_BYTES = 32
 
-  def self.provision(device, manual_key_hex = nil)
-    new(device).provision(manual_key_hex)
-  end
-
   def self.rotate(device_uid)
-    # Знаходимо пристрій (Солдата або Королеву)
     device = Tree.find_by(did: device_uid) || Gateway.find_by(uid: device_uid)
     raise "Пристрій #{device_uid} не знайдено" unless device
 
@@ -24,51 +18,45 @@ class HardwareKeyService
   end
 
   # =========================================================================
-  # 1. ПРОПИСКА (The Initial Handshake)
+  # РОТАЦІЯ (The Dual-Key Handshake)
   # =========================================================================
-  def provision(manual_key_hex = nil)
-    # Використовуємо HEX для консистентності з нашою моделлю HardwareKey
-    hex_key = manual_key_hex || SecureRandom.hex(KEY_SIZE_BYTES).upcase
+  def rotate!
+    key_record = HardwareKey.find_by!(device_uid: @device_uid)
+    
+    # ⚡ [ЗАГАРТУВАННЯ]: Зберігаємо поточний ключ як попередній
+    old_key = key_record.aes_key_hex
+    new_hex_key = SecureRandom.hex(KEY_SIZE_BYTES).upcase
 
     HardwareKey.transaction do
-      key_record = HardwareKey.find_or_initialize_by(device_uid: @device_uid)
       key_record.update!(
-        aes_key_hex: hex_key
+        previous_aes_key_hex: old_key, # "Подушка безпеки"
+        aes_key_hex: new_hex_key,
+        rotated_at: Time.current
       )
     end
 
-    Rails.logger.info "🔐 [Zero-Trust] Якір для #{@device_uid} зафіксовано."
-    hex_key
-  end
+    # Надсилаємо Downlink. 
+    # ВАЖЛИВО: цей пакет має бути зашифрований OLD_KEY, 
+    # бо дерево ще не знає про NEW_KEY!
+    trigger_key_update_downlink(new_hex_key, old_key)
 
-  # =========================================================================
-  # 2. РОТАЦІЯ (The Entropy Pulse)
-  # =========================================================================
-  def rotate!
-    # Використовуємо метод моделі для генерації та збереження
-    key_record = HardwareKey.find_by!(device_uid: @device_uid)
-    new_hex_key = key_record.rotate_key!
-
-    # [СИНХРОНІЗАЦІЯ]: Сповіщаємо пристрій про зміну ключа.
-    # Це має бути Downlink команда, зашифрована ЩЕ СТАРИМ КЛЮЧЕМ,
-    # або через спеціальний OTA-канал.
-    trigger_key_update_downlink(new_hex_key)
-
-    Rails.logger.warn "🔄 [Zero-Trust] Ключ #{@device_uid} оновлено. Ефір сповіщено."
+    Rails.logger.warn "🔄 [Zero-Trust] Ротація для #{@device_uid} активована. Старий ключ збережено як резервний."
     new_hex_key
   end
 
   private
 
-  def trigger_key_update_downlink(new_key_hex)
-    # Якщо пристрій — Солдат, команда йде через його Королеву
-    # Якщо Королева — напряму.
-    # ActuatorCommandWorker.perform_async(...) або специфічний воркер
+  def trigger_key_update_downlink(new_key_hex, encryption_key)
     return unless @device.respond_to?(:ip_address) || @device.respond_to?(:gateway)
-
     target_ip = @device.respond_to?(:ip_address) ? @device.ip_address : @device.gateway.ip_address
 
-    # ПЛАН: Відправляємо нативний CoAP PUT запит на ендпоінт /sys/key
-    # CoapClient.put("coap://#{target_ip}/sys/key", new_key_hex)
+    # Формуємо команду для STM32. 
+    # Воркер має використати 'encryption_key' для шифрування цієї команди.
+    ActuatorCommandWorker.perform_async(
+      @device_uid, 
+      "sys/key_update", 
+      { key: new_key_hex }.to_json,
+      { use_key: encryption_key } # Передаємо конкретний ключ для цього завдання
+    )
   end
 end
