@@ -3,28 +3,33 @@
 module Api
   module V1
     class ProvisioningController < BaseController
-      # Тільки авторизовані Патрульні можуть проводити ініціацію вузлів
       before_action :authorize_forester!
 
-      # --- РИТУАЛ ПРИВ'ЯЗКИ (Hardware-to-DID Binding) ---
-      # POST /api/v1/provisioning/register
-      # Очікує: hardware_uid (crystal ID), device_type (tree/gateway), cluster_id
+      # --- ТЕРМІНАЛ ІНІЦІАЦІЇ ---
+      def new
+        @clusters = Cluster.all
+        @families = TreeFamily.all
+
+        render_dashboard(
+          title: "Hardware Initiation Ritual",
+          component: Views::Components::Provisioning::New.new(
+            clusters: @clusters,
+            families: @families
+          )
+        )
+      end
+
+      # --- РИТУАЛ ПРИВ'ЯЗКИ ---
       def register
         ActiveRecord::Base.transaction do
-          # 1. Визначаємо сутність (Солдат або Королева)
           @device = build_device(provisioning_params)
-
-          # 2. Генеруємо DID на основі hardware_uid (якщо не передано)
           @device.did ||= "SNET-#{provisioning_params[:hardware_uid].last(8).upcase}"
 
           if @device.save
-            # 3. КРИПТОГРАФІЧНА ПРОПИСКА
-            # Використовуємо сервіс для створення HardwareKey (Zero-Trust якір)
-            # [СИНХРОНІЗОВАНО]: Передаємо hardware_uid як device_uid для ключа
-            key_hex = HardwareKeyService.provision(@device)
+            # КРИПТОГРАФІЧНА ПРОПИСКА
+            @key_hex = HardwareKeyService.provision(@device)
 
-            # 4. ФІКСАЦІЯ МОНТАЖУ (MaintenanceRecord)
-            # Кожен монтаж — це перший запис у журналі зцілення
+            # ФІКСАЦІЯ МОНТАЖУ
             MaintenanceRecord.create!(
               maintainable: @device,
               user: current_user,
@@ -33,14 +38,23 @@ module Api
               notes: "Ініціація вузла завершена. DID: #{@device.did}. Hardware UID: #{provisioning_params[:hardware_uid]}"
             )
 
-            render json: {
-              message: "Вузол успішно інтегрований у міцелій лісу.",
-              did: @device.did,
-              aes_key: key_hex, # Передаємо Патрульному для фінальної перевірки зв'язку
-              device: @device
-            }, status: :created
+            respond_to do |format|
+              format.json do
+                render json: { did: @device.did, aes_key: @key_hex, device: @device }, status: :created
+              end
+              format.html do
+                # Показуємо результат ритуалу (ключ та DID)
+                render_dashboard(
+                  title: "Initiation Successful",
+                  component: Views::Components::Provisioning::Success.new(device: @device, aes_key: @key_hex)
+                )
+              end
+            end
           else
-            render_validation_error(@device)
+            respond_to do |format|
+              format.json { render_validation_error(@device) }
+              format.html { render_new_with_errors }
+            end
           end
         end
       rescue StandardError => e
@@ -48,6 +62,19 @@ module Api
       end
 
       private
+
+      def render_new_with_errors
+        @clusters = Cluster.all
+        @families = TreeFamily.all
+        render_dashboard(
+          title: "Initiation Failed",
+          component: Views::Components::Provisioning::New.new(
+            clusters: @clusters,
+            families: @families,
+            device: @device
+          )
+        )
+      end
 
       def build_device(params)
         case params[:device_type]
@@ -61,10 +88,10 @@ module Api
         when "gateway"
           Gateway.new(
             cluster_id: params[:cluster_id],
-            uid: params[:hardware_uid], # Для Королеви UID = Hardware ID
+            uid: params[:hardware_uid],
             latitude: params[:latitude],
             longitude: params[:longitude],
-            config_sleep_interval_s: 3600 # Default Starlink window
+            config_sleep_interval_s: 3600
           )
         else
           raise "Невідомий тип вузла в матриці"
