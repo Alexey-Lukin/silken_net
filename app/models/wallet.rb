@@ -25,8 +25,11 @@ class Wallet < ApplicationRecord
   # Кожен подих дерева конвертується в бали росту.
   def credit!(points)
     # increment! є атомарним на рівні БД (UPDATE ... SET balance = balance + points)
-    # Це захищає нас від втрат при масовому надходженні пакетів через Starlink
+    # Це захищає нас від втрат при масовому надходженні пакетів через Starlink/LoRa
     increment!(:balance, points)
+    
+    # [СИНХРОНІЗАЦІЯ]: Миттєво оновлюємо цифри на Dashboard Архітектора
+    broadcast_balance_update
   end
 
   # --- МЕТОДИ ЕМІСІЇ (Web3 Minting) ---
@@ -67,11 +70,24 @@ class Wallet < ApplicationRecord
       )
 
       # 5. ЗАПУСК WEB3-КОНВЕЄРА (Polygon Network)
-      # [СИНХРОНІЗОВАНО]: BlockchainMintingService підхопить цей ID
+      # [СИНХРОНІЗОВАНО]: MintCarbonCoinWorker спробує виконати транзакцію, 
+      # але TokenomicsEvaluatorWorker може об'єднати її в пакетний batchMint раніше.
       MintCarbonCoinWorker.perform_async(tx.id)
 
       Rails.logger.info "💎 [Wallet] Створено запит на мінтинг #{tokens_to_mint} #{token_type} для #{target_address}."
+      
+      broadcast_balance_update
       tx
     end
+  end
+
+  # Трансляція оновленого стану гаманця через Turbo Streams
+  def broadcast_balance_update
+    # Оновлення великої цифри балансу в UI
+    Turbo::StreamsChannel.broadcast_replace_to(
+      self,
+      target: "wallet_balance_#{id}",
+      html: Views::Components::Wallets::BalanceDisplay.new(wallet: self).call
+    )
   end
 end
