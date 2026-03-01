@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative "../config/environment"
+require_relative "../../config/environment"
 require "socket"
 require "base64"
 
@@ -13,6 +13,41 @@ socket = UDPSocket.new
 socket.bind("0.0.0.0", PORT)
 
 Rails.logger.info "🌳 [Sanctum] UDP/CoAP Брама відкрита на порту #{PORT}. Слухаємо дихання лісу..."
+
+# --- ТИТАНОВИЙ ПАРСЕР ОПЦІЙ (RFC 7252) ---
+# Розбирає блок опцій CoAP на зрозумілий масив структур
+def decode_options(buffer)
+  options = []
+  current_option_number = 0
+  cursor = 0
+
+  while cursor < buffer.bytesize
+    first_byte = buffer.getbyte(cursor)
+    cursor += 1
+    
+    delta = (first_byte >> 4) & 0x0F
+    length = first_byte & 0x0F
+
+    # Обробка розширеної дельти
+    if delta == 13
+      delta = buffer.getbyte(cursor) + 13
+      cursor += 1
+    end
+
+    # Обробка розширеної довжини
+    if length == 13
+      length = buffer.getbyte(cursor) + 13
+      cursor += 1
+    end
+
+    current_option_number += delta
+    value = buffer.byteslice(cursor, length)
+    cursor += length
+
+    options << { number: current_option_number, value: value }
+  end
+  options
+end
 
 # ПРОТОКОЛ ПРАВИЛЬНОГО ЗАВЕРШЕННЯ
 running = true
@@ -58,11 +93,16 @@ while running
         binary_payload = data[(payload_marker_index + 1)..-1]
 
         # 4. МАРШРУТИЗАЦІЯ (Uri-Path аналіз)
-        # Опції Uri-Path мають номер 11. Перевіряємо блок опцій.
+        # Опції Uri-Path мають номер 11.
         options_block = data[(4 + tkl)...payload_marker_index]
+        
+        # [ТИТАНОВА МОДЕРНІЗАЦІЯ]: Використовуємо точний парсинг замість .include?
+        parsed_options = decode_options(options_block)
+        path_segments = parsed_options.select { |o| o[:number] == 11 }.map { |o| o[:value] }
 
         # [СИНХРОНІЗАЦІЯ]: Перевіряємо шлях, який закладений у прошивку main.c
-        if options_block.include?("telemetry") && options_block.include?("batch")
+        # Очікуємо сегменти ["telemetry", "batch"]
+        if path_segments == ["telemetry", "batch"]
           # Кодуємо в Base64 для безпечної передачі в Redis/Sidekiq
           encoded_payload = Base64.strict_encode64(binary_payload)
 
@@ -71,7 +111,7 @@ while running
 
           Rails.logger.debug "🛰️ [Sanctum] Батч від #{gateway_ip} прийнято. Довжина: #{binary_payload.bytesize}б."
         else
-          Rails.logger.debug "⚠️ [Sanctum] Пакет від #{gateway_ip} відхилено: невідомий маршрут."
+          Rails.logger.debug "⚠️ [Sanctum] Пакет від #{gateway_ip} відхилено: невідомий маршрут #{path_segments.join('/')}."
         end
       end
     end
