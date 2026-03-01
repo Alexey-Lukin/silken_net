@@ -1,4 +1,5 @@
-# app/views/components/actuators/index.rb
+# frozen_string_literal: true
+
 module Views
   module Components
     module Actuators
@@ -13,8 +14,12 @@ module Views
             header_section
             
             div(class: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6") do
-              @actuators.each do |actuator|
-                render Views::Components::Actuators::Card.new(actuator: actuator)
+              if @actuators.any?
+                @actuators.each do |actuator|
+                  render Views::Components::Actuators::Card.new(actuator: actuator)
+                end
+              else
+                render_empty_state
               end
             end
           end
@@ -23,14 +28,32 @@ module Views
         private
 
         def header_section
-          div(class: "p-6 border border-emerald-900 bg-black flex justify-between items-center") do
+          div(class: "p-8 border border-emerald-900 bg-black flex flex-col md:flex-row justify-between items-start md:items-center relative overflow-hidden shadow-2xl") do
+            # Декоративний фон
+            div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { "ACTUATORS" }
+            
             div do
-              h3(class: "text-[10px] uppercase tracking-[0.5em] text-emerald-700") { "Hardware Interaction Layer" }
-              h2(class: "text-2xl font-light text-emerald-400 mt-2") { "Cluster: #{@cluster.name}" }
+              h3(class: "text-[10px] uppercase tracking-[0.5em] text-emerald-700 mb-2") { "Hardware Interaction Layer" }
+              h2(class: "text-3xl font-extralight text-emerald-400 tracking-tighter") { "Sector Matrix // #{@cluster.name}" }
             end
-            div(class: "flex space-x-4 text-[10px] font-mono") do
-              span(class: "text-emerald-900") { "Online Nodes: #{@actuators.count}" }
+            
+            div(class: "mt-4 md:mt-0 flex space-x-6 text-[10px] font-mono") do
+              stat_label("Active Nodes", @actuators.count { |a| a.status == 'active' })
+              stat_label("Total Units", @actuators.count)
             end
+          end
+        end
+
+        def stat_label(label, value)
+          div(class: "text-right") do
+            p(class: "text-emerald-900 uppercase") { label }
+            p(class: "text-lg text-emerald-100") { value }
+          end
+        end
+
+        def render_empty_state
+          div(class: "col-span-full p-20 border border-dashed border-emerald-900/30 text-center") do
+            p(class: "text-emerald-900 font-mono text-xs uppercase tracking-widest") { "No actuator nodes provisioned in this sector." }
           end
         end
       end
