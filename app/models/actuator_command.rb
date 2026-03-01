@@ -1,40 +1,27 @@
 # frozen_string_literal: true
 
 class ActuatorCommand < ApplicationRecord
-  # --- ЗВ'ЯЗКИ ---
   belongs_to :actuator
-  # Команда може бути частиною автоматичної відповіді на тривогу
   belongs_to :ews_alert, optional: true
-  # Також фіксуємо, який саме адміністратор/лісник віддав наказ вручну
   belongs_to :user, optional: true
 
-  # --- СТАТУСИ (The Lifecycle of a Command) ---
   enum :status, {
-    issued: 0,       # Створено, чекає на обробку
-    sent: 1,         # Відправлено в ефір (CoapClient)
-    acknowledged: 2, # Отримано підтвердження (ACK) від шлюзу
-    failed: 3,       # Помилка зв'язку або шифрування
-    confirmed: 4     # Успішно завершено (кенозис стану виконано)
+    issued: 0,
+    sent: 1,
+    acknowledged: 2,
+    failed: 3,
+    confirmed: 4
   }, prefix: true
 
-  # --- ВАЛІДАЦІЇ ---
   validates :command_payload, presence: true
   validates :duration_seconds, presence: true,
                                numericality: { greater_than: 0, less_than_or_equal_to: 3600 }
 
-  # --- КОЛБЕКИ (The Spark of Action) ---
-  # Запускаємо воркер ТІЛЬКИ після успішного збереження в БД
   after_commit :dispatch_to_edge!, on: :create
 
-  # --- СКОУПИ ---
   scope :recent, -> { order(created_at: :desc).limit(10) }
   scope :pending, -> { where(status: [ :issued, :sent ]) }
 
-  # =========================================================================
-  # БІЗНЕС-ЛОГІКА
-  # =========================================================================
-
-  # Розрахунок очікуваного часу завершення для UI
   def estimated_completion_at
     return nil unless sent_at
     sent_at + duration_seconds.seconds
@@ -43,16 +30,24 @@ class ActuatorCommand < ApplicationRecord
   private
 
   def dispatch_to_edge!
-    # [СИНХРОНІЗОВАНО]: Перевірка готовності актуатора та шлюзу
+    # Транслюємо створення в UI
+    broadcast_prepend_to_activity_feed
+
     if actuator.ready_for_deployment?
       ActuatorCommandWorker.perform_async(self.id)
     else
-      # Якщо шлюз офлайн або актуатор на ремонті — миттєва капітуляція
       transaction do
-        update_columns(status: self.class.statuses[:failed])
-        # Логуємо причину для патрульного
+        update_columns(status: self.class.statuses[:failed], error_message: "Актуатор недоступний")
         Rails.logger.warn "🛑 [COMMAND] Спроба активації ##{id} провалена: Актуатор #{actuator.name} недоступний."
       end
     end
+  end
+
+  def broadcast_prepend_to_activity_feed
+    Turbo::StreamsChannel.broadcast_prepend_to(
+      actuator.gateway.cluster.organization,
+      target: "recent_commands_feed",
+      html: Views::Components::Actuators::CommandRow.new(command: self).call
+    )
   end
 end
