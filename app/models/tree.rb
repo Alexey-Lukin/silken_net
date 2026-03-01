@@ -35,6 +35,9 @@ class Tree < ApplicationRecord
 
   # ⚡ [ТРИГЕР СМЕРТІ]: Якщо дерево гине або зникає — ініціюємо фінансову відплату (Slashing)
   after_update_commit :trigger_slashing_protocol, if: -> { saved_change_to_status? && (removed? || deceased?) }
+  
+  # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Миттєво оновлюємо вузол на мапі при зміні стану
+  after_update_commit :broadcast_map_update
 
   # --- СКОУПИ (The Watchers) ---
   scope :active, -> { where(status: :active) }
@@ -53,6 +56,8 @@ class Tree < ApplicationRecord
   # Оновлення пульсу (викликається при розпаковці телеметрії)
   def mark_seen!
     touch(:last_seen_at)
+    # Коли дерево "дихає", ми оновлюємо його заряд/статус на мапі
+    broadcast_map_update
   end
 
   # Останній вердикт Оракула
@@ -89,6 +94,18 @@ class Tree < ApplicationRecord
   # Помічник для швидкого доступу до останнього логу (мемоізований)
   def latest_telemetry
     @latest_telemetry ||= telemetry_logs.order(created_at: :desc).first
+  end
+
+  # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Трансляція вузла в Stimulus контролер
+  def broadcast_map_update
+    # Якщо дерево не має координат — його не можна показати на мапі
+    return unless latitude.present? && longitude.present?
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "geospatial_matrix",
+      target: "map_node_#{id}",
+      html: Views::Components::Dashboard::MapNode.new(tree: self).call
+    )
   end
 
   private
