@@ -1,4 +1,3 @@
-# app/views/components/firmwares/index.rb
 # frozen_string_literal: true
 
 module Views
@@ -20,7 +19,7 @@ module Views
         private
 
         def render_inventory_summary
-          div(class: "p-6 border border-emerald-900 bg-zinc-950") do
+          div(class: "p-6 border border-emerald-900 bg-zinc-950 shadow-2xl") do
             h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-6") { "Forest Inventory (Version Distribution)" }
             
             div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do
@@ -36,8 +35,8 @@ module Views
             div(class: "space-y-2") do
               stats.each do |version, count|
                 div(class: "flex justify-between items-center text-[11px] font-mono") do
-                  span(class: "text-emerald-400") { "v#{version}" }
-                  div(class: "flex-1 mx-4 h-px bg-emerald-900/30")
+                  span(class: "text-emerald-400") { "v#{version || '0.0.0'}" }
+                  div(class: "flex-1 mx-4 h-px bg-emerald-900/30 border-dotted")
                   span(class: "text-emerald-100") { "#{count} units" }
                 end
               end
@@ -49,19 +48,23 @@ module Views
           div(class: "space-y-4") do
             div(class: "flex justify-between items-end") do
               h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Available Binary Evolutions" }
-              # Кнопка для завантаження (можна додати модалку пізніше)
-              button(class: "text-[10px] border border-emerald-800 px-3 py-1 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase") { "+ Upload New Code" }
+              
+              # Кнопка переходу до порталу завантаження
+              a(
+                href: helpers.new_api_v1_firmware_path,
+                class: "text-[10px] border border-emerald-500 px-4 py-1 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+              ) { "+ Inject New Code" }
             end
 
-            div(class: "overflow-x-auto border border-emerald-900") do
+            div(class: "overflow-x-auto border border-emerald-900 bg-black") do
               table(class: "w-full text-left font-mono text-xs") do
                 thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
                   tr do
                     th(class: "p-4") { "Version" }
                     th(class: "p-4") { "Target Hardware" }
-                    th(class: "p-4") { "Checksum" }
+                    th(class: "p-4") { "Checksum (MD5)" }
                     th(class: "p-4") { "Uploaded" }
-                    th(class: "p-4 text-right") { "Action" }
+                    th(class: "p-4 text-right") { "Command" }
                   end
                 end
                 tbody(class: "divide-y divide-emerald-900/30") do
