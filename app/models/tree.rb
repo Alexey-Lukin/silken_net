@@ -61,6 +61,33 @@ class Tree < ApplicationRecord
     ews_alerts.unresolved.exists?
   end
 
+  # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  # IONIC INTELLIGENCE (Streaming Potential Management)
+  # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+  # Повертає останній зафіксований вольтаж іоністора
+  def ionic_voltage
+    latest_telemetry&.voltage_mv || 0
+  end
+
+  # Розрахунок заряду у % (Діапазон 3000мВ - 4200мВ)
+  def charge_percentage
+    return 0 if ionic_voltage.zero?
+
+    # Масштабуємо: 3000мВ = 0%, 4200мВ = 100%
+    ((ionic_voltage - 3000).to_f / 1200 * 100).clamp(0, 100).to_i
+  end
+
+  # Перевірка критичного рівня енергії для виживання вузла
+  def low_power?
+    ionic_voltage > 0 && ionic_voltage < 3300
+  end
+
+  # Помічник для швидкого доступу до останнього логу (мемоізований)
+  def latest_telemetry
+    @latest_telemetry ||= telemetry_logs.order(created_at: :desc).first
+  end
+
   private
 
   def build_default_wallet
