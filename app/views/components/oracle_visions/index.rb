@@ -1,9 +1,12 @@
+# frozen_string_literal: true
+
 module Views
   module Components
     module OracleVisions
       class Index < ApplicationComponent
-        def initialize(visions:)
+        def initialize(visions:, yield_forecast:)
           @visions = visions
+          @yield_forecast = yield_forecast
         end
 
         def view_template
@@ -25,16 +28,32 @@ module Views
         private
 
         def header_section
-          div(class: "p-6 border border-emerald-900 bg-black/40 backdrop-blur-md") do
-            h3(class: "text-[10px] uppercase tracking-[0.5em] text-emerald-700") { "Strategic Forecast Matrix" }
-            p(class: "text-2xl font-light text-emerald-400 mt-2") { "AI Confidence: 94.2%" }
+          div(class: "p-6 border border-emerald-900 bg-black/40 backdrop-blur-md flex justify-between items-end") do
+            div do
+              h3(class: "text-[10px] uppercase tracking-[0.5em] text-emerald-700") { "Strategic Forecast Matrix" }
+              p(class: "text-2xl font-light text-emerald-400 mt-2") { "AI Confidence: 94.2%" }
+            end
+
+            # [FINANCIAL ENGINE VISUALIZATION]: Очікуваний врожай
+            div(class: "text-right") do
+              h4(class: "text-[10px] uppercase tracking-widest text-emerald-800 mb-1") { "Expected 24h Yield" }
+              div(class: "flex items-baseline justify-end gap-2") do
+                span(class: "text-3xl font-mono text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]") do
+                  @yield_forecast
+                end
+                span(class: "text-xs text-emerald-600 font-light italic") { "SCC" }
+              end
+            end
           end
         end
 
         def render_active_simulations_feed
           div(id: "simulation_results", class: "space-y-4") do
-            h4(class: "text-[10px] uppercase text-gray-600 tracking-widest") { "Active Simulations" }
-            # Сюди Turbo Stream буде додавати результати
+            div(class: "flex items-center gap-2 mb-4") do
+              div(class: "w-1 h-1 bg-emerald-500 rounded-full animate-ping")
+              h4(class: "text-[10px] uppercase text-gray-600 tracking-widest") { "Active Simulations" }
+            end
+            # Сюди Turbo Stream буде додавати результати симуляцій
           end
         end
       end
