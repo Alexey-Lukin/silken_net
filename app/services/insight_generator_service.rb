@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class InsightGeneratorService
+  # Поріг відхилення. Якщо вологість/температура дерева відрізняється від 
+  # середньої по кластеру більше ніж на 30%, це класифікується як фрод/аномалія.
+  FRAUD_DEVIATION_THRESHOLD = 0.30 
+
   def self.call(date = Date.yesterday)
     new(date).perform
   end
@@ -18,10 +22,17 @@ class InsightGeneratorService
     # 1. ІДЕМПОТЕНТНІСТЬ: Очищуємо старі інсайти за цю дату перед перерахунком
     AiInsight.where(target_date: @date, insight_type: :daily_health_summary).delete_all
 
-    # 2. ПОТРУНКОВА ОБРОБКА ДЕРЕВ (The Soldier Nodes)
-    Tree.find_each do |tree|
-      if generate_for_tree(tree)
-        @processed_count += 1
+    # 2. ПОКЛАСТЕРНА ОБРОБКА З AI-GUARD
+    Cluster.find_each do |cluster|
+      # Збираємо "Кліматичний Базлайн" кластера (середні показники всіх дерев)
+      cluster_baseline = calculate_cluster_baseline(cluster)
+      next unless cluster_baseline
+
+      # Перевіряємо кожне дерево в кластері на відповідність базлайну
+      cluster.trees.find_each do |tree|
+        if generate_for_tree(tree, cluster_baseline)
+          @processed_count += 1
+        end
       end
     end
 
@@ -39,7 +50,28 @@ class InsightGeneratorService
 
   private
 
-  def generate_for_tree(tree)
+  # Обчислює загальний кліматичний фон сектора для виявлення фроду
+  def calculate_cluster_baseline(cluster)
+    logs = TelemetryLog.joins(:tree)
+                       .where(trees: { cluster_id: cluster.id })
+                       .where(created_at: @start_time..@end_time)
+                       
+    return nil if logs.empty?
+
+    baseline = logs.select(
+      "AVG(temperature_c) as avg_temp",
+      "AVG(sap_flow) as avg_sap",       # Використовуємо sap_flow (імпеданс) для перевірки
+      "AVG(z_value) as avg_z"
+    ).take
+
+    {
+      temp: baseline.avg_temp.to_f,
+      sap: baseline.avg_sap.to_f,
+      z: baseline.avg_z.to_f
+    }
+  end
+
+  def generate_for_tree(tree, baseline)
     logs = tree.telemetry_logs.where(created_at: @start_time..@end_time)
     return false if logs.empty?
 
@@ -48,6 +80,7 @@ class InsightGeneratorService
       "AVG(temperature_c) as avg_temp",
       "AVG(voltage_mv) as avg_vcap",
       "AVG(z_value) as avg_z",
+      "AVG(sap_flow) as avg_sap", # Додано sap_flow для AI Guard
       "MAX(acoustic_events) as max_acoustic",
       "SUM(growth_points) as total_growth",
       "MAX(bio_status) as max_status"
@@ -55,13 +88,25 @@ class InsightGeneratorService
 
     return false unless stats&.avg_temp
 
-    # Розраховуємо індекс стресу (враховуючи відхилення Z Атрактора)
-    stress_index = calculate_stress_index(
-      stats.max_status.to_i,
-      stats.avg_temp.to_f,
-      stats.max_acoustic.to_i,
-      stats.avg_z.to_f
-    )
+    # 🛡️ [AI FRAUD GUARD]: Перевірка на "занадто ідеальні" показники
+    is_fraud = detect_fraud?(stats, baseline)
+
+    # Якщо виявлено фрод - ми блокуємо ріст і максимізуємо стрес, щоб запустити Slashing
+    final_growth = is_fraud ? 0 : stats.total_growth.to_i
+    
+    # Розраховуємо індекс стресу (враховуючи відхилення Z Атрактора та Фрод)
+    stress_index = if is_fraud
+                     1.0 # Термінальний статус для шахрайства
+                   else
+                     calculate_stress_index(
+                       stats.max_status.to_i,
+                       stats.avg_temp.to_f,
+                       stats.max_acoustic.to_i,
+                       stats.avg_z.to_f
+                     )
+                   end
+
+    summary = is_fraud ? "🚨 КРИТИЧНО: Виявлено фрод-телеметрію (аномальне відхилення від кластера)." : generate_summary(stats.max_status.to_i, stats.avg_temp.to_f)
 
     AiInsight.create!(
       analyzable: tree,
@@ -69,18 +114,42 @@ class InsightGeneratorService
       target_date: @date,
       average_temperature: stats.avg_temp.to_f.round(2),
       stress_index: stress_index,
-      total_growth_points: stats.total_growth.to_i,
-      summary: generate_summary(stats.max_status.to_i, stats.avg_temp.to_f),
+      total_growth_points: final_growth,
+      summary: summary,
       reasoning: {
         avg_z: stats.avg_z.to_f.round(4),
         max_acoustic: stats.max_acoustic.to_i,
-        avg_vcap: stats.avg_vcap.to_i
+        avg_vcap: stats.avg_vcap.to_i,
+        fraud_detected: is_fraud,
+        deviation_from_baseline: calculate_deviation(stats.avg_sap.to_f, baseline[:sap])
       }
     )
+
+    # Якщо це шахрайство — переводимо дерево в статус removed (це автоматично запустить BurnCarbonTokensWorker)
+    tree.update!(status: :removed) if is_fraud
+
     true
   rescue StandardError => e
     Rails.logger.error "🛑 [Insight] Помилка для Дерева #{tree.did}: #{e.message}"
     false
+  end
+
+  # AI Логіка виявлення фроду
+  def detect_fraud?(stats, baseline)
+    return false if baseline[:sap].zero?
+
+    sap_deviation = calculate_deviation(stats.avg_sap.to_f, baseline[:sap])
+    temp_deviation = calculate_deviation(stats.avg_temp.to_f, baseline[:temp])
+
+    # Якщо потік соку (sap_flow/імпеданс) дерева на 30% кращий/ідеальніший, 
+    # ніж у сусідів у тому ж самому секторі, при цьому температура теж відрізняється — це симуляція.
+    (sap_deviation > FRAUD_DEVIATION_THRESHOLD) && (temp_deviation > FRAUD_DEVIATION_THRESHOLD)
+  end
+
+  # Допоміжний метод розрахунку % відхилення
+  def calculate_deviation(value, base)
+    return 0.0 if base.zero?
+    ((value - base).abs / base).round(4)
   end
 
   def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z)
@@ -111,13 +180,21 @@ class InsightGeneratorService
 
       next if tree_insights.empty?
 
+      # Перевіряємо, чи є в кластері масовий фрод
+      fraud_count = tree_insights.where("reasoning->>'fraud_detected' = 'true'").count
+      summary = if fraud_count > 0
+                  "⚠️ Сектор #{cluster.name}: Виявлено #{fraud_count} вузлів із фрод-телеметрією."
+                else
+                  "Сектор #{cluster.name}: Оброблено #{tree_insights.count} вузлів. Стан стабільний."
+                end
+
       AiInsight.create!(
         analyzable: cluster,
         insight_type: :daily_health_summary,
         target_date: @date,
         stress_index: tree_insights.average(:stress_index).to_f.round(3),
-        total_growth_points: tree_insights.sum(:total_growth_points),
-        summary: "Сектор #{cluster.name}: Оброблено #{tree_insights.count} вузлів. Стан стабільний."
+        total_growth_points: tree_insights.sum(:total_growth_points), # Фродові дерева дають 0
+        summary: summary
       )
     end
   end
