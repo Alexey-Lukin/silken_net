@@ -33,6 +33,9 @@ class Tree < ApplicationRecord
   after_create :build_default_wallet
   after_create :ensure_calibration
 
+  # ⚡ [ТРИГЕР СМЕРТІ]: Якщо дерево гине або зникає — ініціюємо фінансову відплату (Slashing)
+  after_update_commit :trigger_slashing_protocol, if: -> { saved_change_to_status? && (removed? || deceased?) }
+
   # --- СКОУПИ (The Watchers) ---
   scope :active, -> { where(status: :active) }
   scope :geolocated, -> { where.not(latitude: nil, longitude: nil) }
@@ -100,5 +103,16 @@ class Tree < ApplicationRecord
 
   def normalize_did
     self.did = did.to_s.strip.upcase if did.present?
+  end
+
+  def trigger_slashing_protocol
+    return unless cluster&.organization
+
+    # Шукаємо активні NaaS контракти, до яких прив'язаний кластер цього дерева
+    cluster.naas_contracts.active_contracts.find_each do |contract|
+      BurnCarbonTokensWorker.perform_async(cluster.organization_id, contract.id, id)
+    end
+
+    Rails.logger.warn "🚨 [Ecosystem Breach] Дерево #{did} зафіксовано як #{status}. Сигнал на вилучення токенів відправлено."
   end
 end
