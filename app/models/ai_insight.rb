@@ -10,12 +10,12 @@ class AiInsight < ApplicationRecord
     daily_health_summary: 0,  # [РЕАЛЬНІСТЬ]: Вчорашній звіт (база для D-MRV)
     drought_probability: 1,   # [ПРОГНОЗ]: Ймовірність посухи
     carbon_yield_forecast: 2, # [ПРОГНОЗ]: Емісія токенів
-    biodiversity_trend: 3    # [ПРОГНОЗ]: Стабільність Атрактора Лоренца
+    biodiversity_trend: 3     # [ПРОГНОЗ]: Стабільність Атрактора Лоренца
   }, prefix: true
 
   # --- СТРУКТУРОВАНІ ДАНІ (The Reasoning Engine) ---
   # Використовуємо JSONB для гнучкого пояснення логіки ШІ
-  store_accessor :reasoning, :avg_z, :max_temp, :anomaly_vector
+  store_accessor :reasoning, :avg_z, :max_temp, :anomaly_vector, :avg_vcap, :fraud_detected, :deviation_from_baseline
   store_accessor :recommendation, :action_required, :priority
 
   # --- ВАЛІДАЦІЇ ---
@@ -62,6 +62,7 @@ class AiInsight < ApplicationRecord
   # Швидка перевірка стану
   def status_label
     return "Forecast" if forecast?
+    return "Fraud Detected" if reasoning['fraud_detected']
     stress_index.to_f < 0.3 ? "Stable" : "Stressed"
   end
 end
