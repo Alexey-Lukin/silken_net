@@ -14,7 +14,6 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
-    // Індексуємо investor та treeDid для миттєвого пошуку в Subgraph або Rails
     event CarbonMinted(address indexed investor, uint256 amount, string indexed treeDid);
     event TokenSlashed(address indexed investor, uint256 amount);
 
@@ -26,7 +25,6 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable {
 
     /**
      * @notice Емісія токенів на основі підтвердженого гомеостазу.
-     * @param treeDid DID Солдата, який згенерував енергію.
      */
     function mint(address to, uint256 amount, string calldata treeDid) 
         external 
@@ -37,10 +35,25 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable {
     }
 
     /**
-     * @notice Примусове вилучення токенів у разі деградації кластера (Slashing).
-     * @dev Використовує внутрішній _burn, ігноруючи потребу в allowance, 
-     * згідно з умовами NaaS-контракту.
+     * @notice Масовий мінтинг токенів для економії газу при обробці всього сектора.
+     * @param recipients Масив адрес отримувачів.
+     * @param amounts Масив сум для кожного отримувача.
+     * @param treeDids Масив DID дерев-джерел.
      */
+    function batchMint(
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        string[] calldata treeDids
+    ) external onlyRole(MINTER_ROLE) {
+        uint256 length = recipients.length;
+        require(length == amounts.length && length == treeDids.length, "SCC: Array lengths mismatch");
+
+        for (uint256 i = 0; i < length; i++) {
+            _mint(recipients[i], amounts[i]);
+            emit CarbonMinted(recipients[i], amounts[i], treeDids[i]);
+        }
+    }
+
     function slash(address investor, uint256 amount) 
         external 
         onlyRole(SLASHER_ROLE) 
@@ -49,8 +62,6 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable {
         emit TokenSlashed(investor, amount);
     }
 
-    // --- Аварійні протоколи ---
-
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
@@ -58,8 +69,6 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable {
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
-
-    // --- ERC20 Hooks ---
 
     function _update(address from, address to, uint256 value)
         internal
