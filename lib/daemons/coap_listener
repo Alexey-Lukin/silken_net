@@ -5,17 +5,20 @@ require_relative "../../config/environment"
 require "socket"
 require "base64"
 
+# Налаштування для Kamal/Docker логів
+$stdout.sync = true
+
 # Порт за замовчуванням для CoAP
-PORT = 5683
+PORT = ENV.fetch("COAP_PORT", 5683).to_i
 MAX_PACKET_SIZE = 2048
 
 socket = UDPSocket.new
 socket.bind("0.0.0.0", PORT)
 
 Rails.logger.info "🌳 [Sanctum] UDP/CoAP Брама відкрита на порту #{PORT}. Слухаємо дихання лісу..."
+puts "🛰️  Система моніторингу ефіру активована. Очікування пакетів..."
 
 # --- ТИТАНОВИЙ ПАРСЕР ОПЦІЙ (RFC 7252) ---
-# Розбирає блок опцій CoAP на зрозумілий масив структур
 def decode_options(buffer)
   options = []
   current_option_number = 0
@@ -28,13 +31,13 @@ def decode_options(buffer)
     delta = (first_byte >> 4) & 0x0F
     length = first_byte & 0x0F
 
-    # Обробка розширеної дельти
+    # Обробка розширеної дельти (код 13: +1 байт)
     if delta == 13
       delta = buffer.getbyte(cursor) + 13
       cursor += 1
     end
 
-    # Обробка розширеної довжини
+    # Обробка розширеної довжини (код 13: +1 байт)
     if length == 13
       length = buffer.getbyte(cursor) + 13
       cursor += 1
@@ -53,74 +56,72 @@ end
 running = true
 %w[INT TERM].each do |signal|
   trap(signal) do
-    Rails.logger.info "🛑 [Sanctum] Отримано сигнал #{signal}. Ефір закривається..."
+    puts "\n🛑 [Sanctum] Отримано сигнал #{signal}. Ефір закривається..."
     running = false
   end
 end
 
 while running
   begin
-    # Очікуємо дані (таймаут 1с для можливості виходу)
     if IO.select([ socket ], nil, nil, 1)
       data, sender = socket.recvfrom_nonblock(MAX_PACKET_SIZE)
       gateway_ip = sender[3]
+      timestamp = Time.current
 
-      # 1. ПАРСЕР ЗАГОЛОВКА CoAP (RFC 7252)
-      # [Ver:2][T:2][TKL:4] | [Code:8] | [Message ID:16]
+      # 0. ЖИВИЙ ПОТІК У МАТРИЦЮ (ActionCable)
+      # Транслюємо "сирі" байти в гексадецимальному форматі для UI
+      ActionCable.server.broadcast("telemetry_live_stream", {
+        hex: data.unpack1("H*").scan(/../).join(" "),
+        ip: gateway_ip,
+        size: data.bytesize,
+        at: timestamp.strftime("%H:%M:%S.%L")
+      })
+
+      # 1. ПАРСЕР ЗАГОЛОВКА CoAP
       header = data.unpack("CCn")
       first_byte = header[0]
-      type = (first_byte >> 4) & 0x03 # 0: CON, 1: NON, 2: ACK, 3: RST
-      tkl  = first_byte & 0x0F        # Token Length
-      code = header[1]                # Method/Response Code
+      type = (first_byte >> 4) & 0x03
+      tkl  = first_byte & 0x0F
+      code = header[1]
       msg_id = header[2]
 
-      # 2. МИТТЄВИЙ ACK (Для Confirmable пакетів)
-      # Якщо Королева хоче підтвердження (Type 0), ми відправляємо ACK (Type 2)
+      # 2. МИТТЄВИЙ ACK (Confirmable Flow)
       if type == 0
-        # 0x44 = 2.04 Changed (Успішний PUT)
-        # Формуємо заголовок ACK з тим самим Token Length та Message ID
         ack_header = [ (1 << 6) | (2 << 4) | tkl, 0x44, msg_id ].pack("CCn")
-        # Додаємо токен, якщо він був у вхідному пакеті
         token = tkl > 0 ? data[4...(4 + tkl)] : "".b
         socket.send(ack_header + token, 0, gateway_ip, sender[1])
       end
 
       # 3. ПОШУК ПЕЙЛОАДА
-      # Шукаємо маркер 0xFF, який відокремлює опції від тіла
       payload_marker_index = data.index("\xFF".b)
 
       if payload_marker_index
         binary_payload = data[(payload_marker_index + 1)..-1]
-
-        # 4. МАРШРУТИЗАЦІЯ (Uri-Path аналіз)
-        # Опції Uri-Path мають номер 11.
         options_block = data[(4 + tkl)...payload_marker_index]
         
-        # [ТИТАНОВА МОДЕРНІЗАЦІЯ]: Використовуємо точний парсинг замість .include?
         parsed_options = decode_options(options_block)
         path_segments = parsed_options.select { |o| o[:number] == 11 }.map { |o| o[:value] }
 
-        # [СИНХРОНІЗАЦІЯ]: Перевіряємо шлях, який закладений у прошивку main.c
-        # Очікуємо сегменти ["telemetry", "batch"]
         if path_segments == ["telemetry", "batch"]
-          # Кодуємо в Base64 для безпечної передачі в Redis/Sidekiq
+          # 4. СИНХРОНІЗАЦІЯ З БАЗОЮ ТА sidekiq
+          ActiveRecord::Base.connection.verify! unless ActiveRecord::Base.connected?
+          
           encoded_payload = Base64.strict_encode64(binary_payload)
-
-          # Передаємо IP-адресу як "мережевий якір" для ідентифікації Королеви
           UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip)
 
-          Rails.logger.debug "🛰️ [Sanctum] Батч від #{gateway_ip} прийнято. Довжина: #{binary_payload.bytesize}б."
+          puts "📥 [#{timestamp.strftime('%T')}] Пакет від #{gateway_ip} прийнято (#{binary_payload.bytesize}б)"
         else
-          Rails.logger.debug "⚠️ [Sanctum] Пакет від #{gateway_ip} відхилено: невідомий маршрут #{path_segments.join('/')}."
+          puts "⚠️  [#{timestamp.strftime('%T')}] Відхилено: невідомий маршрут #{path_segments.join('/')}"
         end
       end
     end
   rescue Errno::EAGAIN, Errno::EWOULDBLOCK
     retry
   rescue StandardError => e
-    Rails.logger.error "🛑 [Sanctum] Збій у матриці: #{e.message}"
+    puts "🛑 [Sanctum Error] #{e.message}"
+    Rails.logger.error "🛑 [Sanctum] Збій у матриці: #{e.message}\n#{e.backtrace.first(3).join("\n")}"
   end
 end
 
 socket.close
-Rails.logger.info "🌳 [Sanctum] Слухач зупинено. Посудина порожня."
+puts "🔒 [Sanctum] Брама закрита. Ефір мовчить."
