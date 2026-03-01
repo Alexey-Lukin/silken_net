@@ -3,20 +3,25 @@
 module Api
   module V1
     class TelemetryController < BaseController
-      # --- ДИХАННЯ СОЛДАТА (Tree Impedance & Temp) ---
-      # GET /api/v1/trees/:tree_id/telemetry
-      # Параметри: ?days=7&resolution=hourly
+      # --- ЖИВИЙ ПОТІК ІСТИНИ (The Pulse) ---
+      # GET /api/v1/telemetry/live
+      def live
+        respond_to do |format|
+          format.html do
+            render_dashboard(
+              title: "Live Telemetry // The Pulse",
+              component: Views::Components::Telemetry::LiveStream.new
+            )
+          end
+        end
+      end
+
+      # --- ДИХАННЯ СОЛДАТА (Існуючий метод) ---
       def tree_history
         @tree = Tree.find(params[:tree_id])
         days = (params[:days] || 7).to_i
+        logs = @tree.telemetry_logs.where(created_at: days.days.ago..Time.current).order(:created_at)
 
-        # Агрегуємо дані, щоб фронтенд не "впав" від 10,000 точок
-        # Використовуємо середнє значення за годину (hourly average)
-        logs = @tree.telemetry_logs
-                    .where(created_at: days.days.ago..Time.current)
-                    .order(:created_at)
-
-        # Перетворюємо в формат, зручний для Chart.js / ApexCharts
         render json: {
           did: @tree.did,
           unit: "kOhm",
@@ -27,15 +32,11 @@ module Api
         }
       end
 
-      # --- ПУЛЬС КОРЛЕВИ (Gateway Diagnostics) ---
-      # GET /api/v1/gateways/:gateway_id/telemetry
+      # --- ПУЛЬС КОРЛЕВИ (Існуючий метод) ---
       def gateway_history
         @gateway = Gateway.find(params[:gateway_id])
         days = (params[:days] || 7).to_i
-
-        logs = @gateway.gateway_telemetry_logs
-                       .where(created_at: days.days.ago..Time.current)
-                       .order(:created_at)
+        logs = @gateway.gateway_telemetry_logs.where(created_at: days.days.ago..Time.current).order(:created_at)
 
         render json: {
           uid: @gateway.uid,
