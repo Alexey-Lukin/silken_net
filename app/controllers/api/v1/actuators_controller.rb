@@ -5,21 +5,13 @@ module Api
     class ActuatorsController < BaseController
       before_action :authorize_forester!
 
-      # GET /api/v1/clusters/:cluster_id/actuators
+      # --- РЕЄСТР ВИКОНАВЧИХ ВУЗЛІВ ---
       def index
         @cluster = Cluster.find(params[:cluster_id])
         @actuators = @cluster.actuators.includes(:tree, :gateway)
 
         respond_to do |format|
-          format.json do
-            render json: @actuators.as_json(
-              only: [ :id, :actuator_type, :status, :last_command_at ],
-              include: {
-                tree: { only: [ :did ] },
-                gateway: { only: [ :uid ] }
-              }
-            )
-          end
+          format.json { render json: @actuators }
           format.html do
             render_dashboard(
               title: "Actuators // Sector: #{@cluster.name}",
@@ -29,16 +21,33 @@ module Api
         end
       end
 
-      # POST /api/v1/actuators/:id/execute
+      # --- ДЕТАЛЬНИЙ АУДИТ ВУЗЛА ---
+      def show
+        @actuator = Actuator.find(params[:id])
+        @commands = @actuator.actuator_commands.order(created_at: :desc).limit(20)
+
+        respond_to do |format|
+          format.json { render json: { actuator: @actuator, history: @commands } }
+          format.html do
+            render_dashboard(
+              title: "Actuator Hub // #{@actuator.actuator_type.upcase}",
+              component: Views::Components::Actuators::Show.new(actuator: @actuator, commands: @commands)
+            )
+          end
+        end
+      end
+
+      # --- ПРЯМЕ ВИКОНАННЯ КОМАНДИ ---
       def execute
         @actuator = Actuator.find(params[:id])
 
         @command = @actuator.actuator_commands.create!(
           user: current_user,
-          command_payload: params[:action],
+          command_payload: params[:action_payload],
           status: :pending
         )
 
+        # Відправляємо команду в ефір (CoAP/LoRa)
         EmergencyResponseService.dispatch_manual_command(@command.id)
 
         respond_to do |format|
@@ -50,21 +59,6 @@ module Api
             )
           end
         end
-      end
-
-      # --- ПОВЕРНЕНО: СТАН ВИКОНАННЯ (The Audit Trace) ---
-      # GET /api/v1/actuator_commands/:id
-      def command_status
-        @command = ActuatorCommand.find(params[:id])
-        
-        render json: {
-          id: @command.id,
-          actuator_id: @command.actuator_id,
-          status: @command.status, # pending -> dispatched -> executed / failed
-          payload: @command.command_payload,
-          executed_at: @command.executed_at,
-          response_metadata: @command.response_metadata # відповідь від заліза (CoAP/LoRa)
-        }
       end
     end
   end
