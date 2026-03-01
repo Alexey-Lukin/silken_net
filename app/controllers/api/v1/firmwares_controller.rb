@@ -39,10 +39,27 @@ module Api
         end
       end
 
+      # --- ПОРТАЛ ЗАВАНТАЖЕННЯ (The Gateway to New Intellect) ---
+      # GET /api/v1/firmwares/new
+      def new
+        @firmware = BioContractFirmware.new
+
+        render_dashboard(
+          title: "Upload New Evolution",
+          component: Views::Components::Firmwares::New.new(firmware: @firmware)
+        )
+      end
+
       # --- ЗАВАНТАЖЕННЯ НОВОГО ІНТЕЛЕКТУ ---
       # POST /api/v1/firmwares
       def create
-        @firmware = BioContractFirmware.new(firmware_params)
+        @firmware = BioContractFirmware.new(firmware_params.except(:binary_file))
+
+        # [СИНХРОНІЗАЦІЯ]: Конвертуємо бінарний файл у HEX для моделі
+        if params[:firmware][:binary_file].present?
+          binary_data = params[:firmware][:binary_file].read
+          @firmware.bytecode_payload = binary_data.unpack1("H*").upcase
+        end
 
         if @firmware.save
           respond_to do |format|
@@ -58,8 +75,10 @@ module Api
           respond_to do |format|
             format.json { render_validation_error(@firmware) }
             format.html do
-              # Якщо помилка, повертаємось на індекс з алертами
-              redirect_to api_v1_firmwares_path, alert: @firmware.errors.full_messages.join(", ")
+              render_dashboard(
+                title: "Evolution Error",
+                component: Views::Components::Firmwares::New.new(firmware: @firmware)
+              )
             end
           end
         end
