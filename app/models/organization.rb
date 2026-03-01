@@ -6,7 +6,6 @@ class Organization < ApplicationRecord
   has_many :users, dependent: :destroy
 
   # Фінансові контракти (Nature-as-a-Service)
-  # Не даємо видалити організацію, якщо є активні фінансові зобов'язання
   has_many :naas_contracts, dependent: :restrict_with_error
 
   # Лісові масиви, якими володіє або керує організація
@@ -15,6 +14,10 @@ class Organization < ApplicationRecord
   # Прямий доступ до всіх дерев та тривог через кластери
   has_many :trees, through: :clusters
   has_many :ews_alerts, through: :clusters
+
+  # ⚡ [СИНХРОНІЗАЦІЯ]: Пряма магістраль до фінансових ресурсів
+  # Це замикає ланцюжок User -> Organization -> Wallet без зайвих запитів
+  has_many :wallets, through: :trees
 
   # --- НОРМАЛІЗАЦІЯ ---
   normalizes :billing_email, with: ->(e) { e.strip.downcase }
@@ -36,16 +39,17 @@ class Organization < ApplicationRecord
   end
 
   # Загальний вуглецевий баланс організації (сума всіх гаманців дерев)
+  # Використовуємо нову асоціацію для максимальної швидкодії
   def total_carbon_points
-    trees.joins(:wallet).sum("wallets.balance")
+    wallets.sum(:balance)
   end
 
-  # [СИНХРОНІЗОВАНО]: Перевірка наявності активних загроз через скоуп EwsAlert
+  # Перевірка наявності активних загроз через скоуп EwsAlert
   def under_threat?
     ews_alerts.unresolved.critical.exists?
   end
 
-  # [НОВЕ]: Агрегований показник здоров'я всього фонду організації
+  # Агрегований показник здоров'я всього фонду організації
   # Повертає значення від 0.0 до 1.0 (середнє по всіх кластерах)
   def health_score
     return 1.0 if clusters.empty?
