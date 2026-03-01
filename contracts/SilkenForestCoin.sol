@@ -9,14 +9,12 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 /**
  * @title Silken Forest Coin (SFC)
- * @notice Токен управління та біорізноманіття. 
- * Забезпечує голосування в DAO та безгазові операції.
+ * @notice Токен управління та біорізноманіття.
  */
 contract SilkenForestCoin is ERC20, AccessControl, Pausable, ERC20Permit, ERC20Votes {
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    // Індексуємо clusterId для миттєвої фільтрації в Rails Dashboard
     event ForestMinted(address indexed investor, uint256 amount, string indexed clusterId);
 
     constructor(address admin, address oracle)
@@ -27,10 +25,6 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ERC20Permit, ERC20V
         _grantRole(MINTER_ROLE, oracle);
     }
 
-    /**
-     * @notice Емісія токенів за досягнення в біорізноманітті.
-     * @param clusterId ID кластера, який отримав винагороду.
-     */
     function mint(address to, uint256 amount, string calldata clusterId) 
         external 
         onlyRole(MINTER_ROLE) 
@@ -40,7 +34,22 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ERC20Permit, ERC20V
         emit ForestMinted(to, amount, clusterId);
     }
 
-    // --- Адміністрування ---
+    /**
+     * @notice Пакетна емісія токенів управління.
+     */
+    function batchMint(
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        string[] calldata clusterIds
+    ) external onlyRole(MINTER_ROLE) whenNotPaused {
+        uint256 length = recipients.length;
+        require(length == amounts.length && length == clusterIds.length, "SFC: Array lengths mismatch");
+
+        for (uint256 i = 0; i < length; i++) {
+            _mint(recipients[i], amounts[i]);
+            emit ForestMinted(recipients[i], amounts[i], clusterIds[i]);
+        }
+    }
 
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
@@ -50,13 +59,10 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ERC20Permit, ERC20V
         _unpause();
     }
 
-    // --- ERC20 Hooks & Overrides ---
-
     function _update(address from, address to, uint256 value)
         internal
         override(ERC20, ERC20Votes)
     {
-        // Перевірка паузи інтегрована через override
         if (paused()) {
             revert EnforcedPause();
         }
