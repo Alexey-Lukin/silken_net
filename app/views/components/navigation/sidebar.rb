@@ -14,21 +14,24 @@ module Views
               section_group("Strategic Insight") do
                 nav_item("Oracle Visions", helpers.api_v1_oracle_visions_path, "eye")
                 nav_item("Treasury Matrix", helpers.api_v1_wallets_path, "bank")
+                nav_item("NaaS Contracts", helpers.api_v1_contracts_path, "clipboard")
               end
 
               # ОПЕРАЦІЙНИЙ КОНТУР
               section_group("Forest Operations") do
                 nav_item("Threat Alerts", helpers.api_v1_alerts_path, "zap", badge: ews_alert_count)
-                nav_item("Soldier Fleet", "#", "tree") # Посилання на масив дерев
+                nav_item("Soldier Fleet", helpers.api_v1_clusters_path, "tree") # Тепер веде на сектори
                 nav_item("Crew Registry", helpers.api_v1_users_path, "users")
+                nav_item("Clan Hierarchy", helpers.api_v1_organizations_path, "users")
               end
 
               # ТЕХНІЧНИЙ КОНТУР
               section_group("Neural Network") do
                 nav_item("Queen Relays", helpers.api_v1_gateways_path, "radio")
+                nav_item("Species DNA", helpers.api_v1_tree_families_path, "activity") # Нове: Геноми
                 nav_item("Firmware OTA", helpers.api_v1_firmwares_path, "cpu")
                 nav_item("Live Telemetry", helpers.live_api_v1_telemetry_index_path, "activity", pulse: true)
-                nav_item("Maintenance Log", helpers.api_v1_maintenance_records_path, "clipboard")
+                nav_item("Initiate Node", helpers.new_api_v1_provisioning_path, "zap") # Швидкий доступ до ініціації
               end
             end
 
@@ -63,7 +66,8 @@ module Views
         end
 
         def nav_item(label, path, icon, badge: nil, pulse: false)
-          active = helpers.current_page?(path)
+          # Логіка визначення активності, враховуючи вкладеність
+          active = helpers.request.path.start_with?(path.split('?').first)
           
           a(
             href: path,
@@ -73,7 +77,6 @@ module Views
             )
           ) do
             div(class: "flex items-center space-x-3") do
-              # SVG-плейсхолдер для іконок (можна замінити на Heroicons або власні)
               span(class: tokens("w-4 h-4", active ? "text-emerald-500" : "text-emerald-900 group-hover:text-emerald-700")) { render_icon(icon) }
               span { label }
             end
@@ -99,12 +102,10 @@ module Views
         end
 
         def ews_alert_count
-          # Отримуємо кількість активних алертів для бейджа
           EwsAlert.unresolved.count rescue 0
         end
 
         def render_icon(name)
-          # Спрощена логіка іконок — ти можеш вставити сюди SVG
           case name
           when "eye" then "⊙"
           when "bank" then "⬢"
@@ -114,6 +115,7 @@ module Views
           when "cpu" then "⚙"
           when "activity" then "〰"
           when "tree" then "🌳"
+          when "clipboard" then "▤"
           else "○"
           end
         end
