@@ -3,15 +3,19 @@
 module Api
   module V1
     class WalletsController < BaseController
-      # Тільки власники гаманців або адміни можуть бачити деталі транзакцій
-      before_action :authorize_wallet_access!, only: [:show, :history]
+      # Тільки власники гаманців або адміни можуть бачити деталі та історію
+      before_action :authorize_wallet_access!, only: [ :show ]
 
-      # --- ЗАГАЛЬНИЙ ОГЛЯД СКАРБНИЦІ ---
+      # --- ЗАГАЛЬНИЙ ОГЛЯД СКАРБНИЦІ (The Treasury Matrix) ---
       # GET /api/v1/wallets
       def index
-        # Якщо це адмін — бачить усі гаманці, якщо користувач — тільки гаманці своєї організації
-        @wallets = current_user.role_admin? ? Wallet.all : current_user.organization.wallets
-        
+        # Оптимізація: підвантажуємо асоціації, щоб уникнути N+1
+        @wallets = if current_user.role_admin?
+          Wallet.includes(:organization, :tree).all
+        else
+          current_user.organization.wallets.includes(:tree)
+        end
+
         respond_to do |format|
           format.json { render json: @wallets }
           format.html do
@@ -26,11 +30,13 @@ module Api
       # --- ДЕТАЛІ ГАМАНЦЯ (On-Chain Audit) ---
       # GET /api/v1/wallets/:id
       def show
-        @wallet = Wallet.find(params[:id])
+        # Ми вже знайшли @wallet у фільтрі authorize_wallet_access!
         @transactions = @wallet.blockchain_transactions.order(created_at: :desc).limit(50)
 
         respond_to do |format|
-          format.json { render json: @wallet.as_json(include: :blockchain_transactions) }
+          format.json do
+            render json: @wallet.as_json(include: :blockchain_transactions)
+          end
           format.html do
             render_dashboard(
               title: "Wallet // #{@wallet.address.first(8)}...",
@@ -44,9 +50,14 @@ module Api
 
       def authorize_wallet_access!
         @wallet = Wallet.find(params[:id])
-        unless current_user.role_admin? || @wallet.organization == current_user.organization || @wallet.tree&.cluster&.organization == current_user.organization
-          render_forbidden
-        end
+        
+        # Перевірка прав: Адмін, або Гаманець належить Організації користувача,
+        # або Гаманець прив'язаний до Дерева, що належить Організації користувача.
+        access_granted = current_user.role_admin? || 
+                         @wallet.organization == current_user.organization ||
+                         @wallet.tree&.cluster&.organization == current_user.organization
+
+        render_forbidden unless access_granted
       end
     end
   end
