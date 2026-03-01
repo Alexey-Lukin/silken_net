@@ -16,16 +16,17 @@ class ResetActuatorStateWorker
     end
 
     actuator = command.actuator
+    organization = actuator.gateway.cluster.organization
 
-    # Перевіряємо, чи актуатор все ще активний саме за цим наказом
-    # (Додаємо додатковий захист: чи це остання виконана команда для цього актуатора)
+    # Перевіряємо, чи актуатор все ще активний
     if actuator.state_active?
       ActiveRecord::Base.transaction do
         # 1. Повертаємо фізичний об'єкт у гомеостаз (IDLE)
         actuator.mark_idle!
 
-        # 2. Закриваємо наказ у базі даних
-        command.update!(status: :confirmed, completed_at: Time.current)
+        # 2. Закриваємо наказ у базі даних (completed_at, якщо є така колонка, або просто update)
+        command.update!(status: :confirmed)
+        # command.update!(status: :confirmed, completed_at: Time.current) # Розкоментуй, якщо додав колонку
       end
 
       Rails.logger.info "♻️ [Actuator Lifecycle] Механізм #{actuator.name} виконав наказ ##{command.id} і повернувся в спокій."
@@ -36,5 +37,26 @@ class ResetActuatorStateWorker
       # Ми все одно маркуємо команду як завершену, навіть якщо стан змінився ззовні
       command.update!(status: :confirmed) if command.status_acknowledged?
     end
+
+    # ⚡ [СИНХРОНІЗАЦІЯ З UI]: Відправляємо фінальний імпульс Архітектору
+    broadcast_final_state(command, organization)
+  end
+
+  private
+
+  def broadcast_final_state(command, organization)
+    # 1. Оновлюємо статус самої команди в списку недавніх активностей
+    Turbo::StreamsChannel.broadcast_replace_to(
+      organization,
+      target: "command_status_#{command.id}",
+      html: Views::Components::Actuators::CommandStatusBadge.new(command: command).call
+    )
+
+    # 2. Оновлюємо велику картку актуатора, знімаючи з неї пульсуючий ефект "Active"
+    Turbo::StreamsChannel.broadcast_replace_to(
+      organization,
+      target: "actuator_card_#{command.actuator.id}",
+      html: Views::Components::Actuators::Card.new(actuator: command.actuator).call
+    )
   end
 end
