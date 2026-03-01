@@ -3,12 +3,9 @@
 module Api
   module V1
     class MaintenanceRecordsController < BaseController
-      # Тільки Патрульні та Адміни можуть фіксувати втручання
       before_action :authorize_forester!
 
       # --- ЖУРНАЛ ВТРУЧАНЬ ---
-      # GET /api/v1/maintenance_records
-      # Параметри: ?maintainable_type=Tree&maintainable_id=42
       def index
         @records = MaintenanceRecord.includes(:user, :maintainable)
                                     .order(performed_at: :desc)
@@ -20,51 +17,84 @@ module Api
           )
         end
 
-        render json: @records.as_json(
-          include: {
-            user: { only: [ :id, :first_name, :last_name ] },
-            maintainable: { only: [ :id, :did, :uid ] }
-          }
+        respond_to do |format|
+          format.json do
+            render json: @records.as_json(
+              include: {
+                user: { only: [ :id, :first_name, :last_name ] },
+                maintainable: { only: [ :id, :did, :uid ] }
+              }
+            )
+          end
+          format.html do
+            render_dashboard(
+              title: "Maintenance Log // Records of Healing",
+              component: Views::Components::Maintenance::Index.new(records: @records)
+            )
+          end
+        end
+      end
+
+      # --- НОВИЙ ЗАПИС (Форма) ---
+      def new
+        @record = current_user.maintenance_records.build(
+          maintainable_type: params[:maintainable_type] || "Tree",
+          maintainable_id: params[:maintainable_id],
+          ews_alert_id: params[:ews_alert_id]
+        )
+
+        render_dashboard(
+          title: "New Maintenance Ritual",
+          component: Views::Components::Maintenance::Form.new(record: @record)
         )
       end
 
       # --- ФІКСАЦІЯ ЗЦІЛЕННЯ ---
-      # POST /api/v1/maintenance_records
       def create
-        # Створюємо запис, прив'язаний до поточного Патрульного
         @record = current_user.maintenance_records.build(maintenance_params)
 
         if @record.save
-          # [СИНХРОНІЗАЦІЯ]: Колбек heal_ecosystem! у моделі вже запустив:
-          # 1. Оновлення статусу пристрою.
-          # 2. Закриття EwsAlert (якщо ews_alert_id передано).
-
-          render json: {
-            message: "Запис про зцілення зафіксовано. Екосистема оновлена.",
-            record: @record
-          }, status: :created
+          respond_to do |format|
+            format.json do
+              render json: {
+                message: "Запис про зцілення зафіксовано. Екосистема оновлена.",
+                record: @record
+              }, status: :created
+            end
+            format.html { redirect_to api_v1_maintenance_records_path, notice: "Healing ritual recorded." }
+          end
         else
-          render_validation_error(@record)
+          respond_to do |format|
+            format.json { render_validation_error(@record) }
+            format.html do
+              render_dashboard(
+                title: "Error in Ritual",
+                component: Views::Components::Maintenance::Form.new(record: @record)
+              )
+            end
+          end
         end
       end
 
-      # --- ДЕТАЛІ ОГЛЯДУ ---
-      # GET /api/v1/maintenance_records/:id
       def show
         @record = MaintenanceRecord.find(params[:id])
-        render json: @record
+        respond_to do |format|
+          format.json { render json: @record }
+          format.html do
+            render_dashboard(
+              title: "Record Detail // ##{@record.id}",
+              component: Views::Components::Maintenance::Show.new(record: @record)
+            )
+          end
+        end
       end
 
       private
 
       def maintenance_params
         params.require(:maintenance_record).permit(
-          :maintainable_id,
-          :maintainable_type,
-          :ews_alert_id,
-          :action_type,
-          :notes,
-          :performed_at
+          :maintainable_id, :maintainable_type, :ews_alert_id,
+          :action_type, :notes, :performed_at
         )
       end
     end
