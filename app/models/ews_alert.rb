@@ -16,7 +16,7 @@ class EwsAlert < ApplicationRecord
     vandalism_breach: 2,  # Відкриття корпусу
     fire_detected: 3,     # Пожежа
     seismic_anomaly: 4,   # Землетрус
-    system_fault: 5       # [СИНХРОНІЗОВАНО]: Поломка шлюзу/актуатора/сенсора
+    system_fault: 5       # Поломка шлюзу/актуатора/сенсора
   }, prefix: true
 
   # --- ВАЛІДАЦІЇ ---
@@ -25,6 +25,9 @@ class EwsAlert < ApplicationRecord
   # --- КОЛБЕКИ (Zero-Lag Awareness) ---
   # Як тільки тривога зафіксована в БД — гінці (Sidekiq) стають на крило
   after_create_commit :dispatch_notifications!
+  
+  # Миттєве оновлення мапи при зміні статусу тривоги
+  after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
   # --- СКОУПИ ---
   scope :unresolved, -> { status_active }
@@ -35,22 +38,27 @@ class EwsAlert < ApplicationRecord
   # МЕТОДИ (The Lens of Truth)
   # =========================================================================
 
+  # Протокол завершення інциденту
   def resolve!(user: nil, notes: "Закрито системою")
+    # [СИНХРОНІЗАЦІЯ З REDIS]: При закритті тривоги ми маємо видалити 
+    # "режим тиші" в AlertDispatchService, щоб нові аномалії знову могли тригеритись.
+    clear_silence_filter!
+
     update!(
       status: :resolved,
       resolved_at: Time.current,
       resolver: user,
       resolution_notes: notes
     )
-    # Також можемо автоматично закривати пов'язані MaintenanceRecord тут
+    
+    # [SELF-HEALING]: Автоматично закриваємо відкриті MaintenanceRecord, 
+    # якщо вони були прив'язані до цієї тривоги.
+    close_associated_maintenance!
   end
 
   # Точка на мапі для десанту Патрульних
   def coordinates
     return [ tree.latitude, tree.longitude ] if tree.present?
-
-    # Якщо тривога системна для шлюзу, беремо центр кластера (geojson_polygon)
-    # або координати першого ліпшого шлюзу кластера.
     cluster.gateways.first&.then { |g| [ g.latitude, g.longitude ] }
   end
 
@@ -62,7 +70,34 @@ class EwsAlert < ApplicationRecord
   private
 
   def dispatch_notifications!
-    # Викликаємо наш AlertNotificationWorker, який ми зашліфували раніше
     AlertNotificationWorker.perform_async(self.id)
+  end
+
+  # [ОПТИМІЗАЦІЯ]: Видалення ключа тиші з Redis
+  def clear_silence_filter!
+    return unless tree_id.present?
+    
+    # Ключ має точно збігатися з тим, що в AlertDispatchService
+    silence_key = "ews_silence:#{tree_id}:#{alert_type}"
+    Rails.cache.delete(silence_key)
+  end
+
+  def broadcast_status_change
+    # Оновлюємо UI через Hotwire/Turbo, щоб "червоні вогники" гасли в реальному часі
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "ews_updates_#{cluster_id}",
+      target: "alert_#{id}",
+      html: Views::Components::Alerts::Badge.new(alert: self).call
+    )
+  end
+
+  def close_associated_maintenance!
+    # Знаходимо MaintenanceRecord, які були створені як відповідь на цей а alert_id
+    # (якщо ти додав такий зв'язок у таблицю maintenance_records)
+    MaintenanceRecord.where(ews_alert_id: id, status: :pending).update_all(
+      status: :completed, 
+      performed_at: Time.current,
+      notes: "Auto-resolved via EWS Recovery"
+    ) rescue nil
   end
 end
