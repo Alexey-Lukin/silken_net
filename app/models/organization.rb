@@ -2,8 +2,9 @@
 
 class Organization < ApplicationRecord
   # --- ЗВ'ЯЗКИ (The Web of Responsibility) ---
-  # Працівники цієї організації (Інвестори, Лісники, Адміни)
-  has_many :users, dependent: :destroy
+  # [ВИПРАВЛЕНО: Захист Користувачів]: 
+  # Ми не видаляємо людей разом з організацією, щоб зберегти аудит-логи (MaintenanceRecords)
+  has_many :users, dependent: :restrict_with_error
 
   # Фінансові контракти (Nature-as-a-Service)
   has_many :naas_contracts, dependent: :restrict_with_error
@@ -21,13 +22,17 @@ class Organization < ApplicationRecord
 
   # --- НОРМАЛІЗАЦІЯ ---
   normalizes :billing_email, with: ->(e) { e.strip.downcase }
-  normalizes :crypto_public_address, with: ->(a) { a.strip.downcase }
+
+  # [ВИПРАВЛЕНО: EIP-55 Checksum Preservation]:
+  # Прибираємо downcase, щоб не зруйнувати контрольну суму гаманця для Web3-провайдерів
+  normalizes :crypto_public_address, with: ->(a) { a.strip }
 
   # --- ВАЛІДАЦІЇ ---
   validates :name, presence: true, uniqueness: true
   validates :billing_email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
 
   # Валідація гаманця для Web3 операцій (Polygon/Ethereum)
+  # Тепер валідація дозволяє змішаний регістр (A-F)
   validates :crypto_public_address, presence: true, uniqueness: true,
             format: { with: /\A0x[a-fA-F0-9]{40}\z/, message: "має бути валідною адресою гаманця 0x..." }
 
@@ -49,13 +54,13 @@ class Organization < ApplicationRecord
     ews_alerts.unresolved.critical.exists?
   end
 
-  # Агрегований показник здоров'я всього фонду організації
-  # Повертає значення від 0.0 до 1.0 (середнє по всіх кластерах)
+  # [ОПТИМІЗАЦІЯ: N+1 Kill]: Агрегований показник здоров'я всього фонду організації
+  # Тепер розрахунок відбувається на рівні бази даних
   def health_score
     return 1.0 if clusters.empty?
 
-    # Викликаємо метод health_index, який ми зашліфували в моделі Cluster
-    scores = clusters.map(&:health_index)
-    (scores.sum / scores.size).round(2)
+    # Використовуємо SQL AVG для миттєвого розрахунку середнього значення
+    # Формула: $$Health = \frac{\sum_{i=1}^{n} Cluster_{i}.health\_index}{n}$$
+    clusters.average(:health_index).to_f.round(2)
   end
 end
