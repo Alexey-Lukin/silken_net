@@ -7,8 +7,14 @@ class TreeFamily < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :name, presence: true, uniqueness: true
-  validates :baseline_impedance, :critical_z_min, :critical_z_max,
-            presence: true, numericality: true
+  validates :baseline_impedance, :critical_z_min, presence: true, numericality: true
+
+  # [ВИПРАВЛЕНО: Захист законів фізики]: 
+  # Гарантуємо, що межі Атрактора не перехрещуються
+  validates :critical_z_max, 
+            presence: true, 
+            numericality: true, 
+            comparison: { greater_than: :critical_z_min }
 
   # --- JSONB PROPERTIES (The TinyML Support) ---
   # Гнучкі властивості для специфічного аналізу кожної породи
@@ -17,6 +23,12 @@ class TreeFamily < ApplicationRecord
                  :bark_thickness,
                  :foliage_density,
                  :fire_resistance_rating
+
+  # [ВИПРАВЛЕНО: Типізація JSONB-полів]:
+  # Виганяємо "Data Type Phantom" — гарантуємо, що параметри для TinyML є числами
+  validates :sap_flow_index, :bark_thickness, :foliage_density, :fire_resistance_rating, 
+            numericality: true, 
+            allow_nil: true
 
   # --- СКОУПИ ---
   scope :alphabetical, -> { order(name: :asc) }
@@ -46,6 +58,7 @@ class TreeFamily < ApplicationRecord
 
   # Перевірка гомеостазу: чи вписується Z-значення в межі стабільності даної породи
   def healthy_z?(z_value)
+    # Завдяки валідації comparison, цей метод тепер завжди працює коректно
     z_value.to_f.between?(critical_z_min, critical_z_max)
   end
 
