@@ -2,7 +2,7 @@
 
 class HardwareKey < ApplicationRecord
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-  # БЕЗПЕКА ДАНХ (ActiveRecord Encryption)
+  # БЕЗПЕКА ДАНИХ (ActiveRecord Encryption)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   
   # Шифруємо обидва ключі. Non-deterministic шифрування гарантує, що навіть 
@@ -14,8 +14,12 @@ class HardwareKey < ApplicationRecord
   # Зв'язок із Солдатом (Tree) через DID
   belongs_to :tree, foreign_key: :device_uid, primary_key: :did, optional: true
   
+  # [ВИПРАВЛЕНО: Забута Королева]: Повертаємо ієрархічний зв'язок із Шлюзом
+  belongs_to :gateway, foreign_key: :device_uid, primary_key: :uid, optional: true
+  
   # ⚡ [СИНХРОНІЗАЦІЯ]: Висхідна навігація до ієрархії влади
-  delegate :organization, :cluster, to: :tree, allow_nil: true
+  # Тепер ми можемо дістати контекст незалежно від того, хто власник ключа
+  delegate :organization, :cluster, to: :owner, allow_nil: true
 
   # --- НОРМАЛІЗАЦІЯ ---
   normalizes :device_uid, with: ->(uid) { uid.to_s.strip.upcase }
@@ -48,32 +52,36 @@ class HardwareKey < ApplicationRecord
   end
 
   # [СИНХРОНІЗОВАНО]: М'яка ротація ключа
-  # Ми не видаляємо старий ключ, а пересуваємо його в "архів"
   def rotate_key!
     new_key_hex = SecureRandom.hex(32).upcase
 
-    transaction do
-      update!(
-        previous_aes_key_hex: aes_key_hex, # Стара істина стає резервною
-        aes_key_hex: new_key_hex,          # Нова істина вступає в силу
-        rotated_at: Time.current
-      )
-      # Скидаємо мемоізацію
-      @binary_key = nil
-      @binary_previous_key = nil
-    end
+    # [ВИПРАВЛЕНО]: Прибрано зайвий transaction do, оскільки update! 
+    # вже обгорнутий у транзакцію на рівні ActiveRecord.
+    update!(
+      previous_aes_key_hex: aes_key_hex, # Стара істина стає резервною
+      aes_key_hex: new_key_hex,          # Нова істина вступає в силу
+      rotated_at: Time.current
+    )
+    
+    # Скидаємо мемоізацію
+    @binary_key = nil
+    @binary_previous_key = nil
 
     Rails.logger.warn "🔄 [KeyRotation] Для #{device_uid} активовано Grace Period. Старий ключ збережено як резервний."
     binary_key
   end
 
   # Метод для зачистки "хвостів" після успішної синхронізації.
-  # Викликається в UnpackTelemetryWorker, коли ми отримали перший пакет на НОВОМУ ключі.
   def clear_grace_period!
     return if previous_aes_key_hex.blank?
     
     update_columns(previous_aes_key_hex: nil)
     @binary_previous_key = nil
     Rails.logger.info "✅ [KeyRotation] Синхронізація для #{device_uid} підтверджена. Резервний ключ видалено."
+  end
+
+  # Повертає фактичного власника ключа (Дерево або Шлюз)
+  def owner
+    tree || gateway
   end
 end
