@@ -17,15 +17,18 @@ class InsightGeneratorService
   end
 
   def perform
-    Rails.logger.info "🧠 [Insight Generator] Початок агрегації за #{@date}..."
+    Rails.logger.info "🧠 [Insight Generator] Початок масової агрегації за #{@date}..."
 
     # 1. ІДЕМПОТЕНТНІСТЬ: Очищуємо старі інсайти за цю дату перед перерахунком
     AiInsight.where(target_date: @date, insight_type: :daily_health_summary).delete_all
 
+    # ⚡ [ОПТИМІЗАЦІЯ N+1]: Завантажуємо Базлайни ВСІХ кластерів одним запитом перед циклом.
+    # Це прибирає сотні важких JOIN запитів усередині Cluster.find_each.
+    @baselines_map = prefetch_cluster_baselines
+
     # 2. ПОКЛАСТЕРНА ОБРОБКА З AI-GUARD
     Cluster.find_each do |cluster|
-      # Збираємо "Кліматичний Базлайн" кластера (середні показники всіх дерев)
-      cluster_baseline = calculate_cluster_baseline(cluster)
+      cluster_baseline = @baselines_map[cluster.id]
       next unless cluster_baseline
 
       # Перевіряємо кожне дерево в кластері на відповідність базлайну
@@ -36,39 +39,35 @@ class InsightGeneratorService
       end
     end
 
-    # 3. АГРЕГАЦІЯ КЛАСТЕРІВ (The Big Picture)
+    # 3. АГРЕГАЦІЯ КЛАСТЕРІВ (Оптимізовано JSONB)
     aggregate_clusters!
 
     # 4. КЕНОЗИС: Очищення сирих логів
     cleanup_old_logs!
 
     Rails.logger.info "✅ [Insight Generator] Цикл завершено. Оброблено вузлів: #{@processed_count}"
-
-    # Повертаємо результат для DailyAggregationWorker
     { processed_count: @processed_count, date: @date }
   end
 
   private
 
-  # Обчислює загальний кліматичний фон сектора для виявлення фроду
-  def calculate_cluster_baseline(cluster)
-    logs = TelemetryLog.joins(:tree)
-                       .where(trees: { cluster_id: cluster.id })
-                       .where(created_at: @start_time..@end_time)
-                       
-    return nil if logs.empty?
-
-    baseline = logs.select(
-      "AVG(temperature_c) as avg_temp",
-      "AVG(sap_flow) as avg_sap",       # Використовуємо sap_flow (імпеданс) для перевірки
-      "AVG(z_value) as avg_z"
-    ).take
-
-    {
-      temp: baseline.avg_temp.to_f,
-      sap: baseline.avg_sap.to_f,
-      z: baseline.avg_z.to_f
-    }
+  # ⚡ [ANTI-N+1]: Агрегація базлайнів для всіх кластерів одним GROUP BY
+  def prefetch_cluster_baselines
+    TelemetryLog.joins(:tree)
+                .where(created_at: @start_time..@end_time)
+                .group("trees.cluster_id")
+                .select(
+                  "trees.cluster_id",
+                  "AVG(temperature_c) as avg_temp",
+                  "AVG(sap_flow) as avg_sap",
+                  "AVG(z_value) as avg_z"
+                ).each_with_object({}) do |row, hash|
+                  hash[row.cluster_id] = {
+                    temp: row.avg_temp.to_f,
+                    sap: row.avg_sap.to_f,
+                    z: row.avg_z.to_f
+                  }
+                end
   end
 
   def generate_for_tree(tree, baseline)
@@ -80,7 +79,7 @@ class InsightGeneratorService
       "AVG(temperature_c) as avg_temp",
       "AVG(voltage_mv) as avg_vcap",
       "AVG(z_value) as avg_z",
-      "AVG(sap_flow) as avg_sap", # Додано sap_flow для AI Guard
+      "AVG(sap_flow) as avg_sap",
       "MAX(acoustic_events) as max_acoustic",
       "SUM(growth_points) as total_growth",
       "MAX(bio_status) as max_status"
@@ -91,20 +90,12 @@ class InsightGeneratorService
     # 🛡️ [AI FRAUD GUARD]: Перевірка на "занадто ідеальні" показники
     is_fraud = detect_fraud?(stats, baseline)
 
-    # Якщо виявлено фрод - ми блокуємо ріст і максимізуємо стрес, щоб запустити Slashing
+    # Якщо виявлено фрод - ми блокуємо ріст і максимізуємо стрес
     final_growth = is_fraud ? 0 : stats.total_growth.to_i
     
     # Розраховуємо індекс стресу (враховуючи відхилення Z Атрактора та Фрод)
-    stress_index = if is_fraud
-                     1.0 # Термінальний статус для шахрайства
-                   else
-                     calculate_stress_index(
-                       stats.max_status.to_i,
-                       stats.avg_temp.to_f,
-                       stats.max_acoustic.to_i,
-                       stats.avg_z.to_f
-                     )
-                   end
+    # $$Stress = \min(1.0, \text{base\_stress} + \text{anomaly\_penalties})$$
+    stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f)
 
     summary = is_fraud ? "🚨 КРИТИЧНО: Виявлено фрод-телеметрію (аномальне відхилення від кластера)." : generate_summary(stats.max_status.to_i, stats.avg_temp.to_f)
 
@@ -125,8 +116,12 @@ class InsightGeneratorService
       }
     )
 
-    # Якщо це шахрайство — переводимо дерево в статус removed (це автоматично запустить BurnCarbonTokensWorker)
-    tree.update!(status: :removed) if is_fraud
+    # ⚡ [ВИПРАВЛЕНО: Жорсткий Slashing]: 
+    # Ми більше не "вбиваємо" дерево миттєво. Створюємо критичну тривогу для перевірки.
+    # Це захищає інвестора від помилок ШІ, але зупиняє виплати до вердикту людини.
+    if is_fraud
+      AlertDispatchService.create_fraud_alert!(tree, "Виявлено фрод-телеметрію за #{@date}")
+    end
 
     true
   rescue StandardError => e
@@ -134,54 +129,41 @@ class InsightGeneratorService
     false
   end
 
-  # AI Логіка виявлення фроду
   def detect_fraud?(stats, baseline)
     return false if baseline[:sap].zero?
-
     sap_deviation = calculate_deviation(stats.avg_sap.to_f, baseline[:sap])
     temp_deviation = calculate_deviation(stats.avg_temp.to_f, baseline[:temp])
-
-    # Якщо потік соку (sap_flow/імпеданс) дерева на 30% кращий/ідеальніший, 
-    # ніж у сусідів у тому ж самому секторі, при цьому температура теж відрізняється — це симуляція.
     (sap_deviation > FRAUD_DEVIATION_THRESHOLD) && (temp_deviation > FRAUD_DEVIATION_THRESHOLD)
   end
 
-  # Допоміжний метод розрахунку % відхилення
   def calculate_deviation(value, base)
     return 0.0 if base.zero?
     ((value - base).abs / base).round(4)
   end
 
   def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z)
-    # Якщо зафіксовано статус 2 (Аномалія) або 3 (Вандалізм) — стрес максимальний
     return 1.0 if max_status >= 2
-
     base_stress = (max_status == 1 ? 0.6 : 0.0)
-
-    # [МАТЕМАТИКА ХАОСУ]: Якщо Z-index виходить за межі стабільної орбіти (abs > 2.0)
-    # це ознака того, що система втрачає гомеостаз.
     base_stress += 0.2 if avg_z.abs > 2.0
-
-    # Температурний стрес (екстремальні умови Черкаського бору)
     base_stress += 0.1 if avg_temp > 35.0 || avg_temp < -5.0
-
-    # Максимальний стрес для "живого" дерева обмежений 0.99, 1.0 — це термінальний стан
     [ base_stress, 0.99 ].min
   end
 
   def aggregate_clusters!
     Cluster.find_each do |cluster|
-      # Збираємо вердикти всіх дерев кластера за вказану дату
       tree_insights = AiInsight.where(
-        analyzable: cluster.trees,
+        analyzable_type: "Tree",
+        analyzable_id: cluster.trees.select(:id),
         insight_type: :daily_health_summary,
         target_date: @date
       )
 
       next if tree_insights.empty?
 
-      # Перевіряємо, чи є в кластері масовий фрод
-      fraud_count = tree_insights.where("reasoning->>'fraud_detected' = 'true'").count
+      # ⚡ [ОПТИМІЗАЦІЯ JSONB]: Використовуємо оператор входження @> замість ->>
+      # Це дозволяє Postgres використовувати GIN індекс (якщо він є) і не парсити JSON кожен раз.
+      fraud_count = tree_insights.where("reasoning @> ?", { fraud_detected: true }.to_json).count
+      
       summary = if fraud_count > 0
                   "⚠️ Сектор #{cluster.name}: Виявлено #{fraud_count} вузлів із фрод-телеметрією."
                 else
@@ -193,17 +175,15 @@ class InsightGeneratorService
         insight_type: :daily_health_summary,
         target_date: @date,
         stress_index: tree_insights.average(:stress_index).to_f.round(3),
-        total_growth_points: tree_insights.sum(:total_growth_points), # Фродові дерева дають 0
+        total_growth_points: tree_insights.sum(:total_growth_points),
         summary: summary
       )
     end
   end
 
   def cleanup_old_logs!
-    # [КЕНОЗИС]: Ми зберігаємо лише 7 днів сирих даних для економії простору БД
     threshold = 7.days.ago.end_of_day
-    deleted = TelemetryLog.where("created_at <= ?", threshold).delete_all
-    Rails.logger.info "🧹 [Insight Generator] Видалено #{deleted} застарілих логів телеметрії."
+    TelemetryLog.where("created_at <= ?", threshold).delete_all
   end
 
   def generate_summary(status, temp)
