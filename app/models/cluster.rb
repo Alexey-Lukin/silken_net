@@ -13,11 +13,21 @@ class Cluster < ApplicationRecord
   # Страхові поліси, прив'язані до конкретної локації
   has_many :parametric_insurances, dependent: :destroy
   # Поліморфні прогнози та підсумки (Daily Health Summary)
-  has_many :ai_insights, as: :analyzable, dependent: :destroy
+  has_many :ai_insights, as: :analy_able, dependent: :destroy
+
+  # --- JSONB SETTINGS (The Biome Adaptation) ---
+  # [НОВЕ]: Сховище для адаптивних порогів Оракула
+  store_accessor :environmental_settings, 
+                 :custom_fire_threshold, 
+                 :seismic_sensitivity_threshold
 
   # --- ВАЛІДАЦІЇ ТА НОРМАЛІЗАЦІЯ ---
   validates :name, presence: true, uniqueness: true
   validates :region, presence: true
+  
+  # Гарантуємо, що адаптивні пороги є числами
+  validates :custom_fire_threshold, :seismic_sensitivity_threshold, 
+            numericality: { greater_than: 0 }, allow_nil: true
 
   # Гарантуємо, що GeoJSON не містить сміття
   normalizes :geojson_polygon, with: ->(json) { json.is_a?(Hash) ? json.deep_stringify_keys : json }
@@ -47,6 +57,7 @@ class Cluster < ApplicationRecord
 
   # Чи є критичні загрози в секторі?
   def active_threats?
+    # [ОПТИМІЗАЦІЯ]: Використовуємо кеш-метод, якщо він доступний, або швидкий запит
     ews_alerts.unresolved.critical.exists?
   end
 
@@ -55,6 +66,7 @@ class Cluster < ApplicationRecord
     return nil unless mapped?
 
     # Витягуємо всі пари [long, lat] з полігону
+    # [ЗАСТЕРЕЖЕННЯ]: Flatten може бути дорогим для дуже складних полігонів (1000+ точок)
     coords = geojson_polygon["coordinates"].flatten(1)
     return nil if coords.empty?
 
