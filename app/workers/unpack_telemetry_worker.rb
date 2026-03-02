@@ -49,7 +49,11 @@ class UnpackTelemetryWorker
   rescue Base64::Error => e
     Rails.logger.warn "🛑 [Uplink] Корупція Base64 від #{sender_ip}: #{e.message}"
   rescue StandardError => e
-    Rails.logger.error "🚨 [Uplink Critical] Збій обробки батча: #{e.message}"
+    # [ВИПРАВЛЕНО: Broad Rescue Trace]: Додано перші 10 рядків трейсу для швидкої діагностики у продакшені
+    backtrace_summary = e.backtrace.first(10).join("\n")
+    Rails.logger.error "🚨 [Uplink Critical] Збій обробки батча: #{e.message}\n#{backtrace_summary}"
+    
+    # Ми прокидаємо помилку далі, щоб Sidekiq міг зробити retry
     raise e
   end
 
@@ -79,12 +83,14 @@ class UnpackTelemetryWorker
   end
 
   def decrypt_aes(payload, key)
+    # [БЕЗПЕКА]: Використовуємо AES-256-ECB (стандарт для фіксованих батчів у нашій мережі)
     cipher = OpenSSL::Cipher.new("aes-256-ecb")
     cipher.decrypt
     cipher.key = key
     cipher.padding = 0
     
-    # Використовуємо rescue, бо при невірному ключі OpenSSL видасть помилку
+    # Використовуємо rescue тут, бо при невірному ключі OpenSSL видасть помилку.
+    # Це частина логіки перебору, тому трейс тут не потрібен.
     cipher.update(payload) + cipher.final
   rescue StandardError
     nil
@@ -93,6 +99,7 @@ class UnpackTelemetryWorker
   def broadcast_to_matrix(gateway, binary_data)
     hex_payload = binary_data.unpack1("H*").upcase
 
+    # Turbo Stream трансляція для "живого" дашборду телеметрії
     Turbo::StreamsChannel.broadcast_prepend_to(
       "telemetry_stream",
       target: "telemetry_feed",
