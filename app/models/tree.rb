@@ -12,7 +12,10 @@ class Tree < ApplicationRecord
   has_one :hardware_key, foreign_key: :device_uid, primary_key: :did, dependent: :destroy
 
   has_one :device_calibration, dependent: :destroy
-  has_many :telemetry_logs, dependent: :destroy
+  
+  # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для швидкодії без OOM
+  has_many :telemetry_logs, dependent: :delete_all
+  
   has_many :ews_alerts, dependent: :destroy
   has_many :maintenance_records, as: :maintainable, dependent: :destroy
   has_many :ai_insights, as: :analyzable, dependent: :destroy
@@ -36,7 +39,7 @@ class Tree < ApplicationRecord
   # ⚡ [ТРИГЕР СМЕРТІ]: Якщо дерево гине або зникає — ініціюємо фінансову відплату (Slashing)
   after_update_commit :trigger_slashing_protocol, if: -> { saved_change_to_status? && (removed? || deceased?) }
   
-  # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Миттєво оновлюємо вузол на мапі при зміні стану
+  # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Миттєво оновлюємо вузол на мапі при будь-якій зміні (включаючи touch)
   after_update_commit :broadcast_map_update
 
   # --- СКОУПИ (The Watchers) ---
@@ -53,11 +56,14 @@ class Tree < ApplicationRecord
 
   # --- МЕТОДИ (Intelligence) ---
 
-  # Оновлення пульсу (викликається при розпаковці телеметрії)
-  def mark_seen!
-    touch(:last_seen_at)
-    # Коли дерево "дихає", ми оновлюємо його заряд/статус на мапі
-    broadcast_map_update
+  # [ВИПРАВЛЕНО: Фантомна Луна]: Тепер оновлюємо вольтаж та час без подвійного broadcast
+  def mark_seen!(voltage_mv = nil)
+    # Оновлюємо денормалізовані дані. touch автоматично запустить after_update_commit
+    attributes_to_update = { last_seen_at: Time.current }
+    attributes_to_update[:latest_voltage_mv] = voltage_mv if voltage_mv
+    
+    update_columns(attributes_to_update)
+    broadcast_map_update # Викликаємо вручну, бо update_columns не тригерить колбеки (це найшвидший шлях)
   end
 
   # Останній вердикт Оракула
@@ -73,9 +79,9 @@ class Tree < ApplicationRecord
   # IONIC INTELLIGENCE (Streaming Potential Management)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-  # Повертає останній зафіксований вольтаж іоністора
+  # [ОПТИМІЗАЦІЯ: N+1 Загроза]: Тепер беремо значення прямо з таблиці trees
   def ionic_voltage
-    latest_telemetry&.voltage_mv || 0
+    latest_voltage_mv || 0
   end
 
   # Розрахунок заряду у % (Діапазон 3000мВ - 4200мВ)
@@ -91,14 +97,13 @@ class Tree < ApplicationRecord
     ionic_voltage > 0 && ionic_voltage < 3300
   end
 
-  # Помічник для швидкого доступу до останнього логу (мемоізований)
+  # Помічник для глибокого аудиту (використовувати тільки в show)
   def latest_telemetry
     @latest_telemetry ||= telemetry_logs.order(created_at: :desc).first
   end
 
   # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Трансляція вузла в Stimulus контролер
   def broadcast_map_update
-    # Якщо дерево не має координат — його не можна показати на мапі
     return unless latitude.present? && longitude.present?
 
     Turbo::StreamsChannel.broadcast_replace_to(
@@ -125,7 +130,6 @@ class Tree < ApplicationRecord
   def trigger_slashing_protocol
     return unless cluster&.organization
 
-    # Шукаємо активні NaaS контракти, до яких прив'язаний кластер цього дерева
     cluster.naas_contracts.active_contracts.find_each do |contract|
       BurnCarbonTokensWorker.perform_async(cluster.organization_id, contract.id, id)
     end
