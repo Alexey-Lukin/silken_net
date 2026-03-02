@@ -4,6 +4,16 @@ class TelemetryUnpackerService
   # [DID:4][RSSI:1][Payload:16] = 21 байт
   CHUNK_SIZE = 21
 
+  # --- КОНСТАНТИ ЕВОЛЮЦІЇ (The Immutable Offsets) ---
+  # Формат: DID(N), Vcap(n), Temp(c), Acoustic(C), Metabolism(n), Status(C), TTL(C), Pad(a4)
+  PAYLOAD_FORMAT = "N n c C n C C a4"
+  FIRMWARE_PAD_INDEX = 7 # Індекс елемента a4 у розпакованому масиві
+  
+  # --- МЕЖІ РЕАЛЬНОСТІ (Sanity Bounds) ---
+  # Виключаємо сенсорний шум: ADC глюки, що виходять за межі фізики
+  SAFE_VOLTAGE_RANGE = (0..5000)      # 0 - 5В
+  SAFE_TEMP_RANGE    = (-45..90)      # Від арктичних до тропічних пожеж
+
   def self.call(binary_batch, gateway_id = nil)
     new(binary_batch, gateway_id).perform
   end
@@ -11,6 +21,7 @@ class TelemetryUnpackerService
   def initialize(binary_batch, gateway_id)
     @binary_batch = binary_batch
     @gateway = Gateway.find_by(id: gateway_id)
+    @trees_cache = {}
   end
 
   def perform
@@ -19,6 +30,9 @@ class TelemetryUnpackerService
     # Розрізаємо бінарний моноліт на 21-байтні чанки
     chunks = @binary_batch.b.scan(/.{1,#{CHUNK_SIZE}}/m)
 
+    # ⚡ [ОПТИМІЗАЦІЯ N+1]: Спершу витягуємо всі DID з батчу
+    preload_trees(chunks)
+
     chunks.each do |chunk|
       next if chunk.bytesize < CHUNK_SIZE
       process_chunk(chunk)
@@ -26,6 +40,14 @@ class TelemetryUnpackerService
   end
 
   private
+
+  # Створюємо Hash-мапу DID -> Tree для миттєвого доступу без N+1 запитів
+  def preload_trees(chunks)
+    dids = chunks.map { |c| c[0..3].unpack1("N").to_s(16).upcase }.uniq
+    @trees_cache = Tree.where(did: dids)
+                       .includes(:wallet, :device_calibration, :tree_family)
+                       .index_by(&:did)
+  end
 
   def process_chunk(chunk)
     # 1. МАРШРУТИЗАЦІЯ (L2 Header від Королеви)
@@ -37,11 +59,17 @@ class TelemetryUnpackerService
     actual_rssi = -inverted_rssi
 
     # 2. РОЗПАКОВКА БІО-МЕТРИКИ (L3 Payload)
-    # Формат: DID(N), Vcap(n), Temp(c), Acoustic(C), Metabolism(n), Status(C), TTL(C), Pad(a4)
     payload = chunk[5..20]
-    parsed_data = payload.unpack("N n c C n C C a4")
+    parsed_data = payload.unpack(PAYLOAD_FORMAT)
 
-    tree = Tree.find_by(did: hex_did)
+    # [СЕНСОРНИЙ ШУМ]: Перевірка на "адекватність" значень перед коммітом
+    unless valid_sensor_data?(parsed_data)
+      Rails.logger.warn "📡 [Sensor Noise] Пакет від #{hex_did} відхилено: аномальні показники ADC."
+      return
+    end
+
+    # [ОПТИМІЗАЦІЯ]: Беремо дерево з нашого Hash-кешу
+    tree = @trees_cache[hex_did]
     unless tree
       Rails.logger.warn "⚠️ [Uplink] DID #{hex_did} не знайдено в реєстрі."
       return
@@ -52,7 +80,9 @@ class TelemetryUnpackerService
     status_byte = parsed_data[5]
 
     # firmware_id лежить у перших двох байтах Pad (a4)
-    firmware_id = parsed_data[7][0..1].unpack1("n")
+    # [МАГІЯ PAD]: Використовуємо константи для безпечного доступу
+    pad_data = parsed_data[FIRMWARE_PAD_INDEX]
+    firmware_id = pad_data[0..1].unpack1("n")
 
     log_attributes = {
       queen_uid: @gateway&.uid,
@@ -79,7 +109,15 @@ class TelemetryUnpackerService
     commit_telemetry(tree, log_attributes)
 
   rescue StandardError => e
-    Rails.logger.error "🛑 [Telemetry Error] DID #{hex_did || 'UNKNOWN'}: #{e.message}"
+    # [BROAD RESCUE]: Додано логування стеку викликів для дебагу в продакшені
+    trace = e.backtrace.first(5).join("\n")
+    Rails.logger.error "🛑 [Telemetry Error] DID #{hex_did || 'UNKNOWN'}: #{e.message}\n#{trace}"
+  end
+
+  def valid_sensor_data?(data)
+    voltage = data[1]
+    temp = data[2]
+    SAFE_VOLTAGE_RANGE.cover?(voltage) && SAFE_TEMP_RANGE.cover?(temp)
   end
 
   def interpret_status(code)
@@ -96,6 +134,9 @@ class TelemetryUnpackerService
     # Транзакція гарантує, що ми не нарахуємо бали без лога (або навпаки)
     ActiveRecord::Base.transaction do
       log = tree.telemetry_logs.create!(attributes)
+
+      # [СИНХРОНІЗАЦІЯ]: Оновлюємо денормалізований вольтаж для мапи без N+1
+      tree.mark_seen!(log.voltage_mv)
 
       # Нарахування балів у гаманець Солдата
       tree.wallet.credit!(log.growth_points) if log.growth_points.positive?
