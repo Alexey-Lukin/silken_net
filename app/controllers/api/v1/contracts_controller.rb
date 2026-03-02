@@ -18,6 +18,7 @@ module Api
         @stats = {
           total_invested: @contracts.sum(:total_value),
           total_minted: @contracts.sum(:emitted_tokens),
+          # [ОПТИМІЗАЦІЯ]: SQL агрегація замість перебору масиву в Ruby
           portfolio_health: calculate_portfolio_health_for_scope(@contracts)
         }
 
@@ -29,7 +30,8 @@ module Api
                 cluster: { only: [ :id, :name ] },
                 organization: { only: [ :id, :name ] }
               },
-              methods: [ :current_yield_performance ]
+              # [UI/UX]: Додано active_threats?, щоб інвестор бачив "червоний вогник" у списку
+              methods: [ :current_yield_performance, :active_threats? ]
             )
           end
           format.html do
@@ -50,7 +52,7 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              contract: @contract.as_json(methods: [ :current_yield_performance ]),
+              contract: @contract.as_json(methods: [ :current_yield_performance, :active_threats? ]),
               emission_history: @emission_history,
               backing_asset: {
                 cluster_health: @contract.cluster.health_index,
@@ -88,25 +90,26 @@ module Api
         current_user.role_admin? ? NaasContract.find(id) : current_user.organization.naas_contracts.find(id)
       end
 
-      # Твоя оригінальна логіка розрахунку здоров'я
+      # [ОПТИМІЗАЦІЯ]: Використовуємо SQL average для економії RAM
       def calculate_portfolio_health(org)
         return 1.0 if org.clusters.empty?
-        org.clusters.map(&:health_index).sum / org.clusters.size.to_f
+        org.clusters.average(:health_index) || 1.0
       rescue
         1.0
       end
 
-      # Допоміжний метод для індексу (для Phlex)
+      # [ОПТИМІЗАЦІЯ]: SQL агрегація для вибірки контрактів (joins + average)
       def calculate_portfolio_health_for_scope(contracts)
         return 100 if contracts.empty?
-        healths = contracts.map { |c| c.cluster&.health_index }.compact
-        return 100 if healths.empty?
-        (healths.sum / healths.size.to_f).round(1)
+        # Розрахунок середнього здоров'я через SQL для уникнення N+1 та забиття пам'яті
+        (contracts.joins(:cluster).average('clusters.health_index') || 100.0).round(1)
       end
 
-      # Твоя оригінальна логіка ринкової вартості
+      # [DYNAMIC PRICE]: Заміна хардкоду на Oracle Service
       def calculate_market_value(org)
-        org.naas_contracts.sum(:emitted_tokens) * 25.5
+        # Ціна SCC тепер динамічна, підтягується з DEX через наш сервіс
+        current_price = PriceOracleService.current_scc_price
+        org.naas_contracts.sum(:emitted_tokens) * current_price
       end
     end
   end
