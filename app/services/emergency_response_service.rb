@@ -40,24 +40,66 @@ class EmergencyResponseService
     end
   end
 
+  MAX_COMMAND_DURATION = 3600
+
   private_class_method def self.dispatch_commands(actuators, command_code, duration, alert)
     return if actuators.empty?
 
-    actuators.each do |actuator|
-      # [ДЗЕРКАЛЬНА СИНХРОНІЗАЦІЯ]:
-      # Створення цього запису є тригером для ActuatorCommandWorker.
-      # Ми обгортаємо це в begin/rescue, щоб збій одного наказу не зупинив порятунок всього лісу.
-      begin
-        ActuatorCommand.create!(
-          actuator: actuator,
-          ews_alert: alert,
+    # [FIX-3]: Пріоритезація — спершу активуємо актуатори ближчих шлюзів
+    ordered_actuators = prioritize_by_proximity(actuators, alert)
+
+    # [FIX-1]: Розбиваємо тривалість на серії по MAX_COMMAND_DURATION,
+    # щоб не порушити валідацію ActuatorCommand (≤3600с)
+    chunks = duration_chunks(duration)
+
+    # [FIX-2]: Масове створення команд одним INSERT замість N окремих
+    now = Time.current
+    attrs = ordered_actuators.map do |actuator|
+      chunks.map do |chunk_duration|
+        {
+          actuator_id: actuator.id,
+          ews_alert_id: alert.id,
           command_payload: command_code,
-          duration_seconds: duration,
-          status: :issued
-        )
-      rescue => e
-        Rails.logger.error "🛑 [Emergency Error] Не вдалося віддати наказ для #{actuator.name}: #{e.message}"
+          duration_seconds: chunk_duration,
+          status: ActuatorCommand.statuses[:issued],
+          created_at: now,
+          updated_at: now
+        }
       end
+    end.flatten
+
+    begin
+      result = ActuatorCommand.insert_all(attrs, returning: %w[id])
+      result.each { |row| ActuatorCommandWorker.perform_async(row["id"]) }
+    rescue => e
+      Rails.logger.error "🛑 [Emergency Error] Масове створення наказів провалене: #{e.message}"
     end
+  end
+
+  # Розбиваємо загальну тривалість на частини по MAX_COMMAND_DURATION
+  private_class_method def self.duration_chunks(total_duration)
+    return [total_duration] if total_duration <= MAX_COMMAND_DURATION
+
+    full_chunks = total_duration / MAX_COMMAND_DURATION
+    remainder = total_duration % MAX_COMMAND_DURATION
+
+    chunks = Array.new(full_chunks, MAX_COMMAND_DURATION)
+    chunks << remainder if remainder > 0
+    chunks
+  end
+
+  # Сортуємо актуатори за відстанню їхнього шлюзу до дерева-джерела тривоги
+  private_class_method def self.prioritize_by_proximity(actuators, alert)
+    tree = alert.tree
+    return actuators unless tree&.latitude.present? && tree&.longitude.present?
+
+    actuators.order(
+      Arel.sql(
+        ActiveRecord::Base.sanitize_sql_array([
+          "POWER(gateways.latitude - ?, 2) + POWER(gateways.longitude - ?, 2) ASC NULLS LAST",
+          tree.latitude, tree.longitude
+        ])
+      )
+    )
   end
 end
