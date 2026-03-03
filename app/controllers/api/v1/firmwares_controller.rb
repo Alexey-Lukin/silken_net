@@ -10,7 +10,7 @@ module Api
       # GET /api/v1/firmwares
       def index
         @firmwares = BioContractFirmware.order(version: :desc)
-        
+
         # Збираємо статистику інвентаря для дашборду
         @inventory_stats = {
           trees: Tree.group(:firmware_version).count,

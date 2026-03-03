@@ -64,8 +64,8 @@ class TelemetryLog < ApplicationRecord
   def healthy?
     # Дерево вважається здоровим, якщо воно в гомеостазі,
     # температура в межах норми і немає акустичного шторму шкідників.
-    bio_status_homeostasis? && 
-      temperature_c < 50 && 
+    bio_status_homeostasis? &&
+      temperature_c < 50 &&
       acoustic_events < 20
   end
 
@@ -79,10 +79,10 @@ class TelemetryLog < ApplicationRecord
   # Ми вважаємо, що дерево "одужало", якщо останні 3 пакети є здоровими (Anti-Flapping).
   def recovery_confirmed?
     return false unless healthy?
-    
+
     last_logs = tree.telemetry_logs.recent.limit(3)
     return false if last_logs.size < 3
-    
+
     last_logs.all?(&:healthy?)
   end
 end

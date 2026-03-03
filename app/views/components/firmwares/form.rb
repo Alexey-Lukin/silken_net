@@ -10,15 +10,14 @@ module Views
 
         def view_template
           # Тільки логіка взаємодії з моделлю
-          form_with(model: [:api, :v1, @firmware], multipart: true, class: "space-y-8 p-10 border border-emerald-900 bg-black/80 shadow-2xl backdrop-blur-md") do |f|
-            
+          form_with(model: [ :api, :v1, @firmware ], multipart: true, class: "space-y-8 p-10 border border-emerald-900 bg-black/80 shadow-2xl backdrop-blur-md") do |f|
             div(class: "space-y-6") do
               field_container("Evolution Version") do
                 f.text_field :version, class: input_classes, placeholder: "e.g. 1.4.2", required: true
               end
 
               field_container("Target Hardware Architecture") do
-                f.select :target_hardware, [["STM32-L0 (Soldier)", "stm32_l0"], ["ESP32-S3 (Queen)", "esp32_s3"]], {}, class: input_classes
+                f.select :target_hardware, [ [ "STM32-L0 (Soldier)", "stm32_l0" ], [ "ESP32-S3 (Queen)", "esp32_s3" ] ], {}, class: input_classes
               end
 
               field_container("Binary Artifact (.bin)") do

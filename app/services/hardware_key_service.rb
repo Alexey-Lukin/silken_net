@@ -22,7 +22,7 @@ class HardwareKeyService
   # =========================================================================
   def rotate!
     key_record = HardwareKey.find_by!(device_uid: @device_uid)
-    
+
     # ⚡ [ЗАГАРТУВАННЯ]: Зберігаємо поточний ключ як попередній
     old_key = key_record.aes_key_hex
     new_hex_key = SecureRandom.hex(KEY_SIZE_BYTES).upcase
@@ -35,8 +35,8 @@ class HardwareKeyService
       )
     end
 
-    # Надсилаємо Downlink. 
-    # ВАЖЛИВО: цей пакет має бути зашифрований OLD_KEY, 
+    # Надсилаємо Downlink.
+    # ВАЖЛИВО: цей пакет має бути зашифрований OLD_KEY,
     # бо дерево ще не знає про NEW_KEY!
     trigger_key_update_downlink(new_hex_key, old_key)
 
@@ -50,11 +50,11 @@ class HardwareKeyService
     return unless @device.respond_to?(:ip_address) || @device.respond_to?(:gateway)
     target_ip = @device.respond_to?(:ip_address) ? @device.ip_address : @device.gateway.ip_address
 
-    # Формуємо команду для STM32. 
+    # Формуємо команду для STM32.
     # Воркер має використати 'encryption_key' для шифрування цієї команди.
     ActuatorCommandWorker.perform_async(
-      @device_uid, 
-      "sys/key_update", 
+      @device_uid,
+      "sys/key_update",
       { key: new_key_hex }.to_json,
       { use_key: encryption_key } # Передаємо конкретний ключ для цього завдання
     )

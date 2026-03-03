@@ -12,7 +12,7 @@ module Views
           div(class: "max-w-2xl mx-auto animate-in zoom-in duration-500") do
             # Заголовок сторінки (Презентаційний шар)
             header_section
-            
+
             # Виклик атомарного компонента форми
             render Views::Components::Firmwares::Form.new(firmware: @firmware)
           end

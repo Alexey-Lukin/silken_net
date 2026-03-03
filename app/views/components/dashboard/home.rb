@@ -25,12 +25,12 @@ module Views
               div(class: "lg:col-span-2 p-1 border border-emerald-900 bg-black h-[500px] relative group overflow-hidden") do
                 # Фоновий растр
                 div(class: "absolute inset-0 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:30px_30px] opacity-10")
-                
+
                 div(class: "absolute inset-0 flex flex-col items-center justify-center space-y-4") do
                   div(class: "h-12 w-12 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin")
                   p(class: "text-emerald-900 font-mono text-[10px] uppercase tracking-[0.5em]") { "Initializing Geospatial Matrix..." }
                 end
-                
+
                 # Overlay для координат
                 div(class: "absolute bottom-4 left-4 font-mono text-[8px] text-emerald-900") do
                   "LAT: 49.4447 // LON: 32.0588 // ALT: 112m"

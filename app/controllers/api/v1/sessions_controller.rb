@@ -33,7 +33,7 @@ module Api
       # Маршрут: get/post '/auth/:provider/callback'
       def omniauth_create
         auth = request.env["omniauth.auth"]
-        
+
         # 1. Спершу знаходимо або створюємо користувача (Захист від RecordInvalid)
         user = User.find_or_create_by!(email_address: auth.info.email) do |u|
           u.password = SecureRandom.hex(16) # Тимчасовий пароль для has_secure_password
@@ -55,7 +55,7 @@ module Api
         # Видаляємо фізичний запис сесії, якщо він існує
         current_session&.destroy
         session[:user_id] = nil
-        
+
         respond_to do |format|
           format.json { render json: { message: "Вихід успішний. Брама закрита." }, status: :ok }
           format.html { redirect_to api_v1_login_path, notice: "Neural Link Severed." }

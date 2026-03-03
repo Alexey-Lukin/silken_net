@@ -10,10 +10,10 @@ module Views
               i(class: "ph ph-cpu")
               plain "Simulation Engine // What-If?"
             end
-            
+
             form(action: helpers.simulate_api_v1_oracle_visions_path, method: "post", data: { turbo_frame: "simulation_results" }) do
               authenticity_token_input
-              
+
               # Вибір контексту симуляції (Кластер)
               div(class: "mb-6") do
                 label(class: "text-[9px] text-emerald-800 uppercase block mb-2") { "Target Sector" }
@@ -43,7 +43,7 @@ module Views
               label(class: "text-[10px] text-gray-600 uppercase") { label }
               span(class: "text-[10px] font-mono text-emerald-500", data_simulation_target: "value") { value }
             end
-            input(type: "range", name: name, min: min, max: max, value: value, 
+            input(type: "range", name: name, min: min, max: max, value: value,
                   class: "w-full accent-emerald-500 bg-emerald-950 h-1 rounded-full appearance-none cursor-pointer")
           end
         end

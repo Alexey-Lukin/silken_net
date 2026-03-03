@@ -21,7 +21,7 @@ module Views
         def render_inventory_summary
           div(class: "p-6 border border-emerald-900 bg-zinc-950 shadow-2xl") do
             h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-6") { "Forest Inventory (Version Distribution)" }
-            
+
             div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do
               inventory_block("Queens (Gateways)", @inventory_stats[:gateways])
               inventory_block("Soldiers (Trees)", @inventory_stats[:trees])
@@ -48,7 +48,7 @@ module Views
           div(class: "space-y-4") do
             div(class: "flex justify-between items-end") do
               h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Available Binary Evolutions" }
-              
+
               # Кнопка переходу до порталу завантаження
               a(
                 href: helpers.new_api_v1_firmware_path,

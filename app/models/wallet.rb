@@ -12,7 +12,7 @@ class Wallet < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :balance, presence: true, numericality: { greater_than_or_equal_to: 0 }
-  
+
   # Стандартний формат Ethereum/Polygon адреси для On-Chain операцій
   validates :crypto_public_address, format: {
     with: /\A0x[a-fA-F0-9]{40}\z/,
@@ -20,20 +20,20 @@ class Wallet < ApplicationRecord
   }, allow_blank: true
 
   # --- МЕТОДИ НАРАХУВАННЯ (Growth Credit) ---
-  
+
   # Викликається TelemetryUnpackerService після кожного успішного пакету даних від STM32.
   # Кожен подих дерева конвертується в бали росту.
   def credit!(points)
     # increment! є атомарним на рівні БД (UPDATE ... SET balance = balance + points)
     # Це захищає нас від втрат при масовому надходженні пакетів через Starlink/LoRa
     increment!(:balance, points)
-    
+
     # [СИНХРОНІЗАЦІЯ]: Миттєво оновлюємо цифри на Dashboard Архітектора
     broadcast_balance_update
   end
 
   # --- МЕТОДИ ЕМІСІЇ (Web3 Minting) ---
-  
+
   # Конвертація накопичених балів росту в реальні токени SCC/SFC у мережі Polygon
   def lock_and_mint!(points_to_lock, threshold, token_type = :carbon_coin)
     # 1. ПЕРЕВІРКА ЖИТТЄЗДАТНОСТІ
@@ -70,12 +70,12 @@ class Wallet < ApplicationRecord
       )
 
       # 5. ЗАПУСК WEB3-КОНВЕЄРА (Polygon Network)
-      # [СИНХРОНІЗОВАНО]: MintCarbonCoinWorker спробує виконати транзакцію, 
+      # [СИНХРОНІЗОВАНО]: MintCarbonCoinWorker спробує виконати транзакцію,
       # але TokenomicsEvaluatorWorker може об'єднати її в пакетний batchMint раніше.
       MintCarbonCoinWorker.perform_async(tx.id)
 
       Rails.logger.info "💎 [Wallet] Створено запит на мінтинг #{tokens_to_mint} #{token_type} для #{target_address}."
-      
+
       broadcast_balance_update
       tx
     end

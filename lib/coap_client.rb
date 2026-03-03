@@ -46,7 +46,7 @@ class CoapClient
 
     begin
       socket.send(packet, 0, host, port)
-      
+
       if IO.select([ socket ], nil, nil, timeout)
         response_data, _sender = socket.recvfrom(MAX_PACKET_SIZE)
         parse_response(response_data, message_id)

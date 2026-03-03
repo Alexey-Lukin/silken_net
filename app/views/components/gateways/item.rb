@@ -25,7 +25,7 @@ module Views
               h3(class: "text-lg font-light tracking-widest text-emerald-400 uppercase") { "Queen // #{@gateway.uid}" }
               p(class: "text-[10px] font-mono text-emerald-800") { "Cluster: #{@gateway.cluster.name}" }
             end
-            
+
             # Живий індикатор зв'язку
             div(class: tokens(
               "h-2 w-2 rounded-full",

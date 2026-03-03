@@ -59,7 +59,7 @@ module Api
       # Використовується, коли контролер відповідає на .html запит.
       def render_dashboard(title:, component:)
         render Views::Layouts::DashboardLayout.new(
-          title: title, 
+          title: title,
           current_user: current_user
         ) do
           render component

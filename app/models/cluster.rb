@@ -17,16 +17,16 @@ class Cluster < ApplicationRecord
 
   # --- JSONB SETTINGS (The Biome Adaptation) ---
   # [НОВЕ]: Сховище для адаптивних порогів Оракула
-  store_accessor :environmental_settings, 
-                 :custom_fire_threshold, 
+  store_accessor :environmental_settings,
+                 :custom_fire_threshold,
                  :seismic_sensitivity_threshold
 
   # --- ВАЛІДАЦІЇ ТА НОРМАЛІЗАЦІЯ ---
   validates :name, presence: true, uniqueness: true
   validates :region, presence: true
-  
+
   # Гарантуємо, що адаптивні пороги є числами
-  validates :custom_fire_threshold, :seismic_sensitivity_threshold, 
+  validates :custom_fire_threshold, :seismic_sensitivity_threshold,
             numericality: { greater_than: 0 }, allow_nil: true
 
   # Гарантуємо, що GeoJSON не містить сміття

@@ -12,10 +12,10 @@ class Tree < ApplicationRecord
   has_one :hardware_key, foreign_key: :device_uid, primary_key: :did, dependent: :destroy
 
   has_one :device_calibration, dependent: :destroy
-  
+
   # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для швидкодії без OOM
   has_many :telemetry_logs, dependent: :delete_all
-  
+
   has_many :ews_alerts, dependent: :destroy
   has_many :maintenance_records, as: :maintainable, dependent: :destroy
   has_many :ai_insights, as: :analyzable, dependent: :destroy
@@ -38,7 +38,7 @@ class Tree < ApplicationRecord
 
   # ⚡ [ТРИГЕР СМЕРТІ]: Якщо дерево гине або зникає — ініціюємо фінансову відплату (Slashing)
   after_update_commit :trigger_slashing_protocol, if: -> { saved_change_to_status? && (removed? || deceased?) }
-  
+
   # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Миттєво оновлюємо вузол на мапі при будь-якій зміні (включаючи touch)
   after_update_commit :broadcast_map_update
 
@@ -61,7 +61,7 @@ class Tree < ApplicationRecord
     # Оновлюємо денормалізовані дані. touch автоматично запустить after_update_commit
     attributes_to_update = { last_seen_at: Time.current }
     attributes_to_update[:latest_voltage_mv] = voltage_mv if voltage_mv
-    
+
     update_columns(attributes_to_update)
     broadcast_map_update # Викликаємо вручну, бо update_columns не тригерить колбеки (це найшвидший шлях)
   end

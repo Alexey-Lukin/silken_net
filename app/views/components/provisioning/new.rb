@@ -11,7 +11,7 @@ module Views
         def view_template
           div(class: "max-w-3xl mx-auto animate-in fade-in duration-1000") do
             header_section
-            
+
             form_with(url: helpers.register_api_v1_provisioning_index_path, scope: :provisioning, class: "space-y-8 p-10 border border-emerald-900 bg-black/60 backdrop-blur-md shadow-2xl") do |f|
               render_errors if @device&.errors&.any?
 
@@ -21,7 +21,7 @@ module Views
                 end
 
                 field_container("Node Class") do
-                  f.select :device_type, [["Soldier (Tree)", "tree"], ["Queen (Gateway)", "gateway"]], {}, class: input_classes
+                  f.select :device_type, [ [ "Soldier (Tree)", "tree" ], [ "Queen (Gateway)", "gateway" ] ], {}, class: input_classes
                 end
 
                 field_container("Sector Assignment (Cluster)") do

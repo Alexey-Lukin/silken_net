@@ -4,8 +4,8 @@ class HardwareKey < ApplicationRecord
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # БЕЗПЕКА ДАНИХ (ActiveRecord Encryption)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-  
-  # Шифруємо обидва ключі. Non-deterministic шифрування гарантує, що навіть 
+
+  # Шифруємо обидва ключі. Non-deterministic шифрування гарантує, що навіть
   # два однакові ключі в базі виглядатимуть по-різному.
   encrypts :aes_key_hex
   encrypts :previous_aes_key_hex
@@ -13,10 +13,10 @@ class HardwareKey < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
   # Зв'язок із Солдатом (Tree) через DID
   belongs_to :tree, foreign_key: :device_uid, primary_key: :did, optional: true
-  
+
   # [ВИПРАВЛЕНО: Забута Королева]: Повертаємо ієрархічний зв'язок із Шлюзом
   belongs_to :gateway, foreign_key: :device_uid, primary_key: :uid, optional: true
-  
+
   # ⚡ [СИНХРОНІЗАЦІЯ]: Висхідна навігація до ієрархії влади
   # Тепер ми можемо дістати контекст незалежно від того, хто власник ключа
   delegate :organization, :cluster, to: :owner, allow_nil: true
@@ -26,14 +26,14 @@ class HardwareKey < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :device_uid, presence: true, uniqueness: true
-  
+
   # Основний ключ: строго 64 HEX символи (AES-256)
   validates :aes_key_hex, presence: true, length: { is: 64 },
                           format: { with: /\A[0-9A-F]+\z/i }
-                          
+
   # Попередній ключ: може бути порожнім, якщо ротації ще не було
-  validates :previous_aes_key_hex, length: { is: 64 }, 
-                                   format: { with: /\A[0-9A-F]+\z/i }, 
+  validates :previous_aes_key_hex, length: { is: 64 },
+                                   format: { with: /\A[0-9A-F]+\z/i },
                                    allow_nil: true
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -55,14 +55,14 @@ class HardwareKey < ApplicationRecord
   def rotate_key!
     new_key_hex = SecureRandom.hex(32).upcase
 
-    # [ВИПРАВЛЕНО]: Прибрано зайвий transaction do, оскільки update! 
+    # [ВИПРАВЛЕНО]: Прибрано зайвий transaction do, оскільки update!
     # вже обгорнутий у транзакцію на рівні ActiveRecord.
     update!(
       previous_aes_key_hex: aes_key_hex, # Стара істина стає резервною
       aes_key_hex: new_key_hex,          # Нова істина вступає в силу
       rotated_at: Time.current
     )
-    
+
     # Скидаємо мемоізацію
     @binary_key = nil
     @binary_previous_key = nil
@@ -74,7 +74,7 @@ class HardwareKey < ApplicationRecord
   # Метод для зачистки "хвостів" після успішної синхронізації.
   def clear_grace_period!
     return if previous_aes_key_hex.blank?
-    
+
     update_columns(previous_aes_key_hex: nil)
     @binary_previous_key = nil
     Rails.logger.info "✅ [KeyRotation] Синхронізація для #{device_uid} підтверджена. Резервний ключ видалено."

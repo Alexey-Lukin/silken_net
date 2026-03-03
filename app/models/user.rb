@@ -11,7 +11,7 @@ class User < ApplicationRecord
 
   # ⚡ [СИНХРОНІЗАЦІЯ]: Прямий доступ до фінансової мережі підлеглих дерев
   has_many :wallets, through: :organization
-  
+
   # Зв'язок з журналом робіт: фіксуємо відповідальність за залізо
   has_many :maintenance_records, dependent: :restrict_with_error
 
@@ -31,7 +31,7 @@ class User < ApplicationRecord
   }, prefix: true
 
   # --- СКОУПИ (The Watchers) ---
-  scope :notifiable, -> { where.not(phone_number: [nil, ""]).or(where.not(telegram_chat_id: nil)) }
+  scope :notifiable, -> { where.not(phone_number: [ nil, "" ]).or(where.not(telegram_chat_id: nil)) }
   scope :active_foresters, -> { role_forester.where("last_seen_at >= ?", 1.hour.ago) }
 
   # --- ТОКЕНИ (The Magic of Rails 8) ---
@@ -55,7 +55,7 @@ class User < ApplicationRecord
 
   # Естетичне відображення імені в Сайдбарі та Логах
   def full_name
-    [first_name, last_name].compact_blank.join(" ").presence || email_address
+    [ first_name, last_name ].compact_blank.join(" ").presence || email_address
   end
 
   # Оновлення активності (викликається в BaseController для моніторингу присутності в Цитаделі)
@@ -68,7 +68,7 @@ class User < ApplicationRecord
 
   private
 
-  # Пароль не потрібен лише у випадку, якщо користувач надійно запечатаний 
+  # Пароль не потрібен лише у випадку, якщо користувач надійно запечатаний
   # через зовнішнього провайдера (Google/Apple ID)
   def password_required?
     identities.none? || password.present?

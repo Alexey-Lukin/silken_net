@@ -9,7 +9,7 @@ module Api
       def index
         # Використовуємо upcoming для прогнозів, оскільки strategic_forecasts може бути відсутнім
         @visions = AiInsight.upcoming.order(target_date: :asc).limit(10)
-        
+
         # [FINANCIAL ENGINE]: Розрахунок "Очікуваного врожаю" (SCC Yield)
         # Оракул обчислює потенційну емісію на наступні 24 години на основі живого пульсу лісу.
         @scc_yield = calculate_expected_yield
@@ -37,7 +37,7 @@ module Api
           stream_name: "oracle_visions_cluster_#{@cluster.id}",
           # Використовуємо вбудований у Rails 8 механізм підпису токенів
           auth_token: current_user.generate_token_for(:stream_access),
-          provider: "SolidCable" 
+          provider: "SolidCable"
         }
       end
 

@@ -10,7 +10,7 @@ module Views
         def view_template
           div(class: "space-y-10 animate-in slide-in-from-right duration-700") do
             render_hero
-            
+
             div(class: "grid grid-cols-1 lg:grid-cols-2 gap-8") do
               render_threshold_viz
               render_biological_props
@@ -23,7 +23,7 @@ module Views
         def render_hero
           div(class: "p-10 border border-emerald-900 bg-zinc-950 relative overflow-hidden") do
             div(class: "absolute top-0 right-0 p-4 text-[120px] font-bold text-emerald-900/5 select-none uppercase") { @family.name.first(3) }
-            
+
             h2(class: "text-5xl font-extralight tracking-tighter text-white") { @family.name }
             p(class: "text-[10px] font-mono text-emerald-700 uppercase tracking-[0.4em] mt-4") { "Baseline Impedance: #{@family.baseline_impedance} kOhm" }
           end
@@ -32,12 +32,12 @@ module Views
         def render_threshold_viz
           div(class: "p-8 border border-emerald-900 bg-black space-y-8") do
             h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "The Homeostasis Scale" }
-            
+
             # Візуальна шкала
             div(class: "relative pt-10 pb-4") do
               # Лінія шкали
               div(class: "h-px w-full bg-emerald-900/50")
-              
+
               # Маркери
               marker(@family.death_threshold_impedance, "DEATH", "bg-red-900")
               marker(@family.critical_z_min, "SAFE_MIN", "bg-emerald-500")
@@ -49,7 +49,7 @@ module Views
 
         def marker(value, label, color, active: false)
           # Дуже спрощена логіка позиціонування для прикладу
-          left = [(value.to_f / (@family.critical_z_max * 1.2) * 100), 100].min
+          left = [ (value.to_f / (@family.critical_z_max * 1.2) * 100), 100 ].min
           div(class: "absolute top-0 flex flex-col items-center", style: "left: #{left}%") do
              span(class: "text-[8px] text-gray-600 mb-2 font-mono") { "#{value}kΩ" }
              div(class: tokens("h-3 w-px", active ? "bg-white" : "bg-emerald-900"))

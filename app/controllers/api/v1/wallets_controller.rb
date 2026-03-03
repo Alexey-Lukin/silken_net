@@ -50,10 +50,10 @@ module Api
 
       def authorize_wallet_access!
         @wallet = Wallet.find(params[:id])
-        
+
         # Перевірка прав: Адмін, або Гаманець належить Організації користувача,
         # або Гаманець прив'язаний до Дерева, що належить Організації користувача.
-        access_granted = current_user.role_admin? || 
+        access_granted = current_user.role_admin? ||
                          @wallet.organization == current_user.organization ||
                          @wallet.tree&.cluster&.organization == current_user.organization
 

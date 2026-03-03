@@ -12,10 +12,10 @@ class UnpackTelemetryWorker
     # 1. ДЕКОДУВАННЯ (Extraction)
     # Отримуємо сирі байти, що прийшли через CoAP/UDP
     binary_payload = Base64.strict_decode64(encoded_payload)
-    
+
     # 2. ІДЕНТИФІКАЦІЯ ШЛЮЗУ (The Queen Node)
     gateway = Gateway.find_by(ip_address: sender_ip)
-    
+
     unless gateway
       Rails.logger.warn "⚠️ [Uplink] Невідоме джерело пакета: #{sender_ip}. Скидання з'єднання."
       return
@@ -26,7 +26,7 @@ class UnpackTelemetryWorker
     # 3. ДЕШИФРУВАННЯ БАТЧА (Dual-Key Logic)
     # Шукаємо ключі ідентичності для цієї Королеви
     key_record = HardwareKey.find_by(device_uid: gateway.uid)
-    
+
     unless key_record
       Rails.logger.error "🚨 [Security] Відсутній HardwareKey для Королеви #{gateway.uid}!"
       return
@@ -52,7 +52,7 @@ class UnpackTelemetryWorker
     # [ВИПРАВЛЕНО: Broad Rescue Trace]: Додано перші 10 рядків трейсу для швидкої діагностики у продакшені
     backtrace_summary = e.backtrace.first(10).join("\n")
     Rails.logger.error "🚨 [Uplink Critical] Збій обробки батча: #{e.message}\n#{backtrace_summary}"
-    
+
     # Ми прокидаємо помилку далі, щоб Sidekiq міг зробити retry
     raise e
   end
@@ -63,7 +63,7 @@ class UnpackTelemetryWorker
   def attempt_decryption(payload, key_record)
     # Спроба 1: Основний (новий) ключ
     result = decrypt_aes(payload, key_record.binary_key)
-    
+
     if result
       # Якщо новий ключ спрацював — підтверджуємо успішну ротацію (закриваємо Grace Period)
       key_record.clear_grace_period!
@@ -88,7 +88,7 @@ class UnpackTelemetryWorker
     cipher.decrypt
     cipher.key = key
     cipher.padding = 0
-    
+
     # Використовуємо rescue тут, бо при невірному ключі OpenSSL видасть помилку.
     # Це частина логіки перебору, тому трейс тут не потрібен.
     cipher.update(payload) + cipher.final
@@ -109,7 +109,7 @@ class UnpackTelemetryWorker
         timestamp: Time.current
       ).call
     )
-    
+
     Turbo::StreamsChannel.broadcast_remove_to("telemetry_stream", target: "feed_placeholder")
   end
 end

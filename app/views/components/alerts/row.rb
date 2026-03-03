@@ -21,10 +21,10 @@ module Views
 
         def severity_badge
           color = case @alert.severity
-                  when 'critical' then "bg-red-900 text-red-200"
-                  when 'warning' then "bg-amber-900 text-amber-200"
-                  else "bg-emerald-900 text-emerald-200"
-                  end
+          when "critical" then "bg-red-900 text-red-200"
+          when "warning" then "bg-amber-900 text-amber-200"
+          else "bg-emerald-900 text-emerald-200"
+          end
           span(class: "px-2 py-0.5 rounded-sm text-[9px] uppercase font-bold #{color}") { @alert.severity }
         end
 

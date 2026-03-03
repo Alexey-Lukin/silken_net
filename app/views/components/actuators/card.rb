@@ -13,7 +13,7 @@ module Views
           div(id: "actuator_#{@actuator.id}", class: "group p-6 border border-emerald-900 bg-zinc-950 hover:border-emerald-500 transition-all duration-500 relative overflow-hidden shadow-2xl") do
             # Фоновий індикатор типу (декоративний)
             div(class: "absolute -right-4 -top-4 text-[40px] font-bold text-emerald-900/5 select-none") { @actuator.actuator_type[0..2].upcase }
-            
+
             render_header
             render_status_matrix
             render_controls
@@ -40,7 +40,7 @@ module Views
             end
             div(class: "flex justify-between") do
               span(class: "text-gray-600") { "Last Sync Status:" }
-              span(class: tokens(@last_command&.status == 'failed' ? "text-red-500" : "text-gray-400")) do
+              span(class: tokens(@last_command&.status == "failed" ? "text-red-500" : "text-gray-400")) do
                 @last_command&.status || "IDLE"
               end
             end
@@ -51,14 +51,14 @@ module Views
           div(class: "grid grid-cols-2 gap-2") do
             # Кнопка Увімкнення/Відкриття (Execute Open/ON)
             button_to(
-              helpers.execute_api_v1_actuator_path(@actuator, action_payload: 'open'),
+              helpers.execute_api_v1_actuator_path(@actuator, action_payload: "open"),
               method: :post,
               class: "py-2 border border-emerald-500 text-[9px] uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all font-bold tracking-widest"
             ) { "EXECUTE_ON" }
 
             # Кнопка Вимкнення/Закриття (Execute Close/OFF)
             button_to(
-              helpers.execute_api_v1_actuator_path(@actuator, action_payload: 'close'),
+              helpers.execute_api_v1_actuator_path(@actuator, action_payload: "close"),
               method: :post,
               class: "py-2 border border-emerald-900 text-[9px] uppercase text-gray-600 hover:border-red-900 hover:text-white transition-all tracking-widest"
             ) { "EXECUTE_OFF" }
@@ -67,8 +67,8 @@ module Views
 
         def status_led_class
           case @actuator.status
-          when 'active' then "bg-emerald-500 shadow-[0_0_10px_#10b981]"
-          when 'faulty' then "bg-red-600 animate-pulse shadow-[0_0_10px_red]"
+          when "active" then "bg-emerald-500 shadow-[0_0_10px_#10b981]"
+          when "faulty" then "bg-red-600 animate-pulse shadow-[0_0_10px_red]"
           else "bg-gray-800"
           end
         end

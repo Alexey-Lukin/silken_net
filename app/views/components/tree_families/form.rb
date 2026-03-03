@@ -8,7 +8,7 @@ module Views
 
         def view_template
           div(class: "max-w-2xl mx-auto animate-in zoom-in duration-500") do
-            form_with(model: [:api, :v1, @family], class: "space-y-8 p-10 border border-emerald-900 bg-black") do |f|
+            form_with(model: [ :api, :v1, @family ], class: "space-y-8 p-10 border border-emerald-900 bg-black") do |f|
               div(class: "grid grid-cols-1 md:grid-cols-2 gap-6") do
                 field_container("Species Identity") { f.text_field :name, class: input_classes, placeholder: "e.g. Quercus robur" }
                 field_container("Baseline Impedance (kΩ)") { f.number_field :baseline_impedance, step: 0.1, class: input_classes }

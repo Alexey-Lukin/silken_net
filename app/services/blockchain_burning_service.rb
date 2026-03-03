@@ -19,7 +19,7 @@ class BlockchainBurningService
 
   def call
     # 1. АГРЕГАЦІЯ: Рахуємо всі токени, що були "зароблені" цим кластером.
-    # [КЕНОЗИС]: Якщо порушення локальне (одне дерево), ми можемо вилучати 
+    # [КЕНОЗИС]: Якщо порушення локальне (одне дерево), ми можемо вилучати
     # або частку, або весь контракт. Наразі йдемо шляхом повної ануляції за порушення гомеостазу.
     total_minted_amount = BlockchainTransaction
                           .joins(wallet: :tree)
@@ -44,7 +44,7 @@ class BlockchainBurningService
     begin
       tx_hash = nil
       reason = @source_tree ? "загибель дерева #{@source_tree.did}" : "порушення умов кластера"
-      
+
       Rails.logger.warn "🔥 [Slashing] Вилучення #{total_minted_amount} SCC у #{@organization.name}. Причина: #{reason}."
 
       Kredis.lock(lock_key, expires_in: 60.seconds, after_timeout: :raise) do
@@ -91,7 +91,7 @@ class BlockchainBurningService
 
   def handle_slashing_failure(error_msg, amount)
     Rails.logger.error "🛑 [Slashing Failure] ##{@naas_contract.id}: #{error_msg}"
-    
+
     # Створюємо критичний алерт для ручного втручання Оракула
     EwsAlert.create!(
       cluster: @cluster,

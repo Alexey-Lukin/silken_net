@@ -17,7 +17,7 @@ module Views
         def view_template
           div(class: "space-y-10 animate-in fade-in duration-1000") do
             render_header
-            
+
             div(class: "grid grid-cols-1 xl:grid-cols-3 gap-8") do
               # ЛІВИЙ КОНТУР: Біометрія та Графіки
               div(class: "xl:col-span-2 space-y-10") do
@@ -42,7 +42,7 @@ module Views
           div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
             # Декоративний фон
             div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none") { "SOLDIER" }
-            
+
             div do
               h2(class: "text-4xl font-extralight tracking-tighter text-emerald-400") { @tree.did }
               div(class: "flex items-center space-x-3 mt-2") do
@@ -64,7 +64,7 @@ module Views
         def render_biometric_panel
           div(class: "p-8 border border-emerald-900 bg-zinc-950") do
             h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-10") { "Live Biometric Matrix" }
-            
+
             div(class: "grid grid-cols-1 md:grid-cols-2 gap-12 items-center") do
               div(class: "relative h-56 w-56 mx-auto") do
                 render_radial_svg
@@ -86,11 +86,11 @@ module Views
         def render_impedance_history
           div(class: "p-8 border border-emerald-900 bg-black/40") do
             h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Impedance Flux (Last 10 Cycles)" }
-            
+
             # Візуалізація міні-графіка через висоту барів
             div(class: "flex items-end space-x-2 h-32 border-b border-emerald-900/30 pb-2") do
               @recent_logs.reverse_each do |log|
-                height = [(log.z_value.to_f / @family.baseline_impedance * 100), 100].min
+                height = [ (log.z_value.to_f / @family.baseline_impedance * 100), 100 ].min
                 div(
                   class: "flex-1 bg-emerald-500/20 border-t border-emerald-500 hover:bg-emerald-500 transition-all",
                   style: "height: #{height}%",
@@ -109,7 +109,7 @@ module Views
         def render_maintenance_ledger
           div(class: "space-y-4") do
             h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Maintenance Rituals & Healing History" }
-            
+
             div(class: "border border-emerald-900 bg-black overflow-hidden") do
               table(class: "w-full text-left font-mono text-[10px]") do
                 thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[8px]") do
@@ -183,7 +183,7 @@ module Views
             div(class: "space-y-3 text-[10px] font-mono") do
               meta_row("Cluster", @tree.cluster&.name)
               meta_row("Coordinates", "#{@tree.latitude}, #{@tree.longitude}")
-              
+
               a(
                 href: "https://www.google.com/maps?q=#{@tree.latitude},#{@tree.longitude}",
                 target: "_blank",
@@ -225,7 +225,7 @@ module Views
           svg(class: "h-56 w-56 -rotate-90 transform") do
             circle(cx: "112", cy: "112", r: "88", class: "fill-none stroke-emerald-950 stroke-1")
             circle(
-              cx: "112", cy: "112", r: "88", 
+              cx: "112", cy: "112", r: "88",
               class: tokens("fill-none stroke-[3] transition-all duration-1000", @tree.under_threat? ? "stroke-red-600 animate-pulse" : "stroke-emerald-500 shadow-[0_0_15px_#10b981]"),
               style: "stroke-dasharray: 552; stroke-dashoffset: #{offset};"
             )

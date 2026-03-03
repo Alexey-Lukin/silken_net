@@ -35,17 +35,17 @@ module Views
 
         def tx_type_styles
           case @tx.transaction_type
-          when 'mint' then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
-          when 'burn' then "bg-red-900/20 text-red-400 border-red-500/30"
+          when "mint" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
+          when "burn" then "bg-red-900/20 text-red-400 border-red-500/30"
           else "bg-zinc-900 text-zinc-400 border-zinc-700"
           end
         end
 
         def status_color
           case @tx.status
-          when 'confirmed' then "text-emerald-500"
-          when 'processing' then "text-amber-500 animate-pulse"
-          when 'failed' then "text-red-500"
+          when "confirmed" then "text-emerald-500"
+          when "processing" then "text-amber-500 animate-pulse"
+          when "failed" then "text-red-500"
           else "text-gray-600"
           end
         end

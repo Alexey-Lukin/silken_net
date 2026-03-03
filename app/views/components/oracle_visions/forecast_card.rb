@@ -37,10 +37,10 @@ module Views
 
         def render_mini_trend
           div(class: "h-1 w-full bg-emerald-950 my-4") do
-            div(class: "h-full shadow-[0_0_15px_#10b981] transition-all duration-1000", 
+            div(class: "h-full shadow-[0_0_15px_#10b981] transition-all duration-1000",
                 style: "width: #{@insight.confidence_score}%; background-color: #{confidence_color}")
           end
-          p(class: "text-[11px] text-gray-400 italic leading-relaxed") { @insight.payload['description'] }
+          p(class: "text-[11px] text-gray-400 italic leading-relaxed") { @insight.payload["description"] }
         end
 
         def impact_assessment
@@ -70,7 +70,7 @@ module Views
         end
 
         def impact_text_color
-          @insight.payload['yield_impact'].to_f < 0 ? "text-red-500" : "text-emerald-500"
+          @insight.payload["yield_impact"].to_f < 0 ? "text-red-500" : "text-emerald-500"
         end
       end
     end

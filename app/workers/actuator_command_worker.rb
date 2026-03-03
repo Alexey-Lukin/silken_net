@@ -30,7 +30,7 @@ class ActuatorCommandWorker
 
     # 2. ШИФРУВАННЯ (Dual-Key Awareness)
     key_record = HardwareKey.find_by(device_uid: gateway.uid)
-    
+
     if key_record.nil? || key_record.binary_key.blank?
       handle_failure(command, "🛑 [Downlink] Ключ для Королеви #{gateway.uid} відсутній!")
       return
@@ -56,7 +56,7 @@ class ActuatorCommandWorker
       Timeout.timeout(7) do
         url = "coap://#{gateway.ip_address}/actuator/#{actuator.endpoint}"
         response = CoapClient.put(url, encrypted_payload)
-        
+
         # Перевіряємо, чи Королева прийняла наказ
         unless response&.success?
           raise "Королева відхилила наказ. CoAP Code: #{response&.code}"

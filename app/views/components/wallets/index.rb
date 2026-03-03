@@ -11,7 +11,7 @@ module Views
         def view_template
           div(class: "space-y-8 animate-in fade-in duration-700") do
             render_header
-            
+
             div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6") do
               @wallets.each do |wallet|
                 render_wallet_card(wallet)
@@ -38,7 +38,7 @@ module Views
         def render_wallet_card(wallet)
           # Визначаємо ім'я власника (Дерево або Організація)
           owner_name = wallet.tree&.did || wallet.organization&.name || "System Reserve"
-          
+
           div(class: "group p-6 border border-emerald-900 bg-black hover:bg-emerald-950 transition-all duration-500") do
             div(class: "flex justify-between items-start mb-6") do
               div do

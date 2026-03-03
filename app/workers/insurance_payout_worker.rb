@@ -2,7 +2,7 @@
 
 class InsurancePayoutWorker
   include Sidekiq::Job
-  # Найвищий пріоритет: виконання фінансових зобов'язань перед інвесторами 
+  # Найвищий пріоритет: виконання фінансових зобов'язань перед інвесторами
   # є критичним для репутації Цитаделі.
   sidekiq_options queue: "web3", retry: 10
 
@@ -15,7 +15,7 @@ class InsurancePayoutWorker
     return unless insurance.status_triggered?
 
     organization = insurance.cluster.organization
-    
+
     # Шукаємо гаманець-якір для аудиторського логування в Ledger.
     # Зазвичай це гаманець першого активного дерева в кластері.
     audit_wallet = insurance.cluster.trees.active.first&.wallet
@@ -47,14 +47,14 @@ class InsurancePayoutWorker
     end
 
     # 3. WEB3 ЕКЗЕКУЦІЯ (Blockchain Domain)
-    # Тепер, коли транзакція зафіксована в базі, ми передаємо її нашому 
+    # Тепер, коли транзакція зафіксована в базі, ми передаємо її нашому
     # загартованому BlockchainMintingService для підпису та відправки в Polygon.
     if tx
       Rails.logger.info "🚀 [Insurance] Ініціація виплати #{tx.amount} SCC для #{organization.name}..."
-      
+
       # Транслюємо "Flash" повідомлення Архітектору
       broadcast_insurance_update(insurance, tx)
-      
+
       BlockchainMintingService.call(tx.id)
     end
 
@@ -80,7 +80,7 @@ class InsurancePayoutWorker
       "global_events",
       target: "events_feed",
       html: Views::Components::Dashboard::EventRow.new(
-        event: transaction, 
+        event: transaction,
         icon: "shield-check",
         color: "blue"
       ).call

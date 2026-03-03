@@ -16,25 +16,25 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 🏰 ЦЕНТРАЛЬНИЙ ВІВТАР (Dashboard)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :dashboard, only: [:index]
+      resources :dashboard, only: [ :index ]
       root to: "dashboard#index"
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 👤 ЕКІПАЖ (Users & Identity)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       get "users/me", to: "users#me"
-      resources :users, only: [:index, :show]
-      resources :organizations, only: [:index, :show]
+      resources :users, only: [ :index, :show ]
+      resources :organizations, only: [ :index, :show ]
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 🌳 ВІЙСЬКО ТА СЕКТОРИ (Clusters & Trees)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :clusters, only: [:index, :show] do
-        resources :trees,     only: [:index]
-        resources :actuators, only: [:index]
+      resources :clusters, only: [ :index, :show ] do
+        resources :trees,     only: [ :index ]
+        resources :actuators, only: [ :index ]
       end
 
-      resources :trees, only: [:show] do
+      resources :trees, only: [ :show ] do
         get :telemetry, to: "telemetry#tree_history", on: :member
       end
 
@@ -44,7 +44,7 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 📡 НЕЙРОННА МЕРЕЖА (Hardware & Telemetry)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :gateways, only: [:index, :show] do
+      resources :gateways, only: [ :index, :show ] do
         get :telemetry, to: "telemetry#gateway_history", on: :member
       end
 
@@ -56,26 +56,26 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 💎 СКАРБНИЦЯ ТА КОНТРАКТИ (Economy)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :wallets, only: [:index, :show]
-      
-      resources :contracts, only: [:index, :show] do
+      resources :wallets, only: [ :index, :show ]
+
+      resources :contracts, only: [ :index, :show ] do
         get :stats, on: :collection
       end
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # ⚙️ ВУЗЛИ ВОЛІ (Actuators & Control)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :actuators, only: [:show] do
+      resources :actuators, only: [ :show ] do
         post :execute, on: :member
       end
-      
+
       # Аудит виконання команд
       get "actuator_commands/:id", to: "actuators#command_status", as: :actuator_command_status
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 🚀 ЕВОЛЮЦІЯ (Firmware & OTA)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :firmwares, only: [:index, :new, :create] do
+      resources :firmwares, only: [ :index, :new, :create ] do
         get  :inventory, on: :collection
         post :deploy,    as: :deploy, on: :member
       end
@@ -83,16 +83,16 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # ⚠️ ОПЕРАЦІЇ ТА РИТУАЛИ (Alerts & Maintenance)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :alerts, only: [:index, :show] do
+      resources :alerts, only: [ :index, :show ] do
         patch :resolve, on: :member
       end
 
-      resources :maintenance_records, only: [:index, :create, :show]
+      resources :maintenance_records, only: [ :index, :create, :show ]
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # ⊙ ВИДІННЯ ОРАКУЛА (Strategic Intelligence)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :oracle_visions, only: [:index] do
+      resources :oracle_visions, only: [ :index ] do
         post :simulate,      on: :collection
         get  :stream_config, on: :collection
       end
@@ -100,7 +100,7 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # ⚡ ІНІЦІАЦІЯ (Provisioning)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :provisioning, only: [:new] do
+      resources :provisioning, only: [ :new ] do
         post :register, on: :collection
       end
     end

@@ -21,12 +21,12 @@ class Identity < ApplicationRecord
   # OMNIAUTH ІНТЕГРАЦІЯ (The Gateway Processor)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-  # [ВИПРАВЛЕНО]: Тепер метод приймає user як аргумент. Це запобігає 
+  # [ВИПРАВЛЕНО]: Тепер метод приймає user як аргумент. Це запобігає
   # ActiveRecord::RecordInvalid (User must exist) при створенні нової ідентичності.
   def self.find_or_create_from_auth_hash(auth_hash, user: nil)
     identity = find_or_initialize_by(provider: auth_hash.provider, uid: auth_hash.uid)
-    
-    # Прив'язуємо користувача, якщо це новий запис. 
+
+    # Прив'язуємо користувача, якщо це новий запис.
     # Це закриває "дірку", через яку save! вибухав помилкою валідації.
     identity.user = user if identity.new_record? && user.present?
 

@@ -2,14 +2,14 @@
 
 class BlockchainConfirmationWorker
   include Sidekiq::Job
-  # Використовуємо чергу web3. 10 ретраїв з експоненціальною паузою 
+  # Використовуємо чергу web3. 10 ретраїв з експоненціальною паузою
   # дають системі близько 15-20 хвилин на очікування підтвердження мережею.
   sidekiq_options queue: "web3", retry: 10
 
   def perform(tx_hash)
     # 1. ПІДКЛЮЧЕННЯ ДО МАТРИЦІ
     client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
-    
+
     # Запитуємо квитанцію (receipt) транзакції
     # У 2026 році Alchemy повертає результат миттєво, якщо блок вже сформовано.
     receipt = client.eth_get_transaction_receipt(tx_hash)
@@ -17,7 +17,7 @@ class BlockchainConfirmationWorker
     # 2. АНАЛІЗ РЕАЛЬНОСТІ
     if receipt && receipt["result"]
       status = receipt["result"]["status"]
-      
+
       # Знаходимо всі транзакції (батч або одну), пов'язані з цим хешем
       txs = BlockchainTransaction.where(tx_hash: tx_hash)
 
@@ -34,7 +34,7 @@ class BlockchainConfirmationWorker
       else # Reverted (Провал на рівні смарт-контракту)
         reason = "EVM Revert: Транзакція відхилена мережею (можливо, Gas Limit або логіка контракту)."
         txs.each { |tx| tx.fail!(reason) }
-        
+
         # [КРИТИЧНО]: Якщо батч впав, це потребує негайного аудиту
         Rails.logger.error "🚨 [Web3 Critical] Провал транзакції в Polygon: #{tx_hash}"
       end

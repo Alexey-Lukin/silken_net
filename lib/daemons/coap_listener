@@ -27,7 +27,7 @@ def decode_options(buffer)
   while cursor < buffer.bytesize
     first_byte = buffer.getbyte(cursor)
     cursor += 1
-    
+
     delta = (first_byte >> 4) & 0x0F
     length = first_byte & 0x0F
 
@@ -98,14 +98,14 @@ while running
       if payload_marker_index
         binary_payload = data[(payload_marker_index + 1)..-1]
         options_block = data[(4 + tkl)...payload_marker_index]
-        
+
         parsed_options = decode_options(options_block)
         path_segments = parsed_options.select { |o| o[:number] == 11 }.map { |o| o[:value] }
 
-        if path_segments == ["telemetry", "batch"]
+        if path_segments == [ "telemetry", "batch" ]
           # 4. СИНХРОНІЗАЦІЯ З БАЗОЮ ТА sidekiq
           ActiveRecord::Base.connection.verify! unless ActiveRecord::Base.connected?
-          
+
           encoded_payload = Base64.strict_encode64(binary_payload)
           UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip)
 
