@@ -7,7 +7,7 @@ class EwsAlert < ApplicationRecord
   belongs_to :resolver, class_name: "User", foreign_key: "resolved_by", optional: true
 
   # --- СТАТУСИ ТА РІВНІ ---
-  # [СИНХРОНІЗОВАНО]: Використання prefix: true генерує методи status_active?, status_resolved?
+  # [СИНХРОНІЗОВАНО]: prefix: true гарантує виклики status_active? та status_resolved?
   enum :status, { active: 0, resolved: 1, ignored: 2 }, prefix: true
   enum :severity, { low: 0, medium: 1, critical: 2 }, prefix: true
 
@@ -24,10 +24,10 @@ class EwsAlert < ApplicationRecord
   validates :severity, :alert_type, :message, presence: true
 
   # --- КОЛБЕКИ (Zero-Lag Awareness) ---
-  # Як тільки тривога зафіксована в БД — гінці (Sidekiq) стають на крило
+  # Сакральна асинхронність: сповіщення летять лише після COMMIT
   after_create_commit :dispatch_notifications!
 
-  # Миттєве оновлення мапи та стрічки при зміні статусу тривоги
+  # Миттєве оновлення мапи та стрічки новин у Цитаделі
   after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
   # --- СКОУПИ ---
@@ -41,8 +41,8 @@ class EwsAlert < ApplicationRecord
 
   # Протокол завершення інциденту
   def resolve!(user: nil, notes: "Закрито системою")
-    # [СИНХРОНІЗАЦІЯ З REDIS]: При закритті тривоги ми маємо видалити
-    # "режим тиші" в AlertDispatchService, щоб нові аномалії знову могли тригеритись.
+    # [СИНХРОНІЗАЦІЯ З REDIS]: Знімаємо "режим тиші", щоб Оракул знову міг 
+    # слухати це дерево після його відновлення.
     clear_silence_filter!
 
     update!(
@@ -52,20 +52,19 @@ class EwsAlert < ApplicationRecord
       resolution_notes: notes
     )
 
-    # [SELF-HEALING]: Автоматично закриваємо відкриті MaintenanceRecord,
-    # якщо вони були прив'язані до цієї тривоги.
+    # [SELF-HEALING]: Атомарно закриваємо MaintenanceRecord
     close_associated_maintenance!
   end
 
-  # [ВИПРАВЛЕНО]: Точка на мапі з каскадним фолбеком.
-  # Тепер Leaflet.js гарантовано отримує координати, навіть якщо дерево не гео-локоване.
+  # [ВИПРАВЛЕНО]: Навігація в тумані. 
+  # Якщо дерево втратило GPS, ми фокусуємо патруль на центрі сили кластера.
   def coordinates
     if tree&.latitude.present? && tree&.longitude.present?
       [ tree.latitude, tree.longitude ]
     elsif (center = cluster.geo_center)
       [ center[:lat], center[:lng] ]
     else
-      # Абсолютний фолбек для запобігання крашу фронтенду
+      # Нульова точка для запобігання помилкам Leaflet.js
       [ 0.0, 0.0 ]
     end
   end
@@ -81,26 +80,25 @@ class EwsAlert < ApplicationRecord
     AlertNotificationWorker.perform_async(self.id)
   end
 
-  # [ОПТИМІЗАЦІЯ]: Видалення ключа тиші з Redis
+  # [ОПТИМІЗАЦІЯ]: Очищення Redis-блокувальника
   def clear_silence_filter!
     return unless tree_id.present?
 
-    # Ключ має точно збігатися з тим, що в AlertDispatchService
     silence_key = "ews_silence:#{tree_id}:#{alert_type}"
     Rails.cache.delete(silence_key)
   end
 
-  # [ВИПРАВЛЕНО]: Живий UI.
-  # Оновлюємо статусний бейдж ТА видаляємо вирішену тривогу з Live Transmission Feed.
+  # [ВИПРАВЛЕНО]: Turbo Transmission. 
+  # Видаляємо тривогу зі стрічки новин (Live Feed), як тільки вона вирішена.
   def broadcast_status_change
-    # Оновлення бейджа на детальних сторінках
+    # Оновлення бейджа статусу на карті/деталях
     Turbo::StreamsChannel.broadcast_replace_to(
       "ews_updates_#{cluster_id}",
       target: "alert_#{id}",
       html: Views::Components::Alerts::Badge.new(alert: self).call
     )
 
-    # Видалення зі списку активних тривог, якщо статус змінено на resolved
+    # Повне видалення вирішеного інциденту з Live Feed Архітектора
     if status_resolved?
       Turbo::StreamsChannel.broadcast_remove_to(
         "ews_live_feed",
@@ -110,12 +108,11 @@ class EwsAlert < ApplicationRecord
   end
 
   def close_associated_maintenance!
-    # [СИНХРОНІЗОВАНО]: Використовуємо update_all для уникнення зайвих колбеків
-    # Знаходимо MaintenanceRecord, які були створені як відповідь на цей alert_id
+    # Використовуємо update_all для швидкодії без запуску зайвих колбеків моделей
     MaintenanceRecord.where(ews_alert_id: id).where.not(status: :completed).update_all(
       status: :completed,
       performed_at: Time.current,
-      notes: "Auto-resolved via EWS Recovery"
+      notes: "Auto-resolved via EWS Recovery Protocol"
     ) rescue nil
   end
 end
