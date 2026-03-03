@@ -3,13 +3,14 @@ source "https://rubygems.org"
 ruby "3.2.3"
 
 gem "bcrypt"
+gem "blueprinter"
 gem "bootsnap", require: false
 gem "eth"
 gem "groupdate"
 gem "image_processing"
 gem "importmap-rails"
-gem "jbuilder"
 gem "kamal", require: false
+gem "pagy"
 gem "pg"
 gem "phlex-rails"
 gem "propshaft"

@@ -9,16 +9,18 @@ module Api
       # GET /api/v1/users
       def index
         authorize_admin!
-        @users = current_user.organization.users.order(last_seen_at: :desc)
+        scope = current_user.organization.users.order(last_seen_at: :desc, id: :desc)
 
         respond_to do |format|
           format.json do
-            render json: @users.as_json(
-              only: [ :id, :first_name, :last_name, :role, :last_seen_at ],
-              methods: [ :full_name ]
-            )
+            pagy, users = pagy(scope)
+            render json: {
+              data: UserBlueprint.render_as_hash(users, view: :crew),
+              meta: pagy_metadata(pagy)
+            }
           end
           format.html do
+            @pagy, @users = pagy(scope)
             render_dashboard(
               title: "Crew Management // The Clan",
               component: Views::Components::Users::Index.new(users: @users)
@@ -34,9 +36,7 @@ module Api
 
         respond_to do |format|
           format.json do
-            render json: @user.as_json(
-              only: [ :id, :email_address, :first_name, :last_name, :role, :last_seen_at ]
-            )
+            render json: UserBlueprint.render(@user, view: :profile)
           end
           format.html do
             render_dashboard(

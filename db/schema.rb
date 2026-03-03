@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_03_198000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_03_199000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -321,6 +321,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_03_198000) do
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
     t.index ["last_seen_at"], name: "index_users_on_last_seen_at"
     t.index ["organization_id"], name: "index_users_on_organization_id"
+    t.index ["organization_id", "last_seen_at", "id"], name: "index_users_on_org_last_seen_id", order: { last_seen_at: :desc, id: :desc }
   end
 
   create_table "wallets", force: :cascade do |t|
