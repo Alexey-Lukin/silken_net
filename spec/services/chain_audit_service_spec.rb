@@ -5,6 +5,8 @@ require "rails_helper"
 RSpec.describe ChainAuditService do
   before do
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+    ENV["ALCHEMY_POLYGON_RPC_URL"] ||= "https://polygon-rpc.example.com"
+    ENV["CARBON_COIN_CONTRACT_ADDRESS"] ||= "0x#{'0' * 40}"
   end
 
   describe ".call" do
@@ -38,6 +40,7 @@ RSpec.describe ChainAuditService do
       before do
         tree = create(:tree)
         wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x#{'a' * 40}")
 
         wallet.blockchain_transactions.create!(
           amount: 500,
@@ -80,6 +83,7 @@ RSpec.describe ChainAuditService do
       before do
         tree = create(:tree)
         wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x#{'c' * 40}")
 
         wallet.blockchain_transactions.create!(
           amount: 999,
