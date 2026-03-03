@@ -17,11 +17,13 @@ class InsurancePayoutWorker
     organization = insurance.cluster.organization
 
     # Шукаємо гаманець-якір для аудиторського логування в Ledger.
-    # Зазвичай це гаманець першого активного дерева в кластері.
-    audit_wallet = insurance.cluster.trees.active.first&.wallet
+    # Спочатку шукаємо активне дерево; якщо катастрофа знищила всі активні дерева —
+    # беремо будь-яке дерево кластера (незалежно від статусу) лише для аудит-зв'язку.
+    audit_wallet = insurance.cluster.trees.active.first&.wallet ||
+                   insurance.cluster.trees.first&.wallet
 
     unless audit_wallet
-      Rails.logger.error "🛑 [Insurance] Спроба виплати ##{insurance_id} без валідного гаманця в кластері."
+      Rails.logger.error "🛑 [Insurance] Спроба виплати ##{insurance_id} без жодного дерева в кластері."
       return
     end
 
@@ -36,7 +38,7 @@ class InsurancePayoutWorker
       tx = insurance.create_blockchain_transaction!(
         wallet: audit_wallet,
         amount: insurance.payout_amount,
-        token_type: :carbon_coin, # В майбутньому: заміна на USDC_STABLE за контрактом
+        token_type: insurance.token_type, # Тип токена обирається при підписанні контракту
         to_address: organization.crypto_public_address,
         status: :pending,
         notes: "Страхове відшкодування ##{insurance.id}. Подія: #{insurance.trigger_event}."
