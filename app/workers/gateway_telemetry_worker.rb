@@ -19,8 +19,13 @@ class GatewayTelemetryWorker
         cellular_signal_csq: stats[:cellular_signal_csq]
       )
 
-      # Оновлюємо пульс та IP-адресу Starlink/LTE модема
-      gateway.mark_seen!(stats[:ip_address])
+      # [СИНХРОНІЗОВАНО з Gateway v2.2]: 
+      # Тепер ми передаємо voltage_mv безпосередньо в mark_seen!
+      # Це забезпечує денормалізацію даних та прибирає N+1 при перевірці батареї.
+      gateway.mark_seen!(
+        new_ip: stats[:ip_address],
+        voltage_mv: stats[:voltage_mv]
+      )
 
       # 3. АНАЛІЗ (The Diagnostic Lens)
       check_system_health(gateway, log)
@@ -37,20 +42,19 @@ class GatewayTelemetryWorker
   private
 
   def check_system_health(gateway, log)
-    # [СИНХРОНІЗОВАНО]: Використовуємо метод моделі для визначення деградації заліза
+    # Використовуємо метод моделі для визначення деградації заліза
     return unless log.respond_to?(:critical_fault?) && log.critical_fault?
 
     # Формуємо вердикт для патрульного
     message = format_health_message(gateway, log)
 
     # Створюємо тривогу (EwsAlert)
-    # Переконуємося, що шлюз прив'язаний до кластера, інакше тривога піде "в нікуди"
     return unless gateway.cluster_id
 
     alert = EwsAlert.create!(
       cluster_id: gateway.cluster_id,
       severity: :critical,
-      alert_type: :system_fault, # [СИНХРОНІЗОВАНО] з нашою моделлю EwsAlert
+      alert_type: :system_fault, 
       message: message
     )
 
