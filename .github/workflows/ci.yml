@@ -102,9 +102,9 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare test
+        run: bin/rails db:test:prepare && bundle exec rspec
 
-  system-test:
+  feature-test:
     runs-on: ubuntu-latest
 
     services:
@@ -135,16 +135,16 @@ jobs:
         with:
           bundler-cache: true
 
-      - name: Run System Tests
+      - name: Run Feature Tests
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare test:system
+        run: bin/rails db:test:prepare && bundle exec rspec spec/features
 
-      - name: Keep screenshots from failed system tests
-        uses: actions/upload-artifact@v6
+      - name: Keep screenshots from failed feature tests
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: screenshots

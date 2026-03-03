@@ -1,9 +1,0 @@
-forest_fund:
-  name: Cherkasy Forest Fund
-  billing_email: billing@cherkasyforest.org
-  crypto_public_address: "0x1234567890abcdef1234567890abcdef12345678"
-
-green_capital:
-  name: Green Capital Investments
-  billing_email: finance@greencapital.io
-  crypto_public_address: "0xabcdef1234567890abcdef1234567890abcdef12"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_28_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_03_075659) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -90,7 +90,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_000000) do
   create_table "clusters", force: :cascade do |t|
     t.string "climate_type"
     t.datetime "created_at", null: false
+    t.jsonb "environmental_settings"
     t.jsonb "geojson_polygon"
+    t.float "health_index"
     t.string "name"
     t.bigint "organization_id"
     t.string "region"
@@ -157,6 +159,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_000000) do
     t.string "aes_key_hex"
     t.datetime "created_at", null: false
     t.string "device_uid"
+    t.string "previous_aes_key_hex"
+    t.datetime "rotated_at"
     t.datetime "updated_at", null: false
     t.index ["device_uid"], name: "index_hardware_keys_on_device_uid", unique: true
   end
@@ -284,6 +288,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_000000) do
     t.string "did"
     t.string "firmware_version"
     t.datetime "last_seen_at"
+    t.integer "latest_voltage_mv"
     t.decimal "latitude"
     t.decimal "longitude"
     t.integer "status", default: 0

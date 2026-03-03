@@ -1,9 +1,0 @@
-lorenz_v1:
-  version: v1.0.0-lorenz
-  bytecode_payload: 4C4F52454E5A
-  is_active: true
-
-lorenz_v2:
-  version: v2.0.0-lorenz
-  bytecode_payload: 4C4F52454E5A5632
-  is_active: false
