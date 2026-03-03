@@ -32,8 +32,9 @@ module Api
         # Спроба 2: Перевірка через сесію Rails 8 (для Дашборду в браузері)
         @current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
 
-        render_unauthorized unless @current_user
-        @current_user&.touch_visit! # Оновлюємо "пульс" активності користувача
+        return render_unauthorized unless @current_user
+
+        @current_user.touch_visit! # Оновлюємо "пульс" активності користувача
       end
 
       def current_user

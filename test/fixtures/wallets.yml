@@ -1,9 +1,0 @@
-pine_wallet:
-  tree: pine_alpha
-  balance: 5000.0
-  crypto_public_address: "0xaaaa567890abcdef1234567890abcdef12345678"
-
-oak_wallet:
-  tree: oak_beta
-  balance: 12000.0
-  crypto_public_address: "0xbbbb567890abcdef1234567890abcdef12345678"
