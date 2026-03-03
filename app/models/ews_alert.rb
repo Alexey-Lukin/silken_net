@@ -7,6 +7,7 @@ class EwsAlert < ApplicationRecord
   belongs_to :resolver, class_name: "User", foreign_key: "resolved_by", optional: true
 
   # --- СТАТУСИ ТА РІВНІ ---
+  # [СИНХРОНІЗОВАНО]: Використання prefix: true генерує методи status_active?, status_resolved?
   enum :status, { active: 0, resolved: 1, ignored: 2 }, prefix: true
   enum :severity, { low: 0, medium: 1, critical: 2 }, prefix: true
 
@@ -26,7 +27,7 @@ class EwsAlert < ApplicationRecord
   # Як тільки тривога зафіксована в БД — гінці (Sidekiq) стають на крило
   after_create_commit :dispatch_notifications!
   
-  # Миттєве оновлення мапи при зміні статусу тривоги
+  # Миттєве оновлення мапи та стрічки при зміні статусу тривоги
   after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
   # --- СКОУПИ ---
@@ -56,10 +57,17 @@ class EwsAlert < ApplicationRecord
     close_associated_maintenance!
   end
 
-  # Точка на мапі для десанту Патрульних
+  # [ВИПРАВЛЕНО]: Точка на мапі з каскадним фолбеком.
+  # Тепер Leaflet.js гарантовано отримує координати, навіть якщо дерево не гео-локоване.
   def coordinates
-    return [ tree.latitude, tree.longitude ] if tree.present?
-    cluster.gateways.first&.then { |g| [ g.latitude, g.longitude ] }
+    if tree&.latitude.present? && tree&.longitude.present?
+      [tree.latitude, tree.longitude]
+    elsif (center = cluster.geo_center)
+      [center[:lat], center[:lng]]
+    else
+      # Абсолютний фолбек для запобігання крашу фронтенду
+      [0.0, 0.0] 
+    end
   end
 
   # Чи потребує цей інцидент негайного втручання актуаторів?
@@ -82,19 +90,29 @@ class EwsAlert < ApplicationRecord
     Rails.cache.delete(silence_key)
   end
 
+  # [ВИПРАВЛЕНО]: Живий UI.
+  # Оновлюємо статусний бейдж ТА видаляємо вирішену тривогу з Live Transmission Feed.
   def broadcast_status_change
-    # Оновлюємо UI через Hotwire/Turbo, щоб "червоні вогники" гасли в реальному часі
+    # Оновлення бейджа на детальних сторінках
     Turbo::StreamsChannel.broadcast_replace_to(
       "ews_updates_#{cluster_id}",
       target: "alert_#{id}",
       html: Views::Components::Alerts::Badge.new(alert: self).call
     )
+
+    # Видалення зі списку активних тривог, якщо статус змінено на resolved
+    if status_resolved?
+      Turbo::StreamsChannel.broadcast_remove_to(
+        "ews_live_feed",
+        target: "alert_row_#{id}"
+      )
+    end
   end
 
   def close_associated_maintenance!
-    # Знаходимо MaintenanceRecord, які були створені як відповідь на цей а alert_id
-    # (якщо ти додав такий зв'язок у таблицю maintenance_records)
-    MaintenanceRecord.where(ews_alert_id: id, status: :pending).update_all(
+    # [СИНХРОНІЗОВАНО]: Використовуємо update_all для уникнення зайвих колбеків
+    # Знаходимо MaintenanceRecord, які були створені як відповідь на цей alert_id
+    MaintenanceRecord.where(ews_alert_id: id).where.not(status: :completed).update_all(
       status: :completed, 
       performed_at: Time.current,
       notes: "Auto-resolved via EWS Recovery"
