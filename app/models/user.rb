@@ -59,7 +59,10 @@ class User < ApplicationRecord
   end
 
   # Оновлення активності (викликається в BaseController для моніторингу присутності в Цитаделі)
+  # Оновлюємо не частіше ніж раз на 5 хвилин, щоб не перевантажувати базу транзакціями.
   def touch_visit!
+    return if last_seen_at.present? && last_seen_at > 5.minutes.ago
+
     update_columns(last_seen_at: Time.current)
   end
 
