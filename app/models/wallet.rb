@@ -38,6 +38,7 @@ class Wallet < ApplicationRecord
   def lock_and_mint!(points_to_lock, threshold, token_type = :carbon_coin)
     # 1. ПЕРЕВІРКА ЖИТТЄЗДАТНОСТІ
     raise "🛑 [Wallet] Дерево не активне. Мінтинг заборонено." unless tree.active?
+    return if threshold.to_f <= 0
 
     # 2. ПОШУК АДРЕСИ ПРИЗНАЧЕННЯ
     # Пріоритет: Власний гаманець дерева -> Гаманець Організації (Власника)
@@ -47,7 +48,7 @@ class Wallet < ApplicationRecord
       raise "🛑 [Wallet] Відсутня крипто-адреса для мінтингу (Tree чи Organization)"
     end
 
-    transaction do
+    tx = transaction do
       # 3. PESSIMISTIC LOCKING (Захист від Race Conditions під час мінтингу)
       lock!
 
@@ -61,24 +62,26 @@ class Wallet < ApplicationRecord
       # 4. СПИСАННЯ БАЛІВ ТА ФІКСАЦІЯ ТРАНЗАКЦІЇ
       update!(balance: balance - points_to_lock)
 
-      tx = blockchain_transactions.create!(
+      blockchain_transactions.create!(
         amount: tokens_to_mint,
         token_type: token_type,
         status: :pending,
         to_address: target_address,
         notes: "Конвертація #{points_to_lock} балів росту (Поріг: #{threshold})."
       )
-
-      # 5. ЗАПУСК WEB3-КОНВЕЄРА (Polygon Network)
-      # [СИНХРОНІЗОВАНО]: MintCarbonCoinWorker спробує виконати транзакцію,
-      # але TokenomicsEvaluatorWorker може об'єднати її в пакетний batchMint раніше.
-      MintCarbonCoinWorker.perform_async(tx.id)
-
-      Rails.logger.info "💎 [Wallet] Створено запит на мінтинг #{tokens_to_mint} #{token_type} для #{target_address}."
-
-      broadcast_balance_update
-      tx
     end
+
+    return unless tx
+
+    # 5. ЗАПУСК WEB3-КОНВЕЄРА (Polygon Network)
+    # [ВИПРАВЛЕНО]: Воркер запускається ПІСЛЯ завершення транзакції (COMMIT),
+    # щоб уникнути ситуації, коли Redis обробить завдання раніше, ніж БД закриє транзакцію.
+    MintCarbonCoinWorker.perform_async(tx.id)
+
+    Rails.logger.info "💎 [Wallet] Створено запит на мінтинг #{tx.amount} #{token_type} для #{target_address}."
+
+    broadcast_balance_update
+    tx
   end
 
   # Трансляція оновленого стану гаманця через Turbo Streams

@@ -36,10 +36,10 @@ class Actuator < ApplicationRecord
 
   # Перевірка, чи пристрій готовий до негайного розгортання
   def ready_for_deployment?
-    return false unless state_idle?
+    return false unless idle?
 
     # [СИНХРОНІЗОВАНО]: Шлюз має бути в мережі ТА не перебувати в стані оновлення
-    gateway.online? && !gateway.state_updating?
+    gateway.online? && !gateway.updating?
   end
 
   # Фіксація початку роботи (The Pulse of Action)
@@ -62,6 +62,8 @@ class Actuator < ApplicationRecord
   def require_maintenance!(reason = "Невідома помилка CoAP")
     transaction do
       update!(state: :maintenance_needed)
+
+      return unless cluster.present?
 
       # [СИНХРОНІЗОВАНО]: Створюємо системну тривогу через EwsAlert
       EwsAlert.create!(

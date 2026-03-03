@@ -46,11 +46,7 @@ class BlockchainTransaction < ApplicationRecord
 
   # Успішне підтвердження в мережі (виклик від BlockchainConfirmationWorker)
   def confirm!
-    transaction do
-      update!(status: :confirmed, error_message: nil)
-      # [Trigger]: Тут можна додати сповіщення для власника організації
-      # AlertNotificationWorker.perform_async(self.id)
-    end
+    update!(status: :confirmed, error_message: nil)
   end
 
   # Фіксація збою (як при відправці, так і при Revert)

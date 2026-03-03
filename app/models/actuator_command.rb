@@ -36,16 +36,17 @@ class ActuatorCommand < ApplicationRecord
     if actuator.ready_for_deployment?
       ActuatorCommandWorker.perform_async(self.id)
     else
-      transaction do
-        update_columns(status: self.class.statuses[:failed], error_message: "Актуатор недоступний")
-        Rails.logger.warn "🛑 [COMMAND] Спроба активації ##{id} провалена: Актуатор #{actuator.name} недоступний."
-      end
+      update_columns(status: self.class.statuses[:failed], error_message: "Актуатор недоступний")
+      Rails.logger.warn "🛑 [COMMAND] Спроба активації ##{id} провалена: Актуатор #{actuator.name} недоступний."
     end
   end
 
   def broadcast_prepend_to_activity_feed
+    org = actuator.gateway&.cluster&.organization
+    return unless org
+
     Turbo::StreamsChannel.broadcast_prepend_to(
-      actuator.gateway.cluster.organization,
+      org,
       target: "recent_commands_feed",
       html: Views::Components::Actuators::CommandRow.new(command: self).call
     )
