@@ -1,23 +1,32 @@
 # frozen_string_literal: true
 
+require "bigdecimal"
+require "bigdecimal/util"
+
 module SilkenNet
   class Attractor
-    # Класичні константи Лоренца
-    BASE_SIGMA = 10.0
-    BASE_RHO   = 28.0
-    BASE_BETA  = 8.0 / 3.0 # Вища точність для тривалих ітерацій
+    # Використовуємо BigDecimal для абсолютної крос-платформної детермінованості
+    # Це гарантує, що Slashing-вирок буде однаковим на будь-якому процесорі.
+    BASE_SIGMA = "10.0".to_d
+    BASE_RHO   = "28.0".to_d
+    BASE_BETA  = ("8.0".to_d / "3.0".to_d).round(18)
 
-    DT = 0.01
+    DT = "0.01".to_d
     ITERATIONS = 250
+
+    # МЕЖІ СТАБІЛЬНОСТІ (Chaos Clamps):
+    # Захищаємо систему від "вибуху" при екстремальних температурах.
+    SIGMA_LIMITS = (5.0..30.0)
+    RHO_LIMITS   = (10.0..50.0)
 
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # МЕТОД ДЛЯ БЕКЕНДУ (Розрахунок стабільності)
-    # Викликається TelemetryUnpackerService для кожного лога
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     def self.calculate_z(seed, temp, acoustic)
       x, y, z, local_sigma, local_rho = initialize_state(seed, temp, acoustic)
 
-      # Zero-allocation loop
+      # Обчислення в BigDecimal сповільнюють процес, але дають 
+      # "Юридичну Точність" для Web3-аудиту.
       ITERATIONS.times do
         dx = local_sigma * (y - x)
         dy = x * (local_rho - z) - y
@@ -28,54 +37,55 @@ module SilkenNet
         z += dz * DT
       end
 
-      z.round(4)
+      z.to_f.round(4)
     end
 
-    # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    # ПЕРЕВІРКА ГOМЕОСТАЗУ
-    # Порівнює отриманий Z з критичними межами конкретної породи дерева
-    # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     def self.homeostatic?(z_value, tree_family)
       z_value.between?(tree_family.critical_z_min, tree_family.critical_z_max)
     end
 
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # ВІЗУАЛІЗАЦІЯ ТРАЄКТОРІЇ
-    # Для 3D-дашборду інвестора
+    # [ОПТИМІЗАЦІЯ ПАМ'ЯТІ]: Замість масиву з 250 хешів повертаємо 
+    # плаский масив Float. Це в 5 разів легше для пам'яті сервера та 
+    # ідеально для Float32Array у JavaScript (Three.js/Deck.gl).
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     def self.generate_trajectory(seed, temp, acoustic)
       x, y, z, local_sigma, local_rho = initialize_state(seed, temp, acoustic)
-      trajectory = []
+      
+      # Результат: [x1, y1, z1, x2, y2, z2, ...]
+      Array.new(ITERATIONS * 3) do |i|
+        if i % 3 == 0 && i > 0
+          # Крок ітерації виконується кожні 3 значення
+          dx = local_sigma * (y - x)
+          dy = x * (local_rho - z) - y
+          dz = (x * y) - (BASE_BETA * z)
 
-      ITERATIONS.times do
-        dx = local_sigma * (y - x)
-        dy = x * (local_rho - z) - y
-        dz = (x * y) - (BASE_BETA * z)
+          x += dx * DT
+          y += dy * DT
+          z += dz * DT
+        end
 
-        x += dx * DT
-        y += dy * DT
-        z += dz * DT
-
-        trajectory << { x: x.round(4), y: y.round(4), z: z.round(4) }
+        case i % 3
+        when 0 then x.to_f.round(4)
+        when 1 then y.to_f.round(4)
+        when 2 then z.to_f.round(4)
+        end
       end
-
-      trajectory
     end
 
     private_class_method def self.initialize_state(seed, temp, acoustic)
-      # Використовуємо DID дерева як зерно для початкових координат
-      # Це створює "унікальний почерк" хаосу для кожного дерева
-      x = ((seed % 1000) / 500.0) - 1.0
-      y = (((seed >> 4) % 1000) / 500.0) - 1.0
-      z = (((seed >> 8) % 1000) / 500.0) - 1.0
+      # Початкові координати (насіння) з використанням DID
+      x = (((seed % 1000) / 500.0) - 1.0).to_d
+      y = ((((seed >> 4) % 1000) / 500.0) - 1.0).to_d
+      z = ((((seed >> 8) % 1000) / 500.0) - 1.0).to_d
 
-      # Фізична пертурбація:
-      # Акустика (шум/комахи) впливає на зв'язність (Sigma)
-      # Температура впливає на енергію системи (Rho)
-      local_sigma = BASE_SIGMA + (acoustic * 0.1)
-      local_rho   = BASE_RHO + (temp * 0.2)
+      # [СЕРЕДОВИЩНИЙ ЗАПОБІЖНИК]: Clamp запобігає вильоту в нескінченність
+      # навіть якщо дерево горить (temp > 100) або датчик видає шум.
+      local_sigma = (BASE_SIGMA + (acoustic.to_d * "0.1".to_d)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
+      local_rho   = (BASE_RHO + (temp.to_d * "0.2".to_d)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
 
-      [ x, y, z, local_sigma, local_rho ]
+      [x, y, z, local_sigma, local_rho]
     end
   end
 end
