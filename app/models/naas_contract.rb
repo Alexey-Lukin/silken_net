@@ -11,7 +11,7 @@ class NaasContract < ApplicationRecord
   enum :status, {
     draft: 0,      # Підготовка, очікування транзакції інвестора
     active: 1,     # Контракт у силі, емісія токенів дозволена
-    fulfilled: 2,  # Успішне завершення
+    fulfilled: 2,  # Успішне завершення (Audit pass)
     breached: 3    # ПОРУШЕНО (Slashing Protocol активовано)
   }, prefix: true
 
@@ -21,28 +21,29 @@ class NaasContract < ApplicationRecord
   validate :end_date_after_start_date
 
   # --- СКОУПИ ---
-  scope :active_contracts, -> { status_active }
+  # [СИНХРОНІЗОВАНО]: Уніфікована назва для системної єдності
+  scope :active, -> { status_active }
   
   # [ВИПРАВЛЕНО]: Фінансовий дедлайн. 
-  # Контракт вважається завершеним лише після того, як вказана дата повністю минула.
-  scope :pending_completion, -> { active_contracts.where("end_date < ?", Date.current) }
+  # Контракт активний до останньої секунди вказаного дня.
+  scope :pending_completion, -> { active.where("end_date < ?", Date.current) }
 
   # =========================================================================
   # THE SLASHING PROTOCOL (D-MRV Арбітраж)
   # =========================================================================
   
   # [ВИПРАВЛЕНО]: Вигнання "Мертвих Душ". 
-  # Тепер аналізуємо лише живі дерева на момент проведення аудиту.
+  # Ми розраховуємо здоров'я лише за тими "Солдатами", що стоять у строю.
   def check_cluster_health!(target_date = Date.yesterday)
     return unless status_active?
 
-    # Рахуємо лише активні дерева (active), ігноруючи deceased та removed
+    # Рахуємо лише активні дерева, ігноруючи deceased та removed
     active_trees = cluster.trees.active
     total_active_count = active_trees.count
     
     return if total_active_count.zero?
 
-    # Шукаємо інсайти саме для активних дерев
+    # Аналізуємо вердикти Оракула (AiInsight)
     daily_insights = AiInsight.daily_health_summary.where(
       analyzable: active_trees,
       target_date: target_date
@@ -50,10 +51,11 @@ class NaasContract < ApplicationRecord
 
     return if daily_insights.empty?
 
-    # Рахуємо критичні аномалії серед живих (stress_index 1.0 = агонія/вандалізм)
+    # Рахуємо критичні аномалії серед живих
     critical_insights_count = daily_insights.where("stress_index >= 1.0").count
 
     # Математична межа порушення контракту (20% від активної біомаси)
+    # $$HealthRatio = \frac{\sum \text{ActiveTrees with Stress} \ge 1.0}{\text{TotalActiveTrees}}$$
     if critical_insights_count > (total_active_count * 0.20)
       activate_slashing_protocol!
     end
@@ -62,9 +64,9 @@ class NaasContract < ApplicationRecord
   private
 
   # [ВИПРАВЛЕНО]: Ліквідація Race Condition.
-  # Ми розділяємо оновлення бази даних та запуск асинхронного воркера.
+  # Тепер BurnCarbonTokensWorker гарантовано бачить статус :breached у базі.
   def activate_slashing_protocol!
-    # Використовуємо транзакцію лише для зміни стану
+    # Змінюємо стан у межах атомарної транзакції
     breach_confirmed = transaction do
       update!(status: :breached)
       true
@@ -73,11 +75,11 @@ class NaasContract < ApplicationRecord
       false
     end
 
-    # Воркер запускається ТІЛЬКИ після успішного завершення транзакції (COMMIT)
+    # Воркер стає на крило ТІЛЬКИ після успішного COMMIT у PostgreSQL
     if breach_confirmed
-      Rails.logger.warn "🚨 [D-MRV] NaasContract ##{id} РОЗІРВАНО. Сигнал на вилучення капіталу відправлено."
+      Rails.logger.warn "🚨 [D-MRV] NaasContract ##{id} РОЗІРВАНО. Сигнал на Slashing відправлено."
       
-      # Тепер BurnCarbonTokensWorker гарантовано побачить статус :breached у базі
+      # Web3-екзекутор тепер не зустріне "привида" зі статусом :active
       BurnCarbonTokensWorker.perform_async(self.organization_id, self.id)
     end
   end
