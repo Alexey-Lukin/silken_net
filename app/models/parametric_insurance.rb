@@ -10,6 +10,9 @@ class ParametricInsurance < ApplicationRecord
   enum :status, { active: 0, triggered: 1, paid: 2, expired: 3 }, prefix: true
   enum :trigger_event, { critical_fire: 0, extreme_drought: 1, insect_epidemic: 2 }
 
+  # Тип токена виплати — обирається інвестором при підписанні контракту
+  enum :token_type, { carbon_coin: 0, forest_coin: 1 }, prefix: true
+
   # --- ВАЛІДАЦІЇ ---
   validates :payout_amount, :threshold_value, presence: true
   validates :threshold_value, numericality: { greater_than: 0, less_than_or_equal_to: 100 }

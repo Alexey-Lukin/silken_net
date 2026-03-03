@@ -24,9 +24,10 @@ class MintCarbonCoinWorker
       ActiveRecord::Base.transaction do
         # Pessimistic lock для запобігання подвійного використання балів під час відкату
         tx.wallet.with_lock do
-          # Відновлюємо внутрішній баланс Солдата (бали)
-          threshold = TokenomicsEvaluatorWorker::EMISSION_THRESHOLD
-          refund_points = (tx.amount * threshold).to_i
+          # Повертаємо рівно ту кількість балів, яка була заблокована при створенні транзакції.
+          # Використовуємо збережений snapshot locked_points замість перерахунку через
+          # поточний EMISSION_THRESHOLD, який міг змінитись між створенням та ролбеком.
+          refund_points = tx.locked_points || (tx.amount * TokenomicsEvaluatorWorker::EMISSION_THRESHOLD).to_i
 
           tx.wallet.increment!(:balance, refund_points)
           tx.update!(
@@ -79,6 +80,11 @@ class MintCarbonCoinWorker
     # щоб наступний ретрай Sidekiq спробував знову.
     BlockchainTransaction.where(id: batch_ids, status: :processing)
                          .update_all(status: :pending, notes: "Retry: #{e.message.truncate(150)}")
+
+    # Оповіщаємо UI про поточну спробу, щоб користувач бачив прогрес у реальному часі
+    BlockchainTransaction.where(id: batch_ids).each do |tx|
+      tx.wallet&.broadcast_balance_update
+    end
 
     Rails.logger.error "🚨 [Web3] Batch RPC Error: #{e.message}. Планується повтор..."
     raise e

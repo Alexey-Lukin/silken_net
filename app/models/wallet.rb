@@ -67,6 +67,7 @@ class Wallet < ApplicationRecord
         token_type: token_type,
         status: :pending,
         to_address: target_address,
+        locked_points: points_to_lock,
         notes: "Конвертація #{points_to_lock} балів росту (Поріг: #{threshold})."
       )
     end

@@ -24,7 +24,8 @@ class Gateway < ApplicationRecord
     idle: 0,        # Очікування / Сон
     active: 1,      # Передача телеметрії
     updating: 2,    # Прийом OTA чанків (Busy)
-    maintenance: 3  # Технічне обслуговування
+    maintenance: 3, # Технічне обслуговування
+    faulty: 4       # Апаратний збій / вичерпано ретраї OTA
   }, default: :idle
 
   # --- КОЛБЕКИ ТА ВАЛІДАЦІЇ ---
