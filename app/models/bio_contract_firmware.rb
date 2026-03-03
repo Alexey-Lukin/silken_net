@@ -10,8 +10,8 @@ class BioContractFirmware < ApplicationRecord
 
   # Строга HEX-валідація (Case-insensitive)
   validates :bytecode_payload, presence: true, format: {
-    with: /\A[a-fA-F0-9]+\z/,
-    message: "має бути чистим HEX-рядком"
+    with: /\A([a-fA-F0-9]{2})+\z/,
+    message: "має бути чистим HEX-рядком парної довжини (кратним байту)"
   }
 
   # --- СКОУПИ ---

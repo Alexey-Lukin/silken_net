@@ -63,6 +63,7 @@ class DeviceCalibration < ApplicationRecord
 
   def check_for_hardware_fault
     return unless sensor_drift_critical?
+    return unless tree.cluster.present?
 
     # Автоматично створюємо тривогу для технічної команди
     EwsAlert.find_or_create_by!(
