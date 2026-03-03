@@ -11,7 +11,11 @@ class Gateway < ApplicationRecord
   has_many :telemetry_logs, foreign_key: :queen_uid, primary_key: :uid, dependent: :nullify
   has_many :gateway_telemetry_logs, foreign_key: :queen_uid, primary_key: :uid, dependent: :destroy
 
-  has_many :maintenance_records, as: :maintainable, dependent: :destroy
+  # [ВИПРАВЛЕНО]: Знищення Журналу Обслуговування (Аудит).
+  # Використовуємо :restrict_with_error, щоб зберегти історію витрат та ремонтів.
+  # Королеву можна списати (status: :retired), але не можна видалити її минуле.
+  has_many :maintenance_records, as: :maintainable, dependent: :restrict_with_error
+  
   has_many :actuators, dependent: :destroy
   has_many :actuator_commands, through: :actuators
 
@@ -36,25 +40,37 @@ class Gateway < ApplicationRecord
   validates :ip_address, format: { with: Resolv::AddressRegex }, allow_blank: true
 
   # --- СКОУПИ (The Watchers) ---
-  scope :online, -> { where("last_seen_at >= ?", 1.hour.ago) }
-  scope :offline, -> { where("last_seen_at < ? OR last_seen_at IS NULL", 1.hour.ago) }
+  # [ВИПРАВЛЕНО]: Гнучкість "Смерті". Статус онлайн тепер динамічний.
+  # Беремо інтервал сну конкретної Королеви + 20% люфту на затримку мережі/обробку.
+  scope :online, -> {
+    where("last_seen_at >= (CURRENT_TIMESTAMP - (config_sleep_interval_s * 1.2 || ' seconds')::interval)")
+  }
+  
+  scope :offline, -> {
+    where("last_seen_at IS NULL OR last_seen_at < (CURRENT_TIMESTAMP - (config_sleep_interval_s * 1.2 || ' seconds')::interval)")
+  }
+  
   scope :ready_for_commands, -> { idle.online }
 
   # --- МЕТОДИ (Intelligence) ---
 
   # Оновлення пульсу та мережевого якоря
-  def mark_seen!(new_ip = nil)
+  # [ВИПРАВЛЕНО]: Тепер приймає voltage для денормалізації (N+1 fix)
+  def mark_seen!(new_ip: nil, voltage_mv: nil)
     updates = { last_seen_at: Time.current }
     updates[:ip_address] = new_ip if new_ip.present? && ip_address != new_ip
+    updates[:latest_voltage_mv] = voltage_mv if voltage_mv.present?
 
-    # Якщо Королева прокинулася, вона автоматично стає idle, якщо не оновлюється
-    updates[:state] = :idle if state == "active" || state.nil?
+    # Якщо Королева прокинулася, вона автоматично стає idle
+    updates[:state] = :idle if %w[active].include?(state) || state.nil?
 
     update!(updates)
   end
 
   def online?
-    last_seen_at.present? && last_seen_at >= 1.hour.ago
+    return false if last_seen_at.nil?
+    # Динамічна перевірка: чи не перевищено інтервал сну з люфтом
+    last_seen_at >= (config_sleep_interval_s * 1.2).seconds.ago
   end
 
   def geolocated?
@@ -71,10 +87,10 @@ class Gateway < ApplicationRecord
     cluster&.ews_alerts&.unresolved&.system_fault&.exists? || battery_critical?
   end
 
-  # Швидка перевірка останнього рівня напруги
+  # [ВИПРАВЛЕНО]: Блискавична перевірка без SQL запитів до логів.
+  # Використовуємо денормалізовану колонку latest_voltage_mv.
   def battery_critical?
-    last_log = gateway_telemetry_logs.order(created_at: :desc).first
-    last_log.present? && last_log.voltage_mv < 3300
+    latest_voltage_mv.present? && latest_voltage_mv < 3300
   end
 
   private
