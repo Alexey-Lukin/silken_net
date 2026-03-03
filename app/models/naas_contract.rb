@@ -11,7 +11,7 @@ class NaasContract < ApplicationRecord
   enum :status, {
     draft: 0,      # Підготовка, очікування транзакції інвестора
     active: 1,     # Контракт у силі, емісія токенів дозволена
-    fulfilled: 2,  # Успішне завершення (напр. через 10 років)
+    fulfilled: 2,  # Успішне завершення
     breached: 3    # ПОРУШЕНО (Slashing Protocol активовано)
   }, prefix: true
 
@@ -22,50 +22,62 @@ class NaasContract < ApplicationRecord
 
   # --- СКОУПИ ---
   scope :active_contracts, -> { status_active }
-  # Контракти, термін дії яких закінчився, але вони ще не марковані як fulfilled
-  scope :pending_completion, -> { active_contracts.where("end_date <= ?", Date.current) }
+  
+  # [ВИПРАВЛЕНО]: Фінансовий дедлайн. 
+  # Контракт вважається завершеним лише після того, як вказана дата повністю минула.
+  scope :pending_completion, -> { active_contracts.where("end_date < ?", Date.current) }
 
   # =========================================================================
   # THE SLASHING PROTOCOL (D-MRV Арбітраж)
   # =========================================================================
-  # Викликається щоночі після роботи InsightGeneratorService
-  def check_cluster_health!
+  
+  # [ВИПРАВЛЕНО]: Вигнання "Мертвих Душ". 
+  # Тепер аналізуємо лише живі дерева на момент проведення аудиту.
+  def check_cluster_health!(target_date = Date.yesterday)
     return unless status_active?
 
-    total_trees_count = cluster.trees.count
-    return if total_trees_count.zero?
+    # Рахуємо лише активні дерева (active), ігноруючи deceased та removed
+    active_trees = cluster.trees.active
+    total_active_count = active_trees.count
+    
+    return if total_active_count.zero?
 
-    # [СИНХРОНІЗАЦІЯ З ОРАКУЛОМ]:
-    # Використовуємо target_date та insight_type_daily_health_summary
+    # Шукаємо інсайти саме для активних дерев
     daily_insights = AiInsight.daily_health_summary.where(
-      analyzable: cluster.trees,
-      target_date: Date.yesterday
+      analyzable: active_trees,
+      target_date: target_date
     )
 
-    # Якщо за вчора ще немає даних, ми не маємо права на арбітраж
     return if daily_insights.empty?
 
-    # Рахуємо критичні аномалії (stress_index 1.0 = смерть/вандалізм)
+    # Рахуємо критичні аномалії серед живих (stress_index 1.0 = агонія/вандалізм)
     critical_insights_count = daily_insights.where("stress_index >= 1.0").count
 
-    # Математична межа порушення контракту
-    # anomalous_ratio = critical_insights / total_trees
-    if critical_insights_count > (total_trees_count * 0.20)
+    # Математична межа порушення контракту (20% від активної біомаси)
+    if critical_insights_count > (total_active_count * 0.20)
       activate_slashing_protocol!
     end
   end
 
   private
 
+  # [ВИПРАВЛЕНО]: Ліквідація Race Condition.
+  # Ми розділяємо оновлення бази даних та запуск асинхронного воркера.
   def activate_slashing_protocol!
-    transaction do
+    # Використовуємо транзакцію лише для зміни стану
+    breach_confirmed = transaction do
       update!(status: :breached)
+      true
+    rescue StandardError => e
+      Rails.logger.error "🛑 [D-MRV] Провал активації Slashing для контракту ##{id}: #{e.message}"
+      false
+    end
 
-      # Залишаємо відбиток для аудиторів
-      Rails.logger.warn "🚨 [D-MRV] NaasContract ##{id} РОЗІРВАНО. Критичне пошкодження сектору #{cluster.name}."
-
-      # Активуємо воркер для спалювання токенів (Slashing)
-      # Це фізично зменшує баланс інвестора в Polygon, відображаючи реальну втрату біомаси
+    # Воркер запускається ТІЛЬКИ після успішного завершення транзакції (COMMIT)
+    if breach_confirmed
+      Rails.logger.warn "🚨 [D-MRV] NaasContract ##{id} РОЗІРВАНО. Сигнал на вилучення капіталу відправлено."
+      
+      # Тепер BurnCarbonTokensWorker гарантовано побачить статус :breached у базі
       BurnCarbonTokensWorker.perform_async(self.organization_id, self.id)
     end
   end
