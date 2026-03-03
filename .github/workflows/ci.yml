@@ -67,6 +67,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     services:
       postgres:
@@ -106,6 +107,7 @@ jobs:
 
   feature-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     services:
       postgres:
