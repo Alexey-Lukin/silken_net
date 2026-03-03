@@ -22,7 +22,7 @@ class OtaTransmissionWorker
     # Отримуємо нарізані пакети з заголовками [0x99][Index][Total]
     ota_data = OtaPackagerService.prepare(firmware_obj, chunk_size: CHUNK_SIZE)
     packages = ota_data[:packages]
-    total_chunks = packages.size
+    total_chunks = ota_data[:manifest][:total_chunks]
 
     gateway.update!(state: :updating)
 

@@ -88,8 +88,8 @@ uint16_t incoming_lora_size = 0;
 // Буфер для збирання байт-коду по шматочках (OTA)
 uint8_t ota_buffer[1024];
 uint16_t ota_bytes_received = 0;
-uint8_t ota_total_chunks = 0;
-uint8_t ota_chunks_received = 0;
+uint16_t ota_total_chunks = 0;
+uint16_t ota_chunks_received = 0;
 // Масив прапорців для захисту від дублікатів OTA
 uint8_t ota_chunk_received[256] = {0};
 
@@ -430,16 +430,17 @@ int main(void)
 
                 // Сценарій А: OTA Оновлення від Королеви (Пакет починається з 0x99)
                 if (decrypted_rx_payload[0] == 0x99) {
-                    uint8_t chunk_idx = decrypted_rx_payload[1];
-                    ota_total_chunks = decrypted_rx_payload[2];
-                    uint8_t chunk_size = incoming_lora_size - 3;
+                    // 16-bit big-endian index та total (5 байт заголовок: 1 маркер + 2 index + 2 total)
+                    uint16_t chunk_idx = ((uint16_t)decrypted_rx_payload[1] << 8) | decrypted_rx_payload[2];
+                    ota_total_chunks = ((uint16_t)decrypted_rx_payload[3] << 8) | decrypted_rx_payload[4];
+                    uint8_t chunk_size = incoming_lora_size - 5;
 
                     // Явне приведення типів для розрахунку зміщення (MISRA C)
-                    uint16_t offset = (uint16_t)chunk_idx * (uint16_t)chunk_size;
+                    uint32_t offset = (uint32_t)chunk_idx * (uint32_t)chunk_size;
 
                     // Броня пам'яті та захист від дублікатів
-                    if (!ota_chunk_received[chunk_idx] && (offset + chunk_size) <= sizeof(ota_buffer)) {
-                        memcpy(&ota_buffer[offset], &decrypted_rx_payload[3], chunk_size);
+                    if (chunk_idx < sizeof(ota_chunk_received) && !ota_chunk_received[chunk_idx] && (offset + chunk_size) <= sizeof(ota_buffer)) {
+                        memcpy(&ota_buffer[offset], &decrypted_rx_payload[5], chunk_size);
                         ota_chunk_received[chunk_idx] = 1; // Маркуємо шматок як отриманий
                         ota_chunks_received++;
                         ota_bytes_received += chunk_size;
