@@ -81,7 +81,7 @@ uint8_t binary_batch_buffer[2048];
 // =========================================================================
 // Прапорець: 1 - якщо ми зараз в процесі роздачі нової прошивки лісу
 uint8_t ota_is_active = 1;
-uint8_t current_ota_chunk_idx = 0;
+uint16_t current_ota_chunk_idx = 0;
 
 // Уявімо, що це новий контракт bio_contract_v2.rb (байт-код mruby)
 // На практиці Королева може отримувати його з Rails-сервера і складати сюди.
@@ -178,18 +178,20 @@ int main(void)
             uint8_t ota_chunk[16] = {0};
             uint8_t encrypted_ota[16] = {0};
 
-            // В один 16-байтний пакет влазить 13 байт чистого коду (3 байти - заголовок)
-            uint8_t total_chunks = (pending_ota_size + 12) / 13;
+            // В один 16-байтний пакет влазить 11 байт чистого коду (5 байтів - заголовок: 1 маркер + 2 index + 2 total)
+            uint16_t total_chunks = (pending_ota_size + 10) / 11;
 
-            // Формуємо заголовок (0x99 = маркер OTA-пакета)
+            // Формуємо заголовок (0x99 = маркер OTA-пакета, 16-bit big-endian index/total)
             ota_chunk[0] = 0x99;
-            ota_chunk[1] = current_ota_chunk_idx;
-            ota_chunk[2] = total_chunks;
+            ota_chunk[1] = (uint8_t)(current_ota_chunk_idx >> 8);
+            ota_chunk[2] = (uint8_t)(current_ota_chunk_idx & 0xFF);
+            ota_chunk[3] = (uint8_t)(total_chunks >> 8);
+            ota_chunk[4] = (uint8_t)(total_chunks & 0xFF);
 
-            // Копіюємо до 13 байт коду в пакет
-            uint16_t offset = current_ota_chunk_idx * 13;
-            uint8_t bytes_to_copy = (pending_ota_size - offset > 13) ? 13 : (pending_ota_size - offset);
-            memcpy(&ota_chunk[3], &pending_ota_bytecode[offset], bytes_to_copy);
+            // Копіюємо до 11 байт коду в пакет
+            uint16_t offset = current_ota_chunk_idx * 11;
+            uint8_t bytes_to_copy = (pending_ota_size - offset > 11) ? 11 : (pending_ota_size - offset);
+            memcpy(&ota_chunk[5], &pending_ota_bytecode[offset], bytes_to_copy);
 
             // Шифруємо цей шматок коду
             HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4, (uint32_t*)encrypted_ota, 1000);
