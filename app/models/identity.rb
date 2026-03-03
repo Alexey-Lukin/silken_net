@@ -6,7 +6,6 @@ class Identity < ApplicationRecord
 
   # ⚡ [СИНХРОНІЗАЦІЯ]: Прямий доступ до контексту через користувача
   # Це дозволяє робити виклики на кшталт identity.organization або identity.wallets
-  # без зайвих блукань по Матриці.
   delegate :organization, :role, to: :user, allow_nil: true
   delegate :wallets, to: :organization, allow_nil: true
 
@@ -22,10 +21,14 @@ class Identity < ApplicationRecord
   # OMNIAUTH ІНТЕГРАЦІЯ (The Gateway Processor)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-  # Цей метод викликається щоразу, коли Архітектор чи Патрульний повертається
-  # від зовнішнього провайдера. Він оновлює токени, зберігаючи актуальність зв'язку.
-  def self.find_or_create_from_auth_hash(auth_hash)
+  # [ВИПРАВЛЕНО]: Тепер метод приймає user як аргумент. Це запобігає 
+  # ActiveRecord::RecordInvalid (User must exist) при створенні нової ідентичності.
+  def self.find_or_create_from_auth_hash(auth_hash, user: nil)
     identity = find_or_initialize_by(provider: auth_hash.provider, uid: auth_hash.uid)
+    
+    # Прив'язуємо користувача, якщо це новий запис. 
+    # Це закриває "дірку", через яку save! вибухав помилкою валідації.
+    identity.user = user if identity.new_record? && user.present?
 
     # Завжди оновлюємо токени доступу, оскільки вони мають властивість "протухати"
     if auth_hash.credentials.present?
@@ -36,9 +39,10 @@ class Identity < ApplicationRecord
         auth_data: auth_hash.to_h
       )
 
-      # Обробляємо час життя токена (якщо провайдер його надає)
+      # [ВИПРАВЛЕНО]: Додано .to_i для гарантії валідності Unix Timestamp.
+      # Це захищає нас від "типового" хаосу, якщо провайдер надішле String замість Integer.
       if auth_hash.credentials.expires_at.present?
-        identity.expires_at = Time.zone.at(auth_hash.credentials.expires_at)
+        identity.expires_at = Time.zone.at(auth_hash.credentials.expires_at.to_i)
       end
     end
 
