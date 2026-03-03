@@ -57,7 +57,7 @@ class Wallet < ApplicationRecord
       end
 
       tokens_to_mint = (points_to_lock.to_f / threshold).floor
-      next if tokens_to_mint.zero? # Немає сенсу створювати транзакцію на 0 токенів
+      return if tokens_to_mint.zero? # Немає сенсу створювати транзакцію на 0 токенів
 
       # 4. СПИСАННЯ БАЛІВ ТА ФІКСАЦІЯ ТРАНЗАКЦІЇ
       update!(balance: balance - points_to_lock)
