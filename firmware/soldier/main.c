@@ -436,7 +436,7 @@ int main(void)
                     uint8_t chunk_size = incoming_lora_size - 5;
 
                     // Явне приведення типів для розрахунку зміщення (MISRA C)
-                    uint16_t offset = (uint16_t)chunk_idx * (uint16_t)chunk_size;
+                    uint32_t offset = (uint32_t)chunk_idx * (uint32_t)chunk_size;
 
                     // Броня пам'яті та захист від дублікатів
                     if (chunk_idx < sizeof(ota_chunk_received) && !ota_chunk_received[chunk_idx] && (offset + chunk_size) <= sizeof(ota_buffer)) {
