@@ -46,6 +46,11 @@ CRYP_HandleTypeDef hcryp; // Апаратний криптопроцесор AES
 uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
                        0x1A2B3C4D, 0x5E6F7A8B, 0x9C0D1E2F, 0x3A4B5C6D};
 
+// Унікальний ідентифікатор цієї Королеви (прошивається індивідуально).
+// Використовується як третій сегмент CoAP URI-Path: /telemetry/batch/<QUEEN_UID>
+// Дозволяє серверу ідентифікувати шлюз навіть при зміні IP (Starlink NAT).
+const char queen_uid[] = "QUEEN-001";
+
 // =========================================================================
 // === 1. ПАМ'ЯТЬ КОРОЛЕВИ (Прийом Даних) ===
 // =========================================================================
@@ -345,18 +350,55 @@ void Flush_Cache_To_Rails(void)
 
     if (offset == 0) return;
 
+    // =========================================================================
+    // ШИФРУВАННЯ БАТЧА AES-256-CBC
+    // Усуває ECB-вразливість: однакові блоки телеметрії більше не дають
+    // однаковий шифротекст. Сервер очікує формат: [IV:16][Зашифровані дані: N*16]
+    // =========================================================================
+
+    // 1. Вирівнювання до розміру AES-блоку (16 байт) нульовим padding.
+    //    Сервер (TelemetryUnpackerService) ігнорує неповні 21-байтні чанки.
+    uint16_t padded_size = ((offset + 15) / 16) * 16;
+    if (padded_size > sizeof(binary_batch_buffer)) padded_size = sizeof(binary_batch_buffer);
+    memset(binary_batch_buffer + offset, 0, padded_size - offset);
+
+    // 2. Генеруємо унікальний IV для кожного батча на основі системного таймера.
+    //    Не є криптографічно випадковим, але гарантує унікальність між батчами.
+    uint32_t tick = HAL_GetTick();
+    uint32_t batch_iv[4] = {
+        tick,
+        ~tick,
+        tick + 0x5A5A5A5AUL,
+        ~tick + 0xA5A5A5A5UL
+    };
+
+    // 3. Оновлюємо IV у конфігурації крипто-модуля та переініціалізуємо
+    hcryp.Init.pInitVect = batch_iv;
+    HAL_CRYP_Init(&hcryp);
+
+    // 4. Шифруємо батч. Довжина в 32-бітних словах = padded_size / 4.
+    //    Буфер: IV (16 байт) + зашифровані дані
+    uint8_t encrypted_batch_buffer[2048 + 16];
+    memcpy(encrypted_batch_buffer, batch_iv, 16); // Prepend IV як заголовок пакета
+    HAL_CRYP_Encrypt(&hcryp, (uint32_t*)binary_batch_buffer, padded_size / 4,
+                     (uint32_t*)(encrypted_batch_buffer + 16), 2000);
+
+    uint16_t total_size = 16 + padded_size; // IV (16) + зашифровані дані
+
     // Ініціалізація CoAP сесії (UDP)
     SIM7070_SendATCommand("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n", 1000);
 
-    // 1. Початок команди (Вказуємо довжину HEX-рядка та відкриваємо лапки)
-    // Оскільки кожен байт стає двома символами (наприклад, 0xAB -> "ab"), довжина рядка = offset * 2
-    sprintf(at_tx_buffer, "AT+CCOAPSEND=0,2,\"telemetry/batch\",%d,\"", offset * 2);
+    // 1. Початок команди.
+    // URI-Path: /telemetry/batch/<queen_uid> — сервер ідентифікує шлюз за UID,
+    // а не за IP, що вирішує проблему Starlink NAT та динамічних адрес.
+    sprintf(at_tx_buffer, "AT+CCOAPSEND=0,2,\"telemetry/batch/%s\",%d,\"",
+            queen_uid, total_size * 2);
     HAL_UART_Transmit(&huart1, (uint8_t*)at_tx_buffer, strlen(at_tx_buffer), 100);
 
-    // 2. Перетворюємо бінарний буфер у Hex-рядок на льоту і відправляємо в модем
+    // 2. Перетворюємо зашифрований буфер у Hex-рядок на льоту і відправляємо в модем
     char hex_byte[3];
-    for (int i = 0; i < offset; i++) {
-        sprintf(hex_byte, "%02x", binary_batch_buffer[i]);
+    for (int i = 0; i < total_size; i++) {
+        sprintf(hex_byte, "%02x", encrypted_batch_buffer[i]);
         HAL_UART_Transmit(&huart1, (uint8_t*)hex_byte, 2, 10);
     }
 
@@ -390,7 +432,10 @@ static void MX_CRYP_Init(void)
   // Активовано стандарт Gaia 2.0 (256-бітне шифрування)
   hcryp.Init.KeySize = CRYP_KEYSIZE_256B;
   hcryp.Init.pKey = aes_key;
-  hcryp.Init.Algorithm = CRYP_AES_ECB; // Режим ECB достатній для одного 16-байтного блоку
+  // ECB для LoRa-трафіку між Королевою та Солдатами (одиночні 16-байтні блоки).
+  // Батч до сервера шифрується CBC динамічно в Flush_Cache_To_Rails,
+  // після чого CRYP відновлюється до ECB.
+  hcryp.Init.Algorithm = CRYP_AES_ECB;
   HAL_CRYP_Init(&hcryp);
 }
 

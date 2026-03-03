@@ -2,7 +2,12 @@
 
 class BlockchainTransaction < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
-  belongs_to :wallet
+  # optional: true — для аудит-транзакцій slashing, коли весь кластер мертвий
+  # і жодного дерева-носія немає (пастка "Останнього дерева")
+  belongs_to :wallet, optional: true
+
+  # Запасний власник аудит-запису, коли wallet відсутній
+  belongs_to :cluster, optional: true
 
   # Поліморфний зв'язок для аудиту (Напр. AiInsight, EwsAlert або NaasContract)
   belongs_to :sourceable, polymorphic: true, optional: true
@@ -33,7 +38,8 @@ class BlockchainTransaction < ApplicationRecord
   validates :tx_hash, uniqueness: true, allow_nil: true
 
   # --- ДЕЛЕГУВАННЯ ---
-  delegate :organization, to: :wallet
+  # Навігація через wallet (може бути nil для slashing-аудиту — тоді через cluster)
+  delegate :organization, to: :wallet, allow_nil: true
 
   # =========================================================================
   # ЖИТТЄВИЙ ЦИКЛ ТРАНЗАКЦІЇ (The Web3 Protocol)

@@ -8,20 +8,29 @@ class UnpackTelemetryWorker
   # Використовуємо чергу uplink для пріоритетної обробки вхідних сигналів
   sidekiq_options queue: "uplink", retry: 3
 
-  def perform(encoded_payload, sender_ip)
+  # Розмір IV для AES-256-CBC (один AES-блок = 16 байт)
+  AES_IV_SIZE = 16
+
+  # Сигнатура perform: encoded_payload, sender_ip, gateway_uid (необов'язково).
+  # gateway_uid — незашифрований UID з CoAP URI-Path (/telemetry/batch/<UID>).
+  # Дозволяє коректно ідентифікувати шлюзи за NAT / динамічним Starlink IP.
+  def perform(encoded_payload, sender_ip, gateway_uid = nil)
     # 1. ДЕКОДУВАННЯ (Extraction)
     # Отримуємо сирі байти, що прийшли через CoAP/UDP
     binary_payload = Base64.strict_decode64(encoded_payload)
 
     # 2. ІДЕНТИФІКАЦІЯ ШЛЮЗУ (The Queen Node)
-    gateway = Gateway.find_by(ip_address: sender_ip)
+    # Пріоритет: UID з заголовка пакета (стабільний) → IP (може змінитись після NAT)
+    gateway = gateway_uid.present? ? Gateway.find_by(uid: gateway_uid.to_s.strip.upcase) : nil
+    gateway ||= Gateway.find_by(ip_address: sender_ip)
 
     unless gateway
-      Rails.logger.warn "⚠️ [Uplink] Невідоме джерело пакета: #{sender_ip}. Скидання з'єднання."
+      Rails.logger.warn "⚠️ [Uplink] Невідоме джерело: UID=#{gateway_uid.inspect}, IP=#{sender_ip}. Скидання з'єднання."
       return
     end
 
-    gateway.mark_seen!(sender_ip)
+    # Оновлюємо поточну IP-адресу (важливо для динамічних Starlink/LTE модемів)
+    gateway.mark_seen!(new_ip: sender_ip)
 
     # 3. ДЕШИФРУВАННЯ БАТЧА (Dual-Key Logic)
     # Шукаємо ключі ідентичності для цієї Королеви
@@ -83,15 +92,30 @@ class UnpackTelemetryWorker
   end
 
   def decrypt_aes(payload, key)
-    # [БЕЗПЕКА]: Використовуємо AES-256-ECB (стандарт для фіксованих батчів у нашій мережі)
-    cipher = OpenSSL::Cipher.new("aes-256-ecb")
+    # Формат пакета від Королеви: [IV:16][Зашифрований батч: N*16 байт]
+    # де батч вирівняний до 16 байт нульовим padding на стороні прошивки.
+    #
+    # AES-256-CBC усуває ECB-вразливість: однакові блоки даних
+    # (характерно для телеметрії) тепер дають різний шифротекст завдяки IV.
+    return nil if payload.bytesize < AES_IV_SIZE * 2
+
+    iv         = payload.byteslice(0, AES_IV_SIZE)
+    ciphertext = payload.byteslice(AES_IV_SIZE..)
+
+    # Шифротекст має бути вирівняний до розміру AES-блоку
+    return nil unless (ciphertext.bytesize % AES_IV_SIZE).zero?
+
+    cipher = OpenSSL::Cipher.new("aes-256-cbc")
     cipher.decrypt
-    cipher.key = key
+    cipher.key     = key
+    cipher.iv      = iv
+    # Прошивка використовує нульовий padding (не PKCS7).
+    # TelemetryUnpackerService сам ігнорує неповні 21-байтні чанки наприкінці буфера.
     cipher.padding = 0
 
-    # Використовуємо rescue тут, бо при невірному ключі OpenSSL видасть помилку.
-    # Це частина логіки перебору, тому трейс тут не потрібен.
-    cipher.update(payload) + cipher.final
+    cipher.update(ciphertext) + cipher.final
+  rescue OpenSSL::Cipher::CipherError
+    nil
   rescue StandardError
     nil
   end
