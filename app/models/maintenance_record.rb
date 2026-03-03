@@ -30,38 +30,17 @@ class MaintenanceRecord < ApplicationRecord
   # =========================================================================
   # КОЛБЕКИ (The Healing Protocol)
   # =========================================================================
-  after_commit :heal_ecosystem!, on: :create
+  
+  # [ВИПРАВЛЕНО]: Ми відмовилися від heal_ecosystem! всередині моделі.
+  # Замість цього запускаємо асинхронний воркер, що гарантує 100% доставку 
+  # змін статусу навіть при тимчасових збоях бази даних.
+  after_create_commit :trigger_ecosystem_healing!
 
   private
 
-  def heal_ecosystem!
-    # Використовуємо ізольовану транзакцію для фіналізації станів
-    ActiveRecord::Base.transaction do
-      # 1. ОСВІЖЕННЯ ПУЛЬСУ
-      # Актуалізуємо час останньої активності об'єкта
-      maintainable.mark_seen! if maintainable.respond_to?(:mark_seen!)
-
-      # 2. РЕАНІМАЦІЯ ПЕРИФЕРІЇ
-      # [СИНХРОНІЗОВАНО]: Використовуємо mark_idle! для актуаторів
-      if maintainable.is_a?(Actuator) && action_type_repair?
-        maintainable.mark_idle!
-      end
-
-      # 3. ЖИТТЄВИЙ ЦИКЛ ОБ'ЄКТА
-      # Якщо це дерево, і ми його демонтували — фіксуємо фінал
-      if maintainable.is_a?(Tree) && action_type_decommissioning?
-        maintainable.update!(status: :removed)
-      end
-
-      # 4. ЗАКРИТТЯ ІНЦИДЕНТУ (EWS Alert)
-      # [СИНХРОНІЗОВАНО]: Автоматичне вирішення тривоги
-      if ews_alert.present? && !ews_alert.resolved?
-        resolution_msg = "🔧 Відновлено: #{action_type.humanize}. Запис ##{id}. Нотатки: #{notes.truncate(100)}"
-        ews_alert.resolve!(user: user, notes: resolution_msg)
-      end
-    end
-  rescue StandardError => e
-    Rails.logger.error "🛑 [MAINTENANCE FAILURE] Помилка зцілення ##{id}: #{e.message}"
-    # Ми не зупиняємо потік, але фіксуємо збій у Error Tracker
+  def trigger_ecosystem_healing!
+    # Викликаємо "М'яз зцілення" (NAM-ŠID Healing).
+    # Він обробить і логіку актуаторів, і закриття EwsAlert із вірними префіксами (status_resolved?).
+    EcosystemHealingWorker.perform_async(self.id)
   end
 end
