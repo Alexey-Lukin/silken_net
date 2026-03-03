@@ -2,6 +2,8 @@
 
 class GatewayTelemetryLog < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
+  # Зв'язок через UID дозволяє зберігати логіку ідентифікації заліза 
+  # навіть якщо записи в базі будуть перенесені або архівуватися.
   belongs_to :gateway, foreign_key: :queen_uid, primary_key: :uid
 
   # --- ВАЛІДАЦІЇ ---
@@ -29,13 +31,14 @@ class GatewayTelemetryLog < ApplicationRecord
 
   # [НОВЕ]: Перерахунок CSQ у dBm (стандарт 3GPP)
   # Формула: RSSI (dBm) = 2 * CSQ - 113
-  # Результат від -113 dBm (жахливо) до -51 dBm (ідеально)
+  # Результат від -113 dBm (гранична чутливість) до -51 dBm (ідеальний сигнал)
   def signal_dbm
     return nil if cellular_signal_csq == 99 || cellular_signal_csq.nil?
     (2 * cellular_signal_csq) - 113
   end
 
   # [НОВЕ]: Швидка перевірка на критичний стан заліза
+  # Використовується GatewayTelemetryWorker для ініціації EwsAlert
   def critical_fault?
     voltage_mv < 3300 || temperature_c > 65
   end
