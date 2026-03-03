@@ -29,9 +29,9 @@ class User < ApplicationRecord
 
   # --- РОЛЬОВА МОДЕЛЬ (RBAC) ---
   enum :role, {
-    investor: 0, 
-    forester: 1, 
-    admin: 2  
+    investor: 0,
+    forester: 1,
+    admin: 2
   }, prefix: true
 
   # --- СКОУПИ ---

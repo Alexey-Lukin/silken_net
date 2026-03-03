@@ -41,7 +41,7 @@ class ActuatorCommandWorker
     # бо пристрій ще не підтвердив перехід на новий.
     # explicit_key (hex-рядок) використовується при примусовій ротації.
     encryption_key = if explicit_key.present?
-      [explicit_key].pack("H*") # Конвертуємо HEX-рядок у сирі байти
+      [ explicit_key ].pack("H*") # Конвертуємо HEX-рядок у сирі байти
     else
       key_record.binary_previous_key || key_record.binary_key
     end

@@ -15,7 +15,7 @@ class Gateway < ApplicationRecord
   # Використовуємо :restrict_with_error, щоб зберегти історію витрат та ремонтів.
   # Королеву можна списати (status: :retired), але не можна видалити її минуле.
   has_many :maintenance_records, as: :maintainable, dependent: :restrict_with_error
-  
+
   has_many :actuators, dependent: :destroy
   has_many :actuator_commands, through: :actuators
 
@@ -45,11 +45,11 @@ class Gateway < ApplicationRecord
   scope :online, -> {
     where("last_seen_at >= (CURRENT_TIMESTAMP - (config_sleep_interval_s * 1.2 || ' seconds')::interval)")
   }
-  
+
   scope :offline, -> {
     where("last_seen_at IS NULL OR last_seen_at < (CURRENT_TIMESTAMP - (config_sleep_interval_s * 1.2 || ' seconds')::interval)")
   }
-  
+
   scope :ready_for_commands, -> { idle.online }
 
   # --- МЕТОДИ (Intelligence) ---

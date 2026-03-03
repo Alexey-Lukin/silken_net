@@ -6,7 +6,7 @@ class Cluster < ApplicationRecord
 
   has_many :trees, dependent: :nullify
   has_many :gateways, dependent: :nullify
-  
+
   # [ВИПРАВЛЕНО]: Захист Фінансової Історії (Immutable Audit Trail).
   # Кластер неможливо видалити, поки в ньому є діючі NaaS-контракти чи страховки.
   # Це критично для Web3-звітності та довіри інвесторів.
@@ -34,10 +34,10 @@ class Cluster < ApplicationRecord
 
   # --- СКОУПИ ---
   scope :alphabetical, -> { order(name: :asc) }
-  
+
   # [СИНХРОНІЗОВАНО]: Використовуємо статус :active, що відповідає скоупу unresolved в EwsAlert.
-  scope :under_threat, -> { 
-    joins(:ews_alerts).where(ews_alerts: { status: :active, severity: :critical }).distinct 
+  scope :under_threat, -> {
+    joins(:ews_alerts).where(ews_alerts: { status: :active, severity: :critical }).distinct
   }
 
   # --- МЕТОДИ (Sector Intelligence) ---

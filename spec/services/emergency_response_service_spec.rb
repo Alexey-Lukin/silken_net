@@ -119,26 +119,26 @@ RSpec.describe EmergencyResponseService do
       commands = ActuatorCommand.where(ews_alert: alert).order(:id)
       actuator_ids = commands.pluck(:actuator_id)
 
-      expect(actuator_ids).to eq([near_actuator.id, far_actuator.id])
+      expect(actuator_ids).to eq([ near_actuator.id, far_actuator.id ])
     end
   end
 
   describe ".duration_chunks" do
     it "returns single chunk for duration <= 3600" do
-      expect(described_class.send(:duration_chunks, 3600)).to eq([3600])
-      expect(described_class.send(:duration_chunks, 1800)).to eq([1800])
+      expect(described_class.send(:duration_chunks, 3600)).to eq([ 3600 ])
+      expect(described_class.send(:duration_chunks, 1800)).to eq([ 1800 ])
     end
 
     it "splits 7200 into two 3600 chunks" do
-      expect(described_class.send(:duration_chunks, 7200)).to eq([3600, 3600])
+      expect(described_class.send(:duration_chunks, 7200)).to eq([ 3600, 3600 ])
     end
 
     it "splits 14400 into four 3600 chunks" do
-      expect(described_class.send(:duration_chunks, 14400)).to eq([3600, 3600, 3600, 3600])
+      expect(described_class.send(:duration_chunks, 14400)).to eq([ 3600, 3600, 3600, 3600 ])
     end
 
     it "handles remainders correctly" do
-      expect(described_class.send(:duration_chunks, 5400)).to eq([3600, 1800])
+      expect(described_class.send(:duration_chunks, 5400)).to eq([ 3600, 1800 ])
     end
   end
 end

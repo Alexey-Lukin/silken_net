@@ -119,10 +119,10 @@ class BlockchainBurningService
 
     if critical_count.positive?
       # Частка пошкодженої біомаси (max 100%)
-      [critical_count.to_f / total_trees, 1.0].min
+      [ critical_count.to_f / total_trees, 1.0 ].min
     elsif @source_tree.present?
       # Загибель одного конкретного дерева → пропорційна частка
-      [1.0 / total_trees, 1.0].min
+      [ 1.0 / total_trees, 1.0 ].min
     else
       # Немає даних від AiInsight і немає конкретного дерева → повне вилучення
       1.0
