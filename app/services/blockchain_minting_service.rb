@@ -71,7 +71,8 @@ class BlockchainMintingService
     begin
       tx_hash = nil
 
-      Kredis.lock(lock_key, expires_in: 90.seconds, after_timeout: :raise) do
+      # [ОПТИМІЗАЦІЯ]: Скорочуємо час локу, бо ми більше не чекаємо підтвердження блоку
+      Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
         # Переводимо всі транзакції в статус обробки
         txs.each do |tx|
           tx.update!(status: :processing)
@@ -79,9 +80,10 @@ class BlockchainMintingService
         end
 
         if txs.size == 1
-          # Одиночний мінтинг
+          # Одиночний мінтинг (Fire-and-Forget)
           tx = txs.first
-          tx_hash = client.transact_and_wait(
+          # [ВИПРАВЛЕНО]: Використовуємо transact ЗАМІСТЬ transact_and_wait
+          tx_hash = client.transact(
             contract, "mint", tx.to_address, to_wei(tx.amount), identifier_for(tx),
             sender_key: oracle_key, legacy: false
           )
@@ -93,20 +95,26 @@ class BlockchainMintingService
 
           Rails.logger.info "📦 [Web3] BatchMinting #{txs.size} транзакцій для #{token_type}..."
 
-          tx_hash = client.transact_and_wait(
+          # [ВИПРАВЛЕНО]: Використовуємо transact ЗАМІСТЬ transact_and_wait
+          tx_hash = client.transact(
             contract, "batchMint", recipients, amounts, identifiers,
             sender_key: oracle_key, legacy: false
           )
         end
       end
 
-      # 5. ПІДТВЕРДЖЕННЯ ВСЬОГО ПАКЕТА
+      # 5. ФІКСАЦІЯ ВІДПРАВКИ (The Sentinel State)
       if tx_hash.present?
         txs.each do |tx|
-          tx.confirm!(tx_hash)
+          # Оновлюємо статус на :sent і зберігаємо хеш для подальшого аудиту
+          tx.update!(status: :sent, tx_hash: tx_hash)
           broadcast_tx_update(tx)
         end
-        Rails.logger.info "✅ [Web3] Пакет виконано. TX: #{tx_hash}"
+        
+        # Запускаємо воркер-підтверджувач, який прийде через 30 секунд перевірити квитанцію
+        BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
+        
+        Rails.logger.info "🛰️ [Web3] Пакет відправлено в мемпул. TX: #{tx_hash}"
       end
 
     rescue StandardError => e
@@ -131,7 +139,7 @@ class BlockchainMintingService
   def broadcast_tx_update(transaction)
     wallet = transaction.wallet
     
-    # Оновлення рядка в таблиці
+    # Оновлення рядка в таблиці через Hotwire
     Turbo::StreamsChannel.broadcast_replace_to(
       wallet,
       target: "transaction_#{transaction.id}",
