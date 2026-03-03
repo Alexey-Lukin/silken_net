@@ -62,7 +62,7 @@ class AiInsight < ApplicationRecord
   # Швидка перевірка стану
   def status_label
     return "Forecast" if forecast?
-    return "Fraud Detected" if reasoning['fraud_detected']
+    return "Fraud Detected" if reasoning["fraud_detected"]
     stress_index.to_f < 0.3 ? "Stable" : "Stressed"
   end
 end

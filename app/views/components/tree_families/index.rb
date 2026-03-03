@@ -9,7 +9,7 @@ module Views
         def view_template
           div(class: "space-y-8 animate-in fade-in duration-700") do
             render_header
-            
+
             div(class: "border border-emerald-900 bg-black overflow-hidden shadow-2xl") do
               table(class: "w-full text-left font-mono text-[11px]") do
                 thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do

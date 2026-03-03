@@ -9,7 +9,7 @@ module Views
         def view_template
           div(class: "space-y-8 animate-in fade-in duration-700") do
             header_section
-            
+
             div(class: "border border-emerald-900 bg-black overflow-hidden") do
               table(class: "w-full text-left font-mono text-[11px]") do
                 thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
@@ -61,9 +61,9 @@ module Views
 
         def role_color(role)
           case role
-          when 'admin' then "bg-red-900/50 text-red-200 border border-red-800"
-          when 'forester' then "bg-emerald-900/50 text-emerald-200 border border-emerald-800"
-          when 'investor' then "bg-blue-900/50 text-blue-200 border border-blue-800"
+          when "admin" then "bg-red-900/50 text-red-200 border border-red-800"
+          when "forester" then "bg-emerald-900/50 text-emerald-200 border border-emerald-800"
+          when "investor" then "bg-blue-900/50 text-blue-200 border border-blue-800"
           else "bg-zinc-800 text-zinc-400"
           end
         end

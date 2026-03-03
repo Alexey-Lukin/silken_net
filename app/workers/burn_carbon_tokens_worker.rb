@@ -2,7 +2,7 @@
 
 class BurnCarbonTokensWorker
   include Sidekiq::Job
-  # Використовуємо чергу critical, бо фінансова відплата має бути негайною, 
+  # Використовуємо чергу critical, бо фінансова відплата має бути негайною,
   # щоб запобігти виводу токенів інвестором.
   sidekiq_options queue: "critical", retry: 5
 
@@ -20,13 +20,13 @@ class BurnCarbonTokensWorker
     # Передаємо source_tree як доказ порушення для логування в блокчейні.
     # Сервіс сам розрахує суму на основі підтвердженого гомеостазу.
     BlockchainBurningService.call(
-      organization_id, 
-      naas_contract_id, 
+      organization_id,
+      naas_contract_id,
       source_tree: source_tree
     )
 
     # 2. СИНХРОНІЗАЦІЯ ІСТИННИ (Atomic Audit)
-    # Ми маркуємо контракт як BREACHED вже всередині сервісу, але тут 
+    # Ми маркуємо контракт як BREACHED вже всередині сервісу, але тут
     # створюємо "надгробний камінь" у фізичному журналі обслуговування.
     ActiveRecord::Base.transaction do
       # Шукаємо системного інквізитора (Адміна) для підпису запису
@@ -71,7 +71,7 @@ class BurnCarbonTokensWorker
 
     # Повідомляємо конкретну організацію через ActionCable
     ActionCable.server.broadcast("org_#{contract.organization_id}_alerts", payload)
-    
+
     # Також оновлюємо UI контракту через Turbo Streams, якщо Архітектор дивиться на нього
     Turbo::StreamsChannel.broadcast_replace_to(
       contract,

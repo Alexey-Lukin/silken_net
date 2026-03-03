@@ -30,7 +30,7 @@ module Api
       def show
         @organization = Organization.find(params[:id])
         @clusters = @organization.clusters.includes(:trees)
-        
+
         @performance = {
           total_trees: @organization.trees.count,
           carbon_minted: @organization.naas_contracts.sum(:emitted_tokens).to_f.round(2)
@@ -48,7 +48,7 @@ module Api
             render_dashboard(
               title: "Clan Profile // #{@organization.name}",
               component: Views::Components::Organizations::Show.new(
-                organization: @organization, 
+                organization: @organization,
                 clusters: @clusters,
                 performance: @performance
               )

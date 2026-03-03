@@ -14,7 +14,7 @@ module Views
         def view_template
           div(class: "space-y-8 animate-in slide-in-from-bottom-4 duration-700") do
             render_status_header
-            
+
             div(class: "grid grid-cols-1 lg:grid-cols-3 gap-8") do
               # Технічний контур (Сигнал, Енергія, Температура)
               div(class: "lg:col-span-2 space-y-8") do
@@ -56,7 +56,7 @@ module Views
         def render_technical_matrix
           div(class: "p-8 border border-emerald-900 bg-zinc-950") do
             h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-10") { "System Telemetry (Queen Diagnostics)" }
-            
+
             div(class: "grid grid-cols-1 md:grid-cols-3 gap-12") do
               # Cellular Signal (CSQ)
               render_circular_metric(
@@ -108,7 +108,7 @@ module Views
               config_row("Cluster", @gateway.cluster.name)
               config_row("Sleep Interval", "#{@gateway.config_sleep_interval || 60}s")
               config_row("Mesh Mode", "Enabled")
-              
+
               button(class: "w-full mt-4 p-2 border border-emerald-800 text-[10px] uppercase text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all") do
                 "Push New Configuration →"
               end
@@ -122,7 +122,7 @@ module Views
             div(class: "space-y-2 text-[10px] font-mono") do
               p(class: "text-gray-600") { "Hardware UID:" }
               p(class: "text-emerald-500 truncate") { @gateway.hardware_key&.uid || "UNDEFINED" }
-              
+
               div(class: "mt-4 flex items-center space-x-2 text-emerald-800") do
                 span(class: "h-2 w-2 bg-emerald-900 rounded-full")
                 span { "AES-256 Provisioned" }

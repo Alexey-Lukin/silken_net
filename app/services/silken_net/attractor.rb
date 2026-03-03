@@ -25,7 +25,7 @@ module SilkenNet
     def self.calculate_z(seed, temp, acoustic)
       x, y, z, local_sigma, local_rho = initialize_state(seed, temp, acoustic)
 
-      # Обчислення в BigDecimal сповільнюють процес, але дають 
+      # Обчислення в BigDecimal сповільнюють процес, але дають
       # "Юридичну Точність" для Web3-аудиту.
       ITERATIONS.times do
         dx = local_sigma * (y - x)
@@ -46,13 +46,13 @@ module SilkenNet
 
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # ВІЗУАЛІЗАЦІЯ ТРАЄКТОРІЇ
-    # [ОПТИМІЗАЦІЯ ПАМ'ЯТІ]: Замість масиву з 250 хешів повертаємо 
-    # плаский масив Float. Це в 5 разів легше для пам'яті сервера та 
+    # [ОПТИМІЗАЦІЯ ПАМ'ЯТІ]: Замість масиву з 250 хешів повертаємо
+    # плаский масив Float. Це в 5 разів легше для пам'яті сервера та
     # ідеально для Float32Array у JavaScript (Three.js/Deck.gl).
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     def self.generate_trajectory(seed, temp, acoustic)
       x, y, z, local_sigma, local_rho = initialize_state(seed, temp, acoustic)
-      
+
       # Результат: [x1, y1, z1, x2, y2, z2, ...]
       Array.new(ITERATIONS * 3) do |i|
         if i % 3 == 0 && i > 0
@@ -85,7 +85,7 @@ module SilkenNet
       local_sigma = (BASE_SIGMA + (acoustic.to_d * "0.1".to_d)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
       local_rho   = (BASE_RHO + (temp.to_d * "0.2".to_d)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
 
-      [x, y, z, local_sigma, local_rho]
+      [ x, y, z, local_sigma, local_rho ]
     end
   end
 end

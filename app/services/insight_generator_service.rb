@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class InsightGeneratorService
-  # Поріг відхилення. Якщо вологість/температура дерева відрізняється від 
+  # Поріг відхилення. Якщо вологість/температура дерева відрізняється від
   # середньої по кластеру більше ніж на 30%, це класифікується як фрод/аномалія.
-  FRAUD_DEVIATION_THRESHOLD = 0.30 
+  FRAUD_DEVIATION_THRESHOLD = 0.30
 
   def self.call(date = Date.yesterday)
     new(date).perform
@@ -92,7 +92,7 @@ class InsightGeneratorService
 
     # Якщо виявлено фрод - ми блокуємо ріст і максимізуємо стрес
     final_growth = is_fraud ? 0 : stats.total_growth.to_i
-    
+
     # Розраховуємо індекс стресу (враховуючи відхилення Z Атрактора та Фрод)
     # $$Stress = \min(1.0, \text{base\_stress} + \text{anomaly\_penalties})$$
     stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f)
@@ -116,7 +116,7 @@ class InsightGeneratorService
       }
     )
 
-    # ⚡ [ВИПРАВЛЕНО: Жорсткий Slashing]: 
+    # ⚡ [ВИПРАВЛЕНО: Жорсткий Slashing]:
     # Ми більше не "вбиваємо" дерево миттєво. Створюємо критичну тривогу для перевірки.
     # Це захищає інвестора від помилок ШІ, але зупиняє виплати до вердикту людини.
     if is_fraud
@@ -163,12 +163,12 @@ class InsightGeneratorService
       # ⚡ [ОПТИМІЗАЦІЯ JSONB]: Використовуємо оператор входження @> замість ->>
       # Це дозволяє Postgres використовувати GIN індекс (якщо він є) і не парсити JSON кожен раз.
       fraud_count = tree_insights.where("reasoning @> ?", { fraud_detected: true }.to_json).count
-      
+
       summary = if fraud_count > 0
                   "⚠️ Сектор #{cluster.name}: Виявлено #{fraud_count} вузлів із фрод-телеметрією."
-                else
+      else
                   "Сектор #{cluster.name}: Оброблено #{tree_insights.count} вузлів. Стан стабільний."
-                end
+      end
 
       AiInsight.create!(
         analyzable: cluster,

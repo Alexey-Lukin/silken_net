@@ -14,7 +14,7 @@ module Views
           div(class: "space-y-10 animate-in slide-in-from-right duration-700") do
             render_header
             render_performance_hero
-            
+
             div(class: "grid grid-cols-1 xl:grid-cols-3 gap-8") do
               # Основний список секторів
               div(class: "xl:col-span-2 space-y-6") do
@@ -36,7 +36,7 @@ module Views
           div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
             # Декоративний фон для ідентифікації
             div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-emerald-900/5 select-none") { "CLAN" }
-            
+
             div do
               h2(class: "text-4xl font-extralight tracking-tighter text-emerald-400") { @organization.name }
               p(class: "text-[10px] font-mono text-emerald-800 uppercase mt-2 tracking-[0.3em]") do
@@ -75,7 +75,7 @@ module Views
         def render_clusters_registry
           div(class: "space-y-4") do
             h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Assigned Sectors (Clusters)" }
-            
+
             div(class: "border border-emerald-900 bg-black overflow-hidden") do
               table(class: "w-full text-left font-mono text-[11px]") do
                 thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
@@ -116,7 +116,7 @@ module Views
         def render_identity_vault
           div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
             h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "On-Chain Identity Vault" }
-            
+
             div do
               p(class: "text-[9px] text-gray-600 uppercase mb-2") { "Public Crypto Address" }
               p(class: "text-[11px] font-mono text-emerald-500 break-all leading-relaxed") do

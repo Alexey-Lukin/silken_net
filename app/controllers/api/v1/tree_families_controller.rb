@@ -4,7 +4,7 @@ module Api
   module V1
     class TreeFamiliesController < BaseController
       before_action :authorize_admin!
-      before_action :set_family, only: [:show, :edit, :update]
+      before_action :set_family, only: [ :show, :edit, :update ]
 
       # --- РЕЄСТР ГЕНОМІВ ---
       def index

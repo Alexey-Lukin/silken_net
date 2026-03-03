@@ -10,10 +10,10 @@ module Views
         def view_template
           div(class: "space-y-8 animate-in fade-in duration-700") do
             render_stats_hero
-            
+
             div(class: "space-y-4") do
               h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "Active Asset Portfolio" }
-              
+
               div(class: "border border-emerald-900 bg-black overflow-hidden") do
                 table(class: "w-full text-left font-mono text-[11px]") do
                   thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
@@ -83,7 +83,7 @@ module Views
         end
 
         def status_color(status)
-          status == 'active' ? "text-emerald-500" : "text-amber-500"
+          status == "active" ? "text-emerald-500" : "text-amber-500"
         end
       end
     end

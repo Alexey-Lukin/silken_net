@@ -10,7 +10,7 @@ module Views
         def view_template
           div(class: "max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-8 duration-700") do
             render_hero_profile
-            
+
             div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do
               render_access_privileges
               render_activity_stats
@@ -23,7 +23,7 @@ module Views
         def render_hero_profile
           div(class: "p-10 border border-emerald-900 bg-zinc-950 relative overflow-hidden") do
             div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none uppercase") { @user.role }
-            
+
             div(class: "flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-10") do
               # Аватар-плейсхолдер
               div(class: "h-32 w-32 rounded-none border-2 border-emerald-500 bg-emerald-950 flex items-center justify-center") do
@@ -47,7 +47,7 @@ module Views
             h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Neural Access Privileges" }
             div(class: "space-y-4 font-mono text-[11px]") do
               access_item("Organization Access", @user.organization&.name || "None")
-              access_item("Command Execution", @user.role == 'admin' ? "Full" : "Limited")
+              access_item("Command Execution", @user.role == "admin" ? "Full" : "Limited")
               access_item("Encryption Level", "AES-256-GCM")
             end
           end

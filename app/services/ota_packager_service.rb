@@ -38,7 +38,7 @@ class OtaPackagerService
 
   def generate_packages
     total = (@payload.bytesize.to_f / @chunk_size).ceil
-    
+
     @payload.b.scan(/.{1,#{@chunk_size}}/m).map.with_index do |chunk, index|
       # Формуємо заголовок загартованого пакета
       header = [

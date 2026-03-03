@@ -10,7 +10,7 @@ module Views
         def view_template
           div(class: "space-y-8 animate-in fade-in duration-700") do
             render_header
-            
+
             # Масова сітка солдатів
             div(class: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4") do
               @trees.each do |tree|
@@ -28,7 +28,7 @@ module Views
               h3(class: "text-[10px] uppercase tracking-[0.5em] text-emerald-700") { "Sector Matrix Deployment" }
               h2(class: "text-3xl font-extralight text-emerald-400 mt-1") { @cluster.name }
             end
-            
+
             div(class: "flex space-x-8 text-right font-mono text-[10px]") do
               header_stat("Population", @trees.count, "Soldiers")
               header_stat("Operational", @trees.active.count, "Nodes")
@@ -50,8 +50,8 @@ module Views
           latest = tree.telemetry_logs.recent.first
           voltage = latest&.voltage_mv || 0
           # Розрахунок заряду (приблизно 3000-4200mV для іоністора/літію)
-          charge_percent = [((voltage - 3000).to_f / 1200 * 100).to_i, 0].max
-          charge_percent = [charge_percent, 100].min
+          charge_percent = [ ((voltage - 3000).to_f / 1200 * 100).to_i, 0 ].max
+          charge_percent = [ charge_percent, 100 ].min
 
           a(
             href: helpers.api_v1_tree_path(tree),

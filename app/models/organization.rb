@@ -2,7 +2,7 @@
 
 class Organization < ApplicationRecord
   # --- ЗВ'ЯЗКИ (The Web of Responsibility) ---
-  # [ВИПРАВЛЕНО: Захист Користувачів]: 
+  # [ВИПРАВЛЕНО: Захист Користувачів]:
   # Ми не видаляємо людей разом з організацією, щоб зберегти аудит-логи (MaintenanceRecords)
   has_many :users, dependent: :restrict_with_error
 

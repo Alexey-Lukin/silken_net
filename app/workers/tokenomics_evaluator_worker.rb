@@ -2,7 +2,7 @@
 
 class TokenomicsEvaluatorWorker
   include Sidekiq::Job
-  # Використовуємо чергу за замовчуванням. Пріоритет нижчий за телеметрію, 
+  # Використовуємо чергу за замовчуванням. Пріоритет нижчий за телеметрію,
   # оскільки фінансовий аудит може тривати довше.
   sidekiq_options queue: "default", retry: 3
 
@@ -33,7 +33,7 @@ class TokenomicsEvaluatorWorker
         # Кількість балів, що будуть спалені в обмін на токени
         points_to_lock = tokens_to_mint * EMISSION_THRESHOLD
 
-        # [LOCKING]: Виклик lock_and_mint! виконує атомарне списання балів у БД 
+        # [LOCKING]: Виклик lock_and_mint! виконує атомарне списання балів у БД
         # та створює запис у BlockchainTransaction зі статусом :pending.
         tx = wallet.lock_and_mint!(points_to_lock, EMISSION_THRESHOLD)
 
@@ -53,9 +53,9 @@ class TokenomicsEvaluatorWorker
     # Якщо за результатами аудиту створено транзакції — відправляємо їх одним батчем у Polygon.
     if created_tx_ids.any?
       Rails.logger.info "📦 [NAM-ŠID] Ініціація пакетного мінтингу для #{created_tx_ids.size} транзакцій..."
-      
+
       # Виклик оновленого сервісу, який використовує функцію batchMint у смарт-контракті.
-      # Це запобігає ситуації, коли індивідуальні воркери MintCarbonCoinWorker 
+      # Це запобігає ситуації, коли індивідуальні воркери MintCarbonCoinWorker
       # змагаються за Nonce гаманця Оракула.
       BlockchainMintingService.call_batch(created_tx_ids)
     end

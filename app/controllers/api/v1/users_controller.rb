@@ -31,7 +31,7 @@ module Api
       # GET /api/v1/users/me
       def me
         @user = current_user
-        
+
         respond_to do |format|
           format.json do
             render json: @user.as_json(

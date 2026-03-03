@@ -60,9 +60,9 @@ class BlockchainMintingService
 
   def process_token_group(client, oracle_key, token_type, txs)
     contract_address = case token_type
-                       when "carbon_coin" then ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
-                       when "forest_coin" then ENV.fetch("FOREST_COIN_CONTRACT_ADDRESS")
-                       else raise ArgumentError, "Невідомий тип токена: #{token_type}"
+    when "carbon_coin" then ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
+    when "forest_coin" then ENV.fetch("FOREST_COIN_CONTRACT_ADDRESS")
+    else raise ArgumentError, "Невідомий тип токена: #{token_type}"
     end
 
     contract = Eth::Contract.from_abi(name: "SilkenCoin", address: contract_address, abi: CONTRACT_ABI)
@@ -110,10 +110,10 @@ class BlockchainMintingService
           tx.update!(status: :sent, tx_hash: tx_hash)
           broadcast_tx_update(tx)
         end
-        
+
         # Запускаємо воркер-підтверджувач, який прийде через 30 секунд перевірити квитанцію
         BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
-        
+
         Rails.logger.info "🛰️ [Web3] Пакет відправлено в мемпул. TX: #{tx_hash}"
       end
 
@@ -138,7 +138,7 @@ class BlockchainMintingService
 
   def broadcast_tx_update(transaction)
     wallet = transaction.wallet
-    
+
     # Оновлення рядка в таблиці через Hotwire
     Turbo::StreamsChannel.broadcast_replace_to(
       wallet,

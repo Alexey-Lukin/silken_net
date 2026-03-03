@@ -9,11 +9,11 @@ class TreeFamily < ApplicationRecord
   validates :name, presence: true, uniqueness: true
   validates :baseline_impedance, :critical_z_min, presence: true, numericality: true
 
-  # [ВИПРАВЛЕНО: Захист законів фізики]: 
+  # [ВИПРАВЛЕНО: Захист законів фізики]:
   # Гарантуємо, що межі Атрактора не перехрещуються
-  validates :critical_z_max, 
-            presence: true, 
-            numericality: true, 
+  validates :critical_z_max,
+            presence: true,
+            numericality: true,
             comparison: { greater_than: :critical_z_min }
 
   # --- JSONB PROPERTIES (The TinyML Support) ---
@@ -26,8 +26,8 @@ class TreeFamily < ApplicationRecord
 
   # [ВИПРАВЛЕНО: Типізація JSONB-полів]:
   # Виганяємо "Data Type Phantom" — гарантуємо, що параметри для TinyML є числами
-  validates :sap_flow_index, :bark_thickness, :foliage_density, :fire_resistance_rating, 
-            numericality: true, 
+  validates :sap_flow_index, :bark_thickness, :foliage_density, :fire_resistance_rating,
+            numericality: true,
             allow_nil: true
 
   # --- СКОУПИ ---

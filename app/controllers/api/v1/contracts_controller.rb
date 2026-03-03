@@ -102,7 +102,7 @@ module Api
       def calculate_portfolio_health_for_scope(contracts)
         return 100 if contracts.empty?
         # Розрахунок середнього здоров'я через SQL для уникнення N+1 та забиття пам'яті
-        (contracts.joins(:cluster).average('clusters.health_index') || 100.0).round(1)
+        (contracts.joins(:cluster).average("clusters.health_index") || 100.0).round(1)
       end
 
       # [DYNAMIC PRICE]: Заміна хардкоду на Oracle Service

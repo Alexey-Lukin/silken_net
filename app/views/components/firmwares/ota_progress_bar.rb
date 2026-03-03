@@ -16,11 +16,11 @@ module Views
               span(class: "text-[9px] text-emerald-700 uppercase tracking-widest") { "OTA_LINK: #{@uid}" }
               span(class: tokens("text-[9px]", status_color)) { @status }
             end
-            
+
             div(class: "w-full h-1 bg-emerald-950 rounded-full overflow-hidden") do
               div(class: "h-full bg-emerald-500 shadow-[0_0_10px_#10b981] transition-all duration-500", style: "width: #{@percent}%")
             end
-            
+
             div(class: "flex justify-between mt-2 text-[8px] text-gray-600") do
               span { "CHUNK: #{@current} / #{@total}" }
               span { "#{@percent}% COMPLETE" }

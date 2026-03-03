@@ -8,7 +8,7 @@ class TelemetryUnpackerService
   # Формат: DID(N), Vcap(n), Temp(c), Acoustic(C), Metabolism(n), Status(C), TTL(C), Pad(a4)
   PAYLOAD_FORMAT = "N n c C n C C a4"
   FIRMWARE_PAD_INDEX = 7 # Індекс елемента a4 у розпакованому масиві
-  
+
   # --- МЕЖІ РЕАЛЬНОСТІ (Sanity Bounds) ---
   # Виключаємо сенсорний шум: ADC глюки, що виходять за межі фізики
   SAFE_VOLTAGE_RANGE = (0..5000)      # 0 - 5В
@@ -99,7 +99,7 @@ class TelemetryUnpackerService
 
     # 4. МАТЕМАТИКА АТРАКТОРА (The Chaos Engine)
     # ⚡ [ФІКСАЦІЯ ІСТИНИ]: Ми розраховуємо Z один раз тут.
-    # Оскільки Attractor тепер використовує BigDecimal, ми отримуємо 
+    # Оскільки Attractor тепер використовує BigDecimal, ми отримуємо
     # детермінований результат, який зберігається як єдина істина.
     log_attributes[:z_value] = SilkenNet::Attractor.calculate_z(
       parsed_data[0], # Використовуємо сирий DID як seed

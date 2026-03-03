@@ -16,7 +16,7 @@ module Views
           div(class: "space-y-8 animate-in slide-in-from-bottom-4 duration-700") do
             # Винесено в окремий компонент для Turbo-заміни
             render Views::Components::Wallets::BalanceDisplay.new(wallet: @wallet)
-            
+
             div(class: "grid grid-cols-1 lg:grid-cols-3 gap-8") do
               # Головний Ledger
               div(class: "lg:col-span-2") do
@@ -37,7 +37,7 @@ module Views
         def render_transaction_ledger
           div(class: "space-y-4") do
             h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "On-Chain Transaction Ledger" }
-            
+
             div(class: "border border-emerald-900 bg-black overflow-hidden") do
               table(class: "w-full text-left font-mono text-[11px]") do
                 thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do

@@ -9,7 +9,7 @@ class MintCarbonCoinWorker
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # МЕ NAM-TAR: Фінальний Ролбек (The Absolute Integrity)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-  # Викликається, коли всі 5 спроб RPC-зв'язку (відправки в мемпул) вичерпано. 
+  # Викликається, коли всі 5 спроб RPC-зв'язку (відправки в мемпул) вичерпано.
   # Ми не можемо дозволити капіталу "зависнути" в ефірі.
   sidekiq_retries_exhausted do |msg, _ex|
     # Якщо ми працювали з батчем, дістаємо масив ID, якщо з одиничною — ID.
@@ -35,24 +35,24 @@ class MintCarbonCoinWorker
           )
         end
       end
-      
+
       # Сповіщаємо UI про фінальний провал транзакції
       tx.wallet.broadcast_update if tx.wallet.respond_to?(:broadcast_update)
     end
   end
 
-  # [ОПТИМІЗАЦІЯ]: Тепер perform може приймати як один ID, так і масив, 
+  # [ОПТИМІЗАЦІЯ]: Тепер perform може приймати як один ID, так і масив,
   # або взагалі нічого (тоді він забере всі pending транзакції).
   def perform(blockchain_transaction_ids = nil)
     # 1. ЗБІР РОБОТИ (The Harvest)
     # Якщо ID не передані, беремо чергу pending транзакцій (ліміт 1000 для стабільності пам'яті)
-    tx_ids = Array(blockchain_transaction_ids).presence || 
+    tx_ids = Array(blockchain_transaction_ids).presence ||
              BlockchainTransaction.pending.limit(1000).pluck(:id)
 
     return if tx_ids.empty?
 
     # 2. [SLICING]: ДРОБОВИК ДЛЯ ГАЗУ (Gas Limit optimization)
-    # Розбиваємо масив на групи по 200 вузлів. Це гарантує, що ми не 
+    # Розбиваємо масив на групи по 200 вузлів. Це гарантує, що ми не
     # перевищимо Gas Limit блоку Polygon при виклику batchMint.
     tx_ids.each_slice(200) do |batch|
       process_batch(batch)
@@ -69,7 +69,7 @@ class MintCarbonCoinWorker
 
     Rails.logger.info "🚀 [Web3] Запуск батч-емісії для #{txs.size} транзакцій..."
 
-    # [ЧАСОВИЙ ПАРАДОКС]: Оскільки BlockchainMintingService.call_batch тепер 
+    # [ЧАСОВИЙ ПАРАДОКС]: Оскільки BlockchainMintingService.call_batch тепер
     # працює через .transact (асинхронно), цей виклик повернеться миттєво.
     # Sidekiq не буде висіти в очікуванні підтвердження від Alchemy.
     BlockchainMintingService.call_batch(txs.pluck(:id))

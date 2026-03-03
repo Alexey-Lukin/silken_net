@@ -9,7 +9,7 @@ module Views
         def view_template
           div(class: "space-y-6 animate-in fade-in duration-500") do
             header_section
-            
+
             div(class: "border border-emerald-900 bg-black overflow-hidden") do
               table(class: "w-full text-left font-mono text-[11px]") do
                 thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
@@ -39,7 +39,7 @@ module Views
             end
             # Фільтри (спрощено)
             div(class: "flex space-x-2") do
-              ['critical', 'warning', 'info'].each do |s|
+              [ "critical", "warning", "info" ].each do |s|
                 span(class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-900 uppercase") { s }
               end
             end

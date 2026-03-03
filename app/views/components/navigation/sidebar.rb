@@ -8,7 +8,7 @@ module Views
           aside(class: "w-64 h-screen sticky top-0 bg-black border-r border-emerald-900/50 flex flex-col z-50 overflow-y-auto font-mono") do
             render_logo
             render_status_pulse
-            
+
             nav(class: "flex-1 px-4 py-8 space-y-10") do
               # СТРАТЕГІЧНИЙ КОНТУР
               section_group("Strategic Insight") do
@@ -67,8 +67,8 @@ module Views
 
         def nav_item(label, path, icon, badge: nil, pulse: false)
           # Логіка визначення активності, враховуючи вкладеність
-          active = helpers.request.path.start_with?(path.split('?').first)
-          
+          active = helpers.request.path.start_with?(path.split("?").first)
+
           a(
             href: path,
             class: tokens(
@@ -80,7 +80,7 @@ module Views
               span(class: tokens("w-4 h-4", active ? "text-emerald-500" : "text-emerald-900 group-hover:text-emerald-700")) { render_icon(icon) }
               span { label }
             end
-            
+
             if badge&.positive?
               span(class: "bg-red-900/50 text-red-500 text-[8px] px-1.5 py-0.5 rounded-sm") { badge }
             elsif pulse

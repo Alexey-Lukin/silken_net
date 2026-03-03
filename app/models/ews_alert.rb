@@ -26,7 +26,7 @@ class EwsAlert < ApplicationRecord
   # --- КОЛБЕКИ (Zero-Lag Awareness) ---
   # Як тільки тривога зафіксована в БД — гінці (Sidekiq) стають на крило
   after_create_commit :dispatch_notifications!
-  
+
   # Миттєве оновлення мапи та стрічки при зміні статусу тривоги
   after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
@@ -41,7 +41,7 @@ class EwsAlert < ApplicationRecord
 
   # Протокол завершення інциденту
   def resolve!(user: nil, notes: "Закрито системою")
-    # [СИНХРОНІЗАЦІЯ З REDIS]: При закритті тривоги ми маємо видалити 
+    # [СИНХРОНІЗАЦІЯ З REDIS]: При закритті тривоги ми маємо видалити
     # "режим тиші" в AlertDispatchService, щоб нові аномалії знову могли тригеритись.
     clear_silence_filter!
 
@@ -51,8 +51,8 @@ class EwsAlert < ApplicationRecord
       resolver: user,
       resolution_notes: notes
     )
-    
-    # [SELF-HEALING]: Автоматично закриваємо відкриті MaintenanceRecord, 
+
+    # [SELF-HEALING]: Автоматично закриваємо відкриті MaintenanceRecord,
     # якщо вони були прив'язані до цієї тривоги.
     close_associated_maintenance!
   end
@@ -61,12 +61,12 @@ class EwsAlert < ApplicationRecord
   # Тепер Leaflet.js гарантовано отримує координати, навіть якщо дерево не гео-локоване.
   def coordinates
     if tree&.latitude.present? && tree&.longitude.present?
-      [tree.latitude, tree.longitude]
+      [ tree.latitude, tree.longitude ]
     elsif (center = cluster.geo_center)
-      [center[:lat], center[:lng]]
+      [ center[:lat], center[:lng] ]
     else
       # Абсолютний фолбек для запобігання крашу фронтенду
-      [0.0, 0.0] 
+      [ 0.0, 0.0 ]
     end
   end
 
@@ -84,7 +84,7 @@ class EwsAlert < ApplicationRecord
   # [ОПТИМІЗАЦІЯ]: Видалення ключа тиші з Redis
   def clear_silence_filter!
     return unless tree_id.present?
-    
+
     # Ключ має точно збігатися з тим, що в AlertDispatchService
     silence_key = "ews_silence:#{tree_id}:#{alert_type}"
     Rails.cache.delete(silence_key)
@@ -113,7 +113,7 @@ class EwsAlert < ApplicationRecord
     # [СИНХРОНІЗОВАНО]: Використовуємо update_all для уникнення зайвих колбеків
     # Знаходимо MaintenanceRecord, які були створені як відповідь на цей alert_id
     MaintenanceRecord.where(ews_alert_id: id).where.not(status: :completed).update_all(
-      status: :completed, 
+      status: :completed,
       performed_at: Time.current,
       notes: "Auto-resolved via EWS Recovery"
     ) rescue nil

@@ -7,17 +7,16 @@ module Views
         def view_template
           div(class: "space-y-6 animate-in fade-in duration-1000") do
             header_section
-            
+
             # Підписка на SolidCable / Turbo Streams
             turbo_stream_from "telemetry_stream"
-            
+
             # Основний контейнер із відносною позицією для накладання Canvas і Таблиці
             div(class: "relative border border-emerald-900 bg-black min-h-[600px] overflow-hidden rounded-sm shadow-[0_0_40px_rgba(6,78,59,0.2)]") do
-              
               # 📟 МАГІЯ: Абсолютний Canvas на фоні для ефекту "Зеленого дощу"
               # Stimulus-контролер 'matrix-rain' оживить цей тег
               canvas(data_controller: "matrix-rain", class: "absolute inset-0 z-0 opacity-20 pointer-events-none w-full h-full")
-              
+
               # Радіальний градієнт для додаткової глибини
               div(class: "absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/80 to-black pointer-events-none")
 
@@ -32,7 +31,7 @@ module Views
                       th(class: "p-4 w-24 text-right font-medium") { "Status" }
                     end
                   end
-                  
+
                   # Сюди UnpackTelemetryWorker (через LogEntry компонент) буде вставляти нові рядки
                   tbody(id: "telemetry_feed", class: "divide-y divide-emerald-900/20") do
                     tr(id: "feed_placeholder") do
@@ -59,7 +58,7 @@ module Views
               end
               h2(class: "text-2xl font-light text-emerald-400 mt-2") { "Global Telemetry Stream" }
             end
-            
+
             div(class: "flex items-center space-x-3 bg-emerald-950/30 px-4 py-2 border border-emerald-900 shadow-[inset_0_0_10px_rgba(6,78,59,0.5)]") do
               div(class: "relative flex h-2 w-2") do
                 span(class: "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75")

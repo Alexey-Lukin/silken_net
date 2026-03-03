@@ -10,7 +10,7 @@ module Views
         def view_template
           div(class: "space-y-8 animate-in zoom-in duration-500") do
             render_hero_section
-            
+
             div(class: "grid grid-cols-1 lg:grid-cols-3 gap-8") do
               div(class: "lg:col-span-2 space-y-8") do
                 render_emission_ledger
@@ -28,7 +28,7 @@ module Views
         def render_hero_section
           div(class: "p-10 border border-emerald-900 bg-zinc-950 flex flex-col md:flex-row justify-between items-center relative overflow-hidden") do
              div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none") { "NaaS" }
-             
+
              div do
                p(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-2") { "Contract Identity" }
                h2(class: "text-5xl font-extralight text-white tracking-tighter") { "##{@contract.id} // SEC_#{@contract.cluster&.name&.upcase}" }

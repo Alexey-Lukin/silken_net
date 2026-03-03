@@ -25,7 +25,7 @@ module Views
               h3(class: "text-lg font-light tracking-widest text-emerald-400 uppercase") { @cluster.name }
               p(class: "text-[10px] font-mono text-emerald-800") { "ID: #{@cluster.slug || @cluster.id}" }
             end
-            
+
             # Статус кластера (на основі AI інсайтів або алертів)
             div(class: tokens(
               "h-2 w-2 rounded-full",

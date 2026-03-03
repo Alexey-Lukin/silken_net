@@ -16,14 +16,14 @@ module Views
             div(class: "flex h-full overflow-hidden") do
               # ЦЕНТРАЛЬНА НАВІГАЦІЯ
               render Views::Components::Navigation::Sidebar.new
-              
+
               # ГОЛОВНИЙ ТЕРМІНАЛ
               main(class: "flex-1 flex flex-col min-w-0 bg-black relative") do
                 # Фоновий шум (текстура Цитаделі)
                 div(class: "absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]")
-                
+
                 render_top_bar
-                
+
                 div(class: "flex-1 overflow-y-auto p-8 custom-scrollbar relative z-10") do
                   div(class: "max-w-7xl mx-auto") do
                     yield
@@ -66,10 +66,10 @@ module Views
         nav(class: "flex text-[9px] uppercase tracking-widest text-emerald-900 font-bold") do
           ol(class: "flex items-center space-x-2") do
             li { a(href: helpers.api_v1_dashboard_index_path, class: "hover:text-emerald-500 transition-colors") { "Citadel" } }
-            
+
             # Автоматичний парсинг шляху для крихт
-            path_segments = helpers.request.path.split('/').reject(&:empty?).drop(2) # Виключаємо api/v1
-            
+            path_segments = helpers.request.path.split("/").reject(&:empty?).drop(2) # Виключаємо api/v1
+
             path_segments.each_with_index do |segment, index|
               li(class: "flex items-center space-x-2") do
                 span { "//" }

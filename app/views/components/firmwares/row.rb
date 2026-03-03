@@ -14,7 +14,7 @@ module Views
             td(class: "p-4 text-emerald-600 uppercase font-mono text-[10px]") { @firmware.target_hardware }
             td(class: "p-4 text-gray-600 font-mono text-[10px]") { @firmware.checksum&.first(16) || "N/A" }
             td(class: "p-4 text-gray-500 font-mono text-[10px]") { @firmware.created_at.strftime("%d.%m.%y // %H:%M") }
-            
+
             td(class: "p-4 text-right") do
               # Форма для ініціації OTA оновлення
               form(action: helpers.deploy_api_v1_firmware_path(@firmware), method: "post") do

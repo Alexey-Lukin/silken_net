@@ -7,13 +7,13 @@ module Views
           main(class: "min-h-screen bg-black flex items-center justify-center p-4 font-mono relative overflow-hidden") do
             # Фоновий ефект Матриці/Міцелію
             div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]")
-            
+
             div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
               render_portal_header
-              
+
               form_with(url: helpers.api_v1_login_path, method: :post, class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do |f|
                 render_flash_messages
-                
+
                 div(class: "space-y-6") do
                   field_container("Identity (Email)") do
                     f.email_field :email, class: input_classes, placeholder: "architect@silken.net", required: true

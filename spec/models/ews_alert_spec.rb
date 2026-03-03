@@ -30,7 +30,7 @@ RSpec.describe EwsAlert, type: :model do
       alert = create(:ews_alert, :drought)
       coords = alert.coordinates
 
-      expect(coords).to eq([alert.tree.latitude, alert.tree.longitude])
+      expect(coords).to eq([ alert.tree.latitude, alert.tree.longitude ])
     end
   end
 

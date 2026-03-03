@@ -14,7 +14,7 @@ class AlertDispatchService
     # --- 0. АДАПТИВНІ ПОРОГИ (The Biome Adaptation) ---
     # Пожежа: беремо з кластера (біом), породи дерева або дефолт
     fire_limit = cluster.custom_fire_threshold || family.fire_resistance_rating || DEFAULT_FIRE_TEMP_C
-    
+
     # Шкідники: коригується індексом сокоруху (чим соковитіше дерево, тим вищий фон)
     pest_limit = family.sap_flow_index ? (DEFAULT_PEST_THRESHOLD * family.sap_flow_index) : DEFAULT_PEST_THRESHOLD
 
@@ -25,7 +25,7 @@ class AlertDispatchService
         alert_type: :vandalism_breach,
         message: "🚨 КРИТИЧНО: Втручання або втрата живлення! DID: #{tree.did}"
       )
-      return 
+      return
     end
 
     # 2. ПОЖЕЖА або ПИЛКА (Thermal and Acoustic Chaos)
@@ -53,7 +53,7 @@ class AlertDispatchService
 
     if telemetry_log.bio_status_stress? || is_out_of_homeostasis
       msg = is_out_of_homeostasis ? "🌀 АТРАКТОР: Дестабілізація (Z: #{telemetry_log.z_value})." : "💧 ПОСУХА: Гідрологічний стрес."
-      
+
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :medium,
         alert_type: :severe_drought, message: msg
@@ -64,7 +64,7 @@ class AlertDispatchService
     # [ПІДСТУПНІСТЬ]: Тригеримо загрозу навіть БЕЗ біо-стресу, якщо шум аномальний
     if telemetry_log.acoustic_events > pest_limit && telemetry_log.acoustic_events < DEFAULT_SEISMIC_THRESHOLD
       pest_severity = telemetry_log.bio_status_stress? ? :medium : :low
-      
+
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: pest_severity,
         alert_type: :insect_epidemic,

@@ -26,14 +26,14 @@ class PriceOracleService
     def fetch_price_from_uniswap
       return mock_price if Rails.env.development? || Rails.env.test?
 
-      client = Eth::Client.create(ENV['POLYGON_RPC_URL'])
+      client = Eth::Client.create(ENV["POLYGON_RPC_URL"])
       quoter = Eth::Contract.from_abi(name: "Quoter", address: QUOTER_ADDRESS, abi: quoter_abi)
 
       # Запитуємо ціну 1 SCC в USDC
       # quoteExactInputSingle(tokenIn, tokenOut, fee, amountIn, sqrtPriceLimitX96)
       amount_in = 10**18 # 1 full SCC (18 decimals)
-      
-      raw_amount_out = client.call(quoter, "quoteExactInputSingle", 
+
+      raw_amount_out = client.call(quoter, "quoteExactInputSingle",
                                    SCC_TOKEN, USDC_TOKEN, POOL_FEE, amount_in, 0)
 
       # Конвертуємо з 6 децималів USDC у Float
@@ -63,7 +63,7 @@ class PriceOracleService
             { "internalType": "uint160", "name": "sqrtPriceLimitX96", "type": "uint160" }
           ],
           "name": "quoteExactInputSingle",
-          "outputs": [{ "internalType": "uint256", "name": "amountOut", "type": "uint256" }],
+          "outputs": [ { "internalType": "uint256", "name": "amountOut", "type": "uint256" } ],
           "stateMutability": "nonpayable",
           "type": "function"
         }
