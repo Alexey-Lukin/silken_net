@@ -11,7 +11,7 @@ RSpec.describe ChainAuditService do
     let(:chain_total_raw) { 0 }
 
     before do
-      # Стабимо Web3 виклики
+      # Стабуємо Web3 виклики
       mock_client = instance_double(Eth::Client)
       allow(Eth::Client).to receive(:create).and_return(mock_client)
       allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
@@ -47,7 +47,7 @@ RSpec.describe ChainAuditService do
           tx_hash: "0x#{'a' * 64}"
         )
 
-        # Неважливі транзакції (не повинні впливати)
+        # Транзакції, що повинні бути відфільтровані (pending статус або інший тип токена)
         wallet.blockchain_transactions.create!(
           amount: 100,
           token_type: :carbon_coin,
