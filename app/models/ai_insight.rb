@@ -11,7 +11,7 @@ class AiInsight < ApplicationRecord
     drought_probability: 1,   # [ПРОГНОЗ]: Ймовірність посухи
     carbon_yield_forecast: 2, # [ПРОГНОЗ]: Емісія токенів
     biodiversity_trend: 3     # [ПРОГНОЗ]: Стабільність Атрактора Лоренца
-  }, prefix: true
+  }
 
   # --- СТРУКТУРОВАНІ ДАНІ (The Reasoning Engine) ---
   # Використовуємо JSONB для гнучкого пояснення логіки ШІ
