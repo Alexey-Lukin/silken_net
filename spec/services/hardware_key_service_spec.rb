@@ -43,7 +43,7 @@ RSpec.describe HardwareKeyService, type: :service do
       service = described_class.new(tree)
       expect {
         service.rotate!
-      }.to raise_error(RuntimeError, /Ротація заблокована/)
+      }.to raise_error(HardwareKeyService::RotationPendingError, /Ротація заблокована/)
 
       # Key should remain unchanged
       hardware_key.reload

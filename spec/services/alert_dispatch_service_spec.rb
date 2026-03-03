@@ -49,7 +49,7 @@ RSpec.describe AlertDispatchService, type: :service do
       }.to change(EwsAlert, :count).by(2)
 
       alert_types = EwsAlert.last(2).map(&:alert_type)
-      expect(alert_types).to include("vandalism_breach")
+      expect(alert_types).to include("system_fault")
       expect(alert_types).to include("fire_detected")
     end
 
@@ -70,7 +70,7 @@ RSpec.describe AlertDispatchService, type: :service do
       }.to change(EwsAlert, :count).by(1)
 
       alert = EwsAlert.last
-      expect(alert.alert_type).to eq("vandalism_breach")
+      expect(alert.alert_type).to eq("system_fault")
     end
   end
 end

@@ -5,6 +5,9 @@ require "securerandom"
 class HardwareKeyService
   KEY_SIZE_BYTES = 32
 
+  # Помилка подвійної ротації: пристрій ще не підтвердив попереднє оновлення ключа.
+  class RotationPendingError < StandardError; end
+
   def self.rotate(device_uid)
     device = Tree.find_by(did: device_uid) || Gateway.find_by(uid: device_uid)
     raise "Пристрій #{device_uid} не знайдено" unless device
@@ -27,7 +30,7 @@ class HardwareKeyService
     # це означає, що пристрій не підтвердив отримання нового ключа.
     # Повторна ротація затре old_key і ми назавжди втратимо доступ.
     if key_record.previous_aes_key_hex.present?
-      raise "Ротація заблокована для #{@device_uid}: пристрій ще не підтвердив попередню ротацію. " \
+      raise RotationPendingError, "Ротація заблокована для #{@device_uid}: пристрій ще не підтвердив попередню ротацію. " \
             "Дочекайтесь першого пакету на новому ключі або очистіть Grace Period вручну."
     end
 

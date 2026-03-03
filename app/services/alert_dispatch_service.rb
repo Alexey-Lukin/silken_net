@@ -35,7 +35,7 @@ class AlertDispatchService
     if telemetry_log.voltage_mv < 100
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
-        alert_type: :vandalism_breach,
+        alert_type: :system_fault,
         message: "🚨 КРИТИЧНО: Втрата живлення (#{telemetry_log.voltage_mv} мВ)! DID: #{tree.did}"
       )
       # НЕ робимо return — продовжуємо аналіз пожежі/сейсміки,
