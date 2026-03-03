@@ -34,8 +34,8 @@ class OtaTransmissionWorker
       # ⚡ [СИНХРОНІЗАЦІЯ]: Звітуємо Архітектору через Turbo Stream
       broadcast_progress(queen_uid, index, total_chunks)
 
-      # 🔐 КРИПТОГРАФІЧНИЙ ЗАХИСТ (AES-256-ECB)
-      # Шифруємо весь пакет (включаючи OTA-заголовок)
+      # 🔐 КРИПТОГРАФІЧНИЙ ЗАХИСТ (AES-256-CBC з випадковим IV)
+      # Шифруємо весь пакет (включаючи OTA-заголовок); перші 16 байт — IV
       encrypted_package = encrypt_payload(package, key_record.binary_key)
 
       begin
@@ -93,17 +93,18 @@ class OtaTransmissionWorker
   end
 
   def encrypt_payload(payload, key)
-    cipher = OpenSSL::Cipher.new("aes-256-ecb")
+    cipher = OpenSSL::Cipher.new("aes-256-cbc")
     cipher.encrypt
     cipher.key = key
-    cipher.padding = 0 # STM32 зазвичай потребує ручного доповнення до 16 байт
+    iv = cipher.random_iv  # Унікальний IV для кожного пакета; CBC потребує непередбачуваного IV для семантичної безпеки
 
     # Ручне доповнення (Padding) до блоку 16 байт
     block_size = 16
     padding_length = (block_size - (payload.bytesize % block_size)) % block_size
     padded_payload = payload + ("\x00" * padding_length)
 
-    cipher.update(padded_payload) + cipher.final
+    # Передаємо IV разом із шифротекстом: перші 16 байт — IV, решта — дані
+    iv + cipher.update(padded_payload) + cipher.final
   end
 
   def handle_chunk_failure(uid, type, record_id, index, retry_count, error)

@@ -52,7 +52,7 @@ class OtaPackagerService
         # Додаємо CRC16 для кожного чанка для Zero-Lag валідації на рівні заліза
         package_payload = header + chunk
         crc = crc16_ccitt(package_payload)
-        yielder.yield(package_payload + [crc].pack("n"))
+        yielder.yield(package_payload + [ crc ].pack("n"))
       end
     end
   end

@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-ruby "3.4.8"
+ruby "3.2.3"
 
 gem "bcrypt"
 gem "bootsnap", require: false

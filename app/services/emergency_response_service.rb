@@ -78,7 +78,7 @@ class EmergencyResponseService
 
   # Розбиваємо загальну тривалість на частини по MAX_COMMAND_DURATION
   private_class_method def self.duration_chunks(total_duration)
-    return [total_duration] if total_duration <= MAX_COMMAND_DURATION
+    return [ total_duration ] if total_duration <= MAX_COMMAND_DURATION
 
     full_chunks = total_duration / MAX_COMMAND_DURATION
     remainder = total_duration % MAX_COMMAND_DURATION

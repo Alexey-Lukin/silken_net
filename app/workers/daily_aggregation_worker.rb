@@ -35,6 +35,19 @@ class DailyAggregationWorker
       Rails.logger.info "✅ [Хронометрист] Агрегація завершена (#{aggregation_results[:processed_count]} вузлів). Аудит контрактів заплановано."
     else
       Rails.logger.warn "⚠️ [Хронометрист] За #{target_date} не знайдено даних для агрегації. Ланцюг аудиту зупинено."
+
+      # Якщо робочий день пройшов без жодного байта даних — це глобальна аварія зв'язку.
+      # Сповіщаємо патрульних через EwsAlert для кожного активного кластера.
+      if target_date.on_weekday?
+        Cluster.joins(:naas_contracts).merge(NaasContract.status_active).distinct.find_each do |cluster|
+          EwsAlert.create!(
+            cluster_id: cluster.id,
+            severity: :critical,
+            alert_type: :system_fault,
+            message: "🛰️ ГЛОБАЛЬНИЙ БЛЕКАУТ: За #{target_date} не надійшло жодних даних телеметрії. Можлива аварія Starlink або масовий відказ шлюзів."
+          )
+        end
+      end
     end
 
   rescue Date::Error => e

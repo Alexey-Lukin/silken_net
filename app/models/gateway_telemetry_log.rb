@@ -1,8 +1,13 @@
 # frozen_string_literal: true
 
 class GatewayTelemetryLog < ApplicationRecord
+  # --- КОНСТАНТИ ПОРОГІВ (Single Source of Truth) ---
+  LOW_BATTERY_THRESHOLD = 3300  # mV: нижче цього — виснаження батареї/сонячної панелі
+  OVERHEAT_THRESHOLD    = 65    # °C: SIM7070G починає деградувати при перевищенні
+  LOW_SIGNAL_THRESHOLD  = 5     # CSQ: нижче 5 — ризик втрати батчів телеметрії
+
   # --- ЗВ'ЯЗКИ ---
-  # Зв'язок через UID дозволяє зберігати логіку ідентифікації заліза 
+  # Зв'язок через UID дозволяє зберігати логіку ідентифікації заліза
   # навіть якщо записи в базі будуть перенесені або архівуватися.
   belongs_to :gateway, foreign_key: :queen_uid, primary_key: :uid
 
@@ -17,9 +22,9 @@ class GatewayTelemetryLog < ApplicationRecord
 
   # --- СКОУПИ ---
   scope :recent, -> { order(created_at: :desc) }
-  scope :critical_battery, -> { where("voltage_mv < ?", 3300) }
-  # SIM7070G починає деградувати при температурі понад 65°C
-  scope :overheated, -> { where("temperature_c > ?", 65) }
+  scope :critical_battery, -> { where("voltage_mv < ?", LOW_BATTERY_THRESHOLD) }
+  scope :overheated, -> { where("temperature_c > ?", OVERHEAT_THRESHOLD) }
+  scope :weak_signal, -> { where("cellular_signal_csq < ? AND cellular_signal_csq != 99", LOW_SIGNAL_THRESHOLD) }
 
   # --- МЕТОДИ (Health Intelligence) ---
 
@@ -40,6 +45,8 @@ class GatewayTelemetryLog < ApplicationRecord
   # [НОВЕ]: Швидка перевірка на критичний стан заліза
   # Використовується GatewayTelemetryWorker для ініціації EwsAlert
   def critical_fault?
-    voltage_mv < 3300 || temperature_c > 65
+    voltage_mv < LOW_BATTERY_THRESHOLD ||
+      temperature_c > OVERHEAT_THRESHOLD ||
+      (cellular_signal_csq != 99 && cellular_signal_csq.to_i < LOW_SIGNAL_THRESHOLD)
   end
 end

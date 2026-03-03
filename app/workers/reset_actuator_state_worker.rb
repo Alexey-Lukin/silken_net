@@ -16,7 +16,7 @@ class ResetActuatorStateWorker
     end
 
     actuator = command.actuator
-    organization = actuator.gateway.cluster.organization
+    organization = actuator.gateway&.cluster&.organization
 
     # Перевіряємо, чи актуатор все ще активний
     if actuator.state_active?
@@ -25,8 +25,7 @@ class ResetActuatorStateWorker
         actuator.mark_idle!
 
         # 2. Закриваємо наказ у базі даних (completed_at, якщо є така колонка, або просто update)
-        command.update!(status: :confirmed)
-        # command.update!(status: :confirmed, completed_at: Time.current) # Розкоментуй, якщо додав колонку
+        command.update!(status: :confirmed, completed_at: Time.current)
       end
 
       Rails.logger.info "♻️ [Actuator Lifecycle] Механізм #{actuator.name} виконав наказ ##{command.id} і повернувся в спокій."

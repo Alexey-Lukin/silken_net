@@ -23,16 +23,16 @@ class NaasContract < ApplicationRecord
   # --- СКОУПИ ---
   # [СИНХРОНІЗОВАНО]: Уніфікована назва для системної єдності
   scope :active, -> { status_active }
-  
-  # [ВИПРАВЛЕНО]: Фінансовий дедлайн. 
+
+  # [ВИПРАВЛЕНО]: Фінансовий дедлайн.
   # Контракт активний до останньої секунди вказаного дня.
   scope :pending_completion, -> { active.where("end_date < ?", Date.current) }
 
   # =========================================================================
   # THE SLASHING PROTOCOL (D-MRV Арбітраж)
   # =========================================================================
-  
-  # [ВИПРАВЛЕНО]: Вигнання "Мертвих Душ". 
+
+  # [ВИПРАВЛЕНО]: Вигнання "Мертвих Душ".
   # Ми розраховуємо здоров'я лише за тими "Солдатами", що стоять у строю.
   def check_cluster_health!(target_date = Date.yesterday)
     return unless status_active?
@@ -40,7 +40,7 @@ class NaasContract < ApplicationRecord
     # Рахуємо лише активні дерева, ігноруючи deceased та removed
     active_trees = cluster.trees.active
     total_active_count = active_trees.count
-    
+
     return if total_active_count.zero?
 
     # Аналізуємо вердикти Оракула (AiInsight)
@@ -49,7 +49,12 @@ class NaasContract < ApplicationRecord
       target_date: target_date
     )
 
-    return if daily_insights.empty?
+    # Якщо Оракул мовчав цілу добу — це сигнал глобальної аварії зв'язку (Starlink-блекаут).
+    # Відсутність даних > 24 год автоматично вважається порушенням контракту.
+    if daily_insights.empty?
+      activate_slashing_protocol!
+      return
+    end
 
     # Рахуємо критичні аномалії серед живих
     critical_insights_count = daily_insights.where("stress_index >= 1.0").count
@@ -78,7 +83,7 @@ class NaasContract < ApplicationRecord
     # Воркер стає на крило ТІЛЬКИ після успішного COMMIT у PostgreSQL
     if breach_confirmed
       Rails.logger.warn "🚨 [D-MRV] NaasContract ##{id} РОЗІРВАНО. Сигнал на Slashing відправлено."
-      
+
       # Web3-екзекутор тепер не зустріне "привида" зі статусом :active
       BurnCarbonTokensWorker.perform_async(self.organization_id, self.id)
     end

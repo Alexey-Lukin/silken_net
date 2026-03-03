@@ -41,7 +41,7 @@ class EwsAlert < ApplicationRecord
 
   # Протокол завершення інциденту
   def resolve!(user: nil, notes: "Закрито системою")
-    # [СИНХРОНІЗАЦІЯ З REDIS]: Знімаємо "режим тиші", щоб Оракул знову міг 
+    # [СИНХРОНІЗАЦІЯ З REDIS]: Знімаємо "режим тиші", щоб Оракул знову міг
     # слухати це дерево після його відновлення.
     clear_silence_filter!
 
@@ -56,7 +56,7 @@ class EwsAlert < ApplicationRecord
     close_associated_maintenance!
   end
 
-  # [ВИПРАВЛЕНО]: Навігація в тумані. 
+  # [ВИПРАВЛЕНО]: Навігація в тумані.
   # Якщо дерево втратило GPS, ми фокусуємо патруль на центрі сили кластера.
   def coordinates
     if tree&.latitude.present? && tree&.longitude.present?
@@ -88,7 +88,7 @@ class EwsAlert < ApplicationRecord
     Rails.cache.delete(silence_key)
   end
 
-  # [ВИПРАВЛЕНО]: Turbo Transmission. 
+  # [ВИПРАВЛЕНО]: Turbo Transmission.
   # Видаляємо тривогу зі стрічки новин (Live Feed), як тільки вона вирішена.
   def broadcast_status_change
     # Оновлення бейджа статусу на карті/деталях

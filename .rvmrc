@@ -1,1 +1,1 @@
-rvm use ruby-3.4.8 --create
+rvm use ruby-3.2.3@silken_net --create

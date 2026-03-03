@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_03_075659) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_03_194000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -21,6 +21,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_03_075659) do
     t.integer "duration_seconds"
     t.text "error_message"
     t.bigint "ews_alert_id"
+    t.datetime "completed_at"
     t.datetime "executed_at"
     t.datetime "sent_at"
     t.integer "status", default: 0
