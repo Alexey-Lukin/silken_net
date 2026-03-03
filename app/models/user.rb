@@ -2,7 +2,8 @@
 
 class User < ApplicationRecord
   # --- АВТЕНТИФІКАЦІЯ (Rails 8 Standard) ---
-  has_secure_password
+  # [ВИПРАВЛЕНО]: Вимикаємо стандартні валідації, щоб наш password_required? запрацював.
+  has_secure_password validations: false
 
   # --- ЗВ'ЯЗКИ (The Neural Links) ---
   has_many :sessions, dependent: :destroy
@@ -11,26 +12,29 @@ class User < ApplicationRecord
 
   # ⚡ [СИНХРОНІЗАЦІЯ]: Прямий доступ до фінансової мережі підлеглих дерев
   has_many :wallets, through: :organization
-
-  # Зв'язок з журналом робіт: фіксуємо відповідальність за залізо
   has_many :maintenance_records, dependent: :restrict_with_error
 
   # --- НОРМАЛІЗАЦІЯ ТА ВАЛІДАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
 
+  # [ВИПРАВЛЕНО]: Тепер пароль вимагається лише тоді, коли немає зовнішніх ідентичностей.
+  # confirmation: true додає автоматичну перевірку password_confirmation.
+  validates :password, presence: true, confirmation: true, on: :create, if: :password_required?
+  validates :password, length: { minimum: 12 }, allow_blank: true
+
   # Строгий E.164 для SMS-шлюзів (напр. Twilio)
   normalizes :phone_number, with: ->(p) { p.to_s.gsub(/[^0-9+]/, "") }
   validates :phone_number, format: { with: /\A\+?[1-9]\d{1,14}\z/ }, allow_blank: true
 
-  # --- РОЛЬОВА МОДЕЛЬ (RBAC: Role-Based Access Control) ---
+  # --- РОЛЬОВА МОДЕЛЬ (RBAC) ---
   enum :role, {
-    investor: 0, # Тільки читання, фінансові звіти (SCC Treasury)
-    forester: 1, # Доступ до актуаторів, мобільний додаток, ритуали обслуговування
-    admin: 2     # Повний контроль системи, еволюція прошивок (OTA)
+    investor: 0, 
+    forester: 1, 
+    admin: 2  
   }, prefix: true
 
-  # --- СКОУПИ (The Watchers) ---
+  # --- СКОУПИ ---
   scope :notifiable, -> { where.not(phone_number: [ nil, "" ]).or(where.not(telegram_chat_id: nil)) }
   scope :active_foresters, -> { role_forester.where("last_seen_at >= ?", 1.hour.ago) }
 
@@ -43,34 +47,32 @@ class User < ApplicationRecord
     email_address
   end
 
-  # Для "Remember Me" або безпарольного доступу з мобільного додатка Патрульного
-  generates_token_for :api_access
+  # [ВИПРАВЛЕНО]: "Вічний Токен" тепер має термін придатності та прив'язку до пароля.
+  # Якщо змінити пароль — password_salt зміниться, і токен на вкраденому пристрої згорить.
+  generates_token_for :api_access, expires_in: 30.days do
+    password_salt&.last(10)
+  end
 
-  # --- МЕТОДИ (The Identity) ---
+  # --- МЕТОДИ ---
 
-  # Перевірка наявності повноважень для польових операцій
   def forest_commander?
     role_admin? || role_forester?
   end
 
-  # Естетичне відображення імені в Сайдбарі та Логах
   def full_name
     [ first_name, last_name ].compact_blank.join(" ").presence || email_address
   end
 
-  # Оновлення активності (викликається в BaseController для моніторингу присутності в Цитаделі)
-  # Оновлюємо не частіше ніж раз на 5 хвилин, щоб не перевантажувати базу транзакціями.
   def touch_visit!
     return if last_seen_at.present? && last_seen_at > 5.minutes.ago
-
     update_columns(last_seen_at: Time.current)
   end
 
   private
 
-  # Пароль не потрібен лише у випадку, якщо користувач надійно запечатаний
-  # через зовнішнього провайдера (Google/Apple ID)
+  # [ВИПРАВЛЕНО]: Тепер ця логіка реально керує валідацією.
+  # Пароль не потрібен, якщо користувач прийшов через Google/Apple і вже має Identity.
   def password_required?
-    identities.none? || password.present?
+    identities.none?
   end
 end
