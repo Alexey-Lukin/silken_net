@@ -98,9 +98,11 @@ class TelemetryUnpackerService
     }
 
     # 4. МАТЕМАТИКА АТРАКТОРА (The Chaos Engine)
-    # Використовуємо DID як насіння для розрахунку стабільності Z
+    # ⚡ [ФІКСАЦІЯ ІСТИНИ]: Ми розраховуємо Z один раз тут.
+    # Оскільки Attractor тепер використовує BigDecimal, ми отримуємо 
+    # детермінований результат, який зберігається як єдина істина.
     log_attributes[:z_value] = SilkenNet::Attractor.calculate_z(
-      parsed_data[0],
+      parsed_data[0], # Використовуємо сирий DID як seed
       log_attributes[:temperature_c],
       log_attributes[:acoustic_events]
     )
