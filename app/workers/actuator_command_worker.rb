@@ -39,8 +39,12 @@ class ActuatorCommandWorker
     # ⚡ [КЕНОЗИС БЕЗПЕКИ]: Вибір мови спілкування
     # Якщо діє Grace Period, ми МАЄМО відправляти команди старим ключем,
     # бо пристрій ще не підтвердив перехід на новий.
-    # explicit_key використовується при примусовій ротації.
-    encryption_key = explicit_key || key_record.binary_previous_key || key_record.binary_key
+    # explicit_key (hex-рядок) використовується при примусовій ротації.
+    encryption_key = if explicit_key.present?
+      [explicit_key].pack("H*") # Конвертуємо HEX-рядок у сирі байти
+    else
+      key_record.binary_previous_key || key_record.binary_key
+    end
 
     # Формуємо пакет згідно з протоколом прошивки main.c
     raw_payload = "CMD:#{command.command_payload}:#{command.duration_seconds}:#{actuator.id}"

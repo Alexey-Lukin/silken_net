@@ -19,22 +19,27 @@ module SilkenNet
     SIGMA_LIMITS = (5.0..30.0)
     RHO_LIMITS   = (10.0..50.0)
 
+    # Кількість значущих цифр для BigDecimal (запобігає експоненційному росту).
+    # 18 цифр точності достатньо для "Юридичної Точності" Web3-аудиту,
+    # при цьому час обчислення залишається O(n) а не O(2^n).
+    PRECISION = 18
+
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # МЕТОД ДЛЯ БЕКЕНДУ (Розрахунок стабільності)
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     def self.calculate_z(seed, temp, acoustic)
       x, y, z, local_sigma, local_rho = initialize_state(seed, temp, acoustic)
 
-      # Обчислення в BigDecimal сповільнюють процес, але дають
-      # "Юридичну Точність" для Web3-аудиту.
+      # Обчислення в BigDecimal дають "Юридичну Точність" для Web3-аудиту.
+      # round(PRECISION) після кожної ітерації запобігає необмеженому росту цифр.
       ITERATIONS.times do
         dx = local_sigma * (y - x)
         dy = x * (local_rho - z) - y
         dz = (x * y) - (BASE_BETA * z)
 
-        x += dx * DT
-        y += dy * DT
-        z += dz * DT
+        x = (x + dx * DT).round(PRECISION)
+        y = (y + dy * DT).round(PRECISION)
+        z = (z + dz * DT).round(PRECISION)
       end
 
       z.to_f.round(4)
@@ -61,9 +66,9 @@ module SilkenNet
           dy = x * (local_rho - z) - y
           dz = (x * y) - (BASE_BETA * z)
 
-          x += dx * DT
-          y += dy * DT
-          z += dz * DT
+          x = (x + dx * DT).round(PRECISION)
+          y = (y + dy * DT).round(PRECISION)
+          z = (z + dz * DT).round(PRECISION)
         end
 
         case i % 3

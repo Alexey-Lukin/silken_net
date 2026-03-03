@@ -19,13 +19,27 @@ class AlertDispatchService
     pest_limit = family.sap_flow_index ? (DEFAULT_PEST_THRESHOLD * family.sap_flow_index) : DEFAULT_PEST_THRESHOLD
 
     # 1. ВАНДАЛІЗМ (Zero-Trust Breach)
-    if telemetry_log.bio_status_tamper_detected? || telemetry_log.voltage_mv < 100
+    # [ВИПРАВЛЕНО]: Розділено логіку тампера та низького вольтажу.
+    # Якщо корпус відкрито — дані скомпрометовані, подальший аналіз безглуздий.
+    # Якщо ж вольтаж впав через розряд батареї (без тампера) — дерево все ще
+    # може горіти, тому ми фіксуємо тривогу, але НЕ перериваємо аналіз.
+    if telemetry_log.bio_status_tamper_detected?
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
         alert_type: :vandalism_breach,
-        message: "🚨 КРИТИЧНО: Втручання або втрата живлення! DID: #{tree.did}"
+        message: "🚨 КРИТИЧНО: Втручання в корпус пристрою! DID: #{tree.did}"
       )
       return
+    end
+
+    if telemetry_log.voltage_mv < 100
+      create_and_dispatch_alert!(
+        cluster: cluster, tree: tree, severity: :critical,
+        alert_type: :system_fault,
+        message: "🚨 КРИТИЧНО: Втрата живлення (#{telemetry_log.voltage_mv} мВ)! DID: #{tree.did}"
+      )
+      # НЕ робимо return — продовжуємо аналіз пожежі/сейсміки,
+      # бо низький вольтаж може бути розрядом батареї, а не вандалізмом.
     end
 
     # 2. ПОЖЕЖА або ПИЛКА (Thermal and Acoustic Chaos)
