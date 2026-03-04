@@ -4,6 +4,7 @@ module Api
   module V1
     class BaseController < ActionController::API
       include ActionController::HttpAuthentication::Token::ControllerMethods
+      include Pagy::Backend
 
       # --- ПОРЯДОК ЗАХИСТУ ---
       before_action :authenticate_user!

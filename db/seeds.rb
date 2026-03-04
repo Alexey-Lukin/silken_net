@@ -30,6 +30,16 @@ eco_future_fund = Organization.create!(
 )
 
 puts "👤 Створення Патрульних..."
+
+# [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій (спалювання, мейнтенанс).
+# Організація не вказана — це глобальний системний агент.
+User.find_or_create_by!(email_address: "oracle.executioner@system.silken.net") do |u|
+  u.first_name = "Oracle"
+  u.last_name  = "Executioner"
+  u.role       = :admin
+  u.password   = SecureRandom.hex(32)
+end
+
 alexey = User.create!(
   email_address: "alexey@activebridge.org",
   password: "password123",

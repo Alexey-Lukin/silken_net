@@ -25,17 +25,27 @@ class AlertNotificationWorker
   private
 
   def broadcast_to_dashboards(alert)
-    # [БЕЗПЕКА]: Використовуємо дані дерева або шлюзу для локації
-    source = alert.tree || alert.cluster.gateways.first
+    # [БЕЗПЕКА]: Визначаємо координати з урахуванням того, що тривога може бути системною.
+    # Пріоритет: конкретне дерево → центроїд кластера (geo_center) → шлюз-запасний варіант.
+    # Це запобігає дезорієнтації патруля, якщо шлюз стоїть за 5 км від епіцентру.
+    location = if alert.tree
+      { lat: alert.tree.latitude, lng: alert.tree.longitude }
+    elsif (center = alert.cluster.geo_center)
+      center
+    elsif (fallback = alert.cluster.gateways.first)
+      { lat: fallback.latitude, lng: fallback.longitude }
+    else
+      { lat: nil, lng: nil }
+    end
 
     payload = {
       id: alert.id,
-      target_did: alert.tree&.did || "SYSTEM_GATEWAY",
+      target_did: alert.tree&.did || "SYSTEM_CLUSTER",
       severity: alert.severity,
       alert_type: alert.alert_type,
       message: alert.message,
-      lat: source&.latitude,
-      lng: source&.longitude,
+      lat: location[:lat],
+      lng: location[:lng],
       timestamp: alert.created_at.to_i
     }
 
@@ -55,31 +65,17 @@ class AlertNotificationWorker
     end
 
     # Б. Оперативні канали (Патруль та Адміни)
-    # [ВИПРАВЛЕНО]: Охоплюємо і адмінів, і патрульних (foresters)
+    # [ВИПРАВЛЕНО N+1]: Замість послідовного циклу — окремий атомарний SingleNotificationWorker
+    # для кожного користувача і кожного каналу. Sidekiq розпаралелює 250 повідомлень одночасно.
+    # Ретрай зачіпає лише одну конкретну доставку, а не весь пакет.
     stakeholders = organization.users.where(role: [ :admin, :forester ])
 
     stakeholders.each do |user|
       # SMS лише для критичних ситуацій (Пожежа / Вандалізм)
-      if alert.severity_critical?
-        send_sms(user, alert)
-      end
+      SingleNotificationWorker.perform_async(user.id, alert.id, "sms") if alert.severity_critical?
 
       # Push для всіх рівнів тривог
-      send_push_notification(user, alert)
+      SingleNotificationWorker.perform_async(user.id, alert.id, "push")
     end
-  end
-
-  def send_sms(user, alert)
-    return unless user.respond_to?(:phone_number) && user.phone_number.present?
-
-    # [LOGIC]: Викликаємо зовнішній API (напр. Twilio)
-    # TwilioClient.send_sms(to: user.phone_number, body: "🚨 [S-NET] #{alert.message}")
-    Rails.logger.info "📱 [SMS] Надіслано патрульному: #{user.full_name} (#{user.phone_number})"
-  end
-
-  def send_push_notification(user, alert)
-    # [LOGIC]: Викликаємо Firebase або інший Push-сервіс
-    # FcmClient.send_to_user(user, title: "Тривога: #{alert.alert_type}", body: alert.message)
-    Rails.logger.info "📲 [Push] Доставлено в додаток користувачу: #{user.email_address}"
   end
 end

@@ -85,6 +85,7 @@ GEM
     bindex (0.8.1)
     bls12-381 (0.3.0)
       h2c (~> 0.2.0)
+    blueprinter (1.2.1)
     bootsnap (1.23.0)
       msgpack (~> 1.2)
     brakeman (8.0.4)
@@ -265,6 +266,7 @@ GEM
       railties (>= 7.1, < 9)
       zeitwerk (~> 2.7)
     pkg-config (1.6.5)
+    pagy (43.3.1)
     pp (0.6.3)
       prettyprint
     prettyprint (0.2.0)
@@ -488,6 +490,7 @@ PLATFORMS
 
 DEPENDENCIES
   bcrypt
+  blueprinter
   bootsnap
   brakeman
   bundler-audit
@@ -498,8 +501,8 @@ DEPENDENCIES
   groupdate
   image_processing
   importmap-rails
-  jbuilder
   kamal
+  pagy
   pg
   phlex-rails
   propshaft

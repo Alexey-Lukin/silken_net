@@ -8,6 +8,24 @@ class ActuatorCommandWorker
   # Черга downlink має вищий пріоритет.
   sidekiq_options queue: "downlink", retry: 3
 
+  # [РЕТРАЙ-ПАРАДОКС]: Статус :failed виставляємо ТІЛЬКИ після того,
+  # як усі ретраї вичерпано. Це запобігає "брехливому" failed у журналі,
+  # якщо наступний ретрай виконається успішно.
+  sidekiq_retries_exhausted do |job, _exception|
+    command = ActuatorCommand.find_by(id: job["args"].first)
+    if command
+      error_msg = job["error_message"].to_s.truncate(200)
+      if command.update(status: :failed, error_message: error_msg)
+        Turbo::StreamsChannel.broadcast_replace_to(
+          command.actuator.gateway.cluster.organization,
+          target: "command_status_#{command.id}",
+          html: Views::Components::Actuators::CommandStatusBadge.new(command: command).call
+        )
+      end
+      Rails.logger.error "🛑 [Downlink Exhausted] Наказ ##{command.id} провалено після всіх спроб: #{error_msg}"
+    end
+  end
+
   def perform(command_id, explicit_key = nil)
     command = ActuatorCommand.find_by(id: command_id)
     return unless command
@@ -80,10 +98,10 @@ class ActuatorCommandWorker
       ResetActuatorStateWorker.perform_in(command.duration_seconds.seconds, command.id)
 
     rescue Timeout::Error => e
-      handle_failure(command, "Gateway Timeout (No ACK from Queen)")
-      raise e # Retry для Sidekiq
+      Rails.logger.error "🛑 [Downlink Error] Наказ ##{command.id} провалено: Gateway Timeout (No ACK from Queen)"
+      raise e # Retry для Sidekiq; статус :failed виставить sidekiq_retries_exhausted
     rescue StandardError => e
-      handle_failure(command, e.message)
+      Rails.logger.error "🛑 [Downlink Error] Наказ ##{command.id} провалено: #{e.message}"
       raise e
     end
   end

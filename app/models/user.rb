@@ -59,6 +59,13 @@ class User < ApplicationRecord
     role_admin? || role_forester?
   end
 
+  # [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій.
+  # Використовується замість User.find_by(role: :admin) || User.first,
+  # щоб у журналах було чітко видно: це рішення системи, а не дія конкретної людини.
+  def self.oracle_executioner
+    find_by(email_address: "oracle.executioner@system.silken.net")
+  end
+
   def full_name
     [ first_name, last_name ].compact_blank.join(" ").presence || email_address
   end

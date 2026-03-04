@@ -10,6 +10,10 @@ class BurnCarbonTokensWorker
     naas_contract = NaasContract.find_by(id: naas_contract_id)
     return Rails.logger.error "🛑 [Slashing] Контракт ##{naas_contract_id} не знайдено." unless naas_contract
 
+    # [ІДЕМПОТЕНТНІСТЬ]: Якщо контракт вже розірвано (наприклад, попередній ретрай виконав
+    # спалювання, але впав на створенні MaintenanceRecord), виходимо без повторного виклику.
+    return Rails.logger.warn "⚠️ [Slashing] Контракт ##{naas_contract_id} вже розірвано. Пропускаємо." if naas_contract.status_breached?
+
     organization = Organization.find(organization_id)
     cluster = naas_contract.cluster
     source_tree = Tree.find_by(id: tree_id) if tree_id
@@ -29,8 +33,9 @@ class BurnCarbonTokensWorker
     # Ми маркуємо контракт як BREACHED вже всередині сервісу, але тут
     # створюємо "надгробний камінь" у фізичному журналі обслуговування.
     ActiveRecord::Base.transaction do
-      # Шукаємо системного інквізитора (Адміна) для підпису запису
-      executioner = User.find_by(role: :admin) || User.first
+      # Шукаємо системного інквізитора (Oracle Executioner) для підпису запису.
+      # Якщо бот відсутній у DB — fallback на першого адміна, щоб не зламати транзакцію.
+      executioner = User.oracle_executioner || User.find_by(role: :admin) || User.first
 
       MaintenanceRecord.create!(
         maintainable: cluster,
