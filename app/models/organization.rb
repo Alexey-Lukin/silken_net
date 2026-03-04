@@ -61,7 +61,7 @@ class Organization < ApplicationRecord
 
   # Загальний обсяг фінансування за активними контрактами
   def active_tokens_count
-    naas_contracts.active_contracts.sum(:total_funding)
+    naas_contracts.active.sum(:total_funding)
   end
 
   # Загальний вуглецевий баланс організації (сума всіх гаманців дерев)
