@@ -16,12 +16,13 @@ class Cluster < ApplicationRecord
   # Прямий доступ до тривог усього сектора
   has_many :ews_alerts, dependent: :destroy
   # Поліморфні прогнози та підсумки (Daily Health Summary)
-  has_many :ai_insights, as: :analy_able, dependent: :destroy
+  has_many :ai_insights, as: :analyzable, dependent: :destroy
 
   # --- JSONB SETTINGS (The Biome Adaptation) ---
   store_accessor :environmental_settings,
                  :custom_fire_threshold,
-                 :seismic_sensitivity_threshold
+                 :seismic_sensitivity_threshold,
+                 :timezone
 
   # --- ВАЛІДАЦІЇ ТА НОРМАЛІЗАЦІЯ ---
   validates :name, presence: true, uniqueness: true
@@ -57,10 +58,17 @@ class Cluster < ApplicationRecord
     read_attribute(:health_index) || 1.0
   end
 
+  # [UTC/Cluster TZ Anchor]: Вчорашня дата в часовому поясі кластера.
+  # Якщо timezone не задано — використовуємо UTC для детермінованості арбітражу.
+  # Гарантує, що «вчора» у Черкасах та «вчора» у джунглях Амазонки — це правильна дата.
+  def local_yesterday
+    Time.use_zone(timezone.presence || "UTC") { Date.yesterday }
+  end
+
   # Перерахунок health_index на основі даних ШІ (використовується у ClusterHealthCheckWorker)
   # $$V = 1.0 - S$$ де $S$ - stress_index з добового звіту ШІ
-  def recalculate_health_index!
-    insight = ai_insights.daily_health_summary.for_date(Date.yesterday).first
+  def recalculate_health_index!(target_date = local_yesterday)
+    insight = ai_insights.daily_health_summary.for_date(target_date).first
     new_value = insight ? (1.0 - insight.stress_index.to_f).round(2) : 1.0
     update_column(:health_index, new_value)
     new_value

@@ -5,7 +5,8 @@ class InsightGeneratorService
   # середньої по кластеру більше ніж на 30%, це класифікується як фрод/аномалія.
   FRAUD_DEVIATION_THRESHOLD = 0.30
 
-  def self.call(date = Date.yesterday)
+  # [UTC Anchor]: Канонічний UTC-якір для агрегації телеметрії.
+  def self.call(date = Time.current.utc.to_date - 1)
     new(date).perform
   end
 

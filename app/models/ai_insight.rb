@@ -32,7 +32,7 @@ class AiInsight < ApplicationRecord
 
   # --- СКОУПИ ---
   scope :highly_probable, -> { where("probability_score > ?", 80.0) }
-  scope :upcoming, -> { where("target_date >= ?", Date.current) }
+  scope :upcoming, -> { where("target_date >= ?", Time.current.utc.to_date) }
   scope :critical_stress, -> { daily_health_summary.where("stress_index >= ?", 0.8) }
   scope :for_date, ->(date) { where(target_date: date) }
 
