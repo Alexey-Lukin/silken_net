@@ -30,10 +30,16 @@ class Gateway < ApplicationRecord
     faulty: 4       # Апаратний збій / вичерпано ретраї OTA
   }, default: :idle
 
+  # --- КОНСТАНТИ ---
+  # Zero-Trust: Формат UID відповідає апаратній специфікації шлюзу (SNET-Q-[8 hex digits])
+  UID_FORMAT = /\ASNET-Q-[0-9A-F]{8}\z/
+  LOW_POWER_MV = 3300  # Поріг критичного рівня енергії (аналогічно Tree::LOW_POWER_MV)
+
   # --- КОЛБЕКИ ТА ВАЛІДАЦІЇ ---
   before_validation :normalize_uid
 
-  validates :uid, presence: true, uniqueness: true
+  validates :uid, presence: true, uniqueness: true,
+            format: { with: UID_FORMAT, message: "має відповідати апаратному формату (SNET-Q-XXXXXXXX)" }
   validates :config_sleep_interval_s, presence: true, numericality: { greater_than_or_equal_to: 60 }
 
   validates :latitude, numericality: { in: -90..90 }, allow_nil: true
@@ -43,31 +49,45 @@ class Gateway < ApplicationRecord
   validates :ip_address, format: { with: Resolv::AddressRegex }, allow_blank: true
 
   # --- СКОУПИ (The Watchers) ---
-  # [ВИПРАВЛЕНО]: Гнучкість "Смерті". Статус онлайн тепер динамічний.
+  # [ВИПРАВЛЕНО]: Індексоване обчислення порогу (make_interval замість string-concat).
   # Беремо інтервал сну конкретної Королеви + 20% люфту на затримку мережі/обробку.
   scope :online, -> {
-    where("last_seen_at >= (CURRENT_TIMESTAMP - (config_sleep_interval_s * 1.2 || ' seconds')::interval)")
+    where("last_seen_at >= CURRENT_TIMESTAMP - make_interval(secs => config_sleep_interval_s * 1.2)")
   }
 
   scope :offline, -> {
-    where("last_seen_at IS NULL OR last_seen_at < (CURRENT_TIMESTAMP - (config_sleep_interval_s * 1.2 || ' seconds')::interval)")
+    where("last_seen_at IS NULL OR last_seen_at < CURRENT_TIMESTAMP - make_interval(secs => config_sleep_interval_s * 1.2)")
   }
 
   scope :ready_for_commands, -> { idle.online }
 
   # --- МЕТОДИ (Intelligence) ---
 
-  # Оновлення пульсу та мережевого якоря
-  # [ВИПРАВЛЕНО]: Тепер приймає voltage для денормалізації (N+1 fix)
+  # [ВИПРАВЛЕНО: Race Condition + Performance]:
+  # GREATEST гарантує детермінованість при дубльованих пакетах через Starlink Direct to Cell.
+  # update_all обходить колбеки ActiveRecord — блискавичне оновлення на hot path телеметрії.
   def mark_seen!(new_ip: nil, voltage_mv: nil)
-    updates = { last_seen_at: Time.current }
-    updates[:ip_address] = new_ip if new_ip.present? && ip_address != new_ip
-    updates[:latest_voltage_mv] = voltage_mv if voltage_mv.present?
+    now = Time.current
 
-    # Якщо Королева прокинулася, вона автоматично стає idle
-    updates[:state] = :idle if %w[active].include?(state) || state.nil?
+    set_clauses = [ "last_seen_at = GREATEST(COALESCE(last_seen_at, ?), ?)" ]
+    bind_values = [ now, now ]
 
-    update!(updates)
+    if new_ip.present?
+      set_clauses << "ip_address = ?"
+      bind_values << new_ip
+    end
+
+    if voltage_mv.present?
+      set_clauses << "latest_voltage_mv = ?"
+      bind_values << voltage_mv
+    end
+
+    self.class.where(id: id).update_all([ set_clauses.join(", "), *bind_values ])
+
+    # Синхронізуємо in-memory стан без reload для швидкодії на hot path
+    self.last_seen_at = now
+    self.ip_address = new_ip if new_ip.present?
+    self.latest_voltage_mv = voltage_mv if voltage_mv.present?
   end
 
   def online?
@@ -93,7 +113,7 @@ class Gateway < ApplicationRecord
   # [ВИПРАВЛЕНО]: Блискавична перевірка без SQL запитів до логів.
   # Використовуємо денормалізовану колонку latest_voltage_mv.
   def battery_critical?
-    latest_voltage_mv.present? && latest_voltage_mv < 3300
+    latest_voltage_mv.present? && latest_voltage_mv < LOW_POWER_MV
   end
 
   private
