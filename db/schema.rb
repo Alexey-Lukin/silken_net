@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_04_191032) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_04_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -356,8 +356,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_191032) do
     t.decimal "balance"
     t.datetime "created_at", null: false
     t.string "crypto_public_address"
+    t.bigint "organization_id"
     t.bigint "tree_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["organization_id"], name: "index_wallets_on_organization_id"
     t.index ["tree_id"], name: "index_wallets_on_tree_id"
   end
 
@@ -389,5 +391,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_191032) do
   add_foreign_key "trees", "tiny_ml_models"
   add_foreign_key "trees", "tree_families"
   add_foreign_key "users", "organizations"
+  add_foreign_key "wallets", "organizations"
   add_foreign_key "wallets", "trees"
 end

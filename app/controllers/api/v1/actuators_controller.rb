@@ -9,7 +9,7 @@ module Api
 
       # --- РЕЄСТР ВИКОНАВЧИХ ВУЗЛІВ ---
       def index
-        @actuators = @cluster.actuators.includes(:tree, :gateway)
+        @actuators = @cluster.actuators.includes(:gateway)
 
         respond_to do |format|
           format.json { render json: @actuators }
@@ -24,7 +24,7 @@ module Api
 
       # --- ДЕТАЛЬНИЙ АУДИТ ВУЗЛА ---
       def show
-        @commands = @actuator.actuator_commands.order(created_at: :desc).limit(20)
+        @commands = @actuator.commands.order(created_at: :desc).limit(20)
 
         respond_to do |format|
           format.json { render json: { actuator: @actuator, history: @commands } }
