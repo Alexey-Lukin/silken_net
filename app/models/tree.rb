@@ -78,6 +78,7 @@ class Tree < ApplicationRecord
 
     self.class.where(id: id).update_all(sql)
 
+    # Синхронізуємо in-memory стан без reload (як update_columns) для швидкодії на hot path
     self.last_seen_at = now
     self.latest_voltage_mv = voltage_mv if voltage_mv
     broadcast_map_update
@@ -146,12 +147,13 @@ class Tree < ApplicationRecord
   def trigger_slashing_protocol
     return unless cluster&.organization
 
+    org_id = cluster.organization_id
     contract_ids = cluster.naas_contracts.active.pluck(:id)
     return if contract_ids.empty?
 
     # Bulk Slashing: один виклик Redis замість N окремих perform_async
     BurnCarbonTokensWorker.perform_bulk(
-      contract_ids.map { |contract_id| [cluster.organization_id, contract_id, id] }
+      contract_ids.map { |contract_id| [org_id, contract_id, id] }
     )
 
     Rails.logger.warn "🚨 [Ecosystem Breach] Дерево #{did} зафіксовано як #{status}. Сигнал на вилучення токенів відправлено."
