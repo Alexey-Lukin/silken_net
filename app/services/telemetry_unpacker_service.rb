@@ -140,11 +140,28 @@ class TelemetryUnpackerService
       # [СИНХРОНІЗАЦІЯ]: Оновлюємо денормалізований вольтаж для мапи без N+1
       tree.mark_seen!(log.voltage_mv)
 
+      # [KENOSIS TITAN]: Атомарне оновлення health_streak без додаткових SELECT-ів.
+      # Якщо лог здоровий — інкремент, інакше — скидання до нуля.
+      update_health_streak!(tree, log)
+
       # Нарахування балів у гаманець Солдата
       tree.wallet.credit!(log.growth_points) if log.growth_points.positive?
 
       # Аналіз аномалій Оракулом тривог
       AlertDispatchService.analyze_and_trigger!(log)
+    end
+  end
+
+  # [KENOSIS TITAN]: Денормалізований лічильник "одужання" (Anti-Flapping).
+  # Замінює N+1 запит tree.telemetry_logs.recent.limit(3) у recovery_confirmed?.
+  # Атомарний SQL запобігає race conditions при одночасних пакетах від різних Королев.
+  def update_health_streak!(tree, log)
+    if log.healthy?
+      Tree.where(id: tree.id).update_all("health_streak = health_streak + 1")
+      tree.health_streak += 1
+    else
+      Tree.where(id: tree.id).update_all(health_streak: 0)
+      tree.health_streak = 0
     end
   end
 end

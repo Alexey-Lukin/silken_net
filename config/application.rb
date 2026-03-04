@@ -16,6 +16,9 @@ module SilkenNet
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets daemons tasks])
 
+    # [KENOSIS TITAN]: structure.sql зберігає партиціювання PostgreSQL (schema.rb не підтримує)
+    config.active_record.schema_format = :sql
+
     # Use RSpec and FactoryBot for generators
     config.generators do |g|
       g.test_framework :rspec
