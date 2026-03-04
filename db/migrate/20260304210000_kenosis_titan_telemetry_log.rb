@@ -78,8 +78,20 @@ class KenosisTitanTelemetryLog < ActiveRecord::Migration[8.1]
 
     # ──────────────────────────────────────────────────────
     # 7. Міграція існуючих даних та видалення legacy
+    #    Явний перелік колонок запобігає помилкам через різний порядок стовпців
     # ──────────────────────────────────────────────────────
-    execute "INSERT INTO telemetry_logs SELECT * FROM telemetry_logs_legacy"
+    execute <<~SQL
+      INSERT INTO telemetry_logs (
+        id, acoustic_events, bio_status, created_at, firmware_version_id,
+        growth_points, mesh_ttl, metabolism_s, piezo_voltage_mv, queen_uid,
+        rssi, tamper_detected, temperature_c, tree_id, updated_at, voltage_mv, z_value
+      )
+      SELECT
+        id, acoustic_events, bio_status, created_at, firmware_version_id,
+        growth_points, mesh_ttl, metabolism_s, piezo_voltage_mv, queen_uid,
+        rssi, tamper_detected, temperature_c, tree_id, updated_at, voltage_mv, z_value
+      FROM telemetry_logs_legacy
+    SQL
     drop_table :telemetry_logs_legacy
   end
 
@@ -119,7 +131,18 @@ class KenosisTitanTelemetryLog < ActiveRecord::Migration[8.1]
     add_index :telemetry_logs, [ :tree_id, :created_at ]
     add_foreign_key :telemetry_logs, :trees
 
-    execute "INSERT INTO telemetry_logs SELECT * FROM telemetry_logs_partitioned"
+    execute <<~SQL
+      INSERT INTO telemetry_logs (
+        id, acoustic_events, bio_status, created_at, firmware_version_id,
+        growth_points, mesh_ttl, metabolism_s, piezo_voltage_mv, queen_uid,
+        rssi, tamper_detected, temperature_c, tree_id, updated_at, voltage_mv, z_value
+      )
+      SELECT
+        id, acoustic_events, bio_status, created_at, firmware_version_id,
+        growth_points, mesh_ttl, metabolism_s, piezo_voltage_mv, queen_uid,
+        rssi, tamper_detected, temperature_c, tree_id, updated_at, voltage_mv, z_value
+      FROM telemetry_logs_partitioned
+    SQL
 
     execute "DROP TABLE telemetry_logs_default"
     execute "DROP TABLE telemetry_logs_y2026m06"
