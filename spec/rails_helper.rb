@@ -7,8 +7,8 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 require 'rspec/rails'
 
 # Sidekiq: перехоплює perform_async в пам'ять — Redis не потрібен для тестів
-require 'sidekiq/testing'
-Sidekiq::Testing.fake!
+# New API (Sidekiq 8.1.1+): https://github.com/sidekiq/sidekiq/wiki/Testing#new-api
+Sidekiq.testing!(:fake)
 
 # Ensures that the test database schema matches the current schema file.
 begin
