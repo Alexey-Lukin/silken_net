@@ -24,6 +24,10 @@ RSpec.describe User, type: :model do
       expect(build(:user, :forester).forest_commander?).to be true
     end
 
+    it "returns true for super_admin" do
+      expect(build(:user, :super_admin).forest_commander?).to be true
+    end
+
     it "returns false for investor" do
       expect(build(:user, :investor).forest_commander?).to be false
     end
