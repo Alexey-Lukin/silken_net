@@ -13,7 +13,8 @@ class ClusterHealthCheckWorker
     # від Бразилії до Індонезії через timezone кожного кластера.
     target_date = Date.parse(date_string) if date_string.present?
 
-    Rails.logger.info "🕵️ [D-MRV Audit] Початок перевірки активних NaaS контрактів#{" за #{target_date}" if target_date}"
+    date_label = target_date ? " за #{target_date}" : ""
+    Rails.logger.info "🕵️ [D-MRV Audit] Початок перевірки активних NaaS контрактів#{date_label}"
 
     # 1.5. ОНОВЛЕННЯ КЕШУ ЗДОРОВ'Я (Cached Health Index)
     # Перераховуємо health_index для всіх кластерів і зберігаємо в БД.
