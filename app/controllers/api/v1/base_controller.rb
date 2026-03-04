@@ -13,7 +13,8 @@ module Api
 
       # --- ОБРОБКА ПОМИЛОК (The Safety Net) ---
       # Ми не даємо хакеру зрозуміти природу помилки, але даємо розробнику чіткий JSON
-      # StandardError MUST be first so specific handlers override it (Rails checks last-to-first)
+      # StandardError defined first, so it is checked last (Rails rescue_from: reverse order).
+      # This lets specific handlers below (RecordNotFound, etc.) take priority.
       rescue_from StandardError, with: :render_internal_server_error unless Rails.env.development?
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
       rescue_from ActionController::ParameterMissing, with: :render_parameter_missing
