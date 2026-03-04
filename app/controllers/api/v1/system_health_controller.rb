@@ -7,7 +7,7 @@ module Api
 
       # GET /api/v1/system_health
       # Моніторинг стану системи: CoAP listener, Sidekiq, UDP
-      def index
+      def show
         render json: {
           checked_at: Time.current.iso8601,
           coap_listener: coap_status,
