@@ -19,6 +19,10 @@ class Wallet < ApplicationRecord
     message: "має бути валідною 0x адресою"
   }, allow_blank: true
 
+  # Троттлінг трансляції: оновлюємо UI не частіше ніж раз на N секунд,
+  # щоб уникнути "шторму" WebSocket-повідомлень при масовій телеметрії.
+  BROADCAST_THROTTLE_SECONDS = 10
+
   # --- МЕТОДИ НАРАХУВАННЯ (Growth Credit) ---
 
   # Викликається TelemetryUnpackerService після кожного успішного пакету даних від STM32.
@@ -28,8 +32,9 @@ class Wallet < ApplicationRecord
     # Це захищає нас від втрат при масовому надходженні пакетів через Starlink/LoRa
     increment!(:balance, points)
 
-    # [СИНХРОНІЗАЦІЯ]: Миттєво оновлюємо цифри на Dashboard Архітектора
-    broadcast_balance_update
+    # [СИНХРОНІЗАЦІЯ]: Оновлюємо цифри на Dashboard Архітектора з троттлінгом,
+    # щоб при 1 000 000 дерев не створювати ~16 000 повідомлень/сек
+    broadcast_balance_update if should_broadcast?
   end
 
   # --- МЕТОДИ ЕМІСІЇ (Web3 Minting) ---
@@ -59,8 +64,12 @@ class Wallet < ApplicationRecord
       tokens_to_mint = (points_to_lock.to_f / threshold).floor
       return if tokens_to_mint.zero? # Немає сенсу створювати транзакцію на 0 токенів
 
-      # 4. СПИСАННЯ БАЛІВ ТА ФІКСАЦІЯ ТРАНЗАКЦІЇ
-      update!(balance: balance - points_to_lock)
+      # 4. АТОМАРНЕ СПИСАННЯ БАЛІВ (Atomic Debit)
+      # Використовуємо decrement! замість update!(balance: balance - X),
+      # щоб уникнути Race Condition: якщо increment! від credit! встигне
+      # виконатись між lock! та update!, старе значення з пам'яті Ruby
+      # перезапише актуальний баланс БД, і нараховані бали зникнуть.
+      decrement!(:balance, points_to_lock)
 
       blockchain_transactions.create!(
         amount: tokens_to_mint,
@@ -93,5 +102,17 @@ class Wallet < ApplicationRecord
       target: "wallet_balance_#{id}",
       html: Views::Components::Wallets::BalanceDisplay.new(wallet: self).call
     )
+  end
+
+  private
+
+  # Троттлінг WebSocket-трансляцій: не частіше ніж раз на BROADCAST_THROTTLE_SECONDS.
+  # Використовуємо Rails.cache для зберігання мітки останнього broadcast.
+  def should_broadcast?
+    cache_key = "wallet_broadcast_throttle:#{id}"
+    return false if Rails.cache.exist?(cache_key)
+
+    Rails.cache.write(cache_key, true, expires_in: BROADCAST_THROTTLE_SECONDS.seconds)
+    true
   end
 end
