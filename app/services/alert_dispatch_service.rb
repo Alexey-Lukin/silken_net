@@ -101,6 +101,10 @@ class AlertDispatchService
     # Встановлюємо "режим тиші" на 5 хвилин для цього типу тривоги
     Rails.cache.write(silence_key, true, expires_in: 5.minutes)
 
+    # [ІНВАЛІДАЦІЯ КЕШУ]: Критичні аномалії мають негайно оновити прогноз Оракула,
+    # щоб Dashboard не показував застарілий "оптимістичний" прогноз під час катастрофи.
+    Rails.cache.delete("oracle_expected_yield_24h") if severity == :critical
+
     Rails.logger.warn "🚨 [EWS ALERT] #{alert_type} | #{tree.did}"
 
     EmergencyResponseService.call(alert) if defined?(EmergencyResponseService)

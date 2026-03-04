@@ -4,6 +4,7 @@ module Api
   module V1
     class OracleVisionsController < BaseController
       before_action :authorize_forester!
+      before_action :authorize_admin!, only: [ :simulate ]
 
       # GET /api/v1/oracle_visions
       def index
@@ -58,23 +59,21 @@ module Api
         # [КЕНОЗИС ОПТИМІЗАЦІЇ]: Кешуємо розрахунок на 1 годину, щоб уникнути
         # перевантаження БД при масовому запиті сторінки Dashboard.
         Rails.cache.fetch("oracle_expected_yield_24h", expires_in: 1.hour) do
-          # Беремо всі активні дерева та відразу підвантажуємо інсайти для уникнення N+1
-          active_trees = Tree.active.includes(:ai_insights)
-          return 0.0 if active_trees.empty?
-
           # Отримуємо поріг емісії з нашої токеноміки (напр. 10,000 балів = 1 SCC)
           threshold = TokenomicsEvaluatorWorker::EMISSION_THRESHOLD
 
-          # Розраховуємо сумарний потенціал:
-          # Yield = (SapFlow * (1 - Stress)) * 24 / Threshold
-          total_potential = active_trees.sum do |tree|
+          # [ОПТИМІЗАЦІЯ]: Використовуємо find_each для батчевої обробки замість
+          # завантаження всіх дерев в оперативну пам'ять одночасно.
+          total_potential = 0.0
+
+          Tree.active.includes(:ai_insights).find_each(batch_size: 1000) do |tree|
             # sap_flow_index береться з останньої зафіксованої телеметрії
             sap_index = tree.latest_telemetry&.sap_flow || 0.0
             # current_stress - останній вердикт AI Оракула (0.0 - 1.0)
             stress = tree.current_stress
 
             # Чим вищий стрес, тим менша ефективність перетворення біо-енергії в капітал
-            sap_index * (1.0 - stress)
+            total_potential += sap_index * (1.0 - stress)
           end
 
           # Повертаємо очікувану кількість SCC за наступну добу

@@ -7,7 +7,7 @@ module Api
 
       # --- ТЕРМІНАЛ ІНІЦІАЦІЇ ---
       def new
-        @clusters = Cluster.all
+        @clusters = current_user.organization.clusters
         @families = TreeFamily.all
 
         render_dashboard(
@@ -21,6 +21,14 @@ module Api
 
       # --- РИТУАЛ ПРИВ'ЯЗКИ ---
       def register
+        uid = provisioning_params[:hardware_uid]
+
+        # [ЗАХИСТ ВІД ПОДВІЙНОЇ ІНІЦІАЦІЇ]: Перевіряємо чи hardware_uid вже зареєстрований
+        if HardwareKey.exists?(device_uid: uid.to_s.strip.upcase)
+          render json: { error: "Пристрій з UID #{uid} вже зареєстрований в системі." }, status: :conflict
+          return
+        end
+
         ActiveRecord::Base.transaction do
           @device = build_device(provisioning_params)
           @device.did ||= "SNET-#{provisioning_params[:hardware_uid].last(8).upcase}"
@@ -64,7 +72,7 @@ module Api
       private
 
       def render_new_with_errors
-        @clusters = Cluster.all
+        @clusters = current_user.organization.clusters
         @families = TreeFamily.all
         render_dashboard(
           title: "Initiation Failed",
