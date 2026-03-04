@@ -6,7 +6,7 @@ module Api
       # GET /api/v1/gateways
       def index
         @gateways = current_user.organization.gateways
-                      .includes(:cluster, :trees, :latest_gateway_telemetry_log)
+                      .includes(:cluster, :latest_gateway_telemetry_log)
 
         respond_to do |format|
           format.json { render json: @gateways }

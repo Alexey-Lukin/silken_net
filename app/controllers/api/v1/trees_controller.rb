@@ -24,7 +24,7 @@ module Api
                   tree_family: { only: [ :name ] }
                 }
               ),
-              pagy: pagy_metadata(@pagy)
+              pagy: { page: @pagy.page, limit: @pagy.limit, count: @pagy.count, pages: @pagy.last }
             }
           end
           format.html do
