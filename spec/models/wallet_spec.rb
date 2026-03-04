@@ -29,6 +29,16 @@ RSpec.describe Wallet, type: :model do
     end
 
     describe "broadcast throttling" do
+      # Throttling relies on Rails.cache which is :null_store in test environment.
+      # Use MemoryStore so the throttle logic can be tested correctly.
+      around do |example|
+        old_cache = Rails.cache
+        Rails.cache = ActiveSupport::Cache::MemoryStore.new
+        example.run
+      ensure
+        Rails.cache = old_cache
+      end
+
       it "broadcasts on the first credit! call" do
         wallet = create(:tree).wallet
         Rails.cache.clear
