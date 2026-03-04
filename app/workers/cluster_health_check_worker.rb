@@ -7,18 +7,19 @@ class ClusterHealthCheckWorker
 
   def perform(date_string = nil)
     # 1. СИНХРОНІЗАЦІЯ ДАТИ (The Audit Anchor)
-    # Якщо дата не передана, використовуємо вчорашній день за Києвом.
-    target_date = if date_string.present?
-                    Date.parse(date_string)
-    else
-                    Time.use_zone("Kyiv") { Date.yesterday }
-    end
+    # Якщо дата не передана, target_date = nil, і кожен кластер/контракт
+    # використає свій часовий пояс (cluster.local_yesterday).
+    # [Global Forest Anchor]: Прибрано хардкод "Kyiv" — тепер система масштабується
+    # від Бразилії до Індонезії через timezone кожного кластера.
+    target_date = Date.parse(date_string) if date_string.present?
 
-    Rails.logger.info "🕵️ [D-MRV Audit] Початок перевірки активних NaaS контрактів за #{target_date}"
+    date_label = target_date ? " за #{target_date}" : ""
+    Rails.logger.info "🕵️ [D-MRV Audit] Початок перевірки активних NaaS контрактів#{date_label}"
 
     # 1.5. ОНОВЛЕННЯ КЕШУ ЗДОРОВ'Я (Cached Health Index)
     # Перераховуємо health_index для всіх кластерів і зберігаємо в БД.
-    Cluster.find_each(&:recalculate_health_index!)
+    # Кожен кластер використовує свій часовий пояс для визначення "вчора".
+    Cluster.find_each { |c| c.recalculate_health_index!(target_date || c.local_yesterday) }
 
     summary = { checked: 0, breached: 0, errors: 0 }
 
@@ -29,8 +30,8 @@ class ClusterHealthCheckWorker
 
       begin
         # Виконуємо Slashing Protocol, передаючи конкретну дату для аналізу
-        # Метод check_cluster_health! тепер знає, за який день шукати аномалії в AiInsight
-        contract.check_cluster_health!(target_date)
+        # Якщо target_date nil — метод використає cluster.local_yesterday
+        contract.check_cluster_health!(target_date || contract.cluster.local_yesterday)
 
         if contract.status_breached?
           summary[:breached] += 1

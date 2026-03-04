@@ -111,9 +111,11 @@ class BlockchainBurningService
     return 1.0 if total_trees.zero?
 
     # Намагаємось отримати кількість критично стресованих дерев з AiInsight
+    # [SQL Optimization]: Підзапит замість масиву об'єктів (The Polymorphic IN Trap).
+    # [Cluster TZ]: Використовуємо часовий пояс кластера замість серверного Date.yesterday.
     critical_count = AiInsight
                      .daily_health_summary
-                     .where(analyzable: @cluster.trees, target_date: Date.yesterday)
+                     .where(analyzable_type: "Tree", analyzable_id: @cluster.trees.select(:id), target_date: @cluster.local_yesterday)
                      .where("stress_index >= 1.0")
                      .count
 

@@ -26,7 +26,8 @@ class NaasContract < ApplicationRecord
 
   # [ВИПРАВЛЕНО]: Фінансовий дедлайн.
   # Контракт активний до останньої секунди вказаного дня.
-  scope :pending_completion, -> { active.where("end_date < ?", Date.current) }
+  # [UTC Anchor]: Фіксований UTC-якір для детермінованості глобального арбітражу.
+  scope :pending_completion, -> { active.where("end_date < ?", Time.current.utc.to_date) }
 
   # =========================================================================
   # THE SLASHING PROTOCOL (D-MRV Арбітраж)
@@ -34,7 +35,8 @@ class NaasContract < ApplicationRecord
 
   # [ВИПРАВЛЕНО]: Вигнання "Мертвих Душ".
   # Ми розраховуємо здоров'я лише за тими "Солдатами", що стоять у строю.
-  def check_cluster_health!(target_date = Date.yesterday)
+  # [Cluster TZ]: Використовуємо часовий пояс кластера для детермінованості арбітражу.
+  def check_cluster_health!(target_date = cluster.local_yesterday)
     return unless status_active?
 
     # Рахуємо лише активні дерева, ігноруючи deceased та removed
@@ -43,9 +45,12 @@ class NaasContract < ApplicationRecord
 
     return if total_active_count.zero?
 
-    # Аналізуємо вердикти Оракула (AiInsight)
+    # [SQL Optimization]: Використовуємо підзапит замість масиву об'єктів (The Polymorphic IN Trap).
+    # При 100 000+ деревах, передача масиву ID генерує гігантський IN-оператор.
+    # Subquery дозволяє PostgreSQL оптимізувати запит через JOIN/Hash.
     daily_insights = AiInsight.daily_health_summary.where(
-      analyzable: active_trees,
+      analyzable_type: "Tree",
+      analyzable_id: active_trees.select(:id),
       target_date: target_date
     )
 

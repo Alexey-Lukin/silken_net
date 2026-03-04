@@ -9,10 +9,12 @@ class DailyAggregationWorker
 
   def perform(date_string = nil)
     # 1. ВИЗНАЧЕННЯ ЦІЛЬОВОЇ ДАТИ (The Project Pulse)
+    # [UTC Anchor]: Використовуємо UTC як канонічний якір для агрегації телеметрії.
+    # Прибрано хардкод "Kyiv" — UTC забезпечує детермінованість для глобальних операцій.
     target_date = if date_string.present?
                     Date.parse(date_string)
     else
-                    Time.use_zone("Kyiv") { Date.yesterday }
+                    Time.current.utc.to_date - 1
     end
 
     Rails.logger.info "🕒 [Хронометрист] Початок великої агрегації за #{target_date}..."

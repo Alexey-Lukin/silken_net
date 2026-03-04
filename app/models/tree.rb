@@ -57,9 +57,10 @@ class Tree < ApplicationRecord
 
   # [ОПТИМІЗАЦІЯ]: Використовуємо окрему колонку для швидкодії
   scope :silent, -> { where("last_seen_at < ?", 24.hours.ago) }
+  # [UTC Anchor]: Використовуємо фіксований UTC для скоупу без контексту кластера.
   scope :critical_stress, -> {
     joins(:ai_insights)
-      .where(ai_insights: { insight_type: :daily_health_summary, target_date: Date.yesterday })
+      .where(ai_insights: { insight_type: :daily_health_summary, target_date: Time.current.utc.to_date - 1 })
       .where("ai_insights.stress_index > 0.8")
   }
 
@@ -85,8 +86,10 @@ class Tree < ApplicationRecord
   end
 
   # Останній вердикт Оракула
+  # [Cluster TZ]: Використовуємо часовий пояс кластера для правильної дати.
   def current_stress
-    ai_insights.daily_health_summary.for_date(Date.yesterday).first&.stress_index || 0.0
+    target = cluster&.local_yesterday || (Time.current.utc.to_date - 1)
+    ai_insights.daily_health_summary.for_date(target).first&.stress_index || 0.0
   end
 
   def under_threat?

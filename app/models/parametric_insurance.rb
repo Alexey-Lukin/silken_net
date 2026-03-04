@@ -24,16 +24,19 @@ class ParametricInsurance < ApplicationRecord
   # АВТОНОМНИЙ ОРАКУЛ (D-MRV Integration)
   # =========================================================================
   # Цей метод викликається воркером DailyAggregationWorker
-  def evaluate_daily_health!(target_date = Date.yesterday)
+  # [Cluster TZ]: Використовуємо часовий пояс кластера для детермінованості арбітражу.
+  def evaluate_daily_health!(target_date = cluster.local_yesterday)
     return unless status_active?
 
     # 1. Отримуємо вердикт від нашого ШІ-Оракула (AiInsight)
     total_trees_count = cluster.trees.count
     return if total_trees_count.zero?
 
+    # [SQL Optimization]: Підзапит замість масиву об'єктів (The Polymorphic IN Trap).
     # [СИНХРОНІЗОВАНО]: Використовуємо target_date та insight_type
     anomalous_insights = AiInsight.daily_health_summary.where(
-      analyzable: cluster.trees,
+      analyzable_type: "Tree",
+      analyzable_id: cluster.trees.select(:id),
       target_date: target_date,
       stress_index: 0.8..1.0 # Поріг критичного стану / пожежі
     ).count
