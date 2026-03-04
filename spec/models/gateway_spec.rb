@@ -120,19 +120,19 @@ RSpec.describe Gateway, type: :model do
   describe "scopes" do
     it ".online returns gateways seen within threshold" do
       online_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 1.minute.ago)
-      _offline_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 10.minutes.ago)
+      offline_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 10.minutes.ago)
 
       expect(Gateway.online).to include(online_gw)
-      expect(Gateway.online).not_to include(_offline_gw)
+      expect(Gateway.online).not_to include(offline_gw)
     end
 
     it ".offline returns gateways not seen within threshold or never seen" do
-      _online_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 1.minute.ago)
+      online_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 1.minute.ago)
       offline_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 10.minutes.ago)
       never_seen = create(:gateway, config_sleep_interval_s: 300, last_seen_at: nil)
 
       expect(Gateway.offline).to include(offline_gw, never_seen)
-      expect(Gateway.offline).not_to include(_online_gw)
+      expect(Gateway.offline).not_to include(online_gw)
     end
   end
 
