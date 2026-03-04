@@ -6,6 +6,9 @@ module Api
       # Тільки Адміни мають право втручатися в еволюцію коду
       before_action :authorize_admin!
 
+      # Максимальний розмір прошивки (20 МБ) для захисту від перевантаження RAM
+      MAX_FIRMWARE_SIZE = 20.megabytes
+
       # --- РЕЄСТР ЕВОЛЮЦІЙ (The Evolution Hub) ---
       # GET /api/v1/firmwares
       def index
@@ -55,9 +58,15 @@ module Api
       def create
         @firmware = BioContractFirmware.new(firmware_params.except(:binary_file))
 
-        # [СИНХРОНІЗАЦІЯ]: Конвертуємо бінарний файл у HEX для моделі
+        # [ЗАХИСТ ПАМ'ЯТІ]: Обмежуємо розмір файлу перед завантаженням у RAM
         if params[:firmware][:binary_file].present?
-          binary_data = params[:firmware][:binary_file].read
+          uploaded_file = params[:firmware][:binary_file]
+          if uploaded_file.size > MAX_FIRMWARE_SIZE
+            render json: { error: "Розмір файлу перевищує ліміт #{MAX_FIRMWARE_SIZE / 1.megabyte} МБ." }, status: :unprocessable_entity
+            return
+          end
+
+          binary_data = uploaded_file.read
           @firmware.bytecode_payload = binary_data.unpack1("H*").upcase
         end
 
@@ -96,27 +105,32 @@ module Api
 
       # --- НАКАЗ НА ОНОВЛЕННЯ (The Deployment) ---
       # POST /api/v1/firmwares/:id/deploy
-      # Параметри: { cluster_id: 5 } або { target_type: 'Tree' }
+      # Параметри: { cluster_id: 5, target_type: 'Tree', canary_percentage: 1 }
+      # canary_percentage (0–100): відсоток пристроїв для Canary Deployment.
+      # Якщо не вказано — оновлення піде на ВСІ пристрої (100%).
       def deploy
         @firmware = BioContractFirmware.find(params[:id])
+        canary_percentage = params[:canary_percentage].present? ? params[:canary_percentage].to_i.clamp(1, 100) : 100
 
         # Запускаємо масове оновлення через Sidekiq
         # [СИНХРОНІЗОВАНО]: OtaTransmissionWorker обробить чергу завантажень
         OtaTransmissionWorker.perform_async(
           @firmware.id,
           params[:cluster_id],
-          params[:target_type]
+          params[:target_type],
+          canary_percentage
         )
 
         respond_to do |format|
           format.json do
             render json: {
               message: "Наказ на еволюцію v#{@firmware.version} відправлено в ефір.",
-              target: params[:cluster_id] ? "Кластер ##{params[:cluster_id]}" : "Весь ліс"
+              target: params[:cluster_id] ? "Кластер ##{params[:cluster_id]}" : "Весь ліс",
+              canary_percentage: canary_percentage
             }, status: :accepted
           end
           format.html do
-            redirect_to api_v1_firmwares_path, notice: "Evolution deployment initiated for v#{@firmware.version}."
+            redirect_to api_v1_firmwares_path, notice: "Evolution deployment initiated for v#{@firmware.version} (#{canary_percentage}% canary)."
           end
         end
       end

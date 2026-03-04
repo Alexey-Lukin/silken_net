@@ -73,4 +73,39 @@ RSpec.describe AlertDispatchService, type: :service do
       expect(alert.alert_type).to eq("system_fault")
     end
   end
+
+  describe "cache invalidation on critical alerts" do
+    it "clears oracle yield cache when a critical alert is created" do
+      Rails.cache.write("oracle_expected_yield_24h", 42.0)
+
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: true,
+        voltage_mv: 50
+      )
+
+      described_class.analyze_and_trigger!(log)
+
+      expect(Rails.cache.read("oracle_expected_yield_24h")).to be_nil
+    end
+
+    it "does not clear oracle yield cache for non-critical alerts" do
+      Rails.cache.write("oracle_expected_yield_24h", 42.0)
+
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3500,
+        temperature_c: 25,
+        bio_status_anomaly?: false,
+        bio_status_stress?: true,
+        acoustic_events: 10,
+        z_value: 20.0
+      )
+
+      described_class.analyze_and_trigger!(log)
+
+      expect(Rails.cache.read("oracle_expected_yield_24h")).to eq(42.0)
+    end
+  end
 end

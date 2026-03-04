@@ -7,8 +7,9 @@ module Api
 
       # --- ЖУРНАЛ ВТРУЧАНЬ ---
       def index
-        @records = MaintenanceRecord.includes(:user, :maintainable)
-                                    .order(performed_at: :desc)
+        @records = organization_scoped_records
+                     .includes(:user, :maintainable)
+                     .order(performed_at: :desc)
 
         if params[:maintainable_type].present? && params[:maintainable_id].present?
           @records = @records.where(
@@ -17,14 +18,19 @@ module Api
           )
         end
 
+        @pagy, @records = pagy(@records, items: 50)
+
         respond_to do |format|
           format.json do
-            render json: @records.as_json(
-              include: {
-                user: { only: [ :id, :first_name, :last_name ] },
-                maintainable: { only: [ :id, :did, :uid ] }
-              }
-            )
+            render json: {
+              records: @records.as_json(
+                include: {
+                  user: { only: [ :id, :first_name, :last_name ] },
+                  maintainable: { only: [ :id, :did, :uid ] }
+                }
+              ),
+              pagy: { page: @pagy.page, limit: @pagy.limit, count: @pagy.count, pages: @pagy.last }
+            }
           end
           format.html do
             render_dashboard(
@@ -77,7 +83,7 @@ module Api
       end
 
       def show
-        @record = MaintenanceRecord.find(params[:id])
+        @record = organization_scoped_records.find(params[:id])
         respond_to do |format|
           format.json { render json: @record }
           format.html do
@@ -90,6 +96,18 @@ module Api
       end
 
       private
+
+      # Обмежуємо доступ до записів лише організацією поточного користувача
+      def organization_scoped_records
+        org_cluster_ids = current_user.organization.clusters.select(:id)
+
+        MaintenanceRecord.where(
+          "(maintainable_type = 'Tree' AND maintainable_id IN (?)) OR " \
+          "(maintainable_type = 'Gateway' AND maintainable_id IN (?))",
+          Tree.where(cluster_id: org_cluster_ids).select(:id),
+          Gateway.where(cluster_id: org_cluster_ids).select(:id)
+        )
+      end
 
       def maintenance_params
         params.require(:maintenance_record).permit(
