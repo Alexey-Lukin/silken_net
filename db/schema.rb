@@ -10,33 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_04_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_04_191032) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
-
-  create_table "audit_logs", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.bigint "organization_id", null: false
-    t.string "action", null: false
-    t.string "auditable_type"
-    t.bigint "auditable_id"
-    t.jsonb "metadata", default: {}
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["auditable_type", "auditable_id"], name: "index_audit_logs_on_auditable"
-    t.index ["action"], name: "index_audit_logs_on_action"
-    t.index ["organization_id"], name: "index_audit_logs_on_organization_id"
-    t.index ["user_id"], name: "index_audit_logs_on_user_id"
-  end
 
   create_table "actuator_commands", force: :cascade do |t|
     t.bigint "actuator_id", null: false
     t.text "command_payload", null: false
+    t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.integer "duration_seconds"
     t.text "error_message"
     t.bigint "ews_alert_id"
-    t.datetime "completed_at"
     t.datetime "executed_at"
     t.datetime "sent_at"
     t.integer "status", default: 0
@@ -65,6 +50,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_180000) do
     t.date "analyzed_date"
     t.decimal "average_temperature"
     t.datetime "created_at", null: false
+    t.boolean "fraud_detected", default: false, null: false
     t.integer "insight_type"
     t.jsonb "prediction_data"
     t.decimal "probability_score"
@@ -75,7 +61,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_180000) do
     t.date "target_date"
     t.integer "total_growth_points"
     t.datetime "updated_at", null: false
+    t.index ["analyzable_type", "analyzable_id", "target_date", "insight_type"], name: "idx_ai_insights_unique_report", unique: true
     t.index ["analyzable_type", "analyzable_id"], name: "index_ai_insights_on_analyzable"
+    t.index ["reasoning"], name: "idx_ai_insights_reasoning_gin", using: :gin
+    t.index ["target_date"], name: "idx_ai_insights_target_date"
+  end
+
+  create_table "audit_logs", force: :cascade do |t|
+    t.string "action", null: false
+    t.bigint "auditable_id"
+    t.string "auditable_type"
+    t.datetime "created_at", null: false
+    t.jsonb "metadata", default: {}
+    t.bigint "organization_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["action"], name: "index_audit_logs_on_action"
+    t.index ["auditable_type", "auditable_id"], name: "index_audit_logs_on_auditable"
+    t.index ["organization_id"], name: "index_audit_logs_on_organization_id"
+    t.index ["user_id"], name: "index_audit_logs_on_user_id"
   end
 
   create_table "bio_contract_firmwares", force: :cascade do |t|
@@ -344,8 +348,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_180000) do
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
     t.index ["last_seen_at"], name: "index_users_on_last_seen_at"
-    t.index ["organization_id"], name: "index_users_on_organization_id"
     t.index ["organization_id", "last_seen_at", "id"], name: "index_users_on_org_last_seen_id", order: { last_seen_at: :desc, id: :desc }
+    t.index ["organization_id"], name: "index_users_on_organization_id"
   end
 
   create_table "wallets", force: :cascade do |t|
