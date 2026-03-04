@@ -110,7 +110,7 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 🔔 НЕЙРОННА ПАВУТИНА (The Neural Web — Notifications)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      get  "notifications/settings",  to: "notifications#settings",        as: :notifications_settings
+      get "notifications/settings",  to: "notifications#settings",        as: :notifications_settings
       patch "notifications/settings", to: "notifications#update_settings"
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -134,7 +134,7 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 💓 ПУЛЬС СИСТЕМИ (System Health)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resource :system_health, only: [ :show ]
+      resource :system_health, only: [ :show ], controller: "system_health"
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # ⚡ ІНІЦІАЦІЯ (Provisioning)

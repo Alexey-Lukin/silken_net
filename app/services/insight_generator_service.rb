@@ -108,11 +108,11 @@ class InsightGeneratorService
       stress_index: stress_index,
       total_growth_points: final_growth,
       summary: summary,
+      fraud_detected: is_fraud,
       reasoning: {
         avg_z: stats.avg_z.to_f.round(4),
         max_acoustic: stats.max_acoustic.to_i,
         avg_vcap: stats.avg_vcap.to_i,
-        fraud_detected: is_fraud,
         deviation_from_baseline: calculate_deviation(stats.avg_sap.to_f, baseline[:sap])
       }
     )
@@ -161,9 +161,8 @@ class InsightGeneratorService
 
       next if tree_insights.empty?
 
-      # ⚡ [ОПТИМІЗАЦІЯ JSONB]: Використовуємо оператор входження @> замість ->>
-      # Це дозволяє Postgres використовувати GIN індекс (якщо він є) і не парсити JSON кожен раз.
-      fraud_count = tree_insights.where("reasoning @> ?", { fraud_detected: true }.to_json).count
+      # ⚡ [ОПТИМІЗАЦІЯ]: Використовуємо boolean колонку замість JSONB @> оператора
+      fraud_count = tree_insights.where(fraud_detected: true).count
 
       summary = if fraud_count > 0
                   "⚠️ Сектор #{cluster.name}: Виявлено #{fraud_count} вузлів із фрод-телеметрією."

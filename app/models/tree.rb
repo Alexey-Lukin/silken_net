@@ -72,9 +72,9 @@ class Tree < ApplicationRecord
     now = Time.current
 
     sql = if voltage_mv
-      ["last_seen_at = GREATEST(COALESCE(last_seen_at, ?), ?), latest_voltage_mv = ?", now, now, voltage_mv]
+      [ "last_seen_at = GREATEST(COALESCE(last_seen_at, ?), ?), latest_voltage_mv = ?", now, now, voltage_mv ]
     else
-      ["last_seen_at = GREATEST(COALESCE(last_seen_at, ?), ?)", now, now]
+      [ "last_seen_at = GREATEST(COALESCE(last_seen_at, ?), ?)", now, now ]
     end
 
     self.class.where(id: id).update_all(sql)
@@ -156,7 +156,7 @@ class Tree < ApplicationRecord
 
     # Bulk Slashing: один виклик Redis замість N окремих perform_async
     BurnCarbonTokensWorker.perform_bulk(
-      contract_ids.map { |contract_id| [org_id, contract_id, id] }
+      contract_ids.map { |contract_id| [ org_id, contract_id, id ] }
     )
 
     Rails.logger.warn "🚨 [Ecosystem Breach] Дерево #{did} зафіксовано як #{status}. Сигнал на вилучення токенів відправлено."
