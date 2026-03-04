@@ -15,7 +15,8 @@ class AiInsight < ApplicationRecord
 
   # --- СТРУКТУРОВАНІ ДАНІ (The Reasoning Engine) ---
   # Використовуємо JSONB для гнучкого пояснення логіки ШІ
-  store_accessor :reasoning, :avg_z, :max_temp, :anomaly_vector, :avg_vcap, :fraud_detected, :deviation_from_baseline
+  # fraud_detected винесено в окрему boolean колонку для коректної типізації та швидкого пошуку
+  store_accessor :reasoning, :avg_z, :max_temp, :anomaly_vector, :avg_vcap, :deviation_from_baseline
   store_accessor :recommendation, :action_required, :priority
 
   # --- ВАЛІДАЦІЇ ---
@@ -35,13 +36,15 @@ class AiInsight < ApplicationRecord
   scope :upcoming, -> { where("target_date >= ?", Time.current.utc.to_date) }
   scope :critical_stress, -> { daily_health_summary.where("stress_index >= ?", 0.8) }
   scope :for_date, ->(date) { where(target_date: date) }
+  scope :fraudulent, -> { where(fraud_detected: true) }
 
   # --- МЕТОДИ (The Lens of Truth) ---
 
   # Чи вважається цей стан порушенням умов контракту?
   # Використовується в Slashing Protocol
+  # Порівнюємо decimal напряму — без .to_f, щоб уникнути похибки плаваючої коми
   def contract_breach?
-    daily_health_summary? && stress_index.to_f >= 0.8
+    daily_health_summary? && stress_index.present? && stress_index >= BigDecimal("0.8")
   end
 
   # Візуалізація впевненості для Патрульного
@@ -62,7 +65,7 @@ class AiInsight < ApplicationRecord
   # Швидка перевірка стану
   def status_label
     return "Forecast" if forecast?
-    return "Fraud Detected" if fraud_detected
-    stress_index.to_f < 0.3 ? "Stable" : "Stressed"
+    return "Fraud Detected" if fraud_detected?
+    stress_index.present? && stress_index < BigDecimal("0.3") ? "Stable" : "Stressed"
   end
 end
