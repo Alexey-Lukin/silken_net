@@ -18,32 +18,39 @@ module Api
 
       # --- ДИХАННЯ СОЛДАТА (Існуючий метод) ---
       def tree_history
-        @tree = Tree.find(params[:tree_id])
+        @tree = current_user.organization.trees.find(params[:tree_id])
         days = (params[:days] || 7).to_i
         logs = @tree.telemetry_logs.where(created_at: days.days.ago..Time.current).order(:created_at)
+
+        # Оптимізація: використовуємо pluck замість map для зменшення навантаження на пам'ять
+        plucked = logs.pluck(:created_at, :z_value, :temperature_c)
+        baseline = @tree.tree_family.baseline_impedance
 
         render json: {
           did: @tree.did,
           unit: "kOhm",
-          timestamps: logs.map { |l| l.created_at.to_i },
-          impedance: logs.map { |l| l.z_value.to_f.round(2) },
-          temperature: logs.map { |l| l.temperature_c.to_f.round(2) },
-          stress_index: logs.map { |l| (1.0 - (l.z_value.to_f / @tree.tree_family.baseline_impedance)).round(3) }
+          timestamps: plucked.map { |row| row[0].to_i },
+          impedance: plucked.map { |row| row[1].to_f.round(2) },
+          temperature: plucked.map { |row| row[2].to_f.round(2) },
+          stress_index: plucked.map { |row| (1.0 - (row[1].to_f / baseline)).round(3) }
         }
       end
 
       # --- ПУЛЬС КОРЛЕВИ (Існуючий метод) ---
       def gateway_history
-        @gateway = Gateway.find(params[:gateway_id])
+        @gateway = current_user.organization.gateways.find(params[:gateway_id])
         days = (params[:days] || 7).to_i
         logs = @gateway.gateway_telemetry_logs.where(created_at: days.days.ago..Time.current).order(:created_at)
 
+        # Оптимізація: використовуємо pluck замість map
+        plucked = logs.pluck(:created_at, :voltage_mv, :cellular_signal_csq, :temperature_c)
+
         render json: {
           uid: @gateway.uid,
-          timestamps: logs.map { |l| l.created_at.to_i },
-          voltage: logs.map { |l| l.voltage_mv },
-          signal: logs.map { |l| l.cellular_signal_csq },
-          temp: logs.map { |l| l.temperature_c }
+          timestamps: plucked.map { |row| row[0].to_i },
+          voltage: plucked.map { |row| row[1] },
+          signal: plucked.map { |row| row[2] },
+          temp: plucked.map { |row| row[3] }
         }
       end
     end

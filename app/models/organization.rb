@@ -39,6 +39,13 @@ class Organization < ApplicationRecord
 
   # --- БІЗНЕС-ЛОГІКА (Value Extraction) ---
 
+  # Кешований лічильник дерев для масштабування (уникає повільного COUNT на мільйонах записів)
+  def cached_trees_count
+    Rails.cache.fetch("organization_#{id}_trees_count", expires_in: 1.hour) do
+      trees.count
+    end
+  end
+
   # Загальний обсяг фінансування за активними контрактами
   def active_tokens_count
     naas_contracts.active_contracts.sum(:total_funding)

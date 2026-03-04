@@ -8,7 +8,7 @@ module Api
       # --- ПОРТФЕЛЬ КОНТРАКТІВ (Registry + Dashboard) ---
       # GET /api/v1/contracts
       def index
-        @contracts = if current_user.role_admin?
+        @contracts = if current_user.role_admin? || current_user.role_super_admin?
                        NaasContract.includes(:organization, :cluster).all
         else
                        current_user.organization.naas_contracts.includes(:cluster)

@@ -52,7 +52,11 @@ module Api
 
       # 2. ПРАВА ДОСТУПУ (RBAC)
       def authorize_admin!
-        render_forbidden unless current_user&.role_admin?
+        render_forbidden unless current_user&.role_admin? || current_user&.role_super_admin?
+      end
+
+      def authorize_super_admin!
+        render_forbidden unless current_user&.role_super_admin?
       end
 
       def authorize_forester!

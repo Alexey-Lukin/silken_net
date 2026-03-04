@@ -3,8 +3,8 @@
 module Api
   module V1
     class OrganizationsController < BaseController
-      # Тільки Адміни Океану мають доступ до глобального реєстру Кланів
-      before_action :authorize_admin!
+      # Тільки Адміни Океану (super_admin) мають доступ до глобального реєстру Кланів
+      before_action :authorize_super_admin!
 
       # --- ПЕРЕЛІК КЛАНІВ (The Hierarchy View) ---
       def index
@@ -12,10 +12,7 @@ module Api
 
         respond_to do |format|
           format.json do
-            render json: @organizations.as_json(
-              only: [ :id, :name, :crypto_public_address, :created_at ],
-              methods: [ :total_clusters, :total_invested ]
-            )
+            render json: OrganizationBlueprint.render(@organizations, view: :index)
           end
           format.html do
             render_dashboard(
@@ -32,15 +29,15 @@ module Api
         @clusters = @organization.clusters.includes(:trees)
 
         @performance = {
-          total_trees: @organization.trees.count,
+          total_trees: @organization.cached_trees_count,
           carbon_minted: @organization.naas_contracts.sum(:emitted_tokens).to_f.round(2)
         }
 
         respond_to do |format|
           format.json do
             render json: {
-              organization: @organization,
-              clusters: @clusters.as_json(methods: [ :health_index ]),
+              organization: OrganizationBlueprint.render_as_hash(@organization, view: :show),
+              clusters: ClusterBlueprint.render_as_hash(@clusters),
               performance: @performance
             }
           end
