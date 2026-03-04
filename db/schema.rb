@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_04_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_04_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -88,10 +88,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_160000) do
 
   create_table "blockchain_transactions", force: :cascade do |t|
     t.decimal "amount"
+    t.bigint "block_number"
+    t.datetime "confirmed_at"
     t.datetime "created_at", null: false
+    t.decimal "cumulative_gas_cost"
     t.text "error_message"
+    t.decimal "gas_price"
+    t.decimal "gas_used"
     t.integer "locked_points"
+    t.integer "nonce"
     t.text "notes"
+    t.datetime "sent_at"
     t.bigint "sourceable_id"
     t.string "sourceable_type"
     t.integer "status"
@@ -100,6 +107,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_160000) do
     t.string "tx_hash"
     t.datetime "updated_at", null: false
     t.bigint "wallet_id", null: false
+    t.index ["block_number"], name: "index_blockchain_transactions_on_block_number"
+    t.index ["confirmed_at"], name: "index_blockchain_transactions_on_confirmed_at"
     t.index ["sourceable_type", "sourceable_id"], name: "index_blockchain_transactions_on_sourceable"
     t.index ["wallet_id"], name: "index_blockchain_transactions_on_wallet_id"
   end

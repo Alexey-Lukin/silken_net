@@ -37,6 +37,12 @@ class BlockchainTransaction < ApplicationRecord
   validates :tx_hash, presence: true, if: -> { status_sent? || status_confirmed? }
   validates :tx_hash, uniqueness: true, allow_nil: true
 
+  # Валідація метрик газу (якщо присутні)
+  validates :gas_price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :gas_used, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :block_number, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :nonce, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+
   # --- ДЕЛЕГУВАННЯ ---
   # Навігація через wallet (може бути nil для slashing-аудиту — тоді через cluster)
   delegate :organization, to: :wallet, allow_nil: true
@@ -47,12 +53,20 @@ class BlockchainTransaction < ApplicationRecord
 
   # Фіксація моменту вильоту в мемпул
   def mark_as_sent!(hash)
-    update!(tx_hash: hash, status: :sent, error_message: nil)
+    update!(tx_hash: hash, status: :sent, sent_at: Time.current, error_message: nil)
   end
 
   # Успішне підтвердження в мережі (виклик від BlockchainConfirmationWorker)
-  def confirm!
-    update!(status: :confirmed, error_message: nil)
+  # block_num — номер блоку для захисту від реорганізацій
+  # gas_cost — кількість газу, витраченого на транзакцію
+  def confirm!(block_num = nil, gas_cost = nil)
+    update!(
+      status: :confirmed,
+      block_number: block_num,
+      gas_used: gas_cost,
+      confirmed_at: Time.current,
+      error_message: nil
+    )
   end
 
   # Фіксація збою (як при відправці, так і при Revert)
@@ -64,6 +78,9 @@ class BlockchainTransaction < ApplicationRecord
   # Хелпер для посилання на Polygonscan
   def explorer_url
     return nil unless tx_hash
+
     "https://polygonscan.com/tx/#{tx_hash}"
   end
+
+  alias_method :polygonscan_url, :explorer_url
 end
