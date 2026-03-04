@@ -12,17 +12,20 @@ class Organization < ApplicationRecord
   # Лісові масиви, якими володіє або керує організація
   has_many :clusters, dependent: :destroy
 
-  # Журнал дій адміністраторів
-  has_many :audit_logs, dependent: :destroy
+  # [ВИПРАВЛЕНО: Scalability]: Використовуємо delete_all замість destroy,
+  # щоб уникнути OOM та блокування БД при мільйонах записів аудит-логів.
+  # Один SQL DELETE замість завантаження N записів у пам'ять Ruby.
+  has_many :audit_logs, dependent: :delete_all
 
   # Прямий доступ до всіх дерев, шлюзів та тривог через кластери
   has_many :trees, through: :clusters
   has_many :gateways, through: :clusters
   has_many :ews_alerts, through: :clusters
 
-  # ⚡ [СИНХРОНІЗАЦІЯ]: Пряма магістраль до фінансових ресурсів
-  # Це замикає ланцюжок User -> Organization -> Wallet без зайвих запитів
-  has_many :wallets, through: :trees
+  # ⚡ [ВИПРАВЛЕНО: The Join Abyss]: Пряма магістраль до фінансових ресурсів.
+  # Денормалізований зв'язок через organization_id у wallets замість 4-рівневого JOIN
+  # (Organization → Clusters → Trees → Wallets). Це критично для total_carbon_points.
+  has_many :wallets
 
   # --- НОРМАЛІЗАЦІЯ ---
   normalizes :billing_email, with: ->(e) { e.strip.downcase }
@@ -65,7 +68,7 @@ class Organization < ApplicationRecord
   end
 
   # Загальний вуглецевий баланс організації (сума всіх гаманців дерев)
-  # Використовуємо нову асоціацію для максимальної швидкодії
+  # [ОПТИМІЗАЦІЯ]: Використовуємо прямий зв'язок (один SELECT замість 4-рівневого JOIN)
   def total_carbon_points
     wallets.sum(:balance)
   end
@@ -76,7 +79,8 @@ class Organization < ApplicationRecord
   end
 
   # [ОПТИМІЗАЦІЯ: N+1 Kill]: Агрегований показник здоров'я всього фонду організації
-  # Тепер розрахунок відбувається на рівні бази даних
+  # health_index — денормалізована колонка в clusters, оновлюється ClusterHealthCheckWorker
+  # раз на добу після звіту Оракула. Тому AVG виконується на кешованих значеннях.
   def health_score
     return 1.0 if clusters.empty?
 

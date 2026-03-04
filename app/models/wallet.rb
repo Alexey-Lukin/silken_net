@@ -5,10 +5,11 @@ class Wallet < ApplicationRecord
   belongs_to :tree
   has_many :blockchain_transactions, dependent: :destroy
 
-  # ⚡ [СИНХРОНІЗАЦІЯ]: Висхідна навігація до власника ресурсу
-  # Дозволяє миттєво перевіряти права доступу: current_user.organization == wallet.organization
+  # ⚡ [ВИПРАВЛЕНО: The Join Abyss]: Прямий зв'язок з організацією через денормалізований FK.
+  # Замінює глибокий ланцюг wallet → tree → cluster → organization на один SELECT.
+  belongs_to :organization, optional: true
+
   has_one :cluster, through: :tree
-  has_one :organization, through: :cluster
 
   # --- ВАЛІДАЦІЇ ---
   validates :balance, presence: true, numericality: { greater_than_or_equal_to: 0 }

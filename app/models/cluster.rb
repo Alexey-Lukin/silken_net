@@ -6,6 +6,7 @@ class Cluster < ApplicationRecord
 
   has_many :trees, dependent: :nullify
   has_many :gateways, dependent: :nullify
+  has_many :actuators, through: :gateways
 
   # [ВИПРАВЛЕНО]: Захист Фінансової Історії (Immutable Audit Trail).
   # Кластер неможливо видалити, поки в ньому є діючі NaaS-контракти чи страховки.

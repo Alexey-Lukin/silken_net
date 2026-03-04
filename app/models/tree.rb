@@ -136,7 +136,7 @@ class Tree < ApplicationRecord
   private
 
   def build_default_wallet
-    create_wallet!(balance: 0)
+    create_wallet!(balance: 0, organization: cluster&.organization)
   end
 
   def ensure_calibration

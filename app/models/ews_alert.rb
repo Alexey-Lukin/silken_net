@@ -57,6 +57,8 @@ class EwsAlert < ApplicationRecord
 
     # [SELF-HEALING]: Атомарно закриваємо MaintenanceRecord
     close_associated_maintenance!
+
+    true
   end
 
   # [ВИПРАВЛЕНО]: Навігація в тумані.
