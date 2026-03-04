@@ -8,6 +8,7 @@ RSpec.describe EwsAlert, type: :model do
     allow_any_instance_of(EwsAlert).to receive(:broadcast_status_change)
     allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
     allow_any_instance_of(EwsAlert).to receive(:close_associated_maintenance!)
+    allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
   end
 
   describe "#resolve!" do
