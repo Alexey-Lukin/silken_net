@@ -30,6 +30,9 @@ class EwsAlert < ApplicationRecord
   # Миттєве оновлення мапи та стрічки новин у Цитаделі
   after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
+  # Real-time broadcast: оновлюємо дашборди всіх операторів при будь-яких змінах алерту
+  after_update_commit :broadcast_alert_update
+
   # --- СКОУПИ ---
   scope :unresolved, -> { status_active }
   scope :critical, -> { severity_critical.unresolved }
@@ -114,5 +117,14 @@ class EwsAlert < ApplicationRecord
       performed_at: Time.current,
       notes: "Auto-resolved via EWS Recovery Protocol"
     ) rescue nil
+  end
+
+  # Real-time broadcast для всіх операторів організації
+  def broadcast_alert_update
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "ews_alerts_org_#{cluster.organization_id}",
+      target: "alert_#{id}",
+      html: Views::Components::Alerts::Row.new(alert: self).call
+    )
   end
 end

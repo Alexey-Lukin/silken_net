@@ -4,14 +4,19 @@ module Api
   module V1
     class DashboardController < BaseController
       def index
-        # Агрегація Війська
-        total_trees = Tree.count
-        active_trees = Tree.active.count
-        health_avg = Cluster.all.map(&:health_index).sum / Cluster.count.to_f rescue 0
+        org = current_user.organization
+
+        # Агрегація Війська (scoped to organization)
+        total_trees = org.trees.count
+        active_trees = org.trees.active.count
+        health_avg = org.clusters.average(:health_index).to_f.round(2)
 
         # Агрегація Енергії (Streaming Potential)
-        # Беремо середній вольтаж по останніх логах усіх активних вузлів
-        avg_voltage = TelemetryLog.where(created_at: 1.hour.ago..Time.current).average(:voltage_mv) || 0
+        # Середній вольтаж по деревах організації за останню годину
+        avg_voltage = TelemetryLog.joins(tree: :cluster)
+                                  .where(clusters: { organization_id: org.id })
+                                  .where(created_at: 1.hour.ago..Time.current)
+                                  .average(:voltage_mv) || 0
 
         @stats = {
           trees: {
@@ -20,10 +25,10 @@ module Api
             health_avg: health_avg
           },
           economy: {
-            total_scc: Wallet.sum(:scc_balance).to_f.round(4)
+            total_scc: org.wallets.sum(:balance).to_f.round(4)
           },
           security: {
-            active_alerts: EwsAlert.unresolved.count
+            active_alerts: org.ews_alerts.unresolved.count
           },
           energy: {
             avg_voltage: avg_voltage.to_i,
@@ -48,11 +53,17 @@ module Api
       private
 
       def fetch_recent_events
-        # Збираємо мікс з останніх алертів, транзакцій та реєстрацій
+        org = current_user.organization
+
+        # Збираємо мікс з останніх алертів, транзакцій та реєстрацій (scoped to organization)
         [
-          EwsAlert.order(created_at: :desc).limit(3),
-          BlockchainTransaction.order(created_at: :desc).limit(3),
-          MaintenanceRecord.order(created_at: :desc).limit(3)
+          org.ews_alerts.order(created_at: :desc).limit(3),
+          BlockchainTransaction.joins(wallet: { tree: :cluster })
+                               .where(clusters: { organization_id: org.id })
+                               .order(created_at: :desc).limit(3),
+          MaintenanceRecord.joins(:user)
+                           .where(users: { organization_id: org.id })
+                           .order(created_at: :desc).limit(3)
         ].flatten.sort_by(&:created_at).reverse.first(8)
       end
     end

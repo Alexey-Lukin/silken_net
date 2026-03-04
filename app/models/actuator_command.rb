@@ -13,7 +13,11 @@ class ActuatorCommand < ApplicationRecord
     confirmed: 4
   }, prefix: true
 
-  validates :command_payload, presence: true
+  ALLOWED_PAYLOAD_FORMAT = /\A[A-Z_]+(?::\d+)?\z/
+
+  validates :command_payload, presence: true,
+                              format: { with: ALLOWED_PAYLOAD_FORMAT,
+                                        message: "дозволені лише команди формату ACTION або ACTION:value (напр. OPEN:60)" }
   validates :duration_seconds, presence: true,
                                numericality: { greater_than: 0, less_than_or_equal_to: 3600 }
 
