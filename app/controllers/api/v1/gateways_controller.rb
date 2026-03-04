@@ -5,7 +5,8 @@ module Api
     class GatewaysController < BaseController
       # GET /api/v1/gateways
       def index
-        @gateways = Gateway.includes(:cluster, :trees, :gateway_telemetry_logs).all
+        @gateways = current_user.organization.gateways
+                      .includes(:cluster, :trees, :latest_gateway_telemetry_log)
 
         respond_to do |format|
           format.json { render json: @gateways }
@@ -20,7 +21,7 @@ module Api
 
       # GET /api/v1/gateways/:id
       def show
-        @gateway = Gateway.find(params[:id])
+        @gateway = current_user.organization.gateways.find(params[:id])
 
         respond_to do |format|
           format.json { render json: @gateway }

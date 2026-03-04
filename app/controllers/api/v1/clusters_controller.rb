@@ -9,8 +9,8 @@ module Api
       # --- СПИСОК СЕКТОРІВ (The Map View / Dashboard Grid) ---
       # GET /api/v1/clusters
       def index
-        # Оптимізуємо запити, щоб уникнути N+1 при рендерингу карток
-        @clusters = Cluster.all.includes(:organization, :trees, :ews_alerts)
+        # Скоупимо до організації поточного користувача (Security Scope)
+        @clusters = current_user.organization.clusters.includes(:organization, :trees, :ews_alerts)
 
         respond_to do |format|
           # 1. API Response (Mobile / Externals)
@@ -34,7 +34,7 @@ module Api
       # --- ДЕТАЛІ СЕКТОРА (The Deep Dive / Sector Matrix) ---
       # GET /api/v1/clusters/:id
       def show
-        @cluster = Cluster.find(params[:id])
+        @cluster = current_user.organization.clusters.find(params[:id])
 
         respond_to do |format|
           # 1. API Response

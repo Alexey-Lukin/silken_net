@@ -10,6 +10,8 @@ class Gateway < ApplicationRecord
   # Телеметрія дерев та власна діагностика Королеви
   has_many :telemetry_logs, foreign_key: :queen_uid, primary_key: :uid, dependent: :nullify
   has_many :gateway_telemetry_logs, foreign_key: :queen_uid, primary_key: :uid, dependent: :delete_all
+  has_one :latest_gateway_telemetry_log, -> { order(created_at: :desc) },
+          class_name: "GatewayTelemetryLog", foreign_key: :queen_uid, primary_key: :uid
 
   # [ВИПРАВЛЕНО]: Знищення Журналу Обслуговування (Аудит).
   # Використовуємо :restrict_with_error, щоб зберегти історію витрат та ремонтів.

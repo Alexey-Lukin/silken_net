@@ -6,21 +6,26 @@ module Api
       # --- ШЕРЕНГА СОЛДАТІВ (Sector Grid) ---
       # GET /api/v1/clusters/:cluster_id/trees
       def index
-        @cluster = Cluster.find(params[:cluster_id])
-        @trees = @cluster.trees
-                         .includes(:wallet, :tree_family, :hardware_key)
-                         .order(did: :asc)
+        @cluster = current_user.organization.clusters.find(params[:cluster_id])
+        @pagy, @trees = pagy(
+          @cluster.trees
+                  .includes(:wallet, :tree_family, :hardware_key)
+                  .order(did: :asc)
+        )
 
         respond_to do |format|
           format.json do
-            render json: @trees.as_json(
-              only: [ :id, :did, :status, :latitude, :longitude, :last_seen_at ],
-              methods: [ :current_stress, :under_threat? ],
-              include: {
-                wallet: { only: [ :balance ] },
-                tree_family: { only: [ :name ] }
-              }
-            )
+            render json: {
+              trees: @trees.as_json(
+                only: [ :id, :did, :status, :latitude, :longitude, :last_seen_at ],
+                methods: [ :current_stress, :under_threat? ],
+                include: {
+                  wallet: { only: [ :balance ] },
+                  tree_family: { only: [ :name ] }
+                }
+              ),
+              pagy: pagy_metadata(@pagy)
+            }
           end
           format.html do
             render_dashboard(
@@ -34,7 +39,7 @@ module Api
       # --- ПАСПОРТ СОЛДАТА (Deep Audit) ---
       # GET /api/v1/trees/:id
       def show
-        @tree = Tree.find(params[:id])
+        @tree = current_user.organization.trees.find(params[:id])
         @latest_log = @tree.telemetry_logs.order(created_at: :desc).first
         @insights = @tree.ai_insights.daily_health_summary.limit(7)
 
