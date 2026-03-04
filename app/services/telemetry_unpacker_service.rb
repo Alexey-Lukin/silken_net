@@ -155,6 +155,8 @@ class TelemetryUnpackerService
   # [KENOSIS TITAN]: Денормалізований лічильник "одужання" (Anti-Flapping).
   # Замінює N+1 запит tree.telemetry_logs.recent.limit(3) у recovery_confirmed?.
   # Атомарний SQL запобігає race conditions при одночасних пакетах від різних Королев.
+  # In-memory синхронізація безпечна — метод викликається лише всередині транзакції
+  # commit_telemetry, де дерево гарантовано існує (аналогічно mark_seen!).
   def update_health_streak!(tree, log)
     if log.healthy?
       Tree.where(id: tree.id).update_all("health_streak = health_streak + 1")

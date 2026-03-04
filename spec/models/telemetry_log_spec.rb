@@ -91,8 +91,8 @@ RSpec.describe TelemetryLog, type: :model do
       tree.update_column(:health_streak, 5)
       log = build(:telemetry_log, :healthy, tree: tree)
 
-      # recovery_confirmed? має працювати без звернення до telemetry_logs —
-      # використовує лише tree.health_streak (in-memory атрибут)
+      # recovery_confirmed? works without querying telemetry_logs —
+      # uses only tree.health_streak (in-memory attribute)
       result = log.recovery_confirmed?
       expect(result).to be true
     end
@@ -159,8 +159,8 @@ RSpec.describe TelemetryLog, type: :model do
     it "does not validate presence of sensor fields" do
       log = TelemetryLog.new(tree: create(:tree), bio_status: :homeostasis)
 
-      # Модель не повинна мати валідацій на сенсорні поля —
-      # дані перевіряються в TelemetryUnpackerService
+      # Model should not have validations on sensor fields —
+      # data is validated in TelemetryUnpackerService
       expect(log.errors.attribute_names).not_to include(
         :voltage_mv, :temperature_c, :acoustic_events,
         :metabolism_s, :growth_points, :mesh_ttl
