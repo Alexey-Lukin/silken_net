@@ -13,6 +13,7 @@ class User < ApplicationRecord
   # ⚡ [СИНХРОНІЗАЦІЯ]: Прямий доступ до фінансової мережі підлеглих дерев
   has_many :wallets, through: :organization
   has_many :maintenance_records, dependent: :restrict_with_error
+  has_many :audit_logs, dependent: :restrict_with_error
 
   # --- НОРМАЛІЗАЦІЯ ТА ВАЛІДАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
