@@ -26,9 +26,18 @@ class Tree < ApplicationRecord
   # --- СТАН (The Lifecycle) ---
   enum :status, { active: 0, dormant: 1, removed: 2, deceased: 3 }, default: :active
 
+  # --- КОНСТАНТИ (Іоністор суперконденсатор 5.5В 0.47Ф) ---
+  VCAP_MIN_MV = 2800   # Мінімальна робоча напруга (нижче — STM32 втрачає mesh-relay)
+  VCAP_MAX_MV = 5500   # Максимальна напруга повністю зарядженого іоністора
+  LOW_POWER_MV = 3300  # Поріг критичного рівня енергії
+
+  # Zero-Trust: Формат DID відповідає апаратній специфікації STM32 (uint32_t → 8 hex digits)
+  DID_FORMAT = /\ASNET-[0-9A-F]{8}\z/
+
   # --- ВАЛІДАЦІЇ ---
   before_validation :normalize_did
-  validates :did, presence: true, uniqueness: true
+  validates :did, presence: true, uniqueness: true,
+            format: { with: DID_FORMAT, message: "має відповідати апаратному формату (SNET-XXXXXXXX)" }
   validates :latitude, numericality: { in: -90..90 }, allow_nil: true
   validates :longitude, numericality: { in: -180..180 }, allow_nil: true
 
@@ -56,14 +65,22 @@ class Tree < ApplicationRecord
 
   # --- МЕТОДИ (Intelligence) ---
 
-  # [ВИПРАВЛЕНО: Фантомна Луна]: Тепер оновлюємо вольтаж та час без подвійного broadcast
+  # [ВИПРАВЛЕНО: Фантомна Луна + Race Condition]:
+  # GREATEST гарантує детермінованість при одночасних пакетах від різних наземних станцій Starlink
   def mark_seen!(voltage_mv = nil)
-    # Оновлюємо денормалізовані дані. touch автоматично запустить after_update_commit
-    attributes_to_update = { last_seen_at: Time.current }
-    attributes_to_update[:latest_voltage_mv] = voltage_mv if voltage_mv
+    now = Time.current
 
-    update_columns(attributes_to_update)
-    broadcast_map_update # Викликаємо вручну, бо update_columns не тригерить колбеки (це найшвидший шлях)
+    sql = if voltage_mv
+      ["last_seen_at = GREATEST(COALESCE(last_seen_at, ?), ?), latest_voltage_mv = ?", now, now, voltage_mv]
+    else
+      ["last_seen_at = GREATEST(COALESCE(last_seen_at, ?), ?)", now, now]
+    end
+
+    self.class.where(id: id).update_all(sql)
+
+    self.last_seen_at = now
+    self.latest_voltage_mv = voltage_mv if voltage_mv
+    broadcast_map_update
   end
 
   # Останній вердикт Оракула
@@ -84,17 +101,16 @@ class Tree < ApplicationRecord
     latest_voltage_mv || 0
   end
 
-  # Розрахунок заряду у % (Діапазон 3000мВ - 4200мВ)
+  # Розрахунок заряду у % (Іоністор: лінійна крива розряду)
   def charge_percentage
     return 0 if ionic_voltage.zero?
 
-    # Масштабуємо: 3000мВ = 0%, 4200мВ = 100%
-    ((ionic_voltage - 3000).to_f / 1200 * 100).clamp(0, 100).to_i
+    ((ionic_voltage - VCAP_MIN_MV).to_f / (VCAP_MAX_MV - VCAP_MIN_MV) * 100).clamp(0, 100).to_i
   end
 
   # Перевірка критичного рівня енергії для виживання вузла
   def low_power?
-    ionic_voltage > 0 && ionic_voltage < 3300
+    ionic_voltage > 0 && ionic_voltage < LOW_POWER_MV
   end
 
   # Помічник для глибокого аудиту (використовувати тільки в show)
@@ -130,9 +146,13 @@ class Tree < ApplicationRecord
   def trigger_slashing_protocol
     return unless cluster&.organization
 
-    cluster.naas_contracts.active_contracts.find_each do |contract|
-      BurnCarbonTokensWorker.perform_async(cluster.organization_id, contract.id, id)
-    end
+    contract_ids = cluster.naas_contracts.active.pluck(:id)
+    return if contract_ids.empty?
+
+    # Bulk Slashing: один виклик Redis замість N окремих perform_async
+    BurnCarbonTokensWorker.perform_bulk(
+      contract_ids.map { |contract_id| [cluster.organization_id, contract_id, id] }
+    )
 
     Rails.logger.warn "🚨 [Ecosystem Breach] Дерево #{did} зафіксовано як #{status}. Сигнал на вилучення токенів відправлено."
   end
