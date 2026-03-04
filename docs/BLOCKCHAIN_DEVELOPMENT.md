@@ -234,7 +234,7 @@ FOREST_COIN_CONTRACT_ADDRESS=0x<mainnet_sfc_address>
 ### 2. Деплой контрактів на Mainnet
 
 ```bash
-# Переконайтесь, що контракти заауджені
+# Переконайтесь, що контракти пройшли аудит
 # Використовуйте multi-sig для ownership
 
 forge create SilkenCarbonCoin \

@@ -66,6 +66,6 @@ class AiInsight < ApplicationRecord
   def status_label
     return "Forecast" if forecast?
     return "Fraud Detected" if fraud_detected?
-    stress_index.present? && stress_index < BigDecimal("0.3") ? "Stable" : "Stressed"
+    stress_index.present? && stress_index >= BigDecimal("0.3") ? "Stressed" : "Stable"
   end
 end

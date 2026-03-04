@@ -45,6 +45,17 @@ RSpec.describe AiInsight, type: :model do
 
       expect(insight.status_label).to eq("Forecast")
     end
+
+    it "returns 'Stable' when stress_index is nil" do
+      insight = AiInsight.new(
+        insight_type: :daily_health_summary,
+        target_date: Date.yesterday,
+        stress_index: nil,
+        fraud_detected: false
+      )
+
+      expect(insight.status_label).to eq("Stable")
+    end
   end
 
   describe "#contract_breach?" do
