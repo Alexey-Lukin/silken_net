@@ -46,6 +46,16 @@ class Organization < ApplicationRecord
     end
   end
 
+  # Кількість кластерів організації
+  def total_clusters
+    clusters.count
+  end
+
+  # Загальна сума інвестицій за всіма контрактами
+  def total_invested
+    naas_contracts.sum(:total_funding).to_f
+  end
+
   # Загальний обсяг фінансування за активними контрактами
   def active_tokens_count
     naas_contracts.active_contracts.sum(:total_funding)

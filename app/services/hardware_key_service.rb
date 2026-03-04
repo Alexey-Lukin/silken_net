@@ -8,6 +8,18 @@ class HardwareKeyService
   # Помилка подвійної ротації: пристрій ще не підтвердив попереднє оновлення ключа.
   class RotationPendingError < StandardError; end
 
+  def self.provision(device)
+    device_uid = device.respond_to?(:did) ? device.did : device.uid
+    new_hex_key = SecureRandom.hex(KEY_SIZE_BYTES).upcase
+
+    HardwareKey.create!(
+      device_uid: device_uid,
+      aes_key_hex: new_hex_key
+    )
+
+    new_hex_key
+  end
+
   def self.rotate(device_uid)
     device = Tree.find_by(did: device_uid) || Gateway.find_by(uid: device_uid)
     raise "Пристрій #{device_uid} не знайдено" unless device
