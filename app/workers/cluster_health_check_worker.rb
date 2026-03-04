@@ -16,6 +16,10 @@ class ClusterHealthCheckWorker
 
     Rails.logger.info "🕵️ [D-MRV Audit] Початок перевірки активних NaaS контрактів за #{target_date}"
 
+    # 1.5. ОНОВЛЕННЯ КЕШУ ЗДОРОВ'Я (Cached Health Index)
+    # Перераховуємо health_index для всіх кластерів і зберігаємо в БД.
+    Cluster.find_each(&:recalculate_health_index!)
+
     summary = { checked: 0, breached: 0, errors: 0 }
 
     # 2. ПЕРЕВІРКА ПОРУШЕНЬ (The Slashing Protocol)

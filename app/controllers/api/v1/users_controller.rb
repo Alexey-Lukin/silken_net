@@ -16,7 +16,7 @@ module Api
             pagy, users = pagy(scope)
             render json: {
               data: UserBlueprint.render_as_hash(users, view: :crew),
-              meta: pagy_metadata(pagy)
+              meta: { page: pagy.page, limit: pagy.limit, count: pagy.count, pages: pagy.last }
             }
           end
           format.html do

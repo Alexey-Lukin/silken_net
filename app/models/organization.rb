@@ -12,8 +12,9 @@ class Organization < ApplicationRecord
   # Лісові масиви, якими володіє або керує організація
   has_many :clusters, dependent: :destroy
 
-  # Прямий доступ до всіх дерев та тривог через кластери
+  # Прямий доступ до всіх дерев, шлюзів та тривог через кластери
   has_many :trees, through: :clusters
+  has_many :gateways, through: :clusters
   has_many :ews_alerts, through: :clusters
 
   # ⚡ [СИНХРОНІЗАЦІЯ]: Пряма магістраль до фінансових ресурсів

@@ -4,17 +4,21 @@ module Api
   module V1
     class BaseController < ActionController::API
       include ActionController::HttpAuthentication::Token::ControllerMethods
-      include Pagy::Backend
+      include ActionController::MimeResponds
+      include ActionController::Helpers
+      include Pagy::Method
 
       # --- ПОРЯДОК ЗАХИСТУ ---
       before_action :authenticate_user!
 
       # --- ОБРОБКА ПОМИЛОК (The Safety Net) ---
       # Ми не даємо хакеру зрозуміти природу помилки, але даємо розробнику чіткий JSON
+      # StandardError defined first, so it is checked last (Rails rescue_from: reverse order).
+      # This lets specific handlers below (RecordNotFound, etc.) take priority.
+      rescue_from StandardError, with: :render_internal_server_error unless Rails.env.development?
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
       rescue_from ActionController::ParameterMissing, with: :render_parameter_missing
       rescue_from ActiveModel::ValidationError, with: :render_validation_error
-      rescue_from StandardError, with: :render_internal_server_error unless Rails.env.development?
 
       # --- ХЕЛПЕРИ ДОСТУПУ ---
       # Робимо методи доступними в Phlex-компонентах через хелпери Rails

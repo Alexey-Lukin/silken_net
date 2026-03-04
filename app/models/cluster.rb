@@ -51,12 +51,19 @@ class Cluster < ApplicationRecord
   end
 
   # Агрегований індекс життєздатності (Vitality Score)
-  # $$V = 1.0 - S$$ де $S$ - stress_index з добового звіту ШІ
+  # Використовуємо кешоване значення з БД, яке оновлюється ClusterHealthCheckWorker.
+  # Якщо кешованого значення немає, повертаємо 1.0 (ідеальне здоров'я за замовчуванням).
   def health_index
-    @health_index ||= begin
-      insight = ai_insights.daily_health_summary.for_date(Date.yesterday).first
-      insight ? (1.0 - insight.stress_index.to_f).round(2) : 1.0
-    end
+    read_attribute(:health_index) || 1.0
+  end
+
+  # Перерахунок health_index на основі даних ШІ (використовується у ClusterHealthCheckWorker)
+  # $$V = 1.0 - S$$ де $S$ - stress_index з добового звіту ШІ
+  def recalculate_health_index!
+    insight = ai_insights.daily_health_summary.for_date(Date.yesterday).first
+    new_value = insight ? (1.0 - insight.stress_index.to_f).round(2) : 1.0
+    update_column(:health_index, new_value)
+    new_value
   end
 
   # Чи є критичні загрози в секторі?
