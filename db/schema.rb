@@ -10,9 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_03_199000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_04_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "audit_logs", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "organization_id", null: false
+    t.string "action", null: false
+    t.string "auditable_type"
+    t.bigint "auditable_id"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["auditable_type", "auditable_id"], name: "index_audit_logs_on_auditable"
+    t.index ["action"], name: "index_audit_logs_on_action"
+    t.index ["organization_id"], name: "index_audit_logs_on_organization_id"
+    t.index ["user_id"], name: "index_audit_logs_on_user_id"
+  end
 
   create_table "actuator_commands", force: :cascade do |t|
     t.bigint "actuator_id", null: false
@@ -337,6 +352,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_03_199000) do
   add_foreign_key "actuator_commands", "ews_alerts"
   add_foreign_key "actuator_commands", "users"
   add_foreign_key "actuators", "gateways"
+  add_foreign_key "audit_logs", "organizations"
+  add_foreign_key "audit_logs", "users"
   add_foreign_key "blockchain_transactions", "wallets"
   add_foreign_key "clusters", "organizations"
   add_foreign_key "device_calibrations", "trees"

@@ -15,6 +15,8 @@ module Views
                 nav_item("Oracle Visions", helpers.api_v1_oracle_visions_path, "eye")
                 nav_item("Treasury Matrix", helpers.api_v1_wallets_path, "bank")
                 nav_item("NaaS Contracts", helpers.api_v1_contracts_path, "clipboard")
+                nav_item("Blockchain Ledger", helpers.api_v1_blockchain_transactions_path, "bank")
+                nav_item("Reports Archive", helpers.api_v1_reports_path, "clipboard")
               end
 
               # ОПЕРАЦІЙНИЙ КОНТУР
@@ -32,6 +34,14 @@ module Views
                 nav_item("Firmware OTA", helpers.api_v1_firmwares_path, "cpu")
                 nav_item("Live Telemetry", helpers.live_api_v1_telemetry_index_path, "activity", pulse: true)
                 nav_item("Initiate Node", helpers.new_api_v1_provisioning_path, "zap") # Швидкий доступ до ініціації
+              end
+
+              # АДМІНІСТРУВАННЯ
+              section_group("Administration") do
+                nav_item("Notifications", helpers.api_v1_notifications_settings_path, "radio")
+                nav_item("Org Settings", helpers.api_v1_settings_path, "cpu")
+                nav_item("Audit Log", helpers.api_v1_audit_logs_path, "eye")
+                nav_item("System Health", helpers.api_v1_system_health_path, "activity")
               end
             end
 

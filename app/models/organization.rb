@@ -12,6 +12,9 @@ class Organization < ApplicationRecord
   # Лісові масиви, якими володіє або керує організація
   has_many :clusters, dependent: :destroy
 
+  # Журнал дій адміністраторів
+  has_many :audit_logs, dependent: :destroy
+
   # Прямий доступ до всіх дерев, шлюзів та тривог через кластери
   has_many :trees, through: :clusters
   has_many :gateways, through: :clusters

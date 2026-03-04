@@ -103,6 +103,40 @@ Rails.application.routes.draw do
       resources :system_audits, only: [ :index ]
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      # 📒 БЛОКЧЕЙН ЛЕДЖЕР (The Ledger)
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      resources :blockchain_transactions, only: [ :index, :show ]
+
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      # 🔔 НЕЙРОННА ПАВУТИНА (The Neural Web — Notifications)
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      get  "notifications/settings",  to: "notifications#settings",        as: :notifications_settings
+      patch "notifications/settings", to: "notifications#update_settings"
+
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      # 📊 АРХІВ (The Archive — Reports)
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      resources :reports, only: [ :index ] do
+        get :carbon_absorption, on: :collection
+        get :financial_summary, on: :collection
+      end
+
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      # 🧠 КАРТА МОЗКУ (The Brain Map — Settings)
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      resource :settings, only: [ :show, :update ]
+
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      # 👁️ СПОСТЕРІГАЧ (The Watcher — Audit Logs)
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      resources :audit_logs, only: [ :index, :show ]
+
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      # 💓 ПУЛЬС СИСТЕМИ (System Health)
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      resource :system_health, only: [ :show ]
+
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # ⚡ ІНІЦІАЦІЯ (Provisioning)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       resources :provisioning, only: [ :new ] do
