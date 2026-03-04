@@ -21,9 +21,13 @@ RSpec.describe Api::V1::SessionsController, type: :request do
     end
 
     it "resets session before establishing new one (session fixation protection)" do
-      # Verify the controller calls reset_session by checking the session is regenerated
+      # First login to establish a session
       post "/api/v1/login", params: { email: user.email_address, password: "password12345" }, as: :json
+      expect(response).to have_http_status(:created)
 
+      # Second login should reset the old session and create a new one
+      expect_any_instance_of(Api::V1::SessionsController).to receive(:reset_session).and_call_original
+      post "/api/v1/login", params: { email: user.email_address, password: "password12345" }, as: :json
       expect(response).to have_http_status(:created)
     end
   end
