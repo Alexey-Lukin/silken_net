@@ -4,10 +4,11 @@ module Api
   module V1
     class ActuatorsController < BaseController
       before_action :authorize_forester!
+      before_action :set_cluster, only: [ :index ]
+      before_action :set_actuator, only: [ :show, :execute ]
 
       # --- РЕЄСТР ВИКОНАВЧИХ ВУЗЛІВ ---
       def index
-        @cluster = Cluster.find(params[:cluster_id])
         @actuators = @cluster.actuators.includes(:tree, :gateway)
 
         respond_to do |format|
@@ -23,7 +24,6 @@ module Api
 
       # --- ДЕТАЛЬНИЙ АУДИТ ВУЗЛА ---
       def show
-        @actuator = Actuator.find(params[:id])
         @commands = @actuator.actuator_commands.order(created_at: :desc).limit(20)
 
         respond_to do |format|
@@ -39,7 +39,10 @@ module Api
 
       # --- ПРЯМЕ ВИКОНАННЯ КОМАНДИ ---
       def execute
-        @actuator = Actuator.find(params[:id])
+        if @actuator.actuator_commands.pending.exists?
+          return render json: { error: "Актуатор вже має активну команду. Зачекайте на її завершення." },
+                        status: :conflict
+        end
 
         @command = @actuator.actuator_commands.create!(
           user: current_user,
@@ -59,6 +62,18 @@ module Api
             )
           end
         end
+      end
+
+      private
+
+      def set_cluster
+        @cluster = current_user.organization.clusters.find(params[:cluster_id])
+      end
+
+      def set_actuator
+        @actuator = Actuator.joins(gateway: :cluster)
+                            .where(clusters: { organization_id: current_user.organization_id })
+                            .find(params[:id])
       end
     end
   end

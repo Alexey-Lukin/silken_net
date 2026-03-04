@@ -3,10 +3,13 @@
 module Api
   module V1
     class AlertsController < BaseController
+      before_action :set_alert, only: [ :resolve ]
+
       # GET /api/v1/alerts
       def index
-        @alerts = EwsAlert.includes(:cluster, :tree)
-                          .order(created_at: :desc)
+        @alerts = current_user.organization.ews_alerts
+                              .includes(:cluster, :tree)
+                              .order(created_at: :desc)
 
         # Фільтрація
         @alerts = @alerts.where(status: params[:status] || :active)
@@ -35,13 +38,10 @@ module Api
 
       # PATCH /api/v1/alerts/:id/resolve
       def resolve
-        @alert = EwsAlert.find(params[:id])
-
         if @alert.resolve!(user: current_user, notes: params[:notes])
           respond_to do |format|
             format.json { render json: { message: "Тривогу ##{@alert.id} втихомирено.", alert: @alert } }
             format.turbo_stream do
-              # Ми миттєво замінюємо рядок у таблиці на "втихомирений" стан
               render turbo_stream: turbo_stream.replace(
                 "alert_#{@alert.id}",
                 Views::Components::Alerts::Row.new(alert: @alert).call
@@ -52,6 +52,12 @@ module Api
         else
           render_validation_error(@alert)
         end
+      end
+
+      private
+
+      def set_alert
+        @alert = current_user.organization.ews_alerts.find(params[:id])
       end
     end
   end
