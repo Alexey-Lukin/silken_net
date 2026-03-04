@@ -15,6 +15,12 @@ FactoryBot.define do
       role { :admin }
     end
 
+    trait :super_admin do
+      first_name { "Artem" }
+      last_name { "Volkov" }
+      role { :super_admin }
+    end
+
     trait :forester do
       first_name { "Dmytro" }
       last_name { "Bondarenko" }

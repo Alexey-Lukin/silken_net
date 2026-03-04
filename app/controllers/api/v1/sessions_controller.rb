@@ -6,6 +6,11 @@ module Api
       # Дозволяємо доступ до входу без автентифікації
       skip_before_action :authenticate_user!, only: [ :new, :create, :omniauth_create ]
 
+      # Захист від перебору (Brute Force): обмеження кількості спроб входу
+      rate_limit to: 5, within: 1.minute, only: :create, with: -> {
+        render json: { error: "Забагато спроб входу. Спробуйте через хвилину." }, status: :too_many_requests
+      }
+
       # --- ПОРТАЛ ВХОДУ ---
       def new
         respond_to do |format|
@@ -66,17 +71,20 @@ module Api
 
       # Спільна логіка встановлення зв'язку
       def establish_session(user)
-        # 1. Стандартна Rails сесія (Cookie-based)
+        # 1. Захист від Session Fixation: очищуємо стару сесію перед встановленням нової
+        reset_session
+
+        # 2. Стандартна Rails сесія (Cookie-based)
         session[:user_id] = user.id
 
-        # 2. Створення запису в таблиці Session (Operational Pulse)
+        # 3. Створення запису в таблиці Session (Operational Pulse)
         # Це тригерне track_user_activity через after_create в моделі Session
         user.sessions.create!(
           ip_address: request.remote_ip,
           user_agent: request.user_agent
         )
 
-        # 3. Пряме оновлення User (Touch visit)
+        # 4. Пряме оновлення User (Touch visit)
         user.touch_visit!
       end
 

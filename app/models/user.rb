@@ -31,7 +31,8 @@ class User < ApplicationRecord
   enum :role, {
     investor: 0,
     forester: 1,
-    admin: 2
+    admin: 2,
+    super_admin: 3
   }, prefix: true
 
   # --- СКОУПИ ---
@@ -56,7 +57,7 @@ class User < ApplicationRecord
   # --- МЕТОДИ ---
 
   def forest_commander?
-    role_admin? || role_forester?
+    role_admin? || role_forester? || role_super_admin?
   end
 
   # [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій.

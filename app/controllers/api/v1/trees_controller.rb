@@ -16,14 +16,7 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              trees: @trees.as_json(
-                only: [ :id, :did, :status, :latitude, :longitude, :last_seen_at ],
-                methods: [ :current_stress, :under_threat? ],
-                include: {
-                  wallet: { only: [ :balance ] },
-                  tree_family: { only: [ :name ] }
-                }
-              ),
+              trees: TreeBlueprint.render_as_hash(@trees, view: :index),
               pagy: { page: @pagy.page, limit: @pagy.limit, count: @pagy.count, pages: @pagy.last }
             }
           end
@@ -46,14 +39,7 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              tree: @tree.as_json(
-                only: [ :id, :did, :status, :last_seen_at ],
-                methods: [ :current_stress, :under_threat? ],
-                include: {
-                  wallet: { only: [ :balance ] },
-                  tree_family: { only: [ :name, :baseline_impedance ] }
-                }
-              ),
+              tree: TreeBlueprint.render_as_hash(@tree, view: :show),
               telemetry: {
                 z_value: @latest_log&.z_value || 0,
                 temperature: @latest_log&.temperature_c,
