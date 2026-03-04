@@ -6,30 +6,53 @@ module Api
       # GET /api/v1/notifications/settings
       # Поточні налаштування каналів зв'язку для поточного користувача
       def settings
-        render json: {
-          user_id: current_user.id,
-          channels: {
-            email: current_user.email_address,
-            phone: current_user.phone_number,
-            telegram_chat_id: current_user.telegram_chat_id
-          }
-        }
+        respond_to do |format|
+          format.json do
+            render json: {
+              user_id: current_user.id,
+              channels: {
+                email: current_user.email_address,
+                phone: current_user.phone_number,
+                telegram_chat_id: current_user.telegram_chat_id
+              }
+            }
+          end
+          format.html do
+            render_dashboard(
+              title: "Notification Channels",
+              component: Views::Components::Notifications::Settings.new(user: current_user)
+            )
+          end
+        end
       end
 
       # PATCH /api/v1/notifications/settings
       # Оновлення каналів зв'язку (Telegram, SMS, Push, Email)
       def update_settings
         if current_user.update(notification_params)
-          render json: {
-            message: "Налаштування сповіщень оновлено.",
-            channels: {
-              email: current_user.email_address,
-              phone: current_user.phone_number,
-              telegram_chat_id: current_user.telegram_chat_id
-            }
-          }
+          respond_to do |format|
+            format.json do
+              render json: {
+                message: "Налаштування сповіщень оновлено.",
+                channels: {
+                  email: current_user.email_address,
+                  phone: current_user.phone_number,
+                  telegram_chat_id: current_user.telegram_chat_id
+                }
+              }
+            end
+            format.html { redirect_to api_v1_notifications_settings_path, notice: "Налаштування оновлено." }
+          end
         else
-          render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity
+          respond_to do |format|
+            format.json { render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity }
+            format.html do
+              render_dashboard(
+                title: "Notification Channels",
+                component: Views::Components::Notifications::Settings.new(user: current_user)
+              )
+            end
+          end
         end
       end
 

@@ -110,7 +110,7 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 🔔 НЕЙРОННА ПАВУТИНА (The Neural Web — Notifications)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      get  "notifications/settings",  to: "notifications#settings"
+      get  "notifications/settings",  to: "notifications#settings",        as: :notifications_settings
       patch "notifications/settings", to: "notifications#update_settings"
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

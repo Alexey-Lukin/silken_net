@@ -17,20 +17,36 @@ module Api
         @logs = @logs.by_user(params[:user_id])
         @logs = @logs.limit(params.fetch(:limit, 50).to_i.clamp(1, 100))
 
-        render json: @logs.as_json(
-          only: [ :id, :action, :auditable_type, :auditable_id, :metadata, :created_at ],
-          include: { user: { only: [ :id, :email_address, :first_name, :last_name, :role ] } }
-        )
+        respond_to do |format|
+          format.json do
+            render json: AuditLogBlueprint.render(@logs, view: :index)
+          end
+          format.html do
+            render_dashboard(
+              title: "Audit Log",
+              component: Views::Components::AuditLogs::Index.new(logs: @logs)
+            )
+          end
+        end
       end
 
       # GET /api/v1/audit_logs/:id
       def show
-        @log = AuditLog.where(organization_id: current_user.organization_id).find(params[:id])
+        @log = AuditLog.where(organization_id: current_user.organization_id)
+                       .includes(:user)
+                       .find(params[:id])
 
-        render json: @log.as_json(
-          only: [ :id, :action, :auditable_type, :auditable_id, :metadata, :created_at ],
-          include: { user: { only: [ :id, :email_address, :first_name, :last_name, :role ] } }
-        )
+        respond_to do |format|
+          format.json do
+            render json: AuditLogBlueprint.render(@log, view: :show)
+          end
+          format.html do
+            render_dashboard(
+              title: "Audit Event ##{@log.id}",
+              component: Views::Components::AuditLogs::Show.new(log: @log)
+            )
+          end
+        end
       end
     end
   end

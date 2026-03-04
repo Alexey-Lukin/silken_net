@@ -8,12 +8,22 @@ module Api
       # GET /api/v1/system_health
       # Моніторинг стану системи: CoAP listener, Sidekiq, UDP
       def show
-        render json: {
+        @health = {
           checked_at: Time.current.iso8601,
           coap_listener: coap_status,
           sidekiq: sidekiq_status,
           database: database_status
         }
+
+        respond_to do |format|
+          format.json { render json: @health }
+          format.html do
+            render_dashboard(
+              title: "System Health",
+              component: Views::Components::SystemHealth::Show.new(health: @health)
+            )
+          end
+        end
       end
 
       private

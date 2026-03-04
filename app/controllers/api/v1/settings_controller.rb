@@ -10,15 +10,25 @@ module Api
       def show
         org = current_user.organization
 
-        render json: {
-          organization: {
-            id: org.id,
-            name: org.name,
-            billing_email: org.billing_email,
-            crypto_public_address: org.crypto_public_address,
-            created_at: org.created_at
-          }
-        }
+        respond_to do |format|
+          format.json do
+            render json: {
+              organization: {
+                id: org.id,
+                name: org.name,
+                billing_email: org.billing_email,
+                crypto_public_address: org.crypto_public_address,
+                created_at: org.created_at
+              }
+            }
+          end
+          format.html do
+            render_dashboard(
+              title: "Organization Settings",
+              component: Views::Components::Settings::Show.new(organization: org)
+            )
+          end
+        end
       end
 
       # PATCH /api/v1/settings
@@ -27,17 +37,30 @@ module Api
         org = current_user.organization
 
         if org.update(settings_params)
-          render json: {
-            message: "Налаштування Організації оновлено.",
-            organization: {
-              id: org.id,
-              name: org.name,
-              billing_email: org.billing_email,
-              crypto_public_address: org.crypto_public_address
-            }
-          }
+          respond_to do |format|
+            format.json do
+              render json: {
+                message: "Налаштування Організації оновлено.",
+                organization: {
+                  id: org.id,
+                  name: org.name,
+                  billing_email: org.billing_email,
+                  crypto_public_address: org.crypto_public_address
+                }
+              }
+            end
+            format.html { redirect_to api_v1_settings_path, notice: "Налаштування оновлено." }
+          end
         else
-          render json: { errors: org.errors.full_messages }, status: :unprocessable_entity
+          respond_to do |format|
+            format.json { render json: { errors: org.errors.full_messages }, status: :unprocessable_entity }
+            format.html do
+              render_dashboard(
+                title: "Organization Settings",
+                component: Views::Components::Settings::Show.new(organization: org)
+              )
+            end
+          end
         end
       end
 
