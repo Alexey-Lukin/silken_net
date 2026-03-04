@@ -11,7 +11,9 @@ class BlockchainTransactionBlueprint < Blueprinter::Base
 
   view :show do
     fields :amount, :token_type, :status, :tx_hash, :to_address, :locked_points,
-           :notes, :error_message, :created_at, :updated_at
+           :notes, :error_message, :created_at, :updated_at,
+           :gas_price, :gas_used, :cumulative_gas_cost,
+           :block_number, :nonce, :sent_at, :confirmed_at
     field(:explorer_url) { |tx| tx.explorer_url }
     association :wallet, blueprint: WalletBlueprint, view: :with_tree
   end
