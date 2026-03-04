@@ -75,6 +75,10 @@ RSpec.describe AlertDispatchService, type: :service do
   end
 
   describe "cache invalidation on critical alerts" do
+    before do
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+    end
+
     it "clears oracle yield cache when a critical alert is created" do
       Rails.cache.write("oracle_expected_yield_24h", 42.0)
 

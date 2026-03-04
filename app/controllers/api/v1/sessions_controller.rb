@@ -81,7 +81,7 @@ module Api
         # Це тригерне track_user_activity через after_create в моделі Session
         user.sessions.create!(
           ip_address: request.remote_ip,
-          user_agent: request.user_agent
+          user_agent: request.user_agent.presence || "Unknown"
         )
 
         # 4. Пряме оновлення User (Touch visit)
