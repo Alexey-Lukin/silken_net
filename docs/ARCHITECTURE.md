@@ -8,7 +8,7 @@
 │  SilkenCarbonCoin.sol / SilkenForestCoin.sol (ERC-20)       │
 ├─────────────────────────────────────────────────────────────┤
 │  BACKEND (Rails 8.1 + Sidekiq + PostgreSQL)                 │
-│  14 API Controllers · 8 Services · 12 Workers               │
+│  24 API Controllers · 11 Services · 15 Workers              │
 ├─────────────────────────────────────────────────────────────┤
 │  NETWORK (LoRa 868 MHz + CoAP/UDP over LTE/Starlink)        │
 ├─────────────────────────────────────────────────────────────┤
@@ -33,7 +33,7 @@
 
 ## Domain Model
 
-### Core Entities (22 models)
+### Core Entities (24 models)
 
 ```
 Organization ──has_many──→ Users
@@ -78,10 +78,11 @@ NaasContract ──belongs_to──→ Organization, Cluster
 | Queue | Priority | Workers |
 |-------|----------|---------|
 | `uplink` | 5 (highest) | UnpackTelemetryWorker |
-| `alerts` | 4 | AlertNotificationWorker |
+| `alerts` | 4 | AlertNotificationWorker, SingleNotificationWorker |
+| `critical` | 4 | BurnCarbonTokensWorker |
 | `downlink` | 3 | ActuatorCommandWorker, OtaTransmissionWorker, ResetActuatorStateWorker |
-| `default` | 2 | DailyAggregationWorker, ClusterHealthCheckWorker, TokenomicsEvaluatorWorker, GatewayTelemetryWorker |
-| `web3` | 1 | MintCarbonCoinWorker, BurnCarbonTokensWorker, InsurancePayoutWorker |
+| `default` | 2 | DailyAggregationWorker, ClusterHealthCheckWorker, TokenomicsEvaluatorWorker, GatewayTelemetryWorker, EcosystemHealingWorker |
+| `web3` | 1 | MintCarbonCoinWorker, BlockchainConfirmationWorker, InsurancePayoutWorker |
 | `low` | 1 | DailyAggregationWorker |
 
 ## AI Oracle (Lorenz Attractor)
@@ -106,6 +107,6 @@ dz/dt = xy - βz
 - **Zero-Trust Architecture** - Every device has a unique AES-256 key stored in `HardwareKey` (encrypted at rest via ActiveRecord Encryption)
 - **DID-Based Identity** - Each Soldier generates a DID from STM32 factory UID XOR'd with TRNG, locked in RTC backup registers
 - **Token Authentication** - Rails 8 `generates_token_for :api_access` for API, session-based for dashboard
-- **RBAC** - Three roles: `investor` (read-only), `forester` (field operations), `admin` (full control)
+- **RBAC** - Four roles: `investor` (read-only), `forester` (field operations), `admin` (full control), `super_admin` (system-level)
 - **Encrypted Payloads** - AES-256-ECB for all LoRa and CoAP transmissions
 - **Key Rotation** - `HardwareKeyService.rotate` generates new key + OTA downlink
