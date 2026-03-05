@@ -59,4 +59,10 @@ Rails.application.configure do
 
   # No need to dump schema after migrations in test environment.
   config.active_record.dump_schema_after_migration = false
+
+  # ActiveRecord Encryption — deterministic test-only keys.
+  # These values are safe to commit: they are never used outside the test env.
+  config.active_record.encryption.primary_key        = "test-primary-key-silken-net-32b!"
+  config.active_record.encryption.deterministic_key  = "test-determin-key-silken-net-32!"
+  config.active_record.encryption.key_derivation_salt = "test-derivation-salt-silknet32b!"
 end
