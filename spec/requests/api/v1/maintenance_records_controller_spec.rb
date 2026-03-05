@@ -57,5 +57,100 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(response.parsed_body).to have_key("pagy")
       expect(response.parsed_body["pagy"]).to include("page", "count", "pages")
     end
+
+    it "filters by action_type" do
+      get "/api/v1/maintenance_records", params: { action_type: "inspection" },
+                                         headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      types = response.parsed_body["records"].map { |r| r["action_type"] }.uniq
+      expect(types).to eq([ "inspection" ])
+    end
+
+    it "filters by hardware_verified" do
+      own_record.update!(hardware_verified: true)
+      get "/api/v1/maintenance_records", params: { verified: "1" },
+                                         headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      ids = response.parsed_body["records"].map { |r| r["id"] }
+      expect(ids).to include(own_record.id)
+    end
+  end
+
+  describe "PATCH /api/v1/maintenance_records/:id/verify" do
+    let(:record) do
+      MaintenanceRecord.create!(
+        maintainable: own_tree,
+        user: forester,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Checking all sensor connectors for corrosion damage."
+      )
+    end
+
+    it "marks the record as hardware_verified" do
+      patch "/api/v1/maintenance_records/#{record.id}/verify",
+            headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["hardware_verified"]).to be true
+      expect(record.reload.hardware_verified).to be true
+    end
+
+    it "returns 404 for a record outside the user's organization" do
+      other_user = create(:user, :forester, organization: other_organization)
+      other_record = MaintenanceRecord.create!(
+        maintainable: other_tree,
+        user: other_user,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "External inspection outside the organization boundary."
+      )
+
+      patch "/api/v1/maintenance_records/#{other_record.id}/verify",
+            headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  describe "DELETE /api/v1/maintenance_records/:maintenance_record_id/photos/:id" do
+    let(:record) do
+      MaintenanceRecord.create!(
+        maintainable: own_tree,
+        user: forester,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Routine inspection of the node completed successfully."
+      )
+    end
+
+    it "purges the photo and returns ok" do
+      # Attach a test photo using Active Storage test service
+      record.photos.attach(
+        io: StringIO.new("fake-image-data"),
+        filename: "evidence.jpg",
+        content_type: "image/jpeg"
+      )
+      photo = record.photos.first
+
+      delete "/api/v1/maintenance_records/#{record.id}/photos/#{photo.id}",
+             headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["message"]).to be_present
+    end
+
+    it "returns 404 for a photo on another organization's record" do
+      other_user = create(:user, :forester, organization: other_organization)
+      other_record = MaintenanceRecord.create!(
+        maintainable: other_tree,
+        user: other_user,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Inspection in a different organizational forest sector."
+      )
+
+      delete "/api/v1/maintenance_records/#{other_record.id}/photos/999",
+             headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
   end
 end

@@ -206,10 +206,7 @@ RSpec.describe MaintenanceRecord, type: :model do
 
     describe ".by_type" do
       it "filters by action_type" do
-        repair     = create(:maintenance_record, :repair,     action_type: :cleaning)
-        inspection = create(:maintenance_record, performed_at: 3.hours.ago)
-
-        # repair trait overrides action_type to :repair but we set cleaning here:
+        inspection     = create(:maintenance_record, performed_at: 3.hours.ago)
         cleaning_record = create(:maintenance_record, action_type: :cleaning,
                                                       notes: "Cleaned solar panels on node carefully.")
 

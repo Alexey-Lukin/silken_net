@@ -87,7 +87,13 @@ Rails.application.routes.draw do
         patch :resolve, on: :member
       end
 
-      resources :maintenance_records, only: [ :index, :create, :show ]
+      resources :maintenance_records, only: [ :index, :new, :create, :show, :update ] do
+        patch :verify,  on: :member
+        get   :photos,  on: :member
+        resources :photos, only: [ :destroy ],
+                  controller: "maintenance_record_photos",
+                  as: :maintenance_record_photo
+      end
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # ⊙ ВИДІННЯ ОРАКУЛА (Strategic Intelligence)
