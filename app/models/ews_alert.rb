@@ -130,7 +130,7 @@ class EwsAlert < ApplicationRecord
   def close_associated_maintenance!
     MaintenanceRecord.where(ews_alert_id: id).update_all(
       performed_at: Time.current,
-      notes: "Auto-resolved via EWS Recovery Protocol"
+      notes: "Автозакрито через EWS Recovery Protocol"
     )
   end
 
