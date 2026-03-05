@@ -326,7 +326,8 @@ CREATE TABLE public.clusters (
     climate_type character varying,
     organization_id bigint,
     environmental_settings jsonb,
-    health_index double precision
+    health_index double precision,
+    active_trees_count integer DEFAULT 0 NOT NULL
 );
 
 
@@ -2705,6 +2706,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260305143000'),
 ('20260305132625'),
 ('20260304210000'),
 ('20260304200000'),
