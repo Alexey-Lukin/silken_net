@@ -124,10 +124,13 @@ RSpec.describe DeviceCalibration, type: :model do
     it "does not duplicate alerts on repeated saves (deduplication via tree + type + severity)" do
       tree = create(:tree)
       calibration = create(:device_calibration, :critical_drift, tree: tree)
+      original_alert = EwsAlert.last
 
       expect {
         calibration.update!(temperature_offset_c: 7.0)
       }.not_to change(EwsAlert, :count)
+
+      expect(EwsAlert.last.id).to eq(original_alert.id)
     end
 
     it "uses tree.cluster_id without loading Cluster object (N+1 fix)" do
