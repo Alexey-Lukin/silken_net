@@ -1815,6 +1815,13 @@ CREATE INDEX index_ews_alerts_on_tree_id ON public.ews_alerts USING btree (tree_
 
 
 --
+-- Name: index_ews_alerts_unique_active_per_tree; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_ews_alerts_unique_active_per_tree ON public.ews_alerts USING btree (tree_id, alert_type, status) WHERE ((status = 0) AND (tree_id IS NOT NULL));
+
+
+--
 -- Name: index_gateway_telemetry_logs_on_gateway_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2706,6 +2713,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260305152600'),
 ('20260305143000'),
 ('20260305132625'),
 ('20260304210000'),
