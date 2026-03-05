@@ -20,16 +20,18 @@ Trees generate streaming potentials (40-100mV) from xylem ion transport and pH g
 
 | Category | Technology |
 |----------|-----------|
-| Language | Ruby 3.4.1 |
+| Language | Ruby 4.0.1 |
 | Framework | Rails 8.1.2 (Omakase) |
-| Database | PostgreSQL + Solid Cache + Solid Cable |
-| Background Jobs | Sidekiq (6 priority queues) |
-| Frontend | Hotwire (Turbo 8, Stimulus), Tailwind CSS |
-| Blockchain | Polygon, Solidity (ERC-20 + Votes + Permit) |
+| Database | PostgreSQL + Solid Cache + Solid Cable + Solid Queue |
+| Background Jobs | Sidekiq + sidekiq-scheduler (7 priority queues) |
+| Frontend | Hotwire (Turbo 8, Stimulus), Tailwind CSS, Phlex |
+| Serialization | Blueprinter (JSON blueprints) |
+| Pagination | Pagy + Groupdate (time-series) |
+| Blockchain | Polygon, Solidity (ERC-20 + Votes + Permit), eth gem |
 | IoT Protocol | LoRa (868 MHz), CoAP/UDP |
 | MCU | STM32WLE5JC (ARM Cortex-M4 + LoRa SoC) |
 | Edge Runtime | mruby (bio-contracts), TinyML (pest detection) |
-| Deployment | Kamal (Docker) |
+| Deployment | Kamal (Docker), Thruster (HTTP/2 proxy) |
 
 ## Quick Start
 
@@ -44,10 +46,13 @@ bin/dev
 ## Documentation
 
 - [Architecture](ARCHITECTURE.md) - System layers, data flow, domain model, AI Oracle
+- [Models](MODELS.md) - All 20 domain models with relationships
+- [Logic](LOGIC.md) - Services (11) and Workers (15) reference
 - [Tokenomics](TOKENOMICS.md) - Dual token economy, Proof of Growth, slashing protocol
-- [API Reference](API.md) - All 14 API controllers with endpoints and parameters
+- [API Reference](API.md) - All 24 API controllers with endpoints and parameters
 - [Firmware](FIRMWARE.md) - Soldier/Queen lifecycle, binary protocol, mruby bio-contracts
 - [Hardware](HARDWARE.md) - Energy harvesting stack, BOM, energy budget
+- [Blockchain Development](BLOCKCHAIN_DEVELOPMENT.md) - Web3 setup, minting/slashing flows
 - [Vision](VISION.md) - Project vision, science, Titan's Roadmap
 
 ## License

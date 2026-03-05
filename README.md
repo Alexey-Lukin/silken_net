@@ -51,6 +51,8 @@
 * **AiInsight**: денний вердикт Оракула (`stress_index`, `daily_health_summary`).
 * **EwsAlert**: сигнал раннього попередження (пожежа, засуха, системний збій).
 * **Actuator / ActuatorCommand**: виконавчі механізми та журнал команд.
+* **TinyMlModel**: вагова матриця нейромережі для детекції аномалій на пристрої.
+* **BioContractFirmware**: mruby-байткод Атрактора Лоренца (OTA-версіонована прошивка).
 * **NaasContract**: контракт NaaS з повним Slashing-протоколом (D-MRV Арбітраж).
 * **ParametricInsurance**: параметрична страховка кластера.
 * **Wallet / BlockchainTransaction**: фінансова мережа (SCC/SFC баланси).
@@ -181,13 +183,15 @@ kamal setup
 
 Детальна документація знаходиться в директорії [`docs/`](docs/):
 
-* [`API.md`](docs/API.md) — опис всіх API-ендпоінтів
-* [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — архітектурні рішення
+* [`API.md`](docs/API.md) — опис всіх API-ендпоінтів (24 контролери)
+* [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — архітектурні рішення та потоки даних
+* [`MODELS.md`](docs/MODELS.md) — всі 20 доменних моделей та їхні зв'язки
+* [`LOGIC.md`](docs/LOGIC.md) — сервіси (11) та воркери (15) з призначеннями
 * [`FIRMWARE.md`](docs/FIRMWARE.md) — специфікація прошивки STM32
-* [`HARDWARE.md`](docs/HARDWARE.md) — апаратна специфікація
+* [`HARDWARE.md`](docs/HARDWARE.md) — апаратна специфікація та BOM
 * [`TOKENOMICS.md`](docs/TOKENOMICS.md) — деталі токеноміки
 * [`BLOCKCHAIN_DEVELOPMENT.md`](docs/BLOCKCHAIN_DEVELOPMENT.md) — розробка смарт-контрактів
-* [`VISION.md`](docs/VISION.md) — візія проекту
+* [`VISION.md`](docs/VISION.md) — візія проекту та roadmap
 
 ---
 

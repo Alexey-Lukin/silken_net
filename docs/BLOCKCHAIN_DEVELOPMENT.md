@@ -252,7 +252,7 @@ concurrency: 15
 queues:
   - [uplink, 5]    # Телеметрія (КРИТИЧНО)
   - [alerts, 4]    # Сповіщення
-  - [critical, 4]  # Slashing (ВИСОКИЙ пріоритет)
+  - [critical, 4]  # Slashing (КРИТИЧНО)
   - [downlink, 3]  # Команди актуаторів
   - [default, 2]   # Стандартні задачі
   - [web3, 1]      # Блокчейн (НИЗЬКИЙ — повільний RPC)
@@ -333,9 +333,9 @@ ClusterHealthCheckWorker (02:00 UTC)
 
 | Воркер | Розклад | Черга | Призначення |
 |--------|---------|-------|-------------|
-| `TokenomicsEvaluatorWorker` | `0 * * * *` | web3 | Мінтинг pending SCC |
+| `TokenomicsEvaluatorWorker` | `0 * * * *` | default | Мінтинг pending SCC |
 | `DailyAggregationWorker` | `0 1 * * *` | low | Телеметрія → AiInsight |
-| `ClusterHealthCheckWorker` | `0 2 * * *` | critical | Аудит здоров'я, slashing |
+| `ClusterHealthCheckWorker` | `0 2 * * *` | default | Аудит здоров'я, slashing |
 
 ### Блокчейн воркери
 

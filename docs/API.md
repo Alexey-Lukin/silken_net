@@ -33,12 +33,21 @@ Response (200):
 
 ---
 
+### Dashboard
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/dashboard` | Required | Summary: active trees, online gateways, open alerts, recent transactions |
+
+---
+
 ### Users
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/users/me` | Required | Current user profile |
 | `GET` | `/users` | Admin | List organization users |
+| `GET` | `/users/:id` | Admin | User profile |
 
 **GET /users/me** - Returns `{ id, email_address, first_name, last_name, role, full_name, last_seen_at }`
 
@@ -66,7 +75,47 @@ Response (200):
 
 ---
 
-### Telemetry
+### Tree Families (DNA Registry)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/tree_families` | Required | List all species profiles with Lorenz thresholds |
+| `POST` | `/tree_families` | Admin | Register new species |
+| `GET` | `/tree_families/:id` | Required | Species details (`critical_z_min`, `critical_z_max`) |
+| `PATCH` | `/tree_families/:id` | Admin | Update thresholds |
+| `DELETE` | `/tree_families/:id` | Admin | Remove species |
+
+---
+
+### Gateways (Queens)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/gateways` | Required | List gateways (Queens) with online/offline status |
+| `GET` | `/gateways/:id` | Required | Gateway details: UID, state, voltage, signal, actuators |
+| `GET` | `/gateways/:id/telemetry` | Required | Gateway diagnostics time-series |
+
+**GET /gateways/:id** - Returns `{ uid, state, online, last_seen_at, latest_voltage_mv, ip_address, cluster_id }`
+
+---
+
+### Wallets
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/wallets` | Required | List wallets for current user's organization |
+| `GET` | `/wallets/:id` | Required | Wallet details with balance and transaction history |
+
+---
+
+### Blockchain Transactions
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/blockchain_transactions` | Required | Ledger: all on-chain transactions |
+| `GET` | `/blockchain_transactions/:id` | Required | Transaction details: tx_hash, status, amount, token_type |
+
+---
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -190,6 +239,61 @@ Response (200):
 ```
 
 Response: `{ "did": "SNET-A1B2C3D4", "aes_key": "0A1B2C...", "device": { ... } }`
+
+---
+
+### Notifications
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/notifications/settings` | Required | Current notification preferences |
+| `PATCH` | `/notifications/settings` | Required | Update SMS/Telegram notification settings |
+
+---
+
+### Reports (Archive)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/reports` | Required | List available report types |
+| `GET` | `/reports/carbon_absorption` | Required | Carbon absorption analytics per cluster |
+| `GET` | `/reports/financial_summary` | Admin | Financial summary: investment, tokens minted, market value |
+
+---
+
+### Audit Logs
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/audit_logs` | Admin | Full system action log |
+| `GET` | `/audit_logs/:id` | Admin | Audit log entry details |
+
+---
+
+### System Audits
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/system_audits` | Admin | Security and integrity audit reports |
+
+---
+
+### System Health
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/system_health` | Admin | Backend health: DB, Sidekiq, Redis, queue depths |
+
+---
+
+### Settings
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/settings` | Admin | System-wide configuration |
+| `PATCH` | `/settings` | Admin | Update system settings |
+
+---
 
 ## Error Responses
 
