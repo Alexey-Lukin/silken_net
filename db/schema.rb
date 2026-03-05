@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_04_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_05_132625) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -92,17 +92,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_200000) do
 
   create_table "blockchain_transactions", force: :cascade do |t|
     t.decimal "amount"
-    t.bigint "block_number"
-    t.datetime "confirmed_at"
+    t.bigint "block_number", comment: "Block number where transaction was included"
+    t.bigint "cluster_id"
+    t.datetime "confirmed_at", comment: "Timestamp when transaction was confirmed on-chain"
     t.datetime "created_at", null: false
-    t.decimal "cumulative_gas_cost"
+    t.decimal "cumulative_gas_cost", comment: "Total gas cost in MATIC/POL (gas_price * gas_used)"
     t.text "error_message"
-    t.decimal "gas_price"
-    t.decimal "gas_used"
+    t.decimal "gas_price", comment: "Gas price in wei at time of transaction"
+    t.decimal "gas_used", comment: "Gas units consumed by the transaction"
     t.integer "locked_points"
-    t.integer "nonce"
+    t.integer "nonce", comment: "EVM transaction nonce for idempotency"
     t.text "notes"
-    t.datetime "sent_at"
+    t.datetime "sent_at", comment: "Timestamp when transaction was broadcast to mempool"
     t.bigint "sourceable_id"
     t.string "sourceable_type"
     t.integer "status"
@@ -110,8 +111,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_200000) do
     t.integer "token_type"
     t.string "tx_hash"
     t.datetime "updated_at", null: false
-    t.bigint "wallet_id", null: false
+    t.bigint "wallet_id"
     t.index ["block_number"], name: "index_blockchain_transactions_on_block_number"
+    t.index ["cluster_id"], name: "index_blockchain_transactions_on_cluster_id"
     t.index ["confirmed_at"], name: "index_blockchain_transactions_on_confirmed_at"
     t.index ["sourceable_type", "sourceable_id"], name: "index_blockchain_transactions_on_sourceable"
     t.index ["wallet_id"], name: "index_blockchain_transactions_on_wallet_id"
@@ -269,12 +271,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_200000) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
-  create_table "telemetry_logs", force: :cascade do |t|
+  create_table "telemetry_logs", primary_key: ["id", "created_at"], options: "PARTITION BY RANGE (created_at)", force: :cascade do |t|
     t.integer "acoustic_events"
     t.integer "bio_status"
     t.datetime "created_at", null: false
     t.bigint "firmware_version_id"
     t.decimal "growth_points"
+    t.bigserial "id", null: false
     t.integer "mesh_ttl"
     t.integer "metabolism_s"
     t.integer "piezo_voltage_mv"
@@ -286,8 +289,178 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_200000) do
     t.datetime "updated_at", null: false
     t.integer "voltage_mv"
     t.decimal "z_value"
+    t.index ["bio_status", "created_at"], name: "idx_telemetry_logs_bio_status_created"
+    t.index ["piezo_voltage_mv", "created_at"], name: "idx_telemetry_logs_piezo_created"
     t.index ["tree_id", "created_at"], name: "index_telemetry_logs_on_tree_id_and_created_at"
     t.index ["tree_id"], name: "index_telemetry_logs_on_tree_id"
+  end
+
+  create_table "telemetry_logs_default", primary_key: ["id", "created_at"], options: "INHERITS (telemetry_logs)", force: :cascade do |t|
+    t.integer "acoustic_events"
+    t.integer "bio_status"
+    t.datetime "created_at", null: false
+    t.bigint "firmware_version_id"
+    t.decimal "growth_points"
+    t.bigint "id", default: -> { "nextval('telemetry_logs_id_seq'::regclass)" }, null: false
+    t.integer "mesh_ttl"
+    t.integer "metabolism_s"
+    t.integer "piezo_voltage_mv"
+    t.string "queen_uid"
+    t.integer "rssi"
+    t.boolean "tamper_detected"
+    t.decimal "temperature_c"
+    t.bigint "tree_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "voltage_mv"
+    t.decimal "z_value"
+    t.index ["bio_status", "created_at"], name: "telemetry_logs_default_bio_status_created_at_idx"
+    t.index ["piezo_voltage_mv", "created_at"], name: "telemetry_logs_default_piezo_voltage_mv_created_at_idx"
+    t.index ["tree_id", "created_at"], name: "telemetry_logs_default_tree_id_created_at_idx"
+    t.index ["tree_id"], name: "telemetry_logs_default_tree_id_idx"
+  end
+
+  create_table "telemetry_logs_y2026m01", primary_key: ["id", "created_at"], options: "INHERITS (telemetry_logs)", force: :cascade do |t|
+    t.integer "acoustic_events"
+    t.integer "bio_status"
+    t.datetime "created_at", null: false
+    t.bigint "firmware_version_id"
+    t.decimal "growth_points"
+    t.bigint "id", default: -> { "nextval('telemetry_logs_id_seq'::regclass)" }, null: false
+    t.integer "mesh_ttl"
+    t.integer "metabolism_s"
+    t.integer "piezo_voltage_mv"
+    t.string "queen_uid"
+    t.integer "rssi"
+    t.boolean "tamper_detected"
+    t.decimal "temperature_c"
+    t.bigint "tree_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "voltage_mv"
+    t.decimal "z_value"
+    t.index ["bio_status", "created_at"], name: "telemetry_logs_y2026m01_bio_status_created_at_idx"
+    t.index ["piezo_voltage_mv", "created_at"], name: "telemetry_logs_y2026m01_piezo_voltage_mv_created_at_idx"
+    t.index ["tree_id", "created_at"], name: "telemetry_logs_y2026m01_tree_id_created_at_idx"
+    t.index ["tree_id"], name: "telemetry_logs_y2026m01_tree_id_idx"
+  end
+
+  create_table "telemetry_logs_y2026m02", primary_key: ["id", "created_at"], options: "INHERITS (telemetry_logs)", force: :cascade do |t|
+    t.integer "acoustic_events"
+    t.integer "bio_status"
+    t.datetime "created_at", null: false
+    t.bigint "firmware_version_id"
+    t.decimal "growth_points"
+    t.bigint "id", default: -> { "nextval('telemetry_logs_id_seq'::regclass)" }, null: false
+    t.integer "mesh_ttl"
+    t.integer "metabolism_s"
+    t.integer "piezo_voltage_mv"
+    t.string "queen_uid"
+    t.integer "rssi"
+    t.boolean "tamper_detected"
+    t.decimal "temperature_c"
+    t.bigint "tree_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "voltage_mv"
+    t.decimal "z_value"
+    t.index ["bio_status", "created_at"], name: "telemetry_logs_y2026m02_bio_status_created_at_idx"
+    t.index ["piezo_voltage_mv", "created_at"], name: "telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx"
+    t.index ["tree_id", "created_at"], name: "telemetry_logs_y2026m02_tree_id_created_at_idx"
+    t.index ["tree_id"], name: "telemetry_logs_y2026m02_tree_id_idx"
+  end
+
+  create_table "telemetry_logs_y2026m03", primary_key: ["id", "created_at"], options: "INHERITS (telemetry_logs)", force: :cascade do |t|
+    t.integer "acoustic_events"
+    t.integer "bio_status"
+    t.datetime "created_at", null: false
+    t.bigint "firmware_version_id"
+    t.decimal "growth_points"
+    t.bigint "id", default: -> { "nextval('telemetry_logs_id_seq'::regclass)" }, null: false
+    t.integer "mesh_ttl"
+    t.integer "metabolism_s"
+    t.integer "piezo_voltage_mv"
+    t.string "queen_uid"
+    t.integer "rssi"
+    t.boolean "tamper_detected"
+    t.decimal "temperature_c"
+    t.bigint "tree_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "voltage_mv"
+    t.decimal "z_value"
+    t.index ["bio_status", "created_at"], name: "telemetry_logs_y2026m03_bio_status_created_at_idx"
+    t.index ["piezo_voltage_mv", "created_at"], name: "telemetry_logs_y2026m03_piezo_voltage_mv_created_at_idx"
+    t.index ["tree_id", "created_at"], name: "telemetry_logs_y2026m03_tree_id_created_at_idx"
+    t.index ["tree_id"], name: "telemetry_logs_y2026m03_tree_id_idx"
+  end
+
+  create_table "telemetry_logs_y2026m04", primary_key: ["id", "created_at"], options: "INHERITS (telemetry_logs)", force: :cascade do |t|
+    t.integer "acoustic_events"
+    t.integer "bio_status"
+    t.datetime "created_at", null: false
+    t.bigint "firmware_version_id"
+    t.decimal "growth_points"
+    t.bigint "id", default: -> { "nextval('telemetry_logs_id_seq'::regclass)" }, null: false
+    t.integer "mesh_ttl"
+    t.integer "metabolism_s"
+    t.integer "piezo_voltage_mv"
+    t.string "queen_uid"
+    t.integer "rssi"
+    t.boolean "tamper_detected"
+    t.decimal "temperature_c"
+    t.bigint "tree_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "voltage_mv"
+    t.decimal "z_value"
+    t.index ["bio_status", "created_at"], name: "telemetry_logs_y2026m04_bio_status_created_at_idx"
+    t.index ["piezo_voltage_mv", "created_at"], name: "telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx"
+    t.index ["tree_id", "created_at"], name: "telemetry_logs_y2026m04_tree_id_created_at_idx"
+    t.index ["tree_id"], name: "telemetry_logs_y2026m04_tree_id_idx"
+  end
+
+  create_table "telemetry_logs_y2026m05", primary_key: ["id", "created_at"], options: "INHERITS (telemetry_logs)", force: :cascade do |t|
+    t.integer "acoustic_events"
+    t.integer "bio_status"
+    t.datetime "created_at", null: false
+    t.bigint "firmware_version_id"
+    t.decimal "growth_points"
+    t.bigint "id", default: -> { "nextval('telemetry_logs_id_seq'::regclass)" }, null: false
+    t.integer "mesh_ttl"
+    t.integer "metabolism_s"
+    t.integer "piezo_voltage_mv"
+    t.string "queen_uid"
+    t.integer "rssi"
+    t.boolean "tamper_detected"
+    t.decimal "temperature_c"
+    t.bigint "tree_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "voltage_mv"
+    t.decimal "z_value"
+    t.index ["bio_status", "created_at"], name: "telemetry_logs_y2026m05_bio_status_created_at_idx"
+    t.index ["piezo_voltage_mv", "created_at"], name: "telemetry_logs_y2026m05_piezo_voltage_mv_created_at_idx"
+    t.index ["tree_id", "created_at"], name: "telemetry_logs_y2026m05_tree_id_created_at_idx"
+    t.index ["tree_id"], name: "telemetry_logs_y2026m05_tree_id_idx"
+  end
+
+  create_table "telemetry_logs_y2026m06", primary_key: ["id", "created_at"], options: "INHERITS (telemetry_logs)", force: :cascade do |t|
+    t.integer "acoustic_events"
+    t.integer "bio_status"
+    t.datetime "created_at", null: false
+    t.bigint "firmware_version_id"
+    t.decimal "growth_points"
+    t.bigint "id", default: -> { "nextval('telemetry_logs_id_seq'::regclass)" }, null: false
+    t.integer "mesh_ttl"
+    t.integer "metabolism_s"
+    t.integer "piezo_voltage_mv"
+    t.string "queen_uid"
+    t.integer "rssi"
+    t.boolean "tamper_detected"
+    t.decimal "temperature_c"
+    t.bigint "tree_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "voltage_mv"
+    t.decimal "z_value"
+    t.index ["bio_status", "created_at"], name: "telemetry_logs_y2026m06_bio_status_created_at_idx"
+    t.index ["piezo_voltage_mv", "created_at"], name: "telemetry_logs_y2026m06_piezo_voltage_mv_created_at_idx"
+    t.index ["tree_id", "created_at"], name: "telemetry_logs_y2026m06_tree_id_created_at_idx"
+    t.index ["tree_id"], name: "telemetry_logs_y2026m06_tree_id_idx"
   end
 
   create_table "tiny_ml_models", force: :cascade do |t|
@@ -306,11 +479,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_200000) do
   create_table "tree_families", force: :cascade do |t|
     t.integer "baseline_impedance"
     t.jsonb "biological_properties"
+    t.float "carbon_sequestration_coefficient", default: 1.0, null: false
     t.datetime "created_at", null: false
     t.decimal "critical_z_max"
     t.decimal "critical_z_min"
     t.string "name"
+    t.string "scientific_name"
     t.datetime "updated_at", null: false
+    t.index ["scientific_name"], name: "index_tree_families_on_scientific_name", unique: true, where: "(scientific_name IS NOT NULL)"
   end
 
   create_table "trees", force: :cascade do |t|
@@ -319,6 +495,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_200000) do
     t.datetime "created_at", null: false
     t.string "did"
     t.string "firmware_version"
+    t.integer "health_streak", default: 0, null: false
     t.datetime "last_seen_at"
     t.integer "latest_voltage_mv"
     t.decimal "latitude"
@@ -369,6 +546,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_200000) do
   add_foreign_key "actuators", "gateways"
   add_foreign_key "audit_logs", "organizations"
   add_foreign_key "audit_logs", "users"
+  add_foreign_key "blockchain_transactions", "clusters"
   add_foreign_key "blockchain_transactions", "wallets"
   add_foreign_key "clusters", "organizations"
   add_foreign_key "device_calibrations", "trees"
@@ -385,7 +563,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_200000) do
   add_foreign_key "parametric_insurances", "clusters"
   add_foreign_key "parametric_insurances", "organizations"
   add_foreign_key "sessions", "users"
-  add_foreign_key "telemetry_logs", "trees"
+  add_foreign_key "telemetry_logs", "trees", name: "fk_telemetry_logs_tree_id"
+  add_foreign_key "telemetry_logs_default", "trees", name: "fk_telemetry_logs_tree_id"
+  add_foreign_key "telemetry_logs_y2026m01", "trees", name: "fk_telemetry_logs_tree_id"
+  add_foreign_key "telemetry_logs_y2026m02", "trees", name: "fk_telemetry_logs_tree_id"
+  add_foreign_key "telemetry_logs_y2026m03", "trees", name: "fk_telemetry_logs_tree_id"
+  add_foreign_key "telemetry_logs_y2026m04", "trees", name: "fk_telemetry_logs_tree_id"
+  add_foreign_key "telemetry_logs_y2026m05", "trees", name: "fk_telemetry_logs_tree_id"
+  add_foreign_key "telemetry_logs_y2026m06", "trees", name: "fk_telemetry_logs_tree_id"
   add_foreign_key "tiny_ml_models", "tree_families"
   add_foreign_key "trees", "clusters"
   add_foreign_key "trees", "tiny_ml_models"

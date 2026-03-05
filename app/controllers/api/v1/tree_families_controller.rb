@@ -74,7 +74,8 @@ module Api
 
       def family_params
         params.require(:tree_family).permit(
-          :name, :baseline_impedance, :critical_z_min, :critical_z_max,
+          :name, :scientific_name, :baseline_impedance, :critical_z_min, :critical_z_max,
+          :carbon_sequestration_coefficient,
           :sap_flow_index, :bark_thickness, :foliage_density, :fire_resistance_rating
         )
       end

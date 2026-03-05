@@ -9,6 +9,13 @@ class TreeFamily < ApplicationRecord
   validates :name, presence: true, uniqueness: true
   validates :baseline_impedance, :critical_z_min, presence: true, numericality: true
 
+  # [Series D: Глобальний Аудит]: Латинська назва для міжнародних контрактів та страхування
+  validates :scientific_name, uniqueness: true, allow_nil: true
+
+  # [Series C: Tokenomics]: Коефіцієнт секвестрації вуглецю для зваженого нарахування балів
+  validates :carbon_sequestration_coefficient,
+            numericality: { greater_than: 0 }
+
   # [ВИПРАВЛЕНО: Захист законів фізики]:
   # Гарантуємо, що межі Атрактора не перехрещуються
   validates :critical_z_max,
@@ -30,6 +37,10 @@ class TreeFamily < ApplicationRecord
             numericality: true,
             allow_nil: true
 
+  # --- КОЛБЕКИ ---
+  # [Hot Path Cache]: Інвалідація кешу при зміні генетичних параметрів
+  after_update :invalidate_thresholds_cache, if: :thresholds_changed?
+
   # --- СКОУПИ ---
   scope :alphabetical, -> { order(name: :asc) }
 
@@ -45,15 +56,36 @@ class TreeFamily < ApplicationRecord
     }
   end
 
+  # [Hot Path Cache]: Кешована версія attractor_thresholds для обробки телеметрії.
+  # Геном змінюється вкрай рідко, але attractor_thresholds викликається
+  # при обробці кожного пакету від мільйонів дерев.
+  def attractor_thresholds_cached
+    Rails.cache.fetch(thresholds_cache_key, expires_in: 24.hours) do
+      attractor_thresholds
+    end
+  end
+
   # "Межа Смерті": Якщо імпеданс падає нижче 30% від базового,
   # дерево втратило провідні тканини (фізична загибель або зруб).
   def death_threshold_impedance
     baseline_impedance * 0.3
   end
 
-  # Назва для відображення в UI (напр. "Quercus robur (Дуб звичайний)")
+  # [Series D]: Назва для відображення в UI та міжнародних контрактах
+  # Формат: "Quercus robur (Дуб звичайний)" або просто "Дуб звичайний"
   def display_name
-    name
+    if scientific_name.present?
+      "#{scientific_name} (#{name})"
+    else
+      name
+    end
+  end
+
+  # [Series C: Tokenomics]: Зважене нарахування балів росту залежно від породи.
+  # Дуб (Quercus) акумулює вуглець швидше за Сосну (Pinus),
+  # тому коефіцієнт використовується у Wallet#credit! для справедливого розподілу.
+  def weighted_growth_points(raw_points)
+    (raw_points * carbon_sequestration_coefficient).round(2)
   end
 
   # Перевірка гомеостазу: чи вписується Z-значення в межі стабільності даної породи
@@ -69,5 +101,19 @@ class TreeFamily < ApplicationRecord
     return :critical if current_impedance <= baseline_impedance * 0.6
     return :warning if current_impedance <= baseline_impedance * 0.8
     :normal
+  end
+
+  private
+
+  def thresholds_cache_key
+    "tree_family_#{id}_thresholds"
+  end
+
+  def thresholds_changed?
+    saved_change_to_critical_z_min? || saved_change_to_critical_z_max? || saved_change_to_baseline_impedance?
+  end
+
+  def invalidate_thresholds_cache
+    Rails.cache.delete(thresholds_cache_key)
   end
 end
