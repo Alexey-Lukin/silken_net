@@ -17,20 +17,17 @@ class TelemetryLog < ApplicationRecord
     tamper_detected: 3   # Вандалізм / Розкриття корпусу
   }, prefix: true
 
-  # --- ВАЛІДАЦІЇ (The Truth Constraints) ---
-  # z_value - результат розрахунку Атрактора Лоренца
-  validates :z_value, numericality: true, allow_nil: true
-
-  # Базові метрики від Солдата
-  validates :voltage_mv, :temperature_c, :acoustic_events, :metabolism_s, :growth_points, :mesh_ttl, presence: true
-
-  # Сейсмічний Метаматеріал (П'єзо-резонанс)
-  validates :piezo_voltage_mv, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  # --- ВАЛІДАЦІЇ ---
+  # [KENOSIS TITAN]: Валідації видалено з hot path.
+  # На Series C/D масштабі (мільйони пакетів/хв) дані перевіряються
+  # в TelemetryUnpackerService.valid_sensor_data? до створення запису.
+  # ActiveRecord валідації на кожному INSERT — зайві цикли CPU.
 
   # --- СКОУПИ (The Analytical Eyes) ---
+  # Індекс: index_telemetry_logs_on_tree_id_and_created_at
   scope :recent, -> { order(created_at: :desc) }
 
-  # Аномалії включають стрес, критику та акустичні сплески
+  # Індекс: idx_telemetry_logs_bio_status_created
   scope :anomalies, -> {
     where(bio_status: [ :stress, :anomaly, :tamper_detected ])
     .or(where("acoustic_events > ?", 50))
@@ -41,7 +38,7 @@ class TelemetryLog < ApplicationRecord
   # [ВИПРАВЛЕНО]: Використовуємо енум замість окремої колонки
   scope :vandalized, -> { bio_status_tamper_detected }
 
-  # Моніторинг сейсмічної активності через п'єзо-датчик
+  # Індекс: idx_telemetry_logs_piezo_created
   scope :seismic_activity, -> { where("piezo_voltage_mv > ?", 1500) }
 
   # --- МЕТОДИ (Topology Analysis) ---
@@ -74,15 +71,14 @@ class TelemetryLog < ApplicationRecord
     healthy? && voltage_mv > 3600 && z_value.to_f.between?(0.1, 0.5)
   end
 
-  # [СИНХРОНІЗАЦІЯ]: Перевірка на "Відновлення"
+  # [KENOSIS TITAN]: Перевірка на "Відновлення" (Anti-Flapping)
   # Використовується в AlertDispatchService для автоматичного закриття тривог.
-  # Ми вважаємо, що дерево "одужало", якщо останні 3 пакети є здоровими (Anti-Flapping).
+  # Замість N+1 запиту tree.telemetry_logs.recent.limit(3) — використовуємо
+  # денормалізований лічильник health_streak з моделі Tree.
+  # Лічильник оновлюється атомарно в TelemetryUnpackerService.commit_telemetry.
   def recovery_confirmed?
     return false unless healthy?
 
-    last_logs = tree.telemetry_logs.recent.limit(3)
-    return false if last_logs.size < 3
-
-    last_logs.all?(&:healthy?)
+    tree.health_streak >= 3
   end
 end

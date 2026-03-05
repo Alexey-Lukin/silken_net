@@ -1,0 +1,2745 @@
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: actuator_commands; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.actuator_commands (
+    id bigint NOT NULL,
+    actuator_id bigint NOT NULL,
+    ews_alert_id bigint,
+    user_id bigint,
+    command_payload text NOT NULL,
+    duration_seconds integer,
+    status integer DEFAULT 0,
+    sent_at timestamp(6) without time zone,
+    executed_at timestamp(6) without time zone,
+    error_message text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    completed_at timestamp(6) without time zone
+);
+
+
+--
+-- Name: actuator_commands_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.actuator_commands_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: actuator_commands_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.actuator_commands_id_seq OWNED BY public.actuator_commands.id;
+
+
+--
+-- Name: actuators; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.actuators (
+    id bigint NOT NULL,
+    gateway_id bigint NOT NULL,
+    name character varying,
+    device_type integer,
+    state integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    last_activated_at timestamp(6) without time zone,
+    endpoint character varying
+);
+
+
+--
+-- Name: actuators_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.actuators_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: actuators_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.actuators_id_seq OWNED BY public.actuators.id;
+
+
+--
+-- Name: ai_insights; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_insights (
+    id bigint NOT NULL,
+    insight_type integer,
+    prediction_data jsonb,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    analyzable_type character varying,
+    analyzable_id bigint,
+    analyzed_date date,
+    average_temperature numeric,
+    stress_index numeric,
+    total_growth_points integer,
+    summary text,
+    probability_score numeric,
+    target_date date,
+    reasoning jsonb,
+    recommendation jsonb,
+    fraud_detected boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: ai_insights_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ai_insights_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ai_insights_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ai_insights_id_seq OWNED BY public.ai_insights.id;
+
+
+--
+-- Name: ar_internal_metadata; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ar_internal_metadata (
+    key character varying NOT NULL,
+    value character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: audit_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.audit_logs (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    organization_id bigint NOT NULL,
+    action character varying NOT NULL,
+    auditable_type character varying,
+    auditable_id bigint,
+    metadata jsonb DEFAULT '{}'::jsonb,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: audit_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.audit_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: audit_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.audit_logs_id_seq OWNED BY public.audit_logs.id;
+
+
+--
+-- Name: bio_contract_firmwares; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.bio_contract_firmwares (
+    id bigint NOT NULL,
+    version character varying,
+    bytecode_payload text,
+    is_active boolean,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: bio_contract_firmwares_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.bio_contract_firmwares_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bio_contract_firmwares_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.bio_contract_firmwares_id_seq OWNED BY public.bio_contract_firmwares.id;
+
+
+--
+-- Name: blockchain_transactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_transactions (
+    id bigint NOT NULL,
+    wallet_id bigint,
+    amount numeric,
+    token_type integer,
+    status integer,
+    tx_hash character varying,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    to_address character varying,
+    error_message text,
+    sourceable_id bigint,
+    sourceable_type character varying,
+    cluster_id bigint,
+    locked_points integer,
+    gas_price numeric,
+    gas_used numeric,
+    cumulative_gas_cost numeric,
+    block_number bigint,
+    nonce integer,
+    sent_at timestamp(6) without time zone,
+    confirmed_at timestamp(6) without time zone
+);
+
+
+--
+-- Name: COLUMN blockchain_transactions.gas_price; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.blockchain_transactions.gas_price IS 'Gas price in wei at time of transaction';
+
+
+--
+-- Name: COLUMN blockchain_transactions.gas_used; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.blockchain_transactions.gas_used IS 'Gas units consumed by the transaction';
+
+
+--
+-- Name: COLUMN blockchain_transactions.cumulative_gas_cost; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.blockchain_transactions.cumulative_gas_cost IS 'Total gas cost in MATIC/POL (gas_price * gas_used)';
+
+
+--
+-- Name: COLUMN blockchain_transactions.block_number; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.blockchain_transactions.block_number IS 'Block number where transaction was included';
+
+
+--
+-- Name: COLUMN blockchain_transactions.nonce; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.blockchain_transactions.nonce IS 'EVM transaction nonce for idempotency';
+
+
+--
+-- Name: COLUMN blockchain_transactions.sent_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.blockchain_transactions.sent_at IS 'Timestamp when transaction was broadcast to mempool';
+
+
+--
+-- Name: COLUMN blockchain_transactions.confirmed_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.blockchain_transactions.confirmed_at IS 'Timestamp when transaction was confirmed on-chain';
+
+
+--
+-- Name: blockchain_transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blockchain_transactions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blockchain_transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blockchain_transactions_id_seq OWNED BY public.blockchain_transactions.id;
+
+
+--
+-- Name: clusters; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.clusters (
+    id bigint NOT NULL,
+    name character varying,
+    region character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    geojson_polygon jsonb,
+    climate_type character varying,
+    organization_id bigint,
+    environmental_settings jsonb,
+    health_index double precision
+);
+
+
+--
+-- Name: clusters_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.clusters_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: clusters_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.clusters_id_seq OWNED BY public.clusters.id;
+
+
+--
+-- Name: device_calibrations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.device_calibrations (
+    id bigint NOT NULL,
+    tree_id bigint NOT NULL,
+    temperature_offset_c numeric,
+    impedance_offset_ohms integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    vcap_coefficient numeric DEFAULT 1.0
+);
+
+
+--
+-- Name: device_calibrations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.device_calibrations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: device_calibrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.device_calibrations_id_seq OWNED BY public.device_calibrations.id;
+
+
+--
+-- Name: ews_alerts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ews_alerts (
+    id bigint NOT NULL,
+    cluster_id bigint NOT NULL,
+    tree_id bigint,
+    severity integer,
+    alert_type integer,
+    message text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    resolved_at timestamp(6) without time zone,
+    status integer,
+    resolved_by bigint,
+    resolution_notes text
+);
+
+
+--
+-- Name: ews_alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ews_alerts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ews_alerts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ews_alerts_id_seq OWNED BY public.ews_alerts.id;
+
+
+--
+-- Name: gateway_telemetry_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateway_telemetry_logs (
+    id bigint NOT NULL,
+    gateway_id bigint NOT NULL,
+    voltage_mv numeric,
+    cellular_signal_csq integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    queen_uid character varying,
+    temperature_c numeric
+);
+
+
+--
+-- Name: gateway_telemetry_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.gateway_telemetry_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gateway_telemetry_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.gateway_telemetry_logs_id_seq OWNED BY public.gateway_telemetry_logs.id;
+
+
+--
+-- Name: gateways; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateways (
+    id bigint NOT NULL,
+    uid character varying,
+    ip_address character varying,
+    latitude numeric,
+    longitude numeric,
+    altitude numeric,
+    last_seen_at timestamp(6) without time zone,
+    cluster_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    config_sleep_interval_s integer,
+    state integer,
+    firmware_version character varying,
+    latest_voltage_mv integer
+);
+
+
+--
+-- Name: gateways_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.gateways_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gateways_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.gateways_id_seq OWNED BY public.gateways.id;
+
+
+--
+-- Name: hardware_keys; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.hardware_keys (
+    id bigint NOT NULL,
+    aes_key_hex character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    device_uid character varying,
+    previous_aes_key_hex character varying,
+    rotated_at timestamp(6) without time zone
+);
+
+
+--
+-- Name: hardware_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.hardware_keys_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: hardware_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.hardware_keys_id_seq OWNED BY public.hardware_keys.id;
+
+
+--
+-- Name: identities; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.identities (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    provider character varying,
+    uid character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    access_token character varying,
+    refresh_token character varying,
+    auth_data jsonb,
+    expires_at timestamp(6) without time zone
+);
+
+
+--
+-- Name: identities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.identities_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: identities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.identities_id_seq OWNED BY public.identities.id;
+
+
+--
+-- Name: maintenance_records; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.maintenance_records (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    notes text,
+    performed_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    action_type integer,
+    maintainable_type character varying,
+    maintainable_id bigint,
+    ews_alert_id bigint
+);
+
+
+--
+-- Name: maintenance_records_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.maintenance_records_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: maintenance_records_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.maintenance_records_id_seq OWNED BY public.maintenance_records.id;
+
+
+--
+-- Name: naas_contracts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.naas_contracts (
+    id bigint NOT NULL,
+    organization_id bigint NOT NULL,
+    cluster_id bigint NOT NULL,
+    total_funding numeric,
+    start_date timestamp(6) without time zone,
+    end_date timestamp(6) without time zone,
+    status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    emitted_tokens numeric DEFAULT 0.0
+);
+
+
+--
+-- Name: naas_contracts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.naas_contracts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: naas_contracts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.naas_contracts_id_seq OWNED BY public.naas_contracts.id;
+
+
+--
+-- Name: organizations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.organizations (
+    id bigint NOT NULL,
+    name character varying,
+    crypto_public_address character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    billing_email character varying
+);
+
+
+--
+-- Name: organizations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.organizations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: organizations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.organizations_id_seq OWNED BY public.organizations.id;
+
+
+--
+-- Name: parametric_insurances; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.parametric_insurances (
+    id bigint NOT NULL,
+    organization_id bigint NOT NULL,
+    cluster_id bigint NOT NULL,
+    status integer,
+    trigger_event integer,
+    payout_amount numeric,
+    threshold_value numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    token_type integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: parametric_insurances_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.parametric_insurances_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: parametric_insurances_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.parametric_insurances_id_seq OWNED BY public.parametric_insurances.id;
+
+
+--
+-- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.schema_migrations (
+    version character varying NOT NULL
+);
+
+
+--
+-- Name: sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sessions (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    ip_address character varying,
+    user_agent character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: sessions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sessions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sessions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.sessions_id_seq OWNED BY public.sessions.id;
+
+
+--
+-- Name: telemetry_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_logs (
+    id bigint NOT NULL,
+    acoustic_events integer,
+    bio_status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    firmware_version_id bigint,
+    growth_points numeric,
+    mesh_ttl integer,
+    metabolism_s integer,
+    piezo_voltage_mv integer,
+    queen_uid character varying,
+    rssi integer,
+    tamper_detected boolean,
+    temperature_c numeric,
+    tree_id bigint NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    voltage_mv integer,
+    z_value numeric
+)
+PARTITION BY RANGE (created_at);
+
+
+--
+-- Name: telemetry_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telemetry_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telemetry_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telemetry_logs_id_seq OWNED BY public.telemetry_logs.id;
+
+
+--
+-- Name: telemetry_logs_default; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_logs_default (
+    id bigint DEFAULT nextval('public.telemetry_logs_id_seq'::regclass) NOT NULL,
+    acoustic_events integer,
+    bio_status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    firmware_version_id bigint,
+    growth_points numeric,
+    mesh_ttl integer,
+    metabolism_s integer,
+    piezo_voltage_mv integer,
+    queen_uid character varying,
+    rssi integer,
+    tamper_detected boolean,
+    temperature_c numeric,
+    tree_id bigint NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    voltage_mv integer,
+    z_value numeric
+);
+
+
+--
+-- Name: telemetry_logs_y2026m01; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_logs_y2026m01 (
+    id bigint DEFAULT nextval('public.telemetry_logs_id_seq'::regclass) NOT NULL,
+    acoustic_events integer,
+    bio_status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    firmware_version_id bigint,
+    growth_points numeric,
+    mesh_ttl integer,
+    metabolism_s integer,
+    piezo_voltage_mv integer,
+    queen_uid character varying,
+    rssi integer,
+    tamper_detected boolean,
+    temperature_c numeric,
+    tree_id bigint NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    voltage_mv integer,
+    z_value numeric
+);
+
+
+--
+-- Name: telemetry_logs_y2026m02; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_logs_y2026m02 (
+    id bigint DEFAULT nextval('public.telemetry_logs_id_seq'::regclass) NOT NULL,
+    acoustic_events integer,
+    bio_status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    firmware_version_id bigint,
+    growth_points numeric,
+    mesh_ttl integer,
+    metabolism_s integer,
+    piezo_voltage_mv integer,
+    queen_uid character varying,
+    rssi integer,
+    tamper_detected boolean,
+    temperature_c numeric,
+    tree_id bigint NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    voltage_mv integer,
+    z_value numeric
+);
+
+
+--
+-- Name: telemetry_logs_y2026m03; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_logs_y2026m03 (
+    id bigint DEFAULT nextval('public.telemetry_logs_id_seq'::regclass) NOT NULL,
+    acoustic_events integer,
+    bio_status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    firmware_version_id bigint,
+    growth_points numeric,
+    mesh_ttl integer,
+    metabolism_s integer,
+    piezo_voltage_mv integer,
+    queen_uid character varying,
+    rssi integer,
+    tamper_detected boolean,
+    temperature_c numeric,
+    tree_id bigint NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    voltage_mv integer,
+    z_value numeric
+);
+
+
+--
+-- Name: telemetry_logs_y2026m04; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_logs_y2026m04 (
+    id bigint DEFAULT nextval('public.telemetry_logs_id_seq'::regclass) NOT NULL,
+    acoustic_events integer,
+    bio_status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    firmware_version_id bigint,
+    growth_points numeric,
+    mesh_ttl integer,
+    metabolism_s integer,
+    piezo_voltage_mv integer,
+    queen_uid character varying,
+    rssi integer,
+    tamper_detected boolean,
+    temperature_c numeric,
+    tree_id bigint NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    voltage_mv integer,
+    z_value numeric
+);
+
+
+--
+-- Name: telemetry_logs_y2026m05; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_logs_y2026m05 (
+    id bigint DEFAULT nextval('public.telemetry_logs_id_seq'::regclass) NOT NULL,
+    acoustic_events integer,
+    bio_status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    firmware_version_id bigint,
+    growth_points numeric,
+    mesh_ttl integer,
+    metabolism_s integer,
+    piezo_voltage_mv integer,
+    queen_uid character varying,
+    rssi integer,
+    tamper_detected boolean,
+    temperature_c numeric,
+    tree_id bigint NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    voltage_mv integer,
+    z_value numeric
+);
+
+
+--
+-- Name: telemetry_logs_y2026m06; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_logs_y2026m06 (
+    id bigint DEFAULT nextval('public.telemetry_logs_id_seq'::regclass) NOT NULL,
+    acoustic_events integer,
+    bio_status integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    firmware_version_id bigint,
+    growth_points numeric,
+    mesh_ttl integer,
+    metabolism_s integer,
+    piezo_voltage_mv integer,
+    queen_uid character varying,
+    rssi integer,
+    tamper_detected boolean,
+    temperature_c numeric,
+    tree_id bigint NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    voltage_mv integer,
+    z_value numeric
+);
+
+
+--
+-- Name: tiny_ml_models; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tiny_ml_models (
+    id bigint NOT NULL,
+    version character varying,
+    target_pest character varying,
+    binary_weights_payload text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    checksum character varying,
+    is_active boolean DEFAULT false,
+    metadata jsonb,
+    tree_family_id bigint
+);
+
+
+--
+-- Name: tiny_ml_models_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tiny_ml_models_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tiny_ml_models_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tiny_ml_models_id_seq OWNED BY public.tiny_ml_models.id;
+
+
+--
+-- Name: tree_families; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tree_families (
+    id bigint NOT NULL,
+    name character varying,
+    baseline_impedance integer,
+    critical_z_min numeric,
+    critical_z_max numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    biological_properties jsonb
+);
+
+
+--
+-- Name: tree_families_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tree_families_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tree_families_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tree_families_id_seq OWNED BY public.tree_families.id;
+
+
+--
+-- Name: trees; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.trees (
+    id bigint NOT NULL,
+    did character varying,
+    latitude numeric,
+    longitude numeric,
+    altitude numeric,
+    cluster_id bigint,
+    tree_family_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    tiny_ml_model_id bigint,
+    status integer DEFAULT 0,
+    last_seen_at timestamp(6) without time zone,
+    firmware_version character varying,
+    latest_voltage_mv integer,
+    health_streak integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: trees_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.trees_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: trees_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.trees_id_seq OWNED BY public.trees.id;
+
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.users (
+    id bigint NOT NULL,
+    email_address character varying,
+    password_digest character varying,
+    role integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    organization_id bigint,
+    phone_number character varying,
+    last_seen_at timestamp(6) without time zone,
+    first_name character varying,
+    last_name character varying,
+    telegram_chat_id character varying
+);
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+
+
+--
+-- Name: wallets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.wallets (
+    id bigint NOT NULL,
+    tree_id bigint NOT NULL,
+    balance numeric,
+    crypto_public_address character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    organization_id bigint
+);
+
+
+--
+-- Name: wallets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.wallets_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: wallets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.wallets_id_seq OWNED BY public.wallets.id;
+
+
+--
+-- Name: telemetry_logs_default; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_default DEFAULT;
+
+
+--
+-- Name: telemetry_logs_y2026m01; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_y2026m01 FOR VALUES FROM ('2026-01-01 00:00:00') TO ('2026-02-01 00:00:00');
+
+
+--
+-- Name: telemetry_logs_y2026m02; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_y2026m02 FOR VALUES FROM ('2026-02-01 00:00:00') TO ('2026-03-01 00:00:00');
+
+
+--
+-- Name: telemetry_logs_y2026m03; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_y2026m03 FOR VALUES FROM ('2026-03-01 00:00:00') TO ('2026-04-01 00:00:00');
+
+
+--
+-- Name: telemetry_logs_y2026m04; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_y2026m04 FOR VALUES FROM ('2026-04-01 00:00:00') TO ('2026-05-01 00:00:00');
+
+
+--
+-- Name: telemetry_logs_y2026m05; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_y2026m05 FOR VALUES FROM ('2026-05-01 00:00:00') TO ('2026-06-01 00:00:00');
+
+
+--
+-- Name: telemetry_logs_y2026m06; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs ATTACH PARTITION public.telemetry_logs_y2026m06 FOR VALUES FROM ('2026-06-01 00:00:00') TO ('2026-07-01 00:00:00');
+
+
+--
+-- Name: actuator_commands id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.actuator_commands ALTER COLUMN id SET DEFAULT nextval('public.actuator_commands_id_seq'::regclass);
+
+
+--
+-- Name: actuators id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.actuators ALTER COLUMN id SET DEFAULT nextval('public.actuators_id_seq'::regclass);
+
+
+--
+-- Name: ai_insights id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_insights ALTER COLUMN id SET DEFAULT nextval('public.ai_insights_id_seq'::regclass);
+
+
+--
+-- Name: audit_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_logs ALTER COLUMN id SET DEFAULT nextval('public.audit_logs_id_seq'::regclass);
+
+
+--
+-- Name: bio_contract_firmwares id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bio_contract_firmwares ALTER COLUMN id SET DEFAULT nextval('public.bio_contract_firmwares_id_seq'::regclass);
+
+
+--
+-- Name: blockchain_transactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions ALTER COLUMN id SET DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass);
+
+
+--
+-- Name: clusters id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clusters ALTER COLUMN id SET DEFAULT nextval('public.clusters_id_seq'::regclass);
+
+
+--
+-- Name: device_calibrations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.device_calibrations ALTER COLUMN id SET DEFAULT nextval('public.device_calibrations_id_seq'::regclass);
+
+
+--
+-- Name: ews_alerts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ews_alerts ALTER COLUMN id SET DEFAULT nextval('public.ews_alerts_id_seq'::regclass);
+
+
+--
+-- Name: gateway_telemetry_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs ALTER COLUMN id SET DEFAULT nextval('public.gateway_telemetry_logs_id_seq'::regclass);
+
+
+--
+-- Name: gateways id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateways ALTER COLUMN id SET DEFAULT nextval('public.gateways_id_seq'::regclass);
+
+
+--
+-- Name: hardware_keys id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hardware_keys ALTER COLUMN id SET DEFAULT nextval('public.hardware_keys_id_seq'::regclass);
+
+
+--
+-- Name: identities id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.identities ALTER COLUMN id SET DEFAULT nextval('public.identities_id_seq'::regclass);
+
+
+--
+-- Name: maintenance_records id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.maintenance_records ALTER COLUMN id SET DEFAULT nextval('public.maintenance_records_id_seq'::regclass);
+
+
+--
+-- Name: naas_contracts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.naas_contracts ALTER COLUMN id SET DEFAULT nextval('public.naas_contracts_id_seq'::regclass);
+
+
+--
+-- Name: organizations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.organizations ALTER COLUMN id SET DEFAULT nextval('public.organizations_id_seq'::regclass);
+
+
+--
+-- Name: parametric_insurances id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parametric_insurances ALTER COLUMN id SET DEFAULT nextval('public.parametric_insurances_id_seq'::regclass);
+
+
+--
+-- Name: sessions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions ALTER COLUMN id SET DEFAULT nextval('public.sessions_id_seq'::regclass);
+
+
+--
+-- Name: telemetry_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs ALTER COLUMN id SET DEFAULT nextval('public.telemetry_logs_id_seq'::regclass);
+
+
+--
+-- Name: tiny_ml_models id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tiny_ml_models ALTER COLUMN id SET DEFAULT nextval('public.tiny_ml_models_id_seq'::regclass);
+
+
+--
+-- Name: tree_families id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tree_families ALTER COLUMN id SET DEFAULT nextval('public.tree_families_id_seq'::regclass);
+
+
+--
+-- Name: trees id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trees ALTER COLUMN id SET DEFAULT nextval('public.trees_id_seq'::regclass);
+
+
+--
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Name: wallets id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallets ALTER COLUMN id SET DEFAULT nextval('public.wallets_id_seq'::regclass);
+
+
+--
+-- Name: actuator_commands actuator_commands_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.actuator_commands
+    ADD CONSTRAINT actuator_commands_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: actuators actuators_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.actuators
+    ADD CONSTRAINT actuators_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_insights ai_insights_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_insights
+    ADD CONSTRAINT ai_insights_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ar_internal_metadata ar_internal_metadata_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ar_internal_metadata
+    ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: audit_logs audit_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_logs
+    ADD CONSTRAINT audit_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bio_contract_firmwares bio_contract_firmwares_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bio_contract_firmwares
+    ADD CONSTRAINT bio_contract_firmwares_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blockchain_transactions blockchain_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions
+    ADD CONSTRAINT blockchain_transactions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: clusters clusters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clusters
+    ADD CONSTRAINT clusters_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: device_calibrations device_calibrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.device_calibrations
+    ADD CONSTRAINT device_calibrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ews_alerts ews_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ews_alerts
+    ADD CONSTRAINT ews_alerts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: gateway_telemetry_logs gateway_telemetry_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs
+    ADD CONSTRAINT gateway_telemetry_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: gateways gateways_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateways
+    ADD CONSTRAINT gateways_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: hardware_keys hardware_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hardware_keys
+    ADD CONSTRAINT hardware_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: identities identities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.identities
+    ADD CONSTRAINT identities_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: maintenance_records maintenance_records_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.maintenance_records
+    ADD CONSTRAINT maintenance_records_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: naas_contracts naas_contracts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.naas_contracts
+    ADD CONSTRAINT naas_contracts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: organizations organizations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.organizations
+    ADD CONSTRAINT organizations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: parametric_insurances parametric_insurances_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parametric_insurances
+    ADD CONSTRAINT parametric_insurances_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_migrations
+    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: telemetry_logs telemetry_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs
+    ADD CONSTRAINT telemetry_logs_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: telemetry_logs_default telemetry_logs_default_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs_default
+    ADD CONSTRAINT telemetry_logs_default_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m01 telemetry_logs_y2026m01_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs_y2026m01
+    ADD CONSTRAINT telemetry_logs_y2026m01_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m02 telemetry_logs_y2026m02_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs_y2026m02
+    ADD CONSTRAINT telemetry_logs_y2026m02_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m03 telemetry_logs_y2026m03_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs_y2026m03
+    ADD CONSTRAINT telemetry_logs_y2026m03_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m04 telemetry_logs_y2026m04_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs_y2026m04
+    ADD CONSTRAINT telemetry_logs_y2026m04_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m05 telemetry_logs_y2026m05_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs_y2026m05
+    ADD CONSTRAINT telemetry_logs_y2026m05_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m06 telemetry_logs_y2026m06_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_logs_y2026m06
+    ADD CONSTRAINT telemetry_logs_y2026m06_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: tiny_ml_models tiny_ml_models_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tiny_ml_models
+    ADD CONSTRAINT tiny_ml_models_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tree_families tree_families_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tree_families
+    ADD CONSTRAINT tree_families_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: trees trees_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trees
+    ADD CONSTRAINT trees_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: wallets wallets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallets
+    ADD CONSTRAINT wallets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_ai_insights_reasoning_gin; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_insights_reasoning_gin ON public.ai_insights USING gin (reasoning);
+
+
+--
+-- Name: idx_ai_insights_target_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_insights_target_date ON public.ai_insights USING btree (target_date);
+
+
+--
+-- Name: idx_ai_insights_unique_report; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_ai_insights_unique_report ON public.ai_insights USING btree (analyzable_type, analyzable_id, target_date, insight_type);
+
+
+--
+-- Name: idx_telemetry_logs_bio_status_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_logs_bio_status_created ON ONLY public.telemetry_logs USING btree (bio_status, created_at);
+
+
+--
+-- Name: idx_telemetry_logs_piezo_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_logs_piezo_created ON ONLY public.telemetry_logs USING btree (piezo_voltage_mv, created_at);
+
+
+--
+-- Name: index_actuator_commands_on_actuator_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_actuator_commands_on_actuator_id ON public.actuator_commands USING btree (actuator_id);
+
+
+--
+-- Name: index_actuator_commands_on_ews_alert_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_actuator_commands_on_ews_alert_id ON public.actuator_commands USING btree (ews_alert_id);
+
+
+--
+-- Name: index_actuator_commands_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_actuator_commands_on_user_id ON public.actuator_commands USING btree (user_id);
+
+
+--
+-- Name: index_actuators_on_gateway_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_actuators_on_gateway_id ON public.actuators USING btree (gateway_id);
+
+
+--
+-- Name: index_ai_insights_on_analyzable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ai_insights_on_analyzable ON public.ai_insights USING btree (analyzable_type, analyzable_id);
+
+
+--
+-- Name: index_audit_logs_on_action; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_audit_logs_on_action ON public.audit_logs USING btree (action);
+
+
+--
+-- Name: index_audit_logs_on_auditable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_audit_logs_on_auditable ON public.audit_logs USING btree (auditable_type, auditable_id);
+
+
+--
+-- Name: index_audit_logs_on_organization_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_audit_logs_on_organization_id ON public.audit_logs USING btree (organization_id);
+
+
+--
+-- Name: index_audit_logs_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_audit_logs_on_user_id ON public.audit_logs USING btree (user_id);
+
+
+--
+-- Name: index_blockchain_transactions_on_block_number; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_block_number ON public.blockchain_transactions USING btree (block_number);
+
+
+--
+-- Name: index_blockchain_transactions_on_cluster_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_cluster_id ON public.blockchain_transactions USING btree (cluster_id);
+
+
+--
+-- Name: index_blockchain_transactions_on_confirmed_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_confirmed_at ON public.blockchain_transactions USING btree (confirmed_at);
+
+
+--
+-- Name: index_blockchain_transactions_on_sourceable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_sourceable ON public.blockchain_transactions USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: index_blockchain_transactions_on_wallet_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_wallet_id ON public.blockchain_transactions USING btree (wallet_id);
+
+
+--
+-- Name: index_clusters_on_organization_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_clusters_on_organization_id ON public.clusters USING btree (organization_id);
+
+
+--
+-- Name: index_device_calibrations_on_tree_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_device_calibrations_on_tree_id ON public.device_calibrations USING btree (tree_id);
+
+
+--
+-- Name: index_ews_alerts_on_cluster_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ews_alerts_on_cluster_id ON public.ews_alerts USING btree (cluster_id);
+
+
+--
+-- Name: index_ews_alerts_on_resolved_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ews_alerts_on_resolved_at ON public.ews_alerts USING btree (resolved_at);
+
+
+--
+-- Name: index_ews_alerts_on_tree_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ews_alerts_on_tree_id ON public.ews_alerts USING btree (tree_id);
+
+
+--
+-- Name: index_gateway_telemetry_logs_on_gateway_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_gateway_telemetry_logs_on_gateway_id ON public.gateway_telemetry_logs USING btree (gateway_id);
+
+
+--
+-- Name: index_gateways_on_cluster_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_gateways_on_cluster_id ON public.gateways USING btree (cluster_id);
+
+
+--
+-- Name: index_gateways_on_uid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_gateways_on_uid ON public.gateways USING btree (uid);
+
+
+--
+-- Name: index_hardware_keys_on_device_uid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_hardware_keys_on_device_uid ON public.hardware_keys USING btree (device_uid);
+
+
+--
+-- Name: index_identities_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_identities_on_user_id ON public.identities USING btree (user_id);
+
+
+--
+-- Name: index_maintenance_records_on_ews_alert_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_maintenance_records_on_ews_alert_id ON public.maintenance_records USING btree (ews_alert_id);
+
+
+--
+-- Name: index_maintenance_records_on_maintainable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_maintenance_records_on_maintainable ON public.maintenance_records USING btree (maintainable_type, maintainable_id);
+
+
+--
+-- Name: index_maintenance_records_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_maintenance_records_on_user_id ON public.maintenance_records USING btree (user_id);
+
+
+--
+-- Name: index_naas_contracts_on_cluster_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_naas_contracts_on_cluster_id ON public.naas_contracts USING btree (cluster_id);
+
+
+--
+-- Name: index_naas_contracts_on_organization_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_naas_contracts_on_organization_id ON public.naas_contracts USING btree (organization_id);
+
+
+--
+-- Name: index_parametric_insurances_on_cluster_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_parametric_insurances_on_cluster_id ON public.parametric_insurances USING btree (cluster_id);
+
+
+--
+-- Name: index_parametric_insurances_on_organization_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_parametric_insurances_on_organization_id ON public.parametric_insurances USING btree (organization_id);
+
+
+--
+-- Name: index_sessions_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_sessions_on_user_id ON public.sessions USING btree (user_id);
+
+
+--
+-- Name: index_telemetry_logs_on_tree_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_logs_on_tree_id ON ONLY public.telemetry_logs USING btree (tree_id);
+
+
+--
+-- Name: index_telemetry_logs_on_tree_id_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_logs_on_tree_id_and_created_at ON ONLY public.telemetry_logs USING btree (tree_id, created_at);
+
+
+--
+-- Name: index_tiny_ml_models_on_tree_family_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_tiny_ml_models_on_tree_family_id ON public.tiny_ml_models USING btree (tree_family_id);
+
+
+--
+-- Name: index_trees_on_cluster_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_trees_on_cluster_id ON public.trees USING btree (cluster_id);
+
+
+--
+-- Name: index_trees_on_did; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_trees_on_did ON public.trees USING btree (did);
+
+
+--
+-- Name: index_trees_on_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_trees_on_status ON public.trees USING btree (status);
+
+
+--
+-- Name: index_trees_on_tiny_ml_model_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_trees_on_tiny_ml_model_id ON public.trees USING btree (tiny_ml_model_id);
+
+
+--
+-- Name: index_trees_on_tree_family_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_trees_on_tree_family_id ON public.trees USING btree (tree_family_id);
+
+
+--
+-- Name: index_users_on_email_address; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_users_on_email_address ON public.users USING btree (email_address);
+
+
+--
+-- Name: index_users_on_last_seen_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_last_seen_at ON public.users USING btree (last_seen_at);
+
+
+--
+-- Name: index_users_on_org_last_seen_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_org_last_seen_id ON public.users USING btree (organization_id, last_seen_at DESC, id DESC);
+
+
+--
+-- Name: index_users_on_organization_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_organization_id ON public.users USING btree (organization_id);
+
+
+--
+-- Name: index_wallets_on_organization_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_wallets_on_organization_id ON public.wallets USING btree (organization_id);
+
+
+--
+-- Name: index_wallets_on_tree_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_wallets_on_tree_id ON public.wallets USING btree (tree_id);
+
+
+--
+-- Name: telemetry_logs_default_bio_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_default_bio_status_created_at_idx ON public.telemetry_logs_default USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_default_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_default_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_default USING btree (piezo_voltage_mv, created_at);
+
+
+--
+-- Name: telemetry_logs_default_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_default_tree_id_created_at_idx ON public.telemetry_logs_default USING btree (tree_id, created_at);
+
+
+--
+-- Name: telemetry_logs_default_tree_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_default_tree_id_idx ON public.telemetry_logs_default USING btree (tree_id);
+
+
+--
+-- Name: telemetry_logs_y2026m01_bio_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m01_bio_status_created_at_idx ON public.telemetry_logs_y2026m01 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m01_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m01_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m01 USING btree (piezo_voltage_mv, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m01_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m01_tree_id_created_at_idx ON public.telemetry_logs_y2026m01 USING btree (tree_id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m01_tree_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m01_tree_id_idx ON public.telemetry_logs_y2026m01 USING btree (tree_id);
+
+
+--
+-- Name: telemetry_logs_y2026m02_bio_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m02_bio_status_created_at_idx ON public.telemetry_logs_y2026m02 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m02 USING btree (piezo_voltage_mv, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m02_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m02_tree_id_created_at_idx ON public.telemetry_logs_y2026m02 USING btree (tree_id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m02_tree_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m02_tree_id_idx ON public.telemetry_logs_y2026m02 USING btree (tree_id);
+
+
+--
+-- Name: telemetry_logs_y2026m03_bio_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m03_bio_status_created_at_idx ON public.telemetry_logs_y2026m03 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m03_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m03_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m03 USING btree (piezo_voltage_mv, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m03_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m03_tree_id_created_at_idx ON public.telemetry_logs_y2026m03 USING btree (tree_id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m03_tree_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m03_tree_id_idx ON public.telemetry_logs_y2026m03 USING btree (tree_id);
+
+
+--
+-- Name: telemetry_logs_y2026m04_bio_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m04_bio_status_created_at_idx ON public.telemetry_logs_y2026m04 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m04 USING btree (piezo_voltage_mv, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m04_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m04_tree_id_created_at_idx ON public.telemetry_logs_y2026m04 USING btree (tree_id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m04_tree_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m04_tree_id_idx ON public.telemetry_logs_y2026m04 USING btree (tree_id);
+
+
+--
+-- Name: telemetry_logs_y2026m05_bio_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m05_bio_status_created_at_idx ON public.telemetry_logs_y2026m05 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m05_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m05_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m05 USING btree (piezo_voltage_mv, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m05_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m05_tree_id_created_at_idx ON public.telemetry_logs_y2026m05 USING btree (tree_id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m05_tree_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m05_tree_id_idx ON public.telemetry_logs_y2026m05 USING btree (tree_id);
+
+
+--
+-- Name: telemetry_logs_y2026m06_bio_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m06_bio_status_created_at_idx ON public.telemetry_logs_y2026m06 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m06_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m06_piezo_voltage_mv_created_at_idx ON public.telemetry_logs_y2026m06 USING btree (piezo_voltage_mv, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m06_tree_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m06_tree_id_created_at_idx ON public.telemetry_logs_y2026m06 USING btree (tree_id, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m06_tree_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m06_tree_id_idx ON public.telemetry_logs_y2026m06 USING btree (tree_id);
+
+
+--
+-- Name: telemetry_logs_default_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_default_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_default_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_default_piezo_voltage_mv_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_default_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.telemetry_logs_pkey ATTACH PARTITION public.telemetry_logs_default_pkey;
+
+
+--
+-- Name: telemetry_logs_default_tree_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITION public.telemetry_logs_default_tree_id_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_default_tree_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_default_tree_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m01_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m01_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m01_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m01_piezo_voltage_mv_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m01_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.telemetry_logs_pkey ATTACH PARTITION public.telemetry_logs_y2026m01_pkey;
+
+
+--
+-- Name: telemetry_logs_y2026m01_tree_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITION public.telemetry_logs_y2026m01_tree_id_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m01_tree_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_y2026m01_tree_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m02_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m02_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m02_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.telemetry_logs_pkey ATTACH PARTITION public.telemetry_logs_y2026m02_pkey;
+
+
+--
+-- Name: telemetry_logs_y2026m02_tree_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITION public.telemetry_logs_y2026m02_tree_id_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m02_tree_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_y2026m02_tree_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m03_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m03_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m03_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m03_piezo_voltage_mv_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m03_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.telemetry_logs_pkey ATTACH PARTITION public.telemetry_logs_y2026m03_pkey;
+
+
+--
+-- Name: telemetry_logs_y2026m03_tree_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITION public.telemetry_logs_y2026m03_tree_id_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m03_tree_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_y2026m03_tree_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m04_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m04_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m04_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.telemetry_logs_pkey ATTACH PARTITION public.telemetry_logs_y2026m04_pkey;
+
+
+--
+-- Name: telemetry_logs_y2026m04_tree_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITION public.telemetry_logs_y2026m04_tree_id_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m04_tree_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_y2026m04_tree_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m05_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m05_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m05_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m05_piezo_voltage_mv_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m05_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.telemetry_logs_pkey ATTACH PARTITION public.telemetry_logs_y2026m05_pkey;
+
+
+--
+-- Name: telemetry_logs_y2026m05_tree_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITION public.telemetry_logs_y2026m05_tree_id_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m05_tree_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_y2026m05_tree_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m06_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m06_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m06_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_piezo_created ATTACH PARTITION public.telemetry_logs_y2026m06_piezo_voltage_mv_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m06_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.telemetry_logs_pkey ATTACH PARTITION public.telemetry_logs_y2026m06_pkey;
+
+
+--
+-- Name: telemetry_logs_y2026m06_tree_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITION public.telemetry_logs_y2026m06_tree_id_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m06_tree_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_y2026m06_tree_id_idx;
+
+
+--
+-- Name: trees fk_rails_06cda60c51; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trees
+    ADD CONSTRAINT fk_rails_06cda60c51 FOREIGN KEY (tiny_ml_model_id) REFERENCES public.tiny_ml_models(id);
+
+
+--
+-- Name: audit_logs fk_rails_13aa3bd6ad; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_logs
+    ADD CONSTRAINT fk_rails_13aa3bd6ad FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: wallets fk_rails_1c72cbc225; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallets
+    ADD CONSTRAINT fk_rails_1c72cbc225 FOREIGN KEY (tree_id) REFERENCES public.trees(id);
+
+
+--
+-- Name: ews_alerts fk_rails_1d5041378e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ews_alerts
+    ADD CONSTRAINT fk_rails_1d5041378e FOREIGN KEY (tree_id) REFERENCES public.trees(id);
+
+
+--
+-- Name: gateway_telemetry_logs fk_rails_1df16206a5; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs
+    ADD CONSTRAINT fk_rails_1df16206a5 FOREIGN KEY (gateway_id) REFERENCES public.gateways(id);
+
+
+--
+-- Name: audit_logs fk_rails_1f26bc34ae; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_logs
+    ADD CONSTRAINT fk_rails_1f26bc34ae FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: parametric_insurances fk_rails_263c5e6bbe; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parametric_insurances
+    ADD CONSTRAINT fk_rails_263c5e6bbe FOREIGN KEY (cluster_id) REFERENCES public.clusters(id);
+
+
+--
+-- Name: wallets fk_rails_28077d4aa2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wallets
+    ADD CONSTRAINT fk_rails_28077d4aa2 FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: ews_alerts fk_rails_31dc7505cb; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ews_alerts
+    ADD CONSTRAINT fk_rails_31dc7505cb FOREIGN KEY (resolved_by) REFERENCES public.users(id);
+
+
+--
+-- Name: trees fk_rails_3349fced79; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trees
+    ADD CONSTRAINT fk_rails_3349fced79 FOREIGN KEY (tree_family_id) REFERENCES public.tree_families(id);
+
+
+--
+-- Name: clusters fk_rails_43af04cf6d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.clusters
+    ADD CONSTRAINT fk_rails_43af04cf6d FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: maintenance_records fk_rails_51fb28965b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.maintenance_records
+    ADD CONSTRAINT fk_rails_51fb28965b FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: identities fk_rails_5373344100; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.identities
+    ADD CONSTRAINT fk_rails_5373344100 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: gateways fk_rails_637a591322; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateways
+    ADD CONSTRAINT fk_rails_637a591322 FOREIGN KEY (cluster_id) REFERENCES public.clusters(id);
+
+
+--
+-- Name: sessions fk_rails_758836b4f0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT fk_rails_758836b4f0 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: actuator_commands fk_rails_7d7b1ea1d2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.actuator_commands
+    ADD CONSTRAINT fk_rails_7d7b1ea1d2 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: blockchain_transactions fk_rails_7f57af4001; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions
+    ADD CONSTRAINT fk_rails_7f57af4001 FOREIGN KEY (wallet_id) REFERENCES public.wallets(id);
+
+
+--
+-- Name: tiny_ml_models fk_rails_8ebc5faedf; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tiny_ml_models
+    ADD CONSTRAINT fk_rails_8ebc5faedf FOREIGN KEY (tree_family_id) REFERENCES public.tree_families(id);
+
+
+--
+-- Name: naas_contracts fk_rails_a66158730a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.naas_contracts
+    ADD CONSTRAINT fk_rails_a66158730a FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: trees fk_rails_c7140d4291; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trees
+    ADD CONSTRAINT fk_rails_c7140d4291 FOREIGN KEY (cluster_id) REFERENCES public.clusters(id);
+
+
+--
+-- Name: naas_contracts fk_rails_cb132bb86f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.naas_contracts
+    ADD CONSTRAINT fk_rails_cb132bb86f FOREIGN KEY (cluster_id) REFERENCES public.clusters(id);
+
+
+--
+-- Name: blockchain_transactions fk_rails_d3cc5df71d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions
+    ADD CONSTRAINT fk_rails_d3cc5df71d FOREIGN KEY (cluster_id) REFERENCES public.clusters(id);
+
+
+--
+-- Name: users fk_rails_d7b9ff90af; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT fk_rails_d7b9ff90af FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: actuators fk_rails_db554b554e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.actuators
+    ADD CONSTRAINT fk_rails_db554b554e FOREIGN KEY (gateway_id) REFERENCES public.gateways(id);
+
+
+--
+-- Name: maintenance_records fk_rails_e28c02059b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.maintenance_records
+    ADD CONSTRAINT fk_rails_e28c02059b FOREIGN KEY (ews_alert_id) REFERENCES public.ews_alerts(id);
+
+
+--
+-- Name: ews_alerts fk_rails_eef0559de4; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ews_alerts
+    ADD CONSTRAINT fk_rails_eef0559de4 FOREIGN KEY (cluster_id) REFERENCES public.clusters(id);
+
+
+--
+-- Name: actuator_commands fk_rails_ef97c98747; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.actuator_commands
+    ADD CONSTRAINT fk_rails_ef97c98747 FOREIGN KEY (actuator_id) REFERENCES public.actuators(id);
+
+
+--
+-- Name: parametric_insurances fk_rails_f74e36606e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parametric_insurances
+    ADD CONSTRAINT fk_rails_f74e36606e FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: actuator_commands fk_rails_fb2abfc4a2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.actuator_commands
+    ADD CONSTRAINT fk_rails_fb2abfc4a2 FOREIGN KEY (ews_alert_id) REFERENCES public.ews_alerts(id);
+
+
+--
+-- Name: device_calibrations fk_rails_fc89db28c3; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.device_calibrations
+    ADD CONSTRAINT fk_rails_fc89db28c3 FOREIGN KEY (tree_id) REFERENCES public.trees(id);
+
+
+--
+-- Name: telemetry_logs fk_telemetry_logs_tree_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.telemetry_logs
+    ADD CONSTRAINT fk_telemetry_logs_tree_id FOREIGN KEY (tree_id) REFERENCES public.trees(id);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+SET search_path TO "$user", public;
+
+INSERT INTO "schema_migrations" (version) VALUES
+('20260304210000'),
+('20260304200000'),
+('20260304191032'),
+('20260304180000'),
+('20260304160000'),
+('20260303199000'),
+('20260303198000'),
+('20260303197000'),
+('20260303196000'),
+('20260303194000'),
+('20260303193000'),
+('20260303075659'),
+('20260228000000'),
+('20260227220000'),
+('20260226172704'),
+('20260226172050'),
+('20260226171928'),
+('20260226171755'),
+('20260226171604'),
+('20260226171327'),
+('20260226171013'),
+('20260226170638'),
+('20260226170322'),
+('20260226170004'),
+('20260226164466'),
+('20260226164465'),
+('20260226164464'),
+('20260226164463'),
+('20260226164462'),
+('20260226164461'),
+('20260226164460'),
+('20260226164459'),
+('20260226164458'),
+('20260226164457'),
+('20260226164456'),
+('20260226164455'),
+('20260226164454'),
+('20260226164453'),
+('20260226164452'),
+('20260226164451'),
+('20260226164450'),
+('20260226164449'),
+('20260226164448'),
+('20260226164447'),
+('20260226164446'),
+('20260226164445');
+
