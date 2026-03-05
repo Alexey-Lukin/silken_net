@@ -1,27 +1,56 @@
+# =============================================================================
+# SILKEN NET — Active Storage Configuration
+# Scale context: tens of millions of trees, photos for every repair/installation
+#
+# PRODUCTION SETUP:
+#   Set credentials via environment variables or Rails credentials:
+#     bin/rails credentials:edit
+#
+#   Required credentials structure:
+#     aws:
+#       access_key_id: ...
+#       secret_access_key: ...
+#     gcs:
+#       (JSON keyfile contents as a hash)
+# =============================================================================
+
+# --- TEST ---
 test:
   service: Disk
   root: <%= Rails.root.join("tmp/storage") %>
 
+# --- DEVELOPMENT (local disk, mirrors prod structure) ---
 local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
-# Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
-# amazon:
-#   service: S3
-#   access_key_id: <%= Rails.application.credentials.dig(:aws, :access_key_id) %>
-#   secret_access_key: <%= Rails.application.credentials.dig(:aws, :secret_access_key) %>
-#   region: us-east-1
-#   bucket: your_own_bucket-<%= Rails.env %>
+# --- PRODUCTION PRIMARY: Amazon S3 (or any S3-compatible: MinIO, DO Spaces, Backblaze B2) ---
+# Recommended: separate bucket per environment, enable versioning + lifecycle rules
+amazon:
+  service: S3
+  access_key_id: <%= Rails.application.credentials.dig(:aws, :access_key_id) %>
+  secret_access_key: <%= Rails.application.credentials.dig(:aws, :secret_access_key) %>
+  region: <%= ENV.fetch("AWS_REGION", "eu-central-1") %>
+  bucket: <%= ENV.fetch("AWS_BUCKET", "silken-net-#{Rails.env}") %>
+  # Enable server-side encryption at rest
+  upload:
+    server_side_encryption: "AES256"
+  # Use presigned URLs so files are served directly from S3/CDN — bypasses Rails
+  public: false
 
-# Remember not to checkin your GCS keyfile to a repository
-# google:
-#   service: GCS
-#   project: your_project
-#   credentials: <%= Rails.root.join("path/to/gcs.keyfile") %>
-#   bucket: your_own_bucket-<%= Rails.env %>
+# --- DISASTER RECOVERY MIRROR: Google Cloud Storage ---
+# Files are written to both S3 and GCS simultaneously
+google:
+  service: GCS
+  credentials: <%= Rails.application.credentials.dig(:gcs) %>
+  project: <%= ENV.fetch("GCS_PROJECT", "silken-net") %>
+  bucket: <%= ENV.fetch("GCS_BUCKET", "silken-net-#{Rails.env}") %>
 
-# mirror:
-#   service: Mirror
-#   primary: local
-#   mirrors: [ amazon, google, microsoft ]
+# --- PRODUCTION MIRROR SERVICE (primary S3 + mirror GCS) ---
+# Reads always come from primary (amazon); writes go to both.
+# Switch primary to :google instantly if S3 has an outage.
+production_mirror:
+  service: Mirror
+  primary: amazon
+  mirrors:
+    - google

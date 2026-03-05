@@ -27,6 +27,13 @@ gem "thruster", require: false
 gem "turbo-rails"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
+gem "active_storage_validations"
+# Active Storage: cloud object storage backends
+# S3-compatible (AWS, MinIO, DigitalOcean Spaces, Backblaze B2)
+gem "aws-sdk-s3", require: false
+# Google Cloud Storage (mirror / disaster recovery)
+gem "google-cloud-storage", require: false
+
 group :development, :test do
   gem "brakeman", require: false
   gem "bundler-audit", require: false
