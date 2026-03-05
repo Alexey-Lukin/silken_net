@@ -4,6 +4,10 @@ class DeviceCalibration < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
   belongs_to :tree
 
+  # --- ДЕЛЕГУВАННЯ ---
+  # [N+1 Kill]: Прямий доступ до cluster_id через tree без завантаження Cluster
+  delegate :cluster_id, to: :tree
+
   # --- КОНСТАНТИ КРИТИЧНОГО ЗСУВУ (Hardware Decay Thresholds) ---
   # Межі, за якими програмна корекція стає неможливою
   MAX_TEMP_DRIFT = 5.0
@@ -63,14 +67,17 @@ class DeviceCalibration < ApplicationRecord
 
   def check_for_hardware_fault
     return unless sensor_drift_critical?
-    return unless tree.cluster.present?
+    return unless tree.cluster_id # [N+1 Kill]: Читаємо FK напряму, без завантаження Cluster
 
-    # Автоматично створюємо тривогу для технічної команди
+    # [Deduplication Fix]: Шукаємо за tree + alert_type + severity (стабільні ключі),
+    # а не за динамічним message, щоб уникнути дублів при повторних save.
     EwsAlert.find_or_create_by!(
-      cluster: tree.cluster,
+      tree: tree,
       alert_type: :system_fault,
-      severity: :medium,
-      message: "Hardware Decay: Сенсори вузла #{tree.did} вимагають фізичної заміни (критичний дрейф калібрування)."
-    )
+      severity: :medium
+    ) do |alert|
+      alert.cluster_id = tree.cluster_id
+      alert.message = "Hardware Decay: Вузол #{tree.did} вимагає заміни."
+    end
   end
 end
