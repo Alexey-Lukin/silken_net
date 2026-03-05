@@ -38,3 +38,6 @@
 
 .DS_Store
 vendor/bundle
+
+# RSpec example status persistence
+/spec/examples.txt
