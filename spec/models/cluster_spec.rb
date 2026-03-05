@@ -40,4 +40,65 @@ RSpec.describe Cluster, type: :model do
       expect(result).to eq(1.0) # No insights → default 1.0
     end
   end
+
+  describe "#total_active_trees" do
+    it "returns the cached active_trees_count column value" do
+      cluster = create(:cluster, active_trees_count: 42)
+      expect(cluster.total_active_trees).to eq(42)
+    end
+
+    it "defaults to 0 for a new cluster" do
+      cluster = create(:cluster)
+      expect(cluster.total_active_trees).to eq(0)
+    end
+  end
+
+  describe "#active_contract" do
+    it "returns the most recently created active contract" do
+      cluster = create(:cluster)
+      older = create(:naas_contract, cluster: cluster, status: :active, created_at: 2.days.ago)
+      newer = create(:naas_contract, cluster: cluster, status: :active, created_at: 1.day.ago)
+
+      expect(cluster.active_contract).to eq(newer)
+    end
+
+    it "returns nil when no active contracts exist" do
+      cluster = create(:cluster)
+      create(:naas_contract, cluster: cluster, status: :draft)
+
+      expect(cluster.active_contract).to be_nil
+    end
+  end
+
+  describe "#geo_center" do
+    it "returns nil when geojson_polygon is absent" do
+      cluster = create(:cluster, geojson_polygon: nil)
+      expect(cluster.geo_center).to be_nil
+    end
+
+    it "calculates centroid from Polygon coordinates" do
+      polygon = {
+        "type" => "Polygon",
+        "coordinates" => [[[31.9, 49.4], [32.0, 49.4], [32.0, 49.5], [31.9, 49.5], [31.9, 49.4]]]
+      }
+      cluster = create(:cluster, geojson_polygon: polygon)
+      center = cluster.geo_center
+
+      expect(center[:lng]).to be_within(0.01).of(31.94)
+      expect(center[:lat]).to be_within(0.01).of(49.44)
+    end
+
+    it "memoizes the result across multiple calls" do
+      polygon = {
+        "type" => "Polygon",
+        "coordinates" => [[[31.9, 49.4], [32.0, 49.4], [32.0, 49.5], [31.9, 49.5], [31.9, 49.4]]]
+      }
+      cluster = create(:cluster, geojson_polygon: polygon)
+
+      first_call = cluster.geo_center
+      second_call = cluster.geo_center
+
+      expect(first_call).to equal(second_call) # same object_id (memoized)
+    end
+  end
 end

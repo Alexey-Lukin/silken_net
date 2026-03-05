@@ -44,8 +44,11 @@ class Cluster < ApplicationRecord
 
   # --- МЕТОДИ (Sector Intelligence) ---
 
+  # [ОПТИМІЗАЦІЯ: Counter Cache]: Використовуємо денормалізований лічильник замість COUNT(*).
+  # При 50 кластерах × 100 000+ дерев на дашборді — це різниця між 50 SQL-запитами і нулем.
+  # Лічильник оновлюється через колбеки в Tree при зміні статусу або переміщенні між кластерами.
   def total_active_trees
-    trees.active.count
+    active_trees_count
   end
 
   def mapped?
@@ -83,7 +86,24 @@ class Cluster < ApplicationRecord
 
   # [ВИПРАВЛЕНО]: Глибина GeoJSON (Resilient Centroid).
   # Тепер метод збирає всі пари координат незалежно від того, чи це Polygon, чи MultiPolygon.
+  # [ОПТИМІЗАЦІЯ]: Мемоізація результату — при повторних викликах (UI-карта, EwsAlert#coordinates)
+  # обробка масиву координат не повторюється.
   def geo_center
+    return @geo_center if defined?(@geo_center)
+
+    @geo_center = compute_geo_center
+  end
+
+  # [ВИПРАВЛЕНО: Детермінованість]: Гарантуємо порядок для фінансових звітів.
+  # PostgreSQL не гарантує порядок без ORDER BY — .first може повернути різні результати
+  # в різних середовищах. Завжди отримуємо найновіший активний контракт.
+  def active_contract
+    naas_contracts.active.order(created_at: :desc).first
+  end
+
+  private
+
+  def compute_geo_center
     return nil unless mapped?
 
     # Повністю розгортаємо масив і групуємо по два значення (lng, lat)
@@ -95,11 +115,5 @@ class Cluster < ApplicationRecord
     avg_lng = all_points.map(&:first).sum / all_points.size
 
     { lat: avg_lat, lng: avg_lng }
-  end
-
-  # [СИНХРОНІЗОВАНО]: Повертає поточний активний NaaS-контракт.
-  # Використовує уніфікований скоуп .active замість .active_contracts
-  def active_contract
-    naas_contracts.active.first
   end
 end

@@ -45,6 +45,12 @@ class Tree < ApplicationRecord
   after_create :build_default_wallet
   after_create :ensure_calibration
 
+  # [Counter Cache]: Підтримка денормалізованого лічильника active_trees_count у Cluster.
+  # Використовуємо after_commit для гарантії видимості змін іншими транзакціями.
+  after_create_commit :increment_cluster_active_trees_count, if: -> { active? && cluster_id.present? }
+  after_destroy_commit :decrement_cluster_active_trees_count, if: -> { active? && cluster_id.present? }
+  after_update_commit :update_cluster_active_trees_count, if: -> { saved_change_to_status? || saved_change_to_cluster_id? }
+
   # ⚡ [ТРИГЕР СМЕРТІ]: Якщо дерево гине або зникає — ініціюємо фінансову відплату (Slashing)
   after_update_commit :trigger_slashing_protocol, if: -> { saved_change_to_status? && (removed? || deceased?) }
 
@@ -160,5 +166,35 @@ class Tree < ApplicationRecord
     )
 
     Rails.logger.warn "🚨 [Ecosystem Breach] Дерево #{did} зафіксовано як #{status}. Сигнал на вилучення токенів відправлено."
+  end
+
+  # =========================================================================
+  # COUNTER CACHE: active_trees_count на Cluster
+  # =========================================================================
+
+  def increment_cluster_active_trees_count
+    Cluster.where(id: cluster_id).update_all("active_trees_count = active_trees_count + 1")
+  end
+
+  def decrement_cluster_active_trees_count
+    Cluster.where(id: cluster_id).where("active_trees_count > 0").update_all("active_trees_count = active_trees_count - 1")
+  end
+
+  def update_cluster_active_trees_count
+    old_status, new_status = saved_change_to_status || [ status_before_type_cast, status_before_type_cast ]
+    old_cluster_id, new_cluster_id = saved_change_to_cluster_id || [ cluster_id, cluster_id ]
+
+    was_active = old_status == "active" || old_status == 0
+    is_active = active?
+
+    # Декремент зі старого кластера, якщо дерево було активним
+    if was_active && old_cluster_id.present?
+      Cluster.where(id: old_cluster_id).where("active_trees_count > 0").update_all("active_trees_count = active_trees_count - 1")
+    end
+
+    # Інкремент у новому кластері, якщо дерево стало/залишається активним
+    if is_active && new_cluster_id.present?
+      Cluster.where(id: new_cluster_id).update_all("active_trees_count = active_trees_count + 1")
+    end
   end
 end
