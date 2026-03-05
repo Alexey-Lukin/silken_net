@@ -1024,7 +1024,9 @@ CREATE TABLE public.tree_families (
     critical_z_max numeric,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    biological_properties jsonb
+    biological_properties jsonb,
+    scientific_name character varying,
+    carbon_sequestration_coefficient double precision DEFAULT 1.0 NOT NULL
 );
 
 
@@ -1924,6 +1926,13 @@ CREATE INDEX index_tiny_ml_models_on_tree_family_id ON public.tiny_ml_models USI
 
 
 --
+-- Name: index_tree_families_on_scientific_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_tree_families_on_scientific_name ON public.tree_families USING btree (scientific_name) WHERE (scientific_name IS NOT NULL);
+
+
+--
 -- Name: index_trees_on_cluster_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2696,6 +2705,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260305132625'),
 ('20260304210000'),
 ('20260304200000'),
 ('20260304191032'),

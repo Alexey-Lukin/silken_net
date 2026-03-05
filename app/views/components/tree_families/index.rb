@@ -46,7 +46,13 @@ module Views
 
         def render_row(family)
           tr(class: "hover:bg-emerald-950/10 transition-colors group") do
-            td(class: "p-4 text-emerald-100 font-bold") { family.name }
+            td(class: "p-4") do
+              span(class: "text-emerald-100 font-bold") { family.name }
+              if family.scientific_name.present?
+                br
+                span(class: "text-[9px] italic text-emerald-700") { family.scientific_name }
+              end
+            end
             td(class: "p-4 text-emerald-500") { "#{family.baseline_impedance} kΩ" }
             td(class: "p-4 text-gray-500") { "#{family.critical_z_min} - #{family.critical_z_max} kΩ" }
             td(class: "p-4 text-emerald-900") { "#{family.trees.count} Soldiers" }
