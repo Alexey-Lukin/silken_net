@@ -21,8 +21,16 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # Active Storage: S3 primary + GCS mirror for disaster recovery at scale.
+  # Writes go to both services simultaneously; reads come from S3.
+  config.active_storage.service = :production_mirror
+
+  # VIPS is 10-20x faster than MiniMagick for variant generation (critical at scale).
+  # Requires libvips system library (already in Dockerfile base image).
+  config.active_storage.variant_processor = :vips
+
+  # Queue variant generation as background jobs — never block the request cycle.
+  config.active_storage.resolve_model_to_route = :rails_storage_proxy
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   # config.assume_ssl = true
