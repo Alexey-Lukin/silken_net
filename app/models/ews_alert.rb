@@ -23,6 +23,18 @@ class EwsAlert < ApplicationRecord
   # --- ВАЛІДАЦІЇ ---
   validates :severity, :alert_type, :message, presence: true
 
+  # [STORM PROTECTION]: Захист від каскадних дублікатів.
+  # Якщо один кластер накриває задимлення, сотні дерев згенерують fire_detected.
+  # Ця валідація гарантує лише одну активну тривогу на [tree_id, alert_type].
+  # Підкріплено частковим унікальним індексом на рівні БД (див. міграцію).
+  validates :alert_type,
+            uniqueness: { scope: [:tree_id, :status], message: "вже є активним для цього вузла" },
+            if: -> { tree_id.present? && status_active? }
+
+  # Троттлінг WebSocket-трансляцій: не частіше ніж раз на N секунд,
+  # щоб уникнути "шторму" повідомлень при масових інцидентах.
+  BROADCAST_THROTTLE_SECONDS = 5
+
   # --- КОЛБЕКИ (Zero-Lag Awareness) ---
   # Сакральна асинхронність: сповіщення летять лише після COMMIT
   after_create_commit :dispatch_notifications!
@@ -112,21 +124,35 @@ class EwsAlert < ApplicationRecord
     end
   end
 
+  # [ВИПРАВЛЕНО]: MaintenanceRecord не має колонки status.
+  # Використовуємо update_all для швидкодії — MaintenanceRecord не несе
+  # фінансових зобов'язань та не має after_update колбеків, тому update_all безпечний.
   def close_associated_maintenance!
-    # Використовуємо update_all для швидкодії без запуску зайвих колбеків моделей
-    MaintenanceRecord.where(ews_alert_id: id).where.not(status: :completed).update_all(
-      status: :completed,
+    MaintenanceRecord.where(ews_alert_id: id).update_all(
       performed_at: Time.current,
       notes: "Auto-resolved via EWS Recovery Protocol"
-    ) rescue nil
+    )
   end
 
-  # Real-time broadcast для всіх операторів організації
+  # [THROTTLED]: Real-time broadcast для всіх операторів організації.
+  # При масових інцидентах WebSocket-канал може «лягти» від потоку оновлень.
+  # Троттлінг гарантує мінімальний інтервал між некритичними broadcast.
   def broadcast_alert_update
+    return unless should_broadcast?
+
     Turbo::StreamsChannel.broadcast_replace_to(
       "ews_alerts_org_#{cluster.organization_id}",
       target: "alert_#{id}",
       html: Views::Components::Alerts::Row.new(alert: self).call
     )
+  end
+
+  # Троттлінг: не частіше ніж раз на BROADCAST_THROTTLE_SECONDS.
+  def should_broadcast?
+    cache_key = "ews_alert_broadcast_throttle:#{id}"
+    return false if Rails.cache.exist?(cache_key)
+
+    Rails.cache.write(cache_key, true, expires_in: BROADCAST_THROTTLE_SECONDS.seconds)
+    true
   end
 end
