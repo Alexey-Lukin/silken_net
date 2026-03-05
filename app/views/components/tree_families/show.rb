@@ -24,7 +24,7 @@ module Views
           div(class: "p-10 border border-emerald-900 bg-zinc-950 relative overflow-hidden") do
             div(class: "absolute top-0 right-0 p-4 text-[120px] font-bold text-emerald-900/5 select-none uppercase") { @family.name.first(3) }
 
-            h2(class: "text-5xl font-extralight tracking-tighter text-white") { @family.display_name }
+            h2(class: "text-5xl font-extralight tracking-tighter text-white") { @family.name }
             if @family.scientific_name.present?
               p(class: "text-sm italic text-emerald-500 mt-2") { @family.scientific_name }
             end

@@ -349,6 +349,11 @@ RSpec.describe TreeFamily, type: :model do
       family = build(:tree_family, carbon_sequestration_coefficient: 1.5)
       expect(family.weighted_growth_points(0)).to eq(0.0)
     end
+
+    it "handles negative raw points (sensor anomaly pass-through)" do
+      family = build(:tree_family, carbon_sequestration_coefficient: 1.5)
+      expect(family.weighted_growth_points(-5)).to eq(-7.5)
+    end
   end
 
   describe "#healthy_z?" do
