@@ -191,6 +191,7 @@ RSpec.describe EwsAlert, type: :model do
   describe "callbacks" do
     describe "after_create_commit :dispatch_notifications!" do
       it "enqueues AlertNotificationWorker" do
+        allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!).and_call_original
         expect(AlertNotificationWorker).to receive(:perform_async).with(kind_of(Integer))
         create(:ews_alert, :fire)
       end
