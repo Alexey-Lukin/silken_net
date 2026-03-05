@@ -28,7 +28,7 @@ class EwsAlert < ApplicationRecord
   # Ця валідація гарантує лише одну активну тривогу на [tree_id, alert_type].
   # Підкріплено частковим унікальним індексом на рівні БД (див. міграцію).
   validates :alert_type,
-            uniqueness: { scope: [:tree_id, :status], message: "вже є активним для цього вузла" },
+            uniqueness: { scope: [ :tree_id, :status ], message: "вже є активним для цього вузла" },
             if: -> { tree_id.present? && status_active? }
 
   # Троттлінг WebSocket-трансляцій: не частіше ніж раз на N секунд,

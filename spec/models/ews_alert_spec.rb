@@ -159,7 +159,7 @@ RSpec.describe EwsAlert, type: :model do
         _resolved = create(:ews_alert, status: :resolved)
         _ignored = create(:ews_alert, status: :ignored)
 
-        expect(described_class.unresolved).to eq([active])
+        expect(described_class.unresolved).to eq([ active ])
       end
     end
 
@@ -169,7 +169,7 @@ RSpec.describe EwsAlert, type: :model do
         _medium_active = create(:ews_alert, :drought)
         _critical_resolved = create(:ews_alert, severity: :critical, alert_type: :fire_detected, status: :resolved)
 
-        expect(described_class.critical).to eq([critical_active])
+        expect(described_class.critical).to eq([ critical_active ])
       end
     end
 
