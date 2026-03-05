@@ -79,7 +79,7 @@ RSpec.describe Cluster, type: :model do
     it "calculates centroid from Polygon coordinates" do
       polygon = {
         "type" => "Polygon",
-        "coordinates" => [[[31.9, 49.4], [32.0, 49.4], [32.0, 49.5], [31.9, 49.5], [31.9, 49.4]]]
+        "coordinates" => [ [ [ 31.9, 49.4 ], [ 32.0, 49.4 ], [ 32.0, 49.5 ], [ 31.9, 49.5 ], [ 31.9, 49.4 ] ] ]
       }
       cluster = create(:cluster, geojson_polygon: polygon)
       center = cluster.geo_center
@@ -91,7 +91,7 @@ RSpec.describe Cluster, type: :model do
     it "memoizes the result across multiple calls" do
       polygon = {
         "type" => "Polygon",
-        "coordinates" => [[[31.9, 49.4], [32.0, 49.4], [32.0, 49.5], [31.9, 49.5], [31.9, 49.4]]]
+        "coordinates" => [ [ [ 31.9, 49.4 ], [ 32.0, 49.4 ], [ 32.0, 49.5 ], [ 31.9, 49.5 ], [ 31.9, 49.4 ] ] ]
       }
       cluster = create(:cluster, geojson_polygon: polygon)
 
