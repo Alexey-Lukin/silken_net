@@ -39,9 +39,9 @@ class NaasContract < ApplicationRecord
   def check_cluster_health!(target_date = cluster.local_yesterday)
     return unless status_active?
 
-    # Рахуємо лише активні дерева, ігноруючи deceased та removed
-    active_trees = cluster.trees.active
-    total_active_count = active_trees.count
+    # [Counter Cache]: Використовуємо денормалізований лічильник замість COUNT(*).
+    # Рахуємо лише активні дерева, ігноруючи deceased та removed.
+    total_active_count = cluster.active_trees_count
 
     return if total_active_count.zero?
 
@@ -50,7 +50,7 @@ class NaasContract < ApplicationRecord
     # Subquery дозволяє PostgreSQL оптимізувати запит через JOIN/Hash.
     daily_insights = AiInsight.daily_health_summary.where(
       analyzable_type: "Tree",
-      analyzable_id: active_trees.select(:id),
+      analyzable_id: cluster.trees.active.select(:id),
       target_date: target_date
     )
 
@@ -64,9 +64,10 @@ class NaasContract < ApplicationRecord
     # Рахуємо критичні аномалії серед живих
     critical_insights_count = daily_insights.where("stress_index >= 1.0").count
 
-    # Математична межа порушення контракту (20% від активної біомаси)
+    # Математична межа порушення контракту (20% від активної біомаси).
+    # [Rational]: Точна раціональна арифметика замість Float 0.20, щоб уникнути мікропохибок.
     # $$HealthRatio = \frac{\sum \text{ActiveTrees with Stress} \ge 1.0}{\text{TotalActiveTrees}}$$
-    if critical_insights_count > (total_active_count * 0.20)
+    if critical_insights_count > total_active_count * Rational(1, 5)
       activate_slashing_protocol!
     end
   end

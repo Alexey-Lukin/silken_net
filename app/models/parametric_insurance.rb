@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "bigdecimal"
+
 class ParametricInsurance < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
   # Організація-страховик (напр. Swiss Re або децентралізований пул)
@@ -29,12 +31,13 @@ class ParametricInsurance < ApplicationRecord
     return unless status_active?
 
     # 1. Отримуємо вердикт від нашого ШІ-Оракула (AiInsight)
-    total_trees_count = cluster.trees.count
-    return if total_trees_count.zero?
+    # [Counter Cache]: Використовуємо денормалізований лічильник замість COUNT(*) на мільйонах дерев.
+    total_trees = cluster.active_trees_count
+    return if total_trees.zero?
 
     # [SQL Optimization]: Підзапит замість масиву об'єктів (The Polymorphic IN Trap).
     # [СИНХРОНІЗОВАНО]: Використовуємо target_date та insight_type
-    anomalous_insights = AiInsight.daily_health_summary.where(
+    anomalous_count = AiInsight.daily_health_summary.where(
       analyzable_type: "Tree",
       analyzable_id: cluster.trees.select(:id),
       target_date: target_date,
@@ -42,12 +45,13 @@ class ParametricInsurance < ApplicationRecord
     ).count
 
     # Математика тригера:
-    # $$ \text{damage\_ratio} = \frac{\text{anomalous\_insights}}{\text{total\_trees}} \times 100 $$
-    current_anomalous_percentage = (anomalous_insights.to_f / total_trees_count * 100).round(2)
+    # $$ \text{damage\_ratio} = \frac{\text{anomalous\_count}}{\text{total\_trees}} \times 100 $$
+    # [BigDecimal]: Використовуємо точну арифметику — для страхування мікропохибка Float неприпустима.
+    damage_ratio = (BigDecimal(anomalous_count.to_s) / total_trees * 100).round(2)
 
     # 2. Перевірка тригера
-    if current_anomalous_percentage >= threshold_value
-      activate_payout!(current_anomalous_percentage)
+    if damage_ratio >= threshold_value
+      activate_payout!(damage_ratio)
     end
   end
 
@@ -59,15 +63,18 @@ class ParametricInsurance < ApplicationRecord
   private
 
   def activate_payout!(percentage)
-    transaction do
+    payout_triggered = transaction do
       update!(status: :triggered)
 
       # Створюємо системний запис для аудиторів та патрульних
       Rails.logger.warn "💸 [INSURANCE] Тригер ##{id} активовано! Пошкодження сектора: #{percentage}%."
 
-      # ЗАПУСК WEB3 ВОРКЕРА
-      # Він виконає переказ USDC/USDT на адресу recipient_wallet_address
-      InsurancePayoutWorker.perform_async(self.id)
+      true
     end
+
+    # ЗАПУСК WEB3 ВОРКЕРА ПІСЛЯ УСПІШНОГО COMMIT
+    # [Transaction Safety]: Запускаємо воркер тільки після завершення транзакції,
+    # щоб уникнути Race Condition між Redis і PostgreSQL COMMIT.
+    InsurancePayoutWorker.perform_async(id) if payout_triggered
   end
 end

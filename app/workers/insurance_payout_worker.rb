@@ -32,7 +32,9 @@ class InsurancePayoutWorker
     ActiveRecord::Base.transaction do
       # Pessimistic lock для запобігання подвійних виплат (Double Spend Protection)
       insurance.lock!
-      return unless insurance.status_triggered?
+      # [next vs return]: next виходить тільки з блоку, а не з методу perform.
+      # return тут виходив би з методу — семантична пастка при рефакторингу на proc/lambda.
+      next unless insurance.status_triggered?
 
       # Створюємо запис у блокчейн-черзі для виконання емісії/переказу
       tx = insurance.create_blockchain_transaction!(
