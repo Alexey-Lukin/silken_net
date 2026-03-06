@@ -30,7 +30,7 @@ class TinyMlModel < ApplicationRecord
 
   # [Compatibility Gap]: Семантичне версіонування прошивки (напр. "v2.1.0")
   validates :min_firmware_version, format: {
-    with: /\Av?\d+\.\d+\.\d+/,
+    with: /\Av?\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?\z/,
     message: "має відповідати формату семантичного версіонування (напр. v2.1.0)"
   }, allow_nil: true
 
