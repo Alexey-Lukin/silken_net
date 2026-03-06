@@ -1,3 +1,24 @@
+# SimpleCov — аналіз покриття тестами.
+# Має бути на самому початку, до завантаження будь-якого коду додатка.
+require "simplecov"
+SimpleCov.start "rails" do
+  enable_coverage :branch
+
+  add_filter "/spec/"
+  add_filter "/config/"
+  add_filter "/db/"
+  add_filter "/vendor/"
+
+  add_group "Models",      "app/models"
+  add_group "Controllers", "app/controllers"
+  add_group "Services",    "app/services"
+  add_group "Workers",     "app/workers"
+  add_group "Blueprints",  "app/blueprints"
+
+  minimum_coverage line: 15, branch: 10
+  minimum_coverage_by_file 0
+end
+
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
