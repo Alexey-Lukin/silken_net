@@ -17,6 +17,16 @@ RSpec.describe BlockchainBurningService do
     ENV["ORACLE_PRIVATE_KEY"] ||= "0x#{'a' * 64}"
     ENV["CARBON_COIN_CONTRACT_ADDRESS"] ||= "0x#{'0' * 40}"
 
+    # Kredis може бути відсутнім у тестовому середовищі
+    unless defined?(Kredis)
+      kredis_mod = Module.new do
+        def self.lock(*, **, &block)
+          block&.call
+        end
+      end
+      stub_const("Kredis", kredis_mod)
+    end
+
     allow(Eth::Client).to receive(:create).and_return(mock_client)
     allow(Eth::Key).to receive(:new).and_return(mock_key)
     allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)

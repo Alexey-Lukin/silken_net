@@ -10,14 +10,19 @@ RSpec.describe InsightGeneratorService, type: :service do
   before do
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-    allow(AlertDispatchService).to receive(:create_fraud_alert!)
+
+    # create_fraud_alert! викликається в InsightGeneratorService, але визначений як приватний
+    # class method у AlertDispatchService. Використовуємо without_partial_double_verification.
+    without_partial_double_verification {
+      allow(AlertDispatchService).to receive(:create_fraud_alert!)
+    }
   end
 
   describe "#perform" do
     it "creates daily health summary insights for each tree" do
       create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        sap_flow: 100, acoustic_events: 2, growth_points: 10,
+        acoustic_events: 2, growth_points: 10,
         bio_status: :homeostasis, metabolism_s: 1000,
         created_at: date.beginning_of_day + 12.hours)
 
@@ -41,7 +46,7 @@ RSpec.describe InsightGeneratorService, type: :service do
         [normal_tree1, normal_tree2].each do |t|
           create(:telemetry_log, tree: t,
             temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-            sap_flow: 100, acoustic_events: 2, growth_points: 10,
+            acoustic_events: 2, growth_points: 10,
             bio_status: :homeostasis, metabolism_s: 1000,
             created_at: date.beginning_of_day + 12.hours)
         end
@@ -49,7 +54,7 @@ RSpec.describe InsightGeneratorService, type: :service do
         # Fraudulent tree: both sap (200) and temp (50) deviate >30% from cluster avg
         create(:telemetry_log, tree: fraudulent_tree,
           temperature_c: 50.0, voltage_mv: 3500, z_value: 0.5,
-          sap_flow: 200, acoustic_events: 2, growth_points: 10,
+          acoustic_events: 2, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)
       end
@@ -81,7 +86,7 @@ RSpec.describe InsightGeneratorService, type: :service do
     it "calculates correct stress_index for healthy trees (status 0)" do
       create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        sap_flow: 100, acoustic_events: 2, growth_points: 10,
+        acoustic_events: 2, growth_points: 10,
         bio_status: :homeostasis, metabolism_s: 1000,
         created_at: date.beginning_of_day + 12.hours)
 
@@ -95,7 +100,7 @@ RSpec.describe InsightGeneratorService, type: :service do
     it "is idempotent - reruns delete and recreate insights" do
       create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        sap_flow: 100, acoustic_events: 2, growth_points: 10,
+        acoustic_events: 2, growth_points: 10,
         bio_status: :homeostasis, metabolism_s: 1000,
         created_at: date.beginning_of_day + 12.hours)
 
@@ -112,7 +117,7 @@ RSpec.describe InsightGeneratorService, type: :service do
     it "creates cluster-level aggregation insights" do
       create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        sap_flow: 100, acoustic_events: 2, growth_points: 10,
+        acoustic_events: 2, growth_points: 10,
         bio_status: :homeostasis, metabolism_s: 1000,
         created_at: date.beginning_of_day + 12.hours)
 
@@ -130,13 +135,13 @@ RSpec.describe InsightGeneratorService, type: :service do
     it "cleans up telemetry logs older than 7 days" do
       old_log = create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        sap_flow: 100, acoustic_events: 2, growth_points: 10,
+        acoustic_events: 2, growth_points: 10,
         bio_status: :homeostasis, metabolism_s: 1000,
         created_at: 8.days.ago)
 
       create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        sap_flow: 100, acoustic_events: 2, growth_points: 10,
+        acoustic_events: 2, growth_points: 10,
         bio_status: :homeostasis, metabolism_s: 1000,
         created_at: date.beginning_of_day + 12.hours)
 
@@ -148,7 +153,7 @@ RSpec.describe InsightGeneratorService, type: :service do
     it "returns processed count and date" do
       create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        sap_flow: 100, acoustic_events: 2, growth_points: 10,
+        acoustic_events: 2, growth_points: 10,
         bio_status: :homeostasis, metabolism_s: 1000,
         created_at: date.beginning_of_day + 12.hours)
 
@@ -163,7 +168,7 @@ RSpec.describe InsightGeneratorService, type: :service do
 
       create(:telemetry_log, tree: tree_with_logs,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
-        sap_flow: 100, acoustic_events: 2, growth_points: 10,
+        acoustic_events: 2, growth_points: 10,
         bio_status: :homeostasis, metabolism_s: 1000,
         created_at: date.beginning_of_day + 12.hours)
 

@@ -22,6 +22,16 @@ RSpec.describe BlockchainMintingService do
   let(:mock_lock) { double("kredis_lock") }
 
   before do
+    # Kredis може бути відсутнім у тестовому середовищі
+    unless defined?(Kredis)
+      kredis_mod = Module.new do
+        def self.lock(*, **, &block)
+          block&.call
+        end
+      end
+      stub_const("Kredis", kredis_mod)
+    end
+
     allow(Eth::Client).to receive(:create).and_return(mock_client)
     allow(Eth::Key).to receive(:new).and_return(mock_key)
     allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
