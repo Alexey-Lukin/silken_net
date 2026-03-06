@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "eth"
+require "bigdecimal"
 
 class BlockchainMintingService
   # ABI оновлено для підтримки поштучного mint та пакетного batchMint
@@ -133,7 +134,9 @@ class BlockchainMintingService
   end
 
   def to_wei(amount)
-    (amount.to_f * (10**18)).to_i
+    # [BigDecimal]: Уникаємо Float precision loss при конвертації великих сум.
+    # amount.to_f * 10**18 може дати похибку в кількох wei — неприпустимо для Web3.
+    (BigDecimal(amount.to_s) * 10**18).to_i
   end
 
   def broadcast_tx_update(transaction)

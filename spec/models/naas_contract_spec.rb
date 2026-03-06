@@ -29,6 +29,7 @@ RSpec.describe NaasContract, type: :model do
     context "when Oracle is silent (no daily insights)" do
       it "activates slashing protocol" do
         create(:tree, cluster: cluster, status: :active)
+        cluster.reload
 
         contract.check_cluster_health!(target_date)
 
@@ -37,6 +38,7 @@ RSpec.describe NaasContract, type: :model do
 
       it "enqueues BurnCarbonTokensWorker" do
         create(:tree, cluster: cluster, status: :active)
+        cluster.reload
 
         contract.check_cluster_health!(target_date)
 
@@ -52,6 +54,7 @@ RSpec.describe NaasContract, type: :model do
           create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.2)
         end
 
+        cluster.reload
         contract.check_cluster_health!(target_date)
 
         expect(contract.reload).to be_status_active
@@ -70,6 +73,7 @@ RSpec.describe NaasContract, type: :model do
           create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.1)
         end
 
+        cluster.reload
         contract.check_cluster_health!(target_date)
 
         expect(contract.reload).to be_status_breached
@@ -88,6 +92,7 @@ RSpec.describe NaasContract, type: :model do
           create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.1)
         end
 
+        cluster.reload
         contract.check_cluster_health!(target_date)
 
         expect(contract.reload).to be_status_active
@@ -103,6 +108,7 @@ RSpec.describe NaasContract, type: :model do
           create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.1)
         end
 
+        cluster.reload
         contract.check_cluster_health!(target_date)
 
         expect(contract.reload).to be_status_active
@@ -125,6 +131,7 @@ RSpec.describe NaasContract, type: :model do
           queries << payload[:sql] if payload[:sql]&.include?("ai_insights")
         }
 
+        cluster.reload
         ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
           contract.check_cluster_health!(target_date)
         end

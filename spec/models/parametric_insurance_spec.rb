@@ -139,6 +139,7 @@ RSpec.describe ParametricInsurance, type: :model do
         trees[0..1].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.9) }
         trees[2..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
 
+        cluster.reload
         insurance.evaluate_daily_health!(target_date)
 
         expect(insurance.reload).to be_status_active
@@ -152,6 +153,7 @@ RSpec.describe ParametricInsurance, type: :model do
         trees[0..3].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.95) }
         trees[4..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
 
+        cluster.reload
         insurance.evaluate_daily_health!(target_date)
 
         expect(insurance.reload).to be_status_triggered
@@ -162,6 +164,7 @@ RSpec.describe ParametricInsurance, type: :model do
         trees[0..3].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.95) }
         trees[4..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
 
+        cluster.reload
         insurance.evaluate_daily_health!(target_date)
 
         expect(InsurancePayoutWorker).to have_received(:perform_async).with(insurance.id)
@@ -175,6 +178,7 @@ RSpec.describe ParametricInsurance, type: :model do
         trees[0..2].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.9) }
         trees[3..9].each { |t| create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1) }
 
+        cluster.reload
         insurance.evaluate_daily_health!(target_date)
 
         expect(insurance.reload).to be_status_triggered

@@ -183,7 +183,9 @@ class InsightGeneratorService
 
   def cleanup_old_logs!
     threshold = 7.days.ago.end_of_day
-    TelemetryLog.where("created_at <= ?", threshold).delete_all
+    # [Batch Delete]: delete_all на мільйонах рядків може заблокувати таблицю.
+    # in_batches видаляє по 10 000 записів за раз, знижуючи навантаження на Lock Manager.
+    TelemetryLog.where("created_at <= ?", threshold).in_batches(of: 10_000, &:delete_all)
   end
 
   def generate_summary(status, temp)

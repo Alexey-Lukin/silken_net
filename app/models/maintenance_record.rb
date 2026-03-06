@@ -91,4 +91,3 @@ class MaintenanceRecord < ApplicationRecord
     errors.add(:photos, "обов'язкові для типів 'repair' та 'installation' (Trust Protocol)")
   end
 end
-

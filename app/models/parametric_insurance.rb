@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "bigdecimal"
+
 class ParametricInsurance < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
   # Організація-страховик (напр. Swiss Re або децентралізований пул)
