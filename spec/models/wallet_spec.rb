@@ -86,4 +86,89 @@ RSpec.describe Wallet, type: :model do
       expect(wallet.errors[:balance]).to include("must be greater than or equal to 0")
     end
   end
+
+  describe "#available_balance" do
+    it "returns balance minus locked_balance" do
+      wallet = create(:tree).wallet
+      wallet.update!(balance: 500, locked_balance: 200)
+
+      expect(wallet.available_balance).to eq(300)
+    end
+  end
+
+  describe "#lock_funds!" do
+    it "increments locked_balance by the given amount" do
+      wallet = create(:tree).wallet
+      wallet.update!(balance: 1000)
+
+      wallet.lock_funds!(400)
+      wallet.reload
+
+      expect(wallet.locked_balance).to eq(400)
+      expect(wallet.available_balance).to eq(600)
+    end
+
+    it "raises when insufficient available balance" do
+      wallet = create(:tree).wallet
+      wallet.update!(balance: 100, locked_balance: 50)
+
+      expect { wallet.lock_funds!(100) }.to raise_error(RuntimeError, /Недостатньо доступних коштів/)
+    end
+  end
+
+  describe "#release_locked_funds!" do
+    it "decrements locked_balance by the given amount" do
+      wallet = create(:tree).wallet
+      wallet.update!(balance: 1000, locked_balance: 400)
+
+      wallet.release_locked_funds!(200)
+      wallet.reload
+
+      expect(wallet.locked_balance).to eq(200)
+    end
+
+    it "raises when releasing more than locked" do
+      wallet = create(:tree).wallet
+      wallet.update!(balance: 1000, locked_balance: 100)
+
+      expect { wallet.release_locked_funds!(200) }.to raise_error(RuntimeError, /розблокувати більше/)
+    end
+  end
+
+  describe "#finalize_spend!" do
+    it "decreases both balance and locked_balance" do
+      wallet = create(:tree).wallet
+      wallet.update!(balance: 1000, locked_balance: 500)
+
+      wallet.finalize_spend!(300)
+      wallet.reload
+
+      expect(wallet.balance).to eq(700)
+      expect(wallet.locked_balance).to eq(200)
+    end
+
+    it "raises when locked_balance is less than amount" do
+      wallet = create(:tree).wallet
+      wallet.update!(balance: 1000, locked_balance: 100)
+
+      expect { wallet.finalize_spend!(200) }.to raise_error(RuntimeError, /locked_balance/)
+    end
+
+    it "raises when balance is less than amount" do
+      wallet = create(:tree).wallet
+      wallet.update!(balance: 100, locked_balance: 200)
+
+      expect { wallet.finalize_spend!(200) }.to raise_error(RuntimeError, /balance/)
+    end
+  end
+
+  describe "locked_balance validation" do
+    it "rejects negative locked_balance" do
+      wallet = create(:tree).wallet
+      wallet.locked_balance = -1
+
+      expect(wallet).not_to be_valid
+      expect(wallet.errors[:locked_balance]).to include("must be greater than or equal to 0")
+    end
+  end
 end
