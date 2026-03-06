@@ -24,6 +24,7 @@ RSpec.describe OtaPackagerService do
       expect(manifest[:version]).to eq("1.0.0")
       expect(manifest[:total_size]).to eq(3)
       expect(manifest[:checksum]).to be_a(String)
+      expect(manifest[:sha256]).to eq("abc123")
       expect(manifest[:total_chunks]).to eq(1)
     end
   end
