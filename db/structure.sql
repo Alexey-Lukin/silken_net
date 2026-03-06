@@ -263,7 +263,9 @@ CREATE TABLE public.audit_logs (
     auditable_id bigint,
     metadata jsonb DEFAULT '{}'::jsonb,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    ip_address character varying,
+    user_agent character varying
 );
 
 
@@ -2279,6 +2281,27 @@ CREATE INDEX index_audit_logs_on_auditable ON public.audit_logs USING btree (aud
 
 
 --
+-- Name: index_audit_logs_on_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_audit_logs_on_created_at ON public.audit_logs USING btree (created_at DESC);
+
+
+--
+-- Name: index_audit_logs_on_ip_address; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_audit_logs_on_ip_address ON public.audit_logs USING btree (ip_address) WHERE (ip_address IS NOT NULL);
+
+
+--
+-- Name: index_audit_logs_on_org_and_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_audit_logs_on_org_and_created ON public.audit_logs USING btree (organization_id, created_at DESC);
+
+
+--
 -- Name: index_audit_logs_on_organization_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3454,6 +3477,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260306173000'),
 ('20260306165729'),
 ('20260306163055'),
 ('20260306153718'),
