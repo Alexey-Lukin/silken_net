@@ -87,8 +87,7 @@ class User < ApplicationRecord
     end
   end
 
-  # --- RBAC: Розподіл повноважень (Series D) ---
-  # Зручні методи-делегати для чистого коду в контролерах та політиках.
+  # --- RBAC: Зручні методи-делегати (Series D) ---
   # Уніфіковане іменування (без role_ префікса) для використання в authorize_ методах.
   def super_admin?
     role_super_admin?
