@@ -4,7 +4,7 @@ class EnhanceActuatorCommandsResilience < ActiveRecord::Migration[8.1]
   def change
     change_table :actuator_commands do |t|
       # 🛡️ Idempotency: UUID щоб STM32 ігнорував повтори одного наказу
-      t.uuid :idempotency_token, null: false
+      t.uuid :idempotency_token, null: false, default: -> { "gen_random_uuid()" }
 
       # 🚦 Priority: 0=low (плановий полив), 1=medium (діагностика), 2=high (EWS)
       t.integer :priority, null: false, default: 0

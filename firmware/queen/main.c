@@ -89,8 +89,9 @@ uint8_t binary_batch_buffer[2048];
 // Королева зберігає DJB2-хеші останніх N токенів у кільцевому буфері,
 // щоб ігнорувати повтори коли ACK загубився і воркер повторив відправку.
 //
-// Бюджет RAM: 16 записів × 4 байти = 64 байти (замість 1184 для повних UUID)
+// Бюджет RAM: 16 × 4 = 64 байти (хеші) + 2 байти (індекси) + 96 байт (буфер) = 162 байти
 #define CMD_DEDUP_SIZE 16             // Місткість кільцевого буфера хешів
+#define UUID_STR_LEN   36            // Довжина UUID рядка (8-4-4-4-12 з дефісами)
 
 uint32_t cmd_dedup_ring[CMD_DEDUP_SIZE]; // Кільцевий буфер DJB2-хешів
 uint8_t  cmd_dedup_idx  = 0;            // Поточна позиція запису
@@ -506,7 +507,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     if (colons < 3 || *p == '\0') return;
 
     // 4. 🛡️ Idempotency: хешуємо токен і перевіряємо кільцевий буфер
-    if (Cmd_Dedup_Check(djb2_hash(p, 36)) == 1) {
+    if (Cmd_Dedup_Check(djb2_hash(p, UUID_STR_LEN)) == 1) {
         return; // Дублікат — ACK відправляємо, але команду НЕ виконуємо вдруге
     }
 

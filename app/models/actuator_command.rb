@@ -90,7 +90,7 @@ class ActuatorCommand < ApplicationRecord
     # ⏱️ TTL: перевіряємо актуальність перед диспетчеризацією
     if expired?
       update_columns(status: self.class.statuses[:failed], error_message: "Команда протермінована (TTL)")
-      Rails.logger.warn "⏱️ [COMMAND] Наказ ##{id} протермінований до відправки."
+      Rails.logger.warn "⏱️ [COMMAND] Команда ##{id} протермінована до відправки."
       return
     end
 

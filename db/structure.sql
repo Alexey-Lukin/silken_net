@@ -130,7 +130,7 @@ CREATE TABLE public.actuator_commands (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     completed_at timestamp(6) without time zone,
-    idempotency_token uuid NOT NULL,
+    idempotency_token uuid DEFAULT gen_random_uuid() NOT NULL,
     priority integer DEFAULT 0 NOT NULL,
     expires_at timestamp(6) without time zone,
     organization_id bigint
