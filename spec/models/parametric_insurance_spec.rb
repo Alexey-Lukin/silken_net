@@ -111,7 +111,7 @@ RSpec.describe ParametricInsurance, type: :model do
   describe "#evaluate_daily_health!" do
     let(:org)         { create(:organization) }
     let(:cluster)     { create(:cluster, organization: org) }
-    let(:insurance)   { create(:parametric_insurance, organization: org, cluster: cluster, threshold_value: 30) }
+    let(:insurance)   { create(:parametric_insurance, organization: org, cluster: cluster, threshold_value: 30, required_confirmations: 1) }
     let(:target_date) { Date.yesterday }
 
     context "when insurance is not active" do
@@ -183,6 +183,106 @@ RSpec.describe ParametricInsurance, type: :model do
 
         expect(insurance.reload).to be_status_triggered
       end
+    end
+  end
+
+  # =========================================================================
+  # Oracle Consensus
+  # =========================================================================
+  describe "Oracle Consensus (#evaluate_daily_health! with required_confirmations)" do
+    let(:org)         { create(:organization) }
+    let(:cluster)     { create(:cluster, organization: org) }
+    let(:target_date) { Date.yesterday }
+
+    it "does not trigger when only one source confirms anomaly but required_confirmations is 3" do
+      insurance = create(:parametric_insurance, organization: org, cluster: cluster,
+                         threshold_value: 30, required_confirmations: 3)
+      trees = create_list(:tree, 10, cluster: cluster, status: :active)
+
+      trees[0..3].each do |t|
+        create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.9, model_source: "model_a")
+      end
+      trees[4..9].each do |t|
+        create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1, model_source: "model_a")
+      end
+
+      cluster.reload
+      insurance.evaluate_daily_health!(target_date)
+
+      expect(insurance.reload).to be_status_active
+    end
+
+    it "triggers when enough independent sources confirm anomaly" do
+      insurance = create(:parametric_insurance, organization: org, cluster: cluster,
+                         threshold_value: 30, required_confirmations: 3)
+      trees = create_list(:tree, 10, cluster: cluster, status: :active)
+
+      trees[0..3].each do |t|
+        %w[model_a model_b model_c].each do |src|
+          create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.9, model_source: src)
+        end
+      end
+      trees[4..9].each do |t|
+        create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1, model_source: "model_a")
+      end
+
+      cluster.reload
+      insurance.evaluate_daily_health!(target_date)
+
+      expect(insurance.reload).to be_status_triggered
+    end
+
+    it "does not count trees with fewer confirmations than required" do
+      insurance = create(:parametric_insurance, organization: org, cluster: cluster,
+                         threshold_value: 30, required_confirmations: 3)
+      trees = create_list(:tree, 10, cluster: cluster, status: :active)
+
+      # 2 trees confirmed by 3 sources (fully confirmed)
+      trees[0..1].each do |t|
+        %w[model_a model_b model_c].each do |src|
+          create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.9, model_source: src)
+        end
+      end
+
+      # 2 trees confirmed by only 1 source (not enough)
+      trees[2..3].each do |t|
+        create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.9, model_source: "model_a")
+      end
+
+      trees[4..9].each do |t|
+        create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1, model_source: "model_a")
+      end
+
+      cluster.reload
+      insurance.evaluate_daily_health!(target_date)
+
+      # Only 2/10 = 20% confirmed, below 30% threshold
+      expect(insurance.reload).to be_status_active
+    end
+
+    it "works with required_confirmations of 1 (backward compatible)" do
+      insurance = create(:parametric_insurance, organization: org, cluster: cluster,
+                         threshold_value: 30, required_confirmations: 1)
+      trees = create_list(:tree, 10, cluster: cluster, status: :active)
+
+      trees[0..3].each do |t|
+        create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.9)
+      end
+      trees[4..9].each do |t|
+        create(:ai_insight, analyzable: t, target_date: target_date, stress_index: 0.1)
+      end
+
+      cluster.reload
+      insurance.evaluate_daily_health!(target_date)
+
+      # 4/10 = 40% >= 30% threshold
+      expect(insurance.reload).to be_status_triggered
+    end
+
+    it "validates required_confirmations is positive" do
+      insurance = build(:parametric_insurance, required_confirmations: 0)
+      expect(insurance).not_to be_valid
+      expect(insurance.errors[:required_confirmations]).to be_present
     end
   end
 end

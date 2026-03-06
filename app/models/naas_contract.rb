@@ -12,13 +12,18 @@ class NaasContract < ApplicationRecord
     draft: 0,      # Підготовка, очікування транзакції інвестора
     active: 1,     # Контракт у силі, емісія токенів дозволена
     fulfilled: 2,  # Успішне завершення (Audit pass)
-    breached: 3    # ПОРУШЕНО (Slashing Protocol активовано)
+    breached: 3,   # ПОРУШЕНО (Slashing Protocol активовано)
+    cancelled: 4   # Достроково розірвано інвестором (Early Exit)
   }, prefix: true
 
   # --- ВАЛІДАЦІЇ ---
   validates :total_funding, presence: true, numericality: { greater_than: 0 }
   validates :start_date, :end_date, presence: true
   validate :end_date_after_start_date
+
+  # --- CANCELLATION TERMS (JSONB Accessors) ---
+  # cancellation_terms: { "early_exit_fee_percent" => 15, "burn_accrued_points" => true, "min_days_before_exit" => 30 }
+  store_accessor :cancellation_terms, :early_exit_fee_percent, :burn_accrued_points, :min_days_before_exit
 
   # --- СКОУПИ ---
   # [СИНХРОНІЗОВАНО]: Уніфікована назва для системної єдності
@@ -70,6 +75,62 @@ class NaasContract < ApplicationRecord
     if critical_insights_count > total_active_count * Rational(1, 5)
       activate_slashing_protocol!
     end
+  end
+
+  # =========================================================================
+  # EARLY TERMINATION (Дострокове розірвання контракту)
+  # =========================================================================
+
+  # Розрахунок штрафу за дострокове розірвання (Early Exit Fee).
+  # $$ Fee = TotalFunding \times \frac{EarlyExitFeePercent}{100} $$
+  def calculate_early_exit_fee
+    fee_percent = (early_exit_fee_percent || 0).to_d
+    (total_funding * fee_percent / 100).round(2)
+  end
+
+  # Розрахунок пропорційного повернення коштів з урахуванням штрафу.
+  # $$ Refund = TotalFunding \times \frac{RemainingDays}{TotalDays} - EarlyExitFee $$
+  def calculate_prorated_refund
+    return BigDecimal("0") unless status_active?
+
+    total_days = (end_date.to_date - start_date.to_date).to_i
+    return BigDecimal("0") if total_days.zero?
+
+    elapsed_days = (Time.current.utc.to_date - start_date.to_date).to_i
+    remaining_days = [ total_days - elapsed_days, 0 ].max
+
+    prorated = (total_funding * BigDecimal(remaining_days.to_s) / total_days).round(2)
+    fee = calculate_early_exit_fee
+
+    [ prorated - fee, BigDecimal("0") ].max
+  end
+
+  # Дострокове розірвання контракту з розрахунком штрафу та спалюванням балів.
+  def terminate_early!
+    raise "🛑 [NaasContract] Контракт не активний. Розірвання неможливе." unless status_active?
+
+    min_days = (min_days_before_exit || 0).to_i
+    elapsed = (Time.current.utc.to_date - start_date.to_date).to_i
+    if min_days.positive? && elapsed < min_days
+      raise "🛑 [NaasContract] Мінімальний термін до розірвання: #{min_days} днів (пройшло: #{elapsed})."
+    end
+
+    refund = calculate_prorated_refund
+    should_burn = ActiveModel::Type::Boolean.new.cast(burn_accrued_points)
+
+    transaction do
+      update!(status: :cancelled, cancelled_at: Time.current)
+
+      # Спалювання нарахованих балів/токенів, якщо умови контракту це передбачають
+      if should_burn
+        BurnCarbonTokensWorker.perform_async(organization_id, id)
+        Rails.logger.warn "🔥 [NaasContract] Контракт ##{id} розірвано. Нараховані бали спалюються."
+      end
+
+      Rails.logger.info "📜 [NaasContract] Контракт ##{id} розірвано достроково. Повернення: #{refund}, Штраф: #{calculate_early_exit_fee}."
+    end
+
+    { refund: refund, fee: calculate_early_exit_fee, burned: should_burn }
   end
 
   private

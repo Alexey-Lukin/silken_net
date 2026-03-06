@@ -13,6 +13,7 @@ class Wallet < ApplicationRecord
 
   # --- ВАЛІДАЦІЇ ---
   validates :balance, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :locked_balance, numericality: { greater_than_or_equal_to: 0 }
 
   # Стандартний формат Ethereum/Polygon адреси для On-Chain операцій
   validates :crypto_public_address, format: {
@@ -25,6 +26,40 @@ class Wallet < ApplicationRecord
   BROADCAST_THROTTLE_SECONDS = 10
 
   # --- МЕТОДИ НАРАХУВАННЯ (Growth Credit) ---
+
+  # Доступний баланс — це загальний баланс мінус заблоковані кошти (Pending транзакції).
+  # Захищає від Double Spend: користувач не може витратити кошти, що вже відправлені в блокчейн.
+  def available_balance
+    balance - locked_balance
+  end
+
+  # Блокування коштів для Pending транзакцій (Double Spend Protection).
+  # Кошти залишаються на балансі, але не доступні для витрат.
+  def lock_funds!(amount)
+    raise "⚠️ [Wallet] Недостатньо доступних коштів (Доступно: #{available_balance}, Потрібно: #{amount})" if available_balance < amount
+
+    increment!(:locked_balance, amount)
+  end
+
+  # Повернення заблокованих коштів після невдалої транзакції (Rollback).
+  def release_locked_funds!(amount)
+    raise "⚠️ [Wallet] Спроба розблокувати більше, ніж заблоковано (Заблоковано: #{locked_balance}, Запит: #{amount})" if locked_balance < amount
+
+    decrement!(:locked_balance, amount)
+  end
+
+  # Фіналізація витрати після підтвердження транзакції в блокчейні.
+  # Списуємо кошти з balance та знімаємо блокування.
+  def finalize_spend!(amount)
+    transaction do
+      lock!
+      raise "⚠️ [Wallet] Невідповідність: locked_balance (#{locked_balance}) < amount (#{amount})" if locked_balance < amount
+      raise "⚠️ [Wallet] Невідповідність: balance (#{balance}) < amount (#{amount})" if balance < amount
+
+      decrement!(:locked_balance, amount)
+      decrement!(:balance, amount)
+    end
+  end
 
   # Викликається TelemetryUnpackerService після кожного успішного пакету даних від STM32.
   # Кожен подих дерева конвертується в бали росту.
@@ -58,19 +93,18 @@ class Wallet < ApplicationRecord
       # 3. PESSIMISTIC LOCKING (Захист від Race Conditions під час мінтингу)
       lock!
 
-      if balance < points_to_lock
-        raise "⚠️ [Wallet] Недостатньо балів (Баланс: #{balance}, Потрібно: #{points_to_lock})"
+      if available_balance < points_to_lock
+        raise "⚠️ [Wallet] Недостатньо балів (Доступно: #{available_balance}, Потрібно: #{points_to_lock})"
       end
 
       tokens_to_mint = (points_to_lock.to_f / threshold).floor
       return if tokens_to_mint.zero? # Немає сенсу створювати транзакцію на 0 токенів
 
-      # 4. АТОМАРНЕ СПИСАННЯ БАЛІВ (Atomic Debit)
-      # Використовуємо decrement! замість update!(balance: balance - X),
-      # щоб уникнути Race Condition: якщо increment! від credit! встигне
-      # виконатись між lock! та update!, старе значення з пам'яті Ruby
-      # перезапише актуальний баланс БД, і нараховані бали зникнуть.
-      decrement!(:balance, points_to_lock)
+      # 4. БЛОКУВАННЯ КОШТІВ (Pending Balance Protection)
+      # Замість негайного списання з balance, блокуємо кошти в locked_balance.
+      # Це захищає від Double Spend: кошти недоступні, але залишаються на балансі
+      # до фіналізації транзакції в блокчейні.
+      increment!(:locked_balance, points_to_lock)
 
       blockchain_transactions.create!(
         amount: tokens_to_mint,

@@ -22,9 +22,9 @@ class AiInsight < ApplicationRecord
   # --- ВАЛІДАЦІЇ ---
   validates :insight_type, :target_date, presence: true
 
-  # Унікальність: Один звіт про здоров'я на об'єкт на день
+  # Унікальність: Один звіт про здоров'я на об'єкт на день на джерело (Oracle Consensus)
   validates :target_date, uniqueness: {
-    scope: [ :analyzable_id, :analyzable_type, :insight_type ],
+    scope: [ :analyzable_id, :analyzable_type, :insight_type, :model_source ],
     message: "вже зафіксовано для цього об'єкта"
   }, if: :daily_health_summary?
 
