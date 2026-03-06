@@ -1211,7 +1211,10 @@ CREATE TABLE public.tiny_ml_models (
     checksum character varying,
     is_active boolean DEFAULT false,
     metadata jsonb,
-    tree_family_id bigint
+    tree_family_id bigint,
+    min_firmware_version character varying,
+    model_format character varying,
+    rollout_percentage integer DEFAULT 0
 );
 
 
@@ -3409,6 +3412,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260306153718'),
 ('20260306144127'),
 ('20260306125109'),
 ('20260305190001'),

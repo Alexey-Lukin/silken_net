@@ -36,6 +36,128 @@ RSpec.describe TinyMlModel, type: :model do
       exact = build(:tiny_ml_model, binary_weights_payload: "x" * 256.kilobytes)
       expect(exact).to be_valid
     end
+
+    # --- model_format ---
+    describe "model_format" do
+      %w[tflite edge_impulse onnx c_array].each do |fmt|
+        it "accepts '#{fmt}'" do
+          expect(build(:tiny_ml_model, model_format: fmt)).to be_valid
+        end
+      end
+
+      it "rejects an unsupported format" do
+        model = build(:tiny_ml_model, model_format: "pytorch")
+        expect(model).not_to be_valid
+        expect(model.errors[:model_format]).to be_present
+      end
+
+      it "allows nil (legacy models without format)" do
+        expect(build(:tiny_ml_model, model_format: nil)).to be_valid
+      end
+    end
+
+    # --- min_firmware_version ---
+    describe "min_firmware_version" do
+      it "accepts valid semver with v-prefix" do
+        expect(build(:tiny_ml_model, min_firmware_version: "v2.1.0")).to be_valid
+      end
+
+      it "accepts valid semver without v-prefix" do
+        expect(build(:tiny_ml_model, min_firmware_version: "2.1.0")).to be_valid
+      end
+
+      it "accepts semver with suffix (e.g. v2.1.0-silken)" do
+        expect(build(:tiny_ml_model, min_firmware_version: "v2.1.0-silken")).to be_valid
+      end
+
+      it "rejects malformed version string" do
+        model = build(:tiny_ml_model, min_firmware_version: "latest")
+        expect(model).not_to be_valid
+        expect(model.errors[:min_firmware_version]).to be_present
+      end
+
+      it "allows nil" do
+        expect(build(:tiny_ml_model, min_firmware_version: nil)).to be_valid
+      end
+    end
+
+    # --- rollout_percentage ---
+    describe "rollout_percentage" do
+      it "defaults to 0" do
+        model = build(:tiny_ml_model)
+        expect(model.rollout_percentage).to eq(0)
+      end
+
+      it "accepts 0" do
+        expect(build(:tiny_ml_model, rollout_percentage: 0)).to be_valid
+      end
+
+      it "accepts 100" do
+        expect(build(:tiny_ml_model, rollout_percentage: 100)).to be_valid
+      end
+
+      it "rejects values above 100" do
+        model = build(:tiny_ml_model, rollout_percentage: 101)
+        expect(model).not_to be_valid
+        expect(model.errors[:rollout_percentage]).to be_present
+      end
+
+      it "rejects negative values" do
+        model = build(:tiny_ml_model, rollout_percentage: -1)
+        expect(model).not_to be_valid
+        expect(model.errors[:rollout_percentage]).to be_present
+      end
+
+      it "rejects non-integer values" do
+        model = build(:tiny_ml_model, rollout_percentage: 50.5)
+        expect(model).not_to be_valid
+      end
+    end
+
+    # --- accuracy_score / threshold (BigDecimal validation) ---
+    describe "accuracy_score and threshold" do
+      it "rejects accuracy_score > 1" do
+        model = build(:tiny_ml_model)
+        model.accuracy_score = "1.5"
+        expect(model).not_to be_valid
+        expect(model.errors[:accuracy_score]).to be_present
+      end
+
+      it "rejects negative accuracy_score" do
+        model = build(:tiny_ml_model)
+        model.accuracy_score = "-0.1"
+        expect(model).not_to be_valid
+        expect(model.errors[:accuracy_score]).to be_present
+      end
+
+      it "accepts accuracy_score in range 0..1" do
+        model = build(:tiny_ml_model)
+        model.accuracy_score = "0.95"
+        model.threshold = "0.85"
+        expect(model).to be_valid
+      end
+
+      it "rejects threshold > 1" do
+        model = build(:tiny_ml_model)
+        model.threshold = "1.01"
+        expect(model).not_to be_valid
+        expect(model.errors[:threshold]).to be_present
+      end
+
+      it "allows nil accuracy_score and threshold" do
+        model = build(:tiny_ml_model)
+        model.accuracy_score = nil
+        model.threshold = nil
+        expect(model).to be_valid
+      end
+
+      it "rejects non-numeric accuracy_score" do
+        model = build(:tiny_ml_model)
+        model.accuracy_score = "high"
+        expect(model).not_to be_valid
+        expect(model.errors[:accuracy_score]).to be_present
+      end
+    end
   end
 
   # =========================================================================
@@ -87,6 +209,60 @@ RSpec.describe TinyMlModel, type: :model do
       model.update!(version: "v99.9.9")
 
       expect(model.checksum).to eq(original_checksum)
+    end
+  end
+
+  # =========================================================================
+  # BIGDECIMAL ACCESSORS
+  # =========================================================================
+  describe "BigDecimal accessors" do
+    describe "#accuracy_score" do
+      it "returns BigDecimal" do
+        model = build(:tiny_ml_model)
+        model.accuracy_score = 0.95
+        expect(model.accuracy_score).to be_a(BigDecimal)
+      end
+
+      it "preserves precision" do
+        model = build(:tiny_ml_model)
+        model.accuracy_score = "0.123456789"
+        expect(model.accuracy_score).to eq(BigDecimal("0.123456789"))
+      end
+
+      it "returns nil when not set" do
+        model = build(:tiny_ml_model)
+        expect(model.accuracy_score).to be_nil
+      end
+    end
+
+    describe "#threshold" do
+      it "returns BigDecimal" do
+        model = build(:tiny_ml_model)
+        model.threshold = 0.85
+        expect(model.threshold).to be_a(BigDecimal)
+      end
+
+      it "enables precise comparison for EwsAlert trigger" do
+        model = build(:tiny_ml_model)
+        model.threshold = "0.85"
+
+        anomaly_probability = BigDecimal("0.850000000000001")
+        expect(anomaly_probability > model.threshold).to be true
+      end
+
+      it "returns nil when not set" do
+        model = build(:tiny_ml_model)
+        expect(model.threshold).to be_nil
+      end
+    end
+
+    it "persists BigDecimal values through save cycle" do
+      model = create(:tiny_ml_model)
+      model.update!(metadata: (model.metadata || {}).merge("accuracy_score" => "0.95", "threshold" => "0.85"))
+      model.reload
+
+      expect(model.accuracy_score).to eq(BigDecimal("0.95"))
+      expect(model.threshold).to eq(BigDecimal("0.85"))
     end
   end
 
@@ -164,6 +340,39 @@ RSpec.describe TinyMlModel, type: :model do
     end
   end
 
+  # =========================================================================
+  # FIRMWARE COMPATIBILITY
+  # =========================================================================
+  describe "#firmware_compatible?" do
+    it "returns true when min_firmware_version is nil" do
+      model = build(:tiny_ml_model, min_firmware_version: nil)
+      expect(model.firmware_compatible?("v1.0.0")).to be true
+    end
+
+    it "returns true when firmware version matches exactly" do
+      model = build(:tiny_ml_model, min_firmware_version: "v2.1.0")
+      expect(model.firmware_compatible?("v2.1.0")).to be true
+    end
+
+    it "returns true when firmware version is newer" do
+      model = build(:tiny_ml_model, min_firmware_version: "v2.1.0")
+      expect(model.firmware_compatible?("v3.0.0")).to be true
+    end
+
+    it "returns false when firmware version is older" do
+      model = build(:tiny_ml_model, min_firmware_version: "v2.1.0")
+      expect(model.firmware_compatible?("v1.5.0")).to be false
+    end
+
+    it "handles versions with suffixes (e.g. v2.1.0-silken)" do
+      model = build(:tiny_ml_model, min_firmware_version: "v2.1.0")
+      expect(model.firmware_compatible?("v2.1.0-silken")).to be true
+    end
+  end
+
+  # =========================================================================
+  # ACTIVATE! (with Phased Diffusion)
+  # =========================================================================
   describe "#activate!" do
     it "sets is_active to true for this model" do
       model = create(:tiny_ml_model)
@@ -202,6 +411,25 @@ RSpec.describe TinyMlModel, type: :model do
       # Both nil-family models are treated as the same group in the query
       expect(m1.reload.is_active).to be false
       expect(m2.reload.is_active).to be true
+    end
+
+    it "defaults rollout_percentage to 100" do
+      model = create(:tiny_ml_model)
+      model.activate!
+      expect(model.reload.rollout_percentage).to eq(100)
+    end
+
+    it "accepts custom rollout_percentage for phased diffusion" do
+      model = create(:tiny_ml_model)
+      model.activate!(percentage: 10)
+      expect(model.reload.rollout_percentage).to eq(10)
+      expect(model.reload.is_active).to be true
+    end
+
+    it "clamps rollout_percentage to 1..100 range" do
+      model = create(:tiny_ml_model)
+      model.activate!(percentage: 0)
+      expect(model.reload.rollout_percentage).to eq(1)
     end
   end
 end
