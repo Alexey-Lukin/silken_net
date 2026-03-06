@@ -182,4 +182,121 @@ RSpec.describe NaasContract, type: :model do
       end
     end
   end
+
+  describe "#terminate_early!" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:contract) { create(:naas_contract, organization: organization, cluster: cluster, status: :active) }
+
+    it "changes status to cancelled and sets cancelled_at" do
+      contract.terminate_early!
+      contract.reload
+
+      expect(contract).to be_status_cancelled
+      expect(contract.cancelled_at).to be_present
+    end
+
+    it "raises when contract is not active" do
+      contract.update_column(:status, NaasContract.statuses[:draft])
+
+      expect { contract.terminate_early! }.to raise_error(RuntimeError, /не активний/)
+    end
+
+    it "raises when minimum days before exit not met" do
+      contract.update!(start_date: 10.days.ago, min_days_before_exit: 60)
+
+      expect { contract.terminate_early! }.to raise_error(RuntimeError, /Мінімальний термін/)
+    end
+
+    it "enqueues BurnCarbonTokensWorker when burn_accrued_points is true" do
+      contract.update!(burn_accrued_points: true)
+
+      contract.terminate_early!
+
+      expect(BurnCarbonTokensWorker.jobs.size).to eq(1)
+    end
+
+    it "does not enqueue BurnCarbonTokensWorker when burn_accrued_points is false" do
+      contract.update!(burn_accrued_points: false)
+
+      contract.terminate_early!
+
+      expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
+    end
+
+    it "returns refund and fee details" do
+      contract.update!(early_exit_fee_percent: 10, burn_accrued_points: false)
+
+      result = contract.terminate_early!
+
+      expect(result).to include(:refund, :fee, :burned)
+      expect(result[:burned]).to eq(false)
+    end
+  end
+
+  describe "#calculate_early_exit_fee" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "calculates fee based on early_exit_fee_percent" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster,
+        total_funding: 50_000, early_exit_fee_percent: 15)
+
+      expect(contract.calculate_early_exit_fee).to eq(BigDecimal("7500.0"))
+    end
+
+    it "returns 0 when no fee percent is set" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster,
+        total_funding: 50_000)
+
+      expect(contract.calculate_early_exit_fee).to eq(BigDecimal("0"))
+    end
+  end
+
+  describe "#calculate_prorated_refund" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "calculates prorated refund minus fee" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster,
+        total_funding: 50_000, start_date: 6.months.ago, end_date: 6.months.from_now,
+        status: :active, early_exit_fee_percent: 10)
+
+      refund = contract.calculate_prorated_refund
+
+      expect(refund).to be > 0
+      expect(refund).to be < 50_000
+    end
+
+    it "returns 0 when contract is not active" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster,
+        total_funding: 50_000, status: :draft)
+
+      expect(contract.calculate_prorated_refund).to eq(BigDecimal("0"))
+    end
+  end
+
+  describe "cancellation_terms store_accessor" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:contract) { create(:naas_contract, organization: organization, cluster: cluster) }
+
+    it "reads and writes early_exit_fee_percent" do
+      contract.update!(early_exit_fee_percent: 15)
+
+      expect(contract.reload.early_exit_fee_percent).to eq(15)
+    end
+
+    it "reads and writes burn_accrued_points" do
+      contract.update!(burn_accrued_points: true)
+
+      expect(contract.reload.burn_accrued_points).to eq(true)
+    end
+
+    it "reads and writes min_days_before_exit" do
+      contract.update!(min_days_before_exit: 30)
+
+      expect(contract.reload.min_days_before_exit).to eq(30)
+    end
+  end
 end
