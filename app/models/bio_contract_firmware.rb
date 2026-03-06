@@ -38,7 +38,7 @@ class BioContractFirmware < ApplicationRecord
     only_integer: true,
     greater_than_or_equal_to: 0,
     less_than_or_equal_to: 100
-  }, allow_nil: true
+  }
 
   # --- КОЛБЕКИ ---
   # [SHA-256 Integrity]: Автоматичний розрахунок хешу при збереженні
@@ -120,6 +120,8 @@ class BioContractFirmware < ApplicationRecord
 
   # Обчислення SHA-256 хешу бінарного вмісту прошивки
   def compute_binary_sha256
+    # Скидаємо мемоізований бінарний payload, бо bytecode_payload змінився
+    @binary_payload = nil
     self.binary_sha256 = Digest::SHA256.hexdigest([ bytecode_payload ].pack("H*"))
   end
 end

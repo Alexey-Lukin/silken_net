@@ -134,6 +134,18 @@ RSpec.describe BioContractFirmware, type: :model do
       expect(firmware.binary_sha256).to eq(Digest::SHA256.hexdigest(binary))
     end
 
+    it "resets memoized binary_payload when bytecode_payload changes" do
+      firmware = create(:bio_contract_firmware, bytecode_payload: "AABB")
+      # Trigger memoization of old binary_payload
+      _old_binary = firmware.binary_payload
+
+      firmware.update!(bytecode_payload: "CCDD")
+
+      # binary_payload should now reflect the NEW bytecode, not cached old value
+      expect(firmware.binary_payload).to eq([ "CCDD" ].pack("H*"))
+      expect(firmware.verify_integrity!).to be true
+    end
+
     it "does not recompute SHA-256 when other attributes change" do
       firmware = create(:bio_contract_firmware)
       original_sha = firmware.binary_sha256
