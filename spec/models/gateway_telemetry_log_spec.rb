@@ -23,47 +23,18 @@ RSpec.describe GatewayTelemetryLog, type: :model do
   # =========================================================================
   # VALIDATIONS
   # =========================================================================
+  # [KENOSIS TITAN]: AR-валідації видалено з моделі для hot-path оптимізації.
+  # Перевірка даних відбувається в GatewayTelemetryWorker.valid_gateway_stats?
+  # перед записом. insert_all на Series D ігнорує AR-валідації моделі.
   describe "validations" do
-    it "is valid with factory defaults" do
+    it "is valid with factory defaults (no AR validations enforced on model)" do
       log = build(:gateway_telemetry_log)
-      # queen_uid is computed in the factory from gateway.uid
       expect(log).to be_valid
     end
 
-    it "requires voltage_mv" do
-      expect(build(:gateway_telemetry_log, voltage_mv: nil)).not_to be_valid
-    end
-
-    it "requires temperature_c" do
-      expect(build(:gateway_telemetry_log, temperature_c: nil)).not_to be_valid
-    end
-
-    it "requires cellular_signal_csq" do
-      expect(build(:gateway_telemetry_log, cellular_signal_csq: nil)).not_to be_valid
-    end
-
-    it "requires queen_uid" do
-      expect(build(:gateway_telemetry_log, queen_uid: nil)).not_to be_valid
-    end
-
-    describe "cellular_signal_csq inclusion" do
-      it "accepts values 0-31" do
-        [ 0, 1, 15, 31 ].each do |valid_csq|
-          expect(build(:gateway_telemetry_log, cellular_signal_csq: valid_csq)).to be_valid
-        end
-      end
-
-      it "accepts 99 (unknown signal)" do
-        expect(build(:gateway_telemetry_log, cellular_signal_csq: 99)).to be_valid
-      end
-
-      it "rejects values outside valid ranges" do
-        [ -1, 32, 50, 98, 100 ].each do |invalid_csq|
-          log = build(:gateway_telemetry_log, cellular_signal_csq: invalid_csq)
-          expect(log).not_to be_valid
-          expect(log.errors[:cellular_signal_csq]).to be_present
-        end
-      end
+    it "is valid even with nil numeric fields (validated at worker level)" do
+      log = build(:gateway_telemetry_log, voltage_mv: nil, temperature_c: nil)
+      expect(log).to be_valid
     end
   end
 
@@ -201,6 +172,22 @@ RSpec.describe GatewayTelemetryLog, type: :model do
                   voltage_mv: GatewayTelemetryLog::LOW_BATTERY_THRESHOLD + 500,
                   temperature_c: GatewayTelemetryLog::OVERHEAT_THRESHOLD - 5,
                   cellular_signal_csq: 20)
+      expect(log.critical_fault?).to be false
+    end
+
+    # [KENOSIS TITAN]: Nil-safety — без AR-валідацій поля можуть бути nil при insert_all
+    it "returns false when voltage_mv is nil (guard clause)" do
+      log = build(:gateway_telemetry_log, voltage_mv: nil)
+      expect(log.critical_fault?).to be false
+    end
+
+    it "returns false when temperature_c is nil (guard clause)" do
+      log = build(:gateway_telemetry_log, temperature_c: nil)
+      expect(log.critical_fault?).to be false
+    end
+
+    it "returns false when cellular_signal_csq is nil (guard clause)" do
+      log = build(:gateway_telemetry_log, cellular_signal_csq: nil)
       expect(log.critical_fault?).to be false
     end
   end
