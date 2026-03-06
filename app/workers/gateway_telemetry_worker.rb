@@ -5,6 +5,9 @@ class GatewayTelemetryWorker
   # Шлюзи оновлюються рідше за дерева, тому використовуємо чергу за замовчуванням
   sidekiq_options queue: "default", retry: 2
 
+  # CSQ 0-31 — нормальний діапазон (3GPP 27.007); 99 — невизначений/відсутній сигнал
+  VALID_CSQ_VALUES = (0..31).freeze
+
   def perform(queen_uid, stats = {})
     # Підготовлюємо хеш один раз на початку, уникаючи зайвих алокацій в транзакції
     stats = stats.with_indifferent_access
@@ -12,9 +15,17 @@ class GatewayTelemetryWorker
     # 1. Знаходимо Королеву
     gateway = Gateway.find_by!(uid: queen_uid.to_s.strip.upcase)
 
+    # [KENOSIS TITAN]: Перевірка якості даних на рівні обробника.
+    # Замінює AR-валідації, які ігноруються при insert_all на Series D масштабі.
+    unless valid_gateway_stats?(stats)
+      Rails.logger.warn "⚠️ [Gateway] Пакет від #{gateway.uid} відхилено: невалідні дані сенсорів."
+      return
+    end
+
     # 2. ТРАНЗАКЦІЙНІСТЬ (The Integrity Loop)
     ActiveRecord::Base.transaction do
       log = gateway.gateway_telemetry_logs.create!(
+        gateway_id: gateway.id,
         voltage_mv: stats[:voltage_mv],
         temperature_c: stats[:temperature_c],
         cellular_signal_csq: stats[:cellular_signal_csq]
@@ -73,5 +84,18 @@ class GatewayTelemetryWorker
     else
       "🛠️ Апаратний збій Королеви #{gateway.uid}. Потрібен огляд."
     end
+  end
+
+  # [KENOSIS TITAN]: Перевірка якості даних сенсорів на рівні обробника.
+  # Замінює AR-валідації моделі, які ігноруються при insert_all (Series D).
+  # CSQ діапазон: 0-31 (нормальний сигнал) або 99 (невизначений/відсутній) — стандарт 3GPP 27.007.
+  def valid_gateway_stats?(stats)
+    voltage_mv          = stats[:voltage_mv]
+    temperature_c       = stats[:temperature_c]
+    cellular_signal_csq = stats[:cellular_signal_csq]
+
+    return false if voltage_mv.nil? || temperature_c.nil? || cellular_signal_csq.nil?
+
+    VALID_CSQ_VALUES.cover?(cellular_signal_csq.to_i) || cellular_signal_csq.to_i == 99
   end
 end

@@ -529,13 +529,14 @@ ALTER SEQUENCE public.ews_alerts_id_seq OWNED BY public.ews_alerts.id;
 CREATE TABLE public.gateway_telemetry_logs (
     id bigint NOT NULL,
     gateway_id bigint NOT NULL,
+    queen_uid character varying,
     voltage_mv numeric,
     cellular_signal_csq integer,
+    temperature_c numeric,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
-    queen_uid character varying,
-    temperature_c numeric
-);
+    updated_at timestamp(6) without time zone NOT NULL
+)
+PARTITION BY RANGE (created_at);
 
 
 --
@@ -555,6 +556,118 @@ CREATE SEQUENCE public.gateway_telemetry_logs_id_seq
 --
 
 ALTER SEQUENCE public.gateway_telemetry_logs_id_seq OWNED BY public.gateway_telemetry_logs.id;
+
+
+--
+-- Name: gateway_telemetry_logs_default; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateway_telemetry_logs_default (
+    id bigint DEFAULT nextval('public.gateway_telemetry_logs_id_seq'::regclass) NOT NULL,
+    gateway_id bigint NOT NULL,
+    queen_uid character varying,
+    voltage_mv numeric,
+    cellular_signal_csq integer,
+    temperature_c numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m01; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateway_telemetry_logs_y2026m01 (
+    id bigint DEFAULT nextval('public.gateway_telemetry_logs_id_seq'::regclass) NOT NULL,
+    gateway_id bigint NOT NULL,
+    queen_uid character varying,
+    voltage_mv numeric,
+    cellular_signal_csq integer,
+    temperature_c numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m02; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateway_telemetry_logs_y2026m02 (
+    id bigint DEFAULT nextval('public.gateway_telemetry_logs_id_seq'::regclass) NOT NULL,
+    gateway_id bigint NOT NULL,
+    queen_uid character varying,
+    voltage_mv numeric,
+    cellular_signal_csq integer,
+    temperature_c numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m03; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateway_telemetry_logs_y2026m03 (
+    id bigint DEFAULT nextval('public.gateway_telemetry_logs_id_seq'::regclass) NOT NULL,
+    gateway_id bigint NOT NULL,
+    queen_uid character varying,
+    voltage_mv numeric,
+    cellular_signal_csq integer,
+    temperature_c numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m04; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateway_telemetry_logs_y2026m04 (
+    id bigint DEFAULT nextval('public.gateway_telemetry_logs_id_seq'::regclass) NOT NULL,
+    gateway_id bigint NOT NULL,
+    queen_uid character varying,
+    voltage_mv numeric,
+    cellular_signal_csq integer,
+    temperature_c numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m05; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateway_telemetry_logs_y2026m05 (
+    id bigint DEFAULT nextval('public.gateway_telemetry_logs_id_seq'::regclass) NOT NULL,
+    gateway_id bigint NOT NULL,
+    queen_uid character varying,
+    voltage_mv numeric,
+    cellular_signal_csq integer,
+    temperature_c numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m06; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gateway_telemetry_logs_y2026m06 (
+    id bigint DEFAULT nextval('public.gateway_telemetry_logs_id_seq'::regclass) NOT NULL,
+    gateway_id bigint NOT NULL,
+    queen_uid character varying,
+    voltage_mv numeric,
+    cellular_signal_csq integer,
+    temperature_c numeric,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
 
 
 --
@@ -1270,6 +1383,55 @@ ALTER SEQUENCE public.wallets_id_seq OWNED BY public.wallets.id;
 
 
 --
+-- Name: gateway_telemetry_logs_default; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs ATTACH PARTITION public.gateway_telemetry_logs_default DEFAULT;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m01; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs ATTACH PARTITION public.gateway_telemetry_logs_y2026m01 FOR VALUES FROM ('2026-01-01 00:00:00') TO ('2026-02-01 00:00:00');
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m02; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs ATTACH PARTITION public.gateway_telemetry_logs_y2026m02 FOR VALUES FROM ('2026-02-01 00:00:00') TO ('2026-03-01 00:00:00');
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m03; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs ATTACH PARTITION public.gateway_telemetry_logs_y2026m03 FOR VALUES FROM ('2026-03-01 00:00:00') TO ('2026-04-01 00:00:00');
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m04; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs ATTACH PARTITION public.gateway_telemetry_logs_y2026m04 FOR VALUES FROM ('2026-04-01 00:00:00') TO ('2026-05-01 00:00:00');
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m05; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs ATTACH PARTITION public.gateway_telemetry_logs_y2026m05 FOR VALUES FROM ('2026-05-01 00:00:00') TO ('2026-06-01 00:00:00');
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m06; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs ATTACH PARTITION public.gateway_telemetry_logs_y2026m06 FOR VALUES FROM ('2026-06-01 00:00:00') TO ('2026-07-01 00:00:00');
+
+
+--
 -- Name: telemetry_logs_default; Type: TABLE ATTACH; Schema: public; Owner: -
 --
 
@@ -1616,7 +1778,63 @@ ALTER TABLE ONLY public.ews_alerts
 --
 
 ALTER TABLE ONLY public.gateway_telemetry_logs
-    ADD CONSTRAINT gateway_telemetry_logs_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT gateway_telemetry_logs_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_default gateway_telemetry_logs_default_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs_default
+    ADD CONSTRAINT gateway_telemetry_logs_default_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m01 gateway_telemetry_logs_y2026m01_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs_y2026m01
+    ADD CONSTRAINT gateway_telemetry_logs_y2026m01_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m02 gateway_telemetry_logs_y2026m02_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs_y2026m02
+    ADD CONSTRAINT gateway_telemetry_logs_y2026m02_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m03 gateway_telemetry_logs_y2026m03_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs_y2026m03
+    ADD CONSTRAINT gateway_telemetry_logs_y2026m03_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m04 gateway_telemetry_logs_y2026m04_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs_y2026m04
+    ADD CONSTRAINT gateway_telemetry_logs_y2026m04_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m05 gateway_telemetry_logs_y2026m05_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs_y2026m05
+    ADD CONSTRAINT gateway_telemetry_logs_y2026m05_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m06 gateway_telemetry_logs_y2026m06_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gateway_telemetry_logs_y2026m06
+    ADD CONSTRAINT gateway_telemetry_logs_y2026m06_pkey PRIMARY KEY (id, created_at);
 
 
 --
@@ -1793,6 +2011,118 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.wallets
     ADD CONSTRAINT wallets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: index_gateway_telemetry_logs_on_gateway_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_gateway_telemetry_logs_on_gateway_id ON ONLY public.gateway_telemetry_logs USING btree (gateway_id);
+
+
+--
+-- Name: gateway_telemetry_logs_default_gateway_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_default_gateway_id_idx ON public.gateway_telemetry_logs_default USING btree (gateway_id);
+
+
+--
+-- Name: idx_gateway_telemetry_logs_queen_uid_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_gateway_telemetry_logs_queen_uid_created ON ONLY public.gateway_telemetry_logs USING btree (queen_uid, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_default_queen_uid_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_default_queen_uid_created_at_idx ON public.gateway_telemetry_logs_default USING btree (queen_uid, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m01_gateway_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m01_gateway_id_idx ON public.gateway_telemetry_logs_y2026m01 USING btree (gateway_id);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m01_queen_uid_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m01_queen_uid_created_at_idx ON public.gateway_telemetry_logs_y2026m01 USING btree (queen_uid, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m02_gateway_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m02_gateway_id_idx ON public.gateway_telemetry_logs_y2026m02 USING btree (gateway_id);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m02_queen_uid_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m02_queen_uid_created_at_idx ON public.gateway_telemetry_logs_y2026m02 USING btree (queen_uid, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m03_gateway_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m03_gateway_id_idx ON public.gateway_telemetry_logs_y2026m03 USING btree (gateway_id);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m03_queen_uid_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m03_queen_uid_created_at_idx ON public.gateway_telemetry_logs_y2026m03 USING btree (queen_uid, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m04_gateway_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m04_gateway_id_idx ON public.gateway_telemetry_logs_y2026m04 USING btree (gateway_id);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m04_queen_uid_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m04_queen_uid_created_at_idx ON public.gateway_telemetry_logs_y2026m04 USING btree (queen_uid, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m05_gateway_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m05_gateway_id_idx ON public.gateway_telemetry_logs_y2026m05 USING btree (gateway_id);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m05_queen_uid_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m05_queen_uid_created_at_idx ON public.gateway_telemetry_logs_y2026m05 USING btree (queen_uid, created_at);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m06_gateway_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m06_gateway_id_idx ON public.gateway_telemetry_logs_y2026m06 USING btree (gateway_id);
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m06_queen_uid_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX gateway_telemetry_logs_y2026m06_queen_uid_created_at_idx ON public.gateway_telemetry_logs_y2026m06 USING btree (queen_uid, created_at);
 
 
 --
@@ -1996,13 +2326,6 @@ CREATE INDEX index_ews_alerts_on_tree_id ON public.ews_alerts USING btree (tree_
 --
 
 CREATE UNIQUE INDEX index_ews_alerts_unique_active_per_tree ON public.ews_alerts USING btree (tree_id, alert_type, status) WHERE ((status = 0) AND (tree_id IS NOT NULL));
-
-
---
--- Name: index_gateway_telemetry_logs_on_gateway_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_gateway_telemetry_logs_on_gateway_id ON public.gateway_telemetry_logs USING btree (gateway_id);
 
 
 --
@@ -2405,6 +2728,153 @@ CREATE INDEX telemetry_logs_y2026m06_tree_id_idx ON public.telemetry_logs_y2026m
 
 
 --
+-- Name: gateway_telemetry_logs_default_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_gateway_telemetry_logs_on_gateway_id ATTACH PARTITION public.gateway_telemetry_logs_default_gateway_id_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_default_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.gateway_telemetry_logs_pkey ATTACH PARTITION public.gateway_telemetry_logs_default_pkey;
+
+
+--
+-- Name: gateway_telemetry_logs_default_queen_uid_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_gateway_telemetry_logs_queen_uid_created ATTACH PARTITION public.gateway_telemetry_logs_default_queen_uid_created_at_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m01_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_gateway_telemetry_logs_on_gateway_id ATTACH PARTITION public.gateway_telemetry_logs_y2026m01_gateway_id_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m01_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.gateway_telemetry_logs_pkey ATTACH PARTITION public.gateway_telemetry_logs_y2026m01_pkey;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m01_queen_uid_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_gateway_telemetry_logs_queen_uid_created ATTACH PARTITION public.gateway_telemetry_logs_y2026m01_queen_uid_created_at_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m02_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_gateway_telemetry_logs_on_gateway_id ATTACH PARTITION public.gateway_telemetry_logs_y2026m02_gateway_id_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m02_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.gateway_telemetry_logs_pkey ATTACH PARTITION public.gateway_telemetry_logs_y2026m02_pkey;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m02_queen_uid_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_gateway_telemetry_logs_queen_uid_created ATTACH PARTITION public.gateway_telemetry_logs_y2026m02_queen_uid_created_at_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m03_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_gateway_telemetry_logs_on_gateway_id ATTACH PARTITION public.gateway_telemetry_logs_y2026m03_gateway_id_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m03_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.gateway_telemetry_logs_pkey ATTACH PARTITION public.gateway_telemetry_logs_y2026m03_pkey;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m03_queen_uid_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_gateway_telemetry_logs_queen_uid_created ATTACH PARTITION public.gateway_telemetry_logs_y2026m03_queen_uid_created_at_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m04_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_gateway_telemetry_logs_on_gateway_id ATTACH PARTITION public.gateway_telemetry_logs_y2026m04_gateway_id_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m04_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.gateway_telemetry_logs_pkey ATTACH PARTITION public.gateway_telemetry_logs_y2026m04_pkey;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m04_queen_uid_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_gateway_telemetry_logs_queen_uid_created ATTACH PARTITION public.gateway_telemetry_logs_y2026m04_queen_uid_created_at_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m05_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_gateway_telemetry_logs_on_gateway_id ATTACH PARTITION public.gateway_telemetry_logs_y2026m05_gateway_id_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m05_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.gateway_telemetry_logs_pkey ATTACH PARTITION public.gateway_telemetry_logs_y2026m05_pkey;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m05_queen_uid_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_gateway_telemetry_logs_queen_uid_created ATTACH PARTITION public.gateway_telemetry_logs_y2026m05_queen_uid_created_at_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m06_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_gateway_telemetry_logs_on_gateway_id ATTACH PARTITION public.gateway_telemetry_logs_y2026m06_gateway_id_idx;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m06_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.gateway_telemetry_logs_pkey ATTACH PARTITION public.gateway_telemetry_logs_y2026m06_pkey;
+
+
+--
+-- Name: gateway_telemetry_logs_y2026m06_queen_uid_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_gateway_telemetry_logs_queen_uid_created ATTACH PARTITION public.gateway_telemetry_logs_y2026m06_queen_uid_created_at_idx;
+
+
+--
 -- Name: telemetry_logs_default_bio_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -2650,6 +3120,14 @@ ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telem
 
 
 --
+-- Name: gateway_telemetry_logs fk_gateway_telemetry_logs_gateway_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.gateway_telemetry_logs
+    ADD CONSTRAINT fk_gateway_telemetry_logs_gateway_id FOREIGN KEY (gateway_id) REFERENCES public.gateways(id);
+
+
+--
 -- Name: trees fk_rails_06cda60c51; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2679,14 +3157,6 @@ ALTER TABLE ONLY public.wallets
 
 ALTER TABLE ONLY public.ews_alerts
     ADD CONSTRAINT fk_rails_1d5041378e FOREIGN KEY (tree_id) REFERENCES public.trees(id);
-
-
---
--- Name: gateway_telemetry_logs fk_rails_1df16206a5; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gateway_telemetry_logs
-    ADD CONSTRAINT fk_rails_1df16206a5 FOREIGN KEY (gateway_id) REFERENCES public.gateways(id);
 
 
 --
@@ -2920,6 +3390,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260306125109'),
 ('20260305190001'),
 ('20260305190000'),
 ('20260305152600'),
