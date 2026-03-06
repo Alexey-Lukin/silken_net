@@ -6,6 +6,8 @@ FactoryBot.define do
     sequence(:endpoint) { |n| "ep-#{n}" }
     device_type { :water_valve }
     state { :idle }
+    max_active_duration_s { 300 }
+    estimated_mj_per_action { 37.95 }
     gateway
 
     trait :water_valve do

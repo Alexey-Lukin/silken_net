@@ -27,6 +27,11 @@ class Actuator < ApplicationRecord
   # endpoint - унікальний шлях CoAP на конкретній Королеві
   validates :endpoint, presence: true, uniqueness: { scope: :gateway_id }
 
+  # Safety Envelope: фізичний ліміт безперервної роботи актуатора (секунди)
+  validates :max_active_duration_s, numericality: { greater_than: 0 }, allow_nil: true
+  # Energy Budget: орієнтовна витрата енергії за одну активацію (мДж)
+  validates :estimated_mj_per_action, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+
   # --- СКОУПИ ---
   scope :operational, -> { where(state: :idle) }
 
@@ -63,11 +68,13 @@ class Actuator < ApplicationRecord
     transaction do
       update!(state: :maintenance_needed)
 
-      return unless cluster.present?
+      # [N+1 FIX]: Перевіряємо наявність кластера через gateway.cluster_id
+      # замість has_one :through, щоб не створювати зайвий JOIN.
+      return unless gateway.cluster_id.present?
 
       # [СИНХРОНІЗОВАНО]: Створюємо системну тривогу через EwsAlert
       EwsAlert.create!(
-        cluster: cluster,
+        cluster: gateway.cluster,
         alert_type: :system_fault,
         severity: :critical,
         message: "Збій актуатора '#{name}' (#{endpoint}). Причина: #{reason}. Потрібен виїзд патруля."
