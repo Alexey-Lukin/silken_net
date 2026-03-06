@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe OtaPackagerService do
   let(:firmware) do
-    instance_double("BioContractFirmware", version: "1.0.0", binary_payload: payload)
+    instance_double("BioContractFirmware", version: "1.0.0", binary_payload: payload, binary_sha256: "abc123")
   end
 
   describe ".prepare" do

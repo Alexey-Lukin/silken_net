@@ -1,9 +1,21 @@
 # frozen_string_literal: true
 
+require "digest"
+
 class BioContractFirmware < ApplicationRecord
+  # --- КОНСТАНТИ ---
+  # 256KB — межа для стабільного OTA-циклу через CoAP/LoRa в складних погодних умовах.
+  # HEX-рядок займає 2x від бінарного розміру, тому 256KB binary = 512KB HEX.
+  MAX_BYTECODE_SIZE = 512.kilobytes
+
+  # Допустимі типи обладнання для прошивки
+  HARDWARE_TYPES = %w[Tree Gateway].freeze
+
   # --- ЗВ'ЯЗКИ ---
   # Кластери (Ліси), які зараз працюють на цій версії
   has_many :clusters, foreign_key: :active_firmware_id
+  # Специфікація породи (прошивка для Дуба != прошивка для Сосни)
+  belongs_to :tree_family, optional: true
 
   # --- ВАЛІДАЦІЇ ---
   validates :version, presence: true, uniqueness: true
@@ -13,6 +25,24 @@ class BioContractFirmware < ApplicationRecord
     with: /\A([a-fA-F0-9]{2})+\z/,
     message: "має бути чистим HEX-рядком парної довжини (кратним байту)"
   }
+
+  # [DB Bloat Protection]: Обмежуємо розмір HEX-пейлоаду (512KB HEX ≈ 256KB binary)
+  validates :bytecode_payload, length: { maximum: MAX_BYTECODE_SIZE,
+    message: "перевищує ліміт #{MAX_BYTECODE_SIZE / 1.kilobyte} КБ" }
+
+  # [Species Specificity]: Тип обладнання (Tree/Gateway)
+  validates :target_hardware_type, inclusion: { in: HARDWARE_TYPES }, allow_nil: true
+
+  # [Phased Rollout]: Відсоток розгортання (0–100)
+  validates :rollout_percentage, numericality: {
+    only_integer: true,
+    greater_than_or_equal_to: 0,
+    less_than_or_equal_to: 100
+  }, allow_nil: true
+
+  # --- КОЛБЕКИ ---
+  # [SHA-256 Integrity]: Автоматичний розрахунок хешу при збереженні
+  before_save :compute_binary_sha256, if: :bytecode_payload_changed?
 
   # --- СКОУПИ ---
   scope :active, -> { where(is_active: true) }
@@ -47,20 +77,49 @@ class BioContractFirmware < ApplicationRecord
   end
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-  # ЖИТТЄВИЙ ЦИКЛ (The Global Evolution)
+  # ЦІЛІСНІСТЬ (Integrity Verification)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-  def deploy_globally!
+  # Перевірка SHA-256 хешу перед OTA-передачею.
+  # STM32 також отримає цей хеш для верифікації після збірки всіх чанків у Flash.
+  # Повертає true, якщо хеш збігається; інакше піднімає IntegrityError.
+  def verify_integrity!
+    expected = Digest::SHA256.hexdigest(binary_payload)
+    return true if binary_sha256 == expected
+
+    raise IntegrityError, "SHA-256 mismatch: очікувано #{binary_sha256}, отримано #{expected}"
+  end
+
+  # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  # ЖИТТЄВИЙ ЦИКЛ (The Phased Evolution)
+  # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+  # Поступове розгортання прошивки (Phased Rollout).
+  # percentage: 1–100 — частка пристроїв для оновлення.
+  # Спочатку оновлюємо 1% кластера, чекаємо на телеметрію, потім далі.
+  def deploy_globally!(percentage: 100)
+    clamped = percentage.to_i.clamp(1, 100)
+
     transaction do
       # 1. Кенозис старих версій
       self.class.active.where.not(id: id).update_all(is_active: false)
 
-      # 2. Активація нової істини
-      update!(is_active: true)
+      # 2. Активація нової істини з фіксацією відсотка розгортання
+      update!(is_active: true, rollout_percentage: clamped)
 
       # 3. Синхронізація кластерів
       # Ми лише позначаємо версію, а OtaTransmissionWorker підхопить її за розкладом
-      Rails.logger.info "🚀 [OTA] Біо-Контракт #{version} активовано. Готовність: #{payload_size} байт."
+      Rails.logger.info "🚀 [OTA] Біо-Контракт #{version} активовано (#{clamped}%). Готовність: #{payload_size} байт."
     end
+  end
+
+  # Спеціалізований клас помилки цілісності
+  class IntegrityError < StandardError; end
+
+  private
+
+  # Обчислення SHA-256 хешу бінарного вмісту прошивки
+  def compute_binary_sha256
+    self.binary_sha256 = Digest::SHA256.hexdigest([ bytecode_payload ].pack("H*"))
   end
 end
