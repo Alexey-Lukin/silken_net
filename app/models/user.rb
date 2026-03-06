@@ -40,7 +40,7 @@ class User < ApplicationRecord
   }, prefix: true, default: :investor
 
   # --- Series C (Privacy & Localization) ---
-  # Додаємо в майбутньому (або в metadata):
+  # TODO: Додати поля timezone та locale при розширенні на міжнародні ринки.
   # validates :timezone, presence: true, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }
   # validates :locale, presence: true, inclusion: { in: %w[uk en es] }
 
@@ -87,7 +87,9 @@ class User < ApplicationRecord
     end
   end
 
-  # Захист від N+1 при перевірці доступу — прямі делегати до enum-методів
+  # --- RBAC: Розподіл повноважень (Series D) ---
+  # Зручні методи-делегати для чистого коду в контролерах та політиках.
+  # Уніфіковане іменування (без role_ префікса) для використання в authorize_ методах.
   def super_admin?
     role_super_admin?
   end

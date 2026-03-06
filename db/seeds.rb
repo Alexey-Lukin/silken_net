@@ -40,13 +40,25 @@ puts "👤 Створення Патрульних..."
 
 # [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій (спалювання, мейнтенанс).
 # Організація не вказана — це глобальний системний агент.
+# [СИНХРОНІЗОВАНО з RBAC]: super_admin → access_level :system (повний доступ до всієї платформи).
 oracle = User.find_or_create_by!(email_address: "oracle.executioner@system.silken.net") do |u|
   u.first_name = "Oracle"
   u.last_name  = "Executioner"
-  u.role       = :admin
+  u.role       = :super_admin
   u.password   = SecureRandom.hex(32)
 end
 
+# [RBAC: access_level :system] — Архітектор платформи з повним доступом до всіх організацій.
+# super_admin не має прямого доступу до приватних Wallets без явного запрошення (Series D).
+super_admin = User.create!(
+  email_address: "admin@silken.net",
+  password: "password123456",
+  role: :super_admin,
+  first_name: "Artem",
+  last_name: "Volkov"
+)
+
+# [RBAC: access_level :organization] — Адміністратор ActiveBridge з повним доступом в межах організації.
 alexey = User.create!(
   email_address: "alexey@activebridge.org",
   password: "password123456",
@@ -56,6 +68,7 @@ alexey = User.create!(
   last_name: "Architect"
 )
 
+# [RBAC: access_level :field] — Лісничий з польовим доступом в межах організації.
 forester = User.create!(
   email_address: "forester@activebridge.org",
   password: "password123456",
@@ -65,6 +78,7 @@ forester = User.create!(
   last_name: "Lisovyk"
 )
 
+# [RBAC: access_level :read_only] — Інвестор з доступом лише до власних ресурсів.
 investor = User.create!(
   email_address: "investor@ecofuture.fund",
   password: "password123456",
@@ -572,6 +586,11 @@ puts ""
 puts "✅ [PROJECT SILKEN NET] Екосистему ініціалізовано."
 puts "   📊 Організації:         #{Organization.count}"
 puts "   👤 Користувачі:         #{User.count}"
+puts "      🔑 RBAC розподіл:"
+puts "         super_admin (system):       #{User.role_super_admin.count}"
+puts "         admin (organization):       #{User.role_admin.count}"
+puts "         forester (field):           #{User.role_forester.count}"
+puts "         investor (read_only):       #{User.role_investor.count}"
 puts "   🌲 Кластери:            #{Cluster.count}"
 puts "   🧬 Породи дерев:        #{TreeFamily.count}"
 puts "   🌳 Дерева:              #{Tree.count}"
