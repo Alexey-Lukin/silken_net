@@ -4,6 +4,8 @@ class ActuatorCommand < ApplicationRecord
   belongs_to :actuator
   belongs_to :ews_alert, optional: true
   belongs_to :user, optional: true
+  # 📈 Денормалізація: усуваємо N+1 JOIN actuator->gateway->cluster->organization
+  belongs_to :organization, optional: true
 
   enum :status, {
     issued: 0,
@@ -13,26 +15,58 @@ class ActuatorCommand < ApplicationRecord
     confirmed: 4
   }, prefix: true
 
+  # 🚦 Ієрархія Виживання: сирена має витіснити полив
+  enum :priority, {
+    low: 0,      # плановий полив
+    medium: 1,   # діагностика
+    high: 2      # критичне реагування EWS
+  }, prefix: true
+
   ALLOWED_PAYLOAD_FORMAT = /\A[A-Z_]+(?::\d+)?\z/
+
+  # 🛡️ Idempotency: UUID генерується автоматично перед валідацією
+  before_validation :assign_idempotency_token, on: :create
+  # 📈 Денормалізація: organization_id заповнюється з ланцюжка actuator->gateway->cluster
+  before_validation :denormalize_organization, on: :create
 
   validates :command_payload, presence: true,
                               format: { with: ALLOWED_PAYLOAD_FORMAT,
                                         message: "дозволені лише команди формату ACTION або ACTION:value (напр. OPEN:60)" }
   validates :duration_seconds, presence: true,
                                numericality: { greater_than: 0, less_than_or_equal_to: 3600 }
+  validates :idempotency_token, presence: true, uniqueness: true
+  validates :priority, presence: true
   validate :duration_within_safety_envelope
+  validate :expires_at_in_future, on: :create
 
   after_commit :dispatch_to_edge!, on: :create
 
   scope :recent, -> { order(created_at: :desc).limit(10) }
   scope :pending, -> { where(status: [ :issued, :sent ]) }
+  scope :expired, -> { pending.where("expires_at IS NOT NULL AND expires_at < ?", Time.current) }
+  scope :by_priority, -> { order(priority: :desc, created_at: :asc) }
 
   def estimated_completion_at
     return nil unless sent_at
     sent_at + duration_seconds.seconds
   end
 
+  # ⏱️ TTL: перевіряємо, чи команда ще актуальна
+  def expired?
+    expires_at.present? && expires_at < Time.current
+  end
+
   private
+
+  # 🛡️ Генеруємо унікальний токен для кожної команди
+  def assign_idempotency_token
+    self.idempotency_token ||= SecureRandom.uuid
+  end
+
+  # 📈 Денормалізація: зберігаємо organization_id прямо в команді
+  def denormalize_organization
+    self.organization_id ||= actuator&.gateway&.cluster&.organization_id
+  end
 
   # Safety Envelope: тривалість команди не може перевищувати фізичний ліміт актуатора
   def duration_within_safety_envelope
@@ -43,7 +77,23 @@ class ActuatorCommand < ApplicationRecord
     end
   end
 
+  # ⏱️ TTL: expires_at має бути в майбутньому при створенні
+  def expires_at_in_future
+    return unless expires_at.present?
+
+    if expires_at <= Time.current
+      errors.add(:expires_at, "має бути в майбутньому")
+    end
+  end
+
   def dispatch_to_edge!
+    # ⏱️ TTL: перевіряємо актуальність перед диспетчеризацією
+    if expired?
+      update_columns(status: self.class.statuses[:failed], error_message: "Команда протермінована (TTL)")
+      Rails.logger.warn "⏱️ [COMMAND] Команда ##{id} протермінована до відправки."
+      return
+    end
+
     # Транслюємо створення в UI
     broadcast_prepend_to_activity_feed
 
@@ -55,8 +105,9 @@ class ActuatorCommand < ApplicationRecord
     end
   end
 
+  # 📈 Використовуємо денормалізований organization_id замість глибокого JOIN
   def broadcast_prepend_to_activity_feed
-    org = actuator.gateway&.cluster&.organization
+    org = organization || actuator.gateway&.cluster&.organization
     return unless org
 
     Turbo::StreamsChannel.broadcast_prepend_to(

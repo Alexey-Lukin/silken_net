@@ -129,7 +129,11 @@ CREATE TABLE public.actuator_commands (
     error_message text,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    completed_at timestamp(6) without time zone
+    completed_at timestamp(6) without time zone,
+    idempotency_token uuid DEFAULT gen_random_uuid() NOT NULL,
+    priority integer DEFAULT 0 NOT NULL,
+    expires_at timestamp(6) without time zone,
+    organization_id bigint
 );
 
 
@@ -2212,6 +2216,34 @@ CREATE INDEX index_actuator_commands_on_ews_alert_id ON public.actuator_commands
 
 
 --
+-- Name: index_actuator_commands_on_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_actuator_commands_on_expires_at ON public.actuator_commands USING btree (expires_at) WHERE (status = ANY (ARRAY[0, 1]));
+
+
+--
+-- Name: index_actuator_commands_on_idempotency_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_actuator_commands_on_idempotency_token ON public.actuator_commands USING btree (idempotency_token);
+
+
+--
+-- Name: index_actuator_commands_on_organization_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_actuator_commands_on_organization_id ON public.actuator_commands USING btree (organization_id);
+
+
+--
+-- Name: index_actuator_commands_on_priority; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_actuator_commands_on_priority ON public.actuator_commands USING btree (priority);
+
+
+--
 -- Name: index_actuator_commands_on_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3248,6 +3280,14 @@ ALTER TABLE ONLY public.gateways
 
 
 --
+-- Name: actuator_commands fk_rails_6458121e3f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.actuator_commands
+    ADD CONSTRAINT fk_rails_6458121e3f FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
 -- Name: sessions fk_rails_758836b4f0; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3414,6 +3454,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260306165729'),
 ('20260306163055'),
 ('20260306153718'),
 ('20260306144127'),
