@@ -111,7 +111,7 @@ RSpec.describe ParametricInsurance, type: :model do
   describe "#evaluate_daily_health!" do
     let(:org)         { create(:organization) }
     let(:cluster)     { create(:cluster, organization: org) }
-    let(:insurance)   { create(:parametric_insurance, organization: org, cluster: cluster, threshold_value: 30) }
+    let(:insurance)   { create(:parametric_insurance, organization: org, cluster: cluster, threshold_value: 30, required_confirmations: 1) }
     let(:target_date) { Date.yesterday }
 
     context "when insurance is not active" do

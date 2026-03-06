@@ -62,7 +62,7 @@ RSpec.describe Wallet, type: :model do
   end
 
   describe "#lock_and_mint!" do
-    it "atomically decrements balance using decrement!" do
+    it "locks balance using locked_balance instead of immediate decrement" do
       wallet = create(:tree).wallet
       wallet.update!(balance: 1000)
       allow(wallet.tree).to receive(:active?).and_return(true)
@@ -71,7 +71,9 @@ RSpec.describe Wallet, type: :model do
       wallet.lock_and_mint!(500, 100)
       wallet.reload
 
-      expect(wallet.balance).to eq(500)
+      expect(wallet.balance).to eq(1000)
+      expect(wallet.locked_balance).to eq(500)
+      expect(wallet.available_balance).to eq(500)
     end
   end
 
