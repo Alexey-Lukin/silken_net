@@ -46,6 +46,34 @@ RSpec.describe Actuator, type: :model do
 
       expect(second).to be_valid
     end
+
+    it "rejects negative max_active_duration_s" do
+      expect(build(:actuator, max_active_duration_s: -1)).not_to be_valid
+    end
+
+    it "rejects zero max_active_duration_s" do
+      expect(build(:actuator, max_active_duration_s: 0)).not_to be_valid
+    end
+
+    it "allows nil max_active_duration_s" do
+      expect(build(:actuator, max_active_duration_s: nil)).to be_valid
+    end
+
+    it "accepts positive max_active_duration_s" do
+      expect(build(:actuator, max_active_duration_s: 60)).to be_valid
+    end
+
+    it "rejects negative estimated_mj_per_action" do
+      expect(build(:actuator, estimated_mj_per_action: -1)).not_to be_valid
+    end
+
+    it "allows nil estimated_mj_per_action" do
+      expect(build(:actuator, estimated_mj_per_action: nil)).to be_valid
+    end
+
+    it "allows zero estimated_mj_per_action" do
+      expect(build(:actuator, estimated_mj_per_action: 0)).to be_valid
+    end
   end
 
   # =========================================================================
@@ -189,7 +217,7 @@ RSpec.describe Actuator, type: :model do
     it "does not create an EwsAlert when the actuator has no cluster" do
       gateway  = create(:gateway)
       actuator = create(:actuator, gateway: gateway)
-      allow(actuator).to receive(:cluster).and_return(nil)
+      allow(gateway).to receive(:cluster_id).and_return(nil)
 
       expect {
         actuator.require_maintenance!

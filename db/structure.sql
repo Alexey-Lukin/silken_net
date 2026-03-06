@@ -165,7 +165,9 @@ CREATE TABLE public.actuators (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     last_activated_at timestamp(6) without time zone,
-    endpoint character varying
+    endpoint character varying,
+    max_active_duration_s integer,
+    estimated_mj_per_action numeric
 );
 
 
@@ -3412,6 +3414,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260306163055'),
 ('20260306153718'),
 ('20260306144127'),
 ('20260306125109'),

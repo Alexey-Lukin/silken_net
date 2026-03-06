@@ -73,4 +73,51 @@ RSpec.describe ActuatorCommand, type: :model do
       expect(command).not_to be_valid
     end
   end
+
+  describe "safety envelope validation" do
+    it "rejects duration exceeding actuator max_active_duration_s" do
+      limited_actuator = create(:actuator, gateway: gateway, max_active_duration_s: 120)
+      command = ActuatorCommand.new(
+        actuator: limited_actuator,
+        command_payload: "OPEN",
+        duration_seconds: 180,
+        status: :issued
+      )
+      expect(command).not_to be_valid
+      expect(command.errors[:duration_seconds]).to be_present
+    end
+
+    it "accepts duration within actuator max_active_duration_s" do
+      limited_actuator = create(:actuator, gateway: gateway, max_active_duration_s: 120)
+      command = ActuatorCommand.new(
+        actuator: limited_actuator,
+        command_payload: "OPEN",
+        duration_seconds: 60,
+        status: :issued
+      )
+      expect(command).to be_valid
+    end
+
+    it "accepts duration equal to actuator max_active_duration_s" do
+      limited_actuator = create(:actuator, gateway: gateway, max_active_duration_s: 120)
+      command = ActuatorCommand.new(
+        actuator: limited_actuator,
+        command_payload: "OPEN",
+        duration_seconds: 120,
+        status: :issued
+      )
+      expect(command).to be_valid
+    end
+
+    it "skips safety envelope check when actuator has no limit" do
+      unlimited_actuator = create(:actuator, gateway: gateway, max_active_duration_s: nil)
+      command = ActuatorCommand.new(
+        actuator: unlimited_actuator,
+        command_payload: "OPEN",
+        duration_seconds: 3600,
+        status: :issued
+      )
+      expect(command).to be_valid
+    end
+  end
 end

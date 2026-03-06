@@ -20,6 +20,7 @@ class ActuatorCommand < ApplicationRecord
                                         message: "дозволені лише команди формату ACTION або ACTION:value (напр. OPEN:60)" }
   validates :duration_seconds, presence: true,
                                numericality: { greater_than: 0, less_than_or_equal_to: 3600 }
+  validate :duration_within_safety_envelope
 
   after_commit :dispatch_to_edge!, on: :create
 
@@ -32,6 +33,15 @@ class ActuatorCommand < ApplicationRecord
   end
 
   private
+
+  # Safety Envelope: тривалість команди не може перевищувати фізичний ліміт актуатора
+  def duration_within_safety_envelope
+    return unless actuator&.max_active_duration_s.present? && duration_seconds.present?
+
+    if duration_seconds > actuator.max_active_duration_s
+      errors.add(:duration_seconds, "перевищує безпечний ліміт актуатора (#{actuator.max_active_duration_s}с)")
+    end
+  end
 
   def dispatch_to_edge!
     # Транслюємо створення в UI
