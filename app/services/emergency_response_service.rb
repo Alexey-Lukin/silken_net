@@ -54,6 +54,8 @@ class EmergencyResponseService
 
     # [FIX-2]: Масове створення команд одним INSERT замість N окремих
     now = Time.current
+    # 📈 Денормалізація: organization_id для broadcast без N+1
+    org_id = alert.cluster&.organization_id
     attrs = ordered_actuators.map do |actuator|
       chunks.map do |chunk_duration|
         {
@@ -62,6 +64,14 @@ class EmergencyResponseService
           command_payload: command_code,
           duration_seconds: chunk_duration,
           status: ActuatorCommand.statuses[:issued],
+          # 🛡️ Idempotency: UUID для кожної команди (дедуплікація на STM32)
+          idempotency_token: SecureRandom.uuid,
+          # 🚦 Priority: EWS-команди завжди high (критичне реагування)
+          priority: ActuatorCommand.priorities[:high],
+          # ⏱️ TTL: аварійні команди актуальні протягом 15 хвилин
+          expires_at: now + 15.minutes,
+          # 📈 Денормалізація organization_id
+          organization_id: org_id,
           created_at: now,
           updated_at: now
         }

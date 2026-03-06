@@ -82,6 +82,25 @@ uint8_t cache_count = 0;
 uint8_t binary_batch_buffer[2048];
 
 // =========================================================================
+// === 1.6. ДЕДУПЛІКАЦІЯ КОМАНД АКТУАТОРІВ (Idempotency Ring Buffer) ===
+// =========================================================================
+// [СИНХРОНІЗОВАНО з Rails]: ActuatorCommand.idempotency_token (UUID)
+// Формат CoAP команди від сервера: CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<UUID>
+// Королева зберігає DJB2-хеші останніх N токенів у кільцевому буфері,
+// щоб ігнорувати повтори коли ACK загубився і воркер повторив відправку.
+//
+// Бюджет RAM: 16 записів × 4 байти = 64 байти (замість 1184 для повних UUID)
+#define CMD_DEDUP_SIZE 16             // Місткість кільцевого буфера хешів
+
+uint32_t cmd_dedup_ring[CMD_DEDUP_SIZE]; // Кільцевий буфер DJB2-хешів
+uint8_t  cmd_dedup_idx  = 0;            // Поточна позиція запису
+uint8_t  cmd_dedup_used = 0;            // Кількість заповнених слотів (≤ CMD_DEDUP_SIZE)
+
+// Єдиний буфер для дешифровки вхідних CoAP-команд (розділяємо з LoRa тільки поза ISR)
+#define CMD_DECRYPT_BUF_SIZE 96       // Достатньо для CMD:ACTION:DURATION:ID:UUID + padding
+uint8_t cmd_decrypt_buf[CMD_DECRYPT_BUF_SIZE];
+
+// =========================================================================
 // === 2. БУНКЕР OTA-ОНОВЛЕНЬ (Передача нових контрактів) ===
 // =========================================================================
 // Прапорець: 1 - якщо ми зараз в процесі роздачі нової прошивки лісу
@@ -112,6 +131,10 @@ static void MX_CRYP_Init(void); // Ініціалізація шифруванн
 void SIM7070_SendATCommand(char* command, uint32_t delay_ms);
 void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi);
 void Flush_Cache_To_Rails(void);
+// [СИНХРОНІЗОВАНО з Rails]: Обробка вхідних CoAP-команд від сервера
+static uint32_t djb2_hash(const char* str, uint8_t len);
+uint8_t Cmd_Dedup_Check(uint32_t hash);
+void Handle_CoAP_Command(uint8_t* payload, uint16_t len);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -145,6 +168,8 @@ int main(void)
 
   // 2. Ініціалізація Кешу нулями
   memset(forest_cache, 0, sizeof(forest_cache));
+  // [СИНХРОНІЗОВАНО з Rails]: Ініціалізація кільцевого буфера дедуплікації команд
+  memset(cmd_dedup_ring, 0, sizeof(cmd_dedup_ring));
 
   // 3. Ініціалізація модему SIM7070G
   // Перевіряємо зв'язок та налаштовуємо режим (LTE-M / NB-IoT)
@@ -420,6 +445,73 @@ void SIM7070_SendATCommand(char* command, uint32_t delay_ms)
 {
     HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000);
     HAL_Delay(delay_ms); // Чекаємо на відповідь (OK)
+}
+
+// =========================================================================
+// 🛡️ ДЕДУПЛІКАЦІЯ КОМАНД АКТУАТОРІВ (Idempotency)
+// =========================================================================
+// [СИНХРОНІЗОВАНО з Rails]: ActuatorCommandWorker відправляє payload формату:
+//   CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
+// Якщо ACK загубився, воркер повторить відправку з тим самим токеном.
+
+// DJB2 хеш — швидкий, 0 алокацій, достатня ентропія для 16-слотного буфера.
+// Колізія UUID практично неможлива при 2^32 просторі та ≤16 активних записах.
+static uint32_t djb2_hash(const char* str, uint8_t len)
+{
+    uint32_t h = 5381;
+    for (uint8_t i = 0; i < len && str[i] != '\0'; i++) {
+        h = ((h << 5) + h) + (uint8_t)str[i]; // h * 33 + c
+    }
+    return h;
+}
+
+// Перевіряє наявність хешу в кільцевому буфері та зберігає новий.
+// Повертає: 0 = новий (виконувати), 1 = дублікат (ігнорувати)
+uint8_t Cmd_Dedup_Check(uint32_t hash)
+{
+    uint8_t count = cmd_dedup_used < CMD_DEDUP_SIZE ? cmd_dedup_used : CMD_DEDUP_SIZE;
+    for (uint8_t i = 0; i < count; i++) {
+        if (cmd_dedup_ring[i] == hash) return 1;
+    }
+    cmd_dedup_ring[cmd_dedup_idx] = hash;
+    cmd_dedup_idx = (cmd_dedup_idx + 1) % CMD_DEDUP_SIZE;
+    if (cmd_dedup_used < CMD_DEDUP_SIZE) cmd_dedup_used++;
+    return 0;
+}
+
+// =========================================================================
+// ОБРОБКА CoAP-КОМАНД ВІД СЕРВЕРА (Downlink)
+// =========================================================================
+// [СИНХРОНІЗОВАНО з Rails]: ActuatorCommandWorker формує payload:
+//   CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
+// Приклад: CMD:OPEN:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
+void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
+{
+    if (len == 0 || len > CMD_DECRYPT_BUF_SIZE) return;
+
+    // 1. Дешифрування (AES-256-ECB, блоки по 16 байт)
+    uint16_t aligned = ((len + 15) / 16) * 16;
+    if (aligned > CMD_DECRYPT_BUF_SIZE) return;
+    HAL_CRYP_Decrypt(&hcryp, (uint32_t*)payload, aligned / 4,
+                     (uint32_t*)cmd_decrypt_buf, 2000);
+    cmd_decrypt_buf[CMD_DECRYPT_BUF_SIZE - 1] = '\0';
+
+    // 2. Перевірка маркера CMD:
+    if (strncmp((char*)cmd_decrypt_buf, "CMD:", 4) != 0) return;
+
+    // 3. Знаходимо idempotency_token (після 3-ї ':' від позиції +4)
+    char* p = (char*)cmd_decrypt_buf + 4;
+    uint8_t colons = 0;
+    while (*p && colons < 3) { if (*p++ == ':') colons++; }
+    if (colons < 3 || *p == '\0') return;
+
+    // 4. 🛡️ Idempotency: хешуємо токен і перевіряємо кільцевий буфер
+    if (Cmd_Dedup_Check(djb2_hash(p, 36)) == 1) {
+        return; // Дублікат — ACK відправляємо, але команду НЕ виконуємо вдруге
+    }
+
+    // 5. Команда валідна та унікальна — передаємо на виконання актуатору
+    // (Логіка виконання залежить від конкретного пристрою: клапан, сирена тощо)
 }
 
 // =========================================================================

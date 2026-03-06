@@ -16,14 +16,22 @@ class ActuatorCommandWorker
     if command
       error_msg = job["error_message"].to_s.truncate(200)
       if command.update(status: :failed, error_message: error_msg)
-        Turbo::StreamsChannel.broadcast_replace_to(
-          command.actuator.gateway.cluster.organization,
-          target: "command_status_#{command.id}",
-          html: Views::Components::Actuators::CommandStatusBadge.new(command: command).call
-        )
+        broadcast_command_state_static(command)
       end
       Rails.logger.error "🛑 [Downlink Exhausted] Наказ ##{command.id} провалено після всіх спроб: #{error_msg}"
     end
+  end
+
+  # 📈 Статичний метод для broadcast з денормалізованим organization_id
+  def self.broadcast_command_state_static(command)
+    org = command.organization || command.actuator.gateway.cluster.organization
+    return unless org
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      org,
+      target: "command_status_#{command.id}",
+      html: Views::Components::Actuators::CommandStatusBadge.new(command: command).call
+    )
   end
 
   def perform(command_id, explicit_key = nil)
@@ -35,6 +43,12 @@ class ActuatorCommandWorker
 
     # 1. ЗАХИСТ ТА ПЕРЕВІРКА ГОТОВНОСТІ
     return if command.status_acknowledged? || command.status_confirmed?
+
+    # ⏱️ TTL: перевіряємо актуальність перед відправкою
+    if command.expired?
+      handle_failure(command, "⏱️ Команда протермінована (TTL: #{command.expires_at})")
+      return
+    end
 
     unless gateway.ip_address.present?
       handle_failure(command, "🛑 [Downlink] Шлюз #{gateway.uid} не має IP! Наказ скасовано.")
@@ -64,8 +78,8 @@ class ActuatorCommandWorker
       key_record.binary_previous_key || key_record.binary_key
     end
 
-    # Формуємо пакет згідно з протоколом прошивки main.c
-    raw_payload = "CMD:#{command.command_payload}:#{command.duration_seconds}:#{actuator.id}"
+    # 🛡️ Idempotency: включаємо idempotency_token у payload для дедуплікації на STM32
+    raw_payload = "CMD:#{command.command_payload}:#{command.duration_seconds}:#{actuator.id}:#{command.idempotency_token}"
     encrypted_payload = encrypt_payload(raw_payload, encryption_key)
 
     begin
@@ -91,7 +105,7 @@ class ActuatorCommandWorker
         command.update!(status: :acknowledged, sent_at: Time.current)
       end
 
-      Rails.logger.info "⚡ [Downlink] Наказ #{command.id} успішно доставлено на #{gateway.uid} -> #{actuator.endpoint}"
+      Rails.logger.info "⚡ [Downlink] Наказ #{command.id} (token: #{command.idempotency_token}) успішно доставлено на #{gateway.uid} -> #{actuator.endpoint}"
       broadcast_command_state(command)
 
       # 5. ПЛАНУВАННЯ ПОВЕРНЕННЯ (The Reset)
@@ -127,12 +141,8 @@ class ActuatorCommandWorker
     cipher.update(padded_payload) + cipher.final
   end
 
-  # Трансляція зміни стану наказу для живої картини в Dashboard
+  # 📈 Використовуємо денормалізований organization_id для broadcast
   def broadcast_command_state(command)
-    Turbo::StreamsChannel.broadcast_replace_to(
-      command.actuator.gateway.cluster.organization,
-      target: "command_status_#{command.id}",
-      html: Views::Components::Actuators::CommandStatusBadge.new(command: command).call
-    )
+    self.class.broadcast_command_state_static(command)
   end
 end
