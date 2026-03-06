@@ -41,3 +41,6 @@ vendor/bundle
 
 # RSpec example status persistence
 /spec/examples.txt
+
+# SimpleCov coverage reports
+/coverage/

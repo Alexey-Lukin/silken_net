@@ -28,13 +28,21 @@ class User < ApplicationRecord
   normalizes :phone_number, with: ->(p) { p.to_s.gsub(/[^0-9+]/, "") }
   validates :phone_number, format: { with: /\A\+?[1-9]\d{1,14}\z/ }, allow_blank: true
 
+  # Валідація: роль обов'язкова для коректної роботи RBAC
+  validates :role, presence: true
+
   # --- РОЛЬОВА МОДЕЛЬ (RBAC) ---
   enum :role, {
     investor: 0,
     forester: 1,
     admin: 2,
     super_admin: 3
-  }, prefix: true
+  }, prefix: true, default: :investor
+
+  # --- Series C (Privacy & Localization) ---
+  # Додаємо в майбутньому (або в metadata):
+  # validates :timezone, presence: true, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }
+  # validates :locale, presence: true, inclusion: { in: %w[uk en es] }
 
   # --- СКОУПИ ---
   scope :notifiable, -> { where.not(phone_number: [ nil, "" ]).or(where.not(telegram_chat_id: nil)) }
@@ -59,6 +67,33 @@ class User < ApplicationRecord
 
   def forest_commander?
     role_admin? || role_forester? || role_super_admin?
+  end
+
+  # --- RBAC: Розподіл повноважень (Series D) ---
+  # Повертає рівень доступу для використання в контролерах та політиках.
+  # :system  — повний доступ до всієї системи (super_admin)
+  # :organization — повний доступ в межах своєї організації (admin, прив'язаний до org)
+  # :field — польовий доступ (forester, прив'язаний до org)
+  # :read_only — лише перегляд власних ресурсів (investor)
+  def access_level
+    if role_super_admin?
+      :system
+    elsif role_admin? && organization_id.present?
+      :organization
+    elsif role_forester? && organization_id.present?
+      :field
+    else
+      :read_only
+    end
+  end
+
+  # Захист від N+1 при перевірці доступу — прямі делегати до enum-методів
+  def super_admin?
+    role_super_admin?
+  end
+
+  def organization_admin?
+    role_admin? && organization_id.present?
   end
 
   # [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій.
