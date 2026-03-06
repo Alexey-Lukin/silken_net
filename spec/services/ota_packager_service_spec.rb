@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe OtaPackagerService do
   let(:firmware) do
-    instance_double("BioContractFirmware", version: "1.0.0", binary_payload: payload)
+    instance_double("BioContractFirmware", version: "1.0.0", binary_payload: payload, binary_sha256: "abc123")
   end
 
   describe ".prepare" do
@@ -24,6 +24,7 @@ RSpec.describe OtaPackagerService do
       expect(manifest[:version]).to eq("1.0.0")
       expect(manifest[:total_size]).to eq(3)
       expect(manifest[:checksum]).to be_a(String)
+      expect(manifest[:sha256]).to eq("abc123")
       expect(manifest[:total_chunks]).to eq(1)
     end
   end

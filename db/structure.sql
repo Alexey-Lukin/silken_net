@@ -290,7 +290,11 @@ CREATE TABLE public.bio_contract_firmwares (
     bytecode_payload text,
     is_active boolean,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    binary_sha256 character varying,
+    target_hardware_type character varying,
+    tree_family_id bigint,
+    rollout_percentage integer DEFAULT 0
 );
 
 
@@ -2252,6 +2256,13 @@ CREATE INDEX index_audit_logs_on_user_id ON public.audit_logs USING btree (user_
 
 
 --
+-- Name: index_bio_contract_firmwares_on_tree_family_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_bio_contract_firmwares_on_tree_family_id ON public.bio_contract_firmwares USING btree (tree_family_id);
+
+
+--
 -- Name: index_blockchain_transactions_on_block_number; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3288,6 +3299,14 @@ ALTER TABLE ONLY public.active_storage_attachments
 
 
 --
+-- Name: bio_contract_firmwares fk_rails_c65d4e0323; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bio_contract_firmwares
+    ADD CONSTRAINT fk_rails_c65d4e0323 FOREIGN KEY (tree_family_id) REFERENCES public.tree_families(id);
+
+
+--
 -- Name: trees fk_rails_c7140d4291; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3390,6 +3409,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260306144127'),
 ('20260306125109'),
 ('20260305190001'),
 ('20260305190000'),

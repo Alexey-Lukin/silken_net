@@ -32,6 +32,7 @@ class OtaPackagerService
       version: @firmware.version,
       total_size: @payload.bytesize,
       checksum: Zlib.crc32(@payload).to_s(16).upcase,
+      sha256: @firmware.binary_sha256,
       total_chunks: (@payload.bytesize.to_f / @chunk_size).ceil
     }
   end
