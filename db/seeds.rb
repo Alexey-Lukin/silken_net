@@ -32,7 +32,7 @@ active_bridge = Organization.create!(
 
 eco_future_fund = Organization.create!(
   name: "EcoFuture Fund",
-  crypto_public_address: "0x#{SecureRandom.hex(20)}",
+  crypto_public_address: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
   billing_email: "investments@ecofuture.fund"
 )
 
@@ -435,13 +435,15 @@ BlockchainTransaction.create!(
 # 10. ОБСЛУГОВУВАННЯ (MaintenanceRecord)
 # =========================================================================
 puts "🔧 Реєстрація технічного обслуговування..."
+# [СИНХРОНІЗОВАНО]: hardware_verified обов'язковий (validates inclusion: [true, false])
 MaintenanceRecord.create!(
   user: forester,
   maintainable: cherkasy_trees[5],
   ews_alert: drought_alert,
   action_type: :inspection,
   performed_at: 1.day.ago,
-  notes: "Візуальний огляд після тривоги посухи. Стан задовільний, листя не всохло."
+  notes: "Візуальний огляд після тривоги посухи. Стан задовільний, листя не всохло.",
+  hardware_verified: true
 )
 
 MaintenanceRecord.create!(
@@ -449,15 +451,21 @@ MaintenanceRecord.create!(
   maintainable: gateways.first,
   action_type: :cleaning,
   performed_at: 3.days.ago,
-  notes: "Очищено сонячну панель та антену від пилу та павутини. Сигнал покращено."
+  notes: "Очищено сонячну панель та антену від пилу та павутини. Сигнал покращено.",
+  hardware_verified: false
 )
 
+# [СИНХРОНІЗОВАНО]: action_type :installation та :repair вимагають фото (Trust Protocol).
+# У seeds без Active Storage використовуємо :inspection для демонстрації.
 MaintenanceRecord.create!(
   user: alexey,
   maintainable: cherkasy_trees[10],
-  action_type: :installation,
+  action_type: :inspection,
   performed_at: 1.week.ago,
-  notes: "Встановлено новий сенсорний модуль STM32. DID зареєстровано в системі."
+  notes: "Первинний огляд після встановлення сенсорного модуля STM32. DID зареєстровано.",
+  hardware_verified: true,
+  latitude: 49.4285,
+  longitude: 32.0620
 )
 
 # =========================================================================
@@ -466,11 +474,13 @@ MaintenanceRecord.create!(
 puts "⚙️ Відправка тестових команд актуаторам..."
 first_actuator = Actuator.first
 
+# [СИНХРОНІЗОВАНО]: priority обов'язковий (validates :priority, presence: true)
 ActuatorCommand.create!(
   actuator: first_actuator,
   user: alexey,
   command_payload: "OPEN:60",
   duration_seconds: 60,
+  priority: :low,
   status: :confirmed,
   sent_at: 2.hours.ago,
   executed_at: 2.hours.ago,
@@ -482,6 +492,7 @@ ActuatorCommand.create!(
   ews_alert: fire_alert,
   command_payload: "ACTIVATE:120",
   duration_seconds: 120,
+  priority: :high,
   status: :issued
 )
 
