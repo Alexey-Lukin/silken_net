@@ -141,23 +141,23 @@ variable "web_disk_size_gb" {
 }
 
 # -----------------------------------------------------------------------------
-# Staging
+# Canopy (pre-production for developers, deployed from main)
 # -----------------------------------------------------------------------------
 
-variable "staging_enabled" {
-  description = "Enable staging environment (a lighter server for developer testing)"
+variable "canopy_enabled" {
+  description = "Enable Canopy environment — a lighter server for developer testing after main deploys"
   type        = bool
   default     = false
 }
 
-variable "staging_machine_type" {
-  description = "Machine type for the staging server (lighter than production)"
+variable "canopy_machine_type" {
+  description = "Machine type for the Canopy server (lighter than production)"
   type        = string
   default     = "e2-medium"
 }
 
-variable "staging_disk_size_gb" {
-  description = "Boot disk size for the staging server in GB"
+variable "canopy_disk_size_gb" {
+  description = "Boot disk size for the Canopy server in GB"
   type        = number
   default     = 20
 }

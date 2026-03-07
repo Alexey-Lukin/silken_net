@@ -23,8 +23,10 @@ Silken Net використовує **двосередовищну модель*
 
 | Середовище | Тригер | Сервер | Призначення |
 |------------|--------|--------|-------------|
-| **Staging** | Пуш в `main` (після CI) | `e2-medium` (легкий) | Тестування для розробників |
-| **Production** | GitHub Release | `n2-standard-2` (потужний) | Користувачі, прод |
+| **Canopy** 🌿 | Пуш в `main` (після CI) | `e2-medium` (легкий) | Тестування для розробників |
+| **Production** 🌲 | GitHub Release | `n2-standard-2` (потужний) | Користувачі, прод |
+
+> **Canopy** (полог лісу) — верхній шар крон дерев, який першим зустрічає сонце і дощ, захищаючи основний ліс. Розробники тестують у "кроні", перш ніж зміни дістануться до "лісу" (production).
 
 Немає окремого `production` бранча. Команда працює в `main` протягом спрінту (≈2 тижні), а потім створює GitHub Release для деплою на прод.
 
@@ -32,21 +34,25 @@ Silken Net використовує **двосередовищну модель*
 
 ## Середовища
 
-### Staging
+### 🌿 Canopy
 
 - **Коли деплоїться:** Автоматично після кожного пушу в `main`, якщо всі CI-перевірки пройшли.
 - **Сервер:** `e2-medium` (2 vCPU, 4 GB RAM) — дешевший за прод.
 - **Мета:** Розробники бачать актуальний стан `main` на живому сервері.
-- **Kamal destination:** `staging` (`config/deploy.staging.yml`).
+- **Kamal destination:** `canopy` (`config/deploy.canopy.yml`).
 - **Workflow:** `.github/workflows/deploy.yml`.
 
-### Production
+### 🌲 Production
 
 - **Коли деплоїться:** Коли створюється GitHub Release (тег + changelog).
 - **Сервер:** `n2-standard-2` (2 vCPU, 8 GB RAM) — Shielded VM, SSD.
 - **Мета:** Прод для кінцевих користувачів.
 - **Kamal destination:** за замовчуванням (`config/deploy.yml`).
 - **Workflow:** `.github/workflows/deploy-production.yml`.
+
+### RAILS_ENV
+
+Обидва середовища працюють з `RAILS_ENV=production`. Це стандартна практика — Rails production-режим означає скомпільовані ассети, кешування, оптимізації. Різниця між Canopy та Production — в інфраструктурі (потужність серверу, окремі бази), а не в Rails-конфігурації.
 
 ---
 
@@ -64,12 +70,12 @@ Silken Net використовує **двосередовищну модель*
 | `test` | RSpec юніт/інтеграційні тести |
 | `feature-test` | RSpec feature-тести (Capybara + Selenium) |
 
-### 2. Deploy Staging (`deploy.yml`)
+### 2. Deploy Canopy (`deploy.yml`)
 
 Спрацьовує **автоматично** після успішного CI на `main` (через `workflow_run`).
 
 ```
-CI (усі 5 джоб) ✅ → Terraform Apply → Kamal Deploy -d staging
+CI (усі 5 джоб) ✅ → Terraform Apply → Kamal Deploy -d canopy
 ```
 
 Також можна запустити вручну через **workflow_dispatch** у GitHub Actions.
@@ -89,14 +95,14 @@ GitHub Release ✅ → Terraform Apply → Kamal Deploy (production)
 ```
 Day 1-14: Розробка в main
   ├── PR → CI перевірки → merge
-  ├── Push в main → CI ✅ → Auto-deploy staging
-  └── Розробники тестують на staging-сервері
+  ├── Push в main → CI ✅ → Auto-deploy Canopy 🌿
+  └── Розробники тестують на Canopy-сервері
 
 Day 14: Реліз
   ├── GitHub → Releases → "Create a new release"
   ├── Вибираємо тег (наприклад v1.2.0)
   ├── Генеруємо changelog (кнопка "Generate release notes")
-  └── Publish → Auto-deploy production
+  └── Publish → Auto-deploy Production 🌲
 ```
 
 ---
@@ -111,7 +117,7 @@ Day 14: Реліз
 terraform/
 ├── main.tf                   # Provider, GCP APIs, Artifact Registry
 ├── vpc.tf                    # VPC, підмережі, фаєрвол, NAT
-├── compute.tf                # Web-сервери (production + staging)
+├── compute.tf                # Web-сервери (production + canopy)
 ├── database.tf               # Cloud SQL PostgreSQL 16
 ├── redis.tf                  # Memorystore Redis 7.0
 ├── iam.tf                    # Service account та ролі
@@ -132,8 +138,8 @@ terraform/
 │  │  10.0.0.0/20 (4094 IPs)        │    │
 │  │                                 │    │
 │  │  ┌──────────┐  ┌──────────┐    │    │
-│  │  │ web-0    │  │ staging  │    │    │
-│  │  │ (prod)   │  │ (dev)    │    │    │
+│  │  │ web-0    │  │ canopy   │    │    │
+│  │  │ (prod) 🌲│  │ (dev) 🌿 │    │    │
 │  │  └──────────┘  └──────────┘    │    │
 │  └─────────────────────────────────┘    │
 │                                         │
@@ -154,7 +160,7 @@ terraform/
 
 ### Compute (compute.tf)
 
-**Production сервер(и):**
+**Production сервер(и)** 🌲:
 - Тип: `n2-standard-2` (2 vCPU, 8 GB RAM)
 - ОС: Ubuntu 24.04 LTS
 - Диск: 30 GB SSD
@@ -162,12 +168,12 @@ terraform/
 - OS Login увімкнено
 - Кількість: `web_node_count` (за замовчуванням 1)
 
-**Staging сервер:**
+**Canopy сервер** 🌿:
 - Тип: `e2-medium` (2 vCPU, 4 GB RAM) — дешевший
 - ОС: Ubuntu 24.04 LTS
 - Диск: 20 GB SSD
 - Shielded VM
-- Увімкнення: `staging_enabled = true`
+- Увімкнення: `canopy_enabled = true`
 
 ### База даних (database.tf)
 
@@ -260,8 +266,8 @@ terraform output database_url    # конкретний вихід
 
 | Файл | Середовище | Опис |
 |------|------------|------|
-| `config/deploy.yml` | Production | Основна конфігурація Kamal |
-| `config/deploy.staging.yml` | Staging | Перевизначення для staging-сервера |
+| `config/deploy.yml` | Production 🌲 | Основна конфігурація Kamal |
+| `config/deploy.canopy.yml` | Canopy 🌿 | Перевизначення для Canopy-сервера |
 | `.kamal/secrets` | Обидва | Секрети (runtime) |
 | `.kamal/hooks/` | Обидва | Хуки життєвого циклу деплою |
 
@@ -289,19 +295,20 @@ registry:
     - GCP_ARTIFACT_REGISTRY_KEY
 ```
 
-### Staging (`config/deploy.staging.yml`)
+### Canopy (`config/deploy.canopy.yml`)
 
 Kamal "destination" — наслідує від `deploy.yml` і перевизначає:
 
 ```yaml
+# The forest canopy: first layer that meets the sun 🌿
 servers:
   web:
-    - <staging-server-ip>
+    - <canopy-server-ip>
 ```
 
-Деплой staging:
+Деплой Canopy:
 ```bash
-kamal deploy -d staging
+kamal deploy -d canopy
 ```
 
 ### Секрети
@@ -354,9 +361,9 @@ kamal deploy -d staging
 | `GCP_PROJECT_ID` | ID проєкту в Google Cloud |
 | `DATABASE_PASSWORD` | Пароль Cloud SQL (≥16 символів) |
 | `DATABASE_URL` | Production: `postgres://silken_net:<pass>@<ip>:5432/silken_net_production` |
-| `STAGING_DATABASE_URL` | Staging: URL бази даних для staging |
+| `CANOPY_DATABASE_URL` | Canopy: URL бази даних для canopy-середовища |
 | `REDIS_URL` | Production: `redis://<ip>:6379/0` |
-| `STAGING_REDIS_URL` | Staging: URL Redis для staging |
+| `CANOPY_REDIS_URL` | Canopy: URL Redis для canopy-середовища |
 | `SSH_PRIVATE_KEY` | Приватний SSH ключ (`ed25519`) |
 | `SSH_PUBLIC_KEY` | Публічний SSH ключ |
 | `SSH_KNOWN_HOSTS` | SSH fingerprints серверів |
@@ -366,17 +373,17 @@ kamal deploy -d staging
 
 ## Як зробити деплой
 
-### Staging (автоматично)
+### 🌿 Canopy (автоматично)
 
 ```
 1. Зроби зміни в feature-бранчі
 2. Створи PR → CI перевірки запускаються автоматично
 3. Merge PR в main
-4. CI проходить на main → Deploy Staging запускається автоматично
-5. Через ~5 хвилин зміни доступні на staging-сервері
+4. CI проходить на main → Deploy Canopy запускається автоматично
+5. Через ~5 хвилин зміни доступні на Canopy-сервері
 ```
 
-### Production (через Release)
+### 🌲 Production (через Release)
 
 ```
 1. Переходь на GitHub → Releases → "Draft a new release"
@@ -394,15 +401,15 @@ kamal deploy -d staging
 Будь-який деплой можна запустити вручну:
 
 ```
-GitHub → Actions → "Deploy Staging" або "Deploy Production" → Run workflow
+GitHub → Actions → "Deploy Canopy" або "Deploy Production" → Run workflow
 ```
 
 Або через CLI:
 ```bash
-# Staging
-kamal deploy -d staging
+# Canopy 🌿
+kamal deploy -d canopy
 
-# Production
+# Production 🌲
 kamal deploy
 ```
 
@@ -411,31 +418,21 @@ kamal deploy
 ## Операційні команди
 
 ```bash
-# Rails консоль (production)
-kamal console
+# ── Production 🌲 ──────────────────────────
+kamal console                # Rails консоль
+kamal shell                  # Bash на контейнері
+kamal logs -f                # Логи в реальному часі
+kamal dbc                    # Консоль бази даних
+kamal app boot               # Перезапустити додаток
+kamal details                # Статус контейнерів
 
-# Rails консоль (staging)
-kamal console -d staging
-
-# Bash на контейнері
-kamal shell
-kamal shell -d staging
-
-# Логи в реальному часі
-kamal logs -f
-kamal logs -f -d staging
-
-# Консоль бази даних
-kamal dbc
-kamal dbc -d staging
-
-# Перезапустити додаток
-kamal app boot
-kamal app boot -d staging
-
-# Статус контейнерів
-kamal details
-kamal details -d staging
+# ── Canopy 🌿 ──────────────────────────────
+kamal console -d canopy      # Rails консоль
+kamal shell -d canopy        # Bash на контейнері
+kamal logs -f -d canopy      # Логи в реальному часі
+kamal dbc -d canopy          # Консоль бази даних
+kamal app boot -d canopy     # Перезапустити додаток
+kamal details -d canopy      # Статус контейнерів
 ```
 
 ---
@@ -453,14 +450,14 @@ kamal details -d staging
 │                     │ merge                          │ ✅ pass               │
 │                     ▼                                ▼                       │
 │               ┌──────────┐          ┌──────────────────────────────┐         │
-│               │   main   │─────────▶│  Deploy Staging (auto)      │         │
-│               │          │          │  terraform → kamal -d staging│         │
+│               │   main   │─────────▶│  Deploy Canopy 🌿 (auto)    │         │
+│               │          │          │  terraform → kamal -d canopy │         │
 │               └────┬─────┘          └──────────────────────────────┘         │
 │                    │                                                         │
 │                    │ кожні ~2 тижні                                          │
 │                    ▼                                                         │
 │  ┌──────────────────────────────┐   ┌──────────────────────────────┐        │
-│  │  GitHub Release (v1.x.0)    │──▶│  Deploy Production (auto)    │        │
+│  │  GitHub Release (v1.x.0)    │──▶│  Deploy Production 🌲 (auto) │        │
 │  │  + автоматичний changelog   │   │  terraform → kamal deploy    │        │
 │  └──────────────────────────────┘   └──────────────────────────────┘        │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -468,8 +465,8 @@ kamal details -d staging
                               ┌──────────┘                  └──────────┐
                               ▼                                        ▼
                  ┌──────────────────┐                    ┌──────────────────┐
-                 │  STAGING SERVER  │                    │   PROD SERVER    │
-                 │   e2-medium      │                    │  n2-standard-2   │
+                 │  CANOPY SERVER   │                    │   PROD SERVER    │
+                 │  🌿 e2-medium    │                    │  🌲 n2-standard-2│
                  │   (GCE)          │                    │   (GCE)          │
                  └────────┬─────────┘                    └────────┬─────────┘
                           │                                       │
@@ -498,8 +495,8 @@ kamal details -d staging
 │  │                                                            │    │
 │  │  Subnet: 10.0.0.0/20                                      │    │
 │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐     │    │
-│  │  │  web-0   │ │ staging  │ │Cloud SQL │ │  Redis   │     │    │
-│  │  │(prod,ext)│ │ (ext IP) │ │(priv IP) │ │(priv IP) │     │    │
+│  │  │  web-0   │ │ canopy   │ │Cloud SQL │ │  Redis   │     │    │
+│  │  │(prod) 🌲 │ │   🌿     │ │(priv IP) │ │(priv IP) │     │    │
 │  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘     │    │
 │  │                                                            │    │
 │  │  Cloud Router → Cloud NAT (outbound internet)              │    │

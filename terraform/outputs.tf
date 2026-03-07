@@ -59,7 +59,7 @@ output "vpc_name" {
   value       = google_compute_network.silken_net_vpc.name
 }
 
-output "staging_server_ip" {
-  description = "External IP address of the staging server"
-  value       = var.staging_enabled ? google_compute_address.staging[0].address : null
+output "canopy_server_ip" {
+  description = "External IP address of the Canopy server"
+  value       = var.canopy_enabled ? google_compute_address.canopy[0].address : null
 }

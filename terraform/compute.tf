@@ -43,18 +43,19 @@ resource "google_compute_instance" "web" {
   depends_on = [google_project_service.compute]
 }
 
-# Staging server — lighter instance for developer testing after main branch deploys
-resource "google_compute_instance" "staging" {
-  count        = var.staging_enabled ? 1 : 0
-  name         = "silken-net-staging"
-  machine_type = var.staging_machine_type
+# Canopy server — lighter instance for developer testing after main branch deploys.
+# The forest canopy: the first layer that meets the outside world.
+resource "google_compute_instance" "canopy" {
+  count        = var.canopy_enabled ? 1 : 0
+  name         = "silken-net-canopy"
+  machine_type = var.canopy_machine_type
   zone         = var.zone
   tags         = ["web-nodes"]
 
   boot_disk {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
-      size  = var.staging_disk_size_gb
+      size  = var.canopy_disk_size_gb
       type  = "pd-ssd"
     }
   }
@@ -63,7 +64,7 @@ resource "google_compute_instance" "staging" {
     subnetwork = google_compute_subnetwork.web.id
 
     access_config {
-      nat_ip = google_compute_address.staging[0].address
+      nat_ip = google_compute_address.canopy[0].address
     }
   }
 
@@ -88,9 +89,9 @@ resource "google_compute_instance" "staging" {
   depends_on = [google_project_service.compute]
 }
 
-# Static external IP for staging server
-resource "google_compute_address" "staging" {
-  count  = var.staging_enabled ? 1 : 0
-  name   = "silken-net-staging"
+# Static external IP for Canopy server
+resource "google_compute_address" "canopy" {
+  count  = var.canopy_enabled ? 1 : 0
+  name   = "silken-net-canopy"
   region = var.region
 }

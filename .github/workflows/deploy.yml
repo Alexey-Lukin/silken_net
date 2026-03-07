@@ -1,4 +1,4 @@
-name: Deploy Staging
+name: Deploy Canopy
 
 on:
   workflow_run:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-staging
+  group: deploy-canopy
   cancel-in-progress: false
 
 permissions:
@@ -56,7 +56,7 @@ jobs:
         run: terraform apply -auto-approve tfplan
 
   deploy:
-    name: Kamal Deploy (Staging)
+    name: Kamal Deploy (Canopy)
     needs: terraform
     runs-on: ubuntu-latest
 
@@ -90,10 +90,10 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
-      - name: Kamal Deploy to Staging
-        run: kamal deploy -d staging
+      - name: Kamal Deploy to Canopy
+        run: kamal deploy -d canopy
         env:
           KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
           GCP_ARTIFACT_REGISTRY_KEY: ${{ secrets.GCP_SA_KEY }}
-          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-          REDIS_URL: ${{ secrets.STAGING_REDIS_URL }}
+          DATABASE_URL: ${{ secrets.CANOPY_DATABASE_URL }}
+          REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
