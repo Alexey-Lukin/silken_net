@@ -1,0 +1,19 @@
+# GCP Project
+project_id = "your-gcp-project-id"
+region     = "europe-west1"
+zone       = "europe-west1-b"
+
+# Database
+db_password = "CHANGE_ME_use_a_strong_password"
+db_tier     = "db-custom-2-7680"
+
+# Redis
+redis_memory_size_gb = 1
+
+# Compute
+web_machine_type = "n2-standard-2"
+web_node_count   = 1
+
+# SSH Access
+ssh_user       = "deploy"
+ssh_public_key = "ssh-ed25519 AAAA... deploy@silken-net"

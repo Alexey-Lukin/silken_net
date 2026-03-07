@@ -1,10 +1,10 @@
 # Name of your application. Used to uniquely configure containers.
 service: silken_net
 
-# Name of the container image (use your-user/app-name on external registries).
+# Name of the container image.
 image: silken_net
 
-# Deploy to these servers.
+# Deploy to these servers (populated from Terraform outputs).
 servers:
   web:
     - 192.168.0.1
@@ -13,33 +13,34 @@ servers:
   #     - 192.168.0.1
   #   cmd: bin/jobs
 
-# Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
-# If used with Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
-#
-# Using an SSL proxy like this requires turning on config.assume_ssl and config.force_ssl in production.rb!
-#
-# Don't use this when deploying to multiple web servers (then you have to terminate SSL at your load balancer).
-#
+# Kamal proxy configuration.
+# SSL auto-certification via Let's Encrypt. Requires config.assume_ssl and config.force_ssl in production.rb.
 # proxy:
 #   ssl: true
-#   host: app.example.com
+#   host: silken.net
 
-# Where you keep your container images.
+# Proxy boot configuration: publish ports including CoAP UDP.
+boot:
+  proxy:
+    publish:
+      - "80:80"
+      - "443:443"
+      - "5683:5683/udp"
+
+# Google Artifact Registry for Docker images.
+# Run `gcloud auth configure-docker <region>-docker.pkg.dev` before first deploy.
 registry:
-  # Alternatives: hub.docker.com / registry.digitalocean.com / ghcr.io / ...
-  server: localhost:5555
-
-  # Needed for authenticated registries.
-  # username: your-user
-
-  # Always use an access token rather than real password when possible.
-  # password:
-  #   - KAMAL_REGISTRY_PASSWORD
+  server: europe-west1-docker.pkg.dev
+  username: _json_key_base64
+  password:
+    - GCP_ARTIFACT_REGISTRY_KEY
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
   secret:
     - RAILS_MASTER_KEY
+    - DATABASE_URL
+    - REDIS_URL
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
@@ -50,10 +51,6 @@ env:
 
     # Set number of cores available to the application on each server (default: 1).
     # WEB_CONCURRENCY: 2
-
-    # Match this to any external database server to configure Active Record correctly
-    # Use silken_net-db for a db accessory server on same machine via local kamal docker network.
-    # DB_HOST: 192.168.0.2
 
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug
@@ -66,54 +63,17 @@ aliases:
   logs: app logs -f
   dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
 
-# Use a persistent storage volume for sqlite database files and local Active Storage files.
-# Recommended to change this to a mounted volume path that is backed up off server.
+# Persistent storage volume for Active Storage files.
 volumes:
   - "silken_net_storage:/rails/storage"
 
-# Bridge fingerprinted assets, like JS and CSS, between versions to avoid
-# hitting 404 on in-flight requests. Combines all files from new and old
-# version inside the asset_path.
+# Bridge fingerprinted assets between versions to avoid 404 on in-flight requests.
 asset_path: /rails/public/assets
 
 # Configure the image builder.
 builder:
   arch: amd64
 
-  # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
-  # remote: ssh://docker@docker-builder-server
-  #
-  # # Pass arguments and secrets to the Docker build process
-  # args:
-  #   RUBY_VERSION: ruby-3.4.5
-  # secrets:
-  #   - GITHUB_TOKEN
-  #   - RAILS_MASTER_KEY
-
-# Use a different ssh user than root
-# ssh:
-#   user: app
-
-# Use accessory services (secrets come from .kamal/secrets).
-# accessories:
-#   db:
-#     image: mysql:8.0
-#     host: 192.168.0.2
-#     # Change to 3306 to expose port to the world instead of just local network.
-#     port: "127.0.0.1:3306:3306"
-#     env:
-#       clear:
-#         MYSQL_ROOT_HOST: '%'
-#       secret:
-#         - MYSQL_ROOT_PASSWORD
-#     files:
-#       - config/mysql/production.cnf:/etc/mysql/my.cnf
-#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
-#     directories:
-#       - data:/var/lib/mysql
-#   redis:
-#     image: valkey/valkey:8
-#     host: 192.168.0.2
-#     port: 6379
-#     directories:
-#       - data:/data
+# SSH user for connecting to servers
+ssh:
+  user: deploy
