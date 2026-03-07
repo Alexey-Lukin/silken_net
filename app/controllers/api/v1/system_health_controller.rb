@@ -20,7 +20,7 @@ module Api
           format.html do
             render_dashboard(
               title: "System Health",
-              component: Views::Components::SystemHealth::Show.new(health: @health)
+              component: SystemHealth::Show.new(health: @health)
             )
           end
         end

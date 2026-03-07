@@ -23,7 +23,7 @@ module Api
             @pagy, @users = pagy(scope)
             render_dashboard(
               title: "Crew Management // The Clan",
-              component: Views::Components::Users::Index.new(users: @users)
+              component: Users::Index.new(users: @users)
             )
           end
         end
@@ -41,7 +41,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Profile // #{@user.first_name}",
-              component: Views::Components::Users::Profile.new(user: @user)
+              component: Users::Profile.new(user: @user)
             )
           end
         end

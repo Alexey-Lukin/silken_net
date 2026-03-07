@@ -20,7 +20,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Notification Channels",
-              component: Views::Components::Notifications::Settings.new(user: current_user)
+              component: Notifications::Settings.new(user: current_user)
             )
           end
         end
@@ -49,7 +49,7 @@ module Api
             format.html do
               render_dashboard(
                 title: "Notification Channels",
-                component: Views::Components::Notifications::Settings.new(user: current_user)
+                component: Notifications::Settings.new(user: current_user)
               )
             end
           end

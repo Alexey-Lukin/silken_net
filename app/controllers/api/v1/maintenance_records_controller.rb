@@ -36,7 +36,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Maintenance Log // Records of Healing",
-              component: Views::Components::Maintenance::Index.new(records: @records, pagy: @pagy)
+              component: Maintenance::Index.new(records: @records, pagy: @pagy)
             )
           end
         end
@@ -52,7 +52,7 @@ module Api
 
         render_dashboard(
           title: "New Maintenance Ritual",
-          component: Views::Components::Maintenance::Form.new(record: @record)
+          component: Maintenance::Form.new(record: @record)
         )
       end
 
@@ -76,7 +76,7 @@ module Api
             format.html do
               render_dashboard(
                 title: "Error in Ritual",
-                component: Views::Components::Maintenance::Form.new(record: @record)
+                component: Maintenance::Form.new(record: @record)
               )
             end
           end
@@ -91,7 +91,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Record // ##{@record.id}",
-              component: Views::Components::Maintenance::Show.new(
+              component: Maintenance::Show.new(
                 record: @record, photos: @photos, pagy_photos: @pagy_photos
               )
             )
@@ -103,7 +103,7 @@ module Api
       # GET /api/v1/maintenance_records/:id/photos?page=N
       def photos
         @pagy_photos, @photos = pagy(@record.photos, items: 6)
-        render Views::Components::Maintenance::PhotosPage.new(
+        render Maintenance::PhotosPage.new(
           record: @record, photos: @photos, pagy: @pagy_photos
         )
       end
@@ -126,7 +126,7 @@ module Api
             format.html do
               render_dashboard(
                 title: "Edit Record // ##{@record.id}",
-                component: Views::Components::Maintenance::Form.new(record: @record)
+                component: Maintenance::Form.new(record: @record)
               )
             end
           end

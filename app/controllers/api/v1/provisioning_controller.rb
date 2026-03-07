@@ -12,7 +12,7 @@ module Api
 
         render_dashboard(
           title: "Hardware Initiation Ritual",
-          component: Views::Components::Provisioning::New.new(
+          component: Provisioning::New.new(
             clusters: @clusters,
             families: @families
           )
@@ -54,7 +54,7 @@ module Api
                 # Показуємо результат ритуалу (ключ та DID)
                 render_dashboard(
                   title: "Initiation Successful",
-                  component: Views::Components::Provisioning::Success.new(device: @device, aes_key: @key_hex)
+                  component: Provisioning::Success.new(device: @device, aes_key: @key_hex)
                 )
               end
             end
@@ -76,7 +76,7 @@ module Api
         @families = TreeFamily.all
         render_dashboard(
           title: "Initiation Failed",
-          component: Views::Components::Provisioning::New.new(
+          component: Provisioning::New.new(
             clusters: @clusters,
             families: @families,
             device: @device

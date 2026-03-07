@@ -127,7 +127,7 @@ class UnpackTelemetryWorker
     Turbo::StreamsChannel.broadcast_prepend_to(
       "telemetry_stream",
       target: "telemetry_feed",
-      html: Views::Components::Telemetry::LogEntry.new(
+      html: Telemetry::LogEntry.new(
         gateway: gateway,
         hex_payload: hex_payload,
         timestamp: Time.current

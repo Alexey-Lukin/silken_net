@@ -17,7 +17,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Organization Registry // The Clans",
-              component: Views::Components::Organizations::Index.new(organizations: @organizations)
+              component: Organizations::Index.new(organizations: @organizations)
             )
           end
         end
@@ -44,7 +44,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Clan Profile // #{@organization.name}",
-              component: Views::Components::Organizations::Show.new(
+              component: Organizations::Show.new(
                 organization: @organization,
                 clusters: @clusters,
                 performance: @performance

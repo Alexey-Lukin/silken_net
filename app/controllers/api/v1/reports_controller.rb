@@ -29,7 +29,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Reports Archive",
-              component: Views::Components::Reports::Index.new(organization: org, summary: @summary)
+              component: Reports::Index.new(organization: org, summary: @summary)
             )
           end
         end
@@ -60,7 +60,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Carbon Absorption Report",
-              component: Views::Components::Reports::CarbonAbsorption.new(organization: org, data: @data)
+              component: Reports::CarbonAbsorption.new(organization: org, data: @data)
             )
           end
         end
@@ -99,7 +99,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Financial Summary Report",
-              component: Views::Components::Reports::FinancialSummary.new(organization: org, data: @data)
+              component: Reports::FinancialSummary.new(organization: org, data: @data)
             )
           end
         end

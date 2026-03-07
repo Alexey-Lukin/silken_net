@@ -48,14 +48,14 @@ class ResetActuatorStateWorker
     Turbo::StreamsChannel.broadcast_replace_to(
       organization,
       target: "command_status_#{command.id}",
-      html: Views::Components::Actuators::CommandStatusBadge.new(command: command).call
+      html: Actuators::CommandStatusBadge.new(command: command).call
     )
 
     # 2. Оновлюємо велику картку актуатора, знімаючи з неї пульсуючий ефект "Active"
     Turbo::StreamsChannel.broadcast_replace_to(
       organization,
       target: "actuator_card_#{command.actuator.id}",
-      html: Views::Components::Actuators::Card.new(actuator: command.actuator).call
+      html: Actuators::Card.new(actuator: command.actuator).call
     )
   end
 end

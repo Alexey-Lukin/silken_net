@@ -146,14 +146,14 @@ class BlockchainMintingService
     Turbo::StreamsChannel.broadcast_replace_to(
       wallet,
       target: "transaction_#{transaction.id}",
-      html: Views::Components::Wallets::TransactionRow.new(tx: transaction).call
+      html: Wallets::TransactionRow.new(tx: transaction).call
     )
 
     # Оновлення балансу (тільки при успіху або старті)
     Turbo::StreamsChannel.broadcast_replace_to(
       wallet,
       target: "wallet_balance_#{wallet.id}",
-      html: Views::Components::Wallets::BalanceDisplay.new(wallet: wallet).call
+      html: Wallets::BalanceDisplay.new(wallet: wallet).call
     )
   end
 end

@@ -112,7 +112,7 @@ class EwsAlert < ApplicationRecord
     Turbo::StreamsChannel.broadcast_replace_to(
       "ews_updates_#{cluster_id}",
       target: "alert_#{id}",
-      html: Views::Components::Alerts::Badge.new(alert: self).call
+      html: Alerts::Badge.new(alert: self).call
     )
 
     # Повне видалення вирішеного інциденту з Live Feed Архітектора
@@ -143,7 +143,7 @@ class EwsAlert < ApplicationRecord
     Turbo::StreamsChannel.broadcast_replace_to(
       "ews_alerts_org_#{cluster.organization_id}",
       target: "alert_#{id}",
-      html: Views::Components::Alerts::Row.new(alert: self).call
+      html: Alerts::Row.new(alert: self).call
     )
   end
 

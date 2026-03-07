@@ -135,7 +135,7 @@ class Tree < ApplicationRecord
     Turbo::StreamsChannel.broadcast_replace_to(
       "geospatial_matrix",
       target: "map_node_#{id}",
-      html: Views::Components::Dashboard::MapNode.new(tree: self).call
+      html: Dashboard::MapNode.new(tree: self).call
     )
   end
 

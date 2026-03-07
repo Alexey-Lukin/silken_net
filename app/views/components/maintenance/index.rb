@@ -1,169 +1,165 @@
 # frozen_string_literal: true
 
-module Views
-  module Components
-    module Maintenance
-      class Index < ApplicationComponent
-        def initialize(records:, pagy:)
-          @records = records
-          @pagy    = pagy
-        end
+module Maintenance
+  class Index < ApplicationComponent
+    def initialize(records:, pagy:)
+      @records = records
+      @pagy    = pagy
+    end
 
-        def view_template
-          div(class: "space-y-8 animate-in fade-in duration-700") do
-            header_section
-            filter_bar
-            records_table
-            pagination_bar
+    def view_template
+      div(class: "space-y-8 animate-in fade-in duration-700") do
+        header_section
+        filter_bar
+        records_table
+        pagination_bar
+      end
+    end
+
+    private
+
+    def header_section
+      div(class: "flex justify-between items-end mb-2") do
+        div do
+          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "Maintenance Records" }
+          p(class: "text-xs text-gray-600 mt-1") do
+            "#{@pagy.count} intervention#{@pagy.count == 1 ? '' : 's'} · Page #{@pagy.page} of #{@pagy.last}"
           end
         end
+        a(
+          href: helpers.new_api_v1_maintenance_record_path,
+          class: "px-4 py-2 border border-emerald-500 text-emerald-500 hover:bg-emerald-500 " \
+                 "hover:text-black transition-all uppercase text-[10px] tracking-widest"
+        ) { "+ Register Intervention" }
+      end
+    end
 
-        private
+    def filter_bar
+      div(class: "flex flex-wrap gap-2 mb-4") do
+        action_types = MaintenanceRecord.action_types.keys
+        action_types.each do |type|
+          a(
+            href: helpers.api_v1_maintenance_records_path(action_type: type),
+            class: "px-3 py-1 border border-emerald-900 text-[9px] uppercase text-emerald-900 " \
+                   "hover:border-emerald-600 hover:text-emerald-600 transition-all font-mono"
+          ) { type }
+        end
+        a(
+          href: helpers.api_v1_maintenance_records_path(verified: "1"),
+          class: "px-3 py-1 border border-emerald-700 text-[9px] uppercase text-emerald-700 " \
+                 "hover:bg-emerald-900/20 transition-all font-mono"
+        ) { "✓ Verified Only" }
+        a(
+          href: helpers.api_v1_maintenance_records_path,
+          class: "px-3 py-1 border border-gray-800 text-[9px] uppercase text-gray-600 " \
+                 "hover:border-gray-600 transition-all font-mono"
+        ) { "Clear" }
+      end
+    end
 
-        def header_section
-          div(class: "flex justify-between items-end mb-2") do
-            div do
-              h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "Maintenance Records" }
-              p(class: "text-xs text-gray-600 mt-1") do
-                "#{@pagy.count} intervention#{@pagy.count == 1 ? '' : 's'} · Page #{@pagy.page} of #{@pagy.last}"
-              end
+    def records_table
+      div(class: "border border-emerald-900 bg-black overflow-x-auto") do
+        table(class: "w-full text-left font-mono text-[11px] min-w-[900px]") do
+          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+            tr do
+              th(class: "p-4") { "Technician" }
+              th(class: "p-4") { "Unit" }
+              th(class: "p-4") { "Action" }
+              th(class: "p-4 text-right") { "Cost" }
+              th(class: "p-4 text-center") { "Photos" }
+              th(class: "p-4 text-center") { "HW" }
+              th(class: "p-4") { "Timestamp" }
+              th(class: "p-4 text-right") { "" }
             end
-            a(
-              href: helpers.new_api_v1_maintenance_record_path,
-              class: "px-4 py-2 border border-emerald-500 text-emerald-500 hover:bg-emerald-500 " \
-                     "hover:text-black transition-all uppercase text-[10px] tracking-widest"
-            ) { "+ Register Intervention" }
           end
-        end
-
-        def filter_bar
-          div(class: "flex flex-wrap gap-2 mb-4") do
-            action_types = MaintenanceRecord.action_types.keys
-            action_types.each do |type|
-              a(
-                href: helpers.api_v1_maintenance_records_path(action_type: type),
-                class: "px-3 py-1 border border-emerald-900 text-[9px] uppercase text-emerald-900 " \
-                       "hover:border-emerald-600 hover:text-emerald-600 transition-all font-mono"
-              ) { type }
-            end
-            a(
-              href: helpers.api_v1_maintenance_records_path(verified: "1"),
-              class: "px-3 py-1 border border-emerald-700 text-[9px] uppercase text-emerald-700 " \
-                     "hover:bg-emerald-900/20 transition-all font-mono"
-            ) { "✓ Verified Only" }
-            a(
-              href: helpers.api_v1_maintenance_records_path,
-              class: "px-3 py-1 border border-gray-800 text-[9px] uppercase text-gray-600 " \
-                     "hover:border-gray-600 transition-all font-mono"
-            ) { "Clear" }
-          end
-        end
-
-        def records_table
-          div(class: "border border-emerald-900 bg-black overflow-x-auto") do
-            table(class: "w-full text-left font-mono text-[11px] min-w-[900px]") do
-              thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
-                tr do
-                  th(class: "p-4") { "Technician" }
-                  th(class: "p-4") { "Unit" }
-                  th(class: "p-4") { "Action" }
-                  th(class: "p-4 text-right") { "Cost" }
-                  th(class: "p-4 text-center") { "Photos" }
-                  th(class: "p-4 text-center") { "HW" }
-                  th(class: "p-4") { "Timestamp" }
-                  th(class: "p-4 text-right") { "" }
-                end
-              end
-              tbody(class: "divide-y divide-emerald-900/30") do
-                if @records.any?
-                  @records.each { |record| render_row(record) }
-                else
-                  tr do
-                    td(colspan: 8, class: "p-10 text-center text-emerald-900 uppercase tracking-widest text-[9px]") do
-                      "No interventions recorded"
-                    end
-                  end
+          tbody(class: "divide-y divide-emerald-900/30") do
+            if @records.any?
+              @records.each { |record| render_row(record) }
+            else
+              tr do
+                td(colspan: 8, class: "p-10 text-center text-emerald-900 uppercase tracking-widest text-[9px]") do
+                  "No interventions recorded"
                 end
               end
             end
           end
-        end
-
-        def render_row(record)
-          tr(class: "hover:bg-emerald-950/10 transition-colors group") do
-            td(class: "p-4 text-emerald-100") { "#{record.user.first_name} #{record.user.last_name}" }
-            td(class: "p-4 text-emerald-500 text-[10px]") do
-              "#{record.maintainable_type} // #{record.maintainable&.did || record.maintainable&.uid || '—'}"
-            end
-            td(class: "p-4") { action_badge(record.action_type) }
-            td(class: "p-4 text-right text-gray-400") do
-              cost = record.total_cost
-              cost > 0 ? span(class: "text-emerald-300") { "$#{cost.round(2)}" } : span(class: "text-gray-700") { "—" }
-            end
-            td(class: "p-4 text-center") do
-              count = record.photos.size
-              if count > 0
-                span(class: "text-[9px] text-emerald-600 font-mono") { "📷 #{count}" }
-              else
-                span(class: "text-gray-700") { "—" }
-              end
-            end
-            td(class: "p-4 text-center") do
-              if record.hardware_verified
-                span(class: "text-emerald-500 text-[11px]", title: "Hardware Verified") { "✓" }
-              else
-                span(class: "text-amber-900 text-[11px]", title: "Pending Verification") { "◌" }
-              end
-            end
-            td(class: "p-4 text-gray-600 text-[10px]") { record.performed_at&.strftime("%d.%m.%y // %H:%M") }
-            td(class: "p-4 text-right") do
-              a(
-                href: helpers.api_v1_maintenance_record_path(record),
-                class: "text-emerald-700 hover:text-white text-[10px] transition-colors"
-              ) { "OPEN →" }
-            end
-          end
-        end
-
-        def pagination_bar
-          return if @pagy.last <= 1
-
-          div(class: "flex justify-between items-center mt-4 font-mono text-[9px] uppercase") do
-            if @pagy.prev
-              a(
-                href: helpers.api_v1_maintenance_records_path(page: @pagy.prev),
-                class: "px-4 py-2 border border-emerald-900 text-emerald-800 hover:border-emerald-600 " \
-                       "hover:text-emerald-600 transition-all tracking-widest"
-              ) { "← Previous" }
-            else
-              div
-            end
-
-            div(class: "text-emerald-900") { "Page #{@pagy.page} / #{@pagy.last}" }
-
-            if @pagy.next
-              a(
-                href: helpers.api_v1_maintenance_records_path(page: @pagy.next),
-                class: "px-4 py-2 border border-emerald-900 text-emerald-800 hover:border-emerald-600 " \
-                       "hover:text-emerald-600 transition-all tracking-widest"
-              ) { "Next →" }
-            else
-              div
-            end
-          end
-        end
-
-        def action_badge(type)
-          colors = {
-            "repair"          => "text-amber-500",
-            "installation"    => "text-blue-500",
-            "inspection"      => "text-emerald-500",
-            "cleaning"        => "text-cyan-600",
-            "decommissioning" => "text-red-700"
-          }
-          span(class: "uppercase #{colors[type] || 'text-gray-500'}") { type }
         end
       end
+    end
+
+    def render_row(record)
+      tr(class: "hover:bg-emerald-950/10 transition-colors group") do
+        td(class: "p-4 text-emerald-100") { "#{record.user.first_name} #{record.user.last_name}" }
+        td(class: "p-4 text-emerald-500 text-[10px]") do
+          "#{record.maintainable_type} // #{record.maintainable&.did || record.maintainable&.uid || '—'}"
+        end
+        td(class: "p-4") { action_badge(record.action_type) }
+        td(class: "p-4 text-right text-gray-400") do
+          cost = record.total_cost
+          cost > 0 ? span(class: "text-emerald-300") { "$#{cost.round(2)}" } : span(class: "text-gray-700") { "—" }
+        end
+        td(class: "p-4 text-center") do
+          count = record.photos.size
+          if count > 0
+            span(class: "text-[9px] text-emerald-600 font-mono") { "📷 #{count}" }
+          else
+            span(class: "text-gray-700") { "—" }
+          end
+        end
+        td(class: "p-4 text-center") do
+          if record.hardware_verified
+            span(class: "text-emerald-500 text-[11px]", title: "Hardware Verified") { "✓" }
+          else
+            span(class: "text-amber-900 text-[11px]", title: "Pending Verification") { "◌" }
+          end
+        end
+        td(class: "p-4 text-gray-600 text-[10px]") { record.performed_at&.strftime("%d.%m.%y // %H:%M") }
+        td(class: "p-4 text-right") do
+          a(
+            href: helpers.api_v1_maintenance_record_path(record),
+            class: "text-emerald-700 hover:text-white text-[10px] transition-colors"
+          ) { "OPEN →" }
+        end
+      end
+    end
+
+    def pagination_bar
+      return if @pagy.last <= 1
+
+      div(class: "flex justify-between items-center mt-4 font-mono text-[9px] uppercase") do
+        if @pagy.prev
+          a(
+            href: helpers.api_v1_maintenance_records_path(page: @pagy.prev),
+            class: "px-4 py-2 border border-emerald-900 text-emerald-800 hover:border-emerald-600 " \
+                   "hover:text-emerald-600 transition-all tracking-widest"
+          ) { "← Previous" }
+        else
+          div
+        end
+
+        div(class: "text-emerald-900") { "Page #{@pagy.page} / #{@pagy.last}" }
+
+        if @pagy.next
+          a(
+            href: helpers.api_v1_maintenance_records_path(page: @pagy.next),
+            class: "px-4 py-2 border border-emerald-900 text-emerald-800 hover:border-emerald-600 " \
+                   "hover:text-emerald-600 transition-all tracking-widest"
+          ) { "Next →" }
+        else
+          div
+        end
+      end
+    end
+
+    def action_badge(type)
+      colors = {
+        "repair"          => "text-amber-500",
+        "installation"    => "text-blue-500",
+        "inspection"      => "text-emerald-500",
+        "cleaning"        => "text-cyan-600",
+        "decommissioning" => "text-red-700"
+      }
+      span(class: "uppercase #{colors[type] || 'text-gray-500'}") { type }
     end
   end
 end

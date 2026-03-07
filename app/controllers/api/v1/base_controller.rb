@@ -67,7 +67,7 @@ module Api
       # Метод для рендерингу Phlex-компонентів всередині нашого DashboardLayout.
       # Використовується, коли контролер відповідає на .html запит.
       def render_dashboard(title:, component:)
-        render Views::Layouts::DashboardLayout.new(
+        render DashboardLayout.new(
           title: title,
           current_user: current_user
         ) do

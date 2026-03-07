@@ -43,9 +43,9 @@ RSpec.describe InsightGeneratorService, type: :service do
 
       before do
         # Two normal trees establish the baseline centre
-        [normal_tree1, normal_tree2].each do |t|
+        [ normal_tree1, normal_tree2 ].each do |t|
           create(:telemetry_log, tree: t,
-            temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+            temperature_c: 25.0, sap_flow: 100.0, voltage_mv: 3500, z_value: 0.5,
             acoustic_events: 2, growth_points: 10,
             bio_status: :homeostasis, metabolism_s: 1000,
             created_at: date.beginning_of_day + 12.hours)
@@ -53,7 +53,7 @@ RSpec.describe InsightGeneratorService, type: :service do
 
         # Fraudulent tree: both sap (200) and temp (50) deviate >30% from cluster avg
         create(:telemetry_log, tree: fraudulent_tree,
-          temperature_c: 50.0, voltage_mv: 3500, z_value: 0.5,
+          temperature_c: 50.0, sap_flow: 200.0, voltage_mv: 3500, z_value: 0.5,
           acoustic_events: 2, growth_points: 10,
           bio_status: :homeostasis, metabolism_s: 1000,
           created_at: date.beginning_of_day + 12.hours)

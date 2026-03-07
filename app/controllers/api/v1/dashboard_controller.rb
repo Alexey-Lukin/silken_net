@@ -44,7 +44,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Citadel Command // Global Overview",
-              component: Views::Components::Dashboard::Home.new(stats: @stats, events: @recent_events)
+              component: Dashboard::Home.new(stats: @stats, events: @recent_events)
             )
           end
         end

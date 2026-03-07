@@ -28,7 +28,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Treasury Matrix",
-              component: Views::Components::Wallets::Index.new(wallets: @wallets)
+              component: Wallets::Index.new(wallets: @wallets)
             )
           end
         end
@@ -51,7 +51,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Wallet // #{@wallet.address.first(8)}...",
-              component: Views::Components::Wallets::Show.new(wallet: @wallet, transactions: @transactions)
+              component: Wallets::Show.new(wallet: @wallet, transactions: @transactions)
             )
           end
         end

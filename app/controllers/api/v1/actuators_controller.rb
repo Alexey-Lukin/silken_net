@@ -16,7 +16,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Actuators // Sector: #{@cluster.name}",
-              component: Views::Components::Actuators::Index.new(cluster: @cluster, actuators: @actuators)
+              component: Actuators::Index.new(cluster: @cluster, actuators: @actuators)
             )
           end
         end
@@ -31,7 +31,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Actuator Hub // #{@actuator.actuator_type.upcase}",
-              component: Views::Components::Actuators::Show.new(actuator: @actuator, commands: @commands)
+              component: Actuators::Show.new(actuator: @actuator, commands: @commands)
             )
           end
         end
@@ -58,7 +58,7 @@ module Api
           format.turbo_stream do
             render turbo_stream: turbo_stream.replace(
               "actuator_#{@actuator.id}",
-              Views::Components::Actuators::Card.new(actuator: @actuator, last_command: @command).call
+              Actuators::Card.new(actuator: @actuator, last_command: @command).call
             )
           end
         end

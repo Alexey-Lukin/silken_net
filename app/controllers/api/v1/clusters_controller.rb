@@ -25,7 +25,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Cluster Atlas",
-              component: Views::Components::Clusters::Grid.new(clusters: @clusters)
+              component: Clusters::Grid.new(clusters: @clusters)
             )
           end
         end
@@ -56,7 +56,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Sector: #{@cluster.name}",
-              component: Views::Components::Clusters::Show.new(cluster: @cluster)
+              component: Clusters::Show.new(cluster: @cluster)
             )
           end
         end

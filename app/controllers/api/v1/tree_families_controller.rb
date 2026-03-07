@@ -15,7 +15,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Biological Constants // The Genomes",
-              component: Views::Components::TreeFamilies::Index.new(families: @families)
+              component: TreeFamilies::Index.new(families: @families)
             )
           end
         end
@@ -28,7 +28,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Genome Architecture // #{@family.name}",
-              component: Views::Components::TreeFamilies::Show.new(family: @family)
+              component: TreeFamilies::Show.new(family: @family)
             )
           end
         end
@@ -38,7 +38,7 @@ module Api
         @family = TreeFamily.new
         render_dashboard(
           title: "Define New Species",
-          component: Views::Components::TreeFamilies::Form.new(family: @family)
+          component: TreeFamilies::Form.new(family: @family)
         )
       end
 
@@ -47,14 +47,14 @@ module Api
         if @family.save
           redirect_to api_v1_tree_families_path, notice: "New species DNA woven into the network."
         else
-          render_dashboard(title: "DNA Sequence Error", component: Views::Components::TreeFamilies::Form.new(family: @family))
+          render_dashboard(title: "DNA Sequence Error", component: TreeFamilies::Form.new(family: @family))
         end
       end
 
       def edit
         render_dashboard(
           title: "Refine Genome // #{@family.name}",
-          component: Views::Components::TreeFamilies::Form.new(family: @family)
+          component: TreeFamilies::Form.new(family: @family)
         )
       end
 
@@ -62,7 +62,7 @@ module Api
         if @family.update(family_params)
           redirect_to api_v1_tree_family_path(@family), notice: "Biological constants recalibrated."
         else
-          render_dashboard(title: "Recalibration Error", component: Views::Components::TreeFamilies::Form.new(family: @family))
+          render_dashboard(title: "Recalibration Error", component: TreeFamilies::Form.new(family: @family))
         end
       end
 

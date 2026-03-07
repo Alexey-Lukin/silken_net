@@ -33,7 +33,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Firmware Evolution",
-              component: Views::Components::Firmwares::Index.new(
+              component: Firmwares::Index.new(
                 firmwares: @firmwares,
                 inventory_stats: @inventory_stats
               )
@@ -49,7 +49,7 @@ module Api
 
         render_dashboard(
           title: "Upload New Evolution",
-          component: Views::Components::Firmwares::New.new(firmware: @firmware)
+          component: Firmwares::New.new(firmware: @firmware)
         )
       end
 
@@ -86,7 +86,7 @@ module Api
             format.html do
               render_dashboard(
                 title: "Evolution Error",
-                component: Views::Components::Firmwares::New.new(firmware: @firmware)
+                component: Firmwares::New.new(firmware: @firmware)
               )
             end
           end

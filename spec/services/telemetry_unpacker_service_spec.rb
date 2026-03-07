@@ -6,9 +6,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   # Builds a valid 21-byte binary chunk: [DID:4][RSSI:1][Payload:16]
   def build_chunk(did_hex, rssi, voltage, temp, acoustic, metabolism, status_byte, ttl)
     did_int = did_hex.to_i(16)
-    header = [did_int].pack("N")
-    rssi_byte = [-rssi].pack("C")
-    payload = [did_int, voltage, temp, acoustic, metabolism, status_byte, ttl, "\x00\x00\x00\x00"].pack("N n c C n C C a4")
+    header = [ did_int ].pack("N")
+    rssi_byte = [ -rssi ].pack("C")
+    payload = [ did_int, voltage, temp, acoustic, metabolism, status_byte, ttl, "\x00\x00\x00\x00" ].pack("N n c C n C C a4")
     header + rssi_byte + payload
   end
 

@@ -24,7 +24,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Audit Log",
-              component: Views::Components::AuditLogs::Index.new(logs: @logs)
+              component: AuditLogs::Index.new(logs: @logs)
             )
           end
         end
@@ -43,7 +43,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Audit Event ##{@log.id}",
-              component: Views::Components::AuditLogs::Show.new(log: @log)
+              component: AuditLogs::Show.new(log: @log)
             )
           end
         end
