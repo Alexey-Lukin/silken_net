@@ -30,7 +30,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Alerts Command",
-              component: Views::Components::Alerts::Index.new(alerts: @alerts)
+              component: Alerts::Index.new(alerts: @alerts)
             )
           end
         end
@@ -44,7 +44,7 @@ module Api
             format.turbo_stream do
               render turbo_stream: turbo_stream.replace(
                 "alert_#{@alert.id}",
-                Views::Components::Alerts::Row.new(alert: @alert).call
+                Alerts::Row.new(alert: @alert).call
               )
             end
             format.html { redirect_to api_v1_alerts_path, notice: "Загрозу локалізовано." }

@@ -113,7 +113,7 @@ class ActuatorCommand < ApplicationRecord
     Turbo::StreamsChannel.broadcast_prepend_to(
       org,
       target: "recent_commands_feed",
-      html: Views::Components::Actuators::CommandRow.new(command: self).call
+      html: Actuators::CommandRow.new(command: self).call
     )
   end
 end

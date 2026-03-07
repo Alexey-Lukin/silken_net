@@ -10,7 +10,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Live Telemetry // The Pulse",
-              component: Views::Components::Telemetry::LiveStream.new
+              component: Telemetry::LiveStream.new
             )
           end
         end

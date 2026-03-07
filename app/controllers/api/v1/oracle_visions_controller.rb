@@ -20,7 +20,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Oracle Visions // Future Matrix",
-              component: Views::Components::OracleVisions::Index.new(
+              component: OracleVisions::Index.new(
                 visions: @visions,
                 yield_forecast: @scc_yield
               )

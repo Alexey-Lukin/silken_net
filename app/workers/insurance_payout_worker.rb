@@ -76,14 +76,14 @@ class InsurancePayoutWorker
     Turbo::StreamsChannel.broadcast_replace_to(
       insurance.cluster.organization,
       target: "insurance_card_#{insurance.id}",
-      html: Views::Components::Contracts::InsuranceStatus.new(insurance: insurance).call
+      html: Contracts::InsuranceStatus.new(insurance: insurance).call
     )
 
     # Додаємо запис у глобальний потік подій
     Turbo::StreamsChannel.broadcast_prepend_to(
       "global_events",
       target: "events_feed",
-      html: Views::Components::Dashboard::EventRow.new(
+      html: Dashboard::EventRow.new(
         event: transaction,
         icon: "shield-check",
         color: "blue"

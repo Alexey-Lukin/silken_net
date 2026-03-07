@@ -35,7 +35,6 @@ class BlockchainTransaction < ApplicationRecord
 
   # [ОПТИМІЗОВАНО]: tx_hash має бути присутнім для статусів sent та confirmed
   validates :tx_hash, presence: true, if: -> { status_sent? || status_confirmed? }
-  validates :tx_hash, uniqueness: true, allow_nil: true
 
   # Валідація метрик газу (якщо присутні)
   validates :gas_price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true

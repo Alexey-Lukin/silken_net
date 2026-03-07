@@ -15,6 +15,9 @@ class Wallet < ApplicationRecord
   validates :balance, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :locked_balance, numericality: { greater_than_or_equal_to: 0 }
 
+  # SCC = Silken Carbon Coin — public-facing alias for the internal balance column.
+  alias_attribute :scc_balance, :balance
+
   # Стандартний формат Ethereum/Polygon адреси для On-Chain операцій
   validates :crypto_public_address, format: {
     with: /\A0x[a-fA-F0-9]{40}\z/,
@@ -135,7 +138,7 @@ class Wallet < ApplicationRecord
     Turbo::StreamsChannel.broadcast_replace_to(
       self,
       target: "wallet_balance_#{id}",
-      html: Views::Components::Wallets::BalanceDisplay.new(wallet: self).call
+      html: Wallets::BalanceDisplay.new(wallet: self).call
     )
   end
 

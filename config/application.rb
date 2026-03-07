@@ -19,6 +19,12 @@ module SilkenNet
     # [KENOSIS TITAN]: structure.sql зберігає партиціювання PostgreSQL (schema.rb не підтримує)
     config.active_record.schema_format = :sql
 
+    # Phlex components & layouts: autoload app/views/components and
+    # app/views/layouts so Wallets::TransactionRow, DashboardLayout, etc.
+    # are resolvable by Zeitwerk without the Views:: wrapper.
+    config.autoload_paths << root.join("app/views/components").to_s
+    config.autoload_paths << root.join("app/views/layouts").to_s
+
     # Use RSpec and FactoryBot for generators
     config.generators do |g|
       g.test_framework :rspec

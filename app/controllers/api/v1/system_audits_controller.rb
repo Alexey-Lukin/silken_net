@@ -20,7 +20,7 @@ module Api
           format.html do
             render_dashboard(
               title: "System Audit",
-              component: Views::Components::SystemAudits::Index.new(audit: @audit)
+              component: SystemAudits::Index.new(audit: @audit)
             )
           end
         end

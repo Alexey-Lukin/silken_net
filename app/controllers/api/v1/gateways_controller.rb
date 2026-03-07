@@ -13,7 +13,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Queen Registry",
-              component: Views::Components::Gateways::Index.new(gateways: @gateways)
+              component: Gateways::Index.new(gateways: @gateways)
             )
           end
         end
@@ -28,7 +28,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Queen // #{@gateway.uid}",
-              component: Views::Components::Gateways::Show.new(gateway: @gateway)
+              component: Gateways::Show.new(gateway: @gateway)
             )
           end
         end

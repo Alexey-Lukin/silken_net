@@ -25,7 +25,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Organization Settings",
-              component: Views::Components::Settings::Show.new(organization: org)
+              component: Settings::Show.new(organization: org)
             )
           end
         end
@@ -57,7 +57,7 @@ module Api
             format.html do
               render_dashboard(
                 title: "Organization Settings",
-                component: Views::Components::Settings::Show.new(organization: org)
+                component: Settings::Show.new(organization: org)
               )
             end
           end

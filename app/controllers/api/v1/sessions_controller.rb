@@ -14,7 +14,7 @@ module Api
       # --- ПОРТАЛ ВХОДУ ---
       def new
         respond_to do |format|
-          format.html { render Views::Components::Sessions::New.new }
+          format.html { render Sessions::New.new }
         end
       end
 
@@ -101,7 +101,7 @@ module Api
           format.json { render json: { error: "Невірні координати доступу." }, status: :unauthorized }
           format.html do
             flash.now[:alert] = "Access Denied: Invalid Credentials."
-            render Views::Components::Sessions::New.new, status: :unauthorized
+            render Sessions::New.new, status: :unauthorized
           end
         end
       end

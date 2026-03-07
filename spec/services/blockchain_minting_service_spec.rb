@@ -127,6 +127,7 @@ RSpec.describe BlockchainMintingService do
         expect(tx1.status).to eq("sent")
         expect(tx1.tx_hash).to eq(fake_tx_hash)
         expect(tx2.status).to eq("sent")
+        # Batch mint: one blockchain call = shared tx_hash
         expect(tx2.tx_hash).to eq(fake_tx_hash)
       end
     end

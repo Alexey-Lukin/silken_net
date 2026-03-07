@@ -30,7 +30,7 @@ class ActuatorCommandWorker
     Turbo::StreamsChannel.broadcast_replace_to(
       org,
       target: "command_status_#{command.id}",
-      html: Views::Components::Actuators::CommandStatusBadge.new(command: command).call
+      html: Actuators::CommandStatusBadge.new(command: command).call
     )
   end
 

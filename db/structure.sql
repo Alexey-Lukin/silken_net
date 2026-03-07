@@ -215,7 +215,8 @@ CREATE TABLE public.ai_insights (
     target_date date,
     reasoning jsonb,
     recommendation jsonb,
-    fraud_detected boolean DEFAULT false NOT NULL
+    fraud_detected boolean DEFAULT false NOT NULL,
+    model_source character varying
 );
 
 
@@ -850,7 +851,9 @@ CREATE TABLE public.naas_contracts (
     status integer,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    emitted_tokens numeric DEFAULT 0.0
+    emitted_tokens numeric DEFAULT 0.0,
+    cancellation_terms jsonb DEFAULT '{}'::jsonb,
+    cancelled_at timestamp(6) without time zone
 );
 
 
@@ -920,7 +923,8 @@ CREATE TABLE public.parametric_insurances (
     threshold_value numeric,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    token_type integer DEFAULT 0 NOT NULL
+    token_type integer DEFAULT 0 NOT NULL,
+    required_confirmations integer DEFAULT 3 NOT NULL
 );
 
 
@@ -1006,7 +1010,8 @@ CREATE TABLE public.telemetry_logs (
     tree_id bigint NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
-    z_value numeric
+    z_value numeric,
+    sap_flow numeric
 )
 PARTITION BY RANGE (created_at);
 
@@ -1051,7 +1056,8 @@ CREATE TABLE public.telemetry_logs_default (
     tree_id bigint NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
-    z_value numeric
+    z_value numeric,
+    sap_flow numeric
 );
 
 
@@ -1076,7 +1082,8 @@ CREATE TABLE public.telemetry_logs_y2026m01 (
     tree_id bigint NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
-    z_value numeric
+    z_value numeric,
+    sap_flow numeric
 );
 
 
@@ -1101,7 +1108,8 @@ CREATE TABLE public.telemetry_logs_y2026m02 (
     tree_id bigint NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
-    z_value numeric
+    z_value numeric,
+    sap_flow numeric
 );
 
 
@@ -1126,7 +1134,8 @@ CREATE TABLE public.telemetry_logs_y2026m03 (
     tree_id bigint NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
-    z_value numeric
+    z_value numeric,
+    sap_flow numeric
 );
 
 
@@ -1151,7 +1160,8 @@ CREATE TABLE public.telemetry_logs_y2026m04 (
     tree_id bigint NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
-    z_value numeric
+    z_value numeric,
+    sap_flow numeric
 );
 
 
@@ -1176,7 +1186,8 @@ CREATE TABLE public.telemetry_logs_y2026m05 (
     tree_id bigint NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
-    z_value numeric
+    z_value numeric,
+    sap_flow numeric
 );
 
 
@@ -1201,7 +1212,8 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
     tree_id bigint NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
-    z_value numeric
+    z_value numeric,
+    sap_flow numeric
 );
 
 
@@ -1374,7 +1386,8 @@ CREATE TABLE public.wallets (
     crypto_public_address character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    organization_id bigint
+    organization_id bigint,
+    locked_balance numeric DEFAULT 0.0 NOT NULL
 );
 
 
@@ -2158,7 +2171,7 @@ CREATE INDEX idx_ai_insights_target_date ON public.ai_insights USING btree (targ
 -- Name: idx_ai_insights_unique_report; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX idx_ai_insights_unique_report ON public.ai_insights USING btree (analyzable_type, analyzable_id, target_date, insight_type);
+CREATE UNIQUE INDEX idx_ai_insights_unique_report ON public.ai_insights USING btree (analyzable_type, analyzable_id, target_date, insight_type, model_source);
 
 
 --
@@ -3477,61 +3490,5 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260306173000'),
-('20260306165729'),
-('20260306163055'),
-('20260306153718'),
-('20260306144127'),
-('20260306125109'),
-('20260305190001'),
-('20260305190000'),
-('20260305152600'),
-('20260305143000'),
-('20260305132625'),
-('20260304210000'),
-('20260304200000'),
-('20260304191032'),
-('20260304180000'),
-('20260304160000'),
-('20260303199000'),
-('20260303198000'),
-('20260303197000'),
-('20260303196000'),
-('20260303194000'),
-('20260303193000'),
-('20260303075659'),
-('20260228000000'),
-('20260227220000'),
-('20260226172704'),
-('20260226172050'),
-('20260226171928'),
-('20260226171755'),
-('20260226171604'),
-('20260226171327'),
-('20260226171013'),
-('20260226170638'),
-('20260226170322'),
-('20260226170004'),
-('20260226164466'),
-('20260226164465'),
-('20260226164464'),
-('20260226164463'),
-('20260226164462'),
-('20260226164461'),
-('20260226164460'),
-('20260226164459'),
-('20260226164458'),
-('20260226164457'),
-('20260226164456'),
-('20260226164455'),
-('20260226164454'),
-('20260226164453'),
-('20260226164452'),
-('20260226164451'),
-('20260226164450'),
-('20260226164449'),
-('20260226164448'),
-('20260226164447'),
-('20260226164446'),
 ('20260226164445');
 

@@ -81,7 +81,7 @@ class OtaTransmissionWorker
     Turbo::StreamsChannel.broadcast_replace_to(
       "ota_channel_#{uid}",
       target: "ota_progress_#{uid}",
-      html: Views::Components::Firmwares::OtaProgressBar.new(
+      html: Firmwares::OtaProgressBar.new(
         uid: uid,
         percent: percent,
         current: current,

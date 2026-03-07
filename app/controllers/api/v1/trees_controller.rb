@@ -23,7 +23,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Sector Matrix // #{@cluster.name}",
-              component: Views::Components::Trees::Index.new(cluster: @cluster, trees: @trees)
+              component: Trees::Index.new(cluster: @cluster, trees: @trees)
             )
           end
         end
@@ -52,7 +52,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Soldier Identity // #{@tree.did}",
-              component: Views::Components::Trees::Show.new(tree: @tree)
+              component: Trees::Show.new(tree: @tree)
             )
           end
         end
