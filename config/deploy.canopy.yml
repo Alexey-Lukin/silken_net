@@ -3,10 +3,10 @@
 # protecting the forest floor (production) below. 🌿
 # Deploy manually: kamal deploy -d canopy
 
-# Canopy server IP (from Terraform output: canopy_server_ip).
+# Canopy server IP (replace with actual IP from Terraform output: canopy_server_ip).
 servers:
   web:
-    - 192.168.0.2
+    - <CANOPY_SERVER_IP>
 
 # Proxy: no SSL on canopy (HTTP only for developer use).
 # proxy:
