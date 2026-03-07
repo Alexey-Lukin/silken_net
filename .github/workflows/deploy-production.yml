@@ -1,14 +1,12 @@
-name: Deploy Staging
+name: Deploy Production
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
+  release:
+    types: [published]
   workflow_dispatch:
 
 concurrency:
-  group: deploy-staging
+  group: deploy-production
   cancel-in-progress: false
 
 permissions:
@@ -23,7 +21,6 @@ jobs:
   terraform:
     name: Terraform Apply
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     defaults:
       run:
@@ -56,7 +53,7 @@ jobs:
         run: terraform apply -auto-approve tfplan
 
   deploy:
-    name: Kamal Deploy (Staging)
+    name: Kamal Deploy (Production)
     needs: terraform
     runs-on: ubuntu-latest
 
@@ -90,10 +87,10 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
-      - name: Kamal Deploy to Staging
-        run: kamal deploy -d staging
+      - name: Kamal Deploy to Production
+        run: kamal deploy
         env:
           KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
           GCP_ARTIFACT_REGISTRY_KEY: ${{ secrets.GCP_SA_KEY }}
-          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-          REDIS_URL: ${{ secrets.STAGING_REDIS_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}

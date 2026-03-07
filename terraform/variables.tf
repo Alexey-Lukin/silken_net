@@ -141,6 +141,28 @@ variable "web_disk_size_gb" {
 }
 
 # -----------------------------------------------------------------------------
+# Staging
+# -----------------------------------------------------------------------------
+
+variable "staging_enabled" {
+  description = "Enable staging environment (a lighter server for developer testing)"
+  type        = bool
+  default     = false
+}
+
+variable "staging_machine_type" {
+  description = "Machine type for the staging server (lighter than production)"
+  type        = string
+  default     = "e2-medium"
+}
+
+variable "staging_disk_size_gb" {
+  description = "Boot disk size for the staging server in GB"
+  type        = number
+  default     = 20
+}
+
+# -----------------------------------------------------------------------------
 # SSH & Network Access
 # -----------------------------------------------------------------------------
 

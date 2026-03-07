@@ -58,3 +58,8 @@ output "vpc_name" {
   description = "VPC network name"
   value       = google_compute_network.silken_net_vpc.name
 }
+
+output "staging_server_ip" {
+  description = "External IP address of the staging server"
+  value       = var.staging_enabled ? google_compute_address.staging[0].address : null
+}
