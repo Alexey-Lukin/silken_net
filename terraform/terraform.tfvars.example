@@ -24,6 +24,11 @@ web_machine_type = "n2-standard-2"
 web_node_count   = 1
 web_disk_size_gb = 30
 
+# Canopy — lighter server for developer testing (deployed from main branch)
+canopy_enabled      = true
+canopy_machine_type = "e2-medium"
+canopy_disk_size_gb = 20
+
 # SSH Access — IMPORTANT: restrict to your IP/VPN CIDR in production
 ssh_user           = "deploy"
 ssh_public_key     = "ssh-ed25519 AAAA... deploy@silken-net"

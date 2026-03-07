@@ -141,6 +141,28 @@ variable "web_disk_size_gb" {
 }
 
 # -----------------------------------------------------------------------------
+# Canopy (pre-production for developers, deployed from main)
+# -----------------------------------------------------------------------------
+
+variable "canopy_enabled" {
+  description = "Enable Canopy environment — a lighter server for developer testing after main deploys"
+  type        = bool
+  default     = false
+}
+
+variable "canopy_machine_type" {
+  description = "Machine type for the Canopy server (lighter than production)"
+  type        = string
+  default     = "e2-medium"
+}
+
+variable "canopy_disk_size_gb" {
+  description = "Boot disk size for the Canopy server in GB"
+  type        = number
+  default     = 20
+}
+
+# -----------------------------------------------------------------------------
 # SSH & Network Access
 # -----------------------------------------------------------------------------
 

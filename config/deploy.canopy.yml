@@ -1,0 +1,14 @@
+# Canopy destination — deployed automatically from main branch after CI passes.
+# The forest canopy is the first layer that meets the sun and rain,
+# protecting the forest floor (production) below. 🌿
+# Deploy manually: kamal deploy -d canopy
+
+# Canopy server IP (replace with actual IP from Terraform output: canopy_server_ip).
+servers:
+  web:
+    - <CANOPY_SERVER_IP>
+
+# Proxy: no SSL on canopy (HTTP only for developer use).
+# proxy:
+#   ssl: true
+#   host: canopy.silken.net

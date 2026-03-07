@@ -58,3 +58,8 @@ output "vpc_name" {
   description = "VPC network name"
   value       = google_compute_network.silken_net_vpc.name
 }
+
+output "canopy_server_ip" {
+  description = "External IP address of the Canopy server"
+  value       = var.canopy_enabled ? google_compute_address.canopy[0].address : null
+}
