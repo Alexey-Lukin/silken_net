@@ -11,17 +11,17 @@ resource "google_project_iam_member" "deploy_compute_admin" {
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
 
-# Storage Admin role — push/pull Docker images to Artifact Registry
-resource "google_project_iam_member" "deploy_storage_admin" {
-  project = var.project_id
-  role    = "roles/storage.admin"
-  member  = "serviceAccount:${google_service_account.deploy.email}"
-}
-
-# Artifact Registry Writer — push Docker images
+# Artifact Registry Writer — push/pull Docker images
 resource "google_project_iam_member" "deploy_artifact_writer" {
   project = var.project_id
   role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:${google_service_account.deploy.email}"
+}
+
+# Storage Object Viewer — pull images from Artifact Registry storage backend
+resource "google_project_iam_member" "deploy_storage_viewer" {
+  project = var.project_id
+  role    = "roles/storage.objectViewer"
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
 

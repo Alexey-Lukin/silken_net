@@ -56,3 +56,9 @@ variable "ssh_user" {
   type        = string
   default     = "deploy"
 }
+
+variable "ssh_source_ranges" {
+  description = "CIDR ranges allowed to SSH into web nodes (restrict in production)"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}

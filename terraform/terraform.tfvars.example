@@ -15,5 +15,6 @@ web_machine_type = "n2-standard-2"
 web_node_count   = 1
 
 # SSH Access
-ssh_user       = "deploy"
-ssh_public_key = "ssh-ed25519 AAAA... deploy@silken-net"
+ssh_user           = "deploy"
+ssh_public_key     = "ssh-ed25519 AAAA... deploy@silken-net"
+ssh_source_ranges  = ["0.0.0.0/0"]  # Restrict to your IP/VPN in production

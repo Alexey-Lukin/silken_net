@@ -15,7 +15,7 @@ output "database_connection_name" {
 
 output "database_url" {
   description = "PostgreSQL connection URL for the primary database"
-  value       = "postgres://silken_net:${var.db_password}@${google_sql_database_instance.silken_db.private_ip_address}:5432/silken_net_production"
+  value       = "postgres://${google_sql_user.silken_net.name}:${var.db_password}@${google_sql_database_instance.silken_db.private_ip_address}:5432/${google_sql_database.production.name}"
   sensitive   = true
 }
 
