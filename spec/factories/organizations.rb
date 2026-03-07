@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :organization do
-    sequence(:name) { |n| "Organization #{n}" }
+    sequence(:name) { |n| "Test Organization #{n}-#{SecureRandom.hex(4)}" }
     sequence(:billing_email) { |n| "billing#{n}@example.org" }
     sequence(:crypto_public_address) { |n| "0x#{'%040x' % n}" }
 
