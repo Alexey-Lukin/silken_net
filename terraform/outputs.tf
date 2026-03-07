@@ -19,6 +19,11 @@ output "database_url" {
   sensitive   = true
 }
 
+output "read_replica_ips" {
+  description = "Private IPs of Cloud SQL read replicas"
+  value       = google_sql_database_instance.read_replica[*].private_ip_address
+}
+
 output "redis_host" {
   description = "Memorystore Redis host"
   value       = google_redis_instance.silken_redis.host
@@ -44,10 +49,9 @@ output "service_account_email" {
   value       = google_service_account.deploy.email
 }
 
-output "service_account_key" {
-  description = "Deploy service account JSON key (base64)"
-  value       = google_service_account_key.deploy_key.private_key
-  sensitive   = true
+output "nat_ip" {
+  description = "Cloud NAT external IP (auto-allocated)"
+  value       = google_compute_router_nat.nat.name
 }
 
 output "vpc_name" {

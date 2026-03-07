@@ -4,17 +4,27 @@ region     = "europe-west1"
 zone       = "europe-west1-b"
 
 # Database
-db_password = "CHANGE_ME_use_a_strong_password"
-db_tier     = "db-custom-2-7680"
+db_password          = "CHANGE_ME_use_a_strong_password_16_chars_minimum"
+db_tier              = "db-custom-2-7680"
+db_availability_type = "REGIONAL"
+db_disk_size_gb      = 50
+db_max_connections   = "200"
+db_read_replica_count = 0
+
+# Protection
+enable_deletion_protection = true
 
 # Redis
-redis_memory_size_gb = 1
+redis_memory_size_gb   = 1
+redis_ha_enabled       = true
+redis_alternative_zone = "europe-west1-c"
 
 # Compute
 web_machine_type = "n2-standard-2"
 web_node_count   = 1
+web_disk_size_gb = 30
 
-# SSH Access
+# SSH Access — IMPORTANT: restrict to your IP/VPN CIDR in production
 ssh_user           = "deploy"
 ssh_public_key     = "ssh-ed25519 AAAA... deploy@silken-net"
-ssh_source_ranges  = ["0.0.0.0/0"]  # Restrict to your IP/VPN in production
+ssh_source_ranges  = ["0.0.0.0/0"]

@@ -6,24 +6,55 @@ resource "google_sql_database_instance" "silken_db" {
 
   settings {
     tier              = var.db_tier
-    availability_type = "ZONAL"
-    disk_size         = 20
+    availability_type = var.db_availability_type
+    disk_size         = var.db_disk_size_gb
     disk_type         = "PD_SSD"
+    disk_autoresize   = true
 
     ip_configuration {
       ipv4_enabled    = false
       private_network = google_compute_network.silken_net_vpc.id
+      require_ssl     = true
     }
 
     backup_configuration {
       enabled                        = true
       point_in_time_recovery_enabled = true
       start_time                     = "03:00"
+      transaction_log_retention_days = 7
+
+      backup_retention_settings {
+        retained_backups = 30
+        retention_unit   = "COUNT"
+      }
     }
 
     database_flags {
       name  = "max_connections"
-      value = "100"
+      value = var.db_max_connections
+    }
+
+    database_flags {
+      name  = "log_checkpoints"
+      value = "on"
+    }
+
+    database_flags {
+      name  = "log_connections"
+      value = "on"
+    }
+
+    database_flags {
+      name  = "log_disconnections"
+      value = "on"
+    }
+
+    insights_config {
+      query_insights_enabled  = true
+      query_plans_per_minute  = 5
+      query_string_length     = 1024
+      record_application_tags = true
+      record_client_address   = true
     }
 
     maintenance_window {
@@ -33,7 +64,7 @@ resource "google_sql_database_instance" "silken_db" {
     }
   }
 
-  deletion_protection = true
+  deletion_protection = var.enable_deletion_protection
 
   depends_on = [
     google_project_service.sqladmin,
@@ -72,6 +103,33 @@ resource "google_sql_user" "silken_net" {
   password = var.db_password
 }
 
+# Read replica (optional, for horizontal read scaling)
+resource "google_sql_database_instance" "read_replica" {
+  count                = var.db_read_replica_count
+  name                 = "silken-db-replica-${count.index}"
+  master_instance_name = google_sql_database_instance.silken_db.name
+  region               = var.region
+  database_version     = "POSTGRES_16"
+
+  replica_configuration {
+    failover_target = false
+  }
+
+  settings {
+    tier            = var.db_tier
+    disk_type       = "PD_SSD"
+    disk_autoresize = true
+
+    ip_configuration {
+      ipv4_enabled    = false
+      private_network = google_compute_network.silken_net_vpc.id
+      require_ssl     = true
+    }
+  }
+
+  deletion_protection = var.enable_deletion_protection
+}
+
 # Private Service Access for Cloud SQL
 resource "google_compute_global_address" "private_ip_range" {
   name          = "silken-net-private-ip"
@@ -85,4 +143,6 @@ resource "google_service_networking_connection" "private_vpc_connection" {
   network                 = google_compute_network.silken_net_vpc.id
   service                 = "servicenetworking.googleapis.com"
   reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
+
+  depends_on = [google_project_service.servicenetworking]
 }

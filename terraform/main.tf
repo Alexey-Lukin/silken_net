@@ -40,12 +40,36 @@ resource "google_project_service" "artifactregistry" {
   disable_on_destroy = false
 }
 
+resource "google_project_service" "servicenetworking" {
+  service            = "servicenetworking.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "logging" {
+  service            = "logging.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "monitoring" {
+  service            = "monitoring.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Artifact Registry for Docker images
 resource "google_artifact_registry_repository" "silken_net" {
   location      = var.region
   repository_id = "silken-net"
   format        = "DOCKER"
   description   = "Docker images for Silken Net application"
+
+  cleanup_policy_dry_run = false
+  cleanup_policies {
+    id     = "keep-latest-10"
+    action = "KEEP"
+    most_recent_versions {
+      keep_count = 10
+    }
+  }
 
   depends_on = [google_project_service.artifactregistry]
 }

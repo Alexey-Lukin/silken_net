@@ -1,4 +1,4 @@
-# Web server instances
+# Web server instances — OS Login + Shielded VM for security best practices
 resource "google_compute_instance" "web" {
   count        = var.web_node_count
   name         = "silken-net-web-${count.index}"
@@ -9,7 +9,7 @@ resource "google_compute_instance" "web" {
   boot_disk {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
-      size  = 30
+      size  = var.web_disk_size_gb
       type  = "pd-ssd"
     }
   }
@@ -23,12 +23,19 @@ resource "google_compute_instance" "web" {
   }
 
   metadata = {
-    ssh-keys = var.ssh_public_key != "" ? "${var.ssh_user}:${var.ssh_public_key}" : null
+    enable-oslogin = "TRUE"
+    ssh-keys       = var.ssh_public_key != "" ? "${var.ssh_user}:${var.ssh_public_key}" : null
+  }
+
+  shielded_instance_config {
+    enable_secure_boot          = true
+    enable_vtpm                 = true
+    enable_integrity_monitoring = true
   }
 
   service_account {
     email  = google_service_account.deploy.email
-    scopes = ["cloud-platform"]
+    scopes = ["logging-write", "monitoring-write", "storage-ro"]
   }
 
   allow_stopping_for_update = true
