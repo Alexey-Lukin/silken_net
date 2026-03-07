@@ -21,7 +21,7 @@ resource "google_sql_database_instance" "silken_db" {
       enabled                        = true
       point_in_time_recovery_enabled = true
       start_time                     = "03:00"
-      transaction_log_retention_days = 7
+      transaction_log_retention_days = 30
 
       backup_retention_settings {
         retained_backups = 30

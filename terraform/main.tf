@@ -70,6 +70,13 @@ resource "google_artifact_registry_repository" "silken_net" {
       keep_count = 10
     }
   }
+  cleanup_policies {
+    id     = "delete-old-images"
+    action = "DELETE"
+    condition {
+      older_than = "2592000s"
+    }
+  }
 
   depends_on = [google_project_service.artifactregistry]
 }

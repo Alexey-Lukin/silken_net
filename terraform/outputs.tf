@@ -49,8 +49,8 @@ output "service_account_email" {
   value       = google_service_account.deploy.email
 }
 
-output "nat_ip" {
-  description = "Cloud NAT external IP (auto-allocated)"
+output "nat_name" {
+  description = "Cloud NAT resource name (IPs are auto-allocated)"
   value       = google_compute_router_nat.nat.name
 }
 
