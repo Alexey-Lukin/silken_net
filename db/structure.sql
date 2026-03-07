@@ -924,7 +924,8 @@ CREATE TABLE public.parametric_insurances (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     token_type integer DEFAULT 0 NOT NULL,
-    required_confirmations integer DEFAULT 3 NOT NULL
+    required_confirmations integer DEFAULT 3 NOT NULL,
+    paid_at timestamp(6) without time zone
 );
 
 
@@ -3490,5 +3491,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260307093414'),
 ('20260226164445');
 

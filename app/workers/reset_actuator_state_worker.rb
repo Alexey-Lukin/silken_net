@@ -19,7 +19,7 @@ class ResetActuatorStateWorker
     organization = actuator.gateway&.cluster&.organization
 
     # Перевіряємо, чи актуатор все ще активний
-    if actuator.state_active?
+    if actuator.active?
       ActiveRecord::Base.transaction do
         # 1. Повертаємо фізичний об'єкт у гомеостаз (IDLE)
         actuator.mark_idle!

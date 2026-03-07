@@ -41,6 +41,7 @@ class BurnCarbonTokensWorker
         maintainable: cluster,
         user: executioner,
         action_type: :decommissioning,
+        performed_at: Time.current,
         notes: <<~NOTES
           🚨 SLASHING EXECUTED.
           Контракт ##{naas_contract_id} анульовано через порушення біо-цілісності.
