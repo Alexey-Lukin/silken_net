@@ -134,8 +134,8 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
 
     context "when decryption fails completely" do
       it "returns early without calling unpacker" do
-        # Corrupted payload — neither key works
-        encoded = Base64.strict_encode64("\x00" * 64)
+        # Payload коротший за 2 AES блоки (32 байти) — дешифрація відхиляється
+        encoded = Base64.strict_encode64("\x00" * 16)
 
         described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 

@@ -53,7 +53,7 @@ class AlertNotificationWorker
     ActionCable.server.broadcast("cluster_#{alert.cluster_id}_alerts", payload)
 
     # Канал для всієї організації (для центрального офісу)
-    ActionCable.server.broadcast("org_#{alert.organization_id}_alerts", payload)
+    ActionCable.server.broadcast("org_#{alert.cluster.organization_id}_alerts", payload)
   rescue StandardError => e
     Rails.logger.error "🛑 [ActionCable] WebSocket Error: #{e.message}"
   end

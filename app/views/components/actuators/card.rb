@@ -24,7 +24,7 @@ module Actuators
       div(class: "flex justify-between items-start mb-6") do
         div do
           span(class: "text-[8px] px-2 py-0.5 border border-emerald-800 text-emerald-700 uppercase font-mono tracking-widest") { @actuator.device_type }
-          h4(class: "text-lg font-light text-emerald-100 mt-2 tracking-tighter") { @actuator.tree&.did || "Sector Relay // #{@actuator.gateway&.uid}" }
+          h4(class: "text-lg font-light text-emerald-100 mt-2 tracking-tighter") { "Sector Relay // #{@actuator.gateway&.uid}" }
         end
         div(class: tokens("h-2 w-2 rounded-full", status_led_class))
       end
@@ -46,17 +46,21 @@ module Actuators
     end
 
     def render_controls
+      # Route helpers потребують request context (url_options).
+      # При Turbo broadcast з воркера — request context відсутній.
+      return unless respond_to?(:view_context) && view_context&.respond_to?(:url_options)
+
       div(class: "grid grid-cols-2 gap-2") do
         # Кнопка Увімкнення/Відкриття (Execute Open/ON)
         button_to(
-          helpers.execute_api_v1_actuator_path(@actuator, action_payload: "open"),
+          execute_api_v1_actuator_path(@actuator, action_payload: "open"),
           method: :post,
           class: "py-2 border border-emerald-500 text-[9px] uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all font-bold tracking-widest"
         ) { "EXECUTE_ON" }
 
         # Кнопка Вимкнення/Закриття (Execute Close/OFF)
         button_to(
-          helpers.execute_api_v1_actuator_path(@actuator, action_payload: "close"),
+          execute_api_v1_actuator_path(@actuator, action_payload: "close"),
           method: :post,
           class: "py-2 border border-emerald-900 text-[9px] uppercase text-gray-600 hover:border-red-900 hover:text-white transition-all tracking-widest"
         ) { "EXECUTE_OFF" }

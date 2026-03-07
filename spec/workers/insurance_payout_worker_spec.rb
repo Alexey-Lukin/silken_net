@@ -70,12 +70,13 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
     end
 
     it "returns early when no trees exist in cluster" do
-      wallet.destroy!
-      tree.destroy!
+      # Створюємо порожній кластер без дерев
+      empty_cluster = create(:cluster, organization: organization)
+      empty_insurance = create(:parametric_insurance, :triggered, cluster: empty_cluster, organization: organization)
 
       expect(Rails.logger).to receive(:error).with(/без жодного дерева/)
 
-      described_class.new.perform(insurance.id)
+      described_class.new.perform(empty_insurance.id)
       expect(BlockchainMintingService).not_to have_received(:call)
     end
 

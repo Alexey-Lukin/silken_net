@@ -19,15 +19,15 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
         }.to change(BlockchainTransaction, :count).by(1)
       end
 
-      it "locks the correct number of points" do
+      it "locks the correct number of points into locked_balance" do
         tree = create(:tree, status: :active)
         wallet = create(:wallet, tree: tree, balance: 25_000)
 
         described_class.new.perform
 
         wallet.reload
-        # 25000 / 10000 = 2 tokens, 20000 locked
-        expect(wallet.balance.to_i).to eq(5_000)
+        # 25000 / 10000 = 2 tokens, 20000 locked into locked_balance
+        expect(wallet.locked_balance.to_i).to eq(20_000)
       end
 
       it "calls BlockchainMintingService.call_batch" do

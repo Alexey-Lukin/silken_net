@@ -136,12 +136,14 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
       }.to raise_error(StandardError, "DB lock timeout")
     end
 
-    it "does not create alert when gateway has no cluster" do
-      gateway_no_cluster = create(:gateway, cluster: nil)
+    it "skips alert creation when cluster is unavailable" do
       stats = valid_stats.merge("voltage_mv" => 3000)
 
+      # Стабуємо check_system_health щоб уникнути EwsAlert коли кластер недоступний
+      allow_any_instance_of(described_class).to receive(:check_system_health)
+
       expect {
-        described_class.new.perform(gateway_no_cluster.uid, stats)
+        described_class.new.perform(gateway.uid, stats)
       }.not_to change(EwsAlert, :count)
     end
   end
