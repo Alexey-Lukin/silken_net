@@ -8,6 +8,18 @@ SimpleCov.start "rails" do
   add_filter "/config/"
   add_filter "/db/"
   add_filter "/vendor/"
+  add_filter "/firmware/"
+  add_filter "/lib/"
+
+  # Phlex-компоненти (UI шаблони) — тестуються через feature specs.
+  # Виключаємо з unit-coverage, щоб не спотворювати метрику бекенду.
+  add_filter "app/views/components"
+  add_filter "app/views/layouts"
+
+  # Boilerplate Rails-файли без бізнес-логіки
+  add_filter "app/mailers"
+  add_filter "app/jobs/application_job.rb"
+  add_filter "app/helpers/application_helper.rb"
 
   add_group "Models",      "app/models"
   add_group "Controllers", "app/controllers"
@@ -15,7 +27,13 @@ SimpleCov.start "rails" do
   add_group "Workers",     "app/workers"
   add_group "Blueprints",  "app/blueprints"
 
-  minimum_coverage line: 15, branch: 10
+  # Feature-тести запускаються окремим CI job і мають свій скоуп.
+  # Мінімальний кавередж застосовується тільки до unit/integration спеків.
+  if ENV["FEATURE_TEST"]
+    minimum_coverage line: 0, branch: 0
+  else
+    minimum_coverage line: 89, branch: 70
+  end
   minimum_coverage_by_file 0
 end
 

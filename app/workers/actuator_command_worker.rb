@@ -55,7 +55,7 @@ class ActuatorCommandWorker
       return
     end
 
-    if gateway.state_updating?
+    if gateway.updating?
       Rails.logger.warn "⏳ [Downlink] Шлюз #{gateway.uid} оновлюється. Відтермінування наказу..."
       raise "Gateway Busy: Updating"
     end

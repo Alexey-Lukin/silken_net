@@ -48,7 +48,7 @@ class MintCarbonCoinWorker
     # 1. ЗБІР РОБОТИ (The Harvest)
     # Якщо ID не передані, беремо чергу pending транзакцій (ліміт 1000 для стабільності пам'яті)
     tx_ids = Array(blockchain_transaction_ids).presence ||
-             BlockchainTransaction.pending.limit(1000).pluck(:id)
+             BlockchainTransaction.status_pending.limit(1000).pluck(:id)
 
     return if tx_ids.empty?
 

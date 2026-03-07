@@ -55,7 +55,7 @@ class UnpackTelemetryWorker
     # Конвеєр: [DID:4][RSSI:1][Payload:16] x N
     TelemetryUnpackerService.call(decrypted_data, gateway.id)
 
-  rescue Base64::Error => e
+  rescue ArgumentError => e
     Rails.logger.warn "🛑 [Uplink] Корупція Base64 від #{sender_ip}: #{e.message}"
   rescue StandardError => e
     # [ВИПРАВЛЕНО: Broad Rescue Trace]: Додано перші 10 рядків трейсу для швидкої діагностики у продакшені

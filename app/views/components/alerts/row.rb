@@ -6,7 +6,7 @@ module Alerts
     end
 
     def view_template
-      tr(id: "alert_#{@alert.id}", class: tokens("transition-all duration-700", @alert.resolved? ? "bg-emerald-950/5 opacity-40" : "hover:bg-emerald-950/10")) do
+      tr(id: "alert_#{@alert.id}", class: tokens("transition-all duration-700", @alert.status_resolved? ? "bg-emerald-950/5 opacity-40" : "hover:bg-emerald-950/10")) do
         td(class: "p-4") { severity_badge }
         td(class: "p-4 text-emerald-500") { "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}" }
         td(class: "p-4 text-gray-400") { @alert.message }
@@ -27,13 +27,13 @@ module Alerts
     end
 
     def action_button
-      if @alert.resolved?
+      if @alert.status_resolved?
         span(class: "text-emerald-700 text-[9px] uppercase tracking-widest") { "V Resolved" }
       else
         # Форма для "Втихомирення" через Turbo Stream
         button_to(
           "Acknowledge & Resolve →",
-          helpers.resolve_api_v1_alert_path(@alert),
+          resolve_api_v1_alert_path(@alert),
           method: :patch,
           class: "text-[9px] uppercase tracking-tighter border border-red-900 text-red-500 hover:bg-red-900 hover:text-white px-3 py-1 transition-all",
           data: { turbo_confirm: "Ви підтверджуєте локалізацію загрози ##{@alert.id}?" }
