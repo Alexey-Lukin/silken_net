@@ -57,6 +57,7 @@ module Api
       end
 
       # 2. ПРАВА ДОСТУПУ (RBAC) — Legacy хелпери для поступової міграції
+      # TODO: Перенести всі контролери на Pundit і видалити ці методи
       def authorize_admin!
         render_forbidden unless current_user&.role_admin? || current_user&.role_super_admin?
       end

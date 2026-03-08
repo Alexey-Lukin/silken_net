@@ -18,7 +18,8 @@ class ActuatorPolicy < ApplicationPolicy
       if super_admin?
         scope.all
       else
-        scope.joins(gateway: :cluster).where(clusters: { organization_id: user.organization_id })
+        scope.left_joins(gateway: :cluster)
+             .where("clusters.organization_id = ? OR gateways.cluster_id IS NULL", user.organization_id)
       end
     end
   end

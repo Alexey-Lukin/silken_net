@@ -14,7 +14,9 @@ class TreePolicy < ApplicationPolicy
       if super_admin?
         scope.all
       else
-        scope.joins(:cluster).where(clusters: { organization_id: user.organization_id })
+        # Включаємо дерева в кластерах організації ТА безкластерні дерева
+        scope.left_joins(:cluster)
+             .where("clusters.organization_id = ? OR trees.cluster_id IS NULL", user.organization_id)
       end
     end
   end

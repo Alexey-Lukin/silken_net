@@ -36,3 +36,9 @@ RSpec/VerifiedDoubles:
 # Іменовані let з індексами (tree1, tree2) допустимі для парних порівнянь
 RSpec/IndexedLet:
   Enabled: false
+
+# Інтеграційні тести описують сценарії, а не конкретні класи
+RSpec/DescribeClass:
+  Exclude:
+    - "spec/integration/**/*"
+    - "spec/requests/**/*"

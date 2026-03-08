@@ -14,7 +14,9 @@ class EwsAlertPolicy < ApplicationPolicy
       if super_admin?
         scope.all
       else
-        scope.joins(:cluster).where(clusters: { organization_id: user.organization_id })
+        # Включаємо алерти кластерів організації ТА безкластерні алерти
+        scope.left_joins(:cluster)
+             .where("clusters.organization_id = ? OR ews_alerts.cluster_id IS NULL", user.organization_id)
       end
     end
   end
