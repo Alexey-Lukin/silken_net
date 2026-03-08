@@ -28,7 +28,7 @@ RSpec.describe DailyAggregationWorker, type: :worker do
         described_class.new.perform("2026-03-06")
 
         expect(ClusterHealthCheckWorker.jobs.size).to eq(1)
-        expect(ClusterHealthCheckWorker.jobs.first["args"]).to eq(["2026-03-06"])
+        expect(ClusterHealthCheckWorker.jobs.first["args"]).to eq([ "2026-03-06" ])
       end
     end
 

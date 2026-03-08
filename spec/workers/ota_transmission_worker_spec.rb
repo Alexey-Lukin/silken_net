@@ -10,7 +10,7 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
 
   let(:ota_packages) do
     {
-      packages: ["chunk0data_padded!!", "chunk1data_padded!!", "chunk2data_padded!!"],
+      packages: [ "chunk0data_padded!!", "chunk1data_padded!!", "chunk2data_padded!!" ],
       manifest: { total_chunks: 3, version: firmware.version }
     }
   end

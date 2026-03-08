@@ -129,7 +129,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
 
   describe ".sidekiq_retries_exhausted" do
     it "marks command as failed after all retries" do
-      job = { "args" => [command.id], "error_message" => "Permanent failure" }
+      job = { "args" => [ command.id ], "error_message" => "Permanent failure" }
 
       described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
 
