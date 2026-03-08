@@ -97,7 +97,7 @@ module Users
     def security_indicator(label, is_active, value)
       div(class: "p-3 border border-emerald-900/30 text-center") do
         div(class: "flex items-center justify-center space-x-2 mb-2") do
-          div(class: "h-2 w-2 rounded-full #{is_active ? 'bg-emerald-500' : 'bg-red-500'}") {}
+          div(class: "h-2 w-2 rounded-full #{is_active ? 'bg-emerald-500' : 'bg-red-500'}") { }
           span(class: "text-[9px] text-gray-600 uppercase") { label }
         end
         p(class: "text-[11px] #{is_active ? 'text-emerald-400' : 'text-red-400'}") { value }
@@ -106,12 +106,12 @@ module Users
 
     def provider_badge(identity)
       icon = case identity.provider
-             when "google_oauth2" then "🔵"
-             when "facebook"      then "🟦"
-             when "linkedin"      then "🔷"
-             when "twitter"       then "🐦"
-             else "🔗"
-             end
+      when "google_oauth2" then "🔵"
+      when "facebook"      then "🟦"
+      when "linkedin"      then "🔷"
+      when "twitter"       then "🐦"
+      else "🔗"
+      end
 
       div(class: "flex items-center space-x-2 px-3 py-2 border border-emerald-900/50 bg-zinc-950") do
         span { icon }
