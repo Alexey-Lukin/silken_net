@@ -23,7 +23,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Sector Matrix // #{@cluster.name}",
-              component: Trees::Index.new(cluster: @cluster, trees: @trees)
+              component: Trees::Index.new(cluster: @cluster, trees: @trees, pagy: @pagy)
             )
           end
         end

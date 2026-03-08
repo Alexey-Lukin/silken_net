@@ -2,14 +2,19 @@
 
 module AuditLogs
   class Index < ApplicationComponent
-    def initialize(logs:)
+    def initialize(logs:, pagy:)
       @logs = logs
+      @pagy = pagy
     end
 
     def view_template
       div(class: "space-y-6 animate-in fade-in duration-500") do
         header_section
         audit_table
+        render Shared::Pagination.new(
+          pagy: @pagy,
+          url_helper: ->(page:) { helpers.api_v1_audit_logs_path(page: page) }
+        )
       end
     end
 
@@ -23,7 +28,7 @@ module AuditLogs
         end
         div(class: "text-right font-mono text-[10px] text-emerald-900") do
           plain "Records: "
-          span(class: "text-emerald-500") { @logs.size.to_s }
+          span(class: "text-emerald-500") { @pagy.count.to_s }
         end
       end
     end

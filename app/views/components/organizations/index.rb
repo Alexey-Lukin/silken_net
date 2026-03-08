@@ -1,7 +1,8 @@
 module Organizations
   class Index < ApplicationComponent
-    def initialize(organizations:)
+    def initialize(organizations:, pagy:)
       @organizations = organizations
+      @pagy = pagy
     end
 
     def view_template
@@ -24,6 +25,11 @@ module Organizations
             end
           end
         end
+
+        render Shared::Pagination.new(
+          pagy: @pagy,
+          url_helper: ->(page:) { helpers.api_v1_organizations_path(page: page) }
+        )
       end
     end
 

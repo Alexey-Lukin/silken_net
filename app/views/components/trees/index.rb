@@ -1,8 +1,9 @@
 module Trees
   class Index < ApplicationComponent
-    def initialize(cluster:, trees:)
+    def initialize(cluster:, trees:, pagy: nil)
       @cluster = cluster
       @trees = trees
+      @pagy = pagy
     end
 
     def view_template
@@ -14,6 +15,13 @@ module Trees
           @trees.each do |tree|
             render_soldier_node(tree)
           end
+        end
+
+        if @pagy
+          render Shared::Pagination.new(
+            pagy: @pagy,
+            url_helper: ->(page:) { helpers.api_v1_cluster_trees_path(@cluster, page: page) }
+          )
         end
       end
     end
@@ -28,9 +36,8 @@ module Trees
         end
 
         div(class: "flex space-x-8 text-right font-mono text-[10px]") do
-          header_stat("Population", @trees.count, "Soldiers")
-          header_stat("Operational", @trees.active.count, "Nodes")
-          header_stat("Threats", @trees.select(&:under_threat?).count, "Alerts", danger: true)
+          header_stat("Population", @pagy&.count || @trees.size, "Soldiers")
+          header_stat("Operational", @cluster.active_trees_count, "Nodes")
         end
       end
     end
@@ -44,9 +51,8 @@ module Trees
     end
 
     def render_soldier_node(tree)
-      # Отримуємо дані для швидких індикаторів
-      latest = tree.telemetry_logs.recent.first
-      voltage = latest&.voltage_mv || 0
+      # Використовуємо денормалізовані поля замість окремого запиту телеметрії
+      voltage = tree.latest_voltage_mv || 0
       # Розрахунок заряду (приблизно 3000-4200mV для іоністора/літію)
       charge_percent = [ ((voltage - 3000).to_f / 1200 * 100).to_i, 0 ].max
       charge_percent = [ charge_percent, 100 ].min
@@ -58,7 +64,7 @@ module Trees
         # DID та Статус
         div(class: "flex justify-between items-start mb-3") do
           span(class: "text-[9px] font-mono text-emerald-800 group-hover:text-emerald-400") { tree.did.last(6) }
-          div(class: tokens("h-1.5 w-1.5 rounded-full", tree_status_led(tree, latest)))
+          div(class: tokens("h-1.5 w-1.5 rounded-full", tree_status_led(tree)))
         end
 
         # Індикатор заряду іоністора (Streaming Potential Reserve)
@@ -75,20 +81,14 @@ module Trees
           end
         end
 
-        # Показник Streaming Potential (через Z-value)
-        div(class: "mt-2 flex items-baseline justify-between") do
-          span(class: "text-[10px] text-white font-light") { latest&.z_value || "---" }
-          span(class: "text-[7px] text-emerald-900 font-mono") { "kΩ" }
-        end
-
         # Hover overlay зі стресом
         div(class: "absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none")
       end
     end
 
-    def tree_status_led(tree, latest)
+    def tree_status_led(tree)
       return "bg-red-600 animate-pulse shadow-[0_0_8px_red]" if tree.under_threat?
-      return "bg-gray-800" if latest.nil? || latest.created_at < 24.hours.ago
+      return "bg-gray-800" if tree.last_seen_at.nil? || tree.last_seen_at < 24.hours.ago
       "bg-emerald-500 shadow-[0_0_5px_#10b981]"
     end
 

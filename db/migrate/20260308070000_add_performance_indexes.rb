@@ -34,5 +34,9 @@ class AddPerformanceIndexes < ActiveRecord::Migration[8.1]
     # Parametric Insurances: фільтрація для щоденної оцінки
     add_index :parametric_insurances, [ :cluster_id, :status ],
               name: "index_parametric_insurances_on_cluster_id_and_status"
+
+    # TreeFamilies: counter cache для відображення кількості дерев на UI
+    # Замінює N+1 запит family.trees.count у TreeFamilies::Index
+    add_column :tree_families, :trees_count, :integer, default: 0, null: false
   end
 end

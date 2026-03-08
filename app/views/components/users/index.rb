@@ -1,7 +1,8 @@
 module Users
   class Index < ApplicationComponent
-    def initialize(users:)
+    def initialize(users:, pagy: nil)
       @users = users
+      @pagy = pagy
     end
 
     def view_template
@@ -22,6 +23,13 @@ module Users
               @users.each { |user| render_user_row(user) }
             end
           end
+        end
+
+        if @pagy
+          render Shared::Pagination.new(
+            pagy: @pagy,
+            url_helper: ->(page:) { helpers.api_v1_users_path(page: page) }
+          )
         end
       end
     end

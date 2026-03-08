@@ -28,7 +28,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Treasury Matrix",
-              component: Wallets::Index.new(wallets: @wallets)
+              component: Wallets::Index.new(wallets: @wallets, pagy: @pagy)
             )
           end
         end

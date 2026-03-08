@@ -1,7 +1,8 @@
 module TreeFamilies
   class Index < ApplicationComponent
-    def initialize(families:)
+    def initialize(families:, pagy:)
       @families = families
+      @pagy = pagy
     end
 
     def view_template
@@ -24,6 +25,11 @@ module TreeFamilies
             end
           end
         end
+
+        render Shared::Pagination.new(
+          pagy: @pagy,
+          url_helper: ->(page:) { helpers.api_v1_tree_families_path(page: page) }
+        )
       end
     end
 
@@ -53,7 +59,7 @@ module TreeFamilies
         end
         td(class: "p-4 text-emerald-500") { "#{family.baseline_impedance} kΩ" }
         td(class: "p-4 text-gray-500") { "#{family.critical_z_min} - #{family.critical_z_max} kΩ" }
-        td(class: "p-4 text-emerald-900") { "#{family.trees.count} Soldiers" }
+        td(class: "p-4 text-emerald-900") { "#{family.trees_count} Soldiers" }
         td(class: "p-4 text-right space-x-4") do
           a(href: helpers.api_v1_tree_family_path(family), class: "text-emerald-700 hover:text-white") { "AUDIT" }
           a(href: helpers.edit_api_v1_tree_family_path(family), class: "text-zinc-700 hover:text-emerald-500") { "EDIT" }

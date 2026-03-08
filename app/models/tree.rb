@@ -4,7 +4,7 @@ class Tree < ApplicationRecord
   # --- ЗВ'ЯЗКИ (The Fabric of the Forest) ---
   belongs_to :cluster, optional: true
   belongs_to :tiny_ml_model, optional: true
-  belongs_to :tree_family
+  belongs_to :tree_family, counter_cache: true
 
   has_one :wallet, dependent: :destroy
 

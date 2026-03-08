@@ -2,8 +2,9 @@
 
 module Gateways
   class Index < ApplicationComponent
-    def initialize(gateways:)
+    def initialize(gateways:, pagy:)
       @gateways = gateways
+      @pagy = pagy
     end
 
     def view_template
@@ -15,6 +16,11 @@ module Gateways
             render Gateways::Item.new(gateway: gateway)
           end
         end
+
+        render Shared::Pagination.new(
+          pagy: @pagy,
+          url_helper: ->(page:) { helpers.api_v1_gateways_path(page: page) }
+        )
       end
     end
 
