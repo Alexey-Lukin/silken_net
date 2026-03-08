@@ -39,7 +39,7 @@ class AiInsight < ApplicationRecord
   scope :fraudulent, -> { where(fraud_detected: true) }
 
   # Evidence Persistence: знайти інсайти, що посилаються на конкретний telemetry log
-  scope :referencing_log, ->(log_id) { where("? = ANY(source_log_ids)", log_id) }
+  scope :referencing_log, ->(log_id) { where("source_log_ids @> ARRAY[?]::bigint[]", log_id.to_i) }
 
   # --- МЕТОДИ (The Lens of Truth) ---
 
@@ -66,6 +66,7 @@ class AiInsight < ApplicationRecord
   end
 
   # Evidence Persistence: telemetry logs, що стали підставою для цього інсайту
+  # source_log_ids зберігає integer ID (перший елемент composite key партиціонованої таблиці)
   def source_logs
     return TelemetryLog.none if source_log_ids.blank?
 

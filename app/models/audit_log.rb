@@ -110,15 +110,19 @@ class AuditLog < ApplicationRecord
 
   # --- ПРИВАТНІ МЕТОДИ ---
 
-  # Формує канонічний payload з хеша атрибутів (для bulk_record! та chain_payload)
   def self.chain_payload_from_row(row)
+    # Сортуємо ключі metadata для детермінованого хешу,
+    # бо PostgreSQL JSONB не гарантує порядок ключів
+    meta = row["metadata"]
+    meta_str = meta.is_a?(Hash) ? meta.sort_by { |k, _| k.to_s }.to_h.to_json : meta.to_s
+
     [
       row["organization_id"],
       row["user_id"],
       row["action"],
       row["auditable_type"],
       row["auditable_id"],
-      (row["metadata"].is_a?(Hash) ? row["metadata"].to_json : row["metadata"].to_s)
+      meta_str
     ].join("|")
   end
 

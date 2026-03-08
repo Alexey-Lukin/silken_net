@@ -166,4 +166,60 @@ RSpec.describe Cluster, type: :model do
       expect(cluster).not_to be_valid
     end
   end
+
+  # =========================================================================
+  # POSTGIS SPATIAL QUERIES
+  # =========================================================================
+  describe "PostGIS spatial queries" do
+    let(:polygon) do
+      {
+        "type" => "Polygon",
+        "coordinates" => [ [ [ 31.9, 49.4 ], [ 32.0, 49.4 ], [ 32.0, 49.5 ], [ 31.9, 49.5 ], [ 31.9, 49.4 ] ] ]
+      }
+    end
+
+    describe "#contains_point?" do
+      it "returns true for a point inside the polygon" do
+        cluster = create(:cluster, geojson_polygon: polygon)
+        expect(cluster.contains_point?(49.45, 31.95)).to be true
+      end
+
+      it "returns false for a point outside the polygon" do
+        cluster = create(:cluster, geojson_polygon: polygon)
+        expect(cluster.contains_point?(0, 0)).to be false
+      end
+
+      it "returns false when geo_boundary is absent" do
+        cluster = create(:cluster, geojson_polygon: nil)
+        expect(cluster.contains_point?(49.45, 31.95)).to be false
+      end
+    end
+
+    describe ".containing_point" do
+      it "returns clusters that contain the given point" do
+        cluster = create(:cluster, geojson_polygon: polygon)
+        _other = create(:cluster, geojson_polygon: nil)
+
+        result = described_class.containing_point(49.45, 31.95)
+        expect(result).to include(cluster)
+      end
+
+      it "returns empty when no cluster contains the point" do
+        create(:cluster, geojson_polygon: polygon)
+        expect(described_class.containing_point(0, 0)).to be_empty
+      end
+    end
+
+    describe "geo_boundary trigger sync" do
+      it "auto-populates geo_boundary when geojson_polygon is set" do
+        cluster = create(:cluster, geojson_polygon: polygon)
+        expect(cluster.geo_boundary_present?).to be true
+      end
+
+      it "sets geo_boundary to NULL when geojson_polygon is nil" do
+        cluster = create(:cluster, geojson_polygon: nil)
+        expect(cluster.geo_boundary_present?).to be false
+      end
+    end
+  end
 end
