@@ -2,8 +2,9 @@
 
 module Wallets
   class Index < ApplicationComponent
-    def initialize(wallets:)
+    def initialize(wallets:, pagy: nil)
       @wallets = wallets
+      @pagy = pagy
     end
 
     def view_template
@@ -14,6 +15,13 @@ module Wallets
           @wallets.each do |wallet|
             render_wallet_card(wallet)
           end
+        end
+
+        if @pagy
+          render Shared::Pagination.new(
+            pagy: @pagy,
+            url_helper: ->(page:) { helpers.api_v1_wallets_path(page: page) }
+          )
         end
       end
     end

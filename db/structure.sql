@@ -1272,7 +1272,8 @@ CREATE TABLE public.tree_families (
     updated_at timestamp(6) without time zone NOT NULL,
     biological_properties jsonb,
     scientific_name character varying,
-    carbon_sequestration_coefficient double precision DEFAULT 1.0 NOT NULL
+    carbon_sequestration_coefficient double precision DEFAULT 1.0 NOT NULL,
+    trees_count integer DEFAULT 0 NOT NULL
 );
 
 
@@ -2330,6 +2331,13 @@ CREATE INDEX index_audit_logs_on_user_id ON public.audit_logs USING btree (user_
 
 
 --
+-- Name: index_bio_contract_firmwares_on_is_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_bio_contract_firmwares_on_is_active ON public.bio_contract_firmwares USING btree (is_active) WHERE (is_active = true);
+
+
+--
 -- Name: index_bio_contract_firmwares_on_tree_family_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2372,6 +2380,13 @@ CREATE INDEX index_blockchain_transactions_on_wallet_id ON public.blockchain_tra
 
 
 --
+-- Name: index_blockchain_transactions_on_wallet_id_and_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_wallet_id_and_status ON public.blockchain_transactions USING btree (wallet_id, status);
+
+
+--
 -- Name: index_clusters_on_organization_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2390,6 +2405,13 @@ CREATE INDEX index_device_calibrations_on_tree_id ON public.device_calibrations 
 --
 
 CREATE INDEX index_ews_alerts_on_cluster_id ON public.ews_alerts USING btree (cluster_id);
+
+
+--
+-- Name: index_ews_alerts_on_cluster_id_and_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ews_alerts_on_cluster_id_and_status ON public.ews_alerts USING btree (cluster_id, status);
 
 
 --
@@ -2484,6 +2506,13 @@ CREATE INDEX index_naas_contracts_on_cluster_id ON public.naas_contracts USING b
 
 
 --
+-- Name: index_naas_contracts_on_cluster_id_and_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_naas_contracts_on_cluster_id_and_status ON public.naas_contracts USING btree (cluster_id, status);
+
+
+--
 -- Name: index_naas_contracts_on_organization_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2495,6 +2524,13 @@ CREATE INDEX index_naas_contracts_on_organization_id ON public.naas_contracts US
 --
 
 CREATE INDEX index_parametric_insurances_on_cluster_id ON public.parametric_insurances USING btree (cluster_id);
+
+
+--
+-- Name: index_parametric_insurances_on_cluster_id_and_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_parametric_insurances_on_cluster_id_and_status ON public.parametric_insurances USING btree (cluster_id, status);
 
 
 --
@@ -2544,6 +2580,13 @@ CREATE UNIQUE INDEX index_tree_families_on_scientific_name ON public.tree_famili
 --
 
 CREATE INDEX index_trees_on_cluster_id ON public.trees USING btree (cluster_id);
+
+
+--
+-- Name: index_trees_on_cluster_id_and_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_trees_on_cluster_id_and_status ON public.trees USING btree (cluster_id, status);
 
 
 --
@@ -2607,6 +2650,13 @@ CREATE INDEX index_users_on_organization_id ON public.users USING btree (organiz
 --
 
 CREATE INDEX index_wallets_on_organization_id ON public.wallets USING btree (organization_id);
+
+
+--
+-- Name: index_wallets_on_organization_id_and_balance; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_wallets_on_organization_id_and_balance ON public.wallets USING btree (organization_id, balance);
 
 
 --
@@ -3491,6 +3541,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260308070000'),
 ('20260307093414'),
 ('20260226164445');
 

@@ -8,14 +8,19 @@ module Api
 
       # --- РЕЄСТР ГЕНОМІВ ---
       def index
-        @families = TreeFamily.alphabetical.includes(:trees)
+        @pagy, @families = pagy(TreeFamily.alphabetical)
 
         respond_to do |format|
-          format.json { render json: @families }
+          format.json do
+            render json: {
+              data: @families,
+              pagy: pagy_metadata(@pagy)
+            }
+          end
           format.html do
             render_dashboard(
               title: "Biological Constants // The Genomes",
-              component: TreeFamilies::Index.new(families: @families)
+              component: TreeFamilies::Index.new(families: @families, pagy: @pagy)
             )
           end
         end

@@ -23,7 +23,7 @@ module Api
             @pagy, @users = pagy(scope)
             render_dashboard(
               title: "Crew Management // The Clan",
-              component: Users::Index.new(users: @users)
+              component: Users::Index.new(users: @users, pagy: @pagy)
             )
           end
         end

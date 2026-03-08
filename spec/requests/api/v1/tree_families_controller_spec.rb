@@ -20,7 +20,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
         get "/api/v1/tree_families", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
-        names = response.parsed_body.map { |f| f["name"] }
+        names = response.parsed_body["data"].map { |f| f["name"] }
         expect(names).to include("Scots Pine", "Common Oak")
       end
     end

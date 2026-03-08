@@ -1,7 +1,8 @@
 module Alerts
   class Index < ApplicationComponent
-    def initialize(alerts:)
+    def initialize(alerts:, pagy:)
       @alerts = alerts
+      @pagy = pagy
     end
 
     def view_template
@@ -24,6 +25,11 @@ module Alerts
             end
           end
         end
+
+        render Shared::Pagination.new(
+          pagy: @pagy,
+          url_helper: ->(page:) { helpers.api_v1_alerts_path(page: page) }
+        )
       end
     end
 

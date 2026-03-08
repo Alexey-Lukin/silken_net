@@ -16,7 +16,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       let!(:tx2) { create(:blockchain_transaction, wallet: wallet, status: :pending) }
 
       it "calls BlockchainMintingService.call_batch with transaction IDs" do
-        described_class.new.perform([tx1.id, tx2.id])
+        described_class.new.perform([ tx1.id, tx2.id ])
 
         expect(BlockchainMintingService).to have_received(:call_batch)
       end
@@ -24,7 +24,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       it "processes pending transactions only" do
         tx2.update!(status: :confirmed, tx_hash: SecureRandom.hex(32))
 
-        described_class.new.perform([tx1.id, tx2.id])
+        described_class.new.perform([ tx1.id, tx2.id ])
 
         expect(BlockchainMintingService).to have_received(:call_batch)
       end
@@ -66,7 +66,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         allow(BlockchainMintingService).to receive(:call_batch).and_raise(StandardError, "RPC Error")
 
         expect {
-          described_class.new.perform([tx.id])
+          described_class.new.perform([ tx.id ])
         }.to raise_error(StandardError, "RPC Error")
       end
     end
@@ -80,7 +80,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
       allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
-      job = { "args" => [[tx.id]], "error_message" => "Permanent RPC failure" }
+      job = { "args" => [ [ tx.id ] ], "error_message" => "Permanent RPC failure" }
 
       described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
 
@@ -98,7 +98,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
       allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
-      job = { "args" => [[tx.id]], "error_message" => "Failure" }
+      job = { "args" => [ [ tx.id ] ], "error_message" => "Failure" }
 
       described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
 

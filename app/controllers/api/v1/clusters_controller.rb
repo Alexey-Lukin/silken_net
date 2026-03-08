@@ -10,22 +10,27 @@ module Api
       # GET /api/v1/clusters
       def index
         # Скоупимо до організації поточного користувача (Security Scope)
-        @clusters = current_user.organization.clusters.includes(:organization, :trees, :ews_alerts)
+        # active_threats? використовує EXISTS з composite index — includes не потрібен.
+        # health_index та active_trees_count — денормалізовані колонки на clusters.
+        @pagy, @clusters = pagy(current_user.organization.clusters)
 
         respond_to do |format|
           # 1. API Response (Mobile / Externals)
           format.json do
-            render json: @clusters.as_json(
-              only: [ :id, :name, :region, :geojson_polygon ],
-              methods: [ :health_index, :total_active_trees, :geo_center, :active_threats? ]
-            )
+            render json: {
+              data: @clusters.as_json(
+                only: [ :id, :name, :region, :geojson_polygon ],
+                methods: [ :health_index, :total_active_trees, :geo_center, :active_threats? ]
+              ),
+              pagy: pagy_metadata(@pagy)
+            }
           end
 
           # 2. Dashboard Response (Phlex + Hotwire)
           format.html do
             render_dashboard(
               title: "Cluster Atlas",
-              component: Clusters::Grid.new(clusters: @clusters)
+              component: Clusters::Grid.new(clusters: @clusters, pagy: @pagy)
             )
           end
         end

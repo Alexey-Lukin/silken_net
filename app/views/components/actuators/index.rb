@@ -2,9 +2,10 @@
 
 module Actuators
   class Index < ApplicationComponent
-    def initialize(cluster:, actuators:)
+    def initialize(cluster:, actuators:, pagy:)
       @cluster = cluster
       @actuators = actuators
+      @pagy = pagy
     end
 
     def view_template
@@ -20,6 +21,11 @@ module Actuators
             render_empty_state
           end
         end
+
+        render Shared::Pagination.new(
+          pagy: @pagy,
+          url_helper: ->(page:) { helpers.api_v1_cluster_actuators_path(@cluster, page: page) }
+        )
       end
     end
 

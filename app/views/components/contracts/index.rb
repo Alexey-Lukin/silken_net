@@ -1,8 +1,9 @@
 module Contracts
   class Index < ApplicationComponent
-    def initialize(contracts:, stats:)
+    def initialize(contracts:, stats:, pagy:)
       @contracts = contracts
       @stats = stats
+      @pagy = pagy
     end
 
     def view_template
@@ -29,6 +30,11 @@ module Contracts
               end
             end
           end
+
+          render Shared::Pagination.new(
+            pagy: @pagy,
+            url_helper: ->(page:) { helpers.api_v1_contracts_path(page: page) }
+          )
         end
       end
     end

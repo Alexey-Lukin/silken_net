@@ -15,16 +15,20 @@ module Api
         # Фільтрація
         @transactions = @transactions.where(token_type: params[:token_type]) if params[:token_type].present?
         @transactions = @transactions.where(status: params[:status]) if params[:status].present?
-        @transactions = @transactions.limit(params.fetch(:limit, 50).to_i.clamp(1, 100))
+
+        @pagy, @transactions = pagy(@transactions, limit: params.fetch(:limit, 50).to_i.clamp(1, 100))
 
         respond_to do |format|
           format.json do
-            render json: BlockchainTransactionBlueprint.render(@transactions, view: :index)
+            render json: {
+              data: BlockchainTransactionBlueprint.render_as_hash(@transactions, view: :index),
+              pagy: pagy_metadata(@pagy)
+            }
           end
           format.html do
             render_dashboard(
               title: "Blockchain Ledger",
-              component: BlockchainTransactions::Index.new(transactions: @transactions)
+              component: BlockchainTransactions::Index.new(transactions: @transactions, pagy: @pagy)
             )
           end
         end

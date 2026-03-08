@@ -132,7 +132,7 @@ RSpec.describe Cluster, type: :model do
 
   describe "#mapped?" do
     it "returns true when geojson_polygon has coordinates" do
-      polygon = { "type" => "Polygon", "coordinates" => [[[31.9, 49.4], [32.0, 49.5]]] }
+      polygon = { "type" => "Polygon", "coordinates" => [ [ [ 31.9, 49.4 ], [ 32.0, 49.5 ] ] ] }
       cluster = build(:cluster, geojson_polygon: polygon)
 
       expect(cluster).to be_mapped

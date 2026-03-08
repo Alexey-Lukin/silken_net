@@ -2,14 +2,19 @@
 
 module BlockchainTransactions
   class Index < ApplicationComponent
-    def initialize(transactions:)
+    def initialize(transactions:, pagy:)
       @transactions = transactions
+      @pagy = pagy
     end
 
     def view_template
       div(class: "space-y-6 animate-in fade-in duration-500") do
         header_section
         transactions_table
+        render Shared::Pagination.new(
+          pagy: @pagy,
+          url_helper: ->(page:) { helpers.api_v1_blockchain_transactions_path(page: page) }
+        )
       end
     end
 

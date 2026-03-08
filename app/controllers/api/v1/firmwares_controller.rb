@@ -12,7 +12,7 @@ module Api
       # --- РЕЄСТР ЕВОЛЮЦІЙ (The Evolution Hub) ---
       # GET /api/v1/firmwares
       def index
-        @firmwares = BioContractFirmware.order(version: :desc)
+        @pagy, @firmwares = pagy(BioContractFirmware.order(version: :desc))
 
         # Збираємо статистику інвентаря для дашборду
         @inventory_stats = {
@@ -23,10 +23,13 @@ module Api
         respond_to do |format|
           # API Response
           format.json do
-            render json: @firmwares.as_json(
-              only: [ :id, :version, :target_hardware, :file_size, :created_at, :checksum ],
-              methods: [ :deployment_count ]
-            )
+            render json: {
+              data: @firmwares.as_json(
+                only: [ :id, :version, :target_hardware, :file_size, :created_at, :checksum ],
+                methods: [ :deployment_count ]
+              ),
+              pagy: pagy_metadata(@pagy)
+            }
           end
 
           # Dashboard Response (Phlex)
@@ -35,7 +38,8 @@ module Api
               title: "Firmware Evolution",
               component: Firmwares::Index.new(
                 firmwares: @firmwares,
-                inventory_stats: @inventory_stats
+                inventory_stats: @inventory_stats,
+                pagy: @pagy
               )
             )
           end

@@ -15,22 +15,26 @@ module Api
         @alerts = @alerts.where(status: params[:status] || :active)
         @alerts = @alerts.where(severity: params[:severity]) if params[:severity].present?
         @alerts = @alerts.where(cluster_id: params[:cluster_id]) if params[:cluster_id].present?
-        @alerts = @alerts.limit(50)
+
+        @pagy, @alerts = pagy(@alerts)
 
         respond_to do |format|
           format.json do
-            render json: @alerts.as_json(
-              include: {
-                cluster: { only: [ :id, :name ] },
-                tree: { only: [ :id, :did, :latitude, :longitude ] }
-              },
-              methods: [ :coordinates, :actionable? ]
-            )
+            render json: {
+              data: @alerts.as_json(
+                include: {
+                  cluster: { only: [ :id, :name ] },
+                  tree: { only: [ :id, :did, :latitude, :longitude ] }
+                },
+                methods: [ :coordinates, :actionable? ]
+              ),
+              pagy: pagy_metadata(@pagy)
+            }
           end
           format.html do
             render_dashboard(
               title: "Alerts Command",
-              component: Alerts::Index.new(alerts: @alerts)
+              component: Alerts::Index.new(alerts: @alerts, pagy: @pagy)
             )
           end
         end

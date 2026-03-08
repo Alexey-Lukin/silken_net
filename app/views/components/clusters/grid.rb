@@ -2,8 +2,9 @@
 
 module Clusters
   class Grid < ApplicationComponent
-    def initialize(clusters:)
+    def initialize(clusters:, pagy:)
       @clusters = clusters
+      @pagy = pagy
     end
 
     def view_template
@@ -13,6 +14,11 @@ module Clusters
             render Clusters::Item.new(cluster: cluster)
           end
         end
+
+        render Shared::Pagination.new(
+          pagy: @pagy,
+          url_helper: ->(page:) { helpers.api_v1_clusters_path(page: page) }
+        )
       else
         render_empty_state
       end

@@ -2,9 +2,10 @@
 
 module Firmwares
   class Index < ApplicationComponent
-    def initialize(firmwares:, inventory_stats:)
+    def initialize(firmwares:, inventory_stats:, pagy:)
       @firmwares = firmwares
       @inventory_stats = inventory_stats
+      @pagy = pagy
     end
 
     def view_template
@@ -70,6 +71,11 @@ module Firmwares
             end
           end
         end
+
+        render Shared::Pagination.new(
+          pagy: @pagy,
+          url_helper: ->(page:) { helpers.api_v1_firmwares_path(page: page) }
+        )
       end
     end
   end

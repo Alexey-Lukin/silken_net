@@ -19,7 +19,7 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
       get "/api/v1/gateways", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
-      ids = response.parsed_body.map { |g| g["id"] }
+      ids = response.parsed_body["data"].map { |g| g["id"] }
       expect(ids).to include(own_gateway.id)
       expect(ids).not_to include(other_gateway.id)
     end

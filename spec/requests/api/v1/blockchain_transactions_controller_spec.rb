@@ -24,7 +24,7 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
       get "/api/v1/blockchain_transactions", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
-      ids = response.parsed_body.map { |t| t["id"] }
+      ids = response.parsed_body["data"].map { |t| t["id"] }
       expect(ids).to include(own_tx.id)
       expect(ids).not_to include(other_tx.id)
     end
