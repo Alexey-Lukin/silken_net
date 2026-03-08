@@ -125,8 +125,7 @@ RSpec.describe Actuator, type: :model do
     it "returns false when gateway is offline" do
       gateway  = create(:gateway, :offline)
       actuator = create(:actuator, gateway: gateway, state: :idle)
-      allow(gateway).to receive(:online?).and_return(false)
-      allow(gateway).to receive(:updating?).and_return(false)
+      allow(gateway).to receive_messages(online?: false, updating?: false)
 
       expect(actuator.ready_for_deployment?).to be false
     end
@@ -134,8 +133,7 @@ RSpec.describe Actuator, type: :model do
     it "returns false when gateway is updating" do
       gateway  = create(:gateway, :online)
       actuator = create(:actuator, gateway: gateway, state: :idle)
-      allow(gateway).to receive(:online?).and_return(true)
-      allow(gateway).to receive(:updating?).and_return(true)
+      allow(gateway).to receive_messages(online?: true, updating?: true)
 
       expect(actuator.ready_for_deployment?).to be false
     end
@@ -143,8 +141,7 @@ RSpec.describe Actuator, type: :model do
     it "returns true when idle and gateway is online and not updating" do
       gateway  = create(:gateway, :online)
       actuator = create(:actuator, gateway: gateway, state: :idle)
-      allow(gateway).to receive(:online?).and_return(true)
-      allow(gateway).to receive(:updating?).and_return(false)
+      allow(gateway).to receive_messages(online?: true, updating?: false)
 
       expect(actuator.ready_for_deployment?).to be true
     end

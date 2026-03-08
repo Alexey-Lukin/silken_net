@@ -15,7 +15,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
   let!(:common_oak) { create(:tree_family, :common_oak) }
 
   describe "GET /api/v1/tree_families" do
-    context "as JSON" do
+    context "when as JSON" do
       it "returns all tree families for admin" do
         get "/api/v1/tree_families", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
@@ -25,7 +25,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       end
     end
 
-    context "as HTML" do
+    context "when as HTML" do
       it "renders the dashboard page" do
         get "/api/v1/tree_families", headers: headers
         expect(response).to have_http_status(:ok)
@@ -44,7 +44,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
   end
 
   describe "GET /api/v1/tree_families/:id" do
-    context "as JSON" do
+    context "when as JSON" do
       it "returns a specific tree family" do
         get "/api/v1/tree_families/#{scots_pine.id}", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
@@ -52,7 +52,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       end
     end
 
-    context "as HTML" do
+    context "when as HTML" do
       it "renders the dashboard page" do
         get "/api/v1/tree_families/#{scots_pine.id}", headers: headers
         expect(response).to have_http_status(:ok)

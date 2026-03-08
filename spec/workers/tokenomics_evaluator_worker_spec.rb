@@ -71,7 +71,7 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
       end
     end
 
-    context "error handling per wallet" do
+    context "when error handling per wallet" do
       it "continues processing when one wallet fails" do
         tree1 = create(:tree, status: :active)
         wallet1 = create(:wallet, tree: tree1, balance: 10_000)

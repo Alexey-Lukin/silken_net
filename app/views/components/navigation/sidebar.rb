@@ -36,6 +36,7 @@ module Navigation
 
           # АДМІНІСТРУВАННЯ
           section_group("Administration") do
+            nav_item("Account Security", helpers.api_v1_account_security_path, "eye")
             nav_item("Notifications", helpers.api_v1_notifications_settings_path, "radio")
             nav_item("Org Settings", helpers.api_v1_settings_path, "cpu")
             nav_item("Audit Log", helpers.api_v1_audit_logs_path, "eye")

@@ -13,6 +13,20 @@ Rails.application.routes.draw do
       post   "login",  to: "sessions#create"
       delete "logout", to: "sessions#destroy", as: :logout
 
+      # Скидання пароля (Forgot / Reset Password)
+      get  "forgot_password", to: "passwords#new",    as: :forgot_password
+      post "forgot_password", to: "passwords#create"
+      get  "reset_password",  to: "passwords#edit",   as: :edit_password
+      patch "reset_password", to: "passwords#update",  as: :reset_password
+
+      # Безпека акаунту (Account Security / Identity Management)
+      get   "account_security",              to: "account_security#show",            as: :account_security
+      patch "account_security/mfa",          to: "account_security#toggle_mfa",      as: :account_security_mfa
+      patch "account_security/password",     to: "account_security#change_password",  as: :account_security_password
+      delete "account_security/identities/:id", to: "account_security#unlink_identity", as: :account_security_identity
+      patch  "account_security/identities/:id/lock",   to: "account_security#lock_identity",   as: :lock_account_security_identity
+      patch  "account_security/identities/:id/unlock", to: "account_security#unlock_identity",  as: :unlock_account_security_identity
+
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 🏰 ЦЕНТРАЛЬНИЙ ВІВТАР (Dashboard)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

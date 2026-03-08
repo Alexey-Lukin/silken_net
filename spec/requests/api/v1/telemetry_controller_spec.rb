@@ -13,7 +13,7 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
   let!(:other_cluster) { create(:cluster, organization: other_organization) }
 
   describe "GET /api/v1/telemetry/live" do
-    context "as HTML" do
+    context "when as HTML" do
       it "renders the live telemetry dashboard" do
         get "/api/v1/telemetry/live", headers: headers
         expect(response).to have_http_status(:ok)

@@ -5,9 +5,9 @@ require "rails_helper"
 RSpec.describe EwsAlert, type: :model do
   before do
     allow(AlertNotificationWorker).to receive(:perform_async)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_status_change)
-    allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
+    allow_any_instance_of(described_class).to receive(:broadcast_status_change)
+    allow_any_instance_of(described_class).to receive(:dispatch_notifications!)
+    allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
   end
 
   # =========================================================================
@@ -23,7 +23,7 @@ RSpec.describe EwsAlert, type: :model do
     it "belongs to tree (optional)" do
       association = described_class.reflect_on_association(:tree)
       expect(association.macro).to eq(:belongs_to)
-      expect(association.options[:optional]).to eq(true)
+      expect(association.options[:optional]).to be(true)
     end
 
     it "belongs to resolver (optional User)" do
@@ -31,7 +31,7 @@ RSpec.describe EwsAlert, type: :model do
       expect(association.macro).to eq(:belongs_to)
       expect(association.options[:class_name]).to eq("User")
       expect(association.options[:foreign_key]).to eq("resolved_by")
-      expect(association.options[:optional]).to eq(true)
+      expect(association.options[:optional]).to be(true)
     end
   end
 
@@ -191,7 +191,7 @@ RSpec.describe EwsAlert, type: :model do
   describe "callbacks" do
     describe "after_create_commit :dispatch_notifications!" do
       it "enqueues AlertNotificationWorker" do
-        allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!).and_call_original
+        allow_any_instance_of(described_class).to receive(:dispatch_notifications!).and_call_original
         expect(AlertNotificationWorker).to receive(:perform_async).with(kind_of(Integer))
         create(:ews_alert, :fire)
       end
@@ -241,11 +241,13 @@ RSpec.describe EwsAlert, type: :model do
     it "closes associated maintenance records" do
       alert = create(:ews_alert, :fire)
 
-      expect(MaintenanceRecord).to receive(:where)
+      allow(MaintenanceRecord).to receive(:where)
         .with(ews_alert_id: alert.id)
         .and_return(double(update_all: 0))
 
       alert.resolve!
+
+      expect(MaintenanceRecord).to have_received(:where).with(ews_alert_id: alert.id)
     end
   end
 

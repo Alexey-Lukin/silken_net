@@ -60,7 +60,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       end
     end
 
-    context "error handling" do
+    context "when error handling" do
       it "resets transactions to pending on RPC failure" do
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending)
         allow(BlockchainMintingService).to receive(:call_batch).and_raise(StandardError, "RPC Error")

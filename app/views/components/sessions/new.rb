@@ -26,9 +26,9 @@ module Sessions
               f.submit "AUTHENTICATE", class: "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-[0.4em] hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
             end
 
-            div(class: "text-center") do
-              p(class: "text-[8px] text-emerald-900 uppercase tracking-widest") { "System Integrity Verified // AES-256 Enabled" }
-            end
+            render_forgot_password_link
+            render_social_providers
+            render_footer_seal
           end
         end
       end
@@ -62,6 +62,48 @@ module Sessions
         div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-[10px] uppercase tracking-widest text-center") do
           helpers.flash[:alert]
         end
+      end
+      if helpers.flash[:notice]
+        div(class: "p-3 border border-emerald-900 bg-emerald-950/20 text-emerald-500 text-[10px] uppercase tracking-widest text-center") do
+          helpers.flash[:notice]
+        end
+      end
+    end
+
+    def render_forgot_password_link
+      div(class: "text-right") do
+        a(href: helpers.api_v1_forgot_password_path, class: "text-[10px] text-emerald-900 uppercase tracking-widest hover:text-emerald-500 transition-colors") do
+          "Forgot Access Code?"
+        end
+      end
+    end
+
+    def render_social_providers
+      div(class: "space-y-4 pt-4 border-t border-emerald-900/30") do
+        p(class: "text-[9px] uppercase tracking-widest text-emerald-900 text-center") { "Or authenticate via provider" }
+
+        div(class: "grid grid-cols-2 gap-3") do
+          provider_button("google_oauth2", "Google", "🔵")
+          provider_button("facebook", "Facebook", "🟦")
+          provider_button("linkedin", "LinkedIn", "🔷")
+          provider_button("twitter", "Twitter", "🐦")
+        end
+      end
+    end
+
+    def provider_button(provider, label, icon)
+      a(
+        href: "/auth/#{provider}",
+        class: "flex items-center justify-center space-x-2 py-3 border border-emerald-900/50 text-emerald-700 text-[10px] uppercase tracking-widest hover:border-emerald-500 hover:text-emerald-400 hover:bg-emerald-950/10 transition-all"
+      ) do
+        span { icon }
+        span { label }
+      end
+    end
+
+    def render_footer_seal
+      div(class: "text-center") do
+        p(class: "text-[8px] text-emerald-900 uppercase tracking-widest") { "System Integrity Verified // AES-256 Enabled" }
       end
     end
   end

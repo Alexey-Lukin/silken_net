@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe Wallet, type: :model do
   before do
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+    allow_any_instance_of(described_class).to receive(:broadcast_balance_update)
   end
 
   describe "#credit!" do

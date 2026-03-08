@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe OtaPackagerService do
   let(:firmware) do
-    instance_double("BioContractFirmware", version: "1.0.0", binary_payload: payload, binary_sha256: "abc123")
+    instance_double(BioContractFirmware, version: "1.0.0", binary_payload: payload, binary_sha256: "abc123")
   end
 
   describe ".prepare" do
@@ -123,7 +123,7 @@ RSpec.describe OtaPackagerService do
       end
     end
 
-    context "CRC16 detects corruption" do
+    context "when CRC16 detects corruption" do
       let(:payload) { "\xDE\xAD\xBE\xEF" * 128 }
 
       it "CRC changes when data is altered" do

@@ -8,12 +8,7 @@ module Api
       # --- ПОРТФЕЛЬ КОНТРАКТІВ (Registry + Dashboard) ---
       # GET /api/v1/contracts
       def index
-        scope = if current_user.role_admin? || current_user.role_super_admin?
-                       NaasContract.includes(:organization, :cluster).all
-        else
-                       current_user.organization.naas_contracts.includes(:cluster)
-        end
-
+        scope = policy_scope(NaasContract).includes(:organization, :cluster)
         @pagy, @contracts = pagy(scope)
 
         # Агрегуємо дані для Phlex-дашборду, використовуючи твою логіку
@@ -92,7 +87,9 @@ module Api
       private
 
       def find_contract(id)
-        current_user.role_admin? ? NaasContract.find(id) : current_user.organization.naas_contracts.find(id)
+        contract = NaasContract.find(id)
+        authorize contract, :show?
+        contract
       end
 
       # [ОПТИМІЗАЦІЯ]: Використовуємо SQL average для економії RAM

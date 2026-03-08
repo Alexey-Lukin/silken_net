@@ -23,7 +23,7 @@ RSpec.describe Organization, type: :model do
     end
 
     it "has audit_logs with delete_all dependency strategy" do
-      reflection = Organization.reflect_on_association(:audit_logs)
+      reflection = described_class.reflect_on_association(:audit_logs)
       expect(reflection.options[:dependent]).to eq(:delete_all)
     end
   end
@@ -162,6 +162,38 @@ RSpec.describe Organization, type: :model do
     it "accepts valid ai_sensitivity" do
       org = build(:organization, ai_sensitivity: 0.85)
       expect(org).to be_valid
+    end
+
+    # --- Data Residency (Zone 4) ---
+    it "accepts valid data_region" do
+      Organization::SUPPORTED_DATA_REGIONS.each do |region|
+        org = build(:organization, data_region: region)
+        expect(org).to be_valid, "Expected #{region} to be valid"
+      end
+    end
+
+    it "rejects invalid data_region" do
+      org = build(:organization, data_region: "mars-north")
+      expect(org).not_to be_valid
+      expect(org.errors[:data_region]).to be_present
+    end
+
+    it "allows nil data_region" do
+      org = build(:organization, data_region: nil)
+      expect(org).to be_valid
+    end
+
+    it "defaults data_region to eu-west" do
+      org = described_class.new
+      expect(org.data_region).to eq("eu-west")
+    end
+  end
+
+  describe "SUPPORTED_DATA_REGIONS" do
+    it "contains five regions" do
+      expect(Organization::SUPPORTED_DATA_REGIONS).to contain_exactly(
+        "eu-west", "eu-central", "us-east", "us-west", "ap-southeast"
+      )
     end
   end
 end

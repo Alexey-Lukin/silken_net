@@ -18,6 +18,7 @@ gem "prawn"
 gem "prawn-table"
 gem "propshaft"
 gem "puma"
+gem "pundit"
 gem "rails", "~> 8.1.2"
 gem "sidekiq"
 gem "sidekiq-scheduler"
@@ -42,9 +43,11 @@ group :development, :test do
   gem "bundler-audit", require: false
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "factory_bot_rails"
+  gem "parallel_tests"
   gem "prosopite"
   gem "rspec-rails"
   gem "rubocop-rails-omakase", require: false
+  gem "rubocop-rspec", require: false
 end
 
 group :development do
@@ -53,6 +56,6 @@ end
 
 group :test do
   gem "capybara"
-  gem "selenium-webdriver"
+  gem "cuprite"
   gem "simplecov", require: false
 end

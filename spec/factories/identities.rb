@@ -19,8 +19,31 @@ FactoryBot.define do
       sequence(:uid) { |n| "apple_uid_#{n}" }
     end
 
+    trait :facebook do
+      provider { "facebook" }
+      sequence(:uid) { |n| "facebook_uid_#{n}" }
+    end
+
+    trait :linkedin do
+      provider { "linkedin" }
+      sequence(:uid) { |n| "linkedin_uid_#{n}" }
+    end
+
+    trait :twitter do
+      provider { "twitter" }
+      sequence(:uid) { |n| "twitter_uid_#{n}" }
+    end
+
     trait :no_expiry do
       expires_at { nil }
+    end
+
+    trait :locked do
+      locked_at { Time.current }
+    end
+
+    trait :primary_identity do
+      primary { true }
     end
   end
 end

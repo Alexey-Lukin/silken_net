@@ -1,11 +1,52 @@
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
-# Overwrite or add rules to create your own house style
-#
-# # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
-# Layout/SpaceInsideArrayLiteralBrackets:
-#   Enabled: false
+plugins:
+  - rubocop-rspec
+
+AllCops:
+  NewCops: enable
 
 Bundler/OrderedGems:
   Enabled: true
+
+# --- RSpec cops ---
+RSpec/MultipleExpectations:
+  Max: 10
+
+RSpec/ExampleLength:
+  Max: 30
+
+RSpec/NestedGroups:
+  Max: 5
+
+# IoT-телеметрія потребує багато let-хелперів для повного стеку (tree→cluster→org→gateway)
+RSpec/MultipleMemoizedHelpers:
+  Max: 15
+
+# allow_any_instance_of — поступова міграція
+RSpec/AnyInstance:
+  Enabled: false
+
+# Дозволяємо expect(Logger) для перевірки логування
+RSpec/MessageSpies:
+  Enabled: false
+
+# Блокчейн/IoT сервіси використовують double для зовнішніх API (Polygon RPC, CoAP)
+RSpec/VerifiedDoubles:
+  Enabled: false
+
+# Іменовані let з індексами (tree1, tree2) допустимі для парних порівнянь
+RSpec/IndexedLet:
+  Enabled: false
+
+# let! в IoT-тестах часто потрібні для створення записів в БД перед перевіркою
+# (наприклад, tree повинно існувати до того, як worker його шукає)
+RSpec/LetSetup:
+  Enabled: false
+
+# Інтеграційні тести описують сценарії, а не конкретні класи
+RSpec/DescribeClass:
+  Exclude:
+    - "spec/integration/**/*"
+    - "spec/requests/**/*"

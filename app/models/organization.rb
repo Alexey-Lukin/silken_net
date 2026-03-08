@@ -50,6 +50,10 @@ class Organization < ApplicationRecord
   validates :alert_threshold_critical_z, numericality: { greater_than: 0, less_than_or_equal_to: 10 }, allow_nil: true
   validates :ai_sensitivity, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 1 }, allow_nil: true
 
+  # --- Data Residency (Зона 4: GDPR/Sharding) ---
+  SUPPORTED_DATA_REGIONS = %w[eu-west eu-central us-east us-west ap-southeast].freeze
+  validates :data_region, inclusion: { in: SUPPORTED_DATA_REGIONS }, allow_nil: true
+
   # --- БІЗНЕС-ЛОГІКА (Value Extraction) ---
 
   # Кешований лічильник дерев для масштабування (уникає повільного COUNT на мільйонах записів)

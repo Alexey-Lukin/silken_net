@@ -15,7 +15,7 @@ RSpec.describe NaasContract, type: :model do
 
     context "when contract is not active" do
       it "returns early without checking" do
-        contract.update_column(:status, NaasContract.statuses[:draft])
+        contract.update_column(:status, described_class.statuses[:draft])
         expect { contract.check_cluster_health!(target_date) }.not_to change { contract.reload.status }
       end
     end
@@ -115,7 +115,7 @@ RSpec.describe NaasContract, type: :model do
       end
     end
 
-    context "SQL subquery optimization" do
+    context "when SQL subquery optimization" do
       it "uses subquery instead of loading all tree IDs into memory" do
         create(:tree, cluster: cluster, status: :active)
         create(:ai_insight,
@@ -197,7 +197,7 @@ RSpec.describe NaasContract, type: :model do
     end
 
     it "raises when contract is not active" do
-      contract.update_column(:status, NaasContract.statuses[:draft])
+      contract.update_column(:status, described_class.statuses[:draft])
 
       expect { contract.terminate_early! }.to raise_error(RuntimeError, /не активний/)
     end
@@ -230,7 +230,7 @@ RSpec.describe NaasContract, type: :model do
       result = contract.terminate_early!
 
       expect(result).to include(:refund, :fee, :burned)
-      expect(result[:burned]).to eq(false)
+      expect(result[:burned]).to be(false)
     end
   end
 
@@ -290,7 +290,7 @@ RSpec.describe NaasContract, type: :model do
     it "reads and writes burn_accrued_points" do
       contract.update!(burn_accrued_points: true)
 
-      expect(contract.reload.burn_accrued_points).to eq(true)
+      expect(contract.reload.burn_accrued_points).to be(true)
     end
 
     it "reads and writes min_days_before_exit" do
@@ -350,8 +350,8 @@ RSpec.describe NaasContract, type: :model do
         active = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
         draft = create(:naas_contract, organization: organization, cluster: cluster, status: :draft)
 
-        expect(NaasContract.active).to include(active)
-        expect(NaasContract.active).not_to include(draft)
+        expect(described_class.active).to include(active)
+        expect(described_class.active).not_to include(draft)
       end
     end
 
@@ -362,8 +362,8 @@ RSpec.describe NaasContract, type: :model do
         ongoing = create(:naas_contract, organization: organization, cluster: cluster,
           status: :active, end_date: 1.month.from_now)
 
-        expect(NaasContract.pending_completion).to include(expired)
-        expect(NaasContract.pending_completion).not_to include(ongoing)
+        expect(described_class.pending_completion).to include(expired)
+        expect(described_class.pending_completion).not_to include(ongoing)
       end
     end
   end

@@ -11,7 +11,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
   let!(:cluster) { create(:cluster, organization: organization) }
 
   describe "GET /api/v1/dashboard" do
-    context "as JSON" do
+    context "when as JSON" do
       it "returns dashboard stats" do
         get "/api/v1/dashboard", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
@@ -67,7 +67,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       end
     end
 
-    context "as HTML" do
+    context "when as HTML" do
       it "renders the dashboard page" do
         get "/api/v1/dashboard", headers: headers
         expect(response).to have_http_status(:ok)

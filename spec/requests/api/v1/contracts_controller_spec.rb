@@ -34,7 +34,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
   end
 
   describe "GET /api/v1/contracts" do
-    context "as JSON" do
+    context "when as JSON" do
       it "returns only contracts belonging to the user's organization" do
         get "/api/v1/contracts", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
@@ -54,7 +54,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       end
     end
 
-    context "as HTML" do
+    context "when as HTML" do
       it "renders the dashboard page" do
         get "/api/v1/contracts", headers: headers
         expect(response).to have_http_status(:ok)
@@ -68,7 +68,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
   end
 
   describe "GET /api/v1/contracts/:id" do
-    context "as JSON" do
+    context "when as JSON" do
       it "returns a contract belonging to the user's organization" do
         get "/api/v1/contracts/#{own_contract.id}", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
@@ -92,7 +92,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       end
     end
 
-    context "as HTML" do
+    context "when as HTML" do
       it "renders the dashboard page" do
         get "/api/v1/contracts/#{own_contract.id}", headers: headers
         expect(response).to have_http_status(:ok)

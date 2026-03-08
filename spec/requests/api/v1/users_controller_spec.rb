@@ -14,7 +14,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
   describe "GET /api/v1/users" do
     let!(:extra_user) { create(:user, :forester, organization: organization) }
 
-    context "as JSON" do
+    context "when as JSON" do
       it "returns org users for admin" do
         get "/api/v1/users", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
@@ -36,19 +36,16 @@ RSpec.describe Api::V1::UsersController, type: :request do
       end
     end
 
-    context "as HTML" do
+    context "when as HTML" do
       it "renders the dashboard page" do
         get "/api/v1/users", headers: admin_headers
         expect(response).to have_http_status(:ok)
       end
     end
 
-    it "returns error for non-admin users due to double render" do
-      # authorize_admin! renders forbidden but doesn't halt execution in this controller,
-      # causing a DoubleRenderError (pre-existing issue). We verify the request is rejected.
-      expect {
-        get "/api/v1/users", headers: investor_headers, as: :json
-      }.to raise_error(AbstractController::DoubleRenderError)
+    it "returns 403 for non-admin users" do
+      get "/api/v1/users", headers: investor_headers, as: :json
+      expect(response).to have_http_status(:forbidden)
     end
 
     it "returns 401 without authentication" do
@@ -58,7 +55,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
   end
 
   describe "GET /api/v1/users/me" do
-    context "as JSON" do
+    context "when as JSON" do
       it "returns the current user's profile" do
         get "/api/v1/users/me", headers: investor_headers, as: :json
         expect(response).to have_http_status(:ok)
@@ -76,7 +73,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
       end
     end
 
-    context "as HTML" do
+    context "when as HTML" do
       it "renders the dashboard page" do
         get "/api/v1/users/me", headers: investor_headers
         expect(response).to have_http_status(:ok)

@@ -45,8 +45,7 @@ RSpec.describe PriceOracleService do
       let(:raw_amount_out) { 26_000_000 } # 26.0 USDC (6 decimals)
 
       before do
-        allow(Rails.env).to receive(:development?).and_return(false)
-        allow(Rails.env).to receive(:test?).and_return(false)
+        allow(Rails.env).to receive_messages(development?: false, test?: false)
         allow(Eth::Client).to receive(:create).and_return(mock_client)
         allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
         allow(mock_client).to receive(:call).and_return(raw_amount_out)

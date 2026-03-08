@@ -91,6 +91,49 @@ RSpec.describe Identity, type: :model do
     end
   end
 
+  describe ".active" do
+    it "includes identities without locked_at" do
+      active = create(:identity)
+      expect(described_class.active).to include(active)
+    end
+
+    it "excludes locked identities" do
+      locked = create(:identity, :locked)
+      expect(described_class.active).not_to include(locked)
+    end
+  end
+
+  describe ".locked" do
+    it "includes locked identities" do
+      locked = create(:identity, :locked)
+      expect(described_class.locked).to include(locked)
+    end
+
+    it "excludes active identities" do
+      active = create(:identity)
+      expect(described_class.locked).not_to include(active)
+    end
+  end
+
+  describe ".primary_identity" do
+    it "returns only primary identities" do
+      primary = create(:identity, :primary_identity)
+      non_primary = create(:identity)
+
+      expect(described_class.primary_identity).to include(primary)
+      expect(described_class.primary_identity).not_to include(non_primary)
+    end
+  end
+
+  # =========================================================================
+  # SUPPORTED PROVIDERS
+  # =========================================================================
+  describe "SUPPORTED_PROVIDERS" do
+    it "includes the four expected providers" do
+      expect(Identity::SUPPORTED_PROVIDERS).to contain_exactly("google_oauth2", "facebook", "linkedin", "twitter")
+    end
+  end
+
   # =========================================================================
   # .find_or_create_from_auth_hash
   # =========================================================================
@@ -138,6 +181,30 @@ RSpec.describe Identity, type: :model do
       identity = described_class.find_or_create_from_auth_hash(updated_hash, user: user)
 
       expect(identity.access_token).to eq("new_token")
+    end
+
+    it "does not update a locked identity" do
+      locked = create(:identity, user: user, provider: "google_oauth2", uid: "uid_123",
+                       access_token: "old_token", locked_at: Time.current)
+      updated_hash = build_auth_hash(token: "new_token")
+
+      identity = described_class.find_or_create_from_auth_hash(updated_hash, user: user)
+
+      expect(identity.access_token).to eq("old_token")
+      expect(identity.id).to eq(locked.id)
+    end
+
+    it "sets first identity as primary for the user" do
+      identity = described_class.find_or_create_from_auth_hash(auth_hash, user: user)
+
+      expect(identity.primary?).to be true
+    end
+
+    it "does not set subsequent identities as primary" do
+      create(:identity, user: user, provider: "facebook", uid: "fb_123")
+      identity = described_class.find_or_create_from_auth_hash(auth_hash, user: user)
+
+      expect(identity.primary?).to be false
     end
 
     it "handles missing expires_at gracefully" do
@@ -189,6 +256,67 @@ RSpec.describe Identity, type: :model do
     it "returns false when expires_at is in the future" do
       identity = build(:identity, expires_at: 30.minutes.from_now)
       expect(identity.token_expired?).to be false
+    end
+  end
+
+  # =========================================================================
+  # LOCKING / UNLOCKING (Account Takeover Protection)
+  # =========================================================================
+  describe "#locked?" do
+    it "returns false when locked_at is nil" do
+      identity = build(:identity)
+      expect(identity.locked?).to be false
+    end
+
+    it "returns true when locked_at is set" do
+      identity = build(:identity, :locked)
+      expect(identity.locked?).to be true
+    end
+  end
+
+  describe "#lock!" do
+    it "sets locked_at to current time" do
+      identity = create(:identity)
+      expect(identity.locked?).to be false
+
+      freeze_time do
+        identity.lock!
+        expect(identity.locked?).to be true
+        expect(identity.locked_at).to be_within(1.second).of(Time.current)
+      end
+    end
+  end
+
+  describe "#unlock!" do
+    it "clears locked_at" do
+      identity = create(:identity, :locked)
+      expect(identity.locked?).to be true
+
+      identity.unlock!
+      expect(identity.locked?).to be false
+      expect(identity.locked_at).to be_nil
+    end
+  end
+
+  # =========================================================================
+  # PRIMARY IDENTITY
+  # =========================================================================
+  describe "#make_primary!" do
+    it "sets the identity as primary" do
+      identity = create(:identity)
+      identity.make_primary!
+      expect(identity.reload.primary?).to be true
+    end
+
+    it "unsets other identities for the same user as non-primary" do
+      user = create(:user)
+      first = create(:identity, user: user, primary: true)
+      second = create(:identity, :facebook, user: user, primary: false)
+
+      second.make_primary!
+
+      expect(second.reload.primary?).to be true
+      expect(first.reload.primary?).to be false
     end
   end
 end

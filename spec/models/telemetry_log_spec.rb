@@ -117,8 +117,8 @@ RSpec.describe TelemetryLog, type: :model do
         old_log = create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
         new_log = create(:telemetry_log, tree: tree, created_at: 1.minute.ago)
 
-        expect(TelemetryLog.recent.first).to eq(new_log)
-        expect(TelemetryLog.recent.last).to eq(old_log)
+        expect(described_class.recent.first).to eq(new_log)
+        expect(described_class.recent.last).to eq(old_log)
       end
     end
 
@@ -129,7 +129,7 @@ RSpec.describe TelemetryLog, type: :model do
         stress_log = create(:telemetry_log, :stressed, tree: tree)
         anomaly_log = create(:telemetry_log, :anomaly, tree: tree)
 
-        result = TelemetryLog.anomalies
+        result = described_class.anomalies
         expect(result).to include(stress_log, anomaly_log)
         expect(result).not_to include(healthy_log)
       end
@@ -138,7 +138,7 @@ RSpec.describe TelemetryLog, type: :model do
         tree = create(:tree)
         noisy_log = create(:telemetry_log, :healthy, tree: tree, acoustic_events: 60)
 
-        expect(TelemetryLog.anomalies).to include(noisy_log)
+        expect(described_class.anomalies).to include(noisy_log)
       end
     end
 
@@ -148,7 +148,7 @@ RSpec.describe TelemetryLog, type: :model do
         normal_log = create(:telemetry_log, tree: tree, piezo_voltage_mv: 500)
         seismic_log = create(:telemetry_log, :seismic, tree: tree)
 
-        result = TelemetryLog.seismic_activity
+        result = described_class.seismic_activity
         expect(result).to include(seismic_log)
         expect(result).not_to include(normal_log)
       end
@@ -157,7 +157,7 @@ RSpec.describe TelemetryLog, type: :model do
 
   describe "no ActiveRecord validations on hot path" do
     it "does not validate presence of sensor fields" do
-      log = TelemetryLog.new(tree: create(:tree), bio_status: :homeostasis)
+      log = described_class.new(tree: create(:tree), bio_status: :homeostasis)
 
       # Model should not have validations on sensor fields —
       # data is validated in TelemetryUnpackerService

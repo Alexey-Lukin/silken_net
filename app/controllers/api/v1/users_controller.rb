@@ -3,13 +3,11 @@
 module Api
   module V1
     class UsersController < BaseController
-      # Користувач може бачити свій профіль, Адмін — усіх
-
       # --- СПИСОК ЕКІПАЖУ (The Crew) ---
       # GET /api/v1/users
       def index
-        authorize_admin!
-        scope = current_user.organization.users.order(last_seen_at: :desc, id: :desc)
+        authorize User
+        scope = policy_scope(User).order(last_seen_at: :desc, id: :desc)
 
         respond_to do |format|
           format.json do
@@ -33,6 +31,7 @@ module Api
       # GET /api/v1/users/me
       def me
         @user = current_user
+        authorize @user
 
         respond_to do |format|
           format.json do

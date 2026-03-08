@@ -13,7 +13,8 @@ class AlertDispatchService
 
     # --- 0. АДАПТИВНІ ПОРОГИ (The Biome Adaptation) ---
     # Пожежа: беремо з кластера (біом), породи дерева або дефолт
-    fire_limit = cluster.custom_fire_threshold || family.fire_resistance_rating || DEFAULT_FIRE_TEMP_C
+    # [FIX]: Безпечний доступ до cluster — дерево може бути без кластера (одиноке дерево)
+    fire_limit = cluster&.custom_fire_threshold || family.fire_resistance_rating || DEFAULT_FIRE_TEMP_C
 
     # Шкідники: коригується індексом сокоруху (чим соковитіше дерево, тим вищий фон)
     pest_limit = family.sap_flow_index ? (DEFAULT_PEST_THRESHOLD * family.sap_flow_index) : DEFAULT_PEST_THRESHOLD
@@ -85,6 +86,28 @@ class AlertDispatchService
         message: "🪲 БІО-ЗАГРОЗА: Акустична активність шкідників (#{telemetry_log.acoustic_events})."
       )
     end
+  end
+
+  # [FIX]: Публічний метод для створення fraud-алертів з InsightGeneratorService.
+  # Окремий від create_and_dispatch_alert!, бо fraud вимагає manual review
+  # і не повинен тригерити автоматичну EmergencyResponseService.
+  def self.create_fraud_alert!(tree, message)
+    cluster = tree.cluster
+    silence_key = "ews_silence:#{tree.id}:fraud"
+    return if Rails.cache.exist?(silence_key)
+
+    alert = EwsAlert.create!(
+      cluster: cluster, tree: tree, severity: :critical,
+      alert_type: :system_fault,
+      message: "🚨 ФРОД: #{message}"
+    )
+
+    Rails.cache.write(silence_key, true, expires_in: 30.minutes)
+    Rails.cache.delete("oracle_expected_yield_24h")
+    Rails.logger.warn "🚨 [FRAUD ALERT] #{tree.did}: #{message}"
+
+    AlertNotificationWorker.perform_async(alert.id)
+    alert
   end
 
   private_class_method def self.create_and_dispatch_alert!(cluster:, tree:, severity:, alert_type:, message:)
