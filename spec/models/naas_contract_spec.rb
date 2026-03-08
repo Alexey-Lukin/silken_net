@@ -299,4 +299,99 @@ RSpec.describe NaasContract, type: :model do
       expect(contract.reload.min_days_before_exit).to eq(30)
     end
   end
+
+  describe "#current_yield_performance" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "returns percentage of emitted tokens vs total funding" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster,
+        total_funding: 10_000, emitted_tokens: 2_500)
+
+      expect(contract.current_yield_performance).to eq(25)
+    end
+
+    it "returns 0 when total_funding is zero" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster,
+        total_funding: 1, emitted_tokens: 0)
+      contract.update_column(:total_funding, 0)
+
+      expect(contract.current_yield_performance).to eq(0)
+    end
+
+    it "returns 0 when total_funding is nil" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster)
+      contract.update_column(:total_funding, nil)
+
+      expect(contract.current_yield_performance).to eq(0)
+    end
+
+    it "clamps result to 100 when emitted exceeds funding" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster,
+        total_funding: 1_000, emitted_tokens: 2_000)
+
+      expect(contract.current_yield_performance).to eq(100)
+    end
+
+    it "returns 0 when no tokens have been emitted" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster,
+        total_funding: 50_000, emitted_tokens: 0)
+
+      expect(contract.current_yield_performance).to eq(0)
+    end
+  end
+
+  describe "scopes" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    describe ".active" do
+      it "returns only active contracts" do
+        active = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
+        draft = create(:naas_contract, organization: organization, cluster: cluster, status: :draft)
+
+        expect(NaasContract.active).to include(active)
+        expect(NaasContract.active).not_to include(draft)
+      end
+    end
+
+    describe ".pending_completion" do
+      it "returns active contracts past their end date" do
+        expired = create(:naas_contract, organization: organization, cluster: cluster,
+          status: :active, end_date: 1.day.ago)
+        ongoing = create(:naas_contract, organization: organization, cluster: cluster,
+          status: :active, end_date: 1.month.from_now)
+
+        expect(NaasContract.pending_completion).to include(expired)
+        expect(NaasContract.pending_completion).not_to include(ongoing)
+      end
+    end
+  end
+
+  describe "validations" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "requires total_funding to be positive" do
+      contract = build(:naas_contract, organization: organization, cluster: cluster, total_funding: -1)
+      expect(contract).not_to be_valid
+    end
+
+    it "requires start_date" do
+      contract = build(:naas_contract, organization: organization, cluster: cluster, start_date: nil)
+      expect(contract).not_to be_valid
+    end
+
+    it "requires end_date" do
+      contract = build(:naas_contract, organization: organization, cluster: cluster, end_date: nil)
+      expect(contract).not_to be_valid
+    end
+
+    it "requires end_date after start_date" do
+      contract = build(:naas_contract, organization: organization, cluster: cluster,
+        start_date: 1.month.from_now, end_date: 1.month.ago)
+      expect(contract).not_to be_valid
+      expect(contract.errors[:end_date]).to be_present
+    end
+  end
 end

@@ -89,9 +89,9 @@ module Dashboard
 
     def format_event_msg(event)
       case event
-      when EwsAlert then "Threat Detected: #{event.alert_type} in Cluster #{event.cluster.name}"
-      when BlockchainTransaction then "Minted #{event.amount} SCC for #{event.wallet.tree&.did || 'System'}"
-      when MaintenanceRecord then "Unit Ritual: #{event.action_type} by #{event.user.first_name}"
+      when EwsAlert then "Threat Detected: #{event.alert_type} in Cluster #{event.cluster&.name}"
+      when BlockchainTransaction then "Minted #{event.amount} SCC for #{event.wallet&.tree&.did || 'System'}"
+      when MaintenanceRecord then "Unit Ritual: #{event.action_type} by #{event.user&.first_name || 'Unknown'}"
       else "System pulse detected"
       end
     end

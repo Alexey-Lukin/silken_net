@@ -91,9 +91,9 @@ module Organizations
                   td(class: "p-4") do
                     div(class: "flex items-center space-x-2") do
                       div(class: "w-16 h-1 bg-emerald-950 rounded-full overflow-hidden") do
-                        div(class: "h-full bg-emerald-500", style: "width: #{cluster.health_index}%")
+                        div(class: "h-full bg-emerald-500", style: "width: #{(cluster.health_index * 100).round}%")
                       end
-                      span(class: "text-[10px] text-emerald-500") { "#{cluster.health_index}%" }
+                      span(class: "text-[10px] text-emerald-500") { "#{(cluster.health_index * 100).round}%" }
                     end
                   end
                   td(class: "p-4 text-gray-400") { "#{cluster.trees.count} Soldiers" }

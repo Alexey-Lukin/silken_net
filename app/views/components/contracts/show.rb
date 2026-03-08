@@ -30,7 +30,7 @@ module Contracts
          div do
            p(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-2") { "Contract Identity" }
            h2(class: "text-5xl font-extralight text-white tracking-tighter") { "##{@contract.id} // SEC_#{@contract.cluster&.name&.upcase}" }
-           p(class: "mt-4 text-xs font-mono text-emerald-900") { "Signed: #{@contract.signed_at&.strftime('%d.%m.%Y // %H:%M')}" }
+           p(class: "mt-4 text-xs font-mono text-emerald-900") { "Signed: #{@contract.start_date&.strftime('%d.%m.%Y // %H:%M')}" }
          end
 
          div(class: "mt-8 md:mt-0 text-center md:text-right") do
@@ -45,7 +45,7 @@ module Contracts
       div(class: "p-6 border border-emerald-900 bg-black") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Backing Asset Health" }
         div(class: "space-y-4") do
-          metric_row("Cluster Vitality", "#{@contract.cluster.health_index}%", alert: @contract.cluster.health_index < 70)
+          metric_row("Cluster Vitality", "#{(@contract.cluster.health_index * 100).round}%", alert: @contract.cluster.health_index < 0.7)
           metric_row("Active Soldiers", @contract.cluster.total_active_trees)
           metric_row("Threat Status", @contract.cluster.active_threats? ? "DANGER" : "NOMINAL", alert: @contract.cluster.active_threats?)
         end
@@ -68,7 +68,7 @@ module Contracts
              tbody(class: "divide-y divide-emerald-900/30") do
                 @history.each do |tx|
                   tr do
-                    td(class: "p-4 text-emerald-600") { tx.tx_hash.first(12) + "..." }
+                    td(class: "p-4 text-emerald-600") { "#{tx.tx_hash&.first(12)}..." }
                     td(class: "p-4 text-white") { "+ #{tx.amount} SCC" }
                     td(class: "p-4 text-gray-500 text-right") { tx.created_at.strftime("%H:%M // %d.%m.%y") }
                   end

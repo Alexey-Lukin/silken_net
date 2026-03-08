@@ -118,4 +118,112 @@ RSpec.describe Tree, type: :model do
       expect(tree).not_to be_low_power
     end
   end
+
+  describe "#ionic_voltage" do
+    it "returns latest_voltage_mv when present" do
+      tree = build(:tree, latest_voltage_mv: 4200)
+      expect(tree.ionic_voltage).to eq(4200)
+    end
+
+    it "returns 0 when latest_voltage_mv is nil" do
+      tree = build(:tree, latest_voltage_mv: nil)
+      expect(tree.ionic_voltage).to eq(0)
+    end
+  end
+
+  describe "#under_threat?" do
+    it "returns true when tree has unresolved alerts" do
+      tree = create(:tree)
+      create(:ews_alert, tree: tree, cluster: tree.cluster, status: :active, severity: :medium)
+
+      expect(tree).to be_under_threat
+    end
+
+    it "returns false when tree has no alerts" do
+      tree = create(:tree)
+      expect(tree).not_to be_under_threat
+    end
+
+    it "returns false when all alerts are resolved" do
+      tree = create(:tree)
+      create(:ews_alert, tree: tree, cluster: tree.cluster, status: :resolved, severity: :medium)
+
+      expect(tree).not_to be_under_threat
+    end
+  end
+
+  describe "#current_stress" do
+    it "returns 0.0 when no AI insights exist" do
+      tree = create(:tree)
+      expect(tree.current_stress).to eq(0.0)
+    end
+
+    it "returns stress_index from daily health summary" do
+      tree = create(:tree)
+      target = tree.cluster&.local_yesterday || (Time.current.utc.to_date - 1)
+      create(:ai_insight, analyzable: tree, target_date: target, stress_index: 0.75)
+
+      expect(tree.current_stress).to eq(0.75)
+    end
+  end
+
+  describe "scopes" do
+    describe ".active" do
+      it "returns only active trees" do
+        active = create(:tree, status: :active)
+        dormant = create(:tree, status: :dormant)
+
+        expect(Tree.active).to include(active)
+        expect(Tree.active).not_to include(dormant)
+      end
+    end
+
+    describe ".geolocated" do
+      it "returns trees with both latitude and longitude" do
+        located = create(:tree, latitude: 49.4, longitude: 32.0)
+        unlocated = create(:tree, latitude: nil, longitude: nil)
+
+        expect(Tree.geolocated).to include(located)
+        expect(Tree.geolocated).not_to include(unlocated)
+      end
+    end
+
+    describe ".silent" do
+      it "returns trees not seen for more than 24 hours" do
+        silent = create(:tree)
+        silent.update_columns(last_seen_at: 25.hours.ago)
+
+        recent = create(:tree)
+        recent.update_columns(last_seen_at: 1.hour.ago)
+
+        expect(Tree.silent).to include(silent)
+        expect(Tree.silent).not_to include(recent)
+      end
+    end
+  end
+
+  describe "#latest_telemetry" do
+    it "returns the most recent telemetry log" do
+      tree = create(:tree)
+      _old = create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+      newest = create(:telemetry_log, tree: tree, created_at: 1.minute.ago)
+
+      expect(tree.latest_telemetry).to eq(newest)
+    end
+
+    it "returns nil when no telemetry exists" do
+      tree = create(:tree)
+      expect(tree.latest_telemetry).to be_nil
+    end
+
+    it "memoizes the result" do
+      tree = create(:tree)
+      create(:telemetry_log, tree: tree)
+
+      first_call = tree.latest_telemetry
+      second_call = tree.latest_telemetry
+
+      expect(first_call).to equal(second_call)
+    end
+  end
 end
