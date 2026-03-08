@@ -143,13 +143,13 @@ module AccountSecurity
 
     def render_lock_toggle(identity)
       if identity.locked?
-        form(action: helpers.unlock_api_v1_account_security_identity_path(identity), method: "post", class: "inline") do
+        form(action: helpers.api_v1_unlock_account_security_identity_path(identity), method: "post", class: "inline") do
           input(type: "hidden", name: "_method", value: "patch")
           input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
           button(type: "submit", class: "px-3 py-1 border border-emerald-900 text-[8px] text-emerald-700 uppercase hover:text-emerald-400 transition-all") { "Unlock" }
         end
       else
-        form(action: helpers.lock_api_v1_account_security_identity_path(identity), method: "post", class: "inline") do
+        form(action: helpers.api_v1_lock_account_security_identity_path(identity), method: "post", class: "inline") do
           input(type: "hidden", name: "_method", value: "patch")
           input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
           button(type: "submit", class: "px-3 py-1 border border-amber-900 text-[8px] text-amber-700 uppercase hover:text-amber-400 transition-all") { "Lock" }

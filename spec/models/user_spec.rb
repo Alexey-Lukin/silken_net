@@ -325,6 +325,110 @@ RSpec.describe User, type: :model do
     end
   end
 
+  describe ".mfa_enabled" do
+    it "includes users with otp_required_for_login true" do
+      user = create(:user, otp_required_for_login: true)
+      expect(described_class.mfa_enabled).to include(user)
+    end
+
+    it "excludes users with otp_required_for_login false" do
+      user = create(:user, otp_required_for_login: false)
+      expect(described_class.mfa_enabled).not_to include(user)
+    end
+  end
+
+  # --- MFA / TOTP (Zone 4: Security) ---
+
+  describe "#mfa_enabled?" do
+    it "returns true when otp_required_for_login is true" do
+      user = build(:user, otp_required_for_login: true)
+      expect(user.mfa_enabled?).to be true
+    end
+
+    it "returns false when otp_required_for_login is false" do
+      user = build(:user, otp_required_for_login: false)
+      expect(user.mfa_enabled?).to be false
+    end
+
+    it "defaults to false for new users" do
+      user = build(:user)
+      expect(user.mfa_enabled?).to be false
+    end
+  end
+
+  describe "#generate_recovery_codes!" do
+    it "generates 10 recovery codes" do
+      user = create(:user)
+      codes = user.generate_recovery_codes!
+      expect(codes).to be_an(Array)
+      expect(codes.size).to eq(10)
+    end
+
+    it "stores codes as JSON in recovery_codes field" do
+      user = create(:user)
+      codes = user.generate_recovery_codes!
+      user.reload
+      expect(JSON.parse(user.recovery_codes)).to eq(codes)
+    end
+
+    it "generates unique codes each time" do
+      user = create(:user)
+      first_set = user.generate_recovery_codes!
+      second_set = user.generate_recovery_codes!
+      expect(first_set).not_to eq(second_set)
+    end
+  end
+
+  describe "#recovery_codes_remaining" do
+    it "returns 0 when no recovery codes are set" do
+      user = build(:user, recovery_codes: nil)
+      expect(user.recovery_codes_remaining).to eq(0)
+    end
+
+    it "returns the number of remaining codes" do
+      user = create(:user)
+      user.generate_recovery_codes!
+      expect(user.recovery_codes_remaining).to eq(10)
+    end
+
+    it "returns 0 for malformed JSON" do
+      user = build(:user, recovery_codes: "not-json")
+      expect(user.recovery_codes_remaining).to eq(0)
+    end
+  end
+
+  describe "#consume_recovery_code!" do
+    it "removes a valid recovery code and returns true" do
+      user = create(:user)
+      codes = user.generate_recovery_codes!
+
+      expect(user.consume_recovery_code!(codes.first)).to be true
+      expect(user.recovery_codes_remaining).to eq(9)
+    end
+
+    it "returns false for an invalid code" do
+      user = create(:user)
+      user.generate_recovery_codes!
+
+      expect(user.consume_recovery_code!("invalid-code")).to be false
+      expect(user.recovery_codes_remaining).to eq(10)
+    end
+
+    it "cannot reuse a consumed code" do
+      user = create(:user)
+      codes = user.generate_recovery_codes!
+      code = codes.first
+
+      user.consume_recovery_code!(code)
+      expect(user.consume_recovery_code!(code)).to be false
+    end
+
+    it "returns false when no recovery codes are set" do
+      user = create(:user, recovery_codes: nil)
+      expect(user.consume_recovery_code!("anything")).to be false
+    end
+  end
+
   # --- АСОЦІАЦІЇ ---
 
   describe "associations" do
