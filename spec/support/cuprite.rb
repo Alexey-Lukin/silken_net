@@ -8,7 +8,7 @@ require "capybara/cuprite"
 Capybara.register_driver(:cuprite) do |app|
   Capybara::Cuprite::Driver.new(
     app,
-    window_size: [ 1440, 900 ],
+    window_size: [1440, 900],
     browser_options: {
       "no-sandbox": nil,
       "disable-gpu": nil,

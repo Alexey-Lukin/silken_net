@@ -154,7 +154,8 @@ class User < ApplicationRecord
   def parsed_recovery_codes
     return [] if recovery_codes.blank?
     JSON.parse(recovery_codes)
-  rescue JSON::ParserError
+  rescue JSON::ParserError => e
+    Rails.logger.warn "⚠️ [User##{id}] Malformed recovery_codes JSON: #{e.message}"
     []
   end
 end

@@ -104,7 +104,7 @@ module Api
       # --- ЗМІНА ПАРОЛЯ ---
       # PATCH /api/v1/account_security/password
       def change_password
-        unless current_user.password_digest.blank? || current_user.authenticate(params[:current_password])
+        if current_user.password_digest.present? && !current_user.authenticate(params[:current_password])
           respond_to do |format|
             format.json { render json: { error: "Поточний пароль невірний." }, status: :unprocessable_entity }
             format.html { redirect_to api_v1_account_security_path, alert: "Поточний пароль невірний." }

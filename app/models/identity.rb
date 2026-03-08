@@ -90,7 +90,9 @@ class Identity < ApplicationRecord
     update!(locked_at: nil)
   end
 
-  # Встановити як первинний метод входу
+  # Встановити як первинний метод входу.
+  # Використовуємо update_all для масового оновлення без колбеків —
+  # це єдиний атомарний спосіб гарантувати, що рівно одна ідентичність є primary.
   def make_primary!
     transaction do
       user.identities.where.not(id: id).update_all(primary: false)
