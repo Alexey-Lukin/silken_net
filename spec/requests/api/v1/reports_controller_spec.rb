@@ -21,7 +21,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
   end
 
   describe "GET /api/v1/reports/carbon_absorption" do
-    it "returns a carbon absorption report" do
+    it "returns a carbon absorption report as JSON" do
       get "/api/v1/reports/carbon_absorption", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
@@ -29,16 +29,32 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       expect(body["report"]).to eq("carbon_absorption")
       expect(body["data"]).to include("total_carbon_points", "wallets_count")
     end
+
+    it "returns a carbon absorption report as CSV" do
+      get "/api/v1/reports/carbon_absorption.csv", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/csv")
+      expect(response.body).to include("Carbon Absorption Report")
+      expect(response.body).to include("Total Carbon Points")
+    end
   end
 
   describe "GET /api/v1/reports/financial_summary" do
-    it "returns a financial summary report" do
+    it "returns a financial summary report as JSON" do
       get "/api/v1/reports/financial_summary", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       body = response.parsed_body
       expect(body["report"]).to eq("financial_summary")
       expect(body["data"]).to include("total_invested", "blockchain_transactions")
+    end
+
+    it "returns a financial summary report as CSV" do
+      get "/api/v1/reports/financial_summary.csv", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/csv")
+      expect(response.body).to include("Financial Summary Report")
+      expect(response.body).to include("Total Invested")
     end
   end
 end

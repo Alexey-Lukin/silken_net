@@ -17,6 +17,7 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
       expect(body["channels"]["email"]).to eq(user.email_address)
       expect(body["channels"]["phone"]).to eq("+380501234567")
       expect(body["channels"]["telegram_chat_id"]).to eq("12345")
+      expect(body["channels"]).to have_key("push_token")
     end
   end
 
@@ -31,6 +32,18 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
       user.reload
       expect(user.phone_number).to eq("+380509876543")
       expect(user.telegram_chat_id).to eq("99999")
+    end
+
+    it "updates push_token" do
+      patch "/api/v1/notifications/settings",
+            headers: headers,
+            params: { push_token: "fcm_token_abc123" },
+            as: :json
+
+      expect(response).to have_http_status(:ok)
+      user.reload
+      expect(user.push_token).to eq("fcm_token_abc123")
+      expect(response.parsed_body["channels"]["push_token"]).to eq("fcm_token_abc123")
     end
   end
 end

@@ -13,7 +13,8 @@ module Api
               channels: {
                 email: current_user.email_address,
                 phone: current_user.phone_number,
-                telegram_chat_id: current_user.telegram_chat_id
+                telegram_chat_id: current_user.telegram_chat_id,
+                push_token: current_user.push_token
               }
             }
           end
@@ -37,7 +38,8 @@ module Api
                 channels: {
                   email: current_user.email_address,
                   phone: current_user.phone_number,
-                  telegram_chat_id: current_user.telegram_chat_id
+                  telegram_chat_id: current_user.telegram_chat_id,
+                  push_token: current_user.push_token
                 }
               }
             end
@@ -59,7 +61,7 @@ module Api
       private
 
       def notification_params
-        params.permit(:phone_number, :telegram_chat_id)
+        params.permit(:phone_number, :telegram_chat_id, :push_token)
       end
     end
   end

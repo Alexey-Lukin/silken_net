@@ -74,13 +74,17 @@ module Reports
     end
 
     def report_card(title, description, path, icon)
-      a(href: path, class: "group p-6 border border-emerald-900 bg-black hover:bg-emerald-950 transition-all duration-500 block") do
+      div(class: "group p-6 border border-emerald-900 bg-black hover:bg-emerald-950 transition-all duration-500") do
         div(class: "flex justify-between items-start mb-4") do
           span(class: "text-2xl") { icon }
-          span(class: "text-[9px] text-emerald-900 uppercase group-hover:text-emerald-500 transition-colors") { "Generate →" }
         end
         h4(class: "text-sm font-light text-emerald-100 mb-2") { title }
-        p(class: "text-[10px] text-gray-600") { description }
+        p(class: "text-[10px] text-gray-600 mb-4") { description }
+        div(class: "flex items-center space-x-4 pt-4 border-t border-emerald-900/30") do
+          a(href: path, class: "text-[9px] text-emerald-500 uppercase tracking-widest hover:underline") { "View →" }
+          a(href: "#{path}.csv", class: "text-[9px] text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { "CSV ↓" }
+          a(href: "#{path}.pdf", class: "text-[9px] text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { "PDF ↓" }
+        end
       end
     end
   end

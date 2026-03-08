@@ -19,6 +19,9 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       body = response.parsed_body
       expect(body["organization"]["name"]).to eq(organization.name)
       expect(body["organization"]["billing_email"]).to eq(organization.billing_email)
+      expect(body["organization"]).to have_key("alert_threshold_critical_z")
+      expect(body["organization"]).to have_key("ai_sensitivity")
+      expect(body["organization"]).to have_key("logo_url")
     end
 
     it "returns 403 for non-admin users" do
@@ -38,6 +41,18 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       organization.reload
       expect(organization.name).to eq("New Forest Fund")
       expect(organization.billing_email).to eq("new@example.org")
+    end
+
+    it "updates alert threshold and AI sensitivity" do
+      patch "/api/v1/settings",
+            headers: admin_headers,
+            params: { organization: { alert_threshold_critical_z: "3.0", ai_sensitivity: "0.85" } },
+            as: :json
+
+      expect(response).to have_http_status(:ok)
+      organization.reload
+      expect(organization.alert_threshold_critical_z).to eq(3.0)
+      expect(organization.ai_sensitivity).to eq(0.85)
     end
 
     it "returns 403 for non-admin users" do

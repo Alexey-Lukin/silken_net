@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module Api
   module V1
     class ReportsController < BaseController
@@ -57,6 +59,17 @@ module Api
               data: @data
             }
           end
+          format.csv do
+            send_data generate_carbon_csv(org, @data),
+                      filename: "carbon_absorption_#{org.id}_#{Date.current}.csv",
+                      type: "text/csv"
+          end
+          format.pdf do
+            send_data generate_carbon_pdf(org, @data),
+                      filename: "carbon_absorption_#{org.id}_#{Date.current}.pdf",
+                      type: "application/pdf",
+                      disposition: "inline"
+          end
           format.html do
             render_dashboard(
               title: "Carbon Absorption Report",
@@ -96,6 +109,17 @@ module Api
               data: @data
             }
           end
+          format.csv do
+            send_data generate_financial_csv(org, @data),
+                      filename: "financial_summary_#{org.id}_#{Date.current}.csv",
+                      type: "text/csv"
+          end
+          format.pdf do
+            send_data generate_financial_pdf(org, @data),
+                      filename: "financial_summary_#{org.id}_#{Date.current}.pdf",
+                      type: "application/pdf",
+                      disposition: "inline"
+          end
           format.html do
             render_dashboard(
               title: "Financial Summary Report",
@@ -103,6 +127,123 @@ module Api
             )
           end
         end
+      end
+
+      private
+
+      # --- CSV Generators ---
+
+      def generate_carbon_csv(org, data)
+        CSV.generate do |csv|
+          csv << [ "Carbon Absorption Report" ]
+          csv << [ "Organization", org.name ]
+          csv << [ "Generated At", Time.current.iso8601 ]
+          csv << []
+          csv << %w[Metric Value]
+          csv << [ "Total Carbon Points", data[:total_carbon_points] ]
+          csv << [ "Active Wallets", data[:wallets_count] ]
+          csv << [ "Active Trees", data[:trees_active] ]
+          csv << [ "Total Trees", data[:trees_total] ]
+        end
+      end
+
+      def generate_financial_csv(org, data)
+        tx = data[:blockchain_transactions]
+
+        CSV.generate do |csv|
+          csv << [ "Financial Summary Report" ]
+          csv << [ "Organization", org.name ]
+          csv << [ "Generated At", Time.current.iso8601 ]
+          csv << []
+          csv << %w[Metric Value]
+          csv << [ "Total Invested", data[:total_invested] ]
+          csv << [ "Active Contracts", data[:active_contracts] ]
+          csv << [ "Total Contracts", data[:total_contracts] ]
+          csv << []
+          csv << [ "Blockchain Transactions" ]
+          csv << [ "Total", tx[:total] ]
+          csv << [ "Confirmed", tx[:confirmed] ]
+          csv << [ "Pending", tx[:pending] ]
+          csv << [ "Failed", tx[:failed] ]
+        end
+      end
+
+      # --- PDF Generators (Prawn) ---
+
+      def generate_carbon_pdf(org, data)
+        Prawn::Document.new do |pdf|
+          pdf.text "Carbon Absorption Report", size: 20, style: :bold
+          pdf.move_down 10
+          pdf.text "Organization: #{org.name}", size: 12
+          pdf.text "Generated: #{Time.current.strftime('%d.%m.%Y %H:%M UTC')}", size: 10, color: "666666"
+          pdf.move_down 20
+
+          pdf.table(
+            [
+              [ "Metric", "Value" ],
+              [ "Total Carbon Points", data[:total_carbon_points].to_s ],
+              [ "Active Wallets", data[:wallets_count].to_s ],
+              [ "Active Trees", data[:trees_active].to_s ],
+              [ "Total Trees", data[:trees_total].to_s ]
+            ],
+            header: true,
+            width: pdf.bounds.width,
+            cell_style: { size: 10, padding: 8 }
+          ) do |t|
+            t.row(0).font_style = :bold
+            t.row(0).background_color = "10b981"
+            t.row(0).text_color = "ffffff"
+          end
+        end.render
+      end
+
+      def generate_financial_pdf(org, data)
+        tx = data[:blockchain_transactions]
+
+        Prawn::Document.new do |pdf|
+          pdf.text "Financial Summary Report", size: 20, style: :bold
+          pdf.move_down 10
+          pdf.text "Organization: #{org.name}", size: 12
+          pdf.text "Generated: #{Time.current.strftime('%d.%m.%Y %H:%M UTC')}", size: 10, color: "666666"
+          pdf.move_down 20
+
+          pdf.table(
+            [
+              [ "Metric", "Value" ],
+              [ "Total Invested", data[:total_invested].to_s ],
+              [ "Active Contracts", data[:active_contracts].to_s ],
+              [ "Total Contracts", data[:total_contracts].to_s ]
+            ],
+            header: true,
+            width: pdf.bounds.width,
+            cell_style: { size: 10, padding: 8 }
+          ) do |t|
+            t.row(0).font_style = :bold
+            t.row(0).background_color = "10b981"
+            t.row(0).text_color = "ffffff"
+          end
+
+          pdf.move_down 20
+          pdf.text "Blockchain Transactions Breakdown", size: 14, style: :bold
+          pdf.move_down 10
+
+          pdf.table(
+            [
+              [ "Category", "Count" ],
+              [ "Total", tx[:total].to_s ],
+              [ "Confirmed", tx[:confirmed].to_s ],
+              [ "Pending", tx[:pending].to_s ],
+              [ "Failed", tx[:failed].to_s ]
+            ],
+            header: true,
+            width: pdf.bounds.width,
+            cell_style: { size: 10, padding: 8 }
+          ) do |t|
+            t.row(0).font_style = :bold
+            t.row(0).background_color = "10b981"
+            t.row(0).text_color = "ffffff"
+          end
+        end.render
       end
     end
   end

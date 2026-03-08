@@ -27,6 +27,9 @@ class Organization < ApplicationRecord
   # (Organization → Clusters → Trees → Wallets). Це критично для total_carbon_points.
   has_many :wallets
 
+  # Логотип організації (The Brain Map)
+  has_one_attached :logo
+
   # --- НОРМАЛІЗАЦІЯ ---
   normalizes :billing_email, with: ->(e) { e.strip.downcase }
 
@@ -42,6 +45,10 @@ class Organization < ApplicationRecord
   # Тепер валідація дозволяє змішаний регістр (A-F)
   validates :crypto_public_address, presence: true, uniqueness: true,
             format: { with: /\A0x[a-fA-F0-9]{40}\z/, message: "має бути валідною адресою гаманця 0x..." }
+
+  # Пороги тривоги та AI-чутливість (The Brain Map)
+  validates :alert_threshold_critical_z, numericality: { greater_than: 0, less_than_or_equal_to: 10 }, allow_nil: true
+  validates :ai_sensitivity, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 1 }, allow_nil: true
 
   # --- БІЗНЕС-ЛОГІКА (Value Extraction) ---
 

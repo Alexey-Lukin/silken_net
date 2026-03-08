@@ -18,6 +18,9 @@ module Api
                 name: org.name,
                 billing_email: org.billing_email,
                 crypto_public_address: org.crypto_public_address,
+                alert_threshold_critical_z: org.alert_threshold_critical_z,
+                ai_sensitivity: org.ai_sensitivity,
+                logo_url: org.logo.attached? ? url_for(org.logo) : nil,
                 created_at: org.created_at
               }
             }
@@ -32,7 +35,7 @@ module Api
       end
 
       # PATCH /api/v1/settings
-      # Оновлення конфігурації Організації (логотип, пороги тривоги, тощо)
+      # Оновлення конфігурації Організації (логотип, пороги тривоги, AI-чутливість)
       def update
         org = current_user.organization
 
@@ -45,7 +48,10 @@ module Api
                   id: org.id,
                   name: org.name,
                   billing_email: org.billing_email,
-                  crypto_public_address: org.crypto_public_address
+                  crypto_public_address: org.crypto_public_address,
+                  alert_threshold_critical_z: org.alert_threshold_critical_z,
+                  ai_sensitivity: org.ai_sensitivity,
+                  logo_url: org.logo.attached? ? url_for(org.logo) : nil
                 }
               }
             end
@@ -67,7 +73,8 @@ module Api
       private
 
       def settings_params
-        params.require(:organization).permit(:name, :billing_email, :crypto_public_address)
+        params.require(:organization).permit(:name, :billing_email, :crypto_public_address,
+                                             :alert_threshold_critical_z, :ai_sensitivity, :logo)
       end
     end
   end

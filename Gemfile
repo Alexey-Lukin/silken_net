@@ -13,6 +13,8 @@ gem "kamal", require: false
 gem "pagy"
 gem "pg"
 gem "phlex-rails"
+gem "prawn"
+gem "prawn-table"
 gem "propshaft"
 gem "puma"
 gem "rails", "~> 8.1.2"
