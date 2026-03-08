@@ -38,5 +38,15 @@ class AddPerformanceIndexes < ActiveRecord::Migration[8.1]
     # TreeFamilies: counter cache для відображення кількості дерев на UI
     # Замінює N+1 запит family.trees.count у TreeFamilies::Index
     add_column :tree_families, :trees_count, :integer, default: 0, null: false
+
+    # Backfill counter cache для існуючих записів
+    reversible do |dir|
+      dir.up do
+        execute <<~SQL
+          UPDATE tree_families
+          SET trees_count = (SELECT COUNT(*) FROM trees WHERE trees.tree_family_id = tree_families.id)
+        SQL
+      end
+    end
   end
 end

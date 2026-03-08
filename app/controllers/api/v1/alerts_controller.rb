@@ -21,7 +21,7 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              alerts: @alerts.as_json(
+              data: @alerts.as_json(
                 include: {
                   cluster: { only: [ :id, :name ] },
                   tree: { only: [ :id, :did, :latitude, :longitude ] }

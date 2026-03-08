@@ -11,7 +11,7 @@ module Api
       def index
         # Скоупимо до організації поточного користувача (Security Scope)
         @pagy, @clusters = pagy(
-          current_user.organization.clusters.includes(:organization, :ews_alerts)
+          current_user.organization.clusters.includes(:ews_alerts)
         )
 
         respond_to do |format|
