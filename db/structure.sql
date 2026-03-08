@@ -303,7 +303,8 @@ CREATE TABLE public.bio_contract_firmwares (
     binary_sha256 character varying,
     target_hardware_type character varying,
     tree_family_id bigint,
-    rollout_percentage integer DEFAULT 0
+    rollout_percentage integer DEFAULT 0,
+    compatible_hardware_versions jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 
@@ -701,7 +702,8 @@ CREATE TABLE public.gateways (
     config_sleep_interval_s integer,
     state integer,
     firmware_version character varying,
-    latest_voltage_mv integer
+    latest_voltage_mv integer,
+    firmware_update_status integer DEFAULT 0 NOT NULL
 );
 
 
@@ -1315,7 +1317,8 @@ CREATE TABLE public.trees (
     last_seen_at timestamp(6) without time zone,
     firmware_version character varying,
     latest_voltage_mv integer,
-    health_streak integer DEFAULT 0 NOT NULL
+    health_streak integer DEFAULT 0 NOT NULL,
+    firmware_update_status integer DEFAULT 0 NOT NULL
 );
 
 
@@ -3541,6 +3544,8 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260308095001'),
+('20260308095000'),
 ('20260308070000'),
 ('20260307093414'),
 ('20260226164445');

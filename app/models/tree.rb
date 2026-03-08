@@ -26,6 +26,18 @@ class Tree < ApplicationRecord
   # --- СТАН (The Lifecycle) ---
   enum :status, { active: 0, dormant: 1, removed: 2, deceased: 3 }, default: :active
 
+  # --- СТАН ПРОШИВКИ (OTA Status Tracking) ---
+  # Відстежуємо процес OTA-оновлення, щоб уникнути «чорної діри» прошивки.
+  enum :firmware_update_status, {
+    fw_idle: 0,        # Немає активного оновлення
+    fw_pending: 1,     # Оновлення заплановано
+    fw_downloading: 2, # Завантаження чанків
+    fw_verifying: 3,   # Верифікація SHA-256
+    fw_flashing: 4,    # Запис у Flash
+    fw_failed: 5,      # Оновлення провалене
+    fw_completed: 6    # Успішно оновлено
+  }, prefix: :firmware, default: :fw_idle
+
   # --- КОНСТАНТИ (Іоністор суперконденсатор 5.5В 0.47Ф) ---
   VCAP_MIN_MV = 2800   # Мінімальна робоча напруга (нижче — STM32 втрачає mesh-relay)
   VCAP_MAX_MV = 5500   # Максимальна напруга повністю зарядженого іоністора

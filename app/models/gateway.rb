@@ -33,6 +33,18 @@ class Gateway < ApplicationRecord
     faulty: 4       # Апаратний збій / вичерпано ретраї OTA
   }, default: :idle
 
+  # --- СТАН ПРОШИВКИ (OTA Status Tracking) ---
+  # Відстежуємо процес OTA-оновлення, щоб уникнути «чорної діри» прошивки.
+  enum :firmware_update_status, {
+    fw_idle: 0,        # Немає активного оновлення
+    fw_pending: 1,     # Оновлення заплановано
+    fw_downloading: 2, # Завантаження чанків
+    fw_verifying: 3,   # Верифікація SHA-256
+    fw_flashing: 4,    # Запис у Flash
+    fw_failed: 5,      # Оновлення провалене
+    fw_completed: 6    # Успішно оновлено
+  }, prefix: :firmware, default: :fw_idle
+
   # --- КОНСТАНТИ ---
   # Zero-Trust: Формат UID відповідає апаратній специфікації шлюзу (SNET-Q-[8 hex digits])
   UID_FORMAT = /\ASNET-Q-[0-9A-F]{8}\z/
