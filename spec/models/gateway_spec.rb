@@ -152,4 +152,79 @@ RSpec.describe Gateway, type: :model do
       expect(gateway).not_to be_battery_critical
     end
   end
+
+  describe "associations" do
+    it "has trees through cluster" do
+      gateway = create(:gateway)
+      tree = create(:tree, cluster: gateway.cluster)
+
+      expect(gateway.trees).to include(tree)
+    end
+
+    it "returns an empty collection when cluster has no trees" do
+      gateway = create(:gateway)
+      expect(gateway.trees).to be_empty
+    end
+  end
+
+  describe "#system_fault?" do
+    it "returns true when cluster has unresolved system_fault alerts" do
+      gateway = create(:gateway)
+      create(:ews_alert,
+        cluster: gateway.cluster,
+        alert_type: :system_fault,
+        severity: :critical,
+        status: :active
+      )
+
+      expect(gateway).to be_system_fault
+    end
+
+    it "returns true when battery is critical" do
+      gateway = build(:gateway, latest_voltage_mv: Gateway::LOW_POWER_MV - 100, cluster: nil)
+      expect(gateway).to be_system_fault
+    end
+
+    it "returns false when no faults and battery is fine" do
+      gateway = create(:gateway, latest_voltage_mv: 4200)
+      expect(gateway).not_to be_system_fault
+    end
+
+    it "returns false when cluster is nil" do
+      gateway = build(:gateway, cluster: nil, latest_voltage_mv: 4200)
+      expect(gateway).not_to be_system_fault
+    end
+  end
+
+  describe "#geolocated?" do
+    it "returns true when both latitude and longitude are present" do
+      gateway = build(:gateway, :geolocated)
+      expect(gateway).to be_geolocated
+    end
+
+    it "returns false when latitude is nil" do
+      gateway = build(:gateway, latitude: nil, longitude: 32.0)
+      expect(gateway).not_to be_geolocated
+    end
+
+    it "returns false when longitude is nil" do
+      gateway = build(:gateway, latitude: 49.0, longitude: nil)
+      expect(gateway).not_to be_geolocated
+    end
+  end
+
+  describe "#next_wakeup_expected_at" do
+    it "returns last_seen_at + config_sleep_interval_s" do
+      seen_at = Time.current
+      gateway = build(:gateway, last_seen_at: seen_at, config_sleep_interval_s: 300)
+
+      expected = seen_at + 300.seconds
+      expect(gateway.next_wakeup_expected_at).to be_within(1.second).of(expected)
+    end
+
+    it "returns nil when last_seen_at is nil" do
+      gateway = build(:gateway, last_seen_at: nil)
+      expect(gateway.next_wakeup_expected_at).to be_nil
+    end
+  end
 end

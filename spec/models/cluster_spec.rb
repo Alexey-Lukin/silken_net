@@ -101,4 +101,69 @@ RSpec.describe Cluster, type: :model do
       expect(first_call).to equal(second_call) # same object_id (memoized)
     end
   end
+
+  describe "#active_threats?" do
+    it "returns true when cluster has unresolved critical alerts" do
+      cluster = create(:cluster)
+      create(:ews_alert, cluster: cluster, status: :active, severity: :critical, alert_type: :fire_detected)
+
+      expect(cluster).to be_active_threats
+    end
+
+    it "returns false when cluster has no alerts" do
+      cluster = create(:cluster)
+      expect(cluster).not_to be_active_threats
+    end
+
+    it "returns false when alerts are resolved" do
+      cluster = create(:cluster)
+      create(:ews_alert, cluster: cluster, status: :resolved, severity: :critical, alert_type: :fire_detected)
+
+      expect(cluster).not_to be_active_threats
+    end
+
+    it "returns false when alerts are not critical" do
+      cluster = create(:cluster)
+      create(:ews_alert, cluster: cluster, status: :active, severity: :low, alert_type: :severe_drought)
+
+      expect(cluster).not_to be_active_threats
+    end
+  end
+
+  describe "#mapped?" do
+    it "returns true when geojson_polygon has coordinates" do
+      polygon = { "type" => "Polygon", "coordinates" => [[[31.9, 49.4], [32.0, 49.5]]] }
+      cluster = build(:cluster, geojson_polygon: polygon)
+
+      expect(cluster).to be_mapped
+    end
+
+    it "returns false when geojson_polygon is nil" do
+      cluster = build(:cluster, geojson_polygon: nil)
+      expect(cluster).not_to be_mapped
+    end
+
+    it "returns false when coordinates are missing" do
+      cluster = build(:cluster, geojson_polygon: { "type" => "Polygon" })
+      expect(cluster).not_to be_mapped
+    end
+  end
+
+  describe "validations" do
+    it "requires name" do
+      cluster = build(:cluster, name: nil)
+      expect(cluster).not_to be_valid
+    end
+
+    it "requires unique name" do
+      create(:cluster, name: "Unique Sector")
+      duplicate = build(:cluster, name: "Unique Sector")
+      expect(duplicate).not_to be_valid
+    end
+
+    it "requires region" do
+      cluster = build(:cluster, region: nil)
+      expect(cluster).not_to be_valid
+    end
+  end
 end
