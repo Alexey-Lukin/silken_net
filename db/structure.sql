@@ -929,7 +929,9 @@ CREATE TABLE public.organizations (
     crypto_public_address character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    billing_email character varying
+    billing_email character varying,
+    alert_threshold_critical_z numeric(5,2) DEFAULT 2.5,
+    ai_sensitivity numeric(3,2) DEFAULT 0.7
 );
 
 
@@ -1403,7 +1405,8 @@ CREATE TABLE public.users (
     last_seen_at timestamp(6) without time zone,
     first_name character varying,
     last_name character varying,
-    telegram_chat_id character varying
+    telegram_chat_id character varying,
+    push_token character varying
 );
 
 
@@ -3618,6 +3621,8 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260308143801'),
+('20260308143800'),
 ('20260308101003'),
 ('20260308101002'),
 ('20260308101001'),
