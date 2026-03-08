@@ -432,4 +432,67 @@ RSpec.describe TinyMlModel, type: :model do
       expect(model.reload.rollout_percentage).to eq(1)
     end
   end
+
+  # =========================================================================
+  # DRIFT TRACKING (Feedback Loop)
+  # =========================================================================
+  describe "drift tracking" do
+    describe "#record_prediction!" do
+      it "increments total_predictions and confirmed for true positive" do
+        model = create(:tiny_ml_model)
+        model.record_prediction!(confirmed: true)
+
+        model.reload
+        expect(model.total_predictions).to eq(1)
+        expect(model.confirmed_predictions).to eq(1)
+        expect(model.true_positive_rate).to eq(1.0)
+        expect(model.false_positive_rate).to eq(0.0)
+      end
+
+      it "increments only total_predictions for false positive" do
+        model = create(:tiny_ml_model)
+        model.record_prediction!(confirmed: false)
+
+        model.reload
+        expect(model.total_predictions).to eq(1)
+        expect(model.confirmed_predictions).to eq(0)
+        expect(model.false_positive_rate).to eq(1.0)
+      end
+
+      it "updates drift_checked_at" do
+        model = create(:tiny_ml_model)
+        expect(model.drift_checked_at).to be_nil
+
+        model.record_prediction!(confirmed: true)
+        expect(model.reload.drift_checked_at).to be_present
+      end
+    end
+
+    describe "#drifting?" do
+      it "returns true when FPR exceeds threshold" do
+        model = create(:tiny_ml_model, false_positive_rate: 0.20)
+        expect(model.drifting?).to be true
+      end
+
+      it "returns false when FPR is below threshold" do
+        model = create(:tiny_ml_model, false_positive_rate: 0.05)
+        expect(model.drifting?).to be false
+      end
+
+      it "returns false when FPR is nil" do
+        model = create(:tiny_ml_model, false_positive_rate: nil)
+        expect(model.drifting?).to be false
+      end
+    end
+
+    describe ".drifting scope" do
+      it "returns models with high false positive rate" do
+        drifting = create(:tiny_ml_model, false_positive_rate: 0.25)
+        stable = create(:tiny_ml_model, false_positive_rate: 0.05)
+
+        expect(described_class.drifting).to include(drifting)
+        expect(described_class.drifting).not_to include(stable)
+      end
+    end
+  end
 end

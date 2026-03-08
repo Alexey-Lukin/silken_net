@@ -38,6 +38,9 @@ class AiInsight < ApplicationRecord
   scope :for_date, ->(date) { where(target_date: date) }
   scope :fraudulent, -> { where(fraud_detected: true) }
 
+  # Evidence Persistence: знайти інсайти, що посилаються на конкретний telemetry log
+  scope :referencing_log, ->(log_id) { where("source_log_ids @> ARRAY[?]::bigint[]", log_id.to_i) }
+
   # --- МЕТОДИ (The Lens of Truth) ---
 
   # Чи вважається цей стан порушенням умов контракту?
@@ -60,6 +63,19 @@ class AiInsight < ApplicationRecord
 
   def forecast?
     !daily_health_summary?
+  end
+
+  # Evidence Persistence: telemetry logs, що стали підставою для цього інсайту
+  # source_log_ids зберігає integer ID (перший елемент composite key партиціонованої таблиці)
+  def source_logs
+    return TelemetryLog.none if source_log_ids.blank?
+
+    TelemetryLog.where(id: source_log_ids)
+  end
+
+  # Прив'язати telemetry logs як докази для інсайту
+  def attach_evidence!(log_ids)
+    update!(source_log_ids: (source_log_ids + Array(log_ids)).uniq)
   end
 
   # Швидка перевірка стану

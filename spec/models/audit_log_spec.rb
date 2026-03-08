@@ -211,5 +211,100 @@ RSpec.describe AuditLog, type: :model do
       expect { described_class.bulk_record!([]) }.not_to change(described_class, :count)
       expect { described_class.bulk_record!(nil) }.not_to change(described_class, :count)
     end
+
+    it "computes chain_hash for each entry in bulk" do
+      user = create(:user)
+      entries = 3.times.map do |i|
+        {
+          user_id: user.id,
+          organization_id: user.organization_id,
+          action: "bulk_action_#{i}"
+        }
+      end
+
+      described_class.bulk_record!(entries)
+
+      logs = described_class.where(action: "bulk_action_0".."bulk_action_2").order(:id)
+      expect(logs.all? { |l| l.chain_hash.present? }).to be true
+      expect(logs.map(&:chain_hash).uniq.size).to eq(3) # all hashes are unique
+    end
+  end
+
+  # =========================================================================
+  # CHAIN HASH (Immutable Integrity)
+  # =========================================================================
+  describe "chain_hash" do
+    it "computes chain_hash on create" do
+      log = create(:audit_log)
+      expect(log.chain_hash).to be_present
+      expect(log.chain_hash.length).to eq(64) # SHA-256 hex
+    end
+
+    it "chains hashes sequentially per organization" do
+      user = create(:user)
+      log1 = create(:audit_log, user: user, organization: user.organization, action: "first")
+      log2 = create(:audit_log, user: user, organization: user.organization, action: "second")
+
+      expect(log1.chain_hash).not_to eq(log2.chain_hash)
+
+      # Verify that log2's hash depends on log1's hash
+      expected_payload = log2.chain_payload
+      expected_hash = Digest::SHA256.hexdigest("#{log1.chain_hash}|#{expected_payload}")
+      expect(log2.chain_hash).to eq(expected_hash)
+    end
+
+    it "uses GENESIS as previous hash for first record in organization" do
+      log = create(:audit_log)
+      expected = Digest::SHA256.hexdigest("#{AuditLog::GENESIS_HASH}|#{log.chain_payload}")
+      expect(log.chain_hash).to eq(expected)
+    end
+
+    it "maintains separate chains per organization" do
+      user_a = create(:user)
+      user_b = create(:user)
+
+      log_a = create(:audit_log, user: user_a, organization: user_a.organization)
+      log_b = create(:audit_log, user: user_b, organization: user_b.organization)
+
+      # Both are first in their org → both use GENESIS
+      expected_a = Digest::SHA256.hexdigest("#{AuditLog::GENESIS_HASH}|#{log_a.chain_payload}")
+      expected_b = Digest::SHA256.hexdigest("#{AuditLog::GENESIS_HASH}|#{log_b.chain_payload}")
+
+      expect(log_a.chain_hash).to eq(expected_a)
+      expect(log_b.chain_hash).to eq(expected_b)
+    end
+  end
+
+  # =========================================================================
+  # CHAIN INTEGRITY VERIFICATION
+  # =========================================================================
+  describe ".verify_chain_integrity" do
+    it "returns valid for a correct chain" do
+      user = create(:user)
+      3.times { |i| create(:audit_log, user: user, organization: user.organization, action: "action_#{i}") }
+
+      result = described_class.verify_chain_integrity(user.organization_id)
+      expect(result[:valid]).to be true
+      expect(result[:verified_count]).to eq(3)
+    end
+
+    it "detects tampering (modified record)" do
+      user = create(:user)
+      log1 = create(:audit_log, user: user, organization: user.organization, action: "original")
+      create(:audit_log, user: user, organization: user.organization, action: "second")
+
+      # Tamper with first record
+      log1.update_column(:chain_hash, "tampered_hash_value")
+
+      result = described_class.verify_chain_integrity(user.organization_id)
+      expect(result[:valid]).to be false
+      expect(result[:broken_at]).to eq(log1.id)
+    end
+
+    it "returns valid with zero records" do
+      result = described_class.verify_chain_integrity(999_999)
+      expect(result[:valid]).to be true
+      expect(result[:verified_count]).to eq(0)
+    end
   end
 end
