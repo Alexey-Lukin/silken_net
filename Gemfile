@@ -5,6 +5,7 @@ ruby "4.0.1"
 gem "bcrypt"
 gem "blueprinter"
 gem "bootsnap", require: false
+gem "csv"
 gem "eth"
 gem "groupdate"
 gem "image_processing"
