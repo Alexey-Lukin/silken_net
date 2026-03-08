@@ -170,7 +170,7 @@ module Trees
               span(class: "text-xs text-emerald-600 font-mono") { "SCC" }
             end
           end
-          security_item("Address", "#{@tree.wallet&.crypto_public_address&.first(12)}...", full: @tree.wallet&.crypto_public_address)
+          security_item("Address", @tree.wallet&.crypto_public_address.present? ? "#{@tree.wallet.crypto_public_address.first(12)}..." : "NOT_PROVISIONED", full: @tree.wallet&.crypto_public_address)
         end
       end
     end

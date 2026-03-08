@@ -52,7 +52,7 @@ module Wallets
         end
 
         div(class: "flex justify-between items-center pt-4 border-t border-emerald-900/30") do
-          span(class: "text-[10px] font-mono text-gray-600") { "#{wallet.crypto_public_address&.first(10)}..." }
+          span(class: "text-[10px] font-mono text-gray-600") { wallet.crypto_public_address.present? ? "#{wallet.crypto_public_address.first(10)}..." : "NOT_PROVISIONED" }
           a(
             href: helpers.api_v1_wallet_path(wallet),
             class: "text-[10px] uppercase tracking-widest text-emerald-600 hover:text-white transition-colors"
