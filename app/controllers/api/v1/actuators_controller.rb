@@ -35,7 +35,7 @@ module Api
           format.json { render json: { actuator: @actuator, history: @commands } }
           format.html do
             render_dashboard(
-              title: "Actuator Hub // #{@actuator.actuator_type.upcase}",
+              title: "Actuator Hub // #{@actuator.device_type.upcase}",
               component: Actuators::Show.new(actuator: @actuator, commands: @commands)
             )
           end
@@ -52,11 +52,11 @@ module Api
         @command = @actuator.actuator_commands.create!(
           user: current_user,
           command_payload: params[:action_payload],
-          status: :pending
+          duration_seconds: params[:duration_seconds],
+          status: :issued
         )
 
-        # Відправляємо команду в ефір (CoAP/LoRa)
-        EmergencyResponseService.dispatch_manual_command(@command.id)
+        # Команда автоматично диспетчеризується через after_commit :dispatch_to_edge!
 
         respond_to do |format|
           format.json { render json: { command_id: @command.id, status: :accepted }, status: :accepted }

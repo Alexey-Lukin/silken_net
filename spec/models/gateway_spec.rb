@@ -227,4 +227,28 @@ RSpec.describe Gateway, type: :model do
       expect(gateway.next_wakeup_expected_at).to be_nil
     end
   end
+
+  # =========================================================================
+  # FIRMWARE UPDATE STATUS (OTA Status Tracking)
+  # =========================================================================
+  describe "firmware_update_status" do
+    it "defaults to fw_idle" do
+      gateway = build(:gateway)
+      expect(gateway.firmware_update_status).to eq("fw_idle")
+    end
+
+    it "supports all OTA lifecycle states" do
+      gateway = build(:gateway)
+      %w[fw_idle fw_pending fw_downloading fw_verifying fw_flashing fw_failed fw_completed].each do |state|
+        gateway.firmware_update_status = state
+        expect(gateway.firmware_update_status).to eq(state)
+      end
+    end
+
+    it "provides prefixed query methods" do
+      gateway = build(:gateway, firmware_update_status: :fw_flashing)
+      expect(gateway).to be_firmware_fw_flashing
+      expect(gateway).not_to be_firmware_fw_idle
+    end
+  end
 end

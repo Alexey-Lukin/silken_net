@@ -202,6 +202,30 @@ RSpec.describe Tree, type: :model do
     end
   end
 
+  # =========================================================================
+  # FIRMWARE UPDATE STATUS (OTA Status Tracking)
+  # =========================================================================
+  describe "firmware_update_status" do
+    it "defaults to fw_idle" do
+      tree = build(:tree)
+      expect(tree.firmware_update_status).to eq("fw_idle")
+    end
+
+    it "supports all OTA lifecycle states" do
+      tree = build(:tree)
+      %w[fw_idle fw_pending fw_downloading fw_verifying fw_flashing fw_failed fw_completed].each do |state|
+        tree.firmware_update_status = state
+        expect(tree.firmware_update_status).to eq(state)
+      end
+    end
+
+    it "provides prefixed query methods" do
+      tree = build(:tree, firmware_update_status: :fw_downloading)
+      expect(tree).to be_firmware_fw_downloading
+      expect(tree).not_to be_firmware_fw_idle
+    end
+  end
+
   describe "#latest_telemetry" do
     it "returns the most recent telemetry log" do
       tree = create(:tree)

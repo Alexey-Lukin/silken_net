@@ -19,8 +19,13 @@ class ActuatorCommand < ApplicationRecord
   enum :priority, {
     low: 0,      # плановий полив
     medium: 1,   # діагностика
-    high: 2      # критичне реагування EWS
+    high: 2,     # критичне реагування EWS
+    override: 3  # STOP / EMERGENCY_SHUTDOWN — обнуляє всі pending для актуатора
   }, prefix: true
+
+  # 🛑 Команди, що мають системний пріоритет OVERRIDE.
+  # При створенні такої команди всі pending-команди для цього актуатора скасовуються.
+  OVERRIDE_COMMANDS = %w[STOP EMERGENCY_SHUTDOWN EMERGENCY_STOP].freeze
 
   ALLOWED_PAYLOAD_FORMAT = /\A[A-Z_]+(?::\d+)?\z/
 
@@ -28,6 +33,8 @@ class ActuatorCommand < ApplicationRecord
   before_validation :assign_idempotency_token, on: :create
   # 📈 Денормалізація: organization_id заповнюється з ланцюжка actuator->gateway->cluster
   before_validation :denormalize_organization, on: :create
+  # 🛑 Auto-override: STOP/EMERGENCY_SHUTDOWN автоматично отримують override-пріоритет
+  before_validation :enforce_override_priority, on: :create
 
   validates :command_payload, presence: true,
                               format: { with: ALLOWED_PAYLOAD_FORMAT,
@@ -40,6 +47,8 @@ class ActuatorCommand < ApplicationRecord
   validate :expires_at_in_future, on: :create
 
   after_commit :dispatch_to_edge!, on: :create
+  # 🛑 Override: скасовуємо всі pending-команди для актуатора при STOP/EMERGENCY_SHUTDOWN
+  after_commit :cancel_pending_for_actuator!, on: :create, if: :priority_override?
 
   scope :recent, -> { order(created_at: :desc).limit(10) }
   scope :pending, -> { where(status: [ :issued, :sent ]) }
@@ -83,6 +92,28 @@ class ActuatorCommand < ApplicationRecord
 
     if expires_at <= Time.current
       errors.add(:expires_at, "має бути в майбутньому")
+    end
+  end
+
+  # 🛑 Auto-override: команди STOP/EMERGENCY_SHUTDOWN завжди отримують override-пріоритет
+  def enforce_override_priority
+    base_command = command_payload.to_s.split(":").first
+    self.priority = :override if OVERRIDE_COMMANDS.include?(base_command)
+  end
+
+  # 🛑 Override: скасовуємо ВСІ pending-команди для цього актуатора (крім поточної).
+  # Це гарантує, що STOP не чекатиме в черзі за OPEN.
+  def cancel_pending_for_actuator!
+    cancelled_count = actuator.commands
+      .pending
+      .where.not(id: id)
+      .update_all(
+        status: self.class.statuses[:failed],
+        error_message: "Скасовано override-командою ##{id} (#{command_payload})"
+      )
+
+    if cancelled_count > 0
+      Rails.logger.warn "🛑 [OVERRIDE] Команда ##{id} (#{command_payload}) скасувала #{cancelled_count} pending-команд для актуатора #{actuator_id}."
     end
   end
 

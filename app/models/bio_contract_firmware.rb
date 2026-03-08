@@ -40,6 +40,10 @@ class BioContractFirmware < ApplicationRecord
     less_than_or_equal_to: 100
   }
 
+  # [Hardware Compatibility Matrix]: Масив сумісних версій заліза.
+  # Прошивка для Hardware Revision v1.0 (STM32L4) вб'є пристрій v2.0 (STM32H7).
+  validate :compatible_hardware_versions_format
+
   # --- КОЛБЕКИ ---
   # [SHA-256 Integrity]: Автоматичний розрахунок хешу при збереженні
   before_save :compute_binary_sha256, if: :bytecode_payload_changed?
@@ -101,6 +105,9 @@ class BioContractFirmware < ApplicationRecord
     clamped = percentage.to_i.clamp(1, 100)
 
     transaction do
+      # [BUG FIX]: Песимістичне блокування для захисту від гонки конкурентних деплоїв
+      lock!
+
       # 1. Кенозис старих версій
       self.class.active.where.not(id: id).update_all(is_active: false)
 
@@ -123,5 +130,18 @@ class BioContractFirmware < ApplicationRecord
     # Скидаємо мемоізований бінарний payload, бо bytecode_payload змінився
     @binary_payload = nil
     self.binary_sha256 = Digest::SHA256.hexdigest([ bytecode_payload ].pack("H*"))
+  end
+
+  # [Hardware Compatibility Matrix]: Валідація формату масиву сумісних версій.
+  # Кожен елемент — рядок (наприклад, "v1.0", "v2.1-STM32H7").
+  def compatible_hardware_versions_format
+    unless compatible_hardware_versions.is_a?(Array)
+      errors.add(:compatible_hardware_versions, "має бути масивом")
+      return
+    end
+
+    unless compatible_hardware_versions.all? { |v| v.is_a?(String) && v.present? }
+      errors.add(:compatible_hardware_versions, "кожна версія має бути непорожнім рядком")
+    end
   end
 end
