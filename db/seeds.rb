@@ -243,7 +243,7 @@ fire_siren = Actuator.create!(
 puts "📊 Запис діагностики Королев..."
 gateways.each do |gw|
   GatewayTelemetryLog.create!(
-    gateway: gw,
+    gateway_id: gw.id,
     queen_uid: gw.uid,
     voltage_mv: 4200,
     temperature_c: 28.5,
@@ -252,7 +252,7 @@ gateways.each do |gw|
 end
 
 GatewayTelemetryLog.create!(
-  gateway: amazon_gw,
+  gateway_id: amazon_gw.id,
   queen_uid: amazon_gw.uid,
   voltage_mv: 3100,
   temperature_c: 42.0,

@@ -37,12 +37,30 @@ class Cluster < ApplicationRecord
   # --- СКОУПИ ---
   scope :alphabetical, -> { order(name: :asc) }
 
+  # PostGIS: знайти кластери, що містять точку (lat, lng)
+  # Використовує GIST індекс — O(log n) замість O(n) JSONB-сканування
+  scope :containing_point, ->(lat, lng) {
+    where("ST_Contains(geo_boundary, ST_SetSRID(ST_MakePoint(?, ?), 4326))", lng.to_f, lat.to_f)
+  }
+
   # [СИНХРОНІЗОВАНО]: Використовуємо статус :active, що відповідає скоупу unresolved в EwsAlert.
   scope :under_threat, -> {
     joins(:ews_alerts).where(ews_alerts: { status: :active, severity: :critical }).distinct
   }
 
   # --- МЕТОДИ (Sector Intelligence) ---
+
+  # PostGIS: перевірка, чи точка знаходиться в межах кластера
+  def contains_point?(lat, lng)
+    return false unless geo_boundary_present?
+
+    self.class.where(id: id).containing_point(lat, lng).exists?
+  end
+
+  # Чи є geometry-колонка заповнена?
+  def geo_boundary_present?
+    self.class.where(id: id).where.not(geo_boundary: nil).exists?
+  end
 
   # [ОПТИМІЗАЦІЯ: Counter Cache]: Використовуємо денормалізований лічильник замість COUNT(*).
   # При 50 кластерах × 100 000+ дерев на дашборді — це різниця між 50 SQL-запитами і нулем.

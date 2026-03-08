@@ -50,6 +50,7 @@ class TinyMlModel < ApplicationRecord
   # --- СКОУПИ ---
   scope :active, -> { where(is_active: true) }
   scope :latest, -> { order(version: :desc) }
+  scope :drifting, -> { where("false_positive_rate > ?", 0.15) }
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # ВПЕВНЕНІСТЬ ОРАКУЛА (Inference Confidence — BigDecimal Bridge)
@@ -73,6 +74,37 @@ class TinyMlModel < ApplicationRecord
 
   def threshold=(value)
     self.metadata = (metadata || {}).merge("threshold" => value&.to_s)
+  end
+
+  # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  # MODEL DRIFT TRACKING (Feedback Loop)
+  # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+  # Реєстрація результату передбачення для drift tracking
+  # confirmed: true — модель була права, false — хибне спрацювання
+  def record_prediction!(confirmed:)
+    increment!(:total_predictions)
+    increment!(:confirmed_predictions) if confirmed
+    recalculate_drift_metrics!
+  end
+
+  # Перерахунок TPR/FPR на основі накопичених даних
+  def recalculate_drift_metrics!
+    return if total_predictions.zero?
+
+    tp_rate = confirmed_predictions.to_f / total_predictions
+    fp_rate = 1.0 - tp_rate
+
+    update_columns(
+      true_positive_rate: tp_rate.round(4),
+      false_positive_rate: fp_rate.round(4),
+      drift_checked_at: Time.current
+    )
+  end
+
+  # Чи модель демонструє drift (деградацію якості)?
+  def drifting?
+    false_positive_rate.present? && false_positive_rate > BigDecimal("0.15")
   end
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
