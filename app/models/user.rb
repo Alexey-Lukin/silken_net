@@ -47,6 +47,7 @@ class User < ApplicationRecord
   # --- СКОУПИ ---
   scope :notifiable, -> { where.not(phone_number: [ nil, "" ]).or(where.not(telegram_chat_id: nil)) }
   scope :active_foresters, -> { role_forester.where("last_seen_at >= ?", 1.hour.ago) }
+  scope :mfa_enabled, -> { where(otp_required_for_login: true) }
 
   # --- ТОКЕНИ (The Magic of Rails 8) ---
   generates_token_for :password_reset, expires_in: 15.minutes do
@@ -113,11 +114,47 @@ class User < ApplicationRecord
     update_columns(last_seen_at: Time.current)
   end
 
+  # --- MFA / TOTP (Зона 4: Security) ---
+  # Перевірка чи MFA активовано для цього користувача
+  def mfa_enabled?
+    otp_required_for_login?
+  end
+
+  # Кількість невикористаних recovery codes
+  def recovery_codes_remaining
+    parsed_recovery_codes.size
+  end
+
+  # Перевірка recovery code (одноразового використання)
+  def consume_recovery_code!(code)
+    codes = parsed_recovery_codes
+    return false unless codes.include?(code)
+
+    codes.delete(code)
+    update!(recovery_codes: codes.to_json)
+    true
+  end
+
+  # Генерація нового набору recovery codes (10 штук)
+  def generate_recovery_codes!
+    codes = Array.new(10) { SecureRandom.hex(4) }
+    update!(recovery_codes: codes.to_json)
+    codes
+  end
+
   private
 
   # [ВИПРАВЛЕНО]: Тепер ця логіка реально керує валідацією.
   # Пароль не потрібен, якщо користувач прийшов через Google/Apple і вже має Identity.
   def password_required?
     identities.none?
+  end
+
+  # Парсимо recovery_codes з JSON тексту
+  def parsed_recovery_codes
+    return [] if recovery_codes.blank?
+    JSON.parse(recovery_codes)
+  rescue JSON::ParserError
+    []
   end
 end
