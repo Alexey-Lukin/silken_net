@@ -47,7 +47,8 @@ RSpec.describe AlertNotificationWorker, type: :worker do
 
     it "sends email for critical alerts with billing email" do
       mailer_double = double(deliver_later: true)
-      allow(AlertMailer).to receive_message_chain(:with, :critical_notification).and_return(mailer_double)
+      notification_double = double(critical_notification: mailer_double)
+      allow(AlertMailer).to receive(:with).and_return(notification_double)
 
       described_class.new.perform(alert.id)
 

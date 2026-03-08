@@ -1,8 +1,11 @@
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
-require:
+plugins:
   - rubocop-rspec
+
+AllCops:
+  NewCops: enable
 
 Bundler/OrderedGems:
   Enabled: true
@@ -35,6 +38,11 @@ RSpec/VerifiedDoubles:
 
 # Іменовані let з індексами (tree1, tree2) допустимі для парних порівнянь
 RSpec/IndexedLet:
+  Enabled: false
+
+# let! в IoT-тестах часто потрібні для створення записів в БД перед перевіркою
+# (наприклад, tree повинно існувати до того, як worker його шукає)
+RSpec/LetSetup:
   Enabled: false
 
 # Інтеграційні тести описують сценарії, а не конкретні класи

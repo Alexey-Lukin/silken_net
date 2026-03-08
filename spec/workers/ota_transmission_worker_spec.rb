@@ -110,12 +110,12 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
       end
 
       it "marks gateway as faulty after max retries" do
-        described_class.new.perform(gateway.uid, "firmware", firmware.id, 0, OtaTransmissionWorker::MAX_CHUNK_RETRIES)
         allow(CoapClient).to receive(:put).and_raise(StandardError, "NACK")
 
         described_class.new.perform(gateway.uid, "firmware", firmware.id, 0, OtaTransmissionWorker::MAX_CHUNK_RETRIES)
 
-        # Check gateway not changed if CoAP was not actually called with error
+        gateway.reload
+        expect(gateway.state).to eq("faulty")
       end
     end
 

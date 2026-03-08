@@ -40,7 +40,7 @@ RSpec.describe AuditLog, type: :model do
     end
 
     it "is valid without an auditable target (action log without a subject)" do
-      expect(build(:audit_log)).to be_valid
+      expect(build(:audit_log, auditable: nil)).to be_valid
     end
 
     it "is valid with an auditable target" do
