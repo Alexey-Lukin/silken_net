@@ -356,6 +356,7 @@ GEM
       actionpack (>= 7.0.0)
       activesupport (>= 7.0.0)
       rack
+    prosopite (2.1.2)
     psych (5.3.1)
       date
       stringio
@@ -609,6 +610,7 @@ DEPENDENCIES
   pg
   phlex-rails
   propshaft
+  prosopite
   puma
   rails (~> 8.1.2)
   rspec-rails

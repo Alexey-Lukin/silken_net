@@ -15,16 +15,20 @@ module Api
         # Фільтрація
         @logs = @logs.by_action(params[:action_type])
         @logs = @logs.by_user(params[:user_id])
-        @logs = @logs.limit(params.fetch(:limit, 50).to_i.clamp(1, 100))
+
+        @pagy, @logs = pagy(@logs, limit: params.fetch(:limit, 50).to_i.clamp(1, 100))
 
         respond_to do |format|
           format.json do
-            render json: AuditLogBlueprint.render(@logs, view: :index)
+            render json: {
+              data: AuditLogBlueprint.render_as_hash(@logs, view: :index),
+              pagy: pagy_metadata(@pagy)
+            }
           end
           format.html do
             render_dashboard(
               title: "Audit Log",
-              component: AuditLogs::Index.new(logs: @logs)
+              component: AuditLogs::Index.new(logs: @logs, pagy: @pagy)
             )
           end
         end

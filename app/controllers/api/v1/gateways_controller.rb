@@ -5,15 +5,22 @@ module Api
     class GatewaysController < BaseController
       # GET /api/v1/gateways
       def index
-        @gateways = current_user.organization.gateways
-                      .includes(:cluster, :latest_gateway_telemetry_log)
+        @pagy, @gateways = pagy(
+          current_user.organization.gateways
+            .includes(:cluster, :latest_gateway_telemetry_log)
+        )
 
         respond_to do |format|
-          format.json { render json: @gateways }
+          format.json do
+            render json: {
+              data: @gateways,
+              pagy: pagy_metadata(@pagy)
+            }
+          end
           format.html do
             render_dashboard(
               title: "Queen Registry",
-              component: Gateways::Index.new(gateways: @gateways)
+              component: Gateways::Index.new(gateways: @gateways, pagy: @pagy)
             )
           end
         end

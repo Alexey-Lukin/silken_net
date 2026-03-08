@@ -101,6 +101,11 @@ module Api
         Rails.logger.fatal "🚨 [API CRITICAL] #{exception.message}\n#{exception.backtrace.first(5).join("\n")}"
         render json: { error: "Збій у ядрі Океану. Повідомте Архітектора." }, status: :internal_server_error
       end
+
+      # 5. PAGINATION METADATA (Pagy Helper)
+      def pagy_metadata(pagy)
+        { page: pagy.page, limit: pagy.limit, count: pagy.count, pages: pagy.last }
+      end
     end
   end
 end

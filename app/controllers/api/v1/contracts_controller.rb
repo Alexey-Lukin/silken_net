@@ -8,36 +8,41 @@ module Api
       # --- ПОРТФЕЛЬ КОНТРАКТІВ (Registry + Dashboard) ---
       # GET /api/v1/contracts
       def index
-        @contracts = if current_user.role_admin? || current_user.role_super_admin?
+        scope = if current_user.role_admin? || current_user.role_super_admin?
                        NaasContract.includes(:organization, :cluster).all
         else
                        current_user.organization.naas_contracts.includes(:cluster)
         end
 
+        @pagy, @contracts = pagy(scope)
+
         # Агрегуємо дані для Phlex-дашборду, використовуючи твою логіку
         @stats = {
-          total_invested: @contracts.sum(:total_value),
-          total_minted: @contracts.sum(:emitted_tokens),
+          total_invested: scope.sum(:total_value),
+          total_minted: scope.sum(:emitted_tokens),
           # [ОПТИМІЗАЦІЯ]: SQL агрегація замість перебору масиву в Ruby
-          portfolio_health: calculate_portfolio_health_for_scope(@contracts)
+          portfolio_health: calculate_portfolio_health_for_scope(scope)
         }
 
         respond_to do |format|
           format.json do
-            render json: @contracts.as_json(
-              only: [ :id, :status, :total_value, :emitted_tokens, :signed_at ],
-              include: {
-                cluster: { only: [ :id, :name ] },
-                organization: { only: [ :id, :name ] }
-              },
-              # [UI/UX]: Додано active_threats?, щоб інвестор бачив "червоний вогник" у списку
-              methods: [ :current_yield_performance, :active_threats? ]
-            )
+            render json: {
+              data: @contracts.as_json(
+                only: [ :id, :status, :total_value, :emitted_tokens, :signed_at ],
+                include: {
+                  cluster: { only: [ :id, :name ] },
+                  organization: { only: [ :id, :name ] }
+                },
+                # [UI/UX]: Додано active_threats?, щоб інвестор бачив "червоний вогник" у списку
+                methods: [ :current_yield_performance, :active_threats? ]
+              ),
+              pagy: pagy_metadata(@pagy)
+            }
           end
           format.html do
             render_dashboard(
               title: "Nature-as-a-Service Registry",
-              component: Contracts::Index.new(contracts: @contracts, stats: @stats)
+              component: Contracts::Index.new(contracts: @contracts, stats: @stats, pagy: @pagy)
             )
           end
         end
@@ -56,7 +61,7 @@ module Api
               emission_history: @emission_history,
               backing_asset: {
                 cluster_health: @contract.cluster.health_index,
-                active_trees: @contract.cluster.trees.count, # Згідно з твоєю структурою
+                active_trees: @contract.cluster.active_trees_count,
                 active_threats: @contract.cluster.ews_alerts.active.any?
               }
             }

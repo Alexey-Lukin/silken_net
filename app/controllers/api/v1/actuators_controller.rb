@@ -9,14 +9,19 @@ module Api
 
       # --- РЕЄСТР ВИКОНАВЧИХ ВУЗЛІВ ---
       def index
-        @actuators = @cluster.actuators.includes(:gateway)
+        @pagy, @actuators = pagy(@cluster.actuators.includes(:gateway))
 
         respond_to do |format|
-          format.json { render json: @actuators }
+          format.json do
+            render json: {
+              data: @actuators,
+              pagy: pagy_metadata(@pagy)
+            }
+          end
           format.html do
             render_dashboard(
               title: "Actuators // Sector: #{@cluster.name}",
-              component: Actuators::Index.new(cluster: @cluster, actuators: @actuators)
+              component: Actuators::Index.new(cluster: @cluster, actuators: @actuators, pagy: @pagy)
             )
           end
         end

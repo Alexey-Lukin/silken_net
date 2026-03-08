@@ -8,16 +8,19 @@ module Api
 
       # --- ПЕРЕЛІК КЛАНІВ (The Hierarchy View) ---
       def index
-        @organizations = Organization.includes(:clusters, :naas_contracts).all
+        @pagy, @organizations = pagy(Organization.includes(:clusters, :naas_contracts).all)
 
         respond_to do |format|
           format.json do
-            render json: OrganizationBlueprint.render(@organizations, view: :index)
+            render json: {
+              data: OrganizationBlueprint.render_as_hash(@organizations, view: :index),
+              pagy: pagy_metadata(@pagy)
+            }
           end
           format.html do
             render_dashboard(
               title: "Organization Registry // The Clans",
-              component: Organizations::Index.new(organizations: @organizations)
+              component: Organizations::Index.new(organizations: @organizations, pagy: @pagy)
             )
           end
         end
