@@ -98,6 +98,57 @@ RSpec.describe BioContractFirmware, type: :model do
         expect(firmware).not_to be_valid
       end
     end
+
+    # =========================================================================
+    # COMPATIBLE HARDWARE VERSIONS (Hardware Compatibility Matrix)
+    # =========================================================================
+    describe "compatible_hardware_versions" do
+      it "defaults to empty array" do
+        firmware = build(:bio_contract_firmware)
+        expect(firmware.compatible_hardware_versions).to eq([])
+      end
+
+      it "accepts valid hardware version strings" do
+        firmware = build(:bio_contract_firmware, compatible_hardware_versions: %w[v1.0 v2.0-STM32H7])
+        expect(firmware).to be_valid
+      end
+
+      it "accepts empty array (universal firmware)" do
+        firmware = build(:bio_contract_firmware, compatible_hardware_versions: [])
+        expect(firmware).to be_valid
+      end
+
+      it "rejects non-array value" do
+        firmware = build(:bio_contract_firmware)
+        firmware.compatible_hardware_versions = "v1.0"
+        expect(firmware).not_to be_valid
+        expect(firmware.errors[:compatible_hardware_versions]).to be_present
+      end
+
+      it "rejects array with empty strings" do
+        firmware = build(:bio_contract_firmware, compatible_hardware_versions: [ "v1.0", "" ])
+        expect(firmware).not_to be_valid
+        expect(firmware.errors[:compatible_hardware_versions]).to be_present
+      end
+
+      it "rejects array with non-string elements" do
+        firmware = build(:bio_contract_firmware, compatible_hardware_versions: [ "v1.0", 42 ])
+        expect(firmware).not_to be_valid
+        expect(firmware.errors[:compatible_hardware_versions]).to be_present
+      end
+
+      it "rejects array with nil elements" do
+        firmware = build(:bio_contract_firmware, compatible_hardware_versions: [ "v1.0", nil ])
+        expect(firmware).not_to be_valid
+        expect(firmware.errors[:compatible_hardware_versions]).to be_present
+      end
+
+      it "works with :with_hardware_versions factory trait" do
+        firmware = build(:bio_contract_firmware, :with_hardware_versions)
+        expect(firmware).to be_valid
+        expect(firmware.compatible_hardware_versions).to eq(%w[v1.0 v1.1 v2.0])
+      end
+    end
   end
 
   # =========================================================================

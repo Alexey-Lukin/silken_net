@@ -7,6 +7,7 @@ FactoryBot.define do
     is_active { false }
     target_hardware_type { nil }
     tree_family { nil }
+    compatible_hardware_versions { [] }
 
     trait :active do
       is_active { true }
@@ -22,6 +23,10 @@ FactoryBot.define do
 
     trait :for_family do
       tree_family
+    end
+
+    trait :with_hardware_versions do
+      compatible_hardware_versions { %w[v1.0 v1.1 v2.0] }
     end
   end
 end

@@ -12,6 +12,16 @@ FactoryBot.define do
       priority { :high }
     end
 
+    trait :override_stop do
+      command_payload { "STOP" }
+      priority { :override }
+    end
+
+    trait :override_emergency do
+      command_payload { "EMERGENCY_SHUTDOWN" }
+      priority { :override }
+    end
+
     trait :with_ttl do
       expires_at { 30.minutes.from_now }
     end

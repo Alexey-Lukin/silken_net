@@ -177,7 +177,7 @@ RSpec.describe ActuatorCommand, type: :model do
     end
 
     it "accepts all priority levels" do
-      %w[low medium high].each do |level|
+      %w[low medium high override].each do |level|
         command = ActuatorCommand.new(
           actuator: actuator,
           command_payload: "OPEN",
@@ -192,6 +192,98 @@ RSpec.describe ActuatorCommand, type: :model do
       command = ActuatorCommand.new(priority: :high)
       expect(command).to be_priority_high
       expect(command).not_to be_priority_low
+    end
+  end
+
+  # =========================================================================
+  # 🛑 OVERRIDE PRIORITY (STOP / EMERGENCY_SHUTDOWN)
+  # =========================================================================
+  describe "override priority" do
+    it "auto-sets override priority for STOP command" do
+      command = ActuatorCommand.new(
+        actuator: actuator,
+        command_payload: "STOP",
+        duration_seconds: 1
+      )
+      command.valid?
+      expect(command).to be_priority_override
+    end
+
+    it "auto-sets override priority for EMERGENCY_SHUTDOWN command" do
+      command = ActuatorCommand.new(
+        actuator: actuator,
+        command_payload: "EMERGENCY_SHUTDOWN",
+        duration_seconds: 1
+      )
+      command.valid?
+      expect(command).to be_priority_override
+    end
+
+    it "auto-sets override priority for EMERGENCY_STOP command" do
+      command = ActuatorCommand.new(
+        actuator: actuator,
+        command_payload: "EMERGENCY_STOP",
+        duration_seconds: 1
+      )
+      command.valid?
+      expect(command).to be_priority_override
+    end
+
+    it "auto-sets override for STOP:value format" do
+      command = ActuatorCommand.new(
+        actuator: actuator,
+        command_payload: "STOP:0",
+        duration_seconds: 1
+      )
+      command.valid?
+      expect(command).to be_priority_override
+    end
+
+    it "does not auto-set override for regular commands" do
+      command = ActuatorCommand.new(
+        actuator: actuator,
+        command_payload: "OPEN",
+        duration_seconds: 60
+      )
+      command.valid?
+      expect(command).to be_priority_low
+    end
+
+    it "cancels all pending commands for the actuator on creation" do
+      # Create two pending commands
+      pending1 = create(:actuator_command, actuator: actuator, command_payload: "OPEN", duration_seconds: 60)
+      pending2 = create(:actuator_command, actuator: actuator, command_payload: "OPEN:120", duration_seconds: 120)
+
+      # Create override STOP command
+      create(:actuator_command, actuator: actuator, command_payload: "STOP", duration_seconds: 1)
+
+      # Pending commands should be cancelled
+      expect(pending1.reload.status).to eq("failed")
+      expect(pending1.error_message).to include("override")
+      expect(pending2.reload.status).to eq("failed")
+      expect(pending2.error_message).to include("override")
+    end
+
+    it "does not cancel already confirmed or failed commands" do
+      confirmed = create(:actuator_command, actuator: actuator, command_payload: "OPEN", duration_seconds: 60)
+      confirmed.update_columns(status: ActuatorCommand.statuses[:confirmed])
+
+      failed = create(:actuator_command, actuator: actuator, command_payload: "OPEN", duration_seconds: 60)
+      failed.update_columns(status: ActuatorCommand.statuses[:failed])
+
+      create(:actuator_command, actuator: actuator, command_payload: "STOP", duration_seconds: 1)
+
+      expect(confirmed.reload.status).to eq("confirmed")
+      expect(failed.reload.status).to eq("failed")
+    end
+
+    it "does not cancel commands for other actuators" do
+      other_actuator = create(:actuator, gateway: gateway)
+      other_pending = create(:actuator_command, actuator: other_actuator, command_payload: "OPEN", duration_seconds: 60)
+
+      create(:actuator_command, actuator: actuator, command_payload: "STOP", duration_seconds: 1)
+
+      expect(other_pending.reload.status).to eq("issued")
     end
   end
 
