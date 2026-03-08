@@ -815,7 +815,9 @@ CREATE TABLE public.identities (
     access_token character varying,
     refresh_token character varying,
     auth_data jsonb,
-    expires_at timestamp(6) without time zone
+    expires_at timestamp(6) without time zone,
+    locked_at timestamp(6) without time zone,
+    "primary" boolean DEFAULT false NOT NULL
 );
 
 
@@ -931,7 +933,8 @@ CREATE TABLE public.organizations (
     updated_at timestamp(6) without time zone NOT NULL,
     billing_email character varying,
     alert_threshold_critical_z numeric(5,2) DEFAULT 2.5,
-    ai_sensitivity numeric(3,2) DEFAULT 0.7
+    ai_sensitivity numeric(3,2) DEFAULT 0.7,
+    data_region character varying DEFAULT 'eu-west'::character varying
 );
 
 
@@ -1406,7 +1409,9 @@ CREATE TABLE public.users (
     first_name character varying,
     last_name character varying,
     telegram_chat_id character varying,
-    push_token character varying
+    push_token character varying,
+    otp_required_for_login boolean DEFAULT false NOT NULL,
+    recovery_codes text
 );
 
 
@@ -3621,6 +3626,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260308160000'),
 ('20260308143801'),
 ('20260308143800'),
 ('20260308101003'),

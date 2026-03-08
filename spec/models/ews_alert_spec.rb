@@ -241,11 +241,13 @@ RSpec.describe EwsAlert, type: :model do
     it "closes associated maintenance records" do
       alert = create(:ews_alert, :fire)
 
-      expect(MaintenanceRecord).to receive(:where)
+      allow(MaintenanceRecord).to receive(:where)
         .with(ews_alert_id: alert.id)
         .and_return(double(update_all: 0))
 
       alert.resolve!
+
+      expect(MaintenanceRecord).to have_received(:where).with(ews_alert_id: alert.id)
     end
   end
 
