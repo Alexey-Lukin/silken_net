@@ -27,7 +27,7 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       get "/api/v1/alerts", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
-      ids = response.parsed_body.map { |a| a["id"] }
+      ids = response.parsed_body["data"].map { |a| a["id"] }
       expect(ids).to include(own_alert.id)
       expect(ids).not_to include(other_alert.id)
     end

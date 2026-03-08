@@ -21,7 +21,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       get "/api/v1/clusters/#{own_cluster.id}/actuators", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
-      ids = response.parsed_body.map { |a| a["id"] }
+      ids = response.parsed_body["data"].map { |a| a["id"] }
       expect(ids).to include(own_actuator.id)
     end
 

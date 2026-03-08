@@ -39,7 +39,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         get "/api/v1/contracts", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
 
-        ids = response.parsed_body.map { |c| c["id"] }
+        ids = response.parsed_body["data"].map { |c| c["id"] }
         expect(ids).to include(own_contract.id)
         expect(ids).not_to include(other_contract.id)
       end
@@ -48,7 +48,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         get "/api/v1/contracts", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
 
-        ids = response.parsed_body.map { |c| c["id"] }
+        ids = response.parsed_body["data"].map { |c| c["id"] }
         expect(ids).to include(own_contract.id)
         expect(ids).to include(other_contract.id)
       end
