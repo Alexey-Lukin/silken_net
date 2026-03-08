@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe Tree, type: :model do
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    allow_any_instance_of(described_class).to receive(:broadcast_map_update)
   end
 
   describe "after_create callbacks" do
@@ -173,8 +173,8 @@ RSpec.describe Tree, type: :model do
         active = create(:tree, status: :active)
         dormant = create(:tree, status: :dormant)
 
-        expect(Tree.active).to include(active)
-        expect(Tree.active).not_to include(dormant)
+        expect(described_class.active).to include(active)
+        expect(described_class.active).not_to include(dormant)
       end
     end
 
@@ -183,8 +183,8 @@ RSpec.describe Tree, type: :model do
         located = create(:tree, latitude: 49.4, longitude: 32.0)
         unlocated = create(:tree, latitude: nil, longitude: nil)
 
-        expect(Tree.geolocated).to include(located)
-        expect(Tree.geolocated).not_to include(unlocated)
+        expect(described_class.geolocated).to include(located)
+        expect(described_class.geolocated).not_to include(unlocated)
       end
     end
 
@@ -196,8 +196,8 @@ RSpec.describe Tree, type: :model do
         recent = create(:tree)
         recent.update_columns(last_seen_at: 1.hour.ago)
 
-        expect(Tree.silent).to include(silent)
-        expect(Tree.silent).not_to include(recent)
+        expect(described_class.silent).to include(silent)
+        expect(described_class.silent).not_to include(recent)
       end
     end
   end

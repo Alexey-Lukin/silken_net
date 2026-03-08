@@ -116,7 +116,7 @@ RSpec.describe ParametricInsurance, type: :model do
 
     context "when insurance is not active" do
       it "does nothing" do
-        insurance.update_column(:status, ParametricInsurance.statuses[:triggered])
+        insurance.update_column(:status, described_class.statuses[:triggered])
 
         expect {
           insurance.evaluate_daily_health!(target_date)

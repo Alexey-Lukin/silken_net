@@ -14,7 +14,7 @@ RSpec.describe Api::V1::WalletsController, type: :request do
   let!(:wallet) { tree.wallet || create(:wallet, tree: tree) }
 
   describe "GET /api/v1/wallets" do
-    context "as admin" do
+    context "when as admin" do
       let(:admin) { create(:user, :admin, organization: organization) }
       let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
@@ -26,7 +26,7 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       end
     end
 
-    context "as super_admin" do
+    context "when as super_admin" do
       let(:super_admin) { create(:user, :super_admin, organization: organization) }
       let(:headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
 
@@ -37,7 +37,7 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       end
     end
 
-    context "as regular user" do
+    context "when as regular user" do
       let(:user) { create(:user, organization: organization) }
       let(:headers) { { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}" } }
 

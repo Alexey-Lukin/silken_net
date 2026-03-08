@@ -7,6 +7,7 @@ module Api
       include ActionController::MimeResponds
       include ActionController::Helpers
       include Pagy::Method
+      include Pundit::Authorization
 
       # --- ПОРЯДОК ЗАХИСТУ ---
       before_action :authenticate_user!
@@ -19,6 +20,7 @@ module Api
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
       rescue_from ActionController::ParameterMissing, with: :render_parameter_missing
       rescue_from ActiveModel::ValidationError, with: :render_validation_error
+      rescue_from Pundit::NotAuthorizedError, with: :render_forbidden_pundit
 
       # --- ХЕЛПЕРИ ДОСТУПУ ---
       # Робимо методи доступними в Phlex-компонентах через хелпери Rails
@@ -46,11 +48,15 @@ module Api
         @current_user
       end
 
+      # Pundit використовує pundit_user для визначення поточного користувача.
+      # За замовчуванням це current_user, але ми визначаємо явно для ясності.
+      alias_method :pundit_user, :current_user
+
       def signed_in?
         current_user.present?
       end
 
-      # 2. ПРАВА ДОСТУПУ (RBAC)
+      # 2. ПРАВА ДОСТУПУ (RBAC) — Legacy хелпери для поступової міграції
       def authorize_admin!
         render_forbidden unless current_user&.role_admin? || current_user&.role_super_admin?
       end
@@ -81,6 +87,10 @@ module Api
       end
 
       def render_forbidden
+        render json: { error: "Недостатньо прав для цієї еволюції." }, status: :forbidden
+      end
+
+      def render_forbidden_pundit(_exception)
         render json: { error: "Недостатньо прав для цієї еволюції." }, status: :forbidden
       end
 

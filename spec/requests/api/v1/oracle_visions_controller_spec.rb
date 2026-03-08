@@ -23,7 +23,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       allow(Rails.cache).to receive(:fetch).with("oracle_expected_yield_24h", anything).and_return(1.5)
     end
 
-    context "as JSON" do
+    context "when as JSON" do
       it "returns visions and yield forecast for forester" do
         get "/api/v1/oracle_visions", headers: forester_headers, as: :json
         expect(response).to have_http_status(:ok)
@@ -39,7 +39,7 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       end
     end
 
-    context "as HTML" do
+    context "when as HTML" do
       it "renders the dashboard page" do
         get "/api/v1/oracle_visions", headers: forester_headers
         expect(response).to have_http_status(:ok)

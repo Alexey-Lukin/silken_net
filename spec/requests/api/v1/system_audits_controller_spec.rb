@@ -23,7 +23,7 @@ RSpec.describe Api::V1::SystemAuditsController, type: :request do
   end
 
   describe "GET /api/v1/system_audits" do
-    context "as JSON" do
+    context "when as JSON" do
       it "returns the audit results" do
         get "/api/v1/system_audits", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
@@ -52,7 +52,7 @@ RSpec.describe Api::V1::SystemAuditsController, type: :request do
       end
     end
 
-    context "as HTML" do
+    context "when as HTML" do
       it "renders the dashboard page" do
         get "/api/v1/system_audits", headers: headers
         expect(response).to have_http_status(:ok)

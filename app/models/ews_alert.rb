@@ -2,7 +2,8 @@
 
 class EwsAlert < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
-  belongs_to :cluster
+  # [FIX]: cluster optional — дерево може бути без кластера (одиноке дерево / тестова інсталяція)
+  belongs_to :cluster, optional: true
   belongs_to :tree, optional: true
   belongs_to :resolver, class_name: "User", foreign_key: "resolved_by", optional: true
 

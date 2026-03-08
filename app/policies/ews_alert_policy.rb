@@ -1,0 +1,21 @@
+# frozen_string_literal: true
+
+class EwsAlertPolicy < ApplicationPolicy
+  def index?
+    true
+  end
+
+  def resolve?
+    forester_or_above?
+  end
+
+  class Scope < ApplicationPolicy::Scope
+    def resolve
+      if super_admin?
+        scope.all
+      else
+        scope.joins(:cluster).where(clusters: { organization_id: user.organization_id })
+      end
+    end
+  end
+end

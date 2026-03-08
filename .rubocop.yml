@@ -1,11 +1,38 @@
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
-# Overwrite or add rules to create your own house style
-#
-# # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
-# Layout/SpaceInsideArrayLiteralBrackets:
-#   Enabled: false
+require:
+  - rubocop-rspec
 
 Bundler/OrderedGems:
   Enabled: true
+
+# --- RSpec cops ---
+RSpec/MultipleExpectations:
+  Max: 10
+
+RSpec/ExampleLength:
+  Max: 30
+
+RSpec/NestedGroups:
+  Max: 5
+
+# IoT-телеметрія потребує багато let-хелперів для повного стеку (tree→cluster→org→gateway)
+RSpec/MultipleMemoizedHelpers:
+  Max: 15
+
+# allow_any_instance_of — поступова міграція
+RSpec/AnyInstance:
+  Enabled: false
+
+# Дозволяємо expect(Logger) для перевірки логування
+RSpec/MessageSpies:
+  Enabled: false
+
+# Блокчейн/IoT сервіси використовують double для зовнішніх API (Polygon RPC, CoAP)
+RSpec/VerifiedDoubles:
+  Enabled: false
+
+# Іменовані let з індексами (tree1, tree2) допустимі для парних порівнянь
+RSpec/IndexedLet:
+  Enabled: false

@@ -23,7 +23,7 @@ RSpec.describe Organization, type: :model do
     end
 
     it "has audit_logs with delete_all dependency strategy" do
-      reflection = Organization.reflect_on_association(:audit_logs)
+      reflection = described_class.reflect_on_association(:audit_logs)
       expect(reflection.options[:dependent]).to eq(:delete_all)
     end
   end
@@ -184,7 +184,7 @@ RSpec.describe Organization, type: :model do
     end
 
     it "defaults data_region to eu-west" do
-      org = Organization.new
+      org = described_class.new
       expect(org.data_region).to eq("eu-west")
     end
   end

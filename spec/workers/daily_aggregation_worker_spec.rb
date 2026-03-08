@@ -77,7 +77,7 @@ RSpec.describe DailyAggregationWorker, type: :worker do
       end
     end
 
-    context "error handling" do
+    context "when error handling" do
       it "handles invalid date format" do
         expect(Rails.logger).to receive(:error).with(/Невірний формат дати/)
 

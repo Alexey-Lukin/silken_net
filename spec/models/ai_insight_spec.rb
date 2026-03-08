@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe AiInsight, type: :model do
   describe "#status_label" do
     it "returns 'Fraud Detected' when fraud_detected is true" do
-      insight = AiInsight.new(
+      insight = described_class.new(
         insight_type: :daily_health_summary,
         target_date: Date.yesterday,
         stress_index: 0.1,
@@ -16,7 +16,7 @@ RSpec.describe AiInsight, type: :model do
     end
 
     it "returns 'Stable' for healthy summary without fraud" do
-      insight = AiInsight.new(
+      insight = described_class.new(
         insight_type: :daily_health_summary,
         target_date: Date.yesterday,
         stress_index: 0.1,
@@ -27,7 +27,7 @@ RSpec.describe AiInsight, type: :model do
     end
 
     it "returns 'Stressed' for high stress summary" do
-      insight = AiInsight.new(
+      insight = described_class.new(
         insight_type: :daily_health_summary,
         target_date: Date.yesterday,
         stress_index: 0.5,
@@ -38,7 +38,7 @@ RSpec.describe AiInsight, type: :model do
     end
 
     it "returns 'Forecast' for non-summary types" do
-      insight = AiInsight.new(
+      insight = described_class.new(
         insight_type: :drought_probability,
         target_date: Date.tomorrow
       )
@@ -47,7 +47,7 @@ RSpec.describe AiInsight, type: :model do
     end
 
     it "returns 'Stable' when stress_index is nil" do
-      insight = AiInsight.new(
+      insight = described_class.new(
         insight_type: :daily_health_summary,
         target_date: Date.yesterday,
         stress_index: nil,
@@ -60,7 +60,7 @@ RSpec.describe AiInsight, type: :model do
 
   describe "#contract_breach?" do
     it "returns true for daily summary with stress_index >= 0.8" do
-      insight = AiInsight.new(
+      insight = described_class.new(
         insight_type: :daily_health_summary,
         target_date: Date.yesterday,
         stress_index: BigDecimal("0.8")
@@ -70,7 +70,7 @@ RSpec.describe AiInsight, type: :model do
     end
 
     it "returns false for daily summary with stress_index < 0.8" do
-      insight = AiInsight.new(
+      insight = described_class.new(
         insight_type: :daily_health_summary,
         target_date: Date.yesterday,
         stress_index: BigDecimal("0.79")
@@ -80,7 +80,7 @@ RSpec.describe AiInsight, type: :model do
     end
 
     it "returns false when stress_index is nil" do
-      insight = AiInsight.new(
+      insight = described_class.new(
         insight_type: :daily_health_summary,
         target_date: Date.yesterday,
         stress_index: nil
@@ -90,7 +90,7 @@ RSpec.describe AiInsight, type: :model do
     end
 
     it "returns false for non-summary types even with high stress" do
-      insight = AiInsight.new(
+      insight = described_class.new(
         insight_type: :drought_probability,
         target_date: Date.tomorrow,
         stress_index: BigDecimal("0.9")
@@ -101,7 +101,7 @@ RSpec.describe AiInsight, type: :model do
 
     it "uses decimal precision, not float" do
       # BigDecimal("0.8") == 0.8 exactly, no floating point drift
-      insight = AiInsight.new(
+      insight = described_class.new(
         insight_type: :daily_health_summary,
         target_date: Date.yesterday,
         stress_index: BigDecimal("0.8")
@@ -119,7 +119,7 @@ RSpec.describe AiInsight, type: :model do
       create(:ai_insight, analyzable: tree, fraud_detected: false, target_date: 2.days.ago,
              insight_type: :drought_probability)
 
-      expect(AiInsight.fraudulent).to eq([ fraud ])
+      expect(described_class.fraudulent).to eq([ fraud ])
     end
   end
 

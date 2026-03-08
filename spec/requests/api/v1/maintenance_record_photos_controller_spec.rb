@@ -34,7 +34,7 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       )
     end
 
-    context "as JSON" do
+    context "when as JSON" do
       it "purges the photo and returns ok" do
         record.photos.attach(
           io: StringIO.new("fake-image-data"),
@@ -58,7 +58,7 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       end
     end
 
-    context "as HTML" do
+    context "when as HTML" do
       it "redirects after purging the photo" do
         record.photos.attach(
           io: StringIO.new("fake-image-data"),

@@ -60,7 +60,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to).with("telemetry_stream", anything)
     end
 
-    context "dual-key rotation (grace period)" do
+    context "when dual-key rotation (grace period)" do
       it "decrypts with previous key when current key fails" do
         old_key = key_record.binary_key.dup
         # Ротуємо ключ — тепер old_key стає previous
@@ -89,7 +89,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       end
     end
 
-    context "gateway identification" do
+    context "when gateway identification" do
       it "finds gateway by UID (priority)" do
         raw_data = "TEST"
         encrypted = encrypt_payload(raw_data, key_record.binary_key)

@@ -23,7 +23,7 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
   end
 
   describe "#perform" do
-    context "first chunk (chunk_index=0)" do
+    context "when first chunk (chunk_index=0)" do
       it "sets gateway state to updating" do
         described_class.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)
 
@@ -49,7 +49,7 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
       end
     end
 
-    context "last chunk" do
+    context "when last chunk" do
       it "sets gateway state to idle and updates firmware version" do
         described_class.new.perform(gateway.uid, "firmware", firmware.id, 2, 0)
 
@@ -73,7 +73,7 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
       end
     end
 
-    context "firmware type routing" do
+    context "when firmware type routing" do
       it "handles mruby firmware type" do
         described_class.new.perform(gateway.uid, "mruby", firmware.id, 0, 0)
 
@@ -96,7 +96,7 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
       end
     end
 
-    context "chunk failure handling" do
+    context "when chunk failure handling" do
       it "retries on CoAP failure" do
         allow(CoapClient).to receive(:put).and_raise(Timeout::Error)
 

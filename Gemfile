@@ -14,6 +14,7 @@ gem "kamal", require: false
 gem "pagy"
 gem "pg"
 gem "phlex-rails"
+gem "pundit"
 gem "prawn"
 gem "prawn-table"
 gem "propshaft"
@@ -46,6 +47,7 @@ group :development, :test do
   gem "prosopite"
   gem "rspec-rails"
   gem "rubocop-rails-omakase", require: false
+  gem "rubocop-rspec", require: false
 end
 
 group :development do

@@ -34,7 +34,7 @@ RSpec.configure do |config|
   config.filter_run_when_matching :focus
 
   # Clear Sidekiq queues before each example so jobs don't bleed between tests.
-  config.before(:each) do
+  config.before do
     Sidekiq::Job.clear_all
   end
 

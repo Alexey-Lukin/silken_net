@@ -13,6 +13,20 @@ RSpec.describe BlockchainMintingService do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     allow(BlockchainConfirmationWorker).to receive(:perform_in)
+unless defined?(Kredis)
+      kredis_mod = Module.new do
+        def self.lock(*, **, &block)
+          block&.call
+        end
+      end
+      stub_const("Kredis", kredis_mod)
+end
+
+    allow(Eth::Client).to receive(:create).and_return(mock_client)
+    allow(Eth::Key).to receive(:new).and_return(mock_key)
+    allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
+    allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: fake_tx_hash)
+    allow(Kredis).to receive(:lock).and_yield
   end
 
   let(:fake_tx_hash) { "0x" + "f" * 64 }
@@ -21,24 +35,6 @@ RSpec.describe BlockchainMintingService do
   let(:mock_contract) { double("contract") }
   let(:mock_lock) { double("kredis_lock") }
 
-  before do
-    # Kredis може бути відсутнім у тестовому середовищі
-    unless defined?(Kredis)
-      kredis_mod = Module.new do
-        def self.lock(*, **, &block)
-          block&.call
-        end
-      end
-      stub_const("Kredis", kredis_mod)
-    end
-
-    allow(Eth::Client).to receive(:create).and_return(mock_client)
-    allow(Eth::Key).to receive(:new).and_return(mock_key)
-    allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
-    allow(mock_client).to receive(:get_balance).and_return(1 * 10**18)
-    allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
-    allow(Kredis).to receive(:lock).and_yield
-  end
 
   describe ".call" do
     context "when no pending transactions exist" do

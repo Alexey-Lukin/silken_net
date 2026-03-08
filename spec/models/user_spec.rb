@@ -26,7 +26,7 @@ RSpec.describe User, type: :model do
     end
 
     it "requires password on create" do
-      user = User.new(email_address: "test@example.com", password: nil, role: :investor)
+      user = described_class.new(email_address: "test@example.com", password: nil, role: :investor)
       expect(user).not_to be_valid
       expect(user.errors[:password]).to be_present
     end
@@ -69,7 +69,7 @@ RSpec.describe User, type: :model do
 
   describe "email normalization" do
     it "normalizes email_address to downcase and strips whitespace" do
-      user = User.new(email_address: "  ADMIN@EXAMPLE.COM  ", password: "password12345", role: :admin)
+      user = described_class.new(email_address: "  ADMIN@EXAMPLE.COM  ", password: "password12345", role: :admin)
       user.valid?
       expect(user.email_address).to eq("admin@example.com")
     end
@@ -87,7 +87,7 @@ RSpec.describe User, type: :model do
 
   describe "role enum" do
     it "defaults to investor" do
-      user = User.new
+      user = described_class.new
       expect(user.role).to eq("investor")
     end
 
