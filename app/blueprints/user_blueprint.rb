@@ -13,6 +13,8 @@ class UserBlueprint < Blueprinter::Base
   view :profile do
     fields :email_address, :first_name, :last_name, :role, :last_seen_at
     field(:full_name) { |user| user.full_name }
+    field(:mfa_enabled) { |user| user.mfa_enabled? }
+    field(:has_password) { |user| user.password_digest.present? }
   end
 
   # Список екіпажу (використовується в GET /api/v1/users)

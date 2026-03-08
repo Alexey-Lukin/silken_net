@@ -10,6 +10,6 @@ class OrganizationBlueprint < Blueprinter::Base
   end
 
   view :show do
-    fields :name, :crypto_public_address, :billing_email, :created_at
+    fields :name, :crypto_public_address, :billing_email, :data_region, :created_at
   end
 end

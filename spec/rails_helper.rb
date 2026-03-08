@@ -44,3 +44,6 @@ RSpec.configure do |config|
   # ActiveSupport time helpers: travel_to, freeze_time, etc.
   config.include ActiveSupport::Testing::TimeHelpers
 end
+
+# Load support files (Cuprite config, shared contexts, etc.)
+Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }

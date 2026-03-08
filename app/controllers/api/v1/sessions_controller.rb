@@ -34,7 +34,7 @@ module Api
         end
       end
 
-      # --- OMNIAUTH ВХІД (Google/Apple/LinkedIn) ---
+      # --- OMNIAUTH ВХІД (Google/Apple/LinkedIn/Facebook/Twitter) ---
       # Маршрут: get/post '/auth/:provider/callback'
       def omniauth_create
         auth = request.env["omniauth.auth"]
@@ -47,7 +47,14 @@ module Api
           u.role = :investor # Ранг за замовчуванням
         end
 
-        # 2. Прив'язуємо ідентичність через наш оновлений метод (v2.0)
+        # 2. Перевіряємо чи ідентичність заблокована (Account Takeover Protection)
+        existing_identity = Identity.find_by(provider: auth.provider, uid: auth.uid)
+        if existing_identity&.locked?
+          redirect_to api_v1_login_path, alert: "Цей метод входу заблоковано. Зверніться до адміністратора або використайте інший метод."
+          return
+        end
+
+        # 3. Прив'язуємо ідентичність через наш оновлений метод (v2.0)
         Identity.find_or_create_from_auth_hash(auth, user: user)
 
         establish_session(user)
