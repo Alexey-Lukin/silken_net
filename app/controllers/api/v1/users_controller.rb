@@ -9,6 +9,7 @@ module Api
       # GET /api/v1/users
       def index
         authorize_admin!
+        return if performed?
         scope = current_user.organization.users.order(last_seen_at: :desc, id: :desc)
 
         respond_to do |format|
