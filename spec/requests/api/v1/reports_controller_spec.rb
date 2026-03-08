@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require "csv"
 
 RSpec.describe Api::V1::ReportsController, type: :request do
   let(:organization) { create(:organization) }
@@ -21,7 +22,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
   end
 
   describe "GET /api/v1/reports/carbon_absorption" do
-    it "returns a carbon absorption report" do
+    it "returns a carbon absorption report as JSON" do
       get "/api/v1/reports/carbon_absorption", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
@@ -29,16 +30,56 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       expect(body["report"]).to eq("carbon_absorption")
       expect(body["data"]).to include("total_carbon_points", "wallets_count")
     end
+
+    it "returns a carbon absorption report as CSV" do
+      get "/api/v1/reports/carbon_absorption.csv", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/csv")
+
+      rows = CSV.parse(response.body)
+      expect(rows[0]).to eq([ "Carbon Absorption Report" ])
+      expect(rows[1][0]).to eq("Organization")
+      expect(rows[1][1]).to eq(organization.name)
+      expect(rows[4]).to eq(%w[Metric Value])
+      expect(rows[5][0]).to eq("Total Carbon Points")
+    end
+
+    it "returns a carbon absorption report as PDF" do
+      get "/api/v1/reports/carbon_absorption.pdf", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/pdf")
+      expect(response.body).to start_with("%PDF")
+    end
   end
 
   describe "GET /api/v1/reports/financial_summary" do
-    it "returns a financial summary report" do
+    it "returns a financial summary report as JSON" do
       get "/api/v1/reports/financial_summary", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
       body = response.parsed_body
       expect(body["report"]).to eq("financial_summary")
       expect(body["data"]).to include("total_invested", "blockchain_transactions")
+    end
+
+    it "returns a financial summary report as CSV" do
+      get "/api/v1/reports/financial_summary.csv", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/csv")
+
+      rows = CSV.parse(response.body)
+      expect(rows[0]).to eq([ "Financial Summary Report" ])
+      expect(rows[1][0]).to eq("Organization")
+      expect(rows[1][1]).to eq(organization.name)
+      expect(rows[4]).to eq(%w[Metric Value])
+      expect(rows[5][0]).to eq("Total Invested")
+    end
+
+    it "returns a financial summary report as PDF" do
+      get "/api/v1/reports/financial_summary.pdf", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/pdf")
+      expect(response.body).to start_with("%PDF")
     end
   end
 end

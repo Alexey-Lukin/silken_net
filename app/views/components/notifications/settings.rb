@@ -42,6 +42,7 @@ module Notifications
           render_field("Email Address", "email", @user.email_address, disabled: true, hint: "Змінити email можна в профілі.")
           render_field("Phone Number (E.164)", "phone_number", @user.phone_number, placeholder: "+380501234567")
           render_field("Telegram Chat ID", "telegram_chat_id", @user.telegram_chat_id, placeholder: "123456789")
+          render_field("Push Token", "push_token", @user.push_token, placeholder: "FCM or APNs token")
 
           div(class: "pt-4 border-t border-emerald-900/30") do
             button(type: "submit", class: "px-6 py-2 border border-emerald-500 text-[10px] uppercase tracking-widest text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all") { "Save Channels →" }
@@ -77,6 +78,7 @@ module Notifications
           channel_status("📧 Email", @user.email_address.present?)
           channel_status("📱 SMS / Phone", @user.phone_number.present?)
           channel_status("✈️ Telegram", @user.telegram_chat_id.present?)
+          channel_status("🔔 Push", @user.push_token.present?)
         end
       end
 

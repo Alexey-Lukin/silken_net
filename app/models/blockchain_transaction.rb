@@ -12,6 +12,20 @@ class BlockchainTransaction < ApplicationRecord
   # Поліморфний зв'язок для аудиту (Напр. AiInsight, EwsAlert або NaasContract)
   belongs_to :sourceable, polymorphic: true, optional: true
 
+  # ---------------------------------------------------------------------------
+  # SCALABILITY NOTE (Series D — Planetary Scale)
+  # ---------------------------------------------------------------------------
+  # При масштабуванні до мільярдів транзакцій (кожне дерево мінтить SCC щомісяця)
+  # ця таблиця стане найбільшою в базі. Рекомендується:
+  # 1. PostgreSQL Declarative Partitioning по created_at (RANGE, monthly/quarterly)
+  # 2. Альтернатива: партиціювання по cluster_id (LIST) для географічної ізоляції
+  # 3. pg_partman для автоматичного створення та maintenance нових партицій
+  # Приклад:
+  #   CREATE TABLE blockchain_transactions (...) PARTITION BY RANGE (created_at);
+  #   CREATE TABLE blockchain_transactions_2026_q1 PARTITION OF blockchain_transactions
+  #     FOR VALUES FROM ('2026-01-01') TO ('2026-04-01');
+  # ---------------------------------------------------------------------------
+
   # --- ТИПИ ТА СТАТУСИ (The Web3 State Machine) ---
   enum :token_type, { carbon_coin: 0, forest_coin: 1 }, prefix: true
 

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module Api
   module V1
     class ReportsController < BaseController
@@ -57,6 +59,17 @@ module Api
               data: @data
             }
           end
+          format.csv do
+            stream_csv("carbon_absorption_#{org.id}_#{Date.current}.csv") do |yielder|
+              generate_carbon_csv_enum(org, @data).each { |row| yielder << row }
+            end
+          end
+          format.pdf do
+            send_data generate_carbon_pdf(org, @data),
+                      filename: "carbon_absorption_#{org.id}_#{Date.current}.pdf",
+                      type: "application/pdf",
+                      disposition: "inline"
+          end
           format.html do
             render_dashboard(
               title: "Carbon Absorption Report",
@@ -96,6 +109,17 @@ module Api
               data: @data
             }
           end
+          format.csv do
+            stream_csv("financial_summary_#{org.id}_#{Date.current}.csv") do |yielder|
+              generate_financial_csv_enum(org, @data).each { |row| yielder << row }
+            end
+          end
+          format.pdf do
+            send_data generate_financial_pdf(org, @data),
+                      filename: "financial_summary_#{org.id}_#{Date.current}.pdf",
+                      type: "application/pdf",
+                      disposition: "inline"
+          end
           format.html do
             render_dashboard(
               title: "Financial Summary Report",
@@ -103,6 +127,139 @@ module Api
             )
           end
         end
+      end
+
+      private
+
+      # --- CSV Streaming ---
+      # Використовуємо Enumerator для стрімінгу CSV-рядків до клієнта.
+      # Це дозволяє обробляти мільйони рядків без навантаження на пам'ять.
+      # Для summary-звітів це 4-5 рядків, але при масштабуванні до per-tree exports
+      # (мільярди дерев) стрімінг критичний.
+
+      def stream_csv(filename, &block)
+        headers["Content-Disposition"] = "attachment; filename=\"#{filename}\""
+        headers["Content-Type"] = "text/csv"
+        headers["Cache-Control"] = "no-cache"
+
+        self.response_body = Enumerator.new(&block)
+      end
+
+      def generate_carbon_csv_enum(org, data)
+        Enumerator.new do |yielder|
+          yielder << CSV.generate_line([ "Carbon Absorption Report" ])
+          yielder << CSV.generate_line([ "Organization", org.name ])
+          yielder << CSV.generate_line([ "Generated At", Time.current.iso8601 ])
+          yielder << CSV.generate_line([])
+          yielder << CSV.generate_line(%w[Metric Value])
+          yielder << CSV.generate_line([ "Total Carbon Points", data[:total_carbon_points] ])
+          yielder << CSV.generate_line([ "Active Wallets", data[:wallets_count] ])
+          yielder << CSV.generate_line([ "Active Trees", data[:trees_active] ])
+          yielder << CSV.generate_line([ "Total Trees", data[:trees_total] ])
+        end
+      end
+
+      def generate_financial_csv_enum(org, data)
+        tx = data[:blockchain_transactions]
+
+        Enumerator.new do |yielder|
+          yielder << CSV.generate_line([ "Financial Summary Report" ])
+          yielder << CSV.generate_line([ "Organization", org.name ])
+          yielder << CSV.generate_line([ "Generated At", Time.current.iso8601 ])
+          yielder << CSV.generate_line([])
+          yielder << CSV.generate_line(%w[Metric Value])
+          yielder << CSV.generate_line([ "Total Invested", data[:total_invested] ])
+          yielder << CSV.generate_line([ "Active Contracts", data[:active_contracts] ])
+          yielder << CSV.generate_line([ "Total Contracts", data[:total_contracts] ])
+          yielder << CSV.generate_line([])
+          yielder << CSV.generate_line([ "Blockchain Transactions" ])
+          yielder << CSV.generate_line([ "Total", tx[:total] ])
+          yielder << CSV.generate_line([ "Confirmed", tx[:confirmed] ])
+          yielder << CSV.generate_line([ "Pending", tx[:pending] ])
+          yielder << CSV.generate_line([ "Failed", tx[:failed] ])
+        end
+      end
+
+      # --- PDF Generators (Prawn) ---
+      # Prawn будує PDF в пам'яті (потребує повну структуру документа).
+      # Для великих звітів (мільйони рядків) рекомендується генерувати PDF
+      # у фоновому Sidekiq-воркері та зберігати результат в Active Storage,
+      # а клієнту повертати URL для скачування.
+
+      def generate_carbon_pdf(org, data)
+        Prawn::Document.new do |pdf|
+          pdf.text "Carbon Absorption Report", size: 20, style: :bold
+          pdf.move_down 10
+          pdf.text "Organization: #{org.name}", size: 12
+          pdf.text "Generated: #{Time.current.strftime('%d.%m.%Y %H:%M UTC')}", size: 10, color: "666666"
+          pdf.move_down 20
+
+          pdf.table(
+            [
+              [ "Metric", "Value" ],
+              [ "Total Carbon Points", data[:total_carbon_points].to_s ],
+              [ "Active Wallets", data[:wallets_count].to_s ],
+              [ "Active Trees", data[:trees_active].to_s ],
+              [ "Total Trees", data[:trees_total].to_s ]
+            ],
+            header: true,
+            width: pdf.bounds.width,
+            cell_style: { size: 10, padding: 8 }
+          ) do |t|
+            t.row(0).font_style = :bold
+            t.row(0).background_color = "10b981"
+            t.row(0).text_color = "ffffff"
+          end
+        end.render
+      end
+
+      def generate_financial_pdf(org, data)
+        tx = data[:blockchain_transactions]
+
+        Prawn::Document.new do |pdf|
+          pdf.text "Financial Summary Report", size: 20, style: :bold
+          pdf.move_down 10
+          pdf.text "Organization: #{org.name}", size: 12
+          pdf.text "Generated: #{Time.current.strftime('%d.%m.%Y %H:%M UTC')}", size: 10, color: "666666"
+          pdf.move_down 20
+
+          pdf.table(
+            [
+              [ "Metric", "Value" ],
+              [ "Total Invested", data[:total_invested].to_s ],
+              [ "Active Contracts", data[:active_contracts].to_s ],
+              [ "Total Contracts", data[:total_contracts].to_s ]
+            ],
+            header: true,
+            width: pdf.bounds.width,
+            cell_style: { size: 10, padding: 8 }
+          ) do |t|
+            t.row(0).font_style = :bold
+            t.row(0).background_color = "10b981"
+            t.row(0).text_color = "ffffff"
+          end
+
+          pdf.move_down 20
+          pdf.text "Blockchain Transactions Breakdown", size: 14, style: :bold
+          pdf.move_down 10
+
+          pdf.table(
+            [
+              [ "Category", "Count" ],
+              [ "Total", tx[:total].to_s ],
+              [ "Confirmed", tx[:confirmed].to_s ],
+              [ "Pending", tx[:pending].to_s ],
+              [ "Failed", tx[:failed].to_s ]
+            ],
+            header: true,
+            width: pdf.bounds.width,
+            cell_style: { size: 10, padding: 8 }
+          ) do |t|
+            t.row(0).font_style = :bold
+            t.row(0).background_color = "10b981"
+            t.row(0).text_color = "ffffff"
+          end
+        end.render
       end
     end
   end

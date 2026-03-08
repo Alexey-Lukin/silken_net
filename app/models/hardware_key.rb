@@ -10,6 +10,18 @@ class HardwareKey < ApplicationRecord
   encrypts :aes_key_hex
   encrypts :previous_aes_key_hex
 
+  # ---------------------------------------------------------------------------
+  # SCALABILITY NOTE (Series D — High Concurrency Telemetry)
+  # ---------------------------------------------------------------------------
+  # При мільйонах запитів на розшифровку (decryption) десеріалізація зашифрованих
+  # ключів ActiveRecord Encryption створить навантаження на CPU.
+  # Рекомендується:
+  # 1. Кешувати binary_key у захищеному Redis (з TTL 5-15 хв),
+  #    щоб не дешифрувати їх із бази при кожному пакеті телеметрії.
+  # 2. Ключ кешу: "hw_key:#{device_uid}:bin", значення: зашифровано на рівні Redis (TLS + ACL)
+  # 3. Інвалідація: при rotate_key! видаляти кеш-запис негайно.
+  # ---------------------------------------------------------------------------
+
   # --- ЗВ'ЯЗКИ ---
   # Зв'язок із Солдатом (Tree) через DID
   belongs_to :tree, foreign_key: :device_uid, primary_key: :did, optional: true
