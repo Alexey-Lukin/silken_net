@@ -9,6 +9,44 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+--
+-- Name: postgis; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION postgis; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION postgis IS 'PostGIS geometry and geography spatial types and functions';
+
+
+--
+-- Name: sync_cluster_geo_boundary(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.sync_cluster_geo_boundary() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NEW.geojson_polygon IS NOT NULL
+     AND NEW.geojson_polygon->>'type' IS NOT NULL
+     AND NEW.geojson_polygon->>'coordinates' IS NOT NULL THEN
+    BEGIN
+      NEW.geo_boundary := ST_SetSRID(ST_GeomFromGeoJSON(NEW.geojson_polygon::text), 4326);
+    EXCEPTION WHEN OTHERS THEN
+      NEW.geo_boundary := NULL;
+    END;
+  ELSE
+    NEW.geo_boundary := NULL;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -216,7 +254,8 @@ CREATE TABLE public.ai_insights (
     reasoning jsonb,
     recommendation jsonb,
     fraud_detected boolean DEFAULT false NOT NULL,
-    model_source character varying
+    model_source character varying,
+    source_log_ids bigint[] DEFAULT '{}'::bigint[]
 );
 
 
@@ -266,7 +305,8 @@ CREATE TABLE public.audit_logs (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     ip_address character varying,
-    user_agent character varying
+    user_agent character varying,
+    chain_hash character varying
 );
 
 
@@ -440,7 +480,8 @@ CREATE TABLE public.clusters (
     organization_id bigint,
     environmental_settings jsonb,
     health_index double precision,
-    active_trees_count integer DEFAULT 0 NOT NULL
+    active_trees_count integer DEFAULT 0 NOT NULL,
+    geo_boundary public.geometry(Geometry,4326)
 );
 
 
@@ -1237,7 +1278,12 @@ CREATE TABLE public.tiny_ml_models (
     tree_family_id bigint,
     min_firmware_version character varying,
     model_format character varying,
-    rollout_percentage integer DEFAULT 0
+    rollout_percentage integer DEFAULT 0,
+    true_positive_rate numeric(5,4),
+    false_positive_rate numeric(5,4),
+    total_predictions integer DEFAULT 0 NOT NULL,
+    confirmed_predictions integer DEFAULT 0 NOT NULL,
+    drift_checked_at timestamp(6) without time zone
 );
 
 
@@ -2285,6 +2331,13 @@ CREATE INDEX index_ai_insights_on_analyzable ON public.ai_insights USING btree (
 
 
 --
+-- Name: index_ai_insights_on_source_log_ids; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ai_insights_on_source_log_ids ON public.ai_insights USING gin (source_log_ids);
+
+
+--
 -- Name: index_audit_logs_on_action; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2317,6 +2370,13 @@ CREATE INDEX index_audit_logs_on_ip_address ON public.audit_logs USING btree (ip
 --
 
 CREATE INDEX index_audit_logs_on_org_and_created ON public.audit_logs USING btree (organization_id, created_at DESC);
+
+
+--
+-- Name: index_audit_logs_on_org_id_and_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_audit_logs_on_org_id_and_id ON public.audit_logs USING btree (organization_id, id DESC);
 
 
 --
@@ -2387,6 +2447,13 @@ CREATE INDEX index_blockchain_transactions_on_wallet_id ON public.blockchain_tra
 --
 
 CREATE INDEX index_blockchain_transactions_on_wallet_id_and_status ON public.blockchain_transactions USING btree (wallet_id, status);
+
+
+--
+-- Name: index_clusters_on_geo_boundary; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_clusters_on_geo_boundary ON public.clusters USING gist (geo_boundary);
 
 
 --
@@ -3258,6 +3325,13 @@ ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telem
 
 
 --
+-- Name: clusters trigger_sync_cluster_geo_boundary; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trigger_sync_cluster_geo_boundary BEFORE INSERT OR UPDATE OF geojson_polygon ON public.clusters FOR EACH ROW EXECUTE FUNCTION public.sync_cluster_geo_boundary();
+
+
+--
 -- Name: gateway_telemetry_logs fk_gateway_telemetry_logs_gateway_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3544,6 +3618,10 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260308101003'),
+('20260308101002'),
+('20260308101001'),
+('20260308101000'),
 ('20260308095001'),
 ('20260308095000'),
 ('20260308070000'),
