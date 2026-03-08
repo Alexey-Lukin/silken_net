@@ -104,7 +104,7 @@ module Gateways
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Network Configuration" }
         div(class: "space-y-4 font-mono text-[11px]") do
           config_row("Cluster", @gateway.cluster.name)
-          config_row("Sleep Interval", "#{@gateway.config_sleep_interval || 60}s")
+          config_row("Sleep Interval", "#{@gateway.config_sleep_interval_s || 60}s")
           config_row("Mesh Mode", "Enabled")
 
           button(class: "w-full mt-4 p-2 border border-emerald-800 text-[10px] uppercase text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all") do

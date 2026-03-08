@@ -21,13 +21,13 @@ module Clusters
       div(class: "flex justify-between items-start mb-6") do
         div do
           h3(class: "text-lg font-light tracking-widest text-emerald-400 uppercase") { @cluster.name }
-          p(class: "text-[10px] font-mono text-emerald-800") { "ID: #{@cluster.slug || @cluster.id}" }
+          p(class: "text-[10px] font-mono text-emerald-800") { "ID: #{@cluster.id}" }
         end
 
         # Статус кластера (на основі AI інсайтів або алертів)
         div(class: tokens(
           "h-2 w-2 rounded-full",
-          @cluster.ews_alerts.active.any? ? "bg-red-500 animate-pulse" : "bg-emerald-500"
+          @cluster.ews_alerts.unresolved.any? ? "bg-red-500 animate-pulse" : "bg-emerald-500"
         ))
       end
     end
@@ -35,7 +35,7 @@ module Clusters
     def stats_section
       div(class: "grid grid-cols-2 gap-4 mb-6") do
         stat_block("Trees", @cluster.trees.count)
-        stat_block("Health", "#{@cluster.health_score || 100}%")
+        stat_block("Health", "#{(@cluster.health_index * 100).round}%")
       end
     end
 

@@ -41,7 +41,7 @@ module Users
       tr(class: "hover:bg-emerald-950/10 transition-colors group") do
         td(class: "p-4") do
           div(class: "flex items-center space-x-3") do
-            div(class: "h-8 w-8 rounded-full bg-emerald-900/20 border border-emerald-800 flex items-center justify-center text-emerald-500 font-bold") { user.first_name[0] }
+            div(class: "h-8 w-8 rounded-full bg-emerald-900/20 border border-emerald-800 flex items-center justify-center text-emerald-500 font-bold") { user.first_name&.first || user.email_address.first }
             span(class: "text-emerald-100") { "#{user.first_name} #{user.last_name}" }
           end
         end

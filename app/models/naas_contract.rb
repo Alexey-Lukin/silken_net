@@ -133,6 +133,14 @@ class NaasContract < ApplicationRecord
     { refund: refund, fee: calculate_early_exit_fee, burned: should_burn }
   end
 
+  # Відсоток виконання контракту за обсягом емісії відносно вкладених коштів.
+  # Використовується для індикатора прогресу у вьюхах (Contracts::Index).
+  def current_yield_performance
+    return 0 if total_funding.nil? || total_funding.zero?
+
+    (emitted_tokens.to_f / total_funding * 100).clamp(0, 100).round
+  end
+
   private
 
   # [ВИПРАВЛЕНО]: Ліквідація Race Condition.

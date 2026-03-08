@@ -36,7 +36,7 @@ module Actuators
         end
 
         div(class: "mt-4 md:mt-0 flex space-x-6 text-[10px] font-mono") do
-          stat_label("Active Nodes", @actuators.count { |a| a.status == "active" })
+          stat_label("Active Nodes", @actuators.count { |a| a.active? })
           stat_label("Total Units", @actuators.count)
         end
       end

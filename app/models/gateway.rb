@@ -7,6 +7,9 @@ class Gateway < ApplicationRecord
   # Zero-Trust: Унікальний ключ для розшифровки батчів (DID Королеви = device_uid ключа)
   has_one :hardware_key, foreign_key: :device_uid, primary_key: :uid, dependent: :destroy
 
+  # Дерева в секторі (через кластер) — використовується у вьюхах для відображення підлеглих
+  has_many :trees, through: :cluster
+
   # Телеметрія дерев та власна діагностика Королеви
   has_many :telemetry_logs, foreign_key: :queen_uid, primary_key: :uid, dependent: :nullify
   has_many :gateway_telemetry_logs, foreign_key: :queen_uid, primary_key: :uid, dependent: :delete_all
@@ -107,7 +110,7 @@ class Gateway < ApplicationRecord
 
   # Чи потребує Королева уваги патрульного?
   def system_fault?
-    cluster&.ews_alerts&.unresolved&.system_fault&.exists? || battery_critical?
+    cluster&.ews_alerts&.unresolved&.alert_type_system_fault&.exists? || battery_critical?
   end
 
   # [ВИПРАВЛЕНО]: Блискавична перевірка без SQL запитів до логів.

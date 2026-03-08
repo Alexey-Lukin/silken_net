@@ -25,7 +25,7 @@ module Users
         div(class: "flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-10") do
           # Аватар-плейсхолдер
           div(class: "h-32 w-32 rounded-none border-2 border-emerald-500 bg-emerald-950 flex items-center justify-center") do
-            span(class: "text-5xl font-extralight text-emerald-400") { @user.first_name[0] }
+            span(class: "text-5xl font-extralight text-emerald-400") { @user.first_name&.first || @user.email_address.first }
           end
 
           div(class: "text-center md:text-left") do

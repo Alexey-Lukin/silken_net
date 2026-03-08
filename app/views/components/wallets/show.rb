@@ -68,7 +68,7 @@ module Wallets
         div(class: "space-y-4 font-mono text-[10px]") do
           div do
             p(class: "text-gray-600 mb-1 uppercase") { "Polygon Address" }
-            p(class: "text-emerald-400 break-all leading-relaxed hover:text-emerald-300 transition-colors") { @wallet.address }
+            p(class: "text-emerald-400 break-all leading-relaxed hover:text-emerald-300 transition-colors") { @wallet.crypto_public_address || "NOT_PROVISIONED" }
           end
           div do
             p(class: "text-gray-600 mb-1 uppercase") { "Network" }
