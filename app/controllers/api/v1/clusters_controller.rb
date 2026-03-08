@@ -10,9 +10,9 @@ module Api
       # GET /api/v1/clusters
       def index
         # Скоупимо до організації поточного користувача (Security Scope)
-        @pagy, @clusters = pagy(
-          current_user.organization.clusters.includes(:ews_alerts)
-        )
+        # active_threats? використовує EXISTS з composite index — includes не потрібен.
+        # health_index та active_trees_count — денормалізовані колонки на clusters.
+        @pagy, @clusters = pagy(current_user.organization.clusters)
 
         respond_to do |format|
           # 1. API Response (Mobile / Externals)

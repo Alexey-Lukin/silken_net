@@ -29,7 +29,7 @@ module Api
       # --- ПРОФІЛЬ ОРГАНІЗАЦІЇ (Deep Audit) ---
       def show
         @organization = Organization.find(params[:id])
-        @clusters = @organization.clusters.includes(:trees)
+        @clusters = @organization.clusters
 
         @performance = {
           total_trees: @organization.cached_trees_count,
