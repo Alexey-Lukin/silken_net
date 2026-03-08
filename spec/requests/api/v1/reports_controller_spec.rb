@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require "csv"
 
 RSpec.describe Api::V1::ReportsController, type: :request do
   let(:organization) { create(:organization) }
@@ -34,8 +35,20 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       get "/api/v1/reports/carbon_absorption.csv", headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/csv")
-      expect(response.body).to include("Carbon Absorption Report")
-      expect(response.body).to include("Total Carbon Points")
+
+      rows = CSV.parse(response.body)
+      expect(rows[0]).to eq([ "Carbon Absorption Report" ])
+      expect(rows[1][0]).to eq("Organization")
+      expect(rows[1][1]).to eq(organization.name)
+      expect(rows[4]).to eq(%w[Metric Value])
+      expect(rows[5][0]).to eq("Total Carbon Points")
+    end
+
+    it "returns a carbon absorption report as PDF" do
+      get "/api/v1/reports/carbon_absorption.pdf", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/pdf")
+      expect(response.body).to start_with("%PDF")
     end
   end
 
@@ -53,8 +66,20 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       get "/api/v1/reports/financial_summary.csv", headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/csv")
-      expect(response.body).to include("Financial Summary Report")
-      expect(response.body).to include("Total Invested")
+
+      rows = CSV.parse(response.body)
+      expect(rows[0]).to eq([ "Financial Summary Report" ])
+      expect(rows[1][0]).to eq("Organization")
+      expect(rows[1][1]).to eq(organization.name)
+      expect(rows[4]).to eq(%w[Metric Value])
+      expect(rows[5][0]).to eq("Total Invested")
+    end
+
+    it "returns a financial summary report as PDF" do
+      get "/api/v1/reports/financial_summary.pdf", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("application/pdf")
+      expect(response.body).to start_with("%PDF")
     end
   end
 end

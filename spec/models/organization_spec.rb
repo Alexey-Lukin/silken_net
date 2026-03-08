@@ -138,5 +138,30 @@ RSpec.describe Organization, type: :model do
       org = build(:organization, crypto_public_address: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B")
       expect(org).to be_valid
     end
+
+    it "validates alert_threshold_critical_z must be positive" do
+      org = build(:organization, alert_threshold_critical_z: -1)
+      expect(org).not_to be_valid
+    end
+
+    it "validates alert_threshold_critical_z must be at most 10" do
+      org = build(:organization, alert_threshold_critical_z: 11)
+      expect(org).not_to be_valid
+    end
+
+    it "accepts valid alert_threshold_critical_z" do
+      org = build(:organization, alert_threshold_critical_z: 3.5)
+      expect(org).to be_valid
+    end
+
+    it "validates ai_sensitivity must be between 0 and 1" do
+      org = build(:organization, ai_sensitivity: 1.5)
+      expect(org).not_to be_valid
+    end
+
+    it "accepts valid ai_sensitivity" do
+      org = build(:organization, ai_sensitivity: 0.85)
+      expect(org).to be_valid
+    end
   end
 end
