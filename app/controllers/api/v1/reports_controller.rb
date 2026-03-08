@@ -60,9 +60,9 @@ module Api
             }
           end
           format.csv do
-            send_data generate_carbon_csv(org, @data),
-                      filename: "carbon_absorption_#{org.id}_#{Date.current}.csv",
-                      type: "text/csv"
+            stream_csv("carbon_absorption_#{org.id}_#{Date.current}.csv") do |yielder|
+              generate_carbon_csv_enum(org, @data).each { |row| yielder << row }
+            end
           end
           format.pdf do
             send_data generate_carbon_pdf(org, @data),
@@ -110,9 +110,9 @@ module Api
             }
           end
           format.csv do
-            send_data generate_financial_csv(org, @data),
-                      filename: "financial_summary_#{org.id}_#{Date.current}.csv",
-                      type: "text/csv"
+            stream_csv("financial_summary_#{org.id}_#{Date.current}.csv") do |yielder|
+              generate_financial_csv_enum(org, @data).each { |row| yielder << row }
+            end
           end
           format.pdf do
             send_data generate_financial_pdf(org, @data),
@@ -131,44 +131,60 @@ module Api
 
       private
 
-      # --- CSV Generators ---
+      # --- CSV Streaming ---
+      # Використовуємо Enumerator для стрімінгу CSV-рядків до клієнта.
+      # Це дозволяє обробляти мільйони рядків без навантаження на пам'ять.
+      # Для summary-звітів це 4-5 рядків, але при масштабуванні до per-tree exports
+      # (мільярди дерев) стрімінг критичний.
 
-      def generate_carbon_csv(org, data)
-        CSV.generate do |csv|
-          csv << [ "Carbon Absorption Report" ]
-          csv << [ "Organization", org.name ]
-          csv << [ "Generated At", Time.current.iso8601 ]
-          csv << []
-          csv << %w[Metric Value]
-          csv << [ "Total Carbon Points", data[:total_carbon_points] ]
-          csv << [ "Active Wallets", data[:wallets_count] ]
-          csv << [ "Active Trees", data[:trees_active] ]
-          csv << [ "Total Trees", data[:trees_total] ]
+      def stream_csv(filename, &block)
+        headers["Content-Disposition"] = "attachment; filename=\"#{filename}\""
+        headers["Content-Type"] = "text/csv"
+        headers["Cache-Control"] = "no-cache"
+
+        self.response_body = Enumerator.new(&block)
+      end
+
+      def generate_carbon_csv_enum(org, data)
+        Enumerator.new do |yielder|
+          yielder << CSV.generate_line([ "Carbon Absorption Report" ])
+          yielder << CSV.generate_line([ "Organization", org.name ])
+          yielder << CSV.generate_line([ "Generated At", Time.current.iso8601 ])
+          yielder << CSV.generate_line([])
+          yielder << CSV.generate_line(%w[Metric Value])
+          yielder << CSV.generate_line([ "Total Carbon Points", data[:total_carbon_points] ])
+          yielder << CSV.generate_line([ "Active Wallets", data[:wallets_count] ])
+          yielder << CSV.generate_line([ "Active Trees", data[:trees_active] ])
+          yielder << CSV.generate_line([ "Total Trees", data[:trees_total] ])
         end
       end
 
-      def generate_financial_csv(org, data)
+      def generate_financial_csv_enum(org, data)
         tx = data[:blockchain_transactions]
 
-        CSV.generate do |csv|
-          csv << [ "Financial Summary Report" ]
-          csv << [ "Organization", org.name ]
-          csv << [ "Generated At", Time.current.iso8601 ]
-          csv << []
-          csv << %w[Metric Value]
-          csv << [ "Total Invested", data[:total_invested] ]
-          csv << [ "Active Contracts", data[:active_contracts] ]
-          csv << [ "Total Contracts", data[:total_contracts] ]
-          csv << []
-          csv << [ "Blockchain Transactions" ]
-          csv << [ "Total", tx[:total] ]
-          csv << [ "Confirmed", tx[:confirmed] ]
-          csv << [ "Pending", tx[:pending] ]
-          csv << [ "Failed", tx[:failed] ]
+        Enumerator.new do |yielder|
+          yielder << CSV.generate_line([ "Financial Summary Report" ])
+          yielder << CSV.generate_line([ "Organization", org.name ])
+          yielder << CSV.generate_line([ "Generated At", Time.current.iso8601 ])
+          yielder << CSV.generate_line([])
+          yielder << CSV.generate_line(%w[Metric Value])
+          yielder << CSV.generate_line([ "Total Invested", data[:total_invested] ])
+          yielder << CSV.generate_line([ "Active Contracts", data[:active_contracts] ])
+          yielder << CSV.generate_line([ "Total Contracts", data[:total_contracts] ])
+          yielder << CSV.generate_line([])
+          yielder << CSV.generate_line([ "Blockchain Transactions" ])
+          yielder << CSV.generate_line([ "Total", tx[:total] ])
+          yielder << CSV.generate_line([ "Confirmed", tx[:confirmed] ])
+          yielder << CSV.generate_line([ "Pending", tx[:pending] ])
+          yielder << CSV.generate_line([ "Failed", tx[:failed] ])
         end
       end
 
       # --- PDF Generators (Prawn) ---
+      # Prawn будує PDF в пам'яті (потребує повну структуру документа).
+      # Для великих звітів (мільйони рядків) рекомендується генерувати PDF
+      # у фоновому Sidekiq-воркері та зберігати результат в Active Storage,
+      # а клієнту повертати URL для скачування.
 
       def generate_carbon_pdf(org, data)
         Prawn::Document.new do |pdf|
