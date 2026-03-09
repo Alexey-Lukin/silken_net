@@ -96,7 +96,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
         new_password_confirmation: "new_secure_pass_1"
       }, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "rejects too short new password" do
@@ -106,7 +106,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
         new_password_confirmation: "short"
       }, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["error"]).to include("12")
     end
 
@@ -117,7 +117,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
         new_password_confirmation: "different_password"
       }, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "allows setting password without current_password when user has no password (OAuth-only)" do
@@ -153,7 +153,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
 
       delete "/api/v1/account_security/identities/#{identity.id}", headers: headers, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(Identity.find_by(id: identity.id)).to be_present
     end
 

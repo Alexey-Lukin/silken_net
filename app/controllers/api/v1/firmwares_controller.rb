@@ -66,7 +66,7 @@ module Api
         if params[:firmware][:binary_file].present?
           uploaded_file = params[:firmware][:binary_file]
           if uploaded_file.size > MAX_FIRMWARE_SIZE
-            render json: { error: "Розмір файлу перевищує ліміт #{MAX_FIRMWARE_SIZE / 1.megabyte} МБ." }, status: :unprocessable_entity
+            render json: { error: "Розмір файлу перевищує ліміт #{MAX_FIRMWARE_SIZE / 1.megabyte} МБ." }, status: :unprocessable_content
             return
           end
 

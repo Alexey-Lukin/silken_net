@@ -47,7 +47,7 @@ module Api
           end
         else
           respond_to do |format|
-            format.json { render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity }
+            format.json { render json: { errors: current_user.errors.full_messages }, status: :unprocessable_content }
             format.html do
               render_dashboard(
                 title: "Notification Channels",

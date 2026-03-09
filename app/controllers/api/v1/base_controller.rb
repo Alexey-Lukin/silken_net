@@ -104,7 +104,7 @@ module Api
       end
 
       def render_validation_error(record)
-        render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
+        render json: { errors: record.errors.full_messages }, status: :unprocessable_content
       end
 
       def render_internal_server_error(exception)
