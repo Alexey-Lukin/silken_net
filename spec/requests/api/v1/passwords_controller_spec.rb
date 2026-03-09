@@ -80,7 +80,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
         password_confirmation: "new_password_123"
       }, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "rejects password shorter than 12 characters" do
@@ -92,7 +92,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
         password_confirmation: "short"
       }, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["error"]).to include("12")
     end
 
@@ -105,7 +105,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
         password_confirmation: "different_password"
       }, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["error"]).to include("не співпадають")
     end
   end

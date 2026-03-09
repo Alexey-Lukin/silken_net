@@ -98,7 +98,7 @@ RSpec.describe "User authentication and session lifecycle" do
     end
 
     it "validates phone number format (E.164)" do
-      user = build(:user, phone_number: "123", organization: organization)
+      user = build(:user, phone_number: "0123", organization: organization)
       expect(user).not_to be_valid
     end
   end

@@ -53,7 +53,7 @@ module Api
 
         if user.nil?
           respond_to do |format|
-            format.json { render json: { error: "Токен скидання невалідний або протермінований." }, status: :unprocessable_entity }
+            format.json { render json: { error: "Токен скидання невалідний або протермінований." }, status: :unprocessable_content }
             format.html { redirect_to api_v1_forgot_password_path, alert: "Токен протермінований. Запросіть скидання повторно." }
           end
           return
@@ -61,7 +61,7 @@ module Api
 
         if params[:password].to_s.length < 12
           respond_to do |format|
-            format.json { render json: { error: "Пароль повинен містити мінімум 12 символів." }, status: :unprocessable_entity }
+            format.json { render json: { error: "Пароль повинен містити мінімум 12 символів." }, status: :unprocessable_content }
             format.html do
               flash.now[:alert] = "Пароль повинен містити мінімум 12 символів."
               render Passwords::Reset.new(token: params[:token])
@@ -72,7 +72,7 @@ module Api
 
         if params[:password] != params[:password_confirmation]
           respond_to do |format|
-            format.json { render json: { error: "Паролі не співпадають." }, status: :unprocessable_entity }
+            format.json { render json: { error: "Паролі не співпадають." }, status: :unprocessable_content }
             format.html do
               flash.now[:alert] = "Паролі не співпадають."
               render Passwords::Reset.new(token: params[:token])

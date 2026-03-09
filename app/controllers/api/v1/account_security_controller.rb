@@ -63,7 +63,7 @@ module Api
         # Не можна відв'язати всіх провайдерів, якщо немає пароля
         if current_user.password_digest.blank? && current_user.identities.active.count <= 1
           respond_to do |format|
-            format.json { render json: { error: "Неможливо відв'язати останній метод входу без пароля." }, status: :unprocessable_entity }
+            format.json { render json: { error: "Неможливо відв'язати останній метод входу без пароля." }, status: :unprocessable_content }
             format.html { redirect_to api_v1_account_security_path, alert: "Встановіть пароль перед відв'язкою останнього провайдера." }
           end
           return
@@ -106,7 +106,7 @@ module Api
       def change_password
         if current_user.password_digest.present? && !current_user.authenticate(params[:current_password])
           respond_to do |format|
-            format.json { render json: { error: "Поточний пароль невірний." }, status: :unprocessable_entity }
+            format.json { render json: { error: "Поточний пароль невірний." }, status: :unprocessable_content }
             format.html { redirect_to api_v1_account_security_path, alert: "Поточний пароль невірний." }
           end
           return
@@ -114,7 +114,7 @@ module Api
 
         if params[:new_password].to_s.length < 12
           respond_to do |format|
-            format.json { render json: { error: "Новий пароль повинен містити мінімум 12 символів." }, status: :unprocessable_entity }
+            format.json { render json: { error: "Новий пароль повинен містити мінімум 12 символів." }, status: :unprocessable_content }
             format.html { redirect_to api_v1_account_security_path, alert: "Пароль повинен містити мінімум 12 символів." }
           end
           return
@@ -122,7 +122,7 @@ module Api
 
         if params[:new_password] != params[:new_password_confirmation]
           respond_to do |format|
-            format.json { render json: { error: "Паролі не співпадають." }, status: :unprocessable_entity }
+            format.json { render json: { error: "Паролі не співпадають." }, status: :unprocessable_content }
             format.html { redirect_to api_v1_account_security_path, alert: "Паролі не співпадають." }
           end
           return
