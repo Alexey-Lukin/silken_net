@@ -87,9 +87,7 @@ module Api
       private
 
       def find_contract(id)
-        contract = NaasContract.find(id)
-        authorize contract, :show?
-        contract
+        policy_scope(NaasContract).find(id)
       end
 
       # [ОПТИМІЗАЦІЯ]: Використовуємо SQL average для економії RAM

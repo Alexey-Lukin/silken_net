@@ -544,7 +544,7 @@ ALTER SEQUENCE public.device_calibrations_id_seq OWNED BY public.device_calibrat
 
 CREATE TABLE public.ews_alerts (
     id bigint NOT NULL,
-    cluster_id bigint NOT NULL,
+    cluster_id bigint,
     tree_id bigint,
     severity integer,
     alert_type integer,
@@ -3626,6 +3626,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260309070000'),
 ('20260308160000'),
 ('20260308143801'),
 ('20260308143800'),

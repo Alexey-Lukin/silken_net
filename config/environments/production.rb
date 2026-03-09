@@ -45,8 +45,10 @@ Rails.application.configure do
   config.log_tags = [ :request_id ]
   config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
 
-  # Change to "debug" to log everything (including potentially personally-identifiable information!).
-  config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
+  # [COST CONTROL]: Default to "warn" in production to avoid massive Cloud Logging bills.
+  # INFO-level logs from millions of telemetry events can cost more than the infrastructure.
+  # Override with RAILS_LOG_LEVEL=info only for debugging sessions.
+  config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "warn")
 
   # Prevent health checks from clogging up the logs.
   config.silence_healthcheck_path = "/up"
