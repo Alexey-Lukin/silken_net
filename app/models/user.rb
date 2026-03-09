@@ -64,6 +64,10 @@ class User < ApplicationRecord
     password_salt&.last(10)
   end
 
+  generates_token_for :stream_access, expires_in: 1.hour do
+    password_salt&.last(10)
+  end
+
   # --- МЕТОДИ ---
 
   def forest_commander?

@@ -47,7 +47,12 @@ module Api
       # GET /api/v1/contracts/:id
       def show
         @contract = find_contract(params[:id])
-        @emission_history = @contract.blockchain_transactions.confirmed.limit(10)
+        @emission_history = BlockchainTransaction
+          .joins(:wallet)
+          .where(wallets: { organization_id: @contract.organization_id })
+          .where(status: :confirmed)
+          .order(created_at: :desc)
+          .limit(10)
 
         respond_to do |format|
           format.json do
@@ -57,7 +62,7 @@ module Api
               backing_asset: {
                 cluster_health: @contract.cluster.health_index,
                 active_trees: @contract.cluster.active_trees_count,
-                active_threats: @contract.cluster.ews_alerts.active.any?
+                active_threats: @contract.cluster.ews_alerts.unresolved.any?
               }
             }
           end

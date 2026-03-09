@@ -141,6 +141,11 @@ class NaasContract < ApplicationRecord
     (emitted_tokens.to_f / total_funding * 100).clamp(0, 100).round
   end
 
+  # Whether the backing cluster currently has active EWS alerts
+  def active_threats?
+    cluster&.ews_alerts&.unresolved&.any? || false
+  end
+
   private
 
   # [ВИПРАВЛЕНО]: Ліквідація Race Condition.

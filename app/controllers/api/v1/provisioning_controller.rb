@@ -31,7 +31,13 @@ module Api
 
         ActiveRecord::Base.transaction do
           @device = build_device(provisioning_params)
-          @device.did ||= "SNET-#{provisioning_params[:hardware_uid].last(8).upcase}"
+
+          if @device.is_a?(Tree)
+            @device.did ||= "SNET-#{provisioning_params[:hardware_uid].last(8).upcase}"
+            device_identifier = @device.did
+          else
+            device_identifier = @device.uid
+          end
 
           if @device.save
             # КРИПТОГРАФІЧНА ПРОПИСКА
@@ -43,12 +49,13 @@ module Api
               user: current_user,
               action_type: :installation,
               performed_at: Time.current,
-              notes: "Ініціація вузла завершена. DID: #{@device.did}. Hardware UID: #{provisioning_params[:hardware_uid]}"
+              notes: "Ініціація вузла завершена. DID: #{device_identifier}. Hardware UID: #{provisioning_params[:hardware_uid]}",
+              skip_photo_validation: true
             )
 
             respond_to do |format|
               format.json do
-                render json: { did: @device.did, aes_key: @key_hex, device: @device }, status: :created
+                render json: { did: device_identifier, aes_key: @key_hex, device: @device }, status: :created
               end
               format.html do
                 # Показуємо результат ритуалу (ключ та DID)

@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :hardware_key do
-    sequence(:device_uid) { |n| "SNET-%08X" % n }
+    sequence(:device_uid, 900_000) { |n| "SNET-%08X" % n }
     aes_key_hex { SecureRandom.hex(32).upcase }
     previous_aes_key_hex { nil }
 

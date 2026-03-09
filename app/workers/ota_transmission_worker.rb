@@ -21,7 +21,7 @@ class OtaTransmissionWorker
     # 2. ПАКУВАННЯ (Hardware-Aligned Packaging)
     # Отримуємо нарізані пакети з заголовками [0x99][Index][Total]
     ota_data = OtaPackagerService.prepare(firmware_obj, chunk_size: CHUNK_SIZE)
-    packages = ota_data[:packages]
+    packages = ota_data[:packages].to_a
     total_chunks = ota_data[:manifest][:total_chunks]
 
     # Переводимо Королеву в режим оновлення тільки при першому чанку

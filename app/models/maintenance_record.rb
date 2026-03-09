@@ -38,6 +38,9 @@ class MaintenanceRecord < ApplicationRecord
   validates :latitude,  numericality: { in: -90..90 },    allow_nil: true
   validates :longitude, numericality: { in: -180..180 },  allow_nil: true
 
+  # System-generated records (provisioning, slashing) may skip photo requirement
+  attr_accessor :skip_photo_validation
+
   # Evidence Protocol: фото обов'язкові при монтажі та ремонті
   validate :photos_required_for_critical_actions
 
@@ -85,6 +88,7 @@ class MaintenanceRecord < ApplicationRecord
 
   # Trust Protocol: ремонт і монтаж без фото — не proof of care, а просто слова.
   def photos_required_for_critical_actions
+    return if skip_photo_validation
     return unless action_type_repair? || action_type_installation?
     return if photos.any?
 

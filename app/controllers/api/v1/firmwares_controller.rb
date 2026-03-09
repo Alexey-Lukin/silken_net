@@ -142,7 +142,7 @@ module Api
       private
 
       def firmware_params
-        params.require(:firmware).permit(:version, :binary_file, :target_hardware, :notes, :target_hardware_type, :tree_family_id)
+        params.require(:firmware).permit(:version, :binary_file, :target_hardware, :notes, :target_hardware_type, :tree_family_id, :bytecode_payload)
       end
     end
   end
