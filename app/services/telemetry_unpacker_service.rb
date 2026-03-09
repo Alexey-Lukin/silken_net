@@ -14,6 +14,9 @@ class TelemetryUnpackerService
   SAFE_VOLTAGE_RANGE = (0..5000)      # 0 - 5В
   SAFE_TEMP_RANGE    = (-45..90)      # Від арктичних до тропічних пожеж
 
+  # DID-сентинел: Королева передає власну телеметрію з DID = 0x00000000
+  QUEEN_SENTINEL_DID = "0"
+
   def self.call(binary_batch, gateway_id = nil)
     new(binary_batch, gateway_id).perform
   end
@@ -22,6 +25,7 @@ class TelemetryUnpackerService
     @binary_batch = binary_batch
     @gateway = Gateway.find_by(id: gateway_id)
     @trees_cache = {}
+    @latest_firmware_id = nil
   end
 
   def perform
@@ -52,7 +56,8 @@ class TelemetryUnpackerService
   def process_chunk(chunk)
     # 1. МАРШРУТИЗАЦІЯ (L2 Header від Королеви)
     # DID Солдата, який відправив пакет через LoRa
-    hex_did = chunk[0..3].unpack1("N").to_s(16).upcase
+    raw_did = chunk[0..3].unpack1("N")
+    hex_did = raw_did.to_s(16).upcase
 
     # RSSI (якість сигналу в точці прийому Королевою)
     inverted_rssi = chunk[4].unpack1("C")
@@ -61,6 +66,13 @@ class TelemetryUnpackerService
     # 2. РОЗПАКОВКА БІО-МЕТРИКИ (L3 Payload)
     payload = chunk[5..20]
     parsed_data = payload.unpack(PAYLOAD_FORMAT)
+
+    # [СЕНТИНЕЛ]: DID = 0x00000000 — це "нульовий" пакет Королеви з її власною телеметрією.
+    # Маршрутизуємо дані в GatewayTelemetryWorker замість створення TelemetryLog.
+    if raw_did.zero? && @gateway
+      route_queen_health(parsed_data)
+      return
+    end
 
     # [СЕНСОРНИЙ ШУМ]: Перевірка на "адекватність" значень перед коммітом
     unless valid_sensor_data?(parsed_data)
@@ -147,6 +159,10 @@ class TelemetryUnpackerService
       # Нарахування балів у гаманець Солдата
       tree.wallet.credit!(log.growth_points) if log.growth_points.positive?
 
+      # [OTA MISMATCH]: Якщо дерево повідомляє firmware_version_id, що відрізняється від
+      # актуальної прошивки — позначаємо дерево як fw_pending для повторної роздачі OTA.
+      check_firmware_mismatch!(tree, log.firmware_version_id)
+
       # Аналіз аномалій Оракулом тривог
       AlertDispatchService.analyze_and_trigger!(log)
     end
@@ -165,5 +181,49 @@ class TelemetryUnpackerService
       Tree.where(id: tree.id).update_all(health_streak: 0)
       tree.health_streak = 0
     end
+  end
+
+  # [OTA MISMATCH DETECTION]: Перевіряємо, чи прошивка дерева актуальна.
+  # Якщо дерево повідомляє firmware_version_id, що відрізняється від найновішої
+  # активної BioContractFirmware для типу Tree, — позначаємо дерево для OTA-оновлення.
+  # Кешуємо latest_firmware_id на рівні батчу (1 SQL-запит на весь пакет).
+  def check_firmware_mismatch!(tree, reported_firmware_id)
+    return if reported_firmware_id.blank?
+
+    latest_id = latest_tree_firmware_id
+    return if latest_id.nil?
+    return if reported_firmware_id == latest_id
+
+    # Дерево працює на застарілій прошивці — позначаємо як fw_pending
+    # (тільки якщо не вже в процесі оновлення)
+    return unless tree.firmware_fw_idle? || tree.firmware_fw_completed? || tree.firmware_fw_failed?
+
+    Tree.where(id: tree.id).update_all(firmware_update_status: :fw_pending)
+    Rails.logger.info "🔄 [OTA Mismatch] Дерево #{tree.did}: firmware #{reported_firmware_id} != latest #{latest_id}. Позначено fw_pending."
+  end
+
+  # Lazy-кешований ID останньої активної прошивки для дерев (1 запит на весь батч)
+  def latest_tree_firmware_id
+    return @latest_firmware_id if defined?(@latest_firmware_id_loaded)
+
+    @latest_firmware_id_loaded = true
+    @latest_firmware_id = BioContractFirmware.active
+                                             .where(target_hardware_type: "Tree")
+                                             .order(id: :desc)
+                                             .pick(:id)
+  end
+
+  # [СЕНТИНЕЛ КОРОЛЕВИ]: Маршрутизація "нульового" пакета з власною телеметрією Королеви
+  # до GatewayTelemetryWorker. Формат Payload однаковий: Vcap(2B), Temp(1B), Acoustic→CSQ(1B).
+  def route_queen_health(parsed_data)
+    GatewayTelemetryWorker.perform_async(
+      @gateway.uid,
+      {
+        voltage_mv: parsed_data[1],           # Vcap Королеви (2 байти, мілівольти)
+        temperature_c: parsed_data[2],         # Температура корпусу Королеви (1 байт)
+        cellular_signal_csq: parsed_data[3]    # CSQ модему (1 байт, використовує поле Acoustic)
+      }
+    )
+    Rails.logger.info "👑 [Sentinel] Королева #{@gateway.uid} повідомляє: #{parsed_data[1]}mV, #{parsed_data[2]}°C, CSQ=#{parsed_data[3]}"
   end
 end

@@ -53,3 +53,7 @@ terraform/*.tfvars
 !terraform/*.tfvars.example
 terraform/.terraform.lock.hcl
 terraform/tfplan
+
+# Firmware test binaries (host-based, compiled with gcc)
+firmware/test/test_queen
+firmware/test/test_soldier

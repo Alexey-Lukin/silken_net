@@ -212,26 +212,32 @@ int main(void)
             // В один 16-байтний пакет влазить 11 байт чистого коду (5 байтів - заголовок: 1 маркер + 2 index + 2 total)
             uint16_t total_chunks = (pending_ota_size + 10) / 11;
 
-            // Формуємо заголовок (0x99 = маркер OTA-пакета, 16-bit big-endian index/total)
-            ota_chunk[0] = 0x99;
-            ota_chunk[1] = (uint8_t)(current_ota_chunk_idx >> 8);
-            ota_chunk[2] = (uint8_t)(current_ota_chunk_idx & 0xFF);
-            ota_chunk[3] = (uint8_t)(total_chunks >> 8);
-            ota_chunk[4] = (uint8_t)(total_chunks & 0xFF);
+            // [FIX: AUDIT] Перевірка індексу перед використанням
+            if (current_ota_chunk_idx < total_chunks) {
+                // Формуємо заголовок (0x99 = маркер OTA-пакета, 16-bit big-endian index/total)
+                ota_chunk[0] = 0x99;
+                ota_chunk[1] = (uint8_t)(current_ota_chunk_idx >> 8);
+                ota_chunk[2] = (uint8_t)(current_ota_chunk_idx & 0xFF);
+                ota_chunk[3] = (uint8_t)(total_chunks >> 8);
+                ota_chunk[4] = (uint8_t)(total_chunks & 0xFF);
 
-            // Копіюємо до 11 байт коду в пакет
-            uint16_t offset = current_ota_chunk_idx * 11;
-            uint8_t bytes_to_copy = (pending_ota_size - offset > 11) ? 11 : (pending_ota_size - offset);
-            memcpy(&ota_chunk[5], &pending_ota_bytecode[offset], bytes_to_copy);
+                // Копіюємо до 11 байт коду в пакет
+                uint16_t offset = current_ota_chunk_idx * 11;
+                // [FIX: AUDIT CRITICAL] Перевірка на підтікання (offset >= pending_ota_size)
+                if (offset < pending_ota_size) {
+                    uint8_t bytes_to_copy = (pending_ota_size - offset > 11) ? 11 : (uint8_t)(pending_ota_size - offset);
+                    memcpy(&ota_chunk[5], &pending_ota_bytecode[offset], bytes_to_copy);
+                }
 
-            // Шифруємо цей шматок коду
-            HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4, (uint32_t*)encrypted_ota, 1000);
+                // Шифруємо цей шматок коду
+                HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4, (uint32_t*)encrypted_ota, 1000);
 
-            // СТРІЛЯЄМО В ЕФІР
-            Radio.Send(encrypted_ota, 16);
+                // СТРІЛЯЄМО В ЕФІР
+                Radio.Send(encrypted_ota, 16);
 
-            // Даємо радіомодулю час фізично передати пакет (бл. 50-60 мс)
-            HAL_Delay(60);
+                // Даємо радіомодулю час фізично передати пакет (бл. 50-60 мс)
+                HAL_Delay(60);
+            }
 
             // Перемикаємося на наступний шматок для наступного дерева
             current_ota_chunk_idx++;
@@ -266,6 +272,24 @@ int main(void)
     // АБО пройшло достатньо часу (наприклад, 1 година = 3 600 000 мс)
     if (cache_count >= (CACHE_MAX_ENTRIES - 5) || (HAL_GetTick() - last_flush_time > 3600000)) {
         if (cache_count > 0) {
+            // [FIX: Queen Health Blind Spot]
+            // Перед скиданням кешу додаємо власний пакет здоров'я Королеви.
+            // DID=0 — зарезервований sentinel, backend розпізнає як gateway health.
+            // Це дозволяє серверу бачити стан шлюзу (температура, рівень сигналу CSQ)
+            // без окремого протоколу.
+            {
+                uint8_t queen_health[16] = {0};
+                // DID = 0x00000000 (sentinel — "це Королева, не дерево")
+                // Bytes 4-5: Тік як proxy для uptime (wraps кожні ~65 секунд при /1000)
+                uint16_t uptime_sec = (uint16_t)(HAL_GetTick() / 1000);
+                queen_health[4] = (uint8_t)(uptime_sec >> 8);
+                queen_health[5] = (uint8_t)(uptime_sec & 0xFF);
+                // Byte 7: Кількість дерев у кеші (навантаження на шлюз)
+                queen_health[7] = cache_count;
+                // Byte 10: Status = homeostasis (0), growth_points = cache_count (proxy for health)
+                queen_health[10] = (cache_count < 63) ? cache_count : 63;
+                Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пакет)
+            }
             Flush_Cache_To_Rails();
             last_flush_time = HAL_GetTick(); // Оновлюємо таймер
         }
@@ -289,6 +313,11 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
     if (size == 16)
     {
         memcpy(incoming_lora_payload, payload, 16);
+        // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128.
+        // Clamp до int8_t діапазону перед приведенням, щоб запобігти
+        // overflow (наприклад, -130 → 126, що б отруїло CIFO eviction).
+        if (rssi < -128) rssi = -128;
+        if (rssi > 127) rssi = 127;
         current_rssi = (int8_t)rssi;
         lora_rx_flag = 1; // Сигналізуємо головному циклу
     }
@@ -322,23 +351,43 @@ void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
             }
         }
     }
-    // 3. CIFO (Closest In Farthest Out): Кеш повний, викидаємо "найдальшого"
+    // 3. CIFO (Priority-Aware Eviction): Кеш повний, витісняємо з розумом.
+    // [FIX: CIFO Blind Spot] Стара логіка завжди викидала дерево з найгіршим RSSI,
+    // але саме це дерево може бути на межі зони пожежі (критичний статус).
+    // Нова логіка: спочатку шукаємо некритичне (status=0) дерево з найгіршим RSSI.
+    // Якщо ВСІ записи критичні — використовуємо fallback на абсолютно найгірший RSSI.
     else {
-        int farthest_idx = 0;
-        int8_t min_rssi = 127; // Початкове значення - максимально можливий сигнал
+        int best_evict_idx = -1;
+        int8_t best_evict_rssi = 127;
 
-        // Шукаємо пакет з найгіршим сигналом (найдальше дерево)
+        int fallback_idx = 0;
+        int8_t fallback_rssi = 127;
+
         for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
-            if(forest_cache[i].rssi < min_rssi) {
-                min_rssi = forest_cache[i].rssi;
-                farthest_idx = i;
+            // [FIX: AUDIT] Перевіряємо is_active щоб не порівнювати неініціалізовані RSSI
+            if (!forest_cache[i].is_active) continue;
+
+            // bio_status з байта 10 пейлоада: біти [7:6]
+            uint8_t bio_status = (forest_cache[i].payload[10] >> 6) & 0x03;
+
+            // Абсолютний fallback — найгірший RSSI серед усіх
+            if (forest_cache[i].rssi < fallback_rssi) {
+                fallback_rssi = forest_cache[i].rssi;
+                fallback_idx = i;
+            }
+
+            // Перевага: витісняємо некритичне (homeostasis, status=0) з найгіршим RSSI
+            if (bio_status == 0 && forest_cache[i].rssi < best_evict_rssi) {
+                best_evict_rssi = forest_cache[i].rssi;
+                best_evict_idx = i;
             }
         }
 
-        // Перезаписуємо найдальше дерево новими критичними даними
-        forest_cache[farthest_idx].uid = uid;
-        memcpy(forest_cache[farthest_idx].payload, payload, 16);
-        forest_cache[farthest_idx].rssi = rssi;
+        int evict_idx = (best_evict_idx >= 0) ? best_evict_idx : fallback_idx;
+
+        forest_cache[evict_idx].uid = uid;
+        memcpy(forest_cache[evict_idx].payload, payload, 16);
+        forest_cache[evict_idx].rssi = rssi;
     }
 }
 
@@ -360,9 +409,9 @@ void Flush_Cache_To_Rails(void)
             binary_batch_buffer[offset++] = (uint8_t)(forest_cache[i].uid & 0xFF);
 
             // Копіюємо 1 байт RSSI. Інвертуємо знак (наприклад, -85 дБм стає 85).
-            // Це гарантує чисту передачу без проблем з Two's complement.
-            // На сервері треба просто помножити це число на -1.
-            binary_batch_buffer[offset++] = (uint8_t)(-forest_cache[i].rssi);
+            // [FIX: AUDIT] Використовуємо (int16_t) приведення для запобігання UB
+            // при rssi == -128 (abs(-128) не вміщується в int8_t).
+            binary_batch_buffer[offset++] = (uint8_t)(-(int16_t)forest_cache[i].rssi);
 
             // Копіюємо 16 байтів розшифрованого фізичного Payload'у
             memcpy(&binary_batch_buffer[offset], forest_cache[i].payload, 16);
@@ -436,6 +485,15 @@ void Flush_Cache_To_Rails(void)
 
     // Закриваємо CoAP сесію, звільняючи ресурси модему
     SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
+
+    // [FIX: CRITICAL — ECB Restoration]
+    // Flush_Cache_To_Rails() переключає CRYP на CBC для шифрування батча.
+    // Якщо не повернути ECB, всі наступні HAL_CRYP_Decrypt() для LoRa-пакетів
+    // від Солдатів будуть використовувати CBC замість ECB → сміття → втрата даних
+    // до наступного перезавантаження Королеви.
+    hcryp.Init.Algorithm = CRYP_AES_ECB;
+    hcryp.Init.pInitVect = NULL;
+    HAL_CRYP_Init(&hcryp);
 }
 
 // =========================================================================
