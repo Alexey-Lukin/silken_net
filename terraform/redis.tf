@@ -1,4 +1,6 @@
 # Memorystore Redis for Sidekiq queues
+# [ZONE COLOCATION]: Redis MUST be in the same zone as compute instances (var.zone)
+# to avoid inter-zone network traffic costs which can bankrupt at scale.
 resource "google_redis_instance" "silken_redis" {
   name           = "silken-redis"
   tier           = var.redis_ha_enabled ? "STANDARD_HA" : "BASIC"
@@ -16,7 +18,11 @@ resource "google_redis_instance" "silken_redis" {
   transit_encryption_mode = "SERVER_AUTHENTICATION"
 
   redis_configs = {
-    maxmemory-policy = "noeviction"
+    # [MEMORY WALL FIX]: volatile-lru evicts only keys WITH an expire (TTL) set,
+    # such as cache entries and silence filters. Sidekiq queue keys have no TTL
+    # and will never be evicted. This prevents Redis OOM crashes when the telemetry
+    # queue grows faster than workers can drain it, while preserving job data.
+    maxmemory-policy = "volatile-lru"
   }
 
   depends_on = [google_project_service.redis]

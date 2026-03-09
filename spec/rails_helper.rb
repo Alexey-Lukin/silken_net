@@ -34,8 +34,10 @@ RSpec.configure do |config|
   config.filter_run_when_matching :focus
 
   # Clear Sidekiq queues before each example so jobs don't bleed between tests.
+  # Clear Rails cache so rate-limit counters and silence filters don't leak across examples.
   config.before do
     Sidekiq::Job.clear_all
+    Rails.cache.clear
   end
 
   # FactoryBot shorthand: create(:user) instead of FactoryBot.create(:user)

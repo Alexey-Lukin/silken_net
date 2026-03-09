@@ -80,3 +80,17 @@ resource "google_artifact_registry_repository" "silken_net" {
 
   depends_on = [google_project_service.artifactregistry]
 }
+
+# ============================================================================
+# Logging Cost Control (The Bill Shield)
+# ============================================================================
+# GCP Cloud Logging charges per ingested GB. Millions of INFO-level logs from
+# telemetry processing, health checks, and background jobs can cost more than
+# the entire infrastructure. Exclude INFO and DEBUG logs from ingestion —
+# only WARNING, ERROR, and CRITICAL reach Cloud Logging.
+
+resource "google_logging_project_exclusion" "exclude_info_logs" {
+  name        = "silken-net-exclude-info-debug"
+  description = "Exclude logs below WARNING severity to reduce Cloud Logging costs. Only WARNING+ are ingested."
+  filter      = "severity < WARNING"
+}

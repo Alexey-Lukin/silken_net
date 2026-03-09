@@ -14,10 +14,10 @@ RSpec.describe EwsAlert, type: :model do
   # ASSOCIATIONS
   # =========================================================================
   describe "associations" do
-    it "belongs to cluster" do
+    it "belongs to cluster (optional)" do
       association = described_class.reflect_on_association(:cluster)
       expect(association.macro).to eq(:belongs_to)
-      expect(association.options[:optional]).to be_falsey
+      expect(association.options[:optional]).to be(true)
     end
 
     it "belongs to tree (optional)" do

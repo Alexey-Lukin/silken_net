@@ -1,21 +1,30 @@
 # frozen_string_literal: true
 
 :concurrency: 15
+:strict: true
 :queues:
+  # Strict ordering: queues are drained top-to-bottom. No lower-priority job
+  # runs while higher-priority work is waiting. Prevents priority inversion.
+  #
+  # [STRICTLY ISOLATED]: Черги обробляються у строгому порядку пріоритету.
+  # Жодна задача з низькопріоритетної черги НЕ буде оброблена, поки є завдання вище.
+  # Це запобігає "priority inversion" — коли критична fire_shutdown команда
+  # застрягне за мільйоном telemetry_logs.
+  #
   # [КРИТИЧНО]: Вхідний потік від Sanctum. Кожна мс на рахунку.
-  - [uplink, 5]    
+  - uplink    
   # [ОПЕРАТИВНО]: Сповіщення патрульних та SMS-шлюзи.
-  - [alerts, 4]    
+  - alerts    
   # [КРИТИЧНО]: Протокол вилучення токенів (Slashing).
-  - [critical, 4]  
+  - critical  
   # [КЕРУВАННЯ]: Команди актуаторам (Downlink) та OTA-прошивки.
-  - [downlink, 3]  
+  - downlink  
   # [СТАНДАРТ]: Звичайні системні задачі та листи.
-  - [default, 2]   
+  - default   
   # [ФІНАНСИ]: Повільні транзакції Polygon (Slashing/Minting).
-  - [web3, 1]      
+  - web3      
   # [АНАЛІТИКА]: Важка нічна агрегація (InsightGenerator).
-  - [low, 1]       
+  - low       
 
 :scheduler:
   :schedule:
