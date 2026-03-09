@@ -8,11 +8,19 @@ module SilkenNet
     # Класичні константи Лоренца
     BASE_SIGMA = 10.0
     BASE_RHO   = 28.0
-    BASE_BETA  = 2.666 # 8.0 / 3.0
+    BASE_BETA  = 8.0 / 3.0 # [FIX: Attractor Sync] Було 2.666 (обрізано), тепер точне значення
 
     # Крок інтегрування та глибина симуляції
     DT = 0.01
     ITERATIONS = 250 # Даємо системі час вийти на траєкторію хаосу
+
+    # [FIX: Attractor Sync] Межі стабільності, ідентичні серверу
+    # (app/services/silken_net/attractor.rb). Без clamp при екстремальних
+    # показниках температури/акустики система вилітає в нескінченність.
+    SIGMA_MIN = 5.0
+    SIGMA_MAX = 30.0
+    RHO_MIN   = 10.0
+    RHO_MAX   = 50.0
 
     def self.calculate_z_axis(seed, temp, acoustic)
       x = ((seed % 1000) / 500.0) - 1.0
@@ -22,6 +30,12 @@ module SilkenNet
       # Пертурбація системи: акустика та температура змінюють константи
       local_sigma = BASE_SIGMA + (acoustic * 0.1)
       local_rho = BASE_RHO + (temp * 0.2)
+
+      # [FIX: Attractor Sync] Clamp — запобігаємо вибуху при екстремальних вхідних
+      local_sigma = SIGMA_MIN if local_sigma < SIGMA_MIN
+      local_sigma = SIGMA_MAX if local_sigma > SIGMA_MAX
+      local_rho = RHO_MIN if local_rho < RHO_MIN
+      local_rho = RHO_MAX if local_rho > RHO_MAX
 
       ITERATIONS.times do
         dx = local_sigma * (y - x)

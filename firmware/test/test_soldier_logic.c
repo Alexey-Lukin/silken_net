@@ -489,7 +489,6 @@ TEST(test_mesh_pingpong_scenario) {
      * A's DID gets evicted and the packet bounces infinitely.
      * With 8 slots, this is prevented for up to 8 unique DIDs. */
     Mesh_DID_Cache_Init();
-    uint32_t tree_a = 0xAAAA;
     uint32_t tree_b = 0xBBBB;
 
     /* Tree A receives from B, caches B */

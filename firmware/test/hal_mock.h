@@ -64,6 +64,11 @@ typedef struct {
 #define RTC_BKP_DR8  8
 #define RTC_BKP_DR9  9
 #define RTC_BKP_DR10 10
+#define RTC_BKP_DR11 11
+#define RTC_BKP_DR12 12
+#define RTC_BKP_DR13 13
+#define RTC_BKP_DR14 14
+#define RTC_BKP_DR15 15
 
 /* ── Stub functions (no-ops) ───────────────────────────────────────── */
 static inline int  HAL_Init(void) { return HAL_OK; }
