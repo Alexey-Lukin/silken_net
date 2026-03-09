@@ -43,7 +43,8 @@ module Api
               user: current_user,
               action_type: :installation,
               performed_at: Time.current,
-              notes: "Ініціація вузла завершена. DID: #{@device.did}. Hardware UID: #{provisioning_params[:hardware_uid]}"
+              notes: "Ініціація вузла завершена. DID: #{@device.did}. Hardware UID: #{provisioning_params[:hardware_uid]}",
+              skip_photo_validation: true
             )
 
             respond_to do |format|
