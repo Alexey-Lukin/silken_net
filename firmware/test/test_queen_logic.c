@@ -817,6 +817,56 @@ TEST(test_cbc_during_flush) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * 9. CBC COMMAND DECRYPTION TESTS
+ * ════════════════════════════════════════════════════════════════════ */
+
+/* Simulates Handle_CoAP_Command CBC→ECB transition:
+ * [СИНХРОНІЗОВАНО з Rails]: ActuatorCommandWorker sends [IV:16][CBC ciphertext]
+ * Queen must switch to CBC for decryption, then restore ECB for LoRa. */
+static void simulate_cmd_cbc_decrypt(void)
+{
+    /* Command arrives: extract IV, switch to CBC */
+    static uint32_t cmd_iv[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+    test_cryp.Init.Algorithm = CRYP_AES_CBC;
+    test_cryp.Init.pInitVect = cmd_iv;
+    HAL_CRYP_Init(&test_cryp);
+
+    /* After decryption: restore ECB for LoRa traffic */
+    test_cryp.Init.Algorithm = CRYP_AES_ECB;
+    test_cryp.Init.pInitVect = NULL;
+    HAL_CRYP_Init(&test_cryp);
+}
+
+TEST(test_cmd_cbc_ecb_restored) {
+    /* ECB must be restored after CBC command decryption */
+    init_cryp_ecb();
+    simulate_cmd_cbc_decrypt();
+    ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_ECB);
+    ASSERT_NULL(test_cryp.Init.pInitVect);
+}
+
+TEST(test_cmd_cbc_during_decrypt) {
+    /* During command decryption, CRYP must be in CBC mode */
+    init_cryp_ecb();
+    static uint32_t cmd_iv[4] = {0x11, 0x22, 0x33, 0x44};
+    test_cryp.Init.Algorithm = CRYP_AES_CBC;
+    test_cryp.Init.pInitVect = cmd_iv;
+    ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_CBC);
+    ASSERT_NOT_NULL(test_cryp.Init.pInitVect);
+}
+
+TEST(test_cmd_cbc_then_flush_cbc_both_restore) {
+    /* Both Handle_CoAP_Command and Flush_Cache_To_Rails use CBC
+     * and both must restore ECB. Simulate both in sequence. */
+    init_cryp_ecb();
+    simulate_cmd_cbc_decrypt();
+    ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_ECB);
+    simulate_flush_cryp_transition();
+    ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_ECB);
+    ASSERT_NULL(test_cryp.Init.pInitVect);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -899,6 +949,11 @@ int main(void)
     RUN(test_ecb_restored_after_flush);
     RUN(test_ecb_before_flush_is_ecb);
     RUN(test_cbc_during_flush);
+
+    printf("\n  CBC Command Decryption:\n");
+    RUN(test_cmd_cbc_ecb_restored);
+    RUN(test_cmd_cbc_during_decrypt);
+    RUN(test_cmd_cbc_then_flush_cbc_both_restore);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

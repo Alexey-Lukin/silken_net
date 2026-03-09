@@ -466,14 +466,15 @@ void Flush_Cache_To_Rails(void)
     // 1. Початок команди.
     // URI-Path: /telemetry/batch/<queen_uid> — сервер ідентифікує шлюз за UID,
     // а не за IP, що вирішує проблему Starlink NAT та динамічних адрес.
-    sprintf(at_tx_buffer, "AT+CCOAPSEND=0,2,\"telemetry/batch/%s\",%d,\"",
-            queen_uid, total_size * 2);
+    snprintf(at_tx_buffer, sizeof(at_tx_buffer),
+             "AT+CCOAPSEND=0,2,\"telemetry/batch/%s\",%d,\"",
+             queen_uid, total_size * 2);
     HAL_UART_Transmit(&huart1, (uint8_t*)at_tx_buffer, strlen(at_tx_buffer), 100);
 
     // 2. Перетворюємо зашифрований буфер у Hex-рядок на льоту і відправляємо в модем
     char hex_byte[3];
     for (int i = 0; i < total_size; i++) {
-        sprintf(hex_byte, "%02x", encrypted_batch_buffer[i]);
+        snprintf(hex_byte, sizeof(hex_byte), "%02x", encrypted_batch_buffer[i]);
         HAL_UART_Transmit(&huart1, (uint8_t*)hex_byte, 2, 10);
     }
 
@@ -542,34 +543,58 @@ uint8_t Cmd_Dedup_Check(uint32_t hash)
 // ОБРОБКА CoAP-КОМАНД ВІД СЕРВЕРА (Downlink)
 // =========================================================================
 // [СИНХРОНІЗОВАНО з Rails]: ActuatorCommandWorker формує payload:
-//   CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
+//   [IV:16][AES-256-CBC зашифровані дані]
+//   Відкритий текст: CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
 // Приклад: CMD:OPEN:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
 void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 {
-    if (len == 0 || len > CMD_DECRYPT_BUF_SIZE) return;
+    // Мінімум: IV (16 байт) + один AES-блок (16 байт) = 32 байти
+    if (len < 32 || len > (CMD_DECRYPT_BUF_SIZE + 16)) return;
 
-    // 1. Дешифрування (AES-256-ECB, блоки по 16 байт)
-    uint16_t aligned = ((len + 15) / 16) * 16;
-    if (aligned > CMD_DECRYPT_BUF_SIZE) return;
-    HAL_CRYP_Decrypt(&hcryp, (uint32_t*)payload, aligned / 4,
+    // 1. Витягуємо IV з перших 16 байтів пейлоада
+    uint32_t cmd_iv[4];
+    memcpy(cmd_iv, payload, 16);
+
+    // 2. Перемикаємо CRYP на CBC для дешифрування команди
+    hcryp.Init.Algorithm = CRYP_AES_CBC;
+    hcryp.Init.pInitVect = cmd_iv;
+    HAL_CRYP_Init(&hcryp);
+
+    // 3. Дешифруємо шифротекст (після IV)
+    uint16_t ciphertext_len = len - 16;
+    uint16_t aligned = ((ciphertext_len + 15) / 16) * 16;
+    if (aligned > CMD_DECRYPT_BUF_SIZE) {
+        // Відновлюємо ECB перед виходом
+        hcryp.Init.Algorithm = CRYP_AES_ECB;
+        hcryp.Init.pInitVect = NULL;
+        HAL_CRYP_Init(&hcryp);
+        return;
+    }
+    HAL_CRYP_Decrypt(&hcryp, (uint32_t*)(payload + 16), aligned / 4,
                      (uint32_t*)cmd_decrypt_buf, 2000);
+
+    // 4. Відновлюємо ECB для LoRa-трафіку між Королевою та Солдатами
+    hcryp.Init.Algorithm = CRYP_AES_ECB;
+    hcryp.Init.pInitVect = NULL;
+    HAL_CRYP_Init(&hcryp);
+
     cmd_decrypt_buf[CMD_DECRYPT_BUF_SIZE - 1] = '\0';
 
-    // 2. Перевірка маркера CMD:
+    // 5. Перевірка маркера CMD:
     if (strncmp((char*)cmd_decrypt_buf, "CMD:", 4) != 0) return;
 
-    // 3. Знаходимо idempotency_token (після 3-ї ':' від позиції +4)
+    // 6. Знаходимо idempotency_token (після 3-ї ':' від позиції +4)
     char* p = (char*)cmd_decrypt_buf + 4;
     uint8_t colons = 0;
     while (*p && colons < 3) { if (*p++ == ':') colons++; }
     if (colons < 3 || *p == '\0') return;
 
-    // 4. 🛡️ Idempotency: хешуємо токен і перевіряємо кільцевий буфер
+    // 7. 🛡️ Idempotency: хешуємо токен і перевіряємо кільцевий буфер
     if (Cmd_Dedup_Check(djb2_hash(p, UUID_STR_LEN)) == 1) {
         return; // Дублікат — ACK відправляємо, але команду НЕ виконуємо вдруге
     }
 
-    // 5. Команда валідна та унікальна — передаємо на виконання актуатору
+    // 8. Команда валідна та унікальна — передаємо на виконання актуатору
     // (Логіка виконання залежить від конкретного пристрою: клапан, сирена тощо)
 }
 
@@ -585,6 +610,7 @@ static void MX_CRYP_Init(void)
   hcryp.Init.pKey = aes_key;
   // ECB для LoRa-трафіку між Королевою та Солдатами (одиночні 16-байтні блоки).
   // Батч до сервера шифрується CBC динамічно в Flush_Cache_To_Rails,
+  // команди від сервера дешифруються CBC динамічно в Handle_CoAP_Command,
   // після чого CRYP відновлюється до ECB.
   hcryp.Init.Algorithm = CRYP_AES_ECB;
   HAL_CRYP_Init(&hcryp);
