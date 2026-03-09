@@ -210,6 +210,20 @@ static int tests_failed = 0;
 #define ASSERT_TRUE(expr) ASSERT_EQ(!!(expr), 1)
 #define ASSERT_FALSE(expr) ASSERT_EQ(!!(expr), 0)
 
+#define ASSERT_NULL(ptr) do { \
+    if ((ptr) != NULL) { \
+        printf(" ❌ FAIL (line %d: expected NULL, got %p)\n", __LINE__, (void*)(ptr)); \
+        tests_failed++; return; \
+    } \
+} while(0)
+
+#define ASSERT_NOT_NULL(ptr) do { \
+    if ((ptr) == NULL) { \
+        printf(" ❌ FAIL (line %d: expected non-NULL)\n", __LINE__); \
+        tests_failed++; return; \
+    } \
+} while(0)
+
 static void reset_cache(void) {
     memset(forest_cache, 0, sizeof(forest_cache));
     cache_count = 0;
@@ -784,7 +798,7 @@ TEST(test_ecb_restored_after_flush) {
     ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_ECB);
     simulate_flush_cryp_transition();
     ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_ECB);
-    ASSERT_TRUE(test_cryp.Init.pInitVect == NULL);
+    ASSERT_NULL(test_cryp.Init.pInitVect);
 }
 
 TEST(test_ecb_before_flush_is_ecb) {
@@ -799,7 +813,7 @@ TEST(test_cbc_during_flush) {
     test_cryp.Init.Algorithm = CRYP_AES_CBC;
     test_cryp.Init.pInitVect = iv;
     ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_CBC);
-    ASSERT_TRUE(test_cryp.Init.pInitVect != NULL);
+    ASSERT_NOT_NULL(test_cryp.Init.pInitVect);
 }
 
 /* ════════════════════════════════════════════════════════════════════
