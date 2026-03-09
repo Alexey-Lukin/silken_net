@@ -51,6 +51,7 @@ module Api
           .joins(:wallet)
           .where(wallets: { organization_id: @contract.organization_id })
           .where(status: :confirmed)
+          .order(created_at: :desc)
           .limit(10)
 
         respond_to do |format|

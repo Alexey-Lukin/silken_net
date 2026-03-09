@@ -445,7 +445,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     it "calculates distance between two points" do
       # Kyiv to Cherkasy approx ~190km
       distance = SilkenNet::GeoUtils.haversine_distance_m(50.4501, 30.5234, 49.4285, 32.0620)
-      expect(distance).to be_between(150_000, 210_000)
+      expect(distance).to be_between(155_000, 165_000)
     end
 
     it "returns 0 for same point" do

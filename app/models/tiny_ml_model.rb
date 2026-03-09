@@ -117,7 +117,7 @@ class TinyMlModel < ApplicationRecord
 
   # Alias for OtaPackagerService compatibility (BioContractFirmware uses binary_sha256)
   def binary_sha256
-    checksum || Digest::SHA256.hexdigest(binary_payload.to_s)
+    @binary_sha256 ||= checksum || Digest::SHA256.hexdigest(binary_payload.to_s)
   end
 
   def payload_size
