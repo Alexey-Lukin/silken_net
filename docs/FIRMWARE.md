@@ -380,10 +380,40 @@ The server-side `SilkenNet::Attractor` service independently computes the same Z
 | Risk | Severity | Description | Status |
 |------|----------|-------------|--------|
 | **LoRa Collision Storm** | 🔴 Critical | 100+ trees wake simultaneously → TX collisions | ✅ Fixed: random jitter 0-500ms before TX |
-| **OTA Integrity Gap** | 🟠 High | No CRC/SHA-256 check before flash write — corrupted byte → infinite reboot | ⚠️ Open |
-| **CIFO Blind Spot** | 🟡 Medium | Worst-RSSI tree evicted from cache — but it may carry critical fire perimeter data | ⚠️ Open |
+| **OTA Integrity Gap** | 🔴 Critical | No CRC/SHA-256 check before flash write — corrupted byte → infinite reboot | ✅ Fixed: CRC32 (ISO 3309) verification before `Write_OTA_Contract_To_Flash`. On mismatch — state reset, wait for retransmission |
+| **OTA Buffer Overflow** | 🔴 Critical | `chunk_idx * chunk_size` could exceed 1024-byte buffer | ✅ Fixed: bounds check `offset + chunk_size <= sizeof(ota_buffer)`, minimum packet size validation, total_chunks consistency check |
+| **CIFO Blind Spot** | 🟡 Medium | Worst-RSSI tree evicted from cache — but it may carry critical fire perimeter data | ✅ Fixed: priority-aware eviction — stress/anomaly/tamper packets protected, fallback to worst-RSSI only when all entries are critical |
+| **RSSI Negation UB** | 🟡 Medium | `(uint8_t)(-rssi)` undefined behavior when rssi == -128 (int8_t min) | ✅ Fixed: cast `(uint8_t)(-(int16_t)rssi)` prevents overflow |
+| **mruby Heap Fragmentation** | 🟡 Medium | `mrb_open()` once, but objects inside loop may fragment heap over weeks | ✅ Fixed: `mrb_gc_arena_save/restore` around every call + `mrb->exc` exception check |
+| **mruby Exception Handling** | 🟡 Medium | `mrb_funcall_argv` failure → `mrb_fixnum()` reads garbage | ✅ Fixed: check `mrb->exc` before reading result, send 0xFF on error |
+| **Mesh Ping-Pong** | 🟡 Medium | 3-slot `recent_mesh_dids` cache may be insufficient for dense forests | ✅ Fixed: expanded to 8 slots (DR8..DR15), persisted across STOP2 sleep |
+| **Attractor Sync Drift** | 🟠 High | Device `BASE_BETA=2.666` vs server `8.0/3.0` + no clamp → different Z values → false Slashing | ✅ Fixed: `bio_contract.rb` now uses `8.0/3.0` and sigma/rho clamp matching server |
+| **OTA Queen Chunk Underflow** | 🟠 High | `pending_ota_size - offset` underflows when offset > size → reads garbage memory | ✅ Fixed: bounds check `offset < pending_ota_size` before `bytes_to_copy` calculation |
 | **AT Command Blocking** | 🟠 High | `HAL_Delay(2000)` after CoAP — Queen blind for 2s, LoRa FIFO overflow risk | ⚠️ Open (needs UART interrupt driver rewrite) |
-| **mruby Heap Fragmentation** | 🟡 Medium | `mrb_open()` once, but objects inside loop may fragment heap over weeks | ⚠️ Open |
-| **Mesh Ping-Pong** | 🟡 Medium | 3-slot `recent_mesh_dids` cache may be insufficient for dense forests | ⚠️ Open |
 | **Starlink Latency** | 🟡 Medium | `HAL_Delay(1000)` for CoAP session may be too short for Starlink | ⚠️ Open |
 | **Queen Health Blind Spot** | 🟠 High | Queen doesn't send own battery/temperature/CSQ to server | ⚠️ Open (backend ready for DID=0 sentinel) |
+
+### Host-Based Test Coverage
+
+Firmware logic is tested on x86 with gcc (no ARM toolchain required):
+
+```bash
+make -C firmware/test     # Build & run all 94 tests
+make -C firmware/test queen    # Queen-only (41 tests)
+make -C firmware/test soldier  # Soldier-only (53 tests)
+```
+
+| Module | Tests | What's Covered |
+|--------|-------|----------------|
+| DJB2 Hash | 7 | Determinism, known values, NUL handling, UUID format |
+| Dedup Ring | 7 | New/duplicate, ring wrap, eviction, stress 100 |
+| CIFO Cache | 13 | Insert, dedup, priority eviction (all 4 statuses), fallback, edge RSSI |
+| Batch Packing | 8 | 21-byte format, endianness, RSSI -128, round-trip |
+| OTA Chunk Builder | 6 | First/last chunk, reassembly, out-of-range |
+| Payload Packing | 13 | All fields, signed temp, max/zero, pack-unpack roundtrip |
+| DID Generation | 4 | Non-zero guarantee, determinism, uniqueness |
+| Mesh Dedup | 10 | 8-slot cache, eviction, pingpong, relay decisions |
+| OTA Assembly | 7 | Multi-chunk, duplicate ignore, buffer overflow, total mismatch |
+| CRC32 | 7 | ISO 3309 known value, bit flip detection, OTA verify |
+| Bio-Contract Byte | 8 | All statuses, clamping, full 256-combination roundtrip |
+| Panic Payload | 4 | DID, marker, TTL, zero fields |
