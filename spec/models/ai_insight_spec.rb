@@ -123,6 +123,28 @@ RSpec.describe AiInsight, type: :model do
     end
   end
 
+  describe "#confidence_level" do
+    it "returns :n_a when probability_score is nil" do
+      insight = described_class.new(probability_score: nil)
+      expect(insight.confidence_level).to eq(:n_a)
+    end
+
+    it "returns :low for probability_score below 40" do
+      insight = described_class.new(probability_score: 20.0)
+      expect(insight.confidence_level).to eq(:low)
+    end
+
+    it "returns :medium for probability_score between 40 and 75" do
+      insight = described_class.new(probability_score: 50.0)
+      expect(insight.confidence_level).to eq(:medium)
+    end
+
+    it "returns :high for probability_score >= 75" do
+      insight = described_class.new(probability_score: 80.0)
+      expect(insight.confidence_level).to eq(:high)
+    end
+  end
+
   # =========================================================================
   # EVIDENCE PERSISTENCE (source_log_ids)
   # =========================================================================

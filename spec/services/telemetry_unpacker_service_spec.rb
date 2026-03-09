@@ -88,4 +88,53 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
     expect(AlertDispatchService).to have_received(:analyze_and_trigger!).with(an_instance_of(TelemetryLog))
   end
+
+  describe "queen health routing" do
+    let!(:gateway) { create(:gateway) }
+
+    it "routes DID=0x00000000 packets to GatewayTelemetryWorker when gateway is present" do
+      allow(GatewayTelemetryWorker).to receive(:perform_async)
+      chunk = build_chunk("00000000", -70, 3500, 25, 5, 100, 0, 3)
+
+      expect { described_class.call(chunk, gateway.id) }.not_to change(TelemetryLog, :count)
+      expect(GatewayTelemetryWorker).to have_received(:perform_async).with(
+        gateway.uid,
+        a_hash_including(voltage_mv: anything, temperature_c: anything, cellular_signal_csq: anything)
+      )
+    end
+  end
+
+  describe "interpret_status" do
+    it "maps status codes 1, 2, 3 to stress, anomaly, tamper_detected" do
+      # Status byte upper 2 bits: code = status_byte >> 6
+      # code 1 → :stress (status_byte = 0b01_000000 = 64)
+      chunk_stress = build_chunk(did_hex, -70, 3500, 25, 5, 100, 64, 3)
+      described_class.call(chunk_stress)
+      log = TelemetryLog.last
+      expect(log.bio_status).to eq("stress")
+
+      # code 2 → :anomaly (status_byte = 0b10_000000 = 128)
+      chunk_anomaly = build_chunk(did_hex, -70, 3500, 25, 5, 100, 128, 3)
+      described_class.call(chunk_anomaly)
+      log = TelemetryLog.last
+      expect(log.bio_status).to eq("anomaly")
+
+      # code 3 → :tamper_detected (status_byte = 0b11_000000 = 192)
+      chunk_tamper = build_chunk(did_hex, -70, 3500, 25, 5, 100, 192, 3)
+      described_class.call(chunk_tamper)
+      log = TelemetryLog.last
+      expect(log.bio_status).to eq("tamper_detected")
+    end
+  end
+
+  describe "error handling" do
+    it "logs error and continues when process_chunk raises" do
+      allow(SilkenNet::Attractor).to receive(:calculate_z).and_raise(StandardError.new("test error"))
+
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+      expect(Rails.logger).to receive(:error).with(/Telemetry Error/)
+      expect { described_class.call(chunk) }.not_to raise_error
+    end
+  end
 end

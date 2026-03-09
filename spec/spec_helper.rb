@@ -32,7 +32,7 @@ SimpleCov.start "rails" do
   if ENV["FEATURE_TEST"]
     minimum_coverage line: 0, branch: 0
   else
-    minimum_coverage line: 89, branch: 70
+    minimum_coverage line: 96, branch: 80
   end
   minimum_coverage_by_file 0
 end

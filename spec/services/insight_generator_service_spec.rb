@@ -177,5 +177,58 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(AiInsight.find_by(analyzable: tree_without_logs, insight_type: :daily_health_summary)).to be_nil
       expect(AiInsight.find_by(analyzable: tree_with_logs, insight_type: :daily_health_summary)).to be_present
     end
+
+    it "generates stress summary for status 1" do
+      create(:telemetry_log, tree: tree,
+        temperature_c: 40.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 5,
+        bio_status: :stress, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+      expect(insight.summary).to include("СТРЕС")
+    end
+
+    it "generates anomaly summary for status 2" do
+      create(:telemetry_log, tree: tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 5,
+        bio_status: :anomaly, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+      expect(insight.summary).to include("АНОМАЛІЯ")
+    end
+
+    it "generates critical summary for status 3 (tamper_detected)" do
+      create(:telemetry_log, tree: tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 5,
+        bio_status: :tamper_detected, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+      expect(insight.summary).to include("КРИТИЧНО")
+    end
+
+    it "handles errors gracefully and returns false for problematic trees" do
+      create(:telemetry_log, tree: tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      allow(AiInsight).to receive(:create!).and_call_original
+      allow(AiInsight).to receive(:create!).with(hash_including(analyzable: tree)).and_raise(StandardError, "test error")
+
+      expect(Rails.logger).to receive(:error).with(/Insight.*Помилка/)
+      described_class.call(date)
+    end
   end
 end
