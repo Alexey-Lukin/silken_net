@@ -64,8 +64,9 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
     it "uses family fire_resistance_rating as fallback" do
       tree_family.update!(fire_resistance_rating: 80)
       log = create(:telemetry_log, tree: tree, temperature_c: 75, bio_status: :homeostasis,
-                                   voltage_mv: 3500, acoustic_events: 5)
+                                   voltage_mv: 3500, acoustic_events: 5, z_value: 25.0)
       # 75°C < 80 threshold, so NO fire alert
+      # z_value 25.0 is within tree_family bounds (5.0–45.0), so NO drought alert
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .not_to change(EwsAlert, :count)
     end
