@@ -9,19 +9,14 @@ RSpec.describe "Controller coverage — uncovered paths" do
   let(:tree_family) { create(:tree_family) }
   let(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
   let(:gateway) { create(:gateway, cluster: cluster) }
-
   let(:user) { create(:user, organization: organization, password: "password12345") }
   let(:forester) { create(:user, :forester, organization: organization, password: "password12345") }
   let(:admin) { create(:user, :admin, organization: organization, password: "password12345") }
 
-  let(:user_token) { user.generate_token_for(:api_access) }
-  let(:forester_token) { forester.generate_token_for(:api_access) }
-  let(:admin_token) { admin.generate_token_for(:api_access) }
-
-  let(:json_headers) { { "Accept" => "application/json" } }
-  let(:auth_headers) { json_headers.merge("Authorization" => "Bearer #{user_token}") }
-  let(:forester_headers) { json_headers.merge("Authorization" => "Bearer #{forester_token}") }
-  let(:admin_headers) { json_headers.merge("Authorization" => "Bearer #{admin_token}") }
+  def json_headers = { "Accept" => "application/json" }
+  def auth_headers = json_headers.merge("Authorization" => "Bearer #{user.generate_token_for(:api_access)}")
+  def forester_headers = json_headers.merge("Authorization" => "Bearer #{forester.generate_token_for(:api_access)}")
+  def admin_headers = json_headers.merge("Authorization" => "Bearer #{admin.generate_token_for(:api_access)}")
 
   def unique_hardware_uid
     "UID#{SecureRandom.hex(4).upcase}"
