@@ -18,7 +18,7 @@ module Api
 
       # --- ДИХАННЯ СОЛДАТА (Існуючий метод) ---
       def tree_history
-        @tree = current_user.organization.trees.find(params[:tree_id])
+        @tree = current_user.organization.trees.find(params[:id])
         days = (params[:days] || 7).to_i
         logs = @tree.telemetry_logs.where(created_at: days.days.ago..Time.current).order(:created_at)
 
@@ -38,7 +38,7 @@ module Api
 
       # --- ПУЛЬС КОРЛЕВИ (Існуючий метод) ---
       def gateway_history
-        @gateway = current_user.organization.gateways.find(params[:gateway_id])
+        @gateway = current_user.organization.gateways.find(params[:id])
         days = (params[:days] || 7).to_i
         logs = @gateway.gateway_telemetry_logs.where(created_at: days.days.ago..Time.current).order(:created_at)
 

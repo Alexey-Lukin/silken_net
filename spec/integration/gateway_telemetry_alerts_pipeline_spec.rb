@@ -132,7 +132,9 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
     before do
       allow(AlertNotificationWorker).to receive(:perform_async).and_call_original
       allow(SingleNotificationWorker).to receive(:perform_async)
-      allow(AlertMailer).to receive_message_chain(:with, :critical_notification, :deliver_later)
+      mailer_delivery = double(deliver_later: nil)
+      mailer_with = double(critical_notification: mailer_delivery)
+      allow(AlertMailer).to receive(:with).and_return(mailer_with)
     end
 
     it "broadcasts alert to cluster and organization channels" do

@@ -35,7 +35,7 @@ RSpec.describe "Account security and password management" do
     end
 
     it "PATCH /api/v1/account_security/mfa disables MFA when already enabled" do
-      user.update!(otp_required_for_login: true, recovery_codes: ["code1", "code2"])
+      user.update!(otp_required_for_login: true, recovery_codes: [ "code1", "code2" ])
 
       patch "/api/v1/account_security/mfa",
             headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
@@ -136,7 +136,8 @@ RSpec.describe "Account security and password management" do
   describe "Password Reset API" do
     it "POST /api/v1/forgot_password sends reset email" do
       mailer_double = double(deliver_later: nil)
-      allow(PasswordMailer).to receive_message_chain(:with, :reset_instructions).and_return(mailer_double)
+      mailer_with = double(reset_instructions: mailer_double)
+      allow(PasswordMailer).to receive(:with).and_return(mailer_with)
 
       post "/api/v1/forgot_password",
            params: { email: user.email_address },

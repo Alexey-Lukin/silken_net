@@ -44,12 +44,12 @@ module Api
 
       # --- ПРЯМЕ ВИКОНАННЯ КОМАНДИ ---
       def execute
-        if @actuator.actuator_commands.pending.exists?
+        if @actuator.commands.pending.exists?
           return render json: { error: "Актуатор вже має активну команду. Зачекайте на її завершення." },
                         status: :conflict
         end
 
-        @command = @actuator.actuator_commands.create!(
+        @command = @actuator.commands.create!(
           user: current_user,
           command_payload: params[:action_payload],
           duration_seconds: params[:duration_seconds],

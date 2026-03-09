@@ -61,6 +61,11 @@ class BioContractFirmware < ApplicationRecord
     @binary_payload ||= [ bytecode_payload ].pack("H*").freeze
   end
 
+  # Number of devices currently running this firmware version
+  def deployment_count
+    Tree.where(firmware_version: version).count + Gateway.where(firmware_version: version).count
+  end
+
   def payload_size
     binary_payload.bytesize
   end

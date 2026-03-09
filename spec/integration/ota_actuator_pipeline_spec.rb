@@ -188,10 +188,13 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
   describe "ResetActuatorStateWorker" do
     let!(:actuator) { create(:actuator, gateway: gateway, state: :active) }
     let!(:command) do
-      create(:actuator_command,
+      cmd = create(:actuator_command,
              actuator: actuator,
-             status: :acknowledged,
+             status: :issued,
              duration_seconds: 60)
+      # Bypass dispatch callback and set to acknowledged directly
+      cmd.update_columns(status: ActuatorCommand.statuses[:acknowledged], sent_at: Time.current)
+      cmd
     end
 
     it "resets active actuator to idle and confirms command" do
@@ -206,8 +209,6 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
     end
 
     it "confirms acknowledged command when actuator not active" do
-      # Actuator state changes AFTER the command was acknowledged
-      command # create with active actuator
       actuator.update!(state: :maintenance_needed)
 
       ResetActuatorStateWorker.new.perform(command.id)

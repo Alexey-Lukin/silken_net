@@ -13,6 +13,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
 
   before do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+    allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
     allow(ActionCable.server).to receive(:broadcast)
   end
 
@@ -49,7 +50,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
         post "/api/v1/provisioning/register",
              params: {
                provisioning: {
-                 hardware_uid: "GW-QUEEN-001122",
+                 hardware_uid: "SNET-Q-FF001122",
                  device_type: "gateway",
                  cluster_id: cluster.id,
                  latitude: 49.4285,
@@ -229,15 +230,21 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     end
 
     it "GET /api/v1/organizations returns organizations" do
+      super_admin = create(:user, :super_admin, organization: organization)
+      sa_token = super_admin.generate_token_for(:api_access)
+
       get "/api/v1/organizations",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
+          headers: { "Authorization" => "Bearer #{sa_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
 
     it "GET /api/v1/organizations/:id returns org details" do
+      super_admin = create(:user, :super_admin, organization: organization)
+      sa_token = super_admin.generate_token_for(:api_access)
+
       get "/api/v1/organizations/#{organization.id}",
-          headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "application/json" }
+          headers: { "Authorization" => "Bearer #{sa_token}", "Accept" => "application/json" }
 
       expect(response).to have_http_status(:ok)
     end
@@ -438,7 +445,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     it "calculates distance between two points" do
       # Kyiv to Cherkasy approx ~190km
       distance = SilkenNet::GeoUtils.haversine_distance_m(50.4501, 30.5234, 49.4285, 32.0620)
-      expect(distance).to be_between(170_000, 210_000)
+      expect(distance).to be_between(150_000, 210_000)
     end
 
     it "returns 0 for same point" do

@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :gateway do
-    sequence(:uid) { |n| "SNET-Q-%08X" % n }
+    sequence(:uid, 900_000) { |n| "SNET-Q-%08X" % n }
     config_sleep_interval_s { 300 }
     state { :idle }
     last_seen_at { Time.current }

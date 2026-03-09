@@ -51,8 +51,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     before do
       allow(Eth::Client).to receive(:create).and_return(mock_client)
       allow(Eth::Key).to receive(:new).and_return(mock_key)
-      allow(mock_client).to receive(:get_balance).and_return(1 * 10**18)
-      allow(mock_client).to receive(:transact).and_return("0xfake_tx_hash")
+      allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: "0xfake_tx_hash")
       allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
       allow(BlockchainConfirmationWorker).to receive(:perform_in)
     end
@@ -70,9 +69,9 @@ RSpec.describe "Blockchain minting and burning pipeline" do
                    wallet: wallet, status: :pending, amount: 2.0,
                    token_type: :carbon_coin, to_address: organization.crypto_public_address)
 
-      BlockchainMintingService.call_batch([tx.id, tx2.id])
+      BlockchainMintingService.call_batch([ tx.id, tx2.id ])
 
-      [tx, tx2].each(&:reload)
+      [ tx, tx2 ].each(&:reload)
       expect(tx.status).to eq("sent")
       expect(tx2.status).to eq("sent")
       expect(tx.tx_hash).to eq(tx2.tx_hash)
@@ -201,8 +200,8 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     end
 
     it "processes pending transactions in batches" do
-      expect(BlockchainMintingService).to receive(:call_batch).with([pending_tx.id])
-      MintCarbonCoinWorker.new.perform([pending_tx.id])
+      expect(BlockchainMintingService).to receive(:call_batch).with([ pending_tx.id ])
+      MintCarbonCoinWorker.new.perform([ pending_tx.id ])
     end
 
     it "auto-discovers pending transactions when no IDs given" do
@@ -220,7 +219,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       allow(BlockchainMintingService).to receive(:call_batch).and_raise(StandardError, "RPC timeout")
 
       expect {
-        MintCarbonCoinWorker.new.perform([pending_tx.id])
+        MintCarbonCoinWorker.new.perform([ pending_tx.id ])
       }.to raise_error(StandardError)
     end
   end
