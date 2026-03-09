@@ -129,16 +129,17 @@ class ActuatorCommandWorker
   end
 
   def encrypt_payload(payload, binary_key)
-    cipher = OpenSSL::Cipher.new("aes-256-ecb")
+    cipher = OpenSSL::Cipher.new("aes-256-cbc")
     cipher.encrypt
     cipher.key = binary_key
+    iv = cipher.random_iv
     cipher.padding = 0
 
     block_size = 16
     padding_length = (block_size - (payload.bytesize % block_size)) % block_size
     padded_payload = payload + ("\x00" * padding_length)
 
-    cipher.update(padded_payload) + cipher.final
+    iv + cipher.update(padded_payload) + cipher.final
   end
 
   # 📈 Використовуємо денормалізований organization_id для broadcast

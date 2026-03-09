@@ -125,6 +125,35 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
 
       expect { described_class.new.perform(command.id) }.to raise_error(RuntimeError, /Королева відхилила/)
     end
+
+    it "encrypts payload with AES-256-CBC and prepends IV" do
+      encrypted = nil
+      allow(CoapClient).to receive(:put) do |_url, payload|
+        encrypted = payload
+        double(success?: true, code: "2.04")
+      end
+
+      described_class.new.perform(command.id)
+
+      # Encrypted payload must contain IV (16 bytes) + at least one AES block (16 bytes)
+      expect(encrypted.bytesize).to be >= 32
+      expect(encrypted.bytesize % 16).to eq(0) # IV (16) + N*16 ciphertext
+
+      # Extract IV and ciphertext, decrypt, verify round-trip
+      iv = encrypted[0, 16]
+      ciphertext = encrypted[16..]
+
+      binary_key = key_record.binary_previous_key || key_record.binary_key
+      decipher = OpenSSL::Cipher.new("aes-256-cbc")
+      decipher.decrypt
+      decipher.key = binary_key
+      decipher.iv = iv
+      decipher.padding = 0
+
+      plaintext = decipher.update(ciphertext) + decipher.final
+      expect(plaintext).to start_with("CMD:")
+      expect(plaintext).to include(command.idempotency_token)
+    end
   end
 
   describe ".sidekiq_retries_exhausted" do
