@@ -3,6 +3,9 @@
 :concurrency: 15
 :strict: true
 :queues:
+  # Strict ordering: queues are drained top-to-bottom. No lower-priority job
+  # runs while higher-priority work is waiting. Prevents priority inversion.
+  #
   # [STRICTLY ISOLATED]: Черги обробляються у строгому порядку пріоритету.
   # Жодна задача з низькопріоритетної черги НЕ буде оброблена, поки є завдання вище.
   # Це запобігає "priority inversion" — коли критична fire_shutdown команда

@@ -91,6 +91,6 @@ resource "google_artifact_registry_repository" "silken_net" {
 
 resource "google_logging_project_exclusion" "exclude_info_logs" {
   name        = "silken-net-exclude-info-debug"
-  description = "Exclude INFO and DEBUG logs to reduce Cloud Logging costs. Only WARNING+ are ingested."
-  filter      = "severity = DEFAULT OR severity = DEBUG OR severity = INFO"
+  description = "Exclude logs below WARNING severity to reduce Cloud Logging costs. Only WARNING+ are ingested."
+  filter      = "severity < WARNING"
 }
