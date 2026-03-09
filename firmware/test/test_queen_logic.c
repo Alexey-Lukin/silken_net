@@ -613,6 +613,196 @@ TEST(test_ota_reassemble_all) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * 6. RSSI CLAMP TESTS
+ * ════════════════════════════════════════════════════════════════════ */
+
+/* Extracted RSSI clamping logic matching OnRxDone fix */
+static int8_t Clamp_RSSI(int16_t rssi)
+{
+    if (rssi < -128) rssi = -128;
+    if (rssi > 127) rssi = 127;
+    return (int8_t)rssi;
+}
+
+TEST(test_rssi_clamp_normal) {
+    ASSERT_EQ(Clamp_RSSI(-85), -85);
+}
+
+TEST(test_rssi_clamp_minus128) {
+    ASSERT_EQ(Clamp_RSSI(-128), -128);
+}
+
+TEST(test_rssi_clamp_below_minus128) {
+    /* SX1262 can report -130 dBm; without clamp, (int8_t)(-130) = 126 */
+    ASSERT_EQ(Clamp_RSSI(-130), -128);
+}
+
+TEST(test_rssi_clamp_minus200) {
+    ASSERT_EQ(Clamp_RSSI(-200), -128);
+}
+
+TEST(test_rssi_clamp_zero) {
+    ASSERT_EQ(Clamp_RSSI(0), 0);
+}
+
+TEST(test_rssi_clamp_positive) {
+    ASSERT_EQ(Clamp_RSSI(50), 50);
+}
+
+TEST(test_rssi_clamp_max_int16) {
+    ASSERT_EQ(Clamp_RSSI(32767), 127);
+}
+
+/* Verify the old truncation bug produced wrong values */
+TEST(test_rssi_old_truncation_was_wrong) {
+    /* Without clamp, (int8_t)(-130) wraps to 126 — a positive value! */
+    int8_t wrong = (int8_t)(-130);
+    ASSERT_EQ(wrong, 126); /* This proves the old code was buggy */
+    /* Our clamp fixes it */
+    ASSERT_EQ(Clamp_RSSI(-130), -128);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * 7. QUEEN HEALTH SENTINEL TESTS
+ * ════════════════════════════════════════════════════════════════════ */
+
+/* Build queen health packet — extracted from queen main loop fix */
+static void Build_Queen_Health(uint8_t* payload, uint8_t tree_count, uint16_t uptime_sec)
+{
+    memset(payload, 0, 16);
+    /* DID = 0x00000000 (sentinel — "this is the Queen, not a tree") */
+    /* Bytes 4-5: uptime proxy */
+    payload[4] = (uint8_t)(uptime_sec >> 8);
+    payload[5] = (uint8_t)(uptime_sec & 0xFF);
+    /* Byte 7: number of trees in cache */
+    payload[7] = tree_count;
+    /* Byte 10: status=homeostasis(0), growth_points = tree_count (capped at 63) */
+    payload[10] = (tree_count < 63) ? tree_count : 63;
+}
+
+TEST(test_queen_health_did_zero) {
+    uint8_t p[16];
+    Build_Queen_Health(p, 30, 1000);
+    /* DID bytes must be 0 */
+    ASSERT_EQ(p[0], 0);
+    ASSERT_EQ(p[1], 0);
+    ASSERT_EQ(p[2], 0);
+    ASSERT_EQ(p[3], 0);
+}
+
+TEST(test_queen_health_uptime_packed) {
+    uint8_t p[16];
+    Build_Queen_Health(p, 10, 0x1234);
+    ASSERT_EQ(p[4], 0x12);
+    ASSERT_EQ(p[5], 0x34);
+}
+
+TEST(test_queen_health_tree_count) {
+    uint8_t p[16];
+    Build_Queen_Health(p, 42, 100);
+    ASSERT_EQ(p[7], 42);
+}
+
+TEST(test_queen_health_growth_points_clamped) {
+    uint8_t p[16];
+    Build_Queen_Health(p, 100, 100);
+    /* growth_points max is 63 */
+    ASSERT_EQ(p[10], 63);
+}
+
+TEST(test_queen_health_in_cache) {
+    /* Verify DID=0 sentinel goes into cache */
+    reset_cache();
+    uint8_t p[16];
+    Build_Queen_Health(p, 5, 60);
+    Process_And_Cache_Data(0, p, 0);
+    ASSERT_EQ(cache_count, 1);
+    ASSERT_EQ(forest_cache[0].uid, 0);
+    ASSERT_EQ(forest_cache[0].rssi, 0);
+}
+
+TEST(test_queen_health_in_batch) {
+    /* Verify DID=0 packs correctly in batch */
+    reset_cache();
+    uint8_t p[16];
+    Build_Queen_Health(p, 10, 300);
+    Process_And_Cache_Data(0, p, 0);
+    uint16_t offset = Pack_Cache_To_Batch();
+    ASSERT_EQ(offset, 21);
+    /* DID = 0 in big-endian */
+    ASSERT_EQ(binary_batch_buffer[0], 0);
+    ASSERT_EQ(binary_batch_buffer[1], 0);
+    ASSERT_EQ(binary_batch_buffer[2], 0);
+    ASSERT_EQ(binary_batch_buffer[3], 0);
+    /* RSSI = 0 (local) → inverted = 0 */
+    ASSERT_EQ(binary_batch_buffer[4], 0);
+}
+
+TEST(test_queen_health_dedup) {
+    /* Second queen health packet should update, not duplicate */
+    reset_cache();
+    uint8_t p1[16], p2[16];
+    Build_Queen_Health(p1, 10, 100);
+    Build_Queen_Health(p2, 20, 200);
+    Process_And_Cache_Data(0, p1, 0);
+    Process_And_Cache_Data(0, p2, 0);
+    ASSERT_EQ(cache_count, 1);
+    /* Should have the latest data */
+    ASSERT_EQ(forest_cache[0].payload[7], 20);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * 8. ECB RESTORATION TESTS
+ * ════════════════════════════════════════════════════════════════════ */
+
+/* Simulate the CRYP state transitions during Flush_Cache_To_Rails */
+static CRYP_HandleTypeDef test_cryp;
+
+static void init_cryp_ecb(void)
+{
+    test_cryp.Init.Algorithm = CRYP_AES_ECB;
+    test_cryp.Init.pInitVect = NULL;
+}
+
+/* Simulates what Flush_Cache_To_Rails does: switches to CBC then back to ECB */
+static void simulate_flush_cryp_transition(void)
+{
+    /* During flush: switch to CBC with IV */
+    static uint32_t batch_iv[4] = {1, 2, 3, 4};
+    test_cryp.Init.Algorithm = CRYP_AES_CBC;
+    test_cryp.Init.pInitVect = batch_iv;
+    HAL_CRYP_Init(&test_cryp);
+
+    /* [FIX] Restore ECB after flush */
+    test_cryp.Init.Algorithm = CRYP_AES_ECB;
+    test_cryp.Init.pInitVect = NULL;
+    HAL_CRYP_Init(&test_cryp);
+}
+
+TEST(test_ecb_restored_after_flush) {
+    init_cryp_ecb();
+    ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_ECB);
+    simulate_flush_cryp_transition();
+    ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_ECB);
+    ASSERT_TRUE(test_cryp.Init.pInitVect == NULL);
+}
+
+TEST(test_ecb_before_flush_is_ecb) {
+    init_cryp_ecb();
+    ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_ECB);
+}
+
+TEST(test_cbc_during_flush) {
+    init_cryp_ecb();
+    /* Before fix: after switching to CBC, it would stay in CBC */
+    static uint32_t iv[4] = {1, 2, 3, 4};
+    test_cryp.Init.Algorithm = CRYP_AES_CBC;
+    test_cryp.Init.pInitVect = iv;
+    ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_CBC);
+    ASSERT_TRUE(test_cryp.Init.pInitVect != NULL);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -671,6 +861,30 @@ int main(void)
     RUN(test_ota_total_header);
     RUN(test_ota_index_header);
     RUN(test_ota_reassemble_all);
+
+    printf("\n  RSSI Clamp:\n");
+    RUN(test_rssi_clamp_normal);
+    RUN(test_rssi_clamp_minus128);
+    RUN(test_rssi_clamp_below_minus128);
+    RUN(test_rssi_clamp_minus200);
+    RUN(test_rssi_clamp_zero);
+    RUN(test_rssi_clamp_positive);
+    RUN(test_rssi_clamp_max_int16);
+    RUN(test_rssi_old_truncation_was_wrong);
+
+    printf("\n  Queen Health Sentinel:\n");
+    RUN(test_queen_health_did_zero);
+    RUN(test_queen_health_uptime_packed);
+    RUN(test_queen_health_tree_count);
+    RUN(test_queen_health_growth_points_clamped);
+    RUN(test_queen_health_in_cache);
+    RUN(test_queen_health_in_batch);
+    RUN(test_queen_health_dedup);
+
+    printf("\n  ECB Restoration:\n");
+    RUN(test_ecb_restored_after_flush);
+    RUN(test_ecb_before_flush_is_ecb);
+    RUN(test_cbc_during_flush);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

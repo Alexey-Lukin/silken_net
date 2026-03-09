@@ -272,6 +272,24 @@ int main(void)
     // АБО пройшло достатньо часу (наприклад, 1 година = 3 600 000 мс)
     if (cache_count >= (CACHE_MAX_ENTRIES - 5) || (HAL_GetTick() - last_flush_time > 3600000)) {
         if (cache_count > 0) {
+            // [FIX: Queen Health Blind Spot]
+            // Перед скиданням кешу додаємо власний пакет здоров'я Королеви.
+            // DID=0 — зарезервований sentinel, backend розпізнає як gateway health.
+            // Це дозволяє серверу бачити стан шлюзу (температура, рівень сигналу CSQ)
+            // без окремого протоколу.
+            {
+                uint8_t queen_health[16] = {0};
+                // DID = 0x00000000 (sentinel — "це Королева, не дерево")
+                // Bytes 4-5: Тік як proxy для uptime (wraps кожні ~65 секунд при /1000)
+                uint16_t uptime_sec = (uint16_t)(HAL_GetTick() / 1000);
+                queen_health[4] = (uint8_t)(uptime_sec >> 8);
+                queen_health[5] = (uint8_t)(uptime_sec & 0xFF);
+                // Byte 7: Кількість дерев у кеші (навантаження на шлюз)
+                queen_health[7] = cache_count;
+                // Byte 10: Status = homeostasis (0), growth_points = cache_count (proxy for health)
+                queen_health[10] = (cache_count < 63) ? cache_count : 63;
+                Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пакет)
+            }
             Flush_Cache_To_Rails();
             last_flush_time = HAL_GetTick(); // Оновлюємо таймер
         }
@@ -295,6 +313,11 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
     if (size == 16)
     {
         memcpy(incoming_lora_payload, payload, 16);
+        // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128.
+        // Clamp до int8_t діапазону перед приведенням, щоб запобігти
+        // overflow (наприклад, -130 → 126, що б отруїло CIFO eviction).
+        if (rssi < -128) rssi = -128;
+        if (rssi > 127) rssi = 127;
         current_rssi = (int8_t)rssi;
         lora_rx_flag = 1; // Сигналізуємо головному циклу
     }
@@ -462,6 +485,15 @@ void Flush_Cache_To_Rails(void)
 
     // Закриваємо CoAP сесію, звільняючи ресурси модему
     SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
+
+    // [FIX: CRITICAL — ECB Restoration]
+    // Flush_Cache_To_Rails() переключає CRYP на CBC для шифрування батча.
+    // Якщо не повернути ECB, всі наступні HAL_CRYP_Decrypt() для LoRa-пакетів
+    // від Солдатів будуть використовувати CBC замість ECB → сміття → втрата даних
+    // до наступного перезавантаження Королеви.
+    hcryp.Init.Algorithm = CRYP_AES_ECB;
+    hcryp.Init.pInitVect = NULL;
+    HAL_CRYP_Init(&hcryp);
 }
 
 // =========================================================================

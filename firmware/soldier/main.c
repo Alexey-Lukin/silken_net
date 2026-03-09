@@ -30,6 +30,7 @@
 
 /* Private define ------------------------------------------------------------*/
 #define MRUBY_CONTRACT_FLASH_ADDR 0x0803F000 // Адреса для OTA оновлень
+#define FIRMWARE_VERSION_ID       0x0001     // Версія прошивки (інкрементується при OTA)
 /* USER CODE BEGIN PD */
 /* USER CODE END PD */
 
@@ -379,6 +380,11 @@ int main(void)
     // Байт 11: TTL (Time to Live) для Mesh-маршрутизації.
     // Початкове життя пакета = 3 стрибки.
     lora_payload[11] = 3;
+
+    // [FIX: Firmware Version] Байти 12-13: версія прошивки (big-endian).
+    // Дозволяє серверу знати яка прошивка на кожному дереві, для OTA targeting.
+    lora_payload[12] = (uint8_t)(FIRMWARE_VERSION_ID >> 8);
+    lora_payload[13] = (uint8_t)(FIRMWARE_VERSION_ID & 0xFF);
 
     // Обнуляємо лічильник після архівації
     acoustic_events = 0;
