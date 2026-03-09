@@ -399,6 +399,15 @@ int main(void)
     // ФАЗА 4: ПЕРЕДАЧА ДАНИХ (AES-256 + Mesh)
     // =========================================================================
 
+    // [FIX: LoRa Collision Storm] Рандомізована затримка 0-500 мс перед TX.
+    // Якщо 100 дерев прокинуться одночасно (грім, землетрус), без jitter
+    // вони заб'ють ефір колізіями. HRNG дає апаратну ентропію з теплового шуму.
+    {
+        uint32_t random_jitter = 0;
+        HAL_RNG_GenerateRandomNumber(&hrng, &random_jitter);
+        HAL_Delay(random_jitter % 500);
+    }
+
     // 1. Якщо у нас є чужий зашифрований пакет (Mesh), спочатку відправляємо його
     if (has_mesh_relay) {
         Radio.Send(mesh_relay_payload, 16);
