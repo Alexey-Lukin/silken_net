@@ -466,14 +466,15 @@ void Flush_Cache_To_Rails(void)
     // 1. Початок команди.
     // URI-Path: /telemetry/batch/<queen_uid> — сервер ідентифікує шлюз за UID,
     // а не за IP, що вирішує проблему Starlink NAT та динамічних адрес.
-    sprintf(at_tx_buffer, "AT+CCOAPSEND=0,2,\"telemetry/batch/%s\",%d,\"",
-            queen_uid, total_size * 2);
+    snprintf(at_tx_buffer, sizeof(at_tx_buffer),
+             "AT+CCOAPSEND=0,2,\"telemetry/batch/%s\",%d,\"",
+             queen_uid, total_size * 2);
     HAL_UART_Transmit(&huart1, (uint8_t*)at_tx_buffer, strlen(at_tx_buffer), 100);
 
     // 2. Перетворюємо зашифрований буфер у Hex-рядок на льоту і відправляємо в модем
     char hex_byte[3];
     for (int i = 0; i < total_size; i++) {
-        sprintf(hex_byte, "%02x", encrypted_batch_buffer[i]);
+        snprintf(hex_byte, sizeof(hex_byte), "%02x", encrypted_batch_buffer[i]);
         HAL_UART_Transmit(&huart1, (uint8_t*)hex_byte, 2, 10);
     }
 
