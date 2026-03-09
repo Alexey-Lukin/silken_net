@@ -12,17 +12,17 @@ RSpec.describe "OTA firmware deployment flow" do
   end
 
   describe "OtaPackagerService" do
-    let(:firmware) do
-      create(:bio_contract_firmware, binary_payload: "A" * 1500, binary_sha256: Digest::SHA256.hexdigest("A" * 1500))
-    end
+    # 750 hex bytes = 1500 hex chars = 750 binary bytes
+    let(:hex_payload) { "41" * 750 }
+    let(:firmware) { create(:bio_contract_firmware, bytecode_payload: hex_payload) }
 
     it "generates manifest with correct metadata" do
       result = OtaPackagerService.prepare(firmware, chunk_size: 512)
 
       manifest = result[:manifest]
       expect(manifest[:version]).to eq(firmware.version)
-      expect(manifest[:total_size]).to eq(1500)
-      expect(manifest[:total_chunks]).to eq(3) # ceil(1500/512)
+      expect(manifest[:total_size]).to eq(750) # 750 binary bytes
+      expect(manifest[:total_chunks]).to eq(2) # ceil(750/512)
       expect(manifest[:checksum]).to be_present
       expect(manifest[:sha256]).to eq(firmware.binary_sha256)
     end
@@ -31,29 +31,28 @@ RSpec.describe "OTA firmware deployment flow" do
       result = OtaPackagerService.prepare(firmware, chunk_size: 512)
       packages = result[:packages].to_a
 
-      expect(packages.length).to eq(3)
+      expect(packages.length).to eq(2)
 
-      # Each package has: header (5 bytes: 1 marker + 2 index + 2 total) + chunk + CRC16 (2 bytes)
-      packages.each_with_index do |pkg, idx|
-        marker = pkg.unpack1("C")
-        expect(marker).to eq(0x99)
+      # Each package starts with OTA marker 0x99
+      markers = packages.map { |pkg| pkg.unpack1("C") }
+      expect(markers).to all(eq(0x99))
 
-        chunk_index, total = pkg[1..4].unpack("nn")
-        expect(chunk_index).to eq(idx)
-        expect(total).to eq(3)
-      end
+      # Verify chunk indices and totals
+      indices_and_totals = packages.map { |pkg| pkg[1..4].unpack("nn") }
+      expect(indices_and_totals.map(&:first)).to eq([ 0, 1 ])
+      expect(indices_and_totals.map(&:last)).to all(eq(2))
     end
 
     it "uses LoRa MTU for smaller chunk sizes" do
       result = OtaPackagerService.prepare(firmware, chunk_size: OtaPackagerService::LORA_MTU)
       manifest = result[:manifest]
-      expected_chunks = (1500.0 / OtaPackagerService::LORA_MTU).ceil
+      expected_chunks = (750.0 / OtaPackagerService::LORA_MTU).ceil
       expect(manifest[:total_chunks]).to eq(expected_chunks)
     end
   end
 
   describe "BioContractFirmware model" do
-    let!(:firmware) { create(:bio_contract_firmware) }
+    let!(:firmware) { create(:bio_contract_firmware, :for_tree) }
 
     it "has required attributes" do
       expect(firmware.version).to be_present
@@ -81,10 +80,9 @@ RSpec.describe "OTA firmware deployment flow" do
     end
 
     it "tracks firmware mismatch via TelemetryUnpackerService" do
-      latest_fw = create(:bio_contract_firmware, target_hardware_type: "Tree", status: :active)
+      latest_fw = create(:bio_contract_firmware, :for_tree, :active)
       old_fw_id = latest_fw.id - 1
 
-      # Build a mock for the firmware check (internal method)
       service = TelemetryUnpackerService.new(nil, nil)
       service.send(:check_firmware_mismatch!, tree, old_fw_id)
 

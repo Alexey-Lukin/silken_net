@@ -34,25 +34,25 @@ RSpec.describe "User authentication and session lifecycle" do
     it "investor has read_only access" do
       user = create(:user, :investor, organization: organization)
       expect(user.role).to eq("investor")
-      expect(user.access_level).to eq("read_only")
+      expect(user.access_level).to eq(:read_only)
     end
 
     it "admin has organization access" do
       user = create(:user, :admin, organization: organization)
       expect(user.role).to eq("admin")
-      expect(user.access_level).to eq("organization")
+      expect(user.access_level).to eq(:organization)
     end
 
     it "super_admin has system access" do
       user = create(:user, :super_admin, organization: organization)
       expect(user.role).to eq("super_admin")
-      expect(user.access_level).to eq("system")
+      expect(user.access_level).to eq(:system)
     end
 
     it "forester has field access" do
       user = create(:user, :forester, organization: organization)
       expect(user.role).to eq("forester")
-      expect(user.access_level).to eq("field")
+      expect(user.access_level).to eq(:field)
     end
   end
 
@@ -63,7 +63,7 @@ RSpec.describe "User authentication and session lifecycle" do
       codes = user.generate_recovery_codes!
       expect(codes).to be_an(Array)
       expect(codes.length).to eq(10)
-      codes.each { |code| expect(code).to match(/\A[a-f0-9]+\z/i) }
+      expect(codes).to all(match(/\A[a-f0-9]+\z/i))
     end
 
     it "consumes a recovery code" do
@@ -81,10 +81,10 @@ RSpec.describe "User authentication and session lifecycle" do
   end
 
   describe "User validations" do
-    it "requires email" do
-      user = build(:user, email: nil, organization: organization)
+    it "requires email_address" do
+      user = build(:user, email_address: nil, organization: organization)
       expect(user).not_to be_valid
-      expect(user.errors[:email]).to be_present
+      expect(user.errors[:email_address]).to be_present
     end
 
     it "requires minimum password length" do
@@ -92,14 +92,14 @@ RSpec.describe "User authentication and session lifecycle" do
       expect(user).not_to be_valid
     end
 
-    it "normalizes email to lowercase" do
-      user = create(:user, email: "Test@Example.COM", organization: organization)
-      expect(user.email).to eq("test@example.com")
+    it "normalizes email_address to lowercase" do
+      user = create(:user, email_address: "Test@Example.COM", organization: organization)
+      expect(user.email_address).to eq("test@example.com")
     end
 
     it "validates phone number format (E.164)" do
       user = build(:user, phone_number: "123", organization: organization)
-      expect(user).not_to be_valid if user.phone_number.present?
+      expect(user).not_to be_valid
     end
   end
 
@@ -113,7 +113,7 @@ RSpec.describe "User authentication and session lifecycle" do
       expect(response).to have_http_status(:ok)
 
       json = response.parsed_body
-      expect(json["data"]["email"]).to eq(user.email)
+      expect(json["email_address"]).to eq(user.email_address)
     end
 
     it "rejects invalid bearer token" do
@@ -131,12 +131,13 @@ RSpec.describe "User authentication and session lifecycle" do
     let(:user) { create(:user, organization: organization) }
 
     it "creates session on login" do
-      post "/api/v1/login", params: { email: user.email, password: "password12345" }
-      expect(response).to have_http_status(:redirect).or have_http_status(:ok)
+      post "/api/v1/login", params: { email: user.email_address, password: "password12345" },
+                            headers: { "Accept" => "application/json" }
+      expect(response).to have_http_status(:created)
     end
 
     it "rejects invalid credentials" do
-      post "/api/v1/login", params: { email: user.email, password: "wrong_password" },
+      post "/api/v1/login", params: { email: user.email_address, password: "wrong_password" },
                             headers: { "Accept" => "application/json" }
       expect(response).to have_http_status(:unauthorized)
     end
@@ -158,10 +159,10 @@ RSpec.describe "User authentication and session lifecycle" do
       expect(user.organization_admin?).to be true
     end
 
-    it "touch_visit! updates last_visit_at" do
+    it "touch_visit! updates last_seen_at" do
       user = create(:user, organization: organization)
       user.touch_visit!
-      expect(user.reload.last_visit_at).to be_present
+      expect(user.reload.last_seen_at).to be_present
     end
   end
 end

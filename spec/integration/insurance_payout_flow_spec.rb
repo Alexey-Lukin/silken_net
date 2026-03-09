@@ -26,6 +26,7 @@ RSpec.describe "Parametric insurance payout flow" do
     before do
       Cluster.where(id: cluster.id).update_all(active_trees_count: 2)
       allow(InsurancePayoutWorker).to receive(:perform_async)
+      insurance.reload
     end
 
     it "triggers payout when damage exceeds threshold" do
