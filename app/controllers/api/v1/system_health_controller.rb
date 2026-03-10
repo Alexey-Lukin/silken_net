@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "sidekiq/api"
+
 module Api
   module V1
     class SystemHealthController < BaseController

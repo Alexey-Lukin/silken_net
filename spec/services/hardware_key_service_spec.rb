@@ -81,4 +81,71 @@ RSpec.describe HardwareKeyService, type: :service do
       }.not_to raise_error
     end
   end
+
+  describe ".provision" do
+    it "creates a HardwareKey and returns hex key" do
+      result = described_class.provision(tree)
+
+      expect(result).to be_a(String)
+      expect(result.length).to eq(64) # 32 bytes = 64 hex chars
+      expect(result).to match(/\A[0-9A-F]+\z/)
+
+      hw_key = HardwareKey.find_by(device_uid: tree.did)
+      expect(hw_key).to be_present
+      expect(hw_key.aes_key_hex).to eq(result)
+    end
+
+    it "uses uid for gateway devices" do
+      gateway = create(:gateway, cluster: cluster)
+
+      result = described_class.provision(gateway)
+
+      hw_key = HardwareKey.find_by(device_uid: gateway.uid)
+      expect(hw_key).to be_present
+      expect(hw_key.aes_key_hex).to eq(result)
+    end
+  end
+
+  describe ".rotate" do
+    let!(:hardware_key) do
+      HardwareKey.create!(
+        device_uid: tree.did,
+        aes_key_hex: original_key,
+        previous_aes_key_hex: nil
+      )
+    end
+
+    it "finds device by DID (Tree) and calls rotate!" do
+      new_key = described_class.rotate(tree.did)
+
+      expect(new_key).to be_a(String)
+      expect(new_key.length).to eq(64)
+
+      hardware_key.reload
+      expect(hardware_key.aes_key_hex).to eq(new_key)
+      expect(hardware_key.previous_aes_key_hex).to eq(original_key)
+    end
+
+    it "finds device by UID (Gateway) and calls rotate!" do
+      gateway = create(:gateway, cluster: cluster)
+      gw_key_hex = SecureRandom.hex(32).upcase
+      gw_hw_key = HardwareKey.create!(
+        device_uid: gateway.uid,
+        aes_key_hex: gw_key_hex,
+        previous_aes_key_hex: nil
+      )
+
+      new_key = described_class.rotate(gateway.uid)
+
+      gw_hw_key.reload
+      expect(gw_hw_key.aes_key_hex).to eq(new_key)
+      expect(gw_hw_key.previous_aes_key_hex).to eq(gw_key_hex)
+    end
+
+    it "raises when device not found" do
+      expect {
+        described_class.rotate("NONEXISTENT-DID")
+      }.to raise_error(RuntimeError, /не знайдено/)
+    end
+  end
 end

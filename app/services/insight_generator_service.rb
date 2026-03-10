@@ -32,9 +32,15 @@ class InsightGeneratorService
       cluster_baseline = @baselines_map[cluster.id]
       next unless cluster_baseline
 
+      # ⚡ [ANTI-N+1]: Агрегуємо статистику для ВСІХ дерев кластера одним SQL-запитом
+      tree_stats_map = prefetch_tree_stats(cluster)
+
       # Перевіряємо кожне дерево в кластері на відповідність базлайну
       cluster.trees.find_each do |tree|
-        if generate_for_tree(tree, cluster_baseline)
+        stats = tree_stats_map[tree.id]
+        next unless stats
+
+        if generate_for_tree(tree, cluster_baseline, stats)
           @processed_count += 1
         end
       end
@@ -71,21 +77,26 @@ class InsightGeneratorService
                 end
   end
 
-  def generate_for_tree(tree, baseline)
-    logs = tree.telemetry_logs.where(created_at: @start_time..@end_time)
-    return false if logs.empty?
+  # ⚡ [ANTI-N+1]: Агрегація статистики для всіх дерев кластера одним GROUP BY
+  def prefetch_tree_stats(cluster)
+    TelemetryLog.where(tree_id: cluster.trees.select(:id))
+                .where(created_at: @start_time..@end_time)
+                .group(:tree_id)
+                .select(
+                  "tree_id",
+                  "AVG(temperature_c) as avg_temp",
+                  "AVG(voltage_mv) as avg_vcap",
+                  "AVG(z_value) as avg_z",
+                  "AVG(sap_flow) as avg_sap",
+                  "MAX(acoustic_events) as max_acoustic",
+                  "SUM(growth_points) as total_growth",
+                  "MAX(bio_status) as max_status"
+                ).each_with_object({}) do |row, hash|
+                  hash[row.tree_id] = row
+                end
+  end
 
-    # Агрегуємо фізичні показники одним SQL-запитом
-    stats = logs.select(
-      "AVG(temperature_c) as avg_temp",
-      "AVG(voltage_mv) as avg_vcap",
-      "AVG(z_value) as avg_z",
-      "AVG(sap_flow) as avg_sap",
-      "MAX(acoustic_events) as max_acoustic",
-      "SUM(growth_points) as total_growth",
-      "MAX(bio_status) as max_status"
-    ).take
-
+  def generate_for_tree(tree, baseline, stats)
     return false unless stats&.avg_temp
 
     # 🛡️ [AI FRAUD GUARD]: Перевірка на "занадто ідеальні" показники

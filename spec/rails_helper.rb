@@ -40,6 +40,16 @@ RSpec.configure do |config|
     Rails.cache.clear
   end
 
+  # Prosopite: N+1 query detection in request specs.
+  # Raises Prosopite::NPlusOneQueriesError when duplicate queries detected.
+  config.before(:each, type: :request) do
+    Prosopite.scan if defined?(Prosopite)
+  end
+
+  config.after(:each, type: :request) do
+    Prosopite.finish if defined?(Prosopite)
+  end
+
   # FactoryBot shorthand: create(:user) instead of FactoryBot.create(:user)
   config.include FactoryBot::Syntax::Methods
 

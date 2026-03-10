@@ -135,7 +135,7 @@ RSpec.describe "Gateway lifecycle and telemetry relay" do
       tree1 = create(:tree, cluster: cluster, tree_family: tree_family)
       tree2 = create(:tree, cluster: cluster, tree_family: tree_family)
 
-      expect(gateway.trees).to include(tree1, tree2)
+      expect(gateway.trees.to_a).to include(tree1, tree2)
     end
 
     it "tracks telemetry logs through queen_uid" do

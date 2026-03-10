@@ -48,5 +48,33 @@ RSpec.describe ClusterHealthCheckWorker, type: :worker do
 
       described_class.new.perform
     end
+
+    context "with explicit date_string parameter" do
+      it "parses the date_string and passes it to health check" do
+        date_string = "2026-06-15"
+        expected_date = Date.parse(date_string)
+
+        expect_any_instance_of(Cluster).to receive(:recalculate_health_index!).with(expected_date)
+        expect_any_instance_of(NaasContract).to receive(:check_cluster_health!).with(expected_date)
+
+        described_class.new.perform(date_string)
+      end
+    end
+
+    context "when contract becomes breached after health check" do
+      it "counts breached contract in summary" do
+        allow_any_instance_of(NaasContract).to receive(:check_cluster_health!) do |contract, _date|
+          contract.update_column(:status, :breached)
+        end
+
+        allow(Rails.logger).to receive(:info).and_call_original
+        allow(Rails.logger).to receive(:warn).and_call_original
+
+        described_class.new.perform
+
+        expect(Rails.logger).to have_received(:warn).with(/ПОРУШЕНО/).at_least(:once)
+        expect(Rails.logger).to have_received(:info).with(/Розірвано: 1/)
+      end
+    end
   end
 end

@@ -80,5 +80,16 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
     it "raises RecordNotFound for missing record" do
       expect { described_class.new.perform(-1) }.to raise_error(ActiveRecord::RecordNotFound)
     end
+
+    context "when target is a Gateway" do
+      it "calls mark_seen! on the gateway and completes without error" do
+        gateway = create(:gateway)
+        record = create(:maintenance_record, maintainable: gateway, action_type: :inspection)
+
+        expect_any_instance_of(Gateway).to receive(:mark_seen!)
+
+        expect { described_class.new.perform(record.id) }.not_to raise_error
+      end
+    end
   end
 end

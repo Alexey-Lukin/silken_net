@@ -47,5 +47,106 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       expect(response).to have_http_status(:conflict)
       expect(response.parsed_body["error"]).to include("вже зареєстрований")
     end
+
+    context "when registering a new gateway" do
+      let(:gateway_params) do
+        {
+          provisioning: {
+            hardware_uid: "SNET-Q-AA11BB22",
+            device_type: "gateway",
+            cluster_id: own_cluster.id,
+            latitude: 49.4285,
+            longitude: 32.0620
+          }
+        }
+      end
+
+      it "successfully registers a gateway device" do
+        post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:created)
+        body = response.parsed_body
+        expect(body["did"]).to eq("SNET-Q-AA11BB22")
+        expect(body["aes_key"]).to be_present
+      end
+    end
+
+    context "when registering a new tree" do
+      let(:tree_params) do
+        {
+          provisioning: {
+            hardware_uid: "AABB11223344CCDD",
+            device_type: "tree",
+            cluster_id: own_cluster.id,
+            family_id: tree_family.id,
+            latitude: 49.4285,
+            longitude: 32.0620
+          }
+        }
+      end
+
+      it "successfully registers a tree device with auto-generated DID" do
+        post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:created)
+        body = response.parsed_body
+        expect(body["did"]).to eq("SNET-3344CCDD")
+        expect(body["aes_key"]).to be_present
+      end
+    end
+
+    context "when device_type is unknown" do
+      let(:bad_type_params) do
+        {
+          provisioning: {
+            hardware_uid: "AABBCCDD99887766",
+            device_type: "quantum_sensor",
+            cluster_id: own_cluster.id,
+            latitude: 49.4285,
+            longitude: 32.0620
+          }
+        }
+      end
+
+      it "returns internal server error" do
+        post "/api/v1/provisioning/register", params: bad_type_params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:internal_server_error)
+        expect(response.parsed_body["error"]).to include("Збій ініціації")
+      end
+    end
+
+    context "when user is not a forester" do
+      let(:investor) { create(:user, :investor, organization: organization) }
+      let(:investor_token) { investor.generate_token_for(:api_access) }
+      let(:investor_headers) { { "Authorization" => "Bearer #{investor_token}" } }
+
+      it "returns forbidden" do
+        post "/api/v1/provisioning/register", params: valid_params, headers: investor_headers, as: :json
+
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "when device fails validation" do
+      let(:invalid_gateway_params) do
+        {
+          provisioning: {
+            hardware_uid: "INVALIDUID",
+            device_type: "gateway",
+            cluster_id: own_cluster.id,
+            latitude: 49.4285,
+            longitude: 32.0620
+          }
+        }
+      end
+
+      it "returns validation errors" do
+        post "/api/v1/provisioning/register", params: invalid_gateway_params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["errors"]).to be_present
+      end
+    end
   end
 end

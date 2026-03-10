@@ -69,6 +69,19 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       expect(response.status).to be_in([ 200, 500 ])
     end
 
+    it "returns stream name, auth token, and provider on success" do
+      get "/api/v1/oracle_visions/stream_config",
+          params: { cluster_id: cluster.id },
+          headers: forester_headers, as: :json
+
+      if response.status == 200
+        body = response.parsed_body
+        expect(body["stream_name"]).to eq("oracle_visions_cluster_#{cluster.id}")
+        expect(body["auth_token"]).to be_present
+        expect(body["provider"]).to eq("SolidCable")
+      end
+    end
+
     it "returns 403 for investor users" do
       get "/api/v1/oracle_visions/stream_config",
           params: { cluster_id: cluster.id },

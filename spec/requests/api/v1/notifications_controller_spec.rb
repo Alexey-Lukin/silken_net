@@ -45,5 +45,15 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
       expect(user.push_token).to eq("fcm_token_abc123")
       expect(response.parsed_body["channels"]["push_token"]).to eq("fcm_token_abc123")
     end
+
+    it "returns unprocessable_content when update fails with invalid params" do
+      patch "/api/v1/notifications/settings",
+            headers: headers,
+            params: { phone_number: "0123" },
+            as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"]).to be_present
+    end
   end
 end

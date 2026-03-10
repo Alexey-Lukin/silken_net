@@ -141,4 +141,57 @@ RSpec.describe EmergencyResponseService do
       expect(described_class.send(:duration_chunks, 5400)).to eq([ 3600, 1800 ])
     end
   end
+
+  describe "no available actuators" do
+    let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree) }
+
+    it "returns early when no actuators are available" do
+      expect(Rails.logger).to receive(:warn).with(/Не знайдено доступних/)
+
+      expect {
+        described_class.call(alert)
+      }.not_to change(ActuatorCommand, :count)
+    end
+  end
+
+  describe "unknown alert_type" do
+    let(:alert) { create(:ews_alert, cluster: cluster, tree: tree, alert_type: :vandalism_breach, severity: :critical) }
+
+    it "logs info but does not create commands" do
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      expect(Rails.logger).to receive(:info).with(/Тип тривоги.*обробляється лише сповіщенням/)
+
+      expect {
+        described_class.call(alert)
+      }.not_to change(ActuatorCommand, :count)
+    end
+  end
+
+  describe "tree without coordinates" do
+    let(:tree_no_coords) { create(:tree, cluster: cluster, latitude: nil, longitude: nil) }
+    let(:alert) { create(:ews_alert, cluster: cluster, tree: tree_no_coords, alert_type: :insect_epidemic, severity: :low) }
+
+    it "does not sort by proximity and still creates commands" do
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      expect {
+        described_class.call(alert)
+      }.to change(ActuatorCommand, :count).by(1)
+    end
+  end
+
+  describe "insert_all failure" do
+    let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree) }
+
+    it "logs error when insert_all fails" do
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      allow(ActuatorCommand).to receive(:insert_all).and_raise(StandardError, "DB insert failed")
+
+      expect(Rails.logger).to receive(:error).with(/Масове створення наказів провалене/)
+
+      described_class.call(alert)
+    end
+  end
 end

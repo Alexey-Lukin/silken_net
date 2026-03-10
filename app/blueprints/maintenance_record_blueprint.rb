@@ -11,7 +11,7 @@ class MaintenanceRecordBlueprint < Blueprinter::Base
 
     field(:total_cost) { |r| r.total_cost.round(2) }
     field(:photo_count) { |r| r.photos.size }
-    field(:maintainable_label) { |r| "#{r.maintainable_type} // #{r.maintainable&.did || r.maintainable&.uid}" }
+    field(:maintainable_label) { |r| "#{r.maintainable_type} // #{r.maintainable&.try(:did) || r.maintainable&.uid}" }
 
     association :user, blueprint: UserBlueprint, view: :minimal
   end

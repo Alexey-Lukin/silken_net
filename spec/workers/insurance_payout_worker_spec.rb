@@ -87,5 +87,20 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         described_class.new.perform(insurance.id)
       }.to raise_error(StandardError, "RPC error")
     end
+
+    context "when no active trees exist but non-active trees have wallets" do
+      it "falls back to non-active tree wallet for audit" do
+        # Remove the active tree so no active trees exist
+        tree.update!(status: :removed)
+
+        expect {
+          described_class.new.perform(insurance.id)
+        }.to change(BlockchainTransaction, :count).by(1)
+
+        tx = BlockchainTransaction.last
+        expect(tx.wallet.tree).to eq(tree)
+        expect(tx.notes).to include("Страхове відшкодування")
+      end
+    end
   end
 end
