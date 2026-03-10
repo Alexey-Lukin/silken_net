@@ -2,6 +2,7 @@
 # Outputs — Akash Deployment Information
 # =============================================================================
 # Mirrors the structure of terraform/outputs.tf for consistency.
+# See docs/DEPLOYMENT.md § "Akash Network" for the full deployment flow.
 
 output "sdl_file" {
   description = "Path to the generated Akash SDL file (contains secrets — handle securely)"
