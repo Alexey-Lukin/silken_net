@@ -59,8 +59,8 @@ RSpec.describe Chainlink::OracleDispatchService do
     it "uses stub mode when CHAINLINK_FUNCTIONS_ROUTER is not set" do
       service = described_class.new(telemetry_log)
 
+      allow(Rails.logger).to receive(:info).and_call_original
       expect(Rails.logger).to receive(:info).with(/Stub mode/).at_least(:once)
-      allow(Rails.logger).to receive(:info)
 
       request_id = service.dispatch!
       expect(request_id).to start_with("chainlink-req-")
