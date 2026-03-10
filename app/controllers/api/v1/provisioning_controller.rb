@@ -53,6 +53,9 @@ module Api
               skip_photo_validation: true
             )
 
+            # РЕЄСТРАЦІЯ PEAQ DID (Machine Identity)
+            PeaqRegistrationWorker.perform_async(@device.id) if @device.is_a?(Tree)
+
             respond_to do |format|
               format.json do
                 render json: { did: device_identifier, aes_key: @key_hex, device: @device }, status: :created

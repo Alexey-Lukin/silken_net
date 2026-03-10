@@ -15,6 +15,7 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
     allow(ActionCable.server).to receive(:broadcast)
+    allow(PeaqRegistrationWorker).to receive(:perform_async)
   end
 
   # ---------------------------------------------------------------------------

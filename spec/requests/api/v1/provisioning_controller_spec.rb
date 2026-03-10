@@ -20,6 +20,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       key_derivation_salt: "test-salt-value-for-derivation-ok"
     )
     allow(HardwareKeyService).to receive(:provision).and_return(SecureRandom.hex(32).upcase)
+    allow(PeaqRegistrationWorker).to receive(:perform_async)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
   end
 
@@ -92,6 +93,32 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         body = response.parsed_body
         expect(body["did"]).to eq("SNET-3344CCDD")
         expect(body["aes_key"]).to be_present
+      end
+
+      it "enqueues PeaqRegistrationWorker for tree registration" do
+        post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:created)
+        expect(PeaqRegistrationWorker).to have_received(:perform_async).with(Tree.last.id)
+      end
+    end
+
+    context "when registering a gateway" do
+      it "does not enqueue PeaqRegistrationWorker" do
+        gateway_params = {
+          provisioning: {
+            hardware_uid: "SNET-Q-BB22CC33",
+            device_type: "gateway",
+            cluster_id: own_cluster.id,
+            latitude: 49.4285,
+            longitude: 32.0620
+          }
+        }
+
+        post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:created)
+        expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
       end
     end
 

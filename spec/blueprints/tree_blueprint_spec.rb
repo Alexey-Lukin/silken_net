@@ -27,6 +27,10 @@ RSpec.describe TreeBlueprint, type: :model do
       expect(parsed["status"]).to eq("active")
     end
 
+    it "includes peaq_did" do
+      expect(parsed).to have_key("peaq_did")
+    end
+
     it "excludes fields from other views" do
       expect(parsed).not_to have_key("latitude")
       expect(parsed).not_to have_key("longitude")
@@ -46,6 +50,10 @@ RSpec.describe TreeBlueprint, type: :model do
     it "includes did and status" do
       expect(parsed["did"]).to eq(tree.did)
       expect(parsed["status"]).to eq("active")
+    end
+
+    it "includes peaq_did in index view" do
+      expect(parsed).to have_key("peaq_did")
     end
 
     it "includes last_seen_at" do
@@ -83,6 +91,10 @@ RSpec.describe TreeBlueprint, type: :model do
     it "includes did and status" do
       expect(parsed["did"]).to eq(tree.did)
       expect(parsed["status"]).to eq("active")
+    end
+
+    it "includes peaq_did in show view" do
+      expect(parsed).to have_key("peaq_did")
     end
 
     it "includes last_seen_at" do
