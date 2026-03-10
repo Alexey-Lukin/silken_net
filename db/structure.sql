@@ -1369,7 +1369,8 @@ CREATE TABLE public.trees (
     firmware_version character varying,
     latest_voltage_mv integer,
     health_streak integer DEFAULT 0 NOT NULL,
-    firmware_update_status integer DEFAULT 0 NOT NULL
+    firmware_update_status integer DEFAULT 0 NOT NULL,
+    peaq_did character varying
 );
 
 
@@ -2675,6 +2676,13 @@ CREATE UNIQUE INDEX index_trees_on_did ON public.trees USING btree (did);
 
 
 --
+-- Name: index_trees_on_peaq_did; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_trees_on_peaq_did ON public.trees USING btree (peaq_did);
+
+
+--
 -- Name: index_trees_on_status; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3626,6 +3634,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260310160000'),
 ('20260309070000'),
 ('20260308160000'),
 ('20260308143801'),

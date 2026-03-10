@@ -4,11 +4,11 @@ class TreeBlueprint < Blueprinter::Base
   identifier :id
 
   view :minimal do
-    fields :did, :status
+    fields :did, :status, :peaq_did
   end
 
   view :index do
-    fields :did, :status, :latitude, :longitude, :last_seen_at
+    fields :did, :status, :peaq_did, :latitude, :longitude, :last_seen_at
     field(:current_stress) { |tree| tree.current_stress }
     field(:under_threat?) { |tree| tree.under_threat? }
     association :wallet, blueprint: WalletBlueprint do |tree|
@@ -18,7 +18,7 @@ class TreeBlueprint < Blueprinter::Base
   end
 
   view :show do
-    fields :did, :status, :last_seen_at
+    fields :did, :status, :peaq_did, :last_seen_at
     field(:current_stress) { |tree| tree.current_stress }
     field(:under_threat?) { |tree| tree.under_threat? }
     association :wallet, blueprint: WalletBlueprint do |tree|
