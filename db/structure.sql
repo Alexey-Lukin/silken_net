@@ -3793,6 +3793,13 @@ ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telem
 
 
 --
+-- Name: clusters trigger_sync_cluster_geo_boundary; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trigger_sync_cluster_geo_boundary BEFORE INSERT OR UPDATE OF geojson_polygon ON public.clusters FOR EACH ROW EXECUTE FUNCTION public.sync_cluster_geo_boundary();
+
+
+--
 -- Name: gateway_telemetry_logs fk_gateway_telemetry_logs_gateway_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

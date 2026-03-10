@@ -21,7 +21,7 @@ RSpec.describe Chainlink::OracleDispatchService do
       expect(telemetry_log.oracle_status).to eq("dispatched")
     end
 
-    it "returns a chainlink request id string" do
+    it "returns a chainlink request id string in stub mode" do
       service = described_class.new(telemetry_log)
       request_id = service.dispatch!
 
@@ -39,21 +39,31 @@ RSpec.describe Chainlink::OracleDispatchService do
       )
     end
 
-    it "builds payload with tree peaq_did, Lorenz state, and zk_proof_ref" do
+    it "builds payload with Lorenz constants from SilkenNet::Attractor" do
       service = described_class.new(telemetry_log)
 
-      # Access private method to verify payload structure
       payload = service.send(:build_chainlink_payload)
 
       expect(payload[:peaq_did]).to eq("did:peaq:0x#{"a" * 40}")
       expect(payload[:zk_proof_ref]).to eq("zk-proof-abc123")
-      expect(payload[:lorenz_state][:sigma]).to eq(10)
-      expect(payload[:lorenz_state][:rho]).to eq(28)
+      expect(payload[:lorenz_state][:sigma]).to eq(SilkenNet::Attractor::BASE_SIGMA.to_f)
+      expect(payload[:lorenz_state][:rho]).to eq(SilkenNet::Attractor::BASE_RHO.to_f)
+      expect(payload[:lorenz_state][:beta]).to eq(SilkenNet::Attractor::BASE_BETA.to_f)
       expect(payload[:lorenz_state][:z_value]).to eq(telemetry_log.z_value.to_f)
       expect(payload[:tree_did]).to eq(tree.did)
       expect(payload[:telemetry_log_id]).to eq(telemetry_log.id)
       expect(payload[:created_at]).to eq(telemetry_log.created_at.iso8601(6))
       expect(payload[:timestamp]).to be_present
+    end
+
+    it "uses stub mode when CHAINLINK_FUNCTIONS_ROUTER is not set" do
+      service = described_class.new(telemetry_log)
+
+      expect(Rails.logger).to receive(:info).with(/Stub mode/).at_least(:once)
+      allow(Rails.logger).to receive(:info)
+
+      request_id = service.dispatch!
+      expect(request_id).to start_with("chainlink-req-")
     end
   end
 end

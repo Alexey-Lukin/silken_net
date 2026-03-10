@@ -4,12 +4,9 @@ module Chainlink
   class OracleDispatchService
     class DispatchError < StandardError; end
 
-    # Lorenz attractor defaults (σ, ρ, β).
-    # LORENZ_BETA uses Rational for exact precision in backend math;
-    # converted to Float only at the JSON payload boundary.
-    LORENZ_SIGMA = 10
-    LORENZ_RHO   = 28
-    LORENZ_BETA  = Rational(8, 3)
+    # Lorenz attractor constants — single source of truth in SilkenNet::Attractor.
+    # We delegate to avoid duplication: σ=10, ρ=28, β=8/3.
+    delegate :BASE_SIGMA, :BASE_RHO, :BASE_BETA, to: SilkenNet::Attractor
 
     def initialize(telemetry_log)
       @log = telemetry_log
@@ -20,7 +17,7 @@ module Chainlink
       validate_iotex_verification!
 
       payload = build_chainlink_payload
-      request_id = simulate_chainlink_request(payload)
+      request_id = submit_chainlink_request(payload)
 
       @log.update!(
         chainlink_request_id: request_id,
@@ -44,9 +41,9 @@ module Chainlink
       {
         peaq_did: @tree.peaq_did,
         lorenz_state: {
-          sigma: LORENZ_SIGMA,
-          rho: LORENZ_RHO,
-          beta: LORENZ_BETA.to_f,
+          sigma: SilkenNet::Attractor::BASE_SIGMA.to_f,
+          rho: SilkenNet::Attractor::BASE_RHO.to_f,
+          beta: SilkenNet::Attractor::BASE_BETA.to_f,
           z_value: @log.z_value.to_f
         },
         zk_proof_ref: @log.zk_proof_ref,
@@ -60,11 +57,59 @@ module Chainlink
       }
     end
 
-    # Simulates sending a request to the Chainlink Functions DON.
-    # In production, this would call the Chainlink Functions Router contract
-    # via Eth::Client to submit the request on-chain.
-    def simulate_chainlink_request(_payload)
-      "chainlink-req-#{SecureRandom.hex(16)}"
+    # Submits a request to the Chainlink Functions DON.
+    # In production (CHAINLINK_FUNCTIONS_ROUTER configured): calls the Router
+    # contract on-chain via Eth::Client to submit the request.
+    # In development/test (no key): generates a local stub request ID.
+    def submit_chainlink_request(payload)
+      router_address = ENV["CHAINLINK_FUNCTIONS_ROUTER"]
+      subscription_id = ENV["CHAINLINK_SUBSCRIPTION_ID"]
+
+      if router_address.present? && subscription_id.present?
+        send_on_chain_request(payload, router_address, subscription_id)
+      else
+        Rails.logger.info "🔗 [Chainlink] Stub mode — CHAINLINK_FUNCTIONS_ROUTER не налаштовано. Генерую локальний request ID."
+        "chainlink-req-#{SecureRandom.hex(16)}"
+      end
+    end
+
+    def send_on_chain_request(payload, router_address, subscription_id)
+      client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
+      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
+
+      contract = Eth::Contract.from_abi(
+        name: "FunctionsRouter",
+        address: router_address,
+        abi: functions_router_abi
+      )
+
+      tx_hash = client.transact(
+        contract, "sendRequest",
+        subscription_id.to_i,
+        payload.to_json,
+        sender_key: oracle_key,
+        legacy: false
+      )
+
+      Rails.logger.info "🔗 [Chainlink] On-chain request submitted. TX: #{tx_hash}"
+      tx_hash
+    rescue StandardError => e
+      raise DispatchError, "Chainlink on-chain dispatch failed: #{e.message}"
+    end
+
+    def functions_router_abi
+      [
+        {
+          "inputs" => [
+            { "internalType" => "uint64", "name" => "subscriptionId", "type" => "uint64" },
+            { "internalType" => "string", "name" => "data", "type" => "string" }
+          ],
+          "name" => "sendRequest",
+          "outputs" => [ { "internalType" => "bytes32", "name" => "requestId", "type" => "bytes32" } ],
+          "stateMutability" => "nonpayable",
+          "type" => "function"
+        }
+      ].to_json
     end
   end
 end
