@@ -39,7 +39,7 @@ module Iotex
     end
 
     def hardware_signature
-      Digest::SHA256.hexdigest("#{@tree.did}:#{@telemetry_log.id}:#{@telemetry_log.created_at.to_i}")
+      Digest::SHA256.hexdigest("#{@tree.did}:#{@telemetry_log.id_value}:#{@telemetry_log.created_at.to_i}")
     end
 
     def send_to_w3bstream(payload)

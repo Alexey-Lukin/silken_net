@@ -5,7 +5,7 @@ class IotexVerificationWorker
   sidekiq_options queue: "web3", retry: 5
 
   def perform(telemetry_log_id, created_at_iso)
-    log = TelemetryLog.find_by(id: telemetry_log_id, created_at: created_at_iso)
+    log = TelemetryLog.find_by(id: telemetry_log_id, created_at: Time.iso8601(created_at_iso))
     return Rails.logger.error "🛑 [IoTeX] TelemetryLog ##{telemetry_log_id} не знайдено." unless log
     return Rails.logger.info "✅ [IoTeX] TelemetryLog ##{telemetry_log_id} вже верифіковано." if log.verified_by_iotex?
 
