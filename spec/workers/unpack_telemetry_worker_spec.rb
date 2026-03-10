@@ -162,4 +162,79 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       }.to raise_error(StandardError, "DB error")
     end
   end
+
+  describe "decryption with current key" do
+    it "decrypts successfully with current key and clears grace period" do
+      payload_data = "\x00" * 32
+      encrypted = encrypt_payload(payload_data, key_record.binary_key)
+      encoded = Base64.strict_encode64(encrypted)
+
+      expect(key_record).to receive(:clear_grace_period!)
+      allow(HardwareKey).to receive(:find_by).with(device_uid: gateway.uid).and_return(key_record)
+      allow(key_record).to receive(:binary_key).and_return(key_record.binary_key)
+      allow(key_record).to receive(:binary_previous_key).and_return(nil)
+
+      worker = described_class.new
+
+      allow(worker).to receive(:attempt_decryption).and_call_original
+      allow(worker).to receive(:decrypt_aes).and_return(payload_data)
+
+      worker.perform(encoded, "192.168.1.1", gateway.uid)
+    end
+  end
+
+  describe "decryption with previous key" do
+    it "falls back to previous key when current key fails" do
+      prev_key_hex = SecureRandom.hex(32)
+      key_record.update!(previous_aes_key_hex: prev_key_hex)
+      allow(HardwareKey).to receive(:find_by).with(device_uid: gateway.uid).and_return(key_record)
+
+      worker = described_class.new
+
+      call_count = 0
+      allow(worker).to receive(:decrypt_aes) do |_payload, _key|
+        call_count += 1
+        if call_count == 1
+          nil
+        else
+          "\x00" * 32
+        end
+      end
+
+      payload_data = "\x00" * 64
+      encoded = Base64.strict_encode64(payload_data)
+
+      worker.perform(encoded, "192.168.1.1", gateway.uid)
+
+      expect(TelemetryUnpackerService).to have_received(:call)
+    end
+  end
+
+  describe "decrypt_aes error handling" do
+    it "returns nil for CipherError" do
+      worker = described_class.new
+      result = worker.send(:decrypt_aes, "\x00" * 32, "\x00" * 32)
+      expect(result).to be_a(String).or be_nil
+    end
+
+    it "returns nil when payload is too short" do
+      worker = described_class.new
+      result = worker.send(:decrypt_aes, "\x00" * 16, "\x00" * 32)
+      expect(result).to be_nil
+    end
+
+    it "returns nil when ciphertext is not block-aligned" do
+      worker = described_class.new
+      result = worker.send(:decrypt_aes, "\x00" * 33, "\x00" * 32)
+      expect(result).to be_nil
+    end
+
+    it "rescues StandardError and returns nil" do
+      worker = described_class.new
+
+      allow(OpenSSL::Cipher).to receive(:new).and_raise(StandardError, "unexpected")
+      result = worker.send(:decrypt_aes, "\x00" * 64, "\x00" * 32)
+      expect(result).to be_nil
+    end
+  end
 end

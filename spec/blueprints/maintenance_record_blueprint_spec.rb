@@ -127,4 +127,33 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
       expect(parsed).to all(include("total_cost", "maintainable_label"))
     end
   end
+
+  describe "index view with maintainable_label edge cases" do
+    it "renders maintainable_label with did for tree" do
+      record = create(:maintenance_record, user: user, maintainable: tree)
+      json = described_class.render_as_hash(record, view: :index)
+
+      expect(json[:maintainable_label]).to include("Tree")
+      expect(json[:maintainable_label]).to include(tree.did)
+    end
+
+    it "renders maintainable_label with uid for gateway" do
+      gateway = create(:gateway)
+      record = create(:maintenance_record, user: user, maintainable: gateway)
+      json = described_class.render_as_hash(record, view: :index)
+
+      expect(json[:maintainable_label]).to include("Gateway")
+      expect(json[:maintainable_label]).to include(gateway.uid)
+    end
+  end
+
+  describe "show view photo_urls edge cases" do
+    it "renders empty photo_urls when no photos attached" do
+      record = create(:maintenance_record, user: user, maintainable: tree)
+      json = described_class.render_as_hash(record, view: :show, url_helpers: nil)
+
+      expect(json[:photo_urls]).to eq([])
+    end
+
+  end
 end
