@@ -12,7 +12,11 @@ class PeaqRegistrationWorker
     service = Peaq::DidRegistryService.new(tree)
     peaq_did = service.register!
 
-    tree.update!(peaq_did: peaq_did)
+    tree.with_lock do
+      return Rails.logger.info "✅ [peaq DID] Дерево #{tree.did} вже має peaq DID: #{tree.peaq_did}" if tree.peaq_did.present?
+
+      tree.update!(peaq_did: peaq_did)
+    end
 
     Rails.logger.info "🌿 [peaq DID] Дерево #{tree.did} отримало DID: #{peaq_did}"
   rescue Peaq::DidRegistryService::RegistrationError => e

@@ -25,7 +25,7 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
         result = service.register!
 
         expect(result).to start_with("did:peaq:0x")
-        expect(result.length).to eq(49) # "did:peaq:0x" (11) + 40 hex chars
+        expect(result.length).to eq(51) # "did:peaq:0x" (11) + 40 hex chars
       end
 
       it "generates deterministic DID based on tree attributes" do

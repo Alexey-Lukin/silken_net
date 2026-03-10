@@ -99,7 +99,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
-        expect(PeaqRegistrationWorker).to have_received(:perform_async).with(kind_of(Integer))
+        expect(PeaqRegistrationWorker).to have_received(:perform_async).with(Tree.last.id)
       end
     end
 
