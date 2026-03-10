@@ -34,4 +34,22 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       expect(response.parsed_body["token"]).not_to eq(first_token)
     end
   end
+
+  describe "DELETE /api/v1/logout" do
+    let(:api_token) { user.generate_token_for(:api_access) }
+    let(:headers) { { "Authorization" => "Bearer #{api_token}" } }
+
+    it "logs out the user and returns success message" do
+      delete "/api/v1/logout", headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["message"]).to be_present
+    end
+
+    it "returns 401 without authentication" do
+      delete "/api/v1/logout", as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
 end

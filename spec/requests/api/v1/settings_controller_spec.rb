@@ -64,4 +64,25 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       expect(response).to have_http_status(:forbidden)
     end
   end
+
+  describe "GET /api/v1/settings logo_url" do
+    it "returns nil logo_url when no logo is attached" do
+      get "/api/v1/settings", headers: admin_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["organization"]["logo_url"]).to be_nil
+    end
+  end
+
+  describe "PATCH /api/v1/settings failure" do
+    it "returns errors when organization update fails" do
+      patch "/api/v1/settings",
+            headers: admin_headers,
+            params: { organization: { name: "", billing_email: "invalid" } },
+            as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"]).to be_present
+    end
+  end
 end

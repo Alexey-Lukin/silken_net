@@ -78,5 +78,29 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       get "/api/v1/dashboard", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
+
+    context "energy status branches" do
+      it "returns LOW_RESERVE when no telemetry data exists" do
+        get "/api/v1/dashboard", headers: headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        energy = response.parsed_body["energy"]
+        expect(energy["avg_voltage"]).to eq(0)
+        expect(energy["status"]).to eq("LOW_RESERVE")
+      end
+
+      it "returns STABLE when average voltage exceeds 3300 mV" do
+        tree = create(:tree, cluster: cluster, status: :active)
+        create(:telemetry_log, tree: tree, voltage_mv: 4200, created_at: 10.minutes.ago)
+        create(:telemetry_log, tree: tree, voltage_mv: 4000, created_at: 20.minutes.ago)
+
+        get "/api/v1/dashboard", headers: headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        energy = response.parsed_body["energy"]
+        expect(energy["avg_voltage"]).to be > 3300
+        expect(energy["status"]).to eq("STABLE")
+      end
+    end
   end
 end
