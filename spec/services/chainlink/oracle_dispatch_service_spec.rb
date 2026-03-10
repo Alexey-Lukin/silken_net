@@ -52,6 +52,8 @@ RSpec.describe Chainlink::OracleDispatchService do
       expect(payload[:lorenz_state][:z_value]).to eq(telemetry_log.z_value.to_f)
       expect(payload[:tree_did]).to eq(tree.did)
       expect(payload[:telemetry_log_id]).to eq(telemetry_log.id)
+      expect(payload[:created_at]).to eq(telemetry_log.created_at.iso8601(6))
+      expect(payload[:timestamp]).to be_present
     end
   end
 end

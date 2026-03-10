@@ -1062,7 +1062,9 @@ CREATE TABLE public.telemetry_logs (
     z_value numeric,
     sap_flow numeric,
     verified_by_iotex boolean DEFAULT false NOT NULL,
-    zk_proof_ref character varying
+    zk_proof_ref character varying,
+    chainlink_request_id character varying,
+    oracle_status character varying DEFAULT 'pending'::character varying
 )
 PARTITION BY RANGE (created_at);
 
@@ -1110,7 +1112,9 @@ CREATE TABLE public.telemetry_logs_default (
     z_value numeric,
     sap_flow numeric,
     verified_by_iotex boolean DEFAULT false NOT NULL,
-    zk_proof_ref character varying
+    zk_proof_ref character varying,
+    chainlink_request_id character varying,
+    oracle_status character varying DEFAULT 'pending'::character varying
 );
 
 
@@ -1138,7 +1142,9 @@ CREATE TABLE public.telemetry_logs_y2026m01 (
     z_value numeric,
     sap_flow numeric,
     verified_by_iotex boolean DEFAULT false NOT NULL,
-    zk_proof_ref character varying
+    zk_proof_ref character varying,
+    chainlink_request_id character varying,
+    oracle_status character varying DEFAULT 'pending'::character varying
 );
 
 
@@ -1166,7 +1172,9 @@ CREATE TABLE public.telemetry_logs_y2026m02 (
     z_value numeric,
     sap_flow numeric,
     verified_by_iotex boolean DEFAULT false NOT NULL,
-    zk_proof_ref character varying
+    zk_proof_ref character varying,
+    chainlink_request_id character varying,
+    oracle_status character varying DEFAULT 'pending'::character varying
 );
 
 
@@ -1194,7 +1202,9 @@ CREATE TABLE public.telemetry_logs_y2026m03 (
     z_value numeric,
     sap_flow numeric,
     verified_by_iotex boolean DEFAULT false NOT NULL,
-    zk_proof_ref character varying
+    zk_proof_ref character varying,
+    chainlink_request_id character varying,
+    oracle_status character varying DEFAULT 'pending'::character varying
 );
 
 
@@ -1222,7 +1232,9 @@ CREATE TABLE public.telemetry_logs_y2026m04 (
     z_value numeric,
     sap_flow numeric,
     verified_by_iotex boolean DEFAULT false NOT NULL,
-    zk_proof_ref character varying
+    zk_proof_ref character varying,
+    chainlink_request_id character varying,
+    oracle_status character varying DEFAULT 'pending'::character varying
 );
 
 
@@ -1250,7 +1262,9 @@ CREATE TABLE public.telemetry_logs_y2026m05 (
     z_value numeric,
     sap_flow numeric,
     verified_by_iotex boolean DEFAULT false NOT NULL,
-    zk_proof_ref character varying
+    zk_proof_ref character varying,
+    chainlink_request_id character varying,
+    oracle_status character varying DEFAULT 'pending'::character varying
 );
 
 
@@ -1278,7 +1292,9 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
     z_value numeric,
     sap_flow numeric,
     verified_by_iotex boolean DEFAULT false NOT NULL,
-    zk_proof_ref character varying
+    zk_proof_ref character varying,
+    chainlink_request_id character varying,
+    oracle_status character varying DEFAULT 'pending'::character varying
 );
 
 
@@ -2258,6 +2274,27 @@ CREATE INDEX idx_telemetry_logs_bio_status_created ON ONLY public.telemetry_logs
 
 
 --
+-- Name: idx_telemetry_logs_oracle_dispatched; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_logs_oracle_dispatched ON ONLY public.telemetry_logs USING btree (oracle_status) WHERE ((oracle_status)::text = 'dispatched'::text);
+
+
+--
+-- Name: idx_telemetry_logs_oracle_failed; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_logs_oracle_failed ON ONLY public.telemetry_logs USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
+
+
+--
+-- Name: idx_telemetry_logs_oracle_fulfilled; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_logs_oracle_fulfilled ON ONLY public.telemetry_logs USING btree (oracle_status) WHERE ((oracle_status)::text = 'fulfilled'::text);
+
+
+--
 -- Name: idx_telemetry_logs_piezo_created; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2643,6 +2680,13 @@ CREATE INDEX index_sessions_on_user_id ON public.sessions USING btree (user_id);
 
 
 --
+-- Name: index_telemetry_logs_on_chainlink_request_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_logs_on_chainlink_request_id ON ONLY public.telemetry_logs USING btree (chainlink_request_id);
+
+
+--
 -- Name: index_telemetry_logs_on_tree_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2776,6 +2820,34 @@ CREATE INDEX telemetry_logs_default_bio_status_created_at_idx ON public.telemetr
 
 
 --
+-- Name: telemetry_logs_default_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_default_chainlink_request_id_idx ON public.telemetry_logs_default USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_default_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_default_oracle_status_idx ON public.telemetry_logs_default USING btree (oracle_status) WHERE ((oracle_status)::text = 'dispatched'::text);
+
+
+--
+-- Name: telemetry_logs_default_oracle_status_idx1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_default_oracle_status_idx1 ON public.telemetry_logs_default USING btree (oracle_status) WHERE ((oracle_status)::text = 'fulfilled'::text);
+
+
+--
+-- Name: telemetry_logs_default_oracle_status_idx2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_default_oracle_status_idx2 ON public.telemetry_logs_default USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
+
+
+--
 -- Name: telemetry_logs_default_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2801,6 +2873,34 @@ CREATE INDEX telemetry_logs_default_tree_id_idx ON public.telemetry_logs_default
 --
 
 CREATE INDEX telemetry_logs_y2026m01_bio_status_created_at_idx ON public.telemetry_logs_y2026m01 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m01_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m01_chainlink_request_id_idx ON public.telemetry_logs_y2026m01 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m01_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m01_oracle_status_idx ON public.telemetry_logs_y2026m01 USING btree (oracle_status) WHERE ((oracle_status)::text = 'dispatched'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m01_oracle_status_idx1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m01_oracle_status_idx1 ON public.telemetry_logs_y2026m01 USING btree (oracle_status) WHERE ((oracle_status)::text = 'fulfilled'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m01_oracle_status_idx2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m01_oracle_status_idx2 ON public.telemetry_logs_y2026m01 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
 
 
 --
@@ -2832,6 +2932,34 @@ CREATE INDEX telemetry_logs_y2026m02_bio_status_created_at_idx ON public.telemet
 
 
 --
+-- Name: telemetry_logs_y2026m02_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m02_chainlink_request_id_idx ON public.telemetry_logs_y2026m02 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m02_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m02_oracle_status_idx ON public.telemetry_logs_y2026m02 USING btree (oracle_status) WHERE ((oracle_status)::text = 'dispatched'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m02_oracle_status_idx1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m02_oracle_status_idx1 ON public.telemetry_logs_y2026m02 USING btree (oracle_status) WHERE ((oracle_status)::text = 'fulfilled'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m02_oracle_status_idx2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m02_oracle_status_idx2 ON public.telemetry_logs_y2026m02 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
+
+
+--
 -- Name: telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2857,6 +2985,34 @@ CREATE INDEX telemetry_logs_y2026m02_tree_id_idx ON public.telemetry_logs_y2026m
 --
 
 CREATE INDEX telemetry_logs_y2026m03_bio_status_created_at_idx ON public.telemetry_logs_y2026m03 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m03_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m03_chainlink_request_id_idx ON public.telemetry_logs_y2026m03 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m03_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m03_oracle_status_idx ON public.telemetry_logs_y2026m03 USING btree (oracle_status) WHERE ((oracle_status)::text = 'dispatched'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m03_oracle_status_idx1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m03_oracle_status_idx1 ON public.telemetry_logs_y2026m03 USING btree (oracle_status) WHERE ((oracle_status)::text = 'fulfilled'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m03_oracle_status_idx2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m03_oracle_status_idx2 ON public.telemetry_logs_y2026m03 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
 
 
 --
@@ -2888,6 +3044,34 @@ CREATE INDEX telemetry_logs_y2026m04_bio_status_created_at_idx ON public.telemet
 
 
 --
+-- Name: telemetry_logs_y2026m04_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m04_chainlink_request_id_idx ON public.telemetry_logs_y2026m04 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m04_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m04_oracle_status_idx ON public.telemetry_logs_y2026m04 USING btree (oracle_status) WHERE ((oracle_status)::text = 'dispatched'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m04_oracle_status_idx1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m04_oracle_status_idx1 ON public.telemetry_logs_y2026m04 USING btree (oracle_status) WHERE ((oracle_status)::text = 'fulfilled'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m04_oracle_status_idx2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m04_oracle_status_idx2 ON public.telemetry_logs_y2026m04 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
+
+
+--
 -- Name: telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2916,6 +3100,34 @@ CREATE INDEX telemetry_logs_y2026m05_bio_status_created_at_idx ON public.telemet
 
 
 --
+-- Name: telemetry_logs_y2026m05_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m05_chainlink_request_id_idx ON public.telemetry_logs_y2026m05 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m05_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m05_oracle_status_idx ON public.telemetry_logs_y2026m05 USING btree (oracle_status) WHERE ((oracle_status)::text = 'dispatched'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m05_oracle_status_idx1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m05_oracle_status_idx1 ON public.telemetry_logs_y2026m05 USING btree (oracle_status) WHERE ((oracle_status)::text = 'fulfilled'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m05_oracle_status_idx2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m05_oracle_status_idx2 ON public.telemetry_logs_y2026m05 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
+
+
+--
 -- Name: telemetry_logs_y2026m05_piezo_voltage_mv_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2941,6 +3153,34 @@ CREATE INDEX telemetry_logs_y2026m05_tree_id_idx ON public.telemetry_logs_y2026m
 --
 
 CREATE INDEX telemetry_logs_y2026m06_bio_status_created_at_idx ON public.telemetry_logs_y2026m06 USING btree (bio_status, created_at);
+
+
+--
+-- Name: telemetry_logs_y2026m06_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m06_chainlink_request_id_idx ON public.telemetry_logs_y2026m06 USING btree (chainlink_request_id);
+
+
+--
+-- Name: telemetry_logs_y2026m06_oracle_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m06_oracle_status_idx ON public.telemetry_logs_y2026m06 USING btree (oracle_status) WHERE ((oracle_status)::text = 'dispatched'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m06_oracle_status_idx1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m06_oracle_status_idx1 ON public.telemetry_logs_y2026m06 USING btree (oracle_status) WHERE ((oracle_status)::text = 'fulfilled'::text);
+
+
+--
+-- Name: telemetry_logs_y2026m06_oracle_status_idx2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telemetry_logs_y2026m06_oracle_status_idx2 ON public.telemetry_logs_y2026m06 USING btree (oracle_status) WHERE ((oracle_status)::text = 'failed'::text);
 
 
 --
@@ -3119,6 +3359,34 @@ ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public
 
 
 --
+-- Name: telemetry_logs_default_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_default_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_default_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_dispatched ATTACH PARTITION public.telemetry_logs_default_oracle_status_idx;
+
+
+--
+-- Name: telemetry_logs_default_oracle_status_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.telemetry_logs_default_oracle_status_idx1;
+
+
+--
+-- Name: telemetry_logs_default_oracle_status_idx2; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_default_oracle_status_idx2;
+
+
+--
 -- Name: telemetry_logs_default_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -3151,6 +3419,34 @@ ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telem
 --
 
 ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m01_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m01_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m01_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m01_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_dispatched ATTACH PARTITION public.telemetry_logs_y2026m01_oracle_status_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m01_oracle_status_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.telemetry_logs_y2026m01_oracle_status_idx1;
+
+
+--
+-- Name: telemetry_logs_y2026m01_oracle_status_idx2; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m01_oracle_status_idx2;
 
 
 --
@@ -3189,6 +3485,34 @@ ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public
 
 
 --
+-- Name: telemetry_logs_y2026m02_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m02_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m02_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_dispatched ATTACH PARTITION public.telemetry_logs_y2026m02_oracle_status_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m02_oracle_status_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.telemetry_logs_y2026m02_oracle_status_idx1;
+
+
+--
+-- Name: telemetry_logs_y2026m02_oracle_status_idx2; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m02_oracle_status_idx2;
+
+
+--
 -- Name: telemetry_logs_y2026m02_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -3221,6 +3545,34 @@ ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telem
 --
 
 ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m03_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m03_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m03_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m03_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_dispatched ATTACH PARTITION public.telemetry_logs_y2026m03_oracle_status_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m03_oracle_status_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.telemetry_logs_y2026m03_oracle_status_idx1;
+
+
+--
+-- Name: telemetry_logs_y2026m03_oracle_status_idx2; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m03_oracle_status_idx2;
 
 
 --
@@ -3259,6 +3611,34 @@ ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public
 
 
 --
+-- Name: telemetry_logs_y2026m04_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m04_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m04_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_dispatched ATTACH PARTITION public.telemetry_logs_y2026m04_oracle_status_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m04_oracle_status_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.telemetry_logs_y2026m04_oracle_status_idx1;
+
+
+--
+-- Name: telemetry_logs_y2026m04_oracle_status_idx2; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m04_oracle_status_idx2;
+
+
+--
 -- Name: telemetry_logs_y2026m04_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -3291,6 +3671,34 @@ ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telem
 --
 
 ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public.telemetry_logs_y2026m05_bio_status_created_at_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m05_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m05_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m05_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_dispatched ATTACH PARTITION public.telemetry_logs_y2026m05_oracle_status_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m05_oracle_status_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.telemetry_logs_y2026m05_oracle_status_idx1;
+
+
+--
+-- Name: telemetry_logs_y2026m05_oracle_status_idx2; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m05_oracle_status_idx2;
 
 
 --
@@ -3329,6 +3737,34 @@ ALTER INDEX public.idx_telemetry_logs_bio_status_created ATTACH PARTITION public
 
 
 --
+-- Name: telemetry_logs_y2026m06_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_telemetry_logs_on_chainlink_request_id ATTACH PARTITION public.telemetry_logs_y2026m06_chainlink_request_id_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m06_oracle_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_dispatched ATTACH PARTITION public.telemetry_logs_y2026m06_oracle_status_idx;
+
+
+--
+-- Name: telemetry_logs_y2026m06_oracle_status_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_fulfilled ATTACH PARTITION public.telemetry_logs_y2026m06_oracle_status_idx1;
+
+
+--
+-- Name: telemetry_logs_y2026m06_oracle_status_idx2; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_telemetry_logs_oracle_failed ATTACH PARTITION public.telemetry_logs_y2026m06_oracle_status_idx2;
+
+
+--
 -- Name: telemetry_logs_y2026m06_piezo_voltage_mv_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -3354,13 +3790,6 @@ ALTER INDEX public.index_telemetry_logs_on_tree_id_and_created_at ATTACH PARTITI
 --
 
 ALTER INDEX public.index_telemetry_logs_on_tree_id ATTACH PARTITION public.telemetry_logs_y2026m06_tree_id_idx;
-
-
---
--- Name: clusters trigger_sync_cluster_geo_boundary; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trigger_sync_cluster_geo_boundary BEFORE INSERT OR UPDATE OF geojson_polygon ON public.clusters FOR EACH ROW EXECUTE FUNCTION public.sync_cluster_geo_boundary();
 
 
 --
@@ -3650,6 +4079,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260310180000'),
 ('20260310170000'),
 ('20260310160000'),
 ('20260309070000'),

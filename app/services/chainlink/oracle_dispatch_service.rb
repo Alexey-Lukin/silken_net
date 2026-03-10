@@ -50,6 +50,10 @@ module Chainlink
         zk_proof_ref: @log.zk_proof_ref,
         tree_did: @tree.did,
         telemetry_log_id: @log.id,
+        # [SCALE]: created_at is the partition key for telemetry_logs.
+        # Embedding it in the Chainlink request allows the callback to
+        # include it, enabling partition pruning on billions of rows.
+        created_at: @log.created_at.iso8601(6),
         timestamp: Time.current.iso8601
       }
     end

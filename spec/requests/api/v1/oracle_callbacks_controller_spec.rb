@@ -33,7 +33,20 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
         expect(telemetry_log.oracle_status).to eq("fulfilled")
 
         expect(MintCarbonCoinWorker.jobs.size).to eq(1)
-        expect(MintCarbonCoinWorker.jobs.first["args"]).to eq([ telemetry_log.id ])
+        expect(MintCarbonCoinWorker.jobs.first["args"]).to eq([ telemetry_log.id_value ])
+      end
+
+      it "uses created_at for partition-pruned lookup when provided" do
+        post "/api/v1/oracle_callbacks",
+             params: {
+               chainlink_request_id: telemetry_log.chainlink_request_id,
+               created_at: telemetry_log.created_at.iso8601(6),
+               success: true
+             },
+             as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["status"]).to eq("fulfilled")
       end
     end
 

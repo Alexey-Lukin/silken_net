@@ -158,6 +158,19 @@ See `docs/API.md` for the full 24-endpoint reference.
 | `docs/DEPLOYMENT.md`          | Kamal, Terraform, infrastructure            |
 | `docs/VISION.md`              | Mission, science, roadmap (2026–2030)       |
 
+## Environment Setup
+
+- **Ruby 4.0.1** is located at `/opt/hostedtoolcache/Ruby/4.0.1/x64/bin`. Add it to PATH before running any Ruby/Bundle commands:
+  ```bash
+  export PATH="/opt/hostedtoolcache/Ruby/4.0.1/x64/bin:$PATH"
+  ```
+- Always verify with `ruby --version` before running `bundle install`, `bundle exec rspec`, etc.
+- **Migrations**: When creating or modifying migrations, always run them against the **development** database and commit the updated `db/structure.sql`:
+  ```bash
+  bundle exec rails db:migrate
+  ```
+  This regenerates `db/structure.sql`. The updated `structure.sql` **must** be committed alongside the migration file.
+
 ## Important Notes for Copilot
 
 - This is a **Ukrainian-founded** project; comments and README may be in Ukrainian, but code and API are in English.
