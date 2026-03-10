@@ -60,4 +60,33 @@ RSpec.describe WalletPolicy do
       expect(scope).to include(own_tree.wallet, other_tree.wallet)
     end
   end
+
+  describe "#index?" do
+    let(:forester) { create(:user, :forester, organization: organization) }
+
+    it "returns true for all users" do
+      expect(described_class.new(investor, wallet).index?).to be true
+      expect(described_class.new(forester, wallet).index?).to be true
+      expect(described_class.new(admin, wallet).index?).to be true
+      expect(described_class.new(super_admin, wallet).index?).to be true
+    end
+  end
+
+  describe "#show? when tree.cluster.organization_id is nil" do
+    it "denies access when wallet has no org chain and user is not admin" do
+      allow(wallet).to receive(:organization_id).and_return(nil)
+      allow(wallet).to receive(:tree).and_return(double(cluster: nil))
+
+      other_user = create(:user, :investor, organization: other_org)
+      expect(described_class.new(other_user, wallet).show?).to be false
+    end
+
+    it "denies when tree has no cluster" do
+      allow(wallet).to receive(:organization_id).and_return(nil)
+      tree_double = double(cluster: nil)
+      allow(wallet).to receive(:tree).and_return(tree_double)
+
+      expect(described_class.new(investor, wallet).show?).to be false
+    end
+  end
 end

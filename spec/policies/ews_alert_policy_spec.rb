@@ -39,4 +39,31 @@ RSpec.describe EwsAlertPolicy do
       expect(scope).to include(clusterless_alert)
     end
   end
+
+  describe "#index?" do
+    let(:admin) { create(:user, :admin, organization: organization) }
+    let(:super_admin_idx) { create(:user, :super_admin) }
+
+    it "returns true for all users" do
+      expect(described_class.new(investor, own_alert).index?).to be true
+      expect(described_class.new(forester, own_alert).index?).to be true
+      expect(described_class.new(admin, own_alert).index?).to be true
+      expect(described_class.new(super_admin_idx, own_alert).index?).to be true
+    end
+  end
+
+  describe "Scope#resolve edge cases" do
+    let(:super_admin_scope) { create(:user, :super_admin) }
+
+    it "returns all alerts for super_admin" do
+      scope = described_class::Scope.new(super_admin_scope, EwsAlert).resolve
+      expect(scope).to include(own_alert, other_alert)
+    end
+
+    it "scopes to org alerts for non-super_admin" do
+      scope = described_class::Scope.new(investor, EwsAlert).resolve
+      expect(scope).to include(own_alert)
+      expect(scope).not_to include(other_alert)
+    end
+  end
 end

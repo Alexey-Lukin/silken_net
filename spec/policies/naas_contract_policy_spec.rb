@@ -43,4 +43,27 @@ RSpec.describe NaasContractPolicy do
       expect(scope).to include(own_contract, other_contract)
     end
   end
+
+  describe "#index?" do
+    let(:forester) { create(:user, :forester, organization: organization) }
+    let(:super_admin_idx) { create(:user, :super_admin) }
+
+    it "returns true for all users" do
+      expect(described_class.new(investor, own_contract).index?).to be true
+      expect(described_class.new(forester, own_contract).index?).to be true
+      expect(described_class.new(super_admin_idx, own_contract).index?).to be true
+    end
+  end
+
+  describe "#stats?" do
+    let(:forester) { create(:user, :forester, organization: organization) }
+    let(:super_admin_stats) { create(:user, :super_admin) }
+
+    it "returns true for all users" do
+      expect(described_class.new(investor, own_contract).stats?).to be true
+      expect(described_class.new(forester, own_contract).stats?).to be true
+      expect(described_class.new(admin, own_contract).stats?).to be true
+      expect(described_class.new(super_admin_stats, own_contract).stats?).to be true
+    end
+  end
 end
