@@ -211,4 +211,67 @@ end
       expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
     end
   end
+
+  describe "#identifier_for" do
+    let(:service) { described_class.new([-1]) }
+
+    it "returns CLUSTER identifier for forest_coin" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40)
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100,
+        token_type: :forest_coin,
+        status: :pending,
+        to_address: wallet.crypto_public_address,
+        locked_points: 1000
+      )
+
+      result = service.send(:identifier_for, tx)
+      expect(result).to eq("CLUSTER_#{tree.cluster_id}")
+    end
+
+    it "returns CLUSTER_GLOBAL when tree is nil for forest_coin" do
+      org = create(:organization, crypto_public_address: "0x" + "b" * 40)
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40)
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100,
+        token_type: :forest_coin,
+        status: :pending,
+        to_address: wallet.crypto_public_address,
+        locked_points: 1000
+      )
+
+      # Simulate nil tree by stubbing
+      allow(wallet).to receive(:tree).and_return(nil)
+      allow(tx).to receive(:wallet).and_return(wallet)
+
+      result = service.send(:identifier_for, tx)
+      expect(result).to eq("CLUSTER_GLOBAL")
+    end
+
+    it "falls back to ORG identifier when tree is nil for carbon_coin" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40)
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100,
+        token_type: :carbon_coin,
+        status: :pending,
+        to_address: wallet.crypto_public_address,
+        locked_points: 1000
+      )
+
+      allow(wallet).to receive(:tree).and_return(nil)
+      allow(tx).to receive(:wallet).and_return(wallet)
+
+      result = service.send(:identifier_for, tx)
+      expect(result).to eq("ORG_#{wallet.organization_id}")
+    end
+  end
 end

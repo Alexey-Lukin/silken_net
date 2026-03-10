@@ -230,5 +230,98 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(Rails.logger).to receive(:error).with(/Insight.*Помилка/)
       described_class.call(date)
     end
+
+    context "fraud detection with zero baseline sap" do
+      it "returns false (no fraud) when baseline sap is zero" do
+        # Single tree so cluster baseline sap == tree's sap == 0
+        tree_zero_sap = create(:tree, cluster: cluster, status: :active)
+        create(:telemetry_log, tree: tree_zero_sap,
+          temperature_c: 25.0, sap_flow: 0.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree_zero_sap, insight_type: :daily_health_summary, target_date: date)
+        expect(insight).to be_present
+        expect(insight.fraud_detected).to be false
+      end
+    end
+
+    context "stress_index calculations" do
+      it "includes z-value penalty when |avg_z| > 2.0" do
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 3.0,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        # homeostasis (0) → base 0.0, z=3.0 (>2.0) → +0.2 penalty
+        expect(insight.stress_index).to eq(0.2)
+      end
+
+      it "includes temperature penalty for extreme high temps" do
+        create(:telemetry_log, tree: tree,
+          temperature_c: 40.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        # homeostasis (0) → base 0.0, z=0.5 (≤2.0) → no z penalty, temp=40 (>35) → +0.1
+        expect(insight.stress_index).to eq(0.1)
+      end
+
+      it "includes temperature penalty for extreme low temps" do
+        create(:telemetry_log, tree: tree,
+          temperature_c: -10.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        # homeostasis (0) → base 0.0, temp=-10 (<-5) → +0.1
+        expect(insight.stress_index).to eq(0.1)
+      end
+    end
+
+    context "cluster aggregation with fraud" do
+      let(:normal_tree) { create(:tree, cluster: cluster, status: :active) }
+      let(:fraud_tree) { create(:tree, cluster: cluster, status: :active) }
+
+      it "includes fraud count in summary when fraud is detected" do
+        # Normal tree
+        create(:telemetry_log, tree: normal_tree,
+          temperature_c: 25.0, sap_flow: 100.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        # Fraud tree: both sap and temp deviate >30%
+        create(:telemetry_log, tree: fraud_tree,
+          temperature_c: 50.0, sap_flow: 200.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        cluster_insight = AiInsight.find_by(
+          analyzable: cluster,
+          insight_type: :daily_health_summary,
+          target_date: date
+        )
+        expect(cluster_insight).to be_present
+        expect(cluster_insight.summary).to include("фрод")
+      end
+    end
   end
 end

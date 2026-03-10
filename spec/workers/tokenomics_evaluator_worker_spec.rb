@@ -96,5 +96,18 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
     it "handles empty eligible wallets gracefully" do
       expect { described_class.new.perform }.not_to raise_error
     end
+
+    context "when lock_and_mint! returns nil" do
+      it "does not add nil transaction to created_tx_ids and skips batch minting" do
+        tree = create(:tree, status: :active)
+        create(:wallet, tree: tree, balance: 10_000)
+
+        allow_any_instance_of(Wallet).to receive(:lock_and_mint!).and_return(nil)
+
+        described_class.new.perform
+
+        expect(BlockchainMintingService).not_to have_received(:call_batch)
+      end
+    end
   end
 end
