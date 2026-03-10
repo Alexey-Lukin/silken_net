@@ -42,7 +42,12 @@ module Api
       # At billions of rows this is the difference between O(log N) and O(P × log N).
       def find_telemetry_log(request_id)
         scope = TelemetryLog.where(chainlink_request_id: request_id)
-        scope = scope.where(created_at: Time.iso8601(params[:created_at])) if params[:created_at].present?
+
+        if params[:created_at].present?
+          parsed_time = Time.iso8601(params[:created_at]) rescue nil
+          scope = scope.where(created_at: parsed_time) if parsed_time
+        end
+
         scope.first!
       end
     end
