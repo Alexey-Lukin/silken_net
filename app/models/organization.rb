@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Organization < ApplicationRecord
+  include EthAddressValidatable
+
   # --- ЗВ'ЯЗКИ (The Web of Responsibility) ---
   # [ВИПРАВЛЕНО: Захист Користувачів]:
   # Ми не видаляємо людей разом з організацією, щоб зберегти аудит-логи (MaintenanceRecords)
@@ -43,8 +45,7 @@ class Organization < ApplicationRecord
 
   # Валідація гаманця для Web3 операцій (Polygon/Ethereum)
   # Тепер валідація дозволяє змішаний регістр (A-F)
-  validates :crypto_public_address, presence: true, uniqueness: true,
-            format: { with: /\A0x[a-fA-F0-9]{40}\z/, message: "має бути валідною адресою гаманця 0x..." }
+  validates_eth_address :crypto_public_address, presence: true, uniqueness: true
 
   # Пороги тривоги та AI-чутливість (The Brain Map)
   validates :alert_threshold_critical_z, numericality: { greater_than: 0, less_than_or_equal_to: 10 }, allow_nil: true

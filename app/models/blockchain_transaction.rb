@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class BlockchainTransaction < ApplicationRecord
+  include EthAddressValidatable
+
   # --- ЗВ'ЯЗКИ ---
   # optional: true — для аудит-транзакцій slashing, коли весь кластер мертвий
   # і жодного дерева-носія немає (пастка "Останнього дерева")
@@ -42,10 +44,7 @@ class BlockchainTransaction < ApplicationRecord
   validates :amount, presence: true, numericality: { greater_than: 0 }
 
   # Валідація адреси призначення (0x...)
-  validates :to_address, presence: true, format: {
-    with: /\A0x[a-fA-F0-9]{40}\z/,
-    message: "має бути валідною 0x адресою"
-  }
+  validates_eth_address :to_address, presence: true
 
   # [ОПТИМІЗОВАНО]: tx_hash має бути присутнім для статусів sent та confirmed
   validates :tx_hash, presence: true, if: -> { status_sent? || status_confirmed? }
