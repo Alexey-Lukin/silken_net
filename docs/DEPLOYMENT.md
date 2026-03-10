@@ -14,6 +14,7 @@
 - [Як зробити деплой](#як-зробити-деплой)
 - [Операційні команди](#операційні-команди)
 - [Діаграма](#діаграма)
+- [Akash Network — децентралізований деплой](#akash-network--децентралізований-деплой)
 
 ---
 
@@ -505,4 +506,131 @@ kamal details -d canopy      # Статус контейнерів
 │  IAM: silken-net-deploy (service account, least privilege)          │
 │  Terraform State: GCS bucket (silken-net-terraform-state)           │
 └─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Akash Network — децентралізований деплой
+
+Окрім Google Cloud, SilkenNet може бути розгорнутий на **[Akash Network](https://akash.network/)** — децентралізованому хмарному маркетплейсі. Це дає:
+
+- 🌐 **Децентралізація** — жодна компанія не контролює інфраструктуру
+- 💰 **Економія** — провайдери конкурують за ціною (часто дешевше за GCP/AWS)
+- 🛡️ **Стійкість** — додатковий шар розгортання, незалежний від одного хмарного провайдера
+
+### Архітектура
+
+```
+┌─────────────────────────────────────────────────────┐
+│              Akash Network (Web Layer)               │
+│                                                      │
+│  ┌────────────────────────────────────────────────┐  │
+│  │  SilkenNet Container (Rails 8.1 + Puma)        │  │
+│  │  - HTTP :80 (Rails API + Hotwire)              │  │
+│  │  - UDP :5683 (CoAP — IoT телеметрія)           │  │
+│  │  - Solid Queue (в Puma, single-node)           │  │
+│  │  - 4 vCPU / 8 GB RAM / 50 GB ephemeral        │  │
+│  │  - 10 GB persistent storage (Active Storage)   │  │
+│  └────────────────┬──────────────┬────────────────┘  │
+│                   │              │                    │
+└───────────────────┼──────────────┼────────────────────┘
+                    │              │
+          SSL/Public IP    SSL/Public IP
+                    │              │
+┌───────────────────┼──────────────┼────────────────────┐
+│         Google Cloud Platform (Data Layer)             │
+│                   ▼              ▼                     │
+│          ┌──────────────┐ ┌────────────────┐          │
+│          │  Cloud SQL   │ │  Memorystore   │          │
+│          │  PostgreSQL  │ │  Redis 7.0     │          │
+│          │  16 (PostGIS)│ │                │          │
+│          └──────────────┘ └────────────────┘          │
+└───────────────────────────────────────────────────────┘
+```
+
+> **Важливо:** База даних залишається на Cloud SQL (GCP). Akash запускає лише web/API шар. Для з'єднання з Cloud SQL потрібен публічний IP з SSL або Cloud SQL Auth Proxy.
+
+### Файли
+
+| Файл | Призначення |
+|------|-------------|
+| `deploy/akash/deploy.yaml` | Статичний SDL 2.0 — для ручного деплою через `akash` CLI або Akash Console |
+| `deploy/akash/deploy.yaml.tpl` | SDL шаблон для Terraform (змінні підставляються автоматично) |
+| `terraform/akash/main.tf` | Terraform конфігурація — створює/оновлює/закриває Akash deployment |
+| `terraform/akash/variables.tf` | Вхідні змінні (ресурси, секрети, ціна) |
+| `terraform/akash/outputs.tf` | Виходи (шлях до SDL, наступні кроки) |
+| `terraform/akash/terraform.tfvars.example` | Приклад значень змінних |
+
+### Передумови
+
+1. **Akash CLI** встановлений: [docs.akash.network/guides/cli](https://docs.akash.network/guides/cli)
+2. **Гаманець Akash** з AKT токенами для ескроу
+3. **Docker образ** доступний з Akash (Docker Hub, GHCR, або публічний Artifact Registry)
+4. **Cloud SQL публічний IP** з SSL або Cloud SQL Auth Proxy для зовнішнього доступу
+
+### Деплой через Terraform
+
+```bash
+# 1. Підготовка змінних
+cd terraform/akash
+cp terraform.tfvars.example terraform.tfvars
+# Відредагувати terraform.tfvars — заповнити секрети та URL образу
+
+# 2. Ініціалізація та деплой
+terraform init
+terraform plan
+terraform apply
+
+# 3. Після apply — прийняти бід від провайдера
+akash query market bid list --owner <your-address> --dseq <DSEQ>
+akash tx market lease create --dseq <DSEQ> --provider <provider-address> --from silken-deploy
+
+# 4. Відправити маніфест
+akash provider send-manifest terraform/akash/generated-deploy.yaml \
+  --dseq <DSEQ> --provider <provider-address> --from silken-deploy
+
+# 5. Перевірити статус
+akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from silken-deploy
+```
+
+### Деплой через CLI (без Terraform)
+
+```bash
+# Відредагувати deploy/akash/deploy.yaml — змінити image та env змінні
+akash tx deployment create deploy/akash/deploy.yaml --from silken-deploy --chain-id akashnet-2
+
+# Прийняти бід та відправити маніфест (аналогічно Terraform flow)
+```
+
+### Ресурси Akash vs GCP
+
+| Параметр | GCP Production 🌲 | Akash ☁️ | Пояснення |
+|----------|-------------------|----------|-----------|
+| CPU | 2 vCPU (n2-standard-2) | 4 vCPU | Більше CPU для компенсації варіативності провайдерів |
+| RAM | 8 GB | 8 GB | Однаково |
+| Disk | 30 GB SSD | 50 GB ephemeral + 10 GB persistent | Більше — контейнер включає все |
+| Порти | 80, 443, 5683/udp | 80, 5683/udp | SSL терміновано на рівні Akash proxy |
+| DB | Cloud SQL (приватна мережа) | Cloud SQL (публічний IP + SSL) | Потрібна зовнішня доступність |
+| Redis | Memorystore (приватна мережа) | Memorystore (публічний IP або тунель) | Аналогічно DB |
+
+### Terraform State
+
+Akash Terraform state зберігається окремо від GCP:
+
+```
+silken-net-terraform-state/
+├── terraform/state       ← GCP інфраструктура
+└── terraform/akash       ← Akash deployment
+```
+
+Це розділення запобігає ситуації, коли проблема з Akash впливає на GCP стан, і навпаки.
+
+### Закриття Akash deployment
+
+```bash
+# Через Terraform
+cd terraform/akash && terraform destroy
+
+# Через CLI
+akash tx deployment close --dseq <DSEQ> --from silken-deploy
 ```

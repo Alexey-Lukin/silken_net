@@ -1,0 +1,28 @@
+# =============================================================================
+# Akash Deployment — Example Variables
+# =============================================================================
+# Copy to terraform.tfvars and fill in real values before deploying.
+# Never commit terraform.tfvars with real secrets to version control.
+
+# Akash Network
+akash_key_name        = "silken-deploy"
+akash_chain_id        = "akashnet-2"
+akash_node            = "https://rpc.akashnet.net:443"
+akash_auditor_address = "akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24"
+
+# Application
+docker_image     = "europe-west1-docker.pkg.dev/your-project/silken-net/silken_net:latest"
+rails_master_key = "CHANGE_ME"
+database_url     = "postgres://silken_net:CHANGE_ME@CLOUD_SQL_PUBLIC_IP:5432/silken_net_production"
+redis_url        = "redis://REDIS_HOST:6379/0"
+
+# Compute Resources (matches issue requirements: 4 vCPU, 8 GB RAM, 50 GB storage)
+web_cpu_units           = 4
+web_memory_size         = "8Gi"
+web_storage_size        = "50Gi"
+persistent_storage_size = "10Gi"
+
+# Scaling & Pricing
+web_replicas    = 1
+web_concurrency = 4
+max_price_uakt  = 10000

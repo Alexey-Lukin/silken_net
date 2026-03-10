@@ -1,0 +1,201 @@
+# =============================================================================
+# Akash Network — SilkenNet Decentralized Deployment (SDL 2.0)
+# =============================================================================
+#
+# This SDL defines a decentralized deployment of the SilkenNet Rails 8.1
+# application on Akash Network — a permissionless, censorship-resistant
+# compute marketplace. It complements the existing Google Cloud (Kamal +
+# Terraform) infrastructure by providing a decentralized alternative for
+# the web/API layer while the database remains on Cloud SQL.
+#
+# ┌──────────────────────────────────────────────────────────────────────┐
+# │                   Mapping: Kamal → Akash                            │
+# │                                                                      │
+# │  config/deploy.yml            →  deploy/akash/deploy.yaml           │
+# │  servers.web                  →  services.web                       │
+# │  boot.proxy.publish (80,443)  →  expose port 80 (global, HTTP)     │
+# │  boot.proxy.publish (5683)    →  expose port 5683 (global, UDP)    │
+# │  env.secret                   →  env (set before deploy)           │
+# │  volumes                      →  persistent storage profile        │
+# │  builder.arch: amd64          →  compute profile resources         │
+# │  registry (Artifact Registry) →  image reference (same registry)   │
+# └──────────────────────────────────────────────────────────────────────┘
+#
+# Usage:
+#   # Set environment variables in this file or via Akash Console before deploy.
+#   # Deploy with Akash CLI:
+#   akash tx deployment create deploy/akash/deploy.yaml --from <wallet> --chain-id akashnet-2
+#
+#   # Or deploy via Terraform (see terraform/akash/):
+#   cd terraform/akash && terraform apply
+#
+# Prerequisites:
+#   - Docker image pushed to a public/accessible registry
+#   - Cloud SQL configured with a public IP or Cloud SQL Auth Proxy for
+#     Akash provider connectivity (Akash providers are not inside the GCP VPC)
+#   - AKT tokens in Akash wallet for deployment escrow
+# =============================================================================
+
+---
+version: "2.0"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Web Service — Rails 8.1 Application (Puma + Thruster)
+  # ---------------------------------------------------------------------------
+  # Maps to: config/deploy.yml → servers.web
+  #
+  # Runs the production Docker image built by the same Dockerfile used with
+  # Kamal. Thruster provides HTTP/2 reverse proxy; Puma handles Ruby workers.
+  # Solid Queue runs inside Puma (SOLID_QUEUE_IN_PUMA=true) for single-node.
+  web:
+    image: europe-west1-docker.pkg.dev/YOUR_GCP_PROJECT/silken-net/silken_net:latest
+    # ⬆ Replace with your actual Artifact Registry URL or any accessible registry.
+    # The same image that Kamal pushes to Google Artifact Registry.
+    # For public Akash deployments, consider mirroring to Docker Hub or GHCR.
+
+    # --- Environment Variables -----------------------------------------------
+    # Maps to: config/deploy.yml → env.secret + env.clear
+    #
+    # IMPORTANT: Replace placeholder values before deploying. In production,
+    # use Akash Console UI or `akash tx deployment update` to inject secrets.
+    # Never commit real secrets to this file.
+    env:
+      # Rails application port — Thruster listens on this port inside the
+      # container. The Dockerfile EXPOSEs port 80 (Thruster default).
+      # Maps to: Kamal boot.proxy.publish "80:80"
+      - PORT=80
+
+      # Rails encrypted credentials master key.
+      # Maps to: Kamal env.secret RAILS_MASTER_KEY
+      - RAILS_MASTER_KEY=CHANGE_ME
+
+      # PostgreSQL connection URL — must point to Cloud SQL (PostGIS enabled).
+      # Since Akash providers are outside the GCP VPC, use one of:
+      #   1. Cloud SQL public IP with SSL (simpler, add provider IP to allowlist)
+      #   2. Cloud SQL Auth Proxy as a sidecar (more secure)
+      #   3. Tailscale/WireGuard tunnel to the GCP VPC
+      # Format: postgres://silken_net:<password>@<host>:5432/silken_net_production
+      # Maps to: Kamal env.secret DATABASE_URL
+      - DATABASE_URL=CHANGE_ME
+
+      # Redis URL for Sidekiq background job processing.
+      # Same connectivity considerations as DATABASE_URL above.
+      # Format: redis://<host>:6379/0
+      # Maps to: Kamal env.secret REDIS_URL
+      - REDIS_URL=CHANGE_ME
+
+      # Run Solid Queue supervisor inside Puma (single-node mode).
+      # Maps to: Kamal env.clear SOLID_QUEUE_IN_PUMA
+      - SOLID_QUEUE_IN_PUMA=true
+
+      # Rails production environment.
+      - RAILS_ENV=production
+
+      # Puma concurrency — adjust based on 4 vCPU allocation.
+      # Maps to: Kamal env.clear WEB_CONCURRENCY (commented out, default: 1)
+      - WEB_CONCURRENCY=4
+
+    # --- Exposed Ports -------------------------------------------------------
+    # Maps to: config/deploy.yml → boot.proxy.publish
+    expose:
+      # HTTP — Rails web traffic via Thruster (HTTP/2 reverse proxy).
+      # Kamal equivalent: "80:80"
+      - port: 80
+        as: 80
+        to:
+          - global: true
+
+      # CoAP — UDP uplink for tree sensor telemetry (LoRa mesh → Queen → Akash).
+      # This is critical for IoT data ingestion from soldier/queen gateways.
+      # Kamal equivalent: "5683:5683/udp"
+      # See: docs/FIRMWARE.md — CoAP binary telemetry (21-byte packets)
+      - port: 5683
+        as: 5683
+        proto: udp
+        to:
+          - global: true
+
+    # --- Persistent Storage --------------------------------------------------
+    # Maps to: config/deploy.yml → volumes: "silken_net_storage:/rails/storage"
+    #
+    # Mount persistent storage for Active Storage uploads and local logs.
+    # The primary data lives in Cloud SQL; this volume keeps file uploads
+    # and Rails logs across container restarts on the Akash provider.
+    params:
+      storage:
+        data:
+          mount: /rails/storage
+          readOnly: false
+
+profiles:
+  # ---------------------------------------------------------------------------
+  # Compute Profile — Resource Allocation
+  # ---------------------------------------------------------------------------
+  # Maps to: Terraform compute.tf → web_machine_type = "n2-standard-2"
+  #
+  # Kamal/GCP production uses n2-standard-2 (2 vCPU, 8 GB RAM, 30 GB SSD).
+  # Akash allocation is set to 4 vCPU, 8 GB RAM, 50 GB ephemeral + 10 GB
+  # persistent — higher CPU to compensate for variable provider performance
+  # on a decentralized network.
+  compute:
+    web:
+      resources:
+        cpu:
+          units: 4
+        memory:
+          size: 8Gi
+        storage:
+          # Ephemeral storage for the application, gems, assets, and tmp files.
+          # Maps to: Terraform web_disk_size_gb = 30 (expanded for container overhead)
+          - size: 50Gi
+          # Persistent storage for Active Storage uploads and Rails logs.
+          # Survives container restarts. Equivalent to Kamal Docker volume.
+          # Maps to: config/deploy.yml → volumes: "silken_net_storage:/rails/storage"
+          - name: data
+            size: 10Gi
+            attributes:
+              persistent: true
+              class: beta3
+
+  # ---------------------------------------------------------------------------
+  # Placement Profile — Provider Selection
+  # ---------------------------------------------------------------------------
+  # Maps to: Terraform region/zone variables (europe-west1-b)
+  #
+  # Akash does not have traditional "regions" — instead, providers self-report
+  # attributes. The placement profile defines requirements and pricing limits.
+  placement:
+    silken-dcloud:
+      # Provider attribute requirements — target reliable, audited providers.
+      # Audited providers have been verified by the Akash community for uptime
+      # and performance. This is the Akash equivalent of GCP's SLA guarantees.
+      attributes:
+        host: akash
+      signedBy:
+        anyOf:
+          # Akash official auditor address — ensures the provider has been
+          # vetted for reliability. Update this address from:
+          # https://github.com/akash-network/community/blob/main/sig-providers/auditors.md
+          - akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24
+      pricing:
+        web:
+          # Maximum price per block (~6 seconds) in uAKT (micro-AKT).
+          # 10000 uAKT ≈ 0.01 AKT per block.
+          # Monthly cost ≈ 0.01 × 10 × 60 × 24 × 30 ÷ 1000000 ≈ variable.
+          # Adjust based on current AKT price and provider market rates.
+          # Monitor: https://stats.akash.network/
+          denom: uakt
+          amount: 10000
+
+deployment:
+  # ---------------------------------------------------------------------------
+  # Deployment Mapping — Service → Profile → Placement
+  # ---------------------------------------------------------------------------
+  # Ties the web service to its compute profile and placement constraints.
+  # count: 1 = single instance (like Kamal's single web_node_count = 1).
+  # Scale horizontally by increasing count (similar to Terraform web_node_count).
+  web:
+    silken-dcloud:
+      profile: web
+      count: 1
