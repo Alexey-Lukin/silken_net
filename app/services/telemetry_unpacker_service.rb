@@ -165,6 +165,9 @@ class TelemetryUnpackerService
 
       # Аналіз аномалій Оракулом тривог
       AlertDispatchService.analyze_and_trigger!(log)
+
+      # [IoTeX W3bstream]: Відправляємо телеметрію на ZK-верифікацію
+      IotexVerificationWorker.perform_async(log.id_value, log.created_at.iso8601(6))
     end
   end
 

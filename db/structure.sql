@@ -1060,7 +1060,9 @@ CREATE TABLE public.telemetry_logs (
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
     z_value numeric,
-    sap_flow numeric
+    sap_flow numeric,
+    verified_by_iotex boolean DEFAULT false NOT NULL,
+    zk_proof_ref character varying
 )
 PARTITION BY RANGE (created_at);
 
@@ -1106,7 +1108,9 @@ CREATE TABLE public.telemetry_logs_default (
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
     z_value numeric,
-    sap_flow numeric
+    sap_flow numeric,
+    verified_by_iotex boolean DEFAULT false NOT NULL,
+    zk_proof_ref character varying
 );
 
 
@@ -1132,7 +1136,9 @@ CREATE TABLE public.telemetry_logs_y2026m01 (
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
     z_value numeric,
-    sap_flow numeric
+    sap_flow numeric,
+    verified_by_iotex boolean DEFAULT false NOT NULL,
+    zk_proof_ref character varying
 );
 
 
@@ -1158,7 +1164,9 @@ CREATE TABLE public.telemetry_logs_y2026m02 (
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
     z_value numeric,
-    sap_flow numeric
+    sap_flow numeric,
+    verified_by_iotex boolean DEFAULT false NOT NULL,
+    zk_proof_ref character varying
 );
 
 
@@ -1184,7 +1192,9 @@ CREATE TABLE public.telemetry_logs_y2026m03 (
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
     z_value numeric,
-    sap_flow numeric
+    sap_flow numeric,
+    verified_by_iotex boolean DEFAULT false NOT NULL,
+    zk_proof_ref character varying
 );
 
 
@@ -1210,7 +1220,9 @@ CREATE TABLE public.telemetry_logs_y2026m04 (
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
     z_value numeric,
-    sap_flow numeric
+    sap_flow numeric,
+    verified_by_iotex boolean DEFAULT false NOT NULL,
+    zk_proof_ref character varying
 );
 
 
@@ -1236,7 +1248,9 @@ CREATE TABLE public.telemetry_logs_y2026m05 (
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
     z_value numeric,
-    sap_flow numeric
+    sap_flow numeric,
+    verified_by_iotex boolean DEFAULT false NOT NULL,
+    zk_proof_ref character varying
 );
 
 
@@ -1262,7 +1276,9 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
     updated_at timestamp(6) without time zone NOT NULL,
     voltage_mv integer,
     z_value numeric,
-    sap_flow numeric
+    sap_flow numeric,
+    verified_by_iotex boolean DEFAULT false NOT NULL,
+    zk_proof_ref character varying
 );
 
 
@@ -3634,6 +3650,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260310170000'),
 ('20260310160000'),
 ('20260309070000'),
 ('20260308160000'),
