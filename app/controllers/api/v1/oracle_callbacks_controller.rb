@@ -44,8 +44,12 @@ module Api
         scope = TelemetryLog.where(chainlink_request_id: request_id)
 
         if params[:created_at].present?
-          parsed_time = Time.iso8601(params[:created_at]) rescue nil
-          scope = scope.where(created_at: parsed_time) if parsed_time
+          begin
+            parsed_time = Time.iso8601(params[:created_at])
+            scope = scope.where(created_at: parsed_time)
+          rescue ArgumentError => e
+            Rails.logger.warn "⚠️ [Oracle Callback] Malformed created_at ignored: #{e.message}"
+          end
         end
 
         scope.first!

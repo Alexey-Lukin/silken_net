@@ -160,16 +160,35 @@ See `docs/API.md` for the full 24-endpoint reference.
 
 ## Environment Setup
 
-- **Ruby 4.0.1** is located at `/opt/hostedtoolcache/Ruby/4.0.1/x64/bin`. Add it to PATH before running any Ruby/Bundle commands:
-  ```bash
-  export PATH="/opt/hostedtoolcache/Ruby/4.0.1/x64/bin:$PATH"
-  ```
-- Always verify with `ruby --version` before running `bundle install`, `bundle exec rspec`, etc.
-- **Migrations**: When creating or modifying migrations, always run them against the **development** database and commit the updated `db/structure.sql`:
-  ```bash
-  bundle exec rails db:migrate
-  ```
-  This regenerates `db/structure.sql`. The updated `structure.sql` **must** be committed alongside the migration file.
+### Ruby 4.0.1 (CRITICAL)
+
+The system Ruby in this environment is **NOT** 4.0.1. Ruby 4.0.1 is pre-installed via **hostedtoolcache** at:
+
+```
+/opt/hostedtoolcache/Ruby/4.0.1/x64/bin
+```
+
+**You MUST add it to PATH before running ANY Ruby, Bundler, Rails, or RSpec command:**
+
+```bash
+export PATH="/opt/hostedtoolcache/Ruby/4.0.1/x64/bin:$PATH"
+```
+
+Always verify with `ruby --version` — it must output `ruby 4.0.1`. If it shows any other version (e.g. 3.2.x), the PATH is not set correctly and `bundle install` / `bundle exec rspec` will fail with version mismatch errors.
+
+### Migrations & structure.sql
+
+This project uses `db/structure.sql` (not `schema.rb`) because PostgreSQL-specific features (partitioning, PostGIS, triggers) cannot be represented in Ruby DSL.
+
+**When creating or modifying migrations, you MUST:**
+
+1. Run the migration against the **development** database:
+   ```bash
+   export PATH="/opt/hostedtoolcache/Ruby/4.0.1/x64/bin:$PATH"
+   bundle exec rails db:migrate
+   ```
+2. This regenerates `db/structure.sql`.
+3. **Commit `db/structure.sql` alongside the migration file** — CI will fail if structure.sql is out of sync with migrations.
 
 ## Important Notes for Copilot
 

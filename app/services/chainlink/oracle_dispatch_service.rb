@@ -4,7 +4,9 @@ module Chainlink
   class OracleDispatchService
     class DispatchError < StandardError; end
 
-    # Lorenz attractor defaults (σ, ρ, β)
+    # Lorenz attractor defaults (σ, ρ, β).
+    # LORENZ_BETA uses Rational for exact precision in backend math;
+    # converted to Float only at the JSON payload boundary.
     LORENZ_SIGMA = 10
     LORENZ_RHO   = 28
     LORENZ_BETA  = Rational(8, 3)
