@@ -175,7 +175,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         hex_did = tree.did.gsub("SNET-", "")
 
         chunk = build_chunk_with_params(did_hex: hex_did, voltage: 4200, temp: 22)
-        service = TelemetryUnpackerService.new(chunk, nil)
+        service = described_class.new(chunk, nil)
 
         expect { service.perform }.not_to raise_error
       end
@@ -183,7 +183,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
     describe "interpret_status else branch" do
       it "handles unrecognized status codes gracefully" do
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
         result = service.send(:interpret_status, 0)
         expect(result).to eq(:homeostasis)
 
@@ -202,14 +202,14 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       let!(:active_firmware) { create(:bio_contract_firmware, :active, target_hardware_type: "Tree") }
 
       it "skips when reported_firmware_id is blank" do
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
         expect {
           service.send(:check_firmware_mismatch!, tree, nil)
         }.not_to raise_error
       end
 
       it "skips when latest firmware id is nil" do
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
         BioContractFirmware.update_all(is_active: false)
 
         expect {
@@ -218,7 +218,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       end
 
       it "skips when reported firmware matches latest" do
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
         expect {
           service.send(:check_firmware_mismatch!, tree, active_firmware.id)
         }.not_to raise_error
@@ -226,7 +226,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       end
 
       it "marks tree as fw_pending when firmware mismatches and tree is fw_idle" do
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
         service.send(:check_firmware_mismatch!, tree, active_firmware.id + 999)
 
         expect(tree.reload.firmware_update_status).to eq("fw_pending")
@@ -234,7 +234,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       it "does not mark tree as fw_pending when already fw_pending" do
         Tree.where(id: tree.id).update_all(firmware_update_status: :fw_pending)
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
         service.send(:check_firmware_mismatch!, tree, active_firmware.id + 999)
 
         expect(tree.reload.firmware_update_status).to eq("fw_pending")
@@ -244,7 +244,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     describe "latest_tree_firmware_id caching" do
       it "caches the result across calls" do
         create(:bio_contract_firmware, :active, target_hardware_type: "Tree")
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
 
         first_call = service.send(:latest_tree_firmware_id)
         second_call = service.send(:latest_tree_firmware_id)
@@ -255,19 +255,19 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
     describe "valid_sensor_data? range checks" do
       it "rejects out-of-range voltage" do
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
         data = [ 0, 6000, 22, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
         expect(service.send(:valid_sensor_data?, data)).to be false
       end
 
       it "rejects out-of-range temperature" do
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
         data = [ 0, 4200, 100, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
         expect(service.send(:valid_sensor_data?, data)).to be false
       end
 
       it "accepts valid sensor data" do
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
         data = [ 0, 4200, 22, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
         expect(service.send(:valid_sensor_data?, data)).to be true
       end
@@ -280,7 +280,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     let(:gateway_r2) { create(:gateway, :online, cluster: cluster_r2) }
     let(:tree_family) { create(:tree_family) }
     let(:did_hex_r2) { "0000AB01" }
-    let(:extracted_did_r2) { did_hex_r2.to_i(16).upcase.to_s(16).rjust(8, "0") }
+    let(:extracted_did_r2) { did_hex_r2.to_i(16).to_s(16).upcase }
     let(:tree_r2) do
       t = create(:tree, cluster: cluster_r2, tree_family: tree_family, latitude: 49.4, longitude: 32.0)
       t.update_column(:did, extracted_did_r2)
@@ -306,7 +306,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     describe "gateway uid branch — when gateway is present" do
       it "sets queen_uid in log_attributes from gateway.uid" do
         chunk = build_chunk_r2(did_hex_r2, voltage: 3800, temp: 22)
-        service = TelemetryUnpackerService.new(chunk, gateway_r2.id)
+        service = described_class.new(chunk, gateway_r2.id)
         service.perform
 
         log = tree_r2.telemetry_logs.last
@@ -318,7 +318,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     describe "firmware_id positive branch" do
       it "sets firmware_version_id when firmware_id is positive" do
         chunk = build_chunk_r2(did_hex_r2, firmware_id: 42)
-        service = TelemetryUnpackerService.new(chunk, gateway_r2.id)
+        service = described_class.new(chunk, gateway_r2.id)
         service.perform
 
         log = tree_r2.telemetry_logs.last
@@ -327,7 +327,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       it "sets firmware_version_id to nil when firmware_id is zero" do
         chunk = build_chunk_r2(did_hex_r2, firmware_id: 0)
-        service = TelemetryUnpackerService.new(chunk, gateway_r2.id)
+        service = described_class.new(chunk, gateway_r2.id)
         service.perform
 
         log = tree_r2.telemetry_logs.last
@@ -337,7 +337,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
     describe "interpret_status — undefined status code (case else)" do
       it "returns nil for an undefined status code" do
-        service = TelemetryUnpackerService.new("", nil)
+        service = described_class.new("", nil)
         result = service.send(:interpret_status, 99)
         expect(result).to be_nil
       end
@@ -349,7 +349,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         tree_r2.update_columns(firmware_update_status: Tree.firmware_update_statuses[:fw_pending])
 
         chunk = build_chunk_r2(did_hex_r2, firmware_id: active_firmware.id - 1)
-        service = TelemetryUnpackerService.new(chunk, gateway_r2.id)
+        service = described_class.new(chunk, gateway_r2.id)
         service.perform
 
         tree_r2.reload
@@ -361,7 +361,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         tree_r2.update_columns(firmware_update_status: Tree.firmware_update_statuses[:fw_idle])
 
         chunk = build_chunk_r2(did_hex_r2, firmware_id: active_firmware.id - 1)
-        service = TelemetryUnpackerService.new(chunk, gateway_r2.id)
+        service = described_class.new(chunk, gateway_r2.id)
         service.perform
 
         tree_r2.reload

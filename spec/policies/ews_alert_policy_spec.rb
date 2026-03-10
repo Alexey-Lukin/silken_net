@@ -41,6 +41,9 @@ RSpec.describe EwsAlertPolicy do
   end
 
   describe "#index?" do
+    let(:other_org) { create(:organization) }
+    let(:other_cluster) { create(:cluster, organization: other_org) }
+    let!(:own_alert) { create(:ews_alert, cluster: cluster) }
     let(:admin) { create(:user, :admin, organization: organization) }
     let(:super_admin_idx) { create(:user, :super_admin) }
 
@@ -53,6 +56,10 @@ RSpec.describe EwsAlertPolicy do
   end
 
   describe "Scope#resolve edge cases" do
+    let(:other_org) { create(:organization) }
+    let(:other_cluster) { create(:cluster, organization: other_org) }
+    let!(:own_alert) { create(:ews_alert, cluster: cluster) }
+    let!(:other_alert) { create(:ews_alert, cluster: other_cluster) }
     let(:super_admin_scope) { create(:user, :super_admin) }
 
     it "returns all alerts for super_admin" do

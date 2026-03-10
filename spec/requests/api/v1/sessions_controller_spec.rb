@@ -75,7 +75,7 @@ RSpec.describe Api::V1::SessionsController, type: :request do
 
   describe "#current_session" do
     it "returns nil when current_user is nil" do
-      controller = Api::V1::SessionsController.new
+      controller = described_class.new
       allow(controller).to receive(:current_user).and_return(nil)
       result = controller.send(:current_session)
       expect(result).to be_nil

@@ -62,6 +62,9 @@ RSpec.describe WalletPolicy do
   end
 
   describe "#index?" do
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:tree) { create(:tree, cluster: cluster) }
+    let(:wallet) { tree.wallet }
     let(:forester) { create(:user, :forester, organization: organization) }
 
     it "returns true for all users" do
@@ -73,18 +76,20 @@ RSpec.describe WalletPolicy do
   end
 
   describe "#show? when tree.cluster.organization_id is nil" do
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:tree) { create(:tree, cluster: cluster) }
+    let(:wallet) { tree.wallet }
+
     it "denies access when wallet has no org chain and user is not admin" do
-      allow(wallet).to receive(:organization_id).and_return(nil)
-      allow(wallet).to receive(:tree).and_return(double(cluster: nil))
+      allow(wallet).to receive_messages(organization_id: nil, tree: double(cluster: nil))
 
       other_user = create(:user, :investor, organization: other_org)
       expect(described_class.new(other_user, wallet).show?).to be false
     end
 
     it "denies when tree has no cluster" do
-      allow(wallet).to receive(:organization_id).and_return(nil)
       tree_double = double(cluster: nil)
-      allow(wallet).to receive(:tree).and_return(tree_double)
+      allow(wallet).to receive_messages(organization_id: nil, tree: tree_double)
 
       expect(described_class.new(investor, wallet).show?).to be false
     end

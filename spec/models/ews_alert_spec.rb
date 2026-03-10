@@ -383,6 +383,7 @@ RSpec.describe EwsAlert, type: :model do
     let(:cluster_bc) { create(:cluster) }
 
     before do
+      allow_any_instance_of(described_class).to receive(:broadcast_status_change).and_call_original
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
       allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
     end
@@ -403,6 +404,7 @@ RSpec.describe EwsAlert, type: :model do
     let(:cluster_bc) { create(:cluster) }
 
     before do
+      allow_any_instance_of(described_class).to receive(:broadcast_status_change).and_call_original
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
       allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
     end

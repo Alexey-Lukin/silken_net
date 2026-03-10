@@ -154,7 +154,6 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
 
       expect(json[:photo_urls]).to eq([])
     end
-
   end
 
   describe "maintainable_label when maintainable is nil" do
@@ -195,8 +194,7 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
       )
 
       url_helpers = double("url_helpers")
-      allow(url_helpers).to receive(:rails_representation_url).and_return("/thumb.jpg")
-      allow(url_helpers).to receive(:rails_blob_url).and_return("/full.jpg")
+      allow(url_helpers).to receive_messages(rails_representation_url: "/thumb.jpg", rails_blob_url: "/full.jpg")
 
       json = described_class.render_as_hash(
         record_with_cost,

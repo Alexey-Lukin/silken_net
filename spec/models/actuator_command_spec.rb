@@ -436,7 +436,7 @@ RSpec.describe ActuatorCommand, type: :model do
 
   describe "denormalize_organization when actuator chain is nil" do
     it "handles nil gateway gracefully" do
-      command = ActuatorCommand.new(
+      command = described_class.new(
         actuator: actuator,
         command_payload: "OPEN",
         duration_seconds: 60
@@ -450,7 +450,7 @@ RSpec.describe ActuatorCommand, type: :model do
   describe "duration_within_safety_envelope when actuator is nil" do
     it "skips validation when actuator has nil max_active_duration_s" do
       unlimited = create(:actuator, gateway: gateway, max_active_duration_s: nil)
-      command = ActuatorCommand.new(
+      command = described_class.new(
         actuator: unlimited,
         command_payload: "OPEN",
         duration_seconds: 3600
@@ -459,7 +459,7 @@ RSpec.describe ActuatorCommand, type: :model do
     end
 
     it "skips validation when duration_seconds is nil" do
-      command = ActuatorCommand.new(
+      command = described_class.new(
         actuator: actuator,
         command_payload: "OPEN",
         duration_seconds: nil
@@ -477,7 +477,7 @@ RSpec.describe ActuatorCommand, type: :model do
     end
 
     it "broadcasts when organization is present via denormalization" do
-      allow_any_instance_of(ActuatorCommand).to receive(:broadcast_prepend_to_activity_feed).and_call_original
+      allow_any_instance_of(described_class).to receive(:broadcast_prepend_to_activity_feed).and_call_original
 
       command = create(:actuator_command, actuator: actuator)
       expect(command.organization).to eq(organization)
@@ -499,7 +499,7 @@ RSpec.describe ActuatorCommand, type: :model do
       orphan_actuator = build(:actuator, gateway: nil)
       allow(orphan_actuator).to receive(:gateway).and_return(nil)
 
-      command = ActuatorCommand.new(
+      command = described_class.new(
         actuator: orphan_actuator,
         command_payload: "OPEN",
         duration_seconds: 60
@@ -511,7 +511,7 @@ RSpec.describe ActuatorCommand, type: :model do
 
   describe "duration_within_safety_envelope — nil actuator safe navigation" do
     it "skips validation when actuator returns nil from safe navigation" do
-      command = ActuatorCommand.new(
+      command = described_class.new(
         actuator: actuator,
         command_payload: "OPEN",
         duration_seconds: 30
@@ -528,7 +528,7 @@ RSpec.describe ActuatorCommand, type: :model do
     end
 
     it "falls back to actuator.gateway.cluster.organization when organization is nil" do
-      allow_any_instance_of(ActuatorCommand).to receive(:broadcast_prepend_to_activity_feed).and_call_original
+      allow_any_instance_of(described_class).to receive(:broadcast_prepend_to_activity_feed).and_call_original
       command = create(:actuator_command, actuator: actuator)
       command.update_columns(organization_id: nil)
       command.reload
@@ -538,7 +538,7 @@ RSpec.describe ActuatorCommand, type: :model do
     end
 
     it "returns nil when both organization and gateway chain are nil" do
-      allow_any_instance_of(ActuatorCommand).to receive(:broadcast_prepend_to_activity_feed).and_call_original
+      allow_any_instance_of(described_class).to receive(:broadcast_prepend_to_activity_feed).and_call_original
       command = create(:actuator_command, actuator: actuator)
       command.update_columns(organization_id: nil)
       command.reload

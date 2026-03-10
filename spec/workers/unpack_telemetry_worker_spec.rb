@@ -171,8 +171,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
 
       expect(key_record).to receive(:clear_grace_period!)
       allow(HardwareKey).to receive(:find_by).with(device_uid: gateway.uid).and_return(key_record)
-      allow(key_record).to receive(:binary_key).and_return(key_record.binary_key)
-      allow(key_record).to receive(:binary_previous_key).and_return(nil)
+      allow(key_record).to receive_messages(binary_key: key_record.binary_key, binary_previous_key: nil)
 
       worker = described_class.new
 

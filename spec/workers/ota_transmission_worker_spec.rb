@@ -159,7 +159,9 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
       allow(Gateway).to receive(:find_by).with(uid: gateway.uid).and_return(nil)
 
       worker = described_class.new
-      worker.send(:handle_chunk_failure, gateway.uid, "firmware", firmware.id, 0, 5, "test error")
+      expect {
+        worker.send(:handle_chunk_failure, gateway.uid, "firmware", firmware.id, 0, 5, "test error")
+      }.not_to raise_error
     end
   end
 end
