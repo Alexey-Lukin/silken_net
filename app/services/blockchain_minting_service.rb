@@ -52,7 +52,8 @@ class BlockchainMintingService
     raise "🚨 [Web3] Критично низький баланс Оракула: #{balance}" if balance < 0.05 * (10**18)
 
     # 2. ГРУПУВАННЯ ЗА ТИПОМ ТОКЕНА (SCC та SFC мають різні контракти)
-    @transactions.group_by(&:token_type).each do |token_type, txs|
+    # ⚡ [ANTI-N+1]: Використовуємо preloaded @wallet_mapping для уникнення повторних запитів
+    @wallet_mapping.values.group_by(&:token_type).each do |token_type, txs|
       process_token_group(client, oracle_key, token_type, txs)
     end
   end

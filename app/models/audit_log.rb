@@ -130,7 +130,11 @@ class AuditLog < ApplicationRecord
 
   def compute_chain_hash
     # Advisory lock per organization запобігає race condition
-    # при конкурентних записах (Sidekiq workers)
+    # при конкурентних записах (Sidekiq workers).
+    # Prosopite.pause: ці запити виконуються в before_create колбеку і є
+    # навмисно повторюваними (один раз на кожен новий запис у ланцюзі).
+    Prosopite.pause if defined?(Prosopite)
+
     self.class.connection.execute(
       "SELECT pg_advisory_xact_lock(#{CHAIN_LOCK_NS}, #{organization_id.to_i})"
     )
@@ -141,5 +145,7 @@ class AuditLog < ApplicationRecord
                       .pick(:chain_hash) || GENESIS_HASH
 
     self.chain_hash = Digest::SHA256.hexdigest("#{previous_hash}|#{chain_payload}")
+  ensure
+    Prosopite.resume if defined?(Prosopite)
   end
 end

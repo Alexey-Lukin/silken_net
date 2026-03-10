@@ -8,7 +8,7 @@ module Api
       # --- ПОРТФЕЛЬ КОНТРАКТІВ (Registry + Dashboard) ---
       # GET /api/v1/contracts
       def index
-        scope = policy_scope(NaasContract).includes(:organization, :cluster)
+        scope = policy_scope(NaasContract).includes(:organization, cluster: :ews_alerts)
         @pagy, @contracts = pagy(scope)
 
         # Агрегуємо дані для Phlex-дашборду, використовуючи твою логіку
