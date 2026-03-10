@@ -141,9 +141,16 @@ class NaasContract < ApplicationRecord
     (emitted_tokens.to_f / total_funding * 100).clamp(0, 100).round
   end
 
-  # Whether the backing cluster currently has active EWS alerts
+  # Whether the backing cluster currently has active EWS alerts.
+  # Uses Ruby-level filtering to leverage eager-loaded ews_alerts (avoids N+1).
   def active_threats?
-    cluster&.ews_alerts&.unresolved&.any? || false
+    return false unless cluster
+
+    if cluster.association(:ews_alerts).loaded?
+      cluster.ews_alerts.any? { |a| a.status_active? }
+    else
+      cluster.ews_alerts.unresolved.any?
+    end
   end
 
   private

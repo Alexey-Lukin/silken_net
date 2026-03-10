@@ -71,10 +71,10 @@ RSpec.describe "Blockchain minting and burning pipeline" do
 
       BlockchainMintingService.call_batch([ tx.id, tx2.id ])
 
-      [ tx, tx2 ].each(&:reload)
-      expect(tx.status).to eq("sent")
-      expect(tx2.status).to eq("sent")
-      expect(tx.tx_hash).to eq(tx2.tx_hash)
+      reloaded = BlockchainTransaction.where(id: [ tx.id, tx2.id ]).index_by(&:id)
+      expect(reloaded[tx.id].status).to eq("sent")
+      expect(reloaded[tx2.id].status).to eq("sent")
+      expect(reloaded[tx.id].tx_hash).to eq(reloaded[tx2.id].tx_hash)
     end
 
     it "skips already confirmed transactions" do
