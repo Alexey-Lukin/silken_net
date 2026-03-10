@@ -3,6 +3,8 @@
 require "digest"
 
 class BioContractFirmware < ApplicationRecord
+  include OtaChunkable
+
   # --- КОНСТАНТИ ---
   # 256KB — межа для стабільного OTA-циклу через CoAP/LoRa в складних погодних умовах.
   # HEX-рядок займає 2x від бінарного розміру, тому 256KB binary = 512KB HEX.
@@ -68,21 +70,6 @@ class BioContractFirmware < ApplicationRecord
 
   def payload_size
     binary_payload.bytesize
-  end
-
-  # Розрізаємо прошивку на чанки для CoAP (MTU-friendly)
-  # Наприклад, для 512 байт: N = ceil(Size / 512)
-  def chunks(chunk_size = 512)
-    return [] if payload_size.zero?
-
-    binary_payload.b.scan(/.{1,#{chunk_size}}/m)
-  end
-
-  # Скільки всього чанків у даній еволюції
-  def total_chunks(chunk_size = 512)
-    return 0 if payload_size.zero?
-
-    (payload_size.to_f / chunk_size).ceil
   end
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

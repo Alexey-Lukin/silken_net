@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Wallet < ApplicationRecord
+  include EthAddressValidatable
+
   # --- ЗВ'ЯЗКИ (The Financial Fabric) ---
   belongs_to :tree
   has_many :blockchain_transactions, dependent: :destroy
@@ -19,10 +21,7 @@ class Wallet < ApplicationRecord
   alias_attribute :scc_balance, :balance
 
   # Стандартний формат Ethereum/Polygon адреси для On-Chain операцій
-  validates :crypto_public_address, format: {
-    with: /\A0x[a-fA-F0-9]{40}\z/,
-    message: "має бути валідною 0x адресою"
-  }, allow_blank: true
+  validates_eth_address :crypto_public_address, allow_blank: true
 
   # Троттлінг трансляції: оновлюємо UI не частіше ніж раз на N секунд,
   # щоб уникнути "шторму" WebSocket-повідомлень при масовій телеметрії.

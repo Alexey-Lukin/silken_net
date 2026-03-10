@@ -4,6 +4,8 @@ require "digest"
 require "bigdecimal"
 
 class TinyMlModel < ApplicationRecord
+  include OtaChunkable
+
   # --- КОНСТАНТИ ---
   # Допустимі формати вагових файлів для STM32 TinyML
   MODEL_FORMATS = %w[tflite edge_impulse onnx c_array].freeze
@@ -122,17 +124,6 @@ class TinyMlModel < ApplicationRecord
 
   def payload_size
     binary_payload&.bytesize || 0
-  end
-
-  # Розбиття на сегменти для OtaTransmissionWorker (MTU-friendly)
-  def chunks(chunk_size = 512)
-    return [] if payload_size.zero?
-    binary_payload.b.scan(/.{1,#{chunk_size}}/m)
-  end
-
-  def total_chunks(chunk_size = 512)
-    return 0 if payload_size.zero?
-    (payload_size.to_f / chunk_size).ceil
   end
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
