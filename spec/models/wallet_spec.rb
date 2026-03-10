@@ -243,4 +243,50 @@ RSpec.describe Wallet, type: :model do
       expect(MintCarbonCoinWorker).to have_received(:perform_async).with(tx.id)
     end
   end
+
+  describe "Wallet branch coverage" do
+    let(:organization_bc) { create(:organization) }
+    let(:cluster_bc) { create(:cluster, organization: organization_bc) }
+    let(:tree_bc) { create(:tree, cluster: cluster_bc) }
+    let(:wallet_bc) { tree_bc.wallet }
+
+    before do
+      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+      allow(MintCarbonCoinWorker).to receive(:perform_async)
+    end
+
+    describe "organization&.crypto_public_address when organization is nil" do
+      it "raises when both wallet and organization addresses are blank" do
+        wallet_bc.update_columns(crypto_public_address: nil, organization_id: nil)
+        wallet_bc.reload
+
+        expect {
+          wallet_bc.lock_and_mint!(10_000, 10_000)
+        }.to raise_error(RuntimeError, /крипто-адреса/)
+      end
+    end
+
+    describe "return unless tx — tokens_to_mint zero" do
+      it "returns nil when tokens_to_mint is zero" do
+        wallet_bc.update_columns(balance: 5000)
+        wallet_bc.reload
+
+        result = wallet_bc.lock_and_mint!(5000, 10_000)
+        expect(result).to be_nil
+        expect(MintCarbonCoinWorker).not_to have_received(:perform_async)
+      end
+    end
+
+    describe "lock_and_mint! success path" do
+      it "creates transaction and enqueues worker" do
+        wallet_bc.update_columns(balance: 20_000)
+        wallet_bc.reload
+
+        tx = wallet_bc.lock_and_mint!(20_000, 10_000)
+        expect(tx).to be_persisted
+        expect(tx.amount).to eq(2)
+        expect(MintCarbonCoinWorker).to have_received(:perform_async).with(tx.id)
+      end
+    end
+  end
 end

@@ -133,4 +133,33 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
       }.to raise_error(ActiveRecord::RecordNotFound)
     end
   end
+
+  describe "NACK when response is nil" do
+    it "handles nil response from CoAP" do
+      allow(CoapClient).to receive(:put).and_return(nil)
+      expect {
+        described_class.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)
+      }.not_to raise_error
+    end
+  end
+
+  describe "NACK when response.success? is false" do
+    it "handles unsuccessful response" do
+      response = double("response", success?: false, code: "4.04")
+      allow(CoapClient).to receive(:put).and_return(response)
+      expect {
+        described_class.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)
+      }.not_to raise_error
+    end
+  end
+
+  describe "handle_chunk_failure when gateway not found (nil)" do
+    it "handles nil gateway in max retries path" do
+      allow(CoapClient).to receive(:put).and_return(nil)
+      allow(Gateway).to receive(:find_by).with(uid: gateway.uid).and_return(nil)
+
+      worker = described_class.new
+      worker.send(:handle_chunk_failure, gateway.uid, "firmware", firmware.id, 0, 5, "test error")
+    end
+  end
 end

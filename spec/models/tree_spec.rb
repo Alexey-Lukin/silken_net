@@ -250,4 +250,61 @@ RSpec.describe Tree, type: :model do
       expect(first_call).to equal(second_call)
     end
   end
+
+  describe "current_stress when cluster is nil" do
+    it "falls back to UTC yesterday when cluster is nil" do
+      tree = create(:tree)
+      allow(tree).to receive(:cluster).and_return(nil)
+      expect(tree.current_stress).to eq(0.0)
+    end
+  end
+
+  describe "broadcast_map_update when latitude is nil" do
+    it "returns nil without broadcasting when latitude is absent" do
+      allow_any_instance_of(described_class).to receive(:broadcast_map_update).and_call_original
+      tree = create(:tree)
+      tree.update_columns(latitude: nil)
+      tree.reload
+
+      result = tree.broadcast_map_update
+      expect(result).to be_nil
+    end
+  end
+
+  describe "broadcast_map_update when longitude is nil" do
+    it "returns nil without broadcasting when longitude is absent" do
+      allow_any_instance_of(described_class).to receive(:broadcast_map_update).and_call_original
+      tree = create(:tree)
+      tree.update_columns(longitude: nil)
+      tree.reload
+
+      result = tree.broadcast_map_update
+      expect(result).to be_nil
+    end
+  end
+
+  describe "ensure_calibration when calibration already exists" do
+    it "does not create a new calibration if one exists" do
+      tree = create(:tree)
+      existing_cal = tree.device_calibration
+      expect(existing_cal).not_to be_nil
+
+      tree.send(:ensure_calibration)
+      expect(tree.device_calibration.id).to eq(existing_cal.id)
+    end
+  end
+
+  describe "normalize_did when did is blank" do
+    it "does not modify did when it is blank" do
+      tree = Tree.new(did: "", cluster: create(:cluster), tree_family: create(:tree_family))
+      tree.send(:normalize_did)
+      expect(tree.did).to eq("")
+    end
+
+    it "strips and upcases when did is present" do
+      tree = Tree.new(did: " snet-0000abcd ", cluster: create(:cluster), tree_family: create(:tree_family))
+      tree.send(:normalize_did)
+      expect(tree.did).to eq("SNET-0000ABCD")
+    end
+  end
 end

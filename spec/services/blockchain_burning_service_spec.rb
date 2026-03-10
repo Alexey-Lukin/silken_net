@@ -217,4 +217,80 @@ RSpec.describe BlockchainBurningService do
       end
     end
   end
+
+  describe "burn_amount zero" do
+    let(:tree_burn) { create(:tree, cluster: cluster) }
+    let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }
+
+    it "returns early when burn_amount is zero" do
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 1, status: :confirmed)
+      allow_any_instance_of(described_class).to receive(:calculate_damage_ratio).and_return(0.0)
+
+      result = described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
+      expect(result).to be_nil
+    end
+  end
+
+  describe "total_minted_amount zero" do
+    let(:tree_burn) { create(:tree, cluster: cluster) }
+
+    it "returns early when no confirmed transactions exist" do
+      result = described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
+      expect(result).to be_nil
+    end
+  end
+
+  describe "success path with tx_hash" do
+    let(:tree_burn) { create(:tree, cluster: cluster) }
+    let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }
+
+    it "marks naas_contract as breached and creates audit transaction" do
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
+
+      allow(mock_client).to receive(:transact_and_wait).and_return("0x" + "f" * 64)
+
+      described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
+
+      naas_contract.reload
+      expect(naas_contract.status).to eq("breached")
+
+      audit_tx = BlockchainTransaction.where(sourceable: naas_contract).last
+      expect(audit_tx).not_to be_nil
+      expect(audit_tx.tx_hash).to eq("0x" + "f" * 64)
+    end
+  end
+
+  describe "nil source_tree" do
+    let(:tree_burn) { create(:tree, cluster: cluster) }
+    let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }
+
+    it "uses cluster.trees.active.first wallet as audit_wallet" do
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
+
+      allow(mock_client).to receive(:transact_and_wait).and_return("0xabc123")
+
+      described_class.call(organization.id, naas_contract.id)
+
+      audit_tx = BlockchainTransaction.where(sourceable: naas_contract).last
+      expect(audit_tx.wallet).to eq(wallet_burn)
+    end
+  end
+
+  describe "nil audit_wallet" do
+    let(:tree_burn) { create(:tree, cluster: cluster) }
+    let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }
+
+    it "creates transaction with cluster instead of wallet when all trees dead" do
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
+      tree_burn.update_columns(status: Tree.statuses[:deceased])
+
+      allow(mock_client).to receive(:transact_and_wait).and_return("0xdead")
+
+      described_class.call(organization.id, naas_contract.id)
+
+      audit_tx = BlockchainTransaction.where(sourceable: naas_contract).last
+      expect(audit_tx.wallet).to be_nil
+      expect(audit_tx.cluster).to eq(cluster)
+    end
+  end
 end

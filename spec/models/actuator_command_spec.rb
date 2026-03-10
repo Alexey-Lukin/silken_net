@@ -493,4 +493,59 @@ RSpec.describe ActuatorCommand, type: :model do
       expect(result).to be_nil
     end
   end
+
+  describe "denormalize_organization — actuator with no gateway" do
+    it "sets organization_id to nil when gateway is nil" do
+      orphan_actuator = build(:actuator, gateway: nil)
+      allow(orphan_actuator).to receive(:gateway).and_return(nil)
+
+      command = ActuatorCommand.new(
+        actuator: orphan_actuator,
+        command_payload: "OPEN",
+        duration_seconds: 60
+      )
+      command.send(:denormalize_organization)
+      expect(command.organization_id).to be_nil
+    end
+  end
+
+  describe "duration_within_safety_envelope — nil actuator safe navigation" do
+    it "skips validation when actuator returns nil from safe navigation" do
+      command = ActuatorCommand.new(
+        actuator: actuator,
+        command_payload: "OPEN",
+        duration_seconds: 30
+      )
+      allow(command).to receive(:actuator).and_return(nil)
+      command.send(:duration_within_safety_envelope)
+      expect(command.errors[:duration_seconds]).to be_empty
+    end
+  end
+
+  describe "broadcast_prepend_to_activity_feed — fallback through gateway chain" do
+    before do
+      allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
+    end
+
+    it "falls back to actuator.gateway.cluster.organization when organization is nil" do
+      allow_any_instance_of(ActuatorCommand).to receive(:broadcast_prepend_to_activity_feed).and_call_original
+      command = create(:actuator_command, actuator: actuator)
+      command.update_columns(organization_id: nil)
+      command.reload
+
+      command.send(:broadcast_prepend_to_activity_feed)
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to).at_least(:once)
+    end
+
+    it "returns nil when both organization and gateway chain are nil" do
+      allow_any_instance_of(ActuatorCommand).to receive(:broadcast_prepend_to_activity_feed).and_call_original
+      command = create(:actuator_command, actuator: actuator)
+      command.update_columns(organization_id: nil)
+      command.reload
+
+      allow(command.actuator).to receive(:gateway).and_return(nil)
+      result = command.send(:broadcast_prepend_to_activity_feed)
+      expect(result).to be_nil
+    end
+  end
 end

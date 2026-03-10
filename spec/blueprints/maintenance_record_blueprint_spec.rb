@@ -156,4 +156,57 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
     end
 
   end
+
+  describe "maintainable_label when maintainable is nil" do
+    it "handles nil maintainable gracefully" do
+      record = create(:maintenance_record, user: user, maintainable: tree)
+      allow(record).to receive(:maintainable).and_return(nil)
+      json = described_class.render_as_hash(record, view: :index)
+      expect(json[:maintainable_label]).to include("//")
+    end
+  end
+
+  describe "maintainable_label when did is nil but uid is present" do
+    it "falls back to uid when did method is missing" do
+      gateway = create(:gateway)
+      gw_record = create(:maintenance_record, user: user, maintainable: gateway)
+      json = described_class.render_as_hash(gw_record, view: :index)
+      expect(json[:maintainable_label]).to include(gateway.uid)
+    end
+  end
+
+  describe "show view photo_urls without url_helpers" do
+    let(:record_with_cost) { create(:maintenance_record, :with_cost, user: user, maintainable: tree) }
+
+    it "returns empty strings for thumb_url and full_url when url_helpers is nil" do
+      json = described_class.render_as_hash(record_with_cost, view: :show)
+      expect(json[:photo_urls]).to eq([])
+    end
+  end
+
+  describe "show view photo_urls with url_helpers" do
+    let(:record_with_cost) { create(:maintenance_record, :with_cost, user: user, maintainable: tree) }
+
+    it "uses url_helpers when provided and photos are attached" do
+      record_with_cost.photos.attach(
+        io: StringIO.new("fake image data for test"),
+        filename: "test.jpg",
+        content_type: "image/jpeg"
+      )
+
+      url_helpers = double("url_helpers")
+      allow(url_helpers).to receive(:rails_representation_url).and_return("/thumb.jpg")
+      allow(url_helpers).to receive(:rails_blob_url).and_return("/full.jpg")
+
+      json = described_class.render_as_hash(
+        record_with_cost,
+        view: :show,
+        url_helpers: url_helpers
+      )
+
+      expect(json[:photo_urls]).not_to be_empty
+      expect(json[:photo_urls].first[:thumb_url]).to eq("/thumb.jpg")
+      expect(json[:photo_urls].first[:full_url]).to eq("/full.jpg")
+    end
+  end
 end
