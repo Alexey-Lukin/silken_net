@@ -25,6 +25,20 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       expect(telemetry_log.zk_proof_ref).to eq(zk_proof_ref)
     end
 
+    it "enqueues ChainlinkDispatchWorker after successful verification" do
+      zk_proof_ref = "zk-proof-abc123"
+      service = instance_double(Iotex::W3bstreamVerificationService)
+      allow(Iotex::W3bstreamVerificationService).to receive(:new).with(telemetry_log).and_return(service)
+      allow(service).to receive(:verify!).and_return(zk_proof_ref)
+
+      described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(ChainlinkDispatchWorker.jobs.size).to eq(1)
+      expect(ChainlinkDispatchWorker.jobs.first["args"]).to eq([
+        telemetry_log.id_value, telemetry_log.created_at.iso8601(6)
+      ])
+    end
+
     it "skips verification when telemetry_log is already verified" do
       telemetry_log.update_columns(verified_by_iotex: true, zk_proof_ref: "existing-proof")
 
