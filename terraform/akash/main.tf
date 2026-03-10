@@ -118,11 +118,16 @@ resource "null_resource" "akash_deployment" {
           --output json)
 
         # Extract DSEQ from transaction result.
+        # NOTE: Event type is version-specific to Akash API v1beta3.
+        # If Akash upgrades the API version, update the event type filter below.
+        # Check: akash query tx <txhash> --output json | jq '.logs[0].events[].type'
         DSEQ=$(echo "$RESULT" | jq -r '.logs[0].events[] | select(.type=="akash.v1beta3.EventDeploymentCreated") | .attributes[] | select(.key=="dseq") | .value' 2>/dev/null || true)
 
         if [ -z "$DSEQ" ]; then
-          echo "Warning: Could not extract DSEQ from transaction. Check deployment manually."
+          echo "ERROR: Could not extract DSEQ from transaction result."
           echo "Transaction result: $RESULT"
+          echo "Check the deployment manually: akash query deployment list --owner <your-address>"
+          exit 1
         else
           echo "$DSEQ" > "$DSEQ_FILE"
           echo "==> Deployment created with DSEQ=$DSEQ"

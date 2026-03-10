@@ -50,9 +50,10 @@ services:
   # Solid Queue runs inside Puma (SOLID_QUEUE_IN_PUMA=true) for single-node.
   web:
     image: europe-west1-docker.pkg.dev/YOUR_GCP_PROJECT/silken-net/silken_net:latest
-    # ⬆ Replace with your actual Artifact Registry URL or any accessible registry.
+    # ⬆ REQUIRED: Replace YOUR_GCP_PROJECT with your actual GCP project ID.
     # The same image that Kamal pushes to Google Artifact Registry.
     # For public Akash deployments, consider mirroring to Docker Hub or GHCR.
+    # For Terraform-managed deployments, use deploy/akash/deploy.yaml.tpl instead.
 
     # --- Environment Variables -----------------------------------------------
     # Maps to: config/deploy.yml → env.secret + env.clear
@@ -68,7 +69,7 @@ services:
 
       # Rails encrypted credentials master key.
       # Maps to: Kamal env.secret RAILS_MASTER_KEY
-      - RAILS_MASTER_KEY=CHANGE_ME
+      - RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
 
       # PostgreSQL connection URL — must point to Cloud SQL (PostGIS enabled).
       # Since Akash providers are outside the GCP VPC, use one of:
@@ -77,13 +78,13 @@ services:
       #   3. Tailscale/WireGuard tunnel to the GCP VPC
       # Format: postgres://silken_net:<password>@<host>:5432/silken_net_production
       # Maps to: Kamal env.secret DATABASE_URL
-      - DATABASE_URL=CHANGE_ME
+      - DATABASE_URL=REQUIRED_SECRET_NOT_SET
 
       # Redis URL for Sidekiq background job processing.
       # Same connectivity considerations as DATABASE_URL above.
       # Format: redis://<host>:6379/0
       # Maps to: Kamal env.secret REDIS_URL
-      - REDIS_URL=CHANGE_ME
+      - REDIS_URL=REQUIRED_SECRET_NOT_SET
 
       # Run Solid Queue supervisor inside Puma (single-node mode).
       # Maps to: Kamal env.clear SOLID_QUEUE_IN_PUMA
