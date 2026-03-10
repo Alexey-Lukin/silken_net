@@ -14,6 +14,9 @@ class IotexVerificationWorker
 
     log.update!(verified_by_iotex: true, zk_proof_ref: zk_proof_ref)
 
+    # 🔗 [Chainlink]: Після успішної верифікації IoTeX — диспетчеризуємо до Chainlink Oracle
+    ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
+
     Rails.logger.info "🔐 [IoTeX] TelemetryLog ##{telemetry_log_id} верифіковано. Proof: #{zk_proof_ref}"
   rescue Iotex::W3bstreamVerificationService::VerificationError => e
     Rails.logger.error "🚨 [IoTeX] Верифікація TelemetryLog ##{telemetry_log_id} зазнала невдачі: #{e.message}"

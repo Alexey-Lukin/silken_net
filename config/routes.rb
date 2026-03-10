@@ -128,6 +128,11 @@ Rails.application.routes.draw do
       resources :blockchain_transactions, only: [ :index, :show ]
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      # 🔗 CHAINLINK ORACLE (Decentralized Oracle Callbacks)
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      resources :oracle_callbacks, only: [ :create ]
+
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 🔔 НЕЙРОННА ПАВУТИНА (The Neural Web — Notifications)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       get "notifications/settings",  to: "notifications#settings",        as: :notifications_settings
