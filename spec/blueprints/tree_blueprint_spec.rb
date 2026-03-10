@@ -39,8 +39,8 @@ RSpec.describe TreeBlueprint, type: :model do
     subject(:parsed) { JSON.parse(described_class.render(tree, view: :index)) }
 
     it "includes location fields" do
-      expect(parsed["latitude"]).to be_a(Numeric)
-      expect(parsed["longitude"]).to be_a(Numeric)
+      expect(parsed["latitude"]).to eq(tree.latitude.to_s)
+      expect(parsed["longitude"]).to eq(tree.longitude.to_s)
     end
 
     it "includes did and status" do
@@ -65,7 +65,7 @@ RSpec.describe TreeBlueprint, type: :model do
       wallet_data = parsed["wallet"]
       expect(wallet_data).to be_a(Hash)
       expect(wallet_data["id"]).to eq(wallet.id)
-      expect(wallet_data["balance"]).to be_a(Numeric)
+      expect(wallet_data["balance"]).to eq(wallet.balance.to_s)
     end
 
     it "includes tree_family_name" do
@@ -113,15 +113,19 @@ RSpec.describe TreeBlueprint, type: :model do
   end
 
   describe "nil tree_family edge case" do
-    let(:tree) { create(:tree, tree_family: nil, cluster: cluster) }
+    let(:tree_without_family) { create(:tree, cluster: cluster) }
+
+    before do
+      allow(tree_without_family).to receive(:tree_family).and_return(nil)
+    end
 
     it "returns nil for tree_family_name in :index" do
-      parsed = JSON.parse(described_class.render(tree, view: :index))
+      parsed = JSON.parse(described_class.render(tree_without_family, view: :index))
       expect(parsed["tree_family_name"]).to be_nil
     end
 
     it "returns nil for baseline_impedance in :show" do
-      parsed = JSON.parse(described_class.render(tree, view: :show))
+      parsed = JSON.parse(described_class.render(tree_without_family, view: :show))
       expect(parsed["baseline_impedance"]).to be_nil
     end
   end

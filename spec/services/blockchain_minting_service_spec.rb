@@ -213,7 +213,7 @@ end
   end
 
   describe "#identifier_for" do
-    let(:service) { described_class.new([-1]) }
+    let(:service) { described_class.new([ -1 ]) }
 
     it "returns CLUSTER identifier for forest_coin" do
       tree = create(:tree)

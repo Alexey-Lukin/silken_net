@@ -94,7 +94,7 @@ RSpec.describe BlockchainTransactionBlueprint, type: :model do
       wallet_data = parsed["wallet"]
       expect(wallet_data).to be_a(Hash)
       expect(wallet_data["id"]).to eq(wallet.id)
-      expect(wallet_data["balance"]).to be_a(Numeric)
+      expect(wallet_data["balance"]).to eq(wallet.balance.to_s)
       expect(wallet_data["tree"]).to be_a(Hash)
       expect(wallet_data["tree"]["did"]).to eq(tree.did)
     end
@@ -132,10 +132,7 @@ RSpec.describe BlockchainTransactionBlueprint, type: :model do
       parsed = JSON.parse(described_class.render(transactions, view: :index))
       expect(parsed).to be_an(Array)
       expect(parsed.size).to eq(3)
-      parsed.each do |tx|
-        expect(tx).to have_key("explorer_url")
-        expect(tx).to have_key("tree_did")
-      end
+      expect(parsed).to all(include("explorer_url", "tree_did"))
     end
   end
 end

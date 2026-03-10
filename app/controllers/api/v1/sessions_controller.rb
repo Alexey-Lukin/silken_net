@@ -76,6 +76,12 @@ module Api
 
       private
 
+      def current_session
+        return unless current_user
+
+        current_user.sessions.order(created_at: :desc).first
+      end
+
       # Спільна логіка встановлення зв'язку
       def establish_session(user)
         # 1. Захист від Session Fixation: очищуємо стару сесію перед встановленням нової

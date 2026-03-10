@@ -79,13 +79,13 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
-    context "energy status branches" do
+    context "with energy status branches" do
       it "returns LOW_RESERVE when no telemetry data exists" do
         get "/api/v1/dashboard", headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
         energy = response.parsed_body["energy"]
-        expect(energy["avg_voltage"]).to eq(0)
+        expect(energy["avg_voltage"]).to be(0)
         expect(energy["status"]).to eq("LOW_RESERVE")
       end
 

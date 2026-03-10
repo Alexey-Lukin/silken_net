@@ -44,11 +44,14 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
 
       expect(response).to have_http_status(:ok)
       body = response.parsed_body
-      expect(body["database"]["connected"]).to eq(false)
+      expect(body["database"]["connected"]).to be(false)
       expect(body["database"]).to have_key("error")
     end
 
     it "returns all expected top-level keys in the response" do
+      stats = instance_double(Sidekiq::Stats, enqueued: 0, processed: 100, failed: 2, workers_size: 4, queues: {})
+      allow(Sidekiq::Stats).to receive(:new).and_return(stats)
+
       get "/api/v1/system_health", headers: admin_headers, as: :json
 
       expect(response).to have_http_status(:ok)

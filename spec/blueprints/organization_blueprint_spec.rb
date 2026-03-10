@@ -27,7 +27,7 @@ RSpec.describe OrganizationBlueprint, type: :model do
     end
 
     it "includes computed total_clusters" do
-      expect(parsed["total_clusters"]).to eq(0)
+      expect(parsed["total_clusters"]).to be(0)
     end
 
     it "includes computed total_invested" do

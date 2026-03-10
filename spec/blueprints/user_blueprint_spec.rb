@@ -60,8 +60,9 @@ RSpec.describe UserBlueprint, type: :model do
 
     context "when user has no password" do
       let(:user) do
-        create(:user, first_name: "OAuth", last_name: "User",
-                      password: nil, organization: organization)
+        u = create(:user, first_name: "OAuth", last_name: "User", organization: organization)
+        u.update_columns(password_digest: nil)
+        u
       end
 
       it "returns false for has_password" do

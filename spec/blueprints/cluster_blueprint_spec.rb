@@ -48,7 +48,7 @@ RSpec.describe ClusterBlueprint, type: :model do
   describe "total_active_trees reflects denormalized counter" do
     it "returns 0 for a cluster with no trees" do
       parsed = JSON.parse(described_class.render(cluster))
-      expect(parsed["total_active_trees"]).to eq(0)
+      expect(parsed["total_active_trees"]).to be(0)
     end
   end
 
@@ -66,10 +66,7 @@ RSpec.describe ClusterBlueprint, type: :model do
       parsed = JSON.parse(described_class.render(clusters))
       expect(parsed).to be_an(Array)
       expect(parsed.size).to eq(3)
-      parsed.each do |c|
-        expect(c).to have_key("name")
-        expect(c).to have_key("health_index")
-      end
+      expect(parsed).to all(include("name", "health_index"))
     end
   end
 end

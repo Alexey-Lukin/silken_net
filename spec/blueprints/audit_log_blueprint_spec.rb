@@ -115,10 +115,7 @@ RSpec.describe AuditLogBlueprint, type: :model do
       parsed = JSON.parse(described_class.render(logs, view: :index))
       expect(parsed).to be_an(Array)
       expect(parsed.size).to eq(3)
-      parsed.each do |log|
-        expect(log).to have_key("action")
-        expect(log).to have_key("user")
-      end
+      expect(parsed).to all(include("action", "user"))
     end
   end
 end

@@ -79,7 +79,7 @@ RSpec.describe InsightGeneratorService, type: :service do
           insight_type: :daily_health_summary,
           target_date: date
         )
-        expect(fraud_insight.total_growth_points).to eq(0)
+        expect(fraud_insight.total_growth_points).to be(0)
       end
     end
 
@@ -231,7 +231,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       described_class.call(date)
     end
 
-    context "fraud detection with zero baseline sap" do
+    context "when baseline sap is zero" do
       it "returns false (no fraud) when baseline sap is zero" do
         # Single tree so cluster baseline sap == tree's sap == 0
         tree_zero_sap = create(:tree, cluster: cluster, status: :active)
@@ -249,7 +249,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       end
     end
 
-    context "stress_index calculations" do
+    context "with stress_index calculations" do
       it "includes z-value penalty when |avg_z| > 2.0" do
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 3.0,
@@ -293,7 +293,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       end
     end
 
-    context "cluster aggregation with fraud" do
+    context "with cluster aggregation and fraud" do
       let(:normal_tree) { create(:tree, cluster: cluster, status: :active) }
       let(:fraud_tree) { create(:tree, cluster: cluster, status: :active) }
 

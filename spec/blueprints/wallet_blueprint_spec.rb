@@ -18,7 +18,7 @@ RSpec.describe WalletBlueprint, type: :model do
     end
 
     it "includes balance" do
-      expect(parsed["balance"]).to be_a(Numeric)
+      expect(parsed["balance"]).to eq(wallet.balance.to_s)
     end
 
     it "includes crypto_public_address" do
@@ -34,7 +34,7 @@ RSpec.describe WalletBlueprint, type: :model do
     subject(:parsed) { JSON.parse(described_class.render(wallet, view: :with_tree)) }
 
     it "includes base fields" do
-      expect(parsed["balance"]).to be_a(Numeric)
+      expect(parsed["balance"]).to eq(wallet.balance.to_s)
       expect(parsed["crypto_public_address"]).to eq(wallet.crypto_public_address)
     end
 

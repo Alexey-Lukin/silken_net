@@ -33,8 +33,8 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
     end
 
     it "includes cost fields" do
-      expect(parsed["labor_hours"]).to be_a(Numeric)
-      expect(parsed["parts_cost"]).to be_a(Numeric)
+      expect(parsed["labor_hours"]).to eq(maintenance_record.labor_hours.to_s)
+      expect(parsed["parts_cost"]).to eq(maintenance_record.parts_cost.to_s)
     end
 
     it "includes hardware_verified flag" do
@@ -42,8 +42,8 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
     end
 
     it "includes location" do
-      expect(parsed["latitude"]).to be_a(Numeric)
-      expect(parsed["longitude"]).to be_a(Numeric)
+      expect(parsed["latitude"]).to eq(maintenance_record.latitude.to_s)
+      expect(parsed["longitude"]).to eq(maintenance_record.longitude.to_s)
     end
 
     it "includes computed total_cost" do
@@ -53,7 +53,7 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
     end
 
     it "includes computed photo_count" do
-      expect(parsed["photo_count"]).to eq(0)
+      expect(parsed["photo_count"]).to be(0)
     end
 
     it "includes computed maintainable_label with Tree did" do
@@ -124,10 +124,7 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
       parsed = JSON.parse(described_class.render(records, view: :index))
       expect(parsed).to be_an(Array)
       expect(parsed.size).to eq(3)
-      parsed.each do |r|
-        expect(r).to have_key("total_cost")
-        expect(r).to have_key("maintainable_label")
-      end
+      expect(parsed).to all(include("total_cost", "maintainable_label"))
     end
   end
 end
