@@ -12,6 +12,10 @@ RSpec.describe Api::V1::DashboardController, type: :request do
 
   describe "GET /api/v1/dashboard" do
     context "when as JSON" do
+      before do
+        allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_total_carbon_minted).and_return(0)
+      end
+
       it "returns dashboard stats" do
         get "/api/v1/dashboard", headers: headers, as: :json
         expect(response).to have_http_status(:ok)
@@ -21,6 +25,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         expect(body).to have_key("economy")
         expect(body).to have_key("security")
         expect(body).to have_key("energy")
+        expect(body).to have_key("global_onchain_carbon")
       end
 
       it "returns correct tree stats" do
@@ -68,9 +73,34 @@ RSpec.describe Api::V1::DashboardController, type: :request do
     end
 
     context "when as HTML" do
+      before do
+        allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_total_carbon_minted).and_return(0)
+      end
+
       it "renders the dashboard page" do
         get "/api/v1/dashboard", headers: headers
         expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context "with global_onchain_carbon from The Graph" do
+      it "returns the minted amount from The Graph" do
+        allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_total_carbon_minted).and_return(1_450_000)
+
+        get "/api/v1/dashboard", headers: headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["global_onchain_carbon"]).to eq(1_450_000)
+      end
+
+      it "falls back to 0 when The Graph service raises an error" do
+        allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_total_carbon_minted)
+          .and_raise(TheGraph::QueryService::QueryError, "The Graph node is syncing")
+
+        get "/api/v1/dashboard", headers: headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["global_onchain_carbon"]).to eq(0)
       end
     end
 
@@ -80,6 +110,10 @@ RSpec.describe Api::V1::DashboardController, type: :request do
     end
 
     context "with energy status branches" do
+      before do
+        allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_total_carbon_minted).and_return(0)
+      end
+
       it "returns LOW_RESERVE when no telemetry data exists" do
         get "/api/v1/dashboard", headers: headers, as: :json
 

@@ -33,7 +33,8 @@ module Api
           energy: {
             avg_voltage: avg_voltage.to_i,
             status: avg_voltage > 3300 ? "STABLE" : "LOW_RESERVE"
-          }
+          },
+          global_onchain_carbon: fetch_global_onchain_carbon
         }
 
         # Останні події для стрічки
@@ -51,6 +52,12 @@ module Api
       end
 
       private
+
+      def fetch_global_onchain_carbon
+        TheGraph::QueryService.new.fetch_total_carbon_minted
+      rescue StandardError
+        0
+      end
 
       def fetch_recent_events
         org = current_user.organization
