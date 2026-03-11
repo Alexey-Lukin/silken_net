@@ -168,4 +168,74 @@ RSpec.describe BlockchainTransaction, type: :model do
       expect(tx.polygonscan_url).to eq(tx.explorer_url)
     end
   end
+
+  describe "multichain support" do
+    it "defaults blockchain_network to evm" do
+      tx = create(:blockchain_transaction)
+      expect(tx.blockchain_network).to eq("evm")
+    end
+
+    it "validates blockchain_network inclusion" do
+      tx = build(:blockchain_transaction)
+      tx.blockchain_network = "invalid_chain"
+      expect(tx).not_to be_valid
+      expect(tx.errors[:blockchain_network]).to be_present
+    end
+
+    it "accepts solana as blockchain_network" do
+      tx = build(:blockchain_transaction,
+        blockchain_network: "solana",
+        to_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV"
+      )
+      expect(tx).to be_valid
+    end
+
+    describe "#solana_network?" do
+      it "returns true for solana transactions" do
+        tx = build(:blockchain_transaction, blockchain_network: "solana",
+                   to_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV")
+        expect(tx.solana_network?).to be true
+      end
+
+      it "returns false for evm transactions" do
+        tx = build(:blockchain_transaction, blockchain_network: "evm")
+        expect(tx.solana_network?).to be false
+      end
+    end
+
+    describe "#explorer_url for solana" do
+      it "returns Solana Explorer URL for solana transactions" do
+        tx = build(:blockchain_transaction,
+          blockchain_network: "solana",
+          to_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV",
+          tx_hash: "solana:sim:abc123"
+        )
+        expect(tx.explorer_url).to eq("https://explorer.solana.com/tx/solana:sim:abc123?cluster=devnet")
+      end
+
+      it "returns Polygonscan URL for evm transactions" do
+        tx = build(:blockchain_transaction, tx_hash: "0xabc123", blockchain_network: "evm")
+        expect(tx.explorer_url).to eq("https://polygonscan.com/tx/0xabc123")
+      end
+    end
+
+    describe "Solana address validation" do
+      it "validates Base58 format for solana network" do
+        tx = build(:blockchain_transaction,
+          blockchain_network: "solana",
+          to_address: "invalid!address"
+        )
+        expect(tx).not_to be_valid
+        expect(tx.errors[:to_address]).to be_present
+      end
+
+      it "rejects EVM address format for solana network" do
+        tx = build(:blockchain_transaction,
+          blockchain_network: "solana",
+          to_address: "0x1234567890abcdef1234567890abcdef12345678"
+        )
+        expect(tx).not_to be_valid
+      end
+    end
+  end
 end
