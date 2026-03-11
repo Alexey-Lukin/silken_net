@@ -2,8 +2,10 @@
 
 class GatewayTelemetryWorker
   include Sidekiq::Job
-  # Шлюзи оновлюються рідше за дерева, тому використовуємо чергу за замовчуванням
-  sidekiq_options queue: "default", retry: 2
+  # Телеметрія шлюзів — це вхідний потік даних, аналогічний UnpackTelemetryWorker.
+  # Черга uplink гарантує, що діагностика Королев (батарея, температура, сигнал)
+  # не затримується за рутинними задачами в default.
+  sidekiq_options queue: "uplink", retry: 2
 
   # CSQ 0-31 — нормальний діапазон (3GPP 27.007); 99 — невизначений/відсутній сигнал
   VALID_CSQ_VALUES = (0..31).freeze

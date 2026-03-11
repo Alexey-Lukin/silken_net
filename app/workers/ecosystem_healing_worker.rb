@@ -2,7 +2,9 @@
 
 class EcosystemHealingWorker
   include Sidekiq::Job
-  sidekiq_options queue: "default", retry: 3
+  # Відновлення екосистеми після EWS-тривог є критичною операцією:
+  # реанімація актуаторів, зняття з експлуатації, закриття тривог.
+  sidekiq_options queue: "critical", retry: 3
 
   def perform(record_id)
     record = MaintenanceRecord.find(record_id)

@@ -307,7 +307,8 @@ CREATE TABLE public.audit_logs (
     ip_address character varying,
     user_agent character varying,
     chain_hash character varying,
-    ipfs_cid character varying
+    ipfs_cid character varying,
+    l1_anchor_tx_hash character varying
 );
 
 
@@ -2437,6 +2438,13 @@ CREATE INDEX index_audit_logs_on_ip_address ON public.audit_logs USING btree (ip
 
 
 --
+-- Name: index_audit_logs_on_l1_anchor_tx_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_audit_logs_on_l1_anchor_tx_hash ON public.audit_logs USING btree (l1_anchor_tx_hash);
+
+
+--
 -- Name: index_audit_logs_on_org_and_created; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4116,6 +4124,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260311163811'),
 ('20260311160000'),
 ('20260311125000'),
 ('20260311120626'),

@@ -45,3 +45,10 @@
     cluster_health_arbitration:
       cron: '0 2 * * *' # О 02:00, одразу після агрегації
       class: ClusterHealthCheckWorker
+
+    # --- ЦИКЛ L1 ЯКОРЯ (The Ethereum Seal) ---
+    # Щотижневий запис State Root у смарт-контракт на Ethereum Mainnet.
+    # Мінімізація Gas: тільки 1 запис (bytes32) на тиждень.
+    ethereum_state_anchor:
+      cron: '0 3 * * 1' # Щопонеділка о 03:00 UTC, після завершення всіх нічних циклів
+      class: EthereumAnchorWorker
