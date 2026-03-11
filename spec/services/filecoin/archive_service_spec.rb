@@ -44,6 +44,21 @@ RSpec.describe Filecoin::ArchiveService do
         expect(content["metadata"]).to eq("field" => "critical_z", "old_value" => 100, "new_value" => 200)
       end
 
+      it "includes telemetry_summary key in the payload" do
+        expected_body = nil
+        allow_any_instance_of(Net::HTTP).to receive(:request) do |_http, req|
+          expected_body = JSON.parse(req.body)
+          instance_double(Net::HTTPSuccess, body: { "IpfsHash" => "QmTestCid12345" }.to_json, is_a?: true).tap do |resp|
+            allow(resp).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+          end
+        end
+
+        described_class.new(audit_log).archive!
+
+        content = expected_body["pinataContent"]
+        expect(content).to have_key("telemetry_summary")
+      end
+
       it "sends Bearer authorization header" do
         expected_auth = nil
         allow_any_instance_of(Net::HTTP).to receive(:request) do |_http, req|

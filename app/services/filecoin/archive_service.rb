@@ -43,7 +43,7 @@ module Filecoin
 
     private
 
-    # Формує JSON payload з даними аудит-логу для архівування
+    # Формує JSON payload з даними аудит-логу та добовими зведеннями телеметрії
     def build_payload
       {
         pinataContent: {
@@ -54,6 +54,7 @@ module Filecoin
           metadata: @audit_log.metadata,
           auditable_type: @audit_log.auditable_type,
           auditable_id: @audit_log.auditable_id,
+          telemetry_summary: build_telemetry_summary,
           created_at: @audit_log.created_at&.iso8601,
           archived_at: Time.current.iso8601
         },
@@ -65,6 +66,36 @@ module Filecoin
             source: "silken_net"
           }
         }
+      }
+    end
+
+    # Збирає добове зведення телеметрії для організації на дату аудит-логу.
+    # AiInsight (daily_health_summary) зберігає агреговані метрики по кожному дереву/кластеру.
+    def build_telemetry_summary
+      target_date = @audit_log.created_at&.to_date
+      return nil unless target_date
+
+      summaries = AiInsight
+        .daily_health_summary
+        .where(target_date: target_date)
+        .where(analyzable_type: "Cluster")
+        .joins("INNER JOIN clusters ON clusters.id = ai_insights.analyzable_id")
+        .where(clusters: { organization_id: @audit_log.organization_id })
+        .select(:analyzable_id, :stress_index, :total_growth_points, :summary, :fraud_detected)
+
+      return nil if summaries.empty?
+
+      {
+        date: target_date.iso8601,
+        clusters: summaries.map do |insight|
+          {
+            cluster_id: insight.analyzable_id,
+            stress_index: insight.stress_index&.to_f,
+            total_growth_points: insight.total_growth_points,
+            summary: insight.summary,
+            fraud_detected: insight.fraud_detected
+          }
+        end
       }
     end
 

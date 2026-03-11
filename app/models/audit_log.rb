@@ -27,6 +27,8 @@ class AuditLog < ApplicationRecord
   scope :by_user, ->(user_id) { where(user_id: user_id) if user_id.present? }
   scope :by_ip, ->(ip) { where(ip_address: ip) if ip.present? }
   scope :for_period, ->(from, to) { where(created_at: from..to) if from.present? && to.present? }
+  scope :archived, -> { where.not(ipfs_cid: nil) }
+  scope :not_archived, -> { where(ipfs_cid: nil) }
 
   # ---------------------------------------------------------------------------
   # Hot-Path: асинхронний запис через Sidekiq (не блокує основну дію користувача)
