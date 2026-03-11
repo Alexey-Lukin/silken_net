@@ -274,4 +274,71 @@ end
       expect(result).to eq("ORG_#{wallet.organization_id}")
     end
   end
+
+  describe "trustless verification (guard clauses)" do
+    let(:tree) { create(:tree) }
+    let(:wallet) { tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40) } }
+    let!(:tx) do
+      wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+    end
+
+    it "raises when telemetry_log is not verified by IoTeX" do
+      log = create(:telemetry_log, tree: tree, verified_by_iotex: false, oracle_status: "fulfilled")
+
+      expect {
+        described_class.call(tx.id, telemetry_log: log)
+      }.to raise_error(RuntimeError, /Data not verified by IoTeX/)
+    end
+
+    it "raises when Chainlink Oracle consensus is not fulfilled" do
+      log = create(:telemetry_log, tree: tree, verified_by_iotex: true, oracle_status: "dispatched")
+
+      expect {
+        described_class.call(tx.id, telemetry_log: log)
+      }.to raise_error(RuntimeError, /Chainlink Oracle consensus not fulfilled/)
+    end
+
+    it "proceeds when telemetry_log is fully verified" do
+      log = create(:telemetry_log,
+        tree: tree,
+        verified_by_iotex: true,
+        oracle_status: "fulfilled",
+        chainlink_request_id: "chainlink-req-123",
+        zk_proof_ref: "zk-proof-456"
+      )
+
+      described_class.call(tx.id, telemetry_log: log)
+
+      tx.reload
+      expect(tx.status).to eq("sent")
+      expect(tx.tx_hash).to eq(fake_tx_hash)
+    end
+
+    it "saves chainlink_request_id and zk_proof_ref to blockchain_transaction" do
+      log = create(:telemetry_log,
+        tree: tree,
+        verified_by_iotex: true,
+        oracle_status: "fulfilled",
+        chainlink_request_id: "chainlink-req-audit-999",
+        zk_proof_ref: "zk-proof-audit-777"
+      )
+
+      described_class.call(tx.id, telemetry_log: log)
+
+      tx.reload
+      expect(tx.chainlink_request_id).to eq("chainlink-req-audit-999")
+      expect(tx.zk_proof_ref).to eq("zk-proof-audit-777")
+    end
+
+    it "does not save chainlink fields when telemetry_log is nil" do
+      described_class.call(tx.id)
+
+      tx.reload
+      expect(tx.chainlink_request_id).to be_nil
+      expect(tx.zk_proof_ref).to be_nil
+    end
+  end
 end

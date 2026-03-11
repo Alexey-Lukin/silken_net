@@ -12,13 +12,32 @@ class MintCarbonCoinWorker
   # Викликається, коли всі 5 спроб RPC-зв'язку (відправки в мемпул) вичерпано.
   # Ми не можемо дозволити капіталу "зависнути" в ефірі.
   sidekiq_retries_exhausted do |msg, _ex|
-    # Якщо ми працювали з батчем, дістаємо масив ID, якщо з одиничною — ID.
-    tx_ids = msg["args"].flatten.compact
-    txs = BlockchainTransaction.where(id: tx_ids)
+    telemetry_log_id = msg["args"].first
+    created_at_iso = msg["args"].second
+
+    if telemetry_log_id
+      # Oracle-driven flow: знаходимо TelemetryLog та пов'язані транзакції
+      scope = TelemetryLog.where(id: telemetry_log_id)
+      if created_at_iso.present?
+        begin
+          scope = scope.where(created_at: Time.iso8601(created_at_iso))
+        rescue ArgumentError
+          # Некоректний формат — шукаємо без partition pruning
+        end
+      end
+      log = scope.first
+      next unless log
+
+      wallet = log.tree&.wallet
+      next unless wallet
+
+      txs = wallet.blockchain_transactions.where(status: [ :pending, :processing ])
+    else
+      # Auto-discovery flow: знаходимо всі заблоковані транзакції
+      txs = BlockchainTransaction.where(status: [ :pending, :processing ]).limit(1000)
+    end
 
     txs.each do |tx|
-      next unless tx.status_pending? || tx.status_processing?
-
       Rails.logger.fatal "☠️ [Web3] Капітуляція транзакції ##{tx.id}. Запуск протоколу повернення активів..."
 
       ActiveRecord::Base.transaction do
@@ -29,10 +48,20 @@ class MintCarbonCoinWorker
           # поточний EMISSION_THRESHOLD, який міг змінитись між створенням та ролбеком.
           refund_points = tx.locked_points || (tx.amount * TokenomicsEvaluatorWorker::EMISSION_THRESHOLD).to_i
 
-          tx.wallet.increment!(:balance, refund_points)
+          # [FIX]: lock_and_mint! блокує кошти через increment!(:locked_balance),
+          # НЕ змінюючи balance. Правильний rollback — зняти блокування через
+          # release_locked_funds!, а не inflate balance через increment!(:balance).
+          if tx.wallet.locked_balance >= refund_points
+            tx.wallet.release_locked_funds!(refund_points)
+          else
+            # Захисний fallback: якщо locked_balance вже частково розблоковано
+            # (наприклад, іншим процесом), звільняємо скільки можемо.
+            tx.wallet.release_locked_funds!(tx.wallet.locked_balance) if tx.wallet.locked_balance > 0
+          end
+
           tx.update!(
             status: :failed,
-            notes: "Rollback: Постійний збій RPC. Повернено #{refund_points} балів на баланс DID: #{tx.wallet.tree.did}"
+            notes: "Rollback: Постійний збій RPC. Розблоковано #{refund_points} балів для DID: #{tx.wallet.tree.did}"
           )
         end
       end
@@ -42,25 +71,54 @@ class MintCarbonCoinWorker
     end
   end
 
-  # [ОПТИМІЗАЦІЯ]: Тепер perform може приймати як один ID, так і масив,
-  # або взагалі нічого (тоді він забере всі pending транзакції).
-  def perform(blockchain_transaction_ids = nil)
-    # 1. ЗБІР РОБОТИ (The Harvest)
-    # Якщо ID не передані, беремо чергу pending транзакцій (ліміт 1000 для стабільності пам'яті)
-    tx_ids = Array(blockchain_transaction_ids).presence ||
-             BlockchainTransaction.status_pending.limit(1000).pluck(:id)
-
-    return if tx_ids.empty?
-
-    # 2. [SLICING]: ДРОБОВИК ДЛЯ ГАЗУ (Gas Limit optimization)
-    # Розбиваємо масив на групи по 200 вузлів. Це гарантує, що ми не
-    # перевищимо Gas Limit блоку Polygon при виклику batchMint.
-    tx_ids.each_slice(200) do |batch|
-      process_batch(batch)
+  # [TRUSTLESS]: perform тепер приймає telemetry_log_id як основний аргумент
+  # для oracle-driven flow (OracleCallbacksController передає log.id_value + created_at).
+  # [COMPOSITE PK]: telemetry_logs партиціоновано по created_at, тому передаємо обидва
+  # поля для ефективного partition pruning (O(log N) замість O(P × log N)).
+  # Без аргументів — auto-discovery pending транзакцій (fallback/cron).
+  def perform(telemetry_log_id = nil, created_at_iso = nil)
+    if telemetry_log_id
+      process_telemetry_log(telemetry_log_id, created_at_iso)
+    else
+      process_pending_transactions
     end
   end
 
   private
+
+  # [TRUSTLESS]: Oracle-driven мінтинг — знаходимо верифіковану телеметрію
+  # та запускаємо мінтинг для pending транзакцій пов'язаного гаманця.
+  def process_telemetry_log(telemetry_log_id, created_at_iso)
+    log = find_telemetry_log(telemetry_log_id, created_at_iso)
+    return unless log
+
+    wallet = log.tree.wallet
+    return unless wallet
+
+    tx_ids = wallet.blockchain_transactions.status_pending.pluck(:id)
+    return if tx_ids.empty?
+
+    Rails.logger.info "🔐 [Web3] Trustless мінтинг для TelemetryLog ##{telemetry_log_id}: #{tx_ids.size} транзакцій..."
+
+    tx_ids.each_slice(200) do |batch|
+      BlockchainMintingService.call_batch(batch, telemetry_log: log)
+    end
+
+  rescue StandardError => e
+    Rails.logger.error "🚨 [Web3] Oracle-driven mint error для TelemetryLog ##{telemetry_log_id}: #{e.message}"
+    raise e
+  end
+
+  # [FALLBACK]: Auto-discovery pending транзакцій (cron або ручний запуск).
+  # Працює без telemetry_log — для існуючого TokenomicsEvaluatorWorker flow.
+  def process_pending_transactions
+    tx_ids = BlockchainTransaction.status_pending.limit(1000).pluck(:id)
+    return if tx_ids.empty?
+
+    tx_ids.each_slice(200) do |batch|
+      process_batch(batch)
+    end
+  end
 
   def process_batch(batch_ids)
     # [Idempotency & Race Condition Guard]
@@ -88,5 +146,23 @@ class MintCarbonCoinWorker
 
     Rails.logger.error "🚨 [Web3] Batch RPC Error: #{e.message}. Планується повтор..."
     raise e
+  end
+
+  # [COMPOSITE PK]: telemetry_logs партиціоновано по created_at.
+  # Передача created_at дозволяє PostgreSQL пропустити непотрібні партиції.
+  def find_telemetry_log(telemetry_log_id, created_at_iso)
+    scope = TelemetryLog.where(id: telemetry_log_id)
+
+    if created_at_iso.present?
+      begin
+        scope = scope.where(created_at: Time.iso8601(created_at_iso))
+      rescue ArgumentError
+        # Некоректний формат — шукаємо без partition pruning
+      end
+    end
+
+    log = scope.first
+    Rails.logger.error "🛑 [Web3] TelemetryLog ##{telemetry_log_id} не знайдено." unless log
+    log
   end
 end

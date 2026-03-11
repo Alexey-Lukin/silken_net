@@ -25,23 +25,32 @@ class BlockchainMintingService
   ].to_json
 
   # Поштучний виклик
-  def self.call(blockchain_transaction_id)
-    new([ blockchain_transaction_id ]).call
+  def self.call(blockchain_transaction_id, telemetry_log: nil)
+    new([ blockchain_transaction_id ], telemetry_log: telemetry_log).call
   end
 
   # Пакетний виклик для цілого сектора/кластера
-  def self.call_batch(blockchain_transaction_ids)
-    new(blockchain_transaction_ids).call
+  def self.call_batch(blockchain_transaction_ids, telemetry_log: nil)
+    new(blockchain_transaction_ids, telemetry_log: telemetry_log).call
   end
 
-  def initialize(transaction_ids)
+  def initialize(transaction_ids, telemetry_log: nil)
     @transactions = BlockchainTransaction.where(id: transaction_ids)
                                          .where.not(status: :confirmed)
     @wallet_mapping = @transactions.includes(wallet: :tree).index_by(&:id)
+    @telemetry_log = telemetry_log
   end
 
   def call
     return if @transactions.empty?
+
+    # [TRUSTLESS]: Перевірка децентралізованої верифікації перед мінтингом.
+    # Guard clauses активні лише коли telemetry_log передано (oracle-driven flow).
+    # TokenomicsEvaluatorWorker та InsurancePayoutWorker працюють без telemetry_log.
+    if @telemetry_log
+      raise "Security Breach: Data not verified by IoTeX" unless @telemetry_log.verified_by_iotex?
+      raise "Security Breach: Chainlink Oracle consensus not fulfilled" unless @telemetry_log.oracle_status == "fulfilled"
+    end
 
     # 1. ПІДКЛЮЧЕННЯ (The Alchemy Link)
     client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
@@ -108,8 +117,15 @@ class BlockchainMintingService
       # 5. ФІКСАЦІЯ ВІДПРАВКИ (The Sentinel State)
       if tx_hash.present?
         txs.each do |tx|
-          # Оновлюємо статус на :sent і зберігаємо хеш для подальшого аудиту
-          tx.update!(status: :sent, tx_hash: tx_hash)
+          # Оновлюємо статус на :sent і зберігаємо хеш для подальшого аудиту.
+          # [TRUSTLESS]: Зберігаємо chainlink_request_id та zk_proof_ref для
+          # перманентного зв'язку між on-chain транзакцією та її децентралізованим доказом.
+          update_attrs = { status: :sent, tx_hash: tx_hash }
+          if @telemetry_log
+            update_attrs[:chainlink_request_id] = @telemetry_log.chainlink_request_id
+            update_attrs[:zk_proof_ref] = @telemetry_log.zk_proof_ref
+          end
+          tx.update!(**update_attrs)
           broadcast_tx_update(tx)
         end
 

@@ -10,7 +10,6 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
   before do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow(MintCarbonCoinWorker).to receive(:perform_async)
     allow(BurnCarbonTokensWorker).to receive(:perform_async)
     allow(BurnCarbonTokensWorker).to receive(:perform_bulk)
     allow(AlertNotificationWorker).to receive(:perform_async)
@@ -89,7 +88,6 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
       expect(tx.status).to eq("pending")
       expect(tx.locked_points).to eq(10_000)
       expect(wallet.reload.locked_balance).to eq(10_000)
-      expect(MintCarbonCoinWorker).to have_received(:perform_async).with(tx.id)
     end
 
     it "falls back to organization crypto_public_address" do

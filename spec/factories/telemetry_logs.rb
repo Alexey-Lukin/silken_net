@@ -43,6 +43,15 @@ FactoryBot.define do
       z_value { 0.35 }
     end
 
+    # Повністю верифікована телеметрія для trustless мінтингу.
+    # IoTeX W3bstream + Chainlink Oracle — обидва підтвердження присутні.
+    trait :verified_telemetry do
+      verified_by_iotex { true }
+      zk_proof_ref { "zk-proof-#{SecureRandom.hex(8)}" }
+      chainlink_request_id { "chainlink-req-#{SecureRandom.hex(8)}" }
+      oracle_status { "fulfilled" }
+    end
+
     trait :seismic do
       piezo_voltage_mv { 2000 }
     end
