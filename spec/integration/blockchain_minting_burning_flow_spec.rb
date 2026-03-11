@@ -291,9 +291,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     let(:mock_client) { instance_double(Eth::Client) }
 
     before do
-      allow(Eth::Client).to receive(:create).and_return(mock_client)
-      allow(ENV).to receive(:fetch).and_call_original
-      allow(ENV).to receive(:fetch).with("ALCHEMY_POLYGON_RPC_URL").and_return("https://polygon-rpc.example.com")
+      allow(Web3::RpcConnectionPool).to receive(:client_for).with("ALCHEMY_POLYGON_RPC_URL").and_return(mock_client)
     end
 
     it "confirms transaction when receipt shows success" do

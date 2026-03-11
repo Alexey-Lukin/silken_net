@@ -52,14 +52,20 @@ RSpec.describe Web3::RpcConnectionPool do
       client_double1 = instance_double(Eth::Client, "first")
       client_double2 = instance_double(Eth::Client, "second")
 
-      allow(Eth::Client).to receive(:create).and_return(client_double1, client_double2)
+      call_count = 0
+      allow(Eth::Client).to receive(:create) do
+        call_count += 1
+        call_count == 1 ? client_double1 : client_double2
+      end
 
       first_client = described_class.client_for("ALCHEMY_POLYGON_RPC_URL")
-      described_class.reset!
-      second_client = described_class.client_for("ALCHEMY_POLYGON_RPC_URL")
+      expect(first_client).to equal(client_double1)
 
+      described_class.reset!
+
+      second_client = described_class.client_for("ALCHEMY_POLYGON_RPC_URL")
+      expect(second_client).to equal(client_double2)
       expect(first_client).not_to equal(second_client)
-      expect(Eth::Client).to have_received(:create).twice
     end
   end
 end
