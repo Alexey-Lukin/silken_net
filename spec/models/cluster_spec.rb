@@ -167,6 +167,42 @@ RSpec.describe Cluster, type: :model do
     end
   end
 
+  describe "normalizes :geojson_polygon" do
+    it "deep-stringifies keys when given a Hash with symbol keys" do
+      polygon = { type: "Polygon", coordinates: [[[31.9, 49.4]]] }
+      cluster = build(:cluster, geojson_polygon: polygon)
+      expect(cluster.geojson_polygon).to eq("type" => "Polygon", "coordinates" => [[[31.9, 49.4]]])
+    end
+
+    it "leaves non-Hash values unchanged" do
+      cluster = build(:cluster, geojson_polygon: nil)
+      expect(cluster.geojson_polygon).to be_nil
+    end
+  end
+
+  describe "#geo_center with empty coordinates" do
+    it "returns nil when coordinates array is empty after flattening" do
+      polygon = { "type" => "Polygon", "coordinates" => [] }
+      cluster = create(:cluster, geojson_polygon: polygon)
+      expect(cluster.geo_center).to be_nil
+    end
+  end
+
+  describe ".under_threat scope" do
+    it "returns clusters with active critical alerts" do
+      cluster = create(:cluster)
+      create(:ews_alert, cluster: cluster, status: :active, severity: :critical, alert_type: :fire_detected)
+
+      expect(described_class.under_threat).to include(cluster)
+    end
+
+    it "does not return clusters without active critical alerts" do
+      cluster = create(:cluster)
+
+      expect(described_class.under_threat).not_to include(cluster)
+    end
+  end
+
   # =========================================================================
   # POSTGIS SPATIAL QUERIES
   # =========================================================================
