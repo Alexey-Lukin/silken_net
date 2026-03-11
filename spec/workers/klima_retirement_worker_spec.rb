@@ -21,7 +21,7 @@ RSpec.describe KlimaRetirementWorker, type: :worker do
     it "calls KlimaDao::RetirementService with correct arguments" do
       described_class.new.perform(wallet.id, "100.0")
 
-      expect(KlimaDao::RetirementService).to have_received(:new).with(wallet, BigDecimal("100.0"))
+      expect(KlimaDao::RetirementService).to have_received(:new).with(wallet, "100.0")
       expect(mock_service).to have_received(:retire_carbon!)
     end
 

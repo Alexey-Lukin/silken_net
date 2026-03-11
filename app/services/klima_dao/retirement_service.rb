@@ -95,7 +95,7 @@ module KlimaDao
         abi: RETIRE_ABI
       )
 
-      amount_in_wei = (BigDecimal(@amount_to_retire.to_s) * 10**TOKEN_DECIMALS).to_i
+      amount_in_wei = (@amount_to_retire * 10**TOKEN_DECIMALS).to_i
 
       # Step 1: Approve KlimaDAO контракту на витрату SCC
       client.transact(

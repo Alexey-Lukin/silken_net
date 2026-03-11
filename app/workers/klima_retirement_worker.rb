@@ -14,7 +14,7 @@ class KlimaRetirementWorker
       return
     end
 
-    KlimaDao::RetirementService.new(wallet, BigDecimal(amount.to_s)).retire_carbon!
+    KlimaDao::RetirementService.new(wallet, amount).retire_carbon!
 
     Rails.logger.info "🌿 [KlimaDAO] Retirement Worker завершив погашення #{amount} SCC для Wallet ##{wallet_id}."
   rescue KlimaDao::RetirementService::InsufficientBalanceError => e
