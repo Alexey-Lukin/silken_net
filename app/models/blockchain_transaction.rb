@@ -43,8 +43,14 @@ class BlockchainTransaction < ApplicationRecord
   # --- ВАЛІДАЦІЇ ---
   validates :amount, presence: true, numericality: { greater_than: 0 }
 
-  # Валідація адреси призначення (0x...)
-  validates_eth_address :to_address, presence: true
+  # [MULTICHAIN]: Валідація адреси призначення залежить від мережі.
+  # EVM (Polygon/Ethereum): 0x + 40 hex символів
+  # Solana: Base58 адреса (32-44 символи), не починається з 0x
+  validates_eth_address :to_address, presence: true, unless: :solana_network?
+  validates :to_address, presence: true, format: {
+    with: /\A[1-9A-HJ-NP-Za-km-z]{32,44}\z/,
+    message: "має бути валідною Solana Base58 адресою"
+  }, if: :solana_network?
 
   # [ОПТИМІЗОВАНО]: tx_hash має бути присутнім для статусів sent та confirmed
   validates :tx_hash, presence: true, if: -> { status_sent? || status_confirmed? }
@@ -54,6 +60,9 @@ class BlockchainTransaction < ApplicationRecord
   validates :gas_used, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :block_number, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :nonce, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+
+  # [MULTICHAIN]: blockchain_network визначає мережу транзакції
+  validates :blockchain_network, inclusion: { in: %w[evm solana] }
 
   # --- ДЕЛЕГУВАННЯ ---
   # Навігація через wallet (може бути nil для slashing-аудиту — тоді через cluster)
@@ -87,11 +96,20 @@ class BlockchainTransaction < ApplicationRecord
     Rails.logger.error "🛑 [Web3] Транзакція ##{id} провалилася: #{reason}"
   end
 
-  # Хелпер для посилання на Polygonscan
+  # [MULTICHAIN]: Хелпер для визначення мережі транзакції
+  def solana_network?
+    blockchain_network == "solana"
+  end
+
+  # Хелпер для посилання на block explorer (Polygonscan або Solana Explorer)
   def explorer_url
     return nil unless tx_hash
 
-    "https://polygonscan.com/tx/#{tx_hash}"
+    if solana_network?
+      "https://explorer.solana.com/tx/#{tx_hash}?cluster=devnet"
+    else
+      "https://polygonscan.com/tx/#{tx_hash}"
+    end
   end
 
   alias_method :polygonscan_url, :explorer_url

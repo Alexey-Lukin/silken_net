@@ -21,7 +21,7 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
 
   describe "POST /api/v1/oracle_callbacks" do
     context "when successful callback" do
-      it "updates oracle_status to fulfilled and enqueues MintCarbonCoinWorker" do
+      it "updates oracle_status to fulfilled and enqueues MintCarbonCoinWorker and SolanaMicroRewardWorker" do
         post "/api/v1/oracle_callbacks",
              params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },
              as: :json
@@ -32,8 +32,13 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
         telemetry_log.reload
         expect(telemetry_log.oracle_status).to eq("fulfilled")
 
+        # EVM (Polygon) мінтинг
         expect(MintCarbonCoinWorker.jobs.size).to eq(1)
         expect(MintCarbonCoinWorker.jobs.first["args"].first).to eq(telemetry_log.id_value)
+
+        # Solana мікро-винагорода (паралельно)
+        expect(SolanaMicroRewardWorker.jobs.size).to eq(1)
+        expect(SolanaMicroRewardWorker.jobs.first["args"].first).to eq(telemetry_log.id_value)
       end
 
       it "uses created_at for partition-pruned lookup when provided" do
@@ -64,6 +69,7 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
         expect(telemetry_log.oracle_status).to eq("failed")
 
         expect(MintCarbonCoinWorker.jobs.size).to eq(0)
+        expect(SolanaMicroRewardWorker.jobs.size).to eq(0)
       end
 
       it "uses default error message when error param is missing" do

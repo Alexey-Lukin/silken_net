@@ -14,12 +14,18 @@ module Api
         if ActiveModel::Type::Boolean.new.cast(params[:success])
           log.update!(oracle_status: "fulfilled")
 
-          # 🔗 CRITICAL: Trigger existing minting pipeline upon oracle fulfillment.
+          # 🔗 CRITICAL: Trigger DUAL minting pipeline upon oracle fulfillment.
           # [COMPOSITE PK]: telemetry_logs uses [id, created_at] composite key
           # due to partitioning. Pass both id_value and created_at for partition pruning.
-          MintCarbonCoinWorker.perform_async(log.id_value, log.created_at.iso8601(6))
+          created_at_iso = log.created_at.iso8601(6)
 
-          Rails.logger.info "✅ [Oracle Callback] TelemetryLog ##{log.id_value} fulfilled. Minting enqueued."
+          # 1. EVM (Polygon) — мінтинг SCC/SFC для інституційних інвесторів (RWA)
+          MintCarbonCoinWorker.perform_async(log.id_value, created_at_iso)
+
+          # 2. Solana — миттєва мікро-винагорода для власника дерева (швидкість + 0 комісій)
+          SolanaMicroRewardWorker.perform_async(log.id_value, created_at_iso)
+
+          Rails.logger.info "✅ [Oracle Callback] TelemetryLog ##{log.id_value} fulfilled. EVM + Solana minting enqueued."
 
           render json: { status: "fulfilled", telemetry_log_id: log.id_value }, status: :ok
         else

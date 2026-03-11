@@ -395,7 +395,8 @@ CREATE TABLE public.blockchain_transactions (
     sent_at timestamp(6) without time zone,
     confirmed_at timestamp(6) without time zone,
     chainlink_request_id character varying,
-    zk_proof_ref character varying
+    zk_proof_ref character varying,
+    blockchain_network character varying DEFAULT 'evm'::character varying
 );
 
 
@@ -936,7 +937,8 @@ CREATE TABLE public.organizations (
     billing_email character varying,
     alert_threshold_critical_z numeric(5,2) DEFAULT 2.5,
     ai_sensitivity numeric(3,2) DEFAULT 0.7,
-    data_region character varying DEFAULT 'eu-west'::character varying
+    data_region character varying DEFAULT 'eu-west'::character varying,
+    solana_public_address character varying
 );
 
 
@@ -1481,7 +1483,8 @@ CREATE TABLE public.wallets (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     organization_id bigint,
-    locked_balance numeric DEFAULT 0.0 NOT NULL
+    locked_balance numeric DEFAULT 0.0 NOT NULL,
+    solana_public_address character varying
 );
 
 
@@ -4095,6 +4098,8 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260311100001'),
+('20260311100000'),
 ('20260311062121'),
 ('20260310180000'),
 ('20260310170000'),
