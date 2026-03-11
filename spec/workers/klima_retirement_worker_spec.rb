@@ -60,8 +60,8 @@ RSpec.describe KlimaRetirementWorker, type: :worker do
       }.to raise_error(StandardError, "RPC timeout")
     end
 
-    it "uses web3 queue" do
-      expect(described_class.sidekiq_options["queue"]).to eq("web3")
+    it "uses web3_low queue" do
+      expect(described_class.sidekiq_options["queue"]).to eq("web3_low")
     end
 
     it "has retry set to 3" do

@@ -72,8 +72,8 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       expect(telemetry_log.verified_by_iotex).to be false
     end
 
-    it "uses web3 queue" do
-      expect(described_class.get_sidekiq_options["queue"]).to eq("web3")
+    it "uses web3_critical queue" do
+      expect(described_class.get_sidekiq_options["queue"]).to eq("web3_critical")
     end
 
     it "has retry set to 5" do

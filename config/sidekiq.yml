@@ -21,8 +21,13 @@
   - downlink  
   # [СТАНДАРТ]: Звичайні системні задачі та листи.
   - default   
-  # [ФІНАНСИ]: Повільні транзакції Polygon (Slashing/Minting).
+  # [WEB3 КРИТИЧНИЙ]: Час-чутливі blockchain операції — підтвердження TX, мінтинг,
+  # Oracle dispatch, ZK верифікація. Обробляється перед стандартними Web3 задачами.
+  - web3_critical
+  # [WEB3 СТАНДАРТ]: Стандартні Web3 операції — Celo, Solana, peaq DID.
   - web3      
+  # [WEB3 НИЗЬКИЙ]: Некритичні Web3 задачі — L1 anchoring (раз/тиждень), KlimaDAO, Hadron.
+  - web3_low
   # [АНАЛІТИКА]: Важка нічна агрегація (InsightGenerator).
   - low       
 

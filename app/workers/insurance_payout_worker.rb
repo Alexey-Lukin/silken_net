@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class InsurancePayoutWorker
-  include Sidekiq::Job
+  include ApplicationWeb3Worker
   # Найвищий пріоритет: виконання фінансових зобов'язань перед інвесторами
   # є критичним для репутації Цитаделі. Черга critical гарантує, що виплати
   # не застрягнуть за повільними Polygon-мінтингами у web3.
@@ -67,7 +67,7 @@ class InsurancePayoutWorker
     Rails.logger.warn "⚠️ [Insurance] Запис ##{insurance_id} зник із Матриці."
   rescue StandardError => e
     Rails.logger.error "🚨 [Insurance Error] Критичний збій виплати ##{insurance_id}: #{e.message}"
-    raise e # Дозволяємо Sidekiq спробувати ще 10 разів (SLA 99.9%)
+    raise # Дозволяємо Sidekiq спробувати ще 10 разів (SLA 99.9%)
   end
 
   private

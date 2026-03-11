@@ -49,8 +49,8 @@ RSpec.describe ChainlinkDispatchWorker, type: :worker do
       }.to raise_error(Chainlink::OracleDispatchService::DispatchError, /IoTeX not verified/)
     end
 
-    it "uses web3 queue" do
-      expect(described_class.get_sidekiq_options["queue"]).to eq("web3")
+    it "uses web3_critical queue" do
+      expect(described_class.get_sidekiq_options["queue"]).to eq("web3_critical")
     end
 
     it "has retry set to 5" do

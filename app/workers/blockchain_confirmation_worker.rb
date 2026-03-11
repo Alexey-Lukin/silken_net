@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 class BlockchainConfirmationWorker
-  include Sidekiq::Job
-  # Використовуємо чергу web3. 10 ретраїв з експоненціальною паузою
+  include ApplicationWeb3Worker
+  # Web3 Critical черга. 10 ретраїв з експоненціальною паузою
   # дають системі близько 15-20 хвилин на очікування підтвердження мережею.
-  sidekiq_options queue: "web3", retry: 10
+  sidekiq_options queue: "web3_critical", retry: 10
 
   def perform(tx_hash)
-    # 1. ПІДКЛЮЧЕННЯ ДО МАТРИЦІ
-    client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
+    # 1. ПІДКЛЮЧЕННЯ ДО МАТРИЦІ (Thread-cached RPC client)
+    client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
 
     # Запитуємо квитанцію (receipt) транзакції
     # У 2026 році Alchemy повертає результат миттєво, якщо блок вже сформовано.

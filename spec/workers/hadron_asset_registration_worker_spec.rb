@@ -27,8 +27,8 @@ RSpec.describe HadronAssetRegistrationWorker, type: :worker do
       expect { described_class.new.perform(999_999) }.not_to raise_error
     end
 
-    it "uses the web3 queue" do
-      expect(described_class.sidekiq_options["queue"]).to eq("web3")
+    it "uses the web3_low queue" do
+      expect(described_class.sidekiq_options["queue"]).to eq("web3_low")
     end
 
     it "has retry set to 5" do

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 class KlimaRetirementWorker
-  include Sidekiq::Job
-  # Web3 транзакції — черга web3 (пріоритет 1), бо це не критична операція,
+  include ApplicationWeb3Worker
+  # Web3 Low транзакції — черга web3_low (пріоритет 1), бо це не критична операція,
   # а фінансова дія з ESG-звітності, яка може зачекати.
-  sidekiq_options queue: "web3", retry: 3
+  sidekiq_options queue: "web3_low", retry: 3
 
   def perform(wallet_id, amount)
     wallet = Wallet.find_by(id: wallet_id)
@@ -14,7 +14,9 @@ class KlimaRetirementWorker
       return
     end
 
-    KlimaDao::RetirementService.new(wallet, amount).retire_carbon!
+    with_web3_error_handling("KlimaDAO", "Wallet ##{wallet_id}") do
+      KlimaDao::RetirementService.new(wallet, amount).retire_carbon!
+    end
 
     Rails.logger.info "🌿 [KlimaDAO] Retirement Worker завершив погашення #{amount} SCC для Wallet ##{wallet_id}."
   rescue KlimaDao::RetirementService::InsufficientBalanceError => e
@@ -23,6 +25,6 @@ class KlimaRetirementWorker
     Rails.logger.warn "⚠️ [KlimaDAO] Невірний тип токена для Wallet ##{wallet_id}: #{e.message}"
   rescue StandardError => e
     Rails.logger.error "🚨 [KlimaDAO] Помилка погашення для Wallet ##{wallet_id}: #{e.message}"
-    raise e
+    raise
   end
 end
