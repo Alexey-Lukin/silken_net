@@ -33,7 +33,7 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
         expect(telemetry_log.oracle_status).to eq("fulfilled")
 
         expect(MintCarbonCoinWorker.jobs.size).to eq(1)
-        expect(MintCarbonCoinWorker.jobs.first["args"]).to eq([ telemetry_log.id_value ])
+        expect(MintCarbonCoinWorker.jobs.first["args"].first).to eq(telemetry_log.id_value)
       end
 
       it "uses created_at for partition-pruned lookup when provided" do

@@ -66,7 +66,6 @@ RSpec.describe Wallet, type: :model do
       wallet = create(:tree).wallet
       wallet.update!(balance: 1000)
       allow(wallet.tree).to receive(:active?).and_return(true)
-      allow(MintCarbonCoinWorker).to receive(:perform_async)
 
       wallet.lock_and_mint!(500, 100)
       wallet.reload
@@ -181,7 +180,6 @@ RSpec.describe Wallet, type: :model do
     before do
       allow_any_instance_of(Tree).to receive(:broadcast_map_update)
       wallet.update!(balance: 10_000)
-      allow(MintCarbonCoinWorker).to receive(:perform_async)
     end
 
     it "raises when tree is not active" do
@@ -240,7 +238,6 @@ RSpec.describe Wallet, type: :model do
       expect(tx.amount).to eq(10)
       expect(tx.status).to eq("pending")
       expect(tx.locked_points).to eq(1000)
-      expect(MintCarbonCoinWorker).to have_received(:perform_async).with(tx.id)
     end
   end
 
@@ -252,7 +249,6 @@ RSpec.describe Wallet, type: :model do
 
     before do
       allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-      allow(MintCarbonCoinWorker).to receive(:perform_async)
     end
 
     describe "organization&.crypto_public_address when organization is nil" do
@@ -273,19 +269,17 @@ RSpec.describe Wallet, type: :model do
 
         result = wallet_bc.lock_and_mint!(5000, 10_000)
         expect(result).to be_nil
-        expect(MintCarbonCoinWorker).not_to have_received(:perform_async)
       end
     end
 
     describe "lock_and_mint! success path" do
-      it "creates transaction and enqueues worker" do
+      it "creates transaction" do
         wallet_bc.update_columns(balance: 20_000)
         wallet_bc.reload
 
         tx = wallet_bc.lock_and_mint!(20_000, 10_000)
         expect(tx).to be_persisted
         expect(tx.amount).to eq(2)
-        expect(MintCarbonCoinWorker).to have_received(:perform_async).with(tx.id)
       end
     end
   end

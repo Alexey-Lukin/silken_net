@@ -16,8 +16,8 @@ module Api
 
           # 🔗 CRITICAL: Trigger existing minting pipeline upon oracle fulfillment.
           # [COMPOSITE PK]: telemetry_logs uses [id, created_at] composite key
-          # due to partitioning. Use id_value to extract the integer ID for Sidekiq.
-          MintCarbonCoinWorker.perform_async(log.id_value)
+          # due to partitioning. Pass both id_value and created_at for partition pruning.
+          MintCarbonCoinWorker.perform_async(log.id_value, log.created_at.iso8601(6))
 
           Rails.logger.info "✅ [Oracle Callback] TelemetryLog ##{log.id_value} fulfilled. Minting enqueued."
 

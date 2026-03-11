@@ -13,10 +13,19 @@ class MintCarbonCoinWorker
   # Ми не можемо дозволити капіталу "зависнути" в ефірі.
   sidekiq_retries_exhausted do |msg, _ex|
     telemetry_log_id = msg["args"].first
+    created_at_iso = msg["args"].second
 
     if telemetry_log_id
       # Oracle-driven flow: знаходимо TelemetryLog та пов'язані транзакції
-      log = TelemetryLog.find_by(id: telemetry_log_id)
+      scope = TelemetryLog.where(id: telemetry_log_id)
+      if created_at_iso.present?
+        begin
+          scope = scope.where(created_at: Time.iso8601(created_at_iso))
+        rescue ArgumentError
+          # Некоректний формат — шукаємо без partition pruning
+        end
+      end
+      log = scope.first
       next unless log
 
       wallet = log.tree&.wallet
@@ -53,11 +62,13 @@ class MintCarbonCoinWorker
   end
 
   # [TRUSTLESS]: perform тепер приймає telemetry_log_id як основний аргумент
-  # для oracle-driven flow (OracleCallbacksController передає log.id_value).
+  # для oracle-driven flow (OracleCallbacksController передає log.id_value + created_at).
+  # [COMPOSITE PK]: telemetry_logs партиціоновано по created_at, тому передаємо обидва
+  # поля для ефективного partition pruning (O(log N) замість O(P × log N)).
   # Без аргументів — auto-discovery pending транзакцій (fallback/cron).
-  def perform(telemetry_log_id = nil)
+  def perform(telemetry_log_id = nil, created_at_iso = nil)
     if telemetry_log_id
-      process_telemetry_log(telemetry_log_id)
+      process_telemetry_log(telemetry_log_id, created_at_iso)
     else
       process_pending_transactions
     end
@@ -67,8 +78,9 @@ class MintCarbonCoinWorker
 
   # [TRUSTLESS]: Oracle-driven мінтинг — знаходимо верифіковану телеметрію
   # та запускаємо мінтинг для pending транзакцій пов'язаного гаманця.
-  def process_telemetry_log(telemetry_log_id)
-    log = TelemetryLog.find(telemetry_log_id)
+  def process_telemetry_log(telemetry_log_id, created_at_iso)
+    log = find_telemetry_log(telemetry_log_id, created_at_iso)
+    return unless log
 
     wallet = log.tree.wallet
     return unless wallet
@@ -82,8 +94,6 @@ class MintCarbonCoinWorker
       BlockchainMintingService.call_batch(batch, telemetry_log: log)
     end
 
-  rescue ActiveRecord::RecordNotFound
-    Rails.logger.error "🛑 [Web3] TelemetryLog ##{telemetry_log_id} не знайдено."
   rescue StandardError => e
     Rails.logger.error "🚨 [Web3] Oracle-driven mint error для TelemetryLog ##{telemetry_log_id}: #{e.message}"
     raise e
@@ -126,5 +136,23 @@ class MintCarbonCoinWorker
 
     Rails.logger.error "🚨 [Web3] Batch RPC Error: #{e.message}. Планується повтор..."
     raise e
+  end
+
+  # [COMPOSITE PK]: telemetry_logs партиціоновано по created_at.
+  # Передача created_at дозволяє PostgreSQL пропустити непотрібні партиції.
+  def find_telemetry_log(telemetry_log_id, created_at_iso)
+    scope = TelemetryLog.where(id: telemetry_log_id)
+
+    if created_at_iso.present?
+      begin
+        scope = scope.where(created_at: Time.iso8601(created_at_iso))
+      rescue ArgumentError
+        # Некоректний формат — шукаємо без partition pruning
+      end
+    end
+
+    log = scope.first
+    Rails.logger.error "🛑 [Web3] TelemetryLog ##{telemetry_log_id} не знайдено." unless log
+    log
   end
 end

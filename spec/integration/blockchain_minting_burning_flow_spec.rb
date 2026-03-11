@@ -195,13 +195,24 @@ RSpec.describe "Blockchain minting and burning pipeline" do
              token_type: :carbon_coin, to_address: organization.crypto_public_address)
     end
 
+    let!(:telemetry_log) do
+      create(:telemetry_log,
+        tree: tree,
+        verified_by_iotex: true,
+        zk_proof_ref: "zk-proof-flow-test",
+        chainlink_request_id: "chainlink-req-flow-test",
+        oracle_status: "fulfilled"
+      )
+    end
+
     before do
       allow(BlockchainMintingService).to receive(:call_batch)
     end
 
-    it "processes pending transactions in batches" do
-      expect(BlockchainMintingService).to receive(:call_batch).with([ pending_tx.id ])
-      MintCarbonCoinWorker.new.perform([ pending_tx.id ])
+    it "processes pending transactions via telemetry_log (oracle-driven flow)" do
+      expect(BlockchainMintingService).to receive(:call_batch)
+        .with([ pending_tx.id ], telemetry_log: telemetry_log)
+      MintCarbonCoinWorker.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
     end
 
     it "auto-discovers pending transactions when no IDs given" do
@@ -215,11 +226,11 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       MintCarbonCoinWorker.new.perform
     end
 
-    it "resets to pending on RPC error for retry" do
+    it "resets to pending on RPC error for retry (auto-discovery)" do
       allow(BlockchainMintingService).to receive(:call_batch).and_raise(StandardError, "RPC timeout")
 
       expect {
-        MintCarbonCoinWorker.new.perform([ pending_tx.id ])
+        MintCarbonCoinWorker.new.perform
       }.to raise_error(StandardError)
     end
   end
