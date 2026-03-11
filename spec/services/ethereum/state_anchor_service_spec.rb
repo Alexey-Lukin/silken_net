@@ -142,9 +142,11 @@ RSpec.describe Ethereum::StateAnchorService do
     it "rescues IOError and raises with descriptive message" do
       allow(mock_client).to receive(:transact).and_raise(IOError, "Connection reset by peer")
 
+      expect(Rails.logger).to receive(:error).with(/Connection error/)
+
       expect {
         described_class.new.anchor_to_l1!
-      }.to raise_error(RuntimeError, /Ethereum L1 Timeout/)
+      }.to raise_error(RuntimeError, /Ethereum L1 Connection Error/)
     end
 
     it "logs successful anchoring" do

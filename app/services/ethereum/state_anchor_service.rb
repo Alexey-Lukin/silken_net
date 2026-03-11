@@ -70,9 +70,12 @@ module Ethereum
       Rails.logger.info "⚓ [Ethereum L1] State Root anchored: #{state_root} → TX: #{tx_hash}"
 
       tx_hash
-    rescue Net::OpenTimeout, Net::ReadTimeout, IOError => e
+    rescue Net::OpenTimeout, Net::ReadTimeout => e
       Rails.logger.error "🛑 [Ethereum L1] Timeout: #{e.message}"
       raise "Ethereum L1 Timeout: #{e.message}"
+    rescue IOError => e
+      Rails.logger.error "🛑 [Ethereum L1] Connection error: #{e.message}"
+      raise "Ethereum L1 Connection Error: #{e.message}"
     end
   end
 end
