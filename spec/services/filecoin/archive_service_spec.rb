@@ -129,7 +129,7 @@ RSpec.describe Filecoin::ArchiveService do
   end
 
   def stub_pinata_failure
-    mock_response = instance_double(Net::HTTPOK,
+    mock_response = instance_double(Net::HTTPUnauthorized,
       body: "Unauthorized", code: "401"
     )
     allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(false)
