@@ -156,7 +156,7 @@ This provides rollup-style finality: even if Polygon suffers a catastrophic fail
 
 ## The Graph — Carbon Index (Subgraph)
 
-The Graph subgraph indexes every `CarbonMinted` event on Polygon, creating a queryable GraphQL API for global carbon statistics:
+The Graph subgraph (defined in `subgraph/schema.graphql`) indexes every `CarbonMinted` event on Polygon, creating a queryable GraphQL API for global carbon statistics:
 
 ```graphql
 # subgraph/schema.graphql

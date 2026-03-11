@@ -122,11 +122,11 @@ NaasContract ──belongs_to──→ Organization, Cluster
 |-------|----------|---------|
 | `uplink` | 5 (highest) | UnpackTelemetryWorker, GatewayTelemetryWorker |
 | `alerts` | 4 | AlertNotificationWorker, SingleNotificationWorker |
-| `critical` | 3 | BurnCarbonTokensWorker, InsurancePayoutWorker, EcosystemHealingWorker |
-| `downlink` | 2 | ActuatorCommandWorker, OtaTransmissionWorker, ResetActuatorStateWorker |
-| `default` | 1 | ClusterHealthCheckWorker, TokenomicsEvaluatorWorker |
-| `web3` | 0 | MintCarbonCoinWorker, BlockchainConfirmationWorker, IotexVerificationWorker, ChainlinkDispatchWorker, CeloRewardWorker, SolanaMicroRewardWorker, EthereumAnchorWorker, KlimaRetirementWorker, HadronAssetRegistrationWorker, PeaqRegistrationWorker |
-| `low` | -1 | DailyAggregationWorker, FilecoinArchiveWorker, AuditLogWorker, StreamrBroadcastWorker |
+| `critical` | 4 | BurnCarbonTokensWorker, InsurancePayoutWorker, EcosystemHealingWorker |
+| `downlink` | 3 | ActuatorCommandWorker, OtaTransmissionWorker, ResetActuatorStateWorker |
+| `default` | 2 | ClusterHealthCheckWorker, TokenomicsEvaluatorWorker |
+| `web3` | 1 | MintCarbonCoinWorker, BlockchainConfirmationWorker, IotexVerificationWorker, ChainlinkDispatchWorker, CeloRewardWorker, SolanaMicroRewardWorker, EthereumAnchorWorker, KlimaRetirementWorker, HadronAssetRegistrationWorker, PeaqRegistrationWorker |
+| `low` | 1 | DailyAggregationWorker, FilecoinArchiveWorker, AuditLogWorker, StreamrBroadcastWorker |
 
 ### Sidekiq Worker Chain (The Heartbeat)
 
