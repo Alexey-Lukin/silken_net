@@ -13,7 +13,8 @@ module Filecoin
   # =========================================================================
   class VerificationService
     # Публічний IPFS Gateway для читання (не потребує API ключа)
-    IPFS_GATEWAY_URL = "https://gateway.pinata.cloud/ipfs"
+    # Може бути перевизначений через ENV для інших середовищ
+    IPFS_GATEWAY_URL = ENV.fetch("FILECOIN_GATEWAY_URL", "https://gateway.pinata.cloud/ipfs")
 
     OPEN_TIMEOUT = 10
     READ_TIMEOUT = 20

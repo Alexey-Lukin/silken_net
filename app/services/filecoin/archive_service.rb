@@ -16,7 +16,8 @@ module Filecoin
   # =========================================================================
   class ArchiveService
     # Pinata IPFS pinning endpoint (сумісний з Web3.storage та іншими шлюзами)
-    PINATA_API_URL = "https://api.pinata.cloud/pinning/pinJSONToIPFS"
+    # Може бути перевизначений через ENV для інших середовищ
+    PINATA_API_URL = ENV.fetch("FILECOIN_PINNING_API_URL", "https://api.pinata.cloud/pinning/pinJSONToIPFS")
 
     # Таймаути для децентралізованого сховища (uploads бувають повільними)
     OPEN_TIMEOUT  = 15  # секунд на встановлення з'єднання
@@ -75,12 +76,12 @@ module Filecoin
       target_date = @audit_log.created_at&.to_date
       return nil unless target_date
 
+      org_cluster_ids = Cluster.where(organization_id: @audit_log.organization_id).select(:id)
+
       summaries = AiInsight
         .daily_health_summary
         .where(target_date: target_date)
-        .where(analyzable_type: "Cluster")
-        .joins("INNER JOIN clusters ON clusters.id = ai_insights.analyzable_id")
-        .where(clusters: { organization_id: @audit_log.organization_id })
+        .where(analyzable_type: "Cluster", analyzable_id: org_cluster_ids)
         .select(:analyzable_id, :stress_index, :total_growth_points, :summary, :fraud_detected)
 
       return nil if summaries.empty?
