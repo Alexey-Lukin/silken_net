@@ -74,8 +74,8 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
     end
 
     it "splits batch into groups of 200" do
-      tx_ids = 201.times.map do
-        create(:blockchain_transaction, wallet: wallet, status: :pending).id
+      201.times do
+        create(:blockchain_transaction, wallet: wallet, status: :pending)
       end
 
       described_class.new.perform
