@@ -3,8 +3,9 @@
 class InsurancePayoutWorker
   include Sidekiq::Job
   # Найвищий пріоритет: виконання фінансових зобов'язань перед інвесторами
-  # є критичним для репутації Цитаделі.
-  sidekiq_options queue: "web3", retry: 10
+  # є критичним для репутації Цитаделі. Черга critical гарантує, що виплати
+  # не застрягнуть за повільними Polygon-мінтингами у web3.
+  sidekiq_options queue: "critical", retry: 10
 
   def perform(insurance_id)
     insurance = ParametricInsurance.includes(cluster: :organization).find_by(id: insurance_id)
