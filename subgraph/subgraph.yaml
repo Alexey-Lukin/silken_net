@@ -8,8 +8,10 @@ dataSources:
     name: SilkenCarbonCoin
     network: polygon-amoy
     source:
+      # TODO: Замінити на реальну адресу контракту SilkenCarbonCoin після деплою на polygon-amoy
       address: "0x0000000000000000000000000000000000000000"
       abi: SilkenCarbonCoin
+      # TODO: Встановити номер блоку деплою контракту для оптимізації індексації
       startBlock: 0
     mapping:
       kind: ethereum/events
