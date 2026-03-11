@@ -38,7 +38,7 @@ module Polygon
     # Зберігає отриманий asset_id у NaaSContract.
     def register_asset!(naas_contract)
       raise ComplianceError, "NaaSContract must be active" unless naas_contract.status_active?
-      raise ComplianceError, "Cluster is required" if naas_contract.cluster.blank?
+      raise ComplianceError, "NaaSContract must have an associated Cluster for RWA asset registration" if naas_contract.cluster.blank?
 
       response = register_rwa_asset(naas_contract)
       asset_id = response[:asset_id]
