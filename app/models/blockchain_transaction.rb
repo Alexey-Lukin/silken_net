@@ -29,7 +29,7 @@ class BlockchainTransaction < ApplicationRecord
   # ---------------------------------------------------------------------------
 
   # --- ТИПИ ТА СТАТУСИ (The Web3 State Machine) ---
-  enum :token_type, { carbon_coin: 0, forest_coin: 1 }, prefix: true
+  enum :token_type, { carbon_coin: 0, forest_coin: 1, cusd: 2 }, prefix: true
 
   # [СИНХРОНІЗОВАНО]: Додано статус :sent для підтримки асинхронного Fire-and-Forget
   enum :status, {
@@ -62,7 +62,7 @@ class BlockchainTransaction < ApplicationRecord
   validates :nonce, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
 
   # [MULTICHAIN]: blockchain_network визначає мережу транзакції
-  validates :blockchain_network, inclusion: { in: %w[evm solana] }
+  validates :blockchain_network, inclusion: { in: %w[evm solana celo] }
 
   # --- ДЕЛЕГУВАННЯ ---
   # Навігація через wallet (може бути nil для slashing-аудиту — тоді через cluster)
@@ -101,12 +101,18 @@ class BlockchainTransaction < ApplicationRecord
     blockchain_network == "solana"
   end
 
-  # Хелпер для посилання на block explorer (Polygonscan або Solana Explorer)
+  def celo_network?
+    blockchain_network == "celo"
+  end
+
+  # Хелпер для посилання на block explorer (Polygonscan, Solana Explorer або Celo Explorer)
   def explorer_url
     return nil unless tx_hash
 
     if solana_network?
       "https://explorer.solana.com/tx/#{tx_hash}?cluster=devnet"
+    elsif celo_network?
+      "https://explorer.celo.org/alfajores/tx/#{tx_hash}"
     else
       "https://polygonscan.com/tx/#{tx_hash}"
     end

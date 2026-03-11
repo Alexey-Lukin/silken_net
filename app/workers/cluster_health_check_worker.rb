@@ -36,6 +36,11 @@ class ClusterHealthCheckWorker
         if contract.status_breached?
           summary[:breached] += 1
           Rails.logger.warn "🚨 [D-MRV] Контракт ##{contract.id} (Кластер: #{contract.cluster.name}) ПОРУШЕНО за станом на #{target_date}!"
+        else
+          # [Celo ReFi]: Позитивний зворотний зв'язок — якщо кластер здоровий,
+          # нагороджуємо громаду cUSD через Celo.
+          reward_date = target_date || contract.cluster.local_yesterday
+          CeloRewardWorker.perform_async(contract.cluster_id, reward_date.to_s)
         end
 
       rescue StandardError => e
