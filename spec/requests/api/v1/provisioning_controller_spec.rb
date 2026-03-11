@@ -176,4 +176,42 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       end
     end
   end
+
+  describe "format.html responses" do
+    let(:html_headers) do
+      { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+    end
+
+    it "renders HTML success after registering a gateway" do
+      gateway_params = {
+        provisioning: {
+          hardware_uid: "SNET-Q-FF99EE88",
+          device_type: "gateway",
+          cluster_id: own_cluster.id,
+          latitude: 49.4285,
+          longitude: 32.0620
+        }
+      }
+
+      post "/api/v1/provisioning/register", params: gateway_params, headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML errors when device validation fails" do
+      invalid_params = {
+        provisioning: {
+          hardware_uid: "INVALIDUID",
+          device_type: "gateway",
+          cluster_id: own_cluster.id,
+          latitude: 49.4285,
+          longitude: 32.0620
+        }
+      }
+
+      post "/api/v1/provisioning/register", params: invalid_params, headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+  end
 end

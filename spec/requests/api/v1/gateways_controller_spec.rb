@@ -37,4 +37,22 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  context "with format.html responses" do
+    let(:html_headers) do
+      { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+    end
+
+    it "renders HTML for index" do
+      get "/api/v1/gateways", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML for show" do
+      get "/api/v1/gateways/#{own_gateway.id}", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+  end
 end

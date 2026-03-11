@@ -458,4 +458,34 @@ RSpec.describe EwsAlert, type: :model do
       expect(alert.send(:should_broadcast?)).to be false
     end
   end
+
+  describe "broadcast_alert_update execution" do
+    let(:cluster_bc) { create(:cluster) }
+
+    it "skips Turbo broadcast when should_broadcast? returns false" do
+      tree = create(:tree, cluster: cluster_bc)
+      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
+      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
+
+      Rails.cache.write("ews_alert_broadcast_throttle:#{alert.id}", true, expires_in: 5.seconds)
+
+      expect(Turbo::StreamsChannel).not_to receive(:broadcast_replace_to)
+      alert.send(:broadcast_alert_update)
+    end
+
+    it "performs Turbo broadcast when should_broadcast? returns true" do
+      tree = create(:tree, cluster: cluster_bc)
+      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
+
+      Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
+
+      # Stub Phlex component rendering to avoid URL helper issues in test
+      allow_any_instance_of(Alerts::Row).to receive(:call).and_return("<div>alert</div>")
+
+      alert.send(:broadcast_alert_update)
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to)
+    end
+  end
 end

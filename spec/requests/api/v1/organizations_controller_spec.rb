@@ -48,4 +48,23 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
       expect(response.parsed_body["performance"]["total_trees"]).to be_a(Integer)
     end
   end
+
+  context "with format.html responses" do
+    let(:super_admin) { create(:user, :super_admin, organization: organization) }
+    let(:html_headers) do
+      { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}", "Accept" => "text/html" }
+    end
+
+    it "renders HTML for index" do
+      get "/api/v1/organizations", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML for show" do
+      get "/api/v1/organizations/#{organization.id}", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+  end
 end

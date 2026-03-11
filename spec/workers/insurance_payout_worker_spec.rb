@@ -88,6 +88,47 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
       }.to raise_error(StandardError, "RPC error")
     end
 
+    context "when insurance status changes between lock and check (pessimistic lock re-check)" do
+      it "skips payout when insurance is no longer triggered after lock" do
+        # Simulate: insurance.lock! succeeds, but then status changes to :paid
+        allow_any_instance_of(ParametricInsurance).to receive(:lock!) do |ins|
+          ins.update_columns(status: :paid, paid_at: Time.current)
+        end
+
+        expect {
+          described_class.new.perform(insurance.id)
+        }.not_to change(BlockchainTransaction, :count)
+
+        expect(BlockchainMintingService).not_to have_received(:call)
+      end
+    end
+
+    context "when ActiveRecord::RecordNotFound is raised" do
+      it "rescues RecordNotFound and logs a warning" do
+        allow(ParametricInsurance).to receive_messages(includes: ParametricInsurance, find_by: insurance)
+        allow(insurance).to receive(:status_triggered?).and_return(true)
+        allow(insurance).to receive(:lock!).and_raise(ActiveRecord::RecordNotFound)
+
+        expect(Rails.logger).to receive(:warn).with(/зник із Матриці/)
+
+        expect {
+          described_class.new.perform(insurance.id)
+        }.not_to raise_error
+      end
+    end
+
+    context "when tx is nil (transaction block exits early via next)" do
+      it "does not call BlockchainMintingService" do
+        allow_any_instance_of(ParametricInsurance).to receive(:lock!) do |ins|
+          ins.update_columns(status: :paid)
+        end
+
+        described_class.new.perform(insurance.id)
+
+        expect(BlockchainMintingService).not_to have_received(:call)
+      end
+    end
+
     context "when no active trees exist but non-active trees have wallets" do
       it "falls back to non-active tree wallet for audit" do
         # Remove the active tree so no active trees exist

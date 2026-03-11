@@ -121,6 +121,77 @@ RSpec.describe Polygon::HadronComplianceService do
         expect(naas_contract.reload.hadron_asset_id).to eq("HADRON-RWA-POLYGON-42")
       end
     end
+
+    context "when NaaSContract has no cluster" do
+      it "raises ComplianceError" do
+        allow(naas_contract).to receive(:cluster).and_return(nil)
+
+        expect {
+          described_class.new.register_asset!(naas_contract)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /must have an associated Cluster/)
+      end
+    end
+
+    context "when Hadron API returns no asset_id" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return("test-hadron-key")
+        stub_request_with_response({ "status" => "ok" })
+      end
+
+      it "raises ComplianceError about missing asset_id" do
+        expect {
+          described_class.new.register_asset!(naas_contract)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /did not return an asset_id/)
+      end
+    end
+
+    context "when Hadron API returns non-success HTTP" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return("test-hadron-key")
+        mock_response = instance_double(Net::HTTPServerError, code: "500", body: "Internal Server Error")
+        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(false)
+        allow(Net::HTTP).to receive(:start).and_return(mock_response)
+      end
+
+      it "raises ComplianceError for non-success response" do
+        expect {
+          described_class.new.register_asset!(naas_contract)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /Hadron API returned 500/)
+      end
+    end
+
+    context "when Hadron API KYC returns invalid JSON" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return("test-hadron-key")
+        mock_response = instance_double(Net::HTTPSuccess, body: "not json")
+        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+        allow(Net::HTTP).to receive(:start).and_return(mock_response)
+      end
+
+      it "raises ComplianceError for parse error on KYC" do
+        tree_local = create(:tree)
+        wallet_local = tree_local.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "c" * 40) }
+
+        expect {
+          described_class.new.verify_investor!(wallet_local)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /Invalid response from Hadron KYC API/)
+      end
+    end
+
+    context "when Hadron API asset registration returns invalid JSON" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return("test-hadron-key")
+        mock_response = instance_double(Net::HTTPSuccess, body: "not json")
+        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+        allow(Net::HTTP).to receive(:start).and_return(mock_response)
+      end
+
+      it "raises ComplianceError for parse error on asset registration" do
+        expect {
+          described_class.new.register_asset!(naas_contract)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /Invalid response from Hadron Asset API/)
+      end
+    end
   end
 
   private

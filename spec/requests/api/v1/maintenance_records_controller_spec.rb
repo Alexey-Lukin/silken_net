@@ -153,4 +153,37 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  context "with format.html responses" do
+    let(:html_headers) do
+      { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+    end
+
+    let!(:record) do
+      MaintenanceRecord.create!(
+        maintainable: own_tree,
+        user: forester,
+        action_type: :inspection,
+        performed_at: 1.hour.ago,
+        notes: "Routine inspection for HTML format test."
+      )
+    end
+
+    it "renders HTML for index" do
+      get "/api/v1/maintenance_records", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML for show" do
+      get "/api/v1/maintenance_records/#{record.id}", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders photos pagination page" do
+      get "/api/v1/maintenance_records/#{record.id}/photos", headers: html_headers
+      expect(response).to have_http_status(:ok)
+    end
+  end
 end

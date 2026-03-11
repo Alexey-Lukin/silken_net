@@ -56,5 +56,14 @@ RSpec.describe ChainlinkDispatchWorker, type: :worker do
     it "has retry set to 5" do
       expect(described_class.get_sidekiq_options["retry"]).to eq(5)
     end
+
+    context "when created_at_iso has invalid format" do
+      it "returns nil and does not dispatch" do
+        expect(Rails.logger).to receive(:error).with(/Некоректний формат created_at/)
+        expect(Chainlink::OracleDispatchService).not_to receive(:new)
+
+        described_class.new.perform(telemetry_log.id_value, "not-a-valid-iso-date")
+      end
+    end
   end
 end

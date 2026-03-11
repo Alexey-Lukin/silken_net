@@ -494,5 +494,15 @@ RSpec.describe TinyMlModel, type: :model do
         expect(described_class.drifting).not_to include(stable)
       end
     end
+
+    describe "#recalculate_drift_metrics!" do
+      it "returns early when total_predictions is zero" do
+        model = create(:tiny_ml_model, total_predictions: 0)
+        model.recalculate_drift_metrics!
+
+        expect(model.true_positive_rate).to be_nil
+        expect(model.false_positive_rate).to be_nil
+      end
+    end
   end
 end

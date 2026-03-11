@@ -389,4 +389,44 @@ end
       expect(tx.status).to eq("sent")
     end
   end
+
+  describe "unknown token_type" do
+    it "raises ArgumentError for unknown token_type" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+
+      # Override token_type after creation
+      tx.update_column(:token_type, "unknown_token")
+
+      expect {
+        described_class.call(tx.id)
+      }.to raise_error(ArgumentError, /Невідомий тип токена/)
+    end
+  end
+
+  describe "forest_coin transaction" do
+    it "processes a forest_coin transaction using the correct contract" do
+      ENV["FOREST_COIN_CONTRACT_ADDRESS"] = "0x" + "1" * 40
+
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 50, token_type: :forest_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 500
+      )
+
+      described_class.call(tx.id)
+
+      tx.reload
+      expect(tx.status).to eq("sent")
+    end
+  end
 end

@@ -237,5 +237,16 @@ RSpec.describe BlockchainTransaction, type: :model do
         expect(tx).not_to be_valid
       end
     end
+
+    describe "#explorer_url for celo" do
+      it "returns Celo Explorer URL for celo transactions" do
+        tx = build(:blockchain_transaction,
+          blockchain_network: "celo",
+          to_address: "0x" + "a" * 40,
+          tx_hash: "0xcelo123"
+        )
+        expect(tx.explorer_url).to eq("https://explorer.celo.org/alfajores/tx/0xcelo123")
+      end
+    end
   end
 end

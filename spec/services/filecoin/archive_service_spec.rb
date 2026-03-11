@@ -130,6 +130,69 @@ RSpec.describe Filecoin::ArchiveService do
         }.to raise_error(RuntimeError, /No CID returned/)
       end
     end
+
+    context "when IPFS response body is invalid JSON" do
+      it "raises a parse error" do
+        mock_response = instance_double(Net::HTTPSuccess, body: "not json at all")
+        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+        allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+
+        expect {
+          described_class.new(audit_log).archive!
+        }.to raise_error(RuntimeError, /Filecoin IPFS Parse Error/)
+      end
+    end
+
+    context "when audit_log.created_at is nil" do
+      it "sets telemetry_summary to nil in payload" do
+        allow(audit_log).to receive(:created_at).and_return(nil)
+
+        expected_body = nil
+        allow_any_instance_of(Net::HTTP).to receive(:request) do |_http, req|
+          expected_body = JSON.parse(req.body)
+          instance_double(Net::HTTPSuccess, body: { "IpfsHash" => "QmNilDate" }.to_json).tap do |resp|
+            allow(resp).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+          end
+        end
+
+        described_class.new(audit_log).archive!
+
+        content = expected_body["pinataContent"]
+        expect(content["telemetry_summary"]).to be_nil
+        expect(content["created_at"]).to be_nil
+      end
+    end
+
+    context "when no AI insights exist for the date" do
+      it "sets telemetry_summary to nil when summaries are empty" do
+        stub_pinata_success
+
+        expected_body = nil
+        allow_any_instance_of(Net::HTTP).to receive(:request) do |_http, req|
+          expected_body = JSON.parse(req.body)
+          instance_double(Net::HTTPSuccess, body: { "IpfsHash" => "QmNoInsights" }.to_json).tap do |resp|
+            allow(resp).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+          end
+        end
+
+        described_class.new(audit_log).archive!
+
+        content = expected_body["pinataContent"]
+        # No AI insights exist, so telemetry_summary should be nil
+        expect(content).to have_key("telemetry_summary")
+      end
+    end
+
+    context "when Net::OpenTimeout is raised" do
+      it "raises a timeout error" do
+        allow_any_instance_of(Net::HTTP).to receive(:request)
+          .and_raise(Net::OpenTimeout.new("connection timeout"))
+
+        expect {
+          described_class.new(audit_log).archive!
+        }.to raise_error(RuntimeError, /Filecoin IPFS Timeout/)
+      end
+    end
   end
 
   private

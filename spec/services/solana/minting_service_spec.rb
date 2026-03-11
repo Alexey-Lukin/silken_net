@@ -147,6 +147,71 @@ RSpec.describe Solana::MintingService do
         }.to raise_error(RuntimeError, /Solana RPC Error/)
       end
     end
+
+    context "when Solana RPC times out" do
+      it "raises a timeout error on Net::ReadTimeout" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
+        wallet.update!(solana_public_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV")
+
+        allow_any_instance_of(Net::HTTP).to receive(:request)
+          .and_raise(Net::ReadTimeout.new("execution expired"))
+
+        expect {
+          described_class.new(log).mint_micro_reward!
+        }.to raise_error(RuntimeError, /Solana RPC Timeout/)
+      end
+
+      it "raises a timeout error on Net::OpenTimeout" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
+        wallet.update!(solana_public_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV")
+
+        allow_any_instance_of(Net::HTTP).to receive(:request)
+          .and_raise(Net::OpenTimeout.new("connection timeout"))
+
+        expect {
+          described_class.new(log).mint_micro_reward!
+        }.to raise_error(RuntimeError, /Solana RPC Timeout/)
+      end
+    end
+
+    context "when Solana RPC returns invalid JSON" do
+      it "raises a parse error" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
+        wallet.update!(solana_public_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV")
+
+        mock_response = instance_double(Net::HTTPResponse, body: "not json")
+        allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+
+        expect {
+          described_class.new(log).mint_micro_reward!
+        }.to raise_error(RuntimeError, /Solana RPC Parse Error/)
+      end
+    end
+
+    context "when wallet is nil (tree has no wallet)" do
+      it "returns nil from resolve_recipient_address and raises" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
+        allow(tree).to receive(:wallet).and_return(nil)
+
+        expect {
+          described_class.new(log).mint_micro_reward!
+        }.to raise_error(RuntimeError, /Missing Solana address/)
+      end
+    end
+
+    context "when record_transaction! wallet is nil" do
+      it "does not create a transaction when wallet returns nil" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
+        wallet.update!(solana_public_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV")
+
+        service = described_class.new(log)
+        allow(tree).to receive(:wallet).and_return(nil)
+
+        # Test the private method directly
+        result = service.send(:record_transaction!, "recipient", 10_000, "sig")
+        expect(result).to be_nil
+      end
+    end
   end
 
   private

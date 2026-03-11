@@ -85,4 +85,16 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       expect(response.parsed_body["errors"]).to be_present
     end
   end
+
+  context "with format.html responses" do
+    let(:html_headers) do
+      { "Authorization" => "Bearer #{admin_token}", "Accept" => "text/html" }
+    end
+
+    it "renders HTML for show" do
+      get "/api/v1/settings", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+  end
 end
