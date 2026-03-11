@@ -49,7 +49,7 @@ end
       it "processes single carbon_coin transaction" do
         tree = create(:tree)
         wallet = tree.wallet
-        wallet.update!(crypto_public_address: "0x" + "b" * 40)
+        wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
 
         tx = wallet.blockchain_transactions.create!(
           amount: 100,
@@ -71,7 +71,7 @@ end
       it "returns early when no pending transactions" do
         tree = create(:tree)
         wallet = tree.wallet
-        wallet.update!(crypto_public_address: "0x" + "b" * 40)
+        wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
 
         tx = wallet.blockchain_transactions.create!(
           amount: 50,
@@ -94,11 +94,11 @@ end
       it "processes batch transactions" do
         tree1 = create(:tree)
         wallet1 = tree1.wallet
-        wallet1.update!(crypto_public_address: "0x" + "b" * 40)
+        wallet1.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
 
         tree2 = create(:tree)
         wallet2 = tree2.wallet
-        wallet2.update!(crypto_public_address: "0x" + "c" * 40)
+        wallet2.update!(crypto_public_address: "0x" + "c" * 40, hadron_kyc_status: "approved")
 
         tx1 = wallet1.blockchain_transactions.create!(
           amount: 100,
@@ -135,7 +135,7 @@ end
 
       tree = create(:tree)
       wallet = tree.wallet
-      wallet.update!(crypto_public_address: "0x" + "b" * 40)
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
 
       tx = wallet.blockchain_transactions.create!(
         amount: 100,
@@ -155,7 +155,7 @@ end
 
       tree = create(:tree)
       wallet = tree.wallet
-      wallet.update!(crypto_public_address: "0x" + "b" * 40)
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
 
       tx = wallet.blockchain_transactions.create!(
         amount: 100,
@@ -196,7 +196,7 @@ end
     it "schedules BlockchainConfirmationWorker after successful mint" do
       tree = create(:tree)
       wallet = tree.wallet
-      wallet.update!(crypto_public_address: "0x" + "b" * 40)
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
 
       tx = wallet.blockchain_transactions.create!(
         amount: 100,
@@ -218,7 +218,7 @@ end
     it "returns CLUSTER identifier for forest_coin" do
       tree = create(:tree)
       wallet = tree.wallet
-      wallet.update!(crypto_public_address: "0x" + "b" * 40)
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
 
       tx = wallet.blockchain_transactions.create!(
         amount: 100,
@@ -236,7 +236,7 @@ end
       org = create(:organization, crypto_public_address: "0x" + "b" * 40)
       tree = create(:tree)
       wallet = tree.wallet
-      wallet.update!(crypto_public_address: "0x" + "b" * 40)
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
 
       tx = wallet.blockchain_transactions.create!(
         amount: 100,
@@ -257,7 +257,7 @@ end
     it "falls back to ORG identifier when tree is nil for carbon_coin" do
       tree = create(:tree)
       wallet = tree.wallet
-      wallet.update!(crypto_public_address: "0x" + "b" * 40)
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
 
       tx = wallet.blockchain_transactions.create!(
         amount: 100,
@@ -277,7 +277,7 @@ end
 
   describe "trustless verification (guard clauses)" do
     let(:tree) { create(:tree) }
-    let(:wallet) { tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40) } }
+    let(:wallet) { tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved") } }
     let!(:tx) do
       wallet.blockchain_transactions.create!(
         amount: 100, token_type: :carbon_coin, status: :pending,
@@ -339,6 +339,54 @@ end
       tx.reload
       expect(tx.chainlink_request_id).to be_nil
       expect(tx.zk_proof_ref).to be_nil
+    end
+  end
+
+  describe "Hadron RWA compliance (guard clause)" do
+    it "raises when wallet is not Hadron KYC approved" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "pending")
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+
+      expect {
+        described_class.call(tx.id)
+      }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+    end
+
+    it "raises when wallet KYC status is rejected" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "rejected")
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+
+      expect {
+        described_class.call(tx.id)
+      }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+    end
+
+    it "proceeds when wallet KYC is approved" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+
+      described_class.call(tx.id)
+
+      tx.reload
+      expect(tx.status).to eq("sent")
     end
   end
 end
