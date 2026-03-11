@@ -49,5 +49,17 @@ RSpec.describe SingleNotificationWorker, type: :worker do
     it "returns nil when both not found" do
       expect(described_class.new.perform(-1, -1, "sms")).to be_nil
     end
+
+    context "with unknown channel" do
+      it "does not raise error and does nothing" do
+        user = create(:user, :admin, organization: organization)
+
+        expect(Rails.logger).not_to receive(:info).with(/SMS|Push/)
+
+        expect {
+          described_class.new.perform(user.id, alert.id, "email")
+        }.not_to raise_error
+      end
+    end
   end
 end

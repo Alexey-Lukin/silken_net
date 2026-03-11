@@ -235,5 +235,33 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       result = worker.send(:decrypt_aes, "\x00" * 64, "\x00" * 32)
       expect(result).to be_nil
     end
+
+    it "rescues OpenSSL::Cipher::CipherError and returns nil" do
+      worker = described_class.new
+      cipher_mock = instance_double(OpenSSL::Cipher)
+      allow(OpenSSL::Cipher).to receive(:new).and_return(cipher_mock)
+      allow(cipher_mock).to receive(:decrypt)
+      allow(cipher_mock).to receive(:key=)
+      allow(cipher_mock).to receive(:iv=)
+      allow(cipher_mock).to receive(:padding=)
+      allow(cipher_mock).to receive(:update).and_raise(OpenSSL::Cipher::CipherError, "bad decrypt")
+
+      result = worker.send(:decrypt_aes, "\x00" * 64, "\x00" * 32)
+      expect(result).to be_nil
+    end
+  end
+
+  describe "attempt_decryption when both keys fail" do
+    it "returns nil when both current and previous keys fail to decrypt" do
+      prev_key_hex = SecureRandom.hex(32)
+      key_record.update!(previous_aes_key_hex: prev_key_hex)
+
+      worker = described_class.new
+      # Both keys fail
+      allow(worker).to receive(:decrypt_aes).and_return(nil)
+
+      result = worker.send(:attempt_decryption, "\x00" * 64, key_record)
+      expect(result).to be_nil
+    end
   end
 end

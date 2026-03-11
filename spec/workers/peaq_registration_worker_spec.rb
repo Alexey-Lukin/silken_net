@@ -64,5 +64,26 @@ RSpec.describe PeaqRegistrationWorker, type: :worker do
     it "has retry set to 5" do
       expect(described_class.get_sidekiq_options["retry"]).to eq(5)
     end
+
+    context "when peaq_did is set by another process between service call and lock" do
+      it "skips update when tree already has peaq_did under lock" do
+        service = instance_double(Peaq::DidRegistryService)
+        allow(Peaq::DidRegistryService).to receive(:new).and_return(service)
+        allow(service).to receive(:register!).and_return("did:peaq:0x#{"c" * 40}")
+
+        # Simulate: another process sets peaq_did after register! but before with_lock body
+        original_with_lock = Tree.instance_method(:with_lock)
+        allow_any_instance_of(Tree).to receive(:with_lock) do |tree_instance, &block|
+          tree_instance.update_column(:peaq_did, "did:peaq:0x#{"d" * 40}")
+          original_with_lock.bind_call(tree_instance, &block)
+        end
+
+        described_class.new.perform(tree.id)
+
+        tree.reload
+        # The concurrent write wins — the worker guard returns early inside the lock
+        expect(tree.peaq_did).to eq("did:peaq:0x#{"d" * 40}")
+      end
+    end
   end
 end

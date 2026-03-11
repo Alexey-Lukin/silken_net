@@ -77,5 +77,23 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
 
       described_class.new.perform(-1)
     end
+
+    context "when gateway has no cluster (nil organization chain)" do
+      it "broadcasts without error when organization is nil" do
+        allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+        cmd = create(:actuator_command, actuator: actuator, status: :acknowledged, sent_at: 1.minute.ago)
+        cmd.update_column(:status, :acknowledged)
+
+        # Simulate nil in the gateway -> cluster -> organization chain
+        allow(actuator).to receive(:gateway).and_return(nil)
+
+        expect {
+          described_class.new.perform(cmd.id)
+        }.not_to raise_error
+
+        actuator.reload
+        expect(actuator.state).to eq("idle")
+      end
+    end
   end
 end

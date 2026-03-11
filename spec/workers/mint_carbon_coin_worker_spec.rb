@@ -134,5 +134,191 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       expect(wallet.balance).to eq(original_balance)
       expect(wallet.locked_balance).to eq(original_locked)
     end
+
+    context "auto-discovery flow (nil telemetry_log_id)" do
+      it "finds all pending/processing transactions when telemetry_log_id is nil" do
+        tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000)
+        wallet.update!(locked_balance: 5_000)
+
+        allow_any_instance_of(Wallet).to receive(:broadcast_update)
+
+        job = { "args" => [ nil, nil ], "error_message" => "Permanent failure" }
+
+        described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+
+        tx.reload
+        expect(tx.status).to eq("failed")
+        expect(tx.notes).to include("Rollback")
+      end
+    end
+
+    context "partial locked_balance fallback" do
+      it "releases only available locked_balance when it is less than refund_points" do
+        telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        wallet.update!(balance: 20_000, locked_balance: 3_000)
+        tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
+                                             locked_points: 10_000)
+
+        allow_any_instance_of(Wallet).to receive(:broadcast_update)
+
+        job = {
+          "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
+          "error_message" => "Permanent RPC failure"
+        }
+
+        described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+
+        wallet.reload
+        expect(wallet.locked_balance).to eq(0)
+      end
+
+      it "skips release when locked_balance is already zero" do
+        telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        wallet.update!(balance: 20_000, locked_balance: 0)
+        tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
+                                             locked_points: 10_000)
+
+        allow_any_instance_of(Wallet).to receive(:broadcast_update)
+
+        job = {
+          "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
+          "error_message" => "Permanent RPC failure"
+        }
+
+        described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+
+        wallet.reload
+        expect(wallet.locked_balance).to eq(0)
+      end
+    end
+
+    context "when telemetry_log not found" do
+      it "skips processing via next guard" do
+        allow_any_instance_of(Wallet).to receive(:broadcast_update)
+
+        job = {
+          "args" => [ -999, Time.current.iso8601(6) ],
+          "error_message" => "Permanent failure"
+        }
+
+        expect {
+          described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+        }.not_to raise_error
+      end
+    end
+
+    context "when wallet is nil (tree has no wallet)" do
+      it "skips processing via next guard" do
+        telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        allow_any_instance_of(Tree).to receive(:wallet).and_return(nil)
+
+        job = {
+          "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
+          "error_message" => "Permanent failure"
+        }
+
+        expect {
+          described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+        }.not_to raise_error
+      end
+    end
+
+    context "with invalid created_at_iso format" do
+      it "falls back to search without partition pruning" do
+        telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        wallet.update!(locked_balance: 5_000)
+        tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
+                                             locked_points: 5_000)
+
+        allow_any_instance_of(Wallet).to receive(:broadcast_update)
+
+        job = {
+          "args" => [ telemetry_log.id_value, "not-a-valid-iso-date" ],
+          "error_message" => "Permanent failure"
+        }
+
+        described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+
+        tx.reload
+        expect(tx.status).to eq("failed")
+      end
+    end
+
+    context "when broadcast_update is not available" do
+      it "handles wallet without broadcast_update responding false" do
+        telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        wallet.update!(balance: 20_000, locked_balance: 10_000)
+        tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
+                                             locked_points: 10_000)
+
+        # Stub broadcast_update to just do nothing
+        allow_any_instance_of(Wallet).to receive(:broadcast_update)
+
+        job = {
+          "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
+          "error_message" => "Permanent failure"
+        }
+
+        expect {
+          described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+        }.not_to raise_error
+
+        tx.reload
+        expect(tx.status).to eq("failed")
+      end
+    end
+  end
+
+  describe "#find_telemetry_log" do
+    it "handles invalid created_at_iso format gracefully" do
+      telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+      create(:blockchain_transaction, wallet: wallet, status: :pending)
+
+      # Invalid ISO format should not prevent finding the log
+      described_class.new.perform(telemetry_log.id_value, "invalid-date-format")
+
+      expect(BlockchainMintingService).to have_received(:call_batch)
+    end
+
+    it "returns nil for nonexistent log without created_at_iso" do
+      described_class.new.perform(-1, nil)
+
+      expect(BlockchainMintingService).not_to have_received(:call_batch)
+    end
+  end
+
+  describe "#process_pending_transactions" do
+    context "when wallet.broadcast_balance_update is nil-safe" do
+      it "handles broadcast on transactions whose wallet has no broadcast method" do
+        tx = create(:blockchain_transaction, wallet: wallet, status: :pending)
+        allow(BlockchainMintingService).to receive(:call_batch).and_raise(StandardError, "RPC Error")
+        allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+
+        expect {
+          described_class.new.perform
+        }.to raise_error(StandardError, "RPC Error")
+      end
+    end
+
+    context "when no transactions match after filtering" do
+      it "returns early when all transactions are already processing" do
+        tx = create(:blockchain_transaction, wallet: wallet, status: :processing)
+
+        described_class.new.perform
+
+        expect(BlockchainMintingService).not_to have_received(:call_batch)
+      end
+    end
+  end
+
+  describe "#perform with oracle-driven flow and missing wallet" do
+    it "returns early when tree has no wallet" do
+      telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+      allow_any_instance_of(Tree).to receive(:wallet).and_return(nil)
+
+      described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(BlockchainMintingService).not_to have_received(:call_batch)
+    end
   end
 end
