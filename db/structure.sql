@@ -1487,7 +1487,8 @@ CREATE TABLE public.wallets (
     organization_id bigint,
     locked_balance numeric DEFAULT 0.0 NOT NULL,
     solana_public_address character varying,
-    hadron_kyc_status character varying DEFAULT 'pending'::character varying
+    hadron_kyc_status character varying DEFAULT 'pending'::character varying,
+    esg_retired_balance numeric(24,6) DEFAULT 0.0 NOT NULL
 );
 
 
@@ -4115,6 +4116,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260311160000'),
 ('20260311125000'),
 ('20260311120626'),
 ('20260311100001'),
