@@ -16,6 +16,7 @@ class Wallet < ApplicationRecord
   # --- ВАЛІДАЦІЇ ---
   validates :balance, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :locked_balance, numericality: { greater_than_or_equal_to: 0 }
+  validates :esg_retired_balance, numericality: { greater_than_or_equal_to: 0 }
 
   # SCC = Silken Carbon Coin — public-facing alias for the internal balance column.
   alias_attribute :scc_balance, :balance
