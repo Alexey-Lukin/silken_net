@@ -76,7 +76,7 @@ RSpec.describe Celo::CommunityRewardService do
       end
     end
 
-    context "guard clause 1: no AiInsight for target_date" do
+    context "without AiInsight for target_date" do
       it "returns nil without creating a transaction" do
         expect {
           result = described_class.new(cluster, target_date).reward_community!
@@ -85,7 +85,7 @@ RSpec.describe Celo::CommunityRewardService do
       end
     end
 
-    context "guard clause 1: stress_index too high" do
+    context "when stress_index is too high" do
       let!(:insight) do
         create(:ai_insight,
           analyzable: cluster,
@@ -104,7 +104,7 @@ RSpec.describe Celo::CommunityRewardService do
       end
     end
 
-    context "guard clause 1: stress_index at boundary (0.2)" do
+    context "when stress_index is at boundary (0.2)" do
       let!(:insight) do
         create(:ai_insight,
           analyzable: cluster,
@@ -131,7 +131,7 @@ RSpec.describe Celo::CommunityRewardService do
       end
     end
 
-    context "guard clause 1: fraud detected" do
+    context "when fraud is detected" do
       let!(:insight) do
         create(:ai_insight,
           analyzable: cluster,
@@ -150,7 +150,7 @@ RSpec.describe Celo::CommunityRewardService do
       end
     end
 
-    context "guard clause 2: organization has no crypto address" do
+    context "without organization crypto address" do
       let!(:insight) do
         create(:ai_insight,
           analyzable: cluster,

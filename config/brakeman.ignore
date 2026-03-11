@@ -7,6 +7,10 @@
     {
       "fingerprint": "7a165447abef1767e92ddc2f90bd7cda53befad1f1e0baa5805c42b7ef2fe663",
       "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name."
+    },
+    {
+      "fingerprint": "0c1519d2874e131a0d3637e0f8decbf761243e5a1d34323ff2ca3ed1f3141cf7",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in Celo reward service."
     }
   ],
   "updated": "2026-03-03 11:10:00 +0000",
