@@ -118,7 +118,7 @@ RSpec.describe Solana::MintingService do
 
         expect {
           described_class.new(log).mint_micro_reward!
-        }.to raise_error(RuntimeError, /Відсутня Solana-адреса/)
+        }.to raise_error(RuntimeError, /Missing Solana address/)
       end
     end
 

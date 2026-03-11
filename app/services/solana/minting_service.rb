@@ -39,7 +39,7 @@ module Solana
       return if reward_lamports.zero?
 
       recipient_address = resolve_recipient_address
-      raise "🛑 [Solana] Відсутня Solana-адреса для мікро-виплати (Tree або Organization)" if recipient_address.blank?
+      raise "🛑 [Solana] Missing Solana address for micro-payment (Tree or Organization)" if recipient_address.blank?
 
       # Формуємо та відправляємо JSON RPC запит до Solana
       tx_signature = send_transfer_request(recipient_address, reward_lamports)
@@ -94,6 +94,9 @@ module Solana
     # Поточна реалізація — симуляція для Devnet з логуванням payload.
     def send_transfer_request(recipient, amount_lamports)
       rpc_url = ENV.fetch("SOLANA_RPC_URL", DEVNET_RPC_URL)
+      # [DEVNET]: Placeholder defaults for simulation mode. In production, these ENV vars
+      # MUST be set to real Solana keypair addresses. The service currently uses
+      # simulateTransaction, not sendTransaction — no real funds are at risk.
       fee_payer = ENV.fetch("SOLANA_FEE_PAYER_PUBKEY", "SiLkEnNeT1111111111111111111111111111111111")
       mint_authority = ENV.fetch("SOLANA_MINT_AUTHORITY_PUBKEY", fee_payer)
       usdc_mint = ENV.fetch("SOLANA_USDC_MINT_ADDRESS", "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU")

@@ -15,10 +15,6 @@ class SolanaMicroRewardWorker
     return unless log
 
     Solana::MintingService.new(log).mint_micro_reward!
-
-  rescue StandardError => e
-    Rails.logger.error "🌊 [Solana] Micro-reward error для TelemetryLog ##{telemetry_log_id}: #{e.message}"
-    raise e
   end
 
   private
