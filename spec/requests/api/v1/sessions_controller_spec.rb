@@ -81,4 +81,20 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       expect(result).to be_nil
     end
   end
+
+  describe "GET /api/v1/login (HTML format)" do
+    it "renders the login page" do
+      get "/api/v1/login", headers: { "Accept" => "text/html" }
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "POST /api/v1/login (HTML format)" do
+    it "redirects on successful HTML login" do
+      post "/api/v1/login",
+        params: { email: user.email_address, password: "password12345" },
+        headers: { "Accept" => "text/html" }
+      expect(response).to have_http_status(:redirect)
+    end
+  end
 end

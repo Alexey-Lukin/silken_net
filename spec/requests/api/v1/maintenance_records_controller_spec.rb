@@ -180,5 +180,24 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
+
+    it "renders HTML for new" do
+      get "/api/v1/maintenance_records/new", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML for new with pre-populated params" do
+      get "/api/v1/maintenance_records/new",
+        params: { maintainable_type: "Tree", maintainable_id: own_tree.id },
+        headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders photos pagination page" do
+      get "/api/v1/maintenance_records/#{record.id}/photos", headers: html_headers
+      expect(response).to have_http_status(:ok)
+    end
   end
 end

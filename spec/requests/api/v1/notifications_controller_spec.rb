@@ -56,4 +56,25 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
       expect(response.parsed_body["errors"]).to be_present
     end
   end
+
+  context "format.html responses" do
+    let(:html_headers) do
+      { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}", "Accept" => "text/html" }
+    end
+
+    it "renders HTML for settings" do
+      get "/api/v1/notifications/settings", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML for update_settings error" do
+      patch "/api/v1/notifications/settings",
+            headers: html_headers,
+            params: { phone_number: "0123" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+  end
 end
