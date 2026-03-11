@@ -51,4 +51,22 @@ RSpec.describe Api::V1::TreesController, type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  context "format.html responses" do
+    let(:html_headers) do
+      { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+    end
+
+    it "renders HTML for index" do
+      get "/api/v1/clusters/#{own_cluster.id}/trees", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML for show" do
+      get "/api/v1/trees/#{own_tree.id}", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+  end
 end

@@ -61,4 +61,23 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       expect(response.parsed_body).to have_key("pagy")
     end
   end
+
+  context "format.html responses" do
+    let(:admin) { create(:user, :admin, organization: organization) }
+    let(:html_headers) do
+      { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}", "Accept" => "text/html" }
+    end
+
+    it "renders HTML for index" do
+      get "/api/v1/wallets", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML for show" do
+      get "/api/v1/wallets/#{wallet.id}", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+  end
 end

@@ -82,4 +82,28 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       expect(response.body).to start_with("%PDF")
     end
   end
+
+  context "format.html responses" do
+    let(:html_headers) do
+      { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+    end
+
+    it "renders HTML for index" do
+      get "/api/v1/reports", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML for carbon_absorption" do
+      get "/api/v1/reports/carbon_absorption", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML for financial_summary" do
+      get "/api/v1/reports/financial_summary", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+  end
 end

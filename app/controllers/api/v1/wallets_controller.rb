@@ -42,7 +42,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Wallet // #{@wallet.address.first(8)}...",
+              title: "Wallet // #{@wallet.crypto_public_address&.first(8)}...",
               component: Wallets::Show.new(wallet: @wallet, transactions: @transactions)
             )
           end
