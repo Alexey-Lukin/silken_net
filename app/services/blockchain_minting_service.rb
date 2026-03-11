@@ -52,6 +52,15 @@ class BlockchainMintingService
       raise "Security Breach: Chainlink Oracle consensus not fulfilled" unless @telemetry_log.oracle_status == "fulfilled"
     end
 
+    # [RWA COMPLIANCE]: Перевірка Hadron KYC для кожного гаманця-отримувача.
+    # Інституційні токени (SCC/SFC) мінтяться ТІЛЬКИ для верифікованих гаманців.
+    @wallet_mapping.each_value do |tx|
+      recipient_wallet = tx.wallet
+      unless recipient_wallet.hadron_kyc_status == "approved"
+        raise "Compliance Breach: Wallet is not Hadron KYC approved"
+      end
+    end
+
     # 1. ПІДКЛЮЧЕННЯ (The Alchemy Link)
     client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
     oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))

@@ -7,7 +7,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
   let(:cluster) { create(:cluster, organization: organization) }
   let(:tree_family) { create(:tree_family) }
   let!(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
-  let!(:wallet) { tree.wallet || create(:wallet, tree: tree) }
+  let!(:wallet) { (tree.wallet || create(:wallet, tree: tree)).tap { |w| w.update_column(:hadron_kyc_status, "approved") } }
   let(:naas_contract) { create(:naas_contract, organization: organization, cluster: cluster) }
 
   before do

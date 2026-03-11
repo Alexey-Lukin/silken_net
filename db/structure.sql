@@ -902,7 +902,8 @@ CREATE TABLE public.naas_contracts (
     updated_at timestamp(6) without time zone NOT NULL,
     emitted_tokens numeric DEFAULT 0.0,
     cancellation_terms jsonb DEFAULT '{}'::jsonb,
-    cancelled_at timestamp(6) without time zone
+    cancelled_at timestamp(6) without time zone,
+    hadron_asset_id character varying
 );
 
 
@@ -1485,7 +1486,8 @@ CREATE TABLE public.wallets (
     updated_at timestamp(6) without time zone NOT NULL,
     organization_id bigint,
     locked_balance numeric DEFAULT 0.0 NOT NULL,
-    solana_public_address character varying
+    solana_public_address character varying,
+    hadron_kyc_status character varying DEFAULT 'pending'::character varying
 );
 
 
@@ -2658,6 +2660,13 @@ CREATE INDEX index_naas_contracts_on_cluster_id_and_status ON public.naas_contra
 
 
 --
+-- Name: index_naas_contracts_on_hadron_asset_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_naas_contracts_on_hadron_asset_id ON public.naas_contracts USING btree (hadron_asset_id);
+
+
+--
 -- Name: index_naas_contracts_on_organization_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2802,6 +2811,13 @@ CREATE INDEX index_users_on_org_last_seen_id ON public.users USING btree (organi
 --
 
 CREATE INDEX index_users_on_organization_id ON public.users USING btree (organization_id);
+
+
+--
+-- Name: index_wallets_on_hadron_kyc_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_wallets_on_hadron_kyc_status ON public.wallets USING btree (hadron_kyc_status);
 
 
 --
@@ -4099,6 +4115,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260311125000'),
 ('20260311120626'),
 ('20260311100001'),
 ('20260311100000'),
