@@ -25,6 +25,24 @@ RSpec.describe AuditLogWorker, type: :worker do
       expect(log.metadata).to eq("source" => "api")
     end
 
+    it "enqueues FilecoinArchiveWorker after creating the audit log" do
+      user = create(:user)
+      attrs = {
+        "user_id" => user.id,
+        "organization_id" => user.organization_id,
+        "action" => "login",
+        "ip_address" => "203.0.113.42",
+        "user_agent" => "Mozilla/5.0",
+        "metadata" => { "source" => "api" }
+      }
+
+      described_class.new.perform(attrs)
+
+      log = AuditLog.last
+      expect(FilecoinArchiveWorker.jobs.size).to eq(1)
+      expect(FilecoinArchiveWorker.jobs.first["args"]).to eq([ log.id ])
+    end
+
     it "logs error for invalid attributes without raising" do
       attrs = { "action" => nil, "user_id" => 0, "organization_id" => 0 }
 

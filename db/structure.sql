@@ -306,7 +306,8 @@ CREATE TABLE public.audit_logs (
     updated_at timestamp(6) without time zone NOT NULL,
     ip_address character varying,
     user_agent character varying,
-    chain_hash character varying
+    chain_hash character varying,
+    ipfs_cid character varying
 );
 
 
@@ -4098,6 +4099,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260311120626'),
 ('20260311100001'),
 ('20260311100000'),
 ('20260311062121'),
