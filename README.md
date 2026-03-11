@@ -1,8 +1,10 @@
-# 🌿 Silken Net: Цифрова Екосистема Черкаського Бору
+# 🌿 Silken Net — Gaia 2.0: Кіберфізична Держава Черкаського Бору
 
-**Silken Net** — це титанова D-MRV (Digital Measurement, Reporting, and Verification) платформа, що об'єднує біологічний гомеостаз лісу, IoT-периферію на базі STM32 та децентралізовані фінанси в мережі Polygon.
+**Silken Net** — це trustless D-MRV (Digital Measurement, Reporting, and Verification) платформа, що інтегрує 12 блокчейн-мереж та протоколів у єдину Кіберфізичну Державу. Деревам надаються машинні паспорти (peaq DID), їхня телеметрія верифікується ZK-proof (IoTeX W3bstream), а токен-нагороди розподіляються через Polygon, Solana, Celo та Ethereum.
 
 Це "Океан", який дихає в унісон із ксилемним соком кожного "Солдата" (дерева) та кожної "Королеви" (шлюзу).
+
+> 📖 **[Анатомія Gaia 2.0 — 12 кроків Кіберфізичної Держави](docs/GAIA_2_0_ANATOMY.md)**
 
 ---
 
@@ -81,17 +83,29 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 
 | Сервіс | Роль |
 |---|---|
-| `SilkenNet::Attractor` | Лоренц-атрактор — ядро AI-оракула |
-| `InsightGeneratorService` | Генерація денних `AiInsight` та `EwsAlert` |
+| `SilkenNet::Attractor` | Лоренц-атрактор — ядро AI-оракула (BigDecimal, 18 знаків) |
+| `InsightGeneratorService` | Генерація денних `AiInsight` та `EwsAlert` (AI Fraud Guard) |
 | `TelemetryUnpackerService` | Розпакування CoAP-пакетів від STM32 |
 | `AlertDispatchService` | Маршрутизація тривог (SMS/Telegram) |
 | `EmergencyResponseService` | Екстрений протокол реагування |
-| `BlockchainMintingService` | Емісія SCC-токенів (Minting) |
+| `BlockchainMintingService` | Емісія SCC-токенів (Polygon, guard: IoTeX + Chainlink + Hadron) |
 | `BlockchainBurningService` | Slashing-протокол (Burning) |
 | `ChainAuditService` | Аудит on-chain транзакцій |
 | `HardwareKeyService` | Генерація та ротація AES-256 ключів |
 | `OtaPackagerService` | Упаковка та шифрування OTA-пакетів прошивки |
-| `PriceOracleService` | Ціновий оракул для токен-розрахунків |
+| `PriceOracleService` | Ціновий оракул (Uniswap V3 на Polygon) |
+| `Iotex::W3bstreamVerificationService` | ZK-proof верифікація (IoTeX W3bstream) |
+| `Chainlink::OracleDispatchService` | Децентралізований оракул (Chainlink Functions DON) |
+| `Peaq::DidRegistryService` | Машинний паспорт (peaq DID) |
+| `Solana::MintingService` | Мікро-платежі USDC (Solana) |
+| `Celo::CommunityRewardService` | ReFi нагороди громаді (cUSD, Celo) |
+| `KlimaDao::RetirementService` | ESG carbon retirement (KlimaDAO) |
+| `Polygon::HadronComplianceService` | KYC/KYB для RWA (Polygon Hadron, ERC-3643) |
+| `Ethereum::StateAnchorService` | Щотижневий state root (Ethereum L1) |
+| `Streamr::BroadcasterService` | P2P real-time broadcast (Streamr) |
+| `TheGraph::QueryService` | Subgraph indexing (The Graph, GraphQL) |
+| `Filecoin::ArchiveService` | Вічний архів (IPFS/Filecoin) |
+| `Filecoin::VerificationService` | Верифікація архівів (IPFS CID) |
 
 ### 🔄 Фонові Воркери (The Async Army)
 
@@ -110,8 +124,19 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 | `TokenomicsEvaluatorWorker` | `default` | Щогодинна оцінка токеноміки |
 | `ClusterHealthCheckWorker` | `default` | Нічний арбітраж NaaS-контрактів |
 | `DailyAggregationWorker` | `low` | Стиснення телеметрії в AiInsight (01:00) |
-| `EcosystemHealingWorker` | `default` | Автоматична корекція аномалій |
-| `InsurancePayoutWorker` | `web3` | Виплата страхових компенсацій |
+| `EcosystemHealingWorker` | `critical` | Автоматична корекція аномалій |
+| `InsurancePayoutWorker` | `critical` | Виплата страхових компенсацій |
+| `IotexVerificationWorker` | `web3` | ZK-proof генерація (IoTeX W3bstream) |
+| `ChainlinkDispatchWorker` | `web3` | Dispatch до Chainlink Oracle |
+| `PeaqRegistrationWorker` | `web3` | Реєстрація peaq DID |
+| `SolanaMicroRewardWorker` | `web3` | Мікро-платежі USDC (Solana) |
+| `CeloRewardWorker` | `web3` | ReFi нагороди cUSD (Celo) |
+| `KlimaRetirementWorker` | `web3` | ESG carbon retirement (KlimaDAO) |
+| `EthereumAnchorWorker` | `web3` | State root → Ethereum L1 (щотижня) |
+| `HadronAssetRegistrationWorker` | `web3` | RWA реєстрація (Polygon Hadron) |
+| `StreamrBroadcastWorker` | `low` | P2P broadcast (Streamr) |
+| `FilecoinArchiveWorker` | `low` | Архівація на IPFS/Filecoin |
+| `AuditLogWorker` | `low` | Створення аудит-записів |
 
 ---
 
@@ -119,13 +144,16 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 
 * **Backend**: Ruby **4.0.1** / Rails **8.1.2**.
 * **Database**: PostgreSQL + **Solid Cache** + **Solid Cable** + **Solid Queue**.
-* **Background Jobs**: **Sidekiq** + **sidekiq-scheduler** (черги: `uplink`, `alerts`, `critical`, `downlink`, `default`, `web3`, `low`).
+* **Background Jobs**: **Sidekiq** + **sidekiq-scheduler** (черги: `uplink`, `alerts`, `critical`, `downlink`, `default`, `web3`, `low`; 26 воркерів).
 * **Frontend**: Hotwire (Turbo 8 / Stimulus), Tailwind CSS, **Phlex** (компонентна система).
 * **Serialization**: **Blueprinter** (API JSON blueprints).
 * **Pagination**: **Pagy** + **Groupdate** (time-series).
 * **IoT Protocol**: CoAP / LoRaWAN (Sanctum Listener).
-* **Blockchain**: Solidity / Polygon (ERC-20 Permit & Votes), **eth** gem.
-* **Deployment**: **Kamal** (Docker-контейнеризація), **Thruster** (HTTP/2 proxy).
+* **Blockchain (Primary)**: Polygon (ERC-20 Permit & Votes), **eth** gem.
+* **Multichain (Gaia 2.0)**: Ethereum L1 (finality), Solana (micro-rewards), Celo (ReFi), KlimaDAO (ESG), Polygon Hadron (RWA/KYC).
+* **Verification**: IoTeX W3bstream (ZK-proofs), Chainlink (Oracle), peaq (Machine DID).
+* **Data**: Streamr (P2P), The Graph (Subgraph), Filecoin/IPFS (Archive).
+* **Deployment**: **Kamal** (Docker), **Akash Network** (Decentralized Cloud), **Thruster** (HTTP/2 proxy).
 
 ---
 
@@ -183,20 +211,22 @@ kamal setup
 
 Детальна документація знаходиться в директорії [`docs/`](docs/):
 
+* **[`GAIA_2_0_ANATOMY.md`](docs/GAIA_2_0_ANATOMY.md) — 🌐 Анатомія Gaia 2.0: 12 кроків Кіберфізичної Держави**
 * [`API.md`](docs/API.md) — опис всіх API-ендпоінтів (24 контролери)
-* [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — архітектурні рішення та потоки даних
-* [`MODELS.md`](docs/MODELS.md) — всі 20 доменних моделей та їхні зв'язки
-* [`LOGIC.md`](docs/LOGIC.md) — сервіси (11) та воркери (15) з призначеннями
+* [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — мультичейн архітектура та потоки даних (12 мереж)
+* [`MODELS.md`](docs/MODELS.md) — всі доменні моделі та їхні зв'язки
+* [`LOGIC.md`](docs/LOGIC.md) — сервіси (24) та воркери (26) з призначеннями
 * [`FIRMWARE.md`](docs/FIRMWARE.md) — специфікація прошивки STM32
 * [`HARDWARE.md`](docs/HARDWARE.md) — апаратна специфікація та BOM
-* [`TOKENOMICS.md`](docs/TOKENOMICS.md) — деталі токеноміки
-* [`BLOCKCHAIN_DEVELOPMENT.md`](docs/BLOCKCHAIN_DEVELOPMENT.md) — розробка смарт-контрактів
+* [`TOKENOMICS.md`](docs/TOKENOMICS.md) — мультичейн токеноміка (Polygon, Solana, Celo, KlimaDAO, Ethereum L1)
+* [`BLOCKCHAIN_DEVELOPMENT.md`](docs/BLOCKCHAIN_DEVELOPMENT.md) — розробка 12-chain Web3 інфраструктури
+* [`DEPLOYMENT.md`](docs/DEPLOYMENT.md) — Kamal + Akash Network + Terraform
 * [`VISION.md`](docs/VISION.md) — візія проекту та roadmap
 
 ---
 
-## 👁️ Статус Проекту: **Titanium Baseline** (98% Ready)
+## 👁️ Статус Проекту: **Gaia 2.0** (Cyber-Physical State)
 
-Фундамент моделей, сервісів, API-контролерів та фонових воркерів завершено. Система готова до прийому телеметрії та Web3-емісії.
+Мультичейн архітектура з 12 мережами та протоколами завершена. Система готова до прийому телеметрії, ZK-верифікації та мультичейн емісії.
 
 > *"Ми не просто спостерігаємо за лісом. Ми даємо йому цифрову волю."* — **Alexey Architect**

@@ -357,7 +357,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         active_firmware = create(:bio_contract_firmware, :active, target_hardware_type: "Tree")
         tree_r2.update_columns(firmware_update_status: Tree.firmware_update_statuses[:fw_pending])
 
-        chunk = build_chunk_r2(did_hex_r2, firmware_id: active_firmware.id - 1)
+        chunk = build_chunk_r2(did_hex_r2, firmware_id: active_firmware.id + 1)
         service = described_class.new(chunk, gateway_r2.id)
         service.perform
 
@@ -369,7 +369,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         active_firmware = create(:bio_contract_firmware, :active, target_hardware_type: "Tree")
         tree_r2.update_columns(firmware_update_status: Tree.firmware_update_statuses[:fw_idle])
 
-        chunk = build_chunk_r2(did_hex_r2, firmware_id: active_firmware.id - 1)
+        chunk = build_chunk_r2(did_hex_r2, firmware_id: active_firmware.id + 1)
         service = described_class.new(chunk, gateway_r2.id)
         service.perform
 

@@ -47,7 +47,7 @@ The Lorenz attractor serves as a nonlinear transform of multi-sensor data:
 
 The fine structure constant (1/137) appears as a design parameter, reflecting the project's philosophy that fundamental physical constants should guide engineering decisions.
 
-## Network Topology
+## Network Topology (Gaia 2.0 — 12-Chain Architecture)
 
 ```
 Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
@@ -57,19 +57,33 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
       │ LTE/Starlink                          │ LTE/Starlink
       ▼                                       ▼
    ┌──────────────────────────────────────────────┐
-   │  Rails Backend (CoAP Listener + Sidekiq)     │
-   │  TelemetryUnpackerService                    │
-   │  AlertDispatchService                        │
-   │  InsightGeneratorService                     │
-   │  TokenomicsEvaluatorWorker                   │
+   │  Rails Backend (Akash Network / GCP)          │
+   │  CoAP Listener + Sidekiq (26 workers)         │
+   │                                                │
+   │  ┌── Verification ─────────────────────────┐  │
+   │  │ peaq DID → IoTeX ZK-proof → Chainlink   │  │
+   │  └─────────────────────────────────────────┘  │
+   │                                                │
+   │  ┌── Data Streams ─────────────────────────┐  │
+   │  │ Streamr (P2P real-time forest pulse)     │  │
+   │  └─────────────────────────────────────────┘  │
    └──────────────────┬───────────────────────────┘
-                      │ Eth RPC
-                      ▼
-   ┌──────────────────────────────────────────────┐
-   │  Polygon Blockchain                          │
-   │  SilkenCarbonCoin.sol (mint / slash)          │
-   │  SilkenForestCoin.sol (governance)            │
-   └──────────────────────────────────────────────┘
+                      │ Multi-RPC
+       ┌──────────────┼──────────────────────────┐
+       ▼              ▼                          ▼
+   ┌────────┐   ┌──────────┐            ┌──────────┐
+   │Polygon │   │  Solana  │            │   Celo   │
+   │SCC/SFC │   │  micro-  │            │  cUSD    │
+   │Hadron  │   │  rewards │            │  ReFi    │
+   │Chainlnk│   └──────────┘            └──────────┘
+   └───┬────┘
+       │
+   ┌───┴────────────────────────────────────────────┐
+   │  The Graph (subgraph indexing)                  │
+   │  KlimaDAO (ESG carbon retirement)              │
+   │  Filecoin/IPFS (immutable archive)             │
+   │  Ethereum L1 (weekly state root finality)      │
+   └────────────────────────────────────────────────┘
 ```
 
 ## Nature-as-a-Service (NaaS) Business Model
@@ -94,28 +108,32 @@ Unlike Proof of Work (energy waste) or Proof of Stake (capital concentration), P
 
 ## Titan's Roadmap
 
-### Phase 1: Cherkasy Forest Pilot (2026)
+### Phase 1: Cherkasy Forest Pilot (2026) — Genesis
 
 - Deploy first cluster of 50 Soldier nodes in Cherkasy pine forest
 - Validate energy harvesting at 44mV bio-potential
 - First SCC minting on Polygon testnet
 - Iterate on S-NET Anchor design (CODIT compatibility)
+- **Gaia 2.0:** peaq DID registration, IoTeX ZK-proof verification, Streamr P2P broadcast
 
-### Phase 2: Regional Expansion (2027-2028)
+### Phase 2: Regional Expansion (2027-2028) — The Cyber-Physical State
 
 - Scale to 10+ clusters across Ukrainian forests
-- Mainnet deployment on Polygon
-- First NaaS contracts with corporate investors
-- SFC governance token launch
+- Mainnet deployment: Polygon + Ethereum L1 anchoring
+- First NaaS contracts with corporate investors (Hadron KYC/KYB)
+- SFC governance token launch + DAO voting
 - Mobile app for foresters (React Native)
+- **Gaia 2.0:** Solana micro-rewards live, Celo ReFi communities, KlimaDAO ESG retirement, The Graph indexing, Filecoin permanent archive
+- **Akash Network** decentralized cloud deployment
 
-### Phase 3: Global Deployment (2029-2030)
+### Phase 3: Global Deployment (2029-2030) — Planetary Scale
 
 - International forest partnerships
 - Multi-species TreeFamily calibration database
 - Satellite backhaul integration (Starlink)
 - DAO governance via SFC voting
 - Target: 1 million monitored trees
+- **Gaia 2.0 at scale:** Full 12-chain operation, billions of ZK-proofs, planetary carbon dashboard via The Graph
 
 ## Market Opportunity
 
