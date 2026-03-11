@@ -48,10 +48,20 @@ class MintCarbonCoinWorker
           # поточний EMISSION_THRESHOLD, який міг змінитись між створенням та ролбеком.
           refund_points = tx.locked_points || (tx.amount * TokenomicsEvaluatorWorker::EMISSION_THRESHOLD).to_i
 
-          tx.wallet.increment!(:balance, refund_points)
+          # [FIX]: lock_and_mint! блокує кошти через increment!(:locked_balance),
+          # НЕ змінюючи balance. Правильний rollback — зняти блокування через
+          # release_locked_funds!, а не inflate balance через increment!(:balance).
+          if tx.wallet.locked_balance >= refund_points
+            tx.wallet.release_locked_funds!(refund_points)
+          else
+            # Захисний fallback: якщо locked_balance вже частково розблоковано
+            # (наприклад, іншим процесом), звільняємо скільки можемо.
+            tx.wallet.release_locked_funds!(tx.wallet.locked_balance) if tx.wallet.locked_balance > 0
+          end
+
           tx.update!(
             status: :failed,
-            notes: "Rollback: Постійний збій RPC. Повернено #{refund_points} балів на баланс DID: #{tx.wallet.tree.did}"
+            notes: "Rollback: Постійний збій RPC. Розблоковано #{refund_points} балів для DID: #{tx.wallet.tree.did}"
           )
         end
       end

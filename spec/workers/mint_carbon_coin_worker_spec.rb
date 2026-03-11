@@ -15,13 +15,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
   describe "#perform with telemetry_log_id (oracle-driven flow)" do
     let!(:telemetry_log) do
-      create(:telemetry_log,
-        tree: tree,
-        verified_by_iotex: true,
-        zk_proof_ref: "zk-proof-abc123",
-        chainlink_request_id: "chainlink-req-test123",
-        oracle_status: "fulfilled"
-      )
+      create(:telemetry_log, :verified_telemetry, tree: tree)
     end
 
     let!(:tx1) { create(:blockchain_transaction, wallet: wallet, status: :pending) }
@@ -94,12 +88,9 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
   end
 
   describe ".sidekiq_retries_exhausted" do
-    it "rolls back locked points on permanent failure (oracle-driven flow)" do
-      telemetry_log = create(:telemetry_log,
-        tree: tree,
-        verified_by_iotex: true,
-        oracle_status: "fulfilled"
-      )
+    it "releases locked points on permanent failure (oracle-driven flow)" do
+      telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
                                            locked_points: 10_000)
       original_balance = wallet.balance
@@ -117,18 +108,18 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       wallet.reload
       expect(tx.status).to eq("failed")
       expect(tx.notes).to include("Rollback")
-      expect(wallet.balance).to eq(original_balance + 10_000)
+      # [FIX]: Balance stays the same — lock_and_mint! only changes locked_balance, not balance.
+      # The rollback should release locked funds, not inflate balance.
+      expect(wallet.balance).to eq(original_balance)
+      expect(wallet.locked_balance).to eq(0)
     end
 
     it "skips transactions that are already confirmed" do
-      telemetry_log = create(:telemetry_log,
-        tree: tree,
-        verified_by_iotex: true,
-        oracle_status: "fulfilled"
-      )
+      telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
       tx = create(:blockchain_transaction, wallet: wallet, status: :confirmed,
                                            tx_hash: SecureRandom.hex(32))
       original_balance = wallet.balance
+      original_locked = wallet.locked_balance
 
       allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
@@ -141,6 +132,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
       wallet.reload
       expect(wallet.balance).to eq(original_balance)
+      expect(wallet.locked_balance).to eq(original_locked)
     end
   end
 end

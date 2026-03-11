@@ -196,13 +196,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     end
 
     let!(:telemetry_log) do
-      create(:telemetry_log,
-        tree: tree,
-        verified_by_iotex: true,
-        zk_proof_ref: "zk-proof-flow-test",
-        chainlink_request_id: "chainlink-req-flow-test",
-        oracle_status: "fulfilled"
-      )
+      create(:telemetry_log, :verified_telemetry, tree: tree)
     end
 
     before do
@@ -335,6 +329,116 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       expect {
         BlockchainConfirmationWorker.new.perform("0xunknown_hash")
       }.not_to raise_error
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # End-to-end Trustless Minting Flow
+  # ---------------------------------------------------------------------------
+  describe "End-to-end trustless minting flow" do
+    let(:mock_client) { instance_double(Eth::Client) }
+    let(:mock_key) { instance_double(Eth::Key, address: "0xOracle") }
+
+    before do
+      allow(Eth::Client).to receive(:create).and_return(mock_client)
+      allow(Eth::Key).to receive(:new).and_return(mock_key)
+      allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: "0xtrustless_tx")
+      allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
+      allow(BlockchainConfirmationWorker).to receive(:perform_in)
+    end
+
+    it "mints only when both IoTeX and Chainlink verifications pass" do
+      # 1. Створюємо pending транзакцію (як від TokenomicsEvaluatorWorker)
+      pending_tx = create(:blockchain_transaction,
+        wallet: wallet, status: :pending, amount: 1.0,
+        token_type: :carbon_coin, to_address: organization.crypto_public_address,
+        locked_points: 10_000)
+
+      # 2. Створюємо верифіковану телеметрію (як після IoTeX + Chainlink)
+      telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+
+      # 3. Виконуємо мінтинг через trustless flow
+      BlockchainMintingService.call(pending_tx.id, telemetry_log: telemetry_log)
+
+      pending_tx.reload
+      expect(pending_tx.status).to eq("sent")
+      expect(pending_tx.tx_hash).to eq("0xtrustless_tx")
+      # Перевіряємо аудит-зв'язок з децентралізованими доказами
+      expect(pending_tx.chainlink_request_id).to eq(telemetry_log.chainlink_request_id)
+      expect(pending_tx.zk_proof_ref).to eq(telemetry_log.zk_proof_ref)
+    end
+
+    it "rejects minting when IoTeX verification is missing" do
+      pending_tx = create(:blockchain_transaction,
+        wallet: wallet, status: :pending, amount: 1.0,
+        token_type: :carbon_coin, to_address: organization.crypto_public_address)
+
+      unverified_log = create(:telemetry_log, tree: tree,
+        verified_by_iotex: false, oracle_status: "fulfilled")
+
+      expect {
+        BlockchainMintingService.call(pending_tx.id, telemetry_log: unverified_log)
+      }.to raise_error(RuntimeError, /Data not verified by IoTeX/)
+
+      pending_tx.reload
+      expect(pending_tx.status).not_to eq("sent")
+    end
+
+    it "rejects minting when Chainlink Oracle consensus is missing" do
+      pending_tx = create(:blockchain_transaction,
+        wallet: wallet, status: :pending, amount: 1.0,
+        token_type: :carbon_coin, to_address: organization.crypto_public_address)
+
+      dispatched_log = create(:telemetry_log, tree: tree,
+        verified_by_iotex: true, oracle_status: "dispatched")
+
+      expect {
+        BlockchainMintingService.call(pending_tx.id, telemetry_log: dispatched_log)
+      }.to raise_error(RuntimeError, /Chainlink Oracle consensus not fulfilled/)
+    end
+
+    it "allows minting without telemetry_log (legacy batch flow)" do
+      # TokenomicsEvaluatorWorker і InsurancePayoutWorker не передають telemetry_log —
+      # guard clauses не активуються, мінтинг працює як раніше.
+      pending_tx = create(:blockchain_transaction,
+        wallet: wallet, status: :pending, amount: 1.0,
+        token_type: :carbon_coin, to_address: organization.crypto_public_address)
+
+      BlockchainMintingService.call(pending_tx.id)
+
+      pending_tx.reload
+      expect(pending_tx.status).to eq("sent")
+      expect(pending_tx.chainlink_request_id).to be_nil
+      expect(pending_tx.zk_proof_ref).to be_nil
+    end
+
+    it "correctly releases locked_balance on retries_exhausted rollback" do
+      # Створюємо стан після lock_and_mint!: balance=20000, locked_balance=10000
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+
+      pending_tx = create(:blockchain_transaction,
+        wallet: wallet, status: :pending, amount: 1.0,
+        token_type: :carbon_coin, to_address: organization.crypto_public_address,
+        locked_points: 10_000)
+
+      telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+
+      job = {
+        "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
+        "error_message" => "All 5 retries exhausted"
+      }
+
+      MintCarbonCoinWorker.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+
+      wallet.reload
+      pending_tx.reload
+
+      # Balance НЕ змінюється — lock_and_mint! не змінює balance
+      expect(wallet.balance).to eq(20_000)
+      # locked_balance повертається до 0 — блокування знято
+      expect(wallet.locked_balance).to eq(0)
+      expect(wallet.available_balance).to eq(20_000)
+      expect(pending_tx.status).to eq("failed")
     end
   end
 end
