@@ -8,7 +8,8 @@ RSpec.describe SolanaMicroRewardWorker, type: :worker do
   let(:tree) { create(:tree, cluster: cluster) }
 
   before do
-    allow(Solana::MintingService).to receive_message_chain(:new, :mint_micro_reward!)
+    mock_service = instance_double(Solana::MintingService, mint_micro_reward!: nil)
+    allow(Solana::MintingService).to receive(:new).and_return(mock_service)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
   end
 

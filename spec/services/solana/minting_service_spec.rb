@@ -18,7 +18,7 @@ RSpec.describe Solana::MintingService do
   end
 
   describe "#mint_micro_reward!" do
-    context "trustless guard clauses" do
+    context "when validating trustless guard clauses" do
       it "raises when telemetry_log is not verified by IoTeX" do
         log = create(:telemetry_log, tree: tree, verified_by_iotex: false, oracle_status: "fulfilled")
 
