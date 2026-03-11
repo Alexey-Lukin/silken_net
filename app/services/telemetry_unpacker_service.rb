@@ -168,6 +168,10 @@ class TelemetryUnpackerService
 
       # [IoTeX W3bstream]: Відправляємо телеметрію на ZK-верифікацію
       IotexVerificationWorker.perform_async(log.id_value, log.created_at.iso8601(6))
+
+      # [Streamr]: Транслюємо сиру телеметрію в P2P-мережу для «прямого ефіру» лісу.
+      # Працює паралельно з IoTeX — Streamr для присутності, IoTeX для фінансового консенсусу.
+      StreamrBroadcastWorker.perform_async(log.id_value, log.created_at.iso8601(6))
     end
   end
 

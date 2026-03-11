@@ -28,6 +28,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     allow(AlertDispatchService).to receive(:analyze_and_trigger!)
     allow(SilkenNet::Attractor).to receive(:calculate_z).and_return(0.5)
     allow(IotexVerificationWorker).to receive(:perform_async)
+    allow(StreamrBroadcastWorker).to receive(:perform_async)
   end
 
   it "returns early when binary_batch is blank" do
@@ -96,6 +97,14 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     described_class.call(chunk)
 
     expect(IotexVerificationWorker).to have_received(:perform_async).with(an_instance_of(Integer), an_instance_of(String))
+  end
+
+  it "triggers StreamrBroadcastWorker after telemetry commit" do
+    chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+    described_class.call(chunk)
+
+    expect(StreamrBroadcastWorker).to have_received(:perform_async).with(an_instance_of(Integer), an_instance_of(String))
   end
 
   describe "queen health routing" do
