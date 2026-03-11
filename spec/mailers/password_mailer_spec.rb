@@ -4,12 +4,13 @@ require "rails_helper"
 
 RSpec.describe PasswordMailer, type: :mailer do
   describe "#reset_instructions" do
-    let(:user) { create(:user) }
-
     subject(:mail) { described_class.with(user: user).reset_instructions }
 
+    let(:user) { create(:user) }
+
+
     it "sends to the user email address" do
-      expect(mail.to).to eq([user.email_address])
+      expect(mail.to).to eq([ user.email_address ])
     end
 
     it "includes the reset password subject" do

@@ -45,7 +45,7 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     end
   end
 
-  context "format.html responses" do
+  context "with format.html responses" do
     let(:html_headers) do
       { "Authorization" => "Bearer #{admin_token}", "Accept" => "text/html" }
     end

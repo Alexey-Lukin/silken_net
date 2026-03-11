@@ -62,7 +62,7 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     end
   end
 
-  context "format.html responses" do
+  context "with format.html responses" do
     let(:admin) { create(:user, :admin, organization: organization) }
     let(:html_headers) do
       { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}", "Accept" => "text/html" }

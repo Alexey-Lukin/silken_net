@@ -19,10 +19,10 @@ RSpec.describe CoapClient do
         # Version 1, Type 2 (ACK), TKL 0 → first byte = 0x60
         # Code = 2.05 → class 2 (0b010), detail 05 (0b00101) → 0x45
         message_id = 1
-        response_packet = [0x60, 0x45, message_id].pack("CCn") + "\xFF".b + "OK".b
+        response_packet = [ 0x60, 0x45, message_id ].pack("CCn") + "\xFF".b + "OK".b
 
-        allow(IO).to receive(:select).and_return([[mock_socket]])
-        allow(mock_socket).to receive(:recvfrom).and_return([response_packet, nil])
+        allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
+        allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
 
         # We need to control the random message_id
         allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
@@ -48,10 +48,10 @@ RSpec.describe CoapClient do
       it "raises ClientError" do
         message_id = 1
         # Code 4.04 (Not Found): class 4 = 0b100, detail 04 = 0b00100 → 0x84
-        response_packet = [0x60, 0x84, message_id].pack("CCn")
+        response_packet = [ 0x60, 0x84, message_id ].pack("CCn")
 
-        allow(IO).to receive(:select).and_return([[mock_socket]])
-        allow(mock_socket).to receive(:recvfrom).and_return([response_packet, nil])
+        allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
+        allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
         allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
 
         expect {
@@ -64,10 +64,10 @@ RSpec.describe CoapClient do
       it "raises ServerError" do
         message_id = 1
         # Code 5.00 (Internal Server Error): class 5 = 0b101, detail 00 → 0xA0
-        response_packet = [0x60, 0xA0, message_id].pack("CCn")
+        response_packet = [ 0x60, 0xA0, message_id ].pack("CCn")
 
-        allow(IO).to receive(:select).and_return([[mock_socket]])
-        allow(mock_socket).to receive(:recvfrom).and_return([response_packet, nil])
+        allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
+        allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
         allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
 
         expect {
@@ -80,10 +80,10 @@ RSpec.describe CoapClient do
       it "raises NetworkError" do
         message_id = 1
         wrong_message_id = 2
-        response_packet = [0x60, 0x45, wrong_message_id].pack("CCn")
+        response_packet = [ 0x60, 0x45, wrong_message_id ].pack("CCn")
 
-        allow(IO).to receive(:select).and_return([[mock_socket]])
-        allow(mock_socket).to receive(:recvfrom).and_return([response_packet, nil])
+        allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
+        allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
         allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
 
         expect {
@@ -95,10 +95,10 @@ RSpec.describe CoapClient do
     context "when URL has query parameters" do
       it "encodes URI query options in the packet" do
         message_id = 1
-        response_packet = [0x60, 0x45, message_id].pack("CCn") + "\xFF".b + "OK".b
+        response_packet = [ 0x60, 0x45, message_id ].pack("CCn") + "\xFF".b + "OK".b
 
-        allow(IO).to receive(:select).and_return([[mock_socket]])
-        allow(mock_socket).to receive(:recvfrom).and_return([response_packet, nil])
+        allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
+        allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
         allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
 
         result = described_class.put("coap://192.168.1.1/telemetry?key=value", "test")
@@ -110,10 +110,10 @@ RSpec.describe CoapClient do
       it "returns a Response with success? = false" do
         message_id = 1
         # Code class 3 (unknown), detail 0 → 0x60
-        response_packet = [0x60, 0x60, message_id].pack("CCn")
+        response_packet = [ 0x60, 0x60, message_id ].pack("CCn")
 
-        allow(IO).to receive(:select).and_return([[mock_socket]])
-        allow(mock_socket).to receive(:recvfrom).and_return([response_packet, nil])
+        allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
+        allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
         allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
 
         result = described_class.put("coap://192.168.1.1/telemetry", "test")

@@ -135,7 +135,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       expect(wallet.locked_balance).to eq(original_locked)
     end
 
-    context "auto-discovery flow (nil telemetry_log_id)" do
+    context "with auto-discovery flow (nil telemetry_log_id)" do
       it "finds all pending/processing transactions when telemetry_log_id is nil" do
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000)
         wallet.update!(locked_balance: 5_000)
@@ -152,7 +152,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       end
     end
 
-    context "partial locked_balance fallback" do
+    context "with partial locked_balance fallback" do
       it "releases only available locked_balance when it is less than refund_points" do
         telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
         wallet.update!(balance: 20_000, locked_balance: 3_000)

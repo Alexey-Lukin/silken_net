@@ -43,7 +43,7 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
     end
   end
 
-  context "format.html responses" do
+  context "with format.html responses" do
     let(:html_headers) do
       { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
     end

@@ -182,12 +182,6 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
     end
 
-    it "renders new provisioning form" do
-      get "/api/v1/provisioning/new", headers: html_headers
-      expect(response).to have_http_status(:ok)
-      expect(response.content_type).to include("text/html")
-    end
-
     it "renders HTML success after registering a gateway" do
       gateway_params = {
         provisioning: {

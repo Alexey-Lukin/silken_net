@@ -169,9 +169,9 @@ RSpec.describe Cluster, type: :model do
 
   describe "normalizes :geojson_polygon" do
     it "deep-stringifies keys when given a Hash with symbol keys" do
-      polygon = { type: "Polygon", coordinates: [[[31.9, 49.4]]] }
+      polygon = { type: "Polygon", coordinates: [ [ [ 31.9, 49.4 ] ] ] }
       cluster = build(:cluster, geojson_polygon: polygon)
-      expect(cluster.geojson_polygon).to eq("type" => "Polygon", "coordinates" => [[[31.9, 49.4]]])
+      expect(cluster.geojson_polygon).to eq("type" => "Polygon", "coordinates" => [ [ [ 31.9, 49.4 ] ] ])
     end
 
     it "leaves non-Hash values unchanged" do

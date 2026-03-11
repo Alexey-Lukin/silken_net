@@ -105,8 +105,7 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
 
     context "when ActiveRecord::RecordNotFound is raised" do
       it "rescues RecordNotFound and logs a warning" do
-        allow(ParametricInsurance).to receive(:includes).and_return(ParametricInsurance)
-        allow(ParametricInsurance).to receive(:find_by).and_return(insurance)
+        allow(ParametricInsurance).to receive_messages(includes: ParametricInsurance, find_by: insurance)
         allow(insurance).to receive(:status_triggered?).and_return(true)
         allow(insurance).to receive(:lock!).and_raise(ActiveRecord::RecordNotFound)
 

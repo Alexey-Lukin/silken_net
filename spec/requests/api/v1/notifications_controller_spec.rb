@@ -57,7 +57,7 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     end
   end
 
-  context "format.html responses" do
+  context "with format.html responses" do
     let(:html_headers) do
       { "Authorization" => "Bearer #{user.generate_token_for(:api_access)}", "Accept" => "text/html" }
     end

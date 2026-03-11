@@ -49,7 +49,7 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     end
   end
 
-  context "format.html responses" do
+  context "with format.html responses" do
     let(:super_admin) { create(:user, :super_admin, organization: organization) }
     let(:html_headers) do
       { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}", "Accept" => "text/html" }
