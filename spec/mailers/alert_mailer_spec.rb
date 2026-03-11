@@ -10,7 +10,6 @@ RSpec.describe AlertMailer, type: :mailer do
     let(:cluster) { create(:cluster, organization: organization) }
     let(:alert) { create(:ews_alert, :fire, cluster: cluster) }
 
-
     it "sends to the organization billing email" do
       expect(mail.to).to eq([ "ops@forest.ua" ])
     end

@@ -8,7 +8,6 @@ RSpec.describe PasswordMailer, type: :mailer do
 
     let(:user) { create(:user) }
 
-
     it "sends to the user email address" do
       expect(mail.to).to eq([ user.email_address ])
     end
