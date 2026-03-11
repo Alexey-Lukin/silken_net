@@ -5,7 +5,8 @@ class AuditLogWorker
   sidekiq_options queue: "default", retry: 3
 
   def perform(attrs)
-    AuditLog.create!(attrs)
+    log = AuditLog.create!(attrs)
+    FilecoinArchiveWorker.perform_async(log.id)
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "🛑 [AuditLog] Невалідний запис: #{e.message}"
   end

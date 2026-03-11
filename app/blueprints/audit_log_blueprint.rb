@@ -10,7 +10,7 @@ class AuditLogBlueprint < Blueprinter::Base
 
   view :show do
     fields :action, :auditable_type, :auditable_id, :metadata,
-           :ip_address, :user_agent, :chain_hash, :created_at
+           :ip_address, :user_agent, :chain_hash, :ipfs_cid, :created_at
     association :user, blueprint: UserBlueprint, view: :profile
   end
 end

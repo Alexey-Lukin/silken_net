@@ -147,6 +147,28 @@ RSpec.describe AuditLog, type: :model do
         expect(described_class.for_period("", "")).to include(log)
       end
     end
+
+    describe ".archived" do
+      it "returns only logs with ipfs_cid" do
+        archived_log = create(:audit_log)
+        archived_log.update_column(:ipfs_cid, "QmTestCid")
+        unarchived_log = create(:audit_log)
+
+        expect(described_class.archived).to include(archived_log)
+        expect(described_class.archived).not_to include(unarchived_log)
+      end
+    end
+
+    describe ".not_archived" do
+      it "returns only logs without ipfs_cid" do
+        archived_log = create(:audit_log)
+        archived_log.update_column(:ipfs_cid, "QmTestCid")
+        unarchived_log = create(:audit_log)
+
+        expect(described_class.not_archived).to include(unarchived_log)
+        expect(described_class.not_archived).not_to include(archived_log)
+      end
+    end
   end
 
   # =========================================================================
