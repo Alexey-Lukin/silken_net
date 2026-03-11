@@ -48,12 +48,10 @@ module ApplicationWeb3Worker
   def with_web3_error_handling(chain_name, resource_info = nil)
     yield
   rescue Net::OpenTimeout, Net::ReadTimeout => e
-    context = resource_info ? " for #{resource_info}" : ""
-    Rails.logger.error "⏱️ [#{chain_name}] RPC Timeout#{context}: #{e.message}"
+    log_web3_error("⏱️", chain_name, "RPC Timeout", resource_info, e)
     raise
   rescue Errno::ECONNREFUSED, Errno::ECONNRESET, IOError => e
-    context = resource_info ? " for #{resource_info}" : ""
-    Rails.logger.error "🔌 [#{chain_name}] RPC Connection Error#{context}: #{e.message}"
+    log_web3_error("🔌", chain_name, "RPC Connection Error", resource_info, e)
     raise
   end
 
@@ -78,5 +76,12 @@ module ApplicationWeb3Worker
     log = scope.first
     Rails.logger.error "🛑 #{log_prefix} TelemetryLog ##{telemetry_log_id} не знайдено." unless log
     log
+  end
+
+  private
+
+  def log_web3_error(icon, chain_name, error_type, resource_info, exception)
+    context = resource_info ? " for #{resource_info}" : ""
+    Rails.logger.error "#{icon} [#{chain_name}] #{error_type}#{context}: #{exception.message}"
   end
 end

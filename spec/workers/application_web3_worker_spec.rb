@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe ApplicationWeb3Worker do
-  # Тестовий воркер, який використовує ApplicationWeb3Worker
+  # Test worker class that includes ApplicationWeb3Worker for isolated testing
   let(:test_worker_class) do
     Class.new do
       include ApplicationWeb3Worker

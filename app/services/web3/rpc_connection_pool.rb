@@ -34,8 +34,9 @@ module Web3
       # Скидає всі кешовані клієнти в поточному потоці.
       # Використовується при зміні RPC URL або в тестах.
       def reset!
+        prefix = THREAD_KEY_PREFIX.to_s
         Thread.current.keys.each do |key|
-          Thread.current[key] = nil if key.to_s.start_with?(THREAD_KEY_PREFIX.to_s)
+          Thread.current[key] = nil if key.to_s.start_with?(prefix)
         end
       end
     end
