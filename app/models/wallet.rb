@@ -120,11 +120,10 @@ class Wallet < ApplicationRecord
 
     return unless tx
 
-    # 5. ЗАПУСК WEB3-КОНВЕЄРА (Polygon Network)
-    # [ВИПРАВЛЕНО]: Воркер запускається ПІСЛЯ завершення транзакції (COMMIT),
-    # щоб уникнути ситуації, коли Redis обробить завдання раніше, ніж БД закриє транзакцію.
-    MintCarbonCoinWorker.perform_async(tx.id)
-
+    # 5. ЛОГУВАННЯ ТА ОНОВЛЕННЯ UI
+    # [TRUSTLESS]: MintCarbonCoinWorker тепер працює з telemetry_log_id (oracle-driven flow).
+    # Фактичний мінтинг запускається через OracleCallbacksController після верифікації
+    # IoTeX + Chainlink, або через TokenomicsEvaluatorWorker → BlockchainMintingService.call_batch.
     Rails.logger.info "💎 [Wallet] Створено запит на мінтинг #{tx.amount} #{token_type} для #{target_address}."
 
     broadcast_balance_update

@@ -12,13 +12,23 @@ class MintCarbonCoinWorker
   # Викликається, коли всі 5 спроб RPC-зв'язку (відправки в мемпул) вичерпано.
   # Ми не можемо дозволити капіталу "зависнути" в ефірі.
   sidekiq_retries_exhausted do |msg, _ex|
-    # Якщо ми працювали з батчем, дістаємо масив ID, якщо з одиничною — ID.
-    tx_ids = msg["args"].flatten.compact
-    txs = BlockchainTransaction.where(id: tx_ids)
+    telemetry_log_id = msg["args"].first
+
+    if telemetry_log_id
+      # Oracle-driven flow: знаходимо TelemetryLog та пов'язані транзакції
+      log = TelemetryLog.find_by(id: telemetry_log_id)
+      next unless log
+
+      wallet = log.tree&.wallet
+      next unless wallet
+
+      txs = wallet.blockchain_transactions.where(status: [ :pending, :processing ])
+    else
+      # Auto-discovery flow: знаходимо всі заблоковані транзакції
+      txs = BlockchainTransaction.where(status: [ :pending, :processing ]).limit(1000)
+    end
 
     txs.each do |tx|
-      next unless tx.status_pending? || tx.status_processing?
-
       Rails.logger.fatal "☠️ [Web3] Капітуляція транзакції ##{tx.id}. Запуск протоколу повернення активів..."
 
       ActiveRecord::Base.transaction do
@@ -42,25 +52,53 @@ class MintCarbonCoinWorker
     end
   end
 
-  # [ОПТИМІЗАЦІЯ]: Тепер perform може приймати як один ID, так і масив,
-  # або взагалі нічого (тоді він забере всі pending транзакції).
-  def perform(blockchain_transaction_ids = nil)
-    # 1. ЗБІР РОБОТИ (The Harvest)
-    # Якщо ID не передані, беремо чергу pending транзакцій (ліміт 1000 для стабільності пам'яті)
-    tx_ids = Array(blockchain_transaction_ids).presence ||
-             BlockchainTransaction.status_pending.limit(1000).pluck(:id)
-
-    return if tx_ids.empty?
-
-    # 2. [SLICING]: ДРОБОВИК ДЛЯ ГАЗУ (Gas Limit optimization)
-    # Розбиваємо масив на групи по 200 вузлів. Це гарантує, що ми не
-    # перевищимо Gas Limit блоку Polygon при виклику batchMint.
-    tx_ids.each_slice(200) do |batch|
-      process_batch(batch)
+  # [TRUSTLESS]: perform тепер приймає telemetry_log_id як основний аргумент
+  # для oracle-driven flow (OracleCallbacksController передає log.id_value).
+  # Без аргументів — auto-discovery pending транзакцій (fallback/cron).
+  def perform(telemetry_log_id = nil)
+    if telemetry_log_id
+      process_telemetry_log(telemetry_log_id)
+    else
+      process_pending_transactions
     end
   end
 
   private
+
+  # [TRUSTLESS]: Oracle-driven мінтинг — знаходимо верифіковану телеметрію
+  # та запускаємо мінтинг для pending транзакцій пов'язаного гаманця.
+  def process_telemetry_log(telemetry_log_id)
+    log = TelemetryLog.find(telemetry_log_id)
+
+    wallet = log.tree.wallet
+    return unless wallet
+
+    tx_ids = wallet.blockchain_transactions.status_pending.pluck(:id)
+    return if tx_ids.empty?
+
+    Rails.logger.info "🔐 [Web3] Trustless мінтинг для TelemetryLog ##{telemetry_log_id}: #{tx_ids.size} транзакцій..."
+
+    tx_ids.each_slice(200) do |batch|
+      BlockchainMintingService.call_batch(batch, telemetry_log: log)
+    end
+
+  rescue ActiveRecord::RecordNotFound
+    Rails.logger.error "🛑 [Web3] TelemetryLog ##{telemetry_log_id} не знайдено."
+  rescue StandardError => e
+    Rails.logger.error "🚨 [Web3] Oracle-driven mint error для TelemetryLog ##{telemetry_log_id}: #{e.message}"
+    raise e
+  end
+
+  # [FALLBACK]: Auto-discovery pending транзакцій (cron або ручний запуск).
+  # Працює без telemetry_log — для існуючого TokenomicsEvaluatorWorker flow.
+  def process_pending_transactions
+    tx_ids = BlockchainTransaction.status_pending.limit(1000).pluck(:id)
+    return if tx_ids.empty?
+
+    tx_ids.each_slice(200) do |batch|
+      process_batch(batch)
+    end
+  end
 
   def process_batch(batch_ids)
     # [Idempotency & Race Condition Guard]

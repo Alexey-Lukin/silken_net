@@ -393,7 +393,9 @@ CREATE TABLE public.blockchain_transactions (
     block_number bigint,
     nonce integer,
     sent_at timestamp(6) without time zone,
-    confirmed_at timestamp(6) without time zone
+    confirmed_at timestamp(6) without time zone,
+    chainlink_request_id character varying,
+    zk_proof_ref character varying
 );
 
 
@@ -2477,6 +2479,13 @@ CREATE INDEX index_blockchain_transactions_on_block_number ON public.blockchain_
 
 
 --
+-- Name: index_blockchain_transactions_on_chainlink_request_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_chainlink_request_id ON public.blockchain_transactions USING btree (chainlink_request_id);
+
+
+--
 -- Name: index_blockchain_transactions_on_cluster_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4086,6 +4095,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260311062121'),
 ('20260310180000'),
 ('20260310170000'),
 ('20260310160000'),
