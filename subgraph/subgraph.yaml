@@ -1,0 +1,28 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: SilkenCarbonCoin
+    network: polygon-amoy
+    source:
+      # TODO: Замінити на реальну адресу контракту SilkenCarbonCoin після деплою на polygon-amoy
+      address: "0x0000000000000000000000000000000000000000"
+      abi: SilkenCarbonCoin
+      # TODO: Встановити номер блоку деплою контракту для оптимізації індексації
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - CarbonMintEvent
+      abis:
+        - name: SilkenCarbonCoin
+          file: ./abis/SilkenCarbonCoin.json
+      eventHandlers:
+        - event: CarbonMinted(indexed address,uint256,indexed string)
+          handler: handleCarbonMinted
+      file: ./src/mapping.ts

@@ -68,3 +68,8 @@ terraform/akash/akash-dseq.txt
 # Firmware test binaries (host-based, compiled with gcc)
 firmware/test/test_queen
 firmware/test/test_soldier
+
+# Subgraph build artifacts (The Graph)
+subgraph/build/
+subgraph/generated/
+subgraph/node_modules/

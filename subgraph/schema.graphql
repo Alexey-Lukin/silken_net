@@ -1,0 +1,9 @@
+type CarbonMintEvent @entity {
+  id: ID!
+  to: Bytes!
+  amount: BigInt!
+  treeDid: String!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
