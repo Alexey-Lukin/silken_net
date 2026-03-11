@@ -31,4 +31,27 @@ RSpec.describe OrganizationPolicy do
       expect(described_class.new(super_admin, organization).show?).to be true
     end
   end
+
+  describe "Scope#resolve" do
+    let!(:org1) { organization }
+    let(:other_org) { create(:organization) }
+    let!(:org2) { other_org }
+
+    it "returns all orgs for super_admin" do
+      scope = described_class::Scope.new(super_admin, Organization).resolve
+      expect(scope).to include(org1, org2)
+    end
+
+    it "scopes to own org for non-super_admin" do
+      scope = described_class::Scope.new(investor, Organization).resolve
+      expect(scope).to include(org1)
+      expect(scope).not_to include(org2)
+    end
+
+    it "scopes to own org for admin" do
+      scope = described_class::Scope.new(admin, Organization).resolve
+      expect(scope).to include(org1)
+      expect(scope).not_to include(org2)
+    end
+  end
 end

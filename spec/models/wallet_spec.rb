@@ -171,4 +171,122 @@ RSpec.describe Wallet, type: :model do
       expect(wallet.errors[:locked_balance]).to include("must be greater than or equal to 0")
     end
   end
+
+  describe "#lock_and_mint! edge cases" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:tree) { create(:tree, cluster: cluster, status: :active) }
+    let(:wallet) { tree.wallet }
+
+    before do
+      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+      wallet.update!(balance: 10_000)
+      allow(MintCarbonCoinWorker).to receive(:perform_async)
+    end
+
+    it "raises when tree is not active" do
+      tree.update_column(:status, Tree.statuses[:deceased])
+      tree.reload
+
+      expect {
+        wallet.lock_and_mint!(1000, 100)
+      }.to raise_error(RuntimeError, /не активне/)
+    end
+
+    it "returns nil when threshold is zero" do
+      result = wallet.lock_and_mint!(1000, 0)
+      expect(result).to be_nil
+    end
+
+    it "returns nil when threshold is negative" do
+      result = wallet.lock_and_mint!(1000, -5)
+      expect(result).to be_nil
+    end
+
+    it "uses org crypto address when wallet has no crypto_public_address" do
+      wallet.update!(crypto_public_address: nil)
+
+      tx = wallet.lock_and_mint!(1000, 100)
+      expect(tx).to be_present
+      expect(tx.to_address).to eq(organization.crypto_public_address)
+    end
+
+    it "raises when neither wallet nor org have crypto address" do
+      wallet.update!(crypto_public_address: nil)
+      organization.update_column(:crypto_public_address, nil)
+
+      expect {
+        wallet.lock_and_mint!(1000, 100)
+      }.to raise_error(RuntimeError, /крипто-адреса/)
+    end
+
+    it "raises when available balance is insufficient" do
+      wallet.update!(balance: 50, locked_balance: 0)
+
+      expect {
+        wallet.lock_and_mint!(1000, 100)
+      }.to raise_error(RuntimeError, /Недостатньо балів/)
+    end
+
+    it "returns nil when tokens_to_mint is zero" do
+      result = wallet.lock_and_mint!(50, 100)
+      expect(result).to be_nil
+    end
+
+    it "creates blockchain transaction and enqueues worker on success" do
+      tx = wallet.lock_and_mint!(1000, 100)
+
+      expect(tx).to be_present
+      expect(tx.amount).to eq(10)
+      expect(tx.status).to eq("pending")
+      expect(tx.locked_points).to eq(1000)
+      expect(MintCarbonCoinWorker).to have_received(:perform_async).with(tx.id)
+    end
+  end
+
+  describe "Wallet branch coverage" do
+    let(:organization_bc) { create(:organization) }
+    let(:cluster_bc) { create(:cluster, organization: organization_bc) }
+    let(:tree_bc) { create(:tree, cluster: cluster_bc) }
+    let(:wallet_bc) { tree_bc.wallet }
+
+    before do
+      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+      allow(MintCarbonCoinWorker).to receive(:perform_async)
+    end
+
+    describe "organization&.crypto_public_address when organization is nil" do
+      it "raises when both wallet and organization addresses are blank" do
+        wallet_bc.update_columns(crypto_public_address: nil, organization_id: nil)
+        wallet_bc.reload
+
+        expect {
+          wallet_bc.lock_and_mint!(10_000, 10_000)
+        }.to raise_error(RuntimeError, /крипто-адреса/)
+      end
+    end
+
+    describe "return unless tx — tokens_to_mint zero" do
+      it "returns nil when tokens_to_mint is zero" do
+        wallet_bc.update_columns(balance: 5000)
+        wallet_bc.reload
+
+        result = wallet_bc.lock_and_mint!(5000, 10_000)
+        expect(result).to be_nil
+        expect(MintCarbonCoinWorker).not_to have_received(:perform_async)
+      end
+    end
+
+    describe "lock_and_mint! success path" do
+      it "creates transaction and enqueues worker" do
+        wallet_bc.update_columns(balance: 20_000)
+        wallet_bc.reload
+
+        tx = wallet_bc.lock_and_mint!(20_000, 10_000)
+        expect(tx).to be_persisted
+        expect(tx.amount).to eq(2)
+        expect(MintCarbonCoinWorker).to have_received(:perform_async).with(tx.id)
+      end
+    end
+  end
 end

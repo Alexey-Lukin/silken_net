@@ -394,4 +394,91 @@ RSpec.describe NaasContract, type: :model do
       expect(contract.errors[:end_date]).to be_present
     end
   end
+
+  describe "#calculate_prorated_refund when total_days is zero" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "returns 0 when start_date equals end_date" do
+      contract = create(:naas_contract,
+        organization: organization,
+        cluster: cluster,
+        status: :active,
+        start_date: Date.current,
+        end_date: Date.current
+      )
+      contract.update_columns(start_date: Date.current, end_date: Date.current)
+
+      expect(contract.calculate_prorated_refund).to eq(BigDecimal("0"))
+    end
+  end
+
+  describe "#active_threats?" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "returns false when cluster is nil" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster)
+      allow(contract).to receive(:cluster).and_return(nil)
+
+      expect(contract.active_threats?).to be false
+    end
+
+    it "returns false when no active alerts" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster)
+      expect(contract.active_threats?).to be false
+    end
+
+    it "returns true when cluster has unresolved alerts (not eager-loaded)" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster)
+      create(:ews_alert, cluster: cluster, status: :active)
+
+      expect(contract.active_threats?).to be true
+    end
+
+    it "returns true when cluster has eager-loaded active alerts" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster)
+      create(:ews_alert, cluster: cluster, status: :active)
+
+      loaded_cluster = Cluster.includes(:ews_alerts).find(cluster.id)
+      allow(contract).to receive(:cluster).and_return(loaded_cluster)
+
+      expect(contract.active_threats?).to be true
+    end
+
+    it "returns false when cluster has eager-loaded but resolved alerts" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster)
+      create(:ews_alert, cluster: cluster, status: :resolved)
+
+      loaded_cluster = Cluster.includes(:ews_alerts).find(cluster.id)
+      allow(contract).to receive(:cluster).and_return(loaded_cluster)
+
+      expect(contract.active_threats?).to be false
+    end
+  end
+
+  describe "activate_slashing_protocol! error handling" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "handles error during update! and does not enqueue worker" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
+
+      allow(contract).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(contract))
+
+      contract.send(:activate_slashing_protocol!)
+
+      expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
+      expect(contract.reload).to be_status_active
+    end
+
+    it "enqueues worker when slashing succeeds" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
+
+      contract.send(:activate_slashing_protocol!)
+
+      expect(contract.reload).to be_status_breached
+      expect(BurnCarbonTokensWorker.jobs.size).to eq(1)
+    end
+  end
 end

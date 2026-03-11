@@ -167,4 +167,58 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
       expect(command.error_message).to include("Permanent failure")
     end
   end
+
+  describe "sidekiq_retries_exhausted when command is nil (not found)" do
+    it "does nothing when command not found" do
+      job = { "args" => [ -999 ], "error_message" => "some error" }
+      expect {
+        described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new("test"))
+      }.not_to raise_error
+    end
+  end
+
+  describe "sidekiq_retries_exhausted when command.update returns false" do
+    it "skips broadcast when update fails" do
+      allow(ActuatorCommand).to receive(:find_by).with(id: command.id).and_return(command)
+      allow(command).to receive(:update).and_return(false)
+
+      job = { "args" => [ command.id ], "error_message" => "some error" }
+      expect(described_class).not_to receive(:broadcast_command_state_static)
+      described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new("test"))
+    end
+  end
+
+  describe "broadcast_command_state_static when org is nil" do
+    it "returns nil when organization chain resolves to nil" do
+      command.update_columns(organization_id: nil)
+      command.reload
+
+      allow(command.actuator.gateway.cluster).to receive(:organization).and_return(nil)
+      result = described_class.broadcast_command_state_static(command)
+      expect(result).to be_nil
+    end
+  end
+
+  describe "perform — nil response from CoAP" do
+    it "raises when response is nil" do
+      allow(CoapClient).to receive(:put).and_return(nil)
+      allow(ResetActuatorStateWorker).to receive(:perform_in)
+
+      expect {
+        described_class.new.perform(command.id)
+      }.to raise_error(RuntimeError, /Королева відхилила/)
+    end
+  end
+
+  describe "perform — response with code but not success" do
+    it "raises with the response code in the message" do
+      response = double("response", success?: false, code: "5.00")
+      allow(CoapClient).to receive(:put).and_return(response)
+      allow(ResetActuatorStateWorker).to receive(:perform_in)
+
+      expect {
+        described_class.new.perform(command.id)
+      }.to raise_error(RuntimeError, /5\.00/)
+    end
+  end
 end

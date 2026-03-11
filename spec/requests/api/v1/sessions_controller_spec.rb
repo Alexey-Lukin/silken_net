@@ -52,4 +52,33 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
   end
+
+  describe "signed_in? helper" do
+    def json_headers
+      { "Accept" => "application/json" }
+    end
+
+    def auth_headers
+      json_headers.merge("Authorization" => "Bearer #{user.generate_token_for(:api_access)}")
+    end
+
+    it "returns true when user is authenticated" do
+      get "/api/v1/trees", headers: auth_headers
+      expect(response).not_to have_http_status(:unauthorized)
+    end
+
+    it "returns false when user is not authenticated" do
+      get "/api/v1/organizations", headers: json_headers
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
+  describe "#current_session" do
+    it "returns nil when current_user is nil" do
+      controller = described_class.new
+      allow(controller).to receive(:current_user).and_return(nil)
+      result = controller.send(:current_session)
+      expect(result).to be_nil
+    end
+  end
 end

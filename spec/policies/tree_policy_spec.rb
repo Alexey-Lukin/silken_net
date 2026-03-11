@@ -37,4 +37,30 @@ RSpec.describe TreePolicy do
       expect(scope).to include(own_tree, other_tree, clusterless_tree)
     end
   end
+
+  describe "#index?" do
+    let(:tree) { create(:tree, cluster: cluster) }
+    let(:forester) { create(:user, :forester, organization: organization) }
+    let(:admin) { create(:user, :admin, organization: organization) }
+
+    it "returns true for all users" do
+      expect(described_class.new(investor, tree).index?).to be true
+      expect(described_class.new(forester, tree).index?).to be true
+      expect(described_class.new(admin, tree).index?).to be true
+      expect(described_class.new(super_admin, tree).index?).to be true
+    end
+  end
+
+  describe "#show?" do
+    let(:tree) { create(:tree, cluster: cluster) }
+    let(:forester) { create(:user, :forester, organization: organization) }
+    let(:admin) { create(:user, :admin, organization: organization) }
+
+    it "returns true for all users" do
+      expect(described_class.new(investor, tree).show?).to be true
+      expect(described_class.new(forester, tree).show?).to be true
+      expect(described_class.new(admin, tree).show?).to be true
+      expect(described_class.new(super_admin, tree).show?).to be true
+    end
+  end
 end

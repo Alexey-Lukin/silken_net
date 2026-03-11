@@ -362,4 +362,100 @@ RSpec.describe EwsAlert, type: :model do
       expect(alert).to be_alert_type_fire_detected
     end
   end
+
+  describe "coordinates when tree is nil" do
+    let(:cluster_coord) { create(:cluster) }
+
+    it "falls back to cluster geo_center when tree is nil" do
+      alert = create(:ews_alert, cluster: cluster_coord, tree: nil)
+      allow(cluster_coord).to receive(:geo_center).and_return({ lat: 50.0, lng: 30.0 })
+      expect(alert.coordinates).to eq([ 50.0, 30.0 ])
+    end
+
+    it "falls back to [0, 0] when tree is nil and cluster has no geo_center" do
+      alert = create(:ews_alert, cluster: cluster_coord, tree: nil)
+      allow(cluster_coord).to receive(:geo_center).and_return(nil)
+      expect(alert.coordinates).to eq([ 0.0, 0.0 ])
+    end
+  end
+
+  describe "broadcast_status_change when status is NOT resolved" do
+    let(:cluster_bc) { create(:cluster) }
+
+    before do
+      allow_any_instance_of(described_class).to receive(:broadcast_status_change).and_call_original
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
+    end
+
+    it "replaces badge but does not broadcast remove_to" do
+      tree = create(:tree, cluster: cluster_bc)
+      allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
+      alert = create(:ews_alert, cluster: cluster_bc, tree: tree, status: :active)
+
+      alert.update!(status: :ignored)
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:once)
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_remove_to)
+          .with("ews_live_feed", hash_including(target: "alert_row_#{alert.id}"))
+    end
+  end
+
+  describe "broadcast_status_change when status IS resolved" do
+    let(:cluster_bc) { create(:cluster) }
+
+    before do
+      allow_any_instance_of(described_class).to receive(:broadcast_status_change).and_call_original
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
+    end
+
+    it "broadcasts both replace and remove" do
+      tree = create(:tree, cluster: cluster_bc)
+      allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
+      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
+
+      alert.update!(
+        status: :resolved,
+        resolved_at: Time.current,
+        resolution_notes: "Fixed"
+      )
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:once)
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_remove_to).at_least(:once)
+    end
+  end
+
+  describe "broadcast_alert_update — should_broadcast? throttle" do
+    let(:cluster_bc) { create(:cluster) }
+
+    it "skips broadcast when throttle cache exists" do
+      tree = create(:tree, cluster: cluster_bc)
+      allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
+      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
+
+      Rails.cache.write("ews_alert_broadcast_throttle:#{alert.id}", true, expires_in: 5.seconds)
+      expect(alert.send(:should_broadcast?)).to be false
+    end
+
+    it "broadcasts when throttle cache does not exist" do
+      tree = create(:tree, cluster: cluster_bc)
+      allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
+      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
+
+      Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
+      expect(alert.send(:should_broadcast?)).to be true
+    end
+  end
+
+  describe "should_broadcast? returns false then true" do
+    let(:cluster_bc) { create(:cluster) }
+
+    it "returns false on second call within throttle window" do
+      tree = create(:tree, cluster: cluster_bc)
+      alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
+
+      Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
+      expect(alert.send(:should_broadcast?)).to be true
+      expect(alert.send(:should_broadcast?)).to be false
+    end
+  end
 end

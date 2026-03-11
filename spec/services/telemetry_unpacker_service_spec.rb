@@ -146,4 +146,227 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       expect { described_class.call(chunk) }.not_to raise_error
     end
   end
+
+  describe "edge cases from coverage enhancement" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:gateway) { create(:gateway, :online, cluster: cluster) }
+
+    # Keyword-argument variant of build_chunk for coverage enhancement tests
+    def build_chunk_with_params(did_hex:, rssi: 65, voltage: 4200, temp: 22, acoustic: 5, metabolism: 120, status_byte: 0, ttl: 5, firmware_id: 0)
+      did_int = did_hex.to_i(16)
+      did_bytes = [ did_int ].pack("N")
+      rssi_byte = [ rssi ].pack("C")
+
+      growth_points = status_byte & 0x3F
+      combined_status = (status_byte << 6) | growth_points
+      pad = [ firmware_id ].pack("n") + "\x00\x00"
+
+      payload = [ did_int, voltage, temp, acoustic, metabolism, combined_status, ttl ].pack("N n c C n C C") + pad
+      did_bytes + rssi_byte + payload
+    end
+
+    before do
+      allow(GatewayTelemetryWorker).to receive(:perform_async)
+    end
+
+    describe "when gateway is nil (queen_uid branch)" do
+      it "processes chunks without gateway" do
+        hex_did = tree.did.gsub("SNET-", "")
+
+        chunk = build_chunk_with_params(did_hex: hex_did, voltage: 4200, temp: 22)
+        service = described_class.new(chunk, nil)
+
+        expect { service.perform }.not_to raise_error
+      end
+    end
+
+    describe "interpret_status else branch" do
+      it "handles unrecognized status codes gracefully" do
+        service = described_class.new("", nil)
+        result = service.send(:interpret_status, 0)
+        expect(result).to eq(:homeostasis)
+
+        result1 = service.send(:interpret_status, 1)
+        expect(result1).to eq(:stress)
+
+        result2 = service.send(:interpret_status, 2)
+        expect(result2).to eq(:anomaly)
+
+        result3 = service.send(:interpret_status, 3)
+        expect(result3).to eq(:tamper_detected)
+      end
+    end
+
+    describe "check_firmware_mismatch!" do
+      let!(:active_firmware) { create(:bio_contract_firmware, :active, target_hardware_type: "Tree") }
+
+      it "skips when reported_firmware_id is blank" do
+        service = described_class.new("", nil)
+        expect {
+          service.send(:check_firmware_mismatch!, tree, nil)
+        }.not_to raise_error
+      end
+
+      it "skips when latest firmware id is nil" do
+        service = described_class.new("", nil)
+        BioContractFirmware.update_all(is_active: false)
+
+        expect {
+          service.send(:check_firmware_mismatch!, tree, 999)
+        }.not_to raise_error
+      end
+
+      it "skips when reported firmware matches latest" do
+        service = described_class.new("", nil)
+        expect {
+          service.send(:check_firmware_mismatch!, tree, active_firmware.id)
+        }.not_to raise_error
+        expect(tree.reload.firmware_update_status).not_to eq("fw_pending")
+      end
+
+      it "marks tree as fw_pending when firmware mismatches and tree is fw_idle" do
+        service = described_class.new("", nil)
+        service.send(:check_firmware_mismatch!, tree, active_firmware.id + 999)
+
+        expect(tree.reload.firmware_update_status).to eq("fw_pending")
+      end
+
+      it "does not mark tree as fw_pending when already fw_pending" do
+        Tree.where(id: tree.id).update_all(firmware_update_status: :fw_pending)
+        service = described_class.new("", nil)
+        service.send(:check_firmware_mismatch!, tree, active_firmware.id + 999)
+
+        expect(tree.reload.firmware_update_status).to eq("fw_pending")
+      end
+    end
+
+    describe "latest_tree_firmware_id caching" do
+      it "caches the result across calls" do
+        create(:bio_contract_firmware, :active, target_hardware_type: "Tree")
+        service = described_class.new("", nil)
+
+        first_call = service.send(:latest_tree_firmware_id)
+        second_call = service.send(:latest_tree_firmware_id)
+
+        expect(first_call).to eq(second_call)
+      end
+    end
+
+    describe "valid_sensor_data? range checks" do
+      it "rejects out-of-range voltage" do
+        service = described_class.new("", nil)
+        data = [ 0, 6000, 22, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
+        expect(service.send(:valid_sensor_data?, data)).to be false
+      end
+
+      it "rejects out-of-range temperature" do
+        service = described_class.new("", nil)
+        data = [ 0, 4200, 100, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
+        expect(service.send(:valid_sensor_data?, data)).to be false
+      end
+
+      it "accepts valid sensor data" do
+        service = described_class.new("", nil)
+        data = [ 0, 4200, 22, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
+        expect(service.send(:valid_sensor_data?, data)).to be true
+      end
+    end
+  end
+
+  describe "branch coverage round 2" do
+    let(:organization) { create(:organization) }
+    let(:cluster_r2) { create(:cluster, organization: organization) }
+    let(:gateway_r2) { create(:gateway, :online, cluster: cluster_r2) }
+    let(:tree_family) { create(:tree_family) }
+    let(:did_hex_r2) { "0000AB01" }
+    let(:extracted_did_r2) { did_hex_r2.to_i(16).to_s(16).upcase }
+    let(:tree_r2) do
+      t = create(:tree, cluster: cluster_r2, tree_family: tree_family, latitude: 49.4, longitude: 32.0)
+      t.update_column(:did, extracted_did_r2)
+      t.reload
+    end
+    let!(:wallet_r2) { tree_r2.wallet || create(:wallet, tree: tree_r2) }
+
+    before do
+      tree_r2.create_device_calibration! if tree_r2.device_calibration.nil?
+      allow(GatewayTelemetryWorker).to receive(:perform_async)
+    end
+
+    def build_chunk_r2(did_hex_str, rssi: 65, voltage: 3800, temp: 22, acoustic: 0, metabolism: 100,
+                       status_byte: 0x05, ttl: 3, firmware_id: 0)
+      did_int = did_hex_str.to_i(16)
+      did_bytes = [ did_int ].pack("N")
+      rssi_byte = [ rssi ].pack("C")
+      pad = [ firmware_id ].pack("n") + "\x00\x00"
+      payload = [ did_int, voltage, temp, acoustic, metabolism, status_byte, ttl, pad ].pack("N n c C n C C a4")
+      did_bytes + rssi_byte + payload
+    end
+
+    describe "gateway uid branch — when gateway is present" do
+      it "sets queen_uid in log_attributes from gateway.uid" do
+        chunk = build_chunk_r2(did_hex_r2, voltage: 3800, temp: 22)
+        service = described_class.new(chunk, gateway_r2.id)
+        service.perform
+
+        log = tree_r2.telemetry_logs.last
+        expect(log).not_to be_nil
+        expect(log.queen_uid).to eq(gateway_r2.uid)
+      end
+    end
+
+    describe "firmware_id positive branch" do
+      it "sets firmware_version_id when firmware_id is positive" do
+        chunk = build_chunk_r2(did_hex_r2, firmware_id: 42)
+        service = described_class.new(chunk, gateway_r2.id)
+        service.perform
+
+        log = tree_r2.telemetry_logs.last
+        expect(log.firmware_version_id).to eq(42)
+      end
+
+      it "sets firmware_version_id to nil when firmware_id is zero" do
+        chunk = build_chunk_r2(did_hex_r2, firmware_id: 0)
+        service = described_class.new(chunk, gateway_r2.id)
+        service.perform
+
+        log = tree_r2.telemetry_logs.last
+        expect(log.firmware_version_id).to be_nil
+      end
+    end
+
+    describe "interpret_status — undefined status code (case else)" do
+      it "returns nil for an undefined status code" do
+        service = described_class.new("", nil)
+        result = service.send(:interpret_status, 99)
+        expect(result).to be_nil
+      end
+    end
+
+    describe "check_firmware_mismatch! — fw_pending skip" do
+      it "skips update when tree is already fw_pending" do
+        active_firmware = create(:bio_contract_firmware, :active, target_hardware_type: "Tree")
+        tree_r2.update_columns(firmware_update_status: Tree.firmware_update_statuses[:fw_pending])
+
+        chunk = build_chunk_r2(did_hex_r2, firmware_id: active_firmware.id - 1)
+        service = described_class.new(chunk, gateway_r2.id)
+        service.perform
+
+        tree_r2.reload
+        expect(tree_r2.firmware_fw_pending?).to be true
+      end
+
+      it "sets fw_pending when tree is fw_idle and firmware mismatches" do
+        active_firmware = create(:bio_contract_firmware, :active, target_hardware_type: "Tree")
+        tree_r2.update_columns(firmware_update_status: Tree.firmware_update_statuses[:fw_idle])
+
+        chunk = build_chunk_r2(did_hex_r2, firmware_id: active_firmware.id - 1)
+        service = described_class.new(chunk, gateway_r2.id)
+        service.perform
+
+        tree_r2.reload
+        expect(tree_r2.firmware_fw_pending?).to be true
+      end
+    end
+  end
 end

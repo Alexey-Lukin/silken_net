@@ -147,4 +147,39 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
       }.not_to change(EwsAlert, :count)
     end
   end
+
+  describe "gateway nil in rescue" do
+    it "handles rescue when gateway is not set (RecordNotFound)" do
+      expect {
+        described_class.new.perform("NONEXISTENT-UID", { voltage_mv: 4000, temperature_c: 25, cellular_signal_csq: 15 })
+      }.not_to raise_error
+    end
+  end
+
+  describe "return unless gateway.cluster_id" do
+    it "skips alert creation when gateway has no cluster_id" do
+      gw = create(:gateway, cluster: cluster, ip_address: "10.0.0.2")
+      log = create(:gateway_telemetry_log, :low_battery, gateway: gw)
+
+      allow(gw).to receive(:cluster_id).and_return(nil)
+
+      worker = described_class.new
+      worker.send(:check_system_health, gw, log)
+      expect(EwsAlert.where(alert_type: :system_fault)).to be_empty
+    end
+  end
+
+  describe "format_health_message — generic fault branch" do
+    it "returns generic message when no specific threshold is breached but critical_fault? is true" do
+      log = create(:gateway_telemetry_log, gateway: gateway,
+                   voltage_mv: GatewayTelemetryLog::LOW_BATTERY_THRESHOLD + 100,
+                   temperature_c: GatewayTelemetryLog::OVERHEAT_THRESHOLD - 10,
+                   cellular_signal_csq: GatewayTelemetryLog::LOW_SIGNAL_THRESHOLD + 5)
+
+      allow(log).to receive(:critical_fault?).and_return(true)
+      worker = described_class.new
+      message = worker.send(:format_health_message, gateway, log)
+      expect(message).to include("Апаратний збій")
+    end
+  end
 end

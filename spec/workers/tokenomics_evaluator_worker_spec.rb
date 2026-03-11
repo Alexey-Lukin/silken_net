@@ -110,4 +110,51 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
       end
     end
   end
+
+  describe "tokens_to_mint is zero" do
+    it "skips wallet with balance below emission threshold" do
+      tree = create(:tree, cluster: create(:cluster))
+      wallet = tree.wallet
+      wallet.update_columns(balance: described_class::EMISSION_THRESHOLD - 1)
+
+      described_class.new.perform
+      expect(BlockchainMintingService).not_to have_received(:call_batch)
+    end
+  end
+
+  describe "wallet.tree.did when tree is nil (rescue)" do
+    it "continues processing after error with nil tree reference" do
+      tree = create(:tree, cluster: create(:cluster))
+      wallet = tree.wallet
+      wallet.update_columns(balance: described_class::EMISSION_THRESHOLD * 2)
+
+      allow_any_instance_of(Wallet).to receive(:lock_and_mint!).and_raise(StandardError.new("test error"))
+
+      expect {
+        described_class.new.perform
+      }.not_to raise_error
+    end
+  end
+
+  describe "stats[:minted_count] branches" do
+    it "logs with minted_count zero when no eligible wallets" do
+      expect {
+        described_class.new.perform
+      }.not_to raise_error
+    end
+
+    it "logs with minted_count positive when transactions created" do
+      tree = create(:tree, cluster: create(:cluster))
+      wallet = tree.wallet
+      wallet.update_columns(balance: described_class::EMISSION_THRESHOLD * 3)
+
+      tx = create(:blockchain_transaction, wallet: wallet, amount: 3, status: :pending)
+      allow_any_instance_of(Wallet).to receive(:lock_and_mint!).and_return(tx)
+
+      expect {
+        described_class.new.perform
+      }.not_to raise_error
+      expect(BlockchainMintingService).to have_received(:call_batch)
+    end
+  end
 end
