@@ -177,10 +177,10 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
     end
   end
 
-  describe "sidekiq_retries_exhausted when command.update returns false" do
-    it "skips broadcast when update fails" do
+  describe "sidekiq_retries_exhausted when AASM transition is not allowed" do
+    it "skips broadcast when may_fail? returns false" do
       allow(ActuatorCommand).to receive(:find_by).with(id: command.id).and_return(command)
-      allow(command).to receive(:update).and_return(false)
+      allow(command).to receive(:may_fail?).and_return(false)
 
       job = { "args" => [ command.id ], "error_message" => "some error" }
       expect(described_class).not_to receive(:broadcast_command_state_static)

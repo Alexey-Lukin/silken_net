@@ -15,7 +15,8 @@ class ActuatorCommandWorker
     command = ActuatorCommand.find_by(id: job["args"].first)
     if command
       error_msg = job["error_message"].to_s.truncate(200)
-      if command.update(status: :failed, error_message: error_msg)
+      if command.may_fail?
+        command.fail!(error_msg)
         broadcast_command_state_static(command)
       end
       Rails.logger.error "🛑 [Downlink Exhausted] Наказ ##{command.id} провалено після всіх спроб: #{error_msg}"
@@ -84,7 +85,7 @@ class ActuatorCommandWorker
 
     begin
       # 3. ФІЗИЧНА ПЕРЕДАЧА (CoAP Protocol)
-      command.update!(status: :sent)
+      command.dispatch!
       broadcast_command_state(command)
 
       gateway.mark_seen!
@@ -102,7 +103,7 @@ class ActuatorCommandWorker
       # 4. ПІДТВЕРДЖЕННЯ ТА ТРАНСФОРМАЦІЯ СТАНУ
       ActiveRecord::Base.transaction do
         actuator.mark_active!
-        command.update!(status: :acknowledged, sent_at: Time.current)
+        command.acknowledge!
       end
 
       Rails.logger.info "⚡ [Downlink] Наказ #{command.id} (token: #{command.idempotency_token}) успішно доставлено на #{gateway.uid} -> #{actuator.endpoint}"
@@ -124,7 +125,7 @@ class ActuatorCommandWorker
 
   def handle_failure(command, message)
     Rails.logger.error "🛑 [Downlink Error] Наказ ##{command.id} провалено: #{message}"
-    command.update!(status: :failed, error_message: message.truncate(200))
+    command.fail!(message.truncate(200))
     broadcast_command_state(command)
   end
 

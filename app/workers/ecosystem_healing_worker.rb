@@ -21,7 +21,7 @@ class EcosystemHealingWorker
 
       # 3. ЖИТТЄВИЙ ЦИКЛ ДЕРЕВА
       if target.is_a?(Tree) && record.action_type_decommissioning?
-        target.update!(status: :removed)
+        target.decommission!
       end
 
       # 4. [ВИПРАВЛЕНО]: ЗАКРИТТЯ ТРИВОГИ (Enum Method Fix)

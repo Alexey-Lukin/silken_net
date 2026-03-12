@@ -47,8 +47,8 @@ class InsurancePayoutWorker
         notes: "Страхове відшкодування ##{insurance.id}. Подія: #{insurance.trigger_event}."
       )
 
-      # Переводимо страховку в стан виплати
-      insurance.update!(status: :paid, paid_at: Time.current)
+      # Переводимо страховку в стан виплати (AASM: triggered → paid)
+      insurance.pay!
     end
 
     # 3. WEB3 ЕКЗЕКУЦІЯ (Blockchain Domain)
