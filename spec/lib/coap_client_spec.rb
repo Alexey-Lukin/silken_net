@@ -186,10 +186,12 @@ RSpec.describe CoapClient do
   end
 
   describe ".parse_response" do
-    it "returns nil when header is nil" do
-      # Send empty/malformed data that can't be unpacked
-      result = described_class.send(:parse_response, "".b, 1)
-      expect(result).to be_nil
+    it "returns success Response for a valid 2.xx code" do
+      message_id = 42
+      data = [ 0x60, 0x45, message_id ].pack("CCn") + "\xFF".b + "test".b
+      result = described_class.send(:parse_response, data, message_id)
+      expect(result.success?).to be true
+      expect(result.payload).to eq("test")
     end
   end
 end

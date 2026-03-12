@@ -11,7 +11,7 @@ class DeviceCalibration < ApplicationRecord
   # --- КОНСТАНТИ КРИТИЧНОГО ЗСУВУ (Hardware Decay Thresholds) ---
   # Межі, за якими програмна корекція стає неможливою
   MAX_TEMP_DRIFT = 5.0
-  MAX_IMPEDANCE_DRIFT = 500.0
+  MAX_IMPEDANCE_DRIFT = 500
   MAX_VCAP_TOLERANCE = 0.2 # 20% відхилення
 
   # --- ВАЛІДАЦІЇ ---
