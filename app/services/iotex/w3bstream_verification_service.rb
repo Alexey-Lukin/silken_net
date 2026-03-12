@@ -68,7 +68,7 @@ module Iotex
 
       zk_proof_ref
     rescue Web3::HttpClient::RequestError => e
-      raise VerificationError, "Невалідна JSON-відповідь від W3bstream: #{e.message}"
+      raise VerificationError, "W3bstream response error: #{e.message}"
     end
   end
 end

@@ -25,25 +25,28 @@ class InsightGeneratorService < ApplicationService
     # 2. ПОКЛАСТЕРНА ОБРОБКА З AI-GUARD
     # [ОПТИМІЗАЦІЯ]: Обробляємо тільки кластери з даними замість Cluster.find_each
     processed_cluster_ids = @baselines_map.keys
-    Cluster.where(id: processed_cluster_ids).find_each do |cluster|
-      cluster_baseline = @baselines_map[cluster.id]
 
-      # ⚡ [ANTI-N+1]: Агрегуємо статистику для ВСІХ дерев кластера одним SQL-запитом
-      tree_stats_map = prefetch_tree_stats(cluster)
+    unless processed_cluster_ids.empty?
+      Cluster.where(id: processed_cluster_ids).find_each do |cluster|
+        cluster_baseline = @baselines_map[cluster.id]
 
-      # Перевіряємо кожне дерево в кластері на відповідність базлайну
-      cluster.trees.find_each do |tree|
-        stats = tree_stats_map[tree.id]
-        next unless stats
+        # ⚡ [ANTI-N+1]: Агрегуємо статистику для ВСІХ дерев кластера одним SQL-запитом
+        tree_stats_map = prefetch_tree_stats(cluster)
 
-        if generate_for_tree(tree, cluster_baseline, stats)
-          @processed_count += 1
+        # Перевіряємо кожне дерево в кластері на відповідність базлайну
+        cluster.trees.find_each do |tree|
+          stats = tree_stats_map[tree.id]
+          next unless stats
+
+          if generate_for_tree(tree, cluster_baseline, stats)
+            @processed_count += 1
+          end
         end
       end
-    end
 
-    # 3. АГРЕГАЦІЯ КЛАСТЕРІВ — тільки для кластерів з даними (без повторної ітерації)
-    aggregate_clusters!(processed_cluster_ids)
+      # 3. АГРЕГАЦІЯ КЛАСТЕРІВ — тільки для кластерів з даними (без повторної ітерації)
+      aggregate_clusters!(processed_cluster_ids)
+    end
 
     # 4. КЕНОЗИС: Очищення сирих логів
     cleanup_old_logs!
