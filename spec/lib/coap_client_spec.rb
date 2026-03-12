@@ -130,5 +130,66 @@ RSpec.describe CoapClient do
 
       expect(mock_socket).to have_received(:close)
     end
+
+    context "when option delta is >= 13 (extended delta)" do
+      it "handles large delta options in encoding" do
+        message_id = 1
+        response_packet = [ 0x60, 0x45, message_id ].pack("CCn") + "\xFF".b + "OK".b
+
+        allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
+        allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
+        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+
+        # Large option delta >= 13 is triggered with specific URI path patterns
+        # Since Uri-Path is option 11, it won't trigger delta >= 13 on its own.
+        # Uri-Query is option 15 - delta from 11 to 15 is only 4.
+        # We can test encode_option directly:
+        buffer = described_class.send(:encode_option, 14, "v")
+        expect(buffer.bytesize).to be > 2
+
+        result = described_class.put("coap://192.168.1.1/telemetry?key=value", "test")
+        expect(result.success?).to be true
+      end
+    end
+
+    context "when value length >= 13 (extended length)" do
+      it "handles long option values" do
+        message_id = 1
+        response_packet = [ 0x60, 0x45, message_id ].pack("CCn") + "\xFF".b + "OK".b
+
+        allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
+        allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
+        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+
+        # Build a URL with a long path segment (>= 13 bytes) to exercise extended length encoding
+        long_segment = "a" * 20
+        result = described_class.put("coap://192.168.1.1/#{long_segment}", "test")
+        expect(result.success?).to be true
+      end
+    end
+
+    context "when response payload marker is absent" do
+      it "returns nil payload" do
+        message_id = 1
+        # A response with no 0xFF marker (no payload)
+        response_packet = [ 0x60, 0x45, message_id ].pack("CCn")
+
+        allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
+        allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
+        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+
+        result = described_class.put("coap://192.168.1.1/telemetry", "test")
+        expect(result.success?).to be true
+        expect(result.payload).to be_nil
+      end
+    end
+  end
+
+  describe ".parse_response" do
+    it "returns nil when header is nil" do
+      # Send empty/malformed data that can't be unpacked
+      result = described_class.send(:parse_response, "".b, 1)
+      expect(result).to be_nil
+    end
   end
 end

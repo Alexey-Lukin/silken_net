@@ -78,6 +78,18 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["coap_listener"]["alive"]).to be(false)
       end
+
+      it "returns alive: false with error message when coap_status rescue fires" do
+        allow(ENV).to receive(:fetch).and_call_original
+        allow(ENV).to receive(:fetch).with("COAP_PORT", 5683).and_raise(StandardError, "port config error")
+
+        get "/api/v1/system_health", headers: admin_headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        coap = response.parsed_body["coap_listener"]
+        expect(coap["alive"]).to be(false)
+        expect(coap["error"]).to include("port config error")
+      end
     end
   end
 end

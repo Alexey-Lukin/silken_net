@@ -167,6 +167,56 @@ RSpec.describe Filecoin::ArchiveService do
       end
     end
 
+    context "when AI insights exist for the date" do
+      it "includes cluster telemetry summary data" do
+        cluster = create(:cluster, organization: user.organization)
+        create(:ai_insight, :daily_health_summary,
+               analyzable: cluster,
+               target_date: audit_log.created_at.to_date,
+               stress_index: 0.42,
+               total_growth_points: 500,
+               summary: "Moderate health",
+               fraud_detected: false)
+
+        expected_body = nil
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_body = kwargs[:body]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmWithInsights" }.to_json)
+        end
+
+        described_class.new(audit_log).archive!
+
+        content = expected_body[:pinataContent]
+        expect(content[:telemetry_summary]).to be_present
+        expect(content[:telemetry_summary][:date]).to eq(audit_log.created_at.to_date.iso8601)
+        expect(content[:telemetry_summary][:clusters]).to be_an(Array)
+        expect(content[:telemetry_summary][:clusters].first[:cluster_id]).to eq(cluster.id)
+        expect(content[:telemetry_summary][:clusters].first[:stress_index]).to eq(0.42)
+      end
+
+      it "handles nil stress_index in insight" do
+        cluster = create(:cluster, organization: user.organization)
+        create(:ai_insight, :daily_health_summary,
+               analyzable: cluster,
+               target_date: audit_log.created_at.to_date,
+               stress_index: nil,
+               total_growth_points: 0,
+               summary: "No data",
+               fraud_detected: false)
+
+        expected_body = nil
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_body = kwargs[:body]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmNilStress" }.to_json)
+        end
+
+        described_class.new(audit_log).archive!
+
+        content = expected_body[:pinataContent]
+        expect(content[:telemetry_summary][:clusters].first[:stress_index]).to be_nil
+      end
+    end
+
     context "when Net::OpenTimeout is raised" do
       it "raises a timeout error" do
         allow(Web3::HttpClient).to receive(:post)

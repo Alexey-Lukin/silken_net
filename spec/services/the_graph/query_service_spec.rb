@@ -83,6 +83,15 @@ RSpec.describe TheGraph::QueryService, type: :service do
         }.to raise_error(TheGraph::QueryService::QueryError, /Invalid JSON response/)
       end
 
+      it "wraps unexpected StandardError in QueryError" do
+        allow(Web3::HttpClient).to receive(:post)
+          .and_raise(NoMethodError, "undefined method for nil:NilClass")
+
+        expect {
+          described_class.new.fetch_total_carbon_minted
+        }.to raise_error(TheGraph::QueryService::QueryError, /Збій зв'язку з The Graph/)
+      end
+
       it "handles missing data key in response gracefully" do
         response = Web3::HttpClient::Response.new({ "errors" => [ { "message" => "something went wrong" } ] }.to_json)
         allow(Web3::HttpClient).to receive(:post).and_return(response)

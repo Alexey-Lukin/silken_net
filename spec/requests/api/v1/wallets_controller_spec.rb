@@ -74,7 +74,8 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       expect(response.content_type).to include("text/html")
     end
 
-    it "renders HTML for show" do
+    it "renders HTML for show with crypto_public_address present" do
+      wallet.update!(crypto_public_address: "0xABCDEF1234567890ABCDEF1234567890ABCDEF12")
       get "/api/v1/wallets/#{wallet.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")

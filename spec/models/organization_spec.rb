@@ -87,6 +87,23 @@ RSpec.describe Organization, type: :model do
     end
   end
 
+  describe "#active_tokens_count" do
+    it "returns the sum of total_funding for active contracts" do
+      organization = create(:organization)
+      cluster = create(:cluster, organization: organization)
+      create(:naas_contract, organization: organization, cluster: cluster, total_funding: 10_000, status: :active)
+      create(:naas_contract, organization: organization, cluster: cluster, total_funding: 5_000, status: :active)
+      create(:naas_contract, organization: organization, cluster: cluster, total_funding: 3_000, status: :draft)
+
+      expect(organization.active_tokens_count).to eq(15_000)
+    end
+
+    it "returns 0 when no active contracts exist" do
+      organization = create(:organization)
+      expect(organization.active_tokens_count).to eq(0)
+    end
+  end
+
   describe "#under_threat?" do
     it "returns true when organization has unresolved critical alerts" do
       organization = create(:organization)

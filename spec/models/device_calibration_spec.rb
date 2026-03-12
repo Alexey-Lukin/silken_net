@@ -80,6 +80,26 @@ RSpec.describe DeviceCalibration, type: :model do
     end
   end
 
+  describe ".critical_drift scope" do
+    it "returns calibrations with temperature offset exceeding threshold" do
+      tree = create(:tree)
+      cal = create(:device_calibration, tree: tree, temperature_offset_c: 6.0)
+      expect(described_class.critical_drift).to include(cal)
+    end
+
+    it "returns calibrations with impedance offset exceeding threshold" do
+      tree = create(:tree)
+      cal = create(:device_calibration, tree: tree, impedance_offset_ohms: 600)
+      expect(described_class.critical_drift).to include(cal)
+    end
+
+    it "excludes calibrations within thresholds" do
+      tree = create(:tree)
+      cal = create(:device_calibration, tree: tree, temperature_offset_c: 2.0, impedance_offset_ohms: 100)
+      expect(described_class.critical_drift).not_to include(cal)
+    end
+  end
+
   describe "delegate :cluster_id" do
     it "delegates cluster_id to tree" do
       tree = create(:tree)
