@@ -79,7 +79,7 @@ RSpec.describe Web3::HttpClient do
           body: { key: "value" },
           service_name: "Test"
         )
-      }.to raise_error(Web3::HttpClient::RequestError, /Test connection error/)
+      }.to raise_error(Web3::HttpClient::RequestError, /Test connection error \(HTTPX::ConnectionError\)/)
     end
   end
 

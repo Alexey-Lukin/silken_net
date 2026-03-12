@@ -105,7 +105,7 @@ module Web3
             Rails.logger.error "🛑 [#{service_name}] Timeout: #{error.message}"
             raise RequestError, "#{service_name} Timeout: #{error.message}"
           else
-            raise RequestError, "#{service_name} connection error: #{error.message}"
+            raise RequestError, "#{service_name} connection error (#{error.class}): #{error.message}"
           end
         end
 
