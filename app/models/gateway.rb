@@ -2,6 +2,7 @@
 
 class Gateway < ApplicationRecord
   include Firmwareable
+  include GeoLocatable
 
   # --- ЗВ'ЯЗКИ (The Fabric of the Forest) ---
   belongs_to :cluster, optional: true
@@ -46,9 +47,6 @@ class Gateway < ApplicationRecord
   validates :uid, presence: true, uniqueness: true,
             format: { with: UID_FORMAT, message: "має відповідати апаратному формату (SNET-Q-XXXXXXXX)" }
   validates :config_sleep_interval_s, presence: true, numericality: { greater_than_or_equal_to: 60 }
-
-  validates :latitude, numericality: { in: -90..90 }, allow_nil: true
-  validates :longitude, numericality: { in: -180..180 }, allow_nil: true
 
   # IP адреса модему SIM7070G (Starlink/LTE)
   validates :ip_address, format: { with: Resolv::AddressRegex }, allow_blank: true
@@ -99,10 +97,6 @@ class Gateway < ApplicationRecord
     return false if last_seen_at.nil?
     # Динамічна перевірка: чи не перевищено інтервал сну з люфтом
     last_seen_at >= (config_sleep_interval_s * 1.2).seconds.ago
-  end
-
-  def geolocated?
-    latitude.present? && longitude.present?
   end
 
   # Розрахунок наступного вікна зв'язку (Projected Pulse)

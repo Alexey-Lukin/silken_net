@@ -185,7 +185,7 @@ RSpec.describe BlockchainBurningService do
         )
 
         # Use send to directly test calculate_damage_ratio
-        service = described_class.new(organization.id, naas_contract.id, nil)
+        service = described_class.new(organization.id, naas_contract.id)
         trees_relation = double("trees_relation", count: 0)
         allow(cluster).to receive(:trees).and_return(trees_relation)
         # Set the @cluster instance variable

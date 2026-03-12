@@ -2,7 +2,7 @@
 
 require "eth"
 
-class BlockchainBurningService
+class BlockchainBurningService < ApplicationService
   # ABI для функції вилучення/спалювання (Sovereign Slashing)
   CONTRACT_ABI = '[{"inputs":[{"internalType":"address","name":"investor","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"slash","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
 
@@ -10,18 +10,14 @@ class BlockchainBurningService
   # Змініть тут, якщо почнемо підтримувати стейблкоіни з іншою розрядністю (напр. USDC = 6).
   TOKEN_DECIMALS = 18
 
-  def self.call(organization_id, naas_contract_id, source_tree: nil)
-    new(organization_id, naas_contract_id, source_tree).call
-  end
-
-  def initialize(organization_id, naas_contract_id, source_tree)
+  def initialize(organization_id, naas_contract_id, source_tree: nil)
     @organization = Organization.find(organization_id)
     @naas_contract = NaasContract.find(naas_contract_id)
     @cluster = @naas_contract.cluster
     @source_tree = source_tree
   end
 
-  def call
+  def perform
     # 1. АГРЕГАЦІЯ: Рахуємо всі токени, що були "зароблені" цим кластером.
     # [КЕНОЗИС]: Якщо порушення локальне (одне дерево), ми можемо вилучати
     # або частку, або весь контракт. Наразі йдемо шляхом повної ануляції за порушення гомеостазу.

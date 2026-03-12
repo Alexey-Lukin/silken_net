@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class MaintenanceRecord < ApplicationRecord
+  include GeoLocatable
   # --- ЗВ'ЯЗКИ ---
   belongs_to :user
   belongs_to :maintainable, polymorphic: true
@@ -33,10 +34,6 @@ class MaintenanceRecord < ApplicationRecord
 
   # Hardware State Sync
   validates :hardware_verified, inclusion: { in: [ true, false ] }
-
-  # Координати втручання — GPS телефону патрульного (захист від "диванного ремонту")
-  validates :latitude,  numericality: { in: -90..90 },    allow_nil: true
-  validates :longitude, numericality: { in: -180..180 },  allow_nil: true
 
   # System-generated records (provisioning, slashing) may skip photo requirement
   attr_accessor :skip_photo_validation

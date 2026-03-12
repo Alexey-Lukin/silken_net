@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require "openssl"
 require "timeout"
 
 class OtaTransmissionWorker
   include Sidekiq::Job
+  include CoapEncryption
   # Використовуємо окрему чергу для низхідного зв'язку, щоб не блокувати телеметрію
   sidekiq_options queue: "downlink", retry: false
 
@@ -31,7 +31,7 @@ class OtaTransmissionWorker
     broadcast_progress(queen_uid, chunk_index, total_chunks)
 
     # 🔐 КРИПТОГРАФІЧНИЙ ЗАХИСТ (AES-256-CBC з випадковим IV)
-    encrypted_package = encrypt_payload(packages[chunk_index], key_record.binary_key)
+    encrypted_package = coap_encrypt(packages[chunk_index], key_record.binary_key)
 
     begin
       # Збільшений таймаут для супутникових стрибків Starlink
@@ -89,21 +89,6 @@ class OtaTransmissionWorker
         status: status
       ).call
     )
-  end
-
-  def encrypt_payload(payload, key)
-    cipher = OpenSSL::Cipher.new("aes-256-cbc")
-    cipher.encrypt
-    cipher.key = key
-    iv = cipher.random_iv  # Унікальний IV для кожного пакета; CBC потребує непередбачуваного IV для семантичної безпеки
-
-    # Ручне доповнення (Padding) до блоку 16 байт
-    block_size = 16
-    padding_length = (block_size - (payload.bytesize % block_size)) % block_size
-    padded_payload = payload + ("\x00" * padding_length)
-
-    # Передаємо IV разом із шифротекстом: перші 16 байт — IV, решта — дані
-    iv + cipher.update(padded_payload) + cipher.final
   end
 
   def handle_chunk_failure(uid, type, record_id, index, retry_count, error)

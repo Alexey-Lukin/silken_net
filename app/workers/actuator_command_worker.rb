@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require "openssl"
 require "timeout"
 
 class ActuatorCommandWorker
   include Sidekiq::Job
+  include CoapEncryption
   # Черга downlink має вищий пріоритет.
   sidekiq_options queue: "downlink", retry: 3
 
@@ -80,7 +80,7 @@ class ActuatorCommandWorker
 
     # 🛡️ Idempotency: включаємо idempotency_token у payload для дедуплікації на STM32
     raw_payload = "CMD:#{command.command_payload}:#{command.duration_seconds}:#{actuator.id}:#{command.idempotency_token}"
-    encrypted_payload = encrypt_payload(raw_payload, encryption_key)
+    encrypted_payload = coap_encrypt(raw_payload, encryption_key)
 
     begin
       # 3. ФІЗИЧНА ПЕРЕДАЧА (CoAP Protocol)
@@ -126,20 +126,6 @@ class ActuatorCommandWorker
     Rails.logger.error "🛑 [Downlink Error] Наказ ##{command.id} провалено: #{message}"
     command.update!(status: :failed, error_message: message.truncate(200))
     broadcast_command_state(command)
-  end
-
-  def encrypt_payload(payload, binary_key)
-    cipher = OpenSSL::Cipher.new("aes-256-cbc")
-    cipher.encrypt
-    cipher.key = binary_key
-    iv = cipher.random_iv
-    cipher.padding = 0
-
-    block_size = 16
-    padding_length = (block_size - (payload.bytesize % block_size)) % block_size
-    padded_payload = payload + ("\x00" * padding_length)
-
-    iv + cipher.update(padded_payload) + cipher.final
   end
 
   # 📈 Використовуємо денормалізований organization_id для broadcast

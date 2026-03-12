@@ -3,7 +3,7 @@
 require "eth"
 require "bigdecimal"
 
-class BlockchainMintingService
+class BlockchainMintingService < ApplicationService
   # ABI оновлено для підтримки поштучного mint та пакетного batchMint
   CONTRACT_ABI = [
     {
@@ -24,14 +24,14 @@ class BlockchainMintingService
     }
   ].to_json
 
-  # Поштучний виклик
+  # Поштучний виклик — делегується через ApplicationService.call → new.perform
   def self.call(blockchain_transaction_id, telemetry_log: nil)
-    new([ blockchain_transaction_id ], telemetry_log: telemetry_log).call
+    new([ blockchain_transaction_id ], telemetry_log: telemetry_log).perform
   end
 
   # Пакетний виклик для цілого сектора/кластера
   def self.call_batch(blockchain_transaction_ids, telemetry_log: nil)
-    new(blockchain_transaction_ids, telemetry_log: telemetry_log).call
+    new(blockchain_transaction_ids, telemetry_log: telemetry_log).perform
   end
 
   def initialize(transaction_ids, telemetry_log: nil)
@@ -41,7 +41,7 @@ class BlockchainMintingService
     @telemetry_log = telemetry_log
   end
 
-  def call
+  def perform
     return if @transactions.empty?
 
     # [TRUSTLESS]: Перевірка децентралізованої верифікації перед мінтингом.

@@ -23,9 +23,10 @@ class InsightGeneratorService < ApplicationService
     @baselines_map = prefetch_cluster_baselines
 
     # 2. ПОКЛАСТЕРНА ОБРОБКА З AI-GUARD
-    Cluster.find_each do |cluster|
+    # [ОПТИМІЗАЦІЯ]: Обробляємо тільки кластери з даними замість Cluster.find_each
+    processed_cluster_ids = @baselines_map.keys
+    Cluster.where(id: processed_cluster_ids).find_each do |cluster|
       cluster_baseline = @baselines_map[cluster.id]
-      next unless cluster_baseline
 
       # ⚡ [ANTI-N+1]: Агрегуємо статистику для ВСІХ дерев кластера одним SQL-запитом
       tree_stats_map = prefetch_tree_stats(cluster)
@@ -41,8 +42,8 @@ class InsightGeneratorService < ApplicationService
       end
     end
 
-    # 3. АГРЕГАЦІЯ КЛАСТЕРІВ (Оптимізовано JSONB)
-    aggregate_clusters!
+    # 3. АГРЕГАЦІЯ КЛАСТЕРІВ — тільки для кластерів з даними (без повторної ітерації)
+    aggregate_clusters!(processed_cluster_ids)
 
     # 4. КЕНОЗИС: Очищення сирих логів
     cleanup_old_logs!
@@ -156,8 +157,8 @@ class InsightGeneratorService < ApplicationService
     [ base_stress, 0.99 ].min
   end
 
-  def aggregate_clusters!
-    Cluster.find_each do |cluster|
+  def aggregate_clusters!(cluster_ids)
+    Cluster.where(id: cluster_ids).find_each do |cluster|
       tree_insights = AiInsight.where(
         analyzable_type: "Tree",
         analyzable_id: cluster.trees.select(:id),

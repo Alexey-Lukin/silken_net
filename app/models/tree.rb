@@ -2,6 +2,7 @@
 
 class Tree < ApplicationRecord
   include Firmwareable
+  include GeoLocatable
 
   # --- ЗВ'ЯЗКИ (The Fabric of the Forest) ---
   belongs_to :cluster, optional: true
@@ -40,8 +41,6 @@ class Tree < ApplicationRecord
   before_validation :normalize_did
   validates :did, presence: true, uniqueness: true,
             format: { with: DID_FORMAT, message: "має відповідати апаратному формату (SNET-XXXXXXXX)" }
-  validates :latitude, numericality: { in: -90..90 }, allow_nil: true
-  validates :longitude, numericality: { in: -180..180 }, allow_nil: true
 
   # --- КОЛБЕКИ ---
   after_create :build_default_wallet
