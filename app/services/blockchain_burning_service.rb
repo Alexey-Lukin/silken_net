@@ -2,7 +2,7 @@
 
 require "eth"
 
-class BlockchainBurningService
+class BlockchainBurningService < ApplicationService
   # ABI для функції вилучення/спалювання (Sovereign Slashing)
   CONTRACT_ABI = '[{"inputs":[{"internalType":"address","name":"investor","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"slash","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
 
@@ -10,18 +10,14 @@ class BlockchainBurningService
   # Змініть тут, якщо почнемо підтримувати стейблкоіни з іншою розрядністю (напр. USDC = 6).
   TOKEN_DECIMALS = 18
 
-  def self.call(organization_id, naas_contract_id, source_tree: nil)
-    new(organization_id, naas_contract_id, source_tree).call
-  end
-
-  def initialize(organization_id, naas_contract_id, source_tree)
+  def initialize(organization_id, naas_contract_id, source_tree: nil)
     @organization = Organization.find(organization_id)
     @naas_contract = NaasContract.find(naas_contract_id)
     @cluster = @naas_contract.cluster
     @source_tree = source_tree
   end
 
-  def call
+  def perform
     # 1. АГРЕГАЦІЯ: Рахуємо всі токени, що були "зароблені" цим кластером.
     # [КЕНОЗИС]: Якщо порушення локальне (одне дерево), ми можемо вилучати
     # або частку, або весь контракт. Наразі йдемо шляхом повної ануляції за порушення гомеостазу.
@@ -41,13 +37,13 @@ class BlockchainBurningService
 
     return if burn_amount.zero?
 
-    # 2. WEB3 ПІДГОТОВКА (The Judgment Bridge)
-    client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
+    # 2. WEB3 ПІДГОТОВКА (The Judgment Bridge) — Thread-cached RPC client
+    client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
     oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
     contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
     contract = Eth::Contract.from_abi(name: "SilkenCarbonCoin", address: contract_address, abi: CONTRACT_ABI)
 
-    amount_in_wei = (burn_amount.to_f * (10**TOKEN_DECIMALS)).to_i
+    amount_in_wei = Web3::WeiConverter.to_wei(burn_amount, TOKEN_DECIMALS)
     investor_address = @organization.crypto_public_address
 
     # 3. ВИКОНАННЯ (The Verdict)

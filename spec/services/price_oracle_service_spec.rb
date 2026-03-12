@@ -45,11 +45,13 @@ RSpec.describe PriceOracleService do
       let(:raw_amount_out) { 26_000_000 } # 26.0 USDC (6 decimals)
 
       before do
+        Web3::RpcConnectionPool.reset!
         allow(Rails.env).to receive_messages(development?: false, test?: false)
         allow(Eth::Client).to receive(:create).and_return(mock_client)
         allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
         allow(mock_client).to receive(:call).and_return(raw_amount_out)
-        allow(ENV).to receive(:fetch).with("POLYGON_RPC_URL", anything).and_return("https://polygon-rpc.example.com")
+        allow(ENV).to receive(:fetch).and_call_original
+        allow(ENV).to receive(:fetch).with("POLYGON_RPC_URL").and_return("https://polygon-rpc.example.com")
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("POLYGON_RPC_URL").and_return("https://polygon-rpc.example.com")
       end

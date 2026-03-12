@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "net/http"
-require "json"
-
 module TheGraph
   class QueryService
     TIMEOUT_OPEN = 5   # seconds
@@ -29,14 +26,14 @@ module TheGraph
       GRAPHQL
 
       response = execute_query(api_url, query)
-      data = JSON.parse(response.body)
+      data = response.parsed_body
 
       events = data.dig("data", "carbonMintEvents") || []
       events.sum { |e| e["amount"].to_i }
     rescue QueryError
       raise
-    rescue JSON::ParserError => e
-      raise QueryError, "Невалідна відповідь від The Graph: #{e.message}"
+    rescue Web3::HttpClient::RequestError => e
+      raise QueryError, e.message
     rescue StandardError => e
       raise QueryError, "Збій зв'язку з The Graph: #{e.message}"
     end
@@ -44,25 +41,12 @@ module TheGraph
     private
 
     def execute_query(api_url, query)
-      uri = URI.parse(api_url)
-
-      request = Net::HTTP::Post.new(uri, {
-        "Content-Type" => "application/json"
-      })
-      request.body = { query: query }.to_json
-
-      response = Net::HTTP.start(
-        uri.hostname, uri.port,
-        use_ssl: uri.scheme == "https",
+      Web3::HttpClient.post(api_url,
+        body: { query: query },
         open_timeout: TIMEOUT_OPEN,
-        read_timeout: TIMEOUT_READ
-      ) { |http| http.request(request) }
-
-      unless response.is_a?(Net::HTTPSuccess)
-        raise QueryError, "The Graph повернув #{response.code}: #{response.body}"
-      end
-
-      response
+        read_timeout: TIMEOUT_READ,
+        service_name: "The Graph"
+      )
     end
   end
 end

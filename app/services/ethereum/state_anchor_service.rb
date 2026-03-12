@@ -49,7 +49,7 @@ module Ethereum
     def anchor_to_l1!
       state_root = generate_state_root
 
-      client = Eth::Client.create(ENV.fetch("ALCHEMY_ETHEREUM_RPC_URL"))
+      client = Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
       anchor_key = Eth::Key.new(priv: ENV.fetch("ETHEREUM_ANCHOR_PRIVATE_KEY"))
 
       contract_address = ENV.fetch("ETHEREUM_ANCHOR_CONTRACT")

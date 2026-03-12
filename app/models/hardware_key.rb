@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class HardwareKey < ApplicationRecord
+  include NormalizeIdentifier
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # БЕЗПЕКА ДАНИХ (ActiveRecord Encryption)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -34,7 +35,7 @@ class HardwareKey < ApplicationRecord
   delegate :organization, :cluster, to: :owner, allow_nil: true
 
   # --- НОРМАЛІЗАЦІЯ ---
-  normalizes :device_uid, with: ->(uid) { uid.to_s.strip.upcase }
+  normalize_identifier :device_uid
 
   # --- ВАЛІДАЦІЇ ---
   validates :device_uid, presence: true, uniqueness: true

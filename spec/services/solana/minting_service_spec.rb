@@ -13,7 +13,7 @@ RSpec.describe Solana::MintingService do
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
 
-    # Stub HTTP calls to Solana RPC
+    # Stub Web3::HttpClient calls to Solana RPC
     stub_solana_rpc_success
   end
 
@@ -153,24 +153,24 @@ RSpec.describe Solana::MintingService do
         log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
         wallet.update!(solana_public_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV")
 
-        allow_any_instance_of(Net::HTTP).to receive(:request)
-          .and_raise(Net::ReadTimeout.new("execution expired"))
+        allow(Web3::HttpClient).to receive(:post)
+          .and_raise(Web3::HttpClient::RequestError.new("Solana Timeout: execution expired"))
 
         expect {
           described_class.new(log).mint_micro_reward!
-        }.to raise_error(RuntimeError, /Solana RPC Timeout/)
+        }.to raise_error(Web3::HttpClient::RequestError, /Solana Timeout/)
       end
 
       it "raises a timeout error on Net::OpenTimeout" do
         log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
         wallet.update!(solana_public_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV")
 
-        allow_any_instance_of(Net::HTTP).to receive(:request)
-          .and_raise(Net::OpenTimeout.new("connection timeout"))
+        allow(Web3::HttpClient).to receive(:post)
+          .and_raise(Web3::HttpClient::RequestError.new("Solana Timeout: connection timeout"))
 
         expect {
           described_class.new(log).mint_micro_reward!
-        }.to raise_error(RuntimeError, /Solana RPC Timeout/)
+        }.to raise_error(Web3::HttpClient::RequestError, /Solana Timeout/)
       end
     end
 
@@ -179,12 +179,12 @@ RSpec.describe Solana::MintingService do
         log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
         wallet.update!(solana_public_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV")
 
-        mock_response = instance_double(Net::HTTPResponse, body: "not json")
-        allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+        response = Web3::HttpClient::Response.new("not json")
+        allow(Web3::HttpClient).to receive(:post).and_return(response)
 
         expect {
           described_class.new(log).mint_micro_reward!
-        }.to raise_error(RuntimeError, /Solana RPC Parse Error/)
+        }.to raise_error(Web3::HttpClient::RequestError, /Invalid JSON response/)
       end
     end
 
@@ -217,18 +217,16 @@ RSpec.describe Solana::MintingService do
   private
 
   def stub_solana_rpc_success
-    mock_response = instance_double(Net::HTTPResponse,
-      body: { "jsonrpc" => "2.0", "result" => { "value" => { "err" => nil } } }.to_json
+    response = Web3::HttpClient::Response.new(
+      { "jsonrpc" => "2.0", "result" => { "value" => { "err" => nil } } }.to_json
     )
-
-    allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+    allow(Web3::HttpClient).to receive(:post).and_return(response)
   end
 
   def stub_solana_rpc_error
-    mock_response = instance_double(Net::HTTPResponse,
-      body: { "jsonrpc" => "2.0", "error" => { "code" => -32002, "message" => "Transaction simulation failed" } }.to_json
+    response = Web3::HttpClient::Response.new(
+      { "jsonrpc" => "2.0", "error" => { "code" => -32002, "message" => "Transaction simulation failed" } }.to_json
     )
-
-    allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+    allow(Web3::HttpClient).to receive(:post).and_return(response)
   end
 end

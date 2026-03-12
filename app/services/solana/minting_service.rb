@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "net/http"
-require "json"
 require "bigdecimal"
 
 module Solana
@@ -144,26 +142,14 @@ module Solana
 
     # Виконує HTTP POST до Solana JSON RPC endpoint
     def execute_rpc_call(rpc_url, payload)
-      uri = URI.parse(rpc_url)
+      response = Web3::HttpClient.post(rpc_url,
+        body: payload,
+        open_timeout: 10,
+        read_timeout: 15,
+        service_name: "Solana"
+      )
 
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = (uri.scheme == "https")
-      http.open_timeout = 10
-      http.read_timeout = 15
-
-      request = Net::HTTP::Post.new(uri.path.presence || "/")
-      request["Content-Type"] = "application/json"
-      request.body = JSON.generate(payload)
-
-      response = http.request(request)
-      JSON.parse(response.body)
-
-    rescue Net::OpenTimeout, Net::ReadTimeout => e
-      Rails.logger.error "🛑 [Solana] RPC Timeout: #{e.message}"
-      raise "Solana RPC Timeout: #{e.message}"
-    rescue JSON::ParserError => e
-      Rails.logger.error "🛑 [Solana] Invalid RPC response: #{e.message}"
-      raise "Solana RPC Parse Error: #{e.message}"
+      response.parsed_body
     end
 
     # Зберігаємо Solana-транзакцію в blockchain_transactions для єдиного аудиту

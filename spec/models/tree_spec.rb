@@ -294,16 +294,14 @@ RSpec.describe Tree, type: :model do
     end
   end
 
-  describe "normalize_did when did is blank" do
+  describe "NormalizeIdentifier concern" do
     it "does not modify did when it is blank" do
       tree = described_class.new(did: "", cluster: create(:cluster), tree_family: create(:tree_family))
-      tree.send(:normalize_did)
       expect(tree.did).to eq("")
     end
 
     it "strips and upcases when did is present" do
       tree = described_class.new(did: " snet-0000abcd ", cluster: create(:cluster), tree_family: create(:tree_family))
-      tree.send(:normalize_did)
       expect(tree.did).to eq("SNET-0000ABCD")
     end
   end

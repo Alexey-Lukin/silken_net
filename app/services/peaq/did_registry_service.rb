@@ -30,32 +30,25 @@ module Peaq
       node_url = Rails.application.credentials.peaq_node_url
       raise RegistrationError, "peaq_node_url не налаштовано в credentials" unless node_url.present?
 
-      uri = URI.parse("#{node_url}/did/register")
-      request = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
-      request.body = {
-        did: did_string,
-        device_id: @tree.did,
-        metadata: {
-          type: "tree",
-          tree_id: @tree.id,
-          cluster_id: @tree.cluster_id,
-          registered_at: Time.current.iso8601
-        }
-      }.to_json
-
-      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 10, read_timeout: 30) do |http|
-        http.request(request)
-      end
-
-      unless response.is_a?(Net::HTTPSuccess)
-        raise RegistrationError, "peaq node повернув #{response.code}: #{response.body}"
-      end
+      Web3::HttpClient.post("#{node_url}/did/register",
+        body: {
+          did: did_string,
+          device_id: @tree.did,
+          metadata: {
+            type: "tree",
+            tree_id: @tree.id,
+            cluster_id: @tree.cluster_id,
+            registered_at: Time.current.iso8601
+          }
+        },
+        open_timeout: 10,
+        read_timeout: 30,
+        service_name: "peaq DID"
+      )
 
       Rails.logger.info "🌳 [peaq DID] Зареєстровано #{did_string} для дерева #{@tree.did}"
-    rescue RegistrationError
-      raise
-    rescue StandardError => e
-      raise RegistrationError, "Збій зв'язку з peaq node: #{e.message}"
+    rescue Web3::HttpClient::RequestError => e
+      raise RegistrationError, e.message
     end
   end
 end

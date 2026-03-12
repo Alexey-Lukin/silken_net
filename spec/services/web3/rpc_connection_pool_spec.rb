@@ -44,6 +44,16 @@ RSpec.describe Web3::RpcConnectionPool do
 
       expect(result_polygon).not_to equal(result_celo)
     end
+
+    it "uses fallback URL when ENV variable is not set" do
+      fallback_url = "https://testnet.example.com"
+      allow(ENV).to receive(:fetch).with("MISSING_RPC_URL", fallback_url).and_return(fallback_url)
+      client_double = instance_double(Eth::Client)
+      allow(Eth::Client).to receive(:create).with(fallback_url).and_return(client_double)
+
+      client = described_class.client_for("MISSING_RPC_URL", fallback: fallback_url)
+      expect(client).to equal(client_double)
+    end
   end
 
   describe ".reset!" do

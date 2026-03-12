@@ -74,7 +74,7 @@ module Chainlink
     end
 
     def send_on_chain_request(payload, router_address, subscription_id)
-      client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
+      client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
       oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
 
       contract = Eth::Contract.from_abi(

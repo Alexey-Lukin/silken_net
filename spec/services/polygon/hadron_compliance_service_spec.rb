@@ -66,13 +66,14 @@ RSpec.describe Polygon::HadronComplianceService do
     context "when Hadron API times out" do
       before do
         allow(Rails.application.credentials).to receive(:hadron_api_key).and_return("test-hadron-key")
-        allow(Net::HTTP).to receive(:start).and_raise(Net::ReadTimeout.new("execution expired"))
+        allow(Web3::HttpClient).to receive(:post)
+          .and_raise(Web3::HttpClient::RequestError.new("Hadron Timeout: execution expired"))
       end
 
       it "raises ComplianceError" do
         expect {
           described_class.new.verify_investor!(wallet)
-        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /timeout/)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /Timeout/)
       end
     end
   end
@@ -148,9 +149,8 @@ RSpec.describe Polygon::HadronComplianceService do
     context "when Hadron API returns non-success HTTP" do
       before do
         allow(Rails.application.credentials).to receive(:hadron_api_key).and_return("test-hadron-key")
-        mock_response = instance_double(Net::HTTPServerError, code: "500", body: "Internal Server Error")
-        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(false)
-        allow(Net::HTTP).to receive(:start).and_return(mock_response)
+        allow(Web3::HttpClient).to receive(:post)
+          .and_raise(Web3::HttpClient::RequestError.new("Hadron API returned 500: Internal Server Error"))
       end
 
       it "raises ComplianceError for non-success response" do
@@ -163,9 +163,8 @@ RSpec.describe Polygon::HadronComplianceService do
     context "when Hadron API KYC returns invalid JSON" do
       before do
         allow(Rails.application.credentials).to receive(:hadron_api_key).and_return("test-hadron-key")
-        mock_response = instance_double(Net::HTTPSuccess, body: "not json")
-        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-        allow(Net::HTTP).to receive(:start).and_return(mock_response)
+        response = Web3::HttpClient::Response.new("not json")
+        allow(Web3::HttpClient).to receive(:post).and_return(response)
       end
 
       it "raises ComplianceError for parse error on KYC" do
@@ -174,22 +173,21 @@ RSpec.describe Polygon::HadronComplianceService do
 
         expect {
           described_class.new.verify_investor!(wallet_local)
-        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /Invalid response from Hadron KYC API/)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /Invalid JSON response/)
       end
     end
 
     context "when Hadron API asset registration returns invalid JSON" do
       before do
         allow(Rails.application.credentials).to receive(:hadron_api_key).and_return("test-hadron-key")
-        mock_response = instance_double(Net::HTTPSuccess, body: "not json")
-        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-        allow(Net::HTTP).to receive(:start).and_return(mock_response)
+        response = Web3::HttpClient::Response.new("not json")
+        allow(Web3::HttpClient).to receive(:post).and_return(response)
       end
 
       it "raises ComplianceError for parse error on asset registration" do
         expect {
           described_class.new.register_asset!(naas_contract)
-        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /Invalid response from Hadron Asset API/)
+        }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /Invalid JSON response/)
       end
     end
   end
@@ -197,8 +195,7 @@ RSpec.describe Polygon::HadronComplianceService do
   private
 
   def stub_request_with_response(body_hash)
-    mock_response = instance_double(Net::HTTPSuccess, body: body_hash.to_json)
-    allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-    allow(Net::HTTP).to receive(:start).and_return(mock_response)
+    response = Web3::HttpClient::Response.new(body_hash.to_json)
+    allow(Web3::HttpClient).to receive(:post).and_return(response)
   end
 end

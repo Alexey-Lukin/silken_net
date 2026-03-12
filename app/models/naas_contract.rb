@@ -38,43 +38,10 @@ class NaasContract < ApplicationRecord
   # THE SLASHING PROTOCOL (D-MRV Арбітраж)
   # =========================================================================
 
-  # [ВИПРАВЛЕНО]: Вигнання "Мертвих Душ".
-  # Ми розраховуємо здоров'я лише за тими "Солдатами", що стоять у строю.
-  # [Cluster TZ]: Використовуємо часовий пояс кластера для детермінованості арбітражу.
+  # Делегує перевірку здоров'я кластера до ContractHealthCheckService.
+  # [Cluster TZ]: Використовує часовий пояс кластера для детермінованості арбітражу.
   def check_cluster_health!(target_date = cluster.local_yesterday)
-    return unless status_active?
-
-    # [Counter Cache]: Використовуємо денормалізований лічильник замість COUNT(*).
-    # Рахуємо лише активні дерева, ігноруючи deceased та removed.
-    total_active_count = cluster.active_trees_count
-
-    return if total_active_count.zero?
-
-    # [SQL Optimization]: Використовуємо підзапит замість масиву об'єктів (The Polymorphic IN Trap).
-    # При 100 000+ деревах, передача масиву ID генерує гігантський IN-оператор.
-    # Subquery дозволяє PostgreSQL оптимізувати запит через JOIN/Hash.
-    daily_insights = AiInsight.daily_health_summary.where(
-      analyzable_type: "Tree",
-      analyzable_id: cluster.trees.active.select(:id),
-      target_date: target_date
-    )
-
-    # Якщо Оракул мовчав цілу добу — це сигнал глобальної аварії зв'язку (Starlink-блекаут).
-    # Відсутність даних > 24 год автоматично вважається порушенням контракту.
-    if daily_insights.empty?
-      activate_slashing_protocol!
-      return
-    end
-
-    # Рахуємо критичні аномалії серед живих
-    critical_insights_count = daily_insights.where("stress_index >= 1.0").count
-
-    # Математична межа порушення контракту (20% від активної біомаси).
-    # [Rational]: Точна раціональна арифметика замість Float 0.20, щоб уникнути мікропохибок.
-    # $$HealthRatio = \frac{\sum \text{ActiveTrees with Stress} \ge 1.0}{\text{TotalActiveTrees}}$$
-    if critical_insights_count > total_active_count * Rational(1, 5)
-      activate_slashing_protocol!
-    end
+    ContractHealthCheckService.call(self, target_date)
   end
 
   # =========================================================================
@@ -105,32 +72,9 @@ class NaasContract < ApplicationRecord
     [ prorated - fee, BigDecimal("0") ].max
   end
 
-  # Дострокове розірвання контракту з розрахунком штрафу та спалюванням балів.
+  # Дострокове розірвання контракту — делегує до ContractTerminationService.
   def terminate_early!
-    raise "🛑 [NaasContract] Контракт не активний. Розірвання неможливе." unless status_active?
-
-    min_days = (min_days_before_exit || 0).to_i
-    elapsed = (Time.current.utc.to_date - start_date.to_date).to_i
-    if min_days.positive? && elapsed < min_days
-      raise "🛑 [NaasContract] Мінімальний термін до розірвання: #{min_days} днів (пройшло: #{elapsed})."
-    end
-
-    refund = calculate_prorated_refund
-    should_burn = ActiveModel::Type::Boolean.new.cast(burn_accrued_points)
-
-    transaction do
-      update!(status: :cancelled, cancelled_at: Time.current)
-
-      # Спалювання нарахованих балів/токенів, якщо умови контракту це передбачають
-      if should_burn
-        BurnCarbonTokensWorker.perform_async(organization_id, id)
-        Rails.logger.warn "🔥 [NaasContract] Контракт ##{id} розірвано. Нараховані бали спалюються."
-      end
-
-      Rails.logger.info "📜 [NaasContract] Контракт ##{id} розірвано достроково. Повернення: #{refund}, Штраф: #{calculate_early_exit_fee}."
-    end
-
-    { refund: refund, fee: calculate_early_exit_fee, burned: should_burn }
+    ContractTerminationService.call(self)
   end
 
   # Відсоток виконання контракту за обсягом емісії відносно вкладених коштів.
@@ -154,27 +98,6 @@ class NaasContract < ApplicationRecord
   end
 
   private
-
-  # [ВИПРАВЛЕНО]: Ліквідація Race Condition.
-  # Тепер BurnCarbonTokensWorker гарантовано бачить статус :breached у базі.
-  def activate_slashing_protocol!
-    # Змінюємо стан у межах атомарної транзакції
-    breach_confirmed = transaction do
-      update!(status: :breached)
-      true
-    rescue StandardError => e
-      Rails.logger.error "🛑 [D-MRV] Провал активації Slashing для контракту ##{id}: #{e.message}"
-      false
-    end
-
-    # Воркер стає на крило ТІЛЬКИ після успішного COMMIT у PostgreSQL
-    if breach_confirmed
-      Rails.logger.warn "🚨 [D-MRV] NaasContract ##{id} РОЗІРВАНО. Сигнал на Slashing відправлено."
-
-      # Web3-екзекутор тепер не зустріне "привида" зі статусом :active
-      BurnCarbonTokensWorker.perform_async(self.organization_id, self.id)
-    end
-  end
 
   def end_date_after_start_date
     return if end_date.blank? || start_date.blank?

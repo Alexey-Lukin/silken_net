@@ -38,6 +38,7 @@ RSpec.configure do |config|
   config.before do
     Sidekiq::Job.clear_all
     Rails.cache.clear
+    Web3::RpcConnectionPool.reset!
   end
 
   # Prosopite: N+1 query detection in request specs.

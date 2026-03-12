@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "net/http"
-require "json"
-
 module Filecoin
   # =========================================================================
   # 📦 FILECOIN ARCHIVE SERVICE (Вічна Пам'ять Планети)
@@ -105,31 +102,15 @@ module Filecoin
       api_key = Rails.application.credentials.filecoin_api_key
       raise "🛑 [Filecoin] Missing filecoin_api_key in credentials" if api_key.blank?
 
-      uri = URI.parse(PINATA_API_URL)
+      response = Web3::HttpClient.post(PINATA_API_URL,
+        body: payload,
+        headers: { "Authorization" => "Bearer #{api_key}" },
+        open_timeout: OPEN_TIMEOUT,
+        read_timeout: READ_TIMEOUT,
+        service_name: "Filecoin"
+      )
 
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-      http.open_timeout = OPEN_TIMEOUT
-      http.read_timeout = READ_TIMEOUT
-
-      request = Net::HTTP::Post.new(uri.path)
-      request["Content-Type"] = "application/json"
-      request["Authorization"] = "Bearer #{api_key}"
-      request.body = JSON.generate(payload)
-
-      response = http.request(request)
-
-      unless response.is_a?(Net::HTTPSuccess)
-        raise "🛑 [Filecoin] IPFS upload failed (HTTP #{response.code}): #{response.body}"
-      end
-
-      JSON.parse(response.body)
-    rescue Net::OpenTimeout, Net::ReadTimeout => e
-      Rails.logger.error "🛑 [Filecoin] IPFS Timeout: #{e.message}"
-      raise "Filecoin IPFS Timeout: #{e.message}"
-    rescue JSON::ParserError => e
-      Rails.logger.error "🛑 [Filecoin] Invalid IPFS response: #{e.message}"
-      raise "Filecoin IPFS Parse Error: #{e.message}"
+      response.parsed_body
     end
 
     # Витягує CID з відповіді Pinata API

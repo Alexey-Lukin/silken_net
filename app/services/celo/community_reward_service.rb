@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "eth"
-require "bigdecimal"
 
 module Celo
   # =========================================================================
@@ -34,13 +33,13 @@ module Celo
     DEFAULT_RPC_URL = "https://alfajores-forno.celo-testnet.org"
 
     # Фіксована винагорода за ідеальний стан кластера (5 cUSD)
-    REWARD_AMOUNT = BigDecimal("5.0")
+    REWARD_AMOUNT = "5.0"
 
     # cUSD має 18 десяткових знаків (стандарт ERC-20)
     TOKEN_DECIMALS = 18
 
     # Максимальний stress_index для отримання винагороди
-    MAX_STRESS_INDEX = BigDecimal("0.2")
+    MAX_STRESS_INDEX = 0.2
 
     def initialize(cluster, target_date)
       @cluster = cluster
@@ -56,8 +55,8 @@ module Celo
       organization = @cluster.organization
       return unless organization&.crypto_public_address.present?
 
-      # Підключення до Celo RPC
-      client = Eth::Client.create(ENV.fetch("CELO_RPC_URL", DEFAULT_RPC_URL))
+      # Підключення до Celo RPC — Thread-cached RPC client
+      client = Web3::RpcConnectionPool.client_for("CELO_RPC_URL", fallback: DEFAULT_RPC_URL)
       oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
 
       cusd_contract_address = ENV.fetch("CELO_CUSD_CONTRACT_ADDRESS")
@@ -67,7 +66,7 @@ module Celo
         abi: ERC20_TRANSFER_ABI
       )
 
-      amount_in_wei = to_wei(REWARD_AMOUNT)
+      amount_in_wei = Web3::WeiConverter.to_wei(REWARD_AMOUNT, TOKEN_DECIMALS)
       recipient = organization.crypto_public_address
       lock_key = "lock:web3:oracle:#{oracle_key.address}"
 
@@ -110,10 +109,6 @@ module Celo
       return false if insight.fraud_detected?
 
       true
-    end
-
-    def to_wei(amount)
-      (BigDecimal(amount.to_s) * 10**TOKEN_DECIMALS).to_i
     end
 
     def create_reward_transaction(tx_hash, recipient)

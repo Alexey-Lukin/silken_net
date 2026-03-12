@@ -79,55 +79,36 @@ module Polygon
     # --- Production API calls ---
 
     def perform_kyc_request(crypto_address, api_key)
-      uri = URI.parse("#{HADRON_API_URL}/identity/kyc/verify")
-      request = Net::HTTP::Post.new(uri, {
-        "Content-Type" => "application/json",
-        "Authorization" => "Bearer #{api_key}"
-      })
-      request.body = { wallet_address: crypto_address, chain: "polygon" }.to_json
+      response = Web3::HttpClient.post("#{HADRON_API_URL}/identity/kyc/verify",
+        body: { wallet_address: crypto_address, chain: "polygon" },
+        headers: { "Authorization" => "Bearer #{api_key}" },
+        open_timeout: TIMEOUT_OPEN,
+        read_timeout: TIMEOUT_READ,
+        service_name: "Hadron"
+      )
 
-      response = execute_request(uri, request)
-      body = JSON.parse(response.body)
-
+      body = response.parsed_body
       { approved: body["status"] == "approved" }
-    rescue JSON::ParserError => e
-      raise ComplianceError, "Invalid response from Hadron KYC API: #{e.message}"
+    rescue Web3::HttpClient::RequestError => e
+      raise ComplianceError, e.message
     end
 
     def perform_asset_registration(naas_contract, api_key)
-      uri = URI.parse("#{HADRON_API_URL}/assets/rwa/register")
-      request = Net::HTTP::Post.new(uri, {
-        "Content-Type" => "application/json",
-        "Authorization" => "Bearer #{api_key}"
-      })
-      request.body = build_asset_payload(naas_contract).to_json
+      response = Web3::HttpClient.post("#{HADRON_API_URL}/assets/rwa/register",
+        body: build_asset_payload(naas_contract),
+        headers: { "Authorization" => "Bearer #{api_key}" },
+        open_timeout: TIMEOUT_OPEN,
+        read_timeout: TIMEOUT_READ,
+        service_name: "Hadron"
+      )
 
-      response = execute_request(uri, request)
-      body = JSON.parse(response.body)
+      body = response.parsed_body
       asset_id = body["asset_id"]
-
       raise ComplianceError, "Hadron did not return an asset_id" if asset_id.blank?
 
       { asset_id: asset_id }
-    rescue JSON::ParserError => e
-      raise ComplianceError, "Invalid response from Hadron Asset API: #{e.message}"
-    end
-
-    def execute_request(uri, request)
-      response = Net::HTTP.start(
-        uri.hostname, uri.port,
-        use_ssl: uri.scheme == "https",
-        open_timeout: TIMEOUT_OPEN,
-        read_timeout: TIMEOUT_READ
-      ) { |http| http.request(request) }
-
-      unless response.is_a?(Net::HTTPSuccess)
-        raise ComplianceError, "Hadron API returned #{response.code}: #{response.body}"
-      end
-
-      response
-    rescue Net::OpenTimeout, Net::ReadTimeout => e
-      raise ComplianceError, "Hadron API timeout: #{e.message}"
+    rescue Web3::HttpClient::RequestError => e
+      raise ComplianceError, e.message
     end
 
     # --- Simulation mode (no API key configured) ---

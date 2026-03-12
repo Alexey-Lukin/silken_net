@@ -1,16 +1,11 @@
 # frozen_string_literal: true
 
-class InsightGeneratorService
+class InsightGeneratorService < ApplicationService
   # Поріг відхилення. Якщо вологість/температура дерева відрізняється від
   # середньої по кластеру більше ніж на 30%, це класифікується як фрод/аномалія.
   FRAUD_DEVIATION_THRESHOLD = 0.30
 
-  # [UTC Anchor]: Канонічний UTC-якір для агрегації телеметрії.
-  def self.call(date = Time.current.utc.to_date - 1)
-    new(date).perform
-  end
-
-  def initialize(date)
+  def initialize(date = Time.current.utc.to_date - 1)
     @date = date
     @start_time = date.beginning_of_day
     @end_time = date.end_of_day
@@ -28,26 +23,30 @@ class InsightGeneratorService
     @baselines_map = prefetch_cluster_baselines
 
     # 2. ПОКЛАСТЕРНА ОБРОБКА З AI-GUARD
-    Cluster.find_each do |cluster|
-      cluster_baseline = @baselines_map[cluster.id]
-      next unless cluster_baseline
+    # [ОПТИМІЗАЦІЯ]: Обробляємо тільки кластери з даними замість Cluster.find_each
+    processed_cluster_ids = @baselines_map.keys
 
-      # ⚡ [ANTI-N+1]: Агрегуємо статистику для ВСІХ дерев кластера одним SQL-запитом
-      tree_stats_map = prefetch_tree_stats(cluster)
+    unless processed_cluster_ids.empty?
+      Cluster.where(id: processed_cluster_ids).find_each do |cluster|
+        cluster_baseline = @baselines_map[cluster.id]
 
-      # Перевіряємо кожне дерево в кластері на відповідність базлайну
-      cluster.trees.find_each do |tree|
-        stats = tree_stats_map[tree.id]
-        next unless stats
+        # ⚡ [ANTI-N+1]: Агрегуємо статистику для ВСІХ дерев кластера одним SQL-запитом
+        tree_stats_map = prefetch_tree_stats(cluster)
 
-        if generate_for_tree(tree, cluster_baseline, stats)
-          @processed_count += 1
+        # Перевіряємо кожне дерево в кластері на відповідність базлайну
+        cluster.trees.find_each do |tree|
+          stats = tree_stats_map[tree.id]
+          next unless stats
+
+          if generate_for_tree(tree, cluster_baseline, stats)
+            @processed_count += 1
+          end
         end
       end
-    end
 
-    # 3. АГРЕГАЦІЯ КЛАСТЕРІВ (Оптимізовано JSONB)
-    aggregate_clusters!
+      # 3. АГРЕГАЦІЯ КЛАСТЕРІВ — тільки для кластерів з даними (без повторної ітерації)
+      aggregate_clusters!(processed_cluster_ids)
+    end
 
     # 4. КЕНОЗИС: Очищення сирих логів
     cleanup_old_logs!
@@ -161,8 +160,8 @@ class InsightGeneratorService
     [ base_stress, 0.99 ].min
   end
 
-  def aggregate_clusters!
-    Cluster.find_each do |cluster|
+  def aggregate_clusters!(cluster_ids)
+    Cluster.where(id: cluster_ids).find_each do |cluster|
       tree_insights = AiInsight.where(
         analyzable_type: "Tree",
         analyzable_id: cluster.trees.select(:id),

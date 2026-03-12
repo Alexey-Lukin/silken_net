@@ -26,7 +26,7 @@ class PriceOracleService
     def fetch_price_from_uniswap
       return mock_price if Rails.env.development? || Rails.env.test?
 
-      client = Eth::Client.create(ENV["POLYGON_RPC_URL"])
+      client = Web3::RpcConnectionPool.client_for("POLYGON_RPC_URL")
       quoter = Eth::Contract.from_abi(name: "Quoter", address: QUOTER_ADDRESS, abi: quoter_abi)
 
       # Запитуємо ціну 1 SCC в USDC

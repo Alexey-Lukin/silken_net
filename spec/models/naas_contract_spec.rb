@@ -457,16 +457,18 @@ RSpec.describe NaasContract, type: :model do
     end
   end
 
-  describe "activate_slashing_protocol! error handling" do
+  describe "activate_slashing_protocol! (via ContractHealthCheckService)" do
     let(:organization) { create(:organization) }
     let(:cluster) { create(:cluster, organization: organization) }
 
     it "handles error during update! and does not enqueue worker" do
       contract = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
+      create(:tree, cluster: cluster, status: :active)
+      cluster.reload
 
-      allow(contract).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(contract))
+      allow_any_instance_of(described_class).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(contract))
 
-      contract.send(:activate_slashing_protocol!)
+      contract.check_cluster_health!(Time.current.utc.to_date - 1)
 
       expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
       expect(contract.reload).to be_status_active
@@ -474,8 +476,11 @@ RSpec.describe NaasContract, type: :model do
 
     it "enqueues worker when slashing succeeds" do
       contract = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
+      create(:tree, cluster: cluster, status: :active)
+      cluster.reload
 
-      contract.send(:activate_slashing_protocol!)
+      # No insights = Oracle silent = breach
+      contract.check_cluster_health!(Time.current.utc.to_date - 1)
 
       expect(contract.reload).to be_status_breached
       expect(BurnCarbonTokensWorker.jobs.size).to eq(1)

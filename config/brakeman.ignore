@@ -1,7 +1,7 @@
 {
   "ignored_warnings": [
     {
-      "fingerprint": "04a8128ccbf208ff0443106b4f05e5c9e9b8f42e4454ea6afc0c5ad78ebf474a",
+      "fingerprint": "23aaed3b3b5def5fbb25e202e8e8ccca9b76d507cf170e0b0a56caa9aed24ae7",
       "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name."
     },
     {
@@ -13,6 +13,6 @@
       "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in Celo reward service."
     }
   ],
-  "updated": "2026-03-03 11:10:00 +0000",
+  "updated": "2026-03-12 07:00:00 +0000",
   "brakeman_version": "8.0.4"
 }

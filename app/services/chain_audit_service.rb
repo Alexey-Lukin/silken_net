@@ -2,7 +2,7 @@
 
 require "eth"
 
-class ChainAuditService
+class ChainAuditService < ApplicationService
   TOTAL_SUPPLY_ABI = [
     {
       "inputs" => [],
@@ -19,11 +19,7 @@ class ChainAuditService
 
   Result = Struct.new(:db_total, :chain_total, :delta, :critical, :checked_at, keyword_init: true)
 
-  def self.call
-    new.call
-  end
-
-  def call
+  def perform
     db_total     = fetch_db_scc_total
     chain_total  = fetch_chain_total_supply
     delta        = (db_total - chain_total).abs
@@ -47,9 +43,9 @@ class ChainAuditService
       .to_f
   end
 
-  # Загальна емісія SCC у смарт-контракті Polygon (totalSupply)
+  # Загальна емісія SCC у смарт-контракті Polygon (totalSupply) — Thread-cached RPC client
   def fetch_chain_total_supply
-    client   = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
+    client   = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
     contract = Eth::Contract.from_abi(
       name:    "SilkenCarbonCoin",
       address: ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS"),

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class TelemetryUnpackerService
+class TelemetryUnpackerService < ApplicationService
   # [DID:4][RSSI:1][Payload:16] = 21 байт
   CHUNK_SIZE = 21
 
@@ -17,11 +17,7 @@ class TelemetryUnpackerService
   # DID-сентинел: Королева передає власну телеметрію з DID = 0x00000000
   QUEEN_SENTINEL_DID = "0"
 
-  def self.call(binary_batch, gateway_id = nil)
-    new(binary_batch, gateway_id).perform
-  end
-
-  def initialize(binary_batch, gateway_id)
+  def initialize(binary_batch, gateway_id = nil)
     @binary_batch = binary_batch
     @gateway = Gateway.find_by(id: gateway_id)
     @trees_cache = {}

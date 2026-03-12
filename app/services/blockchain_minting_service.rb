@@ -3,7 +3,7 @@
 require "eth"
 require "bigdecimal"
 
-class BlockchainMintingService
+class BlockchainMintingService < ApplicationService
   # ABI оновлено для підтримки поштучного mint та пакетного batchMint
   CONTRACT_ABI = [
     {
@@ -24,14 +24,14 @@ class BlockchainMintingService
     }
   ].to_json
 
-  # Поштучний виклик
+  # Поштучний виклик — делегується через ApplicationService.call → new.perform
   def self.call(blockchain_transaction_id, telemetry_log: nil)
-    new([ blockchain_transaction_id ], telemetry_log: telemetry_log).call
+    new([ blockchain_transaction_id ], telemetry_log: telemetry_log).perform
   end
 
   # Пакетний виклик для цілого сектора/кластера
   def self.call_batch(blockchain_transaction_ids, telemetry_log: nil)
-    new(blockchain_transaction_ids, telemetry_log: telemetry_log).call
+    new(blockchain_transaction_ids, telemetry_log: telemetry_log).perform
   end
 
   def initialize(transaction_ids, telemetry_log: nil)
@@ -41,7 +41,7 @@ class BlockchainMintingService
     @telemetry_log = telemetry_log
   end
 
-  def call
+  def perform
     return if @transactions.empty?
 
     # [TRUSTLESS]: Перевірка децентралізованої верифікації перед мінтингом.
@@ -61,8 +61,8 @@ class BlockchainMintingService
       end
     end
 
-    # 1. ПІДКЛЮЧЕННЯ (The Alchemy Link)
-    client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
+    # 1. ПІДКЛЮЧЕННЯ (The Alchemy Link) — Thread-cached RPC client
+    client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
     oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
 
     # [SAFETY]: Перевірка балансу Оракула
@@ -160,9 +160,7 @@ class BlockchainMintingService
   end
 
   def to_wei(amount)
-    # [BigDecimal]: Уникаємо Float precision loss при конвертації великих сум.
-    # amount.to_f * 10**18 може дати похибку в кількох wei — неприпустимо для Web3.
-    (BigDecimal(amount.to_s) * 10**18).to_i
+    Web3::WeiConverter.to_wei(amount)
   end
 
   def broadcast_tx_update(transaction)
