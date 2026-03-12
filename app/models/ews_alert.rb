@@ -31,7 +31,7 @@ class EwsAlert < ApplicationRecord
     state :resolved
     state :ignored
 
-    event :resolve do
+    event :mark_resolved do
       transitions from: :active, to: :resolved
     end
 
@@ -84,12 +84,12 @@ class EwsAlert < ApplicationRecord
     # слухати це дерево після його відновлення.
     clear_silence_filter!
 
-    update!(
-      status: :resolved,
-      resolved_at: Time.current,
-      resolver: user,
-      resolution_notes: notes
-    )
+    self.resolved_at = Time.current
+    self.resolver = user
+    self.resolution_notes = notes
+
+    # AASM state transition з валідацією (only from :active)
+    mark_resolved!
 
     # [SELF-HEALING]: Атомарно закриваємо MaintenanceRecord
     close_associated_maintenance!

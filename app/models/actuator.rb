@@ -63,7 +63,7 @@ class Actuator < ApplicationRecord
       after do
         Rails.logger.info "⚙️ [ACTUATOR] #{name} повернувся в стан спокою."
       end
-      transitions from: [ :active, :offline ], to: :idle
+      transitions from: [ :active, :offline, :maintenance_needed ], to: :idle
     end
 
     # Пристрій втратив зв'язок

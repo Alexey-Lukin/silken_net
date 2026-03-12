@@ -486,4 +486,71 @@ RSpec.describe NaasContract, type: :model do
       expect(BurnCarbonTokensWorker.jobs.size).to eq(1)
     end
   end
+
+  # =========================================================================
+  # AASM STATE MACHINE
+  # =========================================================================
+  describe "AASM state machine" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    describe "initial state" do
+      it "starts as draft" do
+        contract = build(:naas_contract, organization: organization, cluster: cluster, status: :draft)
+        expect(contract).to be_draft
+      end
+    end
+
+    describe "#activate!" do
+      it "transitions from draft to active" do
+        contract = create(:naas_contract, organization: organization, cluster: cluster, status: :draft)
+        contract.activate!
+        expect(contract.reload).to be_status_active
+      end
+
+      it "rejects transition from fulfilled" do
+        contract = create(:naas_contract, organization: organization, cluster: cluster, status: :fulfilled)
+        expect { contract.activate! }.to raise_error(AASM::InvalidTransition)
+      end
+    end
+
+    describe "#fulfill!" do
+      it "transitions from active to fulfilled" do
+        contract = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
+        contract.fulfill!
+        expect(contract.reload).to be_status_fulfilled
+      end
+    end
+
+    describe "#breach!" do
+      it "transitions from active to breached" do
+        contract = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
+        contract.breach!
+        expect(contract.reload).to be_status_breached
+      end
+    end
+
+    describe "#cancel!" do
+      it "transitions from draft to cancelled" do
+        contract = create(:naas_contract, organization: organization, cluster: cluster, status: :draft)
+        contract.cancel!
+        expect(contract.reload).to be_status_cancelled
+      end
+
+      it "transitions from active to cancelled" do
+        contract = create(:naas_contract, organization: organization, cluster: cluster, status: :active)
+        contract.cancel!
+        expect(contract.reload).to be_status_cancelled
+      end
+    end
+
+    describe "may_ query methods" do
+      it "reports valid transitions from draft" do
+        contract = build(:naas_contract, organization: organization, cluster: cluster, status: :draft)
+        expect(contract.may_activate?).to be true
+        expect(contract.may_fulfill?).to be false
+        expect(contract.may_cancel?).to be true
+      end
+    end
+  end
 end

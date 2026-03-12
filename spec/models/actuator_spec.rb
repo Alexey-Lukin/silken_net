@@ -231,4 +231,67 @@ RSpec.describe Actuator, type: :model do
       expect(EwsAlert.last.message).to include("Невідома помилка CoAP")
     end
   end
+
+  # =========================================================================
+  # AASM STATE MACHINE
+  # =========================================================================
+  describe "AASM state machine" do
+    let(:gateway) { create(:gateway, :online) }
+    let(:actuator) { create(:actuator, gateway: gateway, state: :idle) }
+
+    describe "initial state" do
+      it "starts as idle" do
+        expect(build(:actuator, gateway: gateway)).to be_idle
+      end
+    end
+
+    describe "#activate! (via mark_active!)" do
+      it "transitions from idle to active" do
+        freeze_time do
+          actuator.mark_active!
+          actuator.reload
+          expect(actuator).to be_active
+          expect(actuator.last_activated_at).to be_within(1.second).of(Time.current)
+        end
+      end
+
+      it "rejects transition from maintenance_needed" do
+        actuator.update_columns(state: Actuator.states[:maintenance_needed])
+        actuator.reload
+        expect { actuator.mark_active! }.to raise_error(AASM::InvalidTransition)
+      end
+    end
+
+    describe "#deactivate! (via mark_idle!)" do
+      it "transitions from active to idle" do
+        actuator.update_columns(state: Actuator.states[:active])
+        actuator.reload
+        actuator.mark_idle!
+        expect(actuator.reload).to be_idle
+      end
+
+      it "transitions from maintenance_needed to idle (repair)" do
+        actuator.update_columns(state: Actuator.states[:maintenance_needed])
+        actuator.reload
+        actuator.mark_idle!
+        expect(actuator.reload).to be_idle
+      end
+    end
+
+    describe "#report_fault! (via require_maintenance!)" do
+      it "transitions from idle to maintenance_needed and creates EWS alert" do
+        allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+        actuator.require_maintenance!("CoAP timeout")
+        expect(actuator.reload).to be_maintenance_needed
+      end
+    end
+
+    describe "may_ query methods" do
+      it "reports valid transitions from idle" do
+        expect(actuator.may_activate?).to be true
+        expect(actuator.may_deactivate?).to be false
+        expect(actuator.may_report_fault?).to be true
+      end
+    end
+  end
 end

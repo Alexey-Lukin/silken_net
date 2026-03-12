@@ -249,4 +249,116 @@ RSpec.describe BlockchainTransaction, type: :model do
       end
     end
   end
+
+  # =========================================================================
+  # AASM STATE MACHINE
+  # =========================================================================
+  describe "AASM state machine" do
+    let(:tx) { create(:blockchain_transaction, status: :pending, tx_hash: nil) }
+
+    describe "initial state" do
+      it "starts as pending" do
+        expect(build(:blockchain_transaction, status: :pending)).to be_pending
+      end
+    end
+
+    describe "#process!" do
+      it "transitions from pending to processing" do
+        tx.process!
+        expect(tx.reload).to be_processing
+      end
+
+      it "rejects transition from confirmed" do
+        confirmed_tx = create(:blockchain_transaction, status: :confirmed)
+        expect { confirmed_tx.process! }.to raise_error(AASM::InvalidTransition)
+      end
+    end
+
+    describe "#mark_as_sent!" do
+      it "transitions from pending to sent and sets tx_hash + sent_at" do
+        freeze_time do
+          tx.mark_as_sent!("0xabc123")
+          tx.reload
+          expect(tx).to be_sent
+          expect(tx.tx_hash).to eq("0xabc123")
+          expect(tx.sent_at).to be_within(1.second).of(Time.current)
+          expect(tx.error_message).to be_nil
+        end
+      end
+
+      it "transitions from processing to sent" do
+        tx.update_columns(status: described_class.statuses[:processing])
+        tx.reload
+        tx.mark_as_sent!("0xdef456")
+        expect(tx.reload).to be_sent
+      end
+
+      it "rejects transition from confirmed" do
+        confirmed_tx = create(:blockchain_transaction, status: :confirmed)
+        expect { confirmed_tx.mark_as_sent!("0x1") }.to raise_error(AASM::InvalidTransition)
+      end
+    end
+
+    describe "#confirm!" do
+      it "transitions from sent to confirmed and sets block_number + gas_used" do
+        sent_tx = create(:blockchain_transaction, status: :sent)
+        freeze_time do
+          sent_tx.confirm!(42_000, 21_000)
+          sent_tx.reload
+          expect(sent_tx).to be_confirmed
+          expect(sent_tx.block_number).to eq(42_000)
+          expect(sent_tx.gas_used).to eq(21_000)
+          expect(sent_tx.confirmed_at).to be_within(1.second).of(Time.current)
+        end
+      end
+
+      it "works without arguments (BlockchainConfirmationWorker pattern)" do
+        sent_tx = create(:blockchain_transaction, status: :sent)
+        sent_tx.confirm!
+        expect(sent_tx.reload).to be_confirmed
+      end
+
+      it "rejects transition from pending" do
+        expect { tx.confirm! }.to raise_error(AASM::InvalidTransition)
+      end
+    end
+
+    describe "#fail!" do
+      it "transitions from any state to failed and sets error_message" do
+        allow(Rails.logger).to receive(:error)
+        tx.fail!("EVM revert")
+        tx.reload
+        expect(tx).to be_failed
+        expect(tx.error_message).to eq("EVM revert")
+      end
+
+      it "truncates long error messages to 500 chars" do
+        allow(Rails.logger).to receive(:error)
+        long_reason = "x" * 600
+        tx.fail!(long_reason)
+        expect(tx.reload.error_message.length).to be <= 500
+      end
+
+      it "can fail from sent state" do
+        allow(Rails.logger).to receive(:error)
+        sent_tx = create(:blockchain_transaction, status: :sent)
+        sent_tx.fail!("timeout")
+        expect(sent_tx.reload).to be_failed
+      end
+
+      it "logs the failure" do
+        expect(Rails.logger).to receive(:error).with(/провалилася/)
+        tx.fail!("revert")
+      end
+    end
+
+    describe "may_ query methods" do
+      it "reports valid transitions" do
+        expect(tx.may_process?).to be true
+        expect(tx.may_mark_as_sent?).to be true
+        expect(tx.may_confirm?).to be false
+        expect(tx.may_fail?).to be true
+      end
+    end
+  end
 end

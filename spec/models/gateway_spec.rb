@@ -250,4 +250,139 @@ RSpec.describe Gateway, type: :model do
       expect(gateway).not_to be_firmware_fw_idle
     end
   end
+
+  # =========================================================================
+  # AASM STATE MACHINE
+  # =========================================================================
+  describe "AASM state machine" do
+    describe "initial state" do
+      it "starts as idle" do
+        expect(build(:gateway)).to be_idle
+      end
+    end
+
+    describe "#wake!" do
+      it "transitions from idle to active" do
+        gateway = create(:gateway, state: :idle)
+        gateway.wake!
+        expect(gateway.reload).to be_active
+      end
+    end
+
+    describe "#sleep!" do
+      it "transitions from active to idle" do
+        gateway = create(:gateway)
+        gateway.update_columns(state: Gateway.states[:active])
+        gateway.reload
+        gateway.sleep!
+        expect(gateway.reload).to be_idle
+      end
+    end
+
+    describe "#begin_update!" do
+      it "transitions from idle to updating" do
+        gateway = create(:gateway, state: :idle)
+        gateway.begin_update!
+        expect(gateway.reload).to be_updating
+      end
+    end
+
+    describe "#finish_update!" do
+      it "transitions from updating to idle" do
+        gateway = create(:gateway)
+        gateway.update_columns(state: Gateway.states[:updating])
+        gateway.reload
+        gateway.finish_update!
+        expect(gateway.reload).to be_idle
+      end
+    end
+
+    describe "#report_fault!" do
+      it "transitions from active to faulty" do
+        gateway = create(:gateway)
+        gateway.update_columns(state: Gateway.states[:active])
+        gateway.reload
+        gateway.report_fault!
+        expect(gateway.reload).to be_faulty
+      end
+    end
+
+    describe "#enter_maintenance!" do
+      it "transitions from idle to maintenance" do
+        gateway = create(:gateway, state: :idle)
+        gateway.enter_maintenance!
+        expect(gateway.reload).to be_maintenance
+      end
+    end
+
+    describe "#exit_maintenance!" do
+      it "transitions from maintenance to idle" do
+        gateway = create(:gateway)
+        gateway.update_columns(state: Gateway.states[:maintenance])
+        gateway.reload
+        gateway.exit_maintenance!
+        expect(gateway.reload).to be_idle
+      end
+    end
+
+    describe "may_ query methods" do
+      it "reports valid transitions from idle" do
+        gateway = build(:gateway, state: :idle)
+        expect(gateway.may_wake?).to be true
+        expect(gateway.may_sleep?).to be false
+        expect(gateway.may_begin_update?).to be true
+        expect(gateway.may_report_fault?).to be true
+      end
+    end
+  end
+
+  # =========================================================================
+  # AASM FIRMWARE STATE MACHINE (from Firmwareable concern)
+  # =========================================================================
+  describe "AASM firmware state machine" do
+    let(:gateway) { create(:gateway) }
+
+    describe "#schedule_update!" do
+      it "transitions from fw_idle to fw_pending" do
+        gateway.schedule_update!
+        expect(gateway.reload).to be_firmware_fw_pending
+      end
+    end
+
+    describe "#start_download!" do
+      it "transitions from fw_pending to fw_downloading" do
+        gateway.update_columns(firmware_update_status: Gateway.firmware_update_statuses[:fw_pending])
+        gateway.reload
+        gateway.start_download!
+        expect(gateway.reload).to be_firmware_fw_downloading
+      end
+    end
+
+    describe "#complete_update!" do
+      it "transitions from fw_flashing to fw_completed" do
+        gateway.update_columns(firmware_update_status: Gateway.firmware_update_statuses[:fw_flashing])
+        gateway.reload
+        gateway.complete_update!
+        expect(gateway.reload).to be_firmware_fw_completed
+      end
+    end
+
+    describe "#fail_update!" do
+      it "transitions from fw_downloading to fw_failed" do
+        gateway.update_columns(firmware_update_status: Gateway.firmware_update_statuses[:fw_downloading])
+        gateway.reload
+        gateway.fail_update!
+        expect(gateway.reload).to be_firmware_fw_failed
+      end
+    end
+
+    describe "#reset_firmware!" do
+      it "transitions from fw_failed to fw_idle" do
+        gateway.update_columns(firmware_update_status: Gateway.firmware_update_statuses[:fw_failed])
+        gateway.reload
+        gateway.reset_firmware!
+        expect(gateway.reload).to be_firmware_fw_idle
+      end
+    end
+  end
 end
