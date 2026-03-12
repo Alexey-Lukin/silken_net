@@ -249,7 +249,7 @@ RSpec.describe Solana::MintingService do
       )
       allow(Web3::HttpClient).to receive(:post).and_return(error_response)
 
-      service = Solana::MintingService.new(telemetry_log)
+      service = described_class.new(telemetry_log)
 
       wallet = tree.wallet
       wallet.update!(solana_public_address: "SoLaNa1111111111111111111111111111111111111")
@@ -265,7 +265,7 @@ RSpec.describe Solana::MintingService do
       error_response = double("response", parsed_body: { "error" => {} })
       allow(Web3::HttpClient).to receive(:post).and_return(error_response)
 
-      service = Solana::MintingService.new(telemetry_log)
+      service = described_class.new(telemetry_log)
 
       expect {
         service.send(:send_transfer_request, "SoLaNa1111111111111111111111111111111111111", 10_000)
@@ -278,7 +278,7 @@ RSpec.describe Solana::MintingService do
       nil_response = double("response", parsed_body: nil)
       allow(Web3::HttpClient).to receive(:post).and_return(nil_response)
 
-      service = Solana::MintingService.new(telemetry_log)
+      service = described_class.new(telemetry_log)
 
       expect {
         service.send(:send_transfer_request, "SoLaNa1111111111111111111111111111111111111", 10_000)

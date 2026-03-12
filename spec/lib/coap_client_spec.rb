@@ -204,7 +204,7 @@ RSpec.describe CoapClient do
       allow(IO).to receive(:select).and_return(nil)
 
       expect {
-        CoapClient.put("coap://192.168.1.1:5683/test", "payload", timeout: 1)
+        described_class.put("coap://192.168.1.1:5683/test", "payload", timeout: 1)
       }.to raise_error(CoapClient::NetworkError)
 
       expect(mock_socket).to have_received(:close)
@@ -214,7 +214,7 @@ RSpec.describe CoapClient do
       # Class code 0 is neither 2 (success), 4 (client error), nor 5 (server error)
       # This falls through to the else branch in the case statement
       header = [ 0x00, 0x00, 0x04D2 ].pack("CCn") # version=0, code=0 (class=0, detail=0), MID=1234
-      response = CoapClient.send(:parse_response, header, 1234)
+      response = described_class.send(:parse_response, header, 1234)
       expect(response).not_to be_nil
       expect(response.success?).to be false
       expect(response.class_string).to eq("0.00")
@@ -225,7 +225,7 @@ RSpec.describe CoapClient do
       # code = (1 << 5) | 0 = 32, class=1, detail=0
       code = (1 << 5) | 0
       header = [ 0x60, code, 0x04D2 ].pack("CCn") # ACK type, code=1.00, MID=1234
-      response = CoapClient.send(:parse_response, header, 1234)
+      response = described_class.send(:parse_response, header, 1234)
       expect(response).not_to be_nil
       expect(response.success?).to be false
       expect(response.class_string).to eq("1.00")

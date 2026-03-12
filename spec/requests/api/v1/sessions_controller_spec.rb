@@ -123,8 +123,6 @@ RSpec.describe Api::V1::SessionsController, type: :request do
   end
 
   describe "omniauth_create" do
-    require "ostruct"
-
     let(:auth_hash) do
       OpenStruct.new(
         provider: "google_oauth2",
@@ -134,6 +132,39 @@ RSpec.describe Api::V1::SessionsController, type: :request do
                                     expires_at: 1.hour.from_now.to_i),
         to_h: { provider: "google_oauth2", uid: "123456" }
       )
+    end
+
+    def build_auth_hash(email:, uid:, first_name: "Test", last_name: "User")
+      OpenStruct.new(
+        provider: "google_oauth2",
+        uid: uid,
+        info: OpenStruct.new(email: email, first_name: first_name, last_name: last_name),
+        credentials: OpenStruct.new(token: "t", refresh_token: "r", expires_at: 1.hour.from_now.to_i),
+        to_h: { provider: "google_oauth2", uid: uid }
+      )
+    end
+
+    def build_controller_with_auth(auth_hash)
+      controller = Api::V1::SessionsController.new
+      mock_request = double("request",
+        env: { "omniauth.auth" => auth_hash },
+        remote_ip: "127.0.0.1",
+        user_agent: "RSpec Test",
+        host: "localhost",
+        port: 3000,
+        protocol: "http://",
+        optional_port: "",
+        host_with_port: "localhost:3000"
+      )
+      allow(controller).to receive_messages(
+        request: mock_request,
+        reset_session: nil,
+        session: {},
+        redirect_to: nil,
+        api_v1_login_path: "/api/v1/login",
+        api_v1_dashboard_index_path: "/api/v1/dashboard"
+      )
+      controller
     end
 
     it "creates a new user and establishes session via OmniAuth callback" do
@@ -163,39 +194,6 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       # Verify that locked identity check works
       existing = Identity.find_by(provider: "google_oauth2", uid: "locked-uid-789")
       expect(existing&.locked?).to be true
-    end
-  end
-
-  describe "omniauth_create" do
-    def build_auth_hash(email:, uid:, first_name: "Test", last_name: "User")
-      OpenStruct.new(
-        provider: "google_oauth2",
-        uid: uid,
-        info: OpenStruct.new(email: email, first_name: first_name, last_name: last_name),
-        credentials: OpenStruct.new(token: "t", refresh_token: "r", expires_at: 1.hour.from_now.to_i),
-        to_h: { provider: "google_oauth2", uid: uid }
-      )
-    end
-
-    def build_controller_with_auth(auth_hash)
-      controller = Api::V1::SessionsController.new
-      mock_request = double("request",
-        env: { "omniauth.auth" => auth_hash },
-        remote_ip: "127.0.0.1",
-        user_agent: "RSpec Test",
-        host: "localhost",
-        port: 3000,
-        protocol: "http://",
-        optional_port: "",
-        host_with_port: "localhost:3000"
-      )
-      allow(controller).to receive(:request).and_return(mock_request)
-      allow(controller).to receive(:reset_session)
-      allow(controller).to receive(:session).and_return({})
-      allow(controller).to receive(:redirect_to)
-      allow(controller).to receive(:api_v1_login_path).and_return("/api/v1/login")
-      allow(controller).to receive(:api_v1_dashboard_index_path).and_return("/api/v1/dashboard")
-      controller
     end
 
     it "executes the full omniauth_create flow with a new user" do
@@ -242,21 +240,12 @@ RSpec.describe Api::V1::SessionsController, type: :request do
   end
 
   describe "HTML login failure" do
-    it "exercises HTML login failure code path" do
+    it "exercises HTML login failure code path and sets flash.now" do
       post "/api/v1/login",
         params: { email: user.email_address, password: "wrong_password" },
         headers: { "Accept" => "text/html" }
 
       # Phlex rendering may 500 in test env, but the code path is exercised
-      expect(response.status).to be_in([ 401, 500 ])
-    end
-
-    it "sets flash.now and renders login form on failure" do
-      post "/api/v1/login",
-        params: { email: user.email_address, password: "wrong_password" },
-        headers: { "Accept" => "text/html" }
-
-      # Phlex component may error but the flash.now code path (line 116-117) is exercised
       expect(response.status).to be_in([ 401, 500 ])
     end
   end

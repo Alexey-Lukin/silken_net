@@ -366,7 +366,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending)
 
       expect {
-        MintCarbonCoinWorker.new.perform
+        described_class.new.perform
       }.to raise_error(StandardError, "RPC failure")
 
       # The code path at line 143-144 is exercised during the rescue block
@@ -386,7 +386,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       }
 
       expect {
-        MintCarbonCoinWorker.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+        described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
       }.not_to raise_error
     end
   end
@@ -405,7 +405,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         "error_message" => "Permanent failure"
       }
 
-      MintCarbonCoinWorker.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+      described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
       tx.reload
       expect(tx.status).to eq("failed")
     end

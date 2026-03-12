@@ -113,7 +113,7 @@ RSpec.describe SilkenNet::Attractor do
 
   describe "trajectory coordinate cycling" do
     it "returns x, y, z values at correct positions in trajectory" do
-      trajectory = SilkenNet::Attractor.generate_trajectory(42, 22.0, 5)
+      trajectory = described_class.generate_trajectory(42, 22.0, 5)
 
       # Verify the array contains groups of x, y, z
       expect(trajectory.size).to eq(SilkenNet::Attractor::ITERATIONS * 3)

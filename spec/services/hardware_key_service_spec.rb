@@ -154,7 +154,7 @@ RSpec.describe HardwareKeyService, type: :service do
       gateway = create(:gateway, :online, cluster: cluster, ip_address: "192.168.1.1")
       HardwareKey.create!(device_uid: gateway.uid, aes_key_hex: SecureRandom.hex(32).upcase)
 
-      new_key = HardwareKeyService.rotate(gateway.uid)
+      new_key = described_class.rotate(gateway.uid)
       expect(new_key).to be_present
       expect(ActuatorCommandWorker).to have_received(:perform_async)
     end
@@ -165,7 +165,7 @@ RSpec.describe HardwareKeyService, type: :service do
       tree_device = create(:tree, cluster: cluster)
       HardwareKey.create!(device_uid: tree_device.did, aes_key_hex: SecureRandom.hex(32).upcase)
 
-      new_key = HardwareKeyService.rotate(tree_device.did)
+      new_key = described_class.rotate(tree_device.did)
       expect(new_key).to be_present
       # ActuatorCommandWorker should NOT have been called (early return)
       expect(ActuatorCommandWorker).not_to have_received(:perform_async)

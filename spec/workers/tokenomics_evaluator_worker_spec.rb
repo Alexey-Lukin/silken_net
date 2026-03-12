@@ -185,7 +185,7 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
       # lock_and_mint! returns nil (e.g., tokens_to_mint is zero)
       allow_any_instance_of(Wallet).to receive(:lock_and_mint!).and_return(nil)
 
-      TokenomicsEvaluatorWorker.new.perform
+      described_class.new.perform
 
       # No batch minting should occur
       expect(BlockchainMintingService).not_to have_received(:call_batch)
@@ -205,7 +205,7 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
       wallet.update_columns(balance: TokenomicsEvaluatorWorker::EMISSION_THRESHOLD * 2)
 
       expect {
-        TokenomicsEvaluatorWorker.new.perform
+        described_class.new.perform
       }.not_to raise_error
     end
   end

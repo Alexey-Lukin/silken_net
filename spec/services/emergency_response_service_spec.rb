@@ -235,7 +235,7 @@ RSpec.describe EmergencyResponseService do
 
       # This tests the proximity branch where tree has no coordinates
       expect {
-        EmergencyResponseService.call(alert)
+        described_class.call(alert)
       }.not_to raise_error
     end
   end

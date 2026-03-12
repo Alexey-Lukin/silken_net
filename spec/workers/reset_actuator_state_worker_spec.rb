@@ -112,7 +112,7 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
       )
 
       expect {
-        ResetActuatorStateWorker.new.perform(command.id)
+        described_class.new.perform(command.id)
       }.not_to raise_error
     end
   end

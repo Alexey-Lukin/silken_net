@@ -202,7 +202,7 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
       allow_any_instance_of(Gateway).to receive(:mark_seen!).and_raise(StandardError, "Unexpected failure")
 
       expect {
-        GatewayTelemetryWorker.new.perform(gateway.uid, {
+        described_class.new.perform(gateway.uid, {
           "voltage_mv" => 3500,
           "temperature_c" => 25.0,
           "cellular_signal_csq" => 15
