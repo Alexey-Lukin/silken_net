@@ -588,7 +588,7 @@ RSpec.describe ActuatorCommand, type: :model do
 
       it "rejects transition from acknowledged" do
         command = create(:actuator_command, actuator: actuator)
-        command.update_columns(status: ActuatorCommand.statuses[:acknowledged])
+        command.update_columns(status: described_class.statuses[:acknowledged])
         command.reload
         expect { command.dispatch! }.to raise_error(AASM::InvalidTransition)
       end
@@ -597,7 +597,7 @@ RSpec.describe ActuatorCommand, type: :model do
     describe "#acknowledge!" do
       it "transitions from sent to acknowledged" do
         command = create(:actuator_command, actuator: actuator)
-        command.update_columns(status: ActuatorCommand.statuses[:sent])
+        command.update_columns(status: described_class.statuses[:sent])
         command.reload
         command.acknowledge!
         expect(command.reload).to be_acknowledged
@@ -607,7 +607,7 @@ RSpec.describe ActuatorCommand, type: :model do
     describe "#confirm!" do
       it "transitions from acknowledged to confirmed and sets completed_at" do
         command = create(:actuator_command, actuator: actuator)
-        command.update_columns(status: ActuatorCommand.statuses[:acknowledged])
+        command.update_columns(status: described_class.statuses[:acknowledged])
         command.reload
         freeze_time do
           command.confirm!
@@ -628,7 +628,7 @@ RSpec.describe ActuatorCommand, type: :model do
 
       it "can fail from sent state" do
         command = create(:actuator_command, actuator: actuator)
-        command.update_columns(status: ActuatorCommand.statuses[:sent])
+        command.update_columns(status: described_class.statuses[:sent])
         command.reload
         command.fail!("gateway offline")
         expect(command.reload).to be_failed

@@ -256,7 +256,7 @@ RSpec.describe Actuator, type: :model do
       end
 
       it "rejects transition from maintenance_needed" do
-        actuator.update_columns(state: Actuator.states[:maintenance_needed])
+        actuator.update_columns(state: described_class.states[:maintenance_needed])
         actuator.reload
         expect { actuator.mark_active! }.to raise_error(AASM::InvalidTransition)
       end
@@ -264,14 +264,14 @@ RSpec.describe Actuator, type: :model do
 
     describe "#deactivate! (via mark_idle!)" do
       it "transitions from active to idle" do
-        actuator.update_columns(state: Actuator.states[:active])
+        actuator.update_columns(state: described_class.states[:active])
         actuator.reload
         actuator.mark_idle!
         expect(actuator.reload).to be_idle
       end
 
       it "transitions from maintenance_needed to idle (repair)" do
-        actuator.update_columns(state: Actuator.states[:maintenance_needed])
+        actuator.update_columns(state: described_class.states[:maintenance_needed])
         actuator.reload
         actuator.mark_idle!
         expect(actuator.reload).to be_idle

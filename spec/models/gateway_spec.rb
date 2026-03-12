@@ -272,7 +272,7 @@ RSpec.describe Gateway, type: :model do
     describe "#sleep!" do
       it "transitions from active to idle" do
         gateway = create(:gateway)
-        gateway.update_columns(state: Gateway.states[:active])
+        gateway.update_columns(state: described_class.states[:active])
         gateway.reload
         gateway.sleep!
         expect(gateway.reload).to be_idle
@@ -290,7 +290,7 @@ RSpec.describe Gateway, type: :model do
     describe "#finish_update!" do
       it "transitions from updating to idle" do
         gateway = create(:gateway)
-        gateway.update_columns(state: Gateway.states[:updating])
+        gateway.update_columns(state: described_class.states[:updating])
         gateway.reload
         gateway.finish_update!
         expect(gateway.reload).to be_idle
@@ -300,7 +300,7 @@ RSpec.describe Gateway, type: :model do
     describe "#report_fault!" do
       it "transitions from active to faulty" do
         gateway = create(:gateway)
-        gateway.update_columns(state: Gateway.states[:active])
+        gateway.update_columns(state: described_class.states[:active])
         gateway.reload
         gateway.report_fault!
         expect(gateway.reload).to be_faulty
@@ -318,7 +318,7 @@ RSpec.describe Gateway, type: :model do
     describe "#exit_maintenance!" do
       it "transitions from maintenance to idle" do
         gateway = create(:gateway)
-        gateway.update_columns(state: Gateway.states[:maintenance])
+        gateway.update_columns(state: described_class.states[:maintenance])
         gateway.reload
         gateway.exit_maintenance!
         expect(gateway.reload).to be_idle
@@ -351,7 +351,7 @@ RSpec.describe Gateway, type: :model do
 
     describe "#start_download!" do
       it "transitions from fw_pending to fw_downloading" do
-        gateway.update_columns(firmware_update_status: Gateway.firmware_update_statuses[:fw_pending])
+        gateway.update_columns(firmware_update_status: described_class.firmware_update_statuses[:fw_pending])
         gateway.reload
         gateway.start_download!
         expect(gateway.reload).to be_firmware_fw_downloading
@@ -360,7 +360,7 @@ RSpec.describe Gateway, type: :model do
 
     describe "#complete_update!" do
       it "transitions from fw_flashing to fw_completed" do
-        gateway.update_columns(firmware_update_status: Gateway.firmware_update_statuses[:fw_flashing])
+        gateway.update_columns(firmware_update_status: described_class.firmware_update_statuses[:fw_flashing])
         gateway.reload
         gateway.complete_update!
         expect(gateway.reload).to be_firmware_fw_completed
@@ -369,7 +369,7 @@ RSpec.describe Gateway, type: :model do
 
     describe "#fail_update!" do
       it "transitions from fw_downloading to fw_failed" do
-        gateway.update_columns(firmware_update_status: Gateway.firmware_update_statuses[:fw_downloading])
+        gateway.update_columns(firmware_update_status: described_class.firmware_update_statuses[:fw_downloading])
         gateway.reload
         gateway.fail_update!
         expect(gateway.reload).to be_firmware_fw_failed
@@ -378,7 +378,7 @@ RSpec.describe Gateway, type: :model do
 
     describe "#reset_firmware!" do
       it "transitions from fw_failed to fw_idle" do
-        gateway.update_columns(firmware_update_status: Gateway.firmware_update_statuses[:fw_failed])
+        gateway.update_columns(firmware_update_status: described_class.firmware_update_statuses[:fw_failed])
         gateway.reload
         gateway.reset_firmware!
         expect(gateway.reload).to be_firmware_fw_idle

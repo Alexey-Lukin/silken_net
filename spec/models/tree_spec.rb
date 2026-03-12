@@ -352,7 +352,7 @@ RSpec.describe Tree, type: :model do
 
       it "rejects transition from removed" do
         tree = create(:tree)
-        tree.update_columns(status: Tree.statuses[:removed])
+        tree.update_columns(status: described_class.statuses[:removed])
         tree.reload
         expect { tree.suspend! }.to raise_error(AASM::InvalidTransition)
       end
@@ -361,7 +361,7 @@ RSpec.describe Tree, type: :model do
     describe "#reactivate!" do
       it "transitions from dormant to active" do
         tree = create(:tree)
-        tree.update_columns(status: Tree.statuses[:dormant])
+        tree.update_columns(status: described_class.statuses[:dormant])
         tree.reload
         tree.reactivate!
         expect(tree.reload).to be_active

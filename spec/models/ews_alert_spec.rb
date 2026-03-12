@@ -497,7 +497,7 @@ RSpec.describe EwsAlert, type: :model do
     let(:tree) { create(:tree, cluster: cluster) }
 
     before do
-      allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+      allow_any_instance_of(described_class).to receive(:dispatch_notifications!)
     end
 
     describe "initial state" do
@@ -516,7 +516,7 @@ RSpec.describe EwsAlert, type: :model do
 
       it "rejects transition from ignored" do
         alert = create(:ews_alert, cluster: cluster, tree: tree)
-        alert.update_columns(status: EwsAlert.statuses[:ignored])
+        alert.update_columns(status: described_class.statuses[:ignored])
         alert.reload
         expect { alert.resolve! }.to raise_error(AASM::InvalidTransition)
       end
@@ -533,7 +533,7 @@ RSpec.describe EwsAlert, type: :model do
     describe "AASM #reopen event" do
       it "transitions from resolved to active" do
         alert = create(:ews_alert, cluster: cluster, tree: tree)
-        alert.update_columns(status: EwsAlert.statuses[:resolved])
+        alert.update_columns(status: described_class.statuses[:resolved])
         alert.reload
         alert.reopen!
         expect(alert.reload).to be_active
