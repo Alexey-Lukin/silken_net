@@ -374,6 +374,8 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
   end
 
   describe "retries_exhausted wallet nil branch" do
+    let!(:telemetry_log) { create(:telemetry_log, :verified_telemetry, tree: tree) }
+
     it "skips via next when tree.wallet is nil" do
       allow_any_instance_of(Tree).to receive(:wallet).and_return(nil)
       allow_any_instance_of(Wallet).to receive(:broadcast_update)
@@ -390,6 +392,8 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
   end
 
   describe "broadcast_update after retry exhaustion" do
+    let!(:telemetry_log) { create(:telemetry_log, :verified_telemetry, tree: tree) }
+
     it "calls broadcast_update on wallet after rollback" do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000)
