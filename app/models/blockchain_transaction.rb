@@ -97,8 +97,8 @@ class BlockchainTransaction < ApplicationRecord
     # Успішне підтвердження в мережі (виклик від BlockchainConfirmationWorker)
     event :confirm do
       before do |block_num, gas_cost|
-        self.block_number = block_num
-        self.gas_used = gas_cost
+        self.block_number = block_num if block_num.present?
+        self.gas_used = gas_cost if gas_cost.present?
         self.confirmed_at = Time.current
         self.error_message = nil
       end
@@ -113,7 +113,9 @@ class BlockchainTransaction < ApplicationRecord
       after do
         Rails.logger.error "🛑 [Web3] Транзакція ##{id} провалилася: #{error_message}"
       end
-      transitions from: [ :pending, :processing, :sent, :confirmed, :failed ], to: :failed
+      # :failed → :failed дозволяє оновити error_message при повторному збої
+      # (напр. sidekiq_retries_exhausted після попереднього fail)
+      transitions from: [ :pending, :processing, :sent, :failed ], to: :failed
     end
   end
 

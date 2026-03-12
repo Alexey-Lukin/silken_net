@@ -312,10 +312,22 @@ RSpec.describe BlockchainTransaction, type: :model do
         end
       end
 
-      it "works without arguments (BlockchainConfirmationWorker pattern)" do
-        sent_tx = create(:blockchain_transaction, status: :sent)
+      it "works without arguments and preserves existing values" do
+        sent_tx = create(:blockchain_transaction, status: :sent, block_number: 100, gas_used: 50)
         sent_tx.confirm!
-        expect(sent_tx.reload).to be_confirmed
+        sent_tx.reload
+        expect(sent_tx).to be_confirmed
+        expect(sent_tx.block_number).to eq(100)
+        expect(sent_tx.gas_used).to eq(50)
+      end
+
+      it "updates only provided params and preserves nil ones" do
+        sent_tx = create(:blockchain_transaction, status: :sent, block_number: 100, gas_used: 50)
+        sent_tx.confirm!(200, nil)
+        sent_tx.reload
+        expect(sent_tx).to be_confirmed
+        expect(sent_tx.block_number).to eq(200)
+        expect(sent_tx.gas_used).to eq(50)
       end
 
       it "rejects transition from pending" do
@@ -324,7 +336,7 @@ RSpec.describe BlockchainTransaction, type: :model do
     end
 
     describe "#fail!" do
-      it "transitions from any state to failed and sets error_message" do
+      it "transitions from pending to failed and sets error_message" do
         allow(Rails.logger).to receive(:error)
         tx.fail!("EVM revert")
         tx.reload
@@ -344,6 +356,11 @@ RSpec.describe BlockchainTransaction, type: :model do
         sent_tx = create(:blockchain_transaction, status: :sent)
         sent_tx.fail!("timeout")
         expect(sent_tx.reload).to be_failed
+      end
+
+      it "rejects transition from confirmed (blockchain finality)" do
+        confirmed_tx = create(:blockchain_transaction, status: :confirmed)
+        expect { confirmed_tx.fail!("error") }.to raise_error(AASM::InvalidTransition)
       end
 
       it "logs the failure" do

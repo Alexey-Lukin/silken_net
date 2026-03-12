@@ -64,6 +64,8 @@ class ActuatorCommand < ApplicationRecord
       before do |reason|
         self.error_message = reason.to_s.truncate(200) if reason.present?
       end
+      # :failed → :failed дозволяє оновити error_message при повторному збої
+      # (напр. sidekiq_retries_exhausted після ручного fail з handle_failure)
       transitions from: [ :issued, :sent, :acknowledged, :confirmed, :failed ], to: :failed
     end
   end
