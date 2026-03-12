@@ -2,7 +2,7 @@ source "https://rubygems.org"
 
 ruby "4.0.1"
 
-gem "bcrypt"
+gem "argon2id"
 gem "blueprinter"
 gem "bootsnap", require: false
 gem "csv"

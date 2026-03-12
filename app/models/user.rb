@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 class User < ApplicationRecord
-  # --- АВТЕНТИФІКАЦІЯ (Rails 8 Standard) ---
-  # [ВИПРАВЛЕНО]: Вимикаємо стандартні валідації, щоб наш password_required? запрацював.
-  has_secure_password validations: false
+  # --- АВТЕНТИФІКАЦІЯ (Argon2id — OWASP Recommended) ---
+  # Argon2id замість bcrypt: memory-hard хешування, стійке до GPU/ASIC атак.
+  # Інтерфейс сумісний з has_secure_password (password=, authenticate, password_salt).
+  include HasArgon2Password
 
   # --- ЗВ'ЯЗКИ (The Neural Links) ---
   has_many :sessions, dependent: :destroy
