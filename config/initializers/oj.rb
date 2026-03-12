@@ -21,4 +21,8 @@
 
 require "oj"
 
+# :compat mode забезпечує повну сумісність зі стандартним JSON API Ruby:
+# - JSON.parse / JSON.generate працюють через Oj під капотом
+# - ActiveSupport, Sidekiq, Blueprinter, eth gem — все працює без змін
+# - Date/Time/BigDecimal серіалізуються як у стандартному JSON
 Oj.mimic_JSON
