@@ -3,6 +3,7 @@
 class Tree < ApplicationRecord
   include Firmwareable
   include GeoLocatable
+  include NormalizeIdentifier
 
   # --- ЗВ'ЯЗКИ (The Fabric of the Forest) ---
   belongs_to :cluster, optional: true
@@ -38,7 +39,7 @@ class Tree < ApplicationRecord
   DID_FORMAT = /\ASNET-[0-9A-F]{8}\z/
 
   # --- ВАЛІДАЦІЇ ---
-  before_validation :normalize_did
+  normalize_identifier :did
   validates :did, presence: true, uniqueness: true,
             format: { with: DID_FORMAT, message: "має відповідати апаратному формату (SNET-XXXXXXXX)" }
 
@@ -148,10 +149,6 @@ class Tree < ApplicationRecord
 
   def ensure_calibration
     create_device_calibration! unless device_calibration
-  end
-
-  def normalize_did
-    self.did = did.to_s.strip.upcase if did.present?
   end
 
   def trigger_slashing_protocol

@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "net/http"
-require "json"
-
 module Filecoin
   # =========================================================================
   # 🔍 FILECOIN VERIFICATION SERVICE (Верифікація Вічної Пам'яті)
@@ -36,29 +33,14 @@ module Filecoin
 
     # Завантажує JSON-дані з IPFS Gateway за CID
     def fetch_from_ipfs(cid)
-      uri = URI.parse("#{IPFS_GATEWAY_URL}/#{cid}")
+      response = Web3::HttpClient.get("#{IPFS_GATEWAY_URL}/#{cid}",
+        headers: { "Accept" => "application/json" },
+        open_timeout: OPEN_TIMEOUT,
+        read_timeout: READ_TIMEOUT,
+        service_name: "Filecoin"
+      )
 
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-      http.open_timeout = OPEN_TIMEOUT
-      http.read_timeout = READ_TIMEOUT
-
-      request = Net::HTTP::Get.new(uri.request_uri)
-      request["Accept"] = "application/json"
-
-      response = http.request(request)
-
-      unless response.is_a?(Net::HTTPSuccess)
-        raise "🛑 [Filecoin] IPFS fetch failed (HTTP #{response.code}): #{response.body}"
-      end
-
-      JSON.parse(response.body)
-    rescue Net::OpenTimeout, Net::ReadTimeout => e
-      Rails.logger.error "🛑 [Filecoin] IPFS Gateway Timeout: #{e.message}"
-      raise "Filecoin IPFS Gateway Timeout: #{e.message}"
-    rescue JSON::ParserError => e
-      Rails.logger.error "🛑 [Filecoin] Invalid IPFS data: #{e.message}"
-      raise "Filecoin IPFS Parse Error: #{e.message}"
+      response.parsed_body
     end
 
     # Порівнює chain_hash з IPFS з локальним chain_hash

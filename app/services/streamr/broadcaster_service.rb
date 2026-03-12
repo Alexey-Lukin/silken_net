@@ -47,30 +47,17 @@ module Streamr
       raise BroadcastError, "streamr_api_key не налаштовано в credentials" if api_key.blank?
 
       encoded_stream_id = ERB::Util.url_encode(stream_id)
-      uri = URI.parse("https://brubeck.streamr.network/api/v1/streams/#{encoded_stream_id}/data")
+      url = "https://brubeck.streamr.network/api/v1/streams/#{encoded_stream_id}/data"
 
-      request = Net::HTTP::Post.new(uri, {
-        "Content-Type" => "application/json",
-        "Authorization" => "Bearer #{api_key}"
-      })
-      request.body = payload.to_json
-
-      response = Net::HTTP.start(
-        uri.hostname, uri.port,
-        use_ssl: uri.scheme == "https",
+      Web3::HttpClient.post(url,
+        body: payload,
+        headers: { "Authorization" => "Bearer #{api_key}" },
         open_timeout: TIMEOUT_OPEN,
-        read_timeout: TIMEOUT_READ
-      ) { |http| http.request(request) }
-
-      unless response.is_a?(Net::HTTPSuccess)
-        raise BroadcastError, "Streamr повернув #{response.code}: #{response.body}"
-      end
-
-      response
-    rescue BroadcastError
-      raise
-    rescue StandardError => e
-      raise BroadcastError, "Збій зв'язку з Streamr: #{e.message}"
+        read_timeout: TIMEOUT_READ,
+        service_name: "Streamr"
+      )
+    rescue Web3::HttpClient::RequestError => e
+      raise BroadcastError, e.message
     end
   end
 end

@@ -49,39 +49,25 @@ module Iotex
       raise VerificationError, "iotex_w3bstream_url не налаштовано в credentials" if w3bstream_url.blank?
       raise VerificationError, "iotex_api_key не налаштовано в credentials" if api_key.blank?
 
-      uri = URI.parse("#{w3bstream_url}/verify")
-      request = Net::HTTP::Post.new(uri, {
-        "Content-Type" => "application/json",
-        "Authorization" => "Bearer #{api_key}"
-      })
-      request.body = payload.to_json
-
-      response = Net::HTTP.start(
-        uri.hostname, uri.port,
-        use_ssl: uri.scheme == "https",
+      Web3::HttpClient.post("#{w3bstream_url}/verify",
+        body: payload,
+        headers: { "Authorization" => "Bearer #{api_key}" },
         open_timeout: TIMEOUT_OPEN,
-        read_timeout: TIMEOUT_READ
-      ) { |http| http.request(request) }
-
-      unless response.is_a?(Net::HTTPSuccess)
-        raise VerificationError, "W3bstream повернув #{response.code}: #{response.body}"
-      end
-
-      response
-    rescue VerificationError
-      raise
-    rescue StandardError => e
-      raise VerificationError, "Збій зв'язку з W3bstream: #{e.message}"
+        read_timeout: TIMEOUT_READ,
+        service_name: "W3bstream"
+      )
+    rescue Web3::HttpClient::RequestError => e
+      raise VerificationError, e.message
     end
 
     def parse_response(response)
-      body = JSON.parse(response.body)
+      body = response.parsed_body
       zk_proof_ref = body["proof_id"] || body["receipt_id"]
 
       raise VerificationError, "W3bstream не повернув proof reference" if zk_proof_ref.blank?
 
       zk_proof_ref
-    rescue JSON::ParserError => e
+    rescue Web3::HttpClient::RequestError => e
       raise VerificationError, "Невалідна JSON-відповідь від W3bstream: #{e.message}"
     end
   end
