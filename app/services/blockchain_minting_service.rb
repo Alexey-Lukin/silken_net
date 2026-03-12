@@ -61,8 +61,8 @@ class BlockchainMintingService
       end
     end
 
-    # 1. ПІДКЛЮЧЕННЯ (The Alchemy Link)
-    client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
+    # 1. ПІДКЛЮЧЕННЯ (The Alchemy Link) — Thread-cached RPC client
+    client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
     oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
 
     # [SAFETY]: Перевірка балансу Оракула
@@ -160,9 +160,7 @@ class BlockchainMintingService
   end
 
   def to_wei(amount)
-    # [BigDecimal]: Уникаємо Float precision loss при конвертації великих сум.
-    # amount.to_f * 10**18 може дати похибку в кількох wei — неприпустимо для Web3.
-    (BigDecimal(amount.to_s) * 10**18).to_i
+    Web3::WeiConverter.to_wei(amount)
   end
 
   def broadcast_tx_update(transaction)

@@ -1,16 +1,11 @@
 # frozen_string_literal: true
 
-class InsightGeneratorService
+class InsightGeneratorService < ApplicationService
   # Поріг відхилення. Якщо вологість/температура дерева відрізняється від
   # середньої по кластеру більше ніж на 30%, це класифікується як фрод/аномалія.
   FRAUD_DEVIATION_THRESHOLD = 0.30
 
-  # [UTC Anchor]: Канонічний UTC-якір для агрегації телеметрії.
-  def self.call(date = Time.current.utc.to_date - 1)
-    new(date).perform
-  end
-
-  def initialize(date)
+  def initialize(date = Time.current.utc.to_date - 1)
     @date = date
     @start_time = date.beginning_of_day
     @end_time = date.end_of_day

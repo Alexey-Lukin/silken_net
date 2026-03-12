@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "eth"
+require "bigdecimal"
 
 class BlockchainBurningService
   # ABI для функції вилучення/спалювання (Sovereign Slashing)
@@ -41,13 +42,13 @@ class BlockchainBurningService
 
     return if burn_amount.zero?
 
-    # 2. WEB3 ПІДГОТОВКА (The Judgment Bridge)
-    client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
+    # 2. WEB3 ПІДГОТОВКА (The Judgment Bridge) — Thread-cached RPC client
+    client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
     oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
     contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
     contract = Eth::Contract.from_abi(name: "SilkenCarbonCoin", address: contract_address, abi: CONTRACT_ABI)
 
-    amount_in_wei = (burn_amount.to_f * (10**TOKEN_DECIMALS)).to_i
+    amount_in_wei = Web3::WeiConverter.to_wei(burn_amount, TOKEN_DECIMALS)
     investor_address = @organization.crypto_public_address
 
     # 3. ВИКОНАННЯ (The Verdict)

@@ -77,7 +77,7 @@ module KlimaDao
     end
 
     def execute_blockchain_retirement
-      client = Eth::Client.create(ENV.fetch("ALCHEMY_POLYGON_RPC_URL"))
+      client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
       oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
 
       scc_contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
