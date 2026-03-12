@@ -245,7 +245,7 @@ RSpec.describe Api::V1::SessionsController, type: :request do
         params: { email: user.email_address, password: "wrong_password" },
         headers: { "Accept" => "text/html" }
 
-      # Phlex rendering may 500 in test env, but the code path is exercised
+      # Phlex rendering may 500 in test env, but the HTML login failure and flash.now code path is exercised
       expect(response.status).to be_in([ 401, 500 ])
     end
   end

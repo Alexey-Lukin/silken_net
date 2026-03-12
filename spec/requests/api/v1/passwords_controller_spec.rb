@@ -202,7 +202,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
         params: { token: token, password: "short", password_confirmation: "short" },
         headers: { "Accept" => "text/html" }
 
-      # Phlex component may 500 in test env, but flash.now code path (line 66-67) is exercised
+      # Phlex component may 500 in test env, but the flash.now validation error code path is exercised
       expect(response.status).to be_in([ 200, 500 ])
     end
 
@@ -213,7 +213,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
         params: { token: token, password: "new_password_123", password_confirmation: "different_123" },
         headers: { "Accept" => "text/html" }
 
-      # Phlex component may 500 in test env, but flash.now code path (line 77-78) is exercised
+      # Phlex component may 500 in test env, but the flash.now password mismatch code path is exercised
       expect(response.status).to be_in([ 200, 500 ])
     end
   end

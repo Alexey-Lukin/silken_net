@@ -99,7 +99,7 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
 
   describe "gateway/cluster/organization nil chain" do
     it "handles gateway with cluster that has no organization" do
-      # Test the safe navigation chain: actuator.gateway&.cluster&.organization
+      # Verifies graceful handling when the safe navigation chain (gateway&.cluster&.organization) returns nil
       org_for_test = create(:organization)
       cluster_for_test = create(:cluster, organization: org_for_test)
       gateway_with_cluster = create(:gateway, cluster: cluster_for_test)

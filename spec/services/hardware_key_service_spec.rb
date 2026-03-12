@@ -161,7 +161,7 @@ RSpec.describe HardwareKeyService, type: :service do
 
     it "returns early for tree device without ip_address or gateway" do
       # Tree model has neither ip_address nor gateway method,
-      # so trigger_key_update_downlink returns early (line 76)
+      # so trigger_key_update_downlink returns early
       tree_device = create(:tree, cluster: cluster)
       HardwareKey.create!(device_uid: tree_device.did, aes_key_hex: SecureRandom.hex(32).upcase)
 

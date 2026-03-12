@@ -369,7 +369,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         described_class.new.perform
       }.to raise_error(StandardError, "RPC failure")
 
-      # The code path at line 143-144 is exercised during the rescue block
+      # The broadcast_balance_update call within the RPC failure rescue block is exercised
     end
   end
 
