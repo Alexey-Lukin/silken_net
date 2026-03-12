@@ -43,4 +43,53 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  describe "POST /api/v1/actuators/:id/execute" do
+    before do
+      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+    end
+
+    it "creates and returns a command for the actuator" do
+      post "/api/v1/actuators/#{own_actuator.id}/execute",
+           params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:accepted)
+      expect(response.parsed_body["command_id"]).to be_present
+    end
+
+    it "returns conflict when actuator already has pending command" do
+      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      own_actuator.commands.create!(
+        user: user,
+        command_payload: "TEST",
+        duration_seconds: 10,
+        status: :issued
+      )
+
+      post "/api/v1/actuators/#{own_actuator.id}/execute",
+           params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:conflict)
+    end
+  end
+
+  context "with format.html responses" do
+    let(:html_headers) do
+      { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+    end
+
+    it "renders HTML for actuator index" do
+      get "/api/v1/clusters/#{own_cluster.id}/actuators", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+
+    it "renders HTML for actuator show" do
+      get "/api/v1/actuators/#{own_actuator.id}", headers: html_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+  end
 end

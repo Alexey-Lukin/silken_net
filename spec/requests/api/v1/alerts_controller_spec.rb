@@ -31,6 +31,16 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(ids).to include(own_alert.id)
       expect(ids).not_to include(other_alert.id)
     end
+
+    it "filters by severity" do
+      get "/api/v1/alerts", params: { severity: "critical" }, headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "filters by cluster_id" do
+      get "/api/v1/alerts", params: { cluster_id: own_cluster.id }, headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
   end
 
   describe "PATCH /api/v1/alerts/:id/resolve" do
@@ -42,6 +52,19 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     it "returns 404 for an alert from another organization" do
       patch resolve_api_v1_alert_path(other_alert), headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
+    end
+
+    it "renders validation error when resolve! fails" do
+      allow_any_instance_of(EwsAlert).to receive(:resolve!).and_return(false)
+
+      patch resolve_api_v1_alert_path(own_alert), headers: headers, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "redirects on successful HTML resolve" do
+      patch resolve_api_v1_alert_path(own_alert),
+            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+      expect(response).to have_http_status(:redirect)
     end
   end
 

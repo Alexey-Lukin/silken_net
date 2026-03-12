@@ -59,5 +59,25 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
       expect(body).to include("checked_at", "coap_listener", "sidekiq", "database")
       expect(body["sidekiq"]).to include("enqueued", "processed", "failed")
     end
+
+    context "with format.html" do
+      it "renders HTML dashboard for system health" do
+        get "/api/v1/system_health",
+            headers: { "Authorization" => "Bearer #{admin_token}", "Accept" => "text/html" }
+        expect(response).to have_http_status(:ok)
+        expect(response.content_type).to include("text/html")
+      end
+    end
+
+    context "when coap_status raises an error" do
+      it "returns alive: false with error message" do
+        allow(TCPSocket).to receive(:new).and_raise(Errno::ECONNREFUSED)
+
+        get "/api/v1/system_health", headers: admin_headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["coap_listener"]["alive"]).to be(false)
+      end
+    end
   end
 end

@@ -429,4 +429,28 @@ end
       expect(tx.status).to eq("sent")
     end
   end
+
+  describe "nil tx_hash from transact" do
+    it "does not mark transactions as sent when transact returns nil" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100,
+        token_type: :carbon_coin,
+        status: :pending,
+        to_address: wallet.crypto_public_address,
+        locked_points: 1000
+      )
+
+      allow(mock_client).to receive(:transact).and_return(nil)
+
+      described_class.call(tx.id)
+
+      tx.reload
+      # When tx_hash is nil, the transaction should not be marked as sent
+      expect(tx.status).not_to eq("sent")
+    end
+  end
 end

@@ -509,6 +509,18 @@ RSpec.describe ActuatorCommand, type: :model do
     end
   end
 
+  describe "denormalize_organization — actuator is nil" do
+    it "sets organization_id to nil when actuator is nil" do
+      command = described_class.new(
+        command_payload: "OPEN",
+        duration_seconds: 60
+      )
+      command.actuator = nil
+      command.send(:denormalize_organization)
+      expect(command.organization_id).to be_nil
+    end
+  end
+
   describe "duration_within_safety_envelope — nil actuator safe navigation" do
     it "skips validation when actuator returns nil from safe navigation" do
       command = described_class.new(

@@ -28,6 +28,18 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
       expect(ids).to include(own_tx.id)
       expect(ids).not_to include(other_tx.id)
     end
+
+    it "filters by token_type" do
+      get "/api/v1/blockchain_transactions",
+          params: { token_type: "SCC" }, headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "filters by status" do
+      get "/api/v1/blockchain_transactions",
+          params: { status: "pending" }, headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
   end
 
   describe "GET /api/v1/blockchain_transactions/:id" do

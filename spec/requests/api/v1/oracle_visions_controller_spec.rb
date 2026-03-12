@@ -55,6 +55,21 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       get "/api/v1/oracle_visions", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
+
+    context "when calculate_expected_yield runs without cache" do
+      before do
+        Rails.cache.clear
+      end
+
+      it "computes yield from tree data using sap_flow and stress" do
+        tree = create(:tree, cluster: cluster, status: :active)
+        create(:ai_insight, analyzable: tree)
+
+        get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["yield_forecast"]).to be_a(Numeric)
+      end
+    end
   end
 
   describe "GET /api/v1/oracle_visions/stream_config" do
