@@ -69,6 +69,18 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body["yield_forecast"]).to be_a(Numeric)
       end
+
+      it "uses sap_flow from latest telemetry when present" do
+        tree = create(:tree, cluster: cluster, status: :active)
+        create(:telemetry_log, tree: tree, sap_flow: 1.5,
+               temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+               acoustic_events: 2, growth_points: 10,
+               bio_status: :homeostasis, metabolism_s: 1000)
+
+        get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["yield_forecast"]).to be_a(Numeric)
+      end
     end
   end
 

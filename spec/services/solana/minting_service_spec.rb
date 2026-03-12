@@ -199,6 +199,32 @@ RSpec.describe Solana::MintingService do
       end
     end
 
+    context "when wallet.organization is nil" do
+      it "raises missing address when wallet has no solana address and no org" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
+        wallet.update!(solana_public_address: nil)
+        allow(wallet).to receive(:organization).and_return(nil)
+
+        expect {
+          described_class.new(log).mint_micro_reward!
+        }.to raise_error(RuntimeError, /Missing Solana address/)
+      end
+    end
+
+    context "when Solana RPC returns nil response" do
+      it "raises error with default message" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
+        wallet.update!(solana_public_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV")
+
+        response = Web3::HttpClient::Response.new({ "jsonrpc" => "2.0" }.to_json)
+        allow(Web3::HttpClient).to receive(:post).and_return(response)
+
+        expect {
+          described_class.new(log).mint_micro_reward!
+        }.to raise_error(RuntimeError, /Solana RPC Error: Unknown Solana RPC error/)
+      end
+    end
+
     context "when record_transaction! wallet is nil" do
       it "does not create a transaction when wallet returns nil" do
         log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
