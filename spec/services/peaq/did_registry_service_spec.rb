@@ -5,7 +5,6 @@ require "rails_helper"
 RSpec.describe Peaq::DidRegistryService, type: :service do
   let(:cluster) { create(:cluster) }
   let(:tree) { create(:tree, cluster: cluster) }
-  let(:mock_http) { instance_double(Net::HTTP) }
 
   before do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
@@ -15,12 +14,11 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
     context "when peaq_node_url is configured" do
       before do
         allow(Rails.application.credentials).to receive(:peaq_node_url).and_return("https://peaq-node.example.com")
-        allow(Net::HTTP).to receive(:start).and_yield(mock_http)
+        allow(Web3::HttpClient).to receive(:post)
+          .and_return(Web3::HttpClient::Response.new("{}"))
       end
 
       it "returns a peaq DID string with correct prefix" do
-        allow(mock_http).to receive(:request).and_return(Net::HTTPSuccess.allocate)
-
         service = described_class.new(tree)
         result = service.register!
 
@@ -29,8 +27,6 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
       end
 
       it "generates deterministic DID based on tree attributes" do
-        allow(mock_http).to receive(:request).and_return(Net::HTTPSuccess.allocate)
-
         service = described_class.new(tree)
         did1 = service.register!
         did2 = service.register!
@@ -39,25 +35,25 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
       end
 
       it "raises RegistrationError when peaq node returns error" do
-        error_response = Net::HTTPInternalServerError.allocate
-        allow(error_response).to receive_messages(code: "500", body: "Internal Server Error")
-        allow(mock_http).to receive(:request).and_return(error_response)
+        allow(Web3::HttpClient).to receive(:post)
+          .and_raise(Web3::HttpClient::RequestError.new("peaq DID API returned 500: Internal Server Error"))
 
         service = described_class.new(tree)
 
         expect {
           service.register!
-        }.to raise_error(Peaq::DidRegistryService::RegistrationError, /peaq node повернув 500/)
+        }.to raise_error(Peaq::DidRegistryService::RegistrationError, /peaq DID API returned 500/)
       end
 
       it "raises RegistrationError on network failure" do
-        allow(Net::HTTP).to receive(:start).and_raise(Errno::ECONNREFUSED)
+        allow(Web3::HttpClient).to receive(:post)
+          .and_raise(Web3::HttpClient::RequestError.new("peaq DID connection error: Connection refused"))
 
         service = described_class.new(tree)
 
         expect {
           service.register!
-        }.to raise_error(Peaq::DidRegistryService::RegistrationError, /Збій зв'язку з peaq node/)
+        }.to raise_error(Peaq::DidRegistryService::RegistrationError, /peaq DID connection error/)
       end
     end
 

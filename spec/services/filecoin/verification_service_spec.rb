@@ -53,30 +53,29 @@ RSpec.describe Filecoin::VerificationService do
 
         expect {
           described_class.new(audit_log).verify!
-        }.to raise_error(RuntimeError, /IPFS fetch failed/)
+        }.to raise_error(Web3::HttpClient::RequestError, /Filecoin API returned 404/)
       end
     end
 
     context "when IPFS gateway times out" do
       it "raises a timeout error" do
-        allow_any_instance_of(Net::HTTP).to receive(:request)
-          .and_raise(Net::ReadTimeout.new("execution expired"))
+        allow(Web3::HttpClient).to receive(:get)
+          .and_raise(Web3::HttpClient::RequestError.new("Filecoin Timeout: execution expired"))
 
         expect {
           described_class.new(audit_log).verify!
-        }.to raise_error(RuntimeError, /Filecoin IPFS Gateway Timeout/)
+        }.to raise_error(Web3::HttpClient::RequestError, /Filecoin Timeout/)
       end
     end
 
     context "when IPFS returns invalid JSON" do
       it "raises a parse error" do
-        mock_response = instance_double(Net::HTTPSuccess, body: "not json")
-        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-        allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+        response = Web3::HttpClient::Response.new("not json")
+        allow(Web3::HttpClient).to receive(:get).and_return(response)
 
         expect {
           described_class.new(audit_log).verify!
-        }.to raise_error(RuntimeError, /Filecoin IPFS Parse Error/)
+        }.to raise_error(Web3::HttpClient::RequestError, /Invalid JSON response/)
       end
     end
   end
@@ -84,20 +83,14 @@ RSpec.describe Filecoin::VerificationService do
   private
 
   def stub_ipfs_gateway_success(chain_hash)
-    mock_response = instance_double(Net::HTTPSuccess,
-      body: { "chain_hash" => chain_hash, "action" => "update_settings" }.to_json
+    response = Web3::HttpClient::Response.new(
+      { "chain_hash" => chain_hash, "action" => "update_settings" }.to_json
     )
-    allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-
-    allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+    allow(Web3::HttpClient).to receive(:get).and_return(response)
   end
 
   def stub_ipfs_gateway_failure
-    mock_response = instance_double(Net::HTTPNotFound,
-      body: "Not Found", code: "404"
-    )
-    allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(false)
-
-    allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+    allow(Web3::HttpClient).to receive(:get)
+      .and_raise(Web3::HttpClient::RequestError.new("Filecoin API returned 404: Not Found"))
   end
 end

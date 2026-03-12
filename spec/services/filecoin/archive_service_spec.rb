@@ -29,43 +29,37 @@ RSpec.describe Filecoin::ArchiveService do
 
       it "includes chain_hash and metadata in the payload" do
         expected_body = nil
-        allow_any_instance_of(Net::HTTP).to receive(:request) do |_http, req|
-          expected_body = JSON.parse(req.body)
-          instance_double(Net::HTTPSuccess, body: { "IpfsHash" => "QmTestCid12345" }.to_json, is_a?: true).tap do |resp|
-            allow(resp).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-          end
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_body = kwargs[:body]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmTestCid12345" }.to_json)
         end
 
         described_class.new(audit_log).archive!
 
-        content = expected_body["pinataContent"]
-        expect(content["chain_hash"]).to eq(audit_log.chain_hash)
-        expect(content["action"]).to eq("update_settings")
-        expect(content["metadata"]).to eq("field" => "critical_z", "old_value" => 100, "new_value" => 200)
+        content = expected_body[:pinataContent]
+        expect(content[:chain_hash]).to eq(audit_log.chain_hash)
+        expect(content[:action]).to eq("update_settings")
+        expect(content[:metadata]).to eq("field" => "critical_z", "old_value" => 100, "new_value" => 200)
       end
 
       it "includes telemetry_summary key in the payload" do
         expected_body = nil
-        allow_any_instance_of(Net::HTTP).to receive(:request) do |_http, req|
-          expected_body = JSON.parse(req.body)
-          instance_double(Net::HTTPSuccess, body: { "IpfsHash" => "QmTestCid12345" }.to_json, is_a?: true).tap do |resp|
-            allow(resp).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-          end
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_body = kwargs[:body]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmTestCid12345" }.to_json)
         end
 
         described_class.new(audit_log).archive!
 
-        content = expected_body["pinataContent"]
-        expect(content).to have_key("telemetry_summary")
+        content = expected_body[:pinataContent]
+        expect(content).to have_key(:telemetry_summary)
       end
 
       it "sends Bearer authorization header" do
         expected_auth = nil
-        allow_any_instance_of(Net::HTTP).to receive(:request) do |_http, req|
-          expected_auth = req["Authorization"]
-          instance_double(Net::HTTPSuccess, body: { "IpfsHash" => "QmTestCid12345" }.to_json).tap do |resp|
-            allow(resp).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-          end
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_auth = kwargs[:headers]["Authorization"]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmTestCid12345" }.to_json)
         end
 
         described_class.new(audit_log).archive!
@@ -102,28 +96,25 @@ RSpec.describe Filecoin::ArchiveService do
 
         expect {
           described_class.new(audit_log).archive!
-        }.to raise_error(RuntimeError, /IPFS upload failed/)
+        }.to raise_error(Web3::HttpClient::RequestError, /Filecoin API returned 401/)
       end
     end
 
     context "when IPFS upload times out" do
       it "raises a timeout error" do
-        allow_any_instance_of(Net::HTTP).to receive(:request)
-          .and_raise(Net::ReadTimeout.new("execution expired"))
+        allow(Web3::HttpClient).to receive(:post)
+          .and_raise(Web3::HttpClient::RequestError.new("Filecoin Timeout: execution expired"))
 
         expect {
           described_class.new(audit_log).archive!
-        }.to raise_error(RuntimeError, /Filecoin IPFS Timeout/)
+        }.to raise_error(Web3::HttpClient::RequestError, /Filecoin Timeout/)
       end
     end
 
     context "when IPFS response has no CID" do
       it "raises an error about missing CID" do
-        mock_response = instance_double(Net::HTTPSuccess,
-          body: { "status" => "ok" }.to_json
-        )
-        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-        allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+        response = Web3::HttpClient::Response.new({ "status" => "ok" }.to_json)
+        allow(Web3::HttpClient).to receive(:post).and_return(response)
 
         expect {
           described_class.new(audit_log).archive!
@@ -133,13 +124,12 @@ RSpec.describe Filecoin::ArchiveService do
 
     context "when IPFS response body is invalid JSON" do
       it "raises a parse error" do
-        mock_response = instance_double(Net::HTTPSuccess, body: "not json at all")
-        allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-        allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+        response = Web3::HttpClient::Response.new("not json at all")
+        allow(Web3::HttpClient).to receive(:post).and_return(response)
 
         expect {
           described_class.new(audit_log).archive!
-        }.to raise_error(RuntimeError, /Filecoin IPFS Parse Error/)
+        }.to raise_error(Web3::HttpClient::RequestError, /Invalid JSON response/)
       end
     end
 
@@ -148,49 +138,43 @@ RSpec.describe Filecoin::ArchiveService do
         allow(audit_log).to receive(:created_at).and_return(nil)
 
         expected_body = nil
-        allow_any_instance_of(Net::HTTP).to receive(:request) do |_http, req|
-          expected_body = JSON.parse(req.body)
-          instance_double(Net::HTTPSuccess, body: { "IpfsHash" => "QmNilDate" }.to_json).tap do |resp|
-            allow(resp).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-          end
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_body = kwargs[:body]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmNilDate" }.to_json)
         end
 
         described_class.new(audit_log).archive!
 
-        content = expected_body["pinataContent"]
-        expect(content["telemetry_summary"]).to be_nil
-        expect(content["created_at"]).to be_nil
+        content = expected_body[:pinataContent]
+        expect(content[:telemetry_summary]).to be_nil
+        expect(content[:created_at]).to be_nil
       end
     end
 
     context "when no AI insights exist for the date" do
       it "sets telemetry_summary to nil when summaries are empty" do
-        stub_pinata_success
-
         expected_body = nil
-        allow_any_instance_of(Net::HTTP).to receive(:request) do |_http, req|
-          expected_body = JSON.parse(req.body)
-          instance_double(Net::HTTPSuccess, body: { "IpfsHash" => "QmNoInsights" }.to_json).tap do |resp|
-            allow(resp).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-          end
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_body = kwargs[:body]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmNoInsights" }.to_json)
         end
 
         described_class.new(audit_log).archive!
 
-        content = expected_body["pinataContent"]
+        content = expected_body[:pinataContent]
         # No AI insights exist, so telemetry_summary should be nil
-        expect(content).to have_key("telemetry_summary")
+        expect(content).to have_key(:telemetry_summary)
       end
     end
 
     context "when Net::OpenTimeout is raised" do
       it "raises a timeout error" do
-        allow_any_instance_of(Net::HTTP).to receive(:request)
-          .and_raise(Net::OpenTimeout.new("connection timeout"))
+        allow(Web3::HttpClient).to receive(:post)
+          .and_raise(Web3::HttpClient::RequestError.new("Filecoin Timeout: connection timeout"))
 
         expect {
           described_class.new(audit_log).archive!
-        }.to raise_error(RuntimeError, /Filecoin IPFS Timeout/)
+        }.to raise_error(Web3::HttpClient::RequestError, /Filecoin Timeout/)
       end
     end
   end
@@ -198,20 +182,14 @@ RSpec.describe Filecoin::ArchiveService do
   private
 
   def stub_pinata_success
-    mock_response = instance_double(Net::HTTPSuccess,
-      body: { "IpfsHash" => "QmTestCid12345", "PinSize" => 1234, "Timestamp" => "2026-03-11T12:00:00Z" }.to_json
+    response = Web3::HttpClient::Response.new(
+      { "IpfsHash" => "QmTestCid12345", "PinSize" => 1234, "Timestamp" => "2026-03-11T12:00:00Z" }.to_json
     )
-    allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-
-    allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+    allow(Web3::HttpClient).to receive(:post).and_return(response)
   end
 
   def stub_pinata_failure
-    mock_response = instance_double(Net::HTTPUnauthorized,
-      body: "Unauthorized", code: "401"
-    )
-    allow(mock_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(false)
-
-    allow_any_instance_of(Net::HTTP).to receive(:request).and_return(mock_response)
+    allow(Web3::HttpClient).to receive(:post)
+      .and_raise(Web3::HttpClient::RequestError.new("Filecoin API returned 401: Unauthorized"))
   end
 end

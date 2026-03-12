@@ -74,9 +74,8 @@ RSpec.describe Gateway, type: :model do
 
     it "does not trigger ActiveRecord callbacks" do
       gateway = create(:gateway)
-
-      expect(gateway).not_to receive(:normalize_uid)
-      gateway.mark_seen!
+      # mark_seen! uses update_all which bypasses callbacks
+      expect { gateway.mark_seen! }.not_to change { gateway.reload.uid }
     end
 
     it "syncs in-memory state without reload" do
