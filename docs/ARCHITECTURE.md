@@ -21,7 +21,7 @@
 │  Streamr (P2P real-time) · Filecoin/IPFS (immutable archive)            │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  BACKEND (Rails 8.1 + Sidekiq + PostgreSQL)                             │
-│  24 API Controllers · 24 Services · 26 Workers                          │
+│  24 API Controllers · 29 Services · 26 Workers                          │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  INFRA (Akash Network — Decentralized Cloud)                            │
 │  Containerized Rails deployment on Akash marketplace                    │
@@ -190,3 +190,35 @@ Lorenz Z-value (server) + hardware signature
 - **Key Rotation** — `HardwareKeyService.rotate` generates new key + OTA downlink (Dual-Key Handshake with Grace Period)
 - **Immutable Audit Trail** — SHA-256 chain_hash per organization → Filecoin/IPFS archive (CID) → weekly Ethereum L1 state root
 - **BigDecimal Precision** — All financial and Lorenz calculations use 18-digit BigDecimal to ensure cross-platform determinism and legal-grade Web3 audit accuracy
+
+## Shared Infrastructure Layer
+
+### Base Classes
+
+| Class | Purpose |
+|---|---|
+| **`ApplicationService`** | Base class for all services. Provides `.call(...)` → `#perform` template pattern |
+| **`ApplicationWeb3Worker`** | Base module for blockchain workers. Standardized RPC error handling, structured logging, partition-pruned lookup |
+
+### Web3 Utility Layer (`app/services/web3/`)
+
+| Utility | Purpose |
+|---|---|
+| **`Web3::HttpClient`** | Centralized HTTP client for all external APIs (IPFS, IoTeX, Streamr, Hadron, The Graph, peaq, Solana). Unified timeouts, auto SSL, lazy JSON parsing via `Response` wrapper |
+| **`Web3::RpcConnectionPool`** | Thread-safe `Eth::Client` caching per Sidekiq thread. Prevents repeated TCP/TLS handshakes. Supports `fallback:` URL for testnet |
+| **`Web3::WeiConverter`** | BigDecimal-based conversion between human-readable and wei (ERC-20, 18 decimals). Prevents precision loss in financial operations |
+
+### Model Concerns
+
+| Concern | Models | Purpose |
+|---|---|---|
+| **`GeoLocatable`** | Tree, Gateway, MaintenanceRecord | Unified WGS-84 coordinate validation (latitude -90..90, longitude -180..180) |
+| **`NormalizeIdentifier`** | Tree, Gateway, HardwareKey | UID/DID normalization via Rails `normalizes` DSL (strip + upcase) |
+| **`CoapEncryption`** | Downlink workers | Centralized AES-256-CBC encryption for CoAP packets with random IV |
+
+### Extracted Domain Services
+
+| Service | Extracted From | Purpose |
+|---|---|---|
+| **`ContractHealthCheckService`** | NaasContract model | Cluster health check against NaasContract threshold (20% critical trees). Initiates Slashing Protocol on breach |
+| **`ContractTerminationService`** | NaasContract model | Early NaasContract termination with proportional refund and penalty calculation |

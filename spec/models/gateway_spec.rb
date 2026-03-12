@@ -72,9 +72,9 @@ RSpec.describe Gateway, type: :model do
       expect(gateway.last_seen_at).to be_within(2.seconds).of(future_time)
     end
 
-    it "does not trigger ActiveRecord callbacks" do
+    it "does not modify uid when updating via mark_seen!" do
       gateway = create(:gateway)
-      # mark_seen! uses update_all which bypasses callbacks
+      # mark_seen! uses update_all which bypasses callbacks and normalization
       expect { gateway.mark_seen! }.not_to change { gateway.reload.uid }
     end
 
