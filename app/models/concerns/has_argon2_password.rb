@@ -37,7 +37,7 @@ module HasArgon2Password
   alias_method :authenticate_password, :authenticate
 
   def password_salt
-    return nil unless password_digest?
+    return nil unless password_digest.present?
 
     Argon2id::Password.new(password_digest).salt.unpack1("H*")
   end
