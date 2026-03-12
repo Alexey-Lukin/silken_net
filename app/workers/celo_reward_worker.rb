@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class CeloRewardWorker
-  include Sidekiq::Job
+  include ApplicationWeb3Worker
   sidekiq_options queue: "web3", retry: 3
 
   def perform(cluster_id, target_date_string)
@@ -10,9 +10,11 @@ class CeloRewardWorker
 
     target_date = Date.parse(target_date_string)
 
-    Celo::CommunityRewardService.new(cluster, target_date).reward_community!
+    with_web3_error_handling("Celo", "Cluster ##{cluster_id}") do
+      Celo::CommunityRewardService.new(cluster, target_date).reward_community!
+    end
   rescue StandardError => e
     Rails.logger.error "🛑 [Celo ReFi] Помилка нагороди для кластера ##{cluster_id}: #{e.message}"
-    raise e
+    raise
   end
 end

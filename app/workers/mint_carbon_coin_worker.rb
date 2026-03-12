@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 class MintCarbonCoinWorker
-  include Sidekiq::Job
-  # Використовуємо чергу web3 з низьким пріоритетом, щоб не блокувати телеметрію.
+  include ApplicationWeb3Worker
+  # Web3 Critical черга — мінтинг є час-чутливою фінансовою операцією.
   # Обмеження ретраїв до 5 запобігає нескінченному спаму в RPC Polygon.
-  sidekiq_options queue: "web3", retry: 5
+  sidekiq_options queue: "web3_critical", retry: 5
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # МЕ NAM-TAR: Фінальний Ролбек (The Absolute Integrity)
@@ -106,7 +106,7 @@ class MintCarbonCoinWorker
 
   rescue StandardError => e
     Rails.logger.error "🚨 [Web3] Oracle-driven mint error для TelemetryLog ##{telemetry_log_id}: #{e.message}"
-    raise e
+    raise
   end
 
   # [FALLBACK]: Auto-discovery pending транзакцій (cron або ручний запуск).
@@ -145,24 +145,12 @@ class MintCarbonCoinWorker
     end
 
     Rails.logger.error "🚨 [Web3] Batch RPC Error: #{e.message}. Планується повтор..."
-    raise e
+    raise
   end
 
   # [COMPOSITE PK]: telemetry_logs партиціоновано по created_at.
   # Передача created_at дозволяє PostgreSQL пропустити непотрібні партиції.
   def find_telemetry_log(telemetry_log_id, created_at_iso)
-    scope = TelemetryLog.where(id: telemetry_log_id)
-
-    if created_at_iso.present?
-      begin
-        scope = scope.where(created_at: Time.iso8601(created_at_iso))
-      rescue ArgumentError
-        # Некоректний формат — шукаємо без partition pruning
-      end
-    end
-
-    log = scope.first
-    Rails.logger.error "🛑 [Web3] TelemetryLog ##{telemetry_log_id} не знайдено." unless log
-    log
+    find_telemetry_log_with_pruning(telemetry_log_id, created_at_iso, log_prefix: "[Web3]")
   end
 end

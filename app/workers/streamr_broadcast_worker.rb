@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class StreamrBroadcastWorker
-  include Sidekiq::Job
+  include ApplicationWeb3Worker
   sidekiq_options queue: "low", retry: 3
 
   def perform(telemetry_log_id, created_at_iso)

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class TokenomicsEvaluatorWorker
-  include Sidekiq::Job
+  include ApplicationWeb3Worker
   # Використовуємо чергу за замовчуванням. Пріоритет нижчий за телеметрію,
   # оскільки фінансовий аудит може тривати довше.
   sidekiq_options queue: "default", retry: 3

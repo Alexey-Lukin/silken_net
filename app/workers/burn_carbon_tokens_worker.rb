@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class BurnCarbonTokensWorker
-  include Sidekiq::Job
+  include ApplicationWeb3Worker
   # Використовуємо чергу critical, бо фінансова відплата має бути негайною,
   # щоб запобігти виводу токенів інвестором.
   sidekiq_options queue: "critical", retry: 5
@@ -23,11 +23,13 @@ class BurnCarbonTokensWorker
     # 1. WEB3 ЕКЗЕКУЦІЯ (The Judgment Stroke)
     # Передаємо source_tree як доказ порушення для логування в блокчейні.
     # Сервіс сам розрахує суму на основі підтвердженого гомеостазу.
-    BlockchainBurningService.call(
-      organization_id,
-      naas_contract_id,
-      source_tree: source_tree
-    )
+    with_web3_error_handling("Polygon", "Slashing Contract ##{naas_contract_id}") do
+      BlockchainBurningService.call(
+        organization_id,
+        naas_contract_id,
+        source_tree: source_tree
+      )
+    end
 
     # 2. СИНХРОНІЗАЦІЯ ІСТИННИ (Atomic Audit)
     # Ми маркуємо контракт як BREACHED вже всередині сервісу, але тут
@@ -59,7 +61,7 @@ class BurnCarbonTokensWorker
   rescue StandardError => e
     Rails.logger.error "🚨 [Slashing Error] Провал місії для контракту ##{naas_contract_id}: #{e.message}"
     # Sidekiq перехопить помилку для повторної спроби, якщо блокчейн був недоступний
-    raise e
+    raise
   end
 
   private

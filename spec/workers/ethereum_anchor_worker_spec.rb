@@ -18,8 +18,8 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
       expect(mock_service).to have_received(:anchor_to_l1!)
     end
 
-    it "uses the web3 queue" do
-      expect(described_class.sidekiq_options["queue"]).to eq("web3")
+    it "uses the web3_low queue" do
+      expect(described_class.sidekiq_options["queue"]).to eq("web3_low")
     end
 
     it "has retry set to 3" do
