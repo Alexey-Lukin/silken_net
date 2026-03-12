@@ -34,7 +34,7 @@ class ResetActuatorStateWorker
       Rails.logger.info "ℹ️ [Actuator Lifecycle] Скидання скасовано. Механізм #{actuator.name} у стані '#{actuator.state}'."
 
       # Ми все одно маркуємо команду як завершену, навіть якщо стан змінився ззовні
-      command.confirm! if command.status_acknowledged?
+      command.confirm! if command.may_confirm?
     end
 
     # ⚡ [СИНХРОНІЗАЦІЯ З UI]: Відправляємо фінальний імпульс Архітектору
