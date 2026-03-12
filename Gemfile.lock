@@ -360,6 +360,9 @@ GEM
       racc (~> 1.4)
     nokogiri (1.19.1-x86_64-linux-musl)
       racc (~> 1.4)
+    oj (3.16.15)
+      bigdecimal (>= 3.0)
+      ostruct (>= 0.2)
     openssl (3.3.2)
     os (1.1.4)
     ostruct (0.6.3)
@@ -659,6 +662,7 @@ DEPENDENCIES
   image_processing
   importmap-rails
   kamal
+  oj
   pagy
   parallel_tests
   pg

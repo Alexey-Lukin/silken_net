@@ -11,6 +11,7 @@ gem "groupdate"
 gem "image_processing"
 gem "importmap-rails"
 gem "kamal", require: false
+gem "oj"
 gem "pagy"
 gem "pg"
 gem "phlex-rails"
