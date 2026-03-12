@@ -73,3 +73,4 @@ firmware/test/test_soldier
 subgraph/build/
 subgraph/generated/
 subgraph/node_modules/
+coverage/

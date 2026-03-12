@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Tree < ApplicationRecord
+  include AASM
   include Firmwareable
   include GeoLocatable
   include NormalizeIdentifier
@@ -29,6 +30,36 @@ class Tree < ApplicationRecord
 
   # --- СТАН (The Lifecycle) ---
   enum :status, { active: 0, dormant: 1, removed: 2, deceased: 3 }, default: :active
+
+  # =========================================================================
+  # ЖИТТЄВИЙ ЦИКЛ ДЕРЕВА (AASM State Machine)
+  # =========================================================================
+  aasm column: :status, enum: true, whiny_persistence: true do
+    state :active, initial: true
+    state :dormant
+    state :removed
+    state :deceased
+
+    # Дерево входить у зимовий сон / суху фазу
+    event :suspend do
+      transitions from: :active, to: :dormant
+    end
+
+    # Пробудження після зимового сну / відновлення
+    event :reactivate do
+      transitions from: :dormant, to: :active
+    end
+
+    # Списання дерева (деінсталяція обладнання)
+    event :decommission do
+      transitions from: [ :active, :dormant ], to: :removed
+    end
+
+    # Біологічна смерть дерева
+    event :declare_deceased do
+      transitions from: [ :active, :dormant ], to: :deceased
+    end
+  end
 
   # --- КОНСТАНТИ (Іоністор суперконденсатор 5.5В 0.47Ф) ---
   VCAP_MIN_MV = 2800   # Мінімальна робоча напруга (нижче — STM32 втрачає mesh-relay)

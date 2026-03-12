@@ -488,4 +488,65 @@ RSpec.describe EwsAlert, type: :model do
       expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to)
     end
   end
+
+  # =========================================================================
+  # AASM STATE MACHINE
+  # =========================================================================
+  describe "AASM state machine" do
+    let(:cluster) { create(:cluster, organization: create(:organization)) }
+    let(:tree) { create(:tree, cluster: cluster) }
+
+    before do
+      allow_any_instance_of(described_class).to receive(:dispatch_notifications!)
+    end
+
+    describe "initial state" do
+      it "starts as active" do
+        alert = build(:ews_alert, cluster: cluster, tree: tree, status: :active)
+        expect(alert).to be_active
+      end
+    end
+
+    describe "AASM #resolve via mark_resolved" do
+      it "transitions from active to resolved" do
+        alert = create(:ews_alert, cluster: cluster, tree: tree, status: :active)
+        alert.resolve!
+        expect(alert.reload).to be_resolved
+      end
+
+      it "rejects transition from ignored" do
+        alert = create(:ews_alert, cluster: cluster, tree: tree)
+        alert.update_columns(status: described_class.statuses[:ignored])
+        alert.reload
+        expect { alert.resolve! }.to raise_error(AASM::InvalidTransition)
+      end
+    end
+
+    describe "AASM #ignore event" do
+      it "transitions from active to ignored" do
+        alert = create(:ews_alert, cluster: cluster, tree: tree, status: :active)
+        alert.ignore!
+        expect(alert.reload).to be_ignored
+      end
+    end
+
+    describe "AASM #reopen event" do
+      it "transitions from resolved to active" do
+        alert = create(:ews_alert, cluster: cluster, tree: tree)
+        alert.update_columns(status: described_class.statuses[:resolved])
+        alert.reload
+        alert.reopen!
+        expect(alert.reload).to be_active
+      end
+    end
+
+    describe "may_ query methods" do
+      it "reports valid transitions from active" do
+        alert = build(:ews_alert, cluster: cluster, tree: tree, status: :active)
+        expect(alert.may_mark_resolved?).to be true
+        expect(alert.may_ignore?).to be true
+        expect(alert.may_reopen?).to be false
+      end
+    end
+  end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Gateway < ApplicationRecord
+  include AASM
   include Firmwareable
   include GeoLocatable
   include NormalizeIdentifier
@@ -36,6 +37,52 @@ class Gateway < ApplicationRecord
     maintenance: 3, # Технічне обслуговування
     faulty: 4       # Апаратний збій / вичерпано ретраї OTA
   }, default: :idle
+
+  # =========================================================================
+  # ЖИТТЄВИЙ ЦИКЛ ШЛЮЗУ (AASM State Machine)
+  # =========================================================================
+  aasm column: :state, enum: true, whiny_persistence: true do
+    state :idle, initial: true
+    state :active
+    state :updating
+    state :maintenance
+    state :faulty
+
+    # Шлюз активно передає телеметрію
+    event :wake do
+      transitions from: :idle, to: :active
+    end
+
+    # Повернення в режим сну
+    event :sleep do
+      transitions from: :active, to: :idle
+    end
+
+    # Початок OTA оновлення
+    event :begin_update do
+      transitions from: [ :idle, :active ], to: :updating
+    end
+
+    # Завершення OTA (повернення в idle)
+    event :finish_update do
+      transitions from: :updating, to: :idle
+    end
+
+    # Перехід у режим обслуговування
+    event :enter_maintenance do
+      transitions from: [ :idle, :active, :faulty ], to: :maintenance
+    end
+
+    # Повернення з обслуговування
+    event :exit_maintenance do
+      transitions from: :maintenance, to: :idle
+    end
+
+    # Апаратний збій
+    event :report_fault do
+      transitions from: [ :idle, :active, :updating, :maintenance ], to: :faulty
+    end
+  end
 
   # --- КОНСТАНТИ ---
   # Zero-Trust: Формат UID відповідає апаратній специфікації шлюзу (SNET-Q-[8 hex digits])

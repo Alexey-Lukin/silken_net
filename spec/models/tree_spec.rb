@@ -327,4 +327,71 @@ RSpec.describe Tree, type: :model do
       expect(tree.did).to eq("SNET-0000ABCD")
     end
   end
+
+  # =========================================================================
+  # AASM STATE MACHINE
+  # =========================================================================
+  describe "AASM state machine" do
+    before do
+      allow_any_instance_of(described_class).to receive(:broadcast_map_update)
+    end
+
+    describe "initial state" do
+      it "starts as active" do
+        tree = build(:tree, status: :active)
+        expect(tree).to be_active
+      end
+    end
+
+    describe "#suspend!" do
+      it "transitions from active to dormant" do
+        tree = create(:tree, status: :active)
+        tree.suspend!
+        expect(tree.reload).to be_dormant
+      end
+
+      it "rejects transition from removed" do
+        tree = create(:tree)
+        tree.update_columns(status: described_class.statuses[:removed])
+        tree.reload
+        expect { tree.suspend! }.to raise_error(AASM::InvalidTransition)
+      end
+    end
+
+    describe "#reactivate!" do
+      it "transitions from dormant to active" do
+        tree = create(:tree)
+        tree.update_columns(status: described_class.statuses[:dormant])
+        tree.reload
+        tree.reactivate!
+        expect(tree.reload).to be_active
+      end
+    end
+
+    describe "#decommission!" do
+      it "transitions from active to removed" do
+        tree = create(:tree, status: :active)
+        tree.decommission!
+        expect(tree.reload).to be_removed
+      end
+    end
+
+    describe "#declare_deceased!" do
+      it "transitions from active to deceased" do
+        tree = create(:tree, status: :active)
+        tree.declare_deceased!
+        expect(tree.reload).to be_deceased
+      end
+    end
+
+    describe "may_ query methods" do
+      it "reports valid transitions from active" do
+        tree = build(:tree, status: :active)
+        expect(tree.may_suspend?).to be true
+        expect(tree.may_reactivate?).to be false
+        expect(tree.may_decommission?).to be true
+        expect(tree.may_declare_deceased?).to be true
+      end
+    end
+  end
 end

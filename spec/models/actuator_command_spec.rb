@@ -560,4 +560,88 @@ RSpec.describe ActuatorCommand, type: :model do
       expect(result).to be_nil
     end
   end
+
+  # =========================================================================
+  # AASM STATE MACHINE
+  # =========================================================================
+  describe "AASM state machine" do
+    let(:gateway) { create(:gateway, :online) }
+    let(:actuator) { create(:actuator, gateway: gateway) }
+
+    describe "initial state" do
+      it "starts as issued" do
+        command = build(:actuator_command, actuator: actuator, status: :issued)
+        expect(command).to be_issued
+      end
+    end
+
+    describe "#dispatch!" do
+      it "transitions from issued to sent and sets sent_at" do
+        command = create(:actuator_command, actuator: actuator)
+        freeze_time do
+          command.dispatch!
+          command.reload
+          expect(command).to be_sent
+          expect(command.sent_at).to be_within(1.second).of(Time.current)
+        end
+      end
+
+      it "rejects transition from acknowledged" do
+        command = create(:actuator_command, actuator: actuator)
+        command.update_columns(status: described_class.statuses[:acknowledged])
+        command.reload
+        expect { command.dispatch! }.to raise_error(AASM::InvalidTransition)
+      end
+    end
+
+    describe "#acknowledge!" do
+      it "transitions from sent to acknowledged" do
+        command = create(:actuator_command, actuator: actuator)
+        command.update_columns(status: described_class.statuses[:sent])
+        command.reload
+        command.acknowledge!
+        expect(command.reload).to be_acknowledged
+      end
+    end
+
+    describe "#confirm!" do
+      it "transitions from acknowledged to confirmed and sets completed_at" do
+        command = create(:actuator_command, actuator: actuator)
+        command.update_columns(status: described_class.statuses[:acknowledged])
+        command.reload
+        freeze_time do
+          command.confirm!
+          command.reload
+          expect(command).to be_confirmed
+          expect(command.completed_at).to be_within(1.second).of(Time.current)
+        end
+      end
+    end
+
+    describe "#fail!" do
+      it "transitions from any state to failed" do
+        command = create(:actuator_command, actuator: actuator)
+        command.fail!("timeout")
+        expect(command.reload).to be_failed
+        expect(command.error_message).to eq("timeout")
+      end
+
+      it "can fail from sent state" do
+        command = create(:actuator_command, actuator: actuator)
+        command.update_columns(status: described_class.statuses[:sent])
+        command.reload
+        command.fail!("gateway offline")
+        expect(command.reload).to be_failed
+      end
+    end
+
+    describe "may_ query methods" do
+      it "reports valid transitions from issued" do
+        command = build(:actuator_command, actuator: actuator, status: :issued)
+        expect(command.may_dispatch?).to be true
+        expect(command.may_confirm?).to be false
+        expect(command.may_fail?).to be true
+      end
+    end
+  end
 end

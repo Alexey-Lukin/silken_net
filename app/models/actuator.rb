@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Actuator < ApplicationRecord
+  include AASM
+
   # --- ЗВ'ЯЗКИ ---
   belongs_to :gateway
   has_one :cluster, through: :gateway
@@ -36,8 +38,56 @@ class Actuator < ApplicationRecord
   scope :operational, -> { where(state: :idle) }
 
   # =========================================================================
-  # ЖИТТЄВИЙ ЦИКЛ ТА СТАТУСИ
+  # ЖИТТЄВИЙ ЦИКЛ ТА СТАТУСИ (AASM State Machine)
   # =========================================================================
+  aasm column: :state, enum: true, whiny_persistence: true do
+    state :idle, initial: true
+    state :active
+    state :offline
+    state :maintenance_needed
+
+    # Активація пристрою (виклик від ActuatorCommandWorker)
+    event :activate do
+      before do
+        self.last_activated_at = Time.current
+      end
+      after do
+        gateway.touch(:last_seen_at)
+        Rails.logger.info "⚙️ [ACTUATOR] #{name} на шлюзі #{gateway.uid} АКТИВОВАНО."
+      end
+      transitions from: :idle, to: :active
+    end
+
+    # Повернення в режим очікування (The Reset)
+    event :deactivate do
+      after do
+        Rails.logger.info "⚙️ [ACTUATOR] #{name} повернувся в стан спокою."
+      end
+      transitions from: [ :active, :offline, :maintenance_needed ], to: :idle
+    end
+
+    # Пристрій втратив зв'язок
+    event :go_offline do
+      transitions from: [ :idle, :active ], to: :offline
+    end
+
+    # Критичний збій (The Hardware Fault)
+    event :report_fault do
+      after do |reason|
+        reason ||= "Невідома помилка CoAP"
+        if gateway.cluster_id.present?
+          EwsAlert.create!(
+            cluster: gateway.cluster,
+            alert_type: :system_fault,
+            severity: :critical,
+            message: "Збій актуатора '#{name}' (#{endpoint}). Причина: #{reason}. Потрібен виїзд патруля."
+          )
+        end
+        Rails.logger.error "🛠️ [ACTUATOR] #{name} ВИЙШОВ З ЛАДУ. Система EWS сповіщена."
+      end
+      transitions from: [ :idle, :active, :offline ], to: :maintenance_needed
+    end
+  end
 
   # Перевірка, чи пристрій готовий до негайного розгортання
   def ready_for_deployment?
@@ -47,40 +97,16 @@ class Actuator < ApplicationRecord
     gateway.online? && !gateway.updating?
   end
 
-  # Фіксація початку роботи (The Pulse of Action)
+  # Backward-compatible wrappers для існуючих Workers
   def mark_active!
-    transaction do
-      update!(state: :active, last_activated_at: Time.current)
-      # Оновлюємо пульс шлюзу, оскільки активація актуатора — це теж мережева активність
-      gateway.touch(:last_seen_at)
-    end
-    Rails.logger.info "⚙️ [ACTUATOR] #{name} на шлюзі #{gateway.uid} АКТИВОВАНО."
+    activate!
   end
 
-  # Повернення в режим очікування (The Reset)
   def mark_idle!
-    update!(state: :idle)
-    Rails.logger.info "⚙️ [ACTUATOR] #{name} повернувся в стан спокою."
+    deactivate!
   end
 
-  # Критичний збій (The Hardware Fault)
   def require_maintenance!(reason = "Невідома помилка CoAP")
-    transaction do
-      update!(state: :maintenance_needed)
-
-      # [N+1 FIX]: Перевіряємо наявність кластера через gateway.cluster_id
-      # замість has_one :through, щоб не створювати зайвий JOIN.
-      return unless gateway.cluster_id.present?
-
-      # [СИНХРОНІЗОВАНО]: Створюємо системну тривогу через EwsAlert
-      EwsAlert.create!(
-        cluster: gateway.cluster,
-        alert_type: :system_fault,
-        severity: :critical,
-        message: "Збій актуатора '#{name}' (#{endpoint}). Причина: #{reason}. Потрібен виїзд патруля."
-      )
-    end
-
-    Rails.logger.error "🛠️ [ACTUATOR] #{name} ВИЙШОВ З ЛАДУ. Система EWS сповіщена."
+    report_fault!(reason)
   end
 end

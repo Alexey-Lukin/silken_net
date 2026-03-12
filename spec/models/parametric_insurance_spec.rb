@@ -318,4 +318,61 @@ RSpec.describe ParametricInsurance, type: :model do
       Prosopite.resume if defined?(Prosopite)
     end
   end
+
+  # =========================================================================
+  # AASM STATE MACHINE
+  # =========================================================================
+  describe "AASM state machine" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    describe "initial state" do
+      it "starts as active" do
+        insurance = build(:parametric_insurance, organization: organization, cluster: cluster, status: :active)
+        expect(insurance).to be_active
+      end
+    end
+
+    describe "#trigger!" do
+      it "transitions from active to triggered" do
+        insurance = create(:parametric_insurance, organization: organization, cluster: cluster, status: :active)
+        insurance.trigger!
+        expect(insurance.reload).to be_status_triggered
+      end
+
+      it "rejects transition from paid" do
+        insurance = create(:parametric_insurance, organization: organization, cluster: cluster, status: :paid)
+        expect { insurance.trigger! }.to raise_error(AASM::InvalidTransition)
+      end
+    end
+
+    describe "#pay!" do
+      it "transitions from triggered to paid and sets paid_at" do
+        insurance = create(:parametric_insurance, organization: organization, cluster: cluster, status: :triggered)
+        freeze_time do
+          insurance.pay!
+          insurance.reload
+          expect(insurance).to be_status_paid
+          expect(insurance.paid_at).to be_within(1.second).of(Time.current)
+        end
+      end
+    end
+
+    describe "#expire!" do
+      it "transitions from active to expired" do
+        insurance = create(:parametric_insurance, organization: organization, cluster: cluster, status: :active)
+        insurance.expire!
+        expect(insurance.reload).to be_status_expired
+      end
+    end
+
+    describe "may_ query methods" do
+      it "reports valid transitions from active" do
+        insurance = build(:parametric_insurance, organization: organization, cluster: cluster, status: :active)
+        expect(insurance.may_trigger?).to be true
+        expect(insurance.may_pay?).to be false
+        expect(insurance.may_expire?).to be true
+      end
+    end
+  end
 end

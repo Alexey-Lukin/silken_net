@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class ActuatorCommand < ApplicationRecord
+  include AASM
+
   belongs_to :actuator
   belongs_to :ews_alert, optional: true
   belongs_to :user, optional: true
@@ -22,6 +24,51 @@ class ActuatorCommand < ApplicationRecord
     high: 2,     # критичне реагування EWS
     override: 3  # STOP / EMERGENCY_SHUTDOWN — обнуляє всі pending для актуатора
   }, prefix: true
+
+  # =========================================================================
+  # ЖИТТЄВИЙ ЦИКЛ КОМАНДИ (AASM State Machine)
+  # =========================================================================
+  aasm column: :status, enum: true, whiny_persistence: true do
+    state :issued, initial: true
+    state :sent
+    state :acknowledged
+    state :failed
+    state :confirmed
+
+    # Відправка команди на edge-пристрій через CoAP
+    event :dispatch do
+      before do
+        self.sent_at = Time.current
+      end
+      transitions from: :issued, to: :sent
+    end
+
+    # Підтвердження отримання від шлюзу (ACK)
+    event :acknowledge do
+      before do
+        self.sent_at ||= Time.current
+      end
+      transitions from: :sent, to: :acknowledged
+    end
+
+    # Підтвердження виконання команди актуатором
+    event :confirm do
+      before do
+        self.completed_at = Time.current
+      end
+      transitions from: :acknowledged, to: :confirmed
+    end
+
+    # Збій на будь-якому етапі
+    event :fail do
+      before do |reason|
+        self.error_message = reason.to_s.truncate(200) if reason.present?
+      end
+      # :failed → :failed дозволяє оновити error_message при повторному збої
+      # (напр. sidekiq_retries_exhausted після ручного fail з handle_failure)
+      transitions from: [ :issued, :sent, :acknowledged, :confirmed, :failed ], to: :failed
+    end
+  end
 
   # 🛑 Команди, що мають системний пріоритет OVERRIDE.
   # При створенні такої команди всі pending-команди для цього актуатора скасовуються.

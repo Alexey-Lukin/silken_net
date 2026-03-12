@@ -31,7 +31,9 @@ gem "thruster", require: false
 gem "turbo-rails"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
+gem "aasm"
 gem "active_storage_validations"
+gem "strong_migrations"
 # Active Storage: cloud object storage backends
 # S3-compatible (AWS, MinIO, DigitalOcean Spaces, Backblaze B2)
 gem "aws-sdk-s3", require: false
@@ -43,7 +45,6 @@ group :development, :test do
   gem "bundler-audit", require: false
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "factory_bot_rails"
-  gem "parallel_tests"
   gem "pg_query"
   gem "prosopite"
   gem "rspec-rails"
@@ -58,5 +59,6 @@ end
 group :test do
   gem "capybara"
   gem "cuprite"
+  gem "parallel_tests"
   gem "simplecov", require: false
 end
