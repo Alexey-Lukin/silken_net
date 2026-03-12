@@ -55,6 +55,17 @@ RSpec.describe Web3::HttpClient do
         )
       }.to raise_error(Web3::HttpClient::RequestError, /Test.*Timeout|Test connection error/)
     end
+
+    it "wraps unexpected StandardError in RequestError" do
+      allow(Net::HTTP).to receive(:start).and_raise(Errno::ECONNREFUSED, "Connection refused")
+
+      expect {
+        described_class.post("https://api.example.com/data",
+          body: { key: "value" },
+          service_name: "Test"
+        )
+      }.to raise_error(Web3::HttpClient::RequestError, /Test connection error/)
+    end
   end
 
   describe ".get" do

@@ -134,6 +134,35 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
 
         expect(response.status).to be_in([ 200, 500 ])
       end
+
+      it "redirects on successful HTML password reset" do
+        token = user.generate_token_for(:password_reset)
+
+        patch "/api/v1/reset_password", params: {
+          token: token,
+          password: "new_password_123",
+          password_confirmation: "new_password_123"
+        }, headers: { "Accept" => "text/html" }
+
+        expect(response).to have_http_status(:redirect)
+      end
+
+      it "redirects when token is invalid in HTML format" do
+        patch "/api/v1/reset_password", params: {
+          token: "invalid-token",
+          password: "new_password_123",
+          password_confirmation: "new_password_123"
+        }, headers: { "Accept" => "text/html" }
+
+        expect(response).to have_http_status(:redirect)
+      end
+
+      it "redirects on HTML forgot_password submit" do
+        post "/api/v1/forgot_password", params: { email: user.email_address },
+          headers: { "Accept" => "text/html" }
+
+        expect(response).to have_http_status(:redirect)
+      end
     end
   end
 end

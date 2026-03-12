@@ -16,6 +16,28 @@ RSpec.describe Tree, type: :model do
     end
   end
 
+  describe ".critical_stress scope" do
+    it "returns trees with high stress from yesterday's AI insights" do
+      tree = create(:tree, status: :active)
+      create(:ai_insight, :daily_health_summary,
+             analyzable: tree,
+             target_date: Time.current.utc.to_date - 1,
+             stress_index: 0.95)
+
+      expect(described_class.critical_stress).to include(tree)
+    end
+
+    it "excludes trees with low stress" do
+      tree = create(:tree, status: :active)
+      create(:ai_insight, :daily_health_summary,
+             analyzable: tree,
+             target_date: Time.current.utc.to_date - 1,
+             stress_index: 0.5)
+
+      expect(described_class.critical_stress).not_to include(tree)
+    end
+  end
+
   describe "DID validation" do
     it "normalizes DID to uppercase" do
       tree = build(:tree, did: "snet-00000abc")

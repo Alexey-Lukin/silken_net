@@ -93,5 +93,12 @@ RSpec.describe WalletPolicy do
 
       expect(described_class.new(investor, wallet).show?).to be false
     end
+
+    it "denies when wallet.tree is nil" do
+      allow(wallet).to receive_messages(organization_id: nil, tree: nil)
+
+      other_user = create(:user, :investor, organization: other_org)
+      expect(described_class.new(other_user, wallet).show?).to be false
+    end
   end
 end

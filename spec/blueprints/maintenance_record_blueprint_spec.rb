@@ -206,5 +206,23 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
       expect(json[:photo_urls].first[:thumb_url]).to eq("/thumb.jpg")
       expect(json[:photo_urls].first[:full_url]).to eq("/full.jpg")
     end
+
+    it "returns empty strings for thumb_url and full_url when url_helpers is nil but photos exist" do
+      record_with_cost.photos.attach(
+        io: StringIO.new("fake image data for test"),
+        filename: "test_no_helpers.jpg",
+        content_type: "image/jpeg"
+      )
+
+      json = described_class.render_as_hash(
+        record_with_cost,
+        view: :show,
+        url_helpers: nil
+      )
+
+      expect(json[:photo_urls]).not_to be_empty
+      expect(json[:photo_urls].first[:thumb_url]).to eq("")
+      expect(json[:photo_urls].first[:full_url]).to eq("")
+    end
   end
 end

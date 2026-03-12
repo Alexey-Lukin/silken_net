@@ -51,6 +51,21 @@ RSpec.describe Api::V1::SessionsController, type: :request do
 
       expect(response).to have_http_status(:unauthorized)
     end
+
+    it "destroys the current session record when session exists" do
+      # First login to create a session
+      post "/api/v1/login", params: { email: user.email_address, password: "password12345" }, as: :json
+      token = response.parsed_body["token"]
+
+      delete "/api/v1/logout", headers: { "Authorization" => "Bearer #{token}" }, as: :json
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "redirects to login page for HTML format" do
+      delete "/api/v1/logout",
+        headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+      expect(response).to have_http_status(:redirect)
+    end
   end
 
   describe "signed_in? helper" do

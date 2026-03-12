@@ -186,6 +186,12 @@ RSpec.describe Cluster, type: :model do
       cluster = create(:cluster, geojson_polygon: polygon)
       expect(cluster.geo_center).to be_nil
     end
+
+    it "returns nil when geojson_polygon has coordinates key but is nil value" do
+      polygon = { "type" => "Polygon", "coordinates" => nil }
+      cluster = create(:cluster, geojson_polygon: polygon)
+      expect(cluster.geo_center).to be_nil
+    end
   end
 
   describe ".under_threat scope" do
