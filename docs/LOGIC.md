@@ -175,5 +175,39 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 8. **L1 Finality:** Щотижневий state root на Ethereum Mainnet — незнищенний якір усієї економіки.
 9. **Immutable Archive:** SHA-256 chain_hash per organization → Filecoin/IPFS (CID) — дані доступні навіть після знищення серверів.
 
+---
+
+## 🏗️ VI. Архітектурні Патерни (Infrastructure Patterns)
+
+### Базові класи та утиліти
+
+| Компонент | Призначення |
+| --- | --- |
+| **`ApplicationService`** | Базовий клас для всіх сервісів. Надає `.call(...)` → `#perform` template pattern. |
+| **`ApplicationWeb3Worker`** | Базовий модуль для блокчейн-воркерів. Стандартизована обробка RPC-помилок, структуроване логування, partition-pruned lookup. |
+
+### Web3 Utility Layer (`app/services/web3/`)
+
+| Утиліта | Призначення |
+| --- | --- |
+| **`Web3::HttpClient`** | Централізований HTTP-клієнт для всіх зовнішніх API (IPFS, IoTeX, Streamr, Hadron, The Graph, peaq, Solana). Уніфіковані таймаути, автоматичний SSL, lazy JSON parsing. |
+| **`Web3::RpcConnectionPool`** | Thread-safe кешування `Eth::Client` інстансів per-thread. Запобігає повторним TCP/TLS handshakes у Sidekiq-потоках. Підтримує `fallback:` URL для testnet. |
+| **`Web3::WeiConverter`** | BigDecimal-based конвертація між human-readable та wei (ERC-20, 18 decimals). Запобігає втраті точності у фінансових операціях. |
+
+### Виділені сервіси NaasContract
+
+| Сервіс | Призначення |
+| --- | --- |
+| **`ContractHealthCheckService`** | Перевірка здоров'я кластера відносно порогу NaasContract (20% критичних дерев). Ініціює Slashing Protocol при порушенні. |
+| **`ContractTerminationService`** | Дострокове розірвання NaasContract з розрахунком пропорційного повернення та штрафу. |
+
+### Model Concerns
+
+| Concern | Моделі | Призначення |
+| --- | --- | --- |
+| **`GeoLocatable`** | Tree, Gateway, MaintenanceRecord | Уніфікована валідація WGS-84 координат (latitude -90..90, longitude -180..180). |
+| **`NormalizeIdentifier`** | Tree, Gateway, HardwareKey | Нормалізація UID/DID через Rails `normalizes` DSL (strip + upcase). |
+| **`CoapEncryption`** | Downlink workers | Централізоване AES-256-CBC шифрування для CoAP-пакетів з випадковим IV. |
+
 > **Статус документа:** Актуально.
 > **Версія системи:** Gaia 2.0 (Cyber-Physical State).
