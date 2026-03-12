@@ -193,7 +193,7 @@ RSpec.describe EmergencyResponseService do
     end
   end
 
-  describe "tree without coordinates" do
+  describe "tree without coordinates (proximity skip)" do
     let(:tree_no_coords) { create(:tree, cluster: cluster, latitude: nil, longitude: nil) }
     let(:alert) { create(:ews_alert, cluster: cluster, tree: tree_no_coords, alert_type: :insect_epidemic, severity: :low) }
 

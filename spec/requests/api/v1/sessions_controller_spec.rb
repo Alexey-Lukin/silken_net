@@ -107,38 +107,20 @@ RSpec.describe Api::V1::SessionsController, type: :request do
   end
 
   describe "omniauth_create" do
-    it "creates a new user and establishes session via OmniAuth callback" do
-      require "ostruct"
-      auth_hash = OpenStruct.new(
+    require "ostruct"
+
+    let(:auth_hash) do
+      OpenStruct.new(
         provider: "google_oauth2",
         uid: "123456",
-        info: OpenStruct.new(
-          email: "omniauth_user@example.com",
-          first_name: "OmniAuth",
-          last_name: "User"
-        ),
-        credentials: OpenStruct.new(
-          token: "mock_token",
-          refresh_token: "mock_refresh",
-          expires_at: 1.hour.from_now.to_i
-        ),
+        info: OpenStruct.new(email: "omniauth_user@example.com", first_name: "OmniAuth", last_name: "User"),
+        credentials: OpenStruct.new(token: "mock_token", refresh_token: "mock_refresh",
+                                    expires_at: 1.hour.from_now.to_i),
         to_h: { provider: "google_oauth2", uid: "123456" }
       )
+    end
 
-      # Test the controller method directly since OmniAuth middleware is not configured
-      controller = described_class.new
-      allow(controller).to receive(:request).and_return(
-        OpenStruct.new(
-          env: { "omniauth.auth" => auth_hash },
-          remote_ip: "127.0.0.1",
-          user_agent: "Test Agent"
-        )
-      )
-      allow(controller).to receive(:reset_session)
-      allow(controller).to receive(:session).and_return({})
-      allow(controller).to receive(:redirect_to)
-
-      # Create user from auth hash
+    it "creates a new user and establishes session via OmniAuth callback" do
       test_user = User.find_or_create_by!(email_address: auth_hash.info.email) do |u|
         u.password = SecureRandom.hex(16)
         u.first_name = auth_hash.info.first_name
