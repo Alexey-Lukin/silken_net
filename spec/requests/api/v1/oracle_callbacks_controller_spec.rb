@@ -92,6 +92,21 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
       end
     end
 
+    context "when created_at is malformed" do
+      it "ignores the malformed created_at and still finds the log" do
+        post "/api/v1/oracle_callbacks",
+             params: {
+               chainlink_request_id: telemetry_log.chainlink_request_id,
+               created_at: "not-a-valid-date",
+               success: true
+             },
+             as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["status"]).to eq("fulfilled")
+      end
+    end
+
     it "does not require authentication" do
       post "/api/v1/oracle_callbacks",
            params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },

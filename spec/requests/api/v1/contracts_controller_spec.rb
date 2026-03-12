@@ -123,5 +123,32 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       get "/api/v1/contracts/stats", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
+
+    context "when organization has no clusters" do
+      it "returns portfolio_health as 1.0" do
+        allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
+
+        # Create a fresh user/org with no clusters or contracts
+        fresh_org = create(:organization)
+        fresh_user = create(:user, organization: fresh_org)
+        fresh_headers = { "Authorization" => "Bearer #{fresh_user.generate_token_for(:api_access)}" }
+
+        get "/api/v1/contracts/stats", headers: fresh_headers, as: :json
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["portfolio_health"]).to eq(1.0)
+      end
+    end
+
+    context "when portfolio_health calculation raises" do
+      it "returns 1.0 as fallback" do
+        allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
+        # Stub average to raise an error, triggering the rescue fallback
+        allow_any_instance_of(ActiveRecord::Associations::CollectionProxy).to receive(:average).and_raise(StandardError, "DB error")
+
+        get "/api/v1/contracts/stats", headers: headers, as: :json
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["portfolio_health"]).to eq(1.0)
+      end
+    end
   end
 end

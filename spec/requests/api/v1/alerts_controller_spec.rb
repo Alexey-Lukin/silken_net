@@ -43,6 +43,19 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       patch resolve_api_v1_alert_path(other_alert), headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
+
+    it "renders validation error when resolve! fails" do
+      allow_any_instance_of(EwsAlert).to receive(:resolve!).and_return(false)
+
+      patch resolve_api_v1_alert_path(own_alert), headers: headers, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "redirects on successful HTML resolve" do
+      patch resolve_api_v1_alert_path(own_alert),
+            headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+      expect(response).to have_http_status(:redirect)
+    end
   end
 
   context "with format.html responses" do
