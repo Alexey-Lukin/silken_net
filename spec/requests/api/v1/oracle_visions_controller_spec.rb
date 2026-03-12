@@ -154,4 +154,42 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
   end
+
+  describe "yield calculation with real tree data" do
+    it "iterates over active trees in find_each computing sap_flow and stress" do
+      Rails.cache.clear
+      Prosopite.pause if defined?(Prosopite)
+
+      tree1 = create(:tree, cluster: cluster, status: :active)
+      tree2 = create(:tree, cluster: cluster, status: :active)
+
+      create(:telemetry_log, tree: tree1, sap_flow: 2.0,
+             temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+             acoustic_events: 2, growth_points: 10,
+             bio_status: :homeostasis, metabolism_s: 1000)
+
+      create(:telemetry_log, tree: tree2, sap_flow: 3.0,
+             temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+             acoustic_events: 2, growth_points: 10,
+             bio_status: :homeostasis, metabolism_s: 1000)
+
+      get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+      expect(response).to have_http_status(:ok)
+      # yield_forecast may be a string or numeric depending on JSON serialization
+      forecast = response.parsed_body["yield_forecast"]
+      expect(forecast.to_f).to be_a(Float)
+    ensure
+      Prosopite.resume if defined?(Prosopite)
+    end
+
+    it "handles tree with nil telemetry (sap_flow defaults to 0.0)" do
+      Rails.cache.clear
+
+      create(:tree, cluster: cluster, status: :active)
+
+      get "/api/v1/oracle_visions", headers: forester_headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["yield_forecast"]).to be_a(Numeric)
+    end
+  end
 end

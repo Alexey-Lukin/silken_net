@@ -148,4 +148,27 @@ RSpec.describe HardwareKeyService, type: :service do
       }.to raise_error(RuntimeError, /не знайдено/)
     end
   end
+
+  describe "key update downlink" do
+    it "enqueues ActuatorCommandWorker during gateway rotation" do
+      gateway = create(:gateway, :online, cluster: cluster, ip_address: "192.168.1.1")
+      HardwareKey.create!(device_uid: gateway.uid, aes_key_hex: SecureRandom.hex(32).upcase)
+
+      new_key = HardwareKeyService.rotate(gateway.uid)
+      expect(new_key).to be_present
+      expect(ActuatorCommandWorker).to have_received(:perform_async)
+    end
+
+    it "returns early for tree device without ip_address or gateway" do
+      # Tree model has neither ip_address nor gateway method,
+      # so trigger_key_update_downlink returns early (line 76)
+      tree_device = create(:tree, cluster: cluster)
+      HardwareKey.create!(device_uid: tree_device.did, aes_key_hex: SecureRandom.hex(32).upcase)
+
+      new_key = HardwareKeyService.rotate(tree_device.did)
+      expect(new_key).to be_present
+      # ActuatorCommandWorker should NOT have been called (early return)
+      expect(ActuatorCommandWorker).not_to have_received(:perform_async)
+    end
+  end
 end

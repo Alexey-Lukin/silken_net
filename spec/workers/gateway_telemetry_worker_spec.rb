@@ -193,4 +193,21 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
       expect(message).to include("Апаратний збій")
     end
   end
+
+  describe "StandardError rescue branch" do
+    it "re-raises StandardError after logging" do
+      gateway = create(:gateway, :online, cluster: cluster)
+
+      # Force a StandardError inside the transaction
+      allow_any_instance_of(Gateway).to receive(:mark_seen!).and_raise(StandardError, "Unexpected failure")
+
+      expect {
+        GatewayTelemetryWorker.new.perform(gateway.uid, {
+          "voltage_mv" => 3500,
+          "temperature_c" => 25.0,
+          "cellular_signal_csq" => 15
+        })
+      }.to raise_error(StandardError, "Unexpected failure")
+    end
+  end
 end

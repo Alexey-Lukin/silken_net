@@ -340,4 +340,13 @@ RSpec.describe InsightGeneratorService, type: :service do
       end
     end
   end
+
+  describe "nil stats branch" do
+    it "returns false when stats.avg_temp is nil" do
+      service = InsightGeneratorService.new
+      stats = double("stats", avg_temp: nil)
+      result = service.send(:generate_for_tree, tree, { sap: 1.0, temp: 25.0, z: 0.5 }, stats)
+      expect(result).to be false
+    end
+  end
 end

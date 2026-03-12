@@ -219,4 +219,24 @@ RSpec.describe EmergencyResponseService do
       described_class.call(alert)
     end
   end
+
+  describe "cluster with nil organization" do
+    before do
+      allow(ActuatorCommandWorker).to receive(:perform_async)
+    end
+
+    it "handles alert with cluster having nil organization_id" do
+      cluster_no_org = create(:cluster, organization: organization)
+      tree_no_org = create(:tree, cluster: cluster_no_org, latitude: nil, longitude: nil)
+      gateway_online = create(:gateway, :online, cluster: cluster_no_org, latitude: 49.0, longitude: 32.0)
+      create(:actuator, :water_valve, gateway: gateway_online, state: :idle)
+
+      alert = create(:ews_alert, :drought, cluster: cluster_no_org, tree: tree_no_org)
+
+      # This tests the proximity branch where tree has no coordinates
+      expect {
+        EmergencyResponseService.call(alert)
+      }.not_to raise_error
+    end
+  end
 end

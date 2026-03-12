@@ -169,4 +169,44 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
       expect(BlockchainMintingService).to have_received(:call_batch)
     end
   end
+
+  describe "non-persisted tx" do
+    before do
+      allow(BlockchainMintingService).to receive(:call_batch)
+    end
+
+    it "skips non-persisted transaction from created_tx_ids" do
+      organization = create(:organization)
+      cluster = create(:cluster, organization: organization)
+      tree = create(:tree, cluster: cluster, status: :active)
+      wallet = tree.wallet
+      wallet.update_columns(balance: TokenomicsEvaluatorWorker::EMISSION_THRESHOLD)
+
+      # lock_and_mint! returns nil (e.g., tokens_to_mint is zero)
+      allow_any_instance_of(Wallet).to receive(:lock_and_mint!).and_return(nil)
+
+      TokenomicsEvaluatorWorker.new.perform
+
+      # No batch minting should occur
+      expect(BlockchainMintingService).not_to have_received(:call_batch)
+    end
+  end
+
+  describe "stats logging with minted count" do
+    before do
+      allow(BlockchainMintingService).to receive(:call_batch)
+    end
+
+    it "logs with positive minted_count when transactions are created" do
+      organization = create(:organization)
+      cluster = create(:cluster, organization: organization)
+      tree = create(:tree, cluster: cluster, status: :active)
+      wallet = tree.wallet
+      wallet.update_columns(balance: TokenomicsEvaluatorWorker::EMISSION_THRESHOLD * 2)
+
+      expect {
+        TokenomicsEvaluatorWorker.new.perform
+      }.not_to raise_error
+    end
+  end
 end

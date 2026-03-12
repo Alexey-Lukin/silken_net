@@ -73,4 +73,20 @@ RSpec.describe Api::V1::BaseController, type: :request do
       )
     end
   end
+
+  describe "signed_in? helper" do
+    it "returns false when no user is authenticated" do
+      controller = Api::V1::BaseController.new
+      allow(controller).to receive(:current_user).and_return(nil)
+      expect(controller.send(:signed_in?)).to be false
+    end
+
+    it "returns true when user is authenticated" do
+      organization = create(:organization)
+      user_for_test = create(:user, organization: organization, password: "password12345")
+      controller = Api::V1::BaseController.new
+      allow(controller).to receive(:current_user).and_return(user_for_test)
+      expect(controller.send(:signed_in?)).to be true
+    end
+  end
 end

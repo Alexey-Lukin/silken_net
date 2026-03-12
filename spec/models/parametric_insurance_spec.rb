@@ -285,4 +285,37 @@ RSpec.describe ParametricInsurance, type: :model do
       expect(insurance.errors[:required_confirmations]).to be_present
     end
   end
+
+  describe "payout worker enqueue" do
+    it "enqueues InsurancePayoutWorker when payout is triggered" do
+      Prosopite.pause if defined?(Prosopite)
+
+      org = create(:organization)
+      cluster = create(:cluster, organization: org)
+
+      insurance = create(:parametric_insurance,
+        organization: org,
+        cluster: cluster,
+        threshold_value: 10,
+        required_confirmations: 1,
+        status: :active
+      )
+
+      trees = create_list(:tree, 10, cluster: cluster, status: :active)
+      cluster.update_column(:active_trees_count, 10)
+
+      target_date = cluster.local_yesterday
+      trees.each do |t|
+        create(:ai_insight, analyzable: t, target_date: target_date,
+               stress_index: 0.95, insight_type: :daily_health_summary)
+      end
+
+      insurance.evaluate_daily_health!(target_date)
+
+      expect(insurance.reload).to be_status_triggered
+      expect(InsurancePayoutWorker).to have_received(:perform_async).with(insurance.id)
+    ensure
+      Prosopite.resume if defined?(Prosopite)
+    end
+  end
 end

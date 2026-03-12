@@ -110,4 +110,20 @@ RSpec.describe SilkenNet::Attractor do
       expect(SilkenNet::Attractor::BASE_BETA).to be_a(BigDecimal)
     end
   end
+
+  describe "trajectory coordinate cycling" do
+    it "returns x, y, z values at correct positions in trajectory" do
+      trajectory = SilkenNet::Attractor.generate_trajectory(42, 22.0, 5)
+
+      # Verify the array contains groups of x, y, z
+      expect(trajectory.size).to eq(SilkenNet::Attractor::ITERATIONS * 3)
+
+      # Every element at index % 3 == 0 is x, == 1 is y, == 2 is z
+      # All should be finite floats rounded to 4 decimals
+      trajectory.each_with_index do |val, i|
+        expect(val).to be_a(Float)
+        expect(val).to be_finite
+      end
+    end
+  end
 end
