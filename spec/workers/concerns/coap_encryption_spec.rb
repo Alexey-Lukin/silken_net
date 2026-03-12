@@ -59,7 +59,8 @@ RSpec.describe CoapEncryption do
 
     it "handles empty payload" do
       result = worker.coap_encrypt("", key)
-      expect(result.bytesize).to eq(16) # IV only, no ciphertext for empty payload
+      # Empty payload: padding_length = (16 - 0) % 16 = 0, so no ciphertext block is produced
+      expect(result.bytesize).to eq(16) # IV only
     end
 
     it "handles payload that is exact multiple of block size" do

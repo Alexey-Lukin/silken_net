@@ -56,9 +56,7 @@ module Celo
       return unless organization&.crypto_public_address.present?
 
       # Підключення до Celo RPC — Thread-cached RPC client
-      # [FALLBACK]: Встановлюємо ENV з дефолту якщо відсутній, для коректної роботи пулу
-      ENV["CELO_RPC_URL"] ||= DEFAULT_RPC_URL
-      client = Web3::RpcConnectionPool.client_for("CELO_RPC_URL")
+      client = Web3::RpcConnectionPool.client_for("CELO_RPC_URL", fallback: DEFAULT_RPC_URL)
       oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
 
       cusd_contract_address = ENV.fetch("CELO_CUSD_CONTRACT_ADDRESS")

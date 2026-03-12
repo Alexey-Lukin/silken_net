@@ -25,10 +25,14 @@ module Web3
       # Клієнт створюється один раз per-thread і перевикористовується.
       #
       # @param rpc_url_env_key [String] назва ENV-змінної з RPC URL (e.g., "ALCHEMY_POLYGON_RPC_URL")
+      # @param fallback [String, nil] резервний URL, якщо ENV-змінна відсутня (e.g., testnet URL)
       # @return [Eth::Client]
-      def client_for(rpc_url_env_key)
+      def client_for(rpc_url_env_key, fallback: nil)
         thread_key = :"#{THREAD_KEY_PREFIX}#{rpc_url_env_key}"
-        Thread.current[thread_key] ||= Eth::Client.create(ENV.fetch(rpc_url_env_key))
+        Thread.current[thread_key] ||= begin
+          rpc_url = fallback ? ENV.fetch(rpc_url_env_key, fallback) : ENV.fetch(rpc_url_env_key)
+          Eth::Client.create(rpc_url)
+        end
       end
 
       # Скидає всі кешовані клієнти в поточному потоці.
