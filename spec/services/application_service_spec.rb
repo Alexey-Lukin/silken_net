@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe ApplicationService do
-  # Тестовий сервіс для перевірки базового контракту
+  # Тестовий сервіс для перевірки базового контракту ApplicationService
   let(:test_service_class) do
     Class.new(described_class) do
       attr_reader :input

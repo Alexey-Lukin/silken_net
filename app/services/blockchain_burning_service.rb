@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "eth"
-require "bigdecimal"
 
 class BlockchainBurningService
   # ABI для функції вилучення/спалювання (Sovereign Slashing)
