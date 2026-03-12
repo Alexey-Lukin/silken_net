@@ -178,6 +178,22 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(AiInsight.find_by(analyzable: tree_with_logs, insight_type: :daily_health_summary)).to be_present
     end
 
+    it "skips trees with nil stats (no avg_temp)" do
+      # A tree with active status but no telemetry_logs for the target date
+      # should be skipped by generate_for_tree because stats&.avg_temp returns nil
+      another_tree = create(:tree, cluster: cluster, status: :active)
+      # Create a telemetry log on a different date so the tree has data but not for target date
+      create(:telemetry_log, tree: another_tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: (date - 5.days).beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      expect(AiInsight.find_by(analyzable: another_tree, insight_type: :daily_health_summary, target_date: date)).to be_nil
+    end
+
     it "generates stress summary for status 1" do
       create(:telemetry_log, tree: tree,
         temperature_c: 40.0, voltage_mv: 3500, z_value: 0.5,

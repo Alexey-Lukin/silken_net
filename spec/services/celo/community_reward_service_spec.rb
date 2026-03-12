@@ -200,5 +200,74 @@ RSpec.describe Celo::CommunityRewardService do
         }.to raise_error(StandardError, "Celo RPC timeout")
       end
     end
+
+    context "when insight has nil stress_index" do
+      let!(:insight) do
+        create(:ai_insight,
+          analyzable: cluster,
+          insight_type: :daily_health_summary,
+          target_date: target_date,
+          stress_index: nil,
+          fraud_detected: false
+        )
+      end
+
+      it "returns nil without creating a transaction" do
+        expect {
+          result = described_class.new(cluster, target_date).reward_community!
+          expect(result).to be_nil
+        }.not_to change(BlockchainTransaction, :count)
+      end
+    end
+
+    context "when organization is nil" do
+      let!(:insight) do
+        create(:ai_insight,
+          analyzable: cluster,
+          insight_type: :daily_health_summary,
+          target_date: target_date,
+          stress_index: 0.05,
+          fraud_detected: false
+        )
+      end
+
+      before do
+        allow_any_instance_of(Cluster).to receive(:organization).and_return(nil)
+      end
+
+      it "returns nil without creating a transaction" do
+        expect {
+          result = described_class.new(cluster, target_date).reward_community!
+          expect(result).to be_nil
+        }.not_to change(BlockchainTransaction, :count)
+      end
+    end
+
+    context "when transact returns nil tx_hash" do
+      let!(:insight) do
+        create(:ai_insight,
+          analyzable: cluster,
+          insight_type: :daily_health_summary,
+          target_date: target_date,
+          stress_index: 0.05,
+          fraud_detected: false
+        )
+      end
+
+      before do
+        mock_client = instance_double(Eth::Client)
+        allow(Eth::Client).to receive(:create).and_return(mock_client)
+        allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
+        allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
+        allow(mock_client).to receive(:transact).and_return(nil)
+        allow(Kredis).to receive(:lock).and_yield
+      end
+
+      it "does not create a BlockchainTransaction" do
+        expect {
+          described_class.new(cluster, target_date).reward_community!
+        }.not_to change(BlockchainTransaction, :count)
+      end
+    end
   end
 end

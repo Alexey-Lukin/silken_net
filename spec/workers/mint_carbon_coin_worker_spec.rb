@@ -192,6 +192,27 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       end
     end
 
+    context "with oracle-driven flow and nil created_at_iso" do
+      it "finds telemetry log without partition pruning" do
+        telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        wallet.update!(locked_balance: 5_000)
+        tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
+                                             locked_points: 5_000)
+
+        allow_any_instance_of(Wallet).to receive(:broadcast_update)
+
+        job = {
+          "args" => [ telemetry_log.id_value, nil ],
+          "error_message" => "Permanent failure"
+        }
+
+        described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+
+        tx.reload
+        expect(tx.status).to eq("failed")
+      end
+    end
+
     context "when telemetry_log not found" do
       it "skips processing via next guard" do
         allow_any_instance_of(Wallet).to receive(:broadcast_update)
@@ -308,6 +329,20 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
         expect(BlockchainMintingService).not_to have_received(:call_batch)
       end
+    end
+  end
+
+  describe "#process_batch with empty results" do
+    it "returns early when no pending transactions match the batch IDs" do
+      # Create a transaction that's already confirmed (not pending)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :confirmed,
+                                           tx_hash: SecureRandom.hex(32))
+
+      # Call process_batch with IDs of non-pending transactions
+      worker = described_class.new
+      worker.send(:process_batch, [ tx.id ])
+
+      expect(BlockchainMintingService).not_to have_received(:call_batch)
     end
   end
 

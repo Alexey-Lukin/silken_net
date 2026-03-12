@@ -154,6 +154,31 @@ RSpec.describe EmergencyResponseService do
     end
   end
 
+  describe "nil organization chain" do
+    it "handles nil cluster.organization_id gracefully" do
+      alert = create(:ews_alert, :drought, cluster: cluster, tree: tree)
+      valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      allow(cluster).to receive(:organization_id).and_return(nil)
+
+      expect {
+        described_class.call(alert)
+      }.to change(ActuatorCommand, :count)
+    end
+  end
+
+  describe "tree without coordinates" do
+    it "skips proximity ordering when tree has no latitude/longitude" do
+      tree_no_gps = create(:tree, cluster: cluster, latitude: nil, longitude: nil)
+      alert = create(:ews_alert, :drought, cluster: cluster, tree: tree_no_gps)
+      valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      expect {
+        described_class.call(alert)
+      }.to change(ActuatorCommand, :count)
+    end
+  end
+
   describe "unknown alert_type" do
     let(:alert) { create(:ews_alert, cluster: cluster, tree: tree, alert_type: :vandalism_breach, severity: :critical) }
 

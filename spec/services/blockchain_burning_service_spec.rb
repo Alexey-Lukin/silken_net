@@ -293,4 +293,19 @@ RSpec.describe BlockchainBurningService do
       expect(audit_tx.cluster).to eq(cluster)
     end
   end
+
+  describe "nil tx_hash from transact" do
+    let(:tree_burn) { create(:tree, cluster: cluster) }
+    let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }
+
+    it "does not mark contract as breached when transact returns nil" do
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
+
+      allow(mock_client).to receive(:transact_and_wait).and_return(nil)
+
+      described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
+
+      expect(naas_contract.reload.status).not_to eq("breached")
+    end
+  end
 end

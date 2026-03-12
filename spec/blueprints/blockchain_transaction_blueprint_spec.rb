@@ -123,6 +123,14 @@ RSpec.describe BlockchainTransactionBlueprint, type: :model do
     end
   end
 
+  describe "tree_did when wallet itself is nil" do
+    it "returns nil when wallet is nil" do
+      allow(blockchain_transaction).to receive(:wallet).and_return(nil)
+      parsed = JSON.parse(described_class.render(blockchain_transaction, view: :index))
+      expect(parsed["tree_did"]).to be_nil
+    end
+  end
+
   describe "collection rendering" do
     let!(:transactions) do
       create_list(:blockchain_transaction, 3, wallet: wallet)

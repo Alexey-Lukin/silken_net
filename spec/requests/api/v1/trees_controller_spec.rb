@@ -46,6 +46,29 @@ RSpec.describe Api::V1::TreesController, type: :request do
       expect(response.parsed_body["tree"]["id"]).to eq(own_tree.id)
     end
 
+    it "includes telemetry data with null values when no logs exist" do
+      get "/api/v1/trees/#{own_tree.id}", headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      telemetry = response.parsed_body["telemetry"]
+      expect(telemetry["z_value"]).to eq(0)
+      expect(telemetry["temperature"]).to be_nil
+      expect(telemetry["voltage"]).to be_nil
+      expect(telemetry["last_sync"]).to be_nil
+    end
+
+    it "includes telemetry data when logs exist" do
+      create(:telemetry_log, tree: own_tree,
+        z_value: 1.5, temperature_c: 25.0, voltage_mv: 3500)
+
+      get "/api/v1/trees/#{own_tree.id}", headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      telemetry = response.parsed_body["telemetry"]
+      expect(telemetry["z_value"].to_f).to eq(1.5)
+      expect(telemetry["temperature"].to_f).to eq(25.0)
+      expect(telemetry["voltage"].to_i).to eq(3500)
+      expect(telemetry["last_sync"]).to be_present
+    end
+
     it "returns 404 for a tree from another organization" do
       get "/api/v1/trees/#{other_tree.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)

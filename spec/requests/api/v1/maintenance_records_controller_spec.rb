@@ -74,6 +74,20 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       ids = response.parsed_body["records"].map { |r| r["id"] }
       expect(ids).to include(own_record.id)
     end
+
+    it "filters by maintainable_type and maintainable_id" do
+      get "/api/v1/maintenance_records",
+          params: { maintainable_type: "Tree", maintainable_id: own_tree.id },
+          headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "filters by date range (from/to)" do
+      get "/api/v1/maintenance_records",
+          params: { from: 2.days.ago.iso8601, to: Time.current.iso8601 },
+          headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
   end
 
   describe "PATCH /api/v1/maintenance_records/:id/verify" do

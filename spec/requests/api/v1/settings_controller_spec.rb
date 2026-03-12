@@ -72,6 +72,36 @@ RSpec.describe Api::V1::SettingsController, type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["organization"]["logo_url"]).to be_nil
     end
+
+    it "returns logo_url when logo is attached" do
+      organization.logo.attach(
+        io: StringIO.new("fake-logo-data"),
+        filename: "logo.png",
+        content_type: "image/png"
+      )
+
+      get "/api/v1/settings", headers: admin_headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["organization"]["logo_url"]).to be_present
+    end
+  end
+
+  describe "PATCH /api/v1/settings with logo" do
+    it "returns logo_url after successful update when logo is attached" do
+      organization.logo.attach(
+        io: StringIO.new("fake-logo-data"),
+        filename: "logo.png",
+        content_type: "image/png"
+      )
+
+      patch "/api/v1/settings",
+            headers: admin_headers,
+            params: { organization: { name: "Updated Name" } },
+            as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["organization"]["logo_url"]).to be_present
+    end
   end
 
   describe "PATCH /api/v1/settings failure" do

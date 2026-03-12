@@ -31,6 +31,16 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(ids).to include(own_alert.id)
       expect(ids).not_to include(other_alert.id)
     end
+
+    it "filters by severity" do
+      get "/api/v1/alerts", params: { severity: "critical" }, headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "filters by cluster_id" do
+      get "/api/v1/alerts", params: { cluster_id: own_cluster.id }, headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
   end
 
   describe "PATCH /api/v1/alerts/:id/resolve" do

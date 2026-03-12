@@ -120,6 +120,18 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
       described_class.new.perform
       expect(BlockchainMintingService).not_to have_received(:call_batch)
     end
+
+    it "skips wallet when balance changes to zero between query and calculation" do
+      tree = create(:tree, cluster: create(:cluster))
+      wallet = tree.wallet
+      wallet.update_columns(balance: described_class::EMISSION_THRESHOLD)
+
+      # Simulate a race condition where balance drops after the query
+      allow_any_instance_of(Wallet).to receive(:balance).and_return(0)
+
+      described_class.new.perform
+      expect(BlockchainMintingService).not_to have_received(:call_batch)
+    end
   end
 
   describe "wallet.tree.did when tree is nil (rescue)" do
