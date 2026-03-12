@@ -240,6 +240,52 @@ RSpec.describe Solana::MintingService do
     end
   end
 
+  describe "RPC error message extraction" do
+    it "extracts error message from Solana RPC response" do
+      telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+
+      error_response = double("response",
+        parsed_body: { "error" => { "message" => "Custom RPC error" } }
+      )
+      allow(Web3::HttpClient).to receive(:post).and_return(error_response)
+
+      service = described_class.new(telemetry_log)
+
+      wallet = tree.wallet
+      wallet.update!(solana_public_address: "SoLaNa1111111111111111111111111111111111111")
+
+      expect {
+        service.send(:send_transfer_request, "SoLaNa1111111111111111111111111111111111111", 10_000)
+      }.to raise_error(RuntimeError, /Custom RPC error/)
+    end
+
+    it "falls back to Unknown Solana RPC error when response has no error message" do
+      telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+
+      error_response = double("response", parsed_body: { "error" => {} })
+      allow(Web3::HttpClient).to receive(:post).and_return(error_response)
+
+      service = described_class.new(telemetry_log)
+
+      expect {
+        service.send(:send_transfer_request, "SoLaNa1111111111111111111111111111111111111", 10_000)
+      }.to raise_error(RuntimeError, /Unknown Solana RPC error/)
+    end
+
+    it "handles nil response from RPC" do
+      telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
+
+      nil_response = double("response", parsed_body: nil)
+      allow(Web3::HttpClient).to receive(:post).and_return(nil_response)
+
+      service = described_class.new(telemetry_log)
+
+      expect {
+        service.send(:send_transfer_request, "SoLaNa1111111111111111111111111111111111111", 10_000)
+      }.to raise_error(RuntimeError, /Unknown Solana RPC error/)
+    end
+  end
+
   private
 
   def stub_solana_rpc_success

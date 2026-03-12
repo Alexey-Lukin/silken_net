@@ -96,4 +96,24 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
       end
     end
   end
+
+  describe "gateway/cluster/organization nil chain" do
+    it "handles gateway with cluster that has no organization" do
+      # Verifies graceful handling when the safe navigation chain (gateway&.cluster&.organization) returns nil
+      org_for_test = create(:organization)
+      cluster_for_test = create(:cluster, organization: org_for_test)
+      gateway_with_cluster = create(:gateway, cluster: cluster_for_test)
+      actuator = create(:actuator, gateway: gateway_with_cluster, state: :active)
+      command = create(:actuator_command, actuator: actuator, status: :issued)
+
+      # Stub the chain to return nil at organization level
+      allow_any_instance_of(Gateway).to receive(:cluster).and_return(
+        double("cluster", organization_id: nil, organization: nil)
+      )
+
+      expect {
+        described_class.new.perform(command.id)
+      }.not_to raise_error
+    end
+  end
 end

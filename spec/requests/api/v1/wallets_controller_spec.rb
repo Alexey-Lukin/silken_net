@@ -81,4 +81,21 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       expect(response.content_type).to include("text/html")
     end
   end
+
+  describe "HTML show with nil crypto_public_address" do
+    let(:admin) { create(:user, :admin, organization: organization, password: "password12345") }
+
+    it "renders HTML for show when crypto_public_address is nil" do
+      wallet.update!(crypto_public_address: nil)
+
+      get "/api/v1/wallets/#{wallet.id}",
+        headers: {
+          "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}",
+          "Accept" => "text/html"
+        }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+    end
+  end
 end

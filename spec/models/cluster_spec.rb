@@ -264,4 +264,19 @@ RSpec.describe Cluster, type: :model do
       end
     end
   end
+
+  describe "geo_center with all-empty coordinate arrays" do
+    it "returns nil for polygon with only empty nested arrays" do
+      polygon = { "type" => "Polygon", "coordinates" => [ [] ] }
+      cluster = create(:cluster, geojson_polygon: polygon)
+      expect(cluster.geo_center).to be_nil
+    end
+  end
+
+  describe "normalizes non-Hash geojson_polygon" do
+    it "passes through a string value unchanged" do
+      cluster = build(:cluster, geojson_polygon: "not-a-hash")
+      expect(cluster.geojson_polygon).to eq("not-a-hash")
+    end
+  end
 end

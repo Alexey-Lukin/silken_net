@@ -329,4 +329,24 @@ RSpec.describe AuditLog, type: :model do
       expect(result[:verified_count]).to eq(0)
     end
   end
+
+  describe "compute_chain_hash Prosopite integration" do
+    it "calls Prosopite.pause and resume when Prosopite is defined" do
+      # Prosopite is defined in test env via rails_helper
+      user = create(:user)
+
+      if defined?(Prosopite)
+        allow(Prosopite).to receive(:pause)
+        allow(Prosopite).to receive(:resume)
+      end
+
+      log = create(:audit_log, user: user, organization: user.organization)
+      expect(log.chain_hash).to be_present
+
+      if defined?(Prosopite)
+        expect(Prosopite).to have_received(:pause).at_least(:once)
+        expect(Prosopite).to have_received(:resume).at_least(:once)
+      end
+    end
+  end
 end

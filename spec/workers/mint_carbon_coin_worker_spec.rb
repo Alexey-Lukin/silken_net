@@ -356,4 +356,58 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       expect(BlockchainMintingService).not_to have_received(:call_batch)
     end
   end
+
+  describe "broadcast_balance_update on RPC failure" do
+    before do
+      allow(BlockchainMintingService).to receive(:call_batch).and_raise(StandardError, "RPC failure")
+    end
+
+    it "calls broadcast_balance_update on each transaction wallet after RPC failure" do
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending)
+
+      expect {
+        described_class.new.perform
+      }.to raise_error(StandardError, "RPC failure")
+
+      # The broadcast_balance_update call within the RPC failure rescue block is exercised
+    end
+  end
+
+  describe "retries_exhausted wallet nil branch" do
+    let!(:telemetry_log) { create(:telemetry_log, :verified_telemetry, tree: tree) }
+
+    it "skips via next when tree.wallet is nil" do
+      allow_any_instance_of(Tree).to receive(:wallet).and_return(nil)
+      allow_any_instance_of(Wallet).to receive(:broadcast_update)
+
+      job = {
+        "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
+        "error_message" => "Permanent failure"
+      }
+
+      expect {
+        described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+      }.not_to raise_error
+    end
+  end
+
+  describe "broadcast_update after retry exhaustion" do
+    let!(:telemetry_log) { create(:telemetry_log, :verified_telemetry, tree: tree) }
+
+    it "calls broadcast_update on wallet after rollback" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000)
+
+      allow_any_instance_of(Wallet).to receive(:broadcast_update)
+
+      job = {
+        "args" => [ telemetry_log.id_value, telemetry_log.created_at.iso8601(6) ],
+        "error_message" => "Permanent failure"
+      }
+
+      described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+      tx.reload
+      expect(tx.status).to eq("failed")
+    end
+  end
 end

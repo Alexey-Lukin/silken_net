@@ -194,4 +194,41 @@ RSpec.describe CoapClient do
       expect(result.payload).to eq("test")
     end
   end
+
+  describe "socket management and parsing" do
+    it "closes socket even when an error occurs" do
+      mock_socket = instance_double(UDPSocket)
+      allow(UDPSocket).to receive(:new).and_return(mock_socket)
+      allow(mock_socket).to receive(:send)
+      allow(mock_socket).to receive(:close)
+      allow(IO).to receive(:select).and_return(nil)
+
+      expect {
+        described_class.put("coap://192.168.1.1:5683/test", "payload", timeout: 1)
+      }.to raise_error(CoapClient::NetworkError)
+
+      expect(mock_socket).to have_received(:close)
+    end
+
+    it "handles unknown class code (not 2, 4, or 5) in parse_response" do
+      # Class code 0 is neither 2 (success), 4 (client error), nor 5 (server error)
+      # This falls through to the else branch in the case statement
+      header = [ 0x00, 0x00, 0x04D2 ].pack("CCn") # version=0, code=0 (class=0, detail=0), MID=1234
+      response = described_class.send(:parse_response, header, 1234)
+      expect(response).not_to be_nil
+      expect(response.success?).to be false
+      expect(response.class_string).to eq("0.00")
+    end
+
+    it "handles class code 1 (informational, not 2/4/5) in parse_response" do
+      # Class code 1 is neither 2 (success), 4 (client error), nor 5 (server error)
+      # code = (1 << 5) | 0 = 32, class=1, detail=0
+      code = (1 << 5) | 0
+      header = [ 0x60, code, 0x04D2 ].pack("CCn") # ACK type, code=1.00, MID=1234
+      response = described_class.send(:parse_response, header, 1234)
+      expect(response).not_to be_nil
+      expect(response.success?).to be false
+      expect(response.class_string).to eq("1.00")
+    end
+  end
 end

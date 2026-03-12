@@ -283,4 +283,18 @@ RSpec.describe Wallet, type: :model do
       end
     end
   end
+
+  describe "lock_and_mint! nil tx return guard" do
+    it "returns nil when transaction block returns nil (tokens_to_mint zero)" do
+      organization = create(:organization)
+      cluster = create(:cluster, organization: organization)
+      tree = create(:tree, cluster: cluster, status: :active)
+      wallet = tree.wallet
+      wallet.update!(balance: 50)
+
+      # 50 / 10000 = 0 tokens → returns nil inside block → return unless tx
+      result = wallet.lock_and_mint!(50, 10_000)
+      expect(result).to be_nil
+    end
+  end
 end
