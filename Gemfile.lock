@@ -85,6 +85,13 @@ GEM
       uri (>= 0.13.1)
     addressable (2.8.9)
       public_suffix (>= 2.0.2, < 8.0)
+    argon2id (0.9.0-aarch64-linux-gnu)
+    argon2id (0.9.0-aarch64-linux-musl)
+    argon2id (0.9.0-arm-linux-gnu)
+    argon2id (0.9.0-arm-linux-musl)
+    argon2id (0.9.0-arm64-darwin)
+    argon2id (0.9.0-x86_64-linux-gnu)
+    argon2id (0.9.0-x86_64-linux-musl)
     ast (2.4.3)
     aws-eventstream (1.4.0)
     aws-partitions (1.1223.0)
@@ -106,7 +113,6 @@ GEM
     aws-sigv4 (1.12.1)
       aws-eventstream (~> 1, >= 1.0.2)
     base64 (0.3.0)
-    bcrypt (3.1.21)
     bcrypt_pbkdf (1.1.2)
     bcrypt_pbkdf (1.1.2-arm64-darwin)
     bigdecimal (3.3.1)
@@ -636,8 +642,8 @@ PLATFORMS
 DEPENDENCIES
   aasm
   active_storage_validations
+  argon2id
   aws-sdk-s3
-  bcrypt
   blueprinter
   bootsnap
   brakeman
