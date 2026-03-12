@@ -45,7 +45,6 @@ group :development, :test do
   gem "bundler-audit", require: false
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "factory_bot_rails"
-  gem "parallel_tests"
   gem "pg_query"
   gem "prosopite"
   gem "rspec-rails"
@@ -60,5 +59,6 @@ end
 group :test do
   gem "capybara"
   gem "cuprite"
+  gem "parallel_tests"
   gem "simplecov", require: false
 end
