@@ -3,14 +3,24 @@
 require "rails_helper"
 
 RSpec.describe Web3::HttpClient do
+  let(:mock_http) { instance_double(Net::HTTP) }
+
+  before do
+    allow(Net::HTTP).to receive(:start).and_yield(mock_http)
+  end
+
   describe ".post" do
     it "sends a POST request with JSON body and returns Response" do
-      stub_request(:post, "https://api.example.com/data")
-        .with(
-          body: { key: "value" }.to_json,
-          headers: { "Content-Type" => "application/json", "Authorization" => "Bearer token123" }
-        )
-        .to_return(status: 200, body: '{"result": "ok"}', headers: { "Content-Type" => "application/json" })
+      success_response = instance_double(Net::HTTPSuccess, body: '{"result": "ok"}')
+      allow(success_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+
+      allow(mock_http).to receive(:request) do |req|
+        expect(req).to be_a(Net::HTTP::Post)
+        expect(req.body).to eq({ key: "value" }.to_json)
+        expect(req["Content-Type"]).to eq("application/json")
+        expect(req["Authorization"]).to eq("Bearer token123")
+        success_response
+      end
 
       response = described_class.post("https://api.example.com/data",
         body: { key: "value" },
@@ -23,8 +33,9 @@ RSpec.describe Web3::HttpClient do
     end
 
     it "raises RequestError on non-success HTTP response" do
-      stub_request(:post, "https://api.example.com/data")
-        .to_return(status: 500, body: "Internal Server Error")
+      error_response = instance_double(Net::HTTPInternalServerError, code: "500", body: "Internal Server Error")
+      allow(error_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(false)
+      allow(mock_http).to receive(:request).and_return(error_response)
 
       expect {
         described_class.post("https://api.example.com/data",
@@ -35,8 +46,7 @@ RSpec.describe Web3::HttpClient do
     end
 
     it "raises RequestError on timeout" do
-      stub_request(:post, "https://api.example.com/data")
-        .to_timeout
+      allow(Net::HTTP).to receive(:start).and_raise(Net::ReadTimeout.new("execution expired"))
 
       expect {
         described_class.post("https://api.example.com/data",
@@ -49,9 +59,14 @@ RSpec.describe Web3::HttpClient do
 
   describe ".get" do
     it "sends a GET request and returns Response" do
-      stub_request(:get, "https://api.example.com/info")
-        .with(headers: { "Accept" => "application/json" })
-        .to_return(status: 200, body: '{"data": "test"}', headers: { "Content-Type" => "application/json" })
+      success_response = instance_double(Net::HTTPSuccess, body: '{"data": "test"}')
+      allow(success_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+
+      allow(mock_http).to receive(:request) do |req|
+        expect(req).to be_a(Net::HTTP::Get)
+        expect(req["Accept"]).to eq("application/json")
+        success_response
+      end
 
       response = described_class.get("https://api.example.com/info",
         headers: { "Accept" => "application/json" },
@@ -62,8 +77,9 @@ RSpec.describe Web3::HttpClient do
     end
 
     it "raises RequestError on non-success HTTP response" do
-      stub_request(:get, "https://api.example.com/info")
-        .to_return(status: 404, body: "Not Found")
+      error_response = instance_double(Net::HTTPNotFound, code: "404", body: "Not Found")
+      allow(error_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(false)
+      allow(mock_http).to receive(:request).and_return(error_response)
 
       expect {
         described_class.get("https://api.example.com/info", service_name: "Test")
