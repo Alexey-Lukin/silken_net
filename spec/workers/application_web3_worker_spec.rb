@@ -57,6 +57,26 @@ RSpec.describe ApplicationWeb3Worker do
       expect(result).to eq("success")
     end
 
+    it "re-raises HTTPX::TimeoutError with structured log" do
+      expect(Rails.logger).to receive(:error).with(/\[Polygon\] RPC Timeout/)
+
+      expect {
+        worker.perform_with_handling("Polygon", "TX #42") do
+          raise HTTPX::TimeoutError.new(nil, "request timed out")
+        end
+      }.to raise_error(HTTPX::TimeoutError)
+    end
+
+    it "re-raises HTTPX::ConnectionError with connection error log" do
+      expect(Rails.logger).to receive(:error).with(/\[Solana\] RPC Connection Error/)
+
+      expect {
+        worker.perform_with_handling("Solana") do
+          raise HTTPX::ConnectionError.new("failed to open TCP connection")
+        end
+      }.to raise_error(HTTPX::ConnectionError)
+    end
+
     it "re-raises Net::OpenTimeout with structured log" do
       expect(Rails.logger).to receive(:error).with(/\[Polygon\] RPC Timeout/)
 
@@ -175,6 +195,8 @@ RSpec.describe ApplicationWeb3Worker do
   describe "RPC_TRANSIENT_ERRORS constant" do
     it "includes expected error classes" do
       expect(described_class::RPC_TRANSIENT_ERRORS).to include(
+        HTTPX::TimeoutError,
+        HTTPX::ConnectionError,
         Net::OpenTimeout,
         Net::ReadTimeout,
         Errno::ECONNREFUSED,

@@ -26,7 +26,11 @@ module ApplicationWeb3Worker
 
   # Стандартні RPC-помилки, що виникають при взаємодії з блокчейн-нодами.
   # Ці помилки є тимчасовими (transient) і завжди повинні ретраїтись через Sidekiq.
+  # Включає як HTTPX-специфічні помилки (основний HTTP-клієнт), так і
+  # Net::HTTP-помилки (для сумісності з бібліотеками, що можуть їх кидати).
   RPC_TRANSIENT_ERRORS = [
+    HTTPX::TimeoutError,
+    HTTPX::ConnectionError,
     Net::OpenTimeout,
     Net::ReadTimeout,
     Errno::ECONNREFUSED,
@@ -47,6 +51,12 @@ module ApplicationWeb3Worker
   # @yield блок з RPC-операціями
   def with_web3_error_handling(chain_name, resource_info = nil)
     yield
+  rescue HTTPX::TimeoutError => e
+    log_web3_error("⏱️", chain_name, "RPC Timeout", resource_info, e)
+    raise
+  rescue HTTPX::ConnectionError => e
+    log_web3_error("🔌", chain_name, "RPC Connection Error", resource_info, e)
+    raise
   rescue Net::OpenTimeout, Net::ReadTimeout => e
     log_web3_error("⏱️", chain_name, "RPC Timeout", resource_info, e)
     raise

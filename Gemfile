@@ -7,6 +7,7 @@ gem "blueprinter"
 gem "bootsnap", require: false
 gem "csv"
 gem "eth"
+gem "httpx"
 gem "groupdate"
 gem "image_processing"
 gem "importmap-rails"
