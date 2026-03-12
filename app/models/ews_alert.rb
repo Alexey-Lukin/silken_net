@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class EwsAlert < ApplicationRecord
+  include AASM
+
   # --- ЗВ'ЯЗКИ ---
   # [FIX]: cluster optional — дерево може бути без кластера (одиноке дерево / тестова інсталяція)
   belongs_to :cluster, optional: true
@@ -20,6 +22,27 @@ class EwsAlert < ApplicationRecord
     seismic_anomaly: 4,   # Землетрус
     system_fault: 5       # Поломка шлюзу/актуатора/сенсора
   }, prefix: true
+
+  # =========================================================================
+  # ЖИТТЄВИЙ ЦИКЛ ТРИВОГИ (AASM State Machine)
+  # =========================================================================
+  aasm column: :status, enum: true, whiny_persistence: true do
+    state :active, initial: true
+    state :resolved
+    state :ignored
+
+    event :resolve do
+      transitions from: :active, to: :resolved
+    end
+
+    event :ignore do
+      transitions from: :active, to: :ignored
+    end
+
+    event :reopen do
+      transitions from: [ :resolved, :ignored ], to: :active
+    end
+  end
 
   # --- ВАЛІДАЦІЇ ---
   validates :severity, :alert_type, :message, presence: true

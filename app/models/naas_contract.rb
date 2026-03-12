@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class NaasContract < ApplicationRecord
+  include AASM
+
   # --- ЗВ'ЯЗКИ ---
   belongs_to :organization
   belongs_to :cluster
@@ -15,6 +17,37 @@ class NaasContract < ApplicationRecord
     breached: 3,   # ПОРУШЕНО (Slashing Protocol активовано)
     cancelled: 4   # Достроково розірвано інвестором (Early Exit)
   }, prefix: true
+
+  # =========================================================================
+  # ЖИТТЄВИЙ ЦИКЛ КОНТРАКТУ (AASM State Machine)
+  # =========================================================================
+  aasm column: :status, enum: true, whiny_persistence: true do
+    state :draft, initial: true
+    state :active
+    state :fulfilled
+    state :breached
+    state :cancelled
+
+    # Активація контракту (після підтвердження інвестиції)
+    event :activate do
+      transitions from: :draft, to: :active
+    end
+
+    # Успішне завершення контракту (Audit pass)
+    event :fulfill do
+      transitions from: :active, to: :fulfilled
+    end
+
+    # Порушення контракту (Slashing Protocol)
+    event :breach do
+      transitions from: :active, to: :breached
+    end
+
+    # Дострокове розірвання інвестором (Early Exit)
+    event :cancel do
+      transitions from: [ :draft, :active ], to: :cancelled
+    end
+  end
 
   # --- ВАЛІДАЦІЇ ---
   validates :total_funding, presence: true, numericality: { greater_than: 0 }

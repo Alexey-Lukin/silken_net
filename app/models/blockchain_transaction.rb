@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class BlockchainTransaction < ApplicationRecord
+  include AASM
   include EthAddressValidatable
 
   # --- ЗВ'ЯЗКИ ---
@@ -69,31 +70,51 @@ class BlockchainTransaction < ApplicationRecord
   delegate :organization, to: :wallet, allow_nil: true
 
   # =========================================================================
-  # ЖИТТЄВИЙ ЦИКЛ ТРАНЗАКЦІЇ (The Web3 Protocol)
+  # ЖИТТЄВИЙ ЦИКЛ ТРАНЗАКЦІЇ (The Web3 State Machine — AASM)
   # =========================================================================
+  aasm column: :status, enum: true, whiny_persistence: true do
+    state :pending, initial: true
+    state :processing
+    state :sent
+    state :confirmed
+    state :failed
 
-  # Фіксація моменту вильоту в мемпул
-  def mark_as_sent!(hash)
-    update!(tx_hash: hash, status: :sent, sent_at: Time.current, error_message: nil)
-  end
+    # Початок обробки (підпис / відправка в RPC)
+    event :process do
+      transitions from: :pending, to: :processing
+    end
 
-  # Успішне підтвердження в мережі (виклик від BlockchainConfirmationWorker)
-  # block_num — номер блоку для захисту від реорганізацій
-  # gas_cost — кількість газу, витраченого на транзакцію
-  def confirm!(block_num = nil, gas_cost = nil)
-    update!(
-      status: :confirmed,
-      block_number: block_num,
-      gas_used: gas_cost,
-      confirmed_at: Time.current,
-      error_message: nil
-    )
-  end
+    # Фіксація моменту вильоту в мемпул
+    event :mark_as_sent do
+      before do |hash|
+        self.tx_hash = hash
+        self.sent_at = Time.current
+        self.error_message = nil
+      end
+      transitions from: [ :pending, :processing ], to: :sent
+    end
 
-  # Фіксація збою (як при відправці, так і при Revert)
-  def fail!(reason)
-    update!(status: :failed, error_message: reason.truncate(500))
-    Rails.logger.error "🛑 [Web3] Транзакція ##{id} провалилася: #{reason}"
+    # Успішне підтвердження в мережі (виклик від BlockchainConfirmationWorker)
+    event :confirm do
+      before do |block_num, gas_cost|
+        self.block_number = block_num
+        self.gas_used = gas_cost
+        self.confirmed_at = Time.current
+        self.error_message = nil
+      end
+      transitions from: [ :sent, :processing ], to: :confirmed
+    end
+
+    # Фіксація збою (як при відправці, так і при Revert)
+    event :fail do
+      before do |reason|
+        self.error_message = reason.to_s.truncate(500)
+      end
+      after do
+        Rails.logger.error "🛑 [Web3] Транзакція ##{id} провалилася: #{error_message}"
+      end
+      transitions from: [ :pending, :processing, :sent, :confirmed, :failed ], to: :failed
+    end
   end
 
   # [MULTICHAIN]: Хелпер для визначення мережі транзакції

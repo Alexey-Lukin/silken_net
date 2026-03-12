@@ -3,6 +3,8 @@
 require "bigdecimal"
 
 class ParametricInsurance < ApplicationRecord
+  include AASM
+
   # --- ЗВ'ЯЗКИ ---
   # Організація-страховик (напр. Swiss Re або децентралізований пул)
   belongs_to :organization
@@ -10,6 +12,35 @@ class ParametricInsurance < ApplicationRecord
 
   # --- СТАТУСИ ТА ТРИГЕРИ ---
   enum :status, { active: 0, triggered: 1, paid: 2, expired: 3 }, prefix: true
+
+  # =========================================================================
+  # ЖИТТЄВИЙ ЦИКЛ СТРАХУВАННЯ (AASM State Machine)
+  # =========================================================================
+  aasm column: :status, enum: true, whiny_persistence: true do
+    state :active, initial: true
+    state :triggered
+    state :paid
+    state :expired
+
+    # Тригер страхового випадку (D-MRV verification)
+    event :trigger do
+      transitions from: :active, to: :triggered
+    end
+
+    # Виплата здійснена
+    event :pay do
+      before do
+        self.paid_at = Time.current
+      end
+      transitions from: :triggered, to: :paid
+    end
+
+    # Строк дії вичерпано
+    event :expire do
+      transitions from: :active, to: :expired
+    end
+  end
+
   enum :trigger_event, { critical_fire: 0, extreme_drought: 1, insect_epidemic: 2 }
 
   # Тип токена виплати — обирається інвестором при підписанні контракту
