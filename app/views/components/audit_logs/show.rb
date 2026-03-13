@@ -33,7 +33,7 @@ module AuditLogs
             h2(class: "text-3xl font-extralight tracking-tighter text-white") { @log.action }
             p(class: "text-[10px] font-mono text-gray-600 mt-2") { "##{@log.id} // #{@log.created_at.strftime('%d.%m.%Y %H:%M:%S UTC')}" }
           end
-          render Shared::ActionBadge.new(action: @log.action)
+          render Views::Shared::UI::ActionBadge.new(action: @log.action)
         end
       end
     end

@@ -31,10 +31,10 @@ module Reports
 
     def render_metrics
       div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6") do
-        render Shared::StatCard.new(label: "Total Carbon Points", value: @data[:total_carbon_points], sub: "SCC")
-        render Shared::StatCard.new(label: "Active Wallets", value: @data[:wallets_count], sub: "Wallets")
-        render Shared::StatCard.new(label: "Active Trees", value: @data[:trees_active], sub: "Online")
-        render Shared::StatCard.new(label: "Total Trees", value: @data[:trees_total], sub: "Deployed")
+        render Views::Shared::UI::StatCard.new(label: "Total Carbon Points", value: @data[:total_carbon_points], sub: "SCC")
+        render Views::Shared::UI::StatCard.new(label: "Active Wallets", value: @data[:wallets_count], sub: "Wallets")
+        render Views::Shared::UI::StatCard.new(label: "Active Trees", value: @data[:trees_active], sub: "Online")
+        render Views::Shared::UI::StatCard.new(label: "Total Trees", value: @data[:trees_total], sub: "Deployed")
       end
     end
 

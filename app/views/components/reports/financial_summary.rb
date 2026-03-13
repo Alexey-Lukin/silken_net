@@ -31,9 +31,9 @@ module Reports
 
     def render_metrics
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        render Shared::StatCard.new(label: "Total Invested", value: @data[:total_invested], sub: "SCC")
-        render Shared::StatCard.new(label: "Active Contracts", value: @data[:active_contracts], sub: "NaaS")
-        render Shared::StatCard.new(label: "Total Contracts", value: @data[:total_contracts], sub: "Lifetime")
+        render Views::Shared::UI::StatCard.new(label: "Total Invested", value: @data[:total_invested], sub: "SCC")
+        render Views::Shared::UI::StatCard.new(label: "Active Contracts", value: @data[:active_contracts], sub: "NaaS")
+        render Views::Shared::UI::StatCard.new(label: "Total Contracts", value: @data[:total_contracts], sub: "Lifetime")
       end
     end
 

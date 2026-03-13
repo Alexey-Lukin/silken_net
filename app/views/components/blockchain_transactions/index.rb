@@ -11,7 +11,7 @@ module BlockchainTransactions
       div(class: "space-y-6 animate-in fade-in duration-500") do
         header_section
         transactions_table
-        render Shared::Pagination.new(
+        render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
           url_helper: ->(page:) { helpers.api_v1_blockchain_transactions_path(page: page) }
         )

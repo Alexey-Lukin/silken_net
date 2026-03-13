@@ -32,7 +32,7 @@ module Maintenance
     end
 
     def render_photo_card(photo)
-      render Shared::PhotoCard.new(photo: photo, record: @record, editable: @editable)
+      render Views::Shared::UI::PhotoCard.new(photo: photo, record: @record, editable: @editable)
     end
 
     def render_load_more
