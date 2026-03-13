@@ -50,7 +50,7 @@ module Gateways
         div(class: "flex justify-between items-start mb-6") do
           div do
             h3(class: "text-lg font-light tracking-widest text-emerald-400 uppercase") { "Queen // #{gateway.uid}" }
-            p(class: "text-[10px] font-mono text-emerald-800") { "Cluster: #{gateway.cluster.name}" }
+            p(class: "text-[10px] font-mono text-emerald-800") { "Cluster: #{gateway.cluster&.name || 'UNASSIGNED'}" }
           end
           div(class: tokens("h-2 w-2 rounded-full", led_class))
         end

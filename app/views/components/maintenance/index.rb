@@ -92,7 +92,7 @@ module Maintenance
 
     def render_row(record)
       tr(class: "hover:bg-emerald-950/10 transition-colors group") do
-        td(class: "p-4 text-emerald-100") { "#{record.user.first_name} #{record.user.last_name}" }
+        td(class: "p-4 text-emerald-100") { "#{record.user&.first_name} #{record.user&.last_name}" }
         td(class: "p-4 text-emerald-500 text-[10px]") do
           "#{record.maintainable_type} // #{record.maintainable&.did || record.maintainable&.uid || '—'}"
         end

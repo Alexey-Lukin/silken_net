@@ -158,8 +158,8 @@ module Maintenance
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Intervention Metadata" }
 
         div(class: "space-y-3 text-[10px] font-mono") do
-          meta_row("Technician", "#{@user.first_name} #{@user.last_name}")
-          meta_row("Role", @user.role.to_s.upcase)
+          meta_row("Technician", "#{@user&.first_name} #{@user&.last_name}")
+          meta_row("Role", @user&.role.to_s.upcase)
           meta_row("Target", "#{@record.maintainable_type} // #{@record.maintainable&.did || @record.maintainable&.uid}")
           meta_row("Action", @record.action_type.to_s.upcase)
           meta_row("Photos", @pagy_photos.count.to_s)
