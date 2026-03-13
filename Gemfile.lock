@@ -659,6 +659,7 @@ DEPENDENCIES
   factory_bot_rails
   google-cloud-storage
   groupdate
+  httpx
   image_processing
   importmap-rails
   kamal

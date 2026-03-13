@@ -8,6 +8,7 @@ gem "bootsnap", require: false
 gem "csv"
 gem "eth"
 gem "groupdate"
+gem "httpx"
 gem "image_processing"
 gem "importmap-rails"
 gem "kamal", require: false

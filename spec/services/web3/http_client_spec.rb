@@ -3,24 +3,32 @@
 require "rails_helper"
 
 RSpec.describe Web3::HttpClient do
-  let(:mock_http) { instance_double(Net::HTTP) }
+  let(:mock_session) { instance_double(HTTPX::Session) }
+  let(:configured_session) { instance_double(HTTPX::Session) }
 
   before do
-    allow(Net::HTTP).to receive(:start).and_yield(mock_http)
+    Web3::HttpClient.reset! # rubocop:disable RSpec/DescribedClass
+    allow(HTTPX).to receive(:plugin).with(:persistent).and_return(mock_session)
+    allow(mock_session).to receive(:with).and_return(configured_session)
+    allow(mock_session).to receive(:close)
   end
+
+  after { Web3::HttpClient.reset! } # rubocop:disable RSpec/DescribedClass
 
   describe ".post" do
     it "sends a POST request with JSON body and returns Response" do
-      success_response = instance_double(Net::HTTPSuccess, body: '{"result": "ok"}')
-      allow(success_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+      response_body = instance_double(HTTPX::Response::Body, to_s: '{"result": "ok"}')
+      success_response = instance_double(HTTPX::Response, status: 200, body: response_body)
+      allow(success_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(false)
 
-      allow(mock_http).to receive(:request) do |req|
-        expect(req).to be_a(Net::HTTP::Post)
-        expect(req.body).to eq({ key: "value" }.to_json)
-        expect(req["Content-Type"]).to eq("application/json")
-        expect(req["Authorization"]).to eq("Bearer token123")
-        success_response
-      end
+      allow(configured_session).to receive(:post)
+        .with("https://api.example.com/data", body: { key: "value" }.to_json)
+        .and_return(success_response)
+
+      allow(mock_session).to receive(:with).with(
+        timeout: { connect_timeout: 10, read_timeout: 30 },
+        headers: { "content-type" => "application/json", "Authorization" => "Bearer token123" }
+      ).and_return(configured_session)
 
       response = described_class.post("https://api.example.com/data",
         body: { key: "value" },
@@ -33,9 +41,10 @@ RSpec.describe Web3::HttpClient do
     end
 
     it "raises RequestError on non-success HTTP response" do
-      error_response = instance_double(Net::HTTPInternalServerError, code: "500", body: "Internal Server Error")
-      allow(error_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(false)
-      allow(mock_http).to receive(:request).and_return(error_response)
+      response_body = instance_double(HTTPX::Response::Body, to_s: "Internal Server Error")
+      error_response = instance_double(HTTPX::Response, status: 500, body: response_body)
+      allow(error_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(false)
+      allow(configured_session).to receive(:post).and_return(error_response)
 
       expect {
         described_class.post("https://api.example.com/data",
@@ -46,38 +55,48 @@ RSpec.describe Web3::HttpClient do
     end
 
     it "raises RequestError on timeout" do
-      allow(Net::HTTP).to receive(:start).and_raise(Net::ReadTimeout.new("execution expired"))
+      timeout_error = HTTPX::TimeoutError.new(nil, "execution expired")
+      error_response = instance_double(HTTPX::ErrorResponse, error: timeout_error)
+      allow(error_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(true)
+      allow(configured_session).to receive(:post).and_return(error_response)
 
       expect {
         described_class.post("https://api.example.com/data",
           body: { key: "value" },
           service_name: "Test"
         )
-      }.to raise_error(Web3::HttpClient::RequestError, /Test.*Timeout|Test connection error/)
+      }.to raise_error(Web3::HttpClient::RequestError, /Test.*Timeout/)
     end
 
-    it "wraps unexpected StandardError in RequestError" do
-      allow(Net::HTTP).to receive(:start).and_raise(Errno::ECONNREFUSED, "Connection refused")
+    it "wraps connection errors in RequestError" do
+      conn_error = HTTPX::ConnectionError.new("Connection refused")
+      error_response = instance_double(HTTPX::ErrorResponse, error: conn_error)
+      allow(error_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(true)
+      allow(configured_session).to receive(:post).and_return(error_response)
 
       expect {
         described_class.post("https://api.example.com/data",
           body: { key: "value" },
           service_name: "Test"
         )
-      }.to raise_error(Web3::HttpClient::RequestError, /Test connection error/)
+      }.to raise_error(Web3::HttpClient::RequestError, /Test connection error \(HTTPX::ConnectionError\)/)
     end
   end
 
   describe ".get" do
     it "sends a GET request and returns Response" do
-      success_response = instance_double(Net::HTTPSuccess, body: '{"data": "test"}')
-      allow(success_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
+      response_body = instance_double(HTTPX::Response::Body, to_s: '{"data": "test"}')
+      success_response = instance_double(HTTPX::Response, status: 200, body: response_body)
+      allow(success_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(false)
 
-      allow(mock_http).to receive(:request) do |req|
-        expect(req).to be_a(Net::HTTP::Get)
-        expect(req["Accept"]).to eq("application/json")
-        success_response
-      end
+      allow(configured_session).to receive(:get)
+        .with("https://api.example.com/info")
+        .and_return(success_response)
+
+      allow(mock_session).to receive(:with).with(
+        timeout: { connect_timeout: 10, read_timeout: 30 },
+        headers: { "Accept" => "application/json" }
+      ).and_return(configured_session)
 
       response = described_class.get("https://api.example.com/info",
         headers: { "Accept" => "application/json" },
@@ -88,13 +107,48 @@ RSpec.describe Web3::HttpClient do
     end
 
     it "raises RequestError on non-success HTTP response" do
-      error_response = instance_double(Net::HTTPNotFound, code: "404", body: "Not Found")
-      allow(error_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(false)
-      allow(mock_http).to receive(:request).and_return(error_response)
+      response_body = instance_double(HTTPX::Response::Body, to_s: "Not Found")
+      error_response = instance_double(HTTPX::Response, status: 404, body: response_body)
+      allow(error_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(false)
+      allow(configured_session).to receive(:get).and_return(error_response)
 
       expect {
         described_class.get("https://api.example.com/info", service_name: "Test")
       }.to raise_error(Web3::HttpClient::RequestError, /Test API returned 404/)
+    end
+  end
+
+  describe ".reset!" do
+    it "clears the cached session" do
+      # Trigger session creation
+      response_body = instance_double(HTTPX::Response::Body, to_s: '{"ok": true}')
+      success_response = instance_double(HTTPX::Response, status: 200, body: response_body)
+      allow(success_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(false)
+      allow(configured_session).to receive(:get).and_return(success_response)
+
+      described_class.get("https://api.example.com/test")
+
+      # Reset should close and clear the session
+      expect(mock_session).to receive(:close)
+      described_class.reset!
+
+      expect(Thread.current[:web3_httpx_session]).to be_nil
+    end
+  end
+
+  describe "persistent session reuse" do
+    it "reuses the same HTTPX session across multiple calls" do
+      response_body = instance_double(HTTPX::Response::Body, to_s: '{"ok": true}')
+      success_response = instance_double(HTTPX::Response, status: 200, body: response_body)
+      allow(success_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(false)
+      allow(configured_session).to receive_messages(post: success_response, get: success_response)
+
+      # HTTPX.plugin(:persistent) should be called only once
+      expect(HTTPX).to receive(:plugin).with(:persistent).once.and_return(mock_session)
+
+      described_class.post("https://api.example.com/first", body: { a: 1 })
+      described_class.get("https://api.example.com/second")
+      described_class.post("https://api.example.com/third", body: { b: 2 })
     end
   end
 

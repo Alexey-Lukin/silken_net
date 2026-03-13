@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "net/http"
+require "httpx"
 require "json"
 
 module Web3
@@ -11,9 +11,14 @@ module Web3
   # IPFS/Filecoin, IoTeX W3bstream, Streamr, Polygon Hadron, The Graph,
   # peaq DID, Solana JSON RPC.
   #
+  # Використовує HTTPX замість Net::HTTP для:
+  # - Persistent connections (TCP з'єднання перевикористовуються)
+  # - HTTP/2 підтримка з мультиплексуванням
+  # - Connection pooling per origin (автоматичний пул для кожного сервера)
+  # - Thread-safe sessions (кожен Sidekiq thread має власну сесію)
+  #
   # Забезпечує:
   # - Уніфіковані таймаути з конфігурацією per-service
-  # - Автоматичне SSL для HTTPS
   # - Стандартну обробку помилок (таймаути, HTTP-коди, JSON-парсинг)
   # - Єдиний формат логування помилок
   #
@@ -30,6 +35,8 @@ module Web3
     DEFAULT_OPEN_TIMEOUT = 10
     DEFAULT_READ_TIMEOUT = 30
 
+    THREAD_KEY = :web3_httpx_session
+
     class RequestError < StandardError; end
 
     class << self
@@ -43,14 +50,16 @@ module Web3
       # @param service_name [String] ім'я сервісу для логування помилок
       # @return [Response] обгортка з body та parsed_body
       def post(url, body:, headers: {}, open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT, service_name: "HTTP")
-        uri = URI.parse(url)
+        request_headers = { "content-type" => "application/json" }.merge(headers)
 
-        request = Net::HTTP::Post.new(uri)
-        request["Content-Type"] = "application/json"
-        headers.each { |k, v| request[k] = v }
-        request.body = JSON.generate(body)
+        response = session
+          .with(
+            timeout: { connect_timeout: open_timeout, read_timeout: read_timeout },
+            headers: request_headers
+          )
+          .post(url, body: JSON.generate(body))
 
-        execute(uri, request, open_timeout:, read_timeout:, service_name:)
+        handle_response(response, service_name:)
       end
 
       # Виконує HTTP GET запит.
@@ -62,32 +71,49 @@ module Web3
       # @param service_name [String] ім'я сервісу для логування помилок
       # @return [Response] обгортка з body та parsed_body
       def get(url, headers: {}, open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT, service_name: "HTTP")
-        uri = URI.parse(url)
+        response = session
+          .with(
+            timeout: { connect_timeout: open_timeout, read_timeout: read_timeout },
+            headers: headers
+          )
+          .get(url)
 
-        request = Net::HTTP::Get.new(uri)
-        headers.each { |k, v| request[k] = v }
+        handle_response(response, service_name:)
+      end
 
-        execute(uri, request, open_timeout:, read_timeout:, service_name:)
+      # Скидає кешовану HTTPX-сесію в поточному потоці.
+      # Використовується при зміні конфігурації або в тестах.
+      def reset!
+        old_session = Thread.current[THREAD_KEY]
+        old_session&.close
+        Thread.current[THREAD_KEY] = nil
       end
 
       private
 
-      def execute(uri, request, open_timeout:, read_timeout:, service_name:)
-        response = Net::HTTP.start(
-          uri.hostname, uri.port,
-          use_ssl: uri.scheme == "https",
-          open_timeout: open_timeout,
-          read_timeout: read_timeout
-        ) { |http| http.request(request) }
+      # Thread-safe persistent HTTPX session.
+      # Кожен Sidekiq thread отримує власну сесію з persistent connections.
+      # З'єднання перевикористовуються для всіх origins (Pinata, Streamr, Solana тощо).
+      def session
+        Thread.current[THREAD_KEY] ||= HTTPX.plugin(:persistent)
+      end
 
-        unless response.is_a?(Net::HTTPSuccess)
-          raise RequestError, "#{service_name} API returned #{response.code}: #{response.body}"
+      def handle_response(response, service_name:)
+        if response.is_a?(HTTPX::ErrorResponse)
+          error = response.error
+          if error.is_a?(HTTPX::TimeoutError)
+            Rails.logger.error "🛑 [#{service_name}] Timeout: #{error.message}"
+            raise RequestError, "#{service_name} Timeout: #{error.message}"
+          else
+            raise RequestError, "#{service_name} connection error (#{error.class}): #{error.message}"
+          end
         end
 
-        Response.new(response.body)
-      rescue Net::OpenTimeout, Net::ReadTimeout => e
-        Rails.logger.error "🛑 [#{service_name}] Timeout: #{e.message}"
-        raise RequestError, "#{service_name} Timeout: #{e.message}"
+        unless (200..299).cover?(response.status)
+          raise RequestError, "#{service_name} API returned #{response.status}: #{response.body}"
+        end
+
+        Response.new(response.body.to_s)
       rescue RequestError
         raise
       rescue StandardError => e
