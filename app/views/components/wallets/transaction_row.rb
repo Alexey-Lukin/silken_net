@@ -20,7 +20,9 @@ module Wallets
         end
         td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-[10px]") do
           if @tx.tx_hash.present?
-            a(href: @tx.explorer_url, target: "_blank", class: "hover:text-emerald-500 underline decoration-emerald-900") { @tx.tx_hash.first(16) + "..." }
+            a(href: @tx.explorer_url, target: "_blank", class: "hover:text-emerald-500 underline decoration-emerald-900") do
+              @tx.tx_hash.length > 16 ? "#{@tx.tx_hash.first(16)}…" : @tx.tx_hash
+            end
           else
             span(class: "italic text-zinc-800") { "PENDING_BLOCK" }
           end

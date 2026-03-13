@@ -173,6 +173,7 @@ module Clusters
       case alert.severity.to_s
       when "critical" then "bg-red-500 animate-pulse"
       when "medium" then "bg-amber-500"
+      when "low" then "bg-emerald-500"
       else "bg-emerald-500"
       end
     end
