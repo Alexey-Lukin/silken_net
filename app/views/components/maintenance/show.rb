@@ -162,7 +162,7 @@ module Maintenance
           meta_row("Role", @user.role.to_s.upcase)
           meta_row("Target", "#{@record.maintainable_type} // #{@record.maintainable&.did || @record.maintainable&.uid}")
           meta_row("Action", @record.action_type.to_s.upcase)
-          meta_row("Photos", @record.photos.size.to_s)
+          meta_row("Photos", @pagy_photos.count.to_s)
           if @record.ews_alert_id
             meta_row("EWS Alert", "##{@record.ews_alert_id}")
           end

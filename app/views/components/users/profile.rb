@@ -3,6 +3,7 @@ module Users
   class Profile < ApplicationComponent
     def initialize(user:)
       @user = user
+      @active_identities = @user.identities.active.to_a
     end
 
     def view_template
@@ -74,20 +75,18 @@ module Users
         div(class: "grid grid-cols-3 gap-4 font-mono text-[11px]") do
           security_indicator("2FA / MFA", @user.mfa_enabled?, @user.mfa_enabled? ? "Active" : "Disabled")
           security_indicator("Password", @user.password_digest.present?, @user.password_digest.present? ? "Set" : "Not Set")
-          security_indicator("Providers", @user.identities.active.any?, "#{@user.identities.active.count} linked")
+          security_indicator("Providers", @active_identities.any?, "#{@active_identities.size} linked")
         end
       end
     end
 
     def render_linked_providers
-      identities = @user.identities.active
-
-      return if identities.empty?
+      return if @active_identities.empty?
 
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5 space-y-4") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Linked Identity Providers" }
         div(class: "flex flex-wrap gap-3") do
-          identities.each do |identity|
+          @active_identities.each do |identity|
             provider_badge(identity)
           end
         end

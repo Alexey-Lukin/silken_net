@@ -43,17 +43,9 @@ module Contracts
 
     def render_stats_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        stat_block("Portfolio Capital", "#{@stats[:total_invested].to_f.round(2)} SCC", "Total Injected")
-        stat_block("Biogenic Yield", "#{@stats[:total_minted].to_f.round(2)} SCC", "Total Minted")
-        stat_block("Network Health", "#{@stats[:avg_health]}%", "Portfolio Avg")
-      end
-    end
-
-    def stat_block(label, value, sub)
-      div(class: "p-6 border border-emerald-900 bg-zinc-950") do
-        p(class: "text-[9px] uppercase tracking-widest text-emerald-700 mb-2") { label }
-        p(class: "text-3xl font-light text-white tracking-tighter") { value }
-        p(class: "text-[9px] text-gray-600 font-mono mt-1") { sub }
+        render Shared::StatCard.new(label: "Portfolio Capital", value: "#{@stats[:total_invested].to_f.round(2)} SCC", sub: "Total Injected")
+        render Shared::StatCard.new(label: "Biogenic Yield", value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: "Total Minted")
+        render Shared::StatCard.new(label: "Network Health", value: "#{@stats[:avg_health]}%", sub: "Portfolio Avg")
       end
     end
 
