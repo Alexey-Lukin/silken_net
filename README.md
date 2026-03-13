@@ -221,6 +221,7 @@ kamal setup
 * [`TOKENOMICS.md`](docs/TOKENOMICS.md) — мультичейн токеноміка (Polygon, Solana, Celo, KlimaDAO, Ethereum L1)
 * [`BLOCKCHAIN_DEVELOPMENT.md`](docs/BLOCKCHAIN_DEVELOPMENT.md) — розробка 12-chain Web3 інфраструктури
 * [`DEPLOYMENT.md`](docs/DEPLOYMENT.md) — Kamal + Akash Network + Terraform
+* [`OBSERVABILITY.md`](docs/OBSERVABILITY.md) — Prometheus метрики, Grafana, безпека /metrics ендпоінту
 * [`VISION.md`](docs/VISION.md) — візія проекту та roadmap
 
 ---
