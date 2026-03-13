@@ -43,8 +43,8 @@ module Kredis
       # Uses a Lua script for atomic GET + DEL to avoid TOCTOU race.
       redis.eval(
         "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
-        keys: [full_key],
-        argv: [token]
+        keys: [ full_key ],
+        argv: [ token ]
       )
     end
   end
