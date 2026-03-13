@@ -9,7 +9,7 @@ module Api
 
       # --- РЕЄСТР ВИКОНАВЧИХ ВУЗЛІВ ---
       def index
-        @pagy, @actuators = pagy(@cluster.actuators.includes(:gateway))
+        @pagy, @actuators = pagy(@cluster.actuators.includes(:gateway, :commands))
 
         respond_to do |format|
           format.json do

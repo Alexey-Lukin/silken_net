@@ -163,6 +163,8 @@ module Gateways
       case @gateway.state
       when "active" then "border-emerald-500 text-emerald-500"
       when "updating" then "border-amber-500 text-amber-500"
+      when "maintenance" then "border-blue-500 text-blue-500"
+      when "faulty" then "border-red-500 text-red-500"
       else "border-gray-800 text-gray-700"
       end
     end

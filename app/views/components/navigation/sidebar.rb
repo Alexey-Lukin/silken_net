@@ -20,7 +20,8 @@ module Navigation
           # ОПЕРАЦІЙНИЙ КОНТУР
           section_group("Forest Operations") do
             nav_item("Threat Alerts", helpers.api_v1_alerts_path, "zap", badge: ews_alert_count)
-            nav_item("Soldier Fleet", helpers.api_v1_clusters_path, "tree") # Тепер веде на сектори
+            nav_item("Soldier Fleet", helpers.api_v1_clusters_path, "tree")
+            nav_item("Maintenance Log", helpers.api_v1_maintenance_records_path, "clipboard")
             nav_item("Crew Registry", helpers.api_v1_users_path, "users")
             nav_item("Clan Hierarchy", helpers.api_v1_organizations_path, "users")
           end
@@ -40,6 +41,7 @@ module Navigation
             nav_item("Notifications", helpers.api_v1_notifications_settings_path, "radio")
             nav_item("Org Settings", helpers.api_v1_settings_path, "cpu")
             nav_item("Audit Log", helpers.api_v1_audit_logs_path, "eye")
+            nav_item("System Audits", helpers.api_v1_system_audits_path, "clipboard")
             nav_item("System Health", helpers.api_v1_system_health_path, "activity")
           end
         end

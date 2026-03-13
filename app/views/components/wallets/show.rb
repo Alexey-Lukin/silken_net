@@ -2,9 +2,10 @@
 
 module Wallets
   class Show < ApplicationComponent
-    def initialize(wallet:, transactions:)
+    def initialize(wallet:, transactions:, pagy: nil)
       @wallet = wallet
       @transactions = transactions
+      @pagy = pagy
     end
 
     def view_template
@@ -58,6 +59,13 @@ module Wallets
               end
             end
           end
+        end
+
+        if @pagy
+          render Shared::Pagination.new(
+            pagy: @pagy,
+            url_helper: ->(page:) { helpers.api_v1_wallet_path(@wallet, page: page) }
+          )
         end
       end
     end

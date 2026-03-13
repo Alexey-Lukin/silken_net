@@ -31,19 +31,9 @@ module Reports
 
     def render_metrics
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        stat_card("Total Invested", @data[:total_invested], "SCC")
-        stat_card("Active Contracts", @data[:active_contracts], "NaaS")
-        stat_card("Total Contracts", @data[:total_contracts], "Lifetime")
-      end
-    end
-
-    def stat_card(label, value, sub)
-      div(class: "p-6 border border-emerald-900 bg-zinc-950") do
-        p(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-4") { label }
-        div(class: "flex items-baseline space-x-2") do
-          span(class: "text-3xl font-light text-white") { value.to_s }
-          span(class: "text-[10px] text-gray-600 font-mono") { sub }
-        end
+        render Shared::StatCard.new(label: "Total Invested", value: @data[:total_invested], sub: "SCC")
+        render Shared::StatCard.new(label: "Active Contracts", value: @data[:active_contracts], sub: "NaaS")
+        render Shared::StatCard.new(label: "Total Contracts", value: @data[:total_contracts], sub: "Lifetime")
       end
     end
 

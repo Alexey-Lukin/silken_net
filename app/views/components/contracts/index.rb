@@ -87,7 +87,13 @@ module Contracts
     end
 
     def status_color(status)
-      status == "active" ? "text-emerald-500" : "text-amber-500"
+      case status
+      when "active" then "text-emerald-500"
+      when "fulfilled" then "text-blue-400"
+      when "breached" then "text-red-500"
+      when "cancelled" then "text-gray-500 line-through"
+      else "text-amber-500"
+      end
     end
   end
 end
