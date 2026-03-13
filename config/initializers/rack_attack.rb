@@ -22,7 +22,9 @@ else
       # Isolate rate-limit counters on DB 2 to avoid interference with
       # Sidekiq (DB 0) and Kredis locks (DB 1).
       base = ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
-      base.sub(%r{/\d+\z}, "/2")
+      uri = URI.parse(base)
+      uri.path = "/2"
+      uri.to_s
     },
     expires_in: 10.minutes
   )
@@ -141,8 +143,8 @@ module RackAttackFailCounter
         count_key = "#{FAIL2BAN_CACHE_PREFIX}count:#{ip}"
         store = Rack::Attack.cache.store
 
-        current = store.read(count_key).to_i
-        store.write(count_key, current + 1, expires_in: FAIL2BAN_FINDTIME)
+        # Atomic increment — avoids race conditions under concurrent requests.
+        store.increment(count_key, 1, expires_in: FAIL2BAN_FINDTIME)
       end
 
       [ status, headers, body ]

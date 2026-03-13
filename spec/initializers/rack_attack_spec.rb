@@ -99,10 +99,6 @@ RSpec.describe "Rack::Attack", type: :request do
     end
 
     it "registers the telemetry throttle rule" do
-      expect(Rack::Attack.throttles).to have_key("telemetry/uid")
-    end
-
-    it "registers the telemetry throttle with correct limits" do
       throttle = Rack::Attack.throttles["telemetry/uid"]
       expect(throttle).to be_present
     end
