@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/views/components/tree_families/show.rb
 module TreeFamilies
   class Show < ApplicationComponent

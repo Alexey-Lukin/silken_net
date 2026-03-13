@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Users
   class Index < ApplicationComponent
     def initialize(users:, pagy: nil)

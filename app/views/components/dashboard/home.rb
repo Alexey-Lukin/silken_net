@@ -11,10 +11,14 @@ module Dashboard
       div(class: "space-y-10 animate-in fade-in duration-1000") do
         # Ряд головних метрик (The Four Pillars)
         div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6") do
-          render_stat_card("Forest Vitality", "#{@stats[:trees][:health_avg].to_i}%", color: "emerald")
-          render_stat_card("Active Soldiers", @stats[:trees][:active], sub: "/ #{@stats[:trees][:total]}")
-          render_stat_card("Carbon Treasury", @stats[:economy][:total_scc], sub: "SCC")
-          render_stat_card("Ionic Potential", "#{@stats[:energy][:avg_voltage]}mV", color: energy_color)
+          render Shared::StatCard.new(label: "Forest Vitality", value: "#{@stats[:trees][:health_avg].to_i}%")
+          render Shared::StatCard.new(label: "Active Soldiers", value: @stats[:trees][:active], sub: "/ #{@stats[:trees][:total]}")
+          render Shared::StatCard.new(label: "Carbon Treasury", value: @stats[:economy][:total_scc], sub: "SCC")
+          render Shared::StatCard.new(
+            label: "Ionic Potential",
+            value: "#{@stats[:energy][:avg_voltage]}mV",
+            danger: @stats[:energy][:avg_voltage] < 3300
+          )
         end
 
         # Центральна секція: Карта та Алерти
@@ -43,21 +47,6 @@ module Dashboard
 
     private
 
-    def render_stat_card(label, value, sub: nil, color: "emerald")
-      border_color = color == "red" ? "border-red-900" : "border-emerald-900"
-      text_color = color == "red" ? "text-red-500" : "text-emerald-400"
-
-      div(class: tokens("p-8 border bg-black shadow-2xl relative overflow-hidden group hover:border-emerald-500 transition-colors", border_color)) do
-        p(class: "text-[9px] uppercase tracking-[0.3em] text-gray-600 mb-6") { label }
-        div(class: "flex items-baseline space-x-3") do
-          span(class: tokens("text-4xl font-extralight tracking-tighter", text_color)) { value }
-          span(class: "text-xs text-emerald-900 font-mono") { sub } if sub
-        end
-        # Декоративний імпульс на фоні
-        div(class: tokens("absolute bottom-0 left-0 h-[2px] w-full opacity-20", color == "red" ? "bg-red-500" : "bg-emerald-500"))
-      end
-    end
-
     def render_live_feed
       div(class: "p-6 border border-emerald-900 bg-zinc-950 flex flex-col h-full") do
         div(class: "flex justify-between items-center mb-8") do
@@ -79,25 +68,7 @@ module Dashboard
     end
 
     def render_event_row(event)
-      div(class: "flex items-start space-x-4 border-l border-emerald-900/30 pl-4 py-1") do
-        div(class: "flex flex-col flex-1 font-mono text-[10px]") do
-          span(class: "text-emerald-900 text-[8px] mb-1") { helpers.time_ago_in_words(event.created_at) + " ago" }
-          span(class: "text-gray-400 leading-relaxed") { format_event_msg(event) }
-        end
-      end
-    end
-
-    def format_event_msg(event)
-      case event
-      when EwsAlert then "Threat Detected: #{event.alert_type} in Cluster #{event.cluster&.name}"
-      when BlockchainTransaction then "Minted #{event.amount} SCC for #{event.wallet&.tree&.did || 'System'}"
-      when MaintenanceRecord then "Unit Ritual: #{event.action_type} by #{event.user&.first_name || 'Unknown'}"
-      else "System pulse detected"
-      end
-    end
-
-    def energy_color
-      @stats[:energy][:avg_voltage] < 3300 ? "red" : "emerald"
+      render Dashboard::EventRow.new(event: event)
     end
   end
 end

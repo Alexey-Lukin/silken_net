@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Contracts
   class Index < ApplicationComponent
     def initialize(contracts:, stats:, pagy:)

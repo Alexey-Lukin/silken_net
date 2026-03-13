@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Contracts
   class Show < ApplicationComponent
     def initialize(contract:, history:)

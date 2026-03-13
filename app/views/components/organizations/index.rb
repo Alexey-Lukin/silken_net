@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Organizations
   class Index < ApplicationComponent
     def initialize(organizations:, pagy:)

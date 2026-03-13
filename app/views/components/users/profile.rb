@@ -4,6 +4,7 @@ module Users
     def initialize(user:)
       @user = user
       @active_identities = @user.identities.active.to_a
+      @maintenance_count = @user.maintenance_records.count
     end
 
     def view_template
@@ -59,7 +60,7 @@ module Users
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5 space-y-6") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Operational Activity" }
         div(class: "grid grid-cols-2 gap-4 text-center") do
-          stat_box("Records", @user.maintenance_records.count)
+          stat_box("Records", @maintenance_count)
           stat_box("Last Sync", @user.last_seen_at ? "ONLINE" : "OFFLINE")
         end
       end

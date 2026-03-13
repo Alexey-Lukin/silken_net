@@ -63,7 +63,7 @@ module AuditLogs
         td(class: "p-4 text-[10px] text-gray-600") { log.created_at.strftime("%H:%M:%S // %d.%m.%y") }
         td(class: "p-4 text-emerald-400") { log.user&.full_name || "System" }
         td(class: "p-4") do
-          span(class: tokens("px-2 py-0.5 text-[9px] font-bold uppercase", action_styles(log.action))) { log.action }
+          render Shared::ActionBadge.new(action: log.action)
         end
         td(class: "p-4 text-gray-400") do
           if log.auditable_type.present?
@@ -75,15 +75,6 @@ module AuditLogs
         td(class: "p-4 text-right") do
           a(href: helpers.api_v1_audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-[9px] uppercase tracking-widest") { "Inspect →" }
         end
-      end
-    end
-
-    def action_styles(action)
-      case action
-      when /delete|destroy|remove/ then "bg-red-900/20 text-red-400"
-      when /update|modify|change/ then "bg-amber-900/20 text-amber-400"
-      when /create|add|new/ then "bg-emerald-900/20 text-emerald-400"
-      else "bg-zinc-900/20 text-zinc-400"
       end
     end
   end
