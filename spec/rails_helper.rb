@@ -38,6 +38,8 @@ RSpec.configure do |config|
   config.before do
     Sidekiq::Job.clear_all
     Rails.cache.clear
+    Rack::Attack.cache.store.clear
+    Rack::Attack.reset!
     Web3::RpcConnectionPool.reset!
   end
 

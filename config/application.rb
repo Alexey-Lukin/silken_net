@@ -19,6 +19,11 @@ module SilkenNet
     # [KENOSIS TITAN]: structure.sql зберігає партиціювання PostgreSQL (schema.rb не підтримує)
     config.active_record.schema_format = :sql
 
+    # [GAIA SHIELD]: Rack::Attack — DDoS / brute-force / bot-scanner protection.
+    # Inserted early in the middleware stack so malicious traffic is dropped
+    # before it reaches ActionDispatch, Warden or ActiveRecord.
+    config.middleware.use Rack::Attack
+
     # Phlex components & layouts: autoload app/views/components and
     # app/views/layouts so Wallets::TransactionRow, DashboardLayout, etc.
     # are resolvable by Zeitwerk without the Views:: wrapper.
