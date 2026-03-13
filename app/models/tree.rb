@@ -157,8 +157,8 @@ class Tree < ApplicationRecord
   end
 
   # Помічник для глибокого аудиту (використовувати тільки в show)
-  def latest_telemetry
-    @latest_telemetry ||= telemetry_logs.order(created_at: :desc).first
+  def latest_telemetry_log
+    @latest_telemetry_log ||= telemetry_logs.order(created_at: :desc).first
   end
 
   # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Трансляція вузла в Stimulus контролер

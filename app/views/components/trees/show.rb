@@ -4,7 +4,7 @@ module Trees
   class Show < ApplicationComponent
     def initialize(tree:, latest_log: nil, recent_logs: nil, maintenance_history: nil)
       @tree = tree
-      @latest_log = latest_log || @tree.latest_telemetry
+      @latest_log = latest_log || @tree.latest_telemetry_log
       @recent_logs = recent_logs || @tree.telemetry_logs.order(created_at: :desc).limit(10)
       @family = @tree.tree_family
       @maintenance_history = maintenance_history || @tree.maintenance_records.includes(:user).order(performed_at: :desc).limit(20)

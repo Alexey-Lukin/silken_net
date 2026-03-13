@@ -66,7 +66,7 @@ module Api
         [
           org.ews_alerts.includes(:cluster).order(created_at: :desc).limit(3),
           BlockchainTransaction.joins(wallet: { tree: :cluster })
-                               .includes(wallet: :tree)
+                               .includes(wallet: { tree: :cluster })
                                .where(clusters: { organization_id: org.id })
                                .order(created_at: :desc).limit(3),
           MaintenanceRecord.joins(:user)
