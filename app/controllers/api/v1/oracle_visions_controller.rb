@@ -68,7 +68,7 @@ module Api
           # завантаження всіх дерев в оперативну пам'ять одночасно.
           total_potential = 0.0
 
-          Tree.active.includes(:ai_insights, :latest_telemetry_log).find_each(batch_size: 1000) do |tree|
+          Tree.active.includes(:ai_insights).find_each(batch_size: 1000) do |tree|
             # sap_flow_index береться з останньої зафіксованої телеметрії
             sap_index = tree.latest_telemetry_log&.sap_flow || 0.0
             # current_stress - останній вердикт AI Оракула (0.0 - 1.0)
