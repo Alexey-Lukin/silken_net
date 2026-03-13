@@ -9,7 +9,7 @@ module Dashboard
     def view_template
       div(class: "flex items-start space-x-4 border-l border-emerald-900/30 pl-4 py-1") do
         div(class: "flex flex-col flex-1 font-mono text-[10px]") do
-          span(class: "text-emerald-900 text-[8px] mb-1") { helpers.time_ago_in_words(@event.created_at) + " ago" }
+          span(class: "text-emerald-900 text-[8px] mb-1") { time_ago_text }
           span(class: tokens("leading-relaxed", event_color)) { event_summary }
         end
       end
@@ -33,6 +33,10 @@ module Dashboard
       when MaintenanceRecord then "text-amber-400"
       else "text-gray-400"
       end
+    end
+
+    def time_ago_text
+      ActionController::Base.helpers.time_ago_in_words(@event.created_at) + " ago"
     end
   end
 end
