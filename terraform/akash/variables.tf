@@ -70,7 +70,7 @@ variable "redis_url" {
 }
 
 variable "kredis_redis_url" {
-  description = "Redis connection URL for Kredis distributed locks (DB 1). If empty, derived from redis_url by appending /1."
+  description = "Redis connection URL for Kredis distributed locks (DB 1). If empty, derived from redis_url by replacing the DB suffix with /1."
   type        = string
   default     = ""
   sensitive   = true
