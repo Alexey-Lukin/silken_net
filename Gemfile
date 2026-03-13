@@ -13,6 +13,7 @@ gem "httpx"
 gem "image_processing"
 gem "importmap-rails"
 gem "kamal", require: false
+gem "kredis"
 gem "oj"
 gem "pagy"
 gem "pg"

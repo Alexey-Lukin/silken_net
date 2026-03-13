@@ -59,7 +59,7 @@ variable "database_url" {
 }
 
 variable "redis_url" {
-  description = "Redis connection URL for Sidekiq"
+  description = "Redis connection URL for Sidekiq (DB 0)"
   type        = string
   sensitive   = true
 
@@ -67,6 +67,13 @@ variable "redis_url" {
     condition     = can(regex("^redis(s)?://", var.redis_url))
     error_message = "REDIS_URL must start with redis:// or rediss://"
   }
+}
+
+variable "kredis_redis_url" {
+  description = "Redis connection URL for Kredis distributed locks (DB 1). If empty, derived from redis_url by replacing the DB suffix with /1."
+  type        = string
+  default     = ""
+  sensitive   = true
 }
 
 # -----------------------------------------------------------------------------

@@ -116,6 +116,23 @@ NaasContract ──belongs_to──→ Organization, Cluster
 - **DeviceCalibration** - Per-sensor temperature/impedance/voltage offsets
 - **Session / Identity** - Auth (password + OAuth via Google/Apple/LinkedIn)
 
+## Redis Infrastructure
+
+The system uses a single Redis instance with **logical database isolation**:
+
+| DB | Purpose | Config | Gem |
+|----|---------|--------|-----|
+| DB 0 | Sidekiq job queues & scheduler | `config/initializers/sidekiq.rb` (`REDIS_URL`) | `sidekiq` + `redis-client` |
+| DB 1 | Kredis distributed locks (Web3 nonce management) | `config/redis/shared.yml` (`KREDIS_REDIS_URL`) | `kredis` + `redis` |
+
+### Why both `redis` and `kredis` gems?
+
+- **`sidekiq`** (8.x) uses `redis-client` internally for job queues — it does NOT need the `redis` gem
+- **`kredis`** (Rails' high-level Redis data structures) depends on the `redis` gem and provides typed proxies (scalars, lists, sets, etc.)
+- Kredis does **not** ship a distributed lock primitive, so `config/initializers/kredis.rb` extends the module with `Kredis.lock` — a crash-safe SET NX EX lock with UUID ownership and atomic Lua-script release
+
+This DB isolation prevents a telemetry queue flood (millions of IoT packets/hour) from evicting critical Web3 nonce locks, which would cause EVM nonce collisions and double-spend vulnerabilities on Polygon.
+
 ## Sidekiq Queue Hierarchy
 
 | Queue | Priority | Workers |

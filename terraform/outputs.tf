@@ -35,8 +35,13 @@ output "redis_port" {
 }
 
 output "redis_url" {
-  description = "Redis connection URL for Sidekiq"
+  description = "Redis connection URL for Sidekiq (DB 0)"
   value       = "redis://${google_redis_instance.silken_redis.host}:${google_redis_instance.silken_redis.port}/0"
+}
+
+output "kredis_redis_url" {
+  description = "Redis connection URL for Kredis distributed locks (DB 1)"
+  value       = "redis://${google_redis_instance.silken_redis.host}:${google_redis_instance.silken_redis.port}/1"
 }
 
 output "artifact_registry_url" {

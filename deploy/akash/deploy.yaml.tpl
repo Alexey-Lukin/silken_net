@@ -14,6 +14,7 @@ services:
       - RAILS_MASTER_KEY=${rails_master_key}
       - DATABASE_URL=${database_url}
       - REDIS_URL=${redis_url}
+      - KREDIS_REDIS_URL=${kredis_redis_url}
       - SOLID_QUEUE_IN_PUMA=true
       - RAILS_ENV=production
       - WEB_CONCURRENCY=${web_concurrency}
