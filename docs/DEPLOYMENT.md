@@ -202,8 +202,11 @@ terraform/
 - Пам'ять: 1 GB
 - Приватна мережа
 - Transit encryption
-- Політика: `noeviction`
-- Призначення: Sidekiq черги та кешування
+- Політика: `volatile-lru`
+- **DB ізоляція**:
+  - DB 0 → Sidekiq (черги задач) — `REDIS_URL`
+  - DB 1 → Kredis (розподілені блокування для Web3 nonce) — `KREDIS_REDIS_URL`
+- Це розділення запобігає витісненню критичних Web3 nonce-локів при переповненні черги телеметрії
 
 ### IAM (iam.tf)
 
@@ -320,7 +323,8 @@ kamal deploy -d canopy
 |--------|------|
 | `RAILS_MASTER_KEY` | Ключ шифрування Rails credentials |
 | `DATABASE_URL` | Рядок підключення до PostgreSQL |
-| `REDIS_URL` | Рядок підключення до Redis |
+| `REDIS_URL` | Рядок підключення до Redis (Sidekiq, DB 0) |
+| `KREDIS_REDIS_URL` | Рядок підключення до Redis (Kredis locks, DB 1) |
 | `GCP_ARTIFACT_REGISTRY_KEY` | GCP Service Account ключ (base64) |
 
 ---
@@ -364,6 +368,7 @@ kamal deploy -d canopy
 | `DATABASE_URL` | Production: `postgres://silken_net:<pass>@<ip>:5432/silken_net_production` |
 | `CANOPY_DATABASE_URL` | Canopy: URL бази даних для canopy-середовища |
 | `REDIS_URL` | Production: `redis://<ip>:6379/0` |
+| `KREDIS_REDIS_URL` | Production: `redis://<ip>:6379/1` (Kredis distributed locks) |
 | `CANOPY_REDIS_URL` | Canopy: URL Redis для canopy-середовища |
 | `SSH_PRIVATE_KEY` | Приватний SSH ключ (`ed25519`) |
 | `SSH_PUBLIC_KEY` | Публічний SSH ключ |
