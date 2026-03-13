@@ -68,6 +68,10 @@ class BlockchainBurningService < ApplicationService
         @naas_contract.update!(status: :breached)
 
         create_audit_transaction(tx_hash, burn_amount, reason)
+
+        # [OBSERVABILITY]: Track slashed tokens for Prometheus/Grafana
+        SilkenNet::Metrics::SCC_SLASHED_TOTAL.increment(by: burn_amount)
+
         Rails.logger.info "✅ [Slashing] Виконано. TX: #{tx_hash}"
       end
 

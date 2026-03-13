@@ -36,6 +36,8 @@ gem "thruster", require: false
 gem "turbo-rails"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
+gem "prometheus-client"
+
 gem "aasm"
 gem "active_storage_validations"
 gem "strong_migrations"
