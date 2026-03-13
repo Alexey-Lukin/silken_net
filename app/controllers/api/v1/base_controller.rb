@@ -122,7 +122,9 @@ module Api
 
       # 6. EWS ALERT COUNT (pre-computed for Sidebar — Rule 3: Zero DB queries in views)
       def ews_alert_count_cached
-        EwsAlert.unresolved.count
+        Rails.cache.fetch("ews_alert_count_unresolved", expires_in: 1.minute) do
+          EwsAlert.unresolved.count
+        end
       rescue StandardError
         0
       end

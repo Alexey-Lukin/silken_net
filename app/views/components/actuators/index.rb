@@ -2,10 +2,11 @@
 
 module Actuators
   class Index < ApplicationComponent
-    def initialize(cluster:, actuators:, pagy:)
+    def initialize(cluster:, actuators:, pagy:, active_count: 0)
       @cluster = cluster
       @actuators = actuators
       @pagy = pagy
+      @active_count = active_count
     end
 
     def view_template
@@ -42,8 +43,8 @@ module Actuators
         end
 
         div(class: "mt-4 md:mt-0 flex space-x-6 text-[10px] font-mono") do
-          stat_label("Active Nodes", @actuators.count { |a| a.active? })
-          stat_label("Total Units", @actuators.count)
+          stat_label("Active Nodes", @active_count)
+          stat_label("Total Units", @pagy.count)
         end
       end
     end

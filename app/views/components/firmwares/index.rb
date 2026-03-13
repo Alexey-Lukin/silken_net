@@ -67,7 +67,7 @@ module Firmwares
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
-              @firmwares.each { |f| render Firmwares::Row.new(firmware: f) }
+              @firmwares.each { |f| render_firmware_row(f) }
             end
           end
         end
@@ -76,6 +76,26 @@ module Firmwares
           pagy: @pagy,
           url_helper: ->(page:) { helpers.api_v1_firmwares_path(page: page) }
         )
+      end
+    end
+
+    def render_firmware_row(firmware)
+      tr(class: "hover:bg-emerald-950/10 transition-colors group") do
+        td(class: "p-4 text-emerald-100 font-bold font-mono") { "v#{firmware.version}" }
+        td(class: "p-4 text-emerald-600 uppercase font-mono text-[10px]") { firmware.target_hardware }
+        td(class: "p-4 text-gray-600 font-mono text-[10px]") { firmware.checksum&.first(16) || "N/A" }
+        td(class: "p-4 text-gray-500 font-mono text-[10px]") { firmware.created_at.strftime("%d.%m.%y // %H:%M") }
+
+        td(class: "p-4 text-right") do
+          form(action: helpers.deploy_api_v1_firmware_path(firmware), method: "post") do
+            input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+            button(
+              type: "submit",
+              class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-[9px] tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)]",
+              data: { turbo_confirm: "Initiate evolution to v#{firmware.version} for the selected hardware?" }
+            ) { "Order Evolution →" }
+          end
+        end
       end
     end
   end
