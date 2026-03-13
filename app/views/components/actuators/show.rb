@@ -55,8 +55,10 @@ module Actuators
 
     def cmd_status_class(cmd)
       case cmd.status
-      when "executed" then "border-emerald-500 text-emerald-500"
+      when "confirmed", "acknowledged" then "border-emerald-500 text-emerald-500"
+      when "sent" then "border-blue-800 text-blue-400"
       when "failed" then "border-red-900 text-red-500"
+      when "issued" then "border-amber-800 text-amber-400"
       else "border-zinc-800 text-zinc-600"
       end
     end

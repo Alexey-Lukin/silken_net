@@ -68,7 +68,7 @@ module Api
 
           Tree.active.includes(:ai_insights).find_each(batch_size: 1000) do |tree|
             # sap_flow_index береться з останньої зафіксованої телеметрії
-            sap_index = tree.latest_telemetry&.sap_flow || 0.0
+            sap_index = tree.latest_telemetry_log&.sap_flow || 0.0
             # current_stress - останній вердикт AI Оракула (0.0 - 1.0)
             stress = tree.current_stress
 

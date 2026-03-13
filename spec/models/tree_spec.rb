@@ -248,26 +248,26 @@ RSpec.describe Tree, type: :model do
     end
   end
 
-  describe "#latest_telemetry" do
+  describe "#latest_telemetry_log" do
     it "returns the most recent telemetry log" do
       tree = create(:tree)
       _old = create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
       newest = create(:telemetry_log, tree: tree, created_at: 1.minute.ago)
 
-      expect(tree.latest_telemetry).to eq(newest)
+      expect(tree.latest_telemetry_log).to eq(newest)
     end
 
     it "returns nil when no telemetry exists" do
       tree = create(:tree)
-      expect(tree.latest_telemetry).to be_nil
+      expect(tree.latest_telemetry_log).to be_nil
     end
 
     it "memoizes the result" do
       tree = create(:tree)
       create(:telemetry_log, tree: tree)
 
-      first_call = tree.latest_telemetry
-      second_call = tree.latest_telemetry
+      first_call = tree.latest_telemetry_log
+      second_call = tree.latest_telemetry_log
 
       expect(first_call).to equal(second_call)
     end

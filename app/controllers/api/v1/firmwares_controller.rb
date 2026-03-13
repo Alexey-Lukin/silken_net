@@ -14,10 +14,11 @@ module Api
       def index
         @pagy, @firmwares = pagy(BioContractFirmware.order(version: :desc))
 
-        # Збираємо статистику інвентаря для дашборду
+        # Збираємо статистику інвентаря для дашборду (org-scoped)
+        org = current_user.organization
         @inventory_stats = {
-          trees: Tree.group(:firmware_version).count,
-          gateways: Gateway.group(:firmware_version).count
+          trees: org.trees.group(:firmware_version).count,
+          gateways: org.gateways.group(:firmware_version).count
         }
 
         respond_to do |format|
@@ -100,9 +101,10 @@ module Api
       # --- ПРОВЕРКА ІНВЕНТАРЯ (Who has what?) ---
       # GET /api/v1/firmwares/inventory
       def inventory
+        org = current_user.organization
         stats = {
-          trees: Tree.group(:firmware_version).count,
-          gateways: Gateway.group(:firmware_version).count
+          trees: org.trees.group(:firmware_version).count,
+          gateways: org.gateways.group(:firmware_version).count
         }
         render json: stats
       end

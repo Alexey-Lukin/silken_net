@@ -33,7 +33,7 @@ module AuditLogs
             h2(class: "text-3xl font-extralight tracking-tighter text-white") { @log.action }
             p(class: "text-[10px] font-mono text-gray-600 mt-2") { "##{@log.id} // #{@log.created_at.strftime('%d.%m.%Y %H:%M:%S UTC')}" }
           end
-          span(class: tokens("px-3 py-1 text-[9px] font-bold uppercase", action_badge_styles)) { @log.action }
+          render Shared::ActionBadge.new(action: @log.action)
         end
       end
     end
@@ -122,15 +122,6 @@ module AuditLogs
         else
           p(class: "text-[11px] text-gray-700 italic") { "No specific target." }
         end
-      end
-    end
-
-    def action_badge_styles
-      case @log.action
-      when /delete|destroy|remove/ then "bg-red-900 text-red-200"
-      when /update|modify|change/ then "bg-amber-900 text-amber-200"
-      when /create|add|new/ then "bg-emerald-900 text-emerald-200"
-      else "bg-zinc-900 text-zinc-400"
       end
     end
   end

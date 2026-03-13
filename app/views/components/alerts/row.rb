@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/views/components/alerts/row.rb
 module Alerts
   class Row < ApplicationComponent
@@ -18,10 +20,11 @@ module Alerts
     private
 
     def severity_badge
-      color = case @alert.severity
-      when "critical" then "bg-red-900 text-red-200"
-      when "warning" then "bg-amber-900 text-amber-200"
-      else "bg-emerald-900 text-emerald-200"
+      color = case @alert.severity.to_s
+      when "critical" then "bg-red-900 text-red-200 animate-pulse"
+      when "medium" then "bg-amber-900 text-amber-200"
+      when "low" then "bg-emerald-900 text-emerald-200"
+      else "bg-zinc-900 text-zinc-200"
       end
       span(class: "px-2 py-0.5 rounded-sm text-[9px] uppercase font-bold #{color}") { @alert.severity }
     end

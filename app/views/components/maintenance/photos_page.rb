@@ -32,45 +32,7 @@ module Maintenance
     end
 
     def render_photo_card(photo)
-      div(class: "relative group border border-emerald-900/50 hover:border-emerald-500 transition-all overflow-hidden bg-zinc-950") do
-        a(
-          href: helpers.rails_blob_path(photo, disposition: "inline"),
-          target: "_blank",
-          class: "block aspect-square overflow-hidden"
-        ) do
-          if photo.representable?
-            img(
-              src: helpers.rails_representation_path(photo.variant(:thumb)),
-              alt: photo.filename.to_s,
-              loading: "lazy",
-              class: "w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-            )
-          else
-            div(class: "w-full h-full flex flex-col items-center justify-center space-y-1 p-2 bg-zinc-900") do
-              span(class: "text-emerald-700 text-2xl") { "📎" }
-              span(class: "text-[9px] text-emerald-700 font-mono truncate text-center") { photo.filename.to_s }
-              span(class: "text-[8px] text-gray-600") { helpers.number_to_human_size(photo.byte_size) }
-            end
-          end
-        end
-
-        div(class: "absolute bottom-0 inset-x-0 bg-black/80 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity") do
-          p(class: "text-[8px] font-mono text-emerald-400 truncate") { photo.filename.to_s }
-          p(class: "text-[7px] text-gray-500") { helpers.number_to_human_size(photo.byte_size) }
-        end
-
-        if @editable
-          div(class: "absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity") do
-            button_to(
-              "×",
-              helpers.api_v1_maintenance_record_photo_path(@record, photo),
-              method: :delete,
-              class: "h-6 w-6 bg-red-900/80 text-red-200 text-sm font-bold hover:bg-red-700 transition-colors",
-              data: { turbo_confirm: "Remove this photo from the evidence record?" }
-            )
-          end
-        end
-      end
+      render Shared::PhotoCard.new(photo: photo, record: @record, editable: @editable)
     end
 
     def render_load_more

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module TreeFamilies
   class Form < ApplicationComponent
     def initialize(family:)

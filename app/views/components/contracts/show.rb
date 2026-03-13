@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Contracts
   class Show < ApplicationComponent
     def initialize(contract:, history:)
@@ -64,13 +66,25 @@ module Contracts
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Blockchain Emission History" }
         div(class: "border border-emerald-900 bg-black overflow-hidden") do
            table(class: "w-full text-left font-mono text-[10px]") do
-             # ... аналогічно до Wallets Ledger ...
+             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+               tr do
+                 th(class: "p-4") { "TX Hash" }
+                 th(class: "p-4") { "Amount" }
+                 th(class: "p-4 text-right") { "Timestamp" }
+               end
+             end
              tbody(class: "divide-y divide-emerald-900/30") do
-                @history.each do |tx|
+                if @history.any?
+                  @history.each do |tx|
+                    tr(class: "hover:bg-emerald-950/10 transition-colors") do
+                      td(class: "p-4 text-emerald-600") { tx.tx_hash.present? ? "#{tx.tx_hash.first(12)}…" : "PENDING_BLOCK" }
+                      td(class: "p-4 text-white") { "+ #{tx.amount} SCC" }
+                      td(class: "p-4 text-gray-500 text-right") { tx.created_at.strftime("%H:%M // %d.%m.%y") }
+                    end
+                  end
+                else
                   tr do
-                    td(class: "p-4 text-emerald-600") { "#{tx.tx_hash&.first(12)}..." }
-                    td(class: "p-4 text-white") { "+ #{tx.amount} SCC" }
-                    td(class: "p-4 text-gray-500 text-right") { tx.created_at.strftime("%H:%M // %d.%m.%y") }
+                    td(colspan: 3, class: "p-10 text-center text-gray-700 italic") { "No emissions recorded." }
                   end
                 end
              end

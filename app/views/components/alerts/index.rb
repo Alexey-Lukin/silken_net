@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Alerts
   class Index < ApplicationComponent
     def initialize(alerts:, pagy:)
@@ -43,8 +45,15 @@ module Alerts
         end
         # Фільтри (спрощено)
         div(class: "flex space-x-2") do
-          [ "critical", "warning", "info" ].each do |s|
-            span(class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-900 uppercase") { s }
+          a(
+            href: helpers.api_v1_alerts_path,
+            class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-700 uppercase hover:border-emerald-500 hover:text-emerald-500 transition-all"
+          ) { "all" }
+          %w[critical medium low].each do |s|
+            a(
+              href: helpers.api_v1_alerts_path(severity: s),
+              class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-900 uppercase hover:border-emerald-500 hover:text-emerald-500 transition-all"
+            ) { s }
           end
         end
       end

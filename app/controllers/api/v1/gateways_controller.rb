@@ -33,9 +33,15 @@ module Api
         respond_to do |format|
           format.json { render json: @gateway }
           format.html do
+            @latest_log = @gateway.latest_gateway_telemetry_log
+            @active_soldiers = @gateway.trees.where(status: :active).limit(200)
             render_dashboard(
               title: "Queen // #{@gateway.uid}",
-              component: Gateways::Show.new(gateway: @gateway)
+              component: Gateways::Show.new(
+                gateway: @gateway,
+                latest_log: @latest_log,
+                active_soldiers: @active_soldiers
+              )
             )
           end
         end

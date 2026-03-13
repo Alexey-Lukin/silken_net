@@ -64,11 +64,13 @@ module Api
 
         # Збираємо мікс з останніх алертів, транзакцій та реєстрацій (scoped to organization)
         [
-          org.ews_alerts.order(created_at: :desc).limit(3),
+          org.ews_alerts.includes(:cluster).order(created_at: :desc).limit(3),
           BlockchainTransaction.joins(wallet: { tree: :cluster })
+                               .includes(wallet: { tree: :cluster })
                                .where(clusters: { organization_id: org.id })
                                .order(created_at: :desc).limit(3),
           MaintenanceRecord.joins(:user)
+                           .includes(:user)
                            .where(users: { organization_id: org.id })
                            .order(created_at: :desc).limit(3)
         ].flatten.sort_by(&:created_at).reverse.first(8)

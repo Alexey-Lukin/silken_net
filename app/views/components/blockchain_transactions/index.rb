@@ -93,6 +93,7 @@ module BlockchainTransactions
       case status
       when "confirmed" then "text-emerald-500"
       when "processing", "sent" then "text-amber-500 animate-pulse"
+      when "pending" then "text-gray-400"
       when "failed" then "text-red-500"
       else "text-gray-600"
       end

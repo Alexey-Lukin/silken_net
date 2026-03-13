@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Organizations
   class Index < ApplicationComponent
     def initialize(organizations:, pagy:)
@@ -40,7 +42,9 @@ module Organizations
         td(class: "p-4 text-emerald-400 font-bold") { org.name }
         td(class: "p-4 text-gray-400") { org.total_clusters }
         td(class: "p-4 text-emerald-100") { "#{org.total_invested} SCC" }
-        td(class: "p-4 text-[10px] text-gray-600 font-mono") { org.crypto_public_address.present? ? "#{org.crypto_public_address.first(12)}..." : "NOT_PROVISIONED" }
+        td(class: "p-4 text-[10px] text-gray-600 font-mono") do
+          render Shared::Web3Address.new(address: org.crypto_public_address)
+        end
         td(class: "p-4 text-right") do
           a(href: helpers.api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all") { "VIEW_PROFILE →" }
         end

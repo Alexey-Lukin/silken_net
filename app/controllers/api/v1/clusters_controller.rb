@@ -59,9 +59,15 @@ module Api
 
           # 2. Dashboard Response
           format.html do
+            @gateways = @cluster.gateways.order(:uid).limit(50)
+            @recent_alerts = @cluster.ews_alerts.unresolved.order(created_at: :desc).limit(5)
             render_dashboard(
               title: "Sector: #{@cluster.name}",
-              component: Clusters::Show.new(cluster: @cluster)
+              component: Clusters::Show.new(
+                cluster: @cluster,
+                gateways: @gateways,
+                recent_alerts: @recent_alerts
+              )
             )
           end
         end

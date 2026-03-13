@@ -43,7 +43,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Wallet // #{@wallet.crypto_public_address&.first(8)}...",
-              component: Wallets::Show.new(wallet: @wallet, transactions: @transactions)
+              component: Wallets::Show.new(wallet: @wallet, transactions: @transactions, pagy: @pagy_tx)
             )
           end
         end

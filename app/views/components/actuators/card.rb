@@ -70,7 +70,8 @@ module Actuators
     def status_led_class
       case @actuator.state
       when "active" then "bg-emerald-500 shadow-[0_0_10px_#10b981]"
-      when "faulty" then "bg-red-600 animate-pulse shadow-[0_0_10px_red]"
+      when "maintenance_needed" then "bg-red-600 animate-pulse shadow-[0_0_10px_red]"
+      when "offline" then "bg-red-900"
       else "bg-gray-800"
       end
     end

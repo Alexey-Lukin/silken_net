@@ -2,26 +2,16 @@
 
 module Dashboard
   class EventRow < ApplicationComponent
-    ICON_COLORS = {
-      "blue"    => "text-blue-400",
-      "red"     => "text-red-400",
-      "emerald" => "text-emerald-400",
-      "amber"   => "text-amber-400"
-    }.freeze
-
-    def initialize(event:, icon: "activity", color: "emerald")
+    def initialize(event:)
       @event = event
-      @icon  = icon
-      @color = color
     end
 
     def view_template
-      color_class = ICON_COLORS.fetch(@color, "text-zinc-400")
-
-      div(class: "flex items-center gap-3 py-2 px-3 border-b border-zinc-800 text-[11px]") do
-        span(class: color_class) { "● #{@icon}" }
-        span(class: "text-zinc-300 font-mono") { event_summary }
-        span(class: "text-zinc-600 ml-auto") { @event.created_at&.strftime("%H:%M") }
+      div(class: "flex items-start space-x-4 border-l border-emerald-900/30 pl-4 py-1") do
+        div(class: "flex flex-col flex-1 font-mono text-[10px]") do
+          span(class: "text-emerald-900 text-[8px] mb-1") { time_ago_text }
+          span(class: tokens("leading-relaxed", event_color)) { event_summary }
+        end
       end
     end
 
@@ -29,11 +19,24 @@ module Dashboard
 
     def event_summary
       case @event
-      when BlockchainTransaction
-        "TX ##{@event.id}: #{@event.amount} #{@event.token_type} → #{@event.to_address&.truncate(16)}"
-      else
-        "Event ##{@event.id}"
+      when EwsAlert then "⚠ Threat: #{@event.alert_type} in #{@event.cluster&.name || 'Unknown'}"
+      when BlockchainTransaction then "⬢ Minted #{@event.amount} SCC → #{@event.wallet&.tree&.did || 'System'}"
+      when MaintenanceRecord then "🔧 #{@event.action_type&.capitalize}: by #{@event.user&.first_name || 'System'}"
+      else "● System pulse detected"
       end
+    end
+
+    def event_color
+      case @event
+      when EwsAlert then "text-red-400"
+      when BlockchainTransaction then "text-emerald-400"
+      when MaintenanceRecord then "text-amber-400"
+      else "text-gray-400"
+      end
+    end
+
+    def time_ago_text
+      ActionController::Base.helpers.time_ago_in_words(@event.created_at) + " ago"
     end
   end
 end

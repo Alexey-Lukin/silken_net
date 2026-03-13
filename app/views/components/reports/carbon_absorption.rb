@@ -31,20 +31,10 @@ module Reports
 
     def render_metrics
       div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6") do
-        stat_card("Total Carbon Points", @data[:total_carbon_points], "SCC")
-        stat_card("Active Wallets", @data[:wallets_count], "Wallets")
-        stat_card("Active Trees", @data[:trees_active], "Online")
-        stat_card("Total Trees", @data[:trees_total], "Deployed")
-      end
-    end
-
-    def stat_card(label, value, sub)
-      div(class: "p-6 border border-emerald-900 bg-zinc-950") do
-        p(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-4") { label }
-        div(class: "flex items-baseline space-x-2") do
-          span(class: "text-3xl font-light text-white") { value.to_s }
-          span(class: "text-[10px] text-gray-600 font-mono") { sub }
-        end
+        render Shared::StatCard.new(label: "Total Carbon Points", value: @data[:total_carbon_points], sub: "SCC")
+        render Shared::StatCard.new(label: "Active Wallets", value: @data[:wallets_count], sub: "Wallets")
+        render Shared::StatCard.new(label: "Active Trees", value: @data[:trees_active], sub: "Online")
+        render Shared::StatCard.new(label: "Total Trees", value: @data[:trees_total], sub: "Deployed")
       end
     end
 
