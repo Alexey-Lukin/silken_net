@@ -28,7 +28,7 @@ module SilkenNet
     SCC_MINTED_TOTAL = REGISTRY.counter(
       :silkennet_scc_minted_total,
       docstring: "Total SCC (SilkenCarbonCoin) tokens minted",
-      labels: [:token_type]
+      labels: [ :token_type ]
     )
 
     # Total tokens slashed (monotonic counter)
@@ -41,7 +41,7 @@ module SilkenNet
     RPC_ERRORS_TOTAL = REGISTRY.counter(
       :silkennet_rpc_errors_total,
       docstring: "Total Web3 RPC errors",
-      labels: [:network, :error_type]
+      labels: [ :network, :error_type ]
     )
 
     # -----------------------------------------------------------------------
@@ -68,14 +68,14 @@ module SilkenNet
     WEB3_QUEUE_SIZE = REGISTRY.gauge(
       :silkennet_web3_queue_size,
       docstring: "Current size of the Sidekiq web3 queue",
-      labels: [:queue]
+      labels: [ :queue ]
     )
 
     # Web3 queue latency in seconds (gauge — oldest job age)
     WEB3_QUEUE_LATENCY = REGISTRY.gauge(
       :silkennet_web3_queue_latency_seconds,
       docstring: "Latency (age of oldest job) in Sidekiq web3 queues",
-      labels: [:queue]
+      labels: [ :queue ]
     )
   end
 end

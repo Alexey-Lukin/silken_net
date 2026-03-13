@@ -141,6 +141,20 @@ See `docs/API.md` for the full 24-endpoint reference.
 - Security: `bundle exec brakeman` and `bundle exec bundler-audit check`
 - Feature tests: Capybara + Selenium (headless Chrome)
 
+### ⚠️ MANDATORY: Run RuboCop Before Finishing
+
+**Before completing ANY session, ALWAYS run `bundle exec rubocop` and fix all offenses.**
+CI will fail if RuboCop reports any violations. This includes:
+- `Layout/SpaceInsideArrayLiteralBrackets` — use `[ item ]` not `[item]`
+- `Bundler/OrderedGems` — gems must be sorted alphabetically within each group
+- `RSpec/ContextWording` — context descriptions must start with `when`, `with`, or `without`
+- `RSpec/DescribeClass` — top-level `describe` must reference a class/module, not a string
+
+Run with auto-correct where possible:
+```bash
+bundle exec rubocop -A
+```
+
 ## Documentation Index
 
 | File                          | Content                                     |

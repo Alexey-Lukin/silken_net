@@ -53,7 +53,7 @@ class PrometheusCollector
     [
       200,
       { "content-type" => Prometheus::Client::Formats::Text::CONTENT_TYPE },
-      [body]
+      [ body ]
     ]
   end
 
@@ -111,6 +111,6 @@ class PrometheusCollector
   end
 
   def forbidden_response
-    [403, { "content-type" => "text/plain" }, ["Forbidden"]]
+    [ 403, { "content-type" => "text/plain" }, [ "Forbidden" ] ]
   end
 end

@@ -26,7 +26,7 @@ RSpec.describe PrometheusCollector, type: :request do
   # /metrics ENDPOINT — ACCESS CONTROL
   # -----------------------------------------------------------------------
   describe "GET /metrics" do
-    context "from localhost (127.0.0.1)" do
+    context "when accessed from localhost (127.0.0.1)" do
       it "returns Prometheus text output" do
         get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
 
@@ -37,7 +37,7 @@ RSpec.describe PrometheusCollector, type: :request do
       end
     end
 
-    context "from private network (10.x.x.x)" do
+    context "when accessed from private network (10.x.x.x)" do
       it "returns metrics" do
         get "/metrics", headers: { "REMOTE_ADDR" => "10.0.1.50" }
 
@@ -46,21 +46,21 @@ RSpec.describe PrometheusCollector, type: :request do
       end
     end
 
-    context "from private network (172.16.x.x)" do
+    context "when accessed from private network (172.16.x.x)" do
       it "returns metrics" do
         get "/metrics", headers: { "REMOTE_ADDR" => "172.16.0.1" }
         expect(response).to have_http_status(:ok)
       end
     end
 
-    context "from private network (192.168.x.x)" do
+    context "when accessed from private network (192.168.x.x)" do
       it "returns metrics" do
         get "/metrics", headers: { "REMOTE_ADDR" => "192.168.1.1" }
         expect(response).to have_http_status(:ok)
       end
     end
 
-    context "from public IP (not in allowlist)" do
+    context "when accessed from public IP (not in allowlist)" do
       it "returns 403 Forbidden" do
         get "/metrics", headers: { "REMOTE_ADDR" => "8.8.8.8" }
 
@@ -69,7 +69,7 @@ RSpec.describe PrometheusCollector, type: :request do
       end
     end
 
-    context "from IP in PROMETHEUS_ALLOWED_IPS env" do
+    context "when accessed from IP in PROMETHEUS_ALLOWED_IPS env" do
       around do |example|
         original = ENV["PROMETHEUS_ALLOWED_IPS"]
         ENV["PROMETHEUS_ALLOWED_IPS"] = "203.0.113.0/24,198.51.100.5"
