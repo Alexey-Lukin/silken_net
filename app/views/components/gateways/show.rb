@@ -5,10 +5,17 @@ module Gateways
     # Default healthy voltage (mV) when no telemetry is available.
     # Based on fully charged Li-Po battery typical voltage.
     DEFAULT_HEALTHY_VOLTAGE_MV = 4200
-    def initialize(gateway:, latest_log: nil, active_soldiers: nil)
+
+    # All data must be pre-loaded in the controller — no fallback queries.
+    # @param gateway [Gateway] must respond to :uid, :state, :last_seen_at
+    # @param latest_log [GatewayTelemetryLog, nil] pre-loaded latest telemetry
+    # @param active_soldiers [Array<Tree>] pre-loaded active soldiers
+    def initialize(gateway:, latest_log:, active_soldiers:)
+      raise ArgumentError, "gateway must respond to :uid" unless gateway.respond_to?(:uid)
+
       @gateway = gateway
-      @latest_log = latest_log || @gateway.latest_gateway_telemetry_log
-      @active_soldiers = active_soldiers || @gateway.trees.where(status: :active).limit(200)
+      @latest_log = latest_log
+      @active_soldiers = active_soldiers
     end
 
     def view_template

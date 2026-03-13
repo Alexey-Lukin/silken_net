@@ -2,6 +2,14 @@
 
 module Navigation
   class Sidebar < ApplicationComponent
+    # All data must be passed explicitly — no DB queries, no request/session access.
+    # @param current_path [String] current request path for active-nav highlighting
+    # @param ews_alert_count [Integer] pre-computed count of unresolved EWS alerts (eager-load in controller/layout)
+    def initialize(current_path: "/", ews_alert_count: 0)
+      @current_path = current_path
+      @ews_alert_count = ews_alert_count
+    end
+
     def view_template
       aside(class: "w-64 h-screen sticky top-0 bg-black border-r border-emerald-900/50 flex flex-col z-50 overflow-y-auto font-mono") do
         render_logo
@@ -19,7 +27,7 @@ module Navigation
 
           # ОПЕРАЦІЙНИЙ КОНТУР
           section_group("Forest Operations") do
-            nav_item("Threat Alerts", helpers.api_v1_alerts_path, "zap", badge: ews_alert_count)
+            nav_item("Threat Alerts", helpers.api_v1_alerts_path, "zap", badge: @ews_alert_count)
             nav_item("Soldier Fleet", helpers.api_v1_clusters_path, "tree")
             nav_item("Maintenance Log", helpers.api_v1_maintenance_records_path, "clipboard")
             nav_item("Crew Registry", helpers.api_v1_users_path, "users")
@@ -77,8 +85,7 @@ module Navigation
     end
 
     def nav_item(label, path, icon, badge: nil, pulse: false)
-      # Логіка визначення активності, враховуючи вкладеність
-      active = helpers.request.path.start_with?(path.split("?").first)
+      active = @current_path.start_with?(path.split("?").first)
 
       a(
         href: path,
@@ -110,10 +117,6 @@ module Navigation
           end
         end
       end
-    end
-
-    def ews_alert_count
-      EwsAlert.unresolved.count rescue 0
     end
 
     def render_icon(name)

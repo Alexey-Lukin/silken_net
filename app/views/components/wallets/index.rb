@@ -2,9 +2,13 @@
 
 module Wallets
   class Index < ApplicationComponent
-    def initialize(wallets:, pagy: nil)
+    # @param wallets [Array<Wallet>] pre-loaded wallets
+    # @param pagy [Pagy, nil] pagination metadata
+    # @param total_liquidity [Numeric] pre-computed sum of scc_balance (eager-load in controller)
+    def initialize(wallets:, pagy: nil, total_liquidity: 0)
       @wallets = wallets
       @pagy = pagy
+      @total_liquidity = total_liquidity
     end
 
     def view_template
@@ -36,7 +40,7 @@ module Wallets
         end
         div(class: "text-right font-mono text-[10px] text-emerald-900") do
           plain "Total Liquidity: "
-          span(class: "text-emerald-500") { "#{@wallets.sum(&:scc_balance).to_f.round(2)} SCC" }
+          span(class: "text-emerald-500") { "#{@total_liquidity.to_f.round(2)} SCC" }
         end
       end
     end

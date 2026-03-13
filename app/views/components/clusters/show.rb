@@ -2,11 +2,17 @@
 
 module Clusters
   class Show < ApplicationComponent
-    def initialize(cluster:, gateways: nil, recent_alerts: nil)
+    # All data must be pre-loaded in the controller — no fallback queries.
+    # @param cluster [Cluster] must respond to :name, :region, :health_index
+    # @param gateways [Array<Gateway>] pre-loaded gateways for this cluster
+    # @param recent_alerts [Array<EwsAlert>] pre-loaded unresolved alerts
+    def initialize(cluster:, gateways:, recent_alerts:)
+      raise ArgumentError, "cluster must respond to :name" unless cluster.respond_to?(:name)
+
       @cluster = cluster
-      @gateways = gateways || @cluster.gateways.order(:uid).limit(50)
+      @gateways = gateways
       @active_contract = @cluster.active_contract
-      @recent_alerts = recent_alerts || @cluster.ews_alerts.unresolved.order(created_at: :desc).limit(5)
+      @recent_alerts = recent_alerts
     end
 
     def view_template

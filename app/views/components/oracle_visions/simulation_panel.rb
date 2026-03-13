@@ -2,6 +2,11 @@
 
 module OracleVisions
   class SimulationPanel < ApplicationComponent
+    # @param clusters [Array<Cluster>] pre-loaded clusters for the selector (eager-load in controller)
+    def initialize(clusters:)
+      @clusters = clusters
+    end
+
     def view_template
       div(class: "p-6 border border-emerald-900 bg-black shadow-[0_0_20px_rgba(6,78,59,0.3)]") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6 flex items-center gap-2") do
@@ -16,7 +21,7 @@ module OracleVisions
           div(class: "mb-6") do
             label(class: "text-[9px] text-emerald-800 uppercase block mb-2") { "Target Sector" }
             select(name: "cluster_id", class: "w-full bg-zinc-950 border border-emerald-900 text-emerald-400 text-xs p-2 outline-none focus:border-emerald-500") do
-              Cluster.all.each do |cluster|
+              @clusters.each do |cluster|
                 option(value: cluster.id) { "Sector: #{cluster.name}" }
               end
             end

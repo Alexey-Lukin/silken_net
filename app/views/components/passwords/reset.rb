@@ -2,8 +2,9 @@
 
 module Passwords
   class Reset < ApplicationComponent
-    def initialize(token:)
+    def initialize(token:, flash_alert: nil)
       @token = token
+      @flash_alert = flash_alert
     end
 
     def view_template
@@ -68,9 +69,9 @@ module Passwords
     end
 
     def render_flash_messages
-      if helpers.flash[:alert]
+      if @flash_alert
         div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-[10px] uppercase tracking-widest text-center") do
-          helpers.flash[:alert]
+          @flash_alert
         end
       end
     end
