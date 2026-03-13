@@ -51,11 +51,8 @@ module Trees
     end
 
     def render_soldier_node(tree)
-      # Використовуємо денормалізовані поля замість окремого запиту телеметрії
-      voltage = tree.latest_voltage_mv || 0
-      # Розрахунок заряду (приблизно 3000-4200mV для іоністора/літію)
-      charge_percent = [ ((voltage - 3000).to_f / 1200 * 100).to_i, 0 ].max
-      charge_percent = [ charge_percent, 100 ].min
+      voltage = tree.ionic_voltage
+      charge_percent = tree.charge_percentage
 
       a(
         href: helpers.api_v1_tree_path(tree),

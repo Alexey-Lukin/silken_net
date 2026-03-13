@@ -2,11 +2,10 @@
 
 module Gateways
   class Show < ApplicationComponent
-    def initialize(gateway:)
+    def initialize(gateway:, latest_log: nil, active_soldiers: nil)
       @gateway = gateway
-      # Останній лог самого шлюзу для технічних показників
-      @latest_log = @gateway.gateway_telemetry_logs.order(created_at: :desc).first
-      @active_soldiers = @gateway.trees.where(status: :active)
+      @latest_log = latest_log || @gateway.latest_gateway_telemetry_log
+      @active_soldiers = active_soldiers || @gateway.trees.where(status: :active).limit(200)
     end
 
     def view_template
@@ -92,7 +91,7 @@ module Gateways
 
         # Маленька сітка солдатів у реальному часі
         div(class: "flex flex-wrap gap-2") do
-          @gateway.trees.each do |tree|
+          @active_soldiers.each do |tree|
             render_soldier_node_indicator(tree)
           end
         end
@@ -169,11 +168,11 @@ module Gateways
     end
 
     def connection_led_classes
-      @gateway.last_seen_at&. > 5.minutes.ago ? "bg-emerald-500 shadow-[0_0_10px_#10b981]" : "bg-red-900 animate-pulse"
+      @gateway.last_seen_at&.after?(5.minutes.ago) ? "bg-emerald-500 shadow-[0_0_10px_#10b981]" : "bg-red-900 animate-pulse"
     end
 
     def signal_color; "border-emerald-900/50"; end
-    def battery_color; @latest_log&.voltage_mv&. < 3400 ? "border-red-900" : "border-emerald-900/50"; end
+    def battery_color; @latest_log&.voltage_mv.to_i < 3400 ? "border-red-900" : "border-emerald-900/50"; end
     def temp_color; "border-emerald-900/50"; end
   end
 end

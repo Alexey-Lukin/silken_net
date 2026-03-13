@@ -4,7 +4,7 @@ module Gateways
   class Item < ApplicationComponent
     def initialize(gateway:)
       @gateway = gateway
-      @latest_log = @gateway.gateway_telemetry_logs.order(created_at: :desc).first
+      @latest_log = @gateway.latest_gateway_telemetry_log
     end
 
     def view_template
@@ -34,7 +34,7 @@ module Gateways
 
     def stats_section
       div(class: "grid grid-cols-2 gap-4 mb-6") do
-        stat_block("Soldiers", @gateway.trees.count)
+        stat_block("Soldiers", @gateway.cluster&.active_trees_count || 0)
         stat_block("Signal", "#{@latest_log&.signal_quality_percentage || 0}%")
       end
     end
@@ -57,7 +57,7 @@ module Gateways
     end
 
     def connection_led_class
-       @gateway.last_seen_at&. > 5.minutes.ago ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-red-900 animate-pulse"
+       @gateway.last_seen_at&.after?(5.minutes.ago) ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-red-900 animate-pulse"
     end
   end
 end

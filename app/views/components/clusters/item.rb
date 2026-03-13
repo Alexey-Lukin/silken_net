@@ -27,14 +27,14 @@ module Clusters
         # Статус кластера (на основі AI інсайтів або алертів)
         div(class: tokens(
           "h-2 w-2 rounded-full",
-          @cluster.ews_alerts.unresolved.any? ? "bg-red-500 animate-pulse" : "bg-emerald-500"
+          @cluster.active_threats? ? "bg-red-500 animate-pulse" : "bg-emerald-500"
         ))
       end
     end
 
     def stats_section
       div(class: "grid grid-cols-2 gap-4 mb-6") do
-        stat_block("Trees", @cluster.trees.count)
+        stat_block("Trees", @cluster.total_active_trees)
         stat_block("Health", "#{(@cluster.health_index * 100).round}%")
       end
     end

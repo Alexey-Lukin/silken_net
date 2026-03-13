@@ -32,24 +32,14 @@ module Reports
 
     def render_performance_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        stat_card("Biological Assets", @summary[:total_trees], "Trees")
-        stat_card("Health Score", @summary[:health_score], "Index")
-        stat_card("Carbon Yield", @summary[:total_carbon_points], "SCC Total")
+        render Shared::StatCard.new(label: "Biological Assets", value: @summary[:total_trees], sub: "Trees")
+        render Shared::StatCard.new(label: "Health Score", value: @summary[:health_score], sub: "Index")
+        render Shared::StatCard.new(label: "Carbon Yield", value: @summary[:total_carbon_points], sub: "SCC Total")
       end
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6 mt-6") do
-        stat_card("Capital Injected", @summary[:total_invested], "SCC Invested")
-        stat_card("Sectors", @summary[:total_clusters], "Clusters")
-        stat_card("Threat Level", @summary[:under_threat] ? "ACTIVE" : "CLEAR", "", danger: @summary[:under_threat])
-      end
-    end
-
-    def stat_card(label, value, sub, danger: false)
-      div(class: "p-6 border border-emerald-900 bg-zinc-950") do
-        p(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-4") { label }
-        div(class: "flex items-baseline space-x-2") do
-          span(class: tokens("text-4xl font-light", danger ? "text-red-400" : "text-white")) { value.to_s }
-          span(class: "text-[10px] text-gray-600 font-mono") { sub }
-        end
+        render Shared::StatCard.new(label: "Capital Injected", value: @summary[:total_invested], sub: "SCC Invested")
+        render Shared::StatCard.new(label: "Sectors", value: @summary[:total_clusters], sub: "Clusters")
+        render Shared::StatCard.new(label: "Threat Level", value: @summary[:under_threat] ? "ACTIVE" : "CLEAR", danger: @summary[:under_threat])
       end
     end
 

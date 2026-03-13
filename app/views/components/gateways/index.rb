@@ -34,7 +34,7 @@ module Gateways
         end
 
         div(class: "text-right font-mono text-[10px] text-emerald-900") do
-          online_count = @gateways.count { |g| g.last_seen_at&. > 5.minutes.ago }
+          online_count = @gateways.count { |g| g.last_seen_at&.after?(5.minutes.ago) }
           plain "Nodes Online: "
           span(class: "text-emerald-500") { "#{online_count} / #{@gateways.count}" }
         end

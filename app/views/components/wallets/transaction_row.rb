@@ -20,7 +20,7 @@ module Wallets
         end
         td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-[10px]") do
           if @tx.tx_hash.present?
-            a(href: "https://polygonscan.com/tx/#{@tx.tx_hash}", target: "_blank", class: "hover:text-emerald-500 underline decoration-emerald-900") { @tx.tx_hash.first(16) + "..." }
+            a(href: @tx.explorer_url, target: "_blank", class: "hover:text-emerald-500 underline decoration-emerald-900") { @tx.tx_hash.first(16) + "..." }
           else
             span(class: "italic text-zinc-800") { "PENDING_BLOCK" }
           end
@@ -33,8 +33,8 @@ module Wallets
 
     def tx_type_styles
       case @tx.token_type
-      when "mint" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
-      when "burn" then "bg-red-900/20 text-red-400 border-red-500/30"
+      when "carbon_coin" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
+      when "forest_coin" then "bg-amber-900/20 text-amber-400 border-amber-500/30"
       else "bg-zinc-900 text-zinc-400 border-zinc-700"
       end
     end
@@ -42,7 +42,8 @@ module Wallets
     def status_color
       case @tx.status
       when "confirmed" then "text-emerald-500"
-      when "processing" then "text-amber-500 animate-pulse"
+      when "processing", "sent" then "text-amber-500 animate-pulse"
+      when "pending" then "text-gray-400"
       when "failed" then "text-red-500"
       else "text-gray-600"
       end

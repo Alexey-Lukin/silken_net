@@ -2,13 +2,12 @@
 
 module Trees
   class Show < ApplicationComponent
-    def initialize(tree:)
+    def initialize(tree:, latest_log: nil, recent_logs: nil, maintenance_history: nil)
       @tree = tree
-      # Беремо останній пульс
-      @latest_log = @tree.telemetry_logs.order(created_at: :desc).first
-      @recent_logs = @tree.telemetry_logs.order(created_at: :desc).limit(10)
+      @latest_log = latest_log || @tree.latest_telemetry
+      @recent_logs = recent_logs || @tree.telemetry_logs.order(created_at: :desc).limit(10)
       @family = @tree.tree_family
-      @maintenance_history = @tree.maintenance_records.includes(:user).order(performed_at: :desc)
+      @maintenance_history = maintenance_history || @tree.maintenance_records.includes(:user).order(performed_at: :desc).limit(20)
       @hardware_key = @tree.hardware_key
     end
 
@@ -239,7 +238,7 @@ module Trees
     end
 
     def status_led_class
-      @latest_log&.created_at&. > 15.minutes.ago ? "bg-emerald-500 shadow-[0_0_12px_#10b981]" : "bg-red-900"
+      @latest_log&.created_at&.after?(15.minutes.ago) ? "bg-emerald-500 shadow-[0_0_12px_#10b981]" : "bg-red-900"
     end
   end
 end

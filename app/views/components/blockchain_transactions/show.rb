@@ -129,6 +129,7 @@ module BlockchainTransactions
       case @tx.status
       when "confirmed" then "bg-emerald-900 text-emerald-200"
       when "processing", "sent" then "bg-amber-900 text-amber-200"
+      when "pending" then "bg-zinc-800 text-zinc-300"
       when "failed" then "bg-red-900 text-red-200"
       else "bg-zinc-900 text-zinc-400"
       end

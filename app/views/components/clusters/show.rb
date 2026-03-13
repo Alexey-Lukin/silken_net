@@ -2,11 +2,11 @@
 
 module Clusters
   class Show < ApplicationComponent
-    def initialize(cluster:)
+    def initialize(cluster:, gateways: nil, recent_alerts: nil)
       @cluster = cluster
-      @gateways = @cluster.gateways.order(:uid)
+      @gateways = gateways || @cluster.gateways.order(:uid).limit(50)
       @active_contract = @cluster.active_contract
-      @recent_alerts = @cluster.ews_alerts.unresolved.order(created_at: :desc).limit(5)
+      @recent_alerts = recent_alerts || @cluster.ews_alerts.unresolved.order(created_at: :desc).limit(5)
     end
 
     def view_template
@@ -172,7 +172,6 @@ module Clusters
     def alert_severity_class(alert)
       case alert.severity.to_s
       when "critical" then "bg-red-500 animate-pulse"
-      when "high" then "bg-orange-500"
       when "medium" then "bg-amber-500"
       else "bg-emerald-500"
       end
