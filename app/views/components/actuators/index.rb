@@ -44,7 +44,7 @@ module Actuators
 
         div(class: "mt-4 md:mt-0 flex space-x-6 text-[10px] font-mono") do
           stat_label("Active Nodes", @active_count)
-          stat_label("Total Units", @actuators.count)
+          stat_label("Total Units", @pagy.count)
         end
       end
     end
