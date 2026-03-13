@@ -205,7 +205,7 @@ module Trees
           p(class: "text-[9px] text-gray-600 uppercase") { label }
           p(class: "text-[8px] text-emerald-900 font-mono") { sub } if sub
         end
-        span(class: tokens("text-lg font-mono", danger ? "text-red-500 animate-pulse" : "text-emerald-300")) { value }
+        span(class: tokens("text-lg font-mono", "text-red-500 animate-pulse": danger, "text-emerald-300": !danger)) { value }
       end
     end
 
@@ -230,7 +230,11 @@ module Trees
         circle(cx: "112", cy: "112", r: "88", class: "fill-none stroke-emerald-950 stroke-1")
         circle(
           cx: "112", cy: "112", r: "88",
-          class: tokens("fill-none stroke-[3] transition-all duration-1000", @tree.under_threat? ? "stroke-red-600 animate-pulse" : "stroke-emerald-500 shadow-[0_0_15px_#10b981]"),
+          class: tokens(
+            "fill-none stroke-[3] transition-all duration-1000",
+            "stroke-red-600 animate-pulse": @tree.under_threat?,
+            "stroke-emerald-500 shadow-[0_0_15px_#10b981]": !@tree.under_threat?
+          ),
           style: "stroke-dasharray: 552; stroke-dashoffset: #{offset};"
         )
       end
@@ -245,7 +249,8 @@ module Trees
     end
 
     def status_led_class
-      @latest_log&.created_at&.after?(15.minutes.ago) ? "bg-emerald-500 shadow-[0_0_12px_#10b981]" : "bg-red-900"
+      recently_seen = @latest_log&.created_at&.after?(15.minutes.ago)
+      tokens("bg-emerald-500 shadow-[0_0_12px_#10b981]": recently_seen, "bg-red-900": !recently_seen)
     end
   end
 end

@@ -134,7 +134,7 @@ module Maintenance
         "cleaning"        => "text-cyan-600",
         "decommissioning" => "text-red-700"
       }
-      span(class: "uppercase #{colors[type] || 'text-gray-500'}") { type }
+      span(class: tokens("uppercase", colors[type] || "text-gray-500")) { type }
     end
   end
 end

@@ -57,7 +57,7 @@ module Contracts
     def metric_row(label, value, alert: false)
       div(class: "flex justify-between border-b border-emerald-900/30 pb-2") do
         span(class: "text-[10px] text-gray-600 uppercase") { label }
-        span(class: tokens("font-mono text-sm", alert ? "text-red-500 animate-pulse" : "text-emerald-100")) { value }
+        span(class: tokens("font-mono text-sm", "text-red-500 animate-pulse": alert, "text-emerald-100": !alert)) { value }
       end
     end
 

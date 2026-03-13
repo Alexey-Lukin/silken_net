@@ -100,10 +100,10 @@ module Users
     def security_indicator(label, is_active, value)
       div(class: "p-3 border border-emerald-900/30 text-center") do
         div(class: "flex items-center justify-center space-x-2 mb-2") do
-          div(class: "h-2 w-2 rounded-full #{is_active ? 'bg-emerald-500' : 'bg-red-500'}") { }
+          div(class: tokens("h-2 w-2 rounded-full", "bg-emerald-500": is_active, "bg-red-500": !is_active)) { }
           span(class: "text-[9px] text-gray-600 uppercase") { label }
         end
-        p(class: "text-[11px] #{is_active ? 'text-emerald-400' : 'text-red-400'}") { value }
+        p(class: tokens("text-[11px]", "text-emerald-400": is_active, "text-red-400": !is_active)) { value }
       end
     end
 

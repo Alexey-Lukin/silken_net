@@ -57,7 +57,8 @@ module Gateways
     end
 
     def connection_led_class
-       @gateway.last_seen_at&.after?(5.minutes.ago) ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-red-900 animate-pulse"
+      recently_seen = @gateway.last_seen_at&.after?(5.minutes.ago)
+      tokens("bg-emerald-500 shadow-[0_0_8px_#10b981]": recently_seen, "bg-red-900 animate-pulse": !recently_seen)
     end
   end
 end

@@ -46,7 +46,8 @@ module Clusters
           div(class: "flex items-center space-x-4") do
             div(class: tokens(
               "h-3 w-3 rounded-full",
-              @cluster.active_threats? ? "bg-red-500 animate-pulse" : "bg-emerald-500"
+              "bg-red-500 animate-pulse": @cluster.active_threats?,
+              "bg-emerald-500": !@cluster.active_threats?
             ))
             span(class: "text-[10px] font-mono text-emerald-800 uppercase") do
               @cluster.active_threats? ? "Threat Detected" : "Nominal"

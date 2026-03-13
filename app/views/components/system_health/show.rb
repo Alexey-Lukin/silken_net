@@ -29,8 +29,8 @@ module SystemHealth
           p(class: "text-xs text-gray-600 mt-1") { "Статус CoAP listener, черг Sidekiq та з'єднання з базою даних." }
         end
         div(class: "flex items-center space-x-2") do
-          div(class: tokens("h-2 w-2 rounded-full", all_healthy? ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-red-500 animate-pulse"))
-          span(class: tokens("text-[9px] uppercase font-bold", all_healthy? ? "text-emerald-500" : "text-red-500")) { all_healthy? ? "ALL SYSTEMS GO" : "DEGRADED" }
+          div(class: tokens("h-2 w-2 rounded-full", "bg-emerald-500 shadow-[0_0_8px_#10b981]": all_healthy?, "bg-red-500 animate-pulse": !all_healthy?))
+          span(class: tokens("text-[9px] uppercase font-bold", "text-emerald-500": all_healthy?, "text-red-500": !all_healthy?)) { all_healthy? ? "ALL SYSTEMS GO" : "DEGRADED" }
         end
       end
     end
@@ -110,8 +110,8 @@ module SystemHealth
         div(class: "flex justify-between items-start mb-6") do
           h4(class: "text-sm font-light text-emerald-100") { name }
           div(class: "flex items-center space-x-2") do
-            div(class: tokens("h-1.5 w-1.5 rounded-full", healthy ? "bg-emerald-500 shadow-[0_0_6px_#10b981]" : "bg-red-500 animate-pulse"))
-            span(class: tokens("text-[9px] uppercase font-bold", healthy ? "text-emerald-500" : "text-red-500")) { healthy ? "OK" : "DOWN" }
+            div(class: tokens("h-1.5 w-1.5 rounded-full", "bg-emerald-500 shadow-[0_0_6px_#10b981]": healthy, "bg-red-500 animate-pulse": !healthy))
+            span(class: tokens("text-[9px] uppercase font-bold", "text-emerald-500": healthy, "text-red-500": !healthy)) { healthy ? "OK" : "DOWN" }
           end
         end
         yield

@@ -62,7 +62,7 @@ module Notifications
           disabled: disabled,
           class: tokens(
             "w-full bg-zinc-950 border border-emerald-900/50 text-[11px] font-mono text-emerald-400 px-4 py-3 focus:border-emerald-500 focus:outline-none transition-colors",
-            disabled ? "opacity-50 cursor-not-allowed" : ""
+            "opacity-50 cursor-not-allowed": disabled
           )
         )
         if hint
