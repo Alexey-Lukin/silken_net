@@ -77,7 +77,7 @@ class InsurancePayoutWorker
     Turbo::StreamsChannel.broadcast_replace_to(
       insurance.cluster.organization,
       target: "insurance_card_#{insurance.id}",
-      html: Views::Shared::UI::StatusBadge.new(status: insurance.status, id: "insurance_card_#{insurance.id}").call
+      html: ::Views::Shared::UI::StatusBadge.new(status: insurance.status, id: "insurance_card_#{insurance.id}").call
     )
 
     # Додаємо запис у глобальний потік подій
