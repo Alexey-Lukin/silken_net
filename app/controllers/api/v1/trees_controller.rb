@@ -32,7 +32,9 @@ module Api
       # --- ПАСПОРТ СОЛДАТА (Deep Audit) ---
       # GET /api/v1/trees/:id
       def show
-        @tree = current_user.organization.trees.find(params[:id])
+        @tree = current_user.organization.trees
+                  .includes(:tree_family, :hardware_key, :wallet, :cluster)
+                  .find(params[:id])
         @latest_log = @tree.telemetry_logs.order(created_at: :desc).first
         @insights = @tree.ai_insights.daily_health_summary.limit(7)
 

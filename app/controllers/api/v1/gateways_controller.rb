@@ -18,9 +18,11 @@ module Api
             }
           end
           format.html do
+            online_count = current_user.organization.gateways
+                             .where("last_seen_at > ?", 5.minutes.ago).count
             render_dashboard(
               title: "Queen Registry",
-              component: Gateways::Index.new(gateways: @gateways, pagy: @pagy)
+              component: Gateways::Index.new(gateways: @gateways, pagy: @pagy, online_count: online_count)
             )
           end
         end

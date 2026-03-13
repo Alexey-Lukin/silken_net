@@ -19,9 +19,10 @@ module Api
             }
           end
           format.html do
+            active_count = @cluster.actuators.where(active: true).count
             render_dashboard(
               title: "Actuators // Sector: #{@cluster.name}",
-              component: Actuators::Index.new(cluster: @cluster, actuators: @actuators, pagy: @pagy)
+              component: Actuators::Index.new(cluster: @cluster, actuators: @actuators, pagy: @pagy, active_count: active_count)
             )
           end
         end
