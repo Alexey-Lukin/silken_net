@@ -48,8 +48,12 @@ module Peaq
       # Гем `eth` (secp256k1) тут не підходить — потрібен `ed25519`.
       peaq_signing_key = Rails.application.credentials.peaq_signing_key
       if peaq_signing_key.present?
-        signature = Ed25519Crypto::SigningService.sign(peaq_signing_key, did_string)
-        public_key = Ed25519Crypto::SigningService.public_key_from_seed(peaq_signing_key)
+        begin
+          signature = Ed25519Crypto::SigningService.sign(peaq_signing_key, did_string)
+          public_key = Ed25519Crypto::SigningService.public_key_from_seed(peaq_signing_key)
+        rescue Ed25519Crypto::SigningService::SigningError => e
+          raise RegistrationError, "Invalid peaq_signing_key in credentials: #{e.message}"
+        end
         body[:proof] = {
           type: "Ed25519Signature2020",
           verification_method: "#{did_string}#key-1",

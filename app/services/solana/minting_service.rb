@@ -142,7 +142,11 @@ module Solana
       # SOLANA_WALLET_KEYPAIR — hex-encoded 32-byte seed (приватний ключ).
       keypair_hex = ENV["SOLANA_WALLET_KEYPAIR"]
       if keypair_hex.present?
-        signature_hex = Ed25519Crypto::SigningService.sign(keypair_hex, instruction_payload)
+        begin
+          signature_hex = Ed25519Crypto::SigningService.sign(keypair_hex, instruction_payload)
+        rescue Ed25519Crypto::SigningService::SigningError => e
+          raise "🛑 [Solana] Invalid SOLANA_WALLET_KEYPAIR: #{e.message}"
+        end
         signed_payload = JSON.generate({
           instruction: instruction_payload,
           signature: signature_hex,
