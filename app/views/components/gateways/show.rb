@@ -2,6 +2,9 @@
 
 module Gateways
   class Show < ApplicationComponent
+    # Default healthy voltage (mV) when no telemetry is available.
+    # Based on fully charged Li-Po battery typical voltage.
+    DEFAULT_HEALTHY_VOLTAGE_MV = 4200
     def initialize(gateway:, latest_log: nil, active_soldiers: nil)
       @gateway = gateway
       @latest_log = latest_log || @gateway.latest_gateway_telemetry_log
@@ -174,7 +177,7 @@ module Gateways
     end
 
     def signal_color; "border-emerald-900/50"; end
-    def battery_color; (@latest_log&.voltage_mv || 4200).to_i < 3400 ? "border-red-900" : "border-emerald-900/50"; end
+    def battery_color; (@latest_log&.voltage_mv || DEFAULT_HEALTHY_VOLTAGE_MV).to_i < 3400 ? "border-red-900" : "border-emerald-900/50"; end
     def temp_color; "border-emerald-900/50"; end
   end
 end
