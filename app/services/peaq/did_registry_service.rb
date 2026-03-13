@@ -30,17 +30,36 @@ module Peaq
       node_url = Rails.application.credentials.peaq_node_url
       raise RegistrationError, "peaq_node_url не налаштовано в credentials" unless node_url.present?
 
+      metadata = {
+        type: "tree",
+        tree_id: @tree.id,
+        cluster_id: @tree.cluster_id,
+        registered_at: Time.current.iso8601
+      }
+
+      body = {
+        did: did_string,
+        device_id: @tree.did,
+        metadata: metadata
+      }
+
+      # peaq — Substrate-мережа, що використовує Ed25519 для підпису транзакцій.
+      # Підписуємо DID-документ для криптографічного підтвердження автентичності.
+      # Гем `eth` (secp256k1) тут не підходить — потрібен `ed25519`.
+      peaq_signing_key = Rails.application.credentials.peaq_signing_key
+      if peaq_signing_key.present?
+        signature = Ed25519Crypto::SigningService.sign(peaq_signing_key, did_string)
+        public_key = Ed25519Crypto::SigningService.public_key_from_seed(peaq_signing_key)
+        body[:proof] = {
+          type: "Ed25519Signature2020",
+          verification_method: "#{did_string}#key-1",
+          signature: signature,
+          public_key: public_key
+        }
+      end
+
       Web3::HttpClient.post("#{node_url}/did/register",
-        body: {
-          did: did_string,
-          device_id: @tree.did,
-          metadata: {
-            type: "tree",
-            tree_id: @tree.id,
-            cluster_id: @tree.cluster_id,
-            registered_at: Time.current.iso8601
-          }
-        },
+        body: body,
         open_timeout: 10,
         read_timeout: 30,
         service_name: "peaq DID"

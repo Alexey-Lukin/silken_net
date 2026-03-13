@@ -124,20 +124,35 @@ module Solana
     end
 
     # Побудова інструкції SPL Token Transfer (Base64-encoded placeholder)
+    # В production: серіалізована Solana-транзакція, підписана Ed25519.
+    # Solana використовує криптографію Ed25519 (не secp256k1 як EVM),
+    # тому гем `eth` тут не підходить — потрібен `ed25519`.
     def build_transfer_instruction(fee_payer, mint_authority, recipient, usdc_mint, amount)
-      # В production тут буде реальна серіалізована Solana-транзакція
-      # (Compact Array of Instructions → Base64). Наразі — placeholder для Devnet.
-      Base64.strict_encode64(
-        JSON.generate({
-          type: "spl_token_transfer",
-          fee_payer: fee_payer,
-          mint_authority: mint_authority,
-          recipient: recipient,
-          mint: usdc_mint,
-          amount: amount,
-          program_id: SPL_TOKEN_PROGRAM_ID
+      instruction_payload = JSON.generate({
+        type: "spl_token_transfer",
+        fee_payer: fee_payer,
+        mint_authority: mint_authority,
+        recipient: recipient,
+        mint: usdc_mint,
+        amount: amount,
+        program_id: SPL_TOKEN_PROGRAM_ID
+      })
+
+      # Підписуємо payload ключем fee_payer через Ed25519 (Solana-native криптографія).
+      # SOLANA_WALLET_KEYPAIR — hex-encoded 32-byte seed (приватний ключ).
+      keypair_hex = ENV["SOLANA_WALLET_KEYPAIR"]
+      if keypair_hex.present?
+        signature_hex = Ed25519Crypto::SigningService.sign(keypair_hex, instruction_payload)
+        signed_payload = JSON.generate({
+          instruction: instruction_payload,
+          signature: signature_hex,
+          signer: fee_payer
         })
-      )
+        Base64.strict_encode64(signed_payload)
+      else
+        # Devnet simulation mode — підпис не потрібен
+        Base64.strict_encode64(instruction_payload)
+      end
     end
 
     # Виконує HTTP POST до Solana JSON RPC endpoint

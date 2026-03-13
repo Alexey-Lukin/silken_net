@@ -655,6 +655,7 @@ DEPENDENCIES
   csv
   cuprite
   debug
+  ed25519
   eth
   factory_bot_rails
   google-cloud-storage
