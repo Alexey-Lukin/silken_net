@@ -84,11 +84,7 @@ class InsurancePayoutWorker
     Turbo::StreamsChannel.broadcast_prepend_to(
       "global_events",
       target: "events_feed",
-      html: Dashboard::EventRow.new(
-        event: transaction,
-        icon: "shield-check",
-        color: "blue"
-      ).call
+      html: Dashboard::EventRow.new(event: transaction).call
     )
   end
 end
