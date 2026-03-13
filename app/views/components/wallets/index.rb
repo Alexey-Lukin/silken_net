@@ -2,9 +2,13 @@
 
 module Wallets
   class Index < ApplicationComponent
-    def initialize(wallets:, pagy: nil)
+    # @param wallets [Array<Wallet>] pre-loaded wallets
+    # @param pagy [Pagy, nil] pagination metadata
+    # @param total_liquidity [Numeric] pre-computed sum of scc_balance (eager-load in controller)
+    def initialize(wallets:, pagy: nil, total_liquidity: 0)
       @wallets = wallets
       @pagy = pagy
+      @total_liquidity = total_liquidity
     end
 
     def view_template
@@ -18,7 +22,7 @@ module Wallets
         end
 
         if @pagy
-          render Shared::Pagination.new(
+          render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
             url_helper: ->(page:) { helpers.api_v1_wallets_path(page: page) }
           )
@@ -36,7 +40,7 @@ module Wallets
         end
         div(class: "text-right font-mono text-[10px] text-emerald-900") do
           plain "Total Liquidity: "
-          span(class: "text-emerald-500") { "#{@wallets.sum(&:scc_balance).to_f.round(2)} SCC" }
+          span(class: "text-emerald-500") { "#{@total_liquidity.to_f.round(2)} SCC" }
         end
       end
     end
@@ -60,7 +64,7 @@ module Wallets
         end
 
         div(class: "flex justify-between items-center pt-4 border-t border-emerald-900/30") do
-          render Shared::Web3Address.new(address: wallet.crypto_public_address, truncate: 10)
+          render Views::Shared::Web3::Address.new(address: wallet.crypto_public_address, truncate: 10)
           a(
             href: helpers.api_v1_wallet_path(wallet),
             class: "text-[10px] uppercase tracking-widest text-emerald-600 hover:text-white transition-colors"

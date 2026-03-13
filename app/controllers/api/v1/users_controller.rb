@@ -40,7 +40,11 @@ module Api
           format.html do
             render_dashboard(
               title: "Profile // #{@user.first_name}",
-              component: Users::Profile.new(user: @user)
+              component: Users::Profile.new(
+                user: @user,
+                maintenance_count: @user.maintenance_records.count,
+                active_identities: @user.identities.active.to_a
+              )
             )
           end
         end

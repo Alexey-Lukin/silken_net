@@ -2,6 +2,13 @@
 
 module Passwords
   class Forgot < ApplicationComponent
+    # @param flash_alert [String, nil] alert message to display
+    # @param flash_notice [String, nil] notice message to display
+    def initialize(flash_alert: nil, flash_notice: nil)
+      @flash_alert = flash_alert
+      @flash_notice = flash_notice
+    end
+
     def view_template
       main(class: "min-h-screen bg-black flex items-center justify-center p-4 font-mono relative overflow-hidden") do
         div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]")
@@ -58,14 +65,14 @@ module Passwords
     end
 
     def render_flash_messages
-      if helpers.flash[:alert]
+      if @flash_alert
         div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-[10px] uppercase tracking-widest text-center") do
-          helpers.flash[:alert]
+          @flash_alert
         end
       end
-      if helpers.flash[:notice]
+      if @flash_notice
         div(class: "p-3 border border-emerald-900 bg-emerald-950/20 text-emerald-500 text-[10px] uppercase tracking-widest text-center") do
-          helpers.flash[:notice]
+          @flash_notice
         end
       end
     end

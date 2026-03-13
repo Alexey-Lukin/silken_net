@@ -2,12 +2,19 @@
 
 module Trees
   class Show < ApplicationComponent
-    def initialize(tree:, latest_log: nil, recent_logs: nil, maintenance_history: nil)
+    # All data must be pre-loaded in the controller — no fallback queries.
+    # @param tree [Tree] must respond to :did, :status, :current_stress
+    # @param latest_log [TelemetryLog, nil] pre-loaded latest telemetry
+    # @param recent_logs [Array<TelemetryLog>] pre-loaded recent telemetry logs
+    # @param maintenance_history [Array<MaintenanceRecord>] pre-loaded records (includes :user)
+    def initialize(tree:, latest_log:, recent_logs:, maintenance_history:)
+      raise ArgumentError, "tree must respond to :did" unless tree.respond_to?(:did)
+
       @tree = tree
-      @latest_log = latest_log || @tree.latest_telemetry_log
-      @recent_logs = recent_logs || @tree.telemetry_logs.order(created_at: :desc).limit(10)
+      @latest_log = latest_log
+      @recent_logs = recent_logs
       @family = @tree.tree_family
-      @maintenance_history = maintenance_history || @tree.maintenance_records.includes(:user).order(performed_at: :desc).limit(20)
+      @maintenance_history = maintenance_history
       @hardware_key = @tree.hardware_key
     end
 

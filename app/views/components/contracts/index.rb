@@ -33,7 +33,7 @@ module Contracts
             end
           end
 
-          render Shared::Pagination.new(
+          render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
             url_helper: ->(page:) { helpers.api_v1_contracts_path(page: page) }
           )
@@ -45,9 +45,9 @@ module Contracts
 
     def render_stats_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        render Shared::StatCard.new(label: "Portfolio Capital", value: "#{@stats[:total_invested].to_f.round(2)} SCC", sub: "Total Injected")
-        render Shared::StatCard.new(label: "Biogenic Yield", value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: "Total Minted")
-        render Shared::StatCard.new(label: "Network Health", value: "#{@stats[:avg_health]}%", sub: "Portfolio Avg")
+        render Views::Shared::UI::StatCard.new(label: "Portfolio Capital", value: "#{@stats[:total_invested].to_f.round(2)} SCC", sub: "Total Injected")
+        render Views::Shared::UI::StatCard.new(label: "Biogenic Yield", value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: "Total Minted")
+        render Views::Shared::UI::StatCard.new(label: "Network Health", value: "#{@stats[:avg_health]}%", sub: "Portfolio Avg")
       end
     end
 

@@ -62,7 +62,7 @@ module Wallets
         end
 
         if @pagy
-          render Shared::Pagination.new(
+          render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
             url_helper: ->(page:) { helpers.api_v1_wallet_path(@wallet, page: page) }
           )

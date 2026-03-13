@@ -11,10 +11,10 @@ module Dashboard
       div(class: "space-y-10 animate-in fade-in duration-1000") do
         # Ряд головних метрик (The Four Pillars)
         div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6") do
-          render Shared::StatCard.new(label: "Forest Vitality", value: "#{@stats[:trees][:health_avg].to_i}%")
-          render Shared::StatCard.new(label: "Active Soldiers", value: @stats[:trees][:active], sub: "/ #{@stats[:trees][:total]}")
-          render Shared::StatCard.new(label: "Carbon Treasury", value: @stats[:economy][:total_scc], sub: "SCC")
-          render Shared::StatCard.new(
+          render Views::Shared::UI::StatCard.new(label: "Forest Vitality", value: "#{@stats[:trees][:health_avg].to_i}%")
+          render Views::Shared::UI::StatCard.new(label: "Active Soldiers", value: @stats[:trees][:active], sub: "/ #{@stats[:trees][:total]}")
+          render Views::Shared::UI::StatCard.new(label: "Carbon Treasury", value: @stats[:economy][:total_scc], sub: "SCC")
+          render Views::Shared::UI::StatCard.new(
             label: "Ionic Potential",
             value: "#{@stats[:energy][:avg_voltage]}mV",
             danger: @stats[:energy][:avg_voltage] < 3300

@@ -2,9 +2,10 @@
 
 module OracleVisions
   class Index < ApplicationComponent
-    def initialize(visions:, yield_forecast:)
+    def initialize(visions:, yield_forecast:, clusters:)
       @visions = visions
       @yield_forecast = yield_forecast
+      @clusters = clusters
     end
 
     def view_template
@@ -17,7 +18,7 @@ module OracleVisions
 
         # ПРАВА ПАНЕЛЬ: Пульт Симуляції
         div(class: "space-y-6") do
-          render OracleVisions::SimulationPanel.new
+          render OracleVisions::SimulationPanel.new(clusters: @clusters)
           render_active_simulations_feed
         end
       end

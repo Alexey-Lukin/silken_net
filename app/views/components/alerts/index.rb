@@ -28,7 +28,7 @@ module Alerts
           end
         end
 
-        render Shared::Pagination.new(
+        render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
           url_helper: ->(page:) { helpers.api_v1_alerts_path(page: page) }
         )

@@ -76,7 +76,10 @@ module Api
             format.html do
               render_dashboard(
                 title: "Error in Ritual",
-                component: Maintenance::Form.new(record: @record)
+                component: Maintenance::Form.new(
+                  record: @record,
+                  existing_photos: @record.persisted? ? @record.photos.limit(6).to_a : []
+                )
               )
             end
           end
@@ -126,7 +129,10 @@ module Api
             format.html do
               render_dashboard(
                 title: "Edit Record // ##{@record.id}",
-                component: Maintenance::Form.new(record: @record)
+                component: Maintenance::Form.new(
+                  record: @record,
+                  existing_photos: @record.photos.limit(6).to_a
+                )
               )
             end
           end

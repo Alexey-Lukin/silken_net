@@ -32,14 +32,14 @@ module Reports
 
     def render_performance_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        render Shared::StatCard.new(label: "Biological Assets", value: @summary[:total_trees], sub: "Trees")
-        render Shared::StatCard.new(label: "Health Score", value: @summary[:health_score], sub: "Index")
-        render Shared::StatCard.new(label: "Carbon Yield", value: @summary[:total_carbon_points], sub: "SCC Total")
+        render Views::Shared::UI::StatCard.new(label: "Biological Assets", value: @summary[:total_trees], sub: "Trees")
+        render Views::Shared::UI::StatCard.new(label: "Health Score", value: @summary[:health_score], sub: "Index")
+        render Views::Shared::UI::StatCard.new(label: "Carbon Yield", value: @summary[:total_carbon_points], sub: "SCC Total")
       end
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6 mt-6") do
-        render Shared::StatCard.new(label: "Capital Injected", value: @summary[:total_invested], sub: "SCC Invested")
-        render Shared::StatCard.new(label: "Sectors", value: @summary[:total_clusters], sub: "Clusters")
-        render Shared::StatCard.new(label: "Threat Level", value: @summary[:under_threat] ? "ACTIVE" : "CLEAR", danger: @summary[:under_threat])
+        render Views::Shared::UI::StatCard.new(label: "Capital Injected", value: @summary[:total_invested], sub: "SCC Invested")
+        render Views::Shared::UI::StatCard.new(label: "Sectors", value: @summary[:total_clusters], sub: "Clusters")
+        render Views::Shared::UI::StatCard.new(label: "Threat Level", value: @summary[:under_threat] ? "ACTIVE" : "CLEAR", danger: @summary[:under_threat])
       end
     end
 

@@ -17,9 +17,10 @@ module Api
             }
           end
           format.html do
+            total_liquidity = @wallets.sum(&:scc_balance)
             render_dashboard(
               title: "Treasury Matrix",
-              component: Wallets::Index.new(wallets: @wallets, pagy: @pagy)
+              component: Wallets::Index.new(wallets: @wallets, pagy: @pagy, total_liquidity: total_liquidity)
             )
           end
         end

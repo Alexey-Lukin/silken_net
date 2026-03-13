@@ -12,7 +12,7 @@ module Maintenance
         header_section
         filter_bar
         records_table
-        render Shared::Pagination.new(
+        render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
           url_helper: ->(page:) { helpers.api_v1_maintenance_records_path(page: page) }
         )

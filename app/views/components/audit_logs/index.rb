@@ -11,7 +11,7 @@ module AuditLogs
       div(class: "space-y-6 animate-in fade-in duration-500") do
         header_section
         audit_table
-        render Shared::Pagination.new(
+        render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
           url_helper: ->(page:) { helpers.api_v1_audit_logs_path(page: page) }
         )
@@ -63,7 +63,7 @@ module AuditLogs
         td(class: "p-4 text-[10px] text-gray-600") { log.created_at.strftime("%H:%M:%S // %d.%m.%y") }
         td(class: "p-4 text-emerald-400") { log.user&.full_name || "System" }
         td(class: "p-4") do
-          render Shared::ActionBadge.new(action: log.action)
+          render Views::Shared::UI::ActionBadge.new(action: log.action)
         end
         td(class: "p-4 text-gray-400") do
           if log.auditable_type.present?

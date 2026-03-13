@@ -1,8 +1,11 @@
 module Maintenance
   class Form < ApplicationComponent
-    def initialize(record:)
+    # @param record [MaintenanceRecord] the record to edit/create
+    # @param existing_photos [Array<ActiveStorage::Blob>] pre-loaded first page of photos (max 6, eager-load in controller)
+    def initialize(record:, existing_photos: [])
       @record = record
       @editing = @record.persisted?
+      @existing_photos = existing_photos
     end
 
     def view_template
@@ -105,11 +108,10 @@ module Maintenance
             end
 
             # Існуючі фото при редагуванні (перша сторінка, без load more в формі)
-            if @editing && @record.photos.any?
-              pagy     = Pagy.new(count: @record.photos.size, items: 6, page: 1)
-              photos   = @record.photos.limit(6)
+            if @editing && @existing_photos.any?
+              pagy   = Pagy.new(count: @existing_photos.size, items: 6, page: 1)
               render Maintenance::PhotoGallery.new(
-                record: @record, photos: photos, pagy: pagy, editable: true
+                record: @record, photos: @existing_photos, pagy: pagy, editable: true
               )
               div(class: "mt-3")
             end

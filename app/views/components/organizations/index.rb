@@ -28,7 +28,7 @@ module Organizations
           end
         end
 
-        render Shared::Pagination.new(
+        render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
           url_helper: ->(page:) { helpers.api_v1_organizations_path(page: page) }
         )
@@ -43,7 +43,7 @@ module Organizations
         td(class: "p-4 text-gray-400") { org.total_clusters }
         td(class: "p-4 text-emerald-100") { "#{org.total_invested} SCC" }
         td(class: "p-4 text-[10px] text-gray-600 font-mono") do
-          render Shared::Web3Address.new(address: org.crypto_public_address)
+          render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end
         td(class: "p-4 text-right") do
           a(href: helpers.api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all") { "VIEW_PROFILE →" }

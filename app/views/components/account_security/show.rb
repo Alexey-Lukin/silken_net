@@ -158,7 +158,7 @@ module AccountSecurity
     end
 
     def render_unlink_button(identity)
-      can_unlink = @user.password_digest.present? || @user.identities.active.count > 1
+      can_unlink = @user.password_digest.present? || @identities.count { |i| i.active? } > 1
 
       if can_unlink
         form(action: helpers.api_v1_account_security_identity_path(identity), method: "post", class: "inline") do

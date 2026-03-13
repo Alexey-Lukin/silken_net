@@ -76,7 +76,9 @@ module Api
       def render_dashboard(title:, component:)
         render DashboardLayout.new(
           title: title,
-          current_user: current_user
+          current_user: current_user,
+          current_path: request.path,
+          ews_alert_count: ews_alert_count_cached
         ) do
           render component
         end
@@ -116,6 +118,13 @@ module Api
       # 5. PAGINATION METADATA (Pagy Helper)
       def pagy_metadata(pagy)
         { page: pagy.page, limit: pagy.limit, count: pagy.count, pages: pagy.last }
+      end
+
+      # 6. EWS ALERT COUNT (pre-computed for Sidebar — Rule 3: Zero DB queries in views)
+      def ews_alert_count_cached
+        EwsAlert.unresolved.count
+      rescue StandardError
+        0
       end
     end
   end

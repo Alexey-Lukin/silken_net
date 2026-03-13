@@ -54,9 +54,9 @@ module Organizations
 
     def render_performance_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        render Shared::StatCard.new(label: "Biological Assets", value: @performance[:total_trees], sub: "Soldier Trees")
-        render Shared::StatCard.new(label: "Carbon Yield", value: @performance[:carbon_minted], sub: "SCC Minted")
-        render Shared::StatCard.new(label: "Capital Injected", value: @organization.total_invested, sub: "SCC Total")
+        render Views::Shared::UI::StatCard.new(label: "Biological Assets", value: @performance[:total_trees], sub: "Soldier Trees")
+        render Views::Shared::UI::StatCard.new(label: "Carbon Yield", value: @performance[:carbon_minted], sub: "SCC Minted")
+        render Views::Shared::UI::StatCard.new(label: "Capital Injected", value: @organization.total_invested, sub: "SCC Total")
       end
     end
 
@@ -107,7 +107,7 @@ module Organizations
 
         div do
           p(class: "text-[9px] text-gray-600 uppercase mb-2") { "Public Crypto Address" }
-          render Shared::Web3Address.new(address: @organization.crypto_public_address, truncate: 42)
+          render Views::Shared::Web3::Address.new(address: @organization.crypto_public_address, truncate: 42)
         end
 
         div(class: "pt-4 border-t border-emerald-900/30") do

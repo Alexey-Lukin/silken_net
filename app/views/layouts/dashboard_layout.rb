@@ -1,9 +1,15 @@
 # frozen_string_literal: true
 
 class DashboardLayout < ApplicationComponent
-  def initialize(title:, current_user:)
+  # @param title [String] page title
+  # @param current_user [User] authenticated user (passed from controller)
+  # @param current_path [String] request path for nav highlighting + breadcrumbs
+  # @param ews_alert_count [Integer] pre-computed unresolved alert count (eager-load in controller)
+  def initialize(title:, current_user:, current_path: "/", ews_alert_count: 0)
     @title = title
     @current_user = current_user
+    @current_path = current_path
+    @ews_alert_count = ews_alert_count
   end
 
   def view_template(&block)
@@ -13,7 +19,10 @@ class DashboardLayout < ApplicationComponent
       body(class: "h-full font-mono antialiased text-emerald-500 overflow-hidden") do
         div(class: "flex h-full overflow-hidden") do
           # ЦЕНТРАЛЬНА НАВІГАЦІЯ
-          render Navigation::Sidebar.new
+          render Navigation::Sidebar.new(
+            current_path: @current_path,
+            ews_alert_count: @ews_alert_count
+          )
 
           # ГОЛОВНИЙ ТЕРМІНАЛ
           main(class: "flex-1 flex flex-col min-w-0 bg-black relative") do
@@ -65,8 +74,8 @@ class DashboardLayout < ApplicationComponent
       ol(class: "flex items-center space-x-2") do
         li { a(href: helpers.api_v1_dashboard_index_path, class: "hover:text-emerald-500 transition-colors") { "Citadel" } }
 
-        # Автоматичний парсинг шляху для крихт
-        path_segments = helpers.request.path.split("/").reject(&:empty?).drop(2) # Виключаємо api/v1
+        # Парсинг шляху для крихт — використовуємо @current_path замість helpers.request.path
+        path_segments = @current_path.split("/").reject(&:empty?).drop(2) # Виключаємо api/v1
 
         path_segments.each_with_index do |segment, index|
           li(class: "flex items-center space-x-2") do

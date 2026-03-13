@@ -18,11 +18,13 @@ module Api
         respond_to do |format|
           format.json { render json: { visions: @visions, yield_forecast: @scc_yield } }
           format.html do
+            @clusters = current_user.organization.clusters.order(:name)
             render_dashboard(
               title: "Oracle Visions // Future Matrix",
               component: OracleVisions::Index.new(
                 visions: @visions,
-                yield_forecast: @scc_yield
+                yield_forecast: @scc_yield,
+                clusters: @clusters
               )
             )
           end

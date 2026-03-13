@@ -63,8 +63,7 @@ module Api
           respond_to do |format|
             format.json { render json: { error: "Пароль повинен містити мінімум 12 символів." }, status: :unprocessable_content }
             format.html do
-              flash.now[:alert] = "Пароль повинен містити мінімум 12 символів."
-              render Passwords::Reset.new(token: params[:token])
+              render Passwords::Reset.new(token: params[:token], flash_alert: "Пароль повинен містити мінімум 12 символів.")
             end
           end
           return
@@ -74,8 +73,7 @@ module Api
           respond_to do |format|
             format.json { render json: { error: "Паролі не співпадають." }, status: :unprocessable_content }
             format.html do
-              flash.now[:alert] = "Паролі не співпадають."
-              render Passwords::Reset.new(token: params[:token])
+              render Passwords::Reset.new(token: params[:token], flash_alert: "Паролі не співпадають.")
             end
           end
           return
