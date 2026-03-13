@@ -1,10 +1,13 @@
 # app/views/components/users/profile.rb
 module Users
   class Profile < ApplicationComponent
-    def initialize(user:)
+    # @param user [User] the user to display
+    # @param maintenance_count [Integer] pre-computed count (eager-load in controller)
+    # @param active_identities [Array<Identity>] pre-loaded active identities (eager-load in controller)
+    def initialize(user:, maintenance_count: 0, active_identities: [])
       @user = user
-      @active_identities = @user.identities.active.to_a
-      @maintenance_count = @user.maintenance_records.count
+      @active_identities = active_identities
+      @maintenance_count = maintenance_count
     end
 
     def view_template
