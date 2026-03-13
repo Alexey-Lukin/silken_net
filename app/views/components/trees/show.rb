@@ -81,7 +81,8 @@ module Trees
           div(class: "space-y-6") do
             metric_row("Ionic Potential", "#{@latest_log&.voltage_mv || 0} mV", sub: "Streaming potential charge")
             metric_row("Xylem Thermal", "#{@latest_log&.temperature_c || 0} °C", sub: "Internal core temp")
-            metric_row("Stress Index", "#{((@tree.current_stress || 0) * 100).round(1)}%", danger: @tree.under_threat?)
+            stress_pct = ((@tree.current_stress || 0) * 100).round(1)
+            metric_row("Stress Index", "#{stress_pct}%", danger: @tree.under_threat?)
           end
         end
       end
@@ -94,7 +95,10 @@ module Trees
         # Візуалізація міні-графіка через висоту барів
         div(class: "flex items-end space-x-2 h-32 border-b border-emerald-900/30 pb-2") do
           @recent_logs.reverse_each do |log|
-            height = [ (log.z_value.to_f / (@family&.baseline_impedance || 1) * 100), 100 ].min
+            baseline = @family&.baseline_impedance
+            next unless baseline&.positive?
+
+            height = [ (log.z_value.to_f / baseline * 100), 100 ].min
             div(
               class: "flex-1 bg-emerald-500/20 border-t border-emerald-500 hover:bg-emerald-500 transition-all",
               style: "height: #{height}%",

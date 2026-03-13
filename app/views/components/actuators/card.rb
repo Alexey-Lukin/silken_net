@@ -38,7 +38,8 @@ module Actuators
         end
         div(class: "flex justify-between") do
           span(class: "text-gray-600") { "Last Sync Status:" }
-          span(class: tokens("text-red-500": @last_command&.status == "failed", "text-gray-400": @last_command&.status != "failed")) do
+          failed = @last_command&.status == "failed"
+          span(class: tokens("text-red-500": failed, "text-gray-400": !failed)) do
             @last_command&.status || "IDLE"
           end
         end
