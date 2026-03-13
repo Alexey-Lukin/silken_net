@@ -6,6 +6,7 @@ gem "argon2id"
 gem "blueprinter"
 gem "bootsnap", require: false
 gem "csv"
+gem "ed25519"
 gem "eth"
 gem "groupdate"
 gem "httpx"
