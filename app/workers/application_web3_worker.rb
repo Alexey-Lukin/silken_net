@@ -52,15 +52,19 @@ module ApplicationWeb3Worker
   def with_web3_error_handling(chain_name, resource_info = nil)
     yield
   rescue HTTPX::TimeoutError => e
+    SilkenNet::Metrics::RPC_ERRORS_TOTAL.increment(labels: { network: chain_name, error_type: "timeout" })
     log_web3_error("⏱️", chain_name, "RPC Timeout", resource_info, e)
     raise
   rescue HTTPX::ConnectionError => e
+    SilkenNet::Metrics::RPC_ERRORS_TOTAL.increment(labels: { network: chain_name, error_type: "connection" })
     log_web3_error("🔌", chain_name, "RPC Connection Error", resource_info, e)
     raise
   rescue Net::OpenTimeout, Net::ReadTimeout => e
+    SilkenNet::Metrics::RPC_ERRORS_TOTAL.increment(labels: { network: chain_name, error_type: "timeout" })
     log_web3_error("⏱️", chain_name, "RPC Timeout", resource_info, e)
     raise
   rescue Errno::ECONNREFUSED, Errno::ECONNRESET, IOError => e
+    SilkenNet::Metrics::RPC_ERRORS_TOTAL.increment(labels: { network: chain_name, error_type: "connection" })
     log_web3_error("🔌", chain_name, "RPC Connection Error", resource_info, e)
     raise
   end

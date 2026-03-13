@@ -24,6 +24,12 @@ module SilkenNet
     # before it reaches ActionDispatch, Warden or ActiveRecord.
     config.middleware.use Rack::Attack
 
+    # [OBSERVABILITY]: Prometheus /metrics endpoint — secured by IP allowlist
+    # and optional HTTP Basic Auth. Inserted early so it short-circuits before
+    # routing, session handling, or CSRF protection.
+    require_relative "../app/middleware/prometheus_collector"
+    config.middleware.use PrometheusCollector
+
     # Phlex components & layouts: autoload app/views/components and
     # app/views/layouts so Wallets::TransactionRow, DashboardLayout, etc.
     # are resolvable by Zeitwerk without the Views:: wrapper.

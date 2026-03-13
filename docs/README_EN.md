@@ -62,6 +62,7 @@ bin/dev
 - [Hardware](HARDWARE.md) — Energy harvesting stack, BOM, energy budget
 - [Blockchain Development](BLOCKCHAIN_DEVELOPMENT.md) — 12-chain Web3 setup, minting/slashing flows
 - [Deployment](DEPLOYMENT.md) — Kamal + Akash + Terraform infrastructure
+- [Observability](OBSERVABILITY.md) — Prometheus metrics, Grafana dashboards, /metrics endpoint security
 - [Vision](VISION.md) — Project vision, science, Titan's Roadmap
 
 ## License

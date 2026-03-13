@@ -73,6 +73,7 @@ class TelemetryUnpackerService < ApplicationService
     # [СЕНСОРНИЙ ШУМ]: Перевірка на "адекватність" значень перед коммітом
     unless valid_sensor_data?(parsed_data)
       Rails.logger.warn "📡 [Sensor Noise] Пакет від #{hex_did} відхилено: аномальні показники ADC."
+      SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
       return
     end
 
@@ -80,6 +81,7 @@ class TelemetryUnpackerService < ApplicationService
     tree = @trees_cache[hex_did]
     unless tree
       Rails.logger.warn "⚠️ [Uplink] DID #{hex_did} не знайдено в реєстрі."
+      SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
       return
     end
 
@@ -144,6 +146,9 @@ class TelemetryUnpackerService < ApplicationService
     # Транзакція гарантує, що ми не нарахуємо бали без лога (або навпаки)
     ActiveRecord::Base.transaction do
       log = tree.telemetry_logs.create!(attributes)
+
+      # [OBSERVABILITY]: Count successfully committed telemetry chunks
+      SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL.increment
 
       # [СИНХРОНІЗАЦІЯ]: Оновлюємо денормалізований вольтаж для мапи без N+1
       tree.mark_seen!(log.voltage_mv)

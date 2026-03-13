@@ -136,6 +136,9 @@ class BlockchainMintingService < ApplicationService
           end
           tx.update!(**update_attrs)
           broadcast_tx_update(tx)
+
+          # [OBSERVABILITY]: Increment minted token counter for Prometheus
+          SilkenNet::Metrics::SCC_MINTED_TOTAL.increment(labels: { token_type: token_type })
         end
 
         # Запускаємо воркер-підтверджувач, який прийде через 30 секунд перевірити квитанцію

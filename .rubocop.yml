@@ -50,3 +50,8 @@ RSpec/DescribeClass:
   Exclude:
     - "spec/integration/**/*"
     - "spec/requests/**/*"
+
+# Initializer specs test config/initializers/ which don't map to app class paths
+RSpec/SpecFilePathFormat:
+  Exclude:
+    - "spec/initializers/**/*"
