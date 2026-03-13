@@ -12,10 +12,11 @@ module Shared
 
     def view_template
       if @address.present?
+        display_text = @address.length <= @truncate ? @address : "#{@address.first(@truncate)}…"
         span(
           class: "text-[11px] font-mono text-emerald-500 break-all leading-relaxed",
           title: @address
-        ) { "#{@address.first(@truncate)}…" }
+        ) { display_text }
       else
         span(class: "text-[11px] font-mono text-gray-700 italic") { @fallback }
       end

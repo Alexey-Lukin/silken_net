@@ -174,7 +174,7 @@ module Gateways
     end
 
     def signal_color; "border-emerald-900/50"; end
-    def battery_color; @latest_log&.voltage_mv.to_i < 3400 ? "border-red-900" : "border-emerald-900/50"; end
+    def battery_color; (@latest_log&.voltage_mv || 4200).to_i < 3400 ? "border-red-900" : "border-emerald-900/50"; end
     def temp_color; "border-emerald-900/50"; end
   end
 end
