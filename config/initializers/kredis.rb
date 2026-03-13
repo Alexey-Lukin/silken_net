@@ -22,6 +22,10 @@ module Kredis
   # @param after_timeout [Symbol] :raise (default) → raise LockTimeout; :return → return nil
   # @param config [Symbol]        Kredis connection config name (default :shared)
   def lock(key, expires_in:, after_timeout: :raise, config: :shared)
+    unless after_timeout.in?([ :raise, :return ])
+      raise ArgumentError, "after_timeout must be :raise or :return, got #{after_timeout.inspect}"
+    end
+
     redis = Kredis.redis(config: config)
     full_key = Kredis.namespaced_key(key)
     token = SecureRandom.uuid

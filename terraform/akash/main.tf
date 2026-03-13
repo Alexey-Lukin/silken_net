@@ -52,7 +52,7 @@ resource "local_file" "akash_sdl" {
     rails_master_key   = var.rails_master_key
     database_url       = var.database_url
     redis_url          = var.redis_url
-    kredis_redis_url   = var.kredis_redis_url != "" ? var.kredis_redis_url : replace(var.redis_url, "/0", "/1")
+    kredis_redis_url   = var.kredis_redis_url != "" ? var.kredis_redis_url : "${trimsuffix(var.redis_url, "/0")}/1"
     web_cpu_units      = var.web_cpu_units
     web_memory_size    = var.web_memory_size
     web_storage_size   = var.web_storage_size

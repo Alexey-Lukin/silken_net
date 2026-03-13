@@ -8,13 +8,13 @@
 # which would cause EVM nonce collisions and double-spend vulnerabilities.
 
 production: &production
-  url: <%= ENV.fetch("KREDIS_REDIS_URL", "#{ENV.fetch("REDIS_URL", "redis://localhost:6379")}/1") %>
+  url: <%= ENV.fetch("KREDIS_REDIS_URL") { "#{ENV["REDIS_URL"] || "redis://localhost:6379"}/1" } %>
   timeout: 3
 
 development:
-  url: <%= ENV.fetch("KREDIS_REDIS_URL", "redis://localhost:6379/1") %>
+  url: <%= ENV.fetch("KREDIS_REDIS_URL") { "redis://localhost:6379/1" } %>
   timeout: 1
 
 test:
-  url: <%= ENV.fetch("KREDIS_REDIS_URL", "redis://localhost:6379/1") %>
+  url: <%= ENV.fetch("KREDIS_REDIS_URL") { "redis://localhost:6379/1" } %>
   timeout: 1
