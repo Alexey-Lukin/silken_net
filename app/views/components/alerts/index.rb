@@ -27,7 +27,7 @@ module Alerts
                 th(scope: "col", class: "p-4 text-right") { "Command" }
               end
             end
-            tbody(id: "alerts_feed", class: "divide-y divide-emerald-900/30") do
+            tbody(id: "alerts_list", class: "divide-y divide-emerald-900/30") do
               @alerts.each { |alert| render Alerts::Row.new(alert: alert) }
             end
           end

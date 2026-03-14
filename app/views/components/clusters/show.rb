@@ -16,6 +16,9 @@ module Clusters
     end
 
     def view_template
+      # ⚡ [СИНХРОНІЗАЦІЯ]: Підписка на потік оновлень алертів кластера
+      turbo_stream_from @cluster, :alerts
+
       div(class: "space-y-8 animate-in slide-in-from-bottom-4 duration-700") do
         render_header
         div(class: "grid grid-cols-1 xl:grid-cols-3 gap-8") do
@@ -133,10 +136,11 @@ module Clusters
     def render_alerts_panel
       div(class: "p-6 border border-emerald-900 bg-black") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Active Threats" }
-        if @recent_alerts.any?
-          div(class: "space-y-2") do
+        # ⚡ [СИНХРОНІЗАЦІЯ]: alerts_list — контейнер для broadcast_prepend нових алертів
+        div(id: "alerts_list", class: "space-y-2") do
+          if @recent_alerts.any?
             @recent_alerts.each do |alert|
-              div(class: "flex justify-between items-center py-2 border-b border-emerald-900/20 font-mono text-tiny") do
+              div(id: dom_id(alert), class: "flex justify-between items-center py-2 border-b border-emerald-900/20 font-mono text-tiny") do
                 div(class: "flex items-center gap-3") do
                   div(class: tokens("h-2 w-2 rounded-full", alert_severity_class(alert)))
                   span(class: "text-emerald-400 uppercase") { alert.alert_type }
@@ -144,9 +148,9 @@ module Clusters
                 span(class: "text-gray-600") { alert.created_at.strftime("%d.%m.%y %H:%M") }
               end
             end
+          else
+            p(class: "text-compact text-gray-700 italic") { "No active threats. Sector is nominal." }
           end
-        else
-          p(class: "text-compact text-gray-700 italic") { "No active threats. Sector is nominal." }
         end
       end
     end

@@ -398,6 +398,19 @@ RSpec.describe BlockchainTransaction, type: :model do
       expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_later_to).at_least(:once)
     end
 
+    it "broadcasts to [wallet, :transactions] stream with dom_id target" do
+      tx = create(:blockchain_transaction, status: :pending, tx_hash: nil)
+      tx.update_columns(status: described_class.statuses[:processing])
+      tx.reload
+
+      tx.mark_as_sent!("0x" + SecureRandom.hex(32))
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_later_to).with(
+        [ tx.wallet, :transactions ],
+        hash_including(target: "blockchain_transaction_#{tx.id}")
+      )
+    end
+
     it "does not broadcast when non-status fields change" do
       tx = create(:blockchain_transaction, status: :pending, tx_hash: nil)
       tx.update!(notes: "Updated notes")

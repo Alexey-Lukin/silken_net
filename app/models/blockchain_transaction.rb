@@ -152,10 +152,10 @@ class BlockchainTransaction < ApplicationRecord
   def broadcast_status_change
     return unless wallet
 
-    # Оновлення рядка транзакції в Wallet Ledger (підписка: wallet:<id>)
+    # Оновлення рядка транзакції в Wallet Ledger (підписка: [wallet, :transactions])
     Turbo::StreamsChannel.broadcast_replace_later_to(
-      wallet,
-      target: "transaction_#{id}",
+      [ wallet, :transactions ],
+      target: ActionView::RecordIdentifier.dom_id(self),
       html: Wallets::TransactionRow.new(tx: self).call
     )
 

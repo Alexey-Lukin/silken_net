@@ -11,7 +11,7 @@ RSpec.describe Wallets::TransactionRow do
 
   def mock_tx(token_type: "carbon_coin", status: "confirmed", amount: "0.005",
               tx_hash: "0xabcdef1234567890abcdef", explorer_url: "https://polygonscan.com/tx/0x123")
-    OpenStruct.new(
+    tx = OpenStruct.new(
       id: 42,
       token_type: token_type,
       status: status,
@@ -20,6 +20,14 @@ RSpec.describe Wallets::TransactionRow do
       explorer_url: explorer_url,
       created_at: Time.current
     )
+    # Enable dom_id support for OpenStruct mock
+    def tx.model_name
+      ActiveModel::Name.new(BlockchainTransaction)
+    end
+    def tx.to_key
+      [ id ]
+    end
+    tx
   end
 
   describe "token type styling" do
@@ -91,8 +99,8 @@ RSpec.describe Wallets::TransactionRow do
   describe "rendering" do
     let(:html) { render_component(tx: mock_tx) }
 
-    it "includes the transaction id in the row id" do
-      expect(html).to include("transaction_42")
+    it "includes the dom_id of the transaction in the row id" do
+      expect(html).to include("blockchain_transaction_42")
     end
 
     it "displays the token type" do
