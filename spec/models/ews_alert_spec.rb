@@ -385,6 +385,7 @@ RSpec.describe EwsAlert, type: :model do
 
     before do
       allow_any_instance_of(described_class).to receive(:broadcast_status_change).and_call_original
+      allow_any_instance_of(described_class).to receive(:render_phlex).and_return("<div>badge</div>")
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
       allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
     end
@@ -406,6 +407,7 @@ RSpec.describe EwsAlert, type: :model do
 
     before do
       allow_any_instance_of(described_class).to receive(:broadcast_status_change).and_call_original
+      allow_any_instance_of(described_class).to receive(:render_phlex).and_return("<div>badge</div>")
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
       allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
     end
@@ -483,7 +485,7 @@ RSpec.describe EwsAlert, type: :model do
       Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
 
       # Stub Phlex component rendering to avoid URL helper issues in test
-      allow_any_instance_of(Alerts::Row).to receive(:call).and_return("<div>alert</div>")
+      allow(alert).to receive(:render_phlex).and_return("<div>alert</div>")
 
       alert.send(:broadcast_alert_update)
       expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:twice)
@@ -496,7 +498,7 @@ RSpec.describe EwsAlert, type: :model do
       alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
 
       Rails.cache.delete("ews_alert_broadcast_throttle:#{alert.id}")
-      allow_any_instance_of(Alerts::Row).to receive(:call).and_return("<div>alert</div>")
+      allow(alert).to receive(:render_phlex).and_return("<div>alert</div>")
 
       alert.send(:broadcast_alert_update)
       expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).with(
@@ -515,11 +517,11 @@ RSpec.describe EwsAlert, type: :model do
     before do
       allow_any_instance_of(described_class).to receive(:broadcast_new_alert).and_call_original
       allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_later_to)
+      allow_any_instance_of(described_class).to receive(:render_phlex).and_return("<tr>alert</tr>")
     end
 
     it "prepends new alert to [cluster, :alerts] stream" do
       tree = create(:tree, cluster: cluster_bc)
-      allow_any_instance_of(Alerts::Row).to receive(:call).and_return("<tr>alert</tr>")
 
       alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
 

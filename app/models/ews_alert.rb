@@ -132,7 +132,7 @@ class EwsAlert < ApplicationRecord
     Turbo::StreamsChannel.broadcast_prepend_later_to(
       [ cluster, :alerts ],
       target: "alerts_list",
-      html: Alerts::Row.new(alert: self).call
+      html: render_phlex(Alerts::Row.new(alert: self))
     )
   end
 
@@ -153,7 +153,7 @@ class EwsAlert < ApplicationRecord
     Turbo::StreamsChannel.broadcast_replace_to(
       "ews_updates_#{cluster_id}",
       target: alert_dom_id,
-      html: Alerts::Badge.new(alert: self).call
+      html: render_phlex(Alerts::Badge.new(alert: self))
     )
 
     # Повне видалення вирішеного інциденту з Live Feed Архітектора
@@ -181,7 +181,7 @@ class EwsAlert < ApplicationRecord
   def broadcast_alert_update
     return unless should_broadcast?
 
-    alert_html = Alerts::Row.new(alert: self).call
+    alert_html = render_phlex(Alerts::Row.new(alert: self))
     alert_dom_id = ActionView::RecordIdentifier.dom_id(self)
 
     Turbo::StreamsChannel.broadcast_replace_to(
@@ -205,5 +205,10 @@ class EwsAlert < ApplicationRecord
 
     Rails.cache.write(cache_key, true, expires_in: BROADCAST_THROTTLE_SECONDS.seconds)
     true
+  end
+
+  # Рендеринг Phlex-компонента через контролерний контекст (потрібен для route helpers)
+  def render_phlex(component)
+    ApplicationController.renderer.render(component, layout: false)
   end
 end
