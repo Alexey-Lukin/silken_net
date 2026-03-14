@@ -75,7 +75,9 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 💎 СКАРБНИЦЯ ТА КОНТРАКТИ (Economy)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :wallets, only: [ :index, :show ]
+      resources :wallets, only: [ :index, :show ] do
+        get :balance, on: :member
+      end
 
       resources :contracts, only: [ :index, :show ] do
         get :stats, on: :collection

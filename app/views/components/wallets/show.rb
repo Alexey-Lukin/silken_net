@@ -13,8 +13,13 @@ module Wallets
       turbo_stream_from @wallet
 
       div(class: "space-y-8 animate-in slide-in-from-bottom-4 duration-700") do
-        # Винесено в окремий компонент для Turbo-заміни
-        render Wallets::BalanceDisplay.new(wallet: @wallet)
+        # Lazy-load: Turbo Frame підвантажує BalanceDisplay окремим запитом,
+        # поки що показуємо Skeleton (пульсуючі блоки).
+        turbo_frame_tag "wallet_balance_frame_#{@wallet.id}",
+                        src: helpers.balance_api_v1_wallet_path(@wallet),
+                        loading: :lazy do
+          render Views::Shared::UI::Skeleton.new(variant: :balance)
+        end
 
         div(class: "grid grid-cols-1 lg:grid-cols-3 gap-8") do
           # Головний Ledger

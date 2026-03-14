@@ -171,6 +171,17 @@ bundle exec rubocop -A
 | `docs/BLOCKCHAIN_DEVELOPMENT.md` | Web3 dev guide, Foundry, Polygon         |
 | `docs/DEPLOYMENT.md`          | Kamal, Terraform, infrastructure            |
 | `docs/VISION.md`              | Mission, science, roadmap (2026–2030)       |
+| `docs/FRONTEND_GUIDELINES.md` | Phlex components, Tailwind tokens, Stimulus, accessibility |
+
+### ⚠️ MANDATORY: Read `docs/FRONTEND_GUIDELINES.md` for Frontend Tasks
+
+**When working on ANY frontend task** (Phlex components, Tailwind styling, Stimulus controllers, Turbo integration, view specs), **ALWAYS read `docs/FRONTEND_GUIDELINES.md` first.** It defines:
+- Dark-first semantic color tokens (`gaia-*`, `status-*`, `token-*`) — never use raw Tailwind colors in shared UI components
+- Phlex component architecture and naming conventions
+- TailwindMerge `tokens()` usage pattern
+- Typography scale (`text-micro`, `text-mini`, `text-tiny`, `text-compact`)
+- Accessibility checklist (roles, aria-labels, focus-visible)
+- Lookbook preview conventions
 
 ## Environment Setup
 
