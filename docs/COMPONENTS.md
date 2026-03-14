@@ -376,6 +376,12 @@ Run `bin/rails server` and navigate to **http://localhost:3000/lookbook**
 | `PaginationPreview`          | First page, Middle page, Last page            |
 | `RelativeTimePreview`        | Recent, With prefix, Nil datetime             |
 | `ThemeSwitcherPreview`       | Default toggle button                         |
+| `WalletTransactionRowPreview`| Confirmed carbon, Pending forest, Failed, Processing, Interactive |
+| `WalletBalanceDisplayPreview`| Tree wallet, Locked funds, Organization wallet, Zero balance, Interactive |
+| `ClusterItemPreview`         | Healthy cluster, Under threat, Low health, Interactive |
+| `ActuatorCommandStatusBadgePreview` | All command statuses, Interactive      |
+| `ActuatorCommandRowPreview`  | Confirmed open, Issued activate, Failed close, Interactive |
+| `PhotoCardPreview`           | Image photo (mock layout), File fallback (mock layout) |
 
 ### Creating New Previews
 

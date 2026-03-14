@@ -1,0 +1,16 @@
+<%# File fallback display for non-representable blobs %>
+<div class="w-64">
+  <div class="relative group border border-emerald-900/20 bg-black overflow-hidden shadow-sm dark:shadow-none hover:border-emerald-500 transition-all duration-200 ease-in-out">
+    <div class="block aspect-square overflow-hidden">
+      <div class="w-full h-full flex flex-col items-center justify-center gap-1 p-2 bg-zinc-950">
+        <span class="text-emerald-500 text-2xl" aria-hidden="true">📎</span>
+        <span class="text-mini text-emerald-500 font-mono truncate text-center">calibration_report.pdf</span>
+        <span class="text-micro text-emerald-800">542 KB</span>
+      </div>
+    </div>
+    <div class="absolute bottom-0 inset-x-0 bg-black/80 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <p class="text-micro font-mono text-emerald-500 truncate">calibration_report.pdf</p>
+      <p class="text-micro text-emerald-800">542 KB</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,5 @@
+<div class="flex flex-wrap gap-3 p-4">
+  <% %w[issued sent acknowledged confirmed failed].each do |status| %>
+    <%= render Actuators::CommandStatusBadge.new(command: OpenStruct.new(id: 1, status: status)) %>
+  <% end %>
+</div>
