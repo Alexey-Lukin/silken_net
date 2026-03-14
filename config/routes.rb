@@ -4,6 +4,11 @@ Rails.application.routes.draw do
   # Reveal health status on /up
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # Lookbook component preview browser (development only)
+  if Rails.env.development?
+    mount Lookbook::Engine, at: "/lookbook"
+  end
+
   namespace :api do
     namespace :v1 do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

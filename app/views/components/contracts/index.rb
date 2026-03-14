@@ -13,11 +13,11 @@ module Contracts
         render_stats_hero
 
         div(class: "space-y-4") do
-          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "Active Asset Portfolio" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "Active Asset Portfolio" }
 
           div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-            table(role: "table", class: "w-full text-left font-mono text-[11px]") do
-              thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+            table(role: "table", class: "w-full text-left font-mono text-compact") do
+              thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
                 tr do
                   th(scope: "col", class: "p-4") { "ID / Status" }
                   th(scope: "col", class: "p-4") { "Target Cluster" }
@@ -56,7 +56,7 @@ module Contracts
         td(class: "p-4") do
           div(class: "flex flex-col") do
             span(class: "text-emerald-100") { "##{contract.id}" }
-            span(class: tokens("text-[9px] uppercase mt-1", status_color(contract.status))) { contract.status }
+            span(class: tokens("text-mini uppercase mt-1", status_color(contract.status))) { contract.status }
           end
         end
         td(class: "p-4 text-emerald-500") { contract.cluster&.name || "UNASSIGNED" }
@@ -66,17 +66,17 @@ module Contracts
           render_performance_gauge(contract.current_yield_performance)
         end
         td(class: "p-4 text-right") do
-          a(href: helpers.api_v1_contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "View contract ##{contract.id} details") { "AUDIT_DETAILS →" }
+          a(href: helpers.api_v1_contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View contract ##{contract.id} details") { "AUDIT_DETAILS →" }
         end
       end
     end
 
     def render_performance_gauge(performance)
-      div(class: "flex items-center space-x-3") do
+      div(class: "flex items-center gap-3") do
         div(class: "w-20 h-1 bg-emerald-950 rounded-full overflow-hidden") do
           div(class: "h-full bg-emerald-500 shadow-[0_0_8px_#10b981]", style: "width: #{performance}%")
         end
-        span(class: "text-[10px] text-emerald-500 font-mono") { "#{performance.to_i}%" }
+        span(class: "text-tiny text-emerald-500 font-mono") { "#{performance.to_i}%" }
       end
     end
 
@@ -86,7 +86,7 @@ module Contracts
       when "fulfilled" then "text-blue-400"
       when "breached" then "text-red-500"
       when "cancelled" then "text-gray-500 line-through"
-      else "text-amber-500"
+      else "text-status-warning-text"
       end
     end
   end

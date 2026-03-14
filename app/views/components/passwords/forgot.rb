@@ -41,37 +41,37 @@ module Passwords
 
     def render_header
       div(class: "text-center mb-10 space-y-2") do
-        div(class: "inline-block h-12 w-12 border border-amber-500 rotate-45 mb-4 relative") do
-          div(class: "absolute inset-1 bg-amber-500/50 animate-pulse")
+        div(class: "inline-block h-12 w-12 border border-token-forest rotate-45 mb-4 relative") do
+          div(class: "absolute inset-1 bg-token-forest/50 animate-pulse")
         end
         h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { "Recovery" }
-        p(class: "text-[10px] text-emerald-700 uppercase tracking-[0.5em]") { "Password Reset Protocol" }
+        p(class: "text-tiny text-emerald-700 uppercase tracking-[0.5em]") { "Password Reset Protocol" }
       end
     end
 
     def field_container(label, &)
       div(class: "space-y-2") do
-        label(class: "text-[9px] uppercase tracking-widest text-emerald-900 font-bold") { label }
+        label(class: "text-mini uppercase tracking-widest text-emerald-900 font-bold") { label }
         yield
       end
     end
 
     def input_classes
-      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-4 font-mono text-sm focus:border-emerald-500 focus:ring-0 outline-none transition-all placeholder:text-emerald-950"
+      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-4 font-mono text-sm focus-visible:border-emerald-500 focus-visible:ring-0 outline-none transition-all placeholder:text-emerald-950"
     end
 
     def submit_classes
-      "w-full py-4 bg-amber-500/10 border border-amber-500 text-amber-500 uppercase text-xs tracking-[0.4em] hover:bg-amber-500 hover:text-black transition-all cursor-pointer shadow-[0_0_20px_rgba(245,158,11,0.2)]"
+      "w-full py-4 bg-token-forest/10 border border-token-forest text-token-forest uppercase text-xs tracking-[0.4em] hover:bg-token-forest hover:text-black transition-all cursor-pointer"
     end
 
     def render_flash_messages
       if @flash_alert
-        div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-[10px] uppercase tracking-widest text-center") do
+        div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-tiny uppercase tracking-widest text-center") do
           @flash_alert
         end
       end
       if @flash_notice
-        div(class: "p-3 border border-emerald-900 bg-emerald-950/20 text-emerald-500 text-[10px] uppercase tracking-widest text-center") do
+        div(class: "p-3 border border-emerald-900 bg-emerald-950/20 text-emerald-500 text-tiny uppercase tracking-widest text-center") do
           @flash_notice
         end
       end
@@ -79,7 +79,7 @@ module Passwords
 
     def render_back_link
       div(class: "text-center pt-2") do
-        a(href: helpers.api_v1_login_path, class: "text-[10px] text-emerald-900 uppercase tracking-widest hover:text-emerald-500 transition-colors") do
+        a(href: helpers.api_v1_login_path, class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 transition-colors") do
           "← Back to Login Portal"
         end
       end

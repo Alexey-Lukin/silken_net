@@ -49,15 +49,15 @@ module Trees
 
         div do
           h2(class: "text-4xl font-extralight tracking-tighter text-emerald-400") { @tree.did }
-          div(class: "flex items-center space-x-3 mt-2") do
-            span(class: tokens("text-[10px] px-2 py-0.5 border font-mono uppercase tracking-widest", status_color_class)) { @tree.status }
-            span(class: "text-[10px] text-emerald-900 font-mono") { "Family: #{@family&.name || 'Unknown'}" }
+          div(class: "flex items-center gap-3 mt-2") do
+            span(class: tokens("text-tiny px-2 py-0.5 border font-mono uppercase tracking-widest", status_color_class)) { @tree.status }
+            span(class: "text-tiny text-emerald-900 font-mono") { "Family: #{@family&.name || 'Unknown'}" }
           end
         end
 
-        div(class: "mt-6 md:mt-0 flex items-center space-x-12") do
+        div(class: "mt-6 md:mt-0 flex items-center gap-12") do
           div(class: "text-right") do
-            p(class: "text-[9px] text-gray-600 uppercase tracking-widest") { "Uplink State" }
+            p(class: "text-mini text-gray-600 uppercase tracking-widest") { "Uplink State" }
             p(class: "text-sm font-mono text-emerald-100") { @latest_log&.created_at&.strftime("%H:%M:%S // %d.%m.%y") || "SILENT" }
           end
           div(class: tokens("h-4 w-4 rounded-sm rotate-45", status_led_class))
@@ -67,14 +67,14 @@ module Trees
 
     def render_biometric_panel
       div(class: "p-8 border border-emerald-900 bg-zinc-950") do
-        h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-10") { "Live Biometric Matrix" }
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-10") { "Live Biometric Matrix" }
 
         div(class: "grid grid-cols-1 md:grid-cols-2 gap-12 items-center") do
           div(class: "relative h-56 w-56 mx-auto") do
             render_radial_svg
             div(class: "absolute inset-0 flex flex-col items-center justify-center") do
               span(class: "text-6xl font-extralight text-white") { @latest_log&.z_value || "---" }
-              span(class: "text-[10px] text-emerald-800 font-mono uppercase") { "kΩ Impedance" }
+              span(class: "text-tiny text-emerald-800 font-mono uppercase") { "kΩ Impedance" }
             end
           end
 
@@ -90,10 +90,10 @@ module Trees
 
     def render_impedance_history
       div(class: "p-8 border border-emerald-900 bg-black/40") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Impedance Flux (Last 10 Cycles)" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Impedance Flux (Last 10 Cycles)" }
 
         # Візуалізація міні-графіка через висоту барів
-        div(class: "flex items-end space-x-2 h-32 border-b border-emerald-900/30 pb-2") do
+        div(class: "flex items-end gap-2 h-32 border-b border-emerald-900/30 pb-2") do
           @recent_logs.reverse_each do |log|
             baseline = @family&.baseline_impedance
             next unless baseline&.positive?
@@ -106,7 +106,7 @@ module Trees
             )
           end
         end
-        div(class: "flex justify-between mt-2 text-[8px] font-mono text-emerald-900 uppercase") do
+        div(class: "flex justify-between mt-2 text-micro font-mono text-emerald-900 uppercase") do
           span { "T-10 Cycles" }
           span { "Real-time Sampling" }
           span { "Current" }
@@ -116,11 +116,11 @@ module Trees
 
     def render_maintenance_ledger
       div(class: "space-y-4") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Maintenance Rituals & Healing History" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Maintenance Rituals & Healing History" }
 
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-          table(role: "table", class: "w-full text-left font-mono text-[10px]") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[8px]") do
+          table(role: "table", class: "w-full text-left font-mono text-tiny") do
+            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-micro") do
               tr do
                 th(scope: "col", class: "p-4") { "Technician" }
                 th(scope: "col", class: "p-4") { "Action" }
@@ -150,11 +150,11 @@ module Trees
     def render_hardware_security_vault
       div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
         div(class: "flex justify-between items-center") do
-          h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Hardware Security Vault" }
+          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Hardware Security Vault" }
           span(class: "h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]")
         end
 
-        div(class: "space-y-4 text-[10px] font-mono") do
+        div(class: "space-y-4 text-tiny font-mono") do
           security_item("Key Identity", @hardware_key&.device_uid || "NOT_PROVISIONED")
           security_item("Cipher Suite", "AES-256-ECB (CoAP Level)")
           security_item("Integrity", "Verified Hardware Anchor")
@@ -162,7 +162,7 @@ module Trees
         end
 
         div(class: "pt-4 border-t border-emerald-900/30") do
-          button(class: "w-full py-2 border border-emerald-900 text-[9px] uppercase text-emerald-700 hover:border-emerald-500 hover:text-emerald-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "Rotate hardware encryption key") do
+          button(class: "w-full py-2 border border-emerald-900 text-mini uppercase text-emerald-700 hover:border-emerald-500 hover:text-emerald-500 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Rotate hardware encryption key") do
             "Rotate Hardware Key →"
           end
         end
@@ -171,11 +171,11 @@ module Trees
 
     def render_economic_panel
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Economic Yield" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Economic Yield" }
         div(class: "space-y-4") do
           div do
-            p(class: "text-[9px] text-gray-600 uppercase") { "Verified Balance" }
-            div(class: "flex items-baseline space-x-2") do
+            p(class: "text-mini text-gray-600 uppercase") { "Verified Balance" }
+            div(class: "flex items-baseline gap-2") do
               span(class: "text-3xl font-light text-white") { @tree.wallet&.scc_balance || "0.0" }
               span(class: "text-xs text-emerald-600 font-mono") { "SCC" }
             end
@@ -189,15 +189,15 @@ module Trees
 
     def render_metadata_panel
       div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Deployment Matrix" }
-        div(class: "space-y-3 text-[10px] font-mono") do
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Deployment Matrix" }
+        div(class: "space-y-3 text-tiny font-mono") do
           meta_row("Cluster", @tree.cluster&.name)
           meta_row("Coordinates", "#{@tree.latitude}, #{@tree.longitude}")
 
           a(
             href: "https://www.google.com/maps?q=#{@tree.latitude},#{@tree.longitude}",
             target: "_blank",
-            class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500",
+            class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
             aria_label: "Locate tree node on Google Maps"
           ) { "Locate Node →" }
         end
@@ -209,8 +209,8 @@ module Trees
     def metric_row(label, value, sub: nil, danger: false)
       div(class: "flex justify-between items-end border-b border-emerald-900/30 pb-2") do
         div do
-          p(class: "text-[9px] text-gray-600 uppercase") { label }
-          p(class: "text-[8px] text-emerald-900 font-mono") { sub } if sub
+          p(class: "text-mini text-gray-600 uppercase") { label }
+          p(class: "text-micro text-emerald-900 font-mono") { sub } if sub
         end
         span(class: tokens("text-lg font-mono", "text-red-500 animate-pulse": danger, "text-emerald-300": !danger)) { value }
       end
@@ -218,7 +218,7 @@ module Trees
 
     def security_item(label, value, full: nil)
       div do
-        p(class: "text-[8px] text-gray-600 uppercase mb-1") { label }
+        p(class: "text-micro text-gray-600 uppercase mb-1") { label }
         p(class: "text-emerald-500 truncate", title: full) { value }
       end
     end
@@ -250,7 +250,7 @@ module Trees
     def status_color_class
       case @tree.status
       when "active" then "border-emerald-500 text-emerald-500"
-      when "dormant" then "border-amber-600 text-amber-600"
+      when "dormant" then "border-status-warning text-status-warning-text"
       else "border-red-800 text-red-800"
       end
     end

@@ -34,11 +34,11 @@ module Maintenance
 
     def render_header
       div(class: "flex justify-between items-center") do
-        div(class: "text-[9px] uppercase tracking-widest text-emerald-700") do
+        div(class: "text-mini uppercase tracking-widest text-emerald-700") do
           total = @pagy.count
           "Evidence Protocol // #{total} Photo#{total == 1 ? '' : 's'}"
         end
-        span(class: "text-[8px] text-gray-600 font-mono") do
+        span(class: "text-micro text-gray-600 font-mono") do
           "Page #{@pagy.page} of #{@pagy.last}"
         end
       end
@@ -72,7 +72,7 @@ module Maintenance
           href: next_url,
           data: { turbo_frame: frame_id },
           class: "inline-block px-6 py-2 border border-emerald-900 text-emerald-700 " \
-                 "hover:border-emerald-500 hover:text-emerald-500 uppercase text-[9px] " \
+                 "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini " \
                  "tracking-widest transition-all font-mono"
         ) do
           "Load More // #{[ remaining, 0 ].max} remaining →"

@@ -1,0 +1,11 @@
+<div style="background: #000; padding: 2rem; font-family: monospace;">
+  <h3 style="color: #10b981; margin-bottom: 1rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;">Blockchain Transaction Lifecycle</h3>
+  <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <% %w[pending processing sent confirmed failed].each do |status| %>
+      <%= render Views::Shared::UI::StatusBadge.new(status: status) %>
+      <% if status != "failed" %>
+        <span style="color: #064e3b;">→</span>
+      <% end %>
+    <% end %>
+  </div>
+</div>

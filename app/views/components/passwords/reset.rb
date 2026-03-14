@@ -49,19 +49,19 @@ module Passwords
           div(class: "absolute inset-1 bg-emerald-500 animate-pulse")
         end
         h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { "New Key" }
-        p(class: "text-[10px] text-emerald-700 uppercase tracking-[0.5em]") { "Set New Access Code" }
+        p(class: "text-tiny text-emerald-700 uppercase tracking-[0.5em]") { "Set New Access Code" }
       end
     end
 
     def field_container(label, &)
       div(class: "space-y-2") do
-        label(class: "text-[9px] uppercase tracking-widest text-emerald-900 font-bold") { label }
+        label(class: "text-mini uppercase tracking-widest text-emerald-900 font-bold") { label }
         yield
       end
     end
 
     def input_classes
-      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-4 font-mono text-sm focus:border-emerald-500 focus:ring-0 outline-none transition-all placeholder:text-emerald-950"
+      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-4 font-mono text-sm focus-visible:border-emerald-500 focus-visible:ring-0 outline-none transition-all placeholder:text-emerald-950"
     end
 
     def submit_classes
@@ -70,7 +70,7 @@ module Passwords
 
     def render_flash_messages
       if @flash_alert
-        div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-[10px] uppercase tracking-widest text-center") do
+        div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-tiny uppercase tracking-widest text-center") do
           @flash_alert
         end
       end
@@ -78,7 +78,7 @@ module Passwords
 
     def render_back_link
       div(class: "text-center pt-2") do
-        a(href: helpers.api_v1_login_path, class: "text-[10px] text-emerald-900 uppercase tracking-widest hover:text-emerald-500 transition-colors") do
+        a(href: helpers.api_v1_login_path, class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 transition-colors") do
           "← Back to Login Portal"
         end
       end

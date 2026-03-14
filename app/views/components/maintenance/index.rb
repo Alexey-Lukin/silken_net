@@ -24,7 +24,7 @@ module Maintenance
     def header_section
       div(class: "flex justify-between items-end mb-2") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "Maintenance Records" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "Maintenance Records" }
           p(class: "text-xs text-gray-600 mt-1") do
             "#{@pagy.count} intervention#{@pagy.count == 1 ? '' : 's'} · Page #{@pagy.page} of #{@pagy.last}"
           end
@@ -33,8 +33,8 @@ module Maintenance
           href: helpers.new_api_v1_maintenance_record_path,
           aria_label: "Register new maintenance intervention",
           class: "px-4 py-2 border border-emerald-500 text-emerald-500 hover:bg-emerald-500 " \
-                 "hover:text-black focus:outline-none focus:ring-2 focus:ring-emerald-500 " \
-                 "transition-all uppercase text-[10px] tracking-widest"
+                 "hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+                 "transition-all uppercase text-tiny tracking-widest"
         ) { "+ Register Intervention" }
       end
     end
@@ -46,23 +46,23 @@ module Maintenance
           a(
             href: helpers.api_v1_maintenance_records_path(action_type: type),
             aria_label: "Filter by #{type}",
-            class: "px-3 py-1 border border-emerald-900 text-[9px] uppercase text-emerald-900 " \
-                   "hover:border-emerald-600 hover:text-emerald-600 focus:outline-none focus:ring-2 " \
-                   "focus:ring-emerald-500 transition-all font-mono"
+            class: "px-3 py-1 border border-emerald-900 text-mini uppercase text-emerald-900 " \
+                   "hover:border-emerald-600 hover:text-emerald-600 focus-visible:outline-none focus-visible:ring-2 " \
+                   "focus-visible:ring-emerald-500 transition-all font-mono"
           ) { type }
         end
         a(
           href: helpers.api_v1_maintenance_records_path(verified: "1"),
           aria_label: "Show only verified records",
-          class: "px-3 py-1 border border-emerald-700 text-[9px] uppercase text-emerald-700 " \
-                 "hover:bg-emerald-900/20 focus:outline-none focus:ring-2 focus:ring-emerald-500 " \
+          class: "px-3 py-1 border border-emerald-700 text-mini uppercase text-emerald-700 " \
+                 "hover:bg-emerald-900/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
                  "transition-all font-mono"
         ) { "✓ Verified Only" }
         a(
           href: helpers.api_v1_maintenance_records_path,
           aria_label: "Clear all filters",
-          class: "px-3 py-1 border border-gray-800 text-[9px] uppercase text-gray-600 " \
-                 "hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 " \
+          class: "px-3 py-1 border border-gray-800 text-mini uppercase text-gray-600 " \
+                 "hover:border-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
                  "transition-all font-mono"
         ) { "Clear" }
       end
@@ -70,8 +70,8 @@ module Maintenance
 
     def records_table
       div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-        table(class: "w-full text-left font-mono text-[11px] min-w-[900px]", role: "table") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+        table(class: "w-full text-left font-mono text-compact min-w-[900px]", role: "table") do
+          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { "Technician" }
               th(scope: "col", class: "p-4") { "Unit" }
@@ -88,7 +88,7 @@ module Maintenance
               @records.each { |record| render_row(record) }
             else
               tr do
-                td(colspan: 8, class: "p-10 text-center text-emerald-900 uppercase tracking-widest text-[9px]") do
+                td(colspan: 8, class: "p-10 text-center text-emerald-900 uppercase tracking-widest text-mini") do
                   "No interventions recorded"
                 end
               end
@@ -101,7 +101,7 @@ module Maintenance
     def render_row(record)
       tr(class: "hover:bg-emerald-950/10 transition-colors group") do
         td(class: "p-4 text-emerald-100") { "#{record.user&.first_name} #{record.user&.last_name}" }
-        td(class: "p-4 text-emerald-500 text-[10px]") do
+        td(class: "p-4 text-emerald-500 text-tiny") do
           "#{record.maintainable_type} // #{record.maintainable&.did || record.maintainable&.uid || '—'}"
         end
         td(class: "p-4") { action_badge(record.action_type) }
@@ -112,24 +112,24 @@ module Maintenance
         td(class: "p-4 text-center") do
           count = record.photos_attachments.size
           if count > 0
-            span(class: "text-[9px] text-emerald-600 font-mono") { "📷 #{count}" }
+            span(class: "text-mini text-emerald-600 font-mono") { "📷 #{count}" }
           else
             span(class: "text-gray-700") { "—" }
           end
         end
         td(class: "p-4 text-center") do
           if record.hardware_verified
-            span(class: "text-emerald-500 text-[11px]", title: "Hardware Verified") { "✓" }
+            span(class: "text-emerald-500 text-compact", title: "Hardware Verified") { "✓" }
           else
-            span(class: "text-amber-900 text-[11px]", title: "Pending Verification") { "◌" }
+            span(class: "text-status-warning text-compact", title: "Pending Verification") { "◌" }
           end
         end
-        td(class: "p-4 text-gray-600 text-[10px]") { record.performed_at&.strftime("%d.%m.%y // %H:%M") }
+        td(class: "p-4 text-gray-600 text-tiny") { record.performed_at&.strftime("%d.%m.%y // %H:%M") }
         td(class: "p-4 text-right") do
           a(
             href: helpers.api_v1_maintenance_record_path(record),
             aria_label: "Open maintenance record details",
-            class: "text-emerald-700 hover:text-white text-[10px] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+            class: "text-emerald-700 hover:text-white text-tiny focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
           ) { "OPEN →" }
         end
       end
@@ -137,7 +137,7 @@ module Maintenance
 
     def action_badge(type)
       colors = {
-        "repair"          => "text-amber-500",
+        "repair"          => "text-status-warning-text",
         "installation"    => "text-blue-500",
         "inspection"      => "text-emerald-500",
         "cleaning"        => "text-cyan-600",

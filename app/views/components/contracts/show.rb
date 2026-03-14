@@ -30,13 +30,13 @@ module Contracts
          div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none") { "NaaS" }
 
          div do
-           p(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-2") { "Contract Identity" }
+           p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { "Contract Identity" }
            h2(class: "text-5xl font-extralight text-white tracking-tighter") { "##{@contract.id} // SEC_#{@contract.cluster&.name&.upcase}" }
            p(class: "mt-4 text-xs font-mono text-emerald-900") { "Signed: #{@contract.start_date&.strftime('%d.%m.%Y // %H:%M')}" }
          end
 
          div(class: "mt-8 md:mt-0 text-center md:text-right") do
-           p(class: "text-[10px] text-gray-600 uppercase mb-1") { "Current Yield" }
+           p(class: "text-tiny text-gray-600 uppercase mb-1") { "Current Yield" }
            span(class: "text-6xl font-light text-emerald-400") { @contract.emitted_tokens.to_f.round(2) }
            span(class: "text-xl text-emerald-600 font-mono ml-2") { "SCC" }
          end
@@ -50,7 +50,7 @@ module Contracts
       health = cluster.health_index || 0
 
       div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Backing Asset Health" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Backing Asset Health" }
         div(class: "space-y-4") do
           metric_row("Cluster Vitality", "#{(health * 100).round}%", alert: health < 0.7)
           metric_row("Active Soldiers", cluster.total_active_trees)
@@ -61,17 +61,17 @@ module Contracts
 
     def metric_row(label, value, alert: false)
       div(class: "flex justify-between border-b border-emerald-900/30 pb-2") do
-        span(class: "text-[10px] text-gray-600 uppercase") { label }
+        span(class: "text-tiny text-gray-600 uppercase") { label }
         span(class: tokens("font-mono text-sm", "text-red-500 animate-pulse": alert, "text-emerald-100": !alert)) { value }
       end
     end
 
     def render_emission_ledger
       div(class: "space-y-4") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Blockchain Emission History" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Blockchain Emission History" }
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-           table(role: "table", class: "w-full text-left font-mono text-[10px]") do
-             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+           table(role: "table", class: "w-full text-left font-mono text-tiny") do
+             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
                tr do
                  th(scope: "col", class: "p-4") { "TX Hash" }
                  th(scope: "col", class: "p-4") { "Amount" }
@@ -100,8 +100,8 @@ module Contracts
 
     def render_legal_vault
       div(class: "p-6 border border-emerald-900 bg-emerald-950/10") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-4") { "Smart Contract Data" }
-        p(class: "text-[10px] text-gray-500 font-mono break-all leading-relaxed") do
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Smart Contract Data" }
+        p(class: "text-tiny text-gray-500 font-mono break-all leading-relaxed") do
           "Verified by Silken Net Oracle. Performance indexed to LorentzA attractor stability."
         end
       end

@@ -15,7 +15,7 @@ module Actuators
 
           # Реєстр команд
           div(class: "lg:col-span-2 space-y-4") do
-            h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Command Execution Log" }
+            h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Command Execution Log" }
             render_command_table
           end
         end
@@ -26,8 +26,8 @@ module Actuators
 
     def render_command_table
       div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-        table(class: "w-full text-left font-mono text-[10px] min-w-[640px]", role: "table") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[8px] tracking-widest") do
+        table(class: "w-full text-left font-mono text-tiny min-w-[640px]", role: "table") do
+          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-micro tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { "ID" }
               th(scope: "col", class: "p-4") { "Operator" }
@@ -43,7 +43,7 @@ module Actuators
                 td(class: "p-4 text-emerald-100") { cmd.user&.first_name || "SYSTEM" }
                 td(class: "p-4 font-bold text-white") { cmd.command_payload }
                 td(class: "p-4") do
-                  span(class: tokens("px-2 py-0.5 border text-[8px] uppercase", cmd_status_class(cmd))) { cmd.status }
+                  span(class: tokens("px-2 py-0.5 border text-micro uppercase", cmd_status_class(cmd))) { cmd.status }
                 end
                 td(class: "p-4 text-right text-gray-600") { cmd.executed_at&.strftime("%d.%m.%y // %H:%M:%S") || "---" }
               end
@@ -58,7 +58,7 @@ module Actuators
       when "confirmed", "acknowledged" then "border-emerald-500 text-emerald-500"
       when "sent" then "border-blue-800 text-blue-400"
       when "failed" then "border-red-900 text-red-500"
-      when "issued" then "border-amber-800 text-amber-400"
+      when "issued" then "border-status-warning text-status-warning-text"
       else "border-zinc-800 text-zinc-600"
       end
     end

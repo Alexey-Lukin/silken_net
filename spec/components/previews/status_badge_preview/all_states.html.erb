@@ -1,0 +1,8 @@
+<div style="background: #000; padding: 2rem; font-family: monospace;">
+  <h3 style="color: #10b981; margin-bottom: 1rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;">All AASM Status Badge Variants</h3>
+  <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+    <% %w[pending processing sent confirmed failed issued acknowledged active resolved ignored triggered paid expired draft fulfilled breached cancelled idle updating maintenance faulty dormant removed deceased offline maintenance_needed].each do |status| %>
+      <%= render Views::Shared::UI::StatusBadge.new(status: status) %>
+    <% end %>
+  </div>
+</div>

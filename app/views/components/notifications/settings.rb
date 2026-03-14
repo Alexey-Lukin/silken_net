@@ -25,7 +25,7 @@ module Notifications
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "🔔 Neural Web — Notification Channels" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "🔔 Neural Web — Notification Channels" }
           p(class: "text-xs text-gray-600 mt-1") { "Налаштування каналів зв'язку: куди надсилати сповіщення про тривоги та події." }
         end
       end
@@ -33,7 +33,7 @@ module Notifications
 
     def render_channels_form
       div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Channel Configuration" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Channel Configuration" }
 
         form(action: helpers.api_v1_notifications_settings_path, method: "post", class: "space-y-6") do
           input(type: "hidden", name: "_method", value: "patch")
@@ -45,7 +45,7 @@ module Notifications
           render_field("Push Token", "push_token", @user.push_token, placeholder: "FCM or APNs token")
 
           div(class: "pt-4 border-t border-emerald-900/30") do
-            button(type: "submit", class: "px-6 py-2 border border-emerald-500 text-[10px] uppercase tracking-widest text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all") { "Save Channels →" }
+            button(type: "submit", class: "px-6 py-2 border border-emerald-500 text-tiny uppercase tracking-widest text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all") { "Save Channels →" }
           end
         end
       end
@@ -53,7 +53,7 @@ module Notifications
 
     def render_field(label, name, value, placeholder: nil, disabled: false, hint: nil)
       div(class: "space-y-2") do
-        label(class: "text-[9px] text-gray-600 uppercase tracking-widest block") { label }
+        label(class: "text-mini text-gray-600 uppercase tracking-widest block") { label }
         input(
           type: "text",
           name: name,
@@ -61,19 +61,19 @@ module Notifications
           placeholder: placeholder,
           disabled: disabled,
           class: tokens(
-            "w-full bg-zinc-950 border border-emerald-900/50 text-[11px] font-mono text-emerald-400 px-4 py-3 focus:border-emerald-500 focus:outline-none transition-colors",
+            "w-full bg-zinc-950 border border-emerald-900/50 text-compact font-mono text-emerald-400 px-4 py-3 focus-visible:border-emerald-500 focus-visible:outline-none transition-colors",
             "opacity-50 cursor-not-allowed": disabled
           )
         )
         if hint
-          p(class: "text-[9px] text-gray-700 italic") { hint }
+          p(class: "text-mini text-gray-700 italic") { hint }
         end
       end
     end
 
     def render_channels_status
       div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Active Channels" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Active Channels" }
         div(class: "space-y-4") do
           channel_status("📧 Email", @user.email_address.present?)
           channel_status("📱 SMS / Phone", @user.phone_number.present?)
@@ -83,12 +83,12 @@ module Notifications
       end
 
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-4") { "Notification Types" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Notification Types" }
         div(class: "space-y-3") do
           %w[Critical\ Alerts Warning\ Alerts Minting\ Events Slashing\ Events System\ Health].each do |event|
             div(class: "flex justify-between items-center") do
-              span(class: "text-[10px] text-gray-500 uppercase font-mono") { event }
-              span(class: "text-[9px] text-emerald-500") { "ACTIVE" }
+              span(class: "text-tiny text-gray-500 uppercase font-mono") { event }
+              span(class: "text-mini text-emerald-500") { "ACTIVE" }
             end
           end
         end
@@ -97,14 +97,14 @@ module Notifications
 
     def channel_status(label, active)
       div(class: "flex justify-between items-center py-2 border-b border-emerald-900/20") do
-        span(class: "text-[10px] text-gray-400 font-mono") { label }
+        span(class: "text-tiny text-gray-400 font-mono") { label }
         if active
-          div(class: "flex items-center space-x-2") do
+          div(class: "flex items-center gap-2") do
             div(class: "h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]")
-            span(class: "text-[9px] text-emerald-500 uppercase") { "Connected" }
+            span(class: "text-mini text-emerald-500 uppercase") { "Connected" }
           end
         else
-          span(class: "text-[9px] text-gray-700 uppercase") { "Not configured" }
+          span(class: "text-mini text-gray-700 uppercase") { "Not configured" }
         end
       end
     end

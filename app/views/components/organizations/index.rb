@@ -12,8 +12,8 @@ module Organizations
         header_section
 
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-          table(role: "table", class: "w-full text-left font-mono text-[11px]") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+          table(role: "table", class: "w-full text-left font-mono text-compact") do
+            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { "Organization Name" }
                 th(scope: "col", class: "p-4") { "Sectors" }
@@ -42,11 +42,11 @@ module Organizations
         td(class: "p-4 text-emerald-400 font-bold") { org.name }
         td(class: "p-4 text-gray-400") { org.total_clusters }
         td(class: "p-4 text-emerald-100") { "#{org.total_invested} SCC" }
-        td(class: "p-4 text-[10px] text-gray-600 font-mono") do
+        td(class: "p-4 text-tiny text-gray-600 font-mono") do
           render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end
         td(class: "p-4 text-right") do
-          a(href: helpers.api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "View #{org.name} profile") { "VIEW_PROFILE →" }
+          a(href: helpers.api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View #{org.name} profile") { "VIEW_PROFILE →" }
         end
       end
     end
@@ -54,7 +54,7 @@ module Organizations
     def header_section
       div(class: "flex justify-between items-end") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "Global Clan Registry" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "Global Clan Registry" }
           p(class: "text-xs text-gray-600 mt-1") { "Management of multi-tenant entities and their environmental capital." }
         end
       end

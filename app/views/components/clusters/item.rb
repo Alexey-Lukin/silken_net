@@ -21,7 +21,7 @@ module Clusters
       div(class: "flex justify-between items-start mb-6") do
         div do
           h3(class: "text-lg font-light tracking-widest text-emerald-400 uppercase") { @cluster.name }
-          p(class: "text-[10px] font-mono text-emerald-800") { "ID: #{@cluster.id}" }
+          p(class: "text-tiny font-mono text-emerald-800") { "ID: #{@cluster.id}" }
         end
 
         # Статус кластера (на основі AI інсайтів або алертів)
@@ -42,7 +42,7 @@ module Clusters
 
     def stat_block(label, value)
       div do
-        p(class: "text-[9px] uppercase tracking-tighter text-gray-600") { label }
+        p(class: "text-mini uppercase tracking-tighter text-gray-600") { label }
         p(class: "text-xl font-light text-emerald-100") { value }
       end
     end
@@ -52,7 +52,7 @@ module Clusters
         # Кнопка переходу через Turbo (без рефрешу сторінки)
         a(
           href: helpers.api_v1_cluster_path(@cluster),
-          class: "text-[10px] uppercase tracking-widest text-emerald-600 hover:text-emerald-300 transition-colors"
+          class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-emerald-300 transition-colors"
         ) { "Open Matrix →" }
       end
     end

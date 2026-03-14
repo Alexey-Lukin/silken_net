@@ -31,11 +31,11 @@ module Trees
     def render_header
       div(class: "flex justify-between items-end mb-6 border-b border-emerald-900/30 pb-6") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.5em] text-emerald-700") { "Sector Matrix Deployment" }
+          h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700") { "Sector Matrix Deployment" }
           h2(class: "text-3xl font-extralight text-emerald-400 mt-1") { @cluster.name }
         end
 
-        div(class: "flex space-x-8 text-right font-mono text-[10px]") do
+        div(class: "flex gap-8 text-right font-mono text-tiny") do
           header_stat("Population", @pagy&.count || @trees.size, "Soldiers")
           header_stat("Operational", @cluster.active_trees_count, "Nodes")
         end
@@ -60,13 +60,13 @@ module Trees
       ) do
         # DID та Статус
         div(class: "flex justify-between items-start mb-3") do
-          span(class: "text-[9px] font-mono text-emerald-800 group-hover:text-emerald-400") { tree.did.last(6) }
+          span(class: "text-mini font-mono text-emerald-800 group-hover:text-emerald-400") { tree.did.last(6) }
           div(class: tokens("h-1.5 w-1.5 rounded-full", tree_status_led(tree)))
         end
 
         # Індикатор заряду іоністора (Streaming Potential Reserve)
         div(class: "space-y-1") do
-          div(class: "flex justify-between text-[7px] uppercase text-gray-700 font-mono") do
+          div(class: "flex justify-between text-micro uppercase text-gray-700 font-mono") do
             span { "Ionic Pulse" }
             span { "#{voltage}mV" }
           end
@@ -91,7 +91,7 @@ module Trees
 
     def charge_color(percent)
       if percent > 70 then "bg-emerald-500 shadow-[0_0_5px_#10b981]"
-      elsif percent > 30 then "bg-amber-500"
+      elsif percent > 30 then "bg-status-warning"
       else "bg-red-600 animate-pulse"
       end
     end

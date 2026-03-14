@@ -21,7 +21,7 @@ module Gateways
       div(class: "flex justify-between items-start mb-6") do
         div do
           h3(class: "text-lg font-light tracking-widest text-emerald-400 uppercase") { "Queen // #{@gateway.uid}" }
-          p(class: "text-[10px] font-mono text-emerald-800") { "Cluster: #{@gateway.cluster&.name || 'UNASSIGNED'}" }
+          p(class: "text-tiny font-mono text-emerald-800") { "Cluster: #{@gateway.cluster&.name || 'UNASSIGNED'}" }
         end
 
         # Живий індикатор зв'язку
@@ -41,17 +41,17 @@ module Gateways
 
     def stat_block(label, value)
       div do
-        p(class: "text-[9px] uppercase tracking-tighter text-gray-600") { label }
+        p(class: "text-mini uppercase tracking-tighter text-gray-600") { label }
         p(class: "text-xl font-light text-emerald-100") { value }
       end
     end
 
     def footer_section
       div(class: "flex justify-between items-center mt-4 pt-4 border-t border-emerald-900/50") do
-        p(class: "text-[9px] font-mono text-gray-600") { @gateway.last_seen_at&.strftime("%H:%M // %d.%m") || "SILENT" }
+        p(class: "text-mini font-mono text-gray-600") { @gateway.last_seen_at&.strftime("%H:%M // %d.%m") || "SILENT" }
         a(
           href: helpers.api_v1_gateway_path(@gateway),
-          class: "text-[10px] uppercase tracking-widest text-emerald-600 hover:text-emerald-300 transition-colors"
+          class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-emerald-300 transition-colors"
         ) { "Open Relay →" }
       end
     end

@@ -35,10 +35,10 @@ module Wallets
     def render_header
       div(class: "flex justify-between items-end mb-6") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "Treasury Matrix" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "Treasury Matrix" }
           p(class: "text-xs text-gray-600 mt-1") { "Monitoring the flow of Silken Carbon Coins across the network." }
         end
-        div(class: "text-right font-mono text-[10px] text-emerald-900") do
+        div(class: "text-right font-mono text-tiny text-emerald-900") do
           plain "Total Liquidity: "
           span(class: "text-emerald-500") { "#{@total_liquidity.to_f.round(2)} SCC" }
         end
@@ -52,7 +52,7 @@ module Wallets
       div(class: "group p-6 border border-emerald-900 bg-black hover:bg-emerald-950 transition-all duration-500") do
         div(class: "flex justify-between items-start mb-6") do
           div do
-            p(class: "text-[9px] uppercase text-emerald-800 tracking-tighter") { wallet.tree ? "Soldier Wallet" : "Clan Treasury" }
+            p(class: "text-mini uppercase text-emerald-800 tracking-tighter") { wallet.tree ? "Soldier Wallet" : "Clan Treasury" }
             h4(class: "text-lg font-light text-emerald-100 mt-1") { owner_name }
           end
           div(class: "h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]")
@@ -67,7 +67,7 @@ module Wallets
           render Views::Shared::Web3::Address.new(address: wallet.crypto_public_address, truncate: 10)
           a(
             href: helpers.api_v1_wallet_path(wallet),
-            class: "text-[10px] uppercase tracking-widest text-emerald-600 hover:text-white transition-colors"
+            class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-white transition-colors"
           ) { "Audit Ledger →" }
         end
       end
