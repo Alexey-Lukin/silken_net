@@ -81,9 +81,11 @@ module Maintenance
     end
 
     def render_empty_state
-      div(class: "border border-dashed border-emerald-900/40 p-8 text-center col-span-3") do
-        p(class: "text-emerald-900 uppercase tracking-widest text-[9px]") { "No Photos" }
-      end
+      render Views::Shared::UI::EmptyState.new(
+        title: "No Photos",
+        icon: "📷",
+        description: "Upload evidence to begin documentation."
+      )
     end
   end
 end

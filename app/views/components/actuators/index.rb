@@ -57,9 +57,11 @@ module Actuators
     end
 
     def render_empty_state
-      div(class: "col-span-full p-20 border border-dashed border-emerald-900/30 text-center") do
-        p(class: "text-emerald-900 font-mono text-xs uppercase tracking-widest") { "No actuator nodes provisioned in this sector." }
-      end
+      render Views::Shared::UI::EmptyState.new(
+        title: "No actuator nodes provisioned in this sector.",
+        icon: "⚙",
+        description: "Deploy hardware to begin monitoring."
+      )
     end
   end
 end

@@ -8,7 +8,7 @@
 module ::Views; end
 module ::Views::Shared; end
 
-Rails.autoloaders.main.inflector.inflect("ui" => "UI")
+Rails.autoloaders.main.inflector.inflect("ui" => "UI", "iot" => "IoT")
 
 Rails.autoloaders.main.push_dir(
   Rails.root.join("app/views/shared"),

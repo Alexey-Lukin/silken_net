@@ -51,9 +51,11 @@ module BlockchainTransactions
             if @transactions.any?
               @transactions.each { |tx| render_transaction_row(tx) }
             else
-              tr do
-                td(colspan: 6, class: "p-10 text-center text-gray-700 italic") { "No blockchain transactions recorded." }
-              end
+              render Views::Shared::UI::EmptyState.new(
+                title: "No blockchain transactions recorded.",
+                icon: "⬢",
+                colspan: 6
+              )
             end
           end
         end

@@ -6,7 +6,7 @@ module Views
       class StatusBadge < ApplicationComponent
         STYLES = {
           # AASM: BlockchainTransaction states
-          "pending"      => "bg-zinc-800 text-zinc-300",
+          "pending"      => "bg-yellow-900 text-yellow-200",
           "processing"   => "bg-amber-900 text-amber-200 animate-pulse",
           "sent"         => "bg-blue-900 text-blue-200",
           "confirmed"    => "bg-emerald-800 text-emerald-100",

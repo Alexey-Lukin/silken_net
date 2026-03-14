@@ -36,7 +36,7 @@ module Dashboard
     end
 
     def time_ago_text
-      ActionController::Base.helpers.time_ago_in_words(@event.created_at) + " ago"
+      render Views::Shared::UI::RelativeTime.new(datetime: @event.created_at)
     end
   end
 end

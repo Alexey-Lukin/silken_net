@@ -27,9 +27,11 @@ module Clusters
     private
 
     def render_empty_state
-      div(class: "py-20 text-center border border-dashed border-emerald-900") do
-        p(class: "text-sm text-emerald-800 uppercase tracking-widest") { "Matrix is empty. No clusters detected." }
-      end
+      render Views::Shared::UI::EmptyState.new(
+        title: "Matrix is empty. No clusters detected.",
+        icon: "◎",
+        description: "Deploy sensors to initialize cluster grid."
+      )
     end
   end
 end
