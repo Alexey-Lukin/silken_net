@@ -41,5 +41,8 @@ module SilkenNet
       g.test_framework :rspec
       g.fixture_replacement :factory_bot, dir: "spec/factories"
     end
+
+    # Lookbook component previews path
+    config.lookbook.preview_paths = [ root.join("spec/components/previews").to_s ] if defined?(Lookbook)
   end
 end

@@ -18,9 +18,9 @@ module Provisioning
             render_data_point("Hardware UID", @device.uid || "N/A")
 
             div(class: "pt-4 border-t border-emerald-900/30") do
-              p(class: "text-[9px] text-red-500 uppercase tracking-widest mb-2") { "CRITICAL: AES-256 SESSION KEY" }
+              p(class: "text-mini text-red-500 uppercase tracking-widest mb-2") { "CRITICAL: AES-256 SESSION KEY" }
               div(class: "p-4 bg-black border border-red-900 text-red-400 font-mono text-sm break-all") { @aes_key }
-              p(class: "mt-2 text-[8px] text-gray-700 uppercase italic") { "Write this to STM32 non-volatile memory now. It will never be shown again." }
+              p(class: "mt-2 text-micro text-gray-700 uppercase italic") { "Write this to STM32 non-volatile memory now. It will never be shown again." }
             end
           end
 
@@ -35,7 +35,7 @@ module Provisioning
 
     def render_data_point(label, value)
       div do
-        p(class: "text-[9px] text-gray-600 uppercase tracking-tighter") { label }
+        p(class: "text-mini text-gray-600 uppercase tracking-tighter") { label }
         p(class: "text-emerald-100 font-mono") { value }
       end
     end

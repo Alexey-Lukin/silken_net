@@ -14,7 +14,7 @@ module Views
 
         def view_template
           span(
-            class: "text-[11px] font-mono text-emerald-400 tabular-nums",
+            class: "text-compact font-mono text-emerald-400 tabular-nums",
             title: full_value_text
           ) do
             plain display_value

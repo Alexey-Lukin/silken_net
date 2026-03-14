@@ -28,13 +28,13 @@ module Dashboard
             # Фоновий растр
             div(class: "absolute inset-0 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:30px_30px] opacity-10")
 
-            div(class: "absolute inset-0 flex flex-col items-center justify-center space-y-4") do
+            div(class: "absolute inset-0 flex flex-col items-center justify-center gap-4") do
               div(class: "h-12 w-12 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin")
-              p(class: "text-emerald-900 font-mono text-[10px] uppercase tracking-[0.5em]") { "Initializing Geospatial Matrix..." }
+              p(class: "text-emerald-900 font-mono text-tiny uppercase tracking-[0.5em]") { "Initializing Geospatial Matrix..." }
             end
 
             # Overlay для координат
-            div(class: "absolute bottom-4 left-4 font-mono text-[8px] text-emerald-900") do
+            div(class: "absolute bottom-4 left-4 font-mono text-micro text-emerald-900") do
               "LAT: 49.4447 // LON: 32.0588 // ALT: 112m"
             end
           end
@@ -50,11 +50,11 @@ module Dashboard
     def render_live_feed
       div(class: "p-6 border border-emerald-900 bg-zinc-950 flex flex-col h-full") do
         div(class: "flex justify-between items-center mb-8") do
-          h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Live Transmission Feed" }
+          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Live Transmission Feed" }
           div(class: "h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping")
         end
 
-        div(class: "flex-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar") do
+        div(class: "flex-1 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar") do
           @events.each do |event|
             render_event_row(event)
           end
@@ -62,7 +62,7 @@ module Dashboard
 
         a(
           href: helpers.api_v1_alerts_path,
-          class: "mt-8 text-center py-2 border border-emerald-900 text-[9px] uppercase text-emerald-700 hover:text-emerald-400 hover:border-emerald-700 transition-all"
+          class: "mt-8 text-center py-2 border border-emerald-900 text-mini uppercase text-emerald-700 hover:text-emerald-400 hover:border-emerald-700 transition-all"
         ) { "Open Mission Log →" }
       end
     end

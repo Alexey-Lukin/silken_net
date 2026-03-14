@@ -8,7 +8,7 @@ module Actuators
     end
 
     def view_template
-      div(id: "actuator_#{@actuator.id}", class: "group p-6 border border-emerald-900 bg-zinc-950 hover:border-emerald-500 transition-all duration-500 relative overflow-hidden shadow-2xl") do
+      div(id: "actuator_#{@actuator.id}", class: card_container_classes) do
         # Фоновий індикатор типу (декоративний)
         div(class: "absolute -right-4 -top-4 text-[40px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { @actuator.device_type[0..2].upcase }
 
@@ -23,7 +23,7 @@ module Actuators
     def render_header
       div(class: "flex justify-between items-start mb-6") do
         div do
-          span(class: "text-[8px] px-2 py-0.5 border border-emerald-800 text-emerald-700 uppercase font-mono tracking-widest") { @actuator.device_type }
+          span(class: "text-micro px-2 py-0.5 border border-emerald-800 text-emerald-700 uppercase font-mono tracking-widest") { @actuator.device_type }
           h4(class: "text-lg font-light text-emerald-100 mt-2 tracking-tighter") { "Sector Relay // #{@actuator.gateway&.uid}" }
         end
         div(class: tokens("h-2 w-2 rounded-full", status_led_class))
@@ -31,7 +31,7 @@ module Actuators
     end
 
     def render_status_matrix
-      div(class: "space-y-2 mb-6 font-mono text-[10px] uppercase tracking-tighter") do
+      div(class: "space-y-2 mb-6 font-mono text-tiny uppercase tracking-tighter") do
         div(class: "flex justify-between border-b border-emerald-900/20 pb-1") do
           span(class: "text-gray-600") { "Physical State:" }
           span(class: "text-emerald-500") { @actuator.state }
@@ -57,8 +57,7 @@ module Actuators
           execute_api_v1_actuator_path(@actuator, action_payload: "open"),
           method: :post,
           aria: { label: "Execute ON command for actuator #{@actuator.device_type}" },
-          class: "py-2 border border-emerald-500 text-[9px] uppercase text-emerald-500 hover:bg-emerald-500 " \
-                 "hover:text-black focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-bold tracking-widest"
+          class: execute_on_classes
         ) { "EXECUTE_ON" }
 
         # Кнопка Вимкнення/Закриття (Execute Close/OFF)
@@ -66,8 +65,7 @@ module Actuators
           execute_api_v1_actuator_path(@actuator, action_payload: "close"),
           method: :post,
           aria: { label: "Execute OFF command for actuator #{@actuator.device_type}" },
-          class: "py-2 border border-emerald-900 text-[9px] uppercase text-gray-600 hover:border-red-900 " \
-                 "hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-all tracking-widest"
+          class: execute_off_classes
         ) { "EXECUTE_OFF" }
       end
     end
@@ -79,6 +77,26 @@ module Actuators
       when "offline" then "bg-red-900"
       else "bg-gray-800"
       end
+    end
+
+    def card_container_classes
+      "group p-6 border border-emerald-900 bg-zinc-950 " \
+        "hover:border-emerald-500 transition-all duration-500 " \
+        "relative overflow-hidden shadow-2xl"
+    end
+
+    def execute_on_classes
+      "py-2 border border-emerald-500 text-mini uppercase text-emerald-500 " \
+        "hover:bg-emerald-500 hover:text-black " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+        "transition-all font-bold tracking-widest"
+    end
+
+    def execute_off_classes
+      "py-2 border border-emerald-900 text-mini uppercase text-gray-600 " \
+        "hover:border-red-900 hover:text-white " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 " \
+        "transition-all tracking-widest"
     end
   end
 end

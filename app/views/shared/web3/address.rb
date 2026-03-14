@@ -19,20 +19,19 @@ module Views
               data: { controller: "clipboard", clipboard_content_value: @address }
             ) do
               span(
-                class: "text-[11px] font-mono text-emerald-500 break-all leading-relaxed",
+                class: "text-compact font-mono text-emerald-500 break-all leading-relaxed",
                 title: @address
               ) { truncated_address }
               button(
                 type: "button",
-                class: "text-emerald-700 hover:text-emerald-300 focus:outline-none focus:ring-2 " \
-                       "focus:ring-emerald-500 transition-colors cursor-pointer",
+                class: copy_button_classes,
                 title: "Copy address",
                 aria_label: "Copy address #{truncated_address} to clipboard",
                 data: { action: "clipboard#copy", clipboard_target: "button" }
               ) { copy_icon }
             end
           else
-            span(class: "text-[11px] font-mono text-gray-700 italic") { @fallback }
+            span(class: "text-compact font-mono text-gray-700 italic") { @fallback }
           end
         end
 
@@ -42,6 +41,12 @@ module Views
           return @address if @address.length <= PREFIX_LENGTH + SUFFIX_LENGTH
 
           "#{@address.first(PREFIX_LENGTH)}…#{@address.last(SUFFIX_LENGTH)}"
+        end
+
+        def copy_button_classes
+          "text-emerald-700 hover:text-emerald-300 " \
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+            "transition-colors duration-200 cursor-pointer"
         end
 
         def copy_icon

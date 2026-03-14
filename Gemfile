@@ -63,6 +63,8 @@ group :development, :test do
 end
 
 group :development do
+  gem "lookbook"
+  gem "view_component"
   gem "web-console"
 end
 

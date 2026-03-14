@@ -25,12 +25,12 @@ module SystemHealth
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "💓 System Health — Pulse Monitor" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "💓 System Health — Pulse Monitor" }
           p(class: "text-xs text-gray-600 mt-1") { "Статус CoAP listener, черг Sidekiq та з'єднання з базою даних." }
         end
-        div(class: "flex items-center space-x-2") do
+        div(class: "flex items-center gap-2") do
           div(class: tokens("h-2 w-2 rounded-full", "bg-emerald-500 shadow-[0_0_8px_#10b981]": all_healthy?, "bg-red-500 animate-pulse": !all_healthy?))
-          span(class: tokens("text-[9px] uppercase font-bold", "text-emerald-500": all_healthy?, "text-red-500": !all_healthy?)) { all_healthy? ? "ALL SYSTEMS GO" : "DEGRADED" }
+          span(class: tokens("text-mini uppercase font-bold", "text-emerald-500": all_healthy?, "text-red-500": !all_healthy?)) { all_healthy? ? "ALL SYSTEMS GO" : "DEGRADED" }
         end
       end
     end
@@ -56,13 +56,13 @@ module SystemHealth
       alive = coap[:alive]
 
       service_card("CoAP Listener", alive) do
-        div(class: "space-y-2 font-mono text-[10px]") do
+        div(class: "space-y-2 font-mono text-tiny") do
           meta_row("Port", coap[:port] || "5683")
           meta_row("Protocol", "UDP / RFC 7252")
           meta_row("Status", alive ? "LISTENING" : "OFFLINE")
           if coap[:error]
             div(class: "mt-2 p-2 border border-red-900/30 bg-red-950/10") do
-              p(class: "text-[9px] text-red-400") { coap[:error] }
+              p(class: "text-mini text-red-400") { coap[:error] }
             end
           end
         end
@@ -74,14 +74,14 @@ module SystemHealth
       healthy = sidekiq[:error].blank?
 
       service_card("Sidekiq Workers", healthy) do
-        div(class: "space-y-2 font-mono text-[10px]") do
+        div(class: "space-y-2 font-mono text-tiny") do
           meta_row("Enqueued", sidekiq[:enqueued] || "—")
           meta_row("Processed", sidekiq[:processed] || "—")
           meta_row("Failed", sidekiq[:failed] || "—")
           meta_row("Active Workers", sidekiq[:workers_size] || "—")
           if sidekiq[:error]
             div(class: "mt-2 p-2 border border-red-900/30 bg-red-950/10") do
-              p(class: "text-[9px] text-red-400") { sidekiq[:error] }
+              p(class: "text-mini text-red-400") { sidekiq[:error] }
             end
           end
         end
@@ -93,12 +93,12 @@ module SystemHealth
       connected = db[:connected]
 
       service_card("PostgreSQL", connected) do
-        div(class: "space-y-2 font-mono text-[10px]") do
+        div(class: "space-y-2 font-mono text-tiny") do
           meta_row("Engine", "PostgreSQL")
           meta_row("Connection", connected ? "ACTIVE" : "DISCONNECTED")
           if db[:error]
             div(class: "mt-2 p-2 border border-red-900/30 bg-red-950/10") do
-              p(class: "text-[9px] text-red-400") { db[:error] }
+              p(class: "text-mini text-red-400") { db[:error] }
             end
           end
         end
@@ -109,9 +109,9 @@ module SystemHealth
       div(class: "p-6 border border-emerald-900 bg-black") do
         div(class: "flex justify-between items-start mb-6") do
           h4(class: "text-sm font-light text-emerald-100") { name }
-          div(class: "flex items-center space-x-2") do
+          div(class: "flex items-center gap-2") do
             div(class: tokens("h-1.5 w-1.5 rounded-full", "bg-emerald-500 shadow-[0_0_6px_#10b981]": healthy, "bg-red-500 animate-pulse": !healthy))
-            span(class: tokens("text-[9px] uppercase font-bold", "text-emerald-500": healthy, "text-red-500": !healthy)) { healthy ? "OK" : "DOWN" }
+            span(class: tokens("text-mini uppercase font-bold", "text-emerald-500": healthy, "text-red-500": !healthy)) { healthy ? "OK" : "DOWN" }
           end
         end
         yield
@@ -122,10 +122,10 @@ module SystemHealth
       queues = @health[:sidekiq][:queues]
 
       div(class: "space-y-4") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Sidekiq Queue Distribution" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Sidekiq Queue Distribution" }
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-          table(role: "table", class: "w-full text-left font-mono text-[11px]") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+          table(role: "table", class: "w-full text-left font-mono text-compact") do
+            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { "Queue Name" }
                 th(scope: "col", class: "p-4 text-right") { "Jobs Enqueued" }
@@ -152,7 +152,7 @@ module SystemHealth
     end
 
     def render_footer
-      div(class: "text-[9px] text-gray-600 text-right mt-2 font-mono") do
+      div(class: "text-mini text-gray-600 text-right mt-2 font-mono") do
         "Last checked at #{@health[:checked_at]}"
       end
     end

@@ -26,10 +26,16 @@ RSpec.describe Views::Shared::UI::StatusBadge do
       expect(html).to include("bg-status-danger")
     end
 
-    it "maps processing to amber with animation" do
+    it "maps processing to warning semantic token with animation" do
       html = render_component(status: "processing")
-      expect(html).to include("bg-amber-900")
+      expect(html).to include("bg-status-warning")
       expect(html).to include("animate-pulse")
+    end
+
+    it "maps acknowledged to active semantic token" do
+      html = render_component(status: "acknowledged")
+      expect(html).to include("bg-status-active")
+      expect(html).to include("text-status-active-text")
     end
   end
 
@@ -38,7 +44,7 @@ RSpec.describe Views::Shared::UI::StatusBadge do
 
     it "falls back to default styling" do
       expect(html).to include("bg-status-neutral")
-      expect(html).to include("text-zinc-300")
+      expect(html).to include("text-status-neutral-text")
     end
   end
 
@@ -65,6 +71,24 @@ RSpec.describe Views::Shared::UI::StatusBadge do
     it "includes aria-label with status text" do
       expect(html).to include("aria-label")
       expect(html).to include("Status: pending")
+    end
+  end
+
+  describe "tailwind best practices" do
+    let(:html) { render_component(status: "pending") }
+
+    it "uses semantic text-tiny instead of arbitrary text-[10px]" do
+      expect(html).to include("text-tiny")
+      expect(html).not_to include("text-[")
+    end
+
+    it "uses tracking-widest for uppercase microcopy" do
+      expect(html).to include("tracking-widest")
+    end
+
+    it "accepts class override via **attrs" do
+      html = render_component(status: "pending", class: "mt-2")
+      expect(html).to include("mt-2")
     end
   end
 end

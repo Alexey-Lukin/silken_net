@@ -19,7 +19,7 @@ module Firmwares
           end
 
           field_container("Binary Artifact (.bin)") do
-            f.file_field :binary_file, class: "w-full text-emerald-900 text-[10px] font-mono file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-emerald-900/20 file:text-emerald-500 hover:file:bg-emerald-900/40 cursor-pointer", required: true
+            f.file_field :binary_file, class: "w-full text-emerald-900 text-tiny font-mono file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-emerald-900/20 file:text-emerald-500 hover:file:bg-emerald-900/40 cursor-pointer", required: true
           end
 
           field_container("Release Notes / Logical Changes") do
@@ -37,13 +37,13 @@ module Firmwares
 
     def field_container(label, &block)
       div(class: "space-y-2") do
-        label(class: "text-[9px] uppercase tracking-widest text-gray-600") { label }
+        label(class: "text-mini uppercase tracking-widest text-gray-600") { label }
         yield
       end
     end
 
     def input_classes
-      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs focus:border-emerald-500 outline-none transition-all"
+      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs focus-visible:border-emerald-500 outline-none transition-all"
     end
   end
 end

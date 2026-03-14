@@ -29,13 +29,13 @@ module BlockchainTransactions
         div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { "TX" }
         div(class: "flex justify-between items-start") do
           div do
-            p(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-2") { "Transaction Record" }
+            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { "Transaction Record" }
             h2(class: "text-3xl font-extralight tracking-tighter text-white") { "#{@tx.amount} SCC" }
-            p(class: "text-[10px] font-mono text-gray-600 mt-2") { "##{@tx.id} // #{@tx.created_at.strftime('%d.%m.%Y %H:%M:%S UTC')}" }
+            p(class: "text-tiny font-mono text-gray-600 mt-2") { "##{@tx.id} // #{@tx.created_at.strftime('%d.%m.%Y %H:%M:%S UTC')}" }
           end
-          div(class: "flex items-center space-x-3") do
-            span(class: tokens("px-3 py-1 text-[9px] font-bold uppercase", status_badge_styles)) { @tx.status }
-            span(class: tokens("px-3 py-1 text-[9px] font-bold uppercase border", token_badge_styles)) { @tx.token_type }
+          div(class: "flex items-center gap-3") do
+            span(class: tokens("px-3 py-1 text-mini font-bold uppercase", status_badge_styles)) { @tx.status }
+            span(class: tokens("px-3 py-1 text-mini font-bold uppercase border", token_badge_styles)) { @tx.token_type }
           end
         end
       end
@@ -43,8 +43,8 @@ module BlockchainTransactions
 
     def render_transaction_details
       div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-        table(role: "table", class: "w-full text-left font-mono text-[11px]") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+        table(role: "table", class: "w-full text-left font-mono text-compact") do
+          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { "Field" }
               th(scope: "col", class: "p-4") { "Value" }
@@ -72,16 +72,16 @@ module BlockchainTransactions
 
     def render_notes_panel
       div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-4") { "Transaction Notes" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Transaction Notes" }
         if @tx.notes.present?
-          p(class: "text-[11px] text-gray-400 font-mono leading-relaxed") { @tx.notes }
+          p(class: "text-compact text-gray-400 font-mono leading-relaxed") { @tx.notes }
         else
-          p(class: "text-[11px] text-gray-700 italic") { "No notes attached." }
+          p(class: "text-compact text-gray-700 italic") { "No notes attached." }
         end
         if @tx.error_message.present?
           div(class: "mt-4 p-3 border border-red-900 bg-red-950/20") do
-            p(class: "text-[9px] uppercase text-red-500 tracking-widest mb-1") { "Error Message" }
-            p(class: "text-[11px] text-red-400 font-mono") { @tx.error_message }
+            p(class: "text-mini uppercase text-red-500 tracking-widest mb-1") { "Error Message" }
+            p(class: "text-compact text-red-400 font-mono") { @tx.error_message }
           end
         end
       end
@@ -89,38 +89,38 @@ module BlockchainTransactions
 
     def render_wallet_info
       div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Linked Wallet" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Linked Wallet" }
         if @tx.wallet.present?
           div do
-            p(class: "text-[9px] text-gray-600 uppercase mb-1") { "Tree DID" }
-            p(class: "text-[11px] text-emerald-400 font-mono") { @tx.wallet.tree&.did || "N/A" }
+            p(class: "text-mini text-gray-600 uppercase mb-1") { "Tree DID" }
+            p(class: "text-compact text-emerald-400 font-mono") { @tx.wallet.tree&.did || "N/A" }
           end
           div(class: "pt-3 border-t border-emerald-900/30") do
-            p(class: "text-[9px] text-gray-600 uppercase mb-1") { "Wallet Balance" }
+            p(class: "text-mini text-gray-600 uppercase mb-1") { "Wallet Balance" }
             p(class: "text-lg text-white font-light") do
               plain @tx.wallet.balance.to_f.round(4).to_s
               span(class: "text-xs text-emerald-600 ml-2") { "SCC" }
             end
           end
         else
-          p(class: "text-[11px] text-gray-700 italic") { "No wallet linked." }
+          p(class: "text-compact text-gray-700 italic") { "No wallet linked." }
         end
       end
     end
 
     def render_on_chain_panel
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5 space-y-4") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "On-Chain Verification" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "On-Chain Verification" }
         if @tx.tx_hash.present?
           div do
-            p(class: "text-[9px] text-gray-600 uppercase mb-1") { "Transaction Hash" }
-            p(class: "text-[10px] font-mono text-emerald-500 break-all leading-relaxed") { @tx.tx_hash }
+            p(class: "text-mini text-gray-600 uppercase mb-1") { "Transaction Hash" }
+            p(class: "text-tiny font-mono text-emerald-500 break-all leading-relaxed") { @tx.tx_hash }
           end
           div(class: "mt-4") do
-            a(href: @tx.explorer_url, target: "_blank", class: "w-full block text-center py-2 border border-emerald-500 text-[10px] uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "View transaction on Polygonscan") { "View on Polygonscan →" }
+            a(href: @tx.explorer_url, target: "_blank", class: "w-full block text-center py-2 border border-emerald-500 text-tiny uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View transaction on Polygonscan") { "View on Polygonscan →" }
           end
         else
-          p(class: "text-[11px] text-gray-700 italic") { "Transaction not yet submitted to chain." }
+          p(class: "text-compact text-gray-700 italic") { "Transaction not yet submitted to chain." }
         end
       end
     end
@@ -128,7 +128,7 @@ module BlockchainTransactions
     def status_badge_styles
       case @tx.status
       when "confirmed" then "bg-emerald-900 text-emerald-200"
-      when "processing", "sent" then "bg-amber-900 text-amber-200"
+      when "processing", "sent" then "bg-status-warning text-status-warning-text"
       when "pending" then "bg-zinc-800 text-zinc-300"
       when "failed" then "bg-red-900 text-red-200"
       else "bg-zinc-900 text-zinc-400"
@@ -138,7 +138,7 @@ module BlockchainTransactions
     def token_badge_styles
       case @tx.token_type
       when "carbon_coin" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
-      when "forest_coin" then "bg-amber-900/20 text-amber-400 border-amber-500/30"
+      when "forest_coin" then "bg-token-forest/20 text-token-forest border-token-forest/30"
       else "bg-zinc-900 text-zinc-400 border-zinc-700"
       end
     end

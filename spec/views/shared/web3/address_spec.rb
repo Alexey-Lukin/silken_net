@@ -38,7 +38,7 @@ RSpec.describe Views::Shared::Web3::Address do
     end
 
     it "includes focus ring styles on the copy button" do
-      expect(html).to include("focus:ring-2")
+      expect(html).to include("focus-visible:ring-2")
     end
   end
 

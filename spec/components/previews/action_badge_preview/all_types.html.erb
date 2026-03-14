@@ -1,0 +1,21 @@
+<div style="background: #000; padding: 2rem; font-family: monospace;">
+  <h3 style="color: #10b981; margin-bottom: 1rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;">Action Badge — Pattern Matching</h3>
+  <table style="border-collapse: collapse;">
+    <% [
+      ["create_user", "creative"],
+      ["add_tree", "creative"],
+      ["update_firmware", "mutative"],
+      ["modify_settings", "mutative"],
+      ["delete_node", "destructive"],
+      ["destroy_record", "destructive"],
+      ["remove_photo", "destructive"],
+      ["login", "neutral"],
+      ["export_report", "neutral"]
+    ].each do |action, type| %>
+      <tr>
+        <td style="padding: 0.25rem 1rem; color: #065f46; font-size: 10px;"><%= type %></td>
+        <td style="padding: 0.25rem;"><%= render Views::Shared::UI::ActionBadge.new(action: action) %></td>
+      </tr>
+    <% end %>
+  </table>
+</div>

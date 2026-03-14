@@ -23,12 +23,12 @@ module BlockchainTransactions
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "📒 Blockchain Ledger — Global Audit" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "📒 Blockchain Ledger — Global Audit" }
           p(class: "text-xs text-gray-600 mt-1") { "Minting, slashing та всі on-chain події вашої Організації." }
         end
-        div(class: "flex space-x-2") do
+        div(class: "flex gap-2") do
           %w[carbon_coin forest_coin].each do |t|
-            span(class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-900 uppercase", role: "status") { t }
+            span(class: "px-2 py-0.5 border border-emerald-900 text-mini text-emerald-900 uppercase", role: "status") { t }
           end
         end
       end
@@ -36,8 +36,8 @@ module BlockchainTransactions
 
     def transactions_table
       div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-        table(class: "w-full text-left font-mono text-[11px] min-w-[640px]", role: "table") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+        table(class: "w-full text-left font-mono text-compact min-w-[640px]", role: "table") do
+          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { "Type" }
               th(scope: "col", class: "p-4") { "Amount" }
@@ -65,14 +65,14 @@ module BlockchainTransactions
     def render_transaction_row(tx)
       tr(class: "hover:bg-emerald-950/10 transition-colors") do
         td(class: "p-4") do
-          span(class: tokens("px-2 py-0.5 text-[9px] font-bold uppercase border", token_type_styles(tx.token_type))) { tx.token_type }
+          span(class: tokens("px-2 py-0.5 text-mini font-bold uppercase border", token_type_styles(tx.token_type))) { tx.token_type }
         end
         td(class: "p-4 text-white font-bold") { "#{tx.amount} SCC" }
         td(class: "p-4") do
-          span(class: tokens("text-[8px] uppercase tracking-widest", status_color(tx.status))) { tx.status }
+          span(class: tokens("text-micro uppercase tracking-widest", status_color(tx.status))) { tx.status }
         end
         td(class: "p-4 text-emerald-500") { tx.wallet&.tree&.did || "—" }
-        td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-[10px]") do
+        td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-tiny") do
           if tx.tx_hash.present?
             a(href: tx.explorer_url, target: "_blank", rel: "noopener noreferrer", aria_label: "View transaction on blockchain explorer", class: "hover:text-emerald-500 underline decoration-emerald-900") { tx.tx_hash.first(16) + "..." }
           else
@@ -86,7 +86,7 @@ module BlockchainTransactions
     def token_type_styles(type)
       case type
       when "carbon_coin" then "bg-emerald-900/20 text-emerald-400 border-emerald-500/30"
-      when "forest_coin" then "bg-amber-900/20 text-amber-400 border-amber-500/30"
+      when "forest_coin" then "bg-token-forest/20 text-token-forest border-token-forest/30"
       else "bg-zinc-900 text-zinc-400 border-zinc-700"
       end
     end
@@ -94,7 +94,7 @@ module BlockchainTransactions
     def status_color(status)
       case status
       when "confirmed" then "text-emerald-500"
-      when "processing", "sent" then "text-amber-500 animate-pulse"
+      when "processing", "sent" then "text-status-warning-text animate-pulse"
       when "pending" then "text-gray-400"
       when "failed" then "text-red-500"
       else "text-gray-600"
