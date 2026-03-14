@@ -142,4 +142,24 @@ class BlockchainTransaction < ApplicationRecord
   end
 
   alias_method :polygonscan_url, :explorer_url
+
+  # ⚡ [СИНХРОНІЗАЦІЯ]: Real-time broadcast при зміні статусу транзакції.
+  # Оновлюємо рядок у таблиці Wallet Ledger та на сторінці деталей TX.
+  after_update_commit :broadcast_status_change, if: :saved_change_to_status?
+
+  private
+
+  def broadcast_status_change
+    return unless wallet
+
+    # Оновлення рядка транзакції в Wallet Ledger (підписка: wallet:<id>)
+    Turbo::StreamsChannel.broadcast_replace_later_to(
+      wallet,
+      target: "transaction_#{id}",
+      html: Wallets::TransactionRow.new(tx: self).call
+    )
+
+    # Оновлення балансу при фінальних статусах (confirmed/failed)
+    wallet.broadcast_balance_update if status_confirmed? || status_failed?
+  end
 end

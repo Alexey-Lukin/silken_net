@@ -7,6 +7,9 @@ module BlockchainTransactions
     end
 
     def view_template
+      # ⚡ [СИНХРОНІЗАЦІЯ]: Підписка на потік оновлень транзакції через канал гаманця
+      turbo_stream_from @tx.wallet if @tx.wallet
+
       div(class: "space-y-8 animate-in slide-in-from-bottom-4 duration-700") do
         render_header
         div(class: "grid grid-cols-1 xl:grid-cols-3 gap-8") do

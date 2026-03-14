@@ -34,7 +34,7 @@ module Api
           format.html do
             render_dashboard(
               title: "Alerts Command",
-              component: Alerts::Index.new(alerts: @alerts, pagy: @pagy)
+              component: Alerts::Index.new(alerts: @alerts, pagy: @pagy, organization: current_user.organization)
             )
           end
         end

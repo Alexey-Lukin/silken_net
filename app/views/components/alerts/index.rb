@@ -2,12 +2,16 @@
 
 module Alerts
   class Index < ApplicationComponent
-    def initialize(alerts:, pagy:)
+    def initialize(alerts:, pagy:, organization: nil)
       @alerts = alerts
       @pagy = pagy
+      @organization = organization
     end
 
     def view_template
+      # ⚡ [СИНХРОНІЗАЦІЯ]: Підписка на потік оновлень алертів організації
+      turbo_stream_from "ews_alerts_org_#{@organization.id}" if @organization
+
       div(class: "space-y-6 animate-in fade-in duration-500") do
         header_section
 
