@@ -37,15 +37,15 @@ module Wallets
       div(class: "space-y-4") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "On-Chain Transaction Ledger" }
 
-        div(class: "border border-emerald-900 bg-black overflow-hidden") do
-          table(class: "w-full text-left font-mono text-[11px]") do
+        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+          table(class: "w-full text-left font-mono text-[11px] min-w-[640px]", role: "table") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
               tr do
-                th(class: "p-4") { "Type" }
-                th(class: "p-4") { "Amount" }
-                th(class: "p-4") { "Status" }
-                th(class: "p-4") { "TX Hash" }
-                th(class: "p-4 text-right") { "Timestamp" }
+                th(scope: "col", class: "p-4") { "Type" }
+                th(scope: "col", class: "p-4") { "Amount" }
+                th(scope: "col", class: "p-4") { "Status" }
+                th(scope: "col", class: "p-4") { "TX Hash" }
+                th(scope: "col", class: "p-4 text-right") { "Timestamp" }
               end
             end
             # ⚡ [СИНХРОНІЗАЦІЯ]: ID для вставки нових транзакцій
@@ -90,8 +90,16 @@ module Wallets
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-4") { "Actions" }
         div(class: "space-y-2") do
-          button(class: "w-full py-2 border border-emerald-500 text-[10px] uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all") { "Sync with Polygon" }
-          button(class: "w-full py-2 border border-emerald-900 text-[10px] uppercase text-emerald-900 hover:border-emerald-700 transition-all") { "Export CSV Ledger" }
+          button(
+            aria_label: "Sync wallet with Polygon blockchain",
+            class: "w-full py-2 border border-emerald-500 text-[10px] uppercase text-emerald-500 hover:bg-emerald-500 " \
+                   "hover:text-black focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+          ) { "Sync with Polygon" }
+          button(
+            aria_label: "Export transaction ledger as CSV",
+            class: "w-full py-2 border border-emerald-900 text-[10px] uppercase text-emerald-900 hover:border-emerald-700 " \
+                   "focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+          ) { "Export CSV Ledger" }
         end
       end
     end

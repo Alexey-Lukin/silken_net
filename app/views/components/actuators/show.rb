@@ -25,15 +25,15 @@ module Actuators
     private
 
     def render_command_table
-      div(class: "border border-emerald-900 bg-black overflow-hidden") do
-        table(class: "w-full text-left font-mono text-[10px]") do
+      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        table(class: "w-full text-left font-mono text-[10px] min-w-[640px]", role: "table") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[8px] tracking-widest") do
             tr do
-              th(class: "p-4") { "ID" }
-              th(class: "p-4") { "Operator" }
-              th(class: "p-4") { "Payload" }
-              th(class: "p-4") { "Status" }
-              th(class: "p-4 text-right") { "Executed At" }
+              th(scope: "col", class: "p-4") { "ID" }
+              th(scope: "col", class: "p-4") { "Operator" }
+              th(scope: "col", class: "p-4") { "Payload" }
+              th(scope: "col", class: "p-4") { "Status" }
+              th(scope: "col", class: "p-4 text-right") { "Executed At" }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do

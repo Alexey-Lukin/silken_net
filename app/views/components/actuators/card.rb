@@ -10,7 +10,7 @@ module Actuators
     def view_template
       div(id: "actuator_#{@actuator.id}", class: "group p-6 border border-emerald-900 bg-zinc-950 hover:border-emerald-500 transition-all duration-500 relative overflow-hidden shadow-2xl") do
         # Фоновий індикатор типу (декоративний)
-        div(class: "absolute -right-4 -top-4 text-[40px] font-bold text-emerald-900/5 select-none") { @actuator.device_type[0..2].upcase }
+        div(class: "absolute -right-4 -top-4 text-[40px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { @actuator.device_type[0..2].upcase }
 
         render_header
         render_status_matrix
@@ -56,14 +56,18 @@ module Actuators
         button_to(
           execute_api_v1_actuator_path(@actuator, action_payload: "open"),
           method: :post,
-          class: "py-2 border border-emerald-500 text-[9px] uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all font-bold tracking-widest"
+          aria: { label: "Execute ON command for actuator #{@actuator.device_type}" },
+          class: "py-2 border border-emerald-500 text-[9px] uppercase text-emerald-500 hover:bg-emerald-500 " \
+                 "hover:text-black focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-bold tracking-widest"
         ) { "EXECUTE_ON" }
 
         # Кнопка Вимкнення/Закриття (Execute Close/OFF)
         button_to(
           execute_api_v1_actuator_path(@actuator, action_payload: "close"),
           method: :post,
-          class: "py-2 border border-emerald-900 text-[9px] uppercase text-gray-600 hover:border-red-900 hover:text-white transition-all tracking-widest"
+          aria: { label: "Execute OFF command for actuator #{@actuator.device_type}" },
+          class: "py-2 border border-emerald-900 text-[9px] uppercase text-gray-600 hover:border-red-900 " \
+                 "hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-all tracking-widest"
         ) { "EXECUTE_OFF" }
       end
     end

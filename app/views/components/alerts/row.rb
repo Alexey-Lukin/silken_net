@@ -21,24 +21,30 @@ module Alerts
 
     def severity_badge
       color = case @alert.severity.to_s
-      when "critical" then "bg-red-900 text-red-200 animate-pulse"
+      when "critical" then "bg-status-danger text-status-danger-text animate-pulse"
       when "medium" then "bg-amber-900 text-amber-200"
       when "low" then "bg-emerald-900 text-emerald-200"
       else "bg-zinc-900 text-zinc-200"
       end
-      span(class: tokens("px-2 py-0.5 rounded-sm text-[9px] uppercase font-bold", color)) { @alert.severity }
+      span(
+        role: "status",
+        aria_label: "Severity: #{@alert.severity}",
+        class: tokens("px-2 py-0.5 rounded-sm text-[9px] uppercase font-bold", color)
+      ) { @alert.severity }
     end
 
     def action_button
       if @alert.status_resolved?
-        span(class: "text-emerald-700 text-[9px] uppercase tracking-widest") { "V Resolved" }
+        span(class: "text-emerald-700 text-[9px] uppercase tracking-widest", role: "status") { "V Resolved" }
       else
         # Форма для "Втихомирення" через Turbo Stream
         button_to(
           "Acknowledge & Resolve →",
           resolve_api_v1_alert_path(@alert),
           method: :patch,
-          class: "text-[9px] uppercase tracking-tighter border border-red-900 text-red-500 hover:bg-red-900 hover:text-white px-3 py-1 transition-all",
+          aria: { label: "Resolve alert ##{@alert.id}" },
+          class: "text-[9px] uppercase tracking-tighter border border-red-900 text-red-500 hover:bg-red-900 " \
+                 "hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500 px-3 py-1 transition-all",
           data: { turbo_confirm: "Ви підтверджуєте локалізацію загрози ##{@alert.id}?" }
         )
       end

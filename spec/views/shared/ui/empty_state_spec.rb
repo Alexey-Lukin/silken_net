@@ -23,6 +23,10 @@ RSpec.describe Views::Shared::UI::EmptyState do
     it "wraps in a div with dashed border" do
       expect(html).to include("border-dashed")
     end
+
+    it "includes role=status for screen readers" do
+      expect(html).to include('role="status"')
+    end
   end
 
   describe "with description" do
@@ -36,8 +40,9 @@ RSpec.describe Views::Shared::UI::EmptyState do
   describe "with custom icon" do
     let(:html) { render_component(title: "Empty", icon: "⚙") }
 
-    it "renders the custom icon" do
+    it "renders the custom icon with aria-hidden" do
       expect(html).to include("⚙")
+      expect(html).to include("aria-hidden")
     end
   end
 
