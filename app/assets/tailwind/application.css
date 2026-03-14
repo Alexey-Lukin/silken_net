@@ -8,6 +8,15 @@
   --color-gaia-dark: #064e3b;
   --color-gaia-muted: #065f46;
 
+  /* Semantic surface / text / primary (CSS-variable driven for light/dark) */
+  --color-gaia-surface: var(--gaia-surface);
+  --color-gaia-surface-alt: var(--gaia-surface-alt);
+  --color-gaia-text: var(--gaia-text);
+  --color-gaia-text-muted: var(--gaia-text-muted);
+  --color-gaia-primary: var(--gaia-primary);
+  --color-gaia-primary-hover: var(--gaia-primary-hover);
+  --color-gaia-border: var(--gaia-border);
+
   /* Status: danger / error */
   --color-status-danger: #7f1d1d;
   --color-status-danger-text: #fecaca;
@@ -32,4 +41,39 @@
   /* Blockchain tokens */
   --color-token-carbon: #059669;
   --color-token-forest: #d97706;
+}
+
+/* ── Light / Dark CSS custom properties ── */
+:root {
+  --gaia-surface: #ffffff;
+  --gaia-surface-alt: #f3f4f6;
+  --gaia-text: #111827;
+  --gaia-text-muted: #6b7280;
+  --gaia-primary: #10b981;
+  --gaia-primary-hover: #059669;
+  --gaia-border: #e5e7eb;
+}
+
+.dark {
+  --gaia-surface: #000000;
+  --gaia-surface-alt: #0a0a0a;
+  --gaia-text: #10b981;
+  --gaia-text-muted: #065f46;
+  --gaia-primary: #10b981;
+  --gaia-primary-hover: #34d399;
+  --gaia-border: rgba(16, 185, 129, 0.2);
+}
+
+/* ── Typography Base ── */
+@layer base {
+  h1 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 300; letter-spacing: 0.05em; }
+  h2 { font-size: 1.5rem;   line-height: 2rem;    font-weight: 300; letter-spacing: 0.05em; }
+  h3 { font-size: 1.25rem;  line-height: 1.75rem;  font-weight: 400; }
+  h4 { font-size: 1rem;     line-height: 1.5rem;   font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Custom scrollbar for dark terminal aesthetic */
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 3px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.4); }
 }

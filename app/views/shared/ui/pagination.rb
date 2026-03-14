@@ -25,22 +25,24 @@ module Views
               a(
                 href: @url_helper.call(page: @pagy.prev),
                 aria_label: "Go to previous page",
-                class: "px-4 py-2 border border-emerald-900 text-emerald-800 hover:border-emerald-600 " \
-                       "hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 " \
+                class: "px-4 py-2 border border-gray-300 dark:border-emerald-900 text-gray-500 dark:text-emerald-800 " \
+                       "hover:border-gaia-primary hover:text-gaia-primary " \
+                       "focus:outline-none focus:ring-2 focus:ring-gaia-primary " \
                        "transition-all tracking-widest"
               ) { "← Previous" }
             else
               div
             end
 
-            div(class: "text-emerald-900", aria_current: "page") { "Page #{@pagy.page} / #{@pagy.last}" }
+            div(class: "text-gray-400 dark:text-emerald-900", aria_current: "page") { "Page #{@pagy.page} / #{@pagy.last}" }
 
             if @pagy.next
               a(
                 href: @url_helper.call(page: @pagy.next),
                 aria_label: "Go to next page",
-                class: "px-4 py-2 border border-emerald-900 text-emerald-800 hover:border-emerald-600 " \
-                       "hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 " \
+                class: "px-4 py-2 border border-gray-300 dark:border-emerald-900 text-gray-500 dark:text-emerald-800 " \
+                       "hover:border-gaia-primary hover:text-gaia-primary " \
+                       "focus:outline-none focus:ring-2 focus:ring-gaia-primary " \
                        "transition-all tracking-widest"
               ) { "Next →" }
             else

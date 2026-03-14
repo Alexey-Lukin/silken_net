@@ -11,10 +11,10 @@ module Views
         end
 
         def view_template
-          div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+          div(class: "border border-gray-200 dark:border-emerald-900 bg-white dark:bg-black overflow-x-auto w-full transition-colors duration-300") do
             table(class: "w-full text-left font-mono text-[11px]", role: "table") do
               render_thead
-              tbody(class: "divide-y divide-emerald-900/30", &@rows_block)
+              tbody(class: "divide-y divide-gray-100 dark:divide-emerald-900/30", &@rows_block)
             end
           end
         end
@@ -22,7 +22,7 @@ module Views
         private
 
         def render_thead
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+          thead(class: "bg-gray-50 dark:bg-emerald-950/20 text-gray-500 dark:text-emerald-800 uppercase text-[9px] tracking-widest transition-colors duration-300") do
             tr do
               @columns.each do |col|
                 th(scope: "col", class: tokens("p-4", col[:class])) { col[:label] }

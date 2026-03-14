@@ -11,8 +11,8 @@ module Views
 
         def view_template
           div(class: "flex justify-between") do
-            span(class: "text-gray-600") { "#{@label}:" }
-            span(class: "text-emerald-400 truncate ml-2") { @value.to_s }
+            span(class: "text-gray-400 dark:text-gray-600") { "#{@label}:" }
+            span(class: "text-gaia-primary truncate ml-2") { @value.to_s }
           end
         end
       end
