@@ -48,17 +48,23 @@ module Alerts
           a(
             href: helpers.api_v1_alerts_path,
             aria_label: "Show all alerts",
-            class: "px-2 py-0.5 border border-emerald-900 text-mini text-emerald-700 uppercase hover:border-emerald-500 hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
+            class: filter_link_classes
           ) { "all" }
           %w[critical medium low].each do |s|
             a(
               href: helpers.api_v1_alerts_path(severity: s),
               aria_label: "Filter alerts by #{s} severity",
-              class: "px-2 py-0.5 border border-emerald-900 text-mini text-emerald-900 uppercase hover:border-emerald-500 hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
+              class: filter_link_classes
             ) { s }
           end
         end
       end
+    end
+
+    def filter_link_classes
+      "px-2 py-0.5 border border-emerald-900 text-mini uppercase text-emerald-700 " \
+        "hover:border-emerald-500 hover:text-emerald-500 " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
     end
   end
 end

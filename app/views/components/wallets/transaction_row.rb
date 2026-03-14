@@ -8,7 +8,7 @@ module Wallets
 
     def view_template
       # ⚡ [СИНХРОНІЗАЦІЯ]: target ID для оновлення статусу транзакції
-      tr(id: "transaction_#{@tx.id}", class: "hover:bg-emerald-950/10 transition-colors animate-in fade-in duration-500") do
+      tr(id: "transaction_#{@tx.id}", class: row_classes) do
         td(class: "p-4") do
           span(class: tokens("px-2 py-0.5 rounded-sm text-mini font-bold uppercase border", tx_type_styles)) do
             @tx.token_type
@@ -49,6 +49,10 @@ module Wallets
       when "failed" then "text-red-500"
       else "text-gray-600"
       end
+    end
+
+    def row_classes
+      "hover:bg-emerald-950/10 transition-colors animate-in fade-in duration-500"
     end
   end
 end

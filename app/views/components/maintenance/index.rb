@@ -32,9 +32,7 @@ module Maintenance
         a(
           href: helpers.new_api_v1_maintenance_record_path,
           aria_label: "Register new maintenance intervention",
-          class: "px-4 py-2 border border-emerald-500 text-emerald-500 hover:bg-emerald-500 " \
-                 "hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
-                 "transition-all uppercase text-tiny tracking-widest"
+          class: register_button_classes
         ) { "+ Register Intervention" }
       end
     end
@@ -46,24 +44,18 @@ module Maintenance
           a(
             href: helpers.api_v1_maintenance_records_path(action_type: type),
             aria_label: "Filter by #{type}",
-            class: "px-3 py-1 border border-emerald-900 text-mini uppercase text-emerald-900 " \
-                   "hover:border-emerald-600 hover:text-emerald-600 focus-visible:outline-none focus-visible:ring-2 " \
-                   "focus-visible:ring-emerald-500 transition-all font-mono"
+            class: filter_link_classes
           ) { type }
         end
         a(
           href: helpers.api_v1_maintenance_records_path(verified: "1"),
           aria_label: "Show only verified records",
-          class: "px-3 py-1 border border-emerald-700 text-mini uppercase text-emerald-700 " \
-                 "hover:bg-emerald-900/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
-                 "transition-all font-mono"
+          class: filter_verified_classes
         ) { "✓ Verified Only" }
         a(
           href: helpers.api_v1_maintenance_records_path,
           aria_label: "Clear all filters",
-          class: "px-3 py-1 border border-gray-800 text-mini uppercase text-gray-600 " \
-                 "hover:border-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
-                 "transition-all font-mono"
+          class: filter_clear_classes
         ) { "Clear" }
       end
     end
@@ -144,6 +136,34 @@ module Maintenance
         "decommissioning" => "text-red-700"
       }
       span(class: tokens("uppercase", colors[type] || "text-gray-500")) { type }
+    end
+
+    def register_button_classes
+      "px-4 py-2 border border-emerald-500 text-emerald-500 " \
+        "hover:bg-emerald-500 hover:text-black " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+        "transition-all uppercase text-tiny tracking-widest"
+    end
+
+    def filter_link_classes
+      "px-3 py-1 border border-emerald-900 text-mini uppercase text-emerald-900 " \
+        "hover:border-emerald-600 hover:text-emerald-600 " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+        "transition-all font-mono"
+    end
+
+    def filter_verified_classes
+      "px-3 py-1 border border-emerald-700 text-mini uppercase text-emerald-700 " \
+        "hover:bg-emerald-900/20 " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+        "transition-all font-mono"
+    end
+
+    def filter_clear_classes
+      "px-3 py-1 border border-gray-800 text-mini uppercase text-gray-600 " \
+        "hover:border-gray-600 " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+        "transition-all font-mono"
     end
   end
 end

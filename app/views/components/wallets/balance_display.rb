@@ -8,7 +8,7 @@ module Wallets
 
     def view_template
       # ⚡ [СИНХРОНІЗАЦІЯ]: target ID для BlockchainMintingService
-      div(id: "wallet_balance_#{@wallet.id}", class: "p-10 border border-emerald-900 bg-zinc-950 relative overflow-hidden shadow-2xl") do
+      div(id: "wallet_balance_#{@wallet.id}", class: container_classes) do
         div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { "SCC" }
 
         p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-4") { "Verified Balance" }
@@ -18,6 +18,12 @@ module Wallets
         end
         p(class: "mt-6 text-xs font-mono text-gray-500") { "Locked for: #{@wallet.tree&.did || @wallet.organization&.name}" }
       end
+    end
+
+    private
+
+    def container_classes
+      "p-10 border border-emerald-900 bg-zinc-950 relative overflow-hidden shadow-2xl"
     end
   end
 end

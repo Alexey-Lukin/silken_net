@@ -8,7 +8,7 @@ module Alerts
     end
 
     def view_template
-      tr(id: "alert_#{@alert.id}", class: tokens("transition-all duration-700", "bg-emerald-950/5 opacity-40": @alert.status_resolved?, "hover:bg-emerald-950/10": !@alert.status_resolved?)) do
+      tr(id: "alert_#{@alert.id}", class: row_classes) do
         td(class: "p-4") { severity_badge }
         td(class: "p-4 text-emerald-500") { "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}" }
         td(class: "p-4 text-gray-400") { @alert.message }
@@ -43,11 +43,25 @@ module Alerts
           resolve_api_v1_alert_path(@alert),
           method: :patch,
           aria: { label: "Resolve alert ##{@alert.id}" },
-          class: "text-mini uppercase tracking-tighter border border-red-900 text-red-500 hover:bg-red-900 " \
-                 "hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 px-3 py-1 transition-all",
+          class: resolve_button_classes,
           data: { turbo_confirm: "Ви підтверджуєте локалізацію загрози ##{@alert.id}?" }
         )
       end
+    end
+
+    def row_classes
+      tokens(
+        "transition-all duration-700",
+        "bg-emerald-950/5 opacity-40": @alert.status_resolved?,
+        "hover:bg-emerald-950/10": !@alert.status_resolved?
+      )
+    end
+
+    def resolve_button_classes
+      "text-mini uppercase tracking-tighter border border-red-900 text-red-500 " \
+        "hover:bg-red-900 hover:text-white " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 " \
+        "px-3 py-1 transition-all"
     end
   end
 end
