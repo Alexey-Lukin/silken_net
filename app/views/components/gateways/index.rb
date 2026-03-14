@@ -70,7 +70,8 @@ module Gateways
           p(class: "text-[9px] font-mono text-gray-600") { gateway.last_seen_at&.strftime("%H:%M // %d.%m") || "SILENT" }
           a(
             href: helpers.api_v1_gateway_path(gateway),
-            class: "text-[10px] uppercase tracking-widest text-emerald-600 hover:text-emerald-300 transition-colors"
+            aria_label: "Open gateway #{gateway.uid} details",
+            class: "text-[10px] uppercase tracking-widest text-emerald-600 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
           ) { "Open Relay →" }
         end
       end

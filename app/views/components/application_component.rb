@@ -9,6 +9,11 @@ class ApplicationComponent < Phlex::HTML
   def tokens(*args, **conditions)
     result = args.compact.join(" ")
     conditional = conditions.filter_map { |cls, flag| cls.to_s if flag }.join(" ")
-    [ result, conditional ].reject(&:empty?).join(" ")
+    combined = [ result, conditional ].reject(&:empty?).join(" ")
+    self.class.merger.merge(combined)
+  end
+
+  def self.merger
+    @merger ||= TailwindMerge::Merger.new
   end
 end

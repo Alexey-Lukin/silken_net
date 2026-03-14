@@ -31,8 +31,10 @@ module Maintenance
         end
         a(
           href: helpers.new_api_v1_maintenance_record_path,
+          aria_label: "Register new maintenance intervention",
           class: "px-4 py-2 border border-emerald-500 text-emerald-500 hover:bg-emerald-500 " \
-                 "hover:text-black transition-all uppercase text-[10px] tracking-widest"
+                 "hover:text-black focus:outline-none focus:ring-2 focus:ring-emerald-500 " \
+                 "transition-all uppercase text-[10px] tracking-widest"
         ) { "+ Register Intervention" }
       end
     end
@@ -43,36 +45,42 @@ module Maintenance
         action_types.each do |type|
           a(
             href: helpers.api_v1_maintenance_records_path(action_type: type),
+            aria_label: "Filter by #{type}",
             class: "px-3 py-1 border border-emerald-900 text-[9px] uppercase text-emerald-900 " \
-                   "hover:border-emerald-600 hover:text-emerald-600 transition-all font-mono"
+                   "hover:border-emerald-600 hover:text-emerald-600 focus:outline-none focus:ring-2 " \
+                   "focus:ring-emerald-500 transition-all font-mono"
           ) { type }
         end
         a(
           href: helpers.api_v1_maintenance_records_path(verified: "1"),
+          aria_label: "Show only verified records",
           class: "px-3 py-1 border border-emerald-700 text-[9px] uppercase text-emerald-700 " \
-                 "hover:bg-emerald-900/20 transition-all font-mono"
+                 "hover:bg-emerald-900/20 focus:outline-none focus:ring-2 focus:ring-emerald-500 " \
+                 "transition-all font-mono"
         ) { "✓ Verified Only" }
         a(
           href: helpers.api_v1_maintenance_records_path,
+          aria_label: "Clear all filters",
           class: "px-3 py-1 border border-gray-800 text-[9px] uppercase text-gray-600 " \
-                 "hover:border-gray-600 transition-all font-mono"
+                 "hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 " \
+                 "transition-all font-mono"
         ) { "Clear" }
       end
     end
 
     def records_table
-      div(class: "border border-emerald-900 bg-black overflow-x-auto") do
-        table(class: "w-full text-left font-mono text-[11px] min-w-[900px]") do
+      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        table(class: "w-full text-left font-mono text-[11px] min-w-[900px]", role: "table") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
             tr do
-              th(class: "p-4") { "Technician" }
-              th(class: "p-4") { "Unit" }
-              th(class: "p-4") { "Action" }
-              th(class: "p-4 text-right") { "Cost" }
-              th(class: "p-4 text-center") { "Photos" }
-              th(class: "p-4 text-center") { "HW" }
-              th(class: "p-4") { "Timestamp" }
-              th(class: "p-4 text-right") { "" }
+              th(scope: "col", class: "p-4") { "Technician" }
+              th(scope: "col", class: "p-4") { "Unit" }
+              th(scope: "col", class: "p-4") { "Action" }
+              th(scope: "col", class: "p-4 text-right") { "Cost" }
+              th(scope: "col", class: "p-4 text-center") { "Photos" }
+              th(scope: "col", class: "p-4 text-center") { "HW" }
+              th(scope: "col", class: "p-4") { "Timestamp" }
+              th(scope: "col", class: "p-4 text-right") { "" }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
@@ -120,7 +128,8 @@ module Maintenance
         td(class: "p-4 text-right") do
           a(
             href: helpers.api_v1_maintenance_record_path(record),
-            class: "text-emerald-700 hover:text-white text-[10px] transition-colors"
+            aria_label: "Open maintenance record details",
+            class: "text-emerald-700 hover:text-white text-[10px] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
           ) { "OPEN →" }
         end
       end

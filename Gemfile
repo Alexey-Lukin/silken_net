@@ -44,6 +44,7 @@ gem "solid_cache"
 gem "solid_queue"
 gem "stimulus-rails"
 gem "strong_migrations"
+gem "tailwind_merge"
 gem "tailwindcss-rails"
 gem "thruster", require: false
 gem "turbo-rails"

@@ -29,13 +29,13 @@ module SystemAudits
 
     def status_banner
       if @audit.critical
-        div(class: "border border-red-700 bg-red-950/30 p-4") do
+        div(class: "border border-red-700 bg-red-950/30 p-4", role: "alert") do
           p(class: "text-red-400 text-xs font-mono font-bold uppercase tracking-widest") do
             "🚨 CRITICAL — Дельта #{format_scc(@audit.delta)} SCC перевищує поріг 0.0001"
           end
         end
       else
-        div(class: "border border-emerald-900 bg-emerald-950/20 p-4") do
+        div(class: "border border-emerald-900 bg-emerald-950/20 p-4", role: "status") do
           p(class: "text-emerald-500 text-xs font-mono uppercase tracking-widest") do
             "✓ INTEGRITY OK — Дельта #{format_scc(@audit.delta)} SCC у межах норми"
           end
@@ -44,12 +44,12 @@ module SystemAudits
     end
 
     def comparison_table
-      div(class: "border border-emerald-900 bg-black overflow-hidden") do
-        table(class: "w-full text-left font-mono text-[11px]") do
+      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        table(class: "w-full text-left font-mono text-[11px]", role: "table") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
             tr do
-              th(class: "p-4") { "Source" }
-              th(class: "p-4 text-right") { "SCC Total" }
+              th(scope: "col", class: "p-4") { "Source" }
+              th(scope: "col", class: "p-4 text-right") { "SCC Total" }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do

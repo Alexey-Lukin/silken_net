@@ -1,1 +1,35 @@
 @import "tailwindcss";
+
+@theme {
+  /* ── Gaia Ecosystem: Semantic Color Tokens ── */
+
+  /* Primary brand — forest emerald */
+  --color-gaia-green: #10b981;
+  --color-gaia-dark: #064e3b;
+  --color-gaia-muted: #065f46;
+
+  /* Status: danger / error */
+  --color-status-danger: #7f1d1d;
+  --color-status-danger-text: #fecaca;
+  --color-status-danger-accent: #ef4444;
+
+  /* Status: warning / amber */
+  --color-status-warning: #78350f;
+  --color-status-warning-text: #fde68a;
+
+  /* Status: info / blue */
+  --color-status-info: #1e3a5f;
+  --color-status-info-text: #bfdbfe;
+
+  /* Status: success */
+  --color-status-success: #065f46;
+  --color-status-success-text: #d1fae5;
+
+  /* Status: neutral / inactive */
+  --color-status-neutral: #27272a;
+  --color-status-neutral-text: #a1a1aa;
+
+  /* Blockchain tokens */
+  --color-token-carbon: #059669;
+  --color-token-forest: #d97706;
+}
