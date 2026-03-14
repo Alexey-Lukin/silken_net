@@ -12,7 +12,7 @@ module Navigation
 
     def view_template
       aside(
-        class: "w-64 h-screen sticky top-0 bg-black border-r border-emerald-900/50 flex flex-col z-50 overflow-y-auto font-mono",
+        class: "w-64 h-screen sticky top-0 bg-white dark:bg-black border-r border-gray-200 dark:border-emerald-900/50 flex flex-col z-50 overflow-y-auto font-mono transition-colors duration-300",
         role: "navigation",
         aria_label: "Main navigation"
       ) do
@@ -65,25 +65,25 @@ module Navigation
     private
 
     def render_logo
-      div(class: "px-6 py-8 border-b border-emerald-900/30") do
-        h1(class: "text-emerald-500 font-extralight tracking-[0.4em] uppercase text-lg leading-tight") { "Silken Net" }
-        p(class: "text-micro text-emerald-900 mt-1 uppercase tracking-widest") { "Central Command Citadel" }
+      div(class: "px-6 py-8 border-b border-gray-200 dark:border-emerald-900/30 transition-colors duration-300") do
+        h1(class: "text-gaia-primary font-extralight tracking-[0.4em] uppercase text-lg leading-tight") { "Silken Net" }
+        p(class: "text-micro text-gray-400 dark:text-emerald-900 mt-1 uppercase tracking-widest") { "Central Command Citadel" }
       end
     end
 
     def render_status_pulse
-      div(class: "px-6 py-4 bg-emerald-950/10 flex items-center justify-between border-b border-emerald-900/20") do
+      div(class: "px-6 py-4 bg-gray-50 dark:bg-emerald-950/10 flex items-center justify-between border-b border-gray-200 dark:border-emerald-900/20 transition-colors duration-300") do
         div(class: "flex items-center gap-2") do
-          div(class: "h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse")
-          span(class: "text-mini text-emerald-700 uppercase tracking-widest") { "Sync: 1.12 THz" }
+          div(class: "h-1.5 w-1.5 rounded-full bg-gaia-primary animate-pulse")
+          span(class: "text-mini text-gray-500 dark:text-emerald-700 uppercase tracking-widest") { "Sync: 1.12 THz" }
         end
-        span(class: "text-mini text-emerald-900") { "v8.0.ocean" }
+        span(class: "text-mini text-gray-400 dark:text-emerald-900") { "v8.0.ocean" }
       end
     end
 
     def section_group(title, &block)
       div(class: "space-y-4") do
-        h3(class: "text-mini uppercase tracking-[0.3em] text-emerald-900 px-2") { title }
+        h3(class: "text-mini uppercase tracking-[0.3em] text-gray-400 dark:text-emerald-900 px-2") { title }
         div(class: "space-y-1", &block)
       end
     end
@@ -101,14 +101,14 @@ module Navigation
         )
       ) do
         div(class: "flex items-center gap-3") do
-          span(class: tokens("w-4 h-4", "text-emerald-500": active, "text-emerald-900 group-hover:text-emerald-700": !active), aria_hidden: "true") { render_icon(icon) }
+          span(class: tokens("w-4 h-4", "text-gaia-primary": active, "text-gray-300 dark:text-emerald-900 group-hover:text-gaia-primary": !active), aria_hidden: "true") { render_icon(icon) }
           span { label }
         end
 
         if badge&.positive?
-          span(class: "bg-red-900/50 text-red-500 text-micro px-1.5 py-0.5 rounded-sm") { badge }
+          span(class: "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-500 text-micro px-1.5 py-0.5 rounded-sm") { badge }
         elsif pulse
-          div(class: "h-1 w-1 rounded-full bg-emerald-500 animate-ping")
+          div(class: "h-1 w-1 rounded-full bg-gaia-primary animate-ping")
         end
       end
     end
@@ -120,20 +120,21 @@ module Navigation
     end
 
     def nav_item_active_classes
-      "text-emerald-400 bg-emerald-950/20 border-emerald-500"
+      "text-gaia-primary bg-emerald-50 dark:bg-emerald-950/20 border-gaia-primary"
     end
 
     def nav_item_inactive_classes
-      "text-gray-500 border-transparent hover:text-emerald-600 hover:bg-emerald-950/5 hover:border-emerald-900/50 active:bg-emerald-950/10"
+      "text-gray-500 border-transparent hover:text-gaia-primary hover:bg-gray-50 dark:hover:bg-emerald-950/5 " \
+        "hover:border-gray-300 dark:hover:border-emerald-900/50 active:bg-emerald-950/10"
     end
 
     def render_user_footer
-      div(class: "p-4 border-t border-emerald-900/30 mt-auto bg-black") do
+      div(class: "p-4 border-t border-gray-200 dark:border-emerald-900/30 mt-auto bg-white dark:bg-black transition-colors duration-300") do
         div(class: "flex items-center gap-3 px-2") do
-          div(class: "h-8 w-8 rounded-none border border-emerald-700 flex items-center justify-center text-emerald-500 text-tiny") { "A" }
+          div(class: "h-8 w-8 rounded-none border border-gaia-primary flex items-center justify-center text-gaia-primary text-tiny") { "A" }
           div(class: "flex-1 overflow-hidden") do
-            p(class: "text-tiny text-emerald-100 truncate") { "Architect" }
-            p(class: "text-micro text-emerald-900 uppercase tracking-widest") { "Full Access Link" }
+            p(class: "text-tiny text-gray-900 dark:text-emerald-100 truncate") { "Architect" }
+            p(class: "text-micro text-gray-400 dark:text-emerald-900 uppercase tracking-widest") { "Full Access Link" }
           end
         end
       end

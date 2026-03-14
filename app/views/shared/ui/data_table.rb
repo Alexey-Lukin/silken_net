@@ -15,7 +15,7 @@ module Views
           div(class: tokens(wrapper_classes, @extra_class)) do
             table(class: table_classes, role: "table") do
               render_thead
-              tbody(class: "divide-y divide-emerald-900/30", &@rows_block)
+              tbody(class: "divide-y divide-gray-100 dark:divide-emerald-900/30", &@rows_block)
             end
           end
         end
@@ -23,7 +23,7 @@ module Views
         private
 
         def wrapper_classes
-          "border border-emerald-900 bg-black overflow-x-auto w-full"
+          "border border-gray-200 dark:border-emerald-900 bg-white dark:bg-black overflow-x-auto w-full transition-colors duration-300"
         end
 
         def table_classes
@@ -41,7 +41,7 @@ module Views
         end
 
         def thead_classes
-          "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest"
+          "bg-gray-50 dark:bg-emerald-950/20 text-gray-500 dark:text-emerald-800 uppercase text-mini tracking-widest transition-colors duration-300"
         end
       end
     end
