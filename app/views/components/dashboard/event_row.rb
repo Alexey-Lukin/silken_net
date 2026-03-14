@@ -42,10 +42,16 @@ module Dashboard
     def blockchain_transaction_summary
       sourceable = @event.sourceable
       if sourceable.is_a?(ParametricInsurance) && sourceable.uses_etherisc?
-        "🛡️ Etherisc DIP claim #{@event.amount} USDC → #{@event.to_address&.truncate(16) || 'Pool'}"
+        "🛡️ Etherisc DIP claim #{@event.amount} USDC → #{short_address(@event.to_address)}"
       else
         "⬢ Minted #{@event.amount} SCC → #{@event.wallet&.tree&.did || 'System'}"
       end
+    end
+
+    def short_address(address)
+      return "Pool" unless address.present? && address.length > 10
+
+      "#{address[0..5]}…#{address[-4..]}"
     end
   end
 end

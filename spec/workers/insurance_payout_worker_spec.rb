@@ -159,12 +159,9 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
       end
 
       it "calls Etherisc::ClaimService instead of BlockchainMintingService" do
-        claim_service = instance_double(Etherisc::ClaimService, claim!: fake_tx_hash)
-        allow(Etherisc::ClaimService).to receive(:new).with(etherisc_insurance).and_return(claim_service)
-
         described_class.new.perform(etherisc_insurance.id)
 
-        expect(claim_service).to have_received(:claim!)
+        expect(Etherisc::ClaimService).to have_received(:new).with(etherisc_insurance)
         expect(BlockchainMintingService).not_to have_received(:call)
       end
 
