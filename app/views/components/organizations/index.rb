@@ -11,15 +11,15 @@ module Organizations
       div(class: "space-y-8 animate-in fade-in duration-700") do
         header_section
 
-        div(class: "border border-emerald-900 bg-black overflow-hidden") do
-          table(class: "w-full text-left font-mono text-[11px]") do
+        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+          table(role: "table", class: "w-full text-left font-mono text-[11px]") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
               tr do
-                th(class: "p-4") { "Organization Name" }
-                th(class: "p-4") { "Sectors" }
-                th(class: "p-4") { "Investment (SCC)" }
-                th(class: "p-4") { "On-Chain Identity" }
-                th(class: "p-4 text-right") { "Audit" }
+                th(scope: "col", class: "p-4") { "Organization Name" }
+                th(scope: "col", class: "p-4") { "Sectors" }
+                th(scope: "col", class: "p-4") { "Investment (SCC)" }
+                th(scope: "col", class: "p-4") { "On-Chain Identity" }
+                th(scope: "col", class: "p-4 text-right") { "Audit" }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -46,7 +46,7 @@ module Organizations
           render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end
         td(class: "p-4 text-right") do
-          a(href: helpers.api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all") { "VIEW_PROFILE →" }
+          a(href: helpers.api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "View #{org.name} profile") { "VIEW_PROFILE →" }
         end
       end
     end

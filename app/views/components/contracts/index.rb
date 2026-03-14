@@ -15,16 +15,16 @@ module Contracts
         div(class: "space-y-4") do
           h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "Active Asset Portfolio" }
 
-          div(class: "border border-emerald-900 bg-black overflow-hidden") do
-            table(class: "w-full text-left font-mono text-[11px]") do
+          div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+            table(role: "table", class: "w-full text-left font-mono text-[11px]") do
               thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
                 tr do
-                  th(class: "p-4") { "ID / Status" }
-                  th(class: "p-4") { "Target Cluster" }
-                  th(class: "p-4") { "Investment" }
-                  th(class: "p-4") { "Current Yield" }
-                  th(class: "p-4") { "Performance" }
-                  th(class: "p-4 text-right") { "Command" }
+                  th(scope: "col", class: "p-4") { "ID / Status" }
+                  th(scope: "col", class: "p-4") { "Target Cluster" }
+                  th(scope: "col", class: "p-4") { "Investment" }
+                  th(scope: "col", class: "p-4") { "Current Yield" }
+                  th(scope: "col", class: "p-4") { "Performance" }
+                  th(scope: "col", class: "p-4 text-right") { "Command" }
                 end
               end
               tbody(class: "divide-y divide-emerald-900/30") do
@@ -66,7 +66,7 @@ module Contracts
           render_performance_gauge(contract.current_yield_performance)
         end
         td(class: "p-4 text-right") do
-          a(href: helpers.api_v1_contract_path(contract), class: "text-emerald-600 hover:text-white transition-all") { "AUDIT_DETAILS →" }
+          a(href: helpers.api_v1_contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "View contract ##{contract.id} details") { "AUDIT_DETAILS →" }
         end
       end
     end

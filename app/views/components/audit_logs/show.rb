@@ -39,12 +39,12 @@ module AuditLogs
     end
 
     def render_details_table
-      div(class: "border border-emerald-900 bg-black overflow-hidden") do
-        table(class: "w-full text-left font-mono text-[11px]") do
+      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        table(role: "table", class: "w-full text-left font-mono text-[11px]") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
             tr do
-              th(class: "p-4") { "Field" }
-              th(class: "p-4") { "Value" }
+              th(scope: "col", class: "p-4") { "Field" }
+              th(scope: "col", class: "p-4") { "Value" }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do

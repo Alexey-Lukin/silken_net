@@ -76,15 +76,15 @@ module Clusters
     end
 
     def render_gateways_table
-      div(class: "border border-emerald-900 bg-black overflow-hidden") do
+      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
         h3(class: "p-4 text-[10px] uppercase tracking-widest text-emerald-700 border-b border-emerald-900/30") { "Gateway Fleet" }
-        table(class: "w-full text-left font-mono text-[10px]") do
+        table(role: "table", class: "w-full text-left font-mono text-[10px]") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[8px] tracking-widest") do
             tr do
-              th(class: "p-4") { "UID" }
-              th(class: "p-4") { "State" }
-              th(class: "p-4") { "Coordinates" }
-              th(class: "p-4 text-right") { "Last Seen" }
+              th(scope: "col", class: "p-4") { "UID" }
+              th(scope: "col", class: "p-4") { "State" }
+              th(scope: "col", class: "p-4") { "Coordinates" }
+              th(scope: "col", class: "p-4 text-right") { "Last Seen" }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
@@ -162,7 +162,8 @@ module Clusters
             a(
               href: "https://www.google.com/maps?q=#{center[:lat]},#{center[:lng]}",
               target: "_blank",
-              class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase"
+              class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500",
+              aria_label: "View cluster location on Google Maps"
             ) { "View on Map →" }
           end
         end
