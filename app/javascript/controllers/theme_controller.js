@@ -8,6 +8,18 @@ export default class extends Controller {
 
   connect() {
     this.applyTheme(this.currentTheme)
+    this.mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+    this.mediaQuery.addEventListener("change", this.handleSystemChange)
+  }
+
+  disconnect() {
+    this.mediaQuery?.removeEventListener("change", this.handleSystemChange)
+  }
+
+  handleSystemChange = (event) => {
+    // Only react if user has no explicit preference saved
+    if (localStorage.getItem("theme")) return
+    this.applyTheme(event.matches ? "dark" : "light")
   }
 
   toggle() {

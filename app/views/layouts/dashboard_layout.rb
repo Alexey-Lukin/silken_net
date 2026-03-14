@@ -14,7 +14,7 @@ class DashboardLayout < ApplicationComponent
 
   def view_template(&block)
     doctype
-    html(class: "h-full dark") do
+    html(class: "h-full") do
       render_head
       body(class: "h-full font-mono antialiased bg-white text-gray-900 dark:bg-black dark:text-emerald-500 overflow-hidden transition-colors duration-300") do
         div(class: "flex h-full overflow-hidden") do
@@ -47,9 +47,17 @@ class DashboardLayout < ApplicationComponent
   private
 
   def render_head
+    fouc_script = 'var t=localStorage.getItem("theme")||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");' \
+                  'if(t==="dark")document.documentElement.classList.add("dark")'
+
     head do
       title { "Silken Net // #{@title}" }
       meta(name: "viewport", content: "width=device-width,initial-scale=1")
+      link(rel: "icon", href: "/icon.png", type: "image/png")
+      link(rel: "icon", href: "/icon.svg", type: "image/svg+xml")
+      link(rel: "apple-touch-icon", href: "/icon.png")
+      # Prevent FOUC: apply dark class before first paint
+      script { raw Phlex::HTML::SafeValue.new(fouc_script) }
       csp_meta_tag
       csrf_meta_tags
       stylesheet_link_tag "application", "tailwind", "data-turbo-track": "reload"
