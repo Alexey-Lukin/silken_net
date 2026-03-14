@@ -44,15 +44,15 @@ module Gateways
       div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-6 border border-emerald-900 bg-black shadow-2xl") do
         div do
           h2(class: "text-3xl font-extralight tracking-tighter text-emerald-400") { "Queen Relay // #{@gateway.uid}" }
-          div(class: "flex items-center mt-2 space-x-3") do
-            span(class: tokens("text-[10px] px-2 py-0.5 border font-mono uppercase tracking-widest", state_badge_classes)) { @gateway.state }
-            span(class: "text-[10px] text-emerald-900 font-mono") { "IP: #{@gateway.ip_address || '0.0.0.0'}" }
+          div(class: "flex items-center mt-2 gap-3") do
+            span(class: tokens("text-tiny px-2 py-0.5 border font-mono uppercase tracking-widest", state_badge_classes)) { @gateway.state }
+            span(class: "text-tiny text-emerald-900 font-mono") { "IP: #{@gateway.ip_address || '0.0.0.0'}" }
           end
         end
 
-        div(class: "mt-4 md:mt-0 flex items-center space-x-10") do
+        div(class: "mt-4 md:mt-0 flex items-center gap-10") do
           div(class: "text-right") do
-            p(class: "text-[9px] text-gray-600 uppercase tracking-widest") { "Heartbeat" }
+            p(class: "text-mini text-gray-600 uppercase tracking-widest") { "Heartbeat" }
             p(class: "text-sm font-mono text-emerald-100") { @gateway.last_seen_at&.strftime("%H:%M:%S // %d.%m.%y") || "SILENT" }
           end
           div(class: tokens("h-4 w-4 rounded-sm rotate-45", connection_led_classes))
@@ -62,7 +62,7 @@ module Gateways
 
     def render_technical_matrix
       div(class: "p-8 border border-emerald-900 bg-zinc-950") do
-        h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-10") { "System Telemetry (Queen Diagnostics)" }
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-10") { "System Telemetry (Queen Diagnostics)" }
 
         div(class: "grid grid-cols-1 md:grid-cols-3 gap-12") do
           # Cellular Signal (CSQ)
@@ -95,8 +95,8 @@ module Gateways
     def render_soldier_fleet_overview
       div(class: "p-6 border border-emerald-900 bg-black/20") do
         div(class: "flex justify-between items-center mb-6") do
-          h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Soldier Fleet Under Command" }
-          span(class: "text-[10px] font-mono text-emerald-500") { "#{@active_soldiers.count} Active nodes" }
+          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Soldier Fleet Under Command" }
+          span(class: "text-tiny font-mono text-emerald-500") { "#{@active_soldiers.count} Active nodes" }
         end
 
         # Маленька сітка солдатів у реальному часі
@@ -110,15 +110,15 @@ module Gateways
 
     def render_network_config
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Network Configuration" }
-        div(class: "space-y-4 font-mono text-[11px]") do
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Network Configuration" }
+        div(class: "space-y-4 font-mono text-compact") do
           config_row("Cluster", @gateway.cluster&.name || "UNASSIGNED")
           config_row("Sleep Interval", "#{@gateway.config_sleep_interval_s || 60}s")
           config_row("Mesh Mode", "Enabled")
 
           button(
-            class: "w-full mt-4 p-2 border border-emerald-800 text-[10px] uppercase text-emerald-600 hover:bg-emerald-900 " \
-                   "hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all",
+            class: "w-full mt-4 p-2 border border-emerald-800 text-tiny uppercase text-emerald-600 hover:bg-emerald-900 " \
+                   "hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all",
             aria_label: "Push new configuration to gateway"
           ) do
             "Push New Configuration →"
@@ -129,12 +129,12 @@ module Gateways
 
     def render_hardware_vault
       div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-4") { "Hardware Cryptography" }
-        div(class: "space-y-2 text-[10px] font-mono") do
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Hardware Cryptography" }
+        div(class: "space-y-2 text-tiny font-mono") do
           p(class: "text-gray-600") { "Hardware UID:" }
           p(class: "text-emerald-500 truncate") { @gateway.hardware_key&.uid || "UNDEFINED" }
 
-          div(class: "mt-4 flex items-center space-x-2 text-emerald-800") do
+          div(class: "mt-4 flex items-center gap-2 text-emerald-800") do
             span(class: "h-2 w-2 bg-emerald-900 rounded-full")
             span { "AES-256 Provisioned" }
           end
@@ -149,8 +149,8 @@ module Gateways
         div(class: tokens("h-24 w-24 rounded-full border-2 flex flex-col items-center justify-center mb-4", color)) do
           span(class: "text-xl font-light text-white") { value }
         end
-        p(class: "text-[9px] uppercase text-gray-600 tracking-tighter") { label }
-        p(class: "text-[10px] font-mono text-emerald-900") { subtext }
+        p(class: "text-mini uppercase text-gray-600 tracking-tighter") { label }
+        p(class: "text-tiny font-mono text-emerald-900") { subtext }
       end
     end
 
@@ -179,7 +179,7 @@ module Gateways
     def state_badge_classes
       case @gateway.state
       when "active" then "border-emerald-500 text-emerald-500"
-      when "updating" then "border-amber-500 text-amber-500"
+      when "updating" then "border-status-warning text-status-warning-text"
       when "maintenance" then "border-blue-500 text-blue-500"
       when "faulty" then "border-red-500 text-red-500"
       else "border-gray-800 text-gray-700"

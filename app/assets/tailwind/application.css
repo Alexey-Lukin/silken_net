@@ -25,6 +25,10 @@
   --color-status-success: #065f46;
   --color-status-success-text: #d1fae5;
 
+  /* Status: active / acknowledged */
+  --color-status-active: #064e3b;
+  --color-status-active-text: #a7f3d0;
+
   /* Status: neutral / inactive */
   --color-status-neutral: #27272a;
   --color-status-neutral-text: #a1a1aa;
@@ -32,4 +36,16 @@
   /* Blockchain tokens */
   --color-token-carbon: #059669;
   --color-token-forest: #d97706;
+
+  /* ── Terminal Typography Scale ──
+   * Custom font sizes for the cyberpunk terminal aesthetic.
+   * Registered in ApplicationComponent so TailwindMerge treats them as font-size. */
+  --font-size-micro: 0.5rem;       /* 8px — micro labels, file sizes */
+  --font-size-micro--line-height: 1rem;
+  --font-size-mini: 0.5625rem;     /* 9px — uppercase nav, status badges */
+  --font-size-mini--line-height: 1rem;
+  --font-size-tiny: 0.625rem;      /* 10px — small labels, metadata */
+  --font-size-tiny--line-height: 1rem;
+  --font-size-compact: 0.6875rem;  /* 11px — data tables, addresses */
+  --font-size-compact--line-height: 1.25rem;
 }

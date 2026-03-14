@@ -6,24 +6,29 @@ module Views
       class ActionBadge < ApplicationComponent
         STYLES = {
           destructive: "bg-status-danger text-status-danger-text",
-          mutative:    "bg-amber-900 text-amber-200",
-          creative:    "bg-emerald-900 text-emerald-200",
-          neutral:     "bg-zinc-900 text-zinc-400"
+          mutative:    "bg-status-warning text-status-warning-text",
+          creative:    "bg-status-active text-status-active-text",
+          neutral:     "bg-status-neutral text-status-neutral-text"
         }.freeze
 
-        def initialize(action:)
+        def initialize(action:, **attrs)
           @action = action.to_s
+          @extra_class = attrs[:class]
         end
 
         def view_template
           span(
             role: "status",
             aria_label: "Action: #{@action}",
-            class: tokens("px-2 py-0.5 text-[9px] font-bold uppercase", style_for_action)
+            class: tokens(badge_classes, style_for_action, @extra_class)
           ) { @action }
         end
 
         private
+
+        def badge_classes
+          "px-2 py-0.5 text-mini font-bold uppercase tracking-widest"
+        end
 
         def style_for_action
           case @action

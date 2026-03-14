@@ -19,7 +19,7 @@ module Firmwares
 
     def render_inventory_summary
       div(class: "p-6 border border-emerald-900 bg-zinc-950 shadow-2xl") do
-        h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700 mb-6") { "Forest Inventory (Version Distribution)" }
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-6") { "Forest Inventory (Version Distribution)" }
 
         div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do
           inventory_block("Queens (Gateways)", @inventory_stats[:gateways])
@@ -33,7 +33,7 @@ module Firmwares
         p(class: "text-xs font-mono text-gray-500 mb-3") { title }
         div(class: "space-y-2") do
           stats.each do |version, count|
-            div(class: "flex justify-between items-center text-[11px] font-mono") do
+            div(class: "flex justify-between items-center text-compact font-mono") do
               span(class: "text-emerald-400") { "v#{version || '0.0.0'}" }
               div(class: "flex-1 mx-4 h-px bg-emerald-900/30 border-dotted")
               span(class: "text-emerald-100") { "#{count} units" }
@@ -46,19 +46,19 @@ module Firmwares
     def render_firmware_registry
       div(class: "space-y-4") do
         div(class: "flex justify-between items-end") do
-          h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Available Binary Evolutions" }
+          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Available Binary Evolutions" }
 
           # Кнопка переходу до порталу завантаження
           a(
             href: helpers.new_api_v1_firmware_path,
-            class: "text-[10px] border border-emerald-500 px-4 py-1 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)] focus:outline-none focus:ring-2 focus:ring-emerald-500",
+            class: "text-tiny border border-emerald-500 px-4 py-1 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
             aria_label: "Upload new firmware binary"
           ) { "+ Inject New Code" }
         end
 
         div(class: "overflow-x-auto w-full border border-emerald-900 bg-black") do
           table(role: "table", class: "w-full text-left font-mono text-xs") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { "Version" }
                 th(scope: "col", class: "p-4") { "Target Hardware" }
@@ -83,16 +83,16 @@ module Firmwares
     def render_firmware_row(firmware)
       tr(class: "hover:bg-emerald-950/10 transition-colors group") do
         td(class: "p-4 text-emerald-100 font-bold font-mono") { "v#{firmware.version}" }
-        td(class: "p-4 text-emerald-600 uppercase font-mono text-[10px]") { firmware.target_hardware }
-        td(class: "p-4 text-gray-600 font-mono text-[10px]") { firmware.checksum&.first(16) || "N/A" }
-        td(class: "p-4 text-gray-500 font-mono text-[10px]") { firmware.created_at.strftime("%d.%m.%y // %H:%M") }
+        td(class: "p-4 text-emerald-600 uppercase font-mono text-tiny") { firmware.target_hardware }
+        td(class: "p-4 text-gray-600 font-mono text-tiny") { firmware.checksum&.first(16) || "N/A" }
+        td(class: "p-4 text-gray-500 font-mono text-tiny") { firmware.created_at.strftime("%d.%m.%y // %H:%M") }
 
         td(class: "p-4 text-right") do
           form(action: helpers.deploy_api_v1_firmware_path(firmware), method: "post") do
             input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
             button(
               type: "submit",
-              class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-[9px] tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)] focus:outline-none focus:ring-2 focus:ring-emerald-500",
+              class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-mini tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
               aria_label: "Deploy firmware v#{firmware.version}",
               data: { turbo_confirm: "Initiate evolution to v#{firmware.version} for the selected hardware?" }
             ) { "Order Evolution →" }

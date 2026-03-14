@@ -28,13 +28,13 @@ module TreeFamilies
         if @family.scientific_name.present?
           p(class: "text-sm italic text-emerald-500 mt-2") { @family.scientific_name }
         end
-        p(class: "text-[10px] font-mono text-emerald-700 uppercase tracking-[0.4em] mt-4") { "Baseline Impedance: #{@family.baseline_impedance} kOhm // CO₂ Coefficient: #{@family.carbon_sequestration_coefficient}" }
+        p(class: "text-tiny font-mono text-emerald-700 uppercase tracking-[0.4em] mt-4") { "Baseline Impedance: #{@family.baseline_impedance} kOhm // CO₂ Coefficient: #{@family.carbon_sequestration_coefficient}" }
       end
     end
 
     def render_threshold_viz
       div(class: "p-8 border border-emerald-900 bg-black space-y-8") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "The Homeostasis Scale" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "The Homeostasis Scale" }
 
         # Візуальна шкала
         div(class: "relative pt-10 pb-4") do
@@ -54,16 +54,16 @@ module TreeFamilies
       # Дуже спрощена логіка позиціонування для прикладу
       left = [ (value.to_f / (@family.critical_z_max * 1.2) * 100), 100 ].min
       div(class: "absolute top-0 flex flex-col items-center", style: "left: #{left}%") do
-         span(class: "text-[8px] text-gray-600 mb-2 font-mono") { "#{value}kΩ" }
+         span(class: "text-micro text-gray-600 mb-2 font-mono") { "#{value}kΩ" }
          div(class: tokens("h-3 w-px", "bg-white": active, "bg-emerald-900": !active))
-         span(class: tokens("mt-4 text-[7px] uppercase tracking-tighter", "text-white": active, "text-gray-700": !active)) { label }
+         span(class: tokens("mt-4 text-micro uppercase tracking-tighter", "text-white": active, "text-gray-700": !active)) { label }
       end
     end
 
     def render_biological_props
       div(class: "p-8 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "TinyML Biological Features" }
-        div(class: "space-y-4 font-mono text-[11px]") do
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "TinyML Biological Features" }
+        div(class: "space-y-4 font-mono text-compact") do
           prop_row("CO₂ Sequestration Coeff.", @family.carbon_sequestration_coefficient)
           prop_row("Sap Flow Index", @family.sap_flow_index || "0.0")
           prop_row("Bark Thickness", "#{@family.bark_thickness || 0} mm")

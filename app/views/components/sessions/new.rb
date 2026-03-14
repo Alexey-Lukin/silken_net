@@ -30,7 +30,7 @@ module Sessions
             end
 
             div(class: "pt-4") do
-              f.submit "AUTHENTICATE", class: "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-[0.4em] hover:bg-emerald-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+              f.submit "AUTHENTICATE", class: "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-[0.4em] hover:bg-emerald-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
             end
 
             render_forgot_password_link
@@ -49,29 +49,29 @@ module Sessions
           div(class: "absolute inset-1 bg-emerald-500 animate-pulse")
         end
         h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { "Citadel" }
-        p(class: "text-[10px] text-emerald-700 uppercase tracking-[0.5em]") { "Establishing Neural Link" }
+        p(class: "text-tiny text-emerald-700 uppercase tracking-[0.5em]") { "Establishing Neural Link" }
       end
     end
 
     def field_container(label, &block)
       div(class: "space-y-2") do
-        label(class: "text-[9px] uppercase tracking-widest text-emerald-900 font-bold") { label }
+        label(class: "text-mini uppercase tracking-widest text-emerald-900 font-bold") { label }
         yield
       end
     end
 
     def input_classes
-      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-4 font-mono text-sm focus:border-emerald-500 focus:ring-0 outline-none transition-all placeholder:text-emerald-950"
+      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-4 font-mono text-sm focus-visible:border-emerald-500 focus-visible:ring-0 outline-none transition-all placeholder:text-emerald-950"
     end
 
     def render_flash_messages
       if @flash_alert
-        div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-[10px] uppercase tracking-widest text-center", role: "alert") do
+        div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-tiny uppercase tracking-widest text-center", role: "alert") do
           @flash_alert
         end
       end
       if @flash_notice
-        div(class: "p-3 border border-emerald-900 bg-emerald-950/20 text-emerald-500 text-[10px] uppercase tracking-widest text-center", role: "status") do
+        div(class: "p-3 border border-emerald-900 bg-emerald-950/20 text-emerald-500 text-tiny uppercase tracking-widest text-center", role: "status") do
           @flash_notice
         end
       end
@@ -79,7 +79,7 @@ module Sessions
 
     def render_forgot_password_link
       div(class: "text-right") do
-        a(href: helpers.api_v1_forgot_password_path, class: "text-[10px] text-emerald-900 uppercase tracking-widest hover:text-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors") do
+        a(href: helpers.api_v1_forgot_password_path, class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors") do
           "Forgot Access Code?"
         end
       end
@@ -87,7 +87,7 @@ module Sessions
 
     def render_social_providers
       div(class: "space-y-4 pt-4 border-t border-emerald-900/30") do
-        p(class: "text-[9px] uppercase tracking-widest text-emerald-900 text-center") { "Or authenticate via provider" }
+        p(class: "text-mini uppercase tracking-widest text-emerald-900 text-center") { "Or authenticate via provider" }
 
         div(class: "grid grid-cols-2 gap-3") do
           provider_button("google_oauth2", "Google", "🔵")
@@ -102,7 +102,7 @@ module Sessions
       a(
         href: "/auth/#{provider}",
         aria_label: "Sign in with #{label}",
-        class: "flex items-center justify-center space-x-2 py-3 border border-emerald-900/50 text-emerald-700 text-[10px] uppercase tracking-widest hover:border-emerald-500 hover:text-emerald-400 hover:bg-emerald-950/10 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+        class: "flex items-center justify-center gap-2 py-3 border border-emerald-900/50 text-emerald-700 text-tiny uppercase tracking-widest hover:border-emerald-500 hover:text-emerald-400 hover:bg-emerald-950/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
       ) do
         span(aria_hidden: "true") { icon }
         span { label }
@@ -111,7 +111,7 @@ module Sessions
 
     def render_footer_seal
       div(class: "text-center") do
-        p(class: "text-[8px] text-emerald-900 uppercase tracking-widest") { "System Integrity Verified // AES-256 Enabled" }
+        p(class: "text-micro text-emerald-900 uppercase tracking-widest") { "System Integrity Verified // AES-256 Enabled" }
       end
     end
   end

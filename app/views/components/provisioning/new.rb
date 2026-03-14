@@ -51,19 +51,19 @@ module Provisioning
     def header_section
       div(class: "text-center mb-10 space-y-2") do
         h2(class: "text-3xl font-extralight text-emerald-400 tracking-widest uppercase") { "Hardware Initiation" }
-        p(class: "text-[10px] font-mono text-emerald-900 uppercase tracking-[0.5em]") { "Establishing 40-year biometric link" }
+        p(class: "text-tiny font-mono text-emerald-900 uppercase tracking-[0.5em]") { "Establishing 40-year biometric link" }
       end
     end
 
     def field_container(label, &block)
       div(class: "space-y-2") do
-        label(class: "text-[9px] uppercase tracking-widest text-gray-600") { label }
+        label(class: "text-mini uppercase tracking-widest text-gray-600") { label }
         yield
       end
     end
 
     def input_classes
-      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs focus:border-emerald-500 outline-none transition-all"
+      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs focus-visible:border-emerald-500 outline-none transition-all"
     end
 
     def render_errors

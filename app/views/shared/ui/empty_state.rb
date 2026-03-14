@@ -26,10 +26,10 @@ module Views
         private
 
         def render_content
-          p(class: "text-emerald-900/60 text-lg mb-2", aria_hidden: "true") { @icon }
+          p(class: "text-emerald-900/60 text-lg", aria_hidden: "true") { @icon }
           p(class: "text-emerald-900 font-mono text-xs uppercase tracking-widest") { @title }
           if @description
-            p(class: "text-gray-700 font-mono text-[10px] mt-2") { @description }
+            p(class: "text-gray-700 font-mono text-tiny mt-2") { @description }
           end
         end
       end

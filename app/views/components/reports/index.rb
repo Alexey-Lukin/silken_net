@@ -20,10 +20,10 @@ module Reports
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "📊 The Archive — Reports Hub" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "📊 The Archive — Reports Hub" }
           p(class: "text-xs text-gray-600 mt-1") { "Зведена звітність для інвесторів: екологічні аудити та фінансова ефективність." }
         end
-        div(class: "text-right font-mono text-[10px] text-emerald-900") do
+        div(class: "text-right font-mono text-tiny text-emerald-900") do
           plain "Organization: "
           span(class: "text-emerald-500") { @organization.name }
         end
@@ -45,7 +45,7 @@ module Reports
 
     def render_available_reports
       div(class: "space-y-4") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Available Reports" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Available Reports" }
         div(class: "grid grid-cols-1 md:grid-cols-2 gap-6") do
           report_card(
             "Carbon Absorption Report",
@@ -69,11 +69,11 @@ module Reports
           span(class: "text-2xl") { icon }
         end
         h4(class: "text-sm font-light text-emerald-100 mb-2") { title }
-        p(class: "text-[10px] text-gray-600 mb-4") { description }
-        div(class: "flex items-center space-x-4 pt-4 border-t border-emerald-900/30") do
-          a(href: path, class: "text-[9px] text-emerald-500 uppercase tracking-widest hover:underline") { "View →" }
-          a(href: "#{path}.csv", class: "text-[9px] text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { "CSV ↓" }
-          a(href: "#{path}.pdf", class: "text-[9px] text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { "PDF ↓" }
+        p(class: "text-tiny text-gray-600 mb-4") { description }
+        div(class: "flex items-center gap-4 pt-4 border-t border-emerald-900/30") do
+          a(href: path, class: "text-mini text-emerald-500 uppercase tracking-widest hover:underline") { "View →" }
+          a(href: "#{path}.csv", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { "CSV ↓" }
+          a(href: "#{path}.pdf", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { "PDF ↓" }
         end
       end
     end

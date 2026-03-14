@@ -37,14 +37,14 @@ module Organizations
 
         div do
           h2(class: "text-4xl font-extralight tracking-tighter text-emerald-400") { @organization.name }
-          p(class: "text-[10px] font-mono text-emerald-800 uppercase mt-2 tracking-[0.3em]") do
+          p(class: "text-tiny font-mono text-emerald-800 uppercase mt-2 tracking-[0.3em]") do
             "Member Since: #{@organization.created_at.strftime('%d.%m.%Y')}"
           end
         end
 
-        div(class: "mt-6 md:mt-0 flex items-center space-x-4") do
+        div(class: "mt-6 md:mt-0 flex items-center gap-4") do
           div(class: "text-right") do
-            p(class: "text-[9px] text-gray-600 uppercase tracking-widest") { "Operational Status" }
+            p(class: "text-mini text-gray-600 uppercase tracking-widest") { "Operational Status" }
             p(class: "text-sm font-mono text-emerald-500") { "FULLY_SYNCED" }
           end
           div(class: "h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_12px_#10b981]")
@@ -62,11 +62,11 @@ module Organizations
 
     def render_clusters_registry
       div(class: "space-y-4") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Assigned Sectors (Clusters)" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Assigned Sectors (Clusters)" }
 
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-          table(role: "table", class: "w-full text-left font-mono text-[11px]") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+          table(role: "table", class: "w-full text-left font-mono text-compact") do
+            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { "Sector Name" }
                 th(scope: "col", class: "p-4") { "Vitality" }
@@ -79,18 +79,18 @@ module Organizations
                 tr(class: "hover:bg-emerald-950/10 transition-colors group") do
                   td(class: "p-4 text-emerald-100") { cluster.name }
                   td(class: "p-4") do
-                    div(class: "flex items-center space-x-2") do
+                    div(class: "flex items-center gap-2") do
                       div(class: "w-16 h-1 bg-emerald-950 rounded-full overflow-hidden") do
                         div(class: "h-full bg-emerald-500", style: "width: #{(cluster.health_index * 100).round}%")
                       end
-                      span(class: "text-[10px] text-emerald-500") { "#{(cluster.health_index * 100).round}%" }
+                      span(class: "text-tiny text-emerald-500") { "#{(cluster.health_index * 100).round}%" }
                     end
                   end
                   td(class: "p-4 text-gray-400") { "#{cluster.total_active_trees} Soldiers" }
                   td(class: "p-4 text-right") do
                     a(
                       href: helpers.api_v1_cluster_path(cluster),
-                      class: "text-emerald-600 hover:text-white transition-all uppercase text-[9px] focus:outline-none focus:ring-2 focus:ring-emerald-500",
+                      class: "text-emerald-600 hover:text-white transition-all uppercase text-mini focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
                       aria_label: "Open #{cluster.name} cluster matrix"
                     ) { "Open Matrix →" }
                   end
@@ -104,28 +104,28 @@ module Organizations
 
     def render_identity_vault
       div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "On-Chain Identity Vault" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "On-Chain Identity Vault" }
 
         div do
-          p(class: "text-[9px] text-gray-600 uppercase mb-2") { "Public Crypto Address" }
+          p(class: "text-mini text-gray-600 uppercase mb-2") { "Public Crypto Address" }
           render Views::Shared::Web3::Address.new(address: @organization.crypto_public_address, truncate: 42)
         end
 
         div(class: "pt-4 border-t border-emerald-900/30") do
-          p(class: "text-[9px] text-gray-600 uppercase mb-2") { "Billing Contact" }
-          p(class: "text-[11px] text-gray-400") { @organization.billing_email || "N/A" }
+          p(class: "text-mini text-gray-600 uppercase mb-2") { "Billing Contact" }
+          p(class: "text-compact text-gray-400") { @organization.billing_email || "N/A" }
         end
       end
     end
 
     def render_recent_activity_placeholder
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-4") { "Global Events" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Global Events" }
         div(class: "space-y-3") do
           [ "Contract Renewal", "Asset Expansion", "Carbon Audit" ].each do |event|
             div(class: "flex justify-between items-center") do
-              span(class: "text-[10px] text-gray-500 uppercase font-mono") { event }
-              span(class: "text-[9px] text-emerald-900") { "PENDING" }
+              span(class: "text-tiny text-gray-500 uppercase font-mono") { event }
+              span(class: "text-mini text-emerald-900") { "PENDING" }
             end
           end
         end

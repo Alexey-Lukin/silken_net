@@ -4,7 +4,7 @@ module Alerts
   class Badge < ApplicationComponent
     SEVERITY_STYLES = {
       "low"      => "bg-zinc-800 text-zinc-300",
-      "medium"   => "bg-amber-900 text-amber-200",
+      "medium"   => "bg-status-warning text-status-warning-text",
       "critical" => "bg-red-900 text-red-200 animate-pulse"
     }.freeze
 
@@ -24,7 +24,7 @@ module Alerts
 
       span(
         id: "alert_badge_#{@alert.id}",
-        class: tokens("px-2 py-0.5 rounded text-[10px] font-bold uppercase", severity_class, status_class)
+        class: tokens("px-2 py-0.5 rounded text-tiny font-bold uppercase", severity_class, status_class)
       ) { "#{@alert.severity} — #{@alert.status}" }
     end
   end

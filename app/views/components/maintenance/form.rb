@@ -58,7 +58,7 @@ module Maintenance
           # OpEx ФІНАНСОВИЙ ОБЛІК (Series C)
           # -----------------------------------------------------------------------
           div(class: "border border-emerald-900/30 p-4 space-y-4") do
-            p(class: "text-[9px] uppercase tracking-widest text-emerald-800 mb-2") { "OpEx Financial Tracking" }
+            p(class: "text-mini uppercase tracking-widest text-emerald-800 mb-2") { "OpEx Financial Tracking" }
             div(class: "grid grid-cols-2 gap-6") do
               field_container("Labor Hours") do
                 f.number_field :labor_hours, step: 0.5, min: 0, class: input_classes,
@@ -76,10 +76,10 @@ module Maintenance
           # -----------------------------------------------------------------------
           div(class: "border border-emerald-900/30 p-4 space-y-4") do
             div(class: "flex justify-between items-center mb-2") do
-              p(class: "text-[9px] uppercase tracking-widest text-emerald-800") { "Intervention Coordinates" }
+              p(class: "text-mini uppercase tracking-widest text-emerald-800") { "Intervention Coordinates" }
               button(
                 type: "button",
-                class: "text-[8px] border border-emerald-900 text-emerald-700 px-2 py-1 hover:border-emerald-500 hover:text-emerald-500 transition-all uppercase",
+                class: "text-micro border border-emerald-900 text-emerald-700 px-2 py-1 hover:border-emerald-500 hover:text-emerald-500 transition-all uppercase",
                 data: { action: "click->maintenance-form#captureGPS" }
               ) { "⊕ Capture GPS" }
             end
@@ -102,8 +102,8 @@ module Maintenance
             class: "border border-emerald-900/30 p-4 space-y-4",
             id: "photo_upload_section"
           ) do
-            p(class: "text-[9px] uppercase tracking-widest text-emerald-800") { "Evidence Protocol // Photos" }
-            p(class: "text-[8px] text-gray-600 mb-3") do
+            p(class: "text-mini uppercase tracking-widest text-emerald-800") { "Evidence Protocol // Photos" }
+            p(class: "text-micro text-gray-600 mb-3") do
               "Required for repair and installation. JPEG/PNG/WebP/HEIC · max 20 MB · max 10 photos"
             end
 
@@ -124,8 +124,8 @@ module Maintenance
                 direct_upload: true,
                 class: "w-full bg-black border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs " \
                        "file:mr-3 file:border file:border-emerald-700 file:bg-emerald-950 " \
-                       "file:text-emerald-400 file:text-[9px] file:uppercase file:px-3 file:py-1 " \
-                       "focus:border-emerald-500 outline-none transition-all"
+                       "file:text-emerald-400 file:text-mini file:uppercase file:px-3 file:py-1 " \
+                       "focus-visible:border-emerald-500 outline-none transition-all"
             end
 
             # Direct upload progress bar (активується activestorage JS)
@@ -144,18 +144,18 @@ module Maintenance
           # HARDWARE VERIFIED (тільки при редагуванні)
           # -----------------------------------------------------------------------
           if @editing
-            div(class: "flex items-center space-x-3") do
+            div(class: "flex items-center gap-3") do
               f.check_box :hardware_verified,
-                class: "h-4 w-4 border border-emerald-700 bg-black text-emerald-500 focus:ring-0"
+                class: "h-4 w-4 border border-emerald-700 bg-black text-emerald-500 focus-visible:ring-0"
               label(
                 for: "maintenance_record_hardware_verified",
-                class: "text-[9px] uppercase tracking-widest text-gray-500 cursor-pointer"
+                class: "text-mini uppercase tracking-widest text-gray-500 cursor-pointer"
               ) { "Hardware Verified — STM32 confirmed new pulse" }
             end
           end
 
           # --- SUBMIT ---
-          div(class: "pt-6 flex items-center space-x-4") do
+          div(class: "pt-6 flex items-center gap-4") do
             f.submit(
               @editing ? "Update Record" : "Commit to Matrix",
               class: "flex-1 py-4 bg-emerald-900/20 border border-emerald-500 text-emerald-500 " \
@@ -166,7 +166,7 @@ module Maintenance
               a(
                 href: helpers.api_v1_maintenance_record_path(@record),
                 class: "px-4 py-4 border border-emerald-900 text-emerald-900 hover:text-emerald-500 " \
-                       "uppercase text-[9px] tracking-widest transition-all"
+                       "uppercase text-mini tracking-widest transition-all"
               ) { "Cancel" }
             end
           end
@@ -180,20 +180,20 @@ module Maintenance
 
     def render_form_header(f)
       div(class: "flex justify-between items-center mb-2") do
-        h3(class: "text-[10px] uppercase tracking-[0.5em] text-emerald-700") do
+        h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700") do
           @editing ? "Edit Intervention Record // ##{@record.id}" : "Register Intervention Ritual"
         end
-        span(class: "text-[8px] text-gray-600 font-mono") { @record.maintainable_type&.upcase || "PENDING" }
+        span(class: "text-micro text-gray-600 font-mono") { @record.maintainable_type&.upcase || "PENDING" }
       end
       hr(class: "border-emerald-900/30 mb-6")
     end
 
     def render_errors
       div(class: "mt-6 p-4 border border-red-900 bg-red-950/20") do
-        p(class: "text-[9px] uppercase tracking-widest text-red-700 mb-2") { "Validation Errors" }
+        p(class: "text-mini uppercase tracking-widest text-red-700 mb-2") { "Validation Errors" }
         ul(class: "space-y-1") do
           @record.errors.full_messages.each do |msg|
-            li(class: "text-[10px] text-red-400 font-mono") { "× #{msg}" }
+            li(class: "text-tiny text-red-400 font-mono") { "× #{msg}" }
           end
         end
       end
@@ -201,14 +201,14 @@ module Maintenance
 
     def field_container(label, &)
       div(class: "space-y-2") do
-        label(class: "text-[9px] uppercase tracking-widest text-gray-600") { label }
+        label(class: "text-mini uppercase tracking-widest text-gray-600") { label }
         yield
       end
     end
 
     def input_classes
       "w-full bg-black border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs " \
-      "focus:border-emerald-500 focus:ring-0 outline-none transition-all"
+      "focus-visible:border-emerald-500 focus-visible:ring-0 outline-none transition-all"
     end
   end
 end

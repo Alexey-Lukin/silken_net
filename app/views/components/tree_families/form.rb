@@ -31,13 +31,13 @@ module TreeFamilies
 
     def field_container(label, &block)
       div(class: "space-y-2") do
-        label(class: "text-[9px] uppercase tracking-widest text-emerald-800") { label }
+        label(class: "text-mini uppercase tracking-widest text-emerald-800") { label }
         yield
       end
     end
 
     def input_classes
-      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs focus:border-emerald-500 outline-none transition-all"
+      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs focus-visible:border-emerald-500 outline-none transition-all"
     end
   end
 end

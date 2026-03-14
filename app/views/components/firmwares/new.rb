@@ -21,7 +21,7 @@ module Firmwares
     def header_section
       div(class: "text-center mb-10") do
         h2(class: "text-2xl font-extralight text-emerald-400 tracking-widest uppercase") { "New Code Injection" }
-        p(class: "text-[10px] text-emerald-900 uppercase mt-2 tracking-[0.5em]") { "Prepare the binary artifact for OTA deployment" }
+        p(class: "text-tiny text-emerald-900 uppercase mt-2 tracking-[0.5em]") { "Prepare the binary artifact for OTA deployment" }
       end
     end
   end

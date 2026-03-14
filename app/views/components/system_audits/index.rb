@@ -18,10 +18,10 @@ module SystemAudits
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "⛓️ Chain Audit — System Integrity" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "⛓️ Chain Audit — System Integrity" }
           p(class: "text-xs text-gray-600 mt-1") { "Порівняння суми SCC у БД Postgres та загальної емісії в смарт-контракті Polygon." }
         end
-        div(class: "flex space-x-2") do
+        div(class: "flex gap-2") do
           status_badge
         end
       end
@@ -45,8 +45,8 @@ module SystemAudits
 
     def comparison_table
       div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-        table(class: "w-full text-left font-mono text-[11px]", role: "table") do
-          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+        table(class: "w-full text-left font-mono text-compact", role: "table") do
+          thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
               th(scope: "col", class: "p-4") { "Source" }
               th(scope: "col", class: "p-4 text-right") { "SCC Total" }
@@ -71,16 +71,16 @@ module SystemAudits
     end
 
     def timestamp_footer
-      div(class: "text-[9px] text-gray-600 text-right mt-2 font-mono") do
+      div(class: "text-mini text-gray-600 text-right mt-2 font-mono") do
         "Checked at #{@audit.checked_at.strftime('%Y-%m-%d %H:%M:%S UTC')}"
       end
     end
 
     def status_badge
       if @audit.critical
-        span(class: "px-2 py-0.5 bg-red-900 text-red-200 text-[9px] uppercase font-bold") { "critical" }
+        span(class: "px-2 py-0.5 bg-red-900 text-red-200 text-mini uppercase font-bold") { "critical" }
       else
-        span(class: "px-2 py-0.5 bg-emerald-900 text-emerald-200 text-[9px] uppercase font-bold") { "ok" }
+        span(class: "px-2 py-0.5 bg-emerald-900 text-emerald-200 text-mini uppercase font-bold") { "ok" }
       end
     end
 

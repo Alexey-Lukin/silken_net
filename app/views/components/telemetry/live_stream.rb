@@ -20,7 +20,7 @@ module Telemetry
 
           # Таблиця (HUD), яка "плаває" поверх дощу
           div(class: "relative z-10 w-full h-[400px] md:h-[600px] overflow-y-auto overflow-x-auto custom-scrollbar") do
-            table(class: "w-full text-left font-mono text-[10px] min-w-[640px]", role: "table") do
+            table(class: "w-full text-left font-mono text-tiny min-w-[640px]", role: "table") do
               thead(class: "sticky top-0 bg-emerald-950/80 backdrop-blur-md text-emerald-700 uppercase tracking-widest border-b border-emerald-900/50 shadow-md") do
                 tr do
                   th(scope: "col", class: "p-4 w-32 font-medium") { "Timestamp" }
@@ -35,7 +35,7 @@ module Telemetry
                 tr(id: "feed_placeholder") do
                   td(colspan: 4, class: "p-12 text-center text-emerald-900/60 flex flex-col items-center justify-center") do
                     div(class: "w-8 h-8 rounded-full border-b-2 border-emerald-800 animate-spin mb-4")
-                    p(class: "italic tracking-widest text-[9px]") { "Awaiting Starlink Uplink... CoAP:5683 Listening..." }
+                    p(class: "italic tracking-widest text-mini") { "Awaiting Starlink Uplink... CoAP:5683 Listening..." }
                   end
                 end
               end
@@ -50,19 +50,19 @@ module Telemetry
     def header_section
       div(class: "flex justify-between items-end border-b border-emerald-900/30 pb-4") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.5em] text-emerald-700 flex items-center gap-2") do
+          h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700 flex items-center gap-2") do
             i(class: "ph ph-broadcast")
             plain "Neural Link Output"
           end
           h2(class: "text-2xl font-light text-emerald-400 mt-2") { "Global Telemetry Stream" }
         end
 
-        div(class: "flex items-center space-x-3 bg-emerald-950/30 px-4 py-2 border border-emerald-900 shadow-[inset_0_0_10px_rgba(6,78,59,0.5)]") do
+        div(class: "flex items-center gap-3 bg-emerald-950/30 px-4 py-2 border border-emerald-900 shadow-[inset_0_0_10px_rgba(6,78,59,0.5)]") do
           div(class: "relative flex h-2 w-2") do
             span(class: "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75")
             span(class: "relative inline-flex rounded-full h-2 w-2 bg-emerald-500")
           end
-          span(class: "font-mono text-[9px] text-emerald-500 uppercase tracking-widest") { "Carrier: Direct-to-Cell" }
+          span(class: "font-mono text-mini text-emerald-500 uppercase tracking-widest") { "Carrier: Direct-to-Cell" }
         end
       end
     end

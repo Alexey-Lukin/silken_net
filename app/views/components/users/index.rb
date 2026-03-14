@@ -12,8 +12,8 @@ module Users
         header_section
 
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-          table(role: "table", class: "w-full text-left font-mono text-[11px]") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+          table(role: "table", class: "w-full text-left font-mono text-compact") do
+            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { "Identity" }
                 th(scope: "col", class: "p-4") { "Role / Access" }
@@ -41,7 +41,7 @@ module Users
     def header_section
       div(class: "flex justify-between items-end mb-6") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.4em] text-emerald-700") { "Organization Crew Registry" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "Organization Crew Registry" }
           p(class: "text-xs text-gray-600 mt-1") { "Authorized personnel for ecosystem intervention." }
         end
       end
@@ -50,19 +50,19 @@ module Users
     def render_user_row(user)
       tr(class: "hover:bg-emerald-950/10 transition-colors group") do
         td(class: "p-4") do
-          div(class: "flex items-center space-x-3") do
+          div(class: "flex items-center gap-3") do
             div(class: "h-8 w-8 rounded-full bg-emerald-900/20 border border-emerald-800 flex items-center justify-center text-emerald-500 font-bold") { user.first_name&.first || user.email_address.first }
             span(class: "text-emerald-100") { "#{user.first_name} #{user.last_name}" }
           end
         end
         td(class: "p-4") do
-          span(class: tokens("px-2 py-0.5 rounded-sm text-[9px] font-bold uppercase", role_color(user.role))) { user.role }
+          span(class: tokens("px-2 py-0.5 rounded-sm text-mini font-bold uppercase", role_color(user.role))) { user.role }
         end
         td(class: "p-4 text-gray-600") do
            if user.last_seen_at
              render Views::Shared::UI::RelativeTime.new(
                datetime: user.last_seen_at,
-               css_class: "text-gray-600 text-[11px] font-mono",
+               css_class: "text-gray-600 text-compact font-mono",
                prefix: "Active "
              )
            else
@@ -70,7 +70,7 @@ module Users
            end
         end
         td(class: "p-4 text-right") do
-          a(href: "#", class: "text-emerald-700 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "View logs for #{user.first_name} #{user.last_name}") { "VIEW_LOGS" }
+          a(href: "#", class: "text-emerald-700 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View logs for #{user.first_name} #{user.last_name}") { "VIEW_LOGS" }
         end
       end
     end

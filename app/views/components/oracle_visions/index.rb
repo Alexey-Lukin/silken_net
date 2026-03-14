@@ -29,13 +29,13 @@ module OracleVisions
     def header_section
       div(class: "p-6 border border-emerald-900 bg-black/40 backdrop-blur-md flex justify-between items-end") do
         div do
-          h3(class: "text-[10px] uppercase tracking-[0.5em] text-emerald-700") { "Strategic Forecast Matrix" }
+          h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700") { "Strategic Forecast Matrix" }
           p(class: "text-2xl font-light text-emerald-400 mt-2") { "AI Confidence: 94.2%" }
         end
 
         # [FINANCIAL ENGINE VISUALIZATION]: Очікуваний врожай
         div(class: "text-right") do
-          h4(class: "text-[10px] uppercase tracking-widest text-emerald-800 mb-1") { "Expected 24h Yield" }
+          h4(class: "text-tiny uppercase tracking-widest text-emerald-800 mb-1") { "Expected 24h Yield" }
           div(class: "flex items-baseline justify-end gap-2") do
             span(class: "text-3xl font-mono text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]") do
               @yield_forecast
@@ -50,7 +50,7 @@ module OracleVisions
       div(id: "simulation_results", class: "space-y-4") do
         div(class: "flex items-center gap-2 mb-4") do
           div(class: "w-1 h-1 bg-emerald-500 rounded-full animate-ping")
-          h4(class: "text-[10px] uppercase text-gray-600 tracking-widest") { "Active Simulations" }
+          h4(class: "text-tiny uppercase text-gray-600 tracking-widest") { "Active Simulations" }
         end
         # Сюди Turbo Stream буде додавати результати симуляцій
       end

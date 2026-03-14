@@ -35,11 +35,11 @@ module Wallets
 
     def render_transaction_ledger
       div(class: "space-y-4") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "On-Chain Transaction Ledger" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "On-Chain Transaction Ledger" }
 
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
-          table(class: "w-full text-left font-mono text-[11px] min-w-[640px]", role: "table") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
+          table(class: "w-full text-left font-mono text-compact min-w-[640px]", role: "table") do
+            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { "Type" }
                 th(scope: "col", class: "p-4") { "Amount" }
@@ -72,8 +72,8 @@ module Wallets
 
     def render_wallet_metadata
       div(class: "p-6 border border-emerald-900 bg-black shadow-xl") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Blockchain Identity" }
-        div(class: "space-y-4 font-mono text-[10px]") do
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Blockchain Identity" }
+        div(class: "space-y-4 font-mono text-tiny") do
           div do
             p(class: "text-gray-600 mb-1 uppercase") { "Polygon Address" }
             p(class: "text-emerald-400 break-all leading-relaxed hover:text-emerald-300 transition-colors") { @wallet.crypto_public_address || "NOT_PROVISIONED" }
@@ -88,17 +88,17 @@ module Wallets
 
     def render_on_chain_actions
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-4") { "Actions" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Actions" }
         div(class: "space-y-2") do
           button(
             aria_label: "Sync wallet with Polygon blockchain",
-            class: "w-full py-2 border border-emerald-500 text-[10px] uppercase text-emerald-500 hover:bg-emerald-500 " \
-                   "hover:text-black focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+            class: "w-full py-2 border border-emerald-500 text-tiny uppercase text-emerald-500 hover:bg-emerald-500 " \
+                   "hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
           ) { "Sync with Polygon" }
           button(
             aria_label: "Export transaction ledger as CSV",
-            class: "w-full py-2 border border-emerald-900 text-[10px] uppercase text-emerald-900 hover:border-emerald-700 " \
-                   "focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+            class: "w-full py-2 border border-emerald-900 text-tiny uppercase text-emerald-900 hover:border-emerald-700 " \
+                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
           ) { "Export CSV Ledger" }
         end
       end

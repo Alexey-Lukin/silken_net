@@ -46,7 +46,7 @@ module Maintenance
           href: next_url,
           data: { turbo_frame: "maintenance_photos_#{@record.id}" },
           class: "inline-block px-6 py-2 border border-emerald-900 text-emerald-700 " \
-                 "hover:border-emerald-500 hover:text-emerald-500 uppercase text-[9px] " \
+                 "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini " \
                  "tracking-widest transition-all font-mono"
         ) { "Load More // #{remaining} remaining →" }
       end
