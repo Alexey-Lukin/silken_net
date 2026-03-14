@@ -17,34 +17,30 @@
   --color-gaia-primary-hover: var(--gaia-primary-hover);
   --color-gaia-border: var(--gaia-border);
 
-  /* Status: danger / error */
-  --color-status-danger: #7f1d1d;
-  --color-status-danger-text: #fecaca;
-  --color-status-danger-accent: #ef4444;
+  /* Status colors (CSS-variable driven for light/dark) */
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-text: var(--status-danger-text);
+  --color-status-danger-accent: var(--status-danger-accent);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-text: var(--status-warning-text);
+  --color-status-info: var(--status-info);
+  --color-status-info-text: var(--status-info-text);
+  --color-status-success: var(--status-success);
+  --color-status-success-text: var(--status-success-text);
+  --color-status-active: var(--status-active);
+  --color-status-active-text: var(--status-active-text);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-text: var(--status-neutral-text);
 
-  /* Status: warning / amber */
-  --color-status-warning: #78350f;
-  --color-status-warning-text: #fde68a;
+  /* Blockchain token colors (CSS-variable driven for light/dark) */
+  --color-token-carbon: var(--token-carbon);
+  --color-token-forest: var(--token-forest);
 
-  /* Status: info / blue */
-  --color-status-info: #1e3a5f;
-  --color-status-info-text: #bfdbfe;
-
-  /* Status: success */
-  --color-status-success: #065f46;
-  --color-status-success-text: #d1fae5;
-
-  /* Status: active / acknowledged */
-  --color-status-active: #064e3b;
-  --color-status-active-text: #a7f3d0;
-
-  /* Status: neutral / inactive */
-  --color-status-neutral: #27272a;
-  --color-status-neutral-text: #a1a1aa;
-
-  /* Blockchain tokens */
-  --color-token-carbon: #059669;
-  --color-token-forest: #d97706;
+  /* Form input colors (CSS-variable driven for light/dark) */
+  --color-gaia-input-bg: var(--gaia-input-bg);
+  --color-gaia-input-border: var(--gaia-input-border);
+  --color-gaia-input-text: var(--gaia-input-text);
+  --color-gaia-label: var(--gaia-label);
 
   /* ── Terminal Typography Scale ──
    * Custom font sizes for the cyberpunk terminal aesthetic.
@@ -60,7 +56,10 @@
 }
 
 /* ── Light / Dark CSS custom properties ── */
+
+/* ── Light Mode (default) ── */
 :root {
+  /* Surface / Layout */
   --gaia-surface: #ffffff;
   --gaia-surface-alt: #f3f4f6;
   --gaia-text: #111827;
@@ -68,9 +67,46 @@
   --gaia-primary: #10b981;
   --gaia-primary-hover: #059669;
   --gaia-border: #e5e7eb;
+
+  /* Status: danger — deep red on soft pink */
+  --status-danger: #fee2e2;
+  --status-danger-text: #991b1b;
+  --status-danger-accent: #dc2626;
+
+  /* Status: warning — deep amber on soft amber */
+  --status-warning: #fef3c7;
+  --status-warning-text: #92400e;
+
+  /* Status: info — deep blue on soft blue */
+  --status-info: #dbeafe;
+  --status-info-text: #1e40af;
+
+  /* Status: success — deep emerald on soft emerald */
+  --status-success: #d1fae5;
+  --status-success-text: #065f46;
+
+  /* Status: active / acknowledged — deep teal on soft teal */
+  --status-active: #ccfbf1;
+  --status-active-text: #115e59;
+
+  /* Status: neutral / inactive — gray on light gray */
+  --status-neutral: #f3f4f6;
+  --status-neutral-text: #4b5563;
+
+  /* Blockchain tokens — high-contrast for light surface */
+  --token-carbon: #047857;
+  --token-forest: #b45309;
+
+  /* Form inputs */
+  --gaia-input-bg: #ffffff;
+  --gaia-input-border: #d1d5db;
+  --gaia-input-text: #111827;
+  --gaia-label: #6b7280;
 }
 
+/* ── Dark Mode ── */
 .dark {
+  /* Surface / Layout */
   --gaia-surface: #000000;
   --gaia-surface-alt: #0a0a0a;
   --gaia-text: #10b981;
@@ -78,6 +114,41 @@
   --gaia-primary: #10b981;
   --gaia-primary-hover: #34d399;
   --gaia-border: rgba(16, 185, 129, 0.2);
+
+  /* Status: danger — neon on dark red */
+  --status-danger: #7f1d1d;
+  --status-danger-text: #fecaca;
+  --status-danger-accent: #ef4444;
+
+  /* Status: warning — neon amber on dark amber */
+  --status-warning: #78350f;
+  --status-warning-text: #fde68a;
+
+  /* Status: info — neon blue on dark blue */
+  --status-info: #1e3a5f;
+  --status-info-text: #bfdbfe;
+
+  /* Status: success — neon green on dark emerald */
+  --status-success: #065f46;
+  --status-success-text: #d1fae5;
+
+  /* Status: active — neon teal on dark teal */
+  --status-active: #064e3b;
+  --status-active-text: #a7f3d0;
+
+  /* Status: neutral — muted on dark zinc */
+  --status-neutral: #27272a;
+  --status-neutral-text: #a1a1aa;
+
+  /* Blockchain tokens — glowing for dark surface */
+  --token-carbon: #059669;
+  --token-forest: #d97706;
+
+  /* Form inputs */
+  --gaia-input-bg: #09090b;
+  --gaia-input-border: rgba(16, 185, 129, 0.3);
+  --gaia-input-text: #d1fae5;
+  --gaia-label: #6b7280;
 }
 
 /* ── Typography Base ── */
