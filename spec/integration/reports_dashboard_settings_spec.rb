@@ -11,6 +11,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
 
   before do
     allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
+    allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_protocol_financials)
+      .and_return(total_minted: 500_000, total_burned: 150_000, total_premiums: 30_000)
   end
 
   # ---------------------------------------------------------------------------

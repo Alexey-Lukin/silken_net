@@ -19,10 +19,17 @@ dataSources:
       language: wasm/assemblyscript
       entities:
         - CarbonMintEvent
+        - ProtocolFinancials
+        - SlashingEvent
+        - PremiumPaidEvent
       abis:
         - name: SilkenCarbonCoin
           file: ./abis/SilkenCarbonCoin.json
       eventHandlers:
         - event: CarbonMinted(indexed address,uint256,indexed string)
           handler: handleCarbonMinted
+        - event: Slashed(indexed address,uint256,indexed string)
+          handler: handleSlashed
+        - event: PremiumPaid(indexed address,uint256)
+          handler: handlePremiumPaid
       file: ./src/mapping.ts

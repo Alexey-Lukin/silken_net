@@ -7,3 +7,25 @@ type CarbonMintEvent @entity {
   blockNumber: BigInt!
   transactionHash: Bytes!
 }
+
+type ProtocolFinancials @entity {
+  id: ID!
+  totalMinted: BigInt!
+  totalBurned: BigInt!
+  totalPremiums: BigInt!
+}
+
+type SlashingEvent @entity {
+  id: ID!
+  target: Bytes!
+  amount: BigInt!
+  treeDid: String!
+  timestamp: BigInt!
+}
+
+type PremiumPaidEvent @entity {
+  id: ID!
+  payer: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+}
