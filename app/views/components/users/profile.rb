@@ -30,7 +30,7 @@ module Users
       div(class: "p-10 border border-emerald-900 bg-zinc-950 relative overflow-hidden") do
         div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none uppercase") { @user.role }
 
-        div(class: "flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-0 md:gap-10") do
+        div(class: "flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10") do
           # Аватар-плейсхолдер
           div(class: "h-32 w-32 rounded-none border-2 border-emerald-500 bg-emerald-950 flex items-center justify-center") do
             span(class: "text-5xl font-extralight text-emerald-400") { @user.first_name&.first || @user.email_address.first }

@@ -54,7 +54,7 @@ module Dashboard
           div(class: "h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping")
         end
 
-        div(class: "flex-1 gap-6 overflow-y-auto pr-2 custom-scrollbar") do
+        div(class: "flex-1 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar") do
           @events.each do |event|
             render_event_row(event)
           end
