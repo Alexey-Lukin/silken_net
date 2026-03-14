@@ -10,7 +10,7 @@ module Actuators
     def view_template
       div(id: "actuator_#{@actuator.id}", class: card_container_classes) do
         # Фоновий індикатор типу (декоративний)
-        div(class: "absolute -right-4 -top-4 text-[40px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { @actuator.device_type[0..2].upcase }
+        div(class: "absolute -right-4 -top-4 text-[40px] font-bold text-gaia-text-muted/5 select-none", aria_hidden: "true") { @actuator.device_type[0..2].upcase }
 
         render_header
         render_status_matrix
@@ -23,8 +23,8 @@ module Actuators
     def render_header
       div(class: "flex justify-between items-start mb-6") do
         div do
-          span(class: "text-micro px-2 py-0.5 border border-emerald-800 text-emerald-700 uppercase font-mono tracking-widest") { @actuator.device_type }
-          h4(class: "text-lg font-light text-emerald-100 mt-2 tracking-tighter") { "Sector Relay // #{@actuator.gateway&.uid}" }
+          span(class: "text-micro px-2 py-0.5 border border-gaia-border text-gaia-text-muted uppercase font-mono tracking-widest") { @actuator.device_type }
+          h4(class: "text-lg font-light text-gaia-text mt-2 tracking-tighter") { "Sector Relay // #{@actuator.gateway&.uid}" }
         end
         div(class: tokens("h-2 w-2 rounded-full", status_led_class))
       end
@@ -32,14 +32,14 @@ module Actuators
 
     def render_status_matrix
       div(class: "space-y-2 mb-6 font-mono text-tiny uppercase tracking-tighter") do
-        div(class: "flex justify-between border-b border-emerald-900/20 pb-1") do
-          span(class: "text-gray-600") { "Physical State:" }
-          span(class: "text-emerald-500") { @actuator.state }
+        div(class: "flex justify-between border-b border-gaia-border pb-1") do
+          span(class: "text-gaia-text-muted") { "Physical State:" }
+          span(class: "text-gaia-primary") { @actuator.state }
         end
         div(class: "flex justify-between") do
-          span(class: "text-gray-600") { "Last Sync Status:" }
+          span(class: "text-gaia-text-muted") { "Last Sync Status:" }
           failed = @last_command&.status == "failed"
-          span(class: tokens("text-red-500": failed, "text-gray-400": !failed)) do
+          span(class: tokens("text-status-danger-accent": failed, "text-gaia-text-muted": !failed)) do
             @last_command&.status || "IDLE"
           end
         end
@@ -80,22 +80,23 @@ module Actuators
     end
 
     def card_container_classes
-      "group p-6 border border-emerald-900 bg-zinc-950 " \
-        "hover:border-emerald-500 transition-all duration-500 " \
-        "relative overflow-hidden shadow-2xl"
+      "group p-6 border border-gaia-border bg-gaia-surface " \
+        "shadow-sm dark:shadow-none " \
+        "hover:border-gaia-primary transition-all duration-500 " \
+        "relative overflow-hidden"
     end
 
     def execute_on_classes
-      "py-2 border border-emerald-500 text-mini uppercase text-emerald-500 " \
-        "hover:bg-emerald-500 hover:text-black " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+      "py-2 border border-gaia-primary text-mini uppercase text-gaia-primary " \
+        "hover:bg-gaia-primary hover:text-black " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary " \
         "transition-all font-bold tracking-widest"
     end
 
     def execute_off_classes
-      "py-2 border border-emerald-900 text-mini uppercase text-gray-600 " \
-        "hover:border-red-900 hover:text-white " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 " \
+      "py-2 border border-gaia-border text-mini uppercase text-gaia-text-muted " \
+        "hover:border-status-danger-accent hover:text-status-danger-accent " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-accent " \
         "transition-all tracking-widest"
     end
   end

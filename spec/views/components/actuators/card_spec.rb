@@ -75,9 +75,9 @@ RSpec.describe Actuators::Card do
       expect(html).to include("IDLE")
     end
 
-    it "highlights failed command status in red" do
+    it "highlights failed command status with danger accent" do
       html = render_component(actuator: mock_actuator, last_command: mock_command(status: "failed"))
-      expect(html).to include("text-red-500")
+      expect(html).to include("text-status-danger-accent")
     end
   end
 
@@ -85,9 +85,9 @@ RSpec.describe Actuators::Card do
     let(:html) { render_component(actuator: mock_actuator) }
 
     it "uses extracted card_container_classes method" do
-      expect(html).to include("border-emerald-900")
-      expect(html).to include("bg-zinc-950")
-      expect(html).to include("hover:border-emerald-500")
+      expect(html).to include("border-gaia-border")
+      expect(html).to include("bg-gaia-surface")
+      expect(html).to include("hover:border-gaia-primary")
       expect(html).to include("transition-all")
     end
 
