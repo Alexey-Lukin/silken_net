@@ -97,7 +97,8 @@ module Api
             confirmed: transactions.where(status: :confirmed).count,
             pending: transactions.where(status: :pending).count,
             failed: transactions.where(status: :failed).count
-          }
+          },
+          real_yield: fetch_real_yield
         }
 
         respond_to do |format|
@@ -131,6 +132,21 @@ module Api
 
       private
 
+      REAL_YIELD_DEFAULTS = { total_minted_scc: 0, total_burned_scc: 0, total_premiums_usdc: 0, net_deflation: 0 }.freeze
+
+      def fetch_real_yield
+        financials = TheGraph::QueryService.new.fetch_protocol_financials
+        {
+          total_minted_scc: financials[:total_minted],
+          total_burned_scc: financials[:total_burned],
+          total_premiums_usdc: financials[:total_premiums],
+          net_deflation: financials[:total_burned] - financials[:total_minted]
+        }
+      rescue TheGraph::QueryService::QueryError => e
+        Rails.logger.warn("Real yield fetch failed: #{e.message}")
+        REAL_YIELD_DEFAULTS.dup
+      end
+
       # --- CSV Streaming ---
       # Використовуємо Enumerator для стрімінгу CSV-рядків до клієнта.
       # Це дозволяє обробляти мільйони рядків без навантаження на пам'ять.
@@ -161,6 +177,7 @@ module Api
 
       def generate_financial_csv_enum(org, data)
         tx = data[:blockchain_transactions]
+        ry = data[:real_yield]
 
         Enumerator.new do |yielder|
           yielder << CSV.generate_line([ "Financial Summary Report" ])
@@ -177,6 +194,12 @@ module Api
           yielder << CSV.generate_line([ "Confirmed", tx[:confirmed] ])
           yielder << CSV.generate_line([ "Pending", tx[:pending] ])
           yielder << CSV.generate_line([ "Failed", tx[:failed] ])
+          yielder << CSV.generate_line([])
+          yielder << CSV.generate_line([ "Real Yield (DePIN/ReFi)" ])
+          yielder << CSV.generate_line([ "Total Minted SCC", ry[:total_minted_scc] ])
+          yielder << CSV.generate_line([ "Total Burned SCC", ry[:total_burned_scc] ])
+          yielder << CSV.generate_line([ "Total Premiums USDC", ry[:total_premiums_usdc] ])
+          yielder << CSV.generate_line([ "Net Deflation", ry[:net_deflation] ])
         end
       end
 
@@ -215,6 +238,7 @@ module Api
 
       def generate_financial_pdf(org, data)
         tx = data[:blockchain_transactions]
+        ry = data[:real_yield]
 
         Prawn::Document.new do |pdf|
           pdf.text "Financial Summary Report", size: 20, style: :bold
@@ -250,6 +274,27 @@ module Api
               [ "Confirmed", tx[:confirmed].to_s ],
               [ "Pending", tx[:pending].to_s ],
               [ "Failed", tx[:failed].to_s ]
+            ],
+            header: true,
+            width: pdf.bounds.width,
+            cell_style: { size: 10, padding: 8 }
+          ) do |t|
+            t.row(0).font_style = :bold
+            t.row(0).background_color = "10b981"
+            t.row(0).text_color = "ffffff"
+          end
+
+          pdf.move_down 20
+          pdf.text "Real Yield (DePIN/ReFi)", size: 14, style: :bold
+          pdf.move_down 10
+
+          pdf.table(
+            [
+              [ "Metric", "Value" ],
+              [ "Total Minted SCC", ry[:total_minted_scc].to_s ],
+              [ "Total Burned SCC", ry[:total_burned_scc].to_s ],
+              [ "Total Premiums USDC", ry[:total_premiums_usdc].to_s ],
+              [ "Net Deflation", ry[:net_deflation].to_s ]
             ],
             header: true,
             width: pdf.bounds.width,

@@ -53,6 +53,11 @@ RSpec.describe Api::V1::ReportsController, type: :request do
   end
 
   describe "GET /api/v1/reports/financial_summary" do
+    before do
+      allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_protocol_financials)
+        .and_return(total_minted: 500_000, total_burned: 150_000, total_premiums: 30_000)
+    end
+
     it "returns a financial summary report as JSON" do
       get "/api/v1/reports/financial_summary", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
@@ -60,6 +65,19 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       body = response.parsed_body
       expect(body["report"]).to eq("financial_summary")
       expect(body["data"]).to include("total_invested", "blockchain_transactions")
+    end
+
+    it "includes real_yield data in JSON response" do
+      get "/api/v1/reports/financial_summary", headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+
+      ry = response.parsed_body.dig("data", "real_yield")
+      expect(ry).to include(
+        "total_minted_scc" => 500_000,
+        "total_burned_scc" => 150_000,
+        "total_premiums_usdc" => 30_000,
+        "net_deflation" => -350_000
+      )
     end
 
     it "returns a financial summary report as CSV" do
@@ -75,11 +93,42 @@ RSpec.describe Api::V1::ReportsController, type: :request do
       expect(rows[5][0]).to eq("Total Invested")
     end
 
+    it "includes real_yield data in CSV response" do
+      get "/api/v1/reports/financial_summary.csv", headers: headers
+
+      csv_text = response.body
+      expect(csv_text).to include("Real Yield (DePIN/ReFi)")
+      expect(csv_text).to include("Total Minted SCC")
+      expect(csv_text).to include("Total Burned SCC")
+      expect(csv_text).to include("Total Premiums USDC")
+      expect(csv_text).to include("Net Deflation")
+    end
+
     it "returns a financial summary report as PDF" do
       get "/api/v1/reports/financial_summary.pdf", headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("application/pdf")
       expect(response.body).to start_with("%PDF")
+    end
+
+    context "when TheGraph service is unavailable" do
+      before do
+        allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_protocol_financials)
+          .and_raise(TheGraph::QueryService::QueryError, "connection refused")
+      end
+
+      it "returns zero defaults for real_yield" do
+        get "/api/v1/reports/financial_summary", headers: headers, as: :json
+        expect(response).to have_http_status(:ok)
+
+        ry = response.parsed_body.dig("data", "real_yield")
+        expect(ry).to include(
+          "total_minted_scc" => 0,
+          "total_burned_scc" => 0,
+          "total_premiums_usdc" => 0,
+          "net_deflation" => 0
+        )
+      end
     end
   end
 
