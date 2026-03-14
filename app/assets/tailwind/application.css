@@ -25,7 +25,7 @@
   --color-status-success: #065f46;
   --color-status-success-text: #d1fae5;
 
-  /* Status: active / acknowledged (emerald intermediate) */
+  /* Status: active / acknowledged */
   --color-status-active: #064e3b;
   --color-status-active-text: #a7f3d0;
 
@@ -39,7 +39,7 @@
 
   /* ── Terminal Typography Scale ──
    * Custom font sizes for the cyberpunk terminal aesthetic.
-   * Eliminates arbitrary values (text-[Npx]) per Rule 1. */
+   * Registered in ApplicationComponent so TailwindMerge treats them as font-size. */
   --font-size-micro: 0.5rem;       /* 8px — micro labels, file sizes */
   --font-size-micro--line-height: 1rem;
   --font-size-mini: 0.5625rem;     /* 9px — uppercase nav, status badges */

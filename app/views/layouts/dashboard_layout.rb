@@ -29,7 +29,7 @@ class DashboardLayout < ApplicationComponent
           # ГОЛОВНИЙ ТЕРМІНАЛ
           main(class: "flex-1 flex flex-col min-w-0 bg-black relative", role: "main") do
             # Фоновий шум (текстура Цитаделі)
-            div(class: "absolute inset-0 opacity-3 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]", aria_hidden: "true")
+            div(class: "absolute inset-0 opacity-5 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]", aria_hidden: "true")
 
             render_top_bar
 

@@ -6,7 +6,7 @@ class ApplicationComponent < Phlex::HTML
   include Phlex::Rails::Helpers::TurboFrameTag
   include Phlex::Rails::Helpers::AssetPath
 
-  # Tailwind 4 custom font-size tokens defined in @theme.
+  # Custom font-size tokens defined in app/assets/tailwind/application.css @theme.
   # Registered here so TailwindMerge treats them as font-size (not text-color).
   CUSTOM_TEXT_SCALE = %w[micro mini tiny compact].freeze
 
