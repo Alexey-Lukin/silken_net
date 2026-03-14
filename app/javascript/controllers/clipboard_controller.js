@@ -7,6 +7,15 @@ export default class extends Controller {
   copy() {
     navigator.clipboard.writeText(this.contentValue).then(() => {
       this.showFeedback()
+    }).catch(() => {
+      // Fallback: select text for manual copy when clipboard API is unavailable
+      const temp = document.createElement("input")
+      temp.value = this.contentValue
+      document.body.appendChild(temp)
+      temp.select()
+      document.execCommand("copy")
+      document.body.removeChild(temp)
+      this.showFeedback()
     })
   }
 

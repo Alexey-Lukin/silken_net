@@ -51,4 +51,14 @@ RSpec.describe Views::Shared::UI::RelativeTime do
       expect(html).to include("text-red-500")
     end
   end
+
+  describe "with a prefix" do
+    let(:datetime) { 5.minutes.ago }
+    let(:html) { render_component(datetime: datetime, prefix: "Active ") }
+
+    it "prepends the prefix text" do
+      expect(html).to include("Active ")
+      expect(html).to match(/Active .+ ago/)
+    end
+  end
 end

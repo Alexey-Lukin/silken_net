@@ -4,9 +4,10 @@ module Views
   module Shared
     module UI
       class RelativeTime < ApplicationComponent
-        def initialize(datetime:, css_class: "text-emerald-900 text-[10px] font-mono")
+        def initialize(datetime:, css_class: "text-emerald-900 text-[10px] font-mono", prefix: nil)
           @datetime  = datetime
           @css_class = css_class
+          @prefix    = prefix
         end
 
         def view_template
@@ -17,7 +18,7 @@ module Views
             title: @datetime.strftime("%d.%m.%Y %H:%M:%S UTC"),
             class: @css_class
           ) do
-            plain "#{ActionController::Base.helpers.time_ago_in_words(@datetime)} ago"
+            plain "#{@prefix}#{ActionController::Base.helpers.time_ago_in_words(@datetime)} ago"
           end
         end
       end

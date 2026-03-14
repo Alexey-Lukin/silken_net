@@ -60,8 +60,11 @@ module Users
         end
         td(class: "p-4 text-gray-600") do
            if user.last_seen_at
-             plain "Active "
-             render Views::Shared::UI::RelativeTime.new(datetime: user.last_seen_at, css_class: "text-gray-600 text-[11px] font-mono")
+             render Views::Shared::UI::RelativeTime.new(
+               datetime: user.last_seen_at,
+               css_class: "text-gray-600 text-[11px] font-mono",
+               prefix: "Active "
+             )
            else
              plain "Link offline"
            end
