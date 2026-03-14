@@ -139,7 +139,7 @@ PuroEarthPassportWorker → D-MRV "Biomass Passport" generated
          ↓
 Payload: { tree_did, biomass_yield_kg, extraction_date, gps_coordinates, lifetime_telemetry_hash }
          ↓
-Blockchain anchoring → biomass_passport_tx_hash stored on MaintenanceRecord
+blockchain anchoring → biomass_passport_tx_hash stored on MaintenanceRecord
          ↓
 Puro.earth registry → Biochar CORC issuance (future integration)
 ```
