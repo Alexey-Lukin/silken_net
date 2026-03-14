@@ -63,6 +63,9 @@ class EwsAlert < ApplicationRecord
   # Сакральна асинхронність: сповіщення летять лише після COMMIT
   after_create_commit :dispatch_notifications!
 
+  # Real-time: новий алерт з'являється у стрічці кластера миттєво
+  after_create_commit :broadcast_new_alert
+
   # Миттєве оновлення мапи та стрічки новин у Цитаделі
   after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
@@ -121,6 +124,18 @@ class EwsAlert < ApplicationRecord
     AlertNotificationWorker.perform_async(self.id)
   end
 
+  # [REAL-TIME]: Новий алерт з'являється у стрічці кластера миттєво.
+  # broadcast_prepend_later_to вставляє рядок на початок списку тривог.
+  def broadcast_new_alert
+    return unless cluster
+
+    Turbo::StreamsChannel.broadcast_prepend_later_to(
+      [ cluster, :alerts ],
+      target: "alerts_list",
+      html: render_phlex(Alerts::Row.new(alert: self))
+    )
+  end
+
   # [ОПТИМІЗАЦІЯ]: Очищення Redis-блокувальника
   def clear_silence_filter!
     return unless tree_id.present?
@@ -132,11 +147,13 @@ class EwsAlert < ApplicationRecord
   # [ВИПРАВЛЕНО]: Turbo Transmission.
   # Видаляємо тривогу зі стрічки новин (Live Feed), як тільки вона вирішена.
   def broadcast_status_change
+    alert_dom_id = ActionView::RecordIdentifier.dom_id(self)
+
     # Оновлення бейджа статусу на карті/деталях
     Turbo::StreamsChannel.broadcast_replace_to(
       "ews_updates_#{cluster_id}",
-      target: "alert_#{id}",
-      html: Alerts::Badge.new(alert: self).call
+      target: alert_dom_id,
+      html: render_phlex(Alerts::Badge.new(alert: self))
     )
 
     # Повне видалення вирішеного інциденту з Live Feed Архітектора
@@ -164,10 +181,20 @@ class EwsAlert < ApplicationRecord
   def broadcast_alert_update
     return unless should_broadcast?
 
+    alert_html = render_phlex(Alerts::Row.new(alert: self))
+    alert_dom_id = ActionView::RecordIdentifier.dom_id(self)
+
     Turbo::StreamsChannel.broadcast_replace_to(
       "ews_alerts_org_#{cluster.organization_id}",
-      target: "alert_#{id}",
-      html: Alerts::Row.new(alert: self).call
+      target: alert_dom_id,
+      html: alert_html
+    )
+
+    # Оновлення рядка алерту на сторінці кластера
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ cluster, :alerts ],
+      target: alert_dom_id,
+      html: alert_html
     )
   end
 
@@ -178,5 +205,10 @@ class EwsAlert < ApplicationRecord
 
     Rails.cache.write(cache_key, true, expires_in: BROADCAST_THROTTLE_SECONDS.seconds)
     true
+  end
+
+  # Рендеринг Phlex-компонента через контролерний контекст (потрібен для route helpers)
+  def render_phlex(component)
+    ApplicationController.renderer.render(component, layout: false)
   end
 end

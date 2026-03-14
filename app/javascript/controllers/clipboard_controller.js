@@ -28,6 +28,6 @@ export default class extends Controller {
     setTimeout(() => {
       button.innerHTML = original
       button.classList.remove("text-emerald-300")
-    }, 1500)
+    }, 2000)
   }
 }

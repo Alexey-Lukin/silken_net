@@ -8,7 +8,7 @@ module Alerts
     end
 
     def view_template
-      tr(id: "alert_#{@alert.id}", class: row_classes) do
+      tr(id: dom_id(@alert), class: row_classes) do
         td(class: "p-4") { severity_badge }
         td(class: "p-4 text-mini uppercase text-gray-400 tracking-widest") { @alert.alert_type.to_s.humanize }
         td(class: "p-4 text-emerald-500") { "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}" }

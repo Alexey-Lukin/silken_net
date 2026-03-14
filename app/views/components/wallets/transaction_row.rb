@@ -8,7 +8,7 @@ module Wallets
 
     def view_template
       # ⚡ [СИНХРОНІЗАЦІЯ]: target ID для оновлення статусу транзакції
-      tr(id: "transaction_#{@tx.id}", class: row_classes) do
+      tr(id: dom_id(@tx), class: row_classes) do
         td(class: "p-4") do
           span(class: tokens("px-2 py-0.5 rounded-sm text-mini font-bold uppercase border", tx_type_styles)) do
             @tx.token_type
