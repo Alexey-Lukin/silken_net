@@ -13,8 +13,13 @@ module Wallets
       turbo_stream_from @wallet
 
       div(class: "space-y-8 animate-in slide-in-from-bottom-4 duration-700") do
-        # Винесено в окремий компонент для Turbo-заміни
-        render Wallets::BalanceDisplay.new(wallet: @wallet)
+        # Lazy-load: Turbo Frame підвантажує BalanceDisplay окремим запитом,
+        # поки що показуємо Skeleton (пульсуючі блоки).
+        turbo_frame_tag "wallet_balance_frame_#{@wallet.id}",
+                        src: helpers.balance_api_v1_wallet_path(@wallet),
+                        loading: :lazy do
+          render Views::Shared::UI::Skeleton.new(variant: :balance)
+        end
 
         div(class: "grid grid-cols-1 lg:grid-cols-3 gap-8") do
           # Головний Ledger
@@ -24,7 +29,12 @@ module Wallets
 
           # Метадані та Дії
           div(class: "space-y-8") do
-            render_wallet_metadata
+            # Lazy-load: Blockchain Identity підвантажується окремим запитом
+            turbo_frame_tag "wallet_metadata_frame_#{@wallet.id}",
+                            src: helpers.metadata_api_v1_wallet_path(@wallet),
+                            loading: :lazy do
+              render Views::Shared::UI::Skeleton.new(variant: :card)
+            end
             render_on_chain_actions
           end
         end
@@ -66,34 +76,6 @@ module Wallets
             pagy: @pagy,
             url_helper: ->(page:) { helpers.api_v1_wallet_path(@wallet, page: page) }
           )
-        end
-      end
-    end
-
-    def render_wallet_metadata
-      div(class: "p-6 border border-emerald-900 bg-black shadow-xl") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Blockchain Identity" }
-        div(class: "space-y-4 font-mono text-tiny") do
-          div do
-            p(class: "text-gray-600 mb-1 uppercase") { "Polygon Address" }
-            p(class: "text-emerald-400 break-all leading-relaxed hover:text-emerald-300 transition-colors") { @wallet.crypto_public_address || "NOT_PROVISIONED" }
-          end
-          div do
-            p(class: "text-gray-600 mb-1 uppercase") { "Network" }
-            p(class: "text-white") { "Polygon PoS (Mainnet)" }
-          end
-          div(class: "pt-3 border-t border-emerald-900/30") do
-            p(class: "text-gaia-text-muted mb-1 uppercase") { "Locked Balance" }
-            p(class: "text-status-warning-text") { "#{@wallet.locked_balance.to_f.round(4)} SCC" }
-          end
-          div do
-            p(class: "text-gaia-text-muted mb-1 uppercase") { "Available Balance" }
-            p(class: "text-gaia-primary") { "#{@wallet.available_balance.to_f.round(4)} SCC" }
-          end
-          div do
-            p(class: "text-gaia-text-muted mb-1 uppercase") { "ESG Retired" }
-            p(class: "text-gaia-text-muted") { "#{@wallet.esg_retired_balance.to_f.round(4)} SCC" }
-          end
         end
       end
     end

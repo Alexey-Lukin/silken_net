@@ -4,6 +4,7 @@ class ApplicationComponent < Phlex::HTML
   include Phlex::Rails::Helpers::Routes
   include Phlex::Rails::Helpers::TurboStreamFrom
   include Phlex::Rails::Helpers::TurboFrameTag
+  include Phlex::Rails::Helpers::FormWith
   include Phlex::Rails::Helpers::AssetPath
 
   # Custom font-size tokens defined in app/assets/tailwind/application.css @theme.

@@ -44,7 +44,7 @@ module OracleVisions
       div(class: "mb-4 space-y-2") do
         div(class: "flex justify-between") do
           label(class: "text-tiny text-gray-600 uppercase") { label }
-          span(class: "text-tiny font-mono text-emerald-500", data_simulation_target: "value") { value }
+          span(class: "text-tiny font-mono text-emerald-500", data: { simulation_target: "value" }) { value }
         end
         input(type: "range", name: name, min: min, max: max, value: value,
               class: "w-full accent-emerald-500 bg-emerald-950 h-1 rounded-full appearance-none cursor-pointer")

@@ -36,11 +36,7 @@ module Api
 
       # GET /api/v1/blockchain_transactions/:id
       def show
-        @transaction = BlockchainTransaction
-                         .joins(wallet: { tree: :cluster })
-                         .where(clusters: { organization_id: current_user.organization_id })
-                         .includes(wallet: :tree)
-                         .find(params[:id])
+        @transaction = find_transaction
 
         respond_to do |format|
           format.json do
@@ -53,6 +49,24 @@ module Api
             )
           end
         end
+      end
+
+      # --- ON-CHAIN ВЕРИФІКАЦІЯ (Lazy-Loaded Turbo Frame) ---
+      # GET /api/v1/blockchain_transactions/:id/on_chain
+      def on_chain
+        @transaction = find_transaction
+
+        render BlockchainTransactions::OnChainFrame.new(transaction: @transaction), layout: false
+      end
+
+      private
+
+      def find_transaction
+        BlockchainTransaction
+          .joins(wallet: { tree: :cluster })
+          .where(clusters: { organization_id: current_user.organization_id })
+          .includes(wallet: :tree)
+          .find(params[:id])
       end
     end
   end

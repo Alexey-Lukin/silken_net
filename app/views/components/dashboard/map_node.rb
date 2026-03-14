@@ -10,13 +10,15 @@ module Dashboard
       # Цей div зчитається методом nodeTargetConnected у JS
       div(
         id: "map_node_#{@tree.id}",
-        data_map_target: "node",
-        data_did: @tree.did,
-        data_lat: @tree.latitude.to_f,
-        data_lng: @tree.longitude.to_f,
-        data_stress: @tree.current_stress.to_f,
-        data_charge: @tree.charge_percentage.to_i,
-        data_status: @tree.status
+        data: {
+          map_target: "node",
+          did: @tree.did,
+          lat: @tree.latitude.to_f,
+          lng: @tree.longitude.to_f,
+          stress: @tree.current_stress.to_f,
+          charge: @tree.charge_percentage.to_i,
+          status: @tree.status
+        }
       )
     end
   end

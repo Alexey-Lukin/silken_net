@@ -378,4 +378,66 @@ RSpec.describe BlockchainTransaction, type: :model do
       end
     end
   end
+
+  # =========================================================================
+  # REAL-TIME BROADCASTS
+  # =========================================================================
+  describe "broadcast_status_change" do
+    before do
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_later_to)
+    end
+
+    it "broadcasts when status changes" do
+      tx = create(:blockchain_transaction, status: :pending, tx_hash: nil)
+      tx.update_columns(status: described_class.statuses[:processing])
+      tx.reload
+
+      # Simulate an AASM transition that triggers after_update_commit
+      tx.mark_as_sent!("0x" + SecureRandom.hex(32))
+
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_later_to).at_least(:once)
+    end
+
+    it "does not broadcast when non-status fields change" do
+      tx = create(:blockchain_transaction, status: :pending, tx_hash: nil)
+      tx.update!(notes: "Updated notes")
+
+      expect(Turbo::StreamsChannel).not_to have_received(:broadcast_replace_later_to)
+    end
+
+    it "triggers wallet balance update on confirmed status" do
+      tx = create(:blockchain_transaction, status: :sent)
+      wallet = tx.wallet
+
+      allow(wallet).to receive(:broadcast_balance_update)
+      allow(tx).to receive(:wallet).and_return(wallet)
+
+      tx.confirm!
+
+      expect(wallet).to have_received(:broadcast_balance_update)
+    end
+
+    it "triggers wallet balance update on failed status" do
+      tx = create(:blockchain_transaction, status: :sent)
+      wallet = tx.wallet
+
+      allow(Rails.logger).to receive(:error)
+      allow(wallet).to receive(:broadcast_balance_update)
+      allow(tx).to receive(:wallet).and_return(wallet)
+
+      tx.fail!("RPC timeout")
+
+      expect(wallet).to have_received(:broadcast_balance_update)
+    end
+
+    it "skips broadcast when wallet is nil (slashing audit tx)" do
+      tx = create(:blockchain_transaction, status: :pending, tx_hash: nil)
+      # Simulate orphan tx by nullifying wallet
+      tx.update_columns(wallet_id: nil)
+      tx.reload
+
+      # Should not raise error even without a wallet
+      expect { tx.update!(notes: "audit") }.not_to raise_error
+    end
+  end
 end
