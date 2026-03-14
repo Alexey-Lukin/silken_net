@@ -23,7 +23,7 @@ module Wallets
             if @wallet.crypto_public_address.present?
               render Views::Shared::Web3::Address.new(address: @wallet.crypto_public_address)
             else
-              p(class: "text-gray-700 italic") { "NOT_PROVISIONED" }
+              p(class: "text-gaia-text-muted italic") { "NOT_PROVISIONED" }
             end
           end
           div do
