@@ -48,6 +48,31 @@ RSpec.describe Views::Shared::UI::Skeleton do
     end
   end
 
+  describe "with :stats variant" do
+    let(:html) { render_component(variant: :stats) }
+
+    it "renders three skeleton lines for stat card layout" do
+      expect(html.scan("animate-pulse").length).to eq(3)
+    end
+  end
+
+  describe "with :table variant" do
+    let(:html) { render_component(variant: :table) }
+
+    it "renders four skeleton lines for table layout" do
+      expect(html.scan("animate-pulse").length).to eq(4)
+    end
+  end
+
+  describe "with :map variant" do
+    let(:html) { render_component(variant: :map) }
+
+    it "renders three skeleton lines including a tall map placeholder" do
+      expect(html.scan("animate-pulse").length).to eq(3)
+      expect(html).to include("h-64")
+    end
+  end
+
   describe "with custom lines count" do
     let(:html) { render_component(lines: 5) }
 

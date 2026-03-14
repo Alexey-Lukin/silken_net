@@ -17,6 +17,22 @@ module Views
             { height: "h-4", width: "w-1/3" },
             { height: "h-8", width: "w-2/3" },
             { height: "h-4", width: "w-1/2" }
+          ],
+          stats: [
+            { height: "h-3", width: "w-24" },
+            { height: "h-10", width: "w-32" },
+            { height: "h-2", width: "w-20" }
+          ],
+          table: [
+            { height: "h-4", width: "w-full" },
+            { height: "h-4", width: "w-full" },
+            { height: "h-4", width: "w-full" },
+            { height: "h-4", width: "w-3/4" }
+          ],
+          map: [
+            { height: "h-2", width: "w-1/4" },
+            { height: "h-64", width: "w-full" },
+            { height: "h-2", width: "w-1/3" }
           ]
         }.freeze
 

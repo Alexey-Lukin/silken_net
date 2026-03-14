@@ -13,7 +13,7 @@ module Telemetry
         div(class: "relative border border-emerald-900 bg-black min-h-[400px] md:min-h-[600px] overflow-hidden rounded-sm shadow-[0_0_40px_rgba(6,78,59,0.2)]") do
           # 📟 МАГІЯ: Абсолютний Canvas на фоні для ефекту "Зеленого дощу"
           # Stimulus-контролер 'matrix-rain' оживить цей тег
-          canvas(data_controller: "matrix-rain", class: "absolute inset-0 z-0 opacity-20 pointer-events-none w-full h-full")
+          canvas(data: { controller: "matrix-rain" }, class: "absolute inset-0 z-0 opacity-20 pointer-events-none w-full h-full")
 
           # Радіальний градієнт для додаткової глибини
           div(class: "absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/80 to-black pointer-events-none")

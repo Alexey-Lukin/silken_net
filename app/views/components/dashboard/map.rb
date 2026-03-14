@@ -15,7 +15,7 @@ module Dashboard
         turbo_stream_from "geospatial_matrix"
 
         # Основний контейнер карти з підключеним Stimulus
-        div(data_controller: "map", class: "w-full h-full z-0") do
+        div(data: { controller: "map" }, class: "w-full h-full z-0") do
           # Прихований блок даних. Stimulus "зчитує" звідси.
           div(id: "map_data_nodes", class: "hidden") do
             @trees.each { |tree| render Dashboard::MapNode.new(tree: tree) }

@@ -52,13 +52,20 @@ module Api
 
       # --- БАЛАНС ГАМАНЦЯ (Lazy-Loaded Turbo Frame) ---
       # GET /api/v1/wallets/:id/balance
-      # Повертає тільки BalanceDisplay, загорнутий у turbo_frame_tag
-      # для lazy-loading через Turbo Frames (src: attribute).
       def balance
         @wallet = Wallet.find(params[:id])
         authorize @wallet
 
         render Wallets::BalanceFrame.new(wallet: @wallet), layout: false
+      end
+
+      # --- БЛОКЧЕЙН ІДЕНТИЧНІСТЬ (Lazy-Loaded Turbo Frame) ---
+      # GET /api/v1/wallets/:id/metadata
+      def metadata
+        @wallet = Wallet.find(params[:id])
+        authorize @wallet
+
+        render Wallets::MetadataFrame.new(wallet: @wallet), layout: false
       end
     end
   end

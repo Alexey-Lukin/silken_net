@@ -77,6 +77,7 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       resources :wallets, only: [ :index, :show ] do
         get :balance, on: :member
+        get :metadata, on: :member
       end
 
       resources :contracts, only: [ :index, :show ] do
@@ -132,7 +133,9 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 📒 БЛОКЧЕЙН ЛЕДЖЕР (The Ledger)
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      resources :blockchain_transactions, only: [ :index, :show ]
+      resources :blockchain_transactions, only: [ :index, :show ] do
+        get :on_chain, on: :member
+      end
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 🔗 CHAINLINK ORACLE (Decentralized Oracle Callbacks)

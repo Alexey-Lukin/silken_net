@@ -19,7 +19,12 @@ module BlockchainTransactions
           end
           div(class: "space-y-8") do
             render_wallet_info
-            render_on_chain_panel
+            # Lazy-load: On-Chain Verification підвантажується окремим запитом
+            turbo_frame_tag "tx_onchain_frame_#{@tx.id}",
+                            src: helpers.on_chain_api_v1_blockchain_transaction_path(@tx),
+                            loading: :lazy do
+              render Views::Shared::UI::Skeleton.new(variant: :card)
+            end
           end
         end
       end
@@ -114,23 +119,6 @@ module BlockchainTransactions
           end
         else
           p(class: "text-compact text-gray-700 italic") { "No wallet linked." }
-        end
-      end
-    end
-
-    def render_on_chain_panel
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5 space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "On-Chain Verification" }
-        if @tx.tx_hash.present?
-          div do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { "Transaction Hash" }
-            p(class: "text-tiny font-mono text-emerald-500 break-all leading-relaxed") { @tx.tx_hash }
-          end
-          div(class: "mt-4") do
-            a(href: @tx.explorer_url, target: "_blank", class: "w-full block text-center py-2 border border-emerald-500 text-tiny uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View transaction on Polygonscan") { "View on Polygonscan →" }
-          end
-        else
-          p(class: "text-compact text-gray-700 italic") { "Transaction not yet submitted to chain." }
         end
       end
     end
