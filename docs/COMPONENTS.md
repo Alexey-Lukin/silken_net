@@ -344,13 +344,18 @@ Run `bin/rails server` and navigate to **http://localhost:3000/lookbook**
 
 ### Available Previews
 
-| Preview                | Scenarios                                     |
-|------------------------|-----------------------------------------------|
-| `StatusBadgePreview`   | All AASM states, Transaction lifecycle, Interactive param selector |
-| `StatCardPreview`      | Default, Danger mode, Minimal, Interactive    |
-| `ActionBadgePreview`   | All action types (creative/mutative/destructive/neutral), Interactive |
-| `EmptyStatePreview`    | Default grid, Custom icon, Minimal            |
-| `MetaRowPreview`       | Default, Numeric, Interactive                 |
+| Preview                      | Scenarios                                     |
+|------------------------------|-----------------------------------------------|
+| `StatusBadgePreview`         | All AASM states, Transaction lifecycle, Interactive param selector |
+| `StatCardPreview`            | Default, Danger mode, Minimal, Interactive    |
+| `ActionBadgePreview`         | All action types (creative/mutative/destructive/neutral), Interactive |
+| `EmptyStatePreview`          | Default grid, Custom icon, Minimal            |
+| `MetaRowPreview`             | Default, Numeric, Interactive                 |
+| `AlertBadgePreview`          | Severity × Status matrix (9 combos), Interactive |
+| `DashboardEventRowPreview`   | EwsAlert, BlockchainTx, Maintenance, Unknown events |
+| `SidebarPreview`             | Default, With alerts badge, Telemetry active, Interactive |
+| `Web3AddressPreview`         | Valid, Short, Nil fallback, Custom fallback, Interactive |
+| `IoTMetricValuePreview`      | Default, High precision, Nil, No unit, Interactive |
 
 ### Creating New Previews
 
@@ -363,3 +368,32 @@ class MyComponentPreview < Lookbook::Preview
   end
 end
 ```
+
+---
+
+## Test Coverage
+
+### Shared Components (`spec/views/shared/`)
+
+| Test File                             | Examples | What's Tested                                    |
+|---------------------------------------|----------|--------------------------------------------------|
+| `shared/ui/status_badge_spec.rb`      | 25       | AASM state mapping, accessibility, semantic tokens |
+| `shared/ui/stat_card_spec.rb`         | 7        | Props, danger mode, class override, accessibility |
+| `shared/ui/action_badge_spec.rb`      | 8        | Pattern matching, semantic styles, accessibility  |
+| `shared/ui/empty_state_spec.rb`       | 6        | Default state, custom icon, description           |
+| `shared/ui/meta_row_spec.rb`          | 6        | Label/value rendering, nil handling               |
+| `shared/ui/relative_time_spec.rb`     | 8        | Time intervals, edge cases                        |
+| `shared/web3/address_spec.rb`         | 8        | Truncation, clipboard, nil fallback               |
+| `shared/iot/metric_value_spec.rb`     | 6        | Precision, nil, BigDecimal, unit rendering        |
+
+### Domain Components (`spec/views/components/`)
+
+| Test File                                   | Examples | What's Tested                                    |
+|---------------------------------------------|----------|--------------------------------------------------|
+| `components/alerts/badge_spec.rb`           | 12       | Severity styles, status styles, rendering         |
+| `components/dashboard/event_row_spec.rb`    | 10       | Event types (EwsAlert, Tx, Maintenance, Unknown) |
+| `components/wallets/transaction_row_spec.rb`| 14       | Token types, status colors, hash truncation       |
+| `components/wallets/balance_display_spec.rb`| 8        | Balance rendering, Turbo target, best practices   |
+| `components/actuators/card_spec.rb`         | 16       | Status LED, matrix, container classes             |
+
+**Total: 134 examples, 0 failures**
