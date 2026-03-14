@@ -553,4 +553,49 @@ RSpec.describe NaasContract, type: :model do
       end
     end
   end
+
+  # =========================================================================
+  # HYBRID PROTOCOL GAIA: Corporate Premium (Insurance Pool Funding)
+  # =========================================================================
+  describe "INSURANCE_PREMIUM_RATE constant" do
+    it "is defined as BigDecimal 0.05" do
+      expect(described_class::INSURANCE_PREMIUM_RATE).to eq(BigDecimal("0.05"))
+      expect(described_class::INSURANCE_PREMIUM_RATE).to be_a(BigDecimal)
+    end
+  end
+
+  describe "#insurance_premium_amount" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "returns 5% of total_funding" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster, total_funding: 100_000)
+      expect(contract.insurance_premium_amount).to eq(BigDecimal("5000.0"))
+    end
+
+    it "returns correct premium for small amounts" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster, total_funding: 1)
+      expect(contract.insurance_premium_amount).to eq(BigDecimal("0.05"))
+    end
+
+    it "uses BigDecimal precision" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster, total_funding: 33_333)
+      expect(contract.insurance_premium_amount).to eq(BigDecimal("1666.65"))
+    end
+  end
+
+  describe "#forester_share_amount" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+
+    it "returns 95% of total_funding" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster, total_funding: 100_000)
+      expect(contract.forester_share_amount).to eq(BigDecimal("95000.0"))
+    end
+
+    it "sums to total_funding with insurance_premium_amount" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster, total_funding: 77_777)
+      expect(contract.insurance_premium_amount + contract.forester_share_amount).to eq(contract.total_funding)
+    end
+  end
 end

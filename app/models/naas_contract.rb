@@ -3,6 +3,10 @@
 class NaasContract < ApplicationRecord
   include AASM
 
+  # [HYBRID PROTOCOL GAIA]: Ставка корпоративної страхової премії (Corporate Premium).
+  # 5% від total_funding кожного NaaS-контракту направляється до DAO Treasury Parametric Insurance Pool.
+  INSURANCE_PREMIUM_RATE = BigDecimal("0.05")
+
   # --- ЗВ'ЯЗКИ ---
   belongs_to :organization
   belongs_to :cluster
@@ -29,6 +33,9 @@ class NaasContract < ApplicationRecord
     state :cancelled
 
     # Активація контракту (після підтвердження інвестиції)
+    # [HYBRID PROTOCOL GAIA]: При активації контракту insurance_premium_amount (5% від total_funding)
+    # у USDC направляється до DAO Treasury Parametric Insurance Pool.
+    # Це забезпечує фінансування страхового пулу для параметричних виплат (пожежі, посухи, шкідники).
     event :activate do
       transitions from: :draft, to: :active
     end
@@ -47,6 +54,21 @@ class NaasContract < ApplicationRecord
     event :cancel do
       transitions from: [ :draft, :active ], to: :cancelled
     end
+  end
+
+  # =========================================================================
+  # HYBRID PROTOCOL GAIA: Corporate Premium (Insurance Pool Funding)
+  # =========================================================================
+
+  # Сума страхової премії (5% від total_funding), що направляється до DAO Treasury
+  # Parametric Insurance Pool при активації контракту.
+  def insurance_premium_amount
+    (total_funding * INSURANCE_PREMIUM_RATE).round(2)
+  end
+
+  # Частка total_funding, що залишається форестеру після вирахування страхової премії (95%).
+  def forester_share_amount
+    (total_funding - insurance_premium_amount).round(2)
   end
 
   # --- ВАЛІДАЦІЇ ---
