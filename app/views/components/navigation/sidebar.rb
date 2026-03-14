@@ -11,7 +11,11 @@ module Navigation
     end
 
     def view_template
-      aside(class: "w-64 h-screen sticky top-0 bg-black border-r border-emerald-900/50 flex flex-col z-50 overflow-y-auto font-mono") do
+      aside(
+        class: "w-64 h-screen sticky top-0 bg-black border-r border-emerald-900/50 flex flex-col z-50 overflow-y-auto font-mono",
+        role: "navigation",
+        aria_label: "Main navigation"
+      ) do
         render_logo
         render_status_pulse
 
@@ -89,13 +93,15 @@ module Navigation
 
       a(
         href: path,
+        aria_current: (active ? "page" : nil),
+        aria_label: label,
         class: tokens(
-          "group flex items-center justify-between px-3 py-2 text-[11px] uppercase tracking-widest transition-all duration-300 border-l-2",
+          "group flex items-center justify-between px-3 py-2 text-[11px] uppercase tracking-widest transition-all duration-300 border-l-2 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500",
           active ? "text-emerald-400 bg-emerald-950/20 border-emerald-500" : "text-gray-500 border-transparent hover:text-emerald-600 hover:bg-emerald-950/5 hover:border-emerald-900/50"
         )
       ) do
         div(class: "flex items-center space-x-3") do
-          span(class: tokens("w-4 h-4", "text-emerald-500": active, "text-emerald-900 group-hover:text-emerald-700": !active)) { render_icon(icon) }
+          span(class: tokens("w-4 h-4", "text-emerald-500": active, "text-emerald-900 group-hover:text-emerald-700": !active), aria_hidden: "true") { render_icon(icon) }
           span { label }
         end
 

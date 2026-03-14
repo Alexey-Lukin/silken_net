@@ -18,20 +18,22 @@ class DashboardLayout < ApplicationComponent
       render_head
       body(class: "h-full font-mono antialiased text-emerald-500 overflow-hidden") do
         div(class: "flex h-full overflow-hidden") do
-          # ЦЕНТРАЛЬНА НАВІГАЦІЯ
-          render Navigation::Sidebar.new(
-            current_path: @current_path,
-            ews_alert_count: @ews_alert_count
-          )
+          # ЦЕНТРАЛЬНА НАВІГАЦІЯ — hidden on mobile, visible on md+
+          div(class: "hidden md:block") do
+            render Navigation::Sidebar.new(
+              current_path: @current_path,
+              ews_alert_count: @ews_alert_count
+            )
+          end
 
           # ГОЛОВНИЙ ТЕРМІНАЛ
-          main(class: "flex-1 flex flex-col min-w-0 bg-black relative") do
+          main(class: "flex-1 flex flex-col min-w-0 bg-black relative", role: "main") do
             # Фоновий шум (текстура Цитаделі)
-            div(class: "absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]")
+            div(class: "absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]", aria_hidden: "true")
 
             render_top_bar
 
-            div(class: "flex-1 overflow-y-auto p-8 custom-scrollbar relative z-10") do
+            div(class: "flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar relative z-10") do
               div(class: "max-w-7xl mx-auto") do
                 yield
               end
@@ -56,13 +58,13 @@ class DashboardLayout < ApplicationComponent
   end
 
   def render_top_bar
-    header(class: "h-20 border-b border-emerald-900/30 flex items-center justify-between px-8 bg-black/50 backdrop-blur-md z-20") do
-      div(class: "flex flex-col") do
+    header(class: "h-16 md:h-20 border-b border-emerald-900/30 flex items-center justify-between px-4 md:px-8 bg-black/50 backdrop-blur-md z-20", role: "banner") do
+      div(class: "flex flex-col min-w-0") do
         render_breadcrumbs
-        h1(class: "text-xl font-light tracking-[0.2em] uppercase text-white mt-1") { @title }
+        h1(class: "text-base md:text-xl font-light tracking-[0.2em] uppercase text-white mt-1 truncate") { @title }
       end
 
-      div(class: "flex items-center space-x-6") do
+      div(class: "flex items-center space-x-4 md:space-x-6") do
         render_system_telemetry
         render_user_avatar
       end
@@ -70,7 +72,7 @@ class DashboardLayout < ApplicationComponent
   end
 
   def render_breadcrumbs
-    nav(class: "flex text-[9px] uppercase tracking-widest text-emerald-900 font-bold") do
+    nav(aria_label: "Breadcrumb", class: "flex text-[9px] uppercase tracking-widest text-emerald-900 font-bold") do
       ol(class: "flex items-center space-x-2") do
         li { a(href: helpers.api_v1_dashboard_index_path, class: "hover:text-emerald-500 transition-colors") { "Citadel" } }
 

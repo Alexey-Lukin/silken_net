@@ -69,13 +69,13 @@ module Contracts
     def render_emission_ledger
       div(class: "space-y-4") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Blockchain Emission History" }
-        div(class: "border border-emerald-900 bg-black overflow-hidden") do
-           table(class: "w-full text-left font-mono text-[10px]") do
+        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+           table(role: "table", class: "w-full text-left font-mono text-[10px]") do
              thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
                tr do
-                 th(class: "p-4") { "TX Hash" }
-                 th(class: "p-4") { "Amount" }
-                 th(class: "p-4 text-right") { "Timestamp" }
+                 th(scope: "col", class: "p-4") { "TX Hash" }
+                 th(scope: "col", class: "p-4") { "Amount" }
+                 th(scope: "col", class: "p-4 text-right") { "Timestamp" }
                end
              end
              tbody(class: "divide-y divide-emerald-900/30") do

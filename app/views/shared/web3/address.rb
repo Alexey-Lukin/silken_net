@@ -24,8 +24,10 @@ module Views
               ) { truncated_address }
               button(
                 type: "button",
-                class: "text-emerald-700 hover:text-emerald-300 transition-colors cursor-pointer",
+                class: "text-emerald-700 hover:text-emerald-300 focus:outline-none focus:ring-2 " \
+                       "focus:ring-emerald-500 transition-colors cursor-pointer",
                 title: "Copy address",
+                aria_label: "Copy address #{truncated_address} to clipboard",
                 data: { action: "clipboard#copy", clipboard_target: "button" }
               ) { copy_icon }
             end
@@ -49,7 +51,8 @@ module Views
             viewbox: "0 0 24 24",
             stroke_width: "1.5",
             stroke: "currentColor",
-            class: "w-3 h-3"
+            class: "w-3 h-3",
+            aria_hidden: "true"
           ) do |s|
             s.path(
               stroke_linecap: "round",

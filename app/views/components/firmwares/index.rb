@@ -51,19 +51,20 @@ module Firmwares
           # Кнопка переходу до порталу завантаження
           a(
             href: helpers.new_api_v1_firmware_path,
-            class: "text-[10px] border border-emerald-500 px-4 py-1 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+            class: "text-[10px] border border-emerald-500 px-4 py-1 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)] focus:outline-none focus:ring-2 focus:ring-emerald-500",
+            aria_label: "Upload new firmware binary"
           ) { "+ Inject New Code" }
         end
 
-        div(class: "overflow-x-auto border border-emerald-900 bg-black") do
-          table(class: "w-full text-left font-mono text-xs") do
+        div(class: "overflow-x-auto w-full border border-emerald-900 bg-black") do
+          table(role: "table", class: "w-full text-left font-mono text-xs") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
               tr do
-                th(class: "p-4") { "Version" }
-                th(class: "p-4") { "Target Hardware" }
-                th(class: "p-4") { "Checksum (MD5)" }
-                th(class: "p-4") { "Uploaded" }
-                th(class: "p-4 text-right") { "Command" }
+                th(scope: "col", class: "p-4") { "Version" }
+                th(scope: "col", class: "p-4") { "Target Hardware" }
+                th(scope: "col", class: "p-4") { "Checksum (MD5)" }
+                th(scope: "col", class: "p-4") { "Uploaded" }
+                th(scope: "col", class: "p-4 text-right") { "Command" }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -91,7 +92,8 @@ module Firmwares
             input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
             button(
               type: "submit",
-              class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-[9px] tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)]",
+              class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-[9px] tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)] focus:outline-none focus:ring-2 focus:ring-emerald-500",
+              aria_label: "Deploy firmware v#{firmware.version}",
               data: { turbo_confirm: "Initiate evolution to v#{firmware.version} for the selected hardware?" }
             ) { "Order Evolution →" }
           end

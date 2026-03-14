@@ -34,15 +34,15 @@ module AuditLogs
     end
 
     def audit_table
-      div(class: "border border-emerald-900 bg-black overflow-hidden") do
-        table(class: "w-full text-left font-mono text-[11px]") do
+      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        table(role: "table", class: "w-full text-left font-mono text-[11px]") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
             tr do
-              th(class: "p-4") { "Timestamp" }
-              th(class: "p-4") { "User" }
-              th(class: "p-4") { "Action" }
-              th(class: "p-4") { "Target" }
-              th(class: "p-4 text-right") { "Details" }
+              th(scope: "col", class: "p-4") { "Timestamp" }
+              th(scope: "col", class: "p-4") { "User" }
+              th(scope: "col", class: "p-4") { "Action" }
+              th(scope: "col", class: "p-4") { "Target" }
+              th(scope: "col", class: "p-4 text-right") { "Details" }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
@@ -75,7 +75,7 @@ module AuditLogs
           end
         end
         td(class: "p-4 text-right") do
-          a(href: helpers.api_v1_audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-[9px] uppercase tracking-widest") { "Inspect →" }
+          a(href: helpers.api_v1_audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-[9px] uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "Inspect audit log ##{log.id}") { "Inspect →" }
         end
       end
     end

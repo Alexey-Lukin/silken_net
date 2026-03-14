@@ -9,9 +9,9 @@ module Sessions
 
     def view_template
       # Використовуємо окремий мінімалістичний лейаут для входу
-      main(class: "min-h-screen bg-black flex items-center justify-center p-4 font-mono relative overflow-hidden") do
+      main(class: "min-h-screen bg-black flex items-center justify-center p-4 font-mono relative overflow-hidden", role: "main") do
         # Фоновий ефект Матриці/Міцелію
-        div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]")
+        div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]", aria_hidden: "true")
 
         div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
           render_portal_header
@@ -30,7 +30,7 @@ module Sessions
             end
 
             div(class: "pt-4") do
-              f.submit "AUTHENTICATE", class: "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-[0.4em] hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+              f.submit "AUTHENTICATE", class: "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-[0.4em] hover:bg-emerald-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
             end
 
             render_forgot_password_link
@@ -45,7 +45,7 @@ module Sessions
 
     def render_portal_header
       div(class: "text-center mb-10 space-y-2") do
-        div(class: "inline-block h-12 w-12 border border-emerald-500 rotate-45 mb-4 relative") do
+        div(class: "inline-block h-12 w-12 border border-emerald-500 rotate-45 mb-4 relative", aria_hidden: "true") do
           div(class: "absolute inset-1 bg-emerald-500 animate-pulse")
         end
         h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { "Citadel" }
@@ -66,12 +66,12 @@ module Sessions
 
     def render_flash_messages
       if @flash_alert
-        div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-[10px] uppercase tracking-widest text-center") do
+        div(class: "p-3 border border-red-900 bg-red-950/20 text-red-500 text-[10px] uppercase tracking-widest text-center", role: "alert") do
           @flash_alert
         end
       end
       if @flash_notice
-        div(class: "p-3 border border-emerald-900 bg-emerald-950/20 text-emerald-500 text-[10px] uppercase tracking-widest text-center") do
+        div(class: "p-3 border border-emerald-900 bg-emerald-950/20 text-emerald-500 text-[10px] uppercase tracking-widest text-center", role: "status") do
           @flash_notice
         end
       end
@@ -79,7 +79,7 @@ module Sessions
 
     def render_forgot_password_link
       div(class: "text-right") do
-        a(href: helpers.api_v1_forgot_password_path, class: "text-[10px] text-emerald-900 uppercase tracking-widest hover:text-emerald-500 transition-colors") do
+        a(href: helpers.api_v1_forgot_password_path, class: "text-[10px] text-emerald-900 uppercase tracking-widest hover:text-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors") do
           "Forgot Access Code?"
         end
       end
@@ -101,9 +101,10 @@ module Sessions
     def provider_button(provider, label, icon)
       a(
         href: "/auth/#{provider}",
-        class: "flex items-center justify-center space-x-2 py-3 border border-emerald-900/50 text-emerald-700 text-[10px] uppercase tracking-widest hover:border-emerald-500 hover:text-emerald-400 hover:bg-emerald-950/10 transition-all"
+        aria_label: "Sign in with #{label}",
+        class: "flex items-center justify-center space-x-2 py-3 border border-emerald-900/50 text-emerald-700 text-[10px] uppercase tracking-widest hover:border-emerald-500 hover:text-emerald-400 hover:bg-emerald-950/10 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
       ) do
-        span { icon }
+        span(aria_hidden: "true") { icon }
         span { label }
       end
     end

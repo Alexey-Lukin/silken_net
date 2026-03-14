@@ -64,14 +64,14 @@ module Organizations
       div(class: "space-y-4") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Assigned Sectors (Clusters)" }
 
-        div(class: "border border-emerald-900 bg-black overflow-hidden") do
-          table(class: "w-full text-left font-mono text-[11px]") do
+        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+          table(role: "table", class: "w-full text-left font-mono text-[11px]") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
               tr do
-                th(class: "p-4") { "Sector Name" }
-                th(class: "p-4") { "Vitality" }
-                th(class: "p-4") { "Population" }
-                th(class: "p-4 text-right") { "Matrix" }
+                th(scope: "col", class: "p-4") { "Sector Name" }
+                th(scope: "col", class: "p-4") { "Vitality" }
+                th(scope: "col", class: "p-4") { "Population" }
+                th(scope: "col", class: "p-4 text-right") { "Matrix" }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -90,7 +90,8 @@ module Organizations
                   td(class: "p-4 text-right") do
                     a(
                       href: helpers.api_v1_cluster_path(cluster),
-                      class: "text-emerald-600 hover:text-white transition-all uppercase text-[9px]"
+                      class: "text-emerald-600 hover:text-white transition-all uppercase text-[9px] focus:outline-none focus:ring-2 focus:ring-emerald-500",
+                      aria_label: "Open #{cluster.name} cluster matrix"
                     ) { "Open Matrix →" }
                   end
                 end

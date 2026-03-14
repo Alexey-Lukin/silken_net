@@ -10,7 +10,7 @@ module Telemetry
         turbo_stream_from "telemetry_stream"
 
         # Основний контейнер із відносною позицією для накладання Canvas і Таблиці
-        div(class: "relative border border-emerald-900 bg-black min-h-[600px] overflow-hidden rounded-sm shadow-[0_0_40px_rgba(6,78,59,0.2)]") do
+        div(class: "relative border border-emerald-900 bg-black min-h-[400px] md:min-h-[600px] overflow-hidden rounded-sm shadow-[0_0_40px_rgba(6,78,59,0.2)]") do
           # 📟 МАГІЯ: Абсолютний Canvas на фоні для ефекту "Зеленого дощу"
           # Stimulus-контролер 'matrix-rain' оживить цей тег
           canvas(data_controller: "matrix-rain", class: "absolute inset-0 z-0 opacity-20 pointer-events-none w-full h-full")
@@ -19,14 +19,14 @@ module Telemetry
           div(class: "absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/80 to-black pointer-events-none")
 
           # Таблиця (HUD), яка "плаває" поверх дощу
-          div(class: "relative z-10 w-full h-[600px] overflow-y-auto custom-scrollbar") do
-            table(class: "w-full text-left font-mono text-[10px]") do
+          div(class: "relative z-10 w-full h-[400px] md:h-[600px] overflow-y-auto overflow-x-auto custom-scrollbar") do
+            table(class: "w-full text-left font-mono text-[10px] min-w-[640px]", role: "table") do
               thead(class: "sticky top-0 bg-emerald-950/80 backdrop-blur-md text-emerald-700 uppercase tracking-widest border-b border-emerald-900/50 shadow-md") do
                 tr do
-                  th(class: "p-4 w-32 font-medium") { "Timestamp" }
-                  th(class: "p-4 w-40 font-medium") { "Queen / Gateway" }
-                  th(class: "p-4 font-medium") { "Raw CoAP Payload (Hex Stream)" }
-                  th(class: "p-4 w-24 text-right font-medium") { "Status" }
+                  th(scope: "col", class: "p-4 w-32 font-medium") { "Timestamp" }
+                  th(scope: "col", class: "p-4 w-40 font-medium") { "Queen / Gateway" }
+                  th(scope: "col", class: "p-4 font-medium") { "Raw CoAP Payload (Hex Stream)" }
+                  th(scope: "col", class: "p-4 w-24 text-right font-medium") { "Status" }
                 end
               end
 

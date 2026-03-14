@@ -28,23 +28,23 @@ module BlockchainTransactions
         end
         div(class: "flex space-x-2") do
           %w[carbon_coin forest_coin].each do |t|
-            span(class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-900 uppercase") { t }
+            span(class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-900 uppercase", role: "status") { t }
           end
         end
       end
     end
 
     def transactions_table
-      div(class: "border border-emerald-900 bg-black overflow-hidden") do
-        table(class: "w-full text-left font-mono text-[11px]") do
+      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        table(class: "w-full text-left font-mono text-[11px] min-w-[640px]", role: "table") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
             tr do
-              th(class: "p-4") { "Type" }
-              th(class: "p-4") { "Amount" }
-              th(class: "p-4") { "Status" }
-              th(class: "p-4") { "Tree" }
-              th(class: "p-4") { "TX Hash" }
-              th(class: "p-4 text-right") { "Timestamp" }
+              th(scope: "col", class: "p-4") { "Type" }
+              th(scope: "col", class: "p-4") { "Amount" }
+              th(scope: "col", class: "p-4") { "Status" }
+              th(scope: "col", class: "p-4") { "Tree" }
+              th(scope: "col", class: "p-4") { "TX Hash" }
+              th(scope: "col", class: "p-4 text-right") { "Timestamp" }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
@@ -74,7 +74,7 @@ module BlockchainTransactions
         td(class: "p-4 text-emerald-500") { tx.wallet&.tree&.did || "—" }
         td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-[10px]") do
           if tx.tx_hash.present?
-            a(href: tx.explorer_url, target: "_blank", class: "hover:text-emerald-500 underline decoration-emerald-900") { tx.tx_hash.first(16) + "..." }
+            a(href: tx.explorer_url, target: "_blank", rel: "noopener noreferrer", aria_label: "View transaction on blockchain explorer", class: "hover:text-emerald-500 underline decoration-emerald-900") { tx.tx_hash.first(16) + "..." }
           else
             span(class: "italic text-zinc-800") { "PENDING_BLOCK" }
           end

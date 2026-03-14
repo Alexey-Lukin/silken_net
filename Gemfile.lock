@@ -569,6 +569,7 @@ GEM
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.13.2)
     simplecov_json_formatter (0.1.4)
+    sin_lru_redux (2.5.2)
     solid_cable (3.0.12)
       actioncable (>= 7.2)
       activejob (>= 7.2)
@@ -597,6 +598,8 @@ GEM
     stringio (3.2.0)
     strong_migrations (2.5.2)
       activerecord (>= 7.1)
+    tailwind_merge (1.4.0)
+      sin_lru_redux (~> 2.5)
     tailwindcss-rails (4.4.0)
       railties (>= 7.0.0)
       tailwindcss-ruby (~> 4.0)
@@ -701,6 +704,7 @@ DEPENDENCIES
   solid_queue
   stimulus-rails
   strong_migrations
+  tailwind_merge
   tailwindcss-rails
   thruster
   turbo-rails

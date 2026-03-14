@@ -11,14 +11,14 @@ module Users
       div(class: "space-y-8 animate-in fade-in duration-700") do
         header_section
 
-        div(class: "border border-emerald-900 bg-black overflow-hidden") do
-          table(class: "w-full text-left font-mono text-[11px]") do
+        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+          table(role: "table", class: "w-full text-left font-mono text-[11px]") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
               tr do
-                th(class: "p-4") { "Identity" }
-                th(class: "p-4") { "Role / Access" }
-                th(class: "p-4") { "Neural Link State" }
-                th(class: "p-4 text-right") { "Audit" }
+                th(scope: "col", class: "p-4") { "Identity" }
+                th(scope: "col", class: "p-4") { "Role / Access" }
+                th(scope: "col", class: "p-4") { "Neural Link State" }
+                th(scope: "col", class: "p-4 text-right") { "Audit" }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -70,7 +70,7 @@ module Users
            end
         end
         td(class: "p-4 text-right") do
-          a(href: "#", class: "text-emerald-700 hover:text-white transition-all") { "VIEW_LOGS" }
+          a(href: "#", class: "text-emerald-700 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "View logs for #{user.first_name} #{user.last_name}") { "VIEW_LOGS" }
         end
       end
     end

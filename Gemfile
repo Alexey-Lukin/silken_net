@@ -45,6 +45,7 @@ gem "solid_queue"
 gem "stimulus-rails"
 gem "strong_migrations"
 gem "tailwindcss-rails"
+gem "tailwind_merge"
 gem "thruster", require: false
 gem "turbo-rails"
 gem "tzinfo-data", platforms: %i[ windows jruby ]

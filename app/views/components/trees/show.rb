@@ -118,14 +118,14 @@ module Trees
       div(class: "space-y-4") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Maintenance Rituals & Healing History" }
 
-        div(class: "border border-emerald-900 bg-black overflow-hidden") do
-          table(class: "w-full text-left font-mono text-[10px]") do
+        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+          table(role: "table", class: "w-full text-left font-mono text-[10px]") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[8px]") do
               tr do
-                th(class: "p-4") { "Technician" }
-                th(class: "p-4") { "Action" }
-                th(class: "p-4") { "Observations" }
-                th(class: "p-4 text-right") { "Timestamp" }
+                th(scope: "col", class: "p-4") { "Technician" }
+                th(scope: "col", class: "p-4") { "Action" }
+                th(scope: "col", class: "p-4") { "Observations" }
+                th(scope: "col", class: "p-4 text-right") { "Timestamp" }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -162,7 +162,7 @@ module Trees
         end
 
         div(class: "pt-4 border-t border-emerald-900/30") do
-          button(class: "w-full py-2 border border-emerald-900 text-[9px] uppercase text-emerald-700 hover:border-emerald-500 hover:text-emerald-500 transition-all") do
+          button(class: "w-full py-2 border border-emerald-900 text-[9px] uppercase text-emerald-700 hover:border-emerald-500 hover:text-emerald-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "Rotate hardware encryption key") do
             "Rotate Hardware Key →"
           end
         end
@@ -197,7 +197,8 @@ module Trees
           a(
             href: "https://www.google.com/maps?q=#{@tree.latitude},#{@tree.longitude}",
             target: "_blank",
-            class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase"
+            class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500",
+            aria_label: "Locate tree node on Google Maps"
           ) { "Locate Node →" }
         end
       end

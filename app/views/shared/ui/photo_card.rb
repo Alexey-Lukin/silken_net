@@ -29,7 +29,9 @@ module Views
           a(
             href: helpers.rails_blob_path(@photo, disposition: "inline"),
             target: "_blank",
-            class: "block aspect-square overflow-hidden"
+            rel: "noopener noreferrer",
+            aria_label: "View photo: #{@photo.filename}",
+            class: "block aspect-square overflow-hidden focus:outline-none focus:ring-2 focus:ring-emerald-500"
           ) do
             if @photo.representable?
               img(
@@ -46,7 +48,7 @@ module Views
 
         def render_file_fallback
           div(class: "w-full h-full flex flex-col items-center justify-center space-y-1 p-2 bg-zinc-900") do
-            span(class: "text-emerald-700 text-2xl") { "📎" }
+            span(class: "text-emerald-700 text-2xl", aria_hidden: "true") { "📎" }
             span(class: "text-[9px] text-emerald-700 font-mono truncate text-center") { @photo.filename.to_s }
             span(class: "text-[8px] text-gray-600") { helpers.number_to_human_size(@photo.byte_size) }
           end
@@ -65,7 +67,9 @@ module Views
               "×",
               helpers.api_v1_maintenance_record_photo_path(@record, @photo),
               method: :delete,
-              class: "h-6 w-6 bg-red-900/80 text-red-200 text-sm font-bold hover:bg-red-700 transition-colors",
+              aria: { label: "Remove photo: #{@photo.filename}" },
+              class: "h-6 w-6 bg-red-900/80 text-red-200 text-sm font-bold hover:bg-red-700 " \
+                     "focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors",
               data: { turbo_confirm: "Remove this photo from the evidence record?" }
             )
           end

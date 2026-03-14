@@ -11,15 +11,15 @@ module Alerts
       div(class: "space-y-6 animate-in fade-in duration-500") do
         header_section
 
-        div(class: "border border-emerald-900 bg-black overflow-hidden") do
-          table(class: "w-full text-left font-mono text-[11px]") do
+        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+          table(class: "w-full text-left font-mono text-[11px] min-w-[640px]", role: "table") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
               tr do
-                th(class: "p-4") { "Severity" }
-                th(class: "p-4") { "Source" }
-                th(class: "p-4") { "Event / Message" }
-                th(class: "p-4") { "Timestamp" }
-                th(class: "p-4 text-right") { "Command" }
+                th(scope: "col", class: "p-4") { "Severity" }
+                th(scope: "col", class: "p-4") { "Source" }
+                th(scope: "col", class: "p-4") { "Event / Message" }
+                th(scope: "col", class: "p-4") { "Timestamp" }
+                th(scope: "col", class: "p-4 text-right") { "Command" }
               end
             end
             tbody(id: "alerts_feed", class: "divide-y divide-emerald-900/30") do
@@ -47,12 +47,14 @@ module Alerts
         div(class: "flex space-x-2") do
           a(
             href: helpers.api_v1_alerts_path,
-            class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-700 uppercase hover:border-emerald-500 hover:text-emerald-500 transition-all"
+            aria_label: "Show all alerts",
+            class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-700 uppercase hover:border-emerald-500 hover:text-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
           ) { "all" }
           %w[critical medium low].each do |s|
             a(
               href: helpers.api_v1_alerts_path(severity: s),
-              class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-900 uppercase hover:border-emerald-500 hover:text-emerald-500 transition-all"
+              aria_label: "Filter alerts by #{s} severity",
+              class: "px-2 py-0.5 border border-emerald-900 text-[9px] text-emerald-900 uppercase hover:border-emerald-500 hover:text-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
             ) { s }
           end
         end

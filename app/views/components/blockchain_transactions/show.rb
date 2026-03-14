@@ -42,12 +42,12 @@ module BlockchainTransactions
     end
 
     def render_transaction_details
-      div(class: "border border-emerald-900 bg-black overflow-hidden") do
-        table(class: "w-full text-left font-mono text-[11px]") do
+      div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        table(role: "table", class: "w-full text-left font-mono text-[11px]") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-[9px] tracking-widest") do
             tr do
-              th(class: "p-4") { "Field" }
-              th(class: "p-4") { "Value" }
+              th(scope: "col", class: "p-4") { "Field" }
+              th(scope: "col", class: "p-4") { "Value" }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
@@ -117,7 +117,7 @@ module BlockchainTransactions
             p(class: "text-[10px] font-mono text-emerald-500 break-all leading-relaxed") { @tx.tx_hash }
           end
           div(class: "mt-4") do
-            a(href: @tx.explorer_url, target: "_blank", class: "w-full block text-center py-2 border border-emerald-500 text-[10px] uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all") { "View on Polygonscan →" }
+            a(href: @tx.explorer_url, target: "_blank", class: "w-full block text-center py-2 border border-emerald-500 text-[10px] uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500", aria_label: "View transaction on Polygonscan") { "View on Polygonscan →" }
           end
         else
           p(class: "text-[11px] text-gray-700 italic") { "Transaction not yet submitted to chain." }

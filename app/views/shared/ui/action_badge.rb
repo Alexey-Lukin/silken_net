@@ -5,7 +5,7 @@ module Views
     module UI
       class ActionBadge < ApplicationComponent
         STYLES = {
-          destructive: "bg-red-900 text-red-200",
+          destructive: "bg-status-danger text-status-danger-text",
           mutative:    "bg-amber-900 text-amber-200",
           creative:    "bg-emerald-900 text-emerald-200",
           neutral:     "bg-zinc-900 text-zinc-400"
@@ -16,7 +16,11 @@ module Views
         end
 
         def view_template
-          span(class: tokens("px-2 py-0.5 text-[9px] font-bold uppercase", style_for_action)) { @action }
+          span(
+            role: "status",
+            aria_label: "Action: #{@action}",
+            class: tokens("px-2 py-0.5 text-[9px] font-bold uppercase", style_for_action)
+          ) { @action }
         end
 
         private

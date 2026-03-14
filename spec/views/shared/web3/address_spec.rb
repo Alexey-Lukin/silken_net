@@ -21,8 +21,10 @@ RSpec.describe Views::Shared::Web3::Address do
       expect(html).to include("title=\"#{address}\"")
     end
 
-    it "renders a clipboard copy button" do
+    it "renders a clipboard copy button with aria-label" do
       expect(html).to include('data-action="clipboard#copy"')
+      expect(html).to include("aria-label")
+      expect(html).to include("Copy address")
     end
 
     it "sets the clipboard controller data attribute" do
@@ -30,8 +32,13 @@ RSpec.describe Views::Shared::Web3::Address do
       expect(html).to include("data-clipboard-content-value=\"#{address}\"")
     end
 
-    it "renders an SVG copy icon" do
+    it "renders an SVG copy icon with aria-hidden" do
       expect(html).to include("<svg")
+      expect(html).to include("aria-hidden")
+    end
+
+    it "includes focus ring styles on the copy button" do
+      expect(html).to include("focus:ring-2")
     end
   end
 

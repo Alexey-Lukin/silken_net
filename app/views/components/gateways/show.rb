@@ -116,7 +116,11 @@ module Gateways
           config_row("Sleep Interval", "#{@gateway.config_sleep_interval_s || 60}s")
           config_row("Mesh Mode", "Enabled")
 
-          button(class: "w-full mt-4 p-2 border border-emerald-800 text-[10px] uppercase text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all") do
+          button(
+            class: "w-full mt-4 p-2 border border-emerald-800 text-[10px] uppercase text-emerald-600 hover:bg-emerald-900 " \
+                   "hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all",
+            aria_label: "Push new configuration to gateway"
+          ) do
             "Push New Configuration →"
           end
         end
@@ -154,6 +158,8 @@ module Gateways
       # Квадратик статусу дерева — маленька візуальна мапа флоту
       div(
         title: tree.did,
+        role: "img",
+        aria_label: "Soldier #{tree.did}: #{tree.active? ? 'active' : 'inactive'}",
         class: tokens(
           "h-4 w-4 border transition-colors",
           "border-emerald-500 bg-emerald-950/50": tree.active?,
