@@ -51,7 +51,7 @@ module Trees
           h2(class: "text-4xl font-extralight tracking-tighter text-emerald-400") { @tree.did }
           div(class: "flex items-center space-x-3 mt-2") do
             span(class: tokens("text-[10px] px-2 py-0.5 border font-mono uppercase tracking-widest", status_color_class)) { @tree.status }
-            span(class: "text-[10px] text-emerald-900 font-mono") { "Family: #{@family.name}" }
+            span(class: "text-[10px] text-emerald-900 font-mono") { "Family: #{@family&.name || 'Unknown'}" }
           end
         end
 
@@ -81,7 +81,8 @@ module Trees
           div(class: "space-y-6") do
             metric_row("Ionic Potential", "#{@latest_log&.voltage_mv || 0} mV", sub: "Streaming potential charge")
             metric_row("Xylem Thermal", "#{@latest_log&.temperature_c || 0} °C", sub: "Internal core temp")
-            metric_row("Stress Index", "#{(@tree.current_stress * 100).round(1)}%", danger: @tree.under_threat?)
+            stress_pct = ((@tree.current_stress || 0) * 100).round(1)
+            metric_row("Stress Index", "#{stress_pct}%", danger: @tree.under_threat?)
           end
         end
       end
@@ -94,7 +95,10 @@ module Trees
         # Візуалізація міні-графіка через висоту барів
         div(class: "flex items-end space-x-2 h-32 border-b border-emerald-900/30 pb-2") do
           @recent_logs.reverse_each do |log|
-            height = [ (log.z_value.to_f / @family.baseline_impedance * 100), 100 ].min
+            baseline = @family&.baseline_impedance
+            next unless baseline&.positive?
+
+            height = [ (log.z_value.to_f / baseline * 100), 100 ].min
             div(
               class: "flex-1 bg-emerald-500/20 border-t border-emerald-500 hover:bg-emerald-500 transition-all",
               style: "height: #{height}%",
@@ -128,10 +132,10 @@ module Trees
               if @maintenance_history.any?
                 @maintenance_history.each do |record|
                   tr(class: "hover:bg-emerald-950/10 transition-colors") do
-                    td(class: "p-4 text-emerald-100") { record.user.full_name }
+                    td(class: "p-4 text-emerald-100") { record.user&.full_name || "Unknown" }
                     td(class: "p-4 uppercase text-emerald-500") { record.action_type }
-                    td(class: "p-4 text-gray-500 italic") { record.notes.truncate(50) }
-                    td(class: "p-4 text-right text-gray-600") { record.performed_at.strftime("%d.%m.%y") }
+                    td(class: "p-4 text-gray-500 italic") { record.notes&.truncate(50) || "—" }
+                    td(class: "p-4 text-right text-gray-600") { record.performed_at&.strftime("%d.%m.%y") || "—" }
                   end
                 end
               else
@@ -176,7 +180,9 @@ module Trees
               span(class: "text-xs text-emerald-600 font-mono") { "SCC" }
             end
           end
-          security_item("Address", @tree.wallet&.crypto_public_address.present? ? "#{@tree.wallet.crypto_public_address.first(12)}..." : "NOT_PROVISIONED", full: @tree.wallet&.crypto_public_address)
+          wallet_address = @tree.wallet&.crypto_public_address
+          address_display = wallet_address.present? ? "#{wallet_address.first(12)}..." : "NOT_PROVISIONED"
+          security_item("Address", address_display, full: wallet_address)
         end
       end
     end
@@ -205,7 +211,7 @@ module Trees
           p(class: "text-[9px] text-gray-600 uppercase") { label }
           p(class: "text-[8px] text-emerald-900 font-mono") { sub } if sub
         end
-        span(class: tokens("text-lg font-mono", danger ? "text-red-500 animate-pulse" : "text-emerald-300")) { value }
+        span(class: tokens("text-lg font-mono", "text-red-500 animate-pulse": danger, "text-emerald-300": !danger)) { value }
       end
     end
 
@@ -224,13 +230,17 @@ module Trees
     end
 
     def render_radial_svg
-      stress_factor = @tree.current_stress
+      stress_factor = @tree.current_stress || 0
       offset = 552 * (1 - stress_factor)
       svg(class: "h-56 w-56 -rotate-90 transform") do
         circle(cx: "112", cy: "112", r: "88", class: "fill-none stroke-emerald-950 stroke-1")
         circle(
           cx: "112", cy: "112", r: "88",
-          class: tokens("fill-none stroke-[3] transition-all duration-1000", @tree.under_threat? ? "stroke-red-600 animate-pulse" : "stroke-emerald-500 shadow-[0_0_15px_#10b981]"),
+          class: tokens(
+            "fill-none stroke-[3] transition-all duration-1000",
+            "stroke-red-600 animate-pulse": @tree.under_threat?,
+            "stroke-emerald-500 shadow-[0_0_15px_#10b981]": !@tree.under_threat?
+          ),
           style: "stroke-dasharray: 552; stroke-dashoffset: #{offset};"
         )
       end
@@ -245,7 +255,8 @@ module Trees
     end
 
     def status_led_class
-      @latest_log&.created_at&.after?(15.minutes.ago) ? "bg-emerald-500 shadow-[0_0_12px_#10b981]" : "bg-red-900"
+      recently_seen = @latest_log&.created_at&.after?(15.minutes.ago)
+      tokens("bg-emerald-500 shadow-[0_0_12px_#10b981]": recently_seen, "bg-red-900": !recently_seen)
     end
   end
 end

@@ -44,12 +44,17 @@ module Contracts
     end
 
     def render_backing_asset_panel
+      cluster = @contract.cluster
+      return unless cluster
+
+      health = cluster.health_index || 0
+
       div(class: "p-6 border border-emerald-900 bg-black") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Backing Asset Health" }
         div(class: "space-y-4") do
-          metric_row("Cluster Vitality", "#{(@contract.cluster.health_index * 100).round}%", alert: @contract.cluster.health_index < 0.7)
-          metric_row("Active Soldiers", @contract.cluster.total_active_trees)
-          metric_row("Threat Status", @contract.cluster.active_threats? ? "DANGER" : "NOMINAL", alert: @contract.cluster.active_threats?)
+          metric_row("Cluster Vitality", "#{(health * 100).round}%", alert: health < 0.7)
+          metric_row("Active Soldiers", cluster.total_active_trees)
+          metric_row("Threat Status", cluster.active_threats? ? "DANGER" : "NOMINAL", alert: cluster.active_threats?)
         end
       end
     end
@@ -57,7 +62,7 @@ module Contracts
     def metric_row(label, value, alert: false)
       div(class: "flex justify-between border-b border-emerald-900/30 pb-2") do
         span(class: "text-[10px] text-gray-600 uppercase") { label }
-        span(class: tokens("font-mono text-sm", alert ? "text-red-500 animate-pulse" : "text-emerald-100")) { value }
+        span(class: tokens("font-mono text-sm", "text-red-500 animate-pulse": alert, "text-emerald-100": !alert)) { value }
       end
     end
 

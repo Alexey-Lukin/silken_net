@@ -112,7 +112,7 @@ module Gateways
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700 mb-6") { "Network Configuration" }
         div(class: "space-y-4 font-mono text-[11px]") do
-          config_row("Cluster", @gateway.cluster.name)
+          config_row("Cluster", @gateway.cluster&.name || "UNASSIGNED")
           config_row("Sleep Interval", "#{@gateway.config_sleep_interval_s || 60}s")
           config_row("Mesh Mode", "Enabled")
 
@@ -156,8 +156,9 @@ module Gateways
         title: tree.did,
         class: tokens(
           "h-4 w-4 border transition-colors",
-          tree.active? ? "border-emerald-500 bg-emerald-950/50" : "border-gray-800 bg-gray-900",
-          tree.under_threat? ? "border-red-600 bg-red-950/20 animate-pulse" : ""
+          "border-emerald-500 bg-emerald-950/50": tree.active?,
+          "border-gray-800 bg-gray-900": !tree.active?,
+          "border-red-600 bg-red-950/20 animate-pulse": tree.under_threat?
         )
       )
     end
@@ -180,11 +181,15 @@ module Gateways
     end
 
     def connection_led_classes
-      @gateway.last_seen_at&.after?(5.minutes.ago) ? "bg-emerald-500 shadow-[0_0_10px_#10b981]" : "bg-red-900 animate-pulse"
+      recently_seen = @gateway.last_seen_at&.after?(5.minutes.ago)
+      tokens("bg-emerald-500 shadow-[0_0_10px_#10b981]": recently_seen, "bg-red-900 animate-pulse": !recently_seen)
     end
 
     def signal_color; "border-emerald-900/50"; end
-    def battery_color; (@latest_log&.voltage_mv || DEFAULT_HEALTHY_VOLTAGE_MV).to_i < 3400 ? "border-red-900" : "border-emerald-900/50"; end
+    def battery_color
+      low_voltage = (@latest_log&.voltage_mv || DEFAULT_HEALTHY_VOLTAGE_MV).to_i < 3400
+      tokens("border-red-900": low_voltage, "border-emerald-900/50": !low_voltage)
+    end
     def temp_color; "border-emerald-900/50"; end
   end
 end

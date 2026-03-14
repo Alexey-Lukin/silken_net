@@ -61,9 +61,9 @@ module SystemAudits
               td(class: "p-4 text-emerald-500") { "Polygon Smart Contract (totalSupply)" }
               td(class: "p-4 text-right text-gray-300") { format_scc(@audit.chain_total) }
             end
-            tr(class: tokens("font-bold", @audit.critical ? "bg-red-950/20" : "bg-emerald-950/10")) do
-              td(class: tokens("p-4", @audit.critical ? "text-red-400" : "text-emerald-400")) { "Δ Delta" }
-              td(class: tokens("p-4 text-right", @audit.critical ? "text-red-300" : "text-emerald-300")) { format_scc(@audit.delta) }
+            tr(class: tokens("font-bold", "bg-red-950/20": @audit.critical, "bg-emerald-950/10": !@audit.critical)) do
+              td(class: tokens("p-4", "text-red-400": @audit.critical, "text-emerald-400": !@audit.critical)) { "Δ Delta" }
+              td(class: tokens("p-4 text-right", "text-red-300": @audit.critical, "text-emerald-300": !@audit.critical)) { format_scc(@audit.delta) }
             end
           end
         end

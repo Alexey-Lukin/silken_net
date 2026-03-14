@@ -45,7 +45,7 @@ module Trees
     def header_stat(label, value, unit, danger: false)
       div do
         p(class: "text-gray-600 uppercase mb-1") { label }
-        span(class: tokens("text-lg", danger ? "text-red-500" : "text-emerald-100")) { value.to_s }
+        span(class: tokens("text-lg", "text-red-500": danger, "text-emerald-100": !danger)) { value.to_s }
         span(class: "ml-1 text-emerald-900") { unit }
       end
     end

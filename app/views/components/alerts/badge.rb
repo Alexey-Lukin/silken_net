@@ -24,7 +24,7 @@ module Alerts
 
       span(
         id: "alert_badge_#{@alert.id}",
-        class: "px-2 py-0.5 rounded text-[10px] font-bold uppercase #{severity_class} #{status_class}"
+        class: tokens("px-2 py-0.5 rounded text-[10px] font-bold uppercase", severity_class, status_class)
       ) { "#{@alert.severity} — #{@alert.status}" }
     end
   end

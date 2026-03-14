@@ -8,7 +8,7 @@ module Alerts
     end
 
     def view_template
-      tr(id: "alert_#{@alert.id}", class: tokens("transition-all duration-700", @alert.status_resolved? ? "bg-emerald-950/5 opacity-40" : "hover:bg-emerald-950/10")) do
+      tr(id: "alert_#{@alert.id}", class: tokens("transition-all duration-700", "bg-emerald-950/5 opacity-40": @alert.status_resolved?, "hover:bg-emerald-950/10": !@alert.status_resolved?)) do
         td(class: "p-4") { severity_badge }
         td(class: "p-4 text-emerald-500") { "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}" }
         td(class: "p-4 text-gray-400") { @alert.message }
@@ -26,7 +26,7 @@ module Alerts
       when "low" then "bg-emerald-900 text-emerald-200"
       else "bg-zinc-900 text-zinc-200"
       end
-      span(class: "px-2 py-0.5 rounded-sm text-[9px] uppercase font-bold #{color}") { @alert.severity }
+      span(class: tokens("px-2 py-0.5 rounded-sm text-[9px] uppercase font-bold", color)) { @alert.severity }
     end
 
     def action_button

@@ -16,7 +16,7 @@ module Views
         end
 
         def view_template
-          span(class: "px-2 py-0.5 text-[9px] font-bold uppercase #{style_for_action}") { @action }
+          span(class: tokens("px-2 py-0.5 text-[9px] font-bold uppercase", style_for_action)) { @action }
         end
 
         private

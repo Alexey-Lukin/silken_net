@@ -95,7 +95,7 @@ module Navigation
         )
       ) do
         div(class: "flex items-center space-x-3") do
-          span(class: tokens("w-4 h-4", active ? "text-emerald-500" : "text-emerald-900 group-hover:text-emerald-700")) { render_icon(icon) }
+          span(class: tokens("w-4 h-4", "text-emerald-500": active, "text-emerald-900 group-hover:text-emerald-700": !active)) { render_icon(icon) }
           span { label }
         end
 

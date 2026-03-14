@@ -21,7 +21,7 @@ module Gateways
       div(class: "flex justify-between items-start mb-6") do
         div do
           h3(class: "text-lg font-light tracking-widest text-emerald-400 uppercase") { "Queen // #{@gateway.uid}" }
-          p(class: "text-[10px] font-mono text-emerald-800") { "Cluster: #{@gateway.cluster.name}" }
+          p(class: "text-[10px] font-mono text-emerald-800") { "Cluster: #{@gateway.cluster&.name || 'UNASSIGNED'}" }
         end
 
         # Живий індикатор зв'язку
@@ -57,7 +57,8 @@ module Gateways
     end
 
     def connection_led_class
-       @gateway.last_seen_at&.after?(5.minutes.ago) ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-red-900 animate-pulse"
+      recently_seen = @gateway.last_seen_at&.after?(5.minutes.ago)
+      tokens("bg-emerald-500 shadow-[0_0_8px_#10b981]": recently_seen, "bg-red-900 animate-pulse": !recently_seen)
     end
   end
 end

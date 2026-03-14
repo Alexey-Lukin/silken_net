@@ -146,7 +146,7 @@ module Maintenance
       div(class: "p-4 border border-emerald-900/40 bg-zinc-950") do
         p(class: "text-[9px] uppercase tracking-widest text-emerald-800") { label }
         p(class: "text-[8px] text-gray-600 mt-1 mb-3") { sub }
-        span(class: tokens("text-2xl font-light", highlight ? "text-emerald-400" : "text-gray-300")) { value }
+        span(class: tokens("text-2xl font-light", "text-emerald-400": highlight, "text-gray-300": !highlight)) { value }
       end
     end
 
@@ -158,8 +158,8 @@ module Maintenance
         h3(class: "text-[10px] uppercase tracking-widest text-emerald-700") { "Intervention Metadata" }
 
         div(class: "space-y-3 text-[10px] font-mono") do
-          meta_row("Technician", "#{@user.first_name} #{@user.last_name}")
-          meta_row("Role", @user.role.to_s.upcase)
+          meta_row("Technician", "#{@user&.first_name} #{@user&.last_name}")
+          meta_row("Role", @user&.role.to_s.upcase)
           meta_row("Target", "#{@record.maintainable_type} // #{@record.maintainable&.did || @record.maintainable&.uid}")
           meta_row("Action", @record.action_type.to_s.upcase)
           meta_row("Photos", @pagy_photos.count.to_s)
@@ -276,7 +276,7 @@ module Maintenance
         "decommissioning" => "border-red-800 text-red-800"
       }
       cls = colors[type] || "border-gray-600 text-gray-600"
-      span(class: "text-[9px] px-2 py-0.5 border font-mono uppercase tracking-widest #{cls}") { type }
+      span(class: tokens("text-[9px] px-2 py-0.5 border font-mono uppercase tracking-widest", cls)) { type }
     end
 
     def hardware_badge(verified)

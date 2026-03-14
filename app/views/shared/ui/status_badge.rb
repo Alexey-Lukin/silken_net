@@ -53,7 +53,7 @@ module Views
 
           span(
             id: @id,
-            class: "px-2 py-0.5 rounded text-[10px] font-bold uppercase #{style}"
+            class: tokens("px-2 py-0.5 rounded text-[10px] font-bold uppercase", style)
           ) { @status }
         end
       end

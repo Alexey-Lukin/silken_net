@@ -27,7 +27,8 @@ module Clusters
         # Статус кластера (на основі AI інсайтів або алертів)
         div(class: tokens(
           "h-2 w-2 rounded-full",
-          @cluster.active_threats? ? "bg-red-500 animate-pulse" : "bg-emerald-500"
+          "bg-red-500 animate-pulse": @cluster.active_threats?,
+          "bg-emerald-500": !@cluster.active_threats?
         ))
       end
     end

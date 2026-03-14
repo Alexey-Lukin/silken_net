@@ -45,7 +45,7 @@ module OracleVisions
       # Якщо це негативна подія (стрес), показуємо червоним
       div(class: "mt-4 pt-4 border-t border-emerald-900/50 flex justify-between items-center") do
         span(class: "text-[9px] uppercase text-gray-600") { "Economic Impact" }
-        span(class: "text-xs font-mono #{impact_text_color}") do
+        span(class: tokens("text-xs font-mono", impact_text_color)) do
           plain "#{@insight.payload['yield_impact'] || '-0.04%'} SCC"
         end
       end

@@ -55,8 +55,8 @@ module TreeFamilies
       left = [ (value.to_f / (@family.critical_z_max * 1.2) * 100), 100 ].min
       div(class: "absolute top-0 flex flex-col items-center", style: "left: #{left}%") do
          span(class: "text-[8px] text-gray-600 mb-2 font-mono") { "#{value}kΩ" }
-         div(class: tokens("h-3 w-px", active ? "bg-white" : "bg-emerald-900"))
-         span(class: tokens("mt-4 text-[7px] uppercase tracking-tighter", active ? "text-white" : "text-gray-700")) { label }
+         div(class: tokens("h-3 w-px", "bg-white": active, "bg-emerald-900": !active))
+         span(class: tokens("mt-4 text-[7px] uppercase tracking-tighter", "text-white": active, "text-gray-700": !active)) { label }
       end
     end
 
