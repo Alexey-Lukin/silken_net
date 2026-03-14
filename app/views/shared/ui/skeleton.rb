@@ -42,6 +42,7 @@ module Views
 
         def skeleton_lines
           if @lines
+            # First line narrower to mimic a heading/label, rest full-width for body text
             Array.new(@lines) { |i| { height: "h-4", width: i.zero? ? "w-2/3" : "w-full" } }
           else
             VARIANTS.fetch(@variant, VARIANTS[:text])
