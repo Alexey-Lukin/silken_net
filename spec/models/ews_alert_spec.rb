@@ -60,6 +60,19 @@ RSpec.describe EwsAlert, type: :model do
       expect(alert).to respond_to(:alert_type_fire_detected?)
       expect(alert).to respond_to(:alert_type_system_fault?)
     end
+
+    it "defines satellite_status enum with satellite prefix" do
+      alert = build(:ews_alert)
+      expect(alert).to respond_to(:satellite_unverified?)
+      expect(alert).to respond_to(:satellite_verified?)
+      expect(alert).to respond_to(:satellite_rejected_fraud?)
+      expect(alert).to respond_to(:satellite_inconclusive?)
+    end
+
+    it "defaults satellite_status to unverified" do
+      alert = build(:ews_alert)
+      expect(alert).to be_satellite_unverified
+    end
   end
 
   # =========================================================================
@@ -197,6 +210,32 @@ RSpec.describe EwsAlert, type: :model do
         create(:ews_alert, :fire)
       end
     end
+
+    describe "after_create_commit :schedule_satellite_verification!" do
+      it "enqueues DclimateVerificationWorker for fire_detected" do
+        allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
+        expect(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
+        create(:ews_alert, :fire)
+      end
+
+      it "enqueues DclimateVerificationWorker for severe_drought" do
+        allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
+        expect(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
+        create(:ews_alert, :drought)
+      end
+
+      it "does not enqueue DclimateVerificationWorker for vandalism_breach" do
+        allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
+        expect(DclimateVerificationWorker).not_to receive(:perform_in)
+        create(:ews_alert, alert_type: :vandalism_breach)
+      end
+
+      it "does not enqueue DclimateVerificationWorker for system_fault" do
+        allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
+        expect(DclimateVerificationWorker).not_to receive(:perform_in)
+        create(:ews_alert, alert_type: :system_fault)
+      end
+    end
   end
 
   # =========================================================================
@@ -307,6 +346,33 @@ RSpec.describe EwsAlert, type: :model do
     it "returns false for low fire" do
       alert = create(:ews_alert, severity: :low, alert_type: :fire_detected)
       expect(alert).not_to be_actionable
+    end
+  end
+
+  describe "#requires_satellite_consensus?" do
+    it "returns true for fire_detected" do
+      alert = build(:ews_alert, :fire)
+      expect(alert.requires_satellite_consensus?).to be true
+    end
+
+    it "returns true for severe_drought" do
+      alert = build(:ews_alert, :drought)
+      expect(alert.requires_satellite_consensus?).to be true
+    end
+
+    it "returns false for vandalism_breach" do
+      alert = build(:ews_alert, alert_type: :vandalism_breach)
+      expect(alert.requires_satellite_consensus?).to be false
+    end
+
+    it "returns false for insect_epidemic" do
+      alert = build(:ews_alert, alert_type: :insect_epidemic)
+      expect(alert.requires_satellite_consensus?).to be false
+    end
+
+    it "returns false for system_fault" do
+      alert = build(:ews_alert, alert_type: :system_fault)
+      expect(alert.requires_satellite_consensus?).to be false
     end
   end
 
