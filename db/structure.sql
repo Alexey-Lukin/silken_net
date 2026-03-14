@@ -559,7 +559,9 @@ CREATE TABLE public.ews_alerts (
     resolved_at timestamp(6) without time zone,
     status integer,
     resolved_by bigint,
-    resolution_notes text
+    resolution_notes text,
+    satellite_status integer DEFAULT 0 NOT NULL,
+    dclimate_ref character varying
 );
 
 
@@ -4135,6 +4137,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260314192813'),
 ('20260314184543'),
 ('20260314180000'),
 ('20260314170000'),

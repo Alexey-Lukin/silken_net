@@ -15,6 +15,11 @@ class InsurancePayoutWorker
     # Виконуємо лише якщо Оракул активував тригер, але виплата ще не зафіксована як завершена.
     return unless insurance.status_triggered?
 
+    # [COSMIC EYE]: Перевірка супутникового консенсусу для пожежних алертів.
+    # Якщо в кластері є активні fire_detected/severe_drought алерти, вони повинні
+    # бути підтверджені супутником перед виплатою.
+    return if satellite_verification_pending?(insurance.cluster)
+
     organization = insurance.cluster.organization
 
     # Шукаємо гаманець-якір для аудиторського логування в Ledger.
@@ -81,6 +86,30 @@ class InsurancePayoutWorker
   end
 
   private
+
+  # [COSMIC EYE]: Перевіряє, чи дозволяє супутниковий консенсус виплату.
+  # Повертає true (блокує виплату) якщо:
+  # - unverified алерти: виплата ще не підтверджена супутником, чекаємо
+  # - inconclusive алерти: потрібен ручний DAO-аудит
+  def satellite_verification_pending?(cluster)
+    fire_alerts = cluster.ews_alerts
+                         .where(alert_type: [ :fire_detected, :severe_drought ])
+                         .where(status: :active)
+
+    return false if fire_alerts.none?
+
+    if fire_alerts.exists?(satellite_status: :unverified)
+      Rails.logger.info "🛰️ [Insurance] Виплата відкладена — очікуємо супутникову верифікацію для кластера ##{cluster.id}."
+      return true
+    end
+
+    if fire_alerts.exists?(satellite_status: :inconclusive)
+      Rails.logger.warn "☁️ [Insurance] Виплата заблокована — потрібен ручний DAO-аудит для кластера ##{cluster.id}."
+      return true
+    end
+
+    false
+  end
 
   def broadcast_insurance_update(insurance, transaction)
     # Оновлюємо статус картки страхування на Dashboard

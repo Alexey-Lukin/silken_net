@@ -69,6 +69,61 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
       expect(BlockchainMintingService).not_to have_received(:call)
     end
 
+    context "with satellite verification guard (Cosmic Eye)" do
+      before do
+        allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+        allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
+        allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
+        allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
+      end
+
+      it "skips payout when unverified fire alerts exist in cluster" do
+        create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :unverified)
+
+        described_class.new.perform(insurance.id)
+
+        expect(BlockchainMintingService).not_to have_received(:call)
+      end
+
+      it "skips payout when inconclusive fire alerts exist in cluster" do
+        create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :inconclusive)
+
+        described_class.new.perform(insurance.id)
+
+        expect(BlockchainMintingService).not_to have_received(:call)
+      end
+
+      it "proceeds with payout when fire alerts are satellite_verified" do
+        create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :verified)
+
+        expect {
+          described_class.new.perform(insurance.id)
+        }.to change(BlockchainTransaction, :count).by(1)
+      end
+
+      it "proceeds with payout when no fire/drought alerts exist" do
+        create(:ews_alert, cluster: cluster, tree: tree, alert_type: :vandalism_breach)
+
+        expect {
+          described_class.new.perform(insurance.id)
+        }.to change(BlockchainTransaction, :count).by(1)
+      end
+
+      it "logs satellite pending message for unverified alerts" do
+        create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :unverified)
+        expect(Rails.logger).to receive(:info).with(/очікуємо супутникову верифікацію/)
+
+        described_class.new.perform(insurance.id)
+      end
+
+      it "logs manual audit message for inconclusive alerts" do
+        create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :inconclusive)
+        expect(Rails.logger).to receive(:warn).with(/ручний DAO-аудит/)
+
+        described_class.new.perform(insurance.id)
+      end
+    end
+
     it "returns early when no trees exist in cluster" do
       # Створюємо порожній кластер без дерев
       empty_cluster = create(:cluster, organization: organization)

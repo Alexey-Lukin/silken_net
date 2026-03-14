@@ -23,6 +23,15 @@ class EwsAlert < ApplicationRecord
     system_fault: 5       # Поломка шлюзу/актуатора/сенсора
   }, prefix: true
 
+  # [COSMIC EYE]: Статус супутникової верифікації через dClimate.
+  # Подвійний консенсус для запобігання страховому шахрайству.
+  enum :satellite_status, {
+    unverified: 0,      # Очікує перевірки супутником
+    verified: 1,        # Підтверджено супутником (fire_confirmed)
+    rejected_fraud: 2,  # Відхилено — ясне небо, без пожежі (slashing)
+    inconclusive: 3     # Хмарність/кронопокрив — потрібен DAO-аудит
+  }, prefix: :satellite
+
   # =========================================================================
   # ЖИТТЄВИЙ ЦИКЛ ТРИВОГИ (AASM State Machine)
   # =========================================================================
@@ -62,6 +71,9 @@ class EwsAlert < ApplicationRecord
   # --- КОЛБЕКИ (Zero-Lag Awareness) ---
   # Сакральна асинхронність: сповіщення летять лише після COMMIT
   after_create_commit :dispatch_notifications!
+
+  # [COSMIC EYE]: Запуск супутникової верифікації через dClimate
+  after_create_commit :schedule_satellite_verification!
 
   # Real-time: новий алерт з'являється у стрічці кластера миттєво
   after_create_commit :broadcast_new_alert
@@ -118,10 +130,24 @@ class EwsAlert < ApplicationRecord
     severity_critical? && (alert_type_fire_detected? || alert_type_severe_drought?)
   end
 
+  # [COSMIC EYE]: Чи потребує цей алерт подвійного консенсусу через супутник?
+  # Пожежі та посухи є страховими подіями, тому вимагають верифікації dClimate.
+  def requires_satellite_consensus?
+    alert_type_fire_detected? || alert_type_severe_drought?
+  end
+
   private
 
   def dispatch_notifications!
     AlertNotificationWorker.perform_async(self.id)
+  end
+
+  # [COSMIC EYE]: Планує верифікацію через супутник dClimate з затримкою 1 годину
+  # (час на орбітальний проліт). Тільки для страхових подій (fire/drought).
+  def schedule_satellite_verification!
+    return unless requires_satellite_consensus?
+
+    DclimateVerificationWorker.perform_in(1.hour, self.id)
   end
 
   # [REAL-TIME]: Новий алерт з'являється у стрічці кластера миттєво.
