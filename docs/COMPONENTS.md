@@ -22,28 +22,44 @@ Custom terminal-aesthetic font sizes defined in `app/assets/tailwind/application
 
 ### Semantic Color Tokens
 
-| Token                        | Hex       | Use case                        |
-|------------------------------|-----------|---------------------------------|
-| `gaia-green`                 | `#10b981` | Primary brand (emerald-500)     |
-| `gaia-dark`                  | `#064e3b` | Dark brand variant              |
-| `gaia-muted`                 | `#065f46` | Muted brand variant             |
-| `status-danger`              | `#7f1d1d` | Error/danger background         |
-| `status-danger-text`         | `#fecaca` | Error/danger text               |
-| `status-danger-accent`       | `#ef4444` | Error/danger accent (values)    |
-| `status-warning`             | `#78350f` | Warning/processing background   |
-| `status-warning-text`        | `#fde68a` | Warning/processing text         |
-| `status-info`                | `#1e3a5f` | Informational background        |
-| `status-info-text`           | `#bfdbfe` | Informational text              |
-| `status-success`             | `#065f46` | Success background              |
-| `status-success-text`        | `#d1fae5` | Success text                    |
-| `status-active`              | `#064e3b` | Acknowledged/creative bg        |
-| `status-active-text`         | `#a7f3d0` | Acknowledged/creative text      |
-| `status-neutral`             | `#27272a` | Neutral/inactive background     |
-| `status-neutral-text`        | `#a1a1aa` | Neutral/inactive text           |
-| `token-carbon`               | `#059669` | SCC token color                 |
-| `token-forest`               | `#d97706` | SFC token color                 |
+All status, token, and surface colors are **dynamic** — they automatically switch between high-contrast light and glowing dark palettes via CSS custom properties:
+
+| Token                        | Light Mode         | Dark Mode          | Use case                        |
+|------------------------------|--------------------|--------------------|----------------------------------|
+| `gaia-surface`               | `#ffffff`          | `#000000`          | Card/form backgrounds            |
+| `gaia-surface-alt`           | `#f3f4f6`          | `#0a0a0a`          | Table headers, secondary panels  |
+| `gaia-text`                  | `#111827`          | `#10b981`          | Primary text                     |
+| `gaia-text-muted`            | `#6b7280`          | `#065f46`          | Labels, metadata, placeholders   |
+| `gaia-primary`               | `#10b981`          | `#10b981`          | Primary brand (emerald)          |
+| `gaia-border`                | `#e5e7eb`          | `rgba(16,185,129,0.2)` | Borders, dividers           |
+| `status-danger`              | `#fee2e2`          | `#7f1d1d`          | Error/danger background          |
+| `status-danger-text`         | `#991b1b`          | `#fecaca`          | Error/danger text                |
+| `status-danger-accent`       | `#dc2626`          | `#ef4444`          | Error/danger accent (values)     |
+| `status-warning`             | `#fef3c7`          | `#78350f`          | Warning/processing background    |
+| `status-warning-text`        | `#92400e`          | `#fde68a`          | Warning/processing text          |
+| `status-info`                | `#dbeafe`          | `#1e3a5f`          | Informational background         |
+| `status-info-text`           | `#1e40af`          | `#bfdbfe`          | Informational text               |
+| `status-success`             | `#d1fae5`          | `#065f46`          | Success background               |
+| `status-success-text`        | `#065f46`          | `#d1fae5`          | Success text                     |
+| `status-active`              | `#ccfbf1`          | `#064e3b`          | Acknowledged/creative bg         |
+| `status-active-text`         | `#115e59`          | `#a7f3d0`          | Acknowledged/creative text       |
+| `status-neutral`             | `#f3f4f6`          | `#27272a`          | Neutral/inactive background      |
+| `status-neutral-text`        | `#4b5563`          | `#a1a1aa`          | Neutral/inactive text            |
+| `token-carbon`               | `#047857`          | `#059669`          | SCC token color                  |
+| `token-forest`               | `#b45309`          | `#d97706`          | SFC token color                  |
+| `gaia-input-bg`              | `#ffffff`          | `#09090b`          | Form input backgrounds           |
+| `gaia-input-border`          | `#d1d5db`          | `rgba(16,185,129,0.3)` | Form input borders          |
+| `gaia-input-text`            | `#111827`          | `#d1fae5`          | Form input text                  |
+| `gaia-label`                 | `#6b7280`          | `#6b7280`          | Form field labels                |
 
 **Rule 2 compliance:** All status-related colors use semantic tokens, not raw Tailwind colors.
+
+### Light Mode Depth
+
+In light mode, cards and panels use `shadow-sm` for visual depth. In dark mode, shadows are disabled
+(`dark:shadow-none`) and depth is conveyed through border contrast instead. This is applied to:
+- `StatCard`, `DataTable`, `PhotoCard`, `Actuators::Card`
+- All form components (`Maintenance::Form`, `Firmwares::Form`, `TreeFamilies::Form`)
 
 ---
 
@@ -310,7 +326,7 @@ render Views::Shared::IoT::MetricValue.new(value: 3.14159, unit: "σ", precision
 
 | Rule | Description                            | Status |
 |------|----------------------------------------|--------|
-| 3    | Dark mode definitions                  | ⏳ App is dark-first by design; light mode needs design session |
+| 3    | Dark mode definitions                  | ✅ Light/dark dynamic status colors implemented via CSS custom properties |
 | 13   | Class override on domain components    | ⏳ Shared/ui has `**attrs`; domain components are page-level (less need) |
 | 15   | Extract classes in domain components   | ⏳ Long inline strings remain in some domain views |
 | 17   | Margins in domain page components      | ⏳ Page-level margins (`mb-4`, `mt-6`) are acceptable in non-reusable views |
@@ -356,6 +372,10 @@ Run `bin/rails server` and navigate to **http://localhost:3000/lookbook**
 | `SidebarPreview`             | Default, With alerts badge, Telemetry active, Interactive |
 | `Web3AddressPreview`         | Valid, Short, Nil fallback, Custom fallback, Interactive |
 | `IoTMetricValuePreview`      | Default, High precision, Nil, No unit, Interactive |
+| `DataTablePreview`           | Default with sample rows, Empty state         |
+| `PaginationPreview`          | First page, Middle page, Last page            |
+| `RelativeTimePreview`        | Recent, With prefix, Nil datetime             |
+| `ThemeSwitcherPreview`       | Default toggle button                         |
 
 ### Creating New Previews
 

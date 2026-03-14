@@ -1,0 +1,27 @@
+<%= render Views::Shared::UI::DataTable.new(
+  columns: [
+    { label: "ID", class: "w-20" },
+    { label: "Name" },
+    { label: "Status" },
+    { label: "Last Seen" }
+  ]
+) do %>
+  <tr class="text-compact">
+    <td class="p-4 text-gaia-text-muted">#001</td>
+    <td class="p-4 text-gaia-text">Oak Alpha</td>
+    <td class="p-4"><%= render Views::Shared::UI::StatusBadge.new(status: "confirmed") %></td>
+    <td class="p-4 text-gaia-text-muted">2 min ago</td>
+  </tr>
+  <tr class="text-compact">
+    <td class="p-4 text-gaia-text-muted">#002</td>
+    <td class="p-4 text-gaia-text">Birch Beta</td>
+    <td class="p-4"><%= render Views::Shared::UI::StatusBadge.new(status: "pending") %></td>
+    <td class="p-4 text-gaia-text-muted">15 min ago</td>
+  </tr>
+  <tr class="text-compact">
+    <td class="p-4 text-gaia-text-muted">#003</td>
+    <td class="p-4 text-gaia-text">Pine Gamma</td>
+    <td class="p-4"><%= render Views::Shared::UI::StatusBadge.new(status: "failed") %></td>
+    <td class="p-4 text-gaia-text-muted">1 hour ago</td>
+  </tr>
+<% end %>
