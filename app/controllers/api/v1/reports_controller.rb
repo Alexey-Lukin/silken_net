@@ -132,6 +132,8 @@ module Api
 
       private
 
+      REAL_YIELD_DEFAULTS = { total_minted_scc: 0, total_burned_scc: 0, total_premiums_usdc: 0, net_deflation: 0 }.freeze
+
       def fetch_real_yield
         financials = TheGraph::QueryService.new.fetch_protocol_financials
         {
@@ -142,7 +144,7 @@ module Api
         }
       rescue TheGraph::QueryService::QueryError => e
         Rails.logger.warn("Real yield fetch failed: #{e.message}")
-        { total_minted_scc: 0, total_burned_scc: 0, total_premiums_usdc: 0, net_deflation: 0 }
+        REAL_YIELD_DEFAULTS.dup
       end
 
       # --- CSV Streaming ---
