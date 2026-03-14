@@ -33,7 +33,7 @@ module Views
 
         def render_preview
           a(
-            href: helpers.rails_blob_path(@photo, disposition: "inline"),
+            href: rails_blob_path(@photo, disposition: "inline"),
             target: "_blank",
             rel: "noopener noreferrer",
             aria_label: "View photo: #{@photo.filename}",
@@ -41,7 +41,7 @@ module Views
           ) do
             if @photo.representable?
               img(
-                src: helpers.rails_representation_path(@photo.variant(:thumb)),
+                src: rails_representation_path(@photo.variant(:thumb)),
                 alt: @photo.filename.to_s,
                 loading: "lazy",
                 class: "w-full h-full object-cover hover:scale-105 transition-transform duration-300"
@@ -61,14 +61,14 @@ module Views
           div(class: "w-full h-full flex flex-col items-center justify-center gap-1 p-2 bg-gaia-surface-alt") do
             span(class: "text-gaia-primary text-2xl", aria_hidden: "true") { "📎" }
             span(class: "text-mini text-gaia-primary font-mono truncate text-center") { @photo.filename.to_s }
-            span(class: "text-micro text-gaia-text-muted") { helpers.number_to_human_size(@photo.byte_size) }
+            span(class: "text-micro text-gaia-text-muted") { number_to_human_size(@photo.byte_size) }
           end
         end
 
         def render_meta_overlay
           div(class: "absolute bottom-0 inset-x-0 bg-black/80 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200") do
             p(class: "text-micro font-mono text-gaia-primary truncate") { @photo.filename.to_s }
-            p(class: "text-micro text-gaia-text-muted") { helpers.number_to_human_size(@photo.byte_size) }
+            p(class: "text-micro text-gaia-text-muted") { number_to_human_size(@photo.byte_size) }
           end
         end
 
@@ -76,7 +76,7 @@ module Views
           div(class: "absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200") do
             button_to(
               "×",
-              helpers.api_v1_maintenance_record_photo_path(@record, @photo),
+              api_v1_maintenance_record_photo_path(@record, @photo),
               method: :delete,
               aria: { label: "Remove photo: #{@photo.filename}" },
               class: delete_button_classes,

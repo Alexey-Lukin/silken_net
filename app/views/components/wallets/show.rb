@@ -16,7 +16,7 @@ module Wallets
         # Lazy-load: Turbo Frame підвантажує BalanceDisplay окремим запитом,
         # поки що показуємо Skeleton (пульсуючі блоки).
         turbo_frame_tag "wallet_balance_frame_#{@wallet.id}",
-                        src: helpers.balance_api_v1_wallet_path(@wallet),
+                        src: balance_api_v1_wallet_path(@wallet),
                         loading: :lazy do
           render Views::Shared::UI::Skeleton.new(variant: :balance)
         end
@@ -31,7 +31,7 @@ module Wallets
           div(class: "space-y-8") do
             # Lazy-load: Blockchain Identity підвантажується окремим запитом
             turbo_frame_tag "wallet_metadata_frame_#{@wallet.id}",
-                            src: helpers.metadata_api_v1_wallet_path(@wallet),
+                            src: metadata_api_v1_wallet_path(@wallet),
                             loading: :lazy do
               render Views::Shared::UI::Skeleton.new(variant: :card)
             end
@@ -74,7 +74,7 @@ module Wallets
         if @pagy
           render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
-            url_helper: ->(page:) { helpers.api_v1_wallet_path(@wallet, page: page) }
+            url_helper: ->(page:) { api_v1_wallet_path(@wallet, page: page) }
           )
         end
       end

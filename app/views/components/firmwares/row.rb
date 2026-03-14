@@ -15,7 +15,7 @@ module Firmwares
 
         td(class: "p-4 text-right") do
           # Форма для ініціації OTA оновлення
-          form(action: helpers.deploy_api_v1_firmware_path(@firmware), method: "post") do
+          form(action: deploy_api_v1_firmware_path(@firmware), method: "post") do
             authenticity_token_input
             button(
               type: "submit",
@@ -30,7 +30,7 @@ module Firmwares
     private
 
     def authenticity_token_input
-      input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+      input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
     end
   end
 end

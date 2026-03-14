@@ -30,7 +30,7 @@ module Users
         if @pagy
           render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
-            url_helper: ->(page:) { helpers.api_v1_users_path(page: page) }
+            url_helper: ->(page:) { api_v1_users_path(page: page) }
           )
         end
       end

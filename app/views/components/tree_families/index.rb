@@ -30,7 +30,7 @@ module TreeFamilies
 
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { helpers.api_v1_tree_families_path(page: page) }
+          url_helper: ->(page:) { api_v1_tree_families_path(page: page) }
         )
       end
     end
@@ -44,7 +44,7 @@ module TreeFamilies
           h2(class: "text-2xl font-light text-emerald-400 mt-1") { "Global Species Constants" }
         end
         a(
-          href: helpers.new_api_v1_tree_family_path,
+          href: new_api_v1_tree_family_path,
           class: "px-4 py-2 border border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase text-tiny tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
           aria_label: "Define new tree species"
         ) { "+ Define DNA" }
@@ -64,8 +64,8 @@ module TreeFamilies
         td(class: "p-4 text-gray-500") { "#{family.critical_z_min} - #{family.critical_z_max} kΩ" }
         td(class: "p-4 text-emerald-900") { "#{family.trees_count} Soldiers" }
         td(class: "p-4 text-right space-x-4") do
-          a(href: helpers.api_v1_tree_family_path(family), class: "text-emerald-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Audit #{family.name} species") { "AUDIT" }
-          a(href: helpers.edit_api_v1_tree_family_path(family), class: "text-zinc-700 hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Edit #{family.name} species") { "EDIT" }
+          a(href: api_v1_tree_family_path(family), class: "text-emerald-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Audit #{family.name} species") { "AUDIT" }
+          a(href: edit_api_v1_tree_family_path(family), class: "text-zinc-700 hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Edit #{family.name} species") { "EDIT" }
         end
       end
     end

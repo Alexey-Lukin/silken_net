@@ -35,7 +35,7 @@ module Alerts
 
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { helpers.api_v1_alerts_path(page: page) }
+          url_helper: ->(page:) { api_v1_alerts_path(page: page) }
         )
       end
     end
@@ -51,13 +51,13 @@ module Alerts
         # Фільтри (спрощено)
         div(class: "flex gap-2") do
           a(
-            href: helpers.api_v1_alerts_path,
+            href: api_v1_alerts_path,
             aria_label: "Show all alerts",
             class: filter_link_classes
           ) { "all" }
           %w[critical medium low].each do |s|
             a(
-              href: helpers.api_v1_alerts_path(severity: s),
+              href: api_v1_alerts_path(severity: s),
               aria_label: "Filter alerts by #{s} severity",
               class: filter_link_classes
             ) { s }

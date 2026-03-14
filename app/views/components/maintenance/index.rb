@@ -14,7 +14,7 @@ module Maintenance
         records_table
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { helpers.api_v1_maintenance_records_path(page: page) }
+          url_helper: ->(page:) { api_v1_maintenance_records_path(page: page) }
         )
       end
     end
@@ -30,7 +30,7 @@ module Maintenance
           end
         end
         a(
-          href: helpers.new_api_v1_maintenance_record_path,
+          href: new_api_v1_maintenance_record_path,
           aria_label: "Register new maintenance intervention",
           class: register_button_classes
         ) { "+ Register Intervention" }
@@ -42,18 +42,18 @@ module Maintenance
         action_types = MaintenanceRecord.action_types.keys
         action_types.each do |type|
           a(
-            href: helpers.api_v1_maintenance_records_path(action_type: type),
+            href: api_v1_maintenance_records_path(action_type: type),
             aria_label: "Filter by #{type}",
             class: filter_link_classes
           ) { type }
         end
         a(
-          href: helpers.api_v1_maintenance_records_path(verified: "1"),
+          href: api_v1_maintenance_records_path(verified: "1"),
           aria_label: "Show only verified records",
           class: filter_verified_classes
         ) { "✓ Verified Only" }
         a(
-          href: helpers.api_v1_maintenance_records_path,
+          href: api_v1_maintenance_records_path,
           aria_label: "Clear all filters",
           class: filter_clear_classes
         ) { "Clear" }
@@ -119,7 +119,7 @@ module Maintenance
         td(class: "p-4 text-gray-600 text-tiny") { record.performed_at&.strftime("%d.%m.%y // %H:%M") }
         td(class: "p-4 text-right") do
           a(
-            href: helpers.api_v1_maintenance_record_path(record),
+            href: api_v1_maintenance_record_path(record),
             aria_label: "Open maintenance record details",
             class: "text-emerald-700 hover:text-white text-tiny focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
           ) { "OPEN →" }

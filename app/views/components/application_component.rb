@@ -7,6 +7,9 @@ class ApplicationComponent < Phlex::HTML
   include Phlex::Rails::Helpers::FormWith
   include Phlex::Rails::Helpers::ButtonTo
   include Phlex::Rails::Helpers::AssetPath
+  include Phlex::Rails::Helpers::FormAuthenticityToken
+  include Phlex::Rails::Helpers::NumberToHumanSize
+  include Phlex::Rails::Helpers::TimeAgoInWords
   include ActionView::RecordIdentifier
 
   # Custom font-size tokens defined in app/assets/tailwind/application.css @theme.

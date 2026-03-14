@@ -50,7 +50,7 @@ module Firmwares
 
           # Кнопка переходу до порталу завантаження
           a(
-            href: helpers.new_api_v1_firmware_path,
+            href: new_api_v1_firmware_path,
             class: "text-tiny border border-emerald-500 px-4 py-1 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
             aria_label: "Upload new firmware binary"
           ) { "+ Inject New Code" }
@@ -75,7 +75,7 @@ module Firmwares
 
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { helpers.api_v1_firmwares_path(page: page) }
+          url_helper: ->(page:) { api_v1_firmwares_path(page: page) }
         )
       end
     end
@@ -88,8 +88,8 @@ module Firmwares
         td(class: "p-4 text-gray-500 font-mono text-tiny") { firmware.created_at.strftime("%d.%m.%y // %H:%M") }
 
         td(class: "p-4 text-right") do
-          form(action: helpers.deploy_api_v1_firmware_path(firmware), method: "post") do
-            input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+          form(action: deploy_api_v1_firmware_path(firmware), method: "post") do
+            input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
             button(
               type: "submit",
               class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-mini tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",

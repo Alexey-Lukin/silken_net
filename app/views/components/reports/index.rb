@@ -50,13 +50,13 @@ module Reports
           report_card(
             "Carbon Absorption Report",
             "Поглинання CO₂ та екологічний аудит.",
-            helpers.carbon_absorption_api_v1_reports_path,
+            carbon_absorption_api_v1_reports_path,
             "🌿"
           )
           report_card(
             "Financial Summary Report",
             "Фінансова ефективність та блокчейн-транзакції.",
-            helpers.financial_summary_api_v1_reports_path,
+            financial_summary_api_v1_reports_path,
             "💎"
           )
         end

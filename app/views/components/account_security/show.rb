@@ -51,9 +51,9 @@ module AccountSecurity
     end
 
     def render_mfa_toggle
-      form(action: helpers.api_v1_account_security_mfa_path, method: "post", class: "inline") do
+      form(action: api_v1_account_security_mfa_path, method: "post", class: "inline") do
         input(type: "hidden", name: "_method", value: "patch")
-        input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+        input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
 
         if @user.mfa_enabled?
           button(type: "submit", class: "px-4 py-2 border border-red-900 text-mini text-red-500 uppercase tracking-widest hover:bg-red-900 hover:text-white transition-all") { "Disable MFA" }
@@ -74,9 +74,9 @@ module AccountSecurity
           p(class: "text-tiny text-status-warning-text mb-4") { "⚠️ Пароль не встановлено. Встановіть пароль для можливості відв'язки провайдерів." }
         end
 
-        form(action: helpers.api_v1_account_security_password_path, method: "post", class: "space-y-4") do
+        form(action: api_v1_account_security_password_path, method: "post", class: "space-y-4") do
           input(type: "hidden", name: "_method", value: "patch")
-          input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
 
           if @user.password_digest.present?
             field_container("Current Password") do
@@ -143,15 +143,15 @@ module AccountSecurity
 
     def render_lock_toggle(identity)
       if identity.locked?
-        form(action: helpers.api_v1_unlock_account_security_identity_path(identity), method: "post", class: "inline") do
+        form(action: api_v1_unlock_account_security_identity_path(identity), method: "post", class: "inline") do
           input(type: "hidden", name: "_method", value: "patch")
-          input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
           button(type: "submit", class: "px-3 py-1 border border-emerald-900 text-micro text-emerald-700 uppercase hover:text-emerald-400 transition-all") { "Unlock" }
         end
       else
-        form(action: helpers.api_v1_lock_account_security_identity_path(identity), method: "post", class: "inline") do
+        form(action: api_v1_lock_account_security_identity_path(identity), method: "post", class: "inline") do
           input(type: "hidden", name: "_method", value: "patch")
-          input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
           button(type: "submit", class: "px-3 py-1 border border-status-warning text-micro text-status-warning-text uppercase hover:text-status-warning-text transition-all") { "Lock" }
         end
       end
@@ -161,9 +161,9 @@ module AccountSecurity
       can_unlink = @user.password_digest.present? || @identities.count { |i| i.active? } > 1
 
       if can_unlink
-        form(action: helpers.api_v1_account_security_identity_path(identity), method: "post", class: "inline") do
+        form(action: api_v1_account_security_identity_path(identity), method: "post", class: "inline") do
           input(type: "hidden", name: "_method", value: "delete")
-          input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
           button(type: "submit", class: "px-3 py-1 border border-red-900 text-micro text-red-700 uppercase hover:text-red-400 transition-all",
                  data: { turbo_confirm: "Відв'язати #{identity.provider.titleize}?" }) { "Unlink" }
         end
