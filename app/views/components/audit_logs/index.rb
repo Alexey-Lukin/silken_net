@@ -49,9 +49,11 @@ module AuditLogs
             if @logs.any?
               @logs.each { |log| render_log_row(log) }
             else
-              tr do
-                td(colspan: 5, class: "p-10 text-center text-gray-700 italic") { "No audit events recorded." }
-              end
+              render Views::Shared::UI::EmptyState.new(
+                title: "No audit events recorded.",
+                icon: "👁️",
+                colspan: 5
+              )
             end
           end
         end

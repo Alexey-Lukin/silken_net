@@ -59,7 +59,15 @@ module Users
           span(class: tokens("px-2 py-0.5 rounded-sm text-[9px] font-bold uppercase", role_color(user.role))) { user.role }
         end
         td(class: "p-4 text-gray-600") do
-           user.last_seen_at ? "Active #{helpers.time_ago_in_words(user.last_seen_at)} ago" : "Link offline"
+           if user.last_seen_at
+             render Views::Shared::UI::RelativeTime.new(
+               datetime: user.last_seen_at,
+               css_class: "text-gray-600 text-[11px] font-mono",
+               prefix: "Active "
+             )
+           else
+             plain "Link offline"
+           end
         end
         td(class: "p-4 text-right") do
           a(href: "#", class: "text-emerald-700 hover:text-white transition-all") { "VIEW_LOGS" }
