@@ -10,6 +10,20 @@ class ParametricInsurance < ApplicationRecord
   belongs_to :organization
   belongs_to :cluster      # Лісовий масив під захистом Aegis
 
+  # =========================================================================
+  # ETHERISC DIP ORACLE MODE
+  # =========================================================================
+  # Коли `etherisc_policy_id` присутній, система переключається в режим Oracle:
+  # замість емісії внутрішніх токенів (SCC/SFC), InsurancePayoutWorker
+  # тригерить зовнішній claim через Etherisc Decentralized Insurance Protocol,
+  # який виплачує USDC з децентралізованого пулу ліквідності на Polygon.
+  # Це запобігає інфляції внутрішніх токенів при страхових виплатах.
+
+  # @return [Boolean] true якщо страховка прив'язана до зовнішнього Etherisc policy
+  def uses_etherisc?
+    etherisc_policy_id.present?
+  end
+
   # --- СТАТУСИ ТА ТРИГЕРИ ---
   enum :status, { active: 0, triggered: 1, paid: 2, expired: 3 }, prefix: true
 

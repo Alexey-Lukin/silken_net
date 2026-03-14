@@ -93,6 +93,26 @@ RSpec.describe ParametricInsurance, type: :model do
   end
 
   # =========================================================================
+  # #uses_etherisc?
+  # =========================================================================
+  describe "#uses_etherisc?" do
+    it "returns true when etherisc_policy_id is present" do
+      insurance = build(:parametric_insurance, etherisc_policy_id: "42")
+      expect(insurance.uses_etherisc?).to be true
+    end
+
+    it "returns false when etherisc_policy_id is nil" do
+      insurance = build(:parametric_insurance, etherisc_policy_id: nil)
+      expect(insurance.uses_etherisc?).to be false
+    end
+
+    it "returns false when etherisc_policy_id is empty string" do
+      insurance = build(:parametric_insurance, etherisc_policy_id: "")
+      expect(insurance.uses_etherisc?).to be false
+    end
+  end
+
+  # =========================================================================
   # #recipient_wallet_address
   # =========================================================================
   describe "#recipient_wallet_address" do

@@ -20,7 +20,7 @@ module Dashboard
     def event_summary
       case @event
       when EwsAlert then "⚠ Threat: #{@event.alert_type} in #{@event.cluster&.name || 'Unknown'}"
-      when BlockchainTransaction then "⬢ Minted #{@event.amount} SCC → #{@event.wallet&.tree&.did || 'System'}"
+      when BlockchainTransaction then blockchain_transaction_summary
       when MaintenanceRecord then "🔧 #{@event.action_type&.capitalize}: by #{@event.user&.first_name || 'System'}"
       else "● System pulse detected"
       end
@@ -37,6 +37,15 @@ module Dashboard
 
     def time_ago_text
       render Views::Shared::UI::RelativeTime.new(datetime: @event.created_at)
+    end
+
+    def blockchain_transaction_summary
+      sourceable = @event.sourceable
+      if sourceable.is_a?(ParametricInsurance) && sourceable.uses_etherisc?
+        "🛡️ Etherisc DIP claim #{@event.amount} USDC → #{@event.to_address&.truncate(16) || 'Pool'}"
+      else
+        "⬢ Minted #{@event.amount} SCC → #{@event.wallet&.tree&.did || 'System'}"
+      end
     end
   end
 end

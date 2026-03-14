@@ -982,7 +982,8 @@ CREATE TABLE public.parametric_insurances (
     updated_at timestamp(6) without time zone NOT NULL,
     token_type integer DEFAULT 0 NOT NULL,
     required_confirmations integer DEFAULT 3 NOT NULL,
-    paid_at timestamp(6) without time zone
+    paid_at timestamp(6) without time zone,
+    etherisc_policy_id character varying
 );
 
 
@@ -2699,6 +2700,13 @@ CREATE INDEX index_parametric_insurances_on_cluster_id_and_status ON public.para
 
 
 --
+-- Name: index_parametric_insurances_on_etherisc_policy_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_parametric_insurances_on_etherisc_policy_id ON public.parametric_insurances USING btree (etherisc_policy_id);
+
+
+--
 -- Name: index_parametric_insurances_on_organization_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4126,6 +4134,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260314180000'),
 ('20260314170000'),
 ('20260311163811'),
 ('20260311160000'),

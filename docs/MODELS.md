@@ -60,7 +60,7 @@
 
 * **NaasContract**: Nature-as-a-Service контракт. Статуси: `draft` → `active` → `fulfilled` / `breached`. Слешинг активується при >20% аномальних дерев.
 
-* **ParametricInsurance**: Страховий щит кластера. Автоматичні виплати при `critical_fire`, `extreme_drought`, `insect_epidemic`.
+* **ParametricInsurance**: Страховий щит кластера. Автоматичні виплати при `critical_fire`, `extreme_drought`, `insect_epidemic`. Підтримує інтеграцію з Etherisc DIP — якщо `etherisc_policy_id` присутній, система працює як Oracle, тригеруючи USDC виплати з децентралізованого пулу ліквідності замість емісії внутрішніх токенів.
 
 * **BlockchainTransaction**: Незмінний слід у мережі Polygon. Статуси: `pending` → `sent` → `confirmed` / `failed`.
 

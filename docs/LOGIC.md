@@ -28,6 +28,7 @@
 | **`BlockchainMintingService`** | **Скарбник** | Пакетна емісія токенів (SCC/SFC) у мережі Polygon. Guard clauses: `verified_by_iotex?`, `oracle_status == "fulfilled"`, `hadron_kyc_status == "approved"`. Оптимізовано для Gas Saving Mode (`batchMint`). |
 | **`BlockchainBurningService`** | **Меч Правосуддя** | Розраховує суму вилучення та ініціює блокчейн-функцію `slash` при порушенні умов контракту. |
 | **`ChainAuditService`** | **Цифровий Нотаріус** | Аудит on-chain транзакцій. Звіряє статуси `BlockchainTransaction` з реальним `totalSupply` у Polygon. Поріг дельти: 0.0001. |
+| **`Etherisc::ClaimService`** | **Щит DIP** | Oracle-mode для параметричного страхування. Тригерить `triggerClaim` через Etherisc Decentralized Insurance Protocol (DIP) на Polygon для виплати USDC з децентралізованого пулу ліквідності. Усуває інфляційний тиск на внутрішню токеноміку. |
 
 ### Верифікація та Ідентичність (ZK + DID)
 
@@ -89,7 +90,7 @@
 9. **`MintCarbonCoinWorker`** (`web3`, retry: 5): **NAM-TAR**. Емісійний вузол. Включає протокол атомарного ролбеку балів при критичних помилках RPC.
 10. **`BurnCarbonTokensWorker`** (`critical`, retry: 5): **Екзекутор**. Негайне виконання Slashing-вироку та створення "надгробного" запису в MaintenanceRecord.
 11. **`BlockchainConfirmationWorker`** (`web3`, retry: 10): **Свідок**. Поллінг `eth_get_transaction_receipt`. Підтверджує (`confirmed`) або скасовує (`failed`) транзакцію після отримання рецепту від Polygon.
-12. **`InsurancePayoutWorker`** (`critical`, retry: 10): **Гарант**. Автоматичне виконання виплат за параметричним страхуванням при настанні страхових подій.
+12. **`InsurancePayoutWorker`** (`critical`, retry: 10): **Гарант**. Автоматичне виконання виплат за параметричним страхуванням при настанні страхових подій. Підтримує dual-mode: внутрішній мінтинг (SCC/SFC) або зовнішній Etherisc DIP claim (USDC) через `Etherisc::ClaimService`.
 13. **`EcosystemHealingWorker`** (`critical`, retry: 3): **Лікар**. Критична корекція аномалій в екосистемі. Ініціює відновлювальні заходи після EWS-тривог.
 
 ### 🔗 Рівень Мультичейну (Web3 — Gaia 2.0)

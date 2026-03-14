@@ -54,13 +54,23 @@ class InsurancePayoutWorker
     # 3. WEB3 ЕКЗЕКУЦІЯ (Blockchain Domain)
     # Тепер, коли транзакція зафіксована в базі, ми передаємо її нашому
     # загартованому BlockchainMintingService для підпису та відправки в Polygon.
+    # [ETHERISC DIP]: Якщо страховка прив'язана до Etherisc policy, система
+    # працює як Oracle — тригерить зовнішній USDC payout замість внутрішнього мінтингу.
     if tx
-      Rails.logger.info "🚀 [Insurance] Ініціація виплати #{tx.amount} SCC для #{organization.name}..."
-
-      # Транслюємо "Flash" повідомлення Архітектору
       broadcast_insurance_update(insurance, tx)
 
-      BlockchainMintingService.call(tx.id)
+      if insurance.uses_etherisc?
+        Rails.logger.info "🛡️ [Insurance] Triggering Etherisc DIP claim for policy " \
+                          "#{insurance.etherisc_policy_id} (insurance ##{insurance.id})..."
+
+        etherisc_tx_hash = Etherisc::ClaimService.new(insurance).claim!
+        tx.update!(status: :sent, tx_hash: etherisc_tx_hash)
+
+        BlockchainConfirmationWorker.perform_in(30.seconds, etherisc_tx_hash)
+      else
+        Rails.logger.info "🚀 [Insurance] Ініціація виплати #{tx.amount} SCC для #{organization.name}..."
+        BlockchainMintingService.call(tx.id)
+      end
     end
 
   rescue ActiveRecord::RecordNotFound
