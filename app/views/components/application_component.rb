@@ -6,6 +6,10 @@ class ApplicationComponent < Phlex::HTML
   include Phlex::Rails::Helpers::TurboFrameTag
   include Phlex::Rails::Helpers::AssetPath
 
+  # Tailwind 4 custom font-size tokens defined in @theme.
+  # Registered here so TailwindMerge treats them as font-size (not text-color).
+  CUSTOM_TEXT_SCALE = %w[micro mini tiny compact].freeze
+
   def tokens(*args, **conditions)
     result = args.compact.join(" ")
     conditional = conditions.filter_map { |cls, flag| cls.to_s if flag }.join(" ")
@@ -14,6 +18,8 @@ class ApplicationComponent < Phlex::HTML
   end
 
   def self.merger
-    @merger ||= TailwindMerge::Merger.new
+    @merger ||= TailwindMerge::Merger.new(config: {
+      theme: { "text" => CUSTOM_TEXT_SCALE }
+    })
   end
 end

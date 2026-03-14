@@ -19,15 +19,13 @@ module Views
           nav(
             aria_label: "Pagination",
             role: "navigation",
-            class: "flex justify-between items-center mt-6 font-mono text-[9px] uppercase"
+            class: nav_classes
           ) do
             if @pagy.prev
               a(
                 href: @url_helper.call(page: @pagy.prev),
                 aria_label: "Go to previous page",
-                class: "px-4 py-2 border border-emerald-900 text-emerald-800 hover:border-emerald-600 " \
-                       "hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 " \
-                       "transition-all tracking-widest"
+                class: page_link_classes
               ) { "← Previous" }
             else
               div
@@ -39,14 +37,25 @@ module Views
               a(
                 href: @url_helper.call(page: @pagy.next),
                 aria_label: "Go to next page",
-                class: "px-4 py-2 border border-emerald-900 text-emerald-800 hover:border-emerald-600 " \
-                       "hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 " \
-                       "transition-all tracking-widest"
+                class: page_link_classes
               ) { "Next →" }
             else
               div
             end
           end
+        end
+
+        private
+
+        def nav_classes
+          "flex justify-between items-center font-mono text-mini uppercase"
+        end
+
+        def page_link_classes
+          "px-4 py-2 border border-emerald-900 text-emerald-800 tracking-widest " \
+            "hover:border-emerald-600 hover:text-emerald-600 " \
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+            "transition-all duration-200 ease-in-out"
         end
       end
     end

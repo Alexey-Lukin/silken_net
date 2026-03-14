@@ -16,7 +16,7 @@ module Views
         end
 
         def view_template
-          div(class: "relative group border border-emerald-900/50 hover:border-emerald-500 transition-all overflow-hidden bg-zinc-950") do
+          div(class: card_classes) do
             render_preview
             render_meta_overlay
             render_delete_button if @editable
@@ -25,13 +25,18 @@ module Views
 
         private
 
+        def card_classes
+          "relative group border border-emerald-900/50 bg-zinc-950 overflow-hidden " \
+            "hover:border-emerald-500 transition-all duration-200 ease-in-out"
+        end
+
         def render_preview
           a(
             href: helpers.rails_blob_path(@photo, disposition: "inline"),
             target: "_blank",
             rel: "noopener noreferrer",
             aria_label: "View photo: #{@photo.filename}",
-            class: "block aspect-square overflow-hidden focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            class: preview_link_classes
           ) do
             if @photo.representable?
               img(
@@ -46,33 +51,45 @@ module Views
           end
         end
 
+        def preview_link_classes
+          "block aspect-square overflow-hidden " \
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        end
+
         def render_file_fallback
-          div(class: "w-full h-full flex flex-col items-center justify-center space-y-1 p-2 bg-zinc-900") do
+          div(class: "w-full h-full flex flex-col items-center justify-center gap-1 p-2 bg-zinc-900") do
             span(class: "text-emerald-700 text-2xl", aria_hidden: "true") { "📎" }
-            span(class: "text-[9px] text-emerald-700 font-mono truncate text-center") { @photo.filename.to_s }
-            span(class: "text-[8px] text-gray-600") { helpers.number_to_human_size(@photo.byte_size) }
+            span(class: "text-mini text-emerald-700 font-mono truncate text-center") { @photo.filename.to_s }
+            span(class: "text-micro text-gray-600") { helpers.number_to_human_size(@photo.byte_size) }
           end
         end
 
         def render_meta_overlay
-          div(class: "absolute bottom-0 inset-x-0 bg-black/80 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity") do
-            p(class: "text-[8px] font-mono text-emerald-400 truncate") { @photo.filename.to_s }
-            p(class: "text-[7px] text-gray-500") { helpers.number_to_human_size(@photo.byte_size) }
+          div(class: "absolute bottom-0 inset-x-0 bg-black/80 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200") do
+            p(class: "text-micro font-mono text-emerald-400 truncate") { @photo.filename.to_s }
+            p(class: "text-micro text-gray-500") { helpers.number_to_human_size(@photo.byte_size) }
           end
         end
 
         def render_delete_button
-          div(class: "absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity") do
+          div(class: "absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200") do
             button_to(
               "×",
               helpers.api_v1_maintenance_record_photo_path(@record, @photo),
               method: :delete,
               aria: { label: "Remove photo: #{@photo.filename}" },
-              class: "h-6 w-6 bg-red-900/80 text-red-200 text-sm font-bold hover:bg-red-700 " \
-                     "focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors",
+              class: delete_button_classes,
               data: { turbo_confirm: "Remove this photo from the evidence record?" }
             )
           end
+        end
+
+        def delete_button_classes
+          "h-6 w-6 bg-red-900/80 text-red-200 text-sm font-bold " \
+            "hover:bg-red-700 active:bg-red-800 " \
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 " \
+            "disabled:opacity-50 disabled:cursor-not-allowed " \
+            "transition-colors duration-200 ease-in-out"
         end
       end
     end

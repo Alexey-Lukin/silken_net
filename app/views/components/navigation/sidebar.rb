@@ -66,24 +66,24 @@ module Navigation
 
     def render_logo
       div(class: "px-6 py-8 border-b border-emerald-900/30") do
-        h1(class: "text-emerald-500 font-extralight tracking-[0.4em] uppercase text-lg") { "Silken Net" }
-        p(class: "text-[8px] text-emerald-900 mt-1 uppercase tracking-widest") { "Central Command Citadel" }
+        h1(class: "text-emerald-500 font-extralight tracking-[0.4em] uppercase text-lg leading-tight") { "Silken Net" }
+        p(class: "text-micro text-emerald-900 mt-1 uppercase tracking-widest") { "Central Command Citadel" }
       end
     end
 
     def render_status_pulse
       div(class: "px-6 py-4 bg-emerald-950/10 flex items-center justify-between border-b border-emerald-900/20") do
-        div(class: "flex items-center space-x-2") do
+        div(class: "flex items-center gap-2") do
           div(class: "h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse")
-          span(class: "text-[9px] text-emerald-700 uppercase") { "Sync: 1.12 THz" }
+          span(class: "text-mini text-emerald-700 uppercase tracking-widest") { "Sync: 1.12 THz" }
         end
-        span(class: "text-[9px] text-emerald-900") { "v8.0.ocean" }
+        span(class: "text-mini text-emerald-900") { "v8.0.ocean" }
       end
     end
 
     def section_group(title, &block)
       div(class: "space-y-4") do
-        h3(class: "text-[9px] uppercase tracking-[0.3em] text-emerald-900 px-2") { title }
+        h3(class: "text-mini uppercase tracking-[0.3em] text-emerald-900 px-2") { title }
         div(class: "space-y-1", &block)
       end
     end
@@ -96,30 +96,44 @@ module Navigation
         aria_current: (active ? "page" : nil),
         aria_label: label,
         class: tokens(
-          "group flex items-center justify-between px-3 py-2 text-[11px] uppercase tracking-widest transition-all duration-300 border-l-2 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500",
-          active ? "text-emerald-400 bg-emerald-950/20 border-emerald-500" : "text-gray-500 border-transparent hover:text-emerald-600 hover:bg-emerald-950/5 hover:border-emerald-900/50"
+          nav_item_base_classes,
+          active ? nav_item_active_classes : nav_item_inactive_classes
         )
       ) do
-        div(class: "flex items-center space-x-3") do
+        div(class: "flex items-center gap-3") do
           span(class: tokens("w-4 h-4", "text-emerald-500": active, "text-emerald-900 group-hover:text-emerald-700": !active), aria_hidden: "true") { render_icon(icon) }
           span { label }
         end
 
         if badge&.positive?
-          span(class: "bg-red-900/50 text-red-500 text-[8px] px-1.5 py-0.5 rounded-sm") { badge }
+          span(class: "bg-red-900/50 text-red-500 text-micro px-1.5 py-0.5 rounded-sm") { badge }
         elsif pulse
           div(class: "h-1 w-1 rounded-full bg-emerald-500 animate-ping")
         end
       end
     end
 
+    def nav_item_base_classes
+      "group flex items-center justify-between px-3 py-2 text-compact uppercase tracking-widest " \
+        "transition-all duration-200 ease-in-out border-l-2 " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500"
+    end
+
+    def nav_item_active_classes
+      "text-emerald-400 bg-emerald-950/20 border-emerald-500"
+    end
+
+    def nav_item_inactive_classes
+      "text-gray-500 border-transparent hover:text-emerald-600 hover:bg-emerald-950/5 hover:border-emerald-900/50 active:bg-emerald-950/10"
+    end
+
     def render_user_footer
       div(class: "p-4 border-t border-emerald-900/30 mt-auto bg-black") do
-        div(class: "flex items-center space-x-3 px-2") do
-          div(class: "h-8 w-8 rounded-none border border-emerald-700 flex items-center justify-center text-emerald-500 text-[10px]") { "A" }
+        div(class: "flex items-center gap-3 px-2") do
+          div(class: "h-8 w-8 rounded-none border border-emerald-700 flex items-center justify-center text-emerald-500 text-tiny") { "A" }
           div(class: "flex-1 overflow-hidden") do
-            p(class: "text-[10px] text-emerald-100 truncate") { "Architect" }
-            p(class: "text-[8px] text-emerald-900 uppercase tracking-tighter") { "Full Access Link" }
+            p(class: "text-tiny text-emerald-100 truncate") { "Architect" }
+            p(class: "text-micro text-emerald-900 uppercase tracking-widest") { "Full Access Link" }
           end
         end
       end

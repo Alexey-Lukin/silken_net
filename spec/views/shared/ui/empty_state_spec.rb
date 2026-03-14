@@ -35,6 +35,11 @@ RSpec.describe Views::Shared::UI::EmptyState do
     it "renders the description" do
       expect(html).to include("Check hardware connections.")
     end
+
+    it "uses text-tiny instead of arbitrary text-[10px]" do
+      expect(html).to include("text-tiny")
+      expect(html).not_to include("text-[")
+    end
   end
 
   describe "with custom icon" do

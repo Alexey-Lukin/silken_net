@@ -4,7 +4,9 @@ module Views
   module Shared
     module UI
       class RelativeTime < ApplicationComponent
-        def initialize(datetime:, css_class: "text-emerald-900 text-[10px] font-mono", prefix: nil)
+        DEFAULT_CLASS = "text-emerald-900 text-tiny font-mono"
+
+        def initialize(datetime:, css_class: DEFAULT_CLASS, prefix: nil)
           @datetime  = datetime
           @css_class = css_class
           @prefix    = prefix
