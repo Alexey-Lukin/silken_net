@@ -336,14 +336,11 @@ RSpec.describe InsightGeneratorService, type: :service do
         expect(insight.stress_index).to eq(0.9)
       end
 
-      it "caps stress_index at 0.99 for status 1 with maximum penalties" do
+      it "returns combined maximum of 0.9 for status 1 with all penalties applied" do
         service = described_class.new
-        # status=1, base=0.6, z>2.0=+0.2, temp>35=+0.1 = 0.9, but we can test cap
-        # Actually, max for status 1 is 0.6+0.2+0.1=0.9 which is < 0.99
-        # So let's test the cap directly
+        # status=1 (base=0.6) + z>2.0 (+0.2) + temp>35 (+0.1) = 0.9
         result = service.send(:calculate_stress_index, 1, 40.0, 0, 3.0)
         expect(result).to eq(0.9)
-        expect(result).to be < 0.99
       end
     end
 
