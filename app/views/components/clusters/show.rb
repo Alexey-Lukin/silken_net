@@ -65,6 +65,22 @@ module Clusters
           vital_block("Active Trees", @cluster.total_active_trees.to_s)
           vital_block("Queen Gateways", @gateways.size.to_s)
         end
+        if @cluster.environmental_settings.present?
+          div(class: "mt-8 pt-6 border-t border-emerald-900/30") do
+            h4(class: "text-mini uppercase tracking-widest text-emerald-800 mb-4") { "Environmental Config" }
+            div(class: "grid grid-cols-3 gap-6 text-tiny font-mono") do
+              if @cluster.environmental_settings["custom_fire_threshold"]
+                env_block("Fire Threshold", "#{@cluster.environmental_settings['custom_fire_threshold']}°C")
+              end
+              if @cluster.environmental_settings["seismic_sensitivity_threshold"]
+                env_block("Seismic Sensitivity", @cluster.environmental_settings["seismic_sensitivity_threshold"].to_s)
+              end
+              if @cluster.environmental_settings["timezone"]
+                env_block("Timezone", @cluster.environmental_settings["timezone"])
+              end
+            end
+          end
+        end
       end
     end
 
@@ -72,6 +88,13 @@ module Clusters
       div do
         p(class: "text-mini uppercase tracking-tighter text-gray-600") { label }
         p(class: "text-3xl font-extralight text-emerald-100") { value }
+      end
+    end
+
+    def env_block(label, value)
+      div do
+        p(class: "text-gaia-text-muted uppercase") { label }
+        p(class: "text-gaia-primary mt-1") { value }
       end
     end
 

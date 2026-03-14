@@ -20,9 +20,11 @@ module Contracts
               thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
                 tr do
                   th(scope: "col", class: "p-4") { "ID / Status" }
+                  th(scope: "col", class: "p-4") { "Organization" }
                   th(scope: "col", class: "p-4") { "Target Cluster" }
                   th(scope: "col", class: "p-4") { "Investment" }
                   th(scope: "col", class: "p-4") { "Current Yield" }
+                  th(scope: "col", class: "p-4") { "Period" }
                   th(scope: "col", class: "p-4") { "Performance" }
                   th(scope: "col", class: "p-4 text-right") { "Command" }
                 end
@@ -59,9 +61,15 @@ module Contracts
             span(class: tokens("text-mini uppercase mt-1", status_color(contract.status))) { contract.status }
           end
         end
-        td(class: "p-4 text-emerald-500") { contract.cluster&.name || "UNASSIGNED" }
-        td(class: "p-4 text-gray-400") { "#{contract.total_value} SCC" }
-        td(class: "p-4 text-white") { "#{contract.emitted_tokens} SCC" }
+        td(class: "p-4 text-gaia-text-muted") { contract.organization&.name || "—" }
+        td(class: "p-4 text-gaia-primary") { contract.cluster&.name || "UNASSIGNED" }
+        td(class: "p-4 text-gaia-text-muted") { "#{contract.total_value} SCC" }
+        td(class: "p-4 text-gaia-text") { "#{contract.emitted_tokens} SCC" }
+        td(class: "p-4 text-tiny text-gaia-text-muted") do
+          plain contract.start_date&.strftime("%d.%m.%y")
+          plain " → "
+          plain contract.end_date&.strftime("%d.%m.%y")
+        end
         td(class: "p-4") do
           render_performance_gauge(contract.current_yield_performance)
         end

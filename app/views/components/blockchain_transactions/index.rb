@@ -42,6 +42,7 @@ module BlockchainTransactions
               th(scope: "col", class: "p-4") { "Type" }
               th(scope: "col", class: "p-4") { "Amount" }
               th(scope: "col", class: "p-4") { "Status" }
+              th(scope: "col", class: "p-4") { "Network" }
               th(scope: "col", class: "p-4") { "Tree" }
               th(scope: "col", class: "p-4") { "TX Hash" }
               th(scope: "col", class: "p-4 text-right") { "Timestamp" }
@@ -54,7 +55,7 @@ module BlockchainTransactions
               render Views::Shared::UI::EmptyState.new(
                 title: "No blockchain transactions recorded.",
                 icon: "⬢",
-                colspan: 6
+                colspan: 7
               )
             end
           end
@@ -71,6 +72,7 @@ module BlockchainTransactions
         td(class: "p-4") do
           span(class: tokens("text-micro uppercase tracking-widest", status_color(tx.status))) { tx.status }
         end
+        td(class: "p-4 text-gaia-text-muted text-mini uppercase") { tx.blockchain_network&.upcase || "—" }
         td(class: "p-4 text-emerald-500") { tx.wallet&.tree&.did || "—" }
         td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-tiny") do
           if tx.tx_hash.present?

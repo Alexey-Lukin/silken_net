@@ -82,6 +82,18 @@ module Wallets
             p(class: "text-gray-600 mb-1 uppercase") { "Network" }
             p(class: "text-white") { "Polygon PoS (Mainnet)" }
           end
+          div(class: "pt-3 border-t border-emerald-900/30") do
+            p(class: "text-gaia-text-muted mb-1 uppercase") { "Locked Balance" }
+            p(class: "text-status-warning-text") { "#{@wallet.locked_balance.to_f.round(4)} SCC" }
+          end
+          div do
+            p(class: "text-gaia-text-muted mb-1 uppercase") { "Available Balance" }
+            p(class: "text-gaia-primary") { "#{@wallet.available_balance.to_f.round(4)} SCC" }
+          end
+          div do
+            p(class: "text-gaia-text-muted mb-1 uppercase") { "ESG Retired" }
+            p(class: "text-gaia-text-muted") { "#{@wallet.esg_retired_balance.to_f.round(4)} SCC" }
+          end
         end
       end
     end

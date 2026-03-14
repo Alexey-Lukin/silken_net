@@ -95,6 +95,7 @@ cherkasy_forest = Cluster.create!(
   name: "Черкаський бір",
   region: "Центральна Україна",
   organization: active_bridge,
+  environmental_settings: { "custom_fire_threshold" => 60, "seismic_sensitivity_threshold" => 3.5, "timezone" => "Europe/Kyiv" },
   geojson_polygon: { type: "Polygon", coordinates: [ [ [ 31.9, 49.4 ], [ 32.0, 49.4 ], [ 32.0, 49.5 ], [ 31.9, 49.5 ], [ 31.9, 49.4 ] ] ] }
 )
 
@@ -155,7 +156,8 @@ naas_contract = NaasContract.create!(
   total_funding: 50_000.0,
   start_date: Time.current,
   end_date: 1.year.from_now,
-  status: :active
+  status: :active,
+  cancellation_terms: { "early_exit_fee_percent" => 15, "burn_accrued_points" => true, "min_days_before_exit" => 30 }
 )
 
 NaasContract.create!(
@@ -211,7 +213,9 @@ gateways = []
     name: "Система зрошення Сектор #{i + 1}",
     device_type: :water_valve,
     endpoint: "valve_#{i + 1}",
-    state: :idle
+    state: :idle,
+    max_active_duration_s: 300,
+    estimated_mj_per_action: 150
   )
   gateways << gw
 end
@@ -234,7 +238,9 @@ fire_siren = Actuator.create!(
   name: "Пожежна сирена Amazon",
   device_type: :fire_siren,
   endpoint: "siren_1",
-  state: :idle
+  state: :idle,
+  max_active_duration_s: 120,
+  estimated_mj_per_action: 200
 )
 
 # =========================================================================
@@ -410,6 +416,7 @@ BlockchainTransaction.create!(
   amount: 10,
   token_type: :carbon_coin,
   status: :confirmed,
+  blockchain_network: "evm",
   to_address: eco_future_fund.crypto_public_address,
   tx_hash: "0x#{SecureRandom.hex(32)}",
   sent_at: 2.hours.ago,
@@ -417,6 +424,7 @@ BlockchainTransaction.create!(
   block_number: 45_000_001,
   gas_price: 30_000_000_000,
   gas_used: 21_000,
+  nonce: 42,
   locked_points: 500,
   notes: "Мінтинг 10 SCC за 500 балів росту."
 )
@@ -426,6 +434,7 @@ BlockchainTransaction.create!(
   amount: 5,
   token_type: :forest_coin,
   status: :pending,
+  blockchain_network: "evm",
   to_address: active_bridge.crypto_public_address,
   locked_points: 250,
   notes: "Очікує підтвердження в мережі Polygon."

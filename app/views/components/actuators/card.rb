@@ -24,7 +24,8 @@ module Actuators
       div(class: "flex justify-between items-start mb-6") do
         div do
           span(class: "text-micro px-2 py-0.5 border border-gaia-border text-gaia-text-muted uppercase font-mono tracking-widest") { @actuator.device_type }
-          h4(class: "text-lg font-light text-gaia-text mt-2 tracking-tighter") { "Sector Relay // #{@actuator.gateway&.uid}" }
+          h4(class: "text-lg font-light text-gaia-text mt-2 tracking-tighter") { @actuator.name }
+          p(class: "text-micro text-gaia-text-muted font-mono mt-1") { "Gateway: #{@actuator.gateway&.uid}" }
         end
         div(class: tokens("h-2 w-2 rounded-full", status_led_class))
       end
@@ -35,6 +36,26 @@ module Actuators
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
           span(class: "text-gaia-text-muted") { "Physical State:" }
           span(class: "text-gaia-primary") { @actuator.state }
+        end
+        div(class: "flex justify-between border-b border-gaia-border pb-1") do
+          span(class: "text-gaia-text-muted") { "Endpoint:" }
+          span(class: "text-gaia-primary") { @actuator.endpoint }
+        end
+        if @actuator.max_active_duration_s
+          div(class: "flex justify-between border-b border-gaia-border pb-1") do
+            span(class: "text-gaia-text-muted") { "Max Duration:" }
+            span(class: "text-gaia-primary") { "#{@actuator.max_active_duration_s}s" }
+          end
+        end
+        if @actuator.estimated_mj_per_action
+          div(class: "flex justify-between border-b border-gaia-border pb-1") do
+            span(class: "text-gaia-text-muted") { "Energy Budget:" }
+            span(class: "text-gaia-primary") { "#{@actuator.estimated_mj_per_action} mJ" }
+          end
+        end
+        div(class: "flex justify-between border-b border-gaia-border pb-1") do
+          span(class: "text-gaia-text-muted") { "Last Activated:" }
+          span(class: "text-gaia-primary") { @actuator.last_activated_at&.strftime("%d.%m.%y %H:%M") || "NEVER" }
         end
         div(class: "flex justify-between") do
           span(class: "text-gaia-text-muted") { "Last Sync Status:" }
