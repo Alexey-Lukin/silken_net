@@ -72,7 +72,7 @@ module BlockchainTransactions
         td(class: "p-4") do
           span(class: tokens("text-micro uppercase tracking-widest", status_color(tx.status))) { tx.status }
         end
-        td(class: "p-4 text-gray-500 text-mini uppercase") { tx.blockchain_network&.upcase || "—" }
+        td(class: "p-4 text-gaia-text-muted text-mini uppercase") { tx.blockchain_network&.upcase || "—" }
         td(class: "p-4 text-emerald-500") { tx.wallet&.tree&.did || "—" }
         td(class: "p-4 text-gray-600 truncate max-w-[150px] font-mono text-tiny") do
           if tx.tx_hash.present?

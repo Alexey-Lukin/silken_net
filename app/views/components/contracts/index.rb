@@ -61,11 +61,11 @@ module Contracts
             span(class: tokens("text-mini uppercase mt-1", status_color(contract.status))) { contract.status }
           end
         end
-        td(class: "p-4 text-gray-400") { contract.organization&.name || "—" }
-        td(class: "p-4 text-emerald-500") { contract.cluster&.name || "UNASSIGNED" }
-        td(class: "p-4 text-gray-400") { "#{contract.total_value} SCC" }
-        td(class: "p-4 text-white") { "#{contract.emitted_tokens} SCC" }
-        td(class: "p-4 text-tiny text-gray-500") do
+        td(class: "p-4 text-gaia-text-muted") { contract.organization&.name || "—" }
+        td(class: "p-4 text-gaia-primary") { contract.cluster&.name || "UNASSIGNED" }
+        td(class: "p-4 text-gaia-text-muted") { "#{contract.total_value} SCC" }
+        td(class: "p-4 text-gaia-text") { "#{contract.emitted_tokens} SCC" }
+        td(class: "p-4 text-tiny text-gaia-text-muted") do
           plain contract.start_date&.strftime("%d.%m.%y")
           plain " → "
           plain contract.end_date&.strftime("%d.%m.%y")

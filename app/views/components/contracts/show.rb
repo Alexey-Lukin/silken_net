@@ -32,10 +32,10 @@ module Contracts
          div do
            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { "Contract Identity" }
            h2(class: "text-5xl font-extralight text-white tracking-tighter") { "##{@contract.id} // SEC_#{@contract.cluster&.name&.upcase}" }
-           p(class: "mt-2 text-xs font-mono text-emerald-900") { "Organization: #{@contract.organization&.name}" }
-           p(class: "mt-1 text-xs font-mono text-emerald-900") { "Status: #{@contract.status.upcase}" }
-           p(class: "mt-1 text-xs font-mono text-emerald-900") { "Period: #{@contract.start_date&.strftime('%d.%m.%Y')} → #{@contract.end_date&.strftime('%d.%m.%Y')}" }
-           p(class: "mt-1 text-xs font-mono text-emerald-900") { "Total Funding: #{@contract.total_funding} SCC" }
+           p(class: "mt-2 text-xs font-mono text-gaia-text-muted") { "Organization: #{@contract.organization&.name}" }
+           p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { "Status: #{@contract.status.upcase}" }
+           p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { "Period: #{@contract.start_date&.strftime('%d.%m.%Y')} → #{@contract.end_date&.strftime('%d.%m.%Y')}" }
+           p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { "Total Funding: #{@contract.total_funding} SCC" }
          end
 
          div(class: "mt-8 md:mt-0 text-center md:text-right") do
