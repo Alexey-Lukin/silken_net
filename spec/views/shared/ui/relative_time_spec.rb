@@ -6,7 +6,7 @@ RSpec.describe Views::Shared::UI::RelativeTime do
   let(:component_class) { described_class }
 
   def render_component(**kwargs)
-    component_class.new(**kwargs).call(context: { rails_view_context: ActionController::Base.helpers })
+    component_class.new(**kwargs).call
   end
 
   describe "with a datetime" do

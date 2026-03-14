@@ -8,9 +8,12 @@ class ApplicationComponent < Phlex::HTML
   include Phlex::Rails::Helpers::ButtonTo
   include Phlex::Rails::Helpers::AssetPath
   include Phlex::Rails::Helpers::FormAuthenticityToken
-  include Phlex::Rails::Helpers::NumberToHumanSize
-  include Phlex::Rails::Helpers::TimeAgoInWords
   include ActionView::RecordIdentifier
+
+  # Pure formatting helpers that work without a view context.
+  # Delegated directly so components render correctly in Turbo broadcasts
+  # (where no Rails view context is available).
+  delegate :time_ago_in_words, :number_to_human_size, to: :"ActionController::Base.helpers"
 
   # Custom font-size tokens defined in app/assets/tailwind/application.css @theme.
   # Registered here so TailwindMerge treats them as font-size (not text-color).

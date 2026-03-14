@@ -78,5 +78,29 @@ RSpec.describe ContractHealthCheckService do
         expect(contract.reload).to be_status_breached
       end
     end
+
+    context "when activate_slashing_protocol! encounters a database error" do
+      it "does not enqueue BurnCarbonTokensWorker when update! fails" do
+        create(:tree, cluster: cluster, status: :active)
+        cluster.reload
+
+        allow(contract).to receive(:update!).and_raise(StandardError, "DB lock timeout")
+
+        described_class.call(contract, target_date)
+
+        expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
+      end
+
+      it "logs the slashing activation failure" do
+        create(:tree, cluster: cluster, status: :active)
+        cluster.reload
+
+        allow(contract).to receive(:update!).and_raise(StandardError, "DB lock timeout")
+
+        expect(Rails.logger).to receive(:error).with(/Провал активації Slashing/)
+
+        described_class.call(contract, target_date)
+      end
+    end
   end
 end
