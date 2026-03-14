@@ -36,5 +36,11 @@ FactoryBot.define do
       action_type { :installation }
       notes       { "Installed new titanium anchor and LoRa sensor unit on node." }
     end
+
+    trait :biomass_extraction do
+      action_type      { :biomass_extraction }
+      notes            { "Extracted dead wood biomass for Puro.earth Biochar CORC certification." }
+      biomass_yield_kg { 125.50 }
+    end
   end
 end

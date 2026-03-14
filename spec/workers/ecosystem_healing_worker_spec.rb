@@ -91,5 +91,43 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
         expect { described_class.new.perform(record.id) }.not_to raise_error
       end
     end
+
+    # -----------------------------------------------------------------
+    # Afterlife Economy — Biomass Extraction (Puro.earth)
+    # -----------------------------------------------------------------
+    context "when target is a Tree with biomass_extraction" do
+      it "transitions active tree to deceased" do
+        tree = create(:tree, status: :active)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+
+        allow(PuroEarthPassportWorker).to receive(:perform_async)
+
+        described_class.new.perform(record.id)
+
+        tree.reload
+        expect(tree.status).to eq("deceased")
+      end
+
+      it "does not transition an already deceased tree" do
+        tree = create(:tree, status: :deceased)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+
+        allow(PuroEarthPassportWorker).to receive(:perform_async)
+
+        expect { described_class.new.perform(record.id) }.not_to raise_error
+
+        tree.reload
+        expect(tree.status).to eq("deceased")
+      end
+
+      it "triggers PuroEarthPassportWorker" do
+        tree = create(:tree, status: :active)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+
+        expect(PuroEarthPassportWorker).to receive(:perform_async).with(record.id)
+
+        described_class.new.perform(record.id)
+      end
+    end
   end
 end

@@ -864,7 +864,9 @@ CREATE TABLE public.maintenance_records (
     parts_cost numeric(10,2),
     hardware_verified boolean DEFAULT false NOT NULL,
     latitude numeric(10,6),
-    longitude numeric(10,6)
+    longitude numeric(10,6),
+    biomass_yield_kg numeric(10,2),
+    biomass_passport_tx_hash character varying
 );
 
 
@@ -4124,6 +4126,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260314170000'),
 ('20260311163811'),
 ('20260311160000'),
 ('20260311125000'),
