@@ -44,6 +44,7 @@ RSpec.describe MaintenanceRecord, type: :model do
       expect(record).to respond_to(:action_type_cleaning?)
       expect(record).to respond_to(:action_type_repair?)
       expect(record).to respond_to(:action_type_decommissioning?)
+      expect(record).to respond_to(:action_type_biomass_extraction?)
     end
   end
 
@@ -132,6 +133,35 @@ RSpec.describe MaintenanceRecord, type: :model do
     end
 
     # -----------------------------------------------------------------------
+    # Afterlife Economy: biomass_yield_kg (Puro.earth D-MRV)
+    # -----------------------------------------------------------------------
+    describe "biomass_yield_kg" do
+      it "is required for biomass_extraction" do
+        record = build(:maintenance_record, action_type: :biomass_extraction,
+                       notes: "Extracted dead wood for Biochar.",
+                       biomass_yield_kg: nil)
+        expect(record).not_to be_valid
+        expect(record.errors[:biomass_yield_kg]).to be_present
+      end
+
+      it "must be greater than 0 for biomass_extraction" do
+        record = build(:maintenance_record, action_type: :biomass_extraction,
+                       notes: "Extracted dead wood for Biochar.",
+                       biomass_yield_kg: 0)
+        expect(record).not_to be_valid
+        expect(record.errors[:biomass_yield_kg]).to be_present
+      end
+
+      it "accepts positive value for biomass_extraction" do
+        expect(build(:maintenance_record, :biomass_extraction)).to be_valid
+      end
+
+      it "does not require biomass_yield_kg for other action types" do
+        expect(build(:maintenance_record, action_type: :inspection, biomass_yield_kg: nil)).to be_valid
+      end
+    end
+
+    # -----------------------------------------------------------------------
     # GPS Coordinates (anti-sofa-repair)
     # -----------------------------------------------------------------------
     describe "coordinates" do
@@ -186,6 +216,10 @@ RSpec.describe MaintenanceRecord, type: :model do
 
       it "does NOT require photos for :decommissioning" do
         expect(build(:maintenance_record, action_type: :decommissioning)).to be_valid
+      end
+
+      it "does NOT require photos for :biomass_extraction" do
+        expect(build(:maintenance_record, :biomass_extraction)).to be_valid
       end
     end
   end

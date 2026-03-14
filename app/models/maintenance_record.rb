@@ -15,12 +15,16 @@ class MaintenanceRecord < ApplicationRecord
   end
 
   # --- ТИПИ РОБІТ (The Intervention) ---
+  # biomass_extraction (5) — Afterlife Economy: extraction of dead wood for
+  # Puro.earth Biochar CORC certification. Triggers D-MRV "Biomass Passport"
+  # generation via PuroEarthPassportWorker, anchoring provenance on-chain.
   enum :action_type, {
-    installation: 0,    # Монтаж
-    inspection: 1,      # Огляд
-    cleaning: 2,        # Очищення (панелі/датчики)
-    repair: 3,          # Ремонт заліза
-    decommissioning: 4  # Демонтаж
+    installation: 0,      # Монтаж
+    inspection: 1,        # Огляд
+    cleaning: 2,          # Очищення (панелі/датчики)
+    repair: 3,            # Ремонт заліза
+    decommissioning: 4,   # Демонтаж
+    biomass_extraction: 5  # Вилучення біомаси (Puro.earth Biochar)
   }, prefix: true
 
   # --- ВАЛІДАЦІЇ ---
@@ -34,6 +38,11 @@ class MaintenanceRecord < ApplicationRecord
 
   # Hardware State Sync
   validates :hardware_verified, inclusion: { in: [ true, false ] }
+
+  # Afterlife Economy: biomass yield is mandatory for extraction records (D-MRV proof)
+  validates :biomass_yield_kg, presence: true,
+            numericality: { greater_than: 0 },
+            if: :action_type_biomass_extraction?
 
   # System-generated records (provisioning, slashing) may skip photo requirement
   attr_accessor :skip_photo_validation

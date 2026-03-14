@@ -24,6 +24,14 @@ class EcosystemHealingWorker
         target.decommission!
       end
 
+      # 3a. AFTERLIFE ECONOMY (Puro.earth Biochar D-MRV)
+      # Biomass extraction marks a dead tree and initiates Biomass Passport generation
+      # for Puro.earth CORC certification. The passport anchors provenance on-chain.
+      if target.is_a?(Tree) && record.action_type_biomass_extraction?
+        target.declare_deceased! unless target.deceased?
+        PuroEarthPassportWorker.perform_async(record.id)
+      end
+
       # 4. [ВИПРАВЛЕНО]: ЗАКРИТТЯ ТРИВОГИ (Enum Method Fix)
       # Тепер використовуємо status_resolved? замість resolved?
       alert = record.ews_alert

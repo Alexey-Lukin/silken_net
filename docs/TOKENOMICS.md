@@ -124,6 +124,45 @@ Threshold-based automatic payouts for catastrophic events:
 - **Threshold:** Configurable percentage of anomalous `AiInsight` records
 - **Payout flow:** `ParametricInsurance#evaluate_daily_health!` → `InsurancePayoutWorker` → `BlockchainTransaction`
 
+## Afterlife Economy — Puro.earth Biochar Integration
+
+When a tree dies (biological death or catastrophic event), its biomass retains economic value through Biochar carbon removal credits (CORCs) on the [Puro.earth](https://puro.earth) registry.
+
+### Flow
+
+```
+Tree dies → Forester extracts dead wood → MaintenanceRecord (biomass_extraction)
+         ↓
+EcosystemHealingWorker → Tree status → :deceased
+         ↓
+PuroEarthPassportWorker → D-MRV "Biomass Passport" generated
+         ↓
+Payload: { tree_did, biomass_yield_kg, extraction_date, gps_coordinates, lifetime_telemetry_hash }
+         ↓
+Blockchain anchoring → biomass_passport_tx_hash stored on MaintenanceRecord
+         ↓
+Puro.earth registry → Biochar CORC issuance (future integration)
+```
+
+### D-MRV Biomass Passport
+
+The Digital Measurement, Reporting and Verification (D-MRV) passport provides tamper-proof provenance for extracted biomass:
+
+| Field | Source | Purpose |
+|-------|--------|---------|
+| `tree_did` | Tree.did (SNET-XXXXXXXX) | Unique hardware identity of the source tree |
+| `biomass_yield_kg` | MaintenanceRecord | Weight of extracted dead wood |
+| `extraction_date` | MaintenanceRecord.performed_at | Timestamp of physical extraction |
+| `gps_coordinates` | MaintenanceRecord or Tree | Geographic proof of origin |
+| `lifetime_telemetry_hash` | SHA-256 of telemetry history | Tamper-proof link to tree's sensor data |
+
+### Economic Impact
+
+- Dead trees continue generating value through Biochar CORCs instead of being waste
+- Each CORC represents verified carbon removal (Puro Standard methodology)
+- Lifetime telemetry hash ensures the biomass originated from a monitored, verified tree
+- GPS coordinates prevent double-counting across forest plots
+
 ## Smart Contracts
 
 ### SilkenCarbonCoin.sol (Polygon)
