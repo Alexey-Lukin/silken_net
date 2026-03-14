@@ -111,14 +111,14 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
 
       it "logs satellite pending message for unverified alerts" do
         create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :unverified)
-        expect(Rails.logger).to receive(:info).with(/очікуємо супутникову верифікацію/)
+        expect(Rails.logger).to receive(:info).with(/\[Insurance\] Виплата відкладена — очікуємо супутникову верифікацію для кластера ##{cluster.id}/)
 
         described_class.new.perform(insurance.id)
       end
 
       it "logs manual audit message for inconclusive alerts" do
         create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :inconclusive)
-        expect(Rails.logger).to receive(:warn).with(/ручний DAO-аудит/)
+        expect(Rails.logger).to receive(:warn).with(/\[Insurance\] Виплата заблокована — потрібен ручний DAO-аудит для кластера ##{cluster.id}/)
 
         described_class.new.perform(insurance.id)
       end

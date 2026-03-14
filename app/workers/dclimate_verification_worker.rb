@@ -19,9 +19,13 @@ class DclimateVerificationWorker
   sidekiq_retries_exhausted do |job, _exception|
     alert = EwsAlert.find_by(id: job["args"].first)
     if alert
+      audit_note = "Orbital verification failed due to prolonged canopy/cloud cover. Manual DAO audit required."
+      existing_notes = alert.resolution_notes
+      combined_notes = existing_notes.present? ? "#{existing_notes}\n[#{Time.current.iso8601}] #{audit_note}" : audit_note
+
       alert.update!(
         satellite_status: :inconclusive,
-        resolution_notes: "Orbital verification failed due to prolonged canopy/cloud cover. Manual DAO audit required."
+        resolution_notes: combined_notes
       )
       Rails.logger.warn "☁️ [Cosmic Eye Exhausted] Алерт ##{alert.id} — верифікація не вдалася після всіх спроб. " \
                         "Потрібен ручний DAO-аудит."
