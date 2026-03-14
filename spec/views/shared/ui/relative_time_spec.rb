@@ -30,9 +30,8 @@ RSpec.describe Views::Shared::UI::RelativeTime do
       expect(html).to match(/ago/)
     end
 
-    it "uses text-tiny instead of arbitrary text-[10px]" do
-      expect(html).to include("text-tiny")
-      expect(html).not_to include("text-[")
+    it "uses design system text-muted token" do
+      expect(html).to include("text-gaia-text-muted")
     end
   end
 

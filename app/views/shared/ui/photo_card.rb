@@ -26,8 +26,9 @@ module Views
         private
 
         def card_classes
-          "relative group border border-emerald-900/50 bg-zinc-950 overflow-hidden " \
-            "hover:border-emerald-500 transition-all duration-200 ease-in-out"
+          "relative group border border-gaia-border bg-gaia-surface overflow-hidden " \
+            "shadow-sm dark:shadow-none " \
+            "hover:border-gaia-primary transition-all duration-200 ease-in-out"
         end
 
         def render_preview
@@ -53,21 +54,21 @@ module Views
 
         def preview_link_classes
           "block aspect-square overflow-hidden " \
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
         end
 
         def render_file_fallback
-          div(class: "w-full h-full flex flex-col items-center justify-center gap-1 p-2 bg-zinc-900") do
-            span(class: "text-emerald-700 text-2xl", aria_hidden: "true") { "📎" }
-            span(class: "text-mini text-emerald-700 font-mono truncate text-center") { @photo.filename.to_s }
-            span(class: "text-micro text-gray-600") { helpers.number_to_human_size(@photo.byte_size) }
+          div(class: "w-full h-full flex flex-col items-center justify-center gap-1 p-2 bg-gaia-surface-alt") do
+            span(class: "text-gaia-primary text-2xl", aria_hidden: "true") { "📎" }
+            span(class: "text-mini text-gaia-primary font-mono truncate text-center") { @photo.filename.to_s }
+            span(class: "text-micro text-gaia-text-muted") { helpers.number_to_human_size(@photo.byte_size) }
           end
         end
 
         def render_meta_overlay
           div(class: "absolute bottom-0 inset-x-0 bg-black/80 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200") do
-            p(class: "text-micro font-mono text-emerald-400 truncate") { @photo.filename.to_s }
-            p(class: "text-micro text-gray-500") { helpers.number_to_human_size(@photo.byte_size) }
+            p(class: "text-micro font-mono text-gaia-primary truncate") { @photo.filename.to_s }
+            p(class: "text-micro text-gaia-text-muted") { helpers.number_to_human_size(@photo.byte_size) }
           end
         end
 
@@ -85,9 +86,9 @@ module Views
         end
 
         def delete_button_classes
-          "h-6 w-6 bg-red-900/80 text-red-200 text-sm font-bold " \
-            "hover:bg-red-700 active:bg-red-800 " \
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 " \
+          "h-6 w-6 bg-status-danger text-status-danger-text text-sm font-bold " \
+            "hover:bg-status-danger-accent hover:text-white " \
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-accent " \
             "disabled:opacity-50 disabled:cursor-not-allowed " \
             "transition-colors duration-200 ease-in-out"
         end

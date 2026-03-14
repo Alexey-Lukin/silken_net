@@ -13,7 +13,7 @@ module Maintenance
         form_with(
           model: [ :api, :v1, @record ],
           multipart: true,
-          class: "space-y-8 p-8 border border-emerald-900 bg-zinc-950"
+          class: "space-y-8 p-8 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none"
         ) do |f|
           render_form_header(f)
 
@@ -57,8 +57,8 @@ module Maintenance
           # -----------------------------------------------------------------------
           # OpEx ФІНАНСОВИЙ ОБЛІК (Series C)
           # -----------------------------------------------------------------------
-          div(class: "border border-emerald-900/30 p-4 space-y-4") do
-            p(class: "text-mini uppercase tracking-widest text-emerald-800 mb-2") { "OpEx Financial Tracking" }
+          div(class: "border border-gaia-border p-4 space-y-4") do
+            p(class: "text-mini uppercase tracking-widest text-gaia-text-muted mb-2") { "OpEx Financial Tracking" }
             div(class: "grid grid-cols-2 gap-6") do
               field_container("Labor Hours") do
                 f.number_field :labor_hours, step: 0.5, min: 0, class: input_classes,
@@ -74,12 +74,12 @@ module Maintenance
           # -----------------------------------------------------------------------
           # GPS КООРДИНАТИ (Anti-Sofa-Repair Protocol)
           # -----------------------------------------------------------------------
-          div(class: "border border-emerald-900/30 p-4 space-y-4") do
+          div(class: "border border-gaia-border p-4 space-y-4") do
             div(class: "flex justify-between items-center mb-2") do
-              p(class: "text-mini uppercase tracking-widest text-emerald-800") { "Intervention Coordinates" }
+              p(class: "text-mini uppercase tracking-widest text-gaia-text-muted") { "Intervention Coordinates" }
               button(
                 type: "button",
-                class: "text-micro border border-emerald-900 text-emerald-700 px-2 py-1 hover:border-emerald-500 hover:text-emerald-500 transition-all uppercase",
+                class: "text-micro border border-gaia-border text-gaia-text-muted px-2 py-1 hover:border-gaia-primary hover:text-gaia-primary transition-all uppercase",
                 data: { action: "click->maintenance-form#captureGPS" }
               ) { "⊕ Capture GPS" }
             end
@@ -99,11 +99,11 @@ module Maintenance
           # ФОТОДОКАЗИ (Evidence Protocol — Trust Protocol)
           # -----------------------------------------------------------------------
           div(
-            class: "border border-emerald-900/30 p-4 space-y-4",
+            class: "border border-gaia-border p-4 space-y-4",
             id: "photo_upload_section"
           ) do
-            p(class: "text-mini uppercase tracking-widest text-emerald-800") { "Evidence Protocol // Photos" }
-            p(class: "text-micro text-gray-600 mb-3") do
+            p(class: "text-mini uppercase tracking-widest text-gaia-text-muted") { "Evidence Protocol // Photos" }
+            p(class: "text-micro text-gaia-text-muted mb-3") do
               "Required for repair and installation. JPEG/PNG/WebP/HEIC · max 20 MB · max 10 photos"
             end
 
@@ -122,20 +122,19 @@ module Maintenance
                 multiple: true,
                 accept: "image/jpeg,image/png,image/webp,image/heic,image/heif",
                 direct_upload: true,
-                class: "w-full bg-black border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs " \
-                       "file:mr-3 file:border file:border-emerald-700 file:bg-emerald-950 " \
-                       "file:text-emerald-400 file:text-mini file:uppercase file:px-3 file:py-1 " \
-                       "focus-visible:border-emerald-500 outline-none transition-all"
+                class: "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs " \
+                       "file:mr-3 file:border file:border-gaia-border file:bg-gaia-surface-alt " \
+                       "file:text-gaia-primary file:text-mini file:uppercase file:px-3 file:py-1 " \
+                       "focus-visible:border-gaia-primary outline-none transition-all"
             end
 
             # Direct upload progress bar (активується activestorage JS)
-            div(
-              class: "hidden mt-2",
+            div(class: "hidden mt-2",
               id: "direct-upload-progress",
               data: { "direct-upload-progress-bar": "" }
             ) do
-              div(class: "h-1 bg-emerald-900 overflow-hidden") do
-                div(class: "h-full bg-emerald-500 transition-all", style: "width:0%", id: "direct-upload-bar")
+              div(class: "h-1 bg-gaia-surface-alt overflow-hidden") do
+                div(class: "h-full bg-gaia-primary transition-all", style: "width:0%", id: "direct-upload-bar")
               end
             end
           end
@@ -146,10 +145,10 @@ module Maintenance
           if @editing
             div(class: "flex items-center gap-3") do
               f.check_box :hardware_verified,
-                class: "h-4 w-4 border border-emerald-700 bg-black text-emerald-500 focus-visible:ring-0"
+                class: "h-4 w-4 border border-gaia-border bg-gaia-input-bg text-gaia-primary focus-visible:ring-0"
               label(
                 for: "maintenance_record_hardware_verified",
-                class: "text-mini uppercase tracking-widest text-gray-500 cursor-pointer"
+                class: "text-mini uppercase tracking-widest text-gaia-text-muted cursor-pointer"
               ) { "Hardware Verified — STM32 confirmed new pulse" }
             end
           end
@@ -158,14 +157,14 @@ module Maintenance
           div(class: "pt-6 flex items-center gap-4") do
             f.submit(
               @editing ? "Update Record" : "Commit to Matrix",
-              class: "flex-1 py-4 bg-emerald-900/20 border border-emerald-500 text-emerald-500 " \
-                     "uppercase text-xs tracking-widest hover:bg-emerald-500 hover:text-black " \
-                     "transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+              class: "flex-1 py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary " \
+                     "uppercase text-xs tracking-widest hover:bg-gaia-primary hover:text-black " \
+                     "transition-all cursor-pointer shadow-sm"
             )
             if @editing
               a(
                 href: helpers.api_v1_maintenance_record_path(@record),
-                class: "px-4 py-4 border border-emerald-900 text-emerald-900 hover:text-emerald-500 " \
+                class: "px-4 py-4 border border-gaia-border text-gaia-text-muted hover:text-gaia-primary " \
                        "uppercase text-mini tracking-widest transition-all"
               ) { "Cancel" }
             end
@@ -180,20 +179,20 @@ module Maintenance
 
     def render_form_header(f)
       div(class: "flex justify-between items-center mb-2") do
-        h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700") do
+        h3(class: "text-tiny uppercase tracking-[0.5em] text-gaia-text-muted") do
           @editing ? "Edit Intervention Record // ##{@record.id}" : "Register Intervention Ritual"
         end
-        span(class: "text-micro text-gray-600 font-mono") { @record.maintainable_type&.upcase || "PENDING" }
+        span(class: "text-micro text-gaia-text-muted font-mono") { @record.maintainable_type&.upcase || "PENDING" }
       end
-      hr(class: "border-emerald-900/30 mb-6")
+      hr(class: "border-gaia-border mb-6")
     end
 
     def render_errors
-      div(class: "mt-6 p-4 border border-red-900 bg-red-950/20") do
-        p(class: "text-mini uppercase tracking-widest text-red-700 mb-2") { "Validation Errors" }
+      div(class: "mt-6 p-4 border border-status-danger-accent bg-status-danger") do
+        p(class: "text-mini uppercase tracking-widest text-status-danger-text mb-2") { "Validation Errors" }
         ul(class: "space-y-1") do
           @record.errors.full_messages.each do |msg|
-            li(class: "text-tiny text-red-400 font-mono") { "× #{msg}" }
+            li(class: "text-tiny text-status-danger-accent font-mono") { "× #{msg}" }
           end
         end
       end
@@ -201,14 +200,14 @@ module Maintenance
 
     def field_container(label, &)
       div(class: "space-y-2") do
-        label(class: "text-mini uppercase tracking-widest text-gray-600") { label }
+        label(class: "text-mini uppercase tracking-widest text-gaia-label") { label }
         yield
       end
     end
 
     def input_classes
-      "w-full bg-black border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs " \
-      "focus-visible:border-emerald-500 focus-visible:ring-0 outline-none transition-all"
+      "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs " \
+      "focus-visible:border-gaia-primary focus-visible:ring-0 outline-none transition-all"
     end
   end
 end

@@ -1,0 +1,13 @@
+<%= render Views::Shared::UI::DataTable.new(
+  columns: [
+    { label: "ID", class: "w-20" },
+    { label: "Name" },
+    { label: "Status" }
+  ]
+) do %>
+  <tr>
+    <td colspan="3" class="p-10 text-center">
+      <%= render Views::Shared::UI::EmptyState.new(title: "No records found", description: "Try adjusting your filters.") %>
+    </td>
+  </tr>
+<% end %>

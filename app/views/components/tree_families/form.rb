@@ -8,7 +8,7 @@ module TreeFamilies
 
     def view_template
       div(class: "max-w-2xl mx-auto animate-in zoom-in duration-500") do
-        form_with(model: [ :api, :v1, @family ], class: "space-y-8 p-10 border border-emerald-900 bg-black") do |f|
+        form_with(model: [ :api, :v1, @family ], class: "space-y-8 p-10 border border-gaia-border bg-gaia-surface shadow-sm dark:shadow-none") do |f|
           div(class: "grid grid-cols-1 md:grid-cols-2 gap-6") do
             field_container("Species Identity") { f.text_field :name, class: input_classes, placeholder: "e.g. Дуб звичайний" }
             field_container("Scientific Name (Latin)") { f.text_field :scientific_name, class: input_classes, placeholder: "e.g. Quercus robur" }
@@ -20,8 +20,8 @@ module TreeFamilies
             field_container("Bark Thickness (mm)") { f.number_field :bark_thickness, class: input_classes }
           end
 
-          div(class: "pt-10 border-t border-emerald-900/30") do
-            f.submit "WRITE GENETIC CODE", class: "w-full py-4 bg-emerald-900/20 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-widest hover:bg-emerald-500 hover:text-black transition-all cursor-pointer"
+          div(class: "pt-10 border-t border-gaia-border") do
+            f.submit "WRITE GENETIC CODE", class: "w-full py-4 bg-gaia-primary/10 border border-gaia-primary text-gaia-primary uppercase text-xs tracking-widest hover:bg-gaia-primary hover:text-black transition-all cursor-pointer"
           end
         end
       end
@@ -31,13 +31,13 @@ module TreeFamilies
 
     def field_container(label, &block)
       div(class: "space-y-2") do
-        label(class: "text-mini uppercase tracking-widest text-emerald-800") { label }
+        label(class: "text-mini uppercase tracking-widest text-gaia-label") { label }
         yield
       end
     end
 
     def input_classes
-      "w-full bg-zinc-950 border border-emerald-900/50 text-emerald-100 p-3 font-mono text-xs focus-visible:border-emerald-500 outline-none transition-all"
+      "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs focus-visible:border-gaia-primary outline-none transition-all"
     end
   end
 end

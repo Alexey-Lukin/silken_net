@@ -24,6 +24,10 @@ RSpec.describe Views::Shared::UI::EmptyState do
       expect(html).to include("border-dashed")
     end
 
+    it "uses design system border token" do
+      expect(html).to include("border-gaia-border")
+    end
+
     it "includes role=status for screen readers" do
       expect(html).to include('role="status"')
     end
@@ -36,9 +40,8 @@ RSpec.describe Views::Shared::UI::EmptyState do
       expect(html).to include("Check hardware connections.")
     end
 
-    it "uses text-tiny instead of arbitrary text-[10px]" do
-      expect(html).to include("text-tiny")
-      expect(html).not_to include("text-[")
+    it "uses design system text-muted token" do
+      expect(html).to include("text-gaia-text-muted")
     end
   end
 

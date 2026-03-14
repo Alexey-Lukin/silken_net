@@ -59,6 +59,26 @@ RSpec.describe Views::Shared::UI::StatCard do
     end
   end
 
+  describe "design system compliance" do
+    let(:html) { render_component(label: "Trees", value: "100") }
+
+    it "uses design system surface token" do
+      expect(html).to include("bg-gaia-surface")
+    end
+
+    it "uses design system border token" do
+      expect(html).to include("border-gaia-border")
+    end
+
+    it "uses shadow-sm for light mode depth" do
+      expect(html).to include("shadow-sm")
+    end
+
+    it "disables shadow in dark mode" do
+      expect(html).to include("dark:shadow-none")
+    end
+  end
+
   describe "accessibility" do
     let(:html) { render_component(label: "Trees", value: "100") }
 
