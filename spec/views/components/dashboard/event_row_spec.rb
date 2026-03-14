@@ -6,7 +6,7 @@ RSpec.describe Dashboard::EventRow do
   let(:component_class) { described_class }
 
   def render_component(**kwargs)
-    component_class.new(**kwargs).call
+    component_class.new(**kwargs).call(context: { rails_view_context: ActionController::Base.helpers })
   end
 
   # Use allocate to bypass ActiveRecord initialization but keep class identity
