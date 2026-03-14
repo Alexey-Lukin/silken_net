@@ -15,6 +15,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     ENV["ORACLE_PRIVATE_KEY"] ||= "0x" + "a" * 64
     ENV["CARBON_COIN_CONTRACT_ADDRESS"] ||= "0x" + "0" * 40
     ENV["FOREST_COIN_CONTRACT_ADDRESS"] ||= "0x" + "1" * 40
+    ENV["DAO_TREASURY_ADDRESS"] ||= "0x" + "2" * 40
 
     unless defined?(Kredis)
       kredis_mod = Module.new do
