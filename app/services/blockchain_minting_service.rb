@@ -4,6 +4,10 @@ require "eth"
 require "bigdecimal"
 
 class BlockchainMintingService < ApplicationService
+  # [HYBRID PROTOCOL GAIA]: Dynamic Minting Tax для фінансування DAO Treasury / Parametric Insurance Pool.
+  # 2% від кожного карбонового мінтингу направляється до DAO Treasury, якщо страховий пул потребує фінансування.
+  DYNAMIC_TAX_RATE = BigDecimal("0.02")
+
   # ABI оновлено для підтримки поштучного mint та пакетного batchMint
   CONTRACT_ABI = [
     {
@@ -109,9 +113,27 @@ class BlockchainMintingService < ApplicationService
           )
         else
           # 💎 ПАКЕТНИЙ МІНТИНГ (Gas Saving Mode)
-          recipients = txs.map(&:to_address)
-          amounts = txs.map { |tx| to_wei(tx.amount) }
-          identifiers = txs.map { |tx| identifier_for(tx) }
+          # [HYBRID PROTOCOL GAIA]: Для carbon_coin при недофінансованому страховому пулі
+          # застосовується Dynamic Tax — 2% від суми кожної транзакції направляється до DAO Treasury.
+          # batchMint в Solidity підтримує array-based splitting, тому math виконується off-chain.
+          recipients = []
+          amounts = []
+          identifiers = []
+
+          txs.each do |tx|
+            if token_type == "carbon_coin" && insurance_pool_requires_funding?
+              tax_amount = (tx.amount * DYNAMIC_TAX_RATE).round(4)
+              forester_amount = tx.amount - tax_amount
+
+              recipients.push(tx.to_address, ENV.fetch("DAO_TREASURY_ADDRESS"))
+              amounts.push(to_wei(forester_amount), to_wei(tax_amount))
+              identifiers.push(identifier_for(tx), "TAX_#{identifier_for(tx)}")
+            else
+              recipients.push(tx.to_address)
+              amounts.push(to_wei(tx.amount))
+              identifiers.push(identifier_for(tx))
+            end
+          end
 
           Rails.logger.info "📦 [Web3] BatchMinting #{txs.size} транзакцій для #{token_type}..."
 
@@ -164,6 +186,13 @@ class BlockchainMintingService < ApplicationService
 
   def to_wei(amount)
     Web3::WeiConverter.to_wei(amount)
+  end
+
+  # [HYBRID PROTOCOL GAIA]: Stub для перевірки стану Parametric Insurance Pool.
+  # Повертає true, якщо страховий пул потребує додаткового фінансування (Black Swan Protection).
+  # TODO: Інтегрувати з реальним балансом DAO Treasury через on-chain query.
+  def insurance_pool_requires_funding?
+    true
   end
 
   def broadcast_tx_update(transaction)

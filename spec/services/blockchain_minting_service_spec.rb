@@ -8,6 +8,7 @@ RSpec.describe BlockchainMintingService do
     ENV["ORACLE_PRIVATE_KEY"] ||= "0x" + "a" * 64
     ENV["CARBON_COIN_CONTRACT_ADDRESS"] ||= "0x" + "0" * 40
     ENV["FOREST_COIN_CONTRACT_ADDRESS"] ||= "0x" + "1" * 40
+    ENV["DAO_TREASURY_ADDRESS"] ||= "0x" + "9" * 40
 
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
@@ -451,6 +452,99 @@ end
       tx.reload
       # When tx_hash is nil, the transaction should not be marked as sent
       expect(tx.status).not_to eq("sent")
+    end
+  end
+
+  describe "DYNAMIC_TAX_RATE constant" do
+    it "is defined as BigDecimal 0.02" do
+      expect(described_class::DYNAMIC_TAX_RATE).to eq(BigDecimal("0.02"))
+      expect(described_class::DYNAMIC_TAX_RATE).to be_a(BigDecimal)
+    end
+  end
+
+  describe "Dynamic Minting Tax (Hybrid Protocol Gaia)" do
+    let(:tree1) { create(:tree) }
+    let(:wallet1) { tree1.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved") } }
+    let(:tree2) { create(:tree) }
+    let(:wallet2) { tree2.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "c" * 40, hadron_kyc_status: "approved") } }
+    let!(:tx1) do
+      wallet1.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet1.crypto_public_address, locked_points: 1000
+      )
+    end
+    let!(:tx2) do
+      wallet2.blockchain_transactions.create!(
+        amount: 200, token_type: :carbon_coin, status: :pending,
+        to_address: wallet2.crypto_public_address, locked_points: 2000
+      )
+    end
+
+    context "with batch carbon_coin when insurance pool requires funding" do
+      it "doubles array size with forester and DAO Treasury entries" do
+        expect(mock_client).to receive(:transact) do |_c, _m, recipients, amounts, identifiers, **_|
+          expect(recipients.size).to eq(4)
+          expect(amounts.size).to eq(4)
+          expect(identifiers.size).to eq(4)
+          fake_tx_hash
+        end
+
+        described_class.call_batch([ tx1.id, tx2.id ])
+      end
+
+      it "routes tax entries to DAO_TREASURY_ADDRESS with TAX_ prefix" do
+        dao_treasury = ENV.fetch("DAO_TREASURY_ADDRESS")
+
+        expect(mock_client).to receive(:transact) do |_c, _m, recipients, _amounts, identifiers, **_|
+          expect(recipients[1]).to eq(dao_treasury)
+          expect(recipients[3]).to eq(dao_treasury)
+          expect(identifiers[1]).to start_with("TAX_")
+          expect(identifiers[3]).to start_with("TAX_")
+          fake_tx_hash
+        end
+
+        described_class.call_batch([ tx1.id, tx2.id ])
+      end
+    end
+
+    context "with batch forest_coin transactions" do
+      before do
+        tx1.update_column(:token_type, "forest_coin")
+        tx2.update_column(:token_type, "forest_coin")
+      end
+
+      it "does not apply dynamic tax for forest_coin" do
+        expect(mock_client).to receive(:transact) do |_c, _m, recipients, amounts, _identifiers, **_|
+          expect(recipients.size).to eq(2)
+          expect(amounts.size).to eq(2)
+          fake_tx_hash
+        end
+
+        described_class.call_batch([ tx1.id, tx2.id ])
+      end
+    end
+
+    context "when insurance pool does not require funding" do
+      before do
+        allow_any_instance_of(described_class).to receive(:insurance_pool_requires_funding?).and_return(false)
+      end
+
+      it "does not apply tax split for carbon_coin" do
+        expect(mock_client).to receive(:transact) do |_c, _m, recipients, amounts, _identifiers, **_|
+          expect(recipients.size).to eq(2)
+          expect(amounts.size).to eq(2)
+          fake_tx_hash
+        end
+
+        described_class.call_batch([ tx1.id, tx2.id ])
+      end
+    end
+  end
+
+  describe "#insurance_pool_requires_funding?" do
+    it "returns true (stub for underfunded pool)" do
+      service = described_class.new([ -1 ])
+      expect(service.send(:insurance_pool_requires_funding?)).to be true
     end
   end
 end
