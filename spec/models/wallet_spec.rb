@@ -171,6 +171,77 @@ RSpec.describe Wallet, type: :model do
     end
   end
 
+  describe "toucan_bridged_balance validation" do
+    it "rejects negative toucan_bridged_balance" do
+      wallet = create(:tree).wallet
+      wallet.toucan_bridged_balance = -1
+
+      expect(wallet).not_to be_valid
+      expect(wallet.errors[:toucan_bridged_balance]).to include("must be greater than or equal to 0")
+    end
+  end
+
+  describe "#lock_for_toucan_bridge!" do
+    let(:organization) { create(:organization) }
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:tree) { create(:tree, cluster: cluster) }
+    let(:wallet) { tree.wallet }
+
+    before do
+      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+      wallet.update!(balance: 5000)
+    end
+
+    it "deducts amount from balance and adds to locked_balance" do
+      wallet.lock_for_toucan_bridge!(1000)
+      wallet.reload
+
+      expect(wallet.balance).to eq(4000)
+      expect(wallet.locked_balance).to eq(1000)
+    end
+
+    it "creates a pending blockchain transaction with correct notes" do
+      tx = wallet.lock_for_toucan_bridge!(1000)
+
+      expect(tx).to be_persisted
+      expect(tx.status).to eq("pending")
+      expect(tx.token_type).to eq("carbon_coin")
+      expect(tx.locked_points).to eq(1000)
+      expect(tx.notes).to eq("Bridging to Toucan Protocol (TCO2)")
+    end
+
+    it "returns the created blockchain transaction" do
+      tx = wallet.lock_for_toucan_bridge!(1000)
+
+      expect(tx).to be_a(BlockchainTransaction)
+      expect(tx.amount).to eq(1000)
+    end
+
+    it "raises when balance is insufficient" do
+      wallet.update!(balance: 100)
+
+      expect {
+        wallet.lock_for_toucan_bridge!(500)
+      }.to raise_error(RuntimeError, /Недостатньо коштів для Toucan Bridge/)
+    end
+
+    it "raises when no crypto address is available" do
+      wallet.update!(crypto_public_address: nil)
+      organization.update_column(:crypto_public_address, nil)
+
+      expect {
+        wallet.lock_for_toucan_bridge!(100)
+      }.to raise_error(RuntimeError, /крипто-адреса/)
+    end
+
+    it "uses organization crypto address as fallback" do
+      wallet.update!(crypto_public_address: nil)
+
+      tx = wallet.lock_for_toucan_bridge!(100)
+      expect(tx.to_address).to eq(organization.crypto_public_address)
+    end
+  end
+
   describe "#lock_and_mint! edge cases" do
     let(:organization) { create(:organization) }
     let(:cluster) { create(:cluster, organization: organization) }

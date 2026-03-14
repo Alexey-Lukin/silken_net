@@ -17,6 +17,7 @@ class Wallet < ApplicationRecord
   validates :balance, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :locked_balance, numericality: { greater_than_or_equal_to: 0 }
   validates :esg_retired_balance, numericality: { greater_than_or_equal_to: 0 }
+  validates :toucan_bridged_balance, numericality: { greater_than_or_equal_to: 0 }
 
   # SCC = Silken Carbon Coin — public-facing alias for the internal balance column.
   alias_attribute :scc_balance, :balance
@@ -129,6 +130,31 @@ class Wallet < ApplicationRecord
 
     broadcast_balance_update
     tx
+  end
+
+  # --- TOUCAN BRIDGE (TCO2 Interoperability) ---
+
+  # Блокування SCC для бриджингу в Toucan Protocol (TCO2).
+  # Переводить кошти з balance → locked_balance та створює BlockchainTransaction
+  # зі статусом :pending для подальшої обробки ToucanBridgeWorker.
+  def lock_for_toucan_bridge!(amount)
+    transaction do
+      lock!
+
+      raise "⚠️ [Wallet] Недостатньо коштів для Toucan Bridge (Баланс: #{balance}, Потрібно: #{amount})" if balance < amount
+
+      decrement!(:balance, amount)
+      increment!(:locked_balance, amount)
+
+      blockchain_transactions.create!(
+        amount: amount,
+        token_type: :carbon_coin,
+        status: :pending,
+        to_address: crypto_public_address.presence || organization&.crypto_public_address || raise("🛑 [Wallet] Відсутня крипто-адреса для Toucan Bridge"),
+        locked_points: amount,
+        notes: "Bridging to Toucan Protocol (TCO2)"
+      )
+    end
   end
 
   # Трансляція оновленого стану гаманця через Turbo Streams
