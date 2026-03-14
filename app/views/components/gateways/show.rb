@@ -114,6 +114,8 @@ module Gateways
         div(class: "space-y-4 font-mono text-compact") do
           config_row("Cluster", @gateway.cluster&.name || "UNASSIGNED")
           config_row("Sleep Interval", "#{@gateway.config_sleep_interval_s || 60}s")
+          config_row("Firmware Version", @gateway.firmware_version || "—")
+          config_row("Firmware Hash", @gateway.firmware_hash&.first(16) || "—")
           config_row("Mesh Mode", "Enabled")
 
           button(

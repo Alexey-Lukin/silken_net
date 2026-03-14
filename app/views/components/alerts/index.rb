@@ -16,6 +16,7 @@ module Alerts
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { "Severity" }
+                th(scope: "col", class: "p-4") { "Alert Type" }
                 th(scope: "col", class: "p-4") { "Source" }
                 th(scope: "col", class: "p-4") { "Event / Message" }
                 th(scope: "col", class: "p-4") { "Timestamp" }

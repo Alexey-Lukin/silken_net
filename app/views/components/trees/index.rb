@@ -60,7 +60,10 @@ module Trees
       ) do
         # DID та Статус
         div(class: "flex justify-between items-start mb-3") do
-          span(class: "text-mini font-mono text-emerald-800 group-hover:text-emerald-400") { tree.did.last(6) }
+          div do
+            span(class: "text-mini font-mono text-emerald-800 group-hover:text-emerald-400") { tree.did.last(6) }
+            span(class: tokens("ml-1 text-micro uppercase font-mono", tree_status_text_class(tree))) { tree.status }
+          end
           div(class: tokens("h-1.5 w-1.5 rounded-full", tree_status_led(tree)))
         end
 
@@ -87,6 +90,15 @@ module Trees
       return "bg-red-600 animate-pulse shadow-[0_0_8px_red]" if tree.under_threat?
       return "bg-gray-800" if tree.last_seen_at.nil? || tree.last_seen_at < 24.hours.ago
       "bg-emerald-500 shadow-[0_0_5px_#10b981]"
+    end
+
+    def tree_status_text_class(tree)
+      case tree.status
+      when "active" then "text-emerald-700"
+      when "dormant" then "text-gray-600"
+      when "removed", "deceased" then "text-red-800"
+      else "text-gray-700"
+      end
     end
 
     def charge_color(percent)

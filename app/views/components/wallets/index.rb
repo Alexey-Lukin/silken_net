@@ -61,6 +61,12 @@ module Wallets
         div(class: "mb-6") do
           span(class: "text-3xl font-light text-white") { wallet.scc_balance.to_f.round(4) }
           span(class: "ml-2 text-xs text-emerald-600 font-mono") { "SCC" }
+          if wallet.locked_balance.to_f > 0
+            div(class: "mt-1 text-micro font-mono text-status-warning-text") { "🔒 #{wallet.locked_balance.to_f.round(2)} locked" }
+          end
+          if wallet.esg_retired_balance.to_f > 0
+            div(class: "mt-1 text-micro font-mono text-gray-600") { "♻ #{wallet.esg_retired_balance.to_f.round(2)} retired" }
+          end
         end
 
         div(class: "flex justify-between items-center pt-4 border-t border-emerald-900/30") do

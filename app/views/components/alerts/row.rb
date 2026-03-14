@@ -10,6 +10,7 @@ module Alerts
     def view_template
       tr(id: "alert_#{@alert.id}", class: row_classes) do
         td(class: "p-4") { severity_badge }
+        td(class: "p-4 text-mini uppercase text-gray-400 tracking-widest") { @alert.alert_type.to_s.humanize }
         td(class: "p-4 text-emerald-500") { "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}" }
         td(class: "p-4 text-gray-400") { @alert.message }
         td(class: "p-4 text-tiny text-gray-600") { @alert.created_at.strftime("%H:%M:%S") }
