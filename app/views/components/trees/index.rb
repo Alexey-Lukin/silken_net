@@ -20,7 +20,7 @@ module Trees
         if @pagy
           render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
-            url_helper: ->(page:) { helpers.api_v1_cluster_trees_path(@cluster, page: page) }
+            url_helper: ->(page:) { api_v1_cluster_trees_path(@cluster, page: page) }
           )
         end
       end
@@ -55,7 +55,7 @@ module Trees
       charge_percent = tree.charge_percentage
 
       a(
-        href: helpers.api_v1_tree_path(tree),
+        href: api_v1_tree_path(tree),
         class: "group relative p-3 border border-emerald-900/50 bg-black hover:border-emerald-500 transition-all duration-300"
       ) do
         # DID та Статус

@@ -24,7 +24,7 @@ module Wallets
         if @pagy
           render Views::Shared::UI::Pagination.new(
             pagy: @pagy,
-            url_helper: ->(page:) { helpers.api_v1_wallets_path(page: page) }
+            url_helper: ->(page:) { api_v1_wallets_path(page: page) }
           )
         end
       end
@@ -72,7 +72,7 @@ module Wallets
         div(class: "flex justify-between items-center pt-4 border-t border-emerald-900/30") do
           render Views::Shared::Web3::Address.new(address: wallet.crypto_public_address, truncate: 10)
           a(
-            href: helpers.api_v1_wallet_path(wallet),
+            href: api_v1_wallet_path(wallet),
             class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-white transition-colors"
           ) { "Audit Ledger →" }
         end

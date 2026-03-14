@@ -30,7 +30,7 @@ module Organizations
 
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { helpers.api_v1_organizations_path(page: page) }
+          url_helper: ->(page:) { api_v1_organizations_path(page: page) }
         )
       end
     end
@@ -46,7 +46,7 @@ module Organizations
           render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end
         td(class: "p-4 text-right") do
-          a(href: helpers.api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View #{org.name} profile") { "VIEW_PROFILE →" }
+          a(href: api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View #{org.name} profile") { "VIEW_PROFILE →" }
         end
       end
     end

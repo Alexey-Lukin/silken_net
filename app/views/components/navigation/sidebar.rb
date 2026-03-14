@@ -22,39 +22,39 @@ module Navigation
         nav(class: "flex-1 px-4 py-8 space-y-10") do
           # СТРАТЕГІЧНИЙ КОНТУР
           section_group("Strategic Insight") do
-            nav_item("Oracle Visions", helpers.api_v1_oracle_visions_path, "eye")
-            nav_item("Treasury Matrix", helpers.api_v1_wallets_path, "bank")
-            nav_item("NaaS Contracts", helpers.api_v1_contracts_path, "clipboard")
-            nav_item("Blockchain Ledger", helpers.api_v1_blockchain_transactions_path, "bank")
-            nav_item("Reports Archive", helpers.api_v1_reports_path, "clipboard")
+            nav_item("Oracle Visions", api_v1_oracle_visions_path, "eye")
+            nav_item("Treasury Matrix", api_v1_wallets_path, "bank")
+            nav_item("NaaS Contracts", api_v1_contracts_path, "clipboard")
+            nav_item("Blockchain Ledger", api_v1_blockchain_transactions_path, "bank")
+            nav_item("Reports Archive", api_v1_reports_path, "clipboard")
           end
 
           # ОПЕРАЦІЙНИЙ КОНТУР
           section_group("Forest Operations") do
-            nav_item("Threat Alerts", helpers.api_v1_alerts_path, "zap", badge: @ews_alert_count)
-            nav_item("Soldier Fleet", helpers.api_v1_clusters_path, "tree")
-            nav_item("Maintenance Log", helpers.api_v1_maintenance_records_path, "clipboard")
-            nav_item("Crew Registry", helpers.api_v1_users_path, "users")
-            nav_item("Clan Hierarchy", helpers.api_v1_organizations_path, "users")
+            nav_item("Threat Alerts", api_v1_alerts_path, "zap", badge: @ews_alert_count)
+            nav_item("Soldier Fleet", api_v1_clusters_path, "tree")
+            nav_item("Maintenance Log", api_v1_maintenance_records_path, "clipboard")
+            nav_item("Crew Registry", api_v1_users_path, "users")
+            nav_item("Clan Hierarchy", api_v1_organizations_path, "users")
           end
 
           # ТЕХНІЧНИЙ КОНТУР
           section_group("Neural Network") do
-            nav_item("Queen Relays", helpers.api_v1_gateways_path, "radio")
-            nav_item("Species DNA", helpers.api_v1_tree_families_path, "activity") # Нове: Геноми
-            nav_item("Firmware OTA", helpers.api_v1_firmwares_path, "cpu")
-            nav_item("Live Telemetry", helpers.live_api_v1_telemetry_index_path, "activity", pulse: true)
-            nav_item("Initiate Node", helpers.new_api_v1_provisioning_path, "zap") # Швидкий доступ до ініціації
+            nav_item("Queen Relays", api_v1_gateways_path, "radio")
+            nav_item("Species DNA", api_v1_tree_families_path, "activity") # Нове: Геноми
+            nav_item("Firmware OTA", api_v1_firmwares_path, "cpu")
+            nav_item("Live Telemetry", live_api_v1_telemetry_index_path, "activity", pulse: true)
+            nav_item("Initiate Node", new_api_v1_provisioning_path, "zap") # Швидкий доступ до ініціації
           end
 
           # АДМІНІСТРУВАННЯ
           section_group("Administration") do
-            nav_item("Account Security", helpers.api_v1_account_security_path, "eye")
-            nav_item("Notifications", helpers.api_v1_notifications_settings_path, "radio")
-            nav_item("Org Settings", helpers.api_v1_settings_path, "cpu")
-            nav_item("Audit Log", helpers.api_v1_audit_logs_path, "eye")
-            nav_item("System Audits", helpers.api_v1_system_audits_path, "clipboard")
-            nav_item("System Health", helpers.api_v1_system_health_path, "activity")
+            nav_item("Account Security", api_v1_account_security_path, "eye")
+            nav_item("Notifications", api_v1_notifications_settings_path, "radio")
+            nav_item("Org Settings", api_v1_settings_path, "cpu")
+            nav_item("Audit Log", api_v1_audit_logs_path, "eye")
+            nav_item("System Audits", api_v1_system_audits_path, "clipboard")
+            nav_item("System Health", api_v1_system_health_path, "activity")
           end
         end
 

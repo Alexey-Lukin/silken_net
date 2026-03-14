@@ -35,9 +35,9 @@ module Notifications
       div(class: "p-6 border border-emerald-900 bg-black") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Channel Configuration" }
 
-        form(action: helpers.api_v1_notifications_settings_path, method: "post", class: "space-y-6") do
+        form(action: api_v1_notifications_settings_path, method: "post", class: "space-y-6") do
           input(type: "hidden", name: "_method", value: "patch")
-          input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+          input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
 
           render_field("Email Address", "email", @user.email_address, disabled: true, hint: "Змінити email можна в профілі.")
           render_field("Phone Number (E.164)", "phone_number", @user.phone_number, placeholder: "+380501234567")

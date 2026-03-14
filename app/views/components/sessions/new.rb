@@ -16,7 +16,7 @@ module Sessions
         div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
           render_portal_header
 
-          form_with(url: helpers.api_v1_login_path, method: :post, class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do |f|
+          form_with(url: api_v1_login_path, method: :post, class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do |f|
             render_flash_messages
 
             div(class: "space-y-6") do
@@ -79,7 +79,7 @@ module Sessions
 
     def render_forgot_password_link
       div(class: "text-right") do
-        a(href: helpers.api_v1_forgot_password_path, class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors") do
+        a(href: api_v1_forgot_password_path, class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors") do
           "Forgot Access Code?"
         end
       end

@@ -14,7 +14,7 @@ module OracleVisions
           plain "Simulation Engine // What-If?"
         end
 
-        form(action: helpers.simulate_api_v1_oracle_visions_path, method: "post", data: { turbo_frame: "simulation_results" }) do
+        form(action: simulate_api_v1_oracle_visions_path, method: "post", data: { turbo_frame: "simulation_results" }) do
           authenticity_token_input
 
           # Вибір контексту симуляції (Кластер)
@@ -52,7 +52,7 @@ module OracleVisions
     end
 
     def authenticity_token_input
-      input(type: "hidden", name: "authenticity_token", value: helpers.form_authenticity_token)
+      input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
     end
   end
 end

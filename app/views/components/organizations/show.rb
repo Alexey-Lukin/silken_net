@@ -89,7 +89,7 @@ module Organizations
                   td(class: "p-4 text-gray-400") { "#{cluster.total_active_trees} Soldiers" }
                   td(class: "p-4 text-right") do
                     a(
-                      href: helpers.api_v1_cluster_path(cluster),
+                      href: api_v1_cluster_path(cluster),
                       class: "text-emerald-600 hover:text-white transition-all uppercase text-mini focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
                       aria_label: "Open #{cluster.name} cluster matrix"
                     ) { "Open Matrix →" }

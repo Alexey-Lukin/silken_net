@@ -50,7 +50,7 @@ module Gateways
       div(class: "flex justify-between items-center mt-4 pt-4 border-t border-emerald-900/50") do
         p(class: "text-mini font-mono text-gray-600") { @gateway.last_seen_at&.strftime("%H:%M // %d.%m") || "SILENT" }
         a(
-          href: helpers.api_v1_gateway_path(@gateway),
+          href: api_v1_gateway_path(@gateway),
           class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-emerald-300 transition-colors"
         ) { "Open Relay →" }
       end

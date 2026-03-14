@@ -90,12 +90,12 @@ class DashboardLayout < ApplicationComponent
       ol(class: "flex items-center gap-2") do
         li do
           a(
-            href: helpers.api_v1_dashboard_index_path,
+            href: api_v1_dashboard_index_path,
             class: "hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors duration-200"
           ) { "Citadel" }
         end
 
-        # Парсинг шляху для крихт — використовуємо @current_path замість helpers.request.path
+        # Парсинг шляху для крихт — використовуємо @current_path замість request.path
         path_segments = @current_path.split("/").reject(&:empty?).drop(2) # Виключаємо api/v1
 
         path_segments.each_with_index do |segment, index|

@@ -61,7 +61,7 @@ module Dashboard
         end
 
         a(
-          href: helpers.api_v1_alerts_path,
+          href: api_v1_alerts_path,
           class: "mt-8 text-center py-2 border border-emerald-900 text-mini uppercase text-emerald-700 hover:text-emerald-400 hover:border-emerald-700 transition-all"
         ) { "Open Mission Log →" }
       end

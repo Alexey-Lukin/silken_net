@@ -163,7 +163,7 @@ module Maintenance
             )
             if @editing
               a(
-                href: helpers.api_v1_maintenance_record_path(@record),
+                href: api_v1_maintenance_record_path(@record),
                 class: "px-4 py-4 border border-gaia-border text-gaia-text-muted hover:text-gaia-primary " \
                        "uppercase text-mini tracking-widest transition-all"
               ) { "Cancel" }

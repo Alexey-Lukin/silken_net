@@ -307,6 +307,41 @@ RSpec.describe InsightGeneratorService, type: :service do
         # homeostasis (0) → base 0.0, temp=-10 (<-5) → +0.1
         expect(insight.stress_index).to eq(0.1)
       end
+
+      it "returns stress_index 1.0 for anomaly status (max_status >= 2)" do
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 5,
+          bio_status: :anomaly, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        # anomaly (2) → return 1.0 immediately
+        expect(insight.stress_index).to eq(1.0)
+      end
+
+      it "applies base stress 0.6 for status 1 with combined penalties" do
+        create(:telemetry_log, tree: tree,
+          temperature_c: 40.0, voltage_mv: 3500, z_value: 3.0,
+          acoustic_events: 2, growth_points: 5,
+          bio_status: :stress, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        # stress (1) → base 0.6, z=3.0 (>2.0) → +0.2, temp=40 (>35) → +0.1 = 0.9, min(0.9, 0.99)
+        expect(insight.stress_index).to eq(0.9)
+      end
+
+      it "returns combined maximum of 0.9 for status 1 with all penalties applied" do
+        service = described_class.new
+        # status=1 (base=0.6) + z>2.0 (+0.2) + temp>35 (+0.1) = 0.9
+        result = service.send(:calculate_stress_index, 1, 40.0, 0, 3.0)
+        expect(result).to eq(0.9)
+      end
     end
 
     context "with cluster aggregation and fraud" do

@@ -81,6 +81,21 @@ RSpec.describe Web3::HttpClient do
         )
       }.to raise_error(Web3::HttpClient::RequestError, /Test connection error \(HTTPX::ConnectionError\)/)
     end
+
+    it "wraps unexpected StandardError in RequestError" do
+      response_body = instance_double(HTTPX::Response::Body)
+      allow(response_body).to receive(:to_s).and_raise(Encoding::UndefinedConversionError, "binary to UTF-8")
+      success_response = instance_double(HTTPX::Response, status: 200, body: response_body)
+      allow(success_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(false)
+      allow(configured_session).to receive(:post).and_return(success_response)
+
+      expect {
+        described_class.post("https://api.example.com/data",
+          body: { key: "value" },
+          service_name: "Filecoin"
+        )
+      }.to raise_error(Web3::HttpClient::RequestError, /Filecoin connection error: binary to UTF-8/)
+    end
   end
 
   describe ".get" do

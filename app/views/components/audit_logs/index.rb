@@ -13,7 +13,7 @@ module AuditLogs
         audit_table
         render Views::Shared::UI::Pagination.new(
           pagy: @pagy,
-          url_helper: ->(page:) { helpers.api_v1_audit_logs_path(page: page) }
+          url_helper: ->(page:) { api_v1_audit_logs_path(page: page) }
         )
       end
     end
@@ -75,7 +75,7 @@ module AuditLogs
           end
         end
         td(class: "p-4 text-right") do
-          a(href: helpers.api_v1_audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-mini uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Inspect audit log ##{log.id}") { "Inspect →" }
+          a(href: api_v1_audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-mini uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Inspect audit log ##{log.id}") { "Inspect →" }
         end
       end
     end

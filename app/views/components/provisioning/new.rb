@@ -10,7 +10,7 @@ module Provisioning
       div(class: "max-w-3xl mx-auto animate-in fade-in duration-1000") do
         header_section
 
-        form_with(url: helpers.register_api_v1_provisioning_index_path, scope: :provisioning, class: "space-y-8 p-10 border border-emerald-900 bg-black/60 backdrop-blur-md shadow-2xl") do |f|
+        form_with(url: register_api_v1_provisioning_index_path, scope: :provisioning, class: "space-y-8 p-10 border border-emerald-900 bg-black/60 backdrop-blur-md shadow-2xl") do |f|
           render_errors if @device&.errors&.any?
 
           div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do

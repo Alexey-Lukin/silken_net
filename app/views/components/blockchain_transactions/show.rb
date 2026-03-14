@@ -21,7 +21,7 @@ module BlockchainTransactions
             render_wallet_info
             # Lazy-load: On-Chain Verification підвантажується окремим запитом
             turbo_frame_tag "tx_onchain_frame_#{@tx.id}",
-                            src: helpers.on_chain_api_v1_blockchain_transaction_path(@tx),
+                            src: on_chain_api_v1_blockchain_transaction_path(@tx),
                             loading: :lazy do
               render Views::Shared::UI::Skeleton.new(variant: :card)
             end
