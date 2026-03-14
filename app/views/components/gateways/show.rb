@@ -158,7 +158,7 @@ module Gateways
       # Квадратик статусу дерева — маленька візуальна мапа флоту
       div(
         title: tree.did,
-        role: "status",
+        role: "img",
         aria_label: "Soldier #{tree.did}: #{tree.active? ? 'active' : 'inactive'}",
         class: tokens(
           "h-4 w-4 border transition-colors",
