@@ -38,6 +38,7 @@
 | Chain / Protocol | Purpose | Service | Worker | Critical Path |
 |---|---|---|---|---|
 | **Polygon EVM** | SCC/SFC minting, slashing, price oracle | `BlockchainMintingService`, `BlockchainBurningService`, `ChainAuditService`, `PriceOracleService` | `MintCarbonCoinWorker`, `BurnCarbonTokensWorker`, `BlockchainConfirmationWorker` | ✅ Yes |
+| **Etherisc DIP** | Decentralized parametric insurance (USDC payouts) | `Etherisc::ClaimService` | `InsurancePayoutWorker` (Oracle mode) | ✅ Yes |
 | **Polygon Hadron** | KYC/KYB compliance, RWA (ERC-3643) | `Polygon::HadronComplianceService` | `HadronAssetRegistrationWorker` | ✅ Yes |
 | **Ethereum L1** | Weekly state root anchoring (finality) | `Ethereum::StateAnchorService` | `EthereumAnchorWorker` | ✅ Yes |
 | **Chainlink** | Decentralized oracle (guard clause before mint) | `Chainlink::OracleDispatchService` | `ChainlinkDispatchWorker` | ✅ Yes |

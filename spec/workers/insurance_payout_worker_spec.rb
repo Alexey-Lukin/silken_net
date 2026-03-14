@@ -143,5 +143,48 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         expect(tx.notes).to include("Страхове відшкодування")
       end
     end
+
+    context "when insurance uses Etherisc DIP" do
+      let(:etherisc_insurance) do
+        create(:parametric_insurance, :triggered,
+               cluster: cluster, organization: organization,
+               etherisc_policy_id: "42")
+      end
+      let(:fake_tx_hash) { "0x" + "fa" * 32 }
+
+      before do
+        claim_service_instance = instance_double(Etherisc::ClaimService, claim!: fake_tx_hash)
+        allow(Etherisc::ClaimService).to receive(:new).and_return(claim_service_instance)
+        allow(BlockchainConfirmationWorker).to receive(:perform_in)
+      end
+
+      it "calls Etherisc::ClaimService instead of BlockchainMintingService" do
+        described_class.new.perform(etherisc_insurance.id)
+
+        expect(Etherisc::ClaimService).to have_received(:new).with(etherisc_insurance)
+        expect(BlockchainMintingService).not_to have_received(:call)
+      end
+
+      it "updates BlockchainTransaction with tx_hash and sent status" do
+        described_class.new.perform(etherisc_insurance.id)
+
+        tx = BlockchainTransaction.last
+        expect(tx.status).to eq("sent")
+        expect(tx.tx_hash).to eq(fake_tx_hash)
+      end
+
+      it "enqueues BlockchainConfirmationWorker for receipt polling" do
+        described_class.new.perform(etherisc_insurance.id)
+
+        expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
+      end
+
+      it "broadcasts insurance update via Turbo" do
+        described_class.new.perform(etherisc_insurance.id)
+
+        expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:once)
+        expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to)
+      end
+    end
   end
 end

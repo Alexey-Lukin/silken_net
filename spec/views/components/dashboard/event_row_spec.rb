@@ -41,6 +41,7 @@ RSpec.describe Dashboard::EventRow do
       tx = BlockchainTransaction.allocate
       tx.define_singleton_method(:amount) { "0.005" }
       tx.define_singleton_method(:wallet) { mock_wallet }
+      tx.define_singleton_method(:sourceable) { nil }
       tx.define_singleton_method(:created_at) { 1.minute.ago }
       tx
     end

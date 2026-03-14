@@ -123,6 +123,9 @@ Threshold-based automatic payouts for catastrophic events:
 - **Trigger events:** `critical_fire`, `extreme_drought`, `insect_epidemic`
 - **Threshold:** Configurable percentage of anomalous `AiInsight` records
 - **Payout flow:** `ParametricInsurance#evaluate_daily_health!` → `InsurancePayoutWorker` → `BlockchainTransaction`
+- **Dual-mode execution:**
+  - **Internal (default):** `BlockchainMintingService` mints SCC/SFC tokens on Polygon
+  - **Etherisc DIP (Oracle mode):** When `etherisc_policy_id` is present, the system acts as an Oracle — `Etherisc::ClaimService` triggers `triggerClaim` on the Etherisc Decentralized Insurance Protocol, which pays out USDC from decentralized liquidity pools. This eliminates inflationary pressure on the internal token economy during insurance events.
 
 ## Afterlife Economy — Puro.earth Biochar Integration
 
