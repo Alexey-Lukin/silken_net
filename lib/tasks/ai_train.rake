@@ -57,8 +57,13 @@ namespace :ai do
     Rails.logger.info "🏋️ [AI Train] Тренування Random Forest (100 estimators, max_depth=10)..."
     model.fit(x, y)
 
-    # Серіалізація моделі
-    File.binwrite(model_path, Marshal.dump(model))
-    Rails.logger.info "✅ [AI Train] Модель збережено: #{model_path} (#{File.size(model_path)} bytes)"
+    # Серіалізація моделі + SHA256 дайджест для верифікації цілісності при завантаженні
+    model_data = Marshal.dump(model)
+    digest = OpenSSL::Digest::SHA256.hexdigest(model_data)
+
+    File.binwrite(model_path, model_data)
+    File.write(InsightGeneratorService::MODEL_DIGEST_PATH, digest)
+
+    Rails.logger.info "✅ [AI Train] Модель збережено: #{model_path} (#{File.size(model_path)} bytes, SHA256: #{digest})"
   end
 end

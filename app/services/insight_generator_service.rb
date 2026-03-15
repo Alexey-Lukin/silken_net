@@ -6,6 +6,7 @@ class InsightGeneratorService < ApplicationService
   FRAUD_DEVIATION_THRESHOLD = 0.30
 
   MODEL_PATH = Rails.root.join("lib/assets/silken_forest.marshal").freeze
+  MODEL_DIGEST_PATH = Rails.root.join("lib/assets/silken_forest.marshal.sha256").freeze
 
   def initialize(date = Time.current.utc.to_date - 1)
     @date = date
@@ -236,10 +237,25 @@ class InsightGeneratorService < ApplicationService
   def load_ai_model
     return nil unless File.exist?(MODEL_PATH)
 
-    # Безпечно: файл генерується внутрішнім rake-завданням (ai:train), а не зовнішнім джерелом.
-    Marshal.load(File.binread(MODEL_PATH)) # rubocop:disable Security/MarshalLoad
+    model_data = File.binread(MODEL_PATH)
+    verify_model_integrity!(model_data)
+
+    Marshal.load(model_data) # rubocop:disable Security/MarshalLoad
   rescue StandardError => e
     Rails.logger.warn "⚠️ [Insight] Не вдалося завантажити ML-модель: #{e.message}. Використовуємо евристику."
     nil
+  end
+
+  def verify_model_integrity!(model_data)
+    unless File.exist?(MODEL_DIGEST_PATH)
+      raise "SHA256-дайджест моделі не знайдено: #{MODEL_DIGEST_PATH}"
+    end
+
+    expected_digest = File.read(MODEL_DIGEST_PATH).strip
+    actual_digest = OpenSSL::Digest::SHA256.hexdigest(model_data)
+
+    unless ActiveSupport::SecurityUtils.secure_compare(actual_digest, expected_digest)
+      raise "SHA256-дайджест моделі не збігається (можлива підміна файлу)"
+    end
   end
 end

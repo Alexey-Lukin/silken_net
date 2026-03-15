@@ -404,11 +404,15 @@ RSpec.describe InsightGeneratorService, type: :service do
 
     context "when model file is present" do
       let(:mock_model) { instance_double(Rumale::Ensemble::RandomForestClassifier) }
+      let(:model_data) { Marshal.dump(mock_model) }
 
       before do
         allow(File).to receive(:exist?).and_call_original
         allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_PATH).and_return(true)
-        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return(Marshal.dump(mock_model))
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_DIGEST_PATH).and_return(true)
+        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return(model_data)
+        allow(File).to receive(:read).and_call_original
+        allow(File).to receive(:read).with(InsightGeneratorService::MODEL_DIGEST_PATH).and_return(OpenSSL::Digest::SHA256.hexdigest(model_data))
         allow(Marshal).to receive(:load).and_return(mock_model)
 
         proba_result = Numo::DFloat.cast([ [ 0.3, 0.7 ] ])
@@ -432,11 +436,15 @@ RSpec.describe InsightGeneratorService, type: :service do
 
     context "when model classes are in reversed order [1, 0]" do
       let(:mock_model) { instance_double(Rumale::Ensemble::RandomForestClassifier) }
+      let(:model_data) { Marshal.dump(mock_model) }
 
       before do
         allow(File).to receive(:exist?).and_call_original
         allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_PATH).and_return(true)
-        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return(Marshal.dump(mock_model))
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_DIGEST_PATH).and_return(true)
+        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return(model_data)
+        allow(File).to receive(:read).and_call_original
+        allow(File).to receive(:read).with(InsightGeneratorService::MODEL_DIGEST_PATH).and_return(OpenSSL::Digest::SHA256.hexdigest(model_data))
         allow(Marshal).to receive(:load).and_return(mock_model)
 
         # Reversed class order: stress (1) is at index 0
@@ -462,11 +470,15 @@ RSpec.describe InsightGeneratorService, type: :service do
 
     context "when model lacks stress class (1)" do
       let(:mock_model) { instance_double(Rumale::Ensemble::RandomForestClassifier) }
+      let(:model_data) { Marshal.dump(mock_model) }
 
       before do
         allow(File).to receive(:exist?).and_call_original
         allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_PATH).and_return(true)
-        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return(Marshal.dump(mock_model))
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_DIGEST_PATH).and_return(true)
+        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return(model_data)
+        allow(File).to receive(:read).and_call_original
+        allow(File).to receive(:read).with(InsightGeneratorService::MODEL_DIGEST_PATH).and_return(OpenSSL::Digest::SHA256.hexdigest(model_data))
         allow(Marshal).to receive(:load).and_return(mock_model)
 
         proba_result = Numo::DFloat.cast([ [ 1.0 ] ])
@@ -512,6 +524,57 @@ RSpec.describe InsightGeneratorService, type: :service do
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
         # Heuristic fallback: homeostasis + z=3.0 penalty = 0.2
         expect(insight.stress_index).to eq(0.2)
+      end
+    end
+
+    context "when model digest does not match (tampered file)" do
+      before do
+        allow(File).to receive(:exist?).and_call_original
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_PATH).and_return(true)
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_DIGEST_PATH).and_return(true)
+        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return("tampered data")
+        allow(File).to receive(:read).and_call_original
+        allow(File).to receive(:read).with(InsightGeneratorService::MODEL_DIGEST_PATH).and_return("0000000000000000000000000000000000000000000000000000000000000000")
+      end
+
+      it "falls back to heuristic and logs warning about integrity" do
+        expect(Rails.logger).to receive(:warn).with(/Не вдалося завантажити ML-модель/)
+
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 3.0,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        # Heuristic fallback: homeostasis + z=3.0 penalty = 0.2
+        expect(insight.stress_index).to eq(0.2)
+      end
+    end
+
+    context "when model digest file is missing" do
+      before do
+        allow(File).to receive(:exist?).and_call_original
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_PATH).and_return(true)
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_DIGEST_PATH).and_return(false)
+        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return("some data")
+      end
+
+      it "falls back to heuristic and logs warning about missing digest" do
+        expect(Rails.logger).to receive(:warn).with(/Не вдалося завантажити ML-модель/)
+
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        expect(insight.stress_index).to be_zero
       end
     end
   end

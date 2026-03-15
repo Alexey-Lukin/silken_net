@@ -67,6 +67,7 @@ terraform/akash/akash-dseq.txt
 
 # ML model artifacts (trained binary, not committed)
 lib/assets/silken_forest.marshal
+lib/assets/silken_forest.marshal.sha256
 
 # Firmware test binaries (host-based, compiled with gcc)
 firmware/test/test_queen
