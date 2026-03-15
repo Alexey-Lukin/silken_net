@@ -43,6 +43,9 @@ static uint8_t pending_ota_bytecode[8192];
 static uint16_t pending_ota_size = 0;
 static uint16_t ota_total_expected_chunks = 0;
 static uint16_t ota_chunks_received = 0;
+// [FIX: AUDIT] Бітова карта для захисту від дублікатів OTA-чанків
+static uint16_t ota_chunk_bitmap = 0;
+#define OTA_MAX_CHUNKS 16
 
 /* Reference test data for OTA chunking tests (was hardcoded in pending_ota_bytecode) */
 static const uint8_t ota_test_data[] = {
@@ -69,6 +72,7 @@ static void ota_assembly_reset(void)
     pending_ota_size = 0;
     ota_total_expected_chunks = 0;
     ota_chunks_received = 0;
+    ota_chunk_bitmap = 0;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -217,6 +221,8 @@ static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
     uint16_t total_chunks = ((uint16_t)decrypted[3] << 8) | decrypted[4];
 
     if (total_chunks == 0) return 0;
+    /* [FIX: AUDIT] Захист від chunk_index >= OTA_MAX_CHUNKS */
+    if (chunk_index >= OTA_MAX_CHUNKS) return 0;
     if (aligned < 23) return 0;
 
     uint16_t payload_len = (aligned - 16 >= 514) ? 512 : (aligned - 16 - 7);
@@ -224,9 +230,16 @@ static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
 
     if (offset + payload_len > sizeof(pending_ota_bytecode)) return 0;
 
+    /* [FIX: AUDIT] Дедуплікація OTA-чанків через бітову карту */
+    uint16_t chunk_bit = (uint16_t)(1U << chunk_index);
+    if (ota_chunk_bitmap & chunk_bit) {
+        return 2; /* Дублікат — ігноруємо */
+    }
+
     memcpy(pending_ota_bytecode + offset, &decrypted[5], payload_len);
 
     ota_total_expected_chunks = total_chunks;
+    ota_chunk_bitmap |= chunk_bit;
     ota_chunks_received++;
 
     if (offset + payload_len > pending_ota_size) {
@@ -236,6 +249,7 @@ static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
     if (ota_chunks_received >= ota_total_expected_chunks) {
         ota_chunks_received = 0;
         ota_total_expected_chunks = 0;
+        ota_chunk_bitmap = 0;
         current_ota_chunk_idx_test = 0;
         ota_is_active_flag = 1;
     }
@@ -840,6 +854,65 @@ TEST(test_ota_assembly_size_tracking) {
     ASSERT_EQ(ota_is_active_flag, 1);  /* All chunks received */
 }
 
+TEST(test_ota_assembly_duplicate_chunk_ignored) {
+    /* [FIX: AUDIT] Дублікат чанка не повинен збільшувати ota_chunks_received.
+     * Без bitmap: 2 chunks expected, chunk 0 arrives twice → chunks_received=2
+     * → premature activation з неповними даними (chunk 1 missing). */
+    ota_assembly_reset();
+    ota_is_active_flag = 0;
+    uint8_t pkt[48];
+
+    /* Chunk 0 — перший раз */
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
+    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
+    for (uint8_t i = 0; i < 10; i++) pkt[5 + i] = (uint8_t)(0xA0 + i);
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
+    ASSERT_EQ(ota_chunks_received, 1);
+    ASSERT_EQ(ota_is_active_flag, 0);
+
+    /* Chunk 0 — дублікат (ACK loss retransmit) */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 2);  /* Must return 2 = duplicate */
+    ASSERT_EQ(ota_chunks_received, 1);  /* Counter NOT inflated */
+    ASSERT_EQ(ota_is_active_flag, 0);   /* Premature activation prevented */
+
+    /* Chunk 1 — нормальний */
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[1] = 0x00; pkt[2] = 0x01;  /* index = 1 */
+    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
+    for (uint8_t i = 0; i < 10; i++) pkt[5 + i] = (uint8_t)(0xB0 + i);
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
+    ASSERT_EQ(ota_is_active_flag, 1);   /* Now truly all chunks received */
+}
+
+TEST(test_ota_assembly_chunk_index_above_max) {
+    /* [FIX: AUDIT] chunk_index >= OTA_MAX_CHUNKS (16) повинен бути відхилений */
+    ota_assembly_reset();
+    uint8_t pkt[48];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[1] = 0x00; pkt[2] = 0x10;  /* index = 16 = OTA_MAX_CHUNKS */
+    pkt[3] = 0x00; pkt[4] = 0x20;  /* total = 32 */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 0);  /* Must reject */
+}
+
+TEST(test_ota_assembly_bitmap_reset_after_complete) {
+    /* After successful assembly, bitmap must be reset for next OTA cycle */
+    ota_assembly_reset();
+    ota_is_active_flag = 0;
+    uint8_t pkt[32];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
+    pkt[3] = 0x00; pkt[4] = 0x01;  /* total = 1 */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 32), 1);
+    ASSERT_EQ(ota_is_active_flag, 1);
+    /* Bitmap should be reset */
+    ASSERT_EQ(ota_chunk_bitmap, 0);
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * 6. RSSI CLAMP TESTS
  * ════════════════════════════════════════════════════════════════════ */
@@ -1217,6 +1290,9 @@ int main(void)
     RUN(test_ota_assembly_too_small_aligned);
     RUN(test_ota_assembly_aligned_below_23);
     RUN(test_ota_assembly_size_tracking);
+    RUN(test_ota_assembly_duplicate_chunk_ignored);
+    RUN(test_ota_assembly_chunk_index_above_max);
+    RUN(test_ota_assembly_bitmap_reset_after_complete);
 
     printf("\n  RSSI Clamp:\n");
     RUN(test_rssi_clamp_normal);

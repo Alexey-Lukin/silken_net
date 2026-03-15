@@ -34,6 +34,13 @@
 #define MAX_OTA_CHUNK_PAYLOAD 512    // Максимальний розмір байткоду в одному CoAP-чанку
 #define OTA_FULL_CHUNK_THRESH (MAX_OTA_CHUNK_PAYLOAD + OTA_CRC_SIZE) // 514: поріг повного чанка
 #define MIN_OTA_ALIGNED       (AES_BLOCK_SIZE + OTA_OVERHEAD)        // 23: мінімальний aligned
+
+// [FIX: AUDIT MISRA] Іменовані константи замість магічних чисел
+#define LORA_RX_INFINITE      0xFFFFFF  // Нескінченний таймаут прийому LoRa
+#define FLUSH_INTERVAL_MS     3600000   // Інтервал скидання кешу (1 година)
+#define FLUSH_HEADROOM        5         // Кількість вільних слотів до примусового скидання
+#define QUEEN_HEALTH_GP_MAX   63        // Максимальне значення growth_points
+#define OTA_MAX_CHUNKS        16        // 8192 / 512 = максимальна кількість OTA-чанків
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -65,9 +72,10 @@ const char queen_uid[] = "QUEEN-001";
 // === 1. ПАМ'ЯТЬ КОРОЛЕВИ (Прийом Даних) ===
 // =========================================================================
 volatile uint8_t lora_rx_flag = 0;      // Прапорець: 1 - пакет спіймано
-uint8_t incoming_lora_payload[16];      // Сирий 16-байтний зашифрований пакет
+// [FIX: AUDIT] volatile — записуються в OnRxDone ISR, читаються в main loop
+volatile uint8_t incoming_lora_payload[16]; // Сирий 16-байтний зашифрований пакет
 uint8_t decrypted_payload[16];          // Розшифрований пакет від Солдата
-int8_t current_rssi = 0;                // Рівень сигналу
+volatile int8_t current_rssi = 0;       // Рівень сигналу
 
 char at_tx_buffer[256];                 // Буфер для формування AT-команд
 
@@ -130,6 +138,11 @@ uint16_t pending_ota_size = 0;
 // Стан збирання OTA-чанків від бекенду (CoAP downlink → RAM assembly)
 uint16_t ota_total_expected_chunks = 0;  // Загальна кількість чанків (з заголовка пакета)
 uint16_t ota_chunks_received = 0;        // Скільки чанків вже отримано
+// [FIX: AUDIT] Бітова карта для захисту від дублікатів OTA-чанків.
+// Без неї повторна доставка чанка (ACK loss) збільшує ota_chunks_received
+// і може спровокувати передчасну активацію бродкасту з неповними даними.
+// 16 біт достатньо для 8192/512 = 16 максимальних чанків.
+uint16_t ota_chunk_bitmap = 0;
 
 /* USER CODE END PV */
 
@@ -191,8 +204,7 @@ int main(void)
   SIM7070_SendATCommand("AT+CNMP=38\r\n", 1000);
 
   // 4. Відкриваємо вуха: Королева переходить у режим безперервного слухання
-  // 0xFFFFFF = нескінченний таймаут
-  Radio.Rx(0xFFFFFF);
+  Radio.Rx(LORA_RX_INFINITE);
 
   /* USER CODE END 2 */
 
@@ -211,7 +223,8 @@ int main(void)
     {
         // 1. РОЗШИФРОВУЄМО ПАКЕТ
         // Розшифровуємо 4 слова (16 байт) апаратним модулем
-        HAL_CRYP_Decrypt(&hcryp, (uint32_t*)incoming_lora_payload, 4, (uint32_t*)decrypted_payload, 1000);
+        // (void*) cast strips volatile — safe: lora_rx_flag serializes ISR→main access.
+        HAL_CRYP_Decrypt(&hcryp, (uint32_t*)(void*)incoming_lora_payload, 4, (uint32_t*)decrypted_payload, 1000);
 
         // =========================================================================
         // РЕФЛЕКТОРНИЙ ПОСТРІЛ (OTA BROADCAST)
@@ -275,7 +288,7 @@ int main(void)
 
         // Очищаємо прапорець і знову відкриваємо вуха
         lora_rx_flag = 0;
-        Radio.Rx(0xFFFFFF);
+        Radio.Rx(LORA_RX_INFINITE);
     }
 
     // =========================================================================
@@ -283,7 +296,7 @@ int main(void)
     // =========================================================================
     // Відправляємо пакет даних, якщо кеш заповнений майже повністю (залишилось 5 вільних слотів)
     // АБО пройшло достатньо часу (наприклад, 1 година = 3 600 000 мс)
-    if (cache_count >= (CACHE_MAX_ENTRIES - 5) || (HAL_GetTick() - last_flush_time > 3600000)) {
+    if (cache_count >= (CACHE_MAX_ENTRIES - FLUSH_HEADROOM) || (HAL_GetTick() - last_flush_time > FLUSH_INTERVAL_MS)) {
         if (cache_count > 0) {
             // [FIX: Queen Health Blind Spot]
             // Перед скиданням кешу додаємо власний пакет здоров'я Королеви.
@@ -300,7 +313,7 @@ int main(void)
                 // Byte 7: Кількість дерев у кеші (навантаження на шлюз)
                 queen_health[7] = cache_count;
                 // Byte 10: Status = homeostasis (0), growth_points = cache_count (proxy for health)
-                queen_health[10] = (cache_count < 63) ? cache_count : 63;
+                queen_health[10] = (cache_count < QUEEN_HEALTH_GP_MAX) ? cache_count : QUEEN_HEALTH_GP_MAX;
                 Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пакет)
             }
             Flush_Cache_To_Rails();
@@ -325,7 +338,9 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
     // Очікуємо рівно 16 байт (повний зашифрований блок AES-256)
     if (size == 16)
     {
-        memcpy(incoming_lora_payload, payload, 16);
+        // (void*) cast removes volatile qualifier for HAL function — safe because
+        // ISR is sole writer and main loop does not read until lora_rx_flag is set.
+        memcpy((void*)incoming_lora_payload, payload, 16);
         // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128.
         // Clamp до int8_t діапазону перед приведенням, щоб запобігти
         // overflow (наприклад, -130 → 126, що б отруїло CIFO eviction).
@@ -476,7 +491,10 @@ void Flush_Cache_To_Rails(void)
 
     // 4. Шифруємо батч. Довжина в 32-бітних словах = padded_size / 4.
     //    Буфер: IV (16 байт) + зашифровані дані
-    uint8_t encrypted_batch_buffer[2048 + 16];
+    // [FIX: AUDIT CRITICAL] Переміщено з стеку в static.
+    // 2064 байти на стеку при 64KB RAM — ризик переповнення стеку.
+    // STM32 default stack = 1-4KB, а ця функція може бути викликана з глибокого call chain.
+    static uint8_t encrypted_batch_buffer[2048 + 16];
     memcpy(encrypted_batch_buffer, batch_iv, 16); // Prepend IV як заголовок пакета
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)binary_batch_buffer, padded_size / 4,
                      (uint32_t*)(encrypted_batch_buffer + 16), 2000);
@@ -648,6 +666,9 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // [MISRA C] Захист від невалідних заголовків
         if (total_chunks == 0) return;
 
+        // [FIX: AUDIT] Захист від chunk_index >= OTA_MAX_CHUNKS (переповнення bitmap)
+        if (chunk_index >= OTA_MAX_CHUNKS) return;
+
         // [MISRA C] Захист від overflow при малому aligned (underflow на uint16_t)
         // MIN_OTA_ALIGNED = AES_BLOCK_SIZE (16) + OTA_HEADER_SIZE (5) + OTA_CRC_SIZE (2) = 23
         if (aligned < MIN_OTA_ALIGNED) return;
@@ -669,11 +690,22 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // [MISRA C] Перевірка меж буфера: запобігаємо переповненню від зловмисних пакетів
         if (offset + payload_len > sizeof(pending_ota_bytecode)) return;
 
+        // [FIX: AUDIT CRITICAL] Дедуплікація OTA-чанків.
+        // Без цієї перевірки повторна доставка чанка (ACK loss + retransmit)
+        // збільшує ota_chunks_received і може спровокувати передчасну активацію
+        // бродкасту з неповними даними → "вічний ребут" Солдатів.
+        uint16_t chunk_bit = (uint16_t)(1U << chunk_index);
+        if (ota_chunk_bitmap & chunk_bit) {
+            // Дублікат — дані вже є в RAM, просто ігноруємо
+            return;
+        }
+
         // Копіюємо байткод у відповідну позицію RAM-буфера
         memcpy(pending_ota_bytecode + offset, &cmd_decrypt_buf[OTA_HEADER_SIZE], payload_len);
 
         // Оновлюємо стан збирання
         ota_total_expected_chunks = total_chunks;
+        ota_chunk_bitmap |= chunk_bit;  // Маркуємо чанк як отриманий
         ota_chunks_received++;
 
         // Відстежуємо максимальний розмір зібраного байткоду
@@ -688,6 +720,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         if (ota_chunks_received >= ota_total_expected_chunks) {
             ota_chunks_received = 0;
             ota_total_expected_chunks = 0;
+            ota_chunk_bitmap = 0;
             current_ota_chunk_idx = 0;
             ota_is_active = 1;  // 🚀 Запускаємо бродкаст на ліс!
         }
