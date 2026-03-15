@@ -98,4 +98,28 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       expect(response.content_type).to include("text/html")
     end
   end
+
+  describe "GET /api/v1/wallets/:id/balance" do
+    let(:admin) { create(:user, :admin, organization: organization) }
+    let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
+
+    it "renders balance Turbo Frame" do
+      allow_any_instance_of(Wallets::BalanceFrame).to receive(:template) { |c| c.plain "balance" }
+
+      get "/api/v1/wallets/#{wallet.id}/balance", headers: headers
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "GET /api/v1/wallets/:id/metadata" do
+    let(:admin) { create(:user, :admin, organization: organization) }
+    let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
+
+    it "renders metadata Turbo Frame" do
+      allow_any_instance_of(Wallets::MetadataFrame).to receive(:template) { |c| c.plain "metadata" }
+
+      get "/api/v1/wallets/#{wallet.id}/metadata", headers: headers
+      expect(response).to have_http_status(:ok)
+    end
+  end
 end

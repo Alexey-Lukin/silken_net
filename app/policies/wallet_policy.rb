@@ -11,6 +11,14 @@ class WalletPolicy < ApplicationPolicy
       same_organization?(record.tree&.cluster&.organization_id)
   end
 
+  def balance?
+    show?
+  end
+
+  def metadata?
+    show?
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       if admin_or_above?

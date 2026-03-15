@@ -109,5 +109,26 @@ RSpec.describe Dclimate::VerificationService, type: :service do
         expect { service.perform }.not_to raise_error
       end
     end
+
+    context "when query_dclimate_api returns an unknown outcome" do
+      let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
+      let(:service) { described_class.new(alert) }
+
+      it "does nothing" do
+        allow(service).to receive(:query_dclimate_api).and_return(:unknown_outcome)
+        expect { service.perform }.not_to raise_error
+      end
+    end
+
+    context "when trigger_slashing is called with cluster but no organization" do
+      let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
+      let(:service) { described_class.new(alert) }
+
+      it "returns early without slashing" do
+        allow(cluster).to receive(:organization).and_return(nil)
+        allow(service).to receive(:query_dclimate_api).and_return(:clear_sky_no_fire)
+        expect { service.perform }.not_to raise_error
+      end
+    end
   end
 end

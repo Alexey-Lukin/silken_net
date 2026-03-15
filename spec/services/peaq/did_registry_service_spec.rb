@@ -70,5 +70,43 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
         }.to raise_error(Peaq::DidRegistryService::RegistrationError, /peaq_node_url не налаштовано/)
       end
     end
+
+    context "when peaq_signing_key is configured" do
+      before do
+        allow(Rails.application.credentials).to receive_messages(peaq_node_url: "https://peaq-node.example.com", peaq_signing_key: "a" * 64)
+      end
+
+      it "includes Ed25519 proof in registration payload" do
+        allow(Ed25519Crypto::SigningService).to receive_messages(sign: "sig_hex", public_key_from_seed: "pub_hex")
+        allow(Web3::HttpClient).to receive(:post)
+          .and_return(Web3::HttpClient::Response.new("{}"))
+
+        service = described_class.new(tree)
+        result = service.register!
+        expect(result).to start_with("did:peaq:0x")
+
+        expect(Web3::HttpClient).to have_received(:post).with(
+          anything,
+          hash_including(body: hash_including(:proof))
+        )
+      end
+    end
+
+    context "when peaq_signing_key is invalid" do
+      before do
+        allow(Rails.application.credentials).to receive_messages(peaq_node_url: "https://peaq-node.example.com", peaq_signing_key: "invalid_key")
+      end
+
+      it "raises RegistrationError on Ed25519 signing failure" do
+        allow(Ed25519Crypto::SigningService).to receive(:sign).and_raise(
+          Ed25519Crypto::SigningService::SigningError, "bad key"
+        )
+
+        service = described_class.new(tree)
+        expect { service.register! }.to raise_error(
+          Peaq::DidRegistryService::RegistrationError, /Invalid peaq_signing_key/
+        )
+      end
+    end
   end
 end

@@ -238,6 +238,45 @@ RSpec.describe Solana::MintingService do
         expect(result).to be_nil
       end
     end
+
+    context "when SOLANA_WALLET_KEYPAIR is set" do
+      around do |example|
+        original = ENV["SOLANA_WALLET_KEYPAIR"]
+        ENV["SOLANA_WALLET_KEYPAIR"] = "a" * 64
+        example.run
+      ensure
+        ENV["SOLANA_WALLET_KEYPAIR"] = original
+      end
+
+      it "signs the payload with Ed25519" do
+        allow(Ed25519Crypto::SigningService).to receive(:sign).and_return("fakesig")
+        service = described_class.new(create(:telemetry_log, :verified_telemetry, tree: tree))
+        result = service.send(:build_transfer_instruction, "fee", "mint", "recip", "usdc", 100)
+        decoded = JSON.parse(Base64.decode64(result))
+        expect(decoded).to have_key("signature")
+        expect(decoded["signature"]).to eq("fakesig")
+      end
+    end
+
+    context "when SOLANA_WALLET_KEYPAIR is invalid" do
+      around do |example|
+        original = ENV["SOLANA_WALLET_KEYPAIR"]
+        ENV["SOLANA_WALLET_KEYPAIR"] = "badkey"
+        example.run
+      ensure
+        ENV["SOLANA_WALLET_KEYPAIR"] = original
+      end
+
+      it "raises an error on Ed25519 signing failure" do
+        allow(Ed25519Crypto::SigningService).to receive(:sign).and_raise(
+          Ed25519Crypto::SigningService::SigningError, "invalid key"
+        )
+        service = described_class.new(create(:telemetry_log, :verified_telemetry, tree: tree))
+        expect {
+          service.send(:build_transfer_instruction, "fee", "mint", "recip", "usdc", 100)
+        }.to raise_error(RuntimeError, /Invalid SOLANA_WALLET_KEYPAIR/)
+      end
+    end
   end
 
   describe "RPC error message extraction" do

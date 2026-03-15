@@ -107,5 +107,19 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
         expect { described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new) }.not_to raise_error
       end
     end
+
+    context "when alert has existing resolution_notes and retries exhausted" do
+      it "appends to existing notes instead of replacing" do
+        alert.update!(resolution_notes: "Previous note")
+
+        job = { "args" => [ alert.id ] }
+        described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+
+        alert.reload
+        expect(alert.satellite_status).to eq("inconclusive")
+        expect(alert.resolution_notes).to include("Previous note")
+        expect(alert.resolution_notes).to include("Manual DAO audit required")
+      end
+    end
   end
 end

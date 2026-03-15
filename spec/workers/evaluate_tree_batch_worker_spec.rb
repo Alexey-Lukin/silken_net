@@ -103,6 +103,18 @@ RSpec.describe EvaluateTreeBatchWorker, type: :worker do
         }.not_to raise_error
       end
     end
+
+    context "when wallet tree is nil" do
+      it "logs error with empty DID and continues" do
+        tree = create(:tree, status: :active)
+        wallet = create(:wallet, tree: tree, balance: 10_000)
+        allow_any_instance_of(Wallet).to receive(:tree).and_return(nil)
+        allow_any_instance_of(Wallet).to receive(:lock_and_mint!).and_raise(StandardError, "test error")
+
+        expect(Rails.logger).to receive(:error).with(/Помилка вузла Tree /)
+        described_class.new.perform([ wallet.id ], "test-cycle")
+      end
+    end
   end
 
   describe "sidekiq options" do

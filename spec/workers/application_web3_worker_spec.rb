@@ -156,6 +156,32 @@ RSpec.describe ApplicationWeb3Worker do
     end
   end
 
+  describe "Sidekiq::Limiter::OverLimit handling" do
+    it "logs warning with resource_info and re-raises" do
+      allow(Rails.logger).to receive(:warn)
+      worker = test_worker_class.new
+      allow(worker).to receive(:within_rpc_limit).and_raise(Sidekiq::Limiter::OverLimit)
+
+      expect {
+        worker.with_web3_error_handling("Polygon", "TX #123") { }
+      }.to raise_error(Sidekiq::Limiter::OverLimit)
+
+      expect(Rails.logger).to have_received(:warn).with(/RPC rate limit exceeded for TX #123/)
+    end
+
+    it "logs warning without resource_info and re-raises" do
+      allow(Rails.logger).to receive(:warn)
+      worker = test_worker_class.new
+      allow(worker).to receive(:within_rpc_limit).and_raise(Sidekiq::Limiter::OverLimit)
+
+      expect {
+        worker.with_web3_error_handling("Polygon") { }
+      }.to raise_error(Sidekiq::Limiter::OverLimit)
+
+      expect(Rails.logger).to have_received(:warn).with(/RPC rate limit exceeded\./)
+    end
+  end
+
   describe "#find_telemetry_log_with_pruning" do
     let(:cluster) { create(:cluster) }
     let(:tree) { create(:tree, cluster: cluster) }
