@@ -658,8 +658,10 @@ int main(void)
 // =========================================================================
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
-    // [FIX: AUDIT] Виправлено off-by-one: було size < 255, відхиляло валідні 255/256-байт пакети
+    // [FIX: AUDIT] size > 0 && size <= buffer: виправлено off-by-one (було size < 255)
     if (size > 0 && size <= sizeof(incoming_lora_payload)) {
+        // Cast (void*) removes volatile qualifier for memcpy — safe here because
+        // the ISR is the sole writer and main loop does not read until lora_rx_flag is set.
         memcpy((void*)incoming_lora_payload, payload, size);
         incoming_lora_size = size;
         lora_rx_flag = 1;

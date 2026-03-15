@@ -223,6 +223,7 @@ int main(void)
     {
         // 1. РОЗШИФРОВУЄМО ПАКЕТ
         // Розшифровуємо 4 слова (16 байт) апаратним модулем
+        // (void*) cast strips volatile — safe: lora_rx_flag serializes ISR→main access.
         HAL_CRYP_Decrypt(&hcryp, (uint32_t*)(void*)incoming_lora_payload, 4, (uint32_t*)decrypted_payload, 1000);
 
         // =========================================================================
@@ -337,6 +338,8 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
     // Очікуємо рівно 16 байт (повний зашифрований блок AES-256)
     if (size == 16)
     {
+        // (void*) cast removes volatile qualifier for HAL function — safe because
+        // ISR is sole writer and main loop does not read until lora_rx_flag is set.
         memcpy((void*)incoming_lora_payload, payload, 16);
         // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128.
         // Clamp до int8_t діапазону перед приведенням, щоб запобігти
