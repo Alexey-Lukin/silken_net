@@ -132,8 +132,9 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     before do
       allow(Eth::Client).to receive(:create).and_return(mock_client)
       allow(Eth::Key).to receive(:new).and_return(mock_key)
-      allow(mock_client).to receive(:transact_and_wait).and_return("0xburn_hash")
+      allow(mock_client).to receive(:transact).and_return("0xburn_hash")
       allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
+      allow(BlockchainConfirmationWorker).to receive(:perform_in)
     end
 
     it "burns tokens proportionally to damage ratio" do
@@ -165,7 +166,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     end
 
     it "creates EWS alert on slashing failure" do
-      allow(mock_client).to receive(:transact_and_wait).and_raise(StandardError, "EVM Failure")
+      allow(mock_client).to receive(:transact).and_raise(StandardError, "EVM Failure")
 
       expect {
         begin

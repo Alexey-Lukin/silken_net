@@ -21,9 +21,11 @@ class Tree < ApplicationRecord
   # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для швидкодії без OOM
   has_many :telemetry_logs, dependent: :delete_all
 
-  has_many :ews_alerts, dependent: :destroy
-  has_many :maintenance_records, as: :maintainable, dependent: :destroy
-  has_many :ai_insights, as: :analyzable, dependent: :destroy
+  # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для масових таблиць,
+  # щоб уникнути OOM при видаленні дерева з мільйонами записів.
+  has_many :ews_alerts, dependent: :delete_all
+  has_many :maintenance_records, as: :maintainable, dependent: :delete_all
+  has_many :ai_insights, as: :analyzable, dependent: :delete_all
 
   # --- ДЕЛЕГУВАННЯ ---
   delegate :name, :attractor_thresholds, to: :tree_family, prefix: true

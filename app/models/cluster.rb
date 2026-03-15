@@ -14,10 +14,11 @@ class Cluster < ApplicationRecord
   has_many :naas_contracts, dependent: :restrict_with_error
   has_many :parametric_insurances, dependent: :restrict_with_error
 
-  # Прямий доступ до тривог усього сектора
-  has_many :ews_alerts, dependent: :destroy
+  # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для масових таблиць,
+  # щоб уникнути OOM при видаленні кластера з мільйонами тривог та інсайтів.
+  has_many :ews_alerts, dependent: :delete_all
   # Поліморфні прогнози та підсумки (Daily Health Summary)
-  has_many :ai_insights, as: :analyzable, dependent: :destroy
+  has_many :ai_insights, as: :analyzable, dependent: :delete_all
 
   # --- JSONB SETTINGS (The Biome Adaptation) ---
   store_accessor :environmental_settings,
