@@ -12,6 +12,7 @@ default: &default
   #   1. Puma request threads ............ RAILS_MAX_THREADS  (default 3)
   #   2. Solid Queue threads ............. queue.yml workers.threads (default 3)
   #      (only when SOLID_QUEUE_IN_PUMA=true; runs in-process)
+  #      Set SOLID_QUEUE_THREADS env if queue.yml workers.threads differs from 3.
   #   3. ActionCable / Solid Cable ....... +2 headroom (polling + broadcast)
   #
   # Formula: pool = RAILS_MAX_THREADS + SQ threads + Cable headroom

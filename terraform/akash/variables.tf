@@ -136,8 +136,8 @@ variable "rails_max_threads" {
   default     = 3
 
   validation {
-    condition     = var.rails_max_threads >= 1 && var.rails_max_threads <= 16
-    error_message = "RAILS_MAX_THREADS must be between 1 and 16."
+    condition     = var.rails_max_threads >= 1 && var.rails_max_threads <= 8
+    error_message = "RAILS_MAX_THREADS must be between 1 and 8 to avoid GVL thrashing."
   }
 }
 

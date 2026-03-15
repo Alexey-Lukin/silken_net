@@ -95,9 +95,12 @@ before_fork do
   # Workers will establish their own connections on first use via on_worker_boot.
   ActiveRecord::Base.connection_handler.clear_all_connections!(:all)
 
-  # Disconnect Sidekiq client Redis pool. Workers re-initialize from the
-  # Sidekiq initializer which reads REDIS_URL on boot.
-  Sidekiq.configure_client { |config| config.redis = { size: 0 } } if defined?(Sidekiq)
+  # Shutdown the Sidekiq client Redis connection pool inherited from the
+  # master. Each worker re-establishes its own pool from the initializer.
+  if defined?(Sidekiq)
+    config = Sidekiq.default_configuration
+    config.redis_pool.shutdown(&:close) if config.respond_to?(:redis_pool)
+  end
 end
 
 # 6b. After fork — each worker establishes its own connections
@@ -108,11 +111,10 @@ on_worker_boot do
   # calling establish_connection ensures the primary pool is ready immediately.
   ActiveRecord::Base.establish_connection
 
-  # Re-initialize Kredis Redis connection if Kredis is loaded.
+  # Clear cached Kredis Redis connections inherited from the master.
   # Kredis uses a separate Redis DB (DB 1) for distributed locks.
-  if defined?(Kredis)
-    Kredis.configurator.instance_variable_set(:@connections, {})
-  end
+  # New connections are lazily established on first use in the worker.
+  Kredis.clear_all if defined?(Kredis)
 end
 
 # ---------------------------------------------------------------------------
