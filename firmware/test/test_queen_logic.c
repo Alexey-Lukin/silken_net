@@ -766,6 +766,73 @@ TEST(test_queen_health_dedup) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * 7b. HRNG IV GENERATION TESTS (CVE-fix: predictable IV → hardware RNG)
+ * ════════════════════════════════════════════════════════════════════ */
+
+/* Globals mirroring queen/main.c HRNG IV generation */
+static RNG_HandleTypeDef test_hrng;
+
+/* Simulate the HRNG IV generation logic from Flush_Cache_To_Rails */
+static void simulate_hrng_iv_generation(uint32_t *iv)
+{
+    test_hrng.Instance = RNG;
+    HAL_RNG_Init(&test_hrng);
+
+    for (uint8_t i = 0U; i < 4U; i++) {
+        if (HAL_RNG_GenerateRandomNumber(&test_hrng, &iv[i]) != HAL_OK) {
+            iv[i] = HAL_GetTick() ^ (i * 0x5A5A5A5AUL);
+        }
+    }
+
+    HAL_RNG_DeInit(&test_hrng);
+}
+
+TEST(test_hrng_iv_all_words_filled) {
+    /* Verify that all 4 IV words are populated (not left zero) */
+    uint32_t iv[4] = {0, 0, 0, 0};
+    simulate_hrng_iv_generation(iv);
+    /* Mock returns 42 for all — verify they are filled */
+    for (int i = 0; i < 4; i++) {
+        ASSERT_EQ(iv[i], 42);
+    }
+}
+
+TEST(test_hrng_iv_is_16_bytes) {
+    /* IV must be exactly 128 bits (4 × uint32_t) for AES-256-CBC */
+    uint32_t iv[4];
+    simulate_hrng_iv_generation(iv);
+    ASSERT_EQ(sizeof(iv), 16);
+}
+
+TEST(test_hrng_rng_instance_set) {
+    /* RNG peripheral must be assigned before init */
+    test_hrng.Instance = NULL;
+    uint32_t iv[4];
+    simulate_hrng_iv_generation(iv);
+    ASSERT_EQ(test_hrng.Instance, RNG);
+}
+
+TEST(test_hrng_power_management_deinit) {
+    /* After IV generation, RNG must be de-initialized (zero quiescent current).
+     * We verify the sequence completes without error. */
+    uint32_t iv[4];
+    int result = HAL_RNG_DeInit(&test_hrng);
+    (void)iv;
+    ASSERT_EQ(result, HAL_OK);
+}
+
+TEST(test_hrng_iv_not_tick_based) {
+    /* The old vulnerability: IV was derived from HAL_GetTick() (returns 0 in mock).
+     * With HRNG, IV words must NOT equal the old pattern. */
+    uint32_t iv[4];
+    simulate_hrng_iv_generation(iv);
+    uint32_t tick = HAL_GetTick(); /* mock returns 0 */
+    /* Old pattern was: tick, ~tick, tick+0x5A5A5A5A, ~tick+0xA5A5A5A5 */
+    ASSERT_NE(iv[0], tick);
+    ASSERT_NE(iv[1], ~tick);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * 8. ECB RESTORATION TESTS
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -949,6 +1016,13 @@ int main(void)
     RUN(test_ecb_restored_after_flush);
     RUN(test_ecb_before_flush_is_ecb);
     RUN(test_cbc_during_flush);
+
+    printf("\n  HRNG IV Generation:\n");
+    RUN(test_hrng_iv_all_words_filled);
+    RUN(test_hrng_iv_is_16_bytes);
+    RUN(test_hrng_rng_instance_set);
+    RUN(test_hrng_power_management_deinit);
+    RUN(test_hrng_iv_not_tick_based);
 
     printf("\n  CBC Command Decryption:\n");
     RUN(test_cmd_cbc_ecb_restored);

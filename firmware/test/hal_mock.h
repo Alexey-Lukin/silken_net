@@ -20,7 +20,10 @@ typedef int HAL_StatusTypeDef;
 typedef struct { int dummy; } ADC_HandleTypeDef;
 typedef struct { int dummy; } TIM_HandleTypeDef;
 typedef struct { int dummy; } IWDG_HandleTypeDef;
-typedef struct { int dummy; } RNG_HandleTypeDef;
+typedef struct {
+    void* Instance;
+    int dummy;
+} RNG_HandleTypeDef;
 typedef struct { int dummy; } RTC_HandleTypeDef;
 typedef struct { int dummy; } SUBGHZ_HandleTypeDef;
 typedef struct { int dummy; } UART_HandleTypeDef;
@@ -38,6 +41,7 @@ typedef struct {
 } CRYP_HandleTypeDef;
 
 /* ── Constants ─────────────────────────────────────────────────────── */
+#define RNG             ((void*)0x58001000UL) /* RNG peripheral base (mock) */
 #define CRYP_DATATYPE_32B   0
 #define CRYP_KEYSIZE_256B   1
 #define CRYP_AES_ECB        0
@@ -82,6 +86,8 @@ static inline void MX_RTC_Init(void) {}
 static inline void MX_SUBGHZ_Init(void) {}
 static inline void MX_USART1_UART_Init(void) {}
 static inline int  HAL_CRYP_Init(CRYP_HandleTypeDef *h) { (void)h; return HAL_OK; }
+static inline int  HAL_RNG_Init(RNG_HandleTypeDef *h) { (void)h; return HAL_OK; }
+static inline int  HAL_RNG_DeInit(RNG_HandleTypeDef *h) { (void)h; return HAL_OK; }
 
 static inline void HAL_Delay(uint32_t ms) { (void)ms; }
 static inline uint32_t HAL_GetTick(void) { return 0; }
