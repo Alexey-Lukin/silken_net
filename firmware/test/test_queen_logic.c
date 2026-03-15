@@ -38,14 +38,38 @@ static uint8_t  cmd_dedup_used = 0;
 
 static uint8_t binary_batch_buffer[2048];
 
-/* OTA globals */
-static uint8_t pending_ota_bytecode[] = {
+/* OTA globals (matching queen/main.c dynamic buffer structure) */
+static uint8_t pending_ota_bytecode[8192];
+static uint16_t pending_ota_size = 0;
+static uint16_t ota_total_expected_chunks = 0;
+static uint16_t ota_chunks_received = 0;
+
+/* Reference test data for OTA chunking tests (was hardcoded in pending_ota_bytecode) */
+static const uint8_t ota_test_data[] = {
     0x52, 0x49, 0x54, 0x45, 0x30, 0x33, 0x30, 0x30, 0x00, 0x00,
     0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22, 0x33, 0x44,
     0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33, 0x44,
     0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD
 };
-static uint16_t pending_ota_size = sizeof(pending_ota_bytecode);
+
+/* Initializes pending_ota_bytecode with test data for OTA chunk builder tests */
+static void ota_test_init(void)
+{
+    memset(pending_ota_bytecode, 0, sizeof(pending_ota_bytecode));
+    memcpy(pending_ota_bytecode, ota_test_data, sizeof(ota_test_data));
+    pending_ota_size = sizeof(ota_test_data);
+    ota_total_expected_chunks = 0;
+    ota_chunks_received = 0;
+}
+
+/* Resets OTA assembly state (for OTA downlink tests) */
+static void ota_assembly_reset(void)
+{
+    memset(pending_ota_bytecode, 0, sizeof(pending_ota_bytecode));
+    pending_ota_size = 0;
+    ota_total_expected_chunks = 0;
+    ota_chunks_received = 0;
+}
 
 /* ════════════════════════════════════════════════════════════════════
  * EXTRACTED FUNCTIONS (matching queen/main.c with bug fixes marked)
@@ -175,6 +199,47 @@ static uint8_t Build_OTA_Chunk(uint16_t chunk_idx, uint8_t* ota_chunk)
     uint8_t bytes_to_copy = (pending_ota_size - offset > 11) ? 11 : (uint8_t)(pending_ota_size - offset);
     memcpy(&ota_chunk[5], &pending_ota_bytecode[offset], bytes_to_copy);
     return bytes_to_copy;
+}
+
+/* OTA assembly — extracted from Handle_CoAP_Command OTA downlink branch.
+ * Simulates receiving a decrypted OTA chunk and assembling it into RAM.
+ * Returns 1 on success, 0 on bounds/validation failure.
+ * When all chunks received: sets ota_is_active = 1 (via output param). */
+static uint8_t ota_is_active_flag = 0;
+static uint16_t current_ota_chunk_idx_test = 0;
+
+static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
+{
+    if (aligned < 6) return 0;
+    if (decrypted[0] != 0x99) return 0;
+
+    uint16_t chunk_index  = ((uint16_t)decrypted[1] << 8) | decrypted[2];
+    uint16_t total_chunks = ((uint16_t)decrypted[3] << 8) | decrypted[4];
+
+    if (total_chunks == 0) return 0;
+    if (aligned < 23) return 0;
+
+    uint16_t payload_len = (aligned - 16 >= 514) ? 512 : (aligned - 16 - 7);
+    uint32_t offset = (uint32_t)chunk_index * 512U;
+
+    if (offset + payload_len > sizeof(pending_ota_bytecode)) return 0;
+
+    memcpy(pending_ota_bytecode + offset, &decrypted[5], payload_len);
+
+    ota_total_expected_chunks = total_chunks;
+    ota_chunks_received++;
+
+    if (offset + payload_len > pending_ota_size) {
+        pending_ota_size = (uint16_t)(offset + payload_len);
+    }
+
+    if (ota_chunks_received >= ota_total_expected_chunks) {
+        ota_chunks_received = 0;
+        ota_total_expected_chunks = 0;
+        current_ota_chunk_idx_test = 0;
+        ota_is_active_flag = 1;
+    }
+    return 1;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -578,6 +643,7 @@ TEST(test_batch_reinsert_after_pack) {
  * ════════════════════════════════════════════════════════════════════ */
 
 TEST(test_ota_chunk_first) {
+    ota_test_init();
     uint8_t chunk[16];
     uint8_t copied = Build_OTA_Chunk(0, chunk);
     ASSERT_EQ(chunk[0], 0x99);
@@ -587,17 +653,20 @@ TEST(test_ota_chunk_first) {
 }
 
 TEST(test_ota_chunk_last) {
+    ota_test_init();
     uint8_t chunk[16];
     uint8_t copied = Build_OTA_Chunk(3, chunk);
     ASSERT_EQ(copied, 6);
 }
 
 TEST(test_ota_out_of_range) {
+    ota_test_init();
     uint8_t chunk[16];
     ASSERT_EQ(Build_OTA_Chunk(100, chunk), 0);
 }
 
 TEST(test_ota_total_header) {
+    ota_test_init();
     uint8_t chunk[16];
     Build_OTA_Chunk(0, chunk);
     uint16_t total = ((uint16_t)chunk[3] << 8) | chunk[4];
@@ -605,6 +674,7 @@ TEST(test_ota_total_header) {
 }
 
 TEST(test_ota_index_header) {
+    ota_test_init();
     uint8_t chunk[16];
     Build_OTA_Chunk(2, chunk);
     uint16_t idx = ((uint16_t)chunk[1] << 8) | chunk[2];
@@ -612,6 +682,7 @@ TEST(test_ota_index_header) {
 }
 
 TEST(test_ota_reassemble_all) {
+    ota_test_init();
     uint16_t total_chunks = (pending_ota_size + 10) / 11;
     uint8_t reassembled[1024] = {0};
     uint16_t total_bytes = 0;
@@ -624,6 +695,149 @@ TEST(test_ota_reassemble_all) {
     }
     ASSERT_EQ(total_bytes, pending_ota_size);
     ASSERT_EQ(memcmp(reassembled, pending_ota_bytecode, pending_ota_size), 0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * 5b. OTA ASSEMBLY TESTS (CoAP downlink → RAM)
+ * ════════════════════════════════════════════════════════════════════ */
+
+TEST(test_ota_assembly_single_chunk) {
+    /* Single-chunk OTA: marker + index(0) + total(1) + 10 bytes payload */
+    ota_assembly_reset();
+    ota_is_active_flag = 0;
+    uint8_t pkt[32];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;             /* marker */
+    pkt[1] = 0x00; pkt[2] = 0x00;  /* chunk_index = 0 */
+    pkt[3] = 0x00; pkt[4] = 0x01;  /* total_chunks = 1 */
+    for (uint8_t i = 0; i < 10; i++) pkt[5 + i] = (uint8_t)(0xA0 + i);
+    /* aligned = 32 (2 AES blocks). payload_len = 32 - 16 - 7 = 9 */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 32), 1);
+    ASSERT_EQ(pending_ota_size, 9);
+    ASSERT_EQ(pending_ota_bytecode[0], 0xA0);
+    ASSERT_EQ(pending_ota_bytecode[8], 0xA8);
+    /* All chunks received → broadcast activated */
+    ASSERT_EQ(ota_is_active_flag, 1);
+}
+
+TEST(test_ota_assembly_two_chunks) {
+    /* Two-chunk OTA: each chunk has aligned=48 → payload_len = 48-16-7 = 25 */
+    ota_assembly_reset();
+    ota_is_active_flag = 0;
+    uint8_t pkt[48];
+    memset(pkt, 0, sizeof(pkt));
+
+    /* Chunk 0 */
+    pkt[0] = 0x99;
+    pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
+    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
+    for (uint8_t i = 0; i < 25; i++) pkt[5 + i] = (uint8_t)(0x10 + i);
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
+    ASSERT_EQ(ota_is_active_flag, 0);  /* Not all chunks yet */
+    ASSERT_EQ(ota_chunks_received, 1);
+
+    /* Chunk 1 → offset = 1 * 512 = 512 */
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[1] = 0x00; pkt[2] = 0x01;  /* index = 1 */
+    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
+    for (uint8_t i = 0; i < 25; i++) pkt[5 + i] = (uint8_t)(0x50 + i);
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
+    /* All chunks received → broadcast activated */
+    ASSERT_EQ(ota_is_active_flag, 1);
+    ASSERT_EQ(ota_chunks_received, 0);  /* Reset after activation */
+    ASSERT_EQ(pending_ota_bytecode[0], 0x10);    /* Chunk 0 data at offset 0 */
+    ASSERT_EQ(pending_ota_bytecode[512], 0x50);  /* Chunk 1 data at offset 512 */
+}
+
+TEST(test_ota_assembly_full_512_chunk) {
+    /* Full 512-byte chunk: aligned = 544 → (544 - 16 = 528) >= 514 → payload = 512 */
+    ota_assembly_reset();
+    ota_is_active_flag = 0;
+    uint8_t pkt[544];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
+    pkt[3] = 0x00; pkt[4] = 0x01;  /* total = 1 */
+    for (uint16_t i = 0; i < 512; i++) pkt[5 + i] = (uint8_t)(i & 0xFF);
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 544), 1);
+    ASSERT_EQ(pending_ota_size, 512);
+    ASSERT_EQ(pending_ota_bytecode[0], 0x00);
+    ASSERT_EQ(pending_ota_bytecode[255], 0xFF);
+    ASSERT_EQ(pending_ota_bytecode[511], 0xFF);
+    ASSERT_EQ(ota_is_active_flag, 1);
+}
+
+TEST(test_ota_assembly_bounds_overflow) {
+    /* chunk_index too large → offset + payload would exceed 8192 buffer */
+    ota_assembly_reset();
+    uint8_t pkt[48];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[1] = 0x00; pkt[2] = 0x10;  /* index = 16 → offset = 16*512 = 8192 */
+    pkt[3] = 0x00; pkt[4] = 0x20;  /* total = 32 */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 0);  /* Must reject: overflow */
+}
+
+TEST(test_ota_assembly_invalid_marker) {
+    ota_assembly_reset();
+    uint8_t pkt[32];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x42;  /* Wrong marker */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 32), 0);
+}
+
+TEST(test_ota_assembly_zero_total_chunks) {
+    ota_assembly_reset();
+    uint8_t pkt[32];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[3] = 0x00; pkt[4] = 0x00;  /* total_chunks = 0 */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 32), 0);  /* Must reject */
+}
+
+TEST(test_ota_assembly_too_small_aligned) {
+    ota_assembly_reset();
+    uint8_t pkt[5];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 5), 0);  /* aligned < 6 → reject */
+}
+
+TEST(test_ota_assembly_aligned_below_23) {
+    /* aligned >= 6 but < 23: passes first check but fails second MISRA check */
+    ota_assembly_reset();
+    uint8_t pkt[22];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[3] = 0x00; pkt[4] = 0x01;
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 22), 0);  /* aligned < 23 → reject */
+}
+
+TEST(test_ota_assembly_size_tracking) {
+    /* Verify pending_ota_size tracks the maximum written position */
+    ota_assembly_reset();
+    ota_is_active_flag = 0;
+    uint8_t pkt[48];
+
+    /* Chunk 1 arrives first (out of order), offset = 512 */
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[1] = 0x00; pkt[2] = 0x01;  /* index = 1 */
+    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
+    /* offset=512, payload_len=25 → pending_ota_size = 537 */
+    ASSERT_EQ(pending_ota_size, 537);
+
+    /* Chunk 0 arrives second, offset = 0 */
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0x99;
+    pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
+    pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
+    ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
+    /* offset=0, payload_len=25 → 25 < 537, so pending_ota_size stays 537 */
+    ASSERT_EQ(pending_ota_size, 537);
+    ASSERT_EQ(ota_is_active_flag, 1);  /* All chunks received */
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -992,6 +1206,17 @@ int main(void)
     RUN(test_ota_total_header);
     RUN(test_ota_index_header);
     RUN(test_ota_reassemble_all);
+
+    printf("\n  OTA Assembly (CoAP Downlink):\n");
+    RUN(test_ota_assembly_single_chunk);
+    RUN(test_ota_assembly_two_chunks);
+    RUN(test_ota_assembly_full_512_chunk);
+    RUN(test_ota_assembly_bounds_overflow);
+    RUN(test_ota_assembly_invalid_marker);
+    RUN(test_ota_assembly_zero_total_chunks);
+    RUN(test_ota_assembly_too_small_aligned);
+    RUN(test_ota_assembly_aligned_below_23);
+    RUN(test_ota_assembly_size_tracking);
 
     printf("\n  RSSI Clamp:\n");
     RUN(test_rssi_clamp_normal);
