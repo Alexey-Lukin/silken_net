@@ -68,15 +68,6 @@ while running
       gateway_ip = sender[3]
       timestamp = Time.current
 
-      # 0. ЖИВИЙ ПОТІК У МАТРИЦЮ (ActionCable)
-      # Транслюємо "сирі" байти в гексадецимальному форматі для UI
-      ActionCable.server.broadcast("telemetry_live_stream", {
-        hex: data.unpack1("H*").scan(/../).join(" "),
-        ip: gateway_ip,
-        size: data.bytesize,
-        at: timestamp.strftime("%H:%M:%S.%L")
-      })
-
       # 1. ПАРСЕР ЗАГОЛОВКА CoAP
       header = data.unpack("CCn")
       first_byte = header[0]
@@ -106,9 +97,6 @@ while running
           # UID Королеви передається як третій сегмент шляху: /telemetry/batch/<QUEEN_UID>
           # Це стабільний ідентифікатор, що не залежить від динамічного Starlink/LTE IP.
           gateway_uid = path_segments[2]
-
-          # 4. СИНХРОНІЗАЦІЯ З БАЗОЮ ТА sidekiq
-          ActiveRecord::Base.connection.verify! unless ActiveRecord::Base.connected?
 
           encoded_payload = Base64.strict_encode64(binary_payload)
           UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip, gateway_uid)

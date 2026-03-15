@@ -12,6 +12,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     allow(TelemetryUnpackerService).to receive(:call)
     allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
+    allow(ActionCable.server).to receive(:broadcast)
   end
 
   # Хелпер для створення зашифрованого payload (AES-256-CBC)
@@ -58,6 +59,19 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
       expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to).with("telemetry_stream", anything)
+    end
+
+    it "broadcasts raw hex payload to telemetry_live_stream via ActionCable" do
+      raw_data = "HEX_STREAM_TEST"
+      encrypted = encrypt_payload(raw_data, key_record.binary_key)
+      encoded = Base64.strict_encode64(encrypted)
+
+      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      expect(ActionCable.server).to have_received(:broadcast).with(
+        "telemetry_live_stream",
+        hash_including(ip: "10.0.0.1", size: encrypted.bytesize)
+      )
     end
 
     context "when dual-key rotation (grace period)" do

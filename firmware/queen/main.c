@@ -38,6 +38,7 @@
 // [FIX: AUDIT MISRA] Іменовані константи замість магічних чисел
 #define LORA_RX_INFINITE      0xFFFFFF  // Нескінченний таймаут прийому LoRa
 #define FLUSH_INTERVAL_MS     3600000   // Інтервал скидання кешу (1 година)
+#define FLUSH_JITTER_MAX_MS   60000    // Максимальний джиттер для десинхронізації (0-60 секунд)
 #define FLUSH_HEADROOM        5         // Кількість вільних слотів до примусового скидання
 #define QUEEN_HEALTH_GP_MAX   63        // Максимальне значення growth_points
 #define OTA_MAX_CHUNKS        16        // 8192 / 512 = максимальна кількість OTA-чанків
@@ -210,6 +211,24 @@ int main(void)
 
   uint32_t last_flush_time = HAL_GetTick();
 
+  // [FIX: Thundering Herd] Джиттер для десинхронізації скидання кешу.
+  // Після одночасного перезавантаження (blackout) кожна Королева отримує
+  // випадкове зміщення (0 — FLUSH_JITTER_MAX_MS), розмазуючи трафік по часу.
+  uint32_t current_jitter = 0;
+  {
+      uint32_t rng_val = 0;
+      hrng.Instance = RNG;
+      if (HAL_RNG_Init(&hrng) == HAL_OK) {
+          if (HAL_RNG_GenerateRandomNumber(&hrng, &rng_val) != HAL_OK) {
+              rng_val = HAL_GetTick(); // Fallback: tick як seed
+          }
+          HAL_RNG_DeInit(&hrng);
+      } else {
+          rng_val = HAL_GetTick();
+      }
+      current_jitter = rng_val % (FLUSH_JITTER_MAX_MS + 1);
+  }
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -295,8 +314,8 @@ int main(void)
     // СКИДАННЯ КЕШУ НА СЕРВЕР (GCCS Batching -> UDP/CoAP)
     // =========================================================================
     // Відправляємо пакет даних, якщо кеш заповнений майже повністю (залишилось 5 вільних слотів)
-    // АБО пройшло достатньо часу (наприклад, 1 година = 3 600 000 мс)
-    if (cache_count >= (CACHE_MAX_ENTRIES - FLUSH_HEADROOM) || (HAL_GetTick() - last_flush_time > FLUSH_INTERVAL_MS)) {
+    // АБО пройшло достатньо часу (FLUSH_INTERVAL_MS + джиттер для десинхронізації)
+    if (cache_count >= (CACHE_MAX_ENTRIES - FLUSH_HEADROOM) || (HAL_GetTick() - last_flush_time > FLUSH_INTERVAL_MS + current_jitter)) {
         if (cache_count > 0) {
             // [FIX: Queen Health Blind Spot]
             // Перед скиданням кешу додаємо власний пакет здоров'я Королеви.
@@ -318,6 +337,23 @@ int main(void)
             }
             Flush_Cache_To_Rails();
             last_flush_time = HAL_GetTick(); // Оновлюємо таймер
+
+            // [FIX: Thundering Herd] Перегенеровуємо джиттер після кожного flush,
+            // щоб навіть при однаковому стартовому зміщенні
+            // наступні цикли не синхронізувались.
+            {
+                uint32_t rng_val = 0;
+                hrng.Instance = RNG;
+                if (HAL_RNG_Init(&hrng) == HAL_OK) {
+                    if (HAL_RNG_GenerateRandomNumber(&hrng, &rng_val) != HAL_OK) {
+                        rng_val = HAL_GetTick() ^ 0xA5A5A5A5UL;
+                    }
+                    HAL_RNG_DeInit(&hrng);
+                } else {
+                    rng_val = HAL_GetTick() ^ 0xA5A5A5A5UL;
+                }
+                current_jitter = rng_val % (FLUSH_JITTER_MAX_MS + 1);
+            }
         }
     }
 
