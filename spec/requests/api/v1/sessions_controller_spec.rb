@@ -96,16 +96,15 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       result = controller.send(:current_session)
       expect(result).to be_nil
     end
-  end
 
-  describe "#current_session with authenticated user" do
     it "returns the most recent session when current_user exists" do
-      controller = described_class.new
-      session_mock = double("session_relation", order: double(first: double("session")))
-      mock_user = double("user", sessions: session_mock)
-      allow(controller).to receive(:current_user).and_return(mock_user)
-      result = controller.send(:current_session)
-      expect(result).not_to be_nil
+      # Login to create a session, then logout to exercise current_session lookup
+      post "/api/v1/login", params: { email: user.email_address, password: "password12345" }, as: :json
+      token = response.parsed_body["token"]
+
+      # The destroy action calls current_session internally, exercising lines 80-82
+      delete "/api/v1/logout", headers: { "Authorization" => "Bearer #{token}" }, as: :json
+      expect(response).to have_http_status(:ok)
     end
   end
 
