@@ -384,4 +384,105 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(result).to be false
     end
   end
+
+  describe "ML model integration" do
+    context "when model file is missing" do
+      it "falls back to heuristic stress_index calculation" do
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        # Heuristic: homeostasis (0) → base 0.0, z=0.5 (≤2.0) → no penalty, temp=25 (normal) → 0.0
+        expect(insight.stress_index).to be_zero
+      end
+    end
+
+    context "when model file is present" do
+      let(:mock_model) { instance_double(Rumale::Ensemble::RandomForestClassifier) }
+
+      before do
+        allow(File).to receive(:exist?).and_call_original
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_PATH).and_return(true)
+        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return(Marshal.dump(mock_model))
+        allow(Marshal).to receive(:load).and_return(mock_model)
+
+        proba_result = Numo::DFloat.cast([ [ 0.3, 0.7 ] ])
+        classes = Numo::Int32.cast([ 0, 1 ])
+        allow(mock_model).to receive_messages(predict_proba: proba_result, classes: classes)
+      end
+
+      it "uses ML model predict_proba for stress_index" do
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        expect(insight.stress_index).to eq(0.7)
+      end
+    end
+
+    context "when model loading raises an error" do
+      before do
+        allow(File).to receive(:exist?).and_call_original
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_PATH).and_return(true)
+        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_raise(StandardError, "corrupt model")
+      end
+
+      it "falls back to heuristic and logs warning" do
+        expect(Rails.logger).to receive(:warn).with(/Не вдалося завантажити ML-модель/)
+
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 3.0,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        # Heuristic fallback: homeostasis + z=3.0 penalty = 0.2
+        expect(insight.stress_index).to eq(0.2)
+      end
+    end
+  end
+
+  describe "fraud detection bypasses ML model" do
+    let(:normal_tree1) { create(:tree, cluster: cluster, status: :active) }
+    let(:fraudulent_tree) { create(:tree, cluster: cluster, status: :active) }
+
+    it "assigns stress_index 1.0 for fraud without querying AI model" do
+      # Normal tree establishes baseline
+      create(:telemetry_log, tree: normal_tree1,
+        temperature_c: 25.0, sap_flow: 100.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      # Fraudulent tree: both sap (200) and temp (50) deviate >30% from cluster avg
+      create(:telemetry_log, tree: fraudulent_tree,
+        temperature_c: 50.0, sap_flow: 200.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      fraud_insight = AiInsight.find_by(
+        analyzable: fraudulent_tree,
+        insight_type: :daily_health_summary,
+        target_date: date
+      )
+      expect(fraud_insight.stress_index).to eq(1.0)
+      expect(fraud_insight.fraud_detected).to be true
+    end
+  end
 end

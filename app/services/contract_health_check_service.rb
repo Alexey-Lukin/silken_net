@@ -40,7 +40,7 @@ class ContractHealthCheckService < ApplicationService
     end
 
     # Математична межа порушення — 20% від активної біомаси
-    critical_insights_count = daily_insights.where("stress_index >= 1.0").count
+    critical_insights_count = daily_insights.where("stress_index >= 0.83").count
 
     if critical_insights_count > total_active_count * Rational(1, 5)
       activate_slashing_protocol!

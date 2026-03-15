@@ -5,11 +5,14 @@ class InsightGeneratorService < ApplicationService
   # середньої по кластеру більше ніж на 30%, це класифікується як фрод/аномалія.
   FRAUD_DEVIATION_THRESHOLD = 0.30
 
+  MODEL_PATH = Rails.root.join("lib/assets/silken_forest.marshal").freeze
+
   def initialize(date = Time.current.utc.to_date - 1)
     @date = date
     @start_time = date.beginning_of_day
     @end_time = date.end_of_day
     @processed_count = 0
+    @ai_model = load_ai_model
   end
 
   def perform
@@ -106,7 +109,7 @@ class InsightGeneratorService < ApplicationService
 
     # Розраховуємо індекс стресу (враховуючи відхилення Z Атрактора та Фрод)
     # $$Stress = \min(1.0, \text{base\_stress} + \text{anomaly\_penalties})$$
-    stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f)
+    stress_index = is_fraud ? 1.0 : calculate_stress_index(stats.max_status.to_i, stats.avg_temp.to_f, stats.max_acoustic.to_i, stats.avg_z.to_f, stats.avg_vcap.to_i, calculate_deviation(stats.avg_sap.to_f, baseline[:sap]))
 
     summary = is_fraud ? "🚨 КРИТИЧНО: Виявлено фрод-телеметрію (аномальне відхилення від кластера)." : generate_summary(stats.max_status.to_i, stats.avg_temp.to_f)
 
@@ -158,7 +161,19 @@ class InsightGeneratorService < ApplicationService
     ((value - base).abs / base).round(4)
   end
 
-  def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z)
+  def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z, avg_vcap = 0, sap_deviation = 0.0)
+    if @ai_model
+      features = Numo::DFloat.cast([ [ avg_temp.to_f, avg_vcap.to_f, avg_z.to_f, sap_deviation.to_f, max_acoustic.to_f ] ])
+      proba = @ai_model.predict_proba(features)
+      # Індекс класу 1 (stress) у predict_proba — друга колонка
+      stress_class_index = @ai_model.classes.to_a.index(1) || 1
+      proba[0, stress_class_index].round(3)
+    else
+      calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
+    end
+  end
+
+  def calculate_stress_index_heuristic(max_status, avg_temp, _max_acoustic, avg_z)
     return 1.0 if max_status >= 2
     base_stress = (max_status == 1 ? 0.6 : 0.0)
     base_stress += 0.2 if avg_z.abs > 2.0
@@ -211,5 +226,14 @@ class InsightGeneratorService < ApplicationService
     when 1 then "СТРЕС: Вузол реагує на зовнішнє середовище (#{temp.round(1)}°C)."
     else "ГОМЕОСТАЗ: Стан дерева ідеальний."
     end
+  end
+
+  def load_ai_model
+    return nil unless File.exist?(MODEL_PATH)
+
+    Marshal.load(File.binread(MODEL_PATH)) # rubocop:disable Security/MarshalLoad
+  rescue StandardError => e
+    Rails.logger.warn "⚠️ [Insight] Не вдалося завантажити ML-модель: #{e.message}. Використовуємо евристику."
+    nil
   end
 end

@@ -77,6 +77,38 @@ RSpec.describe ContractHealthCheckService do
 
         expect(contract.reload).to be_status_breached
       end
+
+      it "activates slashing protocol when stress_index is at RF confidence boundary (0.83)" do
+        trees = create_list(:tree, 10, cluster: cluster, status: :active)
+
+        trees[0..2].each do |tree|
+          create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.83)
+        end
+        trees[3..9].each do |tree|
+          create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.1)
+        end
+
+        cluster.reload
+        described_class.call(contract, target_date)
+
+        expect(contract.reload).to be_status_breached
+      end
+
+      it "does not trigger slashing when stress_index is below RF boundary (0.82)" do
+        trees = create_list(:tree, 10, cluster: cluster, status: :active)
+
+        trees[0..2].each do |tree|
+          create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.82)
+        end
+        trees[3..9].each do |tree|
+          create(:ai_insight, analyzable: tree, target_date: target_date, stress_index: 0.1)
+        end
+
+        cluster.reload
+        described_class.call(contract, target_date)
+
+        expect(contract.reload).to be_status_active
+      end
     end
 
     context "when activate_slashing_protocol! encounters a database error" do
