@@ -56,6 +56,9 @@ class MintingRollbackService < ApplicationService
   end
 
   def rollback_transaction!(tx)
+    # [GUARD]: Пропускаємо транзакції, що вже у термінальному стані
+    return if tx.status.in?(%w[confirmed failed])
+
     Rails.logger.fatal "☠️ [Web3] Капітуляція транзакції ##{tx.id}. Запуск протоколу повернення активів..."
 
     ActiveRecord::Base.transaction do
@@ -68,9 +71,11 @@ class MintingRollbackService < ApplicationService
           tx.wallet.release_locked_funds!(tx.wallet.locked_balance)
         end
 
+        # [SAFE NAVIGATION]: Захист від nil-рефренсу при видаленому дереві
+        tree_did = tx.wallet.tree&.did || "N/A"
         tx.update!(
           status: :failed,
-          notes: "Rollback: Постійний збій RPC. Розблоковано #{refund_points} балів для DID: #{tx.wallet.tree.did}"
+          notes: "Rollback: Постійний збій RPC. Розблоковано #{refund_points} балів для DID: #{tree_did}"
         )
       end
     end
