@@ -1414,7 +1414,8 @@ CREATE TABLE public.trees (
     latest_voltage_mv integer,
     health_streak integer DEFAULT 0 NOT NULL,
     firmware_update_status integer DEFAULT 0 NOT NULL,
-    peaq_did character varying
+    peaq_did character varying,
+    latest_stress_index numeric(4,3) DEFAULT 0.0 NOT NULL
 );
 
 
@@ -2259,6 +2260,13 @@ CREATE INDEX gateway_telemetry_logs_y2026m06_gateway_id_idx ON public.gateway_te
 --
 
 CREATE INDEX gateway_telemetry_logs_y2026m06_queen_uid_created_at_idx ON public.gateway_telemetry_logs_y2026m06 USING btree (queen_uid, created_at);
+
+
+--
+-- Name: idx_ai_insights_polymorphic_type_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_insights_polymorphic_type_date ON public.ai_insights USING btree (analyzable_type, analyzable_id, insight_type, target_date);
 
 
 --
@@ -4137,6 +4145,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260315150000'),
 ('20260314192813'),
 ('20260314184543'),
 ('20260314180000'),

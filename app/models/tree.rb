@@ -133,10 +133,12 @@ class Tree < ApplicationRecord
   end
 
   # Останній вердикт Оракула
-  # [Cluster TZ]: Використовуємо часовий пояс кластера для правильної дати.
+  # [ВИПРАВЛЕНО: N+1 TreeBlueprint#current_stress]:
+  # Тепер читаємо денормалізовану колонку latest_stress_index замість запиту до ai_insights.
+  # Колонка оновлюється InsightGeneratorService при щоденній агрегації.
+  # Це усуває N+1 запит для КОЖНОГО дерева при серіалізації TreeBlueprint :index та Dashboard::MapNode.
   def current_stress
-    target = cluster&.local_yesterday || (Time.current.utc.to_date - 1)
-    ai_insights.daily_health_summary.for_date(target).first&.stress_index || 0.0
+    latest_stress_index.to_f
   end
 
   def under_threat?

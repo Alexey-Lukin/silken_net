@@ -13,11 +13,12 @@ module Api
           health_avg = org.clusters.average(:health_index).to_f.round(2)
 
           # Агрегація Енергії (Streaming Potential)
-          # Середній вольтаж по деревах організації за останню годину
-          avg_voltage = TelemetryLog.joins(tree: :cluster)
-                                    .where(clusters: { organization_id: org.id })
-                                    .where(created_at: 1.hour.ago..Time.current)
-                                    .average(:voltage_mv) || 0
+          # [ВИПРАВЛЕНО: Dashboard avg_voltage JOIN]:
+          # Замість важкого JOIN на telemetry_logs (мільйони рядків за годину)
+          # використовуємо вже денормалізовану колонку latest_voltage_mv із таблиці trees.
+          # mark_seen! оновлює latest_voltage_mv при кожному пакеті телеметрії,
+          # тому середнє по активних деревах відображає поточний стан флоту точніше.
+          avg_voltage = org.trees.active.average(:latest_voltage_mv) || 0
 
           {
             trees: {
