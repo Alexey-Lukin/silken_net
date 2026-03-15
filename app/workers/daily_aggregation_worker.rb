@@ -4,8 +4,10 @@ class DailyAggregationWorker
   include Sidekiq::Job
 
   # Пріоритет "low" для фонових задач, але сувора унікальність за датою.
-  # lock: :until_executed гарантує, що ми не почнемо "стискати" той самий день двічі.
-  sidekiq_options queue: "low", retry: 3, lock: :until_executed
+  # [UNIQUE_FOR]: Sidekiq Enterprise Unique Jobs замінює стороннє lock: :until_executed.
+  # Нативна реалізація ефективніша (Redis SETNX замість Lua-скриптів)
+  # та підтримується Sidekiq core team.
+  sidekiq_options queue: "low", retry: 3, unique_for: 6.hours
 
   def perform(date_string = nil)
     # 1. ВИЗНАЧЕННЯ ЦІЛЬОВОЇ ДАТИ (The Project Pulse)

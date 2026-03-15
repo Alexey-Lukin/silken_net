@@ -101,7 +101,9 @@ class MintCarbonCoinWorker
     Rails.logger.info "🔐 [Web3] Trustless мінтинг для TelemetryLog ##{telemetry_log_id}: #{tx_ids.size} транзакцій..."
 
     tx_ids.each_slice(200) do |batch|
-      BlockchainMintingService.call_batch(batch, telemetry_log: log)
+      within_rpc_limit do
+        BlockchainMintingService.call_batch(batch, telemetry_log: log)
+      end
     end
 
   rescue StandardError => e
@@ -128,10 +130,12 @@ class MintCarbonCoinWorker
 
     Rails.logger.info "🚀 [Web3] Запуск батч-емісії для #{txs.size} транзакцій..."
 
-    # [ЧАСОВИЙ ПАРАДОКС]: Оскільки BlockchainMintingService.call_batch тепер
-    # працює через .transact (асинхронно), цей виклик повернеться миттєво.
-    # Sidekiq не буде висіти в очікуванні підтвердження від Alchemy.
-    BlockchainMintingService.call_batch(txs.pluck(:id))
+    # [RATE LIMITED + ЧАСОВИЙ ПАРАДОКС]: RPC виклик захищений глобальним лімітером.
+    # BlockchainMintingService.call_batch працює через .transact (асинхронно),
+    # цей виклик повернеться миттєво. Sidekiq не буде висіти в очікуванні від Alchemy.
+    within_rpc_limit do
+      BlockchainMintingService.call_batch(txs.pluck(:id))
+    end
 
   rescue StandardError => e
     # Якщо сталася помилка на рівні підключення до RPC, повертаємо статус у Pending,

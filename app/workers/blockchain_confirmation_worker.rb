@@ -4,15 +4,22 @@ class BlockchainConfirmationWorker
   include ApplicationWeb3Worker
   # Web3 Critical черга. 10 ретраїв з експоненціальною паузою
   # дають системі близько 15-20 хвилин на очікування підтвердження мережею.
-  sidekiq_options queue: "web3_critical", retry: 10
+  # [UNIQUE_FOR]: Запобігає конкурентному поллінгу того ж tx_hash.
+  # Якщо джоба для цього хешу вже виконується — нова буде відхилена.
+  sidekiq_options queue: "web3_critical", retry: 10, unique_for: 10.minutes
 
   def perform(tx_hash)
-    # 1. ПІДКЛЮЧЕННЯ ДО МАТРИЦІ (Thread-cached RPC client)
-    client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
+    # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
+    # Тільки eth_get_transaction_receipt є RPC-операцією;
+    # обробка результату — це DB-операції, що не потребують лімітування.
+    receipt = within_rpc_limit do
+      # 1. ПІДКЛЮЧЕННЯ ДО МАТРИЦІ (Thread-cached RPC client)
+      client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
 
-    # Запитуємо квитанцію (receipt) транзакції
-    # У 2026 році Alchemy повертає результат миттєво, якщо блок вже сформовано.
-    receipt = client.eth_get_transaction_receipt(tx_hash)
+      # Запитуємо квитанцію (receipt) транзакції
+      # У 2026 році Alchemy повертає результат миттєво, якщо блок вже сформовано.
+      client.eth_get_transaction_receipt(tx_hash)
+    end
 
     # 2. АНАЛІЗ РЕАЛЬНОСТІ
     if receipt && receipt["result"]

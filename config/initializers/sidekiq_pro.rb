@@ -1,0 +1,98 @@
+# frozen_string_literal: true
+
+# = ===================================================================
+# 🔧 SIDEKIQ PRO/ENTERPRISE SHIMS (Development & Test Compatibility)
+# = ===================================================================
+# Забезпечує сумісність з Sidekiq Pro та Enterprise API в середовищах
+# розробки та тестування, де ліцензовані gem'и не встановлені.
+#
+# В продакшені ці класи надаються gem'ами sidekiq-pro та sidekiq-ent.
+# Shim'и просто делегують виконання без обмежень — вся бізнес-логіка
+# залишається ідентичною, лише enforcement-механізми відключені.
+#
+# Sidekiq Pro:  Batch (orchestration), expires_in (stale job TTL)
+# Sidekiq Ent:  Limiter (rate limiting), unique_for (deduplication)
+
+# --- Sidekiq Pro: Batch API ---
+# Оркестрація груп воркерів з колбеками (on_success, on_complete, on_death).
+# Використовується TokenomicsEvaluatorWorker для координації циклу емісії.
+unless defined?(Sidekiq::Batch)
+  module Sidekiq
+    class Batch
+      attr_accessor :description
+      attr_reader :bid
+
+      def initialize
+        @bid = SecureRandom.hex(8)
+        @callbacks = []
+      end
+
+      # Реєстрація колбеків: :success, :complete, :death
+      def on(event, klass, options = {})
+        @callbacks << { event: event.to_sym, klass: klass, options: options }
+      end
+
+      # Блок, що визначає джоби цього батчу.
+      # В продакшені Sidekiq Pro відстежує всі enqueued джоби всередині блоку.
+      def jobs
+        yield
+      end
+
+      # Доступ до зареєстрованих колбеків (для тестування)
+      def callbacks
+        @callbacks
+      end
+
+      # Status API для колбеків
+      class Status
+        attr_reader :bid
+
+        def initialize(bid)
+          @bid = bid
+        end
+
+        def total = 0
+        def failures = 0
+        def pending = 0
+        def complete? = true
+      end
+    end
+  end
+end
+
+# --- Sidekiq Enterprise: Rate Limiter API ---
+# Захист зовнішніх API від перевантаження (Web3 RPC: Alchemy, Infura, QuickNode).
+# Використовується ApplicationWeb3Worker для глобального обмеження RPC-запитів.
+unless defined?(Sidekiq::Limiter)
+  module Sidekiq
+    module Limiter
+      # Виключення, що сигналізує про перевищення ліміту.
+      # Sidekiq Enterprise middleware автоматично перепланує джобу.
+      class OverLimit < StandardError; end
+
+      # Створює window-based лімітер (N запитів за period).
+      # @param name [String] унікальне ім'я лімітера (ключ у Redis)
+      # @param limit [Integer] максимальна кількість запитів
+      # @param period [Symbol] :second, :minute, :hour
+      # @param wait [Integer] секунд очікування перед OverLimit (default: nil)
+      def self.window(name, limit, period, wait: nil)
+        WindowLimiter.new(name, limit, period)
+      end
+
+      # Shim WindowLimiter — просто виконує блок без обмежень.
+      class WindowLimiter
+        attr_reader :name, :limit, :period
+
+        def initialize(name, limit, period)
+          @name = name
+          @limit = limit
+          @period = period
+        end
+
+        def within_limit
+          yield
+        end
+      end
+    end
+  end
+end
