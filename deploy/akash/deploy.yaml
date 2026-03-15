@@ -86,6 +86,12 @@ services:
       # Maps to: Kamal env.secret REDIS_URL
       - REDIS_URL=REQUIRED_SECRET_NOT_SET
 
+      # Redis URL for Kredis distributed locks (Web3 nonce management).
+      # Uses DB 1 to isolate locks from Sidekiq queue data in DB 0.
+      # Format: redis://<host>:6379/1
+      # Maps to: Kamal env.secret KREDIS_REDIS_URL
+      - KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
+
       # Run Solid Queue supervisor inside Puma (single-node mode).
       # Maps to: Kamal env.clear SOLID_QUEUE_IN_PUMA
       - SOLID_QUEUE_IN_PUMA=true

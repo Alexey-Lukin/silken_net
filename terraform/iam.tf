@@ -46,3 +46,10 @@ resource "google_project_iam_member" "deploy_metric_writer" {
   role    = "roles/monitoring.metricWriter"
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
+
+# Cloud SQL Client — connect via Cloud SQL Auth Proxy (required for Akash sidecar proxy)
+resource "google_project_iam_member" "deploy_cloudsql_client" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.deploy.email}"
+}

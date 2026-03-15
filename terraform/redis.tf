@@ -26,11 +26,16 @@ resource "google_redis_instance" "silken_redis" {
   transit_encryption_mode = "SERVER_AUTHENTICATION"
 
   redis_configs = {
-    # [MEMORY WALL FIX]: volatile-lru evicts only keys WITH an expire (TTL) set,
-    # such as cache entries and silence filters. Sidekiq queue keys have no TTL
-    # and will never be evicted. This prevents Redis OOM crashes when the telemetry
-    # queue grows faster than workers can drain it, while preserving job data.
-    maxmemory-policy = "volatile-lru"
+    # [LOCK SAFETY FIX]: noeviction prevents Redis from silently deleting keys
+    # when memory is full. With volatile-lru, Kredis distributed locks (which
+    # carry a TTL for deadlock prevention) could be evicted during a telemetry
+    # queue flood — causing Web3 nonce collisions and double-spend vulnerabilities.
+    #
+    # With noeviction, write commands return OOM errors when memory is exhausted.
+    # Sidekiq handles this gracefully via retries. This is safer than silent lock
+    # eviction. Pair with Cloud Monitoring alerts on redis.googleapis.com/stats/memory/usage_ratio
+    # to proactively scale memory before hitting the limit.
+    maxmemory-policy = "noeviction"
   }
 
   depends_on = [google_project_service.redis]
