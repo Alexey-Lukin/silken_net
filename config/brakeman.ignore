@@ -11,8 +11,12 @@
     {
       "fingerprint": "0c1519d2874e131a0d3637e0f8decbf761243e5a1d34323ff2ca3ed1f3141cf7",
       "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in Celo reward service."
+    },
+    {
+      "fingerprint": "e20e6bdeb0ca4f73c441c913ba78b013155d0e5a5b0cf7c3499f255f5219941e",
+      "note": "Marshal.load is guarded by SHA256 integrity verification (verify_model_integrity!). The .marshal file is generated exclusively by the internal ai:train rake task, never from external input."
     }
   ],
-  "updated": "2026-03-15 15:14:00 +0000",
+  "updated": "2026-03-15 16:07:00 +0000",
   "brakeman_version": "8.0.4"
 }

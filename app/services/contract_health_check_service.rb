@@ -39,8 +39,9 @@ class ContractHealthCheckService < ApplicationService
       return
     end
 
-    # Математична межа порушення — 20% від активної біомаси
-    critical_insights_count = daily_insights.where("stress_index >= 1.0").count
+    # Математична межа порушення — 20% від активної біомаси.
+    # Поріг 0.83 відповідає порогу впевненості Random Forest (замість детерміністичного 1.0)
+    critical_insights_count = daily_insights.where("stress_index >= 0.83").count
 
     if critical_insights_count > total_active_count * Rational(1, 5)
       activate_slashing_protocol!
