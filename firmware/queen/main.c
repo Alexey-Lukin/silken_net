@@ -39,6 +39,7 @@
 #define LORA_RX_INFINITE      0xFFFFFF  // Нескінченний таймаут прийому LoRa
 #define FLUSH_INTERVAL_MS     3600000   // Інтервал скидання кешу (1 година)
 #define FLUSH_JITTER_MAX_MS   60000    // Максимальний джиттер для десинхронізації (0-60 секунд)
+#define RNG_FALLBACK_XOR_MASK 0xA5A5A5A5UL // XOR-маска для fallback-ентропії при відмові HRNG
 #define FLUSH_HEADROOM        5         // Кількість вільних слотів до примусового скидання
 #define QUEEN_HEALTH_GP_MAX   63        // Максимальне значення growth_points
 #define OTA_MAX_CHUNKS        16        // 8192 / 512 = максимальна кількість OTA-чанків
@@ -346,11 +347,11 @@ int main(void)
                 hrng.Instance = RNG;
                 if (HAL_RNG_Init(&hrng) == HAL_OK) {
                     if (HAL_RNG_GenerateRandomNumber(&hrng, &rng_val) != HAL_OK) {
-                        rng_val = HAL_GetTick() ^ 0xA5A5A5A5UL;
+                        rng_val = HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK;
                     }
                     HAL_RNG_DeInit(&hrng);
                 } else {
-                    rng_val = HAL_GetTick() ^ 0xA5A5A5A5UL;
+                    rng_val = HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK;
                 }
                 current_jitter = rng_val % (FLUSH_JITTER_MAX_MS + 1);
             }
