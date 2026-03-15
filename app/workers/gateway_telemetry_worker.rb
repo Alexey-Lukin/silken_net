@@ -13,6 +13,9 @@ class GatewayTelemetryWorker
   VALID_CSQ_VALUES = (0..31).freeze
 
   def perform(queen_uid, stats = {})
+    # Sentry context: tag with queen UID for error correlation
+    Sentry.set_tags(queen_uid: queen_uid || "unknown")
+
     # Підготовлюємо хеш один раз на початку, уникаючи зайвих алокацій в транзакції
     stats = stats.with_indifferent_access
 

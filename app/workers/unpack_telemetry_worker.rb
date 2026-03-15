@@ -17,6 +17,9 @@ class UnpackTelemetryWorker
   # gateway_uid — незашифрований UID з CoAP URI-Path (/telemetry/batch/<UID>).
   # Дозволяє коректно ідентифікувати шлюзи за NAT / динамічним Starlink IP.
   def perform(encoded_payload, sender_ip, gateway_uid = nil)
+    # Sentry context: tag with gateway UID for error correlation
+    Sentry.set_tags(gateway_uid: gateway_uid || "unknown", sender_ip: sender_ip)
+
     # 1. ДЕКОДУВАННЯ (Extraction)
     # Отримуємо сирі байти, що прийшли через CoAP/UDP
     binary_payload = Base64.strict_decode64(encoded_payload)
