@@ -18,7 +18,7 @@ class UnpackTelemetryWorker
   # Дозволяє коректно ідентифікувати шлюзи за NAT / динамічним Starlink IP.
   def perform(encoded_payload, sender_ip, gateway_uid = nil)
     # Sentry context: tag with gateway UID for error correlation
-    Sentry.set_tags(gateway_uid: gateway_uid || "unknown", sender_ip: sender_ip)
+    Sentry.set_tags(gateway_uid: gateway_uid || "unknown")
 
     # 1. ДЕКОДУВАННЯ (Extraction)
     # Отримуємо сирі байти, що прийшли через CoAP/UDP

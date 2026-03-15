@@ -15,7 +15,7 @@ RSpec.describe Sentry do
     end
 
     it "configures background worker threads for async delivery" do
-      expect(config.background_worker_threads).to be >= 1
+      expect(config.background_worker_threads).to eq(2)
     end
 
     it "limits breadcrumbs to prevent oversized payloads" do

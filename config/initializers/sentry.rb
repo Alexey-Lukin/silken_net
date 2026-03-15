@@ -18,7 +18,7 @@ Sentry.init do |config|
   # 🌍 ENVIRONMENT & RELEASE
   # -----------------------------------------------------------------------
   config.environment = Rails.env
-  config.release     = ENV.fetch("RELEASE_VERSION", "silken_net@#{`git rev-parse --short HEAD 2>/dev/null`.strip}")
+  config.release     = ENV.fetch("RELEASE_VERSION", nil)
 
   # -----------------------------------------------------------------------
   # 🔒 DATA SANITIZATION (Zero-Trust Security)
