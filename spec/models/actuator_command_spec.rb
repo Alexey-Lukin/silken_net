@@ -633,6 +633,17 @@ RSpec.describe ActuatorCommand, type: :model do
         command.fail!("gateway offline")
         expect(command.reload).to be_failed
       end
+
+      context "when fail is called without a reason" do
+        it "transitions to failed without setting error_message" do
+          command = create(:actuator_command, actuator: actuator)
+          command.dispatch!
+          command.acknowledge!
+          command.fail!
+          expect(command.status).to eq("failed")
+          expect(command.error_message).to be_nil
+        end
+      end
     end
 
     describe "may_ query methods" do

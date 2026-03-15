@@ -165,6 +165,15 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         described_class.new.perform(gateway.uid, valid_stats)
       }.to raise_error(StandardError, "Connection lost")
     end
+
+    it "logs error with nil UID when gateway not found during StandardError" do
+      allow(Gateway).to receive(:find_by!).and_raise(StandardError, "unexpected error")
+      expect(Rails.logger).to receive(:error).with(/Збій у матриці /)
+
+      expect {
+        described_class.new.perform("UNKNOWN_UID", { "voltage_mv" => 3300, "temperature_c" => 25, "cellular_signal_csq" => 15 })
+      }.to raise_error(StandardError)
+    end
   end
 
   describe "return unless gateway.cluster_id" do

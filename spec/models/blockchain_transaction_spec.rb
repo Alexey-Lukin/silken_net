@@ -452,5 +452,15 @@ RSpec.describe BlockchainTransaction, type: :model do
       # Should not raise error even without a wallet
       expect { tx.update!(notes: "audit") }.not_to raise_error
     end
+
+    context "when wallet is nil during status change" do
+      it "does not broadcast" do
+        tx = create(:blockchain_transaction, status: :sent)
+        allow(tx).to receive(:wallet).and_return(nil)
+        # Verify no broadcast occurs specifically because wallet is nil
+        expect(Turbo::StreamsChannel).not_to receive(:broadcast_replace_later_to)
+        tx.send(:broadcast_status_change)
+      end
+    end
   end
 end

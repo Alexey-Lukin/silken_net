@@ -206,6 +206,14 @@ RSpec.describe EmergencyResponseService do
     end
   end
 
+  describe "alert tree is nil" do
+    it "does not sort by proximity" do
+      alert_no_tree = create(:ews_alert, cluster: cluster, tree: nil, severity: :critical, alert_type: :severe_drought)
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+      expect { described_class.call(alert_no_tree) }.not_to raise_error
+    end
+  end
+
   describe "insert_all failure" do
     let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree) }
 

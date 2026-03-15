@@ -156,6 +156,21 @@ RSpec.describe PrometheusCollector, type: :request do
         expect(response.body).to include("silkennet_web3_queue_latency_seconds")
       end
     end
+
+    context "when IP address is invalid" do
+      it "returns 403 Forbidden" do
+        get "/metrics", headers: { "REMOTE_ADDR" => "not_an_ip" }
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "when Sidekiq/Redis is unavailable during gauge refresh" do
+      it "still returns metrics despite Sidekiq error" do
+        allow(Sidekiq::Queue).to receive(:new).and_raise(Redis::CannotConnectError)
+        get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
+        expect(response).to have_http_status(:ok)
+      end
+    end
   end
 
   # -----------------------------------------------------------------------

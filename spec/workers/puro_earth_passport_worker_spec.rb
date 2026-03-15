@@ -64,5 +64,17 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
     it "raises RecordNotFound for missing record" do
       expect { described_class.new.perform(-1) }.to raise_error(ActiveRecord::RecordNotFound)
     end
+
+    context "when record has nil coordinates" do
+      it "falls back to tree coordinates" do
+        tree = create(:tree, status: :deceased, latitude: 49.4285, longitude: 32.0620)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record.update_columns(latitude: nil, longitude: nil)
+
+        result = described_class.new.perform(record.id)
+        expect(result[:gps_coordinates][:latitude]).to eq(tree.latitude.to_f)
+        expect(result[:gps_coordinates][:longitude]).to eq(tree.longitude.to_f)
+      end
+    end
   end
 end

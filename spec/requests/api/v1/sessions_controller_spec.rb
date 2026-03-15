@@ -98,6 +98,17 @@ RSpec.describe Api::V1::SessionsController, type: :request do
     end
   end
 
+  describe "#current_session with authenticated user" do
+    it "returns the most recent session when current_user exists" do
+      controller = described_class.new
+      session_mock = double("session_relation", order: double(first: double("session")))
+      mock_user = double("user", sessions: session_mock)
+      allow(controller).to receive(:current_user).and_return(mock_user)
+      result = controller.send(:current_session)
+      expect(result).not_to be_nil
+    end
+  end
+
   describe "GET /api/v1/login (HTML format)" do
     it "renders the login page" do
       get "/api/v1/login", headers: { "Accept" => "text/html" }
