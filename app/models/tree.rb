@@ -89,8 +89,11 @@ class Tree < ApplicationRecord
   # ⚡ [ТРИГЕР СМЕРТІ]: Якщо дерево гине або зникає — ініціюємо фінансову відплату (Slashing)
   after_update_commit :trigger_slashing_protocol, if: -> { saved_change_to_status? && (removed? || deceased?) }
 
-  # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Миттєво оновлюємо вузол на мапі при будь-якій зміні (включаючи touch)
-  after_update_commit :broadcast_map_update
+  # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Оновлюємо вузол на мапі лише при зміні гео-даних або статусу.
+  # [ВИПРАВЛЕНО: Broadcast Storm]: Раніше стріляло на КОЖЕН update (включаючи mark_seen!/voltage),
+  # що генерувало 10K+ WebSocket-повідомлень/годину при масовій телеметрії.
+  # Тепер — тільки при зміні координат, статусу або voltage_mv (UI-релевантні зміни).
+  after_update_commit :broadcast_map_update, if: :map_relevant_change?
 
   # --- СКОУПИ (The Watchers) ---
   scope :active, -> { where(status: :active) }
@@ -123,7 +126,10 @@ class Tree < ApplicationRecord
     # Синхронізуємо in-memory стан без reload (як update_columns) для швидкодії на hot path
     self.last_seen_at = now
     self.latest_voltage_mv = voltage_mv if voltage_mv
-    broadcast_map_update
+    # [ВИПРАВЛЕНО: Broadcast Storm]: Видалено broadcast_map_update з hot path телеметрії.
+    # mark_seen! викликається для КОЖНОГО пакету (мільйони на годину).
+    # Мапа оновлюється через after_update_commit :broadcast_map_update лише при
+    # зміні координат або статусу (map_relevant_change?).
   end
 
   # Останній вердикт Оракула
@@ -175,6 +181,14 @@ class Tree < ApplicationRecord
   end
 
   private
+
+  # [ВИПРАВЛЕНО: Broadcast Storm]: Визначаємо, чи зміна є релевантною для оновлення мапи.
+  # Широкомовлення лише при зміні координат, статусу або latest_voltage_mv (іконка батареї).
+  # Це скорочує кількість WebSocket-повідомлень з ~10K/годину до ~100/годину.
+  def map_relevant_change?
+    saved_change_to_latitude? || saved_change_to_longitude? ||
+      saved_change_to_status? || saved_change_to_latest_voltage_mv?
+  end
 
   def build_default_wallet
     create_wallet!(balance: 0, organization: cluster&.organization)

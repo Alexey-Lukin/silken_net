@@ -55,8 +55,14 @@ module Api
 
       private
 
+      # [ВИПРАВЛЕНО: Sync RPC Trap]: Кешуємо GraphQL результат з TheGraph на 5 хвилин,
+      # щоб не блокувати кожен запит дашборду на 2-10 секунд.
       def fetch_global_onchain_carbon
-        TheGraph::QueryService.new.fetch_total_carbon_minted
+        Rails.cache.fetch("global_onchain_carbon", expires_in: 5.minutes) do
+          Timeout.timeout(10) do
+            TheGraph::QueryService.new.fetch_total_carbon_minted
+          end
+        end
       rescue StandardError
         0
       end
