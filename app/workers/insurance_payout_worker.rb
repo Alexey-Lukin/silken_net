@@ -68,13 +68,19 @@ class InsurancePayoutWorker
         Rails.logger.info "🛡️ [Insurance] Triggering Etherisc DIP claim for policy " \
                           "#{insurance.etherisc_policy_id} (insurance ##{insurance.id})..."
 
-        etherisc_tx_hash = Etherisc::ClaimService.new(insurance).claim!
+        # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
+        etherisc_tx_hash = within_rpc_limit do
+          Etherisc::ClaimService.new(insurance).claim!
+        end
         tx.update!(status: :sent, tx_hash: etherisc_tx_hash)
 
         BlockchainConfirmationWorker.perform_in(30.seconds, etherisc_tx_hash)
       else
         Rails.logger.info "🚀 [Insurance] Ініціація виплати #{tx.amount} SCC для #{organization.name}..."
-        BlockchainMintingService.call(tx.id)
+        # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
+        within_rpc_limit do
+          BlockchainMintingService.call(tx.id)
+        end
       end
     end
 

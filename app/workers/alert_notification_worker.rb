@@ -2,7 +2,9 @@
 
 class AlertNotificationWorker
   include Sidekiq::Job
-  sidekiq_options queue: "alerts", retry: 5
+  # [SIDEKIQ PRO EXPIRES_IN]: При flood черги alerts, сповіщення старші
+  # за 5 хвилин втрачають актуальність — патрульні вже побачили новіші.
+  sidekiq_options queue: "alerts", retry: 5, expires_in: 5.minutes
 
   def perform(ews_alert_id)
     alert = EwsAlert.find_by(id: ews_alert_id)

@@ -43,14 +43,35 @@ module ApplicationWeb3Worker
     sidekiq_options queue: "web3", retry: 5
   end
 
+  # [SIDEKIQ ENTERPRISE]: Глобальний RPC Rate Limiter.
+  # Обмежує ВСІХ Web3 воркерів до 50 запитів/секунду сумарно.
+  # Захищає від HTTP 429 (Too Many Requests) від Alchemy/Infura/QuickNode.
+  #
+  # В production: Sidekiq Enterprise використовує Redis для розподіленого
+  # лімітування між усіма процесами Sidekiq (Heroku/Kamal dyno'ами).
+  # В test/dev: shim з config/initializers/sidekiq_pro.rb просто виконує блок.
+  #
+  # wait: 5 означає, що воркер чекатиме до 5 секунд на вільний слот,
+  # перш ніж кинути Sidekiq::Limiter::OverLimit (яку Enterprise middleware
+  # автоматично перетворює на reschedule).
+  WEB3_RPC_LIMITER = Sidekiq::Limiter.window("web3_rpc", 50, :second, wait: 5)
+
   # Обгортка для RPC-взаємодій з блокчейном.
+  # [RATE LIMITED]: Автоматично обмежує частоту RPC-запитів через Enterprise Limiter.
   # Забезпечує уніфіковане логування та гарантує re-raise для Sidekiq retry.
   #
   # @param chain_name [String] назва мережі для логування (e.g., "Polygon", "Celo", "Solana")
   # @param resource_info [String, nil] опціональний контекст ресурсу (e.g., "TX #123", "Wallet #456")
   # @yield блок з RPC-операціями
   def with_web3_error_handling(chain_name, resource_info = nil)
-    yield
+    within_rpc_limit do
+      yield
+    end
+  rescue Sidekiq::Limiter::OverLimit
+    # Sidekiq Enterprise middleware автоматично перепланує джобу.
+    context = resource_info ? " for #{resource_info}" : ""
+    Rails.logger.warn "⏱️ [#{chain_name}] RPC rate limit exceeded#{context}. Job rescheduled by Enterprise."
+    raise
   rescue HTTPX::TimeoutError => e
     SilkenNet::Metrics::RPC_ERRORS_TOTAL.increment(labels: { network: chain_name, error_type: "timeout" })
     log_web3_error("⏱️", chain_name, "RPC Timeout", resource_info, e)
@@ -67,6 +88,15 @@ module ApplicationWeb3Worker
     SilkenNet::Metrics::RPC_ERRORS_TOTAL.increment(labels: { network: chain_name, error_type: "connection" })
     log_web3_error("🔌", chain_name, "RPC Connection Error", resource_info, e)
     raise
+  end
+
+  # Хелпер для прямого доступу до Enterprise Rate Limiter.
+  # Використовується воркерами, що не викликають with_web3_error_handling
+  # (MintCarbonCoinWorker, BlockchainConfirmationWorker, InsurancePayoutWorker).
+  #
+  # @yield блок з RPC-операціями
+  def within_rpc_limit(&block)
+    WEB3_RPC_LIMITER.within_limit(&block)
   end
 
   # [COMPOSITE PK]: Уніфікований пошук TelemetryLog з partition pruning.

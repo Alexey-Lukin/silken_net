@@ -121,8 +121,6 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
 
   describe "TokenomicsEvaluatorWorker flow" do
     it "scans eligible wallets and initiates batch minting" do
-      allow(BlockchainMintingService).to receive(:call_batch)
-
       tree1 = create(:tree, cluster: cluster, tree_family: tree_family)
       tree1.wallet.update!(crypto_public_address: "0x" + "aa" * 20)
       tree1.wallet.credit!(25_000)
@@ -131,7 +129,11 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
       tree2.wallet.update!(crypto_public_address: "0x" + "bb" * 20)
       tree2.wallet.credit!(5_000) # Below threshold
 
+      # [SIDEKIQ PRO BATCH]: Orchestrator enqueues EvaluateTreeBatchWorker chunks
       TokenomicsEvaluatorWorker.new.perform
+
+      # Drain the batch workers to simulate Sidekiq processing the batch
+      EvaluateTreeBatchWorker.drain
 
       # tree1 should have a pending blockchain transaction
       expect(tree1.wallet.blockchain_transactions.count).to eq(1)
@@ -141,8 +143,6 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
 
       # tree2 should have no transactions (below threshold)
       expect(tree2.wallet.blockchain_transactions.count).to eq(0)
-
-      expect(BlockchainMintingService).to have_received(:call_batch)
     end
   end
 

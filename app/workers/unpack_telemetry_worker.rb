@@ -5,8 +5,10 @@ require "openssl"
 
 class UnpackTelemetryWorker
   include Sidekiq::Job
-  # Використовуємо чергу uplink для пріоритетної обробки вхідних сигналів
-  sidekiq_options queue: "uplink", retry: 3
+  # [SIDEKIQ PRO EXPIRES_IN]: Якщо база даних впала або черга переповнена,
+  # телеметрія старша за 5 хвилин стає «застарілою» і лише витрачає CPU.
+  # Sidekiq Pro автоматично відкидає такі джоби при dequeue.
+  sidekiq_options queue: "uplink", retry: 3, expires_in: 5.minutes
 
   # Розмір IV для AES-256-CBC (один AES-блок = 16 байт)
   AES_IV_SIZE = 16

@@ -5,7 +5,11 @@
 # а не весь цикл по 250+ користувачах.
 class SingleNotificationWorker
   include Sidekiq::Job
-  sidekiq_options queue: "alerts", retry: 5
+  # [SIDEKIQ PRO EXPIRES_IN]: Індивідуальні повідомлення мають більший TTL (10 хвилин),
+  # ніж батьківський AlertNotificationWorker (5 хв), оскільки вони вже in-flight.
+  # Якщо конкретний SMS/Push застряг у черзі довше — краще пропустити,
+  # ніж відправити застаріле сповіщення (патрульний вже бачив новіше).
+  sidekiq_options queue: "alerts", retry: 5, expires_in: 10.minutes
 
   def perform(user_id, ews_alert_id, channel)
     user = User.find_by(id: user_id)

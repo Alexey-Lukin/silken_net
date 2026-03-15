@@ -5,7 +5,9 @@ class EthereumAnchorWorker
 
   # Web3 Low черга — повільні L1 Ethereum транзакції (1 раз на тиждень).
   # Retry: 3 спроби з автоматичним backoff (Ethereum gas estimation може бути нестабільним).
-  sidekiq_options queue: "web3_low", retry: 3
+  # [UNIQUE_FOR]: Запобігає перетину тижневих anchoring циклів.
+  # Якщо попередній анкорінг ще виконується — новий не запуститься.
+  sidekiq_options queue: "web3_low", retry: 3, unique_for: 1.hour
 
   def perform
     with_web3_error_handling("Ethereum", "L1 State Anchor") do
