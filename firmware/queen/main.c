@@ -25,6 +25,15 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+// OTA Downlink Constants (CoAP → Queen RAM assembly)
+#define OTA_MARKER            0x99   // Маркер OTA-пакета (перший байт)
+#define OTA_HEADER_SIZE       5      // [0x99][index:2][total:2]
+#define OTA_CRC_SIZE          2      // CRC16-CCITT в кінці чанка
+#define OTA_OVERHEAD          (OTA_HEADER_SIZE + OTA_CRC_SIZE)  // 7 байт
+#define AES_BLOCK_SIZE        16     // AES-256 block size
+#define MAX_OTA_CHUNK_PAYLOAD 512    // Максимальний розмір байткоду в одному CoAP-чанку
+#define OTA_FULL_CHUNK_THRESH (MAX_OTA_CHUNK_PAYLOAD + OTA_CRC_SIZE) // 514: поріг повного чанка
+#define MIN_OTA_ALIGNED       (AES_BLOCK_SIZE + OTA_OVERHEAD)        // 23: мінімальний aligned
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -619,7 +628,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // 8. Команда валідна та унікальна — передаємо на виконання актуатору
         // (Логіка виконання залежить від конкретного пристрою: клапан, сирена тощо)
 
-    } else if (cmd_decrypt_buf[0] == 0x99) {
+    } else if (cmd_decrypt_buf[0] == OTA_MARKER) {
         // ── Гілка OTA Downlink: збирання прошивки від Rails у RAM ─────
         // Архітектурний міст: Backend CoAP downlink → pending_ota_bytecode[] → LoRa broadcast
         //
@@ -639,25 +648,29 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // [MISRA C] Захист від невалідних заголовків
         if (total_chunks == 0) return;
 
+        // [MISRA C] Захист від overflow при малому aligned (underflow на uint16_t)
+        // MIN_OTA_ALIGNED = AES_BLOCK_SIZE (16) + OTA_HEADER_SIZE (5) + OTA_CRC_SIZE (2) = 23
+        if (aligned < MIN_OTA_ALIGNED) return;
+
         // Розрахунок довжини чистого байткоду (без заголовка, CRC, AES-padding):
         // aligned — повна довжина розшифрованих даних (вирівняна по AES-блоку).
-        // Останній 16-байтний блок може бути padding → гарантована корисна довжина = aligned - 16.
-        // Backend пакує до 512 байт коду + 2 байти CRC у чанк.
-        // Якщо (aligned - 16) >= 514 (512 payload + 2 CRC) → повний чанк, payload = 512.
-        // Інакше → неповний/останній чанк: payload = (aligned - 16) - 5 (header) - 2 (CRC).
-        uint16_t payload_len = (aligned - 16 >= 514) ? 512 : (aligned - 16 - 7);
-
-        // [MISRA C] Захист від overflow при малому aligned (underflow на uint16_t)
-        if (aligned < 23) return;  // Мінімум: 16 (AES block) + 5 (header) + 2 (CRC) = 23
+        // Останній AES-блок може бути padding → гарантована корисна довжина = aligned - AES_BLOCK_SIZE.
+        // Backend пакує до MAX_OTA_CHUNK_PAYLOAD байт коду + OTA_CRC_SIZE у чанк.
+        // Якщо guaranteed >= OTA_FULL_CHUNK_THRESH → повний чанк, payload = MAX_OTA_CHUNK_PAYLOAD.
+        // Інакше → неповний/останній чанк: payload = guaranteed - OTA_OVERHEAD.
+        uint16_t guaranteed = aligned - AES_BLOCK_SIZE;
+        uint16_t payload_len = (guaranteed >= OTA_FULL_CHUNK_THRESH)
+                             ? MAX_OTA_CHUNK_PAYLOAD
+                             : (guaranteed - OTA_OVERHEAD);
 
         // Обчислюємо зсув у RAM-буфері
-        uint32_t offset = (uint32_t)chunk_index * 512U;
+        uint32_t offset = (uint32_t)chunk_index * (uint32_t)MAX_OTA_CHUNK_PAYLOAD;
 
         // [MISRA C] Перевірка меж буфера: запобігаємо переповненню від зловмисних пакетів
         if (offset + payload_len > sizeof(pending_ota_bytecode)) return;
 
         // Копіюємо байткод у відповідну позицію RAM-буфера
-        memcpy(pending_ota_bytecode + offset, &cmd_decrypt_buf[5], payload_len);
+        memcpy(pending_ota_bytecode + offset, &cmd_decrypt_buf[OTA_HEADER_SIZE], payload_len);
 
         // Оновлюємо стан збирання
         ota_total_expected_chunks = total_chunks;

@@ -710,7 +710,7 @@ TEST(test_ota_assembly_single_chunk) {
     pkt[0] = 0x99;             /* marker */
     pkt[1] = 0x00; pkt[2] = 0x00;  /* chunk_index = 0 */
     pkt[3] = 0x00; pkt[4] = 0x01;  /* total_chunks = 1 */
-    for (int i = 0; i < 10; i++) pkt[5 + i] = (uint8_t)(0xA0 + i);
+    for (uint8_t i = 0; i < 10; i++) pkt[5 + i] = (uint8_t)(0xA0 + i);
     /* aligned = 32 (2 AES blocks). payload_len = 32 - 16 - 7 = 9 */
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 32), 1);
     ASSERT_EQ(pending_ota_size, 9);
@@ -731,7 +731,7 @@ TEST(test_ota_assembly_two_chunks) {
     pkt[0] = 0x99;
     pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
     pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
-    for (int i = 0; i < 25; i++) pkt[5 + i] = (uint8_t)(0x10 + i);
+    for (uint8_t i = 0; i < 25; i++) pkt[5 + i] = (uint8_t)(0x10 + i);
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     ASSERT_EQ(ota_is_active_flag, 0);  /* Not all chunks yet */
     ASSERT_EQ(ota_chunks_received, 1);
@@ -741,7 +741,7 @@ TEST(test_ota_assembly_two_chunks) {
     pkt[0] = 0x99;
     pkt[1] = 0x00; pkt[2] = 0x01;  /* index = 1 */
     pkt[3] = 0x00; pkt[4] = 0x02;  /* total = 2 */
-    for (int i = 0; i < 25; i++) pkt[5 + i] = (uint8_t)(0x50 + i);
+    for (uint8_t i = 0; i < 25; i++) pkt[5 + i] = (uint8_t)(0x50 + i);
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 48), 1);
     /* All chunks received → broadcast activated */
     ASSERT_EQ(ota_is_active_flag, 1);
@@ -759,7 +759,7 @@ TEST(test_ota_assembly_full_512_chunk) {
     pkt[0] = 0x99;
     pkt[1] = 0x00; pkt[2] = 0x00;  /* index = 0 */
     pkt[3] = 0x00; pkt[4] = 0x01;  /* total = 1 */
-    for (int i = 0; i < 512; i++) pkt[5 + i] = (uint8_t)(i & 0xFF);
+    for (uint16_t i = 0; i < 512; i++) pkt[5 + i] = (uint8_t)(i & 0xFF);
     ASSERT_EQ(Assemble_OTA_Chunk(pkt, 544), 1);
     ASSERT_EQ(pending_ota_size, 512);
     ASSERT_EQ(pending_ota_bytecode[0], 0x00);
