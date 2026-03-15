@@ -35,6 +35,7 @@
 UART_HandleTypeDef huart1;  // Інтерфейс для модему SIM7070G (LTE-M / Starlink)
 SUBGHZ_HandleTypeDef hsubghz;
 CRYP_HandleTypeDef hcryp; // Апаратний криптопроцесор AES
+RNG_HandleTypeDef hrng;   // Апаратний генератор випадкових чисел (HRNG)
 
 /* USER CODE BEGIN PV */
 
@@ -437,15 +438,25 @@ void Flush_Cache_To_Rails(void)
     if (padded_size > sizeof(binary_batch_buffer)) padded_size = sizeof(binary_batch_buffer);
     memset(binary_batch_buffer + offset, 0, padded_size - offset);
 
-    // 2. Генеруємо унікальний IV для кожного батча на основі системного таймера.
-    //    Не є криптографічно випадковим, але гарантує унікальність між батчами.
-    uint32_t tick = HAL_GetTick();
-    uint32_t batch_iv[4] = {
-        tick,
-        ~tick,
-        tick + 0x5A5A5A5AUL,
-        ~tick + 0xA5A5A5A5UL
-    };
+    // 2. Генеруємо криптографічно безпечний IV через апаратний RNG (HRNG).
+    //    "Wu-Wei" підхід: ініціалізація RNG безпосередньо перед генерацією IV,
+    //    де-ініціалізація одразу після — нульове споживання в режимі сну.
+    //    Це запобігає атакам на передбачуваність CBC (CVE-pattern: predictable IV),
+    //    зберігаючи мінімальне енергоспоживання для автономної роботи в лісі.
+    uint32_t batch_iv[4];
+
+    hrng.Instance = RNG;
+    HAL_RNG_Init(&hrng);
+
+    for (uint8_t i = 0U; i < 4U; i++) {
+        if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
+            /* Fallback: якщо HRNG не відповідає — XOR tick з індексом,
+               щоб шлюз не зависав у лісі без зв'язку. */
+            batch_iv[i] = HAL_GetTick() ^ (i * 0x5A5A5A5AUL);
+        }
+    }
+
+    HAL_RNG_DeInit(&hrng);
 
     // 3. Оновлюємо IV у конфігурації крипто-модуля та переініціалізуємо
     hcryp.Init.pInitVect = batch_iv;
