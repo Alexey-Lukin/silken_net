@@ -127,6 +127,12 @@ class InsightGeneratorService < ApplicationService
       }
     )
 
+    # [ВИПРАВЛЕНО: N+1 TreeBlueprint#current_stress]:
+    # Денормалізуємо stress_index прямо в таблицю trees (аналогічно latest_voltage_mv).
+    # Це усуває N+1 запит для кожного дерева при серіалізації (TreeBlueprint, MapNode).
+    # Використовуємо update_column для швидкодії без callbacks (hot path для мільйонів дерев).
+    tree.update_column(:latest_stress_index, stress_index)
+
     # ⚡ [ВИПРАВЛЕНО: Жорсткий Slashing]:
     # Ми більше не "вбиваємо" дерево миттєво. Створюємо критичну тривогу для перевірки.
     # Це захищає інвестора від помилок ШІ, але зупиняє виплати до вердикту людини.

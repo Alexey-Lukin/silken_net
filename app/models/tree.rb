@@ -21,9 +21,11 @@ class Tree < ApplicationRecord
   # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для швидкодії без OOM
   has_many :telemetry_logs, dependent: :delete_all
 
-  has_many :ews_alerts, dependent: :destroy
-  has_many :maintenance_records, as: :maintainable, dependent: :destroy
-  has_many :ai_insights, as: :analyzable, dependent: :destroy
+  # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для масових таблиць,
+  # щоб уникнути OOM при видаленні дерева з мільйонами записів.
+  has_many :ews_alerts, dependent: :delete_all
+  has_many :maintenance_records, as: :maintainable, dependent: :delete_all
+  has_many :ai_insights, as: :analyzable, dependent: :delete_all
 
   # --- ДЕЛЕГУВАННЯ ---
   delegate :name, :attractor_thresholds, to: :tree_family, prefix: true
@@ -87,8 +89,11 @@ class Tree < ApplicationRecord
   # ⚡ [ТРИГЕР СМЕРТІ]: Якщо дерево гине або зникає — ініціюємо фінансову відплату (Slashing)
   after_update_commit :trigger_slashing_protocol, if: -> { saved_change_to_status? && (removed? || deceased?) }
 
-  # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Миттєво оновлюємо вузол на мапі при будь-якій зміні (включаючи touch)
-  after_update_commit :broadcast_map_update
+  # ⚡ [ГЕОПРОСТОРОВА МАТРИЦЯ]: Оновлюємо вузол на мапі лише при зміні гео-даних або статусу.
+  # [ВИПРАВЛЕНО: Broadcast Storm]: Раніше стріляло на КОЖЕН update (включаючи mark_seen!/voltage),
+  # що генерувало 10K+ WebSocket-повідомлень/годину при масовій телеметрії.
+  # Тепер — тільки при зміні координат, статусу або voltage_mv (UI-релевантні зміни).
+  after_update_commit :broadcast_map_update, if: :map_relevant_change?
 
   # --- СКОУПИ (The Watchers) ---
   scope :active, -> { where(status: :active) }
@@ -121,14 +126,19 @@ class Tree < ApplicationRecord
     # Синхронізуємо in-memory стан без reload (як update_columns) для швидкодії на hot path
     self.last_seen_at = now
     self.latest_voltage_mv = voltage_mv if voltage_mv
-    broadcast_map_update
+    # [ВИПРАВЛЕНО: Broadcast Storm]: Видалено broadcast_map_update з hot path телеметрії.
+    # mark_seen! викликається для КОЖНОГО пакету (мільйони на годину).
+    # Мапа оновлюється через after_update_commit :broadcast_map_update лише при
+    # зміні координат або статусу (map_relevant_change?).
   end
 
   # Останній вердикт Оракула
-  # [Cluster TZ]: Використовуємо часовий пояс кластера для правильної дати.
+  # [ВИПРАВЛЕНО: N+1 TreeBlueprint#current_stress]:
+  # Тепер читаємо денормалізовану колонку latest_stress_index замість запиту до ai_insights.
+  # Колонка оновлюється InsightGeneratorService при щоденній агрегації.
+  # Це усуває N+1 запит для КОЖНОГО дерева при серіалізації TreeBlueprint :index та Dashboard::MapNode.
   def current_stress
-    target = cluster&.local_yesterday || (Time.current.utc.to_date - 1)
-    ai_insights.daily_health_summary.for_date(target).first&.stress_index || 0.0
+    latest_stress_index.to_f
   end
 
   def under_threat?
@@ -173,6 +183,14 @@ class Tree < ApplicationRecord
   end
 
   private
+
+  # [ВИПРАВЛЕНО: Broadcast Storm]: Визначаємо, чи зміна є релевантною для оновлення мапи.
+  # Широкомовлення лише при зміні координат, статусу або latest_voltage_mv (іконка батареї).
+  # Це скорочує кількість WebSocket-повідомлень з ~10K/годину до ~100/годину.
+  def map_relevant_change?
+    saved_change_to_latitude? || saved_change_to_longitude? ||
+      saved_change_to_status? || saved_change_to_latest_voltage_mv?
+  end
 
   def build_default_wallet
     create_wallet!(balance: 0, organization: cluster&.organization)

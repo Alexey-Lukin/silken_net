@@ -134,16 +134,25 @@ module Api
 
       REAL_YIELD_DEFAULTS = { total_minted_scc: 0, total_burned_scc: 0, total_premiums_usdc: 0, net_deflation: 0 }.freeze
 
+      # [ВИПРАВЛЕНО: Sync RPC Trap]: Кешуємо GraphQL результат на 5 хвилин,
+      # щоб не блокувати HTTP-запит при кожному генеруванні фінансового звіту.
       def fetch_real_yield
-        financials = TheGraph::QueryService.new.fetch_protocol_financials
-        {
-          total_minted_scc: financials[:total_minted],
-          total_burned_scc: financials[:total_burned],
-          total_premiums_usdc: financials[:total_premiums],
-          net_deflation: financials[:total_burned] - financials[:total_minted]
-        }
+        Rails.cache.fetch("reports_real_yield", expires_in: 5.minutes) do
+          financials = Timeout.timeout(10) do
+            TheGraph::QueryService.new.fetch_protocol_financials
+          end
+          {
+            total_minted_scc: financials[:total_minted],
+            total_burned_scc: financials[:total_burned],
+            total_premiums_usdc: financials[:total_premiums],
+            net_deflation: financials[:total_burned] - financials[:total_minted]
+          }
+        end
       rescue TheGraph::QueryService::QueryError => e
         Rails.logger.warn("Real yield fetch failed: #{e.message}")
+        REAL_YIELD_DEFAULTS.dup
+      rescue StandardError => e
+        Rails.logger.warn("Real yield fetch timeout: #{e.message}")
         REAL_YIELD_DEFAULTS.dup
       end
 

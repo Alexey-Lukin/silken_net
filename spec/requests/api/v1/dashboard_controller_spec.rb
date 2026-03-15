@@ -124,9 +124,7 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       end
 
       it "returns STABLE when average voltage exceeds 3300 mV" do
-        tree = create(:tree, cluster: cluster, status: :active)
-        create(:telemetry_log, tree: tree, voltage_mv: 4200, created_at: 10.minutes.ago)
-        create(:telemetry_log, tree: tree, voltage_mv: 4000, created_at: 20.minutes.ago)
+        create(:tree, cluster: cluster, status: :active, latest_voltage_mv: 4100)
 
         get "/api/v1/dashboard", headers: headers, as: :json
 

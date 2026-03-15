@@ -31,7 +31,7 @@ RSpec.describe BlockchainBurningService do
     allow(Eth::Key).to receive(:new).and_return(mock_key)
     allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
     allow(Kredis).to receive(:lock).and_yield
-    allow(mock_client).to receive(:transact_and_wait).and_return(fake_tx_hash)
+    allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
 
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
@@ -81,7 +81,7 @@ RSpec.describe BlockchainBurningService do
 
         described_class.call(organization.id, naas_contract.id)
 
-        expect(mock_client).to have_received(:transact_and_wait) do |_contract, _method, _addr, amount_in_wei, **_opts|
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
           burn_amount = (2000 * 0.5).ceil
           expected_wei = (burn_amount.to_f * (10**18)).to_i
           expect(amount_in_wei).to eq(expected_wei)
@@ -91,7 +91,7 @@ RSpec.describe BlockchainBurningService do
       it "falls back to full burn when no AiInsight data and no source_tree" do
         described_class.call(organization.id, naas_contract.id)
 
-        expect(mock_client).to have_received(:transact_and_wait) do |_contract, _method, _addr, amount_in_wei, **_opts|
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
           expected_wei = (1000.0 * (10**18)).to_i
           expect(amount_in_wei).to eq(expected_wei)
         end
@@ -109,8 +109,14 @@ RSpec.describe BlockchainBurningService do
         expect(audit_tx.sourceable).to eq(naas_contract)
       end
 
+      it "schedules BlockchainConfirmationWorker after sending transaction" do
+        expect(BlockchainConfirmationWorker).to receive(:perform_in).with(30.seconds, fake_tx_hash)
+
+        described_class.call(organization.id, naas_contract.id)
+      end
+
       it "sets contract to breached and creates EwsAlert on blockchain failure" do
-        allow(mock_client).to receive(:transact_and_wait).and_raise(StandardError, "RPC timeout")
+        allow(mock_client).to receive(:transact).and_raise(StandardError, "RPC timeout")
 
         expect {
           described_class.call(organization.id, naas_contract.id)
@@ -138,7 +144,7 @@ RSpec.describe BlockchainBurningService do
         # 2 trees total, source_tree specified → damage_ratio = 1/2 = 0.5
         described_class.call(organization.id, naas_contract.id, source_tree: tree)
 
-        expect(mock_client).to have_received(:transact_and_wait) do |_contract, _method, _addr, amount_in_wei, **_opts|
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
           total_minted = 1500
           burn_amount = (total_minted * (1.0 / 2)).ceil
           expected_wei = (burn_amount.to_f * (10**18)).to_i
@@ -210,7 +216,7 @@ RSpec.describe BlockchainBurningService do
         # No AiInsight records, no source_tree
         described_class.call(organization.id, naas_contract.id)
 
-        expect(mock_client).to have_received(:transact_and_wait) do |_contract, _method, _addr, amount_in_wei, **_opts|
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
           expected_wei = (200.0 * (10**18)).to_i
           expect(amount_in_wei).to eq(expected_wei)
         end
@@ -247,7 +253,7 @@ RSpec.describe BlockchainBurningService do
     it "marks naas_contract as breached and creates audit transaction" do
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
 
-      allow(mock_client).to receive(:transact_and_wait).and_return("0x" + "f" * 64)
+      allow(mock_client).to receive(:transact).and_return("0x" + "f" * 64)
 
       described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
 
@@ -267,7 +273,7 @@ RSpec.describe BlockchainBurningService do
     it "uses cluster.trees.active.first wallet as audit_wallet" do
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
 
-      allow(mock_client).to receive(:transact_and_wait).and_return("0xabc123")
+      allow(mock_client).to receive(:transact).and_return("0xabc123")
 
       described_class.call(organization.id, naas_contract.id)
 
@@ -284,7 +290,7 @@ RSpec.describe BlockchainBurningService do
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
       tree_burn.update_columns(status: Tree.statuses[:deceased])
 
-      allow(mock_client).to receive(:transact_and_wait).and_return("0xdead")
+      allow(mock_client).to receive(:transact).and_return("0xdead")
 
       described_class.call(organization.id, naas_contract.id)
 
@@ -301,7 +307,7 @@ RSpec.describe BlockchainBurningService do
     it "does not mark contract as breached when transact returns nil" do
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
 
-      allow(mock_client).to receive(:transact_and_wait).and_return(nil)
+      allow(mock_client).to receive(:transact).and_return(nil)
 
       described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
 

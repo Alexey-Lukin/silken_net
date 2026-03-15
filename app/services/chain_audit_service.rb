@@ -17,23 +17,39 @@ class ChainAuditService < ApplicationService
 
   CRITICAL_DELTA_THRESHOLD = 0.0001
 
+  # [ВИПРАВЛЕНО: Sync RPC Trap]: Кешуємо результат аудиту на 5 хвилин,
+  # щоб не блокувати HTTP-запит на 1-10 секунд синхронним RPC до Polygon.
+  # Обмежуємо час виконання RPC-запиту через Timeout.
+  CACHE_TTL = 5.minutes
+  RPC_TIMEOUT_SECONDS = 10
+
   Result = Struct.new(:db_total, :chain_total, :delta, :critical, :checked_at, keyword_init: true)
 
   def perform
-    db_total     = fetch_db_scc_total
-    chain_total  = fetch_chain_total_supply
-    delta        = (db_total - chain_total).abs
-
-    Result.new(
-      db_total:   db_total,
-      chain_total: chain_total,
-      delta:      delta,
-      critical:   delta > CRITICAL_DELTA_THRESHOLD,
-      checked_at: Time.current
-    )
+    Rails.cache.fetch("chain_audit_result", expires_in: CACHE_TTL) do
+      compute_audit
+    end
+  rescue StandardError => e
+    Rails.logger.error "🛑 [ChainAudit] Збій аудиту: #{e.message}"
+    # Повертаємо fallback з нульовими значеннями замість блокування запиту
+    Result.new(db_total: 0, chain_total: 0, delta: 0, critical: false, checked_at: Time.current)
   end
 
   private
+
+  def compute_audit
+    db_total    = fetch_db_scc_total
+    chain_total = fetch_chain_total_supply
+    delta       = (db_total - chain_total).abs
+
+    Result.new(
+      db_total:    db_total,
+      chain_total: chain_total,
+      delta:       delta,
+      critical:    delta > CRITICAL_DELTA_THRESHOLD,
+      checked_at:  Time.current
+    )
+  end
 
   # Сума всіх підтверджених SCC-транзакцій у БД Postgres
   def fetch_db_scc_total
@@ -44,6 +60,7 @@ class ChainAuditService < ApplicationService
   end
 
   # Загальна емісія SCC у смарт-контракті Polygon (totalSupply) — Thread-cached RPC client
+  # [ВИПРАВЛЕНО: Sync RPC Trap]: Обгортаємо в Timeout, щоб не блокувати HTTP запит нескінченно.
   def fetch_chain_total_supply
     client   = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
     contract = Eth::Contract.from_abi(
@@ -52,7 +69,9 @@ class ChainAuditService < ApplicationService
       abi:     TOTAL_SUPPLY_ABI
     )
 
-    raw = client.call(contract, "totalSupply")
+    raw = Timeout.timeout(RPC_TIMEOUT_SECONDS) do
+      client.call(contract, "totalSupply")
+    end
     raw.to_f / (10**18)
   end
 end

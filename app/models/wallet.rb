@@ -5,7 +5,9 @@ class Wallet < ApplicationRecord
 
   # --- ЗВ'ЯЗКИ (The Financial Fabric) ---
   belongs_to :tree
-  has_many :blockchain_transactions, dependent: :destroy
+  # [ВИПРАВЛЕНО: Чорна Діра Пам'яті]: Використовуємо delete_all для масової таблиці
+  # blockchain_transactions, щоб уникнути OOM при видаленні гаманця з мільйонами TX.
+  has_many :blockchain_transactions, dependent: :delete_all
 
   # ⚡ [ВИПРАВЛЕНО: The Join Abyss]: Прямий зв'язок з організацією через денормалізований FK.
   # Замінює глибокий ланцюг wallet → tree → cluster → organization на один SELECT.

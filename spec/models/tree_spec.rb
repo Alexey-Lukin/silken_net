@@ -175,15 +175,13 @@ RSpec.describe Tree, type: :model do
   end
 
   describe "#current_stress" do
-    it "returns 0.0 when no AI insights exist" do
+    it "returns 0.0 when latest_stress_index is default" do
       tree = create(:tree)
       expect(tree.current_stress).to eq(0.0)
     end
 
-    it "returns stress_index from daily health summary" do
-      tree = create(:tree)
-      target = tree.cluster&.local_yesterday || (Time.current.utc.to_date - 1)
-      create(:ai_insight, analyzable: tree, target_date: target, stress_index: 0.75)
+    it "returns latest_stress_index from denormalized column" do
+      tree = create(:tree, latest_stress_index: 0.75)
 
       expect(tree.current_stress).to eq(0.75)
     end
@@ -274,7 +272,7 @@ RSpec.describe Tree, type: :model do
   end
 
   describe "current_stress when cluster is nil" do
-    it "falls back to UTC yesterday when cluster is nil" do
+    it "returns 0.0 from denormalized column regardless of cluster presence" do
       tree = create(:tree)
       allow(tree).to receive(:cluster).and_return(nil)
       expect(tree.current_stress).to eq(0.0)

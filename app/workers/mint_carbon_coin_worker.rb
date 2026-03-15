@@ -11,63 +11,20 @@ class MintCarbonCoinWorker
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # Викликається, коли всі 5 спроб RPC-зв'язку (відправки в мемпул) вичерпано.
   # Ми не можемо дозволити капіталу "зависнути" в ефірі.
+  # [ARCHITECTURAL FIX]: Логіка ролбеку вилучена в MintingRollbackService
+  # для дотримання принципу Single Responsibility та тестованості.
   sidekiq_retries_exhausted do |msg, _ex|
     telemetry_log_id = msg["args"].first
     created_at_iso = msg["args"].second
 
     if telemetry_log_id
-      # Oracle-driven flow: знаходимо TelemetryLog та пов'язані транзакції
-      scope = TelemetryLog.where(id: telemetry_log_id)
-      if created_at_iso.present?
-        begin
-          scope = scope.where(created_at: Time.iso8601(created_at_iso))
-        rescue ArgumentError
-          # Некоректний формат — шукаємо без partition pruning
-        end
-      end
-      log = scope.first
-      next unless log
-
-      wallet = log.tree&.wallet
-      next unless wallet
-
-      txs = wallet.blockchain_transactions.where(status: [ :pending, :processing ])
+      MintingRollbackService.call(
+        telemetry_log_id: telemetry_log_id,
+        created_at_iso: created_at_iso
+      )
     else
-      # Auto-discovery flow: знаходимо всі заблоковані транзакції
       txs = BlockchainTransaction.where(status: [ :pending, :processing ]).limit(1000)
-    end
-
-    txs.each do |tx|
-      Rails.logger.fatal "☠️ [Web3] Капітуляція транзакції ##{tx.id}. Запуск протоколу повернення активів..."
-
-      ActiveRecord::Base.transaction do
-        # Pessimistic lock для запобігання подвійного використання балів під час відкату
-        tx.wallet.with_lock do
-          # Повертаємо рівно ту кількість балів, яка була заблокована при створенні транзакції.
-          # Використовуємо збережений snapshot locked_points замість перерахунку через
-          # поточний EMISSION_THRESHOLD, який міг змінитись між створенням та ролбеком.
-          refund_points = tx.locked_points || (tx.amount * TokenomicsEvaluatorWorker::EMISSION_THRESHOLD).to_i
-
-          # [FIX]: lock_and_mint! блокує кошти через increment!(:locked_balance),
-          # НЕ змінюючи balance. Правильний rollback — зняти блокування через
-          # release_locked_funds!, а не inflate balance через increment!(:balance).
-          if tx.wallet.locked_balance >= refund_points
-            tx.wallet.release_locked_funds!(refund_points)
-          else
-            # Захисний fallback: якщо locked_balance вже частково розблоковано
-            # (наприклад, іншим процесом), звільняємо скільки можемо.
-            tx.wallet.release_locked_funds!(tx.wallet.locked_balance) if tx.wallet.locked_balance > 0
-          end
-
-          tx.update!(
-            status: :failed,
-            notes: "Rollback: Постійний збій RPC. Розблоковано #{refund_points} балів для DID: #{tx.wallet.tree.did}"
-          )
-        end
-      end
-
-      # Сповіщаємо UI про фінальний провал транзакції
-      tx.wallet.broadcast_update if tx.wallet.respond_to?(:broadcast_update)
+      MintingRollbackService.call(transactions: txs)
     end
   end
 

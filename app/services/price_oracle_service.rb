@@ -9,6 +9,10 @@ class PriceOracleService
   USDC_TOKEN = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174" # Стейблкоїн для пари
   POOL_FEE = 3000 # 0.3% pool
 
+  # [ВИПРАВЛЕНО: The 429 Trap]: Таймаут для RPC-запитів до Uniswap Quoter.
+  # Без цього обмеження client.call() може висіти нескінченно при перевантаженні Polygon RPC.
+  RPC_TIMEOUT_SECONDS = 15
+
   class << self
     def current_scc_price
       # [CASHING]: Не турбуємо блокчейн частіше ніж раз на 5 хвилин
@@ -33,8 +37,12 @@ class PriceOracleService
       # quoteExactInputSingle(tokenIn, tokenOut, fee, amountIn, sqrtPriceLimitX96)
       amount_in = 10**18 # 1 full SCC (18 decimals)
 
-      raw_amount_out = client.call(quoter, "quoteExactInputSingle",
-                                   SCC_TOKEN, USDC_TOKEN, POOL_FEE, amount_in, 0)
+      # [ВИПРАВЛЕНО: The 429 Trap]: Обгортаємо RPC-виклик у Timeout, щоб запобігти
+      # нескінченному зависанню при перевантаженні Polygon RPC або Alchemy rate limiting.
+      raw_amount_out = Timeout.timeout(RPC_TIMEOUT_SECONDS) do
+        client.call(quoter, "quoteExactInputSingle",
+                    SCC_TOKEN, USDC_TOKEN, POOL_FEE, amount_in, 0)
+      end
 
       # Конвертуємо з 6 децималів USDC у Float
       (raw_amount_out.to_f / 10**6).round(4)

@@ -8,7 +8,10 @@ module Api
       # --- ТЕРМІНАЛ ІНІЦІАЦІЇ ---
       def new
         @clusters = current_user.organization.clusters
-        @families = TreeFamily.all
+        # [ВИПРАВЛЕНО: Unbounded Query]: Використовуємо alphabetical скоуп замість .all.
+        # TreeFamily — довідник видів (~100-1000 записів), але .all не має ORDER BY
+        # та не обмежує вибірку. alphabetical забезпечує детермінований порядок.
+        @families = TreeFamily.alphabetical
 
         render_dashboard(
           title: "Hardware Initiation Ritual",
@@ -83,7 +86,7 @@ module Api
 
       def render_new_with_errors
         @clusters = current_user.organization.clusters
-        @families = TreeFamily.all
+        @families = TreeFamily.alphabetical
         render_dashboard(
           title: "Initiation Failed",
           component: Provisioning::New.new(

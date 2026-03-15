@@ -68,8 +68,15 @@ class BlockchainBurningService < ApplicationService
 
       Rails.logger.warn "🔥 [Slashing] Вилучення #{burn_amount}/#{total_minted_amount} SCC (#{(damage_ratio * 100).round(1)}%) у #{@organization.name}. Причина: #{reason}."
 
-      Kredis.lock(lock_key, expires_in: 60.seconds, after_timeout: :raise) do
-        tx_hash = client.transact_and_wait(
+      # [ВИПРАВЛЕНО: Lock Duration]: 30 секунд достатньо для transact() (fire-and-forget,
+      # повертається миттєво після відправки TX у мемпул). Операції всередині локу:
+      # client.transact (~1-3s мережева затримка) + DB writes (~10-50ms) = ~5s worst case.
+      # Попередній 60s лок був для transact_and_wait, який чекав підтвердження блоку.
+      Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
+        # [ВИПРАВЛЕНО: The 429 Trap]: Використовуємо transact (fire-and-forget) замість
+        # transact_and_wait, який блокує Sidekiq-потік нескінченно при перевантаженні Polygon.
+        # Підтвердження транзакції делеговано BlockchainConfirmationWorker (як у BlockchainMintingService).
+        tx_hash = client.transact(
           contract, "slash", investor_address, amount_in_wei,
           sender_key: oracle_key, legacy: false
         )
@@ -81,6 +88,10 @@ class BlockchainBurningService < ApplicationService
         @naas_contract.update!(status: :breached)
 
         create_audit_transaction(tx_hash, burn_amount, reason)
+
+        # [ВИПРАВЛЕНО]: Запускаємо воркер-підтверджувач для відстеження квитанції
+        # (аналогічно BlockchainMintingService — transact + confirm pattern).
+        BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
 
         # [OBSERVABILITY]: Track slashed tokens for Prometheus/Grafana
         SilkenNet::Metrics::SCC_SLASHED_TOTAL.increment(by: burn_amount)
