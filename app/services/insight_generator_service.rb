@@ -165,8 +165,13 @@ class InsightGeneratorService < ApplicationService
     if @ai_model
       features = Numo::DFloat.cast([ [ avg_temp.to_f, avg_vcap.to_f, avg_z.to_f, sap_deviation.to_f, max_acoustic.to_f ] ])
       proba = @ai_model.predict_proba(features)
-      # Індекс класу 1 (stress) у predict_proba — друга колонка
-      stress_class_index = @ai_model.classes.to_a.index(1) || 1
+      stress_class_index = @ai_model.classes.to_a.index(1)
+
+      unless stress_class_index
+        Rails.logger.error "🛑 [Insight] ML-модель не містить клас 1 (stress). Fallback на евристику."
+        return calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
+      end
+
       proba[0, stress_class_index].round(3)
     else
       calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
@@ -231,6 +236,7 @@ class InsightGeneratorService < ApplicationService
   def load_ai_model
     return nil unless File.exist?(MODEL_PATH)
 
+    # Безпечно: файл генерується внутрішнім rake-завданням (ai:train), а не зовнішнім джерелом.
     Marshal.load(File.binread(MODEL_PATH)) # rubocop:disable Security/MarshalLoad
   rescue StandardError => e
     Rails.logger.warn "⚠️ [Insight] Не вдалося завантажити ML-модель: #{e.message}. Використовуємо евристику."

@@ -430,6 +430,67 @@ RSpec.describe InsightGeneratorService, type: :service do
       end
     end
 
+    context "when model classes are in reversed order [1, 0]" do
+      let(:mock_model) { instance_double(Rumale::Ensemble::RandomForestClassifier) }
+
+      before do
+        allow(File).to receive(:exist?).and_call_original
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_PATH).and_return(true)
+        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return(Marshal.dump(mock_model))
+        allow(Marshal).to receive(:load).and_return(mock_model)
+
+        # Reversed class order: stress (1) is at index 0
+        proba_result = Numo::DFloat.cast([ [ 0.85, 0.15 ] ])
+        classes = Numo::Int32.cast([ 1, 0 ])
+        allow(mock_model).to receive_messages(predict_proba: proba_result, classes: classes)
+      end
+
+      it "correctly indexes the stress class probability" do
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        # Class 1 is at index 0 → proba[0, 0] = 0.85
+        expect(insight.stress_index).to eq(0.85)
+      end
+    end
+
+    context "when model lacks stress class (1)" do
+      let(:mock_model) { instance_double(Rumale::Ensemble::RandomForestClassifier) }
+
+      before do
+        allow(File).to receive(:exist?).and_call_original
+        allow(File).to receive(:exist?).with(InsightGeneratorService::MODEL_PATH).and_return(true)
+        allow(File).to receive(:binread).with(InsightGeneratorService::MODEL_PATH).and_return(Marshal.dump(mock_model))
+        allow(Marshal).to receive(:load).and_return(mock_model)
+
+        proba_result = Numo::DFloat.cast([ [ 1.0 ] ])
+        classes = Numo::Int32.cast([ 0 ])
+        allow(mock_model).to receive_messages(predict_proba: proba_result, classes: classes)
+      end
+
+      it "falls back to heuristic and logs error" do
+        expect(Rails.logger).to receive(:error).with(/ML-модель не містить клас 1/)
+
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 3.0,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+
+        described_class.call(date)
+
+        insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
+        # Heuristic fallback: homeostasis + z=3.0 penalty = 0.2
+        expect(insight.stress_index).to eq(0.2)
+      end
+    end
+
     context "when model loading raises an error" do
       before do
         allow(File).to receive(:exist?).and_call_original

@@ -6,7 +6,7 @@ require "numo/narray"
 namespace :ai do
   desc "Train Random Forest model for stress_index prediction using historical AiInsight + TelemetryLog data"
   task train: :environment do
-    MODEL_PATH = Rails.root.join("lib/assets/silken_forest.marshal").freeze
+    model_path = InsightGeneratorService::MODEL_PATH
 
     Rails.logger.info "🧠 [AI Train] Збір навчальних даних з AiInsight + TelemetryLog..."
 
@@ -24,6 +24,8 @@ namespace :ai do
     insights.find_each do |insight|
       reasoning = insight.reasoning || {}
 
+      # Feature vector: [avg_temp, avg_vcap, avg_z, sap_deviation, max_acoustic]
+      # Must match the order in InsightGeneratorService#calculate_stress_index
       avg_temp = insight.average_temperature.to_f
       avg_vcap = reasoning["avg_vcap"].to_f
       avg_z = reasoning["avg_z"].to_f
@@ -32,7 +34,9 @@ namespace :ai do
 
       features << [ avg_temp, avg_vcap, avg_z, sap_deviation, max_acoustic ]
 
-      # Бінарна мітка: 1 (стрес/аномалія) або 0 (гомеостаз)
+      # Бінарна мітка: 1 (стрес/аномалія) або 0 (гомеостаз).
+      # Поріг 0.5 визначає клас для навчання; окремий поріг 0.83 використовується
+      # у ContractHealthCheckService для активації Slashing Protocol.
       labels << (insight.stress_index >= 0.5 ? 1 : 0)
     end
 
@@ -54,7 +58,7 @@ namespace :ai do
     model.fit(x, y)
 
     # Серіалізація моделі
-    File.binwrite(MODEL_PATH, Marshal.dump(model))
-    Rails.logger.info "✅ [AI Train] Модель збережено: #{MODEL_PATH} (#{File.size(MODEL_PATH)} bytes)"
+    File.binwrite(model_path, Marshal.dump(model))
+    Rails.logger.info "✅ [AI Train] Модель збережено: #{model_path} (#{File.size(model_path)} bytes)"
   end
 end
