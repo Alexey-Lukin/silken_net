@@ -814,10 +814,10 @@ TEST(test_hrng_rng_instance_set) {
 
 TEST(test_hrng_power_management_deinit) {
     /* After IV generation, RNG must be de-initialized (zero quiescent current).
-     * We verify the sequence completes without error. */
+     * We verify the full Wu-Wei sequence completes without error. */
     uint32_t iv[4];
+    simulate_hrng_iv_generation(iv);
     int result = HAL_RNG_DeInit(&test_hrng);
-    (void)iv;
     ASSERT_EQ(result, HAL_OK);
 }
 
