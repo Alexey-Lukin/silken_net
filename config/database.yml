@@ -2,33 +2,30 @@ default: &default
   adapter: postgresql
   encoding: unicode
   # ---------------------------------------------------------------------------
-  # Pool size per Puma worker per database.
+  # Pool size per process per database.
   # ---------------------------------------------------------------------------
   # Every thread that touches the database needs its own connection checkout.
-  # With 4 databases (primary, cache, queue, cable), each Puma worker opens
+  # With 4 databases (primary, cache, queue, cable), each process opens
   # up to pool × 4 connections to Cloud SQL.
   #
-  # Connection consumers inside a single Puma worker:
+  # Connection consumers inside a Puma worker:
   #   1. Puma request threads ............ RAILS_MAX_THREADS  (default 3)
-  #   2. Solid Queue threads ............. queue.yml workers.threads (default 3)
-  #      (only when SOLID_QUEUE_IN_PUMA=true; runs in-process)
-  #      Set SOLID_QUEUE_THREADS env if queue.yml workers.threads differs from 3.
-  #   3. ActionCable / Solid Cable ....... +2 headroom (polling + broadcast)
+  #   2. ActionCable / Solid Cable ....... +2 headroom (polling + broadcast)
   #
-  # Formula: pool = RAILS_MAX_THREADS + SQ threads + Cable headroom
-  #        default: 3 + 3 + 2 = 8
+  # Formula: pool = RAILS_MAX_THREADS + Cable headroom
+  #        default: 3 + 2 = 5
   #
   # Total connections per database across all Puma workers:
-  #   WEB_CONCURRENCY × pool  (e.g., 2 × 8 = 16 per database on GCP)
-  #   4 databases × 16 = 64 connections total (well within Cloud SQL's 400)
+  #   WEB_CONCURRENCY × pool  (e.g., 2 × 5 = 10 per database on GCP)
+  #   4 databases × 10 = 40 connections total (well within Cloud SQL's 400)
   #
-  # For Sidekiq workers (separate process), override RAILS_MAX_THREADS >= 15
+  # For Sidekiq workers (separate process), override DB_POOL >= 15
   # in the worker container's environment to match sidekiq.yml :concurrency.
   #
   # Override: set DB_POOL to a fixed value if automatic calculation is unwanted.
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   # ---------------------------------------------------------------------------
-  pool: <%= ENV.fetch("DB_POOL") { ENV.fetch("RAILS_MAX_THREADS", 3).to_i + ENV.fetch("SOLID_QUEUE_THREADS", 3).to_i + 2 } %>
+  pool: <%= ENV.fetch("DB_POOL") { ENV.fetch("RAILS_MAX_THREADS", 3).to_i + 2 } %>
 
 development:
   <<: *default

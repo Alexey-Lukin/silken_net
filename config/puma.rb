@@ -25,7 +25,7 @@
 # Keep low (3–5) to limit GVL contention and per-process connection usage.
 #
 # The database.yml pool size must be >= this value. See database.yml for the
-# full concurrency math including Solid Queue and ActionCable headroom.
+# full concurrency math including ActionCable headroom.
 threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
 threads threads_count, threads_count
 
@@ -123,11 +123,10 @@ end
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
 
-# Run the Solid Queue supervisor inside of Puma for single-server deployments.
-# Solid Queue spawns its own threads (configured in config/queue.yml) within
-# each Puma worker. These threads need DB connections — accounted for in
-# database.yml pool size calculation.
-plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
+# Background jobs: all 32 workers use Sidekiq directly (separate process).
+# ActiveJob (mailer deliver_later) is also routed to Sidekiq via
+# config.active_job.queue_adapter = :sidekiq in production.rb.
+# No in-process job supervisor needed — Puma focuses purely on HTTP.
 
 # ---------------------------------------------------------------------------
 # 8. PID file
