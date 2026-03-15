@@ -761,6 +761,82 @@ TEST(test_panic_other_bytes_zero) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * 8. OnRxDone BOUNDARY TESTS
+ * ════════════════════════════════════════════════════════════════════ */
+
+/* Extracted OnRxDone size validation logic (from soldier/main.c).
+ * [FIX: AUDIT] Old code: size < 255 (off-by-one, rejected valid 255-byte packets).
+ * Fixed: size > 0 && size <= BUFFER_SIZE. */
+#define RX_BUFFER_SIZE 256
+static uint8_t  test_rx_buffer[RX_BUFFER_SIZE];
+static uint16_t test_rx_size = 0;
+static uint8_t  test_rx_flag = 0;
+
+static void Test_OnRxDone(uint8_t *payload, uint16_t size)
+{
+    if (size > 0 && size <= RX_BUFFER_SIZE) {
+        memcpy(test_rx_buffer, payload, size);
+        test_rx_size = size;
+        test_rx_flag = 1;
+    }
+}
+
+static void reset_rx(void)
+{
+    memset(test_rx_buffer, 0, sizeof(test_rx_buffer));
+    test_rx_size = 0;
+    test_rx_flag = 0;
+}
+
+TEST(test_onrxdone_normal_16) {
+    reset_rx();
+    uint8_t pkt[16];
+    memset(pkt, 0xAA, 16);
+    Test_OnRxDone(pkt, 16);
+    ASSERT_EQ(test_rx_flag, 1);
+    ASSERT_EQ(test_rx_size, 16);
+    ASSERT_EQ(test_rx_buffer[0], 0xAA);
+}
+
+TEST(test_onrxdone_size_255_accepted) {
+    /* [FIX: AUDIT] Old code rejected size=255 (off-by-one: size < 255). */
+    reset_rx();
+    uint8_t pkt[256];
+    memset(pkt, 0xBB, 256);
+    Test_OnRxDone(pkt, 255);
+    ASSERT_EQ(test_rx_flag, 1);
+    ASSERT_EQ(test_rx_size, 255);
+}
+
+TEST(test_onrxdone_size_256_accepted) {
+    /* Size 256 = buffer maximum, should be accepted. */
+    reset_rx();
+    uint8_t pkt[256];
+    memset(pkt, 0xCC, 256);
+    Test_OnRxDone(pkt, 256);
+    ASSERT_EQ(test_rx_flag, 1);
+    ASSERT_EQ(test_rx_size, 256);
+}
+
+TEST(test_onrxdone_size_257_rejected) {
+    /* Size > buffer → must be rejected to prevent overflow. */
+    reset_rx();
+    uint8_t pkt[260];
+    memset(pkt, 0xDD, 260);
+    Test_OnRxDone(pkt, 257);
+    ASSERT_EQ(test_rx_flag, 0);
+    ASSERT_EQ(test_rx_size, 0);
+}
+
+TEST(test_onrxdone_size_zero_rejected) {
+    /* Size 0 = empty packet, should be rejected. */
+    reset_rx();
+    uint8_t pkt[1] = {0xFF};
+    Test_OnRxDone(pkt, 0);
+    ASSERT_EQ(test_rx_flag, 0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -835,6 +911,13 @@ int main(void)
     RUN(test_panic_acoustic_marker);
     RUN(test_panic_extended_ttl);
     RUN(test_panic_other_bytes_zero);
+
+    printf("\n  OnRxDone Boundary:\n");
+    RUN(test_onrxdone_normal_16);
+    RUN(test_onrxdone_size_255_accepted);
+    RUN(test_onrxdone_size_256_accepted);
+    RUN(test_onrxdone_size_257_rejected);
+    RUN(test_onrxdone_size_zero_rejected);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

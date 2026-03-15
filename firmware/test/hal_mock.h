@@ -89,6 +89,10 @@ static inline int  HAL_CRYP_Init(CRYP_HandleTypeDef *h) { (void)h; return HAL_OK
 static inline int  HAL_RNG_Init(RNG_HandleTypeDef *h) { (void)h; return HAL_OK; }
 static inline int  HAL_RNG_DeInit(RNG_HandleTypeDef *h) { (void)h; return HAL_OK; }
 
+/* RCC clock control stubs (for peripheral power management) */
+#define __HAL_RCC_CRYP_CLK_DISABLE() ((void)0)
+#define __HAL_RCC_CRYP_CLK_ENABLE()  ((void)0)
+
 static inline void HAL_Delay(uint32_t ms) { (void)ms; }
 static inline uint32_t HAL_GetTick(void) { return 0; }
 
