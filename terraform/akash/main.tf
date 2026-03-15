@@ -61,6 +61,7 @@ resource "local_file" "akash_sdl" {
     max_price_uakt     = var.max_price_uakt
     akash_auditor      = var.akash_auditor_address
     web_concurrency    = var.web_concurrency
+    rails_max_threads  = var.rails_max_threads
   })
   filename = "${path.module}/generated-deploy.yaml"
 

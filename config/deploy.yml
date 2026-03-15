@@ -8,10 +8,10 @@ image: silken_net
 servers:
   web:
     - 192.168.0.1
-  # job:
-  #   hosts:
-  #     - 192.168.0.1
-  #   cmd: bin/jobs
+  job:
+    hosts:
+      - 192.168.0.1
+    cmd: bundle exec sidekiq -C config/sidekiq.yml
 
 # Kamal proxy configuration.
 # SSL auto-certification via Let's Encrypt. Requires config.assume_ssl and config.force_ssl in production.rb.
@@ -43,15 +43,10 @@ env:
     - REDIS_URL
     - KREDIS_REDIS_URL
   clear:
-    # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
-    # When you start using multiple servers, you should split out job processing to a dedicated machine.
-    SOLID_QUEUE_IN_PUMA: true
-
-    # Set number of processes dedicated to Solid Queue (default: 1)
-    # JOB_CONCURRENCY: 3
-
-    # Set number of cores available to the application on each server (default: 1).
-    # WEB_CONCURRENCY: 2
+    # Puma clustered mode — number of forked worker processes.
+    # GCP n2-standard-2 has 2 vCPUs, so 2 workers saturate both cores.
+    # Combined with preload_app! + jemalloc, CoW sharing cuts memory ~30-40%.
+    WEB_CONCURRENCY: 2
 
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug

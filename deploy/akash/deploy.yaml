@@ -47,7 +47,7 @@ services:
   #
   # Runs the production Docker image built by the same Dockerfile used with
   # Kamal. Thruster provides HTTP/2 reverse proxy; Puma handles Ruby workers.
-  # Solid Queue runs inside Puma (SOLID_QUEUE_IN_PUMA=true) for single-node.
+  # Background jobs are processed by Sidekiq (separate process or container).
   web:
     image: europe-west1-docker.pkg.dev/YOUR_GCP_PROJECT/silken-net/silken_net:latest
     # ⬆ REQUIRED: Replace YOUR_GCP_PROJECT with your actual GCP project ID.
@@ -92,12 +92,12 @@ services:
       # Maps to: Kamal env.secret KREDIS_REDIS_URL
       - KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
 
-      # Run Solid Queue supervisor inside Puma (single-node mode).
-      # Maps to: Kamal env.clear SOLID_QUEUE_IN_PUMA
-      - SOLID_QUEUE_IN_PUMA=true
-
       # Rails production environment.
       - RAILS_ENV=production
+
+      # Puma thread count per worker — keep low (3-5) to limit GVL contention.
+      # Must align with database.yml pool size calculation.
+      - RAILS_MAX_THREADS=3
 
       # Puma concurrency — adjust based on 4 vCPU allocation.
       # Maps to: Kamal env.clear WEB_CONCURRENCY (commented out, default: 1)
