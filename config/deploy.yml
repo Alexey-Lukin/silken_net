@@ -50,8 +50,10 @@ env:
     # Set number of processes dedicated to Solid Queue (default: 1)
     # JOB_CONCURRENCY: 3
 
-    # Set number of cores available to the application on each server (default: 1).
-    # WEB_CONCURRENCY: 2
+    # Puma clustered mode — number of forked worker processes.
+    # GCP n2-standard-2 has 2 vCPUs, so 2 workers saturate both cores.
+    # Combined with preload_app! + jemalloc, CoW sharing cuts memory ~30-40%.
+    WEB_CONCURRENCY: 2
 
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug

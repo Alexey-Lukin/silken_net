@@ -17,6 +17,7 @@ services:
       - KREDIS_REDIS_URL=${kredis_redis_url}
       - SOLID_QUEUE_IN_PUMA=true
       - RAILS_ENV=production
+      - RAILS_MAX_THREADS=${rails_max_threads}
       - WEB_CONCURRENCY=${web_concurrency}
     expose:
       - port: 80

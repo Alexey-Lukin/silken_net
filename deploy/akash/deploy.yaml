@@ -99,6 +99,10 @@ services:
       # Rails production environment.
       - RAILS_ENV=production
 
+      # Puma thread count per worker — keep low (3-5) to limit GVL contention.
+      # Must align with database.yml pool size calculation.
+      - RAILS_MAX_THREADS=3
+
       # Puma concurrency — adjust based on 4 vCPU allocation.
       # Maps to: Kamal env.clear WEB_CONCURRENCY (commented out, default: 1)
       - WEB_CONCURRENCY=4

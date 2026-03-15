@@ -130,6 +130,17 @@ variable "web_concurrency" {
   default     = 4
 }
 
+variable "rails_max_threads" {
+  description = "Puma RAILS_MAX_THREADS — threads per worker process (keep low 3-5 to limit GVL contention)"
+  type        = number
+  default     = 3
+
+  validation {
+    condition     = var.rails_max_threads >= 1 && var.rails_max_threads <= 16
+    error_message = "RAILS_MAX_THREADS must be between 1 and 16."
+  }
+}
+
 variable "max_price_uakt" {
   description = "Maximum price per block in uAKT (micro-AKT). Controls deployment cost ceiling"
   type        = number
