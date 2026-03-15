@@ -8,7 +8,7 @@ db_password          = "CHANGE_ME_use_a_strong_password_16_chars_minimum"
 db_tier              = "db-custom-2-7680"
 db_availability_type = "REGIONAL"
 db_disk_size_gb      = 50
-db_max_connections   = "200"
+db_max_connections   = "400"
 db_read_replica_count = 0
 
 # Protection
@@ -33,3 +33,9 @@ canopy_disk_size_gb = 20
 ssh_user           = "deploy"
 ssh_public_key     = "ssh-ed25519 AAAA... deploy@silken-net"
 ssh_source_ranges  = ["0.0.0.0/0"]
+
+# Akash Cross-Environment Connectivity — enable when deploying to Akash Network
+akash_enabled = false
+# akash_authorized_networks = [
+#   { name = "akash-provider-1", cidr = "x.x.x.x/32" }
+# ]

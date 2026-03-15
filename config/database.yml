@@ -1,8 +1,13 @@
 default: &default
   adapter: postgresql
   encoding: unicode
+  # Pool size per process. Must accommodate the highest thread-count process:
+  #   - Puma: RAILS_MAX_THREADS (default 3)
+  #   - Sidekiq: set RAILS_MAX_THREADS >= sidekiq concurrency (15) in the worker env
+  # All 4 databases (primary, cache, queue, cable) share the Cloud SQL
+  # max_connections limit (default 400), so keep this value tight.
   # https://guides.rubyonrails.org/configuring.html#database-pooling
-  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 20 } %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
 development:
   <<: *default

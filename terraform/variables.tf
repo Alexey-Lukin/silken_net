@@ -64,9 +64,9 @@ variable "db_disk_size_gb" {
 }
 
 variable "db_max_connections" {
-  description = "PostgreSQL max_connections — scale with number of web nodes and workers"
+  description = "PostgreSQL max_connections — must exceed sum of all pool sizes across all Puma workers, Sidekiq processes, and deployment nodes (Kamal + Akash)"
   type        = string
-  default     = "200"
+  default     = "400"
 }
 
 variable "db_read_replica_count" {
@@ -84,6 +84,25 @@ variable "enable_deletion_protection" {
   description = "Enable deletion protection on Cloud SQL and read replicas"
   type        = bool
   default     = true
+}
+
+# -----------------------------------------------------------------------------
+# Akash Cross-Environment Connectivity
+# -----------------------------------------------------------------------------
+
+variable "akash_enabled" {
+  description = "Enable Cloud SQL public IP and authorized networks for Akash provider connectivity (providers are outside GCP VPC)"
+  type        = bool
+  default     = false
+}
+
+variable "akash_authorized_networks" {
+  description = "CIDR ranges of Akash providers allowed to connect to Cloud SQL. Never use 0.0.0.0/0 — restrict to known provider IPs"
+  type = list(object({
+    name = string
+    cidr = string
+  }))
+  default = []
 }
 
 # -----------------------------------------------------------------------------

@@ -9,8 +9,13 @@ output "database_private_ip" {
 }
 
 output "database_connection_name" {
-  description = "Cloud SQL connection name"
+  description = "Cloud SQL connection name (used by Cloud SQL Auth Proxy)"
   value       = google_sql_database_instance.silken_db.connection_name
+}
+
+output "database_public_ip" {
+  description = "Public IP of Cloud SQL instance (only available when akash_enabled = true)"
+  value       = var.akash_enabled ? google_sql_database_instance.silken_db.public_ip_address : null
 }
 
 output "database_url" {
