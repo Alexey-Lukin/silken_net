@@ -47,6 +47,23 @@ RSpec.describe MintingRollbackService do
       expect(wallet.locked_balance).to eq(original_locked)
     end
 
+    it "skips transactions that are already failed" do
+      tx = create(:blockchain_transaction, wallet: wallet, status: :failed, notes: "Previously failed")
+      original_balance = wallet.balance
+      original_locked = wallet.locked_balance
+
+      described_class.call(
+        telemetry_log_id: telemetry_log.id_value,
+        created_at_iso: telemetry_log.created_at.iso8601(6)
+      )
+
+      wallet.reload
+      tx.reload
+      expect(wallet.balance).to eq(original_balance)
+      expect(wallet.locked_balance).to eq(original_locked)
+      expect(tx.notes).to eq("Previously failed")
+    end
+
     it "handles partial locked_balance gracefully" do
       wallet.update!(balance: 20_000, locked_balance: 3_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000)

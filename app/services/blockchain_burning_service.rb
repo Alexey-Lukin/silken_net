@@ -68,6 +68,10 @@ class BlockchainBurningService < ApplicationService
 
       Rails.logger.warn "🔥 [Slashing] Вилучення #{burn_amount}/#{total_minted_amount} SCC (#{(damage_ratio * 100).round(1)}%) у #{@organization.name}. Причина: #{reason}."
 
+      # [ВИПРАВЛЕНО: Lock Duration]: 30 секунд достатньо для transact() (fire-and-forget,
+      # повертається миттєво після відправки TX у мемпул). Операції всередині локу:
+      # client.transact (~1-3s мережева затримка) + DB writes (~10-50ms) = ~5s worst case.
+      # Попередній 60s лок був для transact_and_wait, який чекав підтвердження блоку.
       Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
         # [ВИПРАВЛЕНО: The 429 Trap]: Використовуємо transact (fire-and-forget) замість
         # transact_and_wait, який блокує Sidekiq-потік нескінченно при перевантаженні Polygon.
