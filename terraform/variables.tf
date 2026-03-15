@@ -97,12 +97,17 @@ variable "akash_enabled" {
 }
 
 variable "akash_authorized_networks" {
-  description = "CIDR ranges of Akash providers allowed to connect to Cloud SQL. Never use 0.0.0.0/0 — restrict to known provider IPs"
+  description = "CIDR ranges of Akash providers allowed to connect to Cloud SQL. Required when akash_enabled = true. Never use 0.0.0.0/0 — restrict to known provider IPs"
   type = list(object({
     name = string
     cidr = string
   }))
   default = []
+
+  validation {
+    condition     = alltrue([for net in var.akash_authorized_networks : net.cidr != "0.0.0.0/0"])
+    error_message = "Authorized networks must not include 0.0.0.0/0 — restrict to specific Akash provider CIDR ranges."
+  }
 }
 
 # -----------------------------------------------------------------------------

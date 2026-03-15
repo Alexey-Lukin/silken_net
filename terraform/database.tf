@@ -83,6 +83,13 @@ resource "google_sql_database_instance" "silken_db" {
     google_project_service.sqladmin,
     google_service_networking_connection.private_vpc_connection
   ]
+
+  lifecycle {
+    precondition {
+      condition     = !var.akash_enabled || length(var.akash_authorized_networks) > 0
+      error_message = "When akash_enabled = true, akash_authorized_networks must contain at least one CIDR range to restrict Cloud SQL public IP access."
+    }
+  }
 }
 
 # Primary application database
