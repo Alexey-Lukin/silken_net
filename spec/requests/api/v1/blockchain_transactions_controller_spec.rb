@@ -76,8 +76,7 @@ RSpec.describe Api::V1::BlockchainTransactionsController, type: :request do
   describe "GET /api/v1/blockchain_transactions/:id/on_chain" do
     it "renders on-chain verification Turbo Frame" do
       get "/api/v1/blockchain_transactions/#{own_tx.id}/on_chain", headers: headers
-      # Phlex component may not fully render in test env, but the code path is exercised
-      expect(response.status).to be_in([ 200, 500 ])
+      expect(response).to have_http_status(:ok)
     end
   end
 end

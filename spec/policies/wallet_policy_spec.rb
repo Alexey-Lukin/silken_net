@@ -101,4 +101,24 @@ RSpec.describe WalletPolicy do
       expect(described_class.new(other_user, wallet).show?).to be false
     end
   end
+
+  describe "#balance?" do
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:tree) { create(:tree, cluster: cluster) }
+    let(:wallet) { tree.wallet }
+
+    it "delegates to show?" do
+      expect(described_class.new(admin, wallet).balance?).to be true
+    end
+  end
+
+  describe "#metadata?" do
+    let(:cluster) { create(:cluster, organization: organization) }
+    let(:tree) { create(:tree, cluster: cluster) }
+    let(:wallet) { tree.wallet }
+
+    it "delegates to show?" do
+      expect(described_class.new(admin, wallet).metadata?).to be true
+    end
+  end
 end

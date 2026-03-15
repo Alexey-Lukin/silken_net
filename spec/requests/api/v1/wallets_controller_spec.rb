@@ -104,9 +104,10 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
     it "renders balance Turbo Frame" do
+      allow_any_instance_of(Wallets::BalanceFrame).to receive(:template) { |c| c.plain "balance" }
+
       get "/api/v1/wallets/#{wallet.id}/balance", headers: headers
-      # Phlex component may not fully render in test env, but the code path is exercised
-      expect(response.status).to be_in([ 200, 500 ])
+      expect(response).to have_http_status(:ok)
     end
   end
 
@@ -115,9 +116,10 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
     it "renders metadata Turbo Frame" do
+      allow_any_instance_of(Wallets::MetadataFrame).to receive(:template) { |c| c.plain "metadata" }
+
       get "/api/v1/wallets/#{wallet.id}/metadata", headers: headers
-      # Phlex component may not fully render in test env, but the code path is exercised
-      expect(response.status).to be_in([ 200, 500 ])
+      expect(response).to have_http_status(:ok)
     end
   end
 end
