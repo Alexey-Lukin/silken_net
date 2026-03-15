@@ -21,6 +21,10 @@ class UnpackTelemetryWorker
     # Отримуємо сирі байти, що прийшли через CoAP/UDP
     binary_payload = Base64.strict_decode64(encoded_payload)
 
+    # 1.1 ЖИВИЙ ПОТІК У МАТРИЦЮ (ActionCable — raw hex stream)
+    # Перенесено з UDP-петлі coap_listener для розвантаження UDP-сокета.
+    broadcast_raw_hex(binary_payload, sender_ip)
+
     # 2. ІДЕНТИФІКАЦІЯ ШЛЮЗУ (The Queen Node)
     # Пріоритет: UID з заголовка пакета (стабільний) → IP (може змінитись після NAT)
     gateway = gateway_uid.present? ? Gateway.find_by(uid: gateway_uid.to_s.strip.upcase) : nil
@@ -137,5 +141,14 @@ class UnpackTelemetryWorker
     )
 
     Turbo::StreamsChannel.broadcast_remove_to("telemetry_stream", target: "feed_placeholder")
+  end
+
+  def broadcast_raw_hex(binary_payload, sender_ip)
+    ActionCable.server.broadcast("telemetry_live_stream", {
+      hex: binary_payload.unpack1("H*").scan(/../).join(" "),
+      ip: sender_ip,
+      size: binary_payload.bytesize,
+      at: Time.current.strftime("%H:%M:%S.%L")
+    })
   end
 end
