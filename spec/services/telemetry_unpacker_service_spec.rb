@@ -15,10 +15,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   let(:did_hex) { "0000ABCD" }
   let(:extracted_did) { format("SNET-%08X", did_hex.to_i(16)) }
 
-  let!(:tree) do
-    t = create(:tree, did: extracted_did)
-    t.reload
-  end
+  let!(:tree) { create(:tree, did: extracted_did) }
 
   before do
     tree.create_device_calibration! if tree.device_calibration.nil?
@@ -290,8 +287,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     let(:did_hex_r2) { "0000AB01" }
     let(:extracted_did_r2) { format("SNET-%08X", did_hex_r2.to_i(16)) }
     let(:tree_r2) do
-      t = create(:tree, did: extracted_did_r2, cluster: cluster_r2, tree_family: tree_family, latitude: 49.4, longitude: 32.0)
-      t.reload
+      create(:tree, did: extracted_did_r2, cluster: cluster_r2, tree_family: tree_family, latitude: 49.4, longitude: 32.0)
     end
     let!(:wallet_r2) { tree_r2.wallet || create(:wallet, tree: tree_r2) }
 

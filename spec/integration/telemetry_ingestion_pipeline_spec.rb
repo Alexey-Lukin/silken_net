@@ -18,8 +18,7 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
     let(:did_hex) { "0000ABCD" }
     let(:extracted_did) { format("SNET-%08X", did_hex.to_i(16)) }
     let!(:tree) do
-      t = create(:tree, did: extracted_did, cluster: cluster, tree_family: tree_family)
-      t.reload
+      create(:tree, did: extracted_did, cluster: cluster, tree_family: tree_family)
     end
 
     before do
