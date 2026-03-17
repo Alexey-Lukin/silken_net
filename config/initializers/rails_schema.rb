@@ -5,6 +5,8 @@
 # Output: docs/schema.html — self-contained ER diagram, no server needed.
 # Regenerate: rake rails_schema:generate
 
+return unless defined?(Rails::Schema)
+
 Rails::Schema.configure do |config|
   config.output_path = "docs/schema.html"
   config.title = "SilkenNet — Database Schema"
