@@ -64,9 +64,9 @@ loop do
   # 2. ВИБІР СОЛДАТІВ (Активні дерева з кластеру Королеви)
   trees = if gateway.cluster
             gateway.cluster.trees.active.order("RANDOM()").limit(rand(BATCH_SIZE_RANGE))
-          else
+  else
             Tree.active.order("RANDOM()").limit(rand(BATCH_SIZE_RANGE))
-          end
+  end
 
   if trees.empty?
     puts "⚠️  #{gateway.uid}: немає активних дерев у кластері. Пропуск..."

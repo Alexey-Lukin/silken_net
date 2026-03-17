@@ -42,8 +42,10 @@ class TelemetryUnpackerService < ApplicationService
   private
 
   # Створюємо Hash-мапу DID -> Tree для миттєвого доступу без N+1 запитів
+  # [ВИПРАВЛЕНО: DID Prefix Mismatch]: Реконструюємо повний SNET-XXXXXXXX формат
+  # із сирого uint32, щоб збігтися з Tree.did у базі (SNET- + 8 hex digits).
   def preload_trees(chunks)
-    dids = chunks.map { |c| c[0..3].unpack1("N").to_s(16).upcase }.uniq
+    dids = chunks.map { |c| format("SNET-%08X", c[0..3].unpack1("N")) }.uniq
     @trees_cache = Tree.where(did: dids)
                        .includes(:wallet, :device_calibration, :tree_family)
                        .index_by(&:did)
@@ -52,8 +54,9 @@ class TelemetryUnpackerService < ApplicationService
   def process_chunk(chunk)
     # 1. МАРШРУТИЗАЦІЯ (L2 Header від Королеви)
     # DID Солдата, який відправив пакет через LoRa
+    # [ВИПРАВЛЕНО: DID Prefix Mismatch]: Реконструюємо повний SNET-XXXXXXXX формат
     raw_did = chunk[0..3].unpack1("N")
-    hex_did = raw_did.to_s(16).upcase
+    hex_did = format("SNET-%08X", raw_did)
 
     # RSSI (якість сигналу в точці прийому Королевою)
     inverted_rssi = chunk[4].unpack1("C")

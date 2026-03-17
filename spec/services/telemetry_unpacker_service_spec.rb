@@ -13,11 +13,10 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   end
 
   let(:did_hex) { "0000ABCD" }
-  let(:extracted_did) { did_hex.to_i(16).to_s(16).upcase }
+  let(:extracted_did) { format("SNET-%08X", did_hex.to_i(16)) }
 
   let!(:tree) do
-    t = create(:tree)
-    t.update_column(:did, extracted_did)
+    t = create(:tree, did: extracted_did)
     t.reload
   end
 
@@ -289,10 +288,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     let(:gateway_r2) { create(:gateway, :online, cluster: cluster_r2) }
     let(:tree_family) { create(:tree_family) }
     let(:did_hex_r2) { "0000AB01" }
-    let(:extracted_did_r2) { did_hex_r2.to_i(16).to_s(16).upcase }
+    let(:extracted_did_r2) { format("SNET-%08X", did_hex_r2.to_i(16)) }
     let(:tree_r2) do
-      t = create(:tree, cluster: cluster_r2, tree_family: tree_family, latitude: 49.4, longitude: 32.0)
-      t.update_column(:did, extracted_did_r2)
+      t = create(:tree, did: extracted_did_r2, cluster: cluster_r2, tree_family: tree_family, latitude: 49.4, longitude: 32.0)
       t.reload
     end
     let!(:wallet_r2) { tree_r2.wallet || create(:wallet, tree: tree_r2) }
