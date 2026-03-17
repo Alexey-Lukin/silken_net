@@ -58,7 +58,7 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
       ▼                                       ▼
    ┌──────────────────────────────────────────────┐
    │  Rails Backend (Akash Network / GCP)          │
-   │  CoAP Listener + Sidekiq (26 workers)         │
+   │  CoAP Listener + Sidekiq (31 workers)         │
    │                                                │
    │  ┌── Verification ─────────────────────────┐  │
    │  │ peaq DID → IoTeX ZK-proof → Chainlink   │  │
