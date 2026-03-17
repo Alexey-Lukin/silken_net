@@ -27,7 +27,7 @@ Trees generate streaming potentials (40-100mV) from xylem ion transport and pH g
 | Language | Ruby 4.0.1 |
 | Framework | Rails 8.1.2 (Omakase) |
 | Database | PostgreSQL + Solid Cache + Solid Cable + Solid Queue |
-| Background Jobs | Sidekiq + sidekiq-scheduler (7 priority queues, 26 workers) |
+| Background Jobs | Sidekiq + sidekiq-scheduler (9 priority queues, 31 workers) |
 | Frontend | Hotwire (Turbo 8, Stimulus), Tailwind CSS, Phlex |
 | Serialization | Blueprinter (JSON blueprints) |
 | Pagination | Pagy + Groupdate (time-series) |
@@ -50,12 +50,60 @@ bin/rails db:prepare
 bin/dev
 ```
 
+## Local Development / Simulation
+
+To test the full telemetry pipeline without physical hardware, use the built-in **Forest Simulator** — a Digital Twin of the Queen (Gateway).
+
+### Prerequisites
+
+```bash
+bundle install
+bin/rails db:prepare   # Create databases & run migrations
+bin/rails db:seed      # Seed Gateway, Tree, HardwareKey, TreeFamily records
+```
+
+### Start All Services
+
+```bash
+bin/dev                # Starts Rails + Sidekiq + Tailwind CSS + CoAP listener
+```
+
+`Procfile.dev` launches:
+- `web` — Rails server (port 3000)
+- `worker` — Sidekiq with `config/sidekiq.yml`
+- `css` — Tailwind CSS watcher
+- `coap` — CoAP/UDP listener (port 5683)
+
+### Run the Forest Simulator (separate terminal)
+
+```bash
+bin/forest_simulator
+```
+
+The simulator:
+- Selects a random Queen (Gateway) with an existing `HardwareKey`
+- Generates realistic telemetry from 5–15 Soldiers (trees)
+- Packs 21-byte binary chunks (L2 Header + L3 Payload)
+- Encrypts with AES-256-CBC (identical to real hardware)
+- Sends via CoAP PUT to `coap://127.0.0.1:5683/telemetry/batch/{gateway_uid}`
+- Repeats every 3–8 seconds
+
+### Verify the Pipeline
+
+```bash
+# Check created telemetry records
+rails runner "puts TelemetryLog.count"
+
+# Watch logs in real time
+tail -f log/development.log | grep -i telemetry
+```
+
 ## Documentation
 
 - **[🌐 Gaia 2.0 Anatomy](GAIA_2_0_ANATOMY.md)** — The 12-step lifecycle of the Cyber-Physical State
 - [Architecture](ARCHITECTURE.md) — System layers, multichain data flow, domain model, AI Oracle
 - [Models](MODELS.md) — All domain models with relationships
-- [Logic](LOGIC.md) — Services (24) and Workers (26) reference
+- [Logic](LOGIC.md) — Services (29+) and Workers (31) reference
 - [Tokenomics](TOKENOMICS.md) — Multichain token economy, Proof of Growth, slashing protocol
 - [API Reference](API.md) — All 24 API controllers with endpoints and parameters
 - [Firmware](FIRMWARE.md) — Soldier/Queen lifecycle, binary protocol, mruby bio-contracts
