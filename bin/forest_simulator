@@ -1,0 +1,163 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# = ===================================================================
+# 🌲 FOREST SIMULATOR — Digital Twin (Queen Gateway Emulator)
+# = ===================================================================
+# Симулятор «Цифрового Близнюка» для тестування CoAP/UDP конвеєру:
+#   CoAP Listener → UnpackTelemetryWorker → TelemetryUnpackerService
+#
+# Генерує реалістичну телеметрію від дерев-Солдатів, шифрує AES-256-CBC
+# та відправляє через CoapClient як справжня Королева (Gateway).
+#
+# Використання:
+#   chmod +x bin/forest_simulator
+#   bin/forest_simulator
+#
+# Вимоги:
+#   - Запущений CoAP Listener (lib/daemons/coap_listener)
+#   - Дані в БД (rails db:seed)
+# = ===================================================================
+
+require_relative "../config/environment"
+require "openssl"
+
+# --- КОНСТАНТИ СИМУЛЯЦІЇ ---
+AES_BLOCK_SIZE = 16
+BATCH_SIZE_RANGE = (5..15)
+SLEEP_RANGE = (3..8)
+COAP_HOST = "coap://127.0.0.1:5683"
+COAP_TIMEOUT = 2
+
+$stdout.sync = true
+
+puts ""
+puts "🌲🌲🌲  SILKEN FOREST SIMULATOR — Digital Twin  🌲🌲🌲"
+puts "=" * 56
+puts "📡 Мета: #{COAP_HOST}"
+puts "⏱️  Інтервал: #{SLEEP_RANGE} секунд між батчами"
+puts "📦 Розмір: #{BATCH_SIZE_RANGE} дерев / батч"
+puts "=" * 56
+puts ""
+
+# Кешуємо останню активну firmware для дерев (1 запит)
+latest_firmware_id = BioContractFirmware.active
+                                        .where(target_hardware_type: "Tree")
+                                        .order(id: :desc)
+                                        .pick(:id) || 0
+
+puts "🔧 Актуальна прошивка: #{latest_firmware_id.zero? ? 'не знайдено' : "##{latest_firmware_id}"}"
+puts ""
+
+loop do
+  # 1. ВИБІР КОРОЛЕВИ (Gateway з HardwareKey)
+  gateway = Gateway.joins(:hardware_key).order("RANDOM()").first
+
+  unless gateway
+    puts "⚠️  Немає жодного шлюзу з HardwareKey. Запустіть: rails db:seed"
+    sleep 5
+    next
+  end
+
+  hw_key = gateway.hardware_key
+
+  # 2. ВИБІР СОЛДАТІВ (Активні дерева з кластеру Королеви)
+  trees = if gateway.cluster
+            gateway.cluster.trees.active.order("RANDOM()").limit(rand(BATCH_SIZE_RANGE))
+          else
+            Tree.active.order("RANDOM()").limit(rand(BATCH_SIZE_RANGE))
+          end
+
+  if trees.empty?
+    puts "⚠️  #{gateway.uid}: немає активних дерев у кластері. Пропуск..."
+    sleep rand(SLEEP_RANGE)
+    next
+  end
+
+  puts "👑 Queen #{gateway.uid} готує батч із #{trees.size} Солдатів..."
+
+  # 3. ПАКУВАННЯ БІНАРНИХ ДАНИХ (21 байт на кожне дерево)
+  batch_data = "".b
+
+  trees.each do |tree|
+    # Витягуємо числовий DID з формату SNET-XXXXXXXX
+    did_hex = tree.did.delete_prefix("SNET-")
+    did_int = did_hex.to_i(16)
+
+    # Реалістичні показники сенсорів
+    voltage     = rand(3200..4800)          # мВ (іоністор)
+    temperature = rand(-10..45)             # °C
+    acoustic    = rand(0..200)              # акустичні події
+    metabolism  = rand(5..120)              # метаболізм
+    rssi        = rand(50..90)              # інвертований RSSI
+    ttl         = rand(1..7)               # mesh hops
+    bio_status  = rand(0..3)               # 0=homeostasis, 1=stress, 2=anomaly, 3=tamper
+    growth_pts  = rand(0..63)              # 6 біт (0-63)
+
+    # StatusByte: верхні 2 біти = bio_status, нижні 6 біт = growth_points
+    status_byte = (bio_status << 6) | (growth_pts & 0x3F)
+
+    # FirmwarePad: [firmware_id:uint16][reserved:uint16] = 4 байти
+    firmware_pad = [ latest_firmware_id, 0 ].pack("n n")
+
+    # L2 Header (5 байт): DID(uint32 BE) + RSSI(uint8)
+    l2_header = [ did_int, rssi ].pack("N C")
+
+    # L3 Payload (16 байт): DID(uint32) + Vcap(uint16) + Temp(int8) + Acoustic(uint8)
+    #                        + Metabolism(uint16) + Status(uint8) + TTL(uint8) + Pad(4 bytes)
+    l3_payload = [ did_int, voltage, temperature, acoustic, metabolism, status_byte, ttl, firmware_pad ].pack("N n c C n C C a4")
+
+    # 21-байтний чанк
+    chunk = l2_header + l3_payload
+    batch_data << chunk
+
+    puts "   🌳 #{tree.did} | #{voltage}mV #{temperature}°C 🎙️#{acoustic} | " \
+         "bio:#{bio_status} grow:#{growth_pts} TTL:#{ttl} RSSI:-#{rssi}"
+  end
+
+  # 4. ШИФРУВАННЯ AES-256-CBC (ідентично CoapEncryption#coap_encrypt)
+  cipher = OpenSSL::Cipher.new("aes-256-cbc")
+  cipher.encrypt
+  cipher.key = hw_key.binary_key
+  iv = cipher.random_iv
+  cipher.padding = 0
+
+  # Вирівнювання до 16-байтової межі (нульове доповнення)
+  padding_length = (AES_BLOCK_SIZE - (batch_data.bytesize % AES_BLOCK_SIZE)) % AES_BLOCK_SIZE
+  padded_batch = batch_data + ("\x00" * padding_length)
+
+  # Фінальний пакет: [IV:16 байт] + [Шифротекст]
+  ciphertext = cipher.update(padded_batch) + cipher.final
+  final_payload = iv + ciphertext
+
+  puts "   🔐 Зашифровано: #{batch_data.bytesize}б → #{final_payload.bytesize}б " \
+       "(IV:16 + CT:#{ciphertext.bytesize}) pad:#{padding_length}"
+
+  # 5. ПЕРЕДАЧА ЧЕРЕЗ CoAP
+  url = "#{COAP_HOST}/telemetry/batch/#{gateway.uid}"
+
+  begin
+    response = CoapClient.put(url, final_payload, timeout: COAP_TIMEOUT)
+    puts "   ✅ Відправлено → #{url} [#{response&.class_string || 'OK'}]"
+  rescue CoapClient::NetworkError => e
+    puts "   📡 Мережа: #{e.message} (CoAP listener запущено?)"
+  rescue CoapClient::Error => e
+    puts "   ❌ CoAP помилка: #{e.message}"
+  rescue StandardError => e
+    puts "   🛑 Збій: #{e.class} — #{e.message}"
+  end
+
+  delay = rand(SLEEP_RANGE)
+  puts "   ⏳ Наступний батч через #{delay}с..."
+  puts ""
+
+  sleep delay
+rescue Interrupt
+  puts ""
+  puts "🛑 Симуляція зупинена оператором. Ліс засинає..."
+  exit 0
+rescue StandardError => e
+  puts "🚨 Критична помилка: #{e.message}"
+  puts e.backtrace.first(5).join("\n")
+  sleep 5
+end
