@@ -16,11 +16,9 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
 
   describe "TelemetryUnpackerService processes binary batch" do
     let(:did_hex) { "0000ABCD" }
-    let(:extracted_did) { did_hex.to_i(16).to_s(16).upcase }
+    let(:extracted_did) { format("SNET-%08X", did_hex.to_i(16)) }
     let!(:tree) do
-      t = create(:tree, cluster: cluster, tree_family: tree_family)
-      t.update_column(:did, extracted_did)
-      t.reload
+      create(:tree, did: extracted_did, cluster: cluster, tree_family: tree_family)
     end
 
     before do
