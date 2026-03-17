@@ -21,7 +21,7 @@
 │  Streamr (P2P real-time) · Filecoin/IPFS (immutable archive)            │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  BACKEND (Rails 8.1 + Sidekiq + PostgreSQL)                             │
-│  24 API Controllers · 29 Services · 26 Workers                          │
+│  28 API Controllers · 29+ Services · 31 Workers                         │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  INFRA (Akash Network — Decentralized Cloud)                            │
 │  Containerized Rails deployment on Akash marketplace                    │
@@ -77,7 +77,7 @@
 
 ## Domain Model
 
-### Core Entities (24 models)
+### Core Entities (25 models)
 
 ```
 Organization ──has_many──→ Users
@@ -138,13 +138,15 @@ This DB isolation prevents a telemetry queue flood (millions of IoT packets/hour
 
 | Queue | Priority | Workers |
 |-------|----------|---------|
-| `uplink` | 5 (highest) | UnpackTelemetryWorker, GatewayTelemetryWorker |
-| `alerts` | 4 | AlertNotificationWorker, SingleNotificationWorker |
-| `critical` | 4 | BurnCarbonTokensWorker, InsurancePayoutWorker, EcosystemHealingWorker |
-| `downlink` | 3 | ActuatorCommandWorker, OtaTransmissionWorker, ResetActuatorStateWorker |
-| `default` | 2 | ClusterHealthCheckWorker, TokenomicsEvaluatorWorker |
-| `web3` | 1 | MintCarbonCoinWorker, BlockchainConfirmationWorker, IotexVerificationWorker, ChainlinkDispatchWorker, CeloRewardWorker, SolanaMicroRewardWorker, EthereumAnchorWorker, KlimaRetirementWorker, HadronAssetRegistrationWorker, PeaqRegistrationWorker |
-| `low` | 1 | DailyAggregationWorker, FilecoinArchiveWorker, AuditLogWorker, StreamrBroadcastWorker |
+| `uplink` | 1 (highest) | UnpackTelemetryWorker, GatewayTelemetryWorker |
+| `alerts` | 2 | AlertNotificationWorker, SingleNotificationWorker, DclimateVerificationWorker |
+| `critical` | 3 | BurnCarbonTokensWorker, InsurancePayoutWorker, EcosystemHealingWorker |
+| `downlink` | 4 | ActuatorCommandWorker, OtaTransmissionWorker, ResetActuatorStateWorker |
+| `default` | 5 | ClusterHealthCheckWorker, TokenomicsEvaluatorWorker, EvaluateTreeBatchWorker |
+| `web3_critical` | 6 | MintCarbonCoinWorker, BlockchainConfirmationWorker, IotexVerificationWorker, ChainlinkDispatchWorker, ToucanBridgeWorker |
+| `web3` | 7 | CeloRewardWorker, SolanaMicroRewardWorker, PeaqRegistrationWorker, PuroEarthPassportWorker |
+| `web3_low` | 8 | EthereumAnchorWorker, KlimaRetirementWorker, HadronAssetRegistrationWorker |
+| `low` | 9 (lowest) | DailyAggregationWorker, FilecoinArchiveWorker, AuditLogWorker, StreamrBroadcastWorker |
 
 ### Sidekiq Worker Chain (The Heartbeat)
 
