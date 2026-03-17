@@ -69,6 +69,7 @@ end
 
 group :development do
   gem "lookbook"
+  gem "rails-schema"
   gem "view_component"
   gem "web-console"
 end
