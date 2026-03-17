@@ -311,15 +311,18 @@ forge create SilkenCarbonCoin \
 ```yaml
 # config/sidekiq.yml
 concurrency: 15
+strict: true
 
 queues:
-  - [uplink, 5]    # Телеметрія (КРИТИЧНО)
-  - [alerts, 4]    # Сповіщення
-  - [critical, 4]  # Slashing (КРИТИЧНО)
-  - [downlink, 3]  # Команди актуаторів
-  - [default, 2]   # Стандартні задачі
-  - [web3, 1]      # Блокчейн (НИЗЬКИЙ — повільний RPC)
-  - [low, 1]       # Аналітика
+  - uplink          # Вхідний потік телеметрії (КРИТИЧНО)
+  - alerts          # Сповіщення патрульних та SMS
+  - critical        # Slashing протокол (КРИТИЧНО)
+  - downlink        # Команди актуаторам та OTA
+  - default         # Стандартні системні задачі
+  - web3_critical   # TX підтвердження, мінтинг, Oracle dispatch, ZK верифікація
+  - web3            # Стандартні Web3 операції (Celo, Solana, peaq DID)
+  - web3_low        # Некритичні Web3 задачі (L1 anchoring, KlimaDAO, Hadron)
+  - low             # Важка нічна аналітика (InsightGenerator)
 ```
 
 ### 4. Моніторинг
@@ -404,8 +407,8 @@ ClusterHealthCheckWorker (02:00 UTC)
 
 | Воркер | Черга | Retry | Призначення |
 |--------|-------|-------|-------------|
-| `MintCarbonCoinWorker` | web3 | 5 | Батч-мінтинг (до 200 tx) |
-| `BlockchainConfirmationWorker` | web3 | 10 | Поллінг receipt, confirm/fail |
+| `MintCarbonCoinWorker` | web3_critical | 5 | Батч-мінтинг (до 200 tx) |
+| `BlockchainConfirmationWorker` | web3_critical | 10 | Поллінг receipt, confirm/fail |
 | `BurnCarbonTokensWorker` | critical | 5 | Виконання slash() |
 
 ---

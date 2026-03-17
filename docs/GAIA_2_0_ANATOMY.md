@@ -309,10 +309,10 @@ The Final Judgment. Written in the most secure, most decentralized, most battle-
 | Metric | Value |
 |---|---|
 | Blockchain networks integrated | **12** |
-| Sidekiq workers | **26** |
-| Services | **24** |
-| API controllers | **24** |
-| Sidekiq queue priority levels | **7** |
+| Sidekiq workers | **31** |
+| Services | **29+** |
+| API controllers | **28** |
+| Sidekiq queue priority levels | **9** |
 | Lorenz attractor precision | **18 digits** (BigDecimal) |
 | Binary packet size | **21 bytes** (outer) / **16 bytes** (inner) |
 | AES encryption | **256-bit** (hardware-bound keys) |
