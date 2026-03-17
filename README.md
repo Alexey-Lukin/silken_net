@@ -19,6 +19,8 @@
 | Контролер | Призначення |
 |---|---|
 | **Sessions** | Брама входу та керування токенами доступу |
+| **Passwords** | Відновлення та скидання пароля |
+| **AccountSecurity** | MFA, зміна пароля, OAuth-ідентичності |
 | **Dashboard** | Центральний вівтар — зведена панель стану системи |
 | **Clusters** | Гео-просторові сектори лісу (GeoJSON) |
 | **Trees** | Шеренга Солдатів — імпеданс, DID, заряд іоністора |
@@ -27,10 +29,12 @@
 | **Telemetry** | Пульс істини — historical дані та live-потік |
 | **Alerts** | Нервова система — EWS-реагування (пожежі, засухи, вандалізм) |
 | **Maintenance** | Журнал зцілення — Proof of Care у полі |
+| **MaintenanceRecordPhotos** | Управління фото до записів обслуговування |
 | **Provisioning** | Ритуал ініціації — прив'язка STM32 UID до DID |
 | **Firmwares** | Еволюція — управління прошивками та OTA-деплой |
 | **Actuators** | Руки Оракула — пряме керування клапанами та сиренами |
 | **OracleVisions** | Прекогніція — AI-прогнози на основі Атрактора Лоренца |
+| **OracleCallbacks** | Chainlink Oracle зворотні виклики |
 | **Contracts** | Економічний купол NaaS (Nature-as-a-Service) |
 | **Wallets** | Скарбниця — токен-баланси дерев та організацій |
 | **BlockchainTransactions** | Блокчейн-леджер — журнал on-chain операцій |
@@ -115,25 +119,30 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 | `GatewayTelemetryWorker` | `uplink` | Обробка телеметрії Королев |
 | `AlertNotificationWorker` | `alerts` | Відправка SMS/Telegram тривог |
 | `SingleNotificationWorker` | `alerts` | Одиночне сповіщення патрульного |
+| `DclimateVerificationWorker` | `alerts` | Верифікація кліматичних даних (dClimate) |
 | `ActuatorCommandWorker` | `downlink` | Виконання команд актуаторам |
 | `OtaTransmissionWorker` | `downlink` | OTA-передача прошивки на вузол |
 | `ResetActuatorStateWorker` | `downlink` | Скидання стану актуатора після команди |
-| `MintCarbonCoinWorker` | `web3` | Емісія SCC на Polygon |
+| `MintCarbonCoinWorker` | `web3_critical` | Емісія SCC на Polygon |
 | `BurnCarbonTokensWorker` | `critical` | Slashing-протокол (спалювання токенів) |
-| `BlockchainConfirmationWorker` | `web3` | Підтвердження on-chain транзакцій |
+| `BlockchainConfirmationWorker` | `web3_critical` | Підтвердження on-chain транзакцій |
 | `TokenomicsEvaluatorWorker` | `default` | Щогодинна оцінка токеноміки |
 | `ClusterHealthCheckWorker` | `default` | Нічний арбітраж NaaS-контрактів |
+| `EvaluateTreeBatchWorker` | `default` | Пакетна оцінка здоров'я дерев |
 | `DailyAggregationWorker` | `low` | Стиснення телеметрії в AiInsight (01:00) |
 | `EcosystemHealingWorker` | `critical` | Автоматична корекція аномалій |
 | `InsurancePayoutWorker` | `critical` | Виплата страхових компенсацій |
-| `IotexVerificationWorker` | `web3` | ZK-proof генерація (IoTeX W3bstream) |
-| `ChainlinkDispatchWorker` | `web3` | Dispatch до Chainlink Oracle |
+| `IotexVerificationWorker` | `web3_critical` | ZK-proof генерація (IoTeX W3bstream) |
+| `ChainlinkDispatchWorker` | `web3_critical` | Dispatch до Chainlink Oracle |
+| `ToucanBridgeWorker` | `web3_critical` | Carbon bridge через Toucan Protocol |
 | `PeaqRegistrationWorker` | `web3` | Реєстрація peaq DID |
+| `PuroEarthPassportWorker` | `web3` | D-MRV Biomass Passport (Puro.earth) |
+| `ApplicationWeb3Worker` | — | Базовий модуль для блокчейн-воркерів |
 | `SolanaMicroRewardWorker` | `web3` | Мікро-платежі USDC (Solana) |
 | `CeloRewardWorker` | `web3` | ReFi нагороди cUSD (Celo) |
-| `KlimaRetirementWorker` | `web3` | ESG carbon retirement (KlimaDAO) |
-| `EthereumAnchorWorker` | `web3` | State root → Ethereum L1 (щотижня) |
-| `HadronAssetRegistrationWorker` | `web3` | RWA реєстрація (Polygon Hadron) |
+| `KlimaRetirementWorker` | `web3_low` | ESG carbon retirement (KlimaDAO) |
+| `EthereumAnchorWorker` | `web3_low` | State root → Ethereum L1 (щотижня) |
+| `HadronAssetRegistrationWorker` | `web3_low` | RWA реєстрація (Polygon Hadron) |
 | `StreamrBroadcastWorker` | `low` | P2P broadcast (Streamr) |
 | `FilecoinArchiveWorker` | `low` | Архівація на IPFS/Filecoin |
 | `AuditLogWorker` | `low` | Створення аудит-записів |
@@ -144,7 +153,7 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 
 * **Backend**: Ruby **4.0.1** / Rails **8.1.2**.
 * **Database**: PostgreSQL + **Solid Cache** + **Solid Cable** + **Solid Queue**.
-* **Background Jobs**: **Sidekiq** + **sidekiq-scheduler** (черги: `uplink`, `alerts`, `critical`, `downlink`, `default`, `web3`, `low`; 26 воркерів).
+* **Background Jobs**: **Sidekiq** + **sidekiq-scheduler** (черги: `uplink`, `alerts`, `critical`, `downlink`, `default`, `web3_critical`, `web3`, `web3_low`, `low`; 31 воркер).
 * **Frontend**: Hotwire (Turbo 8 / Stimulus), Tailwind CSS, **Phlex** (компонентна система).
 * **Serialization**: **Blueprinter** (API JSON blueprints).
 * **Pagination**: **Pagy** + **Groupdate** (time-series).
@@ -207,15 +216,67 @@ kamal setup
 
 ---
 
+## 🧪 Локальна Розробка / Симуляція
+
+Для тестування повного конвеєру телеметрії без фізичного обладнання використовуйте вбудований **Forest Simulator** — Цифровий Близнюк Королеви (Gateway).
+
+### 1. Підготовка бази даних
+
+```bash
+bin/rails db:prepare   # Створює БД та міграції
+bin/rails db:seed      # Заповнює Gateway, Tree, HardwareKey, TreeFamily
+```
+
+### 2. Запуск усіх сервісів
+
+```bash
+bin/dev                # Rails server + Sidekiq + Tailwind CSS + CoAP listener
+```
+
+`Procfile.dev` автоматично піднімає:
+- `web` — Rails-сервер (порт 3000)
+- `worker` — Sidekiq з конфігурацією `config/sidekiq.yml`
+- `css` — Tailwind CSS watcher
+- `coap` — CoAP/UDP listener (порт 5683)
+
+### 3. Запуск Forest Simulator (окремий термінал)
+
+```bash
+bin/forest_simulator
+```
+
+Симулятор:
+- Обирає випадкову Королеву (Gateway) з існуючим `HardwareKey`
+- Генерує реалістичну телеметрію від 5–15 Солдатів (дерев)
+- Пакує 21-байтні бінарні чанки (L2 Header + L3 Payload)
+- Шифрує AES-256-CBC (ідентично реальному обладнанню)
+- Відправляє через CoAP PUT на `coap://127.0.0.1:5683/telemetry/batch/{gateway_uid}`
+- Повторює кожні 3–8 секунд
+
+### 4. Моніторинг конвеєру
+
+```bash
+# Перевірка створених записів телеметрії
+rails runner "puts TelemetryLog.count"
+
+# Sidekiq dashboard
+open http://localhost:3000/sidekiq
+
+# Логи в реальному часі
+tail -f log/development.log | grep -i telemetry
+```
+
+---
+
 ## 📚 Документація
 
 Детальна документація знаходиться в директорії [`docs/`](docs/):
 
 * **[`GAIA_2_0_ANATOMY.md`](docs/GAIA_2_0_ANATOMY.md) — 🌐 Анатомія Gaia 2.0: 12 кроків Кіберфізичної Держави**
-* [`API.md`](docs/API.md) — опис всіх API-ендпоінтів (24 контролери)
+* [`API.md`](docs/API.md) — опис всіх API-ендпоінтів (28 контролерів)
 * [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — мультичейн архітектура та потоки даних (12 мереж)
 * [`MODELS.md`](docs/MODELS.md) — всі доменні моделі та їхні зв'язки
-* [`LOGIC.md`](docs/LOGIC.md) — сервіси (24) та воркери (26) з призначеннями
+* [`LOGIC.md`](docs/LOGIC.md) — сервіси (29+) та воркери (31) з призначеннями
 * [`FIRMWARE.md`](docs/FIRMWARE.md) — специфікація прошивки STM32
 * [`HARDWARE.md`](docs/HARDWARE.md) — апаратна специфікація та BOM
 * [`TOKENOMICS.md`](docs/TOKENOMICS.md) — мультичейн токеноміка (Polygon, Solana, Celo, KlimaDAO, Ethereum L1)
