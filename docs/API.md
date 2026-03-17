@@ -33,6 +33,30 @@ Response (200):
 
 ---
 
+### Passwords
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/forgot_password` | None | Show forgot password form |
+| `POST` | `/forgot_password` | None | Send password reset email |
+| `GET` | `/reset_password` | None | Show reset password form (with token) |
+| `PATCH` | `/reset_password` | None | Reset password with token |
+
+---
+
+### Account Security
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/account_security` | Required | View security settings (MFA, identities) |
+| `PATCH` | `/account_security/mfa` | Required | Toggle MFA on/off |
+| `PATCH` | `/account_security/password` | Required | Change password |
+| `DELETE` | `/account_security/identities/:id` | Required | Unlink OAuth identity |
+| `PATCH` | `/account_security/identities/:id/lock` | Required | Lock OAuth identity |
+| `PATCH` | `/account_security/identities/:id/unlock` | Required | Unlock OAuth identity |
+
+---
+
 ### Dashboard
 
 | Method | Path | Auth | Description |
@@ -117,12 +141,30 @@ Response (200):
 
 ---
 
+### Oracle Callbacks (Chainlink)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/oracle_callbacks` | System | Chainlink oracle callback with verified data |
+
+---
+
+### Telemetry
+
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/trees/:tree_id/telemetry` | Required | Tree telemetry time-series |
 | `GET` | `/gateways/:gateway_id/telemetry` | Required | Gateway diagnostics time-series |
 
 **Parameters:** `?days=7&resolution=hourly`
+
+---
+
+### Telemetry (Live Stream)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/telemetry/live` | Required | Live telemetry matrix stream |
 
 ---
 
@@ -207,6 +249,14 @@ Response (200):
   "ews_alert_id": 15
 }
 ```
+
+---
+
+### Maintenance Record Photos
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `DELETE` | `/maintenance_records/:maintenance_record_id/photos/:id` | Forester+ | Delete a photo from maintenance record |
 
 ---
 
