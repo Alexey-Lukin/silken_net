@@ -78,7 +78,7 @@ jobs:
           ruby-version: "3.3"
 
       - name: Install Kamal
-        run: gem install kamal
+        run: gem install kamal -v '~> 2.11.0'
 
       - name: Set up SSH key
         run: |
@@ -86,6 +86,11 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+
+      - name: Reboot Kamal Proxy
+        run: kamal proxy reboot
+        env:
+          KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
 
       - name: Kamal Deploy to Production
         run: kamal deploy
