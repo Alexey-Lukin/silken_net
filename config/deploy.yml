@@ -58,6 +58,8 @@ aliases:
   shell: app exec --interactive --reuse "bash"
   logs: app logs -f
   dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
+  canopy-console: app exec --interactive --reuse "bin/rails console" -d canopy
+  canopy-logs: app logs -f -d canopy
 
 # Persistent storage volume for Active Storage files.
 volumes:
