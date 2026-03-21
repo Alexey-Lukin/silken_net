@@ -1,0 +1,56 @@
+# Gaia 2.0 AI Rules (SSOT)
+
+## 🌲 Project Core
+
+- **Mission:** Bio-IoT D-MRV platform monitoring forest health at planetary scale (millions → billions → trillions of trees).
+- **Energy:** EBFC (Enzymatic Bio-Fuel Cell) harvests >500 mV from tree glucose metabolism via GOx/Laccase enzymes on Ti-6Al-4V gyroid anchor. Powered by BQ25570 MPPT + 0.47F EDLC supercapacitor.
+- **Edge:** STM32WLE5JC (Cortex-M4) — TinyML acoustic classification + mruby Lorenz attractor → AES-256 encrypted LoRa mesh → Queen gateway → Starlink/LTE → Rails backend.
+- **Math:** Lorenz Attractor (σ=10, ρ=28, β=8/3), 250 iterations, BigDecimal 18-digit precision. Z-axis value determines tree homeostasis for Proof of Growth tokenomics.
+- **Web3:** 12-chain architecture — Polygon (SCC/SFC primary), peaq (Machine DID), IoTeX (ZK-proofs), Chainlink (Oracle DON), Ethereum L1 (weekly State Root anchoring), Solana (micro-rewards), Celo (ReFi), KlimaDAO (ESG retirement), Polygon Hadron (KYC/KYB ERC-3643), Streamr (P2P telemetry), Filecoin/IPFS (immutable archive), The Graph (subgraph indexing).
+
+## 🛠 Tech Stack
+
+- **Backend:** Rails 8.1.2 (Omakase), Ruby 4.0.1, PostgreSQL (4 DBs: primary, cache, queue, cable).
+- **Frontend:** Phlex components, Tailwind CSS (dark-first `gaia-*` tokens), Stimulus, Turbo 8, Lookbook previews.
+- **Jobs:** Sidekiq (31+ workers, 9 strict-priority queues) + Solid Queue/Cache/Cable.
+- **Hardware:** STM32WLE5JC, AES-256, 21-byte binary packets (1 header + 4 DID + 8 sensor + 4 Lorenz + 2 TinyML + 2 CRC).
+- **Security:** Brakeman, bundler-audit, argon2id, Pundit authorization, rack-attack rate limiting.
+- **Deploy:** Kamal (Docker), Terraform (GCP), Akash Network (decentralized), Thruster (HTTP/2).
+- **Monitoring:** Prometheus metrics, Sentry error tracking, Grafana dashboards.
+
+## 🤖 AI Behavior (Cursor & Copilot)
+
+- **SSOT:** The GitHub Wiki (`docs/wiki/`) is the Single Source of Truth. Always consult it before architectural decisions. Local `docs/` folder mirrors key specs.
+- **Style:** Rails 8 Omakase conventions. Thin controllers → service objects → Sidekiq workers. Phlex for UI. No legacy gems.
+- **Database:** Use `structure.sql` (PostgreSQL-specific: partitioning, PostGIS, triggers), NOT `schema.rb`. Commit `db/structure.sql` alongside migrations.
+- **Hardware:** Firmware in `firmware/` is pure C (STM32 HAL). mruby VM in `firmware/bio_contracts/`. Never mix with Ruby/Rails context.
+- **Blockchain:** Solidity contracts in `contracts/` use Foundry toolchain. Ruby ↔ blockchain interaction is isolated in `app/services/` namespaces (Polygon, Ethereum, Solana, Celo, etc.).
+- **Testing:** RSpec + FactoryBot + Capybara + Cuprite. Always run `bundle exec rubocop -A` before finishing.
+- **Language:** Code and API in English. Documentation and comments may be in Ukrainian.
+- **Ruby:** Version 4.0.1 — use modern syntax (pattern matching, numbered block params, `it` keyword).
+
+## 📋 Task Management
+
+- Every task must aim for a **TRL level** (Technology Readiness Level 1–9, NASA standard).
+- If $Z < critical\_z\_min$, trigger `breached` status on `NaasContract` and create `EwsAlert`.
+- Sidekiq queue assignment is critical: `uplink` > `alerts` = `critical` > `downlink` > `default` > `web3_critical` > `web3` > `web3_low` > `low`.
+
+## 📂 Key Directory Map
+
+```
+app/controllers/api/v1/   # 28 RESTful API controllers
+app/models/               # 25 ActiveRecord models
+app/services/             # 20+ service namespaces (incl. multichain Web3)
+app/workers/              # 31+ Sidekiq background workers
+app/blueprints/           # 8 Blueprinter JSON serializers
+app/views/components/     # 29 Phlex domain component directories
+app/views/shared/         # Shared UI (StatusBadge, DataTable, etc.), Web3, IoT components
+contracts/                # Solidity: SilkenCarbonCoin.sol, SilkenForestCoin.sol
+firmware/                 # C firmware: soldier/, queen/, bio_contracts/, test/
+lib/daemons/              # CoAP UDP listener (port 5683)
+spec/                     # RSpec tests (100+ files across 20 directories)
+docs/                     # 15 comprehensive .md documentation files
+subgraph/                 # The Graph subgraph (GraphQL indexing)
+terraform/                # GCP infrastructure-as-code
+deploy/                   # Kamal & Akash deployment configs
+```
