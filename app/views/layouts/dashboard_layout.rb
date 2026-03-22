@@ -19,7 +19,7 @@ class DashboardLayout < ApplicationComponent
       body(class: "h-full font-mono antialiased bg-white text-gray-900 dark:bg-black dark:text-emerald-500 overflow-hidden transition-colors duration-300") do
         div(class: "flex h-full overflow-hidden") do
           # ЦЕНТРАЛЬНА НАВІГАЦІЯ — hidden on mobile, visible on md+
-          div(class: "hidden md:block") do
+          div(class: "hidden md:block", id: "sidebar-navigation", data: { turbo_permanent: "" }) do
             render Navigation::Sidebar.new(
               current_path: @current_path,
               ews_alert_count: @ews_alert_count

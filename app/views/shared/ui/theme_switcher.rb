@@ -5,7 +5,7 @@ module Views
     module UI
       class ThemeSwitcher < ApplicationComponent
         def view_template
-          div(data: { controller: "theme" }) do
+          div(id: "theme-switcher", data: { controller: "theme", turbo_permanent: "" }) do
             button(
               type: "button",
               aria_label: "Toggle light/dark theme",
