@@ -1,0 +1,212 @@
+# TRL Auto-Advancement Workflow
+#
+# Automatically synchronizes Technology Readiness Levels in GitHub Project V2.
+# When an issue is closed the workflow copies the "Target TRL" value
+# into the "Current TRL" field on the corresponding project card.
+#
+# ─── Prerequisites ───────────────────────────────────────────────────
+# 1. A repository secret named PROJECT_PAT must exist.
+#    It needs the scopes: repo, project (read:project + write:project).
+#
+# 2. Set the environment variables below to match your project board.
+#    You can obtain them with the GitHub CLI:
+#
+#      # List your projects and find the number:
+#      gh project list --owner <OWNER>
+#
+#      # Get the Project Node ID and field IDs:
+#      gh project field-list <PROJECT_NUMBER> --owner <OWNER> --format json
+#
+#    Copy the node IDs for "Target TRL" and "Current TRL" fields, as well
+#    as the Project node ID (starts with PVT_), and paste them below.
+# ─────────────────────────────────────────────────────────────────────
+
+name: TRL Sync
+
+on:
+  issues:
+    types: [closed]
+
+# Only the GraphQL token is needed; no checkout required.
+permissions: {}
+
+env:
+  # ── CONFIGURE THESE VALUES ──────────────────────────────────────────
+  # Owner (organization or user) of the GitHub Project V2.
+  PROJECT_OWNER: Alexey-Lukin
+  # The project number visible in the project URL (e.g. 1).
+  PROJECT_NUMBER: "1"
+  # ────────────────────────────────────────────────────────────────────
+
+jobs:
+  sync_trl:
+    name: Copy Target TRL → Current TRL
+    runs-on: ubuntu-latest
+    if: github.event.issue.state == 'closed'
+
+    steps:
+      - name: Sync TRL fields via GraphQL
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECT_PAT }}
+          script: |
+            // ── Helper: run a GraphQL query with the PROJECT_PAT ──
+            async function gql(query, variables = {}) {
+              return github.graphql(query, variables);
+            }
+
+            const owner = process.env.PROJECT_OWNER;
+            const projectNumber = parseInt(process.env.PROJECT_NUMBER, 10);
+            const issueNumber = context.issue.number;
+            const repoName = context.repo.repo;
+            const repoOwner = context.repo.owner;
+
+            core.info(`Issue #${issueNumber} closed in ${repoOwner}/${repoName}`);
+            core.info(`Looking up Project V2 #${projectNumber} owned by "${owner}"…`);
+
+            // ── 1. Resolve Project node ID and field metadata ──────
+            const projectQuery = `
+              query ($owner: String!, $number: Int!) {
+                user(login: $owner) {
+                  projectV2(number: $number) {
+                    id
+                    fields(first: 50) {
+                      nodes {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options { id name }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            // Try user-owned project first; fall back to organization.
+            let projectData;
+            try {
+              const userResult = await gql(projectQuery, { owner, number: projectNumber });
+              projectData = userResult.user?.projectV2;
+            } catch {
+              core.info('User query failed, trying organization…');
+            }
+
+            if (!projectData) {
+              const orgQuery = projectQuery.replace('user(login: $owner)', 'organization(login: $owner)');
+              const orgResult = await gql(orgQuery, { owner, number: projectNumber });
+              projectData = orgResult.organization?.projectV2;
+            }
+
+            if (!projectData) {
+              core.setFailed(`Project V2 #${projectNumber} not found for owner "${owner}".`);
+              return;
+            }
+
+            const projectId = projectData.id;
+            core.info(`Project node ID: ${projectId}`);
+
+            // ── 2. Locate "Target TRL" and "Current TRL" fields ────
+            const fields = projectData.fields.nodes.filter(f => f.name);
+            const targetField = fields.find(f => f.name === 'Target TRL');
+            const currentField = fields.find(f => f.name === 'Current TRL');
+
+            if (!targetField) {
+              core.setFailed('"Target TRL" single-select field not found in the project.');
+              return;
+            }
+            if (!currentField) {
+              core.setFailed('"Current TRL" single-select field not found in the project.');
+              return;
+            }
+
+            core.info(`Target TRL field ID : ${targetField.id}`);
+            core.info(`Current TRL field ID: ${currentField.id}`);
+
+            // ── 3. Find the project item for this issue ────────────
+            const itemQuery = `
+              query ($repoOwner: String!, $repoName: String!, $issueNumber: Int!) {
+                repository(owner: $repoOwner, name: $repoName) {
+                  issue(number: $issueNumber) {
+                    projectItems(first: 20) {
+                      nodes {
+                        id
+                        project { id }
+                        fieldValueByName(name: "Target TRL") {
+                          ... on ProjectV2ItemFieldSingleSelectValue {
+                            name
+                            optionId
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            const itemResult = await gql(itemQuery, {
+              repoOwner,
+              repoName,
+              issueNumber,
+            });
+
+            const items = itemResult.repository.issue.projectItems.nodes;
+            const item = items.find(i => i.project.id === projectId);
+
+            if (!item) {
+              core.warning(
+                `Issue #${issueNumber} is not linked to Project V2 #${projectNumber}. Skipping.`
+              );
+              return;
+            }
+
+            core.info(`Project item ID: ${item.id}`);
+
+            // ── 4. Read Target TRL value ───────────────────────────
+            const targetValue = item.fieldValueByName;
+            if (!targetValue || !targetValue.name) {
+              core.warning(
+                `Issue #${issueNumber} has no "Target TRL" value set. Skipping.`
+              );
+              return;
+            }
+
+            const targetTrlName = targetValue.name;
+            core.info(`Target TRL value: "${targetTrlName}"`);
+
+            // ── 5. Map to Current TRL option ID ────────────────────
+            const currentOption = currentField.options.find(o => o.name === targetTrlName);
+            if (!currentOption) {
+              core.setFailed(
+                `"Current TRL" field has no option matching "${targetTrlName}". ` +
+                `Available options: ${currentField.options.map(o => o.name).join(', ')}`
+              );
+              return;
+            }
+
+            // ── 6. Update Current TRL ──────────────────────────────
+            const mutation = `
+              mutation ($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId
+                  itemId: $itemId
+                  fieldId: $fieldId
+                  value: { singleSelectOptionId: $optionId }
+                }) {
+                  projectV2Item { id }
+                }
+              }
+            `;
+
+            await gql(mutation, {
+              projectId,
+              itemId: item.id,
+              fieldId: currentField.id,
+              optionId: currentOption.id,
+            });
+
+            core.info(
+              `✅ Current TRL updated to "${targetTrlName}" for issue #${issueNumber}.`
+            );
