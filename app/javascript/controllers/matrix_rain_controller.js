@@ -11,7 +11,8 @@ export default class extends Controller {
     this.drops = []
     
     this.resize()
-    window.addEventListener("resize", this.resize.bind(this))
+    this.handleResize = this.resize.bind(this)
+    window.addEventListener("resize", this.handleResize)
     
     // Швидкість матриці
     this.interval = setInterval(this.draw.bind(this), 60)
@@ -19,7 +20,7 @@ export default class extends Controller {
 
   disconnect() {
     clearInterval(this.interval)
-    window.removeEventListener("resize", this.resize.bind(this))
+    window.removeEventListener("resize", this.handleResize)
   }
 
   resize() {

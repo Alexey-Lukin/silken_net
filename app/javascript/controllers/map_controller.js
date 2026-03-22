@@ -18,7 +18,17 @@ export default class extends Controller {
     this.markers = {} // Банк пам'яті: DID -> Marker
     
     // Захист від багів рендерингу в прихованих вкладках
-    setTimeout(() => this.map.invalidateSize(), 200)
+    this.resizeTimeout = setTimeout(() => this.map.invalidateSize(), 200)
+  }
+
+  disconnect() {
+    clearTimeout(this.resizeTimeout)
+    if (this.map) {
+      this.map.off()
+      this.map.remove()
+      this.map = null
+    }
+    this.markers = {}
   }
 
   // ⚡ [КЕНОЗИС]: Цей метод викликається АВТОМАТИЧНО, коли Turbo Stream

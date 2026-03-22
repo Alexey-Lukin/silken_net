@@ -28,6 +28,14 @@ RSpec.describe Views::Shared::UI::ThemeSwitcher do
       expect(html).to include("<svg")
       expect(html).to include("</svg>")
     end
+
+    it "includes id for turbo-permanent identification" do
+      expect(html).to include('id="theme-switcher"')
+    end
+
+    it "includes data-turbo-permanent to persist across Turbo navigations" do
+      expect(html).to include("data-turbo-permanent")
+    end
   end
 
   describe "accessibility" do

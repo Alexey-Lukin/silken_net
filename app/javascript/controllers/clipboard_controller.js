@@ -20,14 +20,19 @@ export default class extends Controller {
   }
 
   showFeedback() {
+    clearTimeout(this.feedbackTimeout)
     const button = this.hasButtonTarget ? this.buttonTarget : this.element
     const original = button.innerHTML
     button.innerHTML = "✓"
     button.classList.add("text-emerald-300")
 
-    setTimeout(() => {
+    this.feedbackTimeout = setTimeout(() => {
       button.innerHTML = original
       button.classList.remove("text-emerald-300")
     }, 2000)
+  }
+
+  disconnect() {
+    clearTimeout(this.feedbackTimeout)
   }
 }
