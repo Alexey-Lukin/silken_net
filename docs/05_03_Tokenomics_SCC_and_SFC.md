@@ -319,7 +319,7 @@ function nonces(address owner)
 | `Slashed(indexed address,uint256,indexed string)` | `TokenSlashed` | 🚨 MISMATCH — [05_01 BLOCKER-2] |
 | `PremiumPaid(indexed address,uint256)` | ❌ **Відсутня в контракті** | 🚨 Подія не існує — BLOCKER B-11 |
 
-> ⚠️ **Indexed string у Events:** `string indexed treeDid` та `string indexed clusterId` зберігаються як `keccak256` хеш — не як рядок. Off-chain підписники не можуть прочитати значення без окремого lookup. (BLOCKER B-05)
+> ⚠️ **Indexed string у Events:** `string indexed treeDid` та `string indexed clusterId` зберігаються як `keccak256` хеш — не як рядок. Off-chain підписники не можуть прочитати значення без окремого lookup. (BLOCKER B-10)
 
 ---
 
