@@ -1,5 +1,17 @@
 # Embedded Firmware
 
+## Development Toolchain
+
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| **STM32CubeIDE** | Full C/C++ IDE for STM32WLE5JC | Includes STM32CubeMX configurator for GPIO pinout, clock tree (STOP2 ultra-low-power mode), and peripheral drivers (I2C/SPI/ADC/RTC). Use this to configure and generate HAL init code before physical boards arrive |
+| **STM32CubeMX** (integrated) | Clock tree + peripheral config | Configure STOP2 sleep, HRNG, SUBGHZ (SX1262), CRYP (AES-256), ADC, TIM2 DMA |
+| **ST-LINK-V3MINIE** | SWD firmware flash + debug | Required for initial provisioning and firmware updates on physical boards |
+| **GCC ARM Embedded** | Cross-compiler | Used by CubeIDE internally; also required for host-based tests (`firmware/test/`) |
+| **GNU Make** | Host test build system | `make -C firmware/test` — runs all 112 tests on x86 without ARM toolchain |
+
+---
+
 ## Platform
 
 **MCU:** STM32WLE5JC (Seeed Studio LoRa-E5 mini)
@@ -395,6 +407,7 @@ The server-side `SilkenNet::Attractor` service independently computes the same Z
 | **Queen Health Blind Spot** | 🟠 High | Queen doesn't send own battery/temperature/CSQ to server | ✅ Fixed: DID=0 sentinel packet injected into cache before each batch flush. Contains uptime, tree count, and cache load |
 | **AT Command Blocking** | 🟠 High | `HAL_Delay(2000)` after CoAP — Queen blind for 2s, LoRa FIFO overflow risk | ⚠️ Open (needs UART interrupt driver rewrite) |
 | **Starlink Latency** | 🟡 Medium | `HAL_Delay(1000)` for CoAP session may be too short for Starlink | ⚠️ Open |
+| **AES Key Mismatch** | 🔴 Critical | `aes_key[8]` in `firmware/soldier/main.c` and `firmware/queen/main.c` must be **bit-for-bit identical**. Even a single differing byte causes the Queen to decrypt all Soldier packets as garbage — the forest goes silent with no error indication | ⚠️ Verify before every firmware flash. Production key provisioned via `/api/v1/provisioning` and injected by `HardwareKeyService` |
 
 ### Host-Based Test Coverage
 

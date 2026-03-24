@@ -26,7 +26,7 @@
 │  INFRA (Akash Network — Decentralized Cloud)                            │
 │  Containerized Rails deployment on Akash marketplace                    │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  NETWORK (LoRa 868 MHz + CoAP/UDP over LTE/Starlink)                    │
+│  NETWORK (LoRa 868 MHz + CoAP/UDP over LTE/Starlink Direct-to-Cell)     │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  EDGE (STM32WLE5JC Soldiers + Queens)                                   │
 │  TinyML · mruby VM · AES-256 · Mesh TTL routing                         │
@@ -59,7 +59,7 @@
 3. **mruby Bio-Contract** — Lorenz attractor computation on-device produces `growth_points` and `bio_status`.
 4. **Bit-Packing & Encryption** — 16-byte payload packed, AES-256-ECB encrypted, transmitted via LoRa.
 5. **Queen Reception** — Queen decrypts, caches via CIFO (Closest In, Farthest Out), batches up to 50 trees.
-6. **CoAP Uplink** — Queen sends binary batch via CoAP PUT over LTE/Starlink to Rails backend (Akash or GCP).
+6. **CoAP Uplink** — Queen sends binary batch via CoAP PUT over LTE/Starlink Direct-to-Cell to Rails backend (Akash or GCP). Starlink Direct-to-Cell works through Kyivstar's NB-IoT/LTE-M network — no dedicated Starlink terminal or modem required; the SIM7070G cellular modem handles the connection transparently.
 7. **Backend Unpacking** — `UnpackTelemetryWorker` → `TelemetryUnpackerService` decodes, normalizes via `DeviceCalibration`, stores `TelemetryLog`.
 8. **Streamr Broadcast** — `StreamrBroadcastWorker` publishes raw telemetry to Streamr P2P network (non-blocking, real-time forest pulse).
 9. **peaq DID Verification** — `Peaq::DidRegistryService` verifies the tree's cryptographic machine passport (`did:peaq:0x...`).

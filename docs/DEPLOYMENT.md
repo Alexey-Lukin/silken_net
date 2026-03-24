@@ -379,6 +379,68 @@ kamal deploy -d canopy
 
 ## Як зробити деплой
 
+### ⚠️ Pre-Flight Checklist (Before Any Deploy)
+
+Five things that can silently break your first deploy. Check all before running `terraform apply` or `kamal setup`:
+
+| # | Check | Detail |
+|---|-------|--------|
+| **1** | **DNS propagation before `kamal setup`** | After `terraform apply`, copy the server IP and create an A-record (`api.silkennet.com → <IP>`). Wait until `dig api.silkennet.com` returns the correct IP globally. Only then run `kamal setup` — Traefik uses Let's Encrypt HTTP-01 challenge, which fails if DNS hasn't propagated. A failed challenge blocks the certificate; the server won't start. |
+| **2** | **`.kamal/secrets` file exists with real values** | Kamal reads secrets from `.kamal/secrets` (not from environment). Create this file locally with real values for `RAILS_MASTER_KEY`, `DATABASE_URL`, `REDIS_URL`, `KREDIS_REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY`. Without it, containers start but crash immediately (missing DB credentials, decryption key). |
+| **3** | **Crypto wallets funded (Gas)** | Web3 workers (`MintCarbonCoinWorker`, `EthereumAnchorWorker`, `SolanaMicroRewardWorker`, `CeloRewardWorker`) require native currency to pay network fees. Fund the oracle wallet before first Sidekiq run: MATIC (Polygon), ETH (Ethereum L1), SOL (Solana), CELO (Celo). Even a perfect codebase returns "Insufficient Funds" without gas — Sidekiq will drown in retries. |
+| **4** | **LoRa antenna physically connected** | **CRITICAL (hardware).** Never power a Queen or Soldier board without the LoRa antenna attached to the SMA/U.FL port. The SX1262 RF amplifier reflects energy back into the chip without a load — the radio module burns in milliseconds. Sequence: connect antenna → power on. |
+| **5** | **AES key symmetry (Soldier ↔ Queen)** | The `aes_key[8]` array in `firmware/soldier/main.c` and `firmware/queen/main.c` must be **bit-for-bit identical**. A single differing byte causes the Queen to produce garbage from every Soldier packet — the forest appears silent with no error. Verify before every firmware flash cycle. |
+
+### Secrets Manager Recommendation
+
+With multiple API keys (12 blockchains, GCP, Akash, Starlink, DB, Redis) it is critical to keep secrets organized:
+
+- **Bitwarden** (open-source, self-hostable) or **1Password** — use one vault per environment (canopy / production)
+- Store every token, private key, and credential there before creating `.kamal/secrets`
+- Never commit secrets to git — use `.gitignore` entries for `.kamal/secrets`, `.env`, `terraform.tfvars`
+
+### 🚀 Quickstart: First Infrastructure Deployment
+
+```bash
+# Step 1: Create GCS bucket for Terraform state (one-time, before terraform init)
+gcloud storage buckets create gs://silken-net-terraform-state \
+  --project=<GCP_PROJECT_ID> \
+  --location=europe-west1 \
+  --uniform-bucket-level-access
+
+# Step 2: Bootstrap infrastructure (10–15 min)
+cd terraform
+cp terraform.tfvars.example terraform.tfvars   # fill in project_id, db_password
+terraform init
+terraform plan
+terraform apply
+# → outputs: web_server_ips, canopy_server_ip, database_url, redis_url
+
+# Step 3: Update Kamal config with real IPs
+# Edit config/deploy.yml → servers.web: [<web_server_ip>]
+# Edit config/deploy.canopy.yml → servers.web: [<canopy_server_ip>]
+
+# Step 4: Create DNS A-record
+# api.silkennet.com → <web_server_ip>
+# canopy.silkennet.com → <canopy_server_ip>
+# Wait for DNS propagation: dig api.silkennet.com → correct IP
+
+# Step 5: Populate .kamal/secrets (from Bitwarden/1Password vault)
+# RAILS_MASTER_KEY=...
+# DATABASE_URL=$(terraform output -raw database_url)
+# REDIS_URL=...
+# KREDIS_REDIS_URL=...
+# GCP_ARTIFACT_REGISTRY_KEY=...
+
+# Step 6: Configure Docker registry
+gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+# Step 7: Deploy (first run)
+kamal setup
+# → Traefik starts → Let's Encrypt issues SSL → Rails boots → CoAP listener opens UDP 5683
+# When logs show "Listening on coap://0.0.0.0:5683" — the forest can talk.
+```
+
 ### 🌿 Canopy (автоматично)
 
 ```
