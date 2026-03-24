@@ -6,7 +6,7 @@
 **Цільовий TRL:** 7 (Повна синхронізація логіки мікроконтролера з Wiki; Factory Flashing розблоковано)
 **Статус Аудиту:** Reverse Shaping Cycle 1 — документування поточного стану ("як є") без рефакторингу коду
 
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з `firmware/soldier/main.c` та `firmware/queen/main.c` станом на 2026-03-23. Усі 112 host-based тестів проходять (`make -C firmware/test`). Виявлені блокери задокументовані в розділі 🛑.
+> **⚠️ SSOT Sync:** Цей документ синхронізовано з `firmware/soldier/main.c`, `firmware/queen/main.c`, `firmware/bio_contracts/bio_contract.rb` та `firmware/test/` станом на 2026-03-24. Усі 137 host-based тестів проходять (`make -C firmware/test`). Виявлені блокери задокументовані в розділі 🛑.
 
 ---
 
@@ -34,7 +34,8 @@
 | **AT Command Blocking (2s HAL_Delay)** | 🔴 BLOCKER (Queen сліпа 2 секунди під час CoAP flush) |
 | **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
 | **Error_Handler без відновлення** | 🟡 OPEN (вимикає IRQ, вічний цикл — немає NVIC_SystemReset) |
-| **Host-based Tests (112)** | ✅ Всі проходять (`make -C firmware/test`) |
+| **CMD_DECRYPT_BUF_SIZE розбіжність** | 🟡 OPEN (544 у firmware, 96 у тестах — OTA path не покритий) |
+| **Host-based Tests (137)** | ✅ Всі проходять (`make -C firmware/test`) |
 
 ---
 
@@ -161,6 +162,33 @@ void Error_Handler(void) {
 
 ---
 
+### 🟡 BLOCKER-6: CMD_DECRYPT_BUF_SIZE розбіжність між firmware та тестами
+
+**Статус:** Відкрито. Потенційна прогалина в тестовому покритті.
+
+**Файли:** `firmware/queen/main.c:122` vs `firmware/test/test_queen_logic.c:21`
+
+```c
+// queen/main.c — реальний firmware:
+#define CMD_DECRYPT_BUF_SIZE 544  // 512 OTA payload + 5 header + 2 CRC + 16 AES padding + 9 margin
+
+// test_queen_logic.c — тест:
+#define CMD_DECRYPT_BUF_SIZE  96  // Тільки CMD (актуаторні команди ≤96 байт)
+```
+
+**Ризики:**
+1. Тестовий файл охоплює тільки CMD-гілку `Handle_CoAP_Command()` (≤96 байт), але не тестує OTA-гілку (≤528 байт).
+2. Будь-які граничні умови OTA downlink з великим `aligned` не покриваються unit-тестами.
+3. Зміна `CMD_DECRYPT_BUF_SIZE` в одному файлі без синхронізації другого може привести до тихого розбіжності.
+
+**Необхідна дія:**
+- Уточнити `CMD_DECRYPT_BUF_SIZE` у тесті або розділити тест на окремі константи `CMD_MAX` та `OTA_MAX`.
+- Додати тести для OTA downlink з великим payload (≥512 байт) до `test_queen_logic.c`.
+
+**Блокує:** Повнота тестового покриття OTA downlink.
+
+---
+
 ### 🟢 INFO: Зафіксовані та Виправлені Ризики (Closed)
 
 Наступні ризики виявлено та виправлено безпосередньо в C-коді:
@@ -181,6 +209,8 @@ void Error_Handler(void) {
 | R-12 | OTA Queen Chunk Underflow | 🟠 | ✅ Виправлено: offset < pending_ota_size |
 | R-13 | Firmware Version Missing (bytes 12-13) | 🟡 | ✅ Виправлено: FIRMWARE_VERSION_ID |
 | R-14 | Queen Health Blind Spot | 🟠 | ✅ Виправлено: DID=0 sentinel |
+| R-15 | OnRxDone Off-by-One (rejected valid 255-byte packets) | 🟡 | ✅ Виправлено: `size > 0 && size <= BUFFER_SIZE` |
+| R-16 | CBC IV Predictability (IV з HAL_GetTick — передбачуваний) | 🟠 | ✅ Виправлено: HRNG-generated IV, fallback XOR mask |
 
 ---
 
@@ -743,48 +773,289 @@ HAL_CRYP_Init(&hcryp);
 
 Без цього відновлення всі наступні LoRa-пакети від Soldiers будуть розшифровані неправильно до наступного ребуту Queen.
 
+**HRNG IV Generation — "Wu-Wei" паттерн:**
+
+```c
+// [FIX: R-16] Стара вразливість: IV = HAL_GetTick() (детермінований, передбачуваний).
+// Нова версія: апаратний TRNG, з fallback XOR-маскою при відмові HRNG.
+uint32_t batch_iv[4];
+
+hrng.Instance = RNG;
+HAL_RNG_Init(&hrng);                                    // Init безпосередньо перед використанням
+
+for (uint8_t i = 0U; i < 4U; i++) {
+    if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
+        batch_iv[i] = HAL_GetTick() ^ (i * 0x5A5A5A5AUL); // Fallback: tick XOR index mask
+    }
+}
+
+HAL_RNG_DeInit(&hrng);                                  // DeInit одразу після — нульовий струм сну
+```
+
+**Чому XOR-маска, а не просто tick?** При відмові HRNG кожен з 4 IV-слів отримує різну маску (`0x00000000`, `0x5A5A5A5A`, `0xB4B4B4B4`, `0x0F0F0F0F`). Це запобігає ситуації де всі 4 слова IV ідентичні навіть при однаковому tick.
+
 ---
 
-## 🧪 10. Host-Based Test Coverage (112 тестів)
+## 🧪 10. Host-Based Test Coverage (137 тестів)
 
 Firmware логіка тестується на x86 з GCC (не потребує ARM toolchain):
 
 ```bash
-make -C firmware/test         # Всі 112 тестів
-make -C firmware/test queen   # Queen-only (59 тестів)
-make -C firmware/test soldier # Soldier-only (53 тести)
+make -C firmware/test         # Всі 137 тестів
+make -C firmware/test queen   # Queen-only (79 тестів)
+make -C firmware/test soldier # Soldier-only (58 тестів)
 ```
+
+### Queen Tests (79)
 
 | Модуль | Тести | Що покривається |
 |--------|-------|-----------------|
-| DJB2 Hash | 7 | Детермінізм, відомі значення, NUL handling, UUID format |
+| DJB2 Hash | 7 | Детермінізм, відомі значення (`djb2("a")=0x2B606`), NUL handling, UUID format |
 | Dedup Ring | 7 | New/duplicate, ring wrap, eviction, stress 100 |
-| CIFO Cache | 13 | Insert, dedup, priority eviction (всі 4 статуси), fallback, edge RSSI |
-| Batch Packing | 8 | 21-байтний формат, ендіанність, RSSI -128, round-trip |
-| OTA Chunk Builder | 6 | First/last chunk, reassembly, out-of-range |
-| RSSI Clamp | 8 | Normal, edge values, overflow proof, int16→int8 truncation |
-| Queen Health | 7 | DID=0 sentinel, uptime packing, cache integration, dedup |
-| ECB Restoration | 3 | CRYP mode state після CBC→ECB переходу |
-| Payload Packing | 13 | Всі поля, signed temp, max/zero, pack-unpack roundtrip |
-| DID Generation | 4 | Non-zero guarantee, детермінізм, унікальність |
-| Mesh Dedup | 10 | 8-slot cache, eviction, pingpong, relay decisions |
-| OTA Assembly | 7 | Multi-chunk, duplicate ignore, buffer overflow, total mismatch |
-| CRC32 | 7 | ISO 3309 known value, bit flip detection, OTA verify |
-| Bio-Contract Byte | 8 | All statuses, clamping, full 256-combination roundtrip |
-| Panic Payload | 4 | DID, marker, TTL, zero fields |
+| CIFO Cache | 13 | Insert, dedup, priority eviction (всі 4 статуси), fallback, edge RSSI, UID=0 |
+| Batch Packing | 8 | 21-байтний формат, ендіанність, RSSI -128, round-trip, cache clear |
+| OTA Chunk Builder | 6 | First/last chunk, reassembly, out-of-range index |
+| OTA Assembly CoAP | 12 | Single/multi-chunk, full 512-chunk, bounds overflow, invalid marker, zero total, duplicate dedup, bitmap reset, size tracking, out-of-order |
+| RSSI Clamp | 8 | Normal, edge ±128, overflow proof, int16→int8 truncation demo |
+| Queen Health | 7 | DID=0 sentinel, uptime packing, cache integration, dedup, batch |
+| ECB Restoration | 3 | CRYP mode state після CBC→ECB переходу (Flush та Handle_CoAP) |
+| HRNG IV Generation | 5 | Words filled, 16-byte size, RNG instance set, power management (DeInit), not tick-based |
+| CBC Command Decryption | 3 | ECB restored after CMD decrypt, CBC during decrypt, both transitions in sequence |
+
+### Soldier Tests (58)
+
+| Модуль | Тести | Що покривається |
+|--------|-------|-----------------|
+| Payload Packing | 13 | Всі поля, signed temp, max/zero, pack-unpack roundtrip, reserved=0 |
+| DID Generation | 4 | Non-zero guarantee (`0x511CEE01`), детермінізм, унікальність |
+| Mesh Dedup | 10 | 8-slot cache, eviction, pingpong scenario, relay decisions (OK/echo/known/ttl_zero) |
+| OTA Assembly (Soldier) | 7 | Multi-chunk, duplicate ignore, buffer overflow, total mismatch, bitmap |
+| CRC32 | 7 | ISO 3309 known value (`0xCBF43926`), bit flip detection, OTA verify/corrupted |
+| Bio-Contract Byte | 8 | All statuses, clamping, full 256-combination roundtrip, `0xFF`=VM error |
+| Panic Payload | 4 | DID, acoustic=0xFF marker, TTL=5, zero fields |
+| OnRxDone Boundary | 5 | Normal 16B, 255B accepted (old off-by-one fix), 256B accepted, 257B rejected, 0B rejected |
 
 > **Що НЕ покривається тестами:** STOP2 wakeup sequence, IWDG timeout, PVD voltage threshold, реальний Radio.Send/Rx, SIM7070G AT-команди. Ці компоненти потребують Hardware-in-the-Loop (HIL) тестування.
 
 ---
 
-## 🔗 11. Посилання
+## 🌿 11. Bio-Contract Specification (`firmware/bio_contracts/bio_contract.rb`)
+
+Цей файл є мостом між C-ядром та математикою Атрактора Лоренца. Компілюється командою `mrbc` у байт-код, який:
+- Вбудовується у `lorenz_bytecode[]` при першій компіляції firmware
+- Або оновлюється через OTA → Flash-сектор `0x0803F000`
+
+### 11.1 Структура модуля
+
+```ruby
+module SilkenNet
+  class Attractor     # Математичне ядро (ізольований хаос)
+  class BioContract   # Бізнес-логіка (токеноміка + статуси)
+end
+
+def calculate_state(seed, temp, acoustic)  # C bridge — єдина публічна функція
+  SilkenNet::BioContract.evaluate_and_pack(seed, temp, acoustic)
+end
+```
+
+C-код знає **тільки** про `calculate_state` (через `mrb_intern_lit`). Вся логіка всередині `SilkenNet::*` невидима для firmware.
+
+### 11.2 Attractor — Математичне Ядро
+
+**Константи:**
+
+| Константа | Значення | Призначення |
+|-----------|----------|-------------|
+| `BASE_SIGMA` | `10.0` | Швидкість конвекції (температурний градієнт) |
+| `BASE_RHO` | `28.0` | Число Релея (нагрів → конвекція) |
+| `BASE_BETA` | `8.0 / 3.0` | Геометрична константа (розсіювання) |
+| `DT` | `0.01` | Крок інтегрування Ейлера |
+| `ITERATIONS` | `250` | Кількість ітерацій до виходу на траєкторію хаосу |
+| `SIGMA_MIN` | `5.0` | Clamp мінімум sigma |
+| `SIGMA_MAX` | `30.0` | Clamp максимум sigma |
+| `RHO_MIN` | `10.0` | Clamp мінімум rho |
+| `RHO_MAX` | `50.0` | Clamp максимум rho |
+
+**Ініціалізація стану (x, y, z) з chaos_seed:**
+
+```ruby
+x = ((seed % 1000) / 500.0) - 1.0          # x ∈ [-1.0, 1.0]
+y = (((seed >> 4) % 1000) / 500.0) - 1.0   # y ∈ [-1.0, 1.0]
+z = (((seed >> 8) % 1000) / 500.0) - 1.0   # z ∈ [-1.0, 1.0]
+```
+
+HRNG-seed з кожним пробудженням дає нову початкову точку, роблячи кожну ітерацію унікальною. Але за 250 кроків система **завжди виходить на дивний атрактор Лоренца** — хаотична, але детермінована траєкторія.
+
+**Пертурбація параметрів датчиками:**
+
+```ruby
+local_sigma = (BASE_SIGMA + acoustic * 0.1).clamp(SIGMA_MIN, SIGMA_MAX)
+local_rho   = (BASE_RHO   + temp    * 0.2).clamp(RHO_MIN,   RHO_MAX)
+```
+
+- `acoustic` → σ (скільки "турбуленції" в системі — кавітація посилює хаос)
+- `temp` → ρ (температура впливає на тепловий рушій конвекції)
+- `BASE_BETA = 8.0/3.0` — незмінний (геометрична постійна ксилемного каналу)
+
+**250 ітерацій Ейлера:**
+
+```ruby
+dx = local_sigma * (y - x)
+dy = x * (local_rho - z) - y
+dz = (x * y) - (BASE_BETA * z)
+x += dx * DT
+y += dy * DT
+z += dz * DT
+```
+
+**Повертає:** `z` — інтенсивність конвекції (рух соку у ксилемі). Серверна копія (`app/services/silken_net/attractor.rb`) обчислює те саме для крос-верифікації.
+
+### 11.3 BioContract — Токеноміка та Статуси
+
+**Порогові значення:**
+
+| Константа | Значення | Значення для дерева |
+|-----------|----------|---------------------|
+| `CRITICAL_Z_MIN` | `2.0` | Нижче → втрата тургору, посуха |
+| `CRITICAL_Z_MAX` | `45.0` | Вище → аномальний стрес, втручання |
+| `OPTIMAL_Z_TARGET` | `29.0` | Ідеальний стан конвекції (max CO₂ депонування) |
+
+**Логіка `evaluate_and_pack(seed, temp, acoustic)`:**
+
+```ruby
+z_val = Attractor.calculate_z_axis(seed, temp, acoustic)
+
+if z_val < CRITICAL_Z_MIN      # Стрес
+  status = 1; growth_points = 1
+elsif z_val > CRITICAL_Z_MAX   # Аномалія
+  status = 2; growth_points = 0
+else                           # Гомеостаз
+  status = 0
+  deviation = (OPTIMAL_Z_TARGET - z_val).abs
+  reward = 50 - deviation.to_i
+  growth_points = [reward, 10].max   # Мінімум 10, якщо reward < 10
+end
+
+growth_points = growth_points.clamp(0, 63)  # 6-bit max
+payload_byte = (status << 6) | growth_points
+```
+
+**Reward Formula:** базова нагорода 50, мінус штраф за відхилення від `OPTIMAL_Z_TARGET=29.0`. Максимум 50 балів (при z=29.0). Мінімум 10 балів (при гомеостазі з великим відхиленням).
+
+**Відображення на байт BioContract (байт 10 payload):**
+
+| z_val | Status | Growth Points | Hex (приклад) |
+|-------|--------|---------------|---------------|
+| < 2.0 | 1 (stress) | 1 | `0x41` |
+| > 45.0 | 2 (anomaly) | 0 | `0x80` |
+| ≈ 29.0 | 0 (homeostasis) | 50 | `0x32` |
+| mruby VM error | 3 (tamper) | 63 | `0xFF` |
+
+> **Синхронізація з сервером:** `app/services/silken_net/attractor.rb` обчислює той самий z-val за тими самими константами. Якщо значення розходяться → Dual Computation Integrity Alert. **[FIX: R-11]** Виправлено: `BASE_BETA` уніфіковано як `8.0/3.0` (не `2.666`), sigma/rho clamp синхронізовано з сервером.
+
+---
+
+## 🛠️ 12. Test Infrastructure (`firmware/test/`)
+
+### 12.1 Архітектура x86 Тестів
+
+Тести компілюються GCC на x86/x64 без ARM toolchain. Ключовий компонент — `hal_mock.h`:
+
+```
+firmware/test/
+  hal_mock.h          — Мінімальні HAL stubs для компіляції без STM32 HAL
+  test_soldier_logic.c — 58 тестів, pure-logic функції з soldier/main.c
+  test_queen_logic.c   — 79 тестів, pure-logic функції з queen/main.c
+  Makefile             — gcc, -Wall -Wextra -Wpedantic -std=c11 -O2
+```
+
+**Принцип:** Тести **не включають** `soldier/main.c` напряму. Натомість вони дублюють (копіюють + адаптують) pure-logic функції в тестовий файл. Це дозволяє:
+- Компілювати на x86 без ARM HAL бібліотек
+- Тестувати ізольовану логіку без hardware state
+- Запускати в CI (GitHub Actions) без фізичного MCU
+
+### 12.2 HAL Mock — Важливі деталі
+
+**AES Encrypt/Decrypt — прозорі stubs:**
+
+```c
+static inline int HAL_CRYP_Encrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t sz,
+                                    uint32_t *out, uint32_t to) {
+    (void)h; (void)to;
+    memcpy(out, in, sz * 4);  // Просто копіює — немає реального шифрування
+    return HAL_OK;
+}
+```
+
+> ⚠️ **Наслідок:** Тести CIFO eviction, OTA dedup, batch packing, ECB restoration — всі перевіряють **структурну логіку**, але не криптографічну коректність. Реальне AES-256 тестування потребує HIL з апаратним AES модулем.
+
+**HRNG Mock — завжди повертає 42:**
+
+```c
+static inline int HAL_RNG_GenerateRandomNumber(RNG_HandleTypeDef *h, uint32_t *v) {
+    (void)h; *v = 42; return HAL_OK;
+}
+```
+
+> ⚠️ **Наслідок:** `test_hrng_iv_all_words_filled` перевіряє що `iv[i] == 42`, але не може перевірити що значення справді випадкове. Тест лише підтверджує, що HRNG викликається коректно.
+
+**ADC Mock — завжди повертає 3000:**
+
+```c
+static inline uint32_t HAL_ADC_GetValue(ADC_HandleTypeDef *h) { (void)h; return 3000; }
+```
+
+**Temperature Macro:**
+
+```c
+#define __LL_ADC_CALC_TEMPERATURE(vref, raw, res) ((int)(25 + ((raw - 1000) / 10)))
+// При raw=3000: temp = 25 + (2000/10) = 225°C (нереальне, але детерміноване)
+```
+
+**RadioDriver_t — struct з function pointers:**
+
+```c
+static RadioDriver_t Radio = {
+    .Init = radio_init_stub,         // no-op
+    .SetChannel = radio_set_channel_stub, // no-op
+    .Send = radio_send_stub,         // no-op (не записує payload нікуди)
+    .Rx = radio_rx_stub,             // no-op
+    .Sleep = radio_sleep_stub        // no-op
+};
+```
+
+> Цей підхід дозволяє компілювати `Radio.Send()` та `Radio.Rx()` без реального LoRa driver.
+
+### 12.3 Makefile Деталі
+
+```makefile
+CC     = gcc
+CFLAGS = -Wall -Wextra -Wpedantic -std=c11 -I. -O2
+```
+
+Усі warnings увімкнені (`-Wall -Wextra -Wpedantic`). `-std=c11` забезпечує MISRA-сумісні конструкції (наприклад, explicit casts). `-O2` дозволяє компілятору виявляти dead code та UB під час оптимізації.
+
+**Команди:**
+```bash
+make -C firmware/test         # Build & run all (default target: queen + soldier)
+make -C firmware/test queen   # Queen tests only
+make -C firmware/test soldier # Soldier tests only
+make -C firmware/test clean   # Remove test_queen, test_soldier binaries
+```
+
+---
+
+## 🔗 13. Посилання
 
 | Ресурс | Опис |
 |--------|------|
 | `firmware/soldier/main.c` | Повний C-код вузла Soldier |
 | `firmware/queen/main.c` | Повний C-код шлюзу Queen |
-| `firmware/test/` | Host-based тести (112 тестів) |
-| `firmware/bio_contracts/bio_contract.rb` | mruby Lorenz Attractor |
+| `firmware/bio_contracts/bio_contract.rb` | mruby Lorenz Attractor bio-contract |
+| `firmware/test/hal_mock.h` | HAL stubs для x86 тестів |
+| `firmware/test/test_soldier_logic.c` | 58 Soldier тестів |
+| `firmware/test/test_queen_logic.c` | 79 Queen тестів |
+| `firmware/test/Makefile` | Build system для host-based тестів |
 | `docs/FIRMWARE.md` | Скорочений довідник прошивки |
 | [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Детальна документація Queen |
 | [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | TinyML класифікатор звуку |
