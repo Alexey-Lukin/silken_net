@@ -39,10 +39,19 @@
 - [x] N1 — Starlink DTC у `02_05`: оновлено статус таблиці, BLOCKER-1 переформульовано — DTC через Київстар не потребує Starlink-термінала/модема; SIM7070G достатньо
 - [x] N7, N8, N9, N10, N11, N12, N18 — у `06_01`: додано розділ "⚠️ Pre-Flight Checklist" (5 пунктів) + "Secrets Manager" + "🚀 Quickstart"
 
-### 🔲 Сесія 2 (наступна)
-**Файли:** `02_01_Hardware_Architecture_and_BOM.md`, `03_01_Firmware_Lifecycle_and_DMA.md`, `08_01_University_R_and_D_Protocols.md`, `01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md`
+### ✅ Сесія 2 (виконано)
+**Файли:** `02_01_Hardware_Architecture_and_BOM.md`, `01_02_Ti6Al4V_PATCH.md`, `08_01_University_R_D_PATCH.md`, `03_01_Firmware_Lifecycle_PATCH.md`
 
-Треба прочитати ці 4 сторінки wiki повністю і інтегрувати N2, N3, N4, N5, N6.
+- [x] N5 — `02_01`: Повна оновлена сторінка з новим розділом "Development Toolchain" (LTspice, KiCad, Wokwi/Proteus)
+- [x] N2 — `01_02_Ti6Al4V_PATCH.md`: Патч — добавити "Manufacturing Status" (nTop ліцензія ✅, 100 шт. DMLS Київ/Дніпро)
+- [x] N3, N4 — `08_01_University_R_D_PATCH.md`: Патч — оновити статус (перший візит заплановано), деталі тесту (pH 4.5-5.5, ICP-MS, електрохімічне прискорення, 1 міс = 4 роки)
+- [x] N6 — `03_01_Firmware_Lifecycle_PATCH.md`: Патч — додати "Development Toolchain" (STM32CubeIDE, Clock Tree, host-tests)
+
+**Тип файлів:**
+- `02_01_Hardware_Architecture_and_BOM.md` — **повна сторінка** (замінює цілком)
+- `01_02_Ti6Al4V_PATCH.md` — **патч** (показує що/де додати в існуючу сторінку)
+- `08_01_University_R_D_PATCH.md` — **патч** (показує що/де додати в існуючу сторінку)
+- `03_01_Firmware_Lifecycle_PATCH.md` — **патч** (показує що/де додати в існуючу сторінку)
 
 ### 🔲 Сесія 3
 **Файли:** `05_03_Tokenomics_SCC_and_SFC.md`, `05_01_Multichain_Architecture.md`, `04_02_Business_Logic_and_Services.md`, `03_05_Hardware_AES256_and_Security.md`
