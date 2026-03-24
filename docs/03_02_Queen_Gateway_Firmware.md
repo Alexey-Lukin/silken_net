@@ -2,7 +2,7 @@
 
 **Модуль:** 03_02 — Queen Gateway Firmware (STM32WLE5JC + SIM7070G)
 **Пов'язані модулі:** [03_01 Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) · [03_05 Hardware AES256 and Security](03_05_Hardware_AES256_and_Security) · [04_02 Business Logic and Services](04_02_Business_Logic_and_Services) · [05_02 Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline)
-**Поточний TRL:** 6 (C-код шлюзу написаний, 59 host-based тестів проходять, але SSOT взаємодії з мережею відсутня)
+**Поточний TRL:** 6 (C-код шлюзу написаний, 59 queen-specific host-based тестів проходять, але SSOT взаємодії з мережею відсутня)
 **Цільовий TRL:** 7 (Повна алгоритмічна прозорість маршрутизації та кешування)
 **Статус Аудиту:** Reverse Shaping Cycle 1 — документування поточного стану ("як є") без рефакторингу коду
 
@@ -44,7 +44,8 @@
 | **Error_Handler без IWDG у Queen** | 🟡 OPEN (вічний цикл при HardFault) |
 | **No CoAP retry logic** | 🟡 OPEN (ACK miss → дані втрачено) |
 | **CMD_DECRYPT_BUF_SIZE розбіжність** | 🟡 OPEN (544 у firmware, 96 у тестах) |
-| **Host-based Tests (59 для Queen)** | ✅ Всі проходять (`make -C firmware/test queen`) |
+| **HRNG Fallback → IV Reuse (CBC)** | 🔴 BLOCKER (при blackout IV≈0, IV reuse attack) |
+| **Host-based Tests (59 queen-specific)** | ✅ Всі проходять (`make -C firmware/test queen`) |
 
 ---
 
@@ -135,7 +136,7 @@ const char queen_uid[] = "QUEEN-001"; // Hardcoded для кожної один�
 ### 🟡 BLOCKER-4: Starlink Latency Gap
 
 **Статус:** Відкрито. Середня латентність Starlink Direct-to-Cell — 600–2400 ms.
-**Файл:** `firmware/queen/main.c:542`
+**Файл:** `firmware/queen/main.c:542-566`
 
 ```c
 SIM7070_SendATCommand("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n", 1000);
@@ -217,9 +218,9 @@ void Error_Handler(void) {
 
 ---
 
-### 🟡 BLOCKER-8: HRNG Fallback до HAL_GetTick() для CBC IV
+### 🔴 BLOCKER-8: HRNG Fallback до HAL_GetTick() — Критична IV-Reuse вразливість CBC
 
-**Статус:** Відкрито. Потенційне послаблення криптографічного захисту batch.
+**Статус:** Відкрито. **Критична** криптографічна вразливість при масовому blackout-відновленні.
 **Файл:** `firmware/queen/main.c:516-519`
 
 ```c
@@ -229,13 +230,17 @@ if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
 }
 ```
 
-`HAL_GetTick()` повертає кількість мілісекунд від старту. Після blackout усі Королеви мають однаковий `HAL_GetTick()` ~ 0. При однаковому IV + однаковому ключі → однаковий шифротекст для різних шлюзів → CBC pattern analysis можливий.
+`HAL_GetTick()` повертає кількість мілісекунд від старту. Після blackout усі Королеви мають `HAL_GetTick() ≈ 0`. Поєднуючи це з BLOCKER-1 (однаковий AES ключ для всіх вузлів):
+
+**IV Reuse Attack (критична CBC вразливість):**
+- Якщо дві Королеви використовують **однаковий ключ** + **однаковий IV** → атакуючий XOR-ує два шифротексти → отримує XOR відкритих текстів → телеметрія частково розкрита.
+- Формально: `C1 XOR C2 = P1 XOR P2` при однаковому IV та ключі в режимі CBC.
+- Це **повністю знищує конфіденційність** CBC для batch даних після будь-якого масового перезавантаження.
 
 **Необхідна дія:**
-- Використовувати STM32 TRNG (справжній апаратний RNG від теплового шуму) як первинне джерело.
-- Якщо HRNG недоступний — застосувати комбінований seed: `tick XOR uid XOR uptime_counter`.
-
-**Блокує:** Криптографічна стійкість батчів при масовому blackout-відновленні.
+- Використовувати STM32 TRNG (справжній апаратний RNG від теплового шуму) як єдине джерело IV.
+- Якщо HRNG недоступний — застосувати комбінований seed: `tick XOR queen_uid_hash XOR uptime_counter` (різний для кожної Queen завдяки UID).
+- Довгостроково — вирішується через BLOCKER-1: унікальний ключ на кожен пристрій ламає однорідність навіть при однаковому IV.
 
 ---
 
@@ -481,7 +486,7 @@ HAL_CRYP_Init(&hcryp);
 2. AT+CCOAPSEND=0,2,"telemetry/batch/<queen_uid>",<size*2>,"<hex>"\r\n
    ↳ Method=2 (PUT), URI-Path визначає шлюз (вирішує Starlink NAT)
    ↳ Hex-рядок: 2 ASCII символи на байт, відправляється побайтово через HAL_UART_Transmit (10 ms/byte)
-   ↳ Для 1066 байт (50 записів + IV): ~2132 ASCII символи, ~21 секунда UART TX  ← ⚠️
+   ↳ Для 1066 байт (50 записів + IV): ~2132 ASCII символи, ~21.3 секунди UART TX  ← ⚠️
 
 3. HAL_Delay(2000)  ← BLOCKER-2: Queen сліпа 2 секунди
 
@@ -630,17 +635,32 @@ Cmd_Dedup_Check(hash):
 
 ```c
 uint8_t queen_health[16] = {0};
-// DID = 0x00000000 — зарезервований sentinel
-// Bytes 4-5: uptime proxy (тік / 1000, wraps кожні ~65 секунд)
+// Bytes 0-3: DID = 0x00000000 — зарезервований sentinel (не є деревом)
+// Bytes 4-5: uptime proxy — тік / 1000 (wraps кожні ~65 секунд)
 uint16_t uptime_sec = (uint16_t)(HAL_GetTick() / 1000);
 queen_health[4] = (uint8_t)(uptime_sec >> 8);
 queen_health[5] = (uint8_t)(uptime_sec & 0xFF);
-// Byte 7: кількість дерев у кеші (навантаження)
+// Byte 6:  зарезервовано (0x00) — майбутнє: температура корпусу Queen
+// Byte 7:  кількість дерев у кеші (навантаження шлюзу, 0–50)
 queen_health[7] = cache_count;
-// Byte 10: growth_points = cache_count (cap at 63)
+// Bytes 8-9: зарезервовано (0x00) — майбутнє: CSQ модему (0–31)
+// Byte 10: growth_points = cache_count (cap at 63, QUEEN_HEALTH_GP_MAX)
 queen_health[10] = (cache_count < QUEEN_HEALTH_GP_MAX) ? cache_count : QUEEN_HEALTH_GP_MAX;
+// Bytes 11-15: зарезервовано (0x00) — майбутнє: напруга батареї, версія прошивки
 Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пакет)
 ```
+
+**Повна структура Queen Health Sentinel (16 байт payload):**
+
+| Байт(и) | Поле | Значення | Опис |
+|---------|------|----------|------|
+| 0–3 | DID | `0x00000000` | Sentinel — "це Королева, не дерево" |
+| 4–5 | Uptime | `HAL_GetTick() / 1000` | Uptime proxy (uint16, wraps ~65 с) |
+| 6 | Reserved | `0x00` | Майбутнє: температура корпусу (°C) |
+| 7 | Cache load | `cache_count` (0–50) | Кількість дерев у кеші |
+| 8–9 | Reserved | `0x00` | Майбутнє: CSQ модему (0–31) |
+| 10 | GP / Status | `cache_count` (cap 63) | Proxy навантаження (bits [5:0]) |
+| 11–15 | Reserved | `0x00` | Майбутнє: V_bat, fw_version |
 
 **Маршрутизація на сервері:** Backend `TelemetryUnpackerService` детектує `DID == 0` і направляє до `GatewayTelemetryWorker` замість створення `TelemetryLog`.
 
