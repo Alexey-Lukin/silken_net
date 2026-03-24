@@ -93,6 +93,151 @@ Zero-power event detection for chainsaw/vibration alerts:
 | **Sustainable TX rate** | **~1 message/hour** |
 | Growth points per day | ~24 (1 cycle/hour x 24 hours) |
 
+## Breadboard Assembly Guide
+
+Step-by-step instructions for assembling the Silken Net Soldier prototype on a breadboard.
+This guide simulates the full energy pipeline: streaming potential → LTC3108 → BQ25570 → supercapacitor → LoRa-E5.
+
+### Golden Rule: Common Ground
+
+**Before touching any wire:** connect every GND pin of every module, the battery holder, and the supercapacitor to the same long blue rail (negative bus) along the edge of the breadboard. All electrons must share a single reference point or the system will behave unpredictably.
+
+### How a Breadboard Works (5-Hole API)
+
+Under the plastic, the breadboard contains metal clip rails:
+
+- **Centre area:** holes are grouped in horizontal rows of 5 (e.g. row 10: columns A, B, C, D, E). All 5 holes in one short row are **physically connected** by a single metal strip — inserting a wire into 10A and another into 10C creates a direct electrical node. This is how you join components without soldering.
+- **Long side rails** (red `+` / blue `−`): run the full length of the board. Used as the power (`3.3V`) and ground (`GND`) buses.
+
+---
+
+### Island 1: Tree Simulator — Voltage Divider (Streaming Potential)
+
+Converts 1.5 V from a AA battery into ~44 mV to simulate the xylem streaming potential.
+
+**Voltage divider formula:**
+
+```
+V_out = V_in × R2 / (R1 + R2)
+V_out = 1.5 V × 100 Ω / (3300 Ω + 100 Ω) ≈ 0.044 V (44 mV)
+```
+
+**Assembly:**
+
+1. Insert the battery holder into the breadboard. Keep the switch **OFF**.
+2. Connect the black wire (−) to the blue GND rail.
+3. Connect the red wire (+) to a free hole in the centre — e.g. row 5, column A.
+4. Insert the 3.3 kΩ resistor from row 5A to row 10A (spanning 5 rows).
+5. Insert the 100 Ω resistor from row 10B to the blue GND rail.
+6. **The magic point:** the shared metal strip at row 10 now holds exactly ~44 mV. Rows 10C, 10D, 10E are free and carry the same potential — use them to route the signal forward.
+
+---
+
+### Island 2: Energy Amplifier — LTC3108 Oscillator
+
+Takes 44 mV and resonates it up to 3–5 V using a Meissner oscillator.
+
+**How it works:** LTC3108 + transformer act as a swing. 44 mV enters the primary winding → transformer induces a pulse back into the chip → chip pushes harder → thousands of cycles per second raise the voltage. The 330 pF capacitor sets the resonant frequency (the "pendulum").
+
+**Assembly (LTC3108 breakout board inserted in breadboard, e.g. rows 20–30):**
+
+1. **Power in:** Jump a wire from row 10 (the 44 mV magic point, any free column) to the row containing the `VIN` pin of LTC3108 (e.g. row 25).
+2. **GND:** Jump LTC3108 `GND` pin row to the blue GND rail.
+3. **Primary winding (Coilcraft LPR6235, pins 1 & 4 — check datasheet for leg orientation):**
+   - Pin 1 of transformer → same row as `VIN` (row 25). The streaming potential feeds both the chip and the transformer simultaneously.
+   - Pin 4 of transformer → row containing LTC3108 `SW` pin (e.g. row 27). The chip pulses current through the primary via `SW`, creating a magnetic field.
+4. **Secondary winding (pins 2 & 3):**
+   - Pin 2 → blue GND rail. This is the oscillator's ground reference.
+   - **Resonant capacitor (330 pF):** one leg → row containing transformer pin 3; other leg → row containing LTC3108 `C1` pin. This routes the amplified secondary voltage back into the chip at the correct resonant frequency.
+5. **Decoupling capacitors:**
+   - 1 µF between `VAUX` pin row and blue GND rail.
+   - 2.2 µF between `VLDO` pin row and blue GND rail.
+
+**Output:** LTC3108 `VOUT` pin now delivers ~3.3–5 V at microamp-level current → feed this to Island 3.
+
+---
+
+### Island 3: Energy Manager + Reservoir — BQ25570 + Supercapacitor
+
+Accumulates the trickle from LTC3108 into the 0.47 F supercapacitor and provides a stable 3.3 V output.
+
+**⚠️ Polarity is critical.** Reversing the supercapacitor will destroy it. The longer leg is `+` (anode); the white stripe on the body marks `−` (cathode).
+
+**Assembly (CJMCU-25570 red module inserted in breadboard):**
+
+1. **Power in:** Jump `VOUT` from LTC3108 to `VIN` (or `VIN_DC`) on the BQ25570 module.
+2. **GND:** Jump BQ25570 `GND` to the blue GND rail.
+3. **Supercapacitor:**
+   - Long leg (`+`) → insert in a free row and jump to `VBAT` (or `BAT`) on BQ25570.
+   - Short leg (`−`) → insert directly into the blue GND rail.
+4. **Output:** BQ25570 `VOUT` pin delivers stable 3.3 V once the supercapacitor reaches the OK threshold (~3.4 V). Connect this to Island 4.
+
+**What happens physically:** BQ25570 trickle-charges the supercapacitor. When `VBAT` crosses the internal threshold, the on-chip buck converter opens and presents 3.3 V on `VOUT`. Before that point, `VOUT` remains at 0 V — the LoRa module will not power on.
+
+---
+
+### Island 4: The Brain — LoRa-E5 Mini
+
+Place the LoRa-E5 mini at the edge of the breadboard for easy access to the Type-C port and programmer headers.
+
+**Assembly:**
+
+1. **GND:** Jump LoRa-E5 `GND` to the blue GND rail.
+2. **Power:** Jump BQ25570 `VOUT` to LoRa-E5 `3V3` pin.
+
+That's it — the energy pipeline is complete.
+
+---
+
+### First-Run Protocol
+
+After assembly, do **not** flip the battery switch immediately.
+
+1. Set your multimeter to DC voltage. Touch the probes to the supercapacitor legs (+ and −).
+2. Confirm reading: `0.0 V` (discharged).
+3. Flip the battery switch to **ON**.
+4. Watch the multimeter: `0.1 V … 0.5 V … 1.2 V …` — the supercapacitor is charging, millivolt by millivolt. Cold start typically takes 15–30 minutes.
+5. When voltage crosses ~3.4 V, BQ25570 opens its buck output.
+6. The LoRa-E5 LED blinks. The Soldier node is alive — powered entirely from 44 mV.
+
+---
+
+### Programmer & Serial Console Physical Wiring
+
+#### Phase 0: Common Ground (Do This First)
+
+1. Jump ST-LINK-V3MINIE `GND` → blue GND rail.
+2. Jump FT232RL adapter `GND` → blue GND rail.
+
+All devices (Mac, ST-LINK, FT232RL, breadboard) now share a single electrical reference.
+
+#### SWD Channel — ST-LINK-V3MINIE (Firmware Flash / Debug)
+
+| ST-LINK pin | LoRa-E5 pin | Purpose |
+|-------------|-------------|---------|
+| `SWCLK` | `CLK` | SWD clock — synchronises data transfer |
+| `SWDIO` | `DIO` | SWD data — carries compiled firmware |
+| `NRST` | `RST` | Hard reset after flashing (optional but recommended) |
+| `T_VCC` | `3V3` | Voltage reference only — ST-LINK does **not** power the board |
+
+> ST-LINK reads the `T_VCC` level to match its logic voltage. It never sources current through this pin.
+
+#### UART Channel — FT232RL (Serial Console / mruby REPL)
+
+**⚠️ Critical check before connecting:** the small jumper on the FT232RL module must be set to **3.3V**, not 5V. 5V on STM32 UART pins causes immediate damage.
+
+UART uses crosswired TX/RX (one device's mouth connects to the other's ear):
+
+| FT232RL pin | LoRa-E5 pin | Direction |
+|-------------|-------------|-----------|
+| `RX` | `TX` | LoRa transmits → adapter receives |
+| `TX` | `RX` | Adapter transmits → LoRa receives |
+| `VCC` | *(leave unconnected)* | Board is already powered by BQ25570 |
+
+Connect both USB cables (ST-LINK Type-C + FT232RL USB) to your Mac. The hardware is now grounded, synchronised, and ready for firmware flashing and real-time log streaming.
+
+---
+
 ## Bill of Materials (BOM)
 
 | # | Component | Specification |
