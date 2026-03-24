@@ -331,7 +331,7 @@ To test in vitro without waiting years for field data, labs synthesize artificia
 1 month of lab testing → equivalent of 4 years of field exposure:
 
 ```
-t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
+t_lab = t_field x exp(-Ea/k x (1/T_field - 1/T_lab))
 Ea ≈ 0.7–1.0 eV (corrosion activation energy for Ti alloys)
 T_field = 293 K (20°C, forest)
 T_lab   = 348 K (75°C, controlled oven)

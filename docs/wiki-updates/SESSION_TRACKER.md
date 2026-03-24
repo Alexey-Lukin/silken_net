@@ -53,10 +53,32 @@
 - `08_01_University_R_D_PATCH.md` — **патч** (показує що/де додати в існуючу сторінку)
 - `03_01_Firmware_Lifecycle_PATCH.md` — **патч** (показує що/де додати в існуючу сторінку)
 
-### 🔲 Сесія 3
-**Файли:** `05_03_Tokenomics_SCC_and_SFC.md`, `05_01_Multichain_Architecture.md`, `04_02_Business_Logic_and_Services.md`, `03_05_Hardware_AES256_and_Security.md`
+### ✅ Сесія 3 (виконано)
+**Файли:** `03_05_AES256_Security_PATCH.md`, `05_03_Tokenomics_PATCH.md`, `04_02_Business_Logic_PATCH.md`
 
-Треба прочитати ці 4 сторінки wiki повністю і інтегрувати N12, N13, N14, N15, N16.
+- [x] N12 — `03_05_AES256_Security_PATCH.md`: Патч — операційне попередження про AES-мисматч (мовчазна втрата телеметрії + vault рекомендація)
+- [x] N13 — `05_03_Tokenomics_PATCH.md`: Патч — Governance DAO (GovernorContract, ProtocolParameters, `Governance::ParameterSyncWorker`, dynamic backend constants)
+- [x] N14 — `04_02_Business_Logic_PATCH.md`: Патч — Forester Guild (ForestBountyService, ProofOfPhysicalWork, USDC bounty, MaintenanceRecord розширення)
+- [x] N15 — `04_02_Business_Logic_PATCH.md`: Патч — Cross-Registry API (Verra/Gold Standard/UNFCCC, CrossRegistryExportService, MRV Report)
+- [x] N16 — `04_02_Business_Logic_PATCH.md`: Патч — Federated Learning Loop (FederatedLearningWorker, ModelValidationService, auto-retrain + OTA)
+
+---
+
+## ✅ Всі Нотатки Оброблено
+
+| # | Нотатка | Файл | Статус |
+|---|---------|------|--------|
+| N1 | Starlink DTC через Київстар | `02_05_Queen_Hardware_and_Starlink.md` | ✅ Сесія 1 |
+| N2 | nTop ліцензія, 100 шт. DMLS | `01_02_Ti6Al4V_PATCH.md` | ✅ Сесія 2 |
+| N3, N4 | ЧНУ тест ксилемного соку | `08_01_University_R_D_PATCH.md` | ✅ Сесія 2 |
+| N5 | LTspice, KiCad, Wokwi/Proteus | `02_01_Hardware_Architecture_and_BOM.md` | ✅ Сесія 2 |
+| N6 | STM32CubeIDE | `03_01_Firmware_Lifecycle_PATCH.md` | ✅ Сесія 2 |
+| N7–N12, N18 | Pre-Flight Checklist + Quickstart | `06_01_Deployment_Kamal_Terraform.md` | ✅ Сесія 1 |
+| N13 | Governance DAO | `05_03_Tokenomics_PATCH.md` | ✅ Сесія 3 |
+| N14 | Forester Guild | `04_02_Business_Logic_PATCH.md` | ✅ Сесія 3 |
+| N15 | Cross-Registry API | `04_02_Business_Logic_PATCH.md` | ✅ Сесія 3 |
+| N16 | Federated Learning Loop | `04_02_Business_Logic_PATCH.md` | ✅ Сесія 3 |
+| N17 | Гранти + монтажна інструкція | — | ✅ Вже є у `07_03` |
 
 ---
 
