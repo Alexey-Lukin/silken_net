@@ -1,5 +1,7 @@
 # 🌿 Silken Net — Gaia 2.0: Кіберфізична Держава Черкаського Бору
 
+[![Hypercommit](https://img.shields.io/badge/Hypercommit-DB2475)](https://hypercommit.com/silken-net)
+
 **Silken Net** — це trustless D-MRV (Digital Measurement, Reporting, and Verification) платформа, що інтегрує 12 блокчейн-мереж та протоколів у єдину Кіберфізичну Державу. Деревам надаються машинні паспорти (peaq DID), їхня телеметрія верифікується ZK-proof (IoTeX W3bstream), а токен-нагороди розподіляються через Polygon, Solana, Celo та Ethereum.
 
 Це "Океан", який дихає в унісон із ксилемним соком кожного "Солдата" (дерева) та кожної "Королеви" (шлюзу).
