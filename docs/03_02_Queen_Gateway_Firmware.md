@@ -45,6 +45,7 @@
 | **No CoAP retry logic** | 🟡 OPEN (ACK miss → дані втрачено) |
 | **CMD_DECRYPT_BUF_SIZE розбіжність** | 🟡 OPEN (544 у firmware, 96 у тестах) |
 | **HRNG Fallback → IV Reuse (CBC)** | 🔴 BLOCKER (при blackout IV≈0, IV reuse attack) |
+| **OTA Broadcast Infinite Loop** | 🔴 BLOCKER (`ota_is_active` ніколи не скидається до 0) |
 | **Host-based Tests (59 queen-specific)** | ✅ Всі проходять (`make -C firmware/test queen`) |
 
 ---
@@ -78,36 +79,45 @@ uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
 
 ---
 
-### 🔴 BLOCKER-2: AT Command Blocking — Queen сліпа 2 секунди
+### 🔴 BLOCKER-2: AT Command Blocking — Queen сліпа ~25 секунд під час flush
 
 **Статус:** Відкрито. Архітектурна проблема CoAP uplink.
-**Файл:** `firmware/queen/main.c:563`
+**Файл:** `firmware/queen/main.c:542-566`
+
+**Реальний час блокування під час flush (розрахунок для 50 записів):**
+
+| Етап | Деталь | Час |
+|------|--------|-----|
+| `AT+CCOAPNEW` + delay | `SIM7070_SendATCommand(..., 1000)` | ~1.0 с |
+| AT+CCOAPSEND заголовок | `HAL_UART_Transmit(..., 100)` | ~0.1 с |
+| **UART hex TX** | 1072 байт × 2 ASCII символи × 10 ms/байт | **~21.4 с** |
+| Завершення команди | 3 байти `\"\r\n` + `HAL_Delay(2000)` | ~2.1 с |
+| `AT+CCOAPDEL` + delay | `SIM7070_SendATCommand(..., 500)` | ~0.5 с |
+| **Разом** | | **~25.1 с** |
 
 ```c
-// Queen не може прийняти жодного LoRa-пакета під час цієї паузи
-HAL_Delay(2000); // Чекаємо ACK від сервера
-```
-
-**Ризики:**
-1. SX1262 LoRa FIFO — 256 байтів. При 16-байтних пакетах і 50+ деревах, що прокидаються одночасно, overflow FIFO за 2 секунди гарантований.
-2. Втрачені пакети не відновлюються — немає ARQ між Soldier і Queen.
-3. Під час пожежі Queen може пропустити emergency TinyML-пакети від Солдатів саме в цей момент.
-
-**Додатково:** Уся функція `SIM7070_SendATCommand` є blocking:
-```c
-void SIM7070_SendATCommand(char* command, uint32_t delay_ms) {
-    HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000);
-    HAL_Delay(delay_ms); // Чекаємо відповідь (OK) — але не читаємо її!
+// Hex TX: кожен байт окремим викликом, 10 ms timeout
+for (int i = 0; i < total_size; i++) {
+    snprintf(hex_byte, sizeof(hex_byte), "%02x", encrypted_batch_buffer[i]);
+    HAL_UART_Transmit(&huart1, (uint8_t*)hex_byte, 2, 10); // ← 10 ms/byte
 }
+HAL_Delay(2000); // ← Чекаємо ACK — але не читаємо відповідь!
 ```
-Відповідь модему (`OK` / `ERROR`) **ніколи не парситься**. Навіть якщо модем повернув `ERROR`, Королева продовжує відправку наступних AT-команд.
+
+**Ризики (ескалація від "2 секунди" до "~25 секунд"):**
+
+1. **Single-packet buffer:** `incoming_lora_payload[16]` — єдиний буфер. Радіо SX1262 продовжує приймати пакети через ISR (`OnRxDone`) під час усього flush. Але оскільки `lora_rx_flag` — однобітний прапорець, а `incoming_lora_payload` — єдиний буфер, кожен новий ISR **мовчки перезаписує** попередній пакет. Після ~25 секунд flush головний цикл обробить лише **один** (останній) пакет. **Усі проміжні пакети від дерев безповоротно втрачені.**
+2. **Emergency packet loss:** Під час пожежі, якщо 10+ дерев одночасно надсилають emergency TinyML сигнали протягом 25-секундного flush — тільки одне зафіксується.
+3. **Немає `Radio.Rx()` після flush:** Функція `Flush_Cache_To_Rails()` не викликає `Radio.Rx()`. Radio переходить у idle-стан після кожного `Radio.Send()` (OTA reflex shot). Якщо OTA не активовано — Radio залишається в RX-стані від попереднього `Radio.Rx(LORA_RX_INFINITE)`. Але якщо OTA активовано і flush відбувається в тому ж циклі — RX відновиться лише після наступного спрацювання `lora_rx_flag`.
+4. **Відповідь модему не парситься:** `SIM7070_SendATCommand` використовує `HAL_Delay` замість читання UART. `OK`/`ERROR` від модему ігнорується.
 
 **Необхідна дія:**
-- Переписати `Flush_Cache_To_Rails()` на UART interrupt-driven (DMA UART + callback).
+- Переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven (DMA UART + callback).
 - Відправку CoAP виконувати асинхронно, не блокуючи головний цикл.
+- Перейти з однобітного `lora_rx_flag` на кільцевий буфер (ring buffer) для ISR-пакетів.
 - Реалізувати парсинг відповіді `OK`/`ERROR` від SIM7070G.
 
-**Блокує:** Надійність Queen в умовах щільного LoRa-трафіку, Emergency Alerting.
+**Блокує:** Надійність Queen в умовах щільного LoRa-трафіку, Emergency Alerting, Proof of Growth completeness.
 
 ---
 
@@ -244,6 +254,37 @@ if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
 
 ---
 
+### 🔴 BLOCKER-9: OTA Broadcast Infinite Loop — `ota_is_active` ніколи не скидається
+
+**Статус:** Відкрито. Після першого OTA Queen назавжди залишається в режимі бродкасту.
+**Файл:** `firmware/queen/main.c:290-293`
+
+```c
+// Перемикаємося на наступний шматок для наступного дерева
+current_ota_chunk_idx++;
+if (current_ota_chunk_idx >= total_chunks) {
+    current_ota_chunk_idx = 0;
+    // Якщо маємо оновити ліс лише один раз, розкоментувати:
+    // ota_is_active = 0;   ← ЗАКОМЕНТОВАНО. Прапорець ніколи не скидається до 0.
+}
+```
+
+**Проблема:** Після того як `Handle_CoAP_Command` отримала всі CoAP-чанки та виставила `ota_is_active = 1`, цей прапорець **ніколи** не повертається до 0. Головний цикл при кожному отриманому LoRa-пакеті виконує OTA Reflex Shot (60 ms), незалежно від того, чи є нові прошивки. `current_ota_chunk_idx` циклічно скидається до 0, і цикл повторюється вічно.
+
+**Наслідки:**
+1. Кожна відповідь на LoRa-пакет від Солдата додає 60 ms фіксованої затримки **назавжди** — навіть після того, як усі Солдати вже оновилися.
+2. OTA-чанки для старої прошивки продовжують надсилатися нескінченно. Солдат, який пізніше приєднався до мережі, отримає застарілу прошивку з `pending_ota_bytecode`.
+3. При наступному OTA-оновленні `pending_ota_bytecode` перезаписується поступово (чанк за чанком), але `ota_is_active = 1` вже. Queen починає бродкастити **суміш** старої та нової прошивки до моменту, поки зберуться всі нові чанки.
+
+**Необхідна дія:**
+- Розкоментувати `ota_is_active = 0` після завершення одного повного циклу бродкасту.
+- Або реалізувати підтвердження від Солдатів (ACK-based OTA completion) та скидати `ota_is_active` лише після отримання ACK від усіх активних вузлів у `forest_cache`.
+- При скиданні OTA-стану також обнулити `pending_ota_size`, щоб запобігти broadcast з частковим буфером.
+
+**Блокує:** Стабільна OTA-доставка при масовому оновленні лісу, коректна робота шлюзу після першої OTA-сесії.
+
+---
+
 ### 🟢 INFO: Зафіксовані та Виправлені Ризики (Closed)
 
 Наступні ризики виявлено та виправлено безпосередньо в C-коді:
@@ -280,7 +321,8 @@ if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
 ║    SIM7070_SendATCommand("AT\r\n", 500ms)                               ║
 ║    SIM7070_SendATCommand("AT+CNMP=38\r\n", 1000ms)  ← LTE-M mode       ║
 ║    Radio.Rx(LORA_RX_INFINITE)  ← Відкриваємо вуха                      ║
-║    current_jitter = HRNG() % 60000  ← Thundering Herd prevention        ║
+║    current_jitter = HRNG() % 60001  ← Thundering Herd prevention        ║
+║                    (fallback: HAL_GetTick(), без XOR-маски)              ║
 ║                                                                          ║
 ║  [MAIN LOOP]                                                             ║
 ║    ┌─────────────────────────────────────────────────────────┐          ║
@@ -322,6 +364,32 @@ if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
 
 ---
 
+## 📐 0. Всі #define Константи (SSOT)
+
+| Константа | Значення | Файл:Рядок | Призначення |
+|-----------|----------|------------|-------------|
+| `LORA_RX_INFINITE` | `0xFFFFFF` | main.c:39 | Нескінченний таймаут RX |
+| `FLUSH_INTERVAL_MS` | `3 600 000` | main.c:40 | Інтервал flush (1 год.) |
+| `FLUSH_JITTER_MAX_MS` | `60 000` | main.c:41 | Макс. jitter (60 сек) |
+| `RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` | main.c:42 | XOR-маска при відмові HRNG (jitter) |
+| `FLUSH_HEADROOM` | `5` | main.c:43 | Слоти до примусового flush |
+| `QUEEN_HEALTH_GP_MAX` | `63` | main.c:44 | Макс. growth_points для sentinel |
+| `OTA_MAX_CHUNKS` | `16` | main.c:45 | Макс. CoAP-чанків (bitmap 16 біт) |
+| `CACHE_MAX_ENTRIES` | `50` | main.c:87 | Місткість CIFO EdgeCache |
+| `CMD_DEDUP_SIZE` | `16` | main.c:113 | Розмір кільцевого буфера dedup |
+| `UUID_STR_LEN` | `36` | main.c:114 | Довжина UUID рядка (8-4-4-4-12) |
+| `CMD_DECRYPT_BUF_SIZE` | `544` | main.c:122 | Буфер decrypt CoAP команд/OTA |
+| `OTA_MARKER` | `0x99` | main.c:29 | Маркер OTA-пакета |
+| `OTA_HEADER_SIZE` | `5` | main.c:30 | Маркер + idx:2 + total:2 |
+| `OTA_CRC_SIZE` | `2` | main.c:31 | CRC16-CCITT |
+| `OTA_OVERHEAD` | `7` | main.c:32 | `OTA_HEADER_SIZE + OTA_CRC_SIZE` |
+| `AES_BLOCK_SIZE` | `16` | main.c:33 | AES-256 block size |
+| `MAX_OTA_CHUNK_PAYLOAD` | `512` | main.c:34 | Макс. байткод у CoAP-чанку |
+| `OTA_FULL_CHUNK_THRESH` | `514` | main.c:35 | `MAX_OTA_CHUNK_PAYLOAD + OTA_CRC_SIZE` |
+| `MIN_OTA_ALIGNED` | `23` | main.c:36 | `AES_BLOCK_SIZE + OTA_OVERHEAD` |
+
+---
+
 ## 📡 1. LoRa Reception та ISR
 
 ### OnRxDone (Апаратне переривання)
@@ -348,8 +416,11 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 | Розмір пакета | 16 байт | Повний AES-256 блок |
 | Таймаут RX | `LORA_RX_INFINITE = 0xFFFFFF` | Нескінченне очікування |
 | UART baud | 115200 | SIM7070G модем |
+| `snr` параметр | **не використовується** | SNR від SX1262 ігнорується в `OnRxDone` |
 
 **Volatile-семантика:** `incoming_lora_payload` та `lora_rx_flag` оголошені `volatile`, бо записуються в ISR, читаються в main loop. `(void*)` cast безпечний: `lora_rx_flag` серіалізує доступ ISR→main.
+
+**Single-packet buffer обмеження:** `incoming_lora_payload[16]` — єдиний буфер. При одночасному отриманні двох пакетів ISR перезаписує буфер — перший пакет втрачається. Це не проблема в нормальному режимі (LoRa TDMA природно розмазує трафік), але критично під час 25-секундного flush (BLOCKER-2).
 
 ---
 
@@ -446,15 +517,35 @@ Buffer size: binary_batch_buffer[2048] — достатньо з запасом
 
 ```
 1. Padding: вирівнювання до 16 байт (нульовий pad)
-2. Generate IV: HRNG (4 × uint32_t = 16 байт)
-   Fallback при HRNG fail: HAL_GetTick() XOR (i * 0x5A5A5A5A)  ← BLOCKER-8
-3. Switch CRYP: ECB → CBC з новим IV
-4. Encrypt: HAL_CRYP_Encrypt(binary_batch_buffer, padded_size/4, output+16)
-5. Prepend IV: encrypted_batch_buffer[0..15] = IV
-6. Total: 16 (IV) + padded_size байт
+   padded_size = ((offset + 15) / 16) * 16  ← AES block alignment
+   Захист: if (padded_size > sizeof(binary_batch_buffer)) → cap
+
+2. Generate IV: HRNG "Wu-Wei" підхід:
+   hrng.Instance = RNG
+   HAL_RNG_Init(&hrng)  ← ініціалізація тільки перед використанням
+   for i in 0..3:
+     if HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK:
+       batch_iv[i] = HAL_GetTick() ^ (i * 0x5A5A5A5AUL)  ← IV fallback
+   HAL_RNG_DeInit(&hrng)  ← деініціалізація зразу після
+
+3. Switch CRYP: hcryp.Init.Algorithm = CRYP_AES_CBC
+   hcryp.Init.pInitVect = batch_iv
+   HAL_CRYP_Init(&hcryp)
+
+4. Encrypt: HAL_CRYP_Encrypt(binary_batch_buffer, padded_size/4, output+16, 2000)
+
+5. Prepend IV: encrypted_batch_buffer[0..15] = batch_iv
+   Total encrypted_batch_buffer size = 16 (IV) + padded_size
 
 static uint8_t encrypted_batch_buffer[2048 + 16];  ← static (не стек!)
 ```
+
+**Два різні HRNG fallback — не плутати:**
+| Місце | Fallback при HRNG fail | Маска |
+|-------|------------------------|-------|
+| CBC IV generation (batch) | `HAL_GetTick() ^ (i * 0x5A5A5A5AUL)` | per-word, різна для кожного слова |
+| Jitter regeneration після flush | `HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` (одна константа) |
+| Startup jitter (один раз) | `HAL_GetTick()` (без XOR!) | без маски — рядок 228 |
 
 ### Крок 3: Restore ECB
 
@@ -480,19 +571,24 @@ HAL_CRYP_Init(&hcryp);
 ### CoAP Flush Sequence (кожен flush)
 
 ```
-1. AT+CCOAPNEW="coap://api.silkennet.com:5683"\r\n  (1000 ms)
+1. AT+CCOAPNEW="coap://api.silkennet.com:5683"\r\n  (HAL_Delay 1000 ms)
    ↳ Відкриваємо CoAP сесію, session_id=0
 
-2. AT+CCOAPSEND=0,2,"telemetry/batch/<queen_uid>",<size*2>,"<hex>"\r\n
+2. Формуємо та відправляємо AT+CCOAPSEND через UART (blocking):
+   a. Заголовок команди: snprintf → HAL_UART_Transmit(..., strlen, 100ms)
+      "AT+CCOAPSEND=0,2,"telemetry/batch/QUEEN-001",<size*2>,\""
+   b. Hex payload: кожен байт окремо → HAL_UART_Transmit(2 байти ASCII, 10ms)
+      Для 50 записів: total_size ≈ 1072 байт → 2144 ASCII → ~21.4 секунди
+   c. Закриваємо: HAL_UART_Transmit("\"\r\n", 3, 100ms)
    ↳ Method=2 (PUT), URI-Path визначає шлюз (вирішує Starlink NAT)
-   ↳ Hex-рядок: 2 ASCII символи на байт, відправляється побайтово через HAL_UART_Transmit (10 ms/byte)
-   ↳ Для 1066 байт (50 записів + IV): ~2132 ASCII символи, ~21.3 секунди UART TX  ← ⚠️
 
-3. HAL_Delay(2000)  ← BLOCKER-2: Queen сліпа 2 секунди
+3. HAL_Delay(2000)  ← Чекаємо UDP ACK від сервера (відповідь не читається!)
 
-4. AT+CCOAPDEL=0\r\n  (500 ms)
+4. AT+CCOAPDEL=0\r\n  (HAL_Delay 500 ms)
    ↳ Закриваємо сесію, звільняємо ресурси модему
 ```
+
+**Загальний час flush для 50 записів: ~25 секунд** (BLOCKER-2)
 
 **Важливо про URI-Path:** `/telemetry/batch/<queen_uid>` використовується замість IP-адреси, що вирішує проблему Starlink NAT та динамічних адрес. Сервер знаходить шлюз за UID, а не за IP.
 
@@ -521,72 +617,125 @@ void SIM7070_SendATCommand(char* command, uint32_t delay_ms) {
 ```
 Солдат TX (16 bytes) → Queen OnRxDone ISR
   ↓
-Queen: decrypt → [OTA REFLEX SHOT if ota_is_active]
+Queen: decrypt → [OTA REFLEX SHOT if ota_is_active == 1]
   ↓
-Build OTA chunk (16 bytes):
-  [0]     = 0x99              ← OTA маркер
-  [1-2]   = current_ota_chunk_idx (big-endian uint16)
-  [3-4]   = total_chunks (big-endian uint16)
-  [5-15]  = 11 байт mruby bytecode
+Всередині: total_chunks = (pending_ota_size + 10) / 11  ← LoRa chunk formula
 
-HAL_CRYP_Encrypt(ECB) → Radio.Send(encrypted_ota, 16)
-HAL_Delay(60ms)   ← час для фізичної передачі пакета
-current_ota_chunk_idx++  → wrap to 0 after last chunk
+if (current_ota_chunk_idx < total_chunks):
+  Build OTA LoRa chunk (16 bytes):
+    [0]     = 0x99                         ← OTA маркер
+    [1-2]   = current_ota_chunk_idx BE     ← uint16 big-endian
+    [3-4]   = total_chunks BE              ← uint16 big-endian
+    [5-15]  = 11 байт mruby bytecode
+               offset = current_ota_chunk_idx * 11
+               bytes_to_copy = min(11, pending_ota_size - offset)
+  HAL_CRYP_Encrypt(ECB) → Radio.Send(encrypted_ota, 16)
+  HAL_Delay(60)   ← час для фізичної передачі пакета (~50-60 мс)
+
+current_ota_chunk_idx++
+if (current_ota_chunk_idx >= total_chunks):
+  current_ota_chunk_idx = 0       ← wrap → цикл починається знову
+  // ota_is_active = 0;           ← ЗАКОМЕНТОВАНО (BLOCKER-9)
 ```
 
-**Математика чанків (LoRa downlink):**
-- Корисне навантаження чанка: 11 байт (16 − 5 байт заголовка)
-- Max bytecode розмір: 8192 байт (pending_ota_bytecode buffer)
-- Max chunks (LoRa): `ceil(8192 / 11) = 745` ітерацій
-- Кожен Солдат отримує наступний послідовний чанк при кожному своєму TX
+**Математика LoRa чанків:**
+- Корисне навантаження: 11 байт (16 − 5 байт заголовка)
+- Для 8192 байт bytecode: `(8192 + 10) / 11 = 745` LoRa-чанків
+- Кожен Солдат при кожному своєму TX отримує **один** послідовний чанк
+- Після 745-го чанка `current_ota_chunk_idx` скидається до 0 і цикл повторюється (BLOCKER-9)
 
 ### OTA Assembly (CoAP Downlink від Rails → RAM)
 
+**Два типи OTA-чанків — важливо не плутати:**
+| Тип | Джерело | Розмір payload | Макс чанків | Ліміт |
+|-----|---------|----------------|-------------|-------|
+| **CoAP downlink** (Rails → Queen) | `Handle_CoAP_Command` | ≤512 байт | 16 | `OTA_MAX_CHUNKS` (bitmap) |
+| **LoRa Reflex Shot** (Queen → Soldier) | Main loop | 11 байт | ≤745 | `(pending_ota_size+10)/11` |
+
 ```
 Rails → CoAP → Handle_CoAP_Command(payload, len):
-  1. Мінімальна перевірка: len >= 32 (IV + 1 блок)
-  2. Витягти IV з payload[0..15]
-  3. Switch CRYP: ECB → CBC з IV
-  4. HAL_CRYP_Decrypt → cmd_decrypt_buf[544]
-  5. Restore ECB ← критично!
 
-  Маршрутизація за маркером:
-    if cmd_decrypt_buf starts "CMD:" → actuator command
-    if cmd_decrypt_buf[0] == 0x99   → OTA downlink chunk
+─── Вхідні перевірки ────────────────────────────────────────────────────
+1. len < 32 OR len > (CMD_DECRYPT_BUF_SIZE + 16=544+16=560) → return
+   (мінімум: IV 16 + 1 AES-блок 16 = 32 байти)
 
-OTA Chunk Processing:
-  chunk_index  = buf[1..2] (big-endian)
-  total_chunks = buf[3..4] (big-endian)
+2. Витягти IV з payload[0..15]: memcpy(cmd_iv, payload, 16)
 
-  Guards:
-    total_chunks == 0       → return  (invalid)
-    chunk_index >= 16       → return  (bitmap overflow protection)
-    aligned < 23            → return  (MISRA: мінімум header + AES block)
-    offset + payload > 8192 → return  (buffer overflow protection)
+3. Switch CRYP → CBC, decrypt payload+16 → cmd_decrypt_buf[544]
+   aligned = ((len-16 + 15) / 16) * 16
+   if (aligned > CMD_DECRYPT_BUF_SIZE=544) → restore ECB → return
 
-  Dedup via bitmap:
-    chunk_bit = 1 << chunk_index
-    if (ota_chunk_bitmap & chunk_bit) → return (duplicate, ignore)
-    ota_chunk_bitmap |= chunk_bit
+4. Restore ECB ← обов'язково ДО обробки, щоб LoRa не зламалось!
 
-  memcpy → pending_ota_bytecode[offset]
+5. cmd_decrypt_buf[CMD_DECRYPT_BUF_SIZE-1] = '\0'  ← NUL terminator
+
+─── Маршрутизація за маркером ───────────────────────────────────────────
+  if cmd_decrypt_buf starts "CMD:" → actuator command (секція 6)
+  if cmd_decrypt_buf[0] == 0x99   → OTA downlink chunk
+
+─── OTA Chunk Processing ─────────────────────────────────────────────────
+Guard 1: if (aligned < 6) → return  [MISRA: мін. 1 маркер + 2 idx + 2 total + 1 байт коду]
+
+Витягуємо:
+  chunk_index  = (cmd_decrypt_buf[1] << 8) | cmd_decrypt_buf[2]  (big-endian)
+  total_chunks = (cmd_decrypt_buf[3] << 8) | cmd_decrypt_buf[4]  (big-endian)
+  ota_total_expected_chunks = total_chunks  ← оновлюється з кожним чанком
+
+Guard 2: if (total_chunks == 0) → return  [invalid header]
+Guard 3: if (chunk_index >= OTA_MAX_CHUNKS=16) → return  [bitmap overflow]
+Guard 4: if (aligned < MIN_OTA_ALIGNED=23) → return  [MISRA: 16 AES + 7 overhead]
+
+─── payload_len calculation (ключова формула) ──────────────────────────
+  guaranteed = aligned - AES_BLOCK_SIZE(16)
+  // guaranteed = корисні байти мінус можливий AES-padding (останній блок)
+
+  if (guaranteed >= OTA_FULL_CHUNK_THRESH=514):
+    payload_len = MAX_OTA_CHUNK_PAYLOAD = 512  ← повний чанк
+  else:
+    payload_len = guaranteed - OTA_OVERHEAD(7) ← останній/неповний чанк
+    // OTA_OVERHEAD = OTA_HEADER_SIZE(5) + OTA_CRC_SIZE(2)
+
+  offset = (uint32_t)chunk_index * MAX_OTA_CHUNK_PAYLOAD  (0, 512, 1024, ...)
+
+Guard 5: if (offset + payload_len > sizeof(pending_ota_bytecode)=8192) → return
+
+─── Dedup via bitmap ─────────────────────────────────────────────────────
+  chunk_bit = 1U << chunk_index
+  if (ota_chunk_bitmap & chunk_bit) → return  (дублікат — ігноруємо)
+  ota_chunk_bitmap |= chunk_bit               (маркуємо як отриманий)
+
+─── Зберігаємо в RAM-буфер ───────────────────────────────────────────────
+  memcpy(pending_ota_bytecode + offset, &cmd_decrypt_buf[OTA_HEADER_SIZE=5], payload_len)
   ota_chunks_received++
 
-  if (ota_chunks_received >= total_chunks):
-    ota_chunk_bitmap = 0
-    ota_chunks_received = 0
-    ota_is_active = 1  ← запускаємо LoRa broadcast!
+  // Відстежуємо реальний розмір зібраного байткоду:
+  if (offset + payload_len > pending_ota_size):
+    pending_ota_size = offset + payload_len
+
+─── Перевірка завершення ──────────────────────────────────────────────────
+  if (ota_chunks_received >= ota_total_expected_chunks):
+    ota_chunks_received = 0           ← скидаємо лічильник
+    ota_total_expected_chunks = 0     ← скидаємо очікуваний total
+    ota_chunk_bitmap = 0              ← скидаємо bitmap
+    current_ota_chunk_idx = 0        ← починаємо LoRa broadcast з чанка 0
+    ota_is_active = 1                 ← 🚀 запускаємо LoRa broadcast!
+    // УВАГА: pending_ota_size НЕ скидається (залишається для broadcast)
+    // УВАГА: ota_is_active ніколи не повертається до 0 (BLOCKER-9)
 ```
 
-**Константи OTA:**
-| Константа | Значення | Опис |
-|-----------|----------|------|
-| `OTA_MARKER` | `0x99` | Маркер OTA-пакета (перший байт) |
-| `OTA_MAX_CHUNKS` | 16 | Максимум чанків від CoAP downlink |
-| `MAX_OTA_CHUNK_PAYLOAD` | 512 байт | Макс. корисний payload на CoAP чанк |
-| `pending_ota_bytecode` | 8192 байт | RAM-буфер збірки прошивки |
-| `OTA_HEADER_SIZE` | 5 байт | 1 маркер + 2 index + 2 total |
-| `OTA_CRC_SIZE` | 2 байти | CRC16-CCITT в кінці чанка |
+**Константи OTA (повна таблиця):**
+| Константа | Значення | Розрахунок | Опис |
+|-----------|----------|------------|------|
+| `OTA_MARKER` | `0x99` | — | Маркер OTA-пакета (перший байт) |
+| `OTA_HEADER_SIZE` | 5 | `1+2+2` | Маркер + index:2 + total:2 |
+| `OTA_CRC_SIZE` | 2 | — | CRC16-CCITT в кінці чанка |
+| `OTA_OVERHEAD` | 7 | `5+2` | Header + CRC (мінімум для розрахунку payload) |
+| `AES_BLOCK_SIZE` | 16 | — | Розмір AES-блоку |
+| `MAX_OTA_CHUNK_PAYLOAD` | 512 | — | Макс. байткод в одному CoAP-чанку |
+| `OTA_FULL_CHUNK_THRESH` | 514 | `512+2` | Поріг повного чанка (payload + CRC) |
+| `MIN_OTA_ALIGNED` | 23 | `16+7` | Мінімум для OTA: AES block + overhead |
+| `OTA_MAX_CHUNKS` | 16 | `8192/512` | Макс. CoAP-чанків (bitmap обмеження) |
+| `pending_ota_bytecode` | 8192 B | — | RAM-буфер збірки прошивки |
 
 ---
 
@@ -715,16 +864,21 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 | Змінна | Тип | Розмір | Призначення |
 |--------|-----|--------|-------------|
 | `aes_key[8]` | `uint32_t` | 32 B | AES-256 ключ (однаковий з Soldiers) |
-| `forest_cache[50]` | `EdgeCache` | 1100 B | CIFO EdgeCache (50 слотів) |
+| `forest_cache[50]` | `EdgeCache` | 1100 B | CIFO EdgeCache (50 × 22 байти) |
 | `binary_batch_buffer[2048]` | `uint8_t` | 2048 B | Бінарний буфер перед шифруванням |
-| `encrypted_batch_buffer[2064]` | `uint8_t` | 2064 B | **static** (IV + зашифровані дані) |
+| `encrypted_batch_buffer[2064]` | `uint8_t static` | 2064 B | **static** (IV + зашифровані дані) |
 | `pending_ota_bytecode[8192]` | `uint8_t` | 8192 B | RAM-буфер збірки OTA від Rails |
-| `at_tx_buffer[256]` | `char` | 256 B | Формування AT-команд |
+| `at_tx_buffer[256]` | `char` | 256 B | Формування AT-команд (`snprintf`) |
 | `cmd_dedup_ring[16]` | `uint32_t` | 64 B | DJB2 хеші idempotency токенів |
 | `cmd_decrypt_buf[544]` | `uint8_t` | 544 B | Decrypt buffer для CoAP команд/OTA |
-| `incoming_lora_payload[16]` | `uint8_t` | 16 B | Сирий зашифрований пакет від ISR |
+| `incoming_lora_payload[16]` | `volatile uint8_t` | 16 B | Сирий зашифрований пакет від ISR |
 | `decrypted_payload[16]` | `uint8_t` | 16 B | Розшифрований пакет |
-| **Разом** | | **~14.4 KB** | З 64 KB SRAM = 22% використання |
+| `ota_chunk_bitmap` | `uint16_t` | 2 B | Bitmap отриманих OTA-чанків (16 біт) |
+| `ota_chunks_received` | `uint16_t` | 2 B | Лічильник отриманих CoAP-чанків |
+| `ota_total_expected_chunks` | `uint16_t` | 2 B | Очікуваний total від header |
+| `pending_ota_size` | `uint16_t` | 2 B | Реальний зібраний розмір байткоду |
+| Scalar variables | misc | ~20 B | `cache_count`, `lora_rx_flag`, `current_rssi`, `ota_is_active`, `current_ota_chunk_idx`, `cmd_dedup_idx`, `cmd_dedup_used` |
+| **Разом** | | **~14.4 KB** | З 64 KB SRAM = ~22% використання |
 
 ---
 
@@ -762,10 +916,13 @@ make -C firmware/test queen    # 59 тестів, ~0.1 секунди
 | CBC Command Decrypt | 3 | ECB restored після CBC decrypt, sequence correctness |
 | **Всього** | **79** | *(включно з shared тестами; queen-specific: 59)* |
 
-**Не покрито тестами (BLOCKER-7):**
+**Не покрито тестами:**
 - AT command response parsing (модем відповіді)
 - CoAP retry logic при мережевих помилках
-- OTA downlink з `aligned >= 544` (повний 512-байтний CoAP чанк в тесті)
+- OTA downlink з `aligned >= 544` (повний 512-байтний CoAP чанк в тесті) — BLOCKER-7
+- `ota_is_active` never-reset scenario (infinite broadcast loop) — BLOCKER-9
+- Single-packet buffer overwrite during ~25 s flush — BLOCKER-2
+- HRNG startup fallback (без XOR mask) vs flush-regen fallback (з `RNG_FALLBACK_XOR_MASK`)
 
 ---
 
@@ -789,5 +946,6 @@ make -C firmware/test queen    # 59 тестів, ~0.1 секунди
 
 ---
 
-*Документ створено: 2026-03-24 | Автор: AI Agent (Copilot) | Issue: #187*
-*Синхронізовано з: `firmware/queen/main.c` (801 рядків), `firmware/test/test_queen_logic.c` (1337 рядків)*
+*Документ створено: 2026-03-24 | Останнє оновлення: 2026-03-24 (Session 3 — детальний re-read main.c) | Автор: AI Agent (Copilot) | Issue: #187*
+*Синхронізовано з: `firmware/queen/main.c` (800 рядків, читання рядок-за-рядком), `firmware/test/test_queen_logic.c` (1337 рядків)*
+*Нові знахідки: BLOCKER-9 (OTA infinite loop), BLOCKER-2 ескалований (~25 с), payload_len formula, snr ignored, RNG_FALLBACK_XOR_MASK, startup vs regen jitter distinction*
