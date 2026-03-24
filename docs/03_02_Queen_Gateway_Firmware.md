@@ -416,7 +416,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 | Розмір пакета | 16 байт | Повний AES-256 блок |
 | Таймаут RX | `LORA_RX_INFINITE = 0xFFFFFF` | Нескінченне очікування |
 | UART baud | 115200 | SIM7070G модем |
-| `snr` параметр | **не використовується** | SNR від SX1262 ігнорується в `OnRxDone` |
+| `snr` параметр | **не використовується** | SNR від SX1262 ігнорується в `OnRxDone`. CIFO eviction базується лише на RSSI. SNR міг би покращити якість рішення евікції (RSSI+SNR = power + noise floor), але не реалізовано — потенційна точка покращення в наступному TRL. |
 
 **Volatile-семантика:** `incoming_lora_payload` та `lora_rx_flag` оголошені `volatile`, бо записуються в ISR, читаються в main loop. `(void*)` cast безпечний: `lora_rx_flag` серіалізує доступ ISR→main.
 
@@ -541,11 +541,13 @@ static uint8_t encrypted_batch_buffer[2048 + 16];  ← static (не стек!)
 ```
 
 **Два різні HRNG fallback — не плутати:**
-| Місце | Fallback при HRNG fail | Маска |
-|-------|------------------------|-------|
-| CBC IV generation (batch) | `HAL_GetTick() ^ (i * 0x5A5A5A5AUL)` | per-word, різна для кожного слова |
-| Jitter regeneration після flush | `HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` (одна константа) |
-| Startup jitter (один раз) | `HAL_GetTick()` (без XOR!) | без маски — рядок 228 |
+| Місце | Fallback при HRNG fail | Маска | Пояснення |
+|-------|------------------------|-------|-----------|
+| CBC IV generation (batch) | `HAL_GetTick() ^ (i * 0x5A5A5A5AUL)` | per-word, різна для кожного слова | XOR з індексом гарантує різні слова IV навіть якщо tick однаковий — мінімальна ентропія без нульових слів |
+| Jitter regeneration після flush | `HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` (одна константа) | Один tick, одна маска — простий jitter, криптостійкість не потрібна |
+| Startup jitter (один раз) | `HAL_GetTick()` (без XOR!) | без маски — рядок 228 | Startup: tick вже унікальний бо залежить від часу включення живлення; жодна маска не додає ентропії у цьому контексті; jitter — не криптографічна операція |
+
+> **Примітка:** Всі три fallback є слабкими при масовому blackout (BLOCKER-8 стосується CBC IV). Для jitter безпека не потрібна. Різниця в масках — це не помилка, а різні вимоги до ентропії.
 
 ### Крок 3: Restore ECB
 
@@ -785,7 +787,7 @@ Cmd_Dedup_Check(hash):
 ```c
 uint8_t queen_health[16] = {0};
 // Bytes 0-3: DID = 0x00000000 — зарезервований sentinel (не є деревом)
-// Bytes 4-5: uptime proxy — тік / 1000 (wraps кожні ~65 секунд)
+// Bytes 4-5: uptime proxy — тік / 1000 (uint16, wraps кожні ~18.2 год = 65535 с)
 uint16_t uptime_sec = (uint16_t)(HAL_GetTick() / 1000);
 queen_health[4] = (uint8_t)(uptime_sec >> 8);
 queen_health[5] = (uint8_t)(uptime_sec & 0xFF);
@@ -804,7 +806,7 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 | Байт(и) | Поле | Значення | Опис |
 |---------|------|----------|------|
 | 0–3 | DID | `0x00000000` | Sentinel — "це Королева, не дерево" |
-| 4–5 | Uptime | `HAL_GetTick() / 1000` | Uptime proxy (uint16, wraps ~65 с) |
+| 4–5 | Uptime | `HAL_GetTick() / 1000` | Uptime proxy в секундах (uint16, wraps ~18.2 год = 65535 с) |
 | 6 | Reserved | `0x00` | Майбутнє: температура корпусу (°C) |
 | 7 | Cache load | `cache_count` (0–50) | Кількість дерев у кеші |
 | 8–9 | Reserved | `0x00` | Майбутнє: CSQ модему (0–31) |
