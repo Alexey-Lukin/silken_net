@@ -68,6 +68,19 @@ Zero-power event detection for chainsaw/vibration alerts:
 - **Trigger:** EXTI rising edge interrupt on STM32 GPIO
 - **Use case:** Immediate wake from deep sleep on mechanical disturbance (vandalism, chainsaw, seismic event)
 
+## ⚠️ Critical Hardware Safety Warning
+
+### LoRa Antenna — Never Power Without It
+
+**CRITICAL:** NEVER apply power to the Queen or Soldier board if the LoRa antenna is not physically connected to the SMA/U.FL port.
+
+The SX1262 radio module contains a high-power RF amplifier (+22 dBm output stage). Without an antenna, the transmitted RF energy has nowhere to go and reflects back into the chip (high VSWR). This destroys the RF front-end within milliseconds — the damage is permanent and unrecoverable.
+
+- **Sequence:** Connect antenna → power on board.
+- **Rule:** If antenna is missing, the board is not ready to power.
+
+---
+
 ## Programming Interface
 
 ### SWD (Debug/Flash)
@@ -258,3 +271,85 @@ Connect both USB cables (ST-LINK Type-C + FT232RL USB) to your Mac. The hardware
 | 14 | 100 Ohm resistor | Voltage divider R2 (simulation) |
 | 15 | AA battery holder | Bio-potential simulation source |
 | 16 | Breadboard + jumper wires | Prototyping |
+
+---
+
+## Development Toolchain
+
+Tools used for hardware design, circuit simulation, and MCU prototyping before physical components are available.
+
+### Circuit Simulation
+
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| **LTspice** (free, Analog Devices) | Analog circuit simulation — energy harvesting stage (LTC3108, BQ25570, supercapacitor charge curve, leakage currents) | Best-in-class for ultra-low-voltage analog; models 44 mV → supercapacitor charge trajectory without risk to real components |
+| **Wokwi** (cloud) | STM32/Arduino rapid IoT prototyping | Fast iteration for sensor logic and LoRa packet construction; no hardware required |
+| **Proteus** | Full MCU + schematic co-simulation | For deeper STM32 peripheral validation when Wokwi is insufficient |
+
+### PCB Design (Factory-Ready)
+
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| **KiCad** (open-source) | Schematic → PCB layout → Gerber file export | Industry standard; Gerber files accepted by JLCPCB, PCBWay, and Ukrainian PCB manufacturers. Open-source format preserves the project's open hardware status — required for Gitcoin/Giveth grant eligibility |
+
+**Workflow:** KiCad schematic → DRC → Layout → Gerber export → Upload to factory (JLCPCB/PCBWay or local UA vendor).
+
+---
+
+## Manufacturing & Prototyping Status
+
+| Item | Status | Notes |
+|------|--------|-------|
+| nTop license (gyroid anchor CAD) | ✅ Obtained | Used to generate parametric Ti-6Al-4V gyroid anchor model for DMLS printing |
+| First batch — 100 units | 🟡 In progress | Contacting DMLS manufacturers in Kyiv and Dnipro; bulk order (100 units) reduces unit cost significantly |
+| PCB design (soldier node) | 🔴 Not started | KiCad layout required before factory order; electrical schematic is the prerequisite |
+| PCB design (queen gateway) | 🔴 Not started | Depends on SIM7070G vs SIM7000G modem blocker resolution (see `docs/FIRMWARE.md` Known Risks) |
+
+---
+
+## R&D Validation — Titanium-Xylem Interface (ChNU)
+
+Accelerated biocompatibility and longevity validation of the Ti-6Al-4V gyroid anchor in collaboration with **Cherkasy National University (ChNU) named after Bohdan Khmelnytsky** — three world-class research schools.
+
+### Why This Matters
+
+Without laboratory-validated data, the anchor's 20-year lifespan claim is an engineering assumption. Academic validation from ChNU converts it into a peer-reviewed, certifiable fact — critical for seed-round investors and carbon credit certification.
+
+### Artificial Xylem Sap Formulation
+
+To test in vitro without waiting years for field data, labs synthesize artificial xylem sap matching _Pinus sylvestris_ (Cherkasy Pine Forest):
+
+| Parameter | Value | Notes |
+|-----------|-------|-------|
+| pH | 4.5–5.5 | Slightly acidic, typical pine xylem |
+| Major cations | K⁺, Ca²⁺, Mg²⁺ | Sourced from botany datasets (Spryhailo / ChNU) |
+| Organic acids | Malic acid, citric acid | Primary chelating agents; drive Ti surface reactions |
+| Base | Deionised water | Ultra-pure; mineral contaminants must be controlled |
+
+### Accelerated Aging (Arrhenius Principle)
+
+1 month of lab testing → equivalent of 4 years of field exposure:
+
+```
+t_lab = t_field x exp(-Ea/k x (1/T_field - 1/T_lab))
+Ea ≈ 0.7–1.0 eV (corrosion activation energy for Ti alloys)
+T_field = 293 K (20°C, forest)
+T_lab   = 348 K (75°C, controlled oven)
+```
+
+Electrochemical acceleration (mild applied current + elevated temperature) further compresses the timeline.
+
+### Validation Objectives
+
+- **Ion release (ICP-MS):** Confirm Ti, Al, V ion concentrations in sap analogue remain below phytotoxic thresholds after 4-year equivalent exposure
+- **Conductivity stability:** Anchor surface resistance must not increase >20% (ensures EBFC energy harvest remains viable)
+- **Biofilm / oxide layer characterisation:** SEM/EDX of surface morphology post-test
+- **Academic deliverable:** Short academic conclusion signed by lab director — serves as primary certification document for regulators and investors
+
+### ChNU Research Partners
+
+| School | Lead | Contribution |
+|--------|------|-------------|
+| Quantum Chemistry & Nanomaterials | Prof. Borys Minaiev | DFT modelling of TiO₂ / organic acid interface; quantum electron yield calculation; xylem sap synthesis recipe |
+| Solid State Physics & Nanodiffusion | Prof. Andriy Husak | 20-year diffusion model (Kirkendall effect) for V/Al ions into wood tissue; tribocorrosion under wind micro-vibrations |
+| Bioecology (Cherkasy Pine Forest) | O. Spryhailo, M. Havryliuk | Historical xylem sap composition baseline (10+ years); seasonal calibration data for Lorenz attractor thresholds |

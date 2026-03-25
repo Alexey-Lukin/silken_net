@@ -214,3 +214,23 @@ type CarbonMintEvent @entity {
 ```
 
 `TheGraph::QueryService` fetches `total_carbon_minted` for dashboards and third-party integrations.
+
+## Planned: Governance DAO (Legislative Branch)
+
+**Current state:** Protocol constants (Lorenz attractor parameters `σ=10`, `ρ=28`, `β=8/3`; Slashing threshold 20%; conversion rate 10,000 growth_points = 1 SCC) are hardcoded in Rails service classes. Manual code changes require a full deployment cycle.
+
+**Problem at planetary scale:** As climate zones diversify (tropical forests vs boreal forests vs mangroves), a single set of constants becomes incorrect for most trees. Manual recalibration via code changes is not scalable.
+
+**Planned solution — Governance DAO:**
+
+- SFC token holders (or a multisig Forester Council) vote on parameter changes via on-chain governance smart contracts
+- Rails backend periodically reads current parameters from the blockchain via `TheGraph::QueryService` instead of class-level constants
+- Changes take effect after a time-lock period (e.g. 48h) to allow operators to react
+
+**Implementation scope:**
+1. Add governance functions to `SilkenForestCoin.sol` (SFC already has Votes + EIP-712 for gasless delegation)
+2. Deploy `GovernorContract.sol` (OpenZeppelin Governor) on Polygon
+3. Add `Governance::ParameterSyncWorker` (queue: `web3_low`) to pull current values from The Graph
+4. Replace `SIGMA`, `RHO`, `BETA`, `SLASH_THRESHOLD`, `POINTS_PER_SCC` constants with dynamic reads
+
+**Priority:** Post-TRL 6. Does not block current prototype or seed round.
