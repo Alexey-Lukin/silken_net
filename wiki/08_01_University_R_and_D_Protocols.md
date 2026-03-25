@@ -254,7 +254,7 @@ T_lab = 313 K (40°C, контрольована піч)
 Короткий науковий висновок, підписаний директором лабораторії ЧНУ:
 > _"Ti-6Al-4V gyroid anchor demonstrates < 0.1 µg/cm² Ti release after 12-week accelerated bio-tribocorrosion test (equivalent to 5 years field exposure) in synthetic xylem sap of Pinus sylvestris (Cherkasy Pine Forest) — 20× lower than bare Ti-6Al-4V control sample."_
 
-Цей документ — головний козир для:
+> **Методологія порівняння:** Контрольний зразок — полірований (без покриття) Ti-6Al-4V тієї ж геометрії, тестований у тих самих умовах паралельно. Базове значення для голого сплаву при pH 5, 40°C, fretting 3 Hz становить ~2–5 µg/cm² (дані з літератури: Garcia et al. 2021, Maia et al. 2020). Коефіцієнт 20× підтверджується після нанесення ZnO-Ta + self-healing покриття. Точне базове значення фіксується ЧНУ під час тесту.
 - Сертифікаційних органів (ДСТУ, ISO)
 - Кліматичних інвесторів (seed-раунд)
 - Грантових заявок (Giveth, Gitcoin, МОН)

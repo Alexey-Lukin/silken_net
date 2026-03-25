@@ -464,10 +464,15 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 ```c
 // Псевдокод — пропозиція для майбутнього циклу
+// HELIUM_FALLBACK_THRESHOLD: 3 цикли (~3 години без ACK від Queen)
+// Стиснення: замість 16-байт повного payload → 8 байт (DID:4 + lambda:2 + status:1 + CRC:1)
+#define HELIUM_FALLBACK_THRESHOLD 3     // пропущені ACK перед активацією fallback
+#define HELIUM_PAYLOAD_SIZE       8     // стиснений пакет: DID + lambda_exponent + status + CRC8
+
 if (queen_ack_timeout_count >= HELIUM_FALLBACK_THRESHOLD) {
-    // Перемикаємо DevEUI/AppKey на Helium credentials
-    // Відправляємо через LoRaWAN (not raw LoRa) на публічну мережу
-    Send_Via_Helium_LoRaWAN(lora_payload_compressed, sizeof_compressed);
+    // Перемикаємо DevEUI/AppKey на Helium credentials (з захищеної зони Flash)
+    // lora_payload_compressed: [DID:4][lambda_exp:2][bio_status:1][CRC8:1]
+    Send_Via_Helium_LoRaWAN(lora_payload_compressed, HELIUM_PAYLOAD_SIZE);
     queen_ack_timeout_count = 0;
 }
 ```
