@@ -604,7 +604,7 @@ AES-256-ECB Decrypt → decrypted_rx_payload[]
        ↓
 Сценарій А: decrypted
 
-<note>Content truncated. Call the fetch tool with a start_index of 20000 to get more content.</note>_rx_payload[0] == OTA_MARKER (0x99)
+_rx_payload[0] == OTA_MARKER (0x99)
   → Валідація мінімального розміру (>= 6 байт)
   → chunk_idx, total_chunks (big-endian)
   → Bounds check: offset + chunk_size <= 1024
@@ -1092,6 +1092,140 @@ z += dz * DT
 ```ruby
 z_val = Attractor.calculate_z_axis(seed, temp, acoustic)
 
-if z_val < CRITICAL_Z_MIN  
+    # Стрес
+  status = 1; growth_points = 1
+elsif z_val > CRITICAL_Z_MAX   # Аномалія
+  status = 2; growth_points = 0
+else                           # Гомеостаз
+  status = 0
+  deviation = (OPTIMAL_Z_TARGET - z_val).abs
+  reward = 50 - deviation.to_i
+  growth_points = [reward, 10].max   # Мінімум 10, якщо reward < 10
+end
 
-<note>Content truncated. Call the fetch tool with a start_index of 40000 to get more content.</note>
+growth_points = growth_points.clamp(0, 63)  # 6-bit max
+payload_byte = (status << 6) | growth_points
+```
+
+**Reward Formula:** базова нагорода 50, мінус штраф за відхилення від `OPTIMAL_Z_TARGET=29.0`. Максимум 50 балів (при z=29.0). Мінімум 10 балів (при гомеостазі з великим відхиленням).
+
+**Відображення на байт BioContract (байт 10 payload):**
+
+| z_val | Status | Growth Points | Hex (приклад) |
+|-------|--------|---------------|---------------|
+| < 2.0 | 1 (stress) | 1 | `0x41` |
+| > 45.0 | 2 (anomaly) | 0 | `0x80` |
+| ≈ 29.0 | 0 (homeostasis) | 50 | `0x32` |
+| mruby VM error | 3 (tamper) | 63 | `0xFF` |
+
+> **Синхронізація з сервером:** `app/services/silken_net/attractor.rb` обчислює той самий z-val за тими самими константами. Якщо значення розходяться → Dual Computation Integrity Alert. **[FIX: R-11]** Виправлено: `BASE_BETA` уніфіковано як `8.0/3.0` (не `2.666`), sigma/rho clamp синхронізовано з сервером.
+
+---
+
+## 🛠️ 12. Test Infrastructure (`firmware/test/`)
+
+### 12.1 Архітектура x86 Тестів
+
+Тести компілюються GCC на x86/x64 без ARM toolchain. Ключовий компонент — `hal_mock.h`:
+
+```
+firmware/test/
+  hal_mock.h          — Мінімальні HAL stubs для компіляції без STM32 HAL
+  test_soldier_logic.c — 58 тестів, pure-logic функції з soldier/main.c
+  test_queen_logic.c   — 79 тестів, pure-logic функції з queen/main.c
+  Makefile             — gcc, -Wall -Wextra -Wpedantic -std=c11 -O2
+```
+
+**Принцип:** Тести **не включають** `soldier/main.c` напряму. Натомість вони дублюють (копіюють + адаптують) pure-logic функції в тестовий файл. Це дозволяє:
+- Компілювати на x86 без ARM HAL бібліотек
+- Тестувати ізольовану логіку без hardware state
+- Запускати в CI (GitHub Actions) без фізичного MCU
+
+### 12.2 HAL Mock — Важливі деталі
+
+**AES Encrypt/Decrypt — прозорі stubs:**
+
+```c
+static inline int HAL_CRYP_Encrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t sz,
+                                    uint32_t *out, uint32_t to) {
+    (void)h; (void)to;
+    memcpy(out, in, sz * 4);  // Просто копіює — немає реального шифрування
+    return HAL_OK;
+}
+```
+
+> ⚠️ **Наслідок:** Тести CIFO eviction, OTA dedup, batch packing, ECB restoration — всі перевіряють **структурну логіку**, але не криптографічну коректність. Реальне AES-256 тестування потребує HIL з апаратним AES модулем.
+
+**HRNG Mock — завжди повертає 42:**
+
+```c
+static inline int HAL_RNG_GenerateRandomNumber(RNG_HandleTypeDef *h, uint32_t *v) {
+    (void)h; *v = 42; return HAL_OK;
+}
+```
+
+> ⚠️ **Наслідок:** `test_hrng_iv_all_words_filled` перевіряє що `iv[i] == 42`, але не може перевірити що значення справді випадкове. Тест лише підтверджує, що HRNG викликається коректно.
+
+**ADC Mock — завжди повертає 3000:**
+
+```c
+static inline uint32_t HAL_ADC_GetValue(ADC_HandleTypeDef *h) { (void)h; return 3000; }
+```
+
+**Temperature Macro:**
+
+```c
+#define __LL_ADC_CALC_TEMPERATURE(vref, raw, res) ((int)(25 + ((raw - 1000) / 10)))
+// При raw=3000: temp = 25 + (2000/10) = 225°C (нереальне, але детерміноване)
+```
+
+**RadioDriver_t — struct з function pointers:**
+
+```c
+static RadioDriver_t Radio = {
+    .Init = radio_init_stub,         // no-op
+    .SetChannel = radio_set_channel_stub, // no-op
+    .Send = radio_send_stub,         // no-op (не записує payload нікуди)
+    .Rx = radio_rx_stub,             // no-op
+    .Sleep = radio_sleep_stub        // no-op
+};
+```
+
+> Цей підхід дозволяє компілювати `Radio.Send()` та `Radio.Rx()` без реального LoRa driver.
+
+### 12.3 Makefile Деталі
+
+```makefile
+CC     = gcc
+CFLAGS = -Wall -Wextra -Wpedantic -std=c11 -I. -O2
+```
+
+Усі warnings увімкнені (`-Wall -Wextra -Wpedantic`). `-std=c11` забезпечує MISRA-сумісні конструкції (наприклад, explicit casts). `-O2` дозволяє компілятору виявляти dead code та UB під час оптимізації.
+
+**Команди:**
+```bash
+make -C firmware/test         # Build & run all (default target: queen + soldier)
+make -C firmware/test queen   # Queen tests only
+make -C firmware/test soldier # Soldier tests only
+make -C firmware/test clean   # Remove test_queen, test_soldier binaries
+```
+
+---
+
+## 🔗 13. Посилання
+
+| Ресурс | Опис |
+|--------|------|
+| `firmware/soldier/main.c` | Повний C-код вузла Soldier |
+| `firmware/queen/main.c` | Повний C-код шлюзу Queen |
+| `firmware/bio_contracts/bio_contract.rb` | mruby Lorenz Attractor bio-contract |
+| `firmware/test/hal_mock.h` | HAL stubs для x86 тестів |
+| `firmware/test/test_soldier_logic.c` | 58 Soldier тестів |
+| `firmware/test/test_queen_logic.c` | 79 Queen тестів |
+| `firmware/test/Makefile` | Build system для host-based тестів |
+| `docs/FIRMWARE.md` | Скорочений довідник прошивки |
+| [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Детальна документація Queen |
+| [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | TinyML класифікатор звуку |
+| [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора |
+| [03_05_Hardware_AES256_and_Security](03_05_Hardware_AES256_and_Security) | Деталі шифрування та RDP |
+| [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | EBFC та іоністор 0.47F |
