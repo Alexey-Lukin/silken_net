@@ -8,11 +8,11 @@
 - Формальна рецензія Атрактора Лоренца (BigDecimal precision, накопичення похибки)
 - Надійність існуючого TTL-flood relay при стохастичних відмовах вузлів буде математично обґрунтована (Порубльов + Онищенко)
 - SPI/DMA оптимізація STM32WLE5 буде підтверджена
-- Lightweight cryptography для Smart Implants буде імплементована
+- MAC/MIC (BLAKE2s/SipHash) для LoRa пакетів буде реалізовано; ECDH key exchange протокол для Factory Flashing provisioning буде спроектовано (адресує BLOCKER-1 та BLOCKER-3 з 03_05)
 - Арифметичне стиснення LoRa-пакетів буде верифіковано
 - Стохастична оптимізація надійності Mesh буде підтверджена
 - Мінорантні методи on-MCU Edge AI будуть адаптовані
-- Паралельна архітектура CFD-симуляцій для Akash буде спроектована
+- Паралельна архітектура CFD-симуляцій гіроїда для Akash буде спроектована (stateless compute use case — перший реальний Akash workload, відповідає TRL 4 → 5)
 - CNN-модель синтезу супутникових макро-даних з анкерною телеметрією буде прототипована
 - BSP-кластеризація IoT-графу для енергоефективного Mesh буде верифікована
 - Фізика DMLS-друку Ti-6Al-4V гіроїда буде проконсультована
@@ -40,7 +40,7 @@
 2. Надійності існуючого TTL-flood relay при стохастичних енергетичних відмовах вузлів: математичне обґрунтування порогів PANIC_TTL=5 та DEFAULT_TTL=3
 3. Архітектурної цілісності 12-ланцюгової Web3-системи як ієрархічної управляючої системи
 4. Апаратної оптимізації SPI/DMA-шини STM32WLE5 для зниження енергоспоживання (Модуль 02)
-5. Захисту Web3-телеметрії через lightweight cryptography для Smart Implants (Модуль 07)
+5. Захисту LoRa-телеметрії через MAC/MIC (BLAKE2s/SipHash) та ECDH key exchange для вирішення BLOCKER-1 (hardcoded key) та BLOCKER-3 (відсутній MAC) з 03_05 (Модуль 07)
 6. Арифметичного стиснення та фільтрації нечітких дублікатів телеметрії перед LoRa TX (Модуль 06)
 7. Надійності Mesh-мережі в умовах стохастичних енергетичних відмов (stochastic branch & bound, Модуль 07)
 8. Енергоефективної on-device оптимізації параметрів Лоренца (`OPTIMAL_Z_TARGET`, зони гомеостазу) через мінорантні методи Піявського; калібрування `confidence_threshold` TinyML — після розблокування inference (Модуль 06)
@@ -132,39 +132,47 @@ HAL_PWR_EnterSTOP2Mode(PWR_STOPENTRY_WFI);  // негайно спати
 
 **Контекст: Дилема «Безпека vs Енергія»**
 
-Анкери Silken Net вживлені у дерева у відкритому лісі — вони фізично вразливі до перехоплення. Водночас традиційна «важка» криптографія (RSA-2048, стандартний AES з CBC-MAC) вимагає тисяч тактів процесора та занадто дорога для системи на 44 мВ. Поточна реалізація (AES-256-CBC через `HAL_CRYP_Encrypt`) захищає **тіло пакету**, але не адресує автентифікацію вузлів та integrity для Web3.
+Анкери Silken Net вживлені у дерева у відкритому лісі — вони фізично вразливі до перехоплення. Водночас традиційна «важка» криптографія (RSA-2048) вимагає сотень тисяч тактів процесора та занадто дорога для системи на 44 мВ. Поточна реалізація:
+
+- **Soldier → Queen (LoRa):** **AES-256-ECB** (`HAL_CRYP_Encrypt`, апаратний CRYP-модуль) — захищає тіло пакету, але **без IV** (режим ECB не забезпечує дифузію між блоками, BLOCKER-2 з 03_05)
+- **Queen → Rails (CoAP Batch):** AES-256-CBC + HRNG IV — батч зашифрований CBC
+- **Відсутнє:** автентифікація повідомлень — **немає MAC/MIC** (BLOCKER-3 з 03_05). Queen не може відрізнити легітимний пакет від підробленого. Також відсутнє per-device provisioning ключів (BLOCKER-1: єдиний hardcoded ключ для всієї мережі).
 
 **Зв'язок з Публікаціями Ярмілка:**
 
 Стаття _«IoT Smart Implants: Information Security and the Implementation of Lightweight Cryptography»_ (2023, співавтори: І. Розломій, С. Науменко) є **прямим науковим фундаментом** для Silken Net. Концепція «Smart Implant» у цій роботі — це буквально те, чим є гіроїдний анкер у дереві.
 
-**Завдання А: Lightweight ECC для Автентифікації Вузлів**
+**Завдання А: ECC (Curve25519) для Вирішення BLOCKER-1 — Key Exchange**
 
-Замінити або доповнити поточний AES-CBC на **ECC (Elliptic Curve Cryptography)** — алгоритм на базі еліптичних кривих, що забезпечує еквівалентний рівень захисту при на порядок меншій кількості тактів:
+Поточний BLOCKER-1 (03_05): єдиний hardcoded AES-256 ключ у Flash всіх вузлів — один зламаний вузол компрометує всю мережу. Рішення — **ECDH (Elliptic Curve Diffie-Hellman)** для безпечного key exchange при Factory Flashing, замість pre-shared symmetric key:
 
-| Алгоритм | Рівень безпеки | Розмір ключа | Такти CPU (підпис) |
-|----------|---------------|-------------|---------------------|
-| RSA-2048 | 112 bit | 256 байт | ~1,000,000 |
-| AES-256-CBC | симетр. | 32 байт | ~50,000 |
-| **ECC (Curve25519)** | **128 bit** | **32 байт** | **~10,000** |
+| Алгоритм | Рівень безпеки | Розмір публічного ключа | Такти CPU |
+|----------|---------------|------------------------|-----------|
+| RSA-2048 (key exchange) | 112 bit | 256 байт | ~1,000,000 |
+| AES-256 (symmetric, поточно) | 256 bit | 32 байт | ~50,000 |
+| **ECDH (Curve25519)** | **128 bit** | **32 байт** | **~10,000** |
 
-Curve25519 (або аналог) вкладається в енергетичний бюджет одного TX-циклу Soldier-вузла.
+ECDH не замінює AES для шифрування пакетів — він забезпечує безпечний **обмін унікальним per-device ключем** при провізіонуванні (`POST /api/v1/provisioning/register`). Після ECDH кожен вузол отримує унікальний `device_key = HKDF(master_key, device_uid)`.
 
-**Завдання Б: Криптографічне Хешування для Data Integrity (Web3)**
+> **Примітка:** При збереженні ECB-режиму для LoRa (BLOCKER-2 з 03_05) необхідно також додати per-packet nonce/counter для захисту від replay-атак. Завдання Ярмілка — обрати та обґрунтувати найбільш прийнятне рішення з урахуванням 21-байтового обмеження пакету.
 
-Розробки Ярмілка щодо застосування **хеш-методів у криптографічному аналізі потоків** забезпечать цілісність даних (Data Integrity) перед пакуванням у LoRaWAN-пакет:
+**Завдання Б: MAC/MIC для LoRa-пакетів — Вирішення BLOCKER-3**
+
+Поточний BLOCKER-3 (03_05): LoRa-пакет не містить жодного механізму перевірки цілісності або автентифікації джерела. Розробки Ярмілка щодо застосування **хеш-методів у криптографічному аналізі потоків** дають основу для додавання lightweight MAC:
 
 ```c
-// Концептуальна схема (Phase 2 — після сенсорного зчитування):
-// Поточно: CRC-16 (2 байти, байти 19-20 пакету) — лише error detection
-// Цільово після Ярмілка: BLAKE2s або SipHash-2-4 (lightweight MAC)
-//   — автентифікація відправника + integrity для peaq DID верифікації
+// Поточно: CRC-16 (2 байти, байти 19-20) — лише error detection, не автентифікація
+// Цільово після Ярмілка: BLAKE2s або SipHash-2-4 (lightweight MAC — 4 байти)
+//   — верифікація відправника + integrity для peaq DID pipeline
+//   — замінює CRC-16 або розширює пакет до 23 байт (аналіз trade-off з Порубльовим)
 uint8_t mac[4];
-siphash24(payload, PAYLOAD_LEN, device_secret_key, mac);
+siphash24(payload, PAYLOAD_LEN, device_key, mac);  // device_key — унікальний (після BLOCKER-1 fix)
 memcpy(packet + MAC_OFFSET, mac, 4);
 ```
 
-Цей MAC (Message Authentication Code) верифікується на боці Queen-шлюзу та Rails backend перед передачею в peaq DID pipeline (Модуль 05\_02).
+Цей MAC верифікується Queen-шлюзом та Rails backend (MAC mismatch → дроп пакету → EwsAlert) перед передачею в peaq DID pipeline (Модуль 05_02).
+
+> **Альтернатива:** AES-256-GCM для LoRa — надає одночасно confidentiality + MAC + nonce. Потребує порівняльного аналізу такти/RAM з окремим BLAKE2s. Онищенко Vector 1 (замінити ECB→AES-GCM) є математичною верифікацією цього вибору.
 
 ---
 
@@ -232,7 +240,7 @@ void HAL_PWR_PVDCallback(void) {  // Power Voltage Detector IRQ
 **Конкретний запит (зведений):**
 
 - **SPI/DMA Audit (Модуль 02):** DMA-режим для BQ25570 опитування; HAL/RTOS anti-collision для спільної SPI-шини
-- **Lightweight Crypto (Модуль 07):** ECC (Curve25519) для автентифікації вузлів; BLAKE2s/SipHash MAC для Web3 integrity
+- **Lightweight Crypto (Модуль 07):** ECDH (Curve25519) для per-device key exchange (BLOCKER-1: hardcoded key); BLAKE2s/SipHash-2-4 MAC для автентифікації LoRa пакетів (BLOCKER-3: відсутній MAC/MIC); оцінка ECB→AES-GCM для LoRa (BLOCKER-2: ECB without IV)
 - **Arithmetic Compression (Модуль 06):** Стиснення 21-байтового пакету (потенційно −34% TX-time)
 - **Fuzzy Dedup (Модуль 06):** Методологія фільтрації нечітких дублікатів телеметрії (suppress TX)
 - **Dependability Framework (Модуль 06):** Brownout detection + graceful shutdown + state recovery через RTC DR-регістри
@@ -738,7 +746,7 @@ float optimal_z_target = minorant_minimize(
 
 **Контекст: CFD-Симуляції на Децентралізованому Суперкомп'ютері**
 
-Гідродинаміка потокового потенціалу в порах гіроїда (Модуль 01\_01) та термодинаміка DMLS-друку вимагають **Computational Fluid Dynamics (CFD)** — задача з O(N³) складністю, яку не можна запустити на одній машині для великих N. Archітектура Akash Network надає доступ до тисяч вузлів GPU/CPU, але лише при правильно **декомпозованій паралельній архітектурі** завдання.
+Гідродинаміка потокового потенціалу в порах гіроїда (Модуль 01\_01) та термодинаміка DMLS-друку вимагають **Computational Fluid Dynamics (CFD)** — задача з O(N³) складністю, яку не можна запустити на одній машині для великих N. Akash Network надає доступ до тисяч вузлів GPU/CPU за децентралізованими цінами — але **виключно для stateless compute workloads** (CFD, ML training), а не для Rails production (через BLOCKER-1: Cloud SQL ізоляція). Поточний TRL Akash: 4 (SDL існує, реального деплою не виконувалось). Для CFD обчислень Akash є першочерговим сценарієм використання — compute-only, без потреби у БД.
 
 **Завдання А: Паралельна Декомпозиція CFD-Моделі Гіроїда для Akash**
 
@@ -961,15 +969,17 @@ DMLS процес:
 
 **Чому Супруненко є критичною для Silken Net:**
 
-'Silken Net' — це **монолітний Ruby on Rails додаток, що деплоїться на децентралізованій інфраструктурі Akash**, одночасно обробляючи тисячі паралельних потоків телеметрії від IoT-анкерів, 31+ Sidekiq workers у 9 чергах, та взаємодії з 12-chain Web3-стеком. Це класична задача верифікації паралельної системи — і Супруненко є єдиною у ЧНУ, хто спеціалізується саме на **Petri net-формалізації таких систем із методом згортки** для управління комбінаторною складністю. Її статус завідувачки кафедри ПЗАС робить її природним **адміністративним entry point** для всього партнерства з ЧНУ.
+'Silken Net' — це **монолітний Ruby on Rails додаток, що деплоїться на GCP через Kamal/Terraform** (поточно — production). Akash Network є **цільовою декентралізованою інфраструктурою** (TRL 4: SDL-маніфест існує, але реального деплою не виконувалось через 4 критичних блокери: мережева ізоляція від Cloud SQL/Redis, відсутній Sidekiq у SDL, Docker образ у приватному GCP Artifact Registry, секрети не заповнені). Rails-моноліт обробляє тисячі паралельних потоків телеметрії від IoT-анкерів, 31+ Sidekiq workers у 9 чергах, та взаємодії з 12-chain Web3-стеком. Це класична задача верифікації паралельної системи — і Супруненко є єдиною у ЧНУ, хто спеціалізується саме на **Petri net-формалізації таких систем із методом згортки** для управління комбінаторною складністю. Її статус завідувачки кафедри ПЗАС робить її природним **адміністративним entry point** для всього партнерства з ЧНУ.
 
 ---
 
-#### 🟤 Вектор 1: Petri Net PN-Модель Rails Моноліту на Akash (Модуль 08)
+#### 🟤 Вектор 1: Petri Net PN-Модель Rails Моноліту (Модуль 08)
 
 **Контекст: Коли тисячі дерев одночасно надсилають телеметрію — хто кого блокує?**
 
-Ruby on Rails з сервером Puma (multi-threaded) + Sidekiq workers (multi-process) + PostgreSQL connection pool — це класична багатопотокова система, де **deadlock між threads** або **вичерпання DB pool** може повністю зупинити інгестію телеметрії. Особливо критично при деплоєменті на Akash, де Kubernetes-pod може мати нестабільний мережевий зв'язок, а timeout конфігурації не очевидні.
+Ruby on Rails з сервером Puma (multi-threaded) + Sidekiq workers (multi-process) + PostgreSQL connection pool — це класична багатопотокова система, де **deadlock між threads** або **вичерпання DB pool** може повністю зупинити інгестію телеметрії. Особливо критично при target-деплойменті на Akash, де Kubernetes-pod може мати нестабільний мережевий зв'язок, а timeout конфігурації не очевидні.
+
+> **Контекст Akash (06_02, TRL 4):** Реального деплою на Akash ще не виконувалось через BLOCKER-1 (Cloud SQL недоступний з Akash — за межами GCP VPC) та BLOCKER-2 (Sidekiq відсутній у SDL). PN-модель дозволяє верифікувати архітектуру **до** вирішення цих блокерів — щоб при переході на Akash система гарантовано залишалась deadlock-free.
 
 Дослідження Супруненко по комбінованому підходу до імітаційного моделювання ПЗ з паралелізмом дозволяють побудувати **математично строгу PN-модель** цієї системи.
 
@@ -1007,8 +1017,8 @@ Transitions (операції):
 Якщо Lorenz Attractor обчислення (Модуль 03\_04, BigDecimal 18 цифр, 250 ітерацій) стане bottleneck — його можна винести у окремий мікросервіс. Методологія аналізу моделей мікросервісів Супруненко дозволяє **верифікувати нову архітектуру на PN-моделі до написання коду**:
 
 ```
-Монолітна модель → PN-декомпозиція → Мікросервісна модель:
-  Lorenz-service: окремий Akash pod, gRPC інтерфейс
+Монолітна модель → PN-декомпозиція → Мікросервісна модель (цільова архітектура після розблокування Akash):
+  Lorenz-service: окремий compute pod (Akash або GCP), gRPC інтерфейс
   Telemetry-ingestor: Rails API + Redis pub/sub → Sidekiq uplink
   Web3-broadcaster: окремий Sidekiq process → Polygon/Solana
 
@@ -1078,7 +1088,7 @@ Shape Up cycle integration:
     → Якщо виявлено potential race condition → зміна архітектури ДО написання тестів
   Тиждень 5–6 (Testing + Deployment):
     → Rspec інтеграційні тести відповідають PN-верифікованим сценаріям
-    → Kamal deploy на Akash: PN-модель гарантує bounded behavior під навантаженням
+    → Kamal deploy (GCP production) або майбутній Akash deploy: PN-модель гарантує bounded behavior під навантаженням
 ```
 
 **Завдання В: AI-Native DeepTech Requirements Framework**
@@ -1124,7 +1134,7 @@ Shape Up cycle integration:
   • Reed-Solomon FEC firmware (Косенюк + Ярмілко)
   • Kalman Filter delta_t firmware (Косенюк)
   • SPI/DMA оптимізація MCU (Ярмілко)
-  • Lightweight AES-256-CBC (Ярмілко)
+  • MAC/MIC для LoRa (BLAKE2s/SipHash + ECDH key exchange) (Ярмілко)
   • Reed-Solomon firmware integration (Ярмілко)
   • PN-модель Rails моноліту (Супруненко)
   • Convolution Method (Супруненко)
@@ -1567,10 +1577,11 @@ pub fn verify_growth(
 
 #### Підгрупа Б: Lightweight Cryptography (Модуль 07)
 
-- Порівняльний аналіз ECC (Curve25519), BLAKE2s, SipHash-2-4 на STM32WLE5JC: такти CPU, RAM footprint, рівень захисту
-- Імплементація lightweight MAC (BLAKE2s або SipHash-2-4) для автентифікації пакетів телеметрії перед peaq DID pipeline
-- Оцінка доцільності переходу з AES-256-CBC на ECC для автентифікації вузлів (не замінює шифрування, а доповнює)
-- Верифікація відповідності вимогам: < 10,000 тактів CPU на підпис, MAC ≤ 4 байти у 21-байтовому пакеті
+- Порівняльний аналіз ECC (Curve25519/ECDH), BLAKE2s, SipHash-2-4 на STM32WLE5JC: такти CPU, RAM footprint, рівень захисту
+- Імплементація lightweight MAC (BLAKE2s або SipHash-2-4) для автентифікації LoRa пакетів — вирішення BLOCKER-3 з 03_05 (відсутній MAC/MIC)
+- Розробка ECDH-based key exchange для Factory Flashing provisioning — вирішення BLOCKER-1 з 03_05 (hardcoded єдиний ключ на всю мережу). ECC не замінює AES-шифрування, а забезпечує безпечний обмін унікальними per-device ключами
+- Оцінка доцільності переходу ECB → AES-256-GCM для LoRa (вирішення BLOCKER-2 з 03_05): GCM надає confidentiality + MAC + nonce в одному режимі; порівняння такти/RAM/payload overhead
+- Верифікація відповідності вимогам: ECDH < 10,000 тактів CPU на key exchange, MAC ≤ 4 байти у 21-байтовому пакеті
 
 #### Підгрупа В: Арифметичне Стиснення та Fuzzy Deduplication (Модуль 06)
 
@@ -1682,7 +1693,7 @@ pub fn verify_growth(
 
 #### Підгрупа В: Паралельна CFD для Akash (Модуль 08)
 
-- Domain decomposition 3D-об'єму гіроїда на N\_x × N\_y × N\_z субдомени → окремі Akash pods
+- Domain decomposition 3D-об'єму гіроїда на N\_x × N\_y × N\_z субдомени → окремі Akash pods (stateless compute — відповідає use case Akash як TRL 4 при відсутності DB-залежності)
 - Алгоритм балансування навантаження між Akash-вузлами з неоднорідними GPU (різні provider capacity)
 - Halo exchange стратегія між субдоменами: MPI або gRPC через Akash networking
 - Fault-tolerance: перерозподіл субдомену при падінні pod без перезапуску всієї симуляції
@@ -1748,7 +1759,7 @@ pub fn verify_growth(
 - Граф-аналітичні шаблони для кожного Sidekiq worker у Wiki: вхідні черги → умови trigger → вихідні дії → failure modes → PN-transition mapping
 - Трасування вимог: Business requirement → API endpoint → Worker → PN-transition → верифікований стан (повна вертикальна трасовність)
 - NFR-формалізація: latency < 500 ms при 10,000 concurrent; queue depth < 1000 при peak; DB pool saturation < 80% → інтегрувати у rspec performance tests
-- Shape Up SDLC інтеграція: Petri net верифікація нової фічі на Тижні 1–2 (Shaping) → коригування архітектури ДО написання коду → deploy на Akash гарантовано bounded
+- Shape Up SDLC інтеграція: Petri net верифікація нової фічі на Тижні 1–2 (Shaping) → коригування архітектури ДО написання коду → production deploy (Kamal/GCP) гарантовано bounded; PN-модель готова для майбутнього Akash deploy після розблокування 06_02
 
 ---
 
