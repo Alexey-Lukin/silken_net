@@ -31,7 +31,13 @@
   - Безпечна параметризація: `quote_table_name` / `quote` для захисту від SQL-ін'єкцій
   - Заплановано щодня о 02:30 UTC через sidekiq-scheduler cron (`30 2 * * *`)
   - Тести: 122 рядки RSpec-специфікацій у `spec/workers/partition_maintenance_worker_spec.rb`
-- **HardwareKey Decrypt Cache:** При мільйонах пакетів/хв десеріалізація зашифрованих ключів AR Encryption створює навантаження на CPU. Рекомендується Redis-кеш binary_key з TTL 5-15 хв + інвалідація при `rotate_key!`.
+- ~~**HardwareKey Decrypt Cache:** При мільйонах пакетів/хв десеріалізація зашифрованих ключів AR Encryption створює навантаження на CPU. Рекомендується Redis-кеш binary_key з TTL 5-15 хв + інвалідація при `rotate_key!`.~~ ✅ **ВИРІШЕНО** у [commit 513556a](https://github.com/Alexey-Lukin/silken_net/commit/513556ad2fb094c420f2ab85c7971be2545e2845):
+  - Додано `HardwareKey#cached_binary_key` — `Rails.cache.fetch("hw_key:#{device_uid}:bin", expires_in: 15.minutes)` (Redis у prod)
+  - Усуває «Double Crypto Tax»: AR Encryption десеріалізація відбувається 1 раз/15 хв замість кожного пакету телеметрії (~2 мс/виклик)
+  - Автоматична інвалідація через `after_commit :clear_key_cache, on: %i[update destroy]`
+  - `UnpackTelemetryWorker#attempt_decryption` — перехід з `binary_key` → `cached_binary_key` на hot path
+  - Безпека: ключі в PostgreSQL залишаються зашифрованими (AR Encryption); Redis — ізольована мережа (Private VPC, TLS, ACL)
+  - Тести: 79 нових рядків RSpec у `spec/models/hardware_key_spec.rb`
 
 ---
 
@@ -382,10 +388,14 @@ any ──report_fault──► faulty
 | Метод | Опис |
 |-------|------|
 | `binary_key` | `[aes_key_hex].pack("H*")` — мемоізовано |
+| `cached_binary_key` | `Rails.cache.fetch("hw_key:#{device_uid}:bin", expires_in: 15.minutes)` — Redis-кеш для hot path |
 | `binary_previous_key` | Попередній ключ у байтах (Grace Period) |
 | `rotate_key!` | М'яка ротація: старий → `previous_aes_key_hex`, новий генерується |
 | `clear_grace_period!` | Очищення `previous_aes_key_hex` після підтвердження синхронізації |
 | `owner` | `tree || gateway` |
+
+**Callbacks:**
+- `after_commit :clear_key_cache, on: %i[update destroy]` — автоматична інвалідація Redis-кешу при зміні або видаленні ключа
 
 ---
 
