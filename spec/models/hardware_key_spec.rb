@@ -113,7 +113,10 @@ RSpec.describe HardwareKey, type: :model do
 
     it "serves from cache on subsequent calls without hitting binary_key" do
       hw_key = create(:hardware_key)
+      cache_key = "hw_key:#{hw_key.device_uid}:bin"
       hw_key.cached_binary_key # prime the cache
+
+      expect(Rails.cache.read(cache_key)).not_to be_nil
 
       # Stub binary_key to verify it is NOT called again
       allow(hw_key).to receive(:binary_key)
@@ -156,9 +159,14 @@ RSpec.describe HardwareKey, type: :model do
 
     it "returns new key after rotation and re-caching" do
       hw_key = create(:hardware_key)
+      cache_key = "hw_key:#{hw_key.device_uid}:bin"
       old_cached = hw_key.cached_binary_key
 
       hw_key.rotate_key!
+
+      # Cache must be invalidated after rotation
+      expect(Rails.cache.read(cache_key)).to be_nil
+
       hw_key.reload
       new_cached = hw_key.cached_binary_key
 
