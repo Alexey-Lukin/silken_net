@@ -12,6 +12,7 @@ class BlockchainMintingService < ApplicationService
   # Якщо баланс DAO Treasury < порогу — Dynamic Tax активний (2% від емісії).
   # Якщо баланс >= порогу — податок вимикається, інвестори отримують 100%.
   INSURANCE_POOL_THRESHOLD = 100_000
+  INSURANCE_POOL_THRESHOLD_WEI = INSURANCE_POOL_THRESHOLD * 10**18
 
   # Мінімальний ABI для читання балансу ERC-20 (balanceOf).
   BALANCE_OF_ABI = [
@@ -217,7 +218,7 @@ class BlockchainMintingService < ApplicationService
   # Безпечний фолбек: при збої RPC повертає true (краще перефінансувати пул, ніж недофінансувати).
   def insurance_pool_requires_funding?
     Rails.cache.fetch(TREASURY_CACHE_KEY, expires_in: TREASURY_CACHE_TTL) do
-      fetch_treasury_balance_wei < INSURANCE_POOL_THRESHOLD * (10**18)
+      fetch_treasury_balance_wei < INSURANCE_POOL_THRESHOLD_WEI
     end
   rescue StandardError => e
     Rails.logger.error "🛑 [Web3] DAO Treasury balance check failed: #{e.message}"
@@ -235,9 +236,11 @@ class BlockchainMintingService < ApplicationService
 
     treasury_address = ENV.fetch("DAO_TREASURY_ADDRESS")
 
-    Timeout.timeout(TREASURY_RPC_TIMEOUT) do
+    raw = Timeout.timeout(TREASURY_RPC_TIMEOUT) do
       client.call(contract, "balanceOf", treasury_address)
     end
+
+    Integer(raw)
   end
 
   def broadcast_tx_update(transaction)

@@ -615,13 +615,8 @@ end
       end
 
       it "does not cache RPC failures" do
-        call_count = 0
-        allow(mock_client).to receive(:call) do
-          call_count += 1
-          raise StandardError, "RPC error" if call_count == 1
-
-          200_000 * 10**18
-        end
+        responses = [ -> { raise StandardError, "RPC error" }, -> { 200_000 * 10**18 } ]
+        allow(mock_client).to receive(:call) { responses.shift.call }
 
         # First call fails → true (not cached)
         expect(service.send(:insurance_pool_requires_funding?)).to be true
