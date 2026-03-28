@@ -41,17 +41,24 @@ class Wallet < ApplicationRecord
 
   # Блокування коштів для Pending транзакцій (Double Spend Protection).
   # Кошти залишаються на балансі, але не доступні для витрат.
+  # [BLOCKER FIX]: with_lock запобігає TOCTOU race condition — перевірка available_balance
+  # та increment! тепер атомарні під SELECT ... FOR UPDATE.
   def lock_funds!(amount)
-    raise "⚠️ [Wallet] Недостатньо доступних коштів (Доступно: #{available_balance}, Потрібно: #{amount})" if available_balance < amount
+    with_lock do
+      raise "⚠️ [Wallet] Недостатньо доступних коштів (Доступно: #{available_balance}, Потрібно: #{amount})" if available_balance < amount
 
-    increment!(:locked_balance, amount)
+      increment!(:locked_balance, amount)
+    end
   end
 
   # Повернення заблокованих коштів після невдалої транзакції (Rollback).
+  # [BLOCKER FIX]: with_lock запобігає race condition при одночасному rollback кількох TX.
   def release_locked_funds!(amount)
-    raise "⚠️ [Wallet] Спроба розблокувати більше, ніж заблоковано (Заблоковано: #{locked_balance}, Запит: #{amount})" if locked_balance < amount
+    with_lock do
+      raise "⚠️ [Wallet] Спроба розблокувати більше, ніж заблоковано (Заблоковано: #{locked_balance}, Запит: #{amount})" if locked_balance < amount
 
-    decrement!(:locked_balance, amount)
+      decrement!(:locked_balance, amount)
+    end
   end
 
   # Фіналізація витрати після підтвердження транзакції в блокчейні.
@@ -69,10 +76,17 @@ class Wallet < ApplicationRecord
 
   # Викликається TelemetryUnpackerService після кожного успішного пакету даних від STM32.
   # Кожен подих дерева конвертується в бали росту.
+  #
+  # [BLOCKER FIX: Database Locking — Wiki 04_01]
+  # Pessimistic lock (SELECT ... FOR UPDATE) запобігає race conditions
+  # при одночасному надходженні тисяч пакетів телеметрії для одного дерева.
+  # with_lock відкриває власну коротку транзакцію — lock тримається лише мілісекунди
+  # (тільки на час INCREMENT), а не на всю тривалість commit_telemetry.
+  # Це критично при 100+ млрд дерев та Sidekiq concurrency=15.
   def credit!(points)
-    # increment! є атомарним на рівні БД (UPDATE ... SET balance = balance + points)
-    # Це захищає нас від втрат при масовому надходженні пакетів через Starlink/LoRa
-    increment!(:balance, points)
+    with_lock do
+      increment!(:balance, points)
+    end
 
     # [СИНХРОНІЗАЦІЯ]: Оновлюємо цифри на Dashboard Архітектора з троттлінгом,
     # щоб при 1 000 000 дерев не створювати ~16 000 повідомлень/сек
