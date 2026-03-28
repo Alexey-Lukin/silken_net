@@ -105,7 +105,9 @@ class PartitionBlockchainTransactionsByCreatedAt < ActiveRecord::Migration[8.1]
       # ─── Step 9: Drop old table ───
       execute "DROP TABLE public.blockchain_transactions_old"
 
-      # ─── Step 10: Re-create indexes (CONCURRENTLY for zero-downtime) ───
+      # ─── Step 10: Re-create indexes ───
+      # NOTE: PostgreSQL does not support CONCURRENTLY on partitioned tables,
+      # so regular CREATE INDEX is used. Indexes propagate to all partitions automatically.
       execute <<~SQL
         CREATE INDEX index_blockchain_transactions_on_block_number
           ON public.blockchain_transactions USING btree (block_number)
