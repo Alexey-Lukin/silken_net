@@ -17,16 +17,16 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
           described_class.new.perform
 
           expect(connection).to have_received(:execute).with(
-            a_string_matching(/CREATE TABLE IF NOT EXISTS telemetry_logs_y2026m03/)
+            a_string_matching(/"telemetry_logs_y2026m03"/)
           )
           expect(connection).to have_received(:execute).with(
-            a_string_matching(/CREATE TABLE IF NOT EXISTS telemetry_logs_y2026m04/)
+            a_string_matching(/"telemetry_logs_y2026m04"/)
           )
           expect(connection).to have_received(:execute).with(
-            a_string_matching(/CREATE TABLE IF NOT EXISTS gateway_telemetry_logs_y2026m03/)
+            a_string_matching(/"gateway_telemetry_logs_y2026m03"/)
           )
           expect(connection).to have_received(:execute).with(
-            a_string_matching(/CREATE TABLE IF NOT EXISTS gateway_telemetry_logs_y2026m04/)
+            a_string_matching(/"gateway_telemetry_logs_y2026m04"/)
           )
         end
       end
@@ -36,10 +36,10 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
           described_class.new.perform
 
           expect(connection).to have_received(:execute).with(
-            a_string_matching(/\btelemetry_logs_y2026m12 PARTITION OF telemetry_logs\b.*FROM \('2026-12-01 00:00:00'\) TO \('2027-01-01 00:00:00'\)/)
+            a_string_matching(/"telemetry_logs_y2026m12" PARTITION OF "telemetry_logs".*FROM \('2026-12-01 00:00:00'\) TO \('2027-01-01 00:00:00'\)/)
           )
           expect(connection).to have_received(:execute).with(
-            a_string_matching(/\btelemetry_logs_y2027m01 PARTITION OF telemetry_logs\b.*FROM \('2027-01-01 00:00:00'\) TO \('2027-02-01 00:00:00'\)/)
+            a_string_matching(/"telemetry_logs_y2027m01" PARTITION OF "telemetry_logs".*FROM \('2027-01-01 00:00:00'\) TO \('2027-02-01 00:00:00'\)/)
           )
         end
       end
@@ -49,7 +49,7 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
           described_class.new.perform
 
           expect(connection).to have_received(:execute).with(
-            a_string_matching(/gateway_telemetry_logs_y2027m01/)
+            a_string_matching(/"gateway_telemetry_logs_y2027m01"/)
           )
         end
       end
@@ -100,10 +100,10 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
         allow(ActiveRecord::Base).to receive(:connection).and_return(connection)
       end
 
-      it "logs partition creation summary" do
+      it "logs partition creation summary with correct count" do
         expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*Перевірка партицій/).ordered
         expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*OK/).exactly(4).times.ordered
-        expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*Завершено/).ordered
+        expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*Завершено.*Створено нових партицій: 4/).ordered
 
         described_class.new.perform
       end

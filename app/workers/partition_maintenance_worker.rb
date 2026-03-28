@@ -32,17 +32,18 @@ class PartitionMaintenanceWorker
   # Створює партицію для вказаної таблиці та місяця, якщо її ще не існує.
   # Повертає 1 якщо партицію було створено, 0 якщо вона вже існувала.
   def ensure_partition(table_name, month_start)
+    conn = ActiveRecord::Base.connection
     partition_name = partition_name_for(table_name, month_start)
     range_from = month_start.strftime("%Y-%m-%d 00:00:00")
     range_to = (month_start + 1.month).strftime("%Y-%m-%d 00:00:00")
 
     sql = <<~SQL.squish
-      CREATE TABLE IF NOT EXISTS #{partition_name}
-      PARTITION OF #{table_name}
-      FOR VALUES FROM ('#{range_from}') TO ('#{range_to}')
+      CREATE TABLE IF NOT EXISTS #{conn.quote_table_name(partition_name)}
+      PARTITION OF #{conn.quote_table_name(table_name)}
+      FOR VALUES FROM (#{conn.quote(range_from)}) TO (#{conn.quote(range_to)})
     SQL
 
-    ActiveRecord::Base.connection.execute(sql)
+    conn.execute(sql)
 
     Rails.logger.info "🗂️ [Partition Maintenance] Партиція #{partition_name} — OK"
     1
