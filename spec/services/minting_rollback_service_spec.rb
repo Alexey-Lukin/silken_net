@@ -33,7 +33,7 @@ RSpec.describe MintingRollbackService do
     end
 
     it "skips transactions that are already confirmed" do
-      tx = create(:blockchain_transaction, wallet: wallet, status: :confirmed, tx_hash: SecureRandom.hex(32))
+      tx = create(:blockchain_transaction, wallet: wallet, status: :confirmed, tx_hash: "0x#{SecureRandom.hex(32)}")
       original_balance = wallet.balance
       original_locked = wallet.locked_balance
 
