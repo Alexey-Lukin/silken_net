@@ -14,13 +14,44 @@ module Dclimate
   #   2. clear_sky_no_fire → rejected_fraud      → BurnCarbonTokensWorker (Slashing)
   #   3. obscured_by_clouds → OrbitalLagError    → Sidekiq retry (до 48 годин)
   #
+  # HTTP-інтеграція з dClimate API (FIRMS — Fire Information for Resource
+  # Management System). Використовує Web3::HttpClient (HTTPX) — єдиний
+  # HTTP-клієнт проєкту з persistent connections та thread-safe sessions.
+  #
   # Використання:
   #   Dclimate::VerificationService.new(ews_alert).perform
   class VerificationService
     OUTCOMES = %i[fire_confirmed clear_sky_no_fire obscured_by_clouds].freeze
 
+    # --- dClimate FIRMS API Configuration ---
+    # Base URL для dClimate REST API (перевизначається через ENV для staging/test).
+    DCLIMATE_BASE_URL = ENV.fetch("DCLIMATE_BASE_URL", "https://api.dclimate.net")
+
+    # Датасет NASA FIRMS (Near Real-Time Global Active Fire) через dClimate.
+    # VIIRS (Visible Infrared Imaging Radiometer Suite) на Suomi NPP — роздільна
+    # здатність 375 м, проліт кожні ~12 годин, затримка даних ~3 години.
+    FIRMS_DATASET = ENV.fetch("DCLIMATE_FIRMS_DATASET", "firms_nrt_global-area_v2")
+
+    # --- Порогові значення інтерпретації супутникових даних ---
+    # FRP (Fire Radiative Power) у МВт — основний індикатор активного вогню.
+    # ≥ 10 МВт = значна активність вогню (NASA FIRMS standard classification).
+    FIRE_FRP_THRESHOLD_MW = 10.0
+
+    # Рівень довіри детекції пожежі (0–100%).
+    # ≥ 50% = помірна-висока впевненість, що це реальний вогонь, а не артефакт.
+    FIRE_CONFIDENCE_THRESHOLD = 50
+
+    # Хмарність у відсотках, яка робить спостереження ненадійним.
+    # > 70% = поверхню не видно, дані неможливо інтерпретувати.
+    CLOUD_COVER_THRESHOLD = 70.0
+
+    # --- HTTP Timeouts (суворі для Sidekiq-воркерів) ---
+    OPEN_TIMEOUT = 10  # секунд на TCP/TLS handshake
+    READ_TIMEOUT = 15  # секунд на відповідь (FIRMS API зазвичай < 5с)
+
     def initialize(alert)
       @alert = alert
+      @satellite_metadata = {}
     end
 
     def perform
@@ -38,11 +69,133 @@ module Dclimate
 
     private
 
-    # [MOCK]: Симуляція API-виклику до dClimate.
-    # У продакшені замінити на реальний HTTP-запит до dClimate API
-    # з координатами алерту та часовим вікном.
+    # ---------------------------------------------------------------
+    # 🛰️ HTTP-запит до dClimate API (FIRMS — Fire Radiative Power)
+    # ---------------------------------------------------------------
+    # Витягує координати алерту (tree → cluster geo_center → [0,0]),
+    # формує GET-запит до dClimate FIRMS endpoint з часовим вікном
+    # ±1 день від дати алерту, парсить JSON-відповідь та інтерпретує
+    # супутникові дані через порогові значення FRP/confidence/cloud_cover.
+    #
+    # При будь-якій мережевій помилці (timeout, HTTP 5xx, DNS failure)
+    # повертає :obscured_by_clouds → OrbitalLagError → Sidekiq retry.
     def query_dclimate_api
-      OUTCOMES.sample
+      lat, lng = @alert.coordinates
+      date = @alert.created_at.to_date
+
+      response_data = fetch_firms_data(lat, lng, date)
+      @satellite_metadata = response_data["metadata"] || {}
+
+      interpret_fire_data(response_data)
+    rescue Web3::HttpClient::RequestError => e
+      # Мережеві збої / HTTP 5xx / таймаути → безпечний fallback.
+      # Sidekiq ретраїтиме через OrbitalLagError до наступного прольоту.
+      Rails.logger.warn "☁️ [Cosmic Eye] dClimate API unavailable for alert ##{@alert.id}: #{e.message}"
+      :obscured_by_clouds
+    end
+
+    # GET-запит до dClimate FIRMS endpoint з координатами та часовим вікном.
+    # Авторизація через Bearer-токен з Rails credentials.
+    def fetch_firms_data(lat, lng, date)
+      api_key = Rails.application.credentials.dig(:dclimate, :api_key)
+
+      url = build_firms_url(lat, lng, date)
+
+      headers = { "Accept" => "application/json" }
+      headers["Authorization"] = "Bearer #{api_key}" if api_key.present?
+
+      response = Web3::HttpClient.get(url,
+        headers: headers,
+        open_timeout: OPEN_TIMEOUT,
+        read_timeout: READ_TIMEOUT,
+        service_name: "dClimate"
+      )
+
+      response.parsed_body
+    end
+
+    # Формує URL для FIRMS point query.
+    # dClimate geo-temporal API: /v4/geo/grid-history/{dataset}?lat=...&lon=...
+    def build_firms_url(lat, lng, date)
+      params = URI.encode_www_form(
+        latitude: lat,
+        longitude: lng,
+        start_date: date.iso8601,
+        end_date: (date + 1.day).iso8601
+      )
+
+      "#{DCLIMATE_BASE_URL}/v4/geo/grid-history/#{FIRMS_DATASET}?#{params}"
+    end
+
+    # ---------------------------------------------------------------
+    # 🔥 Oracle Logic: інтерпретація супутникових даних FIRMS
+    # ---------------------------------------------------------------
+    # Мапінг відповіді dClimate → один з трьох outcomes:
+    #
+    # 1. Немає даних (порожній масив / null) → :obscured_by_clouds
+    #    Причина: супутник не пролетів над цим регіоном у вказаний час,
+    #    або дані ще не оброблені (затримка NRT ~3 години).
+    #
+    # 2. Високий cloud_cover (> 70%) → :obscured_by_clouds
+    #    Причина: оптичний сенсор VIIRS не може "пробити" хмари.
+    #    Sidekiq ретраїтиме до наступного ясного прольоту.
+    #
+    # 3. Є дані, FRP ≥ 10 MW + confidence ≥ 50% → :fire_confirmed
+    #    NASA FIRMS детекція: значна термальна аномалія з високою
+    #    впевненістю. Тригерить InsurancePayoutWorker.
+    #
+    # 4. Є дані, ясне небо, але жодної термальної аномалії → :clear_sky_no_fire
+    #    Супутник бачить поверхню, але вогню немає. Можливе шахрайство.
+    #    Тригерить BurnCarbonTokensWorker (Slashing Protocol).
+    def interpret_fire_data(response_data)
+      entries = extract_entries(response_data)
+
+      # Немає даних → супутник не покрив цей регіон або NRT-затримка
+      return :obscured_by_clouds if entries.empty?
+
+      # Перевірка хмарності — оптичний сенсор не може верифікувати через хмари
+      cloud_cover = extract_cloud_cover(response_data)
+      return :obscured_by_clouds if cloud_cover && cloud_cover > CLOUD_COVER_THRESHOLD
+
+      # Шукаємо активний вогонь серед FIRMS-детекцій
+      fire_detected = entries.any? do |entry|
+        frp = entry["frp"].to_f
+        confidence = parse_confidence(entry["confidence"])
+        frp >= FIRE_FRP_THRESHOLD_MW && confidence >= FIRE_CONFIDENCE_THRESHOLD
+      end
+
+      fire_detected ? :fire_confirmed : :clear_sky_no_fire
+    end
+
+    # Витягує масив детекцій з відповіді dClimate.
+    # Підтримує два формати: {"data": [...]} та GeoJSON {"features": [...]}.
+    def extract_entries(response_data)
+      data = response_data["data"]
+      return data if data.is_a?(Array)
+
+      features = response_data["features"]
+      return features.filter_map { |f| f["properties"] } if features.is_a?(Array)
+
+      []
+    end
+
+    # Витягує cloud_cover з метаданих відповіді.
+    # dClimate може повертати його у metadata або як поле верхнього рівня.
+    def extract_cloud_cover(response_data)
+      cc = response_data.dig("metadata", "cloud_cover") || response_data["cloud_cover"]
+      cc&.to_f
+    end
+
+    # Парсить confidence з FIRMS — може бути числом (0–100) або рядком ("high"/"nominal"/"low").
+    # VIIRS використовує рядкові значення, MODIS — числові.
+    def parse_confidence(value)
+      case value
+      when Numeric then value
+      when "high" then 90
+      when "nominal" then 50
+      when "low" then 20
+      else value.to_i
+      end
     end
 
     # Супутник підтвердив пожежу/посуху → виплата страховки
@@ -77,8 +230,12 @@ module Dclimate
             "Satellite pass obscured by clouds/canopy for alert ##{@alert.id}. Retrying on next orbit."
     end
 
+    # Генерує dclimate_ref з метаданими супутника для аудит-трейлу.
+    # Формат: "dclimate:firms:{satellite}:{timestamp}:{nonce}"
     def generate_dclimate_ref
-      "dclimate:#{SecureRandom.hex(12)}"
+      timestamp = Time.current.utc.strftime("%Y%m%dT%H%M%SZ")
+      satellite = @satellite_metadata&.dig("satellite") || "UNKNOWN"
+      "dclimate:firms:#{satellite}:#{timestamp}:#{SecureRandom.hex(8)}"
     end
 
     # Знаходимо активні страховки кластера та тригеримо виплату
