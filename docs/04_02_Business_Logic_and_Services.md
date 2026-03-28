@@ -13,7 +13,7 @@
 
 * ~~**`Solana::MintingService`**: Поточна реалізація використовує `simulateTransaction` (Devnet). Потрібна заміна на `sendTransaction` + реальний Ed25519-підпис перед Mainnet.~~ ✅ **Виправлено** у PR #222 (commit 7ac8b01): реалізовано повний бінарний flow `getLatestBlockhash → SPL Transfer Message → Ed25519 sign → sendTransaction`. Тепер Mainnet-ready.
 * ~~**`Dclimate::VerificationService#query_dclimate_api`**: Заглушка (`OUTCOMES.sample`). Потрібна реальна HTTP-інтеграція з dClimate API.~~ ✅ **Виправлено** у PR #223 (commit 575ed53): реалізовано реальний HTTP-запит до NASA FIRMS через dClimate API з інтерпретацією FRP/confidence/cloud_cover та `OrbitalLagError` retry-логікою.
-* **`PuroEarthPassportWorker`**: `TODO` — заміна stub `tx_hash` на реальний `PuroEarth::PassportService`.
+* ~~**`PuroEarthPassportWorker`**: `TODO` — заміна stub `tx_hash` на реальний `PuroEarth::PassportService`.~~ ✅ **Виправлено** у PR #224 (commit 669a0dc): реалізовано `PuroEarth::PassportService` — canonical JSON SHA-256 → `anchorPassport(treeDid, bytes32)` на D-MRV Registry смарт-контракті Polygon. `PuroEarthPassportWorker` включає `ApplicationWeb3Worker`, делегує до `PassportService#anchor!`, планує `BlockchainConfirmationWorker`.
 * **`InsurancePayoutWorker` + `BlockchainMintingService`**: Метод `insurance_pool_requires_funding?` повертає `true` хардкодом — потрібна on-chain інтеграція з балансом DAO Treasury.
 * **`DailyAggregationWorker` `unique_for`**: Поточне значення `6.hours` (з коду "як є"). Рекомендовано збільшити до `24.hours` щоб запобігти повторному запуску за одну добу при ручних тригерах.
 * **`TokenomicsEvaluatorWorker` `unique_for`**: Поточне значення `30.minutes` (з коду). Рекомендовано `60.minutes` для точного захисту щогодинного cron-циклу.
@@ -136,6 +136,16 @@
 | **Вхід** | `telemetry_log_id:`, `created_at_iso:` або `transactions:` (AR relation) |
 | **Що робить** | Rollback при вичерпанні всіх Sidekiq-ретраїв у `MintCarbonCoinWorker`. Розблоковує `locked_balance` гаманця. Маркує `BlockchainTransaction.status = :failed`. |
 | **Вихід** | `nil`. Side effect: `wallet.release_locked_funds!`, `tx.update!(status: :failed)`, Turbo broadcast. |
+
+### `PuroEarth::PassportService`
+
+| | |
+|---|---|
+| **Файл** | `app/services/puro_earth/passport_service.rb` |
+| **Вхід** | `payload` (Hash: `tree_did`, `biomass_yield_kg`, `extraction_date`, `gps_coordinates`, `lifetime_telemetry_hash`) |
+| **Що робить** | **[MAINNET READY]** Anchors a cryptographic proof of a Biomass Passport onto Polygon for Puro.earth D-MRV (Digital Measurement, Reporting and Verification) / CORC generation. 1) Serializes payload to canonical JSON (deep-sorted keys — `deep_sort_keys` — for deterministic ordering regardless of Hash insertion order). 2) Computes SHA-256 digest as tamper-proof fingerprint. 3) Calls `anchorPassport(treeDid, bytes32(payloadHash))` on the D-MRV Registry smart contract on Polygon via `Web3::RpcConnectionPool` + `Eth::Contract`. Signing via `ORACLE_PRIVATE_KEY`. Follows `Ethereum::StateAnchorService` (bytes32 anchoring) and `Etherisc::ClaimService` (Polygon transact fire-and-forget) patterns. |
+| **Зовнішні виклики** | Polygon RPC (`ALCHEMY_POLYGON_RPC_URL`), `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS` (D-MRV Registry), `ORACLE_PRIVATE_KEY` |
+| **Вихід** | `tx_hash` (String, `"0x..."`). Raises `PuroEarth::PassportService::AnchoringError` on RPC failure, insufficient gas, or contract revert. |
 
 ### `Etherisc::ClaimService`
 
@@ -683,8 +693,8 @@
 | **Retry** | 5 |
 | **Тригер** | `EcosystemHealingWorker` при `biomass_extraction` |
 | **Вхід** | `maintenance_record_id` (Integer) |
-| **Сервіси** | — (TODO: `PuroEarth::PassportService`) |
-| **Side Effects** | `record.update!(biomass_passport_tx_hash:)`. |
+| **Сервіси** | `PuroEarth::PassportService.new(payload).anchor!` (canonical JSON SHA-256 → `anchorPassport(treeDid, bytes32)` на D-MRV Registry Polygon) |
+| **Side Effects** | `record.update!(biomass_passport_tx_hash: tx_hash)`. `BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)`. |
 
 ---
 
@@ -869,6 +879,7 @@ Financial action
 | **The Graph** | GraphQL | `the_graph_api_url` | TheGraph::QueryService |
 | **Polygon Hadron** | HTTPS REST | `hadron_api_key` / `HADRON_API_URL` | Polygon::HadronComplianceService |
 | **Etherisc DIP** | On-chain (Polygon) | `ETHERISC_DIP_CONTRACT_ADDRESS` | Etherisc::ClaimService |
+| **Puro.earth D-MRV Registry** | On-chain (Polygon) | `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS`, `ORACLE_PRIVATE_KEY` | PuroEarth::PassportService |
 | **KlimaDAO** | On-chain (Polygon) | `KLIMA_RETIREMENT_CONTRACT` | KlimaDao::RetirementService |
 | **Toucan Protocol** | On-chain (Polygon) | `TOUCAN_BRIDGE_CONTRACT_ADDRESS` | Toucan::BridgeService |
 | **Uniswap V3 Quoter** | On-chain (Polygon) | `POLYGON_RPC_URL` | PriceOracleService |
