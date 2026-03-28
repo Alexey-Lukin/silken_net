@@ -390,7 +390,7 @@ RSpec.describe Solana::MintingService do
             )
           when "getTokenAccountsByOwner"
             Web3::HttpClient::Response.new(
-              { "jsonrpc" => "2.0", "result" => { "value" => [ { "pubkey" => "Reso1vedATA111111111111111111111111111111111" } ] } }.to_json
+              { "jsonrpc" => "2.0", "result" => { "value" => [ { "pubkey" => "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM" } ] } }.to_json
             )
           when "sendTransaction"
             Web3::HttpClient::Response.new(

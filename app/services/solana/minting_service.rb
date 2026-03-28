@@ -220,13 +220,12 @@ module Solana
                           [ amount_lamports ].pack("Q<")
 
       # Instruction: program_id_index=3, account_indices=[1,2,0], data=instruction_data
-      instruction = [
-        3,                            # program_id_index (SPL Token Program)
-        encode_compact_u16(3),        # num accounts
-        [ 1, 2, 0 ].pack("C3"),      # account indices: source, dest, authority
-        encode_compact_u16(instruction_data.bytesize),
-        instruction_data
-      ].map { |part| part.is_a?(String) ? part : part.to_s }.join
+      instruction = String.new(encoding: Encoding::BINARY)
+      instruction << [ 3 ].pack("C")                              # program_id_index (SPL Token Program)
+      instruction << encode_compact_u16(3)                         # num accounts
+      instruction << [ 1, 2, 0 ].pack("C3")                       # account indices: source, dest, authority
+      instruction << encode_compact_u16(instruction_data.bytesize) # data length
+      instruction << instruction_data                              # instruction data
 
       # Збираємо повідомлення
       message = String.new(encoding: Encoding::BINARY)
@@ -355,7 +354,14 @@ module Solana
 
       # Preserve leading zeros (Base58 leading '1's → 0x00 bytes)
       leading_ones = address.length - address.lstrip("1").length
-      ([ 0 ] * leading_ones + bytes).pack("C*").rjust(32, "\x00")
+      raw = ([ 0 ] * leading_ones + bytes).pack("C*")
+
+      # Solana public keys are exactly 32 bytes; pad short values, reject oversized ones
+      if raw.bytesize > 32
+        raise "🛑 [Solana] Invalid address: decoded #{raw.bytesize} bytes, expected ≤ 32"
+      end
+
+      raw.rjust(32, "\x00")
     end
 
     # Solana compact-u16 encoding (variable-length unsigned integer)
