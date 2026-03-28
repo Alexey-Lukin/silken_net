@@ -7,7 +7,7 @@ FactoryBot.define do
     token_type { :carbon_coin }
     status { :confirmed }
     to_address { "0x1234567890abcdef1234567890abcdef12345678" }
-    tx_hash { SecureRandom.hex(32) }
+    tx_hash { "0x#{SecureRandom.hex(32)}" }
     notes { "Test minting transaction" }
   end
 end

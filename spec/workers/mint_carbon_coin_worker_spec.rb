@@ -35,8 +35,8 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
     end
 
     it "does nothing when wallet has no pending transactions" do
-      tx1.update!(status: :confirmed, tx_hash: SecureRandom.hex(32))
-      tx2.update!(status: :confirmed, tx_hash: SecureRandom.hex(32))
+      tx1.update!(status: :confirmed, tx_hash: "0x#{SecureRandom.hex(32)}")
+      tx2.update!(status: :confirmed, tx_hash: "0x#{SecureRandom.hex(32)}")
 
       described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
 
@@ -117,7 +117,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
     it "skips transactions that are already confirmed" do
       telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
       tx = create(:blockchain_transaction, wallet: wallet, status: :confirmed,
-                                           tx_hash: SecureRandom.hex(32))
+                                           tx_hash: "0x#{SecureRandom.hex(32)}")
       original_balance = wallet.balance
       original_locked = wallet.locked_balance
 
@@ -336,7 +336,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
     it "returns early when no pending transactions match the batch IDs" do
       # Create a transaction that's already confirmed (not pending)
       tx = create(:blockchain_transaction, wallet: wallet, status: :confirmed,
-                                           tx_hash: SecureRandom.hex(32))
+                                           tx_hash: "0x#{SecureRandom.hex(32)}")
 
       # Call process_batch with IDs of non-pending transactions
       worker = described_class.new
