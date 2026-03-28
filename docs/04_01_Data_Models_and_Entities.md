@@ -43,7 +43,14 @@
   - `CONCURRENTLY` — Zero-Downtime: без table-level lock, без блокування writes під час індексування
   - `WHERE tx_hash IS NOT NULL` — partial index: виключає `pending/processing` рядки (без tx_hash), зменшує розмір індексу
 - ~~**🟠 P1 — `Actuator#commands dependent: :destroy` (OOM ризик при деактивації Gateway):** `app/models/actuator.rb:9` — при видаленні Gateway Rails завантажував кожну `ActuatorCommand` у Ruby і запускав AASM-колбеки + Turbo broadcasts. При 1000+ команд на актуатор → OOM.~~ ✅ **ВИРІШЕНО**: Замінено на `dependent: :delete_all` — один SQL DELETE замість N Ruby-об'єктів. `ActuatorCommand` не несе фінансових зобов'язань (не впливає на `Wallet` балans або `BlockchainTransaction`), тому bypass callbacks безпечний.
-- **🟠 P1 — `blockchain_transactions` не партиціонована:** При планетарному масштабі (1B дерев × щомісячний мінтинг ≈ 12B рядків/рік) повний Sequential Scan деградує до хвилин. Необхідне RANGE-партиціонування по `created_at` (квартальне або місячне) аналогічно `telemetry_logs`. Потребує `pg_partman` або ручного `PartitionMaintenanceWorker` для автоматичного DDL.
+- ~~**🟠 P1 — `blockchain_transactions` не партиціонована:** При планетарному масштабі (1B дерев × щомісячний мінтинг ≈ 12B рядків/рік) повний Sequential Scan деградує до хвилин. Необхідне RANGE-партиціонування по `created_at` (квартальне або місячне) аналогічно `telemetry_logs`. Потребує `pg_partman` або ручного `PartitionMaintenanceWorker` для автоматичного DDL.~~ ✅ **ВИРІШЕНО** у PR #221 ([migration 20260328120000](db/migrate/20260328120000_partition_blockchain_transactions_by_created_at.rb)):
+  - Стратегія: rename → recreate as partitioned → migrate data → drop old (аналогічно `telemetry_logs`)
+  - Composite PK `(id, created_at)` — обов'язкова умова PostgreSQL declarative partitioning (partition key повинен входити в PK)
+  - `BlockchainTransaction.self.primary_key = "id"` — Rails використовує `id` для `dom_id`, lookups і асоціацій (composite PK прозорий для AR)
+  - Default partition `blockchain_transactions_default` + місячні партиції `y2026m01`..`y2026m06`
+  - Всі 8 індексів перестворені на новій партиційованій таблиці (без CONCURRENTLY — PostgreSQL не підтримує CONCURRENTLY на partitioned tables; індекси автоматично пропагуються на всі партиції)
+  - FK-constraints перестворені (`wallet_id → wallets`, `cluster_id → clusters`) через `ALTER TABLE` (без ONLY) для пропагації на партиції
+  - `PartitionMaintenanceWorker::PARTITIONED_TABLES` оновлено: тепер обслуговує 3 таблиці (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`)
 
 ---
 
@@ -69,10 +76,11 @@
 |---------|-----------|---------|
 | `telemetry_logs` | RANGE by month | Мільйони рядків/місяць від Солдатів |
 | `gateway_telemetry_logs` | RANGE by month | Тисячі рядків/місяць від Королев |
+| `blockchain_transactions` | RANGE by month | ≈ 12B рядків/рік при 1B дерев × щомісячний SCC мінтинг; composite PK `(id, created_at)` |
 
 Поточні партиції: `y2026m01` → `y2026m06` + `_default` (для старих/нових даних).
 
-**Автоматизація:** `PartitionMaintenanceWorker` (черга `default`) щодня о 02:30 UTC гарантує існування партицій для **поточного та наступного місяця**. Назва партиції формується за шаблоном `<table>_y<YYYY>m<MM>` (напр. `telemetry_logs_y2026m04`). Операція ідемпотентна — `CREATE TABLE IF NOT EXISTS`.
+**Автоматизація:** `PartitionMaintenanceWorker` (черга `default`) щодня о 02:30 UTC гарантує існування партицій для **поточного та наступного місяця** для всіх трьох таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`). Назва партиції формується за шаблоном `<table>_y<YYYY>m<MM>` (напр. `blockchain_transactions_y2026m04`). Операція ідемпотентна — `CREATE TABLE IF NOT EXISTS`.
 
 ---
 
@@ -815,7 +823,7 @@ any ──report_fault──► faulty
 
 **Методи:** `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
 
-**Scalability Note (P1 Blocker — відкритий):** Таблиця не партиціонована. При 1B дерев × щомісячний SCC мінтинг ≈ 12B рядків/рік. Необхідне RANGE-партиціонування по `created_at` (аналогічно `telemetry_logs`). Відкрите завдання — додати `PartitionMaintenanceWorker` підтримку для `blockchain_transactions`.
+**Scalability (P1 — ✅ ВИРІШЕНО у PR #221):** Таблиця переведена на PostgreSQL Declarative RANGE Partitioning по `created_at` (місячні партиції). Composite PK `(id, created_at)` — вимога partitioning. `self.primary_key = "id"` — Rails використовує `id` для `dom_id` та асоціацій. Всі 8 індексів перестворені (автоматично пропагуються на партиції). `PartitionMaintenanceWorker` тепер підтримує `blockchain_transactions` поряд з `telemetry_logs` та `gateway_telemetry_logs`.
 
 ---
 
@@ -1080,6 +1088,14 @@ Cluster, User, Organization
 | `audit_logs` | `index_audit_logs_on_org_and_created` | BTREE DESC | Пагінація аудиту |
 | `audit_logs` | `index_audit_logs_on_ip_address` | PARTIAL | ip_address IS NOT NULL |
 | `bio_contract_firmwares` | `index_bio_contract_firmwares_on_is_active` | PARTIAL | is_active = true |
+| `blockchain_transactions` | `index_blockchain_transactions_on_wallet_id` | BTREE | FK lookup по wallet |
+| `blockchain_transactions` | `index_blockchain_transactions_on_wallet_id_and_status` | BTREE | Фільтр транзакцій по статусу для wallet |
+| `blockchain_transactions` | `index_blockchain_transactions_on_cluster_id` | BTREE | FK lookup по cluster (slashing-аудит) |
+| `blockchain_transactions` | `index_blockchain_transactions_on_tx_hash` | PARTIAL (WHERE tx_hash IS NOT NULL) | `BlockchainConfirmationWorker` lookup; виключає pending/processing |
+| `blockchain_transactions` | `index_blockchain_transactions_on_block_number` | BTREE | Запити по номеру блоку |
+| `blockchain_transactions` | `index_blockchain_transactions_on_confirmed_at` | BTREE | Часові запити підтверджених TX |
+| `blockchain_transactions` | `index_blockchain_transactions_on_sourceable` | BTREE (sourceable_type, sourceable_id) | Поліморфний зворотній lookup |
+| `blockchain_transactions` | `index_blockchain_transactions_on_chainlink_request_id` | BTREE | Chainlink Oracle correlation |
 
 ---
 
@@ -1108,7 +1124,7 @@ Organization
   │     ├── EwsAlerts (delete_all)
   │     └── AiInsights polymorphic (delete_all)
   ├── Wallets (direct FK, delete_all)
-  │     └── BlockchainTransactions (delete_all)
+  │     └── BlockchainTransactions (delete_all) ← PARTITION
   └── AuditLogs (delete_all)
 
 User
@@ -1141,7 +1157,7 @@ Polymorphic:
 | **GREATEST для race conditions** | `mark_seen!` в Tree та Gateway — атомарне оновлення без дублів |
 | **delete_all для масових таблиць** | Телеметрія, тривоги, логи, ActuatorCommands — уникнення OOM при DELETE |
 | **restrict_with_error для фінансів** | NaasContract, ParametricInsurance, Users — захист аудит-слідів |
-| **Партиціонування по місяцях** | telemetry_logs, gateway_telemetry_logs — прунінг старих даних |
+| **Партиціонування по місяцях** | telemetry_logs, gateway_telemetry_logs, blockchain_transactions — прунінг старих даних |
 | **Counter Cache** | `active_trees_count` в Cluster — уникнення COUNT на мільйонах рядків |
 | **Поліморфізм** | AiInsight, MaintenanceRecord, AuditLog, BlockchainTransaction |
 | **PostGIS GIST** | Cluster.geo_boundary — O(log n) геопросторовий пошук |
