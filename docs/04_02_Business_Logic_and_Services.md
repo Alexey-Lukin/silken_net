@@ -11,7 +11,7 @@
 
 ## 🛑 Блокери (Blockers / Needs Action)
 
-* **`Solana::MintingService`**: Поточна реалізація використовує `simulateTransaction` (Devnet). Потрібна заміна на `sendTransaction` + реальний Ed25519-підпис перед Mainnet.
+* ~~**`Solana::MintingService`**: Поточна реалізація використовує `simulateTransaction` (Devnet). Потрібна заміна на `sendTransaction` + реальний Ed25519-підпис перед Mainnet.~~ ✅ **Виправлено** у PR #222 (commit 7ac8b01): реалізовано повний бінарний flow `getLatestBlockhash → SPL Transfer Message → Ed25519 sign → sendTransaction`. Тепер Mainnet-ready.
 * **`Dclimate::VerificationService#query_dclimate_api`**: Заглушка (`OUTCOMES.sample`). Потрібна реальна HTTP-інтеграція з dClimate API.
 * **`PuroEarthPassportWorker`**: `TODO` — заміна stub `tx_hash` на реальний `PuroEarth::PassportService`.
 * **`InsurancePayoutWorker` + `BlockchainMintingService`**: Метод `insurance_pool_requires_funding?` повертає `true` хардкодом — потрібна on-chain інтеграція з балансом DAO Treasury.
@@ -275,9 +275,9 @@
 |---|---|
 | **Файл** | `app/services/solana/minting_service.rb` |
 | **Вхід** | `telemetry_log` (TelemetryLog AR instance) |
-| **Що робить** | USDC мікро-винагороди на Solana. Guard: `verified_by_iotex?` + `oracle_status == "fulfilled"`. Розраховує `reward_lamports = 10_000 + (growth_points × 100)`, де `growth_points` — 6-бітне поле телеметрії (0–63, зі статус-байту солдата). Діапазон: 10_000–16_300 lamports (0.01–0.0163 USDC). JSON RPC `simulateTransaction` (Devnet) → `sendTransaction` (Mainnet). Ed25519 підпис через `Ed25519Crypto::SigningService`. |
-| **Зовнішні виклики** | `Web3::HttpClient.post` → Solana RPC JSON API |
-| **Вихід** | `tx_signature` (String). Створює `BlockchainTransaction` (audit). |
+| **Що робить** | USDC мікро-винагороди на Solana. **[MAINNET READY]** Guard: `verified_by_iotex?` + `oracle_status == "fulfilled"`. Розраховує `reward_lamports = 10_000 + (growth_points × 100)`, де `growth_points` — 6-бітне поле телеметрії (0–63). Діапазон: 10_000–16_300 lamports (0.01–0.0163 USDC). 4-крокова транзакція: `getLatestBlockhash` → бінарний SPL Token Transfer Message (compact-u16 + account keys + Ed25519-header) → Ed25519 підпис через `Ed25519Crypto::SigningService` (hex-keypair з `SOLANA_WALLET_KEYPAIR`) → `sendTransaction` (base64). ATA отримувача резолюється динамічно через `getTokenAccountsByOwner` RPC. `SOLANA_WALLET_KEYPAIR` (mandatory), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS` — обов'язкові ENV. |
+| **Зовнішні виклики** | `Web3::HttpClient.post` → Solana RPC JSON API (`getLatestBlockhash`, `getTokenAccountsByOwner`, `sendTransaction`) |
+| **Вихід** | `tx_signature` (String). Створює `BlockchainTransaction` зі статусом `:sent` (очікує `BlockchainConfirmationWorker`). |
 
 ### `Celo::CommunityRewardService`
 
@@ -858,7 +858,7 @@ Financial action
 |--------|----------------|-------------------|---------------|
 | **Polygon RPC** (Alchemy) | EVM JSON-RPC | `ALCHEMY_POLYGON_RPC_URL` | BlockchainMintingService, BlockchainBurningService, ChainAuditService, ChainlinkDispatchService, KlimaDao, ToucanBridgeService, PriceOracleService |
 | **Ethereum L1 RPC** | EVM JSON-RPC | `ALCHEMY_ETHEREUM_RPC_URL` | StateAnchorService |
-| **Solana RPC** | JSON-RPC 2.0 | `SOLANA_RPC_URL` | Solana::MintingService |
+| **Solana RPC** | JSON-RPC 2.0 | `SOLANA_RPC_URL`, `SOLANA_WALLET_KEYPAIR` (mandatory), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS` | Solana::MintingService |
 | **Celo RPC** | EVM JSON-RPC | `CELO_RPC_URL` | Celo::CommunityRewardService |
 | **IoTeX W3bstream** | HTTPS REST | `iotex_w3bstream_url`, `iotex_api_key` | Iotex::W3bstreamVerificationService |
 | **peaq Network** | HTTPS REST | `peaq_node_url`, `peaq_signing_key` | Peaq::DidRegistryService |
