@@ -27,7 +27,12 @@ end
     allow(Eth::Key).to receive(:new).and_return(mock_key)
     allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
     allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: fake_tx_hash)
+    # [B-05]: Stub balanceOf → 0 (below threshold) so insurance_pool_requires_funding? defaults to true.
+    # Individual tests override this for specific scenarios.
+    allow(mock_client).to receive(:call).and_return(0)
     allow(Kredis).to receive(:lock).and_yield
+    Web3::RpcConnectionPool.reset!
+    Rails.cache.delete(described_class::TREASURY_CACHE_KEY)
   end
 
   let(:fake_tx_hash) { "0x" + "f" * 64 }
@@ -542,9 +547,93 @@ end
   end
 
   describe "#insurance_pool_requires_funding?" do
-    it "returns true (stub for underfunded pool)" do
-      service = described_class.new([ -1 ])
-      expect(service.send(:insurance_pool_requires_funding?)).to be true
+    let(:service) { described_class.new([ -1 ]) }
+
+    context "when treasury balance is below threshold" do
+      before { allow(mock_client).to receive(:call).and_return(0) }
+
+      it "returns true" do
+        expect(service.send(:insurance_pool_requires_funding?)).to be true
+      end
+    end
+
+    context "when treasury balance is above threshold" do
+      before do
+        # 200,000 SCC in wei (above 100,000 threshold)
+        allow(mock_client).to receive(:call).and_return(200_000 * 10**18)
+      end
+
+      it "returns false" do
+        expect(service.send(:insurance_pool_requires_funding?)).to be false
+      end
+    end
+
+    context "when treasury balance equals threshold" do
+      before do
+        allow(mock_client).to receive(:call).and_return(100_000 * 10**18)
+      end
+
+      it "returns false" do
+        expect(service.send(:insurance_pool_requires_funding?)).to be false
+      end
+    end
+
+    context "when RPC call fails" do
+      before do
+        allow(mock_client).to receive(:call).and_raise(StandardError, "RPC 429 Too Many Requests")
+      end
+
+      it "returns true as safe fallback" do
+        expect(service.send(:insurance_pool_requires_funding?)).to be true
+      end
+
+      it "logs the error" do
+        expect(Rails.logger).to receive(:error).with(/DAO Treasury balance check failed/)
+        service.send(:insurance_pool_requires_funding?)
+      end
+    end
+
+    context "when RPC times out" do
+      before do
+        allow(mock_client).to receive(:call).and_raise(Timeout::Error, "execution expired")
+      end
+
+      it "returns true as safe fallback" do
+        expect(service.send(:insurance_pool_requires_funding?)).to be true
+      end
+    end
+
+    context "with caching" do
+      it "caches the result and does not call RPC again" do
+        allow(mock_client).to receive(:call).and_return(0)
+
+        service.send(:insurance_pool_requires_funding?)
+        service.send(:insurance_pool_requires_funding?)
+
+        # balanceOf should only be called once (cached after first call)
+        expect(mock_client).to have_received(:call).once
+      end
+
+      it "does not cache RPC failures" do
+        call_count = 0
+        allow(mock_client).to receive(:call) do
+          call_count += 1
+          raise StandardError, "RPC error" if call_count == 1
+
+          200_000 * 10**18
+        end
+
+        # First call fails → true (not cached)
+        expect(service.send(:insurance_pool_requires_funding?)).to be true
+        # Second call succeeds → false (now cached)
+        expect(service.send(:insurance_pool_requires_funding?)).to be false
+      end
+    end
+  end
+
+  describe "INSURANCE_POOL_THRESHOLD constant" do
+    it "is defined as 100_000" do
+      expect(described_class::INSURANCE_POOL_THRESHOLD).to eq(100_000)
     end
   end
 end
