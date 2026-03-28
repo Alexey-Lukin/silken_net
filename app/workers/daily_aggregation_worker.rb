@@ -7,7 +7,7 @@ class DailyAggregationWorker
   # [UNIQUE_FOR]: Sidekiq Enterprise Unique Jobs замінює стороннє lock: :until_executed.
   # Нативна реалізація ефективніша (Redis SETNX замість Lua-скриптів)
   # та підтримується Sidekiq core team.
-  sidekiq_options queue: "low", retry: 3, unique_for: 6.hours
+  sidekiq_options queue: "low", retry: 3, unique_for: 24.hours
 
   def perform(date_string = nil)
     # 1. ВИЗНАЧЕННЯ ЦІЛЬОВОЇ ДАТИ (The Project Pulse)

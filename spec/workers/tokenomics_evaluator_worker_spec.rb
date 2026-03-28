@@ -94,8 +94,8 @@ RSpec.describe TokenomicsEvaluatorWorker, type: :worker do
       expect(described_class.get_sidekiq_options["retry"]).to eq(3)
     end
 
-    it "has unique_for set to 30 minutes" do
-      expect(described_class.get_sidekiq_options["unique_for"]).to eq(30.minutes)
+    it "has unique_for set to 60 minutes" do
+      expect(described_class.get_sidekiq_options["unique_for"]).to eq(60.minutes)
     end
   end
 

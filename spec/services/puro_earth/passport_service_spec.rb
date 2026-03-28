@@ -127,7 +127,7 @@ RSpec.describe PuroEarth::PassportService do
     end
 
     it "wraps missing ENV in AnchoringError" do
-      allow(ENV).to receive(:fetch).with("ORACLE_PRIVATE_KEY").and_call_original
+      allow(ENV).to receive(:fetch).with("ORACLE_PRIVATE_KEY").and_raise(KeyError.new("key not found: \"ORACLE_PRIVATE_KEY\""))
 
       expect {
         described_class.new(payload).anchor!

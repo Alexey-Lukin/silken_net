@@ -8,6 +8,30 @@ class BlockchainMintingService < ApplicationService
   # 2% від кожного карбонового мінтингу направляється до DAO Treasury, якщо страховий пул потребує фінансування.
   DYNAMIC_TAX_RATE = BigDecimal("0.02")
 
+  # [B-05 FIX]: Цільовий поріг балансу DAO Treasury (у токенах SCC).
+  # Якщо баланс DAO Treasury < порогу — Dynamic Tax активний (2% від емісії).
+  # Якщо баланс >= порогу — податок вимикається, інвестори отримують 100%.
+  INSURANCE_POOL_THRESHOLD = 100_000
+  INSURANCE_POOL_THRESHOLD_WEI = INSURANCE_POOL_THRESHOLD * 10**18
+
+  # Мінімальний ABI для читання балансу ERC-20 (balanceOf).
+  BALANCE_OF_ABI = [
+    {
+      "inputs" => [ { "internalType" => "address", "name" => "account", "type" => "address" } ],
+      "name" => "balanceOf",
+      "outputs" => [ { "internalType" => "uint256", "name" => "", "type" => "uint256" } ],
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ].to_json
+
+  # Кеш-ключ та TTL для on-chain запиту до DAO Treasury.
+  # 15 хвилин — оптимальний TTL: стан пулу змінюється рідко (лише при страхових виплатах),
+  # а максимальне навантаження на RPC = 4 запити/годину замість тисяч.
+  TREASURY_CACHE_KEY = "dao_treasury_needs_funding"
+  TREASURY_CACHE_TTL = 15.minutes
+  TREASURY_RPC_TIMEOUT = 10
+
   # ABI оновлено для підтримки поштучного mint та пакетного batchMint
   CONTRACT_ABI = [
     {
@@ -188,11 +212,35 @@ class BlockchainMintingService < ApplicationService
     Web3::WeiConverter.to_wei(amount)
   end
 
-  # [HYBRID PROTOCOL GAIA]: Stub для перевірки стану Parametric Insurance Pool.
-  # Повертає true, якщо страховий пул потребує додаткового фінансування (Black Swan Protection).
-  # TODO: Інтегрувати з реальним балансом DAO Treasury через on-chain query.
+  # [B-05 FIX]: Cached On-Chain Oracle для перевірки стану Parametric Insurance Pool.
+  # Виконує eth_call balanceOf на SCC-контракті для адреси DAO Treasury.
+  # Результат кешується на 15 хвилин — стан пулу змінюється рідко (лише при страхових виплатах).
+  # Безпечний фолбек: при збої RPC повертає true (краще перефінансувати пул, ніж недофінансувати).
   def insurance_pool_requires_funding?
+    Rails.cache.fetch(TREASURY_CACHE_KEY, expires_in: TREASURY_CACHE_TTL) do
+      fetch_treasury_balance_wei < INSURANCE_POOL_THRESHOLD_WEI
+    end
+  rescue StandardError => e
+    Rails.logger.error "🛑 [Web3] DAO Treasury balance check failed: #{e.message}"
     true
+  end
+
+  # Повертає баланс DAO Treasury у wei (Integer) для точного порівняння без Float.
+  def fetch_treasury_balance_wei
+    client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
+    contract = Eth::Contract.from_abi(
+      name: "SilkenCarbonCoin",
+      address: ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS"),
+      abi: BALANCE_OF_ABI
+    )
+
+    treasury_address = ENV.fetch("DAO_TREASURY_ADDRESS")
+
+    raw = Timeout.timeout(TREASURY_RPC_TIMEOUT) do
+      client.call(contract, "balanceOf", treasury_address)
+    end
+
+    Integer(raw)
   end
 
   def broadcast_tx_update(transaction)
