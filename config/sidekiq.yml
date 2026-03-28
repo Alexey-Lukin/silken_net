@@ -50,8 +50,8 @@
       class: ClusterHealthCheckWorker
 
     # --- ЦИКЛ ПАРТИЦІЙ (The Partition Guardian) ---
-    # Автоматичне створення партицій для telemetry_logs та gateway_telemetry_logs.
-    # Гарантує, що партиція на наступний місяць існує задовго до 1-го числа.
+    # Автоматичне створення партицій для telemetry_logs, gateway_telemetry_logs
+    # та blockchain_transactions. Гарантує, що партиція на наступний місяць існує задовго до 1-го числа.
     partition_maintenance:
       cron: '30 2 * * *' # О 02:30 UTC щодня, після аудиту контрактів
       class: PartitionMaintenanceWorker

@@ -28,6 +28,12 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
           expect(connection).to have_received(:execute).with(
             a_string_matching(/"gateway_telemetry_logs_y2026m04"/)
           )
+          expect(connection).to have_received(:execute).with(
+            a_string_matching(/"blockchain_transactions_y2026m03"/)
+          )
+          expect(connection).to have_received(:execute).with(
+            a_string_matching(/"blockchain_transactions_y2026m04"/)
+          )
         end
       end
 
@@ -50,6 +56,9 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
 
           expect(connection).to have_received(:execute).with(
             a_string_matching(/"gateway_telemetry_logs_y2027m01"/)
+          )
+          expect(connection).to have_received(:execute).with(
+            a_string_matching(/"blockchain_transactions_y2027m01"/)
           )
         end
       end
@@ -102,8 +111,8 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
 
       it "logs partition creation summary with correct count" do
         expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*Перевірка партицій/).ordered
-        expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*OK/).exactly(4).times.ordered
-        expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*Завершено.*Створено нових партицій: 4/).ordered
+        expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*OK/).exactly(6).times.ordered
+        expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*Завершено.*Створено нових партицій: 6/).ordered
 
         described_class.new.perform
       end
