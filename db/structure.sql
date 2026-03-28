@@ -399,56 +399,8 @@ CREATE TABLE public.blockchain_transactions (
     chainlink_request_id character varying,
     zk_proof_ref character varying,
     blockchain_network character varying DEFAULT 'evm'::character varying
-);
-
-
---
--- Name: COLUMN blockchain_transactions.gas_price; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.blockchain_transactions.gas_price IS 'Gas price in wei at time of transaction';
-
-
---
--- Name: COLUMN blockchain_transactions.gas_used; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.blockchain_transactions.gas_used IS 'Gas units consumed by the transaction';
-
-
---
--- Name: COLUMN blockchain_transactions.cumulative_gas_cost; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.blockchain_transactions.cumulative_gas_cost IS 'Total gas cost in MATIC/POL (gas_price * gas_used)';
-
-
---
--- Name: COLUMN blockchain_transactions.block_number; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.blockchain_transactions.block_number IS 'Block number where transaction was included';
-
-
---
--- Name: COLUMN blockchain_transactions.nonce; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.blockchain_transactions.nonce IS 'EVM transaction nonce for idempotency';
-
-
---
--- Name: COLUMN blockchain_transactions.sent_at; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.blockchain_transactions.sent_at IS 'Timestamp when transaction was broadcast to mempool';
-
-
---
--- Name: COLUMN blockchain_transactions.confirmed_at; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.blockchain_transactions.confirmed_at IS 'Timestamp when transaction was confirmed on-chain';
+)
+PARTITION BY RANGE (created_at);
 
 
 --
@@ -468,6 +420,237 @@ CREATE SEQUENCE public.blockchain_transactions_id_seq
 --
 
 ALTER SEQUENCE public.blockchain_transactions_id_seq OWNED BY public.blockchain_transactions.id;
+
+
+--
+-- Name: blockchain_transactions_default; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_transactions_default (
+    id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
+    wallet_id bigint,
+    amount numeric,
+    token_type integer,
+    status integer,
+    tx_hash character varying,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    to_address character varying,
+    error_message text,
+    sourceable_id bigint,
+    sourceable_type character varying,
+    cluster_id bigint,
+    locked_points integer,
+    gas_price numeric,
+    gas_used numeric,
+    cumulative_gas_cost numeric,
+    block_number bigint,
+    nonce integer,
+    sent_at timestamp(6) without time zone,
+    confirmed_at timestamp(6) without time zone,
+    chainlink_request_id character varying,
+    zk_proof_ref character varying,
+    blockchain_network character varying DEFAULT 'evm'::character varying
+);
+
+
+--
+-- Name: blockchain_transactions_y2026m01; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_transactions_y2026m01 (
+    id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
+    wallet_id bigint,
+    amount numeric,
+    token_type integer,
+    status integer,
+    tx_hash character varying,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    to_address character varying,
+    error_message text,
+    sourceable_id bigint,
+    sourceable_type character varying,
+    cluster_id bigint,
+    locked_points integer,
+    gas_price numeric,
+    gas_used numeric,
+    cumulative_gas_cost numeric,
+    block_number bigint,
+    nonce integer,
+    sent_at timestamp(6) without time zone,
+    confirmed_at timestamp(6) without time zone,
+    chainlink_request_id character varying,
+    zk_proof_ref character varying,
+    blockchain_network character varying DEFAULT 'evm'::character varying
+);
+
+
+--
+-- Name: blockchain_transactions_y2026m02; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_transactions_y2026m02 (
+    id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
+    wallet_id bigint,
+    amount numeric,
+    token_type integer,
+    status integer,
+    tx_hash character varying,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    to_address character varying,
+    error_message text,
+    sourceable_id bigint,
+    sourceable_type character varying,
+    cluster_id bigint,
+    locked_points integer,
+    gas_price numeric,
+    gas_used numeric,
+    cumulative_gas_cost numeric,
+    block_number bigint,
+    nonce integer,
+    sent_at timestamp(6) without time zone,
+    confirmed_at timestamp(6) without time zone,
+    chainlink_request_id character varying,
+    zk_proof_ref character varying,
+    blockchain_network character varying DEFAULT 'evm'::character varying
+);
+
+
+--
+-- Name: blockchain_transactions_y2026m03; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_transactions_y2026m03 (
+    id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
+    wallet_id bigint,
+    amount numeric,
+    token_type integer,
+    status integer,
+    tx_hash character varying,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    to_address character varying,
+    error_message text,
+    sourceable_id bigint,
+    sourceable_type character varying,
+    cluster_id bigint,
+    locked_points integer,
+    gas_price numeric,
+    gas_used numeric,
+    cumulative_gas_cost numeric,
+    block_number bigint,
+    nonce integer,
+    sent_at timestamp(6) without time zone,
+    confirmed_at timestamp(6) without time zone,
+    chainlink_request_id character varying,
+    zk_proof_ref character varying,
+    blockchain_network character varying DEFAULT 'evm'::character varying
+);
+
+
+--
+-- Name: blockchain_transactions_y2026m04; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_transactions_y2026m04 (
+    id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
+    wallet_id bigint,
+    amount numeric,
+    token_type integer,
+    status integer,
+    tx_hash character varying,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    to_address character varying,
+    error_message text,
+    sourceable_id bigint,
+    sourceable_type character varying,
+    cluster_id bigint,
+    locked_points integer,
+    gas_price numeric,
+    gas_used numeric,
+    cumulative_gas_cost numeric,
+    block_number bigint,
+    nonce integer,
+    sent_at timestamp(6) without time zone,
+    confirmed_at timestamp(6) without time zone,
+    chainlink_request_id character varying,
+    zk_proof_ref character varying,
+    blockchain_network character varying DEFAULT 'evm'::character varying
+);
+
+
+--
+-- Name: blockchain_transactions_y2026m05; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_transactions_y2026m05 (
+    id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
+    wallet_id bigint,
+    amount numeric,
+    token_type integer,
+    status integer,
+    tx_hash character varying,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    to_address character varying,
+    error_message text,
+    sourceable_id bigint,
+    sourceable_type character varying,
+    cluster_id bigint,
+    locked_points integer,
+    gas_price numeric,
+    gas_used numeric,
+    cumulative_gas_cost numeric,
+    block_number bigint,
+    nonce integer,
+    sent_at timestamp(6) without time zone,
+    confirmed_at timestamp(6) without time zone,
+    chainlink_request_id character varying,
+    zk_proof_ref character varying,
+    blockchain_network character varying DEFAULT 'evm'::character varying
+);
+
+
+--
+-- Name: blockchain_transactions_y2026m06; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blockchain_transactions_y2026m06 (
+    id bigint DEFAULT nextval('public.blockchain_transactions_id_seq'::regclass) NOT NULL,
+    wallet_id bigint,
+    amount numeric,
+    token_type integer,
+    status integer,
+    tx_hash character varying,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    to_address character varying,
+    error_message text,
+    sourceable_id bigint,
+    sourceable_type character varying,
+    cluster_id bigint,
+    locked_points integer,
+    gas_price numeric,
+    gas_used numeric,
+    cumulative_gas_cost numeric,
+    block_number bigint,
+    nonce integer,
+    sent_at timestamp(6) without time zone,
+    confirmed_at timestamp(6) without time zone,
+    chainlink_request_id character varying,
+    zk_proof_ref character varying,
+    blockchain_network character varying DEFAULT 'evm'::character varying
+);
 
 
 --
@@ -1520,6 +1703,55 @@ ALTER SEQUENCE public.wallets_id_seq OWNED BY public.wallets.id;
 
 
 --
+-- Name: blockchain_transactions_default; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockchain_transactions_default DEFAULT;
+
+
+--
+-- Name: blockchain_transactions_y2026m01; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockchain_transactions_y2026m01 FOR VALUES FROM ('2026-01-01 00:00:00') TO ('2026-02-01 00:00:00');
+
+
+--
+-- Name: blockchain_transactions_y2026m02; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockchain_transactions_y2026m02 FOR VALUES FROM ('2026-02-01 00:00:00') TO ('2026-03-01 00:00:00');
+
+
+--
+-- Name: blockchain_transactions_y2026m03; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockchain_transactions_y2026m03 FOR VALUES FROM ('2026-03-01 00:00:00') TO ('2026-04-01 00:00:00');
+
+
+--
+-- Name: blockchain_transactions_y2026m04; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockchain_transactions_y2026m04 FOR VALUES FROM ('2026-04-01 00:00:00') TO ('2026-05-01 00:00:00');
+
+
+--
+-- Name: blockchain_transactions_y2026m05; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockchain_transactions_y2026m05 FOR VALUES FROM ('2026-05-01 00:00:00') TO ('2026-06-01 00:00:00');
+
+
+--
+-- Name: blockchain_transactions_y2026m06; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockchain_transactions_y2026m06 FOR VALUES FROM ('2026-06-01 00:00:00') TO ('2026-07-01 00:00:00');
+
+
+--
 -- Name: gateway_telemetry_logs_default; Type: TABLE ATTACH; Schema: public; Owner: -
 --
 
@@ -1883,7 +2115,7 @@ ALTER TABLE ONLY public.bio_contract_firmwares
 --
 
 ALTER TABLE ONLY public.blockchain_transactions
-    ADD CONSTRAINT blockchain_transactions_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT blockchain_transactions_pkey PRIMARY KEY (id, created_at);
 
 
 --
@@ -2148,6 +2380,454 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.wallets
     ADD CONSTRAINT wallets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: index_blockchain_transactions_on_sourceable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_sourceable ON ONLY public.blockchain_transactions USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: blockchain_transactions_defau_sourceable_type_sourceable_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_defau_sourceable_type_sourceable_id_idx ON public.blockchain_transactions_default USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: index_blockchain_transactions_on_block_number; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_block_number ON ONLY public.blockchain_transactions USING btree (block_number);
+
+
+--
+-- Name: blockchain_transactions_default_block_number_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_default_block_number_idx ON public.blockchain_transactions_default USING btree (block_number);
+
+
+--
+-- Name: index_blockchain_transactions_on_chainlink_request_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_chainlink_request_id ON ONLY public.blockchain_transactions USING btree (chainlink_request_id);
+
+
+--
+-- Name: blockchain_transactions_default_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_default_chainlink_request_id_idx ON public.blockchain_transactions_default USING btree (chainlink_request_id);
+
+
+--
+-- Name: index_blockchain_transactions_on_cluster_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_cluster_id ON ONLY public.blockchain_transactions USING btree (cluster_id);
+
+
+--
+-- Name: blockchain_transactions_default_cluster_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_default_cluster_id_idx ON public.blockchain_transactions_default USING btree (cluster_id);
+
+
+--
+-- Name: index_blockchain_transactions_on_confirmed_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_confirmed_at ON ONLY public.blockchain_transactions USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_default_confirmed_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_default_confirmed_at_idx ON public.blockchain_transactions_default USING btree (confirmed_at);
+
+
+--
+-- Name: index_blockchain_transactions_on_tx_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_tx_hash ON ONLY public.blockchain_transactions USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
+
+
+--
+-- Name: blockchain_transactions_default_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_default_tx_hash_idx ON public.blockchain_transactions_default USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
+
+
+--
+-- Name: index_blockchain_transactions_on_wallet_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_wallet_id ON ONLY public.blockchain_transactions USING btree (wallet_id);
+
+
+--
+-- Name: blockchain_transactions_default_wallet_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_default_wallet_id_idx ON public.blockchain_transactions_default USING btree (wallet_id);
+
+
+--
+-- Name: index_blockchain_transactions_on_wallet_id_and_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blockchain_transactions_on_wallet_id_and_status ON ONLY public.blockchain_transactions USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_default_wallet_id_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_default_wallet_id_status_idx ON public.blockchain_transactions_default USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_i_idx1 ON public.blockchain_transactions_y2026m02 USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_i_idx2 ON public.blockchain_transactions_y2026m03 USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx3; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_i_idx3 ON public.blockchain_transactions_y2026m04 USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx4; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_i_idx4 ON public.blockchain_transactions_y2026m05 USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx5; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_i_idx5 ON public.blockchain_transactions_y2026m06 USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026_sourceable_type_sourceable_id_idx ON public.blockchain_transactions_y2026m01 USING btree (sourceable_type, sourceable_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m01_block_number_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m01_block_number_idx ON public.blockchain_transactions_y2026m01 USING btree (block_number);
+
+
+--
+-- Name: blockchain_transactions_y2026m01_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m01_chainlink_request_id_idx ON public.blockchain_transactions_y2026m01 USING btree (chainlink_request_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m01_cluster_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m01_cluster_id_idx ON public.blockchain_transactions_y2026m01 USING btree (cluster_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m01_confirmed_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m01_confirmed_at_idx ON public.blockchain_transactions_y2026m01 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m01_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m01_tx_hash_idx ON public.blockchain_transactions_y2026m01 USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
+
+
+--
+-- Name: blockchain_transactions_y2026m01_wallet_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m01_wallet_id_idx ON public.blockchain_transactions_y2026m01 USING btree (wallet_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m01_wallet_id_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m01_wallet_id_status_idx ON public.blockchain_transactions_y2026m01 USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026m02_block_number_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m02_block_number_idx ON public.blockchain_transactions_y2026m02 USING btree (block_number);
+
+
+--
+-- Name: blockchain_transactions_y2026m02_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m02_chainlink_request_id_idx ON public.blockchain_transactions_y2026m02 USING btree (chainlink_request_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m02_cluster_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m02_cluster_id_idx ON public.blockchain_transactions_y2026m02 USING btree (cluster_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m02_confirmed_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m02_confirmed_at_idx ON public.blockchain_transactions_y2026m02 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m02_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m02_tx_hash_idx ON public.blockchain_transactions_y2026m02 USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
+
+
+--
+-- Name: blockchain_transactions_y2026m02_wallet_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m02_wallet_id_idx ON public.blockchain_transactions_y2026m02 USING btree (wallet_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m02_wallet_id_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m02_wallet_id_status_idx ON public.blockchain_transactions_y2026m02 USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026m03_block_number_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m03_block_number_idx ON public.blockchain_transactions_y2026m03 USING btree (block_number);
+
+
+--
+-- Name: blockchain_transactions_y2026m03_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m03_chainlink_request_id_idx ON public.blockchain_transactions_y2026m03 USING btree (chainlink_request_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m03_cluster_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m03_cluster_id_idx ON public.blockchain_transactions_y2026m03 USING btree (cluster_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m03_confirmed_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m03_confirmed_at_idx ON public.blockchain_transactions_y2026m03 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m03_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m03_tx_hash_idx ON public.blockchain_transactions_y2026m03 USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
+
+
+--
+-- Name: blockchain_transactions_y2026m03_wallet_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m03_wallet_id_idx ON public.blockchain_transactions_y2026m03 USING btree (wallet_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m03_wallet_id_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m03_wallet_id_status_idx ON public.blockchain_transactions_y2026m03 USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026m04_block_number_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m04_block_number_idx ON public.blockchain_transactions_y2026m04 USING btree (block_number);
+
+
+--
+-- Name: blockchain_transactions_y2026m04_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m04_chainlink_request_id_idx ON public.blockchain_transactions_y2026m04 USING btree (chainlink_request_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m04_cluster_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m04_cluster_id_idx ON public.blockchain_transactions_y2026m04 USING btree (cluster_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m04_confirmed_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m04_confirmed_at_idx ON public.blockchain_transactions_y2026m04 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m04_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m04_tx_hash_idx ON public.blockchain_transactions_y2026m04 USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
+
+
+--
+-- Name: blockchain_transactions_y2026m04_wallet_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m04_wallet_id_idx ON public.blockchain_transactions_y2026m04 USING btree (wallet_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m04_wallet_id_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m04_wallet_id_status_idx ON public.blockchain_transactions_y2026m04 USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026m05_block_number_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m05_block_number_idx ON public.blockchain_transactions_y2026m05 USING btree (block_number);
+
+
+--
+-- Name: blockchain_transactions_y2026m05_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m05_chainlink_request_id_idx ON public.blockchain_transactions_y2026m05 USING btree (chainlink_request_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m05_cluster_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m05_cluster_id_idx ON public.blockchain_transactions_y2026m05 USING btree (cluster_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m05_confirmed_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m05_confirmed_at_idx ON public.blockchain_transactions_y2026m05 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m05_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m05_tx_hash_idx ON public.blockchain_transactions_y2026m05 USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
+
+
+--
+-- Name: blockchain_transactions_y2026m05_wallet_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m05_wallet_id_idx ON public.blockchain_transactions_y2026m05 USING btree (wallet_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m05_wallet_id_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m05_wallet_id_status_idx ON public.blockchain_transactions_y2026m05 USING btree (wallet_id, status);
+
+
+--
+-- Name: blockchain_transactions_y2026m06_block_number_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m06_block_number_idx ON public.blockchain_transactions_y2026m06 USING btree (block_number);
+
+
+--
+-- Name: blockchain_transactions_y2026m06_chainlink_request_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m06_chainlink_request_id_idx ON public.blockchain_transactions_y2026m06 USING btree (chainlink_request_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m06_cluster_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m06_cluster_id_idx ON public.blockchain_transactions_y2026m06 USING btree (cluster_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m06_confirmed_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m06_confirmed_at_idx ON public.blockchain_transactions_y2026m06 USING btree (confirmed_at);
+
+
+--
+-- Name: blockchain_transactions_y2026m06_tx_hash_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m06_tx_hash_idx ON public.blockchain_transactions_y2026m06 USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
+
+
+--
+-- Name: blockchain_transactions_y2026m06_wallet_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m06_wallet_id_idx ON public.blockchain_transactions_y2026m06 USING btree (wallet_id);
+
+
+--
+-- Name: blockchain_transactions_y2026m06_wallet_id_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blockchain_transactions_y2026m06_wallet_id_status_idx ON public.blockchain_transactions_y2026m06 USING btree (wallet_id, status);
 
 
 --
@@ -2498,62 +3178,6 @@ CREATE INDEX index_bio_contract_firmwares_on_is_active ON public.bio_contract_fi
 --
 
 CREATE INDEX index_bio_contract_firmwares_on_tree_family_id ON public.bio_contract_firmwares USING btree (tree_family_id);
-
-
---
--- Name: index_blockchain_transactions_on_block_number; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_blockchain_transactions_on_block_number ON public.blockchain_transactions USING btree (block_number);
-
-
---
--- Name: index_blockchain_transactions_on_chainlink_request_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_blockchain_transactions_on_chainlink_request_id ON public.blockchain_transactions USING btree (chainlink_request_id);
-
-
---
--- Name: index_blockchain_transactions_on_cluster_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_blockchain_transactions_on_cluster_id ON public.blockchain_transactions USING btree (cluster_id);
-
-
---
--- Name: index_blockchain_transactions_on_confirmed_at; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_blockchain_transactions_on_confirmed_at ON public.blockchain_transactions USING btree (confirmed_at);
-
-
---
--- Name: index_blockchain_transactions_on_sourceable; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_blockchain_transactions_on_sourceable ON public.blockchain_transactions USING btree (sourceable_type, sourceable_id);
-
-
---
--- Name: index_blockchain_transactions_on_wallet_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_blockchain_transactions_on_wallet_id ON public.blockchain_transactions USING btree (wallet_id);
-
-
---
--- Name: index_blockchain_transactions_on_wallet_id_and_status; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_blockchain_transactions_on_wallet_id_and_status ON public.blockchain_transactions USING btree (wallet_id, status);
-
-
---
--- Name: index_blockchain_transactions_on_tx_hash; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_blockchain_transactions_on_tx_hash ON public.blockchain_transactions USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
 
 
 --
@@ -3271,6 +3895,398 @@ CREATE INDEX telemetry_logs_y2026m06_tree_id_idx ON public.telemetry_logs_y2026m
 
 
 --
+-- Name: blockchain_transactions_defau_sourceable_type_sourceable_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_defau_sourceable_type_sourceable_id_idx;
+
+
+--
+-- Name: blockchain_transactions_default_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_block_number ATTACH PARTITION public.blockchain_transactions_default_block_number_idx;
+
+
+--
+-- Name: blockchain_transactions_default_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_chainlink_request_id ATTACH PARTITION public.blockchain_transactions_default_chainlink_request_id_idx;
+
+
+--
+-- Name: blockchain_transactions_default_cluster_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION public.blockchain_transactions_default_cluster_id_idx;
+
+
+--
+-- Name: blockchain_transactions_default_confirmed_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_default_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_default_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_tx_hash ATTACH PARTITION public.blockchain_transactions_default_tx_hash_idx;
+
+
+--
+-- Name: blockchain_transactions_default_wallet_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION public.blockchain_transactions_default_wallet_id_idx;
+
+
+--
+-- Name: blockchain_transactions_default_wallet_id_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_default_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_y2026_sourceable_type_sourceable_i_idx1;
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx2; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_y2026_sourceable_type_sourceable_i_idx2;
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx3; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_y2026_sourceable_type_sourceable_i_idx3;
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx4; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_y2026_sourceable_type_sourceable_i_idx4;
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_i_idx5; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_y2026_sourceable_type_sourceable_i_idx5;
+
+
+--
+-- Name: blockchain_transactions_y2026_sourceable_type_sourceable_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_sourceable ATTACH PARTITION public.blockchain_transactions_y2026_sourceable_type_sourceable_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m01_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_block_number ATTACH PARTITION public.blockchain_transactions_y2026m01_block_number_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m01_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_chainlink_request_id ATTACH PARTITION public.blockchain_transactions_y2026m01_chainlink_request_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m01_cluster_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION public.blockchain_transactions_y2026m01_cluster_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m01_confirmed_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m01_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m01_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_tx_hash ATTACH PARTITION public.blockchain_transactions_y2026m01_tx_hash_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m01_wallet_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION public.blockchain_transactions_y2026m01_wallet_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m01_wallet_id_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m01_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m02_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_block_number ATTACH PARTITION public.blockchain_transactions_y2026m02_block_number_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m02_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_chainlink_request_id ATTACH PARTITION public.blockchain_transactions_y2026m02_chainlink_request_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m02_cluster_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION public.blockchain_transactions_y2026m02_cluster_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m02_confirmed_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m02_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m02_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_tx_hash ATTACH PARTITION public.blockchain_transactions_y2026m02_tx_hash_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m02_wallet_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION public.blockchain_transactions_y2026m02_wallet_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m02_wallet_id_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m02_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m03_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_block_number ATTACH PARTITION public.blockchain_transactions_y2026m03_block_number_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m03_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_chainlink_request_id ATTACH PARTITION public.blockchain_transactions_y2026m03_chainlink_request_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m03_cluster_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION public.blockchain_transactions_y2026m03_cluster_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m03_confirmed_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m03_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m03_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_tx_hash ATTACH PARTITION public.blockchain_transactions_y2026m03_tx_hash_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m03_wallet_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION public.blockchain_transactions_y2026m03_wallet_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m03_wallet_id_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m03_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m04_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_block_number ATTACH PARTITION public.blockchain_transactions_y2026m04_block_number_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m04_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_chainlink_request_id ATTACH PARTITION public.blockchain_transactions_y2026m04_chainlink_request_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m04_cluster_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION public.blockchain_transactions_y2026m04_cluster_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m04_confirmed_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m04_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m04_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_tx_hash ATTACH PARTITION public.blockchain_transactions_y2026m04_tx_hash_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m04_wallet_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION public.blockchain_transactions_y2026m04_wallet_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m04_wallet_id_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m04_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m05_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_block_number ATTACH PARTITION public.blockchain_transactions_y2026m05_block_number_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m05_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_chainlink_request_id ATTACH PARTITION public.blockchain_transactions_y2026m05_chainlink_request_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m05_cluster_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION public.blockchain_transactions_y2026m05_cluster_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m05_confirmed_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m05_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m05_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_tx_hash ATTACH PARTITION public.blockchain_transactions_y2026m05_tx_hash_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m05_wallet_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION public.blockchain_transactions_y2026m05_wallet_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m05_wallet_id_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m05_wallet_id_status_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m06_block_number_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_block_number ATTACH PARTITION public.blockchain_transactions_y2026m06_block_number_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m06_chainlink_request_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_chainlink_request_id ATTACH PARTITION public.blockchain_transactions_y2026m06_chainlink_request_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m06_cluster_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_cluster_id ATTACH PARTITION public.blockchain_transactions_y2026m06_cluster_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m06_confirmed_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_confirmed_at ATTACH PARTITION public.blockchain_transactions_y2026m06_confirmed_at_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m06_tx_hash_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_tx_hash ATTACH PARTITION public.blockchain_transactions_y2026m06_tx_hash_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m06_wallet_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id ATTACH PARTITION public.blockchain_transactions_y2026m06_wallet_id_idx;
+
+
+--
+-- Name: blockchain_transactions_y2026m06_wallet_id_status_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH PARTITION public.blockchain_transactions_y2026m06_wallet_id_status_idx;
+
+
+--
 -- Name: gateway_telemetry_logs_default_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -3866,6 +4882,22 @@ CREATE TRIGGER trigger_sync_cluster_geo_boundary BEFORE INSERT OR UPDATE OF geoj
 
 
 --
+-- Name: blockchain_transactions fk_blockchain_transactions_cluster_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.blockchain_transactions
+    ADD CONSTRAINT fk_blockchain_transactions_cluster_id FOREIGN KEY (cluster_id) REFERENCES public.clusters(id);
+
+
+--
+-- Name: blockchain_transactions fk_blockchain_transactions_wallet_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.blockchain_transactions
+    ADD CONSTRAINT fk_blockchain_transactions_wallet_id FOREIGN KEY (wallet_id) REFERENCES public.wallets(id);
+
+
+--
 -- Name: gateway_telemetry_logs fk_gateway_telemetry_logs_gateway_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4002,14 +5034,6 @@ ALTER TABLE ONLY public.actuator_commands
 
 
 --
--- Name: blockchain_transactions fk_rails_7f57af4001; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.blockchain_transactions
-    ADD CONSTRAINT fk_rails_7f57af4001 FOREIGN KEY (wallet_id) REFERENCES public.wallets(id);
-
-
---
 -- Name: tiny_ml_models fk_rails_8ebc5faedf; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4063,14 +5087,6 @@ ALTER TABLE ONLY public.trees
 
 ALTER TABLE ONLY public.naas_contracts
     ADD CONSTRAINT fk_rails_cb132bb86f FOREIGN KEY (cluster_id) REFERENCES public.clusters(id);
-
-
---
--- Name: blockchain_transactions fk_rails_d3cc5df71d; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.blockchain_transactions
-    ADD CONSTRAINT fk_rails_d3cc5df71d FOREIGN KEY (cluster_id) REFERENCES public.clusters(id);
 
 
 --
@@ -4152,6 +5168,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260328120000'),
 ('20260328110000'),
 ('20260315150000'),
 ('20260314192813'),

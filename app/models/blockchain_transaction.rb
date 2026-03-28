@@ -4,6 +4,10 @@ class BlockchainTransaction < ApplicationRecord
   include AASM
   include EthAddressValidatable
 
+  # PostgreSQL PK is composite (id, created_at) for declarative partitioning,
+  # but Rails should use id alone for lookups, dom_id, and associations.
+  self.primary_key = "id"
+
   # --- ЗВ'ЯЗКИ ---
   # optional: true — для аудит-транзакцій slashing, коли весь кластер мертвий
   # і жодного дерева-носія немає (пастка "Останнього дерева")
