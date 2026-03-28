@@ -54,8 +54,10 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       allow(Eth::Client).to receive(:create).and_return(mock_client)
       allow(Eth::Key).to receive(:new).and_return(mock_key)
       allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: "0xfake_tx_hash")
+      allow(mock_client).to receive(:call).and_return(0)
       allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
       allow(BlockchainConfirmationWorker).to receive(:perform_in)
+      Rails.cache.delete(BlockchainMintingService::TREASURY_CACHE_KEY)
     end
 
     it "mints a single carbon coin transaction" do
