@@ -38,6 +38,12 @@
   - `UnpackTelemetryWorker#attempt_decryption` — перехід з `binary_key` → `cached_binary_key` на hot path
   - Безпека: ключі в PostgreSQL залишаються зашифрованими (AR Encryption); Redis — ізольована мережа (Private VPC, TLS, ACL)
   - Тести: 79 нових рядків RSpec у `spec/models/hardware_key_spec.rb`
+- ~~**🔴 P0 — Missing index on `blockchain_transactions.tx_hash`:** `BlockchainConfirmationWorker` виконує `BlockchainTransaction.where(tx_hash: tx_hash)` без індексу — повний Sequential Scan на таблиці з мільярдами рядків при планетарному масштабі (1 млрд дерев × щомісячний SCC мінтинг). Файл: `app/workers/blockchain_confirmation_worker.rb:29`.~~ ✅ **ВИРІШЕНО** ([migration 20260328110000](db/migrate/20260328110000_add_tx_hash_index_to_blockchain_transactions.rb)):
+  - Додано `CREATE INDEX CONCURRENTLY index_blockchain_transactions_on_tx_hash ... WHERE (tx_hash IS NOT NULL)`
+  - `CONCURRENTLY` — Zero-Downtime: без table-level lock, без блокування writes під час індексування
+  - `WHERE tx_hash IS NOT NULL` — partial index: виключає `pending/processing` рядки (без tx_hash), зменшує розмір індексу
+- ~~**🟠 P1 — `Actuator#commands dependent: :destroy` (OOM ризик при деактивації Gateway):** `app/models/actuator.rb:9` — при видаленні Gateway Rails завантажував кожну `ActuatorCommand` у Ruby і запускав AASM-колбеки + Turbo broadcasts. При 1000+ команд на актуатор → OOM.~~ ✅ **ВИРІШЕНО**: Замінено на `dependent: :delete_all` — один SQL DELETE замість N Ruby-об'єктів. `ActuatorCommand` не несе фінансових зобов'язань (не впливає на `Wallet` балans або `BlockchainTransaction`), тому bypass callbacks безпечний.
+- **🟠 P1 — `blockchain_transactions` не партиціонована:** При планетарному масштабі (1B дерев × щомісячний мінтинг ≈ 12B рядків/рік) повний Sequential Scan деградує до хвилин. Необхідне RANGE-партиціонування по `created_at` (квартальне або місячне) аналогічно `telemetry_logs`. Потребує `pg_partman` або ручного `PartitionMaintenanceWorker` для автоматичного DDL.
 
 ---
 
@@ -571,16 +577,16 @@ any ──report_fault──► faulty
 **Асоціації:**
 - `belongs_to :gateway`
 - `has_one :cluster, through: :gateway`
-- `has_many :commands, class_name: "ActuatorCommand"`
+- `has_many :commands, class_name: "ActuatorCommand", dependent: :delete_all`
 
 **Enums:**
 
 | Enum | Значення |
 |------|----------|
-| `device_type` | `water_valve / alarm_siren / led_marker / camera / vibration_sensor / other` |
-| `state` | `idle / active / offline / maintenance_needed` |
+| `device_type` | `water_valve(0) / fire_siren(1) / seismic_beacon(2) / drone_launcher(3)` |
+| `state` | `idle(0) / active(1) / offline(2) / maintenance_needed(3)` |
 
-**AASM:** `activate` (idle→active), `deactivate` (active→idle), `go_offline`, `report_fault` (→maintenance_needed).
+**AASM:** `activate` (idle→active), `deactivate` (→idle), `go_offline` (→offline), `report_fault` (→maintenance_needed).
 
 **Методи:** `ready_for_deployment?`, `mark_active!`, `mark_idle!`, `require_maintenance!(reason)`.
 
@@ -791,7 +797,7 @@ any ──report_fault──► faulty
 | Enum | Значення |
 |------|----------|
 | `token_type` | `carbon_coin(0) / forest_coin(1) / cusd(2)` |
-| `status` | `pending(0) / processing(1) / sent(2) / confirmed(3) / failed(4)` |
+| `status` | `pending(0) / processing(1) / confirmed(2) / failed(3) / sent(4)` |
 
 **Ключові поля:**
 
@@ -808,6 +814,8 @@ any ──report_fault──► faulty
 **AASM:** `process` (pending→processing), `mark_as_sent`, `confirm`, `fail`.
 
 **Методи:** `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
+
+**Scalability Note (P1 Blocker — відкритий):** Таблиця не партиціонована. При 1B дерев × щомісячний SCC мінтинг ≈ 12B рядків/рік. Необхідне RANGE-партиціонування по `created_at` (аналогічно `telemetry_logs`). Відкрите завдання — додати `PartitionMaintenanceWorker` підтримку для `blockchain_transactions`.
 
 ---
 
@@ -1093,7 +1101,7 @@ Organization
   │     │     ├── HardwareKey (destroy)
   │     │     ├── GatewayTelemetryLogs (delete_all) ← PARTITION
   │     │     ├── Actuators (destroy)
-  │     │     │     └── ActuatorCommands (destroy)
+  │     │     │     └── ActuatorCommands (delete_all) ← P1 Fix
   │     │     └── MaintenanceRecords (restrict_with_error)
   │     ├── NaasContracts (restrict_with_error)
   │     ├── ParametricInsurances (restrict_with_error)
@@ -1131,11 +1139,12 @@ Polymorphic:
 | **Hot Path без валідацій** | `TelemetryLog`, `GatewayTelemetryLog` — валідації в сервісі, не в AR |
 | **Денормалізація для N+1 Kill** | `latest_stress_index`, `latest_voltage_mv`, `active_trees_count`, `health_index` |
 | **GREATEST для race conditions** | `mark_seen!` в Tree та Gateway — атомарне оновлення без дублів |
-| **delete_all для масових таблиць** | Телеметрія, тривоги, логи — уникнення OOM при DELETE |
+| **delete_all для масових таблиць** | Телеметрія, тривоги, логи, ActuatorCommands — уникнення OOM при DELETE |
 | **restrict_with_error для фінансів** | NaasContract, ParametricInsurance, Users — захист аудит-слідів |
 | **Партиціонування по місяцях** | telemetry_logs, gateway_telemetry_logs — прунінг старих даних |
 | **Counter Cache** | `active_trees_count` в Cluster — уникнення COUNT на мільйонах рядків |
 | **Поліморфізм** | AiInsight, MaintenanceRecord, AuditLog, BlockchainTransaction |
 | **PostGIS GIST** | Cluster.geo_boundary — O(log n) геопросторовий пошук |
-| **AR Encryption** | HardwareKey.aes_key_hex — non-deterministic шифрування в БД |
+| **AR Encryption + Redis Cache** | HardwareKey.aes_key_hex — шифрування в БД + `cached_binary_key` у Redis (TTL 15 хв) |
 | **BigDecimal в JSONB** | TinyMlModel accuracy_score/threshold — уникнення Float похибок |
+| **Partial Index для sparse поля** | `blockchain_transactions.tx_hash WHERE tx_hash IS NOT NULL` — виключає рядки без tx_hash (pending/processing) |

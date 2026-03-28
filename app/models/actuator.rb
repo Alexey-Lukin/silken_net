@@ -6,7 +6,12 @@ class Actuator < ApplicationRecord
   # --- ЗВ'ЯЗКИ ---
   belongs_to :gateway
   has_one :cluster, through: :gateway
-  has_many :commands, class_name: "ActuatorCommand", dependent: :destroy
+  # [BLOCKER FIX: Чорна Діра Пам'яті]: Замінено :destroy на :delete_all.
+  # :destroy завантажував кожен ActuatorCommand у Ruby та запускав AASM-колбеки,
+  # Turbo broadcast і sidekiq-jobs при видаленні шлюзу. При 1000+ команд на
+  # актуатор це призводило б до OOM. delete_all виконує один SQL DELETE.
+  # ActuatorCommand не має фінансових зобов'язань, тому bypass callbacks безпечний.
+  has_many :commands, class_name: "ActuatorCommand", dependent: :delete_all
 
   # --- ТИПИ ПРИСТРОЇВ (The Arsenal) ---
   enum :device_type, {
