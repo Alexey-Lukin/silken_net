@@ -80,7 +80,7 @@ class UnpackTelemetryWorker
   # Логіка "М'якої Ротації": пробуємо новий ключ, потім старий
   def attempt_decryption(payload, key_record)
     # Спроба 1: Основний (новий) ключ
-    result = decrypt_aes(payload, key_record.binary_key)
+    result = decrypt_aes(payload, key_record.cached_binary_key)
 
     if result
       # Якщо новий ключ спрацював — підтверджуємо успішну ротацію (закриваємо Grace Period)
