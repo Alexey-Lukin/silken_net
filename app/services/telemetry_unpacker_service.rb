@@ -146,37 +146,46 @@ class TelemetryUnpackerService < ApplicationService
   end
 
   def commit_telemetry(tree, attributes)
-    # Транзакція гарантує, що ми не нарахуємо бали без лога (або навпаки)
-    ActiveRecord::Base.transaction do
-      log = tree.telemetry_logs.create!(attributes)
+    growth_points = attributes[:growth_points]
+
+    # Транзакція фіксує телеметрію, стан дерева та побічні ефекти як єдине ціле.
+    # Wallet credit винесено ЗА межі транзакції (див. нижче).
+    log = ActiveRecord::Base.transaction do
+      record = tree.telemetry_logs.create!(attributes)
 
       # [OBSERVABILITY]: Count successfully committed telemetry chunks
       SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL.increment
 
       # [СИНХРОНІЗАЦІЯ]: Оновлюємо денормалізований вольтаж для мапи без N+1
-      tree.mark_seen!(log.voltage_mv)
+      tree.mark_seen!(record.voltage_mv)
 
       # [KENOSIS TITAN]: Атомарне оновлення health_streak без додаткових SELECT-ів.
       # Якщо лог здоровий — інкремент, інакше — скидання до нуля.
-      update_health_streak!(tree, log)
-
-      # Нарахування балів у гаманець Солдата
-      tree.wallet.credit!(log.growth_points) if log.growth_points.positive?
+      update_health_streak!(tree, record)
 
       # [OTA MISMATCH]: Якщо дерево повідомляє firmware_version_id, що відрізняється від
       # актуальної прошивки — позначаємо дерево як fw_pending для повторної роздачі OTA.
-      check_firmware_mismatch!(tree, log.firmware_version_id)
+      check_firmware_mismatch!(tree, record.firmware_version_id)
 
       # Аналіз аномалій Оракулом тривог
-      AlertDispatchService.analyze_and_trigger!(log)
+      AlertDispatchService.analyze_and_trigger!(record)
 
       # [IoTeX W3bstream]: Відправляємо телеметрію на ZK-верифікацію
-      IotexVerificationWorker.perform_async(log.id_value, log.created_at.iso8601(6))
+      IotexVerificationWorker.perform_async(record.id_value, record.created_at.iso8601(6))
 
       # [Streamr]: Транслюємо сиру телеметрію в P2P-мережу для «прямого ефіру» лісу.
       # Працює паралельно з IoTeX — Streamr для присутності, IoTeX для фінансового консенсусу.
-      StreamrBroadcastWorker.perform_async(log.id_value, log.created_at.iso8601(6))
+      StreamrBroadcastWorker.perform_async(record.id_value, record.created_at.iso8601(6))
+
+      record
     end
+
+    # [BLOCKER FIX: Database Locking — Wiki 04_01]
+    # Нарахування балів у гаманець Солдата ПОЗА основною транзакцією.
+    # credit! відкриває власну коротку транзакцію з pessimistic lock (SELECT ... FOR UPDATE).
+    # Lock тримається лише мілісекунди замість усієї тривалості commit_telemetry.
+    # growth_points записані в TelemetryLog — аудит-трейл для reconciliation при збоях.
+    tree.wallet.credit!(growth_points) if growth_points&.positive?
   end
 
   # [KENOSIS TITAN]: Денормалізований лічильник "одужання" (Anti-Flapping).

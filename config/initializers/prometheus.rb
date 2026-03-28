@@ -77,5 +77,57 @@ module SilkenNet
       docstring: "Latency (age of oldest job) in Sidekiq web3 queues",
       labels: [ :queue ]
     )
+
+    # -----------------------------------------------------------------------
+    # 🔗 DATABASE CONNECTION POOL METRICS (Gauges — Wiki 04_01 Blocker Fix)
+    # -----------------------------------------------------------------------
+    # Моніторинг Connection Pool для виявлення насичення під час масової
+    # телеметрії. Критично при Sidekiq concurrency=15 та pessimistic locks.
+
+    # Total pool size (max connections per database)
+    DB_POOL_SIZE = REGISTRY.gauge(
+      :silkennet_db_pool_size,
+      docstring: "Maximum number of connections in the database pool",
+      labels: [ :database ]
+    )
+
+    # Currently active (checked out) connections
+    DB_POOL_CONNECTIONS = REGISTRY.gauge(
+      :silkennet_db_pool_connections,
+      docstring: "Number of active (checked out) database connections",
+      labels: [ :database ]
+    )
+
+    # Idle connections available in the pool
+    DB_POOL_IDLE = REGISTRY.gauge(
+      :silkennet_db_pool_idle,
+      docstring: "Number of idle database connections in the pool",
+      labels: [ :database ]
+    )
+
+    # Threads waiting for a connection checkout
+    DB_POOL_WAITING = REGISTRY.gauge(
+      :silkennet_db_pool_waiting,
+      docstring: "Number of threads waiting for a database connection",
+      labels: [ :database ]
+    )
+
+    # Snapshot connection pool stats for Prometheus scraping.
+    # Called from PrometheusCollector middleware or a periodic job.
+    def self.sample_connection_pool!
+      ActiveRecord::Base.connection_handler.all_connection_pools.each do |pool|
+        db_name = pool.db_config.name.to_s
+
+        conns = pool.connections
+        in_use = conns.count(&:in_use?)
+
+        DB_POOL_SIZE.set(pool.size, labels: { database: db_name })
+        DB_POOL_CONNECTIONS.set(in_use, labels: { database: db_name })
+        DB_POOL_IDLE.set(conns.size - in_use, labels: { database: db_name })
+        DB_POOL_WAITING.set(pool.num_waiting_in_queue, labels: { database: db_name })
+      end
+    rescue StandardError => e
+      Rails.logger.warn "⚠️ [Prometheus] Connection pool sampling failed: #{e.message}"
+    end
   end
 end
