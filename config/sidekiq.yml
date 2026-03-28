@@ -49,6 +49,13 @@
       cron: '0 2 * * *' # О 02:00, одразу після агрегації
       class: ClusterHealthCheckWorker
 
+    # --- ЦИКЛ ПАРТИЦІЙ (The Partition Guardian) ---
+    # Автоматичне створення партицій для telemetry_logs та gateway_telemetry_logs.
+    # Гарантує, що партиція на наступний місяць існує задовго до 1-го числа.
+    partition_maintenance:
+      cron: '30 2 * * *' # О 02:30 UTC щодня, після аудиту контрактів
+      class: PartitionMaintenanceWorker
+
     # --- ЦИКЛ L1 ЯКОРЯ (The Ethereum Seal) ---
     # Щотижневий запис State Root у смарт-контракт на Ethereum Mainnet.
     # Мінімізація Gas: тільки 1 запис (bytes32) на тиждень.
