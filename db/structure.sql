@@ -2550,13 +2550,6 @@ CREATE INDEX index_blockchain_transactions_on_wallet_id_and_status ON public.blo
 
 
 --
--- Name: index_blockchain_transactions_on_tx_hash; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_blockchain_transactions_on_tx_hash ON public.blockchain_transactions USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
-
-
---
 -- Name: index_clusters_on_geo_boundary; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4152,7 +4145,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260328110000'),
 ('20260315150000'),
 ('20260314192813'),
 ('20260314184543'),
