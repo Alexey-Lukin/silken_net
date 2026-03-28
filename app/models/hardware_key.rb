@@ -12,16 +12,19 @@ class HardwareKey < ApplicationRecord
   encrypts :previous_aes_key_hex
 
   # ---------------------------------------------------------------------------
-  # SCALABILITY NOTE (Series D — High Concurrency Telemetry)
+  # SCALABILITY: Zero Cryptographic Jitter — усунення «Double Crypto Tax»
   # ---------------------------------------------------------------------------
   # При мільйонах запитів на розшифровку (decryption) десеріалізація зашифрованих
-  # ключів ActiveRecord Encryption створить навантаження на CPU.
-  # Рекомендується:
-  # 1. Кешувати binary_key у захищеному Redis (з TTL 5-15 хв),
-  #    щоб не дешифрувати їх із бази при кожному пакеті телеметрії.
-  # 2. Ключ кешу: "hw_key:#{device_uid}:bin", значення: зашифровано на рівні Redis (TLS + ACL)
-  # 3. Інвалідація: при rotate_key! видаляти кеш-запис негайно.
+  # ключів ActiveRecord Encryption створює навантаження на CPU (~2 мс/виклик).
+  # Розшифрований binary_key кешується в Rails.cache (Redis у prod) з TTL 15 хв.
+  # Це усуває повторну AR Encryption десеріалізацію для кожного пакету телеметрії.
+  # Безпека: ключі в PostgreSQL залишаються зашифрованими (AR Encryption).
+  # Redis на проді має бути в ізольованій мережі (Private VPC) з TLS + ACL.
+  # Інвалідація: after_commit на update/destroy + rotate_key! автоматично.
   # ---------------------------------------------------------------------------
+
+  # Інвалідація кешу при будь-якій зміні або видаленні ключа
+  after_commit :clear_key_cache, on: %i[update destroy]
 
   # --- ЗВ'ЯЗКИ ---
   # Зв'язок із Солдатом (Tree) через DID
@@ -56,6 +59,13 @@ class HardwareKey < ApplicationRecord
   # Повертає сирі байти поточного ключа
   def binary_key
     @binary_key ||= [ aes_key_hex ].pack("H*")
+  end
+
+  # Hot-path оптимізація: кешований binary_key через Rails.cache (Redis у prod).
+  # Усуває «Double Crypto Tax» — AR Encryption десеріалізація відбувається лише
+  # раз на 15 хв замість кожного пакету телеметрії.
+  def cached_binary_key
+    Rails.cache.fetch("hw_key:#{device_uid}:bin", expires_in: 15.minutes) { binary_key }
   end
 
   # Повертає сирі байти попереднього ключа (для Grace Period)
@@ -96,5 +106,12 @@ class HardwareKey < ApplicationRecord
   # Повертає фактичного власника ключа (Дерево або Шлюз)
   def owner
     tree || gateway
+  end
+
+  private
+
+  # Інвалідація кешу — викликається через after_commit on: [:update, :destroy]
+  def clear_key_cache
+    Rails.cache.delete("hw_key:#{device_uid}:bin")
   end
 end

@@ -96,6 +96,77 @@ RSpec.describe HardwareKey, type: :model do
     end
   end
 
+  describe "#cached_binary_key" do
+    it "returns the same value as binary_key" do
+      hw_key = build(:hardware_key)
+      expect(hw_key.cached_binary_key).to eq(hw_key.binary_key)
+    end
+
+    it "caches the result in Rails.cache" do
+      hw_key = create(:hardware_key)
+      cache_key = "hw_key:#{hw_key.device_uid}:bin"
+
+      hw_key.cached_binary_key
+
+      expect(Rails.cache.read(cache_key)).to eq(hw_key.binary_key)
+    end
+
+    it "serves from cache on subsequent calls without hitting binary_key" do
+      hw_key = create(:hardware_key)
+      hw_key.cached_binary_key # prime the cache
+
+      # Stub binary_key to verify it is NOT called again
+      allow(hw_key).to receive(:binary_key)
+      hw_key.cached_binary_key
+
+      expect(hw_key).not_to have_received(:binary_key)
+    end
+  end
+
+  describe "cache invalidation" do
+    it "clears cache on update" do
+      hw_key = create(:hardware_key)
+      cache_key = "hw_key:#{hw_key.device_uid}:bin"
+      hw_key.cached_binary_key # prime the cache
+
+      hw_key.update!(aes_key_hex: SecureRandom.hex(32).upcase)
+
+      expect(Rails.cache.read(cache_key)).to be_nil
+    end
+
+    it "clears cache on destroy" do
+      hw_key = create(:hardware_key)
+      cache_key = "hw_key:#{hw_key.device_uid}:bin"
+      hw_key.cached_binary_key # prime the cache
+
+      hw_key.destroy!
+
+      expect(Rails.cache.read(cache_key)).to be_nil
+    end
+
+    it "clears cache on rotate_key!" do
+      hw_key = create(:hardware_key)
+      cache_key = "hw_key:#{hw_key.device_uid}:bin"
+      hw_key.cached_binary_key # prime the cache
+
+      hw_key.rotate_key!
+
+      expect(Rails.cache.read(cache_key)).to be_nil
+    end
+
+    it "returns new key after rotation and re-caching" do
+      hw_key = create(:hardware_key)
+      old_cached = hw_key.cached_binary_key
+
+      hw_key.rotate_key!
+      hw_key.reload
+      new_cached = hw_key.cached_binary_key
+
+      expect(new_cached).not_to eq(old_cached)
+      expect(new_cached).to eq(hw_key.binary_key)
+    end
+  end
+
   describe "#binary_previous_key" do
     it "returns nil when previous_aes_key_hex is blank" do
       hw_key = build(:hardware_key, previous_aes_key_hex: nil)
