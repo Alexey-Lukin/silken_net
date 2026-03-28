@@ -25,7 +25,12 @@
   - `TelemetryUnpackerService#commit_telemetry` — кредитування Wallet винесено поза основну транзакцію для мінімізації часу утримання лока (мс замість повної тривалості транзакції)
   - Prometheus: додано gauge-метрики пулу з'єднань БД (size / connections / idle / waiting)
   - Тести: 10 нових RSpec-специфікацій, що верифікують pessimistic locking поведінку
-- **Partition Automation:** Таблиці `telemetry_logs` та `gateway_telemetry_logs` партиціоновані вручну по місяцях. Необхідний `PartitionMaintenanceWorker` для автоматичного створення нових партицій наперед.
+- ~~**Partition Automation:** Таблиці `telemetry_logs` та `gateway_telemetry_logs` партиціоновані вручну по місяцях. Необхідний `PartitionMaintenanceWorker` для автоматичного створення нових партицій наперед.~~ ✅ **ВИРІШЕНО** у [commit cc7609c](https://github.com/Alexey-Lukin/silken_net/commit/cc7609c12ac4cfbc3daed4a6aeb7229d1b3b60bd):
+  - Додано `PartitionMaintenanceWorker` (черга `default`, 3 ретраї) — ідемпотентне DDL-створення партицій через `CREATE TABLE IF NOT EXISTS ... PARTITION OF`
+  - Охоплює поточний та наступний місяці для `telemetry_logs` і `gateway_telemetry_logs`
+  - Безпечна параметризація: `quote_table_name` / `quote` для захисту від SQL-ін'єкцій
+  - Заплановано щодня о 02:30 UTC через sidekiq-scheduler cron (`30 2 * * *`)
+  - Тести: 122 рядки RSpec-специфікацій у `spec/workers/partition_maintenance_worker_spec.rb`
 - **HardwareKey Decrypt Cache:** При мільйонах пакетів/хв десеріалізація зашифрованих ключів AR Encryption створює навантаження на CPU. Рекомендується Redis-кеш binary_key з TTL 5-15 хв + інвалідація при `rotate_key!`.
 
 ---
@@ -54,6 +59,8 @@
 | `gateway_telemetry_logs` | RANGE by month | Тисячі рядків/місяць від Королев |
 
 Поточні партиції: `y2026m01` → `y2026m06` + `_default` (для старих/нових даних).
+
+**Автоматизація:** `PartitionMaintenanceWorker` (черга `default`) щодня о 02:30 UTC гарантує існування партицій для **поточного та наступного місяця**. Назва партиції формується за шаблоном `<table>_y<YYYY>m<MM>` (напр. `telemetry_logs_y2026m04`). Операція ідемпотентна — `CREATE TABLE IF NOT EXISTS`.
 
 ---
 
