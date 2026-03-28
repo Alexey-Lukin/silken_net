@@ -14,10 +14,10 @@
 * ~~**`Solana::MintingService`**: Поточна реалізація використовує `simulateTransaction` (Devnet). Потрібна заміна на `sendTransaction` + реальний Ed25519-підпис перед Mainnet.~~ ✅ **Виправлено** у PR #222 (commit 7ac8b01): реалізовано повний бінарний flow `getLatestBlockhash → SPL Transfer Message → Ed25519 sign → sendTransaction`. Тепер Mainnet-ready.
 * ~~**`Dclimate::VerificationService#query_dclimate_api`**: Заглушка (`OUTCOMES.sample`). Потрібна реальна HTTP-інтеграція з dClimate API.~~ ✅ **Виправлено** у PR #223 (commit 575ed53): реалізовано реальний HTTP-запит до NASA FIRMS через dClimate API з інтерпретацією FRP/confidence/cloud_cover та `OrbitalLagError` retry-логікою.
 * ~~**`PuroEarthPassportWorker`**: `TODO` — заміна stub `tx_hash` на реальний `PuroEarth::PassportService`.~~ ✅ **Виправлено** у PR #224 (commit 669a0dc): реалізовано `PuroEarth::PassportService` — canonical JSON SHA-256 → `anchorPassport(treeDid, bytes32)` на D-MRV Registry смарт-контракті Polygon. `PuroEarthPassportWorker` включає `ApplicationWeb3Worker`, делегує до `PassportService#anchor!`, планує `BlockchainConfirmationWorker`.
-* **`InsurancePayoutWorker` + `BlockchainMintingService`**: Метод `insurance_pool_requires_funding?` повертає `true` хардкодом — потрібна on-chain інтеграція з балансом DAO Treasury.
-* **`DailyAggregationWorker` `unique_for`**: Поточне значення `6.hours` (з коду "як є"). Рекомендовано збільшити до `24.hours` щоб запобігти повторному запуску за одну добу при ручних тригерах.
-* **`TokenomicsEvaluatorWorker` `unique_for`**: Поточне значення `30.minutes` (з коду). Рекомендовано `60.minutes` для точного захисту щогодинного cron-циклу.
-* **`EthereumAnchorWorker` `unique_for`**: Поточне значення `1.hour` (з коду). Рекомендовано `7.days` для захисту від дублювання щотижневого anchoring.
+* ~~**`InsurancePayoutWorker` + `BlockchainMintingService`**: Метод `insurance_pool_requires_funding?` повертає `true` хардкодом — потрібна on-chain інтеграція з балансом DAO Treasury.~~ ✅ **ВИРІШЕНО** у PR #225 (B-05 Fix): реалізовано cached on-chain oracle через `eth_call balanceOf` на SCC-контракті для адреси `DAO_TREASURY_ADDRESS`. Поріг: `INSURANCE_POOL_THRESHOLD = 100_000 SCC` (`INSURANCE_POOL_THRESHOLD_WEI = 100_000 × 10¹⁸`). Кеш: `Rails.cache.fetch("dao_treasury_needs_funding", expires_in: 15.minutes)` — 4 RPC-запити/годину замість тисяч. Timeout: 10 сек (`Timeout.timeout(10)`). Повертає `Integer` (без Float-похибок). Безпечний фолбек при збої RPC: повертає `true` (краще перефінансувати пул, ніж недофінансувати). Залучає мінімальний BALANCE_OF_ABI (тільки `balanceOf`).
+* ~~**`DailyAggregationWorker` `unique_for`**: Поточне значення `6.hours` (з коду "як є"). Рекомендовано збільшити до `24.hours` щоб запобігти повторному запуску за одну добу при ручних тригерах.~~ ✅ **ВИРІШЕНО** у PR #225: `unique_for: 24.hours`
+* ~~**`TokenomicsEvaluatorWorker` `unique_for`**: Поточне значення `30.minutes` (з коду). Рекомендовано `60.minutes` для точного захисту щогодинного cron-циклу.~~ ✅ **ВИРІШЕНО** у PR #225: `unique_for: 60.minutes`
+* ~~**`EthereumAnchorWorker` `unique_for`**: Поточне значення `1.hour` (з коду). Рекомендовано `7.days` для захисту від дублювання щотижневого anchoring.~~ ✅ **ВИРІШЕНО** у PR #225: `unique_for: 7.days`
 
 ---
 
@@ -105,7 +105,7 @@
 |---|---|
 | **Файл** | `app/services/blockchain_minting_service.rb` |
 | **Вхід** | `blockchain_transaction_ids` (Array\<Integer>), `telemetry_log:` (опціонально, для oracle-driven flow) |
-| **Що робить** | Пакетна емісія SCC/SFC на Polygon через `mint` або `batchMint`. Guard clauses: `verified_by_iotex?`, `oracle_status == "fulfilled"`, `hadron_kyc_status == "approved"`. Dynamic Tax 2% при carbon_coin + недофінансований страховий пул (→ DAO Treasury). `Kredis.lock` проти race conditions. `transact` (fire-and-forget). Prometheus metric `SCC_MINTED_TOTAL`. |
+| **Що робить** | Пакетна емісія SCC/SFC на Polygon через `mint` або `batchMint`. Guard clauses: `verified_by_iotex?`, `oracle_status == "fulfilled"`, `hadron_kyc_status == "approved"`. Dynamic Tax 2% при carbon_coin + недофінансований страховий пул (→ DAO Treasury). `Kredis.lock` проти race conditions. `transact` (fire-and-forget). Prometheus metric `SCC_MINTED_TOTAL`. **[B-05]** `insurance_pool_requires_funding?` — cached on-chain `balanceOf` oracle: `INSURANCE_POOL_THRESHOLD = 100_000 SCC`; кеш 15 хв (`dao_treasury_needs_funding`); timeout 10 сек; failsafe → `true` при збої RPC. |
 | **Зовнішні виклики** | Polygon RPC (`ALCHEMY_POLYGON_RPC_URL`), `Web3::RpcConnectionPool`, `Web3::WeiConverter`, `BlockchainConfirmationWorker.perform_in` |
 | **Вихід** | `tx_hash` (String). Оновлює `BlockchainTransaction.status = :sent`. Turbo Stream broadcast балансу гаманця. |
 
@@ -552,7 +552,7 @@
 | Параметр | Значення |
 |----------|----------|
 | **Черга** | `low` |
-| **Retry** | 3, unique_for: 6 годин |
+| **Retry** | 3, unique_for: 24 години |
 | **Тригер** | Sidekiq cron: щодня 01:00 UTC |
 | **Вхід** | `date_string` (String ISO8601, опціонально — default вчора UTC) |
 | **Сервіси** | `InsightGeneratorService.call(target_date)` |
@@ -574,7 +574,7 @@
 | Параметр | Значення |
 |----------|----------|
 | **Черга** | `default` |
-| **Retry** | 3, unique_for: 30 хвилин |
+| **Retry** | 3, unique_for: 60 хвилин |
 | **Тригер** | Sidekiq cron: щогодини |
 | **Вхід** | — |
 | **Сервіси** | — |
@@ -705,7 +705,7 @@
 | Параметр | Значення |
 |----------|----------|
 | **Черга** | `web3_low` |
-| **Retry** | 3, unique_for: 1 година |
+| **Retry** | 3, unique_for: 7 днів |
 | **Тригер** | Sidekiq cron: щопонеділка 03:00 UTC |
 | **Вхід** | — |
 | **Сервіси** | `Ethereum::StateAnchorService.new.anchor_to_l1!` |
