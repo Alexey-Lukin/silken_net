@@ -1073,6 +1073,8 @@ Sidekiq::Client.push_bulk("class" => SingleNotificationWorker.to_s, "args" => jo
 
 ---
 
+## 🌲 Planned: Forester Guild — Proof-of-Physical-Work (Міністерство Праці)
+
 > **Нотатка N14 інтегрована (Сесія 3).** Відсутній модуль: хто фізично вкручує анкери, міняє обладнання, реагує на EWS-тривоги?
 
 ### Проблема
