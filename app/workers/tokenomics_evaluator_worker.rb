@@ -6,7 +6,7 @@ class TokenomicsEvaluatorWorker
   # [UNIQUE_FOR]: Sidekiq Enterprise Unique Jobs — запобігає перетину
   # щогодинних циклів. Якщо попередній цикл ще виконується,
   # новий буде відхилено замість створення конкурентного батчу.
-  sidekiq_options queue: "default", retry: 3, unique_for: 30.minutes
+  sidekiq_options queue: "default", retry: 3, unique_for: 60.minutes
 
   # [СИНХРОНІЗОВАНО]: 1 SCC (Silken Carbon Coin) = 10,000 балів гомеостазу.
   # Ця константа є фундаментом нашої токеноміки.
