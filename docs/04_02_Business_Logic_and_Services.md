@@ -12,7 +12,7 @@
 ## 🛑 Блокери (Blockers / Needs Action)
 
 * ~~**`Solana::MintingService`**: Поточна реалізація використовує `simulateTransaction` (Devnet). Потрібна заміна на `sendTransaction` + реальний Ed25519-підпис перед Mainnet.~~ ✅ **Виправлено** у PR #222 (commit 7ac8b01): реалізовано повний бінарний flow `getLatestBlockhash → SPL Transfer Message → Ed25519 sign → sendTransaction`. Тепер Mainnet-ready.
-* **`Dclimate::VerificationService#query_dclimate_api`**: Заглушка (`OUTCOMES.sample`). Потрібна реальна HTTP-інтеграція з dClimate API.
+* ~~**`Dclimate::VerificationService#query_dclimate_api`**: Заглушка (`OUTCOMES.sample`). Потрібна реальна HTTP-інтеграція з dClimate API.~~ ✅ **Виправлено** у PR #223 (commit 575ed53): реалізовано реальний HTTP-запит до NASA FIRMS через dClimate API з інтерпретацією FRP/confidence/cloud_cover та `OrbitalLagError` retry-логікою.
 * **`PuroEarthPassportWorker`**: `TODO` — заміна stub `tx_hash` на реальний `PuroEarth::PassportService`.
 * **`InsurancePayoutWorker` + `BlockchainMintingService`**: Метод `insurance_pool_requires_funding?` повертає `true` хардкодом — потрібна on-chain інтеграція з балансом DAO Treasury.
 * **`DailyAggregationWorker` `unique_for`**: Поточне значення `6.hours` (з коду "як є"). Рекомендовано збільшити до `24.hours` щоб запобігти повторному запуску за одну добу при ручних тригерах.
@@ -365,9 +365,9 @@
 |---|---|
 | **Файл** | `app/services/dclimate/verification_service.rb` |
 | **Вхід** | `alert` (EwsAlert AR instance) |
-| **Що робить** | Супутникова верифікація EWS-алертів через dClimate. 3 результати: `fire_confirmed` → InsurancePayoutWorker, `clear_sky_no_fire` → BurnCarbonTokensWorker (Slashing за фрод), `obscured_by_clouds` → raise `OrbitalLagError` (Sidekiq retry до 48 год). |
-| **Зовнішні виклики** | `InsurancePayoutWorker.perform_async` або `BurnCarbonTokensWorker.perform_async` |
-| **Вихід** | `nil`. Side effects: оновлює `alert.satellite_status`, тригерує воркери. |
+| **Що робить** | **[MAINNET READY]** Супутникова верифікація EWS-алертів через dClimate FIRMS API (NASA Near Real-Time Global Active Fire, VIIRS 375 м). HTTP GET до `DCLIMATE_BASE_URL/v4/geo/grid-history/{FIRMS_DATASET}` з координатами дерева та часовим вікном ±1 день. Інтерпретація: FRP ≥ 10 МВт + confidence ≥ 50% → `:fire_confirmed`; ясне небо без аномалій → `:clear_sky_no_fire`; cloud_cover > 70% або відсутні дані → `:obscured_by_clouds`. Підтримує обидва формати відповіді: `{"data": [...]}` (JSON array) та GeoJSON `{"features": [...]}`. VIIRS string confidence (`high/nominal/low`) конвертується у числові значення. Мережеві збої (`Web3::HttpClient::RequestError`) → безпечний fallback до `:obscured_by_clouds`. Авторизація Bearer через `Rails.credentials.dclimate.api_key`. `generate_dclimate_ref` включає метадані супутника для аудит-трейлу. 3 результати: `fire_confirmed` → InsurancePayoutWorker, `clear_sky_no_fire` → BurnCarbonTokensWorker (Slashing за фрод), `obscured_by_clouds` → raise `OrbitalLagError` (Sidekiq retry до 48 год). |
+| **Зовнішні виклики** | `Web3::HttpClient.get` → dClimate FIRMS API (`DCLIMATE_BASE_URL`). `InsurancePayoutWorker.perform_async` або `BurnCarbonTokensWorker.perform_async`. |
+| **Вихід** | `nil`. Side effects: оновлює `alert.satellite_status` та `alert.dclimate_ref`, тригерує воркери. |
 
 ### `Toucan::BridgeService`
 
@@ -863,7 +863,7 @@ Financial action
 | **IoTeX W3bstream** | HTTPS REST | `iotex_w3bstream_url`, `iotex_api_key` | Iotex::W3bstreamVerificationService |
 | **peaq Network** | HTTPS REST | `peaq_node_url`, `peaq_signing_key` | Peaq::DidRegistryService |
 | **Chainlink Functions** | On-chain (Polygon) | `CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_SUBSCRIPTION_ID` | Chainlink::OracleDispatchService |
-| **dClimate API** | HTTPS REST | — (TODO: real integration) | Dclimate::VerificationService |
+| **dClimate API** | HTTPS REST | `DCLIMATE_BASE_URL` (default: `https://api.dclimate.net`), `DCLIMATE_FIRMS_DATASET` (default: `firms_nrt_global-area_v2`), `Rails.credentials.dclimate.api_key` (Bearer) | Dclimate::VerificationService |
 | **Streamr Network** | HTTPS REST | `streamr_stream_id`, `streamr_api_key` | Streamr::BroadcasterService |
 | **Filecoin/IPFS** (Pinata) | HTTPS REST | `filecoin_api_key` / `FILECOIN_PINNING_API_URL` | Filecoin::ArchiveService, VerificationService |
 | **The Graph** | GraphQL | `the_graph_api_url` | TheGraph::QueryService |
