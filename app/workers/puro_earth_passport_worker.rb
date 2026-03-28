@@ -10,9 +10,13 @@
 #
 # The passport anchors: tree DID, GPS coordinates, biomass yield, extraction
 # date, and a SHA-256 hash of lifetime telemetry for tamper-proof provenance.
+#
+# On-chain anchoring is delegated to PuroEarth::PassportService, which records
+# the payload hash in a D-MRV Registry smart contract on Polygon.
+# Transaction confirmation is tracked by BlockchainConfirmationWorker.
 # =============================================================================
 class PuroEarthPassportWorker
-  include Sidekiq::Job
+  include ApplicationWeb3Worker
   sidekiq_options queue: "web3", retry: 5
 
   def perform(maintenance_record_id)
@@ -26,11 +30,12 @@ class PuroEarthPassportWorker
 
     payload = build_passport_payload(record, tree)
 
-    # TODO: Replace with real Puro.earth API / blockchain anchoring service
-    # e.g. PuroEarth::PassportService.new(payload).anchor!
-    tx_hash = "0x#{SecureRandom.hex(32)}"
+    tx_hash = with_web3_error_handling("Polygon", "Puro.earth Passport for Tree #{tree.did}") do
+      PuroEarth::PassportService.new(payload).anchor!
+    end
 
     record.update!(biomass_passport_tx_hash: tx_hash)
+    BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
 
     Rails.logger.info "🌿 [Puro.earth] Biomass Passport for Puro.earth generated. " \
                       "Tree #{tree.did}, yield: #{record.biomass_yield_kg} kg, tx: #{tx_hash}"
