@@ -18,6 +18,17 @@
 * ~~**`DailyAggregationWorker` `unique_for`**: Поточне значення `6.hours` (з коду "як є"). Рекомендовано збільшити до `24.hours` щоб запобігти повторному запуску за одну добу при ручних тригерах.~~ ✅ **ВИРІШЕНО** у PR #225: `unique_for: 24.hours`
 * ~~**`TokenomicsEvaluatorWorker` `unique_for`**: Поточне значення `30.minutes` (з коду). Рекомендовано `60.minutes` для точного захисту щогодинного cron-циклу.~~ ✅ **ВИРІШЕНО** у PR #225: `unique_for: 60.minutes`
 * ~~**`EthereumAnchorWorker` `unique_for`**: Поточне значення `1.hour` (з коду). Рекомендовано `7.days` для захисту від дублювання щотижневого anchoring.~~ ✅ **ВИРІШЕНО** у PR #225: `unique_for: 7.days`
+* 🔴 **P0 [`GatewayTelemetryWorker`] — Sidekiq job enqueued inside DB transaction:** `check_system_health` викликається всередині `ActiveRecord::Base.transaction`. Якщо транзакція відкочується ПІСЛЯ `AlertNotificationWorker.perform_async(alert.id)`, job вже знаходиться в Redis але `EwsAlert` запис не існує. Воркер знайде `nil` і впаде без будь-якого side effect. Виправлення: використати `after_commit` хук або enqueue job поза транзакцією.
+* 🔴 **P0 [`EcosystemHealingWorker`] — Sidekiq job enqueued inside DB transaction:** `PuroEarthPassportWorker.perform_async(record.id)` викликається всередині `ActiveRecord::Base.transaction`. При відкаті транзакції (напр., `alert.resolve!` кидає) — job вже в черзі, але `MaintenanceRecord` може бути в некоректному стані. Виправлення: перенести `perform_async` за межі блоку транзакції.
+* 🔴 **P0 [`ContractTerminationService`] — Sidekiq job enqueued inside DB transaction:** `BurnCarbonTokensWorker.perform_async(...)` викликається всередині `@contract.transaction`. При відкаті (DB constraint чи будь-яка помилка після `update!(status: :cancelled)`) контракт повертається до `:active`, але burn-job вже в Redis. `BurnCarbonTokensWorker` перевіряє лише `status_breached?` — для статусу `:active` guard не спрацює, і система виконає повний Slashing на активному контракті. **Фінансова катастрофа.**
+* 🟠 **P1 [`ToucanBridgeWorker`] — Відсутній idempotency guard (Double-Spend Risk):** На відміну від `BurnCarbonTokensWorker` (`status_breached?`) та `InsurancePayoutWorker` (`status_triggered?`), `ToucanBridgeWorker` не має жодної перевірки стану на початку `perform`. Якщо `Toucan::BridgeService.call` (on-chain `deposit`) виконається успішно, але `tx.mark_as_sent!` впаде (DB error), Sidekiq перезапустить job і `deposit` відправить ті самі токени **вдруге**. Виправлення: додати `return if tx.status_sent? || tx.status_confirmed?` на початку `perform`.
+* 🟠 **P1 [`AlertNotificationWorker`] — OOM при масштабуванні (`.each` замість `.find_each`):** `organization.users.where(role: [:admin, :forester]).each` завантажує всю колекцію в пам'ять. При організації з 10 000+ лісників — одночасне завантаження всіх об'єктів + синхронна постановка 20 000+ jobs в Redis. Виправлення: замінити `.each` на `.find_each`.
+* 🟠 **P1 [`IotexVerificationWorker`] — Відсутній rescue для `ArgumentError`:** `Time.iso8601(created_at_iso)` кине `ArgumentError` при некоректному форматі рядка. На відміну від `ChainlinkDispatchWorker` (який явно перехоплює `ArgumentError`), `IotexVerificationWorker` пропускає цей сценарій — перманентна помилка триґерить всі 5 ретраїв даремно. Виправлення: додати `rescue ArgumentError` аналогічно до `ChainlinkDispatchWorker`.
+* 🟠 **P1 [`InsightGeneratorService`] — Data-loss вікно при `delete_all` перед регенерацією:** Метод `perform` спочатку виконує `AiInsight.where(target_date: @date, ...).delete_all`, а потім регенерує дані. Якщо процес впаде між `delete_all` і завершенням регенерації (напр., OOM на великому кластері), інсайти за день втрачені безповоротно — а вихідна телеметрія очищується через 7 днів. Виправлення: використовувати `upsert_all` з `on_conflict` або транзакційний swap.
+* 🟠 **P1 [`OtaTransmissionWorker`] — Orphaned Gateway state `:updating`:** Воркер використовує `retry: false`. Якщо процес впаде через нетворкову причину (SIGKILL, OOM) до `handle_chunk_failure`, шлюз залишається в стані `:updating` нескінченно — немає ні `sidekiq_retries_exhausted` хендлера, ні timeout-reset. Виправлення: додати `sidekiq_retries_exhausted` що скидає `gateway.update!(state: :faulty)`.
+* 🟠 **P1 [`InsurancePayoutWorker`] — Orphaned tx при Etherisc flow (retry blocked by AASM guard):** Якщо `Etherisc::ClaimService.claim!` виконується успішно, але `tx.update!(status: :sent, tx_hash:)` падає, страховка вже переведена в стан `:paid` (через `insurance.pay!` всередині попередньої транзакції). Наступний ретрай натикається на `return unless insurance.status_triggered?` і блокується — `tx` залишається в статусі `:pending` назавжди без `BlockchainConfirmationWorker`.
+* 🟠 **P1 [SSOT Gap] — `PartitionMaintenanceWorker` відсутній у Workers Registry:** Воркер існує в `app/workers/partition_maintenance_worker.rb` (відповідальний за автоматичне створення місячних партицій `telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`) але жодного разу не згаданий у реєстрі воркерів розділу 11.
+* 🟠 **P1 [SSOT Gap] — Секція "Default — Агрегація та Токеноміка" некоректно групує `DailyAggregationWorker`:** `DailyAggregationWorker` насправді використовує чергу `low` (пріоритет 1), а не `default` (пріоритет 5). Секція-заголовок вводить в оману при визначенні пріоритетів.
 
 ---
 
@@ -443,7 +454,7 @@
 |----------|----------|
 | **Черга** | `alerts` |
 | **Retry** | 5, expires_in: 5 хвилин |
-| **Тригер** | `AlertDispatchService`, `GatewayTelemetryWorker`, `DclimateVerificationWorker` |
+| **Тригер** | `AlertDispatchService` (через `create_and_dispatch_alert!` та `create_fraud_alert!`), `GatewayTelemetryWorker` (при `critical_fault?`) |
 | **Вхід** | `ews_alert_id` (Integer) |
 | **Сервіси** | — |
 | **Side Effects** | ActionCable broadcast до dashboard. Знаходить stakeholders організації → `SingleNotificationWorker.perform_async` per (user, channel). |
@@ -547,6 +558,8 @@
 
 ### ⚖️ Default — Агрегація та Токеноміка
 
+> ⚠️ **SSOT Note:** `DailyAggregationWorker` нижче використовує чергу `low` (пріоритет 1), а не `default` (пріоритет 5). Він залишений у цій секції для збереження логічної групи "добовий цикл", але черга вказана коректно у відповідній таблиці.
+
 #### `DailyAggregationWorker`
 
 | Параметр | Значення |
@@ -590,6 +603,17 @@
 | **Вхід** | `wallet_ids` (Array\<Integer>), `cycle_id` (String UUID) |
 | **Сервіси** | — |
 | **Side Effects** | `wallet.lock_and_mint!(points, threshold)` при `balance >= 10_000`. → `MintCarbonCoinWorker` (implicit через lock_and_mint!). |
+
+#### `PartitionMaintenanceWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `default` |
+| **Retry** | 3 |
+| **Тригер** | Sidekiq cron: щодня (рекомендовано 00:30 UTC, перед `DailyAggregationWorker`) |
+| **Вхід** | — |
+| **Сервіси** | — (пряма робота з `ActiveRecord::Base.connection`) |
+| **Side Effects** | `CREATE TABLE IF NOT EXISTS ... PARTITION OF ...` для таблиць `telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`. Перевіряє та створює партиції для поточного та наступного місяця (формат: `{table}_y{YYYY}m{MM}`). DDL-операція ідемпотентна — повторний запуск безпечний. |
 
 ---
 
@@ -887,13 +911,167 @@ Financial action
 
 ---
 
-> **Версія документа:** v1.0 · 2026-03-22 · Gaia 2.0 — Cycle 1 Small Batch (Reverse Shaping).
+> **Версія документа:** v1.1 · 2026-03-28 · Gaia 2.0 — Cycle 2 (Security & Reliability Audit).
 > **Метод:** Пасивне сканування кодової бази "як є" (`app/services/` + `app/workers/`). Жодного рефакторингу.
-> **Покриття:** 35 service objects (35 файлів), 30 Sidekiq workers + 2 concerns (base infrastructure).
+> **Покриття:** 35 service objects (35 файлів), 31 Sidekiq workers + 2 concerns (base infrastructure).
 
 ---
 
-## 🌲 Planned: Forester Guild — Proof-of-Physical-Work (Міністерство Праці)
+## 🔴 14. Аудит Надійності (Security & Reliability Audit)
+
+> **Методологія:** Глибокий параноїдальний аудит 33 воркерів та 35 сервісів за 5 векторами: Network-in-Transaction Trap, Idempotency Failures, Memory Black Holes, SSOT vs Reality, Orphaned States.
+> **Дата:** 2026-03-28 · Principal Backend Architect audit.
+
+---
+
+### 🔴 P0 Blockers — Критичні Загрози
+
+#### P0-1 · `GatewayTelemetryWorker` — Job enqueued inside DB transaction
+
+| | |
+|---|---|
+| **Файл** | `app/workers/gateway_telemetry_worker.rb`, рядки 26–44 |
+| **Вектор** | Network-in-Transaction Trap (variant: Sidekiq enqueue inside transaction) |
+| **Опис** | Метод `check_system_health(gateway, log)` викликається **всередині** `ActiveRecord::Base.transaction`. Якщо всередині цього блоку будь-який рядок після `AlertNotificationWorker.perform_async(alert.id)` кине помилку і транзакція відкотиться — `EwsAlert` запис не збережеться в БД, але job вже знаходиться в Redis. Воркер запуститься, викличе `EwsAlert.find_by(id: ews_alert_id)` → отримає `nil` → поверне `nil` без жодного повідомлення патрульним. Фізична тривога (пожежа, посуха) може бути проігнорована. |
+| **Код (спрощено)** | `ActiveRecord::Base.transaction { log = create!(...)  gateway.mark_seen!(...)  check_system_health(gateway, log) }` → `check_system_health` → `EwsAlert.create!` → `AlertNotificationWorker.perform_async(alert.id)` ← **тут** |
+| **Виправлення** | Перенести `AlertNotificationWorker.perform_async` поза транзакцію (збирати alert.id після `transaction` блоку та enqueue після commit). Або використати `Rails.after_commit_action { AlertNotificationWorker.perform_async(alert.id) }`. |
+
+#### P0-2 · `EcosystemHealingWorker` — Job enqueued inside DB transaction
+
+| | |
+|---|---|
+| **Файл** | `app/workers/ecosystem_healing_worker.rb`, рядки 17–21 |
+| **Вектор** | Network-in-Transaction Trap (variant: Sidekiq enqueue inside transaction) |
+| **Опис** | `PuroEarthPassportWorker.perform_async(record.id)` викликається **всередині** `ActiveRecord::Base.transaction`. Якщо `alert.resolve!(...)` (наступний рядок у тому ж transaction блоці) кине виключення — транзакція відкочується, `tree.declare_deceased!` скасовується, але `PuroEarthPassportWorker` вже в Redis. Воркер запускається, знаходить дерево в живому стані, anchors Biomass Passport на мертве (по факту живе) дерево — фінансове підтвердження смерті дерева для Puro.earth буде хибним. |
+| **Код (спрощено)** | `ActiveRecord::Base.transaction { target.declare_deceased!  PuroEarthPassportWorker.perform_async(record.id) ← тут  alert.resolve!(...) }` |
+| **Виправлення** | Enqueue `PuroEarthPassportWorker` після transaction блоку. Патерн: `passport_record_id = nil; transaction { ...; passport_record_id = record.id }; PuroEarthPassportWorker.perform_async(passport_record_id) if passport_record_id`. |
+
+#### P0-3 · `ContractTerminationService` — BurnWorker enqueued inside DB transaction
+
+| | |
+|---|---|
+| **Файл** | `app/services/contract_termination_service.rb`, рядки 22–27 |
+| **Вектор** | Network-in-Transaction Trap + Idempotency Failure (фінансова) |
+| **Опис** | `BurnCarbonTokensWorker.perform_async(...)` викликається **всередині** `@contract.transaction`. Якщо після `update!(status: :cancelled)` і `perform_async` транзакція відкочується (будь-яка причина) — контракт повертається до статусу `:active`, але burn-job вже в Redis. `BurnCarbonTokensWorker` перевіряє лише `return if naas_contract.status_breached?`. Для статусу `:active` цей guard **не спрацює** — виконається повний `BlockchainBurningService` на активному контракті. Інвестор втратить токени за контрактом, який фактично не розірвано. |
+| **Важкість** | **Фінансова катастрофа** (незворотнє on-chain спалювання токенів). |
+| **Виправлення** | Перенести `BurnCarbonTokensWorker.perform_async` поза транзакцію. Або оновити guard у `BurnCarbonTokensWorker` на `return unless naas_contract.status_breached? || naas_contract.status_cancelled?`. |
+
+---
+
+### 🟠 P1 Warnings — Ризики та Розсинхронізація
+
+#### P1-1 · `ToucanBridgeWorker` — Відсутній idempotency guard (Double-Bridge Risk)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/toucan_bridge_worker.rb` |
+| **Вектор** | Idempotency Failure — подвійна витрата |
+| **Опис** | На відміну від `BurnCarbonTokensWorker` (guard: `status_breached?`), `InsurancePayoutWorker` (guard: `status_triggered?`), `IotexVerificationWorker` (guard: `verified_by_iotex?`) — `ToucanBridgeWorker` не має жодної перевірки стану на початку `perform`. Сценарій: `Toucan::BridgeService.call` (on-chain `deposit`) виконується успішно → `tx.mark_as_sent!(tx_hash)` падає (DB conflict/constraint) → Sidekiq requeue → повторний виклик `Toucan::BridgeService.call` → **ті самі токени bridged вдруге**. |
+| **Виправлення** | Додати на початку `perform`: `return if tx.status_sent? \|\| tx.status_confirmed?`. Аналогічно до `IotexVerificationWorker`: `return if log.verified_by_iotex?`. |
+
+#### P1-2 · `AlertNotificationWorker` — OOM при `stakeholders.each` (Missing `find_each`)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/alert_notification_worker.rb`, метод `notify_stakeholders` |
+| **Вектор** | Memory Black Hole |
+| **Опис** | `organization.users.where(role: [:admin, :forester]).each` завантажує **всю колекцію** User об'єктів у пам'ять одночасно. Для великої організації (10 000+ лісників при планетарному масштабі) — одночасне завантаження AR об'єктів + синхронна постановка 20 000+ Sidekiq jobs. При 100 000 лісників (реалістично при мільярдах дерев) — OOM kill Sidekiq-воркера. |
+| **Виправлення** | Замінити `.each` на `.find_each(batch_size: 500)`. |
+
+#### P1-3 · `IotexVerificationWorker` — Відсутній `rescue ArgumentError`
+
+| | |
+|---|---|
+| **Файл** | `app/workers/iotex_verification_worker.rb`, рядок 5 |
+| **Вектор** | SSOT vs Reality (розбіжність з `ChainlinkDispatchWorker` паттерном) |
+| **Опис** | `TelemetryLog.find_by(id: ..., created_at: Time.iso8601(created_at_iso))` — якщо `created_at_iso` некоректний (напр., `nil`, пошкоджений Redis payload), `Time.iso8601` кине `ArgumentError`. На відміну від `ChainlinkDispatchWorker` (який явно `rescue ArgumentError => e`) — `IotexVerificationWorker` пропускає цей сценарій. Перманентна помилка спожене всі 5 ретраїв даремно, блокуючи `web3_critical` слоти. |
+| **Виправлення** | Додати `rescue ArgumentError => e` аналогічно до `ChainlinkDispatchWorker#find_log`. |
+
+#### P1-4 · `InsightGeneratorService` — Data-loss вікно при `delete_all` → крах → втрата дня
+
+| | |
+|---|---|
+| **Файл** | `app/services/insight_generator_service.rb`, рядок ≈21 |
+| **Вектор** | Orphaned State (втрата даних) |
+| **Опис** | `AiInsight.where(target_date: @date, insight_type: :daily_health_summary).delete_all` виконується **до** регенерації. При краші процесу після `delete_all` (OOM, SIGKILL при великому кластері) — денні інсайти втрачені безповоротно. `TelemetryLog` очищуються через 7 днів, тобто якщо це відбудеться на 7й день — повторна генерація неможлива. Поточна "ідемпотентність" є деструктивно-першою (delete-then-recreate замість upsert). |
+| **Виправлення** | Використати `upsert_all` з `unique_by:` або зберігати нові записи поряд зі старими (marked `draft`), а потім атомарно замінювати. |
+
+#### P1-5 · `OtaTransmissionWorker` — Orphaned Gateway state `:updating`
+
+| | |
+|---|---|
+| **Файл** | `app/workers/ota_transmission_worker.rb` |
+| **Вектор** | Orphaned State |
+| **Опис** | Воркер використовує `retry: false`. Якщо процес впаде через нетворкову причину (SIGKILL, OOM) після `gateway.update!(state: :updating)` але до `handle_chunk_failure` — шлюз залишається у стані `:updating` нескінченно. Немає `sidekiq_retries_exhausted` хендлера (оскільки `retry: false`), немає timeout-based reset. Королева відмовлятиме всім наступним ActuatorCommand (`if gateway.updating? raise "Gateway Busy"`). |
+| **Виправлення** | Додати `ensure` блок у `perform` що скидає `gateway.update!(state: :faulty)` при будь-якому некерованому виході. Або: встановити `retry: 3` + `sidekiq_retries_exhausted { Gateway.find_by(uid: queen_uid)&.update!(state: :faulty) }`. |
+
+#### P1-6 · `InsurancePayoutWorker` — Orphaned `tx` при Etherisc flow (retry blocked by AASM)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/insurance_payout_worker.rb`, рядки після транзакції |
+| **Вектор** | Orphaned State (зависання AASM) |
+| **Опис** | Якщо `Etherisc::ClaimService.claim!` виконується успішно (on-chain `triggerClaim`), але наступний `tx.update!(status: :sent, tx_hash: etherisc_tx_hash)` падає (DB error) — Sidekiq requeue. На retry: `return unless insurance.status_triggered?` → guard блокує, бо `insurance.pay!` вже виконалось у першій спробі (AASM: `triggered → paid`). `BlockchainTransaction` залишається у статусі `:pending` назавжди без `BlockchainConfirmationWorker`. Etherisc DIP виплата on-chain відбулась, але DB не знає про неї. |
+| **Виправлення** | Перевіряти стан `tx` перед guard: `return if tx&.status_sent? || tx&.status_confirmed?`. Або зберігати `tx_hash` в `insurance` безпосередньо для reconciliation. |
+
+#### P1-7 · `TelemetryUnpackerService#commit_telemetry` — Jobs enqueued inside transaction
+
+| | |
+|---|---|
+| **Файл** | `app/services/telemetry_unpacker_service.rb`, метод `commit_telemetry` |
+| **Вектор** | Network-in-Transaction Trap (variant: phantom Sidekiq jobs) |
+| **Опис** | `IotexVerificationWorker.perform_async(...)` та `StreamrBroadcastWorker.perform_async(...)` ставляться в чергу **всередині** `ActiveRecord::Base.transaction`. Якщо транзакція відкотиться (напр., `update_health_streak!` або `check_firmware_mismatch!` кинуть) — обидва jobs вже в Redis, але `TelemetryLog` запис відсутній. `IotexVerificationWorker` знайде `nil` (5 ретраїв даремно на `web3_critical`). Менш критично ніж P0 (немає фінансового ризику), але засмічує `web3_critical` чергу. |
+| **Виправлення** | Аналогічно до P0: перенести `perform_async` виклики поза `transaction` блок — зберігати `record.id_value` та `record.created_at.iso8601(6)` і enqueue після commit. |
+
+---
+
+### 🔵 Architectural Suggestions
+
+#### A-1 · Transactional Outbox Pattern для всіх P0 випадків
+
+Системна проблема P0-1, P0-2, P0-3, P1-7 — один і той самий антипаттерн: Sidekiq job enqueued inside DB transaction. Рекомендоване рішення:
+
+```ruby
+# Rails 8 after_create_commit / after_commit
+class EwsAlert < ApplicationRecord
+  after_create_commit -> { AlertNotificationWorker.perform_async(id) }
+end
+
+# Або: накопичувати jobs в масиві, enqueue після transaction
+jobs_to_enqueue = []
+ActiveRecord::Base.transaction do
+  alert = EwsAlert.create!(...)
+  jobs_to_enqueue << -> { AlertNotificationWorker.perform_async(alert.id) }
+end
+jobs_to_enqueue.each(&:call)
+```
+
+Sidekiq Pro 7+ також підтримує `Sidekiq::Middleware::CurrentAttributes` + транзакційний outbox через `Kredis::List` — але це вимагає Pro ліцензії.
+
+#### A-2 · `PartitionMaintenanceWorker` — рекомендовано запускати ДО `DailyAggregationWorker`
+
+Поточний cron (якщо є) не специфікований у документі. Якщо `PartitionMaintenanceWorker` не запуститься до 01:00 UTC (час `DailyAggregationWorker`), вставка телеметрії на початку нового місяця падатиме з `no partition of relation` PostgreSQL помилкою. Рекомендовано: `00:30 UTC` щодня.
+
+#### A-3 · `InsightGeneratorService` — розглянути Sidekiq Batch для покластерної обробки
+
+При 10M+ дерев `InsightGeneratorService#perform` є монолітним синхронним процесом. Аналогічно до `TokenomicsEvaluatorWorker` (де використовується `Sidekiq::Batch` → `EvaluateTreeBatchWorker`), `InsightGeneratorService` варто розбити на `InsightGeneratorOrchestrator` (Batch) + `GenerateClusterInsightWorker` (child по 100 кластерів). Це усуне OOM-ризик при великому датасеті і надасть Sidekiq Pro Batch progress tracking.
+
+#### A-4 · `AlertNotificationWorker` — розглянути Sidekiq Pro Bulk для масового enqueue
+
+Замість синхронного циклу `stakeholders.find_each { |u| SingleNotificationWorker.perform_async(...) }` використати `Sidekiq::Client.push_bulk` для одного Redis `LPUSH` з усіма jobs:
+
+```ruby
+jobs = []
+organization.users.where(role: [:admin, :forester]).find_each do |user|
+  jobs << { "class" => SingleNotificationWorker, "args" => [user.id, alert.id, "push"] }
+  jobs << { "class" => SingleNotificationWorker, "args" => [user.id, alert.id, "sms"] } if alert.severity_critical?
+end
+Sidekiq::Client.push_bulk("class" => SingleNotificationWorker.to_s, "args" => jobs.map { _1["args"] })
+```
+
+Це зменшує кількість Redis round-trips з N до 1 при масовому розсиланні.
+
+---
 
 > **Нотатка N14 інтегрована (Сесія 3).** Відсутній модуль: хто фізично вкручує анкери, міняє обладнання, реагує на EWS-тривоги?
 
