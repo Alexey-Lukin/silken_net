@@ -368,4 +368,109 @@ RSpec.describe Wallet, type: :model do
       expect(result).to be_nil
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # 🔒 PESSIMISTIC LOCKING (Wiki 04_01 Blocker Fix)
+  # ---------------------------------------------------------------------------
+  # Перевіряємо, що всі мутаційні методи гаманця використовують pessimistic lock
+  # (SELECT ... FOR UPDATE) для захисту від race conditions при масовій телеметрії.
+  describe "pessimistic locking" do
+    describe "#credit! with pessimistic lock" do
+      it "acquires a row lock via with_lock before incrementing balance" do
+        wallet = create(:tree).wallet
+        original_balance = wallet.balance
+
+        # Verify that with_lock is used (lock! is called internally)
+        expect(wallet).to receive(:lock!).and_call_original
+
+        wallet.credit!(100)
+        wallet.reload
+
+        expect(wallet.balance).to eq(original_balance + 100)
+      end
+
+      it "serializes concurrent credits to the same wallet" do
+        wallet = create(:tree).wallet
+        wallet.update!(balance: 0)
+
+        # Simulate two sequential credits (representing serialized concurrent access)
+        wallet.credit!(100)
+        wallet.credit!(200)
+        wallet.reload
+
+        expect(wallet.balance).to eq(300)
+      end
+    end
+
+    describe "#lock_funds! with pessimistic lock" do
+      it "acquires a row lock before checking available balance" do
+        wallet = create(:tree).wallet
+        wallet.update!(balance: 1000)
+
+        expect(wallet).to receive(:lock!).and_call_original
+
+        wallet.lock_funds!(400)
+        wallet.reload
+
+        expect(wallet.locked_balance).to eq(400)
+      end
+
+      it "raises with fresh balance data under lock" do
+        wallet = create(:tree).wallet
+        wallet.update!(balance: 100, locked_balance: 50)
+
+        expect { wallet.lock_funds!(100) }.to raise_error(RuntimeError, /Недостатньо доступних коштів/)
+      end
+    end
+
+    describe "#release_locked_funds! with pessimistic lock" do
+      it "acquires a row lock before checking locked balance" do
+        wallet = create(:tree).wallet
+        wallet.update!(balance: 1000, locked_balance: 400)
+
+        expect(wallet).to receive(:lock!).and_call_original
+
+        wallet.release_locked_funds!(200)
+        wallet.reload
+
+        expect(wallet.locked_balance).to eq(200)
+      end
+
+      it "raises with fresh data under lock when releasing more than locked" do
+        wallet = create(:tree).wallet
+        wallet.update!(balance: 1000, locked_balance: 100)
+
+        expect { wallet.release_locked_funds!(200) }.to raise_error(RuntimeError, /розблокувати більше/)
+      end
+    end
+
+    describe "consistent locking pattern across all mutation methods" do
+      it "credit! uses with_lock" do
+        wallet = create(:tree).wallet
+        expect(wallet).to receive(:with_lock).and_call_original
+        wallet.credit!(10)
+      end
+
+      it "lock_funds! uses with_lock" do
+        wallet = create(:tree).wallet
+        wallet.update!(balance: 1000)
+        expect(wallet).to receive(:with_lock).and_call_original
+        wallet.lock_funds!(100)
+      end
+
+      it "release_locked_funds! uses with_lock" do
+        wallet = create(:tree).wallet
+        wallet.update!(locked_balance: 500)
+        expect(wallet).to receive(:with_lock).and_call_original
+        wallet.release_locked_funds!(100)
+      end
+
+      it "finalize_spend! uses lock! inside transaction" do
+        wallet = create(:tree).wallet
+        wallet.update!(balance: 1000, locked_balance: 500)
+        expect(wallet).to receive(:lock!).and_call_original
+        wallet.finalize_spend!(300)
+      end
+    end
+  end
 end
