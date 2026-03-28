@@ -171,6 +171,14 @@ RSpec.describe Dclimate::VerificationService, type: :service do
         )
       end
 
+      it "applies strict timeouts for Sidekiq workers" do
+        service.send(:query_dclimate_api)
+        expect(Web3::HttpClient).to have_received(:get).with(
+          anything,
+          hash_including(open_timeout: 10, read_timeout: 15)
+        )
+      end
+
       it "includes Authorization header with API key" do
         service.send(:query_dclimate_api)
         expect(Web3::HttpClient).to have_received(:get).with(

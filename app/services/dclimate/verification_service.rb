@@ -188,13 +188,16 @@ module Dclimate
 
     # Парсить confidence з FIRMS — може бути числом (0–100) або рядком ("high"/"nominal"/"low").
     # VIIRS використовує рядкові значення, MODIS — числові.
+    # Невідомі значення → 0 (безпечний fallback: краще пропустити, ніж хибно підтвердити пожежу).
     def parse_confidence(value)
       case value
       when Numeric then value
       when "high" then 90
       when "nominal" then 50
       when "low" then 20
-      else value.to_i
+      else
+        Rails.logger.warn "⚠️ [Cosmic Eye] Unexpected FIRMS confidence format: #{value.inspect}" unless value.nil?
+        value.to_i
       end
     end
 
