@@ -919,6 +919,22 @@ pipeline:
 Deliverable: SCC token ціна підтверджується dual-source верифікацією (ground truth + satellite)
 ```
 
+**[LIVE ✅] dClimate FIRMS — Термальний Шар NRT як Ground Truth для Class 2 «Fire»**
+
+З PR #223 (commit 575ed53) `Dclimate::VerificationService` інтегровано з NASA FIRMS (VIIRS Suomi NPP, 375 м, NRT-затримка ~3 год) через dClimate API. При кожному `fire_detected` EwsAlert система виконує реальний HTTP GET до `DCLIMATE_BASE_URL/v4/geo/grid-history/firms_nrt_global-area_v2` та отримує FRP (Fire Radiative Power, МВт) і рівень довіри детекції — це точний ground truth для Class 2 CNN Бушина:
+
+```
+dClimate FIRMS → Class 2 CNN labeled samples:
+  fire_confirmed   (FRP ≥ 10 МВт + confidence ≥ 50%) → labeled "Fire / burned area"
+  clear_sky_no_fire (ясне небо, термоаномалій немає) → labeled "Healthy / Stressed" (Class 0/1)
+  obscured_by_clouds (cloud_cover > 70%)             → виключається (як SCL cloud masking у Sentinel-2)
+
+dclimate_ref = "dclimate:firms:{satellite}:{timestamp}:{nonce}" → аудит-трейл кожного sample
+Пайплайн: EwsAlert → DclimateVerificationWorker → VerificationService → FIRMS API → labeled_fire_event
+```
+
+Бушину доступний **готовий live pipeline** замість ручної розмітки: кожен верифікований EwsAlert автоматично стає labeled sample. VIIRS (375 м) виявляє точкові термоаномалії значно точніше, ніж Sentinel-2 (10 м) оптичний канал, і ці дані вже надходять у PostgreSQL через `alert.satellite_status` + `alert.dclimate_ref`.
+
 **Завдання В: Попередня Обробка Супутникових Знімків**
 
 - Cloud masking (SCL band Sentinel-2): видалення хмарних пікселів перед класифікацією
@@ -1512,6 +1528,16 @@ float compute_utility(DecisionUtility_t *u) {
   Часова роздільна здатність: 5 діб (revisit time)
   Доступність: безкоштовно, Copernicus Open Access Hub
 
+Рівень 2.5: dClimate FIRMS — NASA NRT Термальна Аномалія [LIVE ✅]
+  Датчик: VIIRS (Visible Infrared Imaging Radiometer Suite) на Suomi NPP
+  Просторова роздільна здатність: 375 м/піксель (вища ніж Sentinel-2 для точкових подій)
+  Часова роздільна здатність: ~12 год (проліт над регіоном), NRT затримка ~3 год
+  Метрика: FRP (Fire Radiative Power, МВт) + рівень довіри detection (0–100% або high/nominal/low)
+  Статус: ✅ LIVE — Dclimate::VerificationService (PR #223, commit 575ed53)
+  Endpoint: DCLIMATE_BASE_URL/v4/geo/grid-history/firms_nrt_global-area_v2
+  Обробка: FRP ≥ 10 МВт + confidence ≥ 50% → :fire_confirmed; cloud_cover > 70% → OrbitalLagError retry
+  Аудит: dclimate_ref ("dclimate:firms:{satellite}:{timestamp}:{nonce}") у EwsAlert → PostgreSQL
+
 Рівень 3: AI-синтез (Любченко + Бушин)
   Метод: ANN + Random Forest + GA
 
@@ -1781,6 +1807,7 @@ pub fn verify_growth(
 - Побудова pipeline синтезу: CNN stress\_map + anchor telemetry spatial aggregation → кореляційний аналіз (p < 0.01)
 - Cloud masking та temporal compositing Sentinel-2 SCL band: видалення хмарності перед класифікацією
 - NDVI time series per cluster: щомісячний тренд → Early Warning Score → тригер EwsAlert
+- Інтеграція dClimate FIRMS NRT-даних (VIIRS 375 м, вже live у `Dclimate::VerificationService`, PR #223) як автоматично labeled training samples для Class 2 (Fire): кожен `fire_confirmed` EwsAlert з `dclimate_ref` → labeled fire event без ручної розмітки
 
 #### Підгрупа Б: BSP-Кластеризація IoT-Графу (Модуль 07)
 
@@ -1869,6 +1896,7 @@ pub fn verify_growth(
 #### Підгрупа Б: Синтез Sentinel-2 + Анкерних Даних (Глобальний Моніторинг)
 
 - Підготовка датасету: завантаження Sentinel-2 L2A (Copernicus Hub) для 3+ пілотних ділянок × 2 роки; розрахунок NDVI, EVI, SWIR індексів; синхронізація за датою з `telemetry_logs.created_at`
+- Додавання dClimate FIRMS NRT (VIIRS, вже live у `Dclimate::VerificationService`) як третього сигналу: FRP + confidence per координаті EwsAlert → labeled fire events → збагачення датасету термальними аномаліями без ручної розмітки
 - Навчання ансамблевої моделі (ANN + Random Forest + GA): кореляція [NDVI, temp, precip] → [delta\_t, lorenz\_z]; цільова точність ±12% для регіонів без анкерів
 - Раннє виявлення: детектор "прихованого стресу" — якщо delta\_t\_drop > 20% за 7 днів при нормальному NDVI → EwsAlert + ParametricInsurance trigger за 3–4 тижні до видимих ознак
 - Deliverable: API endpoint `GET /api/v1/forest_health_prediction?bbox=...` → JSON з прогнозом стану лісу на 30 днів + стаття Scopus Q1
