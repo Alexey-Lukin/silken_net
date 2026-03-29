@@ -68,7 +68,34 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         expect(response).to have_http_status(:created)
         body = response.parsed_body
         expect(body["did"]).to eq("SNET-Q-AA11BB22")
+        expect(body["key_derivation"]).to eq("hkdf-sha256")
+      end
+
+      it "includes aes_key in TRL4 lab mode (no PROVISIONING_MASTER_KEY)" do
+        post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:created)
+        body = response.parsed_body
         expect(body["aes_key"]).to be_present
+        expect(body["warning"]).to include("TRL4 lab mode")
+      end
+
+      context "with PROVISIONING_MASTER_KEY set (production mode)" do
+        before do
+          allow(ENV).to receive(:[]).and_call_original
+          allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("master-secret-key-32bytes-long!!")
+        end
+
+        it "does not include aes_key in response" do
+          post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+
+          expect(response).to have_http_status(:created)
+          body = response.parsed_body
+          expect(body["did"]).to eq("SNET-Q-AA11BB22")
+          expect(body["key_derivation"]).to eq("hkdf-sha256")
+          expect(body).not_to have_key("aes_key")
+          expect(body).not_to have_key("warning")
+        end
       end
     end
 

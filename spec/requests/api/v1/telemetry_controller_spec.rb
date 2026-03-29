@@ -72,6 +72,47 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     end
   end
 
+  describe "POST /api/v1/gateways/:id/telemetry (gateway_uplink)" do
+    let(:own_gateway) { create(:gateway, cluster: own_cluster) }
+
+    before do
+      allow(UnpackTelemetryWorker).to receive(:perform_async)
+    end
+
+    it "accepts telemetry payload and enqueues UnpackTelemetryWorker with correct arguments" do
+      post "/api/v1/gateways/#{own_gateway.id}/telemetry",
+           params: { gateway_id: own_gateway.id, payload: "AABBCCDD11223344" },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:accepted)
+      body = response.parsed_body
+      expect(body["status"]).to eq("accepted")
+      expect(body["gateway_uid"]).to eq(own_gateway.uid)
+
+      # Сигнатура має збігатися з CoAP daemon: (encoded_payload, sender_ip, gateway_uid)
+      expect(UnpackTelemetryWorker).to have_received(:perform_async).with(
+        "AABBCCDD11223344", "127.0.0.1", own_gateway.uid
+      )
+    end
+
+    it "returns 404 for a gateway from another organization" do
+      other_gateway = create(:gateway, cluster: other_cluster)
+
+      post "/api/v1/gateways/#{other_gateway.id}/telemetry",
+           params: { gateway_id: other_gateway.id, payload: "AABBCCDD" },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns 401 without authentication" do
+      post "/api/v1/gateways/#{own_gateway.id}/telemetry",
+           params: { payload: "AABBCCDD" }, as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
   describe "GET /api/v1/gateways/:id/telemetry (gateway_history)" do
     let(:own_gateway) { create(:gateway, cluster: own_cluster) }
     let(:other_gateway) { create(:gateway, cluster: other_cluster) }

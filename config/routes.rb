@@ -18,6 +18,9 @@ Rails.application.routes.draw do
       post   "login",  to: "sessions#create"
       delete "logout", to: "sessions#destroy", as: :logout
 
+      # M2M Auth (Machine-to-Machine — Gateway/Device authentication via Ed25519)
+      post "auth/m2m_token", to: "m2m_auth#create", as: :m2m_token
+
       # Скидання пароля (Forgot / Reset Password)
       get  "forgot_password", to: "passwords#new",    as: :forgot_password
       post "forgot_password", to: "passwords#create"
@@ -65,6 +68,7 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       resources :gateways, only: [ :index, :show ] do
         get :telemetry, to: "telemetry#gateway_history", on: :member
+        post :telemetry, to: "telemetry#gateway_uplink", on: :member
       end
 
       resources :telemetry, only: [] do
