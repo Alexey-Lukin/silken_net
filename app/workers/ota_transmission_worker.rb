@@ -8,6 +8,16 @@ class OtaTransmissionWorker
   # Використовуємо окрему чергу для низхідного зв'язку, щоб не блокувати телеметрію
   sidekiq_options queue: "downlink", retry: false
 
+  # [P1 FIX]: Якщо job помирає від неочікуваної помилки (SIGKILL, OOM, unhandled exception),
+  # шлюз може залишитись в стані :updating нескінченно. Скидаємо в :faulty.
+  sidekiq_retries_exhausted do |msg, _ex|
+    queen_uid = msg["args"]&.first
+    if queen_uid
+      Gateway.find_by(uid: queen_uid)&.update!(state: :faulty)
+      Rails.logger.error "🛑 [OTA] Job для #{queen_uid} помер. Шлюз переведено у :faulty."
+    end
+  end
+
   CHUNK_SIZE = 512
   MAX_CHUNK_RETRIES = 5
 

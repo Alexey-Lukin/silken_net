@@ -57,6 +57,13 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       described_class.new.perform(-1, Time.current.iso8601(6))
     end
 
+    it "returns early and logs error for invalid created_at_iso format" do
+      expect(Rails.logger).to receive(:error).with(/Некоректний формат created_at/)
+      expect(Iotex::W3bstreamVerificationService).not_to receive(:new)
+
+      described_class.new.perform(telemetry_log.id_value, "not-a-valid-iso-date")
+    end
+
     it "re-raises VerificationError for Sidekiq retry" do
       service = instance_double(Iotex::W3bstreamVerificationService)
       allow(Iotex::W3bstreamVerificationService).to receive(:new).with(telemetry_log).and_return(service)

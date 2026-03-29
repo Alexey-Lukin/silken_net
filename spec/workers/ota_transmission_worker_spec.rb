@@ -164,4 +164,25 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
       }.not_to raise_error
     end
   end
+
+  describe "sidekiq_retries_exhausted (P1 fix)" do
+    it "marks gateway as faulty when job dies" do
+      gateway.update!(state: :updating)
+
+      described_class.sidekiq_retries_exhausted_block.call(
+        { "args" => [ gateway.uid, "firmware", firmware.id, 0, 0 ] }, StandardError.new("SIGKILL")
+      )
+
+      gateway.reload
+      expect(gateway.state).to eq("faulty")
+    end
+
+    it "handles nil queen_uid gracefully" do
+      expect {
+        described_class.sidekiq_retries_exhausted_block.call(
+          { "args" => nil }, StandardError.new("SIGKILL")
+        )
+      }.not_to raise_error
+    end
+  end
 end

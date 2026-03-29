@@ -19,9 +19,6 @@ class InsightGeneratorService < ApplicationService
   def perform
     Rails.logger.info "🧠 [Insight Generator] Початок масової агрегації за #{@date}..."
 
-    # 1. ІДЕМПОТЕНТНІСТЬ: Очищуємо старі інсайти за цю дату перед перерахунком
-    AiInsight.where(target_date: @date, insight_type: :daily_health_summary).delete_all
-
     # ⚡ [ОПТИМІЗАЦІЯ N+1]: Завантажуємо Базлайни ВСІХ кластерів одним запитом перед циклом.
     # Це прибирає сотні важких JOIN запитів усередині Cluster.find_each.
     @baselines_map = prefetch_cluster_baselines
@@ -30,29 +27,36 @@ class InsightGeneratorService < ApplicationService
     # [ОПТИМІЗАЦІЯ]: Обробляємо тільки кластери з даними замість Cluster.find_each
     processed_cluster_ids = @baselines_map.keys
 
-    unless processed_cluster_ids.empty?
-      Cluster.where(id: processed_cluster_ids).find_each do |cluster|
-        cluster_baseline = @baselines_map[cluster.id]
+    # [P1 FIX DATA-LOSS]: Транзакційний swap — якщо процес впаде під час регенерації,
+    # транзакція відкочується і старі інсайти залишаються неушкодженими.
+    ActiveRecord::Base.transaction do
+      # 1. ІДЕМПОТЕНТНІСТЬ: Очищуємо старі інсайти за цю дату перед перерахунком
+      AiInsight.where(target_date: @date, insight_type: :daily_health_summary).delete_all
 
-        # ⚡ [ANTI-N+1]: Агрегуємо статистику для ВСІХ дерев кластера одним SQL-запитом
-        tree_stats_map = prefetch_tree_stats(cluster)
+      unless processed_cluster_ids.empty?
+        Cluster.where(id: processed_cluster_ids).find_each do |cluster|
+          cluster_baseline = @baselines_map[cluster.id]
 
-        # Перевіряємо кожне дерево в кластері на відповідність базлайну
-        cluster.trees.find_each do |tree|
-          stats = tree_stats_map[tree.id]
-          next unless stats
+          # ⚡ [ANTI-N+1]: Агрегуємо статистику для ВСІХ дерев кластера одним SQL-запитом
+          tree_stats_map = prefetch_tree_stats(cluster)
 
-          if generate_for_tree(tree, cluster_baseline, stats)
-            @processed_count += 1
+          # Перевіряємо кожне дерево в кластері на відповідність базлайну
+          cluster.trees.find_each do |tree|
+            stats = tree_stats_map[tree.id]
+            next unless stats
+
+            if generate_for_tree(tree, cluster_baseline, stats)
+              @processed_count += 1
+            end
           end
         end
-      end
 
-      # 3. АГРЕГАЦІЯ КЛАСТЕРІВ — тільки для кластерів з даними (без повторної ітерації)
-      aggregate_clusters!(processed_cluster_ids)
+        # 3. АГРЕГАЦІЯ КЛАСТЕРІВ — тільки для кластерів з даними (без повторної ітерації)
+        aggregate_clusters!(processed_cluster_ids)
+      end
     end
 
-    # 4. КЕНОЗИС: Очищення сирих логів
+    # 4. КЕНОЗИС: Очищення сирих логів (поза транзакцією — це незалежна операція)
     cleanup_old_logs!
 
     Rails.logger.info "✅ [Insight Generator] Цикл завершено. Оброблено вузлів: #{@processed_count}"
