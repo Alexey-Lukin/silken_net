@@ -36,27 +36,32 @@ module Api
         }
       end
 
-      # --- HTTP FALLBACK UPLINK (POST /api/v1/gateways/:id/telemetry) ---
-      # Основний канал передачі телеметрії — CoAP/UDP на порт 5683 (daemon).
-      # Цей ендпоінт — HTTP fallback для ситуацій, коли CoAP недоступний.
-      # Приймає бінарний батч зашифрованих 21-байтних пакетів від Gateway.
+      # --- HTTP TELEMETRY UPLINK (POST /api/v1/gateways/:id/telemetry) ---
+      # Основний канал передачі телеметрії від Gateway — CoAP/UDP на порт 5683
+      # через Starlink Direct-to-Cell / LTE (SIM7070G AT+CCOAPSEND).
+      # Цей HTTP ендпоінт доступний для:
+      #   1. Сценаріїв, де CoAP/UDP заблоковано (корпоративні фаєрволи, LTE UDP обмеження)
+      #   2. Phase 3 Starlink Mini з TCP/IP мостом (ESP32/SIM8200G-M2)
+      #   3. Ручного завантаження телеметрії через Dashboard (forester upload)
+      # Приймає Base64-кодований бінарний батч зашифрованих пакетів від Gateway.
+      # Формат ідентичний CoAP uplink: [IV:16][AES-256-CBC encrypted 21-byte records]
       def gateway_uplink
         @gateway = current_user.organization.gateways.find(params[:id])
 
         payload = params.require(:payload)
-        batch_id = params[:batch_id].presence || SecureRandom.uuid
 
+        # Аргументи UnpackTelemetryWorker: (encoded_payload, sender_ip, gateway_uid)
+        # Сигнатура ідентична виклику з CoAP daemon (lib/daemons/coap_listener).
         UnpackTelemetryWorker.perform_async(
-          @gateway.uid,
           payload,
-          batch_id
+          request.remote_ip,
+          @gateway.uid
         )
 
         @gateway.mark_seen!(new_ip: request.remote_ip)
 
         render json: {
           status: "accepted",
-          batch_id: batch_id,
           gateway_uid: @gateway.uid
         }, status: :accepted
       end

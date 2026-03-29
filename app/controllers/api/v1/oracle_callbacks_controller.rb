@@ -68,8 +68,8 @@ module Api
         expected = OpenSSL::HMAC.hexdigest("SHA256", hmac_secret, body)
 
         unless ActiveSupport::SecurityUtils.secure_compare(expected, signature)
-          Rails.logger.error "🚨 [Oracle Security] Невалідний HMAC-підпис для oracle callback. " \
-                             "Можлива спроба підробки."
+          Rails.logger.error "🚨 [Oracle Security] Invalid HMAC signature for oracle callback. " \
+                             "Possible forgery attempt."
           render json: { error: "Invalid HMAC signature" }, status: :unauthorized
         end
       end

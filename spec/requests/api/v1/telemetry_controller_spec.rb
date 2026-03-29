@@ -79,28 +79,20 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
       allow(UnpackTelemetryWorker).to receive(:perform_async)
     end
 
-    it "accepts telemetry payload and enqueues UnpackTelemetryWorker" do
+    it "accepts telemetry payload and enqueues UnpackTelemetryWorker with correct arguments" do
       post "/api/v1/gateways/#{own_gateway.id}/telemetry",
-           params: { gateway_id: own_gateway.id, payload: "AABBCCDD11223344", batch_id: "batch-001" },
+           params: { gateway_id: own_gateway.id, payload: "AABBCCDD11223344" },
            headers: headers, as: :json
 
       expect(response).to have_http_status(:accepted)
       body = response.parsed_body
       expect(body["status"]).to eq("accepted")
-      expect(body["batch_id"]).to eq("batch-001")
       expect(body["gateway_uid"]).to eq(own_gateway.uid)
+
+      # Сигнатура має збігатися з CoAP daemon: (encoded_payload, sender_ip, gateway_uid)
       expect(UnpackTelemetryWorker).to have_received(:perform_async).with(
-        own_gateway.uid, "AABBCCDD11223344", "batch-001"
+        "AABBCCDD11223344", "127.0.0.1", own_gateway.uid
       )
-    end
-
-    it "generates batch_id when not provided" do
-      post "/api/v1/gateways/#{own_gateway.id}/telemetry",
-           params: { gateway_id: own_gateway.id, payload: "AABBCCDD" },
-           headers: headers, as: :json
-
-      expect(response).to have_http_status(:accepted)
-      expect(response.parsed_body["batch_id"]).to be_present
     end
 
     it "returns 404 for a gateway from another organization" do
