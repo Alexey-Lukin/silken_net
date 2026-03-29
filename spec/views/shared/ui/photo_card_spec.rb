@@ -121,13 +121,15 @@ RSpec.describe Views::Shared::UI::PhotoCard do
     let(:component) { component_class.new(photo: mock_photo, record: mock_record) }
 
     it "uses text-mini for file fallback filename" do
-      # Verified via source: render_file_fallback uses text-mini
-      expect(component_class.instance_method(:render_file_fallback).source_location).to be_present
+      source = component.method(:render_file_fallback).source_location.first
+      content = File.read(source)
+      expect(content).to include("text-mini")
     end
 
-    it "uses text-micro for metadata overlay and file size" do
-      # Verified via source: render_meta_overlay uses text-micro
-      expect(component_class.instance_method(:render_meta_overlay).source_location).to be_present
+    it "uses text-micro for metadata overlay" do
+      source = component.method(:render_meta_overlay).source_location.first
+      content = File.read(source)
+      expect(content).to include("text-micro")
     end
   end
 end

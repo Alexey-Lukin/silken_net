@@ -56,11 +56,10 @@ RSpec.describe Views::Shared::UI::DataTable do
   end
 
   describe "with custom empty_message" do
-    let(:html) { render_component(columns: columns, empty_message: "Nothing here.") }
+    let(:component) { component_class.new(columns: columns, empty_message: "Nothing here.") }
 
     it "stores the custom empty message" do
-      # empty_message is stored as an instance variable for potential use by EmptyState
-      expect(html).to include("<table")
+      expect(component.instance_variable_get(:@empty_message)).to eq("Nothing here.")
     end
   end
 
