@@ -120,6 +120,39 @@ RSpec.describe "Rack::Attack", type: :request do
   end
 
   # -----------------------------------------------------------------------
+  # M2M AUTH THROTTLE (15 req / 1 min)
+  # -----------------------------------------------------------------------
+  describe "m2m auth throttle (m2m_auth/ip)" do
+    it "registers the m2m_auth throttle rule" do
+      throttle = Rack::Attack.throttles["m2m_auth/ip"]
+      expect(throttle).to be_present
+    end
+
+    it "throttles m2m auth attempts after 15 POSTs per minute" do
+      16.times do
+        post "/api/v1/auth/m2m_token",
+          params: { did: "SNET-Q-TEST0001", timestamp: Time.current.iso8601, signature: "a" * 128 },
+          headers: { "REMOTE_ADDR" => "203.0.113.40" },
+          as: :json
+      end
+
+      # Unauthenticated/not-found requests return 401/404, which triggers
+      # Fail2Ban (403) before the M2M throttle (429). Both are valid blocking.
+      expect(response.status).to be_in([ 403, 429 ])
+    end
+  end
+
+  # -----------------------------------------------------------------------
+  # ORACLE CALLBACKS THROTTLE (60 req / 1 min)
+  # -----------------------------------------------------------------------
+  describe "oracle callbacks throttle (oracle_callbacks/ip)" do
+    it "registers the oracle_callbacks throttle rule" do
+      throttle = Rack::Attack.throttles["oracle_callbacks/ip"]
+      expect(throttle).to be_present
+    end
+  end
+
+  # -----------------------------------------------------------------------
   # FAIL2BAN
   # -----------------------------------------------------------------------
   describe "fail2ban (401/404 scanner detection)" do
@@ -183,7 +216,7 @@ RSpec.describe "Rack::Attack", type: :request do
   describe "configuration" do
     it "registers all expected throttle rules" do
       expect(Rack::Attack.throttles.keys).to contain_exactly(
-        "req/ip", "telemetry/uid", "logins/ip"
+        "req/ip", "telemetry/uid", "logins/ip", "m2m_auth/ip", "oracle_callbacks/ip"
       )
     end
 

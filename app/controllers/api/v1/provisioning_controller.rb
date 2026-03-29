@@ -83,10 +83,12 @@ module Api
                 render json: response_body, status: :created
               end
               format.html do
-                # Показуємо результат ритуалу (ключ та DID)
+                # [A-2 FIX]: В Production HKDF mode ключ не передається до UI-компонента.
+                # Zero-Trust: ключ деривується незалежно на прошивці.
+                display_key = ENV["PROVISIONING_MASTER_KEY"].blank? ? @key_hex : nil
                 render_dashboard(
                   title: "Initiation Successful",
-                  component: Provisioning::Success.new(device: @device, aes_key: @key_hex)
+                  component: Provisioning::Success.new(device: @device, aes_key: display_key)
                 )
               end
             end
