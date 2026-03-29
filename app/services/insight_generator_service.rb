@@ -56,7 +56,8 @@ class InsightGeneratorService < ApplicationService
       end
     end
 
-    # 4. КЕНОЗИС: Очищення сирих логів (поза транзакцією — це незалежна операція)
+    # 4. КЕНОЗИС: Очищення сирих логів (поза транзакцією — ідемпотентна операція
+    # на іншому діапазоні дат, не потребує атомарності з інсайтами)
     cleanup_old_logs!
 
     Rails.logger.info "✅ [Insight Generator] Цикл завершено. Оброблено вузлів: #{@processed_count}"

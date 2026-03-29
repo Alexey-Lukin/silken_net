@@ -13,8 +13,12 @@ class OtaTransmissionWorker
   sidekiq_retries_exhausted do |msg, _ex|
     queen_uid = msg["args"]&.first
     if queen_uid
-      Gateway.find_by(uid: queen_uid)&.update!(state: :faulty)
-      Rails.logger.error "🛑 [OTA] Job для #{queen_uid} помер. Шлюз переведено у :faulty."
+      gateway = Gateway.find_by(uid: queen_uid)
+      if gateway && !gateway.update(state: :faulty)
+        Rails.logger.error "🛑 [OTA] Не вдалося скинути #{queen_uid} у :faulty: #{gateway.errors.full_messages.join(', ')}"
+      else
+        Rails.logger.error "🛑 [OTA] Job для #{queen_uid} помер. Шлюз переведено у :faulty."
+      end
     end
   end
 
