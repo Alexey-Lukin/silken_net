@@ -19,23 +19,23 @@
 - ~~**🔴 BLOCKER-01: `map` контролер — відсутній `disconnect()` (Memory Leak при Turbo Drive навігації).**
   `map_controller.js` не мав `disconnect()` методу. Leaflet map instance не знищувалась при Turbo Drive-навігації → витік пам'яті при кожному переході між сторінками. Маркери накопичувались у пам'яті браузера.~~ ✅ **ВИРІШЕНО** у кодбейсі: `map_controller.js` має `disconnect()` що викликає `this.map.off()`, `this.map.remove()`, скидає `this.markers = {}` та очищає `resizeTimeout`. `matrix_rain_controller.js` — коректно очищає `clearInterval` + `removeEventListener` у `disconnect()`.
 
-- **🟠 BLOCKER-02: Відсутні RSpec-тести для `PhotoCard`, `DataTable`, `Pagination`.**
+- ~~**🟠 BLOCKER-02: Відсутні RSpec-тести для `PhotoCard`, `DataTable`, `Pagination`.**
   Документ (§10) декларує 134 приклади в 13 файлах, але три з 11 Shared UI компонентів не мають spec-файлів:
   - `spec/views/shared/ui/photo_card_spec.rb` — **ВІДСУТНІЙ** (`PhotoCard` — ActiveStorage, hover overlay, editable delete)
   - `spec/views/shared/ui/data_table_spec.rb` — **ВІДСУТНІЙ** (`DataTable` — configurable columns, empty state, block rendering)
-  - `spec/views/shared/ui/pagination_spec.rb` — **ВІДСУТНІЙ** (`Pagination` — Pagy prev/next, URL helper)
+  - `spec/views/shared/ui/pagination_spec.rb` — **ВІДСУТНІЙ** (`Pagination` — Pagy prev/next, URL helper)~~ ✅ **ВИРІШЕНО** у [commit b08de50](https://github.com/Alexey-Lukin/silken_net/commit/b08de50f84f1bc612b91db0e90b5e2082338b5d6) (PR #231):
+  - `spec/views/shared/ui/data_table_spec.rb` — додано 20 прикладів: columns+rows, empty state, custom `empty_message`, design system compliance, accessibility, class override, single column
+  - `spec/views/shared/ui/pagination_spec.rb` — додано 22 приклади: middle/first/last/single page, design system compliance, accessibility, focus-visible, invalid pagy guard
+  - `spec/views/shared/ui/photo_card_spec.rb` — додано 17 прикладів: initialization, validation, design system compliance, editable true/false, typography
+  - `spec/components/previews/skeleton_preview.rb` — додано Lookbook preview з 8 сценаріями: default, text, card, stats, table, map, custom_lines, interactive
 
-  **Дія:** Створити три spec-файли із покриттям props, edge cases (nil, empty), accessibility attributes.
-
-- **🟡 BLOCKER-03: Legacy `2xs`/`3xs` fontSize аліаси в `tailwind.config.js` не зареєстровані в `CUSTOM_TEXT_SCALE`.**
+- ~~**🟡 BLOCKER-03: Legacy `2xs`/`3xs` fontSize аліаси в `tailwind.config.js` не зареєстровані в `CUSTOM_TEXT_SCALE`.**
   `config/tailwind.config.js` розширює `theme.fontSize` через:
   ```js
   "2xs": ["0.625rem", { lineHeight: "0.875rem" }],  /* 10px — збігається з `tiny` */
   "3xs": ["0.5rem",   { lineHeight: "0.75rem"  }],  /* 8px  — збігається з `micro` */
   ```
-  Ці аліаси генерують класи `text-2xs` / `text-3xs`, що **не зареєстровані** у `ApplicationComponent::CUSTOM_TEXT_SCALE = %w[micro mini tiny compact]`. Якщо компонент комбінує `text-2xs` з `text-status-*`, TailwindMerge трактує обидва як `text-*` конфлікт і видаляє один із класів.
-
-  **Дія:** Або додати `"2xs"` та `"3xs"` до `CUSTOM_TEXT_SCALE`, або видалити legacy аліаси з `tailwind.config.js` на користь семантичних `micro`/`tiny`.
+  Ці аліаси генерують класи `text-2xs` / `text-3xs`, що **не зареєстровані** у `ApplicationComponent::CUSTOM_TEXT_SCALE = %w[micro mini tiny compact]`. Якщо компонент комбінує `text-2xs` з `text-status-*`, TailwindMerge трактує обидва як `text-*` конфлікт і видаляє один із класів.~~ ✅ **ВИРІШЕНО** у [commit b08de50](https://github.com/Alexey-Lukin/silken_net/commit/b08de50f84f1bc612b91db0e90b5e2082338b5d6) (PR #231): legacy аліаси `"2xs"` та `"3xs"` видалено з `config/tailwind.config.js`. Тепер `theme.fontSize` містить виключно семантичні токени (`micro`, `mini`, `tiny`, `compact`), зареєстровані в `CUSTOM_TEXT_SCALE`. TailwindMerge коректно розрізняє font-size та color класи без конфліктів.
 
 ---
 
@@ -692,11 +692,11 @@ class: "transition-colors duration-300"   # theme switches
 | `spec/views/components/wallets/transaction_row_spec.rb` | 14 | Token types, hash truncation |
 | `spec/views/components/wallets/balance_display_spec.rb` | 8 | Balance rendering, Turbo target |
 | `spec/views/components/actuators/card_spec.rb` | 16 | Status LED, matrix rendering |
-| `spec/views/shared/ui/photo_card_spec.rb` | — | ⚠️ **ВІДСУТНІЙ** (BLOCKER-02) |
-| `spec/views/shared/ui/data_table_spec.rb` | — | ⚠️ **ВІДСУТНІЙ** (BLOCKER-02) |
-| `spec/views/shared/ui/pagination_spec.rb` | — | ⚠️ **ВІДСУТНІЙ** (BLOCKER-02) |
+| `spec/views/shared/ui/data_table_spec.rb` | 20 | Columns+rows, empty state, custom empty_message, design system compliance, accessibility, class override, single column |
+| `spec/views/shared/ui/pagination_spec.rb` | 22 | Middle/first/last/single page, design system compliance, accessibility, focus-visible, invalid pagy guard |
+| `spec/views/shared/ui/photo_card_spec.rb` | 17 | Initialization, validation, design system compliance, editable true/false, typography |
 
-**Total (наявні):** **134** · **0 failures**
+**Total:** **193** · **0 failures**
 
 ### Lookbook (Component Explorer)
 
@@ -720,6 +720,7 @@ Lookbook provides a live preview of all components at `http://localhost:3000/loo
 | `PaginationPreview` | First page, Middle page, Last page |
 | `RelativeTimePreview` | Recent, With prefix, Nil datetime |
 | `ThemeSwitcherPreview` | Default toggle button |
+| `SkeletonPreview` | Default (balance), Text, Card, Stats, Table, Map, Custom lines, Interactive |
 | `WalletTransactionRowPreview` | Confirmed carbon, Pending forest, Failed, Processing, Interactive |
 | `WalletBalanceDisplayPreview` | Tree wallet, Locked funds, Org wallet, Zero balance, Interactive |
 | `ClusterItemPreview` | Healthy, Under threat, Low health, Interactive |
