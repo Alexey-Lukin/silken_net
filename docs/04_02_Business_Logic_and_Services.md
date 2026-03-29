@@ -71,7 +71,7 @@
 | **Файл** | `app/services/alert_dispatch_service.rb` |
 | **Вхід** | `TelemetryLog` (через `.analyze_and_trigger!`) або `Tree` + `message` (через `.create_fraud_alert!`) |
 | **Що робить** | Аналізує телеметрію по 5 напрямках: вандалізм (tamper), пожежа/температура, сейсміка, посуха/атрактор, шкідники. Адаптивні пороги (з кластера/породи дерева). Redis-фільтр тиші (5 хвилин per `tree_id:alert_type`). |
-| **Зовнішні виклики** | `EmergencyResponseService.call`, `AlertNotificationWorker.perform_async` |
+| **Зовнішні виклики** | `EmergencyResponseService.call`. `AlertNotificationWorker` більше **не** викликається явно — `EwsAlert.after_create_commit :dispatch_notifications!` ставить job у чергу безпечно після commit транзакції (A-1 Transactional Outbox). |
 | **Вихід** | Створює `EwsAlert`. Інвалідує `oracle_expected_yield_24h` кеш при critical severity. Повертає `nil` (всі дії через side effects). |
 
 ---
@@ -84,7 +84,8 @@
 |---|---|
 | **Файл** | `app/services/insight_generator_service.rb` |
 | **Вхід** | `date` (Date, default: вчора UTC) |
-| **Що робить** | Добова агрегація телеметрії → `AiInsight`. Включає: AI Fraud Guard (відхилення sap_flow/temp від кластерного базлайну > 30%), ML-модель (`silken_forest.marshal` + SHA256 integrity check) або евристика stress_index. Денормалізує `tree.latest_stress_index`. Очищує `TelemetryLog` старше 7 днів. |
+| **Що робить** | Добова агрегація телеметрії → `AiInsight`. Включає: AI Fraud Guard (відхилення sap_flow/temp від кластерного базлайну > 30%), ML-модель (`silken_forest.marshal` + SHA256 integrity check) або евристика stress_index. Денормалізує `tree.latest_stress_index`. Очищує `TelemetryLog` старше 7 днів — **з виключенням** логів з `oracle_status='dispatched'` (очікують callback від Chainlink; видалення призвело б до `RecordNotFound` у `OracleCallbacksController` і 5 марних ретраїв без мінтингу токенів). |
+| **Публічні методи** | `call(date)` / `perform` (сумісність). `cluster_baselines → Hash<cluster_id, baselines>` — один SQL, потрібен `InsightGeneratorOrchestratorWorker`. `process_cluster_batch(cluster_ids) → Integer` — обробка чанку кластерів для `GenerateClusterInsightWorker`. `cleanup_old_logs!` — клас-метод (викликається з `InsightBatchCallbacks`). |
 | **Зовнішні виклики** | `AlertDispatchService.create_fraud_alert!` |
 | **Вихід** | `{ processed_count: Integer, date: Date }`. Створює `AiInsight` per tree та per cluster. |
 
@@ -568,16 +569,45 @@
 | **Retry** | 3, unique_for: 24 години |
 | **Тригер** | Sidekiq cron: щодня 01:00 UTC |
 | **Вхід** | `date_string` (String ISO8601, опціонально — default вчора UTC) |
-| **Сервіси** | `InsightGeneratorService.call(target_date)` |
-| **Side Effects** | → `ClusterHealthCheckWorker.perform_async(date)`. При відсутності даних: `EwsAlert` GLOBAL_BLACKOUT для кожного активного кластера. |
+| **Сервіси** | `InsightGeneratorOrchestratorWorker.perform_async(target_date.to_s)` |
+| **Side Effects** | → `InsightGeneratorOrchestratorWorker` (batch), який після успіху викликає `InsightBatchCallbacks#on_success` → `ClusterHealthCheckWorker`. При відсутності телеметрії: `EwsAlert` GLOBAL_BLACKOUT для кожного активного кластера. |
 
-#### `ClusterHealthCheckWorker`
+#### `InsightGeneratorOrchestratorWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `low` |
+| **Retry** | 3, unique_for: 24 години |
+| **Тригер** | `DailyAggregationWorker` (після перевірки наявності телеметрії) |
+| **Вхід** | `date_string` (String ISO8601, опціонально — default вчора UTC) |
+| **Що робить** | Визначає кластери з даними за день через `InsightGeneratorService#cluster_baselines` (один SQL-запит). Створює `Sidekiq::Batch`, реєструє `InsightBatchCallbacks`, розбиває кластери на чанки по `CLUSTER_BATCH_SIZE = 100` та enqueue `GenerateClusterInsightWorker` для кожного чанку. Ідемпотентність — на рівні child-воркерів (per-cluster delete+insert). |
+| **Side Effects** | Sidekiq Pro Batch → N × `GenerateClusterInsightWorker`. Після успіху всіх чанків: `InsightBatchCallbacks#on_success`. |
+
+#### `GenerateClusterInsightWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `low` |
+| **Retry** | 3 |
+| **Тригер** | `InsightGeneratorOrchestratorWorker` (всередині `Sidekiq::Batch`) |
+| **Вхід** | `cluster_ids` (Array<Integer>), `date_string` (String ISO8601) |
+| **Що робить** | Викликає `InsightGeneratorService#process_cluster_batch(cluster_ids)` — обробляє чанк кластерів: per-cluster delete+insert `AiInsight`, fraud detection, ML-модель, денормалізація `latest_stress_index`. |
+| **Side Effects** | Оновлення `AiInsight`. `AlertDispatchService.create_fraud_alert!` при виявленні фроду. |
+
+#### `InsightBatchCallbacks`
+
+| Параметр | Значення |
+|----------|----------|
+| **Файл** | `app/callbacks/insight_batch_callbacks.rb` |
+| **Тип** | Sidekiq Pro Batch callback клас (не Worker) |
+| **Тригер** | `InsightGeneratorOrchestratorWorker` (реєструє через `batch.on(:success, InsightBatchCallbacks, "date" => ...)`) |
+| **`on_success`** | Спрацьовує тільки якщо **всі** `GenerateClusterInsightWorker` jobs завершились успішно. Запускає: 1) `ClusterHealthCheckWorker.perform_async(date_string)` — аудит NaaS-контрактів; 2) `InsightGeneratorService.cleanup_old_logs!` — видаляє `TelemetryLog` старше 7 днів (крім `oracle_status='dispatched'`). |
 
 | Параметр | Значення |
 |----------|----------|
 | **Черга** | `default` |
 | **Retry** | 3 |
-| **Тригер** | `DailyAggregationWorker` (після успішної агрегації) |
+| **Тригер** | `InsightBatchCallbacks#on_success` (після успішного завершення всіх `GenerateClusterInsightWorker` чанків) |
 | **Вхід** | `date_string` (String ISO8601, опціонально) |
 | **Сервіси** | `contract.check_cluster_health!(target_date)` → `ContractHealthCheckService` |
 | **Side Effects** | При healthy → `CeloRewardWorker.perform_async`. При breached → `BurnCarbonTokensWorker.perform_async`. Оновлює `cluster.health_index`. |
@@ -814,7 +844,7 @@ CoAP UDP (port 5683)
         │     │                                             └─→ BlockchainConfirmationWorker [web3_critical]
         │     └─→ StreamrBroadcastWorker [low] (non-blocking)
         └─→ GatewayTelemetryWorker [uplink] (при DID=0x00)
-              └─→ AlertNotificationWorker [alerts] (при critical_fault)
+              └─→ (AlertNotificationWorker [alerts] — через EwsAlert.after_create_commit при critical_fault)
 ```
 
 ### ⏰ Щоденний Цикл (01:00 UTC)
@@ -822,15 +852,20 @@ CoAP UDP (port 5683)
 ```
 Sidekiq Cron 01:00 UTC
   └─→ DailyAggregationWorker [low]
-        └─→ InsightGeneratorService
-              ├─→ AlertDispatchService.create_fraud_alert! (при fraud)
-              └─→ ClusterHealthCheckWorker [default]
-                    ├─→ ContractHealthCheckService
-                    ├─→ CeloRewardWorker [web3] (якщо healthy)
-                    │     └─→ Celo::CommunityRewardService
-                    └─→ BurnCarbonTokensWorker [critical] (якщо breached)
-                          └─→ BlockchainBurningService
-                                └─→ BlockchainConfirmationWorker [web3_critical]
+        └─→ InsightGeneratorOrchestratorWorker [low]
+              ├─→ InsightGeneratorService#cluster_baselines (1 SQL)
+              └─→ Sidekiq::Batch → N × GenerateClusterInsightWorker [low]
+                    └─→ InsightGeneratorService#process_cluster_batch
+                          └─→ AlertDispatchService.create_fraud_alert! (при fraud)
+                    [on_success] InsightBatchCallbacks
+                          ├─→ ClusterHealthCheckWorker [default]
+                          │     ├─→ ContractHealthCheckService
+                          │     ├─→ CeloRewardWorker [web3] (якщо healthy)
+                          │     │     └─→ Celo::CommunityRewardService
+                          │     └─→ BurnCarbonTokensWorker [critical] (якщо breached)
+                          │           └─→ BlockchainBurningService
+                          │                 └─→ BlockchainConfirmationWorker [web3_critical]
+                          └─→ InsightGeneratorService.cleanup_old_logs!
 ```
 
 ### ⏰ Щогодинний Цикл (Tokenomics)
@@ -921,7 +956,7 @@ Financial action
 
 > **Методологія:** Глибокий параноїдальний аудит 33 воркерів та 35 сервісів за 5 векторами: Network-in-Transaction Trap, Idempotency Failures, Memory Black Holes, SSOT vs Reality, Orphaned States.
 > **Дата:** 2026-03-28 · Principal Backend Architect audit.
-> **Статус:** Всі P0 (3/3) та P1 (7/7) знахідки виправлено. P0–P1 (6/7) — PR #226 (commit 72f0d4c3). P1-7 (`TelemetryUnpackerService`) — PR #227 (commit 66ee6e1). Architectural Suggestions A-2 та A-4 також реалізовано у PR #227.
+> **Статус:** Всі P0 (3/3) та P1 (7/7) знахідки виправлено. P0–P1 (6/7) — PR #226 (commit 72f0d4c3). P1-7 (`TelemetryUnpackerService`) — PR #227 (commit 66ee6e1). Architectural Suggestions A-2 та A-4 реалізовано у PR #227. A-1 (Transactional Outbox) та A-3 (InsightGenerator Sidekiq Batch) реалізовано у PR #228 (commit 5f934f4).
 
 ---
 
@@ -1025,26 +1060,16 @@ Financial action
 
 ### 🔵 Architectural Suggestions
 
-#### A-1 · Transactional Outbox Pattern для всіх P0 випадків
+#### ✅ A-1 · Transactional Outbox Pattern — реалізовано через `EwsAlert.after_create_commit` (PR #228)
 
-Системна проблема P0-1, P0-2, P0-3, P1-7 — один і той самий антипаттерн: Sidekiq job enqueued inside DB transaction. Рекомендоване рішення:
+~~Системна проблема P0-1, P0-2, P0-3, P1-7 — один і той самий антипаттерн: Sidekiq job enqueued inside DB transaction.~~
 
-```ruby
-# Rails 8 after_create_commit / after_commit
-class EwsAlert < ApplicationRecord
-  after_create_commit -> { AlertNotificationWorker.perform_async(id) }
-end
+**Виправлено у PR #228 (commit 5f934f4):** `EwsAlert` моделі вже містить `after_create_commit :dispatch_notifications!`, який безпечно ставить `AlertNotificationWorker.perform_async(self.id)` **після** commit транзакції. Явні `AlertNotificationWorker.perform_async` виклики видалено з:
+- `AlertDispatchService.create_and_dispatch_alert!` — виклик всередині транзакції `TelemetryUnpackerService#commit_telemetry` (phantom jobs при rollback)
+- `AlertDispatchService.create_fraud_alert!` — виклик всередині транзакції `InsightGeneratorService` (phantom jobs при rollback)
+- `GatewayTelemetryWorker` — явний виклик після транзакції (дублюючий enqueue)
 
-# Або: накопичувати jobs в масиві, enqueue після transaction
-jobs_to_enqueue = []
-ActiveRecord::Base.transaction do
-  alert = EwsAlert.create!(...)
-  jobs_to_enqueue << -> { AlertNotificationWorker.perform_async(alert.id) }
-end
-jobs_to_enqueue.each(&:call)
-```
-
-Sidekiq Pro 7+ також підтримує `Sidekiq::Middleware::CurrentAttributes` + транзакційний outbox через `Kredis::List` — але це вимагає Pro ліцензії.
+~~Sidekiq Pro 7+ також підтримує `Sidekiq::Middleware::CurrentAttributes` + транзакційний outbox через `Kredis::List` — але це вимагає Pro ліцензії.~~
 
 #### ✅ A-2 · `PartitionMaintenanceWorker` — cron встановлено на 00:30 UTC (PR #227)
 
@@ -1052,9 +1077,17 @@ Sidekiq Pro 7+ також підтримує `Sidekiq::Middleware::CurrentAttrib
 
 **Виправлено у PR #227 (commit 66ee6e1):** `config/sidekiq.yml` оновлено — cron `partition_maintenance: '30 0 * * *'` (00:30 UTC). Партиція тепер гарантовано створюється за 30 хвилин до `DailyAggregationWorker` (01:00 UTC). Коментар у yml: *"О 00:30 UTC щодня, ДО агрегації о 01:00 UTC"*.
 
-#### A-3 · `InsightGeneratorService` — розглянути Sidekiq Batch для покластерної обробки
+#### ✅ A-3 · `InsightGeneratorService` → Sidekiq::Batch реалізовано (PR #228)
 
-При 10M+ дерев `InsightGeneratorService#perform` є монолітним синхронним процесом. Аналогічно до `TokenomicsEvaluatorWorker` (де використовується `Sidekiq::Batch` → `EvaluateTreeBatchWorker`), `InsightGeneratorService` варто розбити на `InsightGeneratorOrchestrator` (Batch) + `GenerateClusterInsightWorker` (child по 100 кластерів). Це усуне OOM-ризик при великому датасеті і надасть Sidekiq Pro Batch progress tracking.
+~~При 10M+ дерев `InsightGeneratorService#perform` є монолітним синхронним процесом. Аналогічно до `TokenomicsEvaluatorWorker` (де використовується `Sidekiq::Batch` → `EvaluateTreeBatchWorker`), `InsightGeneratorService` варто розбити на `InsightGeneratorOrchestrator` (Batch) + `GenerateClusterInsightWorker` (child по 100 кластерів). Це усуне OOM-ризик при великому датасеті і надасть Sidekiq Pro Batch progress tracking.~~
+
+**Виправлено у PR #228 (commit 5f934f4):**
+
+- **`InsightGeneratorOrchestratorWorker`** (queue: `low`, `unique_for: 24.hours`) — отримує список кластерів через `InsightGeneratorService#cluster_baselines` (один SQL), створює `Sidekiq::Batch` і розбиває на чанки по `CLUSTER_BATCH_SIZE = 100`.
+- **`GenerateClusterInsightWorker`** (queue: `low`) — child-воркер батчу. Обробляє чанк через `InsightGeneratorService#process_cluster_batch(cluster_ids)`. Ідемпотентний: per-cluster delete+insert замість global `delete_all` (усуває race condition паралельних воркерів).
+- **`InsightBatchCallbacks`** — `on_success`: запускає `ClusterHealthCheckWorker.perform_async` і `InsightGeneratorService.cleanup_old_logs!` тільки після успішного завершення **всіх** чанків.
+- **`DailyAggregationWorker`** оновлено: викликає `InsightGeneratorOrchestratorWorker.perform_async(target_date.to_s)` замість `InsightGeneratorService.call` (усуває OOM-ризик).
+- **`InsightGeneratorService#cleanup_old_logs!`** виправлено: тепер зберігає логи з `oracle_status='dispatched'` — вони очікують callback від Chainlink (`OracleCallbacksController`), видалення переривало б Proof of Growth pipeline.
 
 #### ✅ A-4 · `AlertNotificationWorker` — `Sidekiq::Client.push_bulk` реалізовано (PR #227)
 
