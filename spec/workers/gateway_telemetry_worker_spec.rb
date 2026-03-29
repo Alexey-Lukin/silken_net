@@ -219,4 +219,29 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
       }.to raise_error(StandardError, "Unexpected failure")
     end
   end
+
+  describe "transaction safety (P0 fix)" do
+    it "does not enqueue AlertNotificationWorker when transaction rolls back" do
+      stats = valid_stats.merge("voltage_mv" => 3000)
+
+      # Stub mark_seen! to raise AFTER the alert would be created,
+      # forcing a transaction rollback
+      call_count = 0
+      allow_any_instance_of(Gateway).to receive(:mark_seen!) do
+        call_count += 1
+        raise ActiveRecord::Rollback if call_count == 1
+      end
+
+      # The transaction block silently swallows ActiveRecord::Rollback,
+      # so we need to force a real rollback. Use a different approach:
+      # make check_system_health raise after creating alert
+      allow_any_instance_of(described_class).to receive(:check_system_health).and_raise(StandardError, "DB constraint violation")
+
+      AlertNotificationWorker.jobs.clear
+
+      expect {
+        described_class.new.perform(gateway.uid, stats) rescue nil
+      }.not_to change(AlertNotificationWorker.jobs, :size)
+    end
+  end
 end

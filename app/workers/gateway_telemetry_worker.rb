@@ -30,6 +30,10 @@ class GatewayTelemetryWorker
     end
 
     # 2. ТРАНЗАКЦІЙНІСТЬ (The Integrity Loop)
+    # [P0 FIX]: Sidekiq job НЕ повинен ставитись в чергу всередині транзакції.
+    # Збираємо alert_id під час транзакції, enqueue — після commit.
+    pending_alert_id = nil
+
     ActiveRecord::Base.transaction do
       log = gateway.gateway_telemetry_logs.create!(
         gateway_id: gateway.id,
@@ -47,8 +51,11 @@ class GatewayTelemetryWorker
       )
 
       # 3. АНАЛІЗ (The Diagnostic Lens)
-      check_system_health(gateway, log)
+      pending_alert_id = check_system_health(gateway, log)
     end
+
+    # Enqueue notification ПІСЛЯ успішного commit транзакції
+    AlertNotificationWorker.perform_async(pending_alert_id) if pending_alert_id
 
     Rails.logger.info "👑 [Gateway] #{gateway.uid} Sync: #{stats[:voltage_mv]}mV, Sig: #{stats[:cellular_signal_csq]}/31"
   rescue ActiveRecord::RecordNotFound
@@ -77,8 +84,8 @@ class GatewayTelemetryWorker
       message: message
     )
 
-    # Викликаємо "Голос Патрульних" (SMS/Telegram)
-    AlertNotificationWorker.perform_async(alert.id)
+    # [P0 FIX]: Повертаємо alert.id — enqueue відбувається після commit транзакції
+    alert.id
   end
 
   def format_health_message(gateway, log)

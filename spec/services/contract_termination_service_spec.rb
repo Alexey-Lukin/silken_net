@@ -56,5 +56,24 @@ RSpec.describe ContractTerminationService do
       expect(result).to include(:refund, :fee, :burned)
       expect(result[:burned]).to be(false)
     end
+
+    context "when transaction rolls back (P0 fix)" do
+      it "does not enqueue BurnCarbonTokensWorker" do
+        contract.update!(burn_accrued_points: true)
+
+        # Force an error after status update to trigger rollback
+        allow(Rails.logger).to receive(:info).and_raise(StandardError, "DB constraint violation")
+
+        BurnCarbonTokensWorker.jobs.clear
+
+        expect {
+          described_class.call(contract) rescue nil
+        }.not_to change(BurnCarbonTokensWorker.jobs, :size)
+
+        # Verify contract is NOT cancelled (transaction rolled back)
+        contract.reload
+        expect(contract).to be_status_active
+      end
+    end
   end
 end

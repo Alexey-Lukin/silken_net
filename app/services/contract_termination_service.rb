@@ -29,11 +29,17 @@ class ContractTerminationService < ApplicationService
       @contract.update!(status: :cancelled, cancelled_at: Time.current)
 
       if should_burn
-        BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id)
         Rails.logger.warn "🔥 [NaasContract] Контракт ##{@contract.id} розірвано. Нараховані бали спалюються."
       end
 
       Rails.logger.info "📜 [NaasContract] Контракт ##{@contract.id} розірвано достроково. Повернення: #{refund}, Штраф: #{@contract.calculate_early_exit_fee}."
+    end
+
+    # [P0 FIX]: Enqueue burn job ПІСЛЯ успішного commit транзакції.
+    # При rollback контракт повертається до :active, але burn-job вже в Redis —
+    # BurnCarbonTokensWorker виконає Slashing на активному контракті. Фінансова катастрофа.
+    if should_burn
+      BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id)
     end
 
     { refund: refund, fee: @contract.calculate_early_exit_fee, burned: should_burn }

@@ -129,5 +129,30 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
         described_class.new.perform(record.id)
       end
     end
+
+    # -----------------------------------------------------------------
+    # Transaction Safety (P0 Fix)
+    # -----------------------------------------------------------------
+    context "when transaction rolls back during biomass_extraction" do
+      it "does not enqueue PuroEarthPassportWorker" do
+        tree = create(:tree, status: :active)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+
+        # Force alert resolution to raise, triggering a rollback
+        failing_alert = create(:ews_alert, cluster: tree.cluster, tree: tree, status: :active)
+        allow(record).to receive(:ews_alert).and_return(failing_alert)
+        allow(failing_alert).to receive(:status_resolved?).and_return(false)
+        allow(failing_alert).to receive(:resolve!).and_raise(StandardError, "DB constraint violation")
+
+        # Stub the record lookup so our stubbed record is used
+        allow(MaintenanceRecord).to receive(:find).with(record.id).and_return(record)
+
+        PuroEarthPassportWorker.jobs.clear
+
+        expect {
+          described_class.new.perform(record.id) rescue nil
+        }.not_to change(PuroEarthPassportWorker.jobs, :size)
+      end
+    end
   end
 end
