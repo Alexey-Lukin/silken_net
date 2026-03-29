@@ -49,9 +49,18 @@ RSpec.describe AlertNotificationWorker, type: :worker do
       create(:user, :admin, organization: organization)
       create(:user, :forester, organization: organization)
 
-      # Verify push_bulk is called instead of individual perform_async
+      # Verify push_bulk is called with correct args count:
+      # Critical alert → 2 SMS (admin + forester) + 2 Push (admin + forester) = 4 entries
       expect(Sidekiq::Client).to receive(:push_bulk).with(
-        hash_including("class" => SingleNotificationWorker, "args" => an_instance_of(Array))
+        hash_including(
+          "class" => SingleNotificationWorker,
+          "args" => a_collection_containing_exactly(
+            [ anything, alert.id, "sms" ],
+            [ anything, alert.id, "push" ],
+            [ anything, alert.id, "sms" ],
+            [ anything, alert.id, "push" ]
+          )
+        )
       ).and_call_original
 
       described_class.new.perform(alert.id)
