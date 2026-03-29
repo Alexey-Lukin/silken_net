@@ -28,7 +28,7 @@
 * ~~**🟠 P1 [`OtaTransmissionWorker`] — Orphaned Gateway state `:updating`:** При падінні процесу шлюз міг зависнути в стані `:updating` нескінченно.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): додано `sidekiq_retries_exhausted` хендлер що скидає `gateway.update!(state: :faulty)`.
 * ~~**🟠 P1 [`InsurancePayoutWorker`] — Orphaned tx при Etherisc flow (retry blocked by AASM guard):** `tx` міг зависнути в статусі `:pending` при збої після `insurance.pay!`.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): guard пом'якшено — перевіряє стан `tx` перед блокуванням; orphaned Etherisc TX відновлюється.
 * ~~**🟠 P1 [SSOT Gap] — `PartitionMaintenanceWorker` відсутній у Workers Registry:** Воркер існує в `app/workers/partition_maintenance_worker.rb` але не був згаданий у реєстрі воркерів розділу 11.~~ ✅ **ВИРІШЕНО**: `PartitionMaintenanceWorker` додано до реєстру воркерів (§11, секція "Default — Агрегація та Токеноміка") з повним описом параметрів, тригера (cron 00:30 UTC) та side effects.
-* ~~**🟠 P1 [SSOT Gap] — Секція "Default — Агрегація та Токеноміка" некоректно групує `DailyAggregationWorker`:** `DailyAggregationWorker` насправді використовує чергу `low` (пріоритет 1), а не `default` (пріоритет 5). Секція-заголовок вводив в оману.~~ ✅ **ВИРІШЕНО**: додано SSOT Note до заголовку секції з поясненням розбіжності; черга вказана коректно у таблиці `DailyAggregationWorker`.
+* ~~**🟠 P1 [`TelemetryUnpackerService#commit_telemetry`] — Jobs enqueued inside transaction (phantom Sidekiq jobs):** `IotexVerificationWorker.perform_async(...)` та `StreamrBroadcastWorker.perform_async(...)` ставились в чергу всередині `ActiveRecord::Base.transaction`. При rollback jobs вже в Redis, але `TelemetryLog` запис відсутній — 5 марних ретраїв на `web3_critical`.~~ ✅ **ВИРІШЕНО** у PR #227 (commit 66ee6e1): обидва `perform_async` виклики перенесено поза `transaction` блок (змінна `log` повертається з transaction, enqueue — після нього).
 
 ---
 
@@ -457,7 +457,7 @@
 | **Тригер** | `AlertDispatchService` (через `create_and_dispatch_alert!` та `create_fraud_alert!`), `GatewayTelemetryWorker` (при `critical_fault?`) |
 | **Вхід** | `ews_alert_id` (Integer) |
 | **Сервіси** | — |
-| **Side Effects** | ActionCable broadcast до dashboard. Знаходить stakeholders організації → `SingleNotificationWorker.perform_async` per (user, channel). |
+| **Side Effects** | ActionCable broadcast до dashboard. Знаходить stakeholders організації через `.find_each(batch_size: 500)`, збирає args у масив → `Sidekiq::Client.push_bulk("class" => SingleNotificationWorker, "args" => bulk_args)` — один Redis round-trip замість N окремих `LPUSH`. |
 
 #### `SingleNotificationWorker`
 
@@ -921,7 +921,7 @@ Financial action
 
 > **Методологія:** Глибокий параноїдальний аудит 33 воркерів та 35 сервісів за 5 векторами: Network-in-Transaction Trap, Idempotency Failures, Memory Black Holes, SSOT vs Reality, Orphaned States.
 > **Дата:** 2026-03-28 · Principal Backend Architect audit.
-> **Статус:** Всі P0 (3/3) та P1 (6/7) знахідки виправлено у PR #226 (commit 72f0d4c3). P1-7 (`TelemetryUnpackerService`) — залишається відкритим.
+> **Статус:** Всі P0 (3/3) та P1 (7/7) знахідки виправлено. P0–P1 (6/7) — PR #226 (commit 72f0d4c3). P1-7 (`TelemetryUnpackerService`) — PR #227 (commit 66ee6e1). Architectural Suggestions A-2 та A-4 також реалізовано у PR #227.
 
 ---
 
@@ -956,7 +956,7 @@ Financial action
 
 ---
 
-### ✅ P1 Warnings — Виправлено у PR #226 (крім P1-7)
+### ✅ P1 Warnings — Всі 7/7 виправлено (P1-1..P1-6 → PR #226, P1-7 → PR #227)
 
 #### P1-1 · `ToucanBridgeWorker` — Відсутній idempotency guard (Double-Bridge Risk)
 
@@ -1012,14 +1012,14 @@ Financial action
 | **Опис** | Після успішного `insurance.pay!` і збою `tx.update!` — наступний ретрай блокувався guard `return unless insurance.status_triggered?`. `tx` залишався `:pending` назавжди. |
 | **✅ Виправлення (PR #226)** | Guard пом'якшено: перевіряє стан `tx` (`status_sent?`/`status_confirmed?`) перед блокуванням; додано відновлення orphaned Etherisc TX; `claim!` ідемпотентний. |
 
-#### P1-7 · `TelemetryUnpackerService#commit_telemetry` — Jobs enqueued inside transaction
+#### ✅ P1-7 · `TelemetryUnpackerService#commit_telemetry` — Jobs enqueued inside transaction
 
 | | |
 |---|---|
 | **Файл** | `app/services/telemetry_unpacker_service.rb`, метод `commit_telemetry` |
 | **Вектор** | Network-in-Transaction Trap (variant: phantom Sidekiq jobs) |
-| **Опис** | `IotexVerificationWorker.perform_async(...)` та `StreamrBroadcastWorker.perform_async(...)` ставляться в чергу **всередині** `ActiveRecord::Base.transaction`. Якщо транзакція відкотиться (напр., `update_health_streak!` або `check_firmware_mismatch!` кинуть) — обидва jobs вже в Redis, але `TelemetryLog` запис відсутній. `IotexVerificationWorker` знайде `nil` (5 ретраїв даремно на `web3_critical`). Менш критично ніж P0 (немає фінансового ризику), але засмічує `web3_critical` чергу. |
-| **🟠 Статус** | **Відкрито.** Не включено до PR #226. Виправлення: перенести `perform_async` виклики поза `transaction` блок — зберігати `record.id_value` та `record.created_at.iso8601(6)` і enqueue після commit. |
+| **Опис** | `IotexVerificationWorker.perform_async(...)` та `StreamrBroadcastWorker.perform_async(...)` ставились в чергу **всередині** `ActiveRecord::Base.transaction`. Якщо транзакція відкотилась (напр., `update_health_streak!` або `check_firmware_mismatch!` кинули) — обидва jobs вже в Redis, але `TelemetryLog` запис відсутній. `IotexVerificationWorker` знайде `nil` (5 ретраїв даремно на `web3_critical`). Менш критично ніж P0 (немає фінансового ризику), але засмічує `web3_critical` чергу. |
+| **✅ Виправлення (PR #227)** | `perform_async` виклики перенесено поза `transaction` блок. Transaction-блок тепер повертає `record` у змінну `log`; `IotexVerificationWorker.perform_async(log.id_value, log.created_at.iso8601(6))` та `StreamrBroadcastWorker.perform_async(...)` виконуються після нього. Phantom jobs при rollback більше неможливі. |
 
 ---
 
@@ -1046,25 +1046,29 @@ jobs_to_enqueue.each(&:call)
 
 Sidekiq Pro 7+ також підтримує `Sidekiq::Middleware::CurrentAttributes` + транзакційний outbox через `Kredis::List` — але це вимагає Pro ліцензії.
 
-#### A-2 · `PartitionMaintenanceWorker` — рекомендовано запускати ДО `DailyAggregationWorker`
+#### ✅ A-2 · `PartitionMaintenanceWorker` — cron встановлено на 00:30 UTC (PR #227)
 
-Поточний cron (якщо є) не специфікований у документі. Якщо `PartitionMaintenanceWorker` не запуститься до 01:00 UTC (час `DailyAggregationWorker`), вставка телеметрії на початку нового місяця падатиме з `no partition of relation` PostgreSQL помилкою. Рекомендовано: `00:30 UTC` щодня.
+~~Поточний cron (якщо є) не специфікований у документі. Якщо `PartitionMaintenanceWorker` не запуститься до 01:00 UTC (час `DailyAggregationWorker`), вставка телеметрії на початку нового місяця падатиме з `no partition of relation` PostgreSQL помилкою. Рекомендовано: `00:30 UTC` щодня.~~
+
+**Виправлено у PR #227 (commit 66ee6e1):** `config/sidekiq.yml` оновлено — cron `partition_maintenance: '30 0 * * *'` (00:30 UTC). Партиція тепер гарантовано створюється за 30 хвилин до `DailyAggregationWorker` (01:00 UTC). Коментар у yml: *"О 00:30 UTC щодня, ДО агрегації о 01:00 UTC"*.
 
 #### A-3 · `InsightGeneratorService` — розглянути Sidekiq Batch для покластерної обробки
 
 При 10M+ дерев `InsightGeneratorService#perform` є монолітним синхронним процесом. Аналогічно до `TokenomicsEvaluatorWorker` (де використовується `Sidekiq::Batch` → `EvaluateTreeBatchWorker`), `InsightGeneratorService` варто розбити на `InsightGeneratorOrchestrator` (Batch) + `GenerateClusterInsightWorker` (child по 100 кластерів). Це усуне OOM-ризик при великому датасеті і надасть Sidekiq Pro Batch progress tracking.
 
-#### A-4 · `AlertNotificationWorker` — розглянути Sidekiq Pro Bulk для масового enqueue
+#### ✅ A-4 · `AlertNotificationWorker` — `Sidekiq::Client.push_bulk` реалізовано (PR #227)
 
-Замість синхронного циклу `stakeholders.find_each { |u| SingleNotificationWorker.perform_async(...) }` використати `Sidekiq::Client.push_bulk` для одного Redis `LPUSH` з усіма jobs:
+~~Замість синхронного циклу `stakeholders.find_each { |u| SingleNotificationWorker.perform_async(...) }` використати `Sidekiq::Client.push_bulk` для одного Redis `LPUSH` з усіма jobs:~~
+
+**Виправлено у PR #227 (commit 66ee6e1):** `AlertNotificationWorker#notify_stakeholders` оновлено:
 
 ```ruby
-jobs = []
-organization.users.where(role: [:admin, :forester]).find_each do |user|
-  jobs << { "class" => SingleNotificationWorker, "args" => [user.id, alert.id, "push"] }
-  jobs << { "class" => SingleNotificationWorker, "args" => [user.id, alert.id, "sms"] } if alert.severity_critical?
+bulk_args = []
+organization.users.where(role: [ :admin, :forester ]).find_each do |user|
+  bulk_args << [ user.id, alert.id, "sms" ] if alert.severity_critical?
+  bulk_args << [ user.id, alert.id, "push" ]
 end
-Sidekiq::Client.push_bulk("class" => SingleNotificationWorker.to_s, "args" => jobs.map { _1["args"] })
+Sidekiq::Client.push_bulk("class" => SingleNotificationWorker, "args" => bulk_args) if bulk_args.any?
 ```
 
 Це зменшує кількість Redis round-trips з N до 1 при масовому розсиланні.
