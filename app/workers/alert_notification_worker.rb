@@ -72,7 +72,9 @@ class AlertNotificationWorker
     # Ретрай зачіпає лише одну конкретну доставку, а не весь пакет.
     stakeholders = organization.users.where(role: [ :admin, :forester ])
 
-    stakeholders.each do |user|
+    # [P1 FIX OOM]: find_each замість each — завантажує батчами по 1000 записів,
+    # запобігаючи OOM при організаціях з 10 000+ лісниками.
+    stakeholders.find_each do |user|
       # SMS лише для критичних ситуацій (Пожежа / Вандалізм)
       SingleNotificationWorker.perform_async(user.id, alert.id, "sms") if alert.severity_critical?
 

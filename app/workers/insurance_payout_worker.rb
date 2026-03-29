@@ -13,7 +13,10 @@ class InsurancePayoutWorker
 
     # 1. ПЕРЕВІРКА ТРИГЕРА
     # Виконуємо лише якщо Оракул активував тригер, але виплата ще не зафіксована як завершена.
-    return unless insurance.status_triggered?
+    # [P1 FIX]: Також дозволяємо :paid для recovery orphaned Etherisc TX —
+    # якщо claim! виконався, але tx.update! впав, insurance вже :paid,
+    # а tx залишається :pending без BlockchainConfirmationWorker.
+    return unless insurance.status_triggered? || insurance.status_paid?
 
     # [COSMIC EYE]: Перевірка супутникового консенсусу для пожежних алертів.
     # Якщо в кластері є активні fire_detected/severe_drought алерти, вони повинні
@@ -61,6 +64,9 @@ class InsurancePayoutWorker
     # загартованому BlockchainMintingService для підпису та відправки в Polygon.
     # [ETHERISC DIP]: Якщо страховка прив'язана до Etherisc policy, система
     # працює як Oracle — тригерить зовнішній USDC payout замість внутрішнього мінтингу.
+    # [P1 FIX]: При recovery — знаходимо orphaned pending TX якщо insurance вже :paid
+    tx ||= insurance.blockchain_transaction if insurance.status_paid?
+
     if tx
       broadcast_insurance_update(insurance, tx)
 
@@ -68,13 +74,16 @@ class InsurancePayoutWorker
         Rails.logger.info "🛡️ [Insurance] Triggering Etherisc DIP claim for policy " \
                           "#{insurance.etherisc_policy_id} (insurance ##{insurance.id})..."
 
-        # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
-        etherisc_tx_hash = within_rpc_limit do
-          Etherisc::ClaimService.new(insurance).claim!
+        # [P1 FIX IDEMPOTENCY]: Пропускаємо claim! якщо TX вже :sent/:confirmed
+        unless tx.status_sent? || tx.status_confirmed?
+          # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
+          etherisc_tx_hash = within_rpc_limit do
+            Etherisc::ClaimService.new(insurance).claim!
+          end
+          tx.update!(status: :sent, tx_hash: etherisc_tx_hash)
         end
-        tx.update!(status: :sent, tx_hash: etherisc_tx_hash)
 
-        BlockchainConfirmationWorker.perform_in(30.seconds, etherisc_tx_hash)
+        BlockchainConfirmationWorker.perform_in(30.seconds, tx.tx_hash) if tx.tx_hash.present?
       else
         Rails.logger.info "🚀 [Insurance] Ініціація виплати #{tx.amount} SCC для #{organization.name}..."
         # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
