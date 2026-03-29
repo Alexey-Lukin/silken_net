@@ -102,7 +102,7 @@ RSpec.describe "Insight generation and daily aggregation flow" do
     let!(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
     let(:yesterday) { Time.current.utc.to_date - 1 }
 
-    it "triggers InsightGeneratorService and chains to ClusterHealthCheckWorker" do
+    it "triggers InsightGeneratorOrchestratorWorker and chains to ClusterHealthCheckWorker via batch callback" do
       travel_to yesterday.beginning_of_day + 12.hours do
         create(:telemetry_log, tree: tree, temperature_c: 22.0,
                                voltage_mv: 3500, z_value: 25.0,
@@ -111,7 +111,10 @@ RSpec.describe "Insight generation and daily aggregation flow" do
 
       DailyAggregationWorker.new.perform(yesterday.to_s)
 
-      expect(ClusterHealthCheckWorker).to have_received(:perform_async).with(yesterday.to_s)
+      # [A-3]: DailyAggregationWorker тепер запускає батч-оркестратор замість синхронного виклику.
+      # ClusterHealthCheckWorker запускається з InsightBatchCallbacks#on_success після батчу.
+      expect(InsightGeneratorOrchestratorWorker.jobs.size).to eq(1)
+      expect(InsightGeneratorOrchestratorWorker.jobs.first["args"]).to eq([ yesterday.to_s ])
     end
 
     it "creates blackout alert when no data exists on weekday" do

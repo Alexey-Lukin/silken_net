@@ -106,7 +106,12 @@ class AlertDispatchService
     Rails.cache.delete("oracle_expected_yield_24h")
     Rails.logger.warn "🚨 [FRAUD ALERT] #{tree.did}: #{message}"
 
-    AlertNotificationWorker.perform_async(alert.id)
+    # [A-1 FIX: Transactional Outbox — Wiki 04_02 §14]
+    # AlertNotificationWorker.perform_async видалено.
+    # EwsAlert.after_create_commit :dispatch_notifications! вже безпечно ставить job
+    # у чергу ПІСЛЯ commit транзакції. Явний виклик тут був:
+    # 1) Дублюючим (подвійний enqueue)
+    # 2) Небезпечним при виклику з InsightGeneratorService#perform (всередині transaction)
     alert
   end
 
@@ -131,6 +136,12 @@ class AlertDispatchService
     Rails.logger.warn "🚨 [EWS ALERT] #{alert_type} | #{tree.did}"
 
     EmergencyResponseService.call(alert) if defined?(EmergencyResponseService)
-    AlertNotificationWorker.perform_async(alert.id)
+
+    # [A-1 FIX: Transactional Outbox — Wiki 04_02 §14]
+    # AlertNotificationWorker.perform_async видалено.
+    # EwsAlert.after_create_commit :dispatch_notifications! вже безпечно ставить job
+    # у чергу ПІСЛЯ commit транзакції. Явний виклик тут був:
+    # 1) Дублюючим (подвійний enqueue)
+    # 2) Небезпечним при виклику з TelemetryUnpackerService#commit_telemetry (всередині transaction)
   end
 end
