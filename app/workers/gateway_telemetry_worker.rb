@@ -51,11 +51,12 @@ class GatewayTelemetryWorker
       )
 
       # 3. АНАЛІЗ (The Diagnostic Lens)
-      pending_alert_id = check_system_health(gateway, log)
+      check_system_health(gateway, log)
     end
 
-    # Enqueue notification ПІСЛЯ успішного commit транзакції
-    AlertNotificationWorker.perform_async(pending_alert_id) if pending_alert_id
+    # [A-1 FIX: Transactional Outbox — Wiki 04_02 §14]
+    # Notification відбувається через EwsAlert.after_create_commit :dispatch_notifications!
+    # яка безпечно ставить job у чергу ПІСЛЯ commit транзакції.
 
     Rails.logger.info "👑 [Gateway] #{gateway.uid} Sync: #{stats[:voltage_mv]}mV, Sig: #{stats[:cellular_signal_csq]}/31"
   rescue ActiveRecord::RecordNotFound
@@ -84,8 +85,7 @@ class GatewayTelemetryWorker
       message: message
     )
 
-    # [P0 FIX]: Повертаємо alert.id — enqueue відбувається після commit транзакції
-    alert.id
+    # Notification відбувається через EwsAlert.after_create_commit :dispatch_notifications!
   end
 
   def format_health_message(gateway, log)

@@ -74,13 +74,13 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         expect(EwsAlert.last.message).to include("Слабкий сигнал")
       end
 
-      it "enqueues AlertNotificationWorker for critical faults" do
+      it "dispatches notifications via EwsAlert after_create_commit callback for critical faults" do
         stats = valid_stats.merge("voltage_mv" => 3000)
 
         described_class.new.perform(gateway.uid, stats)
 
-        # Одне з EwsAlert callback, друге з check_system_health
-        expect(AlertNotificationWorker.jobs.size).to be >= 1
+        # [A-1 FIX]: Notification тепер відбувається через EwsAlert after_create_commit :dispatch_notifications!
+        expect(AlertNotificationWorker.jobs.size).to eq(1)
       end
     end
 
