@@ -113,6 +113,24 @@ Rack::Attack.throttle("oracle_callbacks/ip", limit: 60, period: 1.minute) do |re
 end
 
 # ---------------------------------------------------------------------------
+# 5a. M2M AUTH THROTTLE — prevent DID enumeration & Ed25519 DoS
+# ---------------------------------------------------------------------------
+Rack::Attack.throttle("m2m_auth/ip", limit: 15, period: 1.minute) do |request|
+  if request.path == "/api/v1/auth/m2m_token" && request.post?
+    request.ip
+  end
+end
+
+# ---------------------------------------------------------------------------
+# 5b. ORACLE CALLBACKS THROTTLE — limit Chainlink DON callback rate
+# ---------------------------------------------------------------------------
+Rack::Attack.throttle("oracle_callbacks/ip", limit: 60, period: 1.minute) do |request|
+  if request.path == "/api/v1/oracle_callbacks" && request.post?
+    request.ip
+  end
+end
+
+# ---------------------------------------------------------------------------
 # 6. FAIL2BAN — ban IPs that return too many 401/404 errors
 #
 # Rack::Attack blocklists run *before* the response, so we cannot inspect
