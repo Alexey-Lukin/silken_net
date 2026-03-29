@@ -149,7 +149,7 @@ class TelemetryUnpackerService < ApplicationService
     growth_points = attributes[:growth_points]
 
     # Транзакція фіксує телеметрію, стан дерева та побічні ефекти як єдине ціле.
-    # Wallet credit винесено ЗА межі транзакції (див. нижче).
+    # Wallet credit та Sidekiq jobs винесено ЗА межі транзакції (див. нижче).
     log = ActiveRecord::Base.transaction do
       record = tree.telemetry_logs.create!(attributes)
 
@@ -170,15 +170,18 @@ class TelemetryUnpackerService < ApplicationService
       # Аналіз аномалій Оракулом тривог
       AlertDispatchService.analyze_and_trigger!(record)
 
-      # [IoTeX W3bstream]: Відправляємо телеметрію на ZK-верифікацію
-      IotexVerificationWorker.perform_async(record.id_value, record.created_at.iso8601(6))
-
-      # [Streamr]: Транслюємо сиру телеметрію в P2P-мережу для «прямого ефіру» лісу.
-      # Працює паралельно з IoTeX — Streamr для присутності, IoTeX для фінансового консенсусу.
-      StreamrBroadcastWorker.perform_async(record.id_value, record.created_at.iso8601(6))
-
       record
     end
+
+    # [P1-7 FIX: Phantom Sidekiq Jobs — Wiki 04_02 Audit §14]
+    # perform_async виклики перенесено ПОЗА транзакцію. Якщо транзакція відкотиться
+    # (напр., update_health_streak! або check_firmware_mismatch! кинуть) — jobs НЕ
+    # потраплять до Redis, бо виконання не дійде до цих рядків.
+    # Раніше: jobs ставились у чергу всередині transaction — при rollback TelemetryLog
+    # запис не існував, але IotexVerificationWorker вже був у Redis (5 марних ретраїв
+    # на web3_critical чергу).
+    IotexVerificationWorker.perform_async(log.id_value, log.created_at.iso8601(6))
+    StreamrBroadcastWorker.perform_async(log.id_value, log.created_at.iso8601(6))
 
     # [BLOCKER FIX: Database Locking — Wiki 04_01]
     # Нарахування балів у гаманець Солдата ПОЗА основною транзакцією.
