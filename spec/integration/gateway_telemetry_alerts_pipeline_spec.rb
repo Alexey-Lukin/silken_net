@@ -131,7 +131,6 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
 
     before do
       allow(AlertNotificationWorker).to receive(:perform_async).and_call_original
-      allow(SingleNotificationWorker).to receive(:perform_async)
       mailer_delivery = double(deliver_later: nil)
       mailer_with = double(critical_notification: mailer_delivery)
       allow(AlertMailer).to receive(:with).and_return(mailer_with)
@@ -147,9 +146,13 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
     it "sends SMS notifications for critical alerts to admin/forester" do
       AlertNotificationWorker.new.perform(alert.id)
 
-      expect(SingleNotificationWorker).to have_received(:perform_async).with(admin.id, alert.id, "sms")
-      expect(SingleNotificationWorker).to have_received(:perform_async).with(admin.id, alert.id, "push")
-      expect(SingleNotificationWorker).to have_received(:perform_async).with(forester.id, alert.id, "push")
+      # [A-4]: push_bulk enqueues jobs via Sidekiq::Client, verified through .jobs in fake mode
+      jobs = SingleNotificationWorker.jobs
+      sms_args = jobs.select { |j| j["args"][2] == "sms" }.map { |j| j["args"][0] }
+      push_args = jobs.select { |j| j["args"][2] == "push" }.map { |j| j["args"][0] }
+
+      expect(sms_args).to contain_exactly(admin.id, forester.id)
+      expect(push_args).to contain_exactly(admin.id, forester.id)
     end
 
     it "does not crash for non-existent alert" do
