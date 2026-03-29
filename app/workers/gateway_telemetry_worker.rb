@@ -54,8 +54,12 @@ class GatewayTelemetryWorker
       pending_alert_id = check_system_health(gateway, log)
     end
 
-    # Enqueue notification ПІСЛЯ успішного commit транзакції
-    AlertNotificationWorker.perform_async(pending_alert_id) if pending_alert_id
+    # [A-1 FIX: Transactional Outbox — Wiki 04_02 §14]
+    # Явний AlertNotificationWorker.perform_async видалено.
+    # EwsAlert.after_create_commit :dispatch_notifications! вже безпечно ставить job
+    # у чергу ПІСЛЯ commit транзакції. Явний виклик створював подвійний enqueue
+    # (один з колбека моделі, другий з цього рядка).
+    _ = pending_alert_id # retained for clarity; callback handles notification
 
     Rails.logger.info "👑 [Gateway] #{gateway.uid} Sync: #{stats[:voltage_mv]}mV, Sig: #{stats[:cellular_signal_csq]}/31"
   rescue ActiveRecord::RecordNotFound
