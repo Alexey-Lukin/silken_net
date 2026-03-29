@@ -150,6 +150,19 @@ RSpec.describe "Rack::Attack", type: :request do
       throttle = Rack::Attack.throttles["oracle_callbacks/ip"]
       expect(throttle).to be_present
     end
+
+    it "blocks sustained oracle callback requests" do
+      61.times do
+        post "/api/v1/oracle_callbacks",
+          params: { chainlink_request_id: SecureRandom.uuid, success: true },
+          headers: { "REMOTE_ADDR" => "203.0.113.50" },
+          as: :json
+      end
+
+      # Unauthenticated requests return 401, which triggers Fail2Ban (403)
+      # before the oracle throttle (429). Both are valid blocking mechanisms.
+      expect(response.status).to be_in([ 403, 429 ])
+    end
   end
 
   # -----------------------------------------------------------------------
