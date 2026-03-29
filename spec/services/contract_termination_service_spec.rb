@@ -61,8 +61,15 @@ RSpec.describe ContractTerminationService do
       it "does not enqueue BurnCarbonTokensWorker" do
         contract.update!(burn_accrued_points: true)
 
-        # Force an error after status update to trigger rollback
-        allow(Rails.logger).to receive(:info).and_raise(StandardError, "DB constraint violation")
+        # Force update! to succeed but then raise before transaction commits,
+        # triggering a full rollback
+        original_update = contract.method(:update!)
+        call_count = 0
+        allow(contract).to receive(:update!) do |**args|
+          call_count += 1
+          original_update.call(**args)
+          raise StandardError, "DB constraint violation"
+        end
 
         BurnCarbonTokensWorker.jobs.clear
 

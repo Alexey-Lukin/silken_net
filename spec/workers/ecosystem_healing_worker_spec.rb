@@ -138,14 +138,9 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
         tree = create(:tree, status: :active)
         record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
 
-        # Force alert resolution to raise, triggering a rollback
-        failing_alert = create(:ews_alert, cluster: tree.cluster, tree: tree, status: :active)
-        allow(record).to receive(:ews_alert).and_return(failing_alert)
-        allow(failing_alert).to receive(:status_resolved?).and_return(false)
-        allow(failing_alert).to receive(:resolve!).and_raise(StandardError, "DB constraint violation")
-
-        # Stub the record lookup so our stubbed record is used
-        allow(MaintenanceRecord).to receive(:find).with(record.id).and_return(record)
+        # Force declare_deceased! to raise, triggering a transaction rollback
+        # before we reach the post-commit enqueue line
+        allow_any_instance_of(Tree).to receive(:declare_deceased!).and_raise(StandardError, "DB constraint violation")
 
         PuroEarthPassportWorker.jobs.clear
 
