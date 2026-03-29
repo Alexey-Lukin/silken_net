@@ -1019,8 +1019,8 @@ HMAC підписує лише `raw_body` без включення `timestamp` 
 2. **`cached_binary_key` — AES ключ у Redis у plaintext**:
    `HardwareKey#cached_binary_key` зберігає розшифрований бінарний ключ у Rails.cache (Redis) з TTL 15 хв для Hot-path оптимізації. Якщо Redis compromised → всі активні ключі витікають. Задокументований у коді. Redis має бути в Private VPC з TLS + ACL + шифруванням at-rest.
 
-3. **Oracle callback `find_telemetry_log` — `scope.first!` не-детерміновано**:
-   Якщо два `TelemetryLog` мають однаковий `chainlink_request_id` (теоретично неможливо при коректній Chainlink DON імплементації), `scope.first!` поверне перший знайдений без ORDER BY. Рекомендація: `scope.order(created_at: :desc).first!` або унікальний constraint на `chainlink_request_id`.
+3. **Oracle callback `find_telemetry_log` — `scope.first!` не-детерміновано** → ✅ **ВИПРАВЛЕНО в da64021**:
+   ~~`scope.first!` повертає перший знайдений без ORDER BY~~ → виправлено на `scope.order(created_at: :desc).first!`. Забезпечує детермінований результат при потенційному дублюванні `chainlink_request_id` та є ефективним для RANGE-партицій по `created_at` (PostgreSQL partition pruning).
 
 4. **`HardwareKeyService.rotate!` vs `HardwareKey#rotate_key!` — дублювання логіки ротації**:
    Два методи ротації: сервіс використовує `SecureRandom` + `ActuatorCommandWorker` downlink; модельний метод також `SecureRandom` без downlink. Варто залишити єдину точку входу через сервіс.
@@ -1030,19 +1030,24 @@ HMAC підписує лише `raw_body` без включення `timestamp` 
 
 ---
 
-### 8.2 Зведена таблиця знахідок
+### 8.2 Зведена таблиця знахідок (оновлено після merge da64021)
 
-| # | Severity | Файл | Проблема | Статус |
-|---|---|---|---|---|
-| A-1 | 🔴 P0 | `filter_parameter_logging.rb` | `signature`, `payload`, `ed25519_public_key` логуються у plaintext | ✅ Виправлено |
-| A-2 | 🔴 P0 | `provisioning_controller.rb` | HTML format завжди показує HKDF ключ (production leak) | ✅ Виправлено |
-| A-3 | 🟠 P1 | `m2m_auth_controller.rb` | `SigningService::SigningError` → 500 замість 401 (Fail2Ban bypass) | ✅ Виправлено |
-| A-4 | 🟠 P1 | `rack_attack.rb` | `POST /auth/m2m_token` не throttled (DID enumeration + DoS) | ✅ Виправлено |
-| A-5 | 🟠 P1 | `rack_attack.rb` | `POST /oracle_callbacks` не throttled | ✅ Виправлено |
-| A-6 | 🔵 Arch | `oracle_callbacks_controller.rb` | Replay attack (відсутній timestamp в HMAC payload) | ⚠️ Задокументовано |
-| A-7 | 🔵 Arch | `hardware_key.rb` | AES ключ у Redis plaintext (Cache) | ⚠️ Задокументовано |
-| A-8 | 🔵 Arch | `telemetry_controller.rb` | `mark_seen!` — синхронний DB write у request cycle | ⚠️ Задокументовано |
-| A-9 | 🔵 Arch | `oracle_callbacks_controller.rb` | `find_telemetry_log` — non-deterministic `first!` без ORDER BY | ⚠️ Задокументовано |
+| # | Severity | Файл | Проблема | Статус | PR/Commit |
+|---|---|---|---|---|---|
+| A-1 | 🔴 P0 | `filter_parameter_logging.rb` | `signature`, `payload`, `ed25519_public_key` логуються у plaintext | ✅ Виправлено | da64021 |
+| A-2 | 🔴 P0 | `provisioning_controller.rb` | HTML format завжди показує HKDF ключ (production leak) | ✅ Виправлено | da64021 |
+| A-3 | 🟠 P1 | `m2m_auth_controller.rb` | `SigningService::SigningError` → 500 замість 401 (Fail2Ban bypass) | ✅ Виправлено | da64021 |
+| A-4 | 🟠 P1 | `rack_attack.rb` | `POST /auth/m2m_token` не throttled (DID enumeration + DoS) | ✅ Виправлено | da64021 |
+| A-5 | 🟠 P1 | `rack_attack.rb` | `POST /oracle_callbacks` не throttled | ✅ Виправлено | da64021 |
+| A-6 | 🔵 Arch | `oracle_callbacks_controller.rb` | Replay attack (відсутній timestamp в HMAC payload) | ⚠️ Задокументовано | — |
+| A-7 | 🔵 Arch | `hardware_key.rb` | AES ключ у Redis plaintext (Cache) | ⚠️ Задокументовано | — |
+| A-8 | 🔵 Arch | `telemetry_controller.rb` | `mark_seen!` — синхронний DB write у request cycle | ⚠️ Задокументовано | — |
+| A-9 | 🔵 Arch | `oracle_callbacks_controller.rb` | `find_telemetry_log` — non-deterministic `first!` без ORDER BY | ✅ Виправлено | da64021 |
+
+### 8.3 Тести безпеки (додані в da64021)
+
+- `spec/initializers/rack_attack_spec.rb` — покриває throttle правила для `m2m_auth/ip` та `oracle_callbacks/ip`
+- `spec/requests/api/v1/m2m_auth_controller_spec.rb` — перевіряє що некоректний Ed25519 підпис повертає 401 (не 500)
 
 ---
 
