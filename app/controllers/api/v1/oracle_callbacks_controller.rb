@@ -90,7 +90,7 @@ module Api
           end
         end
 
-        scope.first!
+        scope.order(created_at: :desc).first!
       end
     end
   end

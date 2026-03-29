@@ -106,6 +106,17 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
       end
     end
 
+    context "with malformed hex signature (SigningError)" do
+      it "returns 401 instead of 500" do
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: timestamp, signature: "not-hex-!!!" },
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.parsed_body["error"]).to include("signature")
+      end
+    end
+
     it "does not require Bearer token authentication" do
       post "/api/v1/auth/m2m_token",
            params: { did: gateway.uid, timestamp: timestamp, signature: signature },
