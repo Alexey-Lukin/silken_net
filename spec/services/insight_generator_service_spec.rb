@@ -150,6 +150,25 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(TelemetryLog.where(id: old_log.id)).not_to exist
     end
 
+    it "preserves old telemetry logs with oracle_status dispatched" do
+      dispatched_log = create(:telemetry_log, tree: tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        oracle_status: "dispatched",
+        created_at: 8.days.ago)
+
+      create(:telemetry_log, tree: tree,
+        temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+        acoustic_events: 2, growth_points: 10,
+        bio_status: :homeostasis, metabolism_s: 1000,
+        created_at: date.beginning_of_day + 12.hours)
+
+      described_class.call(date)
+
+      expect(TelemetryLog.where(id: dispatched_log.id)).to exist
+    end
+
     it "returns processed count and date" do
       create(:telemetry_log, tree: tree,
         temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,

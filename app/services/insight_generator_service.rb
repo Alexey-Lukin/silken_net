@@ -113,9 +113,17 @@ class InsightGeneratorService < ApplicationService
   end
 
   # Очищення сирих логів старше 7 днів (публічний для виклику з InsightBatchCallbacks).
+  # [БЕЗПЕКА]: Не видаляємо логи з oracle_status = 'dispatched' — вони очікують
+  # Chainlink callback для завершення Proof of Growth pipeline.
+  # Видалення таких логів призведе до втрати мінтингу SCC (RecordNotFound
+  # в OracleCallbacksController при зворотному виклику оракула).
   def self.cleanup_old_logs!
     threshold = 7.days.ago.end_of_day
-    TelemetryLog.where("created_at <= ?", threshold).in_batches(of: 10_000, &:delete_all)
+    # [Batch Delete]: delete_all на мільйонах рядків може заблокувати таблицю.
+    # in_batches видаляє по 10 000 записів за раз, знижуючи навантаження на Lock Manager.
+    TelemetryLog.where("created_at <= ?", threshold)
+                .where.not(oracle_status: "dispatched")
+                .in_batches(of: 10_000, &:delete_all)
   end
 
   private
