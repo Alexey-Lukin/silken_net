@@ -56,10 +56,6 @@ module.exports = {
           "Noto Sans", "sans-serif",
         ],
       },
-      fontSize: {
-        "2xs": ["0.625rem", { lineHeight: "0.875rem" }],  /* 10px */
-        "3xs": ["0.5rem",   { lineHeight: "0.75rem" }],   /*  8px */
-      },
     },
   },
   plugins: [],
