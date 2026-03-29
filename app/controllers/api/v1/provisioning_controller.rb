@@ -83,10 +83,13 @@ module Api
                 render json: response_body, status: :created
               end
               format.html do
-                # Показуємо результат ритуалу (ключ та DID)
+                # Показуємо результат ритуалу (ключ та DID).
+                # У Production (HKDF mode) ключ не показуємо — обидві сторони деривують його незалежно.
+                # У TRL4 lab mode (PROVISIONING_MASTER_KEY не встановлено) — передаємо для ручного прошивання.
+                display_key = ENV["PROVISIONING_MASTER_KEY"].blank? ? @key_hex : nil
                 render_dashboard(
                   title: "Initiation Successful",
-                  component: Provisioning::Success.new(device: @device, aes_key: @key_hex)
+                  component: Provisioning::Success.new(device: @device, aes_key: display_key)
                 )
               end
             end

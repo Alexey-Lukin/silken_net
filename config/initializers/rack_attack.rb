@@ -63,10 +63,11 @@ end
 # 4. TELEMETRY INGESTION THROTTLE — protect high-value IoT endpoints
 #
 # Scanned endpoints (from config/routes.rb & controllers):
-#   GET /api/v1/trees/:id/telemetry    → TelemetryController#tree_history
-#   GET /api/v1/gateways/:id/telemetry → TelemetryController#gateway_history
-#   GET /api/v1/telemetry/live          → TelemetryController#live
-#   POST /api/v1/provisioning/register  → ProvisioningController#register
+#   GET  /api/v1/trees/:id/telemetry      → TelemetryController#tree_history
+#   GET  /api/v1/gateways/:id/telemetry   → TelemetryController#gateway_history
+#   POST /api/v1/gateways/:id/telemetry   → TelemetryController#gateway_uplink (HTTP uplink)
+#   GET  /api/v1/telemetry/live           → TelemetryController#live
+#   POST /api/v1/provisioning/register    → ProvisioningController#register
 #
 # Allows bursts (60 req/min) but blocks sustained spamming.
 # Discriminator: Gateway UID (from "X-Gateway-UID" header) or IP.
@@ -80,12 +81,35 @@ Rack::Attack.throttle("telemetry/uid", limit: 60, period: 1.minute) do |request|
 end
 
 # ---------------------------------------------------------------------------
-# 5. LOGIN / AUTH THROTTLE — protect sessions & passwords endpoints
+# 5. LOGIN / AUTH THROTTLE — protect sessions, passwords & M2M token endpoints
+#
+# POST /api/v1/auth/m2m_token — Ed25519 M2M Gateway authentication.
+# Without a dedicated throttle an attacker can enumerate valid device_uid (DID)
+# values by flooding the endpoint. Each request also triggers a DB lookup
+# (HardwareKey.find_by), so unthrottled flooding is a potential DoS vector.
+# Limit: 15 req/min per IP — generous for legitimate gateways (they refresh
+# every 30 days) yet blocks credential-stuffing / DID enumeration.
 # ---------------------------------------------------------------------------
 Rack::Attack.throttle("logins/ip", limit: 10, period: 1.minute) do |request|
   if request.path.match?(%r{\A/api/v1/(login|forgot_password|reset_password)\z}) && request.post?
     request.ip
   end
+end
+
+Rack::Attack.throttle("m2m_auth/ip", limit: 15, period: 1.minute) do |request|
+  request.ip if request.path == "/api/v1/auth/m2m_token" && request.post?
+end
+
+# ---------------------------------------------------------------------------
+# 5a. ORACLE CALLBACKS THROTTLE — protect Chainlink callback endpoint
+#
+# POST /api/v1/oracle_callbacks — even with HMAC validation enabled, a flood
+# of requests consumes CPU (HMAC computation) and DB reads before rejection.
+# Real Chainlink DON sends at most one callback per fulfilled request.
+# Limit: 60 req/min per IP (generous for legitimate Chainlink DON behavior).
+# ---------------------------------------------------------------------------
+Rack::Attack.throttle("oracle_callbacks/ip", limit: 60, period: 1.minute) do |request|
+  request.ip if request.path == "/api/v1/oracle_callbacks" && request.post?
 end
 
 # ---------------------------------------------------------------------------

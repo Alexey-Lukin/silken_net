@@ -52,11 +52,19 @@ module Api
 
         # Верифікація Ed25519 підпису: signature = Ed25519.sign(private_key, "#{did}:#{timestamp}")
         message = "#{did}:#{timestamp}"
-        valid = Ed25519Crypto::SigningService.verify(
-          hardware_key.ed25519_public_key_hex,
-          signature,
-          message
-        )
+        begin
+          valid = Ed25519Crypto::SigningService.verify(
+            hardware_key.ed25519_public_key_hex,
+            signature,
+            message
+          )
+        rescue Ed25519Crypto::SigningService::SigningError
+          # Невалідний формат підпису або публічного ключа — повертаємо 401, не 500.
+          # Без rescue SigningError bubbles up як StandardError → BaseController
+          # повертає 500 у продакшені, що не відфільтровується Fail2Ban (лише 401/404).
+          render json: { error: "Невалідний підпис." }, status: :unauthorized
+          return
+        end
 
         unless valid
           Rails.logger.error "🚨 [M2M Auth] Невалідний Ed25519 підпис для #{did}."

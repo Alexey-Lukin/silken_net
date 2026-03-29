@@ -5,5 +5,7 @@
 # See the ActiveSupport::ParameterFilter documentation for supported notations and behaviors.
 Rails.application.config.filter_parameters += [
   :passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn, :cvv, :cvc,
-  :aes_key, :wallet_private_key, :mnemonic, :binary_payload, :private_key, :secret_key
+  :aes_key, :wallet_private_key, :mnemonic, :binary_payload, :private_key, :secret_key,
+  # IoT / M2M — Ed25519 signature & raw telemetry payload must never appear in logs
+  :signature, :payload, :ed25519_public_key, :raw_body
 ]

@@ -924,7 +924,129 @@ ed25519_sign(sig, message, strlen(message), private_key);
 
 ---
 
-## 8. Пов'язані Документи
+## 8. Security Audit Report (Gap Analysis — проведений 2026-03-29)
+
+> **Методологія:** параноїдальний аудит (Zero-Trust architecture + REST contract compliance).
+> Перевірені файли: `app/controllers/api/v1/`, `config/routes.rb`, `config/initializers/rack_attack.rb`, `config/initializers/filter_parameter_logging.rb`, `app/services/ed25519_crypto/`, `app/workers/unpack_telemetry_worker.rb`.
+
+### 8.1 Вектори аудиту та результати
+
+---
+
+#### 🟢 Ghost Endpoints (Routing Sync)
+
+| Ендпоінт | Статус |
+|---|---|
+| `POST /api/v1/auth/m2m_token` | ✅ маршрут зареєстровано в `routes.rb`, скіп `authenticate_user!` |
+| `POST /api/v1/gateways/:id/telemetry` | ✅ `routes.rb` має і `get :telemetry` і `post :telemetry` |
+| `GET /api/v1/gateways/:id/telemetry` | ✅ існує лише для читання (Dashboard) |
+| `POST /api/v1/oracle_callbacks` | ✅ `resources :oracle_callbacks, only: [:create]` |
+
+**Висновок:** Розсинхрону маршрутів не виявлено. Жодного ghost-ендпоінту.
+
+---
+
+#### 🟢 Zero-Trust: AES Key Derivation (P0 Blocker 2 — перевірка закриття)
+
+- `HardwareKeyService.provision` → `derive_device_key` → `OpenSSL::KDF.hkdf(PROVISIONING_MASTER_KEY, ...)` ✅
+- JSON response без `aes_key` якщо `PROVISIONING_MASTER_KEY` встановлено ✅
+- ~~HTML format ЗАВЖДИ показував `@key_hex` незалежно від `PROVISIONING_MASTER_KEY`~~ ✅ **ВИПРАВЛЕНО** (цей аудит): `display_key = ENV["PROVISIONING_MASTER_KEY"].blank? ? @key_hex : nil`
+
+**⚠️ Знайдено та виправлено:** `ProvisioningController#register` format html передавав `aes_key: @key_hex` до Phlex-компонента навіть у Production HKDF mode (коли `PROVISIONING_MASTER_KEY` встановлено). Ключ відображався у браузері форестера як частина Dashboard. Суперечило Zero-Trust принципу "ключ ніколи не передається по мережі".
+
+---
+
+#### 🟢 Zero-Trust: HMAC Oracle Validation (P1 Warning 1 — перевірка закриття)
+
+- `before_action :verify_chainlink_signature!` присутній ✅
+- `OpenSSL::HMAC.hexdigest("SHA256", hmac_secret, body)` ✅
+- `ActiveSupport::SecurityUtils.secure_compare(expected, signature)` — timing-safe порівняння ✅
+- Fallback: якщо `CHAINLINK_HMAC_SECRET` blank → warn + return (dev/test mode) ✅
+
+**Потенційний вектор: Oracle Callback Replay Attack.**
+HMAC підписує лише `raw_body` без включення `timestamp` або `nonce`. Якщо зловмисник перехопить валідний HMAC-підписаний запит (MITM до CHAINLINK_HMAC_SECRET), він може повторно надіслати ту ж відповідь. Наслідок: повторний виклик `MintCarbonCoinWorker`. Практичний ризик: низький (вимагає компрометації HMAC secret), але архітектурно слабке місце.
+
+**Рекомендація:** Chainlink DON підтримує `X-Chainlink-Timestamp` header. Додати перевірку: відхиляти callbacks, де `|Time.current - timestamp| > 5.minutes`.
+
+---
+
+#### 🟢 M2M Auth: Ed25519 Verification (P1 Warning 2 — перевірка закриття)
+
+- `Ed25519Crypto::SigningService.verify` — реальна імплементація через гем `ed25519` ✅
+- Timestamp check `(Time.current - request_time).abs > 5.minutes` ✅
+- Scope через організацію (`hardware_key.owner.cluster.organization`) ✅
+- ~~`Ed25519Crypto::SigningService::SigningError` (некоректний формат signature/pubkey) bubble up як `StandardError` → `500` в Production замість `401`~~ ✅ **ВИПРАВЛЕНО** (цей аудит): додано `rescue Ed25519Crypto::SigningService::SigningError` → 401
+
+**⚠️ Знайдено та виправлено:** Якщо Gateway надсилав некоректний hex-encoded підпис (неправильна довжина, не-hex символи), `SigningService::validate_hex!` кидав `SigningError < StandardError`. У Production `BaseController` перехоплює `StandardError` → `500 Internal Server Error`. Наслідки: (1) Fail2Ban відстежує лише 401/404, тому хмара 500-ок від неправильних підписів не блокує зловмисника; (2) потенційний DoS через генерацію 500-ок.
+
+---
+
+#### 🔴 Data Leakage in Logs (P0 — виправлено)
+
+**Знайдено та виправлено:** `config/initializers/filter_parameter_logging.rb` не містив фільтрів для:
+
+| Параметр | Ризик |
+|---|---|
+| `signature` | Ed25519-підпис шлюзу в `POST /auth/m2m_token` — логувався в Rails logs |
+| `payload` | Base64 зашифрований бінарний батч телеметрії — логувався при HTTP uplink |
+| `ed25519_public_key` | Публічний ключ шлюзу при provisioning — логувався в Rails logs |
+
+**Виправлення:** додано три параметри до `filter_parameters`. Тепер логуються як `[FILTERED]`.
+
+---
+
+#### 🟠 Rack::Attack Coverage Gaps (P1 — виправлено)
+
+**Знайдено та виправлено:**
+
+| Ендпоінт | До аудиту | Після виправлення |
+|---|---|---|
+| `POST /api/v1/auth/m2m_token` | ❌ не throttled | ✅ `m2m_auth/ip`: 15 req/min per IP |
+| `POST /api/v1/oracle_callbacks` | ❌ не throttled | ✅ `oracle_callbacks/ip`: 60 req/min per IP |
+| `POST /api/v1/gateways/:id/telemetry` | ✅ вже покрито `TELEMETRY_PATH_PATTERN` (regex не фільтрує за методом) | ✅ залишається |
+
+**Обґрунтування throttle для M2M:** без ліміту зловмисник міг:
+1. Масово перебирати `did` (DID enumeration) — кожен запит → DB lookup → інформація про існування/відсутність device
+2. Флудити endpoint, генеруючи навантаження на PostgreSQL та Ed25519 верифікацію
+
+---
+
+#### 🔵 Architectural Observations (не вимагають негайних змін)
+
+1. **`mark_seen!` — синхронний DB write у controller hot-path** (`TelemetryController#gateway_uplink`):
+   `@gateway.mark_seen!(new_ip: request.remote_ip)` виконується синхронно в рамках HTTP-запиту. Реалізація використовує `update_all` з `GREATEST(COALESCE(...))` — одна дешева SQL-операція. Прийнятно для поточного TRL, але при мільйонах uplink/сек стане вузьким місцем. Рекомендація: виконувати в `UnpackTelemetryWorker` (вже відбувається на рядку `gateway.mark_seen!(new_ip: sender_ip)`) — або зробити оновлення в HTTP-контролері батчевим/асинхронним.
+
+2. **`cached_binary_key` — AES ключ у Redis у plaintext**:
+   `HardwareKey#cached_binary_key` зберігає розшифрований бінарний ключ у Rails.cache (Redis) з TTL 15 хв для Hot-path оптимізації. Якщо Redis compromised → всі активні ключі витікають. Задокументований у коді. Redis має бути в Private VPC з TLS + ACL + шифруванням at-rest.
+
+3. **Oracle callback `find_telemetry_log` — `scope.first!` не-детерміновано**:
+   Якщо два `TelemetryLog` мають однаковий `chainlink_request_id` (теоретично неможливо при коректній Chainlink DON імплементації), `scope.first!` поверне перший знайдений без ORDER BY. Рекомендація: `scope.order(created_at: :desc).first!` або унікальний constraint на `chainlink_request_id`.
+
+4. **`HardwareKeyService.rotate!` vs `HardwareKey#rotate_key!` — дублювання логіки ротації**:
+   Два методи ротації: сервіс використовує `SecureRandom` + `ActuatorCommandWorker` downlink; модельний метод також `SecureRandom` без downlink. Варто залишити єдину точку входу через сервіс.
+
+5. **HTML provisioning використовує Phlex-компонент `Provisioning::Success`**:
+   Компонент отримує `aes_key: nil` у production режимі (після виправлення). Переконайтесь, що компонент коректно обробляє `nil` і показує відповідне повідомлення (наприклад: "HKDF mode: ключ деривується незалежно на прошивці").
+
+---
+
+### 8.2 Зведена таблиця знахідок
+
+| # | Severity | Файл | Проблема | Статус |
+|---|---|---|---|---|
+| A-1 | 🔴 P0 | `filter_parameter_logging.rb` | `signature`, `payload`, `ed25519_public_key` логуються у plaintext | ✅ Виправлено |
+| A-2 | 🔴 P0 | `provisioning_controller.rb` | HTML format завжди показує HKDF ключ (production leak) | ✅ Виправлено |
+| A-3 | 🟠 P1 | `m2m_auth_controller.rb` | `SigningService::SigningError` → 500 замість 401 (Fail2Ban bypass) | ✅ Виправлено |
+| A-4 | 🟠 P1 | `rack_attack.rb` | `POST /auth/m2m_token` не throttled (DID enumeration + DoS) | ✅ Виправлено |
+| A-5 | 🟠 P1 | `rack_attack.rb` | `POST /oracle_callbacks` не throttled | ✅ Виправлено |
+| A-6 | 🔵 Arch | `oracle_callbacks_controller.rb` | Replay attack (відсутній timestamp в HMAC payload) | ⚠️ Задокументовано |
+| A-7 | 🔵 Arch | `hardware_key.rb` | AES ключ у Redis plaintext (Cache) | ⚠️ Задокументовано |
+| A-8 | 🔵 Arch | `telemetry_controller.rb` | `mark_seen!` — синхронний DB write у request cycle | ⚠️ Задокументовано |
+| A-9 | 🔵 Arch | `oracle_callbacks_controller.rb` | `find_telemetry_log` — non-deterministic `first!` без ORDER BY | ⚠️ Задокументовано |
+
+---
+
+## 9. Пов'язані Документи
 
 | Документ | Опис |
 |---|---|
