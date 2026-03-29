@@ -7,6 +7,10 @@ class ToucanBridgeWorker
   def perform(blockchain_transaction_id)
     tx = BlockchainTransaction.find(blockchain_transaction_id)
 
+    # [P1 ІДЕМПОТЕНТНІСТЬ]: Якщо TX вже відправлено (наприклад, попередній ретрай виконав
+    # deposit, але впав на wallet update), виходимо без повторного виклику — Double-Spend захист.
+    return Rails.logger.warn "⚠️ [Toucan] TX ##{tx.id} вже оброблено. Пропускаємо." if tx.status_sent? || tx.status_confirmed?
+
     with_web3_error_handling("Polygon", "Toucan Bridge TX ##{tx.id}") do
       tx_hash = Toucan::BridgeService.call(blockchain_transaction_id)
 

@@ -93,6 +93,44 @@ RSpec.describe ToucanBridgeWorker, type: :worker do
       end
     end
 
+    context "when transaction is already sent (idempotency guard)" do
+      let!(:sent_tx) do
+        wallet.update!(balance: 5000, locked_balance: 500)
+        create(:blockchain_transaction,
+               wallet: wallet,
+               status: :sent,
+               tx_hash: "0x#{'a' * 64}",
+               token_type: :carbon_coin,
+               locked_points: 500,
+               notes: "Bridging to Toucan Protocol (TCO2)")
+      end
+
+      it "skips processing and logs warning" do
+        expect(Toucan::BridgeService).not_to receive(:call)
+
+        described_class.new.perform(sent_tx.id)
+      end
+    end
+
+    context "when transaction is already confirmed (idempotency guard)" do
+      let!(:confirmed_tx) do
+        wallet.update!(balance: 5000, locked_balance: 500)
+        create(:blockchain_transaction,
+               wallet: wallet,
+               status: :confirmed,
+               tx_hash: "0x#{'c' * 64}",
+               token_type: :carbon_coin,
+               locked_points: 500,
+               notes: "Bridging to Toucan Protocol (TCO2)")
+      end
+
+      it "skips processing and logs warning" do
+        expect(Toucan::BridgeService).not_to receive(:call)
+
+        described_class.new.perform(confirmed_tx.id)
+      end
+    end
+
     it "uses web3_critical queue" do
       expect(described_class.sidekiq_options["queue"]).to eq("web3_critical")
     end

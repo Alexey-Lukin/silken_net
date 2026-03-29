@@ -129,5 +129,25 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
         described_class.new.perform(record.id)
       end
     end
+
+    # -----------------------------------------------------------------
+    # Transaction Safety (P0 Fix)
+    # -----------------------------------------------------------------
+    context "when transaction rolls back during biomass_extraction" do
+      it "does not enqueue PuroEarthPassportWorker" do
+        tree = create(:tree, status: :active)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+
+        # Force declare_deceased! to raise, triggering a transaction rollback
+        # before we reach the post-commit enqueue line
+        allow_any_instance_of(Tree).to receive(:declare_deceased!).and_raise(StandardError, "DB constraint violation")
+
+        PuroEarthPassportWorker.jobs.clear
+
+        expect {
+          described_class.new.perform(record.id) rescue nil
+        }.not_to change(PuroEarthPassportWorker.jobs, :size)
+      end
+    end
   end
 end

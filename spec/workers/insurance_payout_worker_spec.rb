@@ -240,6 +240,35 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         expect(Turbo::StreamsChannel).to have_received(:broadcast_replace_to).at_least(:once)
         expect(Turbo::StreamsChannel).to have_received(:broadcast_prepend_to)
       end
+
+      context "when Etherisc claim succeeded but tx.update! failed on previous attempt (P1 fix)" do
+        let!(:orphaned_tx) do
+          etherisc_insurance.update!(status: :paid, paid_at: Time.current)
+          create(:blockchain_transaction,
+                 wallet: wallet,
+                 amount: etherisc_insurance.payout_amount,
+                 token_type: :carbon_coin,
+                 to_address: organization.crypto_public_address,
+                 status: :pending,
+                 notes: "Страхове відшкодування ##{etherisc_insurance.id}.")
+        end
+
+        before do
+          # Associate the tx with the insurance
+          allow(ParametricInsurance).to receive(:includes).and_return(ParametricInsurance)
+          allow(ParametricInsurance).to receive(:find_by).with(id: etherisc_insurance.id).and_return(etherisc_insurance)
+          allow(etherisc_insurance).to receive_messages(blockchain_transaction: orphaned_tx, uses_etherisc?: true, cluster: cluster)
+        end
+
+        it "recovers orphaned TX and calls Etherisc::ClaimService" do
+          described_class.new.perform(etherisc_insurance.id)
+
+          orphaned_tx.reload
+          expect(orphaned_tx.status).to eq("sent")
+          expect(orphaned_tx.tx_hash).to eq(fake_tx_hash)
+          expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash)
+        end
+      end
     end
   end
 end

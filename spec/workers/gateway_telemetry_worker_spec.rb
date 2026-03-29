@@ -219,4 +219,20 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
       }.to raise_error(StandardError, "Unexpected failure")
     end
   end
+
+  describe "transaction safety (P0 fix)" do
+    it "does not enqueue AlertNotificationWorker when transaction rolls back" do
+      stats = valid_stats.merge("voltage_mv" => 3000)
+
+      # Force mark_seen! to raise, triggering a transaction rollback
+      # before we reach the post-commit enqueue line
+      allow_any_instance_of(Gateway).to receive(:mark_seen!).and_raise(StandardError, "DB constraint violation")
+
+      AlertNotificationWorker.jobs.clear
+
+      expect {
+        described_class.new.perform(gateway.uid, stats) rescue nil
+      }.not_to change(AlertNotificationWorker.jobs, :size)
+    end
+  end
 end
