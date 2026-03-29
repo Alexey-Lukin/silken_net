@@ -72,6 +72,55 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
     end
   end
 
+  describe "POST /api/v1/gateways/:id/telemetry (gateway_uplink)" do
+    let(:own_gateway) { create(:gateway, cluster: own_cluster) }
+
+    before do
+      allow(UnpackTelemetryWorker).to receive(:perform_async)
+    end
+
+    it "accepts telemetry payload and enqueues UnpackTelemetryWorker" do
+      post "/api/v1/gateways/#{own_gateway.id}/telemetry",
+           params: { gateway_id: own_gateway.id, payload: "AABBCCDD11223344", batch_id: "batch-001" },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:accepted)
+      body = response.parsed_body
+      expect(body["status"]).to eq("accepted")
+      expect(body["batch_id"]).to eq("batch-001")
+      expect(body["gateway_uid"]).to eq(own_gateway.uid)
+      expect(UnpackTelemetryWorker).to have_received(:perform_async).with(
+        own_gateway.uid, "AABBCCDD11223344", "batch-001"
+      )
+    end
+
+    it "generates batch_id when not provided" do
+      post "/api/v1/gateways/#{own_gateway.id}/telemetry",
+           params: { gateway_id: own_gateway.id, payload: "AABBCCDD" },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:accepted)
+      expect(response.parsed_body["batch_id"]).to be_present
+    end
+
+    it "returns 404 for a gateway from another organization" do
+      other_gateway = create(:gateway, cluster: other_cluster)
+
+      post "/api/v1/gateways/#{other_gateway.id}/telemetry",
+           params: { gateway_id: other_gateway.id, payload: "AABBCCDD" },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns 401 without authentication" do
+      post "/api/v1/gateways/#{own_gateway.id}/telemetry",
+           params: { payload: "AABBCCDD" }, as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
   describe "GET /api/v1/gateways/:id/telemetry (gateway_history)" do
     let(:own_gateway) { create(:gateway, cluster: own_cluster) }
     let(:other_gateway) { create(:gateway, cluster: other_cluster) }

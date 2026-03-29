@@ -78,3 +78,4 @@ subgraph/build/
 subgraph/generated/
 subgraph/node_modules/
 coverage/
+coverage

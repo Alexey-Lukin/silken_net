@@ -104,6 +104,41 @@ RSpec.describe HardwareKeyService, type: :service do
       expect(hw_key).to be_present
       expect(hw_key.aes_key_hex).to eq(result)
     end
+
+    context "with PROVISIONING_MASTER_KEY (HKDF mode)" do
+      before do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("test-master-key-for-hkdf-derive!")
+      end
+
+      it "derives deterministic key from device_uid via HKDF" do
+        result1 = described_class.derive_device_key(tree.did)
+        result2 = described_class.derive_device_key(tree.did)
+
+        expect(result1).to eq(result2) # Deterministic: same UID = same key
+        expect(result1.length).to eq(64)
+        expect(result1).to match(/\A[0-9A-F]+\z/)
+      end
+
+      it "derives different keys for different devices" do
+        gateway = create(:gateway, cluster: cluster)
+
+        key_tree = described_class.derive_device_key(tree.did)
+        key_gateway = described_class.derive_device_key(gateway.uid)
+
+        expect(key_tree).not_to eq(key_gateway)
+      end
+    end
+
+    context "without PROVISIONING_MASTER_KEY (TRL4 lab mode)" do
+      it "falls back to SecureRandom and generates random key" do
+        result1 = described_class.derive_device_key("DEVICE-A")
+        result2 = described_class.derive_device_key("DEVICE-A")
+
+        # Random: same UID but different keys each time
+        expect(result1).not_to eq(result2)
+      end
+    end
   end
 
   describe ".rotate" do

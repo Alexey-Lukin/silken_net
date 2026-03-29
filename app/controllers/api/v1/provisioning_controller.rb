@@ -46,6 +46,12 @@ module Api
             # КРИПТОГРАФІЧНА ПРОПИСКА
             @key_hex = HardwareKeyService.provision(@device)
 
+            # [M2M Auth]: Реєструємо Ed25519 public key для M2M автентифікації шлюзу
+            if provisioning_params[:ed25519_public_key].present?
+              hw_key = HardwareKey.find_by!(device_uid: device_identifier)
+              hw_key.update!(ed25519_public_key_hex: provisioning_params[:ed25519_public_key])
+            end
+
             # ФІКСАЦІЯ МОНТАЖУ
             MaintenanceRecord.create!(
               maintainable: @device,
@@ -61,7 +67,20 @@ module Api
 
             respond_to do |format|
               format.json do
-                render json: { did: device_identifier, aes_key: @key_hex, device: @device }, status: :created
+                # [P0 BLOCKER FIX]: AES ключ НЕ передається через мережу.
+                # Обидві сторони (бекенд + прошивка) деривують ключ незалежно через HKDF.
+                # Повертаємо лише DID та підтвердження провізіонування.
+                response_body = { did: device_identifier, device: @device, key_derivation: "hkdf-sha256" }
+
+                # TRL 4 lab mode: якщо PROVISIONING_MASTER_KEY не встановлено,
+                # повертаємо ключ для ручного прошивання на лабораторному стенді.
+                if ENV["PROVISIONING_MASTER_KEY"].blank?
+                  response_body[:aes_key] = @key_hex
+                  response_body[:warning] = "TRL4 lab mode: AES key included in response. " \
+                                            "Set PROVISIONING_MASTER_KEY for production HKDF derivation."
+                end
+
+                render json: response_body, status: :created
               end
               format.html do
                 # Показуємо результат ритуалу (ключ та DID)
@@ -122,7 +141,7 @@ module Api
       def provisioning_params
         params.require(:provisioning).permit(
           :hardware_uid, :device_type, :cluster_id,
-          :family_id, :latitude, :longitude
+          :family_id, :latitude, :longitude, :ed25519_public_key
         )
       end
     end

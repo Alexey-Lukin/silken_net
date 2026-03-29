@@ -36,6 +36,31 @@ module Api
         }
       end
 
+      # --- HTTP FALLBACK UPLINK (POST /api/v1/gateways/:id/telemetry) ---
+      # Основний канал передачі телеметрії — CoAP/UDP на порт 5683 (daemon).
+      # Цей ендпоінт — HTTP fallback для ситуацій, коли CoAP недоступний.
+      # Приймає бінарний батч зашифрованих 21-байтних пакетів від Gateway.
+      def gateway_uplink
+        @gateway = current_user.organization.gateways.find(params[:id])
+
+        payload = params.require(:payload)
+        batch_id = params[:batch_id].presence || SecureRandom.uuid
+
+        UnpackTelemetryWorker.perform_async(
+          @gateway.uid,
+          payload,
+          batch_id
+        )
+
+        @gateway.mark_seen!(new_ip: request.remote_ip)
+
+        render json: {
+          status: "accepted",
+          batch_id: batch_id,
+          gateway_uid: @gateway.uid
+        }, status: :accepted
+      end
+
       # --- ПУЛЬС КОРЛЕВИ (Існуючий метод) ---
       def gateway_history
         @gateway = current_user.organization.gateways.find(params[:id])

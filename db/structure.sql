@@ -968,7 +968,8 @@ CREATE TABLE public.hardware_keys (
     updated_at timestamp(6) without time zone NOT NULL,
     device_uid character varying,
     previous_aes_key_hex character varying,
-    rotated_at timestamp(6) without time zone
+    rotated_at timestamp(6) without time zone,
+    ed25519_public_key_hex character varying
 );
 
 
@@ -5168,6 +5169,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260329111830'),
 ('20260328120000'),
 ('20260328110000'),
 ('20260315150000'),
