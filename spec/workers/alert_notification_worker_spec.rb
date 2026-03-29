@@ -45,6 +45,24 @@ RSpec.describe AlertNotificationWorker, type: :worker do
       expect(push_jobs.size).to eq(2)
     end
 
+    it "uses Sidekiq::Client.push_bulk for batch enqueue (A-4 optimization)" do
+      create(:user, :admin, organization: organization)
+      create(:user, :forester, organization: organization)
+
+      # Verify push_bulk is called instead of individual perform_async
+      expect(Sidekiq::Client).to receive(:push_bulk).with(
+        hash_including("class" => SingleNotificationWorker, "args" => an_instance_of(Array))
+      ).and_call_original
+
+      described_class.new.perform(alert.id)
+    end
+
+    it "does not call push_bulk when no stakeholders exist" do
+      expect(Sidekiq::Client).not_to receive(:push_bulk)
+
+      described_class.new.perform(alert.id)
+    end
+
     it "sends email for critical alerts with billing email" do
       mailer_double = double(deliver_later: true)
       notification_double = double(critical_notification: mailer_double)

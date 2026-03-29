@@ -103,6 +103,22 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     expect(StreamrBroadcastWorker).to have_received(:perform_async).with(an_instance_of(Integer), an_instance_of(String))
   end
 
+  context "when transaction rolls back (P1-7 phantom job prevention)" do
+    it "does not enqueue IotexVerificationWorker or StreamrBroadcastWorker" do
+      # Simulate a transaction rollback by making update_health_streak! raise
+      allow_any_instance_of(described_class).to receive(:update_health_streak!).and_raise(ActiveRecord::RecordInvalid)
+
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+      # The error is rescued inside process_chunk's broad rescue, so no exception propagates
+      expect { described_class.call(chunk) }.not_to raise_error
+
+      # The key assertion: workers must NOT be enqueued when transaction rolls back
+      expect(IotexVerificationWorker).not_to have_received(:perform_async)
+      expect(StreamrBroadcastWorker).not_to have_received(:perform_async)
+    end
+  end
+
   describe "queen health routing" do
     let!(:gateway) { create(:gateway) }
 

@@ -67,19 +67,22 @@ class AlertNotificationWorker
     end
 
     # Б. Оперативні канали (Патруль та Адміни)
-    # [ВИПРАВЛЕНО N+1]: Замість послідовного циклу — окремий атомарний SingleNotificationWorker
-    # для кожного користувача і кожного каналу. Sidekiq розпаралелює 250 повідомлень одночасно.
-    # Ретрай зачіпає лише одну конкретну доставку, а не весь пакет.
+    # [A-4 FIX: Wiki 04_02 Audit §14 — Sidekiq Bulk Enqueue]
+    # Замість N окремих Redis LPUSH (один per perform_async) — збираємо всі args
+    # у масив та відправляємо одним Sidekiq::Client.push_bulk.
+    # Це зменшує кількість Redis round-trips з N до 1 при масовому розсиланні.
+    # find_each замість each — завантажує батчами, запобігає OOM при 10 000+ лісниках.
+    bulk_args = []
     stakeholders = organization.users.where(role: [ :admin, :forester ])
 
-    # [P1 FIX OOM]: find_each замість each — завантажує батчами по 1000 записів,
-    # запобігаючи OOM при організаціях з 10 000+ лісниками.
     stakeholders.find_each do |user|
       # SMS лише для критичних ситуацій (Пожежа / Вандалізм)
-      SingleNotificationWorker.perform_async(user.id, alert.id, "sms") if alert.severity_critical?
+      bulk_args << [ user.id, alert.id, "sms" ] if alert.severity_critical?
 
       # Push для всіх рівнів тривог
-      SingleNotificationWorker.perform_async(user.id, alert.id, "push")
+      bulk_args << [ user.id, alert.id, "push" ]
     end
+
+    Sidekiq::Client.push_bulk("class" => SingleNotificationWorker, "args" => bulk_args) if bulk_args.any?
   end
 end
