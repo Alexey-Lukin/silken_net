@@ -37,6 +37,57 @@
   ```
   Ці аліаси генерують класи `text-2xs` / `text-3xs`, що **не зареєстровані** у `ApplicationComponent::CUSTOM_TEXT_SCALE = %w[micro mini tiny compact]`. Якщо компонент комбінує `text-2xs` з `text-status-*`, TailwindMerge трактує обидва як `text-*` конфлікт і видаляє один із класів.~~ ✅ **ВИРІШЕНО** у [commit b08de50](https://github.com/Alexey-Lukin/silken_net/commit/b08de50f84f1bc612b91db0e90b5e2082338b5d6) (PR #231): legacy аліаси `"2xs"` та `"3xs"` видалено з `config/tailwind.config.js`. Тепер `theme.fontSize` містить виключно семантичні токени (`micro`, `mini`, `tiny`, `compact`), зареєстровані в `CUSTOM_TEXT_SCALE`. TailwindMerge коректно розрізняє font-size та color класи без конфліктів.
 
+### 🔍 Аудит 2026-03-29 — Нові знайдені проблеми
+
+#### 🔴 Блокери
+
+- **🔴 B-01 · `Web3::Address` використовує raw Tailwind кольори в shared-компоненті.** `app/views/shared/web3/address.rb` містить `text-emerald-500`, `text-emerald-700`, `hover:text-emerald-300`, `focus-visible:ring-emerald-500`, `text-gray-700`. Документ §3.5 забороняє raw Tailwind кольори в shared-компонентах (тільки semantic tokens). `shared/web3/` — reusable shared namespace, а не domain page component. **Дія:** Замінити на семантичні токени: `text-gaia-primary`, `hover:text-gaia-primary-hover`, `focus-visible:ring-gaia-primary`, `text-gaia-text-muted`.
+
+- **🔴 B-02 · `IoT::MetricValue` використовує raw Tailwind кольори в shared-компоненті.** `app/views/shared/iot/metric_value.rb` містить `text-emerald-400` (value span) та `text-emerald-700` (unit span). Порушення того ж правила §3.5. **Дія:** Замінити на `text-gaia-primary` та `text-gaia-text-muted`.
+
+- **🔴 B-03 · Текст вирішення BLOCKER-03 фактично неточний щодо `tailwind.config.js`.** Документ стверджує: "тепер `theme.fontSize` містить виключно семантичні токени (`micro`, `mini`, `tiny`, `compact`)". В реальності `config/tailwind.config.js` **взагалі не має ключа `fontSize`** — ані в `theme`, ані в `theme.extend`. Кастомні font-size токени визначені виключно у CSS `@theme` блоку в `application.css` (`--font-size-micro` тощо). **Дія:** Оновити текст вирішення: "Legacy аліаси видалені повністю. Кастомні токени (`micro`, `mini`, `tiny`, `compact`) визначені у CSS `@theme` блоці `application.css`, а не в JS-конфігу".
+
+#### 🟠 Попередження
+
+- **🟠 W-01 · `StatusBadge` §6.1 — стан `dormant` в неправильному рядку таблиці.** Документ §6.1 розміщує `dormant` серед нейтральних станів (`idle`, `draft`, `expired` тощо). Код `status_badge.rb` та §3.2 узгоджені: `dormant → bg-status-warning`. **Дія:** Перемістити `dormant` у рядок `status-warning` таблиці §6.1.
+
+- **🟠 W-02 · `StatusBadge` — два стани відсутні у таблиці §6.1.** Код містить `"ignored" → bg-status-neutral opacity-30 line-through` та `"maintenance_needed" → bg-status-warning` — жоден не задокументований у §6.1. **Дія:** Додати `ignored` до нейтрального рядка (з приміткою про `opacity-30 line-through`) та `maintenance_needed` до warning-рядка.
+
+- **🟠 W-03 · §6.1 не відображає модифікатори opacity та text-decoration для нейтральних станів.** Код: `resolved`, `cancelled`, `removed` → `opacity-50`; `ignored` → `opacity-30 line-through`; `deceased` → `line-through`. **Дія:** Додати колонку "Модифікатори" або примітки до таблиці станів.
+
+- **🟠 W-04 · Кількість прикладів у таблиці §10 неправильна для 9 з 16 spec-файлів.** Перевірені значення (`grep '^\s*it '`): `status_badge_spec.rb` — 13 (doc: 25); `stat_card_spec.rb` — 14 (doc: 7); `action_badge_spec.rb` — 10 (doc: 8); `empty_state_spec.rb` — 10 (doc: 6); `meta_row_spec.rb` — 5 (doc: 6); `relative_time_spec.rb` — 9 (doc: 8); `address_spec.rb` — 10 (doc: 8); `transaction_row_spec.rb` — 16 (doc: 14); `card_spec.rb` (actuators) — 14 (doc: 16). Реальний підрахунок 16 файлів: **198**, а не 193. **Дія:** Перерахувати всі приклади та оновити таблицю і підсумок.
+
+- **🟠 W-05 · Шість spec-файлів повністю відсутні в таблиці §10.** Існуючі файли не включені до документа: `skeleton_spec.rb` (13 прикладів), `theme_switcher_spec.rb` (10), `alerts/row_spec.rb` (12), `clusters/show_spec.rb` (17), `tree_families/form_spec.rb` (14), `wallets/show_spec.rb` (11). Разом 77 додаткових прикладів — реальний total: **275** у 22 файлах. **Дія:** Додати всі 6 файлів до таблиці §10; оновити підсумок.
+
+- **🟠 W-06 · `hello_controller.js` — активний але незадокументований Stimulus-контролер.** `app/javascript/controllers/hello_controller.js` існує і містить `connect()` що встановлює `this.element.textContent = "Hello World!"`. Через `eagerLoadControllersFrom` він автоматично зареєстрований і доступний через `data-controller="hello"` в production. Це scaffold-залишок. **Дія:** Або видалити файл, або задокументувати як debug-заглушку.
+
+- **🟠 W-07 · Кількість компонентів у §9 занижена.** Документ: "100% compliance across all 67+ components". Реально `find app/views -name "*.rb"` (без `application_component.rb`): **83 файли**. **Дія:** Оновити на "83+ компонентів".
+
+- **🟠 W-08 · `Wallets::Show` — параметр `pagy:` опціональний, але задокументований без дефолту.** Код: `def initialize(wallet:, transactions:, pagy: nil)`. **Дія:** Оновити Props на `wallet:, transactions:, pagy: nil`.
+
+- **🟠 W-09 · CSS `@theme` блок містить три незадокументовані кольорові змінні.** `app/assets/tailwind/application.css`: `--color-gaia-green: #10b981`, `--color-gaia-dark: #064e3b`, `--color-gaia-muted: #065f46`. Генерують класи `bg-gaia-green`, `text-gaia-dark`, `text-gaia-muted`. Відсутні у §3. **Дія:** Додати до таблиці токенів §3 або видалити як невикористані.
+
+- **🟠 W-10 · TRL 9 завищений за наявності активних порушень правил дизайн-системи.** B-01 та B-02 — два shared-компоненти порушують core color-token rule §3.5. B-03 — текст вирішення неточний. W-06 — orphan Stimulus-контролер живий у production. W-04/W-05 — таблиця тестів неточна. **Дія:** Понизити до TRL 8 до виправлення B-01/B-02/W-06 та актуалізації тестової таблиці.
+
+#### 🟡 Нотатки
+
+- **🟡 N-01 · `theme_controller.js` — `disconnect()` не задокументований у §7.1.** Метод видаляє `mediaQuery.addEventListener("change", ...)` для запобігання memory leak при Turbo Drive навігації. **Дія:** Додати опис `disconnect()` до §7.1.
+
+- **🟡 N-02 · `clipboard_controller.js` — `disconnect()` не задокументований у §7.2.** Метод викликає `clearTimeout(this.feedbackTimeout)`. **Дія:** Додати до §7.2.
+
+- **🟡 N-03 · `map_controller.js` — опис `disconnect()` у §7.3 неповний.** Після `this.map.remove()` код також встановлює `this.map = null`. `this.markerLayer` не очищається — потенційний minor memory leak. **Дія:** Додати `this.map = null` до опису; розглянути очищення `this.markerLayer`.
+
+- **🟡 N-04 · `eagerLoadControllersFrom` не попереджає про автоматичну реєстрацію будь-якого `*_controller.js`.** Включно з `hello_controller.js`. **Дія:** Додати до §7 примітку: "Будь-який `*_controller.js` у директорії автоматично реєструється — не залишати scaffold-файли в production".
+
+- **🟡 N-05 · Таблиця Typography Scale §4 показує px-значення, а не rem.** CSS: `0.5rem`, `0.5625rem` тощо — масштабуються з налаштуваннями браузера, а не є фіксованими px. **Дія:** Розширити колонку: `0.5rem (8px)` — уточнити root-relative природу.
+
+- **🟡 N-06 · `StatusBadge` стан `ignored` відсутній у §3.2 таблиці status-токенів.** Код: `ignored → status-neutral`. **Дія:** Додати `ignored` до колонки AASM states для `status-neutral` у §3.2.
+
+- **🟡 N-07 · Lookbook `ActionBadgePreview` — опис сценаріїв вводить в оману.** Документ: "All 4 action types, Interactive". Насправді: 2 методи (`all_types` та `interactive`). **Дія:** Уточнити: "2 сценаріїв: `all_types` (4 типи), `interactive`".
+
+- **🟡 N-08 · Lookbook `AlertBadgePreview` — опис сценаріїв вводить в оману.** Документ: "Severity × Status matrix (9 combos), Interactive". Насправді: 2 методи (`all_combos`, `interactive`). **Дія:** Уточнити: "2 сценаріїв: `all_combos` (9 combo matrix), `interactive`".
+
+
 ---
 
 ## Table of Contents

@@ -52,6 +52,71 @@
   - FK-constraints перестворені (`wallet_id → wallets`, `cluster_id → clusters`) через `ALTER TABLE` (без ONLY) для пропагації на партиції
   - `PartitionMaintenanceWorker::PARTITIONED_TABLES` оновлено: тепер обслуговує 3 таблиці (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`)
 
+### 🔍 Аудит 2026-03-29 — Нові знайдені проблеми
+
+#### 🔴 Блокери
+
+- **🔴 BLK-01 · `AiInsight` — Повністю неправильні назви `insight_type` enum.** Код `app/models/ai_insight.rb` містить 4 значення: `daily_health_summary(0)`, `drought_probability(1)`, `carbon_yield_forecast(2)`, `biodiversity_trend(3)`. Документ §7 натомість наводить `fire_risk_forecast`, `drought_prediction`, `anomaly_detection`, `pest_detection` — жодне з них не існує в коді. Виклик `AiInsight.fire_risk_forecast` або `.pest_detection` підніме `ArgumentError`. **Дія:** Замінити таблицю enum у §7 на актуальні 4 значення.
+
+- **🔴 BLK-02 · `EwsAlert` — `alert_type` enum: неправильні назви І неправильні цілочисельні значення.** Код: `severe_drought(0)`, `insect_epidemic(1)`, `vandalism_breach(2)`, `fire_detected(3)`, `seismic_anomaly(4)`, `system_fault(5)`. Документ §7 вказує `fire(0)`, `drought(1)`, `vandalism(2)`, `system_fault(3)`, `pest(4)`, `seismic(5)` — всі значення неправильні, включно з цілочисельними. Критично для страхових виплат та slashing-логіки. З `prefix: true` → запити використовують `alert_type_fire_detected?`, а не `alert_type_fire?`. **Дія:** Замінити таблицю enum повністю.
+
+- **🔴 BLK-03 · `EwsAlert` — `satellite_status` enum повністю неправильний.** Код: `unverified(0)`, `verified(1)`, `rejected_fraud(2)`, `inconclusive(3)`. Документ §7 вказує `not_required`, `pending`, `verified`, `contradicted`, `unverifiable` — 4 з 5 задокументованих значень не існують. **Дія:** Замінити на актуальні 4 значення.
+
+- **🔴 BLK-04 · `ActuatorCommand` — `priority` enum: всі назви неправильні.** Код: `low(0)`, `medium(1)`, `high(2)`, `override(3)` (з `prefix: true`). Документ §4 вказує `routine(0)`, `urgent(1)`, `emergency(2)`, `override(3)`. Виклики `priority_routine?`, `priority_urgent?`, `priority_emergency?` підняли б `NoMethodError`. **Дія:** Замінити на `low / medium / high / override`, зазначити `prefix: true`.
+
+- **🔴 BLK-05 · `TelemetryLog` — колонка `impedance_ohms` відсутня в БД і моделі.** Документ §3 перераховує `impedance_ohms | integer | Імпеданс ксилеми (Ω)` як поле `TelemetryLog`. Ні DB-схема, ні модель цього поля не мають. **Дія:** Видалити з таблиці полів або відстежити як Open Item.
+
+- **🔴 BLK-06 · `NaasContract` — `insurance_premium_rate` та `forester_share_rate` не є DB-колонками.** Документ §6 перераховує їх як збережені поля. В коді: константа `INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`, обчислювальні методи `insurance_premium_amount` та `forester_share_amount`. **Дія:** Перенести з таблиці "Поля" до таблиці "Методи".
+
+- **🔴 BLK-07 · `Gateway` — `cluster_id` в DB є `NOT NULL`, але модель оголошує `belongs_to :cluster, optional: true`.** `db/structure.sql`: `cluster_id bigint NOT NULL`. Документ §3 вказує "optional". Спроба створити Gateway без cluster_id викличе PG-виключення `null value in column "cluster_id"`. **Дія:** Узгодити схему і модель — або прибрати `optional: true`, або видалити `NOT NULL` з DB.
+
+- **🔴 BLK-08 · `NaasContract` — `start_date`/`end_date`: документ вказує тип `date`, DB зберігає `timestamp`.** `db/structure.sql`: `start_date timestamp(6) without time zone`. **Дія:** Виправити тип на `timestamp`.
+
+#### 🟠 Попередження
+
+- **🟠 WARN-01 · `GatewayTelemetryLog` — два задокументовані поля не існують в БД.** `packets_received_count` та `packets_forwarded_count` відсутні в DB-схемі та моделі. **Дія:** Видалити з документа або створити міграцію.
+
+- **🟠 WARN-02 · `GatewayTelemetryLog#voltage_mv`: тип у документі `integer`, в БД `numeric`.** **Дія:** Виправити тип на `numeric/decimal`.
+
+- **🟠 WARN-03 · `TreeFamily#baseline_impedance`: тип у документі `decimal`, в БД `integer`.** **Дія:** Виправити тип або створити міграцію на `numeric`.
+
+- **🟠 WARN-04 · `MaintenanceRecord` — `action_type` enum: всі значення неправильні.** Код: `installation(0)`, `inspection(1)`, `cleaning(2)`, `repair(3)`, `decommissioning(4)`, `biomass_extraction(5)`. Документ §7 наводить 8 неіснуючих значень. **Дія:** Замінити таблицю enum повністю.
+
+- **🟠 WARN-05 · `MaintenanceRecord` — обмеження фото неправильні.** Код: `size: { less_than: 20.megabytes }`, `content_type: %w[image/jpeg image/png image/webp image/heic image/heif]`, максимум 10 фото. Документ §7 вказує `≤ 5 МБ, JPEG/PNG/HEIC`. **Дія:** Виправити на `≤ 20 МБ, JPEG/PNG/WebP/HEIC/HEIF, макс. 10 фото`.
+
+- **🟠 WARN-06 · `MaintenanceRecord` — відсутній `GeoLocatable` concern у документі §7.** **Дія:** Додати `GeoLocatable` до розділу асоціацій/includes.
+
+- **🟠 WARN-07 · `ParametricInsurance` — поле `uses_etherisc`: документ вказує `boolean`, в коді це рядкова колонка + метод-предикат.** DB: `etherisc_policy_id character varying`. Метод: `def uses_etherisc? = etherisc_policy_id.present?`. **Дія:** Видалити `uses_etherisc` з таблиці полів; додати `etherisc_policy_id | string` і документувати `uses_etherisc?` як метод.
+
+- **🟠 WARN-08 · ER-карта §10: `TreeFamily → TinyMlModels (nullify)` та `→ BioContractFirmwares (nullify)` не існують.** В моделі `TreeFamily` є лише `has_many :trees, dependent: :restrict_with_error`. `TinyMlModel` та `BioContractFirmware` мають `belongs_to :tree_family`, але зворотньої `has_many` в `TreeFamily` немає. **Дія:** Прибрати ці асоціації з ER-карти.
+
+- **🟠 WARN-09 · ER-карта §10: `Organization → Wallets (delete_all)` — в коді відсутній `dependent:`.** `has_many :wallets` без жодної опції `dependent:`. Видалення Organization залишить orphaned Wallets. **Дія:** Додати `dependent: :nullify` або `:destroy`; оновити ER-карту.
+
+- **🟠 WARN-10 · `User#telegram_chat_id`: документ вказує `bigint`, в БД `character varying`.** **Дія:** Виправити тип на `string / varchar`.
+
+- **🟠 WARN-11 · `GatewayTelemetryLog` — AR-асоціація через `queen_uid`, тоді як БД має `gateway_id NOT NULL`.** `belongs_to :gateway, foreign_key: :queen_uid, primary_key: :uid` — Rails ніколи не використовує `gateway_id` для AR. Колонка-"привид" невидима моделі. **Дія:** Задокументувати dual-key патерн; вирішити питання канонічного FK.
+
+- **🟠 WARN-12 · `Identity` — провайдер `apple` згаданий у коментарі моделі, але відсутній у `SUPPORTED_PROVIDERS`.** **Дія:** Або видалити `apple` з документа, або додати до константи.
+
+- **🟠 WARN-13 · `BlockchainTransaction` — статус `sent(4)` має розрив після `failed(3)`.** Документ не показує цілочисельні значення enum. **Дія:** Додати цілочисельні значення до таблиці статусів.
+
+- **🟠 WARN-14 · `Organization` — відсутня асоціація `ews_alerts` у документі §5.** Модель: `has_many :ews_alerts, through: :clusters`. Метод `under_threat?` покладається на цю асоціацію. **Дія:** Додати рядок до таблиці асоціацій Organization.
+
+- **🟠 WARN-15 · `AiInsight` — JSONB-колонка `recommendation` не задокументована.** Код: `store_accessor :recommendation, :action_required, :priority`. **Дія:** Додати `recommendation | jsonb | Рекомендації Оракула (action_required, priority)`.
+
+#### 🟡 Нотатки
+
+- **🟡 NOTE-01 · `Tree` — `active_trees_count` помилково вказаний як поле `Tree`.** Це counter cache на таблиці `clusters`, а не `trees`. **Дія:** Видалити з таблиці полів Tree.
+
+- **🟡 NOTE-02 · Численні незадокументовані DB-колонки.** Серед них: `trees` (`peaq_did`, `firmware_version`, `altitude`); `gateways` (`firmware_version`, `altitude`); `telemetry_logs` (`growth_points`, `metabolism_s`, `rssi`, `sap_flow`, `verified_by_iotex`, `zk_proof_ref`, `chainlink_request_id`, `tamper_detected`); `wallets` (`solana_public_address`, `hadron_kyc_status`); `naas_contracts` (`emitted_tokens`, `cancelled_at`, `hadron_asset_id`); `blockchain_transactions` (`cumulative_gas_cost`, `sent_at`, `confirmed_at`, `chainlink_request_id`, `zk_proof_ref`, `locked_points`); `ews_alerts` (`dclimate_ref`); `maintenance_records` (`biomass_passport_tx_hash`); `tiny_ml_models` (`target_pest`, `drift_checked_at`); `clusters` (`climate_type`); `ai_insights` (`analyzed_date`, `average_temperature`, `total_growth_points`, `summary`). **Дія:** Задокументувати у відповідних таблицях моделей.
+
+- **🟡 NOTE-03 · TRL 8 завищений за наявності незакритих BLK-01..BLK-08.** 8 блокерів означають, що документ не точно описує систему. **Дія:** Закрити всі BLK; після цього TRL 8 обґрунтований.
+
+- **🟡 NOTE-04 · Factory для `Wallet` не встановлює асоціацію `organization`.** Тести що будують wallet напряму (без tree) можуть отримати `organization: nil`. **Дія:** Додати `organization { tree&.cluster&.organization }` до factory.
+
+- **🟡 NOTE-05 · `BlockchainTransaction` — AASM event `confirm` приймає два аргументи, але документ не відображає підписи подій.** Код: `event :confirm do |block_num, gas_cost|`. **Дія:** Додати підписи подій: `confirm(block_num, gas_cost)`, `mark_as_sent(tx_hash)`, `fail(reason)`.
+
+
 ---
 
 ## 🏛️ 0. PostgreSQL Інфраструктура

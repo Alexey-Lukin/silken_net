@@ -31,6 +31,53 @@
 * ~~**🟠 P1 [SSOT Gap] — `PartitionMaintenanceWorker` відсутній у Workers Registry:** Воркер існує в `app/workers/partition_maintenance_worker.rb` але не був згаданий у реєстрі воркерів розділу 11.~~ ✅ **ВИРІШЕНО**: `PartitionMaintenanceWorker` додано до реєстру воркерів (§11, секція "Default — Агрегація та Токеноміка") з повним описом параметрів, тригера (cron 00:30 UTC) та side effects.
 * ~~**🟠 P1 [`TelemetryUnpackerService#commit_telemetry`] — Jobs enqueued inside transaction (phantom Sidekiq jobs):** `IotexVerificationWorker.perform_async(...)` та `StreamrBroadcastWorker.perform_async(...)` ставились в чергу всередині `ActiveRecord::Base.transaction`. При rollback jobs вже в Redis, але `TelemetryLog` запис відсутній — 5 марних ретраїв на `web3_critical`.~~ ✅ **ВИРІШЕНО** у PR #227 (commit 66ee6e1): обидва `perform_async` виклики перенесено поза `transaction` блок (змінна `log` повертається з transaction, enqueue — після нього).
 
+### 🔍 Аудит 2026-03-29 — Нові знайдені проблеми
+
+#### 🔴 Блокери
+
+- **🔴 B-1 · `SolanaMicroRewardWorker` — неправильний тригер задокументований.** Документ §11 вказує тригер: `TelemetryUnpackerService (паралельно з IoTeX)`. В коді воркер запускається виключно з `OracleCallbacksController#create` (Chainlink fulfillment callback). `TelemetryUnpackerService` не викликає жодного Solana-воркера. Розробник, що слідує документу, реалізував би Solana minting до oracle-верифікації — guard `oracle_status == "fulfilled"` відкидав би кожен такий виклик. **Дія:** Змінити тригер на `OracleCallbacksController#create (Chainlink DON fulfillment callback)`.
+
+- **🔴 B-2 · `MintCarbonCoinWorker` — тригер помилково приписаний `TelemetryUnpackerService`.** Документ: `Тригер: TelemetryUnpackerService (через Chainlink callback)`. В коді первинний тригер — `OracleCallbacksController#create`, а не `TelemetryUnpackerService`. Формулювання "через Chainlink callback" некоректно натякає, що TelemetryUnpackerService є caller. Суперечить діаграмі §12, де правильно показано `[Callback] → MintCarbonCoinWorker`. **Дія:** Змінити тригер на `OracleCallbacksController#create (Chainlink DON webhook)`.
+
+- **🔴 B-3 · `AlertNotificationWorker` — тригер описує застарілу поведінку до патчу A-1.** Документ §11: `Тригер: AlertDispatchService (через create_and_dispatch_alert! та create_fraud_alert!), GatewayTelemetryWorker`. Після патчу A-1 воркер запускається виключно через `EwsAlert.after_create_commit :dispatch_notifications!` (Transactional Outbox). Таблиця воркерів суперечить самому розділу Blockers, де A-1 fix коректно описаний. Розробник, що читає таблицю, може додати прямий виклик `perform_async` з сервісу — подвійне ставлення в чергу. **Дія:** Оновити тригер на `EwsAlert.after_create_commit :dispatch_notifications!`.
+
+- **🔴 B-4 · `GatewayTelemetryWorker` — side effects описують поведінку до P0-патчу.** Документ §11: `Side Effects: Перевіряє critical_fault? → AlertNotificationWorker.perform_async`. Після P0-патчу PR #226 воркер не викликає `AlertNotificationWorker.perform_async` напряму. Виправлений потік: `check_system_health → EwsAlert.create! → after_create_commit → AlertNotificationWorker.perform_async`. **Дія:** Оновити Side Effects: `Перевіряє critical_fault? → EwsAlert.create! → (via after_create_commit Transactional Outbox) → AlertNotificationWorker.perform_async`.
+
+#### 🟠 Попередження
+
+- **🟠 W-1 · `BlockchainMintingService` — інтерфейс `.call` та `.call_batch` змішаний в один опис.** Документ §4: `Вхід: blockchain_transaction_ids (Array<Integer>)`. Насправді є два окремих методи: `.call(id: Integer)` (одиночний) та `.call_batch(ids: Array<Integer>)` (пакетний). **Дія:** Задокументувати обидва інтерфейси окремо.
+
+- **🟠 W-2 · `TelemetryUnpackerService` — `gateway_id` задокументований як обов'язковий, але є опціональним.** Код: `def initialize(binary_batch, gateway_id = nil)`. **Дія:** Документувати як `gateway_id (Integer, опціонально — nil якщо шлюз невідомий)`.
+
+- **🟠 W-3 · TRL 8 завищений: Chainlink має stub-режим у production-коді.** `app/services/chainlink/oracle_dispatch_service.rb`: генерує локальний stub request ID коли ENV `CHAINLINK_FUNCTIONS_ROUTER` не встановлений. Документ стверджує "всі заглушки замінено". **Дія:** Уточнити: "Chainlink dispatch має dev/test stub-режим (ENV-gated; production вимагає `CHAINLINK_FUNCTIONS_ROUTER` та `CHAINLINK_SUBSCRIPTION_ID`)".
+
+- **🟠 W-4 · Кількість воркерів у §14 занижена.** Документ: "31 Sidekiq workers + 2 concerns". Реально: 33 конкретних класи + 2 concerns = 35 файлів воркерів. **Дія:** Оновити лічильник.
+
+- **🟠 W-5 · `SolanaMicroRewardWorker` відсутній у діаграмах call chains §12.** `OracleCallbacksController#create` ставить в чергу **і** `MintCarbonCoinWorker`, **і** `SolanaMicroRewardWorker` одночасно. Жодна діаграма §12 не показує цей паралельний виклик. **Дія:** Додати секцію "Oracle Callback": `POST /api/v1/oracle_callbacks → OracleCallbacksController → [MintCarbonCoinWorker + SolanaMicroRewardWorker]`.
+
+- **🟠 W-6 · `ClusterHealthCheckWorker` — приховано рівень непрямого виклику `BurnCarbonTokensWorker`.** Документ §11: `Side Effects: При breached → BurnCarbonTokensWorker.perform_async`. Насправді: `ClusterHealthCheckWorker → ContractHealthCheckService#perform → BurnCarbonTokensWorker.perform_async`. **Дія:** Оновити Side Effects: `При breached → ContractHealthCheckService → BurnCarbonTokensWorker.perform_async`.
+
+- **🟠 W-7 · `spec/callbacks/` не згаданий у покритті §14.** `spec/callbacks/insight_batch_callbacks_spec.rb` та `spec/callbacks/tokenomics_batch_callbacks_spec.rb` існують і тестують критичну orchestration-логіку. **Дія:** Додати до §14: "2 callback-класи (`app/callbacks/`, тести у `spec/callbacks/`)".
+
+- **🟠 W-8 · `DailyAggregationWorker` у секції "Default", але використовує чергу `low`.** Документ сам додає ⚠️-примітку, але розміщення у "Default"-секції вводить в оману. **Дія:** Перемістити до секції "Low — Аудит та Зберігання".
+
+- **🟠 W-9 · Таблиця пріоритетів черг §11 використовує вигадані числові мітки.** `config/sidekiq.yml` використовує `strict: true` з упорядкованим списком. Sidekiq не призначає числові ваги — числа 1–9 є вигадкою автора документа. **Дія:** Замінити колонку "Пріоритет" на "Порядок (Strict)" (1=найвищий); додати примітку: "Sidekiq `:strict: true` дренує черги послідовно — без числових ваг".
+
+#### 🟡 Нотатки
+
+- **🟡 N-1 · `SilkenNet::Attractor#generate_trajectory` — off-by-one у описі.** Перший триплет (i=0,1,2) видає початковий стан (x₀,y₀,z₀) до інтеграції. Документ §3 не зазначає цю поведінку. **Дія:** Додати примітку: "Перший триплет (індекс 0–2) — початковий seed-стан; інтеграція починається з індексу 3".
+
+- **🟡 N-2 · `InsightBatchCallbacks` в §11 плутає читача — це callback, а не воркер.** Файл живе у `app/callbacks/`, а не `app/workers/`. **Дія:** Додати роздільник або заголовок: `#### InsightBatchCallbacks (Sidekiq Batch Callback — not a Worker)`.
+
+- **🟡 N-3 · `TokenomicsBatchCallbacks` не задокументований у §11.** На відміну від `InsightBatchCallbacks`, окремого рядка немає. **Дія:** Додати таблицю паралельну `InsightBatchCallbacks` з описом `on_success → MintCarbonCoinWorker.perform_async`.
+
+- **🟡 N-4 · `OtaTransmissionWorker` — `sidekiq_retries_exhausted` не описаний у §11.** Хендлер встановлює `gateway.update(state: :faulty)`. **Дія:** Додати до Side Effects: "При `sidekiq_retries_exhausted`: `gateway.update!(state: :faulty)` — запобігає Gateway stuck у :updating".
+
+- **🟡 N-5 · `ActuatorCommandWorker` — `sidekiq_retries_exhausted` не описаний у §11.** Хендлер викликає `command.fail!` + Turbo Stream broadcast. **Дія:** Додати до Side Effects.
+
+- **🟡 N-6 · `DailyAggregationWorker` — GLOBAL_BLACKOUT тільки на будні дні, але це не задокументовано.** `target_date.on_weekday?` — EwsAlert-и для вихідних мовчки ігноруються. **Дія:** Додати примітку до Side Effects.
+
+
 ---
 
 ## 🏗️ 1. Архітектурні Засади

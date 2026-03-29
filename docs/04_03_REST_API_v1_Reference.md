@@ -37,6 +37,65 @@
 - ~~**🟠 P1 Warning 2: Refresh Lifecycle для прошивки Gateway — M2M Auth Gap (`POST /api/v1/login`).**
   Bearer-токен, отриманий при `POST /api/v1/login`, має вбудований термін дії (`generates_token_for(:api_access, ...)`). Якщо шлюз логіниться "одноразово" і токен протухає через N днів — дерево в лісі не може ввести логін і пароль.~~ ✅ **ВИРІШЕНО** у PR #229 (commit 59bc5ea): додано новий ендпоінт `POST /api/v1/auth/m2m_token` (`M2mAuthController`). Шлюз підписує `"#{did}:#{timestamp}"` своїм Ed25519 private key. Бекенд верифікує підпис через `Ed25519Crypto::SigningService.verify(ed25519_public_key_hex, signature, message)` з перевіркою timestamp (±5 хвилин). При успіху видається 30-денний Bearer-токен. Ed25519 public key реєструється під час provisioning (поле `ed25519_public_key` в запиті) і зберігається в `hardware_keys.ed25519_public_key_hex` (міграція `20260329111830`).
 
+### 🔍 Аудит 2026-03-29 — Нові знайдені проблеми
+
+#### 🔴 Блокери
+
+- **🔴 B-1 · `GET /api/v1/users/:id` — Ghost route, немає controller action → 500.** `config/routes.rb`: `resources :users, only: [ :index, :show ]` — генерує обидва маршрути. `UsersController` має лише `def index` та `def me` — **`def show` відсутній**. В production: `AbstractController::ActionNotFound` → перехоплюється `BaseController#rescue_from StandardError` → `500`. Документ §4 документує лише `users#index` і взагалі не згадує `:show`. **Дія:** Або додати `def show` до `UsersController`, або змінити маршрут на `only: [ :index ]`.
+
+- **🔴 B-2 · `GET /api/v1/alerts/:id` — Ghost route, немає controller action → 500.** `resources :alerts, only: [ :index, :show ]` генерує `alerts#show`. `AlertsController` має лише `def index` та `def resolve` — **`def show` відсутній**. **Дія:** Додати `def show` або змінити маршрут на `only: [ :index ]`.
+
+- **🔴 B-3 · `DELETE /api/v1/tree_families/:id` — Ghost route, немає controller action → 500.** `resources :tree_families` (без `only:`) генерує всі 7 REST-маршрутів, включно з `DELETE`. `TreeFamiliesController` не має `def destroy`. Документ §4 навмисно не документує `DELETE`, але маршрут мовчки існує. **Дія:** Змінити на `resources :tree_families, only: [ :index, :show, :new, :create, :edit, :update ]`.
+
+- **🔴 B-4 · `oracle_visions#stream_config` — IDOR: Cluster не прив'язаний до організації користувача.** Код: `@cluster = Cluster.find(params[:cluster_id])` — глобальний пошук без org-scoping. Будь-який `forester` з Організації A може запросити `stream_config` для Cluster Організації B та отримати валідний ActionCable auth_token. **Дія:** Замінити на `current_user.organization.clusters.find(params[:cluster_id])`.
+
+- **🔴 B-5 · `provisioning#register` — витік внутрішніх повідомлень помилок у production.** Код: `rescue StandardError => e; render json: { error: "Збій ініціації: #{e.message}" }`. Ruby exception messages можуть містити назви колонок, SQL-фрагменти, шляхи до файлів — все це витікає неautентифікованим API-клієнтам. Суперечить задокументованому контракту §2.2 (`"Збій у ядрі Океану. Повідомте Архітектора."`). Розділ §8 Security Audit не фіксує цю проблему. **Дія:** Логувати `e.message` внутрішньо; повертати загальне повідомлення.
+
+#### 🟠 Попередження
+
+- **🟠 W-1 · Невідповідність кількості ендпоінтів: "79" vs "81".** Рядок 5 (вступний абзац): "описує всі **79 ендпоінтів**". Рядок 10 (Status): "**81**". Таблиця §4: 81 рядок (#1–#81). **Дія:** Виправити вступний абзац на 81.
+
+- **🟠 W-2 · `tree_families#create` та `#update` повертають 302 redirect JSON-клієнтам.** Обидві дії не мають `respond_to`/`format.json` блоку — при успіху безумовно викликають `redirect_to`. JSON-клієнт отримує `302 Found`, а не `201 Created` з JSON-тілом. **Дія:** Додати `respond_to` блок з `format.json`.
+
+- **🟠 W-3 · `clusters#index` / `#show` — використовує `as_json` замість `ClusterBlueprint`.** Контролер додатково повертає `geojson_polygon` (відсутній у blueprint) та `active_threats?` (з `?`, тоді як blueprint має `active_threats`). `clusters#show` повертає вкладені gateway та contract дані, що взагалі не задокументовані. **Дія:** Перейти на `ClusterBlueprint.render_as_hash`; задокументувати реальну схему відповіді.
+
+- **🟠 W-4 · `wallets#index` та `#show` — сирова серіалізація, не `WalletBlueprint`.** Обидві дії використовують `render json: { wallets: @wallets }` (ключ `wallets` замість `data`) — всі DB-колонки гаманця відкриті. **Дія:** Використати `WalletBlueprint`; визначити `:show` view у blueprint.
+
+- **🟠 W-5 · `users#index` — використовує ключ пагінації `meta:` замість `pagy:`.** Код: `render json: { data: ..., meta: { page: pagy.page, ... } }`. Стандарт §2.1 визначає ключ `pagy`. Всі інші контролери (clusters, organizations тощо) використовують `pagy:`. **Дія:** Перейти на `pagy: pagy_metadata(@pagy)`.
+
+- **🟠 W-6 · `trees#index` та `maintenance_records#index` — ключ відповіді `trees`/`records` замість `data`.** Суперечить стандарту §2.1. **Дія:** Стандартизувати на ключ `data:` або явно задокументувати відхилення.
+
+- **🟠 W-7 · `maintenance_records#index` — розмір сторінки за замовчуванням 50, а не 20.** Код: `pagy(@records, items: 50)`. Документ §2.3 вказує 20. Пагінація фото: `pagy(@record.photos, items: 6)` — теж не 20. **Дія:** Задокументувати 50 для maintenance_records та 6 для photos.
+
+- **🟠 W-8 · `DELETE /api/v1/maintenance_records/:id/photos/:photo_id` — неправильні path params у документі.** Маршрут генерує `/:maintenance_record_id/photos/:id`. Контролер використовує `params[:maintenance_record_id]` та `params[:id]`. Документ рядок #61 вказує `/:id/photos/:photo_id`. **Дія:** Виправити на `/:maintenance_record_id/photos/:id`.
+
+- **🟠 W-9 · `wallets#balance` та `wallets#metadata` — повертають HTML Turbo Frame, а не JSON.** Код: `render Wallets::BalanceFrame.new(wallet: @wallet), layout: false` без `respond_to`. REST-клієнт з `Accept: application/json` отримає HTML. Документ вказує "(Turbo Frame)" але не попереджає про відсутність JSON. **Дія:** Додати `⚠️ HTML only` попередження у документ або додати `format.json` блок.
+
+- **🟠 W-10 · `oracle_visions#index` — схема відповіді не задокументована.** Код: `render json: { visions: @visions, yield_forecast: @scc_yield }`. Розділ §5 для oracle_visions не надає приклад відповіді. **Дія:** Задокументувати схему `{ visions: [...], yield_forecast: Float }`.
+
+- **🟠 W-11 · `gateways#index` та `#show` — сирова серіалізація, `GatewayBlueprint` відсутній.** Raw `@gateways` і `@gateway` — всі DB-колонки, включно з потенційно чутливими (config, keys, IP). **Дія:** Створити `GatewayBlueprint` з явним allowlist полів; використати в контролері.
+
+- **🟠 W-12 · `provisioning#register` — відповідь `device` містить всі поля моделі, а не 4 задокументованих.** Код: `{ did: device_identifier, device: @device, key_derivation: "hkdf-sha256" }` — `@device` серіалізується без фільтрації. Документ §5.2 показує лише `id`, `did`, `status`, `cluster_id`. **Дія:** Серіалізувати з `as_json(only: [:id, :did, :status, :cluster_id])`.
+
+- **🟠 W-13 · `oracle_visions#simulate` — `params[:variables]` передається у воркер без валідації.** `sigma`, `rho`, `beta` документовані як required variables, але серверна валідація відсутня. Також `job_id` — це Sidekiq JID (рядок UUID), а не числовий id. **Дія:** Додати `params.permit(variables: [:sigma, :rho, :beta])`; задокументувати тип `job_id`.
+
+- **🟠 W-14 · `oracle_callbacks#create` — відповідь `404` не задокументована у §5.8.** Код: `rescue ActiveRecord::RecordNotFound → 404 "Chainlink request not found"`. **Дія:** Додати `404 Not Found | chainlink_request_id не знайдено` до таблиці помилок §5.8.
+
+- **🟠 W-15 · `users#index` — super_admin scope повертає глобальний список всіх користувачів.** `UserPolicy::Scope`: super_admin → `scope.all` (всі org). Це може бути навмисним, але не задокументованим. **Дія:** Явно задокументувати поведінку super_admin або додати org-scoping.
+
+#### 🟡 Нотатки
+
+- **🟡 N-1 · Rack::Attack та filter_parameter_logging — зміни посилаються на commit `da64021`, але не верифіковані незалежно.** `config/initializers/rack_attack.rb` та `filter_parameter_logging.rb` не перевірялись у цьому аудиті. **Дія:** Провести аудит цих файлів окремо.
+
+- **🟡 N-2 · TRL 8 завищений за наявності 5 активних блокерів.** B-1..B-5 — production-breaking дефекти та security gap. TRL 7 більш точний. **Дія:** Виправити B-1..B-5, після чого відновити TRL 8.
+
+- **🟡 N-3 · `oracle_visions#stream_config` — обов'язковий параметр `cluster_id` не задокументований.** 404 при відсутньому `cluster_id` теж не описаний. **Дія:** Задокументувати `cluster_id` як required query param та 404-відповідь.
+
+- **🟡 N-4 · `GET /api/v1/users/:id` відсутній у таблиці §4.** Маршрут існує в `routes.rb` але пропущений у документі (пов'язано з B-1). **Дія:** Після додавання `def show` — додати рядок до таблиці §4.
+
+- **🟡 N-5 · `GatewayBlueprint` відсутній у `app/blueprints/`.** Всі інші major сутності мають blueprint. Gateway серіалізується через raw `as_json` — неконтрольована поверхня. **Дія:** Створити `GatewayBlueprint`.
+
+
 ---
 
 ## 1. Автентифікація (Authentication)
