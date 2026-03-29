@@ -85,7 +85,6 @@ module Api
               format.html do
                 # [A-2 FIX]: В Production HKDF mode ключ не передається до UI-компонента.
                 # Zero-Trust: ключ деривується незалежно на прошивці.
-                # У TRL4 lab mode (PROVISIONING_MASTER_KEY не встановлено) — передаємо для ручного прошивання.
                 display_key = ENV["PROVISIONING_MASTER_KEY"].blank? ? @key_hex : nil
                 render_dashboard(
                   title: "Initiation Successful",

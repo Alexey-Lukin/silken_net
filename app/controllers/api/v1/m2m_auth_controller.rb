@@ -59,11 +59,8 @@ module Api
             message
           )
         rescue Ed25519Crypto::SigningService::SigningError => e
-          # Невалідний формат підпису або публічного ключа — повертаємо 401, не 500.
-          # Без rescue SigningError bubbles up як StandardError → BaseController
-          # повертає 500 у продакшені, що не відфільтровується Fail2Ban (лише 401/404).
           Rails.logger.error "🚨 [M2M Auth] Invalid signature format for #{did}: #{e.message}"
-          render json: { error: "Невалідний підпис." }, status: :unauthorized
+          render json: { error: "Invalid signature format." }, status: :unauthorized
           return
         end
 
