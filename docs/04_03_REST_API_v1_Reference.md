@@ -6,7 +6,7 @@
 
 ## ✅ Статус (Status)
 
-- **Поточний TRL:** TRL 5 — Всі 4 P0/P1 security blockers вирішено (PR #229, commit 59bc5ea). HKDF key derivation, HMAC Oracle auth, M2M Ed25519 tokens, HTTP telemetry uplink.
+- **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Всі P0/P1 security blockers вирішено (PR #229). Імплементовано Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
 - **Кількість ендпоінтів:** 81 (додано `POST /api/v1/auth/m2m_token` та `POST /api/v1/gateways/:id/telemetry`)
 - **Джерело:** Reverse Shaping з `config/routes.rb` та `app/controllers/api/v1/`
 - **Базовий URL:** `https://<host>/api/v1`
