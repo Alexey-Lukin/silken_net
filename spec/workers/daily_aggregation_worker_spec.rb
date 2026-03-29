@@ -4,43 +4,55 @@ require "rails_helper"
 
 RSpec.describe DailyAggregationWorker, type: :worker do
   before do
-    allow(InsightGeneratorService).to receive(:call).and_return({ processed_count: 10 })
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
   end
 
   describe "#perform" do
-    context "when aggregation produces results" do
-      it "calls InsightGeneratorService with target date" do
+    context "when telemetry data exists" do
+      before do
+        tree = create(:tree, status: :active)
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: Date.new(2026, 3, 6).beginning_of_day + 12.hours)
+      end
+
+      it "enqueues InsightGeneratorOrchestratorWorker with target date" do
         described_class.new.perform("2026-03-06")
 
-        expect(InsightGeneratorService).to have_received(:call).with(Date.new(2026, 3, 6))
+        expect(InsightGeneratorOrchestratorWorker.jobs.size).to eq(1)
+        expect(InsightGeneratorOrchestratorWorker.jobs.first["args"]).to eq([ "2026-03-06" ])
       end
 
       it "uses yesterday UTC when no date provided" do
-        expected_date = Time.current.utc.to_date - 1
+        # Створюємо лог за вчора
+        tree = create(:tree, status: :active)
+        yesterday = Time.current.utc.to_date - 1
+        create(:telemetry_log, tree: tree,
+          temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: yesterday.beginning_of_day + 12.hours)
 
         described_class.new.perform
 
-        expect(InsightGeneratorService).to have_received(:call).with(expected_date)
+        expect(InsightGeneratorOrchestratorWorker.jobs.size).to eq(1)
+        expect(InsightGeneratorOrchestratorWorker.jobs.first["args"]).to eq([ yesterday.to_s ])
       end
 
-      it "chains ClusterHealthCheckWorker when data exists" do
+      it "does not directly chain ClusterHealthCheckWorker (handled by batch callback)" do
         described_class.new.perform("2026-03-06")
 
-        expect(ClusterHealthCheckWorker.jobs.size).to eq(1)
-        expect(ClusterHealthCheckWorker.jobs.first["args"]).to eq([ "2026-03-06" ])
+        expect(ClusterHealthCheckWorker.jobs).to be_empty
       end
     end
 
     context "when no telemetry data available" do
-      before do
-        allow(InsightGeneratorService).to receive(:call).and_return({ processed_count: 0 })
-      end
-
-      it "does not chain ClusterHealthCheckWorker" do
+      it "does not enqueue InsightGeneratorOrchestratorWorker" do
         described_class.new.perform("2026-03-06")
 
-        expect(ClusterHealthCheckWorker.jobs).to be_empty
+        expect(InsightGeneratorOrchestratorWorker.jobs).to be_empty
       end
 
       it "creates EwsAlert for active clusters on weekdays" do
@@ -85,7 +97,7 @@ RSpec.describe DailyAggregationWorker, type: :worker do
       end
 
       it "re-raises StandardError for Sidekiq retry" do
-        allow(InsightGeneratorService).to receive(:call).and_raise(StandardError, "DB connection lost")
+        allow(TelemetryLog).to receive(:where).and_raise(StandardError, "DB connection lost")
 
         expect {
           described_class.new.perform("2026-03-06")

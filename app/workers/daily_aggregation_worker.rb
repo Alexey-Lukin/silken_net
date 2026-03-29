@@ -21,22 +21,18 @@ class DailyAggregationWorker
 
     Rails.logger.info "🕒 [Хронометрист] Початок великої агрегації за #{target_date}..."
 
-    # 2. СТИСНЕННЯ РЕАЛЬНОСТІ (Insight Generation)
-    # Цей сервіс перетворює мільйони логів телеметрії на добові звіти AiInsight.
-    # Результат сервісу (успіх/кількість) допоможе нам зрозуміти, чи йти далі.
-    aggregation_results = InsightGeneratorService.call(target_date)
+    # [A-3: Wiki 04_02 §14 — Sidekiq Batch для покластерної обробки]
+    # Замість синхронного InsightGeneratorService.call (OOM-ризик при 10M+ дерев),
+    # запускаємо батч-оркестратор. InsightBatchCallbacks#on_success автоматично
+    # запустить ClusterHealthCheckWorker після завершення всіх чанків.
+    #
+    # Перевіряємо наявність телеметрії перед запуском батчу.
+    has_telemetry = TelemetryLog.where(created_at: target_date.beginning_of_day..target_date.end_of_day).exists?
 
-    if aggregation_results[:processed_count].to_i.positive?
-      # 3. ЗАМКНЕНИЙ ЦИКЛ (The Chaining)
-      # [СИНХРОНІЗОВАНО]: Передаємо дату наступному воркеру.
-      # Це гарантує, що Slashing Protocol та перевірка контрактів
-      # відбудуться саме для тих даних, які ми щойно згенерували.
-      ClusterHealthCheckWorker.perform_async(target_date.to_s)
+    if has_telemetry
+      InsightGeneratorOrchestratorWorker.perform_async(target_date.to_s)
 
-      # Також варто перевірити параметричне страхування
-      # ParametricInsuranceWorker.perform_async(target_date.to_s)
-
-      Rails.logger.info "✅ [Хронометрист] Агрегація завершена (#{aggregation_results[:processed_count]} вузлів). Аудит контрактів заплановано."
+      Rails.logger.info "✅ [Хронометрист] Дані є за #{target_date}. Батч-агрегацію запущено."
     else
       Rails.logger.warn "⚠️ [Хронометрист] За #{target_date} не знайдено даних для агрегації. Ланцюг аудиту зупинено."
 

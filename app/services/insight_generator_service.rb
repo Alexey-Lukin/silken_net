@@ -16,6 +16,9 @@ class InsightGeneratorService < ApplicationService
     @ai_model = load_ai_model
   end
 
+  # Синхронний режим: обробляє ВСІ кластери в одному процесі.
+  # Підходить для малих датасетів або прямого виклику через InsightGeneratorService.call(date).
+  # Для масштабу 10M+ дерев використовуйте InsightGeneratorOrchestratorWorker (Sidekiq::Batch).
   def perform
     Rails.logger.info "🧠 [Insight Generator] Початок масової агрегації за #{@date}..."
 
@@ -64,25 +67,79 @@ class InsightGeneratorService < ApplicationService
     { processed_count: @processed_count, date: @date }
   end
 
+  # =========================================================================
+  # PUBLIC API ДЛЯ БАТЧЕВОГО РЕЖИМУ (Sidekiq::Batch)
+  # =========================================================================
+  # Використовується GenerateClusterInsightWorker для обробки чанку кластерів.
+  # Кожен воркер отримує масив cluster_ids та обробляє їх незалежно.
+
+  # Повертає Hash { cluster_id => { temp:, sap:, z: } } для кластерів, що мають дані.
+  # Якщо cluster_ids передано — фільтрує тільки вказані кластери.
+  def cluster_baselines(cluster_ids = nil)
+    prefetch_cluster_baselines(cluster_ids)
+  end
+
+  # Обробляє чанк кластерів: створює tree-level та cluster-level AiInsight.
+  # Ідемпотентний: видаляє старі інсайти для вказаних кластерів перед перерахунком.
+  # @param cluster_ids [Array<Integer>] масив ID кластерів для обробки
+  # @return [Integer] кількість оброблених вузлів
+  def process_cluster_batch(cluster_ids)
+    baselines = prefetch_cluster_baselines(cluster_ids)
+
+    Cluster.where(id: cluster_ids).find_each do |cluster|
+      cluster_baseline = baselines[cluster.id]
+      next unless cluster_baseline
+
+      # Ідемпотентність: очищуємо старі інсайти для дерев ТА кластера
+      tree_ids = cluster.trees.select(:id)
+      AiInsight.where(analyzable_type: "Tree", analyzable_id: tree_ids,
+                      insight_type: :daily_health_summary, target_date: @date).delete_all
+      AiInsight.where(analyzable_type: "Cluster", analyzable_id: cluster.id,
+                      insight_type: :daily_health_summary, target_date: @date).delete_all
+
+      tree_stats_map = prefetch_tree_stats(cluster)
+
+      cluster.trees.find_each do |tree|
+        stats = tree_stats_map[tree.id]
+        next unless stats
+
+        @processed_count += 1 if generate_for_tree(tree, cluster_baseline, stats)
+      end
+
+      aggregate_cluster!(cluster)
+    end
+
+    @processed_count
+  end
+
+  # Очищення сирих логів старше 7 днів (публічний для виклику з InsightBatchCallbacks).
+  def self.cleanup_old_logs!
+    threshold = 7.days.ago.end_of_day
+    TelemetryLog.where("created_at <= ?", threshold).in_batches(of: 10_000, &:delete_all)
+  end
+
   private
 
-  # ⚡ [ANTI-N+1]: Агрегація базлайнів для всіх кластерів одним GROUP BY
-  def prefetch_cluster_baselines
-    TelemetryLog.joins(:tree)
-                .where(created_at: @start_time..@end_time)
-                .group("trees.cluster_id")
-                .select(
-                  "trees.cluster_id",
-                  "AVG(temperature_c) as avg_temp",
-                  "AVG(sap_flow) as avg_sap",
-                  "AVG(z_value) as avg_z"
-                ).each_with_object({}) do |row, hash|
-                  hash[row.cluster_id] = {
-                    temp: row.avg_temp.to_f,
-                    sap: row.avg_sap.to_f,
-                    z: row.avg_z.to_f
-                  }
-                end
+  # ⚡ [ANTI-N+1]: Агрегація базлайнів одним GROUP BY.
+  # Якщо cluster_ids передано — фільтрує тільки вказані кластери.
+  def prefetch_cluster_baselines(cluster_ids = nil)
+    scope = TelemetryLog.joins(:tree)
+                        .where(created_at: @start_time..@end_time)
+    scope = scope.where(trees: { cluster_id: cluster_ids }) if cluster_ids
+
+    scope.group("trees.cluster_id")
+         .select(
+           "trees.cluster_id",
+           "AVG(temperature_c) as avg_temp",
+           "AVG(sap_flow) as avg_sap",
+           "AVG(z_value) as avg_z"
+         ).each_with_object({}) do |row, hash|
+           hash[row.cluster_id] = {
+             temp: row.avg_temp.to_f,
+             sap: row.avg_sap.to_f,
+             z: row.avg_z.to_f
+           }
+         end
   end
 
   # ⚡ [ANTI-N+1]: Агрегація статистики для всіх дерев кластера одним GROUP BY
@@ -194,40 +251,43 @@ class InsightGeneratorService < ApplicationService
 
   def aggregate_clusters!(cluster_ids)
     Cluster.where(id: cluster_ids).find_each do |cluster|
-      tree_insights = AiInsight.where(
-        analyzable_type: "Tree",
-        analyzable_id: cluster.trees.select(:id),
-        insight_type: :daily_health_summary,
-        target_date: @date
-      )
-
-      next if tree_insights.empty?
-
-      # ⚡ [ОПТИМІЗАЦІЯ]: Використовуємо boolean колонку замість JSONB @> оператора
-      fraud_count = tree_insights.where(fraud_detected: true).count
-
-      summary = if fraud_count > 0
-                  "⚠️ Сектор #{cluster.name}: Виявлено #{fraud_count} вузлів із фрод-телеметрією."
-      else
-                  "Сектор #{cluster.name}: Оброблено #{tree_insights.count} вузлів. Стан стабільний."
-      end
-
-      AiInsight.create!(
-        analyzable: cluster,
-        insight_type: :daily_health_summary,
-        target_date: @date,
-        stress_index: tree_insights.average(:stress_index).to_f.round(3),
-        total_growth_points: tree_insights.sum(:total_growth_points),
-        summary: summary
-      )
+      aggregate_cluster!(cluster)
     end
   end
 
+  # Створює cluster-level AiInsight на основі tree-level інсайтів.
+  # Використовується як у синхронному perform, так і в батчевому process_cluster_batch.
+  def aggregate_cluster!(cluster)
+    tree_insights = AiInsight.where(
+      analyzable_type: "Tree",
+      analyzable_id: cluster.trees.select(:id),
+      insight_type: :daily_health_summary,
+      target_date: @date
+    )
+
+    return if tree_insights.empty?
+
+    # ⚡ [ОПТИМІЗАЦІЯ]: Використовуємо boolean колонку замість JSONB @> оператора
+    fraud_count = tree_insights.where(fraud_detected: true).count
+
+    summary = if fraud_count > 0
+                "⚠️ Сектор #{cluster.name}: Виявлено #{fraud_count} вузлів із фрод-телеметрією."
+    else
+                "Сектор #{cluster.name}: Оброблено #{tree_insights.count} вузлів. Стан стабільний."
+    end
+
+    AiInsight.create!(
+      analyzable: cluster,
+      insight_type: :daily_health_summary,
+      target_date: @date,
+      stress_index: tree_insights.average(:stress_index).to_f.round(3),
+      total_growth_points: tree_insights.sum(:total_growth_points),
+      summary: summary
+    )
+  end
+
   def cleanup_old_logs!
-    threshold = 7.days.ago.end_of_day
-    # [Batch Delete]: delete_all на мільйонах рядків може заблокувати таблицю.
-    # in_batches видаляє по 10 000 записів за раз, знижуючи навантаження на Lock Manager.
-    TelemetryLog.where("created_at <= ?", threshold).in_batches(of: 10_000, &:delete_all)
+    self.class.cleanup_old_logs!
   end
 
   def generate_summary(status, temp)
