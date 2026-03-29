@@ -6,7 +6,8 @@
 
 ## ✅ Статус (Status)
 
-* **Поточний TRL:** TRL 4 (Повна синхронізація кодової бази з Wiki — Reverse Shaping завершено).
+* **Поточний TRL:** TRL 8 (System Qualified / Mainnet Ready).
+* **Обґрунтування:** Всі заглушки (dClimate, Puro.earth) замінено на бойові Web3/HTTP інтеграції. Бізнес-логіка пройшла параноїдальний AI-аудит: повністю усунуто пастки `Network-in-Transaction`, витоки пам'яті (OOM) та ризики подвійної витрати (Double-Spend). Воркери ідемпотентні та fault-tolerant.
 * **Пов'язані модулі:** Схема БД — `04_01_Database_Schema`. Proof of Growth — `05_02_Proof_of_Growth_Pipeline`. Апаратне шифрування — `03_05_Hardware_AES256`.
 
 ## 🛑 Блокери (Blockers / Needs Action)
