@@ -6,7 +6,8 @@
 
 ## ✅ Статус (Status)
 
-- **Поточний TRL:** TRL 4 — Повна синхронізація контрактів API з кодовою базою.
+- **Поточний TRL:** TRL 5 — Всі 4 P0/P1 security blockers вирішено (PR #229, commit 59bc5ea). HKDF key derivation, HMAC Oracle auth, M2M Ed25519 tokens, HTTP telemetry uplink.
+- **Кількість ендпоінтів:** 81 (додано `POST /api/v1/auth/m2m_token` та `POST /api/v1/gateways/:id/telemetry`)
 - **Джерело:** Reverse Shaping з `config/routes.rb` та `app/controllers/api/v1/`
 - **Базовий URL:** `https://<host>/api/v1`
 - **Формат відповідей:** JSON (якщо не вказано інше)
@@ -18,27 +19,23 @@
 
 ## 🛑 Блокери (Blockers / Needs Action)
 
-- **🔴 P0 Blocker 1: Злочин проти REST — GET Payload Trap (`GET /api/v1/gateways/:id/telemetry`).**
+- ~~**🔴 P0 Blocker 1: Злочин проти REST — GET Payload Trap (`GET /api/v1/gateways/:id/telemetry`).**
   Секція 6 (lifecycle Gateway) описувала ендпоінт №3 як `GET /api/v1/gateways/:id/telemetry → передати накопичену телеметрію`. Використовувати HTTP `GET` для **запису/передачі** даних — грубе порушення протоколу:
   1. `GET`-запити логуються разом з усіма параметрами (витік даних у Nginx / Load Balancer).
   2. URL має жорсткий ліміт (~2048 символів) — 21-байтовий зашифрований пакет туди не влізе → `414 URI Too Long`.
-  3. `GET` може кешуватися проміжними проксі.
-  **Виправлено в документі (Секція 6):** Основний канал передачі телеметрії від Gateway до бекенду — **CoAP/UDP на порт 5683** (daemon). HTTP-ендпоінт `GET /api/v1/gateways/:id/telemetry` — лише для **читання** збереженої телеметрії (Dashboard). Якщо потрібен HTTP fallback для telemetry uplink, має бути строго `POST /api/v1/gateways/:id/telemetry`.
+  3. `GET` може кешуватися проміжними проксі.~~ ✅ **ВИРІШЕНО** у PR #229 (commit 59bc5ea): додано `POST /api/v1/gateways/:id/telemetry` (`telemetry#gateway_uplink`). Метод `gateway_uplink` приймає Base64-encoded зашифрований батч, передає в `UnpackTelemetryWorker.perform_async(payload, request.remote_ip, gateway_uid)`, повертає `202 Accepted`. `GET /api/v1/gateways/:id/telemetry` — лише для **читання** (Dashboard). Основний канал uplink — CoAP/UDP на порт 5683.
 
-- **🔴 P0 Blocker 2: Передача AES-ключа по мережі — Zero-Trust Violation (`POST /api/v1/provisioning/register`).**
+- ~~**🔴 P0 Blocker 2: Передача AES-ключа по мережі — Zero-Trust Violation (`POST /api/v1/provisioning/register`).**
   Поточна реалізація: `HardwareKeyService.provision` генерує AES-ключ на сервері через `SecureRandom.hex` і повертає його у JSON-відповіді (`"aes_key": "2B7E..."`). Це порушення Zero-Trust:
   1. Навіть через TLS — ключ існує в пам'яті сервера, логах, payload відповіді.
-  2. MITM-перехоплювач на етапі provisioning отримує повний доступ до шифрування дерева.
-  **Рекомендоване рішення:** Сервер приймає унікальний серійник (STM32 UID або Public Key). Обидві сторони (залізо та бекенд) математично **деривують однаковий AES-ключ (KDF)** без передачі по мережі. Або: шлюз генерує ключ, шифрує його RSA-публічним ключем сервера і надсилає зашифрованим. **Поточна реалізація залишається прийнятною для TRL 4 (лабораторний стенд), але БЛОКУЄ вихід на Production.**
+  2. MITM-перехоплювач на етапі provisioning отримує повний доступ до шифрування дерева.~~ ✅ **ВИРІШЕНО** у PR #229 (commit 59bc5ea): `HardwareKeyService` тепер використовує **HKDF-SHA256** (`OpenSSL::KDF.hkdf`). Формула: `AES_KEY = HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")`. Ключ **ніколи не передається по мережі** — обидві сторони (залізо та бекенд) деривують його незалежно. Відповідь `POST /provisioning/register` тепер містить `{ did, device, key_derivation: "hkdf-sha256" }`. В TRL4 lab mode (змінна `PROVISIONING_MASTER_KEY` не встановлена) → fallback на `SecureRandom` з попередженням та `aes_key` у відповіді для ручного прошивання на стенді.
 
-- **🟠 P1 Warning 1: Відсутня авторизація Chainlink Oracle — Bypass Risk (`POST /api/v1/oracle_callbacks`).**
+- ~~**🟠 P1 Warning 1: Відсутня авторизація Chainlink Oracle — Bypass Risk (`POST /api/v1/oracle_callbacks`).**
   Поточна реалізація: ендпоінт відкритий без автентифікації, безпека забезпечується лише унікальністю `chainlink_request_id`. Децентралізовані оракули не тримають Bearer-токени — вони підписують payload криптографічно.
-  **Якщо не виправити:** будь-хто може надіслати фейковий callback → `MintCarbonCoinWorker.perform_async` → безпідставний мінтинг SCC.
-  **Рекомендоване рішення:** Валідувати HMAC-підпис у заголовку `X-Chainlink-Signature` перед обробкою callback. Додатково: обмеження доступу на рівні network firewall до IP-адрес Chainlink DON.
+  **Якщо не виправити:** будь-хто може надіслати фейковий callback → `MintCarbonCoinWorker.perform_async` → безпідставний мінтинг SCC.~~ ✅ **ВИРІШЕНО** у PR #229 (commit 59bc5ea): `OracleCallbacksController` тепер має `before_action :verify_chainlink_signature!` — HMAC-SHA256 валідація заголовку `X-Chainlink-Signature` через `OpenSSL::HMAC.hexdigest("SHA256", ENV["CHAINLINK_HMAC_SECRET"], raw_body)` з timing-safe `ActiveSupport::SecurityUtils.secure_compare`. В dev/test (коли `CHAINLINK_HMAC_SECRET` не встановлено) — пропускається з попередженням у логах.
 
-- **🟠 P1 Warning 2: Refresh Lifecycle для прошивки Gateway — M2M Auth Gap (`POST /api/v1/login`).**
-  Bearer-токен, отриманий при `POST /api/v1/login`, має вбудований термін дії (`generates_token_for(:api_access, ...)`). Якщо шлюз логіниться "одноразово" і токен протухає через N днів — дерево в лісі не може ввести логін і пароль.
-  **Рекомендоване рішення:** Або механізм `Refresh Token` для API-клієнтів (`POST /api/v1/auth/refresh`), або безстрокові M2M (Machine-to-Machine) токени, прив'язані до апаратного підпису (DID + Ed25519). Приклад: `POST /api/v1/auth/m2m_token` — шлюз підписує свій DID апаратним ключем.
+- ~~**🟠 P1 Warning 2: Refresh Lifecycle для прошивки Gateway — M2M Auth Gap (`POST /api/v1/login`).**
+  Bearer-токен, отриманий при `POST /api/v1/login`, має вбудований термін дії (`generates_token_for(:api_access, ...)`). Якщо шлюз логіниться "одноразово" і токен протухає через N днів — дерево в лісі не може ввести логін і пароль.~~ ✅ **ВИРІШЕНО** у PR #229 (commit 59bc5ea): додано новий ендпоінт `POST /api/v1/auth/m2m_token` (`M2mAuthController`). Шлюз підписує `"#{did}:#{timestamp}"` своїм Ed25519 private key. Бекенд верифікує підпис через `Ed25519Crypto::SigningService.verify(ed25519_public_key_hex, signature, message)` з перевіркою timestamp (±5 хвилин). При успіху видається 30-денний Bearer-токен. Ed25519 public key реєструється під час provisioning (поле `ed25519_public_key` в запиті) і зберігається в `hardware_keys.ed25519_public_key_hex` (міграція `20260329111830`).
 
 ---
 
@@ -54,9 +51,9 @@ Authorization: Bearer <token>
 
 - Токен генерується при успішному POST `/api/v1/login` (поле `token` у відповіді).
 - Реалізація: `User.find_by_token_for(:api_access, token)` — Rails 8 `generates_token_for`.
-- Токен має вбудований термін дії (визначається в моделі User).
+- Токен має термін дії 30 днів.
 - **Обмеження на вхід:** rate limit — 5 спроб за 1 хвилину (HTTP 429 при перевищенні).
-- ⚠️ **P1 Warning:** токен протухає. Для прошивки Gateway, що працює роками без operator, потрібен M2M Refresh механізм (див. Блокери).
+- **M2M Auth (Gateway):** прошивка шлюзу не може інтерактивно оновити токен. Для цього використовується `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (div. Section 1.4 та Section 5.14). ✅ P1 Warning 2 вирішено.
 
 ### 1.2 Session Cookie (для браузерного Dashboard)
 
@@ -72,9 +69,28 @@ Authorization: Bearer <token>
 | `/api/v1/logout` | DELETE | Вихід |
 | `/api/v1/forgot_password` | GET, POST | Запит скидання пароля |
 | `/api/v1/reset_password` | GET, PATCH | Форма та обробка нового пароля |
-| `/api/v1/oracle_callbacks` | POST | Chainlink DON callback (machine-to-machine) |
+| `/api/v1/oracle_callbacks` | POST | Chainlink DON callback (HMAC-SHA256 валідація через `X-Chainlink-Signature`) |
+| `/api/v1/auth/m2m_token` | POST | M2M автентифікація (Ed25519-підпис, без Bearer token) |
 
-> **Примітка:** `/api/v1/oracle_callbacks` навмисно виключено з автентифікації — це машинний зворотній виклик від Chainlink Oracle Network. Безпека забезпечується на рівні: (1) унікальний непередбачуваний `chainlink_request_id` у кожному запиті, (2) ендпоінт лише оновлює стан наявного запису (не створює нові), (3) рекомендується валідація `X-Chainlink-Signature` HMAC та обмеження доступу на рівні мережевого firewall до IP-адрес Chainlink DON (⚠️ P1 Warning 1 — ще не реалізовано в коді).
+> **Примітка:** `/api/v1/oracle_callbacks` виключено з `authenticate_user!`, але захищено `before_action :verify_chainlink_signature!` — HMAC-SHA256 валідація заголовку `X-Chainlink-Signature` (ENV `CHAINLINK_HMAC_SECRET`). Якщо змінна не встановлена — HMAC пропускається з попередженням (dev/test). ✅ P1 Warning 1 вирішено.
+
+### 1.4 M2M Auth (для прошивки Gateway)
+
+Gateway-пристрої використовують **Ed25519-підпис** для отримання та оновлення Bearer-токену без логіна/пароля:
+
+```
+POST /api/v1/auth/m2m_token
+{
+  "did": "SNET-A1B2C3D4",
+  "timestamp": "2026-03-29T12:00:00Z",
+  "signature": "<Ed25519 sig of 'SNET-A1B2C3D4:2026-03-29T12:00:00Z'>"
+}
+```
+
+- Ed25519 public key реєструється під час provisioning (поле `ed25519_public_key`) і зберігається в `hardware_keys.ed25519_public_key_hex`.
+- Бекенд перевіряє підпис та timestamp (±5 хвилин) перед видачею токена.
+- Токен дійсний 30 днів. Перед закінченням — повторний `POST /api/v1/auth/m2m_token`.
+- Детальний опис: Section 5.14.
 
 ---
 
@@ -163,107 +179,110 @@ Authorization: Bearer <token>
 | 5 | POST | `/api/v1/forgot_password` | `passwords#create` | 🌐 Public | Запит email скидання |
 | 6 | GET | `/api/v1/reset_password` | `passwords#edit` | 🌐 Public | Форма нового пароля (HTML, `?token=`) |
 | 7 | PATCH | `/api/v1/reset_password` | `passwords#update` | 🌐 Public | Встановити новий пароль |
+| 8 | POST | `/api/v1/auth/m2m_token` | `m2m_auth#create` | 🌐 Public (Ed25519) | **M2M Auth:** Gateway отримує Bearer token через Ed25519-підпис DID |
 | **🛡️ Безпека Акаунту** | | | | | |
-| 8 | GET | `/api/v1/account_security` | `account_security#show` | 🔑 Auth | MFA-стан, прив'язані identity |
-| 9 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA |
-| 10 | PATCH | `/api/v1/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль |
-| 11 | DELETE | `/api/v1/account_security/identities/:id` | `account_security#unlink_identity` | 🔑 Auth | Відв'язати OAuth-провайдера |
-| 12 | PATCH | `/api/v1/account_security/identities/:id/lock` | `account_security#lock_identity` | 🔑 Auth | Заблокувати OAuth-ідентичність |
-| 13 | PATCH | `/api/v1/account_security/identities/:id/unlock` | `account_security#unlock_identity` | 🔑 Auth | Розблокувати OAuth-ідентичність |
+| 9 | GET | `/api/v1/account_security` | `account_security#show` | 🔑 Auth | MFA-стан, прив'язані identity |
+| 10 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA |
+| 11 | PATCH | `/api/v1/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль |
+| 12 | DELETE | `/api/v1/account_security/identities/:id` | `account_security#unlink_identity` | 🔑 Auth | Відв'язати OAuth-провайдера |
+| 13 | PATCH | `/api/v1/account_security/identities/:id/lock` | `account_security#lock_identity` | 🔑 Auth | Заблокувати OAuth-ідентичність |
+| 14 | PATCH | `/api/v1/account_security/identities/:id/unlock` | `account_security#unlock_identity` | 🔑 Auth | Розблокувати OAuth-ідентичність |
 | **🏰 Dashboard** | | | | | |
-| 14 | GET | `/api/v1/dashboard` | `dashboard#index` | 🔑 Auth | Зведена статистика організації |
+| 15 | GET | `/api/v1/dashboard` | `dashboard#index` | 🔑 Auth | Зведена статистика організації |
 | **👤 Користувачі та Організації** | | | | | |
-| 15 | GET | `/api/v1/users/me` | `users#me` | 🔑 Auth | Профіль поточного користувача |
-| 16 | GET | `/api/v1/users` | `users#index` | 👑 Admin | Список користувачів організації |
-| 17 | GET | `/api/v1/organizations` | `organizations#index` | 👑👑 SuperAdmin | Список усіх організацій |
-| 18 | GET | `/api/v1/organizations/:id` | `organizations#show` | 👑👑 SuperAdmin | Деталі організації |
+| 16 | GET | `/api/v1/users/me` | `users#me` | 🔑 Auth | Профіль поточного користувача |
+| 17 | GET | `/api/v1/users` | `users#index` | 👑 Admin | Список користувачів організації |
+| 18 | GET | `/api/v1/organizations` | `organizations#index` | 👑👑 SuperAdmin | Список усіх організацій |
+| 19 | GET | `/api/v1/organizations/:id` | `organizations#show` | 👑👑 SuperAdmin | Деталі організації |
 | **🌳 Кластери та Дерева** | | | | | |
-| 19 | GET | `/api/v1/clusters` | `clusters#index` | 🔑 Auth | Список кластерів організації |
-| 20 | GET | `/api/v1/clusters/:id` | `clusters#show` | 🔑 Auth | Деталі кластера |
-| 21 | GET | `/api/v1/clusters/:cluster_id/trees` | `trees#index` | 🔑 Auth | Дерева кластера |
-| 22 | GET | `/api/v1/clusters/:cluster_id/actuators` | `actuators#index` | 🌿 Forester | Актуатори кластера |
-| 23 | GET | `/api/v1/trees/:id` | `trees#show` | 🔑 Auth | Паспорт дерева (солдата) |
-| 24 | GET | `/api/v1/trees/:id/telemetry` | `telemetry#tree_history` | 🔑 Auth | Телеметрія дерева |
+| 20 | GET | `/api/v1/clusters` | `clusters#index` | 🔑 Auth | Список кластерів організації |
+| 21 | GET | `/api/v1/clusters/:id` | `clusters#show` | 🔑 Auth | Деталі кластера |
+| 22 | GET | `/api/v1/clusters/:cluster_id/trees` | `trees#index` | 🔑 Auth | Дерева кластера |
+| 23 | GET | `/api/v1/clusters/:cluster_id/actuators` | `actuators#index` | 🌿 Forester | Актуатори кластера |
+| 24 | GET | `/api/v1/trees/:id` | `trees#show` | 🔑 Auth | Паспорт дерева (солдата) |
+| 25 | GET | `/api/v1/trees/:id/telemetry` | `telemetry#tree_history` | 🔑 Auth | Телеметрія дерева |
 | **🧬 Біологічні Константи** | | | | | |
-| 25 | GET | `/api/v1/tree_families` | `tree_families#index` | 👑 Admin | Список порід дерев |
-| 26 | GET | `/api/v1/tree_families/:id` | `tree_families#show` | 👑 Admin | Деталі породи |
-| 27 | GET | `/api/v1/tree_families/new` | `tree_families#new` | 👑 Admin | Форма нової породи |
-| 28 | POST | `/api/v1/tree_families` | `tree_families#create` | 👑 Admin | Створити породу |
-| 29 | GET | `/api/v1/tree_families/:id/edit` | `tree_families#edit` | 👑 Admin | Форма редагування |
-| 30 | PATCH | `/api/v1/tree_families/:id` | `tree_families#update` | 👑 Admin | Оновити породу |
+| 26 | GET | `/api/v1/tree_families` | `tree_families#index` | 👑 Admin | Список порід дерев |
+| 27 | GET | `/api/v1/tree_families/:id` | `tree_families#show` | 👑 Admin | Деталі породи |
+| 28 | GET | `/api/v1/tree_families/new` | `tree_families#new` | 👑 Admin | Форма нової породи |
+| 29 | POST | `/api/v1/tree_families` | `tree_families#create` | 👑 Admin | Створити породу |
+| 30 | GET | `/api/v1/tree_families/:id/edit` | `tree_families#edit` | 👑 Admin | Форма редагування |
+| 31 | PATCH | `/api/v1/tree_families/:id` | `tree_families#update` | 👑 Admin | Оновити породу |
 | **📡 Шлюзи та Телеметрія** | | | | | |
-| 31 | GET | `/api/v1/gateways` | `gateways#index` | 🔑 Auth | Список Gateway (Queens) |
-| 32 | GET | `/api/v1/gateways/:id` | `gateways#show` | 🔑 Auth | Деталі Gateway |
-| 33 | GET | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_history` | 🔑 Auth | **Читання** збереженої телеметрії Gateway (Dashboard) |
-| 34 | GET | `/api/v1/telemetry/live` | `telemetry#live` | 🔑 Auth | Live-стрім телеметрії (HTML/Turbo) |
+| 32 | GET | `/api/v1/gateways` | `gateways#index` | 🔑 Auth | Список Gateway (Queens) |
+| 33 | GET | `/api/v1/gateways/:id` | `gateways#show` | 🔑 Auth | Деталі Gateway |
+| 34 | GET | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_history` | 🔑 Auth | **Читання** збереженої телеметрії Gateway (Dashboard) |
+| 35 | POST | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_uplink` | 🔑 Auth | **HTTP Uplink:** передати зашифрований батч телеметрії від Gateway |
+| 36 | GET | `/api/v1/telemetry/live` | `telemetry#live` | 🔑 Auth | Live-стрім телеметрії (HTML/Turbo) |
 | **💎 Гаманці та Контракти** | | | | | |
-| 35 | GET | `/api/v1/wallets` | `wallets#index` | 🔑 Auth | Список гаманців організації |
-| 36 | GET | `/api/v1/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
-| 37 | GET | `/api/v1/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (Turbo Frame) |
-| 38 | GET | `/api/v1/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (Turbo Frame) |
-| 39 | GET | `/api/v1/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
-| 40 | GET | `/api/v1/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
-| 41 | GET | `/api/v1/contracts/stats` | `contracts#stats` | 🔑 Auth | Фінансова аналітика |
+| 37 | GET | `/api/v1/wallets` | `wallets#index` | 🔑 Auth | Список гаманців організації |
+| 38 | GET | `/api/v1/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
+| 39 | GET | `/api/v1/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (Turbo Frame) |
+| 40 | GET | `/api/v1/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (Turbo Frame) |
+| 41 | GET | `/api/v1/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
+| 42 | GET | `/api/v1/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
+| 43 | GET | `/api/v1/contracts/stats` | `contracts#stats` | 🔑 Auth | Фінансова аналітика |
 | **⚙️ Актуатори** | | | | | |
-| 42 | GET | `/api/v1/actuators/:id` | `actuators#show` | 🌿 Forester | Деталі актуатора + історія команд |
-| 43 | POST | `/api/v1/actuators/:id/execute` | `actuators#execute` | 🌿 Forester | Виконати команду на актуаторі |
-| 44 | GET | `/api/v1/actuator_commands/:id` | `actuators#command_status` | 🌿 Forester | Статус команди актуатора |
+| 44 | GET | `/api/v1/actuators/:id` | `actuators#show` | 🌿 Forester | Деталі актуатора + історія команд |
+| 45 | POST | `/api/v1/actuators/:id/execute` | `actuators#execute` | 🌿 Forester | Виконати команду на актуаторі |
+| 46 | GET | `/api/v1/actuator_commands/:id` | `actuators#command_status` | 🌿 Forester | Статус команди актуатора |
 | **🚀 Прошивка (OTA)** | | | | | |
-| 45 | GET | `/api/v1/firmwares` | `firmwares#index` | 👑 Admin | Список версій прошивки |
-| 46 | GET | `/api/v1/firmwares/new` | `firmwares#new` | 👑 Admin | Форма завантаження прошивки |
-| 47 | POST | `/api/v1/firmwares` | `firmwares#create` | 👑 Admin | Завантажити нову прошивку |
-| 48 | GET | `/api/v1/firmwares/inventory` | `firmwares#inventory` | 👑 Admin | Статистика версій на пристроях |
-| 49 | POST | `/api/v1/firmwares/:id/deploy` | `firmwares#deploy` | 👑 Admin | Запустити OTA-оновлення |
+| 47 | GET | `/api/v1/firmwares` | `firmwares#index` | 👑 Admin | Список версій прошивки |
+| 48 | GET | `/api/v1/firmwares/new` | `firmwares#new` | 👑 Admin | Форма завантаження прошивки |
+| 49 | POST | `/api/v1/firmwares` | `firmwares#create` | 👑 Admin | Завантажити нову прошивку |
+| 50 | GET | `/api/v1/firmwares/inventory` | `firmwares#inventory` | 👑 Admin | Статистика версій на пристроях |
+| 51 | POST | `/api/v1/firmwares/:id/deploy` | `firmwares#deploy` | 👑 Admin | Запустити OTA-оновлення |
 | **⚠️ Тривоги та Обслуговування** | | | | | |
-| 50 | GET | `/api/v1/alerts` | `alerts#index` | 🔑 Auth | Список EWS-тривог |
-| 51 | PATCH | `/api/v1/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу |
-| 52 | GET | `/api/v1/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування |
-| 53 | GET | `/api/v1/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
-| 54 | POST | `/api/v1/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
-| 55 | GET | `/api/v1/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
-| 56 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис |
-| 57 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32) |
-| 58 | GET | `/api/v1/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
-| 59 | DELETE | `/api/v1/maintenance_records/:id/photos/:photo_id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото |
+| 52 | GET | `/api/v1/alerts` | `alerts#index` | 🔑 Auth | Список EWS-тривог |
+| 53 | PATCH | `/api/v1/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу |
+| 54 | GET | `/api/v1/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування |
+| 55 | GET | `/api/v1/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
+| 56 | POST | `/api/v1/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
+| 57 | GET | `/api/v1/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
+| 58 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис |
+| 59 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32) |
+| 60 | GET | `/api/v1/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
+| 61 | DELETE | `/api/v1/maintenance_records/:id/photos/:photo_id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото |
 | **⊙ Оракул (AI Insights)** | | | | | |
-| 60 | GET | `/api/v1/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
-| 61 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
-| 62 | GET | `/api/v1/oracle_visions/stream_config` | `oracle_visions#stream_config` | 🌿 Forester | Конфіг підписки на стрім |
+| 62 | GET | `/api/v1/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
+| 63 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
+| 64 | GET | `/api/v1/oracle_visions/stream_config` | `oracle_visions#stream_config` | 🌿 Forester | Конфіг підписки на стрім |
 | **⛓️ Блокчейн** | | | | | |
-| 63 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій |
-| 64 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
-| 65 | GET | `/api/v1/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
-| 66 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public ⚠️ | Chainlink Oracle callback (потрібна HMAC валідація) |
+| 65 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій |
+| 66 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
+| 67 | GET | `/api/v1/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
+| 68 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public (HMAC) | Chainlink Oracle callback — захищено `X-Chainlink-Signature` HMAC-SHA256 |
 | **🔔 Сповіщення** | | | | | |
-| 67 | GET | `/api/v1/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
-| 68 | PATCH | `/api/v1/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
+| 69 | GET | `/api/v1/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
+| 70 | PATCH | `/api/v1/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
 | **📊 Звіти** | | | | | |
-| 69 | GET | `/api/v1/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
-| 70 | GET | `/api/v1/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
-| 71 | GET | `/api/v1/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
+| 71 | GET | `/api/v1/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
+| 72 | GET | `/api/v1/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
+| 73 | GET | `/api/v1/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
 | **🧠 Налаштування** | | | | | |
-| 72 | GET | `/api/v1/settings` | `settings#show` | 👑 Admin | Налаштування організації |
-| 73 | PATCH | `/api/v1/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
+| 74 | GET | `/api/v1/settings` | `settings#show` | 👑 Admin | Налаштування організації |
+| 75 | PATCH | `/api/v1/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
 | **👁️ Аудит** | | | | | |
-| 74 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog) |
-| 75 | GET | `/api/v1/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
+| 76 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog) |
+| 77 | GET | `/api/v1/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
 | **⚡ Ініціація Пристроїв** | | | | | |
-| 76 | GET | `/api/v1/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
-| 77 | POST | `/api/v1/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway)** ⚠️ |
+| 78 | GET | `/api/v1/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
+| 79 | POST | `/api/v1/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation** |
 | **⚙️ Системний Моніторинг** | | | | | |
-| 78 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
-| 79 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
+| 80 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
+| 81 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
 
 **Легенда:**
 
 | Символ | Значення |
 |---|---|
 | 🌐 Public | Без автентифікації |
+| 🌐 Public (Ed25519) | Без Bearer token, але верифікується Ed25519-підпис |
+| 🌐 Public (HMAC) | Без Bearer token, але верифікується HMAC-SHA256 підпис |
 | 🔑 Auth | Будь-який автентифікований користувач |
 | 🌿 Forester | Роль `forester` або вище |
 | 👑 Admin | Роль `admin` або `super_admin` |
 | 👑👑 SuperAdmin | Лише роль `super_admin` |
-| ⚠️ | Є відкритий Blocker/Warning (см. секцію Блокери) |
 
 ---
 
@@ -306,7 +325,7 @@ Authorization: Bearer <token>
 
 > **Rate Limit:** 5 запитів за 1 хвилину. При перевищенні — HTTP 429.
 
-> **⚠️ P1 Warning 2 — M2M Refresh Gap:** токен має термін дії. Для прошивки Gateway (яка не може інтерактивно ввести логін) потрібен механізм оновлення: `POST /api/v1/auth/m2m_token` (підпис DID апаратним ключем) або `Refresh Token` flow. Без цього — Gateway відключиться після закінчення терміну дії токена.
+> ✅ **P1 Warning 2 вирішено:** для прошивки Gateway реалізовано `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (Section 5.14). Токен оновлюється перед закінченням 30-денного терміну.
 
 ---
 
@@ -353,13 +372,14 @@ Authorization: Bearer <token>
 | `family_id` | Integer | Лише для `tree` | ID породи дерева (TreeFamily) |
 | `latitude` | Float | ✅ | Широта GPS |
 | `longitude` | Float | ✅ | Довгота GPS |
+| `ed25519_public_key` | String (HEX) | Опційно | Ed25519 public key для M2M Auth (Gateway) |
 
-**Success Response `201 Created` (поточна реалізація TRL 4):**
+**Success Response `201 Created` (Production — HKDF mode):**
 
 ```json
 {
   "did": "SNET-A1B2C3D4",
-  "aes_key": "2B7E151628AED2A6ABF7158809CF4F3C",
+  "key_derivation": "hkdf-sha256",
   "device": {
     "id": 156,
     "did": "SNET-A1B2C3D4",
@@ -369,9 +389,21 @@ Authorization: Bearer <token>
 }
 ```
 
-> **⚠️ P0 Blocker 2 — Zero-Trust Violation:** `aes_key` повертається у відповіді по мережі — це порушення Zero-Trust навіть через TLS. **Прийнятно для лабораторного стенду (TRL 4), БЛОКУЄ Production.** Цільова архітектура: обидві сторони деривують AES-ключ через KDF з `hardware_uid` (STM32 UID), не передаючи його по мережі. Або: шлюз генерує ключ та надсилає його зашифрованим RSA-публічним ключем сервера.
+> ✅ **P0 Blocker 2 вирішено:** AES-ключ **не передається по мережі**. Бекенд та прошивка незалежно деривують однаковий ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")`. Встановіть `PROVISIONING_MASTER_KEY` в ENV для активації Production режиму.
 
-> **`aes_key` повертається лише один раз** при реєстрації. Зберігайте його в захищеній пам'яті мікроконтролера (Flash Option Bytes або OTP-region). Деталі: `docs/FIRMWARE.md`. Повторний запит для того ж `hardware_uid` поверне HTTP 409.
+**Success Response `201 Created` (TRL4 lab mode — `PROVISIONING_MASTER_KEY` не встановлено):**
+
+```json
+{
+  "did": "SNET-A1B2C3D4",
+  "aes_key": "2B7E151628AED2A6ABF7158809CF4F3C",
+  "key_derivation": "hkdf-sha256",
+  "warning": "TRL4 lab mode: AES key included in response. Set PROVISIONING_MASTER_KEY for production HKDF derivation.",
+  "device": { ... }
+}
+```
+
+> **`aes_key` в TRL4 mode повертається лише один раз** для ручного прошивання на лабораторному стенді. Зберігайте в захищеній пам'яті (Flash Option Bytes або OTP-region). Деталі: `docs/FIRMWARE.md`. Повторний запит для того ж `hardware_uid` поверне HTTP 409.
 
 **Conflict Response `409 Conflict`:**
 
@@ -417,7 +449,7 @@ Authorization: Bearer <token>
 
 ### 5.4 GET `/api/v1/gateways/:id/telemetry` — Читання Телеметрії Gateway (Queen)
 
-> **Важливо:** Цей ендпоінт призначений **лише для читання** збереженої телеметрії (Dashboard / Monitoring). Основний канал **запису** телеметрії від Gateway до бекенду — **CoAP/UDP на порт 5683** (daemon). Помилкове уявлення, що `GET /api/v1/gateways/:id/telemetry` передає телеметрію на сервер — виправлено (⚠️ P0 Blocker 1).
+> ✅ **P0 Blocker 1 вирішено:** цей ендпоінт призначений **лише для читання** збереженої телеметрії (Dashboard / Monitoring). Основний канал uplink — **CoAP/UDP на порт 5683** (daemon). Для HTTP fallback використовується `POST /api/v1/gateways/:id/telemetry` (Section 5.15).
 
 **Query Parameters:**
 
@@ -548,15 +580,15 @@ Authorization: Bearer <token>
 
 ### 5.8 POST `/api/v1/oracle_callbacks` — Chainlink Oracle Callback
 
-**Доступ:** 🌐 Публічний (без автентифікації — machine-to-machine).
+**Доступ:** 🌐 Публічний (без Bearer token — machine-to-machine, захищено HMAC-SHA256).
 
-> **⚠️ P1 Warning 1 — Відсутня авторизація Chainlink:** поточна реалізація не перевіряє `X-Chainlink-Signature` HMAC. Будь-хто може надіслати фейковий callback з валідним `chainlink_request_id` і ініціювати `MintCarbonCoinWorker`. **Рекомендовано:** додати валідацію HMAC-підпису та обмежити доступ до IP Chainlink DON на рівні мережевого firewall.
+> ✅ **P1 Warning 1 вирішено:** `OracleCallbacksController` має `before_action :verify_chainlink_signature!` — перевіряє `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` та порівнює з `X-Chainlink-Signature` через `ActiveSupport::SecurityUtils.secure_compare` (timing-safe). Якщо `CHAINLINK_HMAC_SECRET` не встановлено — HMAC пропускається з попередженням у логах (dev/test mode).
 
-**Request Headers (цільова реалізація):**
+**Request Headers:**
 
-| Заголовок | Опис |
-|---|---|
-| `X-Chainlink-Signature` | HMAC-SHA256 підпис тіла запиту, ключ — спільний секрет Chainlink DON |
+| Заголовок | Обов'язковий | Опис |
+|---|---|---|
+| `X-Chainlink-Signature` | ✅ (Production) | HMAC-SHA256(raw_body, `CHAINLINK_HMAC_SECRET`) — підпис від Chainlink DON |
 
 **Request Body:**
 
@@ -751,33 +783,132 @@ Authorization: Bearer <token>
 
 ---
 
+### 5.14 POST `/api/v1/auth/m2m_token` — M2M Автентифікація Gateway (Ed25519)
+
+**Призначення:** Gateway-пристрої отримують та оновлюють Bearer-токен без логіна/пароля через Ed25519-підпис.
+
+**Доступ:** 🌐 Публічний (без Bearer token), але верифікується Ed25519-підпис.
+
+**Передумови:**
+- Ed25519 public key зареєстровано під час provisioning (поле `ed25519_public_key` в `POST /provisioning/register`).
+- Збережено в `hardware_keys.ed25519_public_key_hex`.
+
+**Request Body:**
+
+```json
+{
+  "did": "SNET-A1B2C3D4",
+  "timestamp": "2026-03-29T12:00:00Z",
+  "signature": "a3f2b1c4d5e6..."
+}
+```
+
+| Параметр | Тип | Обов'язковий | Опис |
+|---|---|---|---|
+| `did` | String | ✅ | Device ID (реєструється при provisioning) |
+| `timestamp` | ISO8601 | ✅ | Поточний час UTC (максимальне відхилення ±5 хв від серверного часу) |
+| `signature` | String (HEX) | ✅ | Ed25519 підпис рядка `"#{did}:#{timestamp}"` приватним ключем пристрою |
+
+**Підпис на прошивці (псевдокод):**
+
+```c
+// message = "SNET-A1B2C3D4:2026-03-29T12:00:00Z"
+uint8_t sig[64];
+ed25519_sign(sig, message, strlen(message), private_key);
+// hex-encode sig → signature field
+```
+
+**Success Response `201 Created`:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "device_uid": "SNET-A1B2C3D4",
+  "expires_in": "30 days",
+  "token_type": "Bearer"
+}
+```
+
+**Error Responses:**
+
+| Статус | Причина |
+|---|---|
+| 404 Not Found | `did` не знайдено в `hardware_keys` |
+| 422 Unprocessable | Ed25519 public key не зареєстровано для пристрою |
+| 400 Bad Request | Невалідний формат `timestamp` |
+| 401 Unauthorized | `timestamp` прострочено (>5 хв) або підпис не валідний |
+
+---
+
+### 5.15 POST `/api/v1/gateways/:id/telemetry` — HTTP Telemetry Uplink
+
+**Призначення:** HTTP fallback для передачі зашифрованого батчу телеметрії від Gateway до бекенду. Основний канал — CoAP/UDP порт 5683 (daemon).
+
+**Сценарії використання HTTP uplink:**
+1. CoAP/UDP заблоковано корпоративним фаєрволом або LTE-обмеженнями
+2. Phase 3 Starlink Mini з TCP/IP мостом (ESP32/SIM8200G-M2)
+3. Ручне завантаження телеметрії через Dashboard (forester upload)
+
+**Доступ:** `Authorization: Bearer <token>` (будь-який автентифікований користувач організації).
+
+**Request Body:**
+
+```json
+{
+  "payload": "base64_encoded_binary_batch..."
+}
+```
+
+| Параметр | Тип | Обов'язковий | Опис |
+|---|---|---|---|
+| `payload` | String (Base64) | ✅ | Base64-encoded бінарний батч: `[IV:16][AES-256-CBC encrypted records]`. Формат ідентичний CoAP uplink |
+
+**Success Response `202 Accepted`:**
+
+```json
+{
+  "status": "accepted",
+  "gateway_uid": "GW-UID-E5F6G7H8"
+}
+```
+
+> **Обробка:** `UnpackTelemetryWorker.perform_async(payload, request.remote_ip, gateway_uid)` — сигнатура ідентична виклику з CoAP daemon (`lib/daemons/coap_listener`). Gateway також оновлює `last_seen_at` та IP-адресу.
+
+---
+
 ## 6. Приклад Взаємодії Gateway (Queen) з API
 
 Нижче наведено типовий lifecycle запитів від прошивки Gateway.
 
-> **Примітка:** Основний канал **передачі телеметрії** від Queen до Backend — **CoAP/UDP на порт 5683** (CoAP listener daemon). HTTP API використовується для управління, реєстрації та звітності. Плутанина між "читанням телеметрії через GET" та "записом телеметрії" задокументована як ⚠️ P0 Blocker 1.
+> **Примітка:** Основний канал **передачі телеметрії** від Queen до Backend — **CoAP/UDP на порт 5683** (CoAP listener daemon). HTTP API використовується для управління, реєстрації та звітності. HTTP fallback uplink реалізовано як `POST /api/v1/gateways/:id/telemetry` (✅ P0 Blocker 1 вирішено).
 
 ```text
-1. [Одноразово] POST /api/v1/login
-   → отримати Bearer token для подальших запитів
-   ⚠️ P1 Warning 2: токен має термін дії — потрібен M2M refresh механізм для обладнання без оператора.
+1. [Одноразово] POST /api/v1/provisioning/register
+   → Передає STM32 UID + Ed25519 public key (опційно).
+   → Відповідь містить DID та key_derivation: "hkdf-sha256".
+   → Обидві сторони математично деривують AES-ключ через HKDF без передачі по мережі.
+   ✅ P0 Blocker 2 вирішено: встановіть PROVISIONING_MASTER_KEY в ENV.
 
-2. [Одноразово] POST /api/v1/provisioning/register
-   → передати STM32 UID. Відповідь містить DID.
-   ⚠️ P0 Blocker 2: поточна реалізація повертає AES-ключ у відповіді (Zero-Trust Violation для Production).
-   Цільова архітектура: обидві сторони деривують AES-ключ через KDF без передачі по мережі.
+2. [За потреби] POST /api/v1/auth/m2m_token
+   → Шлюз підписує "did:timestamp" Ed25519 private key.
+   → Отримує 30-денний Bearer token без логіна/пароля.
+   → Повторювати перед закінченням терміну дії.
+   ✅ P1 Warning 2 вирішено.
 
-3. [Регулярно] CoAP PUT → порт 5683 (основний канал передачі телеметрії)
-   → 21-байтовий зашифрований AES-GCM пакет від кожного Soldier → Queen → бекенд.
-   GET /api/v1/gateways/:id/telemetry — лише для ЧИТАННЯ збереженої телеметрії (Dashboard).
-   ⚠️ P0 Blocker 1: НЕ використовувати GET для запису/передачі телеметрії.
+3. [Регулярно] CoAP PUT → порт 5683 (основний канал uplink)
+   → 21-байтовий зашифрований AES-256-CBC батч від кожного Soldier → Queen → бекенд.
+
+   [Fallback] POST /api/v1/gateways/:id/telemetry
+   → Base64-encoded бінарний батч у тілі запиту (якщо CoAP/UDP недоступний).
+   ✅ P0 Blocker 1 вирішено: НЕ використовувати GET для передачі телеметрії.
 
 4. [За потребою] GET /api/v1/oracle_visions/stream_config?cluster_id=7
-   → отримати токен підписки на ActionCable/SolidCable стрім.
+   → Отримати токен підписки на ActionCable/SolidCable стрім.
 
 5. [Автоматично] POST /api/v1/oracle_callbacks
-   → Chainlink викликає цей endpoint після верифікації даних.
-   ⚠️ P1 Warning 1: потрібна валідація HMAC-підпису в заголовку X-Chainlink-Signature.
+   → Chainlink викликає цей endpoint після on-chain верифікації.
+   → Авторизація через HMAC-SHA256 підпис в заголовку X-Chainlink-Signature.
+   ✅ P1 Warning 1 вирішено: встановіть CHAINLINK_HMAC_SECRET в ENV.
 ```
 
 ---
@@ -789,7 +920,7 @@ Authorization: Bearer <token>
 | `Authorization` | ✅ (для захищених ендпоінтів) | `Bearer <token>` |
 | `Content-Type` | ✅ (для POST/PATCH з body) | `application/json` або `multipart/form-data` |
 | `Accept` | Опційно | `application/json` (за замовчуванням) |
-| `X-Chainlink-Signature` | ⚠️ Рекомендовано для `/oracle_callbacks` | HMAC-SHA256 підпис body (ще не реалізовано) |
+| `X-Chainlink-Signature` | ✅ (Production) для `/oracle_callbacks` | `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` — підпис від Chainlink DON |
 
 ---
 
