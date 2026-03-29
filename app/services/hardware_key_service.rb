@@ -1,16 +1,33 @@
 # frozen_string_literal: true
 
 require "securerandom"
+require "openssl"
 
 class HardwareKeyService
   KEY_SIZE_BYTES = 32
+  HKDF_INFO = "silken-aes-256-device-key"
 
   # Помилка подвійної ротації: пристрій ще не підтвердив попереднє оновлення ключа.
   class RotationPendingError < StandardError; end
 
+  # =========================================================================
+  # ПРОВІЗІОНУВАННЯ (Zero-Trust Key Derivation)
+  # =========================================================================
+  # [P0 BLOCKER FIX]: Замість генерації випадкового ключа та передачі через мережу,
+  # використовуємо HKDF (HMAC-based Key Derivation Function) для деривації
+  # однакового AES-256 ключа на обох сторонах (бекенд + прошивка).
+  #
+  # Обидві сторони знають:
+  #   1. PROVISIONING_MASTER_KEY (встановлюється в env, прошивається при Factory Flashing)
+  #   2. device_uid (унікальний серійник STM32)
+  #
+  # Формула: AES_KEY = HKDF-SHA256(ikm: master_key, salt: device_uid, info: "silken-aes-256-device-key")
+  #
+  # Ключ НІКОЛИ не передається по мережі. Якщо PROVISIONING_MASTER_KEY не встановлено,
+  # повертаємося до SecureRandom (TRL 4 lab mode) з попередженням у логах.
   def self.provision(device)
     device_uid = device.respond_to?(:did) ? device.did : device.uid
-    new_hex_key = SecureRandom.hex(KEY_SIZE_BYTES).upcase
+    new_hex_key = derive_device_key(device_uid)
 
     HardwareKey.create!(
       device_uid: device_uid,
@@ -18,6 +35,28 @@ class HardwareKeyService
     )
 
     new_hex_key
+  end
+
+  # Деривація AES-256 ключа з master_key та device_uid через HKDF.
+  # Повертає 64-символьний HEX-рядок (32 байти).
+  def self.derive_device_key(device_uid)
+    master_key = ENV["PROVISIONING_MASTER_KEY"]
+
+    if master_key.blank?
+      Rails.logger.warn "⚠️ [Zero-Trust] PROVISIONING_MASTER_KEY не встановлено. " \
+                        "Використовується SecureRandom (TRL 4 lab mode). БЛОКУЄ Production."
+      return SecureRandom.hex(KEY_SIZE_BYTES).upcase
+    end
+
+    derived = OpenSSL::KDF.hkdf(
+      master_key,
+      salt: device_uid.to_s,
+      info: HKDF_INFO,
+      length: KEY_SIZE_BYTES,
+      hash: "SHA256"
+    )
+
+    derived.unpack1("H*").upcase
   end
 
   def self.rotate(device_uid)

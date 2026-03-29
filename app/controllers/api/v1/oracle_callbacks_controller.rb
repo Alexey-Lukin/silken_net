@@ -6,6 +6,9 @@ module Api
       # Chainlink DON callbacks are machine-to-machine — no user session.
       skip_before_action :authenticate_user!
 
+      # [P1 WARNING FIX]: HMAC-SHA256 валідація підпису Chainlink DON.
+      before_action :verify_chainlink_signature!
+
       # POST /api/v1/oracle_callbacks
       def create
         request_id = params.require(:chainlink_request_id)
@@ -41,6 +44,35 @@ module Api
       end
 
       private
+
+      # [P1 WARNING FIX]: Верифікація HMAC-SHA256 підпису Chainlink DON.
+      # Заголовок X-Chainlink-Signature містить HMAC-SHA256(request_body, shared_secret).
+      # Якщо CHAINLINK_HMAC_SECRET не встановлено (dev/test), пропускаємо перевірку з попередженням.
+      def verify_chainlink_signature!
+        hmac_secret = ENV["CHAINLINK_HMAC_SECRET"]
+
+        if hmac_secret.blank?
+          Rails.logger.warn "⚠️ [Oracle Security] CHAINLINK_HMAC_SECRET не встановлено. " \
+                            "HMAC-верифікація вимкнена. БЛОКУЄ Production."
+          return
+        end
+
+        signature = request.headers["X-Chainlink-Signature"]
+
+        if signature.blank?
+          render json: { error: "Missing X-Chainlink-Signature header" }, status: :unauthorized
+          return
+        end
+
+        body = request.raw_post
+        expected = OpenSSL::HMAC.hexdigest("SHA256", hmac_secret, body)
+
+        unless ActiveSupport::SecurityUtils.secure_compare(expected, signature)
+          Rails.logger.error "🚨 [Oracle Security] Invalid HMAC signature for oracle callback. " \
+                             "Possible forgery attempt."
+          render json: { error: "Invalid HMAC signature" }, status: :unauthorized
+        end
+      end
 
       # [SCALE]: telemetry_logs is PARTITION BY RANGE (created_at).
       # When created_at is provided in the callback, PostgreSQL prunes to a single

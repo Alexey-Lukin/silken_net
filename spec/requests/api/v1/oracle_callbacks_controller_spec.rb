@@ -114,5 +114,46 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    context "with HMAC signature validation" do
+      let(:hmac_secret) { "test-chainlink-hmac-secret-256bit" }
+
+      before do
+        allow(ENV).to receive(:fetch).and_call_original
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("CHAINLINK_HMAC_SECRET").and_return(hmac_secret)
+      end
+
+      it "accepts valid HMAC signature" do
+        body = { chainlink_request_id: telemetry_log.chainlink_request_id, success: true }.to_json
+        signature = OpenSSL::HMAC.hexdigest("SHA256", hmac_secret, body)
+
+        post "/api/v1/oracle_callbacks",
+             params: body,
+             headers: { "Content-Type" => "application/json", "X-Chainlink-Signature" => signature }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["status"]).to eq("fulfilled")
+      end
+
+      it "rejects missing HMAC signature" do
+        post "/api/v1/oracle_callbacks",
+             params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.parsed_body["error"]).to include("Missing X-Chainlink-Signature")
+      end
+
+      it "rejects invalid HMAC signature" do
+        post "/api/v1/oracle_callbacks",
+             params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },
+             headers: { "X-Chainlink-Signature" => "invalid-signature-hex" },
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.parsed_body["error"]).to include("Invalid HMAC")
+      end
+    end
   end
 end

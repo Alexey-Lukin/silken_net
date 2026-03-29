@@ -52,6 +52,11 @@ class HardwareKey < ApplicationRecord
                                    format: { with: /\A[0-9A-F]+\z/i },
                                    allow_nil: true
 
+  # Ed25519 public key для M2M автентифікації (64 hex chars = 32 bytes)
+  validates :ed25519_public_key_hex, length: { is: 64 },
+                                     format: { with: /\A[0-9a-fA-F]+\z/ },
+                                     allow_nil: true
+
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # КРИПТОГРАФІЧНІ МЕТОДИ
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
