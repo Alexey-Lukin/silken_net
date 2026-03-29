@@ -61,17 +61,20 @@ RSpec.describe InsightGeneratorOrchestratorWorker, type: :worker do
         expect(callback[:options]["date"]).to eq(date.to_s)
       end
 
-      it "deletes old insights before creating batch" do
+      it "relies on per-cluster idempotency (no global delete_all)" do
         # Create pre-existing insight
-        create(:ai_insight,
+        insight = create(:ai_insight,
           analyzable: tree,
           insight_type: :daily_health_summary,
           target_date: date)
 
+        # Orchestrator enqueues child workers but does NOT delete insights globally.
+        # Per-cluster cleanup is handled by each GenerateClusterInsightWorker.
         described_class.new.perform(date.to_s)
 
-        # Old insight should be deleted
-        expect(AiInsight.where(target_date: date, insight_type: :daily_health_summary).count).to eq(0)
+        # Pre-existing insight should still exist — orchestrator didn't delete it.
+        # (In real execution, the child worker will delete and recreate it.)
+        expect(AiInsight.where(id: insight.id)).to exist
       end
     end
 

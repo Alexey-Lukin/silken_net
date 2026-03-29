@@ -41,8 +41,11 @@ class InsightGeneratorOrchestratorWorker
       return
     end
 
-    # 2. Ідемпотентність: очищуємо ВСІ старі інсайти за цю дату перед батчем
-    AiInsight.where(target_date: target_date, insight_type: :daily_health_summary).delete_all
+    # 2. Ідемпотентність забезпечується на рівні кожного GenerateClusterInsightWorker:
+    # кожен child-воркер видаляє старі інсайти ТІЛЬКИ для своїх кластерів перед створенням нових.
+    # Глобальний delete_all тут НЕ потрібен і створює race condition:
+    # паралельні воркери можуть вставити інсайти після глобального delete, а інший воркер
+    # знову зробить per-cluster delete, видаливши вже створені дані.
 
     # 3. Створюємо Sidekiq::Batch для оркестрації
     batch = Sidekiq::Batch.new

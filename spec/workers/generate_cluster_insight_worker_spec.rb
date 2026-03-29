@@ -116,6 +116,55 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
         }.to change { AiInsight.where(analyzable_type: "Tree", insight_type: :daily_health_summary).count }.by(2)
       end
     end
+
+    context "with fraud detection in batch mode" do
+      let(:normal_tree) { create(:tree, cluster: cluster, status: :active) }
+      let(:fraudulent_tree) { create(:tree, cluster: cluster, status: :active) }
+
+      before do
+        # Два нормальних дерева встановлюють базлайн кластера
+        [ tree, normal_tree ].each do |t|
+          create(:telemetry_log, tree: t,
+            temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
+            acoustic_events: 2, growth_points: 10, sap_flow: 100.0,
+            bio_status: :homeostasis, metabolism_s: 1000,
+            created_at: date.beginning_of_day + 12.hours)
+        end
+
+        # Фрод-дерево: і sap_flow, і temperature відхиляються >30% від базлайну
+        create(:telemetry_log, tree: fraudulent_tree,
+          temperature_c: 50.0, voltage_mv: 3500, z_value: 0.5,
+          acoustic_events: 2, growth_points: 10, sap_flow: 200.0,
+          bio_status: :homeostasis, metabolism_s: 1000,
+          created_at: date.beginning_of_day + 12.hours)
+      end
+
+      it "marks fraudulent tree insight with fraud_detected=true" do
+        described_class.new.perform([ cluster.id ], date.to_s)
+
+        fraud_insight = AiInsight.find_by(
+          analyzable: fraudulent_tree,
+          insight_type: :daily_health_summary,
+          target_date: date
+        )
+        expect(fraud_insight).to be_present
+        expect(fraud_insight.fraud_detected).to be true
+        expect(fraud_insight.stress_index).to eq(1.0)
+        expect(fraud_insight.total_growth_points).to eq(0)
+      end
+
+      it "creates cluster summary mentioning fraud count" do
+        described_class.new.perform([ cluster.id ], date.to_s)
+
+        cluster_insight = AiInsight.find_by(
+          analyzable: cluster,
+          insight_type: :daily_health_summary,
+          target_date: date
+        )
+        expect(cluster_insight).to be_present
+        expect(cluster_insight.summary).to include("фрод")
+      end
+    end
   end
 
   describe "sidekiq options" do

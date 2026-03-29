@@ -27,6 +27,10 @@ class DailyAggregationWorker
     # запустить ClusterHealthCheckWorker після завершення всіх чанків.
     #
     # Перевіряємо наявність телеметрії перед запуском батчу.
+    # EDGE CASE: якщо телеметрія існує, але всі дерева неактивні —
+    # оркестратор побачить порожній cluster_baselines і поверне nil без запуску батчу.
+    # ClusterHealthCheckWorker НЕ запуститься в цьому випадку. Це прийнятно:
+    # якщо немає активних дерев — аудит NaaS контрактів не потрібен.
     has_telemetry = TelemetryLog.where(created_at: target_date.beginning_of_day..target_date.end_of_day).exists?
 
     if has_telemetry
