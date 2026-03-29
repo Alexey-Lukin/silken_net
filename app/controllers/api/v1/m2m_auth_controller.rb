@@ -13,9 +13,9 @@ module Api
     # Потік:
     #   1. Під час провізіонування шлюз реєструє Ed25519 public key
     #   2. POST /api/v1/auth/m2m_token: шлюз надсилає DID + timestamp + Ed25519 signature
-    #   3. Бекенд верифікує підпис та видає M2M токен (365 днів)
+    #   3. Бекенд верифікує підпис та видає M2M токен (термін = api_access, 30 днів)
     #   4. Шлюз використовує токен для API-запитів
-    #   5. За 30 днів до закінчення — повторний POST /api/v1/auth/m2m_token
+    #   5. Перед закінченням терміну — повторний POST /api/v1/auth/m2m_token
     class M2mAuthController < BaseController
       skip_before_action :authenticate_user!
 
