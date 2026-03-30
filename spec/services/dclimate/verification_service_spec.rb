@@ -362,4 +362,50 @@ RSpec.describe Dclimate::VerificationService, type: :service do
       expect(ref).to match(/\Adclimate:firms:UNKNOWN:\d{8}T\d{6}Z:[a-f0-9]{16}\z/)
     end
   end
+
+  describe "#parse_confidence" do
+    let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
+    let(:service) { described_class.new(alert) }
+
+    it "parses 'low' confidence string to 20" do
+      result = service.send(:parse_confidence, "low")
+      expect(result).to eq(20)
+    end
+
+    it "returns 0 for unexpected non-nil string values with warning" do
+      expect(Rails.logger).to receive(:warn).with(/Unexpected FIRMS confidence/)
+      result = service.send(:parse_confidence, "unknown_value")
+      expect(result).to eq(0)
+    end
+
+    it "returns 0 for nil without warning" do
+      expect(Rails.logger).not_to receive(:warn)
+      result = service.send(:parse_confidence, nil)
+      expect(result).to eq(0)
+    end
+  end
+
+  describe "#trigger_slashing" do
+    let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
+    let(:service) { described_class.new(alert) }
+
+    context "when cluster has active NaaS contracts" do
+      it "enqueues BurnCarbonTokensWorker for each non-breached contract" do
+        contract = create(:naas_contract, cluster: cluster, organization: organization, status: :active)
+
+        service.send(:trigger_slashing)
+
+        expect(BurnCarbonTokensWorker).to have_received(:perform_async).with(organization.id, contract.id, alert.tree_id)
+      end
+    end
+
+    context "when alert has no cluster" do
+      it "returns early without error" do
+        alert.update_column(:cluster_id, nil)
+
+        expect { service.send(:trigger_slashing) }.not_to raise_error
+        expect(BurnCarbonTokensWorker).not_to have_received(:perform_async)
+      end
+    end
+  end
 end

@@ -176,4 +176,21 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
       expect(described_class.get_sidekiq_options["retry"]).to eq(3)
     end
   end
+
+  describe "error handling" do
+    context "when process_cluster_batch raises an error" do
+      before do
+        allow_any_instance_of(InsightGeneratorService).to receive(:process_cluster_batch)
+          .and_raise(StandardError, "DB timeout")
+      end
+
+      it "logs the error and re-raises for Sidekiq retry" do
+        expect(Rails.logger).to receive(:error).with(/Помилка чанку/)
+
+        expect {
+          described_class.new.perform([ cluster.id ], date.to_s)
+        }.to raise_error(StandardError, "DB timeout")
+      end
+    end
+  end
 end
