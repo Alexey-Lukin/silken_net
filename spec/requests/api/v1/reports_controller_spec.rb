@@ -130,6 +130,26 @@ RSpec.describe Api::V1::ReportsController, type: :request do
         )
       end
     end
+
+    context "when real yield fetch raises a generic StandardError" do
+      before do
+        allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_protocol_financials)
+          .and_raise(StandardError, "network timeout")
+      end
+
+      it "returns zero defaults for real_yield on generic error" do
+        get "/api/v1/reports/financial_summary", headers: headers, as: :json
+        expect(response).to have_http_status(:ok)
+
+        ry = response.parsed_body.dig("data", "real_yield")
+        expect(ry).to include(
+          "total_minted_scc" => 0,
+          "total_burned_scc" => 0,
+          "total_premiums_usdc" => 0,
+          "net_deflation" => 0
+        )
+      end
+    end
   end
 
   context "with format.html responses" do

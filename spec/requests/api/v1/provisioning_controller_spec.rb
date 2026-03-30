@@ -130,6 +130,36 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       end
     end
 
+    context "when ed25519_public_key is provided" do
+      let(:ed25519_key_hex) { SecureRandom.hex(32) }
+      let(:ed25519_gateway_params) do
+        {
+          provisioning: {
+            hardware_uid: "SNET-Q-ED250001",
+            device_type: "gateway",
+            cluster_id: own_cluster.id,
+            latitude: 49.4285,
+            longitude: 32.0620,
+            ed25519_public_key: ed25519_key_hex
+          }
+        }
+      end
+
+      before do
+        # Allow real provisioning so HardwareKey is created before ed25519 update
+        allow(HardwareKeyService).to receive(:provision).and_call_original
+      end
+
+      it "stores the Ed25519 public key on the hardware key" do
+        post "/api/v1/provisioning/register", params: ed25519_gateway_params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:created)
+        hw_key = HardwareKey.find_by(device_uid: "SNET-Q-ED250001")
+        expect(hw_key).to be_present
+        expect(hw_key.ed25519_public_key_hex).to eq(ed25519_key_hex)
+      end
+    end
+
     context "when registering a gateway" do
       it "does not enqueue PeaqRegistrationWorker" do
         gateway_params = {
