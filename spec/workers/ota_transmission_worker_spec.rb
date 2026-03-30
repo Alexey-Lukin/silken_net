@@ -184,5 +184,30 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
         )
       }.not_to raise_error
     end
+
+    context "when gateway update to faulty fails" do
+      it "logs the failure reason" do
+        gateway.update_column(:state, :updating)
+        allow_any_instance_of(Gateway).to receive(:update).with(state: :faulty).and_return(false)
+        errors = double("errors", full_messages: [ "State is invalid" ])
+        allow_any_instance_of(Gateway).to receive(:errors).and_return(errors)
+
+        expect(Rails.logger).to receive(:error).with(/Не вдалося скинути.*faulty/)
+
+        described_class.sidekiq_retries_exhausted_block.call(
+          { "args" => [ gateway.uid ] }, StandardError.new("test")
+        )
+      end
+    end
+
+    context "when gateway is found and update succeeds" do
+      it "logs the state change" do
+        expect(Rails.logger).to receive(:error).with(/переведено у :faulty/)
+
+        described_class.sidekiq_retries_exhausted_block.call(
+          { "args" => [ gateway.uid ] }, StandardError.new("test")
+        )
+      end
+    end
   end
 end

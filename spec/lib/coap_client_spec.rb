@@ -231,4 +231,13 @@ RSpec.describe CoapClient do
       expect(response.class_string).to eq("1.00")
     end
   end
+
+  describe ".parse_response with nil header" do
+    it "returns nil when unpack returns nil" do
+      data = +"invalid_data"
+      allow(data).to receive(:unpack).and_return(nil)
+      result = described_class.send(:parse_response, data, 1)
+      expect(result).to be_nil
+    end
+  end
 end
