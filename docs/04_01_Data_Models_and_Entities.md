@@ -56,21 +56,21 @@
 
 #### 🔴 Блокери
 
-- **🔴 BLK-01 · `AiInsight` — Повністю неправильні назви `insight_type` enum.** Код `app/models/ai_insight.rb` містить 4 значення: `daily_health_summary(0)`, `drought_probability(1)`, `carbon_yield_forecast(2)`, `biodiversity_trend(3)`. Документ §7 натомість наводить `fire_risk_forecast`, `drought_prediction`, `anomaly_detection`, `pest_detection` — жодне з них не існує в коді. Виклик `AiInsight.fire_risk_forecast` або `.pest_detection` підніме `ArgumentError`. **Дія:** Замінити таблицю enum у §7 на актуальні 4 значення.
+- ~~**🔴 BLK-01 · `AiInsight` — Повністю неправильні назви `insight_type` enum.** Код `app/models/ai_insight.rb` містить 4 значення: `daily_health_summary(0)`, `drought_probability(1)`, `carbon_yield_forecast(2)`, `biodiversity_trend(3)`. Документ §7 натомість наводить `fire_risk_forecast`, `drought_prediction`, `anomaly_detection`, `pest_detection` — жодне з них не існує в коді. Виклик `AiInsight.fire_risk_forecast` або `.pest_detection` підніме `ArgumentError`. **Дія:** Замінити таблицю enum у §7 на актуальні 4 значення.~~ ✅ **ВИПРАВЛЕНО**: Таблицю enum §7 виправлено — замінено на `daily_health_summary(0)`, `drought_probability(1)`, `carbon_yield_forecast(2)`, `biodiversity_trend(3)`.
 
-- **🔴 BLK-02 · `EwsAlert` — `alert_type` enum: неправильні назви І неправильні цілочисельні значення.** Код: `severe_drought(0)`, `insect_epidemic(1)`, `vandalism_breach(2)`, `fire_detected(3)`, `seismic_anomaly(4)`, `system_fault(5)`. Документ §7 вказує `fire(0)`, `drought(1)`, `vandalism(2)`, `system_fault(3)`, `pest(4)`, `seismic(5)` — всі значення неправильні, включно з цілочисельними. Критично для страхових виплат та slashing-логіки. З `prefix: true` → запити використовують `alert_type_fire_detected?`, а не `alert_type_fire?`. **Дія:** Замінити таблицю enum повністю.
+- ~~**🔴 BLK-02 · `EwsAlert` — `alert_type` enum: неправильні назви І неправильні цілочисельні значення.** Код: `severe_drought(0)`, `insect_epidemic(1)`, `vandalism_breach(2)`, `fire_detected(3)`, `seismic_anomaly(4)`, `system_fault(5)`. Документ §7 вказує `fire(0)`, `drought(1)`, `vandalism(2)`, `system_fault(3)`, `pest(4)`, `seismic(5)` — всі значення неправильні, включно з цілочисельними. Критично для страхових виплат та slashing-логіки. З `prefix: true` → запити використовують `alert_type_fire_detected?`, а не `alert_type_fire?`. **Дія:** Замінити таблицю enum повністю.~~ ✅ **ВИПРАВЛЕНО**: Таблицю enum §7 виправлено.
 
-- **🔴 BLK-03 · `EwsAlert` — `satellite_status` enum повністю неправильний.** Код: `unverified(0)`, `verified(1)`, `rejected_fraud(2)`, `inconclusive(3)`. Документ §7 вказує `not_required`, `pending`, `verified`, `contradicted`, `unverifiable` — 4 з 5 задокументованих значень не існують. **Дія:** Замінити на актуальні 4 значення.
+- ~~**🔴 BLK-03 · `EwsAlert` — `satellite_status` enum повністю неправильний.** Код: `unverified(0)`, `verified(1)`, `rejected_fraud(2)`, `inconclusive(3)`. Документ §7 вказує `not_required`, `pending`, `verified`, `contradicted`, `unverifiable` — 4 з 5 задокументованих значень не існують. **Дія:** Замінити на актуальні 4 значення.~~ ✅ **ВИПРАВЛЕНО**: `satellite_status` виправлено — `unverified(0)`, `verified(1)`, `rejected_fraud(2)`, `inconclusive(3)`, `prefix: :satellite`.
 
-- **🔴 BLK-04 · `ActuatorCommand` — `priority` enum: всі назви неправильні.** Код: `low(0)`, `medium(1)`, `high(2)`, `override(3)` (з `prefix: true`). Документ §4 вказує `routine(0)`, `urgent(1)`, `emergency(2)`, `override(3)`. Виклики `priority_routine?`, `priority_urgent?`, `priority_emergency?` підняли б `NoMethodError`. **Дія:** Замінити на `low / medium / high / override`, зазначити `prefix: true`.
+- ~~**🔴 BLK-04 · `ActuatorCommand` — `priority` enum: всі назви неправильні.** Код: `low(0)`, `medium(1)`, `high(2)`, `override(3)` (з `prefix: true`). Документ §4 вказує `routine(0)`, `urgent(1)`, `emergency(2)`, `override(3)`. Виклики `priority_routine?`, `priority_urgent?`, `priority_emergency?` підняли б `NoMethodError`. **Дія:** Замінити на `low / medium / high / override`, зазначити `prefix: true`.~~ ✅ **ВИПРАВЛЕНО**: Enum §4 виправлено — `low(0)`, `medium(1)`, `high(2)`, `override(3)`, `prefix: true`.
 
-- **🔴 BLK-05 · `TelemetryLog` — колонка `impedance_ohms` відсутня в БД і моделі.** Документ §3 перераховує `impedance_ohms | integer | Імпеданс ксилеми (Ω)` як поле `TelemetryLog`. Ні DB-схема, ні модель цього поля не мають. **Дія:** Видалити з таблиці полів або відстежити як Open Item.
+- ~~**🔴 BLK-05 · `TelemetryLog` — колонка `impedance_ohms` відсутня в БД і моделі.** Документ §3 перераховує `impedance_ohms | integer | Імпеданс ксилеми (Ω)` як поле `TelemetryLog`. Ні DB-схема, ні модель цього поля не мають. **Дія:** Видалити з таблиці полів або відстежити як Open Item.~~ ✅ **ВИПРАВЛЕНО**: Поле `impedance_ohms` видалено з таблиці §3.
 
-- **🔴 BLK-06 · `NaasContract` — `insurance_premium_rate` та `forester_share_rate` не є DB-колонками.** Документ §6 перераховує їх як збережені поля. В коді: константа `INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`, обчислювальні методи `insurance_premium_amount` та `forester_share_amount`. **Дія:** Перенести з таблиці "Поля" до таблиці "Методи".
+- ~~**🔴 BLK-06 · `NaasContract` — `insurance_premium_rate` та `forester_share_rate` не є DB-колонками.** Документ §6 перераховує їх як збережені поля. В коді: константа `INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`, обчислювальні методи `insurance_premium_amount` та `forester_share_amount`. **Дія:** Перенести з таблиці "Поля" до таблиці "Методи".~~ ✅ **ВИПРАВЛЕНО**: Видалено з таблиці полів §6; додано `insurance_premium_amount` та `forester_share_amount` до таблиці методів.
 
 - **🔴 BLK-07 · `Gateway` — `cluster_id` в DB є `NOT NULL`, але модель оголошує `belongs_to :cluster, optional: true`.** `db/structure.sql`: `cluster_id bigint NOT NULL`. Документ §3 вказує "optional". Спроба створити Gateway без cluster_id викличе PG-виключення `null value in column "cluster_id"`. **Дія:** Узгодити схему і модель — або прибрати `optional: true`, або видалити `NOT NULL` з DB.
 
-- **🔴 BLK-08 · `NaasContract` — `start_date`/`end_date`: документ вказує тип `date`, DB зберігає `timestamp`.** `db/structure.sql`: `start_date timestamp(6) without time zone`. **Дія:** Виправити тип на `timestamp`.
+- ~~**🔴 BLK-08 · `NaasContract` — `start_date`/`end_date`: документ вказує тип `date`, DB зберігає `timestamp`.** `db/structure.sql`: `start_date timestamp(6) without time zone`. **Дія:** Виправити тип на `timestamp`.~~ ✅ **ВИПРАВЛЕНО**: Тип виправлено на `timestamp` у §6.
 
 #### 🟠 Попередження
 
@@ -527,7 +527,6 @@ any ──report_fault──► faulty
 | `temperature_c` | decimal | Температура (°C) |
 | `voltage_mv` | integer | Напруга EBFC (мВ) |
 | `z_value` | decimal | Z-значення Атрактора Лоренца |
-| `impedance_ohms` | integer | Імпеданс ксилеми (Ω) |
 | `piezo_voltage_mv` | integer | П'єзодатчик (сейсміка) |
 | `acoustic_events` | integer | Кількість акустичних подій (TinyML) |
 | `mesh_ttl` | integer | Time-To-Live пакету в mesh-мережі |
@@ -682,7 +681,7 @@ any ──report_fault──► faulty
 | Enum | Значення |
 |------|----------|
 | `status` | `issued(0) / sent(1) / acknowledged(2) / failed(3) / confirmed(4)` |
-| `priority` | `routine(0) / urgent(1) / emergency(2) / override(3)` |
+| `priority` | `low(0) / medium(1) / high(2) / override(3)` (prefix: true) |
 
 **AASM:** `dispatch` (issued→sent), `acknowledge` (sent→acknowledged), `confirm` (acknowledged→confirmed), `fail`.
 
@@ -914,9 +913,7 @@ active/draft ──cancel──► cancelled
 |------|-----|------|
 | `status` | enum | `draft/active/fulfilled/breached/cancelled` |
 | `total_funding` | decimal | Загальний обсяг фінансування (> 0) |
-| `start_date` / `end_date` | date | Строки контракту |
-| `insurance_premium_rate` | decimal | Ставка страхової премії |
-| `forester_share_rate` | decimal | Частка лісника |
+| `start_date` / `end_date` | timestamp | Строки контракту |
 
 **Ключові методи:**
 
@@ -928,6 +925,8 @@ active/draft ──cancel──► cancelled
 | `terminate_early!` | Дострокове розірвання |
 | `current_yield_performance` | Поточна прибутковість |
 | `active_threats?` | Загрози в кластері |
+| `insurance_premium_amount` | `total_funding * INSURANCE_PREMIUM_RATE` (5%) — обчислювальний метод |
+| `forester_share_amount` | `total_funding * 0.95` — частка лісника (обчислювальний метод) |
 
 **Scopes:** `active`, `pending_completion` (active + end_date < now).
 
@@ -968,14 +967,12 @@ active/draft ──cancel──► cancelled
 
 **Enum `insight_type`:**
 
-| Тип | Опис |
-|-----|------|
-| `daily_health_summary` | Щоденний підсумок (stress_index) |
-| `fire_risk_forecast` | Прогноз пожежного ризику |
-| `drought_prediction` | Прогноз посухи |
-| `anomaly_detection` | Виявлення аномалії |
-| `carbon_yield_forecast` | Прогноз вуглецевого виходу |
-| `pest_detection` | Виявлення шкідників |
+| Значення | Int | Опис |
+|----------|-----|------|
+| `daily_health_summary` | 0 | Щоденний підсумок (stress_index) — РЕАЛЬНІСТЬ |
+| `drought_probability` | 1 | Ймовірність посухи — ПРОГНОЗ |
+| `carbon_yield_forecast` | 2 | Прогноз вуглецевого виходу — ПРОГНОЗ |
+| `biodiversity_trend` | 3 | Стабільність Атрактора Лоренца — ПРОГНОЗ |
 
 **Ключові поля:**
 
@@ -1009,8 +1006,8 @@ active/draft ──cancel──► cancelled
 |------|----------|
 | `status` | `active(0) / resolved(1) / ignored(2)` |
 | `severity` | `low(0) / medium(1) / critical(2)` |
-| `alert_type` | `fire(0) / drought(1) / vandalism(2) / system_fault(3) / pest(4) / seismic(5)` |
-| `satellite_status` | `not_required / pending / verified / contradicted / unverifiable` |
+| `alert_type` | `severe_drought(0) / insect_epidemic(1) / vandalism_breach(2) / fire_detected(3) / seismic_anomaly(4) / system_fault(5)` (prefix: true) |
+| `satellite_status` | `unverified(0) / verified(1) / rejected_fraud(2) / inconclusive(3)` (prefix: :satellite) |
 
 **AASM:** `mark_resolved`, `ignore`, `reopen` (resolved/ignored→active).
 
