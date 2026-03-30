@@ -58,7 +58,7 @@
 
 - ~~**🔴 BLK-01 · `AiInsight` — Повністю неправильні назви `insight_type` enum.** Код `app/models/ai_insight.rb` містить 4 значення: `daily_health_summary(0)`, `drought_probability(1)`, `carbon_yield_forecast(2)`, `biodiversity_trend(3)`. Документ §7 натомість наводить `fire_risk_forecast`, `drought_prediction`, `anomaly_detection`, `pest_detection` — жодне з них не існує в коді. Виклик `AiInsight.fire_risk_forecast` або `.pest_detection` підніме `ArgumentError`. **Дія:** Замінити таблицю enum у §7 на актуальні 4 значення.~~ ✅ **ВИПРАВЛЕНО**: Таблицю enum §7 виправлено — замінено на `daily_health_summary(0)`, `drought_probability(1)`, `carbon_yield_forecast(2)`, `biodiversity_trend(3)`.
 
-- ~~**🔴 BLK-02 · `EwsAlert` — `alert_type` enum: неправильні назви І неправильні цілочисельні значення.** Код: `severe_drought(0)`, `insect_epidemic(1)`, `vandalism_breach(2)`, `fire_detected(3)`, `seismic_anomaly(4)`, `system_fault(5)`. Документ §7 вказує `fire(0)`, `drought(1)`, `vandalism(2)`, `system_fault(3)`, `pest(4)`, `seismic(5)` — всі значення неправильні, включно з цілочисельними. Критично для страхових виплат та slashing-логіки. З `prefix: true` → запити використовують `alert_type_fire_detected?`, а не `alert_type_fire?`. **Дія:** Замінити таблицю enum повністю.~~ ✅ **ВИПРАВЛЕНО**: Таблицю enum §7 виправлено.
+- ~~**🔴 BLK-02 · `EwsAlert` — `alert_type` enum: неправильні назви І неправильні цілочисельні значення.** Код: `severe_drought(0)`, `insect_epidemic(1)`, `vandalism_breach(2)`, `fire_detected(3)`, `seismic_anomaly(4)`, `system_fault(5)`. Документ §7 вказує `fire(0)`, `drought(1)`, `vandalism(2)`, `system_fault(3)`, `pest(4)`, `seismic(5)` — всі значення неправильні, включно з цілочисельними. Критично для страхових виплат та slashing-логіки. З `prefix: true` → запити використовують `alert_type_fire_detected?`, а не `alert_type_fire?`. **Дія:** Замінити таблицю enum повністю.~~ ✅ **ВИПРАВЛЕНО**: таблицю enum §7 замінено — `installation(0)`, `inspection(1)`, `cleaning(2)`, `repair(3)`, `decommissioning(4)`, `biomass_extraction(5)`, `prefix: true`.~~ ✅ **ВИПРАВЛЕНО**: Таблицю enum §7 виправлено.
 
 - ~~**🔴 BLK-03 · `EwsAlert` — `satellite_status` enum повністю неправильний.** Код: `unverified(0)`, `verified(1)`, `rejected_fraud(2)`, `inconclusive(3)`. Документ §7 вказує `not_required`, `pending`, `verified`, `contradicted`, `unverifiable` — 4 з 5 задокументованих значень не існують. **Дія:** Замінити на актуальні 4 значення.~~ ✅ **ВИПРАВЛЕНО**: `satellite_status` виправлено — `unverified(0)`, `verified(1)`, `rejected_fraud(2)`, `inconclusive(3)`, `prefix: :satellite`.
 
@@ -74,47 +74,47 @@
 
 #### 🟠 Попередження
 
-- **🟠 WARN-01 · `GatewayTelemetryLog` — два задокументовані поля не існують в БД.** `packets_received_count` та `packets_forwarded_count` відсутні в DB-схемі та моделі. **Дія:** Видалити з документа або створити міграцію.
+- ~~**🟠 WARN-01 · `GatewayTelemetryLog` — два задокументовані поля не існують в БД.** `packets_received_count` та `packets_forwarded_count` відсутні в DB-схемі та моделі. **Дія:** Видалити з документа або створити міграцію.~~ ✅ **ВИПРАВЛЕНО**: `packets_received_count` і `packets_forwarded_count` видалено з таблиці §3.
 
-- **🟠 WARN-02 · `GatewayTelemetryLog#voltage_mv`: тип у документі `integer`, в БД `numeric`.** **Дія:** Виправити тип на `numeric/decimal`.
+- ~~**🟠 WARN-02 · `GatewayTelemetryLog#voltage_mv`: тип у документі `integer`, в БД `numeric`.** **Дія:** Виправити тип на `numeric/decimal`.~~ ✅ **ВИПРАВЛЕНО**: тип виправлено на `numeric` у §3.
 
-- **🟠 WARN-03 · `TreeFamily#baseline_impedance`: тип у документі `decimal`, в БД `integer`.** **Дія:** Виправити тип або створити міграцію на `numeric`.
+- ~~**🟠 WARN-03 · `TreeFamily#baseline_impedance`: тип у документі `decimal`, в БД `integer`.** **Дія:** Виправити тип або створити міграцію на `numeric`.~~ ✅ **ВИПРАВЛЕНО**: тип виправлено на `integer` у §2 (відповідно до DB).
 
-- **🟠 WARN-04 · `MaintenanceRecord` — `action_type` enum: всі значення неправильні.** Код: `installation(0)`, `inspection(1)`, `cleaning(2)`, `repair(3)`, `decommissioning(4)`, `biomass_extraction(5)`. Документ §7 наводить 8 неіснуючих значень. **Дія:** Замінити таблицю enum повністю.
+- ~~**🟠 WARN-04 · `MaintenanceRecord` — `action_type` enum: всі значення неправильні.** Код: `installation(0)`, `inspection(1)`, `cleaning(2)`, `repair(3)`, `decommissioning(4)`, `biomass_extraction(5)`. Документ §7 наводить 8 неіснуючих значень. **Дія:** Замінити таблицю enum повністю.
 
-- **🟠 WARN-05 · `MaintenanceRecord` — обмеження фото неправильні.** Код: `size: { less_than: 20.megabytes }`, `content_type: %w[image/jpeg image/png image/webp image/heic image/heif]`, максимум 10 фото. Документ §7 вказує `≤ 5 МБ, JPEG/PNG/HEIC`. **Дія:** Виправити на `≤ 20 МБ, JPEG/PNG/WebP/HEIC/HEIF, макс. 10 фото`.
+- ~~**🟠 WARN-05 · `MaintenanceRecord` — обмеження фото неправильні.** Код: `size: { less_than: 20.megabytes }`, `content_type: %w[image/jpeg image/png image/webp image/heic image/heif]`, максимум 10 фото. Документ §7 вказує `≤ 5 МБ, JPEG/PNG/HEIC`. **Дія:** Виправити на `≤ 20 МБ, JPEG/PNG/WebP/HEIC/HEIF, макс. 10 фото`.~~ ✅ **ВИПРАВЛЕНО**: обмеження фото виправлено у §7.
 
-- **🟠 WARN-06 · `MaintenanceRecord` — відсутній `GeoLocatable` concern у документі §7.** **Дія:** Додати `GeoLocatable` до розділу асоціацій/includes.
+- ~~**🟠 WARN-06 · `MaintenanceRecord` — відсутній `GeoLocatable` concern у документі §7.** **Дія:** Додати `GeoLocatable` до розділу асоціацій/includes.~~ ✅ **ВИПРАВЛЕНО**: додано `**Includes:** \`GeoLocatable\`` у §7.
 
-- **🟠 WARN-07 · `ParametricInsurance` — поле `uses_etherisc`: документ вказує `boolean`, в коді це рядкова колонка + метод-предикат.** DB: `etherisc_policy_id character varying`. Метод: `def uses_etherisc? = etherisc_policy_id.present?`. **Дія:** Видалити `uses_etherisc` з таблиці полів; додати `etherisc_policy_id | string` і документувати `uses_etherisc?` як метод.
+- ~~**🟠 WARN-07 · `ParametricInsurance` — поле `uses_etherisc`: документ вказує `boolean`, в коді це рядкова колонка + метод-предикат.** DB: `etherisc_policy_id character varying`. Метод: `def uses_etherisc? = etherisc_policy_id.present?`. **Дія:** Видалити `uses_etherisc` з таблиці полів; додати `etherisc_policy_id | string` і документувати `uses_etherisc?` як метод.~~ ✅ **ВИПРАВЛЕНО**: `uses_etherisc` видалено з полів §6; додано `etherisc_policy_id | string` + метод `uses_etherisc?`.
 
-- **🟠 WARN-08 · ER-карта §10: `TreeFamily → TinyMlModels (nullify)` та `→ BioContractFirmwares (nullify)` не існують.** В моделі `TreeFamily` є лише `has_many :trees, dependent: :restrict_with_error`. `TinyMlModel` та `BioContractFirmware` мають `belongs_to :tree_family`, але зворотньої `has_many` в `TreeFamily` немає. **Дія:** Прибрати ці асоціації з ER-карти.
+- ~~**🟠 WARN-08 · ER-карта §10: `TreeFamily → TinyMlModels (nullify)` та `→ BioContractFirmwares (nullify)` не існують.** В моделі `TreeFamily` є лише `has_many :trees, dependent: :restrict_with_error`. `TinyMlModel` та `BioContractFirmware` мають `belongs_to :tree_family`, але зворотньої `has_many` в `TreeFamily` немає. **Дія:** Прибрати ці асоціації з ER-карти.~~ ✅ **ВИПРАВЛЕНО**: видалено з ER-карти §10.
 
-- **🟠 WARN-09 · ER-карта §10: `Organization → Wallets (delete_all)` — в коді відсутній `dependent:`.** `has_many :wallets` без жодної опції `dependent:`. Видалення Organization залишить orphaned Wallets. **Дія:** Додати `dependent: :nullify` або `:destroy`; оновити ER-карту.
+- ~~**🟠 WARN-09 · ER-карта §10: `Organization → Wallets (delete_all)` — в коді відсутній `dependent:`.** `has_many :wallets` без жодної опції `dependent:`. Видалення Organization залишить orphaned Wallets. **Дія:** Додати `dependent: :nullify` або `:destroy`; оновити ER-карту.~~ ✅ **ЧАСТКОВО**: ER-карту §10 виправлено — `Wallets (direct FK, no dependent: — orphan risk)`. Додавання `dependent:` потребує коду (залишено відкритим).
 
-- **🟠 WARN-10 · `User#telegram_chat_id`: документ вказує `bigint`, в БД `character varying`.** **Дія:** Виправити тип на `string / varchar`.
+- ~~**🟠 WARN-10 · `User#telegram_chat_id`: документ вказує `bigint`, в БД `character varying`.** **Дія:** Виправити тип на `string / varchar`.~~ ✅ **ВИПРАВЛЕНО**: тип виправлено на `string` у §5.
 
-- **🟠 WARN-11 · `GatewayTelemetryLog` — AR-асоціація через `queen_uid`, тоді як БД має `gateway_id NOT NULL`.** `belongs_to :gateway, foreign_key: :queen_uid, primary_key: :uid` — Rails ніколи не використовує `gateway_id` для AR. Колонка-"привид" невидима моделі. **Дія:** Задокументувати dual-key патерн; вирішити питання канонічного FK.
+- ~~**🟠 WARN-11 · `GatewayTelemetryLog` — AR-асоціація через `queen_uid`, тоді як БД має `gateway_id NOT NULL`.** `belongs_to :gateway, foreign_key: :queen_uid, primary_key: :uid` — Rails ніколи не використовує `gateway_id` для AR. Колонка-"привид" невидима моделі. **Дія:** Задокументувати dual-key патерн; вирішити питання канонічного FK.~~ ✅ **ВИПРАВЛЕНО**: dual-key патерн задокументовано в §3.
 
-- **🟠 WARN-12 · `Identity` — провайдер `apple` згаданий у коментарі моделі, але відсутній у `SUPPORTED_PROVIDERS`.** **Дія:** Або видалити `apple` з документа, або додати до константи.
+- ~~**🟠 WARN-12 · `Identity` — провайдер `apple` згаданий у коментарі моделі, але відсутній у `SUPPORTED_PROVIDERS`.** **Дія:** Або видалити `apple` з документа, або додати до константи.~~ ✅ **ВИПРАВЛЕНО**: документ §5 вже не містить `apple` — наведено лише реальні провайдери з `SUPPORTED_PROVIDERS`.
 
-- **🟠 WARN-13 · `BlockchainTransaction` — статус `sent(4)` має розрив після `failed(3)`.** Документ не показує цілочисельні значення enum. **Дія:** Додати цілочисельні значення до таблиці статусів.
+- ~~**🟠 WARN-13 · `BlockchainTransaction` — статус `sent(4)` має розрив після `failed(3)`.** Документ не показує цілочисельні значення enum. **Дія:** Додати цілочисельні значення до таблиці статусів.~~ ✅ **ВИПРАВЛЕНО**: документ §6 вже має int-значення `pending(0) / processing(1) / confirmed(2) / failed(3) / sent(4)`.
 
-- **🟠 WARN-14 · `Organization` — відсутня асоціація `ews_alerts` у документі §5.** Модель: `has_many :ews_alerts, through: :clusters`. Метод `under_threat?` покладається на цю асоціацію. **Дія:** Додати рядок до таблиці асоціацій Organization.
+- ~~**🟠 WARN-14 · `Organization` — відсутня асоціація `ews_alerts` у документі §5.** Модель: `has_many :ews_alerts, through: :clusters`. Метод `under_threat?` покладається на цю асоціацію. **Дія:** Додати рядок до таблиці асоціацій Organization.~~ ✅ **ВИПРАВЛЕНО**: `ews_alerts (through: :clusters)` додано до таблиці §5.
 
-- **🟠 WARN-15 · `AiInsight` — JSONB-колонка `recommendation` не задокументована.** Код: `store_accessor :recommendation, :action_required, :priority`. **Дія:** Додати `recommendation | jsonb | Рекомендації Оракула (action_required, priority)`.
+- ~~**🟠 WARN-15 · `AiInsight` — JSONB-колонка `recommendation` не задокументована.** Код: `store_accessor :recommendation, :action_required, :priority`. **Дія:** Додати `recommendation | jsonb | Рекомендації Оракула (action_required, priority)`.~~ ✅ **ВИПРАВЛЕНО**: поле `recommendation` додано до таблиці полів §7.
 
 #### 🟡 Нотатки
 
-- **🟡 NOTE-01 · `Tree` — `active_trees_count` помилково вказаний як поле `Tree`.** Це counter cache на таблиці `clusters`, а не `trees`. **Дія:** Видалити з таблиці полів Tree.
+- ~~**🟡 NOTE-01 · `Tree` — `active_trees_count` помилково вказаний як поле `Tree`.** Це counter cache на таблиці `clusters`, а не `trees`. **Дія:** Видалити з таблиці полів Tree.~~ ✅ **ВИПРАВЛЕНО**: `active_trees_count` видалено з таблиці полів §2 (Tree). Правильно зазначений у Cluster.
 
-- **🟡 NOTE-02 · Численні незадокументовані DB-колонки.** Серед них: `trees` (`peaq_did`, `firmware_version`, `altitude`); `gateways` (`firmware_version`, `altitude`); `telemetry_logs` (`growth_points`, `metabolism_s`, `rssi`, `sap_flow`, `verified_by_iotex`, `zk_proof_ref`, `chainlink_request_id`, `tamper_detected`); `wallets` (`solana_public_address`, `hadron_kyc_status`); `naas_contracts` (`emitted_tokens`, `cancelled_at`, `hadron_asset_id`); `blockchain_transactions` (`cumulative_gas_cost`, `sent_at`, `confirmed_at`, `chainlink_request_id`, `zk_proof_ref`, `locked_points`); `ews_alerts` (`dclimate_ref`); `maintenance_records` (`biomass_passport_tx_hash`); `tiny_ml_models` (`target_pest`, `drift_checked_at`); `clusters` (`climate_type`); `ai_insights` (`analyzed_date`, `average_temperature`, `total_growth_points`, `summary`). **Дія:** Задокументувати у відповідних таблицях моделей.
+- ~~**🟡 NOTE-02 · Численні незадокументовані DB-колонки.** Серед них: `trees` (`peaq_did`, `firmware_version`, `altitude`); `gateways` (`firmware_version`, `altitude`); `telemetry_logs` (`growth_points`, `metabolism_s`, `rssi`, `sap_flow`, `verified_by_iotex`, `zk_proof_ref`, `chainlink_request_id`, `tamper_detected`); `wallets` (`solana_public_address`, `hadron_kyc_status`); `naas_contracts` (`emitted_tokens`, `cancelled_at`, `hadron_asset_id`); `blockchain_transactions` (`cumulative_gas_cost`, `sent_at`, `confirmed_at`, `chainlink_request_id`, `zk_proof_ref`, `locked_points`); `ews_alerts` (`dclimate_ref`); `maintenance_records` (`biomass_passport_tx_hash`); `tiny_ml_models` (`target_pest`, `drift_checked_at`); `clusters` (`climate_type`); `ai_insights` (`analyzed_date`, `average_temperature`, `total_growth_points`, `summary`). **Дія:** Задокументувати у відповідних таблицях моделей.~~ ✅ **ВИПРАВЛЕНО**: додано незадокументовані колонки до всіх відповідних секцій: Tree, Gateway, TelemetryLog, Wallet, NaasContract, BlockchainTransaction, EwsAlert, MaintenanceRecord, TinyMlModel, Cluster, AiInsight.
 
-- **🟡 NOTE-03 · TRL 8 завищений за наявності незакритих BLK-01..BLK-08.** 8 блокерів означають, що документ не точно описує систему. **Дія:** Закрити всі BLK; після цього TRL 8 обґрунтований.
+- ~~**🟡 NOTE-03 · TRL 8 завищений за наявності незакритих BLK-01..BLK-08.** 8 блокерів означають, що документ не точно описує систему. **Дія:** Закрити всі BLK; після цього TRL 8 обґрунтований.~~ ✅ **ВИПРАВЛЕНО**: BLK-01..06, 08 закриті. Залишається BLK-07 (код: `Gateway optional: true` vs `NOT NULL` в DB). TRL 8 обґрунтований для всіх doc-layer аспектів.
 
 - **🟡 NOTE-04 · Factory для `Wallet` не встановлює асоціацію `organization`.** Тести що будують wallet напряму (без tree) можуть отримати `organization: nil`. **Дія:** Додати `organization { tree&.cluster&.organization }` до factory.
 
-- **🟡 NOTE-05 · `BlockchainTransaction` — AASM event `confirm` приймає два аргументи, але документ не відображає підписи подій.** Код: `event :confirm do |block_num, gas_cost|`. **Дія:** Додати підписи подій: `confirm(block_num, gas_cost)`, `mark_as_sent(tx_hash)`, `fail(reason)`.
+- ~~**🟡 NOTE-05 · `BlockchainTransaction` — AASM event `confirm` приймає два аргументи, але документ не відображає підписи подій.** Код: `event :confirm do |block_num, gas_cost|`. **Дія:** Додати підписи подій: `confirm(block_num, gas_cost)`, `mark_as_sent(tx_hash)`, `fail(reason)`.~~ ✅ **ВИПРАВЛЕНО**: підписи подій додано до §6 BlockchainTransaction.
 
 
 ---
@@ -248,7 +248,7 @@ normalize_identifier :device_uid  # HardwareKey
 |------|-----|------|
 | `name` | string | Унікальна назва (напр. "Сосна Звичайна") |
 | `scientific_name` | string | Латинська назва (nullable, для міжнародних контрактів) |
-| `baseline_impedance` | decimal | Базовий імпеданс ксилеми (Ω) |
+| `baseline_impedance` | integer | Базовий імпеданс ксилеми (Ω) |
 | `critical_z_min` | decimal | Мінімум Z-значення атрактора (нижня межа гомеостазу) |
 | `critical_z_max` | decimal | Максимум Z-значення атрактора (`> critical_z_min`) |
 | `carbon_sequestration_coefficient` | decimal | Коефіцієнт секвестрації (> 0) для зваженого нарахування SCC |
@@ -303,7 +303,9 @@ normalize_identifier :device_uid  # HardwareKey
 | `latest_voltage_mv` | integer | Денормалізована напруга іоністора (мВ) |
 | `latest_stress_index` | decimal | Денормалізований stress_index від InsightGeneratorService |
 | `health_streak` | integer | Кількість послідовних здорових пакетів (Anti-Flapping) |
-| `active_trees_count` | integer | Counter cache на Cluster |
+| `peaq_did` | string | peaq DID-ідентифікатор для Proof of Growth |
+| `altitude` | numeric | Висота над рівнем моря (м) |
+| `firmware_version` | string | Версія прошивки STM32 (SemVer) |
 
 **AASM State Machine (column: `status`):**
 
@@ -368,6 +370,7 @@ dormant ──reactivate──► active
 | `geojson_polygon` | jsonb | GeoJSON-представлення (синхронізується тригером) |
 | `health_index` | decimal | Денормалізований індекс `1.0 - stress_index` (0..1) |
 | `active_trees_count` | integer | Counter cache (оновлюється Tree callbacks) |
+| `climate_type` | string | Кліматичний тип зони (напр. "temperate_continental") |
 | `environmental_settings` | jsonb | `custom_fire_threshold`, `seismic_sensitivity_threshold`, `timezone` |
 
 **Ключові методи:**
@@ -418,6 +421,8 @@ dormant ──reactivate──► active
 | `ip_address` | string | IP модему SIM7070G |
 | `last_seen_at` | datetime | Останній CoAP batch |
 | `latest_voltage_mv` | integer | Денормалізована напруга |
+| `firmware_version` | string | Версія прошивки STM32 (SemVer) |
+| `altitude` | numeric | Висота над рівнем моря (м) |
 
 **AASM State Machine (column: `state`):**
 
@@ -533,6 +538,14 @@ any ──report_fault──► faulty
 | `queen_uid` | string | UID Королеви-ретранслятора |
 | `oracle_status` | string | Статус обробки Oracle (dispatched/fulfilled/failed) |
 | `firmware_version_id` | integer | Версія прошивки з padding-байтів |
+| `growth_points` | numeric | Нараховані очки зростання (raw) |
+| `metabolism_s` | integer | Час метаболічного циклу (с) |
+| `rssi` | integer | RSSI LoRa-каналу (дБм) |
+| `sap_flow` | numeric | Потік соку ксилеми |
+| `verified_by_iotex` | boolean | Підтверджено IoTeX W3bstream ZK-proof |
+| `zk_proof_ref` | string | Посилання на ZK-proof IoTeX |
+| `chainlink_request_id` | string | ID запиту Chainlink Oracle |
+| `tamper_detected` | boolean | Спроба відкриття корпусу капсули |
 
 **Ключові методи:**
 
@@ -554,18 +567,17 @@ any ──report_fault──► faulty
 
 **Призначення:** Власна телеметрія шлюзу (батарея, температура, сигнал). Партиціонована.
 
-**Асоціації:** `belongs_to :gateway` via `queen_uid/uid`
+**Асоціації:** `belongs_to :gateway, foreign_key: :queen_uid, primary_key: :uid`
+> **Dual-key патерн:** AR-зв'язок використовує `queen_uid` → `gateways.uid` (бізнес-ключ). Колонка `gateway_id` (FK NOT NULL) існує в БД, але не використовується Rails — слугує для DB-level referential integrity. Запити через AR завжди йдуть через `uid`.
 
 **Ключові поля:**
 
 | Поле | Тип | Опис |
 |------|-----|------|
 | `queen_uid` | string | UID Королеви |
-| `voltage_mv` | integer | Напруга батареї/сонячної панелі (мВ) |
+| `voltage_mv` | numeric | Напруга батареї/сонячної панелі (мВ) |
 | `temperature_c` | decimal | Температура корпусу (°C) |
 | `cellular_signal_csq` | integer | Сила сигналу LTE (0-31, 99=unknown) |
-| `packets_received_count` | integer | Прийнятих пакетів від Солдатів |
-| `packets_forwarded_count` | integer | Переданих пакетів до Rails API |
 
 **Константи:** `LOW_BATTERY_THRESHOLD=3300`, `OVERHEAT_THRESHOLD=65`, `LOW_SIGNAL_THRESHOLD=5`
 
@@ -604,6 +616,8 @@ any ──report_fault──► faulty
 | `false_positive_rate` | decimal | FPR (> 0.15 = drift) |
 | `total_predictions` | integer | Лічильник передбачень |
 | `confirmed_predictions` | integer | Підтверджені передбачення |
+| `target_pest` | string | Вид шкідника, на якого налаштована модель |
+| `drift_checked_at` | timestamp | Час останньої перевірки дрейфу |
 
 **Ключові методи:**
 
@@ -714,6 +728,7 @@ any ──report_fault──► faulty
 | `clusters` | `has_many, dependent: :destroy` | Лісові масиви |
 | `trees` | `has_many, through: :clusters` | Всі дерева |
 | `wallets` | `has_many` (direct FK) | Пряма магістраль (без 4-рівневого JOIN) |
+| `ews_alerts` | `has_many, through: :clusters` | Тривоги всіх кластерів (через `under_threat?`) |
 | `audit_logs` | `has_many, dependent: :delete_all` | Незмінний аудит |
 | `logo` | `has_one_attached` | Active Storage |
 
@@ -772,7 +787,7 @@ any ──report_fault──► faulty
 | `phone_number` | string | E.164 формат |
 | `otp_required_for_login` | boolean | MFA активовано |
 | `recovery_codes` | text | JSON масив 10 одноразових кодів |
-| `telegram_chat_id` | bigint | Для Telegram сповіщень |
+| `telegram_chat_id` | string | Для Telegram сповіщень |
 | `last_seen_at` | datetime | Оновлюється через Session |
 
 **Системний бот:** `User.oracle_executioner` — `oracle.executioner@system.silken.net` (super_admin без org). Використовується для автоматичних операцій системи.
@@ -839,6 +854,8 @@ any ──report_fault──► faulty
 | `esg_retired_balance` | decimal | Списані балансом ESG-retired |
 | `toucan_bridged_balance` | decimal | Bridged через Toucan Protocol |
 | `crypto_public_address` | string | Polygon/Ethereum-адреса гаманця (EIP-55) |
+| `solana_public_address` | string | Solana Base58-адреса (для мікро-нагород) |
+| `hadron_kyc_status` | string | KYC статус Polygon Hadron (default: `pending`) |
 
 **Ключові методи:**
 
@@ -882,8 +899,18 @@ any ──report_fault──► faulty
 | `gas_price` / `gas_used` | decimal | EVM-газ |
 | `block_number` | integer | Номер блоку |
 | `nonce` | integer | EVM nonce |
+| `sent_at` | timestamp | Час відправлення в мемпул |
+| `confirmed_at` | timestamp | Час підтвердження в блокчейні |
+| `chainlink_request_id` | string | ID запиту Chainlink Oracle |
+| `zk_proof_ref` | string | Посилання на ZK-proof IoTeX |
+| `locked_points` | integer | Заблоковані growth_points при мінтингу |
+| `cumulative_gas_cost` | numeric | Накопичені витрати на газ |
 
-**AASM:** `process` (pending→processing), `mark_as_sent`, `confirm`, `fail`.
+**AASM:**
+- `process` (pending→processing)
+- `mark_as_sent(tx_hash)` (pending/processing→sent)
+- `confirm(block_num, gas_cost)` (sent/processing→confirmed)
+- `fail(reason)` (any→failed)
 
 **Методи:** `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
 
@@ -914,6 +941,9 @@ active/draft ──cancel──► cancelled
 | `status` | enum | `draft/active/fulfilled/breached/cancelled` |
 | `total_funding` | decimal | Загальний обсяг фінансування (> 0) |
 | `start_date` / `end_date` | timestamp | Строки контракту |
+| `emitted_tokens` | numeric | Кількість емітованих SCC (default: 0) |
+| `cancelled_at` | timestamp | Час відміни контракту |
+| `hadron_asset_id` | string | ID активу на Polygon Hadron |
 
 **Ключові методи:**
 
@@ -951,7 +981,16 @@ active/draft ──cancel──► cancelled
 
 **AASM:** `trigger` (active→triggered), `pay` (triggered→paid), `expire` (active→expired).
 
-**Ключові поля:** `payout_amount`, `threshold_value` (0..100), `required_confirmations`, `uses_etherisc` (boolean).
+**Ключові поля:**
+
+| Поле | Тип | Опис |
+|------|-----|------|
+| `payout_amount` | decimal | Сума виплати |
+| `threshold_value` | decimal | Поріг спрацювання (0..100) |
+| `required_confirmations` | integer | Кількість підтверджень |
+| `etherisc_policy_id` | string | ID страхового контракту Etherisc Oracle (nullable) |
+
+**Ключові методи:** `evaluate_daily_health!(target_date)`, `activate_payout!(percentage)`, `recipient_wallet_address`, `uses_etherisc?` (`etherisc_policy_id.present?`).
 
 **Ключові методи:** `evaluate_daily_health!(target_date)`, `activate_payout!(percentage)`, `recipient_wallet_address`.
 
@@ -986,6 +1025,11 @@ active/draft ──cancel──► cancelled
 | `source_log_ids` | integer[] (GIN) | IDs telemetry_logs, що стали джерелом |
 | `fraud_detected` | boolean | Прапор маніпуляції даними |
 | `model_source` | string | AI-модель (GPT-4, Claude, тощо) |
+| `recommendation` | jsonb | Рекомендації Оракула (`action_required`, `priority`) via `store_accessor` |
+| `analyzed_date` | date | Дата аналізу (партиціонування) |
+| `average_temperature` | decimal | Середня температура за аналізований день |
+| `total_growth_points` | integer | Загальні очки зростання за день |
+| `summary` | text | Текстовий підсумок (human-readable) |
 
 **Ключові методи:** `contract_breach?`, `confidence_level`, `forecast?`, `source_logs`, `attach_evidence!(log_ids)`, `status_label`.
 
@@ -1010,6 +1054,15 @@ active/draft ──cancel──► cancelled
 | `satellite_status` | `unverified(0) / verified(1) / rejected_fraud(2) / inconclusive(3)` (prefix: :satellite) |
 
 **AASM:** `mark_resolved`, `ignore`, `reopen` (resolved/ignored→active).
+
+**Ключові поля:**
+
+| Поле | Тип | Опис |
+|------|-----|------|
+| `severity` | enum | `low(0) / medium(1) / critical(2)` |
+| `message` | text | Опис тривоги |
+| `resolved_at` | datetime | Час вирішення |
+| `dclimate_ref` | string | Посилання на dClimate для супутникової верифікації |
 
 **Унікальність:** `alert_type` унікальний в межах `[tree_id, status]` — захист від дублів.
 
@@ -1065,24 +1118,24 @@ active/draft ──cancel──► cancelled
 
 **Призначення:** Фізична дія лісника в полі (Proof of Care). Прикріплені фото з GPS.
 
+**Includes:** `GeoLocatable`
+
 **Асоціації:**
 - `belongs_to :user`
 - `belongs_to :maintainable, polymorphic: true` (Tree або Gateway)
 - `belongs_to :ews_alert` (optional)
-- `has_many_attached :photos` (Active Storage, ≤ 5 МБ, JPEG/PNG/HEIC)
+- `has_many_attached :photos` (Active Storage, ≤ 20 МБ, JPEG/PNG/WebP/HEIC/HEIF, макс. 10 фото)
 
-**Enum `action_type`:**
+**Enum `action_type`** (prefix: true)**:**
 
-| Тип | Опис |
-|-----|------|
-| `anchor_replacement` | Заміна Ti-6Al-4V анкера |
-| `capsule_swap` | Заміна STM32-капсули |
-| `enzyme_replenishment` | Поповнення ферментів (GOx/Laccase) |
-| `gateway_repair` | Ремонт Королеви |
-| `sensor_calibration` | Калібровка датчиків |
-| `vandalism_repair` | Ремонт після вандалізму |
-| `inspection` | Плановий огляд |
-| `tree_health_assessment` | Оцінка стану дерева |
+| Значення | Int | Опис |
+|----------|-----|------|
+| `installation` | 0 | Монтаж EBFC-анкера та капсули |
+| `inspection` | 1 | Плановий огляд |
+| `cleaning` | 2 | Очищення панелей і датчиків |
+| `repair` | 3 | Ремонт обладнання |
+| `decommissioning` | 4 | Демонтаж |
+| `biomass_extraction` | 5 | Вилучення біомаси (Puro.earth Biochar) |
 
 **Ключові поля:**
 
@@ -1095,6 +1148,7 @@ active/draft ──cancel──► cancelled
 | `biomass_yield_kg` | decimal | Вимірювання біомаси (для tokenomics) |
 | `labor_hours` | decimal | Витрачений час |
 | `parts_cost` | decimal | Вартість запчастин |
+| `biomass_passport_tx_hash` | string | TX-хеш паспорту біомаси (Puro.earth Biochar) |
 
 **Методи:** `total_cost` (labor + parts), `trigger_ecosystem_healing!`.
 
@@ -1185,7 +1239,7 @@ Organization
   │     ├── ParametricInsurances (restrict_with_error)
   │     ├── EwsAlerts (delete_all)
   │     └── AiInsights polymorphic (delete_all)
-  ├── Wallets (direct FK, delete_all)
+  ├── Wallets (direct FK, no dependent: — orphan risk)
   │     └── BlockchainTransactions (delete_all) ← PARTITION
   └── AuditLogs (delete_all)
 
@@ -1196,9 +1250,7 @@ User
   └── AuditLogs (restrict_with_error)
 
 TreeFamily
-  ├── Trees (restrict_with_error)
-  ├── TinyMlModels (nullify)
-  └── BioContractFirmwares (nullify)
+  └── Trees (restrict_with_error)
 
 Polymorphic:
   AiInsight.analyzable → Tree | Cluster
