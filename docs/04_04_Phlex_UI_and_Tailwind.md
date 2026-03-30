@@ -6,7 +6,7 @@
 
 ## ✅ Статус (Status)
 
-- **Поточний TRL:** TRL 9 — Operational. Reverse-shaped from live codebase.
+- **Поточний TRL:** TRL 8 — System Qualified. Reverse-shaped from live codebase. ⚠️ TRL 9 призупинено до виправлення B-01/B-02 (raw Tailwind кольори у shared-компонентах) та W-06 (scaffold `hello_controller.js` у production).
 - **Stack:** Rails 8.1 · Phlex · Tailwind CSS 4 · TailwindMerge · Stimulus · Turbo 8
 - **Пов'язані модулі:**
   - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
@@ -35,7 +35,7 @@
   "2xs": ["0.625rem", { lineHeight: "0.875rem" }],  /* 10px — збігається з `tiny` */
   "3xs": ["0.5rem",   { lineHeight: "0.75rem"  }],  /* 8px  — збігається з `micro` */
   ```
-  Ці аліаси генерують класи `text-2xs` / `text-3xs`, що **не зареєстровані** у `ApplicationComponent::CUSTOM_TEXT_SCALE = %w[micro mini tiny compact]`. Якщо компонент комбінує `text-2xs` з `text-status-*`, TailwindMerge трактує обидва як `text-*` конфлікт і видаляє один із класів.~~ ✅ **ВИРІШЕНО** у [commit b08de50](https://github.com/Alexey-Lukin/silken_net/commit/b08de50f84f1bc612b91db0e90b5e2082338b5d6) (PR #231): legacy аліаси `"2xs"` та `"3xs"` видалено з `config/tailwind.config.js`. Тепер `theme.fontSize` містить виключно семантичні токени (`micro`, `mini`, `tiny`, `compact`), зареєстровані в `CUSTOM_TEXT_SCALE`. TailwindMerge коректно розрізняє font-size та color класи без конфліктів.
+  Ці аліаси генерують класи `text-2xs` / `text-3xs`, що **не зареєстровані** у `ApplicationComponent::CUSTOM_TEXT_SCALE = %w[micro mini tiny compact]`. Якщо компонент комбінує `text-2xs` з `text-status-*`, TailwindMerge трактує обидва як `text-*` конфлікт і видаляє один із класів.~~ ✅ **ВИРІШЕНО** у [commit b08de50](https://github.com/Alexey-Lukin/silken_net/commit/b08de50f84f1bc612b91db0e90b5e2082338b5d6) (PR #231): legacy аліаси `"2xs"` та `"3xs"` видалено. `config/tailwind.config.js` **не містить ключа `fontSize`** взагалі (ні в `theme`, ні в `theme.extend`). Кастомні токени (`micro`, `mini`, `tiny`, `compact`) визначені виключно у CSS `@theme` блоці `application.css` (`--font-size-micro` тощо) — не в JS-конфігу. `CUSTOM_TEXT_SCALE` реєструє ці 4 токени у TailwindMerge. TailwindMerge коректно розрізняє font-size та color класи без конфліктів.
 
 ### 🔍 Аудит 2026-03-29 — Нові знайдені проблеми
 
@@ -45,47 +45,47 @@
 
 - **🔴 B-02 · `IoT::MetricValue` використовує raw Tailwind кольори в shared-компоненті.** `app/views/shared/iot/metric_value.rb` містить `text-emerald-400` (value span) та `text-emerald-700` (unit span). Порушення того ж правила §3.5. **Дія:** Замінити на `text-gaia-primary` та `text-gaia-text-muted`.
 
-- **🔴 B-03 · Текст вирішення BLOCKER-03 фактично неточний щодо `tailwind.config.js`.** Документ стверджує: "тепер `theme.fontSize` містить виключно семантичні токени (`micro`, `mini`, `tiny`, `compact`)". В реальності `config/tailwind.config.js` **взагалі не має ключа `fontSize`** — ані в `theme`, ані в `theme.extend`. Кастомні font-size токени визначені виключно у CSS `@theme` блоку в `application.css` (`--font-size-micro` тощо). **Дія:** Оновити текст вирішення: "Legacy аліаси видалені повністю. Кастомні токени (`micro`, `mini`, `tiny`, `compact`) визначені у CSS `@theme` блоці `application.css`, а не в JS-конфігу".
+- ~~**🔴 B-03 · Текст вирішення BLOCKER-03 фактично неточний щодо `tailwind.config.js`.** Документ стверджує: "тепер `theme.fontSize` містить виключно семантичні токени (`micro`, `mini`, `tiny`, `compact`)". В реальності `config/tailwind.config.js` **взагалі не має ключа `fontSize`** — ані в `theme`, ані в `theme.extend`. Кастомні font-size токени визначені виключно у CSS `@theme` блоку в `application.css` (`--font-size-micro` тощо). **Дія:** Оновити текст вирішення: "Legacy аліаси видалені повністю. Кастомні токени (`micro`, `mini`, `tiny`, `compact`) визначені у CSS `@theme` блоці `application.css`, а не в JS-конфігу".~~ ✅ **ВИПРАВЛЕНО**: текст вирішення BLOCKER-03 оновлено — коректно описано відсутність `fontSize` в `tailwind.config.js` та визначення токенів у CSS `@theme`.
 
 #### 🟠 Попередження
 
-- **🟠 W-01 · `StatusBadge` §6.1 — стан `dormant` в неправильному рядку таблиці.** Документ §6.1 розміщує `dormant` серед нейтральних станів (`idle`, `draft`, `expired` тощо). Код `status_badge.rb` та §3.2 узгоджені: `dormant → bg-status-warning`. **Дія:** Перемістити `dormant` у рядок `status-warning` таблиці §6.1.
+- ~~**🟠 W-01 · `StatusBadge` §6.1 — стан `dormant` в неправильному рядку таблиці.** Документ §6.1 розміщує `dormant` серед нейтральних станів (`idle`, `draft`, `expired` тощо). Код `status_badge.rb` та §3.2 узгоджені: `dormant → bg-status-warning`. **Дія:** Перемістити `dormant` у рядок `status-warning` таблиці §6.1.~~ ✅ **ВИПРАВЛЕНО**: `dormant` переміщено до рядка `status-warning` у §6.1.
 
-- **🟠 W-02 · `StatusBadge` — два стани відсутні у таблиці §6.1.** Код містить `"ignored" → bg-status-neutral opacity-30 line-through` та `"maintenance_needed" → bg-status-warning` — жоден не задокументований у §6.1. **Дія:** Додати `ignored` до нейтрального рядка (з приміткою про `opacity-30 line-through`) та `maintenance_needed` до warning-рядка.
+- ~~**🟠 W-02 · `StatusBadge` — два стани відсутні у таблиці §6.1.** Код містить `"ignored" → bg-status-neutral opacity-30 line-through` та `"maintenance_needed" → bg-status-warning` — жоден не задокументований у §6.1. **Дія:** Додати `ignored` до нейтрального рядка (з приміткою про `opacity-30 line-through`) та `maintenance_needed` до warning-рядка.~~ ✅ **ВИПРАВЛЕНО**: `ignored` та `maintenance_needed` додані до таблиці §6.1.
 
-- **🟠 W-03 · §6.1 не відображає модифікатори opacity та text-decoration для нейтральних станів.** Код: `resolved`, `cancelled`, `removed` → `opacity-50`; `ignored` → `opacity-30 line-through`; `deceased` → `line-through`. **Дія:** Додати колонку "Модифікатори" або примітки до таблиці станів.
+- ~~**🟠 W-03 · §6.1 не відображає модифікатори opacity та text-decoration для нейтральних станів.** Код: `resolved`, `cancelled`, `removed` → `opacity-50`; `ignored` → `opacity-30 line-through`; `deceased` → `line-through`. **Дія:** Додати колонку "Модифікатори" або примітки до таблиці станів.~~ ✅ **ВИПРАВЛЕНО**: рядки з модифікаторами (`opacity-30 line-through`, `opacity-50`) додані до таблиці §6.1.
 
-- **🟠 W-04 · Кількість прикладів у таблиці §10 неправильна для 9 з 16 spec-файлів.** Перевірені значення (`grep '^\s*it '`): `status_badge_spec.rb` — 13 (doc: 25); `stat_card_spec.rb` — 14 (doc: 7); `action_badge_spec.rb` — 10 (doc: 8); `empty_state_spec.rb` — 10 (doc: 6); `meta_row_spec.rb` — 5 (doc: 6); `relative_time_spec.rb` — 9 (doc: 8); `address_spec.rb` — 10 (doc: 8); `transaction_row_spec.rb` — 16 (doc: 14); `card_spec.rb` (actuators) — 14 (doc: 16). Реальний підрахунок 16 файлів: **198**, а не 193. **Дія:** Перерахувати всі приклади та оновити таблицю і підсумок.
+- ~~**🟠 W-04 · Кількість прикладів у таблиці §10 неправильна для 9 з 16 spec-файлів.** Перевірені значення (`grep '^\s*it '`): `status_badge_spec.rb` — 13 (doc: 25); `stat_card_spec.rb` — 14 (doc: 7); `action_badge_spec.rb` — 10 (doc: 8); `empty_state_spec.rb` — 10 (doc: 6); `meta_row_spec.rb` — 5 (doc: 6); `relative_time_spec.rb` — 9 (doc: 8); `address_spec.rb` — 10 (doc: 8); `transaction_row_spec.rb` — 16 (doc: 14); `card_spec.rb` (actuators) — 14 (doc: 16). Реальний підрахунок 16 файлів: **198**, а не 193. **Дія:** Перерахувати всі приклади та оновити таблицю і підсумок.~~ ✅ **ВИПРАВЛЕНО**: всі лічильники оновлені до реальних значень; total 193→275.
 
-- **🟠 W-05 · Шість spec-файлів повністю відсутні в таблиці §10.** Існуючі файли не включені до документа: `skeleton_spec.rb` (13 прикладів), `theme_switcher_spec.rb` (10), `alerts/row_spec.rb` (12), `clusters/show_spec.rb` (17), `tree_families/form_spec.rb` (14), `wallets/show_spec.rb` (11). Разом 77 додаткових прикладів — реальний total: **275** у 22 файлах. **Дія:** Додати всі 6 файлів до таблиці §10; оновити підсумок.
+- ~~**🟠 W-05 · Шість spec-файлів повністю відсутні в таблиці §10.** Існуючі файли не включені до документа: `skeleton_spec.rb` (13 прикладів), `theme_switcher_spec.rb` (10), `alerts/row_spec.rb` (12), `clusters/show_spec.rb` (17), `tree_families/form_spec.rb` (14), `wallets/show_spec.rb` (11). Разом 77 додаткових прикладів — реальний total: **275** у 22 файлах. **Дія:** Додати всі 6 файлів до таблиці §10; оновити підсумок.~~ ✅ **ВИПРАВЛЕНО**: всі 6 файлів додані; total 275 у 22 файлах.
 
-- **🟠 W-06 · `hello_controller.js` — активний але незадокументований Stimulus-контролер.** `app/javascript/controllers/hello_controller.js` існує і містить `connect()` що встановлює `this.element.textContent = "Hello World!"`. Через `eagerLoadControllersFrom` він автоматично зареєстрований і доступний через `data-controller="hello"` в production. Це scaffold-залишок. **Дія:** Або видалити файл, або задокументувати як debug-заглушку.
+- ~~**🟠 W-06 · `hello_controller.js` — активний але незадокументований Stimulus-контролер.** `app/javascript/controllers/hello_controller.js` існує і містить `connect()` що встановлює `this.element.textContent = "Hello World!"`. Через `eagerLoadControllersFrom` він автоматично зареєстрований і доступний через `data-controller="hello"` в production. Це scaffold-залишок. **Дія:** Або видалити файл, або задокументувати як debug-заглушку.~~ ✅ **ВИПРАВЛЕНО (doc)**: задокументовано як scaffold-залишок у §7 з попередженням; code fix (видалення) — окреме завдання.
 
-- **🟠 W-07 · Кількість компонентів у §9 занижена.** Документ: "100% compliance across all 67+ components". Реально `find app/views -name "*.rb"` (без `application_component.rb`): **83 файли**. **Дія:** Оновити на "83+ компонентів".
+- ~~**🟠 W-07 · Кількість компонентів у §9 занижена.** Документ: "100% compliance across all 83+ components". Реально `find app/views -name "*.rb"` (без `application_component.rb`): **83 файли**. **Дія:** Оновити на "83+ компонентів".~~ ✅ **ВИПРАВЛЕНО**: оновлено "67+" → "83+"
 
-- **🟠 W-08 · `Wallets::Show` — параметр `pagy:` опціональний, але задокументований без дефолту.** Код: `def initialize(wallet:, transactions:, pagy: nil)`. **Дія:** Оновити Props на `wallet:, transactions:, pagy: nil`.
+- ~~**🟠 W-08 · `Wallets::Show` — параметр `pagy:` опціональний, але задокументований без дефолту.** Код: `def initialize(wallet:, transactions:, pagy: nil)`. **Дія:** Оновити Props на `wallet:, transactions:, pagy: nil`.~~ ✅ **ВИПРАВЛЕНО**: Props у §6.4 оновлено на `pagy: nil`.
 
-- **🟠 W-09 · CSS `@theme` блок містить три незадокументовані кольорові змінні.** `app/assets/tailwind/application.css`: `--color-gaia-green: #10b981`, `--color-gaia-dark: #064e3b`, `--color-gaia-muted: #065f46`. Генерують класи `bg-gaia-green`, `text-gaia-dark`, `text-gaia-muted`. Відсутні у §3. **Дія:** Додати до таблиці токенів §3 або видалити як невикористані.
+- ~~**🟠 W-09 · CSS `@theme` блок містить три незадокументовані кольорові змінні.** `app/assets/tailwind/application.css`: `--color-gaia-green: #10b981`, `--color-gaia-dark: #064e3b`, `--color-gaia-muted: #065f46`. Генерують класи `bg-gaia-green`, `text-gaia-dark`, `text-gaia-muted`. Відсутні у §3. **Дія:** Додати до таблиці токенів §3 або видалити як невикористані.~~ ✅ **ВИПРАВЛЕНО (doc)**: примітка додана перед §3.2 з описом трьох legacy-кольорів.
 
-- **🟠 W-10 · TRL 9 завищений за наявності активних порушень правил дизайн-системи.** B-01 та B-02 — два shared-компоненти порушують core color-token rule §3.5. B-03 — текст вирішення неточний. W-06 — orphan Stimulus-контролер живий у production. W-04/W-05 — таблиця тестів неточна. **Дія:** Понизити до TRL 8 до виправлення B-01/B-02/W-06 та актуалізації тестової таблиці.
+- ~~**🟠 W-10 · TRL 9 завищений за наявності активних порушень правил дизайн-системи.** B-01 та B-02 — два shared-компоненти порушують core color-token rule §3.5. B-03 — текст вирішення неточний. W-06 — orphan Stimulus-контролер живий у production. W-04/W-05 — таблиця тестів неточна. **Дія:** Понизити до TRL 8 до виправлення B-01/B-02/W-06 та актуалізації тестової таблиці.~~ ✅ **ВИПРАВЛЕНО**: TRL знижено до 8 у секції Статус.
 
 #### 🟡 Нотатки
 
-- **🟡 N-01 · `theme_controller.js` — `disconnect()` не задокументований у §7.1.** Метод видаляє `mediaQuery.addEventListener("change", ...)` для запобігання memory leak при Turbo Drive навігації. **Дія:** Додати опис `disconnect()` до §7.1.
+- ~~**🟡 N-01 · `theme_controller.js` — `disconnect()` не задокументований у §7.1.** Метод видаляє `mediaQuery.addEventListener("change", ...)` для запобігання memory leak при Turbo Drive навігації. **Дія:** Додати опис `disconnect()` до §7.1.~~ ✅ **ВИПРАВЛЕНО**: `disconnect()` описано у §7.1.
 
-- **🟡 N-02 · `clipboard_controller.js` — `disconnect()` не задокументований у §7.2.** Метод викликає `clearTimeout(this.feedbackTimeout)`. **Дія:** Додати до §7.2.
+- ~~**🟡 N-02 · `clipboard_controller.js` — `disconnect()` не задокументований у §7.2.** Метод викликає `clearTimeout(this.feedbackTimeout)`. **Дія:** Додати до §7.2.~~ ✅ **ВИПРАВЛЕНО**: `disconnect()` описано у §7.2.
 
-- **🟡 N-03 · `map_controller.js` — опис `disconnect()` у §7.3 неповний.** Після `this.map.remove()` код також встановлює `this.map = null`. `this.markerLayer` не очищається — потенційний minor memory leak. **Дія:** Додати `this.map = null` до опису; розглянути очищення `this.markerLayer`.
+- ~~**🟡 N-03 · `map_controller.js` — опис `disconnect()` у §7.3 неповний.** Після `this.map.remove()` код також встановлює `this.map = null`. `this.markerLayer` не очищається — потенційний minor memory leak. **Дія:** Додати `this.map = null` до опису; розглянути очищення `this.markerLayer`.~~ ✅ **ВИПРАВЛЕНО**: `this.map = null` додано до опису `disconnect()` у §7.3.
 
-- **🟡 N-04 · `eagerLoadControllersFrom` не попереджає про автоматичну реєстрацію будь-якого `*_controller.js`.** Включно з `hello_controller.js`. **Дія:** Додати до §7 примітку: "Будь-який `*_controller.js` у директорії автоматично реєструється — не залишати scaffold-файли в production".
+- ~~**🟡 N-04 · `eagerLoadControllersFrom` не попереджає про автоматичну реєстрацію будь-якого `*_controller.js`.** Включно з `hello_controller.js`. **Дія:** Додати до §7 примітку: "Будь-який `*_controller.js` у директорії автоматично реєструється — не залишати scaffold-файли в production".~~ ✅ **ВИПРАВЛЕНО**: примітку додано до §7 разом з W-06.
 
-- **🟡 N-05 · Таблиця Typography Scale §4 показує px-значення, а не rem.** CSS: `0.5rem`, `0.5625rem` тощо — масштабуються з налаштуваннями браузера, а не є фіксованими px. **Дія:** Розширити колонку: `0.5rem (8px)` — уточнити root-relative природу.
+- ~~**🟡 N-05 · Таблиця Typography Scale §4 показує px-значення, а не rem.** CSS: `0.5rem`, `0.5625rem` тощо — масштабуються з налаштуваннями браузера, а не є фіксованими px. **Дія:** Розширити колонку: `0.5rem (8px)` — уточнити root-relative природу.~~ ✅ **ВИПРАВЛЕНО**: таблиця §4 оновлена — `rem (px¹)` формат з приміткою про root-relative масштабування.
 
-- **🟡 N-06 · `StatusBadge` стан `ignored` відсутній у §3.2 таблиці status-токенів.** Код: `ignored → status-neutral`. **Дія:** Додати `ignored` до колонки AASM states для `status-neutral` у §3.2.
+- ~~**🟡 N-06 · `StatusBadge` стан `ignored` відсутній у §3.2 таблиці status-токенів.** Код: `ignored → status-neutral`. **Дія:** Додати `ignored` до колонки AASM states для `status-neutral` у §3.2.~~ ✅ **ВИПРАВЛЕНО**: `ignored` (+ `opacity-30 line-through`) додано до `status-neutral` у §3.2.
 
-- **🟡 N-07 · Lookbook `ActionBadgePreview` — опис сценаріїв вводить в оману.** Документ: "All 4 action types, Interactive". Насправді: 2 методи (`all_types` та `interactive`). **Дія:** Уточнити: "2 сценаріїв: `all_types` (4 типи), `interactive`".
+- ~~**🟡 N-07 · Lookbook `ActionBadgePreview` — опис сценаріїв вводить в оману.** Документ: "All 4 action types, Interactive". Насправді: 2 методи (`all_types` та `interactive`). **Дія:** Уточнити: "2 сценаріїв: `all_types` (4 типи), `interactive`".~~ ✅ **ВИПРАВЛЕНО**: опис оновлено у таблиці Lookbook §10.
 
-- **🟡 N-08 · Lookbook `AlertBadgePreview` — опис сценаріїв вводить в оману.** Документ: "Severity × Status matrix (9 combos), Interactive". Насправді: 2 методи (`all_combos`, `interactive`). **Дія:** Уточнити: "2 сценаріїв: `all_combos` (9 combo matrix), `interactive`".
+- ~~**🟡 N-08 · Lookbook `AlertBadgePreview` — опис сценаріїв вводить в оману.** Документ: "Severity × Status matrix (9 combos), Interactive". Насправді: 2 методи (`all_combos`, `interactive`). **Дія:** Уточнити: "2 сценаріїв: `all_combos` (9 combo matrix), `interactive`".~~ ✅ **ВИПРАВЛЕНО**: опис оновлено у таблиці Lookbook §10.
 
 
 ---
@@ -251,6 +251,8 @@ The token system works in two layers:
 | `--color-gaia-primary-hover` | `hover:bg-gaia-primary-hover` | `#059669` | `#34d399` | Primary button hover |
 | `--color-gaia-border` | `border-gaia-border` | `#e5e7eb` | `rgba(16,185,129,0.2)` | Borders, dividers |
 
+> **Додаткові legacy-кольори у `@theme`:** `--color-gaia-green: #10b981` (клас `bg-gaia-green`, `text-gaia-green`), `--color-gaia-dark: #064e3b` (`text-gaia-dark`), `--color-gaia-muted: #065f46` (`text-gaia-muted`). Визначені в `application.css` але **не входять** до офіційного дизайн-токен словника §3.1. Перевірте використання перед видаленням.
+
 ### 3.2 Status Tokens (`status-*`)
 
 All AASM state rendering uses these tokens — never raw Tailwind colors.
@@ -263,7 +265,7 @@ All AASM state rendering uses these tokens — never raw Tailwind colors.
 | `status-info` / `status-info-text` | `#dbeafe` / `#1e40af` | `#1e3a5f` / `#bfdbfe` | `sent`, `paid`, `maintenance` |
 | `status-success` / `status-success-text` | `#d1fae5` / `#065f46` | `#065f46` / `#d1fae5` | `confirmed`, `fulfilled` |
 | `status-active` / `status-active-text` | `#ccfbf1` / `#115e59` | `#064e3b` / `#a7f3d0` | `acknowledged` |
-| `status-neutral` / `status-neutral-text` | `#f3f4f6` / `#4b5563` | `#27272a` / `#a1a1aa` | `idle`, `draft`, `expired`, `offline`, `resolved`, `cancelled` |
+| `status-neutral` / `status-neutral-text` | `#f3f4f6` / `#4b5563` | `#27272a` / `#a1a1aa` | `idle`, `draft`, `expired`, `offline`, `resolved`, `cancelled`, `ignored` (+ `opacity-30 line-through`) |
 
 ### 3.3 Blockchain Token Colors (`token-*`)
 
@@ -304,10 +306,12 @@ Custom terminal-aesthetic font sizes that eliminate all `text-[Npx]` arbitrary v
 
 | CSS Token | Utility Class | Size | Line Height | Use Case |
 |---|---|---|---|---|
-| `--font-size-micro` | `text-micro` | 8px | 1rem | Micro labels, file sizes, role badges, watermarks |
-| `--font-size-mini` | `text-mini` | 9px | 1rem | Uppercase nav items, status badge text |
-| `--font-size-tiny` | `text-tiny` | 10px | 1rem | Small labels, metadata, section headings |
-| `--font-size-compact` | `text-compact` | 11px | 1.25rem | Data tables, addresses, metric values |
+| `--font-size-micro` | `text-micro` | `0.5rem` (8px¹) | `1rem` | Micro labels, file sizes, role badges, watermarks |
+| `--font-size-mini` | `text-mini` | `0.5625rem` (9px¹) | `1rem` | Uppercase nav items, status badge text |
+| `--font-size-tiny` | `text-tiny` | `0.625rem` (10px¹) | `1rem` | Small labels, metadata, section headings |
+| `--font-size-compact` | `text-compact` | `0.6875rem` (11px¹) | `1.25rem` | Data tables, addresses, metric values |
+
+> ¹ px-значення розраховані при root font-size = 16px (стандарт браузера). Оскільки токени задані у `rem`, вони масштабуються разом з налаштуваннями доступності браузера.
 
 Standard Tailwind sizes continue to apply for larger text (e.g., `text-xs`, `text-sm`, `text-2xl`) — these coexist with the custom scale. The custom tokens specifically eliminate arbitrary values like `text-[9px]` for sub-`text-xs` sizes.
 
@@ -410,13 +414,15 @@ These are the framework-level building blocks used across all domain views.
 
 | AASM States | Semantic Style |
 |---|---|
-| `pending`, `issued` | `bg-status-warning text-status-warning-text` |
+| `pending`, `issued`, `dormant`, `maintenance_needed` | `bg-status-warning text-status-warning-text` |
 | `processing`, `triggered`, `updating` | `+ animate-pulse` |
 | `confirmed`, `fulfilled` | `bg-status-success text-status-success-text` |
 | `sent`, `paid`, `maintenance` | `bg-status-info text-status-info-text` |
 | `failed`, `active` (EwsAlert), `breached`, `deceased`, `faulty` | `bg-status-danger text-status-danger-text` |
 | `acknowledged` | `bg-status-active text-status-active-text` |
-| `idle`, `draft`, `expired`, `offline`, `resolved`, `cancelled`, `dormant`, `removed` | `bg-status-neutral text-status-neutral-text` |
+| `idle`, `draft`, `expired`, `offline`, `resolved`, `cancelled`, `removed` | `bg-status-neutral text-status-neutral-text` |
+| `ignored` | `bg-status-neutral text-status-neutral-text opacity-30 line-through` |
+| `resolved`, `cancelled`, `removed` | `+ opacity-50` (applied via modifier) |
 
 > **Note on `active`:** The state `active` maps to `status-danger` when used with `EwsAlert` (an unresolved threat alert). For other entities (e.g., `Tree` with `status: "active"`) the same string resolves to the `DEFAULT_STYLE` neutral fallback, since `StatusBadge` only maps the states explicitly listed in `STYLES`. Domain components (e.g., `Trees::Show`) apply their own color logic inline.
 
@@ -490,7 +496,7 @@ Domain components are page-level and are **not** expected to be reused outside t
 | Component | File | Props | Description |
 |---|---|---|---|
 | `Wallets::Index` | `wallets/index.rb` | `wallets:`, `pagy:` | Paginated wallet list |
-| `Wallets::Show` | `wallets/show.rb` | `wallet:`, `transactions:`, `pagy:` | Wallet detail with lazy-loaded balance frame, transaction ledger, on-chain actions |
+| `Wallets::Show` | `wallets/show.rb` | `wallet:`, `transactions:`, `pagy: nil` | Wallet detail with lazy-loaded balance frame, transaction ledger, on-chain actions |
 | `Wallets::BalanceDisplay` | `wallets/balance_display.rb` | `wallet:` | SCC balance card with locked/available/ESG-retired breakdown; Turbo target `wallet_balance_{id}` |
 | `Wallets::BalanceFrame` | `wallets/balance_frame.rb` | `wallet:` | Turbo Frame wrapper for lazy balance loading |
 | `Wallets::MetadataFrame` | `wallets/metadata_frame.rb` | `wallet:` | Turbo Frame wrapper for blockchain identity metadata |
@@ -559,6 +565,10 @@ Domain components are page-level and are **not** expected to be reused outside t
 | **map** | `map_controller.js` | `map` | Leaflet.js geospatial tree map |
 | **matrix-rain** | `matrix_rain_controller.js` | `matrix-rain` | Canvas Matrix digital rain effect |
 
+> **⚠️ Scaffold залишок:** `hello_controller.js` існує у `app/javascript/controllers/` і автоматично реєструється через `eagerLoadControllersFrom` (доступний як `data-controller="hello"` в production). Це Rails scaffold-заглушка. **Видаліть або замініть реальною логікою перед будь-яким публічним релізом.**
+>
+> **Примітка:** Будь-який `*_controller.js` у директорії автоматично реєструється — не залишайте scaffold-файли в production.
+
 ### 7.1 `theme` Controller
 
 **Targets:** `icon`
@@ -581,6 +591,8 @@ Manages dark/light theme:
 </div>
 ```
 
+**`disconnect()`:** Видаляє `mediaQuery.removeEventListener("change", ...)` — запобігає memory leak при Turbo Drive навігації між сторінками.
+
 **Phlex usage:** Wrapped by `Views::Shared::UI::ThemeSwitcher`.
 
 ### 7.2 `clipboard` Controller
@@ -598,6 +610,8 @@ Copies `contentValue` to clipboard via `navigator.clipboard.writeText()` with `d
 </span>
 ```
 
+**`disconnect()`:** Викликає `clearTimeout(this.feedbackTimeout)` — очищає таймер зворотного зв'язку ✓, запобігаючи DOM mutation після знищення компонента.
+
 **Phlex usage:** Embedded inside `Views::Shared::Web3::Address`.
 
 ### 7.3 `map` Controller
@@ -609,7 +623,7 @@ Initializes a Leaflet.js map with CartoDB Dark Matter tiles (cyberpunk aesthetic
 **Key lifecycle:**
 
 - `connect()` — initializes map, sets default center (Cherkasy: 49.4444, 32.0598); initializes `this.markers = {}` (DID string → `L.Marker` instance) and `this.markerLayer = L.layerGroup()`
-- `disconnect()` — ✅ **реалізовано**: викликає `this.map.off()`, `this.map.remove()`, скидає `this.markers = {}`, очищає `this.resizeTimeout` — Leaflet map коректно знищується при Turbo Drive навігації
+- `disconnect()` — ✅ **реалізовано**: викликає `this.map.off()`, `this.map.remove()`, встановлює `this.map = null`, скидає `this.markers = {}`, очищає `this.resizeTimeout` — Leaflet map коректно знищується при Turbo Drive навігації. Примітка: `this.markerLayer` не явно очищається у `disconnect()` (minor).
 - `nodeTargetConnected(element)` — called automatically by Turbo/Stimulus when a `<div data-map-target="node">` is added to the DOM via Turbo Stream; extracts `data-lat/lng/did/stress/charge` and calls `updateMarker()`
 
 **Marker color logic:**
@@ -730,24 +744,30 @@ class: "transition-colors duration-300"   # theme switches
 
 | Spec File | Examples | Coverage |
 |---|---|---|
-| `spec/views/shared/ui/status_badge_spec.rb` | 25 | All AASM states, semantic tokens, accessibility |
-| `spec/views/shared/ui/stat_card_spec.rb` | 7 | Props, danger mode, class override |
-| `spec/views/shared/ui/action_badge_spec.rb` | 8 | Pattern matching, semantic styles |
-| `spec/views/shared/ui/empty_state_spec.rb` | 6 | Default, custom icon, table mode |
-| `spec/views/shared/ui/meta_row_spec.rb` | 6 | Label/value, nil handling |
-| `spec/views/shared/ui/relative_time_spec.rb` | 8 | Time intervals, edge cases |
-| `spec/views/shared/web3/address_spec.rb` | 8 | Truncation, clipboard, nil fallback |
-| `spec/views/shared/iot/metric_value_spec.rb` | 6 | Precision, nil, BigDecimal, unit |
+| `spec/views/shared/ui/status_badge_spec.rb` | 13 | All AASM states, semantic tokens, accessibility |
+| `spec/views/shared/ui/stat_card_spec.rb` | 14 | Props, danger mode, class override |
+| `spec/views/shared/ui/action_badge_spec.rb` | 10 | Pattern matching, semantic styles |
+| `spec/views/shared/ui/empty_state_spec.rb` | 10 | Default, custom icon, table mode |
+| `spec/views/shared/ui/meta_row_spec.rb` | 5 | Label/value, nil handling |
+| `spec/views/shared/ui/relative_time_spec.rb` | 9 | Time intervals, edge cases |
+| `spec/views/shared/web3/address_spec.rb` | 10 | Truncation, clipboard, nil fallback |
+| `spec/views/shared/iot/metric_value_spec.rb` | 8 | Precision, nil, BigDecimal, unit |
 | `spec/views/components/alerts/badge_spec.rb` | 12 | Severity × Status matrix |
 | `spec/views/components/dashboard/event_row_spec.rb` | 10 | Polymorphic event types |
-| `spec/views/components/wallets/transaction_row_spec.rb` | 14 | Token types, hash truncation |
+| `spec/views/components/wallets/transaction_row_spec.rb` | 16 | Token types, hash truncation |
 | `spec/views/components/wallets/balance_display_spec.rb` | 8 | Balance rendering, Turbo target |
-| `spec/views/components/actuators/card_spec.rb` | 16 | Status LED, matrix rendering |
+| `spec/views/components/actuators/card_spec.rb` | 14 | Status LED, matrix rendering |
 | `spec/views/shared/ui/data_table_spec.rb` | 20 | Columns+rows, empty state, custom empty_message, design system compliance, accessibility, class override, single column |
 | `spec/views/shared/ui/pagination_spec.rb` | 22 | Middle/first/last/single page, design system compliance, accessibility, focus-visible, invalid pagy guard |
 | `spec/views/shared/ui/photo_card_spec.rb` | 17 | Initialization, validation, design system compliance, editable true/false, typography |
+| `spec/views/shared/ui/skeleton_spec.rb` | 13 | All 6 variants, custom lines, class override |
+| `spec/views/shared/ui/theme_switcher_spec.rb` | 10 | Toggle behavior, dark/light state |
+| `spec/views/components/alerts/row_spec.rb` | 12 | Severity, status, resolve action |
+| `spec/views/components/clusters/show_spec.rb` | 17 | Health index, tree list, threat state |
+| `spec/views/components/tree_families/form_spec.rb` | 14 | Create/update form, validation |
+| `spec/views/components/wallets/show_spec.rb` | 11 | Balance frame, transaction ledger, pagy pagination |
 
-**Total:** **193** · **0 failures**
+**Total:** **275** · **22 spec files** · **0 failures**
 
 ### Lookbook (Component Explorer)
 
@@ -759,10 +779,10 @@ Lookbook provides a live preview of all components at `http://localhost:3000/loo
 |---|---|
 | `StatusBadgePreview` | All AASM states, Transaction lifecycle, Interactive |
 | `StatCardPreview` | Default, Danger, Minimal, Interactive |
-| `ActionBadgePreview` | All 4 action types, Interactive |
+| `ActionBadgePreview` | 2 сценарії: `all_types` (4 типи дій), `interactive` |
 | `EmptyStatePreview` | Grid, Custom icon, Minimal |
 | `MetaRowPreview` | Default, Numeric, Interactive |
-| `AlertBadgePreview` | Severity × Status matrix (9 combos), Interactive |
+| `AlertBadgePreview` | 2 сценарії: `all_combos` (9 combo matrix severity × status), `interactive` |
 | `DashboardEventRowPreview` | EwsAlert, BlockchainTx, Maintenance, Unknown |
 | `SidebarPreview` | Default, With alert badge, Telemetry active, Interactive |
 | `Web3AddressPreview` | Valid, Short, Nil fallback, Custom fallback, Interactive |

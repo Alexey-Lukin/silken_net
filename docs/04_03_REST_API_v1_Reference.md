@@ -2,7 +2,7 @@
 
 ## 🎯 Мета (Objective)
 
-Зафіксувати повний контракт REST API v1 як Єдине Джерело Істини (SSOT). Документ описує всі **79 ендпоінтів**, механізми автентифікації, ролеву модель доступу, формати запитів/відповідей та типовий lifecycle взаємодії прошивки Gateway з бекендом.
+Зафіксувати повний контракт REST API v1 як Єдине Джерело Істини (SSOT). Документ описує всі **81 ендпоінт**, механізми автентифікації, ролеву модель доступу, формати запитів/відповідей та типовий lifecycle взаємодії прошивки Gateway з бекендом.
 
 ## ✅ Статус (Status)
 
@@ -53,7 +53,7 @@
 
 #### 🟠 Попередження
 
-- **🟠 W-1 · Невідповідність кількості ендпоінтів: "79" vs "81".** Рядок 5 (вступний абзац): "описує всі **79 ендпоінтів**". Рядок 10 (Status): "**81**". Таблиця §4: 81 рядок (#1–#81). **Дія:** Виправити вступний абзац на 81.
+- ~~**🟠 W-1 · Невідповідність кількості ендпоінтів: "79" vs "81".** Рядок 5 (вступний абзац): "описує всі **79 ендпоінтів**". Рядок 10 (Status): "**81**". Таблиця §4: 81 рядок (#1–#81). **Дія:** Виправити вступний абзац на 81.~~ ✅ **ВИПРАВЛЕНО**: вступний абзац виправлено на "81 ендпоінт".
 
 - **🟠 W-2 · `tree_families#create` та `#update` повертають 302 redirect JSON-клієнтам.** Обидві дії не мають `respond_to`/`format.json` блоку — при успіху безумовно викликають `redirect_to`. JSON-клієнт отримує `302 Found`, а не `201 Created` з JSON-тілом. **Дія:** Додати `respond_to` блок з `format.json`.
 
@@ -63,25 +63,25 @@
 
 - **🟠 W-5 · `users#index` — використовує ключ пагінації `meta:` замість `pagy:`.** Код: `render json: { data: ..., meta: { page: pagy.page, ... } }`. Стандарт §2.1 визначає ключ `pagy`. Всі інші контролери (clusters, organizations тощо) використовують `pagy:`. **Дія:** Перейти на `pagy: pagy_metadata(@pagy)`.
 
-- **🟠 W-6 · `trees#index` та `maintenance_records#index` — ключ відповіді `trees`/`records` замість `data`.** Суперечить стандарту §2.1. **Дія:** Стандартизувати на ключ `data:` або явно задокументувати відхилення.
+- ~~**🟠 W-6 · `trees#index` та `maintenance_records#index` — ключ відповіді `trees`/`records` замість `data`.** Суперечить стандарту §2.1. **Дія:** Стандартизувати на ключ `data:` або явно задокументувати відхилення.~~ ✅ **ВИПРАВЛЕНО (doc)**: відхилення задокументовано у §2.3 (note перед пагінацією). Стандартизація коду — W-6 залишається відкритим для code fix.
 
-- **🟠 W-7 · `maintenance_records#index` — розмір сторінки за замовчуванням 50, а не 20.** Код: `pagy(@records, items: 50)`. Документ §2.3 вказує 20. Пагінація фото: `pagy(@record.photos, items: 6)` — теж не 20. **Дія:** Задокументувати 50 для maintenance_records та 6 для photos.
+- ~~**🟠 W-7 · `maintenance_records#index` — розмір сторінки за замовчуванням 50, а не 20.** Код: `pagy(@records, items: 50)`. Документ §2.3 вказує 20. Пагінація фото: `pagy(@record.photos, items: 6)` — теж не 20. **Дія:** Задокументувати 50 для maintenance_records та 6 для photos.~~ ✅ **ВИПРАВЛЕНО**: виключення `items: 50` та `items: 6` задокументовано у §2.3.
 
-- **🟠 W-8 · `DELETE /api/v1/maintenance_records/:id/photos/:photo_id` — неправильні path params у документі.** Маршрут генерує `/:maintenance_record_id/photos/:id`. Контролер використовує `params[:maintenance_record_id]` та `params[:id]`. Документ рядок #61 вказує `/:id/photos/:photo_id`. **Дія:** Виправити на `/:maintenance_record_id/photos/:id`.
+- ~~**🟠 W-8 · `DELETE /api/v1/maintenance_records/:id/photos/:photo_id` — неправильні path params у документі.** Маршрут генерує `/:maintenance_record_id/photos/:id`. Контролер використовує `params[:maintenance_record_id]` та `params[:id]`. Документ рядок #61 вказує `/:id/photos/:photo_id`. **Дія:** Виправити на `/:maintenance_record_id/photos/:id`.~~ ✅ **ВИПРАВЛЕНО**: рядок #61 таблиці оновлено на `/:maintenance_record_id/photos/:id`.
 
-- **🟠 W-9 · `wallets#balance` та `wallets#metadata` — повертають HTML Turbo Frame, а не JSON.** Код: `render Wallets::BalanceFrame.new(wallet: @wallet), layout: false` без `respond_to`. REST-клієнт з `Accept: application/json` отримає HTML. Документ вказує "(Turbo Frame)" але не попереджає про відсутність JSON. **Дія:** Додати `⚠️ HTML only` попередження у документ або додати `format.json` блок.
+- ~~**🟠 W-9 · `wallets#balance` та `wallets#metadata` — повертають HTML Turbo Frame, а не JSON.** Код: `render Wallets::BalanceFrame.new(wallet: @wallet), layout: false` без `respond_to`. REST-клієнт з `Accept: application/json` отримає HTML. Документ вказує "(Turbo Frame)" але не попереджає про відсутність JSON. **Дія:** Додати `⚠️ HTML only` попередження у документ або додати `format.json` блок.~~ ✅ **ВИПРАВЛЕНО (doc)**: `⚠️ HTML only` попередження додано до рядків #39/#40 у таблиці §4.
 
-- **🟠 W-10 · `oracle_visions#index` — схема відповіді не задокументована.** Код: `render json: { visions: @visions, yield_forecast: @scc_yield }`. Розділ §5 для oracle_visions не надає приклад відповіді. **Дія:** Задокументувати схему `{ visions: [...], yield_forecast: Float }`.
+- ~~**🟠 W-10 · `oracle_visions#index` — схема відповіді не задокументована.** Код: `render json: { visions: @visions, yield_forecast: @scc_yield }`. Розділ §5 для oracle_visions не надає приклад відповіді. **Дія:** Задокументувати схему `{ visions: [...], yield_forecast: Float }`.~~ ✅ **ВИПРАВЛЕНО**: схема відповіді `oracle_visions#index` задокументована у §5.8b.
 
 - **🟠 W-11 · `gateways#index` та `#show` — сирова серіалізація, `GatewayBlueprint` відсутній.** Raw `@gateways` і `@gateway` — всі DB-колонки, включно з потенційно чутливими (config, keys, IP). **Дія:** Створити `GatewayBlueprint` з явним allowlist полів; використати в контролері.
 
 - **🟠 W-12 · `provisioning#register` — відповідь `device` містить всі поля моделі, а не 4 задокументованих.** Код: `{ did: device_identifier, device: @device, key_derivation: "hkdf-sha256" }` — `@device` серіалізується без фільтрації. Документ §5.2 показує лише `id`, `did`, `status`, `cluster_id`. **Дія:** Серіалізувати з `as_json(only: [:id, :did, :status, :cluster_id])`.
 
-- **🟠 W-13 · `oracle_visions#simulate` — `params[:variables]` передається у воркер без валідації.** `sigma`, `rho`, `beta` документовані як required variables, але серверна валідація відсутня. Також `job_id` — це Sidekiq JID (рядок UUID), а не числовий id. **Дія:** Додати `params.permit(variables: [:sigma, :rho, :beta])`; задокументувати тип `job_id`.
+- ~~**🟠 W-13 · `oracle_visions#simulate` — `params[:variables]` передається у воркер без валідації.** `sigma`, `rho`, `beta` документовані як required variables, але серверна валідація відсутня. Також `job_id` — це Sidekiq JID (рядок UUID), а не числовий id. **Дія:** Додати `params.permit(variables: [:sigma, :rho, :beta])`; задокументувати тип `job_id`.~~ ✅ **ВИПРАВЛЕНО (doc)**: `job_id` задокументований як Sidekiq JID (~24 hex-символи). `params.permit` — потребує code fix.
 
-- **🟠 W-14 · `oracle_callbacks#create` — відповідь `404` не задокументована у §5.8.** Код: `rescue ActiveRecord::RecordNotFound → 404 "Chainlink request not found"`. **Дія:** Додати `404 Not Found | chainlink_request_id не знайдено` до таблиці помилок §5.8.
+- ~~**🟠 W-14 · `oracle_callbacks#create` — відповідь `404` не задокументована у §5.8.** Код: `rescue ActiveRecord::RecordNotFound → 404 "Chainlink request not found"`. **Дія:** Додати `404 Not Found | chainlink_request_id не знайдено` до таблиці помилок §5.8.~~ ✅ **ВИПРАВЛЕНО**: таблиця помилок з `401` та `404` додана до §5.8.
 
-- **🟠 W-15 · `users#index` — super_admin scope повертає глобальний список всіх користувачів.** `UserPolicy::Scope`: super_admin → `scope.all` (всі org). Це може бути навмисним, але не задокументованим. **Дія:** Явно задокументувати поведінку super_admin або додати org-scoping.
+- ~~**🟠 W-15 · `users#index` — super_admin scope повертає глобальний список всіх користувачів.** `UserPolicy::Scope`: super_admin → `scope.all` (всі org). Це може бути навмисним, але не задокументованим. **Дія:** Явно задокументувати поведінку super_admin або додати org-scoping.~~ ✅ **ВИПРАВЛЕНО (doc)**: поведінку `super_admin` (`scope.all`) задокументовано в таблиці RBAC §3.
 
 #### 🟡 Нотатки
 
@@ -89,7 +89,7 @@
 
 - **🟡 N-2 · TRL 8 завищений за наявності 5 активних блокерів.** B-1..B-5 — production-breaking дефекти та security gap. TRL 7 більш точний. **Дія:** Виправити B-1..B-5, після чого відновити TRL 8.
 
-- **🟡 N-3 · `oracle_visions#stream_config` — обов'язковий параметр `cluster_id` не задокументований.** 404 при відсутньому `cluster_id` теж не описаний. **Дія:** Задокументувати `cluster_id` як required query param та 404-відповідь.
+- ~~**🟡 N-3 · `oracle_visions#stream_config` — обов'язковий параметр `cluster_id` не задокументований.** 404 при відсутньому `cluster_id` теж не описаний. **Дія:** Задокументувати `cluster_id` як required query param та 404-відповідь.~~ ✅ **ВИПРАВЛЕНО**: `cluster_id` задокументований як обов'язковий query param у рядку #64 таблиці §4; 404 зазначено.
 
 - **🟡 N-4 · `GET /api/v1/users/:id` відсутній у таблиці §4.** Маршрут існує в `routes.rb` але пропущений у документі (пов'язано з B-1). **Дія:** Після додавання `def show` — додати рядок до таблиці §4.
 
@@ -193,6 +193,8 @@ POST /api/v1/auth/m2m_token
 
 > **Примітка:** у `development` середовищі `StandardError` не перехоплюється — Rails показує детальний backtrace.
 
+> **Відхилення ключа відповіді:** `trees#index` та `maintenance_records#index` повертають ключ `trees`/`records` замість стандартного `data`. Це задокументована поведінка; стандартизація потребує зміни коду (W-6).
+
 ### 2.3 Пагінація
 
 Всі list-ендпоінти підтримують стандартну пагінацію Pagy:
@@ -201,6 +203,8 @@ POST /api/v1/auth/m2m_token
 |---|---|---|---|
 | `page` | Integer | 1 | Номер сторінки |
 | `limit` | Integer | 20 | Кількість записів на сторінку |
+
+> **Виключення розміру сторінки:** `maintenance_records#index` використовує `items: 50` (не 20); `maintenance_records#photos` використовує `items: 6`.
 
 Відповідь містить об'єкт `pagy`:
 
@@ -222,7 +226,7 @@ POST /api/v1/auth/m2m_token
 | `investor` | Інвестор (за замовчуванням для OAuth) | Читання фінансових даних своєї організації |
 | `forester` / `patrol` | Патрульний / Лісник | + Provisioning, Actuators, Maintenance Records, Oracle Visions. `patrol` є синонімом ролі `forester` (метод `forest_commander?` у моделі User охоплює обидві) |
 | `admin` | Адміністратор організації | + Firmwares, TreeFamilies, Settings, AuditLogs, SystemHealth, Users, Simulate |
-| `super_admin` | Суперадміністратор | + Organizations (глобальний доступ) |
+| `super_admin` | Суперадміністратор | + Organizations (глобальний доступ). `users#index` повертає **всіх** користувачів системи (`scope.all` через `UserPolicy::Scope`) — без фільтрації по org. |
 
 ---
 
@@ -276,8 +280,8 @@ POST /api/v1/auth/m2m_token
 | **💎 Гаманці та Контракти** | | | | | |
 | 37 | GET | `/api/v1/wallets` | `wallets#index` | 🔑 Auth | Список гаманців організації |
 | 38 | GET | `/api/v1/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
-| 39 | GET | `/api/v1/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (Turbo Frame) |
-| 40 | GET | `/api/v1/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (Turbo Frame) |
+| 39 | GET | `/api/v1/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (Turbo Frame) — ⚠️ **HTML only**: повертає Phlex Turbo Frame, не JSON |
+| 40 | GET | `/api/v1/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (Turbo Frame) — ⚠️ **HTML only**: повертає Phlex Turbo Frame, не JSON |
 | 41 | GET | `/api/v1/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
 | 42 | GET | `/api/v1/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
 | 43 | GET | `/api/v1/contracts/stats` | `contracts#stats` | 🔑 Auth | Фінансова аналітика |
@@ -301,11 +305,11 @@ POST /api/v1/auth/m2m_token
 | 58 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис |
 | 59 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32) |
 | 60 | GET | `/api/v1/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
-| 61 | DELETE | `/api/v1/maintenance_records/:id/photos/:photo_id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото |
+| 61 | DELETE | `/api/v1/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото |
 | **⊙ Оракул (AI Insights)** | | | | | |
 | 62 | GET | `/api/v1/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
 | 63 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
-| 64 | GET | `/api/v1/oracle_visions/stream_config` | `oracle_visions#stream_config` | 🌿 Forester | Конфіг підписки на стрім |
+| 64 | GET | `/api/v1/oracle_visions/stream_config?cluster_id=:id` | `oracle_visions#stream_config` | 🌿 Forester | Конфіг підписки на стрім. `cluster_id` — обов'язковий query param. 404 при невідомому `cluster_id`. ⚠️ [B-4: IDOR] |
 | **⛓️ Блокчейн** | | | | | |
 | 65 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій |
 | 66 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
@@ -679,6 +683,13 @@ POST /api/v1/auth/m2m_token
 - `MintCarbonCoinWorker` — мінтинг SCC/SFC на Polygon
 - `SolanaMicroRewardWorker` — миттєва мікро-винагорода власнику дерева
 
+**Можливі помилки:**
+
+| HTTP Status | Умова |
+|---|---|
+| `401 Unauthorized` | Відсутній або невалідний `X-Chainlink-Signature` |
+| `404 Not Found` | `chainlink_request_id` не знайдено у `TelemetryLog` |
+
 **Success Response `200 OK` (failed):**
 
 ```json
@@ -688,6 +699,35 @@ POST /api/v1/auth/m2m_token
   "error": "Oracle verification timeout"
 }
 ```
+
+---
+
+### 5.8b GET `/api/v1/oracle_visions` — AI Прогнози (Oracle Visions Index)
+
+**Доступ:** Роль `forester` або вище.
+
+**Success Response `200 OK`:**
+
+```json
+{
+  "visions": [
+    {
+      "id": 1,
+      "cluster_id": 7,
+      "target_date": "2026-04-01",
+      "stress_index": 0.42,
+      "summary": "...",
+      "recommendation": { "priority": "high", "action_required": "..." }
+    }
+  ],
+  "yield_forecast": 12.5
+}
+```
+
+| Поле | Тип | Опис |
+|---|---|---|
+| `visions` | Array | Масив `AiInsight` (до 10 записів, `upcoming`, сортування за `target_date asc`) |
+| `yield_forecast` | Float | Прогнозована SCC-врожайність організації |
 
 ---
 
@@ -713,9 +753,11 @@ POST /api/v1/auth/m2m_token
 ```json
 {
   "message": "Оракул почав симуляцію.",
-  "job_id": "abc123def456"
+  "job_id": "abc123def456789abc123def"
 }
 ```
+
+> **`job_id`** — це Sidekiq JID (рядок ~24 hex-символи), а не числовий id. Використовується для відстеження статусу симуляції.
 
 ---
 
