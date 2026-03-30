@@ -361,5 +361,4 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       end
     end
   end
-
 end
