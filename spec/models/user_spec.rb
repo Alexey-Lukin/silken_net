@@ -499,4 +499,45 @@ RSpec.describe User, type: :model do
       expect(found).to be_nil
     end
   end
+
+  describe "token generation" do
+    context "when user has a password_salt" do
+      it "generates a password_reset token" do
+        user = create(:user)
+        token = user.generate_token_for(:password_reset)
+        expect(token).to be_present
+        expect(described_class.find_by_token_for(:password_reset, token)).to eq(user)
+      end
+
+      it "generates an api_access token" do
+        user = create(:user)
+        token = user.generate_token_for(:api_access)
+        expect(token).to be_present
+        expect(described_class.find_by_token_for(:api_access, token)).to eq(user)
+      end
+
+      it "generates a stream_access token" do
+        user = create(:user)
+        token = user.generate_token_for(:stream_access)
+        expect(token).to be_present
+        expect(described_class.find_by_token_for(:stream_access, token)).to eq(user)
+      end
+    end
+
+    context "when password_salt is nil" do
+      it "generates a password_reset token even with nil salt" do
+        user = create(:user)
+        allow(user).to receive(:password_salt).and_return(nil)
+        token = user.generate_token_for(:password_reset)
+        expect(token).to be_present
+      end
+
+      it "generates a stream_access token even with nil salt" do
+        user = create(:user)
+        allow(user).to receive(:password_salt).and_return(nil)
+        token = user.generate_token_for(:stream_access)
+        expect(token).to be_present
+      end
+    end
+  end
 end

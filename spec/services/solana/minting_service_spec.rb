@@ -539,4 +539,15 @@ RSpec.describe Solana::MintingService do
       end
     end
   end
+
+  describe "#decode_base58_to_bytes (oversized address)" do
+    it "raises error when decoded address exceeds 32 bytes" do
+      service = described_class.new(create(:telemetry_log, :verified_telemetry, tree: tree))
+      oversized_address = "z" * 60
+
+      expect {
+        service.send(:decode_base58, oversized_address)
+      }.to raise_error(RuntimeError, /Invalid address.*expected ≤ 32/)
+    end
+  end
 end

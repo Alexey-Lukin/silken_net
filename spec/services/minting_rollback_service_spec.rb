@@ -128,4 +128,15 @@ RSpec.describe MintingRollbackService do
       }.not_to raise_error
     end
   end
+
+  describe "broadcast_update after rollback" do
+    it "calls broadcast_update on wallet when method is available" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000)
+
+      expect_any_instance_of(Wallet).to receive(:broadcast_update).at_least(:once)
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+    end
+  end
 end

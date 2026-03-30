@@ -134,4 +134,18 @@ RSpec.describe PuroEarth::PassportService do
       }.to raise_error(PuroEarth::PassportService::AnchoringError)
     end
   end
+
+  describe "#deep_sort_keys (Array branch)" do
+    it "recursively sorts hashes inside arrays" do
+      service = described_class.new({
+        tree_did: "test",
+        items: [ { z_key: 1, a_key: 2 }, { m_key: 3, b_key: 4 } ]
+      })
+
+      sorted = service.send(:deep_sort_keys, { z: 1, a: [ { c: 3, b: 2 } ] })
+      keys = sorted.keys
+      expect(keys).to eq([ :a, :z ])
+      expect(sorted[:a].first.keys).to eq([ :b, :c ])
+    end
+  end
 end

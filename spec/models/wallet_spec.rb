@@ -473,4 +473,35 @@ RSpec.describe Wallet, type: :model do
       end
     end
   end
+
+  describe "#lock_for_toucan_bridge! (crypto address fallback)" do
+    it "raises error when no crypto_public_address on wallet or organization" do
+      tree_record = create(:tree)
+      wallet = tree_record.wallet
+      wallet.update!(balance: 100)
+      wallet.update_column(:crypto_public_address, nil)
+      allow(wallet).to receive(:organization).and_return(
+        double("Organization", crypto_public_address: nil)
+      )
+
+      expect {
+        wallet.lock_for_toucan_bridge!(10)
+      }.to raise_error(RuntimeError, /Відсутня крипто-адреса/)
+    end
+
+    it "uses organization crypto_public_address as fallback" do
+      tree_record = create(:tree)
+      wallet = tree_record.wallet
+      org = wallet.organization
+      wallet.update!(balance: 100)
+      wallet.update_column(:crypto_public_address, nil)
+
+      expect {
+        wallet.lock_for_toucan_bridge!(10)
+      }.to change(BlockchainTransaction, :count).by(1)
+
+      tx = BlockchainTransaction.last
+      expect(tx.to_address).to eq(org.crypto_public_address)
+    end
+  end
 end

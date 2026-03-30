@@ -115,4 +115,22 @@ RSpec.describe ChainAuditService do
       end
     end
   end
+
+  describe "error handling" do
+    context "when compute_audit raises an error" do
+      before do
+        allow(Rails.cache).to receive(:fetch).and_raise(StandardError, "DB connection lost")
+      end
+
+      it "returns fallback Result with zero values" do
+        result = described_class.call
+
+        expect(result.db_total).to eq(0)
+        expect(result.chain_total).to eq(0)
+        expect(result.delta).to eq(0)
+        expect(result.critical).to be false
+        expect(result.checked_at).to be_present
+      end
+    end
+  end
 end

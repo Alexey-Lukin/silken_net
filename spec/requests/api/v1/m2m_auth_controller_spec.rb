@@ -124,5 +124,47 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
 
       expect(response).not_to have_http_status(:unauthorized)
     end
+
+    context "when device is not linked to an organization" do
+      it "returns 422 when device has no organization in hierarchy" do
+        orphan_uid = "SNET-ORPHAN-0001"
+        HardwareKey.create!(
+          device_uid: orphan_uid,
+          aes_key_hex: SecureRandom.hex(32).upcase,
+          ed25519_public_key_hex: public_key_hex
+        )
+        ts = Time.current.iso8601
+        sig = Ed25519Crypto::SigningService.sign(seed_hex, "#{orphan_uid}:#{ts}")
+
+        post "/api/v1/auth/m2m_token",
+             params: { did: orphan_uid, timestamp: ts, signature: sig },
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["error"]).to include("організації")
+      end
+    end
+
+    context "when organization has no users" do
+      it "returns 422 when organization has no users for token issuance" do
+        empty_org = create(:organization)
+        empty_cluster = create(:cluster, organization: empty_org)
+        empty_gw = create(:gateway, cluster: empty_cluster)
+        HardwareKey.create!(
+          device_uid: empty_gw.uid,
+          aes_key_hex: SecureRandom.hex(32).upcase,
+          ed25519_public_key_hex: public_key_hex
+        )
+        ts = Time.current.iso8601
+        sig = Ed25519Crypto::SigningService.sign(seed_hex, "#{empty_gw.uid}:#{ts}")
+
+        post "/api/v1/auth/m2m_token",
+             params: { did: empty_gw.uid, timestamp: ts, signature: sig },
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["error"]).to include("користувачів")
+      end
+    end
   end
 end
