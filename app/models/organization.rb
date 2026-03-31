@@ -27,7 +27,7 @@ class Organization < ApplicationRecord
   # ⚡ [ВИПРАВЛЕНО: The Join Abyss]: Пряма магістраль до фінансових ресурсів.
   # Денормалізований зв'язок через organization_id у wallets замість 4-рівневого JOIN
   # (Organization → Clusters → Trees → Wallets). Це критично для total_carbon_points.
-  has_many :wallets
+  has_many :wallets, dependent: :nullify
 
   # Логотип організації (The Brain Map)
   has_one_attached :logo

@@ -7,7 +7,7 @@ class Gateway < ApplicationRecord
   include NormalizeIdentifier
 
   # --- ЗВ'ЯЗКИ (The Fabric of the Forest) ---
-  belongs_to :cluster, optional: true
+  belongs_to :cluster
 
   # Zero-Trust: Унікальний ключ для розшифровки батчів (DID Королеви = device_uid ключа)
   has_one :hardware_key, foreign_key: :device_uid, primary_key: :uid, dependent: :destroy

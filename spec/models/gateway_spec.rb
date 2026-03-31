@@ -164,6 +164,12 @@ RSpec.describe Gateway, type: :model do
       gateway = create(:gateway)
       expect(gateway.trees).to be_empty
     end
+
+    it "requires cluster (NOT NULL in DB)" do
+      gateway = build(:gateway, cluster: nil)
+      expect(gateway).not_to be_valid
+      expect(gateway.errors[:cluster]).to be_present
+    end
   end
 
   describe "#system_fault?" do

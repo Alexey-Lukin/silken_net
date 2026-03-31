@@ -26,6 +26,11 @@ RSpec.describe Organization, type: :model do
       reflection = described_class.reflect_on_association(:audit_logs)
       expect(reflection.options[:dependent]).to eq(:delete_all)
     end
+
+    it "has wallets with nullify dependency strategy" do
+      reflection = described_class.reflect_on_association(:wallets)
+      expect(reflection.options[:dependent]).to eq(:nullify)
+    end
   end
 
   describe "#total_carbon_points" do
