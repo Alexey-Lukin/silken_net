@@ -70,7 +70,11 @@ module Api
                 # [P0 BLOCKER FIX]: AES ключ НЕ передається через мережу.
                 # Обидві сторони (бекенд + прошивка) деривують ключ незалежно через HKDF.
                 # Повертаємо лише DID та підтвердження провізіонування.
-                response_body = { did: device_identifier, device: @device, key_derivation: "hkdf-sha256" }
+                response_body = {
+                  did: device_identifier,
+                  device: @device.as_json(only: [ :id, :did, :status, :cluster_id ]),
+                  key_derivation: "hkdf-sha256"
+                }
 
                 # TRL 4 lab mode: якщо PROVISIONING_MASTER_KEY не встановлено,
                 # повертаємо ключ для ручного прошивання на лабораторному стенді.
@@ -100,7 +104,8 @@ module Api
           end
         end
       rescue StandardError => e
-        render json: { error: "Збій ініціації: #{e.message}" }, status: :internal_server_error
+        Rails.logger.error "🚨 [Provisioning] Збій ініціації: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+        render json: { error: "Збій у ядрі Океану. Повідомте Архітектора." }, status: :internal_server_error
       end
 
       private

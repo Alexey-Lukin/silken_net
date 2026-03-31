@@ -50,9 +50,15 @@ module Api
       def create
         @family = TreeFamily.new(family_params)
         if @family.save
-          redirect_to api_v1_tree_families_path, notice: "New species DNA woven into the network."
+          respond_to do |format|
+            format.json { render json: { data: @family }, status: :created }
+            format.html { redirect_to api_v1_tree_families_path, notice: "New species DNA woven into the network." }
+          end
         else
-          render_dashboard(title: "DNA Sequence Error", component: TreeFamilies::Form.new(family: @family))
+          respond_to do |format|
+            format.json { render_validation_error(@family) }
+            format.html { render_dashboard(title: "DNA Sequence Error", component: TreeFamilies::Form.new(family: @family)) }
+          end
         end
       end
 
@@ -65,9 +71,15 @@ module Api
 
       def update
         if @family.update(family_params)
-          redirect_to api_v1_tree_family_path(@family), notice: "Biological constants recalibrated."
+          respond_to do |format|
+            format.json { render json: { data: @family } }
+            format.html { redirect_to api_v1_tree_family_path(@family), notice: "Biological constants recalibrated." }
+          end
         else
-          render_dashboard(title: "Recalibration Error", component: TreeFamilies::Form.new(family: @family))
+          respond_to do |format|
+            format.json { render_validation_error(@family) }
+            format.html { render_dashboard(title: "Recalibration Error", component: TreeFamilies::Form.new(family: @family)) }
+          end
         end
       end
 

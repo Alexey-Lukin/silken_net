@@ -115,6 +115,16 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
           headers: investor_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
+
+    it "returns 404 for a cluster from another organization (B-4 IDOR fix)" do
+      other_org = create(:organization)
+      other_cluster = create(:cluster, organization: other_org)
+
+      get "/api/v1/oracle_visions/stream_config",
+          params: { cluster_id: other_cluster.id },
+          headers: forester_headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
   end
 
   describe "POST /api/v1/oracle_visions/simulate" do

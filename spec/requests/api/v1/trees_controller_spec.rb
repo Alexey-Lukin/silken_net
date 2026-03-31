@@ -23,7 +23,7 @@ RSpec.describe Api::V1::TreesController, type: :request do
       get "/api/v1/clusters/#{own_cluster.id}/trees", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
-      ids = response.parsed_body["trees"].map { |t| t["id"] }
+      ids = response.parsed_body["data"].map { |t| t["id"] }
       expect(ids).to include(own_tree.id)
     end
 

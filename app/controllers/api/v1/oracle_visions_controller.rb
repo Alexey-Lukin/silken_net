@@ -34,7 +34,7 @@ module Api
       # --- ПОВЕРНЕНО: Конфігурація для зовнішніх стрімів ---
       # GET /api/v1/oracle_visions/stream_config?cluster_id=5
       def stream_config
-        @cluster = Cluster.find(params[:cluster_id])
+        @cluster = current_user.organization.clusters.find(params[:cluster_id])
 
         render json: {
           stream_name: "oracle_visions_cluster_#{@cluster.id}",
@@ -46,7 +46,8 @@ module Api
 
       # POST /api/v1/oracle_visions/simulate
       def simulate
-        job_id = SimulationWorker.perform_async(params[:cluster_id], params[:variables])
+        permitted_variables = params.permit(variables: [ :sigma, :rho, :beta ])[:variables]
+        job_id = SimulationWorker.perform_async(params[:cluster_id], permitted_variables&.to_h)
 
         render json: {
           message: "Оракул почав симуляцію.",

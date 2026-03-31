@@ -5,6 +5,10 @@ class WalletBlueprint < Blueprinter::Base
 
   fields :balance, :crypto_public_address
 
+  view :show do
+    association :tree, blueprint: TreeBlueprint, view: :minimal
+  end
+
   view :with_tree do
     association :tree, blueprint: TreeBlueprint, view: :minimal
   end

@@ -3,7 +3,7 @@
 module Api
   module V1
     class AlertsController < BaseController
-      before_action :set_alert, only: [ :resolve ]
+      before_action :set_alert, only: [ :show, :resolve ]
 
       # GET /api/v1/alerts
       def index
@@ -35,6 +35,29 @@ module Api
             render_dashboard(
               title: "Alerts Command",
               component: Alerts::Index.new(alerts: @alerts, pagy: @pagy, organization: current_user.organization)
+            )
+          end
+        end
+      end
+
+      # GET /api/v1/alerts/:id
+      def show
+        respond_to do |format|
+          format.json do
+            render json: {
+              data: @alert.as_json(
+                include: {
+                  cluster: { only: [ :id, :name ] },
+                  tree: { only: [ :id, :did, :latitude, :longitude ] }
+                },
+                methods: [ :coordinates, :actionable? ]
+              )
+            }
+          end
+          format.html do
+            render_dashboard(
+              title: "Alert ##{@alert.id}",
+              component: Alerts::Row.new(alert: @alert)
             )
           end
         end

@@ -16,7 +16,7 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              trees: TreeBlueprint.render_as_hash(@trees, view: :index),
+              data: TreeBlueprint.render_as_hash(@trees, view: :index),
               pagy: { page: @pagy.page, limit: @pagy.limit, count: @pagy.count, pages: @pagy.last }
             }
           end

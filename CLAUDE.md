@@ -8,11 +8,11 @@ Silken Net (Gaia 2.0) is a bio-IoT D-MRV platform for planetary-scale forest mon
 
 ## Environment Setup
 
-**Ruby 4.0.1 is mandatory.** The system Ruby may differ. Always set PATH first:
+**Ruby 4.0.2 is mandatory.** The system Ruby may differ. Always set PATH first:
 
 ```bash
-export PATH="/opt/hostedtoolcache/Ruby/4.0.1/x64/bin:$PATH"
-ruby --version  # Must output: ruby 4.0.1
+export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
+ruby --version  # Must output: ruby 4.0.2
 ```
 
 ## Frequent Commands

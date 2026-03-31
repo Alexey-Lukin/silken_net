@@ -12,8 +12,8 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              wallets: @wallets,
-              pagy: { page: @pagy.page, limit: @pagy.limit, count: @pagy.count, pages: @pagy.last }
+              data: WalletBlueprint.render_as_hash(@wallets),
+              pagy: pagy_metadata(@pagy)
             }
           end
           format.html do
@@ -36,9 +36,9 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              wallet: @wallet,
-              transactions: @transactions,
-              pagy: { page: @pagy_tx.page, limit: @pagy_tx.limit, count: @pagy_tx.count, pages: @pagy_tx.last }
+              data: WalletBlueprint.render_as_hash(@wallet, view: :show),
+              transactions: BlockchainTransactionBlueprint.render_as_hash(@transactions, view: :index),
+              pagy: pagy_metadata(@pagy_tx)
             }
           end
           format.html do

@@ -24,7 +24,7 @@ Trees generate streaming potentials (40-100mV) from xylem ion transport and pH g
 
 | Category | Technology |
 |----------|-----------|
-| Language | Ruby 4.0.1 |
+| Language | Ruby 4.0.2 |
 | Framework | Rails 8.1.2 (Omakase) |
 | Database | PostgreSQL + Solid Cache + Solid Cable + Solid Queue |
 | Background Jobs | Sidekiq + sidekiq-scheduler (9 priority queues, 31 workers) |
