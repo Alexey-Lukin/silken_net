@@ -31,7 +31,7 @@ module Api
       # GET /api/v1/users/:id
       def show
         @user = policy_scope(User).find(params[:id])
-        authorize @user, :me?
+        authorize @user
 
         respond_to do |format|
           format.json do

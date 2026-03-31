@@ -6,7 +6,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def show?
-    me?
+    same_organization?(record.organization_id)
   end
 
   def me?
