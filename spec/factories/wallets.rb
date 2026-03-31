@@ -3,6 +3,7 @@
 FactoryBot.define do
   factory :wallet do
     tree
+    organization { tree&.cluster&.organization }
     balance { 5000.0 }
     hadron_kyc_status { "approved" }
     sequence(:crypto_public_address) { |n| "0x#{'a' * 4}#{'%036x' % n}" }
