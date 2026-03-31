@@ -196,7 +196,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         post "/api/v1/provisioning/register", params: bad_type_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:internal_server_error)
-        expect(response.parsed_body["error"]).to include("Збій ініціації")
+        expect(response.parsed_body["error"]).to include("Збій у ядрі Океану")
       end
     end
 

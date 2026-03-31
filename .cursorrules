@@ -10,7 +10,7 @@
 
 ## 🛠 Tech Stack
 
-- **Backend:** Rails 8.1.2 (Omakase), Ruby 4.0.1, PostgreSQL (4 DBs: primary, cache, queue, cable).
+- **Backend:** Rails 8.1.2 (Omakase), Ruby 4.0.2, PostgreSQL (4 DBs: primary, cache, queue, cable).
 - **Frontend:** Phlex components, Tailwind CSS (dark-first `gaia-*` tokens), Stimulus, Turbo 8, Lookbook previews.
 - **Jobs:** Sidekiq (31+ workers, 9 strict-priority queues) + Solid Queue/Cache/Cable.
 - **Hardware:** STM32WLE5JC, AES-256, 21-byte binary packets (1 header + 4 DID + 8 sensor + 4 Lorenz + 2 TinyML + 2 CRC).
@@ -27,7 +27,7 @@
 - **Blockchain:** Solidity contracts in `contracts/` use Foundry toolchain. Ruby ↔ blockchain interaction is isolated in `app/services/` namespaces (Polygon, Ethereum, Solana, Celo, etc.).
 - **Testing:** RSpec + FactoryBot + Capybara + Cuprite. Always run `bundle exec rubocop -A` before finishing.
 - **Language:** Code and API in English. Documentation and comments may be in Ukrainian.
-- **Ruby:** Version 4.0.1 — use modern syntax (pattern matching, numbered block params, `it` keyword).
+- **Ruby:** Version 4.0.2 — use modern syntax (pattern matching, numbered block params, `it` keyword).
 
 ## 📋 Task Management
 

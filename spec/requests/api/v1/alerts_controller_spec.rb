@@ -43,6 +43,22 @@ RSpec.describe Api::V1::AlertsController, type: :request do
     end
   end
 
+  describe "GET /api/v1/alerts/:id" do
+    it "returns a specific alert from the user's organization" do
+      get "/api/v1/alerts/#{own_alert.id}", headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+
+      body = response.parsed_body["data"]
+      expect(body["id"]).to eq(own_alert.id)
+      expect(body).to have_key("coordinates")
+    end
+
+    it "returns 404 for an alert from another organization" do
+      get "/api/v1/alerts/#{other_alert.id}", headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   describe "PATCH /api/v1/alerts/:id/resolve" do
     it "resolves an alert belonging to the user's organization" do
       patch resolve_api_v1_alert_path(own_alert), headers: headers, as: :json

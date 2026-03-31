@@ -5,6 +5,10 @@ class UserPolicy < ApplicationPolicy
     admin_or_above?
   end
 
+  def show?
+    same_organization?(record.organization_id)
+  end
+
   def me?
     true
   end

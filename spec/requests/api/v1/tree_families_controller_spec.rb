@@ -111,6 +111,22 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
       expect(response).to have_http_status(:redirect)
     end
 
+    context "when as JSON" do
+      it "returns 201 with JSON body on success" do
+        post "/api/v1/tree_families", params: valid_params, headers: headers, as: :json
+        expect(response).to have_http_status(:created)
+
+        body = response.parsed_body
+        expect(body["data"]["name"]).to eq("Silver Birch")
+      end
+
+      it "returns validation errors on failure" do
+        post "/api/v1/tree_families", params: invalid_params, headers: headers, as: :json
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body).to have_key("errors")
+      end
+    end
+
     it "does not create with invalid params and re-renders form" do
       expect {
         post "/api/v1/tree_families", params: invalid_params, headers: headers
@@ -162,6 +178,34 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
             headers: investor_headers
 
       expect(response).to have_http_status(:forbidden)
+    end
+
+    context "when as JSON" do
+      it "returns 200 with JSON body on success" do
+        patch "/api/v1/tree_families/#{scots_pine.id}",
+              params: { tree_family: { name: "Updated Pine" } },
+              headers: headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["data"]["name"]).to eq("Updated Pine")
+      end
+
+      it "returns validation errors on failure" do
+        patch "/api/v1/tree_families/#{scots_pine.id}",
+              params: { tree_family: { name: "" } },
+              headers: headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body).to have_key("errors")
+      end
+    end
+  end
+
+  describe "DELETE /api/v1/tree_families/:id" do
+    it "is not routable because destroy route is not defined (B-3 fix)" do
+      delete "/api/v1/tree_families/#{scots_pine.id}", headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
+      expect(TreeFamily.exists?(scots_pine.id)).to be true
     end
   end
 end

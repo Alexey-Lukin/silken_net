@@ -13,7 +13,7 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              data: @gateways,
+              data: GatewayBlueprint.render_as_hash(@gateways),
               pagy: pagy_metadata(@pagy)
             }
           end
@@ -33,7 +33,7 @@ module Api
         @gateway = current_user.organization.gateways.find(params[:id])
 
         respond_to do |format|
-          format.json { render json: @gateway }
+          format.json { render json: GatewayBlueprint.render_as_hash(@gateway) }
           format.html do
             @latest_log = @gateway.latest_gateway_telemetry_log
             @active_soldiers = @gateway.trees.where(status: :active).limit(200)

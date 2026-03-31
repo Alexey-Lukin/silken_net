@@ -29,7 +29,7 @@ L1  Biophysics            Ti-6Al-4V gyroid anchor, EBFC (GOx anode + Laccase cat
 
 | Layer      | Technology                                                        |
 |------------|-------------------------------------------------------------------|
-| Language   | Ruby 4.0.1                                                        |
+| Language   | Ruby 4.0.2                                                        |
 | Framework  | Rails 8.1.2 (API + Hotwire/Turbo 8/Stimulus, Phlex, Tailwind)    |
 | Database   | PostgreSQL (4 databases: primary, cache, queue, cable)            |
 | Jobs       | Sidekiq (31+ workers, 9 strict-priority queues) + Solid Queue    |
@@ -200,21 +200,21 @@ bundle exec rubocop -A
 
 ## Environment Setup
 
-### Ruby 4.0.1 (CRITICAL)
+### Ruby 4.0.2 (CRITICAL)
 
-The system Ruby in this environment is **NOT** 4.0.1. Ruby 4.0.1 is pre-installed via **hostedtoolcache** at:
+The system Ruby in this environment is **NOT** 4.0.2. Ruby 4.0.2 is pre-installed via **hostedtoolcache** at:
 
 ```
-/opt/hostedtoolcache/Ruby/4.0.1/x64/bin
+/opt/hostedtoolcache/Ruby/4.0.2/x64/bin
 ```
 
 **You MUST add it to PATH before running ANY Ruby, Bundler, Rails, or RSpec command:**
 
 ```bash
-export PATH="/opt/hostedtoolcache/Ruby/4.0.1/x64/bin:$PATH"
+export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
 ```
 
-Always verify with `ruby --version` — it must output `ruby 4.0.1`. If it shows any other version (e.g. 3.2.x), the PATH is not set correctly and `bundle install` / `bundle exec rspec` will fail with version mismatch errors.
+Always verify with `ruby --version` — it must output `ruby 4.0.2`. If it shows any other version (e.g. 3.2.x), the PATH is not set correctly and `bundle install` / `bundle exec rspec` will fail with version mismatch errors.
 
 ### Migrations & structure.sql
 
@@ -224,7 +224,7 @@ This project uses `db/structure.sql` (not `schema.rb`) because PostgreSQL-specif
 
 1. Run the migration against the **development** database:
    ```bash
-   export PATH="/opt/hostedtoolcache/Ruby/4.0.1/x64/bin:$PATH"
+   export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
    bundle exec rails db:migrate
    ```
 2. This regenerates `db/structure.sql`.
@@ -234,7 +234,7 @@ This project uses `db/structure.sql` (not `schema.rb`) because PostgreSQL-specif
 
 - This is a **Ukrainian-founded** project; comments and README may be in Ukrainian, but code and API are in English.
 - The **GitHub Wiki** is the SSOT — consult it for architectural decisions before making changes.
-- Ruby version is **4.0.1** — use modern Ruby syntax (pattern matching, numbered block params, `it` keyword, etc.).
+- Ruby version is **4.0.2** — use modern Ruby syntax (pattern matching, numbered block params, `it` keyword, etc.).
 - Rails version is **8.1.2** — use Rails 8 conventions (Solid Queue/Cache/Cable, no Redis dependency for queue/cache).
 - The project uses **4 separate PostgreSQL databases** (primary, cache, queue, cable) — be aware of `connects_to` in models.
 - The **12-chain blockchain architecture** spans Polygon, Ethereum L1, Solana, Celo, peaq, IoTeX, Chainlink, KlimaDAO, Streamr, Filecoin, The Graph, and Polygon Hadron. Web3 services are namespaced under `app/services/`.

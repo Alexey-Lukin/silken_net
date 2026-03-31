@@ -56,7 +56,7 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     it "returns wallet with paginated transactions" do
       get "/api/v1/wallets/#{wallet.id}", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body).to have_key("wallet")
+      expect(response.parsed_body).to have_key("data")
       expect(response.parsed_body).to have_key("transactions")
       expect(response.parsed_body).to have_key("pagy")
     end

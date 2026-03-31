@@ -21,7 +21,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
 
         body = response.parsed_body
         expect(body).to have_key("data")
-        expect(body).to have_key("meta")
+        expect(body).to have_key("pagy")
 
         ids = body["data"].map { |u| u["id"] }
         expect(ids).to include(admin.id, extra_user.id)
@@ -31,7 +31,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
         get "/api/v1/users", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
 
-        meta = response.parsed_body["meta"]
+        meta = response.parsed_body["pagy"]
         expect(meta).to include("page", "limit", "count", "pages")
       end
     end
@@ -50,6 +50,49 @@ RSpec.describe Api::V1::UsersController, type: :request do
 
     it "returns 401 without authentication" do
       get "/api/v1/users", as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
+  describe "GET /api/v1/users/:id" do
+    let!(:extra_user) { create(:user, :forester, organization: organization) }
+
+    context "when as JSON" do
+      it "returns a specific user from the same organization" do
+        get "/api/v1/users/#{extra_user.id}", headers: admin_headers, as: :json
+        expect(response).to have_http_status(:ok)
+
+        body = response.parsed_body
+        expect(body["id"]).to eq(extra_user.id)
+        expect(body["first_name"]).to eq(extra_user.first_name)
+      end
+
+      it "works for non-admin users viewing org members" do
+        get "/api/v1/users/#{admin.id}", headers: investor_headers, as: :json
+        expect(response).to have_http_status(:ok)
+
+        body = response.parsed_body
+        expect(body["id"]).to eq(admin.id)
+      end
+    end
+
+    context "when as HTML" do
+      it "renders the dashboard page" do
+        get "/api/v1/users/#{extra_user.id}", headers: admin_headers
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    it "returns 404 for a user from another organization" do
+      other_org = create(:organization)
+      other_user = create(:user, organization: other_org)
+
+      get "/api/v1/users/#{other_user.id}", headers: investor_headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns 401 without authentication" do
+      get "/api/v1/users/#{admin.id}", as: :json
       expect(response).to have_http_status(:unauthorized)
     end
   end
