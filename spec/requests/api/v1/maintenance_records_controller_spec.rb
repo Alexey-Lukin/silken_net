@@ -45,7 +45,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       get "/api/v1/maintenance_records", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
-      record_ids = response.parsed_body["records"].map { |r| r["id"] }
+      record_ids = response.parsed_body["data"].map { |r| r["id"] }
       expect(record_ids).to include(own_record.id)
       expect(record_ids).not_to include(other_record.id)
     end
@@ -62,7 +62,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       get "/api/v1/maintenance_records", params: { action_type: "inspection" },
                                          headers: headers, as: :json
       expect(response).to have_http_status(:ok)
-      types = response.parsed_body["records"].map { |r| r["action_type"] }.uniq
+      types = response.parsed_body["data"].map { |r| r["action_type"] }.uniq
       expect(types).to eq([ "inspection" ])
     end
 
@@ -71,7 +71,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       get "/api/v1/maintenance_records", params: { verified: "1" },
                                          headers: headers, as: :json
       expect(response).to have_http_status(:ok)
-      ids = response.parsed_body["records"].map { |r| r["id"] }
+      ids = response.parsed_body["data"].map { |r| r["id"] }
       expect(ids).to include(own_record.id)
     end
 

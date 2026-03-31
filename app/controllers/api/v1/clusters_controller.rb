@@ -18,10 +18,7 @@ module Api
           # 1. API Response (Mobile / Externals)
           format.json do
             render json: {
-              data: @clusters.as_json(
-                only: [ :id, :name, :region, :geojson_polygon ],
-                methods: [ :health_index, :total_active_trees, :geo_center, :active_threats? ]
-              ),
+              data: ClusterBlueprint.render_as_hash(@clusters),
               pagy: pagy_metadata(@pagy)
             }
           end
@@ -44,17 +41,7 @@ module Api
         respond_to do |format|
           # 1. API Response
           format.json do
-            render json: @cluster.as_json(
-              include: {
-                gateways: {
-                  only: [ :uid, :state, :last_seen_at, :latitude, :longitude ]
-                },
-                naas_contracts: {
-                  only: [ :id, :status, :total_value, :emitted_tokens ]
-                }
-              },
-              methods: [ :health_index, :total_active_trees, :geo_center ]
-            )
+            render json: ClusterBlueprint.render_as_hash(@cluster, view: :show)
           end
 
           # 2. Dashboard Response

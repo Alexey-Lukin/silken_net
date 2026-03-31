@@ -151,7 +151,7 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 
 ## 🛠️ Технологічний Стек (The Omakase Way)
 
-* **Backend**: Ruby **4.0.1** / Rails **8.1.2**.
+* **Backend**: Ruby **4.0.2** / Rails **8.1.2**.
 * **Database**: PostgreSQL + **Solid Cache** + **Solid Cable** + **Solid Queue**.
 * **Background Jobs**: **Sidekiq** + **sidekiq-scheduler** (черги: `uplink`, `alerts`, `critical`, `downlink`, `default`, `web3_critical`, `web3`, `web3_low`, `low`; 31 воркер).
 * **Frontend**: Hotwire (Turbo 8 / Stimulus), Tailwind CSS, **Phlex** (компонентна система).

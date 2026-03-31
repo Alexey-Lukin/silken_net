@@ -29,7 +29,7 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              records: MaintenanceRecordBlueprint.render_as_hash(@records, view: :index),
+              data: MaintenanceRecordBlueprint.render_as_hash(@records, view: :index),
               pagy: { page: @pagy.page, limit: @pagy.limit, count: @pagy.count, pages: @pagy.last }
             }
           end

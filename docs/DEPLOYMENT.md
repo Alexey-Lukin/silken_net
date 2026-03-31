@@ -335,7 +335,7 @@ kamal deploy -d canopy
 
 ```
 ┌─────────────────────┐
-│ Stage 1: base        │  ruby:4.0.1-slim + runtime packages
+│ Stage 1: base        │  ruby:4.0.2-slim + runtime packages
 ├─────────────────────┤
 │ Stage 2: build       │  + build tools → bundle install → precompile
 ├─────────────────────┤

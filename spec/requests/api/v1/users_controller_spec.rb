@@ -21,7 +21,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
 
         body = response.parsed_body
         expect(body).to have_key("data")
-        expect(body).to have_key("meta")
+        expect(body).to have_key("pagy")
 
         ids = body["data"].map { |u| u["id"] }
         expect(ids).to include(admin.id, extra_user.id)
@@ -31,7 +31,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
         get "/api/v1/users", headers: admin_headers, as: :json
         expect(response).to have_http_status(:ok)
 
-        meta = response.parsed_body["meta"]
+        meta = response.parsed_body["pagy"]
         expect(meta).to include("page", "limit", "count", "pages")
       end
     end

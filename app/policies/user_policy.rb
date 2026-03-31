@@ -5,6 +5,10 @@ class UserPolicy < ApplicationPolicy
     admin_or_above?
   end
 
+  def show?
+    me?
+  end
+
   def me?
     true
   end

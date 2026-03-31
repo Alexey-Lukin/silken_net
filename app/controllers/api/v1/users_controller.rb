@@ -14,7 +14,7 @@ module Api
             pagy, users = pagy(scope)
             render json: {
               data: UserBlueprint.render_as_hash(users, view: :crew),
-              meta: { page: pagy.page, limit: pagy.limit, count: pagy.count, pages: pagy.last }
+              pagy: pagy_metadata(pagy)
             }
           end
           format.html do
@@ -22,6 +22,29 @@ module Api
             render_dashboard(
               title: "Crew Management // The Clan",
               component: Users::Index.new(users: @users, pagy: @pagy)
+            )
+          end
+        end
+      end
+
+      # --- ПРОФІЛЬ УЧАСНИКА ---
+      # GET /api/v1/users/:id
+      def show
+        @user = policy_scope(User).find(params[:id])
+        authorize @user, :me?
+
+        respond_to do |format|
+          format.json do
+            render json: UserBlueprint.render(@user, view: :crew)
+          end
+          format.html do
+            render_dashboard(
+              title: "Profile // #{@user.first_name}",
+              component: Users::Profile.new(
+                user: @user,
+                maintenance_count: @user.maintenance_records.count,
+                active_identities: @user.identities.active.to_a
+              )
             )
           end
         end

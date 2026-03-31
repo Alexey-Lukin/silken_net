@@ -61,7 +61,7 @@ Rails.application.routes.draw do
       end
 
       # Біологічні константи (DNA Registry)
-      resources :tree_families
+      resources :tree_families, only: [ :index, :show, :new, :create, :edit, :update ]
 
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       # 📡 НЕЙРОННА МЕРЕЖА (Hardware & Telemetry)
