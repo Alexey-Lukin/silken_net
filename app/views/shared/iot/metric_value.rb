@@ -14,12 +14,12 @@ module Views
 
         def view_template
           span(
-            class: "text-compact font-mono text-emerald-400 tabular-nums",
+            class: "text-compact font-mono text-gaia-primary tabular-nums",
             title: full_value_text
           ) do
             plain display_value
             if @unit
-              span(class: "text-emerald-700 ml-0.5") { @unit }
+              span(class: "text-gaia-text-muted ml-0.5") { @unit }
             end
           end
         end

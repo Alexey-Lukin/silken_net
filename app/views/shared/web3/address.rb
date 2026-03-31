@@ -19,7 +19,7 @@ module Views
               data: { controller: "clipboard", clipboard_content_value: @address }
             ) do
               span(
-                class: "text-compact font-mono text-emerald-500 break-all leading-relaxed",
+                class: "text-compact font-mono text-gaia-primary break-all leading-relaxed",
                 title: @address
               ) { truncated_address }
               button(
@@ -31,7 +31,7 @@ module Views
               ) { copy_icon }
             end
           else
-            span(class: "text-compact font-mono text-gray-700 italic") { @fallback }
+            span(class: "text-compact font-mono text-gaia-text-muted italic") { @fallback }
           end
         end
 
@@ -44,8 +44,8 @@ module Views
         end
 
         def copy_button_classes
-          "text-emerald-700 hover:text-emerald-300 " \
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 " \
+          "text-gaia-primary hover:text-gaia-primary-hover " \
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary " \
             "transition-colors duration-200 cursor-pointer"
         end
 
