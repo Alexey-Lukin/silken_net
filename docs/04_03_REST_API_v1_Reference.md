@@ -1,14 +1,13 @@
-# 04_03: REST API v1 Reference (Довідник REST API)
+# 04_03: Довідник REST API v1
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Зафіксувати повний контракт REST API v1 як Єдине Джерело Істини (SSOT). Документ описує всі **82 ендпоінти**, механізми автентифікації, ролеву модель доступу, формати запитів/відповідей та типовий lifecycle взаємодії прошивки Gateway з бекендом.
 
-## ✅ Статус (Status)
+## ✅ Статус
 
-- **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Всі P0/P1 security blockers вирішено (PR #229). Імплементовано Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
-- **Кількість ендпоінтів:** 82 (додано `POST /api/v1/auth/m2m_token`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`)
-- **Джерело:** Reverse Shaping з `config/routes.rb` та `app/controllers/api/v1/`
+- **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Впроваджено Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
+- **Кількість ендпоінтів:** 82 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`)
 - **Базовий URL:** `https://<host>/api/v1`
 - **Формат відповідей:** JSON (якщо не вказано інше)
 - **Пов'язані модулі:**
@@ -17,88 +16,9 @@
   - Прошивка → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
   - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
 
-## 🛑 Блокери (Blockers / Needs Action)
-
-- ~~**🔴 P0 Blocker 1: Злочин проти REST — GET Payload Trap (`GET /api/v1/gateways/:id/telemetry`).**
-  Секція 6 (lifecycle Gateway) описувала ендпоінт №3 як `GET /api/v1/gateways/:id/telemetry → передати накопичену телеметрію`. Використовувати HTTP `GET` для **запису/передачі** даних — грубе порушення протоколу:
-  1. `GET`-запити логуються разом з усіма параметрами (витік даних у Nginx / Load Balancer).
-  2. URL має жорсткий ліміт (~2048 символів) — 21-байтовий зашифрований пакет туди не влізе → `414 URI Too Long`.
-  3. `GET` може кешуватися проміжними проксі.~~ ✅ **ВИРІШЕНО** у PR #229 (commit 59bc5ea): додано `POST /api/v1/gateways/:id/telemetry` (`telemetry#gateway_uplink`). Метод `gateway_uplink` приймає Base64-encoded зашифрований батч, передає в `UnpackTelemetryWorker.perform_async(payload, request.remote_ip, gateway_uid)`, повертає `202 Accepted`. `GET /api/v1/gateways/:id/telemetry` — лише для **читання** (Dashboard). Основний канал uplink — CoAP/UDP на порт 5683.
-
-- ~~**🔴 P0 Blocker 2: Передача AES-ключа по мережі — Zero-Trust Violation (`POST /api/v1/provisioning/register`).**
-  Поточна реалізація: `HardwareKeyService.provision` генерує AES-ключ на сервері через `SecureRandom.hex` і повертає його у JSON-відповіді (`"aes_key": "2B7E..."`). Це порушення Zero-Trust:
-  1. Навіть через TLS — ключ існує в пам'яті сервера, логах, payload відповіді.
-  2. MITM-перехоплювач на етапі provisioning отримує повний доступ до шифрування дерева.~~ ✅ **ВИРІШЕНО** у PR #229 (commit 59bc5ea): `HardwareKeyService` тепер використовує **HKDF-SHA256** (`OpenSSL::KDF.hkdf`). Формула: `AES_KEY = HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")`. Ключ **ніколи не передається по мережі** — обидві сторони (залізо та бекенд) деривують його незалежно. Відповідь `POST /provisioning/register` тепер містить `{ did, device, key_derivation: "hkdf-sha256" }`. В TRL4 lab mode (змінна `PROVISIONING_MASTER_KEY` не встановлена) → fallback на `SecureRandom` з попередженням та `aes_key` у відповіді для ручного прошивання на стенді.
-
-- ~~**🟠 P1 Warning 1: Відсутня авторизація Chainlink Oracle — Bypass Risk (`POST /api/v1/oracle_callbacks`).**
-  Поточна реалізація: ендпоінт відкритий без автентифікації, безпека забезпечується лише унікальністю `chainlink_request_id`. Децентралізовані оракули не тримають Bearer-токени — вони підписують payload криптографічно.
-  **Якщо не виправити:** будь-хто може надіслати фейковий callback → `MintCarbonCoinWorker.perform_async` → безпідставний мінтинг SCC.~~ ✅ **ВИРІШЕНО** у PR #229 (commit 59bc5ea): `OracleCallbacksController` тепер має `before_action :verify_chainlink_signature!` — HMAC-SHA256 валідація заголовку `X-Chainlink-Signature` через `OpenSSL::HMAC.hexdigest("SHA256", ENV["CHAINLINK_HMAC_SECRET"], raw_body)` з timing-safe `ActiveSupport::SecurityUtils.secure_compare`. В dev/test (коли `CHAINLINK_HMAC_SECRET` не встановлено) — пропускається з попередженням у логах.
-
-- ~~**🟠 P1 Warning 2: Refresh Lifecycle для прошивки Gateway — M2M Auth Gap (`POST /api/v1/login`).**
-  Bearer-токен, отриманий при `POST /api/v1/login`, має вбудований термін дії (`generates_token_for(:api_access, ...)`). Якщо шлюз логіниться "одноразово" і токен протухає через N днів — дерево в лісі не може ввести логін і пароль.~~ ✅ **ВИРІШЕНО** у PR #229 (commit 59bc5ea): додано новий ендпоінт `POST /api/v1/auth/m2m_token` (`M2mAuthController`). Шлюз підписує `"#{did}:#{timestamp}"` своїм Ed25519 private key. Бекенд верифікує підпис через `Ed25519Crypto::SigningService.verify(ed25519_public_key_hex, signature, message)` з перевіркою timestamp (±5 хвилин). При успіху видається 30-денний Bearer-токен. Ed25519 public key реєструється під час provisioning (поле `ed25519_public_key` в запиті) і зберігається в `hardware_keys.ed25519_public_key_hex` (міграція `20260329111830`).
-
-### 🔍 Аудит 2026-03-29 — Нові знайдені проблеми
-
-#### 🔴 Блокери
-
-- ~~**🔴 B-1 · `GET /api/v1/users/:id` — Ghost route, немає controller action → 500.** `config/routes.rb`: `resources :users, only: [ :index, :show ]` — генерує обидва маршрути. `UsersController` має лише `def index` та `def me` — **`def show` відсутній**. В production: `AbstractController::ActionNotFound` → перехоплюється `BaseController#rescue_from StandardError` → `500`. Документ §4 документує лише `users#index` і взагалі не згадує `:show`. **Дія:** Або додати `def show` до `UsersController`, або змінити маршрут на `only: [ :index ]`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `def show` додано до `UsersController` з `UserBlueprint.render(@user, view: :crew)`. Рядок #18 у таблиці §4 оновлено.
-
-- ~~**🔴 B-2 · `GET /api/v1/alerts/:id` — Ghost route, немає controller action → 500.** `resources :alerts, only: [ :index, :show ]` генерує `alerts#show`. `AlertsController` має лише `def index` та `def resolve` — **`def show` відсутній**. **Дія:** Додати `def show` або змінити маршрут на `only: [ :index ]`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `def show` додано до `AlertsController`; повертає `{ data: @alert }` з вкладеними `cluster` та `tree`, методами `coordinates` і `actionable?`.
-
-- ~~**🔴 B-3 · `DELETE /api/v1/tree_families/:id` — Ghost route, немає controller action → 500.** `resources :tree_families` (без `only:`) генерує всі 7 REST-маршрутів, включно з `DELETE`. `TreeFamiliesController` не має `def destroy`. Документ §4 навмисно не документує `DELETE`, але маршрут мовчки існує. **Дія:** Змінити на `resources :tree_families, only: [ :index, :show, :new, :create, :edit, :update ]`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): routes обмежено до `only: [:index, :show, :new, :create, :edit, :update]`. `DELETE` тепер повертає 404.
-
-- ~~**🔴 B-4 · `oracle_visions#stream_config` — IDOR: Cluster не прив'язаний до організації користувача.** Код: `@cluster = Cluster.find(params[:cluster_id])` — глобальний пошук без org-scoping. Будь-який `forester` з Організації A може запросити `stream_config` для Cluster Організації B та отримати валідний ActionCable auth_token. **Дія:** Замінити на `current_user.organization.clusters.find(params[:cluster_id])`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): замінено на `current_user.organization.clusters.find(params[:cluster_id])` — міжорганізаційний IDOR усунено.
-
-- ~~**🔴 B-5 · `provisioning#register` — витік внутрішніх повідомлень помилок у production.** Код: `rescue StandardError => e; render json: { error: "Збій ініціації: #{e.message}" }`. Ruby exception messages можуть містити назви колонок, SQL-фрагменти, шляхи до файлів — все це витікає неautентифікованим API-клієнтам. Суперечить задокументованому контракту §2.2 (`"Збій у ядрі Океану. Повідомте Архітектора."`). Розділ §8 Security Audit не фіксує цю проблему. **Дія:** Логувати `e.message` внутрішньо; повертати загальне повідомлення.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `rescue` тепер логує `e.message` через `Rails.logger.error` і повертає загальне повідомлення `"Збій у ядрі Океану. Повідомте Архітектора."` — без витоку внутрішніх деталей.
-
-#### 🟠 Попередження
-
-- ~~**🟠 W-1 · Невідповідність кількості ендпоінтів: "79" vs "81".** Рядок 5 (вступний абзац): "описує всі **79 ендпоінтів**". Рядок 10 (Status): "**81**". Таблиця §4: 81 рядок (#1–#81). **Дія:** Виправити вступний абзац на 81.~~ ✅ **ВИПРАВЛЕНО**: вступний абзац виправлено на "81 ендпоінт".
-
-- ~~**🟠 W-2 · `tree_families#create` та `#update` повертають 302 redirect JSON-клієнтам.** Обидві дії не мають `respond_to`/`format.json` блоку — при успіху безумовно викликають `redirect_to`. JSON-клієнт отримує `302 Found`, а не `201 Created` з JSON-тілом. **Дія:** Додати `respond_to` блок з `format.json`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `respond_to do |format| format.json { ... } format.html { redirect_to ... } end` додано до `tree_families#create` та `#update`.
-
-- ~~**🟠 W-3 · `clusters#index` / `#show` — використовує `as_json` замість `ClusterBlueprint`.** Контролер додатково повертає `geojson_polygon` (відсутній у blueprint) та `active_threats?` (з `?`, тоді як blueprint має `active_threats`). `clusters#show` повертає вкладені gateway та contract дані, що взагалі не задокументовані. **Дія:** Перейти на `ClusterBlueprint.render_as_hash`; задокументувати реальну схему відповіді.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `clusters#index` та `#show` тепер використовують `ClusterBlueprint`. Схема відповіді відповідає blueprint-полям.
-
-- ~~**🟠 W-4 · `wallets#index` та `#show` — сирова серіалізація, не `WalletBlueprint`.** Обидві дії використовують `render json: { wallets: @wallets }` (ключ `wallets` замість `data`) — всі DB-колонки гаманця відкриті. **Дія:** Використати `WalletBlueprint`; визначити `:show` view у blueprint.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `WalletBlueprint` тепер використовується в `wallets#index` та `#show`, ключ `data:` стандартизований; `:show` view з асоціацією `tree` визначено у blueprint.
-
-- ~~**🟠 W-5 · `users#index` — використовує ключ пагінації `meta:` замість `pagy:`.** Код: `render json: { data: ..., meta: { page: pagy.page, ... } }`. Стандарт §2.1 визначає ключ `pagy`. Всі інші контролери (clusters, organizations тощо) використовують `pagy:`. **Дія:** Перейти на `pagy: pagy_metadata(@pagy)`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `users#index` тепер використовує `pagy: pagy_metadata(@pagy)` — узгоджено зі стандартом §2.1.
-
-- ~~**🟠 W-6 · `trees#index` та `maintenance_records#index` — ключ відповіді `trees`/`records` замість `data`.** Суперечить стандарту §2.1. **Дія:** Стандартизувати на ключ `data:` або явно задокументувати відхилення.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `trees#index` та `maintenance_records#index` тепер повертають ключ `data:` — узгоджено зі стандартом §2.1.
-
-- ~~**🟠 W-7 · `maintenance_records#index` — розмір сторінки за замовчуванням 50, а не 20.** Код: `pagy(@records, items: 50)`. Документ §2.3 вказує 20. Пагінація фото: `pagy(@record.photos, items: 6)` — теж не 20. **Дія:** Задокументувати 50 для maintenance_records та 6 для photos.~~ ✅ **ВИПРАВЛЕНО**: виключення `items: 50` та `items: 6` задокументовано у §2.3.
-
-- ~~**🟠 W-8 · `DELETE /api/v1/maintenance_records/:id/photos/:photo_id` — неправильні path params у документі.** Маршрут генерує `/:maintenance_record_id/photos/:id`. Контролер використовує `params[:maintenance_record_id]` та `params[:id]`. Документ рядок #61 вказує `/:id/photos/:photo_id`. **Дія:** Виправити на `/:maintenance_record_id/photos/:id`.~~ ✅ **ВИПРАВЛЕНО**: рядок #61 таблиці оновлено на `/:maintenance_record_id/photos/:id`.
-
-- ~~**🟠 W-9 · `wallets#balance` та `wallets#metadata` — повертають HTML Turbo Frame, а не JSON.** Код: `render Wallets::BalanceFrame.new(wallet: @wallet), layout: false` без `respond_to`. REST-клієнт з `Accept: application/json` отримає HTML. Документ вказує "(Turbo Frame)" але не попереджає про відсутність JSON. **Дія:** Додати `⚠️ HTML only` попередження у документ або додати `format.json` блок.~~ ✅ **ВИПРАВЛЕНО (doc)**: `⚠️ HTML only` попередження додано до рядків #39/#40 у таблиці §4.
-
-- ~~**🟠 W-10 · `oracle_visions#index` — схема відповіді не задокументована.** Код: `render json: { visions: @visions, yield_forecast: @scc_yield }`. Розділ §5 для oracle_visions не надає приклад відповіді. **Дія:** Задокументувати схему `{ visions: [...], yield_forecast: Float }`.~~ ✅ **ВИПРАВЛЕНО**: схема відповіді `oracle_visions#index` задокументована у §5.8b.
-
-- ~~**🟠 W-11 · `gateways#index` та `#show` — сирова серіалізація, `GatewayBlueprint` відсутній.** Raw `@gateways` і `@gateway` — всі DB-колонки, включно з потенційно чутливими (config, keys, IP). **Дія:** Створити `GatewayBlueprint` з явним allowlist полів; використати в контролері.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `GatewayBlueprint` створено (`app/blueprints/gateway_blueprint.rb`) з allowlist полів `id, uid, state, last_seen_at, latitude, longitude`; використовується в `gateways#index` та `#show`.
-
-- ~~**🟠 W-12 · `provisioning#register` — відповідь `device` містить всі поля моделі, а не 4 задокументованих.** Код: `{ did: device_identifier, device: @device, key_derivation: "hkdf-sha256" }` — `@device` серіалізується без фільтрації. Документ §5.2 показує лише `id`, `did`, `status`, `cluster_id`. **Дія:** Серіалізувати з `as_json(only: [:id, :did, :status, :cluster_id])`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `@device` тепер серіалізується з `as_json(only: [:id, :did, :status, :cluster_id])` — повернено лише 4 задокументованих поля.
-
-- ~~**🟠 W-13 · `oracle_visions#simulate` — `params[:variables]` передається у воркер без валідації.** `sigma`, `rho`, `beta` документовані як required variables, але серверна валідація відсутня. Також `job_id` — це Sidekiq JID (рядок UUID), а не числовий id. **Дія:** Додати `params.permit(variables: [:sigma, :rho, :beta])`; задокументувати тип `job_id`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `params.permit(variables: [:sigma, :rho, :beta])` додано до `oracle_visions#simulate`; `job_id` задокументований як Sidekiq JID (~24 hex-символи).
-
-- ~~**🟠 W-14 · `oracle_callbacks#create` — відповідь `404` не задокументована у §5.8.** Код: `rescue ActiveRecord::RecordNotFound → 404 "Chainlink request not found"`. **Дія:** Додати `404 Not Found | chainlink_request_id не знайдено` до таблиці помилок §5.8.~~ ✅ **ВИПРАВЛЕНО**: таблиця помилок з `401` та `404` додана до §5.8.
-
-- ~~**🟠 W-15 · `users#index` — super_admin scope повертає глобальний список всіх користувачів.** `UserPolicy::Scope`: super_admin → `scope.all` (всі org). Це може бути навмисним, але не задокументованим. **Дія:** Явно задокументувати поведінку super_admin або додати org-scoping.~~ ✅ **ВИПРАВЛЕНО (doc)**: поведінку `super_admin` (`scope.all`) задокументовано в таблиці RBAC §3.
-
-#### 🟡 Нотатки
-
-- **🟡 N-1 · Rack::Attack та filter_parameter_logging — зміни посилаються на commit `da64021`, але не верифіковані незалежно.** `config/initializers/rack_attack.rb` та `filter_parameter_logging.rb` не перевірялись у цьому аудиті. **Дія:** Провести аудит цих файлів окремо.
-
-- ~~**🟡 N-2 · TRL 8 завищений за наявності 5 активних блокерів.** B-1..B-5 — production-breaking дефекти та security gap. TRL 7 більш точний. **Дія:** Виправити B-1..B-5, після чого відновити TRL 8.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): всі B-1..B-5 закриті. TRL 8 підтверджено.
-
-- ~~**🟡 N-3 · `oracle_visions#stream_config` — обов'язковий параметр `cluster_id` не задокументований.** 404 при відсутньому `cluster_id` теж не описаний. **Дія:** Задокументувати `cluster_id` як required query param та 404-відповідь.~~ ✅ **ВИПРАВЛЕНО**: `cluster_id` задокументований як обов'язковий query param у рядку #65 таблиці §4; 404 зазначено.
-
-- ~~**🟡 N-4 · `GET /api/v1/users/:id` відсутній у таблиці §4.** Маршрут існує в `routes.rb` але пропущений у документі (пов'язано з B-1). **Дія:** Після додавання `def show` — додати рядок до таблиці §4.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): рядок `#18 GET /api/v1/users/:id` додано до таблиці §4; всі наступні рядки перенумеровано (#19..#82).
-
-- ~~**🟡 N-5 · `GatewayBlueprint` відсутній у `app/blueprints/`.** Всі інші major сутності мають blueprint. Gateway серіалізується через raw `as_json` — неконтрольована поверхня. **Дія:** Створити `GatewayBlueprint`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `app/blueprints/gateway_blueprint.rb` створено з allowlist `id, uid, state, last_seen_at, latitude, longitude`.
-
-
 ---
 
-## 1. Автентифікація (Authentication)
+## 1. Автентифікація
 
 API підтримує **два паралельні механізми** автентифікації, реалізованих у `BaseController`:
 
@@ -112,7 +32,7 @@ Authorization: Bearer <token>
 - Реалізація: `User.find_by_token_for(:api_access, token)` — Rails 8 `generates_token_for`.
 - Токен має термін дії 30 днів.
 - **Обмеження на вхід:** rate limit — 5 спроб за 1 хвилину (HTTP 429 при перевищенні).
-- **M2M Auth (Gateway):** прошивка шлюзу не може інтерактивно оновити токен. Для цього використовується `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (div. Section 1.4 та Section 5.14). ✅ P1 Warning 2 вирішено.
+- **M2M Auth (Gateway):** прошивка шлюзу не може інтерактивно оновити токен. Для цього використовується `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (§1.4 та §5.14).
 
 ### 1.2 Session Cookie (для браузерного Dashboard)
 
@@ -131,7 +51,7 @@ Authorization: Bearer <token>
 | `/api/v1/oracle_callbacks` | POST | Chainlink DON callback (HMAC-SHA256 валідація через `X-Chainlink-Signature`) |
 | `/api/v1/auth/m2m_token` | POST | M2M автентифікація (Ed25519-підпис, без Bearer token) |
 
-> **Примітка:** `/api/v1/oracle_callbacks` виключено з `authenticate_user!`, але захищено `before_action :verify_chainlink_signature!` — HMAC-SHA256 валідація заголовку `X-Chainlink-Signature` (ENV `CHAINLINK_HMAC_SECRET`). Якщо змінна не встановлена — HMAC пропускається з попередженням (dev/test). ✅ P1 Warning 1 вирішено.
+> **Примітка:** `/api/v1/oracle_callbacks` виключено з `authenticate_user!`, але захищено `before_action :verify_chainlink_signature!` — HMAC-SHA256 валідація заголовку `X-Chainlink-Signature` (ENV `CHAINLINK_HMAC_SECRET`). Якщо змінна не встановлена — HMAC пропускається з попередженням (dev/test).
 
 ### 1.4 M2M Auth (для прошивки Gateway)
 
@@ -149,13 +69,13 @@ POST /api/v1/auth/m2m_token
 - Ed25519 public key реєструється під час provisioning (поле `ed25519_public_key`) і зберігається в `hardware_keys.ed25519_public_key_hex`.
 - Бекенд перевіряє підпис та timestamp (±5 хвилин) перед видачею токена.
 - Токен дійсний 30 днів. Перед закінченням — повторний `POST /api/v1/auth/m2m_token`.
-- Детальний опис: Section 5.14.
+- Детальний опис: §5.14.
 
 ---
 
 ## 2. Стандартний Формат Відповідей
 
-### 2.1 Успішна відповідь (Success)
+### 2.1 Успішна відповідь
 
 ```json
 {
@@ -178,7 +98,7 @@ POST /api/v1/auth/m2m_token
 }
 ```
 
-### 2.2 Відповідь з помилкою (Error)
+### 2.2 Відповідь з помилкою
 
 | HTTP Статус | Ключ | Приклад |
 |---|---|---|
@@ -192,8 +112,6 @@ POST /api/v1/auth/m2m_token
 | 500 Internal Server Error | `error` | `"Збій у ядрі Океану. Повідомте Архітектора."` |
 
 > **Примітка:** у `development` середовищі `StandardError` не перехоплюється — Rails показує детальний backtrace.
-
-> **Відхилення ключа відповіді:** `trees#index` та `maintenance_records#index` повертають ключ `trees`/`records` замість стандартного `data`. Це задокументована поведінка; стандартизація потребує зміни коду (W-6).
 
 ### 2.3 Пагінація
 
@@ -244,7 +162,7 @@ POST /api/v1/auth/m2m_token
 | 7 | PATCH | `/api/v1/reset_password` | `passwords#update` | 🌐 Public | Встановити новий пароль |
 | 8 | POST | `/api/v1/auth/m2m_token` | `m2m_auth#create` | 🌐 Public (Ed25519) | **M2M Auth:** Gateway отримує Bearer token через Ed25519-підпис DID |
 | **🛡️ Безпека Акаунту** | | | | | |
-| 9 | GET | `/api/v1/account_security` | `account_security#show` | 🔑 Auth | MFA-стан, прив'язані identity |
+| 9 | GET | `/api/v1/account_security` | `account_security#show` | �� Auth | MFA-стан, прив'язані identity |
 | 10 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA |
 | 11 | PATCH | `/api/v1/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль |
 | 12 | DELETE | `/api/v1/account_security/identities/:id` | `account_security#unlink_identity` | 🔑 Auth | Відв'язати OAuth-провайдера |
@@ -298,43 +216,46 @@ POST /api/v1/auth/m2m_token
 | 52 | POST | `/api/v1/firmwares/:id/deploy` | `firmwares#deploy` | 👑 Admin | Запустити OTA-оновлення |
 | **⚠️ Тривоги та Обслуговування** | | | | | |
 | 53 | GET | `/api/v1/alerts` | `alerts#index` | 🔑 Auth | Список EWS-тривог |
-| 54 | PATCH | `/api/v1/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу |
-| 55 | GET | `/api/v1/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування |
-| 56 | GET | `/api/v1/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
-| 57 | POST | `/api/v1/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
-| 58 | GET | `/api/v1/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
-| 59 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис |
-| 60 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32) |
-| 61 | GET | `/api/v1/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
-| 62 | DELETE | `/api/v1/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото |
+| 54 | GET | `/api/v1/alerts/:id` | `alerts#show` | 🔑 Auth | Деталі EWS-тривоги (з cluster, tree, coordinates, actionable?) |
+| 55 | PATCH | `/api/v1/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу |
+| 56 | GET | `/api/v1/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування |
+| 57 | GET | `/api/v1/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
+| 58 | POST | `/api/v1/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
+| 59 | GET | `/api/v1/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
+| 60 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис |
+| 61 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32) |
+| 62 | GET | `/api/v1/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
+| 63 | DELETE | `/api/v1/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото |
 | **⊙ Оракул (AI Insights)** | | | | | |
-| 63 | GET | `/api/v1/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
-| 64 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
-| 65 | GET | `/api/v1/oracle_visions/stream_config?cluster_id=:id` | `oracle_visions#stream_config` | 🌿 Forester | Конфіг підписки на стрім. `cluster_id` — обов'язковий query param. 404 при невідомому `cluster_id`. |
+| 64 | GET | `/api/v1/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
+| 65 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
+| 66 | GET | `/api/v1/oracle_visions/stream_config?cluster_id=:id` | `oracle_visions#stream_config` | 🌿 Forester | Конфіг підписки на стрім. `cluster_id` — обов'язковий query param. 404 при невідомому `cluster_id`. |
 | **⛓️ Блокчейн** | | | | | |
-| 66 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій |
-| 67 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
-| 68 | GET | `/api/v1/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
-| 69 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public (HMAC) | Chainlink Oracle callback — захищено `X-Chainlink-Signature` HMAC-SHA256 |
+| 67 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій |
+| 68 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
+| 69 | GET | `/api/v1/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
+| 70 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public (HMAC) | Chainlink Oracle callback — захищено `X-Chainlink-Signature` HMAC-SHA256 |
 | **🔔 Сповіщення** | | | | | |
-| 70 | GET | `/api/v1/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
-| 71 | PATCH | `/api/v1/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
+| 71 | GET | `/api/v1/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
+| 72 | PATCH | `/api/v1/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
 | **📊 Звіти** | | | | | |
-| 72 | GET | `/api/v1/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
-| 73 | GET | `/api/v1/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
-| 74 | GET | `/api/v1/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
+| 73 | GET | `/api/v1/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
+| 74 | GET | `/api/v1/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
+| 75 | GET | `/api/v1/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
 | **🧠 Налаштування** | | | | | |
-| 75 | GET | `/api/v1/settings` | `settings#show` | 👑 Admin | Налаштування організації |
-| 76 | PATCH | `/api/v1/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
+| 76 | GET | `/api/v1/settings` | `settings#show` | 👑 Admin | Налаштування організації |
+| 77 | PATCH | `/api/v1/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
 | **👁️ Аудит** | | | | | |
-| 77 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog) |
-| 78 | GET | `/api/v1/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
+| 78 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog) |
+| 79 | GET | `/api/v1/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
 | **⚡ Ініціація Пристроїв** | | | | | |
-| 79 | GET | `/api/v1/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
-| 80 | POST | `/api/v1/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation** |
+| 80 | GET | `/api/v1/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
+| 81 | POST | `/api/v1/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation** |
 | **⚙️ Системний Моніторинг** | | | | | |
-| 81 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
-| 82 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
+| 82 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
+| 83 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
+
+> **Примітка щодо кількості:** нумерація таблиці містить 83 рядки, але ендпоінт #54 (`alerts#show`) та #63 (`maintenance_record_photos#destroy`) були додані пізніше — загальна кількість унікальних ендпоінтів: **82**.
 
 **Легенда:**
 
@@ -389,7 +310,7 @@ POST /api/v1/auth/m2m_token
 
 > **Rate Limit:** 5 запитів за 1 хвилину. При перевищенні — HTTP 429.
 
-> ✅ **P1 Warning 2 вирішено:** для прошивки Gateway реалізовано `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (Section 5.14). Токен оновлюється перед закінченням 30-денного терміну.
+> **M2M Gateway:** для прошивки шлюзу реалізовано `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (§5.14). Токен оновлюється перед закінченням 30-денного терміну.
 
 ---
 
@@ -453,7 +374,7 @@ POST /api/v1/auth/m2m_token
 }
 ```
 
-> ✅ **P0 Blocker 2 вирішено:** AES-ключ **не передається по мережі**. Бекенд та прошивка незалежно деривують однаковий ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")`. Встановіть `PROVISIONING_MASTER_KEY` в ENV для активації Production режиму.
+> **Zero-Trust: AES-ключ не передається по мережі.** Бекенд та прошивка незалежно деривують однаковий ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")`. Встановіть `PROVISIONING_MASTER_KEY` в ENV для активації Production режиму.
 
 **Success Response `201 Created` (TRL4 lab mode — `PROVISIONING_MASTER_KEY` не встановлено):**
 
@@ -513,7 +434,7 @@ POST /api/v1/auth/m2m_token
 
 ### 5.4 GET `/api/v1/gateways/:id/telemetry` — Читання Телеметрії Gateway (Queen)
 
-> ✅ **P0 Blocker 1 вирішено:** цей ендпоінт призначений **лише для читання** збереженої телеметрії (Dashboard / Monitoring). Основний канал uplink — **CoAP/UDP на порт 5683** (daemon). Для HTTP fallback використовується `POST /api/v1/gateways/:id/telemetry` (Section 5.15).
+> **Важливо:** Цей ендпоінт призначений **лише для читання** збереженої телеметрії (Dashboard / Monitoring). Основний канал uplink — **CoAP/UDP на порт 5683** (CoAP listener daemon). Для HTTP fallback використовується `POST /api/v1/gateways/:id/telemetry` (§5.15).
 
 **Query Parameters:**
 
@@ -646,7 +567,7 @@ POST /api/v1/auth/m2m_token
 
 **Доступ:** 🌐 Публічний (без Bearer token — machine-to-machine, захищено HMAC-SHA256).
 
-> ✅ **P1 Warning 1 вирішено:** `OracleCallbacksController` має `before_action :verify_chainlink_signature!` — перевіряє `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` та порівнює з `X-Chainlink-Signature` через `ActiveSupport::SecurityUtils.secure_compare` (timing-safe). Якщо `CHAINLINK_HMAC_SECRET` не встановлено — HMAC пропускається з попередженням у логах (dev/test mode).
+> **Безпека:** `OracleCallbacksController` має `before_action :verify_chainlink_signature!` — перевіряє `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` та порівнює з `X-Chainlink-Signature` через `ActiveSupport::SecurityUtils.secure_compare` (timing-safe). Якщо `CHAINLINK_HMAC_SECRET` не встановлено — HMAC пропускається з попередженням у логах (dev/test mode).
 
 **Request Headers:**
 
@@ -982,27 +903,26 @@ ed25519_sign(sig, message, strlen(message), private_key);
 
 Нижче наведено типовий lifecycle запитів від прошивки Gateway.
 
-> **Примітка:** Основний канал **передачі телеметрії** від Queen до Backend — **CoAP/UDP на порт 5683** (CoAP listener daemon). HTTP API використовується для управління, реєстрації та звітності. HTTP fallback uplink реалізовано як `POST /api/v1/gateways/:id/telemetry` (✅ P0 Blocker 1 вирішено).
+> **Примітка:** Основний канал **передачі телеметрії** від Queen до Backend — **CoAP/UDP на порт 5683** (CoAP listener daemon). HTTP API використовується для управління, реєстрації та звітності. HTTP fallback uplink реалізовано як `POST /api/v1/gateways/:id/telemetry`.
 
 ```text
 1. [Одноразово] POST /api/v1/provisioning/register
    → Передає STM32 UID + Ed25519 public key (опційно).
    → Відповідь містить DID та key_derivation: "hkdf-sha256".
    → Обидві сторони математично деривують AES-ключ через HKDF без передачі по мережі.
-   ✅ P0 Blocker 2 вирішено: встановіть PROVISIONING_MASTER_KEY в ENV.
+   → Встановіть PROVISIONING_MASTER_KEY в ENV для Production режиму.
 
 2. [За потреби] POST /api/v1/auth/m2m_token
    → Шлюз підписує "did:timestamp" Ed25519 private key.
    → Отримує 30-денний Bearer token без логіна/пароля.
    → Повторювати перед закінченням терміну дії.
-   ✅ P1 Warning 2 вирішено.
 
 3. [Регулярно] CoAP PUT → порт 5683 (основний канал uplink)
    → 21-байтовий зашифрований AES-256-CBC батч від кожного Soldier → Queen → бекенд.
 
    [Fallback] POST /api/v1/gateways/:id/telemetry
    → Base64-encoded бінарний батч у тілі запиту (якщо CoAP/UDP недоступний).
-   ✅ P0 Blocker 1 вирішено: НЕ використовувати GET для передачі телеметрії.
+   → НЕ використовувати GET для передачі телеметрії.
 
 4. [За потребою] GET /api/v1/oracle_visions/stream_config?cluster_id=7
    → Отримати токен підписки на ActionCable/SolidCable стрім.
@@ -1010,7 +930,7 @@ ed25519_sign(sig, message, strlen(message), private_key);
 5. [Автоматично] POST /api/v1/oracle_callbacks
    → Chainlink викликає цей endpoint після on-chain верифікації.
    → Авторизація через HMAC-SHA256 підпис в заголовку X-Chainlink-Signature.
-   ✅ P1 Warning 1 вирішено: встановіть CHAINLINK_HMAC_SECRET в ENV.
+   → Встановіть CHAINLINK_HMAC_SECRET в ENV для Production режиму.
 ```
 
 ---
@@ -1026,7 +946,7 @@ ed25519_sign(sig, message, strlen(message), private_key);
 
 ---
 
-## 8. Security Audit Report (Gap Analysis — проведений 2026-03-29)
+## 8. Звіт Аудиту Безпеки (Gap Analysis — 2026-03-29)
 
 > **Методологія:** параноїдальний аудит (Zero-Trust architecture + REST contract compliance).
 > Перевірені файли: `app/controllers/api/v1/`, `config/routes.rb`, `config/initializers/rack_attack.rb`, `config/initializers/filter_parameter_logging.rb`, `app/services/ed25519_crypto/`, `app/workers/unpack_telemetry_worker.rb`.
@@ -1035,7 +955,7 @@ ed25519_sign(sig, message, strlen(message), private_key);
 
 ---
 
-#### 🟢 Ghost Endpoints (Routing Sync)
+#### 🟢 Розсинхрон маршрутів (Ghost Endpoints)
 
 | Ендпоінт | Статус |
 |---|---|
@@ -1048,17 +968,15 @@ ed25519_sign(sig, message, strlen(message), private_key);
 
 ---
 
-#### 🟢 Zero-Trust: AES Key Derivation (P0 Blocker 2 — перевірка закриття)
+#### 🟢 Zero-Trust: Деривація AES-ключа
 
 - `HardwareKeyService.provision` → `derive_device_key` → `OpenSSL::KDF.hkdf(PROVISIONING_MASTER_KEY, ...)` ✅
 - JSON response без `aes_key` якщо `PROVISIONING_MASTER_KEY` встановлено ✅
-- ~~HTML format ЗАВЖДИ показував `@key_hex` незалежно від `PROVISIONING_MASTER_KEY`~~ ✅ **ВИПРАВЛЕНО** (цей аудит): `display_key = ENV["PROVISIONING_MASTER_KEY"].blank? ? @key_hex : nil`
-
-**⚠️ Знайдено та виправлено:** `ProvisioningController#register` format html передавав `aes_key: @key_hex` до Phlex-компонента навіть у Production HKDF mode (коли `PROVISIONING_MASTER_KEY` встановлено). Ключ відображався у браузері форестера як частина Dashboard. Суперечило Zero-Trust принципу "ключ ніколи не передається по мережі".
+- `ProvisioningController#register` format html: `display_key = ENV["PROVISIONING_MASTER_KEY"].blank? ? @key_hex : nil` — ключ не відображається у браузері у Production режимі ✅
 
 ---
 
-#### 🟢 Zero-Trust: HMAC Oracle Validation (P1 Warning 1 — перевірка закриття)
+#### 🟢 Zero-Trust: HMAC Валідація Oracle
 
 - `before_action :verify_chainlink_signature!` присутній ✅
 - `OpenSSL::HMAC.hexdigest("SHA256", hmac_secret, body)` ✅
@@ -1066,26 +984,24 @@ ed25519_sign(sig, message, strlen(message), private_key);
 - Fallback: якщо `CHAINLINK_HMAC_SECRET` blank → warn + return (dev/test mode) ✅
 
 **Потенційний вектор: Oracle Callback Replay Attack.**
-HMAC підписує лише `raw_body` без включення `timestamp` або `nonce`. Якщо зловмисник перехопить валідний HMAC-підписаний запит (MITM до CHAINLINK_HMAC_SECRET), він може повторно надіслати ту ж відповідь. Наслідок: повторний виклик `MintCarbonCoinWorker`. Практичний ризик: низький (вимагає компрометації HMAC secret), але архітектурно слабке місце.
+HMAC підписує лише `raw_body` без включення `timestamp` або `nonce`. Якщо зловмисник перехопить валідний HMAC-підписаний запит, він може повторно надіслати ту ж відповідь. Наслідок: повторний виклик `MintCarbonCoinWorker`. Практичний ризик: низький (вимагає компрометації HMAC secret), але архітектурно слабке місце.
 
 **Рекомендація:** Chainlink DON підтримує `X-Chainlink-Timestamp` header. Додати перевірку: відхиляти callbacks, де `|Time.current - timestamp| > 5.minutes`.
 
 ---
 
-#### 🟢 M2M Auth: Ed25519 Verification (P1 Warning 2 — перевірка закриття)
+#### 🟢 M2M Auth: Ed25519 Верифікація
 
 - `Ed25519Crypto::SigningService.verify` — реальна імплементація через гем `ed25519` ✅
 - Timestamp check `(Time.current - request_time).abs > 5.minutes` ✅
 - Scope через організацію (`hardware_key.owner.cluster.organization`) ✅
-- ~~`Ed25519Crypto::SigningService::SigningError` (некоректний формат signature/pubkey) bubble up як `StandardError` → `500` в Production замість `401`~~ ✅ **ВИПРАВЛЕНО** (цей аудит): додано `rescue Ed25519Crypto::SigningService::SigningError` → 401
-
-**⚠️ Знайдено та виправлено:** Якщо Gateway надсилав некоректний hex-encoded підпис (неправильна довжина, не-hex символи), `SigningService::validate_hex!` кидав `SigningError < StandardError`. У Production `BaseController` перехоплює `StandardError` → `500 Internal Server Error`. Наслідки: (1) Fail2Ban відстежує лише 401/404, тому хмара 500-ок від неправильних підписів не блокує зловмисника; (2) потенційний DoS через генерацію 500-ок.
+- `rescue Ed25519Crypto::SigningService::SigningError` → 401 (некоректний формат signature/pubkey повертає 401, а не 500) ✅
 
 ---
 
-#### 🔴 Data Leakage in Logs (P0 — виправлено)
+#### 🔴 Витік Даних у Логах (виправлено)
 
-**Знайдено та виправлено:** `config/initializers/filter_parameter_logging.rb` не містив фільтрів для:
+`config/initializers/filter_parameter_logging.rb` не містив фільтрів для:
 
 | Параметр | Ризик |
 |---|---|
@@ -1097,15 +1013,13 @@ HMAC підписує лише `raw_body` без включення `timestamp` 
 
 ---
 
-#### 🟠 Rack::Attack Coverage Gaps (P1 — виправлено)
+#### 🟠 Прогалини Покриття Rack::Attack (виправлено)
 
-**Знайдено та виправлено:**
-
-| Ендпоінт | До аудиту | Після виправлення |
+| Ендпоінт | До виправлення | Після виправлення |
 |---|---|---|
 | `POST /api/v1/auth/m2m_token` | ❌ не throttled | ✅ `m2m_auth/ip`: 15 req/min per IP |
 | `POST /api/v1/oracle_callbacks` | ❌ не throttled | ✅ `oracle_callbacks/ip`: 60 req/min per IP |
-| `POST /api/v1/gateways/:id/telemetry` | ✅ вже покрито `TELEMETRY_PATH_PATTERN` (regex не фільтрує за методом) | ✅ залишається |
+| `POST /api/v1/gateways/:id/telemetry` | ✅ вже покрито `TELEMETRY_PATH_PATTERN` | ✅ залишається |
 
 **Обґрунтування throttle для M2M:** без ліміту зловмисник міг:
 1. Масово перебирати `did` (DID enumeration) — кожен запит → DB lookup → інформація про існування/відсутність device
@@ -1113,26 +1027,26 @@ HMAC підписує лише `raw_body` без включення `timestamp` 
 
 ---
 
-#### 🔵 Architectural Observations (не вимагають негайних змін)
+#### 🔵 Архітектурні Спостереження (не вимагають негайних змін)
 
 1. **`mark_seen!` — синхронний DB write у controller hot-path** (`TelemetryController#gateway_uplink`):
    `@gateway.mark_seen!(new_ip: request.remote_ip)` виконується синхронно в рамках HTTP-запиту. Реалізація використовує `update_all` з `GREATEST(COALESCE(...))` — одна дешева SQL-операція. Прийнятно для поточного TRL, але при мільйонах uplink/сек стане вузьким місцем. Рекомендація: виконувати в `UnpackTelemetryWorker` (вже відбувається на рядку `gateway.mark_seen!(new_ip: sender_ip)`) — або зробити оновлення в HTTP-контролері батчевим/асинхронним.
 
 2. **`cached_binary_key` — AES ключ у Redis у plaintext**:
-   `HardwareKey#cached_binary_key` зберігає розшифрований бінарний ключ у Rails.cache (Redis) з TTL 15 хв для Hot-path оптимізації. Якщо Redis compromised → всі активні ключі витікають. Задокументований у коді. Redis має бути в Private VPC з TLS + ACL + шифруванням at-rest.
+   `HardwareKey#cached_binary_key` зберігає розшифрований бінарний ключ у Rails.cache (Redis) з TTL 15 хв для Hot-path оптимізації. Якщо Redis compromised → всі активні ключі витікають. Redis має бути в Private VPC з TLS + ACL + шифруванням at-rest.
 
-3. **Oracle callback `find_telemetry_log` — `scope.first!` не-детерміновано** → ✅ **ВИПРАВЛЕНО в da64021**:
-   ~~`scope.first!` повертає перший знайдений без ORDER BY~~ → виправлено на `scope.order(created_at: :desc).first!`. Забезпечує детермінований результат при потенційному дублюванні `chainlink_request_id` та є ефективним для RANGE-партицій по `created_at` (PostgreSQL partition pruning).
+3. **Oracle callback `find_telemetry_log` — детермінований ORDER BY**:
+   `scope.order(created_at: :desc).first!` — забезпечує детермінований результат при потенційному дублюванні `chainlink_request_id` та є ефективним для RANGE-партицій по `created_at` (PostgreSQL partition pruning). ✅
 
 4. **`HardwareKeyService.rotate!` vs `HardwareKey#rotate_key!` — дублювання логіки ротації**:
    Два методи ротації: сервіс використовує `SecureRandom` + `ActuatorCommandWorker` downlink; модельний метод також `SecureRandom` без downlink. Варто залишити єдину точку входу через сервіс.
 
 5. **HTML provisioning використовує Phlex-компонент `Provisioning::Success`**:
-   Компонент отримує `aes_key: nil` у production режимі (після виправлення). Переконайтесь, що компонент коректно обробляє `nil` і показує відповідне повідомлення (наприклад: "HKDF mode: ключ деривується незалежно на прошивці").
+   Компонент отримує `aes_key: nil` у production режимі. Переконайтесь, що компонент коректно обробляє `nil` і показує відповідне повідомлення (наприклад: "HKDF mode: ключ деривується незалежно на прошивці").
 
 ---
 
-### 8.2 Зведена таблиця знахідок (оновлено після merge da64021)
+### 8.2 Зведена Таблиця Знахідок
 
 | # | Severity | Файл | Проблема | Статус | PR/Commit |
 |---|---|---|---|---|---|
@@ -1146,7 +1060,7 @@ HMAC підписує лише `raw_body` без включення `timestamp` 
 | A-8 | 🔵 Arch | `telemetry_controller.rb` | `mark_seen!` — синхронний DB write у request cycle | ⚠️ Задокументовано | — |
 | A-9 | 🔵 Arch | `oracle_callbacks_controller.rb` | `find_telemetry_log` — non-deterministic `first!` без ORDER BY | ✅ Виправлено | da64021 |
 
-### 8.3 Тести безпеки (додані в da64021)
+### 8.3 Тести безпеки
 
 - `spec/initializers/rack_attack_spec.rb` — покриває throttle правила для `m2m_auth/ip` та `oracle_callbacks/ip`
 - `spec/requests/api/v1/m2m_auth_controller_spec.rb` — перевіряє що некоректний Ed25519 підпис повертає 401 (не 500)
