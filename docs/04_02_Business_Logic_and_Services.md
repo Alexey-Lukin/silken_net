@@ -1,82 +1,14 @@
-# 04_02: Business Logic and Services (Бізнес-Логіка та Сервіси)
+# 04_02: Бізнес-Логіка та Сервіси
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Зафіксувати повний реєстр бізнес-логіки Rails-моноліту як Єдине Джерело Істини (SSOT). Документ описує всі **Service Objects** та **Sidekiq Workers**: їхні вхідні дані, відповідальність та вихідні ефекти. Слугує картою поточних сервісів для запобігання дублювання логіки під час розробки нових фіч і REST API (04_03).
 
-## ✅ Статус (Status)
+## ✅ Статус
 
 * **Поточний TRL:** TRL 8 (System Qualified / Mainnet Ready).
 * **Обґрунтування:** Всі заглушки (dClimate, Puro.earth) замінено на бойові Web3/HTTP інтеграції. Бізнес-логіка пройшла параноїдальний AI-аудит: повністю усунуто пастки `Network-in-Transaction`, витоки пам'яті (OOM) та ризики подвійної витрати (Double-Spend). Воркери ідемпотентні та fault-tolerant. **Примітка:** Chainlink dispatch має dev/test stub-режим (ENV-gated: при відсутності `CHAINLINK_FUNCTIONS_ROUTER` генерується локальний request ID); production вимагає `CHAINLINK_FUNCTIONS_ROUTER` та `CHAINLINK_SUBSCRIPTION_ID`.
 * **Пов'язані модулі:** Схема БД — `04_01_Database_Schema`. Proof of Growth — `05_02_Proof_of_Growth_Pipeline`. Апаратне шифрування — `03_05_Hardware_AES256`.
-
-## 🛑 Блокери (Blockers / Needs Action)
-
-* ~~**`Solana::MintingService`**: Поточна реалізація використовує `simulateTransaction` (Devnet). Потрібна заміна на `sendTransaction` + реальний Ed25519-підпис перед Mainnet.~~ ✅ **Виправлено** у PR #222 (commit 7ac8b01): реалізовано повний бінарний flow `getLatestBlockhash → SPL Transfer Message → Ed25519 sign → sendTransaction`. Тепер Mainnet-ready.
-* ~~**`Dclimate::VerificationService#query_dclimate_api`**: Заглушка (`OUTCOMES.sample`). Потрібна реальна HTTP-інтеграція з dClimate API.~~ ✅ **Виправлено** у PR #223 (commit 575ed53): реалізовано реальний HTTP-запит до NASA FIRMS через dClimate API з інтерпретацією FRP/confidence/cloud_cover та `OrbitalLagError` retry-логікою.
-* ~~**`PuroEarthPassportWorker`**: `TODO` — заміна stub `tx_hash` на реальний `PuroEarth::PassportService`.~~ ✅ **Виправлено** у PR #224 (commit 669a0dc): реалізовано `PuroEarth::PassportService` — canonical JSON SHA-256 → `anchorPassport(treeDid, bytes32)` на D-MRV Registry смарт-контракті Polygon. `PuroEarthPassportWorker` включає `ApplicationWeb3Worker`, делегує до `PassportService#anchor!`, планує `BlockchainConfirmationWorker`.
-* ~~**`InsurancePayoutWorker` + `BlockchainMintingService`**: Метод `insurance_pool_requires_funding?` повертає `true` хардкодом — потрібна on-chain інтеграція з балансом DAO Treasury.~~ ✅ **ВИРІШЕНО** у PR #225 (B-05 Fix): реалізовано cached on-chain oracle через `eth_call balanceOf` на SCC-контракті для адреси `DAO_TREASURY_ADDRESS`. Поріг: `INSURANCE_POOL_THRESHOLD = 100_000 SCC` (`INSURANCE_POOL_THRESHOLD_WEI = 100_000 × 10¹⁸`). Кеш: `Rails.cache.fetch("dao_treasury_needs_funding", expires_in: 15.minutes)` — 4 RPC-запити/годину замість тисяч. Timeout: 10 сек (`Timeout.timeout(10)`). Повертає `Integer` (без Float-похибок). Безпечний фолбек при збої RPC: повертає `true` (краще перефінансувати пул, ніж недофінансувати). Залучає мінімальний BALANCE_OF_ABI (тільки `balanceOf`).
-* ~~**`DailyAggregationWorker` `unique_for`**: Поточне значення `6.hours` (з коду "як є"). Рекомендовано збільшити до `24.hours` щоб запобігти повторному запуску за одну добу при ручних тригерах.~~ ✅ **ВИРІШЕНО** у PR #225: `unique_for: 24.hours`
-* ~~**`TokenomicsEvaluatorWorker` `unique_for`**: Поточне значення `30.minutes` (з коду). Рекомендовано `60.minutes` для точного захисту щогодинного cron-циклу.~~ ✅ **ВИРІШЕНО** у PR #225: `unique_for: 60.minutes`
-* ~~**`EthereumAnchorWorker` `unique_for`**: Поточне значення `1.hour` (з коду). Рекомендовано `7.days` для захисту від дублювання щотижневого anchoring.~~ ✅ **ВИРІШЕНО** у PR #225: `unique_for: 7.days`
-* ~~**🔴 P0 [`GatewayTelemetryWorker`] — Sidekiq job enqueued inside DB transaction:** `check_system_health` викликається всередині `ActiveRecord::Base.transaction`. Якщо транзакція відкочується ПІСЛЯ `AlertNotificationWorker.perform_async(alert.id)`, job вже знаходиться в Redis але `EwsAlert` запис не існує. Воркер знайде `nil` і впаде без будь-якого side effect.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): `check_system_health` тепер повертає `alert_id`; `perform_async` ставиться в чергу поза транзакцією.
-* ~~**🔴 P0 [`EcosystemHealingWorker`] — Sidekiq job enqueued inside DB transaction:** `PuroEarthPassportWorker.perform_async(record.id)` викликається всередині `ActiveRecord::Base.transaction`. При відкаті транзакції — job вже в черзі, але `MaintenanceRecord` може бути в некоректному стані.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): `perform_async` перенесено після `transaction` блоку через `pending_passport_record_id`.
-* ~~**🔴 P0 [`ContractTerminationService`] — Sidekiq job enqueued inside DB transaction:** `BurnCarbonTokensWorker.perform_async(...)` викликається всередині `@contract.transaction`. При відкаті контракт повертається до `:active`, але burn-job вже в Redis — фінансова катастрофа.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): `BurnCarbonTokensWorker.perform_async` перенесено поза `transaction` блок.
-* ~~**🟠 P1 [`ToucanBridgeWorker`] — Відсутній idempotency guard (Double-Spend Risk):** `ToucanBridgeWorker` не мав перевірки стану на початку `perform`. Повторний Sidekiq retry міг відправити ті самі токени вдруге.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): додано `return if tx.status_sent? || tx.status_confirmed?` на початку `perform`.
-* ~~**🟠 P1 [`AlertNotificationWorker`] — OOM при масштабуванні (`.each` замість `.find_each`):** `.each` завантажував всю колекцію User в пам'ять — OOM при 10 000+ лісниках.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): замінено на `.find_each(batch_size: 500)`.
-* ~~**🟠 P1 [`IotexVerificationWorker`] — Відсутній rescue для `ArgumentError`:** `Time.iso8601(created_at_iso)` міг кинути `ArgumentError` — перманентна помилка спожила б всі 5 ретраїв.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): додано `rescue ArgumentError` аналогічно до `ChainlinkDispatchWorker`.
-* ~~**🟠 P1 [`InsightGeneratorService`] — Data-loss вікно при `delete_all` перед регенерацією:** Крах після `delete_all` призводив до безповоротної втрати денних інсайтів.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): `delete_all` + регенерація загорнуті в єдину транзакцію.
-* ~~**🟠 P1 [`OtaTransmissionWorker`] — Orphaned Gateway state `:updating`:** При падінні процесу шлюз міг зависнути в стані `:updating` нескінченно.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): додано `sidekiq_retries_exhausted` хендлер що скидає `gateway.update!(state: :faulty)`.
-* ~~**🟠 P1 [`InsurancePayoutWorker`] — Orphaned tx при Etherisc flow (retry blocked by AASM guard):** `tx` міг зависнути в статусі `:pending` при збої після `insurance.pay!`.~~ ✅ **ВИРІШЕНО** у PR #226 (commit 72f0d4c3): guard пом'якшено — перевіряє стан `tx` перед блокуванням; orphaned Etherisc TX відновлюється.
-* ~~**🟠 P1 [SSOT Gap] — `PartitionMaintenanceWorker` відсутній у Workers Registry:** Воркер існує в `app/workers/partition_maintenance_worker.rb` але не був згаданий у реєстрі воркерів розділу 11.~~ ✅ **ВИРІШЕНО**: `PartitionMaintenanceWorker` додано до реєстру воркерів (§11, секція "Default — Агрегація та Токеноміка") з повним описом параметрів, тригера (cron 00:30 UTC) та side effects.
-* ~~**🟠 P1 [`TelemetryUnpackerService#commit_telemetry`] — Jobs enqueued inside transaction (phantom Sidekiq jobs):** `IotexVerificationWorker.perform_async(...)` та `StreamrBroadcastWorker.perform_async(...)` ставились в чергу всередині `ActiveRecord::Base.transaction`. При rollback jobs вже в Redis, але `TelemetryLog` запис відсутній — 5 марних ретраїв на `web3_critical`.~~ ✅ **ВИРІШЕНО** у PR #227 (commit 66ee6e1): обидва `perform_async` виклики перенесено поза `transaction` блок (змінна `log` повертається з transaction, enqueue — після нього).
-
-### 🔍 Аудит 2026-03-29 — Нові знайдені проблеми
-
-#### 🔴 Блокери
-
-- ~~**🔴 B-1 · `SolanaMicroRewardWorker` — неправильний тригер задокументований.** Документ §11 вказує тригер: `TelemetryUnpackerService (паралельно з IoTeX)`. В коді воркер запускається виключно з `OracleCallbacksController#create` (Chainlink fulfillment callback). `TelemetryUnpackerService` не викликає жодного Solana-воркера. Розробник, що слідує документу, реалізував би Solana minting до oracle-верифікації — guard `oracle_status == "fulfilled"` відкидав би кожен такий виклик. **Дія:** Змінити тригер на `OracleCallbacksController#create (Chainlink DON fulfillment callback)`.~~ ✅ **ВИПРАВЛЕНО**: тригер оновлено в §11.
-
-- ~~**🔴 B-2 · `MintCarbonCoinWorker` — тригер помилково приписаний `TelemetryUnpackerService`.** Документ: `Тригер: TelemetryUnpackerService (через Chainlink callback)`. В коді первинний тригер — `OracleCallbacksController#create`, а не `TelemetryUnpackerService`. Формулювання "через Chainlink callback" некоректно натякає, що TelemetryUnpackerService є caller. Суперечить діаграмі §12, де правильно показано `[Callback] → MintCarbonCoinWorker`. **Дія:** Змінити тригер на `OracleCallbacksController#create (Chainlink DON webhook)`.~~ ✅ **ВИПРАВЛЕНО**: тригер оновлено в §11.
-
-- ~~**🔴 B-3 · `AlertNotificationWorker` — тригер описує застарілу поведінку до патчу A-1.** Документ §11: `Тригер: AlertDispatchService (через create_and_dispatch_alert! та create_fraud_alert!), GatewayTelemetryWorker`. Після патчу A-1 воркер запускається виключно через `EwsAlert.after_create_commit :dispatch_notifications!` (Transactional Outbox). Таблиця воркерів суперечить самому розділу Blockers, де A-1 fix коректно описаний. Розробник, що читає таблицю, може додати прямий виклик `perform_async` з сервісу — подвійне ставлення в чергу. **Дія:** Оновити тригер на `EwsAlert.after_create_commit :dispatch_notifications!`.~~ ✅ **ВИПРАВЛЕНО**: тригер оновлено в §11.
-
-- ~~**🔴 B-4 · `GatewayTelemetryWorker` — side effects описують поведінку до P0-патчу.** Документ §11: `Side Effects: Перевіряє critical_fault? → AlertNotificationWorker.perform_async`. Після P0-патчу PR #226 воркер не викликає `AlertNotificationWorker.perform_async` напряму. Виправлений потік: `check_system_health → EwsAlert.create! → after_create_commit → AlertNotificationWorker.perform_async`. **Дія:** Оновити Side Effects: `Перевіряє critical_fault? → EwsAlert.create! → (via after_create_commit Transactional Outbox) → AlertNotificationWorker.perform_async`.~~ ✅ **ВИПРАВЛЕНО**: Side Effects оновлено в §11.
-
-#### 🟠 Попередження
-
-- ~~**🟠 W-1 · `BlockchainMintingService` — інтерфейс `.call` та `.call_batch` змішаний в один опис.** Документ §4: `Вхід: blockchain_transaction_ids (Array<Integer>)`. Насправді є два окремих методи: `.call(id: Integer)` (одиночний) та `.call_batch(ids: Array<Integer>)` (пакетний). **Дія:** Задокументувати обидва інтерфейси окремо.~~ ✅ **ВИПРАВЛЕНО**: обидва інтерфейси задокументовано в §4.
-
-- ~~**🟠 W-2 · `TelemetryUnpackerService` — `gateway_id` задокументований як обов'язковий, але є опціональним.** Код: `def initialize(binary_batch, gateway_id = nil)`. **Дія:** Документувати як `gateway_id (Integer, опціонально — nil якщо шлюз невідомий)`.~~ ✅ **ВИПРАВЛЕНО**: `gateway_id` позначено як опціональний у §3.
-
-- ~~**🟠 W-3 · TRL 8 завищений: Chainlink має stub-режим у production-коді.** `app/services/chainlink/oracle_dispatch_service.rb`: генерує локальний stub request ID коли ENV `CHAINLINK_FUNCTIONS_ROUTER` не встановлений. Документ стверджує "всі заглушки замінено". **Дія:** Уточнити: "Chainlink dispatch має dev/test stub-режим (ENV-gated; production вимагає `CHAINLINK_FUNCTIONS_ROUTER` та `CHAINLINK_SUBSCRIPTION_ID`)".~~ ✅ **ВИПРАВЛЕНО**: уточнення додано до TRL-обґрунтування.
-
-- ~~**🟠 W-4 · Кількість воркерів у §14 занижена.** Документ: "31 Sidekiq workers + 2 concerns". Реально: 33 конкретних класи + 2 concerns = 35 файлів воркерів. **Дія:** Оновити лічильник.~~ ✅ **ВИПРАВЛЕНО**: лічильник оновлено на `33 Sidekiq workers + 2 concerns = 35 файлів`.
-
-- ~~**🟠 W-5 · `SolanaMicroRewardWorker` відсутній у діаграмах call chains §12.** `OracleCallbacksController#create` ставить в чергу **і** `MintCarbonCoinWorker`, **і** `SolanaMicroRewardWorker` одночасно. Жодна діаграма §12 не показує цей паралельний виклик. **Дія:** Додати секцію "Oracle Callback": `POST /api/v1/oracle_callbacks → OracleCallbacksController → [MintCarbonCoinWorker + SolanaMicroRewardWorker]`.~~ ✅ **ВИПРАВЛЕНО**: секція "Oracle Callback" додана до §12.
-
-- ~~**🟠 W-6 · `ClusterHealthCheckWorker` — приховано рівень непрямого виклику `BurnCarbonTokensWorker`.** Документ §11: `Side Effects: При breached → BurnCarbonTokensWorker.perform_async`. Насправді: `ClusterHealthCheckWorker → ContractHealthCheckService#perform → BurnCarbonTokensWorker.perform_async`. **Дія:** Оновити Side Effects: `При breached → ContractHealthCheckService → BurnCarbonTokensWorker.perform_async`.~~ ✅ **ВИПРАВЛЕНО**: Side Effects оновлено в §11.
-
-- ~~**🟠 W-7 · `spec/callbacks/` не згаданий у покритті §14.** `spec/callbacks/insight_batch_callbacks_spec.rb` та `spec/callbacks/tokenomics_batch_callbacks_spec.rb` існують і тестують критичну orchestration-логіку. **Дія:** Додати до §14: "2 callback-класи (`app/callbacks/`, тести у `spec/callbacks/`)".~~ ✅ **ВИПРАВЛЕНО**: callbacks spec додано до §14.
-
-- ~~**🟠 W-8 · `DailyAggregationWorker` у секції "Default", але використовує чергу `low`.** Документ сам додає ⚠️-примітку, але розміщення у "Default"-секції вводить в оману. **Дія:** Перемістити до секції "Low — Аудит та Зберігання".~~ ✅ **ВИПРАВЛЕНО**: SSOT Note уточнена — перераховані всі low-queue воркери, що розміщені в Default-секції для логічної групи "добовий цикл".
-
-- ~~**🟠 W-9 · Таблиця пріоритетів черг §11 використовує вигадані числові мітки.** `config/sidekiq.yml` використовує `strict: true` з упорядкованим списком. Sidekiq не призначає числові ваги — числа 1–9 є вигадкою автора документа. **Дія:** Замінити колонку "Пріоритет" на "Порядок (Strict)" (1=найвищий); додати примітку: "Sidekiq `:strict: true` дренує черги послідовно — без числових ваг".~~ ✅ **ВИПРАВЛЕНО**: таблиця оновлена — колонка "Порядок (Strict)", примітка про strict mode додана.
-
-#### 🟡 Нотатки
-
-- ~~**🟡 N-1 · `SilkenNet::Attractor#generate_trajectory` — off-by-one у описі.** Перший триплет (i=0,1,2) видає початковий стан (x₀,y₀,z₀) до інтеграції. Документ §3 не зазначає цю поведінку. **Дія:** Додати примітку: "Перший триплет (індекс 0–2) — початковий seed-стан; інтеграція починається з індексу 3".~~ ✅ **ВИПРАВЛЕНО**: примітку додано до §3 `SilkenNet::Attractor`.
-
-- ~~**🟡 N-2 · `InsightBatchCallbacks` в §11 плутає читача — це callback, а не воркер.** Файл живе у `app/callbacks/`, а не `app/workers/`. **Дія:** Додати роздільник або заголовок: `#### InsightBatchCallbacks (Sidekiq Batch Callback — not a Worker)`.~~ ✅ **ВИПРАВЛЕНО**: заголовок оновлено — `InsightBatchCallbacks (Sidekiq Batch Callback — not a Worker)`, Тип уточнено.
-
-- ~~**🟡 N-3 · `TokenomicsBatchCallbacks` не задокументований у §11.** На відміну від `InsightBatchCallbacks`, окремого рядка немає. **Дія:** Додати таблицю паралельну `InsightBatchCallbacks` з описом `on_success → MintCarbonCoinWorker.perform_async`.~~ ✅ **ВИПРАВЛЕНО**: `TokenomicsBatchCallbacks` додано до §11 перед `EvaluateTreeBatchWorker`.
-
-- ~~**🟡 N-4 · `OtaTransmissionWorker` — `sidekiq_retries_exhausted` не описаний у §11.** Хендлер встановлює `gateway.update(state: :faulty)`. **Дія:** Додати до Side Effects: "При `sidekiq_retries_exhausted`: `gateway.update!(state: :faulty)` — запобігає Gateway stuck у :updating".~~ ✅ **ВИПРАВЛЕНО**: додано до Side Effects у §11.
-
-- ~~**🟡 N-5 · `ActuatorCommandWorker` — `sidekiq_retries_exhausted` не описаний у §11.** Хендлер викликає `command.fail!` + Turbo Stream broadcast. **Дія:** Додати до Side Effects.~~ ✅ **ВИПРАВЛЕНО**: `command.fail!` + Turbo Stream broadcast додано до Side Effects у §11.
-
-- ~~**🟡 N-6 · `DailyAggregationWorker` — GLOBAL_BLACKOUT тільки на будні дні, але це не задокументовано.** `target_date.on_weekday?` — EwsAlert-и для вихідних мовчки ігноруються. **Дія:** Додати примітку до Side Effects.~~ ✅ **ВИПРАВЛЕНО**: примітку "тільки в будні дні (`on_weekday?`)" додано до Side Effects у §11.
-
 
 ---
 
@@ -1019,23 +951,22 @@ Financial action
 
 ---
 
-> **Версія документа:** v1.1 · 2026-03-28 · Gaia 2.0 — Cycle 2 (Security & Reliability Audit).
-> **Метод:** Пасивне сканування кодової бази "як є" (`app/services/` + `app/workers/`). Жодного рефакторингу.
+> **Версія документа:** v1.1 · 2026-03-28 · Gaia 2.0 — Цикл 2 (Аудит Безпеки та Надійності).
 > **Покриття:** 35 service objects (35 файлів), 33 Sidekiq workers + 2 concerns (base infrastructure) = 35 файлів воркерів.
 
 ---
 
-## ✅ 14. Аудит Надійності (Security & Reliability Audit)
+## ✅ 14. Аудит Надійності
 
 > **Методологія:** Глибокий параноїдальний аудит 33 воркерів та 35 сервісів за 5 векторами: Network-in-Transaction Trap, Idempotency Failures, Memory Black Holes, SSOT vs Reality, Orphaned States.
 >
 > **Callbacks:** 2 callback-класи (`app/callbacks/insight_batch_callbacks.rb`, `app/callbacks/tokenomics_batch_callbacks.rb`) — тести у `spec/callbacks/`.
 > **Дата:** 2026-03-28 · Principal Backend Architect audit.
-> **Статус:** Всі P0 (3/3) та P1 (7/7) знахідки виправлено. P0–P1 (6/7) — PR #226 (commit 72f0d4c3). P1-7 (`TelemetryUnpackerService`) — PR #227 (commit 66ee6e1). Architectural Suggestions A-2 та A-4 реалізовано у PR #227. A-1 (Transactional Outbox) та A-3 (InsightGenerator Sidekiq Batch) реалізовано у PR #228 (commit 5f934f4).
+> **Статус:** Всі P0 (3/3) та P1 (7/7) знахідки виправлено. P0–P1 (6/7) — PR #226 (commit 72f0d4c3). P1-7 (`TelemetryUnpackerService`) — PR #227 (commit 66ee6e1). Архітектурні Рекомендації A-2 та A-4 реалізовано у PR #227. A-1 (Transactional Outbox) та A-3 (InsightGenerator Sidekiq Batch) реалізовано у PR #228 (commit 5f934f4).
 
 ---
 
-### ✅ P0 Blockers — Виправлено у PR #226
+### ✅ P0 Блокери — Виправлено у PR #226
 
 #### P0-1 · `GatewayTelemetryWorker` — Job enqueued inside DB transaction
 
@@ -1066,7 +997,7 @@ Financial action
 
 ---
 
-### ✅ P1 Warnings — Всі 7/7 виправлено (P1-1..P1-6 → PR #226, P1-7 → PR #227)
+### ✅ P1 Попередження — Всі 7/7 виправлено (P1-1..P1-6 → PR #226, P1-7 → PR #227)
 
 #### P1-1 · `ToucanBridgeWorker` — Відсутній idempotency guard (Double-Bridge Risk)
 
@@ -1133,28 +1064,20 @@ Financial action
 
 ---
 
-### 🔵 Architectural Suggestions
+### 🔵 Архітектурні Рекомендації
 
 #### ✅ A-1 · Transactional Outbox Pattern — реалізовано через `EwsAlert.after_create_commit` (PR #228)
-
-~~Системна проблема P0-1, P0-2, P0-3, P1-7 — один і той самий антипаттерн: Sidekiq job enqueued inside DB transaction.~~
 
 **Виправлено у PR #228 (commit 5f934f4):** `EwsAlert` моделі вже містить `after_create_commit :dispatch_notifications!`, який безпечно ставить `AlertNotificationWorker.perform_async(self.id)` **після** commit транзакції. Явні `AlertNotificationWorker.perform_async` виклики видалено з:
 - `AlertDispatchService.create_and_dispatch_alert!` — виклик всередині транзакції `TelemetryUnpackerService#commit_telemetry` (phantom jobs при rollback)
 - `AlertDispatchService.create_fraud_alert!` — виклик всередині транзакції `InsightGeneratorService` (phantom jobs при rollback)
 - `GatewayTelemetryWorker` — явний виклик після транзакції (дублюючий enqueue)
 
-~~Sidekiq Pro 7+ також підтримує `Sidekiq::Middleware::CurrentAttributes` + транзакційний outbox через `Kredis::List` — але це вимагає Pro ліцензії.~~
-
 #### ✅ A-2 · `PartitionMaintenanceWorker` — cron встановлено на 00:30 UTC (PR #227)
-
-~~Поточний cron (якщо є) не специфікований у документі. Якщо `PartitionMaintenanceWorker` не запуститься до 01:00 UTC (час `DailyAggregationWorker`), вставка телеметрії на початку нового місяця падатиме з `no partition of relation` PostgreSQL помилкою. Рекомендовано: `00:30 UTC` щодня.~~
 
 **Виправлено у PR #227 (commit 66ee6e1):** `config/sidekiq.yml` оновлено — cron `partition_maintenance: '30 0 * * *'` (00:30 UTC). Партиція тепер гарантовано створюється за 30 хвилин до `DailyAggregationWorker` (01:00 UTC). Коментар у yml: *"О 00:30 UTC щодня, ДО агрегації о 01:00 UTC"*.
 
 #### ✅ A-3 · `InsightGeneratorService` → Sidekiq::Batch реалізовано (PR #228)
-
-~~При 10M+ дерев `InsightGeneratorService#perform` є монолітним синхронним процесом. Аналогічно до `TokenomicsEvaluatorWorker` (де використовується `Sidekiq::Batch` → `EvaluateTreeBatchWorker`), `InsightGeneratorService` варто розбити на `InsightGeneratorOrchestrator` (Batch) + `GenerateClusterInsightWorker` (child по 100 кластерів). Це усуне OOM-ризик при великому датасеті і надасть Sidekiq Pro Batch progress tracking.~~
 
 **Виправлено у PR #228 (commit 5f934f4):**
 
@@ -1165,8 +1088,6 @@ Financial action
 - **`InsightGeneratorService#cleanup_old_logs!`** виправлено: тепер зберігає логи з `oracle_status='dispatched'` — вони очікують callback від Chainlink (`OracleCallbacksController`), видалення переривало б Proof of Growth pipeline.
 
 #### ✅ A-4 · `AlertNotificationWorker` — `Sidekiq::Client.push_bulk` реалізовано (PR #227)
-
-~~Замість синхронного циклу `stakeholders.find_each { |u| SingleNotificationWorker.perform_async(...) }` використати `Sidekiq::Client.push_bulk` для одного Redis `LPUSH` з усіма jobs:~~
 
 **Виправлено у PR #227 (commit 66ee6e1):** `AlertNotificationWorker#notify_stakeholders` оновлено:
 
