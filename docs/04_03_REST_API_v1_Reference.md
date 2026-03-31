@@ -2,12 +2,12 @@
 
 ## 🎯 Мета (Objective)
 
-Зафіксувати повний контракт REST API v1 як Єдине Джерело Істини (SSOT). Документ описує всі **81 ендпоінт**, механізми автентифікації, ролеву модель доступу, формати запитів/відповідей та типовий lifecycle взаємодії прошивки Gateway з бекендом.
+Зафіксувати повний контракт REST API v1 як Єдине Джерело Істини (SSOT). Документ описує всі **82 ендпоінти**, механізми автентифікації, ролеву модель доступу, формати запитів/відповідей та типовий lifecycle взаємодії прошивки Gateway з бекендом.
 
 ## ✅ Статус (Status)
 
 - **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Всі P0/P1 security blockers вирішено (PR #229). Імплементовано Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
-- **Кількість ендпоінтів:** 81 (додано `POST /api/v1/auth/m2m_token` та `POST /api/v1/gateways/:id/telemetry`)
+- **Кількість ендпоінтів:** 82 (додано `POST /api/v1/auth/m2m_token`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`)
 - **Джерело:** Reverse Shaping з `config/routes.rb` та `app/controllers/api/v1/`
 - **Базовий URL:** `https://<host>/api/v1`
 - **Формат відповідей:** JSON (якщо не вказано інше)
@@ -41,29 +41,29 @@
 
 #### 🔴 Блокери
 
-- **🔴 B-1 · `GET /api/v1/users/:id` — Ghost route, немає controller action → 500.** `config/routes.rb`: `resources :users, only: [ :index, :show ]` — генерує обидва маршрути. `UsersController` має лише `def index` та `def me` — **`def show` відсутній**. В production: `AbstractController::ActionNotFound` → перехоплюється `BaseController#rescue_from StandardError` → `500`. Документ §4 документує лише `users#index` і взагалі не згадує `:show`. **Дія:** Або додати `def show` до `UsersController`, або змінити маршрут на `only: [ :index ]`.
+- ~~**🔴 B-1 · `GET /api/v1/users/:id` — Ghost route, немає controller action → 500.** `config/routes.rb`: `resources :users, only: [ :index, :show ]` — генерує обидва маршрути. `UsersController` має лише `def index` та `def me` — **`def show` відсутній**. В production: `AbstractController::ActionNotFound` → перехоплюється `BaseController#rescue_from StandardError` → `500`. Документ §4 документує лише `users#index` і взагалі не згадує `:show`. **Дія:** Або додати `def show` до `UsersController`, або змінити маршрут на `only: [ :index ]`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `def show` додано до `UsersController` з `UserBlueprint.render(@user, view: :crew)`. Рядок #18 у таблиці §4 оновлено.
 
-- **🔴 B-2 · `GET /api/v1/alerts/:id` — Ghost route, немає controller action → 500.** `resources :alerts, only: [ :index, :show ]` генерує `alerts#show`. `AlertsController` має лише `def index` та `def resolve` — **`def show` відсутній**. **Дія:** Додати `def show` або змінити маршрут на `only: [ :index ]`.
+- ~~**🔴 B-2 · `GET /api/v1/alerts/:id` — Ghost route, немає controller action → 500.** `resources :alerts, only: [ :index, :show ]` генерує `alerts#show`. `AlertsController` має лише `def index` та `def resolve` — **`def show` відсутній**. **Дія:** Додати `def show` або змінити маршрут на `only: [ :index ]`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `def show` додано до `AlertsController`; повертає `{ data: @alert }` з вкладеними `cluster` та `tree`, методами `coordinates` і `actionable?`.
 
-- **🔴 B-3 · `DELETE /api/v1/tree_families/:id` — Ghost route, немає controller action → 500.** `resources :tree_families` (без `only:`) генерує всі 7 REST-маршрутів, включно з `DELETE`. `TreeFamiliesController` не має `def destroy`. Документ §4 навмисно не документує `DELETE`, але маршрут мовчки існує. **Дія:** Змінити на `resources :tree_families, only: [ :index, :show, :new, :create, :edit, :update ]`.
+- ~~**🔴 B-3 · `DELETE /api/v1/tree_families/:id` — Ghost route, немає controller action → 500.** `resources :tree_families` (без `only:`) генерує всі 7 REST-маршрутів, включно з `DELETE`. `TreeFamiliesController` не має `def destroy`. Документ §4 навмисно не документує `DELETE`, але маршрут мовчки існує. **Дія:** Змінити на `resources :tree_families, only: [ :index, :show, :new, :create, :edit, :update ]`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): routes обмежено до `only: [:index, :show, :new, :create, :edit, :update]`. `DELETE` тепер повертає 404.
 
-- **🔴 B-4 · `oracle_visions#stream_config` — IDOR: Cluster не прив'язаний до організації користувача.** Код: `@cluster = Cluster.find(params[:cluster_id])` — глобальний пошук без org-scoping. Будь-який `forester` з Організації A може запросити `stream_config` для Cluster Організації B та отримати валідний ActionCable auth_token. **Дія:** Замінити на `current_user.organization.clusters.find(params[:cluster_id])`.
+- ~~**🔴 B-4 · `oracle_visions#stream_config` — IDOR: Cluster не прив'язаний до організації користувача.** Код: `@cluster = Cluster.find(params[:cluster_id])` — глобальний пошук без org-scoping. Будь-який `forester` з Організації A може запросити `stream_config` для Cluster Організації B та отримати валідний ActionCable auth_token. **Дія:** Замінити на `current_user.organization.clusters.find(params[:cluster_id])`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): замінено на `current_user.organization.clusters.find(params[:cluster_id])` — міжорганізаційний IDOR усунено.
 
-- **🔴 B-5 · `provisioning#register` — витік внутрішніх повідомлень помилок у production.** Код: `rescue StandardError => e; render json: { error: "Збій ініціації: #{e.message}" }`. Ruby exception messages можуть містити назви колонок, SQL-фрагменти, шляхи до файлів — все це витікає неautентифікованим API-клієнтам. Суперечить задокументованому контракту §2.2 (`"Збій у ядрі Океану. Повідомте Архітектора."`). Розділ §8 Security Audit не фіксує цю проблему. **Дія:** Логувати `e.message` внутрішньо; повертати загальне повідомлення.
+- ~~**🔴 B-5 · `provisioning#register` — витік внутрішніх повідомлень помилок у production.** Код: `rescue StandardError => e; render json: { error: "Збій ініціації: #{e.message}" }`. Ruby exception messages можуть містити назви колонок, SQL-фрагменти, шляхи до файлів — все це витікає неautентифікованим API-клієнтам. Суперечить задокументованому контракту §2.2 (`"Збій у ядрі Океану. Повідомте Архітектора."`). Розділ §8 Security Audit не фіксує цю проблему. **Дія:** Логувати `e.message` внутрішньо; повертати загальне повідомлення.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `rescue` тепер логує `e.message` через `Rails.logger.error` і повертає загальне повідомлення `"Збій у ядрі Океану. Повідомте Архітектора."` — без витоку внутрішніх деталей.
 
 #### 🟠 Попередження
 
 - ~~**🟠 W-1 · Невідповідність кількості ендпоінтів: "79" vs "81".** Рядок 5 (вступний абзац): "описує всі **79 ендпоінтів**". Рядок 10 (Status): "**81**". Таблиця §4: 81 рядок (#1–#81). **Дія:** Виправити вступний абзац на 81.~~ ✅ **ВИПРАВЛЕНО**: вступний абзац виправлено на "81 ендпоінт".
 
-- **🟠 W-2 · `tree_families#create` та `#update` повертають 302 redirect JSON-клієнтам.** Обидві дії не мають `respond_to`/`format.json` блоку — при успіху безумовно викликають `redirect_to`. JSON-клієнт отримує `302 Found`, а не `201 Created` з JSON-тілом. **Дія:** Додати `respond_to` блок з `format.json`.
+- ~~**🟠 W-2 · `tree_families#create` та `#update` повертають 302 redirect JSON-клієнтам.** Обидві дії не мають `respond_to`/`format.json` блоку — при успіху безумовно викликають `redirect_to`. JSON-клієнт отримує `302 Found`, а не `201 Created` з JSON-тілом. **Дія:** Додати `respond_to` блок з `format.json`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `respond_to do |format| format.json { ... } format.html { redirect_to ... } end` додано до `tree_families#create` та `#update`.
 
-- **🟠 W-3 · `clusters#index` / `#show` — використовує `as_json` замість `ClusterBlueprint`.** Контролер додатково повертає `geojson_polygon` (відсутній у blueprint) та `active_threats?` (з `?`, тоді як blueprint має `active_threats`). `clusters#show` повертає вкладені gateway та contract дані, що взагалі не задокументовані. **Дія:** Перейти на `ClusterBlueprint.render_as_hash`; задокументувати реальну схему відповіді.
+- ~~**🟠 W-3 · `clusters#index` / `#show` — використовує `as_json` замість `ClusterBlueprint`.** Контролер додатково повертає `geojson_polygon` (відсутній у blueprint) та `active_threats?` (з `?`, тоді як blueprint має `active_threats`). `clusters#show` повертає вкладені gateway та contract дані, що взагалі не задокументовані. **Дія:** Перейти на `ClusterBlueprint.render_as_hash`; задокументувати реальну схему відповіді.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `clusters#index` та `#show` тепер використовують `ClusterBlueprint`. Схема відповіді відповідає blueprint-полям.
 
-- **🟠 W-4 · `wallets#index` та `#show` — сирова серіалізація, не `WalletBlueprint`.** Обидві дії використовують `render json: { wallets: @wallets }` (ключ `wallets` замість `data`) — всі DB-колонки гаманця відкриті. **Дія:** Використати `WalletBlueprint`; визначити `:show` view у blueprint.
+- ~~**🟠 W-4 · `wallets#index` та `#show` — сирова серіалізація, не `WalletBlueprint`.** Обидві дії використовують `render json: { wallets: @wallets }` (ключ `wallets` замість `data`) — всі DB-колонки гаманця відкриті. **Дія:** Використати `WalletBlueprint`; визначити `:show` view у blueprint.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `WalletBlueprint` тепер використовується в `wallets#index` та `#show`, ключ `data:` стандартизований; `:show` view з асоціацією `tree` визначено у blueprint.
 
-- **🟠 W-5 · `users#index` — використовує ключ пагінації `meta:` замість `pagy:`.** Код: `render json: { data: ..., meta: { page: pagy.page, ... } }`. Стандарт §2.1 визначає ключ `pagy`. Всі інші контролери (clusters, organizations тощо) використовують `pagy:`. **Дія:** Перейти на `pagy: pagy_metadata(@pagy)`.
+- ~~**🟠 W-5 · `users#index` — використовує ключ пагінації `meta:` замість `pagy:`.** Код: `render json: { data: ..., meta: { page: pagy.page, ... } }`. Стандарт §2.1 визначає ключ `pagy`. Всі інші контролери (clusters, organizations тощо) використовують `pagy:`. **Дія:** Перейти на `pagy: pagy_metadata(@pagy)`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `users#index` тепер використовує `pagy: pagy_metadata(@pagy)` — узгоджено зі стандартом §2.1.
 
-- ~~**🟠 W-6 · `trees#index` та `maintenance_records#index` — ключ відповіді `trees`/`records` замість `data`.** Суперечить стандарту §2.1. **Дія:** Стандартизувати на ключ `data:` або явно задокументувати відхилення.~~ ✅ **ВИПРАВЛЕНО (doc)**: відхилення задокументовано у §2.3 (note перед пагінацією). Стандартизація коду — W-6 залишається відкритим для code fix.
+- ~~**🟠 W-6 · `trees#index` та `maintenance_records#index` — ключ відповіді `trees`/`records` замість `data`.** Суперечить стандарту §2.1. **Дія:** Стандартизувати на ключ `data:` або явно задокументувати відхилення.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `trees#index` та `maintenance_records#index` тепер повертають ключ `data:` — узгоджено зі стандартом §2.1.
 
 - ~~**🟠 W-7 · `maintenance_records#index` — розмір сторінки за замовчуванням 50, а не 20.** Код: `pagy(@records, items: 50)`. Документ §2.3 вказує 20. Пагінація фото: `pagy(@record.photos, items: 6)` — теж не 20. **Дія:** Задокументувати 50 для maintenance_records та 6 для photos.~~ ✅ **ВИПРАВЛЕНО**: виключення `items: 50` та `items: 6` задокументовано у §2.3.
 
@@ -73,11 +73,11 @@
 
 - ~~**🟠 W-10 · `oracle_visions#index` — схема відповіді не задокументована.** Код: `render json: { visions: @visions, yield_forecast: @scc_yield }`. Розділ §5 для oracle_visions не надає приклад відповіді. **Дія:** Задокументувати схему `{ visions: [...], yield_forecast: Float }`.~~ ✅ **ВИПРАВЛЕНО**: схема відповіді `oracle_visions#index` задокументована у §5.8b.
 
-- **🟠 W-11 · `gateways#index` та `#show` — сирова серіалізація, `GatewayBlueprint` відсутній.** Raw `@gateways` і `@gateway` — всі DB-колонки, включно з потенційно чутливими (config, keys, IP). **Дія:** Створити `GatewayBlueprint` з явним allowlist полів; використати в контролері.
+- ~~**🟠 W-11 · `gateways#index` та `#show` — сирова серіалізація, `GatewayBlueprint` відсутній.** Raw `@gateways` і `@gateway` — всі DB-колонки, включно з потенційно чутливими (config, keys, IP). **Дія:** Створити `GatewayBlueprint` з явним allowlist полів; використати в контролері.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `GatewayBlueprint` створено (`app/blueprints/gateway_blueprint.rb`) з allowlist полів `id, uid, state, last_seen_at, latitude, longitude`; використовується в `gateways#index` та `#show`.
 
-- **🟠 W-12 · `provisioning#register` — відповідь `device` містить всі поля моделі, а не 4 задокументованих.** Код: `{ did: device_identifier, device: @device, key_derivation: "hkdf-sha256" }` — `@device` серіалізується без фільтрації. Документ §5.2 показує лише `id`, `did`, `status`, `cluster_id`. **Дія:** Серіалізувати з `as_json(only: [:id, :did, :status, :cluster_id])`.
+- ~~**🟠 W-12 · `provisioning#register` — відповідь `device` містить всі поля моделі, а не 4 задокументованих.** Код: `{ did: device_identifier, device: @device, key_derivation: "hkdf-sha256" }` — `@device` серіалізується без фільтрації. Документ §5.2 показує лише `id`, `did`, `status`, `cluster_id`. **Дія:** Серіалізувати з `as_json(only: [:id, :did, :status, :cluster_id])`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `@device` тепер серіалізується з `as_json(only: [:id, :did, :status, :cluster_id])` — повернено лише 4 задокументованих поля.
 
-- ~~**🟠 W-13 · `oracle_visions#simulate` — `params[:variables]` передається у воркер без валідації.** `sigma`, `rho`, `beta` документовані як required variables, але серверна валідація відсутня. Також `job_id` — це Sidekiq JID (рядок UUID), а не числовий id. **Дія:** Додати `params.permit(variables: [:sigma, :rho, :beta])`; задокументувати тип `job_id`.~~ ✅ **ВИПРАВЛЕНО (doc)**: `job_id` задокументований як Sidekiq JID (~24 hex-символи). `params.permit` — потребує code fix.
+- ~~**🟠 W-13 · `oracle_visions#simulate` — `params[:variables]` передається у воркер без валідації.** `sigma`, `rho`, `beta` документовані як required variables, але серверна валідація відсутня. Також `job_id` — це Sidekiq JID (рядок UUID), а не числовий id. **Дія:** Додати `params.permit(variables: [:sigma, :rho, :beta])`; задокументувати тип `job_id`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `params.permit(variables: [:sigma, :rho, :beta])` додано до `oracle_visions#simulate`; `job_id` задокументований як Sidekiq JID (~24 hex-символи).
 
 - ~~**🟠 W-14 · `oracle_callbacks#create` — відповідь `404` не задокументована у §5.8.** Код: `rescue ActiveRecord::RecordNotFound → 404 "Chainlink request not found"`. **Дія:** Додати `404 Not Found | chainlink_request_id не знайдено` до таблиці помилок §5.8.~~ ✅ **ВИПРАВЛЕНО**: таблиця помилок з `401` та `404` додана до §5.8.
 
@@ -87,13 +87,13 @@
 
 - **🟡 N-1 · Rack::Attack та filter_parameter_logging — зміни посилаються на commit `da64021`, але не верифіковані незалежно.** `config/initializers/rack_attack.rb` та `filter_parameter_logging.rb` не перевірялись у цьому аудиті. **Дія:** Провести аудит цих файлів окремо.
 
-- **🟡 N-2 · TRL 8 завищений за наявності 5 активних блокерів.** B-1..B-5 — production-breaking дефекти та security gap. TRL 7 більш точний. **Дія:** Виправити B-1..B-5, після чого відновити TRL 8.
+- ~~**🟡 N-2 · TRL 8 завищений за наявності 5 активних блокерів.** B-1..B-5 — production-breaking дефекти та security gap. TRL 7 більш точний. **Дія:** Виправити B-1..B-5, після чого відновити TRL 8.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): всі B-1..B-5 закриті. TRL 8 підтверджено.
 
-- ~~**🟡 N-3 · `oracle_visions#stream_config` — обов'язковий параметр `cluster_id` не задокументований.** 404 при відсутньому `cluster_id` теж не описаний. **Дія:** Задокументувати `cluster_id` як required query param та 404-відповідь.~~ ✅ **ВИПРАВЛЕНО**: `cluster_id` задокументований як обов'язковий query param у рядку #64 таблиці §4; 404 зазначено.
+- ~~**🟡 N-3 · `oracle_visions#stream_config` — обов'язковий параметр `cluster_id` не задокументований.** 404 при відсутньому `cluster_id` теж не описаний. **Дія:** Задокументувати `cluster_id` як required query param та 404-відповідь.~~ ✅ **ВИПРАВЛЕНО**: `cluster_id` задокументований як обов'язковий query param у рядку #65 таблиці §4; 404 зазначено.
 
-- **🟡 N-4 · `GET /api/v1/users/:id` відсутній у таблиці §4.** Маршрут існує в `routes.rb` але пропущений у документі (пов'язано з B-1). **Дія:** Після додавання `def show` — додати рядок до таблиці §4.
+- ~~**🟡 N-4 · `GET /api/v1/users/:id` відсутній у таблиці §4.** Маршрут існує в `routes.rb` але пропущений у документі (пов'язано з B-1). **Дія:** Після додавання `def show` — додати рядок до таблиці §4.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): рядок `#18 GET /api/v1/users/:id` додано до таблиці §4; всі наступні рядки перенумеровано (#19..#82).
 
-- **🟡 N-5 · `GatewayBlueprint` відсутній у `app/blueprints/`.** Всі інші major сутності мають blueprint. Gateway серіалізується через raw `as_json` — неконтрольована поверхня. **Дія:** Створити `GatewayBlueprint`.
+- ~~**🟡 N-5 · `GatewayBlueprint` відсутній у `app/blueprints/`.** Всі інші major сутності мають blueprint. Gateway серіалізується через raw `as_json` — неконтрольована поверхня. **Дія:** Створити `GatewayBlueprint`.~~ ✅ **ВИПРАВЛЕНО** у [PR #235](https://github.com/Alexey-Lukin/silken_net/commit/37e09ec9a4712814a72179d7038ccb521e819a8f): `app/blueprints/gateway_blueprint.rb` створено з allowlist `id, uid, state, last_seen_at, latitude, longitude`.
 
 
 ---
@@ -202,7 +202,7 @@ POST /api/v1/auth/m2m_token
 | Query-параметр | Тип | За замовчуванням | Опис |
 |---|---|---|---|
 | `page` | Integer | 1 | Номер сторінки |
-| `limit` | Integer | 20 | Кількість записів на сторінку |
+| `limit` | Integer | 21 | Кількість записів на сторінку |
 
 > **Виключення розміру сторінки:** `maintenance_records#index` використовує `items: 50` (не 20); `maintenance_records#photos` використовує `items: 6`.
 
@@ -255,85 +255,86 @@ POST /api/v1/auth/m2m_token
 | **👤 Користувачі та Організації** | | | | | |
 | 16 | GET | `/api/v1/users/me` | `users#me` | 🔑 Auth | Профіль поточного користувача |
 | 17 | GET | `/api/v1/users` | `users#index` | 👑 Admin | Список користувачів організації |
-| 18 | GET | `/api/v1/organizations` | `organizations#index` | 👑👑 SuperAdmin | Список усіх організацій |
-| 19 | GET | `/api/v1/organizations/:id` | `organizations#show` | 👑👑 SuperAdmin | Деталі організації |
+| 18 | GET | `/api/v1/users/:id` | `users#show` | 🔑 Auth | Профіль учасника організації (UserBlueprint `:crew`) |
+| 19 | GET | `/api/v1/organizations` | `organizations#index` | 👑👑 SuperAdmin | Список усіх організацій |
+| 20 | GET | `/api/v1/organizations/:id` | `organizations#show` | 👑👑 SuperAdmin | Деталі організації |
 | **🌳 Кластери та Дерева** | | | | | |
-| 20 | GET | `/api/v1/clusters` | `clusters#index` | 🔑 Auth | Список кластерів організації |
-| 21 | GET | `/api/v1/clusters/:id` | `clusters#show` | 🔑 Auth | Деталі кластера |
-| 22 | GET | `/api/v1/clusters/:cluster_id/trees` | `trees#index` | 🔑 Auth | Дерева кластера |
-| 23 | GET | `/api/v1/clusters/:cluster_id/actuators` | `actuators#index` | 🌿 Forester | Актуатори кластера |
-| 24 | GET | `/api/v1/trees/:id` | `trees#show` | 🔑 Auth | Паспорт дерева (солдата) |
-| 25 | GET | `/api/v1/trees/:id/telemetry` | `telemetry#tree_history` | 🔑 Auth | Телеметрія дерева |
+| 21 | GET | `/api/v1/clusters` | `clusters#index` | 🔑 Auth | Список кластерів організації |
+| 22 | GET | `/api/v1/clusters/:id` | `clusters#show` | 🔑 Auth | Деталі кластера |
+| 23 | GET | `/api/v1/clusters/:cluster_id/trees` | `trees#index` | 🔑 Auth | Дерева кластера |
+| 24 | GET | `/api/v1/clusters/:cluster_id/actuators` | `actuators#index` | 🌿 Forester | Актуатори кластера |
+| 25 | GET | `/api/v1/trees/:id` | `trees#show` | 🔑 Auth | Паспорт дерева (солдата) |
+| 26 | GET | `/api/v1/trees/:id/telemetry` | `telemetry#tree_history` | 🔑 Auth | Телеметрія дерева |
 | **🧬 Біологічні Константи** | | | | | |
-| 26 | GET | `/api/v1/tree_families` | `tree_families#index` | 👑 Admin | Список порід дерев |
-| 27 | GET | `/api/v1/tree_families/:id` | `tree_families#show` | 👑 Admin | Деталі породи |
-| 28 | GET | `/api/v1/tree_families/new` | `tree_families#new` | 👑 Admin | Форма нової породи |
-| 29 | POST | `/api/v1/tree_families` | `tree_families#create` | 👑 Admin | Створити породу |
-| 30 | GET | `/api/v1/tree_families/:id/edit` | `tree_families#edit` | 👑 Admin | Форма редагування |
-| 31 | PATCH | `/api/v1/tree_families/:id` | `tree_families#update` | 👑 Admin | Оновити породу |
+| 27 | GET | `/api/v1/tree_families` | `tree_families#index` | 👑 Admin | Список порід дерев |
+| 28 | GET | `/api/v1/tree_families/:id` | `tree_families#show` | 👑 Admin | Деталі породи |
+| 29 | GET | `/api/v1/tree_families/new` | `tree_families#new` | 👑 Admin | Форма нової породи |
+| 30 | POST | `/api/v1/tree_families` | `tree_families#create` | 👑 Admin | Створити породу |
+| 31 | GET | `/api/v1/tree_families/:id/edit` | `tree_families#edit` | 👑 Admin | Форма редагування |
+| 32 | PATCH | `/api/v1/tree_families/:id` | `tree_families#update` | 👑 Admin | Оновити породу |
 | **📡 Шлюзи та Телеметрія** | | | | | |
-| 32 | GET | `/api/v1/gateways` | `gateways#index` | 🔑 Auth | Список Gateway (Queens) |
-| 33 | GET | `/api/v1/gateways/:id` | `gateways#show` | 🔑 Auth | Деталі Gateway |
-| 34 | GET | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_history` | 🔑 Auth | **Читання** збереженої телеметрії Gateway (Dashboard) |
-| 35 | POST | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_uplink` | 🔑 Auth | **HTTP Uplink:** передати зашифрований батч телеметрії від Gateway |
-| 36 | GET | `/api/v1/telemetry/live` | `telemetry#live` | 🔑 Auth | Live-стрім телеметрії (HTML/Turbo) |
+| 33 | GET | `/api/v1/gateways` | `gateways#index` | 🔑 Auth | Список Gateway (Queens) |
+| 34 | GET | `/api/v1/gateways/:id` | `gateways#show` | 🔑 Auth | Деталі Gateway |
+| 35 | GET | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_history` | 🔑 Auth | **Читання** збереженої телеметрії Gateway (Dashboard) |
+| 36 | POST | `/api/v1/gateways/:id/telemetry` | `telemetry#gateway_uplink` | 🔑 Auth | **HTTP Uplink:** передати зашифрований батч телеметрії від Gateway |
+| 37 | GET | `/api/v1/telemetry/live` | `telemetry#live` | 🔑 Auth | Live-стрім телеметрії (HTML/Turbo) |
 | **💎 Гаманці та Контракти** | | | | | |
-| 37 | GET | `/api/v1/wallets` | `wallets#index` | 🔑 Auth | Список гаманців організації |
-| 38 | GET | `/api/v1/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
-| 39 | GET | `/api/v1/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (Turbo Frame) — ⚠️ **HTML only**: повертає Phlex Turbo Frame, не JSON |
-| 40 | GET | `/api/v1/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (Turbo Frame) — ⚠️ **HTML only**: повертає Phlex Turbo Frame, не JSON |
-| 41 | GET | `/api/v1/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
-| 42 | GET | `/api/v1/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
-| 43 | GET | `/api/v1/contracts/stats` | `contracts#stats` | 🔑 Auth | Фінансова аналітика |
+| 38 | GET | `/api/v1/wallets` | `wallets#index` | 🔑 Auth | Список гаманців організації |
+| 39 | GET | `/api/v1/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
+| 40 | GET | `/api/v1/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (Turbo Frame) — ⚠️ **HTML only**: повертає Phlex Turbo Frame, не JSON |
+| 41 | GET | `/api/v1/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (Turbo Frame) — ⚠️ **HTML only**: повертає Phlex Turbo Frame, не JSON |
+| 42 | GET | `/api/v1/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
+| 43 | GET | `/api/v1/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
+| 44 | GET | `/api/v1/contracts/stats` | `contracts#stats` | 🔑 Auth | Фінансова аналітика |
 | **⚙️ Актуатори** | | | | | |
-| 44 | GET | `/api/v1/actuators/:id` | `actuators#show` | 🌿 Forester | Деталі актуатора + історія команд |
-| 45 | POST | `/api/v1/actuators/:id/execute` | `actuators#execute` | 🌿 Forester | Виконати команду на актуаторі |
-| 46 | GET | `/api/v1/actuator_commands/:id` | `actuators#command_status` | 🌿 Forester | Статус команди актуатора |
+| 45 | GET | `/api/v1/actuators/:id` | `actuators#show` | 🌿 Forester | Деталі актуатора + історія команд |
+| 46 | POST | `/api/v1/actuators/:id/execute` | `actuators#execute` | 🌿 Forester | Виконати команду на актуаторі |
+| 47 | GET | `/api/v1/actuator_commands/:id` | `actuators#command_status` | 🌿 Forester | Статус команди актуатора |
 | **🚀 Прошивка (OTA)** | | | | | |
-| 47 | GET | `/api/v1/firmwares` | `firmwares#index` | 👑 Admin | Список версій прошивки |
-| 48 | GET | `/api/v1/firmwares/new` | `firmwares#new` | 👑 Admin | Форма завантаження прошивки |
-| 49 | POST | `/api/v1/firmwares` | `firmwares#create` | 👑 Admin | Завантажити нову прошивку |
-| 50 | GET | `/api/v1/firmwares/inventory` | `firmwares#inventory` | 👑 Admin | Статистика версій на пристроях |
-| 51 | POST | `/api/v1/firmwares/:id/deploy` | `firmwares#deploy` | 👑 Admin | Запустити OTA-оновлення |
+| 48 | GET | `/api/v1/firmwares` | `firmwares#index` | 👑 Admin | Список версій прошивки |
+| 49 | GET | `/api/v1/firmwares/new` | `firmwares#new` | 👑 Admin | Форма завантаження прошивки |
+| 50 | POST | `/api/v1/firmwares` | `firmwares#create` | 👑 Admin | Завантажити нову прошивку |
+| 51 | GET | `/api/v1/firmwares/inventory` | `firmwares#inventory` | 👑 Admin | Статистика версій на пристроях |
+| 52 | POST | `/api/v1/firmwares/:id/deploy` | `firmwares#deploy` | 👑 Admin | Запустити OTA-оновлення |
 | **⚠️ Тривоги та Обслуговування** | | | | | |
-| 52 | GET | `/api/v1/alerts` | `alerts#index` | 🔑 Auth | Список EWS-тривог |
-| 53 | PATCH | `/api/v1/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу |
-| 54 | GET | `/api/v1/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування |
-| 55 | GET | `/api/v1/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
-| 56 | POST | `/api/v1/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
-| 57 | GET | `/api/v1/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
-| 58 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис |
-| 59 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32) |
-| 60 | GET | `/api/v1/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
-| 61 | DELETE | `/api/v1/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото |
+| 53 | GET | `/api/v1/alerts` | `alerts#index` | 🔑 Auth | Список EWS-тривог |
+| 54 | PATCH | `/api/v1/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу |
+| 55 | GET | `/api/v1/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування |
+| 56 | GET | `/api/v1/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
+| 57 | POST | `/api/v1/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
+| 58 | GET | `/api/v1/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
+| 59 | PATCH | `/api/v1/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис |
+| 60 | PATCH | `/api/v1/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32) |
+| 61 | GET | `/api/v1/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
+| 62 | DELETE | `/api/v1/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото |
 | **⊙ Оракул (AI Insights)** | | | | | |
-| 62 | GET | `/api/v1/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
-| 63 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
-| 64 | GET | `/api/v1/oracle_visions/stream_config?cluster_id=:id` | `oracle_visions#stream_config` | 🌿 Forester | Конфіг підписки на стрім. `cluster_id` — обов'язковий query param. 404 при невідомому `cluster_id`. ⚠️ [B-4: IDOR] |
+| 63 | GET | `/api/v1/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
+| 64 | POST | `/api/v1/oracle_visions/simulate` | `oracle_visions#simulate` | 👑 Admin | Запустити Lorenz-симуляцію |
+| 65 | GET | `/api/v1/oracle_visions/stream_config?cluster_id=:id` | `oracle_visions#stream_config` | 🌿 Forester | Конфіг підписки на стрім. `cluster_id` — обов'язковий query param. 404 при невідомому `cluster_id`. |
 | **⛓️ Блокчейн** | | | | | |
-| 65 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій |
-| 66 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
-| 67 | GET | `/api/v1/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
-| 68 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public (HMAC) | Chainlink Oracle callback — захищено `X-Chainlink-Signature` HMAC-SHA256 |
+| 66 | GET | `/api/v1/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій |
+| 67 | GET | `/api/v1/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції |
+| 68 | GET | `/api/v1/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
+| 69 | POST | `/api/v1/oracle_callbacks` | `oracle_callbacks#create` | 🌐 Public (HMAC) | Chainlink Oracle callback — захищено `X-Chainlink-Signature` HMAC-SHA256 |
 | **🔔 Сповіщення** | | | | | |
-| 69 | GET | `/api/v1/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
-| 70 | PATCH | `/api/v1/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
+| 70 | GET | `/api/v1/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
+| 71 | PATCH | `/api/v1/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
 | **📊 Звіти** | | | | | |
-| 71 | GET | `/api/v1/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
-| 72 | GET | `/api/v1/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
-| 73 | GET | `/api/v1/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
+| 72 | GET | `/api/v1/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
+| 73 | GET | `/api/v1/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
+| 74 | GET | `/api/v1/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
 | **🧠 Налаштування** | | | | | |
-| 74 | GET | `/api/v1/settings` | `settings#show` | 👑 Admin | Налаштування організації |
-| 75 | PATCH | `/api/v1/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
+| 75 | GET | `/api/v1/settings` | `settings#show` | 👑 Admin | Налаштування організації |
+| 76 | PATCH | `/api/v1/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
 | **👁️ Аудит** | | | | | |
-| 76 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog) |
-| 77 | GET | `/api/v1/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
+| 77 | GET | `/api/v1/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog) |
+| 78 | GET | `/api/v1/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
 | **⚡ Ініціація Пристроїв** | | | | | |
-| 78 | GET | `/api/v1/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
-| 79 | POST | `/api/v1/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation** |
+| 79 | GET | `/api/v1/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
+| 80 | POST | `/api/v1/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation** |
 | **⚙️ Системний Моніторинг** | | | | | |
-| 80 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
-| 81 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
+| 81 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
+| 82 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
 
 **Легенда:**
 
