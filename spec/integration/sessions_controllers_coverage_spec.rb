@@ -156,7 +156,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
 
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
-        expect(json["records"]).to be_an(Array)
+        expect(json["data"]).to be_an(Array)
       end
 
       it "filters by action_type" do
@@ -166,7 +166,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
 
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
-        expect(json["records"]).to be_an(Array)
+        expect(json["data"]).to be_an(Array)
       end
 
       it "filters by date range" do

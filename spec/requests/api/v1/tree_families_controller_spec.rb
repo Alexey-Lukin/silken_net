@@ -203,9 +203,9 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
 
   describe "DELETE /api/v1/tree_families/:id" do
     it "is not routable because destroy route is not defined (B-3 fix)" do
-      expect {
-        delete "/api/v1/tree_families/#{scots_pine.id}", headers: headers, as: :json
-      }.to raise_error(ActionController::RoutingError)
+      delete "/api/v1/tree_families/#{scots_pine.id}", headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
+      expect(TreeFamily.exists?(scots_pine.id)).to be true
     end
   end
 end

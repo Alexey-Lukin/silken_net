@@ -48,7 +48,7 @@ RSpec.describe "Pundit authorization integration" do
       get "/api/v1/wallets", headers: investor_headers, as: :json
       expect(response).to have_http_status(:ok)
 
-      ids = response.parsed_body["wallets"].map { |w| w["id"] }
+      ids = response.parsed_body["data"].map { |w| w["id"] }
       expect(ids).to include(own_tree.wallet.id)
       expect(ids).not_to include(other_tree.wallet.id)
     end
@@ -57,7 +57,7 @@ RSpec.describe "Pundit authorization integration" do
       get "/api/v1/wallets", headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
-      ids = response.parsed_body["wallets"].map { |w| w["id"] }
+      ids = response.parsed_body["data"].map { |w| w["id"] }
       expect(ids).to include(own_tree.wallet.id, other_tree.wallet.id)
     end
   end
