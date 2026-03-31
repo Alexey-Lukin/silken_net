@@ -75,7 +75,7 @@ class AlertNotificationWorker
     bulk_args = []
     stakeholders = organization.users.where(role: [ :admin, :forester ])
 
-    stakeholders.find_each do |user|
+    stakeholders.find_each(batch_size: 500) do |user|
       # SMS лише для критичних ситуацій (Пожежа / Вандалізм)
       bulk_args << [ user.id, alert.id, "sms" ] if alert.severity_critical?
 

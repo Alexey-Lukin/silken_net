@@ -72,7 +72,7 @@
 
 ## ⚙️ II. Воркери (Workers) — Виконавчі м'язи
 
-Асинхронні процеси Sidekiq (31 воркер, 9 пріоритетних черг), що забезпечують масштабованість та відмовостійкість системи.
+Асинхронні процеси Sidekiq (33 воркери + 2 concerns, 9 пріоритетних черг), що забезпечують масштабованість та відмовостійкість системи.
 
 ### 📡 Рівень Зв'язку (Uplink/Downlink)
 
@@ -85,7 +85,7 @@
 ### ⚖️ Рівень Аудиту та Токеноміки
 
 6. **`DailyAggregationWorker`** (`low`, retry: 3, lock: :until_executed): **Хронометрист**. Диригент добового циклу (01:00 UTC). Запускає агрегацію інсайтів та подальший ланцюг аудиту. Ланцюг: → `ClusterHealthCheckWorker`.
-7. **`ClusterHealthCheckWorker`** (`default`, retry: 3): **Вартовий** (02:00 UTC). Ретроспективний аудит NaaS-контрактів. Ланцюг: → `CeloRewardWorker` (здоровий) або → `BurnCarbonTokensWorker` (порушений).
+7. **`ClusterHealthCheckWorker`** (`default`, retry: 3): **Вартовий** (02:00 UTC). Ретроспективний аудит NaaS-контрактів. Ланцюг: → `CeloRewardWorker` (здоровий) або → `ContractHealthCheckService` → `BurnCarbonTokensWorker` (порушений).
 8. **`TokenomicsEvaluatorWorker`** (`default`, retry: 3): **NAM-ŠID** (щогодини). Аудит балів росту та ініціація емісії SCC, якщо поріг у 10,000 балів перетнуто.
 9. **`MintCarbonCoinWorker`** (`web3_critical`, retry: 5): **NAM-TAR**. Емісійний вузол. Включає протокол атомарного ролбеку балів при критичних помилках RPC.
 10. **`BurnCarbonTokensWorker`** (`critical`, retry: 5): **Екзекутор**. Негайне виконання Slashing-вироку та створення "надгробного" запису в MaintenanceRecord.
@@ -93,31 +93,39 @@
 12. **`InsurancePayoutWorker`** (`critical`, retry: 10): **Гарант**. Автоматичне виконання виплат за параметричним страхуванням при настанні страхових подій. Підтримує dual-mode: внутрішній мінтинг (SCC/SFC) або зовнішній Etherisc DIP claim (USDC) через `Etherisc::ClaimService`.
 13. **`EcosystemHealingWorker`** (`critical`, retry: 3): **Лікар**. Критична корекція аномалій в екосистемі. Ініціює відновлювальні заходи після EWS-тривог.
 14. **`EvaluateTreeBatchWorker`** (`default`, retry: 3): **Пакетний Оцінювач**. Масова оцінка здоров'я дерев — розподіляє навантаження InsightGenerator по батчах.
+15. **`InsightGeneratorOrchestratorWorker`** (`low`, retry: 3, unique_for: 24h): **Диригент Інсайтів**. Оркестрація добової агрегації через Sidekiq Pro Batch — розбиває кластери на чанки по 100 та розподіляє між `GenerateClusterInsightWorker`. Тригер: `DailyAggregationWorker`.
+16. **`GenerateClusterInsightWorker`** (`low`, retry: 3): **Мозаїчний Аналітик**. Обробка чанку кластерів у межах Sidekiq Pro Batch — створює tree-level та cluster-level `AiInsight` через `InsightGeneratorService#process_cluster_batch`.
+17. **`PartitionMaintenanceWorker`** (`default`, retry: 3): **Архітектор Партицій**. Інфраструктурне обслуговування — створює RANGE-партиції для `telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions` на поточний і наступний місяці. Тригер: cron 00:30 UTC.
 
 ### 🔗 Рівень Мультичейну (Web3 — Gaia 2.0)
 
-15. **`IotexVerificationWorker`** (`web3_critical`, retry: 5): **Абсолютна Істина**. Відправляє телеметрію до IoTeX W3bstream для ZK-proof генерації. Оновлює `verified_by_iotex` та `zk_proof_ref`. Ланцюг: → `ChainlinkDispatchWorker`.
-16. **`ChainlinkDispatchWorker`** (`web3_critical`, retry: 5): **Нервовий Імпульс**. Відправляє верифіковану телеметрію до Chainlink Functions DON. Guard: тільки якщо `verified_by_iotex? == true`.
-17. **`PeaqRegistrationWorker`** (`web3`, retry: 5): **Паспортист**. Реєструє peaq DID для дерева (`did:peaq:0x...`). Зберігає `peaq_did` на моделі Tree.
-18. **`PuroEarthPassportWorker`** (`web3`, retry: 3): **Паспорт Біомаси**. Генерація D-MRV Biomass Passport для загиблих дерев (Puro.earth CORC інтеграція).
-19. **`SolanaMicroRewardWorker`** (`web3`, retry: 3): **Мікро-Життя**. Паралельні USDC мікро-платежі на Solana. Composite PK для partition pruning.
-20. **`CeloRewardWorker`** (`web3`, retry: 3): **Голос Громади**. Відправляє 5 cUSD організації за здоровий кластер. ReFi incentive.
-21. **`KlimaRetirementWorker`** (`web3_low`, retry: 3): **Очищення**. ESG carbon retirement через KlimaDAO. Handles: InsufficientBalanceError, InvalidTokenTypeError.
-22. **`EthereumAnchorWorker`** (`web3_low`, retry: 3): **Останній Суд** (щопонеділка 03:00 UTC). Щотижневий state root → Ethereum L1. Запускається після завершення всіх нічних циклів.
-23. **`HadronAssetRegistrationWorker`** (`web3_low`, retry: 5): **Реєстратор RWA**. Реєструє лісову ділянку як Real World Asset у Polygon Hadron.
-24. **`ToucanBridgeWorker`** (`web3_critical`, retry: 5): **Міст Тукану**. Carbon bridge через Toucan Protocol — перетворення верифікованих вуглецевих кредитів у TCO2 токени.
+18. **`IotexVerificationWorker`** (`web3_critical`, retry: 5): **Абсолютна Істина**. Відправляє телеметрію до IoTeX W3bstream для ZK-proof генерації. Оновлює `verified_by_iotex` та `zk_proof_ref`. Ланцюг: → `ChainlinkDispatchWorker`.
+19. **`ChainlinkDispatchWorker`** (`web3_critical`, retry: 5): **Нервовий Імпульс**. Відправляє верифіковану телеметрію до Chainlink Functions DON. Guard: тільки якщо `verified_by_iotex? == true`.
+20. **`PeaqRegistrationWorker`** (`web3`, retry: 5): **Паспортист**. Реєструє peaq DID для дерева (`did:peaq:0x...`). Зберігає `peaq_did` на моделі Tree.
+21. **`PuroEarthPassportWorker`** (`web3`, retry: 3): **Паспорт Біомаси**. Генерація D-MRV Biomass Passport для загиблих дерев (Puro.earth CORC інтеграція).
+22. **`SolanaMicroRewardWorker`** (`web3`, retry: 3): **Мікро-Життя**. Паралельні USDC мікро-платежі на Solana. Тригер: `OracleCallbacksController#create` (Chainlink DON fulfillment callback). Composite PK для partition pruning.
+23. **`CeloRewardWorker`** (`web3`, retry: 3): **Голос Громади**. Відправляє 5 cUSD організації за здоровий кластер. ReFi incentive.
+24. **`KlimaRetirementWorker`** (`web3_low`, retry: 3): **Очищення**. ESG carbon retirement через KlimaDAO. Handles: InsufficientBalanceError, InvalidTokenTypeError.
+25. **`EthereumAnchorWorker`** (`web3_low`, retry: 3): **Останній Суд** (щопонеділка 03:00 UTC). Щотижневий state root → Ethereum L1. Запускається після завершення всіх нічних циклів.
+26. **`HadronAssetRegistrationWorker`** (`web3_low`, retry: 5): **Реєстратор RWA**. Реєструє лісову ділянку як Real World Asset у Polygon Hadron.
+27. **`ToucanBridgeWorker`** (`web3_critical`, retry: 5): **Міст Тукану**. Carbon bridge через Toucan Protocol — перетворення верифікованих вуглецевих кредитів у TCO2 токени.
 
 ### 📢 Рівень Оповіщення
 
-25. **`AlertNotificationWorker`** (`alerts`, retry: 5): **Голос Цитаделі**. Багатоканальна розсилка тривог: ActionCable (UI), Push-сповіщення та SMS (для Critical Severity).
-26. **`SingleNotificationWorker`** (`alerts`, retry: 5): **Особистий Кур'єр**. Точкове сповіщення конкретного патрульного (SMS/Telegram) при призначенні завдання.
-27. **`DclimateVerificationWorker`** (`alerts`, retry: 3): **Кліматичний Свідок**. Верифікація кліматичних даних через dClimate API для підтвердження екологічних умов кластера.
+28. **`AlertNotificationWorker`** (`alerts`, retry: 5): **Голос Цитаделі**. Багатоканальна розсилка тривог: ActionCable (UI), Push-сповіщення та SMS (для Critical Severity). Тригер: `EwsAlert.after_create_commit :dispatch_notifications!` (Transactional Outbox).
+29. **`SingleNotificationWorker`** (`alerts`, retry: 5): **Особистий Кур'єр**. Точкове сповіщення конкретного патрульного (SMS/Telegram) при призначенні завдання.
+30. **`DclimateVerificationWorker`** (`alerts`, retry: 3): **Кліматичний Свідок**. Верифікація кліматичних даних через dClimate API для підтвердження екологічних умов кластера.
 
 ### 📦 Рівень Децентралізованого Сховища та Стрімінгу
 
-28. **`FilecoinArchiveWorker`** (`low`, retry: 5): **Архіваріус**. Архівує AuditLog записи до IPFS/Filecoin для незнищенної довгострокової пам'яті. Запускається автоматично після `AuditLogWorker`.
-29. **`AuditLogWorker`** (`low`, retry: 3): **Летописець**. Створення аудит-записів у фоновому режимі з автоматичним запуском архівації на Filecoin.
-30. **`StreamrBroadcastWorker`** (`low`, retry: 3): **Голос Лісу**. Real-time broadcast телеметрії у Streamr P2P мережу. Non-critical: не блокує основний потік.
+31. **`FilecoinArchiveWorker`** (`low`, retry: 5): **Архіваріус**. Архівує AuditLog записи до IPFS/Filecoin для незнищенної довгострокової пам'яті. Запускається автоматично після `AuditLogWorker`.
+32. **`AuditLogWorker`** (`low`, retry: 3): **Летописець**. Створення аудит-записів у фоновому режимі з автоматичним запуском архівації на Filecoin.
+33. **`StreamrBroadcastWorker`** (`low`, retry: 3): **Голос Лісу**. Real-time broadcast телеметрії у Streamr P2P мережу. Non-critical: не блокує основний потік.
+
+### 🔁 Sidekiq Batch Callbacks (`app/callbacks/`)
+
+- **`InsightBatchCallbacks`** (Sidekiq Batch Callback — not a Worker): Спрацьовує при завершенні всіх `GenerateClusterInsightWorker` джобів. `on_success` → `ClusterHealthCheckWorker.perform_async` + `InsightGeneratorService.cleanup_old_logs!`.
+- **`TokenomicsBatchCallbacks`** (Sidekiq Batch Callback — not a Worker): Спрацьовує при завершенні всіх `EvaluateTreeBatchWorker` джобів. `on_success` → `MintCarbonCoinWorker.perform_async` (auto-discovery pending TX).
 
 ---
 
@@ -128,25 +136,36 @@
 │ CoAP packet → UnpackTelemetryWorker                                      │
 │   ├→ StreamrBroadcastWorker (P2P broadcast, non-blocking)                │
 │   ├→ IotexVerificationWorker (ZK-proof)                                  │
-│   │    └→ ChainlinkDispatchWorker (oracle dispatch)                      │
-│   │         └→ MintCarbonCoinWorker (Polygon mint)                       │
-│   │              └→ BlockchainConfirmationWorker (+30s polling)           │
-│   ├→ SolanaMicroRewardWorker (parallel micro-payment)                    │
-│   └→ AlertDispatchService → AlertNotificationWorker / ActuatorCommand    │
+│   │    └→ ChainlinkDispatchWorker (oracle dispatch → Chainlink DON)      │
+│   └→ AlertDispatchService → EwsAlert.create!                             │
+│        └→ (after_create_commit) AlertNotificationWorker / ActuatorCommand│
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─── ORACLE CALLBACK (async, Chainlink DON fulfillment) ───────────────────┐
+│ POST /api/v1/oracle_callbacks → OracleCallbacksController#create          │
+│   ├→ MintCarbonCoinWorker (Polygon mint)                                  │
+│   │    └→ BlockchainConfirmationWorker (+30s polling)                     │
+│   └→ SolanaMicroRewardWorker (parallel USDC micro-payment)               │
 └──────────────────────────────────────────────────────────────────────────┘
 
 ┌─── HOURLY ───────────────────────────────────────────────────────────────┐
 │ TokenomicsEvaluatorWorker                                                │
-│   └→ MintCarbonCoinWorker (batch) → BlockchainConfirmationWorker         │
+│   └→ EvaluateTreeBatchWorker (Sidekiq Pro Batch)                         │
+│       └→ [on_success] TokenomicsBatchCallbacks                           │
+│            └→ MintCarbonCoinWorker (batch) → BlockchainConfirmationWorker│
 └──────────────────────────────────────────────────────────────────────────┘
 
 ┌─── DAILY (01:00–02:00 UTC) ──────────────────────────────────────────────┐
 │ DailyAggregationWorker (01:00)                                           │
-│   └→ InsightGeneratorService → AiInsight per tree                        │
-│       └→ ClusterHealthCheckWorker (02:00)                                │
-│           ├→ Healthy: CeloRewardWorker (5 cUSD)                          │
-│           └→ Breached: BurnCarbonTokensWorker → Sovereign Slashing       │
-│               └→ AuditLogWorker → FilecoinArchiveWorker (IPFS)           │
+│   └→ InsightGeneratorOrchestratorWorker (Sidekiq Pro Batch)              │
+│       └→ GenerateClusterInsightWorker × N чанків                         │
+│           └→ [on_success] InsightBatchCallbacks                          │
+│                ├→ ClusterHealthCheckWorker (02:00)                        │
+│                │   ├→ Healthy: CeloRewardWorker (5 cUSD)                 │
+│                │   └→ Breached: ContractHealthCheckService                │
+│                │        └→ BurnCarbonTokensWorker → Sovereign Slashing   │
+│                │            └→ AuditLogWorker → FilecoinArchiveWorker     │
+│                └→ InsightGeneratorService.cleanup_old_logs!               │
 └──────────────────────────────────────────────────────────────────────────┘
 
 ┌─── WEEKLY (Monday 03:00 UTC) ────────────────────────────────────────────┐
