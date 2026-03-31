@@ -68,7 +68,7 @@
 
 - ~~**🔴 BLK-06 · `NaasContract` — `insurance_premium_rate` та `forester_share_rate` не є DB-колонками.** Документ §6 перераховує їх як збережені поля. В коді: константа `INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`, обчислювальні методи `insurance_premium_amount` та `forester_share_amount`. **Дія:** Перенести з таблиці "Поля" до таблиці "Методи".~~ ✅ **ВИПРАВЛЕНО**: Видалено з таблиці полів §6; додано `insurance_premium_amount` та `forester_share_amount` до таблиці методів.
 
-- **🔴 BLK-07 · `Gateway` — `cluster_id` в DB є `NOT NULL`, але модель оголошує `belongs_to :cluster, optional: true`.** `db/structure.sql`: `cluster_id bigint NOT NULL`. Документ §3 вказує "optional". Спроба створити Gateway без cluster_id викличе PG-виключення `null value in column "cluster_id"`. **Дія:** Узгодити схему і модель — або прибрати `optional: true`, або видалити `NOT NULL` з DB.
+- ~~**🔴 BLK-07 · `Gateway` — `cluster_id` в DB є `NOT NULL`, але модель оголошує `belongs_to :cluster, optional: true`.** `db/structure.sql`: `cluster_id bigint NOT NULL`. Документ §3 вказує "optional". Спроба створити Gateway без cluster_id викличе PG-виключення `null value in column "cluster_id"`. **Дія:** Узгодити схему і модель — або прибрати `optional: true`, або видалити `NOT NULL` з DB.~~ ✅ **ВИПРАВЛЕНО** у [PR #233](https://github.com/Alexey-Lukin/silken_net/commit/6418f3792c1a65a179cacf3c9b481850a1f58b3d): `optional: true` видалено з `Gateway#belongs_to :cluster`. Модель узгоджена з `cluster_id bigint NOT NULL` в БД.
 
 - ~~**🔴 BLK-08 · `NaasContract` — `start_date`/`end_date`: документ вказує тип `date`, DB зберігає `timestamp`.** `db/structure.sql`: `start_date timestamp(6) without time zone`. **Дія:** Виправити тип на `timestamp`.~~ ✅ **ВИПРАВЛЕНО**: Тип виправлено на `timestamp` у §6.
 
@@ -90,7 +90,7 @@
 
 - ~~**🟠 WARN-08 · ER-карта §10: `TreeFamily → TinyMlModels (nullify)` та `→ BioContractFirmwares (nullify)` не існують.** В моделі `TreeFamily` є лише `has_many :trees, dependent: :restrict_with_error`. `TinyMlModel` та `BioContractFirmware` мають `belongs_to :tree_family`, але зворотньої `has_many` в `TreeFamily` немає. **Дія:** Прибрати ці асоціації з ER-карти.~~ ✅ **ВИПРАВЛЕНО**: видалено з ER-карти §10.
 
-- ~~**🟠 WARN-09 · ER-карта §10: `Organization → Wallets (delete_all)` — в коді відсутній `dependent:`.** `has_many :wallets` без жодної опції `dependent:`. Видалення Organization залишить orphaned Wallets. **Дія:** Додати `dependent: :nullify` або `:destroy`; оновити ER-карту.~~ ✅ **ЧАСТКОВО**: ER-карту §10 виправлено — `Wallets (direct FK, no dependent: — orphan risk)`. Додавання `dependent:` потребує коду (залишено відкритим).
+- ~~**🟠 WARN-09 · ER-карта §10: `Organization → Wallets (delete_all)` — в коді відсутній `dependent:`.** `has_many :wallets` без жодної опції `dependent:`. Видалення Organization залишить orphaned Wallets. **Дія:** Додати `dependent: :nullify` або `:destroy`; оновити ER-карту.~~ ✅ **ВИПРАВЛЕНО** у [PR #233](https://github.com/Alexey-Lukin/silken_net/commit/6418f3792c1a65a179cacf3c9b481850a1f58b3d): ER-карту §10 виправлено та `dependent: :nullify` додано до `Organization#has_many :wallets`. При видаленні Organization — `organization_id` у Wallets обнуляється (orphan-ризик усунено).
 
 - ~~**🟠 WARN-10 · `User#telegram_chat_id`: документ вказує `bigint`, в БД `character varying`.** **Дія:** Виправити тип на `string / varchar`.~~ ✅ **ВИПРАВЛЕНО**: тип виправлено на `string` у §5.
 
@@ -110,9 +110,9 @@
 
 - ~~**🟡 NOTE-02 · Численні незадокументовані DB-колонки.** Серед них: `trees` (`peaq_did`, `firmware_version`, `altitude`); `gateways` (`firmware_version`, `altitude`); `telemetry_logs` (`growth_points`, `metabolism_s`, `rssi`, `sap_flow`, `verified_by_iotex`, `zk_proof_ref`, `chainlink_request_id`, `tamper_detected`); `wallets` (`solana_public_address`, `hadron_kyc_status`); `naas_contracts` (`emitted_tokens`, `cancelled_at`, `hadron_asset_id`); `blockchain_transactions` (`cumulative_gas_cost`, `sent_at`, `confirmed_at`, `chainlink_request_id`, `zk_proof_ref`, `locked_points`); `ews_alerts` (`dclimate_ref`); `maintenance_records` (`biomass_passport_tx_hash`); `tiny_ml_models` (`target_pest`, `drift_checked_at`); `clusters` (`climate_type`); `ai_insights` (`analyzed_date`, `average_temperature`, `total_growth_points`, `summary`). **Дія:** Задокументувати у відповідних таблицях моделей.~~ ✅ **ВИПРАВЛЕНО**: додано незадокументовані колонки до всіх відповідних секцій: Tree, Gateway, TelemetryLog, Wallet, NaasContract, BlockchainTransaction, EwsAlert, MaintenanceRecord, TinyMlModel, Cluster, AiInsight.
 
-- ~~**🟡 NOTE-03 · TRL 8 завищений за наявності незакритих BLK-01..BLK-08.** 8 блокерів означають, що документ не точно описує систему. **Дія:** Закрити всі BLK; після цього TRL 8 обґрунтований.~~ ✅ **ВИПРАВЛЕНО**: BLK-01..06, 08 закриті. Залишається BLK-07 (код: `Gateway optional: true` vs `NOT NULL` в DB). TRL 8 обґрунтований для всіх doc-layer аспектів.
+- ~~**🟡 NOTE-03 · TRL 8 завищений за наявності незакритих BLK-01..BLK-08.** 8 блокерів означають, що документ не точно описує систему. **Дія:** Закрити всі BLK; після цього TRL 8 обґрунтований.~~ ✅ **ВИПРАВЛЕНО**: BLK-01..08 закриті (BLK-07 закрито у PR #233). TRL 8 повністю обґрунтований.
 
-- **🟡 NOTE-04 · Factory для `Wallet` не встановлює асоціацію `organization`.** Тести що будують wallet напряму (без tree) можуть отримати `organization: nil`. **Дія:** Додати `organization { tree&.cluster&.organization }` до factory.
+- ~~**🟡 NOTE-04 · Factory для `Wallet` не встановлює асоціацію `organization`.** Тести що будують wallet напряму (без tree) можуть отримати `organization: nil`. **Дія:** Додати `organization { tree&.cluster&.organization }` до factory.~~ ✅ **ВИПРАВЛЕНО** у [PR #233](https://github.com/Alexey-Lukin/silken_net/commit/6418f3792c1a65a179cacf3c9b481850a1f58b3d): `organization { tree&.cluster&.organization }` додано до `spec/factories/wallets.rb`.
 
 - ~~**🟡 NOTE-05 · `BlockchainTransaction` — AASM event `confirm` приймає два аргументи, але документ не відображає підписи подій.** Код: `event :confirm do |block_num, gas_cost|`. **Дія:** Додати підписи подій: `confirm(block_num, gas_cost)`, `mark_as_sent(tx_hash)`, `fail(reason)`.~~ ✅ **ВИПРАВЛЕНО**: підписи подій додано до §6 BlockchainTransaction.
 
@@ -401,7 +401,7 @@ dormant ──reactivate──► active
 
 | Зв'язок | Тип | Опис |
 |---------|-----|------|
-| `cluster` | `belongs_to, optional` | Сектор відповідальності |
+| `cluster` | `belongs_to` (required, NOT NULL) | Сектор відповідальності |
 | `hardware_key` | `has_one` via `uid/device_uid` | AES-256 ключ розшифровки батчів |
 | `trees` | `has_many, through: :cluster` | Підлеглі Солдати |
 | `telemetry_logs` | `has_many` via `queen_uid/uid` | Пакети, прийняті цією Королевою |
@@ -727,7 +727,7 @@ any ──report_fault──► faulty
 | `naas_contracts` | `has_many, restrict_with_error` | Фінансова цілісність |
 | `clusters` | `has_many, dependent: :destroy` | Лісові масиви |
 | `trees` | `has_many, through: :clusters` | Всі дерева |
-| `wallets` | `has_many` (direct FK) | Пряма магістраль (без 4-рівневого JOIN) |
+| `wallets` | `has_many, dependent: :nullify` | Пряма магістраль (без 4-рівневого JOIN); `organization_id` обнуляється при видаленні Organization |
 | `ews_alerts` | `has_many, through: :clusters` | Тривоги всіх кластерів (через `under_threat?`) |
 | `audit_logs` | `has_many, dependent: :delete_all` | Незмінний аудит |
 | `logo` | `has_one_attached` | Active Storage |
