@@ -1,147 +1,73 @@
-# 04_04: Phlex UI & Tailwind (Design System SSOT)
+# 04_04: Phlex UI & Tailwind (SSOT Дизайн-Системи)
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
-Зафіксувати повну специфікацію дизайн-системи Gaia 2.0 як Єдине Джерело Істини (SSOT). Документ описує **Phlex-компоненти**, **Tailwind CSS токени**, **Stimulus-контролери**, **Turbo-інтеграцію** та правила доступності. Слугує єдиним авторитетним джерелом для всіх UI-рішень в межах Rails 8.1 моноліту. Зворотньо виведено (Reverse Shaping) з живого кодбейсу.
+Зафіксувати повну специфікацію дизайн-системи Gaia 2.0 як Єдине Джерело Істини (SSOT). Документ описує **Phlex-компоненти**, **Tailwind CSS токени**, **Stimulus-контролери**, **Turbo-інтеграцію** та правила доступності. Слугує єдиним авторитетним джерелом для всіх UI-рішень в межах Rails 8.1 моноліту.
 
-## ✅ Статус (Status)
+## ✅ Статус
 
-- **Поточний TRL:** TRL 9 — System Complete. Reverse-shaped from live codebase. Всі blockers B-01/B-02 (semantic tokens) та W-06 (scaffold `hello_controller.js`) виправлено у [PR #236](https://github.com/Alexey-Lukin/silken_net/commit/a6d6807648ae86767a41d497f0d2b85f9aed4b67).
-- **Stack:** Rails 8.1 · Phlex · Tailwind CSS 4 · TailwindMerge · Stimulus · Turbo 8
+- **Поточний TRL:** TRL 9 — Система завершена. Всі blockers закриті, дизайн-система відповідає SSOT.
+- **Стек:** Rails 8.1 · Phlex · Tailwind CSS 4 · TailwindMerge · Stimulus · Turbo 8
 - **Пов'язані модулі:**
   - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
   - REST API → [`04_03_REST_API_v1_Reference`](04_03_REST_API_v1_Reference)
   - Моделі → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
   - Прошивка → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
 
-## 🛑 Блокери (Blockers / Needs Action)
+---
 
-- ~~**🔴 BLOCKER-01: `map` контролер — відсутній `disconnect()` (Memory Leak при Turbo Drive навігації).**
-  `map_controller.js` не мав `disconnect()` методу. Leaflet map instance не знищувалась при Turbo Drive-навігації → витік пам'яті при кожному переході між сторінками. Маркери накопичувались у пам'яті браузера.~~ ✅ **ВИРІШЕНО** у кодбейсі: `map_controller.js` має `disconnect()` що викликає `this.map.off()`, `this.map.remove()`, скидає `this.markers = {}` та очищає `resizeTimeout`. `matrix_rain_controller.js` — коректно очищає `clearInterval` + `removeEventListener` у `disconnect()`.
+## Зміст
 
-- ~~**🟠 BLOCKER-02: Відсутні RSpec-тести для `PhotoCard`, `DataTable`, `Pagination`.**
-  Документ (§10) декларує 134 приклади в 13 файлах, але три з 11 Shared UI компонентів не мають spec-файлів:
-  - `spec/views/shared/ui/photo_card_spec.rb` — **ВІДСУТНІЙ** (`PhotoCard` — ActiveStorage, hover overlay, editable delete)
-  - `spec/views/shared/ui/data_table_spec.rb` — **ВІДСУТНІЙ** (`DataTable` — configurable columns, empty state, block rendering)
-  - `spec/views/shared/ui/pagination_spec.rb` — **ВІДСУТНІЙ** (`Pagination` — Pagy prev/next, URL helper)~~ ✅ **ВИРІШЕНО** у [commit b08de50](https://github.com/Alexey-Lukin/silken_net/commit/b08de50f84f1bc612b91db0e90b5e2082338b5d6) (PR #231):
-  - `spec/views/shared/ui/data_table_spec.rb` — додано 20 прикладів: columns+rows, empty state, custom `empty_message`, design system compliance, accessibility, class override, single column
-  - `spec/views/shared/ui/pagination_spec.rb` — додано 22 приклади: middle/first/last/single page, design system compliance, accessibility, focus-visible, invalid pagy guard
-  - `spec/views/shared/ui/photo_card_spec.rb` — додано 17 прикладів: initialization, validation, design system compliance, editable true/false, typography
-  - `spec/components/previews/skeleton_preview.rb` — додано Lookbook preview з 8 сценаріями: default, text, card, stats, table, map, custom_lines, interactive
-
-- ~~**🟡 BLOCKER-03: Legacy `2xs`/`3xs` fontSize аліаси в `tailwind.config.js` не зареєстровані в `CUSTOM_TEXT_SCALE`.**
-  `config/tailwind.config.js` розширює `theme.fontSize` через:
-  ```js
-  "2xs": ["0.625rem", { lineHeight: "0.875rem" }],  /* 10px — збігається з `tiny` */
-  "3xs": ["0.5rem",   { lineHeight: "0.75rem"  }],  /* 8px  — збігається з `micro` */
-  ```
-  Ці аліаси генерують класи `text-2xs` / `text-3xs`, що **не зареєстровані** у `ApplicationComponent::CUSTOM_TEXT_SCALE = %w[micro mini tiny compact]`. Якщо компонент комбінує `text-2xs` з `text-status-*`, TailwindMerge трактує обидва як `text-*` конфлікт і видаляє один із класів.~~ ✅ **ВИРІШЕНО** у [commit b08de50](https://github.com/Alexey-Lukin/silken_net/commit/b08de50f84f1bc612b91db0e90b5e2082338b5d6) (PR #231): legacy аліаси `"2xs"` та `"3xs"` видалено. `config/tailwind.config.js` **не містить ключа `fontSize`** взагалі (ні в `theme`, ні в `theme.extend`). Кастомні токени (`micro`, `mini`, `tiny`, `compact`) визначені виключно у CSS `@theme` блоці `application.css` (`--font-size-micro` тощо) — не в JS-конфігу. `CUSTOM_TEXT_SCALE` реєструє ці 4 токени у TailwindMerge. TailwindMerge коректно розрізняє font-size та color класи без конфліктів.
-
-### 🔍 Аудит 2026-03-29 — Нові знайдені проблеми
-
-#### 🔴 Блокери
-
-- ~~**🔴 B-01 · `Web3::Address` використовує raw Tailwind кольори в shared-компоненті.** `app/views/shared/web3/address.rb` містить `text-emerald-500`, `text-emerald-700`, `hover:text-emerald-300`, `focus-visible:ring-emerald-500`, `text-gray-700`. Документ §3.5 забороняє raw Tailwind кольори в shared-компонентах (тільки semantic tokens). `shared/web3/` — reusable shared namespace, а не domain page component. **Дія:** Замінити на семантичні токени: `text-gaia-primary`, `hover:text-gaia-primary-hover`, `focus-visible:ring-gaia-primary`, `text-gaia-text-muted`.~~ ✅ **ВИПРАВЛЕНО** у [PR #236](https://github.com/Alexey-Lukin/silken_net/commit/a6d6807648ae86767a41d497f0d2b85f9aed4b67): `text-emerald-500` → `text-gaia-primary`, `text-emerald-700` / `hover:text-emerald-300` → `hover:text-gaia-primary-hover`, `focus-visible:ring-emerald-500` → `focus-visible:ring-gaia-primary`, `text-gray-700` → `text-gaia-text-muted`.
-
-- ~~**🔴 B-02 · `IoT::MetricValue` використовує raw Tailwind кольори в shared-компоненті.** `app/views/shared/iot/metric_value.rb` містить `text-emerald-400` (value span) та `text-emerald-700` (unit span). Порушення того ж правила §3.5. **Дія:** Замінити на `text-gaia-primary` та `text-gaia-text-muted`.~~ ✅ **ВИПРАВЛЕНО** у [PR #236](https://github.com/Alexey-Lukin/silken_net/commit/a6d6807648ae86767a41d497f0d2b85f9aed4b67): `text-emerald-400` → `text-gaia-primary`, `text-emerald-700` → `text-gaia-text-muted`.
-
-- ~~**🔴 B-03 · Текст вирішення BLOCKER-03 фактично неточний щодо `tailwind.config.js`.** Документ стверджує: "тепер `theme.fontSize` містить виключно семантичні токени (`micro`, `mini`, `tiny`, `compact`)". В реальності `config/tailwind.config.js` **взагалі не має ключа `fontSize`** — ані в `theme`, ані в `theme.extend`. Кастомні font-size токени визначені виключно у CSS `@theme` блоку в `application.css` (`--font-size-micro` тощо). **Дія:** Оновити текст вирішення: "Legacy аліаси видалені повністю. Кастомні токени (`micro`, `mini`, `tiny`, `compact`) визначені у CSS `@theme` блоці `application.css`, а не в JS-конфігу".~~ ✅ **ВИПРАВЛЕНО**: текст вирішення BLOCKER-03 оновлено — коректно описано відсутність `fontSize` в `tailwind.config.js` та визначення токенів у CSS `@theme`.
-
-#### 🟠 Попередження
-
-- ~~**🟠 W-01 · `StatusBadge` §6.1 — стан `dormant` в неправильному рядку таблиці.** Документ §6.1 розміщує `dormant` серед нейтральних станів (`idle`, `draft`, `expired` тощо). Код `status_badge.rb` та §3.2 узгоджені: `dormant → bg-status-warning`. **Дія:** Перемістити `dormant` у рядок `status-warning` таблиці §6.1.~~ ✅ **ВИПРАВЛЕНО**: `dormant` переміщено до рядка `status-warning` у §6.1.
-
-- ~~**🟠 W-02 · `StatusBadge` — два стани відсутні у таблиці §6.1.** Код містить `"ignored" → bg-status-neutral opacity-30 line-through` та `"maintenance_needed" → bg-status-warning` — жоден не задокументований у §6.1. **Дія:** Додати `ignored` до нейтрального рядка (з приміткою про `opacity-30 line-through`) та `maintenance_needed` до warning-рядка.~~ ✅ **ВИПРАВЛЕНО**: `ignored` та `maintenance_needed` додані до таблиці §6.1.
-
-- ~~**🟠 W-03 · §6.1 не відображає модифікатори opacity та text-decoration для нейтральних станів.** Код: `resolved`, `cancelled`, `removed` → `opacity-50`; `ignored` → `opacity-30 line-through`; `deceased` → `line-through`. **Дія:** Додати колонку "Модифікатори" або примітки до таблиці станів.~~ ✅ **ВИПРАВЛЕНО**: рядки з модифікаторами (`opacity-30 line-through`, `opacity-50`) додані до таблиці §6.1.
-
-- ~~**🟠 W-04 · Кількість прикладів у таблиці §10 неправильна для 9 з 16 spec-файлів.** Перевірені значення (`grep '^\s*it '`): `status_badge_spec.rb` — 13 (doc: 25); `stat_card_spec.rb` — 14 (doc: 7); `action_badge_spec.rb` — 10 (doc: 8); `empty_state_spec.rb` — 10 (doc: 6); `meta_row_spec.rb` — 5 (doc: 6); `relative_time_spec.rb` — 9 (doc: 8); `address_spec.rb` — 10 (doc: 8); `transaction_row_spec.rb` — 16 (doc: 14); `card_spec.rb` (actuators) — 14 (doc: 16). Реальний підрахунок 16 файлів: **198**, а не 193. **Дія:** Перерахувати всі приклади та оновити таблицю і підсумок.~~ ✅ **ВИПРАВЛЕНО**: всі лічильники оновлені до реальних значень; total 193→275.
-
-- ~~**🟠 W-05 · Шість spec-файлів повністю відсутні в таблиці §10.** Існуючі файли не включені до документа: `skeleton_spec.rb` (13 прикладів), `theme_switcher_spec.rb` (10), `alerts/row_spec.rb` (12), `clusters/show_spec.rb` (17), `tree_families/form_spec.rb` (14), `wallets/show_spec.rb` (11). Разом 77 додаткових прикладів — реальний total: **275** у 22 файлах. **Дія:** Додати всі 6 файлів до таблиці §10; оновити підсумок.~~ ✅ **ВИПРАВЛЕНО**: всі 6 файлів додані; total 275 у 22 файлах.
-
-- ~~**🟠 W-06 · `hello_controller.js` — активний але незадокументований Stimulus-контролер.** `app/javascript/controllers/hello_controller.js` існує і містить `connect()` що встановлює `this.element.textContent = "Hello World!"`. Через `eagerLoadControllersFrom` він автоматично зареєстрований і доступний через `data-controller="hello"` в production. Це scaffold-залишок. **Дія:** Або видалити файл, або задокументувати як debug-заглушку.~~ ✅ **ВИПРАВЛЕНО** у [PR #236](https://github.com/Alexey-Lukin/silken_net/commit/a6d6807648ae86767a41d497f0d2b85f9aed4b67): `app/javascript/controllers/hello_controller.js` видалено з production.
-
-- ~~**🟠 W-07 · Кількість компонентів у §9 занижена.** Документ: "100% compliance across all 83+ components". Реально `find app/views -name "*.rb"` (без `application_component.rb`): **83 файли**. **Дія:** Оновити на "83+ компонентів".~~ ✅ **ВИПРАВЛЕНО**: оновлено "67+" → "83+"
-
-- ~~**🟠 W-08 · `Wallets::Show` — параметр `pagy:` опціональний, але задокументований без дефолту.** Код: `def initialize(wallet:, transactions:, pagy: nil)`. **Дія:** Оновити Props на `wallet:, transactions:, pagy: nil`.~~ ✅ **ВИПРАВЛЕНО**: Props у §6.4 оновлено на `pagy: nil`.
-
-- ~~**🟠 W-09 · CSS `@theme` блок містить три незадокументовані кольорові змінні.** `app/assets/tailwind/application.css`: `--color-gaia-green: #10b981`, `--color-gaia-dark: #064e3b`, `--color-gaia-muted: #065f46`. Генерують класи `bg-gaia-green`, `text-gaia-dark`, `text-gaia-muted`. Відсутні у §3. **Дія:** Додати до таблиці токенів §3 або видалити як невикористані.~~ ✅ **ВИПРАВЛЕНО (doc)**: примітка додана перед §3.2 з описом трьох legacy-кольорів.
-
-- ~~**🟠 W-10 · TRL 9 завищений за наявності активних порушень правил дизайн-системи.** B-01 та B-02 — два shared-компоненти порушують core color-token rule §3.5. B-03 — текст вирішення неточний. W-06 — orphan Stimulus-контролер живий у production. W-04/W-05 — таблиця тестів неточна. **Дія:** Понизити до TRL 8 до виправлення B-01/B-02/W-06 та актуалізації тестової таблиці.~~ ✅ **ВИПРАВЛЕНО**: TRL знижено до 8 у секції Статус.
-
-#### 🟡 Нотатки
-
-- ~~**🟡 N-01 · `theme_controller.js` — `disconnect()` не задокументований у §7.1.** Метод видаляє `mediaQuery.addEventListener("change", ...)` для запобігання memory leak при Turbo Drive навігації. **Дія:** Додати опис `disconnect()` до §7.1.~~ ✅ **ВИПРАВЛЕНО**: `disconnect()` описано у §7.1.
-
-- ~~**🟡 N-02 · `clipboard_controller.js` — `disconnect()` не задокументований у §7.2.** Метод викликає `clearTimeout(this.feedbackTimeout)`. **Дія:** Додати до §7.2.~~ ✅ **ВИПРАВЛЕНО**: `disconnect()` описано у §7.2.
-
-- ~~**🟡 N-03 · `map_controller.js` — опис `disconnect()` у §7.3 неповний.** Після `this.map.remove()` код також встановлює `this.map = null`. `this.markerLayer` не очищається — потенційний minor memory leak. **Дія:** Додати `this.map = null` до опису; розглянути очищення `this.markerLayer`.~~ ✅ **ВИПРАВЛЕНО**: `this.map = null` додано до опису `disconnect()` у §7.3.
-
-- ~~**🟡 N-04 · `eagerLoadControllersFrom` не попереджає про автоматичну реєстрацію будь-якого `*_controller.js`.** Включно з `hello_controller.js`. **Дія:** Додати до §7 примітку: "Будь-який `*_controller.js` у директорії автоматично реєструється — не залишати scaffold-файли в production".~~ ✅ **ВИПРАВЛЕНО**: примітку додано до §7 разом з W-06.
-
-- ~~**🟡 N-05 · Таблиця Typography Scale §4 показує px-значення, а не rem.** CSS: `0.5rem`, `0.5625rem` тощо — масштабуються з налаштуваннями браузера, а не є фіксованими px. **Дія:** Розширити колонку: `0.5rem (8px)` — уточнити root-relative природу.~~ ✅ **ВИПРАВЛЕНО**: таблиця §4 оновлена — `rem (px¹)` формат з приміткою про root-relative масштабування.
-
-- ~~**🟡 N-06 · `StatusBadge` стан `ignored` відсутній у §3.2 таблиці status-токенів.** Код: `ignored → status-neutral`. **Дія:** Додати `ignored` до колонки AASM states для `status-neutral` у §3.2.~~ ✅ **ВИПРАВЛЕНО**: `ignored` (+ `opacity-30 line-through`) додано до `status-neutral` у §3.2.
-
-- ~~**🟡 N-07 · Lookbook `ActionBadgePreview` — опис сценаріїв вводить в оману.** Документ: "All 4 action types, Interactive". Насправді: 2 методи (`all_types` та `interactive`). **Дія:** Уточнити: "2 сценаріїв: `all_types` (4 типи), `interactive`".~~ ✅ **ВИПРАВЛЕНО**: опис оновлено у таблиці Lookbook §10.
-
-- ~~**🟡 N-08 · Lookbook `AlertBadgePreview` — опис сценаріїв вводить в оману.** Документ: "Severity × Status matrix (9 combos), Interactive". Насправді: 2 методи (`all_combos`, `interactive`). **Дія:** Уточнити: "2 сценаріїв: `all_combos` (9 combo matrix), `interactive`".~~ ✅ **ВИПРАВЛЕНО**: опис оновлено у таблиці Lookbook §10.
-
+1. [Огляд Архітектури](#1-огляд-архітектури)
+2. [ApplicationComponent — Базовий Клас](#2-applicationcomponent--базовий-клас)
+3. [Tailwind Дизайн-Токени](#3-tailwind-дизайн-токени)
+4. [Шкала Типографіки](#4-шкала-типографіки)
+5. [TailwindMerge та патерн `tokens()`](#5-tailwindmerge-та-патерн-tokens)
+6. [Реєстр Компонентів](#6-реєстр-компонентів)
+   - [Спільні UI Примітиви](#61-спільні-ui-примітиви-appviewssharedui)
+   - [Спільні IoT Компоненти](#62-спільні-iot-компоненти-appviewssharediot)
+   - [Спільні Web3 Компоненти](#63-спільні-web3-компоненти-appviewssharedweb3)
+   - [Доменні Компоненти](#64-доменні-компоненти-appviewscomponents)
+7. [Stimulus Контролери](#7-stimulus-контролери)
+8. [Інтеграція Turbo (Streams & Frames)](#8-інтеграція-turbo-streams--frames)
+9. [Чекліст Доступності](#9-чекліст-доступності)
+10. [Тестування та Lookbook](#10-тестування-та-lookbook)
 
 ---
 
-## Table of Contents
+## 1. Огляд Архітектури
 
-1. [Architecture Overview](#1-architecture-overview)
-2. [ApplicationComponent — Base Class](#2-applicationcomponent--base-class)
-3. [Tailwind Design Tokens](#3-tailwind-design-tokens)
-4. [Typography Scale](#4-typography-scale)
-5. [TailwindMerge & `tokens()` Pattern](#5-tailwindmerge--tokens-pattern)
-6. [Component Registry](#6-component-registry)
-   - [Shared UI Primitives](#61-shared-ui-primitives-appviewssharedui)
-   - [Shared IoT Components](#62-shared-iot-components-appviewssharediot)
-   - [Shared Web3 Components](#63-shared-web3-components-appviewssharedweb3)
-   - [Domain Components](#64-domain-components-appviewscomponents)
-7. [Stimulus Controllers](#7-stimulus-controllers)
-8. [Turbo Integration (Streams & Frames)](#8-turbo-integration-streams--frames)
-9. [Accessibility Checklist](#9-accessibility-checklist)
-10. [Testing & Lookbook](#10-testing--lookbook)
+Gaia 2.0 використовує підхід **Ruby-first, utility-CSS**: всі в'юшки — це Phlex Ruby-класи (без `.erb` шаблонів для доменної логіки), стилізовані виключно Tailwind utility-класами, об'єднаними без конфліктів через TailwindMerge.
 
----
+Дизайн-система побудована за принципом **dark-first** — термінальна/кіберпанк естетика з emerald-акцентами (`#10b981`) на чорному фоні (`#000000`). Світлий режим — вторинний, висококонтрастний варіант, що активується перемиканням класу `.dark` на `<html>`.
 
-## 1. Architecture Overview
-
-Gaia 2.0 uses a **Ruby-first, utility-CSS** approach: all views are Phlex Ruby classes (no `.erb` templates for domain logic), styled exclusively with Tailwind utility classes, merged conflict-free via TailwindMerge.
-
-The design system is **dark-first** — a terminal/cyberpunk aesthetic with glowing emerald accents (`#10b981`) on a pure black (`#000000`) background. Light mode is a secondary, high-contrast alternative activated by toggling the `.dark` class on `<html>`.
-
-### Component Hierarchy
+### Ієрархія Компонентів
 
 ```
 ApplicationComponent (Phlex::HTML)
-│   Includes: Routes, TurboStreamFrom, TurboFrameTag, FormWith,
-│             ButtonTo, AssetPath, FormAuthenticityToken
-│   Defines:  tokens(), TailwindMerge::Merger, CUSTOM_TEXT_SCALE
+│   Включає: Routes, TurboStreamFrom, TurboFrameTag, FormWith,
+│            ButtonTo, AssetPath, FormAuthenticityToken
+│   Визначає: tokens(), TailwindMerge::Merger, CUSTOM_TEXT_SCALE
 │
-├── app/views/shared/        # Reusable primitives (framework-level)
-│   ├── ui/                  # Generic UI elements
-│   │   ├── StatusBadge      ← AASM state → semantic color
-│   │   ├── StatCard         ← Dashboard metric card
-│   │   ├── DataTable        ← Table wrapper with configurable columns
-│   │   ├── Pagination       ← Pagy-based prev/next
-│   │   ├── EmptyState       ← Placeholder (grid or table-row mode)
-│   │   ├── MetaRow          ← Key-value display row
-│   │   ├── ActionBadge      ← Audit action type badge
-│   │   ├── PhotoCard        ← ActiveStorage photo with hover overlay
-│   │   ├── RelativeTime     ← "5 minutes ago" with tooltip
-│   │   ├── Skeleton         ← Loading skeleton (6 variants)
-│   │   └── ThemeSwitcher    ← Dark/light toggle button
+├── app/views/shared/        # Reusable примітиви (рівень фреймворку)
+│   ├── ui/                  # Загальні UI-елементи
+│   │   ├── StatusBadge      ← AASM стан → семантичний колір
+│   │   ├── StatCard         ← Картка метрики дашборду
+│   │   ├── DataTable        ← Таблиця з налаштовуваними стовпцями
+│   │   ├── Pagination       ← Pagy-навігація prev/next
+│   │   ├── EmptyState       ← Плейсхолдер (grid або table-row режим)
+│   │   ├── MetaRow          ← Рядок відображення ключ-значення
+│   │   ├── ActionBadge      ← Бейдж типу дії аудиту
+│   │   ├── PhotoCard        ← Фото ActiveStorage з hover-оверлеєм
+│   │   ├── RelativeTime     ← "5 хвилин тому" з підказкою
+│   │   ├── Skeleton         ← Скелетон завантаження (6 варіантів)
+│   │   └── ThemeSwitcher    ← Перемикач темної/світлої теми
 │   ├── iot/
-│   │   └── MetricValue      ← Numeric sensor value with precision + unit
+│   │   └── MetricValue      ← Числове значення сенсора з точністю та одиницею
 │   └── web3/
-│       └── Address          ← Ethereum address with truncation + copy
+│       └── Address          ← Ethereum-адреса з обрізанням + копіюванням
 │
-└── app/views/components/    # Domain-specific page components
+└── app/views/components/    # Доменні компоненти рівня сторінки
     ├── navigation/Sidebar
     ├── dashboard/Home, Map, MapNode, EventRow
     ├── trees/Index, Show
@@ -171,11 +97,11 @@ ApplicationComponent (Phlex::HTML)
     └── passwords/Forgot, Reset
 ```
 
-### Rendering Flow
+### Потік Рендерингу
 
 ```
 HTTP Request
-    └─► Controller (thin — pre-loads all data, no business logic)
+    └─► Controller (тонкий — попередньо завантажує всі дані, без бізнес-логіки)
             └─► render DomainComponent.new(data:)
                     └─► view_template
                             ├─► render Views::Shared::UI::StatusBadge.new(...)
@@ -185,9 +111,9 @@ HTTP Request
 
 ---
 
-## 2. ApplicationComponent — Base Class
+## 2. ApplicationComponent — Базовий Клас
 
-**File:** `app/views/components/application_component.rb`
+**Файл:** `app/views/components/application_component.rb`
 
 ```ruby
 class ApplicationComponent < Phlex::HTML
@@ -198,7 +124,7 @@ class ApplicationComponent < Phlex::HTML
   include Phlex::Rails::Helpers::ButtonTo
   include Phlex::Rails::Helpers::AssetPath
   include Phlex::Rails::Helpers::FormAuthenticityToken
-  include ActionView::RecordIdentifier  # dom_id / dom_class helpers for Turbo targets
+  include ActionView::RecordIdentifier  # dom_id / dom_class helpers для Turbo цілей
 
   delegate :time_ago_in_words, :number_to_human_size,
            to: :"ActionController::Base.helpers"
@@ -220,140 +146,140 @@ class ApplicationComponent < Phlex::HTML
 end
 ```
 
-### Key Design Decisions
+### Ключові Дизайн-Рішення
 
-| Decision | Rationale |
+| Рішення | Обґрунтування |
 |---|---|
-| `delegate :time_ago_in_words` to `ActionController::Base.helpers` | Turbo broadcast contexts have no Rails view context; this ensures helpers work in background workers |
-| `CUSTOM_TEXT_SCALE` registration | Prevents TailwindMerge from treating `text-tiny` (font-size) and `text-status-warning-text` (color) as conflicting classes |
-| No DB queries in `initialize` | All data must be passed as constructor args; components are pure render functions |
+| `delegate :time_ago_in_words` до `ActionController::Base.helpers` | Контексти Turbo-broadcast не мають Rails view context; це забезпечує роботу хелперів у background workers |
+| Реєстрація `CUSTOM_TEXT_SCALE` | Запобігає TailwindMerge трактувати `text-tiny` (font-size) і `text-status-warning-text` (color) як конфліктуючі класи |
+| Без DB-запитів у `initialize` | Всі дані передаються як аргументи конструктора; компоненти — чисті функції рендерингу |
 
 ---
 
-## 3. Tailwind Design Tokens
+## 3. Tailwind Дизайн-Токени
 
-**Files:** `app/assets/tailwind/application.css` · `config/tailwind.config.js`
+**Файли:** `app/assets/tailwind/application.css` · `config/tailwind.config.js`
 
-The token system works in two layers:
+Система токенів працює у двох шарах:
 
-1. **CSS custom properties** (defined in `application.css`) hold the actual values and switch between light/dark modes.
-2. **Tailwind config** maps semantic class names to the CSS variables — Tailwind generates utility classes like `bg-gaia-surface`, `text-status-danger-text`, etc.
+1. **CSS custom properties** (визначені в `application.css`) зберігають фактичні значення та перемикаються між light/dark режимами.
+2. **Tailwind config** мапує семантичні назви класів до CSS-змінних — Tailwind генерує utility-класи на кшталт `bg-gaia-surface`, `text-status-danger-text` тощо.
 
-### 3.1 Surface, Text & Primary Tokens (`gaia-*`)
+### 3.1 Поверхневі, Текстові та Основні Токени (`gaia-*`)
 
-| Token | Tailwind Class | Light `#` | Dark `#` | Use Case |
+| Токен | Tailwind Клас | Light `#` | Dark `#` | Призначення |
 |---|---|---|---|---|
-| `--color-gaia-surface` | `bg-gaia-surface` | `#ffffff` | `#000000` | Card, panel, form backgrounds |
-| `--color-gaia-surface-alt` | `bg-gaia-surface-alt` | `#f3f4f6` | `#0a0a0a` | Table headers, secondary panels |
-| `--color-gaia-text` | `text-gaia-text` | `#111827` | `#10b981` | Primary body text |
-| `--color-gaia-text-muted` | `text-gaia-text-muted` | `#6b7280` | `#065f46` | Labels, metadata, placeholders |
-| `--color-gaia-primary` | `text-gaia-primary` / `bg-gaia-primary` | `#10b981` | `#10b981` | Brand emerald (same in both modes) |
-| `--color-gaia-primary-hover` | `hover:bg-gaia-primary-hover` | `#059669` | `#34d399` | Primary button hover |
-| `--color-gaia-border` | `border-gaia-border` | `#e5e7eb` | `rgba(16,185,129,0.2)` | Borders, dividers |
+| `--color-gaia-surface` | `bg-gaia-surface` | `#ffffff` | `#000000` | Фон карток, панелей, форм |
+| `--color-gaia-surface-alt` | `bg-gaia-surface-alt` | `#f3f4f6` | `#0a0a0a` | Заголовки таблиць, вторинні панелі |
+| `--color-gaia-text` | `text-gaia-text` | `#111827` | `#10b981` | Основний текст |
+| `--color-gaia-text-muted` | `text-gaia-text-muted` | `#6b7280` | `#065f46` | Мітки, метадані, плейсхолдери |
+| `--color-gaia-primary` | `text-gaia-primary` / `bg-gaia-primary` | `#10b981` | `#10b981` | Бренд-emerald (однаковий в обох режимах) |
+| `--color-gaia-primary-hover` | `hover:bg-gaia-primary-hover` | `#059669` | `#34d399` | Hover основної кнопки |
+| `--color-gaia-border` | `border-gaia-border` | `#e5e7eb` | `rgba(16,185,129,0.2)` | Межі, роздільники |
 
 > **Додаткові legacy-кольори у `@theme`:** `--color-gaia-green: #10b981` (клас `bg-gaia-green`, `text-gaia-green`), `--color-gaia-dark: #064e3b` (`text-gaia-dark`), `--color-gaia-muted: #065f46` (`text-gaia-muted`). Визначені в `application.css` але **не входять** до офіційного дизайн-токен словника §3.1. Перевірте використання перед видаленням.
 
-### 3.2 Status Tokens (`status-*`)
+### 3.2 Статусні Токени (`status-*`)
 
-All AASM state rendering uses these tokens — never raw Tailwind colors.
+Всі AASM-стани рендеряться виключно через ці токени — ніяких raw Tailwind кольорів.
 
-| Token Pair | Light Bg / Text | Dark Bg / Text | AASM States |
+| Пара Токенів | Light Bg / Text | Dark Bg / Text | AASM Стани |
 |---|---|---|---|
-| `status-danger` / `status-danger-text` | `#fee2e2` / `#991b1b` | `#7f1d1d` / `#fecaca` | `failed`, `active` (EwsAlert only — see note), `breached`, `deceased`, `faulty` |
-| `status-danger-accent` | `#dc2626` | `#ef4444` | Accent values, LED indicators |
+| `status-danger` / `status-danger-text` | `#fee2e2` / `#991b1b` | `#7f1d1d` / `#fecaca` | `failed`, `active` (лише EwsAlert — див. примітку), `breached`, `deceased`, `faulty` |
+| `status-danger-accent` | `#dc2626` | `#ef4444` | Акцентні значення, LED-індикатори |
 | `status-warning` / `status-warning-text` | `#fef3c7` / `#92400e` | `#78350f` / `#fde68a` | `pending`, `issued`, `triggered`, `updating`, `dormant` |
 | `status-info` / `status-info-text` | `#dbeafe` / `#1e40af` | `#1e3a5f` / `#bfdbfe` | `sent`, `paid`, `maintenance` |
 | `status-success` / `status-success-text` | `#d1fae5` / `#065f46` | `#065f46` / `#d1fae5` | `confirmed`, `fulfilled` |
 | `status-active` / `status-active-text` | `#ccfbf1` / `#115e59` | `#064e3b` / `#a7f3d0` | `acknowledged` |
 | `status-neutral` / `status-neutral-text` | `#f3f4f6` / `#4b5563` | `#27272a` / `#a1a1aa` | `idle`, `draft`, `expired`, `offline`, `resolved`, `cancelled`, `ignored` (+ `opacity-30 line-through`) |
 
-### 3.3 Blockchain Token Colors (`token-*`)
+### 3.3 Кольори Blockchain Токенів (`token-*`)
 
-| Token | Tailwind Class | Light | Dark | Use Case |
+| Токен | Tailwind Клас | Light | Dark | Призначення |
 |---|---|---|---|---|
 | `--color-token-carbon` | `text-token-carbon` | `#047857` | `#059669` | SilkenCarbonCoin (SCC) |
 | `--color-token-forest` | `text-token-forest` | `#b45309` | `#d97706` | SilkenForestCoin (SFC) |
 
-### 3.4 Form Input Tokens (`gaia-input-*`)
+### 3.4 Токени Форм Введення (`gaia-input-*`)
 
-| Token | Tailwind Class | Light | Dark |
+| Токен | Tailwind Клас | Light | Dark |
 |---|---|---|---|
 | `--color-gaia-input-bg` | `bg-gaia-input-bg` | `#ffffff` | `#09090b` |
 | `--color-gaia-input-border` | `border-gaia-input-border` | `#d1d5db` | `rgba(16,185,129,0.3)` |
 | `--color-gaia-input-text` | `text-gaia-input-text` | `#111827` | `#d1fae5` |
 | `--color-gaia-label` | `text-gaia-label` | `#6b7280` | `#6b7280` |
 
-### 3.5 Color Usage Rules
+### 3.5 Правила Використання Кольорів
 
-| ✅ Do | ❌ Never |
+| ✅ Правильно | ❌ Заборонено |
 |---|---|
-| `bg-gaia-surface` | `bg-white` / `bg-black` (in shared components) |
-| `text-gaia-text` | `text-gray-900` / `text-emerald-400` (in shared components) |
-| `border-gaia-border` | `border-gray-200` / `border-emerald-900` (in shared components) |
+| `bg-gaia-surface` | `bg-white` / `bg-black` (у shared-компонентах) |
+| `text-gaia-text` | `text-gray-900` / `text-emerald-400` (у shared-компонентах) |
+| `border-gaia-border` | `border-gray-200` / `border-emerald-900` (у shared-компонентах) |
 | `bg-status-danger text-status-danger-text` | `bg-red-100 text-red-800` |
-| `shadow-sm dark:shadow-none` | `shadow-lg` everywhere |
+| `shadow-sm dark:shadow-none` | `shadow-lg` скрізь |
 
-> **Exception:** Domain-specific page components (not shared/ui) may use raw Tailwind colors (e.g., `border-emerald-900`, `bg-zinc-950`) for their cyberpunk terminal aesthetic, since they are not reused across contexts.
+> **Виняток:** Доменні page-компоненти (не shared/ui) можуть використовувати raw Tailwind кольори (наприклад, `border-emerald-900`, `bg-zinc-950`) для кіберпанк-естетики, оскільки вони не переповикористовуються у різних контекстах.
 
 ---
 
-## 4. Typography Scale
+## 4. Шкала Типографіки
 
-**Defined in:** `app/assets/tailwind/application.css` `@theme` block
-**Registered in:** `ApplicationComponent::CUSTOM_TEXT_SCALE`
+**Визначено у:** блоці `@theme` файлу `app/assets/tailwind/application.css`
+**Зареєстровано у:** `ApplicationComponent::CUSTOM_TEXT_SCALE`
 
-Custom terminal-aesthetic font sizes that eliminate all `text-[Npx]` arbitrary values:
+Кастомні термінальні розміри шрифтів, що усувають всі довільні значення `text-[Npx]`:
 
-| CSS Token | Utility Class | Size | Line Height | Use Case |
+| CSS Токен | Utility Клас | Розмір | Line Height | Призначення |
 |---|---|---|---|---|
-| `--font-size-micro` | `text-micro` | `0.5rem` (8px¹) | `1rem` | Micro labels, file sizes, role badges, watermarks |
-| `--font-size-mini` | `text-mini` | `0.5625rem` (9px¹) | `1rem` | Uppercase nav items, status badge text |
-| `--font-size-tiny` | `text-tiny` | `0.625rem` (10px¹) | `1rem` | Small labels, metadata, section headings |
-| `--font-size-compact` | `text-compact` | `0.6875rem` (11px¹) | `1.25rem` | Data tables, addresses, metric values |
+| `--font-size-micro` | `text-micro` | `0.5rem` (8px¹) | `1rem` | Мікро-мітки, розміри файлів, бейджі ролей, водяні знаки |
+| `--font-size-mini` | `text-mini` | `0.5625rem` (9px¹) | `1rem` | Елементи навігації верхнього регістру, текст статус-бейджів |
+| `--font-size-tiny` | `text-tiny` | `0.625rem` (10px¹) | `1rem` | Малі мітки, метадані, заголовки секцій |
+| `--font-size-compact` | `text-compact` | `0.6875rem` (11px¹) | `1.25rem` | Таблиці даних, адреси, значення метрик |
 
 > ¹ px-значення розраховані при root font-size = 16px (стандарт браузера). Оскільки токени задані у `rem`, вони масштабуються разом з налаштуваннями доступності браузера.
 
-Standard Tailwind sizes continue to apply for larger text (e.g., `text-xs`, `text-sm`, `text-2xl`) — these coexist with the custom scale. The custom tokens specifically eliminate arbitrary values like `text-[9px]` for sub-`text-xs` sizes.
+Стандартні розміри Tailwind продовжують застосовуватись для більшого тексту (наприклад, `text-xs`, `text-sm`, `text-2xl`) — вони співіснують з кастомною шкалою. Кастомні токени зокрема усувають довільні значення на кшталт `text-[9px]` для розмірів менших за `text-xs`.
 
-### Typography Base Styles
+### Базові Стилі Типографіки
 
-Defined in `@layer base` inside `application.css`:
+Визначено у `@layer base` всередині `application.css`:
 
-| Element | Size | Weight | Letter Spacing |
+| Елемент | Розмір | Жирність | Міжлітерний інтервал |
 |---|---|---|---|
 | `h1` | `1.875rem` | `300` (light) | `0.05em` |
 | `h2` | `1.5rem` | `300` (light) | `0.05em` |
 | `h3` | `1.25rem` | `400` (normal) | — |
 | `h4` | `1rem` | `500` (medium) | `0.1em` uppercase |
 
-### Font Families
+### Сімейства Шрифтів
 
-| Family | Fonts |
+| Сімейство | Шрифти |
 |---|---|
-| `font-mono` | JetBrains Mono → Fira Code → SF Mono → Cascadia Code → system mono |
+| `font-mono` | JetBrains Mono → Fira Code → SF Mono → Cascadia Code → системний mono |
 | `font-sans` | Inter → system-ui → -apple-system → … |
 
 ---
 
-## 5. TailwindMerge & `tokens()` Pattern
+## 5. TailwindMerge та патерн `tokens()`
 
-`tokens()` is the design system's class composition method — it replaces direct string concatenation and prevents Tailwind class conflicts.
+`tokens()` — метод композиції класів дизайн-системи, який замінює пряму конкатенацію рядків і запобігає конфліктам Tailwind-класів.
 
-### Signature
+### Сигнатура
 
 ```ruby
 def tokens(*static_classes, **conditional_classes)
-  # static_classes  — always applied
-  # conditional_classes — { "class-string": boolean_condition }
+  # static_classes  — застосовуються завжди
+  # conditional_classes — { "рядок-класів": boolean_умова }
 end
 ```
 
-### Examples
+### Приклади
 
-**Static + conditional classes:**
+**Статичні + умовні класи:**
 
 ```ruby
-# Status-driven styling
+# Стилізація на основі статусу
 span(class: tokens(
   "px-2 py-0.5 rounded text-tiny font-bold uppercase tracking-widest",
   "bg-status-danger text-status-danger-text animate-pulse": alert.severity == "critical",
@@ -361,14 +287,14 @@ span(class: tokens(
   "bg-zinc-800 text-zinc-300": alert.severity == "low"
 ))
 
-# Active nav item
+# Активний елемент навігації
 a(class: tokens(
   nav_item_base_classes,
   active ? nav_item_active_classes : nav_item_inactive_classes
 ))
 ```
 
-**Prop-driven class override (shared components):**
+**Перевизначення класів через props (shared-компоненти):**
 
 ```ruby
 def initialize(status:, **attrs)
@@ -380,39 +306,39 @@ def view_template
   span(class: tokens(badge_base_classes, STYLES[@status], @extra_class)) { @status }
 end
 
-# Caller overrides without conflict:
+# Виклик з перевизначенням без конфліктів:
 render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 ```
 
-### Why TailwindMerge
+### Чому TailwindMerge
 
-Without it, `tokens("text-tiny text-emerald-500")` could produce broken output because TailwindMerge (without configuration) treats both as `text-*` conflicts and drops one. The `CUSTOM_TEXT_SCALE` registration teaches TailwindMerge that `text-micro/mini/tiny/compact` are font-size tokens, not color tokens.
+Без нього `tokens("text-tiny text-emerald-500")` міг би давати некоректний результат, бо TailwindMerge (без конфігурації) трактує обидва як `text-*` конфлікти та видаляє один. Реєстрація `CUSTOM_TEXT_SCALE` навчає TailwindMerge, що `text-micro/mini/tiny/compact` — це font-size токени, а не color токени.
 
 ---
 
-## 6. Component Registry
+## 6. Реєстр Компонентів
 
-### 6.1 Shared UI Primitives (`app/views/shared/ui/`)
+### 6.1 Спільні UI Примітиви (`app/views/shared/ui/`)
 
-These are the framework-level building blocks used across all domain views.
+Це будівельні блоки рівня фреймворку, що використовуються у всіх доменних в'юшках.
 
-| Component | File | Key Props | Purpose |
+| Компонент | Файл | Ключові Props | Призначення |
 |---|---|---|---|
-| **StatusBadge** | `status_badge.rb` | `status:`, `id:`, `class:` | AASM state → semantic color badge (20+ states) |
-| **StatCard** | `stat_card.rb` | `label:`, `value:`, `sub:`, `danger:`, `class:` | Dashboard metric card with optional danger highlight |
-| **DataTable** | `data_table.rb` | `columns:`, `empty_message:`, `class:`, `&block` | Table wrapper with configurable column headers |
-| **Pagination** | `pagination.rb` | `pagy:`, `url_helper:` | Pagy-based prev/next navigation |
-| **EmptyState** | `empty_state.rb` | `title:`, `description:`, `icon:`, `colspan:` | Empty data placeholder (grid or `<tr><td>` mode) |
-| **MetaRow** | `meta_row.rb` | `label:`, `value:`, `class:` | Key-value display row for detail pages |
-| **ActionBadge** | `action_badge.rb` | `action:`, `class:` | Audit log action-type badge (regex pattern matching) |
-| **PhotoCard** | `photo_card.rb` | `photo:`, `record:`, `editable:` | ActiveStorage blob card with hover overlay |
-| **RelativeTime** | `relative_time.rb` | `datetime:`, `css_class:`, `prefix:` | "5 minutes ago" with full timestamp `title` tooltip |
-| **Skeleton** | `skeleton.rb` | `variant:`, `lines:`, `class:` | Loading skeleton (6 variants: `:balance`, `:card`, `:stats`, `:table`, `:map`, `:text`) |
-| **ThemeSwitcher** | `theme_switcher.rb` | — | Dark/light toggle button (uses `theme` Stimulus controller) |
+| **StatusBadge** | `status_badge.rb` | `status:`, `id:`, `class:` | AASM стан → семантичний кольоровий бейдж (20+ станів) |
+| **StatCard** | `stat_card.rb` | `label:`, `value:`, `sub:`, `danger:`, `class:` | Картка метрики дашборду з опціональним danger-виділенням |
+| **DataTable** | `data_table.rb` | `columns:`, `empty_message:`, `class:`, `&block` | Обгортка таблиці з налаштовуваними заголовками стовпців |
+| **Pagination** | `pagination.rb` | `pagy:`, `url_helper:` | Pagy-навігація prev/next |
+| **EmptyState** | `empty_state.rb` | `title:`, `description:`, `icon:`, `colspan:` | Плейсхолдер порожніх даних (grid або `<tr><td>` режим) |
+| **MetaRow** | `meta_row.rb` | `label:`, `value:`, `class:` | Рядок ключ-значення для сторінок деталей |
+| **ActionBadge** | `action_badge.rb` | `action:`, `class:` | Бейдж типу дії журналу аудиту (regex pattern matching) |
+| **PhotoCard** | `photo_card.rb` | `photo:`, `record:`, `editable:` | Картка ActiveStorage blob з hover-оверлеєм |
+| **RelativeTime** | `relative_time.rb` | `datetime:`, `css_class:`, `prefix:` | "5 хвилин тому" з повною міткою часу у `title`-підказці |
+| **Skeleton** | `skeleton.rb` | `variant:`, `lines:`, `class:` | Скелетон завантаження (6 варіантів: `:balance`, `:card`, `:stats`, `:table`, `:map`, `:text`) |
+| **ThemeSwitcher** | `theme_switcher.rb` | — | Кнопка перемикання темної/світлої теми (використовує Stimulus `theme` контролер) |
 
-#### StatusBadge — State Mapping
+#### StatusBadge — Маппінг Станів
 
-| AASM States | Semantic Style |
+| AASM Стани | Семантичний Стиль |
 |---|---|
 | `pending`, `issued`, `dormant`, `maintenance_needed` | `bg-status-warning text-status-warning-text` |
 | `processing`, `triggered`, `updating` | `+ animate-pulse` |
@@ -422,28 +348,28 @@ These are the framework-level building blocks used across all domain views.
 | `acknowledged` | `bg-status-active text-status-active-text` |
 | `idle`, `draft`, `expired`, `offline`, `resolved`, `cancelled`, `removed` | `bg-status-neutral text-status-neutral-text` |
 | `ignored` | `bg-status-neutral text-status-neutral-text opacity-30 line-through` |
-| `resolved`, `cancelled`, `removed` | `+ opacity-50` (applied via modifier) |
+| `resolved`, `cancelled`, `removed` | `+ opacity-50` (застосовується через модифікатор) |
 
-> **Note on `active`:** The state `active` maps to `status-danger` when used with `EwsAlert` (an unresolved threat alert). For other entities (e.g., `Tree` with `status: "active"`) the same string resolves to the `DEFAULT_STYLE` neutral fallback, since `StatusBadge` only maps the states explicitly listed in `STYLES`. Domain components (e.g., `Trees::Show`) apply their own color logic inline.
+> **Примітка щодо `active`:** Стан `active` маппиться на `status-danger` при використанні з `EwsAlert` (нерозв'язаний сигнал загрози). Для інших сутностей (наприклад, `Tree` зі `status: "active"`) той самий рядок відповідає `DEFAULT_STYLE` нейтральному fallback, оскільки `StatusBadge` маппить лише стани, явно перелічені у `STYLES`. Доменні компоненти (наприклад, `Trees::Show`) застосовують власну логіку кольорів inline.
 
-#### Skeleton — Variants
+#### Skeleton — Варіанти
 
-| Variant | Lines | Use Case |
+| Варіант | Рядки | Призначення |
 |---|---|---|
-| `:balance` | 3 (label, amount, sub) | Wallet balance lazy-load frame |
-| `:card` | 3 (title, body, sub) | Metadata/blockchain identity frame |
-| `:stats` | 3 | Dashboard stat cards |
-| `:table` | 4 full-width rows | Table data loading |
-| `:map` | 3 (header, map, footer) | Geospatial map loading |
-| `:text` | 1 | Inline text fragments |
+| `:balance` | 3 (мітка, сума, підпис) | Lazy-load фрейм балансу гаманця |
+| `:card` | 3 (заголовок, тіло, підпис) | Фрейм метаданих/blockchain-ідентичності |
+| `:stats` | 3 | Картки статистики дашборду |
+| `:table` | 4 повних рядки | Завантаження даних таблиці |
+| `:map` | 3 (заголовок, карта, підвал) | Завантаження геопросторової карти |
+| `:text` | 1 | Вбудовані текстові фрагменти |
 
 ---
 
-### 6.2 Shared IoT Components (`app/views/shared/iot/`)
+### 6.2 Спільні IoT Компоненти (`app/views/shared/iot/`)
 
-| Component | File | Key Props | Purpose |
+| Компонент | Файл | Ключові Props | Призначення |
 |---|---|---|---|
-| **MetricValue** | `metric_value.rb` | `value:`, `unit:`, `precision:` | Sensor numeric display with configurable decimal precision; handles `nil` and `BigDecimal` |
+| **MetricValue** | `metric_value.rb` | `value:`, `unit:`, `precision:` | Числове відображення значення сенсора з налаштовуваною точністю; обробляє `nil` та `BigDecimal` |
 
 ```ruby
 render Views::Shared::IoT::MetricValue.new(value: 3800.0, unit: "mV", precision: 0)
@@ -452,11 +378,11 @@ render Views::Shared::IoT::MetricValue.new(value: lorenz_z, unit: "σ", precisio
 
 ---
 
-### 6.3 Shared Web3 Components (`app/views/shared/web3/`)
+### 6.3 Спільні Web3 Компоненти (`app/views/shared/web3/`)
 
-| Component | File | Key Props | Purpose |
+| Компонент | Файл | Ключові Props | Призначення |
 |---|---|---|---|
-| **Address** | `address.rb` | `address:`, `fallback:` | Ethereum address with `PREFIX_LENGTH=6` / `SUFFIX_LENGTH=4` truncation + clipboard copy button (uses `clipboard` Stimulus controller) |
+| **Address** | `address.rb` | `address:`, `fallback:` | Ethereum-адреса з обрізанням `PREFIX_LENGTH=6` / `SUFFIX_LENGTH=4` + кнопка копіювання (використовує `clipboard` Stimulus контролер) |
 
 ```ruby
 render Views::Shared::Web3::Address.new(address: @wallet.crypto_public_address)
@@ -465,73 +391,73 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 
 ---
 
-### 6.4 Domain Components (`app/views/components/`)
+### 6.4 Доменні Компоненти (`app/views/components/`)
 
-Domain components are page-level and are **not** expected to be reused outside their context.
+Доменні компоненти — рівень сторінки, **не** призначені для повторного використання поза своїм контекстом.
 
-#### Navigation
+#### Навігація
 
-| Component | File | Props | Description |
+| Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Navigation::Sidebar` | `navigation/sidebar.rb` | `current_path:`, `ews_alert_count:` | Full app navigation sidebar with 4 section groups (Strategic, Forest Ops, Neural Network, Administration), active state highlighting, EWS alert badge, status pulse |
+| `Navigation::Sidebar` | `navigation/sidebar.rb` | `current_path:`, `ews_alert_count:` | Повна навігаційна бічна панель з 4 групами секцій (Strategic, Forest Ops, Neural Network, Administration), виділенням активного стану, бейджем EWS-сигналів, пульсуючим статусом |
 
-#### Dashboard
+#### Дашборд
 
-| Component | File | Props | Description |
+| Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Dashboard::Home` | `dashboard/home.rb` | `stats:`, `events:` | Main dashboard: 4 stat cards, geospatial map panel, live event feed |
-| `Dashboard::Map` | `dashboard/map.rb` | `trees:` | Leaflet map wrapper with tree marker streaming via Turbo/Stimulus |
-| `Dashboard::MapNode` | `dashboard/map_node.rb` | `tree:` | Hidden Stimulus target node for live map updates |
-| `Dashboard::EventRow` | `dashboard/event_row.rb` | `event:` | Polymorphic event row (EwsAlert / BlockchainTransaction / MaintenanceRecord) |
+| `Dashboard::Home` | `dashboard/home.rb` | `stats:`, `events:` | Головний дашборд: 4 картки статистики, геопросторова панель карти, живий потік подій |
+| `Dashboard::Map` | `dashboard/map.rb` | `trees:` | Обгортка Leaflet-карти з потоком маркерів дерев через Turbo/Stimulus |
+| `Dashboard::MapNode` | `dashboard/map_node.rb` | `tree:` | Прихований Stimulus target-вузол для живих оновлень карти |
+| `Dashboard::EventRow` | `dashboard/event_row.rb` | `event:` | Поліморфний рядок події (EwsAlert / BlockchainTransaction / MaintenanceRecord) |
 
-#### Trees
+#### Дерева
 
-| Component | File | Props | Description |
+| Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Trees::Index` | `trees/index.rb` | `trees:`, `pagy:` | Paginated tree list |
-| `Trees::Show` | `trees/show.rb` | `tree:`, `latest_log:`, `recent_logs:`, `maintenance_history:` | Full tree detail: biometric matrix (radial SVG), impedance history chart, economic panel, hardware security vault, maintenance ledger |
+| `Trees::Index` | `trees/index.rb` | `trees:`, `pagy:` | Пагінований список дерев |
+| `Trees::Show` | `trees/show.rb` | `tree:`, `latest_log:`, `recent_logs:`, `maintenance_history:` | Повна деталізація дерева: біометрична матриця (радіальний SVG), графік історії імпедансу, економічна панель, сховище безпеки обладнання, журнал технічного обслуговування |
 
-#### Wallets
+#### Гаманці
 
-| Component | File | Props | Description |
+| Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Wallets::Index` | `wallets/index.rb` | `wallets:`, `pagy:` | Paginated wallet list |
-| `Wallets::Show` | `wallets/show.rb` | `wallet:`, `transactions:`, `pagy: nil` | Wallet detail with lazy-loaded balance frame, transaction ledger, on-chain actions |
-| `Wallets::BalanceDisplay` | `wallets/balance_display.rb` | `wallet:` | SCC balance card with locked/available/ESG-retired breakdown; Turbo target `wallet_balance_{id}` |
-| `Wallets::BalanceFrame` | `wallets/balance_frame.rb` | `wallet:` | Turbo Frame wrapper for lazy balance loading |
-| `Wallets::MetadataFrame` | `wallets/metadata_frame.rb` | `wallet:` | Turbo Frame wrapper for blockchain identity metadata |
-| `Wallets::TransactionRow` | `wallets/transaction_row.rb` | `tx:` | Single on-chain transaction row with status badge and hash display |
+| `Wallets::Index` | `wallets/index.rb` | `wallets:`, `pagy:` | Пагінований список гаманців |
+| `Wallets::Show` | `wallets/show.rb` | `wallet:`, `transactions:`, `pagy: nil` | Деталізація гаманця з lazy-завантаженим фреймом балансу, журналом транзакцій, on-chain діями |
+| `Wallets::BalanceDisplay` | `wallets/balance_display.rb` | `wallet:` | Картка балансу SCC з розбивкою locked/available/ESG-retired; Turbo target `wallet_balance_{id}` |
+| `Wallets::BalanceFrame` | `wallets/balance_frame.rb` | `wallet:` | Turbo Frame обгортка для lazy-завантаження балансу |
+| `Wallets::MetadataFrame` | `wallets/metadata_frame.rb` | `wallet:` | Turbo Frame обгортка для метаданих blockchain-ідентичності |
+| `Wallets::TransactionRow` | `wallets/transaction_row.rb` | `tx:` | Рядок on-chain транзакції зі статус-бейджем та відображенням хешу |
 
-#### Telemetry
+#### Телеметрія
 
-| Component | File | Props | Description |
+| Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Telemetry::LiveStream` | `telemetry/live_stream.rb` | — | Live telemetry HUD: Matrix Rain canvas background (Stimulus), sticky `<thead>`, `turbo_stream_from "telemetry_stream"` |
-| `Telemetry::LogEntry` | `telemetry/log_entry.rb` | `log:` | Single decoded telemetry row inserted by `UnpackTelemetryWorker` |
+| `Telemetry::LiveStream` | `telemetry/live_stream.rb` | — | Live telemetry HUD: Matrix Rain canvas (Stimulus), sticky `<thead>`, `turbo_stream_from "telemetry_stream"` |
+| `Telemetry::LogEntry` | `telemetry/log_entry.rb` | `log:` | Один декодований рядок телеметрії, вставлений `UnpackTelemetryWorker` |
 
 #### Oracle Visions
 
-| Component | File | Props | Description |
+| Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `OracleVisions::Index` | `oracle_visions/index.rb` | `forecasts:`, `clusters:` | AI forecast list + simulation panel |
-| `OracleVisions::ForecastCard` | `oracle_visions/forecast_card.rb` | `forecast:` | Individual Lorenz attractor forecast card |
-| `OracleVisions::SimulationPanel` | `oracle_visions/simulation_panel.rb` | `clusters:` | What-If simulation form with range sliders; submits to `simulate_api_v1_oracle_visions_path` into a Turbo Frame |
+| `OracleVisions::Index` | `oracle_visions/index.rb` | `forecasts:`, `clusters:` | Список AI-прогнозів + панель симуляції |
+| `OracleVisions::ForecastCard` | `oracle_visions/forecast_card.rb` | `forecast:` | Окрема картка прогнозу атрактора Лоренца |
+| `OracleVisions::SimulationPanel` | `oracle_visions/simulation_panel.rb` | `clusters:` | What-If форма симуляції з повзунками діапазону; надсилає до `simulate_api_v1_oracle_visions_path` у Turbo Frame |
 
 #### Firmware OTA
 
-| Component | File | Props | Description |
+| Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Firmwares::Index` | `firmwares/index.rb` | `firmwares:`, `pagy:` | Firmware list |
-| `Firmwares::New` | `firmwares/new.rb` | — | New firmware upload form |
-| `Firmwares::Form` | `firmwares/form.rb` | `firmware:` | Firmware form fields |
-| `Firmwares::Row` | `firmwares/row.rb` | `firmware:` | Single firmware list row |
-| `Firmwares::OtaProgressBar` | `firmwares/ota_progress_bar.rb` | `uid:`, `percent:`, `current:`, `total:`, `status:` | Animated OTA progress bar; Turbo target `ota_progress_{uid}` |
+| `Firmwares::Index` | `firmwares/index.rb` | `firmwares:`, `pagy:` | Список прошивок |
+| `Firmwares::New` | `firmwares/new.rb` | — | Форма завантаження нової прошивки |
+| `Firmwares::Form` | `firmwares/form.rb` | `firmware:` | Поля форми прошивки |
+| `Firmwares::Row` | `firmwares/row.rb` | `firmware:` | Один рядок списку прошивок |
+| `Firmwares::OtaProgressBar` | `firmwares/ota_progress_bar.rb` | `uid:`, `percent:`, `current:`, `total:`, `status:` | Анімований прогрес-бар OTA; Turbo target `ota_progress_{uid}` |
 
-#### Other Domain Components
+#### Інші Доменні Компоненти
 
-| Namespace | Components | Key Props |
+| Простір імен | Компоненти | Ключові Props |
 |---|---|---|
-| `Alerts` | `Index`, `Row`, `Badge` | `alert:` (severity × status matrix) |
+| `Alerts` | `Index`, `Row`, `Badge` | `alert:` (матриця severity × status) |
 | `Clusters` | `Grid`, `Item`, `Show` | `cluster:`, `trees:` |
 | `Gateways` | `Index`, `Item`, `Show` | `gateway:` |
 | `Actuators` | `Index`, `Show`, `Card`, `CommandRow`, `CommandStatusBadge` | `actuator:`, `command:` |
@@ -553,54 +479,52 @@ Domain components are page-level and are **not** expected to be reused outside t
 
 ---
 
-## 7. Stimulus Controllers
+## 7. Stimulus Контролери
 
-**File location:** `app/javascript/controllers/`
-**Auto-registration:** `eagerLoadControllersFrom("controllers", application)` via importmap
+**Розташування файлів:** `app/javascript/controllers/`
+**Автореєстрація:** `eagerLoadControllersFrom("controllers", application)` через importmap
 
-| Controller | File | `data-controller` | Purpose |
+| Контролер | Файл | `data-controller` | Призначення |
 |---|---|---|---|
-| **theme** | `theme_controller.js` | `theme` | Dark/light mode toggle |
-| **clipboard** | `clipboard_controller.js` | `clipboard` | Copy-to-clipboard for Web3 addresses |
-| **map** | `map_controller.js` | `map` | Leaflet.js geospatial tree map |
-| **matrix-rain** | `matrix_rain_controller.js` | `matrix-rain` | Canvas Matrix digital rain effect |
+| **theme** | `theme_controller.js` | `theme` | Перемикач темного/світлого режиму |
+| **clipboard** | `clipboard_controller.js` | `clipboard` | Копіювання в буфер обміну для Web3-адрес |
+| **map** | `map_controller.js` | `map` | Геопросторова карта дерев Leaflet.js |
+| **matrix-rain** | `matrix_rain_controller.js` | `matrix-rain` | Canvas-ефект Matrix digital rain |
 
-> **✅ Scaffold залишок видалено:** `hello_controller.js` видалено у [PR #236](https://github.com/Alexey-Lukin/silken_net/commit/a6d6807648ae86767a41d497f0d2b85f9aed4b67). Файл більше не існує у `app/javascript/controllers/`.
->
-> **Примітка:** Будь-який `*_controller.js` у директорії автоматично реєструється — не залишайте scaffold-файли в production.
+> **⚠️ Важливо:** Будь-який `*_controller.js` у директорії автоматично реєструється через `eagerLoadControllersFrom` — **не залишайте scaffold-файли в production**.
 
-### 7.1 `theme` Controller
+### 7.1 Контролер `theme`
 
 **Targets:** `icon`
 **Actions:** `toggle`
 
-Manages dark/light theme:
+Керує темою dark/light:
 
-1. Reads `localStorage.getItem("theme")` on `connect()`
-2. Falls back to `window.matchMedia("(prefers-color-scheme: dark)")`
-3. Toggles `.dark` class on `document.documentElement`
-4. Listens for OS-level changes via `mediaQuery.addEventListener("change", ...)`
-5. Updates `icon` target with SVG (☀ in dark mode, ☽ in light mode)
+1. Читає `localStorage.getItem("theme")` при `connect()`
+2. Fallback на `window.matchMedia("(prefers-color-scheme: dark)")`
+3. Перемикає клас `.dark` на `document.documentElement`
+4. Слухає зміни на рівні ОС через `mediaQuery.addEventListener("change", ...)`
+5. Оновлює target `icon` SVG-іконкою (☀ в dark-режимі, ☽ у light-режимі)
 
 ```html
 <div data-controller="theme">
   <button data-action="click->theme#toggle"
           data-theme-target="icon">
-    <!-- SVG injected by controller -->
+    <!-- SVG інжектується контролером -->
   </button>
 </div>
 ```
 
 **`disconnect()`:** Видаляє `mediaQuery.removeEventListener("change", ...)` — запобігає memory leak при Turbo Drive навігації між сторінками.
 
-**Phlex usage:** Wrapped by `Views::Shared::UI::ThemeSwitcher`.
+**Phlex-використання:** Обгорнутий у `Views::Shared::UI::ThemeSwitcher`.
 
-### 7.2 `clipboard` Controller
+### 7.2 Контролер `clipboard`
 
-**Values:** `content` (String — the text to copy)
+**Values:** `content` (String — текст для копіювання)
 **Targets:** `button`
 
-Copies `contentValue` to clipboard via `navigator.clipboard.writeText()` with `document.execCommand("copy")` fallback. Shows `✓` checkmark for 2 seconds as visual feedback.
+Копіює `contentValue` до буфера через `navigator.clipboard.writeText()` з fallback на `document.execCommand("copy")`. Показує галочку `✓` на 2 секунди як візуальний зворотний зв'язок.
 
 ```html
 <span data-controller="clipboard"
@@ -612,60 +536,60 @@ Copies `contentValue` to clipboard via `navigator.clipboard.writeText()` with `d
 
 **`disconnect()`:** Викликає `clearTimeout(this.feedbackTimeout)` — очищає таймер зворотного зв'язку ✓, запобігаючи DOM mutation після знищення компонента.
 
-**Phlex usage:** Embedded inside `Views::Shared::Web3::Address`.
+**Phlex-використання:** Вбудований у `Views::Shared::Web3::Address`.
 
-### 7.3 `map` Controller
+### 7.3 Контролер `map`
 
 **Targets:** `node`
 
-Initializes a Leaflet.js map with CartoDB Dark Matter tiles (cyberpunk aesthetic). Maintains a `markers` hash (`DID → L.Marker`) for incremental updates.
+Ініціалізує Leaflet.js карту з тайлами CartoDB Dark Matter (кіберпанк-естетика). Підтримує хеш `markers` (`DID → L.Marker`) для інкрементальних оновлень.
 
-**Key lifecycle:**
+**Ключовий lifecycle:**
 
-- `connect()` — initializes map, sets default center (Cherkasy: 49.4444, 32.0598); initializes `this.markers = {}` (DID string → `L.Marker` instance) and `this.markerLayer = L.layerGroup()`
-- `disconnect()` — ✅ **реалізовано**: викликає `this.map.off()`, `this.map.remove()`, встановлює `this.map = null`, скидає `this.markers = {}`, очищає `this.resizeTimeout` — Leaflet map коректно знищується при Turbo Drive навігації. Примітка: `this.markerLayer` не явно очищається у `disconnect()` (minor).
-- `nodeTargetConnected(element)` — called automatically by Turbo/Stimulus when a `<div data-map-target="node">` is added to the DOM via Turbo Stream; extracts `data-lat/lng/did/stress/charge` and calls `updateMarker()`
+- `connect()` — ініціалізує карту, встановлює центр за замовчуванням (Черкаси: 49.4444, 32.0598); ініціалізує `this.markers = {}` (DID рядок → `L.Marker` instance) та `this.markerLayer = L.layerGroup()`
+- `disconnect()` — викликає `this.map.off()`, `this.map.remove()`, встановлює `this.map = null`, скидає `this.markers = {}`, очищає `this.resizeTimeout` — Leaflet-карта коректно знищується при Turbo Drive навігації. Примітка: `this.markerLayer` явно не очищається у `disconnect()` (minor).
+- `nodeTargetConnected(element)` — викликається автоматично Turbo/Stimulus коли `<div data-map-target="node">` додається до DOM через Turbo Stream; витягує `data-lat/lng/did/stress/charge` та викликає `updateMarker()`
 
-**Marker color logic:**
+**Логіка кольору маркера:**
 
-| Condition | Color | Glow |
+| Умова | Колір | Свічення |
 |---|---|---|
-| `stress > 0.8` or `status === "removed"` | `#ef4444` (red) | `rgba(239,68,68,0.8)` |
-| `stress > 0.4` or `charge < 30` | `#eab308` (yellow) | `rgba(234,179,8,0.6)` |
-| Default (healthy) | `#10b981` (emerald) | `rgba(16,185,129,0.5)` |
+| `stress > 0.8` або `status === "removed"` | `#ef4444` (червоний) | `rgba(239,68,68,0.8)` |
+| `stress > 0.4` або `charge < 30` | `#eab308` (жовтий) | `rgba(234,179,8,0.6)` |
+| За замовчуванням (здорове) | `#10b981` (emerald) | `rgba(16,185,129,0.5)` |
 
-**Phlex usage:** `data: { controller: "map" }` on the map `<div>` in `Dashboard::Map`. Hidden `<div data-map-target="node">` elements streamed via Turbo from `Dashboard::MapNode`.
+**Phlex-використання:** `data: { controller: "map" }` на map `<div>` у `Dashboard::Map`. Приховані `<div data-map-target="node">` елементи стрімляться через Turbo з `Dashboard::MapNode`.
 
-### 7.4 `matrix-rain` Controller
+### 7.4 Контролер `matrix-rain`
 
-Canvas-based Matrix digital rain effect using hex characters (`0-9A-F`).
+Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`).
 
-- `connect()` — gets canvas 2D context, starts `setInterval(draw, 60ms)`
-- `disconnect()` — clears interval, removes resize listener
-- `resize()` — fits canvas to parent, reinitializes `drops[]` array
+- `connect()` — отримує canvas 2D контекст, запускає `setInterval(draw, 60ms)`
+- `disconnect()` — очищає інтервал, видаляє resize-слухач
+- `resize()` — підганяє canvas під батьківський елемент, переініціалізує масив `drops[]`
 
-**Phlex usage:** `canvas(data: { controller: "matrix-rain" }, class: "absolute inset-0 z-0 opacity-20 ...")` inside `Telemetry::LiveStream`.
+**Phlex-використання:** `canvas(data: { controller: "matrix-rain" }, class: "absolute inset-0 z-0 opacity-20 ...")` всередині `Telemetry::LiveStream`.
 
 ---
 
-## 8. Turbo Integration (Streams & Frames)
+## 8. Інтеграція Turbo (Streams & Frames)
 
 ### 8.1 Turbo Streams
 
-Real-time DOM updates delivered over `ActionCable` (Solid Cable).
+Оновлення DOM в реальному часі через `ActionCable` (Solid Cable).
 
-| Stream | Subscribed In | Updated By |
+| Stream | Підписка у | Оновлюється ким |
 |---|---|---|
-| `"telemetry_stream"` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` (queue: `uplink`) |
+| `"telemetry_stream"` | `Telemetry::LiveStream` | `UnpackTelemetryWorker` (черга: `uplink`) |
 | `@wallet, :transactions` | `Wallets::Show` | `BlockchainMintingService` / TX workers |
 
-**Pattern:**
+**Патерн:**
 
 ```ruby
-# Subscribe (in component view_template)
+# Підписка (у view_template компонента)
 turbo_stream_from @wallet, :transactions
 
-# Broadcast (in worker/service)
+# Broadcast (у worker/service)
 Turbo::StreamsChannel.broadcast_prepend_to(
   [@wallet, :transactions],
   target: "transactions_ledger",
@@ -676,15 +600,15 @@ Turbo::StreamsChannel.broadcast_prepend_to(
 
 ### 8.2 Turbo Frames (Lazy Loading)
 
-Used to defer expensive data fetches until after the initial page paint.
+Використовуються для відкладення дорогих запитів до бази даних до моменту після першого рендерингу сторінки.
 
-| Frame | Used In | Source URL |
+| Frame | Використовується у | URL джерела |
 |---|---|---|
 | `wallet_balance_frame_{id}` | `Wallets::Show` | `balance_api_v1_wallet_path(@wallet)` |
 | `wallet_metadata_frame_{id}` | `Wallets::Show` | `metadata_api_v1_wallet_path(@wallet)` |
 | `simulation_results` | `OracleVisions::SimulationPanel` | Turbo form target |
 
-**Skeleton pattern:**
+**Патерн Skeleton:**
 
 ```ruby
 turbo_frame_tag "wallet_balance_frame_#{@wallet.id}",
@@ -694,11 +618,11 @@ turbo_frame_tag "wallet_balance_frame_#{@wallet.id}",
 end
 ```
 
-### 8.3 Turbo Target IDs (for Worker Broadcasts)
+### 8.3 Turbo Target IDs (для Worker Broadcasts)
 
-Named DOM targets used by Sidekiq workers to inject real-time content:
+Іменовані DOM-цілі, що використовуються Sidekiq workers для інжекції контенту в реальному часі:
 
-| Target ID | Component | Updated By |
+| Target ID | Компонент | Оновлюється ким |
 |---|---|---|
 | `wallet_balance_{id}` | `Wallets::BalanceDisplay` | `BlockchainMintingService` |
 | `transactions_ledger` | `Wallets::Show` | TX confirmation workers |
@@ -708,76 +632,76 @@ Named DOM targets used by Sidekiq workers to inject real-time content:
 
 ---
 
-## 9. Accessibility Checklist
+## 9. Чекліст Доступності
 
-All components are audited against this checklist:
+Всі компоненти перевіряються за цим чеклістом:
 
-| Rule | Implementation |
+| Правило | Реалізація |
 |---|---|
-| `role` on semantic elements | `role="table"` on tables, `role="status"` on badges, `role="navigation"` on sidebar, `role="group"` on StatCard |
-| `aria-label` on interactive elements | All `<button>` and `<a>` elements have descriptive `aria_label:` |
-| `aria-current="page"` | Active nav items in `Navigation::Sidebar` |
-| `scope="col"` on `<th>` | All table headers |
-| `focus-visible:` not `focus:` | 100% compliance across all 67+ components |
-| `aria-hidden="true"` on decorative elements | Sidebar icons, background text watermarks |
-| Keyboard-navigable focus rings | `focus-visible:ring-2 focus-visible:ring-gaia-primary` on all interactive elements |
-| Color contrast | Semantic tokens guarantee WCAG AA in both light and dark modes |
-| `disabled:opacity-50 disabled:cursor-not-allowed` | All disabled buttons (e.g., PhotoCard delete) |
-| `role="status" aria-label="Loading…"` | `Skeleton` component |
+| `role` на семантичних елементах | `role="table"` на таблицях, `role="status"` на бейджах, `role="navigation"` на бічній панелі, `role="group"` на StatCard |
+| `aria-label` на інтерактивних елементах | Всі елементи `<button>` та `<a>` мають описовий `aria_label:` |
+| `aria-current="page"` | Активні елементи навігації у `Navigation::Sidebar` |
+| `scope="col"` на `<th>` | Всі заголовки таблиць |
+| `focus-visible:` а не `focus:` | 100% відповідність у всіх 83+ компонентах |
+| `aria-hidden="true"` на декоративних елементах | Іконки бічної панелі, фонові текстові водяні знаки |
+| Клавіатурно-навіговані focus rings | `focus-visible:ring-2 focus-visible:ring-gaia-primary` на всіх інтерактивних елементах |
+| Контрастність кольорів | Семантичні токени гарантують WCAG AA в обох режимах (light та dark) |
+| `disabled:opacity-50 disabled:cursor-not-allowed` | Всі відключені кнопки (наприклад, видалення PhotoCard) |
+| `role="status" aria-label="Loading…"` | Компонент `Skeleton` |
 
-### Standard Focus Pattern
+### Стандартний Патерн Фокусу
 
 ```ruby
-# ✅ Canonical focus ring for all interactive elements
+# ✅ Канонічне focus ring для всіх інтерактивних елементів
 class: "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
 
-# ✅ Transition pattern
+# ✅ Патерн переходу
 class: "transition-all duration-200 ease-in-out"
-class: "transition-colors duration-300"   # theme switches
+class: "transition-colors duration-300"   # перемикання теми
 ```
 
 ---
 
-## 10. Testing & Lookbook
+## 10. Тестування та Lookbook
 
-### RSpec Component Tests
+### RSpec Тести Компонентів
 
-| Spec File | Examples | Coverage |
+| Spec-файл | Приклади | Покриття |
 |---|---|---|
-| `spec/views/shared/ui/status_badge_spec.rb` | 13 | All AASM states, semantic tokens, accessibility |
-| `spec/views/shared/ui/stat_card_spec.rb` | 14 | Props, danger mode, class override |
-| `spec/views/shared/ui/action_badge_spec.rb` | 10 | Pattern matching, semantic styles |
-| `spec/views/shared/ui/empty_state_spec.rb` | 10 | Default, custom icon, table mode |
-| `spec/views/shared/ui/meta_row_spec.rb` | 5 | Label/value, nil handling |
-| `spec/views/shared/ui/relative_time_spec.rb` | 9 | Time intervals, edge cases |
-| `spec/views/shared/web3/address_spec.rb` | 10 | Truncation, clipboard, nil fallback |
-| `spec/views/shared/iot/metric_value_spec.rb` | 8 | Precision, nil, BigDecimal, unit |
-| `spec/views/components/alerts/badge_spec.rb` | 12 | Severity × Status matrix |
-| `spec/views/components/dashboard/event_row_spec.rb` | 10 | Polymorphic event types |
-| `spec/views/components/wallets/transaction_row_spec.rb` | 16 | Token types, hash truncation |
-| `spec/views/components/wallets/balance_display_spec.rb` | 8 | Balance rendering, Turbo target |
-| `spec/views/components/actuators/card_spec.rb` | 14 | Status LED, matrix rendering |
-| `spec/views/shared/ui/data_table_spec.rb` | 20 | Columns+rows, empty state, custom empty_message, design system compliance, accessibility, class override, single column |
-| `spec/views/shared/ui/pagination_spec.rb` | 22 | Middle/first/last/single page, design system compliance, accessibility, focus-visible, invalid pagy guard |
-| `spec/views/shared/ui/photo_card_spec.rb` | 17 | Initialization, validation, design system compliance, editable true/false, typography |
-| `spec/views/shared/ui/skeleton_spec.rb` | 13 | All 6 variants, custom lines, class override |
-| `spec/views/shared/ui/theme_switcher_spec.rb` | 10 | Toggle behavior, dark/light state |
-| `spec/views/components/alerts/row_spec.rb` | 12 | Severity, status, resolve action |
-| `spec/views/components/clusters/show_spec.rb` | 17 | Health index, tree list, threat state |
-| `spec/views/components/tree_families/form_spec.rb` | 14 | Create/update form, validation |
-| `spec/views/components/wallets/show_spec.rb` | 11 | Balance frame, transaction ledger, pagy pagination |
+| `spec/views/shared/ui/status_badge_spec.rb` | 13 | Всі AASM стани, семантичні токени, доступність |
+| `spec/views/shared/ui/stat_card_spec.rb` | 14 | Props, danger-режим, перевизначення класу |
+| `spec/views/shared/ui/action_badge_spec.rb` | 10 | Pattern matching, семантичні стилі |
+| `spec/views/shared/ui/empty_state_spec.rb` | 10 | За замовчуванням, кастомна іконка, table-режим |
+| `spec/views/shared/ui/meta_row_spec.rb` | 5 | Мітка/значення, обробка nil |
+| `spec/views/shared/ui/relative_time_spec.rb` | 9 | Інтервали часу, граничні випадки |
+| `spec/views/shared/web3/address_spec.rb` | 10 | Обрізання, clipboard, nil fallback |
+| `spec/views/shared/iot/metric_value_spec.rb` | 8 | Точність, nil, BigDecimal, одиниця |
+| `spec/views/components/alerts/badge_spec.rb` | 12 | Матриця severity × status |
+| `spec/views/components/dashboard/event_row_spec.rb` | 10 | Поліморфні типи подій |
+| `spec/views/components/wallets/transaction_row_spec.rb` | 16 | Типи токенів, обрізання хешу |
+| `spec/views/components/wallets/balance_display_spec.rb` | 8 | Рендеринг балансу, Turbo target |
+| `spec/views/components/actuators/card_spec.rb` | 14 | Статус LED, рендеринг матриці |
+| `spec/views/shared/ui/data_table_spec.rb` | 20 | Стовпці+рядки, порожній стан, кастомний empty_message, відповідність дизайн-системі, доступність, перевизначення класу, один стовпець |
+| `spec/views/shared/ui/pagination_spec.rb` | 22 | Перша/середня/остання/одна сторінка, відповідність дизайн-системі, доступність, focus-visible, guard невалідного pagy |
+| `spec/views/shared/ui/photo_card_spec.rb` | 17 | Ініціалізація, валідація, відповідність дизайн-системі, editable true/false, типографіка |
+| `spec/views/shared/ui/skeleton_spec.rb` | 13 | Всі 6 варіантів, кастомні рядки, перевизначення класу |
+| `spec/views/shared/ui/theme_switcher_spec.rb` | 10 | Поведінка перемикання, dark/light стан |
+| `spec/views/components/alerts/row_spec.rb` | 12 | Severity, статус, дія вирішення |
+| `spec/views/components/clusters/show_spec.rb` | 17 | Індекс здоров'я, список дерев, стан загрози |
+| `spec/views/components/tree_families/form_spec.rb` | 14 | Форма створення/оновлення, валідація |
+| `spec/views/components/wallets/show_spec.rb` | 11 | Фрейм балансу, журнал транзакцій, pagy пагінація |
 
-**Total:** **275** · **22 spec files** · **0 failures**
+**Всього:** **275** · **22 spec-файли** · **0 помилок**
 
-### Lookbook (Component Explorer)
+### Lookbook (Дослідник Компонентів)
 
-Lookbook provides a live preview of all components at `http://localhost:3000/lookbook` (development only).
+Lookbook надає живий попередній перегляд усіх компонентів за адресою `http://localhost:3000/lookbook` (лише в режимі development).
 
-**Preview files:** `spec/components/previews/`
+**Файли превью:** `spec/components/previews/`
 
-| Preview | Scenarios |
+| Превью | Сценарії |
 |---|---|
-| `StatusBadgePreview` | All AASM states, Transaction lifecycle, Interactive |
+| `StatusBadgePreview` | Всі AASM стани, Transaction lifecycle, Interactive |
 | `StatCardPreview` | Default, Danger, Minimal, Interactive |
 | `ActionBadgePreview` | 2 сценарії: `all_types` (4 типи дій), `interactive` |
 | `EmptyStatePreview` | Grid, Custom icon, Minimal |
@@ -798,8 +722,3 @@ Lookbook provides a live preview of all components at `http://localhost:3000/loo
 | `ActuatorCommandStatusBadgePreview` | All command statuses, Interactive |
 | `ActuatorCommandRowPreview` | Confirmed open, Issued activate, Failed close, Interactive |
 | `PhotoCardPreview` | Image photo, File fallback |
-
----
-
-_Document reverse-shaped (Cycle 1) from:_
-`app/views/components/` · `app/views/shared/` · `app/javascript/controllers/` · `config/tailwind.config.js` · `app/assets/tailwind/application.css` · `docs/COMPONENTS.md` · `docs/FRONTEND_GUIDELINES.md`
