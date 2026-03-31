@@ -6,7 +6,7 @@
 
 ## ✅ Статус (Status)
 
-- **Поточний TRL:** TRL 8 — System Qualified. Reverse-shaped from live codebase. ⚠️ TRL 9 призупинено до виправлення B-01/B-02 (raw Tailwind кольори у shared-компонентах) та W-06 (scaffold `hello_controller.js` у production).
+- **Поточний TRL:** TRL 9 — System Complete. Reverse-shaped from live codebase. Всі blockers B-01/B-02 (semantic tokens) та W-06 (scaffold `hello_controller.js`) виправлено у [PR #236](https://github.com/Alexey-Lukin/silken_net/commit/a6d6807648ae86767a41d497f0d2b85f9aed4b67).
 - **Stack:** Rails 8.1 · Phlex · Tailwind CSS 4 · TailwindMerge · Stimulus · Turbo 8
 - **Пов'язані модулі:**
   - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
@@ -41,9 +41,9 @@
 
 #### 🔴 Блокери
 
-- **🔴 B-01 · `Web3::Address` використовує raw Tailwind кольори в shared-компоненті.** `app/views/shared/web3/address.rb` містить `text-emerald-500`, `text-emerald-700`, `hover:text-emerald-300`, `focus-visible:ring-emerald-500`, `text-gray-700`. Документ §3.5 забороняє raw Tailwind кольори в shared-компонентах (тільки semantic tokens). `shared/web3/` — reusable shared namespace, а не domain page component. **Дія:** Замінити на семантичні токени: `text-gaia-primary`, `hover:text-gaia-primary-hover`, `focus-visible:ring-gaia-primary`, `text-gaia-text-muted`.
+- ~~**🔴 B-01 · `Web3::Address` використовує raw Tailwind кольори в shared-компоненті.** `app/views/shared/web3/address.rb` містить `text-emerald-500`, `text-emerald-700`, `hover:text-emerald-300`, `focus-visible:ring-emerald-500`, `text-gray-700`. Документ §3.5 забороняє raw Tailwind кольори в shared-компонентах (тільки semantic tokens). `shared/web3/` — reusable shared namespace, а не domain page component. **Дія:** Замінити на семантичні токени: `text-gaia-primary`, `hover:text-gaia-primary-hover`, `focus-visible:ring-gaia-primary`, `text-gaia-text-muted`.~~ ✅ **ВИПРАВЛЕНО** у [PR #236](https://github.com/Alexey-Lukin/silken_net/commit/a6d6807648ae86767a41d497f0d2b85f9aed4b67): `text-emerald-500` → `text-gaia-primary`, `text-emerald-700` / `hover:text-emerald-300` → `hover:text-gaia-primary-hover`, `focus-visible:ring-emerald-500` → `focus-visible:ring-gaia-primary`, `text-gray-700` → `text-gaia-text-muted`.
 
-- **🔴 B-02 · `IoT::MetricValue` використовує raw Tailwind кольори в shared-компоненті.** `app/views/shared/iot/metric_value.rb` містить `text-emerald-400` (value span) та `text-emerald-700` (unit span). Порушення того ж правила §3.5. **Дія:** Замінити на `text-gaia-primary` та `text-gaia-text-muted`.
+- ~~**🔴 B-02 · `IoT::MetricValue` використовує raw Tailwind кольори в shared-компоненті.** `app/views/shared/iot/metric_value.rb` містить `text-emerald-400` (value span) та `text-emerald-700` (unit span). Порушення того ж правила §3.5. **Дія:** Замінити на `text-gaia-primary` та `text-gaia-text-muted`.~~ ✅ **ВИПРАВЛЕНО** у [PR #236](https://github.com/Alexey-Lukin/silken_net/commit/a6d6807648ae86767a41d497f0d2b85f9aed4b67): `text-emerald-400` → `text-gaia-primary`, `text-emerald-700` → `text-gaia-text-muted`.
 
 - ~~**🔴 B-03 · Текст вирішення BLOCKER-03 фактично неточний щодо `tailwind.config.js`.** Документ стверджує: "тепер `theme.fontSize` містить виключно семантичні токени (`micro`, `mini`, `tiny`, `compact`)". В реальності `config/tailwind.config.js` **взагалі не має ключа `fontSize`** — ані в `theme`, ані в `theme.extend`. Кастомні font-size токени визначені виключно у CSS `@theme` блоку в `application.css` (`--font-size-micro` тощо). **Дія:** Оновити текст вирішення: "Legacy аліаси видалені повністю. Кастомні токени (`micro`, `mini`, `tiny`, `compact`) визначені у CSS `@theme` блоці `application.css`, а не в JS-конфігу".~~ ✅ **ВИПРАВЛЕНО**: текст вирішення BLOCKER-03 оновлено — коректно описано відсутність `fontSize` в `tailwind.config.js` та визначення токенів у CSS `@theme`.
 
@@ -59,7 +59,7 @@
 
 - ~~**🟠 W-05 · Шість spec-файлів повністю відсутні в таблиці §10.** Існуючі файли не включені до документа: `skeleton_spec.rb` (13 прикладів), `theme_switcher_spec.rb` (10), `alerts/row_spec.rb` (12), `clusters/show_spec.rb` (17), `tree_families/form_spec.rb` (14), `wallets/show_spec.rb` (11). Разом 77 додаткових прикладів — реальний total: **275** у 22 файлах. **Дія:** Додати всі 6 файлів до таблиці §10; оновити підсумок.~~ ✅ **ВИПРАВЛЕНО**: всі 6 файлів додані; total 275 у 22 файлах.
 
-- ~~**🟠 W-06 · `hello_controller.js` — активний але незадокументований Stimulus-контролер.** `app/javascript/controllers/hello_controller.js` існує і містить `connect()` що встановлює `this.element.textContent = "Hello World!"`. Через `eagerLoadControllersFrom` він автоматично зареєстрований і доступний через `data-controller="hello"` в production. Це scaffold-залишок. **Дія:** Або видалити файл, або задокументувати як debug-заглушку.~~ ✅ **ВИПРАВЛЕНО (doc)**: задокументовано як scaffold-залишок у §7 з попередженням; code fix (видалення) — окреме завдання.
+- ~~**🟠 W-06 · `hello_controller.js` — активний але незадокументований Stimulus-контролер.** `app/javascript/controllers/hello_controller.js` існує і містить `connect()` що встановлює `this.element.textContent = "Hello World!"`. Через `eagerLoadControllersFrom` він автоматично зареєстрований і доступний через `data-controller="hello"` в production. Це scaffold-залишок. **Дія:** Або видалити файл, або задокументувати як debug-заглушку.~~ ✅ **ВИПРАВЛЕНО** у [PR #236](https://github.com/Alexey-Lukin/silken_net/commit/a6d6807648ae86767a41d497f0d2b85f9aed4b67): `app/javascript/controllers/hello_controller.js` видалено з production.
 
 - ~~**🟠 W-07 · Кількість компонентів у §9 занижена.** Документ: "100% compliance across all 83+ components". Реально `find app/views -name "*.rb"` (без `application_component.rb`): **83 файли**. **Дія:** Оновити на "83+ компонентів".~~ ✅ **ВИПРАВЛЕНО**: оновлено "67+" → "83+"
 
@@ -565,7 +565,7 @@ Domain components are page-level and are **not** expected to be reused outside t
 | **map** | `map_controller.js` | `map` | Leaflet.js geospatial tree map |
 | **matrix-rain** | `matrix_rain_controller.js` | `matrix-rain` | Canvas Matrix digital rain effect |
 
-> **⚠️ Scaffold залишок:** `hello_controller.js` існує у `app/javascript/controllers/` і автоматично реєструється через `eagerLoadControllersFrom` (доступний як `data-controller="hello"` в production). Це Rails scaffold-заглушка. **Видаліть або замініть реальною логікою перед будь-яким публічним релізом.**
+> **✅ Scaffold залишок видалено:** `hello_controller.js` видалено у [PR #236](https://github.com/Alexey-Lukin/silken_net/commit/a6d6807648ae86767a41d497f0d2b85f9aed4b67). Файл більше не існує у `app/javascript/controllers/`.
 >
 > **Примітка:** Будь-який `*_controller.js` у директорії автоматично реєструється — не залишайте scaffold-файли в production.
 
