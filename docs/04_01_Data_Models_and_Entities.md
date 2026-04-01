@@ -1,121 +1,18 @@
-# 04_01: Data Models and Entities (The PostgreSQL Core)
+# 04_01: Моделі Даних та Сутності
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 25 моделей, 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
 
 ---
 
-## ✅ Статус (Status)
+## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Схема БД затверджена, міграції написані, поліморфні зв'язки та індекси оптимізовані для planetary-scale highload.
 - **Пов'язані модулі:**
   - Фізичний рівень → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
   - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
   - Web3-економіка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
-
----
-
-## 🛑 Блокери (Blockers / Needs Action)
-
-- ~~**Database Locking:** При одночасному надходженні тисяч пакетів телеметрії, оновлення балансу `Wallet` вимагає `pessimistic locks` (`lock!("FOR UPDATE")`), щоб уникнути race conditions при нарахуванні балів росту. Моніторити Connection Pool.~~ ✅ **ВИРІШЕНО** у [commit 59352473](https://github.com/Alexey-Lukin/silken_net/commit/59352473b7f2ce630532a2ec9e941cbf7d721c99):
-  - `Wallet#credit!` — додано `with_lock` (SELECT ... FOR UPDATE) для захисту від race conditions
-  - `Wallet#lock_funds!` — додано `with_lock` для усунення TOCTOU race condition
-  - `Wallet#release_locked_funds!` — додано `with_lock` для консистентності
-  - `TelemetryUnpackerService#commit_telemetry` — кредитування Wallet винесено поза основну транзакцію для мінімізації часу утримання лока (мс замість повної тривалості транзакції)
-  - Prometheus: додано gauge-метрики пулу з'єднань БД (size / connections / idle / waiting)
-  - Тести: 10 нових RSpec-специфікацій, що верифікують pessimistic locking поведінку
-- ~~**Partition Automation:** Таблиці `telemetry_logs` та `gateway_telemetry_logs` партиціоновані вручну по місяцях. Необхідний `PartitionMaintenanceWorker` для автоматичного створення нових партицій наперед.~~ ✅ **ВИРІШЕНО** у [commit cc7609c](https://github.com/Alexey-Lukin/silken_net/commit/cc7609c12ac4cfbc3daed4a6aeb7229d1b3b60bd):
-  - Додано `PartitionMaintenanceWorker` (черга `default`, 3 ретраї) — ідемпотентне DDL-створення партицій через `CREATE TABLE IF NOT EXISTS ... PARTITION OF`
-  - Охоплює поточний та наступний місяці для `telemetry_logs` і `gateway_telemetry_logs`
-  - Безпечна параметризація: `quote_table_name` / `quote` для захисту від SQL-ін'єкцій
-  - Заплановано щодня о 02:30 UTC через sidekiq-scheduler cron (`30 2 * * *`)
-  - Тести: 122 рядки RSpec-специфікацій у `spec/workers/partition_maintenance_worker_spec.rb`
-- ~~**HardwareKey Decrypt Cache:** При мільйонах пакетів/хв десеріалізація зашифрованих ключів AR Encryption створює навантаження на CPU. Рекомендується Redis-кеш binary_key з TTL 5-15 хв + інвалідація при `rotate_key!`.~~ ✅ **ВИРІШЕНО** у [commit 513556a](https://github.com/Alexey-Lukin/silken_net/commit/513556ad2fb094c420f2ab85c7971be2545e2845):
-  - Додано `HardwareKey#cached_binary_key` — `Rails.cache.fetch("hw_key:#{device_uid}:bin", expires_in: 15.minutes)` (Redis у prod)
-  - Усуває «Double Crypto Tax»: AR Encryption десеріалізація відбувається 1 раз/15 хв замість кожного пакету телеметрії (~2 мс/виклик)
-  - Автоматична інвалідація через `after_commit :clear_key_cache, on: %i[update destroy]`
-  - `UnpackTelemetryWorker#attempt_decryption` — перехід з `binary_key` → `cached_binary_key` на hot path
-  - Безпека: ключі в PostgreSQL залишаються зашифрованими (AR Encryption); Redis — ізольована мережа (Private VPC, TLS, ACL)
-  - Тести: 79 нових рядків RSpec у `spec/models/hardware_key_spec.rb`
-- ~~**🔴 P0 — Missing index on `blockchain_transactions.tx_hash`:** `BlockchainConfirmationWorker` виконує `BlockchainTransaction.where(tx_hash: tx_hash)` без індексу — повний Sequential Scan на таблиці з мільярдами рядків при планетарному масштабі (1 млрд дерев × щомісячний SCC мінтинг). Файл: `app/workers/blockchain_confirmation_worker.rb:29`.~~ ✅ **ВИРІШЕНО** ([migration 20260328110000](db/migrate/20260328110000_add_tx_hash_index_to_blockchain_transactions.rb)):
-  - Додано `CREATE INDEX CONCURRENTLY index_blockchain_transactions_on_tx_hash ... WHERE (tx_hash IS NOT NULL)`
-  - `CONCURRENTLY` — Zero-Downtime: без table-level lock, без блокування writes під час індексування
-  - `WHERE tx_hash IS NOT NULL` — partial index: виключає `pending/processing` рядки (без tx_hash), зменшує розмір індексу
-- ~~**🟠 P1 — `Actuator#commands dependent: :destroy` (OOM ризик при деактивації Gateway):** `app/models/actuator.rb:9` — при видаленні Gateway Rails завантажував кожну `ActuatorCommand` у Ruby і запускав AASM-колбеки + Turbo broadcasts. При 1000+ команд на актуатор → OOM.~~ ✅ **ВИРІШЕНО**: Замінено на `dependent: :delete_all` — один SQL DELETE замість N Ruby-об'єктів. `ActuatorCommand` не несе фінансових зобов'язань (не впливає на `Wallet` балans або `BlockchainTransaction`), тому bypass callbacks безпечний.
-- ~~**🟠 P1 — `blockchain_transactions` не партиціонована:** При планетарному масштабі (1B дерев × щомісячний мінтинг ≈ 12B рядків/рік) повний Sequential Scan деградує до хвилин. Необхідне RANGE-партиціонування по `created_at` (квартальне або місячне) аналогічно `telemetry_logs`. Потребує `pg_partman` або ручного `PartitionMaintenanceWorker` для автоматичного DDL.~~ ✅ **ВИРІШЕНО** у PR #221 ([migration 20260328120000](db/migrate/20260328120000_partition_blockchain_transactions_by_created_at.rb)):
-  - Стратегія: rename → recreate as partitioned → migrate data → drop old (аналогічно `telemetry_logs`)
-  - Composite PK `(id, created_at)` — обов'язкова умова PostgreSQL declarative partitioning (partition key повинен входити в PK)
-  - `BlockchainTransaction.self.primary_key = "id"` — Rails використовує `id` для `dom_id`, lookups і асоціацій (composite PK прозорий для AR)
-  - Default partition `blockchain_transactions_default` + місячні партиції `y2026m01`..`y2026m06`
-  - Всі 8 індексів перестворені на новій партиційованій таблиці (без CONCURRENTLY — PostgreSQL не підтримує CONCURRENTLY на partitioned tables; індекси автоматично пропагуються на всі партиції)
-  - FK-constraints перестворені (`wallet_id → wallets`, `cluster_id → clusters`) через `ALTER TABLE` (без ONLY) для пропагації на партиції
-  - `PartitionMaintenanceWorker::PARTITIONED_TABLES` оновлено: тепер обслуговує 3 таблиці (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`)
-
-### 🔍 Аудит 2026-03-29 — Нові знайдені проблеми
-
-#### 🔴 Блокери
-
-- ~~**🔴 BLK-01 · `AiInsight` — Повністю неправильні назви `insight_type` enum.** Код `app/models/ai_insight.rb` містить 4 значення: `daily_health_summary(0)`, `drought_probability(1)`, `carbon_yield_forecast(2)`, `biodiversity_trend(3)`. Документ §7 натомість наводить `fire_risk_forecast`, `drought_prediction`, `anomaly_detection`, `pest_detection` — жодне з них не існує в коді. Виклик `AiInsight.fire_risk_forecast` або `.pest_detection` підніме `ArgumentError`. **Дія:** Замінити таблицю enum у §7 на актуальні 4 значення.~~ ✅ **ВИПРАВЛЕНО**: Таблицю enum §7 виправлено — замінено на `daily_health_summary(0)`, `drought_probability(1)`, `carbon_yield_forecast(2)`, `biodiversity_trend(3)`.
-
-- ~~**🔴 BLK-02 · `EwsAlert` — `alert_type` enum: неправильні назви І неправильні цілочисельні значення.** Код: `severe_drought(0)`, `insect_epidemic(1)`, `vandalism_breach(2)`, `fire_detected(3)`, `seismic_anomaly(4)`, `system_fault(5)`. Документ §7 вказує `fire(0)`, `drought(1)`, `vandalism(2)`, `system_fault(3)`, `pest(4)`, `seismic(5)` — всі значення неправильні, включно з цілочисельними. Критично для страхових виплат та slashing-логіки. З `prefix: true` → запити використовують `alert_type_fire_detected?`, а не `alert_type_fire?`. **Дія:** Замінити таблицю enum повністю.~~ ✅ **ВИПРАВЛЕНО**: таблицю enum §7 замінено — `installation(0)`, `inspection(1)`, `cleaning(2)`, `repair(3)`, `decommissioning(4)`, `biomass_extraction(5)`, `prefix: true`.~~ ✅ **ВИПРАВЛЕНО**: Таблицю enum §7 виправлено.
-
-- ~~**🔴 BLK-03 · `EwsAlert` — `satellite_status` enum повністю неправильний.** Код: `unverified(0)`, `verified(1)`, `rejected_fraud(2)`, `inconclusive(3)`. Документ §7 вказує `not_required`, `pending`, `verified`, `contradicted`, `unverifiable` — 4 з 5 задокументованих значень не існують. **Дія:** Замінити на актуальні 4 значення.~~ ✅ **ВИПРАВЛЕНО**: `satellite_status` виправлено — `unverified(0)`, `verified(1)`, `rejected_fraud(2)`, `inconclusive(3)`, `prefix: :satellite`.
-
-- ~~**🔴 BLK-04 · `ActuatorCommand` — `priority` enum: всі назви неправильні.** Код: `low(0)`, `medium(1)`, `high(2)`, `override(3)` (з `prefix: true`). Документ §4 вказує `routine(0)`, `urgent(1)`, `emergency(2)`, `override(3)`. Виклики `priority_routine?`, `priority_urgent?`, `priority_emergency?` підняли б `NoMethodError`. **Дія:** Замінити на `low / medium / high / override`, зазначити `prefix: true`.~~ ✅ **ВИПРАВЛЕНО**: Enum §4 виправлено — `low(0)`, `medium(1)`, `high(2)`, `override(3)`, `prefix: true`.
-
-- ~~**🔴 BLK-05 · `TelemetryLog` — колонка `impedance_ohms` відсутня в БД і моделі.** Документ §3 перераховує `impedance_ohms | integer | Імпеданс ксилеми (Ω)` як поле `TelemetryLog`. Ні DB-схема, ні модель цього поля не мають. **Дія:** Видалити з таблиці полів або відстежити як Open Item.~~ ✅ **ВИПРАВЛЕНО**: Поле `impedance_ohms` видалено з таблиці §3.
-
-- ~~**🔴 BLK-06 · `NaasContract` — `insurance_premium_rate` та `forester_share_rate` не є DB-колонками.** Документ §6 перераховує їх як збережені поля. В коді: константа `INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`, обчислювальні методи `insurance_premium_amount` та `forester_share_amount`. **Дія:** Перенести з таблиці "Поля" до таблиці "Методи".~~ ✅ **ВИПРАВЛЕНО**: Видалено з таблиці полів §6; додано `insurance_premium_amount` та `forester_share_amount` до таблиці методів.
-
-- ~~**🔴 BLK-07 · `Gateway` — `cluster_id` в DB є `NOT NULL`, але модель оголошує `belongs_to :cluster, optional: true`.** `db/structure.sql`: `cluster_id bigint NOT NULL`. Документ §3 вказує "optional". Спроба створити Gateway без cluster_id викличе PG-виключення `null value in column "cluster_id"`. **Дія:** Узгодити схему і модель — або прибрати `optional: true`, або видалити `NOT NULL` з DB.~~ ✅ **ВИПРАВЛЕНО** у [PR #233](https://github.com/Alexey-Lukin/silken_net/commit/6418f3792c1a65a179cacf3c9b481850a1f58b3d): `optional: true` видалено з `Gateway#belongs_to :cluster`. Модель узгоджена з `cluster_id bigint NOT NULL` в БД.
-
-- ~~**🔴 BLK-08 · `NaasContract` — `start_date`/`end_date`: документ вказує тип `date`, DB зберігає `timestamp`.** `db/structure.sql`: `start_date timestamp(6) without time zone`. **Дія:** Виправити тип на `timestamp`.~~ ✅ **ВИПРАВЛЕНО**: Тип виправлено на `timestamp` у §6.
-
-#### 🟠 Попередження
-
-- ~~**🟠 WARN-01 · `GatewayTelemetryLog` — два задокументовані поля не існують в БД.** `packets_received_count` та `packets_forwarded_count` відсутні в DB-схемі та моделі. **Дія:** Видалити з документа або створити міграцію.~~ ✅ **ВИПРАВЛЕНО**: `packets_received_count` і `packets_forwarded_count` видалено з таблиці §3.
-
-- ~~**🟠 WARN-02 · `GatewayTelemetryLog#voltage_mv`: тип у документі `integer`, в БД `numeric`.** **Дія:** Виправити тип на `numeric/decimal`.~~ ✅ **ВИПРАВЛЕНО**: тип виправлено на `numeric` у §3.
-
-- ~~**🟠 WARN-03 · `TreeFamily#baseline_impedance`: тип у документі `decimal`, в БД `integer`.** **Дія:** Виправити тип або створити міграцію на `numeric`.~~ ✅ **ВИПРАВЛЕНО**: тип виправлено на `integer` у §2 (відповідно до DB).
-
-- ~~**🟠 WARN-04 · `MaintenanceRecord` — `action_type` enum: всі значення неправильні.** Код: `installation(0)`, `inspection(1)`, `cleaning(2)`, `repair(3)`, `decommissioning(4)`, `biomass_extraction(5)`. Документ §7 наводить 8 неіснуючих значень. **Дія:** Замінити таблицю enum повністю.
-
-- ~~**🟠 WARN-05 · `MaintenanceRecord` — обмеження фото неправильні.** Код: `size: { less_than: 20.megabytes }`, `content_type: %w[image/jpeg image/png image/webp image/heic image/heif]`, максимум 10 фото. Документ §7 вказує `≤ 5 МБ, JPEG/PNG/HEIC`. **Дія:** Виправити на `≤ 20 МБ, JPEG/PNG/WebP/HEIC/HEIF, макс. 10 фото`.~~ ✅ **ВИПРАВЛЕНО**: обмеження фото виправлено у §7.
-
-- ~~**🟠 WARN-06 · `MaintenanceRecord` — відсутній `GeoLocatable` concern у документі §7.** **Дія:** Додати `GeoLocatable` до розділу асоціацій/includes.~~ ✅ **ВИПРАВЛЕНО**: додано `**Includes:** \`GeoLocatable\`` у §7.
-
-- ~~**🟠 WARN-07 · `ParametricInsurance` — поле `uses_etherisc`: документ вказує `boolean`, в коді це рядкова колонка + метод-предикат.** DB: `etherisc_policy_id character varying`. Метод: `def uses_etherisc? = etherisc_policy_id.present?`. **Дія:** Видалити `uses_etherisc` з таблиці полів; додати `etherisc_policy_id | string` і документувати `uses_etherisc?` як метод.~~ ✅ **ВИПРАВЛЕНО**: `uses_etherisc` видалено з полів §6; додано `etherisc_policy_id | string` + метод `uses_etherisc?`.
-
-- ~~**🟠 WARN-08 · ER-карта §10: `TreeFamily → TinyMlModels (nullify)` та `→ BioContractFirmwares (nullify)` не існують.** В моделі `TreeFamily` є лише `has_many :trees, dependent: :restrict_with_error`. `TinyMlModel` та `BioContractFirmware` мають `belongs_to :tree_family`, але зворотньої `has_many` в `TreeFamily` немає. **Дія:** Прибрати ці асоціації з ER-карти.~~ ✅ **ВИПРАВЛЕНО**: видалено з ER-карти §10.
-
-- ~~**🟠 WARN-09 · ER-карта §10: `Organization → Wallets (delete_all)` — в коді відсутній `dependent:`.** `has_many :wallets` без жодної опції `dependent:`. Видалення Organization залишить orphaned Wallets. **Дія:** Додати `dependent: :nullify` або `:destroy`; оновити ER-карту.~~ ✅ **ВИПРАВЛЕНО** у [PR #233](https://github.com/Alexey-Lukin/silken_net/commit/6418f3792c1a65a179cacf3c9b481850a1f58b3d): ER-карту §10 виправлено та `dependent: :nullify` додано до `Organization#has_many :wallets`. При видаленні Organization — `organization_id` у Wallets обнуляється (orphan-ризик усунено).
-
-- ~~**🟠 WARN-10 · `User#telegram_chat_id`: документ вказує `bigint`, в БД `character varying`.** **Дія:** Виправити тип на `string / varchar`.~~ ✅ **ВИПРАВЛЕНО**: тип виправлено на `string` у §5.
-
-- ~~**🟠 WARN-11 · `GatewayTelemetryLog` — AR-асоціація через `queen_uid`, тоді як БД має `gateway_id NOT NULL`.** `belongs_to :gateway, foreign_key: :queen_uid, primary_key: :uid` — Rails ніколи не використовує `gateway_id` для AR. Колонка-"привид" невидима моделі. **Дія:** Задокументувати dual-key патерн; вирішити питання канонічного FK.~~ ✅ **ВИПРАВЛЕНО**: dual-key патерн задокументовано в §3.
-
-- ~~**🟠 WARN-12 · `Identity` — провайдер `apple` згаданий у коментарі моделі, але відсутній у `SUPPORTED_PROVIDERS`.** **Дія:** Або видалити `apple` з документа, або додати до константи.~~ ✅ **ВИПРАВЛЕНО**: документ §5 вже не містить `apple` — наведено лише реальні провайдери з `SUPPORTED_PROVIDERS`.
-
-- ~~**🟠 WARN-13 · `BlockchainTransaction` — статус `sent(4)` має розрив після `failed(3)`.** Документ не показує цілочисельні значення enum. **Дія:** Додати цілочисельні значення до таблиці статусів.~~ ✅ **ВИПРАВЛЕНО**: документ §6 вже має int-значення `pending(0) / processing(1) / confirmed(2) / failed(3) / sent(4)`.
-
-- ~~**🟠 WARN-14 · `Organization` — відсутня асоціація `ews_alerts` у документі §5.** Модель: `has_many :ews_alerts, through: :clusters`. Метод `under_threat?` покладається на цю асоціацію. **Дія:** Додати рядок до таблиці асоціацій Organization.~~ ✅ **ВИПРАВЛЕНО**: `ews_alerts (through: :clusters)` додано до таблиці §5.
-
-- ~~**🟠 WARN-15 · `AiInsight` — JSONB-колонка `recommendation` не задокументована.** Код: `store_accessor :recommendation, :action_required, :priority`. **Дія:** Додати `recommendation | jsonb | Рекомендації Оракула (action_required, priority)`.~~ ✅ **ВИПРАВЛЕНО**: поле `recommendation` додано до таблиці полів §7.
-
-#### 🟡 Нотатки
-
-- ~~**🟡 NOTE-01 · `Tree` — `active_trees_count` помилково вказаний як поле `Tree`.** Це counter cache на таблиці `clusters`, а не `trees`. **Дія:** Видалити з таблиці полів Tree.~~ ✅ **ВИПРАВЛЕНО**: `active_trees_count` видалено з таблиці полів §2 (Tree). Правильно зазначений у Cluster.
-
-- ~~**🟡 NOTE-02 · Численні незадокументовані DB-колонки.** Серед них: `trees` (`peaq_did`, `firmware_version`, `altitude`); `gateways` (`firmware_version`, `altitude`); `telemetry_logs` (`growth_points`, `metabolism_s`, `rssi`, `sap_flow`, `verified_by_iotex`, `zk_proof_ref`, `chainlink_request_id`, `tamper_detected`); `wallets` (`solana_public_address`, `hadron_kyc_status`); `naas_contracts` (`emitted_tokens`, `cancelled_at`, `hadron_asset_id`); `blockchain_transactions` (`cumulative_gas_cost`, `sent_at`, `confirmed_at`, `chainlink_request_id`, `zk_proof_ref`, `locked_points`); `ews_alerts` (`dclimate_ref`); `maintenance_records` (`biomass_passport_tx_hash`); `tiny_ml_models` (`target_pest`, `drift_checked_at`); `clusters` (`climate_type`); `ai_insights` (`analyzed_date`, `average_temperature`, `total_growth_points`, `summary`). **Дія:** Задокументувати у відповідних таблицях моделей.~~ ✅ **ВИПРАВЛЕНО**: додано незадокументовані колонки до всіх відповідних секцій: Tree, Gateway, TelemetryLog, Wallet, NaasContract, BlockchainTransaction, EwsAlert, MaintenanceRecord, TinyMlModel, Cluster, AiInsight.
-
-- ~~**🟡 NOTE-03 · TRL 8 завищений за наявності незакритих BLK-01..BLK-08.** 8 блокерів означають, що документ не точно описує систему. **Дія:** Закрити всі BLK; після цього TRL 8 обґрунтований.~~ ✅ **ВИПРАВЛЕНО**: BLK-01..08 закриті (BLK-07 закрито у PR #233). TRL 8 повністю обґрунтований.
-
-- ~~**🟡 NOTE-04 · Factory для `Wallet` не встановлює асоціацію `organization`.** Тести що будують wallet напряму (без tree) можуть отримати `organization: nil`. **Дія:** Додати `organization { tree&.cluster&.organization }` до factory.~~ ✅ **ВИПРАВЛЕНО** у [PR #233](https://github.com/Alexey-Lukin/silken_net/commit/6418f3792c1a65a179cacf3c9b481850a1f58b3d): `organization { tree&.cluster&.organization }` додано до `spec/factories/wallets.rb`.
-
-- ~~**🟡 NOTE-05 · `BlockchainTransaction` — AASM event `confirm` приймає два аргументи, але документ не відображає підписи подій.** Код: `event :confirm do |block_num, gas_cost|`. **Дія:** Додати підписи подій: `confirm(block_num, gas_cost)`, `mark_as_sent(tx_hash)`, `fail(reason)`.~~ ✅ **ВИПРАВЛЕНО**: підписи подій додано до §6 BlockchainTransaction.
-
 
 ---
 
@@ -149,7 +46,7 @@
 
 ---
 
-## 🔧 1. Concerns (Shared Modules)
+## 🔧 1. Concerns
 
 Шість спільних модулів, що підключаються через `include` до відповідних моделей.
 
@@ -233,7 +130,7 @@ normalize_identifier :device_uid  # HardwareKey
 
 ---
 
-## 🌲 2. Біологічний Рівень (Environment)
+## 🌲 2. Біологічний Рівень
 
 ### `TreeFamily` — Генетичний Шаблон
 
@@ -391,7 +288,7 @@ dormant ──reactivate──► active
 
 ---
 
-## ⚙️ 3. Апаратний Рівень (Hardware & IoT)
+## ⚙️ 3. Апаратний Рівень
 
 ### `Gateway` — Королева (LoRaWAN Шлюз)
 
@@ -713,7 +610,7 @@ any ──report_fault──► faulty
 
 ---
 
-## 👤 5. Люди та Організації (Core & Identity)
+## 👤 5. Люди та Організації
 
 ### `Organization` — Власник Лісових Активів
 
@@ -833,7 +730,7 @@ any ──report_fault──► faulty
 
 ---
 
-## 💰 6. Економічний Рівень (Economy & Web3)
+## 💰 6. Економічний Рівень
 
 ### `Wallet` — Вуглецевий Гаманець
 
@@ -914,7 +811,7 @@ any ──report_fault──► faulty
 
 **Методи:** `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
 
-**Scalability (P1 — ✅ ВИРІШЕНО у PR #221):** Таблиця переведена на PostgreSQL Declarative RANGE Partitioning по `created_at` (місячні партиції). Composite PK `(id, created_at)` — вимога partitioning. `self.primary_key = "id"` — Rails використовує `id` для `dom_id` та асоціацій. Всі 8 індексів перестворені (автоматично пропагуються на партиції). `PartitionMaintenanceWorker` тепер підтримує `blockchain_transactions` поряд з `telemetry_logs` та `gateway_telemetry_logs`.
+**Масштабування:** Таблиця переведена на PostgreSQL Declarative RANGE Partitioning по `created_at` (місячні партиції). Composite PK `(id, created_at)` — вимога partitioning. `self.primary_key = "id"` — Rails використовує `id` для `dom_id` та асоціацій. Всі 8 індексів перестворені (автоматично пропагуються на партиції). `PartitionMaintenanceWorker` тепер підтримує `blockchain_transactions` поряд з `telemetry_logs` та `gateway_telemetry_logs`.
 
 ---
 
@@ -996,7 +893,7 @@ active/draft ──cancel──► cancelled
 
 ---
 
-## 🚨 7. Інтелект та Аудит (Intelligence, Alerts & Compliance)
+## 🚨 7. Інтелект та Аудит
 
 ### `AiInsight` — Висновок Оракула
 
@@ -1215,7 +1112,7 @@ Cluster, User, Organization
 
 ---
 
-## 🗺️ 10. Карта Зв'язків (Entity Relationship Summary)
+## 🗺️ 10. Карта Зв'язків
 
 ```
 Organization
@@ -1233,13 +1130,13 @@ Organization
   │     │     ├── HardwareKey (destroy)
   │     │     ├── GatewayTelemetryLogs (delete_all) ← PARTITION
   │     │     ├── Actuators (destroy)
-  │     │     │     └── ActuatorCommands (delete_all) ← P1 Fix
+  │     │     │     └── ActuatorCommands (delete_all)
   │     │     └── MaintenanceRecords (restrict_with_error)
   │     ├── NaasContracts (restrict_with_error)
   │     ├── ParametricInsurances (restrict_with_error)
   │     ├── EwsAlerts (delete_all)
   │     └── AiInsights polymorphic (delete_all)
-  ├── Wallets (direct FK, no dependent: — orphan risk)
+  ├── Wallets (nullify)
   │     └── BlockchainTransactions (delete_all) ← PARTITION
   └── AuditLogs (delete_all)
 
