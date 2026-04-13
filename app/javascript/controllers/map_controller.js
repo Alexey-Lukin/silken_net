@@ -28,7 +28,12 @@ export default class extends Controller {
       this.map.remove()
       this.map = null
     }
+    this.markerLayer = null
     this.markers = {}
+    // Turbo Drive Cache: видаляємо залишковий Leaflet DOM та CSS-класи,
+    // щоб connect() міг ініціалізувати карту з чистого стану.
+    this.element.replaceChildren()
+    this.element.className = this.element.className.replace(/leaflet-\S+/g, '').trim()
   }
 
   // ⚡ [КЕНОЗИС]: Цей метод викликається АВТОМАТИЧНО, коли Turbo Stream
