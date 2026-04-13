@@ -1,25 +1,32 @@
 import { Controller } from "@hotwired/stimulus"
 
+// Frame interval in ms (~16 fps is enough for decorative rain effect;
+// saves CPU compared to 60 fps while keeping the visual smooth).
+const FRAME_INTERVAL = 60
+
 export default class extends Controller {
   connect() {
     this.canvas = this.element
     this.ctx = this.canvas.getContext("2d")
-    
+
     // Алфавіт телеметрії
     this.chars = "0123456789ABCDEF".split("")
     this.fontSize = 12
     this.drops = []
-    
+    this.lastFrame = 0
+    this.running = true
+
     this.resize()
     this.handleResize = this.resize.bind(this)
     window.addEventListener("resize", this.handleResize)
-    
-    // Швидкість матриці
-    this.interval = setInterval(this.draw.bind(this), 60)
+
+    // requestAnimationFrame автоматично зупиняється, коли вкладка неактивна
+    this.rafId = requestAnimationFrame(this.loop.bind(this))
   }
 
   disconnect() {
-    clearInterval(this.interval)
+    this.running = false
+    cancelAnimationFrame(this.rafId)
     window.removeEventListener("resize", this.handleResize)
   }
 
@@ -27,9 +34,21 @@ export default class extends Controller {
     this.canvas.width = this.element.parentElement.clientWidth
     this.canvas.height = this.element.parentElement.clientHeight
     const columns = Math.floor(this.canvas.width / this.fontSize)
-    
+
     // Заповнюємо краплі, щоб вони починали падати випадково
-    while(this.drops.length < columns) this.drops.push(Math.random() * -100)
+    while (this.drops.length < columns) this.drops.push(Math.random() * -100)
+  }
+
+  loop(timestamp) {
+    if (!this.running) return
+
+    // Throttle до ~16 fps, щоб не навантажувати GPU без потреби
+    if (timestamp - this.lastFrame >= FRAME_INTERVAL) {
+      this.lastFrame = timestamp
+      this.draw()
+    }
+
+    this.rafId = requestAnimationFrame(this.loop.bind(this))
   }
 
   draw() {

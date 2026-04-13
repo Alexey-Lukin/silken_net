@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 @theme {
+  /* ── Font Families ── */
+  --font-family-mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code",
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  --font-family-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
   /* ── Gaia Ecosystem: Semantic Color Tokens ── */
 
   /* Primary brand — forest emerald */

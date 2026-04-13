@@ -30,14 +30,13 @@ Gaia 2.0 is designed **dark-first**. The dark theme is the primary visual identi
    - Dark values are applied inside `.dark { ... }` (which is the default).
    - Light values are applied in the root `:root { ... }` scope.
 
-2. **Tailwind config** (`tailwind.config.js`) maps semantic token names to CSS variables:
-   ```js
-   colors: {
-     "gaia-surface":     "var(--color-gaia-surface)",     // #000 dark, #fff light
-     "gaia-text":        "var(--color-gaia-text)",         // emerald dark, dark-gray light
-     "status-danger":    "var(--color-status-danger)",     // red bg
-     "token-carbon":     "var(--color-token-carbon)",      // SCC green
-     // ... etc.
+2. **Tailwind v4 `@theme`** in `application.css` registers semantic tokens directly — Tailwind generates utility classes like `bg-gaia-surface`, `text-status-danger-text` etc. automatically from `--color-*` variables. No separate JS config file is needed.
+   ```css
+   @theme {
+     --color-gaia-surface: var(--gaia-surface);   /* bg-gaia-surface */
+     --color-status-danger: var(--status-danger);  /* bg-status-danger */
+     --color-token-carbon: var(--token-carbon);    /* text-token-carbon */
+     --font-family-mono: "JetBrains Mono", ...;   /* font-mono */
    }
    ```
 
@@ -76,7 +75,7 @@ Gaia 2.0 is designed **dark-first**. The dark theme is the primary visual identi
 ### Adding New Status Colors
 
 1. Define CSS variables in `app/assets/tailwind/application.css` for both `:root` and `.dark`.
-2. Register the token in `tailwind.config.js` under `theme.extend.colors`.
+2. Register the token in the `@theme` block of `application.css` (e.g. `--color-status-new: var(--status-new);`).
 3. Use the token name in Phlex components via Tailwind classes.
 
 ---
