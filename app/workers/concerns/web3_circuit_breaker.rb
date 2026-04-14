@@ -42,7 +42,8 @@ module Web3CircuitBreaker
     Net::ReadTimeout,
     Errno::ECONNREFUSED,
     Errno::ECONNRESET,
-    IOError
+    IOError,
+    Web3::HttpClient::RequestError
   ].freeze
 
   class CircuitOpenError < StandardError; end
@@ -74,6 +75,14 @@ module Web3CircuitBreaker
     raise # Re-raise circuit open errors без зміни стану
   rescue *CIRCUIT_BREAKER_ERRORS => e
     record_failure!(service_name)
+    raise e
+  rescue StandardError => e
+    # Перевіряємо, чи оригінальна помилка (cause) є transient.
+    # Сервіси часто обгортають RPC-помилки у свої custom errors
+    # (DispatchError, VerificationError), але root cause — transient.
+    if transient_cause?(e)
+      record_failure!(service_name)
+    end
     raise e
   end
 
@@ -133,5 +142,15 @@ module Web3CircuitBreaker
 
   def circuit_opened_at_key(service_name)
     "circuit_breaker:#{service_name}:opened_at"
+  end
+
+  # Перевіряє, чи root cause помилки є transient (мережева/RPC).
+  # Використовується для wrapped errors (DispatchError, VerificationError),
+  # де оригінальна помилка збережена в Exception#cause.
+  def transient_cause?(error)
+    cause = error.cause
+    return false unless cause
+
+    CIRCUIT_BREAKER_ERRORS.any? { |klass| cause.is_a?(klass) } || transient_cause?(cause)
   end
 end
