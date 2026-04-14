@@ -36,7 +36,7 @@ module Treasury
         network: "solana",
         min_balance_wei: 50_000_000, # 0.05 SOL = 50M lamports
         env_rpc_key: "SOLANA_RPC_URL",
-        env_pubkey: "SOLANA_FEE_PAYER_PUBKEY",
+        env_public_key: "SOLANA_FEE_PAYER_PUBKEY",
         currency: "SOL",
         decimals: 9
       },
@@ -145,7 +145,7 @@ module Treasury
     # Solana: getBalance через JSON RPC
     def fetch_solana_balance(config)
       rpc_url = ENV.fetch(config[:env_rpc_key], "https://api.devnet.solana.com")
-      fee_payer = ENV[config[:env_pubkey]]
+      fee_payer = ENV[config[:env_public_key]]
       return 0 if fee_payer.blank?
 
       payload = {
