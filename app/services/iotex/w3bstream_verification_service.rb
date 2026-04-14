@@ -75,9 +75,10 @@ module Iotex
     end
 
     # [BLOCKER-07 FIX]: Додана валідація формату proof reference.
-    # Перевіряємо, що zk_proof_ref відповідає очікуваному формату (hex або UUID),
-    # а не є довільним рядком. Це перший крок до повної on-chain верифікації.
-    ZK_PROOF_REF_PATTERN = /\A[0-9a-f\-]{8,128}\z/i
+    # Перевіряємо, що zk_proof_ref відповідає очікуваному формату
+    # (hex, UUID, або W3bstream proof ID: alphanumeric + hyphens),
+    # а не є довільним рядком з пробілами чи спецсимволами.
+    ZK_PROOF_REF_PATTERN = /\A[0-9a-zA-Z\-_]{8,128}\z/
 
     def parse_response(response)
       body = response.parsed_body

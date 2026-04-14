@@ -41,7 +41,8 @@ RSpec.describe Celo::CommunityRewardService do
         allow(Eth::Client).to receive(:create).and_return(mock_client)
         allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
         allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
-        allow(mock_client).to receive(:transact).and_return("0x" + SecureRandom.hex(32))
+        # [BLOCKER-1 FIX]: Balance check added — stub get_balance to return sufficient funds
+        allow(mock_client).to receive_messages(transact: "0x" + SecureRandom.hex(32), get_balance: 1 * 10**18) # 1 CELO
         allow(Kredis).to receive(:lock).and_yield
       end
 
@@ -120,7 +121,8 @@ RSpec.describe Celo::CommunityRewardService do
         allow(Eth::Client).to receive(:create).and_return(mock_client)
         allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
         allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
-        allow(mock_client).to receive(:transact).and_return("0x" + SecureRandom.hex(32))
+        # [BLOCKER-1 FIX]: Balance check added — stub get_balance
+        allow(mock_client).to receive_messages(transact: "0x" + SecureRandom.hex(32), get_balance: 1 * 10**18)
         allow(Kredis).to receive(:lock).and_yield
       end
 
@@ -190,6 +192,8 @@ RSpec.describe Celo::CommunityRewardService do
         allow(Eth::Client).to receive(:create).and_return(mock_client)
         allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
         allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
+        # [BLOCKER-1 FIX]: get_balance is now called before transact
+        allow(mock_client).to receive(:get_balance).and_return(1 * 10**18)
         allow(mock_client).to receive(:transact).and_raise(StandardError, "Celo RPC timeout")
         allow(Kredis).to receive(:lock).and_yield
       end
@@ -259,7 +263,7 @@ RSpec.describe Celo::CommunityRewardService do
         allow(Eth::Client).to receive(:create).and_return(mock_client)
         allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
         allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
-        allow(mock_client).to receive(:transact).and_return(nil)
+        allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: nil)
         allow(Kredis).to receive(:lock).and_yield
       end
 
