@@ -66,6 +66,46 @@ module Api
           end
         end
       end
+      # --- ЦИФРОВИЙ ЖИТТЄПИС (Tree Chronicle) ---
+      # GET /api/v1/trees/:id/chronicle
+      # HTML: Turbo Frame для lazy-loading у Trees::Show
+      # JSON: Масив хронологічних подій
+      def chronicle
+        @tree = current_user.organization.trees.find(params[:id])
+        result = TreeChronicleService.call(tree: @tree, page: params[:page], per_page: 20)
+
+        respond_to do |format|
+          format.json do
+            render json: {
+              data: result[:entries].map { |e| chronicle_entry_hash(e) },
+              pagy: { page: result[:pagy].page, limit: result[:pagy].limit,
+                      count: result[:pagy].count, pages: result[:pagy].last }
+            }
+          end
+          format.html do
+            render Trees::Chronicle.new(
+              tree: @tree,
+              entries: result[:entries],
+              pagy: result[:pagy]
+            ), layout: false
+          end
+        end
+      end
+
+      private
+
+      def chronicle_entry_hash(entry)
+        {
+          date: entry.date&.iso8601,
+          event_type: entry.event_type,
+          icon: entry.icon,
+          title: entry.title,
+          description: entry.description,
+          severity: entry.severity,
+          source_type: entry.source_type,
+          source_id: entry.source_id
+        }
+      end
     end
   end
 end

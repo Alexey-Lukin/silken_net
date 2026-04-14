@@ -37,10 +37,21 @@ module Trees
             render_metadata_panel
           end
         end
+
+        # ЦИФРОВИЙ ЖИТТЄПИС (Digital Chronicle) — lazy-loaded Turbo Frame
+        render_chronicle_frame
       end
     end
 
     private
+
+    def render_chronicle_frame
+      div(class: "p-8 border border-emerald-900 bg-black/40") do
+        turbo_frame_tag("tree_chronicle", src: chronicle_tree_path(@tree), loading: :lazy) do
+          render Views::Shared::UI::Skeleton.new(variant: :table)
+        end
+      end
+    end
 
     def render_header
       div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do

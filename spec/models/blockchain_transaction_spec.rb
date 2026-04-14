@@ -375,6 +375,34 @@ RSpec.describe BlockchainTransaction, type: :model do
         expect(tx.may_mark_as_sent?).to be true
         expect(tx.may_confirm?).to be false
         expect(tx.may_fail?).to be true
+        expect(tx.may_escalate_to_review?).to be true
+      end
+    end
+
+    describe "#escalate_to_review!" do
+      it "transitions from pending to manual_review with reason" do
+        allow(Rails.logger).to receive(:warn)
+        tx.escalate_to_review!("tx_hash exists but receipt unknown")
+        tx.reload
+        expect(tx).to be_manual_review
+        expect(tx.error_message).to include("tx_hash exists")
+      end
+
+      it "transitions from sent to manual_review" do
+        allow(Rails.logger).to receive(:warn)
+        sent_tx = create(:blockchain_transaction, status: :sent)
+        sent_tx.escalate_to_review!("RPC timeout during receipt check")
+        expect(sent_tx.reload).to be_manual_review
+      end
+
+      it "rejects transition from confirmed (blockchain finality)" do
+        confirmed_tx = create(:blockchain_transaction, status: :confirmed)
+        expect { confirmed_tx.escalate_to_review!("test") }.to raise_error(AASM::InvalidTransition)
+      end
+
+      it "logs the escalation" do
+        expect(Rails.logger).to receive(:warn).with(/ручної перевірки/)
+        tx.escalate_to_review!("test reason")
       end
     end
   end
