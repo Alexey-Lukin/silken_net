@@ -158,12 +158,14 @@ end
 
 ## 3. Tailwind Дизайн-Токени
 
-**Файли:** `app/assets/tailwind/application.css` · `config/tailwind.config.js`
+**Файл:** `app/assets/tailwind/application.css`
 
-Система токенів працює у двох шарах:
+Система токенів відповідає принципу **Tailwind v4 SSOT** — єдине джерело істини:
 
-1. **CSS custom properties** (визначені в `application.css`) зберігають фактичні значення та перемикаються між light/dark режимами.
-2. **Tailwind config** мапує семантичні назви класів до CSS-змінних — Tailwind генерує utility-класи на кшталт `bg-gaia-surface`, `text-status-danger-text` тощо.
+- **`@theme` блок** в `application.css` реєструє усі семантичні токени (`--color-*`, `--font-size-*`, `--font-family-*`) — Tailwind v4 генерує utility-класи напряму: `bg-gaia-surface`, `text-status-danger-text`, `font-mono` тощо.
+- **CSS custom properties** у `:root` / `.dark` задають фактичні значення токенів для light/dark режимів.
+
+> `config/tailwind.config.js` видалено — він порушував SSOT, дублюючи кожен токен на рівні JS.
 
 ### 3.1 Поверхневі, Текстові та Основні Токени (`gaia-*`)
 
@@ -547,7 +549,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 **Ключовий lifecycle:**
 
 - `connect()` — ініціалізує карту, встановлює центр за замовчуванням (Черкаси: 49.4444, 32.0598); ініціалізує `this.markers = {}` (DID рядок → `L.Marker` instance) та `this.markerLayer = L.layerGroup()`
-- `disconnect()` — викликає `this.map.off()`, `this.map.remove()`, встановлює `this.map = null`, скидає `this.markers = {}`, очищає `this.resizeTimeout` — Leaflet-карта коректно знищується при Turbo Drive навігації. Примітка: `this.markerLayer` явно не очищається у `disconnect()` (minor).
+- `disconnect()` — викликає `this.map.off()`, `this.map.remove()`, встановлює `this.map = null`, `this.markerLayer = null`, скидає `this.markers = {}`, очищає `this.resizeTimeout`. **Turbo Drive Cache fix:** видаляє всі дочірні вузли (`replaceChildren()`) та Leaflet CSS-класи (`leaflet-*`) зі свого DOM-елемента — гарантує, що `connect()` ініціалізує карту з повністю чистого стану після відновлення зі snapshot-кешу Turbo.
 - `nodeTargetConnected(element)` — викликається автоматично Turbo/Stimulus коли `<div data-map-target="node">` додається до DOM через Turbo Stream; витягує `data-lat/lng/did/stress/charge` та викликає `updateMarker()`
 
 **Логіка кольору маркера:**
@@ -562,13 +564,13 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 
 ### 7.4 Контролер `matrix-rain`
 
-Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`).
+Canvas-ефект Matrix digital rain з hex-символами (`0-9A-F`). Canvas-елемент отримує `transform-gpu will-change-transform` для GPU-compositing (апаратне прискорення).
 
-- `connect()` — отримує canvas 2D контекст, запускає `setInterval(draw, 60ms)`
-- `disconnect()` — очищає інтервал, видаляє resize-слухач
+- `connect()` — отримує canvas 2D контекст, запускає rAF-цикл (`requestAnimationFrame`) з throttle до ~16 fps (`FRAME_INTERVAL = 60ms`); цикл автоматично призупиняється при неактивній вкладці
+- `disconnect()` — скасовує rAF через `cancelAnimationFrame(this.rafId)`, видаляє resize-слухач
 - `resize()` — підганяє canvas під батьківський елемент, переініціалізує масив `drops[]`
 
-**Phlex-використання:** `canvas(data: { controller: "matrix-rain" }, class: "absolute inset-0 z-0 opacity-20 ...")` всередині `Telemetry::LiveStream`.
+**Phlex-використання:** `canvas(data: { controller: "matrix-rain" }, class: "absolute inset-0 z-0 opacity-20 pointer-events-none w-full h-full transform-gpu will-change-transform")` всередині `Telemetry::LiveStream`.
 
 ---
 
