@@ -190,6 +190,10 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
              params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },
              as: :json
 
+        # Verify first callback enqueued workers
+        expect(MintCarbonCoinWorker.jobs.size).to eq(1)
+        expect(SolanaMicroRewardWorker.jobs.size).to eq(1)
+
         MintCarbonCoinWorker.jobs.clear
         SolanaMicroRewardWorker.jobs.clear
 

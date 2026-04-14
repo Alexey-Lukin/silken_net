@@ -59,7 +59,7 @@ module Provisioning
           plain " on both backend and firmware. No key transmission required."
         end
         p(class: "mt-2 text-micro text-gray-500 uppercase italic") do
-          plain "Ensure PROVISIONING_MASTER_KEY is flashed to device during Factory Provisioning."
+          plain "Ensure PROVISIONING_MASTER_KEY is programmed into device during Factory Provisioning."
         end
       end
     end
