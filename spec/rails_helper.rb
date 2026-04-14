@@ -42,7 +42,11 @@ RSpec.configure do |config|
     Rack::Attack.cache.store.clear
     Rack::Attack.reset!
     Web3::RpcConnectionPool.reset!
-    Kredis.redis(config: :shared).flushdb
+    begin
+      Kredis.redis(config: :shared).flushdb
+    rescue RedisClient::CannotConnectError, Redis::CannotConnectError, Errno::ECONNREFUSED
+      # Redis may not be available in CI — safe to skip flush
+    end
   end
 
   # Prosopite: N+1 query detection in request specs.
