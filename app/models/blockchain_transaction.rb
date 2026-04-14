@@ -38,11 +38,12 @@ class BlockchainTransaction < ApplicationRecord
 
   # [СИНХРОНІЗОВАНО]: Додано статус :sent для підтримки асинхронного Fire-and-Forget
   enum :status, {
-    pending: 0,    # Очікує в черзі на обробку
-    processing: 1, # В процесі підпису/відправки в RPC (заблоковано локом)
-    sent: 4,       # [НОВЕ]: Відправлено в Polygon, чекаємо підтвердження блоку (tx_hash вже є)
-    confirmed: 2,  # Успішно зафіксовано в блокчейні (Finalized)
-    failed: 3      # Помилка транзакції або Revert на рівні EVM
+    pending: 0,        # Очікує в черзі на обробку
+    processing: 1,     # В процесі підпису/відправки в RPC (заблоковано локом)
+    sent: 4,           # [НОВЕ]: Відправлено в Polygon, чекаємо підтвердження блоку (tx_hash вже є)
+    confirmed: 2,      # Успішно зафіксовано в блокчейні (Finalized)
+    failed: 3,         # Помилка транзакції або Revert на рівні EVM
+    manual_review: 5   # [DOUBLE-SPEND GUARD]: tx_hash існує або стан невідомий — потребує ручної звірки
   }, prefix: true
 
   # --- ВАЛІДАЦІЇ ---
@@ -82,6 +83,7 @@ class BlockchainTransaction < ApplicationRecord
     state :sent
     state :confirmed
     state :failed
+    state :manual_review
 
     # Початок обробки (підпис / відправка в RPC)
     event :process do
@@ -120,6 +122,19 @@ class BlockchainTransaction < ApplicationRecord
       # :failed → :failed дозволяє оновити error_message при повторному збої
       # (напр. sidekiq_retries_exhausted після попереднього fail)
       transitions from: [ :pending, :processing, :sent, :failed ], to: :failed
+    end
+
+    # [DOUBLE-SPEND GUARD]: Ескалація до ручної перевірки.
+    # Використовується коли tx_hash існує або стан транзакції на блокчейні невідомий.
+    # Кошти залишаються в locked_balance до ручної звірки з блокчейн-експлорером.
+    event :escalate_to_review do
+      before do |reason|
+        self.error_message = reason.to_s.truncate(500)
+      end
+      after do
+        Rails.logger.warn "⚠️ [Web3] Транзакція ##{id} потребує ручної перевірки: #{error_message}"
+      end
+      transitions from: [ :pending, :processing, :sent, :failed ], to: :manual_review
     end
   end
 

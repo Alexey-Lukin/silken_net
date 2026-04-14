@@ -57,7 +57,10 @@ Rails.application.routes.draw do
       end
 
       resources :trees, only: [ :show ] do
-        get :telemetry, to: "telemetry#tree_history", on: :member
+        member do
+          get :telemetry, to: "telemetry#tree_history"
+          get :chronicle
+        end
       end
 
       # Біологічні константи (DNA Registry)

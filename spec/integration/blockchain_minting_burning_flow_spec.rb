@@ -422,7 +422,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       pending_tx = create(:blockchain_transaction,
         wallet: wallet, status: :pending, amount: 1.0,
         token_type: :carbon_coin, to_address: organization.crypto_public_address,
-        locked_points: 10_000)
+        locked_points: 10_000, tx_hash: nil)
 
       telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
 
