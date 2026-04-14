@@ -204,15 +204,7 @@ module Treasury
                    "is below minimum threshold " \
                    "(#{result[:min_threshold_human]} #{result[:currency]}). " \
                    "Ratio: #{result[:ratio]}x. " \
-                   "Blockchain transactions will fail without top-up.",
-          metadata: {
-            network: result[:network],
-            balance_raw: result[:balance_raw],
-            balance_human: result[:balance_human],
-            currency: result[:currency],
-            threshold_raw: result[:min_threshold_raw],
-            ratio: result[:ratio]
-          }
+                   "Blockchain transactions will fail without top-up."
         )
       end
     end
