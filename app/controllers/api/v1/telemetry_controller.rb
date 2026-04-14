@@ -45,6 +45,10 @@ module Api
       #   3. Ручного завантаження телеметрії через Dashboard (forester upload)
       # Приймає Base64-кодований бінарний батч зашифрованих пакетів від Gateway.
       # Формат ідентичний CoAP uplink: [IV:16][AES-256-CBC encrypted 21-byte records]
+      #
+      # [A-8 FIX]: Controller is fully stateless — zero DB writes in the HTTP hot-path.
+      # mark_seen! is handled inside UnpackTelemetryWorker (line 42) to avoid
+      # Connection Pool Exhaustion during mass gateway reconnects after blackouts.
       def gateway_uplink
         @gateway = current_user.organization.gateways.find(params[:id])
 
@@ -57,8 +61,6 @@ module Api
           request.remote_ip,
           @gateway.uid
         )
-
-        @gateway.mark_seen!(new_ip: request.remote_ip)
 
         render json: {
           status: "accepted",
