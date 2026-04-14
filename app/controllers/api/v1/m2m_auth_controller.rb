@@ -63,7 +63,7 @@ module Api
             render json: { error: "Replay attack detected" }, status: :unauthorized
             return
           end
-        rescue Redis::BaseConnectionError => e
+        rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
           Rails.logger.error "🚨 [M2M Auth] Redis unavailable for nonce check: #{e.message}"
           render json: { error: "Service temporarily unavailable." }, status: :service_unavailable
           return

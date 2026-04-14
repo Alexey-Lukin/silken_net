@@ -44,7 +44,7 @@ RSpec.configure do |config|
     Web3::RpcConnectionPool.reset!
     begin
       Kredis.redis(config: :shared).flushdb
-    rescue RedisClient::CannotConnectError, Redis::CannotConnectError, Errno::ECONNREFUSED
+    rescue RedisClient::CannotConnectError, Redis::CannotConnectError, RedisClient::ConnectionError, Errno::ECONNREFUSED
       # Redis may not be available in CI — safe to skip flush
     end
   end
