@@ -52,7 +52,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     it "creates and returns a command for the actuator" do
       post "/api/v1/actuators/#{own_actuator.id}/execute",
            params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
-           headers: headers, as: :json
+           headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
 
       expect(response).to have_http_status(:accepted)
       expect(response.parsed_body["command_id"]).to be_present
@@ -69,9 +69,58 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
 
       post "/api/v1/actuators/#{own_actuator.id}/execute",
            params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
-           headers: headers, as: :json
+           headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
 
       expect(response).to have_http_status(:conflict)
+    end
+
+    context "with idempotency key" do
+      it "returns 400 when Idempotency-Key header is missing for JSON requests" do
+        post "/api/v1/actuators/#{own_actuator.id}/execute",
+             params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+             headers: headers, as: :json
+
+        expect(response).to have_http_status(:bad_request)
+        expect(response.parsed_body["error"]).to include("Idempotency-Key")
+      end
+
+      it "returns cached response on duplicate request with same Idempotency-Key" do
+        idempotency_key = SecureRandom.uuid
+
+        post "/api/v1/actuators/#{own_actuator.id}/execute",
+             params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+             headers: headers.merge("Idempotency-Key" => idempotency_key), as: :json
+
+        expect(response).to have_http_status(:accepted)
+        first_command_id = response.parsed_body["command_id"]
+
+        # Retry with same Idempotency-Key — should return cached response
+        post "/api/v1/actuators/#{own_actuator.id}/execute",
+             params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+             headers: headers.merge("Idempotency-Key" => idempotency_key), as: :json
+
+        expect(response).to have_http_status(:accepted)
+        expect(response.parsed_body["command_id"]).to eq(first_command_id)
+      end
+
+      it "creates separate commands for different Idempotency-Keys" do
+        post "/api/v1/actuators/#{own_actuator.id}/execute",
+             params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+             headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+
+        expect(response).to have_http_status(:accepted)
+        first_id = response.parsed_body["command_id"]
+
+        # Clear the pending command so second request doesn't get conflict
+        own_actuator.commands.update_all(status: :delivered)
+
+        post "/api/v1/actuators/#{own_actuator.id}/execute",
+             params: { action_payload: "CLOSE_VALVE", duration_seconds: 15 },
+             headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+
+        expect(response).to have_http_status(:accepted)
+        expect(response.parsed_body["command_id"]).not_to eq(first_id)
+      end
     end
   end
 

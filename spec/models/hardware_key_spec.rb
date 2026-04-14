@@ -102,21 +102,18 @@ RSpec.describe HardwareKey, type: :model do
       expect(hw_key.cached_binary_key).to eq(hw_key.binary_key)
     end
 
-    it "caches the result in Rails.cache" do
+    it "caches the result in HARDWARE_KEY_CACHE (in-process LRU)" do
       hw_key = create(:hardware_key)
-      cache_key = "hw_key:#{hw_key.device_uid}:bin"
-
       hw_key.cached_binary_key
 
-      expect(Rails.cache.read(cache_key)).to eq(hw_key.binary_key)
+      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).to eq(hw_key.binary_key)
     end
 
     it "serves from cache on subsequent calls without hitting binary_key" do
       hw_key = create(:hardware_key)
-      cache_key = "hw_key:#{hw_key.device_uid}:bin"
       hw_key.cached_binary_key # prime the cache
 
-      expect(Rails.cache.read(cache_key)).not_to be_nil
+      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).not_to be_nil
 
       # Stub binary_key to verify it is NOT called again
       allow(hw_key).to receive(:binary_key)
@@ -127,45 +124,41 @@ RSpec.describe HardwareKey, type: :model do
   end
 
   describe "cache invalidation" do
-    it "clears cache on update" do
+    it "clears in-process cache on update" do
       hw_key = create(:hardware_key)
-      cache_key = "hw_key:#{hw_key.device_uid}:bin"
       hw_key.cached_binary_key # prime the cache
 
       hw_key.update!(aes_key_hex: SecureRandom.hex(32).upcase)
 
-      expect(Rails.cache.read(cache_key)).to be_nil
+      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).to be_nil
     end
 
-    it "clears cache on destroy" do
+    it "clears in-process cache on destroy" do
       hw_key = create(:hardware_key)
-      cache_key = "hw_key:#{hw_key.device_uid}:bin"
       hw_key.cached_binary_key # prime the cache
 
       hw_key.destroy!
 
-      expect(Rails.cache.read(cache_key)).to be_nil
+      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).to be_nil
     end
 
     it "clears cache on rotate_key!" do
       hw_key = create(:hardware_key)
-      cache_key = "hw_key:#{hw_key.device_uid}:bin"
       hw_key.cached_binary_key # prime the cache
 
       hw_key.rotate_key!
 
-      expect(Rails.cache.read(cache_key)).to be_nil
+      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).to be_nil
     end
 
     it "returns new key after rotation and re-caching" do
       hw_key = create(:hardware_key)
-      cache_key = "hw_key:#{hw_key.device_uid}:bin"
       old_cached = hw_key.cached_binary_key
 
       hw_key.rotate_key!
 
       # Cache must be invalidated after rotation
-      expect(Rails.cache.read(cache_key)).to be_nil
+      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).to be_nil
 
       hw_key.reload
       new_cached = hw_key.cached_binary_key

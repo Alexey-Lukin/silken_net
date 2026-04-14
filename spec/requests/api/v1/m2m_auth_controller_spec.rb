@@ -117,6 +117,40 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
       end
     end
 
+    context "with M2M replay attack prevention" do
+      it "rejects duplicate M2M auth with same signature" do
+        # First request — succeeds
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: timestamp, signature: signature },
+             as: :json
+        expect(response).to have_http_status(:created)
+
+        # Replay — same DID, timestamp, signature
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: timestamp, signature: signature },
+             as: :json
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.parsed_body["error"]).to include("Replay")
+      end
+
+      it "allows new auth with different timestamp and signature" do
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: timestamp, signature: signature },
+             as: :json
+        expect(response).to have_http_status(:created)
+
+        # New timestamp generates a different signature
+        new_timestamp = (Time.current + 1.second).iso8601
+        new_message = "#{gateway.uid}:#{new_timestamp}"
+        new_signature = Ed25519Crypto::SigningService.sign(seed_hex, new_message)
+
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: new_timestamp, signature: new_signature },
+             as: :json
+        expect(response).to have_http_status(:created)
+      end
+    end
+
     it "does not require Bearer token authentication" do
       post "/api/v1/auth/m2m_token",
            params: { did: gateway.uid, timestamp: timestamp, signature: signature },

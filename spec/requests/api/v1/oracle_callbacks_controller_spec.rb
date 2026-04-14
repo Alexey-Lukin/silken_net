@@ -155,5 +155,51 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
         expect(response.parsed_body["error"]).to include("Invalid HMAC")
       end
     end
+
+    context "with replay attack prevention (A-6)" do
+      it "returns 409 Conflict when callback is replayed for already fulfilled log" do
+        # First callback — succeeds
+        post "/api/v1/oracle_callbacks",
+             params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },
+             as: :json
+        expect(response).to have_http_status(:ok)
+
+        # Second callback — replay attack blocked
+        post "/api/v1/oracle_callbacks",
+             params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },
+             as: :json
+        expect(response).to have_http_status(:conflict)
+      end
+
+      it "returns 409 Conflict when callback is replayed for already failed log" do
+        # First callback — fails
+        post "/api/v1/oracle_callbacks",
+             params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: false },
+             as: :json
+        expect(response).to have_http_status(:ok)
+
+        # Replay attempt
+        post "/api/v1/oracle_callbacks",
+             params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },
+             as: :json
+        expect(response).to have_http_status(:conflict)
+      end
+
+      it "does not enqueue minting workers on replay" do
+        post "/api/v1/oracle_callbacks",
+             params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },
+             as: :json
+
+        MintCarbonCoinWorker.jobs.clear
+        SolanaMicroRewardWorker.jobs.clear
+
+        post "/api/v1/oracle_callbacks",
+             params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },
+             as: :json
+
+        expect(MintCarbonCoinWorker.jobs.size).to eq(0)
+        expect(SolanaMicroRewardWorker.jobs.size).to eq(0)
+      end
+    end
   end
 end
