@@ -199,7 +199,6 @@ module Treasury
         EwsAlert.create(
           alert_type: :system_fault,
           severity: :critical,
-          title: "Oracle balance critical: #{result[:network]}",
           message: "#{result[:network]} Oracle wallet balance " \
                    "(#{result[:balance_human]} #{result[:currency]}) " \
                    "is below minimum threshold " \
@@ -220,7 +219,7 @@ module Treasury
 
     # Конвертує wei/lamports у людський формат
     def humanize_balance(raw_balance, decimals)
-      (BigDecimal(raw_balance.to_s) / 10**decimals).round(6).to_s("F")
+      format("%.6f", (BigDecimal(raw_balance.to_s) / 10**decimals))
     end
   end
 end

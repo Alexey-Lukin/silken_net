@@ -60,7 +60,7 @@ RSpec.describe Treasury::MintBatchCollectorService do
             token_type: :carbon_coin,
             status: :pending,
             to_address: wallet.crypto_public_address,
-            blockchain_network: "polygon",
+            blockchain_network: "evm",
             locked_points: 1000
           )
         end
@@ -92,7 +92,7 @@ RSpec.describe Treasury::MintBatchCollectorService do
             token_type: :carbon_coin,
             status: :pending,
             to_address: wallet.crypto_public_address,
-            blockchain_network: "polygon",
+            blockchain_network: "evm",
             locked_points: 1000
           )
         end
@@ -119,7 +119,7 @@ RSpec.describe Treasury::MintBatchCollectorService do
             token_type: :carbon_coin,
             status: :pending,
             to_address: wallet.crypto_public_address,
-            blockchain_network: "polygon",
+            blockchain_network: "evm",
             locked_points: 1000,
             created_at: 45.minutes.ago
           )
@@ -147,7 +147,7 @@ RSpec.describe Treasury::MintBatchCollectorService do
             token_type: :carbon_coin,
             status: :pending,
             to_address: wallet.crypto_public_address,
-            blockchain_network: "polygon",
+            blockchain_network: "evm",
             locked_points: 1000
           )
         end
@@ -160,7 +160,7 @@ RSpec.describe Treasury::MintBatchCollectorService do
             token_type: :forest_coin,
             status: :pending,
             to_address: wallet.crypto_public_address,
-            blockchain_network: "polygon",
+            blockchain_network: "evm",
             locked_points: 500
           )
         end

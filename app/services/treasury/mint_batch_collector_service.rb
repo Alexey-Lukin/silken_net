@@ -53,7 +53,7 @@ module Treasury
     # Знаходить pending транзакції, готові до відправки
     def fetch_pending_transactions
       BlockchainTransaction
-        .where(status: :pending, blockchain_network: "polygon")
+        .where(status: :pending, blockchain_network: "evm")
         .where.not(to_address: nil)
         .includes(wallet: :tree)
         .order(created_at: :asc)
