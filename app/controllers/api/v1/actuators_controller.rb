@@ -44,7 +44,28 @@ module Api
       end
 
       # --- ПРЯМЕ ВИКОНАННЯ КОМАНДИ ---
+      # [IDEMPOTENCY FIX]: POST /api/v1/actuators/:id/execute requires Idempotency-Key header
+      # for JSON requests. This prevents duplicate physical actuations caused by network retries
+      # (e.g., ranger's mobile app in forest with poor connectivity).
+      # Cached responses are stored in Redis with 24h TTL — subsequent requests with the
+      # same key return the original response without creating a new command.
       def execute
+        idempotency_key = request.headers["Idempotency-Key"]
+
+        if request.format.json? && idempotency_key.blank?
+          return render json: { error: "Заголовок Idempotency-Key обов'язковий для виконання команд актуатора." },
+                        status: :bad_request
+        end
+
+        # Check idempotency cache for JSON requests with key
+        if idempotency_key.present?
+          cache_key = "idempotency:actuator:#{@actuator.id}:#{Digest::SHA256.hexdigest(idempotency_key)}"
+          cached = Rails.cache.read(cache_key)
+          if cached
+            return render json: cached, status: :accepted
+          end
+        end
+
         if @actuator.commands.pending.exists?
           return render json: { error: "Актуатор вже має активну команду. Зачекайте на її завершення." },
                         status: :conflict
@@ -60,7 +81,16 @@ module Api
         # Команда автоматично диспетчеризується через after_commit :dispatch_to_edge!
 
         respond_to do |format|
-          format.json { render json: { command_id: @command.id, status: :accepted }, status: :accepted }
+          format.json do
+            response_body = { command_id: @command.id, status: "accepted" }
+
+            # Store in idempotency cache for 24 hours
+            if idempotency_key.present?
+              Rails.cache.write(cache_key, response_body, expires_in: 24.hours)
+            end
+
+            render json: response_body, status: :accepted
+          end
           format.turbo_stream do
             render turbo_stream: turbo_stream.replace(
               "actuator_#{@actuator.id}",

@@ -50,6 +50,20 @@ module Api
           return
         end
 
+        # [M2M REPLAY FIX]: Nonce check — each signature can only be used once.
+        # The signature itself serves as a natural nonce (unique per DID+timestamp).
+        # TTL = 10 minutes (covers the ±5 min window with margin).
+        # Redis SET NX ensures atomicity: first request wins, replays are rejected.
+        nonce_key = "m2m_nonce:#{Digest::SHA256.hexdigest(signature)}"
+        redis = Kredis.redis(config: :shared)
+        nonce_acquired = redis.set(Kredis.namespaced_key(nonce_key), "1", nx: true, ex: 600)
+
+        unless nonce_acquired
+          Rails.logger.warn "⚠️ [M2M Replay] Blocked duplicate M2M auth for #{did} (signature reuse)"
+          render json: { error: "Replay attack detected" }, status: :unauthorized
+          return
+        end
+
         # Верифікація Ed25519 підпису: signature = Ed25519.sign(private_key, "#{did}:#{timestamp}")
         message = "#{did}:#{timestamp}"
         begin
