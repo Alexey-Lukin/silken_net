@@ -77,7 +77,7 @@ class HardwareKey < ApplicationRecord
     @binary_previous_key ||= [ previous_aes_key_hex ].pack("H*")
   end
 
-  # [DEPRECATED]: Use HardwareKeyService.rotate!(device_uid) instead.
+  # [DEPRECATED]: Use HardwareKeyService.rotate(device_uid) instead.
   # Service version includes downlink notification to the device.
   # This model method is kept for backward compatibility but logs a deprecation warning.
   def rotate_key!
