@@ -11,6 +11,7 @@ module Views
           "sent"         => "bg-status-info text-status-info-text",
           "confirmed"    => "bg-status-success text-status-success-text",
           "failed"       => "bg-status-danger text-status-danger-text",
+          "manual_review" => "bg-status-warning text-status-warning-text animate-pulse",
           # AASM: ActuatorCommand states
           "issued"       => "bg-status-warning text-status-warning-text",
           "acknowledged" => "bg-status-active text-status-active-text",
