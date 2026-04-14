@@ -61,12 +61,16 @@ module Chainlink
     # In production (CHAINLINK_FUNCTIONS_ROUTER configured): calls the Router
     # contract on-chain via Eth::Client to submit the request.
     # In development/test (no key): generates a local stub request ID.
+    # [BLOCKER-4 FIX]: У production (WEB3_STRICT_MODE=true) заглушки вимкнено —
+    # відсутність credentials викликає помилку замість фейкової відповіді.
     def submit_chainlink_request(payload)
       router_address = ENV["CHAINLINK_FUNCTIONS_ROUTER"]
       subscription_id = ENV["CHAINLINK_SUBSCRIPTION_ID"]
 
       if router_address.present? && subscription_id.present?
         send_on_chain_request(payload, router_address, subscription_id)
+      elsif ENV["WEB3_STRICT_MODE"] == "true"
+        raise DispatchError, "CHAINLINK_FUNCTIONS_ROUTER та CHAINLINK_SUBSCRIPTION_ID обов'язкові у Production (WEB3_STRICT_MODE=true)."
       else
         Rails.logger.info "🔗 [Chainlink] Stub mode — CHAINLINK_FUNCTIONS_ROUTER не налаштовано. Генерую локальний request ID."
         "chainlink-req-#{SecureRandom.hex(16)}"
@@ -83,10 +87,18 @@ module Chainlink
         abi: functions_router_abi
       )
 
+      # [BLOCKER-09 FIX]: Передаємо всі обов'язкові параметри Chainlink Functions Router v1.
+      data_version = ENV.fetch("CHAINLINK_DATA_VERSION", "1").to_i
+      callback_gas_limit = ENV.fetch("CHAINLINK_CALLBACK_GAS_LIMIT", "300000").to_i
+      don_id = ENV.fetch("CHAINLINK_DON_ID") { raise DispatchError, "CHAINLINK_DON_ID обов'язковий для on-chain dispatch" }
+
       tx_hash = client.transact(
         contract, "sendRequest",
         subscription_id.to_i,
         payload.to_json,
+        data_version,
+        callback_gas_limit,
+        don_id,
         sender_key: oracle_key,
         legacy: false
       )
@@ -97,12 +109,17 @@ module Chainlink
       raise DispatchError, "Chainlink on-chain dispatch failed: #{e.message}"
     end
 
+    # [BLOCKER-09 FIX]: Актуальний ABI Chainlink Functions Router v1 (Polygon Mainnet).
+    # Додані обов'язкові параметри: dataVersion, callbackGasLimit, donId.
     def functions_router_abi
       [
         {
           "inputs" => [
             { "internalType" => "uint64", "name" => "subscriptionId", "type" => "uint64" },
-            { "internalType" => "string", "name" => "data", "type" => "string" }
+            { "internalType" => "bytes", "name" => "data", "type" => "bytes" },
+            { "internalType" => "uint16", "name" => "dataVersion", "type" => "uint16" },
+            { "internalType" => "uint32", "name" => "callbackGasLimit", "type" => "uint32" },
+            { "internalType" => "bytes32", "name" => "donId", "type" => "bytes32" }
           ],
           "name" => "sendRequest",
           "outputs" => [ { "internalType" => "bytes32", "name" => "requestId", "type" => "bytes32" } ],
