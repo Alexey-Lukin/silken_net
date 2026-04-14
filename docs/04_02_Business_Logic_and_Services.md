@@ -27,7 +27,8 @@
 | Утиліта | Призначення |
 |---------|-------------|
 | `Web3::HttpClient` | Централізований HTTP-клієнт (HTTPX) для всіх зовнішніх API. Thread-safe persistent sessions, таймаути per-service, lazy JSON parsing. |
-| `Web3::RpcConnectionPool` | Thread-safe кешування `Eth::Client` інстансів per-thread. Зменшує TCP/TLS handshakes у Sidekiq-потоках. |
+| `Web3::RpcConnectionPool` | Thread-safe кешування `Eth::Client` / `Web3::ResilientClient` per-thread. Зменшує TCP/TLS handshakes у Sidekiq-потоках. Підтримує fallback cascade через `fallback_env_keys`. |
+| `Web3::ResilientClient` | Обгортка навколо `Eth::Client` з автоматичним fallback cascade (Primary→Secondary→Public) та Circuit Breaker: `MAX_FAILURES=3` послідовних збоїв → провайдер вимикається на `CIRCUIT_OPEN_DURATION=60s`. Розпізнає `Net::ReadTimeout`, `Errno::ECONNREFUSED`, HTTP 429. Thread-safe (Mutex). Метод `provider_health` для Prometheus-моніторингу. |
 | `Web3::WeiConverter` | `BigDecimal`-based конвертація `amount → wei` (ERC-20). Запобігає Float-похибкам у фінансових операціях. |
 
 ---
@@ -88,6 +89,27 @@
 | **Що робить** | Haversine distance calculation між двома GPS-точками. |
 | **Вихід** | `haversine_distance_m → Float` (метри). |
 
+### `TreeChronicleService`
+
+| | |
+|---|---|
+| **Файл** | `app/services/tree_chronicle_service.rb` |
+| **Вхід** | `tree:` (Tree AR instance), `page:` (Integer, default: 1), `per_page:` (Integer, 1–100, default: 20) |
+| **Що робить** | Агрегує «цифровий життєпис» дерева з 4 джерел: `AiInsight` (homeostasis / stress / fraud), `EwsAlert` (alert + recovery при resolved), `MaintenanceRecord`, `BlockchainTransaction` (status: confirmed). Об'єднує всі записи у єдиний масив `Entry` (Data.define), сортує за датою DESC, пагінує вручну через `Pagy::Offset` (без додаткових DB-запитів на весь масив). Ліміти: 50 insights, 30 alerts, 20 maintenance, 20 blockchain. Не потребує нових таблиць. |
+| **Зовнішні виклики** | `TreeChronicle::TextFormatter` — генерує i18n-ready текстові шаблони |
+| **Вихід** | `{ entries: Array<TreeChronicleService::Entry>, pagy: Pagy::Offset }`. Entry fields: `date, event_type, icon, title, description, severity, source_type, source_id`. |
+| **Масштабування** | Кожна модель має індекси на `created_at + tree_id`. `per_page` обмежено 100. |
+
+### `TreeChronicle::TextFormatter`
+
+| | |
+|---|---|
+| **Файл** | `app/services/tree_chronicle/text_formatter.rb` |
+| **Вхід** | Модельні об'єкти (AiInsight, EwsAlert, MaintenanceRecord, BlockchainTransaction) |
+| **Що робить** | Централізує всі текстові шаблони хроніки. Методи: `homeostasis_title/description`, `stress_title/description`, `fraud_title/description`, `alert_icon/title/description`, `recovery_title/description`, `maintenance_title/description`, `minting_title/description`. |
+| **i18n** | Усі методи повертають рядки. При додаванні I18n достатньо замінити рядки на `I18n.t(...)` без зміни архітектури. |
+| **Вихід** | Рядки (String). |
+
 ---
 
 ## 🔗 4. Домен: Блокчейн — Polygon (Primary Chain)
@@ -128,8 +150,8 @@
 |---|---|
 | **Файл** | `app/services/minting_rollback_service.rb` |
 | **Вхід** | `telemetry_log_id:`, `created_at_iso:` або `transactions:` (AR relation) |
-| **Що робить** | Rollback при вичерпанні всіх Sidekiq-ретраїв у `MintCarbonCoinWorker`. Розблоковує `locked_balance` гаманця. Маркує `BlockchainTransaction.status = :failed`. |
-| **Вихід** | `nil`. Side effect: `wallet.release_locked_funds!`, `tx.update!(status: :failed)`, Turbo broadcast. |
+| **Що робить** | **[DOUBLE-SPEND GUARD]** Rollback при вичерпанні всіх Sidekiq-ретраїв у `MintCarbonCoinWorker`. Логіка вирішення: (1) `tx_hash` відсутній → безпечний rollback (транзакція не покинула бекенд): розблоковує `locked_balance`, маркує `status = :failed`; (2) `tx_hash` існує → перевіряє стан on-chain через RPC: а) receipt підтверджено → `tx.confirm!` (НЕ rollback); б) receipt null (pending) → `escalate_to_review!` (кошти залишаються заблокованими); в) RPC timeout → `escalate_to_review!`. Multichain: EVM-мережі (Polygon, Celo) використовують `eth_getTransactionReceipt`; Solana — `getTransaction` через прямий HTTP-запит. Fallback RPC cascade через `Web3::RpcConnectionPool` з `fallback_env_keys`. |
+| **Вихід** | `nil`. Side effects: `wallet.release_locked_funds!` + `tx.update!(status: :failed)` + Turbo broadcast (при safe rollback); або `tx.escalate_to_review!(reason)` (при manual_review). |
 
 ### `PuroEarth::PassportService`
 

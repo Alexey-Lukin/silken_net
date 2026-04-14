@@ -183,7 +183,8 @@ POST /api/v1/auth/m2m_token
 | 23 | GET | `/api/v1/clusters/:cluster_id/trees` | `trees#index` | 🔑 Auth | Дерева кластера |
 | 24 | GET | `/api/v1/clusters/:cluster_id/actuators` | `actuators#index` | 🌿 Forester | Актуатори кластера |
 | 25 | GET | `/api/v1/trees/:id` | `trees#show` | 🔑 Auth | Паспорт дерева (солдата) |
-| 26 | GET | `/api/v1/trees/:id/telemetry` | `telemetry#tree_history` | 🔑 Auth | Телеметрія дерева |
+| 26 | GET | `/api/v1/trees/:id/chronicle` | `trees#chronicle` | 🔑 Auth | Цифровий життєпис дерева (HTML Turbo Frame / JSON) |
+| 27 | GET | `/api/v1/trees/:id/telemetry` | `telemetry#tree_history` | 🔑 Auth | Телеметрія дерева |
 | **🧬 Біологічні Константи** | | | | | |
 | 27 | GET | `/api/v1/tree_families` | `tree_families#index` | 👑 Admin | Список порід дерев |
 | 28 | GET | `/api/v1/tree_families/:id` | `tree_families#show` | 👑 Admin | Деталі породи |
@@ -401,7 +402,67 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.3 GET `/api/v1/trees/:id/telemetry` — Телеметрія Дерева
+### 5.3 GET `/api/v1/trees/:id/chronicle` — Цифровий Життєпис Дерева
+
+**Доступ:** `Authorization: Bearer <token>`
+
+**Призначення:** Повертає хронологічний список усіх значущих подій у житті дерева: AI-інсайти (homeostasis / stress / fraud), EWS-тривоги (з відновленням), записи технічного обслуговування та підтверджені blockchain-транзакції. Агрегується на льоту сервісом `TreeChronicleService` — без нових таблиць.
+
+**Content Negotiation:**
+- `Accept: application/json` — JSON масив entries з пагінацією
+- `Accept: text/html` — Phlex компонент `Trees::Chronicle` (Turbo Frame, `layout: false`) для lazy-loading у `Trees::Show`
+
+**Query Parameters:**
+
+| Параметр | Тип | За замовчуванням | Опис |
+|---|---|---|---|
+| `page` | Integer | 1 | Сторінка |
+
+**Success Response `200 OK` (JSON):**
+
+```json
+{
+  "data": [
+    {
+      "date": "2026-03-15T10:30:00Z",
+      "event_type": "homeostasis",
+      "icon": "◉",
+      "title": "Deep Homeostasis",
+      "description": "Tree entered deep homeostasis. Z-value stable: 4.2891 σ",
+      "severity": "stable",
+      "source_type": "AiInsight",
+      "source_id": 4512
+    },
+    {
+      "date": "2026-03-10T08:00:00Z",
+      "event_type": "alert",
+      "icon": "🔥",
+      "title": "Fire Alert: 65.2°C",
+      "description": "Critical temperature threshold exceeded. Sensor value: 65.2°C",
+      "severity": "critical",
+      "source_type": "EwsAlert",
+      "source_id": 88
+    }
+  ],
+  "pagy": {
+    "page": 1,
+    "limit": 20,
+    "count": 87,
+    "pages": 5
+  }
+}
+```
+
+| Поле | Тип | Опис |
+|---|---|---|
+| `event_type` | String | `homeostasis / stress / fraud / alert / recovery / maintenance / minting` |
+| `severity` | String | `stable / info / warning / critical` |
+| `source_type` | String | `AiInsight / EwsAlert / MaintenanceRecord / BlockchainTransaction` |
+| `source_id` | Integer | ID вихідного запису |
+
+---
+
+### 5.4 GET `/api/v1/trees/:id/telemetry` — Телеметрія Дерева
 
 **Доступ:** `Authorization: Bearer <token>`
 
@@ -433,7 +494,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.4 GET `/api/v1/gateways/:id/telemetry` — Читання Телеметрії Gateway (Queen)
+### 5.5 GET `/api/v1/gateways/:id/telemetry` — Читання Телеметрії Gateway (Queen)
 
 > **Важливо:** Цей ендпоінт призначений **лише для читання** збереженої телеметрії (Dashboard / Monitoring). Основний канал uplink — **CoAP/UDP на порт 5683** (CoAP listener daemon). Для HTTP fallback використовується `POST /api/v1/gateways/:id/telemetry` (§5.15).
 
@@ -463,7 +524,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.5 POST `/api/v1/actuators/:id/execute` — Виконати Команду
+### 5.6 POST `/api/v1/actuators/:id/execute` — Виконати Команду
 
 **Доступ:** Роль `forester` або вище.
 
@@ -510,7 +571,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.6 POST `/api/v1/firmwares/:id/deploy` — OTA-розгортання Прошивки
+### 5.7 POST `/api/v1/firmwares/:id/deploy` — OTA-розгортання Прошивки
 
 **Доступ:** Роль `admin`.
 
@@ -542,7 +603,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.7 POST `/api/v1/firmwares` — Завантаження Нової Прошивки
+### 5.8 POST `/api/v1/firmwares` — Завантаження Нової Прошивки
 
 **Доступ:** Роль `admin`.  
 **Content-Type:** `multipart/form-data`
@@ -574,7 +635,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.8 POST `/api/v1/oracle_callbacks` — Chainlink Oracle Callback
+### 5.9 POST `/api/v1/oracle_callbacks` — Chainlink Oracle Callback
 
 **Доступ:** 🌐 Публічний (без Bearer token — machine-to-machine, захищено HMAC-SHA256).
 
@@ -635,7 +696,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.8b GET `/api/v1/oracle_visions` — AI Прогнози (Oracle Visions Index)
+### 5.9b GET `/api/v1/oracle_visions` — AI Прогнози (Oracle Visions Index)
 
 **Доступ:** Роль `forester` або вище.
 
@@ -664,7 +725,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.9 POST `/api/v1/oracle_visions/simulate` — Lorenz Симуляція
+### 5.10 POST `/api/v1/oracle_visions/simulate` — Lorenz Симуляція
 
 **Доступ:** Роль `admin`.
 
@@ -694,7 +755,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.10 POST `/api/v1/maintenance_records` — Фіксація Обслуговування
+### 5.11 POST `/api/v1/maintenance_records` — Фіксація Обслуговування
 
 **Доступ:** Роль `forester` або вище.  
 **Content-Type:** `multipart/form-data` (підтримка завантаження фото)
@@ -725,7 +786,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.11 GET `/api/v1/alerts` — EWS-Тривоги
+### 5.12 GET `/api/v1/alerts` — EWS-Тривоги
 
 **Query Parameters:**
 
@@ -757,7 +818,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.12 GET `/api/v1/system_health` — Стан Системи
+### 5.13 GET `/api/v1/system_health` — Стан Системи
 
 **Доступ:** Роль `admin`.
 
@@ -789,7 +850,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.13 GET `/api/v1/reports/carbon_absorption` — CO₂ Звіт
+### 5.14 GET `/api/v1/reports/carbon_absorption` — CO₂ Звіт
 
 Підтримує мультиформатну відповідь через HTTP `Accept` заголовок:
 
@@ -817,7 +878,7 @@ POST /api/v1/auth/m2m_token
 
 ---
 
-### 5.14 POST `/api/v1/auth/m2m_token` — M2M Автентифікація Gateway (Ed25519)
+### 5.15 POST `/api/v1/auth/m2m_token` — M2M Автентифікація Gateway (Ed25519)
 
 **Призначення:** Gateway-пристрої отримують та оновлюють Bearer-токен без логіна/пароля через Ed25519-підпис.
 
@@ -879,7 +940,7 @@ ed25519_sign(sig, message, strlen(message), private_key);
 
 ---
 
-### 5.15 POST `/api/v1/gateways/:id/telemetry` — HTTP Telemetry Uplink
+### 5.16 POST `/api/v1/gateways/:id/telemetry` — HTTP Telemetry Uplink
 
 **Призначення:** HTTP fallback для передачі зашифрованого батчу телеметрії від Gateway до бекенду. Основний канал — CoAP/UDP порт 5683 (daemon).
 

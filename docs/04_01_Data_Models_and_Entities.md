@@ -783,7 +783,7 @@ any ──report_fault──► faulty
 | Enum | Значення |
 |------|----------|
 | `token_type` | `carbon_coin(0) / forest_coin(1) / cusd(2)` |
-| `status` | `pending(0) / processing(1) / confirmed(2) / failed(3) / sent(4)` |
+| `status` | `pending(0) / processing(1) / confirmed(2) / failed(3) / sent(4) / manual_review(5)` |
 
 **Ключові поля:**
 
@@ -808,6 +808,7 @@ any ──report_fault──► faulty
 - `mark_as_sent(tx_hash)` (pending/processing→sent)
 - `confirm(block_num, gas_cost)` (sent/processing→confirmed)
 - `fail(reason)` (any→failed)
+- `escalate_to_review(reason)` (pending/processing/sent/failed→manual_review) — **[DOUBLE-SPEND GUARD]**: tx_hash вже існує або стан на блокчейні невідомий; кошти залишаються у `locked_balance` до ручної звірки
 
 **Методи:** `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
 

@@ -344,6 +344,7 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 |---|---|
 | `pending`, `issued`, `dormant`, `maintenance_needed` | `bg-status-warning text-status-warning-text` |
 | `processing`, `triggered`, `updating` | `+ animate-pulse` |
+| `manual_review` | `bg-status-warning text-status-warning-text + animate-pulse` — **[DOUBLE-SPEND GUARD]**: tx_hash існує або стан невідомий, потребує ручної звірки |
 | `confirmed`, `fulfilled` | `bg-status-success text-status-success-text` |
 | `sent`, `paid`, `maintenance` | `bg-status-info text-status-info-text` |
 | `failed`, `active` (EwsAlert), `breached`, `deceased`, `faulty` | `bg-status-danger text-status-danger-text` |
@@ -417,7 +418,8 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
 | `Trees::Index` | `trees/index.rb` | `trees:`, `pagy:` | Пагінований список дерев |
-| `Trees::Show` | `trees/show.rb` | `tree:`, `latest_log:`, `recent_logs:`, `maintenance_history:` | Повна деталізація дерева: біометрична матриця (радіальний SVG), графік історії імпедансу, економічна панель, сховище безпеки обладнання, журнал технічного обслуговування |
+| `Trees::Show` | `trees/show.rb` | `tree:`, `latest_log:`, `recent_logs:`, `maintenance_history:` | Повна деталізація дерева: біометрична матриця (радіальний SVG), графік історії імпедансу, економічна панель, сховище безпеки обладнання, журнал технічного обслуговування. Містить lazy-loading Turbo Frame `tree_chronicle_{id}`, що підвантажує `Trees::Chronicle` з `/api/v1/trees/:id/chronicle`. |
+| `Trees::Chronicle` | `trees/chronicle.rb` | `tree:`, `entries:` (Array\<TreeChronicleService::Entry>), `pagy:` | Хронологічний список подій дерева. Рендериться у Turbo Frame (`tree_chronicle_{id}`). Підтримує пагінацію `Shared::UI::Pagination`, порожній стан `Shared::UI::EmptyState`. Стилізація severity через inline CSS-класи (`stable/info/warning/critical`). Skeleton-завантаження через `Shared::UI::Skeleton`. |
 
 #### Гаманці
 

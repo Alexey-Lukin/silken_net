@@ -637,7 +637,8 @@ state_root = Digest::SHA256.hexdigest("#{total_scc_supply}:#{chain_hash}:#{times
 | Утиліта | Призначення |
 |---------|-------------|
 | `Web3::HttpClient` | Централізований HTTP клієнт (HTTPX), thread-safe |
-| `Web3::RpcConnectionPool` | Thread-cached `Eth::Client` per Sidekiq thread |
+| `Web3::RpcConnectionPool` | Thread-cached `Eth::Client` / `Web3::ResilientClient` per Sidekiq thread. Підтримує fallback cascade через `fallback_env_keys`. При одному URL повертає plain `Eth::Client` (без overhead); при кількох — `Web3::ResilientClient`. |
+| `Web3::ResilientClient` | Circuit Breaker + RPC fallback cascade: Primary→Secondary→Public. `MAX_FAILURES=3` → `CIRCUIT_OPEN_DURATION=60s`. Розпізнає `Net::ReadTimeout`, `Errno::ECONNREFUSED`, HTTP 429. Thread-safe (Mutex). `provider_health` → Prometheus. |
 | `Web3::WeiConverter` | BigDecimal конверсія human-readable ↔ wei |
 
 ---
