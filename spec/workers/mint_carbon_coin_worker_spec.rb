@@ -92,7 +92,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
-                                           locked_points: 10_000)
+                                           locked_points: 10_000, tx_hash: nil)
       original_balance = wallet.balance
 
       allow_any_instance_of(Wallet).to receive(:broadcast_update)
@@ -137,7 +137,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
     context "with auto-discovery flow (nil telemetry_log_id)" do
       it "finds all pending/processing transactions when telemetry_log_id is nil" do
-        tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000)
+        tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000, tx_hash: nil)
         wallet.update!(locked_balance: 5_000)
 
         allow_any_instance_of(Wallet).to receive(:broadcast_update)
@@ -157,7 +157,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
         wallet.update!(balance: 20_000, locked_balance: 3_000)
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
-                                             locked_points: 10_000)
+                                             locked_points: 10_000, tx_hash: nil)
 
         allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
@@ -176,7 +176,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
         wallet.update!(balance: 20_000, locked_balance: 0)
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
-                                             locked_points: 10_000)
+                                             locked_points: 10_000, tx_hash: nil)
 
         allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
@@ -197,7 +197,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
         wallet.update!(locked_balance: 5_000)
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
-                                             locked_points: 5_000)
+                                             locked_points: 5_000, tx_hash: nil)
 
         allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
@@ -249,7 +249,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
         wallet.update!(locked_balance: 5_000)
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
-                                             locked_points: 5_000)
+                                             locked_points: 5_000, tx_hash: nil)
 
         allow_any_instance_of(Wallet).to receive(:broadcast_update)
 
@@ -270,7 +270,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
         telemetry_log = create(:telemetry_log, :verified_telemetry, tree: tree)
         wallet.update!(balance: 20_000, locked_balance: 10_000)
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
-                                             locked_points: 10_000)
+                                             locked_points: 10_000, tx_hash: nil)
 
         # Stub broadcast_update to just do nothing
         allow_any_instance_of(Wallet).to receive(:broadcast_update)
@@ -396,7 +396,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
 
     it "calls broadcast_update on wallet after rollback" do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
-      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
 
       allow_any_instance_of(Wallet).to receive(:broadcast_update)
 

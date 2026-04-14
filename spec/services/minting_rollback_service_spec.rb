@@ -18,7 +18,7 @@ RSpec.describe MintingRollbackService do
 
     it "releases locked points on permanent failure" do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
-      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
 
       described_class.call(
         telemetry_log_id: telemetry_log.id_value,
@@ -66,7 +66,7 @@ RSpec.describe MintingRollbackService do
 
     it "handles partial locked_balance gracefully" do
       wallet.update!(balance: 20_000, locked_balance: 3_000)
-      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
 
       described_class.call(
         telemetry_log_id: telemetry_log.id_value,
@@ -105,7 +105,7 @@ RSpec.describe MintingRollbackService do
   describe ".call with transactions (auto-discovery flow)" do
     it "rolls back all provided pending/processing transactions" do
       wallet.update!(locked_balance: 5_000)
-      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000, tx_hash: nil)
 
       described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
 
@@ -132,7 +132,7 @@ RSpec.describe MintingRollbackService do
   describe "broadcast_update after rollback" do
     it "calls broadcast_update on wallet when method is available" do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
-      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
 
       expect_any_instance_of(Wallet).to receive(:broadcast_update).at_least(:once)
 
