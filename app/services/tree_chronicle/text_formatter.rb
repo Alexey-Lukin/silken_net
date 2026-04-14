@@ -79,7 +79,7 @@ module TreeChronicle
     def recovery_description(alert)
       duration = if alert.resolved_at && alert.created_at
                    days = ((alert.resolved_at - alert.created_at) / 1.day).round
-                   "Duration: #{days} #{days == 1 ? 'day' : 'days'}."
+                   "Duration: #{days} #{"day".pluralize(days)}."
       else
                    ""
       end

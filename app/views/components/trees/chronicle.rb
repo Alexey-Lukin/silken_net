@@ -11,6 +11,10 @@ module Trees
   # [i18n-READY]: Тексти формуються через TreeChronicle::TextFormatter.
   # [МАСШТАБ]: Паgінація через Pagy, lazy-load через Turbo Frame.
   class Chronicle < ApplicationComponent
+    # [i18n-READY]: Date format constants — replace with I18n.l() when localizing
+    DATE_FORMAT_SHORT = "%d.%m"
+    DATE_FORMAT_YEAR = "%Y"
+
     # @param tree [Tree] дерево для відображення хроніки
     # @param entries [Array<TreeChronicleService::Entry>] записи хроніки (pre-loaded)
     # @param pagy [Pagy] пагінація
@@ -59,10 +63,10 @@ module Trees
         div(class: "flex-shrink-0 w-16 text-center") do
           div(class: "text-lg") { entry.icon }
           div(class: "text-micro font-mono text-emerald-900 mt-1") do
-            plain(entry.date&.strftime("%d.%m") || "—")
+            plain(entry.date&.strftime(DATE_FORMAT_SHORT) || "—")
           end
           div(class: "text-micro font-mono text-gray-700") do
-            plain(entry.date&.strftime("%Y") || "")
+            plain(entry.date&.strftime(DATE_FORMAT_YEAR) || "")
           end
         end
 
@@ -94,30 +98,30 @@ module Trees
 
     def severity_border_class(severity)
       case severity
-      when :critical then "border-red-600"
-      when :warning  then "border-yellow-600"
-      when :info     then "border-blue-600"
+      when :critical then "border-status-danger-accent"
+      when :warning  then "border-status-warning"
+      when :info     then "border-status-info"
       else "border-emerald-800"
       end
     end
 
     def severity_text_class(severity)
       case severity
-      when :critical then "text-red-400"
-      when :warning  then "text-yellow-400"
-      when :info     then "text-blue-400"
+      when :critical then "text-status-danger-text"
+      when :warning  then "text-status-warning-text"
+      when :info     then "text-status-info-text"
       else "text-emerald-400"
       end
     end
 
     def event_type_badge_class(event_type)
       case event_type
-      when :alert, :fraud          then "bg-red-900/30 text-red-400"
-      when :stress                 then "bg-yellow-900/30 text-yellow-400"
-      when :maintenance            then "bg-blue-900/30 text-blue-400"
-      when :minting                then "bg-emerald-900/30 text-emerald-400"
-      when :recovery, :homeostasis then "bg-emerald-900/20 text-emerald-600"
-      else "bg-zinc-800 text-zinc-400"
+      when :alert, :fraud          then "bg-status-danger text-status-danger-text"
+      when :stress                 then "bg-status-warning text-status-warning-text"
+      when :maintenance            then "bg-status-info text-status-info-text"
+      when :minting                then "bg-status-success text-status-success-text"
+      when :recovery, :homeostasis then "bg-status-active text-status-active-text"
+      else "bg-status-neutral text-status-neutral-text"
       end
     end
   end

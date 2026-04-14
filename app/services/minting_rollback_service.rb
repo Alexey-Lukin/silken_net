@@ -98,9 +98,26 @@ class MintingRollbackService < ApplicationService
 
   # Перевіряємо стан транзакції на блокчейні через RPC.
   # Повертає :confirmed, :reverted, :pending або :unknown
+  #
+  # [MULTICHAIN]: Solana використовує інший RPC-метод (getTransaction),
+  # тому обробка відрізняється від EVM-мереж (eth_getTransactionReceipt).
   def fetch_transaction_receipt(tx)
-    rpc_env_key = tx.solana_network? ? "SOLANA_RPC_URL" : "ALCHEMY_POLYGON_RPC_URL"
-    client = Web3::RpcConnectionPool.client_for(rpc_env_key, fallback: "https://polygon-rpc.com")
+    if tx.solana_network?
+      fetch_solana_transaction_status(tx)
+    else
+      fetch_evm_transaction_receipt(tx)
+    end
+  rescue StandardError => e
+    Rails.logger.error "🛑 [Web3] Не вдалося отримати receipt для TX ##{tx.id}: #{e.message}"
+    :unknown
+  end
+
+  # EVM-мережі (Polygon, Celo): eth_getTransactionReceipt
+  def fetch_evm_transaction_receipt(tx)
+    rpc_env_key = tx.celo_network? ? "CELO_RPC_URL" : "ALCHEMY_POLYGON_RPC_URL"
+    client = Web3::RpcConnectionPool.client_for(rpc_env_key,
+                                                fallback: "https://polygon-rpc.com",
+                                                fallback_env_keys: [ "INFURA_POLYGON_RPC_URL" ])
     receipt = client.eth_get_transaction_receipt(tx.tx_hash)
 
     if receipt.nil? || receipt == {}
@@ -110,9 +127,27 @@ class MintingRollbackService < ApplicationService
     else
       :reverted
     end
-  rescue StandardError => e
-    Rails.logger.error "🛑 [Web3] Не вдалося отримати receipt для TX ##{tx.id}: #{e.message}"
-    :unknown
+  end
+
+  # Solana: JSON-RPC getTransaction
+  # Solana не використовує eth gem, тому робимо HTTP-запит напряму.
+  def fetch_solana_transaction_status(tx)
+    solana_url = ENV.fetch("SOLANA_RPC_URL", nil)
+    return :unknown unless solana_url
+
+    response = Web3::HttpClient.post(solana_url, {
+      jsonrpc: "2.0", id: 1, method: "getTransaction",
+      params: [ tx.tx_hash, { encoding: "json", commitment: "confirmed" } ]
+    })
+
+    result = response&.dig("result")
+    return :pending if result.nil?
+
+    if result.dig("meta", "err").nil?
+      :confirmed
+    else
+      :reverted
+    end
   end
 
   # Безпечний rollback: тільки коли tx_hash ВІДСУТНІЙ (транзакція не покинула бекенд).

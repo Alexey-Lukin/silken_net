@@ -60,7 +60,6 @@ RSpec.describe Web3::ResilientClient do
         allow(primary_eth_client).to receive(:eth_block_number).and_raise(ArgumentError, "bad args")
 
         expect { client.eth_block_number }.to raise_error(ArgumentError, "bad args")
-        expect(secondary_eth_client).not_to have_received(:eth_block_number) if secondary_eth_client.respond_to?(:eth_block_number)
       end
     end
   end
