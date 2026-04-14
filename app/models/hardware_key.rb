@@ -14,13 +14,12 @@ class HardwareKey < ApplicationRecord
   # ---------------------------------------------------------------------------
   # SCALABILITY: Zero Cryptographic Jitter — усунення «Double Crypto Tax»
   # ---------------------------------------------------------------------------
-  # При мільйонах запитів на розшифровку (decryption) десеріалізація зашифрованих
-  # ключів ActiveRecord Encryption створює навантаження на CPU (~2 мс/виклик).
-  # Розшифрований binary_key кешується в Rails.cache (Redis у prod) з TTL 15 хв.
-  # Це усуває повторну AR Encryption десеріалізацію для кожного пакету телеметрії.
-  # Безпека: ключі в PostgreSQL залишаються зашифрованими (AR Encryption).
-  # Redis на проді має бути в ізольованій мережі (Private VPC) з TLS + ACL.
-  # Інвалідація: after_commit на update/destroy + rotate_key! автоматично.
+  # [A-7 FIX]: Decrypted binary keys are cached in process-local RAM
+  # (SinLruRedux::ThreadSafeCache) instead of Redis. This eliminates the risk
+  # of mass key leakage if a Redis instance is compromised. Keys never leave
+  # the Ruby process and vanish on restart/crash.
+  # Previous implementation used Rails.cache (Redis) with TTL 15 min.
+  # Now keys are cached in-process with LRU eviction (max 10,000 keys).
   # ---------------------------------------------------------------------------
 
   # Інвалідація кешу при будь-якій зміні або видаленні ключа
@@ -66,11 +65,10 @@ class HardwareKey < ApplicationRecord
     @binary_key ||= [ aes_key_hex ].pack("H*")
   end
 
-  # Hot-path оптимізація: кешований binary_key через Rails.cache (Redis у prod).
-  # Усуває «Double Crypto Tax» — AR Encryption десеріалізація відбувається лише
-  # раз на 15 хв замість кожного пакету телеметрії.
+  # [A-7 FIX]: In-process LRU cache replaces Rails.cache (Redis).
+  # Keys stay in worker RAM — never serialized to network storage.
   def cached_binary_key
-    Rails.cache.fetch("hw_key:#{device_uid}:bin", expires_in: 15.minutes) { binary_key }
+    HARDWARE_KEY_CACHE.getset(device_uid) { binary_key }
   end
 
   # Повертає сирі байти попереднього ключа (для Grace Period)
@@ -79,15 +77,18 @@ class HardwareKey < ApplicationRecord
     @binary_previous_key ||= [ previous_aes_key_hex ].pack("H*")
   end
 
-  # [СИНХРОНІЗОВАНО]: М'яка ротація ключа
+  # [DEPRECATED]: Use HardwareKeyService.rotate(device_uid) instead.
+  # Service version includes downlink notification to the device.
+  # This model method is kept for backward compatibility but logs a deprecation warning.
   def rotate_key!
+    Rails.logger.warn "⚠️ [Deprecation] HardwareKey#rotate_key! called for #{device_uid}. " \
+                      "Use HardwareKeyService.rotate(device_uid) for full rotation with downlink."
+
     new_key_hex = SecureRandom.hex(32).upcase
 
-    # [ВИПРАВЛЕНО]: Прибрано зайвий transaction do, оскільки update!
-    # вже обгорнутий у транзакцію на рівні ActiveRecord.
     update!(
-      previous_aes_key_hex: aes_key_hex, # Стара істина стає резервною
-      aes_key_hex: new_key_hex,          # Нова істина вступає в силу
+      previous_aes_key_hex: aes_key_hex,
+      aes_key_hex: new_key_hex,
       rotated_at: Time.current
     )
 
@@ -95,7 +96,6 @@ class HardwareKey < ApplicationRecord
     @binary_key = nil
     @binary_previous_key = nil
 
-    Rails.logger.warn "🔄 [KeyRotation] Для #{device_uid} активовано Grace Period. Старий ключ збережено як резервний."
     binary_key
   end
 
@@ -115,8 +115,8 @@ class HardwareKey < ApplicationRecord
 
   private
 
-  # Інвалідація кешу — викликається через after_commit on: [:update, :destroy]
+  # [A-7 FIX]: Invalidate in-process LRU cache (not Redis)
   def clear_key_cache
-    Rails.cache.delete("hw_key:#{device_uid}:bin")
+    HARDWARE_KEY_CACHE.delete(device_uid)
   end
 end

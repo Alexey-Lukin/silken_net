@@ -384,7 +384,8 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect {
         post "/api/v1/actuators/#{actuator.id}/execute",
              params: { action_payload: "OPEN", duration_seconds: 60 },
-             headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
+             headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json",
+                        "Idempotency-Key" => SecureRandom.uuid }
       }.to change(ActuatorCommand, :count).by(1)
 
       expect(response).to have_http_status(:accepted)
@@ -395,7 +396,8 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
 
       post "/api/v1/actuators/#{actuator.id}/execute",
            params: { action_payload: "OPEN", duration_seconds: 60 },
-           headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
+           headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json",
+                      "Idempotency-Key" => SecureRandom.uuid }
 
       expect(response).to have_http_status(:conflict)
     end

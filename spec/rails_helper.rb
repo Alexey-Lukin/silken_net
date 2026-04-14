@@ -35,12 +35,18 @@ RSpec.configure do |config|
 
   # Clear Sidekiq queues before each example so jobs don't bleed between tests.
   # Clear Rails cache so rate-limit counters and silence filters don't leak across examples.
+  # Flush Kredis Redis (DB 1) to remove nonce keys (M2M replay, distributed locks) between tests.
   config.before do
     Sidekiq::Job.clear_all
     Rails.cache.clear
     Rack::Attack.cache.store.clear
     Rack::Attack.reset!
     Web3::RpcConnectionPool.reset!
+    begin
+      Kredis.redis(config: :shared).flushdb
+    rescue RedisClient::CannotConnectError, Redis::CannotConnectError, RedisClient::ConnectionError, Errno::ECONNREFUSED
+      # Redis may not be available in CI — safe to skip flush
+    end
   end
 
   # Prosopite: N+1 query detection in request specs.

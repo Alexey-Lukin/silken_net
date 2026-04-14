@@ -10,13 +10,30 @@ module Api
       before_action :verify_chainlink_signature!
 
       # POST /api/v1/oracle_callbacks
+      #
+      # [A-6 FIX]: State Machine Guard — Replay Attack Prevention.
+      # Atomic update_all with WHERE oracle_status='dispatched' ensures that only
+      # the FIRST callback for a given telemetry log is processed. Subsequent
+      # replays (identical HMAC-signed requests) hit zero rows and receive 409 Conflict.
+      # This eliminates the need for timestamp/nonce in the HMAC payload.
       def create
         request_id = params.require(:chainlink_request_id)
         log = find_telemetry_log(request_id)
 
-        if ActiveModel::Type::Boolean.new.cast(params[:success])
-          log.update!(oracle_status: "fulfilled")
+        new_status = ActiveModel::Type::Boolean.new.cast(params[:success]) ? "fulfilled" : "failed"
 
+        # Atomic state transition: dispatched → fulfilled/failed.
+        # Returns 0 if already processed (replay) or in unexpected state.
+        updated_rows = TelemetryLog.where(id: log.id, created_at: log.created_at, oracle_status: "dispatched")
+                                   .update_all(oracle_status: new_status)
+
+        if updated_rows.zero?
+          Rails.logger.warn "⚠️ [Oracle Replay] Blocked duplicate callback for TelemetryLog ##{log.id_value} " \
+                            "(current status: #{log.oracle_status})"
+          return head :conflict
+        end
+
+        if new_status == "fulfilled"
           # 🔗 CRITICAL: Trigger DUAL minting pipeline upon oracle fulfillment.
           # [COMPOSITE PK]: telemetry_logs uses [id, created_at] composite key
           # due to partitioning. Pass both id_value and created_at for partition pruning.
@@ -33,7 +50,6 @@ module Api
           render json: { status: "fulfilled", telemetry_log_id: log.id_value }, status: :ok
         else
           error_message = params[:error].presence || "Unknown oracle error"
-          log.update!(oracle_status: "failed")
 
           Rails.logger.error "🚨 [Oracle Callback] TelemetryLog ##{log.id_value} failed: #{error_message}"
 
