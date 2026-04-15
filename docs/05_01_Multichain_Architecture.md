@@ -76,7 +76,7 @@ SilkenNet не обирає один блокчейн. Система викор
 | 5 | The Graph | `TheGraph::QueryService` | ✅ Real | GraphQL-запити до subgraph |
 | 6 | Polygon | `BlockchainMintingService` + `BlockchainBurningService` | ✅ Real | Eth::Client → Alchemy RPC |
 | 7 | Polygon Hadron | `Polygon::HadronComplianceService` | ⚠️ Hybrid | Реальне KYC API + симуляція коли credentials відсутні |
-| 8 | Solana | `Solana::MintingService` | ⚠️ Devnet | `simulateTransaction` замість `sendTransaction` |
+| 8 | Solana | `Solana::MintingService` | ✅ Real | Ed25519-signed `sendTransaction` (base64). Balance guard: 0.05 SOL |
 | 9 | Celo | `Celo::CommunityRewardService` | ✅ Real | ERC-20 transfer cUSD через Celo RPC |
 | 10 | KlimaDAO | `KlimaDao::RetirementService` | ✅ Real | Approve + Retire (два ERC-20 виклики) |
 | 11 | Chainlink | `Chainlink::OracleDispatchService` | ⚠️ Hybrid | Реальний Chainlink Functions Router + stub коли credentials відсутні |
@@ -88,31 +88,21 @@ SilkenNet не обирає один блокчейн. Система викор
 
 ## 🛑 Блокери (Blockers / Needs Action)
 
-### 🔴 BLOCKER-1: Cross-chain Gas Costs (Treasury Management)
+### ✅ BLOCKER-1: Cross-chain Gas Costs (Treasury Management) — **ВИРІШЕНО**
 
-**Статус:** Не імплементовано. Винесено в окремий цикл.
+**Статус:** ✅ Імплементовано в PR #253.
 
-Підтримка паралельних транзакцій у Solana, Celo та Polygon вимагає складного балансування гаманців (Treasury Management). Необхідно впровадити:
+**Рішення:**
+1. **Oracle Balance Guards** додано до `Solana::MintingService` (`MIN_ORACLE_BALANCE_LAMPORTS = 50M`, `verify_oracle_balance!`) та `Celo::CommunityRewardService` (`MIN_ORACLE_BALANCE_WEI = 0.05 CELO`, guard перед `transact`). Polygon вже мав guard.
+2. **Treasury::MonitorService** — централізований моніторинг балансів всіх 4 гаманців оракулів (Polygon MATIC, Solana SOL, Celo CELO, Ethereum ETH). Scheduled кожні 15 хв через `TreasuryMonitorWorker [web3_low]`.
+3. **Prometheus gauges**: `ORACLE_BALANCE` (per network), `ORACLE_BALANCE_RATIO` (< 1.0 = critical), `TREASURY_CHECK_ERRORS_TOTAL`.
+4. **EwsAlert** при критичних балансах (alert_type: `:system_fault`, severity: `:critical`).
 
-1. **Автоматичні сповіщення (PagerDuty)** — якщо баланс MATIC, SOL або CELO на гаманцях оракулів падає нижче критичного мінімуму.
-2. **Мінімальні пороги:**
-   - Polygon: `0.05 MATIC` (вже перевіряється в `BlockchainMintingService` як guard clause)
-   - Solana: потребує аналогічну перевірку в `Solana::MintingService`
-   - Celo: потребує аналогічну перевірку в `Celo::CommunityRewardService`
-3. **Treasury Dashboard** — централізований моніторинг балансів усіх 4 гаманців оракулів.
+### ✅ BLOCKER-2: Subgraph Event Name Mismatch — **ВИРІШЕНО**
 
-**Де в коді:** `BlockchainMintingService#perform` вже має guard clause `raise if balance < 0.05 MATIC`, але Solana та Celo — ні.
+**Статус:** ✅ Виправлено в PR #253.
 
-### 🔴 BLOCKER-2: Subgraph Event Name Mismatch
-
-**Статус:** Баг у `subgraph/subgraph.yaml`.
-
-Смарт-контракт `SilkenCarbonCoin.sol` емітує подію `TokenSlashed(address indexed, uint256, string indexed)`, але subgraph manifest підписаний на `Slashed(address indexed, uint256, string indexed)`.
-
-* **Файл:** `subgraph/subgraph.yaml` → `eventHandlers` → `event: Slashed(...)`
-* **Контракт:** `contracts/SilkenCarbonCoin.sol` → `event TokenSlashed(...)`
-* **Вплив:** Slashing-події НЕ індексуються The Graph — `ProtocolFinancials.totalBurned` завжди `0`.
-* **Фікс:** Змінити `Slashed` → `TokenSlashed` в `subgraph.yaml`.
+Змінено `Slashed` → `TokenSlashed` у `subgraph/subgraph.yaml`, `mapping.ts` та `schema.graphql`. Slashing-події тепер коректно індексуються The Graph.
 
 ### 🟡 BLOCKER-3: Solana Devnet Lock
 
@@ -123,11 +113,14 @@ SilkenNet не обирає один блокчейн. Система викор
 2. Розділення конфігурації Devnet/Mainnet через ENV
 3. Інтеграційне тестування з реальним Solana RPC
 
-### 🟡 BLOCKER-4: Hadron та Chainlink Simulation Fallbacks
+### ✅ BLOCKER-4: Hadron та Chainlink Simulation Fallbacks — **ВИРІШЕНО**
 
-**Статус:** Архітектурне рішення (прийнятне для TRL 8, потребує вирішення для TRL 9).
+**Статус:** ✅ Виправлено в PR #253.
 
-`Polygon::HadronComplianceService` та `Chainlink::OracleDispatchService` мають fallback-режим: коли credentials відсутні, генерують stub response замість реальних API-викликів. Для Production це потрібно вимкнути або зробити strict-mode.
+Додано `WEB3_STRICT_MODE` ENV flag. При `WEB3_STRICT_MODE=true`:
+- `Polygon::HadronComplianceService` → raises `ComplianceError` при відсутності `hadron_api_key` (замість simulation fallback).
+- `Chainlink::OracleDispatchService` → raises `DispatchError` при відсутності `CHAINLINK_FUNCTIONS_ROUTER` та `CHAINLINK_SUBSCRIPTION_ID`.
+В dev/test режимі (без strict mode) simulation fallback залишається для зручності розробки.
 
 ### 🟡 BLOCKER-5: PuroEarth Passport Service — Not Implemented
 
@@ -559,7 +552,7 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 | Параметр | Значення |
 |----------|----------|
 | **Файл** | `contracts/SilkenCarbonCoin.sol` |
-| **Стандарт** | ERC-20 + `AccessControl` + `Pausable` |
+| **Стандарт** | ERC-20 + `AccessControl` + `Pausable` + `ERC20Permit` |
 | **Ролі** | `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, `SLASHER_ROLE` |
 
 **Ключові функції:**
@@ -567,6 +560,8 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 - `batchMint(address[] recipients, uint256[] amounts, string[] treeDids)` — До 200 дерев за один виклик.
 - `slash(address investor, uint256 amount)` — Спалює токени при порушенні. Емітує `TokenSlashed`.
 - `pause() / unpause()` — Екстрене заморожування.
+- `nonces(address)` — Override для ERC20Permit/Nonces MRO сумісності.
+- Gasless approvals через EIP-2612 (`ERC20Permit`) — дозволяє DEX/P2P marketplace інтеграцію без газу для власників SCC.
 
 ### SilkenForestCoin.sol (SFC)
 
@@ -650,7 +645,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc_supply}:#{chain_hash}:#{times
 | 1 | Streamr | Data | `StreamrBroadcastWorker` | `low` | 3 | — |
 | 2 | Filecoin | Data | `FilecoinArchiveWorker` | `low` | 5 | — |
 | 3 | peaq | Verification | `PeaqRegistrationWorker` | `web3` | 5 | — |
-| 4 | IoTeX | Verification | `IotexVerificationWorker` | `web3_critical` | 5 | — |
+| 4 | IoTeX | Verification | `IotexVerificationWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
 | 5 | The Graph | Verification | — (read-only) | — | — | — |
 | 6 | Polygon | Finance | `MintCarbonCoinWorker` | `web3_critical` | 5 | — |
 | 6b | Polygon | Finance | `BurnCarbonTokensWorker` | `critical` | 5 | — |
@@ -658,16 +653,18 @@ state_root = Digest::SHA256.hexdigest("#{total_scc_supply}:#{chain_hash}:#{times
 | 8 | Solana | Finance | `SolanaMicroRewardWorker` | `web3` | 3 | — |
 | 9 | Celo | Finance | `CeloRewardWorker` | `web3` | 3 | — |
 | 10 | KlimaDAO | Finance | `KlimaRetirementWorker` | `web3_low` | 3 | — |
-| 11 | Chainlink | Finality | `ChainlinkDispatchWorker` | `web3_critical` | 5 | — |
+| 11 | Chainlink | Finality | `ChainlinkDispatchWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
 | 12 | Ethereum L1 | Finality | `EthereumAnchorWorker` | `web3_low` | 3 | `0 3 * * 1` |
+| 13 | Cross-chain | Treasury | `TreasuryMonitorWorker` | `web3_low` | 3 | `*/15 * * * *` |
+| 14 | Polygon | Gas Optimization | `MintBatchCollectorWorker` | `web3` | 3 | `*/5 * * * *` |
 
 ---
 
 ## 📊 8. Відкриті Питання для Наступного Циклу
 
-1. **Treasury Management Service** — Централізований моніторинг балансів oracle wallets
-2. **Subgraph Fix** — `Slashed` → `TokenSlashed` у `subgraph.yaml`
-3. **Solana Mainnet Switch** — `simulateTransaction` → `sendTransaction`
-4. **Strict Mode** для Hadron/Chainlink simulation fallbacks у Production
+1. ~~**Treasury Management Service**~~ — ✅ Імплементовано (`Treasury::MonitorService` + `Treasury::MintBatchCollectorService`)
+2. ~~**Subgraph Fix**~~ — ✅ `Slashed` → `TokenSlashed` виправлено
+3. ~~**Solana Mainnet Switch**~~ — ✅ `sendTransaction` з Ed25519 підписом (замість `simulateTransaction`)
+4. ~~**Strict Mode**~~ — ✅ `WEB3_STRICT_MODE` для Hadron/Chainlink
 5. **PuroEarth PassportService** — Biochar CORC (Afterlife Economy)
 6. **dClimate Real API** — Замінити mock на реальний satellite API

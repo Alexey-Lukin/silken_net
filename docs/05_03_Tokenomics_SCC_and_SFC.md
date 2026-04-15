@@ -35,14 +35,14 @@
 |---|---|---|
 | **Тип** | Utility Token | Governance Token |
 | **Ticker** | SCC | SFC |
-| **Стандарти** | ERC-20 + AccessControl + Pausable | ERC-20 + AccessControl + Pausable + ERC20Permit + ERC20Votes |
+| **Стандарти** | ERC-20 + AccessControl + Pausable + ERC20Permit | ERC-20 + AccessControl + Pausable + ERC20Permit + ERC20Votes |
 | **Мережа** | Polygon (Amoy testnet → Mainnet) | Polygon (Amoy testnet → Mainnet) |
 | **Файл** | `contracts/SilkenCarbonCoin.sol` | `contracts/SilkenForestCoin.sol` |
 | **ENV адреса** | `CARBON_COIN_CONTRACT_ADDRESS` | `FOREST_COIN_CONTRACT_ADDRESS` |
 | **Pragma** | `^0.8.20` | `^0.8.20` |
 | **Максимальна емісія** | ❌ Не обмежена | ❌ Не обмежена |
 | **Slash / Burn** | ✅ `slash()` через `SLASHER_ROLE` | ❌ Відсутній |
-| **Gasless approvals** | ❌ | ✅ EIP-2612 / EIP-712 |
+| **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
 | **DAO голосування** | ❌ | ✅ `ERC20Votes` |
 | **Subgraph індексація** | ✅ `CarbonMinted`, ⚠️ `Slashed` (помилка) | ❌ Немає |
 
@@ -56,14 +56,17 @@
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
-contract SilkenCarbonCoin is ERC20, AccessControl, Pausable { ... }
+contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ERC20Permit { ... }
 ```
 
 | Базовий контракт | Призначення |
 |---|---|
 | `ERC20` | Стандартний fungible token: `transfer`, `approve`, `transferFrom`, `balanceOf`, `totalSupply` |
 | `AccessControl` | Ієрархія ролей через `bytes32` hash — `grantRole`, `revokeRole`, `hasRole` |
+| `Pausable` | Екстрене заморожування всіх трансферів (override `_update`) |
+| `ERC20Permit` | **[PR #253]** Gasless approvals через EIP-2612 / EIP-712 підписи (`permit()`). Дозволяє DEX/P2P marketplace інтеграцію без газу для власників SCC. `nonces(address)` override для MRO сумісності з Nonces. |
 | `Pausable` | Аварійна зупинка всіх переміщень токенів через `pause()` / `unpause()` |
 
 ### SilkenForestCoin (SFC)
@@ -193,6 +196,7 @@ function batchMint(
 - **Призначення:** Газово-ефективна масова емісія для цілих секторів/кластерів
 - **Валідація:** Перевірка рівності довжин масивів; **ліміт розміру відсутній** — BLOCKER B-04
 - **Dynamic Tax:** При виклику `batchMint` з бекенду, `BlockchainMintingService` може вставляти додаткових отримувачів (`DAO_TREASURY_ADDRESS`) для Dynamic Tax — BLOCKER B-05
+- **Gas Optimization [PR #253]:** `Treasury::MintBatchCollectorService` (cron кожні 5 хв) агрегує pending TX та відправляє пакетами по 100 через `BlockchainMintingService.call_batch`. `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Urgent TX (>30 хв) відправляються негайно.
 
 #### `slash(address investor, uint256 amount)`
 

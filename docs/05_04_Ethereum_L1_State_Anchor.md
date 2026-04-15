@@ -70,15 +70,18 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 - **Де в коді:** `Ethereum::StateAnchorService#anchor_to_l1!` — рядок `client.transact(...)`.
 - **Потрібно:** Додати `max_fee_per_gas`, `max_priority_fee_per_gas` через ENV або Chainlink Gas Oracle. Встановити safety cap.
 
-### 🔴 BLOCKER-4: Відсутність перевірки балансу oracle-гаманця
+### 🟡 BLOCKER-4: Відсутність перевірки балансу oracle-гаманця (частково вирішено)
 
-**Статус:** Критичний. Транзакція впаде без чіткого повідомлення.
+**Статус:** Частково вирішено через Treasury monitoring (PR #253).
 
 `BlockchainMintingService` (Polygon) має явний guard clause: `raise if balance < 0.05 MATIC`. `Ethereum::StateAnchorService` **не перевіряє баланс ETH** на гаманці `ETHEREUM_ANCHOR_PRIVATE_KEY` перед відправленням L1-транзакції.
 
-- **Вплив:** Якщо баланс < gas_price × gas_limit, транзакція впаде з помилкою від RPC (не від нашого коду). Retry-механізм (3 спроби) витратить ці спроби без толку.
-- **Де в коді:** `Ethereum::StateAnchorService#anchor_to_l1!` — немає `balance_check` перед `client.transact`.
-- **Потрібно:** `raise InsufficientBalanceError if eth_balance < MIN_ETH_BALANCE` (аналог `0.01 ETH`).
+**Покращення [PR #253]:** `Treasury::MonitorService` (cron кожні 15 хв) тепер моніторить баланс ETH на `ETHEREUM_ANCHOR_PRIVATE_KEY` гаманці з порогом `0.01 ETH`. При balance < threshold:
+- Prometheus gauge `ORACLE_BALANCE{network="ethereum"}` < threshold
+- `ORACLE_BALANCE_RATIO{network="ethereum"}` < 1.0
+- `EwsAlert.create(alert_type: :system_fault, severity: :critical)` — оперативне сповіщення
+
+**Залишається:** Inline guard clause в `StateAnchorService#anchor_to_l1!` (raise перед transact) ще не додано — покладаємося на proactive моніторинг.
 
 ### 🟡 BLOCKER-5: ENV-змінна `ALCHEMY_ETHEREUM_RPC_URL` не задокументована в `.env.example`
 
