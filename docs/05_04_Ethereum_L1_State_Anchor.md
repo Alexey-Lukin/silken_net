@@ -36,18 +36,45 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 |-----------|------|--------|
 | `EthereumAnchorWorker` | `app/workers/ethereum_anchor_worker.rb` | ✅ Real |
 | `Ethereum::StateAnchorService` | `app/services/ethereum/state_anchor_service.rb` | ✅ Real |
+| `EthereumAnchor` | `app/models/ethereum_anchor.rb` | ✅ Real |
+| Міграція | `db/migrate/20260415140000_create_ethereum_anchors.rb` | ✅ Applied |
 | `Web3::RpcConnectionPool` | `app/services/web3/rpc_connection_pool.rb` | ✅ Real |
 | `ApplicationWeb3Worker` | `app/workers/application_web3_worker.rb` | ✅ Real |
 | Cron-розклад | `config/sidekiq.yml` | ✅ Сконфігуровано |
 | RSpec (worker) | `spec/workers/ethereum_anchor_worker_spec.rb` | ✅ Покрито |
 | RSpec (service) | `spec/services/ethereum/state_anchor_service_spec.rb` | ✅ Покрито |
-| `StateRootAnchor.sol` | `contracts/` | 🔴 Відсутній (ABI захардкоджено в сервісі) |
+| RSpec (model) | `spec/models/ethereum_anchor_spec.rb` | ✅ Покрито |
+| `StateRootAnchor.sol` | `contracts/StateRootAnchor.sol` | ✅ Real |
 
 ---
 
-## 🛑 Відкриті Блокери
+## ✅ Закриті Блокери (PR #254)
 
-### 🔴 BLOCKER-1: Smart Contract відсутній у репозиторії
+### ✅ BLOCKER-1: `StateRootAnchor.sol` створено
+
+`contracts/StateRootAnchor.sol` додано до репозиторію. Контракт успадковує `AccessControl` (OpenZeppelin), визначає роль `ANCHOR_ROLE`, зберігає `latestRoot`, `anchorCount`, маппінг `rootTimestamps` та емітує `StateRootStored(bytes32 indexed root, uint256 timestamp, uint256 anchorIndex)`. Дедуплікація: `require(rootTimestamps[root] == 0, "root already anchored")` — кожен state root можна записати тільки один раз. Деплой через Foundry; адреса зберігається в `ENV["ETHEREUM_ANCHOR_CONTRACT"]`.
+
+### ✅ BLOCKER-2: Персистентність state_root у БД — `EthereumAnchor` модель
+
+Модель `EthereumAnchor` (таблиця `ethereum_anchors`) зберігає повний аудит-трейл кожної L1 операції. `anchor_to_l1!` тепер **до TX** створює запис `status: :pending` (crash recovery), після TX — `update!(status: :sent, tx_hash:)`. Race condition safety: Sidekiq `unique_for: 7.days` + DB unique index на `state_root`.
+
+### ✅ BLOCKER-3: Gas management з safety caps
+
+Явні константи: `DEFAULT_GAS_LIMIT = 100_000`, `DEFAULT_MAX_FEE_GWEI = 100`, `DEFAULT_PRIORITY_FEE_GWEI = 2`. Всі перекриваються ENV: `ETHEREUM_MAX_FEE_GWEI`, `ETHEREUM_PRIORITY_FEE_GWEI`, `ETHEREUM_GAS_LIMIT`. Захист від gas spikes.
+
+### ✅ BLOCKER-4: Inline ETH balance guard
+
+`MIN_ANCHOR_BALANCE_WEI = 0.01 ETH`. Перед `client.transact(...)` перевіряється баланс: `balance = client.get_balance(anchor_key.address)`. При `balance < MIN_ANCHOR_BALANCE_WEI` — `anchor.update!(status: :failed, error_message: ...)` + raise. `EwsAlert` через `TreasuryMonitorWorker` (cron кожні 15 хв) є додатковим проактивним шаром.
+
+### ✅ BLOCKER-5: `.env.example` з усіма ENV-змінними
+
+`.env.example` додано до репозиторію з документацією всіх ENV-змінних включаючи `ALCHEMY_ETHEREUM_RPC_URL`, `ETHEREUM_ANCHOR_PRIVATE_KEY`, `ETHEREUM_ANCHOR_CONTRACT` та gas management змінні.
+
+### ✅ BLOCKER-6: Reproducible state_root — збережені компоненти
+
+`generate_state_root` повертає `Hash { state_root, total_scc, chain_hash, anchored_at }`. Всі компоненти зберігаються в `EthereumAnchor`. `EthereumAnchor#verify_state_root` дозволяє зовнішньому аудитору незалежно відтворити хеш: `SHA256("#{total_scc}|#{chain_hash}|#{anchored_at.utc.iso8601}")`.
+
+---
 
 **Статус:** Критичний архітектурний пробіл.
 
@@ -66,69 +93,6 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 - **Де в коді:** `Ethereum::StateAnchorService#anchor_to_l1!` — немає жодного `ActiveRecord` збереження.
 - **Вплив:** Відсутність аудит-трейлу є проблемою для інституційних інвесторів та регуляторного compliance.
 - **Потрібно:** Модель `EthereumAnchor` або поле в `AuditLog` для збереження `{ state_root, tx_hash, anchored_at, block_number }`.
-
-### 🔴 BLOCKER-3: Відсутність gas management (лімітів та fee caps)
-
-**Статус:** Критичний фінансовий ризик.
-
-Виклик `client.transact(contract, "storeStateRoot", root_bytes, sender_key: anchor_key, legacy: false)` не передає явних параметрів газу:
-
-- **Немає `gas_limit`** — `ruby-eth` самостійно оцінює через `eth_estimateGas`. При пере-завантаженні мережі оцінка може бути хибною.
-- **Немає `max_fee_per_gas` / `max_priority_fee_per_gas`** — незважаючи на EIP-1559 (`legacy: false`), верхній ліміт вартості транзакції не встановлено. Під час gas spike (як у грудні 2021: >500 Gwei) транзакція може коштувати $100–$500.
-- **Де в коді:** `Ethereum::StateAnchorService#anchor_to_l1!` — рядок `client.transact(...)`.
-- **Потрібно:** Додати `max_fee_per_gas`, `max_priority_fee_per_gas` через ENV або Chainlink Gas Oracle. Встановити safety cap.
-
-### 🟡 BLOCKER-4: Відсутність перевірки балансу oracle-гаманця (частково вирішено)
-
-**Статус:** Частково вирішено через Treasury monitoring (PR #253).
-
-`BlockchainMintingService` (Polygon) має явний guard clause: `raise if balance < 0.05 MATIC`. `Ethereum::StateAnchorService` **не перевіряє баланс ETH** на гаманці `ETHEREUM_ANCHOR_PRIVATE_KEY` перед відправленням L1-транзакції.
-
-**Покращення [PR #253]:** `Treasury::MonitorService` (cron кожні 15 хв) тепер моніторить баланс ETH на `ETHEREUM_ANCHOR_PRIVATE_KEY` гаманці з порогом `0.01 ETH`. При balance < threshold:
-- Prometheus gauge `ORACLE_BALANCE{network="ethereum"}` < threshold
-- `ORACLE_BALANCE_RATIO{network="ethereum"}` < 1.0
-- `EwsAlert.create(alert_type: :system_fault, severity: :critical)` — оперативне сповіщення
-
-**Залишається:** Inline guard clause в `StateAnchorService#anchor_to_l1!` (raise перед transact) ще не додано — покладаємося на proactive моніторинг.
-
-### 🟡 BLOCKER-5: ENV-змінна `ALCHEMY_ETHEREUM_RPC_URL` не задокументована в `.env.example`
-
-**Статус:** Середній. Невідповідність між кодом і документацією.
-
-В `docs/BLOCKCHAIN_DEVELOPMENT.md` та `config/` Ethereum RPC задокументовано як `ETHEREUM_RPC_URL`, але в `Ethereum::StateAnchorService` та `Web3::RpcConnectionPool` використовується `ALCHEMY_ETHEREUM_RPC_URL`. Файл `.env.example` відсутній у репозиторії.
-
-- **Де в коді:** `app/services/ethereum/state_anchor_service.rb` рядок `Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")`.
-- **Вплив:** Новий розробник або CI/CD-пайплайн може не встановити правильну ENV-змінну і отримати `KeyError: key not found: "ALCHEMY_ETHEREUM_RPC_URL"` під час деплою.
-- **Потрібно:** Синхронізувати документацію та додати `.env.example`.
-
-### 🟡 BLOCKER-6: Non-reproducible state_root через timestamp
-
-**Статус:** Середній. Архітектурне обмеження верифікації.
-
-`generate_state_root` включає `Time.current.utc.iso8601` у хеш-payload. Це означає:
-
-- **Неможливо незалежно відтворити** той самий `state_root` без знання точного timestamp виконання.
-- Зовнішній аудитор, знаючи `total_scc` та `chain_hash`, **не може верифікувати** хеш без додаткових метаданих.
-- **Де в коді:** `Ethereum::StateAnchorService#generate_state_root` — `timestamp = Time.current.utc.iso8601`.
-- **Потрібно (для TRL 9):** Зберігати `{ total_scc, chain_hash, anchored_at }` разом з `tx_hash` (пов'язано з BLOCKER-2), щоб аудитор міг самостійно відтворити хеш.
-
-### 🟢 INFO: state_root є SHA-256 flat hash, а не Merkle Root
-
-**Статус:** Інформаційний. Архітектурне рішення (прийнятне для TRL 8).
-
-Попри назву "State Root" (яка імплікує Merkle Tree), поточна реалізація використовує плаский SHA-256 хеш трьох полів:
-```
-SHA256("#{total_scc}|#{chain_hash}|#{timestamp}")
-```
-Це технічно є коректним commitment-схемою, але не є справжнім Merkle Root над усіма деревами/транзакціями. Для TRL 9 можна розглянути справжній Merkle Tree над `TelemetryLog.chain_hash` значеннями за тиждень.
-
-### 🟢 INFO: retry: 3 може бути недостатнім для L1
-
-**Статус:** Інформаційний.
-
-`EthereumAnchorWorker` налаштований на `retry: 3`. Ethereum Mainnet може бути перевантажений годинами (наприклад, під час NFT drops або DeFi ліквідацій). Інші Web3 воркери мають `retry: 5` (IoTeX, peaq, Filecoin). Три спроби з Sidekiq exponential backoff (~45 хвилин загалом) може бути недостатньо для відновлення після мережевого congestion.
-
----
 
 ## 1. Cron-Розклад (The Ethereum Seal)
 
@@ -161,7 +125,7 @@ SHA256("#{total_scc}|#{chain_hash}|#{timestamp}")
 class EthereumAnchorWorker
   include ApplicationWeb3Worker
 
-  sidekiq_options queue: "web3_low", retry: 3, unique_for: 1.hour
+  sidekiq_options queue: "web3_low", retry: 5, unique_for: 1.hour
 
   def perform
     with_web3_error_handling("Ethereum", "L1 State Anchor") do
@@ -178,7 +142,7 @@ end
 |----------|----------|-----------|
 | **Queue** | `web3_low` | Найнижчий Web3-пріоритет — некритичні, але важливі L1 операції |
 | **Priority** | 2 з 9 | Обробляється після всіх критичних Web3-задач |
-| **Retry** | 3 | Exponential backoff; ⚠️ може бути недостатньо (BLOCKER INFO) |
+| **Retry** | 5 | Exponential backoff (~2+ годин); достатньо для L1 congestion recovery |
 | **unique_for** | 1.hour | Запобігає паралельному запуску тижневих циклів (idempotency guard) |
 | **Mixin** | `ApplicationWeb3Worker` | RPC Rate Limiter (50 req/s), уніфіковане error handling, Prometheus метрики |
 
@@ -197,16 +161,16 @@ end
 ### Формула
 
 ```
-state_root = SHA256("#{total_scc}|#{latest_chain_hash}|#{timestamp}")
+state_root = SHA256("#{total_scc}|#{chain_hash}|#{anchored_at.iso8601}")
 ```
 
 де:
 
 | Поле | Джерело | Тип | Приклад |
 |------|---------|-----|---------|
-| `total_scc` | `Wallet.sum(:scc_balance)` | Float (сума всіх SCC-балансів у системі) | `"1250000.5"` |
-| `latest_chain_hash` | `AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash)` | String або `"GENESIS"` якщо AuditLog порожній | `"a3f8c2..."` |
-| `timestamp` | `Time.current.utc.iso8601` | ISO 8601 UTC рядок | `"2026-03-23T03:00:01Z"` |
+| `total_scc` | `Wallet.sum(:scc_balance)` | Decimal (сума всіх SCC-балансів у системі) | `"1250000.5"` |
+| `chain_hash` | `AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash)` | String або `"GENESIS"` якщо AuditLog порожній | `"a3f8c2..."` |
+| `anchored_at` | `Time.current.utc` | UTC DateTime (зберігається в `EthereumAnchor.anchored_at`) | `2026-03-23T03:00:01Z` |
 
 ### Покроковий алгоритм (Ruby)
 
@@ -219,14 +183,17 @@ def generate_state_root
   #    order: created_at DESC, id DESC — гарантує детерміновану сортировку при рівному часі
   latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
 
-  # 3. Timestamp моменту формування хешу (⚠️ BLOCKER-6: non-reproducible)
-  timestamp = Time.current.utc.iso8601
+  # 3. Timestamp моменту формування хешу (зберігається в EthereumAnchor.anchored_at)
+  timestamp = Time.current.utc
 
   # 4. Конкатенація через | роздільник
-  payload = "#{total_scc}|#{latest_chain_hash}|#{timestamp}"
+  payload = "#{total_scc}|#{latest_chain_hash}|#{timestamp.iso8601}"
 
   # 5. SHA-256 хешування → 64-символьний hex рядок (256 bits / 32 bytes)
-  Digest::SHA256.hexdigest(payload)
+  state_root = Digest::SHA256.hexdigest(payload)
+
+  # 6. Повернути всі компоненти для збереження в EthereumAnchor (BLOCKER-6)
+  { state_root: state_root, total_scc: total_scc, chain_hash: latest_chain_hash, anchored_at: timestamp }
 end
 ```
 
@@ -243,11 +210,11 @@ Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64
 |------------|------------|
 | Загальний SCC supply (всі гаманці) | Кількість активних дерев |
 | Останній AuditLog chain_hash | TelemetryLog count за тиждень |
-| Timestamp виконання | Lorenz Z-value статистика |
+| Timestamp виконання (збережений в БД) | Lorenz Z-value статистика |
 | | SFC supply |
 | | Merkle root над індивідуальними tree hashes |
 
-> **Примітка:** Це SHA-256 flat commitment, а не повноцінний Merkle Root (детальніше — BLOCKER INFO).
+> **Примітка:** Це SHA-256 flat commitment, а не повноцінний Merkle Root. Для TRL 9 можна розглянути справжній Merkle Tree над `TelemetryLog.chain_hash` значеннями за тиждень. Незалежна верифікація: `EthereumAnchor#verify_state_root` відтворює хеш з збережених компонентів.
 
 ---
 
@@ -262,12 +229,23 @@ Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64
 generate_state_root()
        │
        ▼
+generate_state_root()  →  { state_root, total_scc, chain_hash, anchored_at }
+       │
+       ▼
+EthereumAnchor.create!(state_root:, total_scc:, chain_hash:, anchored_at:, status: :pending)
+       │ Crash recovery: запис існує до TX (якщо процес впаде — запис залишиться в :pending)
+       │
+       ▼
 Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
        │ Thread-cached Eth::Client → Alchemy Ethereum Mainnet HTTPS endpoint
        │
        ▼
 Eth::Key.new(priv: ENV.fetch("ETHEREUM_ANCHOR_PRIVATE_KEY"))
-       │ Secp256k1 приватний ключ → Ethereum адреса oracle-гаманця
+       │
+       ▼
+balance = client.get_balance(anchor_key.address)
+       │ balance < MIN_ANCHOR_BALANCE_WEI (0.01 ETH)?
+       │   → anchor.update!(status: :failed) + raise
        │
        ▼
 Eth::Contract.from_abi(name: "StateRootAnchor", address: ETHEREUM_ANCHOR_CONTRACT, abi: ANCHOR_ABI)
@@ -278,29 +256,35 @@ root_bytes = "0x#{state_root}"   # 64-char hex → 0x-prefixed bytes32
        │
        ▼
 client.transact(contract, "storeStateRoot", root_bytes,
-                sender_key: anchor_key, legacy: false)
-       │ legacy: false → EIP-1559 транзакція (Type 2)
-       │ ⚠️ BLOCKER-3: max_fee_per_gas / gas_limit НЕ встановлено
+                sender_key: anchor_key, legacy: false,
+                gas_limit: DEFAULT_GAS_LIMIT,          # 100_000 (ENV-overridable)
+                max_fee_per_gas: DEFAULT_MAX_FEE_GWEI,  # 100 Gwei cap
+                max_priority_fee_per_gas: DEFAULT_PRIORITY_FEE_GWEI)  # 2 Gwei tip
        │
        ▼
-TX Hash → Rails.logger.info "⚓ [Ethereum L1] State Root anchored: #{state_root} → TX: #{tx_hash}"
-       │ ⚠️ BLOCKER-2: tx_hash НЕ зберігається в БД
+anchor.update!(status: :sent, tx_hash:)
        │
        ▼
-return tx_hash
+Rails.logger.info "⚓ [Ethereum L1] State Root anchored: #{state_root} → TX: #{tx_hash}"
+       │
+       ▼
+return anchor   # EthereumAnchor instance
 ```
 
-### ENV-змінні (обов'язкові)
+### ENV-змінні
 
-| Змінна | Призначення | Де використовується |
-|--------|-------------|---------------------|
-| `ALCHEMY_ETHEREUM_RPC_URL` | Alchemy Ethereum Mainnet HTTPS endpoint | `Web3::RpcConnectionPool.client_for(...)` |
-| `ETHEREUM_ANCHOR_PRIVATE_KEY` | Secp256k1 приватний ключ oracle-гаманця | `Eth::Key.new(priv: ...)` |
-| `ETHEREUM_ANCHOR_CONTRACT` | Адреса `StateRootAnchor` контракту на Mainnet | `Eth::Contract.from_abi(address: ...)` |
+| Змінна | Призначення | Default |
+|--------|-------------|---------|
+| `ALCHEMY_ETHEREUM_RPC_URL` | Alchemy Ethereum Mainnet HTTPS endpoint | — (required) |
+| `ETHEREUM_ANCHOR_PRIVATE_KEY` | Secp256k1 приватний ключ oracle-гаманця | — (required) |
+| `ETHEREUM_ANCHOR_CONTRACT` | Адреса `StateRootAnchor` контракту на Mainnet | — (required) |
+| `ETHEREUM_MAX_FEE_GWEI` | Gas fee cap (Gwei) | `100` |
+| `ETHEREUM_PRIORITY_FEE_GWEI` | Validator tip (Gwei) | `2` |
+| `ETHEREUM_GAS_LIMIT` | Gas limit для `storeStateRoot` | `100_000` |
 
-> ⚠️ **Безпека:** `ETHEREUM_ANCHOR_PRIVATE_KEY` ніколи не повинен потрапляти в Git. Зберігається в Rails encrypted credentials або secrets manager (AWS Secrets Manager / GCP Secret Manager при деплої через Kamal).
+> ⚠️ **Безпека:** `ETHEREUM_ANCHOR_PRIVATE_KEY` ніколи не повинен потрапляти в Git. Зберігається в Rails encrypted credentials або secrets manager.
 
-### Smart Contract ABI (захардкоджено в сервісі)
+### Smart Contract ABI (в константі `ANCHOR_ABI`)
 
 ```json
 [
@@ -317,8 +301,8 @@ return tx_hash
 ```
 
 **Тип транзакції:** EIP-1559 (`legacy: false`)  
-**Метод контракту:** `storeStateRoot(bytes32 root)` — nonpayable (не приймає ETH, тільки gas)  
-**Gas:** Оцінюється автоматично `ruby-eth` через `eth_estimateGas` ⚠️ (BLOCKER-3)
+**Метод контракту:** `storeStateRoot(bytes32 root)` — nonpayable  
+**Gas:** `DEFAULT_GAS_LIMIT = 100_000` (safety cap), `storeStateRoot` потребує ~45,000 gas (1 SSTORE + event)
 
 ---
 
@@ -326,24 +310,27 @@ return tx_hash
 
 ```ruby
 rescue Net::OpenTimeout, Net::ReadTimeout => e
+  anchor&.update!(status: :failed, error_message: e.message.truncate(500)) if anchor&.persisted?
   Rails.logger.error "🛑 [Ethereum L1] Timeout: #{e.message}"
   raise "Ethereum L1 Timeout: #{e.message}"
 
 rescue IOError => e
+  anchor&.update!(status: :failed, error_message: e.message.truncate(500)) if anchor&.persisted?
   Rails.logger.error "🛑 [Ethereum L1] Connection error: #{e.message}"
   raise "Ethereum L1 Connection Error: #{e.message}"
 ```
 
 | Помилка | Джерело | Дія |
 |---------|---------|-----|
-| `Net::OpenTimeout` | RPC endpoint недоступний | Log + raise → Sidekiq retry (до 3 разів) |
-| `Net::ReadTimeout` | Відповідь від Alchemy перевищила таймаут | Log + raise → Sidekiq retry |
-| `IOError` | TCP з'єднання розірвано | Log + raise → Sidekiq retry |
+| Insufficient balance | `balance < MIN_ANCHOR_BALANCE_WEI` | `anchor.update!(status: :failed)` + raise → retry |
+| `Net::OpenTimeout` | RPC endpoint недоступний | `anchor.update!(status: :failed)` + raise → retry |
+| `Net::ReadTimeout` | Відповідь від Alchemy перевищила таймаут | `anchor.update!(status: :failed)` + raise → retry |
+| `IOError` | TCP з'єднання розірвано | `anchor.update!(status: :failed)` + raise → retry |
 | `HTTPX::TimeoutError` | (від `ApplicationWeb3Worker`) | Prometheus counter + raise |
 | `HTTPX::ConnectionError` | (від `ApplicationWeb3Worker`) | Prometheus counter + raise |
-| `KeyError` | `ENV.fetch("ALCHEMY_ETHEREUM_RPC_URL")` якщо не встановлено | Crash без retry ⚠️ |
+| `KeyError` | `ENV.fetch(...)` якщо не встановлено | Crash без retry |
 
-> **Важливо:** Після вичерпання 3 retry-спроб Sidekiq переміщує задачу в Dead Queue. Чергове спрацювання cron (наступний понеділок) відправить новий `state_root` — **пропущений тиждень не буде перезаписано**.
+> **Важливо:** Після вичерпання 5 retry-спроб Sidekiq переміщує задачу в Dead Queue. Чергове спрацювання cron (наступний понеділок) відправить новий `state_root` з іншим `anchored_at` — **пропущений тиждень не буде перезаписано**.
 
 ---
 
@@ -372,13 +359,16 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 | `incorporates total scc_balance from all wallets` | `Wallet.sum(:scc_balance)` впливає на результат |
 | `incorporates chain_hash from latest AuditLog` | AuditLog chain_hash впливає на результат |
 | `uses GENESIS fallback when no AuditLog exists` | Порожній AuditLog → `"GENESIS"` fallback |
-| `incorporates timestamp so results differ over time` | Timestamp впливає на результат |
-| `returns L1 transaction hash on success` | `anchor_to_l1!` повертає tx_hash |
+| `creates EthereumAnchor with status: pending before TX` | Crash recovery: запис до TX |
+| `updates EthereumAnchor to sent with tx_hash on success` | Persistence BLOCKER-2 |
+| `raises and sets status: failed if ETH balance too low` | Balance guard BLOCKER-4 |
+| `uses gas_limit, max_fee_per_gas, priority_fee from ENV` | Gas management BLOCKER-3 |
+| `stores all state_root components for independent verification` | BLOCKER-6 |
 | `connects to Alchemy Ethereum RPC` | Правильний RPC endpoint |
 | `calls storeStateRoot with a 0x-prefixed bytes32 root` | Формат bytes32 аргументу |
-| `rescues Net::OpenTimeout` | Timeout → RuntimeError з описом |
-| `rescues Net::ReadTimeout` | Timeout → RuntimeError з описом |
-| `rescues IOError` | Connection error → RuntimeError з описом |
+| `rescues Net::OpenTimeout and updates anchor to failed` | Timeout + EthereumAnchor persistence |
+| `rescues Net::ReadTimeout and updates anchor to failed` | Timeout + EthereumAnchor persistence |
+| `rescues IOError and updates anchor to failed` | Connection error + EthereumAnchor persistence |
 | `logs successful anchoring` | Rails.logger.info при успіху |
 
 ### `spec/workers/ethereum_anchor_worker_spec.rb`
@@ -387,8 +377,18 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 |------|-------------|
 | `calls Ethereum::StateAnchorService#anchor_to_l1!` | Делегація до сервісу |
 | `uses the web3_low queue` | Правильна черга |
-| `has retry set to 3` | Кількість retry |
+| `has retry set to 5` | Кількість retry |
 | `re-raises errors after logging` | Error propagation для Sidekiq retry |
+
+### `spec/models/ethereum_anchor_spec.rb`
+
+| Тест | Що перевіряє |
+|------|-------------|
+| validations (presence, uniqueness, format) | state_root, tx_hash, total_scc, chain_hash |
+| `verify_state_root` | Відтворення хешу з компонентів (незалежна верифікація) |
+| `etherscan_url` | URL генерація для confirmed TX |
+| scopes: `recent`, `successful`, `latest_confirmed` | AR scopes |
+| enum status transitions | pending/sent/confirmed/failed |
 
 ---
 
@@ -407,21 +407,25 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 ║    Wallet.scc_balance може змінитись (BurnCarbonTokensWorker)       ║
 ║                                                                      ║
 ║  Понеділок 03:00 UTC ← ТОЧКА ФІНАЛІЗАЦІЇ                            ║
-║    EthereumAnchorWorker (web3_low, cron: '0 3 * * 1')               ║
+║    EthereumAnchorWorker (web3_low, cron: '0 3 * * 1', retry: 5)     ║
 ║       │                                                              ║
 ║       ▼                                                              ║
 ║    generate_state_root():                                            ║
 ║      total_scc    = Wallet.sum(:scc_balance)         [PostgreSQL]   ║
 ║      chain_hash   = AuditLog.last.chain_hash         [PostgreSQL]   ║
-║      timestamp    = Time.current.utc.iso8601         [Runtime]      ║
+║      anchored_at  = Time.current.utc                 [Runtime]      ║
 ║      state_root   = SHA256(scc|hash|ts)              [CPU]          ║
 ║       │                                                              ║
 ║       ▼                                                              ║
-║    anchor_to_l1!(state_root):                                        ║
+║    EthereumAnchor.create!(status: :pending)          [PostgreSQL]   ║
+║       │                                                              ║
+║       ▼                                                              ║
+║    anchor_to_l1!:                                                    ║
+║      ETH balance guard (>= 0.01 ETH)                                ║
 ║      Alchemy RPC → Ethereum Mainnet                                  ║
-║      storeStateRoot(bytes32) → TX Hash                              ║
+║      storeStateRoot(bytes32, gas_limit:, max_fee:)                  ║
+║      EthereumAnchor.update!(status: :sent, tx_hash:)  [PostgreSQL] ║
 ║      Rails.logger.info "⚓ State Root anchored"                      ║
-║      ⚠️ БД НЕ оновлюється (BLOCKER-2)                               ║
 ╚══════════════════════════════════════════════════════════════════════╝
           │
           ▼
@@ -474,8 +478,13 @@ ALCHEMY_ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
 # Oracle-гаманець для підпису L1 транзакцій
 ETHEREUM_ANCHOR_PRIVATE_KEY=0x...   # ⚠️ НІКОЛИ не комітити!
 
-# Адреса StateRootAnchor контракту на Mainnet
-ETHEREUM_ANCHOR_CONTRACT=0x...      # ⚠️ Контракт відсутній у contracts/ (BLOCKER-1)
+# Адреса StateRootAnchor контракту на Mainnet (contracts/StateRootAnchor.sol)
+ETHEREUM_ANCHOR_CONTRACT=0x...
+
+# Gas management (опціональні; значення за замовчуванням — безпечні для більшості умов)
+ETHEREUM_MAX_FEE_GWEI=100        # Default: 100 Gwei cap
+ETHEREUM_PRIORITY_FEE_GWEI=2     # Default: 2 Gwei (validator tip)
+ETHEREUM_GAS_LIMIT=100000        # Default: 100_000 (storeStateRoot ~45k gas)
 ```
 
 ### Рекомендовані перевірки перед деплоєм
@@ -488,25 +497,24 @@ bundle exec rails runner "ENV.fetch('ALCHEMY_ETHEREUM_RPC_URL'); ENV.fetch('ETHE
 # Через Alchemy Dashboard або etherscan.io
 
 # 3. Запустити тести:
-bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_spec.rb
+bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_spec.rb spec/models/ethereum_anchor_spec.rb
 ```
 
 ---
 
 ## Зміни від Попередньої Версії SSOT
 
-> Цей документ є **першою версією** синхронізованого SSOT для модуля 05_04.  
-> Попередня документація: відсутня (TRL 7 — механізм існував, але не був задокументований).
-
-| Аспект | До (TRL 7) | Після (TRL 8) |
+| Аспект | TRL 8 (до PR #254) | TRL 9 (після PR #254) |
 |--------|-----------|--------------|
-| Документація | Відсутня | Повна (цей документ) |
-| Cron-розклад | В коді, не задокументований | `'0 3 * * 1'` — задокументовано |
-| Алгоритм state_root | Неочевидний з коду | Точна формула SHA256(scc\|hash\|ts) |
-| Блокери | Не виявлені | 4 критичних + 2 середніх + 2 інфо |
-| RSpec покриття | Існувало | Задокументовано (12 тестів сервісу, 4 тести воркера) |
+| `StateRootAnchor.sol` | 🔴 Відсутній | ✅ `contracts/StateRootAnchor.sol` |
+| `EthereumAnchor` модель | 🔴 Відсутня | ✅ `app/models/ethereum_anchor.rb` |
+| Персистентність state_root | 🔴 Тільки logger | ✅ PostgreSQL аудит-трейл |
+| Gas management | 🔴 Відсутній | ✅ Явні caps + ENV overrides |
+| ETH balance guard | 🟡 Тільки Treasury monitor | ✅ Inline guard перед TX |
+| `.env.example` | 🔴 Відсутній | ✅ Додано до репозиторію |
+| Reproducible state_root | 🔴 Non-reproducible | ✅ Компоненти збережені в EthereumAnchor |
+| Worker retry | 3 | 5 |
 
 ---
 
-*Документ синхронізовано з кодбейсом `Alexey-Lukin/silken_net` станом на **2026-03-23**.  
-Наступна синхронізація — після вирішення BLOCKER-1 (StateRootAnchor.sol) та BLOCKER-2 (DB persistence).*
+*Документ синхронізовано з кодбейсом `Alexey-Lukin/silken_net` станом на **2026-04-15** (PR #254).*

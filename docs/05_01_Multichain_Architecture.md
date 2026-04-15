@@ -400,19 +400,19 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **Сервіс** | `Ethereum::StateAnchorService` |
 | **Воркер** | `EthereumAnchorWorker` |
 | **Черга** | `web3_low` (пріоритет 8) |
-| **Retry** | 3 |
-| **Cron** | `0 3 * * 1` (щопонеділка о 03:00 UTC) |
+| **Retry** | 5 |
 | **Unique** | `unique_for: 1.hour` (запобігає overlapping) |
-| **ENV** | `ETHEREUM_ANCHOR_PRIVATE_KEY`, `ETHEREUM_ANCHOR_CONTRACT` |
+| **ENV** | `ETHEREUM_ANCHOR_PRIVATE_KEY`, `ETHEREUM_ANCHOR_CONTRACT`, `ETHEREUM_MAX_FEE_GWEI`, `ETHEREUM_PRIORITY_FEE_GWEI`, `ETHEREUM_GAS_LIMIT` |
 | **RPC** | `ALCHEMY_ETHEREUM_RPC_URL` |
 | **Спека** | `spec/services/ethereum/state_anchor_service_spec.rb` |
 
 **Алгоритм:**
 ```ruby
-state_root = Digest::SHA256.hexdigest(
-  "#{total_scc_supply}:#{chain_hash}:#{timestamp}"
-)
+root_data = generate_state_root  # { state_root, total_scc, chain_hash, anchored_at }
+# EthereumAnchor.create!(status: :pending, **root_data)
+state_root = Digest::SHA256.hexdigest("#{total_scc}|#{chain_hash}|#{anchored_at.iso8601}")
 # → Ethereum L1: storeStateRoot(bytes32)
+# EthereumAnchor.update!(status: :sent, tx_hash:)
 ```
 
 **Економіка:** 32 байти раз на тиждень. Мінімальний газ, але рівень безпеки мережі Ethereum вартістю в сотні мільярдів доларів.

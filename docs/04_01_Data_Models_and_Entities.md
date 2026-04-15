@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 25 моделей, 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
+Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 26 моделей, 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
 
 ---
 
@@ -1052,12 +1052,55 @@ active/draft ──cancel──► cancelled
 
 ---
 
+### `EthereumAnchor` — Аудит-Трейл L1 Anchoring
+
+**Призначення:** Персистентний журнал щотижневих операцій фіналізації стану Gaia 2.0 в Ethereum Mainnet. Зберігає `state_root`, `tx_hash`, `block_number` та компоненти для незалежної верифікації (BLOCKER-2, BLOCKER-6).
+
+**Ключові поля:**
+
+| Поле | Тип | Опис |
+|------|-----|------|
+| `state_root` | string(64) | 64-char SHA-256 hex дайджест (`UNIQUE`) |
+| `total_scc` | decimal(30,4) | Загальний SCC-баланс усіх гаманців на момент anchoring |
+| `chain_hash` | string | chain_hash останнього `AuditLog` на момент anchoring |
+| `anchored_at` | datetime | UTC-timestamp включений у хеш |
+| `tx_hash` | string(66) | Ethereum TX hash (`0x` + 64 hex chars, `UNIQUE WHERE NOT NULL`) |
+| `block_number` | bigint | Номер блоку підтвердження |
+| `gas_used` | bigint | Витрачений газ |
+| `status` | integer | Enum: `pending(0) / sent(1) / confirmed(2) / failed(3)` |
+| `error_message` | string(500) | Деталі помилки (якщо є) |
+
+**Enum `status`** (prefix: true)**:**
+
+| Значення | Int | Опис |
+|----------|-----|------|
+| `pending` | 0 | State root обчислено, TX ще не відправлена |
+| `sent` | 1 | TX відправлена в мемпул |
+| `confirmed` | 2 | TX підтверджена в L1 блоці |
+| `failed` | 3 | Помилка відправлення або підтвердження |
+
+**Валідації:**
+- `state_root` — presence, uniqueness, format `/\A[a-f0-9]{64}\z/`
+- `tx_hash` — uniqueness, format `/\A0x[a-fA-F0-9]{64}\z/` (when present); presence required for `sent`/`confirmed`
+- `total_scc` — presence, `>= 0`
+- `chain_hash`, `anchored_at` — presence
+
+**Scopes:** `recent`, `successful` (confirmed), `latest_confirmed`.
+
+**Методи:**
+- `verify_state_root` — незалежно відтворює хеш з `total_scc|chain_hash|anchored_at.iso8601` та порівнює з `state_root` (для зовнішнього аудитора)
+- `etherscan_url` — повертає `https://etherscan.io/tx/#{tx_hash}` або `nil`
+
+**Використовується:** `Ethereum::StateAnchorService#anchor_to_l1!` (записує до TX), `EthereumAnchorWorker`.
+
+---
+
 ## 🌱 8. Seeds — Початковий Стан Системи
 
 Порядок видалення при очищенні (від листя до кореня):
 
 ```
-AuditLog, Session, Identity
+AuditLog, Session, Identity, EthereumAnchor
 ActuatorCommand, MaintenanceRecord
 BlockchainTransaction, TelemetryLog, GatewayTelemetryLog, AiInsight, EwsAlert
 Wallet, DeviceCalibration
@@ -1099,6 +1142,10 @@ Cluster, User, Organization
 | `gateway_telemetry_logs` | `idx_gateway_telemetry_logs_queen_uid_created` | BTREE (ONLY) | Зв'язок через uid |
 | `actuator_commands` | `index_actuator_commands_on_idempotency_token` | UNIQUE | Захист від дублів |
 | `actuator_commands` | `index_actuator_commands_on_expires_at` | PARTIAL | status IN (0,1) |
+| `ethereum_anchors` | `index_ethereum_anchors_on_state_root` | UNIQUE BTREE | Дедуплікація state roots |
+| `ethereum_anchors` | `index_ethereum_anchors_on_tx_hash` | UNIQUE PARTIAL (WHERE NOT NULL) | Lookup по TX hash |
+| `ethereum_anchors` | `index_ethereum_anchors_on_status` | BTREE | Фільтр по статусу |
+| `ethereum_anchors` | `index_ethereum_anchors_on_created_at` | BTREE | Хронологічна пагінація |
 | `audit_logs` | `index_audit_logs_on_org_and_created` | BTREE DESC | Пагінація аудиту |
 | `audit_logs` | `index_audit_logs_on_ip_address` | PARTIAL | ip_address IS NOT NULL |
 | `bio_contract_firmwares` | `index_bio_contract_firmwares_on_is_active` | PARTIAL | is_active = true |

@@ -364,9 +364,9 @@
 |---|---|
 | **Файл** | `app/services/ethereum/state_anchor_service.rb` |
 | **Вхід** | — (no args) |
-| **Що робить** | Тижневий SHA-256 state root → Ethereum L1. `root = SHA256("#{total_scc}|#{latest_chain_hash}|#{timestamp}")`. `storeStateRoot(bytes32)` на смарт-контракті. 1 запис на тиждень (gas-efficient). |
-| **Зовнішні виклики** | Ethereum Mainnet RPC (`ALCHEMY_ETHEREUM_RPC_URL`), `StateRootAnchor` contract |
-| **Вихід** | `tx_hash` (String). Raises при timeout/connection error. |
+| **Що робить** | Тижневий SHA-256 state root → Ethereum L1 з повним аудит-трейлом. **[BLOCKER-2]** Перед TX створює `EthereumAnchor` запис (status: `pending`) для crash recovery. **[BLOCKER-3]** Gas management: `DEFAULT_GAS_LIMIT=100_000`, `DEFAULT_MAX_FEE_GWEI=100`, `DEFAULT_PRIORITY_FEE_GWEI=2` — всі перекриваються ENV. **[BLOCKER-4]** Inline guard: перевіряє ETH-баланс wallet (`MIN_ANCHOR_BALANCE_WEI = 0.01 ETH`) перед TX; при недостатньому балансі — `EthereumAnchor.status = failed` + raise. **[BLOCKER-6]** `generate_state_root` повертає `{ state_root, total_scc, chain_hash, anchored_at }` — всі компоненти зберігаються в `EthereumAnchor` для незалежної верифікації методом `verify_state_root`. Formula: `SHA256("#{total_scc}\|#{chain_hash}\|#{anchored_at.iso8601}")`. Після успішної TX — `anchor.update!(status: :sent, tx_hash:)`. |
+| **Зовнішні виклики** | Ethereum Mainnet RPC (`ALCHEMY_ETHEREUM_RPC_URL`), `StateRootAnchor` contract (`storeStateRoot(bytes32)`) |
+| **Вихід** | `EthereumAnchor` (AR instance). Raises при недостатньому балансі, timeout або connection error. |
 
 ### `Filecoin::ArchiveService`
 
@@ -799,7 +799,7 @@
 | Параметр | Значення |
 |----------|----------|
 | **Черга** | `web3_low` |
-| **Retry** | 3, unique_for: 7 днів |
+| **Retry** | 5, unique_for: 7 днів |
 | **Тригер** | Sidekiq cron: щопонеділка 03:00 UTC |
 | **Вхід** | — |
 | **Сервіси** | `Ethereum::StateAnchorService.new.anchor_to_l1!` |
