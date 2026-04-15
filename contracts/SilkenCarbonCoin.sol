@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
 /**
@@ -13,71 +14,143 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
  *      Це дозволяє власникам SCC підписувати approve() оффлайн,
  *      а relayer/backend подає підпис on-chain без газу від власника.
  *      Необхідно для майбутньої інтеграції з DEX, P2P marketplace та Paymaster (ERC-4337).
+ *
+ * [B-01] MAX_SUPPLY = 1 000 000 000 SCC — верхня межа емісії.
+ * [B-02] Розділено MINTER_ROLE та SLASHER_ROLE на окремі oracle-адреси.
+ * [B-03] Конструктор валідує ненульові адреси.
+ * [B-04] batchMint обмежено 200 елементами для gas safety.
+ * [B-10] Events: string поля не indexed, додано bytes32 indexed хеші.
+ * [B-13] ReentrancyGuard для превентивного захисту.
  */
-contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ERC20Permit {
+contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ERC20Permit {
 
+    /// @notice Роль для карбування нових токенів (Proof of Growth oracle).
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+
+    /// @notice Роль для спалювання токенів при slashing protocol (окремий oracle).
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
-    event CarbonMinted(address indexed investor, uint256 amount, string indexed treeDid);
+    /// @notice [B-01] Максимальна емісія SCC: 1 мільярд токенів (18 decimals).
+    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 1e18;
+
+    /// @notice [B-04] Максимальна кількість елементів у batchMint для gas safety.
+    uint256 public constant MAX_BATCH_SIZE = 200;
+
+    /// @notice Емітується при мінтингу SCC для конкретного дерева.
+    /// @param investor Адреса отримувача токенів.
+    /// @param amount Кількість токенів (wei).
+    /// @param treeDidHash Keccak256 хеш DID дерева (indexed для пошуку).
+    /// @param treeDid Повний DID дерева у читабельному вигляді.
+    event CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid);
+
+    /// @notice Емітується при спалюванні токенів через slashing protocol.
+    /// @param investor Адреса, з якої спалюються токени.
+    /// @param amount Кількість спалених токенів (wei).
     event TokenSlashed(address indexed investor, uint256 amount);
 
-    constructor(address admin, address oracle)
+    /// @notice Емітується при оплаті страхової премії (Parametric Insurance).
+    /// @param payer Адреса платника премії.
+    /// @param amount Сума премії (wei).
+    event PremiumPaid(address indexed payer, uint256 amount);
+
+    /// @notice [B-02][B-03] Конструктор з розділеними oracle-адресами.
+    /// @param admin Адміністратор контракту (DEFAULT_ADMIN_ROLE).
+    /// @param minterOracle Oracle-адреса для мінтингу (MINTER_ROLE).
+    /// @param slasherOracle Oracle-адреса для slashing (SLASHER_ROLE).
+    constructor(address admin, address minterOracle, address slasherOracle)
         ERC20("Silken Carbon Coin", "SCC")
         ERC20Permit("Silken Carbon Coin")
     {
-        _grantRole(DEFAULT_ADMIN_ROLE, admin); 
-        _grantRole(MINTER_ROLE, oracle);
-        _grantRole(SLASHER_ROLE, oracle);
+        require(admin != address(0), "SCC: zero admin");
+        require(minterOracle != address(0), "SCC: zero minter oracle");
+        require(slasherOracle != address(0), "SCC: zero slasher oracle");
+
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(MINTER_ROLE, minterOracle);
+        _grantRole(SLASHER_ROLE, slasherOracle);
     }
 
-    /**
-     * @notice Емісія токенів на основі підтвердженого гомеостазу.
-     */
-    function mint(address to, uint256 amount, string calldata treeDid) 
-        external 
-        onlyRole(MINTER_ROLE) 
+    /// @notice [B-12] Емісія токенів для конкретного дерева на основі Proof of Growth.
+    /// @param to Адреса отримувача.
+    /// @param amount Кількість токенів (wei).
+    /// @param treeDid DID дерева-джерела.
+    function mintForTree(address to, uint256 amount, string calldata treeDid)
+        external
+        onlyRole(MINTER_ROLE)
+        nonReentrant
     {
+        require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
         _mint(to, amount);
-        emit CarbonMinted(to, amount, treeDid);
+        emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
     }
 
-    /**
-     * @notice Масовий мінтинг токенів для економії газу при обробці всього сектора.
-     * @param recipients Масив адрес отримувачів.
-     * @param amounts Масив сум для кожного отримувача.
-     * @param treeDids Масив DID дерев-джерел.
-     */
+    /// @notice Backward-compatible alias для mintForTree.
+    /// @param to Адреса отримувача.
+    /// @param amount Кількість токенів (wei).
+    /// @param treeDid DID дерева-джерела.
+    function mint(address to, uint256 amount, string calldata treeDid)
+        external
+        onlyRole(MINTER_ROLE)
+        nonReentrant
+    {
+        require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
+        _mint(to, amount);
+        emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
+    }
+
+    /// @notice [B-04] Масовий мінтинг токенів для економії газу при обробці всього сектора.
+    /// @param recipients Масив адрес отримувачів (max 200).
+    /// @param amounts Масив сум для кожного отримувача.
+    /// @param treeDids Масив DID дерев-джерел.
     function batchMint(
         address[] calldata recipients,
         uint256[] calldata amounts,
         string[] calldata treeDids
-    ) external onlyRole(MINTER_ROLE) {
+    ) external onlyRole(MINTER_ROLE) nonReentrant {
         uint256 length = recipients.length;
-        require(length == amounts.length && length == treeDids.length, "SCC: Array lengths mismatch");
+        require(length == amounts.length && length == treeDids.length, "SCC: array length mismatch");
+        require(length <= MAX_BATCH_SIZE, "SCC: batch too large");
 
         for (uint256 i = 0; i < length; i++) {
+            require(totalSupply() + amounts[i] <= MAX_SUPPLY, "SCC: cap exceeded");
             _mint(recipients[i], amounts[i]);
-            emit CarbonMinted(recipients[i], amounts[i], treeDids[i]);
+            emit CarbonMinted(recipients[i], amounts[i], keccak256(bytes(treeDids[i])), treeDids[i]);
         }
     }
 
-    function slash(address investor, uint256 amount) 
-        external 
-        onlyRole(SLASHER_ROLE) 
+    /// @notice Спалювання токенів через slashing protocol (>20% аномальних дерев у кластері).
+    /// @param investor Адреса, з якої спалюються токени.
+    /// @param amount Кількість токенів для спалювання (wei).
+    function slash(address investor, uint256 amount)
+        external
+        onlyRole(SLASHER_ROLE)
+        nonReentrant
     {
         _burn(investor, amount);
         emit TokenSlashed(investor, amount);
     }
 
+    /// @notice Запис оплати страхової премії (Parametric Insurance).
+    /// @param payer Адреса платника премії.
+    /// @param amount Сума премії (wei).
+    function recordPremiumPaid(address payer, uint256 amount)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        emit PremiumPaid(payer, amount);
+    }
+
+    /// @notice Призупинення всіх трансферів (emergency).
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
+    /// @notice Відновлення трансферів після призупинення.
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
+    /// @dev [B-07] Уніфіковано: whenNotPaused modifier для всіх трансферів.
     function _update(address from, address to, uint256 value)
         internal
         override
@@ -86,9 +159,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ERC20Permit {
         super._update(from, to, value);
     }
 
-    /**
-     * @notice Override nonces для сумісності ERC20Permit + Nonces.
-     */
+    /// @notice Override nonces для сумісності ERC20Permit + Nonces.
     function nonces(address owner)
         public
         view

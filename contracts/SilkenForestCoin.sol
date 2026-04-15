@@ -4,71 +4,135 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 /**
  * @title Silken Forest Coin (SFC)
- * @notice Токен управління та біорізноманіття.
+ * @notice Токен управління (governance) та біорізноманіття для екосистеми Gaia 2.0.
+ * @dev ERC20Votes додано для підтримки DAO governance (Governor/Timelock).
+ *      ERC20Permit — gasless approvals (EIP-2612).
+ *
+ * [B-01] MAX_SUPPLY = 100 000 000 SFC — верхня межа емісії governance токенів.
+ * [B-03] Конструктор валідує ненульові адреси.
+ * [B-04] batchMint обмежено 200 елементами для gas safety.
+ * [B-06] Додано SLASHER_ROLE та slash() для governance slashing.
+ * [B-07] Уніфіковано: whenNotPaused modifier замість ручної перевірки.
+ * [B-10] Events: string поля не indexed, додано bytes32 indexed хеші.
+ * [B-13] ReentrancyGuard для превентивного захисту.
+ * [B-14] Повний NatSpec для аудиту (CertiK/Hacken).
  */
-contract SilkenForestCoin is ERC20, AccessControl, Pausable, ERC20Permit, ERC20Votes {
+contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ERC20Permit, ERC20Votes {
 
+    /// @notice Роль для карбування нових governance токенів.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    event ForestMinted(address indexed investor, uint256 amount, string indexed clusterId);
+    /// @notice [B-06] Роль для спалювання governance токенів при slashing protocol.
+    bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
-    constructor(address admin, address oracle)
+    /// @notice [B-01] Максимальна емісія SFC: 100 мільйонів governance токенів (18 decimals).
+    uint256 public constant MAX_SUPPLY = 100_000_000 * 1e18;
+
+    /// @notice [B-04] Максимальна кількість елементів у batchMint для gas safety.
+    uint256 public constant MAX_BATCH_SIZE = 200;
+
+    /// @notice Емітується при мінтингу SFC для кластера.
+    /// @param investor Адреса отримувача governance токенів.
+    /// @param amount Кількість токенів (wei).
+    /// @param clusterIdHash Keccak256 хеш ID кластера (indexed для пошуку).
+    /// @param clusterId Повний ID кластера у читабельному вигляді.
+    event ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId);
+
+    /// @notice [B-06] Емітується при спалюванні governance токенів через slashing protocol.
+    /// @param investor Адреса, з якої спалюються governance токени.
+    /// @param amount Кількість спалених токенів (wei).
+    event GovernanceSlashed(address indexed investor, uint256 amount);
+
+    /// @notice [B-03] Конструктор з валідацією ненульових адрес.
+    /// @param admin Адміністратор контракту (DEFAULT_ADMIN_ROLE).
+    /// @param oracle Oracle-адреса для мінтингу (MINTER_ROLE).
+    /// @param slasherOracle Oracle-адреса для governance slashing (SLASHER_ROLE).
+    constructor(address admin, address oracle, address slasherOracle)
         ERC20("Silken Forest Coin", "SFC")
         ERC20Permit("Silken Forest Coin")
     {
+        require(admin != address(0), "SFC: zero admin");
+        require(oracle != address(0), "SFC: zero oracle");
+        require(slasherOracle != address(0), "SFC: zero slasher oracle");
+
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MINTER_ROLE, oracle);
+        _grantRole(SLASHER_ROLE, slasherOracle);
     }
 
-    function mint(address to, uint256 amount, string calldata clusterId) 
-        external 
-        onlyRole(MINTER_ROLE) 
-        whenNotPaused 
+    /// @notice Емісія governance токенів для кластера лісу.
+    /// @param to Адреса отримувача.
+    /// @param amount Кількість токенів (wei).
+    /// @param clusterId ID кластера лісу.
+    function mint(address to, uint256 amount, string calldata clusterId)
+        external
+        onlyRole(MINTER_ROLE)
+        nonReentrant
     {
+        require(totalSupply() + amount <= MAX_SUPPLY, "SFC: cap exceeded");
         _mint(to, amount);
-        emit ForestMinted(to, amount, clusterId);
+        emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId);
     }
 
-    /**
-     * @notice Пакетна емісія токенів управління.
-     */
+    /// @notice [B-04] Пакетна емісія governance токенів з обмеженням розміру масиву.
+    /// @param recipients Масив адрес отримувачів (max 200).
+    /// @param amounts Масив сум для кожного отримувача.
+    /// @param clusterIds Масив ID кластерів.
     function batchMint(
         address[] calldata recipients,
         uint256[] calldata amounts,
         string[] calldata clusterIds
-    ) external onlyRole(MINTER_ROLE) whenNotPaused {
+    ) external onlyRole(MINTER_ROLE) nonReentrant {
         uint256 length = recipients.length;
-        require(length == amounts.length && length == clusterIds.length, "SFC: Array lengths mismatch");
+        require(length == amounts.length && length == clusterIds.length, "SFC: array length mismatch");
+        require(length <= MAX_BATCH_SIZE, "SFC: batch too large");
 
         for (uint256 i = 0; i < length; i++) {
+            require(totalSupply() + amounts[i] <= MAX_SUPPLY, "SFC: cap exceeded");
             _mint(recipients[i], amounts[i]);
-            emit ForestMinted(recipients[i], amounts[i], clusterIds[i]);
+            emit ForestMinted(recipients[i], amounts[i], keccak256(bytes(clusterIds[i])), clusterIds[i]);
         }
     }
 
+    /// @notice [B-06] Спалювання governance токенів через slashing protocol.
+    /// @dev Видаляє DAO voting power у "нечесних" учасників після порушення NaaS контракту.
+    /// @param investor Адреса, з якої спалюються governance токени.
+    /// @param amount Кількість токенів для спалювання (wei).
+    function slash(address investor, uint256 amount)
+        external
+        onlyRole(SLASHER_ROLE)
+        nonReentrant
+    {
+        _burn(investor, amount);
+        emit GovernanceSlashed(investor, amount);
+    }
+
+    /// @notice Призупинення всіх трансферів (emergency).
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
+    /// @notice Відновлення трансферів після призупинення.
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
+    /// @dev [B-07] Уніфіковано: whenNotPaused modifier для всіх трансферів (як у SCC).
     function _update(address from, address to, uint256 value)
         internal
         override(ERC20, ERC20Votes)
+        whenNotPaused
     {
-        if (paused()) {
-            revert EnforcedPause();
-        }
         super._update(from, to, value);
     }
 
+    /// @notice Override nonces для сумісності ERC20Permit + Nonces.
     function nonces(address owner)
         public
         view
