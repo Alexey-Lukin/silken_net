@@ -24,15 +24,15 @@ class BlockchainTransaction < ApplicationRecord
   def self.find_with_partition_pruning(id, created_at = nil)
     scope = where(id: id)
     if created_at.present?
-      time = created_at.is_a?(String) ? Time.iso8601(created_at) : created_at
+      time = created_at.is_a?(String) ? Time.iso8601(created_at) : created_at.to_time
       # Use a 1-second range to account for sub-second precision differences
       # between ISO 8601 (second precision) and DB timestamps (microsecond).
       # PostgreSQL still prunes to at most one partition for a 1-second window.
       scope = scope.where(created_at: time...(time + 1))
     end
     scope.first!
-  rescue ArgumentError
-    # Invalid ISO 8601 format — fall back to unscoped lookup
+  rescue ArgumentError, TypeError, NoMethodError
+    # Invalid format or unexpected type — fall back to unscoped lookup
     where(id: id).first!
   end
 

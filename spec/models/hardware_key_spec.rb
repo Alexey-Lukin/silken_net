@@ -161,16 +161,21 @@ RSpec.describe HardwareKey, type: :model do
       hw_key = create(:hardware_key)
       hw_key.cached_binary_key # prime the cache
       old_binary = hw_key.binary_key
+      old_versioned_key = "#{hw_key.device_uid}:v:#{hw_key.updated_at.to_f}"
 
       device_uid = hw_key.device_uid
       hw_key.destroy!
 
-      new_hw_key = create(:hardware_key, device_uid: device_uid)
+      # Force a different AES key to guarantee different binary_key
+      new_aes = SecureRandom.hex(32).upcase
+      new_hw_key = create(:hardware_key, device_uid: device_uid, aes_key_hex: new_aes)
       new_cached = new_hw_key.cached_binary_key
+      new_versioned_key = "#{new_hw_key.device_uid}:v:#{new_hw_key.updated_at.to_f}"
 
       # Different updated_at → different versioned key → fresh binary_key
+      expect(new_versioned_key).not_to eq(old_versioned_key)
       expect(new_cached).to eq(new_hw_key.binary_key)
-      expect(new_cached).not_to eq(old_binary) unless new_hw_key.aes_key_hex == hw_key.aes_key_hex
+      expect(new_cached).not_to eq(old_binary)
     end
   end
 
