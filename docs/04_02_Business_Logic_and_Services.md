@@ -19,7 +19,7 @@
 | Компонент | Файл | Призначення |
 |-----------|------|-------------|
 | `ApplicationService` | `app/services/application_service.rb` | Базовий клас для всіх сервісів. Надає `.call(...)` → `new(...).perform` template. |
-| `ApplicationWeb3Worker` | `app/workers/application_web3_worker.rb` | Базовий **модуль** (не клас) для всіх блокчейн-воркерів. Включає: RPC rate limiter (50 rps), уніфіковану обробку помилок (HTTPX/Net timeouts), partition-pruned TelemetryLog lookup. |
+| `ApplicationWeb3Worker` | `app/workers/application_web3_worker.rb` | Базовий **модуль** (не клас) для всіх блокчейн-воркерів. Включає: RPC rate limiter (50 rps), уніфіковану обробку помилок (HTTPX/Net timeouts), partition-pruned lookups: `find_telemetry_log_with_pruning(id, created_at_iso)` та `find_blockchain_tx_with_pruning(id, created_at_iso)` — обидва додають `created_at` у `WHERE` для уникнення Global Partition Scan по RANGE-партиціонованих таблицях. |
 | `Web3CircuitBreaker` | `app/workers/concerns/web3_circuit_breaker.rb` | **[NEW]** ActiveSupport Concern із 3-state Circuit Breaker (`:closed` → `:open` → `:half_open`). `FAILURE_THRESHOLD=5` послідовних помилок → `OPEN_TIMEOUT=300с` (5 хв) fail-fast. Стан зберігається в `Rails.cache` (Solid Cache) — працює між Sidekiq-процесами та серверами. Розпізнає transient errors: `HTTPX::TimeoutError`, `Net::ReadTimeout`, `Errno::ECONNREFUSED`, `Web3::HttpClient::RequestError` + wrapped custom errors (`transient_cause?` перевіряє `Exception#cause` рекурсивно). Prometheus metric: `CIRCUIT_BREAKER_REJECTIONS`. Raises `CircuitOpenError` при відкритому circuit. Інтегровано в `IotexVerificationWorker`, `ChainlinkDispatchWorker`. |
 | `CoapEncryption` | `app/workers/concerns/coap_encryption.rb` | Concern для downlink-воркерів. AES-256-CBC шифрування з випадковим IV, нульовий padding. Формат: `[IV:16][Ciphertext:N×16]`. |
 
@@ -423,8 +423,8 @@
 | | |
 |---|---|
 | **Файл** | `app/services/toucan/bridge_service.rb` |
-| **Вхід** | `blockchain_transaction_id` (Integer) |
-| **Що робить** | SCC → TCO2 bridge через Toucan Protocol на Polygon. `deposit(scc_address, amount_wei)` на ToucanCarbonBridge контракті. |
+| **Вхід** | `blockchain_transaction_id` (Integer), `created_at_iso` (String, ISO 8601, опціонально) |
+| **Що робить** | SCC → TCO2 bridge через Toucan Protocol на Polygon. `deposit(scc_address, amount_wei)` на ToucanCarbonBridge контракті. Використовує `BlockchainTransaction.find_with_partition_pruning` для partition-aware lookup. |
 | **Зовнішні виклики** | Polygon RPC → `ToucanCarbonBridge.deposit` |
 | **Вихід** | `tx_hash` (String). |
 
@@ -740,8 +740,8 @@
 | **Черга** | `web3_critical` |
 | **Retry** | 5 |
 | **Тригер** | Ручний запуск при bridging request |
-| **Вхід** | `blockchain_transaction_id` (Integer) |
-| **Сервіси** | `Toucan::BridgeService.call(blockchain_transaction_id)` |
+| **Вхід** | `blockchain_transaction_id` (Integer), `created_at_iso` (String, ISO 8601, опціонально) |
+| **Сервіси** | `find_blockchain_tx_with_pruning(blockchain_transaction_id, created_at_iso)`, `Toucan::BridgeService.call(blockchain_transaction_id, created_at_iso)` |
 | **Side Effects** | `tx.mark_as_sent!`. `wallet.locked_balance -= locked_points`, `wallet.toucan_bridged_balance += locked_points`. `BlockchainConfirmationWorker.perform_in(30.seconds, ...)`. |
 
 ---

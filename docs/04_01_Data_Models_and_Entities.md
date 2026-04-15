@@ -369,14 +369,14 @@ any ──report_fault──► faulty
 | Метод | Опис |
 |-------|------|
 | `binary_key` | `[aes_key_hex].pack("H*")` — мемоізовано |
-| `cached_binary_key` | `Rails.cache.fetch("hw_key:#{device_uid}:bin", expires_in: 15.minutes)` — Redis-кеш для hot path |
+| `cached_binary_key` | In-process LRU (SinLruRedux::ThreadSafeCache, max 10 000 entries). Ключ: `versioned_cache_key` — включає `updated_at` для самоінвалідації. Ключі не залишають Ruby-процес (немає Redis-serialize) |
+| `versioned_cache_key` | `"#{device_uid}:v:#{updated_at.to_f}"` — при будь-якому `update!` `updated_at` змінюється → новий ключ → стара запис ніколи не збігається (Cache Key Versioning). Усуває race condition між `COMMIT` і `after_commit` |
 | `binary_previous_key` | Попередній ключ у байтах (Grace Period) |
-| `rotate_key!` | М'яка ротація: старий → `previous_aes_key_hex`, новий генерується |
+| `rotate_key!` | М'яка ротація: старий → `previous_aes_key_hex`, новий генерується. Deprecated — використовуйте `HardwareKeyService.rotate` |
 | `clear_grace_period!` | Очищення `previous_aes_key_hex` після підтвердження синхронізації |
 | `owner` | `tree || gateway` |
 
-**Callbacks:**
-- `after_commit :clear_key_cache, on: %i[update destroy]` — автоматична інвалідація Redis-кешу при зміні або видаленні ключа
+**Callbacks:** немає cache-інвалідаційних callbacks (`after_commit :clear_key_cache` видалено). Інвалідація відбувається автоматично через `versioned_cache_key`.
 
 ---
 
@@ -810,7 +810,9 @@ any ──report_fault──► faulty
 - `fail(reason)` (any→failed)
 - `escalate_to_review(reason)` (pending/processing/sent/failed→manual_review) — **[DOUBLE-SPEND GUARD]**: tx_hash вже існує або стан на блокчейні невідомий; кошти залишаються у `locked_balance` до ручної звірки
 
-**Методи:** `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
+**Методи:** `find_with_partition_pruning(id, created_at = nil)` _(клас)_, `explorer_url`, `solana_network?`, `celo_network?`, `broadcast_status_change`.
+
+> **`find_with_partition_pruning`** — partition-aware lookup: при наявності `created_at` додає `WHERE created_at IN [time, time+1s)`, дозволяючи PostgreSQL звернутись до однієї партиції (`O(log N)`) замість глобального сканування (`O(P×log N)`). Використовується в `ApplicationWeb3Worker#find_blockchain_tx_with_pruning` та контролері (параметр `?created_at=ISO8601`).
 
 **Масштабування:** Таблиця переведена на PostgreSQL Declarative RANGE Partitioning по `created_at` (місячні партиції). Composite PK `(id, created_at)` — вимога partitioning. `self.primary_key = "id"` — Rails використовує `id` для `dom_id` та асоціацій. Всі 8 індексів перестворені (автоматично пропагуються на партиції). `PartitionMaintenanceWorker` тепер підтримує `blockchain_transactions` поряд з `telemetry_logs` та `gateway_telemetry_logs`.
 
@@ -919,7 +921,7 @@ active/draft ──cancel──► cancelled
 | `target_date` | date | Дата, до якої відноситься (unique per analyzable+type) |
 | `stress_index` | decimal | 0.0..1.0 (ключовий показник) |
 | `probability_score` | decimal | 0.0..100.0 (впевненість Оракула) |
-| `reasoning` | jsonb (GIN) | Текстові причини з повнотекстовим пошуком |
+| `reasoning` | jsonb (GIN) | Структуровані причини рішення. Два індекси: `idx_ai_insights_reasoning_gin` (JSONB GIN — containment `@>` запити) та `idx_ai_insights_reasoning_fts` (tsvector GIN — повнотекстовий пошук по `reasoning->>'description'`) |
 | `source_log_ids` | integer[] (GIN) | IDs telemetry_logs, що стали джерелом |
 | `fraud_detected` | boolean | Прапор маніпуляції даними |
 | `model_source` | string | AI-модель (GPT-4, Claude, тощо) |
@@ -930,6 +932,8 @@ active/draft ──cancel──► cancelled
 | `summary` | text | Текстовий підсумок (human-readable) |
 
 **Ключові методи:** `contract_breach?`, `confidence_level`, `forecast?`, `source_logs`, `attach_evidence!(log_ids)`, `status_label`.
+
+**Scopes:** `highly_probable`, `upcoming`, `critical_stress`, `for_date(date)`, `fraudulent`, `referencing_log(log_id)`, `search_reasoning(query)` — повнотекстовий пошук у `reasoning->>'description'` через `plainto_tsquery('simple', ...)` з використанням tsvector GIN-індексу `idx_ai_insights_reasoning_fts`.
 
 ---
 
@@ -1133,7 +1137,8 @@ Cluster, User, Organization
 |---------|--------|-----|-------------|
 | `ai_insights` | `idx_ai_insights_unique_report` | UNIQUE BTREE | analyzable + date + type + model_source |
 | `ai_insights` | `idx_ai_insights_polymorphic_type_date` | BTREE | Пошук по типу та даті |
-| `ai_insights` | `idx_ai_insights_reasoning_gin` | GIN | Повнотекстовий пошук в reasoning |
+| `ai_insights` | `idx_ai_insights_reasoning_gin` | GIN (JSONB) | Containment-запити (`@>`) в JSONB полі reasoning |
+| `ai_insights` | `idx_ai_insights_reasoning_fts` | GIN (tsvector) | Повнотекстовий пошук по `reasoning->>'description'` — використовується scope `search_reasoning` |
 | `ai_insights` | `index_ai_insights_on_source_log_ids` | GIN | Пошук по масиву log IDs |
 | `telemetry_logs` | `idx_telemetry_logs_bio_status_created` | BTREE (ONLY) | Фільтр аномалій |
 | `telemetry_logs` | `idx_telemetry_logs_piezo_created` | BTREE (ONLY) | Сейсмічний моніторинг |
