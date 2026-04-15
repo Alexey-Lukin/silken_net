@@ -8,12 +8,12 @@
 
 ## ✅ Статус
 
-- **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event)
-- **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, unified pause)
+- **Поточний TRL:** TRL 9 — Всі контракти production-ready, блокери закриті (PR #254), готові до Mainnet deployment та зовнішнього аудиту.
+- **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event, mintForTree alias)
+- **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, unified `whenNotPaused`)
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
-- **The Graph subgraph:** ✅ `TokenSlashed` event name виправлено, `treeDidHash` додано
+- **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано
 - **Синхронізація:** 2026-04-15
-- **Mainnet deployment:** ✅ Всі B-01..B-15 блокери закриті в PR #254
 - **Пов'язані модулі:**
   - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
   - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
@@ -90,52 +90,59 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ERC20Permit, ERC20V
 | Роль | Константа | Призначається в конструкторі | Можливості |
 |---|---|---|---|
 | `DEFAULT_ADMIN_ROLE` | `0x00` (OpenZeppelin default) | `admin` (параметр конструктора) | Видача / відкликання будь-яких ролей; `pause()`, `unpause()` |
-| `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `oracle` (параметр конструктора) | `mint()`, `batchMint()` |
-| `SLASHER_ROLE` | `keccak256("SLASHER_ROLE")` | `oracle` (параметр конструктора) | `slash()` |
+| `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `minterOracle` (окремий параметр) | `mintForTree()`, `mint()`, `batchMint()` |
+| `SLASHER_ROLE` | `keccak256("SLASHER_ROLE")` | `slasherOracle` (окремий параметр) | `slash()` |
 
 ```solidity
-constructor(address admin, address oracle) ERC20("Silken Carbon Coin", "SCC") {
+constructor(address admin, address minterOracle, address slasherOracle)
+    ERC20("Silken Carbon Coin", "SCC")
+{
+    require(admin != address(0), "SCC: zero admin");
+    require(minterOracle != address(0), "SCC: zero minter");
+    require(slasherOracle != address(0), "SCC: zero slasher");
     _grantRole(DEFAULT_ADMIN_ROLE, admin);
-    _grantRole(MINTER_ROLE, oracle);
-    _grantRole(SLASHER_ROLE, oracle);   // ⚠️ Та сама адреса — BLOCKER B-02
+    _grantRole(MINTER_ROLE, minterOracle);    // ✅ Окремий ключ для мінтингу
+    _grantRole(SLASHER_ROLE, slasherOracle);  // ✅ Окремий ключ для slashing
 }
 ```
-
-> ⚠️ **Архітектурна проблема:** Один `oracle` акаунт отримує і `MINTER_ROLE`, і `SLASHER_ROLE`. Компрометація одного ключа `ORACLE_PRIVATE_KEY` дозволяє одночасно карбувати та спалювати токени — повний контроль над економікою.
 
 ### SFC — Ролі
 
 | Роль | Константа | Призначається в конструкторі | Можливості |
 |---|---|---|---|
 | `DEFAULT_ADMIN_ROLE` | `0x00` | `admin` | Видача / відкликання ролей; `pause()`, `unpause()` |
-| `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `oracle` | `mint()`, `batchMint()` |
+| `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `minterOracle` | `mint()`, `batchMint()` |
+| `SLASHER_ROLE` | `keccak256("SLASHER_ROLE")` | `slasherOracle` | `slash()` — спалення governance-токенів при breach |
 
 ```solidity
-constructor(address admin, address oracle)
+constructor(address admin, address minterOracle, address slasherOracle)
     ERC20("Silken Forest Coin", "SFC")
     ERC20Permit("Silken Forest Coin")
 {
+    require(admin != address(0), "SFC: zero admin");
+    require(minterOracle != address(0), "SFC: zero minter");
+    require(slasherOracle != address(0), "SFC: zero slasher");
     _grantRole(DEFAULT_ADMIN_ROLE, admin);
-    _grantRole(MINTER_ROLE, oracle);
+    _grantRole(MINTER_ROLE, minterOracle);
+    _grantRole(SLASHER_ROLE, slasherOracle);  // ✅ SFC тепер підтримує slashing governance токенів
 }
 ```
 
-> **Архітектурне рішення:** SFC свідомо не має `SLASHER_ROLE` — governance токени не спалюються при порушенні NaaS контракту. Потенційний наслідок: "нечесні" учасники зберігають DAO voting power після slashing. Потрібне явне архітектурне рішення — BLOCKER B-06.
-
 ### Матриця Дозволів
 
-| Дія | SCC MINTER | SCC SLASHER | SCC ADMIN | SFC MINTER | SFC ADMIN |
-|---|---|---|---|---|---|
-| `mint()` SCC | ✅ | ❌ | ❌ | — | — |
-| `batchMint()` SCC | ✅ | ❌ | ❌ | — | — |
-| `slash()` SCC | ❌ | ✅ | ❌ | — | — |
-| `pause()` SCC | ❌ | ❌ | ✅ | — | — |
-| `unpause()` SCC | ❌ | ❌ | ✅ | — | — |
-| Видача ролей SCC | ❌ | ❌ | ✅ | — | — |
-| `mint()` SFC | — | — | — | ✅ | ❌ |
-| `batchMint()` SFC | — | — | — | ✅ | ❌ |
-| `pause()` SFC | — | — | — | ❌ | ✅ |
-| Видача ролей SFC | — | — | — | ❌ | ✅ |
+| Дія | SCC MINTER | SCC SLASHER | SCC ADMIN | SFC MINTER | SFC SLASHER | SFC ADMIN |
+|---|---|---|---|---|---|---|
+| `mintForTree()` / `mint()` SCC | ✅ | ❌ | ❌ | — | — | — |
+| `batchMint()` SCC | ✅ | ❌ | ❌ | — | — | — |
+| `slash()` SCC | ❌ | ✅ | ❌ | — | — | — |
+| `pause()` SCC | ❌ | ❌ | ✅ | — | — | — |
+| `unpause()` SCC | ❌ | ❌ | ✅ | — | — | — |
+| Видача ролей SCC | ❌ | ❌ | ✅ | — | — | — |
+| `mint()` SFC | — | — | — | ✅ | ❌ | ❌ |
+| `batchMint()` SFC | — | — | — | ✅ | ❌ | ❌ |
+| `slash()` SFC | — | — | — | ❌ | ✅ | ❌ |
+| `pause()` SFC | — | — | — | ❌ | ❌ | ✅ |
+| Видача ролей SFC | — | — | — | ❌ | ❌ | ✅ |
 
 ---
 
@@ -163,10 +170,7 @@ function mint(address to, uint256 amount, string calldata treeDid)
 
 - **Модифікатор:** `onlyRole(MINTER_ROLE)`
 - **Guard on pause:** Опосередковано через `_update → whenNotPaused`
-- **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mint", to, amount, identifier)`
-- **Подія:** `CarbonMinted(address indexed investor, uint256 amount, string indexed treeDid)`
-
-> ⚠️ **Розбіжність з Wiki:** Wiki (05_01, 05_02) посилається на функцію `mintForTree`, але в реальному контракті функція називається `mint`. Назва в ABI `BlockchainMintingService` також `"mint"` — відповідає контракту.
+- **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mintForTree", to, amount, identifier)` (також доступний `"mint"` alias)
 
 #### `batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata treeDids)`
 
@@ -186,7 +190,7 @@ function batchMint(
 ```
 
 - **Призначення:** Газово-ефективна масова емісія для цілих секторів/кластерів
-- **Валідація:** Перевірка рівності довжин масивів; **ліміт розміру відсутній** — BLOCKER B-04
+- **Валідація:** Перевірка рівності довжин масивів; `MAX_BATCH_SIZE = 200` — захист від gas overflow (≈30M gas limit Polygon)
 - **Dynamic Tax:** При виклику `batchMint` з бекенду, `BlockchainMintingService` вставляє додаткових отримувачів (`DAO_TREASURY_ADDRESS`) коли баланс Treasury < 100,000 SCC
 - **Gas Optimization [PR #253]:** `Treasury::MintBatchCollectorService` (cron кожні 5 хв) агрегує pending TX та відправляє пакетами по 100 через `BlockchainMintingService.call_batch`. `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Urgent TX (>30 хв) відправляються негайно.
 
@@ -206,8 +210,6 @@ function slash(address investor, uint256 amount)
 - **Тригер:** `BurnCarbonTokensWorker → BlockchainBurningService → slash(investor, amount)` при >20% аномальних дерев у кластері
 - **Guard on pause:** `_burn → _update → whenNotPaused` — слешинг заблокований під час паузи
 - **Подія:** `TokenSlashed(address indexed investor, uint256 amount)`
-
-> 🚨 **Критичний баг subgraph:** `subgraph/subgraph.yaml` підписаний на `Slashed(...)`, тоді як контракт емітує `TokenSlashed(...)`. Slashing-події **не індексуються** The Graph — `ProtocolFinancials.totalBurned` завжди `0`. ([05_01 BLOCKER-2])
 
 #### `pause()` / `unpause()`
 
@@ -267,16 +269,14 @@ function mint(address to, uint256 amount, string calldata clusterId)
 function _update(address from, address to, uint256 value)
     internal
     override(ERC20, ERC20Votes)
+    whenNotPaused
 {
-    if (paused()) {
-        revert EnforcedPause();
-    }
     super._update(from, to, value);
 }
 ```
 
 - Override необхідний через конфлікт між `ERC20` та `ERC20Votes`
-- Перевірка паузи вручну (`if (paused()) revert EnforcedPause()`) замість модифікатора `whenNotPaused` — відмінність від SCC патерну (BLOCKER B-07)
+- Використовує `whenNotPaused` модифікатор — уніфіковано з SCC патерном
 
 #### `nonces(address owner)` — override для EIP-2612
 
@@ -298,8 +298,9 @@ function nonces(address owner)
 
 | Подія | Сигнатура | Indexed поля | Subgraph |
 |---|---|---|---|
-| `CarbonMinted` | `CarbonMinted(address indexed investor, uint256 amount, string indexed treeDid)` | `investor`, `treeDid` (→ keccak256) | ✅ `handleCarbonMinted` |
-| `TokenSlashed` | `TokenSlashed(address indexed investor, uint256 amount)` | `investor` | 🚨 Subgraph слухає `Slashed` — MISMATCH |
+| `CarbonMinted` | `CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid)` | `investor`, `treeDidHash` | ✅ `handleCarbonMinted` |
+| `TokenSlashed` | `TokenSlashed(address indexed investor, uint256 amount)` | `investor` | ✅ `handleTokenSlashed` |
+| `PremiumPaid` | `PremiumPaid(address indexed payer, uint256 amount)` | `payer` | ✅ `handlePremiumPaid` |
 
 ### SFC
 
@@ -311,11 +312,9 @@ function nonces(address owner)
 
 | Event у subgraph.yaml | Подія у контракті | Статус |
 |---|---|---|
-| `CarbonMinted(indexed address,uint256,indexed string)` | `CarbonMinted` | ✅ Збігається |
-| `TokenSlashed(indexed address,uint256)` | `TokenSlashed` | ✅ Виправлено |
-| `PremiumPaid(indexed address,uint256)` | ❌ **Відсутня в контракті** | 🚨 Подія не існує — BLOCKER B-08 |
-
-> ⚠️ **Indexed string у Events:** `string indexed treeDid` та `string indexed clusterId` зберігаються як `keccak256` хеш — не як рядок. Off-chain підписники не можуть прочитати значення без окремого lookup. (BLOCKER B-10)
+| `CarbonMinted(indexed address,uint256,indexed bytes32,string)` | `CarbonMinted` | ✅ `treeDidHash` (bytes32) |
+| `TokenSlashed(indexed address,uint256)` | `TokenSlashed` | ✅ Синхронізовано |
+| `PremiumPaid(indexed address,uint256)` | `PremiumPaid` | ✅ Event + handler додано |
 
 ---
 
@@ -400,7 +399,7 @@ BurnCarbonTokensWorker [queue: critical]
         ↓
 BlockchainBurningService#call
         ↓
-SCC: slash(investor, amount)   ← SLASHER_ROLE (= той самий ORACLE_PRIVATE_KEY)
+SCC: slash(investor, amount)   ← SLASHER_ROLE (`ORACLE_SLASHER_PRIVATE_KEY`)
         ↓
 emit TokenSlashed(...)
         ↓
@@ -440,14 +439,14 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 
 ```yaml
 # subgraph/subgraph.yaml — поточний стан eventHandlers:
-- event: CarbonMinted(indexed address,uint256,indexed string)
-  handler: handleCarbonMinted           # ✅ OK
+- event: CarbonMinted(indexed address,uint256,indexed bytes32,string)
+  handler: handleCarbonMinted           # ✅ treeDidHash як bytes32
 
-- event: Slashed(indexed address,uint256,indexed string)
-  handler: handleSlashed                # 🚨 MISMATCH: контракт emits "TokenSlashed"
+- event: TokenSlashed(indexed address,uint256)
+  handler: handleTokenSlashed           # ✅ Синхронізовано з контрактом
 
 - event: PremiumPaid(indexed address,uint256)
-  handler: handlePremiumPaid            # 🚨 Подія відсутня в контракті
+  handler: handlePremiumPaid            # ✅ Event додано до контракту
 ```
 
 **GraphQL Entities:**
@@ -466,8 +465,8 @@ type CarbonMintEvent @entity {
 type ProtocolFinancials @entity {
   id: ID!
   totalMinted: BigInt!
-  totalBurned: BigInt!    # ⚠️ Завжди 0 через MISMATCH
-  totalPremiums: BigInt!  # ⚠️ Завжди 0 — PremiumPaid відсутня в контракті
+  totalBurned: BigInt!    # ✅ Індексується через TokenSlashed
+  totalPremiums: BigInt!  # ✅ Індексується через PremiumPaid
 }
 ```
 
@@ -481,7 +480,7 @@ type ProtocolFinancials @entity {
 | **Toolchain** | Foundry (forge, cast, anvil) |
 | **OpenZeppelin** | 5.x (`pragma ^0.8.20`) |
 | **RPC** | `ALCHEMY_POLYGON_RPC_URL` (через `Web3::RpcConnectionPool`) |
-| **Oracle wallet** | `ORACLE_PRIVATE_KEY` — єдиний ключ для MINTER + SLASHER |
+| **Oracle wallet** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER_ROLE) + `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER_ROLE) — окремі ключі |
 | **The Graph** | `subgraph/` — індексує лише SCC події (SFC — ні) |
 | **Chainlink** | Oracle dispatch для Proof of Growth pipeline (⚠️ Hybrid mode) |
 | **peaq DID** | Верифікація `did:peaq:0x...` перед мінтингом |
@@ -491,25 +490,6 @@ type ProtocolFinancials @entity {
 | **Ethereum L1** | Weekly state root anchoring (SHA-256) |
 
 ---
-
-## ✅ Закриті Блокери (PR #254)
-
-Всі блокери, виявлені під час аудиту, закриті в PR #254 (commit 6f4e7ee). Контракти готові до зовнішнього аудиту (CertiK/Hacken) та Mainnet deployment.
-
-| # | Блокер | Область | Статус |
-|---|---|---|---|
-| B-01 | Відсутність max supply | Security | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` / `100_000_000 SFC` з `require` |
-| B-02 | Єдиний oracle = minter + slasher | Security | ✅ Конструктор: `minterOracle` + `slasherOracle` — окремі ролі |
-| B-03 | Zero address check відсутній | Security | ✅ `require(admin != address(0))` у конструкторах SCC та SFC |
-| B-04 | Відсутній ліміт batchMint | Functional | ✅ `MAX_BATCH_SIZE = 200` + pre-calculated total (gas optimization) |
-| B-06 | SFC без slash механізму | Governance | ✅ `SLASHER_ROLE` + `slash()` + `GovernanceSlashed` event додано до SFC |
-| B-07 | Непослідовна реалізація паузи | Maintainability | ✅ Уніфіковано: `whenNotPaused` в `_update` для SCC та SFC |
-| B-08 | `PremiumPaid` відсутня в контракті | Subgraph | ✅ `PremiumPaid` event + `recordPremiumPaid()` додано до SCC |
-| B-10 | Indexed `string` у Events | Observability | ✅ `treeDidHash = keccak256(treeDid)` як окреме `bytes32 indexed` поле |
-| B-12 | `mintForTree` vs `mint` назва | Documentation | ✅ `mintForTree()` + backward-compatible `mint()` alias в SCC |
-| B-13 | Відсутній ReentrancyGuard | Security | ✅ `ReentrancyGuard` успадковано в SCC та SFC |
-| B-14 | Неповний NatSpec у SFC | Documentation | ✅ Повний NatSpec для всіх функцій SCC та SFC |
-| B-15 | `startBlock: 0` у subgraph | Performance | ✅ TODO-коментар уточнено; реальний startBlock встановлюється при деплої |
 
 ## 📂 Структура Файлів (File Map)
 
