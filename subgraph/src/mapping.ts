@@ -1,7 +1,7 @@
 import { BigInt } from "@graphprotocol/graph-ts";
 import {
   CarbonMinted,
-  Slashed,
+  TokenSlashed,
   PremiumPaid,
 } from "../generated/SilkenCarbonCoin/SilkenCarbonCoin";
 import {
@@ -43,16 +43,15 @@ export function handleCarbonMinted(event: CarbonMinted): void {
   financials.save();
 }
 
-export function handleSlashed(event: Slashed): void {
+export function handleTokenSlashed(event: TokenSlashed): void {
   let id =
     event.transaction.hash.toHexString() +
     "-" +
     event.logIndex.toString();
   let entity = new SlashingEvent(id);
 
-  entity.target = event.params.target;
+  entity.target = event.params.investor;
   entity.amount = event.params.amount;
-  entity.treeDid = event.params.treeDid;
   entity.timestamp = event.block.timestamp;
 
   entity.save();

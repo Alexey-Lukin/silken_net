@@ -38,8 +38,22 @@ module Iotex
       }
     end
 
+    # [BLOCKER-06 FIX]: Ed25519-підпис payload'у ключем з HardwareKey.binary_key.
+    # Замість SHA256-хеша, формуємо криптографічний підпис, що доводить
+    # апаратне походження даних із конкретного STM32 пристрою.
+    # W3bstream може верифікувати, що саме цей пристрій надіслав цю телеметрію.
     def hardware_signature
-      Digest::SHA256.hexdigest("#{@tree.did}:#{@telemetry_log.id_value}:#{@telemetry_log.created_at.to_i}")
+      hardware_key = @tree.hardware_key
+      if hardware_key&.binary_key.present?
+        message = "#{@tree.did}:#{@telemetry_log.id_value}:#{@telemetry_log.created_at.to_i}"
+        Ed25519Crypto::SigningService.sign(hardware_key.binary_key, message)
+      else
+        # Fallback для пристроїв без provisioned key (legacy/dev).
+        # У production WEB3_STRICT_MODE=true заблокує це через окремий guard.
+        Rails.logger.warn "⚠️ [W3bstream] HardwareKey відсутній для Tree #{@tree.did}. " \
+                          "Використовуємо SHA256 fallback (не підтверджує апаратне походження)."
+        Digest::SHA256.hexdigest("#{@tree.did}:#{@telemetry_log.id_value}:#{@telemetry_log.created_at.to_i}")
+      end
     end
 
     def send_to_w3bstream(payload)
@@ -60,11 +74,21 @@ module Iotex
       raise VerificationError, e.message
     end
 
+    # [BLOCKER-07 FIX]: Додана валідація формату proof reference.
+    # Перевіряємо, що zk_proof_ref відповідає очікуваному формату
+    # (hex, UUID, або W3bstream proof ID: alphanumeric + hyphens),
+    # а не є довільним рядком з пробілами чи спецсимволами.
+    ZK_PROOF_REF_PATTERN = /\A[0-9a-zA-Z\-_]{8,128}\z/
+
     def parse_response(response)
       body = response.parsed_body
       zk_proof_ref = body["proof_id"] || body["receipt_id"]
 
       raise VerificationError, "W3bstream не повернув proof reference" if zk_proof_ref.blank?
+
+      unless zk_proof_ref.match?(ZK_PROOF_REF_PATTERN)
+        raise VerificationError, "W3bstream повернув невалідний proof reference: #{zk_proof_ref.truncate(50)}"
+      end
 
       zk_proof_ref
     rescue Web3::HttpClient::RequestError => e

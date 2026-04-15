@@ -19,7 +19,6 @@ type SlashingEvent @entity {
   id: ID!
   target: Bytes!
   amount: BigInt!
-  treeDid: String!
   timestamp: BigInt!
 }
 

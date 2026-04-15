@@ -98,7 +98,7 @@ class PrometheusCollector
   # Refresh Sidekiq queue gauges on each Prometheus scrape.
   # Uses Sidekiq::Queue API (reads from Redis, ~1ms per queue).
   def refresh_sidekiq_gauges
-    web3_queues = %w[web3 web3_critical]
+    web3_queues = %w[web3 web3_critical web3_low]
 
     web3_queues.each do |queue_name|
       queue = Sidekiq::Queue.new(queue_name)

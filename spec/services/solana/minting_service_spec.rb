@@ -131,6 +131,10 @@ RSpec.describe Solana::MintingService do
           method = kwargs[:body][:method]
           rpc_calls << method
           case method
+          when "getBalance"
+            Web3::HttpClient::Response.new(
+              { "jsonrpc" => "2.0", "result" => { "value" => 1_000_000_000 } }.to_json
+            )
           when "getLatestBlockhash"
             Web3::HttpClient::Response.new(
               { "jsonrpc" => "2.0", "result" => { "value" => { "blockhash" => "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N" } } }.to_json
@@ -144,7 +148,7 @@ RSpec.describe Solana::MintingService do
 
         described_class.new(log).mint_micro_reward!
 
-        expect(rpc_calls).to eq(%w[getLatestBlockhash sendTransaction])
+        expect(rpc_calls).to eq(%w[getBalance getLatestBlockhash sendTransaction])
       end
 
       it "signs the transaction message with Ed25519" do
@@ -326,14 +330,18 @@ RSpec.describe Solana::MintingService do
         log = create(:telemetry_log, :verified_telemetry, tree: tree, growth_points: 10)
         wallet.update!(solana_public_address: recipient_solana_address)
 
-        call_count = 0
-        allow(Web3::HttpClient).to receive(:post) do |_url, **_kwargs|
-          call_count += 1
-          if call_count == 1
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          method = kwargs[:body][:method]
+          case method
+          when "getBalance"
+            Web3::HttpClient::Response.new(
+              { "jsonrpc" => "2.0", "result" => { "value" => 1_000_000_000 } }.to_json
+            )
+          when "getLatestBlockhash"
             Web3::HttpClient::Response.new(
               { "jsonrpc" => "2.0", "result" => { "value" => { "blockhash" => "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N" } } }.to_json
             )
-          else
+          when "sendTransaction"
             Web3::HttpClient::Response.new(
               { "jsonrpc" => "2.0" }.to_json
             )
@@ -384,6 +392,10 @@ RSpec.describe Solana::MintingService do
         allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
           method = kwargs[:body][:method]
           case method
+          when "getBalance"
+            Web3::HttpClient::Response.new(
+              { "jsonrpc" => "2.0", "result" => { "value" => 1_000_000_000 } }.to_json
+            )
           when "getLatestBlockhash"
             Web3::HttpClient::Response.new(
               { "jsonrpc" => "2.0", "result" => { "value" => { "blockhash" => "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N" } } }.to_json
@@ -410,6 +422,10 @@ RSpec.describe Solana::MintingService do
         allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
           method = kwargs[:body][:method]
           case method
+          when "getBalance"
+            Web3::HttpClient::Response.new(
+              { "jsonrpc" => "2.0", "result" => { "value" => 1_000_000_000 } }.to_json
+            )
           when "getLatestBlockhash"
             Web3::HttpClient::Response.new(
               { "jsonrpc" => "2.0", "result" => { "value" => { "blockhash" => "EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N" } } }.to_json
@@ -504,6 +520,11 @@ RSpec.describe Solana::MintingService do
         Web3::HttpClient::Response.new(
           { "jsonrpc" => "2.0", "result" => "5UfDuX7hXbLMKnPRqHxJgpPh6W9y3m4Nk7v2zKQ1YdCE" }.to_json
         )
+      when "getBalance"
+        # [BLOCKER-1 FIX]: Return sufficient balance (1 SOL = 1_000_000_000 lamports)
+        Web3::HttpClient::Response.new(
+          { "jsonrpc" => "2.0", "result" => { "value" => 1_000_000_000 } }.to_json
+        )
       else
         Web3::HttpClient::Response.new(
           { "jsonrpc" => "2.0", "result" => {} }.to_json
@@ -524,6 +545,10 @@ RSpec.describe Solana::MintingService do
         Web3::HttpClient::Response.new(
           { "jsonrpc" => "2.0", "error" => { "code" => -32002, "message" => "Transaction simulation failed" } }.to_json
         )
+      when "getBalance"
+        Web3::HttpClient::Response.new(
+          { "jsonrpc" => "2.0", "result" => { "value" => 1_000_000_000 } }.to_json
+        )
       end
     end
   end
@@ -535,6 +560,10 @@ RSpec.describe Solana::MintingService do
       when "getLatestBlockhash"
         Web3::HttpClient::Response.new(
           { "jsonrpc" => "2.0", "result" => {} }.to_json
+        )
+      when "getBalance"
+        Web3::HttpClient::Response.new(
+          { "jsonrpc" => "2.0", "result" => { "value" => 1_000_000_000 } }.to_json
         )
       end
     end

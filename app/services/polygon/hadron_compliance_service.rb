@@ -52,25 +52,27 @@ module Polygon
 
     private
 
-    # Симулює API-виклик до Hadron Identity Platform для перевірки KYC.
-    # У production буде реальний HTTP-запит до Hadron API.
+    # [BLOCKER-4 FIX]: У production (WEB3_STRICT_MODE=true) заглушки вимкнено.
     def check_kyc_status(crypto_address)
       api_key = Rails.application.credentials.hadron_api_key
 
       if api_key.present?
         perform_kyc_request(crypto_address, api_key)
+      elsif ENV["WEB3_STRICT_MODE"] == "true"
+        raise ComplianceError, "hadron_api_key обов'язковий у Production (WEB3_STRICT_MODE=true)."
       else
         simulate_kyc_check(crypto_address)
       end
     end
 
-    # Симулює реєстрацію RWA активу на Hadron.
-    # У production буде реальний HTTP-запит до Hadron API.
+    # [BLOCKER-4 FIX]: У production (WEB3_STRICT_MODE=true) заглушки вимкнено.
     def register_rwa_asset(naas_contract)
       api_key = Rails.application.credentials.hadron_api_key
 
       if api_key.present?
         perform_asset_registration(naas_contract, api_key)
+      elsif ENV["WEB3_STRICT_MODE"] == "true"
+        raise ComplianceError, "hadron_api_key обов'язковий у Production (WEB3_STRICT_MODE=true)."
       else
         simulate_asset_registration(naas_contract)
       end

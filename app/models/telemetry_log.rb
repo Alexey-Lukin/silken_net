@@ -17,6 +17,15 @@ class TelemetryLog < ApplicationRecord
     tamper_detected: 3   # Вандалізм / Розкриття корпусу
   }, prefix: true
 
+  # [BLOCKER-12 FIX]: Enum для oracle_status замість plain string.
+  # Забезпечує type safety, Rails-level валідацію та автоматичні scope-методи.
+  enum :oracle_status, {
+    pending: "pending",
+    dispatched: "dispatched",
+    fulfilled: "fulfilled",
+    failed: "failed"
+  }, prefix: true
+
   # --- ВАЛІДАЦІЇ ---
   # [KENOSIS TITAN]: Валідації видалено з hot path.
   # На Series C/D масштабі (мільйони пакетів/хв) дані перевіряються

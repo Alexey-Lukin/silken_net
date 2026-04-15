@@ -43,24 +43,23 @@ module Peaq
         metadata: metadata
       }
 
-      # peaq — Substrate-мережа, що використовує Ed25519 для підпису транзакцій.
-      # Підписуємо DID-документ для криптографічного підтвердження автентичності.
-      # Гем `eth` (secp256k1) тут не підходить — потрібен `ed25519`.
+      # [BLOCKER-08 FIX]: peaq_signing_key обов'язковий для W3C DID Core compliance.
+      # Без Ed25519-підпису DID-документ не має криптографічного доказу автентичності.
       peaq_signing_key = Rails.application.credentials.peaq_signing_key
-      if peaq_signing_key.present?
-        begin
-          signature = Ed25519Crypto::SigningService.sign(peaq_signing_key, did_string)
-          public_key = Ed25519Crypto::SigningService.public_key_from_seed(peaq_signing_key)
-        rescue Ed25519Crypto::SigningService::SigningError => e
-          raise RegistrationError, "Invalid peaq_signing_key in credentials: #{e.message}"
-        end
-        body[:proof] = {
-          type: "Ed25519Signature2020",
-          verification_method: "#{did_string}#key-1",
-          signature: signature,
-          public_key: public_key
-        }
+      raise RegistrationError, "peaq_signing_key обов'язковий у credentials для реєстрації DID (W3C DID Core spec)" if peaq_signing_key.blank?
+
+      begin
+        signature = Ed25519Crypto::SigningService.sign(peaq_signing_key, did_string)
+        public_key = Ed25519Crypto::SigningService.public_key_from_seed(peaq_signing_key)
+      rescue Ed25519Crypto::SigningService::SigningError => e
+        raise RegistrationError, "Invalid peaq_signing_key in credentials: #{e.message}"
       end
+      body[:proof] = {
+        type: "Ed25519Signature2020",
+        verification_method: "#{did_string}#key-1",
+        signature: signature,
+        public_key: public_key
+      }
 
       Web3::HttpClient.post("#{node_url}/did/register",
         body: body,

@@ -65,3 +65,19 @@
     ethereum_state_anchor:
       cron: '0 3 * * 1' # Щопонеділка о 03:00 UTC, після завершення всіх нічних циклів
       class: EthereumAnchorWorker
+
+    # --- ЦИКЛ КАЗНАЧЕЙСТВА (The Treasury Guardian) ---
+    # Моніторинг балансів Oracle-гаманців на всіх 4 мережах.
+    # 15-хвилинний інтервал — баланси змінюються рідко, але критично
+    # відслідковувати падіння нижче порогу перед наступним мінтингом.
+    treasury_monitor:
+      cron: '*/15 * * * *' # Кожні 15 хвилин
+      class: TreasuryMonitorWorker
+
+    # --- ЦИКЛ БАТЧ-КОЛЕКТОРА (The Gas Optimizer) ---
+    # Збирає pending транзакції та відправляє пакетами через batchMint.
+    # Gas savings: batchMint(100) ≈ 30-40% дешевше ніж 100 × mint().
+    # Працює паралельно з MintCarbonCoinWorker (oracle-driven immediate minting).
+    mint_batch_collector:
+      cron: '*/5 * * * *' # Кожні 5 хвилин
+      class: MintBatchCollectorWorker
