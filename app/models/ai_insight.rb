@@ -41,6 +41,17 @@ class AiInsight < ApplicationRecord
   # Evidence Persistence: знайти інсайти, що посилаються на конкретний telemetry log
   scope :referencing_log, ->(log_id) { where("source_log_ids @> ARRAY[?]::bigint[]", log_id.to_i) }
 
+  # Full-text search in reasoning JSONB (uses tsvector GIN index).
+  # The idx_ai_insights_reasoning_gin (plain JSONB GIN) only supports @> containment.
+  # This scope uses the dedicated tsvector GIN index idx_ai_insights_reasoning_fts
+  # for actual word-level text search on reasoning->>'description'.
+  scope :search_reasoning, ->(query) {
+    where(
+      "to_tsvector('simple', COALESCE(reasoning->>'description', '')) @@ plainto_tsquery('simple', ?)",
+      query.to_s
+    )
+  }
+
   # --- МЕТОДИ (The Lens of Truth) ---
 
   # Чи вважається цей стан порушенням умов контракту?

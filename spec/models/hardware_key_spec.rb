@@ -102,18 +102,20 @@ RSpec.describe HardwareKey, type: :model do
       expect(hw_key.cached_binary_key).to eq(hw_key.binary_key)
     end
 
-    it "caches the result in HARDWARE_KEY_CACHE (in-process LRU)" do
+    it "caches the result in HARDWARE_KEY_CACHE with versioned key" do
       hw_key = create(:hardware_key)
       hw_key.cached_binary_key
 
-      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).to eq(hw_key.binary_key)
+      versioned_key = "#{hw_key.device_uid}:v:#{hw_key.updated_at.to_f}"
+      expect(HARDWARE_KEY_CACHE[versioned_key]).to eq(hw_key.binary_key)
     end
 
     it "serves from cache on subsequent calls without hitting binary_key" do
       hw_key = create(:hardware_key)
       hw_key.cached_binary_key # prime the cache
 
-      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).not_to be_nil
+      versioned_key = "#{hw_key.device_uid}:v:#{hw_key.updated_at.to_f}"
+      expect(HARDWARE_KEY_CACHE[versioned_key]).not_to be_nil
 
       # Stub binary_key to verify it is NOT called again
       allow(hw_key).to receive(:binary_key)
@@ -123,48 +125,52 @@ RSpec.describe HardwareKey, type: :model do
     end
   end
 
-  describe "cache invalidation" do
-    it "clears in-process cache on update" do
+  describe "cache key versioning (race condition fix)" do
+    it "uses a different cache key after update (self-invalidating)" do
       hw_key = create(:hardware_key)
-      hw_key.cached_binary_key # prime the cache
+      old_versioned_key = "#{hw_key.device_uid}:v:#{hw_key.updated_at.to_f}"
+      hw_key.cached_binary_key # prime old cache
+
+      expect(HARDWARE_KEY_CACHE[old_versioned_key]).to eq(hw_key.binary_key)
 
       hw_key.update!(aes_key_hex: SecureRandom.hex(32).upcase)
+      hw_key.reload
 
-      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).to be_nil
+      new_versioned_key = "#{hw_key.device_uid}:v:#{hw_key.updated_at.to_f}"
+      expect(new_versioned_key).not_to eq(old_versioned_key)
+
+      # New key returns fresh value; old cache entry is orphaned (LRU evicts later)
+      new_cached = hw_key.cached_binary_key
+      expect(new_cached).to eq(hw_key.binary_key)
+      expect(HARDWARE_KEY_CACHE[new_versioned_key]).to eq(hw_key.binary_key)
     end
 
-    it "clears in-process cache on destroy" do
-      hw_key = create(:hardware_key)
-      hw_key.cached_binary_key # prime the cache
-
-      hw_key.destroy!
-
-      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).to be_nil
-    end
-
-    it "clears cache on rotate_key!" do
-      hw_key = create(:hardware_key)
-      hw_key.cached_binary_key # prime the cache
-
-      hw_key.rotate_key!
-
-      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).to be_nil
-    end
-
-    it "returns new key after rotation and re-caching" do
+    it "returns new key after rotation without explicit cache invalidation" do
       hw_key = create(:hardware_key)
       old_cached = hw_key.cached_binary_key
 
       hw_key.rotate_key!
-
-      # Cache must be invalidated after rotation
-      expect(HARDWARE_KEY_CACHE[hw_key.device_uid]).to be_nil
-
       hw_key.reload
-      new_cached = hw_key.cached_binary_key
 
+      new_cached = hw_key.cached_binary_key
       expect(new_cached).not_to eq(old_cached)
       expect(new_cached).to eq(hw_key.binary_key)
+    end
+
+    it "does not serve stale cache after destroy and re-creation with same device_uid" do
+      hw_key = create(:hardware_key)
+      hw_key.cached_binary_key # prime the cache
+      old_binary = hw_key.binary_key
+
+      device_uid = hw_key.device_uid
+      hw_key.destroy!
+
+      new_hw_key = create(:hardware_key, device_uid: device_uid)
+      new_cached = new_hw_key.cached_binary_key
+
+      # Different updated_at → different versioned key → fresh binary_key
+      expect(new_cached).to eq(new_hw_key.binary_key)
+      expect(new_cached).not_to eq(old_binary) unless new_hw_key.aes_key_hex == hw_key.aes_key_hex
     end
   end
 

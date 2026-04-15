@@ -25,7 +25,10 @@ class BlockchainTransaction < ApplicationRecord
     scope = where(id: id)
     if created_at.present?
       time = created_at.is_a?(String) ? Time.iso8601(created_at) : created_at
-      scope = scope.where(created_at: time)
+      # Use a 1-second range to account for sub-second precision differences
+      # between ISO 8601 (second precision) and DB timestamps (microsecond).
+      # PostgreSQL still prunes to at most one partition for a 1-second window.
+      scope = scope.where(created_at: time...(time + 1))
     end
     scope.first!
   rescue ArgumentError
