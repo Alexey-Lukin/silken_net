@@ -93,8 +93,14 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(length == amounts.length && length == clusterIds.length, "SFC: array length mismatch");
         require(length <= MAX_BATCH_SIZE, "SFC: batch too large");
 
+        // Gas optimization: single SLOAD for totalSupply + pre-calculated total
+        uint256 batchTotal = 0;
         for (uint256 i = 0; i < length; i++) {
-            require(totalSupply() + amounts[i] <= MAX_SUPPLY, "SFC: cap exceeded");
+            batchTotal += amounts[i];
+        }
+        require(totalSupply() + batchTotal <= MAX_SUPPLY, "SFC: cap exceeded");
+
+        for (uint256 i = 0; i < length; i++) {
             _mint(recipients[i], amounts[i]);
             emit ForestMinted(recipients[i], amounts[i], keccak256(bytes(clusterIds[i])), clusterIds[i]);
         }

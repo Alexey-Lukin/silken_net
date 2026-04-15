@@ -9,7 +9,9 @@ class CreateEthereumAnchors < ActiveRecord::Migration[8.1]
       # State root — 64-char SHA-256 hex string
       t.string :state_root, null: false, limit: 64
 
-      # Компоненти state_root для незалежної верифікації (BLOCKER-6)
+      # Компоненти state_root для незалежної верифікації (BLOCKER-6).
+      # precision: 30, scale: 4 — 26 integer digits (MAX_SUPPLY = 1B = 10 digits,
+      # 16 orders of magnitude buffer for future-proofing at planetary scale).
       t.decimal :total_scc, precision: 30, scale: 4, null: false
       t.string :chain_hash, null: false
       t.datetime :anchored_at, null: false

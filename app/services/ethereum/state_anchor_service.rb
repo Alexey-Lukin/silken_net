@@ -85,7 +85,9 @@ module Ethereum
       root_data = generate_state_root
       state_root = root_data[:state_root]
 
-      # [BLOCKER-2] Створюємо запис до відправлення TX для crash recovery
+      # [BLOCKER-2] Створюємо запис до відправлення TX для crash recovery.
+      # Race condition safety: unique_for: 7.days в Sidekiq запобігає паралельним запускам,
+      # а DB unique index на state_root забезпечує додатковий захист.
       anchor = EthereumAnchor.create!(
         state_root: state_root,
         total_scc: root_data[:total_scc],

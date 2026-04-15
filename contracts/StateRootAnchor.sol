@@ -51,9 +51,11 @@ contract StateRootAnchor is AccessControl {
     }
 
     /// @notice Запис нового state root в Ethereum L1.
+    /// @dev Кожен state root може бути записаний тільки один раз (immutability).
     /// @param root 32-байтний SHA-256 дайджест глобального стану SilkenNet.
     function storeStateRoot(bytes32 root) external onlyRole(ANCHOR_ROLE) {
         require(root != bytes32(0), "StateRootAnchor: empty root");
+        require(rootTimestamps[root] == 0, "StateRootAnchor: root already anchored");
 
         anchorCount++;
         latestRoot = root;

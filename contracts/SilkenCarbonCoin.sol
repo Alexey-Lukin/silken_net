@@ -111,8 +111,14 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(length == amounts.length && length == treeDids.length, "SCC: array length mismatch");
         require(length <= MAX_BATCH_SIZE, "SCC: batch too large");
 
+        // Gas optimization: single SLOAD for totalSupply + pre-calculated total
+        uint256 batchTotal = 0;
         for (uint256 i = 0; i < length; i++) {
-            require(totalSupply() + amounts[i] <= MAX_SUPPLY, "SCC: cap exceeded");
+            batchTotal += amounts[i];
+        }
+        require(totalSupply() + batchTotal <= MAX_SUPPLY, "SCC: cap exceeded");
+
+        for (uint256 i = 0; i < length; i++) {
             _mint(recipients[i], amounts[i]);
             emit CarbonMinted(recipients[i], amounts[i], keccak256(bytes(treeDids[i])), treeDids[i]);
         }
