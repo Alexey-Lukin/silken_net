@@ -3012,6 +3012,13 @@ CREATE INDEX idx_ai_insights_reasoning_gin ON public.ai_insights USING gin (reas
 
 
 --
+-- Name: idx_ai_insights_reasoning_fts; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_insights_reasoning_fts ON public.ai_insights USING gin (to_tsvector('simple'::regconfig, COALESCE((reasoning ->> 'description'::text), ''::text)));
+
+
+--
 -- Name: idx_ai_insights_target_date; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5251,6 +5258,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260415180000'),
 ('20260415140000'),
 ('20260329111830'),
 ('20260328120000'),

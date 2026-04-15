@@ -122,6 +122,22 @@ module ApplicationWeb3Worker
     log
   end
 
+  # [COMPOSITE PK]: Partition-pruned lookup for BlockchainTransaction.
+  # blockchain_transactions is RANGE-partitioned by created_at with composite PK (id, created_at).
+  # Without created_at in WHERE, PostgreSQL scans ALL partitions (Global Partition Scan).
+  #
+  # @param blockchain_transaction_id [Integer] ID транзакції
+  # @param created_at_iso [String, nil] ISO 8601 timestamp для partition pruning
+  # @param log_prefix [String] префікс для логування
+  # @return [BlockchainTransaction, nil]
+  def find_blockchain_tx_with_pruning(blockchain_transaction_id, created_at_iso, log_prefix: "[Web3]")
+    tx = BlockchainTransaction.find_with_partition_pruning(blockchain_transaction_id, created_at_iso)
+    tx
+  rescue ActiveRecord::RecordNotFound
+    Rails.logger.error "🛑 #{log_prefix} BlockchainTransaction ##{blockchain_transaction_id} не знайдено."
+    nil
+  end
+
   private
 
   def log_web3_error(icon, chain_name, error_type, resource_info, exception)

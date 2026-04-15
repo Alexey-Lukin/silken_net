@@ -8,6 +8,34 @@ class BlockchainTransaction < ApplicationRecord
   # but Rails should use id alone for lookups, dom_id, and associations.
   self.primary_key = "id"
 
+  # ---------------------------------------------------------------------------
+  # PARTITION-AWARE LOOKUPS (Planetary Scale Guard)
+  # ---------------------------------------------------------------------------
+  # blockchain_transactions is RANGE-partitioned by created_at. Queries without
+  # the partition key in WHERE force PostgreSQL to scan ALL partitions (O(P×log N)
+  # instead of O(log N)). Always prefer find_with_partition_pruning when created_at
+  # is available — it enables single-partition index seek.
+  # ---------------------------------------------------------------------------
+
+  # @param id [Integer] record ID
+  # @param created_at [Time, String, nil] partition key for pruning
+  # @return [BlockchainTransaction]
+  # @raise [ActiveRecord::RecordNotFound] if not found
+  def self.find_with_partition_pruning(id, created_at = nil)
+    scope = where(id: id)
+    if created_at.present?
+      time = created_at.is_a?(String) ? Time.iso8601(created_at) : created_at.to_time
+      # Use a 1-second range to account for sub-second precision differences
+      # between ISO 8601 (second precision) and DB timestamps (microsecond).
+      # PostgreSQL still prunes to at most one partition for a 1-second window.
+      scope = scope.where(created_at: time...(time + 1))
+    end
+    scope.first!
+  rescue ArgumentError, TypeError, NoMethodError
+    # Invalid format or unexpected type — fall back to unscoped lookup
+    where(id: id).first!
+  end
+
   # --- ЗВ'ЯЗКИ ---
   # optional: true — для аудит-транзакцій slashing, коли весь кластер мертвий
   # і жодного дерева-носія немає (пастка "Останнього дерева")

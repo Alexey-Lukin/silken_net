@@ -408,6 +408,45 @@ RSpec.describe BlockchainTransaction, type: :model do
   end
 
   # =========================================================================
+  # PARTITION-AWARE LOOKUPS
+  # =========================================================================
+  describe ".find_with_partition_pruning" do
+    let!(:tx) { create(:blockchain_transaction) }
+
+    it "finds transaction by id alone (backward compatible)" do
+      found = described_class.find_with_partition_pruning(tx.id)
+      expect(found).to eq(tx)
+    end
+
+    it "finds transaction by id + created_at Time object" do
+      found = described_class.find_with_partition_pruning(tx.id, tx.created_at)
+      expect(found).to eq(tx)
+    end
+
+    it "finds transaction by id + created_at ISO 8601 string" do
+      found = described_class.find_with_partition_pruning(tx.id, tx.created_at.iso8601)
+      expect(found).to eq(tx)
+    end
+
+    it "raises RecordNotFound for non-existent id" do
+      expect {
+        described_class.find_with_partition_pruning(-1)
+      }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+
+    it "raises RecordNotFound when created_at doesn't match any partition" do
+      expect {
+        described_class.find_with_partition_pruning(tx.id, "2020-01-01T00:00:00Z")
+      }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+
+    it "falls back to unscoped lookup with invalid ISO 8601 string" do
+      found = described_class.find_with_partition_pruning(tx.id, "not-a-date")
+      expect(found).to eq(tx)
+    end
+  end
+
+  # =========================================================================
   # REAL-TIME BROADCASTS
   # =========================================================================
   describe "broadcast_status_change" do

@@ -29,8 +29,12 @@ module Toucan
       }
     ].to_json
 
-    def initialize(blockchain_transaction_id)
-      @transaction = BlockchainTransaction.find(blockchain_transaction_id)
+    # [COMPOSITE PK]: blockchain_transactions партиціоновано по created_at.
+    # Передача created_at_iso дозволяє partition pruning при lookup.
+    def initialize(blockchain_transaction_id, created_at_iso = nil)
+      @transaction = BlockchainTransaction.find_with_partition_pruning(
+        blockchain_transaction_id, created_at_iso
+      )
     end
 
     def perform

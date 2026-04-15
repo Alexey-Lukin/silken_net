@@ -28,10 +28,16 @@ RSpec.describe ToucanBridgeWorker, type: :worker do
                notes: "Bridging to Toucan Protocol (TCO2)")
       end
 
-      it "calls Toucan::BridgeService with the transaction ID" do
+      it "calls Toucan::BridgeService with the transaction ID and created_at_iso" do
+        described_class.new.perform(tx.id, tx.created_at.iso8601)
+
+        expect(Toucan::BridgeService).to have_received(:call).with(tx.id, tx.created_at.iso8601)
+      end
+
+      it "works without created_at_iso for backward compatibility" do
         described_class.new.perform(tx.id)
 
-        expect(Toucan::BridgeService).to have_received(:call).with(tx.id)
+        expect(Toucan::BridgeService).to have_received(:call).with(tx.id, nil)
       end
 
       it "marks the transaction as sent with tx_hash" do

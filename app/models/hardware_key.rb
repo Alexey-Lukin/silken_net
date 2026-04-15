@@ -18,12 +18,13 @@ class HardwareKey < ApplicationRecord
   # (SinLruRedux::ThreadSafeCache) instead of Redis. This eliminates the risk
   # of mass key leakage if a Redis instance is compromised. Keys never leave
   # the Ruby process and vanish on restart/crash.
-  # Previous implementation used Rails.cache (Redis) with TTL 15 min.
-  # Now keys are cached in-process with LRU eviction (max 10,000 keys).
+  #
+  # [RACE CONDITION FIX]: Cache key now includes updated_at version stamp
+  # (Cache Key Versioning pattern). After any update, updated_at changes →
+  # new cache key → stale entry never matches → no race window between
+  # UPDATE commit and after_commit callback. Old entries are naturally
+  # evicted by LRU policy (max 10,000 keys). No after_commit needed.
   # ---------------------------------------------------------------------------
-
-  # Інвалідація кешу при будь-якій зміні або видаленні ключа
-  after_commit :clear_key_cache, on: %i[update destroy]
 
   # --- ЗВ'ЯЗКИ ---
   # Зв'язок із Солдатом (Tree) через DID
@@ -67,8 +68,11 @@ class HardwareKey < ApplicationRecord
 
   # [A-7 FIX]: In-process LRU cache replaces Rails.cache (Redis).
   # Keys stay in worker RAM — never serialized to network storage.
+  # [RACE CONDITION FIX]: Cache key includes updated_at version — self-invalidating
+  # on any update. Eliminates the need for after_commit cache invalidation callbacks
+  # and the race window between commit and callback execution.
   def cached_binary_key
-    HARDWARE_KEY_CACHE.getset(device_uid) { binary_key }
+    HARDWARE_KEY_CACHE.getset(versioned_cache_key) { binary_key }
   end
 
   # Повертає сирі байти попереднього ключа (для Grace Period)
@@ -115,8 +119,10 @@ class HardwareKey < ApplicationRecord
 
   private
 
-  # [A-7 FIX]: Invalidate in-process LRU cache (not Redis)
-  def clear_key_cache
-    HARDWARE_KEY_CACHE.delete(device_uid)
+  # Versioned cache key: includes updated_at to auto-invalidate on any change.
+  # After rotate_key! or update!, updated_at changes → new cache key →
+  # stale binary key is never served from cache.
+  def versioned_cache_key
+    "#{device_uid}:v:#{updated_at.to_f}"
   end
 end
