@@ -4,12 +4,17 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
 /**
  * @title Silken Carbon Coin (SCC)
  * @notice Реалізація суверенної емісії вуглецевих активів для Silken Net.
+ * @dev ERC20Permit додано для підтримки gasless approvals (EIP-2612).
+ *      Це дозволяє власникам SCC підписувати approve() оффлайн,
+ *      а relayer/backend подає підпис on-chain без газу від власника.
+ *      Необхідно для майбутньої інтеграції з DEX, P2P marketplace та Paymaster (ERC-4337).
  */
-contract SilkenCarbonCoin is ERC20, AccessControl, Pausable {
+contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ERC20Permit {
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
@@ -17,7 +22,10 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable {
     event CarbonMinted(address indexed investor, uint256 amount, string indexed treeDid);
     event TokenSlashed(address indexed investor, uint256 amount);
 
-    constructor(address admin, address oracle) ERC20("Silken Carbon Coin", "SCC") {
+    constructor(address admin, address oracle)
+        ERC20("Silken Carbon Coin", "SCC")
+        ERC20Permit("Silken Carbon Coin")
+    {
         _grantRole(DEFAULT_ADMIN_ROLE, admin); 
         _grantRole(MINTER_ROLE, oracle);
         _grantRole(SLASHER_ROLE, oracle);
@@ -76,5 +84,17 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable {
         whenNotPaused
     {
         super._update(from, to, value);
+    }
+
+    /**
+     * @notice Override nonces для сумісності ERC20Permit + Nonces.
+     */
+    function nonces(address owner)
+        public
+        view
+        override(ERC20Permit, Nonces)
+        returns (uint256)
+    {
+        return super.nonces(owner);
     }
 }

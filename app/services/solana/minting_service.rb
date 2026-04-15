@@ -36,6 +36,10 @@ module Solana
     # Base58 alphabet (Bitcoin variant, used by Solana)
     BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
+    # Мінімальний баланс оракула (SOL) для оплати газу транзакцій.
+    # Аналог перевірки 0.05 MATIC у BlockchainMintingService.
+    MIN_ORACLE_BALANCE_LAMPORTS = 50_000_000 # 0.05 SOL = 50,000,000 lamports
+
     def initialize(telemetry_log)
       @telemetry_log = telemetry_log
       @tree = telemetry_log.tree
@@ -71,7 +75,7 @@ module Solana
         raise "Security Breach: Data not verified by IoTeX"
       end
 
-      unless @telemetry_log.oracle_status == "fulfilled"
+      unless @telemetry_log.oracle_status_fulfilled?
         raise "Security Breach: Chainlink Oracle consensus not fulfilled"
       end
     end
@@ -112,6 +116,11 @@ module Solana
       raise "🛑 [Solana] SOLANA_WALLET_KEYPAIR is required for transaction signing" if keypair_hex.blank?
 
       fee_payer = ENV.fetch("SOLANA_FEE_PAYER_PUBKEY") { raise "🛑 [Solana] SOLANA_FEE_PAYER_PUBKEY is required" }
+
+      # [BLOCKER-1 FIX]: Guard clause — перевірка балансу оракула перед відправкою транзакції.
+      # Аналог BlockchainMintingService: raise if balance < 0.05 SOL.
+      verify_oracle_balance!(rpc_url, fee_payer)
+
       source_token_account = ENV.fetch("SOLANA_FEE_PAYER_TOKEN_ACCOUNT") { raise "🛑 [Solana] SOLANA_FEE_PAYER_TOKEN_ACCOUNT is required" }
       dest_token_account = ENV.fetch("SOLANA_DEST_TOKEN_ACCOUNT", nil)
       usdc_mint = ENV.fetch("SOLANA_USDC_MINT_ADDRESS") { raise "🛑 [Solana] SOLANA_USDC_MINT_ADDRESS is required" }
@@ -324,6 +333,28 @@ module Solana
         zk_proof_ref: @telemetry_log.zk_proof_ref,
         notes: "Solana micro-reward: #{format_usdc(amount_lamports)} USDC (growth_points: #{@telemetry_log.growth_points})"
       )
+    end
+
+    # =========================================================================
+    # [BLOCKER-1 FIX]: Oracle Balance Guard
+    # =========================================================================
+    # Перевіряє баланс SOL на гаманці оракула перед відправкою транзакції.
+    # Аналогічна перевірка вже існує в BlockchainMintingService для MATIC.
+    def verify_oracle_balance!(rpc_url, fee_payer_pubkey)
+      payload = {
+        jsonrpc: "2.0",
+        id: SecureRandom.uuid,
+        method: "getBalance",
+        params: [ fee_payer_pubkey, { commitment: "confirmed" } ]
+      }
+
+      response = execute_rpc_call(rpc_url, payload)
+      balance = response&.dig("result", "value").to_i
+
+      if balance < MIN_ORACLE_BALANCE_LAMPORTS
+        raise "🚨 [Solana] Критично низький баланс Оракула: #{balance} lamports " \
+              "(мінімум: #{MIN_ORACLE_BALANCE_LAMPORTS} lamports / 0.05 SOL)"
+      end
     end
 
     # =========================================================================

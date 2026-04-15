@@ -100,6 +100,7 @@ RSpec.describe Chainlink::OracleDispatchService do
       stub_const("ENV", ENV.to_h.merge(
         "CHAINLINK_FUNCTIONS_ROUTER" => "0x1234567890abcdef1234567890abcdef12345678",
         "CHAINLINK_SUBSCRIPTION_ID" => "42",
+        "CHAINLINK_DON_ID" => "0x#{"d" * 64}",
         "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
         "ORACLE_PRIVATE_KEY" => "a" * 64
       ))
@@ -123,6 +124,7 @@ RSpec.describe Chainlink::OracleDispatchService do
       stub_const("ENV", ENV.to_h.merge(
         "CHAINLINK_FUNCTIONS_ROUTER" => "0x1234567890abcdef1234567890abcdef12345678",
         "CHAINLINK_SUBSCRIPTION_ID" => "42",
+        "CHAINLINK_DON_ID" => "0x#{"d" * 64}",
         "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
         "ORACLE_PRIVATE_KEY" => "a" * 64
       ))

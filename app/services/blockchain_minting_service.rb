@@ -74,10 +74,17 @@ class BlockchainMintingService < ApplicationService
 
     # [TRUSTLESS]: Перевірка децентралізованої верифікації перед мінтингом.
     # Guard clauses активні лише коли telemetry_log передано (oracle-driven flow).
-    # TokenomicsEvaluatorWorker та InsurancePayoutWorker працюють без telemetry_log.
+    # TokenomicsEvaluatorWorker працює без telemetry_log — він конвертує вже
+    # накопичені growth_points, які були зараховані через верифікований pipeline
+    # (TelemetryUnpackerService → IoTeX → Chainlink → credit!).
     if @telemetry_log
       raise "Security Breach: Data not verified by IoTeX" unless @telemetry_log.verified_by_iotex?
-      raise "Security Breach: Chainlink Oracle consensus not fulfilled" unless @telemetry_log.oracle_status == "fulfilled"
+      raise "Security Breach: Chainlink Oracle consensus not fulfilled" unless @telemetry_log.oracle_status_fulfilled?
+    else
+      # [BLOCKER-11 FIX]: Логування для аудиту — tokenomics flow працює без
+      # прямої прив'язки до telemetry_log, але growth_points вже верифіковані.
+      Rails.logger.info "📊 [Trustless] Batch minting без telemetry_log — " \
+                        "використовуються накопичені верифіковані growth_points."
     end
 
     # [RWA COMPLIANCE]: Перевірка Hadron KYC для кожного гаманця-отримувача.

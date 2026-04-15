@@ -28,8 +28,8 @@ dataSources:
       eventHandlers:
         - event: CarbonMinted(indexed address,uint256,indexed string)
           handler: handleCarbonMinted
-        - event: Slashed(indexed address,uint256,indexed string)
-          handler: handleSlashed
+        - event: TokenSlashed(indexed address,uint256)
+          handler: handleTokenSlashed
         - event: PremiumPaid(indexed address,uint256)
           handler: handlePremiumPaid
       file: ./src/mapping.ts

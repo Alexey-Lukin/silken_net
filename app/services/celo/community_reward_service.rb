@@ -41,6 +41,10 @@ module Celo
     # Максимальний stress_index для отримання винагороди
     MAX_STRESS_INDEX = 0.2
 
+    # Мінімальний баланс оракула (CELO) для оплати газу транзакцій.
+    # Аналог перевірки 0.05 MATIC у BlockchainMintingService.
+    MIN_ORACLE_BALANCE_WEI = 0.05 * (10**18)
+
     def initialize(cluster, target_date)
       @cluster = cluster
       @target_date = target_date
@@ -58,6 +62,11 @@ module Celo
       # Підключення до Celo RPC — Thread-cached RPC client
       client = Web3::RpcConnectionPool.client_for("CELO_RPC_URL", fallback: DEFAULT_RPC_URL)
       oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
+
+      # [BLOCKER-1 FIX]: Guard clause — перевірка балансу оракула перед відправкою транзакції.
+      # Аналог BlockchainMintingService: raise if balance < 0.05 CELO.
+      balance = client.get_balance(oracle_key.address)
+      raise "🚨 [Celo] Критично низький баланс Оракула: #{balance}" if balance < MIN_ORACLE_BALANCE_WEI
 
       cusd_contract_address = ENV.fetch("CELO_CUSD_CONTRACT_ADDRESS")
       contract = Eth::Contract.from_abi(

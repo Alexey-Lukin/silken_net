@@ -2,6 +2,7 @@
 
 class IotexVerificationWorker
   include ApplicationWeb3Worker
+  include Web3CircuitBreaker
   sidekiq_options queue: "web3_critical", retry: 5
 
   def perform(telemetry_log_id, created_at_iso)
@@ -9,17 +10,22 @@ class IotexVerificationWorker
     return unless log
     return Rails.logger.info "✅ [IoTeX] TelemetryLog ##{telemetry_log_id} вже верифіковано." if log.verified_by_iotex?
 
-    with_web3_error_handling("IoTeX", "TelemetryLog ##{telemetry_log_id}") do
-      service = Iotex::W3bstreamVerificationService.new(log)
-      zk_proof_ref = service.verify!
+    with_circuit_breaker("iotex_w3bstream") do
+      with_web3_error_handling("IoTeX", "TelemetryLog ##{telemetry_log_id}") do
+        service = Iotex::W3bstreamVerificationService.new(log)
+        zk_proof_ref = service.verify!
 
-      log.update!(verified_by_iotex: true, zk_proof_ref: zk_proof_ref)
+        log.update!(verified_by_iotex: true, zk_proof_ref: zk_proof_ref)
 
-      # 🔗 [Chainlink]: Після успішної верифікації IoTeX — диспетчеризуємо до Chainlink Oracle
-      ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
+        # 🔗 [Chainlink]: Після успішної верифікації IoTeX — диспетчеризуємо до Chainlink Oracle
+        ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 
-      Rails.logger.info "🔐 [IoTeX] TelemetryLog ##{telemetry_log_id} верифіковано. Proof: #{zk_proof_ref}"
+        Rails.logger.info "🔐 [IoTeX] TelemetryLog ##{telemetry_log_id} верифіковано. Proof: #{zk_proof_ref}"
+      end
     end
+  rescue Web3CircuitBreaker::CircuitOpenError
+    Rails.logger.warn "⚡ [IoTeX] Circuit OPEN — TelemetryLog ##{telemetry_log_id} буде повторено пізніше."
+    raise
   rescue Iotex::W3bstreamVerificationService::VerificationError => e
     Rails.logger.error "🚨 [IoTeX] Верифікація TelemetryLog ##{telemetry_log_id} зазнала невдачі: #{e.message}"
     raise

@@ -13,7 +13,9 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
   describe "#register!" do
     context "when peaq_node_url is configured" do
       before do
-        allow(Rails.application.credentials).to receive(:peaq_node_url).and_return("https://peaq-node.example.com")
+        # [BLOCKER-08]: peaq_signing_key is now mandatory — stub it for all tests
+        allow(Rails.application.credentials).to receive_messages(peaq_node_url: "https://peaq-node.example.com", peaq_signing_key: "a" * 64)
+        allow(Ed25519Crypto::SigningService).to receive_messages(sign: "sig_hex", public_key_from_seed: "pub_hex")
         allow(Web3::HttpClient).to receive(:post)
           .and_return(Web3::HttpClient::Response.new("{}"))
       end
@@ -59,7 +61,7 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
 
     context "when peaq_node_url is not configured" do
       before do
-        allow(Rails.application.credentials).to receive(:peaq_node_url).and_return(nil)
+        allow(Rails.application.credentials).to receive_messages(peaq_node_url: nil, peaq_signing_key: "a" * 64)
       end
 
       it "raises RegistrationError" do
@@ -68,6 +70,20 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
         expect {
           service.register!
         }.to raise_error(Peaq::DidRegistryService::RegistrationError, /peaq_node_url не налаштовано/)
+      end
+    end
+
+    context "when peaq_signing_key is not configured" do
+      before do
+        allow(Rails.application.credentials).to receive_messages(peaq_node_url: "https://peaq-node.example.com", peaq_signing_key: nil)
+      end
+
+      it "raises RegistrationError about mandatory peaq_signing_key" do
+        service = described_class.new(tree)
+
+        expect {
+          service.register!
+        }.to raise_error(Peaq::DidRegistryService::RegistrationError, /peaq_signing_key обов'язковий/)
       end
     end
 
