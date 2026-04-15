@@ -11,7 +11,9 @@ dataSources:
       # TODO: Замінити на реальну адресу контракту SilkenCarbonCoin після деплою на polygon-amoy
       address: "0x0000000000000000000000000000000000000000"
       abi: SilkenCarbonCoin
-      # TODO: Встановити номер блоку деплою контракту для оптимізації індексації
+      # TODO: [B-15] Встановити реальний номер блоку деплою контракту для оптимізації індексації.
+      # startBlock: 0 означає індексацію з genesis блоку Polygon — надзвичайно довга синхронізація.
+      # Після деплою контракту через Foundry, встановити block number з receipt.blockNumber.
       startBlock: 0
     mapping:
       kind: ethereum/events
@@ -26,7 +28,7 @@ dataSources:
         - name: SilkenCarbonCoin
           file: ./abis/SilkenCarbonCoin.json
       eventHandlers:
-        - event: CarbonMinted(indexed address,uint256,indexed string)
+        - event: CarbonMinted(indexed address,uint256,indexed bytes32,string)
           handler: handleCarbonMinted
         - event: TokenSlashed(indexed address,uint256)
           handler: handleTokenSlashed

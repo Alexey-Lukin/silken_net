@@ -16,6 +16,11 @@ module Ethereum
   #  і її більше ніколи не можна змінити."
   #
   # Gas-ефективність: тільки 1 запис (bytes32) на тиждень.
+  #
+  # [BLOCKER-2] Зберігає state_root та tx_hash в EthereumAnchor для аудит-трейлу.
+  # [BLOCKER-3] Gas management: max_fee_per_gas + gas_limit safety caps.
+  # [BLOCKER-4] Inline ETH balance guard перед відправленням транзакції.
+  # [BLOCKER-6] Зберігає компоненти state_root для незалежної верифікації.
   # =========================================================================
   class StateAnchorService
     # ABI для контракту StateRootAnchor на Ethereum Mainnet
@@ -31,26 +36,76 @@ module Ethereum
       }
     ].to_json
 
+    # [BLOCKER-3] Gas safety caps для L1 Ethereum транзакцій.
+    # storeStateRoot(bytes32) потребує ~45,000 gas (1 SSTORE + event).
+    # 100,000 — безпечна верхня межа з запасом.
+    DEFAULT_GAS_LIMIT = 100_000
+
+    # [BLOCKER-3] Максимальна ціна газу: 100 Gwei.
+    # Захищає від випадкових gas spikes (>500 Gwei як у грудні 2021).
+    # Configurable через ENV для оперативного реагування на ринкові умови.
+    DEFAULT_MAX_FEE_GWEI = 100
+
+    # [BLOCKER-3] Пріоритетна ціна газу: 2 Gwei (tip для validators).
+    DEFAULT_PRIORITY_FEE_GWEI = 2
+
+    # [BLOCKER-4] Мінімальний баланс ETH на oracle-гаманці для виконання L1 транзакції.
+    # 0.01 ETH достатньо для ~3-5 storeStateRoot транзакцій при нормальних gas цінах.
+    MIN_ANCHOR_BALANCE_WEI = 0.01 * (10**18)
+
     # Генерує State Root — SHA256 дайджест, що об'єднує:
     # 1. Сумарний scc_balance усіх гаманців
     # 2. chain_hash останнього AuditLog
     # 3. Поточний timestamp (UTC)
+    #
+    # [BLOCKER-6] Повертає Hash з усіма компонентами для збереження в EthereumAnchor.
     def generate_state_root
       total_scc = Wallet.sum(:scc_balance)
       latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
-      timestamp = Time.current.utc.iso8601
+      timestamp = Time.current.utc
 
-      payload = "#{total_scc}|#{latest_chain_hash}|#{timestamp}"
-      Digest::SHA256.hexdigest(payload)
+      payload = "#{total_scc}|#{latest_chain_hash}|#{timestamp.iso8601}"
+      state_root = Digest::SHA256.hexdigest(payload)
+
+      {
+        state_root: state_root,
+        total_scc: total_scc,
+        chain_hash: latest_chain_hash,
+        anchored_at: timestamp
+      }
     end
 
     # Записує State Root у смарт-контракт на Ethereum Mainnet (L1).
-    # Повертає хеш L1 транзакції.
+    # [BLOCKER-2] Зберігає результат в EthereumAnchor для аудит-трейлу.
+    # [BLOCKER-3] Використовує gas safety caps.
+    # [BLOCKER-4] Перевіряє баланс ETH перед відправленням.
+    #
+    # @return [EthereumAnchor] Збережений запис з tx_hash та state_root.
     def anchor_to_l1!
-      state_root = generate_state_root
+      root_data = generate_state_root
+      state_root = root_data[:state_root]
+
+      # [BLOCKER-2] Створюємо запис до відправлення TX для crash recovery.
+      # Race condition safety: unique_for: 7.days в Sidekiq запобігає паралельним запускам,
+      # а DB unique index на state_root забезпечує додатковий захист.
+      anchor = EthereumAnchor.create!(
+        state_root: state_root,
+        total_scc: root_data[:total_scc],
+        chain_hash: root_data[:chain_hash],
+        anchored_at: root_data[:anchored_at],
+        status: :pending
+      )
 
       client = Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
       anchor_key = Eth::Key.new(priv: ENV.fetch("ETHEREUM_ANCHOR_PRIVATE_KEY"))
+
+      # [BLOCKER-4] Inline guard clause — перевірка балансу ETH перед відправленням.
+      balance = client.get_balance(anchor_key.address)
+      if balance < MIN_ANCHOR_BALANCE_WEI
+        anchor.update!(status: :failed, error_message: "Insufficient ETH balance: #{balance}")
+        raise "🚨 [Ethereum L1] Insufficient anchor wallet balance: #{balance} wei " \
+              "(minimum: #{MIN_ANCHOR_BALANCE_WEI.to_i} wei)"
+      end
 
       contract_address = ENV.fetch("ETHEREUM_ANCHOR_CONTRACT")
       contract = Eth::Contract.from_abi(
@@ -62,18 +117,32 @@ module Ethereum
       # Конвертуємо SHA256 hex string → bytes32 для EVM
       root_bytes = "0x#{state_root}"
 
+      # [BLOCKER-3] Gas management: явні ліміти та fee caps
+      max_fee = ENV.fetch("ETHEREUM_MAX_FEE_GWEI", DEFAULT_MAX_FEE_GWEI).to_i * (10**9)
+      priority_fee = ENV.fetch("ETHEREUM_PRIORITY_FEE_GWEI", DEFAULT_PRIORITY_FEE_GWEI).to_i * (10**9)
+      gas_limit = ENV.fetch("ETHEREUM_GAS_LIMIT", DEFAULT_GAS_LIMIT).to_i
+
       tx_hash = client.transact(
         contract, "storeStateRoot", root_bytes,
-        sender_key: anchor_key, legacy: false
+        sender_key: anchor_key,
+        legacy: false,
+        gas_limit: gas_limit,
+        max_fee_per_gas: max_fee,
+        max_priority_fee_per_gas: priority_fee
       )
+
+      # [BLOCKER-2] Оновлюємо запис з tx_hash
+      anchor.update!(status: :sent, tx_hash: tx_hash)
 
       Rails.logger.info "⚓ [Ethereum L1] State Root anchored: #{state_root} → TX: #{tx_hash}"
 
-      tx_hash
+      anchor
     rescue Net::OpenTimeout, Net::ReadTimeout => e
+      anchor&.update!(status: :failed, error_message: e.message.truncate(500)) if anchor&.persisted?
       Rails.logger.error "🛑 [Ethereum L1] Timeout: #{e.message}"
       raise "Ethereum L1 Timeout: #{e.message}"
     rescue IOError => e
+      anchor&.update!(status: :failed, error_message: e.message.truncate(500)) if anchor&.persisted?
       Rails.logger.error "🛑 [Ethereum L1] Connection error: #{e.message}"
       raise "Ethereum L1 Connection Error: #{e.message}"
     end

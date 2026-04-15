@@ -31,6 +31,7 @@ export function handleCarbonMinted(event: CarbonMinted): void {
 
   entity.to = event.params.investor;
   entity.amount = event.params.amount;
+  entity.treeDidHash = event.params.treeDidHash;
   entity.treeDid = event.params.treeDid;
   entity.timestamp = event.block.timestamp;
   entity.blockNumber = event.block.number;
