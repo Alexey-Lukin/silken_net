@@ -20,6 +20,7 @@
 |-----------|------|-------------|
 | `ApplicationService` | `app/services/application_service.rb` | Базовий клас для всіх сервісів. Надає `.call(...)` → `new(...).perform` template. |
 | `ApplicationWeb3Worker` | `app/workers/application_web3_worker.rb` | Базовий **модуль** (не клас) для всіх блокчейн-воркерів. Включає: RPC rate limiter (50 rps), уніфіковану обробку помилок (HTTPX/Net timeouts), partition-pruned TelemetryLog lookup. |
+| `Web3CircuitBreaker` | `app/workers/concerns/web3_circuit_breaker.rb` | **[NEW]** ActiveSupport Concern із 3-state Circuit Breaker (`:closed` → `:open` → `:half_open`). `FAILURE_THRESHOLD=5` послідовних помилок → `OPEN_TIMEOUT=300с` (5 хв) fail-fast. Стан зберігається в `Rails.cache` (Solid Cache) — працює між Sidekiq-процесами та серверами. Розпізнає transient errors: `HTTPX::TimeoutError`, `Net::ReadTimeout`, `Errno::ECONNREFUSED`, `Web3::HttpClient::RequestError` + wrapped custom errors (`transient_cause?` перевіряє `Exception#cause` рекурсивно). Prometheus metric: `CIRCUIT_BREAKER_REJECTIONS`. Raises `CircuitOpenError` при відкритому circuit. Інтегровано в `IotexVerificationWorker`, `ChainlinkDispatchWorker`. |
 | `CoapEncryption` | `app/workers/concerns/coap_encryption.rb` | Concern для downlink-воркерів. AES-256-CBC шифрування з випадковим IV, нульовий padding. Формат: `[IV:16][Ciphertext:N×16]`. |
 
 ### Web3 Utility Layer
@@ -121,7 +122,7 @@
 | **Файл** | `app/services/blockchain_minting_service.rb` |
 | **Інтерфейс** | Два методи: `.call(id: Integer, telemetry_log: nil)` — одиночний мінтинг; `.call_batch(ids: Array<Integer>, telemetry_log: nil)` — пакетний мінтинг |
 | **Вхід** | `.call`: `id` (Integer); `.call_batch`: `ids` (Array\<Integer>); `telemetry_log:` (опціонально, для oracle-driven flow) |
-| **Що робить** | Пакетна емісія SCC/SFC на Polygon через `mint` або `batchMint`. Guard clauses: `verified_by_iotex?`, `oracle_status == "fulfilled"`, `hadron_kyc_status == "approved"`. Dynamic Tax 2% при carbon_coin + недофінансований страховий пул (→ DAO Treasury). `Kredis.lock` проти race conditions. `transact` (fire-and-forget). Prometheus metric `SCC_MINTED_TOTAL`. **[B-05]** `insurance_pool_requires_funding?` — cached on-chain `balanceOf` oracle: `INSURANCE_POOL_THRESHOLD = 100_000 SCC`; кеш 15 хв (`dao_treasury_needs_funding`); timeout 10 сек; failsafe → `true` при збої RPC. |
+| **Що робить** | Пакетна емісія SCC/SFC на Polygon через `mint` або `batchMint`. Guard clauses: `verified_by_iotex?`, `oracle_status_fulfilled?` (enum method), `hadron_kyc_status == "approved"`. **[BLOCKER-11]** Guards активні лише при `telemetry_log` (oracle-driven flow); tokenomics flow працює без прямої прив'язки до log — growth_points вже верифіковані pipeline'ом. Dynamic Tax 2% при carbon_coin + недофінансований страховий пул (→ DAO Treasury). `Kredis.lock` проти race conditions. `transact` (fire-and-forget). Prometheus metric `SCC_MINTED_TOTAL`. **[B-05]** `insurance_pool_requires_funding?` — cached on-chain `balanceOf` oracle: `INSURANCE_POOL_THRESHOLD = 100_000 SCC`; кеш 15 хв (`dao_treasury_needs_funding`); timeout 10 сек; failsafe → `true` при збої RPC. |
 | **Зовнішні виклики** | Polygon RPC (`ALCHEMY_POLYGON_RPC_URL`), `Web3::RpcConnectionPool`, `Web3::WeiConverter`, `BlockchainConfirmationWorker.perform_in` |
 | **Вихід** | `tx_hash` (String). Оновлює `BlockchainTransaction.status = :sent`. Turbo Stream broadcast балансу гаманця. |
 
@@ -183,7 +184,7 @@
 |---|---|
 | **Файл** | `app/services/iotex/w3bstream_verification_service.rb` |
 | **Вхід** | `telemetry_log` (TelemetryLog AR instance) |
-| **Що робить** | Відправляє телеметрію до IoTeX W3bstream для генерації ZK-proof. Payload: `device_id`, `peaq_did`, `hardware_signature` (SHA256), `chaotic_data` (z_value, temp, acoustic, voltage, bio_status). |
+| **Що робить** | Відправляє телеметрію до IoTeX W3bstream для генерації ZK-proof. Payload: `device_id`, `peaq_did`, `hardware_signature`, `chaotic_data` (z_value, temp, acoustic, voltage, bio_status). **[BLOCKER-06]** `hardware_signature` = Ed25519-підпис payload'у через `Ed25519Crypto::SigningService.sign(hardware_key.binary_key, message)` де `message = "#{tree.did}:#{log.id_value}:#{log.created_at.to_i}"`. Доводить апаратне походження даних із конкретного STM32. Fallback: SHA256-хеш при відсутності HardwareKey (legacy/dev). **[BLOCKER-07]** Валідація формату `zk_proof_ref` через regex: `/\A[0-9a-zA-Z\-_]{8,128}\z/` — захист від injection довільних рядків. |
 | **Зовнішні виклики** | `Web3::HttpClient.post` → `iotex_w3bstream_url/verify` |
 | **Вихід** | `zk_proof_ref` (String — `proof_id` або `receipt_id`). Raises `VerificationError` при помилці. |
 
@@ -193,7 +194,7 @@
 |---|---|
 | **Файл** | `app/services/peaq/did_registry_service.rb` |
 | **Вхід** | `tree` (Tree AR instance) |
-| **Що робить** | Генерує peaq DID: `did:peaq:0x{SHA256[tree.did:tree.id:created_at][0:40]}`. Підписує DID-документ Ed25519 (якщо `peaq_signing_key` налаштовано). Відправляє реєстрацію до peaq node. |
+| **Що робить** | Генерує peaq DID: `did:peaq:0x{SHA256[tree.did:tree.id:created_at][0:40]}`. **[BLOCKER-08]** `peaq_signing_key` обов'язковий (W3C DID Core compliance). Підписує DID-документ Ed25519 та додає `proof: { type: "Ed25519Signature2020", verification_method, signature, public_key }` до payload. Raises `RegistrationError` при відсутності `peaq_signing_key`. |
 | **Зовнішні виклики** | `Ed25519Crypto::SigningService.sign`, `Web3::HttpClient.post` → `peaq_node_url/did/register` |
 | **Вихід** | `did_string` (String, напр. `did:peaq:0x8a9b...`). Raises `RegistrationError`. |
 
@@ -203,7 +204,7 @@
 |---|---|
 | **Файл** | `app/services/chainlink/oracle_dispatch_service.rb` |
 | **Вхід** | `telemetry_log` (TelemetryLog AR instance) |
-| **Що робить** | Відправляє верифіковану телеметрію до Chainlink Functions DON. Guard clause: `verified_by_iotex? == true`. Payload: `peaq_did`, `lorenz_state` (σ,ρ,β,z), `zk_proof_ref`, `tree_did`, `created_at` (partition key). Stub режим, якщо `CHAINLINK_FUNCTIONS_ROUTER` не налаштовано. |
+| **Що робить** | Відправляє верифіковану телеметрію до Chainlink Functions DON. Guard clause: `verified_by_iotex? == true`. Payload: `peaq_did`, `lorenz_state` (σ,ρ,β,z), `zk_proof_ref`, `tree_did`, `created_at` (partition key). **[BLOCKER-09]** ABI оновлено до Functions Router v1: `sendRequest(subscriptionId, data, dataVersion, callbackGasLimit, donId)` — 5 параметрів (додано `CHAINLINK_DATA_VERSION`, `CHAINLINK_CALLBACK_GAS_LIMIT`, `CHAINLINK_DON_ID`). **[BLOCKER-04]** `WEB3_STRICT_MODE=true` → raises `DispatchError` при відсутності credentials замість stub mode. |
 | **Зовнішні виклики** | Polygon RPC → `FunctionsRouter.sendRequest` |
 | **Вихід** | `request_id` (String). Оновлює `TelemetryLog.chainlink_request_id`, `oracle_status = "dispatched"`. |
 
@@ -301,7 +302,7 @@
 |---|---|
 | **Файл** | `app/services/solana/minting_service.rb` |
 | **Вхід** | `telemetry_log` (TelemetryLog AR instance) |
-| **Що робить** | USDC мікро-винагороди на Solana. **[MAINNET READY]** Guard: `verified_by_iotex?` + `oracle_status == "fulfilled"`. Розраховує `reward_lamports = 10_000 + (growth_points × 100)`, де `growth_points` — 6-бітне поле телеметрії (0–63). Діапазон: 10_000–16_300 lamports (0.01–0.0163 USDC). 4-крокова транзакція: `getLatestBlockhash` → бінарний SPL Token Transfer Message (compact-u16 + account keys + Ed25519-header) → Ed25519 підпис через `Ed25519Crypto::SigningService` (hex-keypair з `SOLANA_WALLET_KEYPAIR`) → `sendTransaction` (base64). ATA отримувача резолюється динамічно через `getTokenAccountsByOwner` RPC. `SOLANA_WALLET_KEYPAIR` (mandatory), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS` — обов'язкові ENV. |
+| **Що робить** | USDC мікро-винагороди на Solana. **[MAINNET READY]** Guard: `verified_by_iotex?` + `oracle_status_fulfilled?` (enum method). **[BLOCKER-1]** `verify_oracle_balance!` — перевіряє баланс SOL оракула через `getBalance` RPC; raises при `< MIN_ORACLE_BALANCE_LAMPORTS` (0.05 SOL = 50M lamports). Розраховує `reward_lamports = 10_000 + (growth_points × 100)`, де `growth_points` — 6-бітне поле телеметрії (0–63). Діапазон: 10_000–16_300 lamports (0.01–0.0163 USDC). 4-крокова транзакція: `getLatestBlockhash` → бінарний SPL Token Transfer Message (compact-u16 + account keys + Ed25519-header) → Ed25519 підпис через `Ed25519Crypto::SigningService` (hex-keypair з `SOLANA_WALLET_KEYPAIR`) → `sendTransaction` (base64). ATA отримувача резолюється динамічно через `getTokenAccountsByOwner` RPC. `SOLANA_WALLET_KEYPAIR` (mandatory), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS` — обов'язкові ENV. |
 | **Зовнішні виклики** | `Web3::HttpClient.post` → Solana RPC JSON API (`getLatestBlockhash`, `getTokenAccountsByOwner`, `sendTransaction`) |
 | **Вихід** | `tx_signature` (String). Створює `BlockchainTransaction` зі статусом `:sent` (очікує `BlockchainConfirmationWorker`). |
 
@@ -311,7 +312,7 @@
 |---|---|
 | **Файл** | `app/services/celo/community_reward_service.rb` |
 | **Вхід** | `cluster` (Cluster AR instance), `target_date` (Date) |
-| **Що робить** | ReFi incentive: відправляє 5 cUSD організації якщо `stress_index <= 0.2` та немає fraud. ERC-20 `transfer` на Celo. `Kredis.lock` проти race conditions. |
+| **Що робить** | ReFi incentive: відправляє 5 cUSD організації якщо `stress_index <= 0.2` та немає fraud. ERC-20 `transfer` на Celo. `Kredis.lock` проти race conditions. **[BLOCKER-1]** `verify_oracle_balance!` — перевіряє баланс CELO оракула через `get_balance`; raises при `< MIN_ORACLE_BALANCE_WEI` (0.05 CELO). |
 | **Зовнішні виклики** | Celo RPC (`CELO_RPC_URL`), `Web3::RpcConnectionPool`, `Web3::WeiConverter` |
 | **Вихід** | `tx_hash` (String) або `nil`. Створює `BlockchainTransaction`. |
 
@@ -331,9 +332,31 @@
 |---|---|
 | **Файл** | `app/services/polygon/hadron_compliance_service.rb` |
 | **Вхід** | `wallet` (для `verify_investor!`) або `naas_contract` (для `register_asset!`) |
-| **Що робить** | **KYC**: перевіряє `hadron_kyc_status` через Polygon Hadron Identity API. **RWA**: реєструє лісову ділянку як Real World Asset (ERC-3643). Simulation mode якщо `HADRON_API_KEY` відсутній. |
+| **Що робить** | **KYC**: перевіряє `hadron_kyc_status` через Polygon Hadron Identity API. **RWA**: реєструє лісову ділянку як Real World Asset (ERC-3643). **[BLOCKER-04]** `WEB3_STRICT_MODE=true` → raises `ComplianceError` при відсутності `hadron_api_key` (вимкнення simulation mode у production). Без strict mode — simulation fallback для dev/test. |
 | **Зовнішні виклики** | `Web3::HttpClient.post` → `HADRON_API_URL/identity/kyc/verify` або `HADRON_API_URL/assets/rwa/register` |
 | **Вихід** | `verify_investor! → "approved"/"rejected"`. `register_asset! → asset_id (String)`. |
+
+### `Treasury::MonitorService`
+
+| | |
+|---|---|
+| **Файл** | `app/services/treasury/monitor_service.rb` |
+| **Вхід** | — (no args) |
+| **Що робить** | **[NEW]** Централізований моніторинг балансів Oracle-гаманців на всіх 4 мережах: Polygon (MATIC, min 0.05), Solana (SOL, min 0.05 = 50M lamports), Celo (CELO, min 0.05), Ethereum (ETH, min 0.01 — weekly anchoring). Для EVM-мереж: `Eth::Key` → `client.get_balance`. Для Solana: `Web3::HttpClient.post` → `getBalance` RPC. `RPC_TIMEOUT = 10с` на кожну мережу. Результат: масив Hash з `{ network, currency, balance_raw, balance_human, ratio, status (:healthy/:critical/:error) }`. |
+| **Зовнішні виклики** | `Web3::RpcConnectionPool.client_for` (Polygon, Celo, Ethereum), `Web3::HttpClient.post` (Solana RPC) |
+| **Prometheus** | `ORACLE_BALANCE` (gauge per network), `ORACLE_BALANCE_RATIO` (gauge, < 1.0 = critical), `TREASURY_CHECK_ERRORS_TOTAL` (counter per network/error_type) |
+| **Side Effects** | `EwsAlert.create(alert_type: :system_fault, severity: :critical)` при balance < threshold |
+| **Вихід** | `Array<Hash>` — звіт по 4 мережах |
+
+### `Treasury::MintBatchCollectorService`
+
+| | |
+|---|---|
+| **Файл** | `app/services/treasury/mint_batch_collector_service.rb` |
+| **Вхід** | — (no args) |
+| **Що робить** | **[NEW]** Sidekiq-level агрегація pending `BlockchainTransaction` записів для оптимізації газу. Збирає `status: :pending, blockchain_network: "evm"`, групує за `token_type` (SCC/SFC), розділяє на urgent (старше `MAX_PENDING_AGE_MINUTES=30хв` — відправляє негайно) та standard (чекає `MIN_BATCH_SIZE=5`). Делегує `BlockchainMintingService.call_batch(ids)` пакетами по `OPTIMAL_BATCH_SIZE=100` (max `MAX_BATCH_SIZE=200`). Gas savings: `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Працює паралельно з `MintCarbonCoinWorker` (oracle-driven immediate). `MAX_TRANSACTIONS_PER_RUN = 1000`. |
+| **Зовнішні виклики** | `BlockchainMintingService.call_batch` |
+| **Вихід** | `nil`. Side effect: транзакції відправлені пакетами. |
 
 ### `Ethereum::StateAnchorService`
 
@@ -692,6 +715,7 @@
 |----------|----------|
 | **Черга** | `web3_critical` |
 | **Retry** | 5 |
+| **Includes** | `Web3CircuitBreaker` — `with_circuit_breaker("iotex_w3bstream")` |
 | **Тригер** | `TelemetryUnpackerService` (після `commit_telemetry`) |
 | **Вхід** | `telemetry_log_id`, `created_at_iso` (ISO8601 6 decimals) |
 | **Сервіси** | `Iotex::W3bstreamVerificationService.new(log).verify!` |
@@ -703,6 +727,7 @@
 |----------|----------|
 | **Черга** | `web3_critical` |
 | **Retry** | 5 |
+| **Includes** | `Web3CircuitBreaker` — `with_circuit_breaker("chainlink_functions")` |
 | **Тригер** | `IotexVerificationWorker` |
 | **Вхід** | `telemetry_log_id`, `created_at_iso` |
 | **Сервіси** | `Chainlink::OracleDispatchService.new(log).dispatch!` |
@@ -798,6 +823,30 @@
 | **Тригер** | При активації NaasContract |
 | **Вхід** | `naas_contract_id` (Integer) |
 | **Сервіси** | `Polygon::HadronComplianceService.new.register_asset!(naas_contract)` |
+
+#### `TreasuryMonitorWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3_low` |
+| **Retry** | 3 |
+| **Lock** | `until_executed` |
+| **Тригер** | Sidekiq cron: `*/15 * * * *` (кожні 15 хвилин) |
+| **Вхід** | — |
+| **Сервіси** | `Treasury::MonitorService.call` |
+| **Side Effects** | Оновлює Prometheus gauges (`ORACLE_BALANCE`, `ORACLE_BALANCE_RATIO`). Створює `EwsAlert` при критичних балансах. Логує `healthy/critical/error` counts. |
+
+#### `MintBatchCollectorWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3` |
+| **Retry** | 3 |
+| **Lock** | `until_executed` |
+| **Тригер** | Sidekiq cron: `*/5 * * * *` (кожні 5 хвилин) |
+| **Вхід** | — |
+| **Сервіси** | `Treasury::MintBatchCollectorService.call` |
+| **Side Effects** | Збирає pending TX та відправляє через `BlockchainMintingService.call_batch`. Gas savings ~30-40%. |
 
 ---
 
@@ -902,6 +951,32 @@ Sidekiq Cron Monday 03:00 UTC
   └─→ EthereumAnchorWorker [web3_low]
         └─→ Ethereum::StateAnchorService
               → SHA256(scc_total + chain_hash + timestamp) → Ethereum L1
+```
+
+### ⏰ Цикл Казначейства (кожні 15 хвилин)
+
+```
+Sidekiq Cron */15 * * * *
+  └─→ TreasuryMonitorWorker [web3_low]
+        └─→ Treasury::MonitorService.call
+              ├─→ Polygon: Eth::Client.get_balance (MATIC)
+              ├─→ Solana: Web3::HttpClient.post → getBalance (SOL)
+              ├─→ Celo: Eth::Client.get_balance (CELO)
+              ├─→ Ethereum: Eth::Client.get_balance (ETH)
+              ├─→ Prometheus gauges: ORACLE_BALANCE, ORACLE_BALANCE_RATIO
+              └─→ EwsAlert.create (при balance < threshold)
+```
+
+### ⏰ Цикл Батч-Колектора (кожні 5 хвилин)
+
+```
+Sidekiq Cron */5 * * * *
+  └─→ MintBatchCollectorWorker [web3]
+        └─→ Treasury::MintBatchCollectorService.call
+              ├─→ BlockchainTransaction.where(status: :pending, blockchain_network: "evm")
+              ├─→ Group by token_type (SCC / SFC)
+              ├─→ Partition: urgent (>30 min) vs standard (>=5 batch)
+              └─→ BlockchainMintingService.call_batch(ids) ×N (per 100 batch)
 ```
 
 ### ⚡ Oracle Callback (Chainlink DON → Workers)

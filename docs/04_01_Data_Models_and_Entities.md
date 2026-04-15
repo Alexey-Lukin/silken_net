@@ -433,7 +433,7 @@ any ──report_fault──► faulty
 | `acoustic_events` | integer | Кількість акустичних подій (TinyML) |
 | `mesh_ttl` | integer | Time-To-Live пакету в mesh-мережі |
 | `queen_uid` | string | UID Королеви-ретранслятора |
-| `oracle_status` | string | Статус обробки Oracle (dispatched/fulfilled/failed) |
+| `oracle_status` | enum | **[BLOCKER-12 FIX]** `pending / dispatched / fulfilled / failed` (string-backed Rails enum з prefix `oracle_status_`). Забезпечує type safety, валідацію та автоматичні scope-методи (`oracle_status_dispatched`, `oracle_status_fulfilled` тощо). Default: `pending`. |
 | `firmware_version_id` | integer | Версія прошивки з padding-байтів |
 | `growth_points` | numeric | Нараховані очки зростання (raw) |
 | `metabolism_s` | integer | Час метаболічного циклу (с) |
