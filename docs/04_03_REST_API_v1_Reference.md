@@ -72,6 +72,13 @@ POST /api/v1/auth/m2m_token
 - Токен дійсний 30 днів. Перед закінченням — повторний `POST /api/v1/auth/m2m_token`.
 - Детальний опис: §5.14.
 
+### 1.5 Тестове Покриття Безпеки
+
+- `spec/initializers/rack_attack_spec.rb` — throttle правила `m2m_auth/ip` та `oracle_callbacks/ip`
+- `spec/requests/api/v1/m2m_auth_controller_spec.rb` — некоректний Ed25519 підпис → 401; nonce replay → 401; Redis unavailable → 503
+- `spec/requests/api/v1/oracle_callbacks_controller_spec.rb` — replay callback → 409 Conflict; state machine guard
+- `spec/requests/api/v1/actuators_controller_spec.rb` — відсутній `Idempotency-Key` → 400; ідемпотентний повтор → 202
+
 ---
 
 ## 2. Стандартний Формат Відповідей
@@ -1024,137 +1031,7 @@ ed25519_sign(sig, message, strlen(message), private_key);
 
 ---
 
-## 8. Звіт Аудиту Безпеки (Gap Analysis — 2026-03-29)
-
-> **Методологія:** параноїдальний аудит (Zero-Trust architecture + REST contract compliance).
-> Перевірені файли: `app/controllers/api/v1/`, `config/routes.rb`, `config/initializers/rack_attack.rb`, `config/initializers/filter_parameter_logging.rb`, `app/services/ed25519_crypto/`, `app/workers/unpack_telemetry_worker.rb`.
-
-### 8.1 Вектори аудиту та результати
-
----
-
-#### 🟢 Розсинхрон маршрутів (Ghost Endpoints)
-
-| Ендпоінт | Статус |
-|---|---|
-| `POST /api/v1/auth/m2m_token` | ✅ маршрут зареєстровано в `routes.rb`, скіп `authenticate_user!` |
-| `POST /api/v1/gateways/:id/telemetry` | ✅ `routes.rb` має і `get :telemetry` і `post :telemetry` |
-| `GET /api/v1/gateways/:id/telemetry` | ✅ існує лише для читання (Dashboard) |
-| `POST /api/v1/oracle_callbacks` | ✅ `resources :oracle_callbacks, only: [:create]` |
-
-**Висновок:** Розсинхрону маршрутів не виявлено. Жодного ghost-ендпоінту.
-
----
-
-#### 🟢 Zero-Trust: Деривація AES-ключа
-
-- `HardwareKeyService.provision` → `derive_device_key` → `OpenSSL::KDF.hkdf(PROVISIONING_MASTER_KEY, ...)` ✅
-- JSON response без `aes_key` якщо `PROVISIONING_MASTER_KEY` встановлено ✅
-- `ProvisioningController#register` format html: `display_key = ENV["PROVISIONING_MASTER_KEY"].blank? ? @key_hex : nil` — ключ не відображається у браузері у Production режимі ✅
-
----
-
-#### 🟢 Zero-Trust: HMAC Валідація Oracle
-
-- `before_action :verify_chainlink_signature!` присутній ✅
-- `OpenSSL::HMAC.hexdigest("SHA256", hmac_secret, body)` ✅
-- `ActiveSupport::SecurityUtils.secure_compare(expected, signature)` — timing-safe порівняння ✅
-- Fallback: якщо `CHAINLINK_HMAC_SECRET` blank → warn + return (dev/test mode) ✅
-
-**Вектор: Oracle Callback Replay Attack — закрито.**
-
-**[A-6 ВИПРАВЛЕНО — коміт bc3a0ce]:** Атомарний **State Machine Guard** — замість timestamp/nonce у HMAC.
-`TelemetryLog.where(id:, created_at:, oracle_status: "dispatched").update_all(oracle_status: new_status)` повертає `updated_rows`. Якщо `updated_rows == 0` — запис вже оброблено (стан не `dispatched`), callback відхиляється з `409 Conflict`. Перший запит транзакційно перемикає стан; всі повтори отримують нульовий результат. Компрометація HMAC secret більше не дозволяє подвійний мінтинг.
-
-> **Примітка:** Chainlink DON підтримує `X-Chainlink-Timestamp` header — додаткова перевірка часу може бути розглянута в наступному циклі.
-
----
-
-#### 🟢 M2M Auth: Ed25519 Верифікація
-
-- `Ed25519Crypto::SigningService.verify` — реальна імплементація через гем `ed25519` ✅
-- Timestamp check `(Time.current - request_time).abs > 5.minutes` ✅
-- Scope через організацію (`hardware_key.owner.cluster.organization`) ✅
-- `rescue Ed25519Crypto::SigningService::SigningError` → 401 (некоректний формат signature/pubkey повертає 401, а не 500) ✅
-
----
-
-#### 🔴 Витік Даних у Логах (виправлено)
-
-`config/initializers/filter_parameter_logging.rb` не містив фільтрів для:
-
-| Параметр | Ризик |
-|---|---|
-| `signature` | Ed25519-підпис шлюзу в `POST /auth/m2m_token` — логувався в Rails logs |
-| `payload` | Base64 зашифрований бінарний батч телеметрії — логувався при HTTP uplink |
-| `ed25519_public_key` | Публічний ключ шлюзу при provisioning — логувався в Rails logs |
-
-**Виправлення:** додано три параметри до `filter_parameters`. Тепер логуються як `[FILTERED]`.
-
----
-
-#### 🟠 Прогалини Покриття Rack::Attack (виправлено)
-
-| Ендпоінт | До виправлення | Після виправлення |
-|---|---|---|
-| `POST /api/v1/auth/m2m_token` | ❌ не throttled | ✅ `m2m_auth/ip`: 15 req/min per IP |
-| `POST /api/v1/oracle_callbacks` | ❌ не throttled | ✅ `oracle_callbacks/ip`: 60 req/min per IP |
-| `POST /api/v1/gateways/:id/telemetry` | ✅ вже покрито `TELEMETRY_PATH_PATTERN` | ✅ залишається |
-
-**Обґрунтування throttle для M2M:** без ліміту зловмисник міг:
-1. Масово перебирати `did` (DID enumeration) — кожен запит → DB lookup → інформація про існування/відсутність device
-2. Флудити endpoint, генеруючи навантаження на PostgreSQL та Ed25519 верифікацію
-
----
-
-#### 🔵 Архітектурні Спостереження (не вимагають негайних змін)
-
-1. **`mark_seen!` — синхронний DB write у controller hot-path** (`TelemetryController#gateway_uplink`):
-
-   **[A-8 ВИПРАВЛЕНО — коміт bc3a0ce]:** `TelemetryController#gateway_uplink` є повністю stateless — жодних DB-записів у HTTP hot-path. `mark_seen!` перенесено виключно в `UnpackTelemetryWorker`. Controller лише ставить job у чергу та повертає `202 Accepted`. Це усуває ризик вичерпання Connection Pool під час масового перепідключення шлюзів після блекаутів.
-
-2. **`cached_binary_key` — AES ключ у Redis у plaintext** — закрито:
-
-   **[A-7 ВИПРАВЛЕНО — коміт bc3a0ce]:** AES-ключі кешуються в **in-process RAM** (`SinLruRedux::ThreadSafeCache`, max 10 000 ключів) замість Redis. Ключі ніколи не залишають Ruby process, зникають при рестарті, не серіалізуються по мережі. Ізольований ризик — лише поточний процес, без централізованого витоку. Ініціалізатор: `config/initializers/hardware_key_cache.rb`. Cache invalidation: `after_commit :clear_key_cache` на update/destroy.
-
-3. **Oracle callback `find_telemetry_log` — детермінований ORDER BY**:
-   `scope.order(created_at: :desc).first!` — забезпечує детермінований результат при потенційному дублюванні `chainlink_request_id` та є ефективним для RANGE-партицій по `created_at` (PostgreSQL partition pruning). ✅
-
-4. **`HardwareKeyService.rotate!` vs `HardwareKey#rotate_key!` — дублювання логіки ротації**:
-   `HardwareKey#rotate_key!` позначено як `[DEPRECATED]` (коміт bc3a0ce). Метод залишено для зворотної сумісності, але логує `DeprecationWarning`. Єдина точка входу для ротації — `HardwareKeyService.rotate(device_uid)`, яка також надсилає downlink-сповіщення до пристрою.
-
-5. **HTML provisioning використовує Phlex-компонент `Provisioning::Success`**:
-   Компонент коректно обробляє `nil aes_key` у production режимі — відображає повідомлення "HKDF mode: ключ деривується незалежно на прошивці". ✅ (коміт bc3a0ce)
-
----
-
-### 8.2 Зведена Таблиця Знахідок
-
-| # | Severity | Файл | Проблема | Статус | PR/Commit |
-|---|---|---|---|---|---|
-| A-1 | 🔴 P0 | `filter_parameter_logging.rb` | `signature`, `payload`, `ed25519_public_key` логуються у plaintext | ✅ Виправлено | da64021 |
-| A-2 | 🔴 P0 | `provisioning_controller.rb` | HTML format завжди показує HKDF ключ (production leak) | ✅ Виправлено | da64021 |
-| A-3 | 🟠 P1 | `m2m_auth_controller.rb` | `SigningService::SigningError` → 500 замість 401 (Fail2Ban bypass) | ✅ Виправлено | da64021 |
-| A-4 | 🟠 P1 | `rack_attack.rb` | `POST /auth/m2m_token` не throttled (DID enumeration + DoS) | ✅ Виправлено | da64021 |
-| A-5 | 🟠 P1 | `rack_attack.rb` | `POST /oracle_callbacks` не throttled | ✅ Виправлено | da64021 |
-| A-6 | 🔵 Arch | `oracle_callbacks_controller.rb` | Replay attack (відсутній timestamp в HMAC payload) | ✅ Виправлено | bc3a0ce |
-| A-7 | 🔵 Arch | `hardware_key.rb` | AES ключ у Redis plaintext (Cache) | ✅ Виправлено | bc3a0ce |
-| A-8 | 🔵 Arch | `telemetry_controller.rb` | `mark_seen!` — синхронний DB write у request cycle | ✅ Виправлено | bc3a0ce |
-| A-9 | 🔵 Arch | `oracle_callbacks_controller.rb` | `find_telemetry_log` — non-deterministic `first!` без ORDER BY | ✅ Виправлено | da64021 |
-| A-10 | 🔵 Arch | `m2m_auth_controller.rb` | M2M signature replay (одна підпис — кілька токенів) | ✅ Виправлено | bc3a0ce |
-| A-11 | 🔵 Arch | `actuators_controller.rb` | Дублювання команди актуатора при network retry (no idempotency) | ✅ Виправлено | bc3a0ce |
-| A-12 | 🔵 Arch | `provisioning/success.rb` | `Provisioning::Success` crash при `nil aes_key` в HKDF mode | ✅ Виправлено | bc3a0ce |
-
-### 8.3 Тести безпеки
-
-- `spec/initializers/rack_attack_spec.rb` — покриває throttle правила для `m2m_auth/ip` та `oracle_callbacks/ip`
-- `spec/requests/api/v1/m2m_auth_controller_spec.rb` — перевіряє що некоректний Ed25519 підпис повертає 401 (не 500); nonce replay → 401; Redis unavailable → 503
-- `spec/requests/api/v1/oracle_callbacks_controller_spec.rb` — replay callback (повторний запит) → 409 Conflict; state machine guard
-- `spec/requests/api/v1/actuators_controller_spec.rb` — відсутній `Idempotency-Key` → 400; ідемпотентний повтор → 202 з кешованою відповіддю
-
----
-
-## 9. Пов'язані Документи
+## 8. Пов'язані Документи
 
 | Документ | Опис |
 |---|---|
