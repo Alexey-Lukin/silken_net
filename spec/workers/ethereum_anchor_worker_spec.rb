@@ -22,8 +22,8 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
       expect(described_class.sidekiq_options["queue"]).to eq("web3_low")
     end
 
-    it "has retry set to 3" do
-      expect(described_class.sidekiq_options["retry"]).to eq(3)
+    it "has retry set to 5" do
+      expect(described_class.sidekiq_options["retry"]).to eq(5)
     end
 
     it "re-raises errors after logging" do
