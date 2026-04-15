@@ -30,7 +30,7 @@
 
 * **Gateway** (Королева): LoRa-шлюз із SIM7070G (Starlink/LTE). Центральний хаб, що збирає дані з дерев і передає в Цитадель. Формат UID: `SNET-Q-XXXXXXXX`.
 
-* **HardwareKey**: Криптографічний якір. Зберігає AES-256 ключ для Zero-Trust зв'язку. Прив'язаний до `device_uid` пристрою.
+* **HardwareKey**: Криптографічний якір. Зберігає AES-256 ключ для Zero-Trust зв'язку. Прив'язаний до `device_uid` пристрою. In-process LRU-кеш (SinLruRedux) використовує **Cache Key Versioning** (`device_uid:v:updated_at`) — будь-яке оновлення запису автоматично інвалідує кеш без `after_commit` callback, усуваючи race condition між `COMMIT` та `after_commit`.
 
 * **DeviceCalibration**: Фільтр точності. Коригує дрейф сенсорів (температура, вольтаж, імпеданс).
 
@@ -46,7 +46,7 @@
 
 ## 🧠 4. Інтелектуальний Рівень (Intelligence/Oracle)
 
-* **AiInsight**: Голос Оракула (поліморфний: `Tree` або `Cluster`). Вердикти: `stress_index`, `insight_type: :daily_health_summary`. Threshold для Slashing: `stress_index >= 1.0`.
+* **AiInsight**: Голос Оракула (поліморфний: `Tree` або `Cluster`). Вердикти: `stress_index`, `insight_type: :daily_health_summary`. Threshold для Slashing: `stress_index >= 1.0`. Підтримує `search_reasoning(query)` scope — повнотекстовий пошук по `reasoning->>'description'` через tsvector GIN-індекс (`idx_ai_insights_reasoning_fts`). Для containment-запитів (`@>`) використовується окремий JSONB GIN-індекс (`idx_ai_insights_reasoning_gin`).
 
 * **TinyMlModel**: Вагова матриця нейромережі для детекції аномалій на пристрої. Доставляється через OTA у 512-байтних чанках.
 
@@ -62,7 +62,7 @@
 
 * **ParametricInsurance**: Страховий щит кластера. Автоматичні виплати при `critical_fire`, `extreme_drought`, `insect_epidemic`. Підтримує інтеграцію з Etherisc DIP — якщо `etherisc_policy_id` присутній, система працює як Oracle, тригеруючи USDC виплати з децентралізованого пулу ліквідності замість емісії внутрішніх токенів.
 
-* **BlockchainTransaction**: Незмінний слід у мережі Polygon. Статуси: `pending` → `sent` → `confirmed` / `failed`.
+* **BlockchainTransaction**: Незмінний слід у мережі Polygon. Статуси: `pending` → `sent` → `confirmed` / `failed`. Таблиця RANGE-партиціонована по `created_at` (composite PK `id + created_at`). Для partition-aware пошуку використовується `find_with_partition_pruning(id, created_at)` — при наявності `created_at` PostgreSQL звертається до однієї партиції замість глобального сканування (`O(log N)` vs `O(P×log N)`). Контролер підтримує `?created_at=ISO8601` для pruning через API.
 
 ---
 
