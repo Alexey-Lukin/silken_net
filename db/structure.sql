@@ -727,6 +727,45 @@ ALTER SEQUENCE public.device_calibrations_id_seq OWNED BY public.device_calibrat
 
 
 --
+-- Name: ethereum_anchors; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ethereum_anchors (
+    id bigint NOT NULL,
+    state_root character varying(64) NOT NULL,
+    total_scc numeric(30,4) NOT NULL,
+    chain_hash character varying NOT NULL,
+    anchored_at timestamp(6) without time zone NOT NULL,
+    tx_hash character varying(66),
+    block_number bigint,
+    gas_used bigint,
+    status integer DEFAULT 0 NOT NULL,
+    error_message character varying(500),
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: ethereum_anchors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ethereum_anchors_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ethereum_anchors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ethereum_anchors_id_seq OWNED BY public.ethereum_anchors.id;
+
+
+--
 -- Name: ews_alerts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1928,6 +1967,13 @@ ALTER TABLE ONLY public.device_calibrations ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: ethereum_anchors id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ethereum_anchors ALTER COLUMN id SET DEFAULT nextval('public.ethereum_anchors_id_seq'::regclass);
+
+
+--
 -- Name: ews_alerts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2133,6 +2179,14 @@ ALTER TABLE ONLY public.clusters
 
 ALTER TABLE ONLY public.device_calibrations
     ADD CONSTRAINT device_calibrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ethereum_anchors ethereum_anchors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ethereum_anchors
+    ADD CONSTRAINT ethereum_anchors_pkey PRIMARY KEY (id);
 
 
 --
@@ -3200,6 +3254,34 @@ CREATE INDEX index_clusters_on_organization_id ON public.clusters USING btree (o
 --
 
 CREATE INDEX index_device_calibrations_on_tree_id ON public.device_calibrations USING btree (tree_id);
+
+
+--
+-- Name: index_ethereum_anchors_on_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ethereum_anchors_on_created_at ON public.ethereum_anchors USING btree (created_at);
+
+
+--
+-- Name: index_ethereum_anchors_on_state_root; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_ethereum_anchors_on_state_root ON public.ethereum_anchors USING btree (state_root);
+
+
+--
+-- Name: index_ethereum_anchors_on_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ethereum_anchors_on_status ON public.ethereum_anchors USING btree (status);
+
+
+--
+-- Name: index_ethereum_anchors_on_tx_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_ethereum_anchors_on_tx_hash ON public.ethereum_anchors USING btree (tx_hash) WHERE (tx_hash IS NOT NULL);
 
 
 --
@@ -5169,6 +5251,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260415140000'),
 ('20260329111830'),
 ('20260328120000'),
 ('20260328110000'),
