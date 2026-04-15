@@ -1,31 +1,22 @@
-# 05_03: Tokenomics — SCC & SFC (Смарт-контракти на Polygon)
+# 05_03: Токеноміка — SCC & SFC (Смарт-контракти на Polygon)
 
-**Модуль:** 05_03 — Tokenomics: SilkenCarbonCoin & SilkenForestCoin
-**Пов'язані модулі:** [05_01 Multichain Architecture](BLOCKCHAIN_DEVELOPMENT.md) · [05_02 Proof of Growth Pipeline](TOKENOMICS.md)
-**Поточний TRL:** 7 (Контракти існують, але SSOT є неправильною/застарілою)
-**Цільовий TRL:** 8 (Повна синхронізація логіки токеноміки з Wiki)
-**Статус Аудиту:** Reverse Shaping — лише документація, без рефакторингу коду
+## 🎯 Мета
 
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з кодбейсом станом на 2026-03-23.
-> **Джерела правди:** `contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`,
-> `app/services/blockchain_minting_service.rb`, `app/services/blockchain_burning_service.rb`,
-> `subgraph/subgraph.yaml`
+Зафіксувати реальний стан («як є») смарт-контрактів токеноміки Gaia 2.0 — `SilkenCarbonCoin` (SCC) та `SilkenForestCoin` (SFC). Документ описує стандарти токенів, ієрархію ролей, ключові функції, механізм Dynamic Tax, зв'язок з бекендом та повний перелік знайдених блокерів.
 
 ---
 
-## 🎯 Мета (Objective)
+## ✅ Статус
 
-Зафіксувати реальний стан ("як є") смарт-контрактів токеноміки Gaia 2.0 — `SilkenCarbonCoin` (SCC) та `SilkenForestCoin` (SFC). Документ описує стандарти токенів, ієрархію ролей, ключові функції, механізм Dynamic Tax, зв'язок з бекендом та повний перелік знайдених блокерів.
-
----
-
-## ✅ Статус (Status)
-
-- **SCC контракт:** ✅ Задеплоєний (логіка мінту та slash реалізована)
-- **SFC контракт:** ✅ Задеплоєний (логіка мінту + Votes + Permit реалізована)
+- **SCC контракт:** ✅ Задеплоєний (логіка мінту та slash реалізована, ERC20Permit)
+- **SFC контракт:** ✅ Задеплоєний (логіка мінту + Votes + Permit)
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
-- **The Graph subgraph:** ⚠️ Event name mismatch (`Slashed` vs `TokenSlashed`) — [05_01 BLOCKER-2]
-- **Mainnet deployment:** 🔴 Заблоковано критичними блокерами (деталі нижче)
+- **The Graph subgraph:** ✅ `TokenSlashed` event name виправлено
+- **Синхронізація:** 2026-04-15
+- **Mainnet deployment:** 🔴 Заблоковано відкритими блокерами (деталі нижче)
+- **Пов'язані модулі:**
+  - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
+  - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
 
 ---
 
@@ -44,7 +35,7 @@
 | **Slash / Burn** | ✅ `slash()` через `SLASHER_ROLE` | ❌ Відсутній |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
 | **DAO голосування** | ❌ | ✅ `ERC20Votes` |
-| **Subgraph індексація** | ✅ `CarbonMinted`, ⚠️ `Slashed` (помилка) | ❌ Немає |
+| **Subgraph індексація** | ✅ `CarbonMinted`, ✅ `TokenSlashed` | ❌ Немає |
 
 ---
 
@@ -195,7 +186,7 @@ function batchMint(
 
 - **Призначення:** Газово-ефективна масова емісія для цілих секторів/кластерів
 - **Валідація:** Перевірка рівності довжин масивів; **ліміт розміру відсутній** — BLOCKER B-04
-- **Dynamic Tax:** При виклику `batchMint` з бекенду, `BlockchainMintingService` може вставляти додаткових отримувачів (`DAO_TREASURY_ADDRESS`) для Dynamic Tax — BLOCKER B-05
+- **Dynamic Tax:** При виклику `batchMint` з бекенду, `BlockchainMintingService` вставляє додаткових отримувачів (`DAO_TREASURY_ADDRESS`) коли баланс Treasury < 100,000 SCC
 - **Gas Optimization [PR #253]:** `Treasury::MintBatchCollectorService` (cron кожні 5 хв) агрегує pending TX та відправляє пакетами по 100 через `BlockchainMintingService.call_batch`. `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Urgent TX (>30 хв) відправляються негайно.
 
 #### `slash(address investor, uint256 amount)`
@@ -320,8 +311,8 @@ function nonces(address owner)
 | Event у subgraph.yaml | Подія у контракті | Статус |
 |---|---|---|
 | `CarbonMinted(indexed address,uint256,indexed string)` | `CarbonMinted` | ✅ Збігається |
-| `Slashed(indexed address,uint256,indexed string)` | `TokenSlashed` | 🚨 MISMATCH — [05_01 BLOCKER-2] |
-| `PremiumPaid(indexed address,uint256)` | ❌ **Відсутня в контракті** | 🚨 Подія не існує — BLOCKER B-11 |
+| `TokenSlashed(indexed address,uint256)` | `TokenSlashed` | ✅ Виправлено |
+| `PremiumPaid(indexed address,uint256)` | ❌ **Відсутня в контракті** | 🚨 Подія не існує — BLOCKER B-08 |
 
 > ⚠️ **Indexed string у Events:** `string indexed treeDid` та `string indexed clusterId` зберігаються як `keccak256` хеш — не як рядок. Off-chain підписники не можуть прочитати значення без окремого lookup. (BLOCKER B-10)
 
@@ -346,13 +337,16 @@ end
 ```
 
 ```ruby
-# TODO: Інтегрувати з реальним балансом DAO Treasury через on-chain query.
 def insurance_pool_requires_funding?
-  true  # ⚠️ ЗАВЖДИ TRUE — BLOCKER B-05
+  # On-chain query: балансOf DAO Treasury < INSURANCE_POOL_THRESHOLD (100_000 SCC)
+  # Кешується 15 хв. Failsafe: true при збої RPC.
+  Rails.cache.fetch(TREASURY_CACHE_KEY, expires_in: TREASURY_CACHE_TTL) do
+    fetch_treasury_balance_wei < INSURANCE_POOL_THRESHOLD_WEI
+  end
 end
 ```
 
-**Наслідок:** Dynamic Tax застосовується на **кожен** пакетний мінт незалежно від стану страхового пулу. Одиночний `mint()` (не `batchMint`) Dynamic Tax **не застосовує**.
+**Наслідок:** Dynamic Tax (2%) застосовується коли баланс DAO Treasury < 100,000 SCC. Одиночний `mint()` (не `batchMint`) Dynamic Tax **не застосовує**.
 
 ---
 
@@ -367,11 +361,11 @@ Telemetry → Lorenz Z-value → growth_points++
                                     ↓
                     MintCarbonCoinWorker [queue: web3_critical]
                                     ↓
-                    Guards (лише якщо telemetry_log переданий):
+                    Guards (лише якщо telemetry_log переданий, oracle-driven flow):
                     ├── verified_by_iotex? == true
-                    ├── oracle_status == "fulfilled"
+                    ├── oracle_status_fulfilled? (enum method)
                     └── hadron_kyc_status == "approved"
-                    ⚠️ TokenomicsEvaluatorWorker НЕ передає telemetry_log → Guards пропускаються [05_02 BLOCKER-11]
+                    (TokenomicsEvaluatorWorker без log → growth_points вже верифіковані pipeline'ом)
                                     ↓
                     BlockchainMintingService#perform
                     ├── Oracle balance ≥ 0.05 MATIC
@@ -409,7 +403,7 @@ SCC: slash(investor, amount)   ← SLASHER_ROLE (= той самий ORACLE_PRIV
         ↓
 emit TokenSlashed(...)
         ↓
-⚠️ The Graph НЕ індексує (subgraph слухає "Slashed", а не "TokenSlashed")
+The Graph індексує `TokenSlashed` → `ProtocolFinancials.totalBurned` оновлюється
         ↓
 EwsAlert + MaintenanceRecord + AuditLog
         ↓
@@ -585,20 +579,7 @@ require(oracle != address(0), "SCC: zero oracle");
 **Ризик:** DoS вектор; `BlockchainMintingService` не має власного ліміту.
 **Потрібно:** `require(length <= 200, "SCC: batch too large");`
 
----
 
-#### B-05: `insurance_pool_requires_funding?` завжди повертає `true`
-
-**Файл:** `app/services/blockchain_minting_service.rb:194–196`
-
-```ruby
-def insurance_pool_requires_funding?
-  true  # TODO: Інтегрувати з реальним балансом DAO Treasury через on-chain query.
-end
-```
-
-**Наслідок:** Dynamic Tax (2%) застосовується на **кожен** пакетний мінт SCC незалежно від стану страхового пулу. 100% пакетних транзакцій розщеплюються між форестером та `DAO_TREASURY_ADDRESS`, що порушує умови NaaS-контрактів (інвестори отримують 98% замість 100%).
-**Потрібно:** On-chain query до DAO Treasury контракту для перевірки балансу пулу. (Також задокументовано у [05_02 BLOCKER-05])
 
 ---
 
@@ -635,24 +616,7 @@ Subgraph підписаний на `PremiumPaid(indexed address,uint256)`, ал�
 
 **Потрібно:** Або додати event `PremiumPaid` до контракту, або видалити handler зі subgraph.
 
----
 
-#### B-09: Event name mismatch у subgraph — `Slashed` vs `TokenSlashed`
-
-**(Перехресне посилання: [05_01 BLOCKER-2])**
-
-**Файли:** `subgraph/subgraph.yaml:32–34`, `contracts/SilkenCarbonCoin.sol:18`
-
-```yaml
-# subgraph.yaml:
-- event: Slashed(indexed address,uint256,indexed string)   # ← НЕПРАВИЛЬНО
-
-# Контракт:
-event TokenSlashed(address indexed investor, uint256 amount); # ← Правильна назва
-```
-
-**Наслідок:** Slashing-події не індексуються The Graph. `ProtocolFinancials.totalBurned` завжди `0`. CertiK/Hacken аудитори побачать нульовий burn у протоколі.
-**Фікс:** Змінити `Slashed` → `TokenSlashed` у `subgraph/subgraph.yaml`.
 
 ---
 
@@ -665,23 +629,7 @@ event TokenSlashed(address indexed investor, uint256 amount); # ← Правил
 
 **Потрібно:** Прибрати `indexed` з рядкових полів; якщо пошук потрібен — додати `bytes32 treeDidHash = keccak256(treeDid)` як окреме indexed поле.
 
----
 
-#### B-11: TokenomicsEvaluatorWorker оминає Trustless Guards
-
-**(Перехресне посилання: [05_02 BLOCKER-11])**
-
-**Файл:** `app/services/blockchain_minting_service.rb:52–57`
-
-```ruby
-if @telemetry_log
-  raise "Security Breach: Data not verified by IoTeX" unless @telemetry_log.verified_by_iotex?
-  raise "Security Breach: Chainlink Oracle consensus not fulfilled" unless ...
-end
-# ⚠️ Якщо telemetry_log == nil — всі guard checks пропускаються
-```
-
-**Наслідок:** `TokenomicsEvaluatorWorker` запускає `MintCarbonCoinWorker` без `telemetry_log`, і всі trustless guards (IoTeX ZK, Chainlink) не спрацьовують. Токени можуть бути відмінтовані для незверифікованих даних.
 
 ---
 
@@ -726,13 +674,10 @@ startBlock: 0  # TODO: встановити номер блоку деплою
 | B-02 | Єдиний oracle = minter + slasher | Security | Повний контроль одним ключем | P0 |
 | B-03 | Zero address check відсутній | Security | Нерозгортувана помилка | P0 |
 | B-04 | Відсутній ліміт batchMint | Functional | DoS / Gas limit revert | P1 |
-| B-05 | `insurance_pool_requires_funding?` = true | Financial | 2% Dynamic Tax на кожен mint | P1 |
 | B-06 | SFC без slash механізму | Governance | DAO атака після breach | P1 |
 | B-07 | Непослідовна реалізація паузи | Maintainability | Ускладнений аудит | P1 |
 | B-08 | `PremiumPaid` відсутня в контракті | Subgraph | `totalPremiums` завжди 0 | P1 |
-| B-09 | `Slashed` vs `TokenSlashed` mismatch | Subgraph | `totalBurned` завжди 0 | P1 |
 | B-10 | Indexed string → keccak256 | Observability | Нечитабельні event logs | P2 |
-| B-11 | TokenomicsEvaluator оминає guards | Security | Незверифікований мінтинг | P1 |
 | B-12 | `mintForTree` vs `mint` назва | Documentation | Розбіжність з Wiki | P3 |
 | B-13 | Відсутній ReentrancyGuard | Security | Превентивний ризик | P2 |
 | B-14 | Неповний NatSpec у SFC | Documentation | Ускладнений аудит | P3 |
@@ -740,7 +685,7 @@ startBlock: 0  # TODO: встановити номер блоку деплою
 
 **Легенда пріоритетів:** P0 = Блокує Mainnet негайно (security breach) · P1 = Потрібно вирішити до Mainnet · P2 = Потрібно для виробничої відповідності · P3 = Технічний борг
 
-**Загальний висновок:** Контракти функціонально реалізують базову логіку мінтингу та slashing і мають RSpec-покриття через сервіси. Проте **3 критичні блокери (B-01, B-02, B-03)** та **6 важливих (B-04 – B-09, B-11)** унеможливлюють production/Mainnet deployment та зовнішній аудит.
+**Загальний висновок:** Контракти функціонально реалізують базову логіку мінтингу та slashing і мають RSpec-покриття через сервіси. Проте **3 критичні блокери (B-01, B-02, B-03)** та **5 важливих (B-04, B-06–B-08)** унеможливлюють production/Mainnet deployment та зовнішній аудит.
 
 ---
 
@@ -763,8 +708,8 @@ app/workers/
 
 subgraph/
 ├── schema.graphql                    # CarbonMintEvent, SlashingEvent, ProtocolFinancials
-├── subgraph.yaml                     # ⚠️ Event name mismatch (B-09, B-08)
-└── src/mapping.ts                    # handleCarbonMinted, handleSlashed, handlePremiumPaid
+├── subgraph.yaml                     # ⚠️ PremiumPaid відсутня в контракті (B-08)
+└── src/mapping.ts                    # handleCarbonMinted, handleTokenSlashed, handlePremiumPaid
 
 spec/services/
 ├── blockchain_minting_service_spec.rb

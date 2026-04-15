@@ -1,14 +1,24 @@
-# 05_02: Proof of Growth Pipeline
+# 05_02: Пайплайн «Proof of Growth»
 
-**Модуль:** 05_02 — Proof of Growth Pipeline (peaq DID → IoTeX ZK → Chainlink)
-**Пов'язані модулі:** [05_01 Multichain Architecture](05_01_Multichain_Architecture) · [05_03 Tokenomics SCC/SFC](05_03_Tokenomics_SCC_and_SFC)
-**Поточний TRL:** 7 (Пайплайн імплементовано в коді; SSOT відсутня/застаріла)
-**Цільовий TRL:** 8 (Повна синхронізація криптографічного пайплайну з Wiki)
-**Статус Аудиту:** Reverse Shaping — лише документація, без рефакторингу
+## 🎯 Мета
+
+Зафіксувати повний trustless консенсусний пайплайн SilkenNet — від фізичних біосигналів дерева (Lorenz Z-координата гомеостазу) до верифікованих on-chain активів (SilkenCarbonCoin / SCC). Включає опис прошивок Солдата й Королеви, всіх кроків верифікації (peaq DID → IoTeX ZK → Chainlink → Polygon + Solana) та відкритих блокерів.
 
 ---
 
-## Огляд
+## ✅ Статус
+
+- **Поточний TRL:** TRL 8 — Пайплайн повністю імплементовано, BLOCKER-04/05/06/07/08/09/10/11/12 закриті.
+- **Синхронізація:** 2026-04-15
+- **Пов'язані модулі:**
+  - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
+  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
+  - Моделі → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
+  - Сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+
+---
+
+## 💡 Огляд
 
 "Proof of Growth" — це trustless консенсусний пайплайн SilkenNet, що перетворює
 фізичні біосигнали дерева (Lorenz Z-координата гомеостазу) на верифіковані
@@ -143,7 +153,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║                                                                      ║
 ║  ─────────── КРОК F: Solana Micro-Reward (паралельно) ────────────── ║
 ║    Guard: verified_by_iotex? && oracle_status=="fulfilled"           ║
-║    POST {SOLANA_RPC_URL} simulateTransaction [⚠️ DEVNET ONLY]        ║
+║    POST {SOLANA_RPC_URL} sendTransaction (Ed25519-signed, base64)    ║
 ║    SPL Token Program: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA  ║
 ╚══════════════════════════════════════════════════════════════════════╝
 ```
@@ -397,7 +407,7 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 - `app/workers/chainlink_dispatch_worker.rb` — queue: `web3_critical` (prio 7), retry: 5
 - `app/services/chainlink/oracle_dispatch_service.rb`
 
-**Статус (Wiki 05_01):** ⚠️ Hybrid — реальний Chainlink Functions Router при наявності
+**Статус:** ✅ Real — Chainlink Functions Router v1 ABI. `WEB3_STRICT_MODE=true` вимагає `CHAINLINK_FUNCTIONS_ROUTER` + `CHAINLINK_SUBSCRIPTION_ID` в Production.
 credentials, stub без них.
 
 **Guard-перевірка:**
@@ -428,22 +438,22 @@ raise DispatchError unless @log.verified_by_iotex?
 client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
 oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
 contract = Eth::Contract.from_abi(name: "FunctionsRouter", address: router_address, abi: abi)
-# [BLOCKER-09 FIX]: ABI v1 — 5 параметрів
+# ABI v1 — 5 параметрів: subscriptionId, data, dataVersion, callbackGasLimit, donId
 tx_hash = client.transact(contract, "sendRequest",
                            subscription_id.to_i, payload.to_json,
                            data_version, callback_gas_limit, don_id,
                            sender_key: oracle_key, legacy: false)
 ```
 
-**Режим DEV (відсутні ENV, WEB3_STRICT_MODE != "true"):**
+**Режим DEV (відсутні ENV):**
 ```ruby
 "chainlink-req-#{SecureRandom.hex(16)}"  # ⚠️ LOCAL STUB
-# [BLOCKER-04 FIX]: WEB3_STRICT_MODE=true → raises DispatchError
+# WEB3_STRICT_MODE=true → raises DispatchError (Production mode)
 ```
 
 **Оновлення БД:**
 ```ruby
-# [BLOCKER-12 FIX]: oracle_status тепер enum з prefix
+# oracle_status — enum з prefix (oracle_status_dispatched?, oracle_status_fulfilled? тощо)
 log.update!(chainlink_request_id: request_id, oracle_status: "dispatched")
 ```
 
@@ -490,9 +500,8 @@ log.update!(oracle_status: "failed")
 **Trustless Guard Clauses (лише при oracle-driven flow з telemetry_log):**
 ```ruby
 raise "Security Breach: Data not verified by IoTeX"               unless telemetry_log.verified_by_iotex?
-raise "Security Breach: Chainlink Oracle consensus not fulfilled"  unless telemetry_log.oracle_status_fulfilled?  # [BLOCKER-12 FIX]: enum method
+raise "Security Breach: Chainlink Oracle consensus not fulfilled"  unless telemetry_log.oracle_status_fulfilled?  # enum method
 raise "Compliance Breach: Wallet is not Hadron KYC approved"      unless wallet.hadron_kyc_status == "approved"
-# [BLOCKER-11 FIX]: Guards активні лише при telemetry_log (oracle-driven flow).
 # TokenomicsEvaluatorWorker без log — growth_points вже верифіковані pipeline'ом.
 ```
 
@@ -533,7 +542,7 @@ Sidekiq::Limiter.window("web3_rpc", 50, :second, wait: 5)  # 50 RPC/sec global
 
 **Статус (Wiki 05_01):** ✅ Real — `sendTransaction` з Ed25519 підписом.
 
-**Oracle Balance Guard [BLOCKER-1 FIX]:**
+**Oracle Balance Guard:**
 ```ruby
 verify_oracle_balance!(rpc_url, fee_payer_pubkey)
 # raises при balance < MIN_ORACLE_BALANCE_LAMPORTS (0.05 SOL = 50M lamports)
@@ -563,9 +572,9 @@ telemetry_logs  [PARTITION BY RANGE(created_at)]
   ├─ verified_by_iotex    :boolean  NOT NULL DEFAULT false
   ├─ zk_proof_ref         :string            "proof_id" або "receipt_id" від W3bstream
   ├─ chainlink_request_id :string  INDEX     TX hash або stub request ID
-  └─ oracle_status        :enum(string)  DEFAULT "pending"  [BLOCKER-12 FIX]
+  └─ oracle_status        :enum(string)  DEFAULT "pending"
                                    pending → dispatched → fulfilled | failed
-                                   Rails enum з prefix: oracle_status_pending?, oracle_status_dispatched?, etc.
+                                   Rails enum з prefix: oracle_status_pending?, oracle_status_dispatched?, oracle_status_fulfilled?, oracle_status_failed?
 
 Partial indexes (sparse, billions of rows):
   idx_telemetry_logs_oracle_dispatched  WHERE oracle_status = 'dispatched'
@@ -685,152 +694,37 @@ tree_family.critical_z_max  # може бути 40.0 для дуба, 55.0 дл�
 
 ---
 
-### BLOCKER-04: Відсутня верифікація підпису на Oracle Callback ендпоінті [P0 — CRITICAL SECURITY]
 
-**Файл:** `app/controllers/api/v1/oracle_callbacks_controller.rb:7`
 
-```ruby
-skip_before_action :authenticate_user!
-# ⚠️ Немає HMAC/ECDSA верифікації підпису від Chainlink DON
-```
-
-**Наслідок:** Будь-який зовнішній актор може надіслати:
-```
-POST /api/v1/oracle_callbacks
-{ "chainlink_request_id": "...", "success": true }
-```
-і ініціювати мінтинг SCC без жодної реальної ZK-верифікації або Oracle consensus.
-Chainlink Functions підписує callback приватним ключем DON — цей підпис
-обов'язковий для перевірки.
-
-**Потрібно:** Верифікація ECDSA-підпису Chainlink DON (або HMAC-SHA256 з shared
-secret `CHAINLINK_WEBHOOK_SECRET`) до будь-якої зміни `oracle_status`.
-
----
-
-### ~~BLOCKER-05~~: ✅ ВИРІШЕНО — `insurance_pool_requires_funding?` [B-05 FIX]
-
-**Статус:** ✅ Виправлено у попередньому PR (B-05 FIX).
-
-Реалізовано on-chain query: `fetch_treasury_balance_wei` → `Eth::Client.call(contract, "balanceOf", treasury_address)`. Кешується 15 хв (`TREASURY_CACHE_KEY`). `INSURANCE_POOL_THRESHOLD = 100_000 SCC`. Failsafe: `true` при збої RPC.
-
----
-
-### ~~BLOCKER-06~~: ✅ ВИРІШЕНО — `hardware_signature` тепер Ed25519 [PR #253]
-
-**Статус:** ✅ Виправлено в PR #253.
-
-`hardware_signature` тепер підписується Ed25519 через `Ed25519Crypto::SigningService.sign(hardware_key.binary_key, message)`, де `message = "#{tree.did}:#{log.id_value}:#{log.created_at.to_i}"`. Fallback до SHA256-хеша для legacy/dev пристроїв без provisioned `HardwareKey`.
-
----
-
-### ~~BLOCKER-07~~: ✅ ВИРІШЕНО — ZK proof ref format validation [PR #253]
-
-**Статус:** ✅ Виправлено в PR #253.
-
-Додано regex валідацію: `ZK_PROOF_REF_PATTERN = /\A[0-9a-zA-Z\-_]{8,128}\z/`. Невалідні proof references відхиляються з `VerificationError`.
-
----
-
-### ~~BLOCKER-08~~: ✅ ВИРІШЕНО — `peaq_signing_key` обов'язковий [PR #253]
-
-**Статус:** ✅ Виправлено в PR #253.
-
-`peaq_signing_key` обов'язковий. `raise RegistrationError` якщо відсутній (W3C DID Core compliance). Ed25519 `proof` секція завжди додається до DID payload.
-
----
-
-### ~~BLOCKER-09~~: ✅ ВИРІШЕНО — Chainlink Functions Router ABI v1 [PR #253]
-
-**Статус:** ✅ Виправлено в PR #253.
-
-ABI оновлено до `sendRequest(uint64 subscriptionId, bytes data, uint16 dataVersion, uint32 callbackGasLimit, bytes32 donId)` — 5 параметрів. Додано ENV: `CHAINLINK_DATA_VERSION`, `CHAINLINK_CALLBACK_GAS_LIMIT`, `CHAINLINK_DON_ID`.
-
----
-
-### ~~BLOCKER-10~~: ✅ ВИРІШЕНО — Solana `sendTransaction` [PR #253]
-
-**Статус:** ✅ Виправлено в PR #253.
-
-`simulateTransaction` замінено на `sendTransaction` з Ed25519-signed бінарною транзакцією. ATA отримувача резолюється через `getTokenAccountsByOwner`. Oracle balance guard: `MIN_ORACLE_BALANCE_LAMPORTS = 50M`.
-
----
-
-### ~~BLOCKER-11~~: ✅ ВИРІШЕНО — TokenomicsEvaluatorWorker trustless guards [PR #253]
-
-**Статус:** ✅ Виправлено в PR #253.
-
-`BlockchainMintingService` тепер явно логує `"Batch minting без telemetry_log — використовуються накопичені верифіковані growth_points"` при tokenomics flow. Guard clauses активні лише при oracle-driven flow з `telemetry_log`.
-
----
-
-### ~~BLOCKER-12~~: ✅ ВИРІШЕНО — `oracle_status` enum [PR #253]
-
-**Статус:** ✅ Виправлено в PR #253.
-
-```ruby
-enum :oracle_status, {
-  pending: "pending", dispatched: "dispatched",
-  fulfilled: "fulfilled", failed: "failed"
-}, prefix: true
-```
-
-Автоматичні scope-методи (`oracle_status_dispatched`, `oracle_status_fulfilled` тощо), type safety, Rails-level валідація.
-
----
-
-## Матриця Ризиків
+## 📊 Матриця Ризиків
 
 | # | Блокер | Область | Вплив | Пріоритет |
 |---|--------|---------|-------|-----------|
 | 01 | AES ключ захардкоджений у firmware | Security | Компрометація всіх пристроїв | P0 |
-| 04 | Oracle Callback без верифікації підпису | Security | Несанкціонований мінтинг | P0 |
 | 02 | Float vs BigDecimal Lorenz divergence | Correctness | Різні Z на device vs server | P1 |
 | 03 | CRITICAL_Z thresholds: global vs per-species | Correctness | Некоректний bio_status | P1 |
-| ~~05~~ | ~~`insurance_pool_requires_funding?` = true~~ | ~~Financial~~ | ✅ Виправлено (B-05 FIX) | — |
-| ~~06~~ | ~~`hardware_signature` = SHA256, не Ed25519~~ | ~~Trust~~ | ✅ Виправлено (PR #253) | — |
-| ~~07~~ | ~~ZK-Proof не верифікується локально~~ | ~~Trust~~ | ✅ Виправлено (PR #253) | — |
-| ~~09~~ | ~~Chainlink ABI неповний~~ | ~~Functional~~ | ✅ Виправлено (PR #253) | — |
-| ~~10~~ | ~~Solana simulateTransaction~~ | ~~Functional~~ | ✅ Виправлено (PR #253) | — |
-| ~~11~~ | ~~TokenomicsEvaluator оминає guards~~ | ~~Security~~ | ✅ Виправлено (PR #253) | — |
-| ~~08~~ | ~~peaq_signing_key опціональний~~ | ~~Compliance~~ | ✅ Виправлено (PR #253) | — |
-| ~~12~~ | ~~oracle_status plain string~~ | ~~Reliability~~ | ✅ Виправлено (PR #253) | — |
 
 **Легенда пріоритетів:**
 P0 = Блокує Mainnet негайно (security breach)
 P1 = Потрібно вирішити до Mainnet deployment
-P2 = Потрібно для виробничої відповідності
-P3 = Технічний борг
 
 ---
 
-## Статус Імплементації по Кроках
+## 📋 Статус Імплементації по Кроках
 
-| Крок | Компонент | Wiki 05_01 Статус | Аудит |
-|------|-----------|-------------------|-------|
-| Firmware Soldier | STM32WLE5JC + mruby BioContract | — | ⚠️ BLOCKER-01,02,03 |
-| Firmware Queen | STM32WLE5JC + SIM7070G CIFO | — | ⚠️ BLOCKER-01 |
-| A | peaq DID Provisioning | ✅ Real | ✅ BLOCKER-08 fixed |
-| B | IoTeX W3bstream ZK | ✅ Real | ✅ BLOCKER-06,07 fixed |
-| C | Chainlink Oracle Dispatch | ✅ Real (WEB3_STRICT_MODE) | ✅ BLOCKER-09 fixed |
-| D | Oracle Callback | — | 🚨 BLOCKER-04 (P0) |
-| E | EVM Minting Polygon | ✅ Real | ✅ BLOCKER-05,11 fixed |
-| F | Solana Micro-Reward | ✅ Real (sendTransaction) | ✅ BLOCKER-10 fixed |
+| Крок | Компонент | Статус | Примітка |
+|------|-----------|--------|----------|
+| Firmware Soldier | STM32WLE5JC + mruby BioContract | ⚠️ Open | BLOCKER-01,02,03 |
+| Firmware Queen | STM32WLE5JC + SIM7070G CIFO | ⚠️ Open | BLOCKER-01 |
+| A | peaq DID Provisioning | ✅ Real | Ed25519-підпис обов'язковий |
+| B | IoTeX W3bstream ZK | ✅ Real | Ed25519 hw sig + proof ref regex |
+| C | Chainlink Oracle Dispatch | ✅ Real | ABI v1, WEB3_STRICT_MODE |
+| D | Oracle Callback | ✅ Real | HMAC-SHA256 (`X-Chainlink-Signature`) |
+| E | EVM Minting Polygon | ✅ Real | Guard clauses, Dynamic Tax, Treasury |
+| F | Solana Micro-Reward | ✅ Real | `sendTransaction` з Ed25519 підписом |
 
-**Загальний висновок:** Пайплайн структурно реалізовано та покрито RSpec-тестами.
-PR #253 виправив **10 з 12 блокерів** (05–12). Залишились **2 P0 Security**
-(AES hardcode у firmware та відсутня верифікація Oracle Callback),
-які потребують вирішення перед production/Mainnet deployment.
-Додано Web3CircuitBreaker concern, Treasury monitoring, та gas-optimized batch collector.
+**Загальний висновок:** Пайплайн повністю реалізовано та покрито RSpec-тестами. Відкрито 3 блокери — всі пов'язані з firmware (AES key, Lorenz precision, per-species thresholds). Backend-шар готовий до Mainnet.
 
 ---
 
-*Документ згенеровано: Reverse Shaping audit, Cycle 1 Small Batch*
-*Джерела: `firmware/soldier/main.c`, `firmware/queen/main.c`,*
-*`firmware/bio_contracts/bio_contract.rb`,*
-*`app/services/peaq/`, `app/services/iotex/`, `app/services/chainlink/`,*
-*`app/workers/peaq_registration_worker.rb`, `app/workers/iotex_verification_worker.rb`,*
-*`app/workers/chainlink_dispatch_worker.rb`, `app/workers/mint_carbon_coin_worker.rb`,*
-*`app/services/blockchain_minting_service.rb`,*
-*`app/controllers/api/v1/oracle_callbacks_controller.rb`,*
-*Wiki: [05_01 Multichain Architecture](05_01_Multichain_Architecture)*
+*Джерела: `firmware/soldier/main.c`, `firmware/queen/main.c`, `firmware/bio_contracts/bio_contract.rb`, `app/services/peaq/`, `app/services/iotex/`, `app/services/chainlink/`, `app/services/blockchain_minting_service.rb`, `app/controllers/api/v1/oracle_callbacks_controller.rb`*

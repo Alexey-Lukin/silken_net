@@ -1,14 +1,24 @@
 # 05_04: Ethereum L1 State Anchor (Щотижнева фіналізація)
 
-**Модуль:** 05_04 — Ethereum L1: Weekly State Root Anchoring  
-**Пов'язані модулі:** [05_01 Multichain Architecture](BLOCKCHAIN_DEVELOPMENT.md) · [05_02 Proof of Growth Pipeline](TOKENOMICS.md) · [05_03 Tokenomics SCC/SFC](TOKENOMICS.md)  
-**Поточний TRL:** 8 (Механізм якорування імплементовано та синхронізовано з SSOT)  
-**Цільовий TRL:** 9 (Production-ready з повним gas management та аудит-трейлом у БД)  
-**Статус Аудиту:** Reverse Shaping завершено — документ синхронізовано з кодбейсом станом на 2026-03-23
+## 🎯 Мета
+
+Зафіксувати механізм щотижневої фіналізації стану Gaia 2.0 в Ethereum Mainnet. Один раз на тиждень `EthereumAnchorWorker` обчислює 32-байтний SHA-256 `state_root` із глобального стану PostgreSQL та записує його в смарт-контракт `StateRootAnchor`. Після запису стан вважається криптографічно незмінним.
 
 ---
 
-## Огляд
+## ✅ Статус
+
+- **Поточний TRL:** TRL 8 — Механізм якорування повністю імплементовано.
+- **Цільовий TRL:** TRL 9 — Production-ready з повним gas management та аудит-трейлом у БД.
+- **Синхронізація:** 2026-04-15
+- **Пов'язані модулі:**
+  - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
+  - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
+  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
+
+---
+
+## 💡 Огляд
 
 Ethereum L1 State Anchor — це **фінальна печатка** всього стану системи Gaia 2.0. Один раз на тиждень (щопонеділка о 03:00 UTC) `EthereumAnchorWorker` запускає `Ethereum::StateAnchorService`, який:
 
@@ -20,7 +30,7 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 
 ---
 
-## Статус Імплементації
+## 📋 Статус Імплементації
 
 | Компонент | Файл | Статус |
 |-----------|------|--------|
@@ -35,9 +45,7 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
-
-> ⚠️ **Scope:** Цей розділ містить виключно аудит без рефакторингу (Shape Up: Rabbit Holes / No Gos).
+## 🛑 Відкриті Блокери
 
 ### 🔴 BLOCKER-1: Smart Contract відсутній у репозиторії
 

@@ -1,10 +1,19 @@
-# 05_01: Multichain Architecture (The 12-Chain Ecosystem)
+# 05_01: Мультичейн Архітектура (12-Chain Ecosystem)
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Зафіксувати повну топологію та взаємодію 12 незалежних блокчейн-мереж і децентралізованих протоколів, що утворюють Кіберфізичну Державу Gaia 2.0. Цей документ деталізує, як фізичні дані з лісу проходять шлях від локального ZK-доказу до глобальної фінансової емісії та фіналізації в Ethereum L1.
 
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з кодбейсом станом на 2026-03-22. Кожна мережа з топології має відповідний Ruby-сервіс, Sidekiq-воркер та RSpec-специфікацію.
+---
+
+## ✅ Статус
+
+- **Поточний TRL:** TRL 8 — Всі 12 мереж мають відповідний Ruby-сервіс, Sidekiq-воркер та RSpec-специфікацію.
+- **Синхронізація:** 2026-04-15
+- **Пов'язані модулі:**
+  - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
+  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
+  - Ethereum L1 → [`05_04_Ethereum_L1_State_Anchor`](05_04_Ethereum_L1_State_Anchor)
 
 ---
 
@@ -86,41 +95,7 @@ SilkenNet не обирає один блокчейн. Система викор
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
-
-### ✅ BLOCKER-1: Cross-chain Gas Costs (Treasury Management) — **ВИРІШЕНО**
-
-**Статус:** ✅ Імплементовано в PR #253.
-
-**Рішення:**
-1. **Oracle Balance Guards** додано до `Solana::MintingService` (`MIN_ORACLE_BALANCE_LAMPORTS = 50M`, `verify_oracle_balance!`) та `Celo::CommunityRewardService` (`MIN_ORACLE_BALANCE_WEI = 0.05 CELO`, guard перед `transact`). Polygon вже мав guard.
-2. **Treasury::MonitorService** — централізований моніторинг балансів всіх 4 гаманців оракулів (Polygon MATIC, Solana SOL, Celo CELO, Ethereum ETH). Scheduled кожні 15 хв через `TreasuryMonitorWorker [web3_low]`.
-3. **Prometheus gauges**: `ORACLE_BALANCE` (per network), `ORACLE_BALANCE_RATIO` (< 1.0 = critical), `TREASURY_CHECK_ERRORS_TOTAL`.
-4. **EwsAlert** при критичних балансах (alert_type: `:system_fault`, severity: `:critical`).
-
-### ✅ BLOCKER-2: Subgraph Event Name Mismatch — **ВИРІШЕНО**
-
-**Статус:** ✅ Виправлено в PR #253.
-
-Змінено `Slashed` → `TokenSlashed` у `subgraph/subgraph.yaml`, `mapping.ts` та `schema.graphql`. Slashing-події тепер коректно індексуються The Graph.
-
-### 🟡 BLOCKER-3: Solana Devnet Lock
-
-**Статус:** Архітектурне обмеження.
-
-`Solana::MintingService` використовує `simulateTransaction` замість `sendTransaction`. Мікро-винагороди фактично не відправляються на Mainnet. Потребує:
-1. Перехід на `sendTransaction` для Production
-2. Розділення конфігурації Devnet/Mainnet через ENV
-3. Інтеграційне тестування з реальним Solana RPC
-
-### ✅ BLOCKER-4: Hadron та Chainlink Simulation Fallbacks — **ВИРІШЕНО**
-
-**Статус:** ✅ Виправлено в PR #253.
-
-Додано `WEB3_STRICT_MODE` ENV flag. При `WEB3_STRICT_MODE=true`:
-- `Polygon::HadronComplianceService` → raises `ComplianceError` при відсутності `hadron_api_key` (замість simulation fallback).
-- `Chainlink::OracleDispatchService` → raises `DispatchError` при відсутності `CHAINLINK_FUNCTIONS_ROUTER` та `CHAINLINK_SUBSCRIPTION_ID`.
-В dev/test режимі (без strict mode) simulation fallback залишається для зручності розробки.
+## 🛑 Відкриті Блокери
 
 ### 🟡 BLOCKER-5: PuroEarth Passport Service — Not Implemented
 
@@ -316,7 +291,7 @@ type PremiumPaidEvent @entity { ... }
 1. `verify_investor!(wallet)` — перевірка KYC через Hadron Identity Platform → `wallet.hadron_kyc_status`
 2. `register_asset!(naas_contract)` — реєстрація лісової ділянки як Real World Asset (RWA) → `naas_contract.hadron_asset_id`
 
-> ⚠️ **Hybrid Mode:** Якщо `hadron_api_key` відсутній, сервіс генерує stub response (`approved: true`). Для Production потрібен strict-mode.
+> **Режими роботи:** `WEB3_STRICT_MODE=true` → raises `ComplianceError` при відсутності credentials (Production). Без strict mode — simulation fallback для dev/test.
 
 #### 8. Solana (Micro-Rewards)
 
@@ -333,11 +308,12 @@ type PremiumPaidEvent @entity { ... }
 
 **Trustless Requirements (Guard Clauses):**
 1. `verified_by_iotex? == true`
-2. `oracle_status == "fulfilled"`
+2. `oracle_status_fulfilled?` (enum method)
+3. `verify_oracle_balance!` — баланс SOL ≥ 0.05 (50M lamports)
 
 **Мікро-винагорода:** Base reward + bonus per growth\_point, конвертовано в lamports → USDC
 
-> ⚠️ **Devnet Lock:** Використовує `simulateTransaction` замість `sendTransaction`. Потребує перемикача для Production.
+Solana `Solana::MintingService` використовує `sendTransaction` з Ed25519-підписом. ATA отримувача резолюється динамічно через `getTokenAccountsByOwner`.
 
 #### 9. Celo (ReFi Community Rewards)
 
@@ -413,7 +389,7 @@ type PremiumPaidEvent @entity { ... }
 }
 ```
 
-> ⚠️ **Hybrid Mode:** Якщо `CHAINLINK_FUNCTIONS_ROUTER` відсутній, сервіс генерує stub `request_id` локально замість on-chain виклику.
+> **Режими роботи:** `WEB3_STRICT_MODE=true` → raises `DispatchError` при відсутності `CHAINLINK_FUNCTIONS_ROUTER`. Без strict mode — stub `request_id` для dev/test.
 
 #### 12. Ethereum L1 (State Root Anchoring)
 
@@ -660,11 +636,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc_supply}:#{chain_hash}:#{times
 
 ---
 
-## 📊 8. Відкриті Питання для Наступного Циклу
+## 📋 8. Відкриті Питання для Наступного Циклу
 
-1. ~~**Treasury Management Service**~~ — ✅ Імплементовано (`Treasury::MonitorService` + `Treasury::MintBatchCollectorService`)
-2. ~~**Subgraph Fix**~~ — ✅ `Slashed` → `TokenSlashed` виправлено
-3. ~~**Solana Mainnet Switch**~~ — ✅ `sendTransaction` з Ed25519 підписом (замість `simulateTransaction`)
-4. ~~**Strict Mode**~~ — ✅ `WEB3_STRICT_MODE` для Hadron/Chainlink
-5. **PuroEarth PassportService** — Biochar CORC (Afterlife Economy)
-6. **dClimate Real API** — Замінити mock на реальний satellite API
+1. **PuroEarth PassportService** — Biochar CORC (Afterlife Economy)
+2. **dClimate Real API** — Замінити mock на реальний satellite API

@@ -1062,12 +1062,11 @@ ed25519_sign(sig, message, strlen(message), private_key);
 - Fallback: якщо `CHAINLINK_HMAC_SECRET` blank → warn + return (dev/test mode) ✅
 
 **Вектор: Oracle Callback Replay Attack — закрито.**
-~~HMAC підписує лише `raw_body` без включення `timestamp` або `nonce`. Якщо зловмисник перехопить валідний HMAC-підписаний запит, він може повторно надіслати ту ж відповідь. Наслідок: повторний виклик `MintCarbonCoinWorker`. Практичний ризик: низький (вимагає компрометації HMAC secret), але архітектурно слабке місце.~~
 
 **[A-6 ВИПРАВЛЕНО — коміт bc3a0ce]:** Атомарний **State Machine Guard** — замість timestamp/nonce у HMAC.
 `TelemetryLog.where(id:, created_at:, oracle_status: "dispatched").update_all(oracle_status: new_status)` повертає `updated_rows`. Якщо `updated_rows == 0` — запис вже оброблено (стан не `dispatched`), callback відхиляється з `409 Conflict`. Перший запит транзакційно перемикає стан; всі повтори отримують нульовий результат. Компрометація HMAC secret більше не дозволяє подвійний мінтинг.
 
-~~**Рекомендація:** Chainlink DON підтримує `X-Chainlink-Timestamp` header. Додати перевірку: відхиляти callbacks, де `|Time.current - timestamp| > 5.minutes`.~~
+> **Примітка:** Chainlink DON підтримує `X-Chainlink-Timestamp` header — додаткова перевірка часу може бути розглянута в наступному циклі.
 
 ---
 
@@ -1111,12 +1110,10 @@ ed25519_sign(sig, message, strlen(message), private_key);
 #### 🔵 Архітектурні Спостереження (не вимагають негайних змін)
 
 1. **`mark_seen!` — синхронний DB write у controller hot-path** (`TelemetryController#gateway_uplink`):
-   ~~`@gateway.mark_seen!(new_ip: request.remote_ip)` виконується синхронно в рамках HTTP-запиту. Реалізація використовує `update_all` з `GREATEST(COALESCE(...))` — одна дешева SQL-операція. Прийнятно для поточного TRL, але при мільйонах uplink/сек стане вузьким місцем. Рекомендація: виконувати в `UnpackTelemetryWorker` (вже відбувається на рядку `gateway.mark_seen!(new_ip: sender_ip)`) — або зробити оновлення в HTTP-контролері батчевим/асинхронним.~~
 
    **[A-8 ВИПРАВЛЕНО — коміт bc3a0ce]:** `TelemetryController#gateway_uplink` є повністю stateless — жодних DB-записів у HTTP hot-path. `mark_seen!` перенесено виключно в `UnpackTelemetryWorker`. Controller лише ставить job у чергу та повертає `202 Accepted`. Це усуває ризик вичерпання Connection Pool під час масового перепідключення шлюзів після блекаутів.
 
 2. **`cached_binary_key` — AES ключ у Redis у plaintext** — закрито:
-   ~~`HardwareKey#cached_binary_key` зберігає розшифрований бінарний ключ у Rails.cache (Redis) з TTL 15 хв для Hot-path оптимізації. Якщо Redis compromised → всі активні ключі витікають. Redis має бути в Private VPC з TLS + ACL + шифруванням at-rest.~~
 
    **[A-7 ВИПРАВЛЕНО — коміт bc3a0ce]:** AES-ключі кешуються в **in-process RAM** (`SinLruRedux::ThreadSafeCache`, max 10 000 ключів) замість Redis. Ключі ніколи не залишають Ruby process, зникають при рестарті, не серіалізуються по мережі. Ізольований ризик — лише поточний процес, без централізованого витоку. Ініціалізатор: `config/initializers/hardware_key_cache.rb`. Cache invalidation: `after_commit :clear_key_cache` на update/destroy.
 
