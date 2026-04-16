@@ -29,6 +29,10 @@ module PuroEarth
   class PassportService
     class AnchoringError < StandardError; end
 
+    # Wei-style multiplier (10^18) for scaling decimal values to deterministic integers.
+    # Matches the encoding convention used across the SilkenNet protocol.
+    ABI_DECIMAL_SCALE = BigDecimal("1000000000000000000")
+
     # D-MRV Registry ABI — stores the cryptographic proof of each Biomass Passport.
     # anchorPassport(string treeDid, bytes32 payloadHash):
     #   - treeDid: the device identity string (e.g., "did:peaq:0x...")
@@ -70,12 +74,18 @@ module PuroEarth
 
     private
 
-    # Serializes payload to canonical JSON (deterministic key ordering)
-    # and computes its SHA-256 digest. This ensures the same payload
-    # always produces the same hash, regardless of Hash insertion order.
+    # Computes a deterministic payload hash using ABI encoding for cross-platform reproducibility.
+    # ABI encoding produces a canonical binary representation defined by the EVM specification,
+    # eliminating Ruby-specific JSON serialization quirks (float formatting, unicode escaping,
+    # key ordering). The hash is reproducible across any language with an ABI encoder.
+    #
+    # Canonical fields are extracted in a fixed order (alphabetical by key name) and typed
+    # explicitly to match the Solidity-level verification signature. This ensures the same
+    # payload always produces the same bytes32 hash regardless of Hash insertion order.
     def compute_payload_hash
-      canonical = JSON.generate(deep_sort_keys(@payload))
-      Digest::SHA256.hexdigest(canonical)
+      types, values = extract_canonical_fields(@payload)
+      encoded = Eth::Abi.encode(types, values)
+      Digest::SHA256.hexdigest(encoded)
     end
 
     def submit_anchor_transaction(payload_hash)
@@ -97,8 +107,41 @@ module PuroEarth
       )
     end
 
+    # Extracts payload fields in alphabetical key order with explicit ABI types.
+    # Flattens nested hashes using dot-notation keys (e.g., gps_coordinates.latitude).
+    # All values are coerced to ABI-compatible types:
+    #   - Strings → "string"
+    #   - Numerics with decimals → scaled to uint256 (×10^18 for precision)
+    #   - Integers → "uint256"
+    def extract_canonical_fields(hash, prefix: nil)
+      types = []
+      values = []
+
+      hash.sort_by { |k, _| k.to_s }.each do |key, value|
+        full_key = prefix ? "#{prefix}.#{key}" : key.to_s
+
+        case value
+        when Hash
+          nested_types, nested_values = extract_canonical_fields(value, prefix: full_key)
+          types.concat(nested_types)
+          values.concat(nested_values)
+        when Integer
+          types << "uint256"
+          values << value
+        when Float, BigDecimal
+          types << "uint256"
+          values << (BigDecimal(value.to_s) * ABI_DECIMAL_SCALE).to_i
+        else
+          types << "string"
+          values << value.to_s
+        end
+      end
+
+      [ types, values ]
+    end
+
     # Recursively sorts hash keys for canonical JSON serialization.
-    # Ensures deterministic output regardless of Ruby Hash insertion order.
+    # Retained for backward compatibility — used by external callers if needed.
     def deep_sort_keys(obj)
       case obj
       when Hash
