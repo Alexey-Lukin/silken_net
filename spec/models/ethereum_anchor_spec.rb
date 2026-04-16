@@ -174,5 +174,28 @@ RSpec.describe EthereumAnchor, type: :model do
     it ".recent orders by created_at desc" do
       expect(described_class.recent.first.state_root).to eq("b" * 64)
     end
+
+    it ".in_flight returns only pending/sent anchors from the last week" do
+      pending_anchor = described_class.create!(
+        state_root: "c" * 64,
+        total_scc: 300.0,
+        chain_hash: "hash3",
+        anchored_at: 1.hour.ago,
+        status: :pending
+      )
+      sent_anchor = described_class.create!(
+        state_root: "d" * 64,
+        total_scc: 400.0,
+        chain_hash: "hash4",
+        anchored_at: 2.hours.ago,
+        status: :sent,
+        tx_hash: "0x#{"cc" * 32}"
+      )
+
+      in_flight = described_class.in_flight
+      expect(in_flight).to include(pending_anchor, sent_anchor)
+      expect(in_flight).not_to include(described_class.find_by(state_root: "a" * 64))
+      expect(in_flight).not_to include(described_class.find_by(state_root: "b" * 64))
+    end
   end
 end

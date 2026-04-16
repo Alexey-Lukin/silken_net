@@ -216,5 +216,84 @@ RSpec.describe Ethereum::StateAnchorService do
 
       described_class.new.anchor_to_l1!
     end
+
+    context "with double-anchoring guard" do
+      it "skips when a sent anchor exists within the last week" do
+        sent_anchor = EthereumAnchor.create!(
+          state_root: "c" * 64,
+          total_scc: 500.0,
+          chain_hash: "existing_hash",
+          anchored_at: 1.hour.ago,
+          status: :sent,
+          tx_hash: "0x#{"dd" * 32}"
+        )
+
+        expect(Rails.logger).to receive(:info).with(/In-flight anchor detected/)
+
+        result = described_class.new.anchor_to_l1!
+
+        expect(result).to eq(sent_anchor)
+        expect(mock_client).not_to have_received(:transact) if mock_client.respond_to?(:have_received)
+        expect(EthereumAnchor.count).to eq(1)
+      end
+
+      it "resumes a pending anchor instead of creating a new one" do
+        pending_anchor = EthereumAnchor.create!(
+          state_root: "d" * 64,
+          total_scc: 600.0,
+          chain_hash: "pending_hash",
+          anchored_at: 30.minutes.ago,
+          status: :pending
+        )
+
+        expected_tx_hash = "0x#{"ee" * 32}"
+        allow(mock_client).to receive(:transact).and_return(expected_tx_hash)
+
+        result = described_class.new.anchor_to_l1!
+
+        expect(result.id).to eq(pending_anchor.id)
+        expect(result).to be_status_sent
+        expect(result.tx_hash).to eq(expected_tx_hash)
+        expect(EthereumAnchor.count).to eq(1)
+      end
+
+      it "ignores anchors older than one week" do
+        EthereumAnchor.create!(
+          state_root: "e" * 64,
+          total_scc: 700.0,
+          chain_hash: "old_hash",
+          anchored_at: 8.days.ago,
+          status: :sent,
+          tx_hash: "0x#{"ff" * 32}",
+          created_at: 8.days.ago
+        )
+
+        allow(mock_client).to receive(:transact).and_return("0x#{"ab" * 32}")
+
+        result = described_class.new.anchor_to_l1!
+
+        expect(result.state_root).not_to eq("e" * 64)
+        expect(EthereumAnchor.count).to eq(2)
+      end
+
+      it "ignores failed anchors and creates a new one" do
+        EthereumAnchor.create!(
+          state_root: "f" * 64,
+          total_scc: 800.0,
+          chain_hash: "failed_hash",
+          anchored_at: 1.hour.ago,
+          status: :failed,
+          error_message: "timeout"
+        )
+
+        allow(mock_client).to receive(:transact).and_return("0x#{"ab" * 32}")
+
+        result = described_class.new.anchor_to_l1!
+
+        expect(result.state_root).not_to eq("f" * 64)
+        expect(result).to be_status_sent
+        expect(EthereumAnchor.count).to eq(2)
+      end
+    end
   end
 end
