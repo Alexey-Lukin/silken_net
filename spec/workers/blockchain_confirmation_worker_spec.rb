@@ -91,4 +91,42 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
       end
     end
   end
+
+  describe "sidekiq_retries_exhausted" do
+    let(:msg) { { "args" => [ tx_hash ] } }
+
+    before do
+      allow_any_instance_of(Wallet).to receive(:broadcast_update)
+    end
+
+    context "when sent transactions exist for the tx_hash" do
+      it "delegates to MintingRollbackService" do
+        expect(MintingRollbackService).to receive(:call) do |transactions:|
+          expect(transactions.map(&:id)).to include(transaction.id)
+        end
+
+        described_class.sidekiq_retries_exhausted_block.call(msg, StandardError.new("timeout"))
+      end
+    end
+
+    context "when no sent transactions exist (already resolved)" do
+      before { transaction.update_column(:status, "confirmed") }
+
+      it "logs warning and does not call MintingRollbackService" do
+        expect(MintingRollbackService).not_to receive(:call)
+
+        described_class.sidekiq_retries_exhausted_block.call(msg, StandardError.new("timeout"))
+      end
+    end
+
+    context "when tx_hash is nil" do
+      let(:msg) { { "args" => [ nil ] } }
+
+      it "does nothing gracefully" do
+        expect(MintingRollbackService).not_to receive(:call)
+
+        described_class.sidekiq_retries_exhausted_block.call(msg, StandardError.new("timeout"))
+      end
+    end
+  end
 end

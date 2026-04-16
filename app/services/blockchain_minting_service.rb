@@ -168,11 +168,19 @@ class BlockchainMintingService < ApplicationService
 
           Rails.logger.info "📦 [Web3] BatchMinting #{txs.size} транзакцій для #{token_type}..."
 
-          # [ВИПРАВЛЕНО]: Використовуємо transact ЗАМІСТЬ transact_and_wait
-          tx_hash = client.transact(
-            contract, "batchMint", recipients, amounts, identifiers,
-            sender_key: oracle_key, legacy: false
-          )
+          # [DRY-RUN GUARD]: Симулюємо batchMint через eth_call перед реальною відправкою.
+          # Якщо хоча б один запис у батчі спричиняє revert (наприклад, відкликаний Hadron KYC
+          # між моментом перевірки та виконанням на блокчейні), весь атомарний batchMint впаде.
+          # Dry-run виявляє "отруйний" запис ДО витрати газу і дозволяє fallback.
+          if batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers)
+            Rails.logger.warn "⚠️ [Web3] batchMint dry-run reverted. Fallback на поодинокі mint()..."
+            tx_hash = fallback_to_individual_mints(client, contract, oracle_key, token_type, txs)
+          else
+            tx_hash = client.transact(
+              contract, "batchMint", recipients, amounts, identifiers,
+              sender_key: oracle_key, legacy: false
+            )
+          end
         end
       end
 
@@ -208,6 +216,67 @@ class BlockchainMintingService < ApplicationService
       Rails.logger.error "🛑 [Web3 Failure] Пакетна помилка: #{e.message}"
       raise e
     end
+  end
+
+  # [DRY-RUN GUARD]: Симуляція batchMint через eth_call (zero-gas execution).
+  # eth_call виконує код контракту на поточному блоці без створення транзакції.
+  # Повертає true, якщо симуляція завершилась revert (батч містить "отруйний" запис).
+  # При помилці підключення — повертає false (оптимістичний фолбек: спробувати transact).
+  def batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers)
+    client.call(contract, "batchMint", recipients, amounts, identifiers, sender_key: oracle_key)
+    false
+  rescue StandardError => e
+    Rails.logger.warn "⚠️ [Web3] batchMint dry-run помилка: #{e.message}"
+    # Розрізняємо EVM revert (контракт відхилив) від мережевих помилок (RPC timeout)
+    evm_revert?(e)
+  end
+
+  # Визначає, чи помилка є EVM revert (контракт відхилив виконання).
+  # Мережеві помилки (timeout, connection refused) не рахуються як revert.
+  def evm_revert?(error)
+    message = error.message.to_s.downcase
+    message.include?("revert") || message.include?("execution reverted") || message.include?("out of gas")
+  end
+
+  # [FALLBACK]: Поодинокий мінтинг для кожної транзакції з батча.
+  # Викликається, коли dry-run batchMint виявив revert.
+  # Кожна транзакція мінтиться окремо: "отруйний" запис fail'не сам,
+  # а решта — успішно замінтяться. Gas дорожчий (~30-40%), але на Polygon
+  # це ~$0.001/tx — прийнятна ціна за збереження 99% батча.
+  def fallback_to_individual_mints(client, contract, oracle_key, token_type, txs)
+    txs.each do |tx|
+      begin
+        individual_tx_hash = client.transact(
+          contract, "mint", tx.to_address, to_wei(tx.amount), identifier_for(tx),
+          sender_key: oracle_key, legacy: false
+        )
+
+        finalize_sent_transaction(tx, individual_tx_hash, token_type)
+      rescue StandardError => e
+        Rails.logger.error "🛑 [Web3] Individual mint failed for TX ##{tx.id}: #{e.message}"
+        tx.fail!(e.message.truncate(200))
+        broadcast_tx_update(tx)
+      end
+    end
+
+    # Повертаємо nil — індивідуальні транзакції вже оброблені в циклі
+    nil
+  end
+
+  # Фіналізує транзакцію після успішної відправки (shared logic для batch та individual).
+  def finalize_sent_transaction(tx, tx_hash, token_type)
+    update_attrs = { status: :sent, tx_hash: tx_hash }
+    if @telemetry_log
+      update_attrs[:chainlink_request_id] = @telemetry_log.chainlink_request_id
+      update_attrs[:zk_proof_ref] = @telemetry_log.zk_proof_ref
+    end
+    tx.update!(**update_attrs)
+    broadcast_tx_update(tx)
+
+    SilkenNet::Metrics::SCC_MINTED_TOTAL.increment(labels: { token_type: token_type })
+
+    # Запускаємо підтверджувач для кожної індивідуальної транзакції
+    BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
   end
 
   def identifier_for(tx)
