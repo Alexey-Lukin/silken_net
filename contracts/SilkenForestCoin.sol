@@ -112,8 +112,9 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         for (uint256 i = 0; i < length; i++) {
             require(recipients[i] != address(0), "SFC: zero recipient");
             require(amounts[i] > 0, "SFC: zero amount");
-            require(bytes(clusterIds[i]).length > 0, "SFC: empty clusterId");
-            require(bytes(clusterIds[i]).length <= 256, "SFC: clusterId too long");
+            uint256 cidLen = bytes(clusterIds[i]).length;
+            require(cidLen > 0, "SFC: empty clusterId");
+            require(cidLen <= 256, "SFC: clusterId too long");
             batchTotal += amounts[i];
         }
         require(totalSupply() + batchTotal <= MAX_SUPPLY, "SFC: cap exceeded");
