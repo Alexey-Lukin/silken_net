@@ -1,16 +1,8 @@
-## 02_05: Queen Hardware & Starlink Uplink (The Bridge)
-
-**Модуль:** 02_05 — Queen Gateway Hardware: STM32WLE5JC + SIM7070G + Starlink Direct-to-Cell / Starlink Mini  
-**Пов'язані модулі:** [02_03 BQ25570 MPPT](02_03_BQ25570_MPPT_Nano_Power) · [02_04 EDLC Supercapacitor](02_04_EDLC_Supercapacitor_Buffer) · [03_02 Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) · [03_05 Hardware AES256 and Security](03_05_Hardware_AES256_and_Security) · [04_02 Business Logic and Services](04_02_Business_Logic_and_Services)  
-**Поточний TRL:** 5 (Схеми/прототипи існують, прошивка готова; Phase 2.5 Starlink DTC підтверджено через Київстар)  
-**Цільовий TRL:** 6 (Повна прозорість апаратної архітектури та енергетичного бюджету шлюзу)  
-**Статус Аудиту:** Reverse Shaping Cycle 1 + нотатка N1 інтегрована (2026-03-24).
-
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з `firmware/queen/main.c`, `docs/HARDWARE.md` та поточним станом апаратної архітектури. BLOCKER-1 переформульовано: Starlink Direct-to-Cell (DTC) через Київстар **не потребує** окремого Starlink-термінала або додаткового модему — SIM7070G є достатнім для Phase 2.5.
+# 02_05: Апаратне Забезпечення Королеви та Starlink (Міст)
 
 ---
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Зафіксувати **повну апаратну архітектуру** вузла "Королева" (Queen Gateway) — єдиного фізичного моста між автономною LoRa-мережею лісу та глобальним інтернетом. Документ відповідає на три критичних питання:
 
@@ -22,38 +14,27 @@
 
 ---
 
-## ✅ Статус (Status)
+## ✅ Статус
 
-| Компонент | Стан |
-|-----------|------|
-| **MCU (STM32WLE5JC) + LoRa RX 868 МГц** | ✅ Реалізовано (`firmware/queen/main.c`) |
-| **SIM7070G UART1 драйвер (AT-команди CoAP)** | ✅ Реалізовано (UART1, 115200 baud) |
-| **AES-256-CBC шифрування батча перед TX** | ✅ Реалізовано (апаратний CRYP модуль) |
-| **CIFO Cache (50 записів × 21 байт)** | ✅ Реалізовано (`forest_cache[]`) |
-| **Flush кожну годину з HRNG jitter (0–60 сек)** | ✅ Реалізовано (`FLUSH_INTERVAL_MS = 3600000`) |
-| **OTA downlink від Rails через CoAP → LoRa broadcast** | ✅ Реалізовано (`Handle_CoAP_Command`) |
-| **Джерело живлення: Сонячна панель + MPPT + LiFePO4** | ✅ Архітектурно визначено (BOM — нижче) |
-| **Phase 2.5: Starlink DTC через Київстар (SIM7070G)** | ✅ **ПІДТВЕРДЖЕНО** — термінал Starlink не потрібен |
-| **Phase 3: STM32WLE5JC → Starlink Mini TCP/IP міст** | 🔴 BLOCKER (тільки для Phase 3 з терміналом) |
-| **SIM7070G пікові струми: BMS валідовано** | 🟡 OPEN (2А пік не підтверджений BMS-специфікацією) |
-| **Зимовий енергетичний баланс (Phase 3 Starlink Mini)** | 🔴 BLOCKER (дефіцит при 10–15% інсоляції) |
-| **Конкретна модель MPPT-контролера** | 🟡 OPEN (серія не зафіксована в SSOT) |
-| **Теплове управління в IP67 корпусі** | 🟡 OPEN (тепловий бюджет не розрахований) |
-| **Узгодження найменування модему (SIM7000G vs SIM7070G)** | 🔴 BLOCKER (розбіжність wiki vs firmware) |
+- **Поточний TRL:** TRL 5 — Схеми/прототипи існують, прошивка готова; Phase 2.5 Starlink DTC підтверджено через Київстар
+- **Пов'язані модулі:**
+  - MPPT → [`02_03_BQ25570_MPPT_Nano_Power`](02_03_BQ25570_MPPT_Nano_Power)
+  - Суперконденсатор → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
+  - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
+  - AES-256 → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+  - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
-
-> Виявлено під час апаратного аудиту "Reverse Shaping". Статус BLOCKER-1 оновлено після підтвердження Starlink DTC через Київстар (нотатка N1).
+## 🛑 Блокери
 
 ---
 
-### ⚡ BLOCKER-1 → ПЕРЕКЛАСИФІКОВАНО: Starlink DTC (Phase 2.5) vs Starlink Mini (Phase 3)
+### ⚡ BLOCKER-1 → ПЕРЕКЛАСИФІКОВАНО: Starlink DTC (Phase 2.5) vs Starlink Mini
 
 **Статус:** Частково вирішено для Phase 2.5. Відкрито для Phase 3.
 
-#### Що підтверджено (Phase 2.5 — Starlink Direct-to-Cell через Київстар)
+#### Що підтверджено
 
 **Starlink Direct-to-Cell (DTC)** — це сервіс SpaceX, що дозволяє LEO-супутникам Starlink безпосередньо обслуговувати стандартні стільникові пристрої через протоколи LTE-M / NB-IoT. **Київстар є партнерським оператором** для DTC в Україні.
 
@@ -88,7 +69,7 @@ STM32WLE5JC ─[UART1 AT]─▶ SIM7070G (Київстар SIM)
 - Зайди на [Starlink Availability Map](https://www.starlink.com/map) → фільтр "Direct to Cell"
 - Або запитай Київстар: чи активовано DTC для корпоративних SIM у зоні Черкаський бір / Канівські гори
 
-#### Що залишається відкритим (Phase 3 — Starlink Mini з терміналом)
+#### Що залишається відкритим
 
 Для ультра-віддалених локацій (Амазонія, Тайга, Африка) де DTC може бути недоступний або потрібна більша пропускна здатність — Starlink Mini (фізичний термінал) залишається Phase 3.
 
@@ -117,7 +98,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 ---
 
-### 🔴 BLOCKER-2: Зимовий Енергетичний Дефіцит (Phase 3 Starlink Mini)
+### 🔴 BLOCKER-2: Зимовий Енергетичний Дефіцит
 
 **Статус:** Відкрито. Критичний ризик автономності Королеви взимку при використанні Starlink Mini.
 
@@ -154,7 +135,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 ---
 
-### 🔴 BLOCKER-3: Розбіжність найменування модему (SIM7000G vs SIM7070G)
+### 🔴 BLOCKER-3: Розбіжність найменування модему
 
 **Статус:** Відкрито. Блокер для закупівлі обладнання та BOM.
 
@@ -258,7 +239,7 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 
 ---
 
-### 2.2 STM32WLE5JC ↔ SIM7070G (Phase 1 / Phase 2.5 DTC)
+### 2.2 STM32WLE5JC ↔ SIM7070G
 
 **Фізичне підключення:**
 
@@ -299,7 +280,7 @@ SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
 
 ---
 
-### 2.3 STM32WLE5JC ↔ Starlink Mini (Phase 3 — Planetary Scale)
+### 2.3 STM32WLE5JC ↔ Starlink Mini
 
 **⚠️ Поточний стан: архітектурно визначено, але НЕ реалізовано у firmware. Не потрібно для Phase 1 та 2.5.**
 
@@ -355,7 +336,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 ---
 
-## 🔋 4. Енергетичний Бюджет (Energy Budget)
+## 🔋 4. Енергетичний Бюджет
 
 ### Phase 1/2.5: SIM7070G LTE-M / Starlink DTC
 
@@ -370,7 +351,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 | **Генерація (зима, хвойний ліс)** | 50W × 3h × 12.5% | | | **18.75 Вт·год/добу** |
 | **Баланс** | | | | **+15.5 Вт·год/добу ✅** |
 
-### Phase 3: Starlink Mini (Duty Cycle: 5 хв/годину, Hard OFF)
+### Phase 3: Starlink Mini
 
 | Компонент | Вт·год/добу |
 |-----------|------------|
@@ -385,7 +366,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 ---
 
-## 📶 5. Топологія Uplink (LoRa → Modem → Rails)
+## 📶 5. Топологія Uplink
 
 ```
 [Ліс: 1–5000 дерев у радіусі 3–5 км]
@@ -419,7 +400,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 ---
 
-## 🛰️ 6. Стратегія Підключення (Connectivity Strategy)
+## 🛰️ 6. Стратегія Підключення
 
 | Фаза | Технологія | Termінал Starlink | Покриття | Потужність TX | Вартість/міс |
 |------|-----------|-------------------|---------|--------------|-------------|
@@ -507,7 +488,7 @@ if (queen_ack_timeout_count >= HELIUM_FALLBACK_THRESHOLD) {
 
 ---
 
-## 🧾 7. BOM Королеви (Bill of Materials)
+## 🧾 7. BOM Королеви
 
 | # | Компонент | Специфікація | Фаза | Статус |
 |---|-----------|-------------|------|--------|
