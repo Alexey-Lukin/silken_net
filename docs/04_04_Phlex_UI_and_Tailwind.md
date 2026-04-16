@@ -726,3 +726,212 @@ Lookbook надає живий попередній перегляд усіх к
 | `ActuatorCommandStatusBadgePreview` | All command statuses, Interactive |
 | `ActuatorCommandRowPreview` | Confirmed open, Issued activate, Failed close, Interactive |
 | `PhotoCardPreview` | Image photo, File fallback |
+
+---
+
+## Additional Reference (from legacy docs)
+
+### 29-Rule TailwindCSS Compliance Summary
+
+> Tracks compliance with the **29 TailwindCSS Best Practices Manifesto** across all 67+ components.
+
+#### ✅ Fully Applied (all 67 components + shared/ui + layout + navigation)
+
+| Rule | Description | Status |
+|------|-------------|--------|
+| 1 | No arbitrary values | ✅ All `text-[Npx]` replaced with `text-micro/mini/tiny/compact` across 63+ files |
+| 2 | Semantic colors for states | ✅ All amber → `status-warning`/`token-forest` tokens (20 files) |
+| 6 | No @apply in Phlex | ✅ Ruby methods only |
+| 7 | Mobile-first | ✅ Default = mobile, `md:` for desktop |
+| 8 | `gap-` instead of margins | ✅ Replaced `space-x`/`space-y` → `gap` in flex/grid (26+ files) |
+| 10 | `grid` for 2D, `flex` for 1D | ✅ Correct usage throughout |
+| 11 | Prevent horizontal scroll | ✅ `overflow-x-auto` on tables |
+| 13 | Class override via `tokens()` | ✅ `**attrs` pattern on shared/ui components |
+| 14 | Logical class grouping | ✅ Layout→Spacing→Type→Visual→Interactive |
+| 15 | Extract long class strings | ✅ Private methods in shared/ui |
+| 17 | No hardcoded margins in components | ✅ Removed `mt-6`, `mb-4`, `mb-2` from shared/ui |
+| 18 | SVGs use `currentColor` | ✅ `stroke="currentColor"` |
+| 20 | `tracking-widest` for uppercase | ✅ Added where missing |
+| 21 | `leading-tight` for headings | ✅ Applied to `h1` |
+| 25 | `hover`/`focus`/`active` states | ✅ All interactive elements |
+| 26 | `focus-visible:` instead of `focus:` | ✅ **All 67+ components** — zero `focus:` violations remain |
+| 27 | Transitions with duration/ease | ✅ `duration-200 ease-in-out` on shared/ui |
+| 28 | `disabled:` states | ✅ On delete button |
+| 29 | `group`/`group-hover` nested interactions | ✅ PhotoCard, Sidebar |
+
+#### ⏳ Low-Priority Remaining Work
+
+| Rule | Description | Status |
+|------|-------------|--------|
+| 3 | Dark mode definitions | ✅ Light/dark dynamic status colors implemented via CSS custom properties |
+| 13 | Class override on domain components | ⏳ Shared/ui has `**attrs`; domain components are page-level (less need) |
+| 15 | Extract classes in domain components | ⏳ Long inline strings remain in some domain views |
+| 17 | Margins in domain page components | ⏳ Page-level margins (`mb-4`, `mt-6`) are acceptable in non-reusable views |
+
+---
+
+### Lookbook Setup Reference
+
+```ruby
+# Gemfile (development group)
+gem "lookbook"
+gem "view_component"
+```
+
+```ruby
+# config/routes.rb
+mount Lookbook::Engine, at: "/lookbook" if Rails.env.development?
+```
+
+```ruby
+# config/application.rb
+config.lookbook.preview_paths = [ root.join("spec/components/previews").to_s ]
+```
+
+**Access:** Run `bin/rails server` and navigate to **http://localhost:3000/lookbook**
+
+---
+
+### Adding New Status Colors
+
+To extend the semantic color token system with a new status color:
+
+1. **Define CSS variables** in `app/assets/tailwind/application.css` for both `:root` and `.dark`:
+   ```css
+   :root {
+     --status-new: #e0f2fe;
+     --status-new-text: #075985;
+   }
+   .dark {
+     --status-new: #0c4a6e;
+     --status-new-text: #bae6fd;
+   }
+   ```
+2. **Register the token** in the `@theme` block of `application.css`:
+   ```css
+   @theme {
+     --color-status-new: var(--status-new);
+     --color-status-new-text: var(--status-new-text);
+   }
+   ```
+3. **Use the token name** in Phlex components via Tailwind classes: `bg-status-new text-status-new-text`
+
+---
+
+### Pagination (Pagy) & N+1 Prevention
+
+#### Pagy Setup
+
+All paginated views use Pagy via the shared `Pagination` component:
+
+```ruby
+# Controller
+def index
+  @pagy, @trees = pagy(Tree.includes(:cluster, :tree_family).active, items: 20)
+end
+
+# View
+render Views::Shared::UI::Pagination.new(
+  pagy: @pagy,
+  url_helper: ->(page:) { helpers.api_v1_cluster_trees_path(@cluster, page: page) }
+)
+```
+
+#### Avoiding N+1 Queries
+
+**Rule: All data displayed in views MUST be pre-loaded in the controller.** No lazy-loading in Phlex components.
+
+```ruby
+# ✅ Good — eager load everything the view needs
+def index
+  @pagy, @contracts = pagy(
+    NaasContract.includes(:organization, :cluster).order(created_at: :desc),
+    items: 20
+  )
+end
+
+# ❌ Bad — N+1 when the view calls contract.organization.name
+def index
+  @pagy, @contracts = pagy(NaasContract.order(created_at: :desc), items: 20)
+end
+```
+
+**Common patterns:**
+
+```ruby
+# Nested associations
+Tree.includes(:cluster, :tree_family, wallet: :blockchain_transactions)
+
+# Counter cache (no extra query)
+cluster.active_trees_count  # Uses denormalized column
+
+# Conditional eager loading for N+1 prevention in Ruby-level filtering
+cluster.association(:ews_alerts).loaded?
+  ? cluster.ews_alerts.any?(&:status_active?)
+  : cluster.ews_alerts.unresolved.any?
+```
+
+#### Groupdate Integration
+
+For time-series aggregation in reports:
+
+```ruby
+# Controller
+@daily_counts = TelemetryLog.where(tree: @cluster.trees)
+                             .group_by_day(:created_at)
+                             .count
+```
+
+---
+
+### File & Naming Conventions
+
+| Item | Convention | Example |
+|------|-----------|---------|
+| Shared UI component | `app/views/shared/ui/<name>.rb` | `status_badge.rb` |
+| Domain component | `app/views/components/<resource>/<action>.rb` | `trees/show.rb` |
+| Component module | `Module::<Resource>::<Action>` | `Trees::Show` |
+| Shared UI module | `Views::Shared::UI::<Name>` | `Views::Shared::UI::StatusBadge` |
+| Lookbook preview | `spec/components/previews/<name>_preview.rb` | `status_badge_preview.rb` |
+| Preview template | `spec/components/previews/<name>_preview/<scenario>.html.erb` | `all_states.html.erb` |
+| Component spec | `spec/views/components/<resource>/<name>_spec.rb` | `actuators/card_spec.rb` |
+| Shared spec | `spec/views/shared/ui/<name>_spec.rb` | `status_badge_spec.rb` |
+
+---
+
+### Quick Reference Card
+
+```ruby
+# Render a status badge
+render Views::Shared::UI::StatusBadge.new(status: "confirmed")
+
+# Render a stat card
+render Views::Shared::UI::StatCard.new(label: "Trees", value: "1,000", sub: "active")
+
+# Render pagination
+render Views::Shared::UI::Pagination.new(pagy: @pagy, url_helper: ->(page:) { path(page: page) })
+
+# Render an empty state in a table
+render Views::Shared::UI::EmptyState.new(title: "No data.", colspan: 5)
+
+# Conditional classes
+span(class: tokens("text-tiny uppercase", "text-red-500": danger?, "text-emerald-500": !danger?))
+
+# Web3 address with copy button
+render Views::Shared::Web3::Address.new(address: "0x1234...")
+
+# IoT metric value
+render Views::Shared::IoT::MetricValue.new(value: 3800, unit: "mV", precision: 0)
+
+# Lookbook preview with annotations
+class MyComponentPreview < Lookbook::Preview
+  # @label My Component
+  # @display bg_color "#000"
+
+  # @label Interactive
+  # @param prop text
+  def interactive(prop: "default")
+    render Views::Shared::UI::MyComponent.new(prop: prop)
+  end
+end
+```
