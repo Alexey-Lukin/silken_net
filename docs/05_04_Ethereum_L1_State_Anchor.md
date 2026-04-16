@@ -513,6 +513,10 @@ bundle exec rails runner "ENV.fetch('ALCHEMY_ETHEREUM_RPC_URL'); ENV.fetch('ETHE
 bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_spec.rb spec/models/ethereum_anchor_spec.rb
 ```
 
+### Operational Security
+
+- **Multisig:** Для production deployment `DEFAULT_ADMIN_ROLE` має бути призначено Gnosis Safe multisig (3/5 або 2/3) замість EOA — стандартна operational security practice для контрактів, що управляють L1 finality
+
 ---
 
 ## Зміни від Попередньої Версії SSOT
@@ -530,4 +534,4 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 
 ---
 
-*Документ синхронізовано з кодбейсом `Alexey-Lukin/silken_net` станом на **2026-04-15** (PR #254).*
+*Документ синхронізовано з кодбейсом `Alexey-Lukin/silken_net` станом на **2026-04-16**.*

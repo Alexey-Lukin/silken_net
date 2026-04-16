@@ -11,7 +11,7 @@
 - **Поточний TRL:** TRL 9 — Всі контракти production-ready, блокери закриті (PR #254), готові до Mainnet deployment та зовнішнього аудиту.
 - **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event, mintForTree alias, audit hardening)
 - **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, unified `whenNotPaused`, audit hardening)
-- **Аудит-зміцнення (PR #255):** ✅ Додано явну перевірку балансу в `slash()`, валідацію нульових значень у `mint()`/`slash()`, перевірку порожнього батчу у `batchMint()`, NatSpec для MAX_SUPPLY, документацію emit-коментарів у конструкторах, NatSpec щодо EIP-712 chain safety
+- **Аудит-зміцнення (PR #255):** ✅ Додано явну перевірку балансу в `slash()`, валідацію нульових значень у `mint()`/`slash()`, перевірку порожнього батчу у `batchMint()`, NatSpec для MAX_SUPPLY, документацію emit-коментарів у конструкторах, NatSpec щодо EIP-712 chain safety. [B-15] Додано `treeDid`/`clusterId` length limit (≤256 bytes) у `mint()`/`mintForTree()`/`batchMint()` — захист від The Graph DoS; валідацію `recordPremiumPaid()` (`payer != address(0)`, `amount > 0`) — запобігання event spoofing; per-element string validation у `batchMint()` для обох контрактів
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
 - **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано
 - **Синхронізація:** 2026-04-16
@@ -169,6 +169,7 @@ function mint(address to, uint256 amount, string calldata treeDid)
     require(to != address(0), "SCC: zero recipient");
     require(amount > 0, "SCC: zero amount");
     require(bytes(treeDid).length > 0, "SCC: empty treeDid");
+    require(bytes(treeDid).length <= 256, "SCC: treeDid too long");
     require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
     _mint(to, amount);
     emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
@@ -179,10 +180,10 @@ function mint(address to, uint256 amount, string calldata treeDid)
 |---|---|---|
 | `to` | `address` | Адреса інвестора / власника дерева |
 | `amount` | `uint256` | Кількість у wei (1 SCC = 10^18 wei) |
-| `treeDid` | `string` | DID дерева (напр. `SNET-00A1B2C3`) |
+| `treeDid` | `string` | DID дерева (напр. `SNET-00A1B2C3`), max 256 bytes |
 
 - **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
-- **Валідація:** `to != address(0)`, `amount > 0`, `treeDid` не порожній, `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SCC: cap exceeded"`)
+- **Валідація:** `to != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ 256 bytes (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SCC: cap exceeded"`)
 - **Guard on pause:** Опосередковано через `_update → whenNotPaused`
 - **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mintForTree", to, amount, identifier)` (також доступний `"mint"` alias)
 
@@ -204,6 +205,8 @@ function batchMint(
     for (uint256 i = 0; i < length; i++) {
         require(recipients[i] != address(0), "SCC: zero recipient");
         require(amounts[i] > 0, "SCC: zero amount");
+        require(bytes(treeDids[i]).length > 0, "SCC: empty treeDid");
+        require(bytes(treeDids[i]).length <= 256, "SCC: treeDid too long");
         batchTotal += amounts[i];
     }
     require(totalSupply() + batchTotal <= MAX_SUPPLY, "SCC: cap exceeded");
@@ -216,9 +219,10 @@ function batchMint(
 ```
 
 - **Призначення:** Газово-ефективна масова емісія для цілих секторів/кластерів
-- **Валідація:** `length > 0` (revert: `"SCC: empty batch"`); рівність довжин масивів; `MAX_BATCH_SIZE = 200` — захист від gas overflow; кожен `recipient != address(0)`, `amount > 0`; `totalSupply() + batchTotal <= MAX_SUPPLY` перевіряється атомарно до мінтингу
+- **Валідація:** `length > 0` (revert: `"SCC: empty batch"`); рівність довжин масивів; `MAX_BATCH_SIZE = 200` — захист від gas overflow; кожен `recipient != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ 256 bytes; `totalSupply() + batchTotal <= MAX_SUPPLY` перевіряється атомарно до мінтингу
 - **Dynamic Tax:** При виклику `batchMint` з бекенду, `BlockchainMintingService` вставляє додаткових отримувачів (`DAO_TREASURY_ADDRESS`) коли баланс Treasury < 100,000 SCC
 - **Gas Optimization [PR #253]:** `Treasury::MintBatchCollectorService` (cron кожні 5 хв) агрегує pending TX та відправляє пакетами по 100 через `BlockchainMintingService.call_batch`. `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Urgent TX (>30 хв) відправляються негайно.
+- **Gas Analysis:** `MAX_BATCH_SIZE = 200` — on-chain safety cap. Backend обмежує до 100. Gas consumption для 200 мінтів з типовими DID (~20 bytes): ~51K gas × 200 ≈ 10.2M gas — в межах Polygon block gas limit (30M). Solidity 0.8+ забезпечує вбудований overflow-захист для `batchTotal += amounts[i]` (revert `Panic(0x11)` при переповненні).
 - **Binary Search Isolation [PR #254]:** При `batchMint` dry-run revert замість наївного N×`mint()` fallback використовується Divide & Conquer алгоритм — бінарний пошук "отруйних" записів через `eth_call`. Чисті підбатчі → `batchMint`, отруйні → `mint()` поштучно. Для 1 отруйного з 100: ~14 `eth_call` + 2-3 `batchMint` замість 100 `mint()`. Guards: `MIN_BINARY_SEARCH_SIZE=4`, `MAX_BINARY_SEARCH_DEPTH=6`, `POISONED_RATIO_THRESHOLD=30%`.
 
 #### `slash(address investor, uint256 amount)`
@@ -243,12 +247,32 @@ function slash(address investor, uint256 amount)
 - **Guard on pause:** `_burn → _update → whenNotPaused` — слешинг заблокований під час паузи
 - **Подія:** `TokenSlashed(address indexed investor, uint256 amount)`
 
+#### `recordPremiumPaid(address payer, uint256 amount)`
+
+```solidity
+function recordPremiumPaid(address payer, uint256 amount)
+    external
+    onlyRole(DEFAULT_ADMIN_ROLE)
+{
+    require(payer != address(0), "SCC: zero payer");
+    require(amount > 0, "SCC: zero premium");
+    emit PremiumPaid(payer, amount);
+}
+```
+
+- **Модифікатор:** `onlyRole(DEFAULT_ADMIN_ROLE)`
+- **Призначення:** Off-chain tracking для Parametric Insurance. Фактична передача токенів відбувається поза контрактом — функція тільки емітує подію `PremiumPaid` для індексації The Graph subgraph
+- **Валідація:** `payer != address(0)`, `amount > 0` — запобігає event spoofing (некоректні події індексувались би у subgraph `ProtocolFinancials.totalPremiums`)
+- **Подія:** `PremiumPaid(address indexed payer, uint256 amount)` → `handlePremiumPaid` у subgraph
+
 #### `pause()` / `unpause()`
 
 ```solidity
 function pause() external onlyRole(DEFAULT_ADMIN_ROLE) { _pause(); }
 function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) { _unpause(); }
 ```
+
+- **Operational Security:** Для production deployment `DEFAULT_ADMIN_ROLE` має бути призначено Gnosis Safe multisig (3/5 або 2/3) замість EOA (Externally Owned Account). `pause()` — це аварійний механізм для негайної зупинки при exploits, тому timelock **не** додається (під час хаку потрібна реакція за хвилини, а не дні)
 
 #### `_update(address from, address to, uint256 value)` — internal hook
 
@@ -280,6 +304,7 @@ function mint(address to, uint256 amount, string calldata clusterId)
     require(to != address(0), "SFC: zero recipient");
     require(amount > 0, "SFC: zero amount");
     require(bytes(clusterId).length > 0, "SFC: empty clusterId");
+    require(bytes(clusterId).length <= 256, "SFC: clusterId too long");
     require(totalSupply() + amount <= MAX_SUPPLY, "SFC: cap exceeded");
     _mint(to, amount);
     emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId);
@@ -290,17 +315,17 @@ function mint(address to, uint256 amount, string calldata clusterId)
 |---|---|---|
 | `to` | `address` | Адреса отримувача (організація / DAO учасник) |
 | `amount` | `uint256` | Кількість SFC у wei |
-| `clusterId` | `string` | Ідентифікатор кластера. Бекенд формує: `"CLUSTER_#{tree.cluster_id}"` або `"CLUSTER_GLOBAL"` |
+| `clusterId` | `string` | Ідентифікатор кластера, max 256 bytes. Бекенд формує: `"CLUSTER_#{tree.cluster_id}"` або `"CLUSTER_GLOBAL"` |
 
 - **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
-- **Валідація:** `to != address(0)`, `amount > 0`, `clusterId` не порожній, `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SFC: cap exceeded"`)
+- **Валідація:** `to != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ 256 bytes (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SFC: cap exceeded"`)
 - **Guard on pause:** Опосередковано через `_update(ERC20, ERC20Votes) → whenNotPaused`
 - **Виклик з бекенду:** `BlockchainMintingService` — однакова логіка з SCC, але `token_type == "forest_coin"` → `FOREST_COIN_CONTRACT_ADDRESS`
 
 #### `batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata clusterIds)`
 
 - Аналогічний SCC `batchMint`, але прив'язаний до `clusterId` замість `treeDid`
-- Модифікатор: `onlyRole(MINTER_ROLE)`, `nonReentrant`; перевіряє `length > 0`, рівність масивів, `MAX_BATCH_SIZE`; per-element: `recipient != address(0)`, `amount > 0`; `totalSupply() + batchTotal <= MAX_SUPPLY` атомарно
+- Модифікатор: `onlyRole(MINTER_ROLE)`, `nonReentrant`; перевіряє `length > 0`, рівність масивів, `MAX_BATCH_SIZE`; per-element: `recipient != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ 256 bytes; `totalSupply() + batchTotal <= MAX_SUPPLY` атомарно
 
 #### `slash(address investor, uint256 amount)`
 
@@ -665,6 +690,8 @@ threshold = SystemParameter.current(:slash_threshold, default: 0.20)
 ```
 
 **`SystemParameter` model:** кеш поточних on-chain значень з TTL 24h. При недоступності The Graph — fallback на default constants.
+
+---
 
 *Документ згенеровано: Reverse Shaping Cycle 1 Small Batch (Issue #172) · Стан "як є" на 2026-03-23*
 *Джерела: `contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`,*

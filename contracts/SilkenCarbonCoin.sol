@@ -24,6 +24,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
  * [B-04] batchMint обмежено 200 елементами для gas safety.
  * [B-10] Events: string поля не indexed, додано bytes32 indexed хеші.
  * [B-13] ReentrancyGuard для превентивного захисту.
+ * [B-15] String length validation: treeDid/clusterId <= 256 bytes (The Graph safety).
  */
 contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ERC20Permit {
 
@@ -90,6 +91,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(to != address(0), "SCC: zero recipient");
         require(amount > 0, "SCC: zero amount");
         require(bytes(treeDid).length > 0, "SCC: empty treeDid");
+        require(bytes(treeDid).length <= 256, "SCC: treeDid too long");
         require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
         _mint(to, amount);
         emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
@@ -108,6 +110,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(to != address(0), "SCC: zero recipient");
         require(amount > 0, "SCC: zero amount");
         require(bytes(treeDid).length > 0, "SCC: empty treeDid");
+        require(bytes(treeDid).length <= 256, "SCC: treeDid too long");
         require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
         _mint(to, amount);
         emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
@@ -132,6 +135,9 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         for (uint256 i = 0; i < length; i++) {
             require(recipients[i] != address(0), "SCC: zero recipient");
             require(amounts[i] > 0, "SCC: zero amount");
+            uint256 didLen = bytes(treeDids[i]).length;
+            require(didLen > 0, "SCC: empty treeDid");
+            require(didLen <= 256, "SCC: treeDid too long");
             batchTotal += amounts[i];
         }
         require(totalSupply() + batchTotal <= MAX_SUPPLY, "SCC: cap exceeded");
@@ -161,10 +167,13 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @notice Запис оплати страхової премії (Parametric Insurance).
     /// @param payer Адреса платника премії.
     /// @param amount Сума премії (wei).
+    /// @dev Тільки запис події (off-chain tracking). Валідація запобігає event spoofing.
     function recordPremiumPaid(address payer, uint256 amount)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        require(payer != address(0), "SCC: zero payer");
+        require(amount > 0, "SCC: zero premium");
         emit PremiumPaid(payer, amount);
     }
 
