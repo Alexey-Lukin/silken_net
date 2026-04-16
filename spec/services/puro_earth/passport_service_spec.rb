@@ -148,4 +148,43 @@ RSpec.describe PuroEarth::PassportService do
       expect(sorted[:a].first.keys).to eq([ :b, :c ])
     end
   end
+
+  describe "#extract_canonical_fields" do
+    let(:service) { described_class.new(payload) }
+
+    it "extracts fields in alphabetical key order" do
+      types, values = service.send(:extract_canonical_fields, {
+        z_field: "last",
+        a_field: "first"
+      })
+
+      expect(types).to eq(%w[string string])
+      expect(values).to eq(%w[first last])
+    end
+
+    it "flattens nested hashes recursively" do
+      types, values = service.send(:extract_canonical_fields, {
+        coordinates: { latitude: 49.0, longitude: 32.0 },
+        name: "test"
+      })
+
+      # coordinates.latitude, coordinates.longitude, name
+      expect(types.size).to eq(3)
+      expect(values[2]).to eq("test")
+    end
+
+    it "scales floats to uint256 with 18-decimal precision" do
+      types, values = service.send(:extract_canonical_fields, { amount: 125.5 })
+
+      expect(types).to eq([ "uint256" ])
+      expect(values).to eq([ 125_500_000_000_000_000_000 ])
+    end
+
+    it "handles integers as uint256 without scaling" do
+      types, values = service.send(:extract_canonical_fields, { count: 42 })
+
+      expect(types).to eq([ "uint256" ])
+      expect(values).to eq([ 42 ])
+    end
+  end
 end

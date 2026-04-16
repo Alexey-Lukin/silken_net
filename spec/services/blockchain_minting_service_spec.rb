@@ -631,4 +631,130 @@ end
       expect(described_class::INSURANCE_POOL_THRESHOLD).to eq(100_000)
     end
   end
+
+  describe "batch dry-run guard (Problem 1: Atomic Batch Revert)" do
+    let(:tree1) { create(:tree) }
+    let(:wallet1) { tree1.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved") } }
+    let(:tree2) { create(:tree) }
+    let(:wallet2) { tree2.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "c" * 40, hadron_kyc_status: "approved") } }
+    let!(:tx1) do
+      wallet1.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet1.crypto_public_address, locked_points: 1000
+      )
+    end
+    let!(:tx2) do
+      wallet2.blockchain_transactions.create!(
+        amount: 200, token_type: :carbon_coin, status: :pending,
+        to_address: wallet2.crypto_public_address, locked_points: 2000
+      )
+    end
+
+    context "when dry-run succeeds (no revert)" do
+      before do
+        # eth_call (dry-run) succeeds → no revert
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything).and_return(nil)
+      end
+
+      it "proceeds with batch mint via transact" do
+        allow(mock_client).to receive(:transact).with(anything, "batchMint", anything, anything, anything, anything).and_return(fake_tx_hash)
+
+        described_class.call_batch([ tx1.id, tx2.id ])
+
+        expect(tx1.reload.status).to eq("sent")
+        expect(tx2.reload.status).to eq("sent")
+        expect(tx1.reload.tx_hash).to eq(fake_tx_hash)
+      end
+    end
+
+    context "when dry-run detects EVM revert" do
+      before do
+        # eth_call (dry-run) fails with revert → fallback to individual mints
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything)
+          .and_raise(StandardError, "execution reverted: KYC not approved")
+        # balanceOf call for insurance pool
+        allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
+      end
+
+      it "falls back to individual mint() calls" do
+        # Expect individual mint calls (one per tx), not batchMint
+        tx_hashes = [ "0x" + "a" * 64, "0x" + "b" * 64 ]
+        call_count = 0
+
+        allow(mock_client).to receive(:transact) do |_c, method, *_args, **_opts|
+          expect(method).to eq("mint")
+          hash = tx_hashes[call_count]
+          call_count += 1
+          hash
+        end
+
+        described_class.call_batch([ tx1.id, tx2.id ])
+
+        expect(tx1.reload.status).to eq("sent")
+        expect(tx2.reload.status).to eq("sent")
+        # Individual mints produce different tx_hashes
+        expect(tx1.reload.tx_hash).to eq(tx_hashes[0])
+        expect(tx2.reload.tx_hash).to eq(tx_hashes[1])
+      end
+
+      it "marks only the poisoned entry as failed when individual mint reverts" do
+        # tx1 succeeds individually, tx2 fails
+        allow(mock_client).to receive(:transact) do |_c, _method, to_address, *_args, **_opts|
+          if to_address == wallet2.crypto_public_address
+            raise StandardError, "KYC revoked for this wallet"
+          end
+          "0x" + "a" * 64
+        end
+
+        described_class.call_batch([ tx1.id, tx2.id ])
+
+        expect(tx1.reload.status).to eq("sent")
+        expect(tx2.reload.status).to eq("failed")
+        expect(tx2.reload.error_message).to include("KYC revoked")
+      end
+    end
+
+    context "when dry-run fails with network error (not revert)" do
+      before do
+        # eth_call fails with timeout → NOT a revert, proceed optimistically
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything)
+          .and_raise(Net::ReadTimeout, "RPC timeout")
+        # balanceOf call for insurance pool
+        allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
+      end
+
+      it "proceeds with batch mint optimistically (network error is not a revert)" do
+        allow(mock_client).to receive(:transact).with(anything, "batchMint", anything, anything, anything, anything).and_return(fake_tx_hash)
+
+        described_class.call_batch([ tx1.id, tx2.id ])
+
+        expect(tx1.reload.status).to eq("sent")
+        expect(tx2.reload.status).to eq("sent")
+      end
+    end
+  end
+
+  describe "#evm_revert?" do
+    let(:service) { described_class.new([ -1 ]) }
+
+    it "returns true for 'execution reverted' errors" do
+      expect(service.send(:evm_revert?, StandardError.new("execution reverted: KYC"))).to be true
+    end
+
+    it "returns true for 'revert' errors" do
+      expect(service.send(:evm_revert?, StandardError.new("Transaction revert"))).to be true
+    end
+
+    it "returns true for 'out of gas' errors" do
+      expect(service.send(:evm_revert?, StandardError.new("out of gas"))).to be true
+    end
+
+    it "returns false for network errors" do
+      expect(service.send(:evm_revert?, Net::ReadTimeout.new("RPC timeout"))).to be false
+    end
+
+    it "returns false for connection errors" do
+      expect(service.send(:evm_revert?, Errno::ECONNREFUSED.new("Connection refused"))).to be false
+    end
+  end
 end

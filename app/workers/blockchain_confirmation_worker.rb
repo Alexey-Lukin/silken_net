@@ -8,6 +8,34 @@ class BlockchainConfirmationWorker
   # Якщо джоба для цього хешу вже виконується — нова буде відхилена.
   sidekiq_options queue: "web3_critical", retry: 10, unique_for: 10.minutes
 
+  # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  # 🛡️ MEMPOOL LIMBO GUARD (The Stuck Transaction Safety Net)
+  # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  # Викликається, коли всі 10 ретраїв вичерпано (~15-20 хвилин polling),
+  # а транзакція так і не отримала receipt від мережі.
+  # Без цього хендлера job потрапляє в Sidekiq Dead queue і транзакції
+  # назавжди залишаються в статусі :sent — кошти зависають у locked_balance.
+  #
+  # Делегуємо до MintingRollbackService, який:
+  #   - Перевіряє receipt ще раз (можливо, мережа відновилась)
+  #   - Підтверджує on-chain якщо receipt з'явився
+  #   - Ескалює до manual_review якщо receipt все ще pending/unknown
+  sidekiq_retries_exhausted do |msg, _ex|
+    tx_hash = msg["args"].first
+    next unless tx_hash
+
+    Rails.logger.error "🚨 [Web3] Confirmation polling exhausted for TX: #{tx_hash}. " \
+                       "Escalating stuck transactions to MintingRollbackService."
+
+    txs = BlockchainTransaction.where(tx_hash: tx_hash, status: :sent)
+    if txs.any?
+      MintingRollbackService.call(transactions: txs)
+    else
+      Rails.logger.warn "⚠️ [Web3] No :sent transactions found for exhausted TX: #{tx_hash}. " \
+                        "Possibly already resolved by another process."
+    end
+  end
+
   def perform(tx_hash)
     # [RATE LIMITED]: RPC виклик захищений глобальним лімітером.
     # Тільки eth_get_transaction_receipt є RPC-операцією;
