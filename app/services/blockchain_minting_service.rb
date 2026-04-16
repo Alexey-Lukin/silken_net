@@ -255,9 +255,13 @@ class BlockchainMintingService < ApplicationService
   def fallback_to_individual_mints(client, contract, oracle_key, token_type, txs)
     poisoned = []
     clean = []
+    original_batch_size = txs.size
 
     # Запускаємо бінарний пошук для ізоляції отруйних записів
-    isolate_poisoned_records(client, contract, oracle_key, token_type, txs, poisoned, clean, depth: 0)
+    isolate_poisoned_records(client, contract, oracle_key, token_type, txs, poisoned, clean,
+                             depth: 0, original_batch_size: original_batch_size)
+
+    Rails.logger.info "🔍 [Web3] Binary search result: #{clean.size} clean, #{poisoned.size} poisoned out of #{original_batch_size}"
 
     # Відправляємо "чисті" транзакції оптимальними батчами
     clean.each_slice(Treasury::MintBatchCollectorService::OPTIMAL_BATCH_SIZE) do |batch|
@@ -275,16 +279,17 @@ class BlockchainMintingService < ApplicationService
 
   # Рекурсивний бінарний пошук для ізоляції отруйних записів.
   # Кожен рівень рекурсії ділить батч навпіл і тестує через eth_call dry-run.
-  def isolate_poisoned_records(client, contract, oracle_key, token_type, txs, poisoned, clean, depth:)
+  def isolate_poisoned_records(client, contract, oracle_key, token_type, txs, poisoned, clean, depth:, original_batch_size:)
     # Базовий випадок: батч занадто малий або досягнуто максимальної глибини — мінтимо поштучно
     if txs.size < MIN_BINARY_SEARCH_SIZE || depth >= MAX_BINARY_SEARCH_DEPTH
+      Rails.logger.info "🔍 [Web3] Binary search: #{txs.size} txs at depth=#{depth} below threshold, marking as potentially poisoned"
       txs.each { |tx| poisoned << tx }
       return
     end
 
-    # Перевіряємо, чи ще ефективний binary search (>30% отруйних — fallback)
-    if poisoned.size > (poisoned.size + clean.size + txs.size) * POISONED_RATIO_THRESHOLD && poisoned.any?
-      Rails.logger.warn "⚠️ [Web3] Binary search: >30% poisoned (#{poisoned.size} poisoned). " \
+    # Перевіряємо, чи ще ефективний binary search (>30% від оригінального батча отруйні — fallback)
+    if poisoned.any? && poisoned.size > original_batch_size * POISONED_RATIO_THRESHOLD
+      Rails.logger.warn "⚠️ [Web3] Binary search: >30% poisoned (#{poisoned.size}/#{original_batch_size}). " \
                         "Fallback to individual mints for remaining #{txs.size} txs."
       txs.each { |tx| poisoned << tx }
       return
@@ -295,14 +300,16 @@ class BlockchainMintingService < ApplicationService
     right_half = txs[mid..]
 
     # Тестуємо ліву половину через dry-run
-    process_half(client, contract, oracle_key, token_type, left_half, poisoned, clean, depth: depth)
+    process_half(client, contract, oracle_key, token_type, left_half, poisoned, clean,
+                 depth: depth, original_batch_size: original_batch_size)
 
     # Тестуємо праву половину через dry-run
-    process_half(client, contract, oracle_key, token_type, right_half, poisoned, clean, depth: depth)
+    process_half(client, contract, oracle_key, token_type, right_half, poisoned, clean,
+                 depth: depth, original_batch_size: original_batch_size)
   end
 
   # Обробляє одну половину батча: dry-run → clean або рекурсивний поділ.
-  def process_half(client, contract, oracle_key, token_type, half_txs, poisoned, clean, depth:)
+  def process_half(client, contract, oracle_key, token_type, half_txs, poisoned, clean, depth:, original_batch_size:)
     return if half_txs.empty?
 
     recipients, amounts, identifiers = build_batch_arrays(half_txs, token_type)
@@ -310,7 +317,8 @@ class BlockchainMintingService < ApplicationService
     if batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers)
       # Ця половина містить отруйний запис — ділимо далі
       Rails.logger.info "🔍 [Web3] Binary search depth=#{depth + 1}: sub-batch of #{half_txs.size} reverted, splitting..."
-      isolate_poisoned_records(client, contract, oracle_key, token_type, half_txs, poisoned, clean, depth: depth + 1)
+      isolate_poisoned_records(client, contract, oracle_key, token_type, half_txs, poisoned, clean,
+                               depth: depth + 1, original_batch_size: original_batch_size)
     else
       # Ця половина чиста — додаємо до clean
       clean.concat(half_txs)
