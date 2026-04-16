@@ -18,7 +18,7 @@
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
+## 🛑 Блокери
 
 > Цей розділ є критично важливим. Жоден реальний деплой неможливий без вирішення цих пунктів.
 
@@ -669,3 +669,92 @@ bundle update kamal
 | `--acme-cache-path` | Спільний кеш Let's Encrypt між proxy-інстансами |
 | `--scope-cookie-paths` | Автоматичний scope cookies до path-prefix |
 | Chunked responses | Не буферизує відповіді з `Transfer-Encoding: chunked` (важливо для SSE/streaming) |
+
+---
+
+## 🔑 Змінні Середовища: Web3 та Мультичейн
+
+### Обов'язкові (Polygon)
+
+```bash
+# Polygon RPC (Alchemy)
+ALCHEMY_POLYGON_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/YOUR_KEY
+
+# Oracle-гаманець (керує мінтингом/слешингом)
+ORACLE_PRIVATE_KEY=0x...  # ⚠️ Зберігати в Rails credentials або Vault, НІКОЛИ не в .env
+
+# Адреси смарт-контрактів (Polygon)
+CARBON_COIN_CONTRACT_ADDRESS=0x...  # SCC
+FOREST_COIN_CONTRACT_ADDRESS=0x...  # SFC
+```
+
+### Мультичейн (Gaia 2.0)
+
+```bash
+# Ethereum L1 (State Anchoring)
+ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+
+# IoTeX W3bstream (ZK Verification)
+W3BSTREAM_API_URL=https://w3bstream-api.iotex.io
+W3BSTREAM_PROJECT_ID=silken_net_dmrv
+
+# Chainlink Functions (Oracle)
+CHAINLINK_ROUTER_ADDRESS=0x...
+CHAINLINK_SUBSCRIPTION_ID=...
+
+# peaq DID (Machine Identity)
+PEAQ_NODE_URL=https://peaq-node.example.com
+
+# Solana (Micro-Rewards)
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+SOLANA_WALLET_KEYPAIR=...
+
+# Celo (Community Rewards)
+CELO_RPC_URL=https://forno.celo.org
+CELO_CUSD_CONTRACT_ADDRESS=0x...
+
+# KlimaDAO (Carbon Retirement)
+KLIMA_RETIREMENT_CONTRACT_ADDRESS=0x...
+
+# Polygon Hadron (RWA Compliance)
+HADRON_API_URL=https://api.hadron.polygon.technology
+HADRON_API_KEY=...
+
+# Streamr (P2P Data)
+STREAMR_API_URL=https://streamr.network/api/v2
+STREAMR_STREAM_ID=silken_net/forest_telemetry
+
+# Filecoin/IPFS (Archive)
+PINATA_API_KEY=...
+PINATA_SECRET_KEY=...
+
+# The Graph (Indexing)
+THE_GRAPH_SUBGRAPH_URL=https://api.thegraph.com/subgraphs/name/silken-net/carbon
+
+# Akash Network (Deployment)
+AKASH_WALLET_ADDRESS=...
+
+# CoAP listener
+COAP_PORT=5683
+```
+
+### Деплой контрактів (Foundry)
+
+```bash
+# Встановіть Foundry (https://book.getfoundry.sh/)
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+
+# Деплой SCC на testnet
+cd contracts/
+forge create SilkenCarbonCoin --rpc-url $ALCHEMY_POLYGON_RPC_URL --private-key $ORACLE_PRIVATE_KEY
+
+# Деплой SFC на testnet
+forge create SilkenForestCoin --rpc-url $ALCHEMY_POLYGON_RPC_URL --private-key $ORACLE_PRIVATE_KEY
+
+# Деплой на Mainnet з верифікацією
+forge create SilkenCarbonCoin \
+  --rpc-url $ALCHEMY_POLYGON_RPC_URL \
+  --private-key $ORACLE_PRIVATE_KEY \
+  --verify --etherscan-api-key $POLYGONSCAN_API_KEY
+```

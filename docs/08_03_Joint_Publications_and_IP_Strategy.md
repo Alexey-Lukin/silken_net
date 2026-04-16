@@ -1,14 +1,6 @@
-## 08_03: Joint Publications & IP Strategy
+# 08_03: Спільні Публікації та Стратегія IP
 
-**Модуль:** 08_03 — Наукові Публікації та Стратегія Інтелектуальної Власності
-**Пов'язані модулі:** [08_01 University R&D Protocols](08_01_University_R_and_D_Protocols) · [08_02 Cybernetic and Mathematical Validation](8_02_Cybernetic_and_Mathematical_Validation) · [07_02 Unit Economics and BOM](07_02_Unit_Economics_and_BOM) · [05_03 Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC)
-**Поточний TRL:** 3 (Публікаційний план визначено; авторські колективи формуються)
-**Цільовий TRL:** 6 (Перша публікація в Q1 Scopus; патентна заявка подана)
-**Стратегічна цінність:** Наукові публікації ЧНУ = легітимізація технології + Hardware Proof для seed-раунду
-
----
-
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Легітимізація технології Silken Net у світовому науковому просторі та юридичне закріплення прав на інтелектуальну власність у межах співпраці ЧНУ та Silken Net. Формування системи публікацій, що охоплює весь технологічний стек від фізики анкера до математики токеноміки.
 
@@ -16,7 +8,18 @@
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
+## ✅ Статус
+
+- **Поточний TRL:** TRL 3 — публікаційний план визначено, авторські колективи формуються
+- **Пов'язані модулі:**
+  - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
+  - Кіберфізична валідація → [`8_02_Cybernetic_and_Mathematical_Validation`](8_02_Cybernetic_and_Mathematical_Validation)
+  - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
+  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
+
+---
+
+## 🛑 Блокери
 
 - **Лабораторні дані відсутні** — перша публікація можлива лише після протоколів з 08_01
 - **Авторський колектив не сформований** — потрібні конкретні викладачі ЧНУ

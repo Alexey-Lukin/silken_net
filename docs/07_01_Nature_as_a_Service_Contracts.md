@@ -279,7 +279,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ---
 
-## 🛑 8. Блокери (Blockers / Needs Action)
+## 🛑 8. Блокери
 
 > Цей розділ є критично важливим. Жоден реальний B2B продаж неможливий без вирішення наступних пунктів.
 

@@ -1,26 +1,16 @@
 # 06_02: Akash Network Integration (Децентралізовані Обчислення)
 
-**Модуль:** 06_02 — Akash Network: Decentralized Compute Layer  
-**Пов'язані модулі:** [06_01 Deployment Kamal & Terraform](06_01_Deployment_Kamal_Terraform) · [06_03 Prometheus Observability](06_03_Prometheus_Observability) · [04_02 Business Logic & Services](04_02_Business_Logic_and_Services)  
-**Поточний TRL:** 4 (SDL-маніфест та Terraform-конфігурація існують, реальний деплой не виконувався, SSOT відсутня)  
-**Цільовий TRL:** 5 (Повна прозорість SDL конфігурацій, ресурсних вимог та архітектурних обмежень)  
-**Статус Аудиту:** Reverse Shaping завершено — документ синхронізовано з кодбейсом станом на 2026-03-23
+## 🎯 Мета
 
----
-
-## 🎯 Мета (Objective)
-
-Зафіксувати **фактичний стан** конфігурації Akash Network — результат "Reverse Shaping" Cycle 1, Small Batch. Документ відповідає на три ключові питання:
+Зафіксувати **фактичний стан** конфігурації Akash Network. Документ відповідає на три ключові питання:
 
 1. Які **обчислювальні ресурси** (CPU, RAM, Disk) замовляються в Akash SDL?
 2. Які **змінні середовища (ENV)** очікує отримати контейнер при деплої?
 3. Які **архітектурні блокери** унеможливлюють повноцінне децентралізоване розгортання сьогодні?
 
-> **⚠️ SSOT Sync:** Цей документ є результатом аудиту без жодних змін у коді (Shape Up: No Gos). Жодного реального деплою (`akash tx deployment create`) не виконувалося. **Цей документ і є встановленням SSOT для модуля 06_02.**
-
 ---
 
-## ✅ Статус Імплементації
+## ✅ Статус
 
 | Компонент | Файл | Статус |
 |-----------|------|--------|
@@ -34,11 +24,15 @@
 | Sidekiq у SDL | — | 🔴 Відсутній (тільки `web` сервіс) |
 | HTTPS / TLS термінація | — | 🟡 Не визначена (немає `443` у SDL) |
 
+- **Поточний TRL:** TRL 4 — SDL-маніфест та Terraform-конфігурація існують, реальний деплой не виконувався
+- **Пов'язані модулі:**
+  - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
+  - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
+  - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
-
-> **Scope:** Цей розділ містить виключно аудит без рефакторингу (Shape Up: Rabbit Holes / No Gos). Жодних змін у коді — тільки фіксація поточного стану "як є".
+## 🛑 Блокери
 
 ### 🔴 BLOCKER-1: Мережева ізоляція — Cloud SQL та Redis недоступні з Akash
 
