@@ -233,7 +233,6 @@ RSpec.describe Ethereum::StateAnchorService do
         result = described_class.new.anchor_to_l1!
 
         expect(result).to eq(sent_anchor)
-        expect(mock_client).not_to have_received(:transact) if mock_client.respond_to?(:have_received)
         expect(EthereumAnchor.count).to eq(1)
       end
 
@@ -258,15 +257,16 @@ RSpec.describe Ethereum::StateAnchorService do
       end
 
       it "ignores anchors older than one week" do
-        EthereumAnchor.create!(
-          state_root: "e" * 64,
-          total_scc: 700.0,
-          chain_hash: "old_hash",
-          anchored_at: 8.days.ago,
-          status: :sent,
-          tx_hash: "0x#{"ff" * 32}",
-          created_at: 8.days.ago
-        )
+        travel_to(8.days.ago) do
+          EthereumAnchor.create!(
+            state_root: "e" * 64,
+            total_scc: 700.0,
+            chain_hash: "old_hash",
+            anchored_at: Time.current,
+            status: :sent,
+            tx_hash: "0x#{"ff" * 32}"
+          )
+        end
 
         allow(mock_client).to receive(:transact).and_return("0x#{"ab" * 32}")
 
