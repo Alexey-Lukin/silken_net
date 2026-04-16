@@ -698,3 +698,46 @@ threshold = SystemParameter.current(:slash_threshold, default: 0.20)
 *`app/services/blockchain_minting_service.rb`, `app/services/blockchain_burning_service.rb`,*
 *`subgraph/subgraph.yaml`,*
 *Wiki: [05_01 Multichain Architecture](https://github.com/Alexey-Lukin/silken_net/wiki/05_01_Multichain_Architecture), [05_02 Proof of Growth Pipeline](https://github.com/Alexey-Lukin/silken_net/wiki/05_02_Proof_of_Growth_Pipeline)*
+
+---
+
+## ♻️ Afterlife Economy — Puro.earth Biochar Integration
+
+Коли дерево помирає (природна смерть або катастрофічна подія), його біомаса зберігає економічну цінність через Biochar carbon removal credits (CORCs) на реєстрі [Puro.earth](https://puro.earth).
+
+### Потік
+
+```
+Tree dies → Forester extracts dead wood → MaintenanceRecord (biomass_extraction)
+         ↓
+EcosystemHealingWorker → Tree status → :deceased
+         ↓
+PuroEarthPassportWorker → D-MRV "Biomass Passport" generated
+         ↓
+Payload: { tree_did, biomass_yield_kg, extraction_date, gps_coordinates, lifetime_telemetry_hash }
+         ↓
+blockchain anchoring → biomass_passport_tx_hash stored on MaintenanceRecord
+         ↓
+Puro.earth registry → Biochar CORC issuance (майбутня інтеграція)
+```
+
+### D-MRV Biomass Passport
+
+Digital Measurement, Reporting and Verification (D-MRV) паспорт забезпечує tamper-proof провенанс для видобутої біомаси:
+
+| Поле | Джерело | Призначення |
+|------|---------|-------------|
+| `tree_did` | Tree.did (SNET-XXXXXXXX) | Унікальна апаратна ідентичність дерева-джерела |
+| `biomass_yield_kg` | MaintenanceRecord | Вага видобутої мертвої деревини |
+| `extraction_date` | MaintenanceRecord.performed_at | Timestamp фізичного видобутку |
+| `gps_coordinates` | MaintenanceRecord або Tree | Географічне підтвердження походження |
+| `lifetime_telemetry_hash` | SHA-256 від telemetry history | Tamper-proof зв'язок з сенсорними даними дерева |
+
+### Економічний Impact
+
+- Мертві дерева продовжують генерувати цінність через Biochar CORCs замість того, щоб бути відходами
+- Кожен CORC представляє верифіковане видалення вуглецю (методологія Puro Standard)
+- Lifetime telemetry hash гарантує, що біомаса походить з моніторованого, верифікованого дерева
+- GPS-координати запобігають подвійному підрахунку між лісовими ділянками
+
+> **Статус:** `PuroEarthPassportWorker` — у черзі `web3` (пріоритет 7). Інтеграція з реальним API Puro.earth є наступним кроком після TRL 6 (BLOCKER-5 в `05_01_Multichain_Architecture`).

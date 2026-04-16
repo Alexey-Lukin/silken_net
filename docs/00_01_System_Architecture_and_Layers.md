@@ -149,3 +149,26 @@ Route metric = f(hop_count, remaining_energy, bio_potential)
 ### 🏛️ Рівень 8: Фіналізація (The Anchor)
 * **Стек:** Ethereum L1.
 * **Роль:** Щотижневе закріплення кореня стану (State Root — 32-byte SHA-256 hash) всієї економіки Gaia 2.0. Гарантія Rollup-рівня від катастрофічних збоїв сайдчейнів.
+
+---
+
+## 🗄️ Redis Infrastructure — Архітектурне Рішення (DB Isolation)
+
+Система використовує єдиний Redis-інстанс із **ізоляцією через логічні бази даних**:
+
+| БД | Призначення | ENV-змінна | Gem |
+|----|-------------|-----------|-----|
+| **DB 0** | Sidekiq черги задач та планувальник | `REDIS_URL` | `sidekiq` + `redis-client` |
+| **DB 1** | Kredis distributed locks (Web3 nonce management) | `KREDIS_REDIS_URL` | `kredis` + `redis` |
+
+### Чому одночасно використовуються `redis` і `kredis` gems?
+
+- **`sidekiq`** (8.x) використовує `redis-client` внутрішньо для черг — він **не потребує** gem `redis`.
+- **`kredis`** (Rails high-level Redis data structures) залежить від gem `redis` і надає типізовані проксі (scalars, lists, sets).
+- Kredis не має вбудованого distributed lock, тому `config/initializers/kredis.rb` розширює модуль через `Kredis.lock` — crash-safe `SET NX EX` lock із UUID-власністю та атомарним Lua-скриптом звільнення.
+
+### Чому ізоляція DB є критично важливою?
+
+Ізоляція **запобігає витісненню** (eviction) критичних Web3-даних телеметричними чергами:
+
+> При мільйонах IoT-пакетів на годину потік телеметрії (DB 0 — Sidekiq) може заповнити пам'ять Redis, змусивши eviction policy (`allkeys-lru`) видаляти ключі. Якби Web3 nonce locks знаходилися в тій самій базі — вони б видалялися, що призвело б до **EVM nonce collisions** і вразливостей **double-spend** на Polygon. Ізоляція через логічні бази даних усуває цей ризик без додаткових Redis-інстансів.
