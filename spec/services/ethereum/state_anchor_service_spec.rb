@@ -84,6 +84,15 @@ RSpec.describe Ethereum::StateAnchorService do
 
       expect(root1).not_to eq(root2)
     end
+
+    it "executes within a REPEATABLE READ transaction for snapshot isolation" do
+      # Verify that generate_state_root wraps SQL queries in a transaction
+      # with isolation level :repeatable_read to prevent inconsistent snapshots
+      # when parallel workers (MintCarbonCoinWorker, AuditLogWorker) write between queries.
+      expect(ActiveRecord::Base).to receive(:transaction).with(isolation: :repeatable_read).and_call_original
+
+      described_class.new.generate_state_root
+    end
   end
 
   describe "#anchor_to_l1!" do

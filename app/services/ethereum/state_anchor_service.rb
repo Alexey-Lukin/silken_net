@@ -59,20 +59,28 @@ module Ethereum
     # 3. Поточний timestamp (UTC)
     #
     # [BLOCKER-6] Повертає Hash з усіма компонентами для збереження в EthereumAnchor.
+    #
+    # [SNAPSHOT ISOLATION]: Обчислення state_root відбувається всередині транзакції
+    # з рівнем ізоляції REPEATABLE READ. Це гарантує, що Wallet.sum(:scc_balance)
+    # та AuditLog.pick(:chain_hash) бачать один і той самий "заморожений" знімок БД,
+    # навіть якщо паралельний воркер (MintCarbonCoinWorker, AuditLogWorker) записує
+    # дані між цими двома SQL-запитами.
     def generate_state_root
-      total_scc = Wallet.sum(:scc_balance)
-      latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
-      timestamp = Time.current.utc
+      ActiveRecord::Base.transaction(isolation: :repeatable_read) do
+        total_scc = Wallet.sum(:scc_balance)
+        latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
+        timestamp = Time.current.utc
 
-      payload = "#{total_scc}|#{latest_chain_hash}|#{timestamp.iso8601}"
-      state_root = Digest::SHA256.hexdigest(payload)
+        payload = "#{total_scc}|#{latest_chain_hash}|#{timestamp.iso8601}"
+        state_root = Digest::SHA256.hexdigest(payload)
 
-      {
-        state_root: state_root,
-        total_scc: total_scc,
-        chain_hash: latest_chain_hash,
-        anchored_at: timestamp
-      }
+        {
+          state_root: state_root,
+          total_scc: total_scc,
+          chain_hash: latest_chain_hash,
+          anchored_at: timestamp
+        }
+      end
     end
 
     # Записує State Root у смарт-контракт на Ethereum Mainnet (L1).
