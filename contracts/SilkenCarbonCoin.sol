@@ -14,6 +14,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
  *      Це дозволяє власникам SCC підписувати approve() оффлайн,
  *      а relayer/backend подає підпис on-chain без газу від власника.
  *      Необхідно для майбутньої інтеграції з DEX, P2P marketplace та Paymaster (ERC-4337).
+ *      ERC20Permit includes block.chainid in the EIP-712 domain separator,
+ *      so permit() signatures are only valid on the chain where they were signed.
+ *      Cross-chain replay is prevented by OpenZeppelin's domain separator implementation.
  *
  * [B-01] MAX_SUPPLY = 1 000 000 000 SCC — верхня межа емісії.
  * [B-02] Розділено MINTER_ROLE та SLASHER_ROLE на окремі oracle-адреси.
@@ -31,6 +34,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
     /// @notice [B-01] Максимальна емісія SCC: 1 мільярд токенів (18 decimals).
+    /// @dev Once MAX_SUPPLY is reached, mint/batchMint revert with "SCC: cap exceeded".
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 1e18;
 
     /// @notice [B-04] Максимальна кількість елементів у batchMint для gas safety.
@@ -66,19 +70,26 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(slasherOracle != address(0), "SCC: zero slasher oracle");
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        // Emits: RoleGranted(DEFAULT_ADMIN_ROLE, admin, msg.sender)
         _grantRole(MINTER_ROLE, minterOracle);
+        // Emits: RoleGranted(MINTER_ROLE, minterOracle, msg.sender)
         _grantRole(SLASHER_ROLE, slasherOracle);
+        // Emits: RoleGranted(SLASHER_ROLE, slasherOracle, msg.sender)
     }
 
     /// @notice [B-12] Емісія токенів для конкретного дерева на основі Proof of Growth.
     /// @param to Адреса отримувача.
     /// @param amount Кількість токенів (wei).
     /// @param treeDid DID дерева-джерела.
+    /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
     function mintForTree(address to, uint256 amount, string calldata treeDid)
         external
         onlyRole(MINTER_ROLE)
         nonReentrant
     {
+        require(to != address(0), "SCC: zero recipient");
+        require(amount > 0, "SCC: zero amount");
+        require(bytes(treeDid).length > 0, "SCC: empty treeDid");
         require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
         _mint(to, amount);
         emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
@@ -88,11 +99,15 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @param to Адреса отримувача.
     /// @param amount Кількість токенів (wei).
     /// @param treeDid DID дерева-джерела.
+    /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
     function mint(address to, uint256 amount, string calldata treeDid)
         external
         onlyRole(MINTER_ROLE)
         nonReentrant
     {
+        require(to != address(0), "SCC: zero recipient");
+        require(amount > 0, "SCC: zero amount");
+        require(bytes(treeDid).length > 0, "SCC: empty treeDid");
         require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
         _mint(to, amount);
         emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
@@ -108,12 +123,15 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         string[] calldata treeDids
     ) external onlyRole(MINTER_ROLE) nonReentrant {
         uint256 length = recipients.length;
+        require(length > 0, "SCC: empty batch");
         require(length == amounts.length && length == treeDids.length, "SCC: array length mismatch");
         require(length <= MAX_BATCH_SIZE, "SCC: batch too large");
 
         // Gas optimization: single SLOAD for totalSupply + pre-calculated total
         uint256 batchTotal = 0;
         for (uint256 i = 0; i < length; i++) {
+            require(recipients[i] != address(0), "SCC: zero recipient");
+            require(amounts[i] > 0, "SCC: zero amount");
             batchTotal += amounts[i];
         }
         require(totalSupply() + batchTotal <= MAX_SUPPLY, "SCC: cap exceeded");
@@ -127,11 +145,15 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @notice Спалювання токенів через slashing protocol (>20% аномальних дерев у кластері).
     /// @param investor Адреса, з якої спалюються токени.
     /// @param amount Кількість токенів для спалювання (wei).
+    /// @dev Reverts if investor balance < amount ("SCC: insufficient balance").
     function slash(address investor, uint256 amount)
         external
         onlyRole(SLASHER_ROLE)
         nonReentrant
     {
+        require(investor != address(0), "SCC: zero investor");
+        require(amount > 0, "SCC: zero amount");
+        require(balanceOf(investor) >= amount, "SCC: insufficient balance");
         _burn(investor, amount);
         emit TokenSlashed(investor, amount);
     }
@@ -157,6 +179,10 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     }
 
     /// @dev [B-07] Уніфіковано: whenNotPaused modifier для всіх трансферів.
+    /// @dev Reentrancy protection is provided by nonReentrant guards on mint(), slash(), and batchMint().
+    /// @dev Do NOT add external calls or callbacks to this function without adding nonReentrant guard.
+    /// @dev Note: nonReentrant cannot be added here directly — it would conflict with the outer
+    ///      nonReentrant guard on mint/slash/batchMint (nested nonReentrant reverts).
     function _update(address from, address to, uint256 value)
         internal
         override

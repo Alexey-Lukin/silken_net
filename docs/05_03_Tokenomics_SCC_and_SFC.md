@@ -9,8 +9,9 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 9 — Всі контракти production-ready, блокери закриті (PR #254), готові до Mainnet deployment та зовнішнього аудиту.
-- **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event, mintForTree alias)
-- **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, unified `whenNotPaused`)
+- **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event, mintForTree alias, audit hardening)
+- **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, unified `whenNotPaused`, audit hardening)
+- **Аудит-зміцнення (PR #255):** ✅ Додано явну перевірку балансу в `slash()`, валідацію нульових значень у `mint()`/`slash()`, перевірку порожнього батчу у `batchMint()`, NatSpec для MAX_SUPPLY, документацію emit-коментарів у конструкторах, NatSpec щодо EIP-712 chain safety
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
 - **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано
 - **Синхронізація:** 2026-04-16
@@ -96,13 +97,17 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ERC20Permit, ERC20V
 ```solidity
 constructor(address admin, address minterOracle, address slasherOracle)
     ERC20("Silken Carbon Coin", "SCC")
+    ERC20Permit("Silken Carbon Coin")
 {
     require(admin != address(0), "SCC: zero admin");
-    require(minterOracle != address(0), "SCC: zero minter");
-    require(slasherOracle != address(0), "SCC: zero slasher");
+    require(minterOracle != address(0), "SCC: zero minter oracle");
+    require(slasherOracle != address(0), "SCC: zero slasher oracle");
     _grantRole(DEFAULT_ADMIN_ROLE, admin);
-    _grantRole(MINTER_ROLE, minterOracle);    // ✅ Окремий ключ для мінтингу
-    _grantRole(SLASHER_ROLE, slasherOracle);  // ✅ Окремий ключ для slashing
+    // Emits: RoleGranted(DEFAULT_ADMIN_ROLE, admin, msg.sender)
+    _grantRole(MINTER_ROLE, minterOracle);
+    // Emits: RoleGranted(MINTER_ROLE, minterOracle, msg.sender)
+    _grantRole(SLASHER_ROLE, slasherOracle);
+    // Emits: RoleGranted(SLASHER_ROLE, slasherOracle, msg.sender)
 }
 ```
 
@@ -111,20 +116,23 @@ constructor(address admin, address minterOracle, address slasherOracle)
 | Роль | Константа | Призначається в конструкторі | Можливості |
 |---|---|---|---|
 | `DEFAULT_ADMIN_ROLE` | `0x00` | `admin` | Видача / відкликання ролей; `pause()`, `unpause()` |
-| `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `minterOracle` | `mint()`, `batchMint()` |
+| `MINTER_ROLE` | `keccak256("MINTER_ROLE")` | `oracle` (параметр конструктора) | `mint()`, `batchMint()` |
 | `SLASHER_ROLE` | `keccak256("SLASHER_ROLE")` | `slasherOracle` | `slash()` — спалення governance-токенів при breach |
 
 ```solidity
-constructor(address admin, address minterOracle, address slasherOracle)
+constructor(address admin, address oracle, address slasherOracle)
     ERC20("Silken Forest Coin", "SFC")
     ERC20Permit("Silken Forest Coin")
 {
     require(admin != address(0), "SFC: zero admin");
-    require(minterOracle != address(0), "SFC: zero minter");
-    require(slasherOracle != address(0), "SFC: zero slasher");
+    require(oracle != address(0), "SFC: zero oracle");
+    require(slasherOracle != address(0), "SFC: zero slasher oracle");
     _grantRole(DEFAULT_ADMIN_ROLE, admin);
-    _grantRole(MINTER_ROLE, minterOracle);
-    _grantRole(SLASHER_ROLE, slasherOracle);  // ✅ SFC тепер підтримує slashing governance токенів
+    // Emits: RoleGranted(DEFAULT_ADMIN_ROLE, admin, msg.sender)
+    _grantRole(MINTER_ROLE, oracle);
+    // Emits: RoleGranted(MINTER_ROLE, oracle, msg.sender)
+    _grantRole(SLASHER_ROLE, slasherOracle);
+    // Emits: RoleGranted(SLASHER_ROLE, slasherOracle, msg.sender)
 }
 ```
 
@@ -156,9 +164,14 @@ constructor(address admin, address minterOracle, address slasherOracle)
 function mint(address to, uint256 amount, string calldata treeDid)
     external
     onlyRole(MINTER_ROLE)
+    nonReentrant
 {
+    require(to != address(0), "SCC: zero recipient");
+    require(amount > 0, "SCC: zero amount");
+    require(bytes(treeDid).length > 0, "SCC: empty treeDid");
+    require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
     _mint(to, amount);
-    emit CarbonMinted(to, amount, treeDid);
+    emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
 }
 ```
 
@@ -168,7 +181,8 @@ function mint(address to, uint256 amount, string calldata treeDid)
 | `amount` | `uint256` | Кількість у wei (1 SCC = 10^18 wei) |
 | `treeDid` | `string` | DID дерева (напр. `SNET-00A1B2C3`) |
 
-- **Модифікатор:** `onlyRole(MINTER_ROLE)`
+- **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
+- **Валідація:** `to != address(0)`, `amount > 0`, `treeDid` не порожній, `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SCC: cap exceeded"`)
 - **Guard on pause:** Опосередковано через `_update → whenNotPaused`
 - **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mintForTree", to, amount, identifier)` (також доступний `"mint"` alias)
 
@@ -179,18 +193,30 @@ function batchMint(
     address[] calldata recipients,
     uint256[] calldata amounts,
     string[] calldata treeDids
-) external onlyRole(MINTER_ROLE) {
+) external onlyRole(MINTER_ROLE) nonReentrant {
     uint256 length = recipients.length;
-    require(length == amounts.length && length == treeDids.length, "SCC: Array lengths mismatch");
+    require(length > 0, "SCC: empty batch");
+    require(length == amounts.length && length == treeDids.length, "SCC: array length mismatch");
+    require(length <= MAX_BATCH_SIZE, "SCC: batch too large");
+
+    // Gas optimization: single SLOAD for totalSupply + pre-calculated total
+    uint256 batchTotal = 0;
+    for (uint256 i = 0; i < length; i++) {
+        require(recipients[i] != address(0), "SCC: zero recipient");
+        require(amounts[i] > 0, "SCC: zero amount");
+        batchTotal += amounts[i];
+    }
+    require(totalSupply() + batchTotal <= MAX_SUPPLY, "SCC: cap exceeded");
+
     for (uint256 i = 0; i < length; i++) {
         _mint(recipients[i], amounts[i]);
-        emit CarbonMinted(recipients[i], amounts[i], treeDids[i]);
+        emit CarbonMinted(recipients[i], amounts[i], keccak256(bytes(treeDids[i])), treeDids[i]);
     }
 }
 ```
 
 - **Призначення:** Газово-ефективна масова емісія для цілих секторів/кластерів
-- **Валідація:** Перевірка рівності довжин масивів; `MAX_BATCH_SIZE = 200` — захист від gas overflow (≈30M gas limit Polygon)
+- **Валідація:** `length > 0` (revert: `"SCC: empty batch"`); рівність довжин масивів; `MAX_BATCH_SIZE = 200` — захист від gas overflow; кожен `recipient != address(0)`, `amount > 0`; `totalSupply() + batchTotal <= MAX_SUPPLY` перевіряється атомарно до мінтингу
 - **Dynamic Tax:** При виклику `batchMint` з бекенду, `BlockchainMintingService` вставляє додаткових отримувачів (`DAO_TREASURY_ADDRESS`) коли баланс Treasury < 100,000 SCC
 - **Gas Optimization [PR #253]:** `Treasury::MintBatchCollectorService` (cron кожні 5 хв) агрегує pending TX та відправляє пакетами по 100 через `BlockchainMintingService.call_batch`. `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Urgent TX (>30 хв) відправляються негайно.
 - **Binary Search Isolation [PR #254]:** При `batchMint` dry-run revert замість наївного N×`mint()` fallback використовується Divide & Conquer алгоритм — бінарний пошук "отруйних" записів через `eth_call`. Чисті підбатчі → `batchMint`, отруйні → `mint()` поштучно. Для 1 отруйного з 100: ~14 `eth_call` + 2-3 `batchMint` замість 100 `mint()`. Guards: `MIN_BINARY_SEARCH_SIZE=4`, `MAX_BINARY_SEARCH_DEPTH=6`, `POISONED_RATIO_THRESHOLD=30%`.
@@ -201,13 +227,18 @@ function batchMint(
 function slash(address investor, uint256 amount)
     external
     onlyRole(SLASHER_ROLE)
+    nonReentrant
 {
+    require(investor != address(0), "SCC: zero investor");
+    require(amount > 0, "SCC: zero amount");
+    require(balanceOf(investor) >= amount, "SCC: insufficient balance");
     _burn(investor, amount);
     emit TokenSlashed(investor, amount);
 }
 ```
 
-- **Модифікатор:** `onlyRole(SLASHER_ROLE)`
+- **Модифікатор:** `onlyRole(SLASHER_ROLE)`, `nonReentrant`
+- **Валідація:** `investor != address(0)`, `amount > 0`, `balanceOf(investor) >= amount` (revert: `"SCC: insufficient balance"`) — явна перевірка замість generic OZ помилки
 - **Тригер:** `BurnCarbonTokensWorker → BlockchainBurningService → slash(investor, amount)` при >20% аномальних дерев у кластері
 - **Guard on pause:** `_burn → _update → whenNotPaused` — слешинг заблокований під час паузи
 - **Подія:** `TokenSlashed(address indexed investor, uint256 amount)`
@@ -232,6 +263,7 @@ function _update(address from, address to, uint256 value)
 ```
 
 - Блокує всі операції (mint, transfer, burn/slash) при активній паузі через модифікатор `whenNotPaused`
+- Reentrancy protection забезпечується `nonReentrant` guards на `mint()`, `mintForTree()`, `slash()`, `batchMint()` — `nonReentrant` не може бути доданий сюди напряму (вкладений виклик спричинив би revert)
 
 ---
 
@@ -243,10 +275,14 @@ function _update(address from, address to, uint256 value)
 function mint(address to, uint256 amount, string calldata clusterId)
     external
     onlyRole(MINTER_ROLE)
-    whenNotPaused
+    nonReentrant
 {
+    require(to != address(0), "SFC: zero recipient");
+    require(amount > 0, "SFC: zero amount");
+    require(bytes(clusterId).length > 0, "SFC: empty clusterId");
+    require(totalSupply() + amount <= MAX_SUPPLY, "SFC: cap exceeded");
     _mint(to, amount);
-    emit ForestMinted(to, amount, clusterId);
+    emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId);
 }
 ```
 
@@ -256,13 +292,37 @@ function mint(address to, uint256 amount, string calldata clusterId)
 | `amount` | `uint256` | Кількість SFC у wei |
 | `clusterId` | `string` | Ідентифікатор кластера. Бекенд формує: `"CLUSTER_#{tree.cluster_id}"` або `"CLUSTER_GLOBAL"` |
 
-- **Відмінність від SCC:** `whenNotPaused` на рівні функції (не лише через `_update`)
+- **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
+- **Валідація:** `to != address(0)`, `amount > 0`, `clusterId` не порожній, `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SFC: cap exceeded"`)
+- **Guard on pause:** Опосередковано через `_update(ERC20, ERC20Votes) → whenNotPaused`
 - **Виклик з бекенду:** `BlockchainMintingService` — однакова логіка з SCC, але `token_type == "forest_coin"` → `FOREST_COIN_CONTRACT_ADDRESS`
 
 #### `batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata clusterIds)`
 
 - Аналогічний SCC `batchMint`, але прив'язаний до `clusterId` замість `treeDid`
-- Має `whenNotPaused` безпосередньо на функції
+- Модифікатор: `onlyRole(MINTER_ROLE)`, `nonReentrant`; перевіряє `length > 0`, рівність масивів, `MAX_BATCH_SIZE`; per-element: `recipient != address(0)`, `amount > 0`; `totalSupply() + batchTotal <= MAX_SUPPLY` атомарно
+
+#### `slash(address investor, uint256 amount)`
+
+```solidity
+function slash(address investor, uint256 amount)
+    external
+    onlyRole(SLASHER_ROLE)
+    nonReentrant
+{
+    require(investor != address(0), "SFC: zero investor");
+    require(amount > 0, "SFC: zero amount");
+    require(balanceOf(investor) >= amount, "SFC: insufficient balance");
+    _burn(investor, amount);
+    emit GovernanceSlashed(investor, amount);
+}
+```
+
+- **Модифікатор:** `onlyRole(SLASHER_ROLE)`, `nonReentrant`
+- **Валідація:** `investor != address(0)`, `amount > 0`, `balanceOf(investor) >= amount` (revert: `"SFC: insufficient balance"`)
+- **Тригер:** `BurnCarbonTokensWorker → BlockchainBurningService → slash(investor, amount)` при порушенні NaaS контракту
+- **Guard on pause:** `_burn → _update → whenNotPaused` — slashing заблокований під час паузи
+- **Подія:** `GovernanceSlashed(address indexed investor, uint256 amount)`
 
 #### `_update(address from, address to, uint256 value)` — internal override
 
@@ -278,6 +338,7 @@ function _update(address from, address to, uint256 value)
 
 - Override необхідний через конфлікт між `ERC20` та `ERC20Votes`
 - Використовує `whenNotPaused` модифікатор — уніфіковано з SCC патерном
+- Reentrancy protection забезпечується `nonReentrant` guards на `mint()`, `slash()`, `batchMint()` — `nonReentrant` не може бути доданий сюди напряму (вкладений виклик спричинив би revert)
 
 #### `nonces(address owner)` — override для EIP-2612
 
@@ -307,7 +368,7 @@ function nonces(address owner)
 
 | Подія | Сигнатура | Indexed поля | Subgraph |
 |---|---|---|---|
-| `ForestMinted` | `ForestMinted(address indexed investor, uint256 amount, string indexed clusterId)` | `investor`, `clusterId` (→ keccak256) | ❌ Не індексується |
+| `ForestMinted` | `ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId)` | `investor`, `clusterIdHash` (bytes32 keccak256) | ❌ Не індексується |
 
 ### Subgraph vs Контракт — Повна Матриця
 

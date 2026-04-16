@@ -47,7 +47,9 @@ contract StateRootAnchor is AccessControl {
         require(anchorOracle != address(0), "StateRootAnchor: zero oracle");
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        // Emits: RoleGranted(DEFAULT_ADMIN_ROLE, admin, msg.sender)
         _grantRole(ANCHOR_ROLE, anchorOracle);
+        // Emits: RoleGranted(ANCHOR_ROLE, anchorOracle, msg.sender)
     }
 
     /// @notice Запис нового state root в Ethereum L1.
