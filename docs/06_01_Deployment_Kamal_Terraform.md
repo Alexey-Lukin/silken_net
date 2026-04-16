@@ -615,3 +615,57 @@ Series D архітектура (>1M вузлів):
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
 | Read-Only Replicas | 🔴 Не налаштовано | Terraform: `google_sql_database_instance` replica |
 | conntrack tuning | 🟡 Не зроблено | Додати в Terraform `startup_script` |
+
+---
+
+## 🔄 Оновлення Kamal (Upgrade Notes)
+
+### Kamal 2.11.0 (з 2.10.1)
+
+> ⚠️ **Kamal 2.11.0 вимагає kamal-proxy ≥ v0.9.2.** Без оновлення proxy деплой зафейлиться.
+
+**Крок 1: Оновити kamal-proxy на серверах**
+
+Перед першим деплоєм з Kamal 2.11.0 потрібно оновити proxy на кожному сервері:
+
+```bash
+# Canopy
+kamal proxy reboot -d canopy
+
+# Production
+kamal proxy reboot
+```
+
+> `kamal proxy reboot` завантажує новий образ kamal-proxy, перезапускає контейнер. Це зазвичай спричиняє **короткий даунтайм** (~1-3 сек).
+
+CI/CD workflows (`deploy.yml`, `deploy-production.yml`) вже включають крок `kamal proxy reboot` перед деплоєм.
+
+**Крок 2: Оновити gem**
+
+```bash
+bundle update kamal
+```
+
+**Що змінилось у Kamal 2.11.0:**
+
+| Зміна | Тип | Вплив на проєкт |
+|-------|-----|-----------------|
+| Вимога kamal-proxy ≥ v0.9.2 | ⚠️ Breaking | CI workflows оновлено, proxy reboot додано |
+| Aliases з destination (`-d`) | ✨ Нове | Додано `canopy-console`, `canopy-logs` в `deploy.yml` |
+| Конфігурована verbosity хуків | ✨ Нове | Доступно для `.kamal/hooks/` |
+| Підтримка ssh-config в run-over-ssh | ✨ Нове | Можна використовувати `~/.ssh/config` |
+| Секрети для pre-connect хука | 🐛 Фікс | Секрети тепер доступні в `pre-connect` хуках |
+| Цитування filter names у docker | 🐛 Фікс | Виправлено проблеми зі спецсимволами |
+| ERB rendering: trim blank lines | 🔧 Покращення | Чистіший парсинг конфігурацій |
+| Додавання user до docker групи | 🔧 Покращення | Автоматично для non-superuser |
+
+**Що нового в kamal-proxy v0.9.2:**
+
+| Фіча | Опис |
+|-------|------|
+| `--http3` | Підтримка HTTP/3 (QUIC) |
+| `--canonical-host` | Редирект на канонічний хост (напр. `example.com → www.example.com`) |
+| `--health-check-host` / `--health-check-port` | Кастомний хост/порт для health checks |
+| `--acme-cache-path` | Спільний кеш Let's Encrypt між proxy-інстансами |
+| `--scope-cookie-paths` | Автоматичний scope cookies до path-prefix |
+| Chunked responses | Не буферизує відповіді з `Transfer-Encoding: chunked` (важливо для SSE/streaming) |

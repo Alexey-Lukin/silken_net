@@ -494,3 +494,24 @@ Structured logging (JSON з `trace_id`, `span_id`, `request_id`) у Rails не �
 3. **Вирішити BLOCKER-2** (Grafana) — розгорнути після Prometheus Server.
 4. **Вирішити BLOCKER-3** (Alertmanager) — додати PromQL правила алертів.
 5. **Вирішити BLOCKER-5** (решта черг) — розширити `refresh_sidekiq_gauges`.
+
+---
+
+## 🏗️ Архітектурне Рішення: Чому `prometheus-client`
+
+### Альтернативи, що розглядались
+
+| Інструмент | Потрібні gems | Плюси | Мінуси |
+|---|---|---|---|
+| **Yabeda** (`yabeda-prometheus`, `yabeda-sidekiq`, `yabeda-rails`) | 4–5 gems | Nice DSL, auto-instruments Rails/Sidekiq | Транзитивні залежності, "магічна" авто-інструментація, повільніший maintenance cadence |
+| **OpenTelemetry** (`opentelemetry-sdk`, `opentelemetry-exporter-otlp`, adapters) | 6–10 gems | Industry standard для traces/spans/logs | Масивний overhead для нашого use case (нам потрібні counters/gauges, не distributed tracing), складне налаштування, vendor-орієнтований |
+| **`prometheus-client`** (один gem) | **1 gem** | Офіційний Prometheus Ruby client, thread-safe, zero magic, ідеально для кастомних бізнес-метрик | Немає авто-інструментації (що нам і потрібно — інструментуємо лише те, що важливо) |
+
+### Чому обрано `prometheus-client`
+
+1. **Lean** — Один gem, нуль транзитивного bloat. Gemfile залишається чистим.
+2. **Офіційний** — Підтримується самою організацією Prometheus (не community wrapper).
+3. **Thread-safe** — Критично для Sidekiq workers (16 потоків × 7 черг).
+4. **Кастомні метрики** — Нам потрібні domain-specific counters (`scc_minted_total`, `rpc_errors_total`), а не generic Rails request histograms. Авто-інструментація Yabeda додає шум.
+5. **Rails 8.1 native** — Працює з `ActiveSupport::Notifications`. Немає конфліктів з framework.
+6. **Без Redis залежності** — Метрики живуть у пам'яті процесу. Без зайвої інфраструктури.

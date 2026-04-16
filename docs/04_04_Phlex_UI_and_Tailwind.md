@@ -726,3 +726,212 @@ Lookbook надає живий попередній перегляд усіх к
 | `ActuatorCommandStatusBadgePreview` | All command statuses, Interactive |
 | `ActuatorCommandRowPreview` | Confirmed open, Issued activate, Failed close, Interactive |
 | `PhotoCardPreview` | Image photo, File fallback |
+
+---
+
+## Додаткові Матеріали
+
+### Зведена Таблиця Відповідності 29 Правилам TailwindCSS
+
+> Відстежує відповідність **Маніфесту 29 Найкращих Практик TailwindCSS** для всіх 67+ компонентів.
+
+#### ✅ Повністю Застосовано (всі 67 компонентів + shared/ui + layout + navigation)
+
+| Правило | Опис | Статус |
+|---------|------|--------|
+| 1 | Без довільних значень | ✅ Всі `text-[Npx]` замінено на `text-micro/mini/tiny/compact` в 63+ файлах |
+| 2 | Семантичні кольори для станів | ✅ Всі amber → токени `status-warning`/`token-forest` (20 файлів) |
+| 6 | Без @apply у Phlex | ✅ Лише Ruby-методи |
+| 7 | Mobile-first | ✅ За замовчуванням = mobile, `md:` для desktop |
+| 8 | `gap-` замість margins | ✅ `space-x`/`space-y` → `gap` у flex/grid (26+ файлів) |
+| 10 | `grid` для 2D, `flex` для 1D | ✅ Правильне використання скрізь |
+| 11 | Запобігання горизонтальному скролу | ✅ `overflow-x-auto` на таблицях |
+| 13 | Перевизначення класів через `tokens()` | ✅ Патерн `**attrs` в shared/ui компонентах |
+| 14 | Логічне групування класів | ✅ Layout→Spacing→Type→Visual→Interactive |
+| 15 | Виносити довгі рядки класів | ✅ Приватні методи у shared/ui |
+| 17 | Без hardcoded margins у компонентах | ✅ `mt-6`, `mb-4`, `mb-2` видалено зі shared/ui |
+| 18 | SVG використовують `currentColor` | ✅ `stroke="currentColor"` |
+| 20 | `tracking-widest` для uppercase | ✅ Додано де бракувало |
+| 21 | `leading-tight` для заголовків | ✅ Застосовано до `h1` |
+| 25 | Стани `hover`/`focus`/`active` | ✅ Всі інтерактивні елементи |
+| 26 | `focus-visible:` замість `focus:` | ✅ **Всі 67+ компонентів** — нуль порушень `focus:` |
+| 27 | Transitions з duration/ease | ✅ `duration-200 ease-in-out` у shared/ui |
+| 28 | Стани `disabled:` | ✅ На кнопці видалення |
+| 29 | Вкладені взаємодії `group`/`group-hover` | ✅ PhotoCard, Sidebar |
+
+#### ⏳ Робота з Низьким Пріоритетом
+
+| Правило | Опис | Статус |
+|---------|------|--------|
+| 3 | Dark mode визначення | ✅ Light/dark динамічні кольори статусів реалізовані через CSS custom properties |
+| 13 | Перевизначення класів у domain компонентах | ⏳ Shared/ui має `**attrs`; domain компоненти — page-level (потреба менша) |
+| 15 | Виносити класи у domain компонентах | ⏳ Довгі inline рядки залишаються в деяких domain views |
+| 17 | Margins у domain page компонентах | ⏳ Page-level margins (`mb-4`, `mt-6`) допустимі в non-reusable views |
+
+---
+
+### Налаштування Lookbook
+
+```ruby
+# Gemfile (development group)
+gem "lookbook"
+gem "view_component"
+```
+
+```ruby
+# config/routes.rb
+mount Lookbook::Engine, at: "/lookbook" if Rails.env.development?
+```
+
+```ruby
+# config/application.rb
+config.lookbook.preview_paths = [ root.join("spec/components/previews").to_s ]
+```
+
+**Доступ:** Запустіть `bin/rails server` і відкрийте **http://localhost:3000/lookbook**
+
+---
+
+### Додавання Нових Кольорів Статусу
+
+Щоб розширити систему семантичних колірних токенів новим кольором статусу:
+
+1. **Define CSS variables** in `app/assets/tailwind/application.css` for both `:root` and `.dark`:
+   ```css
+   :root {
+     --status-new: #e0f2fe;
+     --status-new-text: #075985;
+   }
+   .dark {
+     --status-new: #0c4a6e;
+     --status-new-text: #bae6fd;
+   }
+   ```
+   2. **Зареєструйте токен** у блоці `@theme` в `application.css`:
+   ```css
+   @theme {
+     --color-status-new: var(--status-new);
+     --color-status-new-text: var(--status-new-text);
+   }
+   ```
+   3. **Використовуйте назву токена** у Phlex-компонентах через Tailwind-класи: `bg-status-new text-status-new-text`
+
+---
+
+### Пагінація (Pagy) та Запобігання N+1
+
+#### Налаштування Pagy
+
+Усі пагіновані вигляди використовують Pagy через спільний компонент `Pagination`:
+
+```ruby
+# Controller
+def index
+  @pagy, @trees = pagy(Tree.includes(:cluster, :tree_family).active, items: 20)
+end
+
+# View
+render Views::Shared::UI::Pagination.new(
+  pagy: @pagy,
+  url_helper: ->(page:) { helpers.api_v1_cluster_trees_path(@cluster, page: page) }
+)
+```
+
+#### Запобігання N+1 Запитам
+
+**Правило: Всі дані, що відображаються у вигляді, ОБОВ'ЯЗКОВО мають бути попередньо завантажені в контролері.** Ліниве завантаження в Phlex-компонентах заборонено.
+
+```ruby
+# ✅ Good — eager load everything the view needs
+def index
+  @pagy, @contracts = pagy(
+    NaasContract.includes(:organization, :cluster).order(created_at: :desc),
+    items: 20
+  )
+end
+
+# ❌ Bad — N+1 when the view calls contract.organization.name
+def index
+  @pagy, @contracts = pagy(NaasContract.order(created_at: :desc), items: 20)
+end
+```
+
+**Типові патерни:**
+
+```ruby
+# Nested associations
+Tree.includes(:cluster, :tree_family, wallet: :blockchain_transactions)
+
+# Counter cache (no extra query)
+cluster.active_trees_count  # Uses denormalized column
+
+# Conditional eager loading for N+1 prevention in Ruby-level filtering
+cluster.association(:ews_alerts).loaded?
+  ? cluster.ews_alerts.any?(&:status_active?)
+  : cluster.ews_alerts.unresolved.any?
+```
+
+#### Інтеграція Groupdate
+
+Для агрегації часових рядів у звітах:
+
+```ruby
+# Controller
+@daily_counts = TelemetryLog.where(tree: @cluster.trees)
+                             .group_by_day(:created_at)
+                             .count
+```
+
+---
+
+### Конвенції Файлів та Іменування
+
+| Елемент | Конвенція | Приклад |
+|---------|-----------|---------|
+| Shared UI компонент | `app/views/shared/ui/<name>.rb` | `status_badge.rb` |
+| Domain компонент | `app/views/components/<resource>/<action>.rb` | `trees/show.rb` |
+| Модуль компонента | `Module::<Resource>::<Action>` | `Trees::Show` |
+| Shared UI модуль | `Views::Shared::UI::<Name>` | `Views::Shared::UI::StatusBadge` |
+| Lookbook preview | `spec/components/previews/<name>_preview.rb` | `status_badge_preview.rb` |
+| Preview шаблон | `spec/components/previews/<name>_preview/<scenario>.html.erb` | `all_states.html.erb` |
+| Spec компонента | `spec/views/components/<resource>/<name>_spec.rb` | `actuators/card_spec.rb` |
+| Shared spec | `spec/views/shared/ui/<name>_spec.rb` | `status_badge_spec.rb` |
+
+---
+
+### Картка Швидкого Доступу
+
+```ruby
+# Відобразити статус-бейдж
+render Views::Shared::UI::StatusBadge.new(status: "confirmed")
+
+# Відобразити картку метрики
+render Views::Shared::UI::StatCard.new(label: "Trees", value: "1,000", sub: "active")
+
+# Відобразити пагінацію
+render Views::Shared::UI::Pagination.new(pagy: @pagy, url_helper: ->(page:) { path(page: page) })
+
+# Відобразити порожній стан у таблиці
+render Views::Shared::UI::EmptyState.new(title: "Немає даних.", colspan: 5)
+
+# Умовні класи
+span(class: tokens("text-tiny uppercase", "text-red-500": danger?, "text-emerald-500": !danger?))
+
+# Web3 адреса з кнопкою копіювання
+render Views::Shared::Web3::Address.new(address: "0x1234...")
+
+# IoT метрика з точністю
+render Views::Shared::IoT::MetricValue.new(value: 3800, unit: "mV", precision: 0)
+
+# Lookbook preview з анотаціями
+class MyComponentPreview < Lookbook::Preview
+  # @label Мій Компонент
+  # @display bg_color "#000"
+
+  # @label Інтерактивний
+  # @param prop text
+  def interactive(prop: "default")
+    render Views::Shared::UI::MyComponent.new(prop: prop)
+  end
+end
+```
