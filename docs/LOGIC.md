@@ -108,7 +108,7 @@
 24. **`KlimaRetirementWorker`** (`web3_low`, retry: 3): **Очищення**. ESG carbon retirement через KlimaDAO. Handles: InsufficientBalanceError, InvalidTokenTypeError.
 25. **`EthereumAnchorWorker`** (`web3_low`, retry: 3): **Останній Суд** (щопонеділка 03:00 UTC). Щотижневий state root → Ethereum L1. Запускається після завершення всіх нічних циклів.
 26. **`HadronAssetRegistrationWorker`** (`web3_low`, retry: 5): **Реєстратор RWA**. Реєструє лісову ділянку як Real World Asset у Polygon Hadron.
-27. **`ToucanBridgeWorker`** (`web3_critical`, retry: 5): **Міст Тукану**. Carbon bridge через Toucan Protocol — перетворення верифікованих вуглецевих кредитів у TCO2 токени.
+27. **`ToucanBridgeWorker`** (`web3_critical`, retry: 5): **Міст Тукану**. Carbon bridge через Toucan Protocol — перетворення верифікованих вуглецевих кредитів у TCO2 токени. Приймає опціональний `created_at_iso` (ISO 8601) для partition-pruned пошуку `BlockchainTransaction` — передається з контролера або черги для уникнення Global Partition Scan.
 
 ### 📢 Рівень Оповіщення
 
@@ -208,7 +208,7 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 | Компонент | Призначення |
 | --- | --- |
 | **`ApplicationService`** | Базовий клас для всіх сервісів. Надає `.call(...)` → `#perform` template pattern. |
-| **`ApplicationWeb3Worker`** | Базовий модуль для блокчейн-воркерів. Стандартизована обробка RPC-помилок, структуроване логування, partition-pruned lookup. |
+| **`ApplicationWeb3Worker`** | Базовий модуль для блокчейн-воркерів. Стандартизована обробка RPC-помилок, структуроване логування, partition-pruned lookup. Хелпери: `find_telemetry_log_with_pruning(id, created_at_iso)` та `find_blockchain_tx_with_pruning(id, created_at_iso)` — обидва передають `created_at` у WHERE для уникнення Global Partition Scan по RANGE-партиціонованих таблицях. |
 
 ### Web3 Utility Layer (`app/services/web3/`)
 
