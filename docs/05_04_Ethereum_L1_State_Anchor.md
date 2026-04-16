@@ -332,6 +332,18 @@ rescue IOError => e
 
 > **Важливо:** Після вичерпання 5 retry-спроб Sidekiq переміщує задачу в Dead Queue. Чергове спрацювання cron (наступний понеділок) відправить новий `state_root` з іншим `anchored_at` — **пропущений тиждень не буде перезаписано**.
 
+### Double-Anchoring Guard
+
+**Проблема:** Якщо `client.transact()` відправив TX в мемпул Ethereum, але відповідь не дійшла (timeout), код маркує anchor як `:failed` і Sidekiq робить retry. На retry генерується новий `state_root` і відправляється нова TX. Обидві TX (з різними `state_root`) можуть підтвердитись на L1 (nonce, nonce+1), що призведе до двох state roots за один тиждень.
+
+**Рішення:** `anchor_to_l1!` перед генерацією нового `state_root` перевіряє `EthereumAnchor.in_flight` (статус `:pending` або `:sent`, `created_at > 1.week.ago`):
+
+| In-flight статус | Поведінка |
+|-----------------|-----------|
+| `:sent` | TX може бути в мемпулі — **повертає існуючий anchor без нової TX** |
+| `:pending` | Anchor створено, але TX не відправлена (crash recovery) — **перевикористовує існуючий anchor** і відправляє TX з його `state_root` |
+| Немає in-flight | Стандартний флоу: `generate_state_root()` → `EthereumAnchor.create!` → `client.transact()` |
+
 ---
 
 ## 6. Web3::RpcConnectionPool

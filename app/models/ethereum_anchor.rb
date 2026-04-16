@@ -31,6 +31,7 @@ class EthereumAnchor < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :successful, -> { where(status: :confirmed) }
   scope :latest_confirmed, -> { status_confirmed.order(created_at: :desc).first }
+  scope :in_flight, -> { where(status: [ :pending, :sent ]).where("created_at > ?", 1.week.ago) }
 
   # --- ХЕЛПЕРИ ---
 

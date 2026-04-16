@@ -79,22 +79,44 @@ module Ethereum
     # [BLOCKER-2] Зберігає результат в EthereumAnchor для аудит-трейлу.
     # [BLOCKER-3] Використовує gas safety caps.
     # [BLOCKER-4] Перевіряє баланс ETH перед відправленням.
+    # [DOUBLE-ANCHOR GUARD] Перевіряє наявність in-flight anchor перед створенням нового.
     #
     # @return [EthereumAnchor] Збережений запис з tx_hash та state_root.
     def anchor_to_l1!
-      root_data = generate_state_root
-      state_root = root_data[:state_root]
+      # [DOUBLE-ANCHOR GUARD] Якщо існує anchor зі статусом :pending або :sent за останній тиждень,
+      # це означає, що попередня TX може бути в мемпулі Ethereum. Створення нового state_root
+      # призведе до подвійного якорення (два state_root за один тиждень на L1).
+      # Замість цього пробуємо дослати існуючий anchor.
+      existing_anchor = EthereumAnchor.in_flight.order(created_at: :desc).first
 
-      # [BLOCKER-2] Створюємо запис до відправлення TX для crash recovery.
-      # Race condition safety: unique_for: 7.days в Sidekiq запобігає паралельним запускам,
-      # а DB unique index на state_root забезпечує додатковий захист.
-      anchor = EthereumAnchor.create!(
-        state_root: state_root,
-        total_scc: root_data[:total_scc],
-        chain_hash: root_data[:chain_hash],
-        anchored_at: root_data[:anchored_at],
-        status: :pending
-      )
+      if existing_anchor&.status_sent?
+        # TX вже відправлена і може бути в мемпулі — не відправляємо дублікат.
+        Rails.logger.info "⚓ [Ethereum L1] In-flight anchor detected (status: sent, " \
+                          "tx_hash: #{existing_anchor.tx_hash}). Skipping to avoid double-anchoring."
+        return existing_anchor
+      end
+
+      if existing_anchor&.status_pending?
+        # Anchor створено, але TX не відправлена (crash між create! і transact).
+        # Перевикористовуємо цей anchor замість генерації нового state_root.
+        anchor = existing_anchor
+        state_root = anchor.state_root
+        Rails.logger.info "⚓ [Ethereum L1] Resuming pending anchor (state_root: #{state_root[0..15]}...)."
+      else
+        root_data = generate_state_root
+        state_root = root_data[:state_root]
+
+        # [BLOCKER-2] Створюємо запис до відправлення TX для crash recovery.
+        # Race condition safety: unique_for: 7.days в Sidekiq запобігає паралельним запускам,
+        # а DB unique index на state_root забезпечує додатковий захист.
+        anchor = EthereumAnchor.create!(
+          state_root: state_root,
+          total_scc: root_data[:total_scc],
+          chain_hash: root_data[:chain_hash],
+          anchored_at: root_data[:anchored_at],
+          status: :pending
+        )
+      end
 
       client = Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
       anchor_key = Eth::Key.new(priv: ENV.fetch("ETHEREUM_ANCHOR_PRIVATE_KEY"))
