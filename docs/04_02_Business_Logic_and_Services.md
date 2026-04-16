@@ -122,7 +122,7 @@
 | **Файл** | `app/services/blockchain_minting_service.rb` |
 | **Інтерфейс** | Два методи: `.call(id: Integer, telemetry_log: nil)` — одиночний мінтинг; `.call_batch(ids: Array<Integer>, telemetry_log: nil)` — пакетний мінтинг |
 | **Вхід** | `.call`: `id` (Integer); `.call_batch`: `ids` (Array\<Integer>); `telemetry_log:` (опціонально, для oracle-driven flow) |
-| **Що робить** | Пакетна емісія SCC/SFC на Polygon через `mint` або `batchMint`. Guard clauses: `verified_by_iotex?`, `oracle_status_fulfilled?` (enum method), `hadron_kyc_status == "approved"`. **[BLOCKER-11]** Guards активні лише при `telemetry_log` (oracle-driven flow); tokenomics flow працює без прямої прив'язки до log — growth_points вже верифіковані pipeline'ом. Dynamic Tax 2% при carbon_coin + недофінансований страховий пул (→ DAO Treasury). `Kredis.lock` проти race conditions. `transact` (fire-and-forget). Prometheus metric `SCC_MINTED_TOTAL`. **[B-05]** `insurance_pool_requires_funding?` — cached on-chain `balanceOf` oracle: `INSURANCE_POOL_THRESHOLD = 100_000 SCC`; кеш 15 хв (`dao_treasury_needs_funding`); timeout 10 сек; failsafe → `true` при збої RPC. |
+| **Що робить** | Пакетна емісія SCC/SFC на Polygon через `mint` або `batchMint`. Guard clauses: `verified_by_iotex?`, `oracle_status_fulfilled?` (enum method), `hadron_kyc_status == "approved"`. **[BLOCKER-11]** Guards активні лише при `telemetry_log` (oracle-driven flow); tokenomics flow працює без прямої прив'язки до log — growth_points вже верифіковані pipeline'ом. Dynamic Tax 2% при carbon_coin + недофінансований страховий пул (→ DAO Treasury). `Kredis.lock` проти race conditions. `transact` (fire-and-forget). Prometheus metric `SCC_MINTED_TOTAL`. **[B-05]** `insurance_pool_requires_funding?` — cached on-chain `balanceOf` oracle: `INSURANCE_POOL_THRESHOLD = 100_000 SCC`; кеш 15 хв (`dao_treasury_needs_funding`); timeout 10 сек; failsafe → `true` при збої RPC. **[DRY-RUN GUARD]** Перед кожним `batchMint` виконується `eth_call` симуляція (`batch_dry_run_reverts?`) — zero-gas виконання на поточному блоці. Якщо симуляція повертає EVM revert (ознаки: `"revert"`, `"execution reverted"`, `"out of gas"`), сервіс автоматично переходить у режим `fallback_to_individual_mints`: кожна транзакція мінтиться окремо через `mint()`. "Отруйний" запис (напр., відкликаний Hadron KYC між перевіркою та виконанням) провалюється ізольовано — решта 99% батча успішно замінтяться. Мережеві помилки (RPC timeout) не рахуються як revert — оптимістичний фолбек на `transact`. Gas overhead fallback ~30-40% дорожчий, але на Polygon це ≈$0.001/tx. |
 | **Зовнішні виклики** | Polygon RPC (`ALCHEMY_POLYGON_RPC_URL`), `Web3::RpcConnectionPool`, `Web3::WeiConverter`, `BlockchainConfirmationWorker.perform_in` |
 | **Вихід** | `tx_hash` (String). Оновлює `BlockchainTransaction.status = :sent`. Turbo Stream broadcast балансу гаманця. |
 
@@ -160,7 +160,7 @@
 |---|---|
 | **Файл** | `app/services/puro_earth/passport_service.rb` |
 | **Вхід** | `payload` (Hash: `tree_did`, `biomass_yield_kg`, `extraction_date`, `gps_coordinates`, `lifetime_telemetry_hash`) |
-| **Що робить** | **[MAINNET READY]** Anchors a cryptographic proof of a Biomass Passport onto Polygon for Puro.earth D-MRV (Digital Measurement, Reporting and Verification) / CORC generation. 1) Serializes payload to canonical JSON (deep-sorted keys — `deep_sort_keys` — for deterministic ordering regardless of Hash insertion order). 2) Computes SHA-256 digest as tamper-proof fingerprint. 3) Calls `anchorPassport(treeDid, bytes32(payloadHash))` on the D-MRV Registry smart contract on Polygon via `Web3::RpcConnectionPool` + `Eth::Contract`. Signing via `ORACLE_PRIVATE_KEY`. Follows `Ethereum::StateAnchorService` (bytes32 anchoring) and `Etherisc::ClaimService` (Polygon transact fire-and-forget) patterns. |
+| **Що робить** | **[MAINNET READY]** Anchors a cryptographic proof of a Biomass Passport onto Polygon for Puro.earth D-MRV (Digital Measurement, Reporting and Verification) / CORC generation. 1) Витягує поля payload у фіксованому алфавітному порядку через `extract_canonical_fields` — рекурсивний обхід хешу з явним ABI-типізуванням (`"string"`, `"uint256"`). Float/BigDecimal масштабуються на `ABI_DECIMAL_SCALE = 10^18` і перетворюються в `uint256` для збереження точності. 2) Кодує поля через `Eth::Abi.encode(types, values)` — бінарне кодування, визначене специфікацією EVM, крос-платформне та мово-незалежне (усуває артефакти Ruby JSON: float-форматування, unicode-екранування, порядок ключів). 3) Обчислює SHA-256 від ABI-кодованого бінарного blob. 4) Викликає `anchorPassport(treeDid, bytes32(payloadHash))` на D-MRV Registry смарт-контракті Polygon через `Web3::RpcConnectionPool` + `Eth::Contract`. Підпис через `ORACLE_PRIVATE_KEY`. Метод `deep_sort_keys` збережено для зворотної сумісності. |
 | **Зовнішні виклики** | Polygon RPC (`ALCHEMY_POLYGON_RPC_URL`), `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS` (D-MRV Registry), `ORACLE_PRIVATE_KEY` |
 | **Вихід** | `tx_hash` (String, `"0x..."`). Raises `PuroEarth::PassportService::AnchoringError` on RPC failure, insufficient gas, or contract revert. |
 
@@ -696,7 +696,7 @@
 | **Тригер** | `BlockchainMintingService`, `BlockchainBurningService`, `InsurancePayoutWorker`, `ToucanBridgeWorker` |
 | **Вхід** | `tx_hash` (String) |
 | **Сервіси** | — |
-| **Side Effects** | `eth_get_transaction_receipt` (Polygon RPC). При `0x1`: `tx.confirm!`. При revert: `tx.fail!`. Retry при pending (ще в мемпулі). |
+| **Side Effects** | `eth_get_transaction_receipt` (Polygon RPC). При `0x1`: `tx.confirm!`. При revert: `tx.fail!`. Retry при pending (ще в мемпулі). **[MEMPOOL LIMBO GUARD]** `sidekiq_retries_exhausted` handler: при вичерпанні всіх 10 ретраїв (~15-20 хвилин поллінгу) делегує до `MintingRollbackService.call(transactions: BlockchainTransaction.where(tx_hash:, status: :sent))`. Запобігає зависанню транзакцій у статусі `:sent` з замороженим `locked_balance` після потрапляння job у Sidekiq Dead queue. |
 
 #### `MintCarbonCoinWorker`
 
@@ -787,7 +787,7 @@
 | **Retry** | 5 |
 | **Тригер** | `EcosystemHealingWorker` при `biomass_extraction` |
 | **Вхід** | `maintenance_record_id` (Integer) |
-| **Сервіси** | `PuroEarth::PassportService.new(payload).anchor!` (canonical JSON SHA-256 → `anchorPassport(treeDid, bytes32)` на D-MRV Registry Polygon) |
+| **Сервіси** | `PuroEarth::PassportService.new(payload).anchor!` (ABI-encoded canonical hash → SHA-256 → `anchorPassport(treeDid, bytes32)` на D-MRV Registry Polygon) |
 | **Side Effects** | `record.update!(biomass_passport_tx_hash: tx_hash)`. `BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)`. |
 
 ---

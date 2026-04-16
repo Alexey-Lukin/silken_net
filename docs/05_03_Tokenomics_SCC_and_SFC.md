@@ -370,7 +370,11 @@ Telemetry → Lorenz Z-value → growth_points++
                     BlockchainMintingService#perform
                     ├── Oracle balance ≥ 0.05 MATIC
                     ├── Kredis lock (30s) — запобігає подвійному мінтингу
-                    └── Dynamic Tax: 2% до DAO_TREASURY (якщо batchMint + insurance_pool_requires_funding?)
+                    ├── Dynamic Tax: 2% до DAO_TREASURY (якщо batchMint + insurance_pool_requires_funding?)
+                    └── [batchMint] eth_call dry-run (batch_dry_run_reverts?)
+                         ├── ok  → batchMint() — атомарна пакетна емісія
+                         └── revert → fallback_to_individual_mints()
+                                       (кожен mint() окремо; "отруйний" запис ізольовано)
                                     ↓
                     SCC: mint(to, amount, treeDid)          ← MINTER_ROLE
                     SFC: mint(to, amount, "CLUSTER_{id}")   ← MINTER_ROLE
@@ -421,13 +425,13 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 | `SFC.mint()` | `BlockchainMintingService` | `MintCarbonCoinWorker` | `web3_critical` | 5 |
 | `SFC.batchMint()` | `BlockchainMintingService` | `MintCarbonCoinWorker` | `web3_critical` | 5 |
 | `SCC.slash()` | `BlockchainBurningService` | `BurnCarbonTokensWorker` | `critical` | 5 |
-| TX підтвердження | — | `BlockchainConfirmationWorker` | `web3_critical` | 5 |
+| TX підтвердження | — | `BlockchainConfirmationWorker` | `web3_critical` | 10 |
 | Tokenomics eval | — | `TokenomicsEvaluatorWorker` | `default` | — |
 | Events indexing | `TheGraph::QueryService` | — | — | — |
 | KlimaDAO retire | `KlimaDao::RetirementService` | `KlimaRetirementWorker` | `web3_low` | 3 |
 | Rollback | `MintingRollbackService` | — | — | — |
 
-**Rollback:** `MintingRollbackService.call(...)` при вичерпанні 5 retry через `sidekiq_retries_exhausted`.
+**Rollback:** `MintingRollbackService.call(transactions:)` при вичерпанні 10 retry `BlockchainConfirmationWorker` через `sidekiq_retries_exhausted` (~15-20 хвилин поллінгу мемпулу).
 
 ---
 
