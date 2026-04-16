@@ -1221,7 +1221,7 @@ AuditLogWorker → запис факту оновлення моделі
 
 ---
 
-## Additional Reference (from legacy docs)
+## Додаткові Матеріали
 
 ### Математичні Модулі — Формальний Опис
 
@@ -1237,7 +1237,7 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 
 ---
 
-### Принципи Безпеки (Security Policy Summary)
+### Принципи Безпеки
 
 1. **Zero-Trust:** Кожен пакет шифрується AES-256 (Hardware-bound ключ у `HardwareKey`).
 2. **Idempotency:** Всі фінансові воркери мають захист від повторного виконання (status guards / pessimistic lock).

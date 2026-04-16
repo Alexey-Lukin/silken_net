@@ -701,29 +701,29 @@ threshold = SystemParameter.current(:slash_threshold, default: 0.20)
 
 ---
 
-## ♻️ Afterlife Economy — Puro.earth Biochar Integration
+## ♻️ Посмертна Економіка — Інтеграція Puro.earth Biochar
 
 Коли дерево помирає (природна смерть або катастрофічна подія), його біомаса зберігає економічну цінність через Biochar carbon removal credits (CORCs) на реєстрі [Puro.earth](https://puro.earth).
 
 ### Потік
 
 ```
-Tree dies → Forester extracts dead wood → MaintenanceRecord (biomass_extraction)
+Дерево помирає → Лісник видобуває мертву деревину → MaintenanceRecord (biomass_extraction)
          ↓
-EcosystemHealingWorker → Tree status → :deceased
+EcosystemHealingWorker → статус дерева → :deceased
          ↓
-PuroEarthPassportWorker → D-MRV "Biomass Passport" generated
+PuroEarthPassportWorker → генерація D-MRV "Паспорт Біомаси"
          ↓
 Payload: { tree_did, biomass_yield_kg, extraction_date, gps_coordinates, lifetime_telemetry_hash }
          ↓
-blockchain anchoring → biomass_passport_tx_hash stored on MaintenanceRecord
+blockchain anchoring → biomass_passport_tx_hash збережено в MaintenanceRecord
          ↓
-Puro.earth registry → Biochar CORC issuance (майбутня інтеграція)
+Реєстр Puro.earth → видача Biochar CORC (майбутня інтеграція)
 ```
 
-### D-MRV Biomass Passport
+### D-MRV Паспорт Біомаси
 
-Digital Measurement, Reporting and Verification (D-MRV) паспорт забезпечує tamper-proof провенанс для видобутої біомаси:
+D-MRV (Digital Measurement, Reporting and Verification) паспорт забезпечує захищений від підробки провенанс для видобутої біомаси:
 
 | Поле | Джерело | Призначення |
 |------|---------|-------------|
@@ -733,7 +733,7 @@ Digital Measurement, Reporting and Verification (D-MRV) паспорт забе�
 | `gps_coordinates` | MaintenanceRecord або Tree | Географічне підтвердження походження |
 | `lifetime_telemetry_hash` | SHA-256 від telemetry history | Tamper-proof зв'язок з сенсорними даними дерева |
 
-### Економічний Impact
+### Економічний Вплив
 
 - Мертві дерева продовжують генерувати цінність через Biochar CORCs замість того, щоб бути відходами
 - Кожен CORC представляє верифіковане видалення вуглецю (методологія Puro Standard)
