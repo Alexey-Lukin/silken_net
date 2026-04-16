@@ -25,6 +25,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
  * [B-10] Events: string поля не indexed, додано bytes32 indexed хеші.
  * [B-13] ReentrancyGuard для превентивного захисту.
  * [B-14] Повний NatSpec для аудиту (CertiK/Hacken).
+ * [B-15] String length validation: clusterId <= 256 bytes (The Graph safety).
  */
 contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ERC20Permit, ERC20Votes {
 
@@ -86,6 +87,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(to != address(0), "SFC: zero recipient");
         require(amount > 0, "SFC: zero amount");
         require(bytes(clusterId).length > 0, "SFC: empty clusterId");
+        require(bytes(clusterId).length <= 256, "SFC: clusterId too long");
         require(totalSupply() + amount <= MAX_SUPPLY, "SFC: cap exceeded");
         _mint(to, amount);
         emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId);
@@ -110,6 +112,8 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         for (uint256 i = 0; i < length; i++) {
             require(recipients[i] != address(0), "SFC: zero recipient");
             require(amounts[i] > 0, "SFC: zero amount");
+            require(bytes(clusterIds[i]).length > 0, "SFC: empty clusterId");
+            require(bytes(clusterIds[i]).length <= 256, "SFC: clusterId too long");
             batchTotal += amounts[i];
         }
         require(totalSupply() + batchTotal <= MAX_SUPPLY, "SFC: cap exceeded");

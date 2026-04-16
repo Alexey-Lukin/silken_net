@@ -12,6 +12,7 @@
 - **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event, mintForTree alias, audit hardening)
 - **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, unified `whenNotPaused`, audit hardening)
 - **Аудит-зміцнення (PR #255):** ✅ Додано явну перевірку балансу в `slash()`, валідацію нульових значень у `mint()`/`slash()`, перевірку порожнього батчу у `batchMint()`, NatSpec для MAX_SUPPLY, документацію emit-коментарів у конструкторах, NatSpec щодо EIP-712 chain safety
+- **Аудит-зміцнення (Security Audit):** ✅ [B-15] Додано `treeDid`/`clusterId` length limit (≤256 bytes) у `mint()`/`mintForTree()`/`batchMint()` — захист від The Graph DoS; валідацію `recordPremiumPaid()` (`payer != address(0)`, `amount > 0`) — запобігання event spoofing; per-element string validation у `batchMint()` для обох контрактів
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
 - **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано
 - **Синхронізація:** 2026-04-16
@@ -169,6 +170,7 @@ function mint(address to, uint256 amount, string calldata treeDid)
     require(to != address(0), "SCC: zero recipient");
     require(amount > 0, "SCC: zero amount");
     require(bytes(treeDid).length > 0, "SCC: empty treeDid");
+    require(bytes(treeDid).length <= 256, "SCC: treeDid too long");
     require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
     _mint(to, amount);
     emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
@@ -179,10 +181,10 @@ function mint(address to, uint256 amount, string calldata treeDid)
 |---|---|---|
 | `to` | `address` | Адреса інвестора / власника дерева |
 | `amount` | `uint256` | Кількість у wei (1 SCC = 10^18 wei) |
-| `treeDid` | `string` | DID дерева (напр. `SNET-00A1B2C3`) |
+| `treeDid` | `string` | DID дерева (напр. `SNET-00A1B2C3`), max 256 bytes |
 
 - **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
-- **Валідація:** `to != address(0)`, `amount > 0`, `treeDid` не порожній, `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SCC: cap exceeded"`)
+- **Валідація:** `to != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ 256 bytes (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SCC: cap exceeded"`)
 - **Guard on pause:** Опосередковано через `_update → whenNotPaused`
 - **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mintForTree", to, amount, identifier)` (також доступний `"mint"` alias)
 
@@ -204,6 +206,8 @@ function batchMint(
     for (uint256 i = 0; i < length; i++) {
         require(recipients[i] != address(0), "SCC: zero recipient");
         require(amounts[i] > 0, "SCC: zero amount");
+        require(bytes(treeDids[i]).length > 0, "SCC: empty treeDid");
+        require(bytes(treeDids[i]).length <= 256, "SCC: treeDid too long");
         batchTotal += amounts[i];
     }
     require(totalSupply() + batchTotal <= MAX_SUPPLY, "SCC: cap exceeded");
@@ -216,7 +220,7 @@ function batchMint(
 ```
 
 - **Призначення:** Газово-ефективна масова емісія для цілих секторів/кластерів
-- **Валідація:** `length > 0` (revert: `"SCC: empty batch"`); рівність довжин масивів; `MAX_BATCH_SIZE = 200` — захист від gas overflow; кожен `recipient != address(0)`, `amount > 0`; `totalSupply() + batchTotal <= MAX_SUPPLY` перевіряється атомарно до мінтингу
+- **Валідація:** `length > 0` (revert: `"SCC: empty batch"`); рівність довжин масивів; `MAX_BATCH_SIZE = 200` — захист від gas overflow; кожен `recipient != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ 256 bytes; `totalSupply() + batchTotal <= MAX_SUPPLY` перевіряється атомарно до мінтингу
 - **Dynamic Tax:** При виклику `batchMint` з бекенду, `BlockchainMintingService` вставляє додаткових отримувачів (`DAO_TREASURY_ADDRESS`) коли баланс Treasury < 100,000 SCC
 - **Gas Optimization [PR #253]:** `Treasury::MintBatchCollectorService` (cron кожні 5 хв) агрегує pending TX та відправляє пакетами по 100 через `BlockchainMintingService.call_batch`. `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Urgent TX (>30 хв) відправляються негайно.
 - **Binary Search Isolation [PR #254]:** При `batchMint` dry-run revert замість наївного N×`mint()` fallback використовується Divide & Conquer алгоритм — бінарний пошук "отруйних" записів через `eth_call`. Чисті підбатчі → `batchMint`, отруйні → `mint()` поштучно. Для 1 отруйного з 100: ~14 `eth_call` + 2-3 `batchMint` замість 100 `mint()`. Guards: `MIN_BINARY_SEARCH_SIZE=4`, `MAX_BINARY_SEARCH_DEPTH=6`, `POISONED_RATIO_THRESHOLD=30%`.
@@ -280,6 +284,7 @@ function mint(address to, uint256 amount, string calldata clusterId)
     require(to != address(0), "SFC: zero recipient");
     require(amount > 0, "SFC: zero amount");
     require(bytes(clusterId).length > 0, "SFC: empty clusterId");
+    require(bytes(clusterId).length <= 256, "SFC: clusterId too long");
     require(totalSupply() + amount <= MAX_SUPPLY, "SFC: cap exceeded");
     _mint(to, amount);
     emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId);
@@ -290,17 +295,17 @@ function mint(address to, uint256 amount, string calldata clusterId)
 |---|---|---|
 | `to` | `address` | Адреса отримувача (організація / DAO учасник) |
 | `amount` | `uint256` | Кількість SFC у wei |
-| `clusterId` | `string` | Ідентифікатор кластера. Бекенд формує: `"CLUSTER_#{tree.cluster_id}"` або `"CLUSTER_GLOBAL"` |
+| `clusterId` | `string` | Ідентифікатор кластера, max 256 bytes. Бекенд формує: `"CLUSTER_#{tree.cluster_id}"` або `"CLUSTER_GLOBAL"` |
 
 - **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
-- **Валідація:** `to != address(0)`, `amount > 0`, `clusterId` не порожній, `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SFC: cap exceeded"`)
+- **Валідація:** `to != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ 256 bytes (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SFC: cap exceeded"`)
 - **Guard on pause:** Опосередковано через `_update(ERC20, ERC20Votes) → whenNotPaused`
 - **Виклик з бекенду:** `BlockchainMintingService` — однакова логіка з SCC, але `token_type == "forest_coin"` → `FOREST_COIN_CONTRACT_ADDRESS`
 
 #### `batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata clusterIds)`
 
 - Аналогічний SCC `batchMint`, але прив'язаний до `clusterId` замість `treeDid`
-- Модифікатор: `onlyRole(MINTER_ROLE)`, `nonReentrant`; перевіряє `length > 0`, рівність масивів, `MAX_BATCH_SIZE`; per-element: `recipient != address(0)`, `amount > 0`; `totalSupply() + batchTotal <= MAX_SUPPLY` атомарно
+- Модифікатор: `onlyRole(MINTER_ROLE)`, `nonReentrant`; перевіряє `length > 0`, рівність масивів, `MAX_BATCH_SIZE`; per-element: `recipient != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ 256 bytes; `totalSupply() + batchTotal <= MAX_SUPPLY` атомарно
 
 #### `slash(address investor, uint256 amount)`
 
@@ -666,7 +671,124 @@ threshold = SystemParameter.current(:slash_threshold, default: 0.20)
 
 **`SystemParameter` model:** кеш поточних on-chain значень з TTL 24h. При недоступності The Graph — fallback на default constants.
 
+---
+
+## 🔒 Аудит Безпеки Смарт-Контрактів (Security Audit Analysis)
+
+> **Синхронізація:** 2026-04-16. Проведено внутрішній аналіз 10 потенційних вразливостей, повідомлених у контрактах SCC, SFC та StateRootAnchor.
+
+### Підсумок
+
+| # | Проблема | Вердикт | Дія |
+|---|----------|---------|-----|
+| 1 | `recordPremiumPaid()` event spoofing | ⚠️ Частково валідна | ✅ Додано валідацію `payer != address(0)` та `amount > 0` |
+| 2 | Pausable зловживання (заморозка протоколу) | ❌ Невалідна | Стандартний OpenZeppelin pattern; захист — operational (multisig) |
+| 3 | Відсутня валідація довжини `treeDid`/`clusterId` | ⚠️ Частково валідна | ✅ Додано `length <= 256` у всі mint-функції |
+| 4 | DoS через довгі string у подіях | 🔄 Дублікат #3 | ✅ Вирішено разом з #3 |
+| 5 | Відсутня валідація `address(0)` у `mint()`/`batchMint()` | ❌ Невалідна | Вже реалізовано в поточному коді |
+| 6 | StateRootAnchor immutability | ❌ Невалідна | Іммутабельність — by design (архітектурний принцип L8) |
+| 7 | Integer overflow у `batchMint()` | ❌ Невалідна | Solidity 0.8+ має вбудований захист від overflow |
+| 8 | Gas limit ризик `MAX_BATCH_SIZE=200` | ⚠️ Низький ризик | Backend вже використовує 100; on-chain ліміт — safety cap |
+| 9 | StateRootAnchor не валідує формат root | ❌ Невалідна | `bytes32(0)` вже перевіряється; SHA-256 неможливо валідувати on-chain |
+| 10 | Відсутній механізм оновлення констант | ❌ Невалідна | Intentional design; Governance DAO заплановано (post-TRL 6) |
+
+### Детальний Аналіз
+
+#### ✅ #1: `recordPremiumPaid()` — Input Validation (ВИПРАВЛЕНО)
+
+**Проблема:** Функція `recordPremiumPaid()` не валідувала параметри — `payer` міг бути `address(0)`, а `amount` — нулем. Це дозволяло адміністратору емітувати некоректні `PremiumPaid` події, які б індексувались The Graph subgraph.
+
+**Аналіз:** Дизайн функції (event-only, без state changes) є **інтенціональним** — це off-chain tracking для Parametric Insurance, де фактична передача токенів відбувається поза контрактом. Запропоноване рішення з PremiumPool контрактом є over-engineering для поточної архітектури. Однак відсутність базової валідації вхідних параметрів — валідний gap.
+
+**Виправлення:** Додано `require(payer != address(0), "SCC: zero payer")` та `require(amount > 0, "SCC: zero premium")`.
+
+**Чому запропоноване рішення неправильне:** Option 2 (PremiumPool контракт) вимагає фундаментальної зміни архітектури страхування, яка наразі працює off-chain. Це виходить за межі поточного TRL і вносить зайву складність.
+
+#### ❌ #2: Pausable — Стандартний Emergency Pattern
+
+**Проблема:** Стверджується, що `pause()` може заморозити протокол безстроково.
+
+**Аналіз:** Це стандартний OpenZeppelin Pausable pattern, який використовується в переважній більшості production ERC-20 токенів (USDC, USDT, тощо). `pause()` — це **аварійний механізм**, і додавання 1-денного timelock зробить його **непридатним** для свого призначення (під час exploits потрібна негайна зупинка).
+
+**Правильне рішення:** Операційне — використовувати Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` замість EOA (Externally Owned Account). Це стандартна operational security practice і вже запланована для production deployment.
+
+**Чому запропоноване рішення неправильне:** `schedulePause()` + `executePause()` з 1-денним timelockом повністю нівелюють цінність аварійної зупинки — хак може вичерпати весь протокол за години, а адмін не зможе зупинити його 24 години. `autoUnpause()` створює додатковий ризик: система може автоматично відновитись під час активної атаки.
+
+#### ✅ #3/#4: String Length Validation (ВИПРАВЛЕНО)
+
+**Проблема:** `treeDid`/`clusterId` не мали верхнього обмеження довжини. Теоретично, MINTER_ROLE міг емітувати події з дуже довгими рядками, що порушило б індексацію The Graph.
+
+**Аналіз:** Gas cost є природним обмежувачем (calldata коштує ~16 gas/byte, 50KB ≈ 800K gas), але defense-in-depth вимагає явного ліміту. Порожні рядки вже валідувались у `mint()`/`mintForTree()`, але верхнє обмеження та per-element валідація у `batchMint()` — були відсутні.
+
+**Виправлення:** Додано `require(bytes(treeDid).length <= 256, "SCC: treeDid too long")` та аналогічно `clusterId` у всі mint-функції та `batchMint()` обох контрактів. 256 bytes достатньо для DID дерева (типовий формат `SNET-XXXXXXXX` ≈ 13 bytes) з великим запасом.
+
+#### ❌ #5: Address(0) Validation — Вже Реалізовано
+
+**Проблема:** Стверджується, що mint-функції не валідують `address(0)`.
+
+**Аналіз:** Код **вже містить** ці перевірки:
+- `SCC.mint()` (рядок 110): `require(to != address(0), "SCC: zero recipient")`
+- `SCC.mintForTree()` (рядок 91): `require(to != address(0), "SCC: zero recipient")`
+- `SCC.batchMint()` (рядок 136): `require(recipients[i] != address(0), "SCC: zero recipient")`
+- `SFC.mint()` (рядок 87): `require(to != address(0), "SFC: zero recipient")`
+- `SFC.batchMint()` (рядок 113): `require(recipients[i] != address(0), "SFC: zero recipient")`
+
+Ця проблема базується на неправильному читанні коду або застарілій версії.
+
+#### ❌ #6: StateRootAnchor Immutability — By Design
+
+**Проблема:** Стверджується, що неможливість корекції state root є вразливістю.
+
+**Аналіз:** Іммутабельність — це **основний архітектурний принцип** L8 (Ethereum L1 State Anchor). Документація чітко визначає: *"Те, що сталося в SilkenNet до цього моменту, є істиною, і її більше ніколи не можна змінити."* Якщо state root можна "виправити", вся довіра до L1 anchoring руйнується.
+
+Якщо помилковий state root записано — наступного тижня записується коректний. Кожен тиждень незалежний (`anchored_at` різний → різний `state_root`). Пропущений тиждень не перезаписується.
+
+**Чому запропоноване рішення неправильне:** `correctStateRoot()` з можливістю перезаписати state root фундаментально підриває trust model. Інвестори та аудитори повинні довіряти, що L1 запис є остаточним. Якщо admin може "виправляти" записи — це не immutable ledger, а мутабельна БД з додатковим кроком.
+
+#### ❌ #7: Integer Overflow — Захищено Solidity 0.8+
+
+**Проблема:** Стверджується, що `batchTotal += amounts[i]` може overflow.
+
+**Аналіз:** Контракт використовує `pragma solidity ^0.8.20`. В Solidity 0.8+ **всі арифметичні операції** мають вбудований захист від overflow — при переповненні транзакція автоматично revert з `Panic(0x11)`. Сценарій у звіті (`uint256.max - 1 + uint256.max - 1 = uint256.max - 2`) **неможливий** в Solidity 0.8+ — транзакція revert замість wrap-around.
+
+Те ж стосується `totalSupply() + batchTotal` — overflow revert автоматично.
+
+#### ⚠️ #8: MAX_BATCH_SIZE Gas Risk — Низький Ризик
+
+**Проблема:** `MAX_BATCH_SIZE = 200` може перевищувати block gas limit.
+
+**Аналіз:** Backend (`Treasury::MintBatchCollectorService`) вже агрегує pending TX пакетами **по 100**, а не 200. `MAX_BATCH_SIZE = 200` — це on-chain safety cap, а не рекомендований розмір батча. Фактичний gas consumption для 200 мінтів з типовими DID (~20 bytes): ~51K gas × 200 ≈ 10.2M gas — в межах Polygon block gas limit (30M).
+
+**Рішення:** Зберігаємо `MAX_BATCH_SIZE = 200` як on-chain safety cap. Backend вже обмежує до 100 з адаптивним `Binary Search Isolation` для невдалих батчів (PR #254). Зміна on-chain константи вимагає повного redeployment і міграції — невиправдано для низького ризику.
+
+#### ❌ #9: Root Format Validation — Неможливо On-Chain
+
+**Проблема:** Стверджується, що root може бути "невалідним SHA-256 хешем".
+
+**Аналіз:** `bytes32(0)` вже перевіряється (`require(root != bytes32(0))`). Валідувати, що `bytes32` є "валідним SHA-256 хешем", **неможливо on-chain** — SHA-256 може видати будь-яке 256-бітне значення, тому будь-яке `bytes32` є потенційно валідним хешем. Запропонована перевірка `root != latestRoot` є **шкідливою**: якщо стан системи легітимно не змінився між тижнями (нульова активність), однаковий root буде відхилений. Дедуплікація через `rootTimestamps[root] == 0` вже запобігає повторному запису того ж root.
+
+#### ❌ #10: No Upgrade Mechanism — Intentional Design
+
+**Проблема:** Стверджується, що відсутність upgradeability є вразливістю.
+
+**Аналіз:** Це **свідоме архітектурне рішення**, а не баг. Upgradeable contracts (UUPS/Transparent Proxy) додають: proxy complexity, admin trust assumptions (admin може змінити логіку контракту в будь-який момент), додаткові attack surfaces (storage collision bugs). Для токеноміки carbon credits іммутабельність — це **feature**: інвестори отримують гарантію, що правила (MAX_SUPPLY, mint logic) не будуть змінені після покупки токенів.
+
+Governance DAO для динамічних параметрів (Lorenz constants, slash threshold) вже **заплановано** (post-TRL 6) — див. секцію "Planned: Governance DAO" вище. `ProtocolParameters.sol` буде окремим контрактом для параметрів, які потребують зміни, не торкаючись core token logic.
+
+---
+
+### Операційні Рекомендації (Не Потребують Code Changes)
+
+| Рекомендація | Пріоритет | Деталі |
+|-------------|-----------|--------|
+| Multisig для `DEFAULT_ADMIN_ROLE` | 🔴 Критичний | Gnosis Safe (3/5 або 2/3) замість EOA для SCC, SFC, StateRootAnchor |
+| Gas estimation в бекенді | 🟡 Середній | `BlockchainMintingService` вже адаптивний (batch 100, Binary Search) |
+| Моніторинг The Graph | 🟡 Середній | Prometheus alerts для subgraph indexing lag > 5 хвилин |
+
+---
+
 *Документ згенеровано: Reverse Shaping Cycle 1 Small Batch (Issue #172) · Стан "як є" на 2026-03-23*
+*Оновлено: Security Audit Analysis · 2026-04-16*
 *Джерела: `contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`,*
 *`app/services/blockchain_minting_service.rb`, `app/services/blockchain_burning_service.rb`,*
 *`subgraph/subgraph.yaml`,*
