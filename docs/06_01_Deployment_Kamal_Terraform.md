@@ -1,20 +1,20 @@
-## 06_01: Deployment Kamal & Terraform (Canopy vs Production)
+# 06_01: Розгортання Kamal & Terraform (Canopy vs Production)
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
-Зафіксувати **фактичний стан** конфігурацій розгортання та інфраструктури як коду (IaC) — результат "Reverse Shaping" Cycle 1. Документ відповідає на три ключові питання:
+Зафіксувати повний стан конфігурацій розгортання та інфраструктури як коду (IaC). Документ відповідає на три ключові питання:
 
 1. Чим відрізняються середовища **Canopy** (Staging) та **Production**?
 2. Що розгортається в **GCP** (традиційна хмара), а що — в **Akash Network** (децентралізована мережа)?
 3. Які **API-ключі, секрети та сертифікати** потрібні для першого реального деплою?
 
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з кодовою базою станом на 2026-03-24. Жодного реального деплою не виконувалось. TRL 4 → 5: інфраструктурний код існує та документований, фізичного провізіонування не відбувалось. Інтегровано нотатки N7–N12, N18 (Pre-Flight Checklist, Secrets Manager, Quickstart).
+## ✅ Статус
 
-## ✅ Статус (Status)
-
-- **Поточний TRL:** TRL 4 (Інфраструктурний код існує, деплой не проводився)
-- **Цільовий TRL:** TRL 5 (Повна прозорість інфраструктури)
-- **Пов'язані модулі:** Backend — `04_02_Business_Logic_and_Services`. Observability — `06_03_Prometheus_Observability`. Akash детально — `06_02_Akash_Network_Integration`.
+- **Поточний TRL:** TRL 4 — інфраструктурний код існує, реальний деплой не проводився
+- **Пов'язані модулі:**
+  - Backend → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+  - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
+  - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
 
 ---
 

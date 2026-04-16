@@ -1,17 +1,6 @@
-## 07_01: Nature-as-a-Service Contracts (Юридичний та Бізнес Шар)
+# 07_01: Контракти Nature-as-a-Service (Юридичний та Бізнес-Шар)
 
-**Модуль:** 07_01 — Nature-as-a-Service Contracts
-**Пов'язані модулі:** [05_03 Tokenomics SCC/SFC](05_03_Tokenomics_SCC_and_SFC) · [07_02 Unit Economics & BOM](07_02_Unit_Economics_and_BOM) · [05_02 Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline)
-**Поточний TRL:** 5 (Бізнес-логіка зафіксована в SSOT; юридичні документи відсутні — блокери задокументовані нижче)
-**Цільовий TRL:** 6 (Перший реальний B2B контракт підписано з пілотним клієнтом)
-**Статус Аудиту:** Reverse Shaping — лише документація поточного стану, без рефакторингу коду
-
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з кодовою базою станом на 2026-03-23.
-> **Джерела правди:** `app/models/naas_contract.rb`, `app/services/contract_health_check_service.rb`, `app/services/contract_termination_service.rb`, `app/models/parametric_insurance.rb`, `contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`, `db/structure.sql`.
-
----
-
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Зафіксувати бізнес-логіку та юридичні параметри моделі Nature-as-a-Service (NaaS): хто є клієнтами, що саме вони купують, як юридичні події відображаються у викликах смарт-контрактів (`mint`, `slash`) і які правові документи наразі відсутні.
 
@@ -19,7 +8,13 @@
 
 ---
 
-## ✅ Статус (Status)
+## ✅ Статус
+
+- **Поточний TRL:** TRL 5 — бізнес-логіка зафіксована в SSOT; юридичні документи відсутні
+- **Пов'язані модулі:**
+  - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
+  - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
+  - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
 
 | Компонент | Стан |
 |-----------|------|

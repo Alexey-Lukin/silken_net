@@ -1,23 +1,19 @@
-## 07_03: Grant Applications Tracker (Strategic Funding)
+# 07_03: Трекер Грантових Заявок (Стратегічне Фінансування)
 
-**Модуль:** 07_03 — Стратегія Залучення Децентралізованого Капіталу
-**Пов'язані модулі:** [05_01 Multichain Architecture](05_01_Multichain_Architecture) · [07_01 Nature-as-a-Service Contracts](07_01_Nature_as_a_Service_Contracts) · [07_02 Unit Economics and BOM](07_02_Unit_Economics_and_BOM) · [08_01 University R&D Protocols](08_01_University_R_and_D_Protocols)
-**Поточний TRL:** 4 (Заявки подано до 7 екосистем; чекаємо відповідей; Giveth.io профіль активний)
-**Цільовий TRL:** 5 (Перший грантовий транш отримано + Milestone 1 артефакти готові)
-**Оперативний стан:** Активно чекаємо відповідей. Документи для Milestone 1 готуються.
-
----
-
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Зафіксувати стратегію залучення децентралізованого капіталу (Grants, Donations) та партнерств у екосистемі Web3/DePIN. Цей документ слугує оперативним трекером для поданих заявок, визначає ролі кожного фонду в архітектурі Gaia 2.0 та фокусує команду на виконанні KPI для отримання наступних траншів.
 
 ---
 
-## ✅ Статус (Status)
+## ✅ Статус
 
-- **Загальний прогрес:** Phase 1 (Application Submitted) для 7 стратегічних екосистем
-- **Очікуємо:** Відповіді на всі 7 заявок (терміни — хвилини до місяців залежно від екосистеми)
+- **Поточний TRL:** TRL 4 — заявки подано до 7 екосистем; чекаємо відповідей
+- **Пов'язані модулі:**
+  - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
+  - Контракти → [`07_01_Nature_as_a_Service_Contracts`](07_01_Nature_as_a_Service_Contracts)
+  - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
+  - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
 - **Готові артефакти:** Технічна документація Wiki, BOM, демо Attractor, збірна інструкція
 - **Пов'язані модулі:** Мультичейн — `05_01_Multichain_Architecture`, Токеноміка — `05_03_Tokenomics_SCC_and_SFC`
 
