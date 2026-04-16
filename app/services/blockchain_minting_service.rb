@@ -244,33 +244,13 @@ class BlockchainMintingService < ApplicationService
   # а решта — успішно замінтяться. Gas дорожчий (~30-40%), але на Polygon
   # це ~$0.001/tx — прийнятна ціна за збереження 99% батча.
   def fallback_to_individual_mints(client, contract, oracle_key, token_type, txs)
-    last_tx_hash = nil
-
     txs.each do |tx|
-      individual_recipients = []
-      individual_amounts = []
-      individual_identifiers = []
-
-      if token_type == "carbon_coin" && insurance_pool_requires_funding?
-        tax_amount = (tx.amount * DYNAMIC_TAX_RATE).round(4)
-        forester_amount = tx.amount - tax_amount
-
-        individual_recipients.push(tx.to_address, ENV.fetch("DAO_TREASURY_ADDRESS"))
-        individual_amounts.push(to_wei(forester_amount), to_wei(tax_amount))
-        individual_identifiers.push(identifier_for(tx), "TAX_#{identifier_for(tx)}")
-      else
-        individual_recipients.push(tx.to_address)
-        individual_amounts.push(to_wei(tx.amount))
-        individual_identifiers.push(identifier_for(tx))
-      end
-
       begin
         individual_tx_hash = client.transact(
-          contract, "mint", individual_recipients.first, individual_amounts.first, individual_identifiers.first,
+          contract, "mint", tx.to_address, to_wei(tx.amount), identifier_for(tx),
           sender_key: oracle_key, legacy: false
         )
 
-        last_tx_hash = individual_tx_hash
         finalize_sent_transaction(tx, individual_tx_hash, token_type)
       rescue StandardError => e
         Rails.logger.error "🛑 [Web3] Individual mint failed for TX ##{tx.id}: #{e.message}"

@@ -29,6 +29,10 @@ module PuroEarth
   class PassportService
     class AnchoringError < StandardError; end
 
+    # Wei-style multiplier (10^18) for scaling decimal values to deterministic integers.
+    # Matches the encoding convention used across the SilkenNet protocol.
+    ABI_DECIMAL_SCALE = BigDecimal("1000000000000000000")
+
     # D-MRV Registry ABI — stores the cryptographic proof of each Biomass Passport.
     # anchorPassport(string treeDid, bytes32 payloadHash):
     #   - treeDid: the device identity string (e.g., "did:peaq:0x...")
@@ -125,10 +129,8 @@ module PuroEarth
           types << "uint256"
           values << value
         when Float, BigDecimal
-          # Scale to integer with 18 decimal places for deterministic precision.
-          # This matches Wei-style encoding used across the SilkenNet protocol.
           types << "uint256"
-          values << (BigDecimal(value.to_s) * BigDecimal("1000000000000000000")).to_i
+          values << (BigDecimal(value.to_s) * ABI_DECIMAL_SCALE).to_i
         else
           types << "string"
           values << value.to_s
