@@ -513,6 +513,10 @@ bundle exec rails runner "ENV.fetch('ALCHEMY_ETHEREUM_RPC_URL'); ENV.fetch('ETHE
 bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_spec.rb spec/models/ethereum_anchor_spec.rb
 ```
 
+### Operational Security
+
+- **Multisig:** Для production deployment `DEFAULT_ADMIN_ROLE` має бути призначено Gnosis Safe multisig (3/5 або 2/3) замість EOA — стандартна operational security practice для контрактів, що управляють L1 finality
+
 ---
 
 ## Зміни від Попередньої Версії SSOT
@@ -527,30 +531,6 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 | `.env.example` | 🔴 Відсутній | ✅ Додано до репозиторію |
 | Reproducible state_root | 🔴 Non-reproducible | ✅ Компоненти збережені в EthereumAnchor |
 | Worker retry | 3 | 5 |
-
----
-
-## 🔒 Security Audit — StateRootAnchor
-
-> **Синхронізація:** 2026-04-16. Проведено внутрішній аналіз потенційних вразливостей контракту StateRootAnchor.
-
-### Проаналізовані Проблеми
-
-| # | Проблема | Вердикт | Обґрунтування |
-|---|----------|---------|---------------|
-| 6 | Immutability — неможливість корекції state root | ❌ Невалідна | Іммутабельність — основний архітектурний принцип L8. Корекція підриває trust model |
-| 9 | Відсутня валідація формату root | ❌ Невалідна | `bytes32(0)` вже перевіряється. SHA-256 формат неможливо валідувати on-chain |
-| 10 | Відсутній upgrade mechanism | ❌ Невалідна | Intentional design. Governance DAO заплановано post-TRL 6 |
-
-### Деталі
-
-**Іммутабельність state root (#6):** Запропоноване рішення (`correctStateRoot()`) фундаментально підриває trust model L1 anchoring. Якщо admin може "виправляти" state roots, система перестає бути криптографічно верифікованою — це еквівалентно мутабельній БД. Кожен тиждень генерує новий `state_root` з унікальним `anchored_at` timestamp — пропущений або помилковий тиждень не впливає на наступні якорення. Дедуплікація (`rootTimestamps[root] == 0`) запобігає повторному запису.
-
-**Валідація формату root (#9):** Перевірка `root != bytes32(0)` вже реалізована. Валідувати, що `bytes32` є "валідним SHA-256 хешем", **неможливо** — SHA-256 може видати будь-яке 256-бітне значення. Запропонована перевірка `root != latestRoot` є **шкідливою**: при нульовій активності протоколу між тижнями (малоймовірно, але можливо в pre-launch) легітимний однаковий root буде відхилений.
-
-**Операційна рекомендація:** Використовувати Gnosis Safe multisig для `ANCHOR_ROLE` admin (DEFAULT_ADMIN_ROLE) — стандартна operational security practice для production deployment.
-
-Повний аналіз безпеки всіх контрактів: див. [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC.md) → секція "Аудит Безпеки Смарт-Контрактів".
 
 ---
 
