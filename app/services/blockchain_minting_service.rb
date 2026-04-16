@@ -147,24 +147,7 @@ class BlockchainMintingService < ApplicationService
           # [HYBRID PROTOCOL GAIA]: Для carbon_coin при недофінансованому страховому пулі
           # застосовується Dynamic Tax — 2% від суми кожної транзакції направляється до DAO Treasury.
           # batchMint в Solidity підтримує array-based splitting, тому math виконується off-chain.
-          recipients = []
-          amounts = []
-          identifiers = []
-
-          txs.each do |tx|
-            if token_type == "carbon_coin" && insurance_pool_requires_funding?
-              tax_amount = (tx.amount * DYNAMIC_TAX_RATE).round(4)
-              forester_amount = tx.amount - tax_amount
-
-              recipients.push(tx.to_address, ENV.fetch("DAO_TREASURY_ADDRESS"))
-              amounts.push(to_wei(forester_amount), to_wei(tax_amount))
-              identifiers.push(identifier_for(tx), "TAX_#{identifier_for(tx)}")
-            else
-              recipients.push(tx.to_address)
-              amounts.push(to_wei(tx.amount))
-              identifiers.push(identifier_for(tx))
-            end
-          end
+          recipients, amounts, identifiers = build_batch_arrays(txs, token_type)
 
           Rails.logger.info "📦 [Web3] BatchMinting #{txs.size} транзакцій для #{token_type}..."
 
@@ -172,8 +155,12 @@ class BlockchainMintingService < ApplicationService
           # Якщо хоча б один запис у батчі спричиняє revert (наприклад, відкликаний Hadron KYC
           # між моментом перевірки та виконанням на блокчейні), весь атомарний batchMint впаде.
           # Dry-run виявляє "отруйний" запис ДО витрати газу і дозволяє fallback.
+          #
+          # [BINARY SEARCH]: При збої dry-run замість наївного fallback на N окремих mint(),
+          # використовується алгоритм бінарного пошуку для ізоляції "отруйних" записів.
+          # Чисті підбатчі відправляються через batchMint, отруйні — поштучно.
           if batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers)
-            Rails.logger.warn "⚠️ [Web3] batchMint dry-run reverted. Fallback на поодинокі mint()..."
+            Rails.logger.warn "⚠️ [Web3] batchMint dry-run reverted. Binary search isolation for #{txs.size} txs..."
             tx_hash = fallback_to_individual_mints(client, contract, oracle_key, token_type, txs)
           else
             tx_hash = client.transact(
@@ -238,29 +225,166 @@ class BlockchainMintingService < ApplicationService
     message.include?("revert") || message.include?("execution reverted") || message.include?("out of gas")
   end
 
-  # [FALLBACK]: Поодинокий мінтинг для кожної транзакції з батча.
-  # Викликається, коли dry-run batchMint виявив revert.
-  # Кожна транзакція мінтиться окремо: "отруйний" запис fail'не сам,
-  # а решта — успішно замінтяться. Gas дорожчий (~30-40%), але на Polygon
-  # це ~$0.001/tx — прийнятна ціна за збереження 99% батча.
-  def fallback_to_individual_mints(client, contract, oracle_key, token_type, txs)
-    txs.each do |tx|
-      begin
-        individual_tx_hash = client.transact(
-          contract, "mint", tx.to_address, to_wei(tx.amount), identifier_for(tx),
-          sender_key: oracle_key, legacy: false
-        )
+  # =========================================================================
+  # 🔍 BINARY SEARCH POISONED RECORD ISOLATION (Divide & Conquer)
+  # =========================================================================
+  # Замість наївного fallback на N окремих mint() транзакцій при збої batchMint,
+  # використовуємо бінарний пошук через безкоштовні eth_call dry-run для ізоляції
+  # "отруйних" записів. Типовий сценарій (1-2 отруйних з 100) вирішується за
+  # ~14 eth_call + 2-3 batchMint замість 100 окремих mint().
+  #
+  # Обмеження:
+  #   - MIN_BINARY_SEARCH_SIZE (4): підбатчі менше цього → індивідуальні mints
+  #   - MAX_BINARY_SEARCH_DEPTH (6): запобігає нескінченній рекурсії (~2^6 = 64 мін. елементів)
+  #   - Poisoned ratio guard: якщо >30% батча отруйні → fallback на індивідуальні mints
+  # =========================================================================
 
-        finalize_sent_transaction(tx, individual_tx_hash, token_type)
-      rescue StandardError => e
-        Rails.logger.error "🛑 [Web3] Individual mint failed for TX ##{tx.id}: #{e.message}"
-        tx.fail!(e.message.truncate(200))
-        broadcast_tx_update(tx)
+  # Мінімальний розмір підбатча для binary search. Менші батчі мінтяться поштучно.
+  MIN_BINARY_SEARCH_SIZE = 4
+
+  # Максимальна глибина рекурсії binary search (запобігає нескінченному поділу).
+  MAX_BINARY_SEARCH_DEPTH = 6
+
+  # Поріг "отруйності" — якщо більше 30% транзакцій отруйні, binary search неефективний.
+  POISONED_RATIO_THRESHOLD = 0.3
+
+  # [FALLBACK]: Ізоляція "отруйних" записів через бінарний пошук (Divide & Conquer).
+  # Якщо batchMint dry-run впав, розбиваємо батч навпіл і тестуємо кожну половину.
+  # "Чисті" половини відправляються через batchMint, "отруйні" — далі діляться.
+  # Результат: 99 з 100 транзакцій відправляються 1-2 batchMint, 1 отруйна — mint().
+  def fallback_to_individual_mints(client, contract, oracle_key, token_type, txs)
+    poisoned = []
+    clean = []
+    original_batch_size = txs.size
+
+    # Запускаємо бінарний пошук для ізоляції отруйних записів
+    isolate_poisoned_records(client, contract, oracle_key, token_type, txs, poisoned, clean,
+                             depth: 0, original_batch_size: original_batch_size)
+
+    Rails.logger.info "🔍 [Web3] Binary search result: #{clean.size} clean, #{poisoned.size} poisoned out of #{original_batch_size}"
+
+    # Відправляємо "чисті" транзакції оптимальними батчами
+    clean.each_slice(Treasury::MintBatchCollectorService::OPTIMAL_BATCH_SIZE) do |batch|
+      send_clean_batch(client, contract, oracle_key, token_type, batch)
+    end
+
+    # Мінтимо "отруйні" транзакції поштучно (вони, ймовірно, впадуть)
+    poisoned.each do |tx|
+      mint_individual(client, contract, oracle_key, token_type, tx)
+    end
+
+    # Повертаємо nil — всі транзакції вже оброблені
+    nil
+  end
+
+  # Рекурсивний бінарний пошук для ізоляції отруйних записів.
+  # Кожен рівень рекурсії ділить батч навпіл і тестує через eth_call dry-run.
+  def isolate_poisoned_records(client, contract, oracle_key, token_type, txs, poisoned, clean, depth:, original_batch_size:)
+    # Базовий випадок: батч занадто малий або досягнуто максимальної глибини — мінтимо поштучно
+    if txs.size < MIN_BINARY_SEARCH_SIZE || depth >= MAX_BINARY_SEARCH_DEPTH
+      Rails.logger.info "🔍 [Web3] Binary search: #{txs.size} txs at depth=#{depth} below threshold, marking as potentially poisoned"
+      txs.each { |tx| poisoned << tx }
+      return
+    end
+
+    # Перевіряємо, чи ще ефективний binary search (>30% від оригінального батча отруйні — fallback)
+    if poisoned.any? && poisoned.size > original_batch_size * POISONED_RATIO_THRESHOLD
+      Rails.logger.warn "⚠️ [Web3] Binary search: >30% poisoned (#{poisoned.size}/#{original_batch_size}). " \
+                        "Fallback to individual mints for remaining #{txs.size} txs."
+      txs.each { |tx| poisoned << tx }
+      return
+    end
+
+    mid = txs.size / 2
+    left_half = txs[0...mid]
+    right_half = txs[mid..]
+
+    # Тестуємо ліву половину через dry-run
+    process_half(client, contract, oracle_key, token_type, left_half, poisoned, clean,
+                 depth: depth, original_batch_size: original_batch_size)
+
+    # Тестуємо праву половину через dry-run
+    process_half(client, contract, oracle_key, token_type, right_half, poisoned, clean,
+                 depth: depth, original_batch_size: original_batch_size)
+  end
+
+  # Обробляє одну половину батча: dry-run → clean або рекурсивний поділ.
+  def process_half(client, contract, oracle_key, token_type, half_txs, poisoned, clean, depth:, original_batch_size:)
+    return if half_txs.empty?
+
+    recipients, amounts, identifiers = build_batch_arrays(half_txs, token_type)
+
+    if batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers)
+      # Ця половина містить отруйний запис — ділимо далі
+      Rails.logger.info "🔍 [Web3] Binary search depth=#{depth + 1}: sub-batch of #{half_txs.size} reverted, splitting..."
+      isolate_poisoned_records(client, contract, oracle_key, token_type, half_txs, poisoned, clean,
+                               depth: depth + 1, original_batch_size: original_batch_size)
+    else
+      # Ця половина чиста — додаємо до clean
+      clean.concat(half_txs)
+    end
+  end
+
+  # Будує масиви recipients/amounts/identifiers для підбатча (з Dynamic Tax).
+  def build_batch_arrays(txs, token_type)
+    recipients = []
+    amounts = []
+    identifiers = []
+
+    txs.each do |tx|
+      if token_type == "carbon_coin" && insurance_pool_requires_funding?
+        tax_amount = (tx.amount * DYNAMIC_TAX_RATE).round(4)
+        forester_amount = tx.amount - tax_amount
+
+        recipients.push(tx.to_address, ENV.fetch("DAO_TREASURY_ADDRESS"))
+        amounts.push(to_wei(forester_amount), to_wei(tax_amount))
+        identifiers.push(identifier_for(tx), "TAX_#{identifier_for(tx)}")
+      else
+        recipients.push(tx.to_address)
+        amounts.push(to_wei(tx.amount))
+        identifiers.push(identifier_for(tx))
       end
     end
 
-    # Повертаємо nil — індивідуальні транзакції вже оброблені в циклі
-    nil
+    [ recipients, amounts, identifiers ]
+  end
+
+  # Відправляє "чистий" батч через batchMint (або mint для одиночних).
+  def send_clean_batch(client, contract, oracle_key, token_type, txs)
+    return if txs.empty?
+
+    if txs.size == 1
+      mint_individual(client, contract, oracle_key, token_type, txs.first)
+      return
+    end
+
+    recipients, amounts, identifiers = build_batch_arrays(txs, token_type)
+
+    tx_hash = client.transact(
+      contract, "batchMint", recipients, amounts, identifiers,
+      sender_key: oracle_key, legacy: false
+    )
+
+    txs.each { |tx| finalize_sent_transaction(tx, tx_hash, token_type) }
+
+    Rails.logger.info "✅ [Web3] Clean sub-batch of #{txs.size} sent via batchMint. TX: #{tx_hash}"
+  rescue StandardError => e
+    Rails.logger.error "🛑 [Web3] Clean batch failed (#{txs.size} txs): #{e.message}. Falling back to individual mints."
+    txs.each { |tx| mint_individual(client, contract, oracle_key, token_type, tx) }
+  end
+
+  # Мінтить одну транзакцію індивідуально з обробкою помилок.
+  def mint_individual(client, contract, oracle_key, token_type, tx)
+    individual_tx_hash = client.transact(
+      contract, "mint", tx.to_address, to_wei(tx.amount), identifier_for(tx),
+      sender_key: oracle_key, legacy: false
+    )
+
+    finalize_sent_transaction(tx, individual_tx_hash, token_type)
+  rescue StandardError => e
+    Rails.logger.error "🛑 [Web3] Individual mint failed for TX ##{tx.id}: #{e.message}"
+    tx.fail!(e.message.truncate(200))
+    broadcast_tx_update(tx)
   end
 
   # Фіналізує транзакцію після успішної відправки (shared logic для batch та individual).

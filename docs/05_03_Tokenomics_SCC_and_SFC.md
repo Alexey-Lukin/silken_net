@@ -13,7 +13,7 @@
 - **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, unified `whenNotPaused`)
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
 - **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано
-- **Синхронізація:** 2026-04-15
+- **Синхронізація:** 2026-04-16
 - **Пов'язані модулі:**
   - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
   - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
@@ -193,6 +193,7 @@ function batchMint(
 - **Валідація:** Перевірка рівності довжин масивів; `MAX_BATCH_SIZE = 200` — захист від gas overflow (≈30M gas limit Polygon)
 - **Dynamic Tax:** При виклику `batchMint` з бекенду, `BlockchainMintingService` вставляє додаткових отримувачів (`DAO_TREASURY_ADDRESS`) коли баланс Treasury < 100,000 SCC
 - **Gas Optimization [PR #253]:** `Treasury::MintBatchCollectorService` (cron кожні 5 хв) агрегує pending TX та відправляє пакетами по 100 через `BlockchainMintingService.call_batch`. `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Urgent TX (>30 хв) відправляються негайно.
+- **Binary Search Isolation [PR #254]:** При `batchMint` dry-run revert замість наївного N×`mint()` fallback використовується Divide & Conquer алгоритм — бінарний пошук "отруйних" записів через `eth_call`. Чисті підбатчі → `batchMint`, отруйні → `mint()` поштучно. Для 1 отруйного з 100: ~14 `eth_call` + 2-3 `batchMint` замість 100 `mint()`. Guards: `MIN_BINARY_SEARCH_SIZE=4`, `MAX_BINARY_SEARCH_DEPTH=6`, `POISONED_RATIO_THRESHOLD=30%`.
 
 #### `slash(address investor, uint256 amount)`
 
@@ -373,8 +374,12 @@ Telemetry → Lorenz Z-value → growth_points++
                     ├── Dynamic Tax: 2% до DAO_TREASURY (якщо batchMint + insurance_pool_requires_funding?)
                     └── [batchMint] eth_call dry-run (batch_dry_run_reverts?)
                          ├── ok  → batchMint() — атомарна пакетна емісія
-                         └── revert → fallback_to_individual_mints()
-                                       (кожен mint() окремо; "отруйний" запис ізольовано)
+                         └── revert → 🔍 Binary Search Isolation (Divide & Conquer)
+                                       ├── split batch in half → eth_call dry-run per half
+                                       ├── clean half → batchMint() (gas-efficient)
+                                       ├── poisoned half → recurse (depth < 6, size ≥ 4)
+                                       ├── >30% poisoned → fallback to individual mints
+                                       └── isolated poisoned → mint_individual() (fails gracefully)
                                     ↓
                     SCC: mint(to, amount, treeDid)          ← MINTER_ROLE
                     SFC: mint(to, amount, "CLUSTER_{id}")   ← MINTER_ROLE

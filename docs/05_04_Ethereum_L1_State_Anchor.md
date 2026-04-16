@@ -10,7 +10,7 @@
 
 - **Поточний TRL:** TRL 8 — Механізм якорування повністю імплементовано.
 - **Цільовий TRL:** TRL 9 — Production-ready з повним gas management та аудит-трейлом у БД.
-- **Синхронізація:** 2026-04-15
+- **Синхронізація:** 2026-04-16
 - **Пов'язані модулі:**
   - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
   - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
@@ -76,23 +76,19 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 
 ---
 
-**Статус:** Критичний архітектурний пробіл.
+> **Усі блокери нижче вирішені в PR #254.** Секція збережена для історичної довідки.
 
-Директорія `contracts/` містить тільки `SilkenCarbonCoin.sol` та `SilkenForestCoin.sol`. Смарт-контракт `StateRootAnchor`, у який щотижня записується `state_root`, **відсутній у кодбейсі**.
+### ✅ ~~BLOCKER-1~~: `StateRootAnchor.sol` — вирішено
 
-- **Де в коді:** `Ethereum::StateAnchorService` — ABI для `storeStateRoot(bytes32)` захардкоджено inline як Ruby Hash-масив у константі `ANCHOR_ABI`.
-- **Вплив:** Неможливо провести аудит контракту, верифікувати його адресу, або задеплоїти повторно через Foundry toolchain.
-- **Потрібно:** Створити `contracts/StateRootAnchor.sol`, задеплоїти через Foundry, зберегти адресу в `ENV["ETHEREUM_ANCHOR_CONTRACT"]`.
+~~Директорія `contracts/` містить тільки `SilkenCarbonCoin.sol` та `SilkenForestCoin.sol`. Смарт-контракт `StateRootAnchor`, у який щотижня записується `state_root`, **відсутній у кодбейсі**.~~
 
-### 🔴 BLOCKER-2: Відсутність персистентності state_root та tx_hash у БД
+- **Статус:** ✅ Вирішено. `contracts/StateRootAnchor.sol` створено з `AccessControl`, `ANCHOR_ROLE`, deduplicate guard.
 
-**Статус:** Критичний. Відсутній аудит-трейл на рівні бази даних.
+### ✅ ~~BLOCKER-2~~: Персистентність state_root — вирішено
 
-`Ethereum::StateAnchorService#anchor_to_l1!` виконує L1-транзакцію та логує `tx_hash` тільки в `Rails.logger`. Якщо процес падає після успішного відправлення транзакції, але до збереження результату, **відновити що саме було заанкоровано — неможливо**.
+~~`Ethereum::StateAnchorService#anchor_to_l1!` виконує L1-транзакцію та логує `tx_hash` тільки в `Rails.logger`.~~
 
-- **Де в коді:** `Ethereum::StateAnchorService#anchor_to_l1!` — немає жодного `ActiveRecord` збереження.
-- **Вплив:** Відсутність аудит-трейлу є проблемою для інституційних інвесторів та регуляторного compliance.
-- **Потрібно:** Модель `EthereumAnchor` або поле в `AuditLog` для збереження `{ state_root, tx_hash, anchored_at, block_number }`.
+- **Статус:** ✅ Вирішено. Модель `EthereumAnchor` зберігає повний аудит-трейл. Crash recovery через `status: :pending` до TX.
 
 ## 1. Cron-Розклад (The Ethereum Seal)
 
@@ -176,24 +172,28 @@ state_root = SHA256("#{total_scc}|#{chain_hash}|#{anchored_at.iso8601}")
 
 ```ruby
 def generate_state_root
-  # 1. Сума всіх SCC-балансів у системі (cross-chain total supply snapshot)
-  total_scc = Wallet.sum(:scc_balance)
+  # [SNAPSHOT ISOLATION]: REPEATABLE READ гарантує consistent snapshot
+  # між паралельними MintCarbonCoinWorker / AuditLogWorker записами
+  ActiveRecord::Base.transaction(isolation: :repeatable_read) do
+    # 1. Сума всіх SCC-балансів у системі (cross-chain total supply snapshot)
+    total_scc = Wallet.sum(:scc_balance)
 
-  # 2. chain_hash останнього AuditLog (криптографічна ланцюгова прив'язка)
-  #    order: created_at DESC, id DESC — гарантує детерміновану сортировку при рівному часі
-  latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
+    # 2. chain_hash останнього AuditLog (криптографічна ланцюгова прив'язка)
+    #    order: created_at DESC, id DESC — гарантує детерміновану сортировку при рівному часі
+    latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
 
-  # 3. Timestamp моменту формування хешу (зберігається в EthereumAnchor.anchored_at)
-  timestamp = Time.current.utc
+    # 3. Timestamp моменту формування хешу (зберігається в EthereumAnchor.anchored_at)
+    timestamp = Time.current.utc
 
-  # 4. Конкатенація через | роздільник
-  payload = "#{total_scc}|#{latest_chain_hash}|#{timestamp.iso8601}"
+    # 4. Конкатенація через | роздільник
+    payload = "#{total_scc}|#{latest_chain_hash}|#{timestamp.iso8601}"
 
-  # 5. SHA-256 хешування → 64-символьний hex рядок (256 bits / 32 bytes)
-  state_root = Digest::SHA256.hexdigest(payload)
+    # 5. SHA-256 хешування → 64-символьний hex рядок (256 bits / 32 bytes)
+    state_root = Digest::SHA256.hexdigest(payload)
 
-  # 6. Повернути всі компоненти для збереження в EthereumAnchor (BLOCKER-6)
-  { state_root: state_root, total_scc: total_scc, chain_hash: latest_chain_hash, anchored_at: timestamp }
+    # 6. Повернути всі компоненти для збереження в EthereumAnchor (BLOCKER-6)
+    { state_root: state_root, total_scc: total_scc, chain_hash: latest_chain_hash, anchored_at: timestamp }
+  end
 end
 ```
 
@@ -211,7 +211,7 @@ Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64
 | Загальний SCC supply (всі гаманці) | Кількість активних дерев |
 | Останній AuditLog chain_hash | TelemetryLog count за тиждень |
 | Timestamp виконання (збережений в БД) | Lorenz Z-value статистика |
-| | SFC supply |
+| `REPEATABLE READ` snapshot isolation | SFC supply |
 | | Merkle root над індивідуальними tree hashes |
 
 > **Примітка:** Це SHA-256 flat commitment, а не повноцінний Merkle Root. Для TRL 9 можна розглянути справжній Merkle Tree над `TelemetryLog.chain_hash` значеннями за тиждень. Незалежна верифікація: `EthereumAnchor#verify_state_root` відтворює хеш з збережених компонентів.
@@ -423,6 +423,7 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 ║       │                                                              ║
 ║       ▼                                                              ║
 ║    generate_state_root():                                            ║
+║      [REPEATABLE READ transaction]                                   ║
 ║      total_scc    = Wallet.sum(:scc_balance)         [PostgreSQL]   ║
 ║      chain_hash   = AuditLog.last.chain_hash         [PostgreSQL]   ║
 ║      anchored_at  = Time.current.utc                 [Runtime]      ║

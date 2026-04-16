@@ -734,6 +734,160 @@ end
     end
   end
 
+  describe "binary search poisoned record isolation" do
+    # Create 6 wallets/trees to test binary search (above MIN_BINARY_SEARCH_SIZE=4)
+    let(:trees) { Array.new(6) { create(:tree) } }
+    let(:wallets) do
+      trees.each_with_index.map do |tree, i|
+        tree.wallet.tap do |w|
+          w.update!(
+            crypto_public_address: "0x" + (("a".ord + i).chr * 40),
+            hadron_kyc_status: "approved"
+          )
+        end
+      end
+    end
+    let!(:transactions) do
+      wallets.map do |w|
+        w.blockchain_transactions.create!(
+          amount: 100, token_type: :carbon_coin, status: :pending,
+          to_address: w.crypto_public_address, blockchain_network: "evm",
+          locked_points: 1000
+        )
+      end
+    end
+
+    # Helper to identify which address is the poisoned one
+    let(:poisoned_address) { wallets[2].crypto_public_address }
+
+    context "when 1 out of 6 transactions is poisoned" do
+      before do
+        # Full batch dry-run reverts (initial trigger)
+        # Sub-batch dry-runs: only reverts if poisoned_address is included
+        call_count = 0
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything) do |_c, _m, recipients, *_args|
+          call_count += 1
+          if recipients.include?(poisoned_address)
+            raise StandardError, "execution reverted: KYC not approved"
+          end
+          nil # success
+        end
+        # balanceOf for insurance pool
+        allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
+      end
+
+      it "isolates the poisoned record and batch-mints the clean ones" do
+        batch_mint_count = 0
+        individual_mint_count = 0
+
+        allow(mock_client).to receive(:transact) do |_c, method, *args, **_opts|
+          if method == "batchMint"
+            batch_mint_count += 1
+            # Verify poisoned address is NOT in clean batches
+            recipients = args[0]
+            expect(recipients).not_to include(poisoned_address)
+          else
+            individual_mint_count += 1
+          end
+          "0x" + "f" * 64
+        end
+
+        described_class.call_batch(transactions.map(&:id))
+
+        # Clean transactions should be sent via batchMint (not individual mints)
+        expect(batch_mint_count).to be >= 1
+        # The poisoned tx (and its sub-batch neighbors) go through individual mints
+        expect(individual_mint_count).to be >= 1
+
+        # All clean transactions should be sent
+        clean_txs = transactions.reject { |tx| tx.to_address == poisoned_address }
+        clean_txs.each do |tx|
+          expect(tx.reload.status).to eq("sent")
+        end
+      end
+
+      it "marks the poisoned transaction as failed" do
+        allow(mock_client).to receive(:transact) do |_c, _method, to_address_or_recipients, *_args, **_opts|
+          # Individual mint for poisoned address fails
+          if to_address_or_recipients == poisoned_address
+            raise StandardError, "KYC revoked for this wallet"
+          end
+          "0x" + "f" * 64
+        end
+
+        described_class.call_batch(transactions.map(&:id))
+
+        poisoned_tx = transactions.find { |tx| tx.to_address == poisoned_address }
+        expect(poisoned_tx.reload.status).to eq("failed")
+        expect(poisoned_tx.reload.error_message).to include("KYC revoked")
+
+        # Other transactions should succeed
+        clean_txs = transactions.reject { |tx| tx.to_address == poisoned_address }
+        clean_txs.each do |tx|
+          expect(tx.reload.status).to eq("sent")
+        end
+      end
+    end
+
+    context "when binary search reaches minimum batch size" do
+      before do
+        # ALL dry-runs revert (all records appear poisoned)
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything)
+          .and_raise(StandardError, "execution reverted: contract error")
+        allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
+      end
+
+      it "falls back to individual mints when all sub-batches revert" do
+        mint_methods = []
+        allow(mock_client).to receive(:transact) do |_c, method, *_args, **_opts|
+          mint_methods << method
+          "0x" + "f" * 64
+        end
+
+        described_class.call_batch(transactions.map(&:id))
+
+        # When every sub-batch reverts, eventually all txs are minted individually
+        expect(mint_methods).to all(eq("mint"))
+        transactions.each do |tx|
+          expect(tx.reload.status).to eq("sent")
+        end
+      end
+    end
+
+    context "when clean sub-batch batchMint transact fails" do
+      before do
+        # First dry-run (full batch) reverts
+        first_call = true
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything) do |*_args|
+          if first_call
+            first_call = false
+            raise StandardError, "execution reverted: KYC not approved"
+          end
+          nil # sub-batch dry-runs succeed
+        end
+        allow(mock_client).to receive(:call).with(anything, "balanceOf", anything).and_return(0)
+      end
+
+      it "falls back to individual mints for the sub-batch if batchMint transact fails" do
+        transact_count = 0
+        allow(mock_client).to receive(:transact) do |_c, method, *_args, **_opts|
+          transact_count += 1
+          if method == "batchMint"
+            raise StandardError, "nonce too low" # simulate transact failure
+          end
+          "0x" + "f" * 64 # individual mints succeed
+        end
+
+        described_class.call_batch(transactions.map(&:id))
+
+        # All txs should still eventually be sent (via individual mint fallback)
+        transactions.each do |tx|
+          expect(tx.reload.status).to eq("sent")
+        end
+      end
+    end
+  end
+
   describe "#evm_revert?" do
     let(:service) { described_class.new([ -1 ]) }
 
