@@ -13,6 +13,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
  * @notice Токен управління (governance) та біорізноманіття для екосистеми Gaia 2.0.
  * @dev ERC20Votes додано для підтримки DAO governance (Governor/Timelock).
  *      ERC20Permit — gasless approvals (EIP-2612).
+ *      ERC20Permit includes block.chainid in the EIP-712 domain separator,
+ *      so permit() signatures are only valid on the chain where they were signed.
+ *      Cross-chain replay is prevented by OpenZeppelin's domain separator implementation.
  *
  * [B-01] MAX_SUPPLY = 100 000 000 SFC — верхня межа емісії governance токенів.
  * [B-03] Конструктор валідує ненульові адреси.
@@ -32,6 +35,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
     /// @notice [B-01] Максимальна емісія SFC: 100 мільйонів governance токенів (18 decimals).
+    /// @dev Once MAX_SUPPLY is reached, mint/batchMint revert with "SFC: cap exceeded".
     uint256 public constant MAX_SUPPLY = 100_000_000 * 1e18;
 
     /// @notice [B-04] Максимальна кількість елементів у batchMint для gas safety.
@@ -62,19 +66,26 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(slasherOracle != address(0), "SFC: zero slasher oracle");
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        // Emits: RoleGranted(DEFAULT_ADMIN_ROLE, admin, msg.sender)
         _grantRole(MINTER_ROLE, oracle);
+        // Emits: RoleGranted(MINTER_ROLE, oracle, msg.sender)
         _grantRole(SLASHER_ROLE, slasherOracle);
+        // Emits: RoleGranted(SLASHER_ROLE, slasherOracle, msg.sender)
     }
 
     /// @notice Емісія governance токенів для кластера лісу.
     /// @param to Адреса отримувача.
     /// @param amount Кількість токенів (wei).
     /// @param clusterId ID кластера лісу.
+    /// @dev Reverts if totalSupply() + amount > MAX_SUPPLY.
     function mint(address to, uint256 amount, string calldata clusterId)
         external
         onlyRole(MINTER_ROLE)
         nonReentrant
     {
+        require(to != address(0), "SFC: zero recipient");
+        require(amount > 0, "SFC: zero amount");
+        require(bytes(clusterId).length > 0, "SFC: empty clusterId");
         require(totalSupply() + amount <= MAX_SUPPLY, "SFC: cap exceeded");
         _mint(to, amount);
         emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId);
@@ -90,12 +101,15 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         string[] calldata clusterIds
     ) external onlyRole(MINTER_ROLE) nonReentrant {
         uint256 length = recipients.length;
+        require(length > 0, "SFC: empty batch");
         require(length == amounts.length && length == clusterIds.length, "SFC: array length mismatch");
         require(length <= MAX_BATCH_SIZE, "SFC: batch too large");
 
         // Gas optimization: single SLOAD for totalSupply + pre-calculated total
         uint256 batchTotal = 0;
         for (uint256 i = 0; i < length; i++) {
+            require(recipients[i] != address(0), "SFC: zero recipient");
+            require(amounts[i] > 0, "SFC: zero amount");
             batchTotal += amounts[i];
         }
         require(totalSupply() + batchTotal <= MAX_SUPPLY, "SFC: cap exceeded");
@@ -110,11 +124,15 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     /// @dev Видаляє DAO voting power у "нечесних" учасників після порушення NaaS контракту.
     /// @param investor Адреса, з якої спалюються governance токени.
     /// @param amount Кількість токенів для спалювання (wei).
+    /// @dev Reverts if investor balance < amount ("SFC: insufficient balance").
     function slash(address investor, uint256 amount)
         external
         onlyRole(SLASHER_ROLE)
         nonReentrant
     {
+        require(investor != address(0), "SFC: zero investor");
+        require(amount > 0, "SFC: zero amount");
+        require(balanceOf(investor) >= amount, "SFC: insufficient balance");
         _burn(investor, amount);
         emit GovernanceSlashed(investor, amount);
     }
@@ -130,6 +148,10 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     }
 
     /// @dev [B-07] Уніфіковано: whenNotPaused modifier для всіх трансферів (як у SCC).
+    /// @dev Reentrancy protection is provided by nonReentrant guards on mint(), slash(), and batchMint().
+    /// @dev Do NOT add external calls or callbacks to this function without adding nonReentrant guard.
+    /// @dev Note: nonReentrant cannot be added here directly — it would conflict with the outer
+    ///      nonReentrant guard on mint/slash/batchMint (nested nonReentrant reverts).
     function _update(address from, address to, uint256 value)
         internal
         override(ERC20, ERC20Votes)
