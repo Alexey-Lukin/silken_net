@@ -1,16 +1,8 @@
-# 03_04: mruby Lorenz Attractor (Математика Хаосу та Гомеостаз)
-
-**Модуль:** 03_04 — mruby Lorenz Attractor (Bio-Contract / Математика Хаосу)
-**Пов'язані модулі:** [03_01 Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) · [03_03 TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) · [03_05 Hardware AES256 and Security](03_05_Hardware_AES256_and_Security) · [04_02 Business Logic and Services](04_02_Business_Logic_and_Services) · [05_02 Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline)
-**Поточний TRL:** 6 (Скрипт на mruby написаний, виконується у VM на мікроконтролері, SSOT відсутня)
-**Цільовий TRL:** 7 (Повна математична та алгоритмічна прозорість розрахунку гомеостазу)
-**Статус Аудиту:** Reverse Shaping Cycle 1 — "Reverse Shaping" без рефакторингу математики. Документування поточного стану ("як є").
-
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з `firmware/bio_contracts/bio_contract.rb` та `firmware/soldier/main.c` (Phase 3 — mruby виклик) та `app/services/silken_net/attractor.rb` станом на 2026-03-24. Усі виявлені математичні ризики задокументовано в розділі 🛑. **Жодного рефакторингу не виконувалось** — тільки виявлення та фіксація "як є".
+# 03_04: mruby Атрактор Лоренца (Математика Хаосу та Гомеостаз)
 
 ---
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Задокументувати повний алгоритм **Bio-Contract** — mruby-скрипту, що виконується на борту вузла **Soldier** (STM32WLE5JC) і обчислює стан гомеостазу дерева через Атрактор Лоренца. Цей документ є SSOT для:
 
@@ -18,11 +10,19 @@
 - **Proof of Growth Pipeline (05_02)**: мінтинг SCC заблокований, поки бекенд не розуміє математику, що генерує бали.
 - **University R&D (08_02)**: академічна верифікація числової стабільності методу Ейлера у системі Лоренца.
 
-> Цей документ **не** рефакторить і **не** оптимізує математику. Він фіксує "як є" — включаючи всі відомі ризики, пробіли та відкриті блокери.
-
 ---
 
-## ✅ Статус (Status)
+## ✅ Статус
+
+- **Поточний TRL:** TRL 6 — mruby-скрипт написаний, виконується у VM на мікроконтролері
+- **Пов'язані модулі:**
+  - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
+  - TinyML Акустичний Інференс → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
+  - Апаратний AES-256 та Безпека → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+  - Бізнес-Логіка та Сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+  - Proof of Growth Pipeline → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
+
+---
 
 | Компонент | Стан |
 |---|---|
@@ -43,9 +43,7 @@
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
-
-> Цей розділ є **виходом математичного аудиту** "Reverse Shaping". Виявлено 7 блокерів/ризиків. Жодного рефакторингу не виконувалось.
+## 🛑 Блокери
 
 ---
 
@@ -266,8 +264,6 @@ firmware/soldier/main.c — ФАЗА 3 (mruby виклик)
 
 #### Фізичний Зміст chaos_seed (Квантовий Шум / TRNG)
 
-> **Нотатка інтегрована (2026-03-25).**
-
 `chaos_seed` — не просто "псевдовипадкове число". Це **термічний шум кремнієвого кристала** STM32WLE5JC, виміряний у конкретну мікросекунду часу.
 
 **Фізика TRNG (True Random Number Generator):**
@@ -283,8 +279,6 @@ HAL_RNG_GenerateRandomNumber(&hrng, &chaos_seed);
 ```
 
 Атрактор Лоренца у кожному циклі "думає", відштовхуючись від термічного шуму ксилеми дерева в цю конкретну мить. Це ідеальне злиття біологічної фізики та математики хаосу: **дерево буквально надає початковий стан своїй власній цифровій свідомості**.
-
-
 
 ---
 
@@ -438,7 +432,6 @@ growth_points
    │               ██                    ██
 25 ┤             ██                        ██
 23 ┤           ██      
-
 
 10 ┤  ─────────                                ─────────
    │

@@ -1,24 +1,24 @@
-# 03_05: Hardware AES256 & Security (Шифрування пакетів EwsAlert)
-
-**Модуль:** 03_05 — Hardware AES256 & Security (Криптографічний Пайплайн Прошивки)
-**Пов'язані модулі:** [03_01 Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) · [03_02 Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) · [03_04 mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) · [04_02 Business Logic and Services](04_02_Business_Logic_and_Services) · [05_02 Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline)
-**Поточний TRL:** 6 (Апаратне шифрування налаштовано, 137 host-based тестів проходять, SSOT зафіксовано цим документом)
-**Цільовий TRL:** 7 (Повна прозорість криптографічного пайплайну; Factory Flashing з унікальними ключами розблоковано)
-**Статус Аудиту:** Reverse Shaping Cycle 1 — документування поточного стану ("як є") без рефакторингу коду
-
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з `firmware/soldier/main.c` та `firmware/queen/main.c` станом на 2026-03-24. Усі виявлені блокери безпеки задокументовані в розділі 🛑. **Жодного рефакторингу криптографії не виконувалось** — тільки виявлення та фіксація "як є".
+# 03_05: Апаратний AES-256 та Безпека (Криптографія Пакетів)
 
 ---
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Зафіксувати детальний криптографічний пайплайн вузлів **Soldier** (датчик дерева) та **Queen** (шлюз-агрегатор): режим роботи AES, структуру зашифрованих пакетів, управління ключами та генерацію вектора ініціалізації (IV). Документ є SSOT для Hardware Security Audit перед масовим виробничим розгортанням.
 
-> Цей документ **не** рефакторить криптографію. Він фіксує "як є" — включаючи всі відомі ризики та відкриті блокери безпеки. Ніколи не пишіть власну криптографію і не просіть ШІ "швидко пофіксити" крипто-код.
-
 ---
 
-## ✅ Статус (Status)
+## ✅ Статус
+
+- **Поточний TRL:** TRL 6 — апаратне шифрування налаштовано, 137 host-based тестів проходять
+- **Пов'язані модулі:**
+  - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
+  - Прошивка Шлюзу Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
+  - mruby Атрактор Лоренца → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
+  - Бізнес-Логіка та Сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+  - Proof of Growth Pipeline → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
+
+---
 
 | Компонент | Стан |
 |-----------|------|
@@ -38,9 +38,7 @@
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
-
-> Цей розділ є виходом **жорсткого аудиту безпеки** "Reverse Shaping". Виявлено 3 критичних (🔴) та 3 відкритих (🟡) ризики. Жодного рефакторингу не виконувалось.
+## 🛑 Блокери
 
 ---
 
@@ -227,19 +225,6 @@ HAL_CRYP_Init(&hcryp);
 - Додати watchdog або перевірку стану `hcryp.State` перед кожним `HAL_CRYP_Encrypt/Decrypt`.
 
 **Блокує:** Надійність криптографічного пайплайну Queen при апаратних збоях.
-
----
-
-### 🟢 INFO: Зафіксовані та Виправлені Ризики (Closed)
-
-Наступні ризики виявлено та виправлено безпосередньо в C-коді до синхронізації SSOT:
-
-| # | Ризик | Серйозність | Статус |
-|---|-------|-------------|--------|
-| R-01 | ECB Mode не відновлювався після CBC flush (`Flush_Cache_To_Rails`) | 🔴 | ✅ Виправлено: явний `CRYP_AES_ECB` restore |
-| R-02 | ECB Mode не відновлювався після CBC в `Handle_CoAP_Command` | 🔴 | ✅ Виправлено: явний `CRYP_AES_ECB` restore |
-| R-03 | `encrypted_batch_buffer[2064]` на стеку (ризик Stack Overflow) | 🔴 | ✅ Виправлено: `static uint8_t` у `Flush_Cache_To_Rails` |
-| R-04 | HRNG re-init/de-init на кожен IV batch (неефективна, але безпечна ізоляція) | 🟡 | ✅ Прийнято: "Wu-Wei" підхід, мінімальне споживання |
 
 ---
 
