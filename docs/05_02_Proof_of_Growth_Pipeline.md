@@ -147,7 +147,12 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║  ─────────── КРОК E: BlockchainMintingService (EVM) ─────────────── ║
 ║    Guard: verified_by_iotex? && oracle_status=="fulfilled"           ║
 ║    Guard: wallet.hadron_kyc_status == "approved"                     ║
-║    client.transact("mint" | "batchMint") → Polygon Mainnet           ║
+║    [batchMint path]:                                                 ║
+║      eth_call dry-run → batch_dry_run_reverts?                       ║
+║        ├── false → client.transact("batchMint") → Polygon Mainnet    ║
+║        └── true  → fallback_to_individual_mints                      ║
+║                     (кожен mint() окремо; "отруйний" запис ізольовано)║
+║    [single mint path]: client.transact("mint") → Polygon Mainnet     ║
 ║    → blockchain_transaction.status = :sent, tx_hash saved            ║
 ║    → BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)   ║
 ║                                                                      ║
@@ -529,8 +534,8 @@ Sidekiq::Limiter.window("web3_rpc", 50, :second, wait: 5)  # 50 RPC/sec global
 ]
 ```
 
-**Rollback:** `MintingRollbackService.call(...)` при вичерпанні 5 retry
-через `sidekiq_retries_exhausted`.
+**Rollback:** `MintingRollbackService.call(transactions:)` при вичерпанні 10 retry `BlockchainConfirmationWorker`
+через `sidekiq_retries_exhausted` (~15-20 хвилин поллінгу мемпулу).
 
 ---
 
