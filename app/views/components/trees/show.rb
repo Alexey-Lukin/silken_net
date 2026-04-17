@@ -47,7 +47,7 @@ module Trees
 
     def render_chronicle_frame
       div(class: "p-8 border border-emerald-900 bg-black/40") do
-        turbo_frame_tag("tree_chronicle", src: chronicle_tree_path(@tree), loading: :lazy) do
+        turbo_frame_tag("tree_chronicle", src: chronicle_api_v1_tree_path(@tree), loading: :lazy) do
           render Views::Shared::UI::Skeleton.new(variant: :table)
         end
       end
