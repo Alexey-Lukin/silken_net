@@ -67,8 +67,8 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       expect(BlockchainMintingService).not_to have_received(:call_batch)
     end
 
-    it "splits batch into groups of 200" do
-      201.times do
+    it "splits batch into groups of 100" do
+      101.times do
         create(:blockchain_transaction, wallet: wallet, status: :pending)
       end
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -39,7 +39,11 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 1e18;
 
     /// @notice [B-04] Максимальна кількість елементів у batchMint для gas safety.
-    uint256 public constant MAX_BATCH_SIZE = 200;
+    /// @dev Зменшено з 200 до 100 для гарантії gas safety з максимальними рядками (256 bytes).
+    uint256 public constant MAX_BATCH_SIZE = 100;
+
+    /// @dev Лічильник адміністраторів для запобігання видаленню останнього DEFAULT_ADMIN_ROLE.
+    uint256 private _adminCount;
 
     /// @notice Емітується при мінтингу SCC для конкретного дерева.
     /// @param investor Адреса отримувача токенів.
@@ -88,13 +92,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         onlyRole(MINTER_ROLE)
         nonReentrant
     {
-        require(to != address(0), "SCC: zero recipient");
-        require(amount > 0, "SCC: zero amount");
-        require(bytes(treeDid).length > 0, "SCC: empty treeDid");
-        require(bytes(treeDid).length <= 256, "SCC: treeDid too long");
-        require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
-        _mint(to, amount);
-        emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
+        _mintSCC(to, amount, treeDid);
     }
 
     /// @notice Backward-compatible alias для mintForTree.
@@ -107,6 +105,13 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         onlyRole(MINTER_ROLE)
         nonReentrant
     {
+        _mintSCC(to, amount, treeDid);
+    }
+
+    /// @dev Внутрішня реалізація мінтингу, спільна для mint() та mintForTree().
+    ///      Усуває дублювання коду — будь-які зміни валідації або логіки
+    ///      застосовуються до обох entry points одночасно.
+    function _mintSCC(address to, uint256 amount, string calldata treeDid) internal {
         require(to != address(0), "SCC: zero recipient");
         require(amount > 0, "SCC: zero amount");
         require(bytes(treeDid).length > 0, "SCC: empty treeDid");
@@ -187,7 +192,10 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         _unpause();
     }
 
-    /// @dev [B-07] Уніфіковано: whenNotPaused modifier для всіх трансферів.
+    /// @dev [B-07] Трансфери та мінтинг блокуються при паузі, але burn (slash) дозволено.
+    /// @dev Slashing — це механізм безпеки екосистеми, який НЕ повинен блокуватись адміном.
+    ///      Якщо адмін може блокувати slash через pause(), це створює governance attack vector:
+    ///      компрометований або зловмисний адмін може захистити порушників від слешингу.
     /// @dev Reentrancy protection is provided by nonReentrant guards on mint(), slash(), and batchMint().
     /// @dev Do NOT add external calls or callbacks to this function without adding nonReentrant guard.
     /// @dev Note: nonReentrant cannot be added here directly — it would conflict with the outer
@@ -195,9 +203,37 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     function _update(address from, address to, uint256 value)
         internal
         override
-        whenNotPaused
     {
+        // Allow burn (slash) to bypass pause — to == address(0) means _burn() was called.
+        // Minting (from == 0, to != 0) and transfers (from != 0, to != 0) are still blocked.
+        if (paused() && to != address(0)) {
+            revert EnforcedPause();
+        }
         super._update(from, to, value);
+    }
+
+    /// @dev Захист від видалення останнього DEFAULT_ADMIN_ROLE.
+    ///      Якщо єдиний admin викличе renounceRole() або revokeRole(),
+    ///      контракт стане назавжди некерованим: неможливо pause, неможливо замінити
+    ///      компрометований oracle. Цей override запобігає цьому.
+    function _grantRole(bytes32 role, address account) internal override returns (bool) {
+        bool granted = super._grantRole(role, account);
+        if (granted && role == DEFAULT_ADMIN_ROLE) {
+            _adminCount++;
+        }
+        return granted;
+    }
+
+    /// @dev Блокує видалення останнього адміна через renounceRole або revokeRole.
+    function _revokeRole(bytes32 role, address account) internal override returns (bool) {
+        if (role == DEFAULT_ADMIN_ROLE) {
+            require(_adminCount > 1, "SCC: cannot remove last admin");
+        }
+        bool revoked = super._revokeRole(role, account);
+        if (revoked && role == DEFAULT_ADMIN_ROLE) {
+            _adminCount--;
+        }
+        return revoked;
     }
 
     /// @notice Override nonces для сумісності ERC20Permit + Nonces.

@@ -9,9 +9,10 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 9 — всі контракти production-ready, готові до Mainnet deployment та зовнішнього аудиту
-- **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event, mintForTree alias, audit hardening)
-- **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, unified `whenNotPaused`, audit hardening)
+- **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event, mintForTree alias, audit hardening, slash bypasses pause, admin protection, locked pragma)
+- **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, slash bypasses pause, auto-delegation, admin protection, locked pragma)
 - **Аудит-зміцнення:** ✅ Явна перевірка балансу в `slash()`, валідація нульових значень у `mint()`/`slash()`, перевірка порожнього батчу у `batchMint()`, NatSpec, захист від The Graph DoS (`treeDid`/`clusterId` length ≤256 bytes), валідація `recordPremiumPaid()`, per-element string validation у `batchMint()` для обох контрактів
+- **Зовнішній аудит (19 findings):** ✅ Аналіз 19 знахідок: 9 виправлено on-chain (slash bypass pause, admin protection, auto-delegate, batch size 100, anchor interval, locked pragma, mint dedup, rootHistory, timestamp NatSpec), 10 задокументовано як operational/by-design
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
 - **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано
 - **Пов'язані модулі:**
@@ -30,7 +31,7 @@
 | **Мережа** | Polygon (Amoy testnet → Mainnet) | Polygon (Amoy testnet → Mainnet) |
 | **Файл** | `contracts/SilkenCarbonCoin.sol` | `contracts/SilkenForestCoin.sol` |
 | **ENV адреса** | `CARBON_COIN_CONTRACT_ADDRESS` | `FOREST_COIN_CONTRACT_ADDRESS` |
-| **Pragma** | `^0.8.20` | `^0.8.20` |
+| **Pragma** | `0.8.20` (locked) | `0.8.20` (locked) |
 | **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
 | **Slash / Burn** | ✅ `slash()` через `SLASHER_ROLE` | ✅ `slash()` через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
@@ -165,13 +166,7 @@ function mint(address to, uint256 amount, string calldata treeDid)
     onlyRole(MINTER_ROLE)
     nonReentrant
 {
-    require(to != address(0), "SCC: zero recipient");
-    require(amount > 0, "SCC: zero amount");
-    require(bytes(treeDid).length > 0, "SCC: empty treeDid");
-    require(bytes(treeDid).length <= 256, "SCC: treeDid too long");
-    require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
-    _mint(to, amount);
-    emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
+    _mintSCC(to, amount, treeDid);
 }
 ```
 
@@ -182,9 +177,26 @@ function mint(address to, uint256 amount, string calldata treeDid)
 | `treeDid` | `string` | DID дерева (напр. `SNET-00A1B2C3`), max 256 bytes |
 
 - **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
-- **Валідація:** `to != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ 256 bytes (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SCC: cap exceeded"`)
-- **Guard on pause:** Опосередковано через `_update → whenNotPaused`
+- **Делегує до:** `_mintSCC()` — внутрішня реалізація, спільна з `mintForTree()`
+- **Guard on pause:** Опосередковано через `_update` — мінтинг блокується при паузі, слешинг дозволений
 - **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mintForTree", to, amount, identifier)` (також доступний `"mint"` alias)
+
+#### `_mintSCC(address to, uint256 amount, string calldata treeDid)` — internal
+
+```solidity
+function _mintSCC(address to, uint256 amount, string calldata treeDid) internal {
+    require(to != address(0), "SCC: zero recipient");
+    require(amount > 0, "SCC: zero amount");
+    require(bytes(treeDid).length > 0, "SCC: empty treeDid");
+    require(bytes(treeDid).length <= 256, "SCC: treeDid too long");
+    require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
+    _mint(to, amount);
+    emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
+}
+```
+
+- **Призначення:** Усунення дублювання коду між `mint()` та `mintForTree()`. Будь-які зміни валідації або логіки застосовуються до обох entry points одночасно.
+- **Валідація:** `to != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ 256 bytes (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SCC: cap exceeded"`)
 
 #### `batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata treeDids)`
 
@@ -218,10 +230,10 @@ function batchMint(
 ```
 
 - **Призначення:** Газово-ефективна масова емісія для цілих секторів/кластерів
-- **Валідація:** `length > 0` (revert: `"SCC: empty batch"`); рівність довжин масивів; `MAX_BATCH_SIZE = 200` — захист від gas overflow; кожен `recipient != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ 256 bytes; `totalSupply() + batchTotal <= MAX_SUPPLY` перевіряється атомарно до мінтингу
+- **Валідація:** `length > 0` (revert: `"SCC: empty batch"`); рівність довжин масивів; `MAX_BATCH_SIZE = 100` — захист від gas overflow (зменшено з 200 після аудиту для гарантії gas safety з максимальними рядками 256 bytes); кожен `recipient != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ 256 bytes; `totalSupply() + batchTotal <= MAX_SUPPLY` перевіряється атомарно до мінтингу
 - **Dynamic Tax:** При виклику `batchMint` з бекенду, `BlockchainMintingService` вставляє додаткових отримувачів (`DAO_TREASURY_ADDRESS`) коли баланс Treasury < 100,000 SCC
 - **Gas Optimization [PR #253]:** `Treasury::MintBatchCollectorService` (cron кожні 5 хв) агрегує pending TX та відправляє пакетами по 100 через `BlockchainMintingService.call_batch`. `batchMint(100) ≈ 30-40%` дешевше ніж `100 × mint()`. Urgent TX (>30 хв) відправляються негайно.
-- **Gas Analysis:** `MAX_BATCH_SIZE = 200` — on-chain safety cap. Backend обмежує до 100. Gas consumption для 200 мінтів з типовими DID (~20 bytes): ~51K gas × 200 ≈ 10.2M gas — в межах Polygon block gas limit (30M). Solidity 0.8+ забезпечує вбудований overflow-захист для `batchTotal += amounts[i]` (revert `Panic(0x11)` при переповненні).
+- **Gas Analysis:** `MAX_BATCH_SIZE = 100` — on-chain safety cap (і backend, і контракт обмежують до 100). Gas consumption для 100 мінтів з максимальними DID (~256 bytes): ~10M gas — в межах Polygon block gas limit (30M). Solidity 0.8+ забезпечує вбудований overflow-захист для `batchTotal += amounts[i]` (revert `Panic(0x11)` при переповненні).
 - **Binary Search Isolation [PR #254]:** При `batchMint` dry-run revert замість наївного N×`mint()` fallback використовується Divide & Conquer алгоритм — бінарний пошук "отруйних" записів через `eth_call`. Чисті підбатчі → `batchMint`, отруйні → `mint()` поштучно. Для 1 отруйного з 100: ~14 `eth_call` + 2-3 `batchMint` замість 100 `mint()`. Guards: `MIN_BINARY_SEARCH_SIZE=4`, `MAX_BINARY_SEARCH_DEPTH=6`, `POISONED_RATIO_THRESHOLD=30%`.
 
 #### `slash(address investor, uint256 amount)`
@@ -243,7 +255,7 @@ function slash(address investor, uint256 amount)
 - **Модифікатор:** `onlyRole(SLASHER_ROLE)`, `nonReentrant`
 - **Валідація:** `investor != address(0)`, `amount > 0`, `balanceOf(investor) >= amount` (revert: `"SCC: insufficient balance"`) — явна перевірка замість generic OZ помилки
 - **Тригер:** `BurnCarbonTokensWorker → BlockchainBurningService → slash(investor, amount)` при >20% аномальних дерев у кластері
-- **Guard on pause:** `_burn → _update → whenNotPaused` — слешинг заблокований під час паузи
+- **Guard on pause:** Слешинг **НЕ блокується** при паузі — `_update` дозволяє `_burn()` (to == address(0)) навіть коли контракт призупинено. Це запобігає governance attack vector де адмін захищає порушників від слешингу.
 - **Подія:** `TokenSlashed(address indexed investor, uint256 amount)`
 
 #### `recordPremiumPaid(address payer, uint256 amount)`
@@ -279,14 +291,24 @@ function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) { _unpause(); }
 function _update(address from, address to, uint256 value)
     internal
     override
-    whenNotPaused
 {
+    // Allow burn (slash) to bypass pause — to == address(0) means _burn() was called.
+    // Minting (from == 0, to != 0) and transfers (from != 0, to != 0) are still blocked.
+    if (paused() && to != address(0)) {
+        revert EnforcedPause();
+    }
     super._update(from, to, value);
 }
 ```
 
-- Блокує всі операції (mint, transfer, burn/slash) при активній паузі через модифікатор `whenNotPaused`
+- Блокує мінтинг і трансфери при активній паузі, але **дозволяє burn (slash)** — слешинг є механізмом безпеки, який не повинен блокуватись адміном
 - Reentrancy protection забезпечується `nonReentrant` guards на `mint()`, `mintForTree()`, `slash()`, `batchMint()` — `nonReentrant` не може бути доданий сюди напряму (вкладений виклик спричинив би revert)
+
+#### Admin Protection — `_grantRole` / `_revokeRole` overrides
+
+- `_adminCount` лічильник інкрементується при `_grantRole(DEFAULT_ADMIN_ROLE)` і декрементується при `_revokeRole(DEFAULT_ADMIN_ROLE)`
+- `_revokeRole` блокує видалення останнього адміна: `require(_adminCount > 1, "SCC: cannot remove last admin")`
+- Захищає від `renounceRole()` і `revokeRole()` — обидва проходять через `_revokeRole` internal
 
 ---
 
@@ -306,6 +328,10 @@ function mint(address to, uint256 amount, string calldata clusterId)
     require(bytes(clusterId).length <= 256, "SFC: clusterId too long");
     require(totalSupply() + amount <= MAX_SUPPLY, "SFC: cap exceeded");
     _mint(to, amount);
+    // Auto-delegate to self if not yet delegated
+    if (delegates(to) == address(0)) {
+        _delegate(to, to);
+    }
     emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId);
 }
 ```
@@ -318,13 +344,15 @@ function mint(address to, uint256 amount, string calldata clusterId)
 
 - **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
 - **Валідація:** `to != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ 256 bytes (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SFC: cap exceeded"`)
-- **Guard on pause:** Опосередковано через `_update(ERC20, ERC20Votes) → whenNotPaused`
+- **Auto-delegation:** При першому мінті для адреси автоматично делегує voting power до самого себе (`_delegate(to, to)`). Без цього ERC20Votes вимагає явний `delegate()` виклик, і більшість отримувачів не знатимуть про необхідність делегації, що призводить до штучно низького governance quorum.
+- **Guard on pause:** Мінтинг блокується при паузі через `_update`, слешинг дозволений
 - **Виклик з бекенду:** `BlockchainMintingService` — однакова логіка з SCC, але `token_type == "forest_coin"` → `FOREST_COIN_CONTRACT_ADDRESS`
 
 #### `batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata clusterIds)`
 
 - Аналогічний SCC `batchMint`, але прив'язаний до `clusterId` замість `treeDid`
-- Модифікатор: `onlyRole(MINTER_ROLE)`, `nonReentrant`; перевіряє `length > 0`, рівність масивів, `MAX_BATCH_SIZE`; per-element: `recipient != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ 256 bytes; `totalSupply() + batchTotal <= MAX_SUPPLY` атомарно
+- Модифікатор: `onlyRole(MINTER_ROLE)`, `nonReentrant`; перевіряє `length > 0`, рівність масивів, `MAX_BATCH_SIZE = 100`; per-element: `recipient != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ 256 bytes; `totalSupply() + batchTotal <= MAX_SUPPLY` атомарно
+- **Auto-delegation:** Як і в `mint()`, автоматично делегує voting power при першому мінті для кожної адреси
 
 #### `slash(address investor, uint256 amount)`
 
@@ -345,7 +373,7 @@ function slash(address investor, uint256 amount)
 - **Модифікатор:** `onlyRole(SLASHER_ROLE)`, `nonReentrant`
 - **Валідація:** `investor != address(0)`, `amount > 0`, `balanceOf(investor) >= amount` (revert: `"SFC: insufficient balance"`)
 - **Тригер:** `BurnCarbonTokensWorker → BlockchainBurningService → slash(investor, amount)` при порушенні NaaS контракту
-- **Guard on pause:** `_burn → _update → whenNotPaused` — slashing заблокований під час паузи
+- **Guard on pause:** Слешинг **НЕ блокується** при паузі — `_update` дозволяє `_burn()` навіть коли контракт призупинено. Видалення voting power у порушників має бути завжди можливим.
 - **Подія:** `GovernanceSlashed(address indexed investor, uint256 amount)`
 
 #### `_update(address from, address to, uint256 value)` — internal override
@@ -354,15 +382,22 @@ function slash(address investor, uint256 amount)
 function _update(address from, address to, uint256 value)
     internal
     override(ERC20, ERC20Votes)
-    whenNotPaused
 {
+    if (paused() && to != address(0)) {
+        revert EnforcedPause();
+    }
     super._update(from, to, value);
 }
 ```
 
 - Override необхідний через конфлікт між `ERC20` та `ERC20Votes`
-- Використовує `whenNotPaused` модифікатор — уніфіковано з SCC патерном
+- Блокує мінтинг і трансфери при паузі, але **дозволяє burn (slash)** — уніфіковано з SCC патерном
 - Reentrancy protection забезпечується `nonReentrant` guards на `mint()`, `slash()`, `batchMint()` — `nonReentrant` не може бути доданий сюди напряму (вкладений виклик спричинив би revert)
+
+#### Admin Protection — `_grantRole` / `_revokeRole` overrides
+
+- Аналогічно SCC: `_adminCount` лічильник захищає від видалення останнього `DEFAULT_ADMIN_ROLE`
+- `require(_adminCount > 1, "SFC: cannot remove last admin")`
 
 #### `nonces(address owner)` — override для EIP-2612
 
@@ -572,7 +607,7 @@ type ProtocolFinancials @entity {
 |---|---|
 | **Мережа** | Polygon PoS (Amoy testnet → Mainnet) |
 | **Toolchain** | Foundry (forge, cast, anvil) |
-| **OpenZeppelin** | 5.x (`pragma ^0.8.20`) |
+| **OpenZeppelin** | 5.x (`pragma solidity 0.8.20` — locked) |
 | **RPC** | `ALCHEMY_POLYGON_RPC_URL` (через `Web3::RpcConnectionPool`) |
 | **Oracle wallet** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER_ROLE) + `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER_ROLE) — окремі ключі |
 | **The Graph** | `subgraph/` — індексує лише SCC події (SFC — ні) |
@@ -692,7 +727,7 @@ threshold = SystemParameter.current(:slash_threshold, default: 0.20)
 
 ---
 
-*Документ згенеровано: Reverse Shaping Cycle 1 Small Batch (Issue #172) · Стан "як є" на 2026-03-23*
+*Документ згенеровано: Reverse Shaping Cycle 1 Small Batch (Issue #172) · Стан "як є" на 2026-04-17*
 *Джерела: `contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`,*
 *`app/services/blockchain_minting_service.rb`, `app/services/blockchain_burning_service.rb`,*
 *`subgraph/subgraph.yaml`,*

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -40,7 +40,11 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     uint256 public constant MAX_SUPPLY = 100_000_000 * 1e18;
 
     /// @notice [B-04] Максимальна кількість елементів у batchMint для gas safety.
-    uint256 public constant MAX_BATCH_SIZE = 200;
+    /// @dev Зменшено з 200 до 100 для гарантії gas safety з максимальними рядками (256 bytes).
+    uint256 public constant MAX_BATCH_SIZE = 100;
+
+    /// @dev Лічильник адміністраторів для запобігання видаленню останнього DEFAULT_ADMIN_ROLE.
+    uint256 private _adminCount;
 
     /// @notice Емітується при мінтингу SFC для кластера.
     /// @param investor Адреса отримувача governance токенів.
@@ -90,6 +94,12 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         require(bytes(clusterId).length <= 256, "SFC: clusterId too long");
         require(totalSupply() + amount <= MAX_SUPPLY, "SFC: cap exceeded");
         _mint(to, amount);
+        // Auto-delegate to self if not yet delegated — ensures voting power is immediately active.
+        // Without this, ERC20Votes requires explicit delegate() call, and most recipients
+        // wouldn't know to delegate, leading to artificially low governance quorum.
+        if (delegates(to) == address(0)) {
+            _delegate(to, to);
+        }
         emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId);
     }
 
@@ -121,6 +131,10 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
 
         for (uint256 i = 0; i < length; i++) {
             _mint(recipients[i], amounts[i]);
+            // Auto-delegate to self if not yet delegated — same rationale as in mint().
+            if (delegates(recipients[i]) == address(0)) {
+                _delegate(recipients[i], recipients[i]);
+            }
             emit ForestMinted(recipients[i], amounts[i], keccak256(bytes(clusterIds[i])), clusterIds[i]);
         }
     }
@@ -152,7 +166,9 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         _unpause();
     }
 
-    /// @dev [B-07] Уніфіковано: whenNotPaused modifier для всіх трансферів (як у SCC).
+    /// @dev [B-07] Трансфери та мінтинг блокуються при паузі, але burn (slash) дозволено.
+    /// @dev Slashing governance токенів — це механізм безпеки DAO, який НЕ повинен блокуватись адміном.
+    ///      Видалення voting power у порушників має бути завжди можливим.
     /// @dev Reentrancy protection is provided by nonReentrant guards on mint(), slash(), and batchMint().
     /// @dev Do NOT add external calls or callbacks to this function without adding nonReentrant guard.
     /// @dev Note: nonReentrant cannot be added here directly — it would conflict with the outer
@@ -160,9 +176,34 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
     function _update(address from, address to, uint256 value)
         internal
         override(ERC20, ERC20Votes)
-        whenNotPaused
     {
+        // Allow burn (slash) to bypass pause — to == address(0) means _burn() was called.
+        // Minting (from == 0, to != 0) and transfers (from != 0, to != 0) are still blocked.
+        if (paused() && to != address(0)) {
+            revert EnforcedPause();
+        }
         super._update(from, to, value);
+    }
+
+    /// @dev Захист від видалення останнього DEFAULT_ADMIN_ROLE.
+    function _grantRole(bytes32 role, address account) internal override returns (bool) {
+        bool granted = super._grantRole(role, account);
+        if (granted && role == DEFAULT_ADMIN_ROLE) {
+            _adminCount++;
+        }
+        return granted;
+    }
+
+    /// @dev Блокує видалення останнього адміна через renounceRole або revokeRole.
+    function _revokeRole(bytes32 role, address account) internal override returns (bool) {
+        if (role == DEFAULT_ADMIN_ROLE) {
+            require(_adminCount > 1, "SFC: cannot remove last admin");
+        }
+        bool revoked = super._revokeRole(role, account);
+        if (revoked && role == DEFAULT_ADMIN_ROLE) {
+            _adminCount--;
+        }
+        return revoked;
     }
 
     /// @notice Override nonces для сумісності ERC20Permit + Nonces.
