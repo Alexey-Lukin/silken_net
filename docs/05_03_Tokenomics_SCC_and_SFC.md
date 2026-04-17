@@ -8,13 +8,12 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 9 — Всі контракти production-ready, блокери закриті (PR #254), готові до Mainnet deployment та зовнішнього аудиту.
+- **Поточний TRL:** TRL 9 — всі контракти production-ready, готові до Mainnet deployment та зовнішнього аудиту
 - **SCC контракт:** ✅ Production-ready (MAX_SUPPLY=1B, MINTER/SLASHER split, ReentrancyGuard, NatSpec, PremiumPaid event, mintForTree alias, audit hardening)
 - **SFC контракт:** ✅ Production-ready (MAX_SUPPLY=100M, SLASHER_ROLE + slash(), ReentrancyGuard, NatSpec, unified `whenNotPaused`, audit hardening)
-- **Аудит-зміцнення (PR #255):** ✅ Додано явну перевірку балансу в `slash()`, валідацію нульових значень у `mint()`/`slash()`, перевірку порожнього батчу у `batchMint()`, NatSpec для MAX_SUPPLY, документацію emit-коментарів у конструкторах, NatSpec щодо EIP-712 chain safety. [B-15] Додано `treeDid`/`clusterId` length limit (≤256 bytes) у `mint()`/`mintForTree()`/`batchMint()` — захист від The Graph DoS; валідацію `recordPremiumPaid()` (`payer != address(0)`, `amount > 0`) — запобігання event spoofing; per-element string validation у `batchMint()` для обох контрактів
+- **Аудит-зміцнення:** ✅ Явна перевірка балансу в `slash()`, валідація нульових значень у `mint()`/`slash()`, перевірка порожнього батчу у `batchMint()`, NatSpec, захист від The Graph DoS (`treeDid`/`clusterId` length ≤256 bytes), валідація `recordPremiumPaid()`, per-element string validation у `batchMint()` для обох контрактів
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
 - **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано
-- **Синхронізація:** 2026-04-16
 - **Пов'язані модулі:**
   - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
   - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)

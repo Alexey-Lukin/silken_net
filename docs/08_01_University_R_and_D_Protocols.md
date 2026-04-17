@@ -1,14 +1,6 @@
-## 08_01: University R&D Protocols (The Hard Science)
+# 08_01: Університетські R&D Протоколи (Тверда Наука)
 
-**Модуль:** 08_01 — ChNU Academic Integration: R&D Validation Protocols
-**Пов'язані модулі:** [01_01 Coaxial Gyroid Topology](01_01_Coaxial_Gyroid_Topology_and_PEEK) · [01_02 Ti-6Al-4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) · [01_03 EBFC Enzymatic Bio-Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) · [08_02 Cybernetic and Mathematical Validation](8_02_Cybernetic_and_Mathematical_Validation) · [08_03 Joint Publications and IP Strategy](08_03_Joint_Publications_and_IP_Strategy)
-**Поточний TRL:** 3 (Протоколи сформульовані; лабораторні контакти встановлюються)
-**Цільовий TRL:** 5 (Акредитовані лабораторні звіти ЧНУ підтверджують біосумісність та енергетику)
-**Стратегічний пріоритет:** P0 — Без академічної верифікації хардвер є "nice theory". Звіт ЧНУ = залізобетонний аргумент для seed-раунду.
-
----
-
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Фундаментальна верифікація фізико-хімічних процесів на межі «Метал-Дерево» (Titanium-Xylem Interface) силами трьох провідних наукових шкіл Черкаського національного університету імені Богдана Хмельницького. Використання академічної експертизи світового рівня для доведення біосумісності, довговічності та енергетичної ефективності гіроїдного анкера. Результат: акредитовані лабораторні дані для whitepaper, pitch deck та сертифікаційних документів.
 
@@ -16,7 +8,20 @@
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
+## ✅ Статус
+
+- **Поточний TRL:** TRL 3 — протоколи сформульовані, лабораторні контакти встановлюються
+- **Стратегічний пріоритет:** P0 — без академічної верифікації хардвер залишається теорією
+- **Пов'язані модулі:**
+  - Гіроїдний анкер → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
+  - Металургія → [`01_02_Ti_6Al_4V_Metallurgy_and_DMLS`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)
+  - EBFC → [`01_03_EBFC_Enzymatic_Bio_Fuel_Cell`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)
+  - Кіберфізична валідація → [`8_02_Cybernetic_and_Mathematical_Validation`](8_02_Cybernetic_and_Mathematical_Validation)
+  - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
+
+---
+
+## 🛑 Блокери
 
 - **Акселерований тест біосумісності не проведено** — блокує seed pitch deck та whitepaper
 - **Синтез штучного ксилемного соку Pinus sylvestris (Черкаський бір)** — потребує контакту з ботаніками

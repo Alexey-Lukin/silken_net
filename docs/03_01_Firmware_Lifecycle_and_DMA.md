@@ -1,16 +1,6 @@
-## 03_01: Firmware Lifecycle and DMA (Фази 0-5, Watchdog, STOP2)
+# 03_01: Життєвий Цикл Прошивки та DMA (Фази 0–5, Watchdog, STOP2)
 
-**Модуль:** 03_01 — Firmware Core Architecture (Soldier & Queen Lifecycles)
-**Пов'язані модулі:** [02_04 EDLC Supercapacitor Buffer](02_04_EDLC_Supercapacitor_Buffer) · [03_02 Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) · [03_03 TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) · [03_04 mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) · [03_05 Hardware AES256 and Security](03_05_Hardware_AES256_and_Security)
-**Поточний TRL:** 6 (C-код написаний, 112 host-based тестів проходять, SSOT зафіксовано цим документом)
-**Цільовий TRL:** 7 (Повна синхронізація логіки мікроконтролера з Wiki; Factory Flashing розблоковано)
-**Статус Аудиту:** Reverse Shaping Cycle 1 — документування поточного стану ("як є") без рефакторингу коду
-
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з `firmware/soldier/main.c`, `firmware/queen/main.c`, `firmware/bio_contracts/bio_contract.rb` та `firmware/test/` станом на 2026-03-24. Усі 137 host-based тестів проходять (`make -C firmware/test`). Виявлені блокери задокументовані в розділі 🛑.
-
-## 🛠️ Development Toolchain (Інструменти Розробки)
-
-> **Нотатка N6 інтегрована (Сесія 2).** Інструменти для розробки та тестування прошивки STM32WLE5JC до отримання фізичних плат.
+## 🛠️ Інструментарій Розробки
 
 ### STM32CubeIDE
 
@@ -31,9 +21,7 @@
 4. Запустити host-based тести (make -C firmware/test) без будь-якого ARM toolchain
 5. Запустити Wokwi-симуляцію для логіки сенсорів та пакетного формату
 
-### STM32CubeMX Pinout Configuration (6 Каналів Сенсора + SWD)
-
-> **Нотатка інтегрована (2026-03-25).** Покроковий протокол налаштування Pinout у STM32CubeIDE для кожного апаратного каналу вузла Soldier (STM32WLE5JC).
+### Конфігурація Pinout STM32CubeMX (6 Каналів Сенсора + SWD)
 
 #### Канальна Карта (Channel Map)
 
@@ -100,8 +88,7 @@ PA0 (Piezo):   Клік на пін PA0 на схемі → GPIO_EXTI0  (Кан�
 
 > ⚠️ **Критично:** Код поза `USER CODE BEGIN/END` зонами буде **стертий** при наступній регенерації конфігурації CubeMX. Вся бізнес-логіка Soldier — тільки всередині цих тегів.
 
-
-### Host-Based Tests (без CubeIDE, без плат)
+### Host-Based Тести (без CubeIDE, без плат)
 
 ```bash
 # Запуск всіх 137 тестів на x86 (не потрібен ARM toolchain)
@@ -117,8 +104,6 @@ make -C firmware/test queen
 Компілятор: `gcc` (системний x86). Тести покривають: CIFO, AES, Lorenz, OTA, Mesh, CRC32, DID-генерацію.
 
 ### Фізичне Підключення Апаратного Відладчика (ST-LINK-V3MINIE + FT232RL)
-
-> **Нотатка інтегрована (2026-03-25).** Протокол фізичної синхронізації відладчика на Breadboard перед першою прошивкою.
 
 #### Фаза 0: Заземлення (The Shield — Спільна Земля)
 
@@ -163,16 +148,25 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 
 Обидва USB-кабелі підключаються до Mac одночасно. STM32CubeIDE автоматично знаходить ST-LINK; для логів — `screen /dev/cu.usbserial-* 115200` або Serial Monitor у CubeIDE.
 
+---
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Зафіксувати детермінований життєвий цикл (Main Loop) вузлів **Soldier** (датчик дерева) та **Queen** (шлюз-агрегатор), переходи між станами сну та апаратні переривання (ISR) мікроконтролера STM32WLE5JC. Документ слугує SSOT для Factory Flashing (масового виробництва) та OTA-розгортання.
 
-> Цей документ **не** рефакторить код. Він фіксує "як є" — включаючи всі відомі ризики та відкриті блокери.
-
 ---
 
-## ✅ Статус (Status)
+## ✅ Статус
+
+- **Поточний TRL:** TRL 6 — C-код написаний, 137 host-based тестів проходять
+- **Пов'язані модулі:**
+  - EDLC Супераконденсатор → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
+  - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
+  - TinyML Акустичний Інференс → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
+  - mruby Атрактор Лоренца → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
+  - Апаратний AES-256 та Безпека → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+
+---
 
 | Компонент | Стан |
 |-----------|------|
@@ -193,9 +187,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
-
-> Цей розділ є виходом аудиту "Reverse Shaping". Жодного рефакторингу не виконувалось — тільки виявлення.
+## 🛑 Блокери
 
 ### 🔴 BLOCKER-1: Hardcoded AES-256 Key у Flash-пам'яті
 
@@ -343,29 +335,6 @@ void Error_Handler(void) {
 
 ---
 
-### 🟢 INFO: Зафіксовані та Виправлені Ризики (Closed)
-
-Наступні ризики виявлено та виправлено безпосередньо в C-коді:
-
-| # | Ризик | Серйозність | Статус |
-|---|-------|-------------|--------|
-| R-01 | LoRa Collision Storm (100+ дерев одночасно) | 🔴 | ✅ Виправлено: HRNG jitter 0-500ms |
-| R-02 | OTA Integrity Gap (запис без CRC) | 🔴 | ✅ Виправлено: CRC32 ISO 3309 |
-| R-03 | OTA Buffer Overflow (chunk_idx * size) | 🔴 | ✅ Виправлено: bounds check |
-| R-04 | ECB Mode не відновлювався після CBC flush | 🔴 | ✅ Виправлено: ECB restore в Flush та Handle_CoAP |
-| R-05 | CIFO Blind Spot (critical trees evicted) | 🟡 | ✅ Виправлено: priority-aware eviction |
-| R-06 | RSSI Negation UB (rssi == -128) | 🟡 | ✅ Виправлено: (int16_t) cast |
-| R-07 | RSSI Truncation (< -128 dBm) | 🟡 | ✅ Виправлено: clamp [-128, 127] |
-| R-08 | mruby Heap Fragmentation | 🟡 | ✅ Виправлено: gc_arena_save/restore |
-| R-09 | mruby Exception Handling | 🟡 | ✅ Виправлено: mrb->exc check |
-| R-10 | Mesh Ping-Pong (3-slot cache) | 🟡 | ✅ Виправлено: розширено до 8 слотів |
-| R-11 | Attractor Sync Drift (8/3 vs 2.666) | 🟠 | ✅ Виправлено: уніфіковано 8.0/3.0 |
-| R-12 | OTA Queen Chunk Underflow | 🟠 | ✅ Виправлено: offset < pending_ota_size |
-| R-13 | Firmware Version Missing (bytes 12-13) | 🟡 | ✅ Виправлено: FIRMWARE_VERSION_ID |
-| R-14 | Queen Health Blind Spot | 🟠 | ✅ Виправлено: DID=0 sentinel |
-| R-15 | OnRxDone Off-by-One (rejected valid 255-byte packets) | 🟡 | ✅ Виправлено: `size > 0 && size <= BUFFER_SIZE` |
-| R-16 | CBC IV Predictability (IV з HAL_GetTick — передбачуваний) | 🟠 | ✅ Виправлено: HRNG-generated IV, fallback XOR mask |
-
 ---
 
 ## 🌲 1. Soldier — Архітектура Вузла-Датчика
@@ -454,7 +423,6 @@ HAL_RNG_GenerateRandomNumber(&hrng, &chaos_seed);
 ```
 
 Апаратний генератор випадкових чисел на основі теплового шуму кристала. Подається як `chaos_seed` до Атрактора Лоренца → робить кожну ітерацію унікальною навіть при однакових фізичних умовах.
-
 
 **RSSI (Канал 5 — Zero-Energy Фенологія):**
 
@@ -963,7 +931,7 @@ HAL_RNG_DeInit(&hrng);                                  // DeInit одразу �
 
 ---
 
-## 🧪 10. Host-Based Test Coverage (137 тестів)
+## 🧪 10. Покриття Host-Based Тестами (137 тестів)
 
 Firmware логіка тестується на x86 з GCC (не потребує ARM toolchain):
 
@@ -973,7 +941,7 @@ make -C firmware/test queen   # Queen-only (79 тестів)
 make -C firmware/test soldier # Soldier-only (58 тестів)
 ```
 
-### Queen Tests (79)
+### Тести Queen (79)
 
 | Модуль | Тести | Що покривається |
 |--------|-------|-----------------|
@@ -989,7 +957,7 @@ make -C firmware/test soldier # Soldier-only (58 тестів)
 | HRNG IV Generation | 5 | Words filled, 16-byte size, RNG instance set, power management (DeInit), not tick-based |
 | CBC Command Decryption | 3 | ECB restored after CMD decrypt, CBC during decrypt, both transitions in sequence |
 
-### Soldier Tests (58)
+### Тести Soldier (58)
 
 | Модуль | Тести | Що покривається |
 |--------|-------|-----------------|
@@ -1122,7 +1090,7 @@ payload_byte = (status << 6) | growth_points
 
 ---
 
-## 🛠️ 12. Test Infrastructure (`firmware/test/`)
+## 🛠️ 12. Тестова Інфраструктура (`firmware/test/`)
 
 ### 12.1 Архітектура x86 Тестів
 

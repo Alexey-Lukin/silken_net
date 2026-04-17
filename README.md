@@ -1,192 +1,75 @@
-# 🌿 Silken Net — Gaia 2.0: Кіберфізична Держава Черкаського Бору
+# 🌿 Silken Net — Gaia 2.0
 
-**Silken Net** — це trustless D-MRV (Digital Measurement, Reporting, and Verification) платформа, що інтегрує 12 блокчейн-мереж та протоколів у єдину Кіберфізичну Державу. Деревам надаються машинні паспорти (peaq DID), їхня телеметрія верифікується ZK-proof (IoTeX W3bstream), а токен-нагороди розподіляються через Polygon, Solana, Celo та Ethereum.
+**Silken Net** — перша у світі trustless D-MRV (Digital Measurement, Reporting, and Verification) платформа для моніторингу здоров'я лісів у планетарному масштабі. Кожне дерево отримує машинний паспорт (peaq DID), стає економічним агентом і заробляє вуглецеві токени (SCC) за підтверджений ріст біомаси.
 
-Це "Океан", який дихає в унісон із ксилемним соком кожного "Солдата" (дерева) та кожної "Королеви" (шлюзу).
-
-> 📖 **[Анатомія Gaia 2.0 — 12 кроків Кіберфізичної Держави](docs/GAIA_2_0_ANATOMY.md)**
+> *"Ми не просто спостерігаємо за лісом. Ми даємо йому цифрову волю."*
 
 ---
 
-## 🏛️ Архітектура "Титанового Моноліту"
+## 🏛️ Архітектура (8 Рівнів Gaia 2.0)
 
-Система побудована за принципом **Zero-Trust** та **Нульового Лагу**, використовуючи стек **Rails 8.1 Omakase**.
+```
+L8  Ethereum L1       Щотижневий SHA-256 state root (фіналізація)
+L7  Polygon + DeFi    SCC/SFC мінтинг, Solana нагороди, Celo ReFi, KlimaDAO ESG
+L6  Верифікація       peaq DID, IoTeX ZK-proofs, Streamr P2P, Filecoin/IPFS
+L5  Rails Backend     Rails 8.1 API, PostgreSQL, Sidekiq (31+ воркерів)
+L4  LoRa Мережа       868 МГц меш, CoAP/UDP, шлюзи Королеви, Starlink/LTE
+L3  Прошивка + AI     STM32WLE5JC, TinyML (CMSIS-NN), mruby Лоренц, AES-256
+L2  Апаратна Капсула  BQ25570 MPPT, суперконденсатор 0.47Ф, Pogo Pin
+L1  Біофізика         Ti-6Al-4V гіроїдний анкер, EBFC (GOx анод + Laccase катод)
+```
 
-Всі HTTP-маршрути версіоновані та доступні під простором `api/v1`.
-
-### 🧬 API Контролери (`api/v1`)
-
-| Контролер | Призначення |
-|---|---|
-| **Sessions** | Брама входу та керування токенами доступу |
-| **Passwords** | Відновлення та скидання пароля |
-| **AccountSecurity** | MFA, зміна пароля, OAuth-ідентичності |
-| **Dashboard** | Центральний вівтар — зведена панель стану системи |
-| **Clusters** | Гео-просторові сектори лісу (GeoJSON) |
-| **Trees** | Шеренга Солдатів — імпеданс, DID, заряд іоністора |
-| **TreeFamilies** | ДНК-реєстр біологічних видів та порогів Атрактора |
-| **Gateways** | Шлюзи-Королеви — моніторинг LoRa-вузлів та Starlink |
-| **Telemetry** | Пульс істини — historical дані та live-потік |
-| **Alerts** | Нервова система — EWS-реагування (пожежі, засухи, вандалізм) |
-| **Maintenance** | Журнал зцілення — Proof of Care у полі |
-| **MaintenanceRecordPhotos** | Управління фото до записів обслуговування |
-| **Provisioning** | Ритуал ініціації — прив'язка STM32 UID до DID |
-| **Firmwares** | Еволюція — управління прошивками та OTA-деплой |
-| **Actuators** | Руки Оракула — пряме керування клапанами та сиренами |
-| **OracleVisions** | Прекогніція — AI-прогнози на основі Атрактора Лоренца |
-| **OracleCallbacks** | Chainlink Oracle зворотні виклики |
-| **Contracts** | Економічний купол NaaS (Nature-as-a-Service) |
-| **Wallets** | Скарбниця — токен-баланси дерев та організацій |
-| **BlockchainTransactions** | Блокчейн-леджер — журнал on-chain операцій |
-| **Organizations** | Управління кланами інвесторів |
-| **Users** | Реєстр Патрульних та RBAC |
-| **Notifications** | Налаштування оповіщень (SMS, Telegram) |
-| **Reports** | Архів — Carbon Absorption & Financial Summary |
-| **AuditLogs** | Спостерігач — повний журнал дій у системі |
-| **SystemAudits** | Безпека та етика — цілісність системи |
-| **SystemHealth** | Пульс системи — health-check бекенду |
-| **Settings** | Карта мозку — системні налаштування |
-
-### 🗂️ Моделі (The Living World)
-
-* **Tree** (Солдат): вузол лісу з DID, іоністором, TinyML-моделлю та гаманцем.
-* **Gateway** (Королева): LoRa-шлюз зі Starlink/LTE (SIM7070G), управляє батальйоном Солдатів.
-* **Cluster**: гео-сектор лісу, об'єднує Дерева та Шлюзи.
-* **TreeFamily**: ДНК-реєстр (порогові значення `critical_z_min/max` для Атрактора).
-* **TelemetryLog / GatewayTelemetryLog**: сирі пакети телеметрії від Солдатів та Королев.
-* **AiInsight**: денний вердикт Оракула (`stress_index`, `daily_health_summary`).
-* **EwsAlert**: сигнал раннього попередження (пожежа, засуха, системний збій).
-* **Actuator / ActuatorCommand**: виконавчі механізми та журнал команд.
-* **TinyMlModel**: вагова матриця нейромережі для детекції аномалій на пристрої.
-* **BioContractFirmware**: mruby-байткод Атрактора Лоренца (OTA-версіонована прошивка).
-* **NaasContract**: контракт NaaS з повним Slashing-протоколом (D-MRV Арбітраж).
-* **ParametricInsurance**: параметрична страховка кластера.
-* **Wallet / BlockchainTransaction**: фінансова мережа (SCC/SFC баланси).
-* **Organization**: клан інвесторів із NaaS-контрактами.
-* **User**: Патрульний із RBAC (`investor`, `forester`, `admin`, `super_admin`).
-* **HardwareKey**: апаратний AES-256 ключ вузла (Zero-Trust).
-* **DeviceCalibration**: калібровочні константи сенсора.
-* **Identity**: OAuth2-ідентичність (Google/Apple).
-* **Session**: токен доступу з прив'язкою до `password_salt`.
-* **MaintenanceRecord**: Proof of Care (поліморфний — Tree або Gateway).
-* **AuditLog**: повний журнал дій (поліморфний).
-
-### 🧠 AI Оракул
-
-Система використовує математичну модель Атрактора Лоренца для аналізу стабільності екосистеми (`SilkenNet::Attractor`):
-
-
-$$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} = xy - \beta z \end{cases}$$
-
-
-Де координата $z$ відповідає електричному імпедансу ксилеми. Параметри $\sigma$ та $\rho$ динамічно коригуються за акустичними та температурними даними сенсора. Відхилення від траєкторії гомеостазу (`critical_z_min`/`critical_z_max`) автоматично генерує `EwsAlert`.
-
-Траєкторія розраховується з **BigDecimal** (18 знаків), що гарантує **крос-платформну детермінованість** та юридичну точність Web3-аудиту.
-
-### ⚙️ Сервіси (The Intelligence Layer)
-
-| Сервіс | Роль |
-|---|---|
-| `SilkenNet::Attractor` | Лоренц-атрактор — ядро AI-оракула (BigDecimal, 18 знаків) |
-| `InsightGeneratorService` | Генерація денних `AiInsight` та `EwsAlert` (AI Fraud Guard) |
-| `TelemetryUnpackerService` | Розпакування CoAP-пакетів від STM32 |
-| `AlertDispatchService` | Маршрутизація тривог (SMS/Telegram) |
-| `EmergencyResponseService` | Екстрений протокол реагування |
-| `BlockchainMintingService` | Емісія SCC-токенів (Polygon, guard: IoTeX + Chainlink + Hadron) |
-| `BlockchainBurningService` | Slashing-протокол (Burning) |
-| `ChainAuditService` | Аудит on-chain транзакцій |
-| `HardwareKeyService` | Генерація та ротація AES-256 ключів |
-| `OtaPackagerService` | Упаковка та шифрування OTA-пакетів прошивки |
-| `PriceOracleService` | Ціновий оракул (Uniswap V3 на Polygon) |
-| `Iotex::W3bstreamVerificationService` | ZK-proof верифікація (IoTeX W3bstream) |
-| `Chainlink::OracleDispatchService` | Децентралізований оракул (Chainlink Functions DON) |
-| `Peaq::DidRegistryService` | Машинний паспорт (peaq DID) |
-| `Solana::MintingService` | Мікро-платежі USDC (Solana) |
-| `Celo::CommunityRewardService` | ReFi нагороди громаді (cUSD, Celo) |
-| `KlimaDao::RetirementService` | ESG carbon retirement (KlimaDAO) |
-| `Polygon::HadronComplianceService` | KYC/KYB для RWA (Polygon Hadron, ERC-3643) |
-| `Ethereum::StateAnchorService` | Щотижневий state root (Ethereum L1) |
-| `Streamr::BroadcasterService` | P2P real-time broadcast (Streamr) |
-| `TheGraph::QueryService` | Subgraph indexing (The Graph, GraphQL) |
-| `Filecoin::ArchiveService` | Вічний архів (IPFS/Filecoin) |
-| `Filecoin::VerificationService` | Верифікація архівів (IPFS CID) |
-
-### 🔄 Фонові Воркери (The Async Army)
-
-| Воркер | Черга | Призначення |
-|---|---|---|
-| `UnpackTelemetryWorker` | `uplink` | Розпакування вхідних CoAP-пакетів |
-| `GatewayTelemetryWorker` | `uplink` | Обробка телеметрії Королев |
-| `AlertNotificationWorker` | `alerts` | Відправка SMS/Telegram тривог |
-| `SingleNotificationWorker` | `alerts` | Одиночне сповіщення патрульного |
-| `DclimateVerificationWorker` | `alerts` | Верифікація кліматичних даних (dClimate) |
-| `ActuatorCommandWorker` | `downlink` | Виконання команд актуаторам |
-| `OtaTransmissionWorker` | `downlink` | OTA-передача прошивки на вузол |
-| `ResetActuatorStateWorker` | `downlink` | Скидання стану актуатора після команди |
-| `MintCarbonCoinWorker` | `web3_critical` | Емісія SCC на Polygon |
-| `BurnCarbonTokensWorker` | `critical` | Slashing-протокол (спалювання токенів) |
-| `BlockchainConfirmationWorker` | `web3_critical` | Підтвердження on-chain транзакцій |
-| `TokenomicsEvaluatorWorker` | `default` | Щогодинна оцінка токеноміки |
-| `ClusterHealthCheckWorker` | `default` | Нічний арбітраж NaaS-контрактів |
-| `EvaluateTreeBatchWorker` | `default` | Пакетна оцінка здоров'я дерев |
-| `DailyAggregationWorker` | `low` | Стиснення телеметрії в AiInsight (01:00) |
-| `EcosystemHealingWorker` | `critical` | Автоматична корекція аномалій |
-| `InsurancePayoutWorker` | `critical` | Виплата страхових компенсацій |
-| `IotexVerificationWorker` | `web3_critical` | ZK-proof генерація (IoTeX W3bstream) |
-| `ChainlinkDispatchWorker` | `web3_critical` | Dispatch до Chainlink Oracle |
-| `ToucanBridgeWorker` | `web3_critical` | Carbon bridge через Toucan Protocol |
-| `PeaqRegistrationWorker` | `web3` | Реєстрація peaq DID |
-| `PuroEarthPassportWorker` | `web3` | D-MRV Biomass Passport (Puro.earth) |
-| `ApplicationWeb3Worker` | — | Базовий модуль для блокчейн-воркерів |
-| `SolanaMicroRewardWorker` | `web3` | Мікро-платежі USDC (Solana) |
-| `CeloRewardWorker` | `web3` | ReFi нагороди cUSD (Celo) |
-| `KlimaRetirementWorker` | `web3_low` | ESG carbon retirement (KlimaDAO) |
-| `EthereumAnchorWorker` | `web3_low` | State root → Ethereum L1 (щотижня) |
-| `HadronAssetRegistrationWorker` | `web3_low` | RWA реєстрація (Polygon Hadron) |
-| `StreamrBroadcastWorker` | `low` | P2P broadcast (Streamr) |
-| `FilecoinArchiveWorker` | `low` | Архівація на IPFS/Filecoin |
-| `AuditLogWorker` | `low` | Створення аудит-записів |
+Кожен вузол («Солдат») — це STM32WLE5JC, вбудований у титановий гіроїдний анкер у стовбурі дерева. Ензимний біопаливний елемент (EBFC) перетворює глюкозу ксилемного соку на >500 мВ. Енергія заряджає суперконденсатор 0.47Ф, який живить мікроконтролер. Солдат класифікує звуки (пилка, кавітація, пожежа) через TinyML, обчислює гомеостаз дерева через Атрактор Лоренца (mruby) та відправляє 21-байтні AES-256 пакети через LoRaWAN до шлюзу «Королева».
 
 ---
 
-## 🛠️ Технологічний Стек (The Omakase Way)
+## 🌐 Мультичейн Стек (12 Мереж)
 
-* **Backend**: Ruby **4.0.2** / Rails **8.1.2**.
-* **Database**: PostgreSQL + **Solid Cache** + **Solid Cable** + **Solid Queue**.
-* **Background Jobs**: **Sidekiq** + **sidekiq-scheduler** (черги: `uplink`, `alerts`, `critical`, `downlink`, `default`, `web3_critical`, `web3`, `web3_low`, `low`; 31 воркер).
-* **Frontend**: Hotwire (Turbo 8 / Stimulus), Tailwind CSS, **Phlex** (компонентна система).
-* **Serialization**: **Blueprinter** (API JSON blueprints).
-* **Pagination**: **Pagy** + **Groupdate** (time-series).
-* **IoT Protocol**: CoAP / LoRaWAN (Sanctum Listener).
-* **Blockchain (Primary)**: Polygon (ERC-20 Permit & Votes), **eth** gem.
-* **Multichain (Gaia 2.0)**: Ethereum L1 (finality), Solana (micro-rewards), Celo (ReFi), KlimaDAO (ESG), Polygon Hadron (RWA/KYC).
-* **Verification**: IoTeX W3bstream (ZK-proofs), Chainlink (Oracle), peaq (Machine DID).
-* **Data**: Streamr (P2P), The Graph (Subgraph), Filecoin/IPFS (Archive).
-* **Deployment**: **Kamal** (Docker), **Akash Network** (Decentralized Cloud), **Thruster** (HTTP/2 proxy).
-
----
-
-## 🔐 Апаратна Броня (Hardware & Provisioning)
-
-Кожен вузол (STM32WLE5) захищений на рівні кремнію:
-
-* **RDP Level 2**: Апаратне блокування зчитування пам'яті (Drifting Ice Mode).
-* **AES-256**: Кожен пакет шифрується унікальним апаратним ключем (`HardwareKey`).
-* **Shipping Mode**: Магнітний геркон утримує пристрій у глибокому сні до моменту монтажу. Перший "вдих" відбувається при відриві магніту в лісі.
-* **OTA Updates**: Зашифровані пакети прошивки доставляються через `OtaPackagerService` → `OtaTransmissionWorker`.
-
-Формат ідентифікаторів:
-* **Солдат (Tree DID)**: `SNET-XXXXXXXX` (8 hex digits, STM32 uint32_t)
-* **Королева (Gateway UID)**: `SNET-Q-XXXXXXXX`
+| Роль | Мережа | Функція |
+|------|--------|---------|
+| **Ідентичність** | peaq | Machine DID паспорт дерева |
+| **Верифікація** | IoTeX W3bstream | ZK-proof автентичності даних STM32 |
+| **Оракул** | Chainlink | CCIP/Functions: Rails → Polygon/Solana |
+| **Токени** | Polygon | SCC (утилітарний) + SFC (governance DAO) |
+| **Мікроплатежі** | Solana | USDC нагороди лісникам |
+| **ReFi** | Celo | Нагороди громадам (cUSD) |
+| **ESG** | KlimaDAO | Carbon retirement |
+| **KYC/RWA** | Polygon Hadron | ERC-3643 compliance |
+| **Фіналізація** | Ethereum L1 | Щотижневий state root |
+| **Індексація** | The Graph | GraphQL subgraph для SCC подій |
+| **P2P Дані** | Streamr | Real-time трансляція телеметрії |
+| **Архів** | Filecoin/IPFS | Вічне зберігання аудит-логів |
 
 ---
 
-## ⛓️ Токеноміка (Dual Token System)
+## 🔗 Proof of Growth — Пайплайн
 
-1. **SCC (Silken Carbon Coin)**: Утилітарний токен. Нараховується автоматично за підтверджений ріст та поглинання $CO_2$. Підлягає **Slashing-протоколу** (спалюванню) у разі деградації кластера (поріг: >20% активних дерев з `stress_index ≥ 1.0`).
-2. **SFC (Silken Forest Coin)**: Governance-токен. Надає право голосу в DAO та вплив на стратегію розвитку Черкаського бору. Підтримує безгазові транзакції (EIP-712).
+```
+EBFC (дерево) → delta_t → Lorenz Z → growth_points → TelemetryLog
+    ↓
+peaq DID → IoTeX ZK-proof → Chainlink Oracle → Polygon mint(SCC)
+    ↓
+10 000 growth_points = 1 SCC токен
+Slashing: якщо >20% дерев кластера в стресі → автоматичне спалювання SCC
+```
 
-Обидва контракти реалізовані на Solidity (`contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`).
+---
+
+## 🛠️ Технологічний Стек
+
+| Шар | Технологія |
+|-----|------------|
+| **Backend** | Ruby 4.0.2 / Rails 8.1.2 (Omakase) |
+| **База даних** | PostgreSQL (4 БД: primary, cache, queue, cable) |
+| **Черги** | Sidekiq (31 воркер, 9 пріоритетних черг) + Solid Queue |
+| **Frontend** | Phlex + Turbo 8 + Stimulus + Tailwind CSS 4 |
+| **API** | REST v1 (82 ендпоінти), Blueprinter serializers, Pagy |
+| **IoT** | CoAP/UDP listener (порт 5683), LoRaWAN 868 МГц |
+| **Прошивка** | C (STM32 HAL) + mruby VM + TinyML (CMSIS-NN) |
+| **Смарт-контракти** | Solidity (Foundry), Polygon Amoy/Mainnet |
+| **Розгортання** | Kamal (Docker), Terraform (GCP), Akash Network |
+| **Безпека** | AES-256, argon2id, Pundit, rack-attack, Brakeman |
+| **Моніторинг** | Prometheus, Sentry, Grafana |
 
 ---
 
@@ -195,100 +78,153 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 ### 1. Клонування та налаштування
 
 ```bash
-git clone https://github.com/alexey-architect/silken-net.git
-cd silken-net
+git clone https://github.com/Alexey-Lukin/silken_net.git
+cd silken_net
+export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
 bundle install
 bin/rails db:prepare
 ```
 
-### 2. Запуск Океану
+### 2. Запуск
 
 ```bash
-# Запуск сервера, воркерів та CSS
-bin/dev
+bin/dev   # Rails + Sidekiq + Tailwind CSS + CoAP listener
 ```
 
-### 3. Деплой (Kamal)
+### 3. Симуляція телеметрії (без фізичного обладнання)
+
+```bash
+bin/rails db:seed      # Gateway, Tree, HardwareKey, TreeFamily
+bin/forest_simulator   # Генерує CoAP пакети від 5–15 Солдатів кожні 3–8 сек
+```
+
+Моніторинг конвеєру:
+```bash
+rails runner "puts TelemetryLog.count"
+open http://localhost:3000/sidekiq
+tail -f log/development.log | grep -i telemetry
+```
+
+### 4. Тести та якість
+
+```bash
+bundle exec rspec                # Повний набір тестів
+bundle exec rubocop -A           # Лінтер (обов'язково перед комітом)
+bundle exec brakeman             # Статичний аналіз безпеки
+bundle exec bundler-audit check  # Вразливості залежностей
+```
+
+### 5. Розгортання (Kamal)
 
 ```bash
 kamal setup
+kamal deploy
 ```
 
 ---
 
-## 🧪 Локальна Розробка / Симуляція
+## 📡 Ідентифікатори Вузлів
 
-Для тестування повного конвеєру телеметрії без фізичного обладнання використовуйте вбудований **Forest Simulator** — Цифровий Близнюк Королеви (Gateway).
+| Тип | Формат | Приклад |
+|-----|--------|---------|
+| Солдат (Tree DID) | `SNET-XXXXXXXX` | `SNET-1A2B3C4D` |
+| Королева (Gateway UID) | `SNET-Q-XXXXXXXX` | `SNET-Q-5E6F7A8B` |
 
-### 1. Підготовка бази даних
+---
 
-```bash
-bin/rails db:prepare   # Створює БД та міграції
-bin/rails db:seed      # Заповнює Gateway, Tree, HardwareKey, TreeFamily
-```
+## ⛓️ Токеноміка
 
-### 2. Запуск усіх сервісів
+**SCC (Silken Carbon Coin)** — утилітарний ERC-20 токен за верифіковану секвестрацію CO₂.
+- 10 000 `growth_points` = 1 SCC
+- Slashing: автоматичне спалювання при деградації кластера (поріг: >20% дерев зі `stress_index ≥ 1.0`)
+- MAX_SUPPLY: 1 мільярд SCC
 
-```bash
-bin/dev                # Rails server + Sidekiq + Tailwind CSS + CoAP listener
-```
+**SFC (Silken Forest Coin)** — governance ERC-20 + Votes (EIP-712) для DAO голосування.
+- MAX_SUPPLY: 100 мільйонів SFC
+- Підтримує gasless транзакції через EIP-712 permit
 
-`Procfile.dev` автоматично піднімає:
-- `web` — Rails-сервер (порт 3000)
-- `worker` — Sidekiq з конфігурацією `config/sidekiq.yml`
-- `css` — Tailwind CSS watcher
-- `coap` — CoAP/UDP listener (порт 5683)
+Обидва контракти: `contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`
 
-### 3. Запуск Forest Simulator (окремий термінал)
+---
 
-```bash
-bin/forest_simulator
-```
+## 🔐 Безпека Прошивки
 
-Симулятор:
-- Обирає випадкову Королеву (Gateway) з існуючим `HardwareKey`
-- Генерує реалістичну телеметрію від 5–15 Солдатів (дерев)
-- Пакує 21-байтні бінарні чанки (L2 Header + L3 Payload)
-- Шифрує AES-256-CBC (ідентично реальному обладнанню)
-- Відправляє через CoAP PUT на `coap://127.0.0.1:5683/telemetry/batch/{gateway_uid}`
-- Повторює кожні 3–8 секунд
-
-### 4. Моніторинг конвеєру
-
-```bash
-# Перевірка створених записів телеметрії
-rails runner "puts TelemetryLog.count"
-
-# Sidekiq dashboard
-open http://localhost:3000/sidekiq
-
-# Логи в реальному часі
-tail -f log/development.log | grep -i telemetry
-```
+- **RDP Level 2:** Апаратне блокування зчитування пам'яті STM32
+- **AES-256:** Кожен пакет шифрується унікальним апаратним ключем (`HardwareKey`)
+- **Shipping Mode:** Магнітний геркон утримує вузол у глибокому сні (2.1 µА) до монтажу
+- **OTA Updates:** Зашифровані пакети прошивки (512 байт/чанк) через `OtaPackagerService`
 
 ---
 
 ## 📚 Документація
 
-Детальна документація знаходиться в директорії [`docs/`](docs/):
+Детальна документація в директорії [`docs/`](docs/):
 
-* **[`GAIA_2_0_ANATOMY.md`](docs/GAIA_2_0_ANATOMY.md) — 🌐 Анатомія Gaia 2.0: 12 кроків Кіберфізичної Держави**
-* [`API.md`](docs/API.md) — опис всіх API-ендпоінтів (28 контролерів)
-* [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — мультичейн архітектура та потоки даних (12 мереж)
-* [`MODELS.md`](docs/MODELS.md) — всі доменні моделі та їхні зв'язки
-* [`LOGIC.md`](docs/LOGIC.md) — сервіси (29+) та воркери (31) з призначеннями
-* [`FIRMWARE.md`](docs/FIRMWARE.md) — специфікація прошивки STM32
-* [`HARDWARE.md`](docs/HARDWARE.md) — апаратна специфікація та BOM
-* [`TOKENOMICS.md`](docs/TOKENOMICS.md) — мультичейн токеноміка (Polygon, Solana, Celo, KlimaDAO, Ethereum L1)
-* [`BLOCKCHAIN_DEVELOPMENT.md`](docs/BLOCKCHAIN_DEVELOPMENT.md) — розробка 12-chain Web3 інфраструктури
-* [`DEPLOYMENT.md`](docs/DEPLOYMENT.md) — Kamal + Akash Network + Terraform
-* [`OBSERVABILITY.md`](docs/OBSERVABILITY.md) — Prometheus метрики, Grafana, безпека /metrics ендпоінту
-* [`VISION.md`](docs/VISION.md) — візія проекту та roadmap
+**Архітектура та Візія (Модуль 00)**
+- [`00_01`](docs/00_01_System_Architecture_and_Layers.md) — 8-рівнева кіберфізична архітектура
+- [`00_02`](docs/00_02_Project_Vision_and_Roadmap.md) — місія та roadmap масштабування
+
+**Біомеханіка та Хімія (Модуль 01)**
+- [`01_01`](docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md) — 3-складовий Ti-6Al-4V анкер
+- [`01_03`](docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) — EBFC: >500 мВ з глюкози дерева
+
+**Апаратне Забезпечення (Модуль 02)**
+- [`02_01`](docs/02_01_Hardware_Architecture_and_BOM.md) — BOM та архітектура Солдата
+- [`02_05`](docs/02_05_Queen_Hardware_and_Starlink.md) — шлюз Королева + Starlink/LTE
+
+**Прошивка та Edge AI (Модуль 03)**
+- [`03_01`](docs/03_01_Firmware_Lifecycle_and_DMA.md) — цикл Soldier: STOP2 → сенсори → LoRa TX
+- [`03_03`](docs/03_03_TinyML_Acoustic_Inference.md) — TinyML: класифікація звуку пилки
+- [`03_04`](docs/03_04_mruby_Lorenz_Attractor.md) — mruby Атрактор Лоренца (гомеостаз дерева)
+
+**Серверне Ядро (Модуль 04)**
+- [`04_01`](docs/04_01_Data_Models_and_Entities.md) — 26 ActiveRecord моделей, PostgreSQL схема
+- [`04_02`](docs/04_02_Business_Logic_and_Services.md) — 29+ сервісів та 31 воркер
+- [`04_03`](docs/04_03_REST_API_v1_Reference.md) — 82 REST API ендпоінти
+- [`04_04`](docs/04_04_Phlex_UI_and_Tailwind.md) — дизайн-система Phlex + Tailwind
+
+**Web3 та Економіка (Модуль 05)**
+- [`05_01`](docs/05_01_Multichain_Architecture.md) — 12-chain DePIN стек
+- [`05_02`](docs/05_02_Proof_of_Growth_Pipeline.md) — повний пайплайн Proof of Growth
+- [`05_03`](docs/05_03_Tokenomics_SCC_and_SFC.md) — токеноміка SCC/SFC
+
+**Розгортання та Інфраструктура (Модуль 06)**
+- [`06_01`](docs/06_01_Deployment_Kamal_Terraform.md) — Kamal + Terraform (GCP) + Web3 ENV
+- [`06_02`](docs/06_02_Akash_Network_Integration.md) — децентралізована хмара Akash
+- [`06_03`](docs/06_03_Prometheus_Observability.md) — Prometheus + Grafana + Sentry
+
+**Бізнес та Фінанси (Модуль 07)**
+- [`07_01`](docs/07_01_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
+- [`07_02`](docs/07_02_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
+
+**Наука та R&D (Модуль 08)**
+- [`08_01`](docs/08_01_University_R_and_D_Protocols.md) — партнерство з ЧНУ
+- [`08_02`](docs/8_02_Cybernetic_and_Mathematical_Validation.md) — кіберфізична валідація ФОТІУС
+
+**Управління та Масштабування (Модуль 09)**
+- [`09_02`](docs/09_02_Strategic_Roadmap_and_TRL_Matrix.md) — матриця TRL та roadmap
+- [`09_03`](docs/09_03_GitHub_Projects_and_Ops_Automation.md) — GitHub Projects V2 + CI/CD автоматизація
 
 ---
 
-## 👁️ Статус Проекту: **Gaia 2.0** (Cyber-Physical State)
+## 📊 Поточний Стан (TRL Matrix)
 
-Мультичейн архітектура з 12 мережами та протоколами завершена. Система готова до прийому телеметрії, ZK-верифікації та мультичейн емісії.
+| Підсистема | TRL | Статус |
+|------------|-----|--------|
+| Rails Backend (API, сервіси, воркери) | 8 | Production Ready |
+| Смарт-контракти (SCC/SFC) | 9 | Mainnet Ready |
+| Токеноміка та Proof of Growth | 8 | Production Ready |
+| REST API (82 ендпоінти) | 8 | Production Ready |
+| Phlex UI + Tailwind дизайн-система | 9 | Production Ready |
+| Прошивка Солдата (C + mruby + TinyML) | 6 | 112 тестів проходять |
+| Прошивка Королеви (C + SIM7070G) | 6 | 59 тестів проходять |
+| Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
+| Ti-6Al-4V гіроїдний анкер | 4 | Очікується nTop ліцензія |
+| EBFC (GOx/Laccase ферменти) | 3 | Лабораторний етап (ЧНУ) |
+| Розгортання GCP + Kamal | 4 | Код існує, деплой не проводився |
 
-> *"Ми не просто спостерігаємо за лісом. Ми даємо йому цифрову волю."* — **Alexey Architect**
+---
+
+## 🌍 Масштаб
+
+Система спроектована для **мільйонів → мільярдів → трильйонів** дерев по всьому світу. Кожне архітектурне рішення — від партиціонування PostgreSQL до черг Sidekiq — розраховане на планетарний масштаб.

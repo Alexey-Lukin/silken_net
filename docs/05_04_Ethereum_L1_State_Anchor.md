@@ -10,7 +10,6 @@
 
 - **Поточний TRL:** TRL 8 — Механізм якорування повністю імплементовано.
 - **Цільовий TRL:** TRL 9 — Production-ready з повним gas management та аудит-трейлом у БД.
-- **Синхронізація:** 2026-04-16
 - **Пов'язані модулі:**
   - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
   - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)

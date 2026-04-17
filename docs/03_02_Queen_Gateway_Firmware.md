@@ -1,26 +1,25 @@
-# 03_02: Queen Gateway Firmware (LoRa RX → Dedup → CIFO → SIM7070G TX)
-
-**Модуль:** 03_02 — Queen Gateway Firmware (STM32WLE5JC + SIM7070G)
-**Пов'язані модулі:** [03_01 Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) · [03_05 Hardware AES256 and Security](03_05_Hardware_AES256_and_Security) · [04_02 Business Logic and Services](04_02_Business_Logic_and_Services) · [05_02 Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline)
-**Поточний TRL:** 6 (C-код шлюзу написаний, 59 queen-specific host-based тестів проходять, але SSOT взаємодії з мережею відсутня)
-**Цільовий TRL:** 7 (Повна алгоритмічна прозорість маршрутизації та кешування)
-**Статус Аудиту:** Reverse Shaping Cycle 1 — документування поточного стану ("як є") без рефакторингу коду
-
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з `firmware/queen/main.c` (801 рядків) та `firmware/test/test_queen_logic.c` (1337 рядків) станом на 2026-03-24. Всі 59 queen-specific тестів проходять (`make -C firmware/test queen`). Виявлені блокери задокументовані в розділі 🛑. Жодного рефакторингу не виконувалось.
+# 03_02: Прошивка Шлюзу Королеви (LoRa RX → Dedup → CIFO → SIM7070G TX)
 
 ---
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Зафіксувати повний алгоритм роботи вузла **Queen** (шлюз-агрегатор на базі STM32WLE5JC + модем SIM7070G) — від прийому зашифрованого LoRa-пакета від Солдата до відправки бінарного батча на Rails-бекенд через CoAP/UDP. Документ визначає механізм дедуплікації пакетів (CIFO EdgeCache), алгоритм евікції, логіку OTA-бродкасту та повний цикл взаємодії з GSM-модемом.
-
-> Цей документ **не** рефакторить код. Він фіксує "як є" — включаючи всі відомі ризики та відкриті блокери.
 
 > **Критична залежність:** Королева є єдиною точкою виходу ZK-пакетів у Proof of Growth Pipeline (05_02). Втрата пакетів телеметрії на рівні Королеви → ZK-proof не формується → мінтинг SCC блокується → токеноміка руйнується.
 
 ---
 
-## ✅ Статус (Status)
+## ✅ Статус
+
+- **Поточний TRL:** TRL 6 — C-код шлюзу написаний, 59 queen-specific host-based тестів проходять
+- **Пов'язані модулі:**
+  - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
+  - Апаратний AES-256 та Безпека → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+  - Бізнес-Логіка та Сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+  - Proof of Growth Pipeline → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
+
+---
 
 | Компонент | Стан |
 |-----------|------|
@@ -50,9 +49,7 @@
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
-
-> Цей розділ є виходом аудиту "Reverse Shaping". Жодного рефакторингу не виконувалось — тільки виявлення.
+## 🛑 Блокери
 
 ### 🔴 BLOCKER-1: Hardcoded AES-256 Key у Flash-пам'яті
 
@@ -282,26 +279,6 @@ if (current_ota_chunk_idx >= total_chunks) {
 - При скиданні OTA-стану також обнулити `pending_ota_size`, щоб запобігти broadcast з частковим буфером.
 
 **Блокує:** Стабільна OTA-доставка при масовому оновленні лісу, коректна робота шлюзу після першої OTA-сесії.
-
----
-
-### 🟢 INFO: Зафіксовані та Виправлені Ризики (Closed)
-
-Наступні ризики виявлено та виправлено безпосередньо в C-коді:
-
-| # | Ризик | Серйозність | Статус |
-|---|-------|-------------|--------|
-| R-01 | ECB Mode не відновлювався після CBC flush (LoRa decrypt → сміття) | 🔴 | ✅ Виправлено: `hcryp.Init.Algorithm = CRYP_AES_ECB` в `Flush_Cache_To_Rails` та `Handle_CoAP_Command` |
-| R-02 | CIFO Blind Spot (critical fire trees evicted by worst RSSI) | 🟠 | ✅ Виправлено: priority-aware eviction — `bio_status != 0` захищений |
-| R-03 | RSSI Truncation: `(int8_t)rssi` при rssi < -128 → UB, `+126` | 🟡 | ✅ Виправлено: clamp `[-128, 127]` в `OnRxDone` |
-| R-04 | RSSI Negation UB: `(uint8_t)(-rssi)` при rssi == -128 | 🟡 | ✅ Виправлено: `(uint8_t)(-(int16_t)rssi)` в `Flush_Cache_To_Rails` |
-| R-05 | Queen Health Blind Spot (шлюз не звітував про власний стан) | 🟠 | ✅ Виправлено: DID=0 sentinel packet перед кожним flush |
-| R-06 | Thundering Herd (всі Королеви флашать одночасно після blackout) | 🟠 | ✅ Виправлено: HRNG jitter 0–60 секунд, перегенерується після кожного flush |
-| R-07 | OTA chunk underflow: `pending_ota_size - offset` при `offset >= size` | 🟠 | ✅ Виправлено: bounds check `offset < pending_ota_size` |
-| R-08 | OTA chunk index >= OTA_MAX_CHUNKS → bitmap overflow | 🔴 | ✅ Виправлено: guard `chunk_index >= OTA_MAX_CHUNKS → return` |
-| R-09 | OTA duplicate chunk → premature broadcast activation | 🔴 | ✅ Виправлено: 16-bit `ota_chunk_bitmap` для дедуплікації чанків |
-| R-10 | encrypted_batch_buffer на стеку (2064 байти, Stack overflow ризик) | 🔴 | ✅ Виправлено: переміщено до `static uint8_t` |
-| R-11 | ECB для CoAP batch (однакові блоки → однаковий шифротекст) | 🔴 | ✅ Виправлено: CBC з HRNG IV для batch шифрування |
 
 ---
 
@@ -549,7 +526,7 @@ static uint8_t encrypted_batch_buffer[2048 + 16];  ← static (не стек!)
 
 > **Примітка:** Всі три fallback є слабкими при масовому blackout (BLOCKER-8 стосується CBC IV). Для jitter безпека не потрібна. Різниця в масках — це не помилка, а різні вимоги до ентропії.
 
-### Крок 3: Restore ECB
+### Крок 3: Відновлення ECB
 
 ```c
 // [FIX: CRITICAL — ECB Restoration]

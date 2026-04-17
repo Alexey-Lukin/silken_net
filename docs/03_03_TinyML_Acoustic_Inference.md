@@ -1,26 +1,26 @@
-# 03_03: TinyML Acoustic Inference (Аналіз звуку пилки/кавітації)
-
-**Модуль:** 03_03 — TinyML Acoustic Inference (Edge AI на STM32WLE5JC)
-**Пов'язані модулі:** [03_01 Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) · [03_02 Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) · [03_04 mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) · [03_05 Hardware AES256 and Security](03_05_Hardware_AES256_and_Security) · [04_01 Data Models and Entities](04_01_Data_Models_and_Entities)
-**Поточний TRL:** 6 (Модель інтегрована, DMA налаштовано, SSOT відсутня — `Run_Inference()` закоментована)
-**Цільовий TRL:** 7 (Повна прозорість аудіо-пайплайну та вимог до пам'яті)
-**Статус Аудиту:** Reverse Shaping Cycle 1 — документування поточного стану ("як є") без рефакторингу коду
-
-> **⚠️ SSOT Sync:** Цей документ синхронізовано з `firmware/soldier/main.c` (648 рядків) та `firmware/test/test_soldier_logic.c` станом на 2026-03-24. Заголовковий файл нейромережі `silken_net_audio_model.h` **відсутній у репозиторії** (критичний блокер). Виявлені блокери задокументовані в розділі 🛑. Жодного рефакторингу не виконувалось — тільки виявлення.
+# 03_03: TinyML Акустичний Інференс (Аналіз звуку пилки/кавітації)
 
 ---
 
-## 🎯 Мета (Objective)
+## 🎯 Мета
 
 Задокументувати повний аудіо-пайплайн Edge AI вузла **Soldier**: від апаратного переривання (п'єзодиск → вібрація) через збір сигналу ADC/DMA у буфер RAM, нормалізацію у float, до запуску нейромережевого інференсу та прийняття рішення (кавітація / бензопила / тиша). Цей документ є SSOT для всіх команд, що будують на результатах TinyML: EwsAlert pipeline (03_05), Payload Packing (03_01), та backend TelemetryUnpackerService (04_02).
-
-> Цей документ **не** перенавчає та **не** оптимізує модель. Він фіксує "як є" — включаючи всі відомі ризики, пробіли та відкриті блокери.
 
 > **Критична залежність:** `lora_payload[7]` (байт акустичних подій) та `lora_payload[10]` (bio-contract byte) залежать від результату TinyML. Блокування TinyML → порушення Proof of Growth Pipeline → зупинка мінтингу SCC.
 
 ---
 
-## ✅ Статус (Status)
+## ✅ Статус
+
+- **Поточний TRL:** TRL 6 — модель інтегрована, DMA налаштовано; `Run_Inference()` закоментована
+- **Пов'язані модулі:**
+  - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
+  - Прошивка Шлюзу Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
+  - mruby Атрактор Лоренца → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
+  - Апаратний AES-256 та Безпека → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+  - Моделі Даних та Сутності → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
+
+---
 
 | Компонент | Стан |
 |-----------|------|
@@ -42,9 +42,7 @@
 
 ---
 
-## 🛑 Блокери (Blockers / Needs Action)
-
-> Цей розділ є виходом аудиту "Reverse Shaping". Виявлено 8 блокерів/ризиків. Жодного рефакторингу не виконувалось.
+## 🛑 Блокери
 
 ### 🔴 BLOCKER-1: `Run_Inference()` — Виклик інференсу закоментовано
 
@@ -709,7 +707,3 @@ TinyML-результат безпосередньо впливає на Lorenz 
 - **`firmware/soldier/silken_net_audio_model.h`** — ⚠️ відсутній (BLOCKER-2)
 - **CMSIS-DSP Documentation** — `arm_rfft_fast_f32`, `arm_cmplx_mag_f32`
 - **TensorFlow Lite for Microcontrollers** — https://www.tensorflow.org/lite/microcontrollers
-
----
-
-*Документ згенеровано в рамках Reverse Shaping Cycle 1. Дата: 2026-03-24. Статус аудиту: SSOT зафіксовано, 8 блокерів виявлено, жодного рефакторингу не виконано.*
