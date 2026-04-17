@@ -43,7 +43,7 @@ module Navigation
             nav_item("Queen Relays", api_v1_gateways_path, "radio")
             nav_item("Species DNA", api_v1_tree_families_path, "activity") # Нове: Геноми
             nav_item("Firmware OTA", api_v1_firmwares_path, "cpu")
-            nav_item("Live Telemetry", live_api_v1_telemetry_index_path, "activity", pulse: true)
+            nav_item("Live Telemetry", live_stream_api_v1_telemetry_index_path, "activity", pulse: true)
             nav_item("Initiate Node", new_api_v1_provisioning_path, "zap") # Швидкий доступ до ініціації
           end
 
