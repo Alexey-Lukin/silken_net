@@ -153,4 +153,33 @@ RSpec.describe AccountSecurity::Show do
       expect(html).not_to include("Link Google Oauth2")
     end
   end
+
+  describe "unlink button" do
+    context "when user has password and single identity" do
+      it "renders the Unlink button form" do
+        user_with_pwd = mock_user(password_digest: "hashed_secret")
+        identity = mock_identity(provider: "google_oauth2")
+        html = render_component(user: user_with_pwd, identities: [ identity ])
+        expect(html).to include("Unlink")
+        expect(html).to include("delete")
+      end
+    end
+
+    context "when user has no password and only one active identity" do
+      it "renders disabled Unlink span" do
+        user_no_pwd = mock_user(password_digest: nil)
+        identity = mock_identity(provider: "google_oauth2", active: true)
+        html = render_component(user: user_no_pwd, identities: [ identity ])
+        expect(html).to include("cursor-not-allowed")
+      end
+    end
+  end
+
+  describe "provider_icon else branch" do
+    it "renders generic link icon for unknown provider" do
+      identity = mock_identity(provider: "github")
+      html = render_component(user: user, identities: [ identity ])
+      expect(html).to include("🔗")
+    end
+  end
 end

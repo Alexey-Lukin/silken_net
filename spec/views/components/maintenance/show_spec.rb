@@ -12,6 +12,16 @@ unless Maintenance::Show.method_defined?(:edit_api_v1_maintenance_record_path)
   end)
 end
 
+# Ensure PhotoCard route helpers are stubbed for rendering through PhotoGallery.
+unless Views::Shared::UI::PhotoCard.method_defined?(:_test_route_helpers_stubbed)
+  Views::Shared::UI::PhotoCard.prepend(Module.new do
+    def _test_route_helpers_stubbed = true
+    def rails_blob_path(*, **) = "/rails/blobs/mock"
+    def rails_representation_path(*, **) = "/rails/representations/mock"
+    def api_v1_maintenance_record_photo_path(*, **) = "/api/v1/maintenance_records/42/photos/1"
+  end)
+end
+
 RSpec.describe Maintenance::Show do
   def mock_pagy_photos(count: 0, page: 1)
     pg = OpenStruct.new(
@@ -193,6 +203,81 @@ RSpec.describe Maintenance::Show do
       verified_record = mock_record(hardware_verified: true)
       html = render_component(record: verified_record, photos: [], pagy_photos: mock_pagy_photos)
       expect(html).to include("YES")
+    end
+  end
+
+  describe "evidence gallery with photos" do
+    it "renders PhotoGallery when photos are present" do
+      photo = OpenStruct.new(
+        filename: ActiveStorage::Filename.new("evidence.jpg"),
+        byte_size: 1_024_000,
+        representable?: true
+      )
+      photo.define_singleton_method(:variant) { |_style| "variant_thumb" }
+      pagy = mock_pagy_photos(count: 1)
+      html = render_component(record: record, photos: [ photo ], pagy_photos: pagy)
+      expect(html).to include("Evidence Protocol")
+      expect(html).not_to include("No Photos Attached")
+    end
+  end
+
+  describe "no photos placeholder with trust protocol warning" do
+    it "shows trust protocol warning for repair action_type" do
+      repair_record = mock_record(action_type: "repair")
+      html = render_component(record: repair_record, photos: [], pagy_photos: mock_pagy_photos)
+      expect(html).to include("Trust Protocol requires photos for repair")
+    end
+
+    it "shows trust protocol warning for installation action_type" do
+      install_record = mock_record(action_type: "installation")
+      html = render_component(record: install_record, photos: [], pagy_photos: mock_pagy_photos)
+      expect(html).to include("Trust Protocol requires photos for installation")
+    end
+
+    it "does not show trust protocol warning for inspection" do
+      expect(html).not_to include("Trust Protocol requires photos")
+    end
+  end
+
+  describe "metadata panel with ews_alert_id" do
+    it "renders EWS Alert reference when ews_alert_id present" do
+      record_with_ews = mock_record(ews_alert_id: 99)
+      html = render_component(record: record_with_ews, photos: [], pagy_photos: mock_pagy_photos)
+      expect(html).to include("EWS Alert")
+      expect(html).to include("#99")
+    end
+  end
+
+  describe "GPS drift colors" do
+    let(:tree_with_coords) do
+      t = mock_maintainable
+      t.define_singleton_method(:latitude) { 49.4285 }
+      t.define_singleton_method(:longitude) { 32.0620 }
+      t
+    end
+
+    before do
+      allow(SilkenNet::GeoUtils).to receive(:haversine_distance_m).and_return(drift)
+    end
+
+    context "when drift is between 50 and 500 meters" do
+      let(:drift) { 200.0 }
+
+      it "renders warning color for moderate drift" do
+        record_with_gps = mock_record(latitude: 49.43, longitude: 32.07, maintainable: tree_with_coords)
+        html = render_component(record: record_with_gps, photos: [], pagy_photos: mock_pagy_photos)
+        expect(html).to include("text-status-warning-text")
+      end
+    end
+
+    context "when drift is over 500 meters" do
+      let(:drift) { 800.0 }
+
+      it "renders danger color for large drift" do
+        record_with_gps = mock_record(latitude: 49.50, longitude: 32.20, maintainable: tree_with_coords)
+        html = render_component(record: record_with_gps, photos: [], pagy_photos: mock_pagy_photos)
+        expect(html).to include("text-red-400")
+      end
     end
   end
 end

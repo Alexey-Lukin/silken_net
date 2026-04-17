@@ -164,4 +164,20 @@ RSpec.describe Trees::Index do
       expect(rendered).to include("Sector Matrix Deployment")
     end
   end
+
+  describe "status text else branch" do
+    it "renders unknown status with default gray text" do
+      trees = [ mock_tree(status: "unknown_status") ]
+      rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
+      expect(rendered).to include("text-gray-700")
+    end
+  end
+
+  describe "pagination url_helper" do
+    it "renders pagination links with cluster path" do
+      multi_pagy = mock_pagy(count: 50, page: 1, last: 3)
+      rendered = render_component(cluster: cluster, trees: trees, pagy: multi_pagy)
+      expect(rendered).to include("page=2")
+    end
+  end
 end

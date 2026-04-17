@@ -149,5 +149,18 @@ RSpec.describe Users::Profile do
       html = render_component(user: user, active_identities: [ identity ])
       expect(html).to include("Twitter")
     end
+
+    it "renders provider badge for facebook with blue icon" do
+      identity = mock_identity(provider: "facebook")
+      html = render_component(user: user, active_identities: [ identity ])
+      expect(html).to include("Facebook")
+      expect(html).to include("🟦")
+    end
+
+    it "renders generic link icon for unknown provider" do
+      identity = mock_identity(provider: "github")
+      html = render_component(user: user, active_identities: [ identity ])
+      expect(html).to include("🔗")
+    end
   end
 end

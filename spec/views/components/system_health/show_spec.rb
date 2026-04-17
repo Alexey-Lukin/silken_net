@@ -98,6 +98,24 @@ RSpec.describe SystemHealth::Show do
     end
   end
 
+  describe "Sidekiq error display" do
+    it "renders sidekiq error message when present" do
+      health = healthy_health
+      health[:sidekiq][:error] = "Redis connection lost"
+      html = render_component(health: health)
+      expect(html).to include("Redis connection lost")
+    end
+  end
+
+  describe "Database error display" do
+    it "renders database error message when present" do
+      health = healthy_health
+      health[:database][:error] = "Too many connections"
+      html = render_component(health: health)
+      expect(html).to include("Too many connections")
+    end
+  end
+
   describe "footer" do
     it "renders last checked timestamp" do
       expect(html).to include("Last checked at")

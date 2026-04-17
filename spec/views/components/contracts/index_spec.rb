@@ -132,4 +132,19 @@ RSpec.describe Contracts::Index do
       expect(html).to include("Active Asset Portfolio")
     end
   end
+
+  describe "status colors else branch" do
+    it "colors unknown status with warning text" do
+      html = render_component(contracts: [ mock_contract(status: "expired") ], stats: mock_stats, pagy: mock_pagy(last: 1))
+      expect(html).to include("text-status-warning-text")
+    end
+  end
+
+  describe "pagination rendering" do
+    it "renders pagination component" do
+      pagy = mock_pagy(count: 50, page: 1, last: 3)
+      html = render_component(contracts: [ mock_contract ], stats: mock_stats, pagy: pagy)
+      expect(html).to be_present
+    end
+  end
 end

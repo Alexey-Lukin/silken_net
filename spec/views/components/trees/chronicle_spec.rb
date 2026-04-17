@@ -123,5 +123,53 @@ RSpec.describe Trees::Chronicle do
       html = render_component(tree: tree, entries: [ warning_entry ], pagy: pagy)
       expect(html).to include("border-status-warning")
     end
+
+    it "renders unknown severity with default emerald border" do
+      entry = mock_entry(severity: :unknown, title: "Unknown Severity")
+      html = render_component(tree: tree, entries: [ entry ], pagy: pagy)
+      expect(html).to include("border-emerald-800")
+    end
+  end
+
+  describe "severity text classes" do
+    it "renders unknown severity with default emerald text" do
+      entry = mock_entry(severity: :unknown, title: "Unknown Severity Text")
+      html = render_component(tree: tree, entries: [ entry ], pagy: pagy)
+      expect(html).to include("text-emerald-400")
+    end
+  end
+
+  describe "event type badge classes" do
+    it "renders stress event with warning badge" do
+      entry = mock_entry(event_type: :stress, title: "Stress Event")
+      html = render_component(tree: tree, entries: [ entry ], pagy: pagy)
+      expect(html).to include("bg-status-warning")
+    end
+
+    it "renders fraud event with danger badge" do
+      entry = mock_entry(event_type: :fraud, title: "Fraud Event")
+      html = render_component(tree: tree, entries: [ entry ], pagy: pagy)
+      expect(html).to include("bg-status-danger")
+    end
+
+    it "renders unknown event type with neutral badge" do
+      entry = mock_entry(event_type: :unknown_type, title: "Unknown Event")
+      html = render_component(tree: tree, entries: [ entry ], pagy: pagy)
+      expect(html).to include("bg-status-neutral")
+    end
+
+    it "renders recovery event with active badge" do
+      entry = mock_entry(event_type: :recovery, title: "Recovery Event")
+      html = render_component(tree: tree, entries: [ entry ], pagy: pagy)
+      expect(html).to include("bg-status-active")
+    end
+  end
+
+  describe "pagination" do
+    it "renders pagination when pagy has multiple pages" do
+      multi_pagy = mock_pagy(count: 50, page: 1, last: 3)
+      html = render_component(tree: tree, entries: [ entry ], pagy: multi_pagy)
+      expect(html).to include("tree_chronicle")
+    end
   end
 end

@@ -2,6 +2,16 @@
 
 require "rails_helper"
 
+# Stub ActiveStorage and route helpers that require real blobs/routes during rendering.
+unless Views::Shared::UI::PhotoCard.method_defined?(:_test_route_helpers_stubbed)
+  Views::Shared::UI::PhotoCard.prepend(Module.new do
+    def _test_route_helpers_stubbed = true
+    def rails_blob_path(*, **) = "/rails/blobs/mock"
+    def rails_representation_path(*, **) = "/rails/representations/mock"
+    def api_v1_maintenance_record_photo_path(*, **) = "/api/v1/maintenance_records/42/photos/1"
+  end)
+end
+
 RSpec.describe Views::Shared::UI::PhotoCard do
   # Minimal mock for ActiveStorage::Blob interface
   let(:mock_photo) do
@@ -128,6 +138,89 @@ RSpec.describe Views::Shared::UI::PhotoCard do
       source = component.method(:render_meta_overlay).source_location.first
       content = File.read(source)
       expect(content).to include("text-micro")
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Full rendering via ApplicationController.renderer
+  # ---------------------------------------------------------------------------
+  describe "rendered output" do
+    let(:renderable_photo) do
+      p = OpenStruct.new(
+        filename: ActiveStorage::Filename.new("forest_canopy.jpg"),
+        byte_size: 2_048_576,
+        representable?: true
+      )
+      p.define_singleton_method(:variant) { |_style| "variant_thumb" }
+      p
+    end
+
+    def render_card(**overrides)
+      opts = { photo: renderable_photo, record: mock_record, editable: false }.merge(overrides)
+      ApplicationController.renderer.render(
+        component_class.new(**opts),
+        layout: false
+      )
+    end
+
+    context "with representable photo" do
+      it "renders an img tag for representable photos" do
+        html = render_card
+        expect(html).to include("<img")
+        expect(html).to include("forest_canopy.jpg")
+      end
+
+      it "renders the meta overlay with filename and size" do
+        html = render_card
+        expect(html).to include("forest_canopy.jpg")
+        expect(html).to include("MB")
+      end
+
+      it "wraps content in the card container" do
+        html = render_card
+        expect(html).to include("bg-gaia-surface")
+        expect(html).to include("border-gaia-border")
+      end
+    end
+
+    context "with non-representable photo" do
+      let(:non_representable_photo) do
+        OpenStruct.new(
+          filename: ActiveStorage::Filename.new("data_export.csv"),
+          byte_size: 512_000,
+          representable?: false
+        )
+      end
+
+      it "renders the file fallback with paperclip icon" do
+        html = render_card(photo: non_representable_photo)
+        expect(html).to include("📎")
+      end
+
+      it "renders the filename in the fallback" do
+        html = render_card(photo: non_representable_photo)
+        expect(html).to include("data_export.csv")
+      end
+
+      it "renders the human-readable file size in the fallback" do
+        html = render_card(photo: non_representable_photo)
+        expect(html).to include("500 KB")
+      end
+    end
+
+    context "with editable true" do
+      it "renders the delete button" do
+        html = render_card(editable: true)
+        expect(html).to include("×")
+        expect(html).to include("Remove photo")
+      end
+    end
+
+    context "with editable false" do
+      it "does not render the delete button" do
+        html = render_card(editable: false)
+        expect(html).not_to include("Remove photo")
+      end
     end
   end
 end

@@ -230,4 +230,12 @@ RSpec.describe BlockchainTransactions::Show do
       expect(html).to include('loading="lazy"')
     end
   end
+
+  describe "status badge else branch" do
+    it "renders unknown status with zinc fallback style" do
+      tx = mock_transaction(status: "manual_review")
+      rendered = render_component(transaction: tx)
+      expect(rendered).to include("bg-zinc-900")
+    end
+  end
 end

@@ -91,4 +91,11 @@ RSpec.describe Alerts::Row do
       expect(html).to include("hover:bg-emerald-950/10")
     end
   end
+
+  describe "severity badge else branch" do
+    it "renders unknown severity with zinc fallback style" do
+      html = render_component(alert: mock_alert(severity: "unknown"))
+      expect(html).to include("bg-zinc-900")
+    end
+  end
 end

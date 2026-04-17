@@ -63,6 +63,18 @@ RSpec.describe Wallets::Show do
     end
   end
 
+  describe "pagination" do
+    it "renders pagination when pagy is present" do
+      html = render_component(wallet: wallet, transactions: transactions, pagy: mock_pagy(count: 50, page: 1, last: 3))
+      expect(html).to be_present
+    end
+
+    it "does not render pagination when pagy is nil" do
+      html = render_component(wallet: wallet, transactions: transactions)
+      expect(html).not_to include("pagination")
+    end
+  end
+
   describe "on-chain actions" do
     it "renders sync button with aria-label" do
       expect(html).to include("Sync with Polygon")

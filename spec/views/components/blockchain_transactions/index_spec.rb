@@ -180,4 +180,20 @@ RSpec.describe BlockchainTransactions::Index do
       expect(rendered).to include("2.0 SCC")
     end
   end
+
+  describe "status color else branch" do
+    it "renders unknown status with default gray text" do
+      txs = [ mock_transaction(status: "manual_review") ]
+      rendered = render_component(transactions: txs, pagy: pagy)
+      expect(rendered).to include("text-gray-600")
+    end
+  end
+
+  describe "pagination url_helper" do
+    it "renders pagination links with correct path" do
+      multi_pagy = mock_pagy(count: 50, page: 1, last: 3)
+      rendered = render_component(transactions: [ mock_transaction ], pagy: multi_pagy)
+      expect(rendered).to include("page=2")
+    end
+  end
 end

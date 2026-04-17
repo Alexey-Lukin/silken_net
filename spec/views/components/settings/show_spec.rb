@@ -111,4 +111,16 @@ RSpec.describe Settings::Show do
       expect(html).to include('name="organization[ai_sensitivity]"')
     end
   end
+
+  describe "logo attached" do
+    it "renders current logo filename when attached" do
+      org = mock_org(logo_attached: true)
+      html = render_component(organization: org)
+      expect(html).to include("Current: logo.png")
+    end
+
+    it "does not render current logo filename when not attached" do
+      expect(html).not_to include("Current:")
+    end
+  end
 end

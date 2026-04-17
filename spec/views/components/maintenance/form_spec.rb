@@ -2,6 +2,16 @@
 
 require "rails_helper"
 
+# Ensure PhotoCard route helpers are stubbed for rendering through PhotoGallery in form.
+unless Views::Shared::UI::PhotoCard.method_defined?(:_test_route_helpers_stubbed)
+  Views::Shared::UI::PhotoCard.prepend(Module.new do
+    def _test_route_helpers_stubbed = true
+    def rails_blob_path(*, **) = "/rails/blobs/mock"
+    def rails_representation_path(*, **) = "/rails/representations/mock"
+    def api_v1_maintenance_record_photo_path(*, **) = "/api/v1/maintenance_records/42/photos/1"
+  end)
+end
+
 RSpec.describe Maintenance::Form do
   def render_component(record:, existing_photos: [])
     ApplicationController.renderer.render(
@@ -117,6 +127,31 @@ RSpec.describe Maintenance::Form do
     def html_with_errors(rec)
       rec.errors.add(:notes, "can't be blank") if rec.errors[:notes].empty?
       render_component(record: rec)
+    end
+  end
+
+  describe "edit form with existing photos" do
+    let(:record) { create(:maintenance_record) }
+
+    it "renders existing photo gallery in edit mode" do
+      photo = OpenStruct.new(
+        filename: ActiveStorage::Filename.new("existing.jpg"),
+        byte_size: 500_000,
+        representable?: true
+      )
+      photo.define_singleton_method(:variant) { |_style| "variant_thumb" }
+
+      mock_pg = OpenStruct.new(count: 1, page: 1, last: 1, from: 1, to: 1, prev: nil, next: nil, vars: { items: 6 })
+      mock_pg.define_singleton_method(:series) { [ 1 ] }
+
+      original_new = Pagy.method(:new)
+      Pagy.define_singleton_method(:new) { |**_kwargs| mock_pg }
+      begin
+        html = render_component(record: record, existing_photos: [ photo ])
+        expect(html).to include("Edit Intervention Record")
+      ensure
+        Pagy.define_singleton_method(:new, original_new)
+      end
     end
   end
 end

@@ -2,6 +2,16 @@
 
 require "rails_helper"
 
+# Ensure PhotoCard route helpers are stubbed for rendering through PhotosPage.
+unless Views::Shared::UI::PhotoCard.method_defined?(:_test_route_helpers_stubbed)
+  Views::Shared::UI::PhotoCard.prepend(Module.new do
+    def _test_route_helpers_stubbed = true
+    def rails_blob_path(*, **) = "/rails/blobs/mock"
+    def rails_representation_path(*, **) = "/rails/representations/mock"
+    def api_v1_maintenance_record_photo_path(*, **) = "/api/v1/maintenance_records/42/photos/1"
+  end)
+end
+
 RSpec.describe Maintenance::PhotosPage do
   def mock_pagy(count: 6, page: 2, next_page: nil)
     pg = OpenStruct.new(
@@ -80,6 +90,19 @@ RSpec.describe Maintenance::PhotosPage do
   describe "editable mode" do
     it "renders without errors in non-editable mode" do
       expect(html).to include("photos_grid_page_2")
+    end
+  end
+
+  describe "photo card rendering" do
+    it "renders PhotoCard for each photo" do
+      photo = OpenStruct.new(
+        filename: ActiveStorage::Filename.new("evidence.jpg"),
+        byte_size: 1_024_000,
+        representable?: true
+      )
+      photo.define_singleton_method(:variant) { |_style| "variant_thumb" }
+      html = render_component(record: record, photos: [ photo ], pagy: mock_pagy)
+      expect(html).to include("evidence.jpg")
     end
   end
 end
