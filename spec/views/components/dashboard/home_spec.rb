@@ -98,12 +98,12 @@ RSpec.describe Dashboard::Home do
 
   describe "event_row delegation" do
     it "renders EwsAlert event rows via EventRow component" do
-      html = render_component(stats: stats, events: [mock_ews_event])
+      html = render_component(stats: stats, events: [ mock_ews_event ])
       expect(html).to include("Threat:")
     end
 
     it "renders BlockchainTransaction event rows" do
-      html = render_component(stats: stats, events: [mock_tx_event])
+      html = render_component(stats: stats, events: [ mock_tx_event ])
       expect(html).to include("SNET-00000042")
     end
   end

@@ -3,8 +3,6 @@
 require "rails_helper"
 
 RSpec.describe AuditLogs::Index do
-
-
   def mock_user(name: "Ada Lovelace")
     OpenStruct.new(full_name: name)
   end
@@ -20,14 +18,14 @@ RSpec.describe AuditLogs::Index do
       created_at: created_at
     )
     log.define_singleton_method(:model_name) { ActiveModel::Name.new(AuditLog) }
-    log.define_singleton_method(:to_key) { [id] }
+    log.define_singleton_method(:to_key) { [ id ] }
     log.define_singleton_method(:to_param) { id.to_s }
     log
   end
 
   let(:log_with_user)    { mock_log(id: 1, action: "update", auditable_type: "Tree", auditable_id: 7, user: mock_user) }
   let(:log_without_user) { mock_log(id: 2, action: "destroy", auditable_type: nil, auditable_id: nil, user: nil) }
-  let(:logs)             { [log_with_user, log_without_user] }
+  let(:logs)             { [ log_with_user, log_without_user ] }
   let(:html)             { render_component(logs: logs, pagy: mock_pagy(count: 63)) }
 
   describe "header" do

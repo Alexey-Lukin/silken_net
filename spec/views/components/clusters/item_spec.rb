@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Clusters::Item do
-
   def mock_cluster(id: 1, name: "Carpathian-Alpha", active_threats: false,
                    total_active_trees: 42, health_index: 0.91)
     cluster = OpenStruct.new(
@@ -14,7 +13,7 @@ RSpec.describe Clusters::Item do
     )
     cluster.define_singleton_method(:active_threats?) { active_threats }
     cluster.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    cluster.define_singleton_method(:to_key) { [id] }
+    cluster.define_singleton_method(:to_key) { [ id ] }
     cluster.define_singleton_method(:to_param) { id.to_s }
     cluster
   end

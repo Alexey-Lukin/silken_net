@@ -2,25 +2,23 @@
 
 require "rails_helper"
 
-RSpec.describe Maintenance::Show do
-  # The Maintenance::Show component references `edit_api_v1_maintenance_record_path` but
-  # the routes do not expose an :edit action for maintenance_records. We patch it here.
-  before(:context) do
-    unless Maintenance::Show.method_defined?(:edit_api_v1_maintenance_record_path)
-      Maintenance::Show.prepend(Module.new do
-        def edit_api_v1_maintenance_record_path(record = nil, **_opts)
-          "/api/v1/maintenance_records/#{record&.to_param}/edit"
-        end
-      end)
+# The Maintenance::Show component references `edit_api_v1_maintenance_record_path` but
+# the routes do not expose an :edit action for maintenance_records. We patch it here.
+unless Maintenance::Show.method_defined?(:edit_api_v1_maintenance_record_path)
+  Maintenance::Show.prepend(Module.new do
+    def edit_api_v1_maintenance_record_path(record = nil, **_opts)
+      "/api/v1/maintenance_records/#{record&.to_param}/edit"
     end
-  end
+  end)
+end
 
+RSpec.describe Maintenance::Show do
   def mock_pagy_photos(count: 0, page: 1)
     pg = OpenStruct.new(
       count: count, page: page, last: 1, from: 1, to: count,
       prev: nil, next: nil, vars: { items: 6 }
     )
-    pg.define_singleton_method(:series) { [1] }
+    pg.define_singleton_method(:series) { [ 1 ] }
     pg
   end
 
@@ -64,7 +62,7 @@ RSpec.describe Maintenance::Show do
       updated_at: updated_at
     )
     r.define_singleton_method(:model_name) { ActiveModel::Name.new(MaintenanceRecord) }
-    r.define_singleton_method(:to_key) { [id] }
+    r.define_singleton_method(:to_key) { [ id ] }
     r.define_singleton_method(:to_param) { id.to_s }
     r.define_singleton_method(:total_cost) { (labor_hours.to_f * 50) + parts_cost.to_f }
     r

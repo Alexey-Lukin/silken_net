@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Telemetry::LogEntry do
-
   def mock_gateway(uid: "SNET-Q-AABB0011", ip_address: "192.168.1.100")
     OpenStruct.new(uid: uid, ip_address: ip_address)
   end

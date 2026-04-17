@@ -6,7 +6,7 @@ RSpec.describe OracleVisions::SimulationPanel do
   def mock_cluster(id:, name:)
     c = OpenStruct.new(id: id, name: name)
     c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [id] }
+    c.define_singleton_method(:to_key) { [ id ] }
     c.define_singleton_method(:to_param) { id.to_s }
     c
   end

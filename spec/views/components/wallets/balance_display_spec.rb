@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Wallets::BalanceDisplay do
-
   def mock_wallet(id: 1, scc_balance: 42.123456, tree_did: "TREE::0xBEEF", org_name: nil)
     tree = tree_did ? OpenStruct.new(did: tree_did) : nil
     org  = org_name ? OpenStruct.new(name: org_name) : nil

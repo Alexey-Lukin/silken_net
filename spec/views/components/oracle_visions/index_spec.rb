@@ -17,7 +17,7 @@ RSpec.describe OracleVisions::Index do
   def mock_cluster(id:, name:)
     c = OpenStruct.new(id: id, name: name)
     c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [id] }
+    c.define_singleton_method(:to_key) { [ id ] }
     c.define_singleton_method(:to_param) { id.to_s }
     c
   end
@@ -29,8 +29,8 @@ RSpec.describe OracleVisions::Index do
     )
   end
 
-  let(:clusters) { [mock_cluster(id: 1, name: "Carpathian-Alpha")] }
-  let(:visions) { [mock_insight, mock_insight(insight_type: "frost_risk", confidence_score: 88)] }
+  let(:clusters) { [ mock_cluster(id: 1, name: "Carpathian-Alpha") ] }
+  let(:visions) { [ mock_insight, mock_insight(insight_type: "frost_risk", confidence_score: 88) ] }
   let(:html) { render_component(visions: visions, yield_forecast: "12.45", clusters: clusters) }
 
   describe "header section" do

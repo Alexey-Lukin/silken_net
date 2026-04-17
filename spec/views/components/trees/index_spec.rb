@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe Trees::Index do
   let(:cluster) { mock_cluster }
-  let(:trees) { [mock_tree] }
+  let(:trees) { [ mock_tree ] }
   let(:pagy) { mock_pagy(count: 1, last: 1) }
   let(:html) { render_component(cluster: cluster, trees: trees, pagy: pagy) }
 
@@ -12,7 +12,7 @@ RSpec.describe Trees::Index do
   def mock_cluster(id: 1, name: "Carpathian-Alpha", active_trees_count: 5)
     c = OpenStruct.new(id: id, name: name, active_trees_count: active_trees_count)
     c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [id] }
+    c.define_singleton_method(:to_key) { [ id ] }
     c.define_singleton_method(:to_param) { id.to_s }
     c
   end
@@ -28,7 +28,7 @@ RSpec.describe Trees::Index do
     )
     t.define_singleton_method(:under_threat?) { under_threat }
     t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
-    t.define_singleton_method(:to_key) { [1] }
+    t.define_singleton_method(:to_key) { [ 1 ] }
     t.define_singleton_method(:to_param) { "1" }
     t
   end
@@ -73,20 +73,20 @@ RSpec.describe Trees::Index do
     end
 
     it "shows red pulsing LED when under threat" do
-      trees = [mock_tree(under_threat: true)]
+      trees = [ mock_tree(under_threat: true) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-red-600")
       expect(rendered).to include("animate-pulse")
     end
 
     it "shows gray LED when silent for over 24 hours" do
-      trees = [mock_tree(last_seen_at: 25.hours.ago)]
+      trees = [ mock_tree(last_seen_at: 25.hours.ago) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-gray-800")
     end
 
     it "shows gray LED when last_seen_at is nil" do
-      trees = [mock_tree(last_seen_at: nil)]
+      trees = [ mock_tree(last_seen_at: nil) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-gray-800")
     end
@@ -98,19 +98,19 @@ RSpec.describe Trees::Index do
     end
 
     it "renders dormant status with gray text" do
-      trees = [mock_tree(status: "dormant")]
+      trees = [ mock_tree(status: "dormant") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("text-gray-600")
     end
 
     it "renders removed status with red text" do
-      trees = [mock_tree(status: "removed")]
+      trees = [ mock_tree(status: "removed") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("text-red-800")
     end
 
     it "renders deceased status with red text" do
-      trees = [mock_tree(status: "deceased")]
+      trees = [ mock_tree(status: "deceased") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("text-red-800")
     end
@@ -122,13 +122,13 @@ RSpec.describe Trees::Index do
     end
 
     it "shows warning bar when charge between 30-70%" do
-      trees = [mock_tree(charge_percentage: 50)]
+      trees = [ mock_tree(charge_percentage: 50) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-status-warning")
     end
 
     it "shows red pulsing bar when charge < 30%" do
-      trees = [mock_tree(charge_percentage: 20)]
+      trees = [ mock_tree(charge_percentage: 20) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
       expect(rendered).to include("bg-red-600")
       expect(rendered).to include("animate-pulse")

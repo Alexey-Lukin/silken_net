@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe SystemAudits::Index do
-
   def mock_audit(db_total: 1000.0, chain_total: 1000.0, delta: 0.0,
                  critical: false, checked_at: Time.parse("2024-01-15 12:00:00 UTC"))
     audit = OpenStruct.new(

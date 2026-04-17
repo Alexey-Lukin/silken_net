@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Sessions::New do
-
   let(:html) { render_component(flash_alert: nil, flash_notice: nil) }
 
   describe "portal header" do

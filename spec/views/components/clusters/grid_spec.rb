@@ -3,8 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Clusters::Grid do
-
-
   def mock_cluster(id: 1, name: "Carpathian-Alpha", active_threats: false, total_active_trees: 42,
                    health_index: 0.85)
     cluster = OpenStruct.new(
@@ -15,12 +13,12 @@ RSpec.describe Clusters::Grid do
     )
     cluster.define_singleton_method(:active_threats?) { active_threats }
     cluster.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    cluster.define_singleton_method(:to_key) { [id] }
+    cluster.define_singleton_method(:to_key) { [ id ] }
     cluster.define_singleton_method(:to_param) { id.to_s }
     cluster
   end
 
-  let(:clusters) { [mock_cluster(id: 1, name: "Carpathian-Alpha"), mock_cluster(id: 2, name: "Danube-Beta")] }
+  let(:clusters) { [ mock_cluster(id: 1, name: "Carpathian-Alpha"), mock_cluster(id: 2, name: "Danube-Beta") ] }
   let(:html)     { render_component(clusters: clusters, pagy: mock_pagy(count: 63)) }
 
   describe "grid layout" do
@@ -59,7 +57,7 @@ RSpec.describe Clusters::Grid do
 
     it "renders red LED when cluster has active threats" do
       threat_cluster = mock_cluster(id: 3, name: "Threat-Cluster", active_threats: true)
-      html = render_component(clusters: [threat_cluster], pagy: mock_pagy(count: 63))
+      html = render_component(clusters: [ threat_cluster ], pagy: mock_pagy(count: 63))
       expect(html).to include("bg-red-500")
     end
   end

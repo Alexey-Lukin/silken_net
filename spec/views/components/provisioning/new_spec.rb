@@ -3,11 +3,10 @@
 require "rails_helper"
 
 RSpec.describe Provisioning::New do
-
   def mock_cluster(id: 1, name: "Carpathian-Alpha")
     cluster = OpenStruct.new(id: id, name: name)
     cluster.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    cluster.define_singleton_method(:to_key) { [id] }
+    cluster.define_singleton_method(:to_key) { [ id ] }
     cluster.define_singleton_method(:to_param) { id.to_s }
     cluster
   end
@@ -15,18 +14,18 @@ RSpec.describe Provisioning::New do
   def mock_family(id: 1, name: "Oak")
     family = OpenStruct.new(id: id, name: name)
     family.define_singleton_method(:model_name) { ActiveModel::Name.new(TreeFamily) }
-    family.define_singleton_method(:to_key) { [id] }
+    family.define_singleton_method(:to_key) { [ id ] }
     family.define_singleton_method(:to_param) { id.to_s }
     family
   end
 
-  def mock_device_with_errors(messages: ["Hardware UID can't be blank"])
+  def mock_device_with_errors(messages: [ "Hardware UID can't be blank" ])
     errors = double("errors", any?: true, full_messages: messages)
     OpenStruct.new(errors: errors)
   end
 
-  let(:clusters) { [mock_cluster] }
-  let(:families) { [mock_family] }
+  let(:clusters) { [ mock_cluster ] }
+  let(:families) { [ mock_family ] }
   let(:html)     { render_component(clusters: clusters, families: families) }
 
   describe "header section" do

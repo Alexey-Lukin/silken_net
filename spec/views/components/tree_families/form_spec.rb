@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe TreeFamilies::Form do
-
   def mock_family(id: nil, name: nil, scientific_name: nil)
     family = TreeFamily.new(id: id, name: name, scientific_name: scientific_name)
     family.define_singleton_method(:persisted?) { id.present? }

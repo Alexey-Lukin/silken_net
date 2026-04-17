@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Reports::FinancialSummary do
-
   def mock_org(name: "GreenFund")
     OpenStruct.new(name: name)
   end

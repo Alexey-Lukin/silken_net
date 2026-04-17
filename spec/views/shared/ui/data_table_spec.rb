@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::DataTable do
-
   let(:columns) do
     [
       { label: "Name", class: "w-1/3" },

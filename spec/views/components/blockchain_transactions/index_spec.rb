@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe BlockchainTransactions::Index do
-  let(:transactions) { [mock_transaction] }
+  let(:transactions) { [ mock_transaction ] }
   let(:pagy) { mock_pagy(count: 1, last: 1) }
   let(:html) { render_component(transactions: transactions, pagy: pagy) }
 
@@ -28,7 +28,7 @@ RSpec.describe BlockchainTransactions::Index do
       created_at: Time.current
     )
     tx.define_singleton_method(:model_name) { ActiveModel::Name.new(BlockchainTransaction) }
-    tx.define_singleton_method(:to_key) { [id] }
+    tx.define_singleton_method(:to_key) { [ id ] }
     tx.define_singleton_method(:to_param) { id.to_s }
     tx
   end
@@ -96,13 +96,13 @@ RSpec.describe BlockchainTransactions::Index do
     end
 
     it "renders forest_coin with forest token style" do
-      txs = [mock_transaction(token_type: "forest_coin")]
+      txs = [ mock_transaction(token_type: "forest_coin") ]
       rendered = render_component(transactions: txs, pagy: pagy)
       expect(rendered).to include("text-token-forest")
     end
 
     it "renders unknown token with zinc style" do
-      txs = [mock_transaction(token_type: "other_token")]
+      txs = [ mock_transaction(token_type: "other_token") ]
       rendered = render_component(transactions: txs, pagy: pagy)
       expect(rendered).to include("text-zinc-400")
     end
@@ -114,26 +114,26 @@ RSpec.describe BlockchainTransactions::Index do
     end
 
     it "renders processing with warning text and pulse" do
-      txs = [mock_transaction(status: "processing")]
+      txs = [ mock_transaction(status: "processing") ]
       rendered = render_component(transactions: txs, pagy: pagy)
       expect(rendered).to include("text-status-warning-text")
       expect(rendered).to include("animate-pulse")
     end
 
     it "renders sent with warning text and pulse" do
-      txs = [mock_transaction(status: "sent")]
+      txs = [ mock_transaction(status: "sent") ]
       rendered = render_component(transactions: txs, pagy: pagy)
       expect(rendered).to include("text-status-warning-text")
     end
 
     it "renders pending with gray text" do
-      txs = [mock_transaction(status: "pending")]
+      txs = [ mock_transaction(status: "pending") ]
       rendered = render_component(transactions: txs, pagy: pagy)
       expect(rendered).to include("text-gray-400")
     end
 
     it "renders failed with red text" do
-      txs = [mock_transaction(status: "failed")]
+      txs = [ mock_transaction(status: "failed") ]
       rendered = render_component(transactions: txs, pagy: pagy)
       expect(rendered).to include("text-red-500")
     end
@@ -141,7 +141,7 @@ RSpec.describe BlockchainTransactions::Index do
 
   describe "PENDING_BLOCK" do
     it "shows PENDING_BLOCK when tx_hash is nil" do
-      txs = [mock_transaction(tx_hash: nil)]
+      txs = [ mock_transaction(tx_hash: nil) ]
       rendered = render_component(transactions: txs, pagy: pagy)
       expect(rendered).to include("PENDING_BLOCK")
     end
@@ -162,7 +162,7 @@ RSpec.describe BlockchainTransactions::Index do
 
   describe "wallet without tree" do
     it "shows dash when wallet is nil" do
-      txs = [mock_transaction(has_wallet: false)]
+      txs = [ mock_transaction(has_wallet: false) ]
       rendered = render_component(transactions: txs, pagy: pagy)
       # The component calls tx.wallet&.tree&.did || "—"
       expect(rendered).to include("—")

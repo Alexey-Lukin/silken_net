@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::StatusBadge do
-
   describe "AASM state color mapping" do
     it "maps pending to warning semantic token" do
       html = render_component(status: "pending")

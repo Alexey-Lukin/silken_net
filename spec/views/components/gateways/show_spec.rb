@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe Gateways::Show do
   let(:gateway) { mock_gateway }
   let(:latest_log) { mock_latest_log }
-  let(:active_soldiers) { [mock_soldier] }
+  let(:active_soldiers) { [ mock_soldier ] }
   let(:html) { render_component(gateway: gateway, latest_log: latest_log, active_soldiers: active_soldiers) }
 
   def mock_gateway(uid: "SNET-Q-AAB01234", state: "active", ip_address: "192.168.1.42",
@@ -27,7 +27,7 @@ RSpec.describe Gateways::Show do
       hardware_key: hardware_key
     )
     gw.define_singleton_method(:model_name) { ActiveModel::Name.new(Gateway) }
-    gw.define_singleton_method(:to_key) { [1] }
+    gw.define_singleton_method(:to_key) { [ 1 ] }
     gw.define_singleton_method(:to_param) { "1" }
     gw
   end
@@ -170,13 +170,13 @@ RSpec.describe Gateways::Show do
     end
 
     it "renders gray indicator for inactive soldier" do
-      soldiers = [mock_soldier(did: "SNET-INACTIVE", active: false)]
+      soldiers = [ mock_soldier(did: "SNET-INACTIVE", active: false) ]
       rendered = render_component(gateway: gateway, latest_log: latest_log, active_soldiers: soldiers)
       expect(rendered).to include("border-gray-800")
     end
 
     it "renders red pulsing indicator for under-threat soldier" do
-      soldiers = [mock_soldier(did: "SNET-THREAT", active: true, under_threat: true)]
+      soldiers = [ mock_soldier(did: "SNET-THREAT", active: true, under_threat: true) ]
       rendered = render_component(gateway: gateway, latest_log: latest_log, active_soldiers: soldiers)
       expect(rendered).to include("border-red-600")
       expect(rendered).to include("animate-pulse")

@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe SystemHealth::Show do
-
   def healthy_health(queues: { "uplink" => 0, "default" => 2 })
     {
       coap_listener: { alive: true, port: 5683, error: nil },

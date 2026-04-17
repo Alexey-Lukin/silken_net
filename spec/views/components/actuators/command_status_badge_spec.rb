@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Actuators::CommandStatusBadge do
-
   def mock_command(id: 1, status: "confirmed")
     OpenStruct.new(id: id, status: status)
   end

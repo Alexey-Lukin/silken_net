@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Notifications::Settings do
-
   def mock_user(id: 1, email_address: "ada@silken.net", phone_number: "+380501234567",
                telegram_chat_id: "123456789", push_token: nil)
     user = OpenStruct.new(
@@ -14,7 +13,7 @@ RSpec.describe Notifications::Settings do
       push_token: push_token
     )
     user.define_singleton_method(:model_name) { ActiveModel::Name.new(User) }
-    user.define_singleton_method(:to_key) { [id] }
+    user.define_singleton_method(:to_key) { [ id ] }
     user.define_singleton_method(:to_param) { id.to_s }
     user
   end

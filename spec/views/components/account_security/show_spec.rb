@@ -25,7 +25,7 @@ RSpec.describe AccountSecurity::Show do
     i.define_singleton_method(:primary?) { primary }
     i.define_singleton_method(:active?) { active }
     i.define_singleton_method(:model_name) { ActiveModel::Name.new(Identity) }
-    i.define_singleton_method(:to_key) { [1] }
+    i.define_singleton_method(:to_key) { [ 1 ] }
     i.define_singleton_method(:to_param) { "1" }
     i
   end
@@ -107,7 +107,7 @@ RSpec.describe AccountSecurity::Show do
 
   describe "linked identities" do
     let(:identity) { mock_identity(provider: "google_oauth2", uid: "1234567890abcdef0", primary: true) }
-    let(:html) { render_component(user: user, identities: [identity]) }
+    let(:html) { render_component(user: user, identities: [ identity ]) }
 
     it "renders Linked Identity Providers heading" do
       expect(html).to include("Linked Identity Providers")
@@ -129,13 +129,13 @@ RSpec.describe AccountSecurity::Show do
   describe "lock/unlock buttons" do
     it "renders Lock button for an unlocked identity" do
       identity = mock_identity(locked: false)
-      html = render_component(user: user, identities: [identity])
+      html = render_component(user: user, identities: [ identity ])
       expect(html).to include("Lock")
     end
 
     it "renders Unlock button for a locked identity" do
       identity = mock_identity(locked: true)
-      html = render_component(user: user, identities: [identity])
+      html = render_component(user: user, identities: [ identity ])
       expect(html).to include("Unlock")
     end
   end
@@ -143,13 +143,13 @@ RSpec.describe AccountSecurity::Show do
   describe "available providers" do
     it "renders available providers not yet linked" do
       identity = mock_identity(provider: "google_oauth2")
-      html = render_component(user: user, identities: [identity])
+      html = render_component(user: user, identities: [ identity ])
       expect(html).to include("Link Facebook")
     end
 
     it "does not show a provider if already linked" do
       identity = mock_identity(provider: "google_oauth2")
-      html = render_component(user: user, identities: [identity])
+      html = render_component(user: user, identities: [ identity ])
       expect(html).not_to include("Link Google Oauth2")
     end
   end

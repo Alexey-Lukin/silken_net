@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Passwords::Forgot do
-
   let(:html) { render_component(flash_alert: nil, flash_notice: nil) }
 
   describe "header" do

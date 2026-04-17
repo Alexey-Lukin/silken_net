@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Firmwares::New do
-
   def mock_firmware
     fw = OpenStruct.new(
       id: nil,

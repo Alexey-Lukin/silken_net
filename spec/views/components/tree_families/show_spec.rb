@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe TreeFamilies::Show do
-
   def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur",
                   baseline_impedance: 45, carbon_sequestration_coefficient: 1.2,
                   critical_z_min: 10.0, critical_z_max: 80.0,
@@ -25,7 +24,7 @@ RSpec.describe TreeFamilies::Show do
       fire_resistance_rating: fire_resistance_rating
     )
     family.define_singleton_method(:model_name) { ActiveModel::Name.new(TreeFamily) }
-    family.define_singleton_method(:to_key) { [id] }
+    family.define_singleton_method(:to_key) { [ id ] }
     family.define_singleton_method(:to_param) { id.to_s }
     family
   end

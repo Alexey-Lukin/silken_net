@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Alerts::Row do
-
   def mock_alert(id: 7, severity: "medium", alert_type: "fire_detected", status: "active",
                  cluster_name: "Carpathian-7", tree_did: "TREE::0xBEEF", message: "Thermal anomaly detected")
     alert = EwsAlert.allocate

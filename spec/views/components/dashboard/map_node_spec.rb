@@ -15,7 +15,7 @@ RSpec.describe Dashboard::MapNode do
       status: status
     )
     t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
-    t.define_singleton_method(:to_key) { [id] }
+    t.define_singleton_method(:to_key) { [ id ] }
     t.define_singleton_method(:to_param) { id.to_s }
     t
   end

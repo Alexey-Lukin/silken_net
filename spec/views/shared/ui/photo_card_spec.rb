@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::PhotoCard do
-
   # Minimal mock for ActiveStorage::Blob interface
   let(:mock_photo) do
     OpenStruct.new(

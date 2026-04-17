@@ -3,8 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Users::Index do
-
-
   def mock_user(id: 1, first_name: "Ada", last_name: "Lovelace", role: "admin", last_seen_at: Time.current)
     user = OpenStruct.new(
       id: id,
@@ -15,7 +13,7 @@ RSpec.describe Users::Index do
       email_address: "ada@silken.net"
     )
     user.define_singleton_method(:model_name) { ActiveModel::Name.new(User) }
-    user.define_singleton_method(:to_key) { [id] }
+    user.define_singleton_method(:to_key) { [ id ] }
     user.define_singleton_method(:to_param) { id.to_s }
     user
   end
@@ -23,7 +21,7 @@ RSpec.describe Users::Index do
   let(:admin_user)    { mock_user(id: 1, first_name: "Ada", last_name: "Lovelace", role: "admin") }
   let(:forester_user) { mock_user(id: 2, first_name: "Bob", last_name: "Oak", role: "forester") }
   let(:investor_user) { mock_user(id: 3, first_name: "Carol", last_name: "Pine", role: "investor") }
-  let(:users)         { [admin_user, forester_user, investor_user] }
+  let(:users)         { [ admin_user, forester_user, investor_user ] }
   let(:html)          { render_component(users: users) }
 
   describe "header section" do
@@ -84,7 +82,7 @@ RSpec.describe Users::Index do
 
     it "shows Link offline for users without last_seen_at" do
       no_seen_user = mock_user(id: 9, first_name: "Zero", last_name: "X", last_seen_at: nil)
-      html = render_component(users: [no_seen_user])
+      html = render_component(users: [ no_seen_user ])
       expect(html).to include("Link offline")
     end
   end

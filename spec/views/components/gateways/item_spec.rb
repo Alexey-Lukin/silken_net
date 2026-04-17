@@ -19,7 +19,7 @@ RSpec.describe Gateways::Item do
       latest_gateway_telemetry_log: latest_log
     )
     gw.define_singleton_method(:model_name) { ActiveModel::Name.new(Gateway) }
-    gw.define_singleton_method(:to_key) { [1] }
+    gw.define_singleton_method(:to_key) { [ 1 ] }
     gw.define_singleton_method(:to_param) { "1" }
     gw
   end

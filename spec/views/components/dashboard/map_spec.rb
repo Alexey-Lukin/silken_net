@@ -15,7 +15,7 @@ RSpec.describe Dashboard::Map do
       charge_percentage: charge_percentage
     )
     t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
-    t.define_singleton_method(:to_key) { [id] }
+    t.define_singleton_method(:to_key) { [ id ] }
     t.define_singleton_method(:to_param) { id.to_s }
     t
   end
@@ -27,7 +27,7 @@ RSpec.describe Dashboard::Map do
     )
   end
 
-  let(:trees) { [mock_tree(id: 1, did: "SNET-00000001"), mock_tree(id: 2, did: "SNET-00000002")] }
+  let(:trees) { [ mock_tree(id: 1, did: "SNET-00000001"), mock_tree(id: 2, did: "SNET-00000002") ] }
   let(:html) { render_component(trees: trees) }
 
   describe "map container" do
@@ -56,7 +56,7 @@ RSpec.describe Dashboard::Map do
     end
 
     it "renders correct count for single tree" do
-      html = render_component(trees: [mock_tree])
+      html = render_component(trees: [ mock_tree ])
       expect(html).to include("Live Active Nodes: 1")
     end
   end

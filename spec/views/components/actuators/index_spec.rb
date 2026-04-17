@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Actuators::Index do
-
   def mock_cluster(name: "Amazon-Alpha")
     OpenStruct.new(id: 1, name: name)
   end
@@ -16,7 +15,7 @@ RSpec.describe Actuators::Index do
   end
 
   describe "rendering with actuators" do
-    let(:actuators) { [mock_actuator(id: 1), mock_actuator(id: 2)] }
+    let(:actuators) { [ mock_actuator(id: 1), mock_actuator(id: 2) ] }
     let(:html) { render_component(cluster: mock_cluster, actuators: actuators, pagy: mock_pagy(count: 2, last: 1)) }
 
     it "renders the main container with animation" do
@@ -48,7 +47,7 @@ RSpec.describe Actuators::Index do
     end
 
     it "displays active count stat" do
-      html = render_component(cluster: mock_cluster, actuators: [mock_actuator], pagy: mock_pagy(last: 1), active_count: 5)
+      html = render_component(cluster: mock_cluster, actuators: [ mock_actuator ], pagy: mock_pagy(last: 1), active_count: 5)
       expect(html).to include("Active Nodes")
     end
   end
@@ -70,7 +69,7 @@ RSpec.describe Actuators::Index do
   end
 
   describe "best practices compliance" do
-    let(:html) { render_component(cluster: mock_cluster, actuators: [mock_actuator], pagy: mock_pagy(last: 1)) }
+    let(:html) { render_component(cluster: mock_cluster, actuators: [ mock_actuator ], pagy: mock_pagy(last: 1)) }
 
     it "uses text-tiny for uppercase microcopy" do
       expect(html).to include("text-tiny")

@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Contracts::Index do
-
   def mock_org(name: "Cherkasy Forest Fund")
     OpenStruct.new(name: name)
   end
@@ -11,7 +10,7 @@ RSpec.describe Contracts::Index do
   def mock_cluster(name: "Carpathian-Alpha")
     c = OpenStruct.new(name: name)
     c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [1] }
+    c.define_singleton_method(:to_key) { [ 1 ] }
     c.define_singleton_method(:to_param) { "1" }
     c
   end
@@ -32,7 +31,7 @@ RSpec.describe Contracts::Index do
       end_date: end_date
     )
     c.define_singleton_method(:model_name) { ActiveModel::Name.new(NaasContract) }
-    c.define_singleton_method(:to_key) { [id] }
+    c.define_singleton_method(:to_key) { [ id ] }
     c.define_singleton_method(:to_param) { id.to_s }
     c
   end
@@ -49,7 +48,7 @@ RSpec.describe Contracts::Index do
   end
 
   let(:contract) { mock_contract }
-  let(:html) { render_component(contracts: [contract], stats: mock_stats, pagy: mock_pagy(last: 1)) }
+  let(:html) { render_component(contracts: [ contract ], stats: mock_stats, pagy: mock_pagy(last: 1)) }
 
   describe "header" do
     it "renders Active Asset Portfolio heading" do
@@ -107,22 +106,22 @@ RSpec.describe Contracts::Index do
 
   describe "status colors" do
     it "colors active contracts with emerald" do
-      html = render_component(contracts: [mock_contract(status: "active")], stats: mock_stats, pagy: mock_pagy(last: 1))
+      html = render_component(contracts: [ mock_contract(status: "active") ], stats: mock_stats, pagy: mock_pagy(last: 1))
       expect(html).to include("text-emerald-500")
     end
 
     it "colors fulfilled contracts with blue" do
-      html = render_component(contracts: [mock_contract(status: "fulfilled")], stats: mock_stats, pagy: mock_pagy(last: 1))
+      html = render_component(contracts: [ mock_contract(status: "fulfilled") ], stats: mock_stats, pagy: mock_pagy(last: 1))
       expect(html).to include("text-blue-400")
     end
 
     it "colors breached contracts with red" do
-      html = render_component(contracts: [mock_contract(status: "breached")], stats: mock_stats, pagy: mock_pagy(last: 1))
+      html = render_component(contracts: [ mock_contract(status: "breached") ], stats: mock_stats, pagy: mock_pagy(last: 1))
       expect(html).to include("text-red-500")
     end
 
     it "colors cancelled contracts with gray and line-through" do
-      html = render_component(contracts: [mock_contract(status: "cancelled")], stats: mock_stats, pagy: mock_pagy(last: 1))
+      html = render_component(contracts: [ mock_contract(status: "cancelled") ], stats: mock_stats, pagy: mock_pagy(last: 1))
       expect(html).to include("line-through")
     end
   end

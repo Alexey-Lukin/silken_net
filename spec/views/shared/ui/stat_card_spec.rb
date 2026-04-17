@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::StatCard do
-
   describe "with basic props" do
     let(:html) { render_component(label: "Active Trees", value: "12,847") }
 

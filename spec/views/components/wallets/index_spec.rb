@@ -3,8 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Wallets::Index do
-
-
   def mock_wallet(id: 1, scc_balance: 42.5, locked_balance: 0, esg_retired_balance: 0, tree_did: "SNET-AABBCCDD", org_name: nil, crypto_public_address: "0xDEAD1234BEEF5678")
     tree = tree_did ? OpenStruct.new(did: tree_did) : nil
     org  = org_name ? OpenStruct.new(name: org_name) : nil
@@ -20,7 +18,7 @@ RSpec.describe Wallets::Index do
   end
 
   describe "rendering" do
-    let(:wallets) { [mock_wallet(id: 1), mock_wallet(id: 2, tree_did: nil, org_name: "GreenCorp")] }
+    let(:wallets) { [ mock_wallet(id: 1), mock_wallet(id: 2, tree_did: nil, org_name: "GreenCorp") ] }
     let(:html) { render_component(wallets: wallets, pagy: mock_pagy(count: 2, last: 1), total_liquidity: 100.5) }
 
     it "renders the Treasury Matrix heading" do
@@ -45,7 +43,7 @@ RSpec.describe Wallets::Index do
   end
 
   describe "wallet card content" do
-    let(:html) { render_component(wallets: [mock_wallet(scc_balance: 99.1234)], total_liquidity: 99.1234) }
+    let(:html) { render_component(wallets: [ mock_wallet(scc_balance: 99.1234) ], total_liquidity: 99.1234) }
 
     it "displays the SCC balance" do
       expect(html).to include("99.1234")
@@ -69,7 +67,7 @@ RSpec.describe Wallets::Index do
   end
 
   describe "organization wallet" do
-    let(:html) { render_component(wallets: [mock_wallet(tree_did: nil, org_name: "BioForest")], total_liquidity: 0) }
+    let(:html) { render_component(wallets: [ mock_wallet(tree_did: nil, org_name: "BioForest") ], total_liquidity: 0) }
 
     it "shows Clan Treasury label for org wallets" do
       expect(html).to include("Clan Treasury")
@@ -81,7 +79,7 @@ RSpec.describe Wallets::Index do
   end
 
   describe "System Reserve fallback" do
-    let(:html) { render_component(wallets: [mock_wallet(tree_did: nil, org_name: nil)], total_liquidity: 0) }
+    let(:html) { render_component(wallets: [ mock_wallet(tree_did: nil, org_name: nil) ], total_liquidity: 0) }
 
     it "shows System Reserve when no tree or org" do
       expect(html).to include("System Reserve")
@@ -90,39 +88,39 @@ RSpec.describe Wallets::Index do
 
   describe "locked balance indicator" do
     it "shows locked balance when > 0" do
-      html = render_component(wallets: [mock_wallet(locked_balance: 5.5)], total_liquidity: 0)
+      html = render_component(wallets: [ mock_wallet(locked_balance: 5.5) ], total_liquidity: 0)
       expect(html).to include("🔒")
       expect(html).to include("5.5 locked")
     end
 
     it "hides locked balance when 0" do
-      html = render_component(wallets: [mock_wallet(locked_balance: 0)], total_liquidity: 0)
+      html = render_component(wallets: [ mock_wallet(locked_balance: 0) ], total_liquidity: 0)
       expect(html).not_to include("🔒")
     end
   end
 
   describe "ESG retired balance" do
     it "shows retired balance when > 0" do
-      html = render_component(wallets: [mock_wallet(esg_retired_balance: 3.14)], total_liquidity: 0)
+      html = render_component(wallets: [ mock_wallet(esg_retired_balance: 3.14) ], total_liquidity: 0)
       expect(html).to include("♻")
       expect(html).to include("3.14 retired")
     end
 
     it "hides retired balance when 0" do
-      html = render_component(wallets: [mock_wallet(esg_retired_balance: 0)], total_liquidity: 0)
+      html = render_component(wallets: [ mock_wallet(esg_retired_balance: 0) ], total_liquidity: 0)
       expect(html).not_to include("♻")
     end
   end
 
   describe "without pagination" do
     it "renders without pagy when nil" do
-      html = render_component(wallets: [mock_wallet], total_liquidity: 0)
+      html = render_component(wallets: [ mock_wallet ], total_liquidity: 0)
       expect(html).to include("Treasury Matrix")
     end
   end
 
   describe "best practices compliance" do
-    let(:html) { render_component(wallets: [mock_wallet], total_liquidity: 0) }
+    let(:html) { render_component(wallets: [ mock_wallet ], total_liquidity: 0) }
 
     it "uses text-tiny and text-mini for labels" do
       expect(html).to include("text-tiny")

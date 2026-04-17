@@ -8,7 +8,7 @@ RSpec.describe Maintenance::Index do
       count: count, page: page, last: 1, from: 1, to: count,
       prev: nil, next: nil, vars: { items: 50 }
     )
-    pg.define_singleton_method(:series) { [1] }
+    pg.define_singleton_method(:series) { [ 1 ] }
     pg
   end
 
@@ -43,7 +43,7 @@ RSpec.describe Maintenance::Index do
     )
     r.define_singleton_method(:photos_attachments) { photos_mock }
     r.define_singleton_method(:model_name) { ActiveModel::Name.new(MaintenanceRecord) }
-    r.define_singleton_method(:to_key) { [id] }
+    r.define_singleton_method(:to_key) { [ id ] }
     r.define_singleton_method(:to_param) { id.to_s }
     r
   end
@@ -56,7 +56,7 @@ RSpec.describe Maintenance::Index do
   end
 
   let(:record) { mock_record }
-  let(:html) { render_component(records: [record], pagy: mock_pagy) }
+  let(:html) { render_component(records: [ record ], pagy: mock_pagy) }
 
   describe "header" do
     it "renders the Maintenance Records heading" do
@@ -114,12 +114,12 @@ RSpec.describe Maintenance::Index do
   describe "hardware verified indicator" do
     it "renders the verified checkmark for hardware_verified records" do
       verified_record = mock_record(hardware_verified: true)
-      html = render_component(records: [verified_record], pagy: mock_pagy)
+      html = render_component(records: [ verified_record ], pagy: mock_pagy)
       expect(html).to include("✓")
     end
 
     it "renders the pending indicator for unverified records" do
-      html = render_component(records: [mock_record(hardware_verified: false)], pagy: mock_pagy)
+      html = render_component(records: [ mock_record(hardware_verified: false) ], pagy: mock_pagy)
       expect(html).to include("◌")
     end
   end
@@ -127,12 +127,12 @@ RSpec.describe Maintenance::Index do
   describe "photo count" do
     it "renders photo count when photos are attached" do
       record_with_photos = mock_record(photos_count: 3)
-      html = render_component(records: [record_with_photos], pagy: mock_pagy)
+      html = render_component(records: [ record_with_photos ], pagy: mock_pagy)
       expect(html).to include("📷 3")
     end
 
     it "renders em dash when no photos attached" do
-      html = render_component(records: [mock_record(photos_count: 0)], pagy: mock_pagy)
+      html = render_component(records: [ mock_record(photos_count: 0) ], pagy: mock_pagy)
       expect(html).to include("—")
     end
   end
@@ -140,7 +140,7 @@ RSpec.describe Maintenance::Index do
   describe "cost display" do
     it "renders cost in dollars when total_cost is positive" do
       record_with_cost = mock_record(total_cost: 275.50)
-      html = render_component(records: [record_with_cost], pagy: mock_pagy)
+      html = render_component(records: [ record_with_cost ], pagy: mock_pagy)
       expect(html).to include("$275.5")
     end
   end

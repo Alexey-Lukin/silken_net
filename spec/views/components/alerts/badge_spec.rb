@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Alerts::Badge do
-
   def mock_alert(severity: "medium", status: "active", id: 1)
     OpenStruct.new(id: id, severity: severity, status: status)
   end

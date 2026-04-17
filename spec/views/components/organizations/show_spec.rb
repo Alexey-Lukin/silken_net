@@ -11,7 +11,7 @@ RSpec.describe Organizations::Show do
       total_active_trees: total_active_trees
     )
     c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [id] }
+    c.define_singleton_method(:to_key) { [ id ] }
     c.define_singleton_method(:to_param) { id.to_s }
     c
   end
@@ -36,7 +36,7 @@ RSpec.describe Organizations::Show do
   end
 
   let(:org) { mock_org }
-  let(:clusters) { [mock_cluster] }
+  let(:clusters) { [ mock_cluster ] }
   let(:performance) { { total_trees: 42, carbon_minted: "1234 SCC" } }
   let(:html) { render_component(organization: org, clusters: clusters, performance: performance) }
 

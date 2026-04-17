@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::ActionBadge do
-
   describe "action pattern matching" do
     it "maps delete actions to destructive (danger) style" do
       html = render_component(action: "delete_user")

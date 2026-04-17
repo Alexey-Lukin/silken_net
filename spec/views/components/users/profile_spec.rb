@@ -114,7 +114,7 @@ RSpec.describe Users::Profile do
   describe "linked identities list" do
     context "with identities" do
       let(:identity) { mock_identity(provider: "google_oauth2", primary: true) }
-      let(:html) { render_component(user: user, active_identities: [identity]) }
+      let(:html) { render_component(user: user, active_identities: [ identity ]) }
 
       it "renders Linked Identity Providers heading" do
         expect(html).to include("Linked Identity Providers")
@@ -140,13 +140,13 @@ RSpec.describe Users::Profile do
   describe "provider badges" do
     it "renders provider badge for linkedin" do
       identity = mock_identity(provider: "linkedin")
-      html = render_component(user: user, active_identities: [identity])
+      html = render_component(user: user, active_identities: [ identity ])
       expect(html).to include("Linkedin")
     end
 
     it "renders provider badge for twitter" do
       identity = mock_identity(provider: "twitter")
-      html = render_component(user: user, active_identities: [identity])
+      html = render_component(user: user, active_identities: [ identity ])
       expect(html).to include("Twitter")
     end
   end

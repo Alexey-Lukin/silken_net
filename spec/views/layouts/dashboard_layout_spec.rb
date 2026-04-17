@@ -2,28 +2,26 @@
 
 require "rails_helper"
 
-RSpec.describe DashboardLayout do
-  # DashboardLayout uses ActionView helpers (csp_meta_tag, csrf_meta_tags,
-  # stylesheet_link_tag, javascript_importmap_tags) not included in Phlex by default.
-  # Also, as a layout component, view_template(&block) uses yield — we patch to provide
-  # an empty content block so specs don't raise LocalJumpError.
-  before(:context) do
-    unless DashboardLayout.instance_variable_get(:@test_patched)
-      DashboardLayout.prepend(Module.new do
-        def view_template(&block)
-          block ||= proc { }
-          super(&block)
-        end
-
-        def csp_meta_tag(**_opts) = ""
-        def csrf_meta_tags = ""
-        def stylesheet_link_tag(*_args, **_opts) = ""
-        def javascript_importmap_tags(*_args, **_opts) = ""
-      end)
-      DashboardLayout.instance_variable_set(:@test_patched, true)
+# DashboardLayout uses ActionView helpers (csp_meta_tag, csrf_meta_tags,
+# stylesheet_link_tag, javascript_importmap_tags) not included in Phlex by default.
+# Also, as a layout component, view_template(&block) uses yield — we patch to provide
+# an empty content block so specs don't raise LocalJumpError.
+unless DashboardLayout.instance_variable_get(:@test_patched)
+  DashboardLayout.prepend(Module.new do
+    def view_template(&block)
+      block ||= proc { }
+      super(&block)
     end
-  end
 
+    def csp_meta_tag(**_opts) = ""
+    def csrf_meta_tags = ""
+    def stylesheet_link_tag(*_args, **_opts) = ""
+    def javascript_importmap_tags(*_args, **_opts) = ""
+  end)
+  DashboardLayout.instance_variable_set(:@test_patched, true)
+end
+
+RSpec.describe DashboardLayout do
   def mock_user(first_name: "Olena", last_name: "Kovalenko",
                 role: "admin", email_address: "olena@example.org")
     u = OpenStruct.new(

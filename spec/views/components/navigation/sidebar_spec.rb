@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Navigation::Sidebar do
-
   describe "logo section" do
     let(:html) { render_component }
 

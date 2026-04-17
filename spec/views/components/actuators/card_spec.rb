@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Actuators::Card do
-
   def mock_actuator(id: 1, device_type: "valve", state: "active", gateway_uid: "QUEEN-01")
     gateway = OpenStruct.new(uid: gateway_uid)
     commands = OpenStruct.new(last: nil)

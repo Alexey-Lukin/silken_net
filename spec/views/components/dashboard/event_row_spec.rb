@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Dashboard::EventRow do
-
   # Use allocate to bypass ActiveRecord initialization but keep class identity
   # so case/when (Module#===) pattern matching works correctly.
 

@@ -3,11 +3,10 @@
 require "rails_helper"
 
 RSpec.describe Trees::Chronicle do
-
   def mock_tree(id: 1, did: "SNET-00000042")
     t = OpenStruct.new(id: id, did: did)
     t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
-    t.define_singleton_method(:to_key) { [id] }
+    t.define_singleton_method(:to_key) { [ id ] }
     t.define_singleton_method(:to_param) { id.to_s }
     t
   end
@@ -35,7 +34,7 @@ RSpec.describe Trees::Chronicle do
   let(:tree) { mock_tree }
   let(:pagy) { mock_pagy(count: 2, last: 1) }
   let(:entry) { mock_entry }
-  let(:html) { render_component(tree: tree, entries: [entry], pagy: pagy) }
+  let(:html) { render_component(tree: tree, entries: [ entry ], pagy: pagy) }
 
   describe "turbo frame" do
     it "renders the tree_chronicle turbo frame" do
@@ -73,7 +72,7 @@ RSpec.describe Trees::Chronicle do
     it "renders the date in dd.mm format" do
       html_with_date = render_component(
         tree: tree,
-        entries: [mock_entry(date: Time.zone.parse("2025-03-07 10:00:00"))],
+        entries: [ mock_entry(date: Time.zone.parse("2025-03-07 10:00:00")) ],
         pagy: pagy
       )
       expect(html_with_date).to include("07.03")
@@ -83,19 +82,19 @@ RSpec.describe Trees::Chronicle do
   describe "event types" do
     it "renders alert events with danger styling" do
       alert_entry = mock_entry(event_type: :alert, severity: :critical, title: "FIRE DETECTED")
-      html = render_component(tree: tree, entries: [alert_entry], pagy: pagy)
+      html = render_component(tree: tree, entries: [ alert_entry ], pagy: pagy)
       expect(html).to include("FIRE DETECTED")
     end
 
     it "renders maintenance events" do
       maint_entry = mock_entry(event_type: :maintenance, title: "Sensor Replaced", icon: "🔧")
-      html = render_component(tree: tree, entries: [maint_entry], pagy: pagy)
+      html = render_component(tree: tree, entries: [ maint_entry ], pagy: pagy)
       expect(html).to include("Sensor Replaced")
     end
 
     it "renders minting events" do
       mint_entry = mock_entry(event_type: :minting, title: "SCC Minted", icon: "💎")
-      html = render_component(tree: tree, entries: [mint_entry], pagy: pagy)
+      html = render_component(tree: tree, entries: [ mint_entry ], pagy: pagy)
       expect(html).to include("SCC Minted")
     end
   end
@@ -115,13 +114,13 @@ RSpec.describe Trees::Chronicle do
   describe "severity border classes" do
     it "renders critical severity with danger border" do
       critical_entry = mock_entry(severity: :critical, title: "Critical Event")
-      html = render_component(tree: tree, entries: [critical_entry], pagy: pagy)
+      html = render_component(tree: tree, entries: [ critical_entry ], pagy: pagy)
       expect(html).to include("border-status-danger-accent")
     end
 
     it "renders warning severity with warning border" do
       warning_entry = mock_entry(severity: :warning, title: "Warning Event")
-      html = render_component(tree: tree, entries: [warning_entry], pagy: pagy)
+      html = render_component(tree: tree, entries: [ warning_entry ], pagy: pagy)
       expect(html).to include("border-status-warning")
     end
   end

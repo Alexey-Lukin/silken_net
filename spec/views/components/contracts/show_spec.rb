@@ -16,7 +16,7 @@ RSpec.describe Contracts::Show do
     )
     c.define_singleton_method(:active_threats?) { active_threats }
     c.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    c.define_singleton_method(:to_key) { [1] }
+    c.define_singleton_method(:to_key) { [ 1 ] }
     c.define_singleton_method(:to_param) { "1" }
     c
   end
@@ -41,7 +41,7 @@ RSpec.describe Contracts::Show do
       cancellation_terms: cancellation_terms
     )
     c.define_singleton_method(:model_name) { ActiveModel::Name.new(NaasContract) }
-    c.define_singleton_method(:to_key) { [id] }
+    c.define_singleton_method(:to_key) { [ id ] }
     c.define_singleton_method(:to_param) { id.to_s }
     c
   end
@@ -113,7 +113,7 @@ RSpec.describe Contracts::Show do
   describe "emission ledger" do
     context "with blockchain history" do
       let(:tx) { mock_blockchain_tx(tx_hash: "0xdeadbeef1234567890abcdef", amount: "7.50") }
-      let(:html) { render_component(contract: mock_contract, history: [tx]) }
+      let(:html) { render_component(contract: mock_contract, history: [ tx ]) }
 
       it "renders Blockchain Emission History heading" do
         expect(html).to include("Blockchain Emission History")

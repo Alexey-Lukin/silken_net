@@ -16,7 +16,7 @@ RSpec.describe BlockchainTransactions::OnChainFrame do
       blockchain_network: blockchain_network
     )
     tx.define_singleton_method(:model_name) { ActiveModel::Name.new(BlockchainTransaction) }
-    tx.define_singleton_method(:to_key) { [id] }
+    tx.define_singleton_method(:to_key) { [ id ] }
     tx.define_singleton_method(:to_param) { id.to_s }
     tx.define_singleton_method(:solana_network?) { blockchain_network == "solana" }
     tx.define_singleton_method(:celo_network?) { blockchain_network == "celo" }

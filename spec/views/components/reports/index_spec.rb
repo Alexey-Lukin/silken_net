@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Reports::Index do
-
   def mock_org(id: 1, name: "ForestDAO")
     OpenStruct.new(id: id, name: name)
   end

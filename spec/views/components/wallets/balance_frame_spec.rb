@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Wallets::BalanceFrame do
-
   def mock_wallet(id: 1, scc_balance: 42.5, locked_balance: 0.0,
                   esg_retired_balance: 0.0, toucan_bridged_balance: 0.0)
     wallet = OpenStruct.new(
@@ -14,7 +13,7 @@ RSpec.describe Wallets::BalanceFrame do
       toucan_bridged_balance: toucan_bridged_balance
     )
     wallet.define_singleton_method(:model_name) { ActiveModel::Name.new(Wallet) }
-    wallet.define_singleton_method(:to_key) { [id] }
+    wallet.define_singleton_method(:to_key) { [ id ] }
     wallet.define_singleton_method(:to_param) { id.to_s }
     wallet
   end

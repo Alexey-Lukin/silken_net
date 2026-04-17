@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Wallets::MetadataFrame do
-
   def mock_wallet(id: 1, crypto_public_address: "0xDEAD1234BEEF5678CAFE", locked_balance: 0, available_balance: 42.5, esg_retired_balance: 0)
     OpenStruct.new(
       id: id,

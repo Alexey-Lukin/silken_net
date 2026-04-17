@@ -3,11 +3,10 @@
 require "rails_helper"
 
 RSpec.describe Provisioning::Success do
-
   def mock_cluster(id: 10, name: "Carpathian-Alpha")
     cluster = OpenStruct.new(id: id, name: name)
     cluster.define_singleton_method(:model_name) { ActiveModel::Name.new(Cluster) }
-    cluster.define_singleton_method(:to_key) { [id] }
+    cluster.define_singleton_method(:to_key) { [ id ] }
     cluster.define_singleton_method(:to_param) { id.to_s }
     cluster
   end

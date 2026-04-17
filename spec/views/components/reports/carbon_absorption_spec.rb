@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Reports::CarbonAbsorption do
-
   def mock_org(name: "EcoDAO")
     OpenStruct.new(name: name)
   end

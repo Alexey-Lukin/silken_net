@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Firmwares::OtaProgressBar do
-
   describe "rendering" do
     let(:html) { render_component(uid: "SNET-001", percent: 50, current: 25, total: 50, status: "TRANSMITTING") }
 

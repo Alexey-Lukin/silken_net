@@ -5,8 +5,8 @@ require "rails_helper"
 RSpec.describe Trees::Show do
   let(:tree) { mock_tree }
   let(:latest_log) { mock_latest_log }
-  let(:recent_logs) { [mock_recent_log] }
-  let(:maintenance_history) { [mock_maintenance_record] }
+  let(:recent_logs) { [ mock_recent_log ] }
+  let(:maintenance_history) { [ mock_maintenance_record ] }
   let(:html) do
     render_component(tree: tree, latest_log: latest_log,
                      recent_logs: recent_logs, maintenance_history: maintenance_history)
@@ -45,7 +45,7 @@ RSpec.describe Trees::Show do
     t.define_singleton_method(:under_threat?) { under_threat }
     t.define_singleton_method(:active?) { status == "active" }
     t.define_singleton_method(:model_name) { ActiveModel::Name.new(Tree) }
-    t.define_singleton_method(:to_key) { [1] }
+    t.define_singleton_method(:to_key) { [ 1 ] }
     t.define_singleton_method(:to_param) { "1" }
     t
   end
@@ -198,7 +198,7 @@ RSpec.describe Trees::Show do
     end
 
     it "renders bars for recent logs" do
-      logs = [mock_recent_log(z_value: 50.0), mock_recent_log(z_value: 75.0)]
+      logs = [ mock_recent_log(z_value: 50.0), mock_recent_log(z_value: 75.0) ]
       rendered = render_component(tree: tree, latest_log: latest_log,
                                   recent_logs: logs, maintenance_history: maintenance_history)
       expect(rendered).to include("50.0")
@@ -226,7 +226,7 @@ RSpec.describe Trees::Show do
       long_notes = "A" * 100
       record = mock_maintenance_record(notes: long_notes)
       rendered = render_component(tree: tree, latest_log: latest_log,
-                                  recent_logs: recent_logs, maintenance_history: [record])
+                                  recent_logs: recent_logs, maintenance_history: [ record ])
       expect(rendered).to include("A" * 47 + "...")
     end
 

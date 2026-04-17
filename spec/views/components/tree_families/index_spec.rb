@@ -3,8 +3,6 @@
 require "rails_helper"
 
 RSpec.describe TreeFamilies::Index do
-
-
   def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur", baseline_impedance: 45,
                   critical_z_min: 10, critical_z_max: 80, trees_count: 120)
     family = OpenStruct.new(
@@ -17,13 +15,13 @@ RSpec.describe TreeFamilies::Index do
       trees_count: trees_count
     )
     family.define_singleton_method(:model_name) { ActiveModel::Name.new(TreeFamily) }
-    family.define_singleton_method(:to_key) { [id] }
+    family.define_singleton_method(:to_key) { [ id ] }
     family.define_singleton_method(:to_param) { id.to_s }
     family
   end
 
   let(:family)   { mock_family }
-  let(:families) { [family, mock_family(id: 2, name: "Pine", scientific_name: "Pinus sylvestris", trees_count: 55)] }
+  let(:families) { [ family, mock_family(id: 2, name: "Pine", scientific_name: "Pinus sylvestris", trees_count: 55) ] }
   let(:html)     { render_component(families: families, pagy: mock_pagy(count: 63)) }
 
   describe "header" do

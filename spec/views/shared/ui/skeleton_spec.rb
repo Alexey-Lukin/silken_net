@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::Skeleton do
-
   describe "with default variant (:balance)" do
     let(:html) { render_component }
 

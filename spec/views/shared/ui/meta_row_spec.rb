@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::MetaRow do
-
   describe "with basic props" do
     let(:html) { render_component(label: "Firmware", value: "v2.1.3") }
 

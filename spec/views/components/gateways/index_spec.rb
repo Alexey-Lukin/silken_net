@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe Gateways::Index do
-  let(:gateways) { [mock_gateway] }
+  let(:gateways) { [ mock_gateway ] }
   let(:pagy) { mock_pagy(count: 1, last: 1) }
   let(:html) { render_component(gateways: gateways, pagy: pagy, online_count: 3) }
 
@@ -21,7 +21,7 @@ RSpec.describe Gateways::Index do
       latest_gateway_telemetry_log: latest_log
     )
     gw.define_singleton_method(:model_name) { ActiveModel::Name.new(Gateway) }
-    gw.define_singleton_method(:to_key) { [1] }
+    gw.define_singleton_method(:to_key) { [ 1 ] }
     gw.define_singleton_method(:to_param) { "1" }
     gw
   end
@@ -63,7 +63,7 @@ RSpec.describe Gateways::Index do
   describe "connection LED" do
     it "shows green LED for recently seen gateway" do
       rendered = render_component(
-        gateways: [mock_gateway(last_seen_at: 1.minute.ago)],
+        gateways: [ mock_gateway(last_seen_at: 1.minute.ago) ],
         pagy: pagy, online_count: 1
       )
       expect(rendered).to include("bg-emerald-500")
@@ -71,7 +71,7 @@ RSpec.describe Gateways::Index do
 
     it "shows red pulsing LED for stale gateway" do
       rendered = render_component(
-        gateways: [mock_gateway(last_seen_at: 10.minutes.ago)],
+        gateways: [ mock_gateway(last_seen_at: 10.minutes.ago) ],
         pagy: pagy, online_count: 0
       )
       expect(rendered).to include("bg-red-900")

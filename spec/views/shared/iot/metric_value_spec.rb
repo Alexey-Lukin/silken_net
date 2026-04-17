@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::IoT::MetricValue do # rubocop:disable RSpec/SpecFilePathFormat
-
   describe "with a BigDecimal value" do
     let(:value) { BigDecimal("12.345678901234567890") }
     let(:html) { render_component(value: value) }

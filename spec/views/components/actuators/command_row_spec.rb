@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Actuators::CommandRow do
-
   def mock_command(id: 1, status: "confirmed", command_payload: "OPEN_VALVE", created_at: Time.current)
     OpenStruct.new(id: id, status: status, command_payload: command_payload, created_at: created_at)
   end

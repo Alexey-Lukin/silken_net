@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe AuditLogs::Show do
-
   def mock_user(full_name: "Ada Lovelace", email_address: "ada@silken.net", role: "admin")
     OpenStruct.new(full_name: full_name, email_address: email_address, role: role)
   end
@@ -20,7 +19,7 @@ RSpec.describe AuditLogs::Show do
       created_at: created_at
     )
     log.define_singleton_method(:model_name) { ActiveModel::Name.new(AuditLog) }
-    log.define_singleton_method(:to_key) { [id] }
+    log.define_singleton_method(:to_key) { [ id ] }
     log.define_singleton_method(:to_param) { id.to_s }
     log
   end

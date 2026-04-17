@@ -5,18 +5,18 @@ require "rails_helper"
 RSpec.describe Maintenance::PhotoGallery do
   def mock_pagy(count: 6, page: 1, next_page: nil)
     pg = OpenStruct.new(
-      count: count, page: page, last: [(count / 6.0).ceil, 1].max,
-      from: 1, to: [count, 6].min,
+      count: count, page: page, last: [ (count / 6.0).ceil, 1 ].max,
+      from: 1, to: [ count, 6 ].min,
       prev: nil, next: next_page, vars: { items: 6 }
     )
-    pg.define_singleton_method(:series) { [1] }
+    pg.define_singleton_method(:series) { [ 1 ] }
     pg
   end
 
   def mock_record(id: 5)
     r = OpenStruct.new(id: id)
     r.define_singleton_method(:model_name) { ActiveModel::Name.new(MaintenanceRecord) }
-    r.define_singleton_method(:to_key) { [id] }
+    r.define_singleton_method(:to_key) { [ id ] }
     r.define_singleton_method(:to_param) { id.to_s }
     r
   end
