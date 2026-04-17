@@ -1,245 +1,187 @@
-# Copilot Instructions — SilkenNet
+# Copilot Instructions — SilkenNet (Gaia 2.0)
 
-## SSOT Reference
+## SSOT — читати перед будь-якими архітектурними рішеннями
+1. GitHub Wiki: https://github.com/Alexey-Lukin/silken_net/wiki
+2. `docs/00_00_Gaia_2_0_System_Overview.md` -> `docs/09_03_GitHub_Projects_and_Ops_Automation.md`
+3. `README.md`
 
-The [GitHub Wiki](https://github.com/Alexey-Lukin/silken_net/wiki) is the Single Source of Truth (SSOT) for the Gaia 2.0 architecture. It defines the 8-layer cyber-physical system across 9 modules. Always consult it for architectural decisions. See also `.cursorrules` and `CLAUDE.md` for complementary AI guidance.
+При конфліктах між джерелами: пріоритет мають нові пронумеровані docs (`00_00` -> `09_03`), потім Wiki.
 
-## Project Overview
+---
 
-SilkenNet (Gaia 2.0) is a bio-IoT D-MRV platform that monitors forest health at planetary scale using titanium gyroid anchors (Ti-6Al-4V) embedded in trees. Each anchor contains an EBFC (Enzymatic Bio-Fuel Cell) that harvests >500 mV from tree glucose metabolism via GOx/Laccase enzymes, powering a BQ25570 MPPT and 0.47 F EDLC supercapacitor. An STM32WLE5JC microcontroller runs TinyML acoustic classification and mruby Lorenz attractor computation. The system forms a LoRa mesh network where "soldier" nodes collect sensor data, relay it through peer soldiers to a "queen" gateway, which transmits batched telemetry to the cloud backend via Starlink Direct-to-Cell or LTE (SIM7070G). The backend processes telemetry, runs AI analysis (Lorenz attractor with BigDecimal precision), manages a 12-chain crypto economy anchored on Polygon, and provides a REST API + real-time Phlex/Turbo dashboard.
+## 1. Знімок проєкту
 
-## Scale
+**SilkenNet / Gaia 2.0** — планетарна Bio-IoT D-MRV (Digital Measurement, Reporting, Verification) платформа для моніторингу лісів.
 
-The system is designed to scale to **millions → billions → trillions** of trees worldwide. Every architectural decision — database schema, telemetry ingestion pipeline, queue throughput, API pagination, blockchain tokenomics — must account for this scale. Avoid naive solutions that work for thousands of records but collapse at planetary scale. Think about partitioning, sharding, batch processing, streaming, and horizontal scalability from day one.
+### Апаратний стек (Edge)
+- **Soldier вузол:** STM32WLE5JC + SX1262 LoRa. Ti-6Al-4V гіроїдний анкер (3D DMLS, пористість 70%) вживляється в дерево. EBFC (Enzymatic Bio-Fuel Cell) генерує ~500 мВ з ксилемного соку. BQ25570 MPPT -> EDLC суперконденсатор 0.47F/5.5V -> 3.3V для MCU.
+- **Queen шлюз:** STM32WLE5JC + SIM7070G (LTE-M/NB-IoT або Starlink DTC через Київстар). CIFO EdgeCache 50 слотів. Flush щогодини через CoAP PUT на порт 5683. CoAP batch шифрується AES-256-CBC (HRNG IV).
+- **LoRa протокол:** 868 МГц, TTL-based mesh (DEFAULT_TTL=3, PANIC_TTL=5). Anti-pingpong у RTC Backup Registers (8 слотів).
+- **Packet format (21 байт):** `[DID:4][RSSI:1][AES-256-ECB payload:16]`. Payload: `[Vcap:2][Temp:1][Acoustic:1][dT:2][StatusByte:1][TTL:1][FW:2][PAD:2]`. `StatusByte = [bio_status:2 | growth_points:6]`.
 
-## Architecture (8 Layers per Wiki SSOT)
+### Backend стек
+- **Ruby 4.0.2** (path: `/opt/hostedtoolcache/Ruby/4.0.2/x64/bin`)
+- **Rails 8.1** — thin controllers, бізнес-логіка тільки в services/workers
+- **PostgreSQL multi-DB** — `db/structure.sql` (не `schema.rb`), партиціювання RANGE по `created_at` для `telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`
+- **Sidekiq** strict-priority, 9 черг (суворий порядок дренування):
 
-```
-L8  Ethereum L1          Weekly State Root anchoring (32-byte SHA-256 finality)
-L7  Polygon + DeFi       SCC/SFC minting, Solana micro-rewards, Celo ReFi, KlimaDAO ESG
-L6  Verification          peaq DID, IoTeX ZK-proofs, Streamr P2P, Filecoin/IPFS archive
-L5  Rails Backend         Rails 8.1 API, PostgreSQL, Sidekiq (31+ workers), Prometheus
-L4  LoRa Network          868 MHz mesh, CoAP/UDP, Queen gateways, Starlink/LTE
-L3  Firmware & Edge AI    STM32WLE5JC, TinyML (CMSIS-NN), mruby Lorenz, AES-256
-L2  Hardware Capsule      BQ25570 MPPT, 0.47F EDLC supercapacitor, Pogo Pin blind-mate
-L1  Biophysics            Ti-6Al-4V gyroid anchor, EBFC (GOx anode + Laccase cathode)
-```
+| Черга | Пріоритет | Призначення |
+|-------|-----------|-------------|
+| `uplink` | 1 (найвищий) | CoAP телеметрія -> `UnpackTelemetryWorker` |
+| `alerts` | 2 | EWS тривоги, `DclimateVerificationWorker` |
+| `critical` | 3 | Slashing, страхові виплати, `EcosystemHealingWorker` |
+| `downlink` | 4 | OTA прошивки, команди актуаторів |
+| `default` | 5 | Агрегація, health checks, токеноміка |
+| `web3_critical` | 6 | Мінтинг SCC, IoTeX ZK, Chainlink Oracle |
+| `web3` | 7 | peaq DID, Celo, Solana, Puro.earth |
+| `web3_low` | 8 | Ethereum L1 anchoring, KlimaDAO, Hadron |
+| `low` | 9 (найнижчий) | Audit, Filecoin, Streamr broadcast |
 
-## Tech Stack
+- **CoAP daemon** — UDP порт 5683 (`lib/daemons/`), тригерить `UnpackTelemetryWorker`
+- **Phlex + Turbo** — UI компоненти (не ERB/partials). Читати `docs/04_04_Phlex_UI_and_Tailwind.md` перед будь-яким фронтенд-завданням.
+- **ActionCable (Solid Cable)** — WebSocket для live telemetry, wallet balance, OTA progress.
 
-| Layer      | Technology                                                        |
-|------------|-------------------------------------------------------------------|
-| Language   | Ruby 4.0.2                                                        |
-| Framework  | Rails 8.1.2 (API + Hotwire/Turbo 8/Stimulus, Phlex, Tailwind)    |
-| Database   | PostgreSQL (4 databases: primary, cache, queue, cable)            |
-| Jobs       | Sidekiq (31+ workers, 9 strict-priority queues) + Solid Queue    |
-| Cache      | Solid Cache                                                       |
-| WebSocket  | Solid Cable (ActionCable)                                         |
-| Blockchain | 12-chain: Polygon (primary), Ethereum L1, Solana, Celo, peaq, IoTeX, Chainlink, KlimaDAO, Streamr, Filecoin, The Graph, Polygon Hadron |
-| Serializer | Blueprinter                                                       |
-| Pagination | Pagy + Groupdate                                                  |
-| IoT        | CoAP/UDP listener daemon, LoRaWAN 868 MHz                        |
-| Firmware   | C (STM32 HAL) + mruby VM + TinyML (CMSIS-NN)                     |
-| Deploy     | Kamal (Docker), Terraform (GCP), Akash Network, Thruster (HTTP/2)|
-| Testing    | RSpec, FactoryBot, Capybara, Cuprite, SimpleCov                   |
-| Security   | Brakeman, bundler-audit, argon2id, Pundit, rack-attack, AES-256  |
-| Monitoring | Prometheus, Sentry, Grafana                                       |
-| Storage    | Active Storage (S3 / Google Cloud Storage)                        |
+### Web3 стек (12 мереж)
 
-## Directory Structure
+| # | Мережа | Роль | Черга |
+|---|--------|------|-------|
+| 1 | Streamr | P2P real-time broadcast | `low` |
+| 2 | Filecoin/IPFS | Immutable archive (Pinata) | `low` |
+| 3 | peaq network | Machine DID реєстрація | `web3` |
+| 4 | IoTeX W3bstream | ZK-proof верифікація | `web3_critical` |
+| 5 | The Graph | Decentralized indexing (read-only) | — |
+| 6 | Polygon | Primary EVM — SCC/SFC мінтинг, slashing | `web3_critical` |
+| 7 | Polygon Hadron | KYC/Compliance (ERC-3643) | `web3_low` |
+| 8 | Solana | USDC мікро-винагороди (Ed25519) | `web3` |
+| 9 | Celo | ReFi community rewards (cUSD) | `web3` |
+| 10 | KlimaDAO | ESG carbon retirement | `web3_low` |
+| 11 | Chainlink DON | Oracle dispatch -> мінтинг trigger | `web3_critical` |
+| 12 | Ethereum L1 | Weekly state root anchoring (SHA-256) | `web3_low` |
 
-```
-app/
-  controllers/api/v1/   # 28 RESTful API controllers (inherit BaseController)
-  models/               # 25 ActiveRecord models
-  services/             # 20+ service namespaces (incl. multichain Web3 integrations)
-  workers/              # 31+ Sidekiq background workers
-  blueprints/           # 8 Blueprinter JSON serializers
-  views/components/     # 29 Phlex domain component directories
-  views/shared/         # Shared UI (StatusBadge, DataTable, etc.), Web3, IoT components
-contracts/              # Solidity: SilkenCarbonCoin.sol, SilkenForestCoin.sol
-firmware/
-  soldier/main.c        # Tree sensor node firmware (STM32, 648 lines)
-  queen/main.c          # LoRa gateway firmware (STM32 + SIM7070G, 550 lines)
-  bio_contracts/        # mruby bytecode (Lorenz attractor on-device)
-  test/                 # 112 host-based firmware C tests
-lib/daemons/            # CoAP UDP listener (port 5683)
-spec/                   # RSpec tests (100+ files across 20 directories)
-docs/                   # 15 comprehensive .md documentation files
-subgraph/               # The Graph subgraph (GraphQL indexing for SCC events)
-deploy/                 # Kamal & Akash Network deployment configs
-terraform/              # GCP infrastructure-as-code
-config/
-  sidekiq.yml           # 9 strict-priority queues & cron scheduler
-  database.yml          # PostgreSQL multi-database config (4 DBs)
-  routes.rb             # API routes (namespace api/v1, 28+ endpoints)
-```
+---
 
-## Domain Model (Key Entities)
-
-- **User / Organization / Session / Identity** — authentication, multi-tenant
-- **Tree / TreeFamily / Cluster** — biological entities, grouped by species and geography
-- **Gateway (Queen) / HardwareKey / DeviceCalibration** — IoT hardware registration
-- **TelemetryLog / GatewayTelemetryLog** — raw sensor data (21-byte binary packets)
-- **AiInsight / TinyMlModel / BioContractFirmware** — AI analysis, OTA firmware
-- **Wallet / NaasContract / ParametricInsurance / BlockchainTransaction** — crypto economy
-- **EwsAlert / MaintenanceRecord / AuditLog** — alerts, maintenance, audit trail
-- **Actuator / ActuatorCommand** — remote hardware control
-
-## Coding Conventions
+## 2. Незмінні правила розробки
 
 ### Ruby / Rails
-- Follow `.rubocop.yml` (inherits `rubocop-rails-omakase`)
-- Controllers: thin, delegate to services. Pattern: `Api::V1::<Resource>Controller < Api::V1::BaseController`
-- Services: `app/services/`, plain Ruby classes with `call` or `perform` methods
-- Workers: `app/workers/`, Sidekiq workers with `include Sidekiq::Worker` and `perform` method
-- Serializers: `app/blueprints/`, Blueprinter classes (`<Model>Blueprint < Blueprinter::Base`)
-- Models: validations, associations, scopes. No business logic in models — use services
-- Tests: RSpec, use `let` / `let!`, FactoryBot factories in `spec/factories/`
-- Background job queues (strict priority order): `uplink` > `alerts` = `critical` > `downlink` > `default` > `web3_critical` > `web3` > `web3_low` > `low`
+- Ruby **4.0.2** — єдина версія. Перевірте: `ruby --version`.
+- `db/structure.sql` — ніколи `schema.rb`.
+- Контролери тонкі: лише параметри, авторизація, рендеринг. Вся логіка — у `app/services/` або `app/workers/`.
+- RBAC через Pundit. Ролі: `investor(0) < forester(1) < admin(2) < super_admin(3)`.
+- `User.oracle_executioner` — системний бот (super_admin, без org). Тільки для автоматичних операцій.
 
-### Firmware (C)
-- STM32 HAL library, CMSIS headers
-- Soldier lifecycle: sense → TinyML → mruby → pack+encrypt → TX + sleep
-- Queen lifecycle: LoRa RX → AES decrypt → CIFO cache → CoAP batch PUT → OTA broadcast
-- Binary packet format: 21 bytes (1 header + 4 DID + 8 sensor + 4 Lorenz + 2 TinyML + 2 CRC)
-- Encryption: AES-128/256 with hardware-bound keys provisioned via `/api/v1/provisioning`
-- Mesh: TTL-based multi-hop routing, anti-pingpong via seen-set
+### Бізнес-критичні моделі
+- **`TelemetryLog`** — партиціонована таблиця. Завжди передавати `created_at_iso` у воркери для partition pruning (`find_with_partition_pruning`).
+- **`HardwareKey`** — кеш через `versioned_cache_key = "#{device_uid}:v:#{updated_at.to_f}"`. Ключі не залишають Ruby-процес (немає Redis-serialize). `binary_key` для AES-256-CBC розшифрування batch.
+- **`Wallet#lock_and_mint!`** — 10,000 growth_points = 1 SCC. Атомарна операція з pessimistic lock.
+- **`BlockchainTransaction`** — AASM: `pending -> processing -> sent -> confirmed/failed/manual_review`.
+- **`oracle_status`** enum (prefix: `oracle_status_`): `pending / dispatched / fulfilled / failed`. Методи: `oracle_status_fulfilled?` тощо.
 
-### Solidity
-- OpenZeppelin base contracts (ERC-20, AccessControl, Pausable, Votes, Permit)
-- Polygon network (Amoy testnet → Mainnet)
-- Foundry toolchain for deployment and testing
-
-## Key Domain Concepts
-
-- **EBFC (Enzymatic Bio-Fuel Cell)**: harvests >500 mV from tree glucose metabolism via GOx (anode) and Laccase (cathode) enzymes immobilized on Ti-6Al-4V gyroid anchor; powers BQ25570 MPPT → 0.47 F EDLC supercapacitor. The charge time (`delta_t`) is the primary health sensor input to the Lorenz attractor.
-- **Soldier**: tree-mounted STM32WLE5JC sensor node with LoRa radio, runs mruby VM and TinyML
-- **Queen**: gateway device (STM32 + SIM7070G modem) that collects soldier data and relays to backend via Starlink Direct-to-Cell or LTE
-- **Lorenz Attractor**: chaotic dynamical system (σ, ρ, β parameters) used to model tree homeostasis; computed both on-device (mruby) and backend (Ruby) for dual verification
-- **DID (Device ID)**: 4-byte hardware identity derived from STM32 UID, provisioned via API
-- **Proof of Growth**: trustless consensus pipeline — peaq DID verification → IoTeX W3bstream ZK-proof → Chainlink Oracle → Polygon mint. Trees earn SilkenCarbonCoin (SCC) for verified biomass growth (10,000 growth_points = 1 SCC)
-- **Slashing**: automatic token burning if >20% of cluster trees show stress signals
-- **NaaS (Nature-as-a-Service)**: business model where organizations subscribe to forest monitoring
-- **Parametric Insurance**: automated payouts triggered by catastrophic events (fire >60°C, drought, pest detection)
-- **OTA**: over-the-air firmware updates, chunked (512 bytes/chunk, 0.4s pacing), broadcast from queen to soldiers
-- **CIFO Cache**: queen-side circular buffer for telemetry batching before CoAP transmission
-- **TinyML**: on-device audio classification (chainsaw, fire, woodpecker) using CMSIS-NN, 6-class output
-
-## Sidekiq Queue Hierarchy
-
-| Priority | Queue          | Purpose                                                   |
-|----------|----------------|-----------------------------------------------------------|
-| 9        | uplink         | Telemetry ingestion (UnpackTelemetryWorker)               |
-| 8        | alerts         | EWS alerts, notifications                                 |
-| 7        | critical       | Slashing protocol, ecosystem healing, insurance payouts   |
-| 6        | downlink       | OTA transmission, actuator commands                       |
-| 5        | default        | Aggregation, health checks, standard tasks                |
-| 4        | web3_critical  | Time-sensitive blockchain: TX confirmations, minting, Oracle dispatch, ZK verification |
-| 3        | web3           | Standard Web3: Celo, Solana, peaq DID                     |
-| 2        | web3_low       | Non-critical Web3: L1 anchoring (weekly), KlimaDAO, Hadron|
-| 1        | low            | Audit logging, heavy analytics (InsightGenerator)         |
-
-## API Structure
-
-All endpoints are under `/api/v1/` namespace, JSON responses, token-based auth (Bearer).
-See `docs/API.md` for the full 28-endpoint reference.
-
-## Testing
-
-- Run all tests: `bundle exec rspec`
-- Run specific: `bundle exec rspec spec/models/tree_spec.rb`
-- Linting: `bundle exec rubocop`
-- Security: `bundle exec brakeman` and `bundle exec bundler-audit check`
-- Feature tests: Capybara + Cuprite (headless Chrome)
-
-### ⚠️ MANDATORY: Run RuboCop Before Finishing
-
-**Before completing ANY session, ALWAYS run `bundle exec rubocop` and fix all offenses.**
-CI will fail if RuboCop reports any violations. This includes:
-- `Layout/SpaceInsideArrayLiteralBrackets` — use `[ item ]` not `[item]`
-- `Bundler/OrderedGems` — gems must be sorted alphabetically within each group
-- `RSpec/ContextWording` — context descriptions must start with `when`, `with`, or `without`
-- `RSpec/DescribeClass` — top-level `describe` must reference a class/module, not a string
-
-Run with auto-correct where possible:
-```bash
-bundle exec rubocop -A
+### Proof of Growth Pipeline (суворий порядок)
 ```
-
-## Documentation Index
-
-| File                             | Content                                              |
-|----------------------------------|------------------------------------------------------|
-| `README.md`                      | Project overview (Ukrainian)                         |
-| `docs/README_EN.md`              | Project overview (English)                           |
-| `docs/ARCHITECTURE.md`           | System layers, data flow, multichain integration     |
-| `docs/API.md`                    | 28 REST API endpoints reference (v1)                 |
-| `docs/MODELS.md`                 | All 25 data models with fields and relationships     |
-| `docs/LOGIC.md`                  | 29+ services & 31+ workers reference                 |
-| `docs/FIRMWARE.md`               | STM32 firmware specs, binary packet format, mesh     |
-| `docs/HARDWARE.md`               | Energy harvesting (EBFC), BOM, schematics            |
-| `docs/TOKENOMICS.md`             | SCC/SFC dual-token economy, Proof of Growth          |
-| `docs/BLOCKCHAIN_DEVELOPMENT.md` | Web3 dev guide, 12-chain architecture, Foundry       |
-| `docs/DEPLOYMENT.md`             | Kamal, Terraform, Akash Network, infrastructure      |
-| `docs/VISION.md`                 | Mission, science, roadmap (2026–2030)                |
-| `docs/FRONTEND_GUIDELINES.md`    | Phlex components, Tailwind design tokens, Stimulus, accessibility |
-| `docs/COMPONENTS.md`             | Shared UI component catalog + Lookbook previews      |
-| `docs/OBSERVABILITY.md`          | Prometheus metrics, Grafana dashboards, health checks|
-| `docs/GAIA_2_0_ANATOMY.md`      | 12-step cyber-physical state anatomy                 |
-
-### ⚠️ MANDATORY: Read `docs/FRONTEND_GUIDELINES.md` for Frontend Tasks
-
-**When working on ANY frontend task** (Phlex components, Tailwind styling, Stimulus controllers, Turbo integration, view specs), **ALWAYS read `docs/FRONTEND_GUIDELINES.md` first.** It defines:
-- Dark-first semantic color tokens (`gaia-*`, `status-*`, `token-*`) — never use raw Tailwind colors in shared UI components
-- Phlex component architecture and naming conventions
-- TailwindMerge `tokens()` usage pattern
-- Typography scale (`text-micro`, `text-mini`, `text-tiny`, `text-compact`)
-- Accessibility checklist (roles, aria-labels, focus-visible)
-- Lookbook preview conventions
-
-## Environment Setup
-
-### Ruby 4.0.2 (CRITICAL)
-
-The system Ruby in this environment is **NOT** 4.0.2. Ruby 4.0.2 is pre-installed via **hostedtoolcache** at:
-
+Soldier -> LoRa -> Queen -> CoAP UDP:5683 -> UnpackTelemetryWorker -> TelemetryUnpackerService
+ -> IotexVerificationWorker (web3_critical)
+ -> ChainlinkDispatchWorker (web3_critical)
+ -> POST /api/v1/oracle_callbacks (Chainlink callback, HMAC-SHA256)
+ -> MintCarbonCoinWorker + SolanaMicroRewardWorker
 ```
-/opt/hostedtoolcache/Ruby/4.0.2/x64/bin
-```
+Guard clauses для мінтингу (oracle-driven): `verified_by_iotex? && oracle_status_fulfilled? && hadron_kyc_status == "approved"`.
 
-**You MUST add it to PATH before running ANY Ruby, Bundler, Rails, or RSpec command:**
+Dual Computation Integrity: server Z vs device Z (SilkenNet::Attractor). Divergence > 30% -> fraud flag.
+
+### Безпека та AES
+- LoRa Soldier->Queen: **AES-256-ECB** (1 блок = 16 байт, без IV).
+- CoAP batch uplink Queen->Rails: **AES-256-CBC** (HRNG IV).
+- CoAP downlink Rails->Queen: **AES-256-CBC**.
+- **BLOCKER (відкрито):** Hardcoded AES key у Flash всіх вузлів. Не вважати "виправленим" без коміту в firmware!
+- Provisioning: HKDF-SHA256 (`PROVISIONING_MASTER_KEY`). AES key НІКОЛИ не передається по мережі в production.
+- `WEB3_STRICT_MODE=true` -> всі Web3 стаби вимикаються (Chainlink, Hadron).
+- `oracle_callbacks` endpoint: HMAC-SHA256 `X-Chainlink-Signature` header.
+
+### Frontend (Phlex + Tailwind v4)
+- Всі UI компоненти успадковують від `ApplicationComponent < Phlex::HTML`.
+- Дизайн-токени ЗАВЖДИ: `bg-gaia-surface`, `text-gaia-text`, `border-gaia-border`, `bg-status-danger text-status-danger-text` etc.
+- НІКОЛИ в shared компонентах: `bg-white`, `text-gray-900`, `bg-red-100`, `text-emerald-400`.
+- `tokens(*static, **conditional)` — метод TailwindMerge для складання класів.
+- `config/tailwind.config.js` видалено — SSOT тільки в `app/assets/tailwind/application.css` (`@theme` блок).
+- Turbo Frames для lazy-load. Turbo Streams для live updates. Stimulus: `theme`, `clipboard`, `map`, `matrix-rain`.
+- Accessibility: `focus-visible:ring-2 focus-visible:ring-gaia-primary` на всіх інтерактивних елементах.
+
+### Деплой
+- **Kamal** (production/canopy) + **Terraform/GCP** (infrastructure, `europe-west1`).
+- CoAP UDP порт 5683 пробрасується у Kamal та Akash SDL.
+- Docker: `ruby:4.0.1-slim`, multi-stage build, `USER rails:1000`, CMD: `thrust ./bin/rails server`.
+- Canopy: staging, auto-deploy після push в `main`. Production: після GitHub Release (`v*.*.*`).
+
+---
+
+## 3. API `/api/v1` — 82 унікальні ендпоінти
+
+Повна таблиця: `docs/04_03_REST_API_v1_Reference.md`. Ключові:
+- `POST /login` -> Bearer token (rate limit: 5 req/min)
+- `POST /auth/m2m_token` -> Ed25519-підпис DID для Gateway (без логіна/пароля)
+- `POST /provisioning/register` -> HKDF деривація ключа, повертає DID (`"SNET-XXXXXXXX"`)
+- `POST /oracle_callbacks` -> Chainlink callback (публічний, HMAC-SHA256)
+- `GET /system_health` -> стан CoAP/Sidekiq/DB (admin only)
+- `POST /firmwares/:id/deploy` -> OTA розгортання (admin only)
+- `POST /actuators/:id/execute` -> команда актуатору (forester+, `Idempotency-Key` обов'язковий для JSON)
+
+---
+
+## 4. Ключові сервіси та де шукати логіку
+
+| Домен | Головний сервіс | Файл |
+|-------|----------------|------|
+| Uplink | `TelemetryUnpackerService` | `app/services/telemetry_unpacker_service.rb` |
+| Minting | `BlockchainMintingService` | `app/services/blockchain_minting_service.rb` |
+| Slashing | `BlockchainBurningService` | `app/services/blockchain_burning_service.rb` |
+| ZK-proof | `Iotex::W3bstreamVerificationService` | `app/services/iotex/` |
+| Oracle | `Chainlink::OracleDispatchService` | `app/services/chainlink/` |
+| Key mgmt | `HardwareKeyService` | `app/services/hardware_key_service.rb` |
+| OTA | `OtaPackagerService` | `app/services/ota_packager_service.rb` |
+| Lorenz | `SilkenNet::Attractor` | `app/services/silken_net/attractor.rb` |
+| Emergency | `EmergencyResponseService` | `app/services/emergency_response_service.rb` |
+| Satellite | `Dclimate::VerificationService` | `app/services/dclimate/` |
+
+---
+
+## 5. Активні BLOCKER'и (не закривати без підтвердження в коді + docs)
+
+| ID | Локація | Суть |
+|----|---------|------|
+| HW-AES-KEY | `firmware/*/main.c:65-66` | Hardcoded AES-256 key — єдиний ключ на всю мережу |
+| AES-ECB | `firmware/soldier/main.c:747` | ECB без MAC -> replay/bit-flip attack |
+| TINYML | `firmware/soldier/main.c:355` | `Run_Inference()` закоментована; `.h` відсутній |
+| LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | `delta_t`/`vcap` не передаються в `calculate_state` |
+| LORENZ-STATE | firmware | Стан (x,y,z) не зберігається між циклами STOP2 |
+| QUEEN-UID | `firmware/queen/main.c` | `QUEEN-001` hardcoded |
+| OTA-LOOP | `firmware/queen/main.c` | `ota_is_active` ніколи не скидається |
+| BQ25570-R | `docs/02_03` | Резистори VBAT_OV не верифіковані (Li-Po дефолт 4.2V замість 5.5V для supercap) |
+| PROMETHEUS | `terraform/` | Prometheus Server відсутній у інфраструктурі |
+| SENTRY-DSN | `.kamal/secrets` | `SENTRY_DSN` відсутній — Sentry інертний у production |
+| QUEEN-BLIND | `firmware/queen/main.c:542` | AT command blocking ~25 сек під час CoAP flush |
+
+---
+
+## 6. Фізична модель (контекст для розуміння)
+
+- 1 SCC = 10,000 growth_points (ERC-20, Polygon, MAX_SUPPLY = 1B SCC)
+- `bio_status`: 0=homeostasis, 1=stress, 2=anomaly, 3=tamper_detected
+- Lorenz Z: OPTIMAL_Z_TARGET=29.0, CRITICAL_Z_MIN=2.0, CRITICAL_Z_MAX=45.0
+- EDLC `delta_t` = час заряду іоністора = швидкість метаболізму EBFC = індикатор здоров'я дерева
+- TRL поточний: firmware TRL 6, backend TRL 8, hardware TRL 4-5
+
+---
+
+## 7. Команди валідації
 
 ```bash
 export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
+bundle exec rubocop
+bundle exec rspec
+bundle exec brakeman
+bundle exec bundler-audit check
+# Firmware (x86, без ARM toolchain):
+make -C firmware/test          # всі 137 тестів
+make -C firmware/test soldier  # тільки Soldier
+make -C firmware/test queen    # тільки Queen (59 тестів)
 ```
-
-Always verify with `ruby --version` — it must output `ruby 4.0.2`. If it shows any other version (e.g. 3.2.x), the PATH is not set correctly and `bundle install` / `bundle exec rspec` will fail with version mismatch errors.
-
-### Migrations & structure.sql
-
-This project uses `db/structure.sql` (not `schema.rb`) because PostgreSQL-specific features (partitioning, PostGIS, triggers) cannot be represented in Ruby DSL.
-
-**When creating or modifying migrations, you MUST:**
-
-1. Run the migration against the **development** database:
-   ```bash
-   export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
-   bundle exec rails db:migrate
-   ```
-2. This regenerates `db/structure.sql`.
-3. **Commit `db/structure.sql` alongside the migration file** — CI will fail if structure.sql is out of sync with migrations.
-
-## Important Notes for Copilot
-
-- This is a **Ukrainian-founded** project; comments and README may be in Ukrainian, but code and API are in English.
-- The **GitHub Wiki** is the SSOT — consult it for architectural decisions before making changes.
-- Ruby version is **4.0.2** — use modern Ruby syntax (pattern matching, numbered block params, `it` keyword, etc.).
-- Rails version is **8.1.2** — use Rails 8 conventions (Solid Queue/Cache/Cable, no Redis dependency for queue/cache).
-- The project uses **4 separate PostgreSQL databases** (primary, cache, queue, cable) — be aware of `connects_to` in models.
-- The **12-chain blockchain architecture** spans Polygon, Ethereum L1, Solana, Celo, peaq, IoTeX, Chainlink, KlimaDAO, Streamr, Filecoin, The Graph, and Polygon Hadron. Web3 services are namespaced under `app/services/`.
-- Firmware files in `firmware/` are plain C with STM32 HAL — not managed by Bundler or Rails.
-- Solidity contracts in `contracts/` use Foundry toolchain — not managed by Bundler.
-- When working with telemetry, remember the **21-byte binary packet format** and AES-256 encryption.
-- Background jobs have strict **9-queue priority** — always assign the correct queue to new workers.
-- The Lorenz attractor math is critical — σ=10, ρ=28, β=8/3 are defaults, perturbed by sensor readings. BigDecimal with 18-digit precision for legal/financial determinism.

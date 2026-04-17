@@ -1,99 +1,276 @@
-# Gaia 2.0 Guide for Claude
+# Gaia 2.0 — Повний контекст для Claude
 
-## Project Context
+## Порядок читання (обов'язково)
+1. Wiki SSOT: https://github.com/Alexey-Lukin/silken_net/wiki
+2. `docs/00_00_...` -> `docs/09_03_...` (всі файли, не лише заголовки)
+3. `README.md`
 
-Silken Net (Gaia 2.0) is a bio-IoT D-MRV platform for planetary-scale forest monitoring. Trees generate energy via EBFC (Enzymatic Bio-Fuel Cell, >500 mV from glucose metabolism), powering STM32WLE5JC sensor nodes that form a LoRa mesh network. Data flows through queen gateways to a Rails 8.1 backend, which runs Lorenz attractor analysis and manages a 12-chain blockchain economy (Polygon, Ethereum L1, Solana, Celo, peaq, IoTeX, Chainlink, KlimaDAO, Streamr, Filecoin, The Graph, Polygon Hadron).
+---
 
-**Single Source of Truth:** The [GitHub Wiki](https://github.com/Alexey-Lukin/silken_net/wiki) is the architectural SSOT. Local `docs/` folder contains complementary reference documentation. Always consult `.cursorrules` for AI behavior rules.
+## 1. Що таке SilkenNet
 
-## Environment Setup
+SilkenNet / Gaia 2.0 — планетарна кіберфізична платформа для моніторингу здоров'я лісів. Система поєднує:
+- **Hardware edge**: Ti-6Al-4V гіроїдний анкер (DMLS, пористість 70%) вживляється в дерево. EBFC (Enzymatic Bio-Fuel Cell) на межі метал-ксилема генерує ~500 мВ. BQ25570 MPPT -> EDLC суперконденсатор 0.47F/5.5V -> MCU 3.3V. Принцип "zero grid" — дерево живить власний монітор.
+- **Firmware**: Soldier (STM32WLE5JC) збирає дані, запускає mruby Lorenz attractor, упаковує 21-байтний пакет, шифрує AES-256-ECB, відправляє LoRa 868 МГц.
+- **Backend**: Rails 8.1 / Ruby 4.0.2 / PostgreSQL / Sidekiq — декодує, верифікує через 12-chain Web3 pipeline, мінтить SCC.
+- **Tokenomics**: Proof of Growth — 10,000 growth_points = 1 SCC (Polygon ERC-20). Слешинг при деградації лісу.
 
-**Ruby 4.0.2 is mandatory.** The system Ruby may differ. Always set PATH first:
+**Поточний TRL**: firmware TRL 6, backend TRL 7-8, hardware TRL 4-5.
+
+---
+
+## 2. Середовище розробки
 
 ```bash
 export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
-ruby --version  # Must output: ruby 4.0.2
+ruby --version  # must show 4.0.2
+bundle exec rubocop
+bundle exec rspec
+bundle exec brakeman
+bundle exec bundler-audit check
+# Firmware tests (host-based, x86):
+make -C firmware/test
 ```
 
-## Frequent Commands
+---
 
-```bash
-# Server & development
-bundle exec rails s                           # Start Rails server
-bin/dev                                       # Start all processes (Rails, Sidekiq, Tailwind, CoAP)
-bundle exec sidekiq -C config/sidekiq.yml     # Start Sidekiq worker
+## 3. Апаратна архітектура
 
-# Testing
-bundle exec rspec                             # Run full test suite
-bundle exec rspec spec/models/tree_spec.rb    # Run specific test file
-bundle exec rspec spec/services/              # Run all service tests
+### Soldier (STM32WLE5JC)
+**Файл**: `firmware/soldier/main.c` (648 рядків C)
 
-# Linting & security (MANDATORY before finishing)
-bundle exec rubocop -A                        # Auto-correct RuboCop offenses
-bundle exec brakeman                          # Static security analysis
-bundle exec bundler-audit check               # Dependency vulnerability scan
+Цикл пробудження (STOP2 -> active -> STOP2):
+1. **SENSE**: ADC читає Vcap (uint16 мВ), internal temp (int8 °C). DMA 16 кГц -> 512 ADC samples для TinyML.
+2. **TinyML**: CMSIS-NN акустичний inference (4 класи: silence/wind/cavitation/chainsaw). **BLOCKER: `Run_Inference()` закоментована** (main.c:355). `silken_net_audio_model.h` відсутній.
+3. **mruby BioContract** (`firmware/bio_contracts/bio_contract.rb`): Lorenz attractor 250 ітерацій (Euler, **Float** — не BigDecimal!). Входи: `chaos_seed` (HRNG), `temp`, `acoustic`. Виходи: `z_val` -> `status` + `growth_points`. Пакує в 1 байт: `[status:2|growth_points:6]`.
 
-# Database (uses structure.sql, NOT schema.rb)
-bundle exec rails db:migrate                  # Run migrations (regenerates structure.sql)
-bundle exec rails db:test:prepare             # Prepare test database
+   Firmware Lorenz константи:
+   ```ruby
+   BASE_SIGMA = 10.0;  BASE_RHO = 28.0;  BASE_BETA = 8.0 / 3.0  # Float!
+   DT = 0.01;  ITERATIONS = 250
+   SIGMA_LIMITS = (5.0..30.0);  RHO_LIMITS = (10.0..50.0)
+   ```
+   Формула growth_points:
+   ```ruby
+   # CRITICAL_Z_MIN=2.0, CRITICAL_Z_MAX=45.0, OPTIMAL_Z_TARGET=29.0
+   if z_val < 2.0  then status=1, growth_points=1   # stress
+   elsif z_val > 45.0 then status=2, growth_points=0  # anomaly
+   else  status=0; growth_points = clamp(50 - deviation.to_i, 10, 63)  # homeostasis
+   end
+   payload_byte = (status << 6) | growth_points  # C entry: calculate_state → uint8_t
+   ```
+   **Важливо:** Float vs BigDecimal — на прошивці `BASE_BETA = 8.0/3.0` → `2.6666666666666665` (IEEE 754), на сервері `("8.0".to_d / "3.0".to_d).round(18)` → `2.666666666666666667`. Це є джерелом природного divergence між device Z і server Z.
 
-# Firmware (pure C, not managed by Bundler)
-cd firmware && make test                      # Run host-based firmware tests
+4. **PACK**: 16-байтний payload.
+5. **ENCRYPT**: AES-256-ECB (апаратний CRYP модуль, без IV). 1 блок = 1 AES operation.
+6. **TX**: `Radio.Send(21 bytes)`. Mesh TTL-based. Emergency TX при chainsaw detection (PANIC_TTL=5).
+
+**21-байтний packet format**:
+```
+[DID:4][RSSI:1] | [Vcap:2][Temp:1][Acoustic:1][dT:2][StatusByte:1][TTL:1][FW:2][PAD:2]
+  unencrypted   |  AES-256-ECB encrypted (16 bytes = 1 block)
+```
+Ruby unpack: `"N n c C n C C a4"`.
+
+### Queen (STM32WLE5JC + SIM7070G)
+**Файл**: `firmware/queen/main.c` (550 рядків C)
+
+- LoRa RX -> AES-256-ECB decrypt -> CIFO EdgeCache (50 slots, дедуплікація за DID).
+- **Queen Sentinel:** `DID == 0x00000000` → власна телеметрія Королеви → `GatewayTelemetryWorker` (не `TelemetryLog`).
+- Flush trigger: >= 45 entries OR 1 година + HRNG jitter (0-60 сек).
+- Flush process: CBC encrypt (HRNG IV) -> AT+CCOAPSEND -> CoAP PUT `/telemetry/batch/<QUEEN_UID>` -> SIM7070G.
+- **BLOCKER: ECB restore** після CBC flush — якщо не відновити, наступні LoRa decrypt ламаються.
+- **BLOCKER: `QUEEN-001` hardcoded** UID -> неможливий уніфікований флешинг.
+- **BLOCKER: AT command blind delay ~25 sec** під час flush (немає парсингу відповіді модему).
+- OTA downlink: CoAP -> RAM assembly (`pending_ota_bytecode[8192]`) -> reflex broadcast chunk by chunk (TTL).
+  - Chunk format: `[0x99][index:2][total:2][bytecode:11]`, AES-256-CBC, pacing 60ms між чанками.
+  - `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`. Magic check: `0x45544952 ("RITE")` → load OTA bytecode, else → load embedded `lorenz_bytecode[]`.
+
+### AES режими
+| Напрямок | Режим | IV |
+|----------|-------|-----|
+| Soldier -> Queen (LoRa) | AES-256-ECB | немає |
+| Queen -> Rails (CoAP batch) | AES-256-CBC | HRNG |
+| Rails -> Queen (downlink) | AES-256-CBC | з payload |
+
+**BLOCKER**: ECB без MAC/IV -> вразливість replay attack, bit-flip, chosen plaintext. Потрібен AES-256-GCM.
+
+---
+
+## 4. Backend — модель даних
+
+### Ключові entities (04_01)
+
+**`Tree`** (Soldier):
+- `did`: `"SNET-XXXXXXXX"` (апаратний UID)
+- `peaq_did`: `"did:peaq:0x{40hex}"` (Web3 DID)
+- `bio_status`: enum (homeostasis/stress/anomaly/deceased/removed)
+- `health_streak`: скільки днів поспіль homeostasis
+- Includes: `AASM`, `GeoLocatable`, `Firmwareable`, `OtaChunkable`
+
+**`Gateway`** (Queen):
+- `uid`: `"SNET-Q-[8 HEX]"`
+- `state`: AASM (idle/active/updating/maintenance/faulty)
+- `mark_seen!(new_ip:, voltage_mv:)` — GREATEST атомарне оновлення
+- `online?` = `last_seen_at >= (sleep_interval * 1.2).seconds.ago`
+
+**`HardwareKey`**:
+- `aes_key_hex`: 64 HEX символи (AES-256), AR Encryption non-deterministic
+- `cached_binary_key`: in-process LRU (SinLruRedux), versioned_cache_key = `"#{device_uid}:v:#{updated_at.to_f}"`
+- Ключі не залишають Ruby-процес (немає Redis-serialize). Self-invalidation через `updated_at`.
+- Dual-Key Grace Period при ротації: `previous_aes_key_hex` активний поки не підтверджена синхронізація.
+
+**`TelemetryLog`** (partitioned, RANGE по created_at):
+- `bio_status` enum, `z_value`, `growth_points`, `acoustic_events`, `oracle_status`
+- `oracle_status` (string-backed enum, prefix: `oracle_status_`): `pending/dispatched/fulfilled/failed`
+- `verified_by_iotex`: bool, `zk_proof_ref`: string
+- Валідації видалені з hot path (KENOSIS TITAN). Перевірка в `TelemetryUnpackerService.valid_sensor_data?`.
+
+**`Wallet`**:
+- `balance`, `locked_balance`, `esg_retired_balance`, `toucan_bridged_balance`
+- `lock_and_mint!(points, threshold, token_type)` — 10,000 points = 1 SCC
+- `credit!(points)` враховує `carbon_sequestration_coefficient` породи дерева
+
+**`BlockchainTransaction`** (partitioned):
+- AASM: `pending -> processing -> sent -> confirmed / failed / manual_review`
+- `find_with_partition_pruning(id, created_at)` — partition-aware O(log N) lookup
+- `manual_review` — DOUBLE-SPEND GUARD: tx_hash є але стан невідомий, кошти заблоковані до ручної звірки.
+
+---
+
+## 5. Proof of Growth Pipeline
+
+**Суворий порядок** (05_02):
+```
+A. Provisioning: POST /provisioning/register
+   -> PeaqRegistrationWorker -> Peaq::DidRegistryService
+   -> DID = "did:peaq:0x{SHA256(did:id:created_at)[0:40]}"
+   -> Ed25519 підпис (Ed25519Crypto::SigningService)
+
+B. Uplink: CoAP PUT UDP:5683
+   -> UnpackTelemetryWorker (queue: uplink #1)
+   -> TelemetryUnpackerService: AES-256-CBC decrypt, 21-byte decode, Lorenz server-side
+   -> IotexVerificationWorker (queue: web3_critical #6)
+   -> Iotex::W3bstreamVerificationService: POST /verify
+   -> log.update!(verified_by_iotex: true, zk_proof_ref: ...)
+   -> ChainlinkDispatchWorker (queue: web3_critical #6)
+
+C. Oracle: POST /api/v1/oracle_callbacks (Chainlink DON, HMAC-SHA256)
+   -> log.oracle_status = "fulfilled"
+   -> MintCarbonCoinWorker + SolanaMicroRewardWorker
+
+D. Minting (BlockchainMintingService):
+   Guards: verified_by_iotex? && oracle_status_fulfilled? && hadron_kyc_status=="approved"
+   batchMint dry-run (eth_call) -> Binary Search isolation при revert
+   Dynamic Tax: 2% до DAO_TREASURY якщо insurance_pool < 100,000 SCC
 ```
 
-## Coding Standards
+**Dual Computation Integrity**: SilkenNet::Attractor (BigDecimal, 18-digit) розраховує Z server-side. Divergence > 30% між device Z і server Z -> fraud flag.
 
-- **Language:** English (code, API, variable names). Ukrainian (documentation, comments, README).
-- **Framework:** Rails 8.1 Omakase + Phlex UI components + Tailwind CSS (dark-first `gaia-*` design tokens).
-- **Architecture pattern:** Thin controllers → Service objects (`app/services/`) → Sidekiq workers (`app/workers/`). No business logic in models.
-- **Serialization:** Blueprinter (`app/blueprints/`), not JBuilder or ActiveModelSerializers.
-- **Auth:** Token-based (Bearer), argon2id for password hashing, Pundit for authorization.
-- **Database:** PostgreSQL with 4 separate databases (primary, cache, queue, cable). Always use `structure.sql`.
-- **Background jobs:** 9 strict-priority queues — assign the correct queue: `uplink` > `alerts` = `critical` > `downlink` > `default` > `web3_critical` > `web3` > `web3_low` > `low`.
-- **Testing:** RSpec, `let`/`let!`, FactoryBot factories in `spec/factories/`. Capybara + Cuprite for feature tests.
-- **Frontend:** Read `docs/FRONTEND_GUIDELINES.md` before any UI work. Use semantic color tokens (`gaia-*`, `status-*`, `token-*`), never raw Tailwind colors in shared components.
+---
 
-## Key Domain Concepts
-
-| Concept | Description |
-|---------|-------------|
-| **EBFC** | Enzymatic Bio-Fuel Cell — harvests >500 mV from tree glucose via GOx/Laccase enzymes |
-| **Soldier** | Tree-mounted STM32WLE5JC sensor node (LoRa, mruby VM, TinyML) |
-| **Queen** | LoRa gateway (STM32 + SIM7070G modem) — aggregates and relays to backend |
-| **Lorenz Attractor** | σ=10, ρ=28, β=8/3 — 250 iterations, BigDecimal(18) — models tree homeostasis |
-| **Proof of Growth** | 10,000 growth_points = 1 SCC token (verified via peaq DID → IoTeX ZK → Chainlink → Polygon) |
-| **Slashing** | Auto token burn if >20% cluster trees breach critical_z_min threshold |
-| **NaaS** | Nature-as-a-Service — subscription model for forest monitoring contracts |
-| **TRL** | Technology Readiness Level (1–9) — NASA standard, used as the sole progress metric |
-
-## Architecture (8 Layers per Wiki SSOT)
+## 6. Sidekiq черги (суворий пріоритет, `:strict: true`)
 
 ```
-L8  Ethereum L1          Weekly State Root anchoring (32-byte SHA-256 hash)
-L7  Polygon + DeFi       SCC/SFC minting, Solana micro-rewards, Celo ReFi, KlimaDAO ESG
-L6  Verification          peaq DID, IoTeX ZK-proofs, Streamr P2P, Filecoin/IPFS archive
-L5  Rails Backend         Rails 8.1 API, PostgreSQL, Sidekiq (31+ workers), Prometheus
-L4  LoRa Network          868 MHz mesh, CoAP/UDP, Queen gateways, Starlink/LTE
-L3  Firmware & Edge AI    STM32WLE5JC, TinyML (CMSIS-NN), mruby Lorenz, AES-256
-L2  Hardware Capsule      BQ25570 MPPT, 0.47F EDLC supercapacitor, Pogo Pin blind-mate
-L1  Biophysics            Ti-6Al-4V gyroid anchor, EBFC (GOx anode + Laccase cathode)
+uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5)
+> web3_critical(6) > web3(7) > web3_low(8) > low(9)
 ```
 
-## Documentation Index
+Числа — порядок дренування. Sidekiq NOT зважений, а строго послідовний. `uplink` повністю дренується перед `alerts`.
 
-| File | Content |
-|------|---------|
-| `docs/ARCHITECTURE.md` | System layers, data flow, multichain integration |
-| `docs/API.md` | 28 REST API endpoints reference (v1) |
-| `docs/MODELS.md` | 25 data entity models and relationships |
-| `docs/LOGIC.md` | 29+ services & 31+ workers with queue assignments |
-| `docs/FIRMWARE.md` | STM32 firmware specs, binary packet format, mesh protocol |
-| `docs/HARDWARE.md` | Energy harvesting BOM, EBFC, schematics |
-| `docs/TOKENOMICS.md` | SCC/SFC dual-token economy, Proof of Growth |
-| `docs/BLOCKCHAIN_DEVELOPMENT.md` | Web3 dev guide, 12-chain architecture, Foundry |
-| `docs/FRONTEND_GUIDELINES.md` | Phlex components, Tailwind design system, accessibility |
-| `docs/COMPONENTS.md` | Shared UI component catalog + Lookbook previews |
-| `docs/OBSERVABILITY.md` | Prometheus metrics, Grafana, health checks |
-| `docs/DEPLOYMENT.md` | Kamal, Terraform, Akash Network, infrastructure |
-| `docs/GAIA_2_0_ANATOMY.md` | 12-step cyber-physical state anatomy |
-| `docs/VISION.md` | Mission, science, roadmap (2026–2030) |
+---
+
+## 7. Frontend — Phlex + Tailwind v4
+
+**Правила** (04_04):
+- `ApplicationComponent < Phlex::HTML` — базовий клас. Без DB-запитів у `initialize`.
+- `tokens(*static, **conditional)` — TailwindMerge composit method.
+- Дизайн-токени ТІЛЬКИ: `bg-gaia-surface`, `text-gaia-text`, `bg-status-danger text-status-danger-text` тощо.
+- Raw Tailwind (`bg-red-100`) — заборонено в shared components, дозволено в domain-specific page components.
+- `config/tailwind.config.js` ВИДАЛЕНО — SSOT тільки у `application.css` (`@theme` блок).
+- Типографіка: `text-micro(8px)`, `text-mini(9px)`, `text-tiny(10px)`, `text-compact(11px)` — кастомна шкала.
+- CUSTOM_TEXT_SCALE реєструється в ApplicationComponent — TailwindMerge знає що це font-size, не color.
+
+**Turbo**:
+- Streams: `"telemetry_stream"`, `[@wallet, :transactions]`, `"alert_badge_{id}"`, `"ota_progress_{uid}"`
+- Frames lazy: `wallet_balance_frame_{id}`, `wallet_metadata_frame_{id}`, `tree_chronicle_{id}`
+
+**Stimulus**: `theme`, `clipboard`, `map` (Leaflet CartoDB Dark Matter), `matrix-rain` (Canvas hex rain, ~16fps, GPU-compositing).
+
+---
+
+## 8. API — ключові ендпоінти
+
+82 унікальні ендпоінти, всі під `/api/v1`. Деталі: `docs/04_03_REST_API_v1_Reference.md`.
+
+Ролі: `investor(0) < forester(1) < admin(2) < super_admin(3)`. `patrol` = синонім `forester`.
+
+Пагінація: Pagy, `?page=N&limit=21` (default 21, крім maintenance_records: 50/6).
+
+Ключові особливості:
+- `POST /actuators/:id/execute`: `Idempotency-Key` header обов'язковий для JSON запитів.
+- `GET /wallets/:id/balance` і `/metadata`: повертають Phlex Turbo Frame (HTML only, не JSON).
+- `POST /oracle_callbacks`: публічний ендпоінт (без Bearer), HMAC-SHA256 захист.
+- `POST /auth/m2m_token`: Ed25519-підпис DID. Replay protection через Redis nonce (SHA256 підпису, TTL 10 хв).
+
+---
+
+## 9. Безпека
+
+- Паролі: Argon2id (`HasArgon2Password`).
+- API tokens: Rails 8 `generates_token_for` (TTL: password_reset 15хв, email_verify 24г, api_access 30д).
+- MFA: TOTP + recovery codes (10 штук).
+- OAuth2: google, facebook, linkedin, twitter. Lock/unlock identity.
+- `send_default_pii: false` в Sentry (Zero-Trust).
+- AES keys шифруються AR Encryption non-deterministic в БД.
+- Chainlink HMAC перевірка: `ActiveSupport::SecurityUtils.secure_compare` (timing-safe).
+
+---
+
+## 10. Деплой та інфраструктура
+
+- **GCP** `europe-west1` (GDPR): Cloud SQL PostgreSQL 16, Memorystore Redis 7.0, GCE instances.
+- **Kamal**: production + canopy. SSH deploy, Traefik reverse proxy, Let's Encrypt SSL.
+- **Akash Network**: децентралізована хмара (ЄС, цензуростійкість). SDL в `deploy/akash/`. **BLOCKER: Sidekiq відсутній в Akash SDL**.
+- **Docker**: `ruby:4.0.1-slim`, multi-stage, `thrust ./bin/rails server`.
+- **Prometheus** (`/metrics` endpoint): 7 метрик (5 counters + 2 gauges). **BLOCKER: Prometheus Server відсутній у Terraform**.
+- **Sentry** 6.5.0: налаштований, але **`SENTRY_DSN` відсутній у `.kamal/secrets`**.
+- **Pre-flight**: антена ПЕРЕД живленням на SX1262 (згорить без антени). AES ключ симетричний на всіх вузлах.
+
+---
+
+## 11. 12-Chain Web3 деталі
+
+Усі сервіси в `app/services/`. Guard clause для мінтингу:
+```ruby
+raise "IoTeX" unless log.verified_by_iotex?
+raise "Chainlink" unless log.oracle_status_fulfilled?   # enum method
+raise "Hadron KYC" unless wallet.hadron_kyc_status == "approved"
+```
+
+`WEB3_STRICT_MODE=true` у production -> Chainlink та Hadron стаби вимикаються, raises при відсутності ENV.
+
+batchMint (100 записів): ~30-40% газу vs 100x mint(). Binary Search Poisoned Record Isolation при dry-run revert (Divide & Conquer, MAX_DEPTH=6).
+
+Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція через `getTokenAccountsByOwner`. Мікро-винагорода: 10,000 + growth_points*100 lamports (0.01-0.016 USDC).
+
+---
+
+## 12. Активні BLOCKER'и (MUST NOT treat as resolved)
+
+| BLOCKER | Файл | Суть |
+|---------|------|------|
+| HW-AES-KEY | `firmware/*/main.c:65-66` | Hardcoded AES key — єдиний ключ для всіх вузлів мережі |
+| AES-ECB | `firmware/soldier/main.c:747` | ECB без MAC -> replay/bit-flip attacks |
+| TINYML-COMMENT | `firmware/soldier/main.c:355` | `Run_Inference()` закоментована; model header відсутній |
+| LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | `delta_t`/`vcap` не передаються як входи атрактора |
+| LORENZ-STATE | firmware | Стан (x,y,z) не зберігається між циклами STOP2 через RTC regs |
+| OPTIMAL-Z | `bio_contract.rb:83` | Коментар каже 20.0, константа 29.0 |
+| QUEEN-UID | `firmware/queen/main.c` | `"QUEEN-001"` hardcoded |
+| QUEEN-OTA-LOOP | `firmware/queen/main.c` | `ota_is_active` ніколи не скидається |
+| QUEEN-AT-BLIND | `firmware/queen/main.c:542` | ~25 сек blind wait під час CoAP flush |
+| HRNG-IV-REUSE | `firmware/queen/main.c:516` | При HRNG blackout IV->0 -> CBC IV reuse |
+| BQ25570-R | `docs/02_03` | VBAT_OV резистори не верифіковані |
+| PROMETHEUS | `terraform/` | Prometheus Server відсутній |
+| SENTRY-DSN | `.kamal/secrets` | SENTRY_DSN не додано |
+| AKASH-SIDEKIQ | `deploy/akash/deploy.yaml` | Job role відсутній в SDL |
