@@ -3,17 +3,7 @@
 require "rails_helper"
 
 RSpec.describe Users::Index do
-  let(:component_class) { described_class }
 
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
-  def mock_pagy
-    pagy = OpenStruct.new(count: 63, page: 1, last: 3, from: 1, to: 21, prev: nil, next: 2, vars: { items: 21 })
-    pagy.define_singleton_method(:series) { [1, 2, 3] }
-    pagy
-  end
 
   def mock_user(id: 1, first_name: "Ada", last_name: "Lovelace", role: "admin", last_seen_at: Time.current)
     user = OpenStruct.new(
@@ -101,7 +91,7 @@ RSpec.describe Users::Index do
 
   describe "pagination" do
     it "renders pagination when pagy is provided" do
-      html = render_component(users: users, pagy: mock_pagy)
+      html = render_component(users: users, pagy: mock_pagy(count: 63))
       expect(html).to include("page=")
     end
 

@@ -12,7 +12,7 @@ RSpec.describe OracleVisions::SimulationPanel do
   end
 
   def render_component(clusters:)
-    ApplicationController.renderer.render(described_class.new(clusters: clusters), layout: false)
+    ApplicationController.renderer.render(component_class.new(clusters: clusters), layout: false)
   end
 
   let(:clusters) do

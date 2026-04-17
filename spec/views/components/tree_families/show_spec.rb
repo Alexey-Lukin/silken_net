@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe TreeFamilies::Show do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur",
                   baseline_impedance: 45, carbon_sequestration_coefficient: 1.2,

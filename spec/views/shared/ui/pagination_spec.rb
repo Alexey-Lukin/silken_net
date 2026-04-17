@@ -3,12 +3,7 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::Pagination do
-  let(:component_class) { described_class }
   let(:url_helper) { ->(page:) { "/items?page=#{page}" } }
-
-  def render_component(**kwargs)
-    component_class.new(**kwargs).call
-  end
 
   describe "with a middle page" do
     let(:pagy) { OpenStruct.new(page: 3, last: 10, prev: 2, next: 4) }

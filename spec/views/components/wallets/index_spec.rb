@@ -3,17 +3,7 @@
 require "rails_helper"
 
 RSpec.describe Wallets::Index do
-  let(:component_class) { described_class }
 
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
-  def mock_pagy(count: 3, page: 1)
-    pagy = OpenStruct.new(count: count, page: page, last: 1, from: 1, to: count, prev: nil, next: nil, vars: { items: 21 })
-    pagy.define_singleton_method(:series) { [1] }
-    pagy
-  end
 
   def mock_wallet(id: 1, scc_balance: 42.5, locked_balance: 0, esg_retired_balance: 0, tree_did: "SNET-AABBCCDD", org_name: nil, crypto_public_address: "0xDEAD1234BEEF5678")
     tree = tree_did ? OpenStruct.new(did: tree_did) : nil
@@ -31,7 +21,7 @@ RSpec.describe Wallets::Index do
 
   describe "rendering" do
     let(:wallets) { [mock_wallet(id: 1), mock_wallet(id: 2, tree_did: nil, org_name: "GreenCorp")] }
-    let(:html) { render_component(wallets: wallets, pagy: mock_pagy(count: 2), total_liquidity: 100.5) }
+    let(:html) { render_component(wallets: wallets, pagy: mock_pagy(count: 2, last: 1), total_liquidity: 100.5) }
 
     it "renders the Treasury Matrix heading" do
       expect(html).to include("Treasury Matrix")

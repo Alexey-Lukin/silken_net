@@ -30,7 +30,7 @@ RSpec.describe Organizations::Show do
 
   def render_component(organization:, clusters:, performance:)
     ApplicationController.renderer.render(
-      described_class.new(organization: organization, clusters: clusters, performance: performance),
+      component_class.new(organization: organization, clusters: clusters, performance: performance),
       layout: false
     )
   end

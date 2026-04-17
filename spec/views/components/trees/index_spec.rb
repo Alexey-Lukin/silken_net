@@ -3,24 +3,11 @@
 require "rails_helper"
 
 RSpec.describe Trees::Index do
-  let(:component_class) { described_class }
   let(:cluster) { mock_cluster }
   let(:trees) { [mock_tree] }
-  let(:pagy) { mock_pagy }
+  let(:pagy) { mock_pagy(count: 1, last: 1) }
   let(:html) { render_component(cluster: cluster, trees: trees, pagy: pagy) }
 
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
-  def mock_pagy(count: 1, page: 1)
-    pg = OpenStruct.new(
-      count: count, page: page, last: 1, from: 1, to: count,
-      prev: nil, next: nil, vars: { items: 21 }
-    )
-    pg.define_singleton_method(:series) { [1] }
-    pg
-  end
 
   def mock_cluster(id: 1, name: "Carpathian-Alpha", active_trees_count: 5)
     c = OpenStruct.new(id: id, name: name, active_trees_count: active_trees_count)
@@ -173,7 +160,7 @@ RSpec.describe Trees::Index do
 
   describe "empty grid" do
     it "renders without errors when no trees" do
-      rendered = render_component(cluster: cluster, trees: [], pagy: mock_pagy(count: 0))
+      rendered = render_component(cluster: cluster, trees: [], pagy: mock_pagy(count: 0, last: 1))
       expect(rendered).to include("Sector Matrix Deployment")
     end
   end

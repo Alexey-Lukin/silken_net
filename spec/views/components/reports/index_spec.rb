@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Reports::Index do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_org(id: 1, name: "ForestDAO")
     OpenStruct.new(id: id, name: name)

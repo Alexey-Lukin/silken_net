@@ -3,7 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Trees::Show do
-  let(:component_class) { described_class }
   let(:tree) { mock_tree }
   let(:latest_log) { mock_latest_log }
   let(:recent_logs) { [mock_recent_log] }
@@ -11,10 +10,6 @@ RSpec.describe Trees::Show do
   let(:html) do
     render_component(tree: tree, latest_log: latest_log,
                      recent_logs: recent_logs, maintenance_history: maintenance_history)
-  end
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
   end
 
   def mock_tree(did: "SNET-00000042", status: "active", current_stress: 0.35,

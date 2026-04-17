@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Firmwares::New do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_firmware
     fw = OpenStruct.new(

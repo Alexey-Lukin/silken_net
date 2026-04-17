@@ -72,7 +72,7 @@ RSpec.describe Maintenance::Show do
 
   def render_component(record:, photos:, pagy_photos:)
     ApplicationController.renderer.render(
-      described_class.new(record: record, photos: photos, pagy_photos: pagy_photos),
+      component_class.new(record: record, photos: photos, pagy_photos: pagy_photos),
       layout: false
     )
   end

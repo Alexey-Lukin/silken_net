@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Wallets::BalanceFrame do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_wallet(id: 1, scc_balance: 42.5, locked_balance: 0.0,
                   esg_retired_balance: 0.0, toucan_bridged_balance: 0.0)

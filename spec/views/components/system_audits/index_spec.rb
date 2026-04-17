@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe SystemAudits::Index do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    component_class.new(**kwargs).call
-  end
 
   def mock_audit(db_total: 1000.0, chain_total: 1000.0, delta: 0.0,
                  critical: false, checked_at: Time.parse("2024-01-15 12:00:00 UTC"))

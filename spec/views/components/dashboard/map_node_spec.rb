@@ -21,7 +21,7 @@ RSpec.describe Dashboard::MapNode do
   end
 
   def render_component(tree:)
-    described_class.new(tree: tree).call
+    component_class.new(tree: tree).call
   end
 
   let(:tree) { mock_tree }

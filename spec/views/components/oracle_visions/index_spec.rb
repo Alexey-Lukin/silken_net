@@ -24,7 +24,7 @@ RSpec.describe OracleVisions::Index do
 
   def render_component(visions:, yield_forecast:, clusters:)
     ApplicationController.renderer.render(
-      described_class.new(visions: visions, yield_forecast: yield_forecast, clusters: clusters),
+      component_class.new(visions: visions, yield_forecast: yield_forecast, clusters: clusters),
       layout: false
     )
   end

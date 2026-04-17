@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe TreeFamilies::Form do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_family(id: nil, name: nil, scientific_name: nil)
     family = TreeFamily.new(id: id, name: name, scientific_name: scientific_name)

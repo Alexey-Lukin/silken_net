@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Actuators::CommandStatusBadge do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    component_class.new(**kwargs).call
-  end
 
   def mock_command(id: 1, status: "confirmed")
     OpenStruct.new(id: id, status: status)

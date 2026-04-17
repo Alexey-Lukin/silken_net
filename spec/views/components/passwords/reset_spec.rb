@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Passwords::Reset do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   let(:token) { "abc123securetoken" }
   let(:html)  { render_component(token: token, flash_alert: nil) }

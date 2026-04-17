@@ -3,17 +3,7 @@
 require "rails_helper"
 
 RSpec.describe Firmwares::Index do
-  let(:component_class) { described_class }
 
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
-  def mock_pagy(count: 3, page: 1)
-    pagy = OpenStruct.new(count: count, page: page, last: 1, from: 1, to: count, prev: nil, next: nil, vars: { items: 21 })
-    pagy.define_singleton_method(:series) { [1] }
-    pagy
-  end
 
   def mock_firmware(id: 1, version: "1.4.2", target_hardware: "stm32_l0", checksum: "abcdef1234567890AABB", created_at: Time.new(2024, 3, 15, 10, 30))
     OpenStruct.new(
@@ -36,7 +26,7 @@ RSpec.describe Firmwares::Index do
 
   describe "rendering" do
     let(:firmwares) { [mock_firmware(id: 1), mock_firmware(id: 2, version: "1.3.0")] }
-    let(:html) { render_component(firmwares: firmwares, inventory_stats: mock_inventory_stats, pagy: mock_pagy(count: 2)) }
+    let(:html) { render_component(firmwares: firmwares, inventory_stats: mock_inventory_stats, pagy: mock_pagy(count: 2, last: 1)) }
 
     it "renders with fade-in animation" do
       expect(html).to include("animate-in")
@@ -72,7 +62,7 @@ RSpec.describe Firmwares::Index do
   end
 
   describe "inventory stats" do
-    let(:html) { render_component(firmwares: [], inventory_stats: mock_inventory_stats, pagy: mock_pagy(count: 0)) }
+    let(:html) { render_component(firmwares: [], inventory_stats: mock_inventory_stats, pagy: mock_pagy(count: 0, last: 1)) }
 
     it "displays Queens (Gateways) section" do
       expect(html).to include("Queens (Gateways)")
@@ -98,7 +88,7 @@ RSpec.describe Firmwares::Index do
   end
 
   describe "accessibility" do
-    let(:html) { render_component(firmwares: [mock_firmware], inventory_stats: mock_inventory_stats, pagy: mock_pagy) }
+    let(:html) { render_component(firmwares: [mock_firmware], inventory_stats: mock_inventory_stats, pagy: mock_pagy(last: 1)) }
 
     it "renders table with role=table" do
       expect(html).to include('role="table"')
@@ -114,7 +104,7 @@ RSpec.describe Firmwares::Index do
   end
 
   describe "best practices compliance" do
-    let(:html) { render_component(firmwares: [mock_firmware], inventory_stats: mock_inventory_stats, pagy: mock_pagy) }
+    let(:html) { render_component(firmwares: [mock_firmware], inventory_stats: mock_inventory_stats, pagy: mock_pagy(last: 1)) }
 
     it "uses text-tiny for typography" do
       expect(html).to include("text-tiny")

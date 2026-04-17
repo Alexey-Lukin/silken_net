@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe Maintenance::Form do
   def render_component(record:, existing_photos: [])
     ApplicationController.renderer.render(
-      described_class.new(record: record, existing_photos: existing_photos),
+      component_class.new(record: record, existing_photos: existing_photos),
       layout: false
     )
   end

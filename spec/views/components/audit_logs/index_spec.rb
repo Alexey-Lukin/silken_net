@@ -3,17 +3,7 @@
 require "rails_helper"
 
 RSpec.describe AuditLogs::Index do
-  let(:component_class) { described_class }
 
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
-  def mock_pagy(count: 63)
-    pagy = OpenStruct.new(count: count, page: 1, last: 3, from: 1, to: 21, prev: nil, next: 2, vars: { items: 21 })
-    pagy.define_singleton_method(:series) { [1, 2, 3] }
-    pagy
-  end
 
   def mock_user(name: "Ada Lovelace")
     OpenStruct.new(full_name: name)
@@ -38,7 +28,7 @@ RSpec.describe AuditLogs::Index do
   let(:log_with_user)    { mock_log(id: 1, action: "update", auditable_type: "Tree", auditable_id: 7, user: mock_user) }
   let(:log_without_user) { mock_log(id: 2, action: "destroy", auditable_type: nil, auditable_id: nil, user: nil) }
   let(:logs)             { [log_with_user, log_without_user] }
-  let(:html)             { render_component(logs: logs, pagy: mock_pagy) }
+  let(:html)             { render_component(logs: logs, pagy: mock_pagy(count: 63)) }
 
   describe "header" do
     it "renders the Watcher heading" do

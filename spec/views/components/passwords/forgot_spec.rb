@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Passwords::Forgot do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   let(:html) { render_component(flash_alert: nil, flash_notice: nil) }
 

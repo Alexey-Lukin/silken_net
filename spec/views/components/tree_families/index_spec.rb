@@ -3,17 +3,7 @@
 require "rails_helper"
 
 RSpec.describe TreeFamilies::Index do
-  let(:component_class) { described_class }
 
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
-  def mock_pagy
-    pagy = OpenStruct.new(count: 63, page: 1, last: 3, from: 1, to: 21, prev: nil, next: 2, vars: { items: 21 })
-    pagy.define_singleton_method(:series) { [1, 2, 3] }
-    pagy
-  end
 
   def mock_family(id: 1, name: "Oak", scientific_name: "Quercus robur", baseline_impedance: 45,
                   critical_z_min: 10, critical_z_max: 80, trees_count: 120)
@@ -34,7 +24,7 @@ RSpec.describe TreeFamilies::Index do
 
   let(:family)   { mock_family }
   let(:families) { [family, mock_family(id: 2, name: "Pine", scientific_name: "Pinus sylvestris", trees_count: 55)] }
-  let(:html)     { render_component(families: families, pagy: mock_pagy) }
+  let(:html)     { render_component(families: families, pagy: mock_pagy(count: 63)) }
 
   describe "header" do
     it "renders Biological Matrix label" do

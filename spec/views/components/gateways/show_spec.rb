@@ -3,15 +3,10 @@
 require "rails_helper"
 
 RSpec.describe Gateways::Show do
-  let(:component_class) { described_class }
   let(:gateway) { mock_gateway }
   let(:latest_log) { mock_latest_log }
   let(:active_soldiers) { [mock_soldier] }
   let(:html) { render_component(gateway: gateway, latest_log: latest_log, active_soldiers: active_soldiers) }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_gateway(uid: "SNET-Q-AAB01234", state: "active", ip_address: "192.168.1.42",
                    last_seen_at: 1.minute.ago, cluster_name: "Carpathian-Alpha",

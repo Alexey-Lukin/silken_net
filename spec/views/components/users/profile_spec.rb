@@ -32,7 +32,7 @@ RSpec.describe Users::Profile do
 
   def render_component(user:, maintenance_count: 0, active_identities: [])
     ApplicationController.renderer.render(
-      described_class.new(user: user, maintenance_count: maintenance_count, active_identities: active_identities),
+      component_class.new(user: user, maintenance_count: maintenance_count, active_identities: active_identities),
       layout: false
     )
   end

@@ -3,17 +3,7 @@
 require "rails_helper"
 
 RSpec.describe Organizations::Index do
-  let(:component_class) { described_class }
 
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
-  def mock_pagy
-    pagy = OpenStruct.new(count: 63, page: 1, last: 3, from: 1, to: 21, prev: nil, next: 2, vars: { items: 21 })
-    pagy.define_singleton_method(:series) { [1, 2, 3] }
-    pagy
-  end
 
   def mock_org(id: 1, name: "EcoInvest DAO", total_clusters: 5, total_invested: 12_000,
                crypto_public_address: "0xAbCd1234AbCd1234AbCd1234AbCd1234AbCd1234")
@@ -32,7 +22,7 @@ RSpec.describe Organizations::Index do
 
   let(:org)           { mock_org }
   let(:organizations) { [org, mock_org(id: 2, name: "GreenFund Ltd", total_invested: 5_000)] }
-  let(:html)          { render_component(organizations: organizations, pagy: mock_pagy) }
+  let(:html)          { render_component(organizations: organizations, pagy: mock_pagy(count: 63)) }
 
   describe "header section" do
     it "renders the Global Clan Registry heading" do

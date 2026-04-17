@@ -48,7 +48,7 @@ RSpec.describe Contracts::Show do
 
   def render_component(contract:, history:)
     ApplicationController.renderer.render(
-      described_class.new(contract: contract, history: history),
+      component_class.new(contract: contract, history: history),
       layout: false
     )
   end

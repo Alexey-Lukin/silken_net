@@ -50,7 +50,7 @@ RSpec.describe Maintenance::Index do
 
   def render_component(records:, pagy:)
     ApplicationController.renderer.render(
-      described_class.new(records: records, pagy: pagy),
+      component_class.new(records: records, pagy: pagy),
       layout: false
     )
   end

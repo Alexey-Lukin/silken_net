@@ -34,7 +34,7 @@ RSpec.describe Dashboard::Home do
 
   def render_component(stats:, events:)
     ApplicationController.renderer.render(
-      described_class.new(stats: stats, events: events),
+      component_class.new(stats: stats, events: events),
       layout: false
     )
   end

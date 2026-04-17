@@ -3,23 +3,10 @@
 require "rails_helper"
 
 RSpec.describe Gateways::Index do
-  let(:component_class) { described_class }
   let(:gateways) { [mock_gateway] }
-  let(:pagy) { mock_pagy }
+  let(:pagy) { mock_pagy(count: 1, last: 1) }
   let(:html) { render_component(gateways: gateways, pagy: pagy, online_count: 3) }
 
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
-  def mock_pagy(count: 1, page: 1)
-    pg = OpenStruct.new(
-      count: count, page: page, last: 1, from: 1, to: count,
-      prev: nil, next: nil, vars: { items: 21 }
-    )
-    pg.define_singleton_method(:series) { [1] }
-    pg
-  end
 
   def mock_gateway(uid: "SNET-Q-AAB01234", last_seen_at: 1.minute.ago,
                    cluster_name: "Carpathian-Alpha", active_trees_count: 12,
@@ -104,7 +91,7 @@ RSpec.describe Gateways::Index do
     let(:gateways) { [] }
 
     it "renders without errors when no gateways" do
-      rendered = render_component(gateways: [], pagy: mock_pagy(count: 0), online_count: 0)
+      rendered = render_component(gateways: [], pagy: mock_pagy(count: 0, last: 1), online_count: 0)
       expect(rendered).to include("Queen Registry // Global Relays")
       expect(rendered).to include("0 / 0")
     end
@@ -116,7 +103,7 @@ RSpec.describe Gateways::Index do
         mock_gateway(uid: "SNET-Q-001"),
         mock_gateway(uid: "SNET-Q-002")
       ]
-      rendered = render_component(gateways: gateways, pagy: mock_pagy(count: 2), online_count: 2)
+      rendered = render_component(gateways: gateways, pagy: mock_pagy(count: 2, last: 1), online_count: 2)
       expect(rendered).to include("SNET-Q-001")
       expect(rendered).to include("SNET-Q-002")
     end

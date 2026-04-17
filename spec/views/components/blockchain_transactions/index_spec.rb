@@ -3,23 +3,10 @@
 require "rails_helper"
 
 RSpec.describe BlockchainTransactions::Index do
-  let(:component_class) { described_class }
   let(:transactions) { [mock_transaction] }
-  let(:pagy) { mock_pagy }
+  let(:pagy) { mock_pagy(count: 1, last: 1) }
   let(:html) { render_component(transactions: transactions, pagy: pagy) }
 
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
-  def mock_pagy(count: 1, page: 1)
-    pg = OpenStruct.new(
-      count: count, page: page, last: 1, from: 1, to: count,
-      prev: nil, next: nil, vars: { items: 21 }
-    )
-    pg.define_singleton_method(:series) { [1] }
-    pg
-  end
 
   def mock_transaction(id: 1, amount: "0.005", status: "confirmed", token_type: "carbon_coin",
                        tx_hash: "0xabcdef1234567890abcdef1234567890abcdef12",
@@ -162,7 +149,7 @@ RSpec.describe BlockchainTransactions::Index do
 
   describe "empty state" do
     it "shows empty message when no transactions" do
-      rendered = render_component(transactions: [], pagy: mock_pagy(count: 0))
+      rendered = render_component(transactions: [], pagy: mock_pagy(count: 0, last: 1))
       expect(rendered).to include("No blockchain transactions recorded.")
     end
   end
@@ -188,7 +175,7 @@ RSpec.describe BlockchainTransactions::Index do
         mock_transaction(id: 1, amount: "1.0"),
         mock_transaction(id: 2, amount: "2.0")
       ]
-      rendered = render_component(transactions: txs, pagy: mock_pagy(count: 2))
+      rendered = render_component(transactions: txs, pagy: mock_pagy(count: 2, last: 1))
       expect(rendered).to include("1.0 SCC")
       expect(rendered).to include("2.0 SCC")
     end

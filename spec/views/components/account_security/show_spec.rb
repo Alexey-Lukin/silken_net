@@ -32,7 +32,7 @@ RSpec.describe AccountSecurity::Show do
 
   def render_component(user:, identities:)
     ApplicationController.renderer.render(
-      described_class.new(user: user, identities: identities),
+      component_class.new(user: user, identities: identities),
       layout: false
     )
   end

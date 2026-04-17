@@ -19,7 +19,7 @@ RSpec.describe OracleVisions::ForecastCard do
   end
 
   def render_component(insight:)
-    described_class.new(insight: insight).call
+    component_class.new(insight: insight).call
   end
 
   describe "insight_type badge" do

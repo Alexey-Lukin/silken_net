@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe SystemHealth::Show do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    component_class.new(**kwargs).call
-  end
 
   def healthy_health(queues: { "uplink" => 0, "default" => 2 })
     {

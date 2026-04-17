@@ -3,13 +3,8 @@
 require "rails_helper"
 
 RSpec.describe Gateways::Item do
-  let(:component_class) { described_class }
   let(:gateway) { mock_gateway }
   let(:html) { render_component(gateway: gateway) }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_gateway(uid: "SNET-Q-AAB01234", last_seen_at: 1.minute.ago,
                    cluster_name: "Carpathian-Alpha", active_trees_count: 12,

@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe AuditLogs::Show do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_user(full_name: "Ada Lovelace", email_address: "ada@silken.net", role: "admin")
     OpenStruct.new(full_name: full_name, email_address: email_address, role: role)

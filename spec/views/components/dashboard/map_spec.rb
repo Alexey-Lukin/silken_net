@@ -22,7 +22,7 @@ RSpec.describe Dashboard::Map do
 
   def render_component(trees:)
     ApplicationController.renderer.render(
-      described_class.new(trees: trees),
+      component_class.new(trees: trees),
       layout: false
     )
   end

@@ -33,7 +33,7 @@ RSpec.describe Maintenance::PhotoGallery do
 
   def render_component(record:, photos:, pagy:, editable: false)
     ApplicationController.renderer.render(
-      described_class.new(record: record, photos: photos, pagy: pagy, editable: editable),
+      component_class.new(record: record, photos: photos, pagy: pagy, editable: editable),
       layout: false
     )
   end

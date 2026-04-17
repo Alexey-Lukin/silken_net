@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Notifications::Settings do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_user(id: 1, email_address: "ada@silken.net", phone_number: "+380501234567",
                telegram_chat_id: "123456789", push_token: nil)

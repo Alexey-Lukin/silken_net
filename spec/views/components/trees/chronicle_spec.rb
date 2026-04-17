@@ -3,14 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Trees::Chronicle do
-  def mock_pagy(count: 5, page: 1)
-    pg = OpenStruct.new(
-      count: count, page: page, last: 1, from: 1, to: count,
-      prev: nil, next: nil, vars: { items: 20 }
-    )
-    pg.define_singleton_method(:series) { [1] }
-    pg
-  end
 
   def mock_tree(id: 1, did: "SNET-00000042")
     t = OpenStruct.new(id: id, did: did)
@@ -35,13 +27,13 @@ RSpec.describe Trees::Chronicle do
 
   def render_component(tree:, entries:, pagy:)
     ApplicationController.renderer.render(
-      described_class.new(tree: tree, entries: entries, pagy: pagy),
+      component_class.new(tree: tree, entries: entries, pagy: pagy),
       layout: false
     )
   end
 
   let(:tree) { mock_tree }
-  let(:pagy) { mock_pagy(count: 2) }
+  let(:pagy) { mock_pagy(count: 2, last: 1) }
   let(:entry) { mock_entry }
   let(:html) { render_component(tree: tree, entries: [entry], pagy: pagy) }
 
@@ -110,12 +102,12 @@ RSpec.describe Trees::Chronicle do
 
   describe "empty state" do
     it "renders empty state message when entries are empty" do
-      html = render_component(tree: tree, entries: [], pagy: mock_pagy(count: 0))
+      html = render_component(tree: tree, entries: [], pagy: mock_pagy(count: 0, last: 1))
       expect(html).to include("No chronicle events recorded")
     end
 
     it "renders the empty state description" do
-      html = render_component(tree: tree, entries: [], pagy: mock_pagy(count: 0))
+      html = render_component(tree: tree, entries: [], pagy: mock_pagy(count: 0, last: 1))
       expect(html).to include("Events will appear here")
     end
   end

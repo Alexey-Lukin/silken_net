@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Clusters::Item do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_cluster(id: 1, name: "Carpathian-Alpha", active_threats: false,
                    total_active_trees: 42, health_index: 0.91)

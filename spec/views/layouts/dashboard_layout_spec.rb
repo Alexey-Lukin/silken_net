@@ -40,7 +40,7 @@ RSpec.describe DashboardLayout do
                     ews_alert_count: 0, user: nil)
     current_user = user || mock_user
     ApplicationController.renderer.render(
-      described_class.new(
+      component_class.new(
         title: title,
         current_user: current_user,
         current_path: current_path,

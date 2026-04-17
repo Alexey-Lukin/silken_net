@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Telemetry::LiveStream do
-  let(:component_class) { described_class }
-
-  def render_component
-    ApplicationController.renderer.render(component_class.new, layout: false)
-  end
 
   describe "rendering" do
     let(:html) { render_component }

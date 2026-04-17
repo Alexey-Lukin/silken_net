@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Reports::FinancialSummary do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    component_class.new(**kwargs).call
-  end
 
   def mock_org(name: "GreenFund")
     OpenStruct.new(name: name)

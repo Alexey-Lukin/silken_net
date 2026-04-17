@@ -24,7 +24,7 @@ RSpec.describe Settings::Show do
 
   def render_component(organization:)
     ApplicationController.renderer.render(
-      described_class.new(organization: organization),
+      component_class.new(organization: organization),
       layout: false
     )
   end

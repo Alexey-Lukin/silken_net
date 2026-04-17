@@ -3,13 +3,8 @@
 require "rails_helper"
 
 RSpec.describe BlockchainTransactions::Show do
-  let(:component_class) { described_class }
   let(:transaction) { mock_transaction }
   let(:html) { render_component(transaction: transaction) }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_transaction(id: 1, amount: "0.005", status: "confirmed", token_type: "carbon_coin",
                        tx_hash: "0xabcdef1234567890abcdef1234567890abcdef12",

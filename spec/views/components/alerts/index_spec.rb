@@ -3,17 +3,7 @@
 require "rails_helper"
 
 RSpec.describe Alerts::Index do
-  let(:component_class) { described_class }
 
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
-  def mock_pagy
-    pagy = OpenStruct.new(count: 63, page: 1, last: 3, from: 1, to: 21, prev: nil, next: 2, vars: { items: 21 })
-    pagy.define_singleton_method(:series) { [1, 2, 3] }
-    pagy
-  end
 
   def mock_alert(id: 1, alert_type: "fire_detected", severity: "critical", status: "active")
     alert = OpenStruct.new(id: id, alert_type: alert_type, severity: severity, status: status, created_at: Time.current)
@@ -29,7 +19,7 @@ RSpec.describe Alerts::Index do
 
   let(:org)    { mock_org }
   let(:alerts) { [mock_alert(id: 1, severity: "critical"), mock_alert(id: 2, severity: "medium")] }
-  let(:html)   { render_component(alerts: alerts, pagy: mock_pagy, organization: org) }
+  let(:html)   { render_component(alerts: alerts, pagy: mock_pagy(count: 63), organization: org) }
 
   describe "turbo stream subscription" do
     it "includes turbo-cable-stream-source when organization is provided" do
@@ -43,7 +33,7 @@ RSpec.describe Alerts::Index do
     end
 
     it "does not render turbo stream when organization is nil" do
-      html = render_component(alerts: alerts, pagy: mock_pagy, organization: nil)
+      html = render_component(alerts: alerts, pagy: mock_pagy(count: 63), organization: nil)
       expect(html).not_to include("ews_alerts_org_")
     end
   end

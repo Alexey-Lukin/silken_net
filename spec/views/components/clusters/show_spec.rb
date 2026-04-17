@@ -3,15 +3,10 @@
 require "rails_helper"
 
 RSpec.describe Clusters::Show do
-  let(:component_class) { described_class }
   let(:cluster) { mock_cluster }
   let(:gateways) { [ mock_gateway ] }
   let(:recent_alerts) { [] }
   let(:html) { render_component(cluster: cluster, gateways: gateways, recent_alerts: recent_alerts) }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_cluster(id: 1, name: "Carpathian-Alpha", region: "Cherkasy Oblast",
                    health_index: 0.87, total_active_trees: 142, active_threats: false)
@@ -43,7 +38,6 @@ RSpec.describe Clusters::Show do
     alert.define_singleton_method(:to_key) { [ id ] }
     alert
   end
-
 
   describe "turbo stream subscription" do
     it "includes turbo-cable-stream-source for alerts" do

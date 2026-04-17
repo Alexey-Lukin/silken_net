@@ -3,11 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::Web3::Address do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    component_class.new(**kwargs).call
-  end
 
   describe "with a valid Ethereum address" do
     let(:address) { "0x1234567890abcdef1234567890abcdef12345678" }
