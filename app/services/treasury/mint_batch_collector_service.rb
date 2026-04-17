@@ -19,7 +19,7 @@ module Treasury
   # =========================================================================
   class MintBatchCollectorService < ApplicationService
     # Максимальний розмір пакета для batchMint (обмеження Solidity контракту)
-    MAX_BATCH_SIZE = 200
+    MAX_BATCH_SIZE = 100
 
     # Оптимальний розмір пакета для газ-ефективності
     # При 50-100 транзакціях gas overhead мінімальний

@@ -21,6 +21,10 @@ contract StateRootAnchor is AccessControl {
     /// @notice Роль для запису state root (EthereumAnchorWorker oracle).
     bytes32 public constant ANCHOR_ROLE = keccak256("ANCHOR_ROLE");
 
+    /// @notice Мінімальний інтервал між якоруваннями (6 днів = буфер для тижневого розкладу).
+    /// @dev Запобігає спаму фейковими state roots компрометованим oracle.
+    uint256 public constant MIN_ANCHOR_INTERVAL = 6 days;
+
     /// @notice Останній збережений state root.
     bytes32 public latestRoot;
 
@@ -30,8 +34,14 @@ contract StateRootAnchor is AccessControl {
     /// @notice Загальна кількість збережених state roots.
     uint256 public anchorCount;
 
+    /// @notice Timestamp останнього якорування (для перевірки мінімального інтервалу).
+    uint256 public lastAnchorTime;
+
     /// @notice Маппінг: state_root → block.timestamp коли він був збережений.
     mapping(bytes32 => uint256) public rootTimestamps;
+
+    /// @dev Лічильник адміністраторів для запобігання видаленню останнього DEFAULT_ADMIN_ROLE.
+    uint256 private _adminCount;
 
     /// @notice Емітується при кожному записі state root.
     /// @param root 32-байтний SHA-256 state root.
@@ -54,11 +64,17 @@ contract StateRootAnchor is AccessControl {
 
     /// @notice Запис нового state root в Ethereum L1.
     /// @dev Кожен state root може бути записаний тільки один раз (immutability).
+    ///      Мінімальний інтервал між записами — 6 днів (захист від спаму).
     /// @param root 32-байтний SHA-256 дайджест глобального стану SilkenNet.
     function storeStateRoot(bytes32 root) external onlyRole(ANCHOR_ROLE) {
         require(root != bytes32(0), "StateRootAnchor: empty root");
         require(rootTimestamps[root] == 0, "StateRootAnchor: root already anchored");
+        require(
+            block.timestamp >= lastAnchorTime + MIN_ANCHOR_INTERVAL,
+            "StateRootAnchor: too soon since last anchor"
+        );
 
+        lastAnchorTime = block.timestamp;
         anchorCount++;
         latestRoot = root;
         latestTimestamp = block.timestamp;
@@ -72,5 +88,26 @@ contract StateRootAnchor is AccessControl {
     /// @return true якщо root був збережений.
     function isRootAnchored(bytes32 root) external view returns (bool) {
         return rootTimestamps[root] != 0;
+    }
+
+    /// @dev Захист від видалення останнього DEFAULT_ADMIN_ROLE.
+    function _grantRole(bytes32 role, address account) internal override returns (bool) {
+        bool granted = super._grantRole(role, account);
+        if (granted && role == DEFAULT_ADMIN_ROLE) {
+            _adminCount++;
+        }
+        return granted;
+    }
+
+    /// @dev Блокує видалення останнього адміна через renounceRole або revokeRole.
+    function _revokeRole(bytes32 role, address account) internal override returns (bool) {
+        if (role == DEFAULT_ADMIN_ROLE) {
+            require(_adminCount > 1, "StateRootAnchor: cannot remove last admin");
+        }
+        bool revoked = super._revokeRole(role, account);
+        if (revoked && role == DEFAULT_ADMIN_ROLE) {
+            _adminCount--;
+        }
+        return revoked;
     }
 }

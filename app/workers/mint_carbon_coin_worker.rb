@@ -57,7 +57,7 @@ class MintCarbonCoinWorker
 
     Rails.logger.info "🔐 [Web3] Trustless мінтинг для TelemetryLog ##{telemetry_log_id}: #{tx_ids.size} транзакцій..."
 
-    tx_ids.each_slice(200) do |batch|
+    tx_ids.each_slice(100) do |batch|
       within_rpc_limit do
         BlockchainMintingService.call_batch(batch, telemetry_log: log)
       end
@@ -74,7 +74,7 @@ class MintCarbonCoinWorker
     tx_ids = BlockchainTransaction.status_pending.limit(1000).pluck(:id)
     return if tx_ids.empty?
 
-    tx_ids.each_slice(200) do |batch|
+    tx_ids.each_slice(100) do |batch|
       process_batch(batch)
     end
   end
