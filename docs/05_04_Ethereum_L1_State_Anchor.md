@@ -51,7 +51,7 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 
 ### ✅ BLOCKER-1: `StateRootAnchor.sol` створено
 
-`contracts/StateRootAnchor.sol` додано до репозиторію. Контракт успадковує `AccessControl` (OpenZeppelin), визначає роль `ANCHOR_ROLE`, зберігає `latestRoot`, `anchorCount`, маппінг `rootTimestamps` та емітує `StateRootStored(bytes32 indexed root, uint256 timestamp, uint256 anchorIndex)`. Дедуплікація: `require(rootTimestamps[root] == 0, "root already anchored")` — кожен state root можна записати тільки один раз. Деплой через Foundry; адреса зберігається в `ENV["ETHEREUM_ANCHOR_CONTRACT"]`.
+`contracts/StateRootAnchor.sol` додано до репозиторію. Контракт успадковує `AccessControl` (OpenZeppelin), визначає роль `ANCHOR_ROLE`, зберігає `latestRoot`, `anchorCount`, маппінг `rootTimestamps`, маппінг `rootHistory` (anchorIndex → root) та емітує `StateRootStored(bytes32 indexed root, uint256 timestamp, uint256 anchorIndex)`. Дедуплікація: `require(rootTimestamps[root] == 0, "root already anchored")` — кожен state root можна записати тільки один раз. Мінімальний інтервал між записами: `MIN_ANCHOR_INTERVAL = 6 days`. Історичні запити: `getRootAtIndex(uint256 index)`. Захист від видалення останнього адміна: `_adminCount` лічильник. Pragma locked: `0.8.20`. Деплой через Foundry; адреса зберігається в `ENV["ETHEREUM_ANCHOR_CONTRACT"]`.
 
 ### ✅ BLOCKER-2: Персистентність state_root у БД — `EthereumAnchor` модель
 
@@ -295,13 +295,28 @@ return anchor   # EthereumAnchor instance
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "index", "type": "uint256" }
+    ],
+    "name": "getRootAtIndex",
+    "outputs": [
+      { "internalType": "bytes32", "name": "root", "type": "bytes32" },
+      { "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]
 ```
 
 **Тип транзакції:** EIP-1559 (`legacy: false`)  
 **Метод контракту:** `storeStateRoot(bytes32 root)` — nonpayable  
-**Gas:** `DEFAULT_GAS_LIMIT = 100_000` (safety cap), `storeStateRoot` потребує ~45,000 gas (1 SSTORE + event)
+**View метод:** `getRootAtIndex(uint256 index)` — повертає (root, timestamp) для ISO 14064 / Verra VCS compliance  
+**Gas:** `DEFAULT_GAS_LIMIT = 100_000` (safety cap), `storeStateRoot` потребує ~50,000 gas (2 SSTORE + event)
+**Мінімальний інтервал:** `MIN_ANCHOR_INTERVAL = 6 days` — захист від спаму при компрометованому oracle
+**block.timestamp:** Може відрізнятись від реального часу до ~12 секунд (Ethereum PoS). Для compliance-звітності використовуйте `EthereumAnchor.anchored_at`.
 
 ---
 
@@ -515,22 +530,29 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 ### Operational Security
 
 - **Multisig:** Для production deployment `DEFAULT_ADMIN_ROLE` має бути призначено Gnosis Safe multisig (3/5 або 2/3) замість EOA — стандартна operational security practice для контрактів, що управляють L1 finality
+- **Admin Protection:** Контракт блокує видалення останнього `DEFAULT_ADMIN_ROLE` через `_adminCount` лічильник — `renounceRole()` та `revokeRole()` ревертять якщо залишився один адмін
+- **Anti-Spam:** `MIN_ANCHOR_INTERVAL = 6 days` запобігає спаму фейковими state roots компрометованим oracle
+- **Timestamp:** `block.timestamp` може відрізнятись від реального часу до ~12 секунд (Ethereum PoS). Для compliance-звітності крос-референс з `EthereumAnchor.anchored_at` в PostgreSQL
 
 ---
 
 ## Зміни від Попередньої Версії SSOT
 
-| Аспект | TRL 8 (до PR #254) | TRL 9 (після PR #254) |
-|--------|-----------|--------------|
-| `StateRootAnchor.sol` | 🔴 Відсутній | ✅ `contracts/StateRootAnchor.sol` |
-| `EthereumAnchor` модель | 🔴 Відсутня | ✅ `app/models/ethereum_anchor.rb` |
-| Персистентність state_root | 🔴 Тільки logger | ✅ PostgreSQL аудит-трейл |
-| Gas management | 🔴 Відсутній | ✅ Явні caps + ENV overrides |
-| ETH balance guard | 🟡 Тільки Treasury monitor | ✅ Inline guard перед TX |
-| `.env.example` | 🔴 Відсутній | ✅ Додано до репозиторію |
-| Reproducible state_root | 🔴 Non-reproducible | ✅ Компоненти збережені в EthereumAnchor |
-| Worker retry | 3 | 5 |
+| Аспект | TRL 8 (до PR #254) | TRL 9 (після PR #254) | Аудит-зміцнення |
+|--------|-----------|--------------|-----------------|
+| `StateRootAnchor.sol` | 🔴 Відсутній | ✅ `contracts/StateRootAnchor.sol` | ✅ Pragma locked `0.8.20` |
+| `EthereumAnchor` модель | 🔴 Відсутня | ✅ `app/models/ethereum_anchor.rb` | — |
+| Персистентність state_root | 🔴 Тільки logger | ✅ PostgreSQL аудит-трейл | — |
+| Gas management | 🔴 Відсутній | ✅ Явні caps + ENV overrides | — |
+| ETH balance guard | 🟡 Тільки Treasury monitor | ✅ Inline guard перед TX | — |
+| `.env.example` | 🔴 Відсутній | ✅ Додано до репозиторію | — |
+| Reproducible state_root | 🔴 Non-reproducible | ✅ Компоненти збережені в EthereumAnchor | — |
+| Worker retry | 3 | 5 | — |
+| MIN_ANCHOR_INTERVAL | — | — | ✅ 6 днів (захист від спаму) |
+| rootHistory mapping | — | — | ✅ `getRootAtIndex()` для ISO 14064 |
+| Admin protection | — | — | ✅ `_adminCount` — захист від видалення останнього адміна |
+| Timestamp NatSpec | — | — | ✅ Документовано ~12с variance |
 
 ---
 
-*Документ синхронізовано з кодбейсом `Alexey-Lukin/silken_net` станом на **2026-04-16**.*
+*Документ синхронізовано з кодбейсом `Alexey-Lukin/silken_net` станом на **2026-04-17**.*
