@@ -14,7 +14,7 @@ RSpec.describe Telemetry::LogEntry do
   end
 
   describe "rendering" do
-    let(:html) { render_component(gateway: mock_gateway, hex_payload: "DEADBEEF1234", timestamp: Time.new(2024, 6, 15, 10, 30, 45, 123_456)) }
+    let(:html) { render_component(gateway: mock_gateway, hex_payload: "DEADBEEF1234", timestamp: Time.new(2024, 6, 15, 10, 30, 45)) }
 
     it "renders the gateway UID" do
       expect(html).to include("SNET-Q-AABB0011")

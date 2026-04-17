@@ -6,7 +6,7 @@ RSpec.describe Telemetry::LiveStream do
   let(:component_class) { described_class }
 
   def render_component
-    component_class.new.call
+    ApplicationController.renderer.render(component_class.new, layout: false)
   end
 
   describe "rendering" do

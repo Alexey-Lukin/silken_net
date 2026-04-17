@@ -90,7 +90,7 @@ module Settings
 
         div do
           p(class: "text-mini text-gray-600 uppercase mb-2") { "Public Crypto Address" }
-          render Views::Shared::Web3::Address.new(address: @organization.crypto_public_address, truncate: 42)
+          render Views::Shared::Web3::Address.new(address: @organization.crypto_public_address)
         end
 
         div(class: "pt-4 border-t border-emerald-900/30") do
