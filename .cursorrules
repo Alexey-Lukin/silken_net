@@ -61,12 +61,14 @@ make -C firmware/test  # firmware (x86 host-based)
 24. **`oracle_callbacks` endpoint** — публічний (без Bearer). Захист: HMAC-SHA256 `X-Chainlink-Signature`. `ActiveSupport::SecurityUtils.secure_compare` для timing-safe порівняння.
 25. **Dual Computation Integrity**: server Lorenz Z (BigDecimal, 18-digit) vs device Z (Float). Divergence > 30% -> fraud. Не пропускати цю перевірку.
 26. **batchMint dry-run** перед кожним реальним `batchMint`. Binary Search Isolation при revert (не наївний N×mint fallback).
+27. **Blockchain/Web3 логіка** залишається виключно у service layer namespaces (`app/services/chainlink/`, `app/services/solana/`, etc.). Не виносити в controllers або models.
 
 ---
 
 ## Поведінка в редакторі
 
-- Мінімальні, точні зміни. Не чіпати код поза scope задачі.
+- **Мінімальні, точні зміни.** Не чіпати код поза scope задачі.
+- **Не покладатися на застарілі статуси/лічильники** з instruction-файлів — завжди перевіряти актуальний код та docs.
 - Якщо в docs є секція BLOCKER — вважати її активним обмеженням за замовчуванням.
 - Не ставити статус "виправлено" тільки тому що в docs/коді є TODO або коментар.
 - Firmware (C) та Rails (Ruby) — різні домени. Не переносити Ruby-припущення у C код.

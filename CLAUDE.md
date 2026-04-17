@@ -42,7 +42,25 @@ make -C firmware/test
 Цикл пробудження (STOP2 -> active -> STOP2):
 1. **SENSE**: ADC читає Vcap (uint16 мВ), internal temp (int8 °C). DMA 16 кГц -> 512 ADC samples для TinyML.
 2. **TinyML**: CMSIS-NN акустичний inference (4 класи: silence/wind/cavitation/chainsaw). **BLOCKER: `Run_Inference()` закоментована** (main.c:355). `silken_net_audio_model.h` відсутній.
-3. **mruby BioContract** (`firmware/bio_contracts/bio_contract.rb`): Lorenz attractor 250 ітерацій (Euler, Float). Входи: `chaos_seed` (HRNG), `temp`, `acoustic`. Виходи: `z_val` -> `status` + `growth_points`. Пакує в 1 байт: `[status:2|growth_points:6]`.
+3. **mruby BioContract** (`firmware/bio_contracts/bio_contract.rb`): Lorenz attractor 250 ітерацій (Euler, **Float** — не BigDecimal!). Входи: `chaos_seed` (HRNG), `temp`, `acoustic`. Виходи: `z_val` -> `status` + `growth_points`. Пакує в 1 байт: `[status:2|growth_points:6]`.
+
+   Firmware Lorenz константи:
+   ```ruby
+   BASE_SIGMA = 10.0;  BASE_RHO = 28.0;  BASE_BETA = 8.0 / 3.0  # Float!
+   DT = 0.01;  ITERATIONS = 250
+   SIGMA_LIMITS = (5.0..30.0);  RHO_LIMITS = (10.0..50.0)
+   ```
+   Формула growth_points:
+   ```ruby
+   # CRITICAL_Z_MIN=2.0, CRITICAL_Z_MAX=45.0, OPTIMAL_Z_TARGET=29.0
+   if z_val < 2.0  then status=1, growth_points=1   # stress
+   elsif z_val > 45.0 then status=2, growth_points=0  # anomaly
+   else  status=0; growth_points = clamp(50 - deviation.to_i, 10, 63)  # homeostasis
+   end
+   payload_byte = (status << 6) | growth_points  # C entry: calculate_state → uint8_t
+   ```
+   **Важливо:** Float vs BigDecimal — на прошивці `BASE_BETA = 8.0/3.0` → `2.6666666666666665` (IEEE 754), на сервері `("8.0".to_d / "3.0".to_d).round(18)` → `2.666666666666666667`. Це є джерелом природного divergence між device Z і server Z.
+
 4. **PACK**: 16-байтний payload.
 5. **ENCRYPT**: AES-256-ECB (апаратний CRYP модуль, без IV). 1 блок = 1 AES operation.
 6. **TX**: `Radio.Send(21 bytes)`. Mesh TTL-based. Emergency TX при chainsaw detection (PANIC_TTL=5).
@@ -58,12 +76,15 @@ Ruby unpack: `"N n c C n C C a4"`.
 **Файл**: `firmware/queen/main.c` (550 рядків C)
 
 - LoRa RX -> AES-256-ECB decrypt -> CIFO EdgeCache (50 slots, дедуплікація за DID).
+- **Queen Sentinel:** `DID == 0x00000000` → власна телеметрія Королеви → `GatewayTelemetryWorker` (не `TelemetryLog`).
 - Flush trigger: >= 45 entries OR 1 година + HRNG jitter (0-60 сек).
 - Flush process: CBC encrypt (HRNG IV) -> AT+CCOAPSEND -> CoAP PUT `/telemetry/batch/<QUEEN_UID>` -> SIM7070G.
 - **BLOCKER: ECB restore** після CBC flush — якщо не відновити, наступні LoRa decrypt ламаються.
 - **BLOCKER: `QUEEN-001` hardcoded** UID -> неможливий уніфікований флешинг.
 - **BLOCKER: AT command blind delay ~25 sec** під час flush (немає парсингу відповіді модему).
-- OTA downlink: CoAP -> RAM assembly -> reflex broadcast chunk by chunk (TTL).
+- OTA downlink: CoAP -> RAM assembly (`pending_ota_bytecode[8192]`) -> reflex broadcast chunk by chunk (TTL).
+  - Chunk format: `[0x99][index:2][total:2][bytecode:11]`, AES-256-CBC, pacing 60ms між чанками.
+  - `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`. Magic check: `0x45544952 ("RITE")` → load OTA bytecode, else → load embedded `lorenz_bytecode[]`.
 
 ### AES режими
 | Напрямок | Режим | IV |
