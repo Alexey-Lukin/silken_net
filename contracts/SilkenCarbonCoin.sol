@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -92,13 +92,7 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         onlyRole(MINTER_ROLE)
         nonReentrant
     {
-        require(to != address(0), "SCC: zero recipient");
-        require(amount > 0, "SCC: zero amount");
-        require(bytes(treeDid).length > 0, "SCC: empty treeDid");
-        require(bytes(treeDid).length <= 256, "SCC: treeDid too long");
-        require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
-        _mint(to, amount);
-        emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
+        _mintSCC(to, amount, treeDid);
     }
 
     /// @notice Backward-compatible alias для mintForTree.
@@ -111,6 +105,13 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         onlyRole(MINTER_ROLE)
         nonReentrant
     {
+        _mintSCC(to, amount, treeDid);
+    }
+
+    /// @dev Внутрішня реалізація мінтингу, спільна для mint() та mintForTree().
+    ///      Усуває дублювання коду — будь-які зміни валідації або логіки
+    ///      застосовуються до обох entry points одночасно.
+    function _mintSCC(address to, uint256 amount, string calldata treeDid) internal {
         require(to != address(0), "SCC: zero recipient");
         require(amount > 0, "SCC: zero amount");
         require(bytes(treeDid).length > 0, "SCC: empty treeDid");

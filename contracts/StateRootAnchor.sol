@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
@@ -40,6 +40,11 @@ contract StateRootAnchor is AccessControl {
     /// @notice Маппінг: state_root → block.timestamp коли він був збережений.
     mapping(bytes32 => uint256) public rootTimestamps;
 
+    /// @notice Маппінг: anchorIndex → state_root для ефективних історичних запитів.
+    /// @dev Дозволяє аудиторам запитувати state root за порядковим номером без сканування
+    ///      event logs. Необхідно для ISO 14064 / Verra VCS compliance.
+    mapping(uint256 => bytes32) public rootHistory;
+
     /// @dev Лічильник адміністраторів для запобігання видаленню останнього DEFAULT_ADMIN_ROLE.
     uint256 private _adminCount;
 
@@ -65,6 +70,9 @@ contract StateRootAnchor is AccessControl {
     /// @notice Запис нового state root в Ethereum L1.
     /// @dev Кожен state root може бути записаний тільки один раз (immutability).
     ///      Мінімальний інтервал між записами — 6 днів (захист від спаму).
+    ///      block.timestamp може відрізнятись від реального часу подання до ~12 секунд
+    ///      через Ethereum PoS validator timestamp flexibility. Для compliance-звітності
+    ///      використовуйте off-chain EthereumAnchor.anchored_at як точний timestamp.
     /// @param root 32-байтний SHA-256 дайджест глобального стану SilkenNet.
     function storeStateRoot(bytes32 root) external onlyRole(ANCHOR_ROLE) {
         require(root != bytes32(0), "StateRootAnchor: empty root");
@@ -79,6 +87,7 @@ contract StateRootAnchor is AccessControl {
         latestRoot = root;
         latestTimestamp = block.timestamp;
         rootTimestamps[root] = block.timestamp;
+        rootHistory[anchorCount] = root;
 
         emit StateRootStored(root, block.timestamp, anchorCount);
     }
@@ -88,6 +97,17 @@ contract StateRootAnchor is AccessControl {
     /// @return true якщо root був збережений.
     function isRootAnchored(bytes32 root) external view returns (bool) {
         return rootTimestamps[root] != 0;
+    }
+
+    /// @notice Отримання state root за порядковим номером (anchorIndex).
+    /// @dev Дозволяє аудиторам запитувати історичні state roots без сканування event logs.
+    /// @param index Порядковий номер запису (1-based, від 1 до anchorCount).
+    /// @return root 32-байтний state root.
+    /// @return timestamp Block timestamp коли root був збережений.
+    function getRootAtIndex(uint256 index) external view returns (bytes32 root, uint256 timestamp) {
+        require(index > 0 && index <= anchorCount, "StateRootAnchor: invalid index");
+        root = rootHistory[index];
+        timestamp = rootTimestamps[root];
     }
 
     /// @dev Захист від видалення останнього DEFAULT_ADMIN_ROLE.
