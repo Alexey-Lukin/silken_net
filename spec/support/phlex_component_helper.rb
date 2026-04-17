@@ -93,7 +93,7 @@ module PhlexComponentHelper
     obj = OpenStruct.new(id: id, **attrs)
     model_name = ActiveModel::Name.new(klass)
     obj.define_singleton_method(:model_name) { model_name }
-    obj.define_singleton_method(:to_key) { [id] }
+    obj.define_singleton_method(:to_key) { [ id ] }
     obj.define_singleton_method(:to_param) { id.to_s }
     obj
   end
