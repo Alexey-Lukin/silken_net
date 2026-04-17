@@ -3,12 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::EmptyState do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    component_class.new(**kwargs).call
-  end
-
   describe "with title only" do
     let(:html) { render_component(title: "No records found.") }
 

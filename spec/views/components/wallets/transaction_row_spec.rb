@@ -3,12 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Wallets::TransactionRow do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    component_class.new(**kwargs).call
-  end
-
   def mock_tx(token_type: "carbon_coin", status: "confirmed", amount: "0.005",
               tx_hash: "0xabcdef1234567890abcdef", explorer_url: "https://polygonscan.com/tx/0x123")
     tx = OpenStruct.new(

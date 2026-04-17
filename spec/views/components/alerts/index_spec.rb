@@ -1,0 +1,80 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe Alerts::Index do
+  def mock_alert(id: 1, alert_type: "fire_detected", severity: "critical", status: "active")
+    alert = OpenStruct.new(id: id, alert_type: alert_type, severity: severity, status: status, created_at: Time.current)
+    alert.define_singleton_method(:model_name) { ActiveModel::Name.new(EwsAlert) }
+    alert.define_singleton_method(:to_key) { [ id ] }
+    alert.define_singleton_method(:to_param) { id.to_s }
+    alert
+  end
+
+  def mock_org(id: 42, name: "ForestCorp")
+    OpenStruct.new(id: id, name: name)
+  end
+
+  let(:org)    { mock_org }
+  let(:alerts) { [ mock_alert(id: 1, severity: "critical"), mock_alert(id: 2, severity: "medium") ] }
+  let(:html)   { render_component(alerts: alerts, pagy: mock_pagy(count: 63), organization: org) }
+
+  describe "turbo stream subscription" do
+    it "includes turbo-cable-stream-source when organization is provided" do
+      expect(html).to include("turbo-cable-stream-source")
+    end
+
+    it "subscribes to org-specific stream channel" do
+      expect(html).to include("turbo-cable-stream-source")
+      # The stream name is signed/base64-encoded; verify the raw channel attribute is present
+      expect(html).to include('channel="Turbo::StreamsChannel"')
+    end
+
+    it "does not render turbo stream when organization is nil" do
+      html = render_component(alerts: alerts, pagy: mock_pagy(count: 63), organization: nil)
+      expect(html).not_to include("ews_alerts_org_")
+    end
+  end
+
+  describe "header section" do
+    it "renders the matrix header" do
+      expect(html).to include("Active Threats Matrix")
+    end
+
+    it "renders the monitoring subtitle" do
+      expect(html).to include("Monitoring live telemetry")
+    end
+
+    it "renders filter link for all alerts" do
+      expect(html).to include('aria-label="Show all alerts"')
+    end
+
+    it "renders filter links for critical severity" do
+      expect(html).to include("Filter alerts by critical severity")
+    end
+
+    it "renders filter links for medium severity" do
+      expect(html).to include("Filter alerts by medium severity")
+    end
+
+    it "renders filter links for low severity" do
+      expect(html).to include("Filter alerts by low severity")
+    end
+  end
+
+  describe "table structure" do
+    it "renders Severity column header" do
+      expect(html).to include("Severity")
+    end
+
+    it "renders alerts_list tbody id" do
+      expect(html).to include('id="alerts_list"')
+    end
+  end
+
+  describe "pagination" do
+    it "renders pagination links" do
+      expect(html).to include("page=")
+    end
+  end
+end

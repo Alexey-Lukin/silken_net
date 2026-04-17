@@ -3,12 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Alerts::Row do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
-
   def mock_alert(id: 7, severity: "medium", alert_type: "fire_detected", status: "active",
                  cluster_name: "Carpathian-7", tree_did: "TREE::0xBEEF", message: "Thermal anomaly detected")
     alert = EwsAlert.allocate
@@ -95,6 +89,13 @@ RSpec.describe Alerts::Row do
 
     it "includes hover transition styles" do
       expect(html).to include("hover:bg-emerald-950/10")
+    end
+  end
+
+  describe "severity badge else branch" do
+    it "renders unknown severity with zinc fallback style" do
+      html = render_component(alert: mock_alert(severity: "unknown"))
+      expect(html).to include("bg-zinc-900")
     end
   end
 end

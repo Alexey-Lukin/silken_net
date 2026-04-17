@@ -3,12 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::RelativeTime do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    component_class.new(**kwargs).call
-  end
-
   describe "with a datetime" do
     let(:datetime) { Time.zone.parse("2026-03-14 04:00:00 UTC") }
     let(:html) { render_component(datetime: datetime) }

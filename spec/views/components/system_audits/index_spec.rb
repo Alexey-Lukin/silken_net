@@ -1,0 +1,108 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe SystemAudits::Index do
+  def mock_audit(db_total: 1000.0, chain_total: 1000.0, delta: 0.0,
+                 critical: false, checked_at: Time.parse("2024-01-15 12:00:00 UTC"))
+    audit = OpenStruct.new(
+      id: 1,
+      db_total: db_total,
+      chain_total: chain_total,
+      delta: delta,
+      checked_at: checked_at
+    )
+    audit.define_singleton_method(:critical) { critical }
+    audit.define_singleton_method(:ok?) { !critical }
+    audit
+  end
+
+  let(:ok_audit)       { mock_audit }
+  let(:critical_audit) { mock_audit(db_total: 1000.0, chain_total: 998.5, delta: 1.5, critical: true) }
+
+  describe "header" do
+    it "renders Chain Audit heading" do
+      html = render_component(audit: ok_audit)
+      expect(html).to include("Chain Audit")
+    end
+
+    it "renders System Integrity subtitle" do
+      html = render_component(audit: ok_audit)
+      expect(html).to include("System Integrity")
+    end
+  end
+
+  describe "status badge" do
+    it "renders ok badge when audit is not critical" do
+      html = render_component(audit: ok_audit)
+      expect(html).to include("ok")
+    end
+
+    it "renders critical badge when audit is critical" do
+      html = render_component(audit: critical_audit)
+      expect(html).to include("critical")
+    end
+  end
+
+  describe "status banner" do
+    it "renders INTEGRITY OK banner for passing audit" do
+      html = render_component(audit: ok_audit)
+      expect(html).to include("INTEGRITY OK")
+    end
+
+    it "renders CRITICAL banner when delta exceeds threshold" do
+      html = render_component(audit: critical_audit)
+      expect(html).to include("CRITICAL")
+    end
+  end
+
+  describe "comparison table" do
+    it "renders Postgres DB row" do
+      html = render_component(audit: ok_audit)
+      expect(html).to include("Postgres DB")
+    end
+
+    it "renders Polygon Smart Contract row" do
+      html = render_component(audit: ok_audit)
+      expect(html).to include("Polygon Smart Contract")
+    end
+
+    it "renders Delta row" do
+      html = render_component(audit: ok_audit)
+      expect(html).to include("Delta")
+    end
+
+    it "renders db_total formatted as decimal" do
+      html = render_component(audit: ok_audit)
+      expect(html).to include("1000.000000")
+    end
+
+    it "renders chain_total value" do
+      html = render_component(audit: critical_audit)
+      expect(html).to include("998.500000")
+    end
+
+    it "renders delta value" do
+      html = render_component(audit: critical_audit)
+      expect(html).to include("1.500000")
+    end
+
+    it "highlights delta row red when critical" do
+      html = render_component(audit: critical_audit)
+      expect(html).to include("bg-red-950/20")
+    end
+
+    it "highlights delta row emerald when ok" do
+      html = render_component(audit: ok_audit)
+      expect(html).to include("bg-emerald-950/10")
+    end
+  end
+
+  describe "timestamp footer" do
+    it "renders checked at timestamp" do
+      html = render_component(audit: ok_audit)
+      expect(html).to include("Checked at")
+      expect(html).to include("2024-01-15")
+    end
+  end
+end

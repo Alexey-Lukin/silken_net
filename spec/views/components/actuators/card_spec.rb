@@ -3,12 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Actuators::Card do
-  let(:component_class) { described_class }
-
-  def render_component(**kwargs)
-    component_class.new(**kwargs).call
-  end
-
   def mock_actuator(id: 1, device_type: "valve", state: "active", gateway_uid: "QUEEN-01")
     gateway = OpenStruct.new(uid: gateway_uid)
     commands = OpenStruct.new(last: nil)

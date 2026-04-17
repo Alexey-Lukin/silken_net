@@ -3,15 +3,10 @@
 require "rails_helper"
 
 RSpec.describe Clusters::Show do
-  let(:component_class) { described_class }
   let(:cluster) { mock_cluster }
   let(:gateways) { [ mock_gateway ] }
   let(:recent_alerts) { [] }
   let(:html) { render_component(cluster: cluster, gateways: gateways, recent_alerts: recent_alerts) }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_cluster(id: 1, name: "Carpathian-Alpha", region: "Cherkasy Oblast",
                    health_index: 0.87, total_active_trees: 142, active_threats: false)
@@ -43,7 +38,6 @@ RSpec.describe Clusters::Show do
     alert.define_singleton_method(:to_key) { [ id ] }
     alert
   end
-
 
   describe "turbo stream subscription" do
     it "includes turbo-cable-stream-source for alerts" do
@@ -128,6 +122,81 @@ RSpec.describe Clusters::Show do
 
     it "includes Google Maps link" do
       expect(html).to include("google.com/maps")
+    end
+  end
+
+  describe "environmental settings" do
+    it "renders fire threshold when set" do
+      cluster = mock_cluster
+      cluster.environmental_settings = { "custom_fire_threshold" => 65 }
+      html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
+      expect(html).to include("Fire Threshold")
+      expect(html).to include("65°C")
+    end
+
+    it "renders seismic sensitivity when set" do
+      cluster = mock_cluster
+      cluster.environmental_settings = { "seismic_sensitivity_threshold" => 0.8 }
+      html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
+      expect(html).to include("Seismic Sensitivity")
+      expect(html).to include("0.8")
+    end
+
+    it "renders timezone when set" do
+      cluster = mock_cluster
+      cluster.environmental_settings = { "timezone" => "Europe/Kyiv" }
+      html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
+      expect(html).to include("Timezone")
+      expect(html).to include("Europe/Kyiv")
+    end
+
+    it "renders Environmental Config heading when settings present" do
+      cluster = mock_cluster
+      cluster.environmental_settings = { "custom_fire_threshold" => 65 }
+      html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
+      expect(html).to include("Environmental Config")
+    end
+  end
+
+  describe "contract panel" do
+    it "renders NaaS Contract heading" do
+      expect(html).to include("NaaS Contract")
+    end
+
+    it "shows 'No active NaaS contract.' when no contract" do
+      expect(html).to include("No active NaaS contract.")
+    end
+
+    context "with active contract" do
+      it "renders contract details" do
+        contract = OpenStruct.new(status: "active", total_value: 50_000, emitted_tokens: 1200)
+        cluster = mock_cluster
+        cluster.define_singleton_method(:active_contract) { contract }
+        html = render_component(cluster: cluster, gateways: [], recent_alerts: [])
+        expect(html).to include("ACTIVE")
+        expect(html).to include("50000")
+        expect(html).to include("1200")
+      end
+    end
+  end
+
+  describe "alert severity class" do
+    it "uses warning style for medium severity" do
+      alert = mock_alert(severity: "medium")
+      html = render_component(cluster: cluster, gateways: [], recent_alerts: [ alert ])
+      expect(html).to include("bg-status-warning")
+    end
+
+    it "uses emerald style for low severity" do
+      alert = mock_alert(severity: "low")
+      html = render_component(cluster: cluster, gateways: [], recent_alerts: [ alert ])
+      expect(html).to include("bg-emerald-500")
+    end
+
+    it "uses emerald style for unknown severity" do
+      alert = mock_alert(severity: "unknown")
+      html = render_component(cluster: cluster, gateways: [], recent_alerts: [ alert ])
+      expect(html).to include("bg-emerald-500")
     end
   end
 end

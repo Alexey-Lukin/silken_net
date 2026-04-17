@@ -90,7 +90,7 @@ module Trees
     def render_pagination
       render Views::Shared::UI::Pagination.new(
         pagy: @pagy,
-        url_helper: ->(page:) { chronicle_tree_path(@tree, page: page) }
+        url_helper: ->(page:) { chronicle_api_v1_tree_path(@tree, page: page) }
       )
     end
 

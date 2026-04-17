@@ -3,12 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::ThemeSwitcher do
-  let(:component_class) { described_class }
-
-  def render_component
-    component_class.new.call
-  end
-
   describe "rendered HTML" do
     let(:html) { render_component }
 

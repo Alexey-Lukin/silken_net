@@ -8,6 +8,7 @@ class ApplicationComponent < Phlex::HTML
   include Phlex::Rails::Helpers::ButtonTo
   include Phlex::Rails::Helpers::AssetPath
   include Phlex::Rails::Helpers::FormAuthenticityToken
+  include Phlex::SVG::StandardElements
   include ActionView::RecordIdentifier
 
   # Pure formatting helpers that work without a view context.

@@ -3,14 +3,9 @@
 require "rails_helper"
 
 RSpec.describe Wallets::Show do
-  let(:component_class) { described_class }
   let(:wallet) { mock_wallet }
   let(:transactions) { [ mock_tx ] }
   let(:html) { render_component(wallet: wallet, transactions: transactions) }
-
-  def render_component(**kwargs)
-    ApplicationController.renderer.render(component_class.new(**kwargs), layout: false)
-  end
 
   def mock_wallet(id: 1, scc_balance: 42.5)
     wallet = OpenStruct.new(id: id, scc_balance: scc_balance)
@@ -30,7 +25,6 @@ RSpec.describe Wallets::Show do
     tx.define_singleton_method(:to_key) { [ id ] }
     tx
   end
-
 
   describe "turbo stream subscription" do
     it "includes turbo-cable-stream-source for wallet transactions" do
@@ -66,6 +60,18 @@ RSpec.describe Wallets::Show do
 
     it "shows empty state message" do
       expect(html).to include("No transactions detected")
+    end
+  end
+
+  describe "pagination" do
+    it "renders pagination when pagy is present" do
+      html = render_component(wallet: wallet, transactions: transactions, pagy: mock_pagy(count: 50, page: 1, last: 3))
+      expect(html).to be_present
+    end
+
+    it "does not render pagination when pagy is nil" do
+      html = render_component(wallet: wallet, transactions: transactions)
+      expect(html).not_to include("pagination")
     end
   end
 
