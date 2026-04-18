@@ -114,54 +114,34 @@ Alertmanager — частина стандартного Prometheus-стеку. 
 
 ---
 
-### 🟡 BLOCKER-4: `SENTRY_DSN` відсутній у `.kamal/secrets` — Sentry інертний у Production
+### ✅ BLOCKER-4: `SENTRY_DSN` додано до `.kamal/secrets` (Виправлено)
 
-**Статус:** Середній. Sentry налаштований, але не підключений.
+**Статус:** Виправлено. `SENTRY_DSN` додано до `.kamal/secrets` та `config/deploy.yml env.secret`.
 
-`.kamal/secrets` містить: `RAILS_MASTER_KEY`, `GCP_ARTIFACT_REGISTRY_KEY`, `DATABASE_URL`, `REDIS_URL`. Але **`SENTRY_DSN` відсутній**.
-
-Ініціалізатор `config/initializers/sentry.rb` використовує `ENV["SENTRY_DSN"]`:
-```ruby
-config.dsn = ENV["SENTRY_DSN"]
-```
-
-Якщо `SENTRY_DSN` не задано — Sentry не надсилає жодних подій (за документацією `sentry-ruby`, SDK є інертним без DSN). Весь Production-трафік — помилки Sidekiq, збої Web3 — не потрапляє до Sentry.
-
-**Дія:**
-1. Створити проєкт у [sentry.io](https://sentry.io) (або self-hosted Sentry).
-2. Отримати DSN.
-3. Додати до `.kamal/secrets`: `SENTRY_DSN=$SENTRY_DSN`
-4. Додати до `config/deploy.yml` → `env.secret`: `- SENTRY_DSN`
-5. Зберегти в GitHub Secret `SENTRY_DSN`.
+Sentry тепер активний у production. Всі помилки Sidekiq, збої Web3 та виключення Rails надсилаються до Sentry.
 
 ---
 
-### 🟡 BLOCKER-5: Лише 2 з 9 Sidekiq черг моніторяться Prometheus
+### ✅ BLOCKER-5: Усі 9 Sidekiq черг моніторяться Prometheus (Виправлено)
 
-**Статус:** Середній. Архітектурна прогалина в охопленні метрик.
+**Статус:** Виправлено. `refresh_sidekiq_gauges` розширено для всіх 9 черг.
 
-`PrometheusCollector` middleware (функція `refresh_sidekiq_gauges`) моніторить лише дві черги:
+`PrometheusCollector` middleware тепер моніторить усі 9 черг:
 ```ruby
-web3_queues = %w[web3 web3_critical]
+ALL_QUEUES = %w[uplink alerts critical downlink default web3_critical web3 web3_low low]
 ```
-
-З 9 пріоритетних черг **7 залишаються поза Prometheus-моніторингом**:
 
 | Черга | Пріоритет | Воркери | Статус |
 |-------|-----------|---------|--------|
-| `uplink` | 9 (найвищий) | `UnpackTelemetryWorker` | ❌ Не моніториться |
-| `alerts` | 8 | `EwsAlertWorker` | ❌ Не моніториться |
-| `critical` | 7 | `SlashingProtocolWorker` | ❌ Не моніториться |
-| `downlink` | 6 | `OtaTransmissionWorker` | ❌ Не моніториться |
-| `default` | 5 | Агрегація, health checks | ❌ Не моніториться |
-| `web3_critical` | 4 | Мінтинг, Oracle, ZK | ✅ Моніториться |
-| `web3` | 3 | Celo, Solana, peaq | ✅ Моніториться |
-| `web3_low` | 2 | L1 anchoring, KlimaDAO | ❌ Не моніториться |
-| `low` | 1 | Audit logging, analytics | ❌ Не моніториться |
-
-**Найкритичніша прогалина:** черга `uplink` (пріоритет 9 — обробка 21-байтових CoAP/UDP телеметрія-пакетів від "солдатів" через `UnpackTelemetryWorker`) має **найвищий пріоритет** у системі, але її стан невидимий для Prometheus. Переповнення `uplink` означає, що дані з дерев не обробляються — але жодного алерту немає.
-
-**Дія (поза scope — аудит тільки):** Розширити `refresh_sidekiq_gauges` для всіх 9 черг або реалізувати через `yabeda-sidekiq` при майбутньому рефакторингу.
+| `uplink` | 1 (найвищий) | `UnpackTelemetryWorker` | ✅ Моніториться |
+| `alerts` | 2 | `EwsAlertWorker` | ✅ Моніториться |
+| `critical` | 3 | `SlashingProtocolWorker` | ✅ Моніториться |
+| `downlink` | 4 | `OtaTransmissionWorker` | ✅ Моніториться |
+| `default` | 5 | Агрегація, health checks | ✅ Моніториться |
+| `web3_critical` | 6 | Мінтинг, Oracle, ZK | ✅ Моніториться |
+| `web3` | 7 | Celo, Solana, peaq | ✅ Моніториться |
+| `web3_low` | 8 | L1 anchoring, KlimaDAO | ✅ Моніториться |
+| `low` | 9 (найнижчий) | Audit logging, analytics | ✅ Моніториться |
 
 ---
 
@@ -186,7 +166,7 @@ web3_queues = %w[web3 web3_critical]
 | Prometheus Server | `terraform/**/*.tf`, `config/deploy.yml` | 🔴 **ВІДСУТНІЙ** |
 | Grafana | `terraform/**/*.tf`, `config/deploy.yml` | 🔴 **ВІДСУТНЯ** |
 | Alertmanager | `terraform/**/*.tf` | 🔴 **ВІДСУТНІЙ** |
-| `SENTRY_DSN` у Kamal secrets | `.kamal/secrets` | 🟡 Відсутній |
+| `SENTRY_DSN` у Kamal secrets | `.kamal/secrets` | ✅ Додано |
 | Prometheus scrape config | — | 🔴 Відсутній |
 | Grafana dashboards | — | 🔴 Відсутні |
 
@@ -260,7 +240,7 @@ Gem `sentry-sidekiq` автоматично додає Sentry middleware до Si
 | `development` | Інертний (немає `SENTRY_DSN`) |
 | `test` | Інертний (немає `SENTRY_DSN`) |
 | `canopy` (staging) | Активний при наявності `SENTRY_DSN` |
-| `production` | Активний при наявності `SENTRY_DSN` (**🟡 BLOCKER-4: відсутній у `.kamal/secrets`**) |
+| `production` | Активний (✅ `SENTRY_DSN` додано у `.kamal/secrets`) |
 
 ---
 
@@ -319,10 +299,10 @@ end
 
 | Metric Name | Ruby Constant | Labels | Де оновлюється | Бізнес-значення |
 |-------------|--------------|--------|----------------|-----------------|
-| `silkennet_web3_queue_size` | `SilkenNet::Metrics::WEB3_QUEUE_SIZE` | `queue` (web3, web3_critical) | `PrometheusCollector#refresh_sidekiq_gauges` | Поточна кількість задач у Sidekiq Web3 чергах |
-| `silkennet_web3_queue_latency_seconds` | `SilkenNet::Metrics::WEB3_QUEUE_LATENCY` | `queue` (web3, web3_critical) | `PrometheusCollector#refresh_sidekiq_gauges` | Вік найстарішої задачі в черзі (секунди) |
+| `silkennet_sidekiq_queue_size` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_SIZE` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Поточна кількість задач у кожній Sidekiq черзі |
+| `silkennet_sidekiq_queue_latency_seconds` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_LATENCY` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Вік найстарішої задачі в черзі (секунди) |
 
-**Підсумок реєстру: 5 Counters + 2 Gauges = 7 кастомних метрик.**
+**Підсумок реєстру: 5 Counters + 2 Gauges = 7 кастомних метрик (всі 9 черг покриті).**
 
 ### 2.4 Відсутні метрики (прогалини аудиту)
 
@@ -386,15 +366,15 @@ Structured logging (JSON з `trace_id`, `span_id`, `request_id`) у Rails не �
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  Sentry SDK (sentry-rails, sentry-sidekiq)              │   │
-│  │  ✅ Налаштований  ❌ SENTRY_DSN відсутній у production  │   │
+│  │  ✅ Налаштований  ✅ SENTRY_DSN додано у production    │   │
 │  └──────────────────────────┬──────────────────────────────┘   │
-│                             │ [НІКУДИ в production]            │
+│                             │ [Активний у production]          │
 │                             ▼                                   │
-│                     sentry.io (недосяжний)                      │
+│                     sentry.io (активний)                        │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  /metrics endpoint (PrometheusCollector middleware)     │   │
-│  │  ✅ 7 кастомних метрик  ❌ Ніхто не скрейпить          │   │
+│  │  ✅ 7 кастомних метрик  ✅ Всі 9 черг  ❌ Ніхто не скрейпить  │   │
 │  └──────────────────────────┬──────────────────────────────┘   │
 │                             │ [НІКУДИ]                         │
 │                             ▼                                   │
@@ -459,7 +439,7 @@ Structured logging (JSON з `trace_id`, `span_id`, `request_id`) у Rails не �
 
 | ENV змінна | Обов'язкова | Де використовується | Статус |
 |-----------|-------------|---------------------|--------|
-| `SENTRY_DSN` | ✅ Для production | `config/initializers/sentry.rb` | 🔴 Відсутня у `.kamal/secrets` |
+| `SENTRY_DSN` | ✅ Для production | `config/initializers/sentry.rb` | ✅ Додано у `.kamal/secrets` |
 | `SENTRY_TRACES_SAMPLE_RATE` | ❌ (default: 0.001) | `config/initializers/sentry.rb` | — |
 | `SENTRY_WORKER_THREADS` | ❌ (default: 2) | `config/initializers/sentry.rb` | — |
 | `RELEASE_VERSION` | ❌ (рекомендовано) | `config.release` | Не задана |
@@ -483,17 +463,13 @@ Structured logging (JSON з `trace_id`, `span_id`, `request_id`) у Rails не �
 1. **Prometheus Server** — метрики генеруються, але не збираються.
 2. **Grafana** — нема де переглядати метрики.
 3. **Alertmanager** — нема автоматичних сповіщень.
-4. **`SENTRY_DSN` у production** — Sentry інертний.
-5. **7 з 9 Sidekiq черг** не моніторяться (включаючи найвищопріоритетну `uplink`).
-6. **Structured logging** — логи неструктуровані, кореляція з Sentry утруднена.
+4. **Structured logging** — логи неструктуровані, кореляція з Sentry утруднена.
 
 ### Наступні кроки (поза scope цього документа)
 
-1. **Вирішити BLOCKER-4** (SENTRY_DSN) — 15 хвилин, максимальний impact.
-2. **Вирішити BLOCKER-1** (Prometheus Server) — додати як Kamal accessory.
-3. **Вирішити BLOCKER-2** (Grafana) — розгорнути після Prometheus Server.
-4. **Вирішити BLOCKER-3** (Alertmanager) — додати PromQL правила алертів.
-5. **Вирішити BLOCKER-5** (решта черг) — розширити `refresh_sidekiq_gauges`.
+1. **Вирішити BLOCKER-1** (Prometheus Server) — додати як Kamal accessory.
+2. **Вирішити BLOCKER-2** (Grafana) — розгорнути після Prometheus Server.
+3. **Вирішити BLOCKER-3** (Alertmanager) — додати PromQL правила алертів.
 
 ---
 

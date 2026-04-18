@@ -292,7 +292,7 @@ Binary batch format: [DID:4][RSSI:1][Payload:16] × N entries
 Транспорт: CoAP PUT /telemetry/batch/<QUEEN_UID>
            via SIM7070G (AT+CNMP=38, LTE-M/NB-IoT)
            або Starlink Direct-to-Cell
-URI-Path: third segment = queen_uid ("QUEEN-001") → Gateway lookup
+URI-Path: third segment = queen_uid (Flash-provisioned або "UNPROV-{HEX}") → Gateway lookup
 ```
 
 #### OTA Downlink
