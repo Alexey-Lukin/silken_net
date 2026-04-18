@@ -43,7 +43,35 @@ Rails.application.configure do
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [ :request_id ]
-  config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
+
+  # [S2.5] Structured JSON logging for production.
+  # JSON format enables Cloud Logging parsing, Sentry correlation, and Grafana Loki queries.
+  # Oj (already in Gemfile) provides fast JSON serialization.
+  # Compatible with Cloud Logging cost exclusion (severity field used for filtering).
+  if ENV["RAILS_LOG_JSON"] != "false"
+    json_logger = ActiveSupport::Logger.new(STDOUT)
+    json_logger.formatter = proc do |severity, timestamp, progname, msg|
+      payload = {
+        severity: severity,
+        timestamp: timestamp.utc.iso8601(3),
+        message: msg.is_a?(String) ? msg : msg.inspect,
+        service: "silken_net",
+        pid: Process.pid
+      }
+      # Sentry trace correlation (if available)
+      if defined?(Sentry) && (scope = Sentry.get_current_scope)
+        span = scope.get_span
+        if span
+          payload[:sentry_trace_id] = span.trace_id
+          payload[:sentry_span_id] = span.span_id
+        end
+      end
+      Oj.dump(payload, mode: :compat) + "\n"
+    end
+    config.logger = ActiveSupport::TaggedLogging.new(json_logger)
+  else
+    config.logger = ActiveSupport::TaggedLogging.logger(STDOUT)
+  end
 
   # [COST CONTROL]: Default to "warn" in production to avoid massive Cloud Logging bills.
   # INFO-level logs from millions of telemetry events can cost more than the infrastructure.

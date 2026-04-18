@@ -31,6 +31,10 @@ class BurnCarbonTokensWorker
       )
     end
 
+    # [S2.4] Track slashing event by reason for Prometheus monitoring
+    reason = source_tree ? "tree_death" : "cluster_degradation"
+    SilkenNet::Metrics::SLASHING_EVENTS_TOTAL.increment(labels: { reason: reason })
+
     # 2. СИНХРОНІЗАЦІЯ ІСТИННИ (Atomic Audit)
     # Ми маркуємо контракт як BREACHED вже всередині сервісу, але тут
     # створюємо "надгробний камінь" у фізичному журналі обслуговування.

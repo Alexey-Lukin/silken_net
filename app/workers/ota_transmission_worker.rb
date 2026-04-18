@@ -62,6 +62,9 @@ class OtaTransmissionWorker
       return
     end
 
+    # [S2.4] Track OTA chunk transmission for Prometheus monitoring
+    SilkenNet::Metrics::OTA_CHUNKS_SENT_TOTAL.increment(labels: { firmware_version: firmware_obj.version })
+
     next_index = chunk_index + 1
 
     if next_index < total_chunks

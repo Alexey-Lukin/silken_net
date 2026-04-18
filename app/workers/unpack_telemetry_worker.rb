@@ -35,6 +35,7 @@ class UnpackTelemetryWorker
 
     unless gateway
       Rails.logger.warn "⚠️ [Uplink] Невідоме джерело: UID=#{gateway_uid.inspect}, IP=#{sender_ip}. Скидання з'єднання."
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "unknown_device" })
       return
     end
 
@@ -54,6 +55,7 @@ class UnpackTelemetryWorker
 
     unless decrypted_data
       Rails.logger.error "🛑 [Security] Критична помилка дешифрування від #{gateway.uid}. Пакет корумпований або ключ невірний."
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "decrypt_error" })
       return
     end
 
@@ -63,6 +65,9 @@ class UnpackTelemetryWorker
     # 4. ПЕРЕДАЧА В СЕРВІС РОЗПАКОВКИ
     # Конвеєр: [DID:4][RSSI:1][Payload:16] x N
     TelemetryUnpackerService.call(decrypted_data, gateway.id)
+
+    # [S2.4] Track successful CoAP packet processing for Prometheus
+    SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "success" })
 
   rescue ArgumentError => e
     Rails.logger.warn "🛑 [Uplink] Корупція Base64 від #{sender_ip}: #{e.message}"

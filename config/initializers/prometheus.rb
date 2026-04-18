@@ -146,6 +146,45 @@ module SilkenNet
       labels: [ :network, :error_type ]
     )
 
+    # -----------------------------------------------------------------------
+    # 🔥 WORKER-SPECIFIC METRICS (Gap Analysis — S2.4)
+    # -----------------------------------------------------------------------
+
+    # Slashing events by reason (fraud, cluster_stress, contract_breach)
+    SLASHING_EVENTS_TOTAL = REGISTRY.counter(
+      :silkennet_slashing_events_total,
+      docstring: "Total slashing (burn) events by reason",
+      labels: [ :reason ]
+    )
+
+    # OTA firmware chunks sent to field devices
+    OTA_CHUNKS_SENT_TOTAL = REGISTRY.counter(
+      :silkennet_ota_chunks_sent_total,
+      docstring: "Total OTA firmware chunks transmitted to field devices",
+      labels: [ :firmware_version ]
+    )
+
+    # Early Warning System alerts dispatched
+    EWS_ALERTS_TOTAL = REGISTRY.counter(
+      :silkennet_ews_alerts_total,
+      docstring: "Total EWS alerts dispatched (fire, drought, pest, storm)",
+      labels: [ :alert_type ]
+    )
+
+    # Chainlink oracle dispatch latency (histogram for percentile analysis)
+    ORACLE_DISPATCH_DURATION = REGISTRY.histogram(
+      :silkennet_oracle_dispatch_duration_seconds,
+      docstring: "Chainlink oracle dispatch latency in seconds",
+      buckets: [ 0.5, 1, 2.5, 5, 10, 30, 60 ]
+    )
+
+    # CoAP UDP packets received by the daemon
+    COAP_PACKETS_RECEIVED_TOTAL = REGISTRY.counter(
+      :silkennet_coap_packets_received_total,
+      docstring: "Total CoAP UDP packets received by the telemetry daemon",
+      labels: [ :status ]  # success, decrypt_error, unknown_device, malformed
+    )
+
     # Snapshot connection pool stats for Prometheus scraping.
     # Called from PrometheusCollector middleware or a periodic job.
     def self.sample_connection_pool!
