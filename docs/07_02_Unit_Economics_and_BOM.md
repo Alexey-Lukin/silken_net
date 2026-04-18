@@ -34,8 +34,8 @@
 | **Energy Harvesting** | BQ25570 (MPPT Nano-Power) | Прямий запуск від EBFC >500 мВ (LTC3108 видалено). |
 | **Накопичувач енергії** | Supercapacitor 0.47 F / 5.5 В | До 500,000 циклів заряду/розряду. |
 | **MCU & Radio** | STM32WLE5JC (LoRa-E5) | ARM Cortex-M4, LoRaWAN 868 МГц, Edge AI (TinyML). |
-| **Антена** | Ceramic SMD Antenna 868 МГц (LTCC) | Пайка роботом, Keep-Out Zone ≥3 мм. Детально → `02_01` §5. |
-| **Корпус / Радом** | PEEK Medical Grade (IP68) | Радіопрозорий купол, захист від вандалізму та вологи. |
+| **Антена** | Ceramic SMD Antenna 868 МГц (LTCC) | Пайка роботом, Keep-Out Zone ≥3 мм. Альтернатива: Ignion Virtual Antenna™. Детально → `02_01` §5. |
+| **Корпус / Радом** | PEEK Medical Grade (IP68) — Деталь 4 | Радіопрозорий купол (∅20–30 мм), різьба/байонет на Деталь 3 (Анод), O-ring EPDM. Захист від вандалізму та вологи. Детально → `02_01` §5.2. |
 
 > **Архітектурна зміна (Pivot v2):** 4 титанові голки-електроди (система Кельвіна) та каскад LTC3108 + трансформатор 1:100 **повністю видалено**. Замінено на коаксіальну «Матрьошку» з EBFC (GOx анод + Laccase катод, >500 мВ), що напряму живить BQ25570 без проміжного підсилення.
 
@@ -59,7 +59,7 @@
 | 1 | MCU + LoRa SoC | Seeed LoRa-E5 (STM32WLE5JC + SX1262) | ~$5.50 |
 | 2 | PMIC | TI BQ25570RGRR | ~$2.80 |
 | 3 | Supercapacitor | Eaton HV0H474AEJ-R (0.47 F / 5.5 В) | ~$1.10 |
-| 4 | Ceramic Antenna | Yageo ANT1608LLC00R2400A (868 МГц, LTCC, SMD) | ~$0.35 |
+| 4 | Ceramic Antenna | Yageo ANT1608LLC00R2400A, Taoglas FXP73 або Ignion NN02-310 (868 МГц, LTCC/Virtual, SMD) | ~$0.35 |
 | 5 | П'єзоелемент | ZP-3 / ZP-5 (∅27 мм, пасивний тригер) | ~$0.15 |
 | 6 | PCB | FR4, 4 шари, 1.6 мм (Power Deck + RF Deck) | ~$0.65 |
 | 7 | Пасивні | 0402/0603 резистори, конденсатори X5R/C0G | ~$0.20 |

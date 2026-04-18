@@ -599,13 +599,16 @@
   - [ ] Додати temperature sensor (NTC або DS18B20)
   - [ ] Реалізувати hardware charge protection при T < 0°C
 
-#### HW.17 — PEEK radome prototype
-- **Джерело:** `02_01`
-- **Опис:** PEEK-Radome прототип "Не розпочато". Потребує KiCad PCB dimensions
-- **Блокує:** Ceramic antenna protection, RF performance validation
+#### HW.17 — PEEK radome prototype (Деталь 4)
+- **Джерело:** `02_01` §5.2 + Legacy notes
+- **Опис:** Деталь 4 (PEEK Crown / Капсула-Радом) — радіопрозорий купол ∅20–30 мм, який «насаджується» на зовнішню різьбу Деталі 3 (Анод). Різьба або байонет + O-ring EPDM → IP68. Керамічна SMD-антена в міліметрі від внутрішньої стінки PEEK. Прототип "Не розпочато"
+- **Блокує:** Ceramic antenna protection, RF performance validation, Zero-Touch Assembly validation
 - **Статус:**
   - [ ] KiCad PCB layout (HW.9) → PEEK radome dimensions
-  - [ ] Замовити PEEK прототип
+  - [ ] Визначити тип кріплення: різьба на Деталь 3 vs байонет
+  - [ ] Визначити матеріал O-ring (EPDM vs FKM) для ксилемного середовища
+  - [ ] Замовити PEEK прототип (CNC або injection molding)
+  - [ ] Верифікувати RF performance (VSWR, КСВ) з антеною під радомом
 
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
 - **Джерело:** `02_05` BLOCKER-1
@@ -908,6 +911,7 @@
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates + автоматична компресія. Відхилено для TRL 6-8 (нативний RANGE partitioning достатній) | Legacy notes, `04_01` | [ ] Тільки при >100M рядків/місяць |
 | E.38 | Press-Fit фаски: мінімальні радіуси округлення (R ≥ 0.2 мм) на кутах титанового стрижня для зняття пікових напружень у PEEK | Legacy notes, `01_01` | [ ] Включити у nTop 3D-модель (HW.1) |
 | E.39 | **EBFC Gen 2.0 Enzyme R&D:** FAD-GDH замість GOx на аноді (без H₂O₂); Laccase + laccase-like nanozymes (Cu/Ce/Au ZIF) на катоді (×10 power density, 75% стабільності після 10 днів vs 30%); ZIF-інкапсуляція для 20-25 років. Не заміняє поточний GOx/Laccase стек, а додається як R&D альтернатива | Legacy notes, `01_03` §3 | [ ] Лабораторне тестування ЧНУ (HW.5, Модуль `08_01`). DFT-моделювання Мінаєв |
+| E.40 | **Ignion Virtual Antenna™ evaluation:** Оцінити Ignion NN02-310 (https://ignion.io) як альтернативу Yageo/Taoglas керамічним антенам 868 МГц. Переваги: мініатюрний SMD форм-фактор, інтегрований matching, широкосмуговість. Потребує верифікації VSWR під PEEK-радомом | Legacy notes, `02_01` §5 | [ ] Замовити evaluation kit Ignion. Тест VSWR + link budget під PEEK |
 
 ### HW.20 — Buffer Cap: Tantalum → MLCC migration
 
@@ -927,7 +931,7 @@
 |--------|-------------|-------------|-----------------|--------|
 | 00 System Architecture | 4 | 9 | Module 01 chemistry | ARCH.1-ARCH.6 |
 | 01 Materials & EBFC | 3 | 6 | Lab tests (ЧНУ) | HW.1-HW.6 |
-| 02 Hardware & BOM | 4 | 6 | BQ25570, PCB layout, Pogo pins | HW.7-HW.20 |
+| 02 Hardware & BOM | 4 | 6 | BQ25570, PCB layout, Pogo pins, PEEK Radome (Деталь 4) | HW.7-HW.20 |
 | 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking, Time Sync | FW.1-FW.21 |
 | 04 Backend Rails | 8 | 9 | Prometheus Server, тести guard clauses | S1-S3, DIFF.1-DIFF.7 |
 | 05 Web3 Pipeline | 8-9 | 9 | PuroEarth real API, SFC contract address | S3.3, S3.5 |
@@ -955,6 +959,7 @@
 | 2026-04-18 | Architecture notes integration | Аналіз 8 архітектурних нотаток. Додано: E.31 (TinyML tflite format), E.32 (Smart Contract Audit roadmap), E.33 (FCM/Twilio rate limits), E.34 (dClimate fallback oracle), E.35 (Flash Loan defense), E.36 (PostGIS Generated Column), E.37 (TimescaleDB evaluation). Оновлено `03_03` (OTA model format + Federated Learning pipeline), `05_03` (Flash Loan attack vector + Audit Roadmap + Bonding Curves), `05_04` (Merkle Tree + EigenLayer AVS), `04_02` (rate limits + fallback oracle), `04_01` (Generated Column + TimescaleDB). |
 | 2026-04-18 | Hardware/firmware notes integration | Аналіз 7 нотаток (enzyme protection, chamfers, MPPT, buffer cap, SIM7070G, race condition). Оновлено: `01_03` (Chitosan/Nafion/PEG захисні шари для ферментів), `02_03` BLOCKER-2 (MPPT 65% замість 50%, Міхаеліс-Ментен/Тафель обґрунтування) + §6 Buffer Cap (тантал → MLCC X5R/X7R, leakage current), `01_01` BLOCKER-2 (фаски R≥0.2мм для press-fit), `03_03` BLOCKER-8 (NVIC ізоляція замість __disable_irq), `02_05` (SIM7070G підтверджено, eDRX/PSM додано). Трекер: збагачено HW.5/6/10/13, FW.11. Додано: E.38 (chamfer), HW.20 (Buffer Cap MLCC). |
 | 2026-04-18 | EBFC Gen 2.0 enzyme alternatives | Аналіз нотатки щодо альтернативних ферментів для EBFC. Додано `01_03` §3 "Альтернативні ферменти Gen 2.0" — повні таблиці анодних (FAD-GDH #1, PQQ-GDH, CDH) та катодних (Laccase/nanozyme гібрид #1, engineered Laccase mutants, BOD, Tyrosinase) альтернатив. Додано §4.3 стратегії іммобілізації Gen 2.0 (ZIF, covalent bonding, enzyme+nanozyme). Оновлено `08_01` — розширений запит до Мінаєва (DFT FAD-GDH + nanozymes на TiO₂) та готовий pitch текст. Трекер: оновлено HW.5 (Gen 2.0 ціль 20-25 років), додано E.39 (EBFC Gen 2.0 R&D). |
+| 2026-04-18 | Radome Деталь 4 + Ignion antenna | Інтеграція нотатки про Капсулу-Радом (Деталь 4 — PEEK Crown). Оновлено `02_01` §5.2: Деталь 4 як "Четвертий Елемент" механічного стеку (різьба/байонет на Деталь 3, O-ring EPDM IP68, ∅20–30 мм, CNC/injection molding). Додано Ignion NN02-310 Virtual Antenna™ як альтернативний вендор у BOM та antenna spec. Оновлено `07_02` §1.1 (Деталь 4 в BOM, Ignion). Трекер: збагачено HW.17 (Деталь 4 деталізація, O-ring, bayonet vs thread). Додано E.40 (Ignion evaluation). |
 
 ---
 
