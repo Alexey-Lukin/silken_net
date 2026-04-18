@@ -108,35 +108,15 @@ resource "google_compute_firewall" "allow_coap" {
   }
 }
 
-# [PLAN 5.10] CoAP UDP DDoS mitigation — iptables rate limiting via instance metadata startup script.
+# [PLAN 5.10] CoAP UDP DDoS mitigation — iptables rate limiting via instance startup script.
 # GCP VPC firewalls don't support per-IP rate limiting for UDP, so we apply kernel-level
 # rate limiting on each compute instance. This limits each source IP to 100 UDP packets/second
 # on port 5683, with a burst allowance of 200 packets.
 # At ~50 packets per Queen flush (1 batch = 1 UDP packet), this allows 2 flushes/second per IP
 # while blocking amplification attacks.
-resource "google_compute_project_metadata_item" "coap_rate_limit_script" {
-  key   = "startup-script-coap-ratelimit"
-  value = <<-EOF
-    #!/bin/bash
-    # CoAP UDP rate limiting — prevents DDoS amplification attacks on port 5683.
-    # Limits each source IP to 100 UDP packets/sec with burst of 200.
-    # Applied idempotently (checks if rule exists before adding).
-    # Rules persist across reboots via iptables-persistent.
-    apt-get install -y -qq iptables-persistent 2>/dev/null || true
-    if ! iptables -C INPUT -p udp --dport 5683 -m hashlimit \
-         --hashlimit-above 100/sec --hashlimit-burst 200 \
-         --hashlimit-mode srcip --hashlimit-name coap_limit \
-         -j DROP 2>/dev/null; then
-      iptables -A INPUT -p udp --dport 5683 -m hashlimit \
-        --hashlimit-above 100/sec --hashlimit-burst 200 \
-        --hashlimit-mode srcip --hashlimit-name coap_limit \
-        -j DROP
-      # Persist rules across reboots
-      iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
-      logger -t coap-ratelimit "CoAP UDP rate limiting applied: 100 pkt/sec per IP"
-    fi
-  EOF
-}
+#
+# Applied via instance metadata `startup-script` in compute.tf, not here.
+# See: google_compute_instance.web.metadata.startup-script
 
 # Firewall: Allow internal communication — restricted to subnet CIDR
 resource "google_compute_firewall" "allow_internal" {

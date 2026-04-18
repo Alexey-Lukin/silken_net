@@ -58,8 +58,6 @@
 // Fixed 1000 ms is insufficient for Starlink worst case.
 #define COAP_BASE_TIMEOUT_MS  2000       // Base timeout for CoAP session setup
 #define COAP_SEND_TIMEOUT_MS  5000       // Timeout for data send (includes Starlink worst case)
-#define COAP_MAX_RETRIES      3          // Maximum CoAP send retries before giving up
-#define COAP_BACKOFF_BASE_MS  1000       // Base delay for exponential backoff between retries
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -615,57 +613,44 @@ void Flush_Cache_To_Rails(void)
 
     uint16_t total_size = 16 + padded_size; // IV (16) + зашифровані дані
 
-    // [PLAN 2.9 + 2.11] CoAP send with retry logic and adaptive timeouts.
-    // Without retry, a batch of 50 telemetry records is PERMANENTLY LOST on any
-    // network error (Starlink DTC latency spike, LTE-M coverage gap, modem glitch).
-    // Retry with exponential backoff: 1s → 2s → 4s between attempts.
-    // Total worst case: ~7s of retries before giving up (within IWDG ~26s window).
-    uint8_t send_success = 0;
-    for (uint8_t retry = 0; retry < COAP_MAX_RETRIES && !send_success; retry++) {
-        if (retry > 0) {
-            // Exponential backoff: 1s, 2s, 4s...
-            uint32_t backoff_ms = COAP_BACKOFF_BASE_MS << (retry - 1);
-            HAL_Delay(backoff_ms);
-            HAL_IWDG_Refresh(&hiwdg); // Keep watchdog alive during retry
-        }
+    // [PLAN 2.11] CoAP send with adaptive timeouts for Starlink DTC.
+    // Starlink worst-case RTT: 600–2400 ms. Original 1000 ms CCOAPNEW + 2000 ms
+    // CCOAPSEND timeouts were insufficient → silent data loss.
+    // Increased to 2000 ms / 5000 ms to cover worst-case Starlink latency.
+    //
+    // TODO [PLAN 2.9]: Add retry with exponential backoff once interrupt-driven
+    // UART RX is implemented (AT-blind issue 2.3). Without UART response parsing
+    // we cannot detect send failure, so retry logic would be dead code.
 
-        // Initialize CoAP session (UDP)
-        SIM7070_SendATCommand("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n",
-                              COAP_BASE_TIMEOUT_MS);
+    // Ініціалізація CoAP сесії (UDP)
+    SIM7070_SendATCommand("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n",
+                          COAP_BASE_TIMEOUT_MS);
 
-        // 1. Build AT+CCOAPSEND command header.
-        // URI-Path: /telemetry/batch/<queen_uid> — server identifies gateway by UID,
-        // not by IP (solves Starlink NAT / dynamic IP).
-        snprintf(at_tx_buffer, sizeof(at_tx_buffer),
-                 "AT+CCOAPSEND=0,2,\"telemetry/batch/%s\",%d,\"",
-                 queen_uid, total_size * 2);
-        HAL_UART_Transmit(&huart1, (uint8_t*)at_tx_buffer, strlen(at_tx_buffer), 100);
+    // 1. Початок команди.
+    // URI-Path: /telemetry/batch/<queen_uid> — сервер ідентифікує шлюз за UID,
+    // а не за IP, що вирішує проблему Starlink NAT та динамічних адрес.
+    snprintf(at_tx_buffer, sizeof(at_tx_buffer),
+             "AT+CCOAPSEND=0,2,\"telemetry/batch/%s\",%d,\"",
+             queen_uid, total_size * 2);
+    HAL_UART_Transmit(&huart1, (uint8_t*)at_tx_buffer, strlen(at_tx_buffer), 100);
 
-        // 2. Stream encrypted buffer as hex string to modem
-        char hex_byte[3];
-        for (int i = 0; i < total_size; i++) {
-            snprintf(hex_byte, sizeof(hex_byte), "%02x", encrypted_batch_buffer[i]);
-            HAL_UART_Transmit(&huart1, (uint8_t*)hex_byte, 2, 10);
-        }
-
-        // 3. Close AT command (close quotes + CRLF)
-        HAL_UART_Transmit(&huart1, (uint8_t*)"\"\r\n", 3, 100);
-
-        // [PLAN 2.11] Wait for modem to send data and receive UDP ACK.
-        // Increased from 2000ms to COAP_SEND_TIMEOUT_MS (5000ms)
-        // to accommodate Starlink DTC worst-case latency (600–2400ms RTT).
-        HAL_Delay(COAP_SEND_TIMEOUT_MS);
-        HAL_IWDG_Refresh(&hiwdg);
-
-        // Close CoAP session
-        SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
-
-        // TODO: Parse UART response for +CCOAPSEND: status to detect success/failure.
-        // Current implementation assumes success — SIM7070G AT response parsing
-        // requires interrupt-driven UART RX (AT-blind issue 2.3).
-        // For now, mark as success to avoid infinite retry.
-        send_success = 1;
+    // 2. Перетворюємо зашифрований буфер у Hex-рядок на льоту і відправляємо в модем
+    char hex_byte[3];
+    for (int i = 0; i < total_size; i++) {
+        snprintf(hex_byte, sizeof(hex_byte), "%02x", encrypted_batch_buffer[i]);
+        HAL_UART_Transmit(&huart1, (uint8_t*)hex_byte, 2, 10);
     }
+
+    // 3. Завершуємо команду (Закриваємо лапки і імітуємо натискання Enter)
+    HAL_UART_Transmit(&huart1, (uint8_t*)"\"\r\n", 3, 100);
+
+    // Чекаємо, поки модем надішле дані через ефір та отримає UDP ACK від сервера.
+    // [PLAN 2.11] Збільшено з 2000 до 5000 мс для Starlink DTC worst-case latency.
+    HAL_Delay(COAP_SEND_TIMEOUT_MS);
+    HAL_IWDG_Refresh(&hiwdg);
+
+    // Закриваємо CoAP сесію, звільняючи ресурси модему
+    SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
 
     // [FIX: CRITICAL — ECB Restoration]
     // Flush_Cache_To_Rails() переключає CRYP на CBC для шифрування батча.
