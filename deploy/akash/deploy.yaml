@@ -156,6 +156,9 @@ services:
       - "-C"
       - "config/sidekiq.yml"
     env:
+      # REQUIRED: Replace placeholder values before deploying.
+      # In production, use Akash Console UI or `akash tx deployment update` to inject secrets.
+      # Never commit real secrets to this file.
       - RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
       - DATABASE_URL=REQUIRED_SECRET_NOT_SET
       - REDIS_URL=REQUIRED_SECRET_NOT_SET

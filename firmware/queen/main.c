@@ -97,7 +97,8 @@ static uint8_t Read_Queen_UID_From_Flash(void)
 {
     const uint32_t* flash_ptr = (const uint32_t*)QUEEN_UID_FLASH_ADDR;
 
-    // Check magic marker
+    // Check magic marker. Unprogrammed Flash reads as 0xFFFFFFFF,
+    // which won't match QUEEN_UID_MAGIC ("QUID" = 0x51554944).
     if (flash_ptr[0] != QUEEN_UID_MAGIC) {
         // Not provisioned — use default UID (safe fallback, device still functions)
         strncpy(queen_uid, "QUEEN-UNPROVISIONED", QUEEN_UID_MAX_LEN - 1);
@@ -109,7 +110,9 @@ static uint8_t Read_Queen_UID_From_Flash(void)
     const uint8_t* byte_ptr = (const uint8_t*)QUEEN_UID_FLASH_ADDR;
     uint8_t uid_len = byte_ptr[4];
 
-    if (uid_len == 0 || uid_len >= QUEEN_UID_MAX_LEN) {
+    // Validate uid_len is within safe bounds for both the destination buffer
+    // and the Flash provisioning region (2KB page = 2048 bytes, header = 5 bytes).
+    if (uid_len == 0 || uid_len >= QUEEN_UID_MAX_LEN || (5U + uid_len) > 2048U) {
         strncpy(queen_uid, "QUEEN-UNPROVISIONED", QUEEN_UID_MAX_LEN - 1);
         queen_uid[QUEEN_UID_MAX_LEN - 1] = '\0';
         return 0;
@@ -584,12 +587,13 @@ void Flush_Cache_To_Rails(void)
             /* [PLAN 2.7] Improved HRNG fallback: combine multiple entropy sources
                to reduce IV predictability when HRNG fails.
                HAL_GetTick() alone is predictable (~1ms resolution).
-               XOR with: device UID hash, loop index rotation, and ADC thermal noise
-               to create a less predictable fallback IV. */
+               XOR with: device UID hash, loop index scaling, and bit-shifted tick
+               to create a less predictable fallback IV.
+               For i ∈ {0,1,2,3}: tick >> {0,8,16,24} extracts different byte regions. */
             uint32_t tick = HAL_GetTick();
             uint32_t uid_hash = djb2_hash(queen_uid, strlen(queen_uid));
             batch_iv[i] = tick ^ (uid_hash << i) ^ ((uint32_t)i * RNG_FALLBACK_XOR_MASK)
-                        ^ (tick >> (8 * i));  // Bit-rotate tick by word position
+                        ^ (tick >> (8U * i));
         }
     }
 
