@@ -162,9 +162,9 @@ _(Запропонована тема; студент визначається �
 
 | Автор | Внесок |
 |-------|--------|
-| **Косенюк Г.В.** | VSWR/КСВ оптимізація SMD-антени під PEEK-радомом; 3D-діаграма спрямованості з Ti-анкером як Ground Plane; Link Budget LoRa у лісі (SF=9 балансування); Reed-Solomon FEC для 21-байтового пакету; Kalman/EMA фільтри для delta\_t Edge AI; CE/FCC compliance roadmap |
-| **Ярмілко А.В.** | Lightweight cryptography integration (AES-256-CBC, HAL\_CRYP); firmware архітектура SPI/DMA для фільтрованих сигналів |
-| Архітектор (Silken Net) | EBFC-джерело живлення (44 мВ, <500 мкВт), STM32WLE5JC RF-конфігурація, 21-байтовий пакет, IP68 механічна специфікація |
+| **Косенюк Г.В.** | VSWR/КСВ оптимізація SMD-антени під PEEK-радомом (Деталь 4); 3D-діаграма спрямованості з Ti-анкером як Ground Plane; Link Budget LoRa у лісі (SF=7–9 балансування, → `02_01` §5.3); Reed-Solomon FEC для 21-байтового пакету; Kalman/EMA фільтри для delta\_t Edge AI; CE/FCC compliance roadmap |
+| **Ярмілко А.В.** | Lightweight cryptography integration (AES-256-ECB для LoRa Soldier→Queen, AES-256-CBC для CoAP batch Queen→Rails, HAL\_CRYP); firmware архітектура SPI/DMA для фільтрованих сигналів |
+| Архітектор (Silken Net) | EBFC-джерело живлення (>500 мВ, <500 мкВт), STM32WLE5JC RF-конфігурація, 21-байтовий пакет, IP68 механічна специфікація (Деталь 4 — PEEK Crown) |
 
 **Магістерська робота (Науковий керівник — Косенюк):**
 _«Радіотехнічна оптимізація мікропотужних IoT-пристроїв у лісовому середовищі: узгодження антенних систем, завадостійке кодування та стохастична фільтрація сигналів EBFC-джерел»_
