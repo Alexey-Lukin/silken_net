@@ -279,6 +279,20 @@ if (vibration_detected) {
 - Додати `__disable_irq()` / `__enable_irq()` навколо read-clear-start послідовності.
 - Або перевіряти `HAL_ADC_Start_DMA` return code та обробляти `HAL_BUSY`.
 
+> **📝 Покращене рішення — NVIC-рівнева ізоляція (Legacy notes):** Замість `__disable_irq()`, який зупиняє **всю систему** (включно з SysTick, радіо-перериваннями та DMA callbacks), рекомендовано вимикати лише конкретну EXTI-лінію п'єзодиска:
+> ```c
+> // Замість __disable_irq() / __enable_irq():
+> HAL_NVIC_DisableIRQ(EXTI0_IRQn);  // Вимкнути тільки п'єзо-переривання
+> if (vibration_detected) {
+>     vibration_detected = 0;
+>     audio_ready = 0;
+>     HAL_TIM_Base_Start(&htim2);
+>     HAL_ADC_Start_DMA(&hadc, (uint32_t*)raw_audio_buffer, 512);
+> }
+> HAL_NVIC_EnableIRQ(EXTI0_IRQn);   // Увімкнути назад після завершення
+> ```
+> **Переваги:** SysTick (HAL_Delay), LoRa-переривання та DMA callbacks продовжують працювати під час аудіо-ініціалізації. Менший ризик пропуску радіо-пакетів у Queen relay-сценаріях.
+
 **Блокує:** Стабільність DMA в умовах вібраційного шуму (вітер, гроза, механічні удари).
 
 ---

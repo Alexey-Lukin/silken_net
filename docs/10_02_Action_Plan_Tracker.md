@@ -350,10 +350,11 @@
 ### 🟢 P2 — Низькопріоритетні firmware fixes
 
 #### FW.11 — Race condition: `vibration_detected`
-- **Джерело:** `03_03`
+- **Джерело:** `03_03` + Legacy notes
 - **Опис:** Між read та write немає атомарності (ISR vs main loop)
 - **Статус:**
-  - [ ] Wrap read-clear-start у `__disable_irq()` / `__enable_irq()`
+  - [ ] Використати NVIC-рівневу ізоляцію: `HAL_NVIC_DisableIRQ(EXTI0_IRQn)` замість `__disable_irq()` — вимикає лише п'єзо-переривання, не зупиняючи SysTick/Radio/DMA
+  - [ ] Fallback: `__disable_irq()` / `__enable_irq()` якщо NVIC-підхід неможливий
   - [ ] Тести
 - **Сесія:** —
 - **Коміт:** —
@@ -484,10 +485,13 @@
   - [ ] Тест: 10× вищий Rct
 
 #### HW.5 — Enzyme lifespan
-- **Джерело:** `01_03`
-- **Опис:** GOx/Laccase деградація у кислому ксилемному середовищі (pH 4.5-5.5)
+- **Джерело:** `01_03` + Legacy notes
+- **Опис:** GOx/Laccase деградація у кислому ксилемному середовищі (pH 4.5-5.5). Глутаральдегід (крос-лінкер) фіксує ферменти механічно, але НЕ захищає від кислотної деградації
 - **Статус:**
   - [ ] Розробка protective polymer matrix
+  - [ ] Тест Chitosan-шару (pH-буферизація навколо ферментів) — додано в `01_03`
+  - [ ] Тест Nafion-покриття (селективна мембрана: пропускає H⁺, блокує агресивні молекули) — додано в `01_03`
+  - [ ] Тест комбінації Chitosan + Nafion (пріоритетний варіант)
   - [ ] Тест: 3-5 років функціонального ферменту
 
 #### HW.6 — Resin barrier
@@ -496,6 +500,7 @@
 - **Статус:**
   - [ ] 30° installation angle verification
   - [ ] Hydrophilic coating test
+  - [ ] PEG (поліетиленгліколь) обробка гіроїда: смола (гідрофобна) зісковзує з PEG-покритих пор, канали залишаються відкритими для водного соку — додано в `01_03`
   - [ ] Hydrophobic/hydrophilic gradient test (PTFE на нижній частині гіроїда, гідрофільний верх) — додано в `01_04`
   - [ ] Thermal installation test: визначити точну T° нагріву (150-200°C рекомендовано), час витримки, глибину прогріву — додано в `01_04`
   - [ ] FEM-моделювання теплового поля в Ti-6Al-4V анкері (λ = 6.7 W/m·K — низька теплопровідність!)
@@ -528,11 +533,12 @@
   - [ ] RF Keep-Out Zone verification
 
 #### HW.10 — Modem name discrepancy
-- **Джерело:** `02_05`
-- **Опис:** SIM7000G (Wiki) vs SIM7070G (firmware AT-commands)
+- **Джерело:** `02_05` + Legacy notes
+- **Опис:** SIM7000G (Wiki) vs SIM7070G (firmware AT-commands). **Рішення прийнято: SIM7070G** — краща підтримка eDRX/PSM, нижче idle-споживання (~3 мкА vs ~10 мкА)
 - **Статус:**
   - [ ] Фізично перевірити маркування на прототипі
-  - [ ] Узгодити Wiki, BOM та firmware
+  - [ ] Узгодити Wiki, BOM та firmware → **SIM7070G**
+  - [ ] Додати AT+CPSMS та AT+CEDRXS команди у firmware Queen
 
 #### HW.11 — Potting material selection (quartz resonator risk)
 - **Джерело:** `02_01` BLOCKER-1
@@ -552,11 +558,13 @@
 - **Блокує:** Hardware safety, TRL 5
 
 #### HW.13 — MPPT coefficient verification for EBFC
-- **Джерело:** `02_03` BLOCKER-2
-- **Опис:** Поточний MPPT = 50% VOC (ROC1=ROC2=10MΩ) — теоретична оцінка. Реальний оптимум для EBFC (Ti-6Al-4V | GOx/Laccase | Pinus sylvestris) може бути 60-70%
+- **Джерело:** `02_03` BLOCKER-2 + Legacy notes
+- **Опис:** Поточний MPPT = 50% VOC (ROC1=ROC2=10MΩ) — **занадто низько для EBFC**. EBFC (GOx/Laccase) має специфічну поляризаційну криву (Міхаеліс-Ментен + Тафель), MPP лежить у діапазоні 60-70% VOC. При 50% — зона масо-транспортних обмежень ферменту
+- **Рекомендація:** Почати з 65% (ROC1=5.36 MΩ, ROC2=10 MΩ)
 - **Статус:**
+  - [ ] Зняти повну P-V криву (потужність-напруга) EBFC
   - [ ] Виміряти VOC та VMP при різному освітленні (ранок/день/вечір, сезонно)
-  - [ ] Визначити оптимальну фракцію
+  - [ ] Визначити оптимальну фракцію (починати з 65%)
   - [ ] Якщо потрібно — замінити ROC1/ROC2
 - **Блокує:** Max EBFC power, optimal charge speed
 
@@ -893,6 +901,17 @@
 | E.35 | Flash Loan defense в GovernorContract.sol: `getPastVotes` snapshot voting + Voting Delay 7200 блоків + 4% quorum + 48h Timelock | Legacy notes, `05_03` | [ ] Разом з Governor deployment (Post-TRL 6) |
 | E.36 | PostGIS Cluster.geo_boundary: заміна тригера `sync_cluster_geo_boundary()` на PostgreSQL Generated Column (GENERATED ALWAYS AS) | Legacy notes, `04_01` | [ ] Post-TRL 8 (оптимізація, тригер працює коректно) |
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates + автоматична компресія. Відхилено для TRL 6-8 (нативний RANGE partitioning достатній) | Legacy notes, `04_01` | [ ] Тільки при >100M рядків/місяць |
+| E.38 | Press-Fit фаски: мінімальні радіуси округлення (R ≥ 0.2 мм) на кутах титанового стрижня для зняття пікових напружень у PEEK | Legacy notes, `01_01` | [ ] Включити у nTop 3D-модель (HW.1) |
+
+### HW.20 — Buffer Cap: Tantalum → MLCC migration
+
+- **Джерело:** `02_03` §6 + Legacy notes
+- **Опис:** Buffer Cap 100µF на лінії VOUT для LoRa TX peak. Рання специфікація вказувала танталовий конденсатор, але його струм витоку (1-10 мкА) подвоює/потроює E_sleep (1.5 мкА). **Виправлено на MLCC X5R/X7R** (виток ~десятки нА)
+- **Статус:**
+  - [x] Документацію оновлено (`02_03` §6) — тантал замінено на MLCC
+  - [ ] Обрати конкретний part number: 100µF/6.3V X5R 1210 (напр. Murata GRM32ER60J107ME20)
+  - [ ] Врахувати DC bias derating (~20% при 3.3V/6.3V → ефективна ємність ~80µF)
+  - [ ] Додати до KiCad BOM (HW.9)
 
 ---
 
@@ -902,7 +921,7 @@
 |--------|-------------|-------------|-----------------|--------|
 | 00 System Architecture | 4 | 9 | Module 01 chemistry | ARCH.1-ARCH.6 |
 | 01 Materials & EBFC | 3 | 6 | Lab tests (ЧНУ) | HW.1-HW.6 |
-| 02 Hardware & BOM | 4 | 6 | BQ25570, PCB layout, Pogo pins | HW.7-HW.19 |
+| 02 Hardware & BOM | 4 | 6 | BQ25570, PCB layout, Pogo pins | HW.7-HW.20 |
 | 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking, Time Sync | FW.1-FW.21 |
 | 04 Backend Rails | 8 | 9 | Prometheus Server, тести guard clauses | S1-S3, DIFF.1-DIFF.7 |
 | 05 Web3 Pipeline | 8-9 | 9 | PuroEarth real API, SFC contract address | S3.3, S3.5 |
@@ -928,6 +947,7 @@
 | 2026-04-18 | Security notes integration | Аналіз 4 security/firmware нотаток. Оновлено FW.2 (AES-CCM 24-байтний пакет з Frame Counter + MIC), FW.16 (RCC CRYP_FORCE_RESET recovery), FW.17 (Hash Ratchet KDF замість key-over-air). Оновлено BLOCKER-2/3/5/6 у `03_05`. Note 4 (HRNG ADC noise) — вже виправлено краще (djb2 HW UID). |
 | 2026-04-18 | Hardware notes integration | Аналіз нотаток щодо ADS1220 / TPS22860 / LIC Eaton HS1016. Додано §4 "Розглянуті альтернативи" в `02_04` (LIC vs EDLC, концепт VOC-діагностики). Додано §7 "Розглянуті альтернативні компоненти" в `02_01` (ADS1220, TPS22860). Всі три компоненти відхилено для TRL 6 з документованим обґрунтуванням. |
 | 2026-04-18 | Architecture notes integration | Аналіз 8 архітектурних нотаток. Додано: E.31 (TinyML tflite format), E.32 (Smart Contract Audit roadmap), E.33 (FCM/Twilio rate limits), E.34 (dClimate fallback oracle), E.35 (Flash Loan defense), E.36 (PostGIS Generated Column), E.37 (TimescaleDB evaluation). Оновлено `03_03` (OTA model format + Federated Learning pipeline), `05_03` (Flash Loan attack vector + Audit Roadmap + Bonding Curves), `05_04` (Merkle Tree + EigenLayer AVS), `04_02` (rate limits + fallback oracle), `04_01` (Generated Column + TimescaleDB). |
+| 2026-04-18 | Hardware/firmware notes integration | Аналіз 7 нотаток (enzyme protection, chamfers, MPPT, buffer cap, SIM7070G, race condition). Оновлено: `01_03` (Chitosan/Nafion/PEG захисні шари для ферментів), `02_03` BLOCKER-2 (MPPT 65% замість 50%, Міхаеліс-Ментен/Тафель обґрунтування) + §6 Buffer Cap (тантал → MLCC X5R/X7R, leakage current), `01_01` BLOCKER-2 (фаски R≥0.2мм для press-fit), `03_03` BLOCKER-8 (NVIC ізоляція замість __disable_irq), `02_05` (SIM7070G підтверджено, eDRX/PSM додано). Трекер: збагачено HW.5/6/10/13, FW.11. Додано: E.38 (chamfer), HW.20 (Buffer Cap MLCC). |
 
 ---
 
