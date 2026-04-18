@@ -408,6 +408,32 @@
 - **Сесія:** —
 - **Коміт:** —
 
+#### FW.20 — LoRa Time Sync (clock drift compensation)
+- **Джерело:** Legacy notes
+- **Опис:** Дешеві кварцові резонатори / внутрішні осцилятори STM32 мають температурний дрейф. При -20°C та +40°C RTC годинник Soldier йде з різною швидкістю. За кілька місяців автономної роботи без LTE-синхронізації "час дерева" розсинхронізується з "часом бекенду" на хвилини або години. Це впливає на: (1) `created_at` timestamp у TelemetryLog → partition pruning errors, (2) HMAC/nonce replay protection windows, (3) cron-like wakeup scheduling
+- **Рішення:** Протокол Time Sync через Queen downlink. Queen має точний час через LTE/NTP. Періодично (раз на добу або при flush ACK) Queen надсилає OTA-корекцію часу (downlink). Soldier звіряє свій RTC і застосовує поправку. Аналог LoRaWAN MAC command `DeviceTimeReq`
+- **Статус:**
+  - [ ] Firmware Queen: додати time correction у CoAP ACK або окремий downlink command
+  - [ ] Firmware Soldier: прийняти та застосувати RTC correction
+  - [ ] Backend: включити server UTC timestamp у downlink payload
+  - [ ] Тести: перевірити drift compensation при ΔT = ±60°C
+- **Пріоритет:** P2 (не блокує TRL 6, критичний для тривалої автономної роботи TRL 7+)
+- **Сесія:** —
+- **Коміт:** —
+
+#### FW.21 — Edge data aggregation (RAM-aware Soldier)
+- **Джерело:** Legacy notes + `08_02` (Kalman filter Vector 4)
+- **Опис:** Soldier MCU має обмежений RAM (~20 KB вільного). При накопиченні даних (acoustic_events, delta_t history) між wakeup циклами, є ризик buffer overflow. Поточна архітектура: кожен wakeup → один 21-байтний пакет → TX. Але для майбутнього (Kalman filtering, TinyML context) потрібна локальна агрегація
+- **Рішення:** Використовувати moving average / exponential moving average (EMA) прямо на MCU. Відправляти на Queen лише: (1) поточне значення, (2) дельту від попереднього EMA, (3) стиснуті "summary" пакети замість raw arrays. Це зменшує трафік LoRa та економить батарею
+- **Статус:**
+  - [ ] Визначити які метрики потребують EMA (delta_t, vcap — кандидати)
+  - [ ] Реалізувати lightweight EMA на Soldier (O(1) memory, O(1) compute)
+  - [ ] Інтегрувати з Kalman filter design (E.10 — Косенук)
+  - [ ] Верифікувати RAM footprint залишається < 80% available
+- **Пріоритет:** P2 (пов'язано з E.10, потребує R&D partnership)
+- **Сесія:** —
+- **Коміт:** —
+
 ---
 
 ## 🧪 Hardware / Lab — Блокери
@@ -457,12 +483,14 @@
   - [ ] Тест: 3-5 років функціонального ферменту
 
 #### HW.6 — Resin barrier
-- **Джерело:** `01_04`
+- **Джерело:** `01_04` + Legacy notes
 - **Опис:** Сосни заливають рану смолою → блокує доступ до ферментів
 - **Статус:**
   - [ ] 30° installation angle verification
   - [ ] Hydrophilic coating test
-  - [ ] Optional: thermal installation test
+  - [ ] Hydrophobic/hydrophilic gradient test (PTFE на нижній частині гіроїда, гідрофільний верх) — додано в `01_04`
+  - [ ] Thermal installation test: визначити точну T° нагріву (150-200°C рекомендовано), час витримки, глибину прогріву — додано в `01_04`
+  - [ ] FEM-моделювання теплового поля в Ti-6Al-4V анкері (λ = 6.7 W/m·K — низька теплопровідність!)
 
 #### HW.7 — BQ25570 resistors verification
 - **Джерело:** `02_03`
@@ -836,6 +864,11 @@
 | E.23 | Пропущений тиждень Ethereum anchoring не буде перезаписано (cron creates new state_root) | `05_04` | [ ] Задокументувати в ops runbook |
 | E.24 | `PROVISIONING_MASTER_KEY` not set → AES key in response (TRL4 lab mode only) | `04_03` | [ ] Забезпечити що в production ENV встановлений |
 | E.25 | Euler method DT=0.01 — acceptable for PoG but not scientific simulations | `03_04` | [x] Задокументовано як design tradeoff |
+| E.26 | `health_trend` field для TelemetryLog — predictive degradation: якщо шум Pogo Pin зростає, auto-tune Kalman params via Downlink | Legacy notes | [ ] Post-TRL 6, потребує E.10 (Kalman) |
+| E.27 | Chaos Engineering: Chaos Mesh для Akash або kill-scripts для Kamal web nodes — верифікація RpcConnectionPool + Sidekiq retries resilience | Legacy notes | [ ] Post-TRL 7, production hardening |
+| E.28 | Kamal deploy hooks idempotency audit: `kamal deploy` повторний запуск після перерваного деплою не повинен дублювати DB migrations або blockchain TX | Legacy notes, `06_01` | [ ] Верифікувати `.kamal/hooks/` + migration idempotency |
+| E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) для лабораторного порівняння з поточним осмієвим MET | Legacy notes, `01_03` | [ ] Додано в `01_03` як R&D alternatives |
+| E.30 | InsightGeneratorService: кліматичні базлайни per region, не лише per cluster — для точнішого AI Fraud Guard при планетарному масштабуванні | Legacy notes, `04_02` | [ ] Post-TRL 7 (поточний cluster-level baseline достатній для TRL 6-8) |
 
 ---
 
@@ -846,7 +879,7 @@
 | 00 System Architecture | 4 | 9 | Module 01 chemistry | ARCH.1-ARCH.6 |
 | 01 Materials & EBFC | 3 | 6 | Lab tests (ЧНУ) | HW.1-HW.6 |
 | 02 Hardware & BOM | 4 | 6 | BQ25570, PCB layout, Pogo pins | HW.7-HW.18 |
-| 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking | FW.1-FW.19 |
+| 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking, Time Sync | FW.1-FW.21 |
 | 04 Backend Rails | 8 | 9 | Prometheus Server, тести guard clauses | S1-S3, DIFF.1-DIFF.7 |
 | 05 Web3 Pipeline | 8-9 | 9 | PuroEarth real API, SFC contract address | S3.3, S3.5 |
 | 06 DevOps | 6 | 9 | Prometheus, Akash isolation | S2.1-S2.3, S4, INF.1-INF.6 |
@@ -867,6 +900,7 @@
 | 2026-04-18 | Оновлення документації | Виконані задачі задокументовано в 03_01/03_04/04_04/05_03/06_01/06_03. Трекер очищено від завершених пунктів. |
 | 2026-04-18 | Сесія 5 — E.2 + S3.4 | ✅ E.2 Oracle Role Separation (MINTER/SLASHER окремі ключі з fallback). ✅ S3.4 M2M Token Refresh endpoint + тести. |
 | 2026-04-18 | Повний аудит docs + codebase | Повторний аудит ВСІХ 35 документів (повне читання). Аудит кодбейзу (firmware, backend, infra). Додано: FW.15-FW.19, HW.11-HW.18, SEC.1-SEC.4, INF.1-INF.6, ARCH.1-ARCH.6, DIFF.1-DIFF.7, E.7-E.25. Оновлено TRL матрицю та зведену статистику. |
+| 2026-04-18 | Legacy notes integration | Аналіз 10 старих нотаток. Додано: FW.20 (Time Sync), FW.21 (Edge aggregation), E.26-E.30. Оновлено HW.6 (thermal spec + hydrophobic gradient). Оновлено `01_04` (CODIT spec temperature + hydrophobic gradient). Оновлено `01_03` (альтернативні медіатори). Notes 3/6/9 — вже реалізовано або неактуальні. |
 
 ---
 
