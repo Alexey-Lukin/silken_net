@@ -886,6 +886,13 @@
 | E.28 | Kamal deploy hooks idempotency audit: `kamal deploy` повторний запуск після перерваного деплою не повинен дублювати DB migrations або blockchain TX | Legacy notes, `06_01` | [ ] Верифікувати `.kamal/hooks/` + migration idempotency |
 | E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) для лабораторного порівняння з поточним осмієвим MET | Legacy notes, `01_03` | [ ] Додано в `01_03` як R&D alternatives |
 | E.30 | InsightGeneratorService: кліматичні базлайни per region, не лише per cluster — для точнішого AI Fraud Guard при планетарному масштабуванні | Legacy notes, `04_02` | [ ] Post-TRL 7 (поточний cluster-level baseline достатній для TRL 6-8) |
+| E.31 | TinyML OTA: `.tflite` формат (INT8 quantization) + Python ML microservice для Federated Learning. Ruby `.marshal` неприпустимий для STM32 | Legacy notes, `03_03` | [ ] Post-TRL 8 (залежить від BLOCKER-1/2 в `03_03`) |
+| E.32 | Smart Contract Audit: Slither/Mythril в CI + Hacken/Hashlock pre-mainnet + CertiK Skynet post-mainnet | Legacy notes, `05_03` | [ ] Pre-Mainnet (Slither/Mythril можна додати зараз) |
+| E.33 | AlertNotificationWorker rate limits: FCM multicast (500 tokens/req), Twilio Notify (10k/req) замість окремих SingleNotificationWorker HTTP-запитів | Legacy notes, `04_02` | [ ] Post-TRL 8 (поточні стаби не мають rate limit проблем) |
+| E.34 | DclimateVerificationWorker: при `severity: :critical` + `:obscured_by_clouds` → миттєвий fallback на ForestBountyService (drone/ranger Proof-of-Physical-Work) | Legacy notes, `04_02` | [ ] Post-TRL 6 (залежить від E.20 Forester Guild) |
+| E.35 | Flash Loan defense в GovernorContract.sol: `getPastVotes` snapshot voting + Voting Delay 7200 блоків + 4% quorum + 48h Timelock | Legacy notes, `05_03` | [ ] Разом з Governor deployment (Post-TRL 6) |
+| E.36 | PostGIS Cluster.geo_boundary: заміна тригера `sync_cluster_geo_boundary()` на PostgreSQL Generated Column (GENERATED ALWAYS AS) | Legacy notes, `04_01` | [ ] Post-TRL 8 (оптимізація, тригер працює коректно) |
+| E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates + автоматична компресія. Відхилено для TRL 6-8 (нативний RANGE partitioning достатній) | Legacy notes, `04_01` | [ ] Тільки при >100M рядків/місяць |
 
 ---
 
@@ -920,6 +927,7 @@
 | 2026-04-18 | Legacy notes integration | Аналіз 10 старих нотаток. Додано: FW.20 (Time Sync), FW.21 (Edge aggregation), E.26-E.30. Оновлено HW.6 (thermal spec + hydrophobic gradient). Оновлено `01_04` (CODIT spec temperature + hydrophobic gradient). Оновлено `01_03` (альтернативні медіатори). Notes 3/6/9 — вже реалізовано або неактуальні. |
 | 2026-04-18 | Security notes integration | Аналіз 4 security/firmware нотаток. Оновлено FW.2 (AES-CCM 24-байтний пакет з Frame Counter + MIC), FW.16 (RCC CRYP_FORCE_RESET recovery), FW.17 (Hash Ratchet KDF замість key-over-air). Оновлено BLOCKER-2/3/5/6 у `03_05`. Note 4 (HRNG ADC noise) — вже виправлено краще (djb2 HW UID). |
 | 2026-04-18 | Hardware notes integration | Аналіз нотаток щодо ADS1220 / TPS22860 / LIC Eaton HS1016. Додано §4 "Розглянуті альтернативи" в `02_04` (LIC vs EDLC, концепт VOC-діагностики). Додано §7 "Розглянуті альтернативні компоненти" в `02_01` (ADS1220, TPS22860). Всі три компоненти відхилено для TRL 6 з документованим обґрунтуванням. |
+| 2026-04-18 | Architecture notes integration | Аналіз 8 архітектурних нотаток. Додано: E.31 (TinyML tflite format), E.32 (Smart Contract Audit roadmap), E.33 (FCM/Twilio rate limits), E.34 (dClimate fallback oracle), E.35 (Flash Loan defense), E.36 (PostGIS Generated Column), E.37 (TimescaleDB evaluation). Оновлено `03_03` (OTA model format + Federated Learning pipeline), `05_03` (Flash Loan attack vector + Audit Roadmap + Bonding Curves), `05_04` (Merkle Tree + EigenLayer AVS), `04_02` (rate limits + fallback oracle), `04_01` (Generated Column + TimescaleDB). |
 
 ---
 

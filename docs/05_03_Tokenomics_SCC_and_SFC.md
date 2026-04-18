@@ -725,7 +725,55 @@ TokenomicsEvaluatorWorker (dynamic conversion rate)
 | **Пріоритет** | Post-TRL 6. Не блокує прототип або seed-раунд |
 | **Залежить від** | `SilkenForestCoin.sol` (SFC) задеплоєний → ✅ є |
 | **Блокує** | Планетарне масштабування з різними кліматичними зонами |
-| **Ризики DAO** | Voter apathy, governance attacks (купівля SFC для зміни параметрів) → потрібен quorum + timelock |
+| **Ризики DAO** | Voter apathy, Flash Loan attacks, governance attacks → потрібен quorum + timelock + snapshot voting |
+
+### ⚠️ Flash Loan Attack Vector (Критичний)
+
+**Загроза:** Якщо параметри системи (наприклад, `SLASH_THRESHOLD`) можна змінювати через DAO голосування, зловмисник може:
+1. Взяти Flash Loan токенів SFC на DEX (позика + повернення в одній транзакції)
+2. Проголосувати за зміну параметра (наприклад, підвищити `SLASH_THRESHOLD` до 100%, щоб уникнути слешингу свого лісу)
+3. Повернути позику в тій самій транзакції — нульова вартість атаки
+
+**Обов'язкові захисти в `GovernorContract.sol`:**
+
+| Захист | Механізм | Чому працює |
+|--------|----------|-------------|
+| **Snapshot Voting** | `getPastVotes(account, blockNumber)` замість `balanceOf()` | Голоси рахуються за балансом на момент створення пропозиції, а не поточним. Flash Loan отримується ПІСЛЯ snapshot → не має voting power |
+| **Voting Delay** | Мінімум 1 блок (рекомендовано 1 день / ~7200 блоків на Polygon) між створенням пропозиції та початком голосування | Зловмисник мусить тримати токени протягом delay — Flash Loan неможливий |
+| **Quorum** | Мінімум 4% від `totalSupply()` для прийняття пропозиції | Запобігає атакам малими обсягами |
+| **Timelock** | `TimelockController` з 48h затримкою між прийняттям та виконанням | Дає час для реакції та vetoing |
+| **Vote Weight = Past Balance** | `ERC20Votes._delegate()` + checkpoint system (вже реалізовано в SFC) | Кожен трансфер створює checkpoint; `getPastVotes` читає історичний checkpoint |
+
+**Реалізація (OpenZeppelin Governor):**
+```solidity
+// GovernorContract.sol
+contract GaiaGovernor is Governor, GovernorSettings, GovernorCountingSimple,
+    GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
+
+    constructor(IVotes _token, TimelockController _timelock)
+        Governor("Gaia Governor")
+        GovernorSettings(
+            7200,    // votingDelay: ~1 day on Polygon (block time ~12s)
+            50400,   // votingPeriod: ~7 days
+            100e18   // proposalThreshold: 100 SFC to propose
+        )
+        GovernorVotesQuorumFraction(4)  // 4% quorum
+        GovernorTimelockControl(_timelock)
+    {}
+}
+```
+
+> **Важливо:** SFC вже має `ERC20Votes` з auto-delegation — checkpoint система працює. Залишається імплементувати Governor + Timelock контракти.
+
+### Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
+
+Поточна модель: фіксований курс 10,000 growth_points = 1 SCC. Для планетарного масштабу можна розглянути алгоритмічне ціноутворення:
+
+**Концепт:** Вартість мінтингу SCC алгоритмічно залежить від глобального показника здоров'я лісу (середній Z-value атрактора Лоренца по всіх кластерах). Чим здоровіший ліс → тим цінніший актив → тим більше growth_points потрібно для 1 SCC.
+
+**Чому відкладено:** Bonding Curves значно ускладнюють аудит контрактів, створюють MEV-вектори та потребують ліквідності для функціонування. Для TRL 6-8 фіксований курс є простішим та безпечнішим.
+
+**Статус:** Перспективна ідея. Не планується до TRL 9+.
 
 ### Governance-Aware Backend (Future State)
 
@@ -740,6 +788,39 @@ threshold = SystemParameter.current(:slash_threshold, default: 0.20)
 ```
 
 **`SystemParameter` model:** кеш поточних on-chain значень з TTL 24h. При недоступності The Graph — fallback на default constants.
+
+---
+
+## 🔍 Smart Contract Audit Roadmap
+
+### Етапи аудиту перед Mainnet Deployment
+
+| Фаза | Інструмент / Постачальник | Тип | Коли | Статус |
+|------|--------------------------|-----|------|--------|
+| **1. Automated Static Analysis** | [Slither](https://github.com/crytic/slither) | Безкоштовний open-source | Зараз (CI/CD) | 🟡 TODO |
+| **1b. Symbolic Execution** | [Mythril](https://github.com/Consensys/mythril) | Безкоштовний open-source | Зараз (CI/CD) | 🟡 TODO |
+| **2. Manual Audit (Pre-Testnet)** | [Hacken](https://hacken.io/) або [Hashlock](https://hashlock.com/) | Платний аудит | Перед Amoy → Mainnet | 🔴 TODO |
+| **3. Runtime Monitoring** | [CertiK Skynet](https://skynet.certik.com/) | 24/7 моніторинг | Після Mainnet deploy | 🔴 TODO |
+
+**Scope аудиту (5 контрактів):**
+1. `SilkenCarbonCoin.sol` — mint/burn/batchMint, MINTER/SLASHER roles
+2. `SilkenForestCoin.sol` — governance token, ERC20Votes, slash
+3. `StateRootAnchor.sol` — L1 finality, state root storage
+4. `GovernorContract.sol` — DAO governance (коли буде реалізовано)
+5. `ProtocolParameters.sol` — on-chain parameter registry (коли буде реалізовано)
+
+**Slither / Mythril в CI:**
+```bash
+# Додати до GitHub Actions workflow:
+slither contracts/ --filter-paths "node_modules"
+myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.20
+```
+
+**Operational Security (production):**
+- `DEFAULT_ADMIN_ROLE` → Gnosis Safe multisig (3/5 або 2/3) — **TODO** (SEC.1)
+- `MINTER_ROLE` / `SLASHER_ROLE` → окремі Oracle EOA (✅ реалізовано, E.2)
+- `pause()` → без timelock (потрібна миттєва реакція при exploits)
+- Всі інші governance-зміни → через Timelock 48h
 
 ---
 

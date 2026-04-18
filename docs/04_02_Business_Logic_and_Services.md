@@ -489,6 +489,11 @@
 | **Сервіси** | — |
 | **Side Effects** | ActionCable broadcast до dashboard. Знаходить stakeholders організації через `.find_each(batch_size: 500)`, збирає args у масив → `Sidekiq::Client.push_bulk("class" => SingleNotificationWorker, "args" => bulk_args)` — один Redis round-trip замість N окремих `LPUSH`. |
 
+> **⚠️ Rate Limiting (Post-TRL 8):** При кластерах з 5000+ стейкхолдерів `push_bulk` створить 5000 `SingleNotificationWorker` джобів, кожен з яких робить HTTP-запит до Twilio/FCM. Це гарантовано призведе до HTTP 429 (Too Many Requests) від провайдерів. **Рішення:** Замість тисяч окремих воркерів, використовувати нативні Bulk API:
+> - **FCM:** Multicast-повідомлення — до 500 device tokens за 1 HTTP-запит (`send_multicast`)
+> - **Twilio:** Notify Service — до 10,000 номерів за 1 API виклик (`create_notification`)
+> - **Батчинг:** `AlertNotificationWorker` має групувати recipients по каналу (`:sms` / `:push`) та відправляти батчами по 500 (FCM) або 10,000 (Twilio), а не делегувати кожне повідомлення окремому воркеру.
+
 #### `SingleNotificationWorker`
 
 | Параметр | Значення |
@@ -509,6 +514,10 @@
 | **Вхід** | `alert_id` (Integer) |
 | **Сервіси** | `Dclimate::VerificationService.new(alert).perform` |
 | **Side Effects** | При вичерпанні ретраїв: `alert.satellite_status = :inconclusive` (DAO audit). |
+
+> **⚠️ Критична проблема орбітального вікна (Post-TRL 8):** При `severity: :critical` (наприклад, `fire_detected`) чекати 48 годин на прояснення хмар неприпустимо. Якщо dClimate повертає `:obscured_by_clouds` для критичних тривог, воркер не повинен просто йти в retry-sleep.
+>
+> **Рішення — Forester Guild як Fallback Oracle (E.20):** При `severity: :critical` + `:obscured_by_clouds` → миттєво створити `ForestBountyService.create_bounty!(ews_alert, type: :drone_verification)`. Фізичний виліт рейнджера з дроном (Proof-of-Physical-Work) стає **Резервним Оракулом**, який закриває тривогу швидше за супутник. Пріоритет: Post-TRL 6 (E.20 в трекері).
 
 ---
 

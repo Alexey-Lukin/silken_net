@@ -44,6 +44,13 @@
 
 **Автоматизація:** `PartitionMaintenanceWorker` (черга `default`) щодня о 02:30 UTC гарантує існування партицій для **поточного та наступного місяця** для всіх трьох таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`). Назва партиції формується за шаблоном `<table>_y<YYYY>m<MM>` (напр. `blockchain_transactions_y2026m04`). Операція ідемпотентна — `CREATE TABLE IF NOT EXISTS`.
 
+> **📝 Розглянута альтернатива — TimescaleDB (E.37):**
+> Для IoT-телеметрії такого масштабу розглядалось розширення TimescaleDB (hypertables, continuous aggregates, автоматична компресія до 90% економії місця). **Чому відхилено для поточного TRL:**
+> - Нативний PostgreSQL RANGE partitioning повністю покриває потреби TRL 6-8 (мільйони рядків/місяць, partition pruning через `find_with_partition_pruning`)
+> - TimescaleDB додає зовнішню залежність та ускладнює деплой (Kamal Docker, Akash SDL, GCP Cloud SQL)
+> - Continuous Aggregates можна замінити `AiInsight` воркером (вже реалізовано: денна агрегація)
+> - При масштабуванні за 100M+ рядків/місяць — переглянути рішення (TimescaleDB або ClickHouse)
+
 ---
 
 ## 🔧 1. Concerns
@@ -264,7 +271,7 @@ dormant ──reactivate──► active
 | `name` | string | Унікальна назва кластера |
 | `region` | string | Географічний регіон |
 | `geo_boundary` | geometry (PostGIS) | Полігон сектора для ST_Contains |
-| `geojson_polygon` | jsonb | GeoJSON-представлення (синхронізується тригером) |
+| `geojson_polygon` | jsonb | GeoJSON-представлення (синхронізується тригером → див. примітку нижче) |
 | `health_index` | decimal | Денормалізований індекс `1.0 - stress_index` (0..1) |
 | `active_trees_count` | integer | Counter cache (оновлюється Tree callbacks) |
 | `climate_type` | string | Кліматичний тип зони (напр. "temperate_continental") |
@@ -285,6 +292,15 @@ dormant ──reactivate──► active
 | `mapped?` | Чи є GeoJSON координати |
 
 **Scopes:** `alphabetical`, `containing_point(lat, lng)`, `under_threat`.
+
+> **📝 PostGIS Оптимізація — Generated Column vs Тригер (E.36):**
+> Поточна синхронізація `geojson_polygon` → `geo_boundary` використовує PL/pgSQL тригер `sync_cluster_geo_boundary()`. Починаючи з PostgreSQL 12, для таких прямих трансформацій рекомендовано використовувати **Generated Columns**:
+> ```sql
+> ALTER TABLE clusters
+> ADD COLUMN geo_boundary geometry(Polygon, 4326)
+> GENERATED ALWAYS AS (ST_GeomFromGeoJSON(geojson_polygon)) STORED;
+> ```
+> **Переваги:** працює на рівні C-рушія БД (швидше), не потребує підтримки тригерних функцій, автоматично оновлюється при зміні `geojson_polygon`. **Обмеження:** generated column не може посилатися на інші generated columns; GIST-індекс на generated column підтримується. **Статус:** Оптимізація для Post-TRL 8.
 
 ---
 
