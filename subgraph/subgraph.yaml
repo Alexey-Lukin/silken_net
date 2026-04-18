@@ -8,12 +8,19 @@ dataSources:
     name: SilkenCarbonCoin
     network: polygon-amoy
     source:
-      # TODO: Замінити на реальну адресу контракту SilkenCarbonCoin після деплою на polygon-amoy
+      # ⚠️ BLOCKER [1.7]: Replace with real SilkenCarbonCoin contract address after deployment.
+      # After deploying via Foundry:
+      #   1. Get address from deployment receipt: `forge script ... --broadcast`
+      #   2. Replace this placeholder: `address: "0x<REAL_CONTRACT_ADDRESS>"`
+      #   3. Set startBlock to deployment block number from receipt.blockNumber
+      #   4. Run: `graph codegen && graph build && graph deploy`
+      # Without this change, The Graph will attempt to index from genesis block
+      # (extremely slow) and won't find any contract events.
       address: "0x0000000000000000000000000000000000000000"
       abi: SilkenCarbonCoin
-      # TODO: [B-15] Встановити реальний номер блоку деплою контракту для оптимізації індексації.
-      # startBlock: 0 означає індексацію з genesis блоку Polygon — надзвичайно довга синхронізація.
-      # Після деплою контракту через Foundry, встановити block number з receipt.blockNumber.
+      # Set to the block number where SilkenCarbonCoin was deployed.
+      # startBlock: 0 indexes from genesis — wastes hours of indexing time.
+      # After deployment: startBlock: <receipt.blockNumber>
       startBlock: 0
     mapping:
       kind: ethereum/events
