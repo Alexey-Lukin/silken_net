@@ -5,7 +5,13 @@ import {
   PremiumPaid,
 } from "../generated/SilkenCarbonCoin/SilkenCarbonCoin";
 import {
+  ForestMinted,
+  GovernanceSlashed,
+} from "../generated/SilkenForestCoin/SilkenForestCoin";
+import {
   CarbonMintEvent,
+  ForestMintEvent,
+  GovernanceSlashEvent,
   ProtocolFinancials,
   SlashingEvent,
   PremiumPaidEvent,
@@ -18,6 +24,8 @@ function getProtocolFinancials(): ProtocolFinancials {
     financials.totalMinted = BigInt.zero();
     financials.totalBurned = BigInt.zero();
     financials.totalPremiums = BigInt.zero();
+    financials.totalForestMinted = BigInt.zero();
+    financials.totalGovernanceSlashed = BigInt.zero();
   }
   return financials;
 }
@@ -77,5 +85,52 @@ export function handlePremiumPaid(event: PremiumPaid): void {
 
   let financials = getProtocolFinancials();
   financials.totalPremiums = financials.totalPremiums.plus(event.params.amount);
+  financials.save();
+}
+
+// [S3.5] SFC: ForestMinted event handler — governance token minting per cluster
+export function handleForestMinted(event: ForestMinted): void {
+  let id =
+    event.transaction.hash.toHexString() +
+    "-" +
+    event.logIndex.toString();
+  let entity = new ForestMintEvent(id);
+
+  entity.to = event.params.investor;
+  entity.amount = event.params.amount;
+  entity.clusterIdHash = event.params.clusterIdHash;
+  entity.clusterId = event.params.clusterId;
+  entity.timestamp = event.block.timestamp;
+  entity.blockNumber = event.block.number;
+  entity.transactionHash = event.transaction.hash;
+
+  entity.save();
+
+  let financials = getProtocolFinancials();
+  financials.totalForestMinted = financials.totalForestMinted.plus(
+    event.params.amount
+  );
+  financials.save();
+}
+
+// [S3.5] SFC: GovernanceSlashed event handler — DAO slashing of voting power
+export function handleGovernanceSlashed(event: GovernanceSlashed): void {
+  let id =
+    event.transaction.hash.toHexString() +
+    "-" +
+    event.logIndex.toString();
+  let entity = new GovernanceSlashEvent(id);
+
+  entity.target = event.params.investor;
+  entity.amount = event.params.amount;
+  entity.timestamp = event.block.timestamp;
+  entity.blockNumber = event.block.number;
+  entity.transactionHash = event.transaction.hash;
+
+  entity.save();
+
+  let financials = getProtocolFinancials();
+  financials.totalGovernanceSlashed =
+    financials.totalGovernanceSlashed.plus(event.params.amount);
   financials.save();
 }

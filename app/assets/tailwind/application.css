@@ -10,11 +10,6 @@
 
   /* ── Gaia Ecosystem: Semantic Color Tokens ── */
 
-  /* Primary brand — forest emerald */
-  --color-gaia-green: #10b981;
-  --color-gaia-dark: #064e3b;
-  --color-gaia-muted: #065f46;
-
   /* Semantic surface / text / primary (CSS-variable driven for light/dark) */
   --color-gaia-surface: var(--gaia-surface);
   --color-gaia-surface-alt: var(--gaia-surface-alt);

@@ -384,7 +384,9 @@ int main(void)
     lora_payload[6] = (int8_t)__LL_ADC_CALC_TEMPERATURE(3300, internal_temp, LL_ADC_RESOLUTION_12B);
 
     // Байт 7: Акустичні події (Відфільтровані TinyML)
-    lora_payload[7] = (uint8_t)(acoustic_events & 0xFF);
+    // [FIX FW.12]: Saturation замість truncation. При >255 подій uint8_t переповнювався
+    // (& 0xFF давав молодші біти — silent corruption). Clamp до 255 зберігає семантику.
+    lora_payload[7] = (uint8_t)(acoustic_events > 255 ? 255 : acoustic_events);
 
     // Байти 8-9: Швидкість заряду (Секунди)
     lora_payload[8] = (uint8_t)(delta_t_seconds >> 8);
@@ -757,10 +759,13 @@ static void MX_CRYP_Init(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+  /* [FIX FW.14]: Soft reset замість вічного циклу.
+   * Нескінченний цикл з вимкненими IRQ = повний зависання до ручного reset.
+   * IWDG (Independent Watchdog) може бути не налаштований на ранніх стадіях
+   * ініціалізації, тому explicit software reset — безпечніший варіант.
+   * 100ms затримка дає час завершити UART TX буфер (для post-mortem логу). */
   __disable_irq();
-  while (1)
-  {
-  }
+  for (volatile uint32_t i = 0; i < 3200000; i++) { } // ~100ms @ 32MHz
+  NVIC_SystemReset();
   /* USER CODE END Error_Handler_Debug */
 }

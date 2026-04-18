@@ -50,6 +50,21 @@ if ! iptables -C INPUT -p udp --dport 5683 -m hashlimit \
   iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
   logger -t coap-ratelimit "CoAP UDP rate limiting applied: 100 pkt/sec per IP"
 fi
+
+# [S3.6] Conntrack table tuning for high-volume CoAP UDP traffic.
+# Default nf_conntrack_max (~65536) can overflow at scale, causing
+# "nf_conntrack: table full, dropping packet" errors.
+# UDP timeout reduced from default 30s to prevent stale entries.
+if ! grep -q "nf_conntrack_max=2000000" /etc/sysctl.conf 2>/dev/null; then
+  cat >> /etc/sysctl.conf << 'SYSCTL'
+# SilkenNet: CoAP UDP conntrack tuning (Plan S3.6)
+net.netfilter.nf_conntrack_max=2000000
+net.netfilter.nf_conntrack_udp_timeout=30
+net.netfilter.nf_conntrack_udp_timeout_stream=120
+SYSCTL
+  sysctl -p /etc/sysctl.conf 2>/dev/null || true
+  logger -t conntrack-tuning "Conntrack table tuned: max=2M, udp_timeout=30s"
+fi
 SCRIPT
   }
 

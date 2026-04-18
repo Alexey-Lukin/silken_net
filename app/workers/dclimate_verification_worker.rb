@@ -39,6 +39,10 @@ class DclimateVerificationWorker
     # Пропускаємо, якщо алерт вже верифіковано або відхилено
     return unless alert.satellite_unverified?
 
-    Dclimate::VerificationService.new(alert).perform
+    result = Dclimate::VerificationService.new(alert).perform
+
+    # [S2.4] Track EWS alert outcome for Prometheus monitoring
+    alert_type = alert.respond_to?(:alert_type) ? alert.alert_type.to_s : "unknown"
+    SilkenNet::Metrics::EWS_ALERTS_TOTAL.increment(labels: { alert_type: alert_type }) if result
   end
 end

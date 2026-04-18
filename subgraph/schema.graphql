@@ -9,11 +9,35 @@ type CarbonMintEvent @entity {
   transactionHash: Bytes!
 }
 
+# [S3.5] SFC ForestMinted event — governance token minting per cluster
+type ForestMintEvent @entity {
+  id: ID!
+  to: Bytes!
+  amount: BigInt!
+  clusterIdHash: Bytes!
+  clusterId: String!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# [S3.5] SFC GovernanceSlashed event — DAO slashing of voting power
+type GovernanceSlashEvent @entity {
+  id: ID!
+  target: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
 type ProtocolFinancials @entity {
   id: ID!
   totalMinted: BigInt!
   totalBurned: BigInt!
   totalPremiums: BigInt!
+  totalForestMinted: BigInt!
+  totalGovernanceSlashed: BigInt!
 }
 
 type SlashingEvent @entity {
