@@ -29,7 +29,7 @@ echo "Region:   ${REGION}"
 echo ""
 
 # 1. Verify gcloud authentication
-if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>/dev/null | head -1 | grep -q '@'; then
+if ! gcloud auth list --format="value(account)" --filter="status:ACTIVE" --limit=1 2>/dev/null | grep -q .; then
   echo "❌ No active gcloud authentication found."
   echo "   Run: gcloud auth application-default login"
   exit 1

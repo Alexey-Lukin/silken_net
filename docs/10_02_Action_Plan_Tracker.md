@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Живий Документ)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-18
+> **Останнє оновлення:** 2026-04-18 (Сесія 2)
 > **Відповідальний:** AI Copilot Sessions + Core Team
 > **Принцип:** Кожна сесія оновлює чекбокси `[ ]` → `[x]` та додає дату + коміт.
 
@@ -11,7 +11,7 @@
 
 | Категорія | Знайдено | Виправлено | Залишилось |
 |-----------|----------|------------|------------|
-| Явні BLOCKER'и | ~65 | ~18 | ~47 |
+| Явні BLOCKER'и | ~65 | ~24 | ~41 |
 | Архітектурні рішення | ~30+ | — | Задокументовані |
 | Рекомендації та пропозиції | ~40+ | — | В роботі |
 | Відкриті питання | ~25+ | — | В роботі |
@@ -54,10 +54,10 @@
 - **Опис:** GCS bucket для Terraform state має існувати ДО першого `terraform init` (chicken-and-egg)
 - **Статус:**
   - [x] `terraform/terraform.tfvars.example` існує з прикладом конфігурації
-  - [ ] Створити bootstrap скрипт `terraform/bootstrap.sh` (створює GCS bucket)
+  - [x] Створити bootstrap скрипт `terraform/bootstrap.sh` (створює GCS bucket)
   - [ ] Документувати bootstrapping процедуру в README або окремому doc
-- **Сесія:** —
-- **Коміт:** —
+- **Сесія:** 2026-04-18 Сесія 2
+- **Коміт:** `39f6e7e`
 
 #### S1.4 — Terraform: canopy_enabled
 - **Пріоритет:** P2 | **Складність:** Низька | **Джерело:** `06_01`
@@ -82,30 +82,33 @@
 - **Пріоритет:** P1 | **Складність:** Низька | **Джерело:** `07_01`
 - **Опис:** Controller серіалізує `signed_at`, але колонка відсутня в `db/structure.sql`
 - **Статус:**
-  - [ ] Визначити: додати міграцію з `signed_at` АБО прибрати з контролера
-  - [ ] Реалізувати обране рішення
-  - [ ] Перевірити RSpec тести
-- **Сесія:** —
-- **Коміт:** —
+  - [x] Визначити: додати міграцію з `signed_at` АБО прибрати з контролера
+  - [x] Реалізувати обране рішення
+  - [x] Перевірити RSpec тести
+- **Результат:** ✅ Вже вирішено — контролер НЕ серіалізує `signed_at` (only: [:id, :status, :total_value, :emitted_tokens])
+- **Сесія:** 2026-04-18 Сесія 2
+- **Коміт:** Верифікація, код не змінювався
 
 #### S1.7 — Legacy Tailwind colors cleanup
 - **Пріоритет:** P1 | **Складність:** Низька | **Джерело:** `04_04`
 - **Опис:** `--color-gaia-green`, `--color-gaia-dark`, `--color-gaia-muted` — не в офіційному дизайн-словнику
 - **Статус:**
-  - [ ] Аудит використання legacy кольорів (grep по кодовій базі)
-  - [ ] Замінити на офіційні дизайн-токени або видалити
-  - [ ] Верифікувати UI не зламано
-- **Сесія:** —
-- **Коміт:** —
+  - [x] Аудит використання legacy кольорів (grep по кодовій базі)
+  - [x] Замінити на офіційні дизайн-токени або видалити
+  - [x] Верифікувати UI не зламано
+- **Результат:** ✅ Видалено 3 legacy кольори з `@theme` — НЕ використовувались жодним компонентом (bg-gaia-green/text-gaia-green тощо). Семантичні токени (gaia-primary, gaia-text-muted) залишаються.
+- **Сесія:** 2026-04-18 Сесія 2
+- **Коміт:** `39f6e7e`
 
 #### S1.8 — Файл `8_02` → `08_02` naming fix
 - **Пріоритет:** P2 | **Складність:** Мінімальна | **Джерело:** `00_00` SSOT Index
 - **Опис:** `8_02_Cybernetic_and_Mathematical_Validation.md` порушує naming convention
 - **Статус:**
-  - [ ] Перейменувати на `08_02_Cybernetic_and_Mathematical_Validation.md`
-  - [ ] Оновити посилання в `00_00_SSOT_Index.md`
-- **Сесія:** —
-- **Коміт:** —
+  - [x] Перейменувати на `08_02_Cybernetic_and_Mathematical_Validation.md`
+  - [x] Оновити посилання в `00_00_SSOT_Index.md`
+- **Результат:** ✅ Виконано
+- **Сесія:** 2026-04-18 Сесія 1
+- **Коміт:** `6c20644`
 
 ---
 
@@ -155,27 +158,29 @@
 - **Пріоритет:** P1 | **Складність:** Низька-середня | **Джерело:** `06_03` gap analysis
 - **Опис:** Відсутні метрики для важливих воркерів
 - **Статус:**
-  - [ ] `slashing_events_total{reason}` — SlashingProtocolWorker
-  - [ ] `ota_chunks_sent_total{firmware_version}` — OtaTransmissionWorker
-  - [ ] `ews_alerts_total{alert_type}` — EwsAlertWorker / DclimateVerificationWorker
-  - [ ] `oracle_dispatch_latency_seconds` — ChainlinkOracleWorker
-  - [ ] `coap_packets_received_total` — CoAP UDP listener
-  - [ ] Додати метрики до `config/initializers/prometheus.rb`
-  - [ ] Інструментувати відповідні воркери
-  - [ ] Додати тести
-- **Сесія:** —
-- **Коміт:** —
+  - [x] `slashing_events_total{reason}` — BurnCarbonTokensWorker
+  - [x] `ota_chunks_sent_total{firmware_version}` — OtaTransmissionWorker
+  - [x] `ews_alerts_total{alert_type}` — DclimateVerificationWorker
+  - [x] `oracle_dispatch_duration_seconds` — ChainlinkDispatchWorker (histogram)
+  - [x] `coap_packets_received_total{status}` — UnpackTelemetryWorker
+  - [x] Додати метрики до `config/initializers/prometheus.rb`
+  - [x] Інструментувати відповідні воркери
+  - [ ] Додати тести (потребує PostgreSQL)
+- **Результат:** ✅ 5 нових метрик зареєстровані та інструментовані в 5 воркерах
+- **Сесія:** 2026-04-18 Сесія 2
+- **Коміт:** `39f6e7e`
 
 #### S2.5 — Structured JSON logging
 - **Пріоритет:** P1 | **Складність:** Середня | **Джерело:** `06_03`
 - **Опис:** Логи неструктуровані, кореляція з Sentry утруднена
 - **Статус:**
-  - [ ] Впровадити structured JSON logger (Rails config)
-  - [ ] Додати correlation ID (request_id + Sentry trace)
-  - [ ] Верифікувати формат у production.rb
-  - [ ] Перевірити сумісність з Cloud Logging cost exclusion
-- **Сесія:** —
-- **Коміт:** —
+  - [x] Впровадити structured JSON logger (Rails config)
+  - [x] Додати correlation ID (request_id + Sentry trace)
+  - [x] Верифікувати формат у production.rb
+  - [x] Перевірити сумісність з Cloud Logging cost exclusion
+- **Результат:** ✅ JSON logging з Oj serializer + Sentry trace_id/span_id correlation. Opt-out: `RAILS_LOG_JSON=false`.
+- **Сесія:** 2026-04-18 Сесія 2
+- **Коміт:** `39f6e7e`
 
 ---
 
@@ -246,10 +251,11 @@
 - **Опис:** Ризик overflow при масштабі (`nf_conntrack: table full, dropping packet`)
 - **Статус:**
   - [x] CoAP UDP rate limiting додано до startup-script (`terraform/compute.tf`)
-  - [ ] Додати `sysctl` tuning: `net.netfilter.nf_conntrack_max=2000000`
-  - [ ] Додати `sysctl` tuning: `net.netfilter.nf_conntrack_udp_timeout=30`
-- **Сесія:** —
-- **Коміт:** —
+  - [x] Додати `sysctl` tuning: `net.netfilter.nf_conntrack_max=2000000`
+  - [x] Додати `sysctl` tuning: `net.netfilter.nf_conntrack_udp_timeout=30`
+- **Результат:** ✅ Conntrack tuning додано до startup-script, persistent через `/etc/sysctl.conf`
+- **Сесія:** 2026-04-18 Сесія 2
+- **Коміт:** `39f6e7e`
 
 ---
 
@@ -667,7 +673,7 @@
 | Дата | Сесія | Зміни |
 |------|-------|-------|
 | 2026-04-18 | Аудит документації | Створено документ. Аудит 35 docs. Відмічені вже реалізовані пункти: S1.2, S3.2, S3.3, E.9, E.10 |
-| | | |
+| 2026-04-18 | Сесія 2 — Sprint 1-3 | ✅ S1.3: `terraform/bootstrap.sh` створено. ✅ S1.6: Верифіковано — вирішено. ✅ S1.7: Legacy кольори видалені. ✅ S1.8: Naming fix (попередня сесія). ✅ S2.4: 5 нових Prometheus метрик + інструментація 5 воркерів. ✅ S2.5: Structured JSON logging з Sentry correlation. ✅ S3.6: Conntrack sysctl tuning у Terraform. |
 
 ---
 

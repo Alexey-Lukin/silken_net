@@ -50,13 +50,14 @@ Rails.application.configure do
   # Compatible with Cloud Logging cost exclusion (severity field used for filtering).
   if ENV["RAILS_LOG_JSON"] != "false"
     json_logger = ActiveSupport::Logger.new(STDOUT)
+    current_pid = Process.pid
     json_logger.formatter = proc do |severity, timestamp, progname, msg|
       payload = {
         severity: severity,
         timestamp: timestamp.utc.iso8601(3),
         message: msg.is_a?(String) ? msg : msg.inspect,
         service: "silken_net",
-        pid: Process.pid
+        pid: current_pid
       }
       # Sentry trace correlation (if available)
       if defined?(Sentry) && (scope = Sentry.get_current_scope)
