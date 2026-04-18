@@ -245,12 +245,15 @@
 - **Джерело:** `03_05`
 - **Опис:** Детерміністичний шифротекст, replay/bit-flip attacks можливі. Немає автентифікації пакетів
 - **Файли:** `firmware/soldier/main.c:747`, `firmware/queen/main.c:781`
-- **Рішення:** AES-256-GCM або додавання HMAC-SHA256 MIC (4-byte suffix)
+- **Рішення (рекомендоване):** **AES-256-CCM** (апаратно підтримується STM32WLE5JC) з новим 24-байтним пакетом: `[DID:4][SensorData:8][FrameCounter:4][MIC:4]`. Frame Counter у RTC Backup Domain як Nonce. MIC апаратно генерується CCM. Вирішує BLOCKER-2 та BLOCKER-3 одночасно
+- **Альтернативи:** AES-256-GCM, AES-256-CTR + HMAC-SHA256 MIC (4-byte suffix)
 - **Статус:**
-  - [ ] Обрати: GCM (одна операція) vs HMAC MIC (простіше, але +4 байти)
-  - [ ] Зміна формату пакету (21 → 25 байт або оптимізація payload)
-  - [ ] Firmware: оновити encrypt/decrypt
-  - [ ] Backend: оновити `TelemetryUnpackerService`
+  - [ ] Верифікувати `CRYP_AES_CCM` підтримку на цільовій ревізії STM32WLE5JC
+  - [ ] Дизайн 24-байтного пакету (8 байт sensor data vs поточних 16 — оптимізувати поля)
+  - [ ] Firmware Soldier: CCM encrypt + Frame Counter інкремент + MIC append
+  - [ ] Firmware Queen: CCM decrypt + Frame Counter validation (anti-replay)
+  - [ ] Backend: оновити `TelemetryUnpackerService` для 24-байтного формату
+  - [ ] LoRa airtime budget verification (24B vs 16B при SF10/DR2)
   - [ ] Тести
 - **Сесія:** —
 - **Коміт:** —
@@ -371,8 +374,10 @@
 #### FW.16 — ECB restore race condition при HAL_CRYP_Init failure
 - **Джерело:** `03_05` BLOCKER-6
 - **Опис:** `HAL_CRYP_Init()` для restore ECB не має timeout. Якщо AES peripheral зависне (hardware defect), наступний LoRa decrypt використає CBC → garbage → data loss. Handle_CoAP_Command error path може повернутися без ECB restore
+- **Рішення:** Перевірка return code `HAL_CRYP_Init()`. При помилці — жорсткий апаратний скид: `__HAL_RCC_CRYP_FORCE_RESET()` + `__HAL_RCC_CRYP_RELEASE_RESET()` + повторна ініціалізація. Якщо повторна ініціалізація теж невдала — `NVIC_SystemReset()` (повний перезапуск MCU)
 - **Статус:**
   - [ ] Додати return-code check на `HAL_CRYP_Init()` при ECB restore
+  - [ ] Додати RCC CRYP_FORCE_RESET як hard recovery path
   - [ ] Verify `hcryp.State` перед кожним Encrypt/Decrypt
   - [ ] Забезпечити ECB restore навіть на error path
 - **Сесія:** —
@@ -381,10 +386,13 @@
 #### FW.17 — Key rotation mechanism
 - **Джерело:** `03_05` BLOCKER-5
 - **Опис:** Поточна архітектура: статичний ключ при Factory Flashing. Немає механізму зміни ключа без перепрошивки всіх вузлів. Порушує GDPR/ISO 27001/NIST SP 800-57
+- **Рішення (рекомендоване — Hash Ratchet KDF):** Синхронна деривація нового ключа на обох кінцях без передачі ключа по мережі. Backend надсилає `CMD:ROTATE_KEY:<UUID>` → Queen + Soldier одночасно проганяють `K_current` через AES-KDF → `K_next`. Забезпечує Perfect Forward Secrecy (PFS): компрометація поточного ключа не розкриває попередній трафік
 - **Статус:**
-  - [ ] Дизайн протоколу ротації ключів (K_new encrypted with K_old via OTA)
-  - [ ] Cluster-wide activation confirmation
-  - [ ] Consider ECDH/Curve25519 key exchange при provisioning
+  - [ ] Дизайн Hash Ratchet протоколу (AES-based KDF on STM32 hardware)
+  - [ ] CMD:ROTATE_KEY CoAP command + OTA relay через Queen
+  - [ ] Cluster-wide activation confirmation (ACK від усіх вузлів)
+  - [ ] Зберігання `K_current` та `rotation_counter` у Flash/RTC Backup Domain
+  - [ ] Consider ECDH/Curve25519 key exchange при provisioning (альтернатива)
 - **Пріоритет:** Після FW.1 (per-device provisioning) — future cycle
 - **Сесія:** —
 - **Коміт:** —
@@ -901,6 +909,7 @@
 | 2026-04-18 | Сесія 5 — E.2 + S3.4 | ✅ E.2 Oracle Role Separation (MINTER/SLASHER окремі ключі з fallback). ✅ S3.4 M2M Token Refresh endpoint + тести. |
 | 2026-04-18 | Повний аудит docs + codebase | Повторний аудит ВСІХ 35 документів (повне читання). Аудит кодбейзу (firmware, backend, infra). Додано: FW.15-FW.19, HW.11-HW.18, SEC.1-SEC.4, INF.1-INF.6, ARCH.1-ARCH.6, DIFF.1-DIFF.7, E.7-E.25. Оновлено TRL матрицю та зведену статистику. |
 | 2026-04-18 | Legacy notes integration | Аналіз 10 старих нотаток. Додано: FW.20 (Time Sync), FW.21 (Edge aggregation), E.26-E.30. Оновлено HW.6 (thermal spec + hydrophobic gradient). Оновлено `01_04` (CODIT spec temperature + hydrophobic gradient). Оновлено `01_03` (альтернативні медіатори). Notes 3/6/9 — вже реалізовано або неактуальні. |
+| 2026-04-18 | Security notes integration | Аналіз 4 security/firmware нотаток. Оновлено FW.2 (AES-CCM 24-байтний пакет з Frame Counter + MIC), FW.16 (RCC CRYP_FORCE_RESET recovery), FW.17 (Hash Ratchet KDF замість key-over-air). Оновлено BLOCKER-2/3/5/6 у `03_05`. Note 4 (HRNG ADC noise) — вже виправлено краще (djb2 HW UID). |
 
 ---
 
