@@ -32,13 +32,13 @@ RSpec.describe SilkenNet::Metrics do
     expect(metric).to be_a(Prometheus::Client::Counter)
   end
 
-  it "registers web3_queue_size gauge" do
-    metric = described_class::REGISTRY.get(:silkennet_web3_queue_size)
+  it "registers sidekiq_queue_size gauge" do
+    metric = described_class::REGISTRY.get(:silkennet_sidekiq_queue_size)
     expect(metric).to be_a(Prometheus::Client::Gauge)
   end
 
-  it "registers web3_queue_latency_seconds gauge" do
-    metric = described_class::REGISTRY.get(:silkennet_web3_queue_latency_seconds)
+  it "registers sidekiq_queue_latency_seconds gauge" do
+    metric = described_class::REGISTRY.get(:silkennet_sidekiq_queue_latency_seconds)
     expect(metric).to be_a(Prometheus::Client::Gauge)
   end
 

@@ -23,7 +23,7 @@ module Api
           format.json do
             render json: {
               data: @contracts.as_json(
-                only: [ :id, :status, :total_value, :emitted_tokens, :signed_at ],
+                only: [ :id, :status, :total_value, :emitted_tokens ],
                 include: {
                   cluster: { only: [ :id, :name ] },
                   organization: { only: [ :id, :name ] }

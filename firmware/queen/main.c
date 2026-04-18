@@ -43,6 +43,21 @@
 #define FLUSH_HEADROOM        5         // Кількість вільних слотів до примусового скидання
 #define QUEEN_HEALTH_GP_MAX   63        // Максимальне значення growth_points
 #define OTA_MAX_CHUNKS        16        // 8192 / 512 = максимальна кількість OTA-чанків
+
+// [PLAN 2.4] Queen UID — read from dedicated Flash region instead of hardcoding.
+// This allows unified firmware binary to be flashed on any Queen node.
+// At provisioning time, the backend writes the unique UID to this Flash address
+// via SWD/JTAG (e.g., ST-Link: `st-flash write uid.bin 0x0803F800`).
+// Flash page 127 (last 2KB page on STM32WLE5JC with 256KB Flash).
+#define QUEEN_UID_FLASH_ADDR  0x0803F800UL
+#define QUEEN_UID_MAX_LEN     32         // Max UID string length including null terminator
+#define QUEEN_UID_MAGIC       0x51554944UL // "QUID" — magic marker for provisioned UID
+
+// [PLAN 2.11] Starlink/LTE adaptive timeouts
+// Starlink DTC latency: 600–2400 ms (variable). LTE-M: 100–500 ms.
+// Fixed 1000 ms is insufficient for Starlink worst case.
+#define COAP_BASE_TIMEOUT_MS  2000       // Base timeout for CoAP session setup
+#define COAP_SEND_TIMEOUT_MS  5000       // Timeout for data send (includes Starlink worst case)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -54,6 +69,7 @@ UART_HandleTypeDef huart1;  // Інтерфейс для модему SIM7070G (
 SUBGHZ_HandleTypeDef hsubghz;
 CRYP_HandleTypeDef hcryp; // Апаратний криптопроцесор AES
 RNG_HandleTypeDef hrng;   // Апаратний генератор випадкових чисел (HRNG)
+IWDG_HandleTypeDef hiwdg; // [PLAN 2.6] Independent Watchdog для auto-recovery
 
 /* USER CODE BEGIN PV */
 
@@ -65,10 +81,49 @@ RNG_HandleTypeDef hrng;   // Апаратний генератор випадк�
 uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
                        0x1A2B3C4D, 0x5E6F7A8B, 0x9C0D1E2F, 0x3A4B5C6D};
 
-// Унікальний ідентифікатор цієї Королеви (прошивається індивідуально).
-// Використовується як третій сегмент CoAP URI-Path: /telemetry/batch/<QUEEN_UID>
-// Дозволяє серверу ідентифікувати шлюз навіть при зміні IP (Starlink NAT).
-const char queen_uid[] = "QUEEN-001";
+// Унікальний ідентифікатор цієї Королеви.
+// [PLAN 2.4] Replaced hardcoded "QUEEN-001" with Flash-based UID.
+// At boot, reads UID from dedicated Flash page (0x0803F800).
+// If Flash is not provisioned (magic != "QUID"), falls back to default
+// to prevent bricking an unprovisioned device.
+// Provisioning: write [magic:4][uid_len:1][uid_string:N] to QUEEN_UID_FLASH_ADDR via SWD.
+static char queen_uid[QUEEN_UID_MAX_LEN];
+
+// [PLAN 2.4] Read Queen UID from Flash provisioning region.
+// Returns 1 if provisioned UID found, 0 if using fallback.
+static uint8_t Read_Queen_UID_From_Flash(void)
+{
+    const uint32_t* flash_ptr = (const uint32_t*)QUEEN_UID_FLASH_ADDR;
+
+    // Check magic marker. Unprogrammed Flash reads as 0xFFFFFFFF,
+    // which won't match QUEEN_UID_MAGIC ("QUID" = 0x51554944).
+    if (flash_ptr[0] != QUEEN_UID_MAGIC) {
+        // Not provisioned — generate unique fallback from STM32 hardware UID
+        // (96-bit unique ID at 0x1FFF7590). Last 4 bytes → 8 hex chars.
+        // Each physical MCU gets a distinct ID even without provisioning.
+        const uint32_t* hw_uid = (const uint32_t*)0x1FFF7590UL;
+        snprintf(queen_uid, QUEEN_UID_MAX_LEN, "UNPROV-%08lX",
+                 (unsigned long)hw_uid[2]);
+        return 0;
+    }
+
+    // Read UID length (byte 4) and string (bytes 5+)
+    const uint8_t* byte_ptr = (const uint8_t*)QUEEN_UID_FLASH_ADDR;
+    uint8_t uid_len = byte_ptr[4];
+
+    // Validate uid_len is within safe bounds for both the destination buffer
+    // and the Flash provisioning region (2KB page = 2048 bytes, header = 5 bytes).
+    if (uid_len == 0 || uid_len >= QUEEN_UID_MAX_LEN || (5U + uid_len) > 2048U) {
+        const uint32_t* hw_uid = (const uint32_t*)0x1FFF7590UL;
+        snprintf(queen_uid, QUEEN_UID_MAX_LEN, "UNPROV-%08lX",
+                 (unsigned long)hw_uid[2]);
+        return 0;
+    }
+
+    memcpy(queen_uid, &byte_ptr[5], uid_len);
+    queen_uid[uid_len] = '\0';
+    return 1;
+}
 
 // =========================================================================
 // === 1. ПАМ'ЯТЬ КОРОЛЕВИ (Прийом Даних) ===
@@ -154,6 +209,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_SUBGHZ_Init(void);
 static void MX_CRYP_Init(void); // Ініціалізація шифрування
+static void MX_IWDG_Init(void); // [PLAN 2.6] Independent Watchdog — auto-recovery from HardFault
 
 /* USER CODE BEGIN PFP */
 // Функції-обгортки для роботи з модемом та транзитом
@@ -188,8 +244,13 @@ int main(void)
   MX_USART1_UART_Init(); // UART для розмови з SIM7070G (115200 baud)
   MX_SUBGHZ_Init();
   MX_CRYP_Init();        // Вмикаємо апаратний модуль AES
+  MX_IWDG_Init();        // [PLAN 2.6] Watchdog: auto-reset ~26 sec after hang
 
   /* USER CODE BEGIN 2 */
+
+  // 0. Read unique Queen UID from Flash provisioning region
+  // [PLAN 2.4] Must be done before any CoAP communication that uses queen_uid
+  Read_Queen_UID_From_Flash();
 
   // 1. Ініціалізація низькорівневого радіо
   Radio.Init(NULL);
@@ -221,11 +282,14 @@ int main(void)
       hrng.Instance = RNG;
       if (HAL_RNG_Init(&hrng) == HAL_OK) {
           if (HAL_RNG_GenerateRandomNumber(&hrng, &rng_val) != HAL_OK) {
-              rng_val = HAL_GetTick(); // Fallback: tick як seed
+              // [PLAN 2.7] Improved fallback: XOR tick with UID hash for less predictable jitter
+              uint32_t uid_hash = djb2_hash(queen_uid, strlen(queen_uid));
+              rng_val = HAL_GetTick() ^ uid_hash ^ RNG_FALLBACK_XOR_MASK;
           }
           HAL_RNG_DeInit(&hrng);
       } else {
-          rng_val = HAL_GetTick();
+          uint32_t uid_hash = djb2_hash(queen_uid, strlen(queen_uid));
+          rng_val = HAL_GetTick() ^ uid_hash ^ RNG_FALLBACK_XOR_MASK;
       }
       current_jitter = rng_val % (FLUSH_JITTER_MAX_MS + 1);
   }
@@ -234,6 +298,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    // [PLAN 2.6] Kick the watchdog — prevents auto-reset during normal operation.
+    // If firmware hangs (e.g., SIM7070G AT blocking), IWDG expires after ~26 sec → NVIC_SystemReset.
+    HAL_IWDG_Refresh(&hiwdg);
+
     // =========================================================================
     // ФАЗА ОЧІКУВАННЯ ТА ОБРОБКИ РАДІОЕФІРУ
     // =========================================================================
@@ -289,8 +357,9 @@ int main(void)
             current_ota_chunk_idx++;
             if (current_ota_chunk_idx >= total_chunks) {
                 current_ota_chunk_idx = 0;
-                // Якщо маємо оновити ліс лише один раз, розкоментувати:
-                // ota_is_active = 0;
+                // [PLAN 2.5]: Reset OTA broadcast flag after full cycle to prevent infinite loop.
+                // Without this, Queen broadcasts OTA chunks forever after first update.
+                ota_is_active = 0;
             }
         }
 
@@ -347,11 +416,14 @@ int main(void)
                 hrng.Instance = RNG;
                 if (HAL_RNG_Init(&hrng) == HAL_OK) {
                     if (HAL_RNG_GenerateRandomNumber(&hrng, &rng_val) != HAL_OK) {
-                        rng_val = HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK;
+                        // [PLAN 2.7] Improved fallback with UID hash
+                        uint32_t uid_hash = djb2_hash(queen_uid, strlen(queen_uid));
+                        rng_val = HAL_GetTick() ^ uid_hash ^ RNG_FALLBACK_XOR_MASK;
                     }
                     HAL_RNG_DeInit(&hrng);
                 } else {
-                    rng_val = HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK;
+                    uint32_t uid_hash = djb2_hash(queen_uid, strlen(queen_uid));
+                    rng_val = HAL_GetTick() ^ uid_hash ^ RNG_FALLBACK_XOR_MASK;
                 }
                 current_jitter = rng_val % (FLUSH_JITTER_MAX_MS + 1);
             }
@@ -514,9 +586,16 @@ void Flush_Cache_To_Rails(void)
 
     for (uint8_t i = 0U; i < 4U; i++) {
         if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
-            /* Fallback: якщо HRNG не відповідає — XOR tick з індексом,
-               щоб шлюз не зависав у лісі без зв'язку. */
-            batch_iv[i] = HAL_GetTick() ^ (i * 0x5A5A5A5AUL);
+            /* [PLAN 2.7] Improved HRNG fallback: combine multiple entropy sources
+               to reduce IV predictability when HRNG fails.
+               HAL_GetTick() alone is predictable (~1ms resolution).
+               XOR with: device UID hash, loop index scaling, and bit-shifted tick
+               to create a less predictable fallback IV.
+               For i ∈ {0,1,2,3}: tick >> {0,8,16,24} extracts different byte regions. */
+            uint32_t tick = HAL_GetTick();
+            uint32_t uid_hash = djb2_hash(queen_uid, strlen(queen_uid));
+            batch_iv[i] = tick ^ (uid_hash << i) ^ ((uint32_t)i * RNG_FALLBACK_XOR_MASK)
+                        ^ (tick >> (8U * i));
         }
     }
 
@@ -538,8 +617,18 @@ void Flush_Cache_To_Rails(void)
 
     uint16_t total_size = 16 + padded_size; // IV (16) + зашифровані дані
 
+    // [PLAN 2.11] CoAP send with adaptive timeouts for Starlink DTC.
+    // Starlink worst-case RTT: 600–2400 ms. Original 1000 ms CCOAPNEW + 2000 ms
+    // CCOAPSEND timeouts were insufficient → silent data loss.
+    // Increased to 2000 ms / 5000 ms to cover worst-case Starlink latency.
+    //
+    // TODO [PLAN 2.9]: Add retry with exponential backoff once interrupt-driven
+    // UART RX is implemented (AT-blind issue 2.3). Without UART response parsing
+    // we cannot detect send failure, so retry logic would be dead code.
+
     // Ініціалізація CoAP сесії (UDP)
-    SIM7070_SendATCommand("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n", 1000);
+    SIM7070_SendATCommand("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n",
+                          COAP_BASE_TIMEOUT_MS);
 
     // 1. Початок команди.
     // URI-Path: /telemetry/batch/<queen_uid> — сервер ідентифікує шлюз за UID,
@@ -559,8 +648,14 @@ void Flush_Cache_To_Rails(void)
     // 3. Завершуємо команду (Закриваємо лапки і імітуємо натискання Enter)
     HAL_UART_Transmit(&huart1, (uint8_t*)"\"\r\n", 3, 100);
 
-    // Чекаємо, поки модем надішле дані через ефір та отримає UDP ACK від сервера
-    HAL_Delay(2000);
+    // Чекаємо, поки модем надішле дані через ефір та отримає UDP ACK від сервера.
+    // [PLAN 2.11] Збільшено з 2000 до 5000 мс для Starlink DTC worst-case latency.
+    // Refresh IWDG before AND after the blocking delay — the delay alone consumes
+    // ~19% of the 26.6s watchdog window. Without pre-refresh, time accumulated from
+    // cache packing + AES encryption + CCOAPNEW could push past the IWDG threshold.
+    HAL_IWDG_Refresh(&hiwdg);
+    HAL_Delay(COAP_SEND_TIMEOUT_MS);
+    HAL_IWDG_Refresh(&hiwdg);
 
     // Закриваємо CoAP сесію, звільняючи ресурси модему
     SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
@@ -780,6 +875,23 @@ static void MX_CRYP_Init(void)
   // після чого CRYP відновлюється до ECB.
   hcryp.Init.Algorithm = CRYP_AES_ECB;
   HAL_CRYP_Init(&hcryp);
+}
+
+// =========================================================================
+// [PLAN 2.6] INDEPENDENT WATCHDOG (IWDG) — AUTO-RECOVERY FROM HANG
+// =========================================================================
+// Without IWDG, Queen hangs forever on HardFault or SIM7070G AT-command blocking.
+// Soldier already has IWDG (~26 sec recovery). This brings Queen to parity.
+// Timeout formula: (Reload × Prescaler) / LSI_freq = (3328 × 256) / 32000 ≈ 26.6 seconds.
+static void MX_IWDG_Init(void)
+{
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_256;  // LSI 32 kHz / 256 = 125 Hz tick
+  hiwdg.Init.Window = IWDG_WINDOW_DISABLE;
+  hiwdg.Init.Reload = 3328;                    // 3328 / 125 ≈ 26.6 sec timeout
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK) {
+    Error_Handler();
+  }
 }
 
 /* USER CODE END 4 */

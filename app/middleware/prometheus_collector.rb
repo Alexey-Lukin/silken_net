@@ -97,13 +97,15 @@ class PrometheusCollector
 
   # Refresh Sidekiq queue gauges on each Prometheus scrape.
   # Uses Sidekiq::Queue API (reads from Redis, ~1ms per queue).
+  # [PLAN 1.3]: Monitor ALL 9 queues (strict priority order), not just web3.
+  # The `uplink` queue has the highest priority but was previously invisible.
   def refresh_sidekiq_gauges
-    web3_queues = %w[web3 web3_critical web3_low]
+    all_queues = %w[uplink alerts critical downlink default web3_critical web3 web3_low low]
 
-    web3_queues.each do |queue_name|
+    all_queues.each do |queue_name|
       queue = Sidekiq::Queue.new(queue_name)
-      SilkenNet::Metrics::WEB3_QUEUE_SIZE.set(queue.size, labels: { queue: queue_name })
-      SilkenNet::Metrics::WEB3_QUEUE_LATENCY.set(queue.latency, labels: { queue: queue_name })
+      SilkenNet::Metrics::SIDEKIQ_QUEUE_SIZE.set(queue.size, labels: { queue: queue_name })
+      SilkenNet::Metrics::SIDEKIQ_QUEUE_LATENCY.set(queue.latency, labels: { queue: queue_name })
     end
   rescue => e
     # Don't let Sidekiq/Redis errors break the metrics endpoint

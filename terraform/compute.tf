@@ -25,6 +25,32 @@ resource "google_compute_instance" "web" {
   metadata = {
     enable-oslogin = "TRUE"
     ssh-keys       = var.ssh_public_key != "" ? "${var.ssh_user}:${var.ssh_public_key}" : null
+
+    # [PLAN 5.10] CoAP UDP rate limiting — prevents DDoS amplification attacks on port 5683.
+    # Limits each source IP to 100 UDP packets/sec with burst of 200.
+    # Applied idempotently (checks if rule exists before adding).
+    # Ubuntu 24.04 LTS — iptables + hashlimit module available by default.
+    startup-script = <<-SCRIPT
+#!/bin/bash
+apt-get install -y -qq iptables-persistent 2>/dev/null || true
+if ! iptables -C INPUT -p udp --dport 5683 -m hashlimit \
+     --hashlimit-above 100/sec --hashlimit-burst 200 \
+     --hashlimit-mode srcip --hashlimit-name coap_limit \
+     -j DROP 2>/dev/null; then
+  # Log rate-limited packets (max 10/min to prevent log flooding during attacks)
+  iptables -A INPUT -p udp --dport 5683 -m hashlimit \
+    --hashlimit-above 100/sec --hashlimit-burst 200 \
+    --hashlimit-mode srcip --hashlimit-name coap_log \
+    -m limit --limit 10/min -j LOG --log-prefix "CoAP-RATE-LIMIT: "
+  # Drop excessive packets
+  iptables -A INPUT -p udp --dport 5683 -m hashlimit \
+    --hashlimit-above 100/sec --hashlimit-burst 200 \
+    --hashlimit-mode srcip --hashlimit-name coap_limit \
+    -j DROP
+  iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+  logger -t coap-ratelimit "CoAP UDP rate limiting applied: 100 pkt/sec per IP"
+fi
+SCRIPT
   }
 
   shielded_instance_config {

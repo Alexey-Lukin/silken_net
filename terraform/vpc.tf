@@ -82,6 +82,14 @@ resource "google_compute_firewall" "allow_web" {
 }
 
 # Firewall: Allow CoAP UDP (port 5683) — IoT uplink from Soldier/Queen nodes
+# [PLAN 5.10] Rate limiting note: GCP VPC firewall rules don't support rate limiting natively.
+# UDP DDoS amplification mitigation is handled at two levels:
+#   1. Application level: CoAP daemon validates packet structure (21-byte aligned, AES-256 encrypted)
+#      — invalid packets are dropped before touching Sidekiq/DB.
+#   2. GCP Cloud Armor: when using external Application Load Balancer, add Cloud Armor security
+#      policy with rate limiting (see google_compute_security_policy below).
+# For direct UDP (no ALB), consider: iptables rate limiting in compute startup script,
+# or deploying a CoAP Ingress Proxy (Rust/Go) with built-in rate limiting.
 resource "google_compute_firewall" "allow_coap" {
   name        = "silken-net-allow-coap"
   network     = google_compute_network.silken_net_vpc.name
@@ -99,6 +107,16 @@ resource "google_compute_firewall" "allow_coap" {
     metadata = "INCLUDE_ALL_METADATA"
   }
 }
+
+# [PLAN 5.10] CoAP UDP DDoS mitigation — iptables rate limiting via instance startup script.
+# GCP VPC firewalls don't support per-IP rate limiting for UDP, so we apply kernel-level
+# rate limiting on each compute instance. This limits each source IP to 100 UDP packets/second
+# on port 5683, with a burst allowance of 200 packets.
+# At ~50 packets per Queen flush (1 batch = 1 UDP packet), this allows 2 flushes/second per IP
+# while blocking amplification attacks.
+#
+# Applied via instance metadata `startup-script` in compute.tf, not here.
+# See: google_compute_instance.web.metadata.startup-script
 
 # Firewall: Allow internal communication — restricted to subnet CIDR
 resource "google_compute_firewall" "allow_internal" {

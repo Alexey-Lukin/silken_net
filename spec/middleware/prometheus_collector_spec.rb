@@ -148,12 +148,12 @@ RSpec.describe PrometheusCollector, type: :request do
     # SIDEKIQ GAUGE REFRESH
     # -----------------------------------------------------------------------
     describe "Sidekiq gauge refresh" do
-      it "includes web3 queue size gauges in output" do
+      it "includes sidekiq queue size gauges in output" do
         get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include("silkennet_web3_queue_size")
-        expect(response.body).to include("silkennet_web3_queue_latency_seconds")
+        expect(response.body).to include("silkennet_sidekiq_queue_size")
+        expect(response.body).to include("silkennet_sidekiq_queue_latency_seconds")
       end
     end
 
