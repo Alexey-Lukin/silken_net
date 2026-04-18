@@ -147,7 +147,7 @@ _(Запропонована тема; студент визначається �
 |-------|--------|
 | **Супруненко О.О.** | Побудова PN-моделі Rails моноліту (Sidekiq + Puma + PostgreSQL pool); Convolution Method для state explosion redukції; аналіз вимог та SDLC-інтеграція |
 | **Онищенко Б.О.** | Паралельна семантика Petri net (спільна публікація 2023); stochastic extensions для EBFC-driven availability |
-| Архітектор (Silken Net) | Rails 8.1 специфіка, 31+ Sidekiq workers, 9-рівнева черга, Akash deployment, 10,000+ concurrent IoT nodes |
+| Архітектор (Silken Net) | Rails 8.1 специфіка, 36+ Sidekiq workers, 9-рівнева черга, Akash deployment, 10,000+ concurrent IoT nodes |
 
 **Магістерська робота (Науковий керівник — Супруненко):**
 _«Формальна верифікація паралельних процесів IoT-бекенду засобами мереж Петрі з методом згортки для зниження обчислювальної складності»_
