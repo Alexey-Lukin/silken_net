@@ -46,7 +46,7 @@
 
 **Статус:** Відкрито. **Критичний ризик безпеки для масового виробництва.**
 
-**Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:65-66`
+**Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
 
 ```c
 // Однаковий ключ у ВСІХ вузлах мережі Silken Net — Soldier та Queen
@@ -473,7 +473,7 @@ uint32_t aes_key[8] = {
     0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX   // 128 біт (частина 2)
 };
 ```
-> ⚠️ **Увага:** Аудит виявив, що перші 4 слова ключа збігаються зі стандартним тестовим ключем AES-128 з FIPS-197 (Appendix B) — загальновідомими тестовими векторами. Точні значення навмисно не публікуються в цьому документі. Для аудиту безпеки — дивись `firmware/soldier/main.c:66-67` та `firmware/queen/main.c:65-66`. Ключ **підлягає негайній заміні** відповідно до BLOCKER-1.
+> ⚠️ **Увага:** Аудит виявив, що перші 4 слова ключа збігаються зі стандартним тестовим ключем AES-128 з FIPS-197 (Appendix B) — загальновідомими тестовими векторами. Точні значення навмисно не публікуються в цьому документі. Для аудиту безпеки — дивись `firmware/soldier/main.c:66-67` та `firmware/queen/main.c:81-82`. Ключ **підлягає негайній заміні** відповідно до BLOCKER-1.
 
 ### 3.2 Відсутній Secure Element
 
@@ -754,7 +754,7 @@ HAL_CRYP_Init(&hcryp);
 | `firmware/soldier/main.c:458` | `HAL_CRYP_Encrypt` Phase 4 TX |
 | `firmware/soldier/main.c:477` | `HAL_CRYP_Decrypt` Mesh RX |
 | `firmware/soldier/main.c:720` | `HAL_CRYP_Encrypt` Emergency TX |
-| `firmware/queen/main.c:65-66` | Hardcoded `aes_key` (ідентичний Soldier) |
+| `firmware/queen/main.c:81-82` | Hardcoded `aes_key` (ідентичний Soldier) |
 | `firmware/queen/main.c:247` | `HAL_CRYP_Decrypt` LoRa RX |
 | `firmware/queen/main.c:493-576` | `Flush_Cache_To_Rails()` CBC batch encrypt |
 | `firmware/queen/main.c:632-662` | `Handle_CoAP_Command()` CBC decrypt + ECB restore |

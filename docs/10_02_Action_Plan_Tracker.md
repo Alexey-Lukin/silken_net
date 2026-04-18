@@ -230,7 +230,7 @@
 #### FW.1 — Hardcoded AES-256 Key
 - **Джерело:** `03_01`, `03_02`, `03_05`, `05_02`
 - **Опис:** Один і той самий ключ на ВСІХ вузлах мережі. Злам одного пристрою = компрометація всієї мережі
-- **Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:65-66`
+- **Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
 - **Рішення:** Per-device provisioning через HKDF, Factory Flashing pipeline
 - **Статус:**
   - [ ] Дизайн HKDF key derivation protocol
@@ -787,7 +787,7 @@
 - **Документація (CLAUDE.md, 03_01, 03_02, 05_02):** "firmware/queen/main.c:65-66"
 - **Код:** Actual position `firmware/queen/main.c:81-82`
 - **Дія:**
-  - [ ] Оновити line references у документації (03_01, 03_02, 05_02)
+  - [x] Оновити line references у документації (03_01, 03_02, 03_05, 05_02, 10_02)
   - [ ] Оновити CLAUDE.md окремо (критичний SSOT для AI assistants)
 
 #### DIFF.7 — SNR parameter unused in Queen CIFO eviction
