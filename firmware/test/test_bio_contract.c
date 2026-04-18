@@ -257,8 +257,8 @@ static void test_evaluate_pack_vm_error_byte(void) {
 }
 
 static void test_beta_precision(void) {
-    /* BASE_BETA = 8.0/3.0 should be approximately 2.6667 */
-    ASSERT(fabs(BASE_BETA - 2.666666666666666) < 0.001,
+    /* BASE_BETA = 8.0/3.0 should be 2.666666666666667 (IEEE 754 double) */
+    ASSERT(fabs(BASE_BETA - (8.0 / 3.0)) < 1e-15,
            "test_beta_precision_8_div_3");
 }
 
