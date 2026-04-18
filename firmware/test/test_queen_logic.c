@@ -18,7 +18,7 @@
 #define CACHE_MAX_ENTRIES     50
 #define CMD_DEDUP_SIZE        16
 #define UUID_STR_LEN          36
-#define CMD_DECRYPT_BUF_SIZE  96
+#define CMD_DECRYPT_BUF_SIZE  544
 
 /* ── Data structures (from queen/main.c) ────────────────────────────── */
 typedef struct {

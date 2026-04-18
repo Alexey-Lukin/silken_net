@@ -42,6 +42,7 @@ env:
     - DATABASE_URL
     - REDIS_URL
     - KREDIS_REDIS_URL
+    - SENTRY_DSN
   clear:
     # Puma clustered mode — number of forked worker processes.
     # GCP n2-standard-2 has 2 vCPUs, so 2 workers saturate both cores.

@@ -47,7 +47,7 @@ services:
   #
   # Runs the production Docker image built by the same Dockerfile used with
   # Kamal. Thruster provides HTTP/2 reverse proxy; Puma handles Ruby workers.
-  # Background jobs are processed by Sidekiq (separate process or container).
+  # Background jobs are processed by the job service below.
   web:
     image: europe-west1-docker.pkg.dev/YOUR_GCP_PROJECT/silken-net/silken_net:latest
     # ⬆ REQUIRED: Replace YOUR_GCP_PROJECT with your actual GCP project ID.
@@ -135,6 +135,34 @@ services:
           mount: /rails/storage
           readOnly: false
 
+  # ---------------------------------------------------------------------------
+  # Job Service — Sidekiq Background Worker (31+ workers)
+  # ---------------------------------------------------------------------------
+  # Maps to: config/deploy.yml → servers.job
+  #
+  # [PLAN 5.8]: Without this service, ALL 31+ Sidekiq workers are offline on
+  # Akash: telemetry processing, Web3 minting, slashing, OTA, L1 anchoring,
+  # alert notifications — none of them run. This is a critical functional gap.
+  #
+  # Runs the same Docker image but with Sidekiq as the entrypoint command
+  # instead of Puma/Thruster. Uses the 9-queue strict priority configuration
+  # from config/sidekiq.yml.
+  job:
+    image: europe-west1-docker.pkg.dev/YOUR_GCP_PROJECT/silken-net/silken_net:latest
+    command:
+      - "bundle"
+      - "exec"
+      - "sidekiq"
+      - "-C"
+      - "config/sidekiq.yml"
+    env:
+      - RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+      - DATABASE_URL=REQUIRED_SECRET_NOT_SET
+      - REDIS_URL=REQUIRED_SECRET_NOT_SET
+      - KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
+      - RAILS_ENV=production
+      - RAILS_MAX_THREADS=3
+
 profiles:
   # ---------------------------------------------------------------------------
   # Compute Profile — Resource Allocation
@@ -164,6 +192,15 @@ profiles:
             attributes:
               persistent: true
               class: beta3
+    # [PLAN 5.8] Sidekiq worker — lower CPU but more memory for 15 threads × 31+ workers.
+    job:
+      resources:
+        cpu:
+          units: 2
+        memory:
+          size: 4Gi
+        storage:
+          - size: 20Gi
 
   # ---------------------------------------------------------------------------
   # Placement Profile — Provider Selection
@@ -194,6 +231,9 @@ profiles:
           # Monitor: https://stats.akash.network/
           denom: uakt
           amount: 10000
+        job:
+          denom: uakt
+          amount: 5000
 
 deployment:
   # ---------------------------------------------------------------------------
@@ -205,4 +245,8 @@ deployment:
   web:
     silken-dcloud:
       profile: web
+      count: 1
+  job:
+    silken-dcloud:
+      profile: job
       count: 1

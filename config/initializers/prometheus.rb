@@ -63,20 +63,27 @@ module SilkenNet
     # -----------------------------------------------------------------------
     # ⚙️ SIDEKIQ QUEUE METRICS (Gauges — sampled at scrape time)
     # -----------------------------------------------------------------------
+    # [PLAN 1.3]: Renamed from WEB3_QUEUE_* to SIDEKIQ_QUEUE_* to reflect
+    # monitoring ALL 9 queues (uplink, alerts, critical, downlink, default,
+    # web3_critical, web3, web3_low, low), not just web3.
 
-    # Web3 queue size (gauge — set on each scrape via collector callback)
-    WEB3_QUEUE_SIZE = REGISTRY.gauge(
-      :silkennet_web3_queue_size,
-      docstring: "Current size of the Sidekiq web3 queue",
+    # Sidekiq queue size (gauge — set on each scrape via collector callback)
+    SIDEKIQ_QUEUE_SIZE = REGISTRY.gauge(
+      :silkennet_sidekiq_queue_size,
+      docstring: "Current size of a Sidekiq queue",
       labels: [ :queue ]
     )
 
-    # Web3 queue latency in seconds (gauge — oldest job age)
-    WEB3_QUEUE_LATENCY = REGISTRY.gauge(
-      :silkennet_web3_queue_latency_seconds,
-      docstring: "Latency (age of oldest job) in Sidekiq web3 queues",
+    # Sidekiq queue latency in seconds (gauge — oldest job age)
+    SIDEKIQ_QUEUE_LATENCY = REGISTRY.gauge(
+      :silkennet_sidekiq_queue_latency_seconds,
+      docstring: "Latency (age of oldest job) in a Sidekiq queue",
       labels: [ :queue ]
     )
+
+    # Legacy aliases for backward compatibility with existing Grafana dashboards.
+    WEB3_QUEUE_SIZE = SIDEKIQ_QUEUE_SIZE
+    WEB3_QUEUE_LATENCY = SIDEKIQ_QUEUE_LATENCY
 
     # -----------------------------------------------------------------------
     # 🔗 DATABASE CONNECTION POOL METRICS (Gauges — Wiki 04_01 Blocker Fix)

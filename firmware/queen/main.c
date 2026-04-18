@@ -54,6 +54,7 @@ UART_HandleTypeDef huart1;  // Інтерфейс для модему SIM7070G (
 SUBGHZ_HandleTypeDef hsubghz;
 CRYP_HandleTypeDef hcryp; // Апаратний криптопроцесор AES
 RNG_HandleTypeDef hrng;   // Апаратний генератор випадкових чисел (HRNG)
+IWDG_HandleTypeDef hiwdg; // [PLAN 2.6] Independent Watchdog для auto-recovery
 
 /* USER CODE BEGIN PV */
 
@@ -154,6 +155,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_SUBGHZ_Init(void);
 static void MX_CRYP_Init(void); // Ініціалізація шифрування
+static void MX_IWDG_Init(void); // [PLAN 2.6] Independent Watchdog — auto-recovery from HardFault
 
 /* USER CODE BEGIN PFP */
 // Функції-обгортки для роботи з модемом та транзитом
@@ -188,6 +190,7 @@ int main(void)
   MX_USART1_UART_Init(); // UART для розмови з SIM7070G (115200 baud)
   MX_SUBGHZ_Init();
   MX_CRYP_Init();        // Вмикаємо апаратний модуль AES
+  MX_IWDG_Init();        // [PLAN 2.6] Watchdog: auto-reset ~26 sec after hang
 
   /* USER CODE BEGIN 2 */
 
@@ -234,6 +237,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    // [PLAN 2.6] Kick the watchdog — prevents auto-reset during normal operation.
+    // If firmware hangs (e.g., SIM7070G AT blocking), IWDG expires after ~26 sec → NVIC_SystemReset.
+    HAL_IWDG_Refresh(&hiwdg);
+
     // =========================================================================
     // ФАЗА ОЧІКУВАННЯ ТА ОБРОБКИ РАДІОЕФІРУ
     // =========================================================================
@@ -289,8 +296,9 @@ int main(void)
             current_ota_chunk_idx++;
             if (current_ota_chunk_idx >= total_chunks) {
                 current_ota_chunk_idx = 0;
-                // Якщо маємо оновити ліс лише один раз, розкоментувати:
-                // ota_is_active = 0;
+                // [PLAN 2.5]: Reset OTA broadcast flag after full cycle to prevent infinite loop.
+                // Without this, Queen broadcasts OTA chunks forever after first update.
+                ota_is_active = 0;
             }
         }
 
@@ -780,6 +788,23 @@ static void MX_CRYP_Init(void)
   // після чого CRYP відновлюється до ECB.
   hcryp.Init.Algorithm = CRYP_AES_ECB;
   HAL_CRYP_Init(&hcryp);
+}
+
+// =========================================================================
+// [PLAN 2.6] INDEPENDENT WATCHDOG (IWDG) — AUTO-RECOVERY FROM HANG
+// =========================================================================
+// Without IWDG, Queen hangs forever on HardFault or SIM7070G AT-command blocking.
+// Soldier already has IWDG (~26 sec recovery). This brings Queen to parity.
+// LSI clock ~32 kHz, prescaler /256 = 128 Hz tick, reload 3328 ≈ 26 sec timeout.
+static void MX_IWDG_Init(void)
+{
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_256;
+  hiwdg.Init.Window = IWDG_WINDOW_DISABLE;
+  hiwdg.Init.Reload = 3328; // ~26 seconds at 32 kHz / 256
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK) {
+    Error_Handler();
+  }
 }
 
 /* USER CODE END 4 */
