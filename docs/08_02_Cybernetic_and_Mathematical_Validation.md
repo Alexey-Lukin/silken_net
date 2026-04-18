@@ -70,7 +70,7 @@
 
 **Чому Ярмілко є унікальним для Silken Net:**
 
-Silken Net — це система **промислового IoT у кризових умовах**: живлення від дерева (44 мВ → 500 мВ EBFC), відкрите середовище (фізична вразливість анкерів), обмежена пропускна здатність LoRa. Це точна ніша досліджень Ярмілка — IIoT Dependability + Embedded Security + Data Compression. Три вектори його публікацій покривають три критичних вузькі місця системи.
+Silken Net — це система **промислового IoT у кризових умовах**: живлення від дерева (>500 мВ EBFC → BQ25570 MPPT), відкрите середовище (фізична вразливість анкерів), обмежена пропускна здатність LoRa. Це точна ніша досліджень Ярмілка — IIoT Dependability + Embedded Security + Data Compression. Три вектори його публікацій покривають три критичних вузькі місця системи.
 
 ---
 
@@ -104,7 +104,7 @@ HAL_PWR_EnterSTOP2Mode(PWR_STOPENTRY_WFI);  // негайно спати
 
 **Завдання Б: Запобігання Колізіям (HAL + RTOS парадигма)**
 
-Ярмілко має досвід застосування HAL та методів RTOS для запобігання нештатним ситуаціям **множинного доступу до загальної SPI-шини**. У Silken Net на одній шині можуть конкурувати: опитування BQ25570, читання сенсора температури, TinyML inference (DMA 16 кГц аудіо). Його методологія гарантує стабільність 4-провідної системи Кельвіна при одночасному опитуванні кількох каналів без data corruption.
+Ярмілко має досвід застосування HAL та методів RTOS для запобігання нештатним ситуаціям **множинного доступу до загальної SPI-шини**. У Silken Net на одній шині можуть конкурувати: опитування сенсорної периферії, читання сенсора температури, TinyML inference (DMA 16 кГц аудіо). Його методологія гарантує стабільність 2-пінового Pogo Pin Blind Mate інтерфейсу (→ `02_02`) при одночасному опитуванні кількох каналів без data corruption.
 
 ---
 
@@ -112,7 +112,7 @@ HAL_PWR_EnterSTOP2Mode(PWR_STOPENTRY_WFI);  // негайно спати
 
 **Контекст: Дилема «Безпека vs Енергія»**
 
-Анкери Silken Net вживлені у дерева у відкритому лісі — вони фізично вразливі до перехоплення. Водночас традиційна «важка» криптографія (RSA-2048) вимагає сотень тисяч тактів процесора та занадто дорога для системи на 44 мВ. Поточна реалізація:
+Анкери Silken Net вживлені у дерева у відкритому лісі — вони фізично вразливі до перехоплення. Водночас традиційна «важка» криптографія (RSA-2048) вимагає сотень тисяч тактів процесора та занадто дорога для системи з мікроватним живленням від EBFC. Поточна реалізація:
 
 - **Soldier → Queen (LoRa):** **AES-256-ECB** (`HAL_CRYP_Encrypt`, апаратний CRYP-модуль) — захищає тіло пакету, але **без IV** (режим ECB не забезпечує дифузію між блоками, BLOCKER-2 з 03_05)
 - **Queen → Rails (CoAP Batch):** AES-256-CBC + HRNG IV — батч зашифрований CBC
@@ -215,7 +215,7 @@ void HAL_PWR_PVDCallback(void) {  // Power Voltage Detector IRQ
 
 **Промпт для зустрічі з Ярмілком:**
 
-> _"Андрію Васильовичу, пам'ятаєте, ви вчили мене embedded системам? Я зараз будую IoT-систему на STM32WLE5, яка живиться від дерева (44 мілівольти!). Маю три задачі саме з вашого профілю: оптимізація SPI/DMA для зменшення енергії, lightweight cryptography для захисту Web3-даних з лісових анкерів — і ваша стаття про Smart Implants це буквально наш продукт, — і алгоритми стиснення LoRa-пакетів та dependability firmware для brownout-відновлення. Це три статті в Scopus Q1."_
+> _"Андрію Васильовичу, пам'ятаєте, ви вчили мене embedded системам? Я зараз будую IoT-систему на STM32WLE5, яка живиться від дерева (>500 мілівольт від EBFC!). Маю три задачі саме з вашого профілю: оптимізація SPI/DMA для зменшення енергії, lightweight cryptography для захисту Web3-даних з лісових анкерів — і ваша стаття про Smart Implants це буквально наш продукт, — і алгоритми стиснення LoRa-пакетів та dependability firmware для brownout-відновлення. Це три статті в Scopus Q1."_
 
 **Конкретний запит (зведений):**
 
@@ -467,7 +467,7 @@ bool should_transmit(uint8_t *new_pkt, uint8_t *last_pkt, uint8_t threshold) {
 
 **Контекст: Архітектура RF-Deck 'Silken Net'**
 
-Система використовує **STM32WLE5JC** з інтегрованим LoRa-трансивером та **керамічну SMD-антену** на верхньому шарі двоповерхової PCB. Плата накривається куполоподібним **PEEK-радомом** (герметизація IP68), залишаючи зовні дерева лише 2–3 см «таблетку». Нижній шар (іоністор 0.47F, трансформатор) та 120-мм Ti-6Al-4V анкер слугують частковим електромагнітним екраном знизу.
+Система використовує **STM32WLE5JC** з інтегрованим LoRa-трансивером та **керамічну SMD-антену** на верхньому шарі двоповерхової PCB. Плата накривається куполоподібним **PEEK-радомом** (Деталь 4, герметизація IP68), залишаючи зовні дерева лише 2–3 см «таблетку». Нижній шар (Power Deck: іоністор 0.47F + BQ25570 MPPT) та 120-мм Ti-6Al-4V анкер слугують частковим електромагнітним екраном знизу.
 
 Ця конструкція породжує **три критичних RF-завдання**:
 
@@ -509,15 +509,15 @@ bool should_transmit(uint8_t *new_pkt, uint8_t *last_pkt, uint8_t threshold) {
 
 ```
 Link Budget 'Silken Net':
-  TX Power:        +14 dBm (STM32WLE5JC, максимум)
-  SMD Antenna Gain: -3 dBi (типово для керамічної SMD vs. дипольна)
-  PEEK Radome Loss: -0.5 dB
-  Path Loss (лісовий масив 200м, LoRa 868 МГц): -120 dB (ITU-R P.833)
-  Foliage Excess:   -8 dB (додаткові втрати в листяному масиві)
+  TX Power:        +22 dBm (STM32WLE5JC SX1262, максимум)
+  SMD Antenna Gain:  0 dBi (керамічна SMD, omnidirectional)
+  PEEK Radome Loss: -0.3 dB
+  Path Loss (лісовий масив 200м, LoRa 868 МГц): -91 dB (worst case, волога кора)
   RX Sensitivity:  -137 dBm (SF=12, BW=125kHz)
-  Margin:           +19.5 dB  → SF=9 достатньо для 200м hop
+  Margin:           +67.7 dB  → SF=7 достатньо для 200м hop
 
-Висновок Косенюка: оптимальний SF=9 (баланс дальність/час-в-ефірі/енергія)
+Висновок Косенюка: навіть при SF=7 запас зв'язку > +55 дБ (→ `02_01` §5.3);
+  оптимальний SF=7–9 (баланс дальність/час-в-ефірі/енергія)
   при типовій відстані між анкерами 150–200м у лісі
 ```
 
@@ -532,13 +532,20 @@ Link Budget 'Silken Net':
 **Завдання А: Forward Error Correction (FEC) для 21-байтового Пакету**
 
 ```
-Поточна структура 21-байтового пакету:
-  Byte 0:    Header (1B)
-  Bytes 1-4: DID (4B)
-  Bytes 5-12: Sensor data — delta_t (4B) + vcap (2B) + temp (2B) (8B)
-  Bytes 13-16: Lorenz Z (4B)
-  Bytes 17-18: TinyML class (2B)
-  Bytes 19-20: CRC-16 (2B)
+Поточна структура 21-байтового пакету (→ firmware/soldier/main.c):
+  Незашифровані (5 байт):
+    Bytes 0-3: DID (4B, uint32_t, Network byte order)
+    Byte 4:    RSSI (1B, int8_t, додається Queen при ретрансляції)
+  AES-256-ECB зашифровані (16 байт = 1 блок):
+    Bytes 5-6:   Vcap (2B, uint16_t, мілівольти)
+    Byte 7:      Temp (1B, int8_t, °C)
+    Byte 8:      Acoustic (1B, uint8_t, TinyML клас)
+    Bytes 9-10:  dT / delta_t (2B, uint16_t)
+    Byte 11:     StatusByte (1B: [bio_status:2 | growth_points:6])
+    Byte 12:     TTL (1B, uint8_t)
+    Bytes 13-14: FW version (2B)
+    Bytes 15-16: PAD (2B, зарезервовано)
+  Ruby unpack: "N n c C n C C a4" (після розшифровки AES-ECB блоку)
 
 Пропозиція FEC (Косенюк):
   Reed-Solomon(21,17) або Hamming(26,21): додати 4–5 байт контрольних символів
@@ -664,10 +671,11 @@ float ema_update(float prev, float measurement) {
 
 - C-код для STM32WLE5JC: переведення процесора у STOP2 (2.1 мкА sleep)
 - 21-байтовий бінарний пакет: кожен біт продуманий
-- AES-256-CBC апаратне шифрування через HAL\_CRYP\_Encrypt
+- AES-256-ECB апаратне шифрування через HAL\_CRYP\_Encrypt (Soldier → Queen LoRa)
+- AES-256-CBC для CoAP batch (Queen → Rails)
 - DMA 16 кГц для аудіо → TinyML inference
 
-**Що показати:** Саме C-код `firmware/soldier/main.c` (648 рядків) — це найкращий доказ того, що уроки з низькорівневої оптимізації не минули дарма. MCU живе на **44 мілівольтах**, зібраних з дерева.
+**Що показати:** Саме C-код `firmware/soldier/main.c` (648 рядків) — це найкращий доказ того, що уроки з низькорівневої оптимізації не минули дарма. MCU живе на **мікроватах**, зібраних з дерева (>500 мВ EBFC → BQ25570 → іоністор 0.47F → 3.3 В).
 
 ---
 
@@ -1053,9 +1061,9 @@ Places (ресурси та стани):
   p1: HTTP request queue (CoAP → Rails API endpoint /api/v1/telemetry)
   p2: Puma thread pool (config.puma threads: MIN=5, MAX=25 per pod)
   p3: PostgreSQL connection pool (pool: 25 у database.yml)
-  p4: Sidekiq job queue "uplink" (priority 9, UnpackTelemetryWorker)
-  p5: Sidekiq job queue "alerts" (priority 8, EwsAlertWorker)
-  p6: Sidekiq job queue "web3_critical" (priority 4, MintingWorker)
+  p4: Sidekiq job queue "uplink" (priority 1 — найвищий, UnpackTelemetryWorker)
+  p5: Sidekiq job queue "alerts" (priority 2, EwsAlertWorker)
+  p6: Sidekiq job queue "web3_critical" (priority 6, MintingWorker)
   p7: Active DB transaction (INSERT INTO telemetry_logs)
   p8: Completed telemetry record
 
@@ -1723,7 +1731,7 @@ pub fn verify_growth(
 - VNA-вимір S11-параметра реальної зборки (SMD-антена + PEEK-кришка + O-ring + волога) → комплексний імпеданс Z\_measured на 868 МГц та 915 МГц
 - Проектування LC-ланцюга узгодження (П- або Т-подібний фільтр): Z\_source = 50 Ω (STM32WLE5 PA) → Z\_measured → VSWR < 1.5
 - FEKO/CST моделювання 3D-діаграми спрямованості: вплив Ti-анкера (Ground Plane), PEEK-радому (діелектричне навантаження), кори дерева (ε ≈ 10–20)
-- Link Budget розрахунок: TX +14 dBm, SMD Gain -3 dBi, ITU-R P.833 лісовий path loss → оптимальний SF=9 для hop 150–200м
+- Link Budget розрахунок: TX +22 dBm, SMD Gain 0 dBi, worst-case лісовий path loss → запас зв'язку > +55 дБ (→ `02_01` §5.3); оптимальний SF=7–9 для hop 150–200м
 - Deliverable: специфікація оптимальної геометрії PEEK-кришки + LC-узгодження для серійного виробництва (10,000 пристроїв, допуск ±5%)
 
 #### Підгрупа Б: FEC + Hash Method для Телеметрії (Модуль 07)
@@ -1819,7 +1827,7 @@ pub fn verify_growth(
 - Побудова PN-моделі Rails-моноліту: places = {HTTP queue, Puma thread pool (5–25), PostgreSQL connection pool (25), Sidekiq "uplink" / "alerts" / "web3\_critical" queues, active DB transaction}; transitions = {accept\_request, acquire\_db\_conn, enqueue\_sidekiq, process\_telemetry, trigger\_ews, mint\_scc}
 - Reachability analysis: чи може PostgreSQL connection pool (place p3) вичерпатись при 10,000 concurrent IoT requests? (peak: 167 pkt/s @ 10k nodes × 60s cycle)
 - Deadlock detection: пошук станів де t2 (acquire\_db) та t4 (process\_telemetry) одночасно очікують p3 → алгоритмічне виявлення mutual exclusion порушень
-- Boundedness verification: черга "uplink" (priority 9) bounded при пікових навантаженнях → доказ що telemetry\_logs INSERT не переповнює буфер
+- Boundedness verification: черга "uplink" (priority 1 — найвищий) bounded при пікових навантаженнях → доказ що telemetry\_logs INSERT не переповнює буфер
 
 #### Підгрупа Б: Convolution Method для State Explosion (Модуль 08)
 
