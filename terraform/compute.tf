@@ -37,6 +37,12 @@ if ! iptables -C INPUT -p udp --dport 5683 -m hashlimit \
      --hashlimit-above 100/sec --hashlimit-burst 200 \
      --hashlimit-mode srcip --hashlimit-name coap_limit \
      -j DROP 2>/dev/null; then
+  # Log rate-limited packets (max 10/min to prevent log flooding during attacks)
+  iptables -A INPUT -p udp --dport 5683 -m hashlimit \
+    --hashlimit-above 100/sec --hashlimit-burst 200 \
+    --hashlimit-mode srcip --hashlimit-name coap_log \
+    -m limit --limit 10/min -j LOG --log-prefix "CoAP-RATE-LIMIT: "
+  # Drop excessive packets
   iptables -A INPUT -p udp --dport 5683 -m hashlimit \
     --hashlimit-above 100/sec --hashlimit-burst 200 \
     --hashlimit-mode srcip --hashlimit-name coap_limit \

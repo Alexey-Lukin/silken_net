@@ -98,9 +98,12 @@ static uint8_t Read_Queen_UID_From_Flash(void)
     // Check magic marker. Unprogrammed Flash reads as 0xFFFFFFFF,
     // which won't match QUEEN_UID_MAGIC ("QUID" = 0x51554944).
     if (flash_ptr[0] != QUEEN_UID_MAGIC) {
-        // Not provisioned — use default UID (safe fallback, device still functions)
-        strncpy(queen_uid, "QUEEN-UNPROVISIONED", QUEEN_UID_MAX_LEN - 1);
-        queen_uid[QUEEN_UID_MAX_LEN - 1] = '\0';
+        // Not provisioned — generate unique fallback from STM32 hardware UID
+        // (96-bit unique ID at 0x1FFF7590). Last 4 bytes → 8 hex chars.
+        // Each physical MCU gets a distinct ID even without provisioning.
+        const uint32_t* hw_uid = (const uint32_t*)0x1FFF7590UL;
+        snprintf(queen_uid, QUEEN_UID_MAX_LEN, "UNPROV-%08lX",
+                 (unsigned long)hw_uid[2]);
         return 0;
     }
 
@@ -111,8 +114,9 @@ static uint8_t Read_Queen_UID_From_Flash(void)
     // Validate uid_len is within safe bounds for both the destination buffer
     // and the Flash provisioning region (2KB page = 2048 bytes, header = 5 bytes).
     if (uid_len == 0 || uid_len >= QUEEN_UID_MAX_LEN || (5U + uid_len) > 2048U) {
-        strncpy(queen_uid, "QUEEN-UNPROVISIONED", QUEEN_UID_MAX_LEN - 1);
-        queen_uid[QUEEN_UID_MAX_LEN - 1] = '\0';
+        const uint32_t* hw_uid = (const uint32_t*)0x1FFF7590UL;
+        snprintf(queen_uid, QUEEN_UID_MAX_LEN, "UNPROV-%08lX",
+                 (unsigned long)hw_uid[2]);
         return 0;
     }
 
@@ -646,6 +650,10 @@ void Flush_Cache_To_Rails(void)
 
     // Чекаємо, поки модем надішле дані через ефір та отримає UDP ACK від сервера.
     // [PLAN 2.11] Збільшено з 2000 до 5000 мс для Starlink DTC worst-case latency.
+    // Refresh IWDG before AND after the blocking delay — the delay alone consumes
+    // ~19% of the 26.6s watchdog window. Without pre-refresh, time accumulated from
+    // cache packing + AES encryption + CCOAPNEW could push past the IWDG threshold.
+    HAL_IWDG_Refresh(&hiwdg);
     HAL_Delay(COAP_SEND_TIMEOUT_MS);
     HAL_IWDG_Refresh(&hiwdg);
 
