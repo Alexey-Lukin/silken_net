@@ -279,6 +279,20 @@ if (vibration_detected) {
 - Додати `__disable_irq()` / `__enable_irq()` навколо read-clear-start послідовності.
 - Або перевіряти `HAL_ADC_Start_DMA` return code та обробляти `HAL_BUSY`.
 
+> **📝 Покращене рішення — NVIC-рівнева ізоляція (Legacy notes):** Замість `__disable_irq()`, який зупиняє **всю систему** (включно з SysTick, радіо-перериваннями та DMA callbacks), рекомендовано вимикати лише конкретну EXTI-лінію п'єзодиска:
+> ```c
+> // Замість __disable_irq() / __enable_irq():
+> HAL_NVIC_DisableIRQ(EXTI0_IRQn);  // Вимкнути тільки п'єзо-переривання
+> if (vibration_detected) {
+>     vibration_detected = 0;
+>     audio_ready = 0;
+>     HAL_TIM_Base_Start(&htim2);
+>     HAL_ADC_Start_DMA(&hadc, (uint32_t*)raw_audio_buffer, 512);
+> }
+> HAL_NVIC_EnableIRQ(EXTI0_IRQn);   // Увімкнути назад після завершення
+> ```
+> **Переваги:** SysTick (HAL_Delay), LoRa-переривання та DMA callbacks продовжують працювати під час аудіо-ініціалізації. Менший ризик пропуску радіо-пакетів у Queen relay-сценаріях.
+
 **Блокує:** Стабільність DMA в умовах вібраційного шуму (вітер, гроза, механічні удари).
 
 ---
@@ -693,6 +707,62 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 8 | Confidence threshold конфігурується (не хардкод) | 🟡 Відкрито |
 | 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | 🟡 Відкрито |
 | 10 | `acoustic_events` overflow захист реалізовано | 🟡 Відкрито |
+
+---
+
+## 🔬 OTA Model Format та Federated Learning Pipeline
+
+### Формат Моделі — TFLite (єдиний допустимий)
+
+**Критичне обмеження:** STM32WLE5JC (ARM Cortex-M4, C/C++) **не може** виконувати Ruby/Python артефакти (`.marshal`, `.pkl`, `.h5`). Єдиний допустимий формат для OTA-оновлення моделі:
+
+| Формат | Розширення | Допустимість | Причина |
+|--------|-----------|-------------|---------|
+| **TensorFlow Lite FlatBuffer** | `.tflite` | ✅ Єдиний | Бінарний, виконується TFLM runtime на Cortex-M4 |
+| TensorFlow Lite C-array | `.h` / `.cc` | ✅ Альтернативний | Скомпільований масив `const unsigned char model[]` — вбудовується у firmware |
+| X-CUBE-AI (STM) | `.c` / `.h` | ⚠️ Можливий | Проприєтарний ST; краща оптимізація для STM32, але vendor lock-in |
+| Ruby Marshal | `.marshal` | ❌ Заборонено | MCU не має Ruby VM |
+| Python Pickle | `.pkl` | ❌ Заборонено | MCU не має Python runtime |
+| ONNX | `.onnx` | ❌ Заборонено | Немає ONNX runtime для 64 KB SRAM |
+
+### Квантизація — INT8 (обов'язкова)
+
+Модель **обов'язково** повинна використовувати **INT8 post-training quantization** для розгортання на STM32WLE5JC:
+
+- **Float32 модель:** ~50-100 KB (перевищує SRAM бюджет)
+- **INT8 модель:** ~12-25 KB (вписується в Tensor Arena 8-32 KB)
+- **Втрата точності:** типово < 1-2% для аудіо-класифікації (допустимо)
+- **Інструмент:** `tf.lite.TFLiteConverter` з `tf.lite.Optimize.DEFAULT` + representative dataset
+
+### Federated Learning Pipeline (Архітектура, Post-TRL 8)
+
+Тренування моделі **не може** відбуватися в Rails. Потрібен окремий ML-мікросервіс:
+
+```
+MaintenanceRecord (ground truth labels: "chainsaw confirmed" / "false positive")
+       │
+       ▼
+Python ML Microservice (FastAPI + Celery / або Vertex AI Pipeline)
+       │ 1. Fetch labeled audio features з PostgreSQL
+       │ 2. Fine-tune TensorFlow/Keras модель
+       │ 3. INT8 quantization → .tflite
+       │ 4. Валідація на hold-out тесті (accuracy > threshold)
+       │
+       ▼
+Rails: ActiveStorage upload .tflite → TinyMlModel.create!(binary_payload: ...)
+       │ SHA-256 integrity check
+       │
+       ▼
+OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → Soldiers
+```
+
+**Ключові обмеження:**
+- Rails **лише** приймає готовий `.tflite` через API, зберігає в ActiveStorage, рахує SHA-256
+- Тренування виконується **поза** Rails (Python, GPU-сервер або хмарний ML pipeline)
+- `TinyMlModel` AR модель зберігає: `binary_payload`, `payload_size`, `binary_sha256`, `model_version`, `quantization_type` (`:int8`)
+- OTA chunk format: `[0x99][index:2][total:2][bytecode:11]` — AES-256-CBC, pacing 60ms
+
+**Статус:** Не реалізовано. Post-TRL 8. Залежить від BLOCKER-1 (Run_Inference) та BLOCKER-2 (model.h).
 
 ---
 
