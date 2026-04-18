@@ -603,6 +603,15 @@
   - [ ] Додати co-processor firmware до `firmware/`
 - **Пріоритет:** Phase 3 only
 
+#### HW.19 — VOC-діагностика деградації конденсатора (ADS1220 + TPS22860)
+- **Джерело:** Legacy notes + `02_04` §4.2
+- **Опис:** Раз на добу вимірювати чисту VOC EBFC (при від'єднаному навантаженні) для розрізнення "дерево хворіє" vs "конденсатор деградує". Обидва стани проявляються як зростання delta_t. ADS1220 (24-bit ADC) + TPS22860 (load switch) для прецизійного duty-cycling вимірювання. Для TRL 6 достатньо вбудованого 12-біт ADC STM32
+- **Статус:**
+  - [ ] Валідувати концепт на вбудованому 12-біт ADC (firmware: GPIO disconnect EDLC → measure VOC → reconnect)
+  - [ ] Якщо 12-біт недостатньо — додати ADS1220 + TPS22860 до BOM
+  - [ ] Backend: поле `voc_mv` у TelemetryLog для серверної корекції моделі Лоренца
+- **Пріоритет:** TRL 8+ (після базової валідації в полі)
+
 ---
 
 ## 🔐 Безпекові пункти
@@ -886,7 +895,7 @@
 |--------|-------------|-------------|-----------------|--------|
 | 00 System Architecture | 4 | 9 | Module 01 chemistry | ARCH.1-ARCH.6 |
 | 01 Materials & EBFC | 3 | 6 | Lab tests (ЧНУ) | HW.1-HW.6 |
-| 02 Hardware & BOM | 4 | 6 | BQ25570, PCB layout, Pogo pins | HW.7-HW.18 |
+| 02 Hardware & BOM | 4 | 6 | BQ25570, PCB layout, Pogo pins | HW.7-HW.19 |
 | 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking, Time Sync | FW.1-FW.21 |
 | 04 Backend Rails | 8 | 9 | Prometheus Server, тести guard clauses | S1-S3, DIFF.1-DIFF.7 |
 | 05 Web3 Pipeline | 8-9 | 9 | PuroEarth real API, SFC contract address | S3.3, S3.5 |
@@ -910,6 +919,7 @@
 | 2026-04-18 | Повний аудит docs + codebase | Повторний аудит ВСІХ 35 документів (повне читання). Аудит кодбейзу (firmware, backend, infra). Додано: FW.15-FW.19, HW.11-HW.18, SEC.1-SEC.4, INF.1-INF.6, ARCH.1-ARCH.6, DIFF.1-DIFF.7, E.7-E.25. Оновлено TRL матрицю та зведену статистику. |
 | 2026-04-18 | Legacy notes integration | Аналіз 10 старих нотаток. Додано: FW.20 (Time Sync), FW.21 (Edge aggregation), E.26-E.30. Оновлено HW.6 (thermal spec + hydrophobic gradient). Оновлено `01_04` (CODIT spec temperature + hydrophobic gradient). Оновлено `01_03` (альтернативні медіатори). Notes 3/6/9 — вже реалізовано або неактуальні. |
 | 2026-04-18 | Security notes integration | Аналіз 4 security/firmware нотаток. Оновлено FW.2 (AES-CCM 24-байтний пакет з Frame Counter + MIC), FW.16 (RCC CRYP_FORCE_RESET recovery), FW.17 (Hash Ratchet KDF замість key-over-air). Оновлено BLOCKER-2/3/5/6 у `03_05`. Note 4 (HRNG ADC noise) — вже виправлено краще (djb2 HW UID). |
+| 2026-04-18 | Hardware notes integration | Аналіз нотаток щодо ADS1220 / TPS22860 / LIC Eaton HS1016. Додано §4 "Розглянуті альтернативи" в `02_04` (LIC vs EDLC, концепт VOC-діагностики). Додано §7 "Розглянуті альтернативні компоненти" в `02_01` (ADS1220, TPS22860). Всі три компоненти відхилено для TRL 6 з документованим обґрунтуванням. |
 
 ---
 
