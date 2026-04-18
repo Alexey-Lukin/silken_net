@@ -700,7 +700,7 @@
 
 #### DIFF.1 — `Wallet#lock_and_mint!` threshold documentation misleading
 - **Документація:** "10,000 growth_points = 1 SCC" як fixed threshold
-- **Код:** `wallet.rb:99-120` — threshold є **параметром методу**, не hardcoded константою. Значення 10,000 приходить від caller (`TokenomicsEvaluatorWorker`)
+- **Код:** `app/models/wallet.rb:99-120` — threshold є **параметром методу**, не hardcoded константою. Значення 10,000 приходить від caller (`TokenomicsEvaluatorWorker`)
 - **Дія:** Уточнити в документації що threshold = runtime parameter
 
 #### DIFF.2 — `carbon_sequestration_coefficient` NOT IMPLEMENTED
@@ -725,7 +725,9 @@
 #### DIFF.6 — Queen AES key line numbers mismatch
 - **Документація (CLAUDE.md, 03_01, 03_02, 05_02):** "firmware/queen/main.c:65-66"
 - **Код:** Actual position `firmware/queen/main.c:81-82`
-- **Дія:** Оновити line references у документації (line numbers зсунулись після PR #273)
+- **Дія:**
+  - [ ] Оновити line references у документації (03_01, 03_02, 05_02)
+  - [ ] Оновити CLAUDE.md окремо (критичний SSOT для AI assistants)
 
 #### DIFF.7 — SNR parameter unused in Queen CIFO eviction
 - **Джерело:** `03_02`, `03_03` (NOTE)
