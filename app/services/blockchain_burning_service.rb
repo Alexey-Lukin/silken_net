@@ -52,7 +52,10 @@ class BlockchainBurningService < ApplicationService
 
     # 2. WEB3 ПІДГОТОВКА (The Judgment Bridge) — Thread-cached RPC client
     client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
-    oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
+    # [E.2 ROLE SEPARATION]: Окремий ключ для SLASHER_ROLE зменшує blast radius
+    # при компрометації — мінтинг залишається під окремим ключем.
+    # Backward-compatible fallback на ORACLE_PRIVATE_KEY для існуючих деплоїв.
+    oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_SLASHER_PRIVATE_KEY") { ENV.fetch("ORACLE_PRIVATE_KEY") })
     contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
     contract = Eth::Contract.from_abi(name: "SilkenCarbonCoin", address: contract_address, abi: CONTRACT_ABI)
 

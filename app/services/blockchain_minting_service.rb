@@ -98,7 +98,10 @@ class BlockchainMintingService < ApplicationService
 
     # 1. ПІДКЛЮЧЕННЯ (The Alchemy Link) — Thread-cached RPC client
     client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
-    oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
+    # [E.2 ROLE SEPARATION]: Окремий ключ для MINTER_ROLE зменшує blast radius
+    # при компрометації — slashing залишається під окремим ключем.
+    # Backward-compatible fallback на ORACLE_PRIVATE_KEY для існуючих деплоїв.
+    oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_MINTER_PRIVATE_KEY") { ENV.fetch("ORACLE_PRIVATE_KEY") })
 
     # [SAFETY]: Перевірка балансу Оракула
     balance = client.get_balance(oracle_key.address)

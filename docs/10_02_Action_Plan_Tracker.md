@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Живий Документ)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-18 (Оновлення документації — виконані задачі задокументовані в профільних docs, трекер очищено)
+> **Останнє оновлення:** 2026-04-18 (E.2 Oracle Role Separation + S3.4 M2M Token Refresh реалізовано)
 > **Відповідальний:** AI Copilot Sessions + Core Team
 > **Принцип:** Кожна сесія оновлює чекбокси `[ ]` → `[x]` та додає дату + коміт.
 
@@ -11,7 +11,7 @@
 
 | Категорія | Знайдено | Виправлено | Залишилось |
 |-----------|----------|------------|------------|
-| Явні BLOCKER'и | ~65 | ~30 | ~35 |
+| Явні BLOCKER'и | ~65 | ~31 | ~34 |
 | Архітектурні рішення | ~30+ | — | Задокументовані |
 | Рекомендації та пропозиції | ~40+ | — | В роботі |
 | Відкриті питання | ~25+ | — | В роботі |
@@ -150,11 +150,11 @@
 - **Опис:** 30-денний M2M token не має механізму автоматичного оновлення
 - **Ризик:** Token expires mid-uplink для Gateway devices
 - **Статус:**
-  - [ ] Дизайн: sliding window refresh або auto-renew endpoint
-  - [ ] Реалізація
-  - [ ] Тести
-- **Сесія:** —
-- **Коміт:** —
+  - [x] Дизайн: sliding window refresh — `POST /api/v1/auth/m2m_token/refresh` з Bearer token
+  - [x] Реалізація: `M2mAuthController#refresh`, route, backward-compatible
+  - [x] Тести: 4 request specs (valid token, invalid token, no token, new token validity)
+- **Сесія:** 2026-04-18 Сесія 5 — Action Plan Tracker
+- **Коміт:** (pending)
 
 #### S3.5 — Subgraph: ForestMinted (SFC) event
 - **Пріоритет:** P2 | **Складність:** Низька-середня | **Джерело:** `05_03`
@@ -523,7 +523,7 @@
 | # | Знахідка | Джерело | Статус |
 |---|----------|---------|--------|
 | E.1 | SFC voting power зберігається після slashing | `07_01` | [ ] Дослідити |
-| E.2 | Oracle private key має MINTER + SLASHER roles (single point of failure) | `07_01` | [ ] Розділити ролі |
+| E.2 | Oracle private key має MINTER + SLASHER roles (single point of failure) | `07_01` | [x] Ролі розділено: `ORACLE_MINTER_PRIVATE_KEY` / `ORACLE_SLASHER_PRIVATE_KEY` з fallback на `ORACLE_PRIVATE_KEY` |
 | E.3 | Breadboard video відсутнє (потрібне для грантів) | `07_03` | [ ] Зняти відео |
 | E.4 | Helium Network fallback — concept є, реалізації немає | `02_05` | [ ] Дизайн + реалізація |
 | E.5 | CoAP listener — Ruby, масштабується до ~10k вузлів | `06_01` | [ ] Series D: Rust/Go proxy |
@@ -556,6 +556,7 @@
 | 2026-04-18 | Сесія 2 — Sprint 1-3 | ✅ S1.3/S1.6/S1.7/S1.8/S2.4/S2.5/S3.6 виконано та задокументовано. |
 | 2026-04-18 | Сесія 3 — Firmware + Subgraph | ✅ FW.12/FW.13/FW.14/S3.1/S3.5 виконано. 137 firmware tests pass. |
 | 2026-04-18 | Оновлення документації | Виконані задачі задокументовано в 03_01/03_04/04_04/05_03/06_01/06_03. Трекер очищено від завершених пунктів. |
+| 2026-04-18 | Сесія 5 — E.2 + S3.4 | ✅ E.2 Oracle Role Separation (MINTER/SLASHER окремі ключі з fallback). ✅ S3.4 M2M Token Refresh endpoint + тести. |
 
 ---
 

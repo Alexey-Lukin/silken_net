@@ -7,7 +7,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Впроваджено Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
-- **Кількість ендпоінтів:** 82 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`)
+- **Кількість ендпоінтів:** 83 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`)
 - **Базовий URL:** `https://<host>/api/v1`
 - **Формат відповідей:** JSON (якщо не вказано інше)
 - **Пов'язані модулі:**
@@ -69,7 +69,7 @@ POST /api/v1/auth/m2m_token
 - Ed25519 public key реєструється під час provisioning (поле `ed25519_public_key`) і зберігається в `hardware_keys.ed25519_public_key_hex`.
 - Бекенд перевіряє підпис та timestamp (±5 хвилин) перед видачею токена.
 - **Replay-захист (nonce):** SHA256-дайджест підпису зберігається в Redis із TTL 10 хв (`SET NX`). Повторне використання тієї ж `signature` повертає `401 Unauthorized` із повідомленням `"Replay attack detected"`.
-- Токен дійсний 30 днів. Перед закінченням — повторний `POST /api/v1/auth/m2m_token`.
+- Токен дійсний 30 днів. Для оновлення: `POST /api/v1/auth/m2m_token/refresh` з поточним Bearer token (§5.15.1), або повторний `POST /api/v1/auth/m2m_token` з Ed25519-підписом.
 - Детальний опис: §5.14.
 
 ### 1.5 Тестове Покриття Безпеки
@@ -169,6 +169,7 @@ POST /api/v1/auth/m2m_token
 | 6 | GET | `/api/v1/reset_password` | `passwords#edit` | 🌐 Public | Форма нового пароля (HTML, `?token=`) |
 | 7 | PATCH | `/api/v1/reset_password` | `passwords#update` | 🌐 Public | Встановити новий пароль |
 | 8 | POST | `/api/v1/auth/m2m_token` | `m2m_auth#create` | 🌐 Public (Ed25519) | **M2M Auth:** Gateway отримує Bearer token через Ed25519-підпис DID |
+| 8a | POST | `/api/v1/auth/m2m_token/refresh` | `m2m_auth#refresh` | 🔑 Auth (Bearer) | **M2M Refresh:** Оновлення Bearer token без Ed25519 re-auth |
 | **🛡️ Безпека Акаунту** | | | | | |
 | 9 | GET | `/api/v1/account_security` | `account_security#show` | �� Auth | MFA-стан, прив'язані identity |
 | 10 | PATCH | `/api/v1/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | Увімкнути/вимкнути MFA |
@@ -944,6 +945,53 @@ ed25519_sign(sig, message, strlen(message), private_key);
 | 400 Bad Request | Невалідний формат `timestamp` |
 | 401 Unauthorized | `timestamp` прострочено (>5 хв) або підпис не валідний або повтор нonce (Replay attack) |
 | 503 Service Unavailable | Redis недоступний (nonce перевірка не виконана) |
+
+---
+
+### 5.15.1 POST `/api/v1/auth/m2m_token/refresh` — M2M Token Refresh (Sliding Window)
+
+**Призначення:** Оновлення Bearer-токена без повторної Ed25519 автентифікації. Gateway надсилає поточний валідний токен і отримує новий 30-денний токен.
+
+**Доступ:** 🔑 Автентифікований (Bearer token обов'язковий).
+
+**Мотивація (S3.4):** 30-денний M2M token може протухнути під час тривалого uplink. Цей ендпоінт дозволяє Gateway автоматично оновити токен без Ed25519 криптографії (яка потребує CPU + часу).
+
+**Request:**
+
+```
+POST /api/v1/auth/m2m_token/refresh
+Authorization: Bearer <current_valid_token>
+```
+
+Тіло запиту не потрібне — автентифікація відбувається через Bearer header.
+
+**Success Response `201 Created`:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "expires_in": "30 days",
+  "token_type": "Bearer",
+  "refreshed_at": "2026-04-18T13:00:00Z"
+}
+```
+
+**Error Responses:**
+
+| Статус | Причина |
+|---|---|
+| 401 Unauthorized | Токен прострочений, невалідний або відсутній |
+
+**Firmware flow (псевдокод):**
+
+```c
+// Перевірка перед кожним CoAP flush:
+if (days_until_token_expiry() < 7) {
+    http_post("/api/v1/auth/m2m_token/refresh",
+              headers: {"Authorization": "Bearer " + current_token});
+    // Зберегти новий token + timestamp
+}
+```
 
 ---
 
