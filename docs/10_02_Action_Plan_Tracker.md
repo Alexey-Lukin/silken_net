@@ -486,13 +486,18 @@
 
 #### HW.5 — Enzyme lifespan
 - **Джерело:** `01_03` + Legacy notes
-- **Опис:** GOx/Laccase деградація у кислому ксилемному середовищі (pH 4.5-5.5). Глутаральдегід (крос-лінкер) фіксує ферменти механічно, але НЕ захищає від кислотної деградації
+- **Опис:** GOx/Laccase деградація у кислому ксилемному середовищі (pH 4.5-5.5). Глутаральдегід (крос-лінкер) фіксує ферменти механічно, але НЕ захищає від кислотної деградації. Додаткова проблема: GOx виробляє H₂O₂ (окислювальний стрес для дерева)
+- **Gen 1.0 ціль:** 3-5 років (Chitosan + Nafion захист)
+- **Gen 2.0 ціль:** 20-25 років (FAD-GDH + Laccase/nanozyme + ZIF інкапсуляція)
 - **Статус:**
   - [ ] Розробка protective polymer matrix
   - [ ] Тест Chitosan-шару (pH-буферизація навколо ферментів) — додано в `01_03`
   - [ ] Тест Nafion-покриття (селективна мембрана: пропускає H⁺, блокує агресивні молекули) — додано в `01_03`
   - [ ] Тест комбінації Chitosan + Nafion (пріоритетний варіант)
-  - [ ] Тест: 3-5 років функціонального ферменту
+  - [ ] Тест: 3-5 років функціонального ферменту (Gen 1.0)
+  - [ ] **Gen 2.0:** Тест FAD-GDH замість GOx на аноді (без H₂O₂, вища стабільність) — `01_03` §3
+  - [ ] **Gen 2.0:** Тест Laccase + laccase-like nanozymes (Cu/Ce/Au ZIF) на катоді — `01_03` §3
+  - [ ] **Gen 2.0:** ZIF-інкапсуляція ферментів для 20-25 років — `01_03` §3.3
 
 #### HW.6 — Resin barrier
 - **Джерело:** `01_04` + Legacy notes
@@ -902,6 +907,7 @@
 | E.36 | PostGIS Cluster.geo_boundary: заміна тригера `sync_cluster_geo_boundary()` на PostgreSQL Generated Column (GENERATED ALWAYS AS) | Legacy notes, `04_01` | [ ] Post-TRL 8 (оптимізація, тригер працює коректно) |
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates + автоматична компресія. Відхилено для TRL 6-8 (нативний RANGE partitioning достатній) | Legacy notes, `04_01` | [ ] Тільки при >100M рядків/місяць |
 | E.38 | Press-Fit фаски: мінімальні радіуси округлення (R ≥ 0.2 мм) на кутах титанового стрижня для зняття пікових напружень у PEEK | Legacy notes, `01_01` | [ ] Включити у nTop 3D-модель (HW.1) |
+| E.39 | **EBFC Gen 2.0 Enzyme R&D:** FAD-GDH замість GOx на аноді (без H₂O₂); Laccase + laccase-like nanozymes (Cu/Ce/Au ZIF) на катоді (×10 power density, 75% стабільності після 10 днів vs 30%); ZIF-інкапсуляція для 20-25 років. Не заміняє поточний GOx/Laccase стек, а додається як R&D альтернатива | Legacy notes, `01_03` §3 | [ ] Лабораторне тестування ЧНУ (HW.5, Модуль `08_01`). DFT-моделювання Мінаєв |
 
 ### HW.20 — Buffer Cap: Tantalum → MLCC migration
 
@@ -948,6 +954,7 @@
 | 2026-04-18 | Hardware notes integration | Аналіз нотаток щодо ADS1220 / TPS22860 / LIC Eaton HS1016. Додано §4 "Розглянуті альтернативи" в `02_04` (LIC vs EDLC, концепт VOC-діагностики). Додано §7 "Розглянуті альтернативні компоненти" в `02_01` (ADS1220, TPS22860). Всі три компоненти відхилено для TRL 6 з документованим обґрунтуванням. |
 | 2026-04-18 | Architecture notes integration | Аналіз 8 архітектурних нотаток. Додано: E.31 (TinyML tflite format), E.32 (Smart Contract Audit roadmap), E.33 (FCM/Twilio rate limits), E.34 (dClimate fallback oracle), E.35 (Flash Loan defense), E.36 (PostGIS Generated Column), E.37 (TimescaleDB evaluation). Оновлено `03_03` (OTA model format + Federated Learning pipeline), `05_03` (Flash Loan attack vector + Audit Roadmap + Bonding Curves), `05_04` (Merkle Tree + EigenLayer AVS), `04_02` (rate limits + fallback oracle), `04_01` (Generated Column + TimescaleDB). |
 | 2026-04-18 | Hardware/firmware notes integration | Аналіз 7 нотаток (enzyme protection, chamfers, MPPT, buffer cap, SIM7070G, race condition). Оновлено: `01_03` (Chitosan/Nafion/PEG захисні шари для ферментів), `02_03` BLOCKER-2 (MPPT 65% замість 50%, Міхаеліс-Ментен/Тафель обґрунтування) + §6 Buffer Cap (тантал → MLCC X5R/X7R, leakage current), `01_01` BLOCKER-2 (фаски R≥0.2мм для press-fit), `03_03` BLOCKER-8 (NVIC ізоляція замість __disable_irq), `02_05` (SIM7070G підтверджено, eDRX/PSM додано). Трекер: збагачено HW.5/6/10/13, FW.11. Додано: E.38 (chamfer), HW.20 (Buffer Cap MLCC). |
+| 2026-04-18 | EBFC Gen 2.0 enzyme alternatives | Аналіз нотатки щодо альтернативних ферментів для EBFC. Додано `01_03` §3 "Альтернативні ферменти Gen 2.0" — повні таблиці анодних (FAD-GDH #1, PQQ-GDH, CDH) та катодних (Laccase/nanozyme гібрид #1, engineered Laccase mutants, BOD, Tyrosinase) альтернатив. Додано §4.3 стратегії іммобілізації Gen 2.0 (ZIF, covalent bonding, enzyme+nanozyme). Оновлено `08_01` — розширений запит до Мінаєва (DFT FAD-GDH + nanozymes на TiO₂) та готовий pitch текст. Трекер: оновлено HW.5 (Gen 2.0 ціль 20-25 років), додано E.39 (EBFC Gen 2.0 R&D). |
 
 ---
 
