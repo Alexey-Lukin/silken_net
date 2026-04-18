@@ -181,7 +181,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 | **AES Key — зашитий у Flash** | 🔴 BLOCKER (hardcoded, не обертається) |
 | **AT Command Blocking (2s HAL_Delay)** | 🔴 BLOCKER (Queen сліпа 2 секунди під час CoAP flush) |
 | **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
-| **Error_Handler без відновлення** | 🟡 OPEN (вимикає IRQ, вічний цикл — немає NVIC_SystemReset) |
+| **Error_Handler** | ✅ Виправлено — `NVIC_SystemReset()` через 100 мс замість вічного циклу (FW.14) |
 | **CMD_DECRYPT_BUF_SIZE розбіжність** | 🟡 OPEN (544 у firmware, 96 у тестах — OTA path не покритий) |
 | **Host-based Tests (137)** | ✅ Всі проходять (`make -C firmware/test`) |
 
@@ -272,6 +272,34 @@ IWDG ініціалізовано та refresh додано в main loop (вкл
 ### ✅ BLOCKER-6: CMD_DECRYPT_BUF_SIZE синхронізовано (Виправлено)
 
 **Статус:** Виправлено (PR #273). Тест синхронізовано з firmware — обидва файли тепер використовують `544`.
+
+---
+
+### ✅ BLOCKER-7: Error_Handler виправлено — soft reset замість вічного циклу (FW.14)
+
+**Статус:** Виправлено.
+
+**Файл:** `firmware/soldier/main.c` (+ аналогічно `firmware/queen/main.c`)
+
+До виправлення `Error_Handler()` входив у нескінченний цикл — вузол зависав назавжди:
+```c
+// До: вічний цикл без відновлення
+void Error_Handler(void) {
+  __disable_irq();
+  while (1) {}
+}
+```
+
+Після виправлення — 100 мс затримка для flush UART буфера, потім soft reset:
+```c
+// Після: відновлення через NVIC soft reset
+void Error_Handler(void) {
+  HAL_Delay(100);        // flush UART tx buffer
+  NVIC_SystemReset();    // soft reset — STM32 перезавантажується
+}
+```
+
+`NVIC_SystemReset()` виконує ARM CoreSight System Reset Request — вузол перезавантажується за ~1 мс і повертається до нормальної роботи автоматично. Затримка 100 мс дозволяє USART завершити передачу будь-яких незавершених AT-команд перед скиданням.
 
 ---
 
@@ -426,7 +454,7 @@ Offset | Size | Field            | Значення
 0-3    | 4    | DID              | Tree ID (big-endian uint32)
 4-5    | 2    | Vcap             | Напруга іоністора (mV, BE)
 6      | 1    | Temp             | Температура кристала (°C, int8)
-7      | 1    | Acoustic         | TinyML acoustic events (uint8)
+7      | 1    | Acoustic         | TinyML acoustic events (uint8, насичення: >255→255)
 8-9    | 2    | Metabolism       | delta_t_seconds (BE uint16)
 10     | 1    | BioContract      | [Status:2 bits | GrowthPoints:6 bits]
 11     | 1    | TTL              | Mesh Time-To-Live (initial = 3)
@@ -439,6 +467,12 @@ Offset | Size | Field            | Значення
 - Біти `[5:0]`: Growth Points → `0-63` (Proof of Growth)
 
 Після пакування: `acoustic_events = 0` (скидаємо лічильник).
+
+**Насичення acoustic_events (FW.12):** лічильник `acoustic_events` — uint16 (може накопичувати >255 подій між пробудженнями при тривалій кавітації). При пакуванні в uint8-байт застосовується насичення замість зрізання:
+```c
+lora_payload[7] = (uint8_t)(acoustic_events > 255 ? 255 : acoustic_events);
+```
+До виправлення: `(uint8_t)acoustic_events` → беззвучне переповнення (511 → 255, 256 → 0). Насичення гарантує, що "надактивний" вузол репортить 255 замість 0.
 
 ---
 
@@ -1006,11 +1040,10 @@ elsif z_val > CRITICAL_Z_MAX   # Аномалія
 else                           # Гомеостаз
   status = 0
   deviation = (OPTIMAL_Z_TARGET - z_val).abs
-  reward = 50 - deviation.to_i
-  growth_points = [reward, 10].max   # Мінімум 10, якщо reward < 10
+  reward = 50 - deviation.round          # FW.13: .round замість .to_i (математично коректне округлення)
+  growth_points = reward.clamp(10, 63)   # FW.13: clamp(10,63) замість [reward,10].max + clamp(0,63)
 end
 
-growth_points = growth_points.clamp(0, 63)  # 6-bit max
 payload_byte = (status << 6) | growth_points
 ```
 

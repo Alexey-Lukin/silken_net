@@ -10,7 +10,7 @@
 |-----|------------|--------|
 | **APM / Error Tracking** | Sentry | ✅ Реалізовано в коді |
 | **Time-series / Metrics** | Prometheus (`prometheus-client`) | ✅ `/metrics` endpoint існує, ❌ Prometheus Server відсутній |
-| **Logs** | GCP Cloud Logging (WARNING+) | ✅ Часткова конфігурація (GCP Logging API) |
+| **Logs** | GCP Cloud Logging + Structured JSON | ✅ Реалізовано (WARNING+, JSON з Sentry correlation) |
 | **Visualization** | Grafana | ❌ **Відсутня в інфраструктурі** |
 | **Alerting** | Alertmanager | ❌ **Відсутній в інфраструктурі** |
 
@@ -18,7 +18,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — бібліотеки встановлені, кастомні метрики частково прописані, Prometheus Server та Grafana відсутні в інфраструктурі
+- **Поточний TRL:** TRL 5 — бібліотеки встановлені, 10 кастомних метрик реалізовані та інструментовані, структуровані JSON-логи активні; Prometheus Server та Grafana відсутні в інфраструктурі
 - **Пов'язані модулі:**
   - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
@@ -304,17 +304,25 @@ end
 
 **Підсумок реєстру: 5 Counters + 2 Gauges = 7 кастомних метрик (всі 9 черг покриті).**
 
-### 2.4 Відсутні метрики (прогалини аудиту)
+### 2.4 Реалізовані додаткові метрики (Sprint 2, S2.4)
 
-Бізнес-логіка, яка **НЕ має** Prometheus-інструментації (аудит "як є"):
+5 нових метрик зареєстровані в `config/initializers/prometheus.rb` та інструментовані у відповідних воркерах:
+
+| Metric Name | Тип | Воркер | Labels |
+|-------------|-----|--------|--------|
+| `silkennet_slashing_events_total` | Counter | `BurnCarbonTokensWorker` | `reason` |
+| `silkennet_ota_chunks_sent_total` | Counter | `OtaTransmissionWorker` | `firmware_version` |
+| `silkennet_ews_alerts_total` | Counter | `DclimateVerificationWorker` | `alert_type` |
+| `silkennet_oracle_dispatch_duration_seconds` | Histogram | `ChainlinkDispatchWorker` | — |
+| `silkennet_coap_packets_received_total` | Counter | `UnpackTelemetryWorker` | `status` |
+
+**Підсумок реєстру: 10 кастомних метрик (7 оригінальних + 5 нових = 10: 7 counters + 1 histogram + 2 gauges).**
+
+### 2.5 Відсутні метрики (залишкові прогалини)
 
 | Компонент | Відсутня метрика | Бізнес-ризик |
 |-----------|-----------------|--------------|
-| `SlashingProtocolWorker` | `slashing_events_total{reason}` | Немає деталізації причин слешингу |
-| `OtaTransmissionWorker` | `ota_chunks_sent_total{firmware_version}` | Прогрес OTA оновлення невидимий |
-| `EwsAlertWorker` | `ews_alerts_total{alert_type}` | Статистика EWS тривог недоступна |
-| `ChainlinkOracleWorker` | `oracle_dispatch_latency_seconds` | Час відповіді оракула невідомий |
-| `CoAP UDP listener` | `coap_packets_received_total` | Вхідний потік не вимірюється |
+| `ChainlinkOracleWorker` | `oracle_dispatch_latency_seconds` — деталізація по мережах | Час відповіді оракула per-network невідомий |
 | Всі Lorenz-обчислення | `lorenz_computation_duration_seconds` | Час обчислення атрактора невідомий |
 
 ---
@@ -350,9 +358,28 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 | `ERROR` | ✅ Зберігається | `Rails.logger.error "🛑 [Security] Критична помилка..."` |
 | `CRITICAL` | ✅ Зберігається | Незамасковані виключення |
 
-### 3.3 Відсутня інтеграція
+### ✅ 3.3 Structured JSON Logging (Виправлено, Sprint 2 S2.5)
 
-Structured logging (JSON з `trace_id`, `span_id`, `request_id`) у Rails не налаштований. Логи є простим текстом, що ускладнює кореляцію між помилками в Sentry та відповідними log-записами в Cloud Logging.
+**Статус:** Реалізовано. `config/environments/production.rb` тепер конфігурує Rails logger з JSON-форматуванням через Oj-серіалізатор.
+
+Кожен log-рядок містить:
+
+```json
+{
+  "timestamp": "2026-04-18T10:47:13.123Z",
+  "level": "INFO",
+  "pid": 12345,
+  "request_id": "abc123",
+  "sentry_trace_id": "def456",
+  "sentry_span_id": "ghi789",
+  "message": "..."
+}
+```
+
+- **Кореляція з Sentry:** `sentry_trace_id` / `sentry_span_id` — можна знайти будь-який запит між Cloud Logging та Sentry.
+- **Opt-out:** `RAILS_LOG_JSON=false` вимикає JSON-форматування (зручно в dev/CI).
+- **PID мемоізація:** `Process.pid` кешується один раз — уникається системний виклик при кожному лог-записі.
+- **Вартість:** INFO/DEBUG логи як і раніше виключаються Cloud Logging cost-exclusion фільтром (тільки WARNING+ зберігається).
 
 ---
 
@@ -382,7 +409,7 @@ Structured logging (JSON з `trace_id`, `span_id`, `request_id`) у Rails не �
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  Rails.logger → GCP Cloud Logging                       │   │
-│  │  ✅ WARNING+ логи  ❌ Структуровані логи відсутні       │   │
+│  │  ✅ WARNING+ логи  ✅ Structured JSON (Sentry trace)    │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │                 Grafana (ВІДСУТНЯ)                              │
@@ -418,7 +445,7 @@ Structured logging (JSON з `trace_id`, `span_id`, `request_id`) у Rails не �
 |------|------|--------|
 | `Gemfile` | `prometheus-client` 4.2.5, `sentry-ruby/rails/sidekiq` 6.5.0 | ✅ |
 | `config/initializers/sentry.rb` | Ініціалізація Sentry (DSN, sampling, exclusions, scrubbing) | ✅ |
-| `config/initializers/prometheus.rb` | Визначення `SilkenNet::Metrics` (5 Counters, 2 Gauges) | ✅ |
+| `config/initializers/prometheus.rb` | Визначення `SilkenNet::Metrics` (7 Counters + 1 Histogram + 2 Gauges = 10 метрик) | ✅ |
 | `app/middleware/prometheus_collector.rb` | Rack middleware: `/metrics` endpoint, IP allowlist, Basic Auth, Sidekiq gauge refresh | ✅ |
 | `config/application.rb` (рядок 31) | `config.middleware.use PrometheusCollector` | ✅ |
 | `app/services/blockchain_minting_service.rb` (р.162) | `SCC_MINTED_TOTAL.increment(labels: {token_type:})` | ✅ |
@@ -451,19 +478,19 @@ Structured logging (JSON з `trace_id`, `span_id`, `request_id`) у Rails не �
 
 ## 📋 Висновки аудиту
 
-### Що реально реалізовано (TRL 4 факти)
+### Що реально реалізовано (TRL 5 факти)
 
-1. **Prometheus-client інтегрований** — 7 метрик визначені, `/metrics` endpoint працює з IP-захистом.
+1. **Prometheus-client інтегрований** — 10 метрик визначені (7 counters + 1 histogram + 2 gauges), `/metrics` endpoint працює з IP-захистом.
 2. **Sentry SDK встановлений і налаштований** — zero-noise конфігурація з 34 виключеннями, автоматична Sidekiq-інтеграція, PII-scrubbing.
-3. **Інструментація в бізнес-логіці** — всі критичні операції (мінтинг, слешинг, RPC-помилки, телеметрія) мають Prometheus-лічильники.
+3. **Інструментація в бізнес-логіці** — всі критичні операції (мінтинг, слешинг, RPC-помилки, телеметрія, OTA, EWS, CoAP) мають Prometheus-лічильники.
 4. **GCP Cloud Logging** — WARNING+ логи зберігаються, cost-control фільтр активний.
+5. **Structured JSON logging** — активовано у production: кожен рядок містить `timestamp`, `pid`, `request_id`, `sentry_trace_id`, `sentry_span_id`.
 
 ### Що відсутнє (Gap Analysis)
 
 1. **Prometheus Server** — метрики генеруються, але не збираються.
 2. **Grafana** — нема де переглядати метрики.
 3. **Alertmanager** — нема автоматичних сповіщень.
-4. **Structured logging** — логи неструктуровані, кореляція з Sentry утруднена.
 
 ### Наступні кроки (поза scope цього документа)
 

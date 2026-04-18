@@ -179,7 +179,7 @@ end
 | `--color-gaia-primary-hover` | `hover:bg-gaia-primary-hover` | `#059669` | `#34d399` | Hover основної кнопки |
 | `--color-gaia-border` | `border-gaia-border` | `#e5e7eb` | `rgba(16,185,129,0.2)` | Межі, роздільники |
 
-> **Додаткові legacy-кольори у `@theme`:** `--color-gaia-green: #10b981` (клас `bg-gaia-green`, `text-gaia-green`), `--color-gaia-dark: #064e3b` (`text-gaia-dark`), `--color-gaia-muted: #065f46` (`text-gaia-muted`). Визначені в `application.css` але **не входять** до офіційного дизайн-токен словника §3.1. Перевірте використання перед видаленням.
+> **Legacy-кольори `gaia-green`, `gaia-dark`, `gaia-muted` видалені.** `--color-gaia-green`, `--color-gaia-dark`, `--color-gaia-muted` було видалено з `@theme` блоку `application.css` (Sprint 1, S1.7). Аудит підтвердив: жоден компонент їх не використовував — вони були присутні лише як визначення без відповідних utility-класів у коді. Семантичні токени `gaia-primary`, `gaia-text-muted`, `gaia-text` залишаються.
 
 ### 3.2 Статусні Токени (`status-*`)
 

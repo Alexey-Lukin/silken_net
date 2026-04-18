@@ -14,7 +14,7 @@
 - **Аудит-зміцнення:** ✅ Явна перевірка балансу в `slash()`, валідація нульових значень у `mint()`/`slash()`, перевірка порожнього батчу у `batchMint()`, NatSpec, захист від The Graph DoS (`treeDid`/`clusterId` length ≤256 bytes), валідація `recordPremiumPaid()`, per-element string validation у `batchMint()` для обох контрактів
 - **Зовнішній аудит (19 findings):** ✅ Аналіз 19 знахідок: 9 виправлено on-chain (slash bypass pause, admin protection, auto-delegate, batch size 100, anchor interval, locked pragma, mint dedup, rootHistory, timestamp NatSpec), 10 задокументовано як operational/by-design
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
-- **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано
+- **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `PremiumPaid` додано, `treeDidHash` (bytes32) додано. ✅ SFC: `ForestMintEvent` + `GovernanceSlashEvent` + handlers додано (Sprint 3, S3.5). ⚠️ SFC contract address — placeholder до Mainnet deploy.
 - **Пов'язані модулі:**
   - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
   - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
@@ -36,7 +36,7 @@
 | **Slash / Burn** | ✅ `slash()` через `SLASHER_ROLE` | ✅ `slash()` через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
 | **DAO голосування** | ❌ | ✅ `ERC20Votes` |
-| **Subgraph індексація** | ✅ `CarbonMinted`, ✅ `TokenSlashed` | ❌ Немає |
+| **Subgraph індексація** | ✅ `CarbonMinted`, ✅ `TokenSlashed`, ✅ `PremiumPaid` | ✅ `ForestMintEvent`, ✅ `GovernanceSlashEvent` (⚠️ contract address placeholder) |
 
 ---
 
@@ -427,7 +427,8 @@ function nonces(address owner)
 
 | Подія | Сигнатура | Indexed поля | Subgraph |
 |---|---|---|---|
-| `ForestMinted` | `ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId)` | `investor`, `clusterIdHash` (bytes32 keccak256) | ❌ Не індексується |
+| `ForestMinted` | `ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId)` | `investor`, `clusterIdHash` (bytes32 keccak256) | ✅ `handleForestMinted` (⚠️ contract address placeholder `0x0000...`) |
+| `GovernanceSlashed` | `GovernanceSlashed(address indexed investor, uint256 amount)` | `investor` | ✅ `handleGovernanceSlashed` (⚠️ contract address placeholder) |
 
 ### Subgraph vs Контракт — Повна Матриця
 
@@ -436,6 +437,10 @@ function nonces(address owner)
 | `CarbonMinted(indexed address,uint256,indexed bytes32,string)` | `CarbonMinted` | ✅ `treeDidHash` (bytes32) |
 | `TokenSlashed(indexed address,uint256)` | `TokenSlashed` | ✅ Синхронізовано |
 | `PremiumPaid(indexed address,uint256)` | `PremiumPaid` | ✅ Event + handler додано |
+| `ForestMinted(indexed address,uint256,indexed bytes32,string)` | `ForestMinted` (SFC) | ✅ Handler додано (Sprint 3, S3.5) |
+| `GovernanceSlashed(indexed address,uint256)` | `GovernanceSlashed` (SFC) | ✅ Handler додано (Sprint 3, S3.5) |
+
+> ⚠️ SFC data source в `subgraph.yaml` використовує placeholder `0x0000000000000000000000000000000000000000` — блокує deploy subgraph до Mainnet. Замінити після деплою SFC контракту.
 
 ---
 
@@ -568,6 +573,8 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 
 ```yaml
 # subgraph/subgraph.yaml — поточний стан eventHandlers:
+
+# SCC data source
 - event: CarbonMinted(indexed address,uint256,indexed bytes32,string)
   handler: handleCarbonMinted           # ✅ treeDidHash як bytes32
 
@@ -576,6 +583,13 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 
 - event: PremiumPaid(indexed address,uint256)
   handler: handlePremiumPaid            # ✅ Event додано до контракту
+
+# SFC data source (додано Sprint 3, S3.5)
+- event: ForestMinted(indexed address,uint256,indexed bytes32,string)
+  handler: handleForestMinted           # ✅ clusterIdHash як bytes32
+
+- event: GovernanceSlashed(indexed address,uint256)
+  handler: handleGovernanceSlashed      # ✅ Governance slashing tracking
 ```
 
 **GraphQL Entities:**
@@ -594,8 +608,10 @@ type CarbonMintEvent @entity {
 type ProtocolFinancials @entity {
   id: ID!
   totalMinted: BigInt!
-  totalBurned: BigInt!    # ✅ Індексується через TokenSlashed
-  totalPremiums: BigInt!  # ✅ Індексується через PremiumPaid
+  totalBurned: BigInt!           # ✅ Індексується через TokenSlashed (SCC)
+  totalPremiums: BigInt!         # ✅ Індексується через PremiumPaid
+  totalForestMinted: BigInt!     # ✅ Індексується через ForestMinted (SFC)
+  totalGovernanceSlashed: BigInt! # ✅ Індексується через GovernanceSlashed (SFC)
 }
 ```
 
@@ -610,7 +626,7 @@ type ProtocolFinancials @entity {
 | **OpenZeppelin** | 5.x (`pragma solidity 0.8.20` — locked) |
 | **RPC** | `ALCHEMY_POLYGON_RPC_URL` (через `Web3::RpcConnectionPool`) |
 | **Oracle wallet** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER_ROLE) + `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER_ROLE) — окремі ключі |
-| **The Graph** | `subgraph/` — індексує лише SCC події (SFC — ні) |
+| **The Graph** | `subgraph/` — SCC та SFC events індексуються (⚠️ SFC: contract address placeholder) |
 | **Chainlink** | Oracle dispatch для Proof of Growth pipeline (⚠️ Hybrid mode) |
 | **peaq DID** | Верифікація `did:peaq:0x...` перед мінтингом |
 | **IoTeX W3bstream** | ZK-доказ апаратного походження телеметрії |
