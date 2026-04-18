@@ -17,12 +17,8 @@ module Api
     #   4. Шлюз використовує токен для API-запитів
     #   5. Перед закінченням терміну — повторний POST /api/v1/auth/m2m_token
     class M2mAuthController < BaseController
+      # create — публічний (Ed25519 auth); refresh — потребує Bearer token (BaseController default)
       skip_before_action :authenticate_user!, only: :create
-      before_action :authenticate_user!, only: :refresh
-
-      # Вікно, протягом якого дозволений refresh (останні 7 днів з 30).
-      # Занадто раннє оновлення не потрібне — зменшуємо ризик зловживання.
-      REFRESH_WINDOW = 7.days
 
       # POST /api/v1/auth/m2m_token
       def create
