@@ -39,7 +39,8 @@
 | **`delta_t` та `vcap` як прямі входи атрактора** | 🔴 BLOCKER — **НЕ реалізовано** (специфікація vs код розходяться) |
 | **Збереження стану (x, y, z) між циклами сну** | 🔴 BLOCKER — **відсутнє** (кожен цикл — нова траєкторія) |
 | **Float32 vs Float64 верифікація** | 🔴 BLOCKER — **невизначено** |
-| **Коментар OPTIMAL_Z_TARGET (20.0 vs 29.0)** | 🔴 BLOCKER — **розбіжність у коді** |
+| **Коментар OPTIMAL_Z_TARGET (20.0 vs 29.0)** | ✅ Виправлено — коментар виправлено на 29.0 |
+| **`deviation.to_i` (Truncation замість Round)** | ✅ Виправлено — `deviation.round` |
 
 ---
 
@@ -64,23 +65,16 @@
 
 ---
 
-### 🔴 BLOCKER-2: Коментар vs Константа OPTIMAL_Z_TARGET
+### ✅ BLOCKER-2: Коментар vs Константа OPTIMAL_Z_TARGET (Виправлено)
 
-**Опис:** У `firmware/bio_contracts/bio_contract.rb`, рядок 83:
+**Статус:** Виправлено. Коментар у `firmware/bio_contracts/bio_contract.rb` виправлено:
 
 ```ruby
-# Розрахунок винагороди: чим ближче стан дерева до ідеалу (20.0),
+# Розрахунок винагороди: чим ближче стан дерева до ідеалу (29.0),
 deviation = (OPTIMAL_Z_TARGET - z_val).abs
 ```
 
-Коментар каже `ідеал = 20.0`, але константа:
-```ruby
-OPTIMAL_Z_TARGET = 29.0  # рядок 64
-```
-
-**Ризик:** Розбіжність у 9 одиниць Z-осі. Якщо ця константа використовується в академічних публікаціях або юридичних параметричних страхових контрактах — це критична помилка документації. Бекенд і документи мають узгоджуватися.
-
-**Дія:** Виправити коментар у `bio_contract.rb` — замінити `(20.0)` на `(29.0)`.
+Коментар тепер коректно відображає значення константи `OPTIMAL_Z_TARGET = 29.0`.
 
 ---
 
@@ -137,30 +131,25 @@ z_{n+1} = z_n + dz/dt · DT
 
 ---
 
-### 🟡 BLOCKER-6: Усічення `deviation.to_i` (Truncation vs Round)
+### ✅ BLOCKER-6: `deviation.round` замість `deviation.to_i` (Виправлено)
 
-**Опис:** Розрахунок балів у зоні гомеостазу:
+**Статус:** Виправлено. Усічення замінено на заокруглення:
 
 ```ruby
 deviation = (OPTIMAL_Z_TARGET - z_val).abs  # Float
-reward    = 50 - deviation.to_i             # Integer (TRUNCATION, not rounding!)
+reward    = 50 - deviation.round             # Integer (правильне заокруглення)
 growth_points = reward > 0 ? reward : 10
 ```
 
-`.to_i` усікає до нуля: `0.9.to_i == 0`, `0.1.to_i == 0`. Для z ∈ (28.0, 30.0) — повна зона ±1.0 навколо OPTIMAL_Z_TARGET — `deviation.to_i` завжди `== 0`, тому `reward == 50` для всіх z у цьому інтервалі.
+`.round` математично коректне: `0.9.round == 1`, `0.5.round == 1`. Зона "безкоштовного максимуму" для z ∈ (28.5, 29.5) тепер вузча — лише ±0.5 навколо OPTIMAL_Z_TARGET замість ±1.0.
 
-**Ефективна функція growth_points (зона гомеостазу):**
+**Ефективна функція growth_points (зона гомеостазу) після виправлення:**
 
 ```
-z ∈ [28.0, 30.0):  growth_points = 50  (зона "безкоштовного максимуму")
-z ∈ [27.0, 28.0):  growth_points = 49  (deviation = 1..2, to_i = 1)
-z ∈ [2.0, 15.0):   growth_points = max(10, 50 - deviation.to_i)
-z ∈ [43.0, 45.0]:  growth_points = max(10, 36)  = 36
+z ∈ [28.5, 29.5):  growth_points = 50  (deviation.round == 0)
+z ∈ [27.5, 28.5):  growth_points = 49  (deviation.round == 1)
+z ∈ [2.0, 15.0):   growth_points = max(10, 50 - deviation.round)
 ```
-
-**Ризик:** Це не критична помилка, але викликає неточність у Proof of Growth — бекенд має знати про цю "зону безкоштовного максимуму".
-
-**Дія:** Задокументувати як "by design" або замінити `.to_i` на `.round` у наступному рефакторинг-циклі.
 
 ---
 
@@ -415,7 +404,7 @@ end
 
 ```
 deviation      = |OPTIMAL_Z_TARGET - z|  =  |29.0 - z|
-reward         = 50 - deviation.to_i
+reward         = 50 - deviation.round
 growth_points  = (reward > 0) ? reward : 10
 growth_points  = clamp(growth_points, 0, 63)   ← overflow protection (6-bit space)
 ```
@@ -444,17 +433,17 @@ growth_points
 
 **Числові приклади:**
 
-| Z-значення | `deviation` | `deviation.to_i` | `reward` | `growth_points` |
+| Z-значення | `deviation` | `deviation.round` | `reward` | `growth_points` |
 |---|---|---|---|---|
 | 1.5 | — | — | — | **1** (status=1, stress) |
 | 2.0 | 27.0 | 27 | 23 | **23** |
 | 10.0 | 19.0 | 19 | 31 | **31** |
 | 20.0 | 9.0 | 9 | 41 | **41** |
-| 28.5 | 0.5 | 0 | 50 | **50** ← .to_i усікає |
+| 28.5 | 0.5 | 1 | 49 | **49** ← .round округлює |
 | 29.0 | 0.0 | 0 | 50 | **50** (ідеал) |
 | 30.0 | 1.0 | 1 | 49 | **49** |
 | 40.0 | 11.0 | 11 | 39 | **39** |
-| 44.5 | 15.5 | 15 | 35 | **35** |
+| 44.5 | 15.5 | 16 | 34 | **34** |
 | 45.0 | 16.0 | 16 | 34 | **34** |
 | 46.0 | — | — | — | **0** (status=2, anomaly) |
 

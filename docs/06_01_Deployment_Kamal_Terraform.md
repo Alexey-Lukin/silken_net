@@ -115,34 +115,30 @@ akash_authorized_networks = [
 
 ---
 
-### 🟡 BLOCKER-7: Sidekiq (job role) відсутній в Akash SDL
+### ✅ BLOCKER-7: Sidekiq (job role) додано в Akash SDL (Виправлено)
 
-**Статус:** Архітектурний gap.
+**Статус:** Виправлено. `job` сервіс додано в `deploy/akash/deploy.yaml`.
 
-Akash SDL визначає **тільки** `web` сервіс. На Akash **Sidekiq не запускається** — всі 31+ фонових воркерів (телеметрія, Web3, OTA) не виконуються.
+SDL тепер визначає два сервіси:
+- `web` — Puma HTTP сервер
+- `job` — `bundle exec sidekiq -C config/sidekiq.yml` (всі 31+ воркери)
 
-**Дія:**
-1. Додати `job` сервіс в Akash SDL: `bundle exec sidekiq -C config/sidekiq.yml`
-2. Або залишити Sidekiq виключно на GCP, а Akash — тільки для web-шару.
+Секрети в `job` сервісі позначено `REQUIRED` коментарями для явного налаштування перед деплоєм.
 
 ---
 
-### 🟡 BLOCKER-8: `ssh_source_ranges = ["0.0.0.0/0"]` — небезпечно
+### ✅ BLOCKER-8: `ssh_source_ranges` — порожній список за замовчуванням (Виправлено)
 
-**Дія:** В `terraform.tfvars`:
+**Статус:** Виправлено. Значення за замовчуванням змінено з `["0.0.0.0/0"]` на `[]` (порожній список). Terraform тепер блокує застосування з відкритим SSH (`0.0.0.0/0`) і виводить попередження при спробі використати такий CIDR. Необхідно явно вказати конкретні IP в `terraform.tfvars`:
 ```hcl
 ssh_source_ranges = ["203.0.113.10/32", "198.51.100.0/24"]
 ```
 
 ---
 
-### 🟡 BLOCKER-9: `KREDIS_REDIS_URL` відсутній у `.kamal/secrets`
+### ✅ BLOCKER-9: `KREDIS_REDIS_URL` додано до `.kamal/secrets` (Виправлено)
 
-**Дія:** Додати в `.kamal/secrets`:
-```
-KREDIS_REDIS_URL=$KREDIS_REDIS_URL
-```
-Та відповідний GitHub Secret.
+**Статус:** Виправлено. `KREDIS_REDIS_URL` додано до `.kamal/secrets`.
 
 ---
 
@@ -290,7 +286,7 @@ kamal setup
 │  │  4 vCPU / 8 GB RAM / 50 GB ephemeral                │   │
 │  │  Порти: :80 (HTTP) + :5683/UDP (CoAP)               │   │
 │  │                                                      │   │
-│  │  ❌ НЕ запускає Sidekiq (job role відсутній в SDL)  │   │
+│  │  ✅ Запускає Sidekiq (job role додано в SDL)            │   │
 │  │  ✅ Підключається до Cloud SQL (публічний IP + SSL) │   │
 │  │  ⚠️ Redis (Memorystore) недоступний з Akash         │   │
 │  └──────────────────────────────────────────────────────┘   │
@@ -300,7 +296,7 @@ kamal setup
 | Сервіс/Ресурс | GCP (Kamal) | Akash Network | Примітка |
 |--------------|-------------|---------------|---------|
 | **Rails web (Puma + Thruster)** | ✅ | ✅ | Один Docker образ |
-| **Sidekiq (job role)** | ✅ | ❌ | В Akash SDL відсутній |
+| **Sidekiq (job role)** | ✅ | ✅ | `job` сервіс додано в Akash SDL |
 | **CoAP UDP daemon (:5683)** | ✅ | ✅ | Порт відкритий в обох |
 | **Cloud SQL PostgreSQL 16** | ✅ | ❌ | DB завжди на GCP |
 | **Memorystore Redis 7.0** | ✅ | ❌ | Тільки приватна IP |
@@ -501,24 +497,24 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
       config/deploy.yml: 192.168.0.1 → <web_server_ips[0]>
       config/deploy.canopy.yml: <CANOPY_SERVER_IP> → <canopy_server_ip>
 
-☐ 6. Додати KREDIS_REDIS_URL в .kamal/secrets (BLOCKER-9)
+☑ 6. KREDIS_REDIS_URL в .kamal/secrets (BLOCKER-9) ← ВИПРАВЛЕНО
 
 ☐ 7. Вирішити підключення Redis з Akash (BLOCKER-6)
 
-☐ 8. Вирішити Sidekiq на Akash (BLOCKER-7)
+☑ 8. Sidekiq на Akash (BLOCKER-7) ← ВИПРАВЛЕНО (job сервіс додано)
 
 ☐ 9. Створити deploy-production.yml workflow (INFO)
 
-☐ 10. DNS A-запис створено та поширився (Pre-Flight #1) ← НОВЕ
+☐ 10. DNS A-запис створено та поширився (Pre-Flight #1)
        dig api.silkennet.com → правильний IP
 
-☐ 11. .kamal/secrets заповнені реальними значеннями (Pre-Flight #2) ← НОВЕ
+☐ 11. .kamal/secrets заповнені реальними значеннями (Pre-Flight #2)
 
-☐ 12. Oracle гаманці поповнені газом (MATIC/ETH/SOL/CELO) (Pre-Flight #3) ← НОВЕ
+☐ 12. Oracle гаманці поповнені газом (MATIC/ETH/SOL/CELO) (Pre-Flight #3)
 
-☐ 13. LoRa-антени підключені до всіх плат (Pre-Flight #4) ← НОВЕ
+☐ 13. LoRa-антени підключені до всіх плат (Pre-Flight #4)
 
-☐ 14. AES-ключ Soldier = AES-ключ Queen (побітово) (Pre-Flight #5) ← НОВЕ
+☐ 14. AES-ключ Soldier = AES-ключ Queen (побітово) (Pre-Flight #5)
 
 ☐ 15. Перший тестовий деплой Canopy:
        kamal setup -d canopy
@@ -559,14 +555,25 @@ sysctl -w net.netfilter.nf_conntrack_udp_timeout=30
 # Довгострокове рішення: Ingress Proxy перед Rails (розділ нижче)
 ```
 
-### 🔴 Ризик-2: UDP Amplification (DDoS Вектор)
+### ✅ Ризик-2: UDP Rate Limiting реалізовано через Terraform (Виправлено)
 
-**Проблема:** CoAP/UDP listener на порті 5683 без rate limiting може стати інструментом UDP-ампліфікаційної DDoS-атаки. Зловмисник підробляє IP жертви → надсилає CoAP запити на твій сервер → сервер відповідає великими пакетами на IP жертви.
+**Статус:** Виправлено. `iptables` hashlimit правило додано в `startup-script` GCP instance.
 
-**Мітигація:**
-- Firewall: дозволяти UDP:5683 лише з відомих CIDR-блоків (IP-адреси Queen-шлюзів)
-- Rate limiting на рівні GCP Firewall Rules: `max-rate 1000 pps per source IP`
-- Валідація AES-CBC підпису у CoAP listener до будь-якої обробки
+```bash
+# Автоматично виконується при старті GCP instance (terraform/compute.tf):
+iptables -A INPUT -p udp --dport 5683 \
+  -m hashlimit --hashlimit-name coap \
+  --hashlimit-upto 100/sec --hashlimit-burst 200 \
+  --hashlimit-mode srcip -j ACCEPT
+iptables -A INPUT -p udp --dport 5683 \
+  -m limit --limit 10/min -j LOG --log-prefix "CoAP-RATELIMIT-DROP: "
+iptables -A INPUT -p udp --dport 5683 -j DROP
+```
+
+Правила зберігаються через `iptables-persistent` — переживають перезавантаження GCP instance.
+
+- **100 UDP пакетів/сек** на IP-адресу + burst 200 → легальна Queen не обмежується
+- **LOG** перед DROP (max 10/хв) → DDoS атаки видимі у Cloud Logging без флуду логів
 
 ### 🟡 Ризик-3: IP Exhaustion при Динамічних IP Шлюзів
 

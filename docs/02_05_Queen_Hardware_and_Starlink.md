@@ -200,13 +200,11 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 
 ---
 
-### 🟡 BLOCKER-6: Відсутність IWDG (Watchdog) у Queen прошивці
+### ✅ BLOCKER-6: IWDG (Watchdog) додано до Queen прошивки (Виправлено)
 
-**Статус:** Задокументовано в [03_01 Firmware Lifecycle](03_01_Firmware_Lifecycle_and_DMA) (BLOCKER-5). Дублюється тут як апаратний ризик.
+**Статус:** Виправлено. Задокументовано в [03_02 Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) (BLOCKER-5 виправлено).
 
-`firmware/queen/main.c:791`: Queen не має апаратного watchdog (`IWDG`). Якщо прошивка зависне (наприклад, нескінченне очікування AT-відповіді від SIM7070G), Королева ніколи не перезавантажиться.
-
-**Необхідна дія:** Додати `HAL_IWDG_Init()` + `HAL_IWDG_Refresh()` в основний цикл Queen.
+`firmware/queen/main.c`: Queen тепер має апаратний watchdog (`IWDG`). `HAL_IWDG_Init()` ініціалізується при старті, `HAL_IWDG_Refresh()` викликається в main loop — включаючи pre-refresh перед CoAP flush (до 5-секундного delay). При зависанні або HardFault IWDG автоматично перезавантажує MCU через ~26.6 с.
 
 ---
 

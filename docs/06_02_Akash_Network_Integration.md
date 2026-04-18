@@ -62,29 +62,25 @@
 
 ---
 
-### 🔴 BLOCKER-2: Sidekiq відсутній у SDL — 31+ воркерів не запускаються
+### ✅ BLOCKER-2: Sidekiq (`job` сервіс) додано в SDL (Виправлено)
 
-**Статус:** Критичний функціональний блокер.
+**Статус:** Виправлено. SDL `deploy/akash/deploy.yaml` тепер визначає два сервіси:
+- `web` — Puma + Thruster HTTP сервер
+- `job` — `bundle exec sidekiq -C config/sidekiq.yml` (всі 31+ воркери)
 
-SDL `deploy/akash/deploy.yaml` визначає **лише один сервіс: `web`** (Puma + Thruster). Kamal-конфігурація `config/deploy.yml` визначає дві ролі:
-- `web` — Puma HTTP сервер
-- `job` — Sidekiq background workers
+Усі категорії воркерів тепер запускаються на Akash:
 
-На Akash **Sidekiq не запускається**. Це означає, що при деплої на Akash будуть недоступні:
+| Категорія | Воркери | Статус |
+|-----------|---------|--------|
+| **Telemetry** | `UnpackTelemetryWorker` (queue: `uplink`) | ✅ Запускається |
+| **Alerts** | `EwsAlertWorker`, `MaintenanceSchedulerWorker` | ✅ Запускається |
+| **Web3 Critical** | `BlockchainMintingWorker`, `ZkProofVerificationWorker`, `ChainlinkOracleWorker` | ✅ Запускається |
+| **Web3** | `PolygonMintSccWorker`, `SolanaRewardWorker`, `PeaqDidWorker` | ✅ Запускається |
+| **OTA** | `OtaTransmissionWorker` | ✅ Запускається |
+| **Слешинг** | `SlashingProtocolWorker` | ✅ Запускається |
+| **L1 Anchoring** | `EthereumAnchorWorker` | ✅ Запускається |
 
-| Категорія | Воркери | Наслідок |
-|-----------|---------|---------|
-| **Telemetry** | `UnpackTelemetryWorker` (queue: `uplink`) | Дані з дерев не обробляються |
-| **Alerts** | `EwsAlertWorker`, `MaintenanceSchedulerWorker` | EWS тривоги не відправляються |
-| **Web3 Critical** | `BlockchainMintingWorker`, `ZkProofVerificationWorker`, `ChainlinkOracleWorker` | Proof of Growth зупиняється |
-| **Web3** | `PolygonMintSccWorker`, `SolanaRewardWorker`, `PeaqDidWorker` | Токенізація недоступна |
-| **OTA** | `OtaTransmissionWorker` | Firmware-оновлення солдатів заблоковані |
-| **Слешинг** | `SlashingProtocolWorker` | Захист інвесторів не спрацьовує |
-| **L1 Anchoring** | `EthereumAnchorWorker` | Щотижнева фіналізація стану не виконується |
-
-**Варіанти вирішення (не реалізовано):**
-1. Додати `job` сервіс в SDL з командою `bundle exec sidekiq -C config/sidekiq.yml`.
-2. Залишити Sidekiq виключно на GCP (Kamal `job` role), Akash використовувати лише для web-шару.
+**Примітка:** Секрети в `job` сервісі позначено `REQUIRED` коментарями — необхідно заповнити перед деплоєм.
 
 ---
 
@@ -620,7 +616,7 @@ Mapping між конфігурацією Kamal (`config/deploy.yml`) та SDL (
 | `env.clear RAILS_MAX_THREADS=3` | `env: RAILS_MAX_THREADS=3` |
 | `volumes: silken_net_storage:/rails/storage` | `params.storage.data.mount: /rails/storage` |
 | `builder.arch: amd64` | `profiles.compute.web.resources.cpu.units: 4` |
-| `servers.job` (Sidekiq) | **🔴 Відсутній** (BLOCKER-2) |
+| `servers.job` (Sidekiq) | ✅ Додано (BLOCKER-2 виправлено) |
 
 ---
 
@@ -632,14 +628,14 @@ Akash Network займає рівень **L5 (Rails Backend)** в 8-рівнев
 L8  Ethereum L1          Weekly State Root          (EthereumAnchorWorker — 🔴 не запускається на Akash)
 L7  Polygon + DeFi       SCC/SFC minting            (BlockchainMintingWorker — 🔴 не запускається на Akash)
 L6  Verification          peaq DID, IoTeX ZK         (ZkProofVerificationWorker — 🔴 не запускається на Akash)
-L5  Rails Backend         Rails 8.1 API ← [Akash]   (тільки Puma HTTP, без Sidekiq)
+L5  Rails Backend         Rails 8.1 API ← [Akash]   (Puma HTTP + Sidekiq job сервіс)
 L4  LoRa Network          Queen CoAP → :5683 ← [Akash UDP port] ✅
 L3  Firmware & Edge AI    STM32WLE5JC               (не залежить від Akash)
 L2  Hardware Capsule      BQ25570, EDLC             (не залежить від Akash)
 L1  Biophysics            Ti-6Al-4V EBFC            (не залежить від Akash)
 ```
 
-**Висновок:** При поточному стані SDL, Akash може взяти на себе лише **HTTP web-шар** (Rails API для зовнішніх клієнтів) та **CoAP/UDP прийом телеметрії** (від Queen gateway). Весь processing (Sidekiq workers), data layer (PostgreSQL, Redis) та Web3 pipeline залишаються залежними від GCP.
+**Висновок:** SDL тепер визначає обидва сервіси: `web` (Rails API + CoAP) та `job` (Sidekiq workers). При поточному стані основним обмеженням залишається data layer: PostgreSQL (Cloud SQL) та Redis (Memorystore) не доступні безпосередньо з Akash — потребують вирішення мережевої ізоляції (BLOCKER-1).
 
 ---
 
@@ -649,7 +645,7 @@ L1  Biophysics            Ti-6Al-4V EBFC            (не залежить ві�
 |-----|------------|--------|
 | **TRL 5** (поточна мета) | Цей документ ✅ | — |
 | **TRL 6** | Вирішити мережеву ізоляцію (Tailscale sidecar в SDL або публічний Redis) | BLOCKER-1 |
-| **TRL 6** | Додати `job` сервіс в SDL для Sidekiq | BLOCKER-2 |
+| **TRL 6** | Додати `job` сервіс в SDL для Sidekiq | ✅ BLOCKER-2 виправлено |
 | **TRL 6** | Замінити Docker образ на публічний реєстр (GHCR/Docker Hub) | BLOCKER-4 |
 | **TRL 7** | Перший реальний деплой на testnet Akash + функціональне тестування | BLOCKER-1,2,3,4 |
 | **TRL 7** | Додати HTTPS (порт 443) через Akash ingress або Cloudflare | BLOCKER-5 |

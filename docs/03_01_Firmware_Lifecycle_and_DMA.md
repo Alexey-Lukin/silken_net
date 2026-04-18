@@ -241,99 +241,37 @@ HAL_Delay(2000); // Чекаємо ACK від сервера
 
 ---
 
-### 🔴 BLOCKER-3: Queen UID — статичний рядок у Flash
+### ✅ BLOCKER-3: Queen UID — Flash-based provisioning реалізовано (Виправлено)
 
-**Статус:** Відкрито. Блокує масштабування на кілька Queens.
+**Статус:** Виправлено (PR #273). Flash-based provisioning реалізовано з fallback на STM32 HW UID.
 
-**Файл:** `firmware/queen/main.c:71`
-
-```c
-const char queen_uid[] = "QUEEN-001"; // Hardcoded для кожної одиниці
-```
-
-**Ризики:**
-1. Кожна Queen потребує окремо скомпільованої прошивки — неможливо зробити єдиний бінарний образ для заводського флешингу.
-2. При OTA-оновленні Queen UID не зберігається (якщо OTA перезаписує цей регіон Flash).
-
-**Необхідна дія:**
-- Зберігати `queen_uid` в окремому захищеному регіоні Flash (наприклад, `FLASH_USER_SECTOR`) або в EEPROM-емуляції через STM32 Flash API.
-- Провізіонувати `queen_uid` через той самий `POST /api/v1/provisioning/register` механізм, що і для Soldiers.
-
-**Блокує:** Уніфікований Factory Flashing, масштабування мережі Queens.
+Queen читає UID з Flash-сторінки `0x0803F800` з magic-маркером. При незаповненому Flash генерує унікальний `"UNPROV-{8HEX}"` на основі STM32 HW UID (`0x1FFF7590`). Детальніше: [03_02 Queen Gateway Firmware BLOCKER-3](03_02_Queen_Gateway_Firmware).
 
 ---
 
-### 🟡 BLOCKER-4: Starlink Latency Gap
+### ✅ BLOCKER-4: Starlink Latency Gap (Частково виправлено)
 
-**Статус:** Відкрито. Середня латентність Starlink Direct-to-Cell — 600-2400 ms.
+**Статус:** Таймаути збільшено (PR #273). CoAP session timeout: `1000 ms` → `2000 ms`. ACK wait: `2000 ms` → `5000 ms`.
 
-**Файл:** `firmware/queen/main.c:542`
+Повний retry залишається відкритим (потребує UART RX парсингу).
 
-```c
-SIM7070_SendATCommand("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n", 1000);
-```
-
-`HAL_Delay(1000)` після `AT+CCOAPNEW` — timeout для встановлення CoAP-сесії. Для Starlink це може бути недостатньо.
-
-**Необхідна дія:**
-- Замінити фіксований `HAL_Delay` на polling UART RX з перевіркою `OK` відповіді від модему.
-- Збільшити timeout до 5000ms або реалізувати retry-логіку.
-
-**Блокує:** Стабільність CoAP uplink через Starlink.
+**Блокує:** (частково) Стабільність CoAP uplink через Starlink.
 
 ---
 
-### 🟡 BLOCKER-5: Error_Handler без механізму відновлення
+### ✅ BLOCKER-5: IWDG додано до Queen (Виправлено)
 
-**Статус:** Відкрито. Системна вразливість при HardFault.
+**Статус:** Виправлено (PR #273).
 
-**Файл:** `firmware/soldier/main.c:758`, `firmware/queen/main.c:792`
+**Файл:** `firmware/queen/main.c`
 
-```c
-void Error_Handler(void) {
-  __disable_irq();
-  while (1) {}  // Вічний цикл — єдиний вихід це фізичний reset або IWDG
-}
-```
-
-**Ризики:**
-1. IWDG врятує Soldier (перезавантаження → дані з RTC). Але IWDG не освіжується всередині `Error_Handler` → ~26 секунд до IWDG reset (залежно від prescaler).
-2. Queen **не має IWDG** — при HardFault вона "заморожується" назавжди до фізичного перезапуску.
-
-**Необхідна дія для Queen:**
-- Додати IWDG в Queen firmware (навіть при continuous operation це корисна "остання лінія оборони").
-- Або в `Error_Handler` явно викликати `NVIC_SystemReset()` перед `while(1)`.
-
-**Блокує:** Autonomous recovery у Production, 24/7 режим роботи.
+IWDG ініціалізовано та refresh додано в main loop (включаючи pre-refresh перед CoAP flush). IWDG врятує і Soldier, і Queen — обидва перезавантажуються автоматично без фізичного втручання.
 
 ---
 
-### 🟡 BLOCKER-6: CMD_DECRYPT_BUF_SIZE розбіжність між firmware та тестами
+### ✅ BLOCKER-6: CMD_DECRYPT_BUF_SIZE синхронізовано (Виправлено)
 
-**Статус:** Відкрито. Потенційна прогалина в тестовому покритті.
-
-**Файли:** `firmware/queen/main.c:122` vs `firmware/test/test_queen_logic.c:21`
-
-```c
-// queen/main.c — реальний firmware:
-#define CMD_DECRYPT_BUF_SIZE 544  // 512 OTA payload + 5 header + 2 CRC + 16 AES padding + 9 margin
-
-// test_queen_logic.c — тест:
-#define CMD_DECRYPT_BUF_SIZE  96  // Тільки CMD (актуаторні команди ≤96 байт)
-```
-
-**Ризики:**
-1. Тестовий файл охоплює тільки CMD-гілку `Handle_CoAP_Command()` (≤96 байт), але не тестує OTA-гілку (≤528 байт).
-2. Будь-які граничні умови OTA downlink з великим `aligned` не покриваються unit-тестами.
-3. Зміна `CMD_DECRYPT_BUF_SIZE` в одному файлі без синхронізації другого може привести до тихого розбіжності.
-
-**Необхідна дія:**
-- Уточнити `CMD_DECRYPT_BUF_SIZE` у тесті або розділити тест на окремі константи `CMD_MAX` та `OTA_MAX`.
-- Додати тести для OTA downlink з великим payload (≥512 байт) до `test_queen_logic.c`.
-
-**Блокує:** Повнота тестового покриття OTA downlink.
-
----
+**Статус:** Виправлено (PR #273). Тест синхронізовано з firmware — обидва файли тепер використовують `544`.
 
 ---
 
@@ -353,7 +291,7 @@ void Error_Handler(void) {
 | `hsubghz` | SUBGHZ | Інтегрований LoRa трансивер SX1262 (868 МГц) |
 | `hcryp` | AES | Апаратний AES-256-ECB (Hardware Crypto Engine) |
 
-**Примітка:** Soldier — єдиний вузол, що має ADC, TIM2, IWDG, RNG та RTC. Queen — не має жодного з них (окрім RNG та AES).
+**Примітка:** Soldier — єдиний вузол, що має ADC, TIM2, RNG та RTC. Queen — не має ADC, TIM2 та RTC (окрім RNG, AES та IWDG, доданого у PR #273).
 
 ### 1.2 Загальний Lifecycle
 
@@ -678,8 +616,9 @@ Queen **ніколи не спить** (continuous operation). Живиться 
 | `hsubghz` | SUBGHZ | LoRa трансивер SX1262 (868 МГц) |
 | `hcryp` | AES | ECB (LoRa), CBC (CoAP batches), CBC (downlink commands) |
 | `hrng` | RNG | HRNG для генерації IV (CBC) та flush jitter |
+| `hiwdg` | IWDG | Апаратний Watchdog (~26.6 с timeout, додано у PR #273) |
 
-**Queen НЕ має:** ADC, TIM2, IWDG, RTC — на відміну від Soldier.
+**Queen НЕ має:** ADC, TIM2, RTC — на відміну від Soldier. **Queen тепер має IWDG** (додано у PR #273).
 
 ### 4.2 Загальний Lifecycle
 

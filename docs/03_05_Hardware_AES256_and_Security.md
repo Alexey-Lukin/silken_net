@@ -32,7 +32,7 @@
 | **AES Key — захардкоджений у Flash** | 🔴 BLOCKER (ідентичний для всіх вузлів) |
 | **ECB Mode для Soldier ↔ Queen (відсутність IV)** | 🔴 BLOCKER (вразливість для статичних блоків) |
 | **Відсутність MAC/MIC для LoRa-пакетів** | 🔴 BLOCKER (немає автентифікації повідомлень) |
-| **HRNG Fallback — передбачуваний seed** | 🟡 OPEN (HAL_GetTick() → слабка ентропія) |
+| **HRNG Fallback — передбачуваний seed** | ✅ Виправлено (djb2 STM32 HW UID XOR tick — унікальний на кожній Queen) |
 | **Відсутність ротації ключів (Key Rotation)** | 🟡 OPEN (неможлива без перепрошивки) |
 | **Ідентичний ключ Soldier та Queen (симетрія при прошивці)** | 🔴 BLOCKER (єдина точка компрометації + операційний ризик мовчазної втрати телеметрії при мисматчі) |
 
@@ -142,34 +142,20 @@ hcryp.Init.Algorithm = CRYP_AES_ECB; // ECB для LoRa-трафіку між К
 
 ---
 
-### 🟡 BLOCKER-4: HRNG Fallback — Передбачуваний Seed (HAL_GetTick)
+### ✅ BLOCKER-4: HRNG Fallback — покращена ентропія (Виправлено)
 
-**Статус:** Відкрито. Середня серйозність.
+**Статус:** Виправлено (PR #273).
 
-**Файли:** `firmware/queen/main.c:516-519`
+**Реалізація:** Fallback тепер використовує djb2 хеш STM32 HW UID (унікальний для кожного чіпу, `0x1FFF7590`) XOR `HAL_GetTick()` з bit-shift для кожного слова IV:
 
 ```c
-if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
-    /* Fallback: якщо HRNG не відповідає — XOR tick з індексом */
-    batch_iv[i] = HAL_GetTick() ^ (i * 0x5A5A5A5AUL);
-}
+// djb2 hash of STM32 HW UID (unique per chip)
+uint32_t uid_hash = djb2_hash((uint8_t*)0x1FFF7590, 12);
+// i ∈ {0,1,2,3}: shift забезпечує різні слова IV
+batch_iv[i] = uid_hash ^ (HAL_GetTick() << (i * 8)) ^ (i * RNG_FALLBACK_XOR_MASK);
 ```
 
-**Аналіз:**
-
-- `HAL_GetTick()` — мілісекунди з моменту запуску MCU. Цей час є частково передбачуваним (Queen запускається за фіксований час після подачі живлення, а flush відбувається через кратне `FLUSH_INTERVAL_MS`).
-- XOR з фіксованою константою `0x5A5A5A5AUL` не додає ентропії — це детерміністична операція.
-- Адверсар, що знає приблизний час запуску Queen та інтервал флашингу, може звузити простір пошуку IV до ~2^16 (64К варіантів) замість теоретичних 2^128.
-
-**Пом'якшуюча обставина:** Fallback активується **лише при відмові HRNG** — нормальний сценарій використовує апаратний RNG (тепловий шум). Відмова HRNG — аномалія, не типовий режим.
-
-**Необхідна дія:**
-
-- Якщо HRNG недоступний, Queen має **відмовитись від flush** та спробувати повторно після перезапуску, а не використовувати слабкий fallback.
-- Або комбінувати кілька джерел ентропії: `XOR(HAL_GetTick(), ADC_noise_sample, uid_hash)`.
-- Додати лічильник відмов HRNG у метрики (Prometheus) для моніторингу апаратних аномалій.
-
-**Блокує:** Криптографічна стійкість CBC IV при апаратних збоях.
+Оскільки STM32 HW UID унікальний для кожної Queen, навіть при масовому blackout-відновленні (всі Queens перезавантажились одночасно) IV будуть різними для кожного пристрою — IV Reuse Attack унеможливлена на рівні fallback.
 
 ---
 
@@ -348,7 +334,7 @@ HAL_CRYP_Encrypt(&hcryp, (uint32_t*)panic_payload,   4, (uint32_t*)encrypted_pan
 +--------+--------+--------+--------+--------+--------+--------+--------+--------+
 ```
 
-**CoAP URI:** `PUT /telemetry/batch/<QUEEN_UID>` (queen_uid = `"QUEEN-001"`, hardcoded — ⚠️ окремий блокер 03_01 BLOCKER-3)
+**CoAP URI:** `PUT /telemetry/batch/<QUEEN_UID>` (queen_uid читається з Flash — Flash-provisioned або `"UNPROV-{HEX}"` через STM32 HW UID)
 
 **Передача:** Зашифрований буфер перетворюється у Hex-рядок та відправляється через `AT+CCOAPSEND` команди до SIM7070G модему.
 
@@ -546,8 +532,9 @@ HAL_RNG_Init(&hrng);                    // Ініціалізуємо апара
 
 for (uint8_t i = 0U; i < 4U; i++) {
     if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
-        // Fallback при відмові HRNG (⚠️ — слабка ентропія):
-        batch_iv[i] = HAL_GetTick() ^ (i * 0x5A5A5A5AUL);
+        // Fallback: djb2 хеш STM32 HW UID (унікальний per chip) XOR tick
+        uint32_t uid_hash = djb2_hash((uint8_t*)0x1FFF7590U, 12U);
+        batch_iv[i] = uid_hash ^ (HAL_GetTick() << (i * 8U)) ^ (i * RNG_FALLBACK_XOR_MASK);
     }
 }
 
@@ -570,7 +557,7 @@ HAL_CRYP_Encrypt(&hcryp, (uint32_t*)binary_batch_buffer,
 |----------|---------|
 | Розмір | 128 біт (4 × uint32_t) |
 | Джерело | HRNG (тепловий шум) — при успіху |
-| Fallback | `HAL_GetTick() ^ (i * 0x5A5A5A5AUL)` — при відмові HRNG |
+| Fallback | `djb2(STM32_HW_UID) XOR (HAL_GetTick() << (i*8)) XOR XOR_MASK(i)` — унікальний на кожній Queen |
 | Унікальність | Новий IV на кожен батч-флашинг (не перевикористовується) |
 | Передача | Prepend до ciphertext: `[IV:16][Encrypted:N×16]` |
 
@@ -621,7 +608,7 @@ Flush_Cache_To_Rails():
   3. Generate IV via HRNG (4 × HAL_RNG_GenerateRandomNumber)
   4. hcryp → CBC mode, pInitVect = batch_iv
   5. encrypted_batch_buffer = [IV:16][CBC-Encrypted:padded_size]
-  6. AT+CCOAPSEND → SIM7070G → CoAP PUT /telemetry/batch/QUEEN-001
+  6. AT+CCOAPSEND → SIM7070G → CoAP PUT /telemetry/batch/<queen_uid>
   7. Restore: hcryp → ECB mode, pInitVect = NULL
          │
          │ CoAP/UDP (AES-256-CBC, [IV:16][Ciphertext:N×16])
@@ -725,4 +712,4 @@ HAL_CRYP_Init(&hcryp);
 | **Factory Flashing Pipeline** | 🟡 OPEN | Архітектура визначена (розділ 3.4), provisioning endpoint (`/api/v1/provisioning/register`) існує |
 | **Shipping Mode (Геркон)** | 🟡 OPEN | Концепт визначено (розділ 3.5); компонент не доданий до BOM |
 | **Key Rotation** | 🔴 Відсутній | Неможливий без повної перепрошивки |
-| **HRNG Fallback** | 🟡 Слабкий | HAL_GetTick() — передбачуваний при відмові HRNG |
+| **HRNG Fallback** | ✅ Виправлено | djb2(STM32_HW_UID) XOR tick — унікальний на кожній Queen (PR #273) |
