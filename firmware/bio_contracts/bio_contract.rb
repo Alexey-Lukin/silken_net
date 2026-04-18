@@ -83,14 +83,16 @@ module SilkenNet
         # тим ефективніше воно депонує вуглець і більше балів отримує.
         deviation = (OPTIMAL_Z_TARGET - z_val).abs
 
-        # Базова нагорода 50 балів мінус штраф за відхилення
+        # Базова нагорода 50 балів мінус штраф за відхилення.
+        # [FIX FW.13]: Explicit clamp замість ternary + окремих guard'ів.
+        # В homeostasis zone deviation ∈ [0, 27], тому reward ∈ [23, 50] — завжди > 0.
+        # Але clamp(10, 63) захищає від edge cases + об'єднує guard'и нижче.
         reward = 50 - deviation.round
-        growth_points = reward > 0 ? reward : 10
+        growth_points = reward.clamp(10, 63)
       end
 
       # Захист від переповнення для 6-бітного простору (максимум 63)
-      growth_points = 63 if growth_points > 63
-      growth_points = 0  if growth_points < 0
+      growth_points = growth_points.clamp(0, 63)
 
       # ПАКУВАННЯ АКТИВУ
       # Зсуваємо статус на 6 бітів вліво і додаємо бали росту.

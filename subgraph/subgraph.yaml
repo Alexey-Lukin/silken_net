@@ -42,3 +42,31 @@ dataSources:
         - event: PremiumPaid(indexed address,uint256)
           handler: handlePremiumPaid
       file: ./src/mapping.ts
+
+  # [S3.5] SilkenForestCoin (SFC) — Governance & Biodiversity Token
+  # Events: ForestMinted (cluster-based minting), GovernanceSlashed (DAO slashing)
+  - kind: ethereum
+    name: SilkenForestCoin
+    network: polygon-amoy
+    source:
+      # ⚠️ BLOCKER: Replace with real SilkenForestCoin contract address after deployment.
+      address: "0x0000000000000000000000000000000000000000"
+      abi: SilkenForestCoin
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - ForestMintEvent
+        - GovernanceSlashEvent
+        - ProtocolFinancials
+      abis:
+        - name: SilkenForestCoin
+          file: ./abis/SilkenForestCoin.json
+      eventHandlers:
+        - event: ForestMinted(indexed address,uint256,indexed bytes32,string)
+          handler: handleForestMinted
+        - event: GovernanceSlashed(indexed address,uint256)
+          handler: handleGovernanceSlashed
+      file: ./src/mapping.ts

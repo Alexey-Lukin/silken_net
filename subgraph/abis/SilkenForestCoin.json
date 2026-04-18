@@ -1,0 +1,22 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "investor", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "indexed": true, "internalType": "bytes32", "name": "clusterIdHash", "type": "bytes32" },
+      { "indexed": false, "internalType": "string", "name": "clusterId", "type": "string" }
+    ],
+    "name": "ForestMinted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "investor", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "GovernanceSlashed",
+    "type": "event"
+  }
+]
