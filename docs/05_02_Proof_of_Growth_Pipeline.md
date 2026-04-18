@@ -221,7 +221,7 @@ def self.evaluate_and_pack(seed, temp, acoustic)
   elsif z_val > CRITICAL_Z_MAX  → status=2, growth_points=0  # anomaly
   else                          → status=0                    # homeostasis
     deviation = (OPTIMAL_Z_TARGET - z_val).abs
-    growth_points = clamp(50 - deviation.to_i, 10, 63)
+    growth_points = clamp(50 - deviation.round, 10, 63)  # FW.13: .round замість .to_i
   end
   payload_byte = (status << 6) | growth_points  # [ 2 bits | 6 bits ]
 end

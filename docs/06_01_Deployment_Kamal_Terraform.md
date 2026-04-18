@@ -38,20 +38,23 @@ terraform output canopy_server_ip  # → canopy IP (якщо canopy_enabled = tr
 
 ---
 
-### 🔴 BLOCKER-2: GCS Bucket для Terraform State — не існує
+### ✅ BLOCKER-2: GCS Bucket для Terraform State — автоматизовано (Виправлено)
 
-**Статус:** Chicken-and-egg проблема. Блокує `terraform init`.
+**Статус:** Вирішено. Скрипт `terraform/bootstrap.sh` автоматизує створення GCS-кошика до першого `terraform init`.
 
-Terraform backend посилається на GCS-кошик `silken-net-terraform-state`. Він має існувати **до** першого `terraform init`.
-
-**Дія:** Створити вручну через `gcloud`:
 ```bash
-# Перший раз — до terraform init
-gcloud storage buckets create gs://silken-net-terraform-state \
-  --project=<GCP_PROJECT_ID> \
-  --location=europe-west1 \
-  --uniform-bucket-level-access
+# Один раз — до terraform init
+cd terraform
+chmod +x bootstrap.sh
+./bootstrap.sh  # запитає GCP_PROJECT_ID, створить bucket + перевірить gcloud auth
 ```
+
+Скрипт виконує:
+1. Перевіряє наявність `gcloud` та автентифікацію
+2. Створює `gs://silken-net-terraform-state` у `europe-west1` з `uniform-bucket-level-access`
+3. Виводить підтвердження — після цього `terraform init` спрацює
+
+> Якщо бакет вже існує — скрипт завершується без помилки (idempotent).
 
 ---
 
@@ -180,10 +183,9 @@ ssh_source_ranges = ["203.0.113.10/32", "198.51.100.0/24"]
 
 ```bash
 # Крок 1: Створити GCS bucket для Terraform State (один раз, до terraform init)
-gcloud storage buckets create gs://silken-net-terraform-state \
-  --project=<GCP_PROJECT_ID> \
-  --location=europe-west1 \
-  --uniform-bucket-level-access
+cd terraform
+chmod +x bootstrap.sh
+./bootstrap.sh  # автоматично перевіряє gcloud auth та створює bucket
 
 # Крок 2: Налаштувати terraform.tfvars
 cd terraform
@@ -481,8 +483,8 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 ## 📋 Чеклист першого деплою (Priority Order)
 
 ```
-☐ 1. Створити GCS bucket вручну (BLOCKER-2)
-      gcloud storage buckets create gs://silken-net-terraform-state ...
+☑ 1. Створити GCS bucket для Terraform State (BLOCKER-2) ← ВИПРАВЛЕНО (bootstrap.sh)
+      cd terraform && ./bootstrap.sh
 
 ☐ 2. Створити terraform/terraform.tfvars (BLOCKER-4)
       project_id, db_password, canopy_enabled=true, ssh_source_ranges=[<your-ip>]
@@ -540,20 +542,24 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 > Цей розділ описує архітектурні ризики та рекомендації для переходу від сотень до **мільйонів** вузлів. Поточна архітектура (CoAP прямо в Rails) є коректною для TRL 5–6, але потребує еволюції перед Series D.
 
-### 🔴 Ризик-1: Conntrack Table Overflow (Linux Kernel)
+### ✅ Ризик-1: Conntrack Table Overflow — Виправлено (Sprint 3, S3.6)
 
 **Проблема:** CoAP працює на UDP. Google Cloud (та будь-який Linux-сервер) веде таблицю `conntrack` у ядрі для відстеження з'єднань. При мільйонах IoT-пакетів на годину таблиця переповнюється → ядро починає мовчки ігнорувати нові сигнали від дерев. Ліс "замовкає" без жодної помилки в логах.
 
 **Симптом:** `nf_conntrack: table full, dropping packet` у `/var/log/kern.log`.
 
-**Мітигація:**
+**Статус:** Виправлено. `sysctl` тюнінг conntrack додано до `startup-script` у `terraform/compute.tf`. Налаштування зберігаються через `/etc/sysctl.conf` — переживають перезавантаження:
+
 ```bash
-# Збільшити ліміт (тимчасовий захід):
+# Автоматично виконується при старті GCP instance (terraform/compute.tf):
 sysctl -w net.netfilter.nf_conntrack_max=2000000
 sysctl -w net.netfilter.nf_conntrack_udp_timeout=30
-
-# Довгострокове рішення: Ingress Proxy перед Rails (розділ нижче)
+echo "net.netfilter.nf_conntrack_max=2000000" >> /etc/sysctl.conf
+echo "net.netfilter.nf_conntrack_udp_timeout=30" >> /etc/sysctl.conf
 ```
+
+- `nf_conntrack_max=2000000` — 2M entry замість типових 65K
+- `nf_conntrack_udp_timeout=30s` — UDP записи очищаються вчасно (замість 180s за замовчуванням)
 
 ### ✅ Ризик-2: UDP Rate Limiting реалізовано через Terraform (Виправлено)
 
@@ -621,7 +627,7 @@ Series D архітектура (>1M вузлів):
 | Ingress Proxy (Rust/Go) | 🔴 Не реалізовано | Series D milestone |
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
 | Read-Only Replicas | 🔴 Не налаштовано | Terraform: `google_sql_database_instance` replica |
-| conntrack tuning | 🟡 Не зроблено | Додати в Terraform `startup_script` |
+| conntrack tuning | ✅ Виправлено | `sysctl` у Terraform `startup_script` (`terraform/compute.tf`) |
 
 ---
 
