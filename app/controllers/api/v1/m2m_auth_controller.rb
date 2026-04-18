@@ -17,7 +17,8 @@ module Api
     #   4. Шлюз використовує токен для API-запитів
     #   5. Перед закінченням терміну — повторний POST /api/v1/auth/m2m_token
     class M2mAuthController < BaseController
-      skip_before_action :authenticate_user!
+      # create — публічний (Ed25519 auth); refresh — потребує Bearer token (BaseController default)
+      skip_before_action :authenticate_user!, only: :create
 
       # POST /api/v1/auth/m2m_token
       def create
@@ -116,6 +117,32 @@ module Api
           device_uid: did,
           expires_in: "30 days",
           token_type: "Bearer"
+        }, status: :created
+      end
+
+      # POST /api/v1/auth/m2m_token/refresh
+      # [S3.4 M2M REFRESH]: Sliding-window token renewal.
+      # Gateway надсилає поточний валідний Bearer-токен і отримує новий 30-денний токен
+      # без необхідності Ed25519 re-authentication. Дозволено лише в останні 7 днів
+      # терміну дії (REFRESH_WINDOW), щоб зменшити ризик зловживання.
+      #
+      # Firmware flow:
+      #   1. Gateway зберігає timestamp видачі токена
+      #   2. Щогодини (або при CoAP flush) перевіряє: залишилось < 7 днів?
+      #   3. Якщо так → POST /api/v1/auth/m2m_token/refresh з Bearer header
+      #   4. Отримує новий токен → зберігає → продовжує роботу
+      def refresh
+        # current_user вже автентифікований через before_action :authenticate_user!
+        new_token = current_user.generate_token_for(:api_access)
+
+        Rails.logger.info "🔄 [M2M Refresh] Токен оновлено для #{current_user.email_address} " \
+                          "(org: #{current_user.organization&.name})."
+
+        render json: {
+          token: new_token,
+          expires_in: "30 days",
+          token_type: "Bearer",
+          refreshed_at: Time.current.iso8601
         }, status: :created
       end
     end

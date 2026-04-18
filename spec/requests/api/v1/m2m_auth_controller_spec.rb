@@ -201,4 +201,62 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
       end
     end
   end
+
+  describe "POST /api/v1/auth/m2m_token/refresh" do
+    context "with valid Bearer token" do
+      it "issues a new token" do
+        token = admin_user.generate_token_for(:api_access)
+
+        post "/api/v1/auth/m2m_token/refresh",
+             headers: { "Authorization" => "Bearer #{token}" },
+             as: :json
+
+        expect(response).to have_http_status(:created)
+        body = response.parsed_body
+        expect(body["token"]).to be_present
+        expect(body["token"]).not_to eq(token)
+        expect(body["token_type"]).to eq("Bearer")
+        expect(body["expires_in"]).to eq("30 days")
+        expect(body["refreshed_at"]).to be_present
+      end
+    end
+
+    context "with expired or invalid token" do
+      it "returns 401 unauthorized" do
+        post "/api/v1/auth/m2m_token/refresh",
+             headers: { "Authorization" => "Bearer invalid_token_here" },
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context "without Bearer token" do
+      it "returns 401 unauthorized" do
+        post "/api/v1/auth/m2m_token/refresh", as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context "when new token is used for authentication" do
+      it "can be used for subsequent API requests" do
+        original_token = admin_user.generate_token_for(:api_access)
+
+        post "/api/v1/auth/m2m_token/refresh",
+             headers: { "Authorization" => "Bearer #{original_token}" },
+             as: :json
+
+        expect(response).to have_http_status(:created)
+        new_token = response.parsed_body["token"]
+
+        # Verify the new token works for an authenticated endpoint
+        get "/api/v1/users/me",
+            headers: { "Authorization" => "Bearer #{new_token}" },
+            as: :json
+
+        expect(response).not_to have_http_status(:unauthorized)
+      end
+    end
+  end
 end

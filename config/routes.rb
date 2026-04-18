@@ -20,6 +20,7 @@ Rails.application.routes.draw do
 
       # M2M Auth (Machine-to-Machine — Gateway/Device authentication via Ed25519)
       post "auth/m2m_token", to: "m2m_auth#create", as: :m2m_token
+      post "auth/m2m_token/refresh", to: "m2m_auth#refresh", as: :m2m_token_refresh
 
       # Скидання пароля (Forgot / Reset Password)
       get  "forgot_password", to: "passwords#new",    as: :forgot_password
