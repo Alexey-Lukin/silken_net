@@ -205,10 +205,10 @@ variable "ssh_user" {
 variable "ssh_source_ranges" {
   description = "CIDR ranges allowed to SSH into web nodes — restrict to VPN/office IP in production"
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = []
 
   validation {
-    condition     = !contains(var.ssh_source_ranges, "0.0.0.0/0") || length(var.ssh_source_ranges) == 1
-    error_message = "WARNING: ssh_source_ranges includes 0.0.0.0/0 (open to the world). Restrict to VPN/office CIDR in production."
+    condition     = length(var.ssh_source_ranges) == 0 || !contains(var.ssh_source_ranges, "0.0.0.0/0")
+    error_message = "ssh_source_ranges must not include 0.0.0.0/0 (open to the world). Restrict to VPN/office CIDR. Example: [\"203.0.113.0/24\"]"
   }
 }

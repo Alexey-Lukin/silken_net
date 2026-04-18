@@ -795,13 +795,13 @@ static void MX_CRYP_Init(void)
 // =========================================================================
 // Without IWDG, Queen hangs forever on HardFault or SIM7070G AT-command blocking.
 // Soldier already has IWDG (~26 sec recovery). This brings Queen to parity.
-// LSI clock ~32 kHz, prescaler /256 = 128 Hz tick, reload 3328 ≈ 26 sec timeout.
+// Timeout formula: (Reload × Prescaler) / LSI_freq = (3328 × 256) / 32000 ≈ 26.6 seconds.
 static void MX_IWDG_Init(void)
 {
   hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_256;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_256;  // LSI 32 kHz / 256 = 125 Hz tick
   hiwdg.Init.Window = IWDG_WINDOW_DISABLE;
-  hiwdg.Init.Reload = 3328; // ~26 seconds at 32 kHz / 256
+  hiwdg.Init.Reload = 3328;                    // 3328 / 125 ≈ 26.6 sec timeout
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK) {
     Error_Handler();
   }
