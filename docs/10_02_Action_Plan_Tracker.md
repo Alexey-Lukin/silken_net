@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Живий Документ)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-18 (Повний аудит docs + codebase: +40 нових пунктів)
+> **Останнє оновлення:** 2026-04-18 Сесія 6 (DIFF.2/3/5/6, FW.15, INF.3)
 > **Відповідальний:** AI Copilot Sessions + Core Team
 > **Принцип:** Кожна сесія оновлює чекбокси `[ ]` → `[x]` та додає дату + коміт.
 
@@ -18,7 +18,7 @@
 | Технічний борг | ~35+ | — | В роботі |
 | Безпекові проблеми | ~25+ | ~3 | В роботі |
 | Не реалізовані фічі | ~30+ | — | В роботі |
-| Невідповідності код ↔ документація | ~15 | — | В роботі |
+| Невідповідності код ↔ документація | ~15 | ~4 | В роботі |
 | Hardware / Lab блокери | ~20+ | — | Потребують фізичної роботи |
 
 ---
@@ -368,9 +368,9 @@
 - **Статус:**
   - [ ] `test_tinyml_pipeline.c` — mock Run_Inference(), 4 класи × confidence boundary
   - [ ] `test_encryption.c` — ECB/CBC switching, ECB restore, key verification
-  - [ ] `test_bio_contract.c` — σ/ρ clamp, Z-axis bounds, growth_points calculation
-- **Сесія:** —
-- **Коміт:** —
+  - [x] `test_bio_contract.c` — σ/ρ clamp, Z-axis bounds, growth_points calculation (27 тестів)
+- **Сесія:** 2026-04-18 Сесія 6 (bio_contract)
+- **Коміт:** d7971cf
 
 #### FW.16 — ECB restore race condition при HAL_CRYP_Init failure
 - **Джерело:** `03_05` BLOCKER-6
@@ -694,8 +694,10 @@
 - **Джерело:** `06_02` BLOCKER-5
 - **Опис:** SDL відкриває лише HTTP (port 80) та CoAP UDP (5683). Port 443 відсутній. Browsers block WebSocket from HTTPS → HTTP
 - **Статус:**
-  - [ ] Додати port 443 до SDL
+  - [x] Додати port 443 до SDL
   - [ ] Налаштувати TLS (Akash ingress `*.ingress.akash.pub` або Cloudflare)
+- **Сесія:** 2026-04-18 Сесія 6
+- **Коміт:** d7971cf
 
 #### INF.4 — Akash no official Terraform provider
 - **Джерело:** `06_02` BLOCKER-7
@@ -763,16 +765,21 @@
 - **Документація:** "10,000 growth_points = 1 SCC" як fixed threshold
 - **Код:** `app/models/wallet.rb:99-120` — threshold є **параметром методу**, не hardcoded константою. Значення 10,000 приходить від caller (`TokenomicsEvaluatorWorker`)
 - **Дія:** Уточнити в документації що threshold = runtime parameter
+- **Примітка:** Документація не є технічно неправильною — 10,000 є дефолтним значенням у production. Threshold як параметр дозволяє гнучкість для тестування та майбутнього governance (DAO voting). Без дії, залишаємо як є.
 
 #### DIFF.2 — `carbon_sequestration_coefficient` NOT IMPLEMENTED
 - **Документація:** Згадується як фактор у `Wallet#credit!`
-- **Код:** Не знайдено ні в `wallet.rb`, ні в жодному сервісі
-- **Дія:** Або реалізувати, або видалити з документації
+- **Код:** `TreeFamily#weighted_growth_points` існував, але НЕ використовувався при `credit!`
+- **Дія:** ✅ Реалізовано в `TelemetryUnpackerService#commit_telemetry` — growth_points зважуються за `carbon_sequestration_coefficient` породи перед `wallet.credit!`
+- **Сесія:** 2026-04-18 Сесія 6
+- **Коміт:** d7971cf
 
 #### DIFF.3 — Divergence 30% threshold location unclear
 - **Документація:** "Divergence > 30% → fraud flag" для Lorenz Z
 - **Код:** `BlockchainMintingService::POISONED_RATIO_THRESHOLD = 0.3` — це про batch poisoned records, НЕ про Z divergence
-- **Дія:** Знайти або реалізувати actual Z divergence check у `TelemetryUnpackerService`
+- **Дія:** ✅ Реалізовано `TelemetryUnpackerService#check_z_divergence!` — Dual Computation Integrity: порівнює device bio_status з server-derived bio_status (з server Z + tree_family thresholds). Категорична невідповідність інкрементує `TELEMETRY_FRAUD_DETECTED_TOTAL`
+- **Сесія:** 2026-04-18 Сесія 6
+- **Коміт:** d7971cf
 
 #### DIFF.4 — `vibration_detected` race condition undocumented
 - **Код:** `firmware/soldier/main.c:70,320-337` — subtle window між flag check та IRQ disable. Mitigated, але не задокументований
@@ -781,7 +788,9 @@
 #### DIFF.5 — Sentry gem versions not pinned
 - **Код:** `Gemfile:42-44` — `gem "sentry-rails"`, `gem "sentry-ruby"`, `gem "sentry-sidekiq"` без версій
 - **Документація:** `06_03` каже "sentry-ruby 6.5.0"
-- **Дія:** Запінити версії у Gemfile для reproducible builds
+- **Дія:** ✅ Запіновано у Gemfile: `gem "sentry-rails", "~> 6.5"` тощо
+- **Сесія:** 2026-04-18 Сесія 6
+- **Коміт:** d7971cf
 
 #### DIFF.6 — Queen AES key line numbers mismatch
 - **Документація (CLAUDE.md, 03_01, 03_02, 05_02):** "firmware/queen/main.c:65-66"
@@ -960,6 +969,7 @@
 | 2026-04-18 | Hardware/firmware notes integration | Аналіз 7 нотаток (enzyme protection, chamfers, MPPT, buffer cap, SIM7070G, race condition). Оновлено: `01_03` (Chitosan/Nafion/PEG захисні шари для ферментів), `02_03` BLOCKER-2 (MPPT 65% замість 50%, Міхаеліс-Ментен/Тафель обґрунтування) + §6 Buffer Cap (тантал → MLCC X5R/X7R, leakage current), `01_01` BLOCKER-2 (фаски R≥0.2мм для press-fit), `03_03` BLOCKER-8 (NVIC ізоляція замість __disable_irq), `02_05` (SIM7070G підтверджено, eDRX/PSM додано). Трекер: збагачено HW.5/6/10/13, FW.11. Додано: E.38 (chamfer), HW.20 (Buffer Cap MLCC). |
 | 2026-04-18 | EBFC Gen 2.0 enzyme alternatives | Аналіз нотатки щодо альтернативних ферментів для EBFC. Додано `01_03` §3 "Альтернативні ферменти Gen 2.0" — повні таблиці анодних (FAD-GDH #1, PQQ-GDH, CDH) та катодних (Laccase/nanozyme гібрид #1, engineered Laccase mutants, BOD, Tyrosinase) альтернатив. Додано §4.3 стратегії іммобілізації Gen 2.0 (ZIF, covalent bonding, enzyme+nanozyme). Оновлено `08_01` — розширений запит до Мінаєва (DFT FAD-GDH + nanozymes на TiO₂) та готовий pitch текст. Трекер: оновлено HW.5 (Gen 2.0 ціль 20-25 років), додано E.39 (EBFC Gen 2.0 R&D). |
 | 2026-04-18 | Radome Деталь 4 + Ignion antenna | Інтеграція нотатки про Капсулу-Радом (Деталь 4 — PEEK Crown). Оновлено `02_01` §5.2: Деталь 4 як "Четвертий Елемент" механічного стеку (різьба/байонет на Деталь 3, O-ring EPDM IP68, ∅20–30 мм, CNC/injection molding). Додано Ignion NN02-310 Virtual Antenna™ як альтернативний вендор у BOM та antenna spec. Оновлено `07_02` §1.1 (Деталь 4 в BOM, Ignion). Трекер: збагачено HW.17 (Деталь 4 деталізація, O-ring, bayonet vs thread). Додано E.40 (Ignion evaluation). |
+| 2026-04-18 | Сесія 6 — Action Plan code sprint | ✅ **DIFF.5** Sentry gems запіновані (~> 6.5). ✅ **DIFF.3** Dual Computation Integrity — `check_z_divergence!` в TelemetryUnpackerService (device bio_status vs server Z + tree_family thresholds, fraud counter). ✅ **DIFF.2** `carbon_sequestration_coefficient` застосовано в credit! flow (weighted_growth_points per species). ✅ **INF.3** HTTPS порт 443 додано до Akash SDL. ✅ **FW.15** `test_bio_contract.c` — 27 тестів (σ/ρ clamp, Z bounds, growth_points, StatusByte encoding). ✅ **DIFF.6** Queen AES key line references виправлено в 5 docs (65-66 → 81-82). Total firmware tests: 164 (79+58+27). |
 | 2026-04-18 | 08_02 sync audit | Хірургічний аудит `08_02` (1894 рядки) проти поточного стану всіх docs. Виправлено 12 застарілих/неточних місць: (1) "44 мВ" → ">500 мВ EBFC" (4 місця — Pivot v2 видалив LTC3108); (2) "4-провідна система Кельвіна" → "Pogo Pin Blind Mate" (→ `02_02`); (3) "трансформатор від LTC3108" видалено (Power Deck); (4) TX Power +14 → +22 dBm (SX1262 max); (5) SMD Antenna Gain -3 → 0 dBi (→ `02_01` §5.3); (6) Link Budget повністю перераховано (+67.7 дБ margin); (7) 21-байтний пакет — виправлено хибну розкладку на правильну [DID:4][RSSI:1]\|[Vcap:2][Temp:1][Acoustic:1][dT:2][StatusByte:1][TTL:1][FW:2][PAD:2]; (8) AES-256-CBC → ECB для LoRa; (9) Sidekiq priorities виправлено (uplink=1, alerts=2, web3_critical=6 замість хибних 9/8/4); (10) Додано "Деталь 4" термін для PEEK-радому; (11) AES-ECB/CBC режими розділено для Soldier→Queen та Queen→Rails. |
 | 2026-04-18 | 08_02 + 08_03 deep sync audit | Другий прохід аудиту `08_02` та `08_03` проти всіх docs. **08_02:** (1) §1.2 Порубльов: "44–500 мВ" → ">500 мВ від EBFC" (2 місця); (2) §1.4: розділено — Авраменко окремо, Любченко (→ §1.9) та Супруненко (→ §1.7) мають власні детальні R&D секції; (3) §1.7 Супруненко: "28 API контролерами" → "83+ API ендпоінтами" (→ `04_03`); (4) §1.7 Супруненко: "8 шарів, 9 модулів, 28 API endpoints" → "10 шарів, 38 модулів, 83+ API endpoints" + "Wiki" → "docs/ та Wiki". **08_03:** (1) Стаття 8 Косенюк: "SF=9" → "SF=7–9" (→ `02_01` §5.3); (2) Ярмілко: "AES-256-CBC" → "AES-256-ECB (LoRa) / AES-256-CBC (CoAP batch)"; (3) Архітектор: "44 мВ" → ">500 мВ"; (4) Додано "Деталь 4 — PEEK Crown" терміни. |
 | 2026-04-18 | 08_02 third pass sync | Третій прохід аудиту `08_02`. **§1.1 Ярмілко:** "AES-256-GCM" → "AES-256-CCM" як рекомендоване рішення з `03_05` (BLOCKER-2 + BLOCKER-3 одночасно; апаратна підтримка `CRYP_AES_CCM`; пакет 21→24 байти). **§1.4 Авраменко:** "648 рядків" → "771 рядок" (актуальний `wc -l`). **§1.8 Осауленко:** Triple Helix — "7 науковців" → "8", "8 статей Q1" → "10" (→ `08_03`), "3 магістри" → "8+ магістрів" (→ `08_03`). **§3 Порубльов Підгрупа Б:** BLOCKER-2 (03_04) — оновлено статус (коментар виправлено, мат. питання ρ−1=27 vs 29.0 залишається відкритим); BLOCKER-6 (03_04) — оновлено статус (✅ `deviation.round` замість `.to_i`, верифікація впливу — завдання Порубльова). **§3 Ярмілко Підгрупа Б:** "AES-256-GCM" → "AES-256-CCM" (рекомендація `03_05`, CCM вирішує BLOCKER-2+3 одночасно). |
