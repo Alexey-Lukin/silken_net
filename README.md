@@ -85,13 +85,32 @@ bundle install
 bin/rails db:prepare
 ```
 
-### 2. Запуск
+### 2. Змінні середовища (`.env`)
+
+Перед першим запуском скопіюйте шаблон та заповніть потрібні значення:
+
+```bash
+cp .env.example .env
+```
+
+Для локальної розробки та симуляції телеметрії достатньо залишити більшість полів порожніми — мінімальний набір:
+
+| Змінна | Опис |
+|--------|------|
+| `REDIS_URL` | `redis://localhost:6379/0` (Sidekiq, вже є в шаблоні) |
+| `WEB3_STRICT_MODE` | `false` — Web3-стаби активні, реальні ключі не потрібні |
+
+Для повноцінного Web3-стеку (мінтинг SCC, Chainlink oracle, Solana мікроплатежі) потрібно заповнити:
+`CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_HMAC_SECRET`, `CHAINLINK_SUBSCRIPTION_ID`, `SOLANA_WALLET_KEYPAIR`, `PROVISIONING_MASTER_KEY`.
+Деталі — у [`docs/06_01_Deployment_Kamal_Terraform.md`](docs/06_01_Deployment_Kamal_Terraform.md).
+
+### 3. Запуск
 
 ```bash
 bin/dev   # Rails + Sidekiq + Tailwind CSS + CoAP listener
 ```
 
-### 3. Симуляція телеметрії (без фізичного обладнання)
+### 4. Симуляція телеметрії (без фізичного обладнання)
 
 ```bash
 bin/rails db:seed      # Gateway, Tree, HardwareKey, TreeFamily
@@ -105,7 +124,7 @@ open http://localhost:3000/sidekiq
 tail -f log/development.log | grep -i telemetry
 ```
 
-### 4. Тести та якість
+### 5. Тести та якість
 
 ```bash
 bundle exec rspec                # Повний набір тестів
@@ -114,7 +133,7 @@ bundle exec brakeman             # Статичний аналіз безпек�
 bundle exec bundler-audit check  # Вразливості залежностей
 ```
 
-### 5. Розгортання (Kamal)
+### 6. Розгортання (Kamal)
 
 ```bash
 kamal setup
@@ -161,21 +180,30 @@ kamal deploy
 Детальна документація в директорії [`docs/`](docs/):
 
 **Архітектура та Візія (Модуль 00)**
+- [`00_00`](docs/00_00_SSOT_Index.md) — єдине джерело істини (SSOT), головний реєстр
 - [`00_01`](docs/00_01_System_Architecture_and_Layers.md) — 8-рівнева кіберфізична архітектура
 - [`00_02`](docs/00_02_Project_Vision_and_Roadmap.md) — місія та roadmap масштабування
+- [`00_03`](docs/00_03_AI_Native_Concurrent_Engineering.md) — AI-Native парадигма управління та TRL
 
 **Біомеханіка та Хімія (Модуль 01)**
 - [`01_01`](docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md) — 3-складовий Ti-6Al-4V анкер
+- [`01_02`](docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) — металургія Ti-6Al-4V, DMLS та біосумісність
 - [`01_03`](docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) — EBFC: >500 мВ з глюкози дерева
+- [`01_04`](docs/01_04_CODIT_and_Xylemointegration.md) — CODIT та ксилемоінтеграція
 
 **Апаратне Забезпечення (Модуль 02)**
 - [`02_01`](docs/02_01_Hardware_Architecture_and_BOM.md) — BOM та архітектура Солдата
+- [`02_02`](docs/02_02_Blind_Mate_Pogo_Pin_Interface.md) — сліпий з'єднувач Pogo Pin
+- [`02_03`](docs/02_03_BQ25570_MPPT_Nano_Power.md) — BQ25570 MPPT та нано-менеджмент живлення
+- [`02_04`](docs/02_04_EDLC_Supercapacitor_Buffer.md) — буфер суперконденсатора EDLC 0.47Ф
 - [`02_05`](docs/02_05_Queen_Hardware_and_Starlink.md) — шлюз Королева + Starlink/LTE
 
 **Прошивка та Edge AI (Модуль 03)**
 - [`03_01`](docs/03_01_Firmware_Lifecycle_and_DMA.md) — цикл Soldier: STOP2 → сенсори → LoRa TX
+- [`03_02`](docs/03_02_Queen_Gateway_Firmware.md) — прошивка шлюзу Королеви (LoRa RX → CIFO → CoAP)
 - [`03_03`](docs/03_03_TinyML_Acoustic_Inference.md) — TinyML: класифікація звуку пилки
 - [`03_04`](docs/03_04_mruby_Lorenz_Attractor.md) — mruby Атрактор Лоренца (гомеостаз дерева)
+- [`03_05`](docs/03_05_Hardware_AES256_and_Security.md) — апаратний AES-256 та безпека пакетів
 
 **Серверне Ядро (Модуль 04)**
 - [`04_01`](docs/04_01_Data_Models_and_Entities.md) — 26 ActiveRecord моделей, PostgreSQL схема
@@ -187,6 +215,7 @@ kamal deploy
 - [`05_01`](docs/05_01_Multichain_Architecture.md) — 12-chain DePIN стек
 - [`05_02`](docs/05_02_Proof_of_Growth_Pipeline.md) — повний пайплайн Proof of Growth
 - [`05_03`](docs/05_03_Tokenomics_SCC_and_SFC.md) — токеноміка SCC/SFC
+- [`05_04`](docs/05_04_Ethereum_L1_State_Anchor.md) — щотижнева фіналізація в Ethereum L1
 
 **Розгортання та Інфраструктура (Модуль 06)**
 - [`06_01`](docs/06_01_Deployment_Kamal_Terraform.md) — Kamal + Terraform (GCP) + Web3 ENV
@@ -196,14 +225,20 @@ kamal deploy
 **Бізнес та Фінанси (Модуль 07)**
 - [`07_01`](docs/07_01_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування
 - [`07_02`](docs/07_02_Unit_Economics_and_BOM.md) — юніт-економіка та ROI через SCC
+- [`07_03`](docs/07_03_Grant_Applications_Tracker.md) — трекер грантових заявок
 
 **Наука та R&D (Модуль 08)**
 - [`08_01`](docs/08_01_University_R_and_D_Protocols.md) — партнерство з ЧНУ
 - [`08_02`](docs/8_02_Cybernetic_and_Mathematical_Validation.md) — кіберфізична валідація ФОТІУС
+- [`08_03`](docs/08_03_Joint_Publications_and_IP_Strategy.md) — спільні публікації та стратегія IP
 
 **Управління та Масштабування (Модуль 09)**
+- [`09_01`](docs/09_01_AI_Native_Concurrent_Engineering.md) — AI-Native Concurrent Engineering (Shape Up)
 - [`09_02`](docs/09_02_Strategic_Roadmap_and_TRL_Matrix.md) — матриця TRL та roadmap
 - [`09_03`](docs/09_03_GitHub_Projects_and_Ops_Automation.md) — GitHub Projects V2 + CI/CD автоматизація
+
+**Тестування (Модуль 10)**
+- [`10_01`](docs/10_01_View_Component_Testing_Guide.md) — 30 best practices для тестування Phlex-компонентів
 
 ---
 
