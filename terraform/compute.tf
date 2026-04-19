@@ -45,22 +45,70 @@ resource "google_compute_instance" "ingress_anchor" {
     access_config { nat_ip = google_compute_address.ingress_ip.address }
   }
 
-  # HAProxy configuration for forwarding traffic to Akash deployment.
-  # AKASH_DEPLOYMENT_IP is a placeholder — update after each Akash deployment.
+  # HAProxy + socat configuration for forwarding traffic to Akash deployment.
+  # AKASH_DEPLOYMENT_IP is read from instance metadata — update after each
+  # Akash deployment via:
+  #   gcloud compute instances add-metadata silken-net-ingress \
+  #     --metadata akash-deployment-ip=<NEW_IP> --zone europe-west1-b
+  #   gcloud compute instances reset silken-net-ingress --zone europe-west1-b
   metadata_startup_script = <<-EOF
     #!/bin/bash
     set -e
 
-    # Install HAProxy if not present
-    if ! command -v haproxy &> /dev/null; then
-      apt-get update -qq && apt-get install -y -qq haproxy
-    fi
+    # =========================================================================
+    # 1. Kernel tuning for planetary-scale CoAP/UDP (conntrack + rate limiting)
+    # =========================================================================
+    # At planetary scale (millions of Queens), UDP conntrack entries accumulate
+    # and can overflow the default 65K table. We raise the limit to 2M and
+    # shorten UDP timeout to 30s (from default 180s).
+    # See: docs/06_01 Risk-1 (Conntrack Table Overflow)
 
-    # Read Akash deployment IP from instance metadata (updatable via gcloud CLI)
+    sysctl -w net.netfilter.nf_conntrack_max=2000000
+    sysctl -w net.netfilter.nf_conntrack_udp_timeout=30
+    grep -q "nf_conntrack_max" /etc/sysctl.conf || \
+      echo "net.netfilter.nf_conntrack_max=2000000" >> /etc/sysctl.conf
+    grep -q "nf_conntrack_udp_timeout" /etc/sysctl.conf || \
+      echo "net.netfilter.nf_conntrack_udp_timeout=30" >> /etc/sysctl.conf
+
+    # CoAP UDP rate limiting — 100 packets/sec per source IP, burst 200.
+    # Protects against UDP DDoS amplification while allowing legitimate Queens.
+    # See: docs/06_01 Risk-2 (UDP Rate Limiting)
+    apt-get install -y -qq iptables-persistent 2>/dev/null || true
+
+    iptables -C INPUT -p udp --dport 5683 -m hashlimit --hashlimit-name coap \
+      --hashlimit-upto 100/sec --hashlimit-burst 200 --hashlimit-mode srcip \
+      -j ACCEPT 2>/dev/null || \
+    iptables -A INPUT -p udp --dport 5683 -m hashlimit --hashlimit-name coap \
+      --hashlimit-upto 100/sec --hashlimit-burst 200 --hashlimit-mode srcip \
+      -j ACCEPT
+
+    iptables -C INPUT -p udp --dport 5683 -m limit --limit 10/min \
+      -j LOG --log-prefix "CoAP-RATELIMIT-DROP: " 2>/dev/null || \
+    iptables -A INPUT -p udp --dport 5683 -m limit --limit 10/min \
+      -j LOG --log-prefix "CoAP-RATELIMIT-DROP: "
+
+    iptables -C INPUT -p udp --dport 5683 -j DROP 2>/dev/null || \
+    iptables -A INPUT -p udp --dport 5683 -j DROP
+
+    netfilter-persistent save 2>/dev/null || true
+
+    # =========================================================================
+    # 2. Install HAProxy + socat
+    # =========================================================================
+    if ! command -v haproxy &> /dev/null; then
+      apt-get update -qq && apt-get install -y -qq haproxy socat
+    fi
+    apt-get install -y -qq socat 2>/dev/null || true
+
+    # =========================================================================
+    # 3. Read Akash deployment IP from instance metadata
+    # =========================================================================
     AKASH_IP=$(curl -sf "http://metadata.google.internal/computeMetadata/v1/instance/attributes/akash-deployment-ip" \
       -H "Metadata-Flavor: Google" 2>/dev/null || echo "AKASH_IP_NOT_SET")
 
-    # Generate HAProxy configuration
+    # =========================================================================
+    # 4. Generate HAProxy configuration (TCP 80/443 → Akash)
+    # =========================================================================
     cat > /etc/haproxy/haproxy.cfg << HAPROXY_CFG
 global
     log /dev/log local0
@@ -96,21 +144,35 @@ frontend https_in
 backend akash_https
     mode tcp
     server akash1 $AKASH_IP:443 check
-
-# ----- UDP 5683 (CoAP) → Akash -----
-# HAProxy does not natively support UDP. For CoAP forwarding, we use
-# socat as a lightweight UDP relay alongside HAProxy.
 HAPROXY_CFG
 
     systemctl restart haproxy || true
 
-    # UDP relay for CoAP (port 5683) via socat
-    apt-get install -y -qq socat 2>/dev/null || true
-    # Kill existing socat relay if running
-    pkill -f "socat.*UDP4-LISTEN:5683" 2>/dev/null || true
-    # Start UDP relay in background (survives via nohup)
+    # =========================================================================
+    # 5. UDP relay for CoAP (port 5683) via socat
+    # =========================================================================
+    # HAProxy does not natively support UDP. socat provides a lightweight
+    # UDP4 relay. We use a systemd service for reliability instead of nohup.
+
+    cat > /etc/systemd/system/coap-relay.service << SYSTEMD_UNIT
+[Unit]
+Description=CoAP UDP relay to Akash deployment
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/socat UDP4-LISTEN:5683,reuseaddr,fork UDP4:$AKASH_IP:5683
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+SYSTEMD_UNIT
+
     if [ "$AKASH_IP" != "AKASH_IP_NOT_SET" ]; then
-      nohup socat UDP4-LISTEN:5683,reuseaddr,fork UDP4:$AKASH_IP:5683 &
+      systemctl daemon-reload
+      systemctl enable coap-relay
+      systemctl restart coap-relay
       logger -t ingress-anchor "CoAP UDP relay started: :5683 → $AKASH_IP:5683"
     fi
 

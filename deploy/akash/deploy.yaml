@@ -31,8 +31,8 @@
 #
 # Prerequisites:
 #   - Docker image pushed to a public/accessible registry
-#   - Cloud SQL configured with a public IP or Cloud SQL Auth Proxy for
-#     Akash provider connectivity (Akash providers are not inside the GCP VPC)
+#   - Cloud SQL Auth Proxy configured (built into Dockerfile, activated by
+#     CLOUD_SQL_INSTANCE_CONNECTION_NAME env var — no public IP or VPN needed)
 #   - AKT tokens in Akash wallet for deployment escrow
 # =============================================================================
 

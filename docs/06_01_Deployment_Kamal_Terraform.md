@@ -557,10 +557,10 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 **Симптом:** `nf_conntrack: table full, dropping packet` у `/var/log/kern.log`.
 
-**Статус:** Виправлено. `sysctl` тюнінг conntrack додано до `startup-script` у `terraform/compute.tf`. Налаштування зберігаються через `/etc/sysctl.conf` — переживають перезавантаження:
+**Статус:** Виправлено. `sysctl` тюнінг conntrack додано до `startup-script` Ingress Anchor у `terraform/compute.tf`. Налаштування зберігаються через `/etc/sysctl.conf` — переживають перезавантаження:
 
 ```bash
-# Автоматично виконується при старті GCP instance (terraform/compute.tf):
+# Автоматично виконується при старті Ingress Anchor (terraform/compute.tf):
 sysctl -w net.netfilter.nf_conntrack_max=2000000
 sysctl -w net.netfilter.nf_conntrack_udp_timeout=30
 echo "net.netfilter.nf_conntrack_max=2000000" >> /etc/sysctl.conf
@@ -572,10 +572,10 @@ echo "net.netfilter.nf_conntrack_udp_timeout=30" >> /etc/sysctl.conf
 
 ### ✅ Ризик-2: UDP Rate Limiting реалізовано через Terraform (Виправлено)
 
-**Статус:** Виправлено. `iptables` hashlimit правило додано в `startup-script` GCP instance.
+**Статус:** Виправлено. `iptables` hashlimit правило додано в `startup-script` Ingress Anchor.
 
 ```bash
-# Автоматично виконується при старті GCP instance (terraform/compute.tf):
+# Автоматично виконується при старті Ingress Anchor (terraform/compute.tf):
 iptables -A INPUT -p udp --dport 5683 \
   -m hashlimit --hashlimit-name coap \
   --hashlimit-upto 100/sec --hashlimit-burst 200 \
@@ -585,7 +585,7 @@ iptables -A INPUT -p udp --dport 5683 \
 iptables -A INPUT -p udp --dport 5683 -j DROP
 ```
 
-Правила зберігаються через `iptables-persistent` — переживають перезавантаження GCP instance.
+Правила зберігаються через `iptables-persistent` — переживають перезавантаження Ingress Anchor.
 
 - **100 UDP пакетів/сек** на IP-адресу + burst 200 → легальна Queen не обмежується
 - **LOG** перед DROP (max 10/хв) → DDoS атаки видимі у Cloud Logging без флуду логів
@@ -636,7 +636,7 @@ Series D архітектура (>1M вузлів):
 | Ingress Proxy (Rust/Go) | 🔴 Не реалізовано | Series D milestone |
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
 | Read-Only Replicas | 🔴 Не налаштовано | Terraform: `google_sql_database_instance` replica |
-| conntrack tuning | ✅ Виправлено | `sysctl` у Terraform `startup_script` (`terraform/compute.tf`) |
+| conntrack tuning | ✅ Виправлено | `sysctl` у Ingress Anchor `startup_script` (`terraform/compute.tf`) |
 
 ---
 

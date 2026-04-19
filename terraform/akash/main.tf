@@ -6,8 +6,8 @@
 # It lives alongside the GCP infrastructure (terraform/) but has its own state
 # because the two environments have different lifecycles and credentials:
 #
-#   terraform/          → GCP infrastructure (Cloud SQL, Redis, Compute, VPC)
-#   terraform/akash/    → Akash decentralized deployment (web service only)
+#   terraform/          → GCP infrastructure (Cloud SQL, VPC, Ingress Anchor)
+#   terraform/akash/    → Akash decentralized deployment (web + job services)
 #
 # The Akash deployment connects BACK to GCP Cloud SQL for the database —
 # only the compute layer is decentralized.
@@ -24,7 +24,7 @@
 #   - AKASH_KEY_NAME, AKASH_KEYRING_BACKEND, AKASH_ACCOUNT_ADDRESS,
 #     AKASH_NODE, AKASH_CHAIN_ID environment variables set
 #   - Docker image pushed to an accessible registry
-#   - Cloud SQL configured for external access (public IP + SSL or proxy)
+#   - Cloud SQL Auth Proxy configured in Dockerfile (handles external access via HTTPS)
 # =============================================================================
 
 terraform {

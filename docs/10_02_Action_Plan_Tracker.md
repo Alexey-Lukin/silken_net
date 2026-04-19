@@ -41,14 +41,13 @@
 - **Сесія:** —
 - **Коміт:** —
 
-#### S1.4 — Terraform: canopy_enabled
+#### S1.4 — Terraform: canopy_enabled — N/A (Canopy на Akash)
 - **Пріоритет:** P2 | **Складність:** Низька | **Джерело:** `06_01`
-- **Опис:** `canopy_enabled = false` за замовчуванням — staging не провізіонується
+- **Опис:** `canopy_enabled` більше не існує в Terraform — Canopy розгортається на Akash, не на окремій GCP VM. Змінна та пов'язана GCE instance видалені в Infrastructure Pivot (Сесія 8)
 - **Статус:**
-  - [x] `terraform.tfvars.example` має `canopy_enabled = true`
-  - [ ] Верифікувати що Canopy deploy працює з `canopy_enabled = true`
-- **Сесія:** —
-- **Коміт:** —
+  - [x] N/A — `canopy_enabled` variable видалено з `terraform/variables.tf`
+- **Сесія:** 2026-04-19 Сесія 8 (Infrastructure Pivot)
+- **Результат:** ✅ N/A
 
 #### S1.5 — Kamal IP placeholders
 - **Пріоритет:** P2 | **Складність:** Низька | **Джерело:** `06_01`

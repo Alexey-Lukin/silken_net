@@ -4,7 +4,9 @@ service: silken_net
 # Name of the container image.
 image: silken_net
 
-# Deploy to these servers (populated from Terraform outputs).
+# Deploy to these servers (Ingress Anchor IP from Terraform: `terraform output ingress_ip`).
+# After infrastructure pivot, GCP hosts only the Ingress Anchor (e2-micro) — Rails runs on Akash.
+# Kamal is retained for direct GCP deployments (fallback) and deployment tooling.
 servers:
   web:
     - 192.168.0.1
