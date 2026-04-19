@@ -37,7 +37,7 @@ make -C firmware/test
 ## 3. Апаратна архітектура
 
 ### Soldier (STM32WLE5JC)
-**Файл**: `firmware/soldier/main.c` (648 рядків C)
+**Файл**: `firmware/soldier/main.c` (771 рядків C)
 
 Цикл пробудження (STOP2 -> active -> STOP2):
 1. **SENSE**: ADC читає Vcap (uint16 мВ), internal temp (int8 °C). DMA 16 кГц -> 512 ADC samples для TinyML.
@@ -260,16 +260,16 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 
 | BLOCKER | Файл | Суть |
 |---------|------|------|
-| HW-AES-KEY | `firmware/*/main.c:65-66` | Hardcoded AES key — єдиний ключ для всіх вузлів мережі |
+| HW-AES-KEY | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82` | Hardcoded AES key — єдиний ключ для всіх вузлів мережі |
 | AES-ECB | `firmware/soldier/main.c:747` | ECB без MAC -> replay/bit-flip attacks |
 | TINYML-COMMENT | `firmware/soldier/main.c:355` | `Run_Inference()` закоментована; model header відсутній |
 | LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | `delta_t`/`vcap` не передаються як входи атрактора |
 | LORENZ-STATE | firmware | Стан (x,y,z) не зберігається між циклами STOP2 через RTC regs |
 | OPTIMAL-Z | `bio_contract.rb:83` | Коментар каже 20.0, константа 29.0 |
-| QUEEN-UID | `firmware/queen/main.c` | `"QUEEN-001"` hardcoded |
-| QUEEN-OTA-LOOP | `firmware/queen/main.c` | `ota_is_active` ніколи не скидається |
+| QUEEN-UID | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.4): Flash-based UID з fallback |
+| QUEEN-OTA-LOOP | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.5): `ota_is_active` скидається після повного циклу |
 | QUEEN-AT-BLIND | `firmware/queen/main.c:542` | ~25 сек blind wait під час CoAP flush |
-| HRNG-IV-REUSE | `firmware/queen/main.c:516` | При HRNG blackout IV->0 -> CBC IV reuse |
+| HRNG-IV-REUSE | `firmware/queen/main.c:588` | ✅ Покращено (PLAN 2.7): djb2 fallback замість IV=0, але не криптографічний PRNG |
 | BQ25570-R | `docs/02_03` | VBAT_OV резистори не верифіковані |
 | PROMETHEUS | `terraform/` | Prometheus Server відсутній |
 | SENTRY-DSN | `.kamal/secrets` | SENTRY_DSN не додано |
