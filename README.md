@@ -75,6 +75,53 @@ Slashing: якщо >20% дерев кластера в стресі → авто
 
 ## 🚀 Швидкий Старт
 
+### 0. Системні залежності
+
+Перед `bundle install` встановіть системні пакети.
+
+#### PostGIS (обов'язково для просторових запитів кластерів)
+
+**Ubuntu / Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install -y postgresql-16-postgis-3 postgresql-16-postgis-3-scripts
+```
+
+**macOS (Homebrew):**
+```bash
+brew install postgis
+```
+
+Після встановлення PostgreSQL-розширення активується автоматично через `structure.sql` (`CREATE EXTENSION IF NOT EXISTS postgis`). При ручному створенні бази виконайте в psql:
+```sql
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
+
+#### numo-narray (нативний gem, потребує компілятора)
+
+`numo-narray` використовується для векторних обчислень у ML-сервісах. Він компілює нативні C-розширення, тому потребує інструментів збирання.
+
+**Ubuntu / Debian:**
+```bash
+sudo apt-get install -y build-essential gfortran libopenblas-dev
+```
+
+**macOS (Homebrew):**
+```bash
+brew install gcc gfortran openblas
+# Якщо bundle install завершується помилкою компіляції:
+bundle config build.numo-narray --with-opt-dir="$(brew --prefix openblas)"
+```
+
+**Якщо `bundle install` падає з помилкою `numo-narray`:**
+```bash
+gem install numo-narray -- --with-opt-dir=/usr/local
+# або вкажіть шлях до бібліотек вручну:
+gem install numo-narray -- --with-narray-include=/path/to/include
+```
+
+---
+
 ### 1. Клонування та налаштування
 
 ```bash
