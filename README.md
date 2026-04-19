@@ -75,6 +75,52 @@ Slashing: якщо >20% дерев кластера в стресі → авто
 
 ## 🚀 Швидкий Старт
 
+### 0. Системні залежності
+
+Перед `bundle install` встановіть системні пакети.
+
+#### PostGIS (обов'язково для просторових запитів кластерів)
+
+**Ubuntu / Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install -y postgresql-16-postgis-3 postgresql-16-postgis-3-scripts
+```
+
+**macOS (Homebrew):**
+```bash
+brew install postgis
+```
+
+Після встановлення PostgreSQL-розширення активується автоматично через `structure.sql` (`CREATE EXTENSION IF NOT EXISTS postgis`). При ручному створенні бази виконайте в psql:
+```sql
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
+
+#### numo-narray (нативний gem, потребує компілятора)
+
+`rumale` (ML-сервіси) залежить від `numo-narray-alt` — актуального fork'а `numo-narray`. Explicit `gem "numo-narray"` **видалено** з Gemfile, оскільки встановлення обох одночасно спричиняє конфлікт і runtime-попередження:
+
+> *'numo-narray-alt' is an alternative implementation of 'numo-narray'. Having both gems installed may lead to conflicts.*
+
+`numo-narray-alt` надає ідентичний API (`Numo::DFloat`, `Numo::NArray` тощо), тому в коді нічого змінювати не потрібно.
+
+Обидва gem-и компілюють нативні C-розширення, тому потрібні інструменти збирання:
+
+**Ubuntu / Debian:**
+```bash
+sudo apt-get install -y build-essential ruby-dev
+```
+
+**macOS (Homebrew):**
+```bash
+xcode-select --install   # або: brew install gcc
+```
+
+Після цього звичайний `bundle install` відпрацює без помилок.
+
+---
+
 ### 1. Клонування та налаштування
 
 ```bash
