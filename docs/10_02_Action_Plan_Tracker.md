@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-19 Сесія 12 (Глибокий аудит всіх docs + codebase cross-reference. Додано 40+ нових пунктів: документаційні невідповідності, відсутні метрики, нові SEC/ARCH/OPS/FW items)
+> **Останнє оновлення:** 2026-04-19 Сесія 13 (Завершення глибокого аудиту. Додано: FW.22-23, SEC.5-7, DOC.1-7, OPS.1-2, BIZ.6-7, ARCH.7-17. Всього ~40 нових пунктів)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -271,6 +271,25 @@
 - [ ] Інтегрувати з Kalman filter design (E.10 — Косенук)
 - [ ] Верифікувати RAM footprint залишається < 80% available
 
+#### FW.22 — acoustic_events payload overflow (uint16 → uint8 truncation)
+- `03_03` BLOCKER-7
+- **Опис:** `acoustic_events` — тип `uint16_t` в firmware, але в 21-байтний пакет пишеться лише молодший байт (low byte). Якщо між TX циклами більше 255 подій — silent overflow, дані корумпуються. Backend отримує обрізане значення без можливості виявити overflow
+- **Пріоритет:** P2 (рідкий сценарій при нормальній роботі, критичний при stress-тестуванні)
+- [ ] Firmware: обмежити `acoustic_events` до `uint8_t` з saturating increment (cap at 255)
+- [ ] АБО: виділити 2 байти в payload (потребує перепакування — пов'язано з FW.2 CCM transition)
+- [ ] Backend: додати warning якщо `acoustic_events == 255` (ймовірний overflow)
+
+#### FW.23 — OTA firmware broadcast: ECB без автентифікації
+- `03_05` | `firmware/queen/main.c`
+- **Опис:** OTA bytecode chunks (`[0x99][index:2][total:2][bytecode:11]`) передаються через AES-256-ECB без MAC/signature. Зловмисник може підмінити firmware chunks → code injection на всіх Soldiers у радіусі Queen. Відсутня верифікація цілісності зібраного bytecode перед записом у Flash (`0x0803F000`)
+- **Пріоритет:** P1 (критичний для security, але блокується FW.2 CCM transition)
+- **Рішення:** (1) Підписати OTA image Ed25519 на backend, (2) Queen верифікує підпис перед relay, (3) Soldier верифікує перед Flash write. АБО: HMAC-SHA256 над повним image, transmitted як фінальний chunk
+- [ ] Дизайн OTA authentication protocol
+- [ ] Backend: підпис OTA image перед відправкою
+- [ ] Firmware Queen: верифікація підпису/HMAC перед relay
+- [ ] Firmware Soldier: верифікація перед Flash write (`MRUBY_CONTRACT_FLASH_ADDR`)
+- [ ] Magic check `0x45544952 ("RITE")` + HMAC verification = dual gate
+
 ---
 
 ## 🧪 Hardware / Lab
@@ -476,6 +495,67 @@
 - [ ] Додати Hamlin 59140-1-T-00-A reed switch + N52 neodymium magnet до BOM
 - [ ] Оновити KiCad schematic
 
+#### SEC.5 — HMAC bypass при відсутньому CHAINLINK_HMAC_SECRET
+- **Джерело:** `04_03`, `04_02` | `app/controllers/api/v1/oracle_callbacks_controller.rb`
+- **Опис:** Якщо ENV `CHAINLINK_HMAC_SECRET` не встановлено, HMAC-SHA256 перевірка `X-Chainlink-Signature` header **пропускається** з warning у лог. У dev/test це допустимо, але якщо production буде misconfigured (ENV не встановлено) — oracle callback endpoint стає повністю відкритим. Зловмисник може фальсифікувати `oracle_status_fulfilled?` → unauthorized minting
+- **Пріоритет:** P0 (до mainnet deploy)
+- [ ] Додати guard: якщо `WEB3_STRICT_MODE=true` та `CHAINLINK_HMAC_SECRET` відсутній → raise при старті Rails (fail-fast)
+- [ ] Додати integration тест: request без HMAC header при встановленому secret → 401
+- [ ] Задокументувати у `04_03` як security requirement
+
+#### SEC.6 — Secure Element (ATECC608B) не використовується
+- **Джерело:** `03_05` | Firmware architecture
+- **Опис:** AES-256 ключ зберігається у plain Flash STM32 (навіть з RDP Level 1 — key extraction можливий через glitching/side-channel). ATECC608B забезпечує hardware-protected key storage з tamper-detection. Ціна ~$0.60/unit
+- **Пріоритет:** P2 (Post-TRL 7, перед mass production >1000 units)
+- [ ] Оцінити ATECC608B integration з STM32WLE5JC (I²C interface)
+- [ ] Дизайн key storage: ATECC608B slot 0 = AES key, slot 1 = device certificate
+- [ ] Оновити Factory Flashing pipeline (SEC.3) для ATECC608B provisioning
+- [ ] Оцінити альтернативи: STSAFE-A110 (ST ecosystem), Infineon OPTIGA Trust M
+
+#### SEC.7 — OTA image автентифікація (cross-ref FW.23)
+- **Джерело:** `03_05`, `03_02`
+- **Опис:** OTA broadcast (mruby bytecode та потенційно firmware updates) не має цифрового підпису. Пов'язано з FW.23 але виділено як окремий security item через критичність. Поточний захист — лише AES-256-ECB шифрування (яке буде замінено на CCM в FW.2)
+- **Пріоритет:** P1 (перед першою OTA в полі)
+- [ ] Ed25519 key pair: private на backend, public у Soldier/Queen Flash (protected sector)
+- [ ] Backend: `OtaPackagerService` → sign(bytecode) → append signature
+- [ ] Firmware: verify signature перед Flash write
+- [ ] Fallback: HMAC-SHA256 якщо Ed25519 не вміщується в SRAM budget
+
+---
+
+## 📝 Документаційні невідповідності (DOC)
+
+> Виявлені при cross-reference аудиті всіх 35 документів. Потребують узгодження між docs, firmware та backend.
+
+| ID | Невідповідність | Документи | Дія |
+|----|----------------|-----------|-----|
+| DOC.1 | **Lorenz Z thresholds розходяться:** `02_03` та `02_04` вказують `CRITICAL_Z_MIN=5.0, CRITICAL_Z_MAX=30.0, OPTIMAL_Z_TARGET=20.0`. Firmware та `03_04`/`05_02` використовують `2.0/45.0/29.0`. Docs `02_03`/`02_04` **застарілі** | `02_03` §3, `02_04` §3 vs `03_04`, `05_02`, firmware | Оновити `02_03` та `02_04` → `2.0/45.0/29.0` |
+| DOC.2 | **HardwareKey кеш: Redis vs In-process.** `04_01` L1244 каже "cached_binary_key in Redis (TTL 15 min)". `04_01` L388 каже "In-process LRU (SinLruRedux::ThreadSafeCache) — keys never leave Ruby process (no Redis-serialize)". Суперечність в одному документі | `04_01` L388 vs L1244 | Видалити згадку Redis на L1244 — SSOT: in-process LRU |
+| DOC.3 | **TRL 9 claim в `04_04`:** "System complete. All blockers closed." Суперечить всім іншим docs де TRL = 4-8 та десятки відкритих блокерів | `04_04` L9 vs `09_02`, `10_02` | Виправити на актуальний TRL (8 для Phlex UI) |
+| DOC.4 | **Porosity: 65% vs 70%.** `01_01` послідовно використовує 65%, але CLAUDE.md instructions кажуть 70%. `01_01` §5.2 таблиця каже "60-70% range" | `01_01` vs CLAUDE.md | Узгодити: 65% = target, 60-70% = acceptable range |
+| DOC.5 | **Endpoint count: 82 vs 83.** Header `04_03` каже "82 endpoints", але status section каже "83 endpoints". Endpoint #27 дублюється | `04_03` L5-10, L197 | Перерахувати та виправити |
+| DOC.6 | **`peaq_signing_key` optionality.** `04_02` L207 каже mandatory (raises `RegistrationError`). `05_02` L601 каже "Фактично ні" (effectively not required) | `04_02` vs `05_02` | Узгодити: mandatory для production, optional для dev/test |
+| DOC.7 | **Soldier file size:** `05_02` L170 каже 648 рядків. CLAUDE.md каже 771 рядків. Обидва можуть бути застарілими | `05_02` vs CLAUDE.md | Оновити до актуального `wc -l firmware/soldier/main.c` |
+
+---
+
+## ⚙️ Операційна автоматизація (OPS)
+
+#### OPS.1 — TRL Auto-Advancement GitHub Action
+- **Джерело:** `09_03` | **Складність: M**
+- **Опис:** `trl_sync.yml` — GitHub Action що автоматично переміщує картки на Project Board при закритті issues з TRL-labels. Описаний як "на стадії впровадження" (TRL 7), але не реалізований. Потребує `secrets.PROJECT_PAT` з GraphQL project board permissions
+- [ ] Створити `.github/workflows/trl_sync.yml`
+- [ ] Налаштувати GraphQL API для GitHub Projects v2
+- [ ] Створити `PROJECT_PAT` secret з project:write scope
+- [ ] Тестування з тестовими issues
+
+#### OPS.2 — SSOT Integrity Guard
+- **Джерело:** `09_03` | **Складність: M**
+- **Опис:** GitHub Action що блокує merge PRs якщо зміни в `app/models/` або `firmware/` не супроводжуються відповідними оновленнями в `docs/` або Wiki. Запобігає context drift між кодом та документацією
+- [ ] Створити `.github/workflows/ssot_guard.yml`
+- [ ] Визначити mapping: які файли потребують яких doc updates
+- [ ] Налаштувати як required check на `main` branch
+
 ---
 
 ## 📋 Юридичні / Бізнес
@@ -511,6 +591,21 @@
 - **Джерело:** `08_03`
 - [ ] Engagement з патентним адвокатом
 - [ ] Патентна заявка на дизайн анкера
+
+#### BIZ.6 — Supply chain war-zone risk mitigation
+- **Джерело:** `07_02` | **Пріоритет: P1**
+- **Опис:** DMLS manufacturing залежить від українських підрядників (Київ 3D Metal Tech, Дніпро ALT Ukraine, Черкаси SVS-ARTA) — зона активних бойових дій. Логістичні ризики, енергетичні перебої, мобілізація персоналу. Відсутній contingency plan з EU/US альтернативами
+- [ ] Ідентифікувати 2-3 backup DMLS заводи в ЄС (Польща, Чехія, Німеччина)
+- [ ] Отримати quotes для порівняння вартості
+- [ ] Задокументувати contingency план у `07_02`
+
+#### BIZ.7 — Soldier failure rate та replacement OPEX
+- **Джерело:** `07_02` | **Пріоритет: P2**
+- **Опис:** Unit Economics (`07_02`) не враховують failure rate Soldiers в полі та вартість їх заміни. При 10,000+ деревах навіть 1% annual failure = 100 replacements/рік. Також відсутня оцінка деградації LiFePO4 батареї Queen (12V 6Ah) за 5+ років
+- [ ] Визначити expected failure rate (target < 1% annually)
+- [ ] Додати replacement OPEX у Unit Economics
+- [ ] Додати Queen battery degradation (80% capacity після 2000 циклів ≈ 5.5 років)
+- [ ] Оновити ROI model в `07_02`
 
 ---
 
@@ -591,6 +686,17 @@
 | ARCH.4 | Governance DAO (SFC voting) — protocol constants via on-chain governance | `05_03` | Post-TRL 6 |
 | ARCH.5 | Cross-Registry Export (Verra, Gold Standard, UNFCCC) | `04_02` | Post-TRL 7 |
 | ARCH.6 | Federated Learning auto-retraining (monthly cycle, A/B testing) | `04_02` | Post-TRL 7 |
+| ARCH.7 | Edge Data Fusion: transmit 2-byte λ-exponent замість 16-byte Z payload | `00_01` | Post-TRL 7 |
+| ARCH.8 | Event-Triggered Reporting: heartbeat 1/day normal, continuous on anomaly | `00_01` | Post-TRL 6 |
+| ARCH.9 | Network Sharding: isolate anomalous clusters to prevent storm propagation | `00_01` | Post-TRL 7 |
+| ARCH.10 | Queen-to-Queen Backhaul Mesh: LoRa SF12 inter-Queen relay (Starlink fallback) | `00_01` | Post-TRL 8 |
+| ARCH.11 | Energy-Aware Routing: route metric = f(hop_count, remaining_energy, bio_potential) | `00_01` | Post-TRL 7 |
+| ARCH.12 | Merkle Tree state root (замість flat SHA-256) для partial verification / ISO 14064 | `05_04` | TRL 9 |
+| ARCH.13 | EigenLayer AVS як альтернатива direct L1 write (~$0.01/week vs $5-15/week) | `05_04` | Research |
+| ARCH.14 | Read-Only PostgreSQL Replicas для analytics та Oracle queries | `00_01`, `06_01` | Post-TRL 7 |
+| ARCH.15 | SystemParameter model для governance-aware backend (`SystemParameter.current(:lorenz_sigma)`) | `05_03` | Post-TRL 6 |
+| ARCH.16 | Mobile app для foresters (Phase 2 roadmap) | `00_02` | Post-TRL 7 |
+| ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
 
 ---
 
@@ -621,6 +727,7 @@
 | 2026-04-19 | Сесії 7-8: ARCH.3/DIFF.4/DIFF.6/E.6/E.16/E.21-25/INF.1/INF.4-7/S4.1 виконано. Infrastructure Pivot. |
 | 2026-04-19 | Сесія 9: OBS.1 — Grafana Alloy sidecar → Grafana Cloud (BLOCKERs 1-3 resolved). |
 | 2026-04-19 | Сесія 10: Очищення трекера — видалено виконані задачі, прибрано sprint-групування. Відновлено описи для незавершених пунктів. |
+| 2026-04-19 | Сесії 12-13: Глибокий аудит всіх 35 docs (повне читання, не лише заголовки). Cross-reference codebase. Додано: S5.1-S5.6 (backend), FW.22-FW.23 (firmware), SEC.5-SEC.7 (security), DOC.1-DOC.7 (документаційні невідповідності), OPS.1-OPS.2 (автоматизація), BIZ.6-BIZ.7 (бізнес), ARCH.7-ARCH.17 (архітектурні пропозиції). Всього ~40 нових пунктів. |
 
 ---
 
