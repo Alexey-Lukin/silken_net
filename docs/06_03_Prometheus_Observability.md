@@ -316,6 +316,19 @@ end
 
 **Підсумок реєстру: 10 кастомних метрик (7 оригінальних + 5 нових = 10: 7 counters + 1 histogram + 2 gauges).**
 
+### 2.4.1 RSpec покриття нових метрик (S2.4 — Виконано)
+
+Всі 5 нових метрик покриті RSpec тестами:
+
+| Spec файл | Метрика | Кількість тестів | Що перевіряється |
+|-----------|---------|------------------|------------------|
+| `spec/initializers/prometheus_spec.rb` | Всі 5+1 нових | 22 | Реєстрація, інкрементування, доступність констант, label validation |
+| `spec/workers/burn_carbon_tokens_worker_spec.rb` | `SLASHING_EVENTS_TOTAL` | 3 | Інкремент по reason (tree_death / cluster_degradation), не інкрементується при breached |
+| `spec/workers/ota_transmission_worker_spec.rb` | `OTA_CHUNKS_SENT_TOTAL` | 3 | Інкремент при успішній передачі, не інкрементується при failure, послідовна передача |
+| `spec/workers/dclimate_verification_worker_spec.rb` | `EWS_ALERTS_TOTAL` | 4 | Інкремент при успішній верифікації, не інкрементується при falsey/verified/not found |
+| `spec/workers/chainlink_dispatch_worker_spec.rb` | `ORACLE_DISPATCH_DURATION` | 3 | Histogram observation, не observe при skip/not found |
+| `spec/workers/unpack_telemetry_worker_spec.rb` | `COAP_PACKETS_RECEIVED_TOTAL` | 4 | Статуси: success, unknown_device, decrypt_error; ізоляція між статусами |
+
 ### 2.5 Відсутні метрики (залишкові прогалини)
 
 | Компонент | Відсутня метрика | Бізнес-ризик |

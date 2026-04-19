@@ -1257,3 +1257,18 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 7. **Hadron KYC:** Інституційні інвестори мусять пройти KYC/KYB через Polygon Hadron (ERC-3643) перед отриманням RWA-токенів.
 8. **L1 Finality:** Щотижневий state root на Ethereum Mainnet — незнищенний якір усієї економіки.
 9. **Immutable Archive:** SHA-256 chain_hash per organization → Filecoin/IPFS (CID) — дані доступні навіть після знищення серверів.
+
+### S3.1 — Guard Clause RSpec покриття (Виконано)
+
+Guard clauses повністю покриті RSpec тестами. Тести верифікують:
+
+| Сценарій | Spec файл | Тести |
+|----------|-----------|-------|
+| Oracle-driven: IoTeX guard | `spec/services/blockchain_minting_service_spec.rb` | 4 тести (not verified, pending, dispatched, failed) |
+| Oracle-driven: Chainlink guard | `spec/services/blockchain_minting_service_spec.rb` | 2 тести (pending/dispatched = blocked) |
+| Oracle-driven: successful flow | `spec/services/blockchain_minting_service_spec.rb` | 2 тести (both guards pass → mint + audit trail) |
+| Batch emission: bypass guards | `spec/services/blockchain_minting_service_spec.rb` | 2 тести (no telemetry_log → no guards → mint) |
+| Hadron KYC: always enforced | `spec/services/blockchain_minting_service_spec.rb` | 5 тестів (pending/rejected в обох flows, approved pass) |
+| Prometheus guard interaction | `spec/services/blockchain_minting_service_spec.rb` | 3 тести (metrics NOT incremented on guard rejection) |
+| IoTeX worker guards | `spec/workers/iotex_verification_worker_spec.rb` | 4 тести (already-verified skip, pipeline ordering, failure isolation) |
+| Chainlink worker guards | `spec/workers/chainlink_dispatch_worker_spec.rb` | 2 тести (idempotency, oracle_status tracking) |

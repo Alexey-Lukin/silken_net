@@ -45,15 +45,17 @@
 - [ ] Alert: Sidekiq queue latency > 5 min
 - [ ] Налаштувати notification channel (Slack / Email / PagerDuty)
 
-#### S2.4 — RSpec тести для Prometheus метрик
+#### ✅ S2.4 — RSpec тести для Prometheus метрик (Виконано)
 - **P1** | `06_03` | Потребує PostgreSQL
-- **Опис:** 5 нових метрик реалізовано та інструментовано. Задокументовано в `06_03` розділ 2.4. Потрібні RSpec тести
-- [ ] Додати RSpec тести для нових метрик
+- **Опис:** 5 нових метрик реалізовано та інструментовано. Задокументовано в `06_03` розділ 2.4. RSpec тести додано.
+- [x] Додати RSpec тести для нових метрик
+- **Результат:** 22 тести в `spec/initializers/prometheus_spec.rb` (реєстрація, інкрементування, доступність констант) + 14 тестів в worker specs (SLASHING_EVENTS_TOTAL, OTA_CHUNKS_SENT_TOTAL, EWS_ALERTS_TOTAL, ORACLE_DISPATCH_DURATION, COAP_PACKETS_RECEIVED_TOTAL)
 
-#### S3.1 — Guard clause RSpec тести
-- **P1** | `04_02` | Аудит завершено, потрібні тести
+#### ✅ S3.1 — Guard clause RSpec тести (Виконано)
+- **P1** | `04_02` | Аудит завершено, тести додано
 - **Опис:** Аудит завершено. Архітектура коректна by design (задокументовано в `04_02`). Oracle-driven flow: IoTeX + Chainlink guards ENFORCED. Batch emission: guards bypassed intentionally. `hadron_kyc_status` завжди перевіряється
-- [ ] Додати RSpec тести для обох сценаріїв (oracle-driven + batch emission)
+- [x] Додати RSpec тести для обох сценаріїв (oracle-driven + batch emission)
+- **Результат:** 20+ тестів у `spec/services/blockchain_minting_service_spec.rb` (oracle-driven guard clauses, batch emission bypass, Hadron KYC enforcement у обох flow, Prometheus метрики при guard rejection) + 8 тестів у `spec/workers/iotex_verification_worker_spec.rb` та `spec/workers/chainlink_dispatch_worker_spec.rb`
 
 #### S3.2 — dClimate Real API verification
 - **P1** | `05_01` | Сервіс реалізований, потрібна staging верифікація
