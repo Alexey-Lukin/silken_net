@@ -64,6 +64,13 @@ resource "local_file" "akash_sdl" {
     akash_auditor                      = var.akash_auditor_address
     web_concurrency                    = var.web_concurrency
     rails_max_threads                  = var.rails_max_threads
+    # OBS.1: Grafana Alloy observability sidecar
+    grafana_remote_write_url           = var.grafana_remote_write_url
+    grafana_remote_write_username      = var.grafana_remote_write_username
+    grafana_remote_write_token         = var.grafana_remote_write_token
+    prometheus_auth_user               = var.prometheus_auth_user
+    prometheus_auth_password           = var.prometheus_auth_password
+    alloy_config_base64                = filebase64("${path.module}/../../deploy/akash/config.alloy")
   })
   filename = "${path.module}/generated-deploy.yaml"
 

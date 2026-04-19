@@ -36,3 +36,14 @@ persistent_storage_size = "10Gi"
 web_replicas    = 1
 web_concurrency = 4
 max_price_uakt  = 10000
+
+# Observability — Grafana Cloud (OBS.1)
+# Sign up at https://grafana.com/products/cloud/ (free tier available)
+# Create a Prometheus data source → copy the remote_write URL, instance ID, and API token.
+grafana_remote_write_url      = "https://prometheus-prod-01-eu-west-0.grafana.net/api/prom/push"
+grafana_remote_write_username = "123456"
+grafana_remote_write_token    = "CHANGE_ME_grafana_cloud_api_token"
+
+# Basic Auth for Rails /metrics endpoint (must match web service ENV vars)
+prometheus_auth_user     = "prometheus"
+prometheus_auth_password = "CHANGE_ME_metrics_password"

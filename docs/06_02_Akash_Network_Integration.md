@@ -22,6 +22,8 @@
 | Приклад конфігурації | `terraform/akash/terraform.tfvars.example` | ✅ Існує |
 | Реальний деплой (DSEQ) | `terraform/akash/akash-dseq.txt` | 🔴 Відсутній (деплой не проводився) |
 | Sidekiq у SDL | `deploy/akash/deploy.yaml` (`job` сервіс) | ✅ Додано (BLOCKER-2 виправлено) |
+| Grafana Alloy у SDL | `deploy/akash/deploy.yaml` (`alloy` сервіс) | ✅ Додано (OBS.1 — Grafana Cloud SaaS) |
+| Alloy config | `deploy/akash/config.alloy` | ✅ Створено |
 | Cloud SQL connectivity | Cloud SQL Auth Proxy в контейнері | ✅ Вирішено (BLOCKER-1) |
 | Redis connectivity | Upstash serverless Redis (TLS) | ✅ Вирішено (BLOCKER-1) |
 | Ingress Anchor (GCP) | `e2-micro` зі статичним IP | ✅ Замінює важкі web VM |
@@ -66,9 +68,10 @@
 
 ### ✅ BLOCKER-2: Sidekiq (`job` сервіс) додано в SDL (Виправлено)
 
-**Статус:** Виправлено. SDL `deploy/akash/deploy.yaml` тепер визначає два сервіси:
+**Статус:** Виправлено. SDL `deploy/akash/deploy.yaml` тепер визначає три сервіси:
 - `web` — Puma + Thruster HTTP сервер
 - `job` — `/rails/bin/docker-entrypoint bundle exec sidekiq -C config/sidekiq.yml` (через entrypoint для запуску Cloud SQL Auth Proxy)
+- `alloy` — Grafana Alloy metrics agent (скрейпить `web:80/metrics`, пушить у Grafana Cloud)
 
 Усі категорії воркерів тепер запускаються на Akash:
 
@@ -205,7 +208,8 @@ SDL (Stack Definition Language) — це декларативний формат
 ```
 deploy/akash/
 ├── deploy.yaml        ← Статичний SDL (для ручного деплою через akash CLI або Akash Console)
-└── deploy.yaml.tpl    ← Шаблон SDL для Terraform (секрети підставляються з terraform.tfvars)
+├── deploy.yaml.tpl    ← Шаблон SDL для Terraform (секрети підставляються з terraform.tfvars)
+└── config.alloy       ← Grafana Alloy конфігурація (River format, кодується в Base64 для SDL)
 ```
 
 ---
@@ -357,8 +361,21 @@ Queen Gateway (STM32 + SIM7070G)
 │  │ (HTTPS tunnel, no public IP)    │    │
 │  └─────────────────────────────────┘    │
 │                                         │
+│  ┌─────────────────────────────────┐    │
+│  │ Grafana Alloy (alloy service)   │    │
+│  │ scrapes web:80/metrics (15s)    │    │
+│  │ remote_write → Grafana Cloud    │    │
+│  └─────────────────────────────────┘    │
+│                                         │
 │  REDIS_URL = rediss://upstash (TLS) ✅  │
 │  DATABASE_URL = 127.0.0.1:5432    ✅    │
+└─────────────────────────────────────────┘
+                    │
+                    │ remote_write (HTTPS)
+                    ▼
+┌─────────────────────────────────────────┐
+│  Grafana Cloud (SaaS)                   │
+│  Prometheus + Grafana + Alerting        │
 └─────────────────────────────────────────┘
 ```
 
@@ -488,6 +505,18 @@ silken-net-terraform-state/ (GCS bucket)
 | `kredis_redis_url` | — (auto-derived if empty) |
 | `cloud_sql_instance_connection_name` | Формат: `project:region:instance` |
 | `gcp_sa_key_base64` | Base64-encoded GCP service account JSON key |
+| `grafana_remote_write_token` | Grafana Cloud API token (metrics:write scope) |
+| `prometheus_auth_password` | Basic Auth password для `/metrics` endpoint |
+
+**Observability — Grafana Cloud (OBS.1):**
+
+| Змінна | За замовчуванням | Sensitive | Опис |
+|--------|-----------------|-----------|------|
+| `grafana_remote_write_url` | — (обов'язкова) | ❌ | Grafana Cloud Prometheus remote_write URL |
+| `grafana_remote_write_username` | — (обов'язкова) | ❌ | Grafana Cloud instance ID (числовий) |
+| `grafana_remote_write_token` | — (обов'язкова) | ✅ | Grafana Cloud API token |
+| `prometheus_auth_user` | — (обов'язкова) | ❌ | Basic Auth username для `/metrics` |
+| `prometheus_auth_password` | — (обов'язкова) | ✅ | Basic Auth password для `/metrics` |
 
 ### 3.3 Lifecycle Provisioner
 
@@ -643,6 +672,7 @@ Mapping між конфігурацією Kamal (`config/deploy.yml`) та SDL (
 | `volumes: silken_net_storage:/rails/storage` | `params.storage.data.mount: /rails/storage` |
 | `builder.arch: amd64` | `profiles.compute.web.resources.cpu.units: 4` |
 | `servers.job` (Sidekiq) | ✅ Додано (BLOCKER-2 виправлено) |
+| — (Grafana Alloy sidecar) | ✅ `alloy` сервіс (OBS.1 — Grafana Cloud) |
 
 ---
 
@@ -661,7 +691,7 @@ L2  Hardware Capsule      BQ25570, EDLC             (не залежить ві�
 L1  Biophysics            Ti-6Al-4V EBFC            (не залежить від Akash)
 ```
 
-**Висновок:** SDL визначає обидва сервіси: `web` (Rails API + CoAP) та `job` (Sidekiq workers). Cloud SQL Auth Proxy (in-container) забезпечує доступ до PostgreSQL через HTTPS тунель, Upstash serverless Redis (TLS) замінює GCP Memorystore. `job` сервіс використовує entrypoint (`/rails/bin/docker-entrypoint bundle exec sidekiq ...`) для запуску Cloud SQL Proxy і для Sidekiq. Ingress Anchor (`e2-micro` зі статичним IP) проксіює CoAP-трафік від Queens до Akash.
+**Висновок:** SDL визначає три сервіси: `web` (Rails API + CoAP), `job` (Sidekiq workers), та `alloy` (Grafana Alloy → Grafana Cloud). Cloud SQL Auth Proxy (in-container) забезпечує доступ до PostgreSQL через HTTPS тунель, Upstash serverless Redis (TLS) замінює GCP Memorystore. `job` сервіс використовує entrypoint (`/rails/bin/docker-entrypoint bundle exec sidekiq ...`) для запуску Cloud SQL Proxy і для Sidekiq. `alloy` сервіс скрейпить `/metrics` endpoint `web` сервісу кожні 15 секунд та пушить метрики у Grafana Cloud через remote_write — вирішуючи BLOCKER'и спостережуваності (06_03). Ingress Anchor (`e2-micro` зі статичним IP) проксіює CoAP-трафік від Queens до Akash.
 
 ---
 

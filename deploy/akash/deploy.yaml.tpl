@@ -20,6 +20,8 @@ services:
       - RAILS_ENV=production
       - RAILS_MAX_THREADS=${rails_max_threads}
       - WEB_CONCURRENCY=${web_concurrency}
+      - PROMETHEUS_AUTH_USER=${prometheus_auth_user}
+      - PROMETHEUS_AUTH_PASSWORD=${prometheus_auth_password}
     expose:
       - port: 80
         as: 80
@@ -59,6 +61,21 @@ services:
       - RAILS_ENV=production
       - RAILS_MAX_THREADS=${rails_max_threads}
 
+  alloy:
+    image: grafana/alloy:latest
+    env:
+      - GRAFANA_REMOTE_WRITE_URL=${grafana_remote_write_url}
+      - GRAFANA_REMOTE_WRITE_USERNAME=${grafana_remote_write_username}
+      - GRAFANA_REMOTE_WRITE_TOKEN=${grafana_remote_write_token}
+      - PROMETHEUS_AUTH_USER=${prometheus_auth_user}
+      - PROMETHEUS_AUTH_PASSWORD=${prometheus_auth_password}
+      - ALLOY_CONFIG_BASE64=${alloy_config_base64}
+    command:
+      - "/bin/sh"
+      - "-c"
+    args:
+      - "mkdir -p /etc/alloy && echo $ALLOY_CONFIG_BASE64 | base64 -d > /etc/alloy/config.alloy && alloy run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy"
+
 profiles:
   compute:
     web:
@@ -82,6 +99,14 @@ profiles:
           size: 4Gi
         storage:
           - size: 20Gi
+    alloy:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 512Mi
+        storage:
+          - size: 1Gi
   placement:
     silken-dcloud:
       attributes:
@@ -96,6 +121,9 @@ profiles:
         job:
           denom: uakt
           amount: 5000
+        alloy:
+          denom: uakt
+          amount: 1000
 
 deployment:
   web:
@@ -105,4 +133,8 @@ deployment:
   job:
     silken-dcloud:
       profile: job
+      count: 1
+  alloy:
+    silken-dcloud:
+      profile: alloy
       count: 1
