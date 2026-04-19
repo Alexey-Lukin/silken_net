@@ -36,9 +36,11 @@ variable "akash_auditor_address" {
 # -----------------------------------------------------------------------------
 
 variable "docker_image" {
-  description = "Full Docker image URL (same image Kamal pushes to Artifact Registry)"
+  description = "Full Docker image URL. Default: GHCR public image (accessible to Akash providers). Override for private registries."
   type        = string
-  # Example: europe-west1-docker.pkg.dev/your-project/silken-net/silken_net:latest
+  default     = "ghcr.io/alexey-lukin/silken_net:latest"
+  # GHCR image is mirrored automatically by .github/workflows/mirror-ghcr.yml
+  # For GCP Artifact Registry (private): europe-west1-docker.pkg.dev/your-project/silken-net/silken_net:latest
 }
 
 variable "rails_master_key" {

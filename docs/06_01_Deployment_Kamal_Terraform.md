@@ -319,7 +319,8 @@ terraform apply
 | **Redis** | ❌ | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
 | **Prometheus + Grafana + Alerting** | ❌ | — | — | ✅ | SaaS, Alloy → remote_write |
 | **Ingress Anchor** | ✅ | — | — | — | `e2-micro`, HAProxy/socat, статична IP |
-| **Artifact Registry (Docker)** | ✅ | shared | — | — | Той самий образ |
+| **Artifact Registry (Docker)** | ✅ | — | — | — | Kamal пушить у GCP AR |
+| **GHCR (Docker mirror)** | — | ✅ | — | — | `.github/workflows/mirror-ghcr.yml`, публічний для Akash |
 
 ---
 

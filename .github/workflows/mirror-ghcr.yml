@@ -1,0 +1,87 @@
+# =============================================================================
+# Mirror Docker Image to GitHub Container Registry (GHCR)
+# =============================================================================
+#
+# Resolves INF.2 / 06_02 BLOCKER-4:
+# Akash providers cannot pull images from private GCP Artifact Registry.
+# This workflow builds the production Docker image and pushes it to GHCR
+# (ghcr.io), which is publicly accessible to Akash providers.
+#
+# Triggers:
+#   - After CI passes on main branch (same cadence as Canopy deploy)
+#   - On GitHub Release published (same cadence as Production deploy)
+#   - Manual dispatch for ad-hoc mirroring
+#
+# Tags pushed to GHCR:
+#   - ghcr.io/alexey-lukin/silken_net:latest       (on main push)
+#   - ghcr.io/alexey-lukin/silken_net:sha-<commit>  (always)
+#   - ghcr.io/alexey-lukin/silken_net:v1.2.3        (on release)
+# =============================================================================
+
+name: Mirror to GHCR
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: mirror-ghcr
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  mirror:
+    name: Build & Push to GHCR
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
