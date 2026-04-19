@@ -65,12 +65,13 @@
 - **Опис:** SFC events (ForestMinted, GovernanceSlashed) додано до subgraph. Задокументовано в `05_03` розділ Subgraph. Але contract address — placeholder. Блокує deploy subgraph.
 - [ ] ⚠️ Замінити placeholder `0x0000...0000` на реальну адресу SFC контракту у `subgraph.yaml`
 
-#### INF.2 — Docker image registry для Akash providers
-- **P2** | `06_02` BLOCKER-4 | **Складність: S**
+#### ~~INF.2 — Docker image registry для Akash providers~~ ✅
+- **P2** | `06_02` BLOCKER-4 | **Складність: S** | **Виконано**
 - **Опис:** SDL reference `europe-west1-docker.pkg.dev/.../silken_net:latest`. Akash providers без GCP credentials → pull fails "unauthorized"
-- [ ] Mirror image до Docker Hub або GHCR (public або з token)
-- [ ] Оновити SDL image reference
-- [ ] CI workflow для автоматичного mirror
+- **Рішення:** GHCR mirror (`ghcr.io/alexey-lukin/silken_net:latest`) + CI workflow `.github/workflows/mirror-ghcr.yml`
+- [x] Mirror image до GHCR (public)
+- [x] Оновити SDL image reference (`deploy/akash/deploy.yaml`)
+- [x] CI workflow для автоматичного mirror (`.github/workflows/mirror-ghcr.yml`)
 
 #### INF.3 — TLS termination
 - **P2** | `06_02` BLOCKER-5 | **Складність: S** | **🔧 Операційна** — конфігурація Cloudflare або Akash ingress, без коду в Rails

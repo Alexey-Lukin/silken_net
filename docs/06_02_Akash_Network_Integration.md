@@ -28,6 +28,7 @@
 | Redis connectivity | Upstash serverless Redis (TLS) | ✅ Вирішено (BLOCKER-1) |
 | Ingress Anchor (GCP) | `e2-micro` зі статичним IP | ✅ Замінює важкі web VM |
 | Multi-replica ActionCable | Solid Cable (PostgreSQL LISTEN/NOTIFY) | ✅ Вирішено (BLOCKER-8) |
+| GHCR image mirror | `.github/workflows/mirror-ghcr.yml` | ✅ Вирішено (BLOCKER-4 виправлено) |
 | HTTPS / TLS термінація | — | 🟡 Не визначена (немає `443` у SDL) |
 
 - **Поточний TRL:** TRL 5→6 — SDL-маніфест, Terraform-конфігурація, DB+Redis connectivity вирішені; TRL 6 підтверджується після першого реального деплою
@@ -113,21 +114,27 @@
 
 ---
 
-### 🔴 BLOCKER-4: Docker образ у приватному GCP Artifact Registry
+### ✅ BLOCKER-4: Docker образ у приватному GCP Artifact Registry (Виправлено)
 
-**Статус:** Критичний. Akash-провайдери не мають доступу до приватного реєстру.
+**Статус:** ✅ Вирішено. Docker образ тепер дзеркалюється на **GitHub Container Registry (GHCR)** — публічний реєстр, доступний Akash-провайдерам без будь-яких credentials.
 
-SDL посилається на образ:
-```
-europe-west1-docker.pkg.dev/YOUR_GCP_PROJECT/silken-net/silken_net:latest
-```
+**Проблема:** SDL посилався на образ у приватному GCP Artifact Registry (`europe-west1-docker.pkg.dev/...`). Akash-провайдери — незалежні вузли без GCP-credentials → pull завершувався помилкою `unauthorized`.
 
-Google Artifact Registry є **приватним** реєстром. Akash-провайдери — незалежні вузли без GCP-credentials. Pull образу завершиться помилкою `unauthorized: Unauthenticated request`.
+**Реалізоване рішення:**
 
-**Варіанти вирішення:**
-1. Дзеркалювати образ на **Docker Hub** або **GitHub Container Registry (GHCR)** — публічний або з токеном.
-2. Налаштувати **imagePullSecrets** у SDL (Akash підтримує Docker registry credentials через Kubernetes-secrets синтаксис).
-3. Використати **Workload Identity Federation** для надання Akash-провайдерам доступу до Artifact Registry (складно, не рекомендовано).
+| Компонент | Зміна |
+|-----------|-------|
+| **CI Workflow** | `.github/workflows/mirror-ghcr.yml` — автоматично збирає Docker image і пушить до GHCR після CI на `main` та на GitHub Release |
+| **GHCR образ** | `ghcr.io/alexey-lukin/silken_net:latest` (public) |
+| **SDL** | `deploy/akash/deploy.yaml` — обидва сервіси (`web`, `job`) тепер використовують GHCR image |
+| **Terraform** | `docker_image` variable має default `ghcr.io/alexey-lukin/silken_net:latest` |
+
+**Теги GHCR образу:**
+- `latest` — автоматично при push в `main` (після CI)
+- `sha-<commit>` — кожен білд
+- `v1.2.3`, `v1.2` — при GitHub Release
+
+> **Kamal + GCP Artifact Registry** залишаються основним деплоєм для GCP інфраструктури. GHCR — паралельне дзеркало для Akash Network.
 
 ---
 
@@ -303,17 +310,17 @@ deploy/akash/
 ```yaml
 services:
   web:
-    image: europe-west1-docker.pkg.dev/YOUR_GCP_PROJECT/silken-net/silken_net:latest
+    image: ghcr.io/alexey-lukin/silken_net:latest
 ```
 
 | Параметр | Значення | Відповідність Kamal |
 |----------|---------|---------------------|
 | **Назва сервісу** | `web` | `config/deploy.yml` → `servers.web` |
-| **Docker образ** | `europe-west1-docker.pkg.dev/YOUR_GCP_PROJECT/silken-net/silken_net:latest` | Той самий образ, що Kamal пушить в Artifact Registry |
+| **Docker образ** | `ghcr.io/alexey-lukin/silken_net:latest` | GHCR дзеркало, автоматично синхронізується `.github/workflows/mirror-ghcr.yml` |
 | **Платформа** | `amd64` | `config/deploy.yml` → `builder.arch: amd64` |
 | **Кількість реплік** | `1` | `config/deploy.yml` → `web_node_count = 1` |
 
-> ⚠️ `YOUR_GCP_PROJECT` — плейсхолдер. Для реального деплою використовувати `deploy.yaml.tpl` через Terraform або замінити вручну.
+> ✅ GHCR образ — публічний, доступний Akash-провайдерам без credentials. Дзеркалюється автоматично `.github/workflows/mirror-ghcr.yml`. Kamal паралельно пушить у GCP Artifact Registry для GCP деплою.
 
 > **Ingress Anchor:** Важкі GCP web VM замінені легковажним `e2-micro` інстансом зі статичним IP. HAProxy/socat на Ingress Anchor перенаправляє трафік до Akash deployment. Queen шлюзи надсилають CoAP на цей статичний IP, який проксіює до Akash-контейнера.
 

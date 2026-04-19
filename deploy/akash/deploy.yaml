@@ -18,7 +18,7 @@
 # │  env.secret                   →  env (set before deploy)           │
 # │  volumes                      →  persistent storage profile        │
 # │  builder.arch: amd64          →  compute profile resources         │
-# │  registry (Artifact Registry) →  image reference (same registry)   │
+# │  registry (Artifact Registry) →  image reference (GHCR public)        │
 # └──────────────────────────────────────────────────────────────────────┘
 #
 # Usage:
@@ -49,10 +49,12 @@ services:
   # Kamal. Thruster provides HTTP/2 reverse proxy; Puma handles Ruby workers.
   # Background jobs are processed by the job service below.
   web:
-    image: europe-west1-docker.pkg.dev/YOUR_GCP_PROJECT/silken-net/silken_net:latest
-    # ⬆ REQUIRED: Replace YOUR_GCP_PROJECT with your actual GCP project ID.
-    # The same image that Kamal pushes to Google Artifact Registry.
-    # For public Akash deployments, consider mirroring to Docker Hub or GHCR.
+    image: ghcr.io/alexey-lukin/silken_net:latest
+    # ⬆ GHCR (GitHub Container Registry) — publicly accessible to Akash providers.
+    # Mirrored automatically by .github/workflows/mirror-ghcr.yml on every
+    # push to main (after CI) and on GitHub Release.
+    # For production, pin to a specific tag: ghcr.io/alexey-lukin/silken_net:v1.2.3
+    # or sha-based: ghcr.io/alexey-lukin/silken_net:sha-abc1234
     # For Terraform-managed deployments, use deploy/akash/deploy.yaml.tpl instead.
 
     # --- Environment Variables -----------------------------------------------
@@ -176,7 +178,7 @@ services:
   # instead of Puma/Thruster. Uses the 9-queue strict priority configuration
   # from config/sidekiq.yml.
   job:
-    image: europe-west1-docker.pkg.dev/YOUR_GCP_PROJECT/silken-net/silken_net:latest
+    image: ghcr.io/alexey-lukin/silken_net:latest
     command:
       - "/rails/bin/docker-entrypoint"
       - "bundle"
