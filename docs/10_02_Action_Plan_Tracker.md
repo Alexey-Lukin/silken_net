@@ -22,11 +22,13 @@
 - [ ] Верифікувати Kamal deploy з реальними IP
 
 #### S2.1 — Верифікація метрик після deploy
-- **P0** | `06_03` | Alloy sidecar налаштовано, потрібна верифікація
+- **P0** | `06_03`
+- **Опис:** `/metrics` endpoint працює (10+ метрик), скрейпиться Grafana Alloy sidecar → Grafana Cloud. Інфраструктура налаштована (prometheus.rb, middleware, Alloy sidecar, Terraform vars). Потрібна верифікація після першого Akash deploy
 - [ ] Верифікувати що метрики збираються (після першого Akash deploy)
 
 #### S2.2 — Grafana Cloud dashboards
 - **P0** | `06_03` | Операційна задача в Grafana Cloud UI
+- **Опис:** Grafana Cloud SaaS — метрики доступні, дашборди створюються в UI
 - [ ] Dashboard: Sidekiq queues (9 черг, size + latency)
 - [ ] Dashboard: Web3 RPC errors by network
 - [ ] Dashboard: Telemetry ingest rate + fraud detection
@@ -35,6 +37,7 @@
 
 #### S2.3 — Grafana Cloud alerting rules
 - **P0** | `06_03` | Операційна задача в Grafana Cloud UI
+- **Опис:** Grafana Cloud Alerting замінює потребу в self-hosted Alertmanager
 - [ ] Alert: `web3_critical` queue depth > 100
 - [ ] Alert: `silkennet_telemetry_fraud_detected_total` rate > 0
 - [ ] Alert: `silkennet_rpc_errors_total` rate > 10/min
@@ -44,43 +47,52 @@
 
 #### S2.4 — RSpec тести для Prometheus метрик
 - **P1** | `06_03` | Потребує PostgreSQL
+- **Опис:** 5 нових метрик реалізовано та інструментовано. Задокументовано в `06_03` розділ 2.4. Потрібні RSpec тести
 - [ ] Додати RSpec тести для нових метрик
 
 #### S3.1 — Guard clause RSpec тести
 - **P1** | `04_02` | Аудит завершено, потрібні тести
+- **Опис:** Аудит завершено. Архітектура коректна by design (задокументовано в `04_02`). Oracle-driven flow: IoTeX + Chainlink guards ENFORCED. Batch emission: guards bypassed intentionally. `hadron_kyc_status` завжди перевіряється
 - [ ] Додати RSpec тести для обох сценаріїв (oracle-driven + batch emission)
 
 #### S3.2 — dClimate Real API verification
 - **P1** | `05_01` | Сервіс реалізований, потрібна staging верифікація
+- **Опис:** `Dclimate::VerificationService` реалізований з реальним API (NASA FIRMS через dClimate). Fire detection (FRP ≥ 10 MW, confidence ≥ 50%), cloud obscuration fallback, metadata extraction — все працює. Потрібна верифікація з реальним ключем
 - [ ] Верифікувати з реальним API ключем в staging
 - [ ] End-to-end тест з `DclimateVerificationWorker`
 
 #### S3.3 — PuroEarth REST API інтеграція
 - **P1** | `05_01`, `05_03` | On-chain anchoring є, REST API — TODO
-- [ ] Інтеграція з реальним Puro.earth API (поточно: тільки on-chain anchoring)
+- **Опис:** `PuroEarth::PassportService` реалізований. SHA-256 payload hashing + Polygon anchoring працює. Потрібна інтеграція з реальним Puro.earth REST API (поточно: тільки on-chain anchoring)
+- [ ] Інтеграція з реальним Puro.earth API
 - [ ] Верифікувати end-to-end flow: мертве дерево → `MaintenanceRecord` → passport → on-chain
 
 #### S3.5 — Subgraph contract address
 - **P2** | `05_03` | Блокує deploy subgraph
+- **Опис:** SFC events (ForestMinted, GovernanceSlashed) додано до subgraph. Задокументовано в `05_03` розділ Subgraph. Але contract address — placeholder
 - [ ] ⚠️ Замінити placeholder `0x0000...0000` на реальну адресу SFC контракту у `subgraph.yaml`
 
 #### INF.2 — Docker image registry для Akash providers
-- **P2** | `06_02` | Akash провайдери не мають доступу до GCP Artifact Registry
+- **P2** | `06_02` BLOCKER-4
+- **Опис:** SDL reference `europe-west1-docker.pkg.dev/.../silken_net:latest`. Akash providers без GCP credentials → pull fails "unauthorized"
 - [ ] Mirror image до Docker Hub або GHCR (public або з token)
 - [ ] Оновити SDL image reference
 - [ ] CI workflow для автоматичного mirror
 
 #### INF.3 — TLS termination
-- **P2** | `06_02` | Port 443 додано в SDL, TLS потрібно налаштувати
+- **P2** | `06_02` BLOCKER-5
+- **Опис:** SDL відкриває HTTP (port 80), CoAP UDP (5683), та port 443 (додано Сесія 6). Але TLS termination не налаштовано. Browsers block WebSocket from HTTPS → HTTP
 - [ ] Налаштувати TLS (Akash ingress `*.ingress.akash.pub` або Cloudflare)
 
 #### S4.3 — Akash SDL secrets
-- **P3** | `06_02` | `REQUIRED_SECRET_NOT_SET` для критичних змінних
+- **P3** | `06_02`
+- **Опис:** `REQUIRED_SECRET_NOT_SET` для 4 критичних змінних
 - [ ] Заповнити в `deploy/akash/deploy.yaml`
 - [ ] Верифікувати startup
 
 #### S4.5 — Multi-replica sticky sessions
-- **P3** | `06_02` | Потрібно при >1 репліці
+- **P3** | `06_02`
+- **Опис:** ActionCable/Turbo потребують sticky sessions при >1 репліці
 - [ ] Визначити load balancing strategy
 - [ ] Реалізувати sticky sessions або shared ActionCable adapter
 
@@ -92,7 +104,8 @@
 
 #### FW.1 — Hardcoded AES-256 Key
 - `03_01`, `03_02`, `03_05`, `05_02` | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
-- **Опис:** Один ключ на ВСІХ вузлах. Злам одного пристрою = компрометація всієї мережі
+- **Опис:** Один і той самий ключ на ВСІХ вузлах мережі. Злам одного пристрою = компрометація всієї мережі
+- **Рішення:** Per-device provisioning через HKDF, Factory Flashing pipeline
 - [ ] Дизайн HKDF key derivation protocol
 - [ ] Backend: provisioning endpoint (POST `/api/v1/provisioning/register` вже існує)
 - [ ] Firmware: змінити key storage з hardcoded → Flash-based
@@ -101,10 +114,11 @@
 
 #### FW.2 — AES-256-ECB без MAC/MIC
 - `03_05` | `firmware/soldier/main.c:747`, `firmware/queen/main.c:781`
-- **Опис:** Детерміністичний шифротекст, replay/bit-flip attacks можливі
-- **Рішення:** AES-256-CCM (апаратна підтримка STM32WLE5JC) з 24-байтним пакетом
+- **Опис:** Детерміністичний шифротекст, replay/bit-flip attacks можливі. Немає автентифікації пакетів
+- **Рішення (рекомендоване):** **AES-256-CCM** (апаратно підтримується STM32WLE5JC) з новим 24-байтним пакетом: `[DID:4][SensorData:8][FrameCounter:4][MIC:4][Reserved:4]`. Frame Counter у RTC Backup Domain як Nonce. MIC апаратно генерується CCM. Вирішує BLOCKER-2 та BLOCKER-3 одночасно
+- **Альтернативи:** AES-256-GCM, AES-256-CTR + HMAC-SHA256 MIC (4-byte suffix)
 - [ ] Верифікувати `CRYP_AES_CCM` підтримку на цільовій ревізії STM32WLE5JC
-- [ ] Дизайн 24-байтного пакету (8 байт sensor data vs поточних 16)
+- [ ] Дизайн 24-байтного пакету (8 байт sensor data vs поточних 16 — оптимізувати поля)
 - [ ] Firmware Soldier: CCM encrypt + Frame Counter інкремент + MIC append
 - [ ] Firmware Queen: CCM decrypt + Frame Counter validation (anti-replay)
 - [ ] Backend: оновити `TelemetryUnpackerService` для 24-байтного формату
@@ -113,7 +127,8 @@
 
 #### FW.3 — Queen AT Command Blocking (~25 сек)
 - `03_01`, `03_02`
-- **Опис:** Queen "сліпа" до LoRa пакетів під час CoAP flush. Пакети втрачаються
+- **Опис:** Queen "сліпа" до LoRa пакетів під час CoAP flush. Single-packet buffer — пакети втрачаються
+- **Рішення:** UART DMA interrupt-driven + ring buffer
 - [ ] Переписати `Flush_Cache_To_Rails()` на UART DMA
 - [ ] Замінити single-packet buffer на ring buffer
 - [ ] Додати CoAP response parsing (замість blind HAL_Delay)
@@ -121,6 +136,7 @@
 
 #### FW.4 — TinyML `Run_Inference()` закоментований
 - `03_03` | `main.c:355`, `silken_net_audio_model.h` відсутній
+- **Опис:** `Run_Inference()` закоментована; model header відсутній
 - **Блокує:** Acoustic detection (chainsaw, cavitation, wind)
 - [ ] Тренування моделі (4 класи: silence/wind/cavitation/chainsaw)
 - [ ] Генерація `silken_net_audio_model.h`
@@ -133,90 +149,113 @@
 
 #### FW.5 — Lorenz Attractor: delta_t/vcap не передаються
 - `03_04`, `05_02`
+- **Опис:** Spec: `calculate_state(delta_t, vcap)`, реалізація: `calculate_state(chaos_seed, temp, acoustic)`
 - [ ] Архітектурне рішення: прийняти "snapshot" модель АБО змінити firmware inputs
 - [ ] Задокументувати рішення в `03_04`
 - [ ] Реалізувати (якщо зміна)
 
 #### FW.6 — Lorenz State persistence
-- `03_04` | Стан (x,y,z) не зберігається між STOP2 циклами
+- `03_04`
+- **Опис:** Стан (x,y,z) НЕ зберігається між циклами STOP2 в RTC Backup Registers
 - [ ] Зберегти (x,y,z) у RTC DR0-DR5 (3 × float → 3 × uint32_t)
 - [ ] Відновити при wakeup
 - [ ] Тести
 
 #### FW.7 — Float vs BigDecimal divergence
-- `05_02` | firmware Float64 vs backend BigDecimal
+- `05_02`
+- **Опис:** firmware `8.0/3.0 = 2.6666666666666665` vs backend BigDecimal `2.666666666666666667`
+- **Рішення:** Документувати як "by design" + tolerance band (±2.0 на Z) або integer math на firmware
 - [ ] Рішення: tolerance band АБО integer math
 - [ ] Задокументувати в `05_02` та `03_04`
-- [ ] Якщо tolerance — додати check у `SilkenNet::Attractor`
+- [ ] Якщо tolerance — додати відповідний check у `SilkenNet::Attractor` (backend)
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
-- `05_02` | firmware: global 2.0/45.0 vs backend: per-species через `TreeFamily`
+- `05_02`
+- **Опис:** firmware: global 2.0/45.0 vs backend: per-species через `TreeFamily`
+- **Рішення:** OTA sync species-specific thresholds
 - [ ] Додати thresholds до OTA config payload
 - [ ] Firmware: зберігати thresholds у Flash/RTC
 - [ ] Backend: включити thresholds у OTA bytecode
 
 #### FW.9 — CoAP retry logic
-- `03_02` | ACK miss → весь кеш втрачається
+- `03_02`
+- **Опис:** Після AT+CCOAPSEND: `HAL_Delay(2000)` без парсингу відповіді. ACK miss → весь кеш втрачається
 - [ ] Парсинг UART RX для `OK`/`ERROR` відповіді модему
 - [ ] Double-buffering або persistent buffer для retry
 - [ ] Configurable retry count
 
 #### FW.10 — Temperature-based TX deferral
-- `02_04` | При T < -15°C ESR іоністора зростає
-- [ ] Додати check: `temp < -15` && `vcap_voltage < 4.0V` → відкласти TX
+- `02_04`
+- **Опис:** При T < -15°C ESR іоністора зростає; може спричинити просадку LoRa TX
+- [ ] Додати check: якщо `temp < -15` && `vcap_voltage < 4.0V` → відкласти TX
 - [ ] Тести
 
 ### 🟢 P2 — Низькопріоритетні
 
 #### FW.11 — Race condition: `vibration_detected`
-- `03_03` | ISR vs main loop атомарність
-- [ ] NVIC-рівнева ізоляція: `HAL_NVIC_DisableIRQ(EXTI0_IRQn)`
-- [ ] Fallback: `__disable_irq()` / `__enable_irq()`
+- `03_03` + Legacy notes
+- **Опис:** Між read та write немає атомарності (ISR vs main loop)
+- [ ] Використати NVIC-рівневу ізоляцію: `HAL_NVIC_DisableIRQ(EXTI0_IRQn)` замість `__disable_irq()` — вимикає лише п'єзо-переривання, не зупиняючи SysTick/Radio/DMA
+- [ ] Fallback: `__disable_irq()` / `__enable_irq()` якщо NVIC-підхід неможливий
 - [ ] Тести
 
 #### FW.15 — Missing test suites: TinyML, Crypto
-- `03_03` | `test_bio_contract.c` ✅ done (27 тестів), залишились:
+- `03_03` BLOCKER-4 + codebase audit
+- **Опис:** `firmware/test/` має лише `test_soldier_logic.c` та `test_queen_logic.c`. Відсутні: тести аудіо-пайплайну (mock `Run_Inference`), тести AES-256 ECB/CBC mode switching
+- **Ризик:** Зміни в crypto або bio-contract пройдуть CI без валідації
+- `test_bio_contract.c` ✅ done (27 тестів), залишились:
 - [ ] `test_tinyml_pipeline.c` — mock Run_Inference(), 4 класи × confidence boundary
 - [ ] `test_encryption.c` — ECB/CBC switching, ECB restore, key verification
 
-#### FW.16 — ECB restore race condition
-- `03_05` BLOCKER-6 | `HAL_CRYP_Init()` без timeout
-- [ ] Return-code check на `HAL_CRYP_Init()` при ECB restore
-- [ ] RCC CRYP_FORCE_RESET як hard recovery path
+#### FW.16 — ECB restore race condition при HAL_CRYP_Init failure
+- `03_05` BLOCKER-6
+- **Опис:** `HAL_CRYP_Init()` для restore ECB не має timeout. Якщо AES peripheral зависне (hardware defect), наступний LoRa decrypt використає CBC → garbage → data loss. Handle_CoAP_Command error path може повернутися без ECB restore
+- **Рішення:** Перевірка return code `HAL_CRYP_Init()`. При помилці — `__HAL_RCC_CRYP_FORCE_RESET()` + `__HAL_RCC_CRYP_RELEASE_RESET()` + повторна ініціалізація. Якщо невдала — `NVIC_SystemReset()` (повний перезапуск MCU)
+- [ ] Додати return-code check на `HAL_CRYP_Init()` при ECB restore
+- [ ] Додати RCC CRYP_FORCE_RESET як hard recovery path
 - [ ] Verify `hcryp.State` перед кожним Encrypt/Decrypt
-- [ ] ECB restore навіть на error path
+- [ ] Забезпечити ECB restore навіть на error path
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
-- `03_05` BLOCKER-5 | Після FW.1
-- [ ] Дизайн Hash Ratchet протоколу (AES-based KDF on STM32)
-- [ ] CMD:ROTATE_KEY CoAP command + OTA relay
-- [ ] Cluster-wide activation confirmation
-- [ ] Зберігання `K_current` та `rotation_counter`
+- `03_05` BLOCKER-5 | Після FW.1 (per-device provisioning) — future cycle
+- **Опис:** Поточна архітектура: статичний ключ при Factory Flashing. Немає механізму зміни ключа без перепрошивки всіх вузлів. Порушує GDPR/ISO 27001/NIST SP 800-57
+- **Рішення (рекомендоване — Hash Ratchet KDF):** Синхронна деривація нового ключа на обох кінцях без передачі ключа по мережі. Backend надсилає `CMD:ROTATE_KEY:<UUID>` → Queen + Soldier проганяють `K_current` через AES-KDF → `K_next`. Забезпечує Perfect Forward Secrecy (PFS)
+- [ ] Дизайн Hash Ratchet протоколу (AES-based KDF on STM32 hardware)
+- [ ] CMD:ROTATE_KEY CoAP command + OTA relay через Queen
+- [ ] Cluster-wide activation confirmation (ACK від усіх вузлів)
+- [ ] Зберігання `K_current` та `rotation_counter` у Flash/RTC Backup Domain
+- [ ] Consider ECDH/Curve25519 key exchange при provisioning (альтернатива)
 
 #### FW.18 — Hardcoded confidence threshold 0.80
 - `03_03` BLOCKER-6
-- [ ] Threshold у RTC Backup Register (updateable via OTA)
-- [ ] Dual-threshold: WARNING (0.60) → counter; CRITICAL (0.85) → Emergency TX
+- **Опис:** `if (ml_confidence > 0.80)` hardcoded в Flash. Неможливо remote-tune для різних лісів/сезонів. Немає "warning" рівня (лише binary: alarm / no alarm)
+- [ ] Зберегти threshold у RTC Backup Register (updateable via OTA)
+- [ ] Дизайн dual-threshold: WARNING (0.60) → event counter; CRITICAL (0.85) → Emergency TX
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
 - `03_04` BLOCKER-4
-- [ ] Верифікувати mruby compile flags (`MRB_USE_FLOAT`)
-- [ ] Tolerance band у `TelemetryUnpackerService` (±2.0 на Z)
+- **Опис:** mruby без `MRB_USE_FLOAT` використовує double (64-bit), з прапорцем — float (32-bit). Makefile не верифікований. Різниця ±5-10 units на Z-осі після 250 ітерацій може змінити bio_status (false slashing)
+- [ ] Верифікувати mruby compile flags (`MRB_USE_FLOAT` у Makefile або mrbconf.h)
+- [ ] Додати tolerance band у `TelemetryUnpackerService` (±2.0 на Z)
 - [ ] Задокументувати результат
 
 #### FW.20 — LoRa Time Sync (clock drift compensation)
-- Legacy notes | P2 (критичний для TRL 7+)
-- [ ] Queen: time correction у CoAP ACK або downlink command
-- [ ] Soldier: прийняти та застосувати RTC correction
-- [ ] Backend: server UTC timestamp у downlink payload
-- [ ] Тести drift compensation при ΔT = ±60°C
+- Legacy notes | P2 (не блокує TRL 6, критичний для TRL 7+)
+- **Опис:** Дешеві кварцові резонатори / внутрішні осцилятори STM32 мають температурний дрейф. При -20°C та +40°C RTC годинник Soldier йде з різною швидкістю. За кілька місяців "час дерева" розсинхронізується з "часом бекенду" на хвилини або години. Впливає на: (1) `created_at` timestamp → partition pruning errors, (2) HMAC/nonce replay protection windows, (3) cron-like wakeup scheduling
+- **Рішення:** Протокол Time Sync через Queen downlink. Queen має точний час через LTE/NTP. Періодично Queen надсилає OTA-корекцію часу. Аналог LoRaWAN MAC command `DeviceTimeReq`
+- [ ] Firmware Queen: додати time correction у CoAP ACK або окремий downlink command
+- [ ] Firmware Soldier: прийняти та застосувати RTC correction
+- [ ] Backend: включити server UTC timestamp у downlink payload
+- [ ] Тести: перевірити drift compensation при ΔT = ±60°C
 
 #### FW.21 — Edge data aggregation (RAM-aware Soldier)
-- Legacy + `08_02` | P2, потребує R&D
-- [ ] Визначити які метрики потребують EMA
-- [ ] Lightweight EMA на Soldier (O(1) memory)
-- [ ] Інтегрувати з Kalman filter design (E.10)
-- [ ] Верифікувати RAM footprint < 80%
+- Legacy notes + `08_02` (Kalman filter Vector 4) | P2 (потребує R&D partnership)
+- **Опис:** Soldier MCU має обмежений RAM (~20 KB вільного). Поточна архітектура: кожен wakeup → один 21-байтний пакет → TX. Для майбутнього (Kalman filtering, TinyML context) потрібна локальна агрегація
+- **Рішення:** Moving average / EMA прямо на MCU. Відправляти на Queen лише: (1) поточне значення, (2) дельту від попереднього EMA, (3) стиснуті "summary" пакети. Зменшує трафік LoRa та економить батарею
+- [ ] Визначити які метрики потребують EMA (delta_t, vcap — кандидати)
+- [ ] Реалізувати lightweight EMA на Soldier (O(1) memory, O(1) compute)
+- [ ] Інтегрувати з Kalman filter design (E.10 — Косенук)
+- [ ] Верифікувати RAM footprint залишається < 80% available
 
 ---
 
@@ -224,173 +263,238 @@
 
 > ⚠️ Потребують фізичної роботи в лабораторії та/або з підрядниками.
 
-#### HW.1 — nTop model → DMLS factory (`01_01`)
+#### HW.1 — nTop model → DMLS factory
+- **Джерело:** `01_01` | ✅ Ліцензія отримана
 - [ ] Генерація TPMS gyroid geometry (65% porosity)
-- [ ] STL/STEP файл → DMLS завод
+- [ ] STL/STEP файл → передати на DMLS завод (Київ/Дніпро)
 - [ ] SEM criteria для приймання партії
 
-#### HW.2 — Dual-scale roughness spec (`01_02`)
-- Блокує: Максимальний струм EBFC, TRL 5
-- [ ] Factory spec з метриками (Sa 0.5-5 µm, Sv 50-500 nm)
+#### HW.2 — Dual-scale roughness spec
+- **Джерело:** `01_02`
+- **Опис:** Sa 0.5-5 µm, Sv 50-500 nm НЕ передана на завод
+- **Блокує:** Максимальний струм EBFC, TRL 5
+- [ ] Підготувати factory spec з метриками
 - [ ] Передати на завод
-- [ ] SEM images ×500/×5,000/×50,000
+- [ ] Отримати SEM images ×500/×5,000/×50,000
 
-#### HW.3 — Accelerated aging test Arrhenius (`01_02`)
-- Блокує: Seed раунд, whitepaper, TRL 5→6
-- [ ] Синтез штучного ксилемного соку
-- [ ] 12-тижневий тест
+#### HW.3 — Accelerated aging test (Arrhenius)
+- **Джерело:** `01_02`
+- **Опис:** 12-тижневий тест у synthetic xylem sap
+- **Блокує:** Seed раунд, whitepaper, TRL 5→6
+- [ ] Синтез штучного ксилемного соку (потрібен ботанік)
+- [ ] Запуск 12-тижневого тесту
 - [ ] ICP-MS аналіз: Ti < 0.1 µg/cm², V < 0.02 µg/cm²
 - [ ] EIS degradation < 50%
 
-#### HW.4 — Self-healing coating (`01_02`)
-- Блокує: 20+ років longevity, TRL 6
+#### HW.4 — Self-healing coating
+- **Джерело:** `01_02`
+- **Опис:** 8-HQ мікрокапсули не синтезовані
+- **Блокує:** 20+ років longevity claims, TRL 6
 - [ ] Синтез 8-HQ мікрокапсул (in-situ polymerization)
 - [ ] Інтеграція в PEO electrolyte або layer-by-layer
 - [ ] Тест: 10× вищий Rct
 
-#### HW.5 — Enzyme lifespan (`01_03`)
-- Gen 1.0: 3-5 років (Chitosan + Nafion), Gen 2.0: 20-25 років (FAD-GDH + ZIF)
-- [ ] Protective polymer matrix
-- [ ] Тест Chitosan-шару, Nafion-покриття, комбінації
-- [ ] Тест: 3-5 років (Gen 1.0)
-- [ ] Gen 2.0: FAD-GDH, Laccase/nanozymes, ZIF-інкапсуляція
+#### HW.5 — Enzyme lifespan
+- **Джерело:** `01_03` + Legacy notes
+- **Опис:** GOx/Laccase деградація у кислому ксилемному середовищі (pH 4.5-5.5). Глутаральдегід фіксує ферменти механічно, але НЕ захищає від кислотної деградації. GOx виробляє H₂O₂ (окислювальний стрес для дерева)
+- **Gen 1.0 ціль:** 3-5 років (Chitosan + Nafion захист)
+- **Gen 2.0 ціль:** 20-25 років (FAD-GDH + Laccase/nanozyme + ZIF інкапсуляція)
+- [ ] Розробка protective polymer matrix
+- [ ] Тест Chitosan-шару (pH-буферизація) — додано в `01_03`
+- [ ] Тест Nafion-покриття (селективна мембрана) — додано в `01_03`
+- [ ] Тест комбінації Chitosan + Nafion (пріоритетний варіант)
+- [ ] Тест: 3-5 років функціонального ферменту (Gen 1.0)
+- [ ] **Gen 2.0:** FAD-GDH замість GOx (без H₂O₂) — `01_03` §3
+- [ ] **Gen 2.0:** Laccase + laccase-like nanozymes (Cu/Ce/Au ZIF) — `01_03` §3
+- [ ] **Gen 2.0:** ZIF-інкапсуляція для 20-25 років — `01_03` §3.3
 
-#### HW.6 — Resin barrier (`01_04`)
+#### HW.6 — Resin barrier
+- **Джерело:** `01_04` + Legacy notes
+- **Опис:** Сосни заливають рану смолою → блокує доступ до ферментів
 - [ ] 30° installation angle verification
-- [ ] Hydrophilic coating / PEG / gradient test
-- [ ] Thermal installation test (150-200°C)
-- [ ] FEM-моделювання теплового поля
+- [ ] Hydrophilic coating test
+- [ ] PEG обробка гіроїда: смола зісковзує з PEG-покритих пор — додано в `01_03`
+- [ ] Hydrophobic/hydrophilic gradient test (PTFE знизу, гідрофільний верх) — додано в `01_04`
+- [ ] Thermal installation test: T° нагріву (150-200°C), час витримки — додано в `01_04`
+- [ ] FEM-моделювання теплового поля в Ti-6Al-4V анкері (λ = 6.7 W/m·K)
 
-#### HW.7 — BQ25570 resistors verification (`02_03`)
-- Блокує: PCBA production
-- [ ] Виміряти 8 резисторів
-- [ ] Порівняти з таблицею
-- [ ] Замінити SMD якщо мисматч
+#### HW.7 — BQ25570 resistors verification
+- **Джерело:** `02_03`
+- **Опис:** CJMCU-25570 може мати Li-Po дефолт (VBAT_OV = 4.2V замість 5.5V для supercap)
+- **Блокує:** Фіналізацію схеми, PCBA production
+- [ ] Виміряти 8 резисторів мультиметром
+- [ ] Порівняти з розрахунковою таблицею (Section 4 в `02_03`)
+- [ ] Замінити SMD резистори якщо мисматч
+- [ ] Задокументувати фінальні номінали
 
-#### HW.8 — Pogo pin specification (`02_02`, 5 блокерів)
-- [ ] Матеріал напилення (Gold Au 0.76 µm)
-- [ ] Сила пружини (~100 г/пін)
-- [ ] Механізм фіксації (bayonet)
-- [ ] O-ring (EPDM)
-- [ ] Допуски соосності (Lead-in chamfer)
+#### HW.8 — Pogo pin specification (5 блокерів)
+- **Джерело:** `02_02`
+- [ ] BLOCKER-1: Матеріал напилення → Gold (Hard Gold, Au 0.76 µm)
+- [ ] BLOCKER-2: Сила пружини → ~100 г/пін, Travel ≥ 1.5 мм
+- [ ] BLOCKER-3: Механізм фіксації → Quarter-turn bayonet (рекомендовано)
+- [ ] BLOCKER-4: O-ring → EPDM, CS 1.5-2.0 мм, 15-25% compression
+- [ ] BLOCKER-5: Допуски соосності → Lead-in chamfer
 
-#### HW.9 — PCB KiCad layouts (`02_01`)
-- [ ] Soldier PCB layout
-- [ ] Queen PCB layout
+#### HW.9 — PCB KiCad layouts
+- **Джерело:** `02_01`
+- **Опис:** Soldier PCB та Queen PCB: "Не розпочато"
+- [ ] Soldier PCB layout (KiCad)
+- [ ] Queen PCB layout (KiCad)
 - [ ] RF Keep-Out Zone verification
 
-#### HW.10 — Modem discrepancy SIM7000G vs SIM7070G (`02_05`)
-- Рішення: SIM7070G
+#### HW.10 — Modem name discrepancy
+- **Джерело:** `02_05` + Legacy notes
+- **Опис:** SIM7000G (Wiki) vs SIM7070G (firmware AT-commands). **Рішення прийнято: SIM7070G** — краща підтримка eDRX/PSM, нижче idle-споживання (~3 мкА vs ~10 мкА)
 - [ ] Фізично перевірити маркування на прототипі
-- [ ] Узгодити Wiki, BOM та firmware
-- [ ] AT+CPSMS та AT+CEDRXS команди у firmware Queen
+- [ ] Узгодити Wiki, BOM та firmware → **SIM7070G**
+- [ ] Додати AT+CPSMS та AT+CEDRXS команди у firmware Queen
 
-#### HW.11 — Potting material selection (`02_01`)
-- Блокує: Hardware freeze, IP67
-- [ ] Обрати compound (Sylgard 184)
-- [ ] Верифікувати при -20°C / +60°C
+#### HW.11 — Potting material selection (quartz resonator risk)
+- **Джерело:** `02_01` BLOCKER-1
+- **Опис:** Потрібно обрати epoxy compound що НЕ знищить quartz resonator LoRa модуля при -20°C. Rigid compound при температурному стисненні → тріщини кварцу → RF loss
+- **Рішення:** Soft compound Shore A < 50 (Dow Sylgard 184 або аналог)
+- **Блокує:** Hardware freeze, IP67 certification
+- [ ] Обрати compound (Sylgard 184 рекомендовано)
+- [ ] Верифікувати з кварцовим резонатором при -20°C / +60°C
 
-#### HW.12 — EBFC >5.5V protection (`02_01`)
-- Блокує: Hardware safety, TRL 5
-- [ ] Верифікувати BQ25570 OV threshold
-- [ ] TVS-діод або зенерівський обмежувач
+#### HW.12 — EBFC upper voltage limit >5.5V protection
+- **Джерело:** `02_01` BLOCKER-2
+- **Опис:** При тривалій інсоляції EBFC може генерувати напругу >5.5V → overcharge supercap → деградація/вибух
+- **Блокує:** Hardware safety, TRL 5
+- [ ] Верифікувати BQ25570 OV protection threshold (VBAT_OV = 5.5V, див. HW.7)
+- [ ] Додати TVS-діод або зенерівський обмежувач як backup
 
-#### HW.13 — MPPT coefficient verification (`02_03`)
-- Блокує: Max EBFC power
-- [ ] P-V крива EBFC
-- [ ] VOC та VMP при різному освітленні
-- [ ] Оптимальна фракція (65%)
-- [ ] Замінити ROC1/ROC2 якщо потрібно
+#### HW.13 — MPPT coefficient verification for EBFC
+- **Джерело:** `02_03` BLOCKER-2 + Legacy notes
+- **Опис:** Поточний MPPT = 50% VOC (ROC1=ROC2=10MΩ) — **занадто низько для EBFC**. EBFC (GOx/Laccase) має специфічну поляризаційну криву (Міхаеліс-Ментен + Тафель), MPP лежить у діапазоні 60-70% VOC. При 50% — зона масо-транспортних обмежень ферменту
+- **Рекомендація:** Почати з 65% (ROC1=5.36 MΩ, ROC2=10 MΩ)
+- **Блокує:** Max EBFC power, optimal charge speed
+- [ ] Зняти повну P-V криву (потужність-напруга) EBFC
+- [ ] Виміряти VOC та VMP при різному освітленні (ранок/день/вечір, сезонно)
+- [ ] Визначити оптимальну фракцію (починати з 65%)
+- [ ] Якщо потрібно — замінити ROC1/ROC2
 
-#### HW.14 — Winter energy deficit Queen Phase 3 (`02_05`)
-- Phase 3 only
-- [ ] Збільшити батарею або зменшити duty cycle або 100W panel
+#### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
+- **Джерело:** `02_05` BLOCKER-2
+- **Опис:** Phase 3 (Starlink Mini): 44 Wh/day consumption vs 18.75 Wh/day winter generation = -25 Wh/day deficit. 12V/20Ah LiFePO4 → 7.7 днів автономності
+- **Пріоритет:** Phase 3 only (Phase 2.5 unaffected)
+- [ ] Збільшити батарею до 40Ah (15 днів автономності), АБО
+- [ ] Зменшити Starlink duty cycle до 1 хв/год (~9 Wh/day), АБО
+- [ ] Встановити 100W solar panel
 - [ ] Оновити Unit Economics (07_02)
 
-#### HW.15 — BMS not specified for Queen (`02_05`)
-- [ ] BMS: 12V / 20A continuous / 50A peak
-- [ ] MPPT: Victron SmartSolar 75/15
+#### HW.15 — BMS not specified for Queen
+- **Джерело:** `02_05` BLOCKER-4
+- **Опис:** SIM7070G TX peak current до 2A. BMS model не вказано в BOM
+- [ ] Обрати BMS: мінімум 12V / 20A continuous / 50A peak
+- [ ] Обрати MPPT: мінімум Victron SmartSolar MPPT 75/15
 - [ ] Оновити BOM
 
-#### HW.16 — Thermal management в IP67 (`02_05`)
-- [ ] Thermal budget для enclosure
-- [ ] Temperature sensor (NTC/DS18B20)
-- [ ] Hardware charge protection при T < 0°C
+#### HW.16 — Thermal management в IP67 enclosure
+- **Джерело:** `02_05` BLOCKER-5
+- **Опис:** SIM7070G + MCU при TX: ~500 mW × 5 sec. Літній interior temp до 60-70°C. LiFePO4 charging при T < 0°C пошкоджує батарею
+- [ ] Розрахувати thermal budget для enclosure (T_ext = +40°C)
+- [ ] Додати temperature sensor (NTC або DS18B20)
+- [ ] Реалізувати hardware charge protection при T < 0°C
 
-#### HW.17 — PEEK radome prototype Деталь 4 (`02_01`)
-- Блокує: RF performance, Zero-Touch Assembly
-- [ ] KiCad → PEEK radome dimensions
-- [ ] Тип кріплення (різьба vs байонет)
-- [ ] Матеріал O-ring (EPDM vs FKM)
-- [ ] Замовити PEEK прототип
-- [ ] RF performance (VSWR)
+#### HW.17 — PEEK radome prototype (Деталь 4)
+- **Джерело:** `02_01` §5.2 + Legacy notes
+- **Опис:** Деталь 4 (PEEK Crown / Капсула-Радом) — радіопрозорий купол ∅20–30 мм, який «насаджується» на зовнішню різьбу Деталі 3 (Анод). Різьба або байонет + O-ring EPDM → IP68. Керамічна SMD-антена в міліметрі від внутрішньої стінки PEEK. Прототип "Не розпочато"
+- **Блокує:** Ceramic antenna protection, RF performance validation, Zero-Touch Assembly validation
+- [ ] KiCad PCB layout (HW.9) → PEEK radome dimensions
+- [ ] Визначити тип кріплення: різьба на Деталь 3 vs байонет
+- [ ] Визначити матеріал O-ring (EPDM vs FKM) для ксилемного середовища
+- [ ] Замовити PEEK прототип (CNC або injection molding)
+- [ ] Верифікувати RF performance (VSWR, КСВ) з антеною під радомом
 
-#### HW.18 — Starlink DTC WiFi co-processor (`02_05`)
-- Phase 3 only
-- [ ] Архітектурне рішення ESP32-S3 vs SIM8200G-M2
-- [ ] Оновити 03_02
-- [ ] Co-processor firmware
+#### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
+- **Джерело:** `02_05` BLOCKER-1
+- **Опис:** Phase 3 (Starlink Mini terminal) потребує WiFi co-processor. Архітектурне рішення між ESP32-S3 та SIM8200G-M2 не прийнято
+- **Пріоритет:** Phase 3 only
+- [ ] Прийняти архітектурне рішення
+- [ ] Оновити 03_02 з рішенням
+- [ ] Додати co-processor firmware до `firmware/`
 
-#### HW.19 — VOC-діагностика деградації конденсатора (`02_04`)
-- TRL 8+
-- [ ] Валідувати на 12-біт ADC
-- [ ] ADS1220 + TPS22860 якщо 12-біт недостатньо
-- [ ] Backend: `voc_mv` у TelemetryLog
+#### HW.19 — VOC-діагностика деградації конденсатора (ADS1220 + TPS22860)
+- **Джерело:** Legacy notes + `02_04` §4.2
+- **Опис:** Раз на добу вимірювати чисту VOC EBFC (при від'єднаному навантаженні) для розрізнення "дерево хворіє" vs "конденсатор деградує". Обидва стани проявляються як зростання delta_t. ADS1220 (24-bit ADC) + TPS22860 (load switch) для прецизійного duty-cycling вимірювання. Для TRL 6 достатньо вбудованого 12-біт ADC STM32
+- **Пріоритет:** TRL 8+ (після базової валідації в полі)
+- [ ] Валідувати концепт на вбудованому 12-біт ADC (firmware: GPIO disconnect EDLC → measure VOC → reconnect)
+- [ ] Якщо 12-біт недостатньо — додати ADS1220 + TPS22860 до BOM
+- [ ] Backend: поле `voc_mv` у TelemetryLog для серверної корекції моделі Лоренца
 
-#### HW.20 — Buffer Cap MLCC part number (`02_03`)
-- [ ] Part number: 100µF/6.3V X5R 1210 (Murata GRM32ER60J107ME20)
-- [ ] DC bias derating (~80µF ефективна)
+#### HW.20 — Buffer Cap: Tantalum → MLCC migration
+- **Джерело:** `02_03` §6 + Legacy notes
+- **Опис:** Buffer Cap 100µF на лінії VOUT для LoRa TX peak. Рання специфікація вказувала танталовий конденсатор, але його струм витоку (1-10 мкА) подвоює/потроює E_sleep (1.5 мкА). Документація оновлена на MLCC X5R/X7R (виток ~десятки нА)
+- [ ] Обрати конкретний part number: 100µF/6.3V X5R 1210 (напр. Murata GRM32ER60J107ME20)
+- [ ] Врахувати DC bias derating (~20% при 3.3V/6.3V → ефективна ємність ~80µF)
 - [ ] Додати до KiCad BOM (HW.9)
 
 ---
 
 ## 🔐 Безпека
 
-#### SEC.1 — Multisig Gnosis Safe (`05_03`)
-- Before mainnet deploy
+#### SEC.1 — Multisig Gnosis Safe для production admin role
+- **Джерело:** `05_03` Operational Security
+- **Опис:** `DEFAULT_ADMIN_ROLE` у production контрактах SCC/SFC має бути Gnosis Safe multisig (3/5 або 2/3), а не EOA
+- **Пріоритет:** Before mainnet deploy
 - [ ] Створити Gnosis Safe wallet
-- [ ] Reassign DEFAULT_ADMIN_ROLE у SCC та SFC
+- [ ] Reassign DEFAULT_ADMIN_ROLE у SCC та SFC контрактах
 
-#### SEC.2 — RDP Level 2 activation (`03_05`)
+#### SEC.2 — RDP Level 2 activation timeline
+- **Джерело:** `03_05` NOTE-1
+- **Опис:** Поточний стан: RDP Level 0 (development). Level 1 потрібен перед першою польовою партією, Level 2 — тільки після повної OTA верифікації (незворотній — лише OTA updates можливі)
 - [ ] Верифікувати OTA flow end-to-end
-- [ ] RDP Level 1 для field batch
-- [ ] Процедура Level 2 activation (необоротна)
+- [ ] Перейти на RDP Level 1 для field batch
+- [ ] Задокументувати процедуру Level 2 activation (необоротна)
 
-#### SEC.3 — Factory Flashing pipeline (`03_05`)
-- Блокує: Mass production
+#### SEC.3 — Factory Flashing pipeline
+- **Джерело:** `03_05` NOTE-2
+- **Опис:** Multi-step factory process: (1) Flash firmware з placeholder key, (2) Backend → HKDF(master_key, device_uid) → unique_key, (3) Robot пише key у protected Flash sector, (4) STM32CubeProgrammer → RDP Level 1/2
+- **Блокує:** Mass production
+- [ ] Дизайн завершений
 - [ ] Реалізація Factory Flashing tool
 - [ ] Integration тест з provisioning API
 
-#### SEC.4 — Reed Switch shipping mode (`03_05`)
-- [ ] Hamlin 59140-1-T-00-A + N52 magnet до BOM
-- [ ] KiCad schematic
+#### SEC.4 — Reed Switch shipping mode (not in BOM)
+- **Джерело:** `03_05` NOTE-3
+- **Опис:** Reed switch (магнітний сенсор) для zero consumption при транспортуванні. Магніт на коробці → circuit open. Інсталятор знімає магніт → first power-up. ~$0.05/unit. Дизайн approved, BOM не оновлений
+- [ ] Додати Hamlin 59140-1-T-00-A reed switch + N52 neodymium magnet до BOM
+- [ ] Оновити KiCad schematic
 
 ---
 
 ## 📋 Юридичні / Бізнес
 
-#### BIZ.1 — 1 SCC = ? kg CO₂ (`07_01`)
-- ЮРИДИЧНИЙ БЛОКЕР: Carbon credit marketplace
-- [ ] Методологія розрахунку
-- [ ] Додати в код
-- [ ] Задокументувати для registries
+#### BIZ.1 — 1 SCC = ? kg CO₂
+- **Джерело:** `07_01`
+- **Опис:** CO₂ еквівалент для 1 SCC не визначений — ЮРИДИЧНИЙ БЛОКЕР
+- **Блокує:** Carbon credit marketplace integration
+- [ ] Визначити методологію розрахунку
+- [ ] Додати в код (constants або config)
+- [ ] Задокументувати для carbon registries
 
-#### BIZ.2 — B2B MSA (`07_01`)
-- [ ] Юридичний шаблон
+#### BIZ.2 — B2B MSA (Master Service Agreement)
+- **Джерело:** `07_01`
+- [ ] Створити юридичний шаблон
 - [ ] Review з юристом
 
-#### BIZ.3 — B2C ToS / Privacy Policy (`07_01`)
-- [ ] Terms of Service
-- [ ] Privacy Policy (GDPR)
+#### BIZ.3 — B2C ToS / Privacy Policy
+- **Джерело:** `07_01`
+- [ ] Terms of Service draft
+- [ ] Privacy Policy (GDPR-compliant)
 - [ ] Cookie Policy
 
-#### BIZ.4 — DAO Governance Process (`07_01`, `05_03`)
-- Post-TRL 6
-- [ ] GovernorContract.sol
-- [ ] ProtocolParameters.sol
+#### BIZ.4 — DAO Governance Process
+- **Джерело:** `07_01`, `05_03`
+- **Опис:** SFC voting mechanism не визначений
+- **Статус:** Post-TRL 6 (не блокує прототип)
+- [ ] GovernorContract.sol design
+- [ ] ProtocolParameters.sol registry
 - [ ] Governance::ParameterSyncWorker
 
-#### BIZ.5 — Patent application (`08_03`)
+#### BIZ.5 — Patent application
+- **Джерело:** `08_03`
 - [ ] Engagement з патентним адвокатом
 - [ ] Патентна заявка на дизайн анкера
 
@@ -398,24 +502,27 @@
 
 ## 🎓 Академічні блокери (ЧНУ)
 
-#### UNI.1 — Перший контакт з деканом Онищенком (`08_01`)
-- Блокує: Всю лабораторну роботу, 10 публікацій, 11 магістерських
+#### UNI.1 — Перший контакт з деканом Онищенком
+- **Джерело:** `08_01`
+- **Блокує:** Всю лабораторну роботу, 10 публікацій, 11 магістерських
 - [ ] Призначити зустріч
-- [ ] Підготувати презентацію
+- [ ] Підготувати презентацію проєкту
 - [ ] Провести зустріч
 
-#### UNI.2 — 8 зустрічей з факультетом ФОТІУС (`08_02`)
-- [ ] Супруненко — PN-verification, Convolution Method
-- [ ] Онищенко — stochastic B&B, Petri nets
-- [ ] Ярмілко — Embedded Systems, ECDH
+#### UNI.2 — 8 зустрічей з факультетом ФОТІУС
+- **Джерело:** `08_02`
+- [ ] Супруненко (ПЗАС) — PN-verification, Convolution Method
+- [ ] Онищенко (Декан) — stochastic B&B, Petri nets
+- [ ] Ярмілко — Embedded Systems, ECDH key exchange
 - [ ] Порублів — Discrete Math, reliability
 - [ ] Косенук — RF/FEC/compliance
 - [ ] Бушин — CNN/BSP/DMLS physics
 - [ ] Осауленко — Portfolio management
 - [ ] Любченко — GA/Neural Networks
 
-#### UNI.3 — IP договір з ЧНУ (`08_03`)
-- Блокує: Старт публікацій
+#### UNI.3 — IP договір з ЧНУ
+- **Джерело:** `08_03`
+- **Блокує:** Старт публікацій
 - [ ] Юридичне оформлення IP-договору
 - [ ] Підпис обома сторонами
 
@@ -427,37 +534,37 @@
 |---|----------|---------|----------|
 | E.1 | SFC voting power зберігається після slashing | `07_01` | Дослідити |
 | E.3 | Breadboard video відсутнє (для грантів) | `07_03` | Зняти відео |
-| E.4 | Helium Network fallback | `02_05` | Дизайн + реалізація |
-| E.5 | CoAP listener Ruby — до ~10k вузлів | `06_01` | Series D: Rust/Go proxy |
-| E.7 | dClimate mock mode → real API | `05_01` | Пов'язано з S3.2 |
-| E.8 | SNR unused у Queen CIFO eviction | `03_02` | Low priority |
-| E.9 | DMA SPI optimization (Ярмілко) | `08_02` | R&D partnership |
-| E.10 | Kalman/EMA delta_t filtering | `08_02` | R&D partnership |
-| E.11 | CE/FCC/EMC/IP68 certification | `08_02` | Потребує Косенук |
-| E.12 | Boolean minimization TX (Карно/Quine-McCluskey) | `08_02` | Потребує Любченко |
-| E.13 | Petri Net model Rails (deadlock-free 10k IoT) | `08_02` | Потребує Супруненко |
-| E.14 | Multi-source satellite fusion (Sentinel-2 NDVI) | `08_02` | Потребує Любченко + Бушин |
-| E.15 | Reed-Solomon FEC LoRa | `08_02` | Потребує Косенук |
-| E.18 | 10 Q1 публікацій | `08_03` | Blocked by UNI.1-3 |
-| E.19 | 8 магістерських | `08_03` | Post-TRL 4 |
-| E.20 | Forester Guild (Proof-of-Physical-Work) | `04_02` | Post-TRL 6 |
-| E.26 | `health_trend` field TelemetryLog | Legacy | Post-TRL 6, потребує E.10 |
-| E.27 | Chaos Engineering Akash/Kamal | Legacy | Post-TRL 7 |
-| E.28 | Kamal deploy hooks idempotency | `06_01` | Верифікувати |
-| E.29 | Альтернативні EBFC медіатори (ferrocene, MB) | `01_03` | R&D alternatives |
-| E.30 | InsightGenerator: per-region baselines | `04_02` | Post-TRL 7 |
-| E.31 | TinyML OTA `.tflite` format | `03_03` | Post-TRL 8 |
-| E.32 | Smart Contract Audit (Slither/Mythril) | `05_03` | Pre-Mainnet |
-| E.33 | AlertNotification rate limits (FCM/Twilio) | `04_02` | Post-TRL 8 |
-| E.34 | dClimate fallback → ForestBountyService | `04_02` | Post-TRL 6 |
-| E.35 | Flash Loan defense GovernorContract.sol | `05_03` | Post-TRL 6 |
-| E.36 | PostGIS Generated Column (geo_boundary) | `04_01` | Post-TRL 8 |
-| E.37 | TimescaleDB для telemetry_logs | `04_01` | >100M рядків/місяць |
-| E.38 | Press-Fit фаски R≥0.2мм | `01_01` | Включити у nTop (HW.1) |
-| E.39 | EBFC Gen 2.0 enzyme R&D (FAD-GDH + ZIF) | `01_03` | ЧНУ lab testing |
-| E.40 | Ignion Virtual Antenna™ evaluation | `02_01` | Evaluation kit + VSWR тест |
-| DIFF.1 | `Wallet#lock_and_mint!` threshold = runtime param | `04_02` | Informational, no action |
-| DIFF.7 | SNR unused in Queen CIFO eviction | `03_02` | Low priority optimization |
+| E.4 | Helium Network fallback — concept є, реалізації немає | `02_05` | Дизайн + реалізація |
+| E.5 | CoAP listener Ruby — масштабується до ~10k вузлів | `06_01` | Series D: Rust/Go proxy |
+| E.7 | dClimate mock mode — потрібна реальна інтеграція для Production | `05_01` | Пов'язано з S3.2 |
+| E.8 | SNR parameter unused у Queen CIFO eviction (лише RSSI) | `03_02`, `03_03` | Low priority optimization |
+| E.9 | DMA SPI optimization — зменшення енергоспоживання (Vector 1 — Ярмілко) | `08_02` | R&D partnership |
+| E.10 | Kalman/EMA filtering для delta_t noise suppression (±8% → ±1.2%) | `08_02` | R&D partnership |
+| E.11 | CE/FCC/EMC/IP68 certification roadmap не розпочато | `08_02` | Потребує Косенук (RF) |
+| E.12 | Boolean minimization TX decision conditions (Karnaugh/Quine-McCluskey) | `08_02` | Потребує Любченко |
+| E.13 | Petri Net model of Rails monolith — deadlock-free verification at 10k concurrent IoT | `08_02` | Потребує Супруненко |
+| E.14 | Multi-source satellite + anchor data fusion (Sentinel-2 NDVI) | `08_02` | Потребує Любченко + Бушин |
+| E.15 | Reed-Solomon FEC або Hamming для LoRa error correction | `08_02` | Потребує Косенук |
+| E.18 | 10 запланованих Q1 публікацій — blocked by lab data | `08_03` | Blocked by UNI.1-3 |
+| E.19 | 8 магістерських — blocked by TRL 4 advancement | `08_03` | Post-TRL 4 |
+| E.20 | Forester Guild (Proof-of-Physical-Work) — planned post-TRL 6 | `04_02` | Post-TRL 6 |
+| E.26 | `health_trend` field для TelemetryLog — predictive degradation | Legacy | Post-TRL 6, потребує E.10 (Kalman) |
+| E.27 | Chaos Engineering: Chaos Mesh для Akash або kill-scripts для Kamal | Legacy | Post-TRL 7, production hardening |
+| E.28 | Kamal deploy hooks idempotency audit | `06_01` | Верифікувати `.kamal/hooks/` |
+| E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) | `01_03` | R&D alternatives |
+| E.30 | InsightGenerator: кліматичні базлайни per region | `04_02` | Post-TRL 7 |
+| E.31 | TinyML OTA: `.tflite` формат (INT8 quantization) + Python ML microservice | `03_03` | Post-TRL 8 |
+| E.32 | Smart Contract Audit: Slither/Mythril в CI + Hacken pre-mainnet | `05_03` | Pre-Mainnet |
+| E.33 | AlertNotification rate limits: FCM multicast (500 tokens/req), Twilio Notify | `04_02` | Post-TRL 8 |
+| E.34 | dClimate fallback → ForestBountyService (drone/ranger PoPhW) | `04_02` | Post-TRL 6 |
+| E.35 | Flash Loan defense в GovernorContract.sol: `getPastVotes` + 48h Timelock | `05_03` | Post-TRL 6 |
+| E.36 | PostGIS Generated Column (geo_boundary) замість тригера | `04_01` | Post-TRL 8 |
+| E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates | `04_01` | >100M рядків/місяць |
+| E.38 | Press-Fit фаски: R ≥ 0.2 мм для зняття напружень у PEEK | `01_01` | Включити у nTop (HW.1) |
+| E.39 | **EBFC Gen 2.0:** FAD-GDH + Laccase/nanozymes + ZIF (20-25 років) | `01_03` §3 | ЧНУ lab testing |
+| E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
+| DIFF.1 | `Wallet#lock_and_mint!` threshold = runtime param (не hardcoded) | `04_02` | Informational, no action |
+| DIFF.7 | SNR parameter unused in Queen CIFO eviction | `03_02` | Low priority optimization |
 
 ---
 
@@ -465,11 +572,11 @@
 
 | ID | Пропозиція | Джерело | Milestone |
 |----|-----------|---------|-----------|
-| ARCH.1 | Fractal topology: L2 Sergeant nodes | `00_01` | Post-TRL 7 |
-| ARCH.2 | Ingress Proxy (Rust/Go) + Kafka | `00_01`, `06_01` | Series D |
-| ARCH.4 | Governance DAO (SFC voting) | `05_03` | Post-TRL 6 |
-| ARCH.5 | Cross-Registry Export (Verra, Gold Standard) | `04_02` | Post-TRL 7 |
-| ARCH.6 | Federated Learning auto-retraining | `04_02` | Post-TRL 7 |
+| ARCH.1 | Fractal topology: L2 Sergeant nodes (H-LDSE hierarchical routing, geohashing) | `00_01` | Post-TRL 7 |
+| ARCH.2 | Ingress Proxy (Rust/Go) + Kafka для >1M packets/hour | `00_01`, `06_01` | Series D |
+| ARCH.4 | Governance DAO (SFC voting) — protocol constants via on-chain governance | `05_03` | Post-TRL 6 |
+| ARCH.5 | Cross-Registry Export (Verra, Gold Standard, UNFCCC) | `04_02` | Post-TRL 7 |
+| ARCH.6 | Federated Learning auto-retraining (monthly cycle, A/B testing) | `04_02` | Post-TRL 7 |
 
 ---
 
@@ -499,4 +606,4 @@
 | 2026-04-18 | Сесії 2-6: S1.3/S1.6-8/S2.4-5/S3.1/S3.4-6/FW.12-15/DIFF.2-6/INF.3/E.2/E.17 виконано. |
 | 2026-04-19 | Сесії 7-8: ARCH.3/DIFF.4/DIFF.6/E.6/E.16/E.21-25/INF.1/INF.4-7/S4.1 виконано. Infrastructure Pivot. |
 | 2026-04-19 | Сесія 9: OBS.1 — Grafana Alloy sidecar → Grafana Cloud (BLOCKERs 1-3 resolved). |
-| 2026-04-19 | Сесія 10: Очищення трекера — видалено виконані задачі (задокументовані в основних docs), прибрано sprint-групування. |
+| 2026-04-19 | Сесія 10: Очищення трекера — видалено виконані задачі, прибрано sprint-групування. Відновлено описи для незавершених пунктів. |
