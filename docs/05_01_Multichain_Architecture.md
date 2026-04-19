@@ -96,13 +96,13 @@ SilkenNet не обирає один блокчейн. Система викор
 
 ## 🛑 Відкриті Блокери
 
-### 🟡 BLOCKER-5: PuroEarth Passport Service — Not Implemented
+### ~~🟡 BLOCKER-5: PuroEarth Passport Service — Not Implemented~~ ✅
 
-**Статус:** Worker існує (`PuroEarthPassportWorker`), але сервіс `PuroEarth::PassportService` ще не створено.
+**Статус:** ✅ Повністю реалізовано. `PuroEarth::PassportService` (on-chain anchoring) + `PuroEarth::RegistryApiService` (REST API submission to Puro.earth).
 
-* **Файл:** `app/workers/puro_earth_passport_worker.rb` — містить TODO для сервісу
-* **Вплив:** D-MRV Biomass Passport для мертвих дерев (Biochar CORC) не генерується
-* **Це НЕ частина 12-Chain топології**, але блокує "Afterlife Economy" пайплайн
+* **Файли:** `app/services/puro_earth/passport_service.rb`, `app/services/puro_earth/registry_api_service.rb`
+* **Worker:** `PuroEarthPassportWorker` — двофазний: 1) Polygon anchoring → 2) REST API submission
+* **D-MRV pipeline:** MaintenanceRecord (biomass_extraction) → EcosystemHealingWorker → PuroEarthPassportWorker → on-chain + CORC ref
 
 ### 🟢 INFO: dClimate Verification — Mock Mode
 
@@ -637,5 +637,5 @@ state_root = Digest::SHA256.hexdigest("#{total_scc_supply}:#{chain_hash}:#{times
 
 ## 📋 8. Відкриті Питання для Наступного Циклу
 
-1. **PuroEarth PassportService** — Biochar CORC (Afterlife Economy)
+1. ~~**PuroEarth PassportService** — Biochar CORC (Afterlife Economy)~~ ✅ Реалізовано: `PassportService` (on-chain) + `RegistryApiService` (REST API)
 2. **dClimate Real API** — Замінити mock на реальний satellite API

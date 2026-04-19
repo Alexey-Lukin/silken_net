@@ -164,6 +164,16 @@
 | **Зовнішні виклики** | Polygon RPC (`ALCHEMY_POLYGON_RPC_URL`), `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS` (D-MRV Registry), `ORACLE_PRIVATE_KEY` |
 | **Вихід** | `tx_hash` (String, `"0x..."`). Raises `PuroEarth::PassportService::AnchoringError` on RPC failure, insufficient gas, or contract revert. |
 
+### `PuroEarth::RegistryApiService`
+
+| | |
+|---|---|
+| **Файл** | `app/services/puro_earth/registry_api_service.rb` |
+| **Вхід** | `payload` (Hash: той самий D-MRV passport payload), `tx_hash:` (String: on-chain anchoring TX hash) |
+| **Що робить** | **[MAINNET READY]** Submits Biomass Passport data to the Puro.earth REST API for CORC (CO₂ Removal Certificate) issuance. Constructs D-MRV submission body including passport data, on-chain proof (`tx_hash`, `network: "polygon"`, `contract` address), and source metadata (`source: "silkennet"`, `methodology: "biochar-corc"`). Uses `Web3::HttpClient` (HTTPX) for HTTP POST to `/v1/dmrv/submissions`. Bearer token auth from Rails credentials (`credentials.puro_earth.api_key`) or ENV fallback (`PURO_EARTH_API_KEY`). Parses response for `corc_ref` or `submission_id`. |
+| **Зовнішні виклики** | Puro.earth REST API (`PURO_EARTH_API_URL`, default: `https://api.puro.earth`), `PURO_EARTH_API_KEY` або `Rails.credentials.puro_earth.api_key` |
+| **Вихід** | `corc_ref` (String, e.g., `"CORC-2026-XXXXXXXX"`). Raises `PuroEarth::RegistryApiService::SubmissionError` on API failure, auth error, or missing CORC reference. |
+
 ### `Etherisc::ClaimService`
 
 | | |
@@ -796,8 +806,8 @@
 | **Retry** | 5 |
 | **Тригер** | `EcosystemHealingWorker` при `biomass_extraction` |
 | **Вхід** | `maintenance_record_id` (Integer) |
-| **Сервіси** | `PuroEarth::PassportService.new(payload).anchor!` (ABI-encoded canonical hash → SHA-256 → `anchorPassport(treeDid, bytes32)` на D-MRV Registry Polygon) |
-| **Side Effects** | `record.update!(biomass_passport_tx_hash: tx_hash)`. `BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)`. |
+| **Сервіси** | Phase 1: `PuroEarth::PassportService.new(payload).anchor!` (on-chain anchoring → Polygon D-MRV Registry). Phase 2: `PuroEarth::RegistryApiService.new(payload, tx_hash:).submit!` (REST API → Puro.earth CORC) |
+| **Side Effects** | `record.update!(biomass_passport_tx_hash: tx_hash)`. `record.update!(puro_earth_corc_ref: corc_ref)` (якщо REST API успішний). `BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)`. Phase 2 non-blocking: REST API failure не скасовує on-chain anchoring. |
 
 ---
 
@@ -1049,7 +1059,7 @@ Financial action
 | **The Graph** | GraphQL | `the_graph_api_url` | TheGraph::QueryService |
 | **Polygon Hadron** | HTTPS REST | `hadron_api_key` / `HADRON_API_URL` | Polygon::HadronComplianceService |
 | **Etherisc DIP** | On-chain (Polygon) | `ETHERISC_DIP_CONTRACT_ADDRESS` | Etherisc::ClaimService |
-| **Puro.earth D-MRV Registry** | On-chain (Polygon) | `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS`, `ORACLE_PRIVATE_KEY` | PuroEarth::PassportService |
+| **Puro.earth D-MRV Registry** | On-chain (Polygon) + HTTPS REST | `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS`, `ORACLE_PRIVATE_KEY` (on-chain); `PURO_EARTH_API_URL` (default: `https://api.puro.earth`), `Rails.credentials.puro_earth.api_key` або `PURO_EARTH_API_KEY` (REST) | PuroEarth::PassportService, PuroEarth::RegistryApiService |
 | **KlimaDAO** | On-chain (Polygon) | `KLIMA_RETIREMENT_CONTRACT` | KlimaDao::RetirementService |
 | **Toucan Protocol** | On-chain (Polygon) | `TOUCAN_BRIDGE_CONTRACT_ADDRESS` | Toucan::BridgeService |
 | **Uniswap V3 Quoter** | On-chain (Polygon) | `POLYGON_RPC_URL` | PriceOracleService |

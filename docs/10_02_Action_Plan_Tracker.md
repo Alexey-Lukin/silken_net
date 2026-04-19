@@ -54,11 +54,11 @@
 - [ ] Верифікувати з реальним API ключем в staging (**🔧 Операційна** — отримати та встановити API key)
 - [ ] End-to-end тест з `DclimateVerificationWorker`
 
-#### S3.3 — PuroEarth REST API інтеграція
-- **P1** | `05_01`, `05_03` | **Складність: M** | On-chain anchoring є, REST API — TODO
-- **Опис:** `PuroEarth::PassportService` реалізований. SHA-256 payload hashing + Polygon anchoring працює. Потрібна інтеграція з реальним Puro.earth REST API (поточно: тільки on-chain anchoring)
-- [ ] Інтеграція з реальним Puro.earth API
-- [ ] Верифікувати end-to-end flow: мертве дерево → `MaintenanceRecord` → passport → on-chain
+#### ~~S3.3 — PuroEarth REST API інтеграція~~ ✅
+- **P1** | `05_01`, `05_03` | **Складність: M** | **Виконано**
+- **Опис:** `PuroEarth::PassportService` (on-chain anchoring) + `PuroEarth::RegistryApiService` (REST API submission). Двофазний pipeline: Phase 1 → `biomass_passport_tx_hash`, Phase 2 → `puro_earth_corc_ref`. Колонка `puro_earth_corc_ref` додана до `maintenance_records`. Документація оновлена: `04_02`, `05_01`, `05_03`.
+- [x] Інтеграція з реальним Puro.earth API
+- [x] Верифікувати end-to-end flow: мертве дерево → `MaintenanceRecord` → passport → on-chain
 
 #### S3.5 — Subgraph contract address
 - **P2** | `05_03` | **Складність: XS** | **🔧 Операційна** — замінити placeholder після deploy контракту
@@ -577,7 +577,7 @@
 | 02 Hardware & BOM | 4 | 6 | BQ25570, PCB, Pogo, PEEK |
 | 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking |
 | 04 Backend Rails | 8 | 9 | RSpec тести |
-| 05 Web3 Pipeline | 8-9 | 9 | PuroEarth API, SFC address |
+| 05 Web3 Pipeline | 8-9 | 9 | SFC address |
 | 06 DevOps | 7 | 9 | Docker registry, TLS |
 | 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS |
 | 08 University R&D | 2 | 6 | ЧНУ partnership |
