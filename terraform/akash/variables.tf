@@ -48,7 +48,7 @@ variable "rails_master_key" {
 }
 
 variable "database_url" {
-  description = "PostgreSQL connection URL (Cloud SQL with PostGIS). Must be reachable from Akash providers (use public IP + SSL or proxy)"
+  description = "PostgreSQL connection URL (via Cloud SQL Auth Proxy at 127.0.0.1). Format: postgres://user:pass@127.0.0.1:5432/db_name"
   type        = string
   sensitive   = true
 
@@ -58,8 +58,19 @@ variable "database_url" {
   }
 }
 
+variable "cloud_sql_instance_connection_name" {
+  description = "Cloud SQL instance connection name for Auth Proxy (format: project:region:instance). From `terraform output database_connection_name`"
+  type        = string
+}
+
+variable "gcp_sa_key_base64" {
+  description = "Base64-encoded GCP Service Account JSON key for Cloud SQL Auth Proxy. Generate: cat gcp-sa-key.json | base64 -w0"
+  type        = string
+  sensitive   = true
+}
+
 variable "redis_url" {
-  description = "Redis connection URL for Sidekiq (DB 0)"
+  description = "Redis connection URL for Sidekiq (DB 0). Use Upstash with TLS: rediss://default:password@endpoint.upstash.io:6379"
   type        = string
   sensitive   = true
 

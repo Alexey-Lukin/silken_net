@@ -21,10 +21,13 @@
 | Terraform outputs | `terraform/akash/outputs.tf` | ✅ Виводить SDL path та наступні кроки |
 | Приклад конфігурації | `terraform/akash/terraform.tfvars.example` | ✅ Існує |
 | Реальний деплой (DSEQ) | `terraform/akash/akash-dseq.txt` | 🔴 Відсутній (деплой не проводився) |
-| Sidekiq у SDL | — | 🔴 Відсутній (тільки `web` сервіс) |
+| Sidekiq у SDL | `deploy/akash/deploy.yaml` (`job` сервіс) | ✅ Додано (BLOCKER-2 виправлено) |
+| Cloud SQL connectivity | Cloud SQL Auth Proxy в контейнері | ✅ Вирішено (BLOCKER-1) |
+| Redis connectivity | Upstash serverless Redis (TLS) | ✅ Вирішено (BLOCKER-1) |
+| Ingress Anchor (GCP) | `e2-micro` зі статичним IP | ✅ Замінює важкі web VM |
 | HTTPS / TLS термінація | — | 🟡 Не визначена (немає `443` у SDL) |
 
-- **Поточний TRL:** TRL 4 — SDL-маніфест та Terraform-конфігурація існують, реальний деплой не виконувався
+- **Поточний TRL:** TRL 5→6 — SDL-маніфест, Terraform-конфігурація, DB+Redis connectivity вирішені; TRL 6 підтверджується після першого реального деплою
 - **Пов'язані модулі:**
   - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
@@ -34,31 +37,30 @@
 
 ## 🛑 Блокери
 
-### 🔴 BLOCKER-1: Мережева ізоляція — Cloud SQL та Redis недоступні з Akash
+### ✅ BLOCKER-1: Мережева ізоляція — Cloud SQL та Redis недоступні з Akash (ВИРІШЕНО)
 
-**Статус:** Критичний архітектурний блокер. Блокує будь-який реальний деплой.
+**Статус:** ✅ Вирішено. Обидва з'єднання (PostgreSQL і Redis) тепер доступні з Akash-контейнера.
 
 Це найважливіший висновок аудиту, успадкований з `06_01` (BLOCKER-6). Akash Network є **публічним децентралізованим маркетплейсом** — провайдери знаходяться поза межами GCP VPC. Наш Rails-моноліт потребує двох з'єднань, які за замовчуванням **недоступні** з Akash:
 
-**Cloud SQL (PostgreSQL):**
+**Cloud SQL (PostgreSQL) — оригінальна проблема:**
 - За замовчуванням Cloud SQL у GCP має **лише приватну IP** у межах `silken-net-vpc` (підмережа `10.0.0.0/20`).
 - Akash-контейнер не є частиною цієї VPC → TCP-з'єднання на приватний IP блокується.
 - Навіть якщо `akash_enabled = true` і Cloud SQL отримає публічний IP (через `terraform.tfvars`), потрібно заповнити `akash_authorized_networks` конкретними CIDR-діапазонами Akash-провайдера — але ці IP невідомі заздалегідь (провайдери динамічні).
 
-**Redis (Memorystore):**
+**Redis (Memorystore) — оригінальна проблема:**
 - Cloud Memorystore Redis **не має публічного IP взагалі** — це фундаментальне обмеження сервісу.
 - Не існує офіційного способу підключити зовнішній сервіс (поза VPC) до Memorystore без VPN/тунелю.
 - Без Redis — Sidekiq не стартує, Kredis не працює, 31+ фонових воркерів недоступні.
 
-**Три можливі рішення (не реалізовано жодне):**
+**✅ Реалізоване рішення:**
 
-| Рішення | Складність | Безпека | Примітки |
-|---------|-----------|---------|---------|
-| **Tailscale / WireGuard VPN тунель** | Середня | 🟢 Висока | Акаш-контейнер підключається до GCP VPC через mesh VPN. Потребує Tailscale sidecar у SDL або впровадження у Dockerfile. |
-| **Cloud SQL Auth Proxy sidecar** | Середня | 🟢 Висока | Проксі запускається в тому ж поді, тунелює трафік до Cloud SQL через Google API. Але Redis проблему не вирішує. |
-| **Публічний IP + SSL + allowlist** | Низька | 🟡 Середня | Простіше, але Memorystore все одно недоступний. Потрібен окремий Redis (наприклад, Redis Cloud або Upstash). |
+| Компонент | Рішення | Деталі |
+|-----------|---------|--------|
+| **Cloud SQL (PostgreSQL)** | Cloud SQL Auth Proxy в контейнері | Проксі запускається всередині Docker-контейнера (entrypoint). Тунелює трафік через Google Cloud API (вихідний HTTPS — Akash це дозволяє). Cloud SQL залишається private-only (`ipv4_enabled=false`). VPN/Tailscale не потрібен. `DATABASE_URL` вказує на `127.0.0.1:5432` (локальний сокет проксі). |
+| **Redis** | Upstash serverless Redis (TLS) | GCP Memorystore замінено на **Upstash** — serverless Redis з публічними TLS-ендпоінтами. URL формат: `rediss://` (подвійне `s` = TLS). Free tier достатній до TRL 8. |
 
-> **Висновок:** До вирішення цього блокера деклараційне твердження "система децентралізована" є технічно некоректним. Обчислення залишаються залежними від GCP (Web2) інфраструктури для data layer.
+> **Висновок:** Мережева ізоляція вирішена. Обчислення на Akash тепер мають повноцінний доступ до data layer без компромісу безпеки (Cloud SQL залишається без публічного IP, Redis з'єднання шифрується TLS).
 
 ---
 
@@ -66,7 +68,7 @@
 
 **Статус:** Виправлено. SDL `deploy/akash/deploy.yaml` тепер визначає два сервіси:
 - `web` — Puma + Thruster HTTP сервер
-- `job` — `bundle exec sidekiq -C config/sidekiq.yml` (всі 31+ воркери)
+- `job` — `/rails/bin/docker-entrypoint bundle exec sidekiq -C config/sidekiq.yml` (через entrypoint для запуску Cloud SQL Auth Proxy)
 
 Усі категорії воркерів тепер запускаються на Akash:
 
@@ -95,9 +97,11 @@
 - DATABASE_URL=REQUIRED_SECRET_NOT_SET
 - REDIS_URL=REQUIRED_SECRET_NOT_SET
 - KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
+- CLOUD_SQL_INSTANCE_CONNECTION_NAME=REQUIRED_SECRET_NOT_SET
+- GCP_SA_KEY_BASE64=REQUIRED_SECRET_NOT_SET
 ```
 
-При спробі запустити Rails без `RAILS_MASTER_KEY` — процес аварійно завершується ще до старту Puma. `DATABASE_URL` без реального значення — ActiveRecord не підключається. Це зроблено навмисно для безпеки (секрети не комітяться в git), але потребує чіткого процесу перед деплоєм.
+При спробі запустити Rails без `RAILS_MASTER_KEY` — процес аварійно завершується ще до старту Puma. `DATABASE_URL` без реального значення — ActiveRecord не підключається. `CLOUD_SQL_INSTANCE_CONNECTION_NAME` та `GCP_SA_KEY_BASE64` необхідні для Cloud SQL Auth Proxy — без них проксі не стартує і `DATABASE_URL=127.0.0.1:5432` не працює. Це зроблено навмисно для безпеки (секрети не комітяться в git), але потребує чіткого процесу перед деплоєм.
 
 **Варіанти вирішення:**
 1. **Рекомендовано:** Terraform-шаблон `deploy.yaml.tpl` через `terraform/akash/` — секрети підставляються з `terraform.tfvars` (в `.gitignore`).
@@ -223,6 +227,8 @@ services:
 
 > ⚠️ `YOUR_GCP_PROJECT` — плейсхолдер. Для реального деплою використовувати `deploy.yaml.tpl` через Terraform або замінити вручну.
 
+> **Ingress Anchor:** Важкі GCP web VM замінені легковажним `e2-micro` інстансом зі статичним IP. HAProxy/socat на Ingress Anchor перенаправляє трафік до Akash deployment. Queen шлюзи надсилають CoAP на цей статичний IP, який проксіює до Akash-контейнера.
+
 ---
 
 ### 1.2 Профіль Обчислень (Compute Profile)
@@ -329,17 +335,31 @@ Soldier (STM32WLE5JC)
     │ LoRa 868 MHz (AES-256 зашифровані 21-байтні пакети)
     ▼
 Queen Gateway (STM32 + SIM7070G)
-    │ CoAP/UDP → публічний IP Akash провайдера :5683
+    │ CoAP/UDP → статичний IP Ingress Anchor :5683
     ▼
-┌────────────────────────────────────┐
-│  Akash Provider (децентралізований)│
-│  SilkenNet Container               │
-│  HTTP :80 (Rails 8.1 + Puma)       │  ← 🔴 без HTTPS
-│  UDP :5683 (CoAP listener)         │
-│                                    │
-│  ??? DATABASE_URL (BLOCKER-1)      │  ← недоступно з Akash
-│  ??? REDIS_URL    (BLOCKER-1)      │  ← недоступно з Akash
-└────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│  GCP Ingress Anchor (e2-micro)          │
+│  Статичний IP, HAProxy/socat            │
+│  CoAP/UDP :5683 → forward to Akash     │
+│  HTTP :80 → forward to Akash           │
+└─────────────┬───────────────────────────┘
+              │ (forward)
+              ▼
+┌─────────────────────────────────────────┐
+│  Akash Provider (децентралізований)     │
+│  SilkenNet Container                    │
+│  HTTP :80 (Rails 8.1 + Puma)            │  ← 🔴 без HTTPS
+│  UDP :5683 (CoAP listener)              │
+│                                         │
+│  ┌─────────────────────────────────┐    │
+│  │ Cloud SQL Auth Proxy (in-container)│  │
+│  │ 127.0.0.1:5432 → Cloud SQL     │    │
+│  │ (HTTPS tunnel, no public IP)    │    │
+│  └─────────────────────────────────┘    │
+│                                         │
+│  REDIS_URL = rediss://upstash (TLS) ✅  │
+│  DATABASE_URL = 127.0.0.1:5432    ✅    │
+└─────────────────────────────────────────┘
 ```
 
 ---
@@ -370,15 +390,17 @@ params:
 **Розділ SDL:** `services.web.env`  
 **Відповідність:** `config/deploy.yml` → `env.secret` + `env.clear`
 
-Всі 7 ENV змінних, які маніфест передає в контейнер при старті:
+Всі 10 ENV змінних, які маніфест передає в контейнер при старті:
 
 | Змінна | Значення в SDL | Тип | Обов'язкова | Опис |
 |--------|---------------|-----|------------|------|
 | `PORT` | `80` | Відкрита | ✅ | Порт, на якому слухає Thruster всередині контейнера |
 | `RAILS_MASTER_KEY` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Ключ розшифровки `config/credentials.yml.enc`. Rails не стартує без нього |
-| `DATABASE_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | PostgreSQL URL. Формат: `postgres://user:pass@host:5432/db`. 🔴 BLOCKER-1 |
-| `REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Redis URL для Sidekiq (DB 0). Формат: `redis://host:6379/0`. 🔴 BLOCKER-1 |
-| `KREDIS_REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Redis URL для Kredis distributed locks (DB 1). Формат: `redis://host:6379/1`. 🔴 BLOCKER-1 |
+| `DATABASE_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | PostgreSQL URL. Формат: `postgres://user:pass@127.0.0.1:5432/db`. Вказує на локальний Cloud SQL Auth Proxy |
+| `REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Redis URL для Sidekiq (DB 0). Формат: `rediss://...@host:port/0` (Upstash, TLS) |
+| `KREDIS_REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Redis URL для Kredis distributed locks (DB 1). Формат: `rediss://...@host:port/1` (Upstash, TLS) |
+| `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Cloud SQL instance connection name (з `terraform output database_connection_name`). Формат: `project:region:instance` |
+| `GCP_SA_KEY_BASE64` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Base64-encoded GCP service account JSON key для Cloud SQL Auth Proxy |
 | `RAILS_ENV` | `production` | Відкрита | ✅ | Rails environment — production режим обов'язковий |
 | `RAILS_MAX_THREADS` | `3` | Відкрита | — | Кількість Puma threads на worker. Має відповідати `pool` у `database.yml` |
 | `WEB_CONCURRENCY` | `4` | Відкрита | — | Кількість Puma worker processes. Встановлено рівним CPU units (4 vCPU) |
@@ -389,9 +411,11 @@ params:
 # terraform/akash/main.tf — рендеринг шаблону
 resource "local_file" "akash_sdl" {
   content = templatefile("deploy/akash/deploy.yaml.tpl", {
-    rails_master_key  = var.rails_master_key    # sensitive = true
-    database_url      = var.database_url         # sensitive = true
-    redis_url         = var.redis_url            # sensitive = true
+    rails_master_key                    = var.rails_master_key    # sensitive = true
+    database_url                        = var.database_url         # sensitive = true
+    redis_url                           = var.redis_url            # sensitive = true
+    cloud_sql_instance_connection_name  = var.cloud_sql_instance_connection_name  # sensitive = true
+    gcp_sa_key_base64                   = var.gcp_sa_key_base64   # sensitive = true
     kredis_redis_url  = var.kredis_redis_url != "" ?
                         var.kredis_redis_url :
                         "${trimsuffix(var.redis_url, "/0")}/1"  # auto-derive DB 1
@@ -462,6 +486,8 @@ silken-net-terraform-state/ (GCS bucket)
 | `database_url` | Must start with `postgres://` or `postgresql://` |
 | `redis_url` | Must start with `redis://` or `rediss://` |
 | `kredis_redis_url` | — (auto-derived if empty) |
+| `cloud_sql_instance_connection_name` | Формат: `project:region:instance` |
+| `gcp_sa_key_base64` | Base64-encoded GCP service account JSON key |
 
 ### 3.3 Lifecycle Provisioner
 
@@ -587,10 +613,10 @@ akash tx deployment close \
 | **Persistent Disk** | Docker volume | 10 GiB (`beta3`) | ✅ Аналогічно |
 | **Порт 80 (HTTP)** | ✅ | ✅ | ✅ |
 | **Порт 443 (HTTPS)** | ✅ (Kamal proxy) | 🔴 Відсутній | 🔴 BLOCKER-5 |
-| **Порт 5683 (CoAP/UDP)** | ✅ | ✅ | ✅ |
-| **Database** | Cloud SQL private IP | 🔴 Недоступно | 🔴 BLOCKER-1 |
-| **Redis** | Memorystore private | 🔴 Недоступно | 🔴 BLOCKER-1 |
-| **Sidekiq (31+ workers)** | ✅ (Kamal `job` role) | 🔴 Відсутній | 🔴 BLOCKER-2 |
+| **Порт 5683 (CoAP/UDP)** | ✅ | ✅ (через Ingress Anchor) | ✅ |
+| **Database** | Cloud SQL private IP | ✅ Cloud SQL Auth Proxy (in-container) | ✅ BLOCKER-1 вирішено |
+| **Redis** | Memorystore private | ✅ Upstash serverless Redis (TLS) | ✅ BLOCKER-1 вирішено |
+| **Sidekiq (31+ workers)** | ✅ (Kamal `job` role) | ✅ (`job` сервіс в SDL) | ✅ BLOCKER-2 вирішено |
 | **Управління** | Kamal + Terraform GCP | Akash CLI + Terraform | ✅ |
 | **Цінова модель** | Фіксована (GCP billing) | Аукціон (uAKT/block) | ✅ Потенційно дешевше |
 | **Відмовостійкість** | GCP SLA + Shielded VM | Залежить від провайдера | 🟡 Без SLA гарантій |
@@ -622,20 +648,20 @@ Mapping між конфігурацією Kamal (`config/deploy.yml`) та SDL (
 
 ## 7. Інтеграція у Загальну Архітектуру Gaia 2.0
 
-Akash Network займає рівень **L5 (Rails Backend)** в 8-рівневій архітектурі, але лише частково:
+Akash Network займає рівень **L5 (Rails Backend)** в 8-рівневій архітектурі. З вирішенням BLOCKER-1 (DB + Redis connectivity) всі рівні L5–L8 тепер працюють на Akash:
 
 ```
-L8  Ethereum L1          Weekly State Root          (EthereumAnchorWorker — 🔴 не запускається на Akash)
-L7  Polygon + DeFi       SCC/SFC minting            (BlockchainMintingWorker — 🔴 не запускається на Akash)
-L6  Verification          peaq DID, IoTeX ZK         (ZkProofVerificationWorker — 🔴 не запускається на Akash)
+L8  Ethereum L1          Weekly State Root          (EthereumAnchorWorker — ✅ запускається на Akash через Sidekiq job сервіс)
+L7  Polygon + DeFi       SCC/SFC minting            (BlockchainMintingWorker — ✅ запускається на Akash через Sidekiq job сервіс)
+L6  Verification          peaq DID, IoTeX ZK         (ZkProofVerificationWorker — ✅ запускається на Akash через Sidekiq job сервіс)
 L5  Rails Backend         Rails 8.1 API ← [Akash]   (Puma HTTP + Sidekiq job сервіс)
-L4  LoRa Network          Queen CoAP → :5683 ← [Akash UDP port] ✅
+L4  LoRa Network          Queen CoAP → Ingress Anchor → :5683 ← [Akash UDP port] ✅
 L3  Firmware & Edge AI    STM32WLE5JC               (не залежить від Akash)
 L2  Hardware Capsule      BQ25570, EDLC             (не залежить від Akash)
 L1  Biophysics            Ti-6Al-4V EBFC            (не залежить від Akash)
 ```
 
-**Висновок:** SDL тепер визначає обидва сервіси: `web` (Rails API + CoAP) та `job` (Sidekiq workers). При поточному стані основним обмеженням залишається data layer: PostgreSQL (Cloud SQL) та Redis (Memorystore) не доступні безпосередньо з Akash — потребують вирішення мережевої ізоляції (BLOCKER-1).
+**Висновок:** SDL визначає обидва сервіси: `web` (Rails API + CoAP) та `job` (Sidekiq workers). Cloud SQL Auth Proxy (in-container) забезпечує доступ до PostgreSQL через HTTPS тунель, Upstash serverless Redis (TLS) замінює GCP Memorystore. `job` сервіс використовує entrypoint (`/rails/bin/docker-entrypoint bundle exec sidekiq ...`) для запуску Cloud SQL Proxy і для Sidekiq. Ingress Anchor (`e2-micro` зі статичним IP) проксіює CoAP-трафік від Queens до Akash.
 
 ---
 
@@ -644,14 +670,14 @@ L1  Biophysics            Ti-6Al-4V EBFC            (не залежить ві�
 | TRL | Що потрібно | Блокер |
 |-----|------------|--------|
 | **TRL 5** (поточна мета) | Цей документ ✅ | — |
-| **TRL 6** | Вирішити мережеву ізоляцію (Tailscale sidecar в SDL або публічний Redis) | BLOCKER-1 |
+| **TRL 6** | Вирішити мережеву ізоляцію | ✅ BLOCKER-1 вирішено (Cloud SQL Auth Proxy + Upstash Redis) |
 | **TRL 6** | Додати `job` сервіс в SDL для Sidekiq | ✅ BLOCKER-2 виправлено |
 | **TRL 6** | Замінити Docker образ на публічний реєстр (GHCR/Docker Hub) | BLOCKER-4 |
-| **TRL 7** | Перший реальний деплой на testnet Akash + функціональне тестування | BLOCKER-1,2,3,4 |
+| **TRL 7** | Перший реальний деплой на testnet Akash + функціональне тестування | BLOCKER-3,4 |
 | **TRL 7** | Додати HTTPS (порт 443) через Akash ingress або Cloudflare | BLOCKER-5 |
-| **TRL 8** | Production деплой з моніторингом (Prometheus exporter в SDL) | BLOCKER-1..5 |
+| **TRL 8** | Production деплой з моніторингом (Prometheus exporter в SDL) | BLOCKER-4,5 |
 | **TRL 9** | Automated failover GCP ↔ Akash + повна CI/CD інтеграція | — |
 
 ---
 
-*Документ створено в рамках Shape Up Cycle 1 — Small Batch "Reverse Shaping". Аудит без змін у коді. Наступний крок: вирішення BLOCKER-1 (мережева ізоляція) як окремий цикл.*
+*Документ створено в рамках Shape Up Cycle 1 — Small Batch "Reverse Shaping". BLOCKER-1 (мережева ізоляція) вирішено: Cloud SQL Auth Proxy + Upstash Redis. Наступний крок: вирішення BLOCKER-4 (Docker image registry) та перший реальний деплой.*

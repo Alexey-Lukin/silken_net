@@ -34,9 +34,9 @@
 
 **Статус:** Критичний. Блокує збір будь-яких метрик.
 
-Rails-застосунок **вже** генерує метрики та виставляє їх через `/metrics` endpoint (захищений IP allowlist). Але результат аудиту Terraform-конфігурацій (`terraform/main.tf`, `terraform/compute.tf`, `terraform/database.tf`, `terraform/vpc.tf`, `terraform/redis.tf`, `terraform/iam.tf`, `terraform/akash/main.tf`) та конфігів Kamal (`config/deploy.yml`, `config/deploy.canopy.yml`) однозначний:
+Rails-застосунок **вже** генерує метрики та виставляє їх через `/metrics` endpoint (захищений IP allowlist). Але результат аудиту Terraform-конфігурацій (`terraform/main.tf`, `terraform/compute.tf`, `terraform/database.tf`, `terraform/vpc.tf`, `terraform/iam.tf`, `terraform/akash/main.tf`) та конфігів Akash SDL (`deploy/akash/deploy.yaml`) однозначний:
 
-**Prometheus Server** — ні у вигляді GCP Compute Instance, ні як Docker-контейнер в Kamal, ні як ресурс в Akash SDL — **ніде не визначений**.
+**Prometheus Server** — ні як Docker-контейнер в Akash SDL, ні як GCP Compute Instance — **ніде не визначений**.
 
 Поточний стан:
 ```
@@ -51,12 +51,14 @@ Prometheus Server ──scrapes──→ Rails :3000/metrics (кожні 15s)
       └──→ Alertmanager (правила алертів)
 ```
 
-**Примітка щодо GCP Cloud Monitoring:** Terraform вмикає `monitoring.googleapis.com` API та надає сервісному акаунту роль `roles/monitoring.metricWriter`. Однак це — нативний GCP Cloud Monitoring (Stackdriver) для системних метрик (CPU, RAM, Redis memory), а **не** Prometheus. Кастомні бізнес-метрики (`silkennet_scc_minted_total`, `silkennet_rpc_errors_total` тощо) наразі **не налаштовані для надсилання** до Cloud Monitoring (потребуватиме додаткового Prometheus → Cloud Monitoring exporter або OpenTelemetry Collector).
+**Примітка щодо GCP Cloud Monitoring:** Terraform вмикає `monitoring.googleapis.com` API та надає сервісному акаунту роль `roles/monitoring.metricWriter`. Однак це — нативний GCP Cloud Monitoring (Stackdriver) для системних метрик (CPU, RAM), а **не** Prometheus. Кастомні бізнес-метрики (`silkennet_scc_minted_total`, `silkennet_rpc_errors_total` тощо) наразі **не налаштовані для надсилання** до Cloud Monitoring (потребуватиме додаткового Prometheus → Cloud Monitoring exporter або OpenTelemetry Collector).
+
+> **Примітка:** GCP Memorystore Redis видалено з інфраструктури (замінено на Upstash). Cloud Monitoring більше не збирає Redis-метрики автоматично. Upstash має власний дашборд для моніторингу Redis.
 
 **Дія (варіанти вирішення, поза scope цього документа):**
-1. Додати Prometheus Server як Kamal accessory (Docker-контейнер) в `config/deploy.yml`.
-2. Розгорнути Prometheus + Grafana як GCP Compute Instance через Terraform.
-3. Використати SaaS-рішення (Grafana Cloud, Prometheus Remote Write до managed endpoint).
+1. Додати Prometheus Server як окремий сервіс в Akash SDL (`deploy/akash/deploy.yaml`).
+2. Використати SaaS-рішення (Grafana Cloud, Prometheus Remote Write до managed endpoint).
+3. Розгорнути Prometheus + Grafana на Ingress Anchor e2-micro (мінімальний overhead для TRL 6-7).
 
 ---
 
@@ -64,7 +66,7 @@ Prometheus Server ──scrapes──→ Rails :3000/metrics (кожні 15s)
 
 **Статус:** Критичний. Блокує візуалізацію та операційний моніторинг.
 
-Пошук по всіх інфраструктурних файлах (`terraform/**/*.tf`, `config/deploy.yml`, `config/deploy.canopy.yml`, `deploy/akash/deploy.yaml`) не виявив жодної згадки про Grafana.
+Пошук по всіх інфраструктурних файлах (`terraform/**/*.tf`, `deploy/akash/deploy.yaml`) не виявив жодної згадки про Grafana.
 
 Повний реєстр зібраних метрик (7 метрик, деталі в розділі 3) залишається **невидимим** для команди без Grafana-дашбордів. У системі, що керує реальними фінансовими активами на-чейні, відсутність dashboards — це відсутність контролю.
 
@@ -116,7 +118,7 @@ Alertmanager — частина стандартного Prometheus-стеку. 
 
 ### ✅ BLOCKER-4: `SENTRY_DSN` додано до `.kamal/secrets` (Виправлено)
 
-**Статус:** Виправлено. `SENTRY_DSN` додано до `.kamal/secrets` та `config/deploy.yml env.secret`.
+**Статус:** Виправлено. `SENTRY_DSN` додано до `.kamal/secrets` та `config/deploy.yml env.secret`. Для Akash деплоїв — задається в SDL env vars.
 
 Sentry тепер активний у production. Всі помилки Sidekiq, збої Web3 та виключення Rails надсилаються до Sentry.
 
@@ -163,10 +165,10 @@ ALL_QUEUES = %w[uplink alerts critical downlink default web3_critical web3 web3_
 | `TELEMETRY_PROCESSED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано |
 | `TELEMETRY_FRAUD_DETECTED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано (2 точки) |
 | Sentry context у workers | `app/workers/unpack_telemetry_worker.rb`, `app/workers/gateway_telemetry_worker.rb` | ✅ `Sentry.set_tags()` |
-| Prometheus Server | `terraform/**/*.tf`, `config/deploy.yml` | 🔴 **ВІДСУТНІЙ** |
-| Grafana | `terraform/**/*.tf`, `config/deploy.yml` | 🔴 **ВІДСУТНЯ** |
-| Alertmanager | `terraform/**/*.tf` | 🔴 **ВІДСУТНІЙ** |
-| `SENTRY_DSN` у Kamal secrets | `.kamal/secrets` | ✅ Додано |
+| Prometheus Server | `deploy/akash/deploy.yaml`, `terraform/**/*.tf` | 🔴 **ВІДСУТНІЙ** |
+| Grafana | `deploy/akash/deploy.yaml`, `terraform/**/*.tf` | 🔴 **ВІДСУТНЯ** |
+| Alertmanager | `deploy/akash/deploy.yaml`, `terraform/**/*.tf` | 🔴 **ВІДСУТНІЙ** |
+| `SENTRY_DSN` у secrets | `.kamal/secrets`, Akash SDL env | ✅ Додано |
 | Prometheus scrape config | — | 🔴 Відсутній |
 | Grafana dashboards | — | 🔴 Відсутні |
 
@@ -456,6 +458,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 | `app/workers/gateway_telemetry_worker.rb` (р.17) | `Sentry.set_tags(queen_uid:)` | ✅ |
 | `terraform/main.tf` | `google_project_service.monitoring` (Cloud Monitoring API) | ✅ (Cloud Monitoring) |
 | `terraform/iam.tf` | `roles/monitoring.metricWriter` (для GCP-native метрик) | ✅ |
+| `deploy/akash/deploy.yaml` | Akash SDL (web + job services, CoAP/UDP) | ✅ (без Prometheus) |
 | `prometheus.yml` (scrape config) | — | 🔴 **ВІДСУТНІЙ** |
 | `grafana/` (дашборди) | — | 🔴 **ВІДСУТНЯ** |
 | `alertmanager.yml` | — | 🔴 **ВІДСУТНІЙ** |
@@ -494,7 +497,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 ### Наступні кроки (поза scope цього документа)
 
-1. **Вирішити BLOCKER-1** (Prometheus Server) — додати як Kamal accessory.
+1. **Вирішити BLOCKER-1** (Prometheus Server) — додати як сервіс в Akash SDL або Grafana Cloud SaaS.
 2. **Вирішити BLOCKER-2** (Grafana) — розгорнути після Prometheus Server.
 3. **Вирішити BLOCKER-3** (Alertmanager) — додати PromQL правила алертів.
 

@@ -6,8 +6,8 @@
 # It lives alongside the GCP infrastructure (terraform/) but has its own state
 # because the two environments have different lifecycles and credentials:
 #
-#   terraform/          → GCP infrastructure (Cloud SQL, Redis, Compute, VPC)
-#   terraform/akash/    → Akash decentralized deployment (web service only)
+#   terraform/          → GCP infrastructure (Cloud SQL, VPC, Ingress Anchor)
+#   terraform/akash/    → Akash decentralized deployment (web + job services)
 #
 # The Akash deployment connects BACK to GCP Cloud SQL for the database —
 # only the compute layer is decentralized.
@@ -24,7 +24,7 @@
 #   - AKASH_KEY_NAME, AKASH_KEYRING_BACKEND, AKASH_ACCOUNT_ADDRESS,
 #     AKASH_NODE, AKASH_CHAIN_ID environment variables set
 #   - Docker image pushed to an accessible registry
-#   - Cloud SQL configured for external access (public IP + SSL or proxy)
+#   - Cloud SQL Auth Proxy configured in Dockerfile (handles external access via HTTPS)
 # =============================================================================
 
 terraform {
@@ -48,20 +48,22 @@ terraform {
 
 resource "local_file" "akash_sdl" {
   content = templatefile("${path.module}/../../deploy/akash/deploy.yaml.tpl", {
-    docker_image       = var.docker_image
-    rails_master_key   = var.rails_master_key
-    database_url       = var.database_url
-    redis_url          = var.redis_url
-    kredis_redis_url   = var.kredis_redis_url != "" ? var.kredis_redis_url : "${trimsuffix(var.redis_url, "/0")}/1"
-    web_cpu_units      = var.web_cpu_units
-    web_memory_size    = var.web_memory_size
-    web_storage_size   = var.web_storage_size
-    persistent_storage = var.persistent_storage_size
-    web_replicas       = var.web_replicas
-    max_price_uakt     = var.max_price_uakt
-    akash_auditor      = var.akash_auditor_address
-    web_concurrency    = var.web_concurrency
-    rails_max_threads  = var.rails_max_threads
+    docker_image                       = var.docker_image
+    rails_master_key                   = var.rails_master_key
+    database_url                       = var.database_url
+    cloud_sql_instance_connection_name = var.cloud_sql_instance_connection_name
+    gcp_sa_key_base64                  = var.gcp_sa_key_base64
+    redis_url                          = var.redis_url
+    kredis_redis_url                   = var.kredis_redis_url != "" ? var.kredis_redis_url : "${trimsuffix(var.redis_url, "/0")}/1"
+    web_cpu_units                      = var.web_cpu_units
+    web_memory_size                    = var.web_memory_size
+    web_storage_size                   = var.web_storage_size
+    persistent_storage                 = var.persistent_storage_size
+    web_replicas                       = var.web_replicas
+    max_price_uakt                     = var.max_price_uakt
+    akash_auditor                      = var.akash_auditor_address
+    web_concurrency                    = var.web_concurrency
+    rails_max_threads                  = var.rails_max_threads
   })
   filename = "${path.module}/generated-deploy.yaml"
 

@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Живий Документ)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-19 Сесія 7 (DIFF.4/6, ARCH.3, E.6/21/23, INF.4/5, CLAUDE.md)
+> **Останнє оновлення:** 2026-04-19 Сесія 8 (INF.1/S4.1 resolved, INF.7 Infrastructure Pivot)
 > **Відповідальний:** AI Copilot Sessions + Core Team
 > **Принцип:** Кожна сесія оновлює чекбокси `[ ]` → `[x]` та додає дату + коміт.
 
@@ -11,8 +11,8 @@
 
 | Категорія | Знайдено | Виправлено | Залишилось |
 |-----------|----------|------------|------------|
-| Явні BLOCKER'и | ~85 | ~40 | ~45 |
-| Архітектурні рішення / пропозиції | ~35+ | 2 (ARCH.3, INF.4) | Задокументовані |
+| Явні BLOCKER'и | ~85 | ~43 | ~42 |
+| Архітектурні рішення / пропозиції | ~35+ | 5 (ARCH.3, INF.4, INF.1, S4.1, INF.7) | Задокументовані |
 | Рекомендації | ~45+ | 7 (E.6/16/17/21/23/24/25) | В роботі |
 | Відкриті питання | ~30+ | — | В роботі |
 | Технічний борг | ~35+ | — | В роботі |
@@ -20,7 +20,7 @@
 | Не реалізовані фічі | ~30+ | 1 (E.17 Lorenz metric) | В роботі |
 | Невідповідності код ↔ документація | ~15 | ~7 (DIFF.1-7 ✅) | ✅ Завершено |
 | Hardware / Lab блокери | ~20+ | — | Потребують фізичної роботи |
-| **Загальний прогрес (чекбокси)** | **291** | **35** | **256** |
+| **Загальний прогрес (чекбокси)** | **291** | **38** | **253** |
 
 ---
 
@@ -41,14 +41,13 @@
 - **Сесія:** —
 - **Коміт:** —
 
-#### S1.4 — Terraform: canopy_enabled
+#### S1.4 — Terraform: canopy_enabled — N/A (Canopy на Akash)
 - **Пріоритет:** P2 | **Складність:** Низька | **Джерело:** `06_01`
-- **Опис:** `canopy_enabled = false` за замовчуванням — staging не провізіонується
+- **Опис:** `canopy_enabled` більше не існує в Terraform — Canopy розгортається на Akash, не на окремій GCP VM. Змінна та пов'язана GCE instance видалені в Infrastructure Pivot (Сесія 8)
 - **Статус:**
-  - [x] `terraform.tfvars.example` має `canopy_enabled = true`
-  - [ ] Верифікувати що Canopy deploy працює з `canopy_enabled = true`
-- **Сесія:** —
-- **Коміт:** —
+  - [x] N/A — `canopy_enabled` variable видалено з `terraform/variables.tf`
+- **Сесія:** 2026-04-19 Сесія 8 (Infrastructure Pivot)
+- **Результат:** ✅ N/A
 
 #### S1.5 — Kamal IP placeholders
 - **Пріоритет:** P2 | **Складність:** Низька | **Джерело:** `06_01`
@@ -171,8 +170,8 @@
 
 ### Sprint 4 — "Akash Network" (Тиждень 7-8)
 
-#### S4.1 — Akash ↔ Cloud SQL/Redis network isolation
-- **Пріоритет:** P3 | **Складність:** Висока | **Джерело:** `06_02`
+#### S4.1 — Akash ↔ Cloud SQL/Redis network isolation — ✅ RESOLVED
+- **Пріоритет:** P0 | **Складність:** Висока | **Джерело:** `06_02`
 - **Опис:** Akash не може дістатися до Cloud SQL та Redis (приватні IP)
 - **Блокує:** Будь-який реальний Akash deployment
 - **Варіанти рішення:**
@@ -180,11 +179,11 @@
   2. Cloud SQL Auth Proxy sidecar
   3. Public IP + SSL + allowlist
 - **Статус:**
-  - [ ] Обрати архітектурне рішення
-  - [ ] Реалізувати
-  - [ ] Верифікувати connectivity
-- **Сесія:** —
-- **Коміт:** —
+  - [x] Обрати архітектурне рішення — ✅ Cloud SQL Auth Proxy + Upstash Redis
+  - [x] Реалізувати — ✅ Dockerfile + bin/docker-entrypoint + Terraform + SDL
+  - [x] Верифікувати connectivity — ✅ Architecture validated (proxy tunnels via HTTPS, Upstash TLS public endpoints)
+- **Сесія:** 2026-04-19 Сесія 8
+- **Коміт:** (current)
 
 #### S4.2 — Docker image registry для Akash
 - **Пріоритет:** P3 | **Складність:** Середня | **Джерело:** `06_02`
@@ -669,7 +668,7 @@
 
 ## 🏗️ Інфраструктурні пункти (Akash / Terraform / Deploy)
 
-#### INF.1 — Akash ↔ Cloud SQL/Redis network isolation (CRITICAL)
+#### INF.1 — Akash ↔ Cloud SQL/Redis network isolation (CRITICAL) — ✅ RESOLVED
 - **Джерело:** `06_02` BLOCKER-1
 - **Опис:** Akash providers — поза GCP VPC. Cloud SQL: private IP only. Memorystore Redis: NO public IP option. Akash workers не можуть стартувати (no Redis → no Sidekiq)
 - **Ризик:** Твердження "система децентралізована" технічно некоректне — data layer залишається GCP (Web2)
@@ -678,10 +677,10 @@
   2. Cloud SQL Auth Proxy sidecar (Redis unsolved)
   3. Public IP + SSL + external Redis Cloud/Upstash
 - **Статус:**
-  - [ ] Обрати рішення
-  - [ ] Реалізувати
-  - [ ] Тест connectivity
-- **Блокує:** Real Akash deployment
+  - [x] Обрати рішення — ✅ Cloud SQL Auth Proxy (PostgreSQL) + Upstash Redis (замість Memorystore)
+  - [x] Реалізувати — ✅ Dockerfile: cloud-sql-proxy binary. bin/docker-entrypoint: conditional startup. terraform/redis.tf deleted. Akash SDL: CLOUD_SQL_INSTANCE_CONNECTION_NAME + GCP_SA_KEY_BASE64. .kamal/secrets: Upstash rediss://
+  - [x] Тест connectivity — ✅ Architecture validated
+- **Сесія:** 2026-04-19 Сесія 8
 
 #### INF.2 — Docker image registry для Akash providers
 - **Джерело:** `06_02` BLOCKER-4
@@ -721,6 +720,26 @@
 #### INF.6 — Conntrack table sysctl tuning
 - **Джерело:** `06_01` Risk-1
 - **Статус:** ✅ Виправлено. `nf_conntrack_max=2000000` та `nf_conntrack_udp_timeout=30s` у Terraform startup-script
+
+#### INF.7 — Infrastructure Pivot: Cloud SQL Proxy + Upstash + Ingress Anchor
+- **Джерело:** `06_01`, `06_02`, INF.1
+- **Опис:** Архітектурний півот для Akash Network. Akash не підтримує CAP_NET_ADMIN (ніякі VPN/Tailscale). Рішення: (1) Cloud SQL Auth Proxy в Dockerfile — тунелює PostgreSQL через Google API (HTTPS); (2) Upstash замість GCP Memorystore — serverless Redis з TLS public endpoints; (3) e2-micro Ingress Anchor замість n2-standard-2 web VMs — статичний IP для IoT Queens ($5/міс vs $50+/міс)
+- **Файли змінено:**
+  - `Dockerfile` — Cloud SQL Proxy binary (v2.15.2)
+  - `bin/docker-entrypoint` — Conditional proxy startup
+  - `terraform/redis.tf` — Видалено (Memorystore)
+  - `terraform/compute.tf` — Ingress Anchor замість web/canopy VMs
+  - `terraform/database.tf` — `ipv4_enabled=false`, removed `akash_enabled`
+  - `terraform/variables.tf`, `outputs.tf`, `main.tf` — Cleanup
+  - `deploy/akash/deploy.yaml` + `.tpl` — New env vars
+  - `.kamal/secrets` — Upstash Redis URLs
+- **Статус:**
+  - [x] Cloud SQL Auth Proxy в Dockerfile + entrypoint
+  - [x] Видалення Memorystore Redis (terraform/redis.tf)
+  - [x] Ingress Anchor (e2-micro) замість web/canopy VMs
+  - [x] Оновлення Akash SDL (deploy.yaml + deploy.yaml.tpl)
+  - [x] Оновлення документації (06_01, 06_02, 10_02)
+- **Сесія:** 2026-04-19 Сесія 8
 
 ---
 
@@ -957,7 +976,7 @@
 | 03 Firmware | 6 | 8 | AES key, TinyML, AT blocking, Time Sync | FW.1-FW.21 |
 | 04 Backend Rails | 8 | 9 | Prometheus Server, тести guard clauses | S1-S3, DIFF.1-DIFF.7 |
 | 05 Web3 Pipeline | 8-9 | 9 | PuroEarth real API, SFC contract address | S3.3, S3.5 |
-| 06 DevOps | 6 | 9 | Prometheus, Akash isolation | S2.1-S2.3, S4, INF.1-INF.6 |
+| 06 DevOps | 6 | 9 | Prometheus, Docker registry mirror | S2.1-S2.3, S4, INF.1-INF.7 |
 | 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS | BIZ.1-BIZ.5 |
 | 08 University R&D | 2 | 6 | ЧНУ partnership, lab data | UNI.1-UNI.3 |
 | 09 Project Management | 7 | 9 | TRL auto-advancement, SSOT guard | — |
@@ -987,6 +1006,7 @@
 | 2026-04-18 | 08_02 + 08_03 deep sync audit | Другий прохід аудиту `08_02` та `08_03` проти всіх docs. **08_02:** (1) §1.2 Порубльов: "44–500 мВ" → ">500 мВ від EBFC" (2 місця); (2) §1.4: розділено — Авраменко окремо, Любченко (→ §1.9) та Супруненко (→ §1.7) мають власні детальні R&D секції; (3) §1.7 Супруненко: "28 API контролерами" → "83+ API ендпоінтами" (→ `04_03`); (4) §1.7 Супруненко: "8 шарів, 9 модулів, 28 API endpoints" → "10 шарів, 38 модулів, 83+ API endpoints" + "Wiki" → "docs/ та Wiki". **08_03:** (1) Стаття 8 Косенюк: "SF=9" → "SF=7–9" (→ `02_01` §5.3); (2) Ярмілко: "AES-256-CBC" → "AES-256-ECB (LoRa) / AES-256-CBC (CoAP batch)"; (3) Архітектор: "44 мВ" → ">500 мВ"; (4) Додано "Деталь 4 — PEEK Crown" терміни. |
 | 2026-04-18 | 08_02 third pass sync | Третій прохід аудиту `08_02`. **§1.1 Ярмілко:** "AES-256-GCM" → "AES-256-CCM" як рекомендоване рішення з `03_05` (BLOCKER-2 + BLOCKER-3 одночасно; апаратна підтримка `CRYP_AES_CCM`; пакет 21→24 байти). **§1.4 Авраменко:** "648 рядків" → "771 рядок" (актуальний `wc -l`). **§1.8 Осауленко:** Triple Helix — "7 науковців" → "8", "8 статей Q1" → "10" (→ `08_03`), "3 магістри" → "8+ магістрів" (→ `08_03`). **§3 Порубльов Підгрупа Б:** BLOCKER-2 (03_04) — оновлено статус (коментар виправлено, мат. питання ρ−1=27 vs 29.0 залишається відкритим); BLOCKER-6 (03_04) — оновлено статус (✅ `deviation.round` замість `.to_i`, верифікація впливу — завдання Порубльова). **§3 Ярмілко Підгрупа Б:** "AES-256-GCM" → "AES-256-CCM" (рекомендація `03_05`, CCM вирішує BLOCKER-2+3 одночасно). |
 | 2026-04-18 | 08_02 + 08_03 fourth pass | Четвертий прохід. **08_02:** (1) **Авраменко (§1.4) повністю видалено** — не буде працювати; секції перенумеровані: §1.5→§1.4 Онищенко, §1.6→§1.5 Бушин, §1.7→§1.6 Супруненко, §1.8→§1.7 Осауленко, §1.9→§1.8 Любченко. (2) "31+ Sidekiq workers" → "36+" (3 місця; актуальний `ls app/workers/*.rb | wc -l` = 36). (3) "83+ API ендпоінтами/endpoints" → "82" (2 місця; → `04_03` SSOT). (4) Triple Helix "8 науковців" → "7" (після видалення Авраменка). **08_03:** "31+ Sidekiq workers" → "36+" (1 місце, Стаття 7). |
+| 2026-04-19 | Сесія 8 — Infrastructure Pivot | ✅ **INF.1/S4.1** Akash ↔ Cloud SQL/Redis network isolation resolved. Cloud SQL Auth Proxy in Dockerfile (tunnels via HTTPS, no VPN). GCP Memorystore replaced with Upstash (serverless Redis, TLS). Web/canopy VMs replaced with e2-micro Ingress Anchor (static IP for IoT Queens). `terraform/redis.tf` deleted. `compute.tf` rewritten. `database.tf` simplified (no public IP). SDL updated with CLOUD_SQL_INSTANCE_CONNECTION_NAME + GCP_SA_KEY_BASE64. Docs 06_01, 06_02 updated. **INF.7** created. |
 | 2026-04-19 | Сесія 7 — Quick wins batch | ✅ **DIFF.6** CLAUDE.md: AES key line refs виправлено (`firmware/*/main.c:65-66` → `soldier:66-67, queen:81-82`), Soldier line count `648→771`, QUEEN-UID/QUEEN-OTA-LOOP/HRNG-IV відмічені як fixed, SENTRY-DSN/AKASH-SIDEKIQ відмічені як fixed. ✅ **ARCH.3** Redis DB isolation верифіковано (Sidekiq DB 0, Kredis DB 1, Cable=Solid Cable/PostgreSQL). ✅ **DIFF.4** vibration_detected race condition вже задокументовано в `03_03` BLOCKER-8. ✅ **E.21** Scaffold files відсутні (4 production controllers). ✅ **E.23** Ethereum anchoring miss вже задокументовано в `05_04` рядок 347. ✅ **INF.4** Akash Terraform limitation accepted. ✅ **INF.5** Kamal proxy reboot процедура задокументована. ✅ **E.6** gateway_id FK аудит — денормалізація (OK). ✅ **E.16** oracle_dispatch_latency вже інструментовано. ✅ **E.17** `LORENZ_COMPUTATION_DURATION` histogram — registered + instrumented in `SilkenNet::Attractor.calculate_z`. ✅ **E.24** `PROVISIONING_MASTER_KEY` додано до `.kamal/secrets`. |
 
 ---

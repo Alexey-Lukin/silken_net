@@ -1,12 +1,17 @@
 # Canopy destination — deployed automatically from main branch after CI passes.
 # The forest canopy is the first layer that meets the sun and rain,
 # protecting the forest floor (production) below. 🌿
+#
+# After infrastructure pivot, Canopy runs on Akash Network (not a dedicated GCP VM).
+# This Kamal config is retained for fallback direct-deploy scenarios only.
+# Primary deployment: deploy/akash/deploy.yaml with canopy-specific env vars.
 # Deploy manually: kamal deploy -d canopy
 
-# Canopy server IP (replace with actual IP from Terraform output: canopy_server_ip).
+# Canopy server IP — use Ingress Anchor IP from: terraform output ingress_ip
+# (same IP as production — canopy is differentiated by Akash SDL env vars, not server IP)
 servers:
   web:
-    - <CANOPY_SERVER_IP>
+    - <INGRESS_ANCHOR_IP>
 
 # Proxy: no SSL on canopy (HTTP only for developer use).
 # proxy:

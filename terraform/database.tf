@@ -12,22 +12,13 @@ resource "google_sql_database_instance" "silken_db" {
     disk_autoresize   = true
 
     ip_configuration {
-      # [AKASH CONNECTIVITY]: When Akash nodes are deployed, they run OUTSIDE the
-      # GCP VPC and cannot reach a private-only Cloud SQL instance. Enable a public
-      # IP so that external clients (Akash providers, Cloud SQL Auth Proxy sidecars)
-      # can connect. Access is restricted to specific CIDR ranges via
-      # authorized_networks — never open to 0.0.0.0/0.
-      ipv4_enabled    = var.akash_enabled
+      # Cloud SQL stays private-only. External access (from Akash Network) is
+      # handled by Cloud SQL Auth Proxy running inside the container. The proxy
+      # tunnels traffic through Google Cloud API (outbound HTTPS) — no public IP
+      # or VPN required. See: Dockerfile + bin/docker-entrypoint.
+      ipv4_enabled    = false
       private_network = google_compute_network.silken_net_vpc.id
       require_ssl     = true
-
-      dynamic "authorized_networks" {
-        for_each = var.akash_enabled ? var.akash_authorized_networks : []
-        content {
-          name  = authorized_networks.value.name
-          value = authorized_networks.value.cidr
-        }
-      }
     }
 
     backup_configuration {
@@ -83,13 +74,6 @@ resource "google_sql_database_instance" "silken_db" {
     google_project_service.sqladmin,
     google_service_networking_connection.private_vpc_connection
   ]
-
-  lifecycle {
-    precondition {
-      condition     = !var.akash_enabled || length(var.akash_authorized_networks) > 0
-      error_message = "When akash_enabled = true, akash_authorized_networks must contain at least one CIDR range to restrict Cloud SQL public IP access."
-    }
-  }
 }
 
 # Primary application database
@@ -141,7 +125,7 @@ resource "google_sql_database_instance" "read_replica" {
     disk_autoresize = true
 
     ip_configuration {
-      ipv4_enabled    = var.akash_enabled
+      ipv4_enabled    = false
       private_network = google_compute_network.silken_net_vpc.id
       require_ssl     = true
     }

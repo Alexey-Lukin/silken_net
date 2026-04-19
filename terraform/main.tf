@@ -30,11 +30,6 @@ resource "google_project_service" "sqladmin" {
   disable_on_destroy = false
 }
 
-resource "google_project_service" "redis" {
-  service            = "redis.googleapis.com"
-  disable_on_destroy = false
-}
-
 resource "google_project_service" "artifactregistry" {
   service            = "artifactregistry.googleapis.com"
   disable_on_destroy = false

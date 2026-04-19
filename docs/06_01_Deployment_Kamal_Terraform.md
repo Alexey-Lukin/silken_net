@@ -22,19 +22,18 @@
 
 > Цей розділ є критично важливим. Жоден реальний деплой неможливий без вирішення цих пунктів.
 
-### 🔴 BLOCKER-1: IP-адреси серверів — плейсхолдери
+### 🔴 BLOCKER-1: IP-адреса Ingress Anchor — плейсхолдер
 
-**Статус:** Не заповнено. Блокує Kamal deploy.
+**Статус:** Не заповнено. Блокує DNS та маршрутизацію трафіку до Akash.
 
-У `config/deploy.yml` та `config/deploy.canopy.yml` прописані плейсхолдери:
-- `config/deploy.yml` → `192.168.0.1` (приватна IP — явно плейсхолдер)
-- `config/deploy.canopy.yml` → `<CANOPY_SERVER_IP>` (текстовий плейсхолдер)
+Після інфраструктурного піввоту залишається лише одна статична IP — **Ingress Anchor** (`e2-micro`), який проксює HTTP/HTTPS/CoAP трафік на Akash deployment. GCP web/canopy VM більше не існують.
 
-**Дія:** Після `terraform apply` отримати реальні IP:
+**Дія:** Після `terraform apply` отримати IP:
 ```bash
-terraform output web_server_ips    # → production IP
-terraform output canopy_server_ip  # → canopy IP (якщо canopy_enabled = true)
+terraform output ingress_ip    # → єдина статична IP (Ingress Anchor)
 ```
+
+> `web_server_ips` та `canopy_server_ip` більше не існують. DNS A-запис вказує на `ingress_ip`.
 
 ---
 
@@ -69,9 +68,9 @@ chmod +x bootstrap.sh
 | `DATABASE_PASSWORD` | Пароль Cloud SQL (≥16 символів) | Придумати. Зберегти у vault. |
 | `DATABASE_URL` | Production DB URL | `terraform output database_url` |
 | `CANOPY_DATABASE_URL` | Canopy DB URL | Окрема БД або схема |
-| `REDIS_URL` | Production Redis (DB 0) | `redis://<host>:<port>/0` |
-| `CANOPY_REDIS_URL` | Canopy Redis (DB 0) | — |
-| `KREDIS_REDIS_URL` | Production Redis (DB 1) | `redis://<host>:<port>/1` |
+| `REDIS_URL` | Production Redis (DB 0) | Upstash: `rediss://<host>:<port>/0` (TLS) |
+| `CANOPY_REDIS_URL` | Canopy Redis (DB 0) | Upstash: `rediss://<host>:<port>/0` |
+| `KREDIS_REDIS_URL` | Production Redis (DB 1) | Upstash: `rediss://<host>:<port>/1` |
 | `SSH_PRIVATE_KEY` | Приватний SSH ключ (ed25519) | `ssh-keygen -t ed25519` |
 | `SSH_PUBLIC_KEY` | Публічний SSH ключ | Пара до SSH_PRIVATE_KEY |
 | `SSH_KNOWN_HOSTS` | SSH fingerprints серверів | `ssh-keyscan <server-ip>` |
@@ -79,18 +78,19 @@ chmod +x bootstrap.sh
 
 ---
 
-### 🔴 BLOCKER-4: `canopy_enabled = false` за замовчуванням
+### ⬜ BLOCKER-4: `canopy_enabled` — N/A (Canopy на Akash)
 
-**Статус:** Canopy-сервер не буде провізіонований без явного включення.
+**Статус:** N/A. Canopy (staging) тепер розгортається на Akash Network, а не на окремій GCP VM. Змінна `canopy_enabled` в Terraform більше не впливає на інфраструктуру — GCP містить лише Cloud SQL та Ingress Anchor (`e2-micro`).
 
 **Дія:** Створити `terraform/terraform.tfvars` (в `.gitignore`!):
 ```hcl
 project_id     = "your-gcp-project-id"
 db_password    = "your-super-secret-password-16chars+"
-canopy_enabled = true
+ssh_source_ranges = ["<your-ip>/32"]
 ```
 
 > ⚠️ `terraform.tfvars` містить секрети — **ніколи не комітити в git**.
+> Canopy/Production розрізняються на рівні Akash SDL та environment variables, не GCP ресурсів.
 
 ---
 
@@ -102,19 +102,13 @@ canopy_enabled = true
 
 ---
 
-### 🟡 BLOCKER-6: Cloud SQL публічний IP для Akash
+### ✅ BLOCKER-6: Cloud SQL публічний IP для Akash — Вирішено (Cloud SQL Auth Proxy)
 
-**Статус:** `akash_enabled = false` за замовчуванням → Cloud SQL не має публічного IP.
+**Статус:** Вирішено. Cloud SQL Auth Proxy вбудовано в Docker-образ. Proxy тунелює PostgreSQL-трафік через Google Cloud API (вихідний HTTPS), тому Cloud SQL залишається з приватною IP (`ipv4_enabled=false`). Ні VPN, ні Tailscale, ні публічний IP на Cloud SQL не потрібні.
 
-**Дія:** В `terraform.tfvars`:
-```hcl
-akash_enabled = true
-akash_authorized_networks = [
-  { name = "akash-provider-1", cidr = "1.2.3.4/32" }
-]
-```
+Proxy запускається автоматично, коли встановлена ENV-змінна `CLOUD_SQL_INSTANCE_CONNECTION_NAME`. Змінні `akash_enabled` та `akash_authorized_networks` видалені з `database.tf`/`variables.tf` — більше не потрібні.
 
-> **Безпечніша альтернатива:** Cloud SQL Auth Proxy як sidecar-контейнер в SDL.
+> Cloud SQL Auth Proxy автентифікується через GCP Service Account JSON key (тіж самі credentials, що й для Artifact Registry).
 
 ---
 
@@ -190,37 +184,37 @@ chmod +x bootstrap.sh
 # Крок 2: Налаштувати terraform.tfvars
 cd terraform
 cp terraform.tfvars.example terraform.tfvars
-# Заповнити: project_id, db_password, canopy_enabled=true, ssh_source_ranges
+# Заповнити: project_id, db_password, ssh_source_ranges
 
-# Крок 3: Провізіонувати інфраструктуру (10–15 хвилин)
+# Крок 3: Провізіонувати GCP інфраструктуру (Cloud SQL + Ingress Anchor)
 terraform init
 terraform plan
 terraform apply
-# → outputs: web_server_ips, canopy_server_ip, database_url, redis_url
+# → outputs: ingress_ip, database_url
+# GCP тепер містить: Cloud SQL PostgreSQL (приватна IP) + Ingress Anchor (e2-micro, статична IP)
 
-# Крок 4: Оновити Kamal configs з реальними IP
-# config/deploy.yml → servers.web: [<web_server_ip>]
-# config/deploy.canopy.yml → servers.web: [<canopy_server_ip>]
-
-# Крок 5: Створити DNS A-записи
-# api.silkennet.com      → <web_server_ip>
-# canopy.silkennet.com   → <canopy_server_ip>
+# Крок 4: Створити DNS A-запис
+# api.silkennet.com → $(terraform output -raw ingress_ip)
 # Дочекатися: dig api.silkennet.com → правильний IP
 
-# Крок 6: Заповнити .kamal/secrets (з vault Bitwarden/1Password)
-# RAILS_MASTER_KEY=...
-# DATABASE_URL=$(terraform output -raw database_url)
-# REDIS_URL=redis://<redis_host>:6379/0
-# KREDIS_REDIS_URL=redis://<redis_host>:6379/1
-# GCP_ARTIFACT_REGISTRY_KEY=<base64-json-key>
+# Крок 5: Налаштувати Akash SDL
+# Заповнити секрети в deploy/akash/deploy.yaml або terraform/akash/terraform.tfvars:
+#   RAILS_MASTER_KEY, DATABASE_URL, CLOUD_SQL_INSTANCE_CONNECTION_NAME
+#   REDIS_URL=rediss://<upstash-host>:6379  (Upstash TLS)
+#   KREDIS_REDIS_URL=rediss://<upstash-host>:6379/1
+#   GCP_SA_KEY (для Cloud SQL Auth Proxy)
 
-# Крок 7: Налаштувати Docker registry
-gcloud auth configure-docker europe-west1-docker.pkg.dev
+# Крок 6: Деплой на Akash Network
+cd terraform/akash
+terraform init
+terraform apply
+# → Akash розгортає web (Rails + Puma) та job (Sidekiq) сервіси
+# → Cloud SQL Auth Proxy в контейнері тунелює DB-трафік через Google API
+# → Redis через Upstash (зовнішній, TLS)
 
-# Крок 8: Перший деплой
-kamal setup
-# → Traefik стартує → Let's Encrypt видає SSL → Rails запускається → CoAP listener відкриває UDP 5683
+# Крок 7: Верифікація
 # Коли в логах: "Listening on coap://0.0.0.0:5683" — ліс може говорити.
+# Ingress Anchor (HAProxy/socat) проксює HTTP/HTTPS/CoAP з GCP IP на Akash deployment.
 ```
 
 ---
@@ -257,13 +251,11 @@ kamal setup
 |---------|-----------|--------------|
 | **Тригер деплою** | Push в `main` після успішного CI | GitHub Release (`v*.*.*`) |
 | **Workflow** | `.github/workflows/deploy.yml` | `.github/workflows/deploy-production.yml` |
-| **Kamal конфіг** | `config/deploy.canopy.yml` (`-d canopy`) | `config/deploy.yml` (за замовчуванням) |
-| **GCE машина** | `e2-medium` (2 vCPU, 4 GB RAM) | `n2-standard-2` (2 vCPU, 8 GB RAM) |
-| **Диск** | 20 GB SSD | 30 GB SSD |
-| **Terraform змінна** | `canopy_enabled = true` (⚠️ зараз `false`) | `web_node_count = 1` |
-| **SSL/HTTPS** | Вимкнено | Let's Encrypt (потрібен DNS!) |
+| **Платформа** | Akash Network (окремий SDL або namespace) | Akash Network |
+| **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-micro`) | Cloud SQL (HA) + Ingress Anchor (`e2-micro`) |
+| **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | Upstash Serverless Redis (TLS, `rediss://`) |
+| **SSL/HTTPS** | Вимкнено або Let's Encrypt через Ingress Anchor | Let's Encrypt через Ingress Anchor |
 | **DB** | Окрема або спільна Cloud SQL | `silken_net_production` (HA) |
-| **Redis** | Спільний або окремий Memorystore | Memorystore `STANDARD_HA` |
 | **Puma workers** | `WEB_CONCURRENCY: 2` | `WEB_CONCURRENCY: 2` |
 
 ---
@@ -274,11 +266,14 @@ kamal setup
 ┌─────────────────────────────────────────────────────────────┐
 │                    Google Cloud Platform (GCP)              │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │  web-0 (Prod 🌲, Kamal)  + canopy (🌿, Kamal)       │   │
+│  │  Ingress Anchor (e2-micro, silken-net-ingress)      │   │
+│  │    — статична IP, HAProxy/socat                     │   │
+│  │    — проксює HTTP/HTTPS/CoAP на Akash deployment   │   │
 │  │  Cloud SQL PostgreSQL 16 (4 бази, HA, приватна IP)  │   │
-│  │  Memorystore Redis 7.0 (HA, приватна IP)             │   │
 │  │  Artifact Registry (Docker images)                   │   │
 │  └──────────────────────────────────────────────────────┘   │
+│  ❌ Memorystore Redis — ВИДАЛЕНО (замінено на Upstash)      │
+│  ❌ web-0 / canopy VMs — ВИДАЛЕНО (Rails на Akash)          │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -288,21 +283,30 @@ kamal setup
 │  │  4 vCPU / 8 GB RAM / 50 GB ephemeral                │   │
 │  │  Порти: :80 (HTTP) + :5683/UDP (CoAP)               │   │
 │  │                                                      │   │
-│  │  ✅ Запускає Sidekiq (job role додано в SDL)            │   │
-│  │  ✅ Підключається до Cloud SQL (публічний IP + SSL) │   │
-│  │  ⚠️ Redis (Memorystore) недоступний з Akash         │   │
+│  │  ✅ job сервіс (Sidekiq, всі 31+ воркери)            │   │
+│  │  ✅ Cloud SQL через Auth Proxy (HTTPS tunnel)        │   │
+│  │  ✅ Redis через Upstash (зовнішній, TLS, rediss://) │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    Upstash (Serverless Redis)               │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Redis 7.x з TLS (публічний endpoint, rediss://)    │   │
+│  │  Доступний з Akash та будь-де через інтернет         │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-| Сервіс/Ресурс | GCP (Kamal) | Akash Network | Примітка |
-|--------------|-------------|---------------|---------|
-| **Rails web (Puma + Thruster)** | ✅ | ✅ | Один Docker образ |
-| **Sidekiq (job role)** | ✅ | ✅ | `job` сервіс додано в Akash SDL |
-| **CoAP UDP daemon (:5683)** | ✅ | ✅ | Порт відкритий в обох |
-| **Cloud SQL PostgreSQL 16** | ✅ | ❌ | DB завжди на GCP |
-| **Memorystore Redis 7.0** | ✅ | ❌ | Тільки приватна IP |
-| **Artifact Registry (Docker)** | ✅ | shared | Той самий образ |
+| Сервіс/Ресурс | GCP | Akash Network | Upstash | Примітка |
+|--------------|-----|---------------|---------|---------|
+| **Rails web (Puma + Thruster)** | ❌ | ✅ | — | Повністю на Akash |
+| **Sidekiq (job role)** | ❌ | ✅ | — | `job` сервіс в Akash SDL |
+| **CoAP UDP daemon (:5683)** | proxy | ✅ | — | Ingress Anchor проксює UDP на Akash |
+| **Cloud SQL PostgreSQL 16** | ✅ | — | — | Приватна IP, доступ через Auth Proxy |
+| **Redis** | ❌ | — | ✅ | Upstash Serverless, TLS (`rediss://`) |
+| **Ingress Anchor** | ✅ | — | — | `e2-micro`, HAProxy/socat, статична IP |
+| **Artifact Registry (Docker)** | ✅ | shared | — | Той самий образ |
 
 ---
 
@@ -376,18 +380,19 @@ kamal logs -f -d canopy
 terraform/
 ├── main.tf       # Provider (google ~> 5.0), GCP APIs, Artifact Registry
 ├── vpc.tf        # VPC, subnet (10.0.0.0/20), Cloud Router, Cloud NAT, Firewall
-├── compute.tf    # GCE instances (web-0...N, canopy), Static IPs
+├── compute.tf    # Ingress Anchor (e2-micro, silken-net-ingress), Static IP
 ├── database.tf   # Cloud SQL PostgreSQL 16, 4 databases, Private Service Access
-├── redis.tf      # Memorystore Redis 7.0, HA
 ├── iam.tf        # Service Account silken-net-deploy + 7 IAM roles
 ├── variables.tf  # Всі input variables з валідацією
-└── outputs.tf    # IP-адреси, DB URL, Redis URL тощо
+└── outputs.tf    # ingress_ip, DB URL тощо
 
 terraform/akash/
 ├── main.tf       # SDL generation, null_resource (akash CLI)
 ├── variables.tf  # Akash-specific variables + app secrets
 └── outputs.tf    # SDL path, deployment notes
 ```
+
+> **Примітка:** `redis.tf` видалено — Redis тепер обслуговується Upstash (serverless, зовнішній сервіс, не GCP). `compute.tf` більше не містить web/canopy VMs — лише Ingress Anchor (`e2-micro`) з HAProxy/socat для проксування трафіку на Akash.
 
 ### GCP Region та Zone
 
@@ -427,12 +432,12 @@ Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
 
 | Компонент | Підключення |
 |-----------|------------|
-| Puma workers (2) × Threads (5) | 10 |
-| Sidekiq threads (25) | 25 |
-| Puma canopy | 10 |
-| Akash replicas (1) × Threads (3) × WEB_CONCURRENCY (4) | 12 |
+| Akash web: Puma workers (2) × Threads (5) | 10 |
+| Akash job: Sidekiq threads (25) | 25 |
+| Akash replicas (canopy) × Threads | 12 |
 | Rails DB console / admin | 5 |
-| **Мінімум** | **~62** |
+| Cloud SQL Auth Proxy overhead | 3 |
+| **Мінімум** | **~55** |
 
 `400` — з великим запасом для масштабування. Адекватно.
 
@@ -443,8 +448,10 @@ Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
 ```
 Stage 1: base          — ruby:4.0.1-slim + libjemalloc2, libvips, postgresql-client
 Stage 2: build         — bundle install, bootsnap, assets:precompile
-Stage 3: final         — COPY gems + app, USER rails:1000, CMD: thrust ./bin/rails server
+Stage 3: final         — COPY gems + app + Cloud SQL Auth Proxy, USER rails:1000, CMD: thrust ./bin/rails server
 ```
+
+> **Cloud SQL Auth Proxy** вбудовано у фінальний Docker-образ. Proxy запускається автоматично як фоновий процес при наявності ENV `CLOUD_SQL_INSTANCE_CONNECTION_NAME`. Він тунелює PostgreSQL-трафік через Google Cloud API (вихідний HTTPS на порт 443), тому Cloud SQL не потребує публічної IP.
 
 ---
 
@@ -486,41 +493,43 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 ☑ 1. Створити GCS bucket для Terraform State (BLOCKER-2) ← ВИПРАВЛЕНО (bootstrap.sh)
       cd terraform && ./bootstrap.sh
 
-☐ 2. Створити terraform/terraform.tfvars (BLOCKER-4)
-      project_id, db_password, canopy_enabled=true, ssh_source_ranges=[<your-ip>]
+☐ 2. Створити terraform/terraform.tfvars
+      project_id, db_password, ssh_source_ranges=[<your-ip>]
 
 ☐ 3. Заповнити всі GitHub Secrets (BLOCKER-3)
       GCP_SA_KEY, GCP_PROJECT_ID, DATABASE_PASSWORD, DATABASE_URL, ...
 
 ☐ 4. terraform init && terraform plan && terraform apply
-      Перевірити outputs: web_server_ips, canopy_server_ip, redis_host
+      Перевірити outputs: ingress_ip, database_url
 
-☐ 5. Оновити IP в конфігах Kamal (BLOCKER-1)
-      config/deploy.yml: 192.168.0.1 → <web_server_ips[0]>
-      config/deploy.canopy.yml: <CANOPY_SERVER_IP> → <canopy_server_ip>
+☐ 5. DNS A-запис створено та поширився
+      api.silkennet.com → $(terraform output -raw ingress_ip)
+      dig api.silkennet.com → правильний IP
 
 ☑ 6. KREDIS_REDIS_URL в .kamal/secrets (BLOCKER-9) ← ВИПРАВЛЕНО
 
-☐ 7. Вирішити підключення Redis з Akash (BLOCKER-6)
+☑ 7. Cloud SQL доступний з Akash (BLOCKER-6) ← ВИПРАВЛЕНО (Cloud SQL Auth Proxy)
 
 ☑ 8. Sidekiq на Akash (BLOCKER-7) ← ВИПРАВЛЕНО (job сервіс додано)
 
 ☐ 9. Створити deploy-production.yml workflow (INFO)
 
-☐ 10. DNS A-запис створено та поширився (Pre-Flight #1)
-       dig api.silkennet.com → правильний IP
+☐ 10. Налаштувати Upstash Redis (заміна GCP Memorystore)
+       Створити Upstash інстанс, отримати rediss:// URL
+       Вказати REDIS_URL та KREDIS_REDIS_URL в Akash SDL
 
-☐ 11. .kamal/secrets заповнені реальними значеннями (Pre-Flight #2)
+☐ 11. Деплой на Akash Network
+       cd terraform/akash && terraform apply
+       Верифікувати web та job сервіси запущені
 
-☐ 12. Oracle гаманці поповнені газом (MATIC/ETH/SOL/CELO) (Pre-Flight #3)
+☐ 12. Верифікувати Ingress Anchor маршрутизацію
+       curl https://api.silkennet.com/up → 200
 
-☐ 13. LoRa-антени підключені до всіх плат (Pre-Flight #4)
+☐ 13. Oracle гаманці поповнені газом (MATIC/ETH/SOL/CELO) (Pre-Flight #3)
 
-☐ 14. AES-ключ Soldier = AES-ключ Queen (побітово) (Pre-Flight #5)
+☐ 14. LoRa-антени підключені до всіх плат (Pre-Flight #4)
 
-☐ 15. Перший тестовий деплой Canopy:
-       kamal setup -d canopy
-       kamal deploy -d canopy
+☐ 15. AES-ключ Soldier = AES-ключ Queen (побітово) (Pre-Flight #5)
 ```
 
 ---
@@ -548,10 +557,10 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 **Симптом:** `nf_conntrack: table full, dropping packet` у `/var/log/kern.log`.
 
-**Статус:** Виправлено. `sysctl` тюнінг conntrack додано до `startup-script` у `terraform/compute.tf`. Налаштування зберігаються через `/etc/sysctl.conf` — переживають перезавантаження:
+**Статус:** Виправлено. `sysctl` тюнінг conntrack додано до `startup-script` Ingress Anchor у `terraform/compute.tf`. Налаштування зберігаються через `/etc/sysctl.conf` — переживають перезавантаження:
 
 ```bash
-# Автоматично виконується при старті GCP instance (terraform/compute.tf):
+# Автоматично виконується при старті Ingress Anchor (terraform/compute.tf):
 sysctl -w net.netfilter.nf_conntrack_max=2000000
 sysctl -w net.netfilter.nf_conntrack_udp_timeout=30
 echo "net.netfilter.nf_conntrack_max=2000000" >> /etc/sysctl.conf
@@ -563,10 +572,10 @@ echo "net.netfilter.nf_conntrack_udp_timeout=30" >> /etc/sysctl.conf
 
 ### ✅ Ризик-2: UDP Rate Limiting реалізовано через Terraform (Виправлено)
 
-**Статус:** Виправлено. `iptables` hashlimit правило додано в `startup-script` GCP instance.
+**Статус:** Виправлено. `iptables` hashlimit правило додано в `startup-script` Ingress Anchor.
 
 ```bash
-# Автоматично виконується при старті GCP instance (terraform/compute.tf):
+# Автоматично виконується при старті Ingress Anchor (terraform/compute.tf):
 iptables -A INPUT -p udp --dport 5683 \
   -m hashlimit --hashlimit-name coap \
   --hashlimit-upto 100/sec --hashlimit-burst 200 \
@@ -576,7 +585,7 @@ iptables -A INPUT -p udp --dport 5683 \
 iptables -A INPUT -p udp --dport 5683 -j DROP
 ```
 
-Правила зберігаються через `iptables-persistent` — переживають перезавантаження GCP instance.
+Правила зберігаються через `iptables-persistent` — переживають перезавантаження Ingress Anchor.
 
 - **100 UDP пакетів/сек** на IP-адресу + burst 200 → легальна Queen не обмежується
 - **LOG** перед DROP (max 10/хв) → DDoS атаки видимі у Cloud Logging без флуду логів
@@ -627,7 +636,7 @@ Series D архітектура (>1M вузлів):
 | Ingress Proxy (Rust/Go) | 🔴 Не реалізовано | Series D milestone |
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
 | Read-Only Replicas | 🔴 Не налаштовано | Terraform: `google_sql_database_instance` replica |
-| conntrack tuning | ✅ Виправлено | `sysctl` у Terraform `startup_script` (`terraform/compute.tf`) |
+| conntrack tuning | ✅ Виправлено | `sysctl` у Ingress Anchor `startup_script` (`terraform/compute.tf`) |
 
 ---
 

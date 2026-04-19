@@ -115,8 +115,8 @@ resource "google_compute_firewall" "allow_coap" {
 # At ~50 packets per Queen flush (1 batch = 1 UDP packet), this allows 2 flushes/second per IP
 # while blocking amplification attacks.
 #
-# Applied via instance metadata `startup-script` in compute.tf, not here.
-# See: google_compute_instance.web.metadata.startup-script
+# Applied via instance metadata `startup-script` in compute.tf.
+# See: google_compute_instance.ingress_anchor.metadata_startup_script
 
 # Firewall: Allow internal communication — restricted to subnet CIDR
 resource "google_compute_firewall" "allow_internal" {
@@ -157,11 +157,4 @@ resource "google_compute_firewall" "deny_all_ingress" {
   log_config {
     metadata = "INCLUDE_ALL_METADATA"
   }
-}
-
-# Reserve static external IPs for web nodes
-resource "google_compute_address" "web" {
-  count  = var.web_node_count
-  name   = "silken-net-web-${count.index}"
-  region = var.region
 }
