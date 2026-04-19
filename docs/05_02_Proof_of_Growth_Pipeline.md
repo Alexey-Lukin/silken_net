@@ -624,7 +624,7 @@ blockchain_transactions
 
 **Файли:**
 - `firmware/soldier/main.c:66–67`
-- `firmware/queen/main.c:65–66`
+- `firmware/queen/main.c:81–82`
 
 ```c
 // ОДНАКОВИЙ У ОБОХ ФАЙЛАХ:

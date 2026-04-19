@@ -73,6 +73,7 @@ lib/assets/silken_forest.marshal.sha256
 # Firmware test binaries (host-based, compiled with gcc)
 firmware/test/test_queen
 firmware/test/test_soldier
+firmware/test/test_bio_contract
 
 # Subgraph build artifacts (The Graph)
 subgraph/build/

@@ -13,9 +13,9 @@ CC       = gcc
 CFLAGS   = -Wall -Wextra -Wpedantic -std=c11 -I. -O2
 BINDIR   = .
 
-.PHONY: all queen soldier clean
+.PHONY: all queen soldier bio_contract clean
 
-all: queen soldier
+all: queen soldier bio_contract
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -23,11 +23,17 @@ queen: $(BINDIR)/test_queen
 soldier: $(BINDIR)/test_soldier
 	@./$(BINDIR)/test_soldier
 
+bio_contract: $(BINDIR)/test_bio_contract
+	@./$(BINDIR)/test_bio_contract
+
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
 $(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h
 	$(CC) $(CFLAGS) -o $@ test_soldier_logic.c
 
+$(BINDIR)/test_bio_contract: test_bio_contract.c
+	$(CC) $(CFLAGS) -o $@ test_bio_contract.c -lm
+
 clean:
-	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier
+	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract

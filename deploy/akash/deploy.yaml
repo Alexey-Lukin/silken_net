@@ -113,6 +113,16 @@ services:
         to:
           - global: true
 
+      # HTTPS — TLS-terminated traffic for secure browser/API access.
+      # Required for WebSocket (ActionCable) over HTTPS and browser security policies.
+      # TLS termination is handled by Akash ingress (*.ingress.akash.pub)
+      # or external Cloudflare proxy. Thruster handles HTTP/2 internally.
+      # Kamal equivalent: "443:443"
+      - port: 443
+        as: 443
+        to:
+          - global: true
+
       # CoAP — UDP uplink for tree sensor telemetry (LoRa mesh → Queen → Akash).
       # This is critical for IoT data ingestion from soldier/queen gateways.
       # Kamal equivalent: "5683:5683/udp"

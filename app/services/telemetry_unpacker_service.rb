@@ -14,6 +14,11 @@ class TelemetryUnpackerService < ApplicationService
   SAFE_VOLTAGE_RANGE = (0..5000)      # 0 - 5В
   SAFE_TEMP_RANGE    = (-45..90)      # Від арктичних до тропічних пожеж
 
+  # --- DUAL COMPUTATION INTEGRITY ---
+  # Device (Float, mruby) та Server (BigDecimal, Ruby) розраховують Z незалежно.
+  # Float vs BigDecimal divergence є природною (~IEEE 754 vs arbitrary precision).
+  # Якщо device bio_status суперечить server Z — потенційний fraud або збій firmware.
+
   # DID-сентинел: Королева передає власну телеметрію з DID = 0x00000000
   QUEEN_SENTINEL_DID = "0"
 
@@ -120,6 +125,12 @@ class TelemetryUnpackerService < ApplicationService
       log_attributes[:acoustic_events]
     )
 
+    # 4.1 DUAL COMPUTATION INTEGRITY (Z Divergence Check)
+    # Device повідомляє bio_status з власного Lorenz (Float, mruby).
+    # Server розраховує Z (BigDecimal). Порівнюємо статуси:
+    # якщо device каже "homeostasis" а server Z поза межами породи — fraud flag.
+    check_z_divergence!(tree, log_attributes)
+
     # 5. ФІКСАЦІЯ ТА ЕКОНОМІЧНИЙ ВІДГУК
     commit_telemetry(tree, log_attributes)
 
@@ -142,6 +153,35 @@ class TelemetryUnpackerService < ApplicationService
     when 1 then :stress
     when 2 then :anomaly
     when 3 then :tamper_detected
+    end
+  end
+
+  # [DUAL COMPUTATION INTEGRITY]: Порівнюємо device bio_status з server-derived bio_status.
+  # Device (mruby, Float) та Server (Ruby, BigDecimal) розраховують Lorenz незалежно.
+  # Float vs BigDecimal дає природний divergence ~±2.0 на Z-осі після 250 ітерацій.
+  # Ми перевіряємо лише категоричну невідповідність:
+  #   - Device каже "homeostasis" (status=0) а server Z поза межами породи
+  #   - Device каже "anomaly" (status=2) а server Z цілком здоровий
+  # Це ловить tampered firmware або replay attacks з підставленим StatusByte.
+  def check_z_divergence!(tree, attributes)
+    tree_family = tree.tree_family
+    return unless tree_family # Без породи — перевірка неможлива
+
+    server_z = attributes[:z_value]
+    device_bio_status = attributes[:bio_status]
+    return if server_z.nil? || device_bio_status.nil?
+
+    server_healthy = tree_family.healthy_z?(server_z)
+    device_healthy = device_bio_status == :homeostasis
+
+    # Категорична невідповідність: один каже "здоровий", інший — "ні"
+    if device_healthy != server_healthy
+      Rails.logger.warn(
+        "🔍 [Z Divergence] DID #{tree.did}: device=#{device_bio_status}, " \
+        "server_z=#{server_z}, healthy_range=#{tree_family.critical_z_min}..#{tree_family.critical_z_max}. " \
+        "Dual Computation Integrity mismatch."
+      )
+      SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
     end
   end
 
@@ -188,7 +228,14 @@ class TelemetryUnpackerService < ApplicationService
     # credit! відкриває власну коротку транзакцію з pessimistic lock (SELECT ... FOR UPDATE).
     # Lock тримається лише мілісекунди замість усієї тривалості commit_telemetry.
     # growth_points записані в TelemetryLog — аудит-трейл для reconciliation при збоях.
-    tree.wallet.credit!(growth_points) if growth_points&.positive?
+    #
+    # [DIFF.2 FIX: carbon_sequestration_coefficient]:
+    # Зважуємо бали росту за коефіцієнтом секвестрації породи дерева.
+    # Дуб (Quercus) акумулює вуглець швидше за Сосну (Pinus) — справедливий розподіл SCC.
+    if growth_points&.positive?
+      weighted_points = tree.tree_family&.weighted_growth_points(growth_points) || growth_points
+      tree.wallet.credit!(weighted_points) if weighted_points.positive?
+    end
   end
 
   # [KENOSIS TITAN]: Денормалізований лічильник "одужання" (Anti-Flapping).

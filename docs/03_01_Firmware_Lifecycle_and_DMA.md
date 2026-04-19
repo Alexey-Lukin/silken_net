@@ -193,7 +193,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 
 **Статус:** Відкрито. Критичний ризик безпеки для масового виробництва.
 
-**Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:65-66`
+**Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
 
 ```c
 // Однаковий ключ у ВСІХ вузлах мережі Silken Net
