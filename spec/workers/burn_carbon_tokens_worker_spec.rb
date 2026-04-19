@@ -78,4 +78,40 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
       }.to raise_error(StandardError, "RPC timeout")
     end
   end
+
+  # -----------------------------------------------------------------------
+  # S2.4: Prometheus metric SLASHING_EVENTS_TOTAL
+  # -----------------------------------------------------------------------
+  describe "Prometheus metrics (S2.4)" do
+    it "increments SLASHING_EVENTS_TOTAL with reason tree_death when tree_id is provided" do
+      metric = SilkenNet::Metrics::SLASHING_EVENTS_TOTAL
+      before_val = metric.get(labels: { reason: "tree_death" })
+
+      described_class.new.perform(organization.id, naas_contract.id, tree.id)
+
+      expect(metric.get(labels: { reason: "tree_death" })).to eq(before_val + 1.0)
+    end
+
+    it "increments SLASHING_EVENTS_TOTAL with reason cluster_degradation when tree_id is nil" do
+      metric = SilkenNet::Metrics::SLASHING_EVENTS_TOTAL
+      before_val = metric.get(labels: { reason: "cluster_degradation" })
+
+      described_class.new.perform(organization.id, naas_contract.id)
+
+      expect(metric.get(labels: { reason: "cluster_degradation" })).to eq(before_val + 1.0)
+    end
+
+    it "does not increment metric when contract is already breached" do
+      naas_contract.update_column(:status, :breached)
+
+      metric = SilkenNet::Metrics::SLASHING_EVENTS_TOTAL
+      before_tree = metric.get(labels: { reason: "tree_death" })
+      before_cluster = metric.get(labels: { reason: "cluster_degradation" })
+
+      described_class.new.perform(organization.id, naas_contract.id, tree.id)
+
+      expect(metric.get(labels: { reason: "tree_death" })).to eq(before_tree)
+      expect(metric.get(labels: { reason: "cluster_degradation" })).to eq(before_cluster)
+    end
+  end
 end

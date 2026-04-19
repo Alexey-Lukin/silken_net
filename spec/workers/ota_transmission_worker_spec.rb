@@ -165,6 +165,42 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
     end
   end
 
+  # -----------------------------------------------------------------------
+  # S2.4: Prometheus metric OTA_CHUNKS_SENT_TOTAL
+  # -----------------------------------------------------------------------
+  describe "Prometheus metrics (S2.4)" do
+    it "increments OTA_CHUNKS_SENT_TOTAL on successful chunk transmission" do
+      metric = SilkenNet::Metrics::OTA_CHUNKS_SENT_TOTAL
+      before_val = metric.get(labels: { firmware_version: firmware.version })
+
+      described_class.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)
+
+      expect(metric.get(labels: { firmware_version: firmware.version })).to eq(before_val + 1.0)
+    end
+
+    it "does not increment OTA_CHUNKS_SENT_TOTAL on chunk failure" do
+      allow(CoapClient).to receive(:put).and_raise(Timeout::Error)
+      metric = SilkenNet::Metrics::OTA_CHUNKS_SENT_TOTAL
+      before_val = metric.get(labels: { firmware_version: firmware.version })
+
+      described_class.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)
+
+      expect(metric.get(labels: { firmware_version: firmware.version })).to eq(before_val)
+    end
+
+    it "increments OTA_CHUNKS_SENT_TOTAL for each chunk in sequence" do
+      metric = SilkenNet::Metrics::OTA_CHUNKS_SENT_TOTAL
+      before_val = metric.get(labels: { firmware_version: firmware.version })
+
+      # Transmit 3 chunks (0, 1, 2) — the full firmware
+      3.times do |i|
+        described_class.new.perform(gateway.uid, "firmware", firmware.id, i, 0)
+      end
+
+      expect(metric.get(labels: { firmware_version: firmware.version })).to eq(before_val + 3.0)
+    end
+  end
+
   describe "sidekiq_retries_exhausted (P1 fix)" do
     it "marks gateway as faulty when job dies" do
       gateway.update!(state: :updating)

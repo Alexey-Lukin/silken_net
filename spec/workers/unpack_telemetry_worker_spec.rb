@@ -278,4 +278,56 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       expect(result).to be_nil
     end
   end
+
+  # -----------------------------------------------------------------------
+  # S2.4: Prometheus metric COAP_PACKETS_RECEIVED_TOTAL
+  # -----------------------------------------------------------------------
+  describe "Prometheus metrics (S2.4)" do
+    it "increments COAP_PACKETS_RECEIVED_TOTAL with status success on full processing" do
+      raw_data = "TELEMETRY_BATCH_DATA_TEST_1234"
+      encrypted = encrypt_payload(raw_data, key_record.binary_key)
+      encoded = Base64.strict_encode64(encrypted)
+
+      metric = SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL
+      before_val = metric.get(labels: { status: "success" })
+
+      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      expect(metric.get(labels: { status: "success" })).to eq(before_val + 1.0)
+    end
+
+    it "increments COAP_PACKETS_RECEIVED_TOTAL with status unknown_device for unknown source" do
+      encoded = Base64.strict_encode64("garbage" * 10)
+
+      metric = SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL
+      before_val = metric.get(labels: { status: "unknown_device" })
+
+      described_class.new.perform(encoded, "unknown.ip.0.0", "UNKNOWN-UID")
+
+      expect(metric.get(labels: { status: "unknown_device" })).to eq(before_val + 1.0)
+    end
+
+    it "increments COAP_PACKETS_RECEIVED_TOTAL with status decrypt_error on decryption failure" do
+      # Payload too short for valid AES-CBC (need at least 2 blocks = 32 bytes)
+      encoded = Base64.strict_encode64("\x00" * 16)
+
+      metric = SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL
+      before_val = metric.get(labels: { status: "decrypt_error" })
+
+      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      expect(metric.get(labels: { status: "decrypt_error" })).to eq(before_val + 1.0)
+    end
+
+    it "does not increment success metric for unknown devices" do
+      encoded = Base64.strict_encode64("garbage" * 10)
+
+      metric = SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL
+      before_val = metric.get(labels: { status: "success" })
+
+      described_class.new.perform(encoded, "unknown.ip.0.0", "UNKNOWN-UID")
+
+      expect(metric.get(labels: { status: "success" })).to eq(before_val)
+    end
+  end
 end

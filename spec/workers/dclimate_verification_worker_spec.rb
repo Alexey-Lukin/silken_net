@@ -76,6 +76,58 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
     end
   end
 
+  # -----------------------------------------------------------------------
+  # S2.4: Prometheus metric EWS_ALERTS_TOTAL
+  # -----------------------------------------------------------------------
+  describe "Prometheus metrics (S2.4)" do
+    let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
+
+    it "increments EWS_ALERTS_TOTAL on successful verification" do
+      service = instance_double(Dclimate::VerificationService)
+      allow(Dclimate::VerificationService).to receive(:new).with(alert).and_return(service)
+      allow(service).to receive(:perform).and_return(true)
+
+      metric = SilkenNet::Metrics::EWS_ALERTS_TOTAL
+      before_val = metric.get(labels: { alert_type: alert.alert_type.to_s })
+
+      described_class.new.perform(alert.id)
+
+      expect(metric.get(labels: { alert_type: alert.alert_type.to_s })).to eq(before_val + 1.0)
+    end
+
+    it "does not increment EWS_ALERTS_TOTAL when verification returns falsey" do
+      service = instance_double(Dclimate::VerificationService)
+      allow(Dclimate::VerificationService).to receive(:new).with(alert).and_return(service)
+      allow(service).to receive(:perform).and_return(nil)
+
+      metric = SilkenNet::Metrics::EWS_ALERTS_TOTAL
+      before_val = metric.get(labels: { alert_type: alert.alert_type.to_s })
+
+      described_class.new.perform(alert.id)
+
+      expect(metric.get(labels: { alert_type: alert.alert_type.to_s })).to eq(before_val)
+    end
+
+    it "does not increment EWS_ALERTS_TOTAL when alert is already verified" do
+      verified_alert = create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :verified)
+      metric = SilkenNet::Metrics::EWS_ALERTS_TOTAL
+      before_val = metric.get(labels: { alert_type: verified_alert.alert_type.to_s })
+
+      described_class.new.perform(verified_alert.id)
+
+      expect(metric.get(labels: { alert_type: verified_alert.alert_type.to_s })).to eq(before_val)
+    end
+
+    it "does not increment EWS_ALERTS_TOTAL when alert does not exist" do
+      metric = SilkenNet::Metrics::EWS_ALERTS_TOTAL
+      before_val = metric.get(labels: { alert_type: "unknown" })
+
+      described_class.new.perform(-1)
+
+      expect(metric.get(labels: { alert_type: "unknown" })).to eq(before_val)
+    end
+  end
+
   describe ".sidekiq_retries_exhausted" do
     let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
 
