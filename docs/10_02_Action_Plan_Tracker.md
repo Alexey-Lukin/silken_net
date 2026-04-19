@@ -11,15 +11,16 @@
 
 | Категорія | Знайдено | Виправлено | Залишилось |
 |-----------|----------|------------|------------|
-| Явні BLOCKER'и | ~85 | ~35 | ~50 |
-| Архітектурні рішення / пропозиції | ~35+ | — | Задокументовані |
-| Рекомендації | ~45+ | — | В роботі |
+| Явні BLOCKER'и | ~85 | ~40 | ~45 |
+| Архітектурні рішення / пропозиції | ~35+ | 2 (ARCH.3, INF.4) | Задокументовані |
+| Рекомендації | ~45+ | 7 (E.6/16/17/21/23/24/25) | В роботі |
 | Відкриті питання | ~30+ | — | В роботі |
 | Технічний борг | ~35+ | — | В роботі |
-| Безпекові проблеми | ~25+ | ~3 | В роботі |
-| Не реалізовані фічі | ~30+ | — | В роботі |
-| Невідповідності код ↔ документація | ~15 | ~4 | В роботі |
+| Безпекові проблеми | ~25+ | ~5 | В роботі |
+| Не реалізовані фічі | ~30+ | 1 (E.17 Lorenz metric) | В роботі |
+| Невідповідності код ↔ документація | ~15 | ~7 (DIFF.1-7 ✅) | ✅ Завершено |
 | Hardware / Lab блокери | ~20+ | — | Потребують фізичної роботи |
+| **Загальний прогрес (чекбокси)** | **291** | **35** | **256** |
 
 ---
 
@@ -908,15 +909,15 @@
 | E.13 | Petri Net model of Rails monolith — deadlock-free verification at 10k concurrent IoT | `08_02` | [ ] Потребує Супруненко |
 | E.14 | Multi-source satellite + anchor data fusion (Sentinel-2 NDVI) | `08_02` | [ ] Потребує Любченко + Бушин |
 | E.15 | Reed-Solomon FEC або Hamming для LoRa error correction | `08_02` | [ ] Потребує Косенук |
-| E.16 | `oracle_dispatch_latency_seconds` per-network detail metric missing | `06_03` | [ ] Low priority |
-| E.17 | `lorenz_computation_duration_seconds` metric missing | `06_03` | [ ] Low priority |
+| E.16 | `oracle_dispatch_latency_seconds` per-network detail metric missing | `06_03` | [x] ✅ Вже реалізовано: `ORACLE_DISPATCH_DURATION` histogram зареєстровано в `prometheus.rb`, інструментовано в `ChainlinkDispatchWorker` |
+| E.17 | `lorenz_computation_duration_seconds` metric missing | `06_03` | [x] ✅ Реалізовано: `LORENZ_COMPUTATION_DURATION` histogram додано в `prometheus.rb`, інструментовано в `SilkenNet::Attractor.calculate_z` |
 | E.18 | 10 запланованих Q1 публікацій — blocked by lab data and author collective | `08_03` | [ ] Blocked by UNI.1-UNI.3 |
 | E.19 | 8 магістерських — blocked by TRL 4 advancement | `08_03` | [ ] Post-TRL 4 |
 | E.20 | Forester Guild (Proof-of-Physical-Work) — planned post-TRL 6 module | `04_02` | [ ] Post-TRL 6 |
 | E.21 | `Scaffold files в app/javascript/controllers/` — видалити перед production | `04_04` | [x] ✅ Верифіковано: scaffold files відсутні. Залишились лише production controllers: theme, clipboard, map, matrix_rain |
 | E.22 | Leaflet map Turbo Drive cache fix — verified working (disconnect() cleanup) | `04_04` | [x] Реалізовано |
 | E.23 | Пропущений тиждень Ethereum anchoring не буде перезаписано (cron creates new state_root) | `05_04` | [x] ✅ Задокументовано в `05_04_Ethereum_L1_State_Anchor.md` рядок 347: "пропущений тиждень не буде перезаписано" |
-| E.24 | `PROVISIONING_MASTER_KEY` not set → AES key in response (TRL4 lab mode only) | `04_03` | [ ] Забезпечити що в production ENV встановлений |
+| E.24 | `PROVISIONING_MASTER_KEY` not set → AES key in response (TRL4 lab mode only) | `04_03` | [x] ✅ Додано до `.kamal/secrets` (`PROVISIONING_MASTER_KEY=$PROVISIONING_MASTER_KEY`). Потребує заповнення через GitHub Secrets перед production deploy |
 | E.25 | Euler method DT=0.01 — acceptable for PoG but not scientific simulations | `03_04` | [x] Задокументовано як design tradeoff |
 | E.26 | `health_trend` field для TelemetryLog — predictive degradation: якщо шум Pogo Pin зростає, auto-tune Kalman params via Downlink | Legacy notes | [ ] Post-TRL 6, потребує E.10 (Kalman) |
 | E.27 | Chaos Engineering: Chaos Mesh для Akash або kill-scripts для Kamal web nodes — верифікація RpcConnectionPool + Sidekiq retries resilience | Legacy notes | [ ] Post-TRL 7, production hardening |
@@ -986,7 +987,7 @@
 | 2026-04-18 | 08_02 + 08_03 deep sync audit | Другий прохід аудиту `08_02` та `08_03` проти всіх docs. **08_02:** (1) §1.2 Порубльов: "44–500 мВ" → ">500 мВ від EBFC" (2 місця); (2) §1.4: розділено — Авраменко окремо, Любченко (→ §1.9) та Супруненко (→ §1.7) мають власні детальні R&D секції; (3) §1.7 Супруненко: "28 API контролерами" → "83+ API ендпоінтами" (→ `04_03`); (4) §1.7 Супруненко: "8 шарів, 9 модулів, 28 API endpoints" → "10 шарів, 38 модулів, 83+ API endpoints" + "Wiki" → "docs/ та Wiki". **08_03:** (1) Стаття 8 Косенюк: "SF=9" → "SF=7–9" (→ `02_01` §5.3); (2) Ярмілко: "AES-256-CBC" → "AES-256-ECB (LoRa) / AES-256-CBC (CoAP batch)"; (3) Архітектор: "44 мВ" → ">500 мВ"; (4) Додано "Деталь 4 — PEEK Crown" терміни. |
 | 2026-04-18 | 08_02 third pass sync | Третій прохід аудиту `08_02`. **§1.1 Ярмілко:** "AES-256-GCM" → "AES-256-CCM" як рекомендоване рішення з `03_05` (BLOCKER-2 + BLOCKER-3 одночасно; апаратна підтримка `CRYP_AES_CCM`; пакет 21→24 байти). **§1.4 Авраменко:** "648 рядків" → "771 рядок" (актуальний `wc -l`). **§1.8 Осауленко:** Triple Helix — "7 науковців" → "8", "8 статей Q1" → "10" (→ `08_03`), "3 магістри" → "8+ магістрів" (→ `08_03`). **§3 Порубльов Підгрупа Б:** BLOCKER-2 (03_04) — оновлено статус (коментар виправлено, мат. питання ρ−1=27 vs 29.0 залишається відкритим); BLOCKER-6 (03_04) — оновлено статус (✅ `deviation.round` замість `.to_i`, верифікація впливу — завдання Порубльова). **§3 Ярмілко Підгрупа Б:** "AES-256-GCM" → "AES-256-CCM" (рекомендація `03_05`, CCM вирішує BLOCKER-2+3 одночасно). |
 | 2026-04-18 | 08_02 + 08_03 fourth pass | Четвертий прохід. **08_02:** (1) **Авраменко (§1.4) повністю видалено** — не буде працювати; секції перенумеровані: §1.5→§1.4 Онищенко, §1.6→§1.5 Бушин, §1.7→§1.6 Супруненко, §1.8→§1.7 Осауленко, §1.9→§1.8 Любченко. (2) "31+ Sidekiq workers" → "36+" (3 місця; актуальний `ls app/workers/*.rb | wc -l` = 36). (3) "83+ API ендпоінтами/endpoints" → "82" (2 місця; → `04_03` SSOT). (4) Triple Helix "8 науковців" → "7" (після видалення Авраменка). **08_03:** "31+ Sidekiq workers" → "36+" (1 місце, Стаття 7). |
-| 2026-04-19 | Сесія 7 — Quick wins batch | ✅ **DIFF.6** CLAUDE.md: AES key line refs виправлено (`firmware/*/main.c:65-66` → `soldier:66-67, queen:81-82`), Soldier line count `648→771`, QUEEN-UID/QUEEN-OTA-LOOP/HRNG-IV відмічені як fixed. ✅ **ARCH.3** Redis DB isolation верифіковано (Sidekiq DB 0, Kredis DB 1, Cable=Solid Cable/PostgreSQL). ✅ **DIFF.4** vibration_detected race condition вже задокументовано в `03_03` BLOCKER-8. ✅ **E.21** Scaffold files відсутні (4 production controllers). ✅ **E.23** Ethereum anchoring miss вже задокументовано в `05_04` рядок 347. ✅ **INF.4** Akash Terraform limitation accepted. ✅ **INF.5** Kamal proxy reboot процедура задокументована. ✅ **E.6** gateway_id FK аудит — денормалізація (OK). |
+| 2026-04-19 | Сесія 7 — Quick wins batch | ✅ **DIFF.6** CLAUDE.md: AES key line refs виправлено (`firmware/*/main.c:65-66` → `soldier:66-67, queen:81-82`), Soldier line count `648→771`, QUEEN-UID/QUEEN-OTA-LOOP/HRNG-IV відмічені як fixed, SENTRY-DSN/AKASH-SIDEKIQ відмічені як fixed. ✅ **ARCH.3** Redis DB isolation верифіковано (Sidekiq DB 0, Kredis DB 1, Cable=Solid Cable/PostgreSQL). ✅ **DIFF.4** vibration_detected race condition вже задокументовано в `03_03` BLOCKER-8. ✅ **E.21** Scaffold files відсутні (4 production controllers). ✅ **E.23** Ethereum anchoring miss вже задокументовано в `05_04` рядок 347. ✅ **INF.4** Akash Terraform limitation accepted. ✅ **INF.5** Kamal proxy reboot процедура задокументована. ✅ **E.6** gateway_id FK аудит — денормалізація (OK). ✅ **E.16** oracle_dispatch_latency вже інструментовано. ✅ **E.17** `LORENZ_COMPUTATION_DURATION` histogram — registered + instrumented in `SilkenNet::Attractor.calculate_z`. ✅ **E.24** `PROVISIONING_MASTER_KEY` додано до `.kamal/secrets`. |
 
 ---
 

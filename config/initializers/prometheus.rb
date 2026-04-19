@@ -185,6 +185,13 @@ module SilkenNet
       labels: [ :status ]  # success, decrypt_error, unknown_device, malformed
     )
 
+    # Lorenz attractor computation duration (BigDecimal, 250 iterations)
+    LORENZ_COMPUTATION_DURATION = REGISTRY.histogram(
+      :silkennet_lorenz_computation_duration_seconds,
+      docstring: "Lorenz attractor server-side computation time (BigDecimal, 250 iterations)",
+      buckets: [ 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5 ]
+    )
+
     # Snapshot connection pool stats for Prometheus scraping.
     # Called from PrometheusCollector middleware or a periodic job.
     def self.sample_connection_pool!

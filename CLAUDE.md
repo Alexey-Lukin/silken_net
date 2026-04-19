@@ -272,5 +272,5 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 | HRNG-IV-REUSE | `firmware/queen/main.c:588` | ✅ Покращено (PLAN 2.7): djb2 fallback замість IV=0, але не криптографічний PRNG |
 | BQ25570-R | `docs/02_03` | VBAT_OV резистори не верифіковані |
 | PROMETHEUS | `terraform/` | Prometheus Server відсутній |
-| SENTRY-DSN | `.kamal/secrets` | SENTRY_DSN не додано |
-| AKASH-SIDEKIQ | `deploy/akash/deploy.yaml` | Job role відсутній в SDL |
+| SENTRY-DSN | `.kamal/secrets` | ✅ Додано: `SENTRY_DSN=$SENTRY_DSN` (потребує ENV at deploy time) |
+| AKASH-SIDEKIQ | `deploy/akash/deploy.yaml` | ✅ Виправлено (PLAN 5.8): `job:` service з Sidekiq entrypoint додано |
