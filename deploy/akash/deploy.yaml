@@ -53,6 +53,8 @@ services:
     # ⬆ GHCR (GitHub Container Registry) — publicly accessible to Akash providers.
     # Mirrored automatically by .github/workflows/mirror-ghcr.yml on every
     # push to main (after CI) and on GitHub Release.
+    # For production, pin to a specific tag: ghcr.io/alexey-lukin/silken_net:v1.2.3
+    # or sha-based: ghcr.io/alexey-lukin/silken_net:sha-abc1234
     # For Terraform-managed deployments, use deploy/akash/deploy.yaml.tpl instead.
 
     # --- Environment Variables -----------------------------------------------

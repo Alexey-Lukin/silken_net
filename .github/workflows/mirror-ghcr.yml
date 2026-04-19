@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: mirror-ghcr
+  group: mirror-ghcr-${{ github.event_name }}
   cancel-in-progress: true
 
 permissions:
