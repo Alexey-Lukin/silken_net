@@ -927,7 +927,7 @@ end
       )
     end
 
-    context "oracle-driven flow (telemetry_log present)" do
+    context "when telemetry_log is present (oracle-driven flow)" do
       it "blocks minting when IoTeX not verified AND Chainlink not fulfilled" do
         log = create(:telemetry_log, tree: tree, verified_by_iotex: false, oracle_status: "pending")
 
@@ -984,7 +984,7 @@ end
       end
     end
 
-    context "batch emission flow (no telemetry_log)" do
+    context "without telemetry_log (batch emission flow)" do
       it "bypasses IoTeX and Chainlink guards when telemetry_log is nil" do
         # This is the tokenomics flow — growth_points already verified by pipeline
         described_class.call(tx.id)
@@ -1002,7 +1002,7 @@ end
       end
     end
 
-    context "hadron_kyc_status — always enforced" do
+    context "when hadron_kyc_status is not approved" do
       it "blocks minting with KYC pending in oracle-driven flow" do
         wallet.update!(hadron_kyc_status: "pending")
         log = create(:telemetry_log, :verified_telemetry, tree: tree)
@@ -1057,7 +1057,7 @@ end
       end
     end
 
-    context "Prometheus metrics during guard clause enforcement" do
+    context "with Prometheus metrics during guard clause enforcement" do
       it "does not increment SCC_MINTED_TOTAL when IoTeX guard blocks minting" do
         log = create(:telemetry_log, tree: tree, verified_by_iotex: false, oracle_status: "fulfilled")
         metric = SilkenNet::Metrics::SCC_MINTED_TOTAL
