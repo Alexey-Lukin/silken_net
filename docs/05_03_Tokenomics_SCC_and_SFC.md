@@ -824,14 +824,6 @@ myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.20
 
 ---
 
-*Документ згенеровано: Reverse Shaping Cycle 1 Small Batch (Issue #172) · Стан "як є" на 2026-04-17*
-*Джерела: `contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`,*
-*`app/services/blockchain_minting_service.rb`, `app/services/blockchain_burning_service.rb`,*
-*`subgraph/subgraph.yaml`,*
-*Wiki: [05_01 Multichain Architecture](https://github.com/Alexey-Lukin/silken_net/wiki/05_01_Multichain_Architecture), [05_02 Proof of Growth Pipeline](https://github.com/Alexey-Lukin/silken_net/wiki/05_02_Proof_of_Growth_Pipeline)*
-
----
-
 ## ♻️ Посмертна Економіка — Інтеграція Puro.earth Biochar
 
 Коли дерево помирає (природна смерть або катастрофічна подія), його біомаса зберігає економічну цінність через Biochar carbon removal credits (CORCs) на реєстрі [Puro.earth](https://puro.earth).
