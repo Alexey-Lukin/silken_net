@@ -1091,7 +1091,8 @@ CREATE TABLE public.maintenance_records (
     latitude numeric(10,6),
     longitude numeric(10,6),
     biomass_yield_kg numeric(10,2),
-    biomass_passport_tx_hash character varying
+    biomass_passport_tx_hash character varying,
+    puro_earth_corc_ref character varying
 );
 
 
