@@ -26,7 +26,8 @@ gem "image_processing"
 gem "importmap-rails"
 gem "kamal", require: false
 gem "kredis"
-gem "numo-narray"
+# numo-narray is intentionally omitted: rumale pulls in numo-narray-alt (drop-in replacement).
+# Having both gems installed simultaneously triggers a runtime conflict warning.
 gem "oj"
 gem "pagy"
 gem "pg"

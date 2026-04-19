@@ -99,26 +99,25 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 
 #### numo-narray (нативний gem, потребує компілятора)
 
-`numo-narray` використовується для векторних обчислень у ML-сервісах. Він компілює нативні C-розширення, тому потребує інструментів збирання.
+`rumale` (ML-сервіси) залежить від `numo-narray-alt` — актуального fork'а `numo-narray`. Explicit `gem "numo-narray"` **видалено** з Gemfile, оскільки встановлення обох одночасно спричиняє конфлікт і runtime-попередження:
+
+> *'numo-narray-alt' is an alternative implementation of 'numo-narray'. Having both gems installed may lead to conflicts.*
+
+`numo-narray-alt` надає ідентичний API (`Numo::DFloat`, `Numo::NArray` тощо), тому в коді нічого змінювати не потрібно.
+
+Обидва gem-и компілюють нативні C-розширення, тому потрібні інструменти збирання:
 
 **Ubuntu / Debian:**
 ```bash
-sudo apt-get install -y build-essential gfortran libopenblas-dev
+sudo apt-get install -y build-essential ruby-dev
 ```
 
 **macOS (Homebrew):**
 ```bash
-brew install gcc gfortran openblas
-# Якщо bundle install завершується помилкою компіляції:
-bundle config build.numo-narray --with-opt-dir="$(brew --prefix openblas)"
+xcode-select --install   # або: brew install gcc
 ```
 
-**Якщо `bundle install` падає з помилкою `numo-narray`:**
-```bash
-gem install numo-narray -- --with-opt-dir=/usr/local
-# або вкажіть шлях до бібліотек вручну:
-gem install numo-narray -- --with-narray-include=/path/to/include
-```
+Після цього звичайний `bundle install` відпрацює без помилок.
 
 ---
 
