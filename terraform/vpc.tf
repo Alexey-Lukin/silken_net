@@ -158,10 +158,3 @@ resource "google_compute_firewall" "deny_all_ingress" {
     metadata = "INCLUDE_ALL_METADATA"
   }
 }
-
-# Reserve static external IPs for web nodes
-resource "google_compute_address" "web" {
-  count  = var.web_node_count
-  name   = "silken-net-web-${count.index}"
-  region = var.region
-}

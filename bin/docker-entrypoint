@@ -1,5 +1,42 @@
 #!/bin/bash -e
 
+# ---------------------------------------------------------------------------
+# Cloud SQL Auth Proxy (for Akash / external deployments outside GCP VPC)
+# ---------------------------------------------------------------------------
+# Akash Network containers lack CAP_NET_ADMIN — no VPN/Tailscale possible.
+# The Cloud SQL Auth Proxy tunnels PostgreSQL traffic through Google Cloud API
+# (outbound HTTPS, which Akash permits). It creates a local TCP socket at
+# 127.0.0.1:5432 for Rails to connect to.
+#
+# Set these ENV vars to activate:
+#   CLOUD_SQL_INSTANCE_CONNECTION_NAME=project:region:instance
+#   GCP_SA_KEY_BASE64=<base64-encoded service account JSON key>
+#
+# When not set (e.g. Kamal deployments inside GCP VPC), this block is skipped.
+# See: docs/06_02_Akash_Network_Integration.md
+# ---------------------------------------------------------------------------
+if [ -n "$CLOUD_SQL_INSTANCE_CONNECTION_NAME" ]; then
+  echo "[entrypoint] Starting Cloud SQL Auth Proxy for ${CLOUD_SQL_INSTANCE_CONNECTION_NAME}..."
+
+  PROXY_ARGS=("$CLOUD_SQL_INSTANCE_CONNECTION_NAME")
+
+  if [ -n "$GCP_SA_KEY_BASE64" ]; then
+    echo "$GCP_SA_KEY_BASE64" | base64 -d > /tmp/gcp-sa-key.json
+    PROXY_ARGS=("--credentials-file" "/tmp/gcp-sa-key.json" "${PROXY_ARGS[@]}")
+  fi
+
+  cloud-sql-proxy "${PROXY_ARGS[@]}" &
+
+  # Wait for proxy to be ready (up to 15 seconds)
+  for i in $(seq 1 15); do
+    if pg_isready -h 127.0.0.1 -p 5432 -q 2>/dev/null; then
+      echo "[entrypoint] Cloud SQL Auth Proxy is ready."
+      break
+    fi
+    sleep 1
+  done
+fi
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare

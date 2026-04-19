@@ -11,10 +11,20 @@ akash_node            = "https://rpc.akashnet.net:443"
 akash_auditor_address = "akash1365yvmc4s7awdyj3n2sav7xfx76axy6czqt24"
 
 # Application
-docker_image     = "europe-west1-docker.pkg.dev/your-project/silken-net/silken_net:latest"
+docker_image     = "ghcr.io/your-org/silken_net:latest"
 rails_master_key = "CHANGE_ME"
-database_url     = "postgres://silken_net:CHANGE_ME@CLOUD_SQL_PUBLIC_IP:5432/silken_net_production"
-redis_url        = "redis://REDIS_HOST:6379/0"
+
+# Cloud SQL Auth Proxy — connects to Cloud SQL via Google Cloud API (HTTPS)
+# No public IP on Cloud SQL required. No VPN/Tailscale needed.
+database_url                       = "postgres://silken_net:CHANGE_ME@127.0.0.1:5432/silken_net_production"
+cloud_sql_instance_connection_name = "your-project:europe-west1:silken-db"
+gcp_sa_key_base64                  = "CHANGE_ME_base64_encoded_sa_key_json"
+
+# Upstash Redis (serverless, TLS public endpoints)
+# Replaces GCP Memorystore (which has no public IP and is unreachable from Akash).
+# Free tier (10k commands/day) sufficient through TRL 8.
+# Sign up: https://upstash.com/ → Create Redis database → Copy connection URL
+redis_url = "rediss://default:CHANGE_ME@eu1-xyz.upstash.io:6379"
 
 # Compute Resources (matches issue requirements: 4 vCPU, 8 GB RAM, 50 GB storage)
 web_cpu_units           = 4

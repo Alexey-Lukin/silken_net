@@ -48,20 +48,22 @@ terraform {
 
 resource "local_file" "akash_sdl" {
   content = templatefile("${path.module}/../../deploy/akash/deploy.yaml.tpl", {
-    docker_image       = var.docker_image
-    rails_master_key   = var.rails_master_key
-    database_url       = var.database_url
-    redis_url          = var.redis_url
-    kredis_redis_url   = var.kredis_redis_url != "" ? var.kredis_redis_url : "${trimsuffix(var.redis_url, "/0")}/1"
-    web_cpu_units      = var.web_cpu_units
-    web_memory_size    = var.web_memory_size
-    web_storage_size   = var.web_storage_size
-    persistent_storage = var.persistent_storage_size
-    web_replicas       = var.web_replicas
-    max_price_uakt     = var.max_price_uakt
-    akash_auditor      = var.akash_auditor_address
-    web_concurrency    = var.web_concurrency
-    rails_max_threads  = var.rails_max_threads
+    docker_image                       = var.docker_image
+    rails_master_key                   = var.rails_master_key
+    database_url                       = var.database_url
+    cloud_sql_instance_connection_name = var.cloud_sql_instance_connection_name
+    gcp_sa_key_base64                  = var.gcp_sa_key_base64
+    redis_url                          = var.redis_url
+    kredis_redis_url                   = var.kredis_redis_url != "" ? var.kredis_redis_url : "${trimsuffix(var.redis_url, "/0")}/1"
+    web_cpu_units                      = var.web_cpu_units
+    web_memory_size                    = var.web_memory_size
+    web_storage_size                   = var.web_storage_size
+    persistent_storage                 = var.persistent_storage_size
+    web_replicas                       = var.web_replicas
+    max_price_uakt                     = var.max_price_uakt
+    akash_auditor                      = var.akash_auditor_address
+    web_concurrency                    = var.web_concurrency
+    rails_max_threads                  = var.rails_max_threads
   })
   filename = "${path.module}/generated-deploy.yaml"
 
