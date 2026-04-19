@@ -269,7 +269,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 | QUEEN-UID | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.4): Flash-based UID з fallback |
 | QUEEN-OTA-LOOP | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.5): `ota_is_active` скидається після повного циклу |
 | QUEEN-AT-BLIND | `firmware/queen/main.c:542` | ~25 сек blind wait під час CoAP flush |
-| HRNG-IV-REUSE | `firmware/queen/main.c:588` | ✅ Покращено (PLAN 2.7): djb2 fallback замість IV=0, але не криптографічний PRNG |
+| HRNG-IV-REUSE | `firmware/queen/main.c:588` | ⚠️ Покращено (PLAN 2.7): djb2 fallback замість IV=0, але djb2 НЕ криптографічний PRNG — CBC IV залишається передбачуваним при HRNG failure |
 | BQ25570-R | `docs/02_03` | VBAT_OV резистори не верифіковані |
 | PROMETHEUS | `terraform/` | Prometheus Server відсутній |
 | SENTRY-DSN | `.kamal/secrets` | ✅ Додано: `SENTRY_DSN=$SENTRY_DSN` (потребує ENV at deploy time) |
