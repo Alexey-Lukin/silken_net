@@ -54,24 +54,10 @@
 - [ ] Верифікувати з реальним API ключем в staging (**🔧 Операційна** — отримати та встановити API key)
 - [ ] End-to-end тест з `DclimateVerificationWorker`
 
-#### ~~S3.3 — PuroEarth REST API інтеграція~~ ✅
-- **P1** | `05_01`, `05_03` | **Складність: M** | **Виконано**
-- **Опис:** `PuroEarth::PassportService` (on-chain anchoring) + `PuroEarth::RegistryApiService` (REST API submission). Двофазний pipeline: Phase 1 → `biomass_passport_tx_hash`, Phase 2 → `puro_earth_corc_ref`. Колонка `puro_earth_corc_ref` додана до `maintenance_records`. Документація оновлена: `04_02`, `05_01`, `05_03`.
-- [x] Інтеграція з реальним Puro.earth API
-- [x] Верифікувати end-to-end flow: мертве дерево → `MaintenanceRecord` → passport → on-chain
-
 #### S3.5 — Subgraph contract address
 - **P2** | `05_03` | **Складність: XS** | **🔧 Операційна** — замінити placeholder після deploy контракту
 - **Опис:** SFC events (ForestMinted, GovernanceSlashed) додано до subgraph. Задокументовано в `05_03` розділ Subgraph. Але contract address — placeholder. Блокує deploy subgraph.
 - [ ] ⚠️ Замінити placeholder `0x0000...0000` на реальну адресу SFC контракту у `subgraph.yaml`
-
-#### ~~INF.2 — Docker image registry для Akash providers~~ ✅
-- **P2** | `06_02` BLOCKER-4 | **Складність: S** | **Виконано**
-- **Опис:** SDL reference `europe-west1-docker.pkg.dev/.../silken_net:latest`. Akash providers без GCP credentials → pull fails "unauthorized"
-- **Рішення:** GHCR mirror (`ghcr.io/alexey-lukin/silken_net:latest`) + CI workflow `.github/workflows/mirror-ghcr.yml`
-- [x] Mirror image до GHCR (public)
-- [x] Оновити SDL image reference (`deploy/akash/deploy.yaml`)
-- [x] CI workflow для автоматичного mirror (`.github/workflows/mirror-ghcr.yml`)
 
 #### INF.3 — TLS termination
 - **P2** | `06_02` BLOCKER-5 | **Складність: S** | **🔧 Операційна** — конфігурація Cloudflare або Akash ingress, без коду в Rails
@@ -502,8 +488,8 @@
 - [ ] Супруненко (ПЗАС) — PN-verification, Convolution Method
 - [ ] Онищенко (Декан) — stochastic B&B, Petri nets
 - [ ] Ярмілко — Embedded Systems, ECDH key exchange
-- [ ] Порублів — Discrete Math, reliability
-- [ ] Косенук — RF/FEC/compliance
+- [ ] Порубльов — Discrete Math, reliability
+- [ ] Косенюк — RF/FEC/compliance
 - [ ] Бушин — CNN/BSP/DMLS physics
 - [ ] Осауленко — Portfolio management
 - [ ] Любченко — GA/Neural Networks
@@ -595,3 +581,13 @@
 | 2026-04-19 | Сесії 7-8: ARCH.3/DIFF.4/DIFF.6/E.6/E.16/E.21-25/INF.1/INF.4-7/S4.1 виконано. Infrastructure Pivot. |
 | 2026-04-19 | Сесія 9: OBS.1 — Grafana Alloy sidecar → Grafana Cloud (BLOCKERs 1-3 resolved). |
 | 2026-04-19 | Сесія 10: Очищення трекера — видалено виконані задачі, прибрано sprint-групування. Відновлено описи для незавершених пунктів. |
+
+---
+
+> **Як оновлювати цей документ:**
+> 1. Знайти відповідний пункт (S1.1, FW.3, HW.7, тощо)
+> 2. Змінити `[ ]` → `[x]` для виконаних підзадач
+> 3. Заповнити поля **Сесія** та **Коміт**
+> 4. Додати запис у таблицю **Журнал оновлень**
+> 5. Оновити **Зведену статистику** вгорі (якщо блокер закрито)
+> 6. Оновити поле **Останнє оновлення** у шапці документа
