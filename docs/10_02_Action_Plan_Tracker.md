@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-19 Сесія 11 (Видалено виконані задачі, додана складність, уточнені операційні)
+> **Останнє оновлення:** 2026-04-19 Сесія 12 (Глибокий аудит всіх docs + codebase cross-reference. Додано 40+ нових пунктів: документаційні невідповідності, відсутні метрики, нові SEC/ARCH/OPS/FW items)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -69,6 +69,46 @@
 - **Опис:** `REQUIRED_SECRET_NOT_SET` для 4 критичних змінних
 - [ ] Заповнити в `deploy/akash/deploy.yaml`
 - [ ] Верифікувати startup
+
+#### S5.1 — Відсутні Prometheus метрики
+- **P2** | `06_03` | **Складність: S**
+- **Опис:** Документація `06_03` визначає 2 метрики, які відсутні в реалізації: `oracle_dispatch_latency_seconds` (per-network oracle response time) та `lorenz_computation_duration_seconds` (Lorenz attractor compute time). Без них неможливо діагностувати latency проблеми в Web3 pipeline та контролювати compute budget Lorenz
+- [ ] Додати `oracle_dispatch_latency_seconds` histogram у `Chainlink::OracleDispatchService`
+- [ ] Додати `lorenz_computation_duration_seconds` histogram у `SilkenNet::Attractor`
+- [ ] Верифікувати що метрики з'являються на `/metrics`
+
+#### S5.2 — RELEASE_VERSION ENV для Sentry
+- **P2** | `06_03` | **Складність: XS** | **🔧 Операційна**
+- **Опис:** `RELEASE_VERSION` ENV не встановлено — Sentry release tracking не працює. Потрібно додати у Kamal/Akash deploy config
+- [ ] Додати `RELEASE_VERSION` у deploy pipeline (git SHA або tag)
+- [ ] Верифікувати Sentry release tracking
+
+#### S5.3 — deploy-production.yml workflow
+- **P2** | `06_01` | **Складність: S**
+- **Опис:** Існує лише `deploy.yml` (Canopy/staging). Production deploy workflow відсутній. Блокує автоматизований production deploy при GitHub Release (`v*.*.*`)
+- [ ] Створити `.github/workflows/deploy-production.yml`
+- [ ] Trigger: `release` event з tag `v*.*.*`
+- [ ] Тестування з dry-run
+
+#### S5.4 — Redis DB isolation
+- **P1** | `00_01` | **Складність: S**
+- **Опис:** Без ізоляції Redis databases IoT телеметрія (Kredis, ActionCable) може витіснити Web3 nonce locks → EVM nonce collision → double-spend на Polygon. Потрібно: окремі Redis DB numbers або окремі Redis instances для telemetry vs Web3
+- [ ] Аудит поточної Redis конфігурації (один DB для всього?)
+- [ ] Розділити: DB 0 = Rails cache, DB 1 = Sidekiq, DB 2 = Web3 nonce locks, DB 3 = ActionCable
+- [ ] Оновити `config/redis.yml` та Sidekiq config
+- [ ] Задокументувати у `06_01`
+
+#### S5.5 — Wallet balance/metadata endpoints: HTML-only
+- **P2** | `04_03` | **Складність: S**
+- **Опис:** `GET /wallets/:id/balance` та `/metadata` повертають **лише HTML** (Phlex Turbo Frame), не JSON. API consumers (mobile app, third-party integrators) отримають unexpected response. Потрібна `respond_to` block або окремі JSON endpoints
+- [ ] Додати JSON format до wallet balance/metadata endpoints
+- [ ] Або задокументувати як "HTML-only by design" та створити окремі JSON endpoints
+
+#### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
+- **P3** | `06_02` BLOCKER-6 | **Складність: XS** | **🔧 Операційна**
+- **Опис:** GCS bucket для remote Terraform state має бути створений вручну перед `terraform init`. Документація є, але checklist відсутній
+- [ ] Створити GCS bucket вручну (`gsutil mb`)
+- [ ] Верифікувати `terraform init` проходить
 
 ---
 
