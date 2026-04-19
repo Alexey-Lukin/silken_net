@@ -92,11 +92,12 @@
 - [ ] Заповнити в `deploy/akash/deploy.yaml`
 - [ ] Верифікувати startup
 
-#### S4.5 — Multi-replica sticky sessions
+#### ✅ S4.5 — Multi-replica sticky sessions (Виконано)
 - **P3** | `06_02`
-- **Опис:** ActionCable/Turbo потребують sticky sessions при >1 репліці
-- [ ] Визначити load balancing strategy
-- [ ] Реалізувати sticky sessions або shared ActionCable adapter
+- **Опис:** ActionCable/Turbo потребують sticky sessions при >1 репліці. Вирішено через Solid Cable adapter — PostgreSQL `LISTEN/NOTIFY` забезпечує крос-реплікову доставку broadcast-повідомлень без sticky sessions та без додаткової інфраструктури (Redis не потрібен для ActionCable)
+- [x] Визначити load balancing strategy
+- [x] Реалізувати sticky sessions або shared ActionCable adapter
+- **Результат:** `config/cable.yml` вже використовує `adapter: solid_cable` з виділеною БД `silken_net_production_cable`. BLOCKER-8 у `06_02` помічено як вирішений. Sticky sessions не потрібні — архітектурно вирішено через shared database adapter
 
 ---
 

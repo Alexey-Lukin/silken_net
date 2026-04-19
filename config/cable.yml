@@ -8,6 +8,31 @@ development:
 test:
   adapter: test
 
+# =============================================================================
+# Production: Solid Cable (PostgreSQL-backed ActionCable adapter)
+# =============================================================================
+# Multi-replica safe: all Puma replicas (deployment.web.count = N on Akash)
+# connect to the same Cloud SQL database `silken_net_production_cable`.
+# PostgreSQL LISTEN/NOTIFY ensures broadcasts reach ALL replicas instantly.
+#
+# NO sticky sessions required — any replica can serve any WebSocket client.
+# NO Redis dependency — ActionCable uses the same Cloud SQL instance as the app.
+#
+# Architecture:
+#   Sidekiq (job service) → broadcast(...) → INSERT into solid_cable_messages
+#   PostgreSQL → LISTEN/NOTIFY → All Puma workers on all replicas
+#   Each Puma worker → delivers to its connected WebSocket clients
+#
+# Turbo Stream channels using this:
+#   - "geospatial_matrix" (map updates)
+#   - "telemetry_stream" (live telemetry feed)
+#   - [@wallet, :transactions] (wallet balance)
+#   - "ews_alerts_org_#{id}" (alert notifications)
+#   - [@cluster, :alerts] (cluster alerts)
+#   - "telemetry_live_stream" (raw hex broadcast)
+#
+# See: docs/06_02_Akash_Network_Integration.md → BLOCKER-8 (resolved)
+# =============================================================================
 production:
   adapter: solid_cable
   connects_to:

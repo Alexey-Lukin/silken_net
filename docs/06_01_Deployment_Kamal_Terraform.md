@@ -315,6 +315,7 @@ terraform apply
 | **Grafana Alloy (metrics agent)** | ❌ | ✅ | — | — | `alloy` сервіс в Akash SDL, пушить у Grafana Cloud |
 | **CoAP UDP daemon (:5683)** | proxy | ✅ | — | — | Ingress Anchor проксює UDP на Akash |
 | **Cloud SQL PostgreSQL 16** | ✅ | — | — | — | Приватна IP, доступ через Auth Proxy |
+| **ActionCable (Solid Cable)** | ✅ | ✅ | — | — | Спільна Cloud SQL БД `cable`, LISTEN/NOTIFY (без sticky sessions) |
 | **Redis** | ❌ | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
 | **Prometheus + Grafana + Alerting** | ❌ | — | — | ✅ | SaaS, Alloy → remote_write |
 | **Ingress Anchor** | ✅ | — | — | — | `e2-micro`, HAProxy/socat, статична IP |
