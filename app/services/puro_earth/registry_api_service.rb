@@ -69,7 +69,7 @@ module PuroEarth
       body = build_submission_body
 
       response = Web3::HttpClient.post(
-        "#{PURO_EARTH_API_URL}#{SUBMISSIONS_ENDPOINT}",
+        "#{PURO_EARTH_API_URL.chomp("/")}#{SUBMISSIONS_ENDPOINT}",
         body: body,
         headers: headers,
         open_timeout: OPEN_TIMEOUT,

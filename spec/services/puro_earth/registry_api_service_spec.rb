@@ -205,13 +205,7 @@ RSpec.describe PuroEarth::RegistryApiService do
     end
 
     context "with custom API URL via ENV" do
-      before do
-        allow(ENV).to receive(:fetch).with("PURO_EARTH_API_URL", "https://api.puro.earth")
-          .and_return("https://sandbox.puro.earth")
-      end
-
       it "uses the configured base URL" do
-        # Re-define the constant for this test
         stub_const("PuroEarth::RegistryApiService::PURO_EARTH_API_URL", "https://sandbox.puro.earth")
 
         described_class.new(payload, tx_hash: tx_hash).submit!
