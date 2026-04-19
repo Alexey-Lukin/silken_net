@@ -171,7 +171,7 @@ variable "max_price_uakt" {
 # Resolves 06_03 BLOCKERs 1-3 (Prometheus Server, Grafana, Alertmanager).
 
 variable "grafana_remote_write_url" {
-  description = "Grafana Cloud Prometheus remote_write endpoint URL. Format: https://prometheus-prod-XX-prod-XX.grafana.net/api/prom/push"
+  description = "Grafana Cloud Prometheus remote_write endpoint URL (e.g., https://prometheus-prod-01-eu-west-0.grafana.net/api/prom/push)"
   type        = string
 }
 
