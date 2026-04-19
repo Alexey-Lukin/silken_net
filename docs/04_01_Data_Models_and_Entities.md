@@ -273,7 +273,7 @@ dormant ──reactivate──► active
 | `geo_boundary` | geometry (PostGIS) | Полігон сектора для ST_Contains |
 | `geojson_polygon` | jsonb | GeoJSON-представлення (синхронізується тригером → див. примітку нижче) |
 | `health_index` | decimal | Денормалізований індекс `1.0 - stress_index` (0..1) |
-| `active_trees_count` | integer | Counter cache (оновлюється Tree callbacks) |
+| `active_trees_count` | bigint | Counter cache (оновлюється Tree callbacks) |
 | `climate_type` | string | Кліматичний тип зони (напр. "temperate_continental") |
 | `environmental_settings` | jsonb | `custom_fire_threshold`, `seismic_sensitivity_threshold`, `timezone` |
 
@@ -810,13 +810,13 @@ any ──report_fault──► faulty
 | `blockchain_network` | string | `evm / solana / celo` |
 | `tx_hash` | string | Хеш транзакції (required для sent/confirmed) |
 | `gas_price` / `gas_used` | decimal | EVM-газ |
-| `block_number` | integer | Номер блоку |
-| `nonce` | integer | EVM nonce |
+| `block_number` | bigint | Номер блоку |
+| `nonce` | bigint | EVM nonce |
 | `sent_at` | timestamp | Час відправлення в мемпул |
 | `confirmed_at` | timestamp | Час підтвердження в блокчейні |
 | `chainlink_request_id` | string | ID запиту Chainlink Oracle |
 | `zk_proof_ref` | string | Посилання на ZK-proof IoTeX |
-| `locked_points` | integer | Заблоковані growth_points при мінтингу |
+| `locked_points` | bigint | Заблоковані growth_points при мінтингу |
 | `cumulative_gas_cost` | numeric | Накопичені витрати на газ |
 
 **AASM:**
@@ -944,7 +944,7 @@ active/draft ──cancel──► cancelled
 | `recommendation` | jsonb | Рекомендації Оракула (`action_required`, `priority`) via `store_accessor` |
 | `analyzed_date` | date | Дата аналізу (партиціонування) |
 | `average_temperature` | decimal | Середня температура за аналізований день |
-| `total_growth_points` | integer | Загальні очки зростання за день |
+| `total_growth_points` | bigint | Загальні очки зростання за день |
 | `summary` | text | Текстовий підсумок (human-readable) |
 
 **Ключові методи:** `contract_breach?`, `confidence_level`, `forecast?`, `source_logs`, `attach_evidence!(log_ids)`, `status_label`.
