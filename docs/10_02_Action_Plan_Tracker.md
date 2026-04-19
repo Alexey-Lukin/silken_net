@@ -1,33 +1,36 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-19 Сесія 10 (Очищення трекера)
+> **Останнє оновлення:** 2026-04-19 Сесія 11 (Видалено виконані задачі, додана складність, уточнені операційні)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
 
 ## 🛣️ Software / Backend / DevOps
 
+> **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
+> **Виконані задачі видалено** (S2.4, S3.1, S4.5 — задокументовано у `06_03`, `04_02`, `06_02`).
+
 #### S1.1 — GitHub Secrets заповнення
-- **P0** | `06_01` | Блокує весь CI/CD pipeline
-- **Опис:** 12 критичних секретів не встановлені: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `DATABASE_URL`, `SSH_PRIVATE_KEY`, тощо
+- **P0** | `06_01` | **Складність: XS** | **🔧 Операційна** — ручне заповнення в GitHub UI, без коду
+- **Опис:** 12 критичних секретів не встановлені: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `DATABASE_URL`, `SSH_PRIVATE_KEY`, тощо. Блокує весь CI/CD pipeline.
 - [ ] Створити список необхідних секретів (checklist)
 - [ ] Заповнити GitHub repository secrets
 - [ ] Верифікувати CI pipeline проходить
 
 #### S1.5 — Kamal IP placeholders
-- **P2** | `06_01` | Операційна задача після `terraform apply`
+- **P2** | `06_01` | **Складність: XS** | **🔧 Операційна** — підстановка IP після `terraform apply`
 - **Опис:** `192.168.0.1` та `<CANOPY_SERVER_IP>` — плейсхолдери в Kamal config
 - [ ] Підставити реальні IP після `terraform apply`
 - [ ] Верифікувати Kamal deploy з реальними IP
 
 #### S2.1 — Верифікація метрик після deploy
-- **P0** | `06_03`
+- **P0** | `06_03` | **Складність: XS** | **🔧 Операційна** — верифікація після першого Akash deploy, без коду
 - **Опис:** `/metrics` endpoint працює (10+ метрик), скрейпиться Grafana Alloy sidecar → Grafana Cloud. Інфраструктура налаштована (prometheus.rb, middleware, Alloy sidecar, Terraform vars). Потрібна верифікація після першого Akash deploy
 - [ ] Верифікувати що метрики збираються (після першого Akash deploy)
 
 #### S2.2 — Grafana Cloud dashboards
-- **P0** | `06_03` | Операційна задача в Grafana Cloud UI
+- **P0** | `06_03` | **Складність: S** | **🔧 Операційна** — налаштування в Grafana Cloud UI, без коду
 - **Опис:** Grafana Cloud SaaS — метрики доступні, дашборди створюються в UI
 - [ ] Dashboard: Sidekiq queues (9 черг, size + latency)
 - [ ] Dashboard: Web3 RPC errors by network
@@ -36,7 +39,7 @@
 - [ ] Dashboard: Database connection pool stats
 
 #### S2.3 — Grafana Cloud alerting rules
-- **P0** | `06_03` | Операційна задача в Grafana Cloud UI
+- **P0** | `06_03` | **Складність: S** | **🔧 Операційна** — налаштування в Grafana Cloud UI, без коду
 - **Опис:** Grafana Cloud Alerting замінює потребу в self-hosted Alertmanager
 - [ ] Alert: `web3_critical` queue depth > 100
 - [ ] Alert: `silkennet_telemetry_fraud_detected_total` rate > 0
@@ -45,59 +48,40 @@
 - [ ] Alert: Sidekiq queue latency > 5 min
 - [ ] Налаштувати notification channel (Slack / Email / PagerDuty)
 
-#### ✅ S2.4 — RSpec тести для Prometheus метрик (Виконано)
-- **P1** | `06_03` | Потребує PostgreSQL
-- **Опис:** 5 нових метрик реалізовано та інструментовано. Задокументовано в `06_03` розділ 2.4. RSpec тести додано.
-- [x] Додати RSpec тести для нових метрик
-- **Результат:** 22 тести в `spec/initializers/prometheus_spec.rb` (реєстрація, інкрементування, доступність констант) + 14 тестів в worker specs (SLASHING_EVENTS_TOTAL, OTA_CHUNKS_SENT_TOTAL, EWS_ALERTS_TOTAL, ORACLE_DISPATCH_DURATION, COAP_PACKETS_RECEIVED_TOTAL)
-
-#### ✅ S3.1 — Guard clause RSpec тести (Виконано)
-- **P1** | `04_02` | Аудит завершено, тести додано
-- **Опис:** Аудит завершено. Архітектура коректна by design (задокументовано в `04_02`). Oracle-driven flow: IoTeX + Chainlink guards ENFORCED. Batch emission: guards bypassed intentionally. `hadron_kyc_status` завжди перевіряється
-- [x] Додати RSpec тести для обох сценаріїв (oracle-driven + batch emission)
-- **Результат:** 20+ тестів у `spec/services/blockchain_minting_service_spec.rb` (oracle-driven guard clauses, batch emission bypass, Hadron KYC enforcement у обох flow, Prometheus метрики при guard rejection) + 8 тестів у `spec/workers/iotex_verification_worker_spec.rb` та `spec/workers/chainlink_dispatch_worker_spec.rb`
-
 #### S3.2 — dClimate Real API verification
-- **P1** | `05_01` | Сервіс реалізований, потрібна staging верифікація
+- **P1** | `05_01` | **Складність: S** | Сервіс реалізований, потрібна staging верифікація
 - **Опис:** `Dclimate::VerificationService` реалізований з реальним API (NASA FIRMS через dClimate). Fire detection (FRP ≥ 10 MW, confidence ≥ 50%), cloud obscuration fallback, metadata extraction — все працює. Потрібна верифікація з реальним ключем
-- [ ] Верифікувати з реальним API ключем в staging
+- [ ] Верифікувати з реальним API ключем в staging (**🔧 Операційна** — отримати та встановити API key)
 - [ ] End-to-end тест з `DclimateVerificationWorker`
 
 #### S3.3 — PuroEarth REST API інтеграція
-- **P1** | `05_01`, `05_03` | On-chain anchoring є, REST API — TODO
+- **P1** | `05_01`, `05_03` | **Складність: M** | On-chain anchoring є, REST API — TODO
 - **Опис:** `PuroEarth::PassportService` реалізований. SHA-256 payload hashing + Polygon anchoring працює. Потрібна інтеграція з реальним Puro.earth REST API (поточно: тільки on-chain anchoring)
 - [ ] Інтеграція з реальним Puro.earth API
 - [ ] Верифікувати end-to-end flow: мертве дерево → `MaintenanceRecord` → passport → on-chain
 
 #### S3.5 — Subgraph contract address
-- **P2** | `05_03` | Блокує deploy subgraph
-- **Опис:** SFC events (ForestMinted, GovernanceSlashed) додано до subgraph. Задокументовано в `05_03` розділ Subgraph. Але contract address — placeholder
+- **P2** | `05_03` | **Складність: XS** | **🔧 Операційна** — замінити placeholder після deploy контракту
+- **Опис:** SFC events (ForestMinted, GovernanceSlashed) додано до subgraph. Задокументовано в `05_03` розділ Subgraph. Але contract address — placeholder. Блокує deploy subgraph.
 - [ ] ⚠️ Замінити placeholder `0x0000...0000` на реальну адресу SFC контракту у `subgraph.yaml`
 
 #### INF.2 — Docker image registry для Akash providers
-- **P2** | `06_02` BLOCKER-4
+- **P2** | `06_02` BLOCKER-4 | **Складність: S**
 - **Опис:** SDL reference `europe-west1-docker.pkg.dev/.../silken_net:latest`. Akash providers без GCP credentials → pull fails "unauthorized"
 - [ ] Mirror image до Docker Hub або GHCR (public або з token)
 - [ ] Оновити SDL image reference
 - [ ] CI workflow для автоматичного mirror
 
 #### INF.3 — TLS termination
-- **P2** | `06_02` BLOCKER-5
+- **P2** | `06_02` BLOCKER-5 | **Складність: S** | **🔧 Операційна** — конфігурація Cloudflare або Akash ingress, без коду в Rails
 - **Опис:** SDL відкриває HTTP (port 80), CoAP UDP (5683), та port 443 (додано Сесія 6). Але TLS termination не налаштовано. Browsers block WebSocket from HTTPS → HTTP
 - [ ] Налаштувати TLS (Akash ingress `*.ingress.akash.pub` або Cloudflare)
 
 #### S4.3 — Akash SDL secrets
-- **P3** | `06_02`
+- **P3** | `06_02` | **Складність: XS** | **🔧 Операційна** — заповнити 4 змінні у `deploy.yaml`
 - **Опис:** `REQUIRED_SECRET_NOT_SET` для 4 критичних змінних
 - [ ] Заповнити в `deploy/akash/deploy.yaml`
 - [ ] Верифікувати startup
-
-#### ✅ S4.5 — Multi-replica sticky sessions (Виконано)
-- **P3** | `06_02`
-- **Опис:** ActionCable/Turbo потребують sticky sessions при >1 репліці. Вирішено через Solid Cable adapter — PostgreSQL `LISTEN/NOTIFY` забезпечує крос-реплікову доставку broadcast-повідомлень без sticky sessions та без додаткової інфраструктури (Redis не потрібен для ActionCable)
-- [x] Визначити load balancing strategy
-- [x] Реалізувати sticky sessions або shared ActionCable adapter
-- **Результат:** `config/cable.yml` вже використовує `adapter: solid_cable` з виділеною БД `silken_net_production_cable`. BLOCKER-8 у `06_02` помічено як вирішений. Sticky sessions не потрібні — архітектурно вирішено через shared database adapter
 
 ---
 
