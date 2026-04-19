@@ -911,4 +911,182 @@ end
       expect(service.send(:evm_revert?, Errno::ECONNREFUSED.new("Connection refused"))).to be false
     end
   end
+
+  # -----------------------------------------------------------------------
+  # S3.1: Comprehensive Guard Clause Tests (Oracle-driven vs Batch Emission)
+  # -----------------------------------------------------------------------
+  describe "S3.1 — guard clause scenarios" do
+    let(:tree) { create(:tree) }
+    let(:wallet) do
+      tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved") }
+    end
+    let!(:tx) do
+      wallet.blockchain_transactions.create!(
+        amount: 100, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, locked_points: 1000
+      )
+    end
+
+    context "when telemetry_log is present (oracle-driven flow)" do
+      it "blocks minting when IoTeX not verified AND Chainlink not fulfilled" do
+        log = create(:telemetry_log, tree: tree, verified_by_iotex: false, oracle_status: "pending")
+
+        expect {
+          described_class.call(tx.id, telemetry_log: log)
+        }.to raise_error(RuntimeError, /Data not verified by IoTeX/)
+      end
+
+      it "blocks minting when IoTeX verified but Chainlink pending" do
+        log = create(:telemetry_log, tree: tree, verified_by_iotex: true,
+                                     oracle_status: "pending", zk_proof_ref: "zk-proof-123")
+
+        expect {
+          described_class.call(tx.id, telemetry_log: log)
+        }.to raise_error(RuntimeError, /Chainlink Oracle consensus not fulfilled/)
+      end
+
+      it "blocks minting when IoTeX verified but Chainlink dispatched (not yet fulfilled)" do
+        log = create(:telemetry_log, tree: tree, verified_by_iotex: true,
+                                     oracle_status: "dispatched", zk_proof_ref: "zk-proof-123")
+
+        expect {
+          described_class.call(tx.id, telemetry_log: log)
+        }.to raise_error(RuntimeError, /Chainlink Oracle consensus not fulfilled/)
+      end
+
+      it "blocks minting when IoTeX verified but Chainlink failed" do
+        log = create(:telemetry_log, tree: tree, verified_by_iotex: true,
+                                     oracle_status: "failed", zk_proof_ref: "zk-proof-123")
+
+        expect {
+          described_class.call(tx.id, telemetry_log: log)
+        }.to raise_error(RuntimeError, /Chainlink Oracle consensus not fulfilled/)
+      end
+
+      it "allows minting when both IoTeX and Chainlink are fulfilled" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree)
+
+        described_class.call(tx.id, telemetry_log: log)
+
+        tx.reload
+        expect(tx.status).to eq("sent")
+        expect(tx.tx_hash).to be_present
+      end
+
+      it "stores verification audit trail on blockchain_transaction" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree)
+
+        described_class.call(tx.id, telemetry_log: log)
+
+        tx.reload
+        expect(tx.chainlink_request_id).to eq(log.chainlink_request_id)
+        expect(tx.zk_proof_ref).to eq(log.zk_proof_ref)
+      end
+    end
+
+    context "without telemetry_log (batch emission flow)" do
+      it "bypasses IoTeX and Chainlink guards when telemetry_log is nil" do
+        # This is the tokenomics flow — growth_points already verified by pipeline
+        described_class.call(tx.id)
+
+        tx.reload
+        expect(tx.status).to eq("sent")
+      end
+
+      it "does not store chainlink/iotex audit trail when telemetry_log is nil" do
+        described_class.call(tx.id)
+
+        tx.reload
+        expect(tx.chainlink_request_id).to be_nil
+        expect(tx.zk_proof_ref).to be_nil
+      end
+    end
+
+    context "when hadron_kyc_status is not approved" do
+      it "blocks minting with KYC pending in oracle-driven flow" do
+        wallet.update!(hadron_kyc_status: "pending")
+        log = create(:telemetry_log, :verified_telemetry, tree: tree)
+
+        expect {
+          described_class.call(tx.id, telemetry_log: log)
+        }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+      end
+
+      it "blocks minting with KYC pending in batch emission flow" do
+        wallet.update!(hadron_kyc_status: "pending")
+
+        expect {
+          described_class.call(tx.id)
+        }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+      end
+
+      it "blocks minting with KYC rejected in oracle-driven flow" do
+        wallet.update!(hadron_kyc_status: "rejected")
+        log = create(:telemetry_log, :verified_telemetry, tree: tree)
+
+        expect {
+          described_class.call(tx.id, telemetry_log: log)
+        }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+      end
+
+      it "blocks minting with KYC rejected in batch emission flow" do
+        wallet.update!(hadron_kyc_status: "rejected")
+
+        expect {
+          described_class.call(tx.id)
+        }.to raise_error(RuntimeError, /Compliance Breach: Wallet is not Hadron KYC approved/)
+      end
+
+      it "allows minting with KYC approved in both flows" do
+        expect(wallet.hadron_kyc_status).to eq("approved")
+
+        # Oracle-driven
+        log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        described_class.call(tx.id, telemetry_log: log)
+        tx.reload
+        expect(tx.status).to eq("sent")
+
+        # Batch emission (create new pending tx)
+        tx2 = wallet.blockchain_transactions.create!(
+          amount: 50, token_type: :carbon_coin, status: :pending,
+          to_address: wallet.crypto_public_address, locked_points: 500
+        )
+        described_class.call(tx2.id)
+        tx2.reload
+        expect(tx2.status).to eq("sent")
+      end
+    end
+
+    context "with Prometheus metrics during guard clause enforcement" do
+      it "does not increment SCC_MINTED_TOTAL when IoTeX guard blocks minting" do
+        log = create(:telemetry_log, tree: tree, verified_by_iotex: false, oracle_status: "fulfilled")
+        metric = SilkenNet::Metrics::SCC_MINTED_TOTAL
+        before_val = metric.get(labels: { token_type: "carbon_coin" })
+
+        expect { described_class.call(tx.id, telemetry_log: log) }.to raise_error(RuntimeError)
+
+        expect(metric.get(labels: { token_type: "carbon_coin" })).to eq(before_val)
+      end
+
+      it "does not increment SCC_MINTED_TOTAL when Hadron KYC blocks minting" do
+        wallet.update!(hadron_kyc_status: "pending")
+        metric = SilkenNet::Metrics::SCC_MINTED_TOTAL
+        before_val = metric.get(labels: { token_type: "carbon_coin" })
+
+        expect { described_class.call(tx.id) }.to raise_error(RuntimeError)
+
+        expect(metric.get(labels: { token_type: "carbon_coin" })).to eq(before_val)
+      end
+
+      it "increments SCC_MINTED_TOTAL only after successful minting" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        metric = SilkenNet::Metrics::SCC_MINTED_TOTAL
+        before_val = metric.get(labels: { token_type: "carbon_coin" })
+
+        described_class.call(tx.id, telemetry_log: log)
+
+        expect(metric.get(labels: { token_type: "carbon_coin" })).to be > before_val
+      end
+    end
+  end
 end

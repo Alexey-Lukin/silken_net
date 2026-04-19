@@ -87,4 +87,61 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       expect(described_class.get_sidekiq_options["retry"]).to eq(5)
     end
   end
+
+  # -----------------------------------------------------------------------
+  # S3.1: Guard clause — IoTeX verification (ZK-proof rejection)
+  # -----------------------------------------------------------------------
+  describe "guard clauses (S3.1)" do
+    it "rejects already-verified logs without calling W3bstream" do
+      telemetry_log.update_columns(verified_by_iotex: true, zk_proof_ref: "existing-proof")
+
+      expect(Iotex::W3bstreamVerificationService).not_to receive(:new)
+      described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+    end
+
+    it "does not chain ChainlinkDispatchWorker when verification fails" do
+      service = instance_double(Iotex::W3bstreamVerificationService)
+      allow(Iotex::W3bstreamVerificationService).to receive(:new).with(telemetry_log).and_return(service)
+      allow(service).to receive(:verify!).and_raise(
+        Iotex::W3bstreamVerificationService::VerificationError, "Invalid ZK proof data"
+      )
+
+      expect {
+        described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+      }.to raise_error(Iotex::W3bstreamVerificationService::VerificationError)
+
+      expect(ChainlinkDispatchWorker.jobs).to be_empty
+    end
+
+    it "does not set verified_by_iotex when verification fails" do
+      service = instance_double(Iotex::W3bstreamVerificationService)
+      allow(Iotex::W3bstreamVerificationService).to receive(:new).with(telemetry_log).and_return(service)
+      allow(service).to receive(:verify!).and_raise(
+        Iotex::W3bstreamVerificationService::VerificationError, "Fake telemetry detected"
+      )
+
+      expect {
+        described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+      }.to raise_error(Iotex::W3bstreamVerificationService::VerificationError)
+
+      telemetry_log.reload
+      expect(telemetry_log.verified_by_iotex).to be false
+      expect(telemetry_log.zk_proof_ref).to be_nil
+    end
+
+    it "preserves pipeline ordering: IoTeX verification before Chainlink dispatch" do
+      zk_proof_ref = "zk-proof-order-test"
+      service = instance_double(Iotex::W3bstreamVerificationService)
+      allow(Iotex::W3bstreamVerificationService).to receive(:new).with(telemetry_log).and_return(service)
+      allow(service).to receive(:verify!).and_return(zk_proof_ref)
+
+      described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      # Verify IoTeX flag set before Chainlink dispatched
+      telemetry_log.reload
+      expect(telemetry_log.verified_by_iotex).to be true
+      expect(telemetry_log.zk_proof_ref).to eq(zk_proof_ref)
+      expect(ChainlinkDispatchWorker.jobs.size).to eq(1)
+    end
+  end
 end

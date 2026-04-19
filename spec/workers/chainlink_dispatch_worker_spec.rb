@@ -66,4 +66,64 @@ RSpec.describe ChainlinkDispatchWorker, type: :worker do
       end
     end
   end
+
+  # -----------------------------------------------------------------------
+  # S2.4: Prometheus metric ORACLE_DISPATCH_DURATION
+  # -----------------------------------------------------------------------
+  describe "Prometheus metrics (S2.4)" do
+    it "observes ORACLE_DISPATCH_DURATION histogram on successful dispatch" do
+      service = instance_double(Chainlink::OracleDispatchService)
+      allow(Chainlink::OracleDispatchService).to receive(:new).with(telemetry_log).and_return(service)
+      allow(service).to receive(:dispatch!).and_return("chainlink-req-abc123")
+
+      metric = SilkenNet::Metrics::ORACLE_DISPATCH_DURATION
+      expect(metric).to receive(:observe).with(a_value > 0)
+
+      described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+    end
+
+    it "does not observe ORACLE_DISPATCH_DURATION when log already dispatched" do
+      telemetry_log.update_columns(chainlink_request_id: "existing-req-id")
+
+      metric = SilkenNet::Metrics::ORACLE_DISPATCH_DURATION
+      expect(metric).not_to receive(:observe)
+
+      described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+    end
+
+    it "does not observe ORACLE_DISPATCH_DURATION when log not found" do
+      metric = SilkenNet::Metrics::ORACLE_DISPATCH_DURATION
+      expect(metric).not_to receive(:observe)
+
+      allow(Rails.logger).to receive(:error)
+      described_class.new.perform(-1, Time.current.iso8601(6))
+    end
+  end
+
+  # -----------------------------------------------------------------------
+  # S3.1: Guard clause — Chainlink dispatch
+  # -----------------------------------------------------------------------
+  describe "guard clauses (S3.1)" do
+    it "skips dispatch when log already has chainlink_request_id (idempotency)" do
+      telemetry_log.update_columns(chainlink_request_id: "existing-req-id")
+
+      expect(Chainlink::OracleDispatchService).not_to receive(:new)
+      described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+    end
+
+    it "preserves oracle_status as dispatched after successful dispatch" do
+      service = instance_double(Chainlink::OracleDispatchService)
+      allow(Chainlink::OracleDispatchService).to receive(:new).with(telemetry_log).and_return(service)
+      allow(service).to receive(:dispatch!) do
+        telemetry_log.update!(chainlink_request_id: "chainlink-req-guard-test", oracle_status: "dispatched")
+        "chainlink-req-guard-test"
+      end
+
+      described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      telemetry_log.reload
+      expect(telemetry_log.oracle_status).to eq("dispatched")
+      expect(telemetry_log.chainlink_request_id).to eq("chainlink-req-guard-test")
+    end
+  end
 end
