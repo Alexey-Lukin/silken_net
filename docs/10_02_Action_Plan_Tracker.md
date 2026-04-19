@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Живий Документ)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-19 Сесія 8 (INF.1/S4.1 resolved, INF.7 Infrastructure Pivot)
+> **Останнє оновлення:** 2026-04-19 Сесія 9 (OBS.1 — Grafana Cloud SaaS + Alloy sidecar на Akash)
 > **Відповідальний:** AI Copilot Sessions + Core Team
 > **Принцип:** Кожна сесія оновлює чекбокси `[ ]` → `[x]` та додає дату + коміт.
 
@@ -65,35 +65,39 @@
 
 #### S2.1 — Prometheus Server deployment
 - **Пріоритет:** P0 | **Складність:** Середня | **Джерело:** `06_03`
-- **Опис:** `/metrics` endpoint працює (7+ метрик), але НІКУДИ не скрейпиться — Prometheus Server відсутній
+- **Опис:** `/metrics` endpoint працює (10+ метрик), скрейпиться Grafana Alloy sidecar → Grafana Cloud
 - **Блокує:** Production-readiness, операційна видимість, інвестиційний due diligence
 - **Статус:**
   - [x] `config/initializers/prometheus.rb` — метрики зареєстровані
   - [x] `app/middleware/prometheus_collector.rb` — endpoint `/metrics` з IP allowlist + Basic Auth
-  - [ ] Додати Prometheus Server у Terraform (`terraform/prometheus.tf`) АБО налаштувати Grafana Cloud SaaS
-  - [ ] Налаштувати scrape config для `/metrics` endpoint
-  - [ ] Верифікувати що метрики збираються
-- **Сесія:** —
-- **Коміт:** —
+  - [x] Grafana Alloy sidecar в Akash SDL (`alloy` сервіс) → remote_write до Grafana Cloud
+  - [x] Конфігурація: `deploy/akash/config.alloy` (scrape `web:80/metrics`, 15s, Basic Auth)
+  - [x] Terraform змінні: `grafana_remote_write_url`, `grafana_remote_write_username`, `grafana_remote_write_token`
+  - [ ] Верифікувати що метрики збираються (після першого Akash deploy)
+- **Сесія:** 2026-04-19 Сесія 9 (OBS.1)
+- **Коміт:** (current)
+- **Результат:** ✅ Вирішено через Grafana Cloud SaaS (замість self-hosted Prometheus)
 
 #### S2.2 — Grafana dashboards
 - **Пріоритет:** P0 | **Складність:** Середня | **Джерело:** `06_03`
-- **Опис:** Grafana відсутня — 7+ метрик невидимі для команди
+- **Опис:** Grafana Cloud SaaS — метрики доступні, дашборди створюються в UI
 - **Статус:**
-  - [ ] Розгорнути Grafana (Terraform або Grafana Cloud)
+  - [x] Grafana Cloud SaaS обрано як платформу (замість self-hosted)
+  - [x] Alloy remote_write → Grafana Cloud Prometheus endpoint
   - [ ] Dashboard: Sidekiq queues (9 черг, size + latency)
   - [ ] Dashboard: Web3 RPC errors by network
   - [ ] Dashboard: Telemetry ingest rate + fraud detection
   - [ ] Dashboard: Treasury / Oracle balance monitoring
   - [ ] Dashboard: Database connection pool stats
-- **Сесія:** —
-- **Коміт:** —
+- **Сесія:** 2026-04-19 Сесія 9 (OBS.1 — інфраструктура)
+- **Коміт:** (current)
+- **Примітка:** Дашборди — операційна задача в Grafana Cloud UI після першого deploy
 
 #### S2.3 — Alertmanager rules
 - **Пріоритет:** P0 | **Складність:** Середня | **Джерело:** `06_03`
-- **Опис:** Alertmanager не налаштований — Web3 оракули падають без сповіщень
+- **Опис:** Grafana Cloud Alerting замінює потребу в self-hosted Alertmanager
 - **Статус:**
-  - [ ] Розгорнути Alertmanager (Terraform або Grafana Cloud Alerting)
+  - [x] Grafana Cloud Alerting обрано як платформу (замість self-hosted Alertmanager)
   - [ ] Alert: `web3_critical` queue depth > 100
   - [ ] Alert: `silkennet_telemetry_fraud_detected_total` rate > 0
   - [ ] Alert: `silkennet_rpc_errors_total` rate > 10/min

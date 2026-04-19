@@ -9,16 +9,16 @@
 | Шар | Інструмент | Статус |
 |-----|------------|--------|
 | **APM / Error Tracking** | Sentry | ✅ Реалізовано в коді |
-| **Time-series / Metrics** | Prometheus (`prometheus-client`) | ✅ `/metrics` endpoint існує, ❌ Prometheus Server відсутній |
+| **Time-series / Metrics** | Prometheus (`prometheus-client`) + Grafana Alloy | ✅ `/metrics` endpoint існує, ✅ Alloy scrapes + remote_write → Grafana Cloud |
 | **Logs** | GCP Cloud Logging + Structured JSON | ✅ Реалізовано (WARNING+, JSON з Sentry correlation) |
-| **Visualization** | Grafana | ❌ **Відсутня в інфраструктурі** |
-| **Alerting** | Alertmanager | ❌ **Відсутній в інфраструктурі** |
+| **Visualization** | Grafana Cloud | ✅ **Доступна через SaaS (дашборди — операційна задача)** |
+| **Alerting** | Grafana Cloud Alerting | ✅ **Доступний через SaaS (правила — операційна задача)** |
 
 ---
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 5 — бібліотеки встановлені, 10 кастомних метрик реалізовані та інструментовані, структуровані JSON-логи активні; Prometheus Server та Grafana відсутні в інфраструктурі
+- **Поточний TRL:** TRL 6 — бібліотеки встановлені, 10 кастомних метрик реалізовані та інструментовані, структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (BLOCKERs 1-3 вирішені); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
 - **Пов'язані модулі:**
   - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
@@ -30,71 +30,64 @@
 
 > Без вирішення цих пунктів система летить "наосліп" у Mainnet.
 
-### 🔴 BLOCKER-1: Prometheus Server не розгорнутий — `/metrics` нікому скрейпити
+### ✅ BLOCKER-1: Prometheus Server — вирішено через Grafana Cloud SaaS (OBS.1)
 
-**Статус:** Критичний. Блокує збір будь-яких метрик.
+**Статус:** ✅ Вирішено. Grafana Alloy sidecar (`alloy` сервіс в Akash SDL) скрейпить `/metrics` endpoint кожні 15 секунд і пушить метрики в Grafana Cloud через Prometheus remote_write.
 
-Rails-застосунок **вже** генерує метрики та виставляє їх через `/metrics` endpoint (захищений IP allowlist). Але результат аудиту Terraform-конфігурацій (`terraform/main.tf`, `terraform/compute.tf`, `terraform/database.tf`, `terraform/vpc.tf`, `terraform/iam.tf`, `terraform/akash/main.tf`) та конфігів Akash SDL (`deploy/akash/deploy.yaml`) однозначний:
+Замість розгортання self-hosted Prometheus Server, обрано SaaS підхід:
+- **Grafana Alloy** (`grafana/alloy:latest`) — легковажний agent, 3-й мікросервіс в Akash SDL (поряд з `web` та `job`)
+- **Scrape**: `web:80/metrics` по внутрішній мережі Akash (Basic Auth)
+- **Push**: `prometheus.remote_write` → Grafana Cloud endpoint (HTTPS)
+- **Config**: `deploy/akash/config.alloy` (River format), кодується в Base64 через Terraform `filebase64()` і передається як ENV
 
-**Prometheus Server** — ні як Docker-контейнер в Akash SDL, ні як GCP Compute Instance — **ніде не визначений**.
-
-Поточний стан:
 ```
-Rails /metrics ──→ [НІКУДИ] — немає Prometheus Server, який би скрейпив endpoint
-```
-
-Очікуваний стан:
-```
-Prometheus Server ──scrapes──→ Rails :3000/metrics (кожні 15s)
+Grafana Alloy (Akash) ──scrapes──→ Rails web:80/metrics (кожні 15s, Basic Auth)
       │
-      └──→ Grafana (PromQL дашборди)
-      └──→ Alertmanager (правила алертів)
+      └──remote_write──→ Grafana Cloud (Prometheus endpoint, HTTPS)
+                              │
+                              ├──→ Grafana Dashboards (PromQL)
+                              └──→ Grafana Alerting (правила алертів)
 ```
 
-**Примітка щодо GCP Cloud Monitoring:** Terraform вмикає `monitoring.googleapis.com` API та надає сервісному акаунту роль `roles/monitoring.metricWriter`. Однак це — нативний GCP Cloud Monitoring (Stackdriver) для системних метрик (CPU, RAM), а **не** Prometheus. Кастомні бізнес-метрики (`silkennet_scc_minted_total`, `silkennet_rpc_errors_total` тощо) наразі **не налаштовані для надсилання** до Cloud Monitoring (потребуватиме додаткового Prometheus → Cloud Monitoring exporter або OpenTelemetry Collector).
-
-> **Примітка:** GCP Memorystore Redis видалено з інфраструктури (замінено на Upstash). Cloud Monitoring більше не збирає Redis-метрики автоматично. Upstash має власний дашборд для моніторингу Redis.
-
-**Дія (варіанти вирішення, поза scope цього документа):**
-1. Додати Prometheus Server як окремий сервіс в Akash SDL (`deploy/akash/deploy.yaml`).
-2. Використати SaaS-рішення (Grafana Cloud, Prometheus Remote Write до managed endpoint).
-3. Розгорнути Prometheus + Grafana на Ingress Anchor e2-micro (мінімальний overhead для TRL 6-7).
+**Файли:**
+- `deploy/akash/config.alloy` — конфігурація Alloy (scrape + remote_write)
+- `deploy/akash/deploy.yaml` / `deploy.yaml.tpl` — `alloy` сервіс (0.5 CPU, 512Mi RAM)
+- `terraform/akash/variables.tf` — 5 нових змінних (Grafana Cloud credentials)
+- `terraform/akash/main.tf` — `filebase64()` для config injection
 
 ---
 
-### 🔴 BLOCKER-2: Grafana відсутня — метрики є, але переглядати нема де
+### ✅ BLOCKER-2: Grafana — вирішено через Grafana Cloud SaaS (OBS.1)
 
-**Статус:** Критичний. Блокує візуалізацію та операційний моніторинг.
+**Статус:** ✅ Вирішено. Grafana Cloud надає повнофункціональні дашборди та PromQL-запити.
 
-Пошук по всіх інфраструктурних файлах (`terraform/**/*.tf`, `deploy/akash/deploy.yaml`) не виявив жодної згадки про Grafana.
+Метрики, що надходять через remote_write від Alloy sidecar, автоматично доступні в Grafana Cloud для побудови дашбордів. Залишається операційна задача: створити конкретні дашборди в Grafana Cloud UI.
 
-Повний реєстр зібраних метрик (7 метрик, деталі в розділі 3) залишається **невидимим** для команди без Grafana-дашбордів. У системі, що керує реальними фінансовими активами на-чейні, відсутність dashboards — це відсутність контролю.
+**Критичні дашборди (операційна задача):**
 
-**Критичні сценарії без Grafana:**
-
-| Подія | Метрика | Наслідок без дашборду |
-|-------|---------|----------------------|
-| Alchemy RPC починає відхиляти запити | `silkennet_rpc_errors_total{network="polygon"}` | Зростання не видно — мінтинг SCC зупиняється мовчки |
-| Sidekiq `web3_critical` черга переповнюється | `silkennet_web3_queue_size{queue="web3_critical"}` | Підтвердження транзакцій затримуються — інвестори не отримують токени |
-| Атака підробленими DID | `silkennet_telemetry_fraud_detected_total` | Спайк непомітний — незаконний мінтинг можливий |
-| Слешинг кластерів | `silkennet_scc_slashed_total` | Масове спалювання токенів без сповіщення |
-
-**Дія:** Після розгортання Prometheus Server (BLOCKER-1) — розгорнути Grafana та імпортувати дашборди.
+| Подія | Метрика | Дашборд |
+|-------|---------|---------|
+| Alchemy RPC починає відхиляти запити | `silkennet_rpc_errors_total{network="polygon"}` | Web3 RPC Errors by Network |
+| Sidekiq `web3_critical` черга переповнюється | `silkennet_web3_queue_size{queue="web3_critical"}` | Sidekiq Queues (9 черг, size + latency) |
+| Атака підробленими DID | `silkennet_telemetry_fraud_detected_total` | Telemetry Ingest + Fraud Detection |
+| Слешинг кластерів | `silkennet_scc_slashed_total` | Treasury / Token Economics |
 
 ---
 
-### 🔴 BLOCKER-3: Alertmanager не налаштований — Web3-оракули падають без сповіщень
+### ✅ BLOCKER-3: Alertmanager — вирішено через Grafana Cloud Alerting (OBS.1)
 
-**Статус:** Критичний. Блокує отримання статусу "Production-Ready".
+**Статус:** ✅ Вирішено. Grafana Cloud включає вбудовану систему алертів (Grafana Alerting), яка замінює потребу в self-hosted Alertmanager.
 
-"Сліпий" політ у Mainnet без автоматичних алертів на падіння Chainlink Oracle, зростання `rpc_errors_total` або зупинку телеметрії (`telemetry_processed_total` = 0 за 10 хвилин) — це критичний операційний ризик.
+Після створення дашбордів у Grafana Cloud — алерти налаштовуються через Grafana Alerting UI:
+- Alert rules на базі PromQL
+- Notification channels (Slack, Email, PagerDuty, Telegram)
+- Silence / mute rules
+- Escalation policies
 
-Alertmanager — частина стандартного Prometheus-стеку. Жодної конфігурації Alertmanager (правила алертів `*.rules.yml`, `alertmanager.yml`, Slack/PagerDuty webhook) не виявлено в репозиторії.
-
-**Мінімальні алерти, що мають бути налаштовані (поза scope):**
+**Мінімальні алерти (операційна задача — створити в Grafana Cloud UI):**
 
 ```yaml
-# Приклад правил (не реалізовано — лише довідка)
+# Приклад правил (створюються в Grafana Cloud UI, не в коді)
 - alert: Web3QueueCritical
   expr: silkennet_web3_queue_size{queue="web3_critical"} > 500
   for: 5m
@@ -165,12 +158,15 @@ ALL_QUEUES = %w[uplink alerts critical downlink default web3_critical web3 web3_
 | `TELEMETRY_PROCESSED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано |
 | `TELEMETRY_FRAUD_DETECTED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано (2 точки) |
 | Sentry context у workers | `app/workers/unpack_telemetry_worker.rb`, `app/workers/gateway_telemetry_worker.rb` | ✅ `Sentry.set_tags()` |
-| Prometheus Server | `deploy/akash/deploy.yaml`, `terraform/**/*.tf` | 🔴 **ВІДСУТНІЙ** |
-| Grafana | `deploy/akash/deploy.yaml`, `terraform/**/*.tf` | 🔴 **ВІДСУТНЯ** |
-| Alertmanager | `deploy/akash/deploy.yaml`, `terraform/**/*.tf` | 🔴 **ВІДСУТНІЙ** |
+| Prometheus Server | `deploy/akash/deploy.yaml` (alloy сервіс) | ✅ **Grafana Alloy sidecar → Grafana Cloud** |
+| Grafana | Grafana Cloud SaaS | ✅ **Доступна (дашборди — операційна задача)** |
+| Alertmanager | Grafana Cloud Alerting | ✅ **Доступний (правила — операційна задача)** |
 | `SENTRY_DSN` у secrets | `.kamal/secrets`, Akash SDL env | ✅ Додано |
-| Prometheus scrape config | — | 🔴 Відсутній |
-| Grafana dashboards | — | 🔴 Відсутні |
+| Grafana Alloy config | `deploy/akash/config.alloy` | ✅ Scrape + remote_write |
+| Grafana Alloy SDL service | `deploy/akash/deploy.yaml` (`alloy` сервіс) | ✅ 0.5 CPU, 512Mi RAM |
+| Terraform Grafana Cloud vars | `terraform/akash/variables.tf` | ✅ 5 змінних (3 sensitive) |
+| Prometheus scrape config | `deploy/akash/config.alloy` | ✅ `web:80/metrics`, 15s, Basic Auth |
+| Grafana dashboards | Grafana Cloud UI | 🟡 Операційна задача |
 
 ---
 
@@ -387,7 +383,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 ## 🗺️ Архітектура спостережуваності (Поточний стан vs Цільовий)
 
-### Поточний стан (TRL 4 — "Як є")
+### Поточний стан (TRL 6 — "Як є")
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -403,19 +399,29 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  /metrics endpoint (PrometheusCollector middleware)     │   │
-│  │  ✅ 7 кастомних метрик  ✅ Всі 9 черг  ❌ Ніхто не скрейпить  │   │
+│  │  ✅ 10 кастомних метрик  ✅ Всі 9 черг                 │   │
+│  │  ✅ Basic Auth (PROMETHEUS_AUTH_USER/PASSWORD)          │   │
 │  └──────────────────────────┬──────────────────────────────┘   │
-│                             │ [НІКУДИ]                         │
+│                             │ [Alloy scrapes кожні 15s]        │
 │                             ▼                                   │
-│                 Prometheus Server (ВІДСУТНІЙ)                   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  Grafana Alloy (alloy сервіс в Akash SDL)              │   │
+│  │  ✅ prometheus.scrape → web:80/metrics (Basic Auth)     │   │
+│  │  ✅ prometheus.remote_write → Grafana Cloud (HTTPS)     │   │
+│  └──────────────────────────┬──────────────────────────────┘   │
+│                             │                                   │
+│                             ▼                                   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  Grafana Cloud (SaaS)                                   │   │
+│  │  ✅ Prometheus (зберігання метрик)                       │   │
+│  │  🟡 Grafana Dashboards (операційна задача)              │   │
+│  │  🟡 Grafana Alerting (операційна задача)                │   │
+│  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  Rails.logger → GCP Cloud Logging                       │   │
 │  │  ✅ WARNING+ логи  ✅ Structured JSON (Sentry trace)    │   │
 │  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-│                 Grafana (ВІДСУТНЯ)                              │
-│                 Alertmanager (ВІДСУТНІЙ)                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -428,11 +434,12 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │  Sentry SDK ──────────────────────────────────────────→ sentry.io   │
 │  (errors, 0.1% traces)    ✅ SENTRY_DSN налаштований                 │
 │                                                                       │
-│  /metrics endpoint ──────→ Prometheus Server ──────→ Grafana        │
-│  (7+ метрик, secured)          (scrape 15s)          (dashboards)   │
-│                                      │                               │
-│                                      └──────────────→ Alertmanager  │
-│                                                        (Slack/PD)   │
+│  /metrics endpoint ──────→ Grafana Alloy ──remote_write──→           │
+│  (10 метрик, Basic Auth)     (Akash sidecar)              │           │
+│                                                           ▼           │
+│                                                    Grafana Cloud     │
+│                                                    (dashboards +     │
+│                                                     alerting)        │
 │                                                                       │
 │  Rails.logger ───────────→ GCP Cloud Logging                        │
 │  (WARNING+, structured)      (alerts on ERROR)                      │
@@ -458,10 +465,13 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 | `app/workers/gateway_telemetry_worker.rb` (р.17) | `Sentry.set_tags(queen_uid:)` | ✅ |
 | `terraform/main.tf` | `google_project_service.monitoring` (Cloud Monitoring API) | ✅ (Cloud Monitoring) |
 | `terraform/iam.tf` | `roles/monitoring.metricWriter` (для GCP-native метрик) | ✅ |
-| `deploy/akash/deploy.yaml` | Akash SDL (web + job services, CoAP/UDP) | ✅ (без Prometheus) |
-| `prometheus.yml` (scrape config) | — | 🔴 **ВІДСУТНІЙ** |
-| `grafana/` (дашборди) | — | 🔴 **ВІДСУТНЯ** |
-| `alertmanager.yml` | — | 🔴 **ВІДСУТНІЙ** |
+| `deploy/akash/deploy.yaml` | Akash SDL (web + job + alloy services, CoAP/UDP) | ✅ (з Alloy sidecar) |
+| `deploy/akash/config.alloy` | Grafana Alloy конфігурація (scrape + remote_write) | ✅ Створено |
+| `terraform/akash/variables.tf` | Grafana Cloud змінні (URL, username, token, auth) | ✅ 5 змінних |
+| `terraform/akash/main.tf` | SDL generation + `filebase64(config.alloy)` | ✅ Alloy config injection |
+| `prometheus.yml` (scrape config) | — | ✅ Замінено на `config.alloy` (Alloy agent) |
+| `grafana/` (дашборди) | Grafana Cloud SaaS | 🟡 Операційна задача |
+| `alertmanager.yml` | Grafana Cloud Alerting | 🟡 Операційна задача |
 
 ---
 
@@ -473,33 +483,39 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 | `SENTRY_TRACES_SAMPLE_RATE` | ❌ (default: 0.001) | `config/initializers/sentry.rb` | — |
 | `SENTRY_WORKER_THREADS` | ❌ (default: 2) | `config/initializers/sentry.rb` | — |
 | `RELEASE_VERSION` | ❌ (рекомендовано) | `config.release` | Не задана |
-| `PROMETHEUS_ALLOWED_IPS` | ❌ | `app/middleware/prometheus_collector.rb` | Не задана |
-| `PROMETHEUS_AUTH_USER` | ❌ (рекомендовано) | `app/middleware/prometheus_collector.rb` | Не задана |
-| `PROMETHEUS_AUTH_PASSWORD` | ❌ (рекомендовано) | `app/middleware/prometheus_collector.rb` | Не задана |
+| `PROMETHEUS_ALLOWED_IPS` | ❌ | `app/middleware/prometheus_collector.rb` | Не задана (RFC 1918 дозволені за замовчуванням — Akash internal network) |
+| `PROMETHEUS_AUTH_USER` | ✅ (рекомендовано) | `app/middleware/prometheus_collector.rb`, Alloy `config.alloy` | ✅ Додано в web SDL env |
+| `PROMETHEUS_AUTH_PASSWORD` | ✅ (рекомендовано) | `app/middleware/prometheus_collector.rb`, Alloy `config.alloy` | ✅ Додано в web SDL env |
+| `GRAFANA_REMOTE_WRITE_URL` | ✅ Для production | `deploy/akash/config.alloy` (Alloy sidecar) | ✅ В Terraform variables |
+| `GRAFANA_REMOTE_WRITE_USERNAME` | ✅ Для production | `deploy/akash/config.alloy` (Alloy sidecar) | ✅ В Terraform variables |
+| `GRAFANA_REMOTE_WRITE_TOKEN` | ✅ Для production | `deploy/akash/config.alloy` (Alloy sidecar) | ✅ В Terraform variables (sensitive) |
 
 ---
 
 ## 📋 Висновки аудиту
 
-### Що реально реалізовано (TRL 5 факти)
+### Що реально реалізовано (TRL 6 факти)
 
-1. **Prometheus-client інтегрований** — 10 метрик визначені (7 counters + 1 histogram + 2 gauges), `/metrics` endpoint працює з IP-захистом.
+1. **Prometheus-client інтегрований** — 10 метрик визначені (7 counters + 1 histogram + 2 gauges), `/metrics` endpoint працює з IP-захистом + Basic Auth.
 2. **Sentry SDK встановлений і налаштований** — zero-noise конфігурація з 34 виключеннями, автоматична Sidekiq-інтеграція, PII-scrubbing.
 3. **Інструментація в бізнес-логіці** — всі критичні операції (мінтинг, слешинг, RPC-помилки, телеметрія, OTA, EWS, CoAP) мають Prometheus-лічильники.
 4. **GCP Cloud Logging** — WARNING+ логи зберігаються, cost-control фільтр активний.
 5. **Structured JSON logging** — активовано у production: кожен рядок містить `timestamp`, `pid`, `request_id`, `sentry_trace_id`, `sentry_span_id`.
+6. **Grafana Alloy sidecar** — `alloy` сервіс в Akash SDL скрейпить `/metrics` кожні 15s, пушить у Grafana Cloud через remote_write.
 
-### Що відсутнє (Gap Analysis)
+### Що залишилось (операційні задачі)
 
-1. **Prometheus Server** — метрики генеруються, але не збираються.
-2. **Grafana** — нема де переглядати метрики.
-3. **Alertmanager** — нема автоматичних сповіщень.
+1. **Grafana Cloud дашборди** — створити в Grafana Cloud UI: Sidekiq queues, Web3 RPC errors, Telemetry ingest, Treasury.
+2. **Grafana Cloud алерти** — створити правила алертів: `web3_critical` > 100, fraud rate > 0, RPC errors > 10/min.
+3. **Notification channels** — налаштувати Slack / Email / PagerDuty у Grafana Cloud.
 
-### Наступні кроки (поза scope цього документа)
+### Наступні кроки
 
-1. **Вирішити BLOCKER-1** (Prometheus Server) — додати як сервіс в Akash SDL або Grafana Cloud SaaS.
-2. **Вирішити BLOCKER-2** (Grafana) — розгорнути після Prometheus Server.
-3. **Вирішити BLOCKER-3** (Alertmanager) — додати PromQL правила алертів.
+1. ✅ ~~**Вирішити BLOCKER-1** (Prometheus Server)~~ — вирішено через Grafana Alloy → Grafana Cloud.
+2. ✅ ~~**Вирішити BLOCKER-2** (Grafana)~~ — вирішено через Grafana Cloud SaaS.
+3. ✅ ~~**Вирішити BLOCKER-3** (Alertmanager)~~ — вирішено через Grafana Cloud Alerting.
+4. 🟡 **Створити дашборди** — операційна задача в Grafana Cloud UI.
+5. 🟡 **Створити алерти** — операційна задача в Grafana Cloud UI.
 
 ---
 
