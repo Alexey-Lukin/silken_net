@@ -284,6 +284,7 @@ terraform apply
 │  │  Порти: :80 (HTTP) + :5683/UDP (CoAP)               │   │
 │  │                                                      │   │
 │  │  ✅ job сервіс (Sidekiq, всі 31+ воркери)            │   │
+│  │  ✅ alloy сервіс (Grafana Alloy → Grafana Cloud)     │   │
 │  │  ✅ Cloud SQL через Auth Proxy (HTTPS tunnel)        │   │
 │  │  ✅ Redis через Upstash (зовнішній, TLS, rediss://) │   │
 │  └──────────────────────────────────────────────────────┘   │
@@ -296,17 +297,28 @@ terraform apply
 │  │  Доступний з Akash та будь-де через інтернет         │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    Grafana Cloud (SaaS)                     │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Prometheus (remote_write endpoint)                  │   │
+│  │  Grafana (dashboards, PromQL)                        │   │
+│  │  Alerting (alert rules, notification channels)       │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-| Сервіс/Ресурс | GCP | Akash Network | Upstash | Примітка |
-|--------------|-----|---------------|---------|---------|
-| **Rails web (Puma + Thruster)** | ❌ | ✅ | — | Повністю на Akash |
-| **Sidekiq (job role)** | ❌ | ✅ | — | `job` сервіс в Akash SDL |
-| **CoAP UDP daemon (:5683)** | proxy | ✅ | — | Ingress Anchor проксює UDP на Akash |
-| **Cloud SQL PostgreSQL 16** | ✅ | — | — | Приватна IP, доступ через Auth Proxy |
-| **Redis** | ❌ | — | ✅ | Upstash Serverless, TLS (`rediss://`) |
-| **Ingress Anchor** | ✅ | — | — | `e2-micro`, HAProxy/socat, статична IP |
-| **Artifact Registry (Docker)** | ✅ | shared | — | Той самий образ |
+| Сервіс/Ресурс | GCP | Akash Network | Upstash | Grafana Cloud | Примітка |
+|--------------|-----|---------------|---------|---------------|---------|
+| **Rails web (Puma + Thruster)** | ❌ | ✅ | — | — | Повністю на Akash |
+| **Sidekiq (job role)** | ❌ | ✅ | — | — | `job` сервіс в Akash SDL |
+| **Grafana Alloy (metrics agent)** | ❌ | ✅ | — | — | `alloy` сервіс в Akash SDL, пушить у Grafana Cloud |
+| **CoAP UDP daemon (:5683)** | proxy | ✅ | — | — | Ingress Anchor проксює UDP на Akash |
+| **Cloud SQL PostgreSQL 16** | ✅ | — | — | — | Приватна IP, доступ через Auth Proxy |
+| **Redis** | ❌ | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
+| **Prometheus + Grafana + Alerting** | ❌ | — | — | ✅ | SaaS, Alloy → remote_write |
+| **Ingress Anchor** | ✅ | — | — | — | `e2-micro`, HAProxy/socat, статична IP |
+| **Artifact Registry (Docker)** | ✅ | shared | — | — | Той самий образ |
 
 ---
 
@@ -388,11 +400,11 @@ terraform/
 
 terraform/akash/
 ├── main.tf       # SDL generation, null_resource (akash CLI)
-├── variables.tf  # Akash-specific variables + app secrets
+├── variables.tf  # Akash-specific variables + app secrets + Grafana Cloud
 └── outputs.tf    # SDL path, deployment notes
 ```
 
-> **Примітка:** `redis.tf` видалено — Redis тепер обслуговується Upstash (serverless, зовнішній сервіс, не GCP). `compute.tf` більше не містить web/canopy VMs — лише Ingress Anchor (`e2-micro`) з HAProxy/socat для проксування трафіку на Akash.
+> **Примітка:** `redis.tf` видалено — Redis тепер обслуговується Upstash (serverless, зовнішній сервіс, не GCP). `compute.tf` більше не містить web/canopy VMs — лише Ingress Anchor (`e2-micro`) з HAProxy/socat для проксування трафіку на Akash. Grafana Alloy `config.alloy` знаходиться в `deploy/akash/config.alloy` і кодується в Base64 через `filebase64()` при рендерингу SDL шаблону.
 
 ### GCP Region та Zone
 

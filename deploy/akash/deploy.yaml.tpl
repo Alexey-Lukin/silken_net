@@ -20,6 +20,8 @@ services:
       - RAILS_ENV=production
       - RAILS_MAX_THREADS=${rails_max_threads}
       - WEB_CONCURRENCY=${web_concurrency}
+      - PROMETHEUS_AUTH_USER=${prometheus_auth_user}
+      - PROMETHEUS_AUTH_PASSWORD=${prometheus_auth_password}
     expose:
       - port: 80
         as: 80
@@ -72,7 +74,7 @@ services:
       - "/bin/sh"
       - "-c"
     args:
-      - "mkdir -p /etc/alloy && echo $ALLOY_CONFIG_BASE64 | base64 -d > /etc/alloy/config.river && alloy run /etc/alloy/config.river"
+      - "mkdir -p /etc/alloy && echo $ALLOY_CONFIG_BASE64 | base64 -d > /etc/alloy/config.alloy && alloy run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy"
 
 profiles:
   compute:
