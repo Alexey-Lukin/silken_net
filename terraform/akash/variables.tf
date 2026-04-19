@@ -162,3 +162,37 @@ variable "max_price_uakt" {
     error_message = "Price must be at least 100 uAKT per block."
   }
 }
+
+# -----------------------------------------------------------------------------
+# Observability — Grafana Cloud (OBS.1)
+# -----------------------------------------------------------------------------
+# Grafana Alloy runs as a sidecar in the Akash deployment, scraping the Rails
+# /metrics endpoint and pushing metrics to Grafana Cloud via remote_write.
+# Resolves 06_03 BLOCKERs 1-3 (Prometheus Server, Grafana, Alertmanager).
+
+variable "grafana_remote_write_url" {
+  description = "Grafana Cloud Prometheus remote_write endpoint URL. Format: https://prometheus-prod-XX-prod-XX.grafana.net/api/prom/push"
+  type        = string
+}
+
+variable "grafana_remote_write_username" {
+  description = "Grafana Cloud instance ID (numeric) for remote_write authentication"
+  type        = string
+}
+
+variable "grafana_remote_write_token" {
+  description = "Grafana Cloud API token with metrics:write scope for remote_write authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "prometheus_auth_user" {
+  description = "HTTP Basic Auth username for Rails /metrics endpoint (must match PROMETHEUS_AUTH_USER env var in web service)"
+  type        = string
+}
+
+variable "prometheus_auth_password" {
+  description = "HTTP Basic Auth password for Rails /metrics endpoint (must match PROMETHEUS_AUTH_PASSWORD env var in web service)"
+  type        = string
+  sensitive   = true
+}
