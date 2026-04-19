@@ -28,6 +28,8 @@ module SilkenNet
     # МЕТОД ДЛЯ БЕКЕНДУ (Розрахунок стабільності)
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     def self.calculate_z(seed, temp, acoustic)
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
       x, y, z, local_sigma, local_rho = initialize_state(seed, temp, acoustic)
 
       # Обчислення в BigDecimal дають "Юридичну Точність" для Web3-аудиту.
@@ -41,6 +43,9 @@ module SilkenNet
         y = (y + dy * DT).round(PRECISION)
         z = (z + dz * DT).round(PRECISION)
       end
+
+      duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
+      SilkenNet::Metrics::LORENZ_COMPUTATION_DURATION.observe(duration) if defined?(SilkenNet::Metrics)
 
       z.to_f.round(4)
     end
