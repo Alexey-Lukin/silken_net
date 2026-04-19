@@ -158,11 +158,11 @@ services:
           readOnly: false
 
   # ---------------------------------------------------------------------------
-  # Job Service — Sidekiq Background Worker (31+ workers)
+  # Job Service — Sidekiq Background Worker (36+ workers)
   # ---------------------------------------------------------------------------
   # Maps to: config/deploy.yml → servers.job
   #
-  # [PLAN 5.8]: Without this service, ALL 31+ Sidekiq workers are offline on
+  # [PLAN 5.8]: Without this service, ALL 36+ Sidekiq workers are offline on
   # Akash: telemetry processing, Web3 minting, slashing, OTA, L1 anchoring,
   # alert notifications — none of them run. This is a critical functional gap.
   #

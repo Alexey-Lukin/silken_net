@@ -95,10 +95,9 @@ resource "google_compute_instance" "ingress_anchor" {
     # =========================================================================
     # 2. Install HAProxy + socat
     # =========================================================================
-    if ! command -v haproxy &> /dev/null; then
+    if ! command -v haproxy &> /dev/null || ! command -v socat &> /dev/null; then
       apt-get update -qq && apt-get install -y -qq haproxy socat
     fi
-    apt-get install -y -qq socat 2>/dev/null || true
 
     # =========================================================================
     # 3. Read Akash deployment IP from instance metadata
@@ -153,6 +152,8 @@ HAPROXY_CFG
     # =========================================================================
     # HAProxy does not natively support UDP. socat provides a lightweight
     # UDP4 relay. We use a systemd service for reliability instead of nohup.
+    # The unit file is always created so that updating AKASH_IP via metadata
+    # and resetting the instance immediately activates the relay.
 
     cat > /etc/systemd/system/coap-relay.service << SYSTEMD_UNIT
 [Unit]
