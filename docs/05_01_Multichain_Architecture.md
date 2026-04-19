@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — Всі 12 мереж мають відповідний Ruby-сервіс, Sidekiq-воркер та RSpec-специфікацію.
+- **Поточний TRL:** TRL 8 TRL 8 (Мультичейн архітектура повністю спроєктована. Структурний скелет усіх 12 мереж присутній у кодбейсі. Всі сервіси мають RSpec-покриття)
 - **Пов'язані модулі:**
   - Proof of Growth → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
   - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
@@ -67,12 +67,6 @@ SilkenNet не обирає один блокчейн. Система викор
 
 > **Для грантових заявок:** Коли ви кажете "ми використовуємо стек Solana + peaq + Chainlink + IoTeX + Filecoin", інженери розуміють: ви не винаходите велосипед, ви будуєте хмарочос з найкращих у світі матеріалів.
 
-
-## ✅ Статус
-
-* **Поточний TRL:** TRL 8 (Мультичейн архітектура повністю спроєктована. Структурний скелет усіх 12 мереж присутній у кодбейсі. Всі сервіси мають RSpec-покриття.)
-* **Пов'язані модулі:** Джерела даних — `04_02_Business_Logic_and_Services`. Токеноміка — `05_02_Proof_of_Growth_Pipeline`, `05_03_Tokenomics_SCC_and_SFC`. Фіналізація — `05_04_Ethereum_L1_State_Anchor`.
-
 ### Статус Імплементації по Мережах
 
 | # | Мережа | Сервіс | Статус | Примітка |
@@ -95,14 +89,6 @@ SilkenNet не обирає один блокчейн. Система викор
 ---
 
 ## 🛑 Відкриті Блокери
-
-### ~~🟡 BLOCKER-5: PuroEarth Passport Service — Not Implemented~~ ✅
-
-**Статус:** ✅ Повністю реалізовано. `PuroEarth::PassportService` (on-chain anchoring) + `PuroEarth::RegistryApiService` (REST API submission to Puro.earth).
-
-* **Файли:** `app/services/puro_earth/passport_service.rb`, `app/services/puro_earth/registry_api_service.rb`
-* **Worker:** `PuroEarthPassportWorker` — двофазний: 1) Polygon anchoring → 2) REST API submission
-* **D-MRV pipeline:** MaintenanceRecord (biomass_extraction) → EcosystemHealingWorker → PuroEarthPassportWorker → on-chain + CORC ref
 
 ### 🟢 INFO: dClimate Verification — Mock Mode
 
@@ -632,10 +618,3 @@ state_root = Digest::SHA256.hexdigest("#{total_scc_supply}:#{chain_hash}:#{times
 | 12 | Ethereum L1 | Finality | `EthereumAnchorWorker` | `web3_low` | 3 | `0 3 * * 1` |
 | 13 | Cross-chain | Treasury | `TreasuryMonitorWorker` | `web3_low` | 3 | `*/15 * * * *` |
 | 14 | Polygon | Gas Optimization | `MintBatchCollectorWorker` | `web3` | 3 | `*/5 * * * *` |
-
----
-
-## 📋 8. Відкриті Питання для Наступного Циклу
-
-1. ~~**PuroEarth PassportService** — Biochar CORC (Afterlife Economy)~~ ✅ Реалізовано: `PassportService` (on-chain) + `RegistryApiService` (REST API)
-2. **dClimate Real API** — Замінити mock на реальний satellite API
