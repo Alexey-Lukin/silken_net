@@ -11,8 +11,10 @@
 # The passport anchors: tree DID, GPS coordinates, biomass yield, extraction
 # date, and a SHA-256 hash of lifetime telemetry for tamper-proof provenance.
 #
-# On-chain anchoring is delegated to PuroEarth::PassportService, which records
-# the payload hash in a D-MRV Registry smart contract on Polygon.
+# Two-phase submission:
+# 1. On-chain anchoring via PuroEarth::PassportService → Polygon D-MRV Registry
+# 2. REST API submission via PuroEarth::RegistryApiService → Puro.earth CORC
+#
 # Transaction confirmation is tracked by BlockchainConfirmationWorker.
 # =============================================================================
 class PuroEarthPassportWorker
@@ -30,6 +32,7 @@ class PuroEarthPassportWorker
 
     payload = build_passport_payload(record, tree)
 
+    # Phase 1: On-chain anchoring (Polygon D-MRV Registry)
     tx_hash = with_web3_error_handling("Polygon", "Puro.earth Passport for Tree #{tree.did}") do
       PuroEarth::PassportService.new(payload).anchor!
     end
@@ -37,13 +40,29 @@ class PuroEarthPassportWorker
     record.update!(biomass_passport_tx_hash: tx_hash)
     BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)
 
-    Rails.logger.info "🌿 [Puro.earth] Biomass Passport for Puro.earth generated. " \
-                      "Tree #{tree.did}, yield: #{record.biomass_yield_kg} kg, tx: #{tx_hash}"
+    # Phase 2: REST API submission to Puro.earth for CORC issuance
+    corc_ref = submit_to_puro_earth_api(payload, tx_hash)
+    record.update!(puro_earth_corc_ref: corc_ref) if corc_ref
+
+    Rails.logger.info "🌿 [Puro.earth] Biomass Passport generated. " \
+                      "Tree #{tree.did}, yield: #{record.biomass_yield_kg} kg, " \
+                      "tx: #{tx_hash}, CORC: #{corc_ref || "pending"}"
 
     payload
   end
 
   private
+
+  # Phase 2: Submit passport to Puro.earth REST API for CORC issuance.
+  # Non-blocking: REST API failure does NOT invalidate on-chain anchoring.
+  # The on-chain proof (tx_hash) is already recorded, so CORC can be
+  # resubmitted manually or via retry if API is temporarily unavailable.
+  def submit_to_puro_earth_api(payload, tx_hash)
+    PuroEarth::RegistryApiService.new(payload, tx_hash: tx_hash).submit!
+  rescue PuroEarth::RegistryApiService::SubmissionError => e
+    Rails.logger.warn "🌿 [Puro.earth] REST API submission failed (on-chain anchoring succeeded): #{e.message}"
+    nil
+  end
 
   def build_passport_payload(record, tree)
     {

@@ -4,15 +4,19 @@ require "rails_helper"
 
 RSpec.describe PuroEarthPassportWorker, type: :worker do
   let(:fake_tx_hash) { "0x#{"fa" * 32}" }
+  let(:fake_corc_ref) { "CORC-2026-A1B2C3D4" }
 
   before do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
 
-    # Stub PuroEarth::PassportService to return a realistic on-chain tx_hash
+    # Stub PuroEarth::PassportService (Phase 1: on-chain anchoring)
     allow_any_instance_of(PuroEarth::PassportService).to receive(:anchor!).and_return(fake_tx_hash)
     allow(BlockchainConfirmationWorker).to receive(:perform_in)
+
+    # Stub PuroEarth::RegistryApiService (Phase 2: REST API submission)
+    allow_any_instance_of(PuroEarth::RegistryApiService).to receive(:submit!).and_return(fake_corc_ref)
   end
 
   describe "#perform" do
@@ -65,9 +69,42 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
         tree = create(:tree, status: :deceased)
         record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
 
-        expect(Rails.logger).to receive(:info).with(a_string_matching(/Biomass Passport for Puro\.earth generated/))
+        expect(Rails.logger).to receive(:info).with(a_string_matching(/Biomass Passport generated/))
 
         described_class.new.perform(record.id)
+      end
+
+      it "submits to Puro.earth REST API after on-chain anchoring" do
+        tree = create(:tree, status: :deceased)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+
+        expect_any_instance_of(PuroEarth::RegistryApiService).to receive(:submit!)
+
+        described_class.new.perform(record.id)
+      end
+
+      it "stores puro_earth_corc_ref from REST API submission" do
+        tree = create(:tree, status: :deceased)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+
+        described_class.new.perform(record.id)
+
+        record.reload
+        expect(record.puro_earth_corc_ref).to eq(fake_corc_ref)
+      end
+
+      it "continues successfully when REST API submission fails" do
+        tree = create(:tree, status: :deceased)
+        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+
+        allow_any_instance_of(PuroEarth::RegistryApiService).to receive(:submit!)
+          .and_raise(PuroEarth::RegistryApiService::SubmissionError, "API timeout")
+
+        expect { described_class.new.perform(record.id) }.not_to raise_error
+
+        record.reload
+        expect(record.biomass_passport_tx_hash).to eq(fake_tx_hash)
+        expect(record.puro_earth_corc_ref).to be_nil
       end
     end
 

@@ -824,14 +824,6 @@ myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.20
 
 ---
 
-*Документ згенеровано: Reverse Shaping Cycle 1 Small Batch (Issue #172) · Стан "як є" на 2026-04-17*
-*Джерела: `contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`,*
-*`app/services/blockchain_minting_service.rb`, `app/services/blockchain_burning_service.rb`,*
-*`subgraph/subgraph.yaml`,*
-*Wiki: [05_01 Multichain Architecture](https://github.com/Alexey-Lukin/silken_net/wiki/05_01_Multichain_Architecture), [05_02 Proof of Growth Pipeline](https://github.com/Alexey-Lukin/silken_net/wiki/05_02_Proof_of_Growth_Pipeline)*
-
----
-
 ## ♻️ Посмертна Економіка — Інтеграція Puro.earth Biochar
 
 Коли дерево помирає (природна смерть або катастрофічна подія), його біомаса зберігає економічну цінність через Biochar carbon removal credits (CORCs) на реєстрі [Puro.earth](https://puro.earth).
@@ -847,9 +839,11 @@ PuroEarthPassportWorker → генерація D-MRV "Паспорт Біома�
          ↓
 Payload: { tree_did, biomass_yield_kg, extraction_date, gps_coordinates, lifetime_telemetry_hash }
          ↓
-blockchain anchoring → biomass_passport_tx_hash збережено в MaintenanceRecord
+Phase 1: blockchain anchoring → biomass_passport_tx_hash збережено в MaintenanceRecord
          ↓
-Реєстр Puro.earth → видача Biochar CORC (майбутня інтеграція)
+Phase 2: REST API submission → Puro.earth → puro_earth_corc_ref збережено в MaintenanceRecord
+         ↓
+Реєстр Puro.earth → видача Biochar CORC (автоматична інтеграція через RegistryApiService)
 ```
 
 ### D-MRV Паспорт Біомаси
@@ -863,6 +857,7 @@ D-MRV (Digital Measurement, Reporting and Verification) паспорт забе�
 | `extraction_date` | MaintenanceRecord.performed_at | Timestamp фізичного видобутку |
 | `gps_coordinates` | MaintenanceRecord або Tree | Географічне підтвердження походження |
 | `lifetime_telemetry_hash` | SHA-256 від telemetry history | Tamper-proof зв'язок з сенсорними даними дерева |
+| `puro_earth_corc_ref` | Puro.earth REST API response | CORC reference ID для відстеження сертифікації |
 
 ### Економічний Вплив
 
@@ -871,4 +866,4 @@ D-MRV (Digital Measurement, Reporting and Verification) паспорт забе�
 - Lifetime telemetry hash гарантує, що біомаса походить з моніторованого, верифікованого дерева
 - GPS-координати запобігають подвійному підрахунку між лісовими ділянками
 
-> **Статус:** `PuroEarthPassportWorker` — у черзі `web3` (пріоритет 7). Інтеграція з реальним API Puro.earth є наступним кроком після TRL 6 (BLOCKER-5 в `05_01_Multichain_Architecture`).
+> **Статус:** `PuroEarthPassportWorker` — у черзі `web3` (пріоритет 7). ✅ Повна інтеграція: on-chain anchoring (`PassportService`) + REST API submission (`RegistryApiService`). Двофазний pipeline: Phase 1 зберігає `biomass_passport_tx_hash`, Phase 2 зберігає `puro_earth_corc_ref`.

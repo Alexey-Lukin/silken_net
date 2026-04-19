@@ -1091,7 +1091,8 @@ CREATE TABLE public.maintenance_records (
     latitude numeric(10,6),
     longitude numeric(10,6),
     biomass_yield_kg numeric(10,2),
-    biomass_passport_tx_hash character varying
+    biomass_passport_tx_hash character varying,
+    puro_earth_corc_ref character varying
 );
 
 
@@ -5258,5 +5259,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260419072056');
+('20260419072056'),
+('20260419160334');
 
