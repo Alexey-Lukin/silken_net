@@ -35,6 +35,21 @@ RSpec.describe Toucan::BridgeService do
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
   end
 
+  describe "BRIDGE_ABI" do
+    it "defines the deposit function ABI" do
+      abi = JSON.parse(described_class::BRIDGE_ABI)
+      expect(abi).to be_an(Array)
+      expect(abi.first["name"]).to eq("deposit")
+      expect(abi.first["inputs"].size).to eq(2)
+    end
+
+    it "has erc20Addr and amount as inputs" do
+      abi = JSON.parse(described_class::BRIDGE_ABI)
+      input_names = abi.first["inputs"].map { |i| i["name"] }
+      expect(input_names).to eq(%w[erc20Addr amount])
+    end
+  end
+
   describe ".call" do
     it "returns a transaction hash" do
       result = described_class.call(tx.id)
@@ -59,8 +74,50 @@ RSpec.describe Toucan::BridgeService do
       )
     end
 
+    it "uses non-legacy transaction (EIP-1559)" do
+      described_class.call(tx.id)
+
+      expect(mock_client).to have_received(:transact).with(
+        anything, anything, anything, anything,
+        hash_including(legacy: false)
+      )
+    end
+
+    it "converts locked_points to wei using WeiConverter" do
+      described_class.call(tx.id)
+
+      expected_wei = Web3::WeiConverter.to_wei(tx.locked_points)
+      expect(mock_client).to have_received(:transact).with(
+        anything, anything, anything, expected_wei,
+        anything
+      )
+    end
+
     it "raises ActiveRecord::RecordNotFound for invalid transaction ID" do
       expect { described_class.call(-1) }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+
+    it "constructs Toucan Bridge contract from ABI" do
+      described_class.call(tx.id)
+
+      expect(Eth::Contract).to have_received(:from_abi).with(
+        name: "ToucanCarbonBridge",
+        address: ENV.fetch("TOUCAN_BRIDGE_CONTRACT_ADDRESS"),
+        abi: described_class::BRIDGE_ABI
+      )
+    end
+
+    it "uses ORACLE_PRIVATE_KEY for signing" do
+      described_class.call(tx.id)
+
+      expect(Eth::Key).to have_received(:new).with(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
+    end
+  end
+
+  describe "partition pruning" do
+    it "accepts optional created_at_iso for partition-aware lookup" do
+      result = described_class.call(tx.id, tx.created_at.iso8601)
+      expect(result).to eq(fake_tx_hash)
     end
   end
 end

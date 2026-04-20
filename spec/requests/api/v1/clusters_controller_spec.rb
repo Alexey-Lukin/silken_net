@@ -21,6 +21,17 @@ RSpec.describe Api::V1::ClustersController, type: :request do
       expect(ids).to include(own_cluster.id)
       expect(ids).not_to include(other_cluster.id)
     end
+
+    it "returns pagination metadata" do
+      get "/api/v1/clusters", headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["pagy"]).to be_present
+    end
+
+    it "returns 401 without authentication" do
+      get "/api/v1/clusters", as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
   end
 
   describe "GET /api/v1/clusters/:id" do
@@ -32,6 +43,11 @@ RSpec.describe Api::V1::ClustersController, type: :request do
 
     it "returns 404 for a cluster from another organization" do
       get "/api/v1/clusters/#{other_cluster.id}", headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns 404 for a non-existent cluster" do
+      get "/api/v1/clusters/999999", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
   end

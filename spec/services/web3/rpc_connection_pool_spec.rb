@@ -54,6 +54,66 @@ RSpec.describe Web3::RpcConnectionPool do
       client = described_class.client_for("MISSING_RPC_URL", fallback: fallback_url)
       expect(client).to equal(client_double)
     end
+
+    it "raises KeyError when ENV variable is not set and no fallback provided" do
+      allow(ENV).to receive(:fetch).with("TOTALLY_MISSING_URL").and_raise(KeyError.new("key not found"))
+
+      expect {
+        described_class.client_for("TOTALLY_MISSING_URL")
+      }.to raise_error(KeyError)
+    end
+
+    context "with fallback_env_keys cascade" do
+      it "creates a ResilientClient when multiple URLs are available" do
+        allow(ENV).to receive(:fetch).with("PRIMARY_RPC_URL").and_return("https://primary.example.com")
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("SECONDARY_RPC_URL").and_return("https://secondary.example.com")
+
+        client = described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: [ "SECONDARY_RPC_URL" ])
+
+        expect(client).to be_a(Web3::ResilientClient)
+      end
+
+      it "falls back to simple Eth::Client when fallback env keys are not set" do
+        allow(ENV).to receive(:fetch).with("PRIMARY_RPC_URL").and_return("https://primary.example.com")
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("MISSING_SECONDARY_URL").and_return(nil)
+
+        client_double = instance_double(Eth::Client)
+        allow(Eth::Client).to receive(:create).with("https://primary.example.com").and_return(client_double)
+
+        client = described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: [ "MISSING_SECONDARY_URL" ])
+
+        expect(client).to equal(client_double)
+      end
+
+      it "skips empty string fallback URLs" do
+        allow(ENV).to receive(:fetch).with("PRIMARY_RPC_URL").and_return("https://primary.example.com")
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("EMPTY_RPC_URL").and_return("")
+
+        client_double = instance_double(Eth::Client)
+        allow(Eth::Client).to receive(:create).with("https://primary.example.com").and_return(client_double)
+
+        client = described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: [ "EMPTY_RPC_URL" ])
+
+        expect(client).to equal(client_double)
+      end
+
+      it "supports multiple fallback env keys" do
+        allow(ENV).to receive(:fetch).with("PRIMARY_RPC_URL").and_return("https://primary.example.com")
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("SECONDARY_RPC_URL").and_return("https://secondary.example.com")
+        allow(ENV).to receive(:[]).with("TERTIARY_RPC_URL").and_return("https://tertiary.example.com")
+
+        client = described_class.client_for(
+          "PRIMARY_RPC_URL",
+          fallback_env_keys: [ "SECONDARY_RPC_URL", "TERTIARY_RPC_URL" ]
+        )
+
+        expect(client).to be_a(Web3::ResilientClient)
+      end
+    end
   end
 
   describe ".reset!" do

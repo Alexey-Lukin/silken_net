@@ -80,6 +80,112 @@ RSpec.describe Web3::ResilientClient do
       expect(primary_health[:circuit_open]).to be true
       expect(primary_health[:failures]).to eq(described_class::MAX_FAILURES)
     end
+
+    it "resets failure count on success" do
+      allow(primary_eth_client).to receive(:eth_block_number).and_return("0xok")
+
+      # First a failure, then a success
+      allow(primary_eth_client).to receive(:eth_block_number).and_raise(Net::ReadTimeout).once
+      allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xok")
+      client.eth_block_number
+
+      # Reset the stub to succeed
+      allow(primary_eth_client).to receive(:eth_block_number).and_return("0xok")
+      client.eth_block_number
+
+      health = client.provider_health
+      primary_health = health.find { |h| h[:provider].include?("alchemy") }
+      expect(primary_health[:failures]).to eq(0)
+    end
+
+    it "marks circuit breaker as unavailable when open" do
+      allow(primary_eth_client).to receive(:eth_block_number).and_raise(Net::ReadTimeout)
+      allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xok")
+
+      described_class::MAX_FAILURES.times { client.eth_block_number }
+
+      health = client.provider_health
+      primary_health = health.find { |h| h[:provider].include?("alchemy") }
+      expect(primary_health[:available]).to be false
+    end
+
+    it "reopens circuit breaker after CIRCUIT_OPEN_DURATION" do
+      allow(primary_eth_client).to receive(:eth_block_number).and_raise(Net::ReadTimeout)
+      allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xok")
+
+      described_class::MAX_FAILURES.times { client.eth_block_number }
+
+      # Simulate time passing beyond circuit open duration
+      allow(Time).to receive(:current).and_return(Time.current + described_class::CIRCUIT_OPEN_DURATION + 1)
+
+      health = client.provider_health
+      primary_health = health.find { |h| h[:provider].include?("alchemy") }
+      expect(primary_health[:available]).to be true
+    end
+
+    it "resets all circuits and retries all providers when all are open" do
+      allow(primary_eth_client).to receive(:eth_block_number).and_raise(Net::ReadTimeout)
+      allow(secondary_eth_client).to receive(:eth_block_number).and_raise(Net::ReadTimeout)
+
+      # Open both circuit breakers
+      described_class::MAX_FAILURES.times do
+        expect { client.eth_block_number }.to raise_error(Net::ReadTimeout)
+      end
+
+      # Now make secondary work - all circuits are open so it should still try both
+      allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xrecovered")
+      result = client.eth_block_number
+      expect(result).to eq("0xrecovered")
+    end
+  end
+
+  describe "rate limiting detection" do
+    it "falls back on HTTP 429 errors" do
+      error = StandardError.new("HTTP 429 Too Many Requests")
+      allow(primary_eth_client).to receive(:eth_block_number).and_raise(error)
+      allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xfallback")
+
+      result = client.eth_block_number
+      expect(result).to eq("0xfallback")
+    end
+
+    it "falls back on 'too many requests' error messages" do
+      error = StandardError.new("too many requests from your IP")
+      allow(primary_eth_client).to receive(:eth_block_number).and_raise(error)
+      allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xfallback")
+
+      result = client.eth_block_number
+      expect(result).to eq("0xfallback")
+    end
+
+    it "falls back on 'rate limit' error messages" do
+      error = StandardError.new("rate limit exceeded")
+      allow(primary_eth_client).to receive(:eth_block_number).and_raise(error)
+      allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xfallback")
+
+      result = client.eth_block_number
+      expect(result).to eq("0xfallback")
+    end
+  end
+
+  describe "retriable errors" do
+    [
+      Net::ReadTimeout,
+      Net::OpenTimeout,
+      Errno::ECONNREFUSED,
+      Errno::ECONNRESET,
+      Errno::EHOSTUNREACH,
+      IOError,
+      SocketError
+    ].each do |error_class|
+      it "falls back on #{error_class}" do
+        allow(primary_eth_client).to receive(:eth_block_number).and_raise(error_class)
+        allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xrecovered")
+
+        result = client.eth_block_number
+        expect(result).to eq("0xrecovered")
+      end
+    end
   end
 
   describe "#provider_health" do
