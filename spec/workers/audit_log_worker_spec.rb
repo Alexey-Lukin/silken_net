@@ -3,6 +3,22 @@
 require "rails_helper"
 
 RSpec.describe AuditLogWorker, type: :worker do
+  describe "sidekiq_options" do
+    it "uses the low queue" do
+      expect(described_class.sidekiq_options["queue"]).to eq("low")
+    end
+
+    it "has retry set to 3" do
+      expect(described_class.sidekiq_options["retry"]).to eq(3)
+    end
+  end
+
+  describe "module inclusion" do
+    it "includes Sidekiq::Job" do
+      expect(described_class.ancestors).to include(Sidekiq::Job)
+    end
+  end
+
   describe "#perform" do
     it "creates an audit log record from attributes" do
       user = create(:user)
@@ -48,6 +64,47 @@ RSpec.describe AuditLogWorker, type: :worker do
 
       expect(Rails.logger).to receive(:error).with(/Невалідний запис/)
       expect { described_class.new.perform(attrs) }.not_to raise_error
+    end
+
+    it "does not enqueue FilecoinArchiveWorker on failure" do
+      attrs = { "action" => nil, "user_id" => 0, "organization_id" => 0 }
+
+      allow(Rails.logger).to receive(:error)
+      described_class.new.perform(attrs)
+
+      expect(FilecoinArchiveWorker.jobs).to be_empty
+    end
+
+    it "sets correct user_id on the audit log" do
+      user = create(:user)
+      attrs = {
+        "user_id" => user.id,
+        "organization_id" => user.organization_id,
+        "action" => "password_reset",
+        "ip_address" => "10.0.0.1",
+        "user_agent" => "SilkenNetMobile/1.0"
+      }
+
+      described_class.new.perform(attrs)
+
+      log = AuditLog.last
+      expect(log.user_id).to eq(user.id)
+      expect(log.organization_id).to eq(user.organization_id)
+    end
+
+    it "handles action types from the audit log enum" do
+      user = create(:user)
+      %w[login logout token_mint token_slash].each do |action|
+        attrs = {
+          "user_id" => user.id,
+          "organization_id" => user.organization_id,
+          "action" => action,
+          "ip_address" => "10.0.0.1",
+          "user_agent" => "Mozilla/5.0"
+        }
+
+        expect { described_class.new.perform(attrs) }.to change(AuditLog, :count).by(1)
+      end
     end
   end
 end
