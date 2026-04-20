@@ -16,6 +16,7 @@ class WalletBlueprint < Blueprinter::Base
   # Lightweight view for the /balance endpoint — returns key financial figures
   # without tree/org associations to keep the response fast for Turbo Frame lazy-loads.
   view :balance do
+    exclude :crypto_public_address
     field :scc_balance
     field :locked_balance
     field :available_balance

@@ -15,6 +15,10 @@
   - Backend → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
   - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
   - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
+  - Contracts → [`docs/DEPLOYMENT.md`](../DEPLOYMENT.md) — детальна операційна документація
+  - IaC → `terraform/`, `terraform/akash/`
+  - Kamal → `config/deploy.yml`, `config/deploy.canopy.yml`
+  - SDL → `deploy/akash/deploy.yaml`
 
 ---
 
@@ -34,26 +38,6 @@ terraform output ingress_ip    # → єдина статична IP (Ingress Anc
 ```
 
 > `web_server_ips` та `canopy_server_ip` більше не існують. DNS A-запис вказує на `ingress_ip`.
-
----
-
-### ✅ BLOCKER-2: GCS Bucket для Terraform State — автоматизовано (Виправлено)
-
-**Статус:** Вирішено. Скрипт `terraform/bootstrap.sh` автоматизує створення GCS-кошика до першого `terraform init`.
-
-```bash
-# Один раз — до terraform init
-cd terraform
-chmod +x bootstrap.sh
-./bootstrap.sh  # запитає GCP_PROJECT_ID, створить bucket + перевірить gcloud auth
-```
-
-Скрипт виконує:
-1. Перевіряє наявність `gcloud` та автентифікацію
-2. Створює `gs://silken-net-terraform-state` у `europe-west1` з `uniform-bucket-level-access`
-3. Виводить підтвердження — після цього `terraform init` спрацює
-
-> Якщо бакет вже існує — скрипт завершується без помилки (idempotent).
 
 ---
 
@@ -100,43 +84,6 @@ ssh_source_ranges = ["<your-ip>/32"]
 **Статус:** `deploy/akash/deploy.yaml` потребує ручного редагування перед деплоєм.
 
 **Дія (рекомендовано):** Використати Terraform-шаблон `deploy/akash/deploy.yaml.tpl` — секрети підставляються автоматично з `terraform.tfvars`.
-
----
-
-### ✅ BLOCKER-6: Cloud SQL публічний IP для Akash — Вирішено (Cloud SQL Auth Proxy)
-
-**Статус:** Вирішено. Cloud SQL Auth Proxy вбудовано в Docker-образ. Proxy тунелює PostgreSQL-трафік через Google Cloud API (вихідний HTTPS), тому Cloud SQL залишається з приватною IP (`ipv4_enabled=false`). Ні VPN, ні Tailscale, ні публічний IP на Cloud SQL не потрібні.
-
-Proxy запускається автоматично, коли встановлена ENV-змінна `CLOUD_SQL_INSTANCE_CONNECTION_NAME`. Змінні `akash_enabled` та `akash_authorized_networks` видалені з `database.tf`/`variables.tf` — більше не потрібні.
-
-> Cloud SQL Auth Proxy автентифікується через GCP Service Account JSON key (тіж самі credentials, що й для Artifact Registry).
-
----
-
-### ✅ BLOCKER-7: Sidekiq (job role) додано в Akash SDL (Виправлено)
-
-**Статус:** Виправлено. `job` сервіс додано в `deploy/akash/deploy.yaml`.
-
-SDL тепер визначає два сервіси:
-- `web` — Puma HTTP сервер
-- `job` — `bundle exec sidekiq -C config/sidekiq.yml` (всі 31+ воркери)
-
-Секрети в `job` сервісі позначено `REQUIRED` коментарями для явного налаштування перед деплоєм.
-
----
-
-### ✅ BLOCKER-8: `ssh_source_ranges` — порожній список за замовчуванням (Виправлено)
-
-**Статус:** Виправлено. Значення за замовчуванням змінено з `["0.0.0.0/0"]` на `[]` (порожній список). Terraform тепер блокує застосування з відкритим SSH (`0.0.0.0/0`) і виводить попередження при спробі використати такий CIDR. Необхідно явно вказати конкретні IP в `terraform.tfvars`:
-```hcl
-ssh_source_ranges = ["203.0.113.10/32", "198.51.100.0/24"]
-```
-
----
-
-### ✅ BLOCKER-9: `KREDIS_REDIS_URL` додано до `.kamal/secrets` (Виправлено)
-
-**Статус:** Виправлено. `KREDIS_REDIS_URL` додано до `.kamal/secrets`.
 
 ---
 
@@ -597,7 +544,7 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 ## 📋 Чеклист першого деплою (Priority Order)
 
 ```
-☑ 1. Створити GCS bucket для Terraform State (BLOCKER-2) ← ВИПРАВЛЕНО (bootstrap.sh)
+☑ 1. Створити GCS bucket для Terraform State ← ВИПРАВЛЕНО (bootstrap.sh)
       cd terraform && ./bootstrap.sh
 
 ☐ 2. Створити terraform/terraform.tfvars
@@ -613,11 +560,11 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
       api.silkennet.com → $(terraform output -raw ingress_ip)
       dig api.silkennet.com → правильний IP
 
-☑ 6. KREDIS_REDIS_URL в .kamal/secrets (BLOCKER-9) ← ВИПРАВЛЕНО
+☑ 6. KREDIS_REDIS_URL в .kamal/secrets ← ВИПРАВЛЕНО
 
-☑ 7. Cloud SQL доступний з Akash (BLOCKER-6) ← ВИПРАВЛЕНО (Cloud SQL Auth Proxy)
+☑ 7. Cloud SQL доступний з Akash ← ВИПРАВЛЕНО (Cloud SQL Auth Proxy)
 
-☑ 8. Sidekiq на Akash (BLOCKER-7) ← ВИПРАВЛЕНО (job сервіс додано)
+☑ 8. Sidekiq на Akash ← ВИПРАВЛЕНО (job сервіс додано)
 
 ☐ 9. Створити deploy-production.yml workflow (INFO)
 
@@ -641,61 +588,15 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 ---
 
-## 🔗 Пов'язані ресурси
-
-- **`docs/DEPLOYMENT.md`** — детальна операційна документація (команди, діаграми)
-- **`06_02_Akash_Network_Integration`** — поглиблений аналіз Akash SDL та провайдерів
-- **`06_03_Prometheus_Observability`** — метрики, Grafana, Cloud Monitoring алерти
-- **`04_02_Business_Logic_and_Services`** — Sidekiq workers та черги
-- **`terraform/`** — Infrastructure as Code (GCP)
-- **`terraform/akash/`** — Infrastructure as Code (Akash)
-- **`config/deploy.yml`**, **`config/deploy.canopy.yml`** — Kamal конфіги
-- **`deploy/akash/deploy.yaml`** — Akash SDL
-
----
-
 ## 🌐 Масштабування до Планетарного Рівня — CoAP/UDP та Ingress
 
 > Цей розділ описує архітектурні ризики та рекомендації для переходу від сотень до **мільйонів** вузлів. Поточна архітектура (CoAP прямо в Rails) є коректною для TRL 5–6, але потребує еволюції перед Series D.
 
-### ✅ Ризик-1: Conntrack Table Overflow — Виправлено (Sprint 3, S3.6)
+### ✅ Ризик-1 & Ризик-2 — Conntrack + UDP Rate Limiting (Виправлено)
 
-**Проблема:** CoAP працює на UDP. Google Cloud (та будь-який Linux-сервер) веде таблицю `conntrack` у ядрі для відстеження з'єднань. При мільйонах IoT-пакетів на годину таблиця переповнюється → ядро починає мовчки ігнорувати нові сигнали від дерев. Ліс "замовкає" без жодної помилки в логах.
-
-**Симптом:** `nf_conntrack: table full, dropping packet` у `/var/log/kern.log`.
-
-**Статус:** Виправлено. `sysctl` тюнінг conntrack додано до `startup-script` Ingress Anchor у `terraform/compute.tf`. Налаштування зберігаються через `/etc/sysctl.conf` — переживають перезавантаження:
-
-```bash
-# Автоматично виконується при старті Ingress Anchor (terraform/compute.tf):
-sysctl -w net.netfilter.nf_conntrack_max=2000000
-sysctl -w net.netfilter.nf_conntrack_udp_timeout=30
-echo "net.netfilter.nf_conntrack_max=2000000" >> /etc/sysctl.conf
-echo "net.netfilter.nf_conntrack_udp_timeout=30" >> /etc/sysctl.conf
-```
-
-- `nf_conntrack_max=2000000` — 2M entry замість типових 65K
-- `nf_conntrack_udp_timeout=30s` — UDP записи очищаються вчасно (замість 180s за замовчуванням)
-
-### ✅ Ризик-2: UDP Rate Limiting реалізовано через Terraform (Виправлено)
-
-**Статус:** Виправлено. `iptables` hashlimit правило додано в `startup-script` Ingress Anchor.
-
-```bash
-# Автоматично виконується при старті Ingress Anchor (terraform/compute.tf):
-iptables -A INPUT -p udp --dport 5683 \
-  -m hashlimit --hashlimit-name coap \
-  --hashlimit-upto 100/sec --hashlimit-burst 200 \
-  --hashlimit-mode srcip -j ACCEPT
-iptables -A INPUT -p udp --dport 5683 \
-  -m limit --limit 10/min -j LOG --log-prefix "CoAP-RATELIMIT-DROP: "
-iptables -A INPUT -p udp --dport 5683 -j DROP
-```
-
-Правила зберігаються через `iptables-persistent` — переживають перезавантаження Ingress Anchor.
-
-- **100 UDP пакетів/сек** на IP-адресу + burst 200 → легальна Queen не обмежується
-- **LOG** перед DROP (max 10/хв) → DDoS атаки видимі у Cloud Logging без флуду логів
+Обидва ризики вирішені в `terraform/compute.tf` (`startup-script` Ingress Anchor):
+- **conntrack**: `nf_conntrack_max=2000000`, `nf_conntrack_udp_timeout=30s` — 2M entries замість 65K дефолт.
+- **UDP rate limit**: `iptables` hashlimit 100 pkt/s per IP + burst 200; DROP з LOG (max 10/хв у Cloud Logging). Налаштування зберігаються через `/etc/sysctl.conf` та `iptables-persistent`.
 
 ### 🟡 Ризик-3: IP Exhaustion при Динамічних IP Шлюзів
 
@@ -743,61 +644,7 @@ Series D архітектура (>1M вузлів):
 | Ingress Proxy (Rust/Go) | 🔴 Не реалізовано | Series D milestone |
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
 | Read-Only Replicas | 🔴 Не налаштовано | Terraform: `google_sql_database_instance` replica |
-| conntrack tuning | ✅ Виправлено | `sysctl` у Ingress Anchor `startup_script` (`terraform/compute.tf`) |
-
----
-
-## 🔄 Оновлення Kamal (Upgrade Notes)
-
-### Kamal 2.11.0 (з 2.10.1)
-
-> ⚠️ **Kamal 2.11.0 вимагає kamal-proxy ≥ v0.9.2.** Без оновлення proxy деплой зафейлиться.
-
-**Крок 1: Оновити kamal-proxy на серверах**
-
-Перед першим деплоєм з Kamal 2.11.0 потрібно оновити proxy на кожному сервері:
-
-```bash
-# Canopy
-kamal proxy reboot -d canopy
-
-# Production
-kamal proxy reboot
-```
-
-> `kamal proxy reboot` завантажує новий образ kamal-proxy, перезапускає контейнер. Це зазвичай спричиняє **короткий даунтайм** (~1-3 сек).
-
-CI/CD workflows (`deploy.yml`, `deploy-production.yml`) вже включають крок `kamal proxy reboot` перед деплоєм.
-
-**Крок 2: Оновити gem**
-
-```bash
-bundle update kamal
-```
-
-**Що змінилось у Kamal 2.11.0:**
-
-| Зміна | Тип | Вплив на проєкт |
-|-------|-----|-----------------|
-| Вимога kamal-proxy ≥ v0.9.2 | ⚠️ Breaking | CI workflows оновлено, proxy reboot додано |
-| Aliases з destination (`-d`) | ✨ Нове | Додано `canopy-console`, `canopy-logs` в `deploy.yml` |
-| Конфігурована verbosity хуків | ✨ Нове | Доступно для `.kamal/hooks/` |
-| Підтримка ssh-config в run-over-ssh | ✨ Нове | Можна використовувати `~/.ssh/config` |
-| Секрети для pre-connect хука | 🐛 Фікс | Секрети тепер доступні в `pre-connect` хуках |
-| Цитування filter names у docker | 🐛 Фікс | Виправлено проблеми зі спецсимволами |
-| ERB rendering: trim blank lines | 🔧 Покращення | Чистіший парсинг конфігурацій |
-| Додавання user до docker групи | 🔧 Покращення | Автоматично для non-superuser |
-
-**Що нового в kamal-proxy v0.9.2:**
-
-| Фіча | Опис |
-|-------|------|
-| `--http3` | Підтримка HTTP/3 (QUIC) |
-| `--canonical-host` | Редирект на канонічний хост (напр. `example.com → www.example.com`) |
-| `--health-check-host` / `--health-check-port` | Кастомний хост/порт для health checks |
-| `--acme-cache-path` | Спільний кеш Let's Encrypt між proxy-інстансами |
-| `--scope-cookie-paths` | Автоматичний scope cookies до path-prefix |
-| Chunked responses | Не буферизує відповіді з `Transfer-Encoding: chunked` (важливо для SSE/streaming) |
+| conntrack + UDP rate limit | ✅ Виправлено | `terraform/compute.tf` startup_script |
 
 ---
 
