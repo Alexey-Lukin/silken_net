@@ -209,8 +209,8 @@ POST /api/v1/auth/m2m_token
 | **💎 Гаманці та Контракти** | | | | | |
 | 38 | GET | `/api/v1/wallets` | `wallets#index` | 🔑 Auth | Список гаманців організації |
 | 39 | GET | `/api/v1/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
-| 40 | GET | `/api/v1/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (Turbo Frame) — ⚠️ **HTML only**: повертає Phlex Turbo Frame, не JSON |
-| 41 | GET | `/api/v1/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (Turbo Frame) — ⚠️ **HTML only**: повертає Phlex Turbo Frame, не JSON |
+| 40 | GET | `/api/v1/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (JSON + Turbo Frame) |
+| 41 | GET | `/api/v1/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (JSON + Turbo Frame) |
 | 42 | GET | `/api/v1/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
 | 43 | GET | `/api/v1/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
 | 44 | GET | `/api/v1/contracts/stats` | `contracts#stats` | 🔑 Auth | Фінансова аналітика |
@@ -529,6 +529,70 @@ POST /api/v1/auth/m2m_token
 | `voltage` | Напруга живлення (мВ) |
 | `signal` | Рівень сигналу LTE (CSQ, 0–31) |
 | `temp` | Температура модуля (°C) |
+
+---
+
+### 5.5b GET `/api/v1/wallets/:id/balance` — Баланс Гаманця
+
+**Доступ:** 🔑 Auth (будь-яка роль, Pundit scope).
+
+**Dual-Format:** HTML (Phlex Turbo Frame для lazy-load) + JSON (для API consumers).
+
+**JSON Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "id": 42,
+    "scc_balance": "1250.500000",
+    "locked_balance": "100.000000",
+    "available_balance": "1150.500000",
+    "esg_retired_balance": "25.000000"
+  }
+}
+```
+
+| Поле | Тип | Опис |
+|------|-----|------|
+| `scc_balance` | Decimal (string) | Загальний баланс SCC (alias для `balance`) |
+| `locked_balance` | Decimal (string) | Заблоковано для pending blockchain TX |
+| `available_balance` | Decimal (string) | Доступно для витрат (`scc_balance - locked_balance`) |
+| `esg_retired_balance` | Decimal (string) | ESG-retired SCC (назавжди виведені з обігу) |
+
+**HTML Response:** Повертає `Wallets::BalanceFrame` Phlex-компонент (Turbo Frame `wallet_balance_frame_{id}`), без layout.
+
+---
+
+### 5.5c GET `/api/v1/wallets/:id/metadata` — Блокчейн-Метадані Гаманця
+
+**Доступ:** 🔑 Auth (будь-яка роль, Pundit scope).
+
+**Dual-Format:** HTML (Phlex Turbo Frame для lazy-load) + JSON (для API consumers).
+
+**JSON Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "id": 42,
+    "crypto_public_address": "0xABCDEF1234567890ABCDEF1234567890ABCDEF12",
+    "locked_balance": "100.000000",
+    "available_balance": "1150.500000",
+    "esg_retired_balance": "25.000000",
+    "network": "Polygon PoS (Mainnet)"
+  }
+}
+```
+
+| Поле | Тип | Опис |
+|------|-----|------|
+| `crypto_public_address` | String / null | Polygon/Ethereum адреса гаманця |
+| `locked_balance` | Decimal (string) | Заблоковано для pending TX |
+| `available_balance` | Decimal (string) | Доступно для витрат |
+| `esg_retired_balance` | Decimal (string) | ESG-retired SCC |
+| `network` | String | Мережа блокчейну (`"Polygon PoS (Mainnet)"`) |
+
+**HTML Response:** Повертає `Wallets::MetadataFrame` Phlex-компонент (Turbo Frame `wallet_metadata_frame_{id}`), без layout.
 
 ---
 

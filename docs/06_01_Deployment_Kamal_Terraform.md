@@ -68,9 +68,10 @@ chmod +x bootstrap.sh
 | `DATABASE_PASSWORD` | Пароль Cloud SQL (≥16 символів) | Придумати. Зберегти у vault. |
 | `DATABASE_URL` | Production DB URL | `terraform output database_url` |
 | `CANOPY_DATABASE_URL` | Canopy DB URL | Окрема БД або схема |
-| `REDIS_URL` | Production Redis (DB 0) | Upstash: `rediss://<host>:<port>/0` (TLS) |
+| `REDIS_URL` | Production Redis (DB 0) — Sidekiq | Upstash: `rediss://<host>:<port>/0` (TLS) |
 | `CANOPY_REDIS_URL` | Canopy Redis (DB 0) | Upstash: `rediss://<host>:<port>/0` |
-| `KREDIS_REDIS_URL` | Production Redis (DB 1) | Upstash: `rediss://<host>:<port>/1` |
+| `KREDIS_REDIS_URL` | Production Redis (DB 1) — Kredis locks | Upstash: `rediss://<host>:<port>/1` |
+| `RACK_ATTACK_REDIS_URL` | Production Redis (DB 2) — Rate limiting (опц., auto-derive) | Upstash: `rediss://<host>:<port>/2` |
 | `SSH_PRIVATE_KEY` | Приватний SSH ключ (ed25519) | `ssh-keygen -t ed25519` |
 | `SSH_PUBLIC_KEY` | Публічний SSH ключ | Пара до SSH_PRIVATE_KEY |
 | `SSH_KNOWN_HOSTS` | SSH fingerprints серверів | `ssh-keyscan <server-ip>` |
@@ -321,6 +322,98 @@ terraform apply
 | **Ingress Anchor** | ✅ | — | — | — | `e2-micro`, HAProxy/socat, статична IP |
 | **Artifact Registry (Docker)** | ✅ | — | — | — | Kamal пушить у GCP AR |
 | **GHCR (Docker mirror)** | — | ✅ | — | — | `.github/workflows/mirror-ghcr.yml`, публічний для Akash |
+
+---
+
+## 🔴 Redis DB Isolation Strategy
+
+### Проблема
+
+Без ізоляції Redis databases IoT телеметрія (мільйони дерев, пакети щогодини від кожної Queen) може витіснити критичні Web3 nonce locks → EVM nonce collision → double-spend на Polygon. При масштабі мільярдів-трильйонів дерев обсяг Sidekiq-черг та rate-limit counters зростає експоненціально, і shared Redis database стає single point of contention.
+
+### Рішення: 3 Redis DB + 2 PostgreSQL-Backed + 1 In-Process
+
+Система розділяє всі stateful підсистеми на ізольовані сховища. Кожна підсистема використовує окремий Redis DB number (або зовсім не Redis), що гарантує неможливість взаємного витіснення:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Upstash Serverless Redis (TLS)               │
+│  ┌──────────────────────┬──────────────────┬──────────────────┐ │
+│  │  DB 0: Sidekiq       │  DB 1: Kredis    │  DB 2: Rack::Atk │ │
+│  │  Job queues          │  Distributed     │  Rate-limit      │ │
+│  │  Scheduler           │  locks (Web3     │  counters        │ │
+│  │  9 priority queues   │  nonce mgmt,     │  per-IP/DID      │ │
+│  │                      │  M2M nonce)      │  (10 min TTL)    │ │
+│  └──────────────────────┴──────────────────┴──────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────┬──────────────────────────────┐
+│  PostgreSQL: Solid Cache         │  PostgreSQL: Solid Cable     │
+│  Rails.cache (domain caching)    │  ActionCable adapter         │
+│  Web3 circuit breaker state      │  LISTEN/NOTIFY pub/sub       │
+│  Alert silence windows           │  Multi-replica safe          │
+│  Dashboard stats                 │  No sticky sessions          │
+└──────────────────────────────────┴──────────────────────────────┘
+
+┌──────────────────────────────────┐
+│  In-Process RAM (SinLruRedux)    │
+│  HardwareKey AES binary keys     │
+│  Max 10,000 entries (~320 KB)    │
+│  Keys never leave Ruby process   │
+└──────────────────────────────────┘
+```
+
+### Детальна таблиця ізоляції
+
+| Підсистема | Сховище | Redis DB | ENV змінна | Конфігурація | TTL / Eviction |
+|-----------|---------|----------|------------|--------------|----------------|
+| **Sidekiq** (9 черг, scheduler) | Upstash Redis | **DB 0** | `REDIS_URL` | `config/initializers/sidekiq.rb` | Persistent (no eviction) |
+| **Kredis** (distributed locks) | Upstash Redis | **DB 1** | `KREDIS_REDIS_URL` | `config/redis/shared.yml` | 1–300 sec (lock TTL) |
+| **Rack::Attack** (rate limiting) | Upstash Redis | **DB 2** | `RACK_ATTACK_REDIS_URL` | `config/initializers/rack_attack.rb` | 10 min |
+| **Rails.cache** (Solid Cache) | PostgreSQL | — | — | `config/cache.yml` + `config/environments/production.rb` | Per-entry max_age |
+| **ActionCable** (Solid Cable) | PostgreSQL | — | — | `config/cable.yml` | 1 day message retention |
+| **Hardware Key Cache** | In-Process RAM | — | — | `config/initializers/hardware_key_cache.rb` | Process lifetime |
+
+### ENV змінні та автоматична деривація
+
+```bash
+# Обов'язкові:
+REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/0       # Sidekiq (DB 0)
+KREDIS_REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/1 # Kredis (DB 1)
+
+# Опціональні (автоматично деривуються з REDIS_URL):
+# RACK_ATTACK_REDIS_URL — якщо не вказано, auto-derive: замінює /0 → /2 в REDIS_URL
+```
+
+Логіка auto-derive у `config/initializers/rack_attack.rb`:
+```ruby
+ENV.fetch("RACK_ATTACK_REDIS_URL") {
+  uri = URI.parse(ENV.fetch("REDIS_URL", "redis://localhost:6379/0"))
+  uri.path = "/2"
+  uri.to_s
+}
+```
+
+Аналогічна логіка для Kredis у `config/redis/shared.yml` та Terraform `main.tf`.
+
+### Чому саме ця архітектура
+
+1. **Sidekiq (DB 0)**: Найбільший обсяг даних — мільйони телеметричних job'ів щогодини. Ізоляція на DB 0 запобігає витісненню Web3 locks.
+2. **Kredis (DB 1)**: Критичні distributed locks для Web3 nonce management (`BlockchainMintingService`, `BlockchainBurningService`, `CeloRewardService`), M2M nonce anti-replay. Lock TTL 30 sec — якщо lock витіснений, це double-spend vulnerability.
+3. **Rack::Attack (DB 2)**: Rate-limit counters з TTL 10 min. Менший обсяг, але потребує ізоляції від Sidekiq щоб counters не губились при spike-ах.
+4. **Solid Cache (PostgreSQL)**: Rails.cache для Web3 circuit breaker state, dashboard stats, alert silence windows. PostgreSQL гарантує durability — circuit breaker state не зникає при Redis restart.
+5. **Solid Cable (PostgreSQL)**: ActionCable через PostgreSQL LISTEN/NOTIFY — zero Redis dependency, multi-replica safe без sticky sessions.
+6. **In-Process RAM**: AES hardware keys — Zero Network Exposure. Ключі ніколи не серіалізуються і не передаються по мережі.
+
+### Масштабування (мільйони → мільярди → трильйони дерев)
+
+| Масштаб | Дерев | Queens | Sidekiq jobs/год | Redis DB стратегія |
+|---------|-------|--------|------------------|--------------------|
+| **Pilot** (TRL 6-7) | ~1,000 | ~50 | ~50K | Single Upstash instance, 3 DBs |
+| **Regional** (TRL 8) | ~1M | ~50K | ~50M | Upstash Pro, 3 DBs + dedicated Sidekiq |
+| **Planetary** (TRL 9) | ~1B+ | ~50M | ~50B | Separate Redis clusters per DB: Sidekiq cluster (DB 0), Kredis cluster (DB 1), Rack::Attack cluster (DB 2). Або Upstash multi-region з read replicas. |
+
+При planetary масштабі кожен DB може потребувати окремий Redis cluster або Upstash instance з окремим endpoint. ENV архітектура вже це підтримує — кожна підсистема має окрему ENV змінну.
 
 ---
 

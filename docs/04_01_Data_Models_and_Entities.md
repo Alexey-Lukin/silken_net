@@ -1241,6 +1241,6 @@ Polymorphic:
 | **Counter Cache** | `active_trees_count` в Cluster — уникнення COUNT на мільйонах рядків |
 | **Поліморфізм** | AiInsight, MaintenanceRecord, AuditLog, BlockchainTransaction |
 | **PostGIS GIST** | Cluster.geo_boundary — O(log n) геопросторовий пошук |
-| **AR Encryption + Redis Cache** | HardwareKey.aes_key_hex — шифрування в БД + `cached_binary_key` у Redis (TTL 15 хв) |
+| **AR Encryption + In-Process LRU Cache** | HardwareKey.aes_key_hex — шифрування в БД + `cached_binary_key` у in-process LRU (SinLruRedux, max 10 000 entries). Ключі не залишають Ruby-процес (Zero Network Exposure) |
 | **BigDecimal в JSONB** | TinyMlModel accuracy_score/threshold — уникнення Float похибок |
 | **Partial Index для sparse поля** | `blockchain_transactions.tx_hash WHERE tx_hash IS NOT NULL` — виключає рядки без tx_hash (pending/processing) |

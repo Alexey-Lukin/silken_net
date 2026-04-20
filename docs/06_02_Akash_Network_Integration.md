@@ -507,6 +507,7 @@ params:
 | `DATABASE_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | PostgreSQL URL. Формат: `postgres://user:pass@127.0.0.1:5432/db`. Вказує на локальний Cloud SQL Auth Proxy |
 | `REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Redis URL для Sidekiq (DB 0). Формат: `rediss://...@host:port/0` (Upstash, TLS) |
 | `KREDIS_REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Redis URL для Kredis distributed locks (DB 1). Формат: `rediss://...@host:port/1` (Upstash, TLS) |
+| `RACK_ATTACK_REDIS_URL` | — (auto-derive) | **Секрет** | — | Redis URL для rate-limiting (DB 2). Опц.: auto-derive з `REDIS_URL` → `/2` |
 | `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Cloud SQL instance connection name (з `terraform output database_connection_name`). Формат: `project:region:instance` |
 | `GCP_SA_KEY_BASE64` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Base64-encoded GCP service account JSON key для Cloud SQL Auth Proxy |
 | `RAILS_ENV` | `production` | Відкрита | ✅ | Rails environment — production режим обов'язковий |
