@@ -39,6 +39,22 @@ RSpec.describe PriceOracleService do
       expect(price).to eq(25.5)
     end
 
+    it "returns fallback price on Timeout::Error" do
+      allow(Rails.cache).to receive(:fetch).and_raise(Timeout::Error, "execution expired")
+
+      price = described_class.current_scc_price
+
+      expect(price).to eq(25.5)
+    end
+
+    it "logs an error when falling back" do
+      allow(Rails.cache).to receive(:fetch).and_raise(StandardError, "RPC connection failed")
+
+      expect(Rails.logger).to receive(:error).with(/ORACLE ERROR.*RPC connection failed/)
+
+      described_class.current_scc_price
+    end
+
     context "when in production environment" do
       let(:mock_client) { instance_double(Eth::Client) }
       let(:mock_contract) { double("contract") }
@@ -71,6 +87,44 @@ RSpec.describe PriceOracleService do
         )
         expect(price).to eq(26.0)
       end
+
+      it "converts USDC decimals (6) to float correctly" do
+        allow(mock_client).to receive(:call).and_return(25_500_000) # 25.5 USDC
+        price = described_class.current_scc_price
+        expect(price).to eq(25.5)
+      end
+
+      it "handles zero price from quoter" do
+        allow(mock_client).to receive(:call).and_return(0)
+        price = described_class.current_scc_price
+        expect(price).to eq(0.0)
+      end
+
+      it "falls back to 25.5 on RPC timeout" do
+        allow(mock_client).to receive(:call).and_raise(Timeout::Error, "execution expired")
+        price = described_class.current_scc_price
+        expect(price).to eq(25.5)
+      end
+    end
+  end
+
+  describe "constants" do
+    it "defines QUOTER_ADDRESS as Ethereum address" do
+      expect(PriceOracleService::QUOTER_ADDRESS).to start_with("0x")
+      expect(PriceOracleService::QUOTER_ADDRESS.length).to eq(42)
+    end
+
+    it "defines USDC_TOKEN as Polygon address" do
+      expect(PriceOracleService::USDC_TOKEN).to start_with("0x")
+      expect(PriceOracleService::USDC_TOKEN.length).to eq(42)
+    end
+
+    it "defines POOL_FEE as 3000 (0.3%)" do
+      expect(PriceOracleService::POOL_FEE).to eq(3000)
+    end
+
+    it "defines RPC_TIMEOUT_SECONDS" do
+      expect(PriceOracleService::RPC_TIMEOUT_SECONDS).to eq(15)
     end
   end
 end

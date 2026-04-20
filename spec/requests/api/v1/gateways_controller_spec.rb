@@ -23,6 +23,17 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
       expect(ids).to include(own_gateway.id)
       expect(ids).not_to include(other_gateway.id)
     end
+
+    it "returns pagination metadata" do
+      get "/api/v1/gateways", headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["pagy"]).to be_present
+    end
+
+    it "returns 401 without authentication" do
+      get "/api/v1/gateways", as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
   end
 
   describe "GET /api/v1/gateways/:id" do
@@ -36,6 +47,11 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
       get "/api/v1/gateways/#{other_gateway.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
+
+    it "returns 404 for a non-existent gateway" do
+      get "/api/v1/gateways/999999", headers: headers, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
   end
 
   context "with format.html responses" do
@@ -43,13 +59,13 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
       { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
     end
 
-    it "renders HTML for index" do
+    it "renders HTML for index with online_count" do
       get "/api/v1/gateways", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
-    it "renders HTML for show" do
+    it "renders HTML for show with latest_log and active_soldiers" do
       get "/api/v1/gateways/#{own_gateway.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")

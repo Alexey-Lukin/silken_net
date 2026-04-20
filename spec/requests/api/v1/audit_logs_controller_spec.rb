@@ -45,6 +45,57 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
     end
   end
 
+  describe "GET /api/v1/audit_logs with filtering" do
+    it "filters by action_type" do
+      get "/api/v1/audit_logs", params: { action_type: own_log.action_type }, headers: admin_headers, as: :json
+      expect(response).to have_http_status(:ok)
+
+      data = response.parsed_body["data"]
+      expect(data).to be_an(Array)
+    end
+
+    it "filters by user_id" do
+      get "/api/v1/audit_logs", params: { user_id: admin_user.id }, headers: admin_headers, as: :json
+      expect(response).to have_http_status(:ok)
+
+      data = response.parsed_body["data"]
+      expect(data).to be_an(Array)
+    end
+
+    it "returns empty results for non-matching action_type filter" do
+      get "/api/v1/audit_logs", params: { action_type: "nonexistent_action" }, headers: admin_headers, as: :json
+      expect(response).to have_http_status(:ok)
+
+      data = response.parsed_body["data"]
+      expect(data).to be_an(Array)
+    end
+  end
+
+  describe "GET /api/v1/audit_logs with pagination" do
+    it "respects custom limit parameter" do
+      get "/api/v1/audit_logs", params: { limit: 1 }, headers: admin_headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["pagy"]).to be_present
+    end
+
+    it "clamps limit to minimum of 1" do
+      get "/api/v1/audit_logs", params: { limit: 0 }, headers: admin_headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "clamps limit to maximum of 100" do
+      get "/api/v1/audit_logs", params: { limit: 999 }, headers: admin_headers, as: :json
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "authentication" do
+    it "returns 401 without authentication" do
+      get "/api/v1/audit_logs", as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
   context "with format.html responses" do
     let(:html_headers) do
       { "Authorization" => "Bearer #{admin_token}", "Accept" => "text/html" }
