@@ -156,6 +156,23 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
       end
     end
 
+    context "with WEB3_STRICT_MODE=true and missing CHAINLINK_HMAC_SECRET (SEC.5)" do
+      before do
+        allow(ENV).to receive(:fetch).and_call_original
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("CHAINLINK_HMAC_SECRET").and_return(nil)
+        allow(ENV).to receive(:[]).with("WEB3_STRICT_MODE").and_return("true")
+      end
+
+      it "raises SecurityError to prevent unprotected oracle callbacks" do
+        expect {
+          post "/api/v1/oracle_callbacks",
+               params: { chainlink_request_id: telemetry_log.chainlink_request_id, success: true },
+               as: :json
+        }.to raise_error(SecurityError, /CHAINLINK_HMAC_SECRET обов'язковий/)
+      end
+    end
+
     context "with replay attack prevention (A-6)" do
       it "returns 409 Conflict when callback is replayed for already fulfilled log" do
         # First callback — succeeds

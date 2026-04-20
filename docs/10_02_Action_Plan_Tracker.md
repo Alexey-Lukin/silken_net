@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-19 Сесія 13 (Завершення глибокого аудиту. Додано: FW.22-23, SEC.5-7, DOC.1-7, OPS.1-2, BIZ.6-7, ARCH.7-17. Всього ~40 нових пунктів)
+> **Останнє оновлення:** 2026-04-20 Сесія 14 (SEC.5 fail-fast guard + DOC.1/3/5/6/7 виправлено)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -9,7 +9,6 @@
 ## 🛣️ Software / Backend / DevOps
 
 > **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
-> **Виконані задачі видалено** (S2.4, S3.1, S4.5 — задокументовано у `06_03`, `04_02`, `06_02`).
 
 #### S1.1 — GitHub Secrets заповнення
 - **P0** | `06_01` | **Складність: XS** | **🔧 Операційна** — ручне заповнення в GitHub UI, без коду
@@ -49,9 +48,9 @@
 - [ ] Налаштувати notification channel (Slack / Email / PagerDuty)
 
 #### S3.2 — dClimate Real API verification
-- **P1** | `05_01` | **Складність: S** | Сервіс реалізований, потрібна staging верифікація
+- **P1** | `05_01` | **Складність: S** | **🔧 Операційна** - отримати та встановити API key, сервіс реалізований, потрібна staging верифікація
 - **Опис:** `Dclimate::VerificationService` реалізований з реальним API (NASA FIRMS через dClimate). Fire detection (FRP ≥ 10 MW, confidence ≥ 50%), cloud obscuration fallback, metadata extraction — все працює. Потрібна верифікація з реальним ключем
-- [ ] Верифікувати з реальним API ключем в staging (**🔧 Операційна** — отримати та встановити API key)
+- [ ] Верифікувати з реальним API ключем в staging (отримати та встановити API key)
 - [ ] End-to-end тест з `DclimateVerificationWorker`
 
 #### S3.5 — Subgraph contract address
@@ -485,8 +484,8 @@
 - **Джерело:** `04_03`, `04_02` | `app/controllers/api/v1/oracle_callbacks_controller.rb`
 - **Опис:** Якщо ENV `CHAINLINK_HMAC_SECRET` не встановлено, HMAC-SHA256 перевірка `X-Chainlink-Signature` header **пропускається** з warning у лог. У dev/test це допустимо, але якщо production буде misconfigured (ENV не встановлено) — oracle callback endpoint стає повністю відкритим. Зловмисник може фальсифікувати `oracle_status_fulfilled?` → unauthorized minting
 - **Пріоритет:** P0 (до mainnet deploy)
-- [ ] Додати guard: якщо `WEB3_STRICT_MODE=true` та `CHAINLINK_HMAC_SECRET` відсутній → raise при старті Rails (fail-fast)
-- [ ] Додати integration тест: request без HMAC header при встановленому secret → 401
+- [x] Додати guard: якщо `WEB3_STRICT_MODE=true` та `CHAINLINK_HMAC_SECRET` відсутній → raise SecurityError (fail-fast)
+- [x] Додати integration тест: request без HMAC при `WEB3_STRICT_MODE=true` → SecurityError
 - [ ] Задокументувати у `04_03` як security requirement
 
 #### SEC.6 — Secure Element (ATECC608B) не використовується
@@ -515,12 +514,7 @@
 
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
-| DOC.1 | **Lorenz Z thresholds розходяться:** `02_03` та `02_04` вказують `CRITICAL_Z_MIN=5.0, CRITICAL_Z_MAX=30.0, OPTIMAL_Z_TARGET=20.0`. Firmware та `03_04`/`05_02` використовують `2.0/45.0/29.0`. Docs `02_03`/`02_04` **застарілі** | `02_03` §3, `02_04` §3 vs `03_04`, `05_02`, firmware | Оновити `02_03` та `02_04` → `2.0/45.0/29.0` |
-| DOC.3 | **TRL 9 claim в `04_04`:** "System complete. All blockers closed." Суперечить всім іншим docs де TRL = 4-8 та десятки відкритих блокерів | `04_04` L9 vs `09_02`, `10_02` | Виправити на актуальний TRL (8 для Phlex UI) |
-| DOC.4 | **Porosity: 65% vs 70%.** `01_01` послідовно використовує 65%, але CLAUDE.md instructions кажуть 70%. `01_01` §5.2 таблиця каже "60-70% range" | `01_01` vs CLAUDE.md | Узгодити: 65% = target, 60-70% = acceptable range |
-| DOC.5 | **Endpoint count: 82 vs 83.** Header `04_03` каже "82 endpoints", але status section каже "83 endpoints". Endpoint #27 дублюється | `04_03` L5-10, L197 | Перерахувати та виправити |
-| DOC.6 | **`peaq_signing_key` optionality.** `04_02` L207 каже mandatory (raises `RegistrationError`). `05_02` L601 каже "Фактично ні" (effectively not required) | `04_02` vs `05_02` | Узгодити: mandatory для production, optional для dev/test |
-| DOC.7 | **Soldier file size:** `05_02` L170 каже 648 рядків. CLAUDE.md каже 771 рядків. Обидва можуть бути застарілими | `05_02` vs CLAUDE.md | Оновити до актуального `wc -l firmware/soldier/main.c` |
+| DOC.4 | **Porosity: 65% vs 70%.** `01_01` послідовно використовує 65%, але CLAUDE.md instructions кажуть 70%. `01_01` §5.2 таблиця каже "60-70% range" | `01_01` vs CLAUDE.md | Узгодити: 65% = target, 60-70%
 
 ---
 
@@ -713,6 +707,7 @@
 | 2026-04-19 | Сесія 9: OBS.1 — Grafana Alloy sidecar → Grafana Cloud (BLOCKERs 1-3 resolved). |
 | 2026-04-19 | Сесія 10: Очищення трекера — видалено виконані задачі, прибрано sprint-групування. Відновлено описи для незавершених пунктів. |
 | 2026-04-19 | Сесії 12-13: Глибокий аудит всіх 35 docs (повне читання, не лише заголовки). Cross-reference codebase. Додано: S5.1-S5.6 (backend), FW.22-FW.23 (firmware), SEC.5-SEC.7 (security), DOC.1-DOC.7 (документаційні невідповідності), OPS.1-OPS.2 (автоматизація), BIZ.6-BIZ.7 (бізнес), ARCH.7-ARCH.17 (архітектурні пропозиції). Всього ~40 нових пунктів. |
+| 2026-04-20 | Сесія 14: **SEC.5** — fail-fast guard `SecurityError` при `WEB3_STRICT_MODE=true` без `CHAINLINK_HMAC_SECRET` + integration test. **DOC.1** — `02_04` Lorenz thresholds → 2.0/45.0/29.0. **DOC.3** — `04_04` TRL 9→8. **DOC.5** — `04_03` endpoint count 82→83. **DOC.6** — `05_02` `peaq_signing_key` → mandatory. **DOC.7** — `05_02` soldier 648→771 рядків. |
 
 ---
 

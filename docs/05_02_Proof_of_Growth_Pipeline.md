@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — Пайплайн повністю імплементовано, BLOCKER-04/05/06/07/08/09/10/11/12 закриті.
+- **Поточний TRL:** TRL 8 — Пайплайн повністю імплементовано.
 - **Пов'язані модулі:**
   - Мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
   - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
@@ -168,7 +168,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 
 ### Firmware: Солдат (STM32WLE5JC)
 
-**Файл:** `firmware/soldier/main.c` (648 рядків)
+**Файл:** `firmware/soldier/main.c` (771 рядків)
 
 #### Фаза 1 — SENSE (Збір фізичних даних)
 
@@ -598,7 +598,7 @@ blockchain_transactions
 | Змінна | Сервіс | Обов'язкова |
 |--------|--------|-------------|
 | `credentials.peaq_node_url` | `Peaq::DidRegistryService` | ✅ Так |
-| `credentials.peaq_signing_key` | `Peaq::DidRegistryService` (Ed25519) | ⚠️ Фактично ні |
+| `credentials.peaq_signing_key` | `Peaq::DidRegistryService` (Ed25519) | ✅ Так (raises `RegistrationError` при відсутності) |
 | `credentials.iotex_w3bstream_url` | `Iotex::W3bstreamVerificationService` | ✅ Так |
 | `credentials.iotex_api_key` | `Iotex::W3bstreamVerificationService` | ✅ Так |
 | `ENV["CHAINLINK_FUNCTIONS_ROUTER"]` | `Chainlink::OracleDispatchService` | ⚠️ PROD only |
@@ -720,15 +720,5 @@ P1 = Потрібно вирішити до Mainnet deployment
 |------|-----------|--------|----------|
 | Firmware Soldier | STM32WLE5JC + mruby BioContract | ⚠️ Open | BLOCKER-01,02,03 |
 | Firmware Queen | STM32WLE5JC + SIM7070G CIFO | ⚠️ Open | BLOCKER-01 |
-| A | peaq DID Provisioning | ✅ Real | Ed25519-підпис обов'язковий |
-| B | IoTeX W3bstream ZK | ✅ Real | Ed25519 hw sig + proof ref regex |
-| C | Chainlink Oracle Dispatch | ✅ Real | ABI v1, WEB3_STRICT_MODE |
-| D | Oracle Callback | ✅ Real | HMAC-SHA256 (`X-Chainlink-Signature`) |
-| E | EVM Minting Polygon | ✅ Real | Guard clauses, Dynamic Tax, Treasury |
-| F | Solana Micro-Reward | ✅ Real | `sendTransaction` з Ed25519 підписом |
 
 **Загальний висновок:** Пайплайн повністю реалізовано та покрито RSpec-тестами. Відкрито 3 блокери — всі пов'язані з firmware (AES key, Lorenz precision, per-species thresholds). Backend-шар готовий до Mainnet.
-
----
-
-*Джерела: `firmware/soldier/main.c`, `firmware/queen/main.c`, `firmware/bio_contracts/bio_contract.rb`, `app/services/peaq/`, `app/services/iotex/`, `app/services/chainlink/`, `app/services/blockchain_minting_service.rb`, `app/controllers/api/v1/oracle_callbacks_controller.rb`*
