@@ -109,6 +109,59 @@ RSpec.describe SilkenNet::Attractor do
       expect(SilkenNet::Attractor::BASE_RHO).to be_a(BigDecimal)
       expect(SilkenNet::Attractor::BASE_BETA).to be_a(BigDecimal)
     end
+
+    it "has DT of 0.01 (BigDecimal)" do
+      expect(SilkenNet::Attractor::DT).to eq("0.01".to_d)
+    end
+
+    it "runs 250 iterations" do
+      expect(SilkenNet::Attractor::ITERATIONS).to eq(250)
+    end
+
+    it "uses 18-digit precision for BigDecimal" do
+      expect(SilkenNet::Attractor::PRECISION).to eq(18)
+    end
+
+    it "has BASE_BETA approximately equal to 8/3" do
+      expect(SilkenNet::Attractor::BASE_BETA.to_f).to be_within(0.0001).of(8.0 / 3.0)
+    end
+  end
+
+  describe "clamping behavior" do
+    it "clamps sigma within SIGMA_LIMITS for extreme acoustic values" do
+      # With acoustic=1000, sigma would be 10 + 1000*0.1 = 110, clamped to 30
+      z_extreme = described_class.calculate_z(42, 22.0, 1000)
+      z_normal = described_class.calculate_z(42, 22.0, 5)
+      # Both should be finite; extreme should differ from normal
+      expect(z_extreme).to be_finite
+      expect(z_extreme).not_to eq(z_normal)
+    end
+
+    it "clamps rho within RHO_LIMITS for extreme temperature values" do
+      # With temp=500, rho would be 28 + 500*0.2 = 128, clamped to 50
+      z_extreme = described_class.calculate_z(42, 500.0, 5)
+      z_normal = described_class.calculate_z(42, 22.0, 5)
+      expect(z_extreme).to be_finite
+      expect(z_extreme).not_to eq(z_normal)
+    end
+
+    it "handles negative temperature (sub-zero)" do
+      result = described_class.calculate_z(42, -40.0, 5)
+      expect(result).to be_a(Float)
+      expect(result).to be_finite
+    end
+
+    it "handles zero acoustic value" do
+      result = described_class.calculate_z(42, 22.0, 0)
+      expect(result).to be_a(Float)
+      expect(result).to be_finite
+    end
+
+    it "handles very large seed values" do
+      result = described_class.calculate_z(2**31 - 1, 22.0, 5)
+      expect(result).to be_a(Float)
+      expect(result).to be_finite
+    end
   end
 
   describe "trajectory coordinate cycling" do

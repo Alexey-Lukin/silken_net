@@ -36,6 +36,21 @@ RSpec.describe TreePolicy do
       scope = described_class::Scope.new(super_admin, Tree).resolve
       expect(scope).to include(own_tree, other_tree, clusterless_tree)
     end
+
+    it "excludes trees from other organizations for forester" do
+      forester = create(:user, :forester, organization: organization)
+      scope = described_class::Scope.new(forester, Tree).resolve
+      expect(scope).to include(own_tree)
+      expect(scope).not_to include(other_tree)
+    end
+
+    it "excludes trees from other organizations for admin" do
+      admin = create(:user, :admin, organization: organization)
+      scope = described_class::Scope.new(admin, Tree).resolve
+      expect(scope).to include(own_tree)
+      expect(scope).not_to include(other_tree)
+      expect(scope).to include(clusterless_tree)
+    end
   end
 
   describe "#index?" do
