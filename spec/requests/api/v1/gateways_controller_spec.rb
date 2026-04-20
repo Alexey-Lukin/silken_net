@@ -59,13 +59,13 @@ RSpec.describe Api::V1::GatewaysController, type: :request do
       { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
     end
 
-    it "renders HTML for index with online_count" do
+    it "renders HTML for index" do
       get "/api/v1/gateways", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
     end
 
-    it "renders HTML for show with latest_log and active_soldiers" do
+    it "renders HTML for show" do
       get "/api/v1/gateways/#{own_gateway.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")

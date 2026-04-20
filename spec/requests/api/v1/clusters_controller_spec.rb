@@ -63,7 +63,7 @@ RSpec.describe Api::V1::ClustersController, type: :request do
       expect(response.content_type).to include("text/html")
     end
 
-    it "renders HTML for show with gateways and recent_alerts" do
+    it "renders HTML for show" do
       get "/api/v1/clusters/#{own_cluster.id}", headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")

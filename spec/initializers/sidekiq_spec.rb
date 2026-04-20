@@ -35,7 +35,7 @@ RSpec.describe "Sidekiq initializer" do
     end
 
     it "uses Redis DB 0 by default (not DB 1 reserved for Kredis)" do
-      expect(SIDEKIQ_REDIS_URL).to match(%r{/0\z}) | match(%r{localhost:6379\z})
+      expect(SIDEKIQ_REDIS_URL).to match(%r{/0\z}).or match(%r{localhost:6379\z})
     end
   end
 end
