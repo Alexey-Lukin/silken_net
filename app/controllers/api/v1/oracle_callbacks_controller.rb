@@ -68,6 +68,13 @@ module Api
         hmac_secret = ENV["CHAINLINK_HMAC_SECRET"]
 
         if hmac_secret.blank?
+          # [SEC.5 FIX]: Fail-fast у production — не дозволяти bypass HMAC верифікації.
+          if ENV["WEB3_STRICT_MODE"] == "true"
+            raise SecurityError,
+                  "CHAINLINK_HMAC_SECRET обов'язковий при WEB3_STRICT_MODE=true. " \
+                  "Oracle callback endpoint незахищений без HMAC верифікації."
+          end
+
           Rails.logger.warn "⚠️ [Oracle Security] CHAINLINK_HMAC_SECRET не встановлено. " \
                             "HMAC-верифікація вимкнена. БЛОКУЄ Production."
           return

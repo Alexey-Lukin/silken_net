@@ -6,7 +6,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 9 — Система завершена. Всі blockers закриті, дизайн-система відповідає SSOT.
+- **Поточний TRL:** TRL 8 — Дизайн-система відповідає SSOT. Потребує production verification.
 - **Стек:** Rails 8.1 · Phlex · Tailwind CSS 4 · TailwindMerge · Stimulus · Turbo 8
 - **Пов'язані модулі:**
   - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)

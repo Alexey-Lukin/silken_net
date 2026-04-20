@@ -168,7 +168,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 
 ### Firmware: Солдат (STM32WLE5JC)
 
-**Файл:** `firmware/soldier/main.c` (648 рядків)
+**Файл:** `firmware/soldier/main.c` (771 рядків)
 
 #### Фаза 1 — SENSE (Збір фізичних даних)
 
@@ -598,7 +598,7 @@ blockchain_transactions
 | Змінна | Сервіс | Обов'язкова |
 |--------|--------|-------------|
 | `credentials.peaq_node_url` | `Peaq::DidRegistryService` | ✅ Так |
-| `credentials.peaq_signing_key` | `Peaq::DidRegistryService` (Ed25519) | ⚠️ Фактично ні |
+| `credentials.peaq_signing_key` | `Peaq::DidRegistryService` (Ed25519) | ✅ Так (raises `RegistrationError` при відсутності) |
 | `credentials.iotex_w3bstream_url` | `Iotex::W3bstreamVerificationService` | ✅ Так |
 | `credentials.iotex_api_key` | `Iotex::W3bstreamVerificationService` | ✅ Так |
 | `ENV["CHAINLINK_FUNCTIONS_ROUTER"]` | `Chainlink::OracleDispatchService` | ⚠️ PROD only |
