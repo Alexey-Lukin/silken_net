@@ -265,8 +265,6 @@ POST /api/v1/auth/m2m_token
 | 82 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
 | 83 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
 
-> **Примітка щодо нумерації:** таблиця містить 83 ендпоінти. Номер #27 дублюється (перший — `telemetry#tree_history`, другий — `tree_families#index`), тому нумерація в таблиці може не збігатися з порядковими номерами. Загальна кількість унікальних ендпоінтів: **83**.
-
 **Легенда:**
 
 | Символ | Значення |
