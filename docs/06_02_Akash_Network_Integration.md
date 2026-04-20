@@ -29,9 +29,9 @@
 | Ingress Anchor (GCP) | `e2-micro` зі статичним IP | ✅ Замінює важкі web VM |
 | Multi-replica ActionCable | Solid Cable (PostgreSQL LISTEN/NOTIFY) | ✅ Вирішено (BLOCKER-8) |
 | GHCR image mirror | `.github/workflows/mirror-ghcr.yml` | ✅ Вирішено (BLOCKER-4 виправлено) |
-| HTTPS / TLS термінація | — | 🟡 Не визначена (немає `443` у SDL) |
+| HTTPS / TLS термінація | `deploy/akash/deploy.yaml` | 🟡 Порт `443` оголошено в SDL; TLS termination через Akash ingress або Cloudflare ще не конфігурована |
 
-- **Поточний TRL:** TRL 5→6 — SDL-маніфест, Terraform-конфігурація, DB+Redis connectivity вирішені; TRL 6 підтверджується після першого реального деплою
+- **Поточний TRL:** TRL 6 — SDL повністю конфігурований (`web` + `job` + `alloy`), DB+Redis connectivity вирішені (Cloud SQL Auth Proxy + Upstash TLS), GHCR mirror активний; TRL 7 підтверджується після першого реального деплою на Akash Mainnet
 - **Пов'язані модулі:**
   - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
@@ -39,57 +39,9 @@
 
 ---
 
-## 🛑 Блокери
+## 🛑 Активні Блокери
 
-### ✅ BLOCKER-1: Мережева ізоляція — Cloud SQL та Redis недоступні з Akash (ВИРІШЕНО)
-
-**Статус:** ✅ Вирішено. Обидва з'єднання (PostgreSQL і Redis) тепер доступні з Akash-контейнера.
-
-Це найважливіший висновок аудиту, успадкований з `06_01` (BLOCKER-6). Akash Network є **публічним децентралізованим маркетплейсом** — провайдери знаходяться поза межами GCP VPC. Наш Rails-моноліт потребує двох з'єднань, які за замовчуванням **недоступні** з Akash:
-
-**Cloud SQL (PostgreSQL) — оригінальна проблема:**
-- За замовчуванням Cloud SQL у GCP має **лише приватну IP** у межах `silken-net-vpc` (підмережа `10.0.0.0/20`).
-- Akash-контейнер не є частиною цієї VPC → TCP-з'єднання на приватний IP блокується.
-- Навіть якщо `akash_enabled = true` і Cloud SQL отримає публічний IP (через `terraform.tfvars`), потрібно заповнити `akash_authorized_networks` конкретними CIDR-діапазонами Akash-провайдера — але ці IP невідомі заздалегідь (провайдери динамічні).
-
-**Redis (Memorystore) — оригінальна проблема:**
-- Cloud Memorystore Redis **не має публічного IP взагалі** — це фундаментальне обмеження сервісу.
-- Не існує офіційного способу підключити зовнішній сервіс (поза VPC) до Memorystore без VPN/тунелю.
-- Без Redis — Sidekiq не стартує, Kredis не працює, 31+ фонових воркерів недоступні.
-
-**✅ Реалізоване рішення:**
-
-| Компонент | Рішення | Деталі |
-|-----------|---------|--------|
-| **Cloud SQL (PostgreSQL)** | Cloud SQL Auth Proxy в контейнері | Проксі запускається всередині Docker-контейнера (entrypoint). Тунелює трафік через Google Cloud API (вихідний HTTPS — Akash це дозволяє). Cloud SQL залишається private-only (`ipv4_enabled=false`). VPN/Tailscale не потрібен. `DATABASE_URL` вказує на `127.0.0.1:5432` (локальний сокет проксі). |
-| **Redis** | Upstash serverless Redis (TLS) | GCP Memorystore замінено на **Upstash** — serverless Redis з публічними TLS-ендпоінтами. URL формат: `rediss://` (подвійне `s` = TLS). Free tier достатній до TRL 8. |
-
-> **Висновок:** Мережева ізоляція вирішена. Обчислення на Akash тепер мають повноцінний доступ до data layer без компромісу безпеки (Cloud SQL залишається без публічного IP, Redis з'єднання шифрується TLS).
-
----
-
-### ✅ BLOCKER-2: Sidekiq (`job` сервіс) додано в SDL (Виправлено)
-
-**Статус:** Виправлено. SDL `deploy/akash/deploy.yaml` тепер визначає три сервіси:
-- `web` — Puma + Thruster HTTP сервер
-- `job` — `/rails/bin/docker-entrypoint bundle exec sidekiq -C config/sidekiq.yml` (через entrypoint для запуску Cloud SQL Auth Proxy)
-- `alloy` — Grafana Alloy metrics agent (скрейпить `web:80/metrics`, пушить у Grafana Cloud)
-
-Усі категорії воркерів тепер запускаються на Akash:
-
-| Категорія | Воркери | Статус |
-|-----------|---------|--------|
-| **Telemetry** | `UnpackTelemetryWorker` (queue: `uplink`) | ✅ Запускається |
-| **Alerts** | `EwsAlertWorker`, `MaintenanceSchedulerWorker` | ✅ Запускається |
-| **Web3 Critical** | `BlockchainMintingWorker`, `ZkProofVerificationWorker`, `ChainlinkOracleWorker` | ✅ Запускається |
-| **Web3** | `PolygonMintSccWorker`, `SolanaRewardWorker`, `PeaqDidWorker` | ✅ Запускається |
-| **OTA** | `OtaTransmissionWorker` | ✅ Запускається |
-| **Слешинг** | `SlashingProtocolWorker` | ✅ Запускається |
-| **L1 Anchoring** | `EthereumAnchorWorker` | ✅ Запускається |
-
-**Примітка:** Секрети в `job` сервісі позначено `REQUIRED` коментарями — необхідно заповнити перед деплоєм.
-
----
+> Вирішені блокери (BLOCKER-1, 2, 4, 8) перенесені у секцію **"✅ Архів вирішених блокерів"** наприкінці документа.
 
 ### 🔴 BLOCKER-3: Секрети SDL не заповнені — Rails не стартує
 
@@ -114,39 +66,17 @@
 
 ---
 
-### ✅ BLOCKER-4: Docker образ у приватному GCP Artifact Registry (Виправлено)
+### 🟡 BLOCKER-5: TLS термінація не конфігурована
 
-**Статус:** ✅ Вирішено. Docker образ тепер дзеркалюється на **GitHub Container Registry (GHCR)** — публічний реєстр, доступний Akash-провайдерам без будь-яких credentials.
+**Статус:** Середній. Порт `443` вже оголошений у SDL — потрібна конфігурація Akash ingress або Cloudflare для TLS термінації.
 
-**Проблема:** SDL посилався на образ у приватному GCP Artifact Registry (`europe-west1-docker.pkg.dev/...`). Akash-провайдери — незалежні вузли без GCP-credentials → pull завершувався помилкою `unauthorized`.
+SDL визначає порти `80`, `443` та `5683`. Порт `443` присутній у `services.web.expose`, проте TLS термінація не підключена:
+- **Akash ingress:** надає `*.ingress.akash.pub` субдомени з автоматичним Let's Encrypt — потрібно додати `accept: [*.ingress.akash.pub]` в placement або використати Akash hostname operator.
+- **Cloudflare Proxy:** зовнішній варіант — Cloudflare термінує TLS перед Ingress Anchor.
 
-**Реалізоване рішення:**
-
-| Компонент | Зміна |
-|-----------|-------|
-| **CI Workflow** | `.github/workflows/mirror-ghcr.yml` — автоматично збирає Docker image і пушить до GHCR після CI на `main` та на GitHub Release |
-| **GHCR образ** | `ghcr.io/alexey-lukin/silken_net:latest` (public) |
-| **SDL** | `deploy/akash/deploy.yaml` — обидва сервіси (`web`, `job`) тепер використовують GHCR image |
-| **Terraform** | `docker_image` variable має default `ghcr.io/alexey-lukin/silken_net:latest` |
-
-**Теги GHCR образу:**
-- `latest` — автоматично при push в `main` (після CI)
-- `sha-<commit>` — кожен білд
-- `v1.2.3`, `v1.2` — при GitHub Release
-
-> **Kamal + GCP Artifact Registry** залишаються основним деплоєм для GCP інфраструктури. GHCR — паралельне дзеркало для Akash Network.
-
----
-
-### 🟡 BLOCKER-5: HTTPS / TLS термінація не визначена в SDL
-
-**Статус:** Середній. Функціональний, але безпечний деплой неможливий.
-
-SDL відкриває лише порт `80` (HTTP) глобально. Порт `443` (HTTPS) відсутній. Akash надає автоматичну TLS термінацію через `*.ingress.akash.pub` домени — але вона не налаштована в поточному SDL.
-
-- **Вплив:** Rails API та Hotwire/Turbo WebSocket будуть доступні лише через незахищений HTTP. Браузери будуть блокувати WebSocket з'єднання.
-- **Де в коді:** `deploy/akash/deploy.yaml` → `services.web.expose` — відсутній запис для порту `443`.
-- **Потрібно:** Або додати `443` в SDL з Akash ingress, або налаштувати зовнішній reverse proxy (Cloudflare, Nginx Proxy Manager).
+- **Вплив:** Rails API та Hotwire/Turbo WebSocket доступні по HTTP. Браузери блокують WebSocket з'єднання на незахищеному `ws://`.
+- **Де в коді:** `deploy/akash/deploy.yaml` → `services.web.expose` — порт `443` є, `accept`-домен не вказаний.
+- **Потрібно:** Або налаштувати Akash hostname operator (ingress), або проксіювати через Cloudflare (Ingress Anchor → HTTPS).
 
 ---
 
@@ -185,97 +115,6 @@ resource "null_resource" "akash_deployment" {
 - Стан деплою зберігається у локальному файлі `akash-dseq.txt`, а не в Terraform state.
 - Потребує встановленого `akash` CLI на машині, де запускається Terraform.
 - `terraform destroy` — закриває деплой через `akash tx deployment close`.
-
----
-
-### ✅ BLOCKER-8: Multi-replica ActionCable/Turbo — Вирішено (Solid Cable)
-
-**Статус:** ✅ Вирішено. Горизонтальне масштабування `deployment.web.count = N` повністю підтримується.
-
-**Проблема:** SDL підтримує горизонтальне масштабування через `deployment.web.count = N`. При >1 репліці Puma кожний WebSocket-клієнт підключається до випадкової репліки. Якщо Sidekiq-воркер або інша репліка робить `ActionCable.server.broadcast(...)`, підписники на інших репліках не отримають повідомлення — бо кожен процес Puma має власний in-memory pub/sub.
-
-**Рішення: Solid Cable (Rails 8.1 built-in)**
-
-Обране рішення — **Solid Cable** (`adapter: solid_cable` у `config/cable.yml`). Це нативний Rails 8.1 adapter, що використовує PostgreSQL як спільний pub/sub брокер замість Redis.
-
-**Як це працює:**
-1. Всі `broadcast(...)` виклики пишуть повідомлення у таблицю `solid_cable_messages` у виділеній БД `silken_net_production_cable`
-2. PostgreSQL `LISTEN/NOTIFY` миттєво (< 1 мс) сповіщає **всі** підключені Puma-процеси на **всіх** репліках про нові повідомлення
-3. Кожна репліка доставляє повідомлення своїм WebSocket-клієнтам
-4. Старі повідомлення автоматично очищуються (TTL: `message_retention: 1.day`)
-
-**Чому Solid Cable, а не Upstash Redis:**
-
-| Критерій | Solid Cable (PostgreSQL) | Upstash Redis |
-|----------|--------------------------|---------------|
-| **Додаткова інфраструктура** | ❌ Не потрібна — вже є Cloud SQL | ✅ Вже є для Sidekiq |
-| **Persistent connections** | 1 conn/worker/replica (pool) | 1 conn/Puma-process (pub/sub) |
-| **Масштабування >1T дерев** | PostgreSQL `LISTEN/NOTIFY` — один сигнал на всі репліки, O(1) per broadcast | Redis Pub/Sub — аналогічно O(1) |
-| **Latency** | < 1 мс (LISTEN/NOTIFY через Cloud SQL Auth Proxy) | ~2-5 мс (TLS до Upstash, Frankfurt) |
-| **Reliability** | Cloud SQL 99.95% SLA, HA replica | Upstash Free tier — обмежений (1000 conn) |
-| **Sticky sessions** | ❌ Не потрібні — архітектурно вирішено | ❌ Не потрібні — архітектурно вирішено |
-| **Data locality** | DB + Cable в одній Cloud SQL (GCP europe-west1) | Зовнішній сервіс (Upstash Frankfurt) |
-| **Навантаження на БД** | Мінімальне — окрема БД `cable`, лише тимчасові повідомлення | Нуль на Cloud SQL |
-| **Залежності** | Нуль (gem `solid_cable` вже встановлено) | ActionCable потребує `redis` gem |
-
-**Ключовий аргумент:** Solid Cable використовує **виділену БД** `silken_net_production_cable` (окремий пул підключень, окрема міграційна директорія `db/cable_migrate`), тому навантаження на основну БД `silken_net_production` **нульове**. Cloud SQL з 400 max_connections витримає десятки реплік Akash.
-
-**Поточна конфігурація:**
-
-```yaml
-# config/cable.yml (production)
-production:
-  adapter: solid_cable
-  connects_to:
-    database:
-      writing: cable
-  polling_interval: 0.1.seconds
-  message_retention: 1.day
-```
-
-```yaml
-# config/database.yml (production.cable)
-cable:
-  <<: *primary_production
-  database: silken_net_production_cable
-  migrations_paths: db/cable_migrate
-```
-
-**Масштабування при >1 репліці Akash (deployment.web.count = N):**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Akash Provider                                                 │
-│                                                                 │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐                     │
-│  │ Web #1   │  │ Web #2   │  │ Web #N   │  ← Puma replicas    │
-│  │ Puma 4w  │  │ Puma 4w  │  │ Puma 4w  │                     │
-│  │ WS: 100  │  │ WS: 100  │  │ WS: 100  │  ← WebSocket клієнти│
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘                     │
-│       │             │             │                             │
-│       └─────────────┼─────────────┘                             │
-│                     │ LISTEN/NOTIFY                              │
-│                     ▼                                            │
-│  ┌──────────────────────────────────┐                           │
-│  │ Cloud SQL Auth Proxy (per-replica)│                           │
-│  │ 127.0.0.1:5432                   │                           │
-│  └──────────────┬───────────────────┘                           │
-└─────────────────┼───────────────────────────────────────────────┘
-                  │ HTTPS tunnel (Google Cloud API)
-                  ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Cloud SQL (europe-west1)                                       │
-│  ┌────────────────────────────────────────────┐                 │
-│  │ silken_net_production_cable                 │                 │
-│  │ solid_cable_messages (auto-cleanup 1 day)   │                 │
-│  │ LISTEN/NOTIFY → broadcast to all replicas  │                 │
-│  └────────────────────────────────────────────┘                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Sticky sessions не потрібні:** Клієнт може підключитися до будь-якої репліки. Якщо Sidekiq (на `job` сервісі) або інша репліка робить broadcast — PostgreSQL `LISTEN/NOTIFY` доставить повідомлення всім реплікам, і кожна доставить його своїм WebSocket-підписникам. Це працює ідентично Redis Pub/Sub, але без додаткової інфраструктури.
-
-> **Примітка щодо масштабу мільярдів дерев:** При планетарному масштабі (>1B дерев) основне навантаження на ActionCable — це Turbo Stream broadcasts від `UnpackTelemetryWorker` (telemetry feed), `AlertNotificationWorker` (dashboard alerts), та `Wallet#broadcast_balance_update`. Кількість WebSocket-клієнтів (dashboards) буде набагато меншою ніж кількість дерев — це **fan-in** архітектура. Навіть при 1000 одночасних dashboard-сесій, Solid Cable з PostgreSQL LISTEN/NOTIFY обробляє це без проблем (тест: > 100k повідомлень/сек на PostgreSQL 16).
 
 ---
 
@@ -409,6 +248,11 @@ expose:
     to:
       - global: true
 
+  - port: 443
+    as: 443
+    to:
+      - global: true
+
   - port: 5683
     as: 5683
     proto: udp
@@ -419,9 +263,10 @@ expose:
 | Порт | Протокол | Призначення | Відповідність Kamal |
 |------|---------|-------------|---------------------|
 | **80** | TCP (HTTP) | Rails API + Hotwire/Turbo (Thruster reverse proxy) | `boot.proxy.publish "80:80"` |
+| **443** | TCP (HTTPS) | TLS-термінований трафік; TLS через Akash ingress або Cloudflare | `boot.proxy.publish "443:443"` |
 | **5683** | UDP | CoAP — IoT телеметрія від Queen gateway (21-байтні бінарні пакети) | `boot.proxy.publish "5683:5683/udp"` |
 
-> **Відсутній порт 443 (HTTPS)** — дивись BLOCKER-5.
+> **Порт 443** оголошений у SDL. TLS термінація потребує налаштування Akash hostname operator або зовнішнього Cloudflare proxy — див. BLOCKER-5.
 
 **Схема мережевого потоку (поточний стан):**
 
@@ -443,7 +288,8 @@ Queen Gateway (STM32 + SIM7070G)
 ┌─────────────────────────────────────────┐
 │  Akash Provider (децентралізований)     │
 │  SilkenNet Container                    │
-│  HTTP :80 (Rails 8.1 + Puma)            │  ← 🔴 без HTTPS
+│  HTTP :80 (Rails 8.1 + Puma)            │
+│  HTTPS :443 (TLS термінація — BLOCKER-5)│
 │  UDP :5683 (CoAP listener)              │
 │                                         │
 │  ┌─────────────────────────────────┐    │
@@ -733,7 +579,7 @@ akash tx deployment close \
 | **Ephemeral Disk** | 30 GB SSD | 50 GiB | ✅ Більше |
 | **Persistent Disk** | Docker volume | 10 GiB (`beta3`) | ✅ Аналогічно |
 | **Порт 80 (HTTP)** | ✅ | ✅ | ✅ |
-| **Порт 443 (HTTPS)** | ✅ (Kamal proxy) | 🔴 Відсутній | 🔴 BLOCKER-5 |
+| **Порт 443 (HTTPS)** | ✅ (Kamal proxy) | 🟡 В SDL, TLS термінація не конфігурована | 🟡 BLOCKER-5 |
 | **Порт 5683 (CoAP/UDP)** | ✅ | ✅ (через Ingress Anchor) | ✅ |
 | **Database** | Cloud SQL private IP | ✅ Cloud SQL Auth Proxy (in-container) | ✅ BLOCKER-1 вирішено |
 | **Redis** | Memorystore private | ✅ Upstash serverless Redis (TLS) | ✅ BLOCKER-1 вирішено |
@@ -788,15 +634,39 @@ L1  Biophysics            Ti-6Al-4V EBFC            (не залежить ві�
 
 ---
 
-## 8. Дорожня Карта (Path to TRL 5 → 9)
+## 8. Дорожня Карта (Path to TRL 6 → 9)
 
-| TRL | Що потрібно | Блокер |
+| TRL | Що потрібно | Статус |
 |-----|------------|--------|
-| **TRL 5** (поточна мета) | Цей документ ✅ | — |
-| **TRL 6** | Вирішити мережеву ізоляцію | ✅ BLOCKER-1 вирішено (Cloud SQL Auth Proxy + Upstash Redis) |
-| **TRL 6** | Додати `job` сервіс в SDL для Sidekiq | ✅ BLOCKER-2 виправлено |
-| **TRL 6** | Замінити Docker образ на публічний реєстр (GHCR/Docker Hub) | BLOCKER-4 |
-| **TRL 7** | Перший реальний деплой на testnet Akash + функціональне тестування | BLOCKER-3,4 |
-| **TRL 7** | Додати HTTPS (порт 443) через Akash ingress або Cloudflare | BLOCKER-5 |
-| **TRL 8** | Production деплой з моніторингом (Prometheus exporter в SDL) | BLOCKER-4,5 |
+| **TRL 6** ✅ | SDL-маніфест (`web` + `job` + `alloy`), DB+Redis connectivity, GHCR mirror | ✅ Всі передумови виконані |
+| **TRL 6** ✅ | Вирішити мережеву ізоляцію (Cloud SQL + Redis) | ✅ BLOCKER-1 — Cloud SQL Auth Proxy + Upstash |
+| **TRL 6** ✅ | Додати `job` сервіс в SDL для Sidekiq | ✅ BLOCKER-2 виправлено |
+| **TRL 6** ✅ | Замінити Docker образ на публічний реєстр (GHCR) | ✅ BLOCKER-4 виправлено (`mirror-ghcr.yml`) |
+| **TRL 7** 🎯 | Перший реальний деплой на Akash Mainnet + функціональне тестування CoAP | 🔴 BLOCKER-3 (секрети — заповнити `terraform.tfvars`) |
+| **TRL 7** 🎯 | Налаштувати TLS через Akash ingress hostname operator або Cloudflare | 🟡 BLOCKER-5 (порт 443 у SDL, TLS не активована) |
+| **TRL 7** 🎯 | GCS bucket для Terraform state | 🟡 BLOCKER-6 (створити вручну перед `terraform init`) |
+| **TRL 8** | Production деплой з Grafana Cloud метриками + alerting | Потребує TRL 7 + GRAFANA_* secrets |
 | **TRL 9** | Automated failover GCP ↔ Akash + повна CI/CD інтеграція | — |
+
+---
+
+## ✅ Архів вирішених блокерів
+
+> Деталі реалізованих рішень для довідки.
+
+### ✅ BLOCKER-1: Мережева ізоляція — Cloud SQL та Redis (Вирішено)
+
+- **Cloud SQL:** Cloud SQL Auth Proxy запускається в Docker-контейнері (через `bin/docker-entrypoint`). Тунелює трафік через Google Cloud API (HTTPS) — публічний IP на Cloud SQL не потрібен (`ipv4_enabled=false`). `DATABASE_URL` вказує на `127.0.0.1:5432`.
+- **Redis:** GCP Memorystore замінено на **Upstash** serverless Redis з публічними TLS-ендпоінтами (`rediss://`). Free tier достатній до TRL 8.
+
+### ✅ BLOCKER-2: Sidekiq `job` сервіс в SDL (Вирішено)
+
+SDL `deploy/akash/deploy.yaml` визначає три сервіси: `web` (Puma + Thruster), `job` (Sidekiq, 9 черг, strict priority), `alloy` (Grafana Alloy → Grafana Cloud). Всі 36+ воркерів (telemetry, Web3, slashing, OTA, L1 anchoring) запускаються на Akash.
+
+### ✅ BLOCKER-4: Docker образ — GHCR mirror (Вирішено)
+
+`.github/workflows/mirror-ghcr.yml` автоматично збирає та пушить образ `ghcr.io/alexey-lukin/silken_net:latest` (public) після CI на `main` та на GitHub Release. SDL та Terraform variable `docker_image` посилаються на GHCR. Kamal + GCP Artifact Registry залишаються для GCP деплою.
+
+### ✅ BLOCKER-8: Multi-replica ActionCable (Вирішено — Solid Cable)
+
+**Solid Cable** (`adapter: solid_cable`, `config/cable.yml`) — нативний Rails 8.1 adapter, PostgreSQL LISTEN/NOTIFY як pub/sub брокер. Виділена БД `silken_net_production_cable` (без навантаження на основну). При `deployment.web.count = N` всі репліки отримують broadcasts через LISTEN/NOTIFY < 1 мс. Sticky sessions не потрібні.
