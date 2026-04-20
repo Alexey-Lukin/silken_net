@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "HARDWARE_KEY_CACHE initializer" do
+RSpec.describe "HARDWARE_KEY_CACHE initializer" do # rubocop:disable RSpec/DescribeClass
   it "defines the HARDWARE_KEY_CACHE constant" do
     expect(defined?(HARDWARE_KEY_CACHE)).to eq("constant")
   end

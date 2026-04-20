@@ -252,7 +252,7 @@ RSpec.describe ApplicationWeb3Worker do
     let(:tree) { create(:tree) }
     let!(:log) { create(:telemetry_log, tree: tree, created_at: Time.current) }
 
-    it "finds telemetry log by ID" do
+    it "finds telemetry log by ID without partition pruning" do
       result = worker.find_telemetry_log_with_pruning(log.id, nil)
       expect(result).to eq(log)
     end
@@ -267,8 +267,8 @@ RSpec.describe ApplicationWeb3Worker do
       expect(result).to eq(log)
     end
 
-    it "falls back to non-pruned search when created_at_iso is nil" do
-      result = worker.find_telemetry_log_with_pruning(log.id, nil)
+    it "falls back to non-pruned search when created_at_iso is blank" do
+      result = worker.find_telemetry_log_with_pruning(log.id, "")
       expect(result).to eq(log)
     end
 

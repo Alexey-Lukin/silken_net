@@ -63,7 +63,7 @@ RSpec.describe Api::V1::SystemAuditsController, type: :request do
         expect(body["db_total"]).to be_a(Numeric)
         expect(body["chain_total"]).to be_a(Numeric)
         expect(body["delta"]).to be_a(Numeric)
-        expect(body["critical"]).to be_in([true, false])
+        expect(body["critical"]).to be_in([ true, false ])
         expect(body["checked_at"]).to be_a(String)
       end
     end

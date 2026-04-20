@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "filter_parameter_logging initializer" do
+RSpec.describe "filter_parameter_logging initializer" do # rubocop:disable RSpec/DescribeClass
   let(:filter) { ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters) }
 
   describe "password-related parameters" do

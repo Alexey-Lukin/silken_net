@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Sidekiq initializer" do
+RSpec.describe "Sidekiq initializer" do # rubocop:disable RSpec/DescribeClass
   describe "constants" do
     it "defines SIDEKIQ_REDIS_URL with default fallback" do
       expect(defined?(SIDEKIQ_REDIS_URL)).to be_truthy

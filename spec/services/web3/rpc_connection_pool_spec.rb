@@ -69,7 +69,7 @@ RSpec.describe Web3::RpcConnectionPool do
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("SECONDARY_RPC_URL").and_return("https://secondary.example.com")
 
-        client = described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: ["SECONDARY_RPC_URL"])
+        client = described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: [ "SECONDARY_RPC_URL" ])
 
         expect(client).to be_a(Web3::ResilientClient)
       end
@@ -82,7 +82,7 @@ RSpec.describe Web3::RpcConnectionPool do
         client_double = instance_double(Eth::Client)
         allow(Eth::Client).to receive(:create).with("https://primary.example.com").and_return(client_double)
 
-        client = described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: ["MISSING_SECONDARY_URL"])
+        client = described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: [ "MISSING_SECONDARY_URL" ])
 
         expect(client).to equal(client_double)
       end
@@ -95,7 +95,7 @@ RSpec.describe Web3::RpcConnectionPool do
         client_double = instance_double(Eth::Client)
         allow(Eth::Client).to receive(:create).with("https://primary.example.com").and_return(client_double)
 
-        client = described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: ["EMPTY_RPC_URL"])
+        client = described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: [ "EMPTY_RPC_URL" ])
 
         expect(client).to equal(client_double)
       end
@@ -108,7 +108,7 @@ RSpec.describe Web3::RpcConnectionPool do
 
         client = described_class.client_for(
           "PRIMARY_RPC_URL",
-          fallback_env_keys: ["SECONDARY_RPC_URL", "TERTIARY_RPC_URL"]
+          fallback_env_keys: [ "SECONDARY_RPC_URL", "TERTIARY_RPC_URL" ]
         )
 
         expect(client).to be_a(Web3::ResilientClient)

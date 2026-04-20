@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Sidekiq Pro/Enterprise shims" do
+RSpec.describe "Sidekiq Pro/Enterprise shims" do # rubocop:disable RSpec/DescribeClass
   describe "Sidekiq::Batch" do
     it "is defined" do
       expect(defined?(Sidekiq::Batch)).to be_truthy
