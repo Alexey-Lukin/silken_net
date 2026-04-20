@@ -115,6 +115,9 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       expect(response).to have_http_status(:ok)
       data = response.parsed_body["data"]
       expect(data).to include("id", "scc_balance", "locked_balance", "available_balance", "esg_retired_balance")
+      expect(data["id"]).to eq(wallet.id)
+      expect(data["scc_balance"].to_d).to eq(wallet.scc_balance)
+      expect(data["available_balance"].to_d).to eq(wallet.available_balance)
     end
   end
 
@@ -134,6 +137,8 @@ RSpec.describe Api::V1::WalletsController, type: :request do
       expect(response).to have_http_status(:ok)
       data = response.parsed_body["data"]
       expect(data).to include("id", "crypto_public_address", "locked_balance", "available_balance", "esg_retired_balance", "network")
+      expect(data["network"]).to eq("Polygon PoS (Mainnet)")
+      expect(data["crypto_public_address"]).to eq(wallet.crypto_public_address)
     end
   end
 end
