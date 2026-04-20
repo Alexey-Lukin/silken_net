@@ -63,4 +63,29 @@ RSpec.describe WalletBlueprint, type: :model do
       expect(parsed.size).to eq(2)
     end
   end
+
+  describe ":balance view" do
+    subject(:parsed) { JSON.parse(described_class.render(wallet, view: :balance)) }
+
+    it "includes balance fields" do
+      expect(parsed).to include("id", "scc_balance", "locked_balance", "available_balance", "esg_retired_balance")
+    end
+
+    it "does not include tree or crypto_public_address" do
+      expect(parsed).not_to have_key("tree")
+      expect(parsed).not_to have_key("crypto_public_address")
+    end
+  end
+
+  describe ":metadata view" do
+    subject(:parsed) { JSON.parse(described_class.render(wallet, view: :metadata)) }
+
+    it "includes metadata fields" do
+      expect(parsed).to include("id", "crypto_public_address", "locked_balance", "available_balance", "esg_retired_balance", "network")
+    end
+
+    it "returns Polygon network name" do
+      expect(parsed["network"]).to eq("Polygon PoS (Mainnet)")
+    end
+  end
 end

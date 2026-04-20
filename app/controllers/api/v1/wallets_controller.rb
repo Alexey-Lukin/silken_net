@@ -56,7 +56,14 @@ module Api
         @wallet = Wallet.find(params[:id])
         authorize @wallet
 
-        render Wallets::BalanceFrame.new(wallet: @wallet), layout: false
+        respond_to do |format|
+          format.json do
+            render json: { data: WalletBlueprint.render_as_hash(@wallet, view: :balance) }
+          end
+          format.html do
+            render Wallets::BalanceFrame.new(wallet: @wallet), layout: false
+          end
+        end
       end
 
       # --- БЛОКЧЕЙН ІДЕНТИЧНІСТЬ (Lazy-Loaded Turbo Frame) ---
@@ -65,7 +72,14 @@ module Api
         @wallet = Wallet.find(params[:id])
         authorize @wallet
 
-        render Wallets::MetadataFrame.new(wallet: @wallet), layout: false
+        respond_to do |format|
+          format.json do
+            render json: { data: WalletBlueprint.render_as_hash(@wallet, view: :metadata) }
+          end
+          format.html do
+            render Wallets::MetadataFrame.new(wallet: @wallet), layout: false
+          end
+        end
       end
     end
   end

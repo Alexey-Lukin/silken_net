@@ -12,4 +12,25 @@ class WalletBlueprint < Blueprinter::Base
   view :with_tree do
     association :tree, blueprint: TreeBlueprint, view: :minimal
   end
+
+  # Lightweight view for the /balance endpoint — returns key financial figures
+  # without tree/org associations to keep the response fast for Turbo Frame lazy-loads.
+  view :balance do
+    field :scc_balance
+    field :locked_balance
+    field :available_balance
+    field :esg_retired_balance
+  end
+
+  # Lightweight view for the /metadata endpoint — returns blockchain identity
+  # fields used by mobile clients and third-party integrators.
+  view :metadata do
+    field :crypto_public_address
+    field :locked_balance
+    field :available_balance
+    field :esg_retired_balance
+    field :network do |_wallet, _options|
+      "Polygon PoS (Mainnet)"
+    end
+  end
 end
