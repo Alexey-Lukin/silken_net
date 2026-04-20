@@ -9,7 +9,6 @@
 ## 🛣️ Software / Backend / DevOps
 
 > **Складність:** XS < 1 год · S = 1–4 год · M = 4–8 год · L = 1–3 дні
-> **Виконані задачі видалено** (S2.4, S3.1, S4.5 — задокументовано у `06_03`, `04_02`, `06_02`).
 
 #### S1.1 — GitHub Secrets заповнення
 - **P0** | `06_01` | **Складність: XS** | **🔧 Операційна** — ручне заповнення в GitHub UI, без коду
@@ -49,9 +48,9 @@
 - [ ] Налаштувати notification channel (Slack / Email / PagerDuty)
 
 #### S3.2 — dClimate Real API verification
-- **P1** | `05_01` | **Складність: S** | Сервіс реалізований, потрібна staging верифікація
+- **P1** | `05_01` | **Складність: S** | **🔧 Операційна** - отримати та встановити API key, сервіс реалізований, потрібна staging верифікація
 - **Опис:** `Dclimate::VerificationService` реалізований з реальним API (NASA FIRMS через dClimate). Fire detection (FRP ≥ 10 MW, confidence ≥ 50%), cloud obscuration fallback, metadata extraction — все працює. Потрібна верифікація з реальним ключем
-- [ ] Верифікувати з реальним API ключем в staging (**🔧 Операційна** — отримати та встановити API key)
+- [ ] Верифікувати з реальним API ключем в staging (отримати та встановити API key)
 - [ ] End-to-end тест з `DclimateVerificationWorker`
 
 #### S3.5 — Subgraph contract address
@@ -515,12 +514,7 @@
 
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
-| DOC.1 | ~~**Lorenz Z thresholds розходяться**~~ ✅ Виправлено: `02_04` оновлено → `2.0/45.0/29.0`. `02_03` не містив застарілих значень | `02_04` §3 | ✅ Done |
-| DOC.3 | ~~**TRL 9 claim в `04_04`**~~ ✅ Виправлено на TRL 8 | `04_04` L9 | ✅ Done |
-| DOC.4 | **Porosity: 65% vs 70%.** `01_01` послідовно використовує 65%, але CLAUDE.md instructions кажуть 70%. `01_01` §5.2 таблиця каже "60-70% range" | `01_01` vs CLAUDE.md | Узгодити: 65% = target, 60-70% = acceptable range |
-| DOC.5 | ~~**Endpoint count: 82 vs 83**~~ ✅ Виправлено: header `04_03` оновлено на 83, примітка виправлена (дубльований #27) | `04_03` L5, L268 | ✅ Done |
-| DOC.6 | ~~**`peaq_signing_key` optionality**~~ ✅ Виправлено: `05_02` L601 оновлено на "✅ Так" (код дійсно raises `RegistrationError`) | `05_02` L601 | ✅ Done |
-| DOC.7 | ~~**Soldier file size**~~ ✅ Виправлено: `05_02` L171 оновлено на 771 рядків (актуальне `wc -l`) | `05_02` L171 | ✅ Done | |
+| DOC.4 | **Porosity: 65% vs 70%.** `01_01` послідовно використовує 65%, але CLAUDE.md instructions кажуть 70%. `01_01` §5.2 таблиця каже "60-70% range" | `01_01` vs CLAUDE.md | Узгодити: 65% = target, 60-70%
 
 ---
 
