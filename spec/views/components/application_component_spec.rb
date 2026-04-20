@@ -91,7 +91,7 @@ RSpec.describe ApplicationComponent, type: :view do
       expect(html_inactive).not_to include("text-gaia-primary")
     end
 
-    it "merges conflicting Tailwind classes (last wins)" do
+    it "merges conflicting Tailwind classes (last wins via TailwindMerge)" do
       component_conflict = Class.new(described_class) do
         def view_template
           div(class: tokens("p-2 p-4")) { "test" }
@@ -99,7 +99,7 @@ RSpec.describe ApplicationComponent, type: :view do
       end
 
       html = component_conflict.new.call
-      # TailwindMerge should resolve conflict: p-4 wins
+      # TailwindMerge resolves conflict: later class (p-4) wins over earlier (p-2)
       expect(html).to include("p-4")
       expect(html).not_to include("p-2")
     end

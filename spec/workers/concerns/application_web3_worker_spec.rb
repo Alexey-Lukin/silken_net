@@ -29,8 +29,7 @@ RSpec.describe ApplicationWeb3Worker do
         include ApplicationWeb3Worker
         def self.name; "DefaultWorker"; end
       end
-      # Default is overridden, so check that parent concern sets 'web3'
-      expect(described_class.instance_variable_get(:@_included_block)).to be_present
+      expect(default_class.sidekiq_options["queue"]).to eq("web3")
     end
 
     it "allows subclass to override sidekiq_options" do
