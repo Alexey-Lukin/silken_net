@@ -1140,17 +1140,3 @@ if (days_until_token_expiry() < 7) {
 | `Accept` | Опційно | `application/json` (за замовчуванням) |
 | `X-Chainlink-Signature` | ✅ (Production) для `/oracle_callbacks` | `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` — підпис від Chainlink DON |
 | `Idempotency-Key` | ✅ (JSON) для `POST /actuators/:id/execute` | Унікальний клієнтський ключ (UUID рекомендовано). Запобігає дублюванню фізичних команд при retry. |
-
----
-
-## 8. Пов'язані Документи
-
-| Документ | Опис |
-|---|---|
-| `docs/ARCHITECTURE.md` | Системна архітектура 8 шарів |
-| `docs/FIRMWARE.md` | Формат бінарного пакету 21 байт, CoAP-протокол |
-| `docs/MODELS.md` | Опис 25 моделей даних |
-| `docs/TOKENOMICS.md` | Токеноміка SCC/SFC, Proof of Growth |
-| `docs/LOGIC.md` | 31+ Sidekiq workers та їх черги |
-| `04_02_Business_Logic_and_Services` | Повний реєстр сервісів та воркерів (SSOT) |
-| `04_01_Data_Models_and_Entities` | Схема БД та ActiveRecord-моделі |
