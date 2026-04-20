@@ -257,7 +257,7 @@ RSpec.describe ApplicationWeb3Worker do
     end
 
     it "applies partition pruning when created_at_iso is provided" do
-      result = worker.find_telemetry_log_with_pruning(log.id, log.created_at.iso8601)
+      result = worker.find_telemetry_log_with_pruning(log.id, log.created_at.iso8601(6))
       expect(result).to eq(log)
     end
 

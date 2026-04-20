@@ -47,7 +47,7 @@ RSpec.describe Api::V1::AuditLogsController, type: :request do
 
   describe "GET /api/v1/audit_logs with filtering" do
     it "filters by action_type" do
-      get "/api/v1/audit_logs", params: { action_type: own_log.action_type }, headers: admin_headers, as: :json
+      get "/api/v1/audit_logs", params: { action_type: own_log.action }, headers: admin_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       data = response.parsed_body["data"]
