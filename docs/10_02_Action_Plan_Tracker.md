@@ -90,25 +90,6 @@
 - [ ] Trigger: `release` event з tag `v*.*.*`
 - [ ] Тестування з dry-run
 
-#### ✅ S5.4 — Redis DB isolation (ВИПРАВЛЕНО)
-- **P1** | `00_01`, `06_01` | **Складність: S**
-- **Опис:** Без ізоляції Redis databases IoT телеметрія може витіснити Web3 nonce locks → EVM nonce collision → double-spend на Polygon. Реалізовано: 3 Redis DB (DB 0 = Sidekiq, DB 1 = Kredis locks, DB 2 = Rack::Attack) + Solid Cache/Solid Cable (PostgreSQL) + In-Process RAM (AES keys).
-- [x] Аудит поточної Redis конфігурації — ізоляція вже реалізована в коді
-- [x] DB 0 = Sidekiq, DB 1 = Kredis (Web3 nonce locks, M2M nonce), DB 2 = Rack::Attack (rate-limit counters)
-- [x] ActionCable → Solid Cable (PostgreSQL), Cache → Solid Cache (PostgreSQL), AES keys → In-Process RAM
-- [x] Оновити `config/initializers/sidekiq.rb`, `config/redis/shared.yml`, `config/initializers/rack_attack.rb` — вже налаштовано
-- [x] Додати `RACK_ATTACK_REDIS_URL` до `.env.example`
-- [x] Задокументувати у `06_01` (секція "Redis DB Isolation Strategy")
-- [x] Оновити `06_02` (Akash env vars таблиця)
-
-#### ✅ S5.5 — Wallet balance/metadata endpoints: HTML-only (ВИПРАВЛЕНО)
-- **P2** | `04_03` | **Складність: S**
-- **Опис:** `GET /wallets/:id/balance` та `/metadata` тепер підтримують dual-format: JSON (для API consumers) + HTML (Phlex Turbo Frame для lazy-load). WalletBlueprint має `:balance` та `:metadata` views.
-- [x] Додати `respond_to` block з JSON format до `balance` та `metadata` actions
-- [x] Додати `:balance` та `:metadata` views до `WalletBlueprint`
-- [x] Оновити тести (controller + blueprint specs)
-- [x] Задокументувати у `04_03` (секції 5.5b, 5.5c)
-
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
 - **P3** | `06_02` BLOCKER-6 | **Складність: XS** | **🔧 Операційна**
 - **Опис:** GCS bucket для remote Terraform state має бути створений вручну перед `terraform init`. Документація є, але checklist відсутній
@@ -535,7 +516,6 @@
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
 | DOC.1 | **Lorenz Z thresholds розходяться:** `02_03` та `02_04` вказують `CRITICAL_Z_MIN=5.0, CRITICAL_Z_MAX=30.0, OPTIMAL_Z_TARGET=20.0`. Firmware та `03_04`/`05_02` використовують `2.0/45.0/29.0`. Docs `02_03`/`02_04` **застарілі** | `02_03` §3, `02_04` §3 vs `03_04`, `05_02`, firmware | Оновити `02_03` та `02_04` → `2.0/45.0/29.0` |
-| DOC.2 | ✅ **ВИПРАВЛЕНО.** ~~HardwareKey кеш: Redis vs In-process.~~ `04_01` L1244 виправлено — тепер "In-Process LRU Cache" замість "Redis Cache". SSOT: in-process LRU (SinLruRedux) | `04_01` L1244 | ✅ Виправлено |
 | DOC.3 | **TRL 9 claim в `04_04`:** "System complete. All blockers closed." Суперечить всім іншим docs де TRL = 4-8 та десятки відкритих блокерів | `04_04` L9 vs `09_02`, `10_02` | Виправити на актуальний TRL (8 для Phlex UI) |
 | DOC.4 | **Porosity: 65% vs 70%.** `01_01` послідовно використовує 65%, але CLAUDE.md instructions кажуть 70%. `01_01` §5.2 таблиця каже "60-70% range" | `01_01` vs CLAUDE.md | Узгодити: 65% = target, 60-70% = acceptable range |
 | DOC.5 | **Endpoint count: 82 vs 83.** Header `04_03` каже "82 endpoints", але status section каже "83 endpoints". Endpoint #27 дублюється | `04_03` L5-10, L197 | Перерахувати та виправити |
