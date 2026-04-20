@@ -800,7 +800,3 @@ L1  Biophysics            Ti-6Al-4V EBFC            (не залежить ві�
 | **TRL 7** | Додати HTTPS (порт 443) через Akash ingress або Cloudflare | BLOCKER-5 |
 | **TRL 8** | Production деплой з моніторингом (Prometheus exporter в SDL) | BLOCKER-4,5 |
 | **TRL 9** | Automated failover GCP ↔ Akash + повна CI/CD інтеграція | — |
-
----
-
-*Документ створено в рамках Shape Up Cycle 1 — Small Batch "Reverse Shaping". BLOCKER-1 (мережева ізоляція) вирішено: Cloud SQL Auth Proxy + Upstash Redis. BLOCKER-8 (multi-replica ActionCable) вирішено: Solid Cable adapter з PostgreSQL LISTEN/NOTIFY. Наступний крок: вирішення BLOCKER-4 (Docker image registry) та перший реальний деплой.*
