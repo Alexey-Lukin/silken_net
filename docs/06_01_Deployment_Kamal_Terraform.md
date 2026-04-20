@@ -15,6 +15,10 @@
   - Backend → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
   - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
   - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
+  - Contracts → [`docs/DEPLOYMENT.md`](../DEPLOYMENT.md) — детальна операційна документація
+  - IaC → `terraform/`, `terraform/akash/`
+  - Kamal → `config/deploy.yml`, `config/deploy.canopy.yml`
+  - SDL → `deploy/akash/deploy.yaml`
 
 ---
 
@@ -37,26 +41,6 @@ terraform output ingress_ip    # → єдина статична IP (Ingress Anc
 
 ---
 
-### ✅ BLOCKER-2: GCS Bucket для Terraform State — автоматизовано (Виправлено)
-
-**Статус:** Вирішено. Скрипт `terraform/bootstrap.sh` автоматизує створення GCS-кошика до першого `terraform init`.
-
-```bash
-# Один раз — до terraform init
-cd terraform
-chmod +x bootstrap.sh
-./bootstrap.sh  # запитає GCP_PROJECT_ID, створить bucket + перевірить gcloud auth
-```
-
-Скрипт виконує:
-1. Перевіряє наявність `gcloud` та автентифікацію
-2. Створює `gs://silken-net-terraform-state` у `europe-west1` з `uniform-bucket-level-access`
-3. Виводить підтвердження — після цього `terraform init` спрацює
-
-> Якщо бакет вже існує — скрипт завершується без помилки (idempotent).
-
----
-
 ### 🔴 BLOCKER-3: GitHub Secrets — не заповнені
 
 **Статус:** Жоден CI/CD pipeline не спрацює без них.
@@ -68,9 +52,10 @@ chmod +x bootstrap.sh
 | `DATABASE_PASSWORD` | Пароль Cloud SQL (≥16 символів) | Придумати. Зберегти у vault. |
 | `DATABASE_URL` | Production DB URL | `terraform output database_url` |
 | `CANOPY_DATABASE_URL` | Canopy DB URL | Окрема БД або схема |
-| `REDIS_URL` | Production Redis (DB 0) | Upstash: `rediss://<host>:<port>/0` (TLS) |
+| `REDIS_URL` | Production Redis (DB 0) — Sidekiq | Upstash: `rediss://<host>:<port>/0` (TLS) |
 | `CANOPY_REDIS_URL` | Canopy Redis (DB 0) | Upstash: `rediss://<host>:<port>/0` |
-| `KREDIS_REDIS_URL` | Production Redis (DB 1) | Upstash: `rediss://<host>:<port>/1` |
+| `KREDIS_REDIS_URL` | Production Redis (DB 1) — Kredis locks | Upstash: `rediss://<host>:<port>/1` |
+| `RACK_ATTACK_REDIS_URL` | Production Redis (DB 2) — Rate limiting (опц., auto-derive) | Upstash: `rediss://<host>:<port>/2` |
 | `SSH_PRIVATE_KEY` | Приватний SSH ключ (ed25519) | `ssh-keygen -t ed25519` |
 | `SSH_PUBLIC_KEY` | Публічний SSH ключ | Пара до SSH_PRIVATE_KEY |
 | `SSH_KNOWN_HOSTS` | SSH fingerprints серверів | `ssh-keyscan <server-ip>` |
@@ -99,43 +84,6 @@ ssh_source_ranges = ["<your-ip>/32"]
 **Статус:** `deploy/akash/deploy.yaml` потребує ручного редагування перед деплоєм.
 
 **Дія (рекомендовано):** Використати Terraform-шаблон `deploy/akash/deploy.yaml.tpl` — секрети підставляються автоматично з `terraform.tfvars`.
-
----
-
-### ✅ BLOCKER-6: Cloud SQL публічний IP для Akash — Вирішено (Cloud SQL Auth Proxy)
-
-**Статус:** Вирішено. Cloud SQL Auth Proxy вбудовано в Docker-образ. Proxy тунелює PostgreSQL-трафік через Google Cloud API (вихідний HTTPS), тому Cloud SQL залишається з приватною IP (`ipv4_enabled=false`). Ні VPN, ні Tailscale, ні публічний IP на Cloud SQL не потрібні.
-
-Proxy запускається автоматично, коли встановлена ENV-змінна `CLOUD_SQL_INSTANCE_CONNECTION_NAME`. Змінні `akash_enabled` та `akash_authorized_networks` видалені з `database.tf`/`variables.tf` — більше не потрібні.
-
-> Cloud SQL Auth Proxy автентифікується через GCP Service Account JSON key (тіж самі credentials, що й для Artifact Registry).
-
----
-
-### ✅ BLOCKER-7: Sidekiq (job role) додано в Akash SDL (Виправлено)
-
-**Статус:** Виправлено. `job` сервіс додано в `deploy/akash/deploy.yaml`.
-
-SDL тепер визначає два сервіси:
-- `web` — Puma HTTP сервер
-- `job` — `bundle exec sidekiq -C config/sidekiq.yml` (всі 31+ воркери)
-
-Секрети в `job` сервісі позначено `REQUIRED` коментарями для явного налаштування перед деплоєм.
-
----
-
-### ✅ BLOCKER-8: `ssh_source_ranges` — порожній список за замовчуванням (Виправлено)
-
-**Статус:** Виправлено. Значення за замовчуванням змінено з `["0.0.0.0/0"]` на `[]` (порожній список). Terraform тепер блокує застосування з відкритим SSH (`0.0.0.0/0`) і виводить попередження при спробі використати такий CIDR. Необхідно явно вказати конкретні IP в `terraform.tfvars`:
-```hcl
-ssh_source_ranges = ["203.0.113.10/32", "198.51.100.0/24"]
-```
-
----
-
-### ✅ BLOCKER-9: `KREDIS_REDIS_URL` додано до `.kamal/secrets` (Виправлено)
-
-**Статус:** Виправлено. `KREDIS_REDIS_URL` додано до `.kamal/secrets`.
 
 ---
 
@@ -324,6 +272,98 @@ terraform apply
 
 ---
 
+## 🔴 Redis DB Isolation Strategy
+
+### Проблема
+
+Без ізоляції Redis databases IoT телеметрія (мільйони дерев, пакети щогодини від кожної Queen) може витіснити критичні Web3 nonce locks → EVM nonce collision → double-spend на Polygon. При масштабі мільярдів-трильйонів дерев обсяг Sidekiq-черг та rate-limit counters зростає експоненціально, і shared Redis database стає single point of contention.
+
+### Рішення: 3 Redis DB + 2 PostgreSQL-Backed + 1 In-Process
+
+Система розділяє всі stateful підсистеми на ізольовані сховища. Кожна підсистема використовує окремий Redis DB number (або зовсім не Redis), що гарантує неможливість взаємного витіснення:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Upstash Serverless Redis (TLS)               │
+│  ┌──────────────────────┬──────────────────┬──────────────────┐ │
+│  │  DB 0: Sidekiq       │  DB 1: Kredis    │  DB 2: Rack::Atk │ │
+│  │  Job queues          │  Distributed     │  Rate-limit      │ │
+│  │  Scheduler           │  locks (Web3     │  counters        │ │
+│  │  9 priority queues   │  nonce mgmt,     │  per-IP/DID      │ │
+│  │                      │  M2M nonce)      │  (10 min TTL)    │ │
+│  └──────────────────────┴──────────────────┴──────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────┬──────────────────────────────┐
+│  PostgreSQL: Solid Cache         │  PostgreSQL: Solid Cable     │
+│  Rails.cache (domain caching)    │  ActionCable adapter         │
+│  Web3 circuit breaker state      │  LISTEN/NOTIFY pub/sub       │
+│  Alert silence windows           │  Multi-replica safe          │
+│  Dashboard stats                 │  No sticky sessions          │
+└──────────────────────────────────┴──────────────────────────────┘
+
+┌──────────────────────────────────┐
+│  In-Process RAM (SinLruRedux)    │
+│  HardwareKey AES binary keys     │
+│  Max 10,000 entries (~320 KB)    │
+│  Keys never leave Ruby process   │
+└──────────────────────────────────┘
+```
+
+### Детальна таблиця ізоляції
+
+| Підсистема | Сховище | Redis DB | ENV змінна | Конфігурація | TTL / Eviction |
+|-----------|---------|----------|------------|--------------|----------------|
+| **Sidekiq** (9 черг, scheduler) | Upstash Redis | **DB 0** | `REDIS_URL` | `config/initializers/sidekiq.rb` | Persistent (no eviction) |
+| **Kredis** (distributed locks) | Upstash Redis | **DB 1** | `KREDIS_REDIS_URL` | `config/redis/shared.yml` | 1–300 sec (lock TTL) |
+| **Rack::Attack** (rate limiting) | Upstash Redis | **DB 2** | `RACK_ATTACK_REDIS_URL` | `config/initializers/rack_attack.rb` | 10 min |
+| **Rails.cache** (Solid Cache) | PostgreSQL | — | — | `config/cache.yml` + `config/environments/production.rb` | Per-entry max_age |
+| **ActionCable** (Solid Cable) | PostgreSQL | — | — | `config/cable.yml` | 1 day message retention |
+| **Hardware Key Cache** | In-Process RAM | — | — | `config/initializers/hardware_key_cache.rb` | Process lifetime |
+
+### ENV змінні та автоматична деривація
+
+```bash
+# Обов'язкові:
+REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/0       # Sidekiq (DB 0)
+KREDIS_REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/1 # Kredis (DB 1)
+
+# Опціональні (автоматично деривуються з REDIS_URL):
+# RACK_ATTACK_REDIS_URL — якщо не вказано, auto-derive: замінює /0 → /2 в REDIS_URL
+```
+
+Логіка auto-derive у `config/initializers/rack_attack.rb`:
+```ruby
+ENV.fetch("RACK_ATTACK_REDIS_URL") {
+  uri = URI.parse(ENV.fetch("REDIS_URL", "redis://localhost:6379/0"))
+  uri.path = "/2"
+  uri.to_s
+}
+```
+
+Аналогічна логіка для Kredis у `config/redis/shared.yml` та Terraform `main.tf`.
+
+### Чому саме ця архітектура
+
+1. **Sidekiq (DB 0)**: Найбільший обсяг даних — мільйони телеметричних job'ів щогодини. Ізоляція на DB 0 запобігає витісненню Web3 locks.
+2. **Kredis (DB 1)**: Критичні distributed locks для Web3 nonce management (`BlockchainMintingService`, `BlockchainBurningService`, `CeloRewardService`), M2M nonce anti-replay. Lock TTL 30 sec — якщо lock витіснений, це double-spend vulnerability.
+3. **Rack::Attack (DB 2)**: Rate-limit counters з TTL 10 min. Менший обсяг, але потребує ізоляції від Sidekiq щоб counters не губились при spike-ах.
+4. **Solid Cache (PostgreSQL)**: Rails.cache для Web3 circuit breaker state, dashboard stats, alert silence windows. PostgreSQL гарантує durability — circuit breaker state не зникає при Redis restart.
+5. **Solid Cable (PostgreSQL)**: ActionCable через PostgreSQL LISTEN/NOTIFY — zero Redis dependency, multi-replica safe без sticky sessions.
+6. **In-Process RAM**: AES hardware keys — Zero Network Exposure. Ключі ніколи не серіалізуються і не передаються по мережі.
+
+### Масштабування (мільйони → мільярди → трильйони дерев)
+
+| Масштаб | Дерев | Queens | Sidekiq jobs/год | Redis DB стратегія |
+|---------|-------|--------|------------------|--------------------|
+| **Pilot** (TRL 6-7) | ~1,000 | ~50 | ~50K | Single Upstash instance, 3 DBs |
+| **Regional** (TRL 8) | ~1M | ~50K | ~50M | Upstash Pro, 3 DBs + dedicated Sidekiq |
+| **Planetary** (TRL 9) | ~1B+ | ~50M | ~50B | Separate Redis clusters per DB: Sidekiq cluster (DB 0), Kredis cluster (DB 1), Rack::Attack cluster (DB 2). Або Upstash multi-region з read replicas. |
+
+При planetary масштабі кожен DB може потребувати окремий Redis cluster або Upstash instance з окремим endpoint. ENV архітектура вже це підтримує — кожна підсистема має окрему ENV змінну.
+
+---
+
 ## 📦 Kamal — Детальний Аналіз
 
 ### Файлова структура
@@ -504,7 +544,7 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 ## 📋 Чеклист першого деплою (Priority Order)
 
 ```
-☑ 1. Створити GCS bucket для Terraform State (BLOCKER-2) ← ВИПРАВЛЕНО (bootstrap.sh)
+☑ 1. Створити GCS bucket для Terraform State ← ВИПРАВЛЕНО (bootstrap.sh)
       cd terraform && ./bootstrap.sh
 
 ☐ 2. Створити terraform/terraform.tfvars
@@ -520,11 +560,11 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
       api.silkennet.com → $(terraform output -raw ingress_ip)
       dig api.silkennet.com → правильний IP
 
-☑ 6. KREDIS_REDIS_URL в .kamal/secrets (BLOCKER-9) ← ВИПРАВЛЕНО
+☑ 6. KREDIS_REDIS_URL в .kamal/secrets ← ВИПРАВЛЕНО
 
-☑ 7. Cloud SQL доступний з Akash (BLOCKER-6) ← ВИПРАВЛЕНО (Cloud SQL Auth Proxy)
+☑ 7. Cloud SQL доступний з Akash ← ВИПРАВЛЕНО (Cloud SQL Auth Proxy)
 
-☑ 8. Sidekiq на Akash (BLOCKER-7) ← ВИПРАВЛЕНО (job сервіс додано)
+☑ 8. Sidekiq на Akash ← ВИПРАВЛЕНО (job сервіс додано)
 
 ☐ 9. Створити deploy-production.yml workflow (INFO)
 
@@ -548,61 +588,15 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 
 ---
 
-## 🔗 Пов'язані ресурси
-
-- **`docs/DEPLOYMENT.md`** — детальна операційна документація (команди, діаграми)
-- **`06_02_Akash_Network_Integration`** — поглиблений аналіз Akash SDL та провайдерів
-- **`06_03_Prometheus_Observability`** — метрики, Grafana, Cloud Monitoring алерти
-- **`04_02_Business_Logic_and_Services`** — Sidekiq workers та черги
-- **`terraform/`** — Infrastructure as Code (GCP)
-- **`terraform/akash/`** — Infrastructure as Code (Akash)
-- **`config/deploy.yml`**, **`config/deploy.canopy.yml`** — Kamal конфіги
-- **`deploy/akash/deploy.yaml`** — Akash SDL
-
----
-
 ## 🌐 Масштабування до Планетарного Рівня — CoAP/UDP та Ingress
 
 > Цей розділ описує архітектурні ризики та рекомендації для переходу від сотень до **мільйонів** вузлів. Поточна архітектура (CoAP прямо в Rails) є коректною для TRL 5–6, але потребує еволюції перед Series D.
 
-### ✅ Ризик-1: Conntrack Table Overflow — Виправлено (Sprint 3, S3.6)
+### ✅ Ризик-1 & Ризик-2 — Conntrack + UDP Rate Limiting (Виправлено)
 
-**Проблема:** CoAP працює на UDP. Google Cloud (та будь-який Linux-сервер) веде таблицю `conntrack` у ядрі для відстеження з'єднань. При мільйонах IoT-пакетів на годину таблиця переповнюється → ядро починає мовчки ігнорувати нові сигнали від дерев. Ліс "замовкає" без жодної помилки в логах.
-
-**Симптом:** `nf_conntrack: table full, dropping packet` у `/var/log/kern.log`.
-
-**Статус:** Виправлено. `sysctl` тюнінг conntrack додано до `startup-script` Ingress Anchor у `terraform/compute.tf`. Налаштування зберігаються через `/etc/sysctl.conf` — переживають перезавантаження:
-
-```bash
-# Автоматично виконується при старті Ingress Anchor (terraform/compute.tf):
-sysctl -w net.netfilter.nf_conntrack_max=2000000
-sysctl -w net.netfilter.nf_conntrack_udp_timeout=30
-echo "net.netfilter.nf_conntrack_max=2000000" >> /etc/sysctl.conf
-echo "net.netfilter.nf_conntrack_udp_timeout=30" >> /etc/sysctl.conf
-```
-
-- `nf_conntrack_max=2000000` — 2M entry замість типових 65K
-- `nf_conntrack_udp_timeout=30s` — UDP записи очищаються вчасно (замість 180s за замовчуванням)
-
-### ✅ Ризик-2: UDP Rate Limiting реалізовано через Terraform (Виправлено)
-
-**Статус:** Виправлено. `iptables` hashlimit правило додано в `startup-script` Ingress Anchor.
-
-```bash
-# Автоматично виконується при старті Ingress Anchor (terraform/compute.tf):
-iptables -A INPUT -p udp --dport 5683 \
-  -m hashlimit --hashlimit-name coap \
-  --hashlimit-upto 100/sec --hashlimit-burst 200 \
-  --hashlimit-mode srcip -j ACCEPT
-iptables -A INPUT -p udp --dport 5683 \
-  -m limit --limit 10/min -j LOG --log-prefix "CoAP-RATELIMIT-DROP: "
-iptables -A INPUT -p udp --dport 5683 -j DROP
-```
-
-Правила зберігаються через `iptables-persistent` — переживають перезавантаження Ingress Anchor.
-
-- **100 UDP пакетів/сек** на IP-адресу + burst 200 → легальна Queen не обмежується
-- **LOG** перед DROP (max 10/хв) → DDoS атаки видимі у Cloud Logging без флуду логів
+Обидва ризики вирішені в `terraform/compute.tf` (`startup-script` Ingress Anchor):
+- **conntrack**: `nf_conntrack_max=2000000`, `nf_conntrack_udp_timeout=30s` — 2M entries замість 65K дефолт.
+- **UDP rate limit**: `iptables` hashlimit 100 pkt/s per IP + burst 200; DROP з LOG (max 10/хв у Cloud Logging). Налаштування зберігаються через `/etc/sysctl.conf` та `iptables-persistent`.
 
 ### 🟡 Ризик-3: IP Exhaustion при Динамічних IP Шлюзів
 
@@ -650,61 +644,7 @@ Series D архітектура (>1M вузлів):
 | Ingress Proxy (Rust/Go) | 🔴 Не реалізовано | Series D milestone |
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
 | Read-Only Replicas | 🔴 Не налаштовано | Terraform: `google_sql_database_instance` replica |
-| conntrack tuning | ✅ Виправлено | `sysctl` у Ingress Anchor `startup_script` (`terraform/compute.tf`) |
-
----
-
-## 🔄 Оновлення Kamal (Upgrade Notes)
-
-### Kamal 2.11.0 (з 2.10.1)
-
-> ⚠️ **Kamal 2.11.0 вимагає kamal-proxy ≥ v0.9.2.** Без оновлення proxy деплой зафейлиться.
-
-**Крок 1: Оновити kamal-proxy на серверах**
-
-Перед першим деплоєм з Kamal 2.11.0 потрібно оновити proxy на кожному сервері:
-
-```bash
-# Canopy
-kamal proxy reboot -d canopy
-
-# Production
-kamal proxy reboot
-```
-
-> `kamal proxy reboot` завантажує новий образ kamal-proxy, перезапускає контейнер. Це зазвичай спричиняє **короткий даунтайм** (~1-3 сек).
-
-CI/CD workflows (`deploy.yml`, `deploy-production.yml`) вже включають крок `kamal proxy reboot` перед деплоєм.
-
-**Крок 2: Оновити gem**
-
-```bash
-bundle update kamal
-```
-
-**Що змінилось у Kamal 2.11.0:**
-
-| Зміна | Тип | Вплив на проєкт |
-|-------|-----|-----------------|
-| Вимога kamal-proxy ≥ v0.9.2 | ⚠️ Breaking | CI workflows оновлено, proxy reboot додано |
-| Aliases з destination (`-d`) | ✨ Нове | Додано `canopy-console`, `canopy-logs` в `deploy.yml` |
-| Конфігурована verbosity хуків | ✨ Нове | Доступно для `.kamal/hooks/` |
-| Підтримка ssh-config в run-over-ssh | ✨ Нове | Можна використовувати `~/.ssh/config` |
-| Секрети для pre-connect хука | 🐛 Фікс | Секрети тепер доступні в `pre-connect` хуках |
-| Цитування filter names у docker | 🐛 Фікс | Виправлено проблеми зі спецсимволами |
-| ERB rendering: trim blank lines | 🔧 Покращення | Чистіший парсинг конфігурацій |
-| Додавання user до docker групи | 🔧 Покращення | Автоматично для non-superuser |
-
-**Що нового в kamal-proxy v0.9.2:**
-
-| Фіча | Опис |
-|-------|------|
-| `--http3` | Підтримка HTTP/3 (QUIC) |
-| `--canonical-host` | Редирект на канонічний хост (напр. `example.com → www.example.com`) |
-| `--health-check-host` / `--health-check-port` | Кастомний хост/порт для health checks |
-| `--acme-cache-path` | Спільний кеш Let's Encrypt між proxy-інстансами |
-| `--scope-cookie-paths` | Автоматичний scope cookies до path-prefix |
-| Chunked responses | Не буферизує відповіді з `Transfer-Encoding: chunked` (важливо для SSE/streaming) |
+| conntrack + UDP rate limit | ✅ Виправлено | `terraform/compute.tf` startup_script |
 
 ---
 

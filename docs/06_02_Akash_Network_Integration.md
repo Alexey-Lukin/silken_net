@@ -507,6 +507,7 @@ params:
 | `DATABASE_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | PostgreSQL URL. Формат: `postgres://user:pass@127.0.0.1:5432/db`. Вказує на локальний Cloud SQL Auth Proxy |
 | `REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Redis URL для Sidekiq (DB 0). Формат: `rediss://...@host:port/0` (Upstash, TLS) |
 | `KREDIS_REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Redis URL для Kredis distributed locks (DB 1). Формат: `rediss://...@host:port/1` (Upstash, TLS) |
+| `RACK_ATTACK_REDIS_URL` | — (auto-derive) | **Секрет** | — | Redis URL для rate-limiting (DB 2). Опц.: auto-derive з `REDIS_URL` → `/2` |
 | `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Cloud SQL instance connection name (з `terraform output database_connection_name`). Формат: `project:region:instance` |
 | `GCP_SA_KEY_BASE64` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Base64-encoded GCP service account JSON key для Cloud SQL Auth Proxy |
 | `RAILS_ENV` | `production` | Відкрита | ✅ | Rails environment — production режим обов'язковий |
@@ -799,7 +800,3 @@ L1  Biophysics            Ti-6Al-4V EBFC            (не залежить ві�
 | **TRL 7** | Додати HTTPS (порт 443) через Akash ingress або Cloudflare | BLOCKER-5 |
 | **TRL 8** | Production деплой з моніторингом (Prometheus exporter в SDL) | BLOCKER-4,5 |
 | **TRL 9** | Automated failover GCP ↔ Akash + повна CI/CD інтеграція | — |
-
----
-
-*Документ створено в рамках Shape Up Cycle 1 — Small Batch "Reverse Shaping". BLOCKER-1 (мережева ізоляція) вирішено: Cloud SQL Auth Proxy + Upstash Redis. BLOCKER-8 (multi-replica ActionCable) вирішено: Solid Cable adapter з PostgreSQL LISTEN/NOTIFY. Наступний крок: вирішення BLOCKER-4 (Docker image registry) та перший реальний деплой.*

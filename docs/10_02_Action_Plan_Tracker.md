@@ -90,20 +90,6 @@
 - [ ] Trigger: `release` event з tag `v*.*.*`
 - [ ] Тестування з dry-run
 
-#### S5.4 — Redis DB isolation
-- **P1** | `00_01` | **Складність: S**
-- **Опис:** Без ізоляції Redis databases IoT телеметрія (Kredis, ActionCable) може витіснити Web3 nonce locks → EVM nonce collision → double-spend на Polygon. Потрібно: окремі Redis DB numbers або окремі Redis instances для telemetry vs Web3
-- [ ] Аудит поточної Redis конфігурації (один DB для всього?)
-- [ ] Розділити: DB 0 = Rails cache, DB 1 = Sidekiq, DB 2 = Web3 nonce locks, DB 3 = ActionCable
-- [ ] Оновити `config/redis.yml` та Sidekiq config
-- [ ] Задокументувати у `06_01`
-
-#### S5.5 — Wallet balance/metadata endpoints: HTML-only
-- **P2** | `04_03` | **Складність: S**
-- **Опис:** `GET /wallets/:id/balance` та `/metadata` повертають **лише HTML** (Phlex Turbo Frame), не JSON. API consumers (mobile app, third-party integrators) отримають unexpected response. Потрібна `respond_to` block або окремі JSON endpoints
-- [ ] Додати JSON format до wallet balance/metadata endpoints
-- [ ] Або задокументувати як "HTML-only by design" та створити окремі JSON endpoints
-
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
 - **P3** | `06_02` BLOCKER-6 | **Складність: XS** | **🔧 Операційна**
 - **Опис:** GCS bucket для remote Terraform state має бути створений вручну перед `terraform init`. Документація є, але checklist відсутній
@@ -530,7 +516,6 @@
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
 | DOC.1 | **Lorenz Z thresholds розходяться:** `02_03` та `02_04` вказують `CRITICAL_Z_MIN=5.0, CRITICAL_Z_MAX=30.0, OPTIMAL_Z_TARGET=20.0`. Firmware та `03_04`/`05_02` використовують `2.0/45.0/29.0`. Docs `02_03`/`02_04` **застарілі** | `02_03` §3, `02_04` §3 vs `03_04`, `05_02`, firmware | Оновити `02_03` та `02_04` → `2.0/45.0/29.0` |
-| DOC.2 | **HardwareKey кеш: Redis vs In-process.** `04_01` L1244 каже "cached_binary_key in Redis (TTL 15 min)". `04_01` L388 каже "In-process LRU (SinLruRedux::ThreadSafeCache) — keys never leave Ruby process (no Redis-serialize)". Суперечність в одному документі | `04_01` L388 vs L1244 | Видалити згадку Redis на L1244 — SSOT: in-process LRU |
 | DOC.3 | **TRL 9 claim в `04_04`:** "System complete. All blockers closed." Суперечить всім іншим docs де TRL = 4-8 та десятки відкритих блокерів | `04_04` L9 vs `09_02`, `10_02` | Виправити на актуальний TRL (8 для Phlex UI) |
 | DOC.4 | **Porosity: 65% vs 70%.** `01_01` послідовно використовує 65%, але CLAUDE.md instructions кажуть 70%. `01_01` §5.2 таблиця каже "60-70% range" | `01_01` vs CLAUDE.md | Узгодити: 65% = target, 60-70% = acceptable range |
 | DOC.5 | **Endpoint count: 82 vs 83.** Header `04_03` каже "82 endpoints", але status section каже "83 endpoints". Endpoint #27 дублюється | `04_03` L5-10, L197 | Перерахувати та виправити |

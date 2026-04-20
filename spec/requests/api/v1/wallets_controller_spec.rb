@@ -103,11 +103,21 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     let(:admin) { create(:user, :admin, organization: organization) }
     let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
-    it "renders balance Turbo Frame" do
+    it "renders balance Turbo Frame for HTML" do
       allow_any_instance_of(Wallets::BalanceFrame).to receive(:template) { |c| c.plain "balance" }
 
       get "/api/v1/wallets/#{wallet.id}/balance", headers: headers
       expect(response).to have_http_status(:ok)
+    end
+
+    it "returns JSON with balance data" do
+      get "/api/v1/wallets/#{wallet.id}/balance", headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      data = response.parsed_body["data"]
+      expect(data).to include("id", "scc_balance", "locked_balance", "available_balance", "esg_retired_balance")
+      expect(data["id"]).to eq(wallet.id)
+      expect(data["scc_balance"].to_d).to eq(wallet.scc_balance)
+      expect(data["available_balance"].to_d).to eq(wallet.available_balance)
     end
   end
 
@@ -115,11 +125,20 @@ RSpec.describe Api::V1::WalletsController, type: :request do
     let(:admin) { create(:user, :admin, organization: organization) }
     let(:headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
 
-    it "renders metadata Turbo Frame" do
+    it "renders metadata Turbo Frame for HTML" do
       allow_any_instance_of(Wallets::MetadataFrame).to receive(:template) { |c| c.plain "metadata" }
 
       get "/api/v1/wallets/#{wallet.id}/metadata", headers: headers
       expect(response).to have_http_status(:ok)
+    end
+
+    it "returns JSON with metadata" do
+      get "/api/v1/wallets/#{wallet.id}/metadata", headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      data = response.parsed_body["data"]
+      expect(data).to include("id", "crypto_public_address", "locked_balance", "available_balance", "esg_retired_balance", "network")
+      expect(data["network"]).to eq("Polygon PoS (Mainnet)")
+      expect(data["crypto_public_address"]).to eq(wallet.crypto_public_address)
     end
   end
 end
