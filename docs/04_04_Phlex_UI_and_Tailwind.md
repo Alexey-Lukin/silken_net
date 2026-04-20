@@ -695,8 +695,6 @@ class: "transition-colors duration-300"   # перемикання теми
 | `spec/views/components/tree_families/form_spec.rb` | 14 | Форма створення/оновлення, валідація |
 | `spec/views/components/wallets/show_spec.rb` | 11 | Фрейм балансу, журнал транзакцій, pagy пагінація |
 
-**Всього:** **275** · **22 spec-файли** · **0 помилок**
-
 ### Lookbook (Дослідник Компонентів)
 
 Lookbook надає живий попередній перегляд усіх компонентів за адресою `http://localhost:3000/lookbook` (лише в режимі development).
