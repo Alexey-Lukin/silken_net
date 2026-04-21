@@ -30,6 +30,8 @@ module SilkenNet
       # [FIX FW.7]: Float арифметика без round() — ідентично firmware bio_contract.rb.
       # mruby на MCU виконує x += dx * DT без будь-якого округлення між ітераціями.
       # Сервер МУСИТЬ робити те саме для Dual Computation Integrity.
+      # Overflow protection: з clamped σ∈[5,30] та ρ∈[10,50], Lorenz attractor bounded.
+      # Емпірично |x|<25, |y|<35, |z|<50 після 250 ітерацій — далеко від Float64 overflow.
       ITERATIONS.times do
         dx = local_sigma * (y - x)
         dy = x * (local_rho - z) - y

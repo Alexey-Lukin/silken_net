@@ -148,8 +148,7 @@ static int tests_run = 0, tests_failed = 0;
 } while(0)
 
 #define TEST(name) static void name(void)
-#define RUN(name) do { tests_run++; name(); printf("  %-55s %s\n", #name, tests_failed == _prev ? "✅" : "❌"); } while(0)
-#define _prev tests_failed
+#define RUN(name) do { int _prev = tests_failed; tests_run++; name(); printf("  %-55s %s\n", #name, tests_failed == _prev ? "✅" : "❌"); } while(0)
 
 /* ══════════════════════════════════════════════════════════════════
  * 1. NORMALIZATION TESTS

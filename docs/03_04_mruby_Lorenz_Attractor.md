@@ -130,7 +130,7 @@ deviation = (OPTIMAL_Z_TARGET - z_val).abs
 
 **Залишковий ризик (MRB_USE_FLOAT):** Якщо mruby скомпільовано з `MRB_USE_FLOAT` (Float32 замість Float64), firmware матиме нижчу точність. Потрібна верифікація прапорів компіляції mruby при першому lab-тестуванні. За замовчуванням mruby використовує `double` (Float64) — ідентично Ruby Float.
 
-**Примітка:** BigDecimal "юридична точність" не потрібна для Lorenz верифікації. Фінансові розрахунки (growth_points → SCC мінтинг) виконуються в `Wallet#lock_and_mint!` — окремо від Lorenz.
+**Примітка:** BigDecimal "юридична точність" не потрібна для Lorenz верифікації. Lorenz Z→growth_points конвертація (у `BioContract.evaluate_and_pack`) використовує Float як на firmware, так і на сервері. Фактичний token мінтинг (`Wallet#lock_and_mint!`) використовує integer арифметику (10,000 growth_points = 1 SCC) — Float precision не впливає на фінансові операції.
 
 ---
 
