@@ -69,28 +69,12 @@
 - [ ] Заповнити в `deploy/akash/deploy.yaml`
 - [ ] Верифікувати startup
 
-#### S5.1 — Відсутні Prometheus метрики
-- **P2** | `06_03` | **Складність: S**
-- **Опис:** Документація `06_03` визначає 2 метрики, які відсутні в реалізації: `oracle_dispatch_latency_seconds` (per-network oracle response time) та `lorenz_computation_duration_seconds` (Lorenz attractor compute time). Без них неможливо діагностувати latency проблеми в Web3 pipeline та контролювати compute budget Lorenz
-- **Статус:** ✅ Виконано. Обидві метрики зареєстровані в `config/initializers/prometheus.rb` та інструментовані: `ORACLE_DISPATCH_DURATION` у `ChainlinkDispatchWorker`, `LORENZ_COMPUTATION_DURATION` у `SilkenNet::Attractor`
-- [x] Додати `oracle_dispatch_latency_seconds` histogram у `Chainlink::OracleDispatchService`
-- [x] Додати `lorenz_computation_duration_seconds` histogram у `SilkenNet::Attractor`
-- [x] Верифікувати що метрики з'являються на `/metrics`
-
 #### S5.2 — RELEASE_VERSION ENV для Sentry
 - **P2** | `06_03` | **Складність: XS** | **🔧 Операційна**
 - **Опис:** `RELEASE_VERSION` ENV не встановлено — Sentry release tracking не працює. Потрібно додати у Kamal/Akash deploy config
 - **Статус:** ✅ Виконано. `RELEASE_VERSION` додано у: `deploy.yml` (Canopy, git SHA), `deploy-production.yml` (Production, release tag або git SHA), `config/deploy.yml` (Kamal clear env), `deploy/akash/deploy.yaml` (web + job services)
 - [x] Додати `RELEASE_VERSION` у deploy pipeline (git SHA або tag)
 - [ ] Верифікувати Sentry release tracking
-
-#### S5.3 — deploy-production.yml workflow
-- **P2** | `06_01` | **Складність: S**
-- **Опис:** Існує лише `deploy.yml` (Canopy/staging). Production deploy workflow відсутній. Блокує автоматизований production deploy при GitHub Release (`v*.*.*`)
-- **Статус:** ✅ Виконано. `.github/workflows/deploy-production.yml` створено з trigger на `release` event та `workflow_dispatch`. Включає Terraform Apply + Kamal Deploy jobs
-- [x] Створити `.github/workflows/deploy-production.yml`
-- [x] Trigger: `release` event з tag `v*.*.*`
-- [ ] Тестування з dry-run
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
 - **P3** | `06_02` BLOCKER-6 | **Складність: XS** | **🔧 Операційна**
@@ -157,17 +141,6 @@
 - [ ] Задокументувати рішення в `03_04` з обґрунтуванням впливу на токеноміку
 - [ ] Реалізувати (якщо зміна)
 
-#### FW.6 — Lorenz State persistence
-- `03_04`
-- **Опис:** Стан (x,y,z) НЕ зберігався між циклами STOP2 в RTC Backup Registers
-- **Статус:** ✅ Реалізовано. Стан зберігається в RTC DR16-DR18 (float32→uint32 bit-copy) + DR19 (magic marker `0x4C5A5354`). Два режими: первинний старт (chaos_seed) та продовження (RTC state). NaN/Inf guard. Backend mirror: `calculate_z_continued`. 16 нових C-тестів.
-- [x] Зберегти (x,y,z) у RTC DR16-DR18 (3 × float32 → 3 × uint32_t) + DR19 magic marker
-- [x] Відновити при wakeup з isfinite() валідацією
-- [x] Firmware bio_contract.rb: `calculate_state_continued(x, y, z, temp, acoustic)`
-- [x] Backend attractor.rb: `calculate_z_continued(x_prev, y_prev, z_prev, temp, acoustic)`
-- [x] Тести: 16 C-тестів (float pack/unpack, RTC roundtrip, NaN/Inf rejection, multi-cycle)
-- [x] Документація: 03_04 BLOCKER-3 закрито, 03_01 register map оновлено, 05_02 firmware phases оновлено
-
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - `05_02`
 - **Опис:** firmware `8.0/3.0 = 2.6666666666666665` vs backend BigDecimal `2.666666666666666667`
@@ -200,33 +173,6 @@
 - [ ] Тести
 
 ### 🟢 P2 — Низькопріоритетні
-
-#### FW.11 — Race condition: `vibration_detected`
-- `03_03` + Legacy notes
-- **Опис:** Між read та write немає атомарності (ISR vs main loop)
-- **Статус:** ✅ Виправлено. NVIC-рівнева ізоляція реалізована
-- [x] Використати NVIC-рівневу ізоляцію: `HAL_NVIC_DisableIRQ(EXTI0_IRQn)` замість `__disable_irq()` — вимикає лише п'єзо-переривання, не зупиняючи SysTick/Radio/DMA
-- [x] Тести (`test_tinyml_pipeline.c` — 3 тести для vibration race condition guard)
-
-#### FW.15 — Missing test suites: TinyML, Crypto
-- `03_03` BLOCKER-4 + codebase audit
-- **Опис:** `firmware/test/` має лише `test_soldier_logic.c` та `test_queen_logic.c`. Відсутні: тести аудіо-пайплайну (mock `Run_Inference`), тести AES-256 ECB/CBC mode switching
-- **Статус:** ✅ Виправлено. Два нових test suites додані
-- `test_bio_contract.c` ✅ done (27 тестів)
-- [x] `test_tinyml_pipeline.c` — 25 тестів: mock Run_Inference(), 4 класи × confidence boundary, saturation, vibration race guard
-- [x] `test_encryption.c` — 18 тестів: ECB/CBC switching, ECB restore error recovery (FW.16), IV handling, encrypt/decrypt verification
-- [x] Makefile оновлено з `tinyml` та `encryption` targets
-- [x] Всі 207 firmware тестів проходять (79 + 58 + 27 + 25 + 18)
-- [x] `firmware_test` job додано до `.github/workflows/ci.yml` (CI coverage)
-
-#### FW.16 — ECB restore race condition при HAL_CRYP_Init failure
-- `03_05` BLOCKER-6
-- **Опис:** `HAL_CRYP_Init()` для restore ECB не має timeout. Якщо AES peripheral зависне (hardware defect), наступний LoRa decrypt використає CBC → garbage → data loss. Handle_CoAP_Command error path може повернутися без ECB restore
-- **Статус:** ✅ Виправлено. `Restore_ECB_Mode()` helper function з error recovery
-- [x] Додати return-code check на `HAL_CRYP_Init()` при ECB restore
-- [x] Додати RCC CRYP_FORCE_RESET як hard recovery path
-- [x] Забезпечити ECB restore навіть на error path (Handle_CoAP_Command overflow)
-- [x] Тести (`test_encryption.c` — 3 тести error recovery: success, RCC reset, NVIC system reset)
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
 - `03_05` BLOCKER-5 | Після FW.1 (per-device provisioning) — future cycle
@@ -493,14 +439,6 @@
 - [ ] Додати Hamlin 59140-1-T-00-A reed switch + N52 neodymium magnet до BOM
 - [ ] Оновити KiCad schematic
 
-#### SEC.5 — HMAC bypass при відсутньому CHAINLINK_HMAC_SECRET
-- **Джерело:** `04_03`, `04_02` | `app/controllers/api/v1/oracle_callbacks_controller.rb`
-- **Опис:** Якщо ENV `CHAINLINK_HMAC_SECRET` не встановлено, HMAC-SHA256 перевірка `X-Chainlink-Signature` header **пропускається** з warning у лог. У dev/test це допустимо, але якщо production буде misconfigured (ENV не встановлено) — oracle callback endpoint стає повністю відкритим. Зловмисник може фальсифікувати `oracle_status_fulfilled?` → unauthorized minting
-- **Пріоритет:** P0 (до mainnet deploy)
-- [x] Додати guard: якщо `WEB3_STRICT_MODE=true` та `CHAINLINK_HMAC_SECRET` відсутній → raise SecurityError (fail-fast)
-- [x] Додати integration тест: request без HMAC при `WEB3_STRICT_MODE=true` → SecurityError
-- [x] Задокументувати у `04_03` як security requirement
-
 #### SEC.6 — Secure Element (ATECC608B) не використовується
 - **Джерело:** `03_05` | Firmware architecture
 - **Опис:** AES-256 ключ зберігається у plain Flash STM32 (навіть з RDP Level 1 — key extraction можливий через glitching/side-channel). ATECC608B забезпечує hardware-protected key storage з tamper-detection. Ціна ~$0.60/unit
@@ -527,7 +465,6 @@
 
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
-| DOC.4 | ~~**Porosity: 65% vs 70%.** `01_01` послідовно використовує 65%, але CLAUDE.md instructions кажуть 70%. `01_01` §5.2 таблиця каже "60-70% range"~~ ✅ Виправлено: CLAUDE.md та copilot-instructions.md оновлені на "65%, діапазон 60-70%" | `01_01` vs CLAUDE.md | ✅ Узгоджено |
 
 ---
 
