@@ -206,13 +206,4 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         return revoked;
     }
 
-    /// @notice Override nonces для сумісності ERC20Permit + Nonces.
-    function nonces(address owner)
-        public
-        view
-        override(ERC20Permit, Nonces)
-        returns (uint256)
-    {
-        return super.nonces(owner);
-    }
 }
