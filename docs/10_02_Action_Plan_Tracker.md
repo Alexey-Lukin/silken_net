@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-21 Сесія 15 (FW.11/FW.15/FW.16/FW.22/FW.7/FW.19 + firmware CI job)
+> **Останнє оновлення:** 2026-04-21 Сесія 16 (FW.6 Lorenz State Persistence + ARCH.18 Fixed-Point Arithmetic roadmap)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -165,10 +165,11 @@
 - [x] Тести: 16 C-тестів (float pack/unpack, RTC roundtrip, NaN/Inf rejection, multi-cycle)
 - [x] Документація: 03_04 BLOCKER-3 закрито, 03_01 register map оновлено, 05_02 firmware phases оновлено
 
-#### FW.7 — Float vs BigDecimal divergence
+#### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - `05_02`
 - **Опис:** firmware `8.0/3.0 = 2.6666666666666665` vs backend BigDecimal `2.666666666666666667`
-- **Статус:** ✅ Виправлено. Backend `SilkenNet::Attractor` переведено з BigDecimal на Float (IEEE 754 double) — ідентично firmware mruby. Dual Computation Integrity тепер дає однакові Z-значення
+- **Статус:** ✅ Виправлено (TRL 6). Backend `SilkenNet::Attractor` переведено з BigDecimal на Float (IEEE 754 double) — ідентично firmware mruby. Dual Computation Integrity тепер дає однакові Z-значення на одній архітектурі
+- ⚠️ *Увага: IEEE 754 Float математика все одно буде давати незначний drift між ARM (STM32 Soldier) та x86 (GCP/Akash Backend) архітектурами. Категоричний tolerance band (homeostasis/stress/anomaly) компенсує це для TRL 6, але строгий побітовий consensus потребує `ARCH.18`.*
 - [x] Backend: замінити BigDecimal на Float в `SilkenNet::Attractor` (calculate_z, generate_trajectory, initialize_state)
 - [x] Оновити тести (BigDecimal → Float assertions)
 - [x] Задокументувати в `03_04` (BLOCKER-4 закрито)
@@ -685,6 +686,7 @@
 | ARCH.15 | SystemParameter model для governance-aware backend (`SystemParameter.current(:lorenz_sigma)`) | `05_03` | Post-TRL 6 |
 | ARCH.16 | Mobile app для foresters (Phase 2 roadmap) | `00_02` | Post-TRL 7 |
 | ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
+| ARCH.18 | Детерміністична Fixed-Point арифметика (Integer Math): для досягнення побітової ідентичності розрахунків (consensus) між STM32 (Soldier) та GCP/Akash (Backend), необхідно відмовитись від IEEE 754 Floating-Point. Всі вхідні дані мають множитись на 10⁶ (або 10⁸) і розраховуватись у 64-бітних цілих числах (`int64_t` у C, `Integer` у Ruby). Це усуне апаратний drift при розрахунку Атрактора Лоренца. Потребує повного переписування математики в прошивці з урахуванням ризиків переповнення буферів (overflows) під час множення великих чисел. | `03_04`, `05_02` | Post-TRL 7 |
 
 ---
 
@@ -718,6 +720,7 @@
 | 2026-04-19 | Сесії 12-13: Глибокий аудит всіх 35 docs (повне читання, не лише заголовки). Cross-reference codebase. Додано: S5.1-S5.6 (backend), FW.22-FW.23 (firmware), SEC.5-SEC.7 (security), DOC.1-DOC.7 (документаційні невідповідності), OPS.1-OPS.2 (автоматизація), BIZ.6-BIZ.7 (бізнес), ARCH.7-ARCH.17 (архітектурні пропозиції). Всього ~40 нових пунктів. |
 | 2026-04-20 | Сесія 14: **SEC.5** — fail-fast guard `SecurityError` при `WEB3_STRICT_MODE=true` без `CHAINLINK_HMAC_SECRET` + integration test. **DOC.1** — `02_04` Lorenz thresholds → 2.0/45.0/29.0. **DOC.3** — `04_04` TRL 9→8. **DOC.5** — `04_03` endpoint count 82→83. **DOC.6** — `05_02` `peaq_signing_key` → mandatory. **DOC.7** — `05_02` soldier 648→771 рядків. |
 | 2026-04-21 | Сесія 15: **FW.11** — NVIC-рівнева ізоляція `vibration_detected` race condition. **FW.15** — `test_tinyml_pipeline.c` (25 тестів) + `test_encryption.c` (18 тестів). **FW.16** — `Restore_ECB_Mode()` helper з RCC reset + NVIC_SystemReset fallback. **FW.22** — backend warning для `acoustic_events==255` в `TelemetryUnpackerService`. **FW.7/FW.19** — задокументовано Float vs BigDecimal tolerance як "by design" в `03_04`. **FW.5** — BLOCKER-1 збагачено аналізом chaos_seed vs delta_t/vcap впливу на токеноміку (залишено відкритим). **CI** — `firmware_test` job додано до `.github/workflows/ci.yml`. **03_03** — BLOCKER-4 (тести) та BLOCKER-8 (race condition) закрито. Всього 207 firmware тестів (79+58+27+25+18). |
+| 2026-04-21 | Сесія 16: **FW.6** — Lorenz State Persistence: стан (x,y,z) зберігається в RTC DR16-DR18 між циклами STOP2 (BLOCKER-3 закрито). 16 нових C-тестів. **FW.7** — уточнено як TRL 6 mitigation з попередженням про IEEE 754 ARM/x86 drift. **ARCH.18** — додано Fixed-Point Arithmetic (Integer Math) як довгостроковий roadmap для побітового consensus. Документація оновлена: `03_04` (BLOCKER-3), `03_01` (register map DR0-DR19), `05_02` (firmware phases). Всього 223 firmware тести (79+74+27+25+18). |
 
 ---
 
