@@ -99,3 +99,4 @@ jobs:
           GCP_ARTIFACT_REGISTRY_KEY: ${{ secrets.GCP_SA_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
+          RELEASE_VERSION: ${{ github.event.release.tag_name || github.sha }}

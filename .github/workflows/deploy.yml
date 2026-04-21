@@ -102,3 +102,4 @@ jobs:
           GCP_ARTIFACT_REGISTRY_KEY: ${{ secrets.GCP_SA_KEY }}
           DATABASE_URL: ${{ secrets.CANOPY_DATABASE_URL }}
           REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
+          RELEASE_VERSION: ${{ github.sha }}

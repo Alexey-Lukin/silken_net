@@ -149,7 +149,7 @@ ALL_QUEUES = %w[uplink alerts critical downlink default web3_critical web3 web3_
 | `sentry-sidekiq` gem | `Gemfile` | ✅ 6.5.0 (auto-instruments Sidekiq) |
 | `prometheus-client` gem | `Gemfile` | ✅ 4.2.5 |
 | Sentry initializer | `config/initializers/sentry.rb` | ✅ Повністю налаштований |
-| Prometheus initializer | `config/initializers/prometheus.rb` | ✅ 5 Counters + 2 Gauges визначені |
+| Prometheus initializer | `config/initializers/prometheus.rb` | ✅ 7 Counters + 3 Histograms + 2 Gauges визначені |
 | `/metrics` endpoint | `app/middleware/prometheus_collector.rb` | ✅ Реалізований (IP allowlist + Basic Auth) |
 | Middleware registration | `config/application.rb` | ✅ `config.middleware.use PrometheusCollector` |
 | `SCC_MINTED_TOTAL` instrumentation | `app/services/blockchain_minting_service.rb` | ✅ Реалізовано |
@@ -329,12 +329,16 @@ end
 | `spec/workers/chainlink_dispatch_worker_spec.rb` | `ORACLE_DISPATCH_DURATION` | 3 | Histogram observation, не observe при skip/not found |
 | `spec/workers/unpack_telemetry_worker_spec.rb` | `COAP_PACKETS_RECEIVED_TOTAL` | 4 | Статуси: success, unknown_device, decrypt_error; ізоляція між статусами |
 
-### 2.5 Відсутні метрики (залишкові прогалини)
+### 2.5 Додаткові метрики (S5.1 — Виконано)
 
-| Компонент | Відсутня метрика | Бізнес-ризик |
-|-----------|-----------------|--------------|
-| `ChainlinkOracleWorker` | `oracle_dispatch_latency_seconds` — деталізація по мережах | Час відповіді оракула per-network невідомий |
-| Всі Lorenz-обчислення | `lorenz_computation_duration_seconds` | Час обчислення атрактора невідомий |
+| Metric Name | Тип | Файл | Buckets |
+|-------------|-----|------|---------|
+| `silkennet_oracle_dispatch_duration_seconds` | Histogram | `ChainlinkDispatchWorker` | 0.5, 1, 2.5, 5, 10, 30, 60 |
+| `silkennet_lorenz_computation_duration_seconds` | Histogram | `SilkenNet::Attractor` | 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5 |
+
+Обидві метрики зареєстровані в `config/initializers/prometheus.rb` та інструментовані у відповідних класах. `ORACLE_DISPATCH_DURATION` вимірює повний цикл dispatch (від виклику до отримання request_id). `LORENZ_COMPUTATION_DURATION` вимірює час серверного розрахунку 250 ітерацій Лоренца (Float арифметика).
+
+**Підсумок реєстру: 12 кастомних метрик (7 counters + 3 histograms + 2 gauges).**
 
 ---
 
@@ -495,7 +499,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 | `SENTRY_DSN` | ✅ Для production | `config/initializers/sentry.rb` | ✅ Додано у `.kamal/secrets` |
 | `SENTRY_TRACES_SAMPLE_RATE` | ❌ (default: 0.001) | `config/initializers/sentry.rb` | — |
 | `SENTRY_WORKER_THREADS` | ❌ (default: 2) | `config/initializers/sentry.rb` | — |
-| `RELEASE_VERSION` | ❌ (рекомендовано) | `config.release` | Не задана |
+| `RELEASE_VERSION` | ❌ (рекомендовано) | `config.release` | ✅ Додано у deploy.yml (git SHA), deploy-production.yml (release tag), config/deploy.yml (Kamal), deploy/akash/deploy.yaml |
 | `PROMETHEUS_ALLOWED_IPS` | ❌ | `app/middleware/prometheus_collector.rb` | Не задана (RFC 1918 дозволені за замовчуванням — Akash internal network) |
 | `PROMETHEUS_AUTH_USER` | ✅ (рекомендовано) | `app/middleware/prometheus_collector.rb`, Alloy `config.alloy` | ✅ Додано в web SDL env |
 | `PROMETHEUS_AUTH_PASSWORD` | ✅ (рекомендовано) | `app/middleware/prometheus_collector.rb`, Alloy `config.alloy` | ✅ Додано в web SDL env |

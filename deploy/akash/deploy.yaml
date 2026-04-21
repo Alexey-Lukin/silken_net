@@ -109,6 +109,10 @@ services:
       # Rails production environment.
       - RAILS_ENV=production
 
+      # Sentry release tracking — set to git SHA or release tag at deploy time.
+      # Enables Sentry to group errors by deploy and track regressions.
+      - RELEASE_VERSION=
+
       # Puma thread count per worker — keep low (3-5) to limit GVL contention.
       # Must align with database.yml pool size calculation.
       - RAILS_MAX_THREADS=3
@@ -197,6 +201,7 @@ services:
       - REDIS_URL=REQUIRED_SECRET_NOT_SET
       - KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
       - RAILS_ENV=production
+      - RELEASE_VERSION=
       - RAILS_MAX_THREADS=3
 
   # ---------------------------------------------------------------------------
