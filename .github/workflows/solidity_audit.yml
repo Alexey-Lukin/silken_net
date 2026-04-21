@@ -27,5 +27,5 @@ jobs:
         with:
           target: contracts/
           node-version: '20'
-          solc-version: '0.8.20'
+          solc-version: '0.8.24'
           fail-on: high

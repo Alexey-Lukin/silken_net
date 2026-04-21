@@ -31,7 +31,7 @@
 | **Мережа** | Polygon (Amoy testnet → Mainnet) | Polygon (Amoy testnet → Mainnet) |
 | **Файл** | `contracts/SilkenCarbonCoin.sol` | `contracts/SilkenForestCoin.sol` |
 | **ENV адреса** | `CARBON_COIN_CONTRACT_ADDRESS` | `FOREST_COIN_CONTRACT_ADDRESS` |
-| **Pragma** | `0.8.20` (locked) | `0.8.20` (locked) |
+| **Pragma** | `0.8.24` (locked) | `0.8.24` (locked) |
 | **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
 | **Slash / Burn** | ✅ `slash()` через `SLASHER_ROLE` | ✅ `slash()` через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
@@ -623,7 +623,7 @@ type ProtocolFinancials @entity {
 |---|---|
 | **Мережа** | Polygon PoS (Amoy testnet → Mainnet) |
 | **Toolchain** | Foundry (forge, cast, anvil) |
-| **OpenZeppelin** | 5.x (`pragma solidity 0.8.20` — locked) |
+| **OpenZeppelin** | 5.x (`pragma solidity 0.8.24` — locked) |
 | **RPC** | `ALCHEMY_POLYGON_RPC_URL` (через `Web3::RpcConnectionPool`) |
 | **Oracle wallet** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER_ROLE) + `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER_ROLE) — окремі ключі |
 | **The Graph** | `subgraph/` — SCC та SFC events індексуються (⚠️ SFC: contract address placeholder) |
@@ -826,13 +826,13 @@ SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governan
 ```yaml
 # .github/workflows/solidity_audit.yml
 # Тригер: зміни в contracts/ на PR або push to main
-# crytic/slither-action@v0.4.0, solc 0.8.20, fail-on: high
+# crytic/slither-action@v0.4.0, solc 0.8.24, fail-on: high
 # OpenZeppelin 5.x через contracts/package.json
 ```
 
 **Mythril (TODO):**
 ```bash
-myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.20
+myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.24
 ```
 
 **Operational Security (production):**
