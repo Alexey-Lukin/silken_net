@@ -243,40 +243,6 @@ lora_payload[7] = (uint8_t)(acoustic_events & 0xFF); // Тільки молод�
 
 ---
 
-### ✅ BLOCKER-8: Race condition при `vibration_detected` — NVIC-рівнева ізоляція (Виправлено, FW.11)
-
-**Статус:** Виправлено. NVIC-рівнева ізоляція реалізована.
-
-**Файл:** `firmware/soldier/main.c`
-
-**Реалізація:** Замість атомарного read-clear в single statement (що неможливо без критичної секції), використано NVIC-рівневу ізоляцію:
-
-```c
-// [FIX FW.11]: NVIC-рівнева ізоляція замість "if (vibration_detected) { vibration_detected = 0; }"
-HAL_NVIC_DisableIRQ(EXTI0_IRQn);  // Вимкнути тільки п'єзо-переривання
-uint8_t vib = vibration_detected;
-vibration_detected = 0;
-HAL_NVIC_EnableIRQ(EXTI0_IRQn);   // Увімкнути назад
-
-if (vib) {
-    audio_ready = 0;
-    HAL_TIM_Base_Start(&htim2);
-    HAL_ADC_Start_DMA(&hadc, (uint32_t*)raw_audio_buffer, 512);
-    // ...
-}
-```
-
-**Переваги порівняно з `__disable_irq()`:**
-- SysTick (HAL_Delay), LoRa-переривання та DMA callbacks продовжують працювати
-- Блокується лише конкретна EXTI0 лінія п'єзодиска
-- Менший ризик пропуску радіо-пакетів при mesh relay
-
-**Тести:** `firmware/test/test_tinyml_pipeline.c` — 3 тести для vibration race condition guard.
-
-**Закриває:** Стабільність DMA в умовах вібраційного шуму.
-
----
-
 ## 🎵 1. Апаратна Платформа та Тригер
 
 ### 1.1 Мікроконтролер
@@ -307,6 +273,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 ```
 
 **Логіка фільтрації:** Якщо `vibration_detected == 0` на момент Phase 1.5 → аудіо-цикл повністю пропускається → STM32 не витрачає енергію на семплінг у тиші.
+
+**[FIX FW.11] Атомарне зчитування `vibration_detected` — NVIC-ізоляція:** Щоб запобігти race condition між ISR та головним циклом (ISR може виставити прапорець між перевіркою `if (vib)` та `vib = 0`), використовується NVIC-рівнева ізоляція:
+
+```c
+// Вимикаємо лише п'єзо-переривання — SysTick, LoRa та DMA callbacks продовжують працювати
+HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+uint8_t vib = vibration_detected;
+vibration_detected = 0;
+HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+if (vib) { /* запустити аудіо-пайплайн */ }
+```
+
+Перевага над `__disable_irq()`: блокується лише конкретна EXTI0 лінія п'єзодиска, менший ризик пропуску радіо-пакетів при mesh relay. Тести: `firmware/test/test_tinyml_pipeline.c` — 3 тести для vibration race condition guard.
 
 **Фізичний сенс:** П'єзодиск фіксує механічні вібрації деревини. Бензопила → характерна вібрація частотою 50–200 Hz (обертання ланцюга). Кавітаційний колапс у ксилемі → ультразвукові мікроімпульси 10–100 µs.
 

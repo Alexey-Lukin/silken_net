@@ -182,7 +182,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 | **AT Command Blocking (2s HAL_Delay)** | 🔴 BLOCKER (Queen сліпа 2 секунди під час CoAP flush) |
 | **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
 | **Error_Handler** | ✅ Виправлено — `NVIC_SystemReset()` через 100 мс замість вічного циклу (FW.14) |
-| **CMD_DECRYPT_BUF_SIZE розбіжність** | 🟡 OPEN (544 у firmware, 96 у тестах — OTA path не покритий) |
+| **CMD_DECRYPT_BUF_SIZE розбіжність** | ✅ Виправлено — тест синхронізовано з firmware (96 → 544) |
 | **Host-based Tests (207)** | ✅ Всі проходять (`make -C firmware/test`) |
 
 ---
@@ -241,14 +241,6 @@ HAL_Delay(2000); // Чекаємо ACK від сервера
 
 ---
 
-### ✅ BLOCKER-3: Queen UID — Flash-based provisioning реалізовано (Виправлено)
-
-**Статус:** Виправлено (PR #273). Flash-based provisioning реалізовано з fallback на STM32 HW UID.
-
-Queen читає UID з Flash-сторінки `0x0803F800` з magic-маркером. При незаповненому Flash генерує унікальний `"UNPROV-{8HEX}"` на основі STM32 HW UID (`0x1FFF7590`). Детальніше: [03_02 Queen Gateway Firmware BLOCKER-3](03_02_Queen_Gateway_Firmware).
-
----
-
 ### ✅ BLOCKER-4: Starlink Latency Gap (Частково виправлено)
 
 **Статус:** Таймаути збільшено (PR #273). CoAP session timeout: `1000 ms` → `2000 ms`. ACK wait: `2000 ms` → `5000 ms`.
@@ -256,50 +248,6 @@ Queen читає UID з Flash-сторінки `0x0803F800` з magic-марке�
 Повний retry залишається відкритим (потребує UART RX парсингу).
 
 **Блокує:** (частково) Стабільність CoAP uplink через Starlink.
-
----
-
-### ✅ BLOCKER-5: IWDG додано до Queen (Виправлено)
-
-**Статус:** Виправлено (PR #273).
-
-**Файл:** `firmware/queen/main.c`
-
-IWDG ініціалізовано та refresh додано в main loop (включаючи pre-refresh перед CoAP flush). IWDG врятує і Soldier, і Queen — обидва перезавантажуються автоматично без фізичного втручання.
-
----
-
-### ✅ BLOCKER-6: CMD_DECRYPT_BUF_SIZE синхронізовано (Виправлено)
-
-**Статус:** Виправлено (PR #273). Тест синхронізовано з firmware — обидва файли тепер використовують `544`.
-
----
-
-### ✅ BLOCKER-7: Error_Handler виправлено — soft reset замість вічного циклу (FW.14)
-
-**Статус:** Виправлено.
-
-**Файл:** `firmware/soldier/main.c` (+ аналогічно `firmware/queen/main.c`)
-
-До виправлення `Error_Handler()` входив у нескінченний цикл — вузол зависав назавжди:
-```c
-// До: вічний цикл без відновлення
-void Error_Handler(void) {
-  __disable_irq();
-  while (1) {}
-}
-```
-
-Після виправлення — 100 мс затримка для flush UART буфера, потім soft reset:
-```c
-// Після: відновлення через NVIC soft reset
-void Error_Handler(void) {
-  HAL_Delay(100);        // flush UART tx buffer
-  NVIC_SystemReset();    // soft reset — STM32 перезавантажується
-}
-```
-
-`NVIC_SystemReset()` виконує ARM CoreSight System Reset Request — вузол перезавантажується за ~1 мс і повертається до нормальної роботи автоматично. Затримка 100 мс дозволяє USART завершити передачу будь-яких незавершених AT-команд перед скиданням.
 
 ---
 
@@ -351,6 +299,19 @@ HAL_IWDG_Refresh(&hiwdg);
 ```
 
 Перша інструкція кожного циклу. Якщо mruby VM, DMA або будь-який інший блок зависне і цей рядок не виконається протягом IWDG timeout (налаштовується prescaler: типово ~26 секунд), MCU автоматично перезавантажиться. Усі критичні дані зберігаються в RTC Backup Domain.
+
+### 1.3.1 Error_Handler: Soft Reset замість Вічного Циклу (FW.14)
+
+При HardFault або критичній помилці HAL викликається `Error_Handler()`. До виправлення (FW.14) він входив у нескінченний цикл — вузол зависав назавжди. Тепер реалізований soft reset:
+
+```c
+void Error_Handler(void) {
+  HAL_Delay(100);     // 100 мс: дозволяє USART завершити передачу AT-команд
+  NVIC_SystemReset(); // ARM CoreSight System Reset Request → перезавантаження за ~1 мс
+}
+```
+
+`NVIC_SystemReset()` — стандартний ARM CoreSight System Reset. Вузол перезавантажується автоматично і повертається до нормальної роботи. Затримка 100 мс запобігає обриву незавершених UART-транзакцій перед скиданням.
 
 ---
 

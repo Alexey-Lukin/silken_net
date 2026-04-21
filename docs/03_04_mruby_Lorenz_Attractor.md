@@ -89,66 +89,6 @@
 
 ---
 
-### ✅ BLOCKER-2: Коментар vs Константа OPTIMAL_Z_TARGET (Виправлено)
-
-**Статус:** Виправлено. Коментар у `firmware/bio_contracts/bio_contract.rb` виправлено:
-
-```ruby
-# Розрахунок винагороди: чим ближче стан дерева до ідеалу (29.0),
-deviation = (OPTIMAL_Z_TARGET - z_val).abs
-```
-
-Коментар тепер коректно відображає значення константи `OPTIMAL_Z_TARGET = 29.0`.
-
----
-
-### ✅ BLOCKER-3: Збереження Стану (x, y, z) між Циклами STOP2 — Вирішено (FW.6)
-
-**Статус:** Виправлено. Стан `(x, y, z)` зберігається у RTC Backup Registers DR16-DR18 між циклами STOP2.
-
-**Проблема:** Кожен цикл пробудження Soldier генерував **новий** `chaos_seed` з HRNG і запускав 250 ітерацій Лоренца **з нуля**. Система не була безперервним хаотичним атрактором — це був 250-кроковий знімок від випадкової початкової точки.
-
-**Рішення (FW.6):** Додано два режими роботи атрактора:
-
-1. **Первинний старт** (DR19 ≠ `LORENZ_STATE_MAGIC`): `chaos_seed` → (x₀, y₀, z₀) як раніше. Після 250 ітерацій стан зберігається в RTC.
-2. **Продовження** (DR19 == `LORENZ_STATE_MAGIC`): відновлюємо (x, y, z) з DR16-DR18, пропускаємо chaos_seed, викликаємо `calculate_state_continued(x, y, z, temp, acoustic)` → 250 ітерацій від збереженого стану.
-
-**RTC Register Map (FW.6):**
-
-| Регістр | Змінна | Тип | Опис |
-|---------|--------|-----|------|
-| `DR16` | `lorenz_x` | float32 → uint32 | X-координата атрактора (IEEE 754 bit-copy) |
-| `DR17` | `lorenz_y` | float32 → uint32 | Y-координата атрактора |
-| `DR18` | `lorenz_z` | float32 → uint32 | Z-координата атрактора (інтенсивність конвекції) |
-| `DR19` | `LORENZ_STATE_MAGIC` | uint32 | Маркер валідності: `0x4C5A5354` ("LZST") |
-
-**Захист від корупції:** При відновленні перевіряємо `isfinite(x) && isfinite(y) && isfinite(z)`. NaN або Inf → скидання до chaos_seed (первинний старт).
-
-**Backend дзеркало:** `SilkenNet::Attractor.calculate_z_continued(x_prev, y_prev, z_prev, temp, acoustic)` — ідентична математика для перевірки безперервних траєкторій.
-
-**Firmware Bio-Contract:** Додано `calculate_state_continued(x, y, z, temp, acoustic)` → повертає `[payload_byte, x_final, y_final, z_final]`.
-
-**Тести:** 16 нових C-тестів у `test_soldier_logic.c` (float pack/unpack, RTC roundtrip, NaN/Inf rejection, multi-cycle, register isolation).
-
----
-
-### ✅ BLOCKER-4: Float32 vs Float64 — Вирішено: Backend переведено на Float (Виправлено, FW.7)
-
-**Статус:** Виправлено. Backend `SilkenNet::Attractor` переведено з BigDecimal на Float (IEEE 754 double).
-
-**Проблема:** Backend використовував `BigDecimal` з `round(18)` після кожної ітерації, а firmware — `Float` (IEEE 754) без округлення. Після 250 ітерацій хаотичної системи Лоренца Z-значення розходились на десятки одиниць, що робило Dual Computation Integrity непрацездатним.
-
-**Рішення (FW.7):** `SilkenNet::Attractor` переписаний на Float:
-- `BASE_BETA = 8.0 / 3.0` — ідентично firmware `bio_contract.rb`
-- `x += dx * DT` — без `round()` між ітераціями, ідентично firmware
-- Dual Computation Integrity тепер дає **однакові** Z-значення на обох сторонах
-
-**Залишковий ризик (MRB_USE_FLOAT):** Якщо mruby скомпільовано з `MRB_USE_FLOAT` (Float32 замість Float64), firmware матиме нижчу точність. Потрібна верифікація прапорів компіляції mruby при першому lab-тестуванні. За замовчуванням mruby використовує `double` (Float64) — ідентично Ruby Float.
-
-**Примітка:** BigDecimal "юридична точність" не потрібна для Lorenz верифікації. Lorenz Z→growth_points конвертація (у `BioContract.evaluate_and_pack`) використовує Float як на firmware, так і на сервері. Фактичний token мінтинг (`Wallet#lock_and_mint!`) використовує integer арифметику (10,000 growth_points = 1 SCC) — Float precision не впливає на фінансові операції.
-
----
-
 ### 🟡 BLOCKER-5: Чисельна Нестабільність Методу Ейлера при DT=0.01
 
 **Опис:** Метод Ейлера першого порядку застосовується для інтегрування системи Лоренца:
@@ -166,48 +106,6 @@ z_{n+1} = z_n + dz/dt · DT
 **Захисний механізм (вже реалізований):** Clamp σ ∈ [5, 30] та ρ ∈ [10, 50] запобігає найгіршим сценаріям.
 
 **Дія:** Документувати як відомий компроміс. Альтернатива (RK4) потребує 4× більше обчислень — критично для EBFC-живлення. Поточний DT=0.01 прийнятний для "Proof of Growth" (не для наукових симуляцій).
-
----
-
-### ✅ BLOCKER-6: `deviation.round` замість `deviation.to_i` (Виправлено)
-
-**Статус:** Виправлено. Усічення замінено на заокруглення:
-
-```ruby
-deviation = (OPTIMAL_Z_TARGET - z_val).abs  # Float
-reward    = 50 - deviation.round             # Integer (правильне заокруглення)
-growth_points = reward > 0 ? reward : 10
-```
-
-`.round` математично коректне: `0.9.round == 1`, `0.5.round == 1`. Зона "безкоштовного максимуму" для z ∈ (28.5, 29.5) тепер вузча — лише ±0.5 навколо OPTIMAL_Z_TARGET замість ±1.0.
-
-**Ефективна функція growth_points (зона гомеостазу) після виправлення:**
-
-```
-z ∈ [28.5, 29.5):  growth_points = 50  (deviation.round == 0)
-z ∈ [27.5, 28.5):  growth_points = 49  (deviation.round == 1)
-z ∈ [2.0, 15.0):   growth_points = max(10, 50 - deviation.round)
-```
-
----
-
-### ✅ BLOCKER-7: `reward > 0 ? reward : 10` — мертвий код, замінено на `clamp` (Виправлено, FW.13)
-
-**Статус:** Виправлено.
-
-Попередній код:
-```ruby
-growth_points = reward > 0 ? reward : 10
-```
-
-Тернарна гілка `reward > 0 ? reward : 10` **ніколи не обирала** `:10` у зоні гомеостазу — `reward_min = 50 - 27 = 23 > 0` завжди. Це був мертвий захисний код.
-
-Виправлено на явний `clamp(10, 63)`, що поєднує тернарний захист та окремий `clamp(0, 63)` в єдину операцію:
-```ruby
-growth_points = reward.clamp(10, 63)
-```
-
-Логіка незмінна: мінімум 10 балів у зоні гомеостазу, максимум 63 (6-bit). Всі 137 firmware тестів проходять.
 
 ---
 
@@ -464,10 +362,13 @@ end
 
 ```
 deviation      = |OPTIMAL_Z_TARGET - z|  =  |29.0 - z|
-reward         = 50 - deviation.round
-growth_points  = (reward > 0) ? reward : 10
-growth_points  = clamp(growth_points, 0, 63)   ← overflow protection (6-bit space)
+reward         = 50 - deviation.round     ← .round, не .to_i (коректне заокруглення: 0.5 → 1)
+growth_points  = clamp(reward, 10, 63)    ← об'єднує guard ≥10 та overflow protection ≤63
 ```
+
+> **Примітка `.round` vs `.to_i`:** `.to_i` усікає (`0.9.to_i == 0`), `.round` округляє (`0.9.round == 1`). Зона максимального балу — z ∈ [28.5, 29.5): `deviation ∈ [0, 0.5)` → `deviation.round == 0` → `growth_points == 50`. При `.to_i` зона була б ширша (±1.0), що математично некоректно.
+
+> **`clamp(10, 63)` замість `(reward > 0) ? reward : 10`:** В зоні гомеостазу `reward_min = 50 − |45.0 − 29.0| = 34 > 0` завжди — тернарний `:10` ніколи не спрацьовував. `clamp(10, 63)` об'єднує обидва guard'и в єдину операцію.
 
 **Графік нарахування growth_points залежно від Z:**
 

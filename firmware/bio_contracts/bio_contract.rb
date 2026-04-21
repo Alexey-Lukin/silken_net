@@ -38,7 +38,7 @@ module SilkenNet
     # Повертає масив [z, x_final, y_final, z_final] для збереження у RTC.
     def self.calculate_z_axis_continued(x_prev, y_prev, z_prev, temp, acoustic)
       x, y, z = iterate(x_prev, y_prev, z_prev, temp, acoustic)
-      [z, x, y, z]
+      [ z, x, y, z ]
     end
 
     # Спільне ядро ітерацій Лоренца — уникаємо дублювання коду
@@ -63,7 +63,7 @@ module SilkenNet
         z += dz * DT
       end
 
-      [x, y, z]
+      [ x, y, z ]
     end
   end
 
@@ -87,7 +87,7 @@ module SilkenNet
     def self.evaluate_and_pack_continued(x_prev, y_prev, z_prev, temp, acoustic)
       z_val, x_final, y_final, z_final = Attractor.calculate_z_axis_continued(x_prev, y_prev, z_prev, temp, acoustic)
       payload_byte = pack_status_byte(z_val)
-      [payload_byte, x_final, y_final, z_final]
+      [ payload_byte, x_final, y_final, z_final ]
     end
 
     # Спільна логіка пакування Z → status_byte
