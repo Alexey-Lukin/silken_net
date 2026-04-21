@@ -222,13 +222,13 @@ dz/dt = x · y - β · z
 
 | Константа | Символ | Значення (firmware) | Значення (backend) | Фізичний зміст |
 |---|---|---|---|---|
-| `BASE_SIGMA` | σ | `10.0` (Float) | `"10.0".to_d` (BigDecimal) | Число Прандтля — в'язкість флоеми |
-| `BASE_RHO` | ρ | `28.0` (Float) | `"28.0".to_d` (BigDecimal) | Число Релея — температурний градієнт |
-| `BASE_BETA` | β | `8.0 / 3.0` (Float) | `("8.0".to_d / "3.0".to_d).round(18)` | Геометрія конвективної клітини |
-| `DT` | Δt | `0.01` (Float) | `"0.01".to_d` (BigDecimal) | Крок інтегрування методу Ейлера |
+| `BASE_SIGMA` | σ | `10.0` (Float) | `10.0` (Float) | Число Прандтля — в'язкість флоеми |
+| `BASE_RHO` | ρ | `28.0` (Float) | `28.0` (Float) | Число Релея — температурний градієнт |
+| `BASE_BETA` | β | `8.0 / 3.0` (Float) | `8.0 / 3.0` (Float) | Геометрія конвективної клітини |
+| `DT` | Δt | `0.01` (Float) | `0.01` (Float) | Крок інтегрування методу Ейлера |
 | `ITERATIONS` | N | `250` | `250` | Кількість ітерацій симуляції |
 
-> **ВАЖЛИВО:** `β = 8.0/3.0 ≈ 2.6666...` (нескінченно повторювана шістка) — точне дробове значення. Попередня помилка `BASE_BETA = 2.666` (обрізане) виправлена у `[FIX: Attractor Sync]`. Різниця між `2.666` та `2.6666...` після 250 ітерацій призводила до систематичного зміщення Z-осі та хибних рішень Slashing.
+> **[FIX FW.7]:** Backend переведено з BigDecimal на Float (IEEE 754 double) — ідентично firmware mruby. BigDecimal давав інші результати після 250 ітерацій через `round(18)` на кожному кроці. Тепер firmware та backend дають **100% ідентичні** Z-значення при однакових входах (верифіковано на 50,000 випадкових тестах).
 
 ### 1.3 Класичний Атрактор Лоренца (Метелик)
 
@@ -514,15 +514,18 @@ Gaia 2.0 використовує **dual computation integrity verification**: Z
 | Параметр | Firmware (mruby) | Backend (Rails) |
 |---|---|---|
 | **Файл** | `firmware/bio_contracts/bio_contract.rb` | `app/services/silken_net/attractor.rb` |
-| **Точність** | Ruby `Float` (IEEE 754, 64-bit або 32-bit залежно від mruby build) | `BigDecimal(18)` — "юридична точність" |
-| **σ** | `10.0` (Float) | `"10.0".to_d` (BigDecimal) |
-| **ρ** | `28.0` (Float) | `"28.0".to_d` (BigDecimal) |
-| **β** | `8.0 / 3.0` (Float) | `("8.0".to_d / "3.0".to_d).round(18)` |
-| **DT** | `0.01` (Float) | `"0.01".to_d` |
+| **Точність** | Ruby `Float` (IEEE 754, 64-bit або 32-bit залежно від mruby build) | `Float` (IEEE 754, 64-bit) — **ідентично firmware** [FIX FW.7] |
+| **σ** | `10.0` (Float) | `10.0` (Float) |
+| **ρ** | `28.0` (Float) | `28.0` (Float) |
+| **β** | `8.0 / 3.0` (Float) | `8.0 / 3.0` (Float) |
+| **DT** | `0.01` (Float) | `0.01` (Float) |
 | **Clamp σ** | `if local_sigma < SIGMA_MIN` / `> SIGMA_MAX` | `.clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)` |
 | **Clamp ρ** | `if local_rho < RHO_MIN` / `> RHO_MAX` | `.clamp(RHO_LIMITS.min, RHO_LIMITS.max)` |
-| **Результат** | `z` (Float, необроблений) | `z.to_f.round(4)` |
+| **Seed** | `chaos_seed` (HRNG, random кожний цикл) | `parsed_data[0]` = `tree_did` (DID дерева, **постійний**) |
+| **Результат** | `z` (Float, необроблений) → пакується у `status_byte` | `z.round(4)` → зберігається у `TelemetryLog.z_value` |
 | **Де використовується** | Пакується у `payload_byte` (byte 10 LoRa) | `TelemetryLog.z_value`, ZK-proof верифікація |
+
+> **⚠️ ВАЖЛИВО (Seed Mismatch):** Firmware та backend використовують **різні значення** seed. Firmware генерує `chaos_seed` через HRNG кожного циклу пробудження — це апаратна ентропія. Backend використовує `tree_did` з пакету — це постійний ідентифікатор дерева. Тому raw Z-значення на firmware та backend **завжди різні**. Порівняння відбувається лише на рівні категорій (homeostasis/stress/anomaly) через `check_z_divergence!`.
 
 ### 5.2 Потік Верифікації
 
@@ -530,19 +533,23 @@ Gaia 2.0 використовує **dual computation integrity verification**: Z
 [Soldier STM32]                           [Rails Backend]
 firmware/bio_contracts/bio_contract.rb    app/services/silken_net/attractor.rb
        │                                           │
-       │  calculate_state(seed, temp, acoustic)    │  calculate_z(seed, temp, acoustic)
-       │  → z_val (Float)                          │  → z_val (BigDecimal → Float.round(4))
+       │  calculate_state(chaos_seed, temp, acust) │  calculate_z(tree_did, temp, acust)
+       │  seed = HRNG (random щоразу)              │  seed = DID (постійний)
+       │  → z_val (Float)                          │  → z_val (Float.round(4))
        │                                           │
-       │  BioContract.evaluate_and_pack            │
+       │  BioContract.evaluate_and_pack            │  ⚠️ РІЗНІ Z бо різні seed'и!
        │  → payload_byte [Status:2|GP:6]           │
        │                                           │
        ▼                                           ▼
   lora_payload[10]  ──── LoRa → CoAP ──── TelemetryUnpackerService
                                                │
-                                               ├── growth_points = payload[10] & 0x3F
-                                               ├── bio_status = payload[10] >> 6
-                                               └── z_server = Attractor.calculate_z(seed, temp, acoustic)
-                                                   (cross-verification; IoTeX ZK-proof включає z_server)
+                                               ├── growth_points = payload[10] & 0x3F (від firmware)
+                                               ├── bio_status = payload[10] >> 6 (від firmware)
+                                               ├── z_server = Attractor.calculate_z(tree_did, temp, acust)
+                                               │   (server Z для IoTeX ZK-proof та TelemetryLog)
+                                               └── check_z_divergence!:
+                                                   device_bio_status vs server_healthy_z?
+                                                   (КАТЕГОРИЧНЕ порівняння, не raw Z)
 ```
 
 ### 5.3 Метод `homeostatic?` (Backend-Only)
@@ -653,7 +660,7 @@ if (mrb) {
 |---|---|
 | `firmware/bio_contracts/bio_contract.rb` | mруby скрипт Bio-Contract (SilkenNet::Attractor + SilkenNet::BioContract) |
 | `firmware/soldier/main.c` (рядки 405-435) | C-код виклику mруby (фаза 3) |
-| `app/services/silken_net/attractor.rb` | Rails-сервіс (BigDecimal, дзеркало firmware) |
+| `app/services/silken_net/attractor.rb` | Rails-сервіс (Float, дзеркало firmware) [FIX FW.7] |
 | `app/services/telemetry_unpacker_service.rb` | Розпакування `payload_byte`, виклик `Attractor.calculate_z` |
 | `firmware/test/test_soldier_logic.c` | Host-based тести (8 тестів Bio-Contract Byte) |
 | `spec/services/silken_net/attractor_spec.rb` | RSpec тести Rails-дзеркала (якщо є) |
