@@ -37,7 +37,7 @@
 | **Bit-packing `[Status:2&#124;GrowthPoints:6]`** | ✅ Реалізовано |
 | **Backend дзеркало** (`SilkenNet::Attractor` у Rails) | ✅ Реалізовано |
 | **`delta_t` та `vcap` як прямі входи атрактора** | 🔴 BLOCKER — **НЕ реалізовано** (потребує архітектурного рішення з математичним обґрунтуванням) |
-| **Збереження стану (x, y, z) між циклами сну** | 🔴 BLOCKER — **відсутнє** (кожен цикл — нова траєкторія) |
+| **Збереження стану (x, y, z) між циклами сну** | ✅ Реалізовано (FW.6) — RTC DR16-DR18 + DR19 маркер валідності |
 | **Float32 vs Float64 верифікація** | ✅ Виправлено — backend переведено на Float (IEEE 754), ідентично firmware |
 | **Коментар OPTIMAL_Z_TARGET (20.0 vs 29.0)** | ✅ Виправлено — коментар виправлено на 29.0 |
 | **`deviation.to_i` (Truncation замість Round)** | ✅ Виправлено — `deviation.round` |
@@ -102,18 +102,33 @@ deviation = (OPTIMAL_Z_TARGET - z_val).abs
 
 ---
 
-### 🔴 BLOCKER-3: Відсутність Збереження Стану (x, y, z) між Циклами STOP2
+### ✅ BLOCKER-3: Збереження Стану (x, y, z) між Циклами STOP2 — Вирішено (FW.6)
 
-**Опис:** Кожен цикл пробудження Soldier генерує **новий** `chaos_seed` з HRNG (`HAL_RNG_GenerateRandomNumber`) і запускає 250 ітерацій Лоренца **з нуля** на основі цього зерна. Стан `(x, y, z)` **не зберігається** у RTC Backup регістрах між циклами сну.
+**Статус:** Виправлено. Стан `(x, y, z)` зберігається у RTC Backup Registers DR16-DR18 між циклами STOP2.
 
-```
-Специфікація: "Збереження стану між ітераціями здійснюється у масиві байтів через RTC Backup регістри"
-Реалізація:   Нова (x₀, y₀, z₀) з кожного chaos_seed при кожному пробудженні
-```
+**Проблема:** Кожен цикл пробудження Soldier генерував **новий** `chaos_seed` з HRNG і запускав 250 ітерацій Лоренца **з нуля**. Система не була безперервним хаотичним атрактором — це був 250-кроковий знімок від випадкової початкової точки.
 
-**Ризик:** Система **не є** безперервним хаотичним динамічним атрактором у фізичному сенсі — це 250-кроковий знімок від випадкової початкової точки. Біологічна інтерпретація "гомеостазу" як безперервного процесу ставиться під сумнів. RTC регістри (DR0-DR10) зафіксовані для інших цілей (acoustic_events, last_wakeup_timestamp, mesh_relay, тощо) — місця для (x, y, z) не виділено.
+**Рішення (FW.6):** Додано два режими роботи атрактора:
 
-**Дія:** Вирішити архітектурно: (A) прийняти поточну "знімкову" модель і оновити специфікацію; або (B) виділити RTC регістри (3 × float = 12 байт) для збереження стану між пробудженнями.
+1. **Первинний старт** (DR19 ≠ `LORENZ_STATE_MAGIC`): `chaos_seed` → (x₀, y₀, z₀) як раніше. Після 250 ітерацій стан зберігається в RTC.
+2. **Продовження** (DR19 == `LORENZ_STATE_MAGIC`): відновлюємо (x, y, z) з DR16-DR18, пропускаємо chaos_seed, викликаємо `calculate_state_continued(x, y, z, temp, acoustic)` → 250 ітерацій від збереженого стану.
+
+**RTC Register Map (FW.6):**
+
+| Регістр | Змінна | Тип | Опис |
+|---------|--------|-----|------|
+| `DR16` | `lorenz_x` | float32 → uint32 | X-координата атрактора (IEEE 754 bit-copy) |
+| `DR17` | `lorenz_y` | float32 → uint32 | Y-координата атрактора |
+| `DR18` | `lorenz_z` | float32 → uint32 | Z-координата атрактора (інтенсивність конвекції) |
+| `DR19` | `LORENZ_STATE_MAGIC` | uint32 | Маркер валідності: `0x4C5A5354` ("LZST") |
+
+**Захист від корупції:** При відновленні перевіряємо `isfinite(x) && isfinite(y) && isfinite(z)`. NaN або Inf → скидання до chaos_seed (первинний старт).
+
+**Backend дзеркало:** `SilkenNet::Attractor.calculate_z_continued(x_prev, y_prev, z_prev, temp, acoustic)` — ідентична математика для перевірки безперервних траєкторій.
+
+**Firmware Bio-Contract:** Додано `calculate_state_continued(x, y, z, temp, acoustic)` → повертає `[payload_byte, x_final, y_final, z_final]`.
+
+**Тести:** 16 нових C-тестів у `test_soldier_logic.c` (float pack/unpack, RTC roundtrip, NaN/Inf rejection, multi-cycle, register isolation).
 
 ---
 
@@ -248,10 +263,17 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 ### 2.1 Звідки Беруться Вхідні Параметри
 
 ```
-firmware/soldier/main.c — ФАЗА 1 (SENSE)
+firmware/soldier/main.c — ФАЗА 1 (SENSE + State Restore)
 │
 ├── chaos_seed   ← HAL_RNG_GenerateRandomNumber(&hrng, &chaos_seed)
 │                   uint32_t, апаратна ентропія (теплові шуми)
+│                   ⚠️ Використовується ТІЛЬКИ при першому старті (DR19 ≠ MAGIC)
+│
+├── [FW.6] lorenz_x/y/z ← HAL_RTCEx_BKUPRead(DR16/DR17/DR18)
+│                   float32 (IEEE 754 bit-copy через uint32_t)
+│                   Відновлення стану атрактора з попереднього циклу STOP2
+│                   DR19 == 0x4C5A5354 ("LZST") → state_valid = 1
+│                   isfinite() перевірка → захист від NaN/Inf корупції
 │
 ├── internal_temp ← HAL_ADC_GetValue(&hadc)  [ADC, канал internal temp]
 │                   int8_t, перетворений через __LL_ADC_CALC_TEMPERATURE()
@@ -263,9 +285,19 @@ firmware/soldier/main.c — ФАЗА 1 (SENSE)
 
 firmware/soldier/main.c — ФАЗА 3 (mruby виклик)
 │
-├── args[0] = mrb_fixnum_value(chaos_seed)
-├── args[1] = mrb_fixnum_value((int8_t)lora_payload[6])  ← internal_temp
-└── args[2] = mrb_fixnum_value(lora_payload[7])           ← acoustic_events
+├── [FW.6] Якщо lorenz_state_valid == 1 (стан відновлено з RTC):
+│   ├── args[0] = mrb_float_value(mrb, lorenz_x)    ← збережений стан
+│   ├── args[1] = mrb_float_value(mrb, lorenz_y)
+│   ├── args[2] = mrb_float_value(mrb, lorenz_z)
+│   ├── args[3] = mrb_fixnum_value(temp)
+│   └── args[4] = mrb_fixnum_value(acoustic)
+│   → calculate_state_continued(x, y, z, temp, acoustic) → [payload_byte, x, y, z]
+│
+└── Якщо lorenz_state_valid == 0 (перший старт або RTC скинуто):
+    ├── args[0] = mrb_fixnum_value(chaos_seed)
+    ├── args[1] = mrb_fixnum_value(temp)
+    └── args[2] = mrb_fixnum_value(acoustic)
+    → calculate_state(seed, temp, acoustic) → payload_byte
 ```
 
 > **⚠️ УВАГА (BLOCKER-1):** `delta_t_seconds` та `vcap_voltage` **присутні у фазі 1** та записані в LoRa payload (байти 8-9 та 4-5), але **не передаються** у `calculate_state()`. Атрактор використовує `chaos_seed` (HRNG), а не `delta_t` як крок інтегрування.
@@ -274,7 +306,8 @@ firmware/soldier/main.c — ФАЗА 3 (mruby виклик)
 
 | Параметр | Фізичний зміст | Вплив на Атрактор |
 |---|---|---|
-| `chaos_seed` (uint32, HRNG) | Апаратна ентропія — "поточний момент часу" у квантовому шумі | Визначає початкові координати (x₀, y₀, z₀) — старт траєкторії |
+| `chaos_seed` (uint32, HRNG) | Апаратна ентропія — "поточний момент часу" у квантовому шумі | Визначає початкові координати (x₀, y₀, z₀) — **тільки при першому старті** |
+| `lorenz_x/y/z` (float32, RTC) | [FW.6] Збережений стан атрактора з попереднього циклу STOP2 | При наступних циклах — продовження безперервної траєкторії |
 | `temp` (int8, °C) | Температура кристала STM32 (корельована з температурою дерева) | Збурює ρ: `ρ_eff = 28 + temp × 0.2` → змінює "теплову рушійну силу" |
 | `acoustic` (uint8) | Кількість кавітаційних подій флоеми (TinyML) | Збурює σ: `σ_eff = 10 + acoustic × 0.1` → змінює "в'язкість" системи |
 
@@ -571,26 +604,54 @@ end
 
 ```c
 // firmware/soldier/main.c — ФАЗА 3: ПЛАВКА (мруby Лоренц)
+// [FW.6] Два режими: продовження стану або первинний старт
 if (mrb) {
-  int arena_idx = mrb_gc_arena_save(mrb);   // [FIX: mruby Heap Fragmentation]
+  int arena_idx = mrb_gc_arena_save(mrb);
 
-  mrb_value args[3];
-  args[0] = mrb_fixnum_value(chaos_seed);              // uint32 → Fixnum
-  args[1] = mrb_fixnum_value((int8_t)lora_payload[6]); // Temp  → Fixnum
-  args[2] = mrb_fixnum_value(lora_payload[7]);          // Acoustic → Fixnum
+  if (lorenz_state_valid) {
+      // ПРОДОВЖЕННЯ ТРАЄКТОРІЇ (стан відновлено з RTC DR16-DR18)
+      mrb_value args[5];
+      args[0] = mrb_float_value(mrb, (double)lorenz_x);
+      args[1] = mrb_float_value(mrb, (double)lorenz_y);
+      args[2] = mrb_float_value(mrb, (double)lorenz_z);
+      args[3] = mrb_fixnum_value((int8_t)lora_payload[6]); // Temp
+      args[4] = mrb_fixnum_value(lora_payload[7]);          // Acoustic
 
-  mrb_value ruby_result = mrb_funcall_argv(
-    mrb,
-    mrb_top_self(mrb),
-    mrb_intern_lit(mrb, "calculate_state"),  // виклик точки входу
-    3, args
-  );
+      mrb_value result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
+          mrb_intern_lit(mrb, "calculate_state_continued"), 5, args);
+      // result = [payload_byte, x_final, y_final, z_final]
 
-  if (!mrb->exc) {
-    lora_payload[10] = (uint8_t)mrb_fixnum(ruby_result);  // payload_byte
+      if (!mrb->exc && mrb_array_p(result) && RARRAY_LEN(result) == 4) {
+          lora_payload[10] = (uint8_t)mrb_fixnum(mrb_ary_entry(result, 0));
+          lorenz_x = (float)mrb_float(mrb_ary_entry(result, 1));
+          lorenz_y = (float)mrb_float(mrb_ary_entry(result, 2));
+          lorenz_z = (float)mrb_float(mrb_ary_entry(result, 3));
+      } else {
+          lora_payload[10] = BIO_STATUS_VM_ERROR;
+          lorenz_state_valid = 0; // Скидаємо для наступного циклу
+          if (mrb->exc) mrb->exc = NULL;
+      }
   } else {
-    lora_payload[10] = BIO_STATUS_VM_ERROR;  // 0xFF = Tamper (2 bits) + max GP
-    mrb->exc = NULL;                         // скидаємо для наступної ітерації
+      // ПЕРВИННИЙ СТАРТ (chaos_seed)
+      mrb_value args[3];
+      args[0] = mrb_fixnum_value(chaos_seed);              // uint32 → Fixnum
+      args[1] = mrb_fixnum_value((int8_t)lora_payload[6]); // Temp  → Fixnum
+      args[2] = mrb_fixnum_value(lora_payload[7]);          // Acoustic → Fixnum
+
+      mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
+          mrb_intern_lit(mrb, "calculate_state"), 3, args);
+
+      if (!mrb->exc) {
+          lora_payload[10] = (uint8_t)mrb_fixnum(ruby_result);
+          // Ініціалізуємо стан Лоренца для збереження
+          lorenz_x = (float)(((chaos_seed % 1000) / 500.0) - 1.0);
+          lorenz_y = (float)((((chaos_seed >> 4) % 1000) / 500.0) - 1.0);
+          lorenz_z = (float)((((chaos_seed >> 8) % 1000) / 500.0) - 1.0);
+          lorenz_state_valid = 1;
+      } else {
+          lora_payload[10] = BIO_STATUS_VM_ERROR;
+          mrb->exc = NULL;
+      }
   }
 
   mrb_gc_arena_restore(mrb, arena_idx);
@@ -598,9 +659,17 @@ if (mrb) {
 ```
 
 ```ruby
-# firmware/bio_contracts/bio_contract.rb — точка входу
+# firmware/bio_contracts/bio_contract.rb — точки входу
+
+# Первинний старт (chaos_seed визначає початковий стан)
 def calculate_state(seed, temp, acoustic)
   SilkenNet::BioContract.evaluate_and_pack(seed, temp, acoustic)
+end
+
+# [FW.6] Продовження стану (RTC зберіг x,y,z з попереднього циклу)
+# Повертає [payload_byte, x_final, y_final, z_final]
+def calculate_state_continued(x_prev, y_prev, z_prev, temp, acoustic)
+  SilkenNet::BioContract.evaluate_and_pack_continued(x_prev, y_prev, z_prev, temp, acoustic)
 end
 ```
 
@@ -658,9 +727,9 @@ if (mrb) {
 
 | Файл | Призначення |
 |---|---|
-| `firmware/bio_contracts/bio_contract.rb` | mруby скрипт Bio-Contract (SilkenNet::Attractor + SilkenNet::BioContract) |
-| `firmware/soldier/main.c` (рядки 405-435) | C-код виклику mруby (фаза 3) |
-| `app/services/silken_net/attractor.rb` | Rails-сервіс (Float, дзеркало firmware) [FIX FW.7] |
+| `firmware/bio_contracts/bio_contract.rb` | mруby скрипт Bio-Contract (SilkenNet::Attractor + SilkenNet::BioContract). [FW.6] Додано `calculate_state_continued` та `iterate` |
+| `firmware/soldier/main.c` (Фаза 1 + Фаза 3 + Фаза 5) | C-код: відновлення стану з RTC DR16-DR18, виклик mруby (dual-path), збереження стану перед STOP2 |
+| `app/services/silken_net/attractor.rb` | Rails-сервіс (Float, дзеркало firmware) [FIX FW.7]. [FW.6] Додано `calculate_z_continued` та `iterate_lorenz` |
 | `app/services/telemetry_unpacker_service.rb` | Розпакування `payload_byte`, виклик `Attractor.calculate_z` |
-| `firmware/test/test_soldier_logic.c` | Host-based тести (8 тестів Bio-Contract Byte) |
-| `spec/services/silken_net/attractor_spec.rb` | RSpec тести Rails-дзеркала (якщо є) |
+| `firmware/test/test_soldier_logic.c` | Host-based тести (8 Bio-Contract + 16 Lorenz State Persistence) |
+| `spec/services/silken_net/attractor_spec.rb` | RSpec тести Rails-дзеркала |

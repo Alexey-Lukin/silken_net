@@ -156,10 +156,14 @@
 
 #### FW.6 — Lorenz State persistence
 - `03_04`
-- **Опис:** Стан (x,y,z) НЕ зберігається між циклами STOP2 в RTC Backup Registers
-- [ ] Зберегти (x,y,z) у RTC DR0-DR5 (3 × float → 3 × uint32_t)
-- [ ] Відновити при wakeup
-- [ ] Тести
+- **Опис:** Стан (x,y,z) НЕ зберігався між циклами STOP2 в RTC Backup Registers
+- **Статус:** ✅ Реалізовано. Стан зберігається в RTC DR16-DR18 (float32→uint32 bit-copy) + DR19 (magic marker `0x4C5A5354`). Два режими: первинний старт (chaos_seed) та продовження (RTC state). NaN/Inf guard. Backend mirror: `calculate_z_continued`. 16 нових C-тестів.
+- [x] Зберегти (x,y,z) у RTC DR16-DR18 (3 × float32 → 3 × uint32_t) + DR19 magic marker
+- [x] Відновити при wakeup з isfinite() валідацією
+- [x] Firmware bio_contract.rb: `calculate_state_continued(x, y, z, temp, acoustic)`
+- [x] Backend attractor.rb: `calculate_z_continued(x_prev, y_prev, z_prev, temp, acoustic)`
+- [x] Тести: 16 C-тестів (float pack/unpack, RTC roundtrip, NaN/Inf rejection, multi-cycle)
+- [x] Документація: 03_04 BLOCKER-3 закрито, 03_01 register map оновлено, 05_02 firmware phases оновлено
 
 #### FW.7 — Float vs BigDecimal divergence
 - `05_02`
