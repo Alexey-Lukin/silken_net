@@ -429,11 +429,13 @@ Offset | Size | Field            | Значення
 
 Після пакування: `acoustic_events = 0` (скидаємо лічильник).
 
-**Насичення acoustic_events (FW.12):** лічильник `acoustic_events` — uint16 (може накопичувати >255 подій між пробудженнями при тривалій кавітації). При пакуванні в uint8-байт застосовується насичення замість зрізання:
+**Насичення acoustic_events (FW.22):** лічильник `acoustic_events` — **`uint8_t`** з saturating increment:
 ```c
-lora_payload[7] = (uint8_t)(acoustic_events > 255 ? 255 : acoustic_events);
+uint8_t acoustic_events = 0;                        // [FW.22] Saturating uint8_t
+if (acoustic_events < 255) acoustic_events++;        // Saturating increment (no overflow)
+lora_payload[7] = (uint8_t)acoustic_events;          // Direct assignment (no clamping needed)
 ```
-До виправлення: `(uint8_t)acoustic_events` → беззвучне переповнення (511 → 255, 256 → 0). Насичення гарантує, що "надактивний" вузол репортить 255 замість 0.
+Попередня реалізація (FW.12) використовувала `uint16_t` з clamp при пакуванні. FW.22 переміщує захист на рівень інкременту — тип `uint8_t` фізично не може перевищити 255.
 
 ---
 
@@ -559,7 +561,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 | Регістр | Змінна | Тип | Опис |
 |---------|--------|-----|------|
-| `DR0` | `acoustic_events` | uint16 | Лічильник акустичних подій (кавітація) |
+| `DR0` | `acoustic_events` | uint8 | Лічильник акустичних подій (кавітація), saturating [0, 255] |
 | `DR1` | `last_wakeup_timestamp` | uint32 | Час останнього пробудження (HAL_GetTick/1000) |
 | `DR2` | `has_mesh_relay` | uint8 | Прапорець: 1 = є пакет для ретрансляції |
 | `DR3` | `mesh_relay_payload[0..3]` | uint32 | Транзитний пакет, байти 0-3 |

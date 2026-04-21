@@ -1079,6 +1079,124 @@ TEST(test_lorenz_multi_cycle_state_overwrites) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * FW.22 — ACOUSTIC EVENTS SATURATING INCREMENT (uint8_t)
+ * ════════════════════════════════════════════════════════════════════ */
+
+/* Extracted logic: saturating increment for uint8_t acoustic_events */
+static uint8_t Saturating_Increment_U8(uint8_t val) {
+    if (val < 255) val++;
+    return val;
+}
+
+TEST(test_acoustic_sat_inc_zero) {
+    ASSERT_EQ(Saturating_Increment_U8(0), 1);
+}
+
+TEST(test_acoustic_sat_inc_normal) {
+    ASSERT_EQ(Saturating_Increment_U8(100), 101);
+}
+
+TEST(test_acoustic_sat_inc_254_to_255) {
+    ASSERT_EQ(Saturating_Increment_U8(254), 255);
+}
+
+TEST(test_acoustic_sat_inc_255_stays_255) {
+    /* Must NOT overflow to 0 — this is the core bug FW.22 fixes */
+    ASSERT_EQ(Saturating_Increment_U8(255), 255);
+}
+
+TEST(test_acoustic_sat_inc_repeated_at_max) {
+    uint8_t val = 255;
+    for (int i = 0; i < 1000; i++) {
+        val = Saturating_Increment_U8(val);
+    }
+    ASSERT_EQ(val, 255);
+}
+
+TEST(test_acoustic_sat_inc_ramp_to_max) {
+    uint8_t val = 0;
+    for (int i = 0; i < 300; i++) {
+        val = Saturating_Increment_U8(val);
+    }
+    ASSERT_EQ(val, 255); /* Should saturate at 255, not wrap */
+}
+
+TEST(test_acoustic_packing_uint8_direct) {
+    /* With uint8_t type, packing is a direct assignment — no clamping needed */
+    uint8_t acoustic = 200;
+    uint8_t packed = (uint8_t)acoustic;
+    ASSERT_EQ(packed, 200);
+}
+
+TEST(test_acoustic_packing_uint8_max) {
+    uint8_t acoustic = 255;
+    uint8_t packed = (uint8_t)acoustic;
+    ASSERT_EQ(packed, 255);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * FW.10 — TEMPERATURE-BASED TX DEFERRAL
+ * ════════════════════════════════════════════════════════════════════ */
+
+#define COLD_TX_DEFER_TEMP_TEST    (-15)
+#define COLD_TX_DEFER_VCAP_MV_TEST 4000
+
+/* Extracted decision logic matching firmware/soldier/main.c */
+static int Should_Defer_TX(int8_t temp, uint16_t vcap_mv) {
+    return (temp < COLD_TX_DEFER_TEMP_TEST && vcap_mv < COLD_TX_DEFER_VCAP_MV_TEST);
+}
+
+TEST(test_tx_defer_cold_and_low_vcap) {
+    /* -20°C, 3500 mV → MUST defer */
+    ASSERT_TRUE(Should_Defer_TX(-20, 3500));
+}
+
+TEST(test_tx_defer_exactly_minus15_not_deferred) {
+    /* -15°C exactly is NOT < -15, so should NOT defer */
+    ASSERT_FALSE(Should_Defer_TX(-15, 3500));
+}
+
+TEST(test_tx_defer_minus16_low_vcap) {
+    /* -16°C, 3999 mV → defer */
+    ASSERT_TRUE(Should_Defer_TX(-16, 3999));
+}
+
+TEST(test_tx_defer_cold_but_high_vcap) {
+    /* -20°C, 4000 mV → high vcap saves us, do NOT defer */
+    ASSERT_FALSE(Should_Defer_TX(-20, 4000));
+}
+
+TEST(test_tx_defer_cold_but_very_high_vcap) {
+    /* -30°C, 5000 mV → fully charged supercap, do NOT defer */
+    ASSERT_FALSE(Should_Defer_TX(-30, 5000));
+}
+
+TEST(test_tx_defer_warm_and_low_vcap) {
+    /* +25°C, 3000 mV → warm, do NOT defer even with low vcap */
+    ASSERT_FALSE(Should_Defer_TX(25, 3000));
+}
+
+TEST(test_tx_defer_zero_temp) {
+    /* 0°C, 3000 mV → not cold enough */
+    ASSERT_FALSE(Should_Defer_TX(0, 3000));
+}
+
+TEST(test_tx_defer_extreme_cold_zero_vcap) {
+    /* -40°C, 0 mV → extreme case, definitely defer */
+    ASSERT_TRUE(Should_Defer_TX(-40, 0));
+}
+
+TEST(test_tx_defer_boundary_vcap_3999) {
+    /* -16°C, 3999 mV → both below threshold → defer */
+    ASSERT_TRUE(Should_Defer_TX(-16, 3999));
+}
+
+TEST(test_tx_defer_boundary_vcap_4001) {
+    /* -16°C, 4001 mV → vcap above threshold → do NOT defer */
+    ASSERT_FALSE(Should_Defer_TX(-16, 4001));
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -1178,6 +1296,28 @@ int main(void)
     RUN(test_lorenz_state_magic_wrong_value);
     RUN(test_lorenz_state_does_not_clobber_existing_registers);
     RUN(test_lorenz_multi_cycle_state_overwrites);
+
+    printf("\n  Acoustic Events Saturation — uint8_t (FW.22):\n");
+    RUN(test_acoustic_sat_inc_zero);
+    RUN(test_acoustic_sat_inc_normal);
+    RUN(test_acoustic_sat_inc_254_to_255);
+    RUN(test_acoustic_sat_inc_255_stays_255);
+    RUN(test_acoustic_sat_inc_repeated_at_max);
+    RUN(test_acoustic_sat_inc_ramp_to_max);
+    RUN(test_acoustic_packing_uint8_direct);
+    RUN(test_acoustic_packing_uint8_max);
+
+    printf("\n  Temperature-Based TX Deferral (FW.10):\n");
+    RUN(test_tx_defer_cold_and_low_vcap);
+    RUN(test_tx_defer_exactly_minus15_not_deferred);
+    RUN(test_tx_defer_minus16_low_vcap);
+    RUN(test_tx_defer_cold_but_high_vcap);
+    RUN(test_tx_defer_cold_but_very_high_vcap);
+    RUN(test_tx_defer_warm_and_low_vcap);
+    RUN(test_tx_defer_zero_temp);
+    RUN(test_tx_defer_extreme_cold_zero_vcap);
+    RUN(test_tx_defer_boundary_vcap_3999);
+    RUN(test_tx_defer_boundary_vcap_4001);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

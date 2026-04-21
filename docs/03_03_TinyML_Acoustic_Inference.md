@@ -215,29 +215,22 @@ if (ml_confidence > 0.80) {
 
 ---
 
-### 🟡 BLOCKER-7: Накопичення `acoustic_events` без переповнення uint16_t
+### ✅ BLOCKER-7: Накопичення `acoustic_events` — ВИРІШЕНО (FW.22)
 
-**Статус:** Відкрито. Потенційний overflow при тривалому моніторингу.
+**Статус:** ✅ Вирішено (Сесія 18).
 
-**Файл:** `firmware/soldier/main.c:71, 360, 387`
-
+**Рішення:** Тип змінено з `uint16_t` на `uint8_t` із saturating increment:
 ```c
-uint16_t acoustic_events = 0;          // Відфільтровані мікророзриви (Кавітація)
+uint8_t acoustic_events = 0;           // [FW.22] Saturating uint8_t
 // ...
-acoustic_events++;                     // При кавітації (ml_event_id == 2)
+if (acoustic_events < 255) acoustic_events++;  // Saturating increment
 // ...
-lora_payload[7] = (uint8_t)(acoustic_events & 0xFF); // Тільки молодший байт!
+lora_payload[7] = (uint8_t)acoustic_events;    // Direct assignment (no clamping needed)
 ```
 
-**Проблема:**
-1. `acoustic_events` — `uint16_t` (0–65535), але в пейлоад записується тільки `& 0xFF` (0–255).
-2. При > 255 подій між TX-циклами старший байт втрачається → silent data corruption.
-3. `acoustic_events` скидається в `0` після пакування (`lora_payload[7] = ...; acoustic_events = 0;` — `main.c:387,403`). Якщо між `acoustic_events++` (рядок 360) та скиданням (рядок 403) відбудеться > 255 інкрементів, то перед скиданням `lora_payload[7]` вже отримає зіпсоване значення (`0xFF` і далі — wrap-around). Запис у `HAL_RTCEx_BKUPWrite(DR0, acoustic_events)` (рядок 605) відбувається після пакування, але до скидання в циклі: якщо там вже накопичено > 255 — RTC збереже wraparound-значення.
+8 host-based unit tests підтверджують: нуль, нормальне значення, 254→255, 255 залишається 255, ramp to max, repeated at max, packing.
 
-**Необхідна дія:**
-- Або обмежити `acoustic_events` до `uint8_t` (максимум 255 кавітацій за цикл — більш ніж достатньо).
-- Або масштабувати: `lora_payload[7] = (uint8_t)MIN(acoustic_events, 255)` (clamp).
-- Задокументувати семантику байту 7 у Binary Packet Format SSOT.
+Backend warning для `acoustic_events == 255` реалізовано в `TelemetryUnpackerService` (Сесія 15).
 
 **Блокує:** Коректність даних кавітації, точність backend-аналізу.
 
@@ -666,7 +659,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | 🔴 Відкрито |
 | 8 | Confidence threshold конфігурується (не хардкод) | 🟡 Відкрито |
 | 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | 🟡 Відкрито |
-| 10 | `acoustic_events` overflow захист реалізовано | 🟡 Відкрито |
+| 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment, 8 тестів) |
 
 ---
 

@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-21 Сесія 17 (S5.2 RELEASE_VERSION + SEC.5 HMAC doc + DOC.4 porosity fix)
+> **Останнє оновлення:** 2026-04-21 Сесія 18 (FW.10 TX deferral + FW.22 uint8_t saturation + OPS.2 SSOT Guard)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -166,12 +166,6 @@
 - [ ] Double-buffering або persistent buffer для retry
 - [ ] Configurable retry count
 
-#### FW.10 — Temperature-based TX deferral
-- `02_04`
-- **Опис:** При T < -15°C ESR іоністора зростає; може спричинити просадку LoRa TX
-- [ ] Додати check: якщо `temp < -15` && `vcap_voltage < 4.0V` → відкласти TX
-- [ ] Тести
-
 ### 🟢 P2 — Низькопріоритетні
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
@@ -219,7 +213,8 @@
 - `03_03` BLOCKER-7
 - **Опис:** `acoustic_events` — тип `uint16_t` в firmware, але в 21-байтний пакет пишеться лише молодший байт (low byte). Якщо між TX циклами більше 255 подій — silent overflow, дані корумпуються. Backend отримує обрізане значення без можливості виявити overflow
 - **Пріоритет:** P2 (рідкий сценарій при нормальній роботі, критичний при stress-тестуванні)
-- [ ] Firmware: обмежити `acoustic_events` до `uint8_t` з saturating increment (cap at 255)
+- **Статус:** ✅ Виконано (Сесія 18). Тип змінено на `uint8_t`, додано saturating increment `if (acoustic_events < 255) acoustic_events++`. Packing спрощено (ternary видалено). 8 unit tests.
+- [x] Firmware: обмежити `acoustic_events` до `uint8_t` з saturating increment (cap at 255)
 - [ ] АБО: виділити 2 байти в payload (потребує перепакування — пов'язано з FW.2 CCM transition)
 - [x] Backend: додати warning якщо `acoustic_events == 255` (ймовірний overflow) — реалізовано в `TelemetryUnpackerService`
 
@@ -482,8 +477,9 @@
 #### OPS.2 — SSOT Integrity Guard
 - **Джерело:** `09_03` | **Складність: M**
 - **Опис:** GitHub Action що блокує merge PRs якщо зміни в `app/models/` або `firmware/` не супроводжуються відповідними оновленнями в `docs/` або Wiki. Запобігає context drift між кодом та документацією
-- [ ] Створити `.github/workflows/ssot_guard.yml`
-- [ ] Визначити mapping: які файли потребують яких doc updates
+- **Статус:** ✅ Виконано (Сесія 18). `.github/workflows/ssot_guard.yml` створено. Перевіряє: `app/models/`, `firmware/soldier/`, `firmware/queen/`, `firmware/bio_contracts/`, `contracts/`, `app/services/`. Bypass через label `ssot-bypass`. Виводить деталізований звіт у PR check.
+- [x] Створити `.github/workflows/ssot_guard.yml`
+- [x] Визначити mapping: які файли потребують яких doc updates
 - [ ] Налаштувати як required check на `main` branch
 
 ---
@@ -663,6 +659,7 @@
 | 2026-04-21 | Сесія 15: **FW.11** — NVIC-рівнева ізоляція `vibration_detected` race condition. **FW.15** — `test_tinyml_pipeline.c` (25 тестів) + `test_encryption.c` (18 тестів). **FW.16** — `Restore_ECB_Mode()` helper з RCC reset + NVIC_SystemReset fallback. **FW.22** — backend warning для `acoustic_events==255` в `TelemetryUnpackerService`. **FW.7/FW.19** — задокументовано Float vs BigDecimal tolerance як "by design" в `03_04`. **FW.5** — BLOCKER-1 збагачено аналізом chaos_seed vs delta_t/vcap впливу на токеноміку (залишено відкритим). **CI** — `firmware_test` job додано до `.github/workflows/ci.yml`. **03_03** — BLOCKER-4 (тести) та BLOCKER-8 (race condition) закрито. Всього 207 firmware тестів (79+58+27+25+18). |
 | 2026-04-21 | Сесія 16: **FW.6** — Lorenz State Persistence: стан (x,y,z) зберігається в RTC DR16-DR18 між циклами STOP2 (BLOCKER-3 закрито). 16 нових C-тестів. **FW.7** — уточнено як TRL 6 mitigation з попередженням про IEEE 754 ARM/x86 drift. **ARCH.18** — додано Fixed-Point Arithmetic (Integer Math) як довгостроковий roadmap для побітового consensus. Документація оновлена: `03_04` (BLOCKER-3), `03_01` (register map DR0-DR19), `05_02` (firmware phases). Всього 223 firmware тести (79+74+27+25+18). |
 | 2026-04-21 | Сесія 17: **S5.2** — `RELEASE_VERSION` ENV додано до deploy.yml (Canopy: git SHA), deploy-production.yml (Production: release tag), config/deploy.yml (Kamal), deploy/akash/deploy.yaml (web+job). Sentry release tracking тепер активний. **SEC.5** — Документовано HMAC bypass security requirement у `04_03` (WEB3_STRICT_MODE=true → SecurityError). **DOC.4** — Пористість узгоджена: CLAUDE.md та copilot-instructions.md оновлені з 70% → 65% (target), діапазон 60-70% (відповідно до `01_01`). **Трекер** — Позначено як виконані: S5.1 (Prometheus метрики), S5.3 (deploy-production.yml), OPS.1 (trl_sync.yml). |
+| 2026-04-21 | Сесія 18: **FW.22** — `acoustic_events` змінено з `uint16_t` на `uint8_t` із saturating increment (`if < 255`) у `soldier/main.c:415`. Packing спрощено (ternary видалено). 8 unit tests. **FW.10** — Temperature-based TX deferral: guard clause `packed_temp < -15 && vcap_voltage < 4000` → `goto phase5_kenosis`. Named constants `COLD_TX_DEFER_TEMP`, `COLD_TX_DEFER_VCAP_MV`. 10 unit tests. **OPS.2** — SSOT Integrity Guard: `.github/workflows/ssot_guard.yml` створено. Перевіряє 6 protected areas (models, firmware, contracts, services). `ssot-bypass` label для обходу. Всього 241 firmware тест (79+92+27+25+18). |
 
 ---
 

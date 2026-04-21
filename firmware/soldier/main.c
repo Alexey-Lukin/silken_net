@@ -44,6 +44,8 @@
 #define TX_JITTER_MAX_MS          500        // Максимальна рандомізована затримка TX (мс)
 #define PANIC_TTL                 5          // TTL для екстрених пакетів
 #define DEFAULT_TTL               3          // Стандартний TTL для пакетів
+#define COLD_TX_DEFER_TEMP        (-15)      // Temperature threshold for TX deferral (°C)
+#define COLD_TX_DEFER_VCAP_MV     4000       // Vcap threshold for TX deferral (mV)
 /* USER CODE BEGIN PD */
 /* USER CODE END PD */
 
@@ -69,7 +71,7 @@ uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
 
 // === 1. ОРГАНИ ЧУТТЯ ТА ПАМ'ЯТЬ ===
 volatile uint8_t vibration_detected = 0; // Прапорець переривання від п'єзодиска
-uint16_t acoustic_events = 0;          // Відфільтровані мікророзриви (Кавітація)
+uint8_t acoustic_events = 0;           // Відфільтровані мікророзриви (Кавітація)
 uint32_t last_wakeup_timestamp = 0;    // Час попереднього пробудження
 uint32_t delta_t_seconds = 0;          // Швидкість заряду іоністора (Метаболізм)
 uint32_t tree_did = 0;                 // Decentralized Identity (Гаманець Дерева)
@@ -413,7 +415,7 @@ int main(void)
             if (ml_confidence > 0.80) {
                 if (ml_event_id == 2) {
                     // Це підтверджена кавітація ксилеми!
-                    acoustic_events++;
+                    if (acoustic_events < 255) acoustic_events++;
                 } else if (ml_event_id == 3) {
                     // Тривога: Аномальна вібрація (Бензопила / Вандалізм)
                     Trigger_Emergency_LoRa_TX();
@@ -440,9 +442,9 @@ int main(void)
     lora_payload[6] = (int8_t)__LL_ADC_CALC_TEMPERATURE(3300, internal_temp, LL_ADC_RESOLUTION_12B);
 
     // Байт 7: Акустичні події (Відфільтровані TinyML)
-    // [FIX FW.12]: Saturation замість truncation. При >255 подій uint8_t переповнювався
-    // (& 0xFF давав молодші біти — silent corruption). Clamp до 255 зберігає семантику.
-    lora_payload[7] = (uint8_t)(acoustic_events > 255 ? 255 : acoustic_events);
+    // [FW.22]: acoustic_events is now uint8_t with saturating increment,
+    // so no clamping needed — value is already in [0, 255].
+    lora_payload[7] = (uint8_t)acoustic_events;
 
     // Байти 8-9: Швидкість заряду (Секунди)
     lora_payload[8] = (uint8_t)(delta_t_seconds >> 8);
@@ -533,6 +535,17 @@ int main(void)
     // =========================================================================
     // ФАЗА 4: ПЕРЕДАЧА ДАНИХ (AES-256 + Mesh)
     // =========================================================================
+
+    // [FW.10] Temperature-based TX deferral: at extreme cold (-15°C and below),
+    // EDLC ESR rises sharply. If vcap is also low (<4.0V), LoRa TX may cause
+    // a voltage brownout. Skip TX and go directly to sleep to preserve energy.
+    {
+        int8_t packed_temp = (int8_t)lora_payload[6];
+        if (packed_temp < COLD_TX_DEFER_TEMP && vcap_voltage < COLD_TX_DEFER_VCAP_MV) {
+            // Skip Phase 4 (TX) and Phase 4.5 (RX/OTA) — go directly to Phase 5 (KENOSIS)
+            goto phase5_kenosis;
+        }
+    }
 
     // [FIX: LoRa Collision Storm] Рандомізована затримка 0-500 мс перед TX.
     // Якщо 100 дерев прокинуться одночасно (грім, землетрус), без jitter
@@ -695,6 +708,7 @@ int main(void)
         Radio.Sleep(); // Вимикаємо приймач
     }
 
+    phase5_kenosis:
     // =========================================================================
     // ФАЗА 5: КЕНОЗИС (Абсолютний сон та збереження)
     // =========================================================================
