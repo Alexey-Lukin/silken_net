@@ -16,6 +16,7 @@
 #include <mruby.h>
 #include <mruby/irep.h>
 #include <mruby/array.h>
+#include <math.h>     // [FW.6] isfinite() для валідації RTC Lorenz state
 
 // Підключаємо скомпільовану нейромережу TinyML
 #include "silken_net_audio_model.h"
@@ -111,6 +112,28 @@ uint16_t ota_chunks_received = 0;
 uint8_t ota_chunk_received[256] = {0};
 
 uint8_t* current_lorenz_bytecode;
+
+// === 1.9. СТАН АТРАКТОРА ЛОРЕНЦА (FW.6: State Persistence) ===
+// Зберігаємо (x, y, z) між циклами STOP2 через RTC Backup Registers DR16-DR18.
+// DR19 = маркер валідності (LORENZ_STATE_MAGIC = 0x4C5A5354 "LZST").
+// При першому старті (DR19 != MAGIC) — ініціалізація від chaos_seed.
+// При наступних — продовження безперервної траєкторії на атракторі.
+#define LORENZ_STATE_MAGIC 0x4C5A5354  // "LZST" — маркер збереженого стану
+float lorenz_x = 0.0f, lorenz_y = 0.0f, lorenz_z = 0.0f;
+uint8_t lorenz_state_valid = 0;  // 1 = відновлено з RTC, 0 = перший старт
+
+// IEEE 754 float ↔ uint32_t конвертація (бітова копія, без втрат)
+static inline uint32_t float_to_uint32(float f) {
+    uint32_t u;
+    memcpy(&u, &f, sizeof(u));
+    return u;
+}
+
+static inline float uint32_to_float(uint32_t u) {
+    float f;
+    memcpy(&f, &u, sizeof(f));
+    return f;
+}
 
 // === 2. РУДА СВІДОМОСТІ (Байт-код mruby) ===
 // Скомпільований скрипт Атрактора Лоренца.
@@ -209,6 +232,30 @@ int main(void)
   recent_mesh_dids[5] = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR13);
   recent_mesh_dids[6] = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR14);
   recent_mesh_dids[7] = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR15);
+
+  // =========================================================================
+  // [FW.6] ВІДНОВЛЕННЯ СТАНУ АТРАКТОРА ЛОРЕНЦА (RTC DR16-DR19)
+  // =========================================================================
+  // Перевіряємо маркер валідності в DR19. Якщо LORENZ_STATE_MAGIC —
+  // відновлюємо (x, y, z) з попереднього циклу для безперервної траєкторії.
+  // Інакше — перший старт, chaos_seed ініціалізує стан пізніше.
+  {
+      uint32_t lorenz_magic = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR19);
+      if (lorenz_magic == LORENZ_STATE_MAGIC) {
+          lorenz_x = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR16));
+          lorenz_y = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR17));
+          lorenz_z = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR18));
+
+          // Захист від NaN/Inf після збою RTC або бітових помилок
+          if (isfinite(lorenz_x) && isfinite(lorenz_y) && isfinite(lorenz_z)) {
+              lorenz_state_valid = 1;
+          } else {
+              // Корупція даних — скидаємо до першого старту
+              lorenz_state_valid = 0;
+              lorenz_x = lorenz_y = lorenz_z = 0.0f;
+          }
+      }
+  }
 
   // =========================================================================
   // ГЕНЕРАЦІЯ DECENTRALIZED IDENTITY (DID)
@@ -415,6 +462,7 @@ int main(void)
 
     // =========================================================================
     // ФАЗА 3: ПЛАВКА (Запуск Ruby та Атрактора Лоренца)
+    // [FW.6] Два режими: первинний (chaos_seed) та продовження (RTC state).
     // =========================================================================
 
     if (mrb) {
@@ -423,20 +471,57 @@ int main(void)
       // повільному «витоку» пам'яті через тижні безперервної роботи.
       int arena_idx = mrb_gc_arena_save(mrb);
 
-      mrb_value args[3];
-      args[0] = mrb_fixnum_value(chaos_seed);
-      args[1] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура (Зимовий щит)
-      args[2] = mrb_fixnum_value(lora_payload[7]); // Акустика
+      if (lorenz_state_valid) {
+          // [FW.6] ПРОДОВЖЕННЯ ТРАЄКТОРІЇ: використовуємо збережений стан
+          // calculate_state_continued(x_prev, y_prev, z_prev, temp, acoustic)
+          // → [payload_byte, x_final, y_final, z_final]
+          mrb_value args[5];
+          args[0] = mrb_float_value(mrb, (double)lorenz_x);
+          args[1] = mrb_float_value(mrb, (double)lorenz_y);
+          args[2] = mrb_float_value(mrb, (double)lorenz_z);
+          args[3] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура
+          args[4] = mrb_fixnum_value(lora_payload[7]); // Акустика
 
-      mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb), mrb_intern_lit(mrb, "calculate_state"), 3, args);
+          mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
+              mrb_intern_lit(mrb, "calculate_state_continued"), 5, args);
 
-      // Байт 10: Біо-Контракт (Токеноміка)
-      if (!mrb->exc) {
-          lora_payload[10] = (uint8_t)mrb_fixnum(ruby_result);
+          if (!mrb->exc && mrb_array_p(ruby_result) && RARRAY_LEN(ruby_result) == 4) {
+              // Витягуємо payload_byte та оновлений стан
+              lora_payload[10] = (uint8_t)mrb_fixnum(mrb_ary_entry(ruby_result, 0));
+              lorenz_x = (float)mrb_float(mrb_ary_entry(ruby_result, 1));
+              lorenz_y = (float)mrb_float(mrb_ary_entry(ruby_result, 2));
+              lorenz_z = (float)mrb_float(mrb_ary_entry(ruby_result, 3));
+          } else {
+              // Помилка mruby або невалідний результат — позначаємо tamper
+              lora_payload[10] = BIO_STATUS_VM_ERROR;
+              lorenz_state_valid = 0; // Скидаємо для наступного циклу
+              if (mrb->exc) mrb->exc = NULL;
+          }
       } else {
-          // [FIX: AUDIT] Обробка помилки mruby — позначаємо status=tamper
-          lora_payload[10] = BIO_STATUS_VM_ERROR;
-          mrb->exc = NULL; // Скидаємо виняток для наступної ітерації
+          // ПЕРВИННИЙ СТАРТ: chaos_seed визначає початковий стан
+          mrb_value args[3];
+          args[0] = mrb_fixnum_value(chaos_seed);
+          args[1] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура (Зимовий щит)
+          args[2] = mrb_fixnum_value(lora_payload[7]); // Акустика
+
+          mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
+              mrb_intern_lit(mrb, "calculate_state"), 3, args);
+
+          // Байт 10: Біо-Контракт (Токеноміка)
+          if (!mrb->exc) {
+              lora_payload[10] = (uint8_t)mrb_fixnum(ruby_result);
+
+              // [FW.6] Ініціалізуємо стан Лоренца від chaos_seed для збереження.
+              // Повторюємо seed→(x,y,z) перетворення ідентично bio_contract.rb.
+              lorenz_x = (float)(((chaos_seed % 1000) / 500.0) - 1.0);
+              lorenz_y = (float)((((chaos_seed >> 4) % 1000) / 500.0) - 1.0);
+              lorenz_z = (float)((((chaos_seed >> 8) % 1000) / 500.0) - 1.0);
+              lorenz_state_valid = 1;
+          } else {
+              // [FIX: AUDIT] Обробка помилки mruby — позначаємо status=tamper
+              lora_payload[10] = BIO_STATUS_VM_ERROR;
+              mrb->exc = NULL; // Скидаємо виняток для наступної ітерації
+          }
       }
 
       mrb_gc_arena_restore(mrb, arena_idx);
@@ -640,6 +725,15 @@ int main(void)
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, recent_mesh_dids[5]);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, recent_mesh_dids[6]);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR15, recent_mesh_dids[7]);
+
+    // [FW.6] Зберігаємо стан Атрактора Лоренца перед STOP2
+    // Якщо стан валідний — записуємо (x, y, z) + маркер LORENZ_STATE_MAGIC
+    if (lorenz_state_valid) {
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR16, float_to_uint32(lorenz_x));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR17, float_to_uint32(lorenz_y));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR18, float_to_uint32(lorenz_z));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC);
+    }
 
     // [FIX: AUDIT Energy] Вимикаємо периферію перед STOP2 для мінімального споживання.
     // Без де-ініціалізації ці модулі тягнуть мікроампери навіть у STOP2.

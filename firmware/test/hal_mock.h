@@ -56,7 +56,7 @@ typedef struct {
 #define GPIO_PIN_0      0x0001
 #define LL_ADC_RESOLUTION_12B 12
 
-/* RTC Backup Registers */
+/* RTC Backup Registers (STM32WLE5 supports DR0-DR19, 20 registers total) */
 #define RTC_BKP_DR0  0
 #define RTC_BKP_DR1  1
 #define RTC_BKP_DR2  2
@@ -73,6 +73,11 @@ typedef struct {
 #define RTC_BKP_DR13 13
 #define RTC_BKP_DR14 14
 #define RTC_BKP_DR15 15
+/* [FW.6] Lorenz state persistence registers */
+#define RTC_BKP_DR16 16
+#define RTC_BKP_DR17 17
+#define RTC_BKP_DR18 18
+#define RTC_BKP_DR19 19
 
 /* ── Stub functions (no-ops) ───────────────────────────────────────── */
 static inline int  HAL_Init(void) { return HAL_OK; }
@@ -107,8 +112,22 @@ static inline void HAL_ResumeTick(void) {}
 static inline void HAL_PWREx_EnterSTOP2Mode(int m) { (void)m; }
 static inline void HAL_PWR_EnterSLEEPMode(int a, int b) { (void)a; (void)b; }
 
-static inline uint32_t HAL_RTCEx_BKUPRead(RTC_HandleTypeDef *h, int r) { (void)h; (void)r; return 0; }
-static inline void HAL_RTCEx_BKUPWrite(RTC_HandleTypeDef *h, int r, uint32_t v) { (void)h; (void)r; (void)v; }
+/* [FW.6] Functional RTC Backup Register mock — stores/retrieves values for testing state persistence */
+#define RTC_BKP_REGISTER_COUNT 20
+static uint32_t _rtc_bkp_regs[RTC_BKP_REGISTER_COUNT] = {0};
+
+static inline uint32_t HAL_RTCEx_BKUPRead(RTC_HandleTypeDef *h, int r) {
+    (void)h;
+    if (r >= 0 && r < RTC_BKP_REGISTER_COUNT) return _rtc_bkp_regs[r];
+    return 0;
+}
+static inline void HAL_RTCEx_BKUPWrite(RTC_HandleTypeDef *h, int r, uint32_t v) {
+    (void)h;
+    if (r >= 0 && r < RTC_BKP_REGISTER_COUNT) _rtc_bkp_regs[r] = v;
+}
+static inline void _rtc_bkp_reset_all(void) {
+    memset(_rtc_bkp_regs, 0, sizeof(_rtc_bkp_regs));
+}
 
 static inline void HAL_IWDG_Refresh(IWDG_HandleTypeDef *h) { (void)h; }
 

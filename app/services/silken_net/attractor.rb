@@ -32,20 +32,25 @@ module SilkenNet
       # Сервер МУСИТЬ робити те саме для Dual Computation Integrity.
       # Overflow protection: з clamped σ∈[5,30] та ρ∈[10,50], Lorenz attractor bounded.
       # Емпірично |x|<25, |y|<35, |z|<50 після 250 ітерацій — далеко від Float64 overflow.
-      ITERATIONS.times do
-        dx = local_sigma * (y - x)
-        dy = x * (local_rho - z) - y
-        dz = (x * y) - (BASE_BETA * z)
-
-        x += dx * DT
-        y += dy * DT
-        z += dz * DT
-      end
+      x, y, z = iterate_lorenz(x, y, z, local_sigma, local_rho)
 
       duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
       SilkenNet::Metrics::LORENZ_COMPUTATION_DURATION.observe(duration) if defined?(SilkenNet::Metrics)
 
       z.round(4)
+    end
+
+    # [FW.6] Обчислення Z з продовженням стану.
+    # Використовується для перевірки безперервної траєкторії атрактора,
+    # коли firmware зберігає (x, y, z) між циклами STOP2.
+    # Повертає [z_rounded, x_final, y_final, z_final] для подальшого ланцюгування.
+    def self.calculate_z_continued(x_prev, y_prev, z_prev, temp, acoustic)
+      local_sigma = (BASE_SIGMA + (acoustic * 0.1)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
+      local_rho   = (BASE_RHO + (temp * 0.2)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
+
+      x, y, z = iterate_lorenz(x_prev, y_prev, z_prev, local_sigma, local_rho)
+
+      [ z.round(4), x, y, z ]
     end
 
     def self.homeostatic?(z_value, tree_family)
@@ -80,6 +85,21 @@ module SilkenNet
         when 2 then z.round(4)
         end
       end
+    end
+
+    # Спільне ядро ітерацій Лоренца — використовується в calculate_z та calculate_z_continued
+    private_class_method def self.iterate_lorenz(x, y, z, local_sigma, local_rho)
+      ITERATIONS.times do
+        dx = local_sigma * (y - x)
+        dy = x * (local_rho - z) - y
+        dz = (x * y) - (BASE_BETA * z)
+
+        x += dx * DT
+        y += dy * DT
+        z += dz * DT
+      end
+
+      [ x, y, z ]
     end
 
     private_class_method def self.initialize_state(seed, temp, acoustic)
