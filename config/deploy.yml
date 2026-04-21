@@ -51,6 +51,11 @@ env:
     # Combined with preload_app! + jemalloc, CoW sharing cuts memory ~30-40%.
     WEB_CONCURRENCY: 2
 
+    # Sentry release tracking — set by CI/CD pipeline (git SHA or release tag).
+    # Enables Sentry to group errors by deploy and track regressions.
+    # See: config/initializers/sentry.rb → config.release
+    RELEASE_VERSION: "${RELEASE_VERSION}"
+
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug
 

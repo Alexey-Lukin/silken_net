@@ -10,7 +10,7 @@
 ## 1. Що таке SilkenNet
 
 SilkenNet / Gaia 2.0 — планетарна кіберфізична платформа для моніторингу здоров'я лісів. Система поєднує:
-- **Hardware edge**: Ti-6Al-4V гіроїдний анкер (DMLS, пористість 70%) вживляється в дерево. EBFC (Enzymatic Bio-Fuel Cell) на межі метал-ксилема генерує ~500 мВ. BQ25570 MPPT -> EDLC суперконденсатор 0.47F/5.5V -> MCU 3.3V. Принцип "zero grid" — дерево живить власний монітор.
+- **Hardware edge**: Ti-6Al-4V гіроїдний анкер (DMLS, пористість 65%, діапазон 60-70%) вживляється в дерево. EBFC (Enzymatic Bio-Fuel Cell) на межі метал-ксилема генерує ~500 мВ. BQ25570 MPPT -> EDLC суперконденсатор 0.47F/5.5V -> MCU 3.3V. Принцип "zero grid" — дерево живить власний монітор.
 - **Firmware**: Soldier (STM32WLE5JC) збирає дані, запускає mruby Lorenz attractor, упаковує 21-байтний пакет, шифрує AES-256-ECB, відправляє LoRa 868 МГц.
 - **Backend**: Rails 8.1 / Ruby 4.0.2 / PostgreSQL / Sidekiq — декодує, верифікує через 12-chain Web3 pipeline, мінтить SCC.
 - **Tokenomics**: Proof of Growth — 10,000 growth_points = 1 SCC (Polygon ERC-20). Слешинг при деградації лісу.

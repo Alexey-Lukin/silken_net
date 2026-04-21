@@ -51,7 +51,7 @@ Authorization: Bearer <token>
 | `/api/v1/oracle_callbacks` | POST | Chainlink DON callback (HMAC-SHA256 валідація через `X-Chainlink-Signature`) |
 | `/api/v1/auth/m2m_token` | POST | M2M автентифікація (Ed25519-підпис, без Bearer token) |
 
-> **Примітка:** `/api/v1/oracle_callbacks` виключено з `authenticate_user!`, але захищено `before_action :verify_chainlink_signature!` — HMAC-SHA256 валідація заголовку `X-Chainlink-Signature` (ENV `CHAINLINK_HMAC_SECRET`). Якщо змінна не встановлена — HMAC пропускається з попередженням (dev/test).
+> **Примітка:** `/api/v1/oracle_callbacks` виключено з `authenticate_user!`, але захищено `before_action :verify_chainlink_signature!` — HMAC-SHA256 валідація заголовку `X-Chainlink-Signature` (ENV `CHAINLINK_HMAC_SECRET`). Якщо змінна не встановлена — HMAC пропускається з попередженням (dev/test). **При `WEB3_STRICT_MODE=true` (production) — відсутність `CHAINLINK_HMAC_SECRET` викликає `SecurityError` (fail-fast).**
 
 ### 1.4 M2M Auth (для прошивки Gateway)
 
@@ -710,6 +710,8 @@ POST /api/v1/auth/m2m_token
 **Доступ:** 🌐 Публічний (без Bearer token — machine-to-machine, захищено HMAC-SHA256).
 
 > **Безпека:** `OracleCallbacksController` має `before_action :verify_chainlink_signature!` — перевіряє `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` та порівнює з `X-Chainlink-Signature` через `ActiveSupport::SecurityUtils.secure_compare` (timing-safe). Якщо `CHAINLINK_HMAC_SECRET` не встановлено — HMAC пропускається з попередженням у логах (dev/test mode).
+>
+> **🔴 SECURITY REQUIREMENT (SEC.5):** При `WEB3_STRICT_MODE=true` (production) відсутність `CHAINLINK_HMAC_SECRET` викликає `SecurityError` (fail-fast). Це запобігає ситуації, коли misconfigured production залишає oracle callback endpoint без HMAC-захисту, що дозволило б зловмиснику фальсифікувати `oracle_status_fulfilled?` та ініціювати неавторизований мінтинг SCC. Перед mainnet deploy **обов'язково** встановити `CHAINLINK_HMAC_SECRET` та `WEB3_STRICT_MODE=true` в ENV.
 
 **Request Headers:**
 

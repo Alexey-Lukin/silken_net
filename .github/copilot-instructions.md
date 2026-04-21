@@ -14,7 +14,7 @@
 **SilkenNet / Gaia 2.0** — планетарна Bio-IoT D-MRV (Digital Measurement, Reporting, Verification) платформа для моніторингу лісів.
 
 ### Апаратний стек (Edge)
-- **Soldier вузол:** STM32WLE5JC + SX1262 LoRa. Ti-6Al-4V гіроїдний анкер (3D DMLS, пористість 70%) вживляється в дерево. EBFC (Enzymatic Bio-Fuel Cell) генерує ~500 мВ з ксилемного соку. BQ25570 MPPT -> EDLC суперконденсатор 0.47F/5.5V -> 3.3V для MCU.
+- **Soldier вузол:** STM32WLE5JC + SX1262 LoRa. Ti-6Al-4V гіроїдний анкер (3D DMLS, пористість 65%, діапазон 60-70%) вживляється в дерево. EBFC (Enzymatic Bio-Fuel Cell) генерує ~500 мВ з ксилемного соку. BQ25570 MPPT -> EDLC суперконденсатор 0.47F/5.5V -> 3.3V для MCU.
 - **Queen шлюз:** STM32WLE5JC + SIM7070G (LTE-M/NB-IoT або Starlink DTC через Київстар). CIFO EdgeCache 50 слотів. Flush щогодини через CoAP PUT на порт 5683. CoAP batch шифрується AES-256-CBC (HRNG IV).
 - **LoRa протокол:** 868 МГц, TTL-based mesh (DEFAULT_TTL=3, PANIC_TTL=5). Anti-pingpong у RTC Backup Registers (8 слотів).
 - **Packet format (21 байт):** `[DID:4][RSSI:1][AES-256-ECB payload:16]`. Payload: `[Vcap:2][Temp:1][Acoustic:1][dT:2][StatusByte:1][TTL:1][FW:2][PAD:2]`. `StatusByte = [bio_status:2 | growth_points:6]`.

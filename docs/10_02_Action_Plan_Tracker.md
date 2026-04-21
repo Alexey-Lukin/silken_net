@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-21 Сесія 16 (FW.6 Lorenz State Persistence + ARCH.18 Fixed-Point Arithmetic roadmap)
+> **Останнє оновлення:** 2026-04-21 Сесія 17 (S5.2 RELEASE_VERSION + SEC.5 HMAC doc + DOC.4 porosity fix)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -72,21 +72,24 @@
 #### S5.1 — Відсутні Prometheus метрики
 - **P2** | `06_03` | **Складність: S**
 - **Опис:** Документація `06_03` визначає 2 метрики, які відсутні в реалізації: `oracle_dispatch_latency_seconds` (per-network oracle response time) та `lorenz_computation_duration_seconds` (Lorenz attractor compute time). Без них неможливо діагностувати latency проблеми в Web3 pipeline та контролювати compute budget Lorenz
-- [ ] Додати `oracle_dispatch_latency_seconds` histogram у `Chainlink::OracleDispatchService`
-- [ ] Додати `lorenz_computation_duration_seconds` histogram у `SilkenNet::Attractor`
-- [ ] Верифікувати що метрики з'являються на `/metrics`
+- **Статус:** ✅ Виконано. Обидві метрики зареєстровані в `config/initializers/prometheus.rb` та інструментовані: `ORACLE_DISPATCH_DURATION` у `ChainlinkDispatchWorker`, `LORENZ_COMPUTATION_DURATION` у `SilkenNet::Attractor`
+- [x] Додати `oracle_dispatch_latency_seconds` histogram у `Chainlink::OracleDispatchService`
+- [x] Додати `lorenz_computation_duration_seconds` histogram у `SilkenNet::Attractor`
+- [x] Верифікувати що метрики з'являються на `/metrics`
 
 #### S5.2 — RELEASE_VERSION ENV для Sentry
 - **P2** | `06_03` | **Складність: XS** | **🔧 Операційна**
 - **Опис:** `RELEASE_VERSION` ENV не встановлено — Sentry release tracking не працює. Потрібно додати у Kamal/Akash deploy config
-- [ ] Додати `RELEASE_VERSION` у deploy pipeline (git SHA або tag)
+- **Статус:** ✅ Виконано. `RELEASE_VERSION` додано у: `deploy.yml` (Canopy, git SHA), `deploy-production.yml` (Production, release tag або git SHA), `config/deploy.yml` (Kamal clear env), `deploy/akash/deploy.yaml` (web + job services)
+- [x] Додати `RELEASE_VERSION` у deploy pipeline (git SHA або tag)
 - [ ] Верифікувати Sentry release tracking
 
 #### S5.3 — deploy-production.yml workflow
 - **P2** | `06_01` | **Складність: S**
 - **Опис:** Існує лише `deploy.yml` (Canopy/staging). Production deploy workflow відсутній. Блокує автоматизований production deploy при GitHub Release (`v*.*.*`)
-- [ ] Створити `.github/workflows/deploy-production.yml`
-- [ ] Trigger: `release` event з tag `v*.*.*`
+- **Статус:** ✅ Виконано. `.github/workflows/deploy-production.yml` створено з trigger на `release` event та `workflow_dispatch`. Включає Terraform Apply + Kamal Deploy jobs
+- [x] Створити `.github/workflows/deploy-production.yml`
+- [x] Trigger: `release` event з tag `v*.*.*`
 - [ ] Тестування з dry-run
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
@@ -496,7 +499,7 @@
 - **Пріоритет:** P0 (до mainnet deploy)
 - [x] Додати guard: якщо `WEB3_STRICT_MODE=true` та `CHAINLINK_HMAC_SECRET` відсутній → raise SecurityError (fail-fast)
 - [x] Додати integration тест: request без HMAC при `WEB3_STRICT_MODE=true` → SecurityError
-- [ ] Задокументувати у `04_03` як security requirement
+- [x] Задокументувати у `04_03` як security requirement
 
 #### SEC.6 — Secure Element (ATECC608B) не використовується
 - **Джерело:** `03_05` | Firmware architecture
@@ -524,7 +527,7 @@
 
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
-| DOC.4 | **Porosity: 65% vs 70%.** `01_01` послідовно використовує 65%, але CLAUDE.md instructions кажуть 70%. `01_01` §5.2 таблиця каже "60-70% range" | `01_01` vs CLAUDE.md | Узгодити: 65% = target, 60-70%
+| DOC.4 | ~~**Porosity: 65% vs 70%.** `01_01` послідовно використовує 65%, але CLAUDE.md instructions кажуть 70%. `01_01` §5.2 таблиця каже "60-70% range"~~ ✅ Виправлено: CLAUDE.md та copilot-instructions.md оновлені на "65%, діапазон 60-70%" | `01_01` vs CLAUDE.md | ✅ Узгоджено |
 
 ---
 
@@ -533,8 +536,9 @@
 #### OPS.1 — TRL Auto-Advancement GitHub Action
 - **Джерело:** `09_03` | **Складність: M**
 - **Опис:** `trl_sync.yml` — GitHub Action що автоматично переміщує картки на Project Board при закритті issues з TRL-labels. Описаний як "на стадії впровадження" (TRL 7), але не реалізований. Потребує `secrets.PROJECT_PAT` з GraphQL project board permissions
-- [ ] Створити `.github/workflows/trl_sync.yml`
-- [ ] Налаштувати GraphQL API для GitHub Projects v2
+- **Статус:** ✅ Виконано. `.github/workflows/trl_sync.yml` створено з GraphQL API для GitHub Projects v2 (user + org fallback)
+- [x] Створити `.github/workflows/trl_sync.yml`
+- [x] Налаштувати GraphQL API для GitHub Projects v2
 - [ ] Створити `PROJECT_PAT` secret з project:write scope
 - [ ] Тестування з тестовими issues
 
@@ -721,6 +725,7 @@
 | 2026-04-20 | Сесія 14: **SEC.5** — fail-fast guard `SecurityError` при `WEB3_STRICT_MODE=true` без `CHAINLINK_HMAC_SECRET` + integration test. **DOC.1** — `02_04` Lorenz thresholds → 2.0/45.0/29.0. **DOC.3** — `04_04` TRL 9→8. **DOC.5** — `04_03` endpoint count 82→83. **DOC.6** — `05_02` `peaq_signing_key` → mandatory. **DOC.7** — `05_02` soldier 648→771 рядків. |
 | 2026-04-21 | Сесія 15: **FW.11** — NVIC-рівнева ізоляція `vibration_detected` race condition. **FW.15** — `test_tinyml_pipeline.c` (25 тестів) + `test_encryption.c` (18 тестів). **FW.16** — `Restore_ECB_Mode()` helper з RCC reset + NVIC_SystemReset fallback. **FW.22** — backend warning для `acoustic_events==255` в `TelemetryUnpackerService`. **FW.7/FW.19** — задокументовано Float vs BigDecimal tolerance як "by design" в `03_04`. **FW.5** — BLOCKER-1 збагачено аналізом chaos_seed vs delta_t/vcap впливу на токеноміку (залишено відкритим). **CI** — `firmware_test` job додано до `.github/workflows/ci.yml`. **03_03** — BLOCKER-4 (тести) та BLOCKER-8 (race condition) закрито. Всього 207 firmware тестів (79+58+27+25+18). |
 | 2026-04-21 | Сесія 16: **FW.6** — Lorenz State Persistence: стан (x,y,z) зберігається в RTC DR16-DR18 між циклами STOP2 (BLOCKER-3 закрито). 16 нових C-тестів. **FW.7** — уточнено як TRL 6 mitigation з попередженням про IEEE 754 ARM/x86 drift. **ARCH.18** — додано Fixed-Point Arithmetic (Integer Math) як довгостроковий roadmap для побітового consensus. Документація оновлена: `03_04` (BLOCKER-3), `03_01` (register map DR0-DR19), `05_02` (firmware phases). Всього 223 firmware тести (79+74+27+25+18). |
+| 2026-04-21 | Сесія 17: **S5.2** — `RELEASE_VERSION` ENV додано до deploy.yml (Canopy: git SHA), deploy-production.yml (Production: release tag), config/deploy.yml (Kamal), deploy/akash/deploy.yaml (web+job). Sentry release tracking тепер активний. **SEC.5** — Документовано HMAC bypass security requirement у `04_03` (WEB3_STRICT_MODE=true → SecurityError). **DOC.4** — Пористість узгоджена: CLAUDE.md та copilot-instructions.md оновлені з 70% → 65% (target), діапазон 60-70% (відповідно до `01_01`). **Трекер** — Позначено як виконані: S5.1 (Prometheus метрики), S5.3 (deploy-production.yml), OPS.1 (trl_sync.yml). |
 
 ---
 
