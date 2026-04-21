@@ -1,0 +1,150 @@
+# SSOT Integrity Guard (OPS.2)
+#
+# Blocks PR merges when changes to core code (models, firmware) are not
+# accompanied by corresponding documentation updates.
+#
+# This prevents context drift between implementation and the SSOT docs.
+# Ref: docs/09_03_GitHub_Projects_and_Ops_Automation.md
+
+name: SSOT Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ssot_check:
+    name: Documentation consistency check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check SSOT consistency
+        id: check
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { execSync } = require('child_process');
+
+            // Get list of changed files in this PR
+            const base = context.payload.pull_request.base.sha;
+            const head = context.payload.pull_request.head.sha;
+            const diffOutput = execSync(
+              `git diff --name-only ${base}...${head}`,
+              { encoding: 'utf-8' }
+            ).trim();
+
+            if (!diffOutput) {
+              core.info('No changed files detected.');
+              return;
+            }
+
+            const changedFiles = diffOutput.split('\n').filter(Boolean);
+            core.info(`Changed files (${changedFiles.length}):\n${changedFiles.join('\n')}`);
+
+            // ── Mapping: source paths → expected doc updates ──────────
+            // Each entry: { pattern, description, docPatterns }
+            const mappings = [
+              {
+                pattern: /^app\/models\//,
+                description: 'Data models (app/models/)',
+                docPatterns: [/^docs\//, /\.md$/],
+              },
+              {
+                pattern: /^firmware\/soldier\//,
+                description: 'Soldier firmware (firmware/soldier/)',
+                docPatterns: [/^docs\//, /\.md$/],
+              },
+              {
+                pattern: /^firmware\/queen\//,
+                description: 'Queen firmware (firmware/queen/)',
+                docPatterns: [/^docs\//, /\.md$/],
+              },
+              {
+                pattern: /^firmware\/bio_contracts\//,
+                description: 'Bio-contracts (firmware/bio_contracts/)',
+                docPatterns: [/^docs\//, /\.md$/],
+              },
+              {
+                pattern: /^contracts\//,
+                description: 'Smart contracts (contracts/)',
+                docPatterns: [/^docs\//, /\.md$/],
+              },
+              {
+                pattern: /^app\/services\//,
+                description: 'Business services (app/services/)',
+                docPatterns: [/^docs\//, /\.md$/],
+              },
+            ];
+
+            // ── Check which protected areas were modified ─────────────
+            const triggeredAreas = [];
+            for (const mapping of mappings) {
+              const matchedFiles = changedFiles.filter(f => mapping.pattern.test(f));
+              if (matchedFiles.length > 0) {
+                triggeredAreas.push({
+                  ...mapping,
+                  files: matchedFiles,
+                });
+              }
+            }
+
+            if (triggeredAreas.length === 0) {
+              core.info('✅ No protected areas modified — SSOT check passed.');
+              return;
+            }
+
+            // ── Check if docs were updated too ────────────────────────
+            const hasDocUpdate = changedFiles.some(f =>
+              f.startsWith('docs/') ||
+              f === 'README.md' ||
+              f === 'CLAUDE.md'
+            );
+
+            // ── Check for SSOT bypass label ───────────────────────────
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            const hasBypass = labels.includes('ssot-bypass');
+
+            if (hasBypass) {
+              core.info('⚠️ SSOT bypass label detected — skipping documentation check.');
+              core.warning(
+                'PR has "ssot-bypass" label. Documentation may need updating.'
+              );
+              return;
+            }
+
+            if (hasDocUpdate) {
+              core.info('✅ Protected areas modified AND docs updated — SSOT check passed.');
+              return;
+            }
+
+            // ── Build failure message ─────────────────────────────────
+            const areas = triggeredAreas.map(a =>
+              `- **${a.description}**: ${a.files.length} file(s) changed`
+            ).join('\n');
+
+            const message = [
+              '## 🛡️ SSOT Integrity Guard',
+              '',
+              'This PR modifies protected code areas without updating documentation.',
+              '',
+              '### Modified areas:',
+              areas,
+              '',
+              '### Required action:',
+              'Add corresponding updates to `docs/` (or `README.md` / `CLAUDE.md`).',
+              '',
+              'If documentation changes are intentionally not needed, add the `ssot-bypass` label to this PR.',
+              '',
+              '> Ref: [09_03 SSOT Integrity Guard](../docs/09_03_GitHub_Projects_and_Ops_Automation.md)',
+            ].join('\n');
+
+            core.setFailed(message);
