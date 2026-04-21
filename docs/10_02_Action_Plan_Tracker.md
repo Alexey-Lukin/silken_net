@@ -166,13 +166,6 @@
 - [ ] Double-buffering або persistent buffer для retry
 - [ ] Configurable retry count
 
-#### FW.10 — Temperature-based TX deferral
-- `02_04`
-- **Опис:** При T < -15°C ESR іоністора зростає; може спричинити просадку LoRa TX
-- **Статус:** ✅ Виконано (Сесія 18). Guard clause в Phase 4: `packed_temp < COLD_TX_DEFER_TEMP && vcap_voltage < COLD_TX_DEFER_VCAP_MV` → `goto phase5_kenosis`. Named constants: `COLD_TX_DEFER_TEMP = -15`, `COLD_TX_DEFER_VCAP_MV = 4000`. 10 unit tests.
-- [x] Додати check: якщо `temp < -15` && `vcap_voltage < 4.0V` → відкласти TX
-- [x] Тести
-
 ### 🟢 P2 — Низькопріоритетні
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
