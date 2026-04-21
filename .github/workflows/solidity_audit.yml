@@ -22,19 +22,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Solidity dependencies
-        working-directory: contracts
-        run: npm install
-
       - name: Run Slither
         uses: crytic/slither-action@v0.4.0
         with:
           target: contracts/
-          slither-args: --filter-paths "node_modules" --exclude-dependencies
-          fail-on: high
+          node-version: '20'
           solc-version: '0.8.20'
+          slither-config: contracts/slither.config.json
+          fail-on: high
