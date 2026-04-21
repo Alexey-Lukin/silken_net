@@ -9,6 +9,17 @@ on:
     branches: [ main ]
 
 jobs:
+  firmware_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run firmware host-based tests
+        run: make -C firmware/test
+
   scan_ruby:
     runs-on: ubuntu-latest
 

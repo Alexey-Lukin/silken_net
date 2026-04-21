@@ -529,6 +529,28 @@ void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
 }
 
 // =========================================================================
+// [FIX FW.16]: Безпечне відновлення AES-256-ECB після CBC операцій.
+// Після CBC шифрування/дешифрування ОБОВ'ЯЗКОВО повертаємо ECB для LoRa.
+// Якщо HAL_CRYP_Init зависне (hardware defect) — RCC reset + retry.
+// Якщо і після RCC reset невдача — NVIC_SystemReset (повний перезапуск MCU),
+// бо без робочого AES Королева не може дешифрувати пакети від Солдатів.
+// =========================================================================
+static void Restore_ECB_Mode(void)
+{
+    hcryp.Init.Algorithm = CRYP_AES_ECB;
+    hcryp.Init.pInitVect = NULL;
+    if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
+        __HAL_RCC_CRYP_FORCE_RESET();
+        __HAL_RCC_CRYP_RELEASE_RESET();
+        hcryp.Init.Algorithm = CRYP_AES_ECB;
+        hcryp.Init.pInitVect = NULL;
+        if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
+            NVIC_SystemReset();
+        }
+    }
+}
+
+// =========================================================================
 // ПАКЕТНЕ ВІДПРАВЛЕННЯ ЧЕРЕЗ CoAP (Бінарний масив поверх UDP)
 // =========================================================================
 void Flush_Cache_To_Rails(void)
@@ -660,14 +682,11 @@ void Flush_Cache_To_Rails(void)
     // Закриваємо CoAP сесію, звільняючи ресурси модему
     SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
 
-    // [FIX: CRITICAL — ECB Restoration]
+    // [FIX FW.16: ECB Restoration with error recovery]
     // Flush_Cache_To_Rails() переключає CRYP на CBC для шифрування батча.
     // Якщо не повернути ECB, всі наступні HAL_CRYP_Decrypt() для LoRa-пакетів
-    // від Солдатів будуть використовувати CBC замість ECB → сміття → втрата даних
-    // до наступного перезавантаження Королеви.
-    hcryp.Init.Algorithm = CRYP_AES_ECB;
-    hcryp.Init.pInitVect = NULL;
-    HAL_CRYP_Init(&hcryp);
+    // від Солдатів будуть використовувати CBC замість ECB → сміття → втрата даних.
+    Restore_ECB_Mode();
 }
 
 // =========================================================================
@@ -742,19 +761,15 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     uint16_t ciphertext_len = len - 16;
     uint16_t aligned = ((ciphertext_len + 15) / 16) * 16;
     if (aligned > CMD_DECRYPT_BUF_SIZE) {
-        // Відновлюємо ECB перед виходом
-        hcryp.Init.Algorithm = CRYP_AES_ECB;
-        hcryp.Init.pInitVect = NULL;
-        HAL_CRYP_Init(&hcryp);
+        // [FIX FW.16] Відновлюємо ECB перед виходом (з error recovery)
+        Restore_ECB_Mode();
         return;
     }
     HAL_CRYP_Decrypt(&hcryp, (uint32_t*)(payload + 16), aligned / 4,
                      (uint32_t*)cmd_decrypt_buf, 2000);
 
-    // 4. Відновлюємо ECB для LoRa-трафіку між Королевою та Солдатами
-    hcryp.Init.Algorithm = CRYP_AES_ECB;
-    hcryp.Init.pInitVect = NULL;
-    HAL_CRYP_Init(&hcryp);
+    // 4. [FIX FW.16] Відновлюємо ECB для LoRa-трафіку (з error recovery)
+    Restore_ECB_Mode();
 
     cmd_decrypt_buf[CMD_DECRYPT_BUF_SIZE - 1] = '\0';
 

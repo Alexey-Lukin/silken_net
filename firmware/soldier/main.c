@@ -317,8 +317,17 @@ int main(void)
     // =========================================================================
 
     // Якщо ядро прокинулось через вібрацію на піні
-    if (vibration_detected) {
-        vibration_detected = 0;
+    // [FIX FW.11]: NVIC-рівнева ізоляція замість "if (vibration_detected) { vibration_detected = 0; }"
+    // Без цього: якщо друге переривання EXTI0 спрацює між читанням прапорця та
+    // HAL_ADC_Start_DMA, DMA може стартувати двічі → HAL_BUSY → buffer corruption.
+    // HAL_NVIC_DisableIRQ(EXTI0_IRQn) блокує лише п'єзо-переривання, не зупиняючи
+    // SysTick, Radio, DMA або інші критичні ISR.
+    HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+    uint8_t vib = vibration_detected;
+    vibration_detected = 0;
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+    if (vib) {
         audio_ready = 0;
 
         // 1. Запускаємо Таймер-метроном і АЦП у режимі DMA

@@ -92,6 +92,9 @@ static inline int  HAL_RNG_DeInit(RNG_HandleTypeDef *h) { (void)h; return HAL_OK
 /* RCC clock control stubs (for peripheral power management) */
 #define __HAL_RCC_CRYP_CLK_DISABLE() ((void)0)
 #define __HAL_RCC_CRYP_CLK_ENABLE()  ((void)0)
+/* RCC CRYP peripheral reset stubs (for FW.16 ECB restore recovery) */
+#define __HAL_RCC_CRYP_FORCE_RESET()   ((void)0)
+#define __HAL_RCC_CRYP_RELEASE_RESET() ((void)0)
 
 static inline void HAL_Delay(uint32_t ms) { (void)ms; }
 static inline uint32_t HAL_GetTick(void) { return 0; }
@@ -165,6 +168,11 @@ static RadioDriver_t Radio = {
     .Rx = radio_rx_stub,
     .Sleep = radio_sleep_stub
 };
+
+/* NVIC interrupt control stubs (for FW.11 race condition fix) */
+typedef enum { EXTI0_IRQn = 6 } IRQn_Type;
+static inline void HAL_NVIC_DisableIRQ(IRQn_Type n) { (void)n; }
+static inline void HAL_NVIC_EnableIRQ(IRQn_Type n) { (void)n; }
 
 /* System reset stub */
 static inline void NVIC_SystemReset(void) {}
