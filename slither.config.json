@@ -1,5 +1,5 @@
 {
   "filter_paths": "node_modules",
   "exclude_dependencies": true,
-  "solc_args": "--base-path . --include-path contracts/node_modules"
+  "solc_args": "--base-path . --include-path contracts/node_modules --evm-version cancun"
 }

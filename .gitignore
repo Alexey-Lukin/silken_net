@@ -83,4 +83,8 @@ subgraph/node_modules/
 # Smart contracts dependencies (Solidity)
 contracts/node_modules/
 
+# Foundry build artifacts
+contracts/out/
+contracts/cache/
+
 coverage/
