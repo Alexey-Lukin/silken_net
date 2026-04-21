@@ -14,12 +14,77 @@ puts "🔥 Очищення старого світу (Кенозис)..."
   Gateway,
   ParametricInsurance, NaasContract,
   BioContractFirmware,
+  SystemParameter,
   Cluster, User, Organization
 ].each do |model|
   model.delete_all if ActiveRecord::Base.connection.table_exists?(model.table_name)
 end
 
 puts "🌍 Формування нового ландшафту..."
+
+# =========================================================================
+# 0. СИСТЕМНІ ПАРАМЕТРИ (Governance-Aware Protocol Constants)
+# See: docs/05_03 § Governance-Aware Backend, ARCH.15
+# =========================================================================
+puts "⚙️  Ініціалізація системних параметрів..."
+
+system_params = [
+  # --- Lorenz Attractor (03_04) ---
+  { key: "lorenz_sigma", value: "10.0", value_type: "float", category: "lorenz",
+    min_value: 5.0, max_value: 30.0, description: "Lorenz σ (Prandtl number) — sap viscosity" },
+  { key: "lorenz_rho", value: "28.0", value_type: "float", category: "lorenz",
+    min_value: 10.0, max_value: 50.0, description: "Lorenz ρ (Rayleigh number) — thermal gradient" },
+  { key: "lorenz_beta", value: "2.6666666666666665", value_type: "float", category: "lorenz",
+    min_value: 1.0, max_value: 5.0, description: "Lorenz β (geometry) — 8.0/3.0" },
+  { key: "lorenz_dt", value: "0.01", value_type: "float", category: "lorenz",
+    min_value: 0.001, max_value: 0.1, description: "Euler integration time step" },
+  { key: "lorenz_iterations", value: "250", value_type: "integer", category: "lorenz",
+    min_value: 50, max_value: 1000, description: "Number of Lorenz iterations per cycle" },
+  { key: "critical_z_min", value: "2.0", value_type: "float", category: "lorenz",
+    min_value: 0.0, max_value: 10.0, description: "Z below this → stress (bio_status=1)" },
+  { key: "critical_z_max", value: "45.0", value_type: "float", category: "lorenz",
+    min_value: 30.0, max_value: 60.0, description: "Z above this → anomaly (bio_status=2)" },
+  { key: "optimal_z_target", value: "29.0", value_type: "float", category: "lorenz",
+    min_value: 15.0, max_value: 40.0, description: "Ideal Z for maximum growth_points" },
+
+  # --- Tokenomics (05_03) ---
+  { key: "emission_threshold", value: "10000", value_type: "integer", category: "tokenomics",
+    min_value: 1000, max_value: 100_000, description: "Growth points required to mint 1 SCC" },
+  { key: "dynamic_tax_rate", value: "0.02", value_type: "decimal", category: "minting",
+    min_value: 0, max_value: 0.10, description: "DAO Treasury tax rate (2% default)" },
+  { key: "insurance_pool_threshold", value: "100000", value_type: "integer", category: "insurance",
+    min_value: 10_000, max_value: 1_000_000, description: "SCC threshold for dynamic tax activation" },
+
+  # --- Fraud Detection (05_02) ---
+  { key: "fraud_deviation_threshold", value: "0.30", value_type: "float", category: "alerts",
+    min_value: 0.10, max_value: 0.50, description: "Device Z vs Server Z divergence → fraud flag" },
+
+  # --- Alert Thresholds (04_02) ---
+  { key: "default_fire_temp_c", value: "60", value_type: "integer", category: "alerts",
+    min_value: 40, max_value: 100, description: "Temperature threshold for fire alerts (°C)" },
+  { key: "default_seismic_threshold", value: "200", value_type: "integer", category: "alerts",
+    min_value: 100, max_value: 255, description: "Acoustic events threshold for seismic alert" },
+  { key: "fire_frp_threshold_mw", value: "10.0", value_type: "float", category: "alerts",
+    min_value: 1.0, max_value: 50.0, description: "NASA FIRMS FRP threshold (MW) for fire detection" },
+  { key: "fire_confidence_threshold", value: "50", value_type: "integer", category: "alerts",
+    min_value: 20, max_value: 100, description: "Minimum satellite fire detection confidence (%)" },
+
+  # --- Hardware (02_03, 02_04) ---
+  { key: "vcap_min_mv", value: "2800", value_type: "integer", category: "hardware",
+    min_value: 2000, max_value: 3500, description: "Minimum supercap voltage (mV)" },
+  { key: "vcap_max_mv", value: "5500", value_type: "integer", category: "hardware",
+    min_value: 4500, max_value: 6000, description: "Maximum supercap voltage (mV)" },
+  { key: "low_power_mv", value: "3300", value_type: "integer", category: "hardware",
+    min_value: 2800, max_value: 4000, description: "Critical low-power threshold (mV)" }
+]
+
+system_params.each do |attrs|
+  SystemParameter.find_or_create_by!(key: attrs[:key]) do |p|
+    p.assign_attributes(attrs.merge(source: "default"))
+  end
+end
+
+puts "   ⚙️  Системні параметри:   #{SystemParameter.count}"
 
 # =========================================================================
 # 1. МАКРОЕКОНОМІКА ТА ЛЮДИ
@@ -629,3 +694,4 @@ puts "   📊 Діагностика Queens:  #{GatewayTelemetryLog.count}"
 puts "   📡 Телеметрія:          #{TelemetryLog.count}"
 puts "   🔐 Апаратні ключі:      #{HardwareKey.count}"
 puts "   🔑 Сесії:               #{Session.count}"
+puts "   ⚙️  Системні параметри:   #{SystemParameter.count}"
