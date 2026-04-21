@@ -169,9 +169,9 @@ RSpec.describe SystemParameter, type: :model do
       # First call populates cache
       described_class.current(:lorenz_sigma)
 
-      # Second call should use cache (no DB query)
+      # Second call should use cache (no DB query) and return same value
       expect(described_class).not_to receive(:find_by)
-      described_class.current(:lorenz_sigma)
+      expect(described_class.current(:lorenz_sigma)).to eq(10.0)
     end
 
     it "invalidates cache on update" do
@@ -185,6 +185,17 @@ RSpec.describe SystemParameter, type: :model do
 
       # Should return new value
       expect(described_class.current(:lorenz_sigma)).to eq(15.0)
+    end
+
+    it "correctly caches boolean false values" do
+      create(:system_parameter, key: "disabled_flag", value: "false", value_type: "boolean", category: "general")
+
+      # First call should return false (not nil)
+      expect(described_class.current(:disabled_flag)).to be(false)
+
+      # Second call should return cached false (not fall through to DB)
+      expect(described_class).not_to receive(:find_by)
+      expect(described_class.current(:disabled_flag)).to be(false)
     end
   end
 

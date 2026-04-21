@@ -34,7 +34,7 @@ system_params = [
     min_value: 5.0, max_value: 30.0, description: "Lorenz σ (Prandtl number) — sap viscosity" },
   { key: "lorenz_rho", value: "28.0", value_type: "float", category: "lorenz",
     min_value: 10.0, max_value: 50.0, description: "Lorenz ρ (Rayleigh number) — thermal gradient" },
-  { key: "lorenz_beta", value: "2.6666666666666665", value_type: "float", category: "lorenz",
+  { key: "lorenz_beta", value: (8.0 / 3.0).to_s, value_type: "float", category: "lorenz",
     min_value: 1.0, max_value: 5.0, description: "Lorenz β (geometry) — 8.0/3.0" },
   { key: "lorenz_dt", value: "0.01", value_type: "float", category: "lorenz",
     min_value: 0.001, max_value: 0.1, description: "Euler integration time step" },

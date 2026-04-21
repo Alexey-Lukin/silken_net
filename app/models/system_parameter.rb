@@ -45,15 +45,17 @@ class SystemParameter < ApplicationRecord
   # Cache TTL: 24 hours (invalidated on update via after_commit).
   def self.current(key, default: nil)
     key = key.to_s
+    cache_key = cache_key_for(key)
 
-    cached = Rails.cache.read(cache_key_for(key))
-    return cached unless cached.nil?
+    if Rails.cache.exist?(cache_key)
+      return Rails.cache.read(cache_key)
+    end
 
     record = find_by(key: key)
 
     if record
       typed = record.typed_value
-      Rails.cache.write(cache_key_for(key), typed, expires_in: CACHE_TTL)
+      Rails.cache.write(cache_key, typed, expires_in: CACHE_TTL)
       typed
     else
       default
