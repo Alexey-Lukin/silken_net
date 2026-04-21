@@ -28,5 +28,4 @@ jobs:
           target: contracts/
           node-version: '20'
           solc-version: '0.8.20'
-          slither-config: contracts/slither.config.json
           fail-on: high
