@@ -1174,7 +1174,6 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 | `firmware/test/test_soldier_logic.c` | 58 Soldier тестів |
 | `firmware/test/test_queen_logic.c` | 79 Queen тестів |
 | `firmware/test/Makefile` | Build system для host-based тестів |
-| `docs/FIRMWARE.md` | Скорочений довідник прошивки |
 | [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Детальна документація Queen |
 | [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | TinyML класифікатор звуку |
 | [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора |
