@@ -1,0 +1,4 @@
+{
+  "detectors_to_exclude": "timestamp",
+  "filter_paths": "node_modules"
+}
