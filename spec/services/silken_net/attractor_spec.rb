@@ -104,26 +104,22 @@ RSpec.describe SilkenNet::Attractor do
       expect(SilkenNet::Attractor::RHO_LIMITS.min).to be > 0
     end
 
-    it "uses BigDecimal for base constants" do
-      expect(SilkenNet::Attractor::BASE_SIGMA).to be_a(BigDecimal)
-      expect(SilkenNet::Attractor::BASE_RHO).to be_a(BigDecimal)
-      expect(SilkenNet::Attractor::BASE_BETA).to be_a(BigDecimal)
+    it "uses Float for base constants (identical to firmware mruby)" do
+      expect(SilkenNet::Attractor::BASE_SIGMA).to be_a(Float)
+      expect(SilkenNet::Attractor::BASE_RHO).to be_a(Float)
+      expect(SilkenNet::Attractor::BASE_BETA).to be_a(Float)
     end
 
-    it "has DT of 0.01 (BigDecimal)" do
-      expect(SilkenNet::Attractor::DT).to eq("0.01".to_d)
+    it "has DT of 0.01 (Float)" do
+      expect(SilkenNet::Attractor::DT).to eq(0.01)
     end
 
     it "runs 250 iterations" do
       expect(SilkenNet::Attractor::ITERATIONS).to eq(250)
     end
 
-    it "uses 18-digit precision for BigDecimal" do
-      expect(SilkenNet::Attractor::PRECISION).to eq(18)
-    end
-
-    it "has BASE_BETA approximately equal to 8/3" do
-      expect(SilkenNet::Attractor::BASE_BETA.to_f).to be_within(0.0001).of(8.0 / 3.0)
+    it "has BASE_BETA equal to IEEE 754 8.0/3.0" do
+      expect(SilkenNet::Attractor::BASE_BETA).to eq(8.0 / 3.0)
     end
   end
 

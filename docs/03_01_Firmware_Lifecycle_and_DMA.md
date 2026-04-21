@@ -91,7 +91,7 @@ PA0 (Piezo):   Клік на пін PA0 на схемі → GPIO_EXTI0  (Кан�
 ### Host-Based Тести (без CubeIDE, без плат)
 
 ```bash
-# Запуск всіх 137 тестів на x86 (не потрібен ARM toolchain)
+# Запуск всіх 207 тестів на x86 (не потрібен ARM toolchain)
 make -C firmware/test
 
 # Тільки Soldier:
@@ -158,7 +158,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — C-код написаний, 137 host-based тестів проходять
+- **Поточний TRL:** TRL 6 — C-код написаний, 207 host-based тестів проходять
 - **Пов'язані модулі:**
   - EDLC Супераконденсатор → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
   - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
@@ -183,7 +183,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 | **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
 | **Error_Handler** | ✅ Виправлено — `NVIC_SystemReset()` через 100 мс замість вічного циклу (FW.14) |
 | **CMD_DECRYPT_BUF_SIZE розбіжність** | 🟡 OPEN (544 у firmware, 96 у тестах — OTA path не покритий) |
-| **Host-based Tests (137)** | ✅ Всі проходять (`make -C firmware/test`) |
+| **Host-based Tests (207)** | ✅ Всі проходять (`make -C firmware/test`) |
 
 ---
 
@@ -904,15 +904,20 @@ HAL_RNG_DeInit(&hrng);                                  // DeInit одразу �
 
 ---
 
-## 🧪 10. Покриття Host-Based Тестами (137 тестів)
+## 🧪 10. Покриття Host-Based Тестами (207 тестів)
 
 Firmware логіка тестується на x86 з GCC (не потребує ARM toolchain):
 
 ```bash
-make -C firmware/test         # Всі 137 тестів
-make -C firmware/test queen   # Queen-only (79 тестів)
-make -C firmware/test soldier # Soldier-only (58 тестів)
+make -C firmware/test             # Всі 207 тестів
+make -C firmware/test queen       # Queen-only (79 тестів)
+make -C firmware/test soldier     # Soldier-only (58 тестів)
+make -C firmware/test bio_contract # Bio-Contract (27 тестів)
+make -C firmware/test tinyml      # TinyML pipeline (25 тестів)
+make -C firmware/test encryption  # AES encryption (18 тестів)
 ```
+
+**CI:** Firmware тести інтегровані в GitHub Actions (`firmware_test` job у `.github/workflows/ci.yml`).
 
 ### Тести Queen (79)
 
