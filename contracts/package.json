@@ -1,0 +1,9 @@
+{
+  "name": "silken-net-contracts",
+  "version": "1.0.0",
+  "description": "SilkenNet Solidity smart contracts (SCC, SFC, StateRootAnchor)",
+  "private": true,
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2"
+  }
+}

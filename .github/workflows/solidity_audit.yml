@@ -1,0 +1,40 @@
+name: Solidity Audit
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - 'contracts/**'
+  push:
+    branches: [ main ]
+    paths:
+      - 'contracts/**'
+
+jobs:
+  slither:
+    name: Slither Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Solidity dependencies
+        working-directory: contracts
+        run: npm install
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.0
+        with:
+          target: contracts/
+          slither-args: --filter-paths "node_modules" --exclude-dependencies
+          fail-on: high
+          solc-version: '0.8.20'

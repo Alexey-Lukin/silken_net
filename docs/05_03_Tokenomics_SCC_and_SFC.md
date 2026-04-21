@@ -775,19 +775,32 @@ contract GaiaGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 
 **Статус:** Перспективна ідея. Не планується до TRL 9+.
 
-### Governance-Aware Backend (Future State)
+### Governance-Aware Backend (✅ Реалізовано — Сесія 19)
 
 ```ruby
 # Замість: SIGMA = 10.0
-# Буде:
+# Тепер:
 sigma = SystemParameter.current(:lorenz_sigma, default: 10.0)
 
 # Замість: SLASH_THRESHOLD = 0.20
-# Буде:
+# Тепер:
 threshold = SystemParameter.current(:slash_threshold, default: 0.20)
+
+# Bulk fetch:
+params = SystemParameter.current_values(lorenz_sigma: 10.0, lorenz_rho: 28.0)
+
+# Admin/Governance update:
+SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governance")
 ```
 
-**`SystemParameter` model:** кеш поточних on-chain значень з TTL 24h. При недоступності The Graph — fallback на default constants.
+**`SystemParameter` model** (`app/models/system_parameter.rb`):
+- Кеш поточних значень з TTL 24h (invalidation через `after_commit`)
+- Fallback на `default:` при відсутності запису
+- Type coercion: `integer`, `float`, `decimal`, `string`, `boolean`, `json`
+- Bounds validation (`min_value` / `max_value`)
+- Audit trail (`updated_by` → User FK, `source`: default/admin/governance)
+- 19 seed-параметрів: Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target), tokenomics, alerts, hardware
+- **Наступний крок:** `Governance::ParameterSyncWorker` для синхронізації з `ProtocolParameters.sol` через The Graph
 
 ---
 
@@ -797,7 +810,7 @@ threshold = SystemParameter.current(:slash_threshold, default: 0.20)
 
 | Фаза | Інструмент / Постачальник | Тип | Коли | Статус |
 |------|--------------------------|-----|------|--------|
-| **1. Automated Static Analysis** | [Slither](https://github.com/crytic/slither) | Безкоштовний open-source | Зараз (CI/CD) | 🟡 TODO |
+| **1. Automated Static Analysis** | [Slither](https://github.com/crytic/slither) | Безкоштовний open-source | Зараз (CI/CD) | ✅ Реалізовано (Сесія 19): `.github/workflows/solidity_audit.yml` |
 | **1b. Symbolic Execution** | [Mythril](https://github.com/Consensys/mythril) | Безкоштовний open-source | Зараз (CI/CD) | 🟡 TODO |
 | **2. Manual Audit (Pre-Testnet)** | [Hacken](https://hacken.io/) або [Hashlock](https://hashlock.com/) | Платний аудит | Перед Amoy → Mainnet | 🔴 TODO |
 | **3. Runtime Monitoring** | [CertiK Skynet](https://skynet.certik.com/) | 24/7 моніторинг | Після Mainnet deploy | 🔴 TODO |
@@ -809,10 +822,16 @@ threshold = SystemParameter.current(:slash_threshold, default: 0.20)
 4. `GovernorContract.sol` — DAO governance (коли буде реалізовано)
 5. `ProtocolParameters.sol` — on-chain parameter registry (коли буде реалізовано)
 
-**Slither / Mythril в CI:**
+**Slither в CI (✅ Реалізовано):**
+```yaml
+# .github/workflows/solidity_audit.yml
+# Тригер: зміни в contracts/ на PR або push to main
+# crytic/slither-action@v0.4.0, solc 0.8.20, fail-on: high
+# OpenZeppelin 5.x через contracts/package.json
+```
+
+**Mythril (TODO):**
 ```bash
-# Додати до GitHub Actions workflow:
-slither contracts/ --filter-paths "node_modules"
 myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.20
 ```
 

@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-21 Сесія 18 (FW.10 TX deferral + FW.22 uint8_t saturation + OPS.2 SSOT Guard)
+> **Останнє оновлення:** 2026-04-21 Сесія 19 (ARCH.15 SystemParameter model + E.32 Slither CI)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -589,7 +589,7 @@
 | E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) | `01_03` | R&D alternatives |
 | E.30 | InsightGenerator: кліматичні базлайни per region | `04_02` | Post-TRL 7 |
 | E.31 | TinyML OTA: `.tflite` формат (INT8 quantization) + Python ML microservice | `03_03` | Post-TRL 8 |
-| E.32 | Smart Contract Audit: Slither/Mythril в CI + Hacken pre-mainnet | `05_03` | Pre-Mainnet |
+| E.32 | ✅ (Slither) Smart Contract Audit: Slither в CI (`.github/workflows/solidity_audit.yml`). Mythril + Hacken — окремі етапи pre-mainnet | `05_03` | Slither CI ✅ (Сесія 19), Mythril + Hacken TODO |
 | E.33 | AlertNotification rate limits: FCM multicast (500 tokens/req), Twilio Notify | `04_02` | Post-TRL 8 |
 | E.34 | dClimate fallback → ForestBountyService (drone/ranger PoPhW) | `04_02` | Post-TRL 6 |
 | E.35 | Flash Loan defense в GovernorContract.sol: `getPastVotes` + 48h Timelock | `05_03` | Post-TRL 6 |
@@ -620,7 +620,7 @@
 | ARCH.12 | Merkle Tree state root (замість flat SHA-256) для partial verification / ISO 14064 | `05_04` | TRL 9 |
 | ARCH.13 | EigenLayer AVS як альтернатива direct L1 write (~$0.01/week vs $5-15/week) | `05_04` | Research |
 | ARCH.14 | Read-Only PostgreSQL Replicas для analytics та Oracle queries | `00_01`, `06_01` | Post-TRL 7 |
-| ARCH.15 | SystemParameter model для governance-aware backend (`SystemParameter.current(:lorenz_sigma)`) | `05_03` | Post-TRL 6 |
+| ARCH.15 | ✅ SystemParameter model для governance-aware backend (`SystemParameter.current(:lorenz_sigma)`) | `05_03` | ✅ Реалізовано (Сесія 19): модель, міграція, 19 seed-параметрів (Lorenz, tokenomics, alerts, hardware), spec, factory. Кешований lookup з TTL 24h, fallback на default |
 | ARCH.16 | Mobile app для foresters (Phase 2 roadmap) | `00_02` | Post-TRL 7 |
 | ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
 | ARCH.18 | Детерміністична Fixed-Point арифметика (Integer Math): для досягнення побітової ідентичності розрахунків (consensus) між STM32 (Soldier) та GCP/Akash (Backend), необхідно відмовитись від IEEE 754 Floating-Point. Всі вхідні дані мають множитись на 10⁶ (або 10⁸) і розраховуватись у 64-бітних цілих числах (`int64_t` у C, `Integer` у Ruby). Це усуне апаратний drift при розрахунку Атрактора Лоренца. Потребує повного переписування математики в прошивці з урахуванням ризиків переповнення буферів (overflows) під час множення великих чисел. | `03_04`, `05_02` | Post-TRL 7 |
@@ -660,6 +660,7 @@
 | 2026-04-21 | Сесія 16: **FW.6** — Lorenz State Persistence: стан (x,y,z) зберігається в RTC DR16-DR18 між циклами STOP2 (BLOCKER-3 закрито). 16 нових C-тестів. **FW.7** — уточнено як TRL 6 mitigation з попередженням про IEEE 754 ARM/x86 drift. **ARCH.18** — додано Fixed-Point Arithmetic (Integer Math) як довгостроковий roadmap для побітового consensus. Документація оновлена: `03_04` (BLOCKER-3), `03_01` (register map DR0-DR19), `05_02` (firmware phases). Всього 223 firmware тести (79+74+27+25+18). |
 | 2026-04-21 | Сесія 17: **S5.2** — `RELEASE_VERSION` ENV додано до deploy.yml (Canopy: git SHA), deploy-production.yml (Production: release tag), config/deploy.yml (Kamal), deploy/akash/deploy.yaml (web+job). Sentry release tracking тепер активний. **SEC.5** — Документовано HMAC bypass security requirement у `04_03` (WEB3_STRICT_MODE=true → SecurityError). **DOC.4** — Пористість узгоджена: CLAUDE.md та copilot-instructions.md оновлені з 70% → 65% (target), діапазон 60-70% (відповідно до `01_01`). **Трекер** — Позначено як виконані: S5.1 (Prometheus метрики), S5.3 (deploy-production.yml), OPS.1 (trl_sync.yml). |
 | 2026-04-21 | Сесія 18: **FW.22** — `acoustic_events` змінено з `uint16_t` на `uint8_t` із saturating increment (`if < 255`) у `soldier/main.c:415`. Packing спрощено (ternary видалено). 8 unit tests. **FW.10** — Temperature-based TX deferral: guard clause `packed_temp < -15 && vcap_voltage < 4000` → `goto phase5_kenosis`. Named constants `COLD_TX_DEFER_TEMP`, `COLD_TX_DEFER_VCAP_MV`. 10 unit tests. **OPS.2** — SSOT Integrity Guard: `.github/workflows/ssot_guard.yml` створено. Перевіряє 6 protected areas (models, firmware, contracts, services). `ssot-bypass` label для обходу. Всього 241 firmware тест (79+92+27+25+18). |
+| 2026-04-21 | Сесія 19: **ARCH.15** — `SystemParameter` модель для governance-aware backend. Міграція, модель з `.current(:key, default:)` кешований lookup (TTL 24h), 19 seed-параметрів (Lorenz: σ/ρ/β/dt/iterations/z_min/z_max/z_target, tokenomics: emission_threshold/dynamic_tax_rate/insurance_pool_threshold, alerts: fraud/fire/seismic thresholds, hardware: vcap bounds). Factory, spec (валідації, typed_value, кешування, bounds, .set, .current_values). **E.32** — Slither static analysis CI: `.github/workflows/solidity_audit.yml` для 3 Solidity контрактів (SCC/SFC/StateRootAnchor). OpenZeppelin 5.x, pragma 0.8.20, `fail-on: high`. `contracts/package.json` для npm dependencies. |
 
 ---
 
