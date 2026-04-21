@@ -15,8 +15,11 @@ class TelemetryUnpackerService < ApplicationService
   SAFE_TEMP_RANGE    = (-45..90)      # Від арктичних до тропічних пожеж
 
   # --- DUAL COMPUTATION INTEGRITY ---
-  # Device (Float, mruby) та Server (BigDecimal, Ruby) розраховують Z незалежно.
-  # Float vs BigDecimal divergence є природною (~IEEE 754 vs arbitrary precision).
+  # Device (mruby, Float) та Server (Ruby, Float) розраховують Z незалежно.
+  # [FIX FW.7]: Backend переведено на Float (IEEE 754) — ідентично firmware mruby.
+  # ВАЖЛИВО: firmware використовує chaos_seed (HRNG random), backend — tree_did (DID).
+  # Це РІЗНІ входи — тому raw Z-значення завжди різні.
+  # Перевірка лише категорична: device bio_status vs server healthy_z?.
   # Якщо device bio_status суперечить server Z — потенційний fraud або збій firmware.
 
   # DID-сентинел: Королева передає власну телеметрію з DID = 0x00000000
@@ -115,10 +118,20 @@ class TelemetryUnpackerService < ApplicationService
       bio_status: interpret_status(status_byte >> 6) # Верхні 2 біти — статус
     }
 
+    # [FW.22] Firmware saturates acoustic_events at 255 (uint16 → uint8 clamped).
+    # Value 255 likely indicates overflow — real count may be higher.
+    # Log warning for operational awareness and future payload redesign.
+    if log_attributes[:acoustic_events] == 255
+      Rails.logger.warn(
+        "⚠️ [Acoustic Overflow] DID #{hex_did}: acoustic_events=255 (saturated). " \
+        "Real count may exceed 255 — firmware uint8 payload limit reached."
+      )
+    end
+
     # 4. МАТЕМАТИКА АТРАКТОРА (The Chaos Engine)
     # ⚡ [ФІКСАЦІЯ ІСТИНИ]: Ми розраховуємо Z один раз тут.
-    # Оскільки Attractor тепер використовує BigDecimal, ми отримуємо
-    # детермінований результат, який зберігається як єдина істина.
+    # [FIX FW.7]: Attractor використовує Float (IEEE 754) — ідентично firmware mruby.
+    # Це забезпечує Dual Computation Integrity: однакова математика → однакові результати.
     log_attributes[:z_value] = SilkenNet::Attractor.calculate_z(
       parsed_data[0], # Використовуємо сирий DID як seed
       log_attributes[:temperature_c],
@@ -127,7 +140,7 @@ class TelemetryUnpackerService < ApplicationService
 
     # 4.1 DUAL COMPUTATION INTEGRITY (Z Divergence Check)
     # Device повідомляє bio_status з власного Lorenz (Float, mruby).
-    # Server розраховує Z (BigDecimal). Порівнюємо статуси:
+    # Server розраховує Z (Float, ідентично). Порівнюємо статуси:
     # якщо device каже "homeostasis" а server Z поза межами породи — fraud flag.
     check_z_divergence!(tree, log_attributes)
 
@@ -157,9 +170,9 @@ class TelemetryUnpackerService < ApplicationService
   end
 
   # [DUAL COMPUTATION INTEGRITY]: Порівнюємо device bio_status з server-derived bio_status.
-  # Device (mruby, Float) та Server (Ruby, BigDecimal) розраховують Lorenz незалежно.
-  # Float vs BigDecimal дає природний divergence ~±2.0 на Z-осі після 250 ітерацій.
-  # Ми перевіряємо лише категоричну невідповідність:
+  # Device (mruby, Float) та Server (Ruby, Float) розраховують Lorenz незалежно,
+  # але з РІЗНИМИ seed'ами: firmware — chaos_seed (HRNG), backend — tree_did.
+  # Тому raw Z-значення завжди різні. Порівнюємо лише категоричну невідповідність:
   #   - Device каже "homeostasis" (status=0) а server Z поза межами породи
   #   - Device каже "anomaly" (status=2) а server Z цілком здоровий
   # Це ловить tampered firmware або replay attacks з підставленим StatusByte.

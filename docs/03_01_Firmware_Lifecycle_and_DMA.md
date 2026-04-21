@@ -91,7 +91,7 @@ PA0 (Piezo):   Клік на пін PA0 на схемі → GPIO_EXTI0  (Кан�
 ### Host-Based Тести (без CubeIDE, без плат)
 
 ```bash
-# Запуск всіх 137 тестів на x86 (не потрібен ARM toolchain)
+# Запуск всіх 207 тестів на x86 (не потрібен ARM toolchain)
 make -C firmware/test
 
 # Тільки Soldier:
@@ -158,7 +158,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — C-код написаний, 137 host-based тестів проходять
+- **Поточний TRL:** TRL 6 — C-код написаний, 207 host-based тестів проходять
 - **Пов'язані модулі:**
   - EDLC Супераконденсатор → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
   - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
@@ -182,8 +182,8 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 | **AT Command Blocking (2s HAL_Delay)** | 🔴 BLOCKER (Queen сліпа 2 секунди під час CoAP flush) |
 | **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
 | **Error_Handler** | ✅ Виправлено — `NVIC_SystemReset()` через 100 мс замість вічного циклу (FW.14) |
-| **CMD_DECRYPT_BUF_SIZE розбіжність** | 🟡 OPEN (544 у firmware, 96 у тестах — OTA path не покритий) |
-| **Host-based Tests (137)** | ✅ Всі проходять (`make -C firmware/test`) |
+| **CMD_DECRYPT_BUF_SIZE розбіжність** | ✅ Виправлено — тест синхронізовано з firmware (96 → 544) |
+| **Host-based Tests (207)** | ✅ Всі проходять (`make -C firmware/test`) |
 
 ---
 
@@ -241,14 +241,6 @@ HAL_Delay(2000); // Чекаємо ACK від сервера
 
 ---
 
-### ✅ BLOCKER-3: Queen UID — Flash-based provisioning реалізовано (Виправлено)
-
-**Статус:** Виправлено (PR #273). Flash-based provisioning реалізовано з fallback на STM32 HW UID.
-
-Queen читає UID з Flash-сторінки `0x0803F800` з magic-маркером. При незаповненому Flash генерує унікальний `"UNPROV-{8HEX}"` на основі STM32 HW UID (`0x1FFF7590`). Детальніше: [03_02 Queen Gateway Firmware BLOCKER-3](03_02_Queen_Gateway_Firmware).
-
----
-
 ### ✅ BLOCKER-4: Starlink Latency Gap (Частково виправлено)
 
 **Статус:** Таймаути збільшено (PR #273). CoAP session timeout: `1000 ms` → `2000 ms`. ACK wait: `2000 ms` → `5000 ms`.
@@ -256,50 +248,6 @@ Queen читає UID з Flash-сторінки `0x0803F800` з magic-марке�
 Повний retry залишається відкритим (потребує UART RX парсингу).
 
 **Блокує:** (частково) Стабільність CoAP uplink через Starlink.
-
----
-
-### ✅ BLOCKER-5: IWDG додано до Queen (Виправлено)
-
-**Статус:** Виправлено (PR #273).
-
-**Файл:** `firmware/queen/main.c`
-
-IWDG ініціалізовано та refresh додано в main loop (включаючи pre-refresh перед CoAP flush). IWDG врятує і Soldier, і Queen — обидва перезавантажуються автоматично без фізичного втручання.
-
----
-
-### ✅ BLOCKER-6: CMD_DECRYPT_BUF_SIZE синхронізовано (Виправлено)
-
-**Статус:** Виправлено (PR #273). Тест синхронізовано з firmware — обидва файли тепер використовують `544`.
-
----
-
-### ✅ BLOCKER-7: Error_Handler виправлено — soft reset замість вічного циклу (FW.14)
-
-**Статус:** Виправлено.
-
-**Файл:** `firmware/soldier/main.c` (+ аналогічно `firmware/queen/main.c`)
-
-До виправлення `Error_Handler()` входив у нескінченний цикл — вузол зависав назавжди:
-```c
-// До: вічний цикл без відновлення
-void Error_Handler(void) {
-  __disable_irq();
-  while (1) {}
-}
-```
-
-Після виправлення — 100 мс затримка для flush UART буфера, потім soft reset:
-```c
-// Після: відновлення через NVIC soft reset
-void Error_Handler(void) {
-  HAL_Delay(100);        // flush UART tx buffer
-  NVIC_SystemReset();    // soft reset — STM32 перезавантажується
-}
-```
-
-`NVIC_SystemReset()` виконує ARM CoreSight System Reset Request — вузол перезавантажується за ~1 мс і повертається до нормальної роботи автоматично. Затримка 100 мс дозволяє USART завершити передачу будь-яких незавершених AT-команд перед скиданням.
 
 ---
 
@@ -351,6 +299,19 @@ HAL_IWDG_Refresh(&hiwdg);
 ```
 
 Перша інструкція кожного циклу. Якщо mruby VM, DMA або будь-який інший блок зависне і цей рядок не виконається протягом IWDG timeout (налаштовується prescaler: типово ~26 секунд), MCU автоматично перезавантажиться. Усі критичні дані зберігаються в RTC Backup Domain.
+
+### 1.3.1 Error_Handler: Soft Reset замість Вічного Циклу (FW.14)
+
+При HardFault або критичній помилці HAL викликається `Error_Handler()`. До виправлення (FW.14) він входив у нескінченний цикл — вузол зависав назавжди. Тепер реалізований soft reset:
+
+```c
+void Error_Handler(void) {
+  HAL_Delay(100);     // 100 мс: дозволяє USART завершити передачу AT-команд
+  NVIC_SystemReset(); // ARM CoreSight System Reset Request → перезавантаження за ~1 мс
+}
+```
+
+`NVIC_SystemReset()` — стандартний ARM CoreSight System Reset. Вузол перезавантажується автоматично і повертається до нормальної роботи. Затримка 100 мс запобігає обриву незавершених UART-транзакцій перед скиданням.
 
 ---
 
@@ -592,7 +553,7 @@ HAL_CRYP_Init(&hcryp);
 
 ---
 
-## 🗺️ 2. Soldier RTC Backup Register Map (DR0..DR15)
+## 🗺️ 2. Soldier RTC Backup Register Map (DR0..DR19)
 
 RTC Backup Domain не скидається при STOP2 та більшості реботів (окрім повного знеструмлення або `HAL_RTCEx_BKUPWrite` з нулями).
 
@@ -614,8 +575,14 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `DR13` | `recent_mesh_dids[5]` | uint32 | Anti-pingpong DID cache, слот 5 |
 | `DR14` | `recent_mesh_dids[6]` | uint32 | Anti-pingpong DID cache, слот 6 |
 | `DR15` | `recent_mesh_dids[7]` | uint32 | Anti-pingpong DID cache, слот 7 |
+| `DR16` | `lorenz_x` | float32→uint32 | [FW.6] X-координата атрактора Лоренца (IEEE 754 bit-copy) |
+| `DR17` | `lorenz_y` | float32→uint32 | [FW.6] Y-координата атрактора Лоренца |
+| `DR18` | `lorenz_z` | float32→uint32 | [FW.6] Z-координата атрактора (інтенсивність конвекції) |
+| `DR19` | `LORENZ_STATE_MAGIC` | uint32 | [FW.6] Маркер валідності: `0x4C5A5354` ("LZST"). Захист від RTC-корупції |
 
 > **DR7 — Незмінний DID:** Записується один раз при першому старті (`tree_did == 0`). Якщо `tree_did != 0` при наступних стартах, запис пропускається. Це гарантує унікальність ідентифікатора навіть після OTA-ребуту.
+
+> **DR16-DR19 — Стан Лоренца (FW.6):** Зберігається/відновлюється при кожному циклі STOP2. При первинному старті або після повного знеструмлення (DR19 ≠ `0x4C5A5354`) система переходить у режим ініціалізації від `chaos_seed`. NaN/Inf перевірка через `isfinite()` захищає від бітових помилок у Backup Domain. STM32WLE5 підтримує 20 backup registers (DR0-DR19) — всі тепер зайняті.
 
 ---
 
@@ -904,15 +871,20 @@ HAL_RNG_DeInit(&hrng);                                  // DeInit одразу �
 
 ---
 
-## 🧪 10. Покриття Host-Based Тестами (137 тестів)
+## 🧪 10. Покриття Host-Based Тестами (207 тестів)
 
 Firmware логіка тестується на x86 з GCC (не потребує ARM toolchain):
 
 ```bash
-make -C firmware/test         # Всі 137 тестів
-make -C firmware/test queen   # Queen-only (79 тестів)
-make -C firmware/test soldier # Soldier-only (58 тестів)
+make -C firmware/test             # Всі 207 тестів
+make -C firmware/test queen       # Queen-only (79 тестів)
+make -C firmware/test soldier     # Soldier-only (58 тестів)
+make -C firmware/test bio_contract # Bio-Contract (27 тестів)
+make -C firmware/test tinyml      # TinyML pipeline (25 тестів)
+make -C firmware/test encryption  # AES encryption (18 тестів)
 ```
+
+**CI:** Firmware тести інтегровані в GitHub Actions (`firmware_test` job у `.github/workflows/ci.yml`).
 
 ### Тести Queen (79)
 
@@ -1163,7 +1135,6 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 | `firmware/test/test_soldier_logic.c` | 58 Soldier тестів |
 | `firmware/test/test_queen_logic.c` | 79 Queen тестів |
 | `firmware/test/Makefile` | Build system для host-based тестів |
-| `docs/FIRMWARE.md` | Скорочений довідник прошивки |
 | [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Детальна документація Queen |
 | [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | TinyML класифікатор звуку |
 | [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора |

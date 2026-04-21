@@ -38,7 +38,7 @@
 | **Confidence threshold (0.80)** | 🟡 OPEN — хардкодований, не налаштовується |
 | **Decision: Cavitation → acoustic_events++** | ✅ Реалізовано (але мертве: inference закоментована) |
 | **Decision: Chainsaw → Emergency LoRa TX** | ✅ Реалізовано (але мертве: inference закоментована) |
-| **Host-based tests для аудіо-пайплайну** | 🔴 BLOCKER — **відсутні** (тести не покривають TinyML) |
+| **Host-based tests для аудіо-пайплайну** | ✅ Реалізовано (`firmware/test/test_tinyml_pipeline.c`, 25 тестів) |
 
 ---
 
@@ -135,33 +135,24 @@
 
 ---
 
-### 🔴 BLOCKER-4: Відсутні host-based тести для TinyML аудіо-пайплайну
+### ✅ BLOCKER-4: Host-based тести для TinyML аудіо-пайплайну (Реалізовано)
 
-**Статус:** Відкрито. Критичний для TRL 7.
+**Статус:** Виправлено. `firmware/test/test_tinyml_pipeline.c` додано з 25 тестами.
 
-**Файл:** `firmware/test/test_soldier_logic.c` — жодного тесту для TinyML.
+**Покриття:**
+- Audio normalization (boundary values: 0, 2047, 4095, full 512-element buffer)
+- Confidence threshold (0.80): below, exactly at, just above, max 1.0
+- All 4 event classes: silence (no action), wind (no action), cavitation (acoustic_events++), chainsaw (Emergency TX)
+- Acoustic events saturation (FW.12/FW.22): uint8 cap at 255
+- Vibration race condition guard (FW.11): NVIC-level read-and-clear atomicity
+- Multi-cycle accumulation: 10 consecutive cavitations, mixed events
 
-**Поточне покриття:** Тестовий файл охоплює:
-- Payload packing/unpacking ✅
-- DID generation ✅
-- Mesh anti-pingpong ✅
-- OTA chunk assembly + CRC32 ✅
-- TTL handling ✅
+**Залишкові обмеження:**
+- Mock `Run_Inference()` — тести перевіряють decision logic, не саму нейромережу
+- Реальний ISR timing та DMA race conditions не тестуються в host-based середовищі
+- `HAL_ADC_Start_DMA` return code (`HAL_BUSY`) не тестується
 
-**Відсутнє покриття:**
-- `HAL_ADC_ConvCpltCallback` ISR (встановлення `audio_ready = 1`)
-- Нормалізація `raw_audio_buffer[i] / 4095.0f` (boundary values: 0, 4095, 2047)
-- Race condition між ISR та main loop (`audio_ready` + `__DMB()`)
-- Mock `Run_Inference()` з різними `ml_event_id` / `ml_confidence` комбінаціями
-- Decision logic: клас 2 → `acoustic_events++`; клас 3 → `Trigger_Emergency_LoRa_TX()`
-- Граничне значення `ml_confidence` (≤0.80 → no action; >0.80 → action)
-
-**Необхідна дія:**
-- Додати `test_tinyml_pipeline.c` або розширити `test_soldier_logic.c`.
-- Mock `Run_Inference()` у тест-середовищі (stub function).
-- Покрити всі 4 класи виходу та граничне значення confidence.
-
-**Блокує:** TRL 7, Factory Testing, EwsAlert validation (03_05).
+**Закриває:** TRL 7 checklist item #5, FW.15 (частково)
 
 ---
 
@@ -252,51 +243,6 @@ lora_payload[7] = (uint8_t)(acoustic_events & 0xFF); // Тільки молод�
 
 ---
 
-### 🟡 BLOCKER-8: Race condition при `vibration_detected` — повторний вхід у DMA цикл
-
-**Статус:** Відкрито. Рідкісний, але реальний.
-
-**Файл:** `firmware/soldier/main.c:321-365`
-
-```c
-if (vibration_detected) {
-    vibration_detected = 0;
-    audio_ready = 0;
-    HAL_TIM_Base_Start(&htim2);
-    HAL_ADC_Start_DMA(&hadc, (uint32_t*)raw_audio_buffer, 512);
-    // ...
-}
-```
-
-**Проблема:**
-1. `vibration_detected` встановлюється у `HAL_GPIO_EXTI_Callback` (ISR, GPIO_PIN_0).
-2. Між `if (vibration_detected)` (read) та `vibration_detected = 0` (write) — немає атомарності.
-3. Якщо підряд відбувається два вібраційних удари, другий ISR може встановити `vibration_detected = 1` між рядками 321 та 322.
-4. Результат: DMA вже запущений → `HAL_ADC_Start_DMA` повертає `HAL_BUSY` → старий буфер записується поверх нового → артефакти в аудіо.
-
-**Необхідна дія:**
-- Оголосити `vibration_detected` як `volatile uint8_t` (вже є ✅).
-- Додати `__disable_irq()` / `__enable_irq()` навколо read-clear-start послідовності.
-- Або перевіряти `HAL_ADC_Start_DMA` return code та обробляти `HAL_BUSY`.
-
-> **📝 Покращене рішення — NVIC-рівнева ізоляція (Legacy notes):** Замість `__disable_irq()`, який зупиняє **всю систему** (включно з SysTick, радіо-перериваннями та DMA callbacks), рекомендовано вимикати лише конкретну EXTI-лінію п'єзодиска:
-> ```c
-> // Замість __disable_irq() / __enable_irq():
-> HAL_NVIC_DisableIRQ(EXTI0_IRQn);  // Вимкнути тільки п'єзо-переривання
-> if (vibration_detected) {
->     vibration_detected = 0;
->     audio_ready = 0;
->     HAL_TIM_Base_Start(&htim2);
->     HAL_ADC_Start_DMA(&hadc, (uint32_t*)raw_audio_buffer, 512);
-> }
-> HAL_NVIC_EnableIRQ(EXTI0_IRQn);   // Увімкнути назад після завершення
-> ```
-> **Переваги:** SysTick (HAL_Delay), LoRa-переривання та DMA callbacks продовжують працювати під час аудіо-ініціалізації. Менший ризик пропуску радіо-пакетів у Queen relay-сценаріях.
-
-**Блокує:** Стабільність DMA в умовах вібраційного шуму (вітер, гроза, механічні удари).
-
----
-
 ## 🎵 1. Апаратна Платформа та Тригер
 
 ### 1.1 Мікроконтролер
@@ -327,6 +273,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 ```
 
 **Логіка фільтрації:** Якщо `vibration_detected == 0` на момент Phase 1.5 → аудіо-цикл повністю пропускається → STM32 не витрачає енергію на семплінг у тиші.
+
+**[FIX FW.11] Атомарне зчитування `vibration_detected` — NVIC-ізоляція:** Щоб запобігти race condition між ISR та головним циклом (ISR може виставити прапорець між перевіркою `if (vib)` та `vib = 0`), використовується NVIC-рівнева ізоляція:
+
+```c
+// Вимикаємо лише п'єзо-переривання — SysTick, LoRa та DMA callbacks продовжують працювати
+HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+uint8_t vib = vibration_detected;
+vibration_detected = 0;
+HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+if (vib) { /* запустити аудіо-пайплайн */ }
+```
+
+Перевага над `__disable_irq()`: блокується лише конкретна EXTI0 лінія п'єзодиска, менший ризик пропуску радіо-пакетів при mesh relay. Тести: `firmware/test/test_tinyml_pipeline.c` — 3 тести для vibration race condition guard.
 
 **Фізичний сенс:** П'єзодиск фіксує механічні вібрації деревини. Бензопила → характерна вібрація частотою 50–200 Hz (обертання ланцюга). Кавітаційний колапс у ксилемі → ультразвукові мікроімпульси 10–100 µs.
 
@@ -701,7 +661,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 2 | `Run_Inference()` розкоментовано та функціонує | 🔴 Відкрито |
 | 3 | `TENSOR_ARENA_SIZE` задокументовано з реального файлу | 🔴 Відкрито |
 | 4 | Memory Map верифіковано (`arm-none-eabi-size`) | 🔴 Відкрито |
-| 5 | Host-based тести TinyML pipeline додані | 🔴 Відкрито |
+| 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`, 25 тестів) |
 | 6 | Smoke-тест: class 2 → `acoustic_events++` верифіковано | 🔴 Відкрито |
 | 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | 🔴 Відкрито |
 | 8 | Confidence threshold конфігурується (не хардкод) | 🟡 Відкрито |

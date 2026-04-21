@@ -61,7 +61,12 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║     delta_t_seconds = tick - last_wakeup_timestamp (метаболізм EBFC) ║
 ║                                                                      ║
 ║   ФАЗА 2: mruby BioContract (on-device Lorenz)                      ║
-║     bio_contract.rb :: Attractor.calculate_z_axis(seed, temp, acust) ║
+║     [FW.6] Два режими:                                               ║
+║       A) Продовження (DR19 == MAGIC): відновлення (x,y,z) з DR16-18  ║
+║          calculate_state_continued(x, y, z, temp, acust)             ║
+║          → [status_byte, x_final, y_final, z_final]                  ║
+║       B) Первинний старт (DR19 ≠ MAGIC): chaos_seed → (x₀,y₀,z₀)   ║
+║          calculate_state(seed, temp, acust) → status_byte            ║
 ║     bio_contract.rb :: BioContract.evaluate_and_pack → status_byte  ║
 ║     status_byte = [bio_status:2 bits | growth_points:6 bits]        ║
 ║                                                                      ║

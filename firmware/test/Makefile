@@ -13,9 +13,9 @@ CC       = gcc
 CFLAGS   = -Wall -Wextra -Wpedantic -std=c11 -I. -O2
 BINDIR   = .
 
-.PHONY: all queen soldier bio_contract clean
+.PHONY: all queen soldier bio_contract tinyml encryption clean
 
-all: queen soldier bio_contract
+all: queen soldier bio_contract tinyml encryption
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -26,6 +26,12 @@ soldier: $(BINDIR)/test_soldier
 bio_contract: $(BINDIR)/test_bio_contract
 	@./$(BINDIR)/test_bio_contract
 
+tinyml: $(BINDIR)/test_tinyml
+	@./$(BINDIR)/test_tinyml
+
+encryption: $(BINDIR)/test_encryption
+	@./$(BINDIR)/test_encryption
+
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
@@ -35,5 +41,12 @@ $(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h
 $(BINDIR)/test_bio_contract: test_bio_contract.c
 	$(CC) $(CFLAGS) -o $@ test_bio_contract.c -lm
 
+$(BINDIR)/test_tinyml: test_tinyml_pipeline.c hal_mock.h
+	$(CC) $(CFLAGS) -o $@ test_tinyml_pipeline.c -lm
+
+$(BINDIR)/test_encryption: test_encryption.c hal_mock.h
+	$(CC) $(CFLAGS) -o $@ test_encryption.c
+
 clean:
-	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract
+	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract \
+	      $(BINDIR)/test_tinyml $(BINDIR)/test_encryption

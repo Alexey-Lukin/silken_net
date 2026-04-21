@@ -104,26 +104,22 @@ RSpec.describe SilkenNet::Attractor do
       expect(SilkenNet::Attractor::RHO_LIMITS.min).to be > 0
     end
 
-    it "uses BigDecimal for base constants" do
-      expect(SilkenNet::Attractor::BASE_SIGMA).to be_a(BigDecimal)
-      expect(SilkenNet::Attractor::BASE_RHO).to be_a(BigDecimal)
-      expect(SilkenNet::Attractor::BASE_BETA).to be_a(BigDecimal)
+    it "uses Float for base constants (identical to firmware mruby)" do
+      expect(SilkenNet::Attractor::BASE_SIGMA).to be_a(Float)
+      expect(SilkenNet::Attractor::BASE_RHO).to be_a(Float)
+      expect(SilkenNet::Attractor::BASE_BETA).to be_a(Float)
     end
 
-    it "has DT of 0.01 (BigDecimal)" do
-      expect(SilkenNet::Attractor::DT).to eq("0.01".to_d)
+    it "has DT of 0.01 (Float)" do
+      expect(SilkenNet::Attractor::DT).to eq(0.01)
     end
 
     it "runs 250 iterations" do
       expect(SilkenNet::Attractor::ITERATIONS).to eq(250)
     end
 
-    it "uses 18-digit precision for BigDecimal" do
-      expect(SilkenNet::Attractor::PRECISION).to eq(18)
-    end
-
-    it "has BASE_BETA approximately equal to 8/3" do
-      expect(SilkenNet::Attractor::BASE_BETA.to_f).to be_within(0.0001).of(8.0 / 3.0)
+    it "has BASE_BETA equal to IEEE 754 8.0/3.0" do
+      expect(SilkenNet::Attractor::BASE_BETA).to eq(8.0 / 3.0)
     end
   end
 
@@ -176,6 +172,60 @@ RSpec.describe SilkenNet::Attractor do
       trajectory.each_with_index do |val, i|
         expect(val).to be_a(Float)
         expect(val).to be_finite
+      end
+    end
+  end
+
+  describe "Dual Computation Integrity (firmware parity)" do
+    # [FW.7] Backend MUST produce identical Z-values to firmware (mruby bio_contract.rb).
+    # This test replicates the exact firmware math to verify parity.
+    def firmware_z(seed, temp, acoustic)
+      x = ((seed % 1000) / 500.0) - 1.0
+      y = (((seed >> 4) % 1000) / 500.0) - 1.0
+      z = (((seed >> 8) % 1000) / 500.0) - 1.0
+
+      sigma = [ 5.0, [ 30.0, 10.0 + (acoustic * 0.1) ].min ].max
+      rho   = [ 10.0, [ 50.0, 28.0 + (temp * 0.2) ].min ].max
+      beta  = 8.0 / 3.0
+
+      250.times do
+        dx = sigma * (y - x)
+        dy = x * (rho - z) - y
+        dz = (x * y) - (beta * z)
+        x += dx * 0.01
+        y += dy * 0.01
+        z += dz * 0.01
+      end
+      z
+    end
+
+    it "matches firmware Z (round 4) for normal inputs" do
+      [ [ 123_456, 22.5, 5 ], [ 42, 20.0, 10 ], [ 77_777, 15.0, 3 ] ].each do |seed, temp, acoustic|
+        fw = firmware_z(seed, temp, acoustic).round(4)
+        be = described_class.calculate_z(seed, temp, acoustic)
+        expect(be).to eq(fw), "Mismatch for seed=#{seed}, temp=#{temp}, acoustic=#{acoustic}: firmware=#{fw}, backend=#{be}"
+      end
+    end
+
+    it "matches firmware Z for extreme inputs" do
+      [ [ 0, 0, 0 ], [ 999_999, -40.0, 255 ], [ 2**31 - 1, 60.0, 200 ] ].each do |seed, temp, acoustic|
+        fw = firmware_z(seed, temp, acoustic).round(4)
+        be = described_class.calculate_z(seed, temp, acoustic)
+        expect(be).to eq(fw), "Mismatch for seed=#{seed}, temp=#{temp}, acoustic=#{acoustic}: firmware=#{fw}, backend=#{be}"
+      end
+    end
+
+    it "matches firmware bio_status category for boundary Z-values" do
+      # Test that firmware and backend agree on homeostasis/stress/anomaly
+      [ [ 1, 50.0, 200 ], [ 54_321, 10.0, 50 ], [ 100, 22.0, 5 ] ].each do |seed, temp, acoustic|
+        fw_z = firmware_z(seed, temp, acoustic)
+        be_z = described_class.calculate_z(seed, temp, acoustic).to_f
+
+        fw_healthy = fw_z.between?(2.0, 45.0)
+        be_healthy = be_z.between?(2.0, 45.0)
+
+        expect(be_healthy).to eq(fw_healthy),
+          "Category mismatch for seed=#{seed}: fw_z=#{fw_z.round(4)} (#{fw_healthy}), be_z=#{be_z} (#{be_healthy})"
       end
     end
   end

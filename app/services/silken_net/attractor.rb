@@ -1,28 +1,23 @@
 # frozen_string_literal: true
 
-require "bigdecimal"
-require "bigdecimal/util"
-
 module SilkenNet
   class Attractor
-    # Використовуємо BigDecimal для абсолютної крос-платформної детермінованості
-    # Це гарантує, що Slashing-вирок буде однаковим на будь-якому процесорі.
-    BASE_SIGMA = "10.0".to_d
-    BASE_RHO   = "28.0".to_d
-    BASE_BETA  = ("8.0".to_d / "3.0".to_d).round(18)
+    # [FIX FW.7]: Використовуємо Float (IEEE 754 double) — ІДЕНТИЧНО firmware (mruby).
+    # BigDecimal давав "юридичну точність", але РІЗНУ від firmware — після 250 ітерацій
+    # хаотичної системи Лоренца Z-значення розходились на десятки одиниць.
+    # Dual Computation Integrity вимагає ОДНАКОВОЇ математики на обох сторонах.
+    # Фінансові розрахунки (growth_points → SCC мінтинг) виконуються ПІСЛЯ верифікації Z.
+    BASE_SIGMA = 10.0
+    BASE_RHO   = 28.0
+    BASE_BETA  = 8.0 / 3.0  # IEEE 754: 2.6666666666666665 — ідентично firmware
 
-    DT = "0.01".to_d
+    DT = 0.01
     ITERATIONS = 250
 
     # МЕЖІ СТАБІЛЬНОСТІ (Chaos Clamps):
     # Захищаємо систему від "вибуху" при екстремальних температурах.
     SIGMA_LIMITS = (5.0..30.0)
     RHO_LIMITS   = (10.0..50.0)
-
-    # Кількість значущих цифр для BigDecimal (запобігає експоненційному росту).
-    # 18 цифр точності достатньо для "Юридичної Точності" Web3-аудиту,
-    # при цьому час обчислення залишається O(n) а не O(2^n).
-    PRECISION = 18
 
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # МЕТОД ДЛЯ БЕКЕНДУ (Розрахунок стабільності)
@@ -32,22 +27,30 @@ module SilkenNet
 
       x, y, z, local_sigma, local_rho = initialize_state(seed, temp, acoustic)
 
-      # Обчислення в BigDecimal дають "Юридичну Точність" для Web3-аудиту.
-      # round(PRECISION) після кожної ітерації запобігає необмеженому росту цифр.
-      ITERATIONS.times do
-        dx = local_sigma * (y - x)
-        dy = x * (local_rho - z) - y
-        dz = (x * y) - (BASE_BETA * z)
-
-        x = (x + dx * DT).round(PRECISION)
-        y = (y + dy * DT).round(PRECISION)
-        z = (z + dz * DT).round(PRECISION)
-      end
+      # [FIX FW.7]: Float арифметика без round() — ідентично firmware bio_contract.rb.
+      # mruby на MCU виконує x += dx * DT без будь-якого округлення між ітераціями.
+      # Сервер МУСИТЬ робити те саме для Dual Computation Integrity.
+      # Overflow protection: з clamped σ∈[5,30] та ρ∈[10,50], Lorenz attractor bounded.
+      # Емпірично |x|<25, |y|<35, |z|<50 після 250 ітерацій — далеко від Float64 overflow.
+      x, y, z = iterate_lorenz(x, y, z, local_sigma, local_rho)
 
       duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
       SilkenNet::Metrics::LORENZ_COMPUTATION_DURATION.observe(duration) if defined?(SilkenNet::Metrics)
 
-      z.to_f.round(4)
+      z.round(4)
+    end
+
+    # [FW.6] Обчислення Z з продовженням стану.
+    # Використовується для перевірки безперервної траєкторії атрактора,
+    # коли firmware зберігає (x, y, z) між циклами STOP2.
+    # Повертає [z_rounded, x_final, y_final, z_final] для подальшого ланцюгування.
+    def self.calculate_z_continued(x_prev, y_prev, z_prev, temp, acoustic)
+      local_sigma = (BASE_SIGMA + (acoustic * 0.1)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
+      local_rho   = (BASE_RHO + (temp * 0.2)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
+
+      x, y, z = iterate_lorenz(x_prev, y_prev, z_prev, local_sigma, local_rho)
+
+      [ z.round(4), x, y, z ]
     end
 
     def self.homeostatic?(z_value, tree_family)
@@ -71,29 +74,45 @@ module SilkenNet
           dy = x * (local_rho - z) - y
           dz = (x * y) - (BASE_BETA * z)
 
-          x = (x + dx * DT).round(PRECISION)
-          y = (y + dy * DT).round(PRECISION)
-          z = (z + dz * DT).round(PRECISION)
+          x += dx * DT
+          y += dy * DT
+          z += dz * DT
         end
 
         case i % 3
-        when 0 then x.to_f.round(4)
-        when 1 then y.to_f.round(4)
-        when 2 then z.to_f.round(4)
+        when 0 then x.round(4)
+        when 1 then y.round(4)
+        when 2 then z.round(4)
         end
       end
     end
 
+    # Спільне ядро ітерацій Лоренца — використовується в calculate_z та calculate_z_continued
+    private_class_method def self.iterate_lorenz(x, y, z, local_sigma, local_rho)
+      ITERATIONS.times do
+        dx = local_sigma * (y - x)
+        dy = x * (local_rho - z) - y
+        dz = (x * y) - (BASE_BETA * z)
+
+        x += dx * DT
+        y += dy * DT
+        z += dz * DT
+      end
+
+      [ x, y, z ]
+    end
+
     private_class_method def self.initialize_state(seed, temp, acoustic)
       # Початкові координати (насіння) з використанням DID
-      x = (((seed % 1000) / 500.0) - 1.0).to_d
-      y = ((((seed >> 4) % 1000) / 500.0) - 1.0).to_d
-      z = ((((seed >> 8) % 1000) / 500.0) - 1.0).to_d
+      # [FIX FW.7]: Float арифметика — ідентично firmware bio_contract.rb
+      x = ((seed % 1000) / 500.0) - 1.0
+      y = (((seed >> 4) % 1000) / 500.0) - 1.0
+      z = (((seed >> 8) % 1000) / 500.0) - 1.0
 
       # [СЕРЕДОВИЩНИЙ ЗАПОБІЖНИК]: Clamp запобігає вильоту в нескінченність
       # навіть якщо дерево горить (temp > 100) або датчик видає шум.
-      local_sigma = (BASE_SIGMA + (acoustic.to_d * "0.1".to_d)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
-      local_rho   = (BASE_RHO + (temp.to_d * "0.2".to_d)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
+      local_sigma = (BASE_SIGMA + (acoustic * 0.1)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
+      local_rho   = (BASE_RHO + (temp * 0.2)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
 
       [ x, y, z, local_sigma, local_rho ]
     end
