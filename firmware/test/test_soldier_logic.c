@@ -837,6 +837,248 @@ TEST(test_onrxdone_size_zero_rejected) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * FW.6: LORENZ STATE PERSISTENCE (RTC Backup DR16-DR19)
+ * ════════════════════════════════════════════════════════════════════ */
+
+#include <math.h>
+
+/* LORENZ_STATE_MAGIC = 0x4C5A5354 ("LZST") */
+#define LORENZ_STATE_MAGIC_TEST 0x4C5A5354
+
+/* IEEE 754 float ↔ uint32_t bit-exact conversion (identical to main.c) */
+static uint32_t test_float_to_uint32(float f) {
+    uint32_t u;
+    memcpy(&u, &f, sizeof(u));
+    return u;
+}
+
+static float test_uint32_to_float(uint32_t u) {
+    float f;
+    memcpy(&f, &u, sizeof(f));
+    return f;
+}
+
+/* Float comparison with epsilon */
+#define ASSERT_FLOAT_EQ(a, b, eps) do { \
+    float _a = (float)(a), _b = (float)(b); \
+    if (fabsf(_a - _b) > (eps)) { \
+        printf(" ❌ FAIL (line %d: got %f, expected %f, diff %f > eps %f)\n", \
+               __LINE__, (double)_a, (double)_b, (double)fabsf(_a-_b), (double)(eps)); \
+        tests_failed++; return; \
+    } \
+} while(0)
+
+/* --- Float pack/unpack roundtrip --- */
+
+TEST(test_float_pack_positive) {
+    float val = 29.12345f;
+    uint32_t packed = test_float_to_uint32(val);
+    float unpacked = test_uint32_to_float(packed);
+    ASSERT_FLOAT_EQ(unpacked, val, 0.0f);
+}
+
+TEST(test_float_pack_negative) {
+    float val = -15.789f;
+    uint32_t packed = test_float_to_uint32(val);
+    float unpacked = test_uint32_to_float(packed);
+    ASSERT_FLOAT_EQ(unpacked, val, 0.0f);
+}
+
+TEST(test_float_pack_zero) {
+    float val = 0.0f;
+    uint32_t packed = test_float_to_uint32(val);
+    float unpacked = test_uint32_to_float(packed);
+    ASSERT_FLOAT_EQ(unpacked, val, 0.0f);
+    ASSERT_EQ(packed, 0); /* IEEE 754: +0.0 = 0x00000000 */
+}
+
+TEST(test_float_pack_small) {
+    float val = 0.001234f;
+    uint32_t packed = test_float_to_uint32(val);
+    float unpacked = test_uint32_to_float(packed);
+    ASSERT_FLOAT_EQ(unpacked, val, 0.0f);
+}
+
+TEST(test_float_pack_typical_lorenz_x) {
+    /* Typical Lorenz attractor x-coordinate */
+    float val = -7.3456f;
+    uint32_t packed = test_float_to_uint32(val);
+    float unpacked = test_uint32_to_float(packed);
+    ASSERT_FLOAT_EQ(unpacked, val, 0.0f);
+}
+
+TEST(test_float_pack_typical_lorenz_z) {
+    /* Typical Lorenz attractor z-coordinate (homeostasis zone) */
+    float val = 28.567f;
+    uint32_t packed = test_float_to_uint32(val);
+    float unpacked = test_uint32_to_float(packed);
+    ASSERT_FLOAT_EQ(unpacked, val, 0.0f);
+}
+
+/* --- RTC Backup Register mock functional tests --- */
+
+TEST(test_rtc_mock_write_read_roundtrip) {
+    RTC_HandleTypeDef rtc;
+    _rtc_bkp_reset_all();
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR16, 0xDEADBEEF);
+    uint32_t val = HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR16);
+    ASSERT_EQ(val, 0xDEADBEEF);
+}
+
+TEST(test_rtc_mock_dr16_dr19_independent) {
+    RTC_HandleTypeDef rtc;
+    _rtc_bkp_reset_all();
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR16, 111);
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR17, 222);
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR18, 333);
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR19, 444);
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR16), 111);
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR17), 222);
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR18), 333);
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR19), 444);
+}
+
+TEST(test_rtc_mock_uninitialized_returns_zero) {
+    RTC_HandleTypeDef rtc;
+    _rtc_bkp_reset_all();
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR16), 0);
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR19), 0);
+}
+
+/* --- Lorenz state save/restore simulation --- */
+
+TEST(test_lorenz_state_save_restore_roundtrip) {
+    /* Simulate Phase 5 save → Phase 1 restore cycle */
+    RTC_HandleTypeDef rtc;
+    _rtc_bkp_reset_all();
+
+    /* Phase 5: Save state before STOP2 */
+    float x_save = -7.345f, y_save = 12.891f, z_save = 28.456f;
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR16, test_float_to_uint32(x_save));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR17, test_float_to_uint32(y_save));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR18, test_float_to_uint32(z_save));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC_TEST);
+
+    /* Phase 1: Restore state after wakeup */
+    uint32_t magic = HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR19);
+    ASSERT_EQ(magic, LORENZ_STATE_MAGIC_TEST);
+
+    float x_load = test_uint32_to_float(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR16));
+    float y_load = test_uint32_to_float(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR17));
+    float z_load = test_uint32_to_float(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR18));
+
+    ASSERT_FLOAT_EQ(x_load, x_save, 0.0f);
+    ASSERT_FLOAT_EQ(y_load, y_save, 0.0f);
+    ASSERT_FLOAT_EQ(z_load, z_save, 0.0f);
+}
+
+TEST(test_lorenz_first_boot_no_magic) {
+    /* First boot: DR19 is 0 (not LORENZ_STATE_MAGIC) → state_valid = 0 */
+    RTC_HandleTypeDef rtc;
+    _rtc_bkp_reset_all();
+
+    uint32_t magic = HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR19);
+    ASSERT_NE(magic, LORENZ_STATE_MAGIC_TEST);
+    /* System should fall back to chaos_seed initialization */
+}
+
+TEST(test_lorenz_state_nan_rejected) {
+    /* If RTC contains NaN due to corruption, state must be rejected */
+    RTC_HandleTypeDef rtc;
+    _rtc_bkp_reset_all();
+
+    /* NaN in IEEE 754: 0x7FC00000 */
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR16, 0x7FC00000); /* NaN */
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR17, test_float_to_uint32(10.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR18, test_float_to_uint32(20.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC_TEST);
+
+    float x_load = test_uint32_to_float(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR16));
+    uint8_t valid = isfinite(x_load) ? 1 : 0;
+    ASSERT_EQ(valid, 0); /* NaN is not finite → rejected */
+}
+
+TEST(test_lorenz_state_inf_rejected) {
+    /* If RTC contains Inf due to corruption, state must be rejected */
+    RTC_HandleTypeDef rtc;
+    _rtc_bkp_reset_all();
+
+    /* +Inf in IEEE 754: 0x7F800000 */
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR16, test_float_to_uint32(1.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR17, 0x7F800000); /* Inf */
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR18, test_float_to_uint32(30.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC_TEST);
+
+    float y_load = test_uint32_to_float(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR17));
+    uint8_t valid = isfinite(y_load) ? 1 : 0;
+    ASSERT_EQ(valid, 0); /* Inf is not finite → rejected */
+}
+
+TEST(test_lorenz_state_magic_wrong_value) {
+    /* If DR19 has a random value (not LORENZ_STATE_MAGIC), state is invalid */
+    RTC_HandleTypeDef rtc;
+    _rtc_bkp_reset_all();
+
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR16, test_float_to_uint32(1.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR17, test_float_to_uint32(2.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR18, test_float_to_uint32(3.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR19, 0xBADC0FFE); /* wrong magic */
+
+    uint32_t magic = HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR19);
+    ASSERT_NE(magic, LORENZ_STATE_MAGIC_TEST);
+}
+
+TEST(test_lorenz_state_does_not_clobber_existing_registers) {
+    /* Writing DR16-DR19 must not affect DR0-DR15 (existing data) */
+    RTC_HandleTypeDef rtc;
+    _rtc_bkp_reset_all();
+
+    /* Simulate existing data in DR0-DR15 */
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR0, 0x11111111);
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR7, 0x77777777);
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR15, 0xFFFFFFFF);
+
+    /* Write Lorenz state to DR16-DR19 */
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR16, test_float_to_uint32(5.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR17, test_float_to_uint32(6.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR18, test_float_to_uint32(7.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC_TEST);
+
+    /* Verify existing data is unchanged */
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR0), 0x11111111);
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR7), 0x77777777);
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR15), 0xFFFFFFFF);
+}
+
+TEST(test_lorenz_multi_cycle_state_overwrites) {
+    /* Simulate 3 consecutive STOP2 cycles, each overwriting state */
+    RTC_HandleTypeDef rtc;
+    _rtc_bkp_reset_all();
+
+    /* Cycle 1 */
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR16, test_float_to_uint32(1.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR17, test_float_to_uint32(2.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR18, test_float_to_uint32(3.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC_TEST);
+
+    /* Cycle 2 */
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR16, test_float_to_uint32(10.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR17, test_float_to_uint32(20.0f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR18, test_float_to_uint32(30.0f));
+
+    /* Cycle 3 */
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR16, test_float_to_uint32(-5.5f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR17, test_float_to_uint32(8.8f));
+    HAL_RTCEx_BKUPWrite(&rtc, RTC_BKP_DR18, test_float_to_uint32(27.3f));
+
+    /* Only the last values should survive */
+    ASSERT_FLOAT_EQ(test_uint32_to_float(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR16)), -5.5f, 0.0f);
+    ASSERT_FLOAT_EQ(test_uint32_to_float(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR17)), 8.8f, 0.0f);
+    ASSERT_FLOAT_EQ(test_uint32_to_float(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR18)), 27.3f, 0.0f);
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&rtc, RTC_BKP_DR19), LORENZ_STATE_MAGIC_TEST);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -918,6 +1160,24 @@ int main(void)
     RUN(test_onrxdone_size_256_accepted);
     RUN(test_onrxdone_size_257_rejected);
     RUN(test_onrxdone_size_zero_rejected);
+
+    printf("\n  Lorenz State Persistence (FW.6):\n");
+    RUN(test_float_pack_positive);
+    RUN(test_float_pack_negative);
+    RUN(test_float_pack_zero);
+    RUN(test_float_pack_small);
+    RUN(test_float_pack_typical_lorenz_x);
+    RUN(test_float_pack_typical_lorenz_z);
+    RUN(test_rtc_mock_write_read_roundtrip);
+    RUN(test_rtc_mock_dr16_dr19_independent);
+    RUN(test_rtc_mock_uninitialized_returns_zero);
+    RUN(test_lorenz_state_save_restore_roundtrip);
+    RUN(test_lorenz_first_boot_no_magic);
+    RUN(test_lorenz_state_nan_rejected);
+    RUN(test_lorenz_state_inf_rejected);
+    RUN(test_lorenz_state_magic_wrong_value);
+    RUN(test_lorenz_state_does_not_clobber_existing_registers);
+    RUN(test_lorenz_multi_cycle_state_overwrites);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);
