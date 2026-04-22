@@ -8,6 +8,10 @@ evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
 via_ir = false
+# OZ 5.6 P256.sol has a complex assembly block that hits "stack too deep"
+# when viaIR is disabled (which coverage mode does by default).
+# coverage_via_ir enables --ir-minimum for coverage runs only.
+coverage_via_ir = true
 remappings = [
   "@openzeppelin/=node_modules/@openzeppelin/",
   "forge-std/=node_modules/forge-std/src/"
