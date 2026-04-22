@@ -311,41 +311,44 @@ contract ProtocolParametersTest is Test {
     // ─── Admin Protection ─────────────────────────────────────────────
 
     function test_adminProtection_cannotRemoveLastAdmin() public {
+        bytes32 adminRole = params.DEFAULT_ADMIN_ROLE();
         vm.prank(admin);
         vm.expectRevert("ProtocolParameters: cannot remove last admin");
-        params.renounceRole(params.DEFAULT_ADMIN_ROLE(), admin);
+        params.renounceRole(adminRole, admin);
     }
 
     function test_adminProtection_canRemoveAdminIfMultiple() public {
+        bytes32 adminRole = params.DEFAULT_ADMIN_ROLE();
         address admin2 = address(0xD);
 
         // Admin grants admin role to admin2
         vm.prank(admin);
-        params.grantRole(params.DEFAULT_ADMIN_ROLE(), admin2);
+        params.grantRole(adminRole, admin2);
 
         // Now admin can renounce — there are 2 admins
         vm.prank(admin);
-        params.renounceRole(params.DEFAULT_ADMIN_ROLE(), admin);
+        params.renounceRole(adminRole, admin);
 
-        assertFalse(params.hasRole(params.DEFAULT_ADMIN_ROLE(), admin));
-        assertTrue(params.hasRole(params.DEFAULT_ADMIN_ROLE(), admin2));
+        assertFalse(params.hasRole(adminRole, admin));
+        assertTrue(params.hasRole(adminRole, admin2));
     }
 
     function test_adminProtection_cannotRevokeLastAdmin() public {
+        bytes32 adminRole = params.DEFAULT_ADMIN_ROLE();
         address admin2 = address(0xD);
 
         // Add second admin
         vm.prank(admin);
-        params.grantRole(params.DEFAULT_ADMIN_ROLE(), admin2);
+        params.grantRole(adminRole, admin2);
 
         // admin2 can revoke admin
         vm.prank(admin2);
-        params.revokeRole(params.DEFAULT_ADMIN_ROLE(), admin);
+        params.revokeRole(adminRole, admin);
 
         // Now admin2 is the only admin — cannot be revoked
         vm.prank(admin2);
         vm.expectRevert("ProtocolParameters: cannot remove last admin");
-        params.renounceRole(params.DEFAULT_ADMIN_ROLE(), admin2);
+        params.renounceRole(adminRole, admin2);
     }
 
     // ─── Fuzz Tests ───────────────────────────────────────────────────

@@ -168,9 +168,10 @@ contract SilkenForestCoinTest is Test {
     }
 
     function testRevert_mint_exceedsMaxSupply() public {
+        uint256 cap = sfc.MAX_SUPPLY();
         vm.prank(minter);
         vm.expectRevert("SFC: cap exceeded");
-        sfc.mint(user1, sfc.MAX_SUPPLY() + 1, CLUSTER_ID);
+        sfc.mint(user1, cap + 1, CLUSTER_ID);
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -358,21 +359,23 @@ contract SilkenForestCoinTest is Test {
     // ═══════════════════════════════════════════════════════════════════
 
     function testRevert_cannotRemoveLastAdmin() public {
+        bytes32 adminRole = sfc.DEFAULT_ADMIN_ROLE();
         vm.prank(admin);
         vm.expectRevert("SFC: cannot remove last admin");
-        sfc.renounceRole(sfc.DEFAULT_ADMIN_ROLE(), admin);
+        sfc.renounceRole(adminRole, admin);
     }
 
     function test_canRemoveAdminIfMultiple() public {
+        bytes32 adminRole = sfc.DEFAULT_ADMIN_ROLE();
         address admin2 = makeAddr("admin2");
         vm.prank(admin);
-        sfc.grantRole(sfc.DEFAULT_ADMIN_ROLE(), admin2);
+        sfc.grantRole(adminRole, admin2);
 
         vm.prank(admin);
-        sfc.renounceRole(sfc.DEFAULT_ADMIN_ROLE(), admin);
+        sfc.renounceRole(adminRole, admin);
 
-        assertFalse(sfc.hasRole(sfc.DEFAULT_ADMIN_ROLE(), admin));
-        assertTrue(sfc.hasRole(sfc.DEFAULT_ADMIN_ROLE(), admin2));
+        assertFalse(sfc.hasRole(adminRole, admin));
+        assertTrue(sfc.hasRole(adminRole, admin2));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -395,10 +398,12 @@ contract SilkenForestCoinTest is Test {
         vm.prank(minter);
         sfc.mint(user1, 1000e18, CLUSTER_ID);
 
-        vm.roll(block.number + 1);
+        // Capture snapshot at the block where the first mint happened,
+        // then advance so this block becomes queryable as a past block.
         uint256 snapshotBlock = block.number;
+        vm.roll(block.number + 1);
 
-        // Mint more after snapshot
+        // Mint more after snapshot (at a later block)
         vm.prank(minter);
         sfc.mint(user1, 500e18, "cluster-2");
         vm.roll(block.number + 1);

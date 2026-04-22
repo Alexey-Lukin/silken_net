@@ -214,21 +214,23 @@ contract StateRootAnchorTest is Test {
     // ═══════════════════════════════════════════════════════════════════
 
     function testRevert_cannotRemoveLastAdmin() public {
+        bytes32 adminRole = anchor.DEFAULT_ADMIN_ROLE();
         vm.prank(admin);
         vm.expectRevert("StateRootAnchor: cannot remove last admin");
-        anchor.renounceRole(anchor.DEFAULT_ADMIN_ROLE(), admin);
+        anchor.renounceRole(adminRole, admin);
     }
 
     function test_canRemoveAdminIfMultiple() public {
+        bytes32 adminRole = anchor.DEFAULT_ADMIN_ROLE();
         address admin2 = makeAddr("admin2");
         vm.prank(admin);
-        anchor.grantRole(anchor.DEFAULT_ADMIN_ROLE(), admin2);
+        anchor.grantRole(adminRole, admin2);
 
         vm.prank(admin);
-        anchor.renounceRole(anchor.DEFAULT_ADMIN_ROLE(), admin);
+        anchor.renounceRole(adminRole, admin);
 
-        assertFalse(anchor.hasRole(anchor.DEFAULT_ADMIN_ROLE(), admin));
-        assertTrue(anchor.hasRole(anchor.DEFAULT_ADMIN_ROLE(), admin2));
+        assertFalse(anchor.hasRole(adminRole, admin));
+        assertTrue(anchor.hasRole(adminRole, admin2));
     }
 
     // ═══════════════════════════════════════════════════════════════════

@@ -153,15 +153,17 @@ contract SilkenCarbonCoinTest is Test {
     }
 
     function testRevert_mint_exceedsMaxSupply() public {
+        uint256 cap = scc.MAX_SUPPLY();
         vm.prank(minter);
         vm.expectRevert("SCC: cap exceeded");
-        scc.mint(user1, scc.MAX_SUPPLY() + 1, TREE_DID);
+        scc.mint(user1, cap + 1, TREE_DID);
     }
 
     function test_mint_exactlyMaxSupply() public {
+        uint256 cap = scc.MAX_SUPPLY();
         vm.prank(minter);
-        scc.mint(user1, scc.MAX_SUPPLY(), TREE_DID);
-        assertEq(scc.totalSupply(), scc.MAX_SUPPLY());
+        scc.mint(user1, cap, TREE_DID);
+        assertEq(scc.totalSupply(), cap);
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -380,21 +382,23 @@ contract SilkenCarbonCoinTest is Test {
     // ═══════════════════════════════════════════════════════════════════
 
     function testRevert_cannotRemoveLastAdmin() public {
+        bytes32 adminRole = scc.DEFAULT_ADMIN_ROLE();
         vm.prank(admin);
         vm.expectRevert("SCC: cannot remove last admin");
-        scc.renounceRole(scc.DEFAULT_ADMIN_ROLE(), admin);
+        scc.renounceRole(adminRole, admin);
     }
 
     function test_canRemoveAdminIfMultiple() public {
+        bytes32 adminRole = scc.DEFAULT_ADMIN_ROLE();
         address admin2 = makeAddr("admin2");
         vm.prank(admin);
-        scc.grantRole(scc.DEFAULT_ADMIN_ROLE(), admin2);
+        scc.grantRole(adminRole, admin2);
 
         vm.prank(admin);
-        scc.renounceRole(scc.DEFAULT_ADMIN_ROLE(), admin);
+        scc.renounceRole(adminRole, admin);
 
-        assertFalse(scc.hasRole(scc.DEFAULT_ADMIN_ROLE(), admin));
-        assertTrue(scc.hasRole(scc.DEFAULT_ADMIN_ROLE(), admin2));
+        assertFalse(scc.hasRole(adminRole, admin));
+        assertTrue(scc.hasRole(adminRole, admin2));
     }
 
     // ═══════════════════════════════════════════════════════════════════
