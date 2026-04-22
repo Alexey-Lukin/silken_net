@@ -10,7 +10,7 @@ via_ir = false
 remappings = [
   "@openzeppelin/=node_modules/@openzeppelin/"
 ]
-gas_reports = ["SilkenCarbonCoin", "SilkenForestCoin", "StateRootAnchor"]
+gas_reports = ["SilkenCarbonCoin", "SilkenForestCoin", "StateRootAnchor", "SilkenGovernor", "SilkenTimelock", "ProtocolParameters"]
 
 # CI profile: faster builds, no optimizer (for Slither / quick checks)
 [profile.ci]
