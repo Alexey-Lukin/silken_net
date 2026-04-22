@@ -24,7 +24,7 @@ module Governance
   class ParameterSyncWorker
     include ApplicationWeb3Worker
 
-    sidekiq_options queue: "web3_low", retry: 3, unique_for: 12.hours
+    sidekiq_options queue: "web3_low", retry: 3, unique_for: 24.hours
 
     # Маппінг on-chain параметрів до SystemParameter ключів.
     # On-chain значення зберігаються як uint256 з 18 decimals (1e18 = 1.0).
