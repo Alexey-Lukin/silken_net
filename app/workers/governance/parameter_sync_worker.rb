@@ -112,9 +112,9 @@ module Governance
 
           converted_value = convert_value(raw_value, config[:decimals])
 
-          # Compare with current SystemParameter
+          # Compare with current SystemParameter (type-aware comparison)
           current = SystemParameter.current(param_key)
-          if current.present? && current.to_s == converted_value.to_s
+          if current.present? && values_equal?(current, converted_value, config[:value_type])
             skipped += 1
             next
           end
@@ -139,6 +139,19 @@ module Governance
 
     private
 
+    # Type-aware comparison to avoid false updates due to string representation differences.
+    # e.g., BigDecimal('10.0').to_s vs Integer(10).to_s → '10.0' vs '10'.
+    def values_equal?(current, on_chain, value_type)
+      case value_type
+      when "integer"
+        current.to_i == on_chain.to_i
+      when "float", "decimal"
+        (current.to_f - on_chain.to_f).abs < 1e-15
+      else
+        current.to_s == on_chain.to_s
+      end
+    end
+
     # Compute Solidity-compatible keccak256 hash of a string for mapping key.
     # Returns bytes32 hex string matching Solidity: keccak256("lorenz_sigma").
     def solidity_keccak256(str)
@@ -152,8 +165,14 @@ module Governance
       if decimals == 0
         raw_uint256.to_i
       else
-        BigDecimal(raw_uint256.to_s) / BigDecimal(10**decimals)
+        BigDecimal(raw_uint256.to_s) / decimals_divisor(decimals)
       end
+    end
+
+    # Memoized divisor for fixed-point conversion (avoids repeated 10**18 computation).
+    def decimals_divisor(decimals)
+      @decimals_divisors ||= {}
+      @decimals_divisors[decimals] ||= BigDecimal(10**decimals)
     end
 
     # System bot user (User.oracle_executioner) for audit trail.

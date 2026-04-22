@@ -91,13 +91,16 @@ contract ProtocolParameters is AccessControl {
         emit ParameterUpdated(key, oldValue, value, msg.sender);
     }
 
+    /// @notice Максимальна кількість параметрів у batch-оновленні для gas safety.
+    uint256 public constant MAX_BATCH_SIZE = 50;
+
     /// @notice Batch-оновлення кількох параметрів в одній транзакції.
     /// @param keys Масив ключів параметрів.
     /// @param values Масив нових значень.
     function setParameters(bytes32[] calldata keys, uint256[] calldata values) external onlyRole(GOVERNANCE_ROLE) {
         require(keys.length == values.length, "ProtocolParameters: array length mismatch");
         require(keys.length > 0, "ProtocolParameters: empty batch");
-        require(keys.length <= 50, "ProtocolParameters: batch too large");
+        require(keys.length <= MAX_BATCH_SIZE, "ProtocolParameters: batch too large");
 
         for (uint256 i = 0; i < keys.length; i++) {
             require(keys[i] != bytes32(0), "ProtocolParameters: zero key");
