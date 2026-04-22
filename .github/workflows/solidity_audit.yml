@@ -43,6 +43,10 @@ jobs:
         run: forge test -vvv --gas-report
 
       - name: Run coverage (lcov)
+        # --ir-minimum enables viaIR for stack-too-deep avoidance in coverage.
+        # Tests that use getPastVotes must use hardcoded block numbers (not
+        # block.number reads) because Yul CSE can cache block.number across
+        # vm.roll calls. See test/SilkenForestCoin.t.sol for details.
         run: forge coverage --ir-minimum --report lcov --report summary
 
       - name: Upload coverage to artifacts
