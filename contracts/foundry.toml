@@ -14,7 +14,17 @@ remappings = [
 ]
 gas_reports = ["SilkenCarbonCoin", "SilkenForestCoin", "StateRootAnchor", "SilkenGovernor", "SilkenTimelock", "ProtocolParameters"]
 
-# CI profile: faster builds, no optimizer (for Slither / quick checks)
+# Fuzz testing defaults
+[fuzz]
+runs = 512
+seed = "0xGaia2"
+
+# Invariant testing
+[invariant]
+runs = 128
+depth = 64
+
+# CI profile: faster builds, reduced fuzz for speed
 [profile.ci]
 optimizer = false
 fuzz.runs = 256

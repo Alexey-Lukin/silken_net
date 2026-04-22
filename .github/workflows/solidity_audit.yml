@@ -13,6 +13,45 @@ on:
       - 'contracts/**'
 
 jobs:
+  foundry-tests:
+    name: Foundry Tests & Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: contracts
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install contract dependencies
+        run: npm ci
+
+      - name: Build contracts
+        run: forge build --sizes
+
+      - name: Run tests with gas report
+        run: forge test -vvv --gas-report
+
+      - name: Run coverage (lcov)
+        run: forge coverage --report lcov --report summary
+
+      - name: Upload coverage to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: solidity-coverage
+          path: contracts/lcov.info
+          retention-days: 14
+
   slither:
     name: Slither Static Analysis
     runs-on: ubuntu-latest

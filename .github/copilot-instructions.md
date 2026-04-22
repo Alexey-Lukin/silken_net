@@ -184,4 +184,44 @@ bundle exec bundler-audit check
 make -C firmware/test          # всі 137 тестів
 make -C firmware/test soldier  # тільки Soldier
 make -C firmware/test queen    # тільки Queen (59 тестів)
+# Solidity (Foundry):
+cd contracts && npm ci
+forge build --sizes            # компіляція + розмір контрактів
+forge test -vvv --gas-report   # тести з газовим звітом
+forge coverage --report summary # покриття (аналог SimpleCov)
+forge coverage --report lcov   # lcov.info для CI/Codecov
 ```
+
+---
+
+## 8. Solidity / Foundry Best Practices
+
+### Конфігурація
+- **`contracts/foundry.toml`** — SSOT конфігурація Foundry. Профілі: `default`, `ci`, `production`.
+- **`contracts/test/*.t.sol`** — тести для кожного контракту. Naming: `{ContractName}.t.sol`.
+- **`forge-std`** — Foundry test library. Встановлюється через `npm ci` (devDependency).
+- **Coverage**: `forge coverage --report lcov` → `lcov.info`. CI завантажує як artifact.
+
+### Правила тестування
+1. **Naming**: `test_` (happy path), `testRevert_` (expected revert), `testFuzz_` (fuzz/property-based).
+2. **Addresses**: `makeAddr("descriptive-name")` — labeled, deterministic, readable в trace output.
+3. **Caller isolation**: `vm.prank(caller)` для кожного виклику. НЕ `vm.startPrank` без `vm.stopPrank`.
+4. **Error matching**: `vm.expectRevert("SCC: zero recipient")` — exact error string, не `vm.expectRevert()`.
+5. **Event verification**: `vm.expectEmit(true, true, false, true)` + `emit Event(...)` перед викликом.
+6. **Fuzz**: `bound(value, min, max)` замість `vm.assume(value > 0)` — менше відхилень, кращий coverage.
+7. **Time**: `vm.warp(block.timestamp + N)` для time-dependent логіки (timelock, anchor intervals).
+8. **Blocks**: `vm.roll(block.number + N)` для snapshot-based voting power (ERC20Votes checkpoints).
+9. **Gas**: `forge test --gas-report` в CI. `forge build --sizes` для EIP-170 (24KB) перевірки.
+10. **Admin protection**: кожен контракт з AccessControl тестує `testRevert_cannotRemoveLastAdmin`.
+11. **Pause bypass**: SCC/SFC `slash()` працює під pause (B-07). Обов'язковий тест: `test_pause_allowsSlash`.
+12. **Invariant**: `totalSupply() <= MAX_SUPPLY` після будь-якої послідовності операцій.
+
+### Контракти та їх тести
+| Контракт | Файл | Тест |
+|----------|------|------|
+| SCC | `contracts/SilkenCarbonCoin.sol` | `contracts/test/SilkenCarbonCoin.t.sol` |
+| SFC | `contracts/SilkenForestCoin.sol` | `contracts/test/SilkenForestCoin.t.sol` |
+| StateRootAnchor | `contracts/StateRootAnchor.sol` | `contracts/test/StateRootAnchor.t.sol` |
+| ProtocolParameters | `contracts/ProtocolParameters.sol` | `contracts/test/ProtocolParameters.t.sol` |
+| SilkenGovernor | `contracts/SilkenGovernor.sol` | `contracts/test/SilkenGovernor.t.sol` |
+| SilkenTimelock | `contracts/SilkenTimelock.sol` | `contracts/test/SilkenTimelock.t.sol` |
