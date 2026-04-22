@@ -31,7 +31,7 @@
 | **Мережа** | Polygon (Amoy testnet → Mainnet) | Polygon (Amoy testnet → Mainnet) |
 | **Файл** | `contracts/SilkenCarbonCoin.sol` | `contracts/SilkenForestCoin.sol` |
 | **ENV адреса** | `CARBON_COIN_CONTRACT_ADDRESS` | `FOREST_COIN_CONTRACT_ADDRESS` |
-| **Pragma** | `0.8.24` (locked) | `0.8.24` (locked) |
+| **Pragma** | `0.8.28` (locked) | `0.8.28` (locked) |
 | **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
 | **Slash / Burn** | ✅ `slash()` через `SLASHER_ROLE` | ✅ `slash()` через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
@@ -623,7 +623,7 @@ type ProtocolFinancials @entity {
 |---|---|
 | **Мережа** | Polygon PoS (Amoy testnet → Mainnet) |
 | **Toolchain** | Foundry (forge, cast, anvil) |
-| **OpenZeppelin** | 5.x (`pragma solidity 0.8.24` — locked) |
+| **OpenZeppelin** | 5.6.x (`pragma solidity 0.8.28` — locked) |
 | **RPC** | `ALCHEMY_POLYGON_RPC_URL` (через `Web3::RpcConnectionPool`) |
 | **Oracle wallet** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER_ROLE) + `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER_ROLE) — окремі ключі |
 | **The Graph** | `subgraph/` — SCC та SFC events індексуються (⚠️ SFC: contract address placeholder) |
@@ -667,6 +667,19 @@ subgraph/
 spec/services/
 ├── blockchain_minting_service_spec.rb
 └── blockchain_burning_service_spec.rb
+
+spec/workers/governance/
+└── parameter_sync_worker_spec.rb  # ✅ [ARCH.4] RSpec тести для governance sync worker
+
+contracts/test/
+├── SilkenCarbonCoin.t.sol           # ✅ Foundry тести SCC (mint, slash, batchMint, access control, pause)
+├── SilkenForestCoin.t.sol           # ✅ Foundry тести SFC (mint, slash, votes, delegation, governance)
+├── StateRootAnchor.t.sol            # ✅ Foundry тести L1 anchor (store, interval, dedup, admin)
+├── SilkenGovernor.t.sol             # ✅ [ARCH.4] Foundry тести Governor (propose, vote, execute, quorum)
+├── SilkenTimelock.t.sol             # ✅ [ARCH.4] Foundry тести Timelock (delay, roles, scheduling)
+└── ProtocolParameters.t.sol         # ✅ [ARCH.4] Foundry тести registry (set, batch, access, defaults)
+
+contracts/foundry.toml               # ✅ Foundry config: solc 0.8.28, EVM cancun, profiles (default/ci/production)
 ```
 
 ---
@@ -730,10 +743,10 @@ TokenomicsEvaluatorWorker (dynamic conversion rate)
 
 | Аспект | Деталі |
 |--------|--------|
-| **Пріоритет** | Post-TRL 6. Не блокує прототип або seed-раунд |
+| **Пріоритет** | ✅ Реалізовано (ARCH.4 / BIZ.4 / E.35). Governance DAO pipeline повністю функціональний |
 | **Залежить від** | `SilkenForestCoin.sol` (SFC) задеплоєний → ✅ є |
 | **Блокує** | Планетарне масштабування з різними кліматичними зонами |
-| **Ризики DAO** | Voter apathy, Flash Loan attacks, governance attacks → потрібен quorum + timelock + snapshot voting |
+| **Ризики DAO** | ✅ Захисти реалізовано: quorum 4% + timelock 48h + snapshot voting + votingDelay 43200 blocks |
 
 ### ⚠️ Flash Loan Attack Vector (Критичний)
 
@@ -742,7 +755,7 @@ TokenomicsEvaluatorWorker (dynamic conversion rate)
 2. Проголосувати за зміну параметра (наприклад, підвищити `SLASH_THRESHOLD` до 100%, щоб уникнути слешингу свого лісу)
 3. Повернути позику в тій самій транзакції — нульова вартість атаки
 
-**Обов'язкові захисти в `GovernorContract.sol`:**
+**Обов'язкові захисти в `SilkenGovernor.sol` (✅ Реалізовано):**
 
 | Захист | Механізм | Чому працює |
 |--------|----------|-------------|
@@ -835,13 +848,13 @@ SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governan
 ```yaml
 # .github/workflows/solidity_audit.yml
 # Тригер: зміни в contracts/ на PR або push to main
-# crytic/slither-action@v0.4.0, solc 0.8.24, fail-on: high
+# crytic/slither-action@v0.4.0, solc 0.8.28, fail-on: high
 # OpenZeppelin 5.x через contracts/package.json
 ```
 
 **Mythril (TODO):**
 ```bash
-myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.24
+myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.28
 ```
 
 **Operational Security (production):**

@@ -340,6 +340,20 @@ end
 
 **Підсумок реєстру: 12 кастомних метрик (7 counters + 3 histograms + 2 gauges).**
 
+### 2.6 Governance Parameter Sync Observability
+
+`Governance::ParameterSyncWorker` (queue: `web3_low`, cron: 03:30 UTC щоденно) моніторинг:
+
+| Аспект | Механізм | Деталі |
+|--------|----------|--------|
+| **Sidekiq Queue** | `silkennet_sidekiq_queue_size{queue="web3_low"}` | Gauge, вже покрито `refresh_sidekiq_gauges` |
+| **Sidekiq Latency** | `silkennet_sidekiq_queue_latency_seconds{queue="web3_low"}` | Gauge, вже покрито |
+| **RPC Errors** | `silkennet_rpc_errors_total{network="polygon"}` | Counter, через `ApplicationWeb3Worker` |
+| **Sync Logging** | `Rails.logger.info` | `synced: N, skipped: M` per run (structured JSON в production) |
+| **Failure Alerts** | Sentry + Sidekiq retry exhaustion | 3 retries, unique_for 24h |
+
+> **Перспектива:** Коли обсяг governance-операцій зростатиме, можна додати dedicated counter `silkennet_governance_params_synced_total` з label `status` (synced/skipped/error) та histogram `silkennet_governance_sync_duration_seconds`.
+
 ---
 
 ## 🪵 Частина III: Logs — GCP Cloud Logging

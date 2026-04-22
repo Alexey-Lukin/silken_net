@@ -42,11 +42,25 @@
 * **Умова:** Pull Request вносить зміни в `app/models/` або ядро прошивки.
 * **Дія:** Action перевіряє наявність відповідних змін у папці `docs/wiki/` (або заповненого поля SSOT Link). Мердж блокується, якщо документація не оновлена.
 
+### Протокол "Solidity Audit" (`solidity_audit.yml`) ✅
+Автоматизована перевірка та аудит смарт-контрактів Solidity (6 контрактів: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters).
+* **Тригер:** Push до `main` або PR з змінами у `contracts/**`
+* **Job 1: Foundry Tests & Coverage** (`foundry-tests`, timeout: 15 хв):
+  - `npm ci` → `forge build --sizes` → `forge test -vvv --gas-report` → `forge coverage --ir-minimum --report lcov --report summary`
+  - Coverage artifact: `lcov.info` (retention 14 днів)
+* **Job 2: Slither Static Analysis** (`slither`, timeout: 10 хв):
+  - `crytic/slither-action@v0.4.0`, solc 0.8.28, `fail-on: high`
+* **Конфігурація Foundry** (`contracts/foundry.toml`):
+  - solc 0.8.28, EVM cancun, optimizer 200 runs (default), 1000 runs (production profile)
+  - Gas reports: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters
+  - Fuzz: 512 runs (default), 256 (ci profile). Invariant: 128 runs, depth 64
+* **Тестове покриття:** 171 тест у 6 test suites (`contracts/test/*.t.sol`)
+
 ## 🗂️ 3. Репозиторії Екосистеми
 Кожен репозиторій керується єдиними правилами контекстного управління:
-* **silken_net:** Ядро системи (Rails 8.1, PostgreSQL, Sidekiq).
+* **silken_net:** Ядро системи (Rails 8.1, PostgreSQL, Sidekiq). Включає смарт-контракти у `contracts/` (Solidity, Foundry toolchain).
 * **silken-soldier-fw:** Низькорівнева прошивка (C, mruby) для STM32 та LoRa.
-* **silken-contracts:** Смарт-контракти (Solidity) та ZK-схеми для Polygon/IoTeX.
+* **silken-contracts:** ⚠️ Архівний. Активні контракти тепер у `silken_net/contracts/` з повним Foundry CI.
 
 ## ✔️ 4. Верифікація та Критерії Виходу
 * **Протокол тестування:** Закриття тестового Issue повинно фізично перемістити його колонку на дошці "Матриця TRL".
