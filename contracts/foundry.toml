@@ -17,6 +17,7 @@ gas_reports = ["SilkenCarbonCoin", "SilkenForestCoin", "StateRootAnchor", "Silke
 # Fuzz testing defaults
 [fuzz]
 runs = 512
+# "Gaia2.0" in ASCII hex, zero-padded to 32 bytes
 seed = "0x47616961322e300000000000000000000000000000000000000000000000dead"
 
 # Invariant testing
