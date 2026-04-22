@@ -79,4 +79,12 @@ firmware/test/test_bio_contract
 subgraph/build/
 subgraph/generated/
 subgraph/node_modules/
+
+# Smart contracts dependencies (Solidity)
+contracts/node_modules/
+
+# Foundry build artifacts
+contracts/out/
+contracts/cache/
+
 coverage/

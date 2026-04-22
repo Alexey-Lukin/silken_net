@@ -51,7 +51,7 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 
 ### ✅ BLOCKER-1: `StateRootAnchor.sol` створено
 
-`contracts/StateRootAnchor.sol` додано до репозиторію. Контракт успадковує `AccessControl` (OpenZeppelin), визначає роль `ANCHOR_ROLE`, зберігає `latestRoot`, `anchorCount`, маппінг `rootTimestamps`, маппінг `rootHistory` (anchorIndex → root) та емітує `StateRootStored(bytes32 indexed root, uint256 timestamp, uint256 anchorIndex)`. Дедуплікація: `require(rootTimestamps[root] == 0, "root already anchored")` — кожен state root можна записати тільки один раз. Мінімальний інтервал між записами: `MIN_ANCHOR_INTERVAL = 6 days`. Історичні запити: `getRootAtIndex(uint256 index)`. Захист від видалення останнього адміна: `_adminCount` лічильник. Pragma locked: `0.8.20`. Деплой через Foundry; адреса зберігається в `ENV["ETHEREUM_ANCHOR_CONTRACT"]`.
+`contracts/StateRootAnchor.sol` додано до репозиторію. Контракт успадковує `AccessControl` (OpenZeppelin), визначає роль `ANCHOR_ROLE`, зберігає `latestRoot`, `anchorCount`, маппінг `rootTimestamps`, маппінг `rootHistory` (anchorIndex → root) та емітує `StateRootStored(bytes32 indexed root, uint256 timestamp, uint256 anchorIndex)`. Дедуплікація: `require(rootTimestamps[root] == 0, "root already anchored")` — кожен state root можна записати тільки один раз. Мінімальний інтервал між записами: `MIN_ANCHOR_INTERVAL = 6 days`. Історичні запити: `getRootAtIndex(uint256 index)`. Захист від видалення останнього адміна: `_adminCount` лічильник. Pragma locked: `0.8.24`. Деплой через Foundry; адреса зберігається в `ENV["ETHEREUM_ANCHOR_CONTRACT"]`.
 
 ### ✅ BLOCKER-2: Персистентність state_root у БД — `EthereumAnchor` модель
 
@@ -540,7 +540,7 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 
 | Аспект | TRL 8 (до PR #254) | TRL 9 (після PR #254) | Аудит-зміцнення |
 |--------|-----------|--------------|-----------------|
-| `StateRootAnchor.sol` | 🔴 Відсутній | ✅ `contracts/StateRootAnchor.sol` | ✅ Pragma locked `0.8.20` |
+| `StateRootAnchor.sol` | 🔴 Відсутній | ✅ `contracts/StateRootAnchor.sol` | ✅ Pragma locked `0.8.24` |
 | `EthereumAnchor` модель | 🔴 Відсутня | ✅ `app/models/ethereum_anchor.rb` | — |
 | Персистентність state_root | 🔴 Тільки logger | ✅ PostgreSQL аудит-трейл | — |
 | Gas management | 🔴 Відсутній | ✅ Явні caps + ENV overrides | — |
@@ -597,7 +597,3 @@ bundle exec rspec spec/services/ethereum/ spec/workers/ethereum_anchor_worker_sp
 **Висновок:** EigenLayer AVS — перспективний варіант для зниження gas costs при масштабуванні до мільйонів дерев. Для поточного TRL 8 пряме L1 якоріння залишається оптимальним вибором (простота + максимальна довіра аудиторів).
 
 **Статус:** Дослідження. Не планується до масштабування за межі 10,000+ кластерів.
-
----
-
-*Документ синхронізовано з кодбейсом `Alexey-Lukin/silken_net` станом на **2026-04-17**.*

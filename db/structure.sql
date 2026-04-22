@@ -1275,6 +1275,45 @@ ALTER SEQUENCE public.sessions_id_seq OWNED BY public.sessions.id;
 
 
 --
+-- Name: system_parameters; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.system_parameters (
+    id bigint NOT NULL,
+    key character varying NOT NULL,
+    value character varying NOT NULL,
+    value_type character varying DEFAULT 'string'::character varying NOT NULL,
+    category character varying DEFAULT 'general'::character varying NOT NULL,
+    description text,
+    min_value numeric,
+    max_value numeric,
+    source character varying DEFAULT 'default'::character varying NOT NULL,
+    updated_by_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: system_parameters_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.system_parameters_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: system_parameters_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.system_parameters_id_seq OWNED BY public.system_parameters.id;
+
+
+--
 -- Name: telemetry_logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2045,6 +2084,13 @@ ALTER TABLE ONLY public.sessions ALTER COLUMN id SET DEFAULT nextval('public.ses
 
 
 --
+-- Name: system_parameters id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.system_parameters ALTER COLUMN id SET DEFAULT nextval('public.system_parameters_id_seq'::regclass);
+
+
+--
 -- Name: telemetry_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2332,6 +2378,14 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.sessions
     ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: system_parameters system_parameters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.system_parameters
+    ADD CONSTRAINT system_parameters_pkey PRIMARY KEY (id);
 
 
 --
@@ -3451,6 +3505,27 @@ CREATE INDEX index_parametric_insurances_on_organization_id ON public.parametric
 --
 
 CREATE INDEX index_sessions_on_user_id ON public.sessions USING btree (user_id);
+
+
+--
+-- Name: index_system_parameters_on_category; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_system_parameters_on_category ON public.system_parameters USING btree (category);
+
+
+--
+-- Name: index_system_parameters_on_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_system_parameters_on_key ON public.system_parameters USING btree (key);
+
+
+--
+-- Name: index_system_parameters_on_updated_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_system_parameters_on_updated_by_id ON public.system_parameters USING btree (updated_by_id);
 
 
 --
@@ -5253,6 +5328,14 @@ ALTER TABLE public.telemetry_logs
 
 
 --
+-- Name: system_parameters fk_rails_system_parameters_updated_by; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.system_parameters
+    ADD CONSTRAINT fk_rails_system_parameters_updated_by FOREIGN KEY (updated_by_id) REFERENCES public.users(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
@@ -5260,5 +5343,6 @@ SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
 ('20260419072056'),
-('20260419160334');
+('20260419160334'),
+('20260421181059');
 

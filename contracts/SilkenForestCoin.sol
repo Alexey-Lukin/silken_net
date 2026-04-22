@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import "@openzeppelin/contracts/utils/Nonces.sol";
 
 /**
  * @title Silken Forest Coin (SFC)
@@ -206,7 +207,9 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
         return revoked;
     }
 
-    /// @notice Override nonces для сумісності ERC20Permit + Nonces.
+    /// @notice Override nonces for ERC20Permit + ERC20Votes diamond inheritance resolution.
+    /// @dev Both ERC20Permit and Votes (via ERC20Votes) inherit Nonces, creating a diamond
+    ///      that requires explicit override in the derived contract.
     function nonces(address owner)
         public
         view
