@@ -239,15 +239,27 @@ type PremiumPaidEvent @entity { ... }
 
 #### 6. Polygon (Primary EVM)
 
-Головна артерія системи. Тут розгорнуті наші ключові смарт-контракти (`SilkenCarbonCoin.sol` та `SilkenForestCoin.sol`). Вибраний через низьку вартість транзакцій та сумісність з EVM.
+Головна артерія системи. Тут розгорнуті наші ключові смарт-контракти (`SilkenCarbonCoin.sol`, `SilkenForestCoin.sol`, `SilkenGovernor.sol`, `SilkenTimelock.sol`, `ProtocolParameters.sol`). Вибраний через низьку вартість транзакцій та сумісність з EVM.
 
 | Параметр | Значення |
 |----------|----------|
 | **Сервіси** | `BlockchainMintingService`, `BlockchainBurningService`, `ChainAuditService`, `PriceOracleService`, `MintingRollbackService` |
-| **Воркери** | `MintCarbonCoinWorker`, `BurnCarbonTokensWorker`, `BlockchainConfirmationWorker`, `TokenomicsEvaluatorWorker` |
-| **Черги** | `web3_critical` (мінтинг, підтвердження), `critical` (спалювання), `default` (токеноміка) |
-| **ENV** | `ALCHEMY_POLYGON_RPC_URL`, `ORACLE_PRIVATE_KEY`, `CARBON_COIN_CONTRACT_ADDRESS` |
-| **Спеки** | `spec/services/blockchain_minting_service_spec.rb`, `spec/services/blockchain_burning_service_spec.rb`, `spec/services/chain_audit_service_spec.rb`, `spec/services/price_oracle_service_spec.rb`, `spec/services/minting_rollback_service_spec.rb` |
+| **Воркери** | `MintCarbonCoinWorker`, `BurnCarbonTokensWorker`, `BlockchainConfirmationWorker`, `TokenomicsEvaluatorWorker`, `Governance::ParameterSyncWorker` |
+| **Черги** | `web3_critical` (мінтинг, підтвердження), `critical` (спалювання), `default` (токеноміка), `web3_low` (governance sync) |
+| **ENV** | `ALCHEMY_POLYGON_RPC_URL`, `ORACLE_PRIVATE_KEY`, `CARBON_COIN_CONTRACT_ADDRESS`, `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` |
+| **Спеки** | `spec/services/blockchain_minting_service_spec.rb`, `spec/services/blockchain_burning_service_spec.rb`, `spec/services/chain_audit_service_spec.rb`, `spec/services/price_oracle_service_spec.rb`, `spec/services/minting_rollback_service_spec.rb`, `spec/workers/governance/parameter_sync_worker_spec.rb` |
+
+**Governance DAO (✅ ARCH.4):**
+
+Повний governance pipeline для зміни протокольних параметрів через SFC voting:
+
+| Контракт | Файл | Роль |
+|----------|------|------|
+| `SilkenGovernor` | `contracts/SilkenGovernor.sol` | OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction (4%). votingDelay=43200 blocks (~1 day), votingPeriod=302400 blocks (~7 days), proposalThreshold=100 SFC |
+| `SilkenTimelock` | `contracts/SilkenTimelock.sol` | TimelockController з 48h мінімальною затримкою. Proposer: Governor, Executor: address(0) (permissionless після delay) |
+| `ProtocolParameters` | `contracts/ProtocolParameters.sol` | On-chain registry з GOVERNANCE_ROLE. 13 well-known keys (Lorenz σ/ρ/β/dt/iterations/z_min/z_max/z_target, emission_threshold, dynamic_tax_rate, insurance_pool_threshold, slash_threshold, stress_threshold). Fixed-point 18 decimals |
+
+**Flash Loan Defense:** snapshot voting (`getPastVotes`), 1-day voting delay, 4% quorum, 48h timelock.
 
 **Guard Clauses (BlockchainMintingService):**
 1. `verified_by_iotex? == true` — ZK-proof з IoTeX
