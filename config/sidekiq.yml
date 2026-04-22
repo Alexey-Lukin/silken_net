@@ -81,3 +81,11 @@
     mint_batch_collector:
       cron: '*/5 * * * *' # Кожні 5 хвилин
       class: MintBatchCollectorWorker
+
+    # --- ЦИКЛ GOVERNANCE (The DAO Sync) ---
+    # Синхронізує on-chain параметри протоколу (ProtocolParameters.sol)
+    # з локальною SystemParameter моделлю. 1×/день о 03:30 UTC.
+    # Після EthereumAnchor (понеділок 03:00) та перед денним циклом.
+    governance_parameter_sync:
+      cron: '30 3 * * *' # Щодня о 03:30 UTC
+      class: Governance::ParameterSyncWorker

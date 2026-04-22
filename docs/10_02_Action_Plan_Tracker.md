@@ -505,13 +505,14 @@
 - [ ] Privacy Policy (GDPR-compliant)
 - [ ] Cookie Policy
 
-#### BIZ.4 — DAO Governance Process
+#### BIZ.4 — DAO Governance Process ✅
 - **Джерело:** `07_01`, `05_03`
-- **Опис:** SFC voting mechanism не визначений
-- **Статус:** Post-TRL 6 (не блокує прототип)
-- [ ] GovernorContract.sol design
-- [ ] ProtocolParameters.sol registry
-- [ ] Governance::ParameterSyncWorker
+- **Опис:** SFC voting mechanism — Governance DAO
+- **Статус:** ✅ Реалізовано (ARCH.4 / E.35 / E.1)
+- [x] SilkenGovernor.sol — OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction (4% quorum, 43200 blocks delay ~1 day, 302400 blocks period ~7 days, 100 SFC threshold)
+- [x] SilkenTimelock.sol — TimelockController (48h min delay)
+- [x] ProtocolParameters.sol — on-chain registry з 13 well-known parameter keys (Lorenz, tokenomics, slashing)
+- [x] Governance::ParameterSyncWorker — queue: web3_low, 1×/day, Eth::Contract + Web3::RpcConnectionPool → SystemParameter
 
 #### BIZ.5 — Patent application
 - **Джерело:** `08_03`
@@ -567,7 +568,7 @@
 
 | # | Знахідка | Джерело | Примітка |
 |---|----------|---------|----------|
-| E.1 | SFC voting power зберігається після slashing | `07_01` | Дослідити |
+| E.1 | ✅ SFC voting power коректно зменшується після slashing — ERC20Votes `_update` → `_transferVotingUnits` → checkpoint update. Підтверджено аналізом OZ v5 | `07_01` | ✅ Досліджено та підтверджено |
 | E.3 | Breadboard video відсутнє (для грантів) | `07_03` | Зняти відео |
 | E.4 | Helium Network fallback — concept є, реалізації немає | `02_05` | Дизайн + реалізація |
 | E.5 | CoAP listener Ruby — масштабується до ~10k вузлів | `06_01` | Series D: Rust/Go proxy |
@@ -589,10 +590,10 @@
 | E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) | `01_03` | R&D alternatives |
 | E.30 | InsightGenerator: кліматичні базлайни per region | `04_02` | Post-TRL 7 |
 | E.31 | TinyML OTA: `.tflite` формат (INT8 quantization) + Python ML microservice | `03_03` | Post-TRL 8 |
-| E.32 | ✅ (Slither) Smart Contract Audit: Slither в CI (`.github/workflows/solidity_audit.yml`). Foundry toolchain (`contracts/foundry.toml`): solc 0.8.24, EVM cancun, optimizer 200 runs, CI/production profiles. Mythril + Hacken — окремі етапи pre-mainnet | `05_03` | Slither CI ✅ (Сесія 19-20), Mythril + Hacken TODO |
+| E.32 | ✅ (Slither + Foundry) Smart Contract Audit: Slither в CI (`.github/workflows/solidity_audit.yml`). Foundry toolchain (`contracts/foundry.toml`): solc 0.8.28, EVM cancun, optimizer 200 runs, CI/production profiles. 171 тест у 6 test suites. Coverage via `forge coverage --ir-minimum`. Mythril + Hacken — окремі етапи pre-mainnet | `05_03` | Slither CI ✅ (Сесія 19-20), Foundry tests ✅ (Сесія 22), Mythril + Hacken TODO |
 | E.33 | AlertNotification rate limits: FCM multicast (500 tokens/req), Twilio Notify | `04_02` | Post-TRL 8 |
 | E.34 | dClimate fallback → ForestBountyService (drone/ranger PoPhW) | `04_02` | Post-TRL 6 |
-| E.35 | Flash Loan defense в GovernorContract.sol: `getPastVotes` + 48h Timelock | `05_03` | Post-TRL 6 |
+| E.35 | ✅ Flash Loan defense реалізовано в `SilkenGovernor.sol`: GovernorVotes (`getPastVotes`), GovernorSettings (votingDelay=43200 блоків ~1 day, votingPeriod=302400 ~7 days), GovernorVotesQuorumFraction (4%), GovernorTimelockControl (48h через `SilkenTimelock.sol`) | `05_03` | ✅ Реалізовано |
 | E.36 | PostGIS Generated Column (geo_boundary) замість тригера | `04_01` | Post-TRL 8 |
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates | `04_01` | >100M рядків/місяць |
 | E.38 | Press-Fit фаски: R ≥ 0.2 мм для зняття напружень у PEEK | `01_01` | Включити у nTop (HW.1) |
@@ -609,7 +610,7 @@
 |----|-----------|---------|-----------|
 | ARCH.1 | Fractal topology: L2 Sergeant nodes (H-LDSE hierarchical routing, geohashing) | `00_01` | Post-TRL 7 |
 | ARCH.2 | Ingress Proxy (Rust/Go) + Kafka для >1M packets/hour | `00_01`, `06_01` | Series D |
-| ARCH.4 | Governance DAO (SFC voting) — protocol constants via on-chain governance | `05_03` | Post-TRL 6 |
+| ARCH.4 | ✅ Governance DAO (SFC voting) — protocol constants via on-chain governance. `SilkenGovernor.sol` + `SilkenTimelock.sol` + `ProtocolParameters.sol` + `Governance::ParameterSyncWorker` | `05_03` | ✅ Реалізовано |
 | ARCH.5 | Cross-Registry Export (Verra, Gold Standard, UNFCCC) | `04_02` | Post-TRL 7 |
 | ARCH.6 | Federated Learning auto-retraining (monthly cycle, A/B testing) | `04_02` | Post-TRL 7 |
 | ARCH.7 | Edge Data Fusion: transmit 2-byte λ-exponent замість 16-byte Z payload | `00_01` | Post-TRL 7 |
@@ -662,6 +663,7 @@
 | 2026-04-21 | Сесія 18: **FW.22** — `acoustic_events` змінено з `uint16_t` на `uint8_t` із saturating increment (`if < 255`) у `soldier/main.c:415`. Packing спрощено (ternary видалено). 8 unit tests. **FW.10** — Temperature-based TX deferral: guard clause `packed_temp < -15 && vcap_voltage < 4000` → `goto phase5_kenosis`. Named constants `COLD_TX_DEFER_TEMP`, `COLD_TX_DEFER_VCAP_MV`. 10 unit tests. **OPS.2** — SSOT Integrity Guard: `.github/workflows/ssot_guard.yml` створено. Перевіряє 6 protected areas (models, firmware, contracts, services). `ssot-bypass` label для обходу. Всього 241 firmware тест (79+92+27+25+18). |
 | 2026-04-21 | Сесія 19: **ARCH.15** — `SystemParameter` модель для governance-aware backend. Міграція, модель з `.current(:key, default:)` кешований lookup (TTL 24h), 19 seed-параметрів (Lorenz: σ/ρ/β/dt/iterations/z_min/z_max/z_target, tokenomics: emission_threshold/dynamic_tax_rate/insurance_pool_threshold, alerts: fraud/fire/seismic thresholds, hardware: vcap bounds). Factory, spec (валідації, typed_value, кешування, bounds, .set, .current_values). **E.32** — Slither static analysis CI: `.github/workflows/solidity_audit.yml` для 3 Solidity контрактів (SCC/SFC/StateRootAnchor). OpenZeppelin 5.x, pragma 0.8.24, `fail-on: high`. `contracts/package.json` для npm dependencies. |
 | 2026-04-21 | Сесія 20: **E.32 (fix)** — Slither CI fix: pragma 0.8.20→0.8.24 (OZ 5.x ERC20Permit/ERC20Votes вимагають ^0.8.24). `contracts/foundry.toml` додано (evm_version=cancun для mcopy opcode в OZ Bytes.sol). Foundry profiles: default (optimizer 200 runs), ci (no optimizer, fast builds), production (optimizer 1000 runs, via_ir). `slither.config.json` оновлено: `--evm-version cancun`. `.gitignore` доповнено `contracts/out/`, `contracts/cache/`. Docs оновлено: `05_03`, `05_04`, `10_02`. |
+| 2026-04-22 | **ARCH.4/BIZ.4/E.35/E.1** — Governance DAO реалізовано. **SilkenGovernor.sol**: OZ Governor + GovernorVotes (flash loan defense via getPastVotes) + GovernorTimelockControl (48h) + GovernorCountingSimple + GovernorVotesQuorumFraction (4% quorum). votingDelay=43200 blocks (~1 day Polygon 2s), votingPeriod=302400 blocks (~7 days), proposalThreshold=100 SFC. **SilkenTimelock.sol**: TimelockController з 48h мін. затримкою. **ProtocolParameters.sol**: on-chain registry з GOVERNANCE_ROLE, 13 well-known keys, generic setParameter/setParameters + getParameterOrDefault + named getters, admin protection. **Governance::ParameterSyncWorker**: queue web3_low, unique_for 24h, cron 03:30 UTC, Eth::Contract + Web3::RpcConnectionPool, Timeout 10s per call, uniform 18-decimal fixed-point conversion, SystemParameter sync. **E.1** досліджено: SFC voting power коректно зменшується після slashing через ERC20Votes._update → _transferVotingUnits → checkpoint update (OZ v5). Docs оновлено: `05_03`, `10_02`, `foundry.toml`, `sidekiq.yml`. |
 
 ---
 

@@ -453,7 +453,7 @@
 | `default` | 5 | Агрегація, перевірка контрактів, токеноміка |
 | `web3_critical` | 6 | Blockchain confirmation, мінтинг, IoTeX, Chainlink |
 | `web3` | 7 | peaq DID, Celo, Solana, Puro.earth |
-| `web3_low` | 8 | Ethereum L1, KlimaDAO, Hadron |
+| `web3_low` | 8 | Ethereum L1, KlimaDAO, Hadron, Governance Parameter Sync |
 | `low` | 9 (найнижчий) | Аудит, Filecoin, Streamr |
 
 > **Примітка:** Sidekiq `:strict: true` дренує черги послідовно згори-донизу. Числа — порядок дренування, не ваги.
@@ -855,6 +855,18 @@
 | **Сервіси** | `Treasury::MonitorService.call` |
 | **Side Effects** | Оновлює Prometheus gauges (`ORACLE_BALANCE`, `ORACLE_BALANCE_RATIO`). Створює `EwsAlert` при критичних балансах. Логує `healthy/critical/error` counts. |
 
+#### `Governance::ParameterSyncWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3_low` |
+| **Retry** | 3, unique_for: 24 hours |
+| **Тригер** | Sidekiq cron: `30 3 * * *` (щоденно 03:30 UTC) |
+| **Вхід** | — |
+| **Сервіси** | `Eth::Contract` (ProtocolParameters ABI) через `Web3::RpcConnectionPool` |
+| **ENV** | `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS`, `ALCHEMY_POLYGON_RPC_URL` |
+| **Side Effects** | Зчитує 13 on-chain параметрів (8 Lorenz + 3 tokenomics + 2 slashing) з `ProtocolParameters.sol`. Fixed-point conversion (uint256/1e18 → BigDecimal). Порівнює з `SystemParameter` і оновлює змінені (source: `"governance"`, updated_by: `User.oracle_executioner`). Timeout 10s per RPC call. |
+
 #### `MintBatchCollectorWorker`
 
 | Параметр | Значення |
@@ -970,6 +982,18 @@ Sidekiq Cron Monday 03:00 UTC
   └─→ EthereumAnchorWorker [web3_low]
         └─→ Ethereum::StateAnchorService
               → SHA256(scc_total + chain_hash + timestamp) → Ethereum L1
+```
+
+### ⏰ Щоденний Цикл Governance Sync (03:30 UTC)
+
+```
+Sidekiq Cron 03:30 UTC (щоденно)
+  └─→ Governance::ParameterSyncWorker [web3_low]
+        └─→ Eth::Contract (ProtocolParameters.sol) via Web3::RpcConnectionPool
+              ├─→ isParameterSet(key) × 13 параметрів (Timeout 10s per call)
+              ├─→ getParameter(key) для встановлених параметрів
+              ├─→ Fixed-point conversion (uint256 / 1e18 → BigDecimal)
+              └─→ SystemParameter.set(key, value, source: "governance")
 ```
 
 ### ⏰ Цикл Казначейства (кожні 15 хвилин)

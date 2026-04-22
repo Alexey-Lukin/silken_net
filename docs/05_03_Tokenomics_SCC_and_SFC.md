@@ -31,7 +31,7 @@
 | **Мережа** | Polygon (Amoy testnet → Mainnet) | Polygon (Amoy testnet → Mainnet) |
 | **Файл** | `contracts/SilkenCarbonCoin.sol` | `contracts/SilkenForestCoin.sol` |
 | **ENV адреса** | `CARBON_COIN_CONTRACT_ADDRESS` | `FOREST_COIN_CONTRACT_ADDRESS` |
-| **Pragma** | `0.8.24` (locked) | `0.8.24` (locked) |
+| **Pragma** | `0.8.28` (locked) | `0.8.28` (locked) |
 | **Максимальна емісія** | ✅ `MAX_SUPPLY = 1_000_000_000 SCC` | ✅ `MAX_SUPPLY = 100_000_000 SFC` |
 | **Slash / Burn** | ✅ `slash()` через `SLASHER_ROLE` | ✅ `slash()` через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
@@ -623,7 +623,7 @@ type ProtocolFinancials @entity {
 |---|---|
 | **Мережа** | Polygon PoS (Amoy testnet → Mainnet) |
 | **Toolchain** | Foundry (forge, cast, anvil) |
-| **OpenZeppelin** | 5.x (`pragma solidity 0.8.24` — locked) |
+| **OpenZeppelin** | 5.6.x (`pragma solidity 0.8.28` — locked) |
 | **RPC** | `ALCHEMY_POLYGON_RPC_URL` (через `Web3::RpcConnectionPool`) |
 | **Oracle wallet** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER_ROLE) + `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER_ROLE) — окремі ключі |
 | **The Graph** | `subgraph/` — SCC та SFC events індексуються (⚠️ SFC: contract address placeholder) |
@@ -642,7 +642,10 @@ type ProtocolFinancials @entity {
 contracts/
 ├── SilkenCarbonCoin.sol              # SCC: ERC-20 + AccessControl + Pausable + ReentrancyGuard + Permit
 ├── SilkenForestCoin.sol              # SFC: ERC-20 + AccessControl + Pausable + ReentrancyGuard + Permit + Votes
-└── StateRootAnchor.sol               # Ethereum L1 state root anchoring (weekly finality)
+├── StateRootAnchor.sol               # Ethereum L1 state root anchoring (weekly finality)
+├── SilkenGovernor.sol                # ✅ [ARCH.4] DAO Governor (OZ Governor + TimelockControl + flash loan defense)
+├── SilkenTimelock.sol                # ✅ [ARCH.4] TimelockController (48h min delay)
+└── ProtocolParameters.sol            # ✅ [ARCH.4] On-chain protocol parameter registry (governance-controlled)
 
 app/services/
 ├── blockchain_minting_service.rb     # SCC + SFC mint / batchMint + Dynamic Tax
@@ -652,7 +655,9 @@ app/workers/
 ├── mint_carbon_coin_worker.rb        # queue: web3_critical, retry: 5
 ├── burn_carbon_tokens_worker.rb      # queue: critical, retry: 5
 ├── blockchain_confirmation_worker.rb # queue: web3_critical, retry: 5
-└── tokenomics_evaluator_worker.rb    # cron: 0 * * * *, queue: default
+├── tokenomics_evaluator_worker.rb    # cron: 0 * * * *, queue: default
+└── governance/
+    └── parameter_sync_worker.rb      # ✅ [ARCH.4] queue: web3_low, cron: 0 3 * * *, sync on-chain → SystemParameter
 
 subgraph/
 ├── schema.graphql                    # CarbonMintEvent (treeDidHash), SlashingEvent, ProtocolFinancials
@@ -662,13 +667,26 @@ subgraph/
 spec/services/
 ├── blockchain_minting_service_spec.rb
 └── blockchain_burning_service_spec.rb
+
+spec/workers/governance/
+└── parameter_sync_worker_spec.rb  # ✅ [ARCH.4] RSpec тести для governance sync worker
+
+contracts/test/
+├── SilkenCarbonCoin.t.sol           # ✅ Foundry тести SCC (mint, slash, batchMint, access control, pause)
+├── SilkenForestCoin.t.sol           # ✅ Foundry тести SFC (mint, slash, votes, delegation, governance)
+├── StateRootAnchor.t.sol            # ✅ Foundry тести L1 anchor (store, interval, dedup, admin)
+├── SilkenGovernor.t.sol             # ✅ [ARCH.4] Foundry тести Governor (propose, vote, execute, quorum)
+├── SilkenTimelock.t.sol             # ✅ [ARCH.4] Foundry тести Timelock (delay, roles, scheduling)
+└── ProtocolParameters.t.sol         # ✅ [ARCH.4] Foundry тести registry (set, batch, access, defaults)
+
+contracts/foundry.toml               # ✅ Foundry config: solc 0.8.28, EVM cancun, profiles (default/ci/production)
 ```
 
 ---
 
-## 🗳️ Planned: Governance DAO (Законодавча Гілка Влади)
+## 🗳️ ✅ Governance DAO (Законодавча Гілка Влади) — Реалізовано
 
-> **Нотатка N13 інтегрована (Сесія 3).** Поточний стан: константи протоколу жорстко зашиті в коді. Запланована архітектурна зміна для post-TRL 6.
+> **Нотатка N13 інтегрована (Сесія 3).** Реалізовано ARCH.4 / BIZ.4 / E.35: on-chain governance pipeline для протокольних параметрів через SFC voting.
 
 ### Проблема (Абсолютна Монархія)
 
@@ -709,23 +727,26 @@ ContractHealthCheckService (dynamic slash threshold)
 TokenomicsEvaluatorWorker (dynamic conversion rate)
 ```
 
-**Нові смарт-контракти:**
-1. `GovernorContract.sol` — OpenZeppelin Governor з TimelockController (48h)
-2. `ProtocolParameters.sol` — on-chain registry: `setSigma(uint)`, `setRho(uint)`, `setSlashThreshold(uint)`, `setPointsPerScc(uint)`
+**Нові смарт-контракти (✅ Реалізовано):**
+1. `SilkenGovernor.sol` — OpenZeppelin Governor з GovernorVotes, GovernorTimelockControl (48h), GovernorCountingSimple, GovernorVotesQuorumFraction (4%)
+2. `SilkenTimelock.sol` — TimelockController з 48h мінімальною затримкою
+3. `ProtocolParameters.sol` — on-chain registry з generic `setParameter(bytes32 key, uint256 value)` + batch `setParameters()` + named getters (`lorenzSigma()`, `slashThreshold()`, etc.)
 
-**Новий Rails воркер:**
+**Новий Rails воркер (✅ Реалізовано):**
 - `Governance::ParameterSyncWorker` (queue: `web3_low`, cron: 1×/день)
-- Зчитує поточні параметри з `ProtocolParameters.sol` через `TheGraph::QueryService`
-- Зберігає у `SystemParameter` (нова модель) або Rails credentials з auto-rotation
+- Зчитує поточні параметри з `ProtocolParameters.sol` через `Web3::RpcConnectionPool` + `Eth::Contract`
+- Порівнює з поточними значеннями `SystemParameter` та оновлює змінені з `source: "governance"`
+- Використовує `Timeout.timeout(10s)` на кожен RPC-запит
+- 13 параметрів: 8 Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target), 3 tokenomics, 2 slashing
 
 ### Пріоритет та Залежності
 
 | Аспект | Деталі |
 |--------|--------|
-| **Пріоритет** | Post-TRL 6. Не блокує прототип або seed-раунд |
+| **Пріоритет** | ✅ Реалізовано (ARCH.4 / BIZ.4 / E.35). Governance DAO pipeline повністю функціональний |
 | **Залежить від** | `SilkenForestCoin.sol` (SFC) задеплоєний → ✅ є |
 | **Блокує** | Планетарне масштабування з різними кліматичними зонами |
-| **Ризики DAO** | Voter apathy, Flash Loan attacks, governance attacks → потрібен quorum + timelock + snapshot voting |
+| **Ризики DAO** | ✅ Захисти реалізовано: quorum 4% + timelock 48h + snapshot voting + votingDelay 43200 blocks |
 
 ### ⚠️ Flash Loan Attack Vector (Критичний)
 
@@ -734,27 +755,27 @@ TokenomicsEvaluatorWorker (dynamic conversion rate)
 2. Проголосувати за зміну параметра (наприклад, підвищити `SLASH_THRESHOLD` до 100%, щоб уникнути слешингу свого лісу)
 3. Повернути позику в тій самій транзакції — нульова вартість атаки
 
-**Обов'язкові захисти в `GovernorContract.sol`:**
+**Обов'язкові захисти в `SilkenGovernor.sol` (✅ Реалізовано):**
 
 | Захист | Механізм | Чому працює |
 |--------|----------|-------------|
 | **Snapshot Voting** | `getPastVotes(account, blockNumber)` замість `balanceOf()` | Голоси рахуються за балансом на момент створення пропозиції, а не поточним. Flash Loan отримується ПІСЛЯ snapshot → не має voting power |
-| **Voting Delay** | Мінімум 1 блок (рекомендовано 1 день / ~7200 блоків на Polygon) між створенням пропозиції та початком голосування | Зловмисник мусить тримати токени протягом delay — Flash Loan неможливий |
+| **Voting Delay** | Мінімум 1 блок (рекомендовано 1 день / ~43200 блоків на Polygon при ~2s block time) між створенням пропозиції та початком голосування | Зловмисник мусить тримати токени протягом delay — Flash Loan неможливий |
 | **Quorum** | Мінімум 4% від `totalSupply()` для прийняття пропозиції | Запобігає атакам малими обсягами |
 | **Timelock** | `TimelockController` з 48h затримкою між прийняттям та виконанням | Дає час для реакції та vetoing |
 | **Vote Weight = Past Balance** | `ERC20Votes._delegate()` + checkpoint system (вже реалізовано в SFC) | Кожен трансфер створює checkpoint; `getPastVotes` читає історичний checkpoint |
 
-**Реалізація (OpenZeppelin Governor):**
+**Реалізація (`contracts/SilkenGovernor.sol`):**
 ```solidity
-// GovernorContract.sol
-contract GaiaGovernor is Governor, GovernorSettings, GovernorCountingSimple,
+// SilkenGovernor.sol — SSOT: contracts/SilkenGovernor.sol
+contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
     GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
 
     constructor(IVotes _token, TimelockController _timelock)
-        Governor("Gaia Governor")
+        Governor("Silken Governor")
         GovernorSettings(
-            7200,    // votingDelay: ~1 day on Polygon (block time ~12s)
-            50400,   // votingPeriod: ~7 days
+            43200,   // votingDelay: ~1 day on Polygon (block time ~2s)
+            302400,  // votingPeriod: ~7 days on Polygon
             100e18   // proposalThreshold: 100 SFC to propose
         )
         GovernorVotesQuorumFraction(4)  // 4% quorum
@@ -763,7 +784,7 @@ contract GaiaGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 }
 ```
 
-> **Важливо:** SFC вже має `ERC20Votes` з auto-delegation — checkpoint система працює. Залишається імплементувати Governor + Timelock контракти.
+> **✅ Реалізовано:** SFC має `ERC20Votes` з auto-delegation — checkpoint система працює. Governor + Timelock контракти реалізовано.
 
 ### Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
 
@@ -815,24 +836,25 @@ SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governan
 | **2. Manual Audit (Pre-Testnet)** | [Hacken](https://hacken.io/) або [Hashlock](https://hashlock.com/) | Платний аудит | Перед Amoy → Mainnet | 🔴 TODO |
 | **3. Runtime Monitoring** | [CertiK Skynet](https://skynet.certik.com/) | 24/7 моніторинг | Після Mainnet deploy | 🔴 TODO |
 
-**Scope аудиту (5 контрактів):**
+**Scope аудиту (6 контрактів):**
 1. `SilkenCarbonCoin.sol` — mint/burn/batchMint, MINTER/SLASHER roles
 2. `SilkenForestCoin.sol` — governance token, ERC20Votes, slash
 3. `StateRootAnchor.sol` — L1 finality, state root storage
-4. `GovernorContract.sol` — DAO governance (коли буде реалізовано)
-5. `ProtocolParameters.sol` — on-chain parameter registry (коли буде реалізовано)
+4. `SilkenGovernor.sol` — ✅ DAO governance (OZ Governor, flash loan defense)
+5. `SilkenTimelock.sol` — ✅ 48h TimelockController
+6. `ProtocolParameters.sol` — ✅ On-chain parameter registry
 
 **Slither в CI (✅ Реалізовано):**
 ```yaml
 # .github/workflows/solidity_audit.yml
 # Тригер: зміни в contracts/ на PR або push to main
-# crytic/slither-action@v0.4.0, solc 0.8.24, fail-on: high
+# crytic/slither-action@v0.4.0, solc 0.8.28, fail-on: high
 # OpenZeppelin 5.x через contracts/package.json
 ```
 
 **Mythril (TODO):**
 ```bash
-myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.24
+myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.28
 ```
 
 **Operational Security (production):**

@@ -179,6 +179,19 @@ bundle exec brakeman             # Статичний аналіз безпек�
 bundle exec bundler-audit check  # Вразливості залежностей
 ```
 
+### 5.1. Смарт-контракти (Foundry)
+
+```bash
+cd contracts
+npm ci                           # Встановити OZ + forge-std
+forge build --sizes              # Компіляція + розмір контрактів
+forge test -vvv --gas-report     # Тести з газовим звітом
+forge coverage --report summary  # Покриття (аналог SimpleCov)
+forge coverage --report lcov     # lcov.info для CI/Codecov
+```
+
+Тестові файли: `contracts/test/*.t.sol` (6 контрактів × ~30-50 тестів кожен).
+
 ### 6. Розгортання (Kamal)
 
 ```bash
@@ -208,7 +221,13 @@ kamal deploy
 - MAX_SUPPLY: 100 мільйонів SFC
 - Підтримує gasless транзакції через EIP-712 permit
 
-Обидва контракти: `contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`
+**Governance DAO** — SFC holders голосують за зміну параметрів протоколу:
+- `SilkenGovernor.sol` — OZ Governor + GovernorVotes (snapshot defense) + 48h Timelock
+- `SilkenTimelock.sol` — TimelockController з 48h мінімальною затримкою
+- `ProtocolParameters.sol` — on-chain registry (13 параметрів: Lorenz σ/ρ/β, tokenomics, slashing)
+- `StateRootAnchor.sol` — щотижнева фіналізація state root в Ethereum L1
+
+Всі контракти: `contracts/*.sol`, тести: `contracts/test/*.t.sol` (Foundry)
 
 ---
 

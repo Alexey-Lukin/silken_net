@@ -1,9 +1,12 @@
 {
   "name": "silken-net-contracts",
   "version": "1.0.0",
-  "description": "SilkenNet Solidity smart contracts (SCC, SFC, StateRootAnchor)",
+  "description": "SilkenNet Solidity smart contracts (SCC, SFC, StateRootAnchor, Governance)",
   "private": true,
   "dependencies": {
-    "@openzeppelin/contracts": "~5.2.0"
+    "@openzeppelin/contracts": "~5.6.0"
+  },
+  "devDependencies": {
+    "forge-std": "github:foundry-rs/forge-std#v1.9.6"
   }
 }

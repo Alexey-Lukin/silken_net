@@ -18,6 +18,9 @@ bundle exec rubocop    # завжди перед commit
 bundle exec rspec      # якщо DB/services доступні
 bundle exec brakeman   # при змінах безпеки
 make -C firmware/test  # firmware (x86 host-based)
+# Solidity (Foundry):
+cd contracts && npm ci && forge test -vvv   # тести контрактів
+forge coverage --report summary             # покриття контрактів
 ```
 
 ---
@@ -63,6 +66,22 @@ make -C firmware/test  # firmware (x86 host-based)
 26. **batchMint dry-run** перед кожним реальним `batchMint`. Binary Search Isolation при revert (не наївний N×mint fallback).
 27. **Blockchain/Web3 логіка** залишається виключно у service layer namespaces (`app/services/chainlink/`, `app/services/solana/`, etc.). Не виносити в controllers або models.
 
+### Solidity / Foundry (контракти)
+28. **Foundry test best practices** — тести в `contracts/test/*.t.sol`:
+    - `test_` prefix для happy-path, `testRevert_` для очікуваного revert, `testFuzz_` для fuzz tests.
+    - `makeAddr("name")` замість `address(0xN)` для labeled, детерміністичних адрес.
+    - `vm.prank(caller)` для кожного виклику — caller isolation per test.
+    - `vm.expectRevert("exact error string")` — завжди перевіряти точне повідомлення помилки.
+    - `vm.expectEmit(true, true, false, true)` + `emit Event()` — перевіряти indexed topics + data.
+    - `bound(value, min, max)` у fuzz тестах замість `vm.assume` (менше відхилень).
+    - Arrange-Act-Assert pattern у кожному тесті.
+29. **Покриття (coverage)**: `forge coverage --report summary` (аналог SimpleCov). CI генерує lcov.info.
+    - `forge coverage --report lcov` → lcov.info для Codecov/Coveralls інтеграції.
+30. **Gas**: `forge test --gas-report` для оцінки газових витрат. `forge build --sizes` для перевірки розміру контрактів (ліміт EIP-170: 24KB).
+31. **Нові контракти**: завжди створювати `contracts/test/{ContractName}.t.sol` паралельно з `.sol` файлом.
+32. **Admin Protection**: всі контракти з `AccessControl` мають `_adminCount` guard — тестувати `testRevert_cannotRemoveLastAdmin`.
+33. **Pause bypass**: SCC та SFC `slash()` ОБОВ'ЯЗКОВО працюють під час `pause()` (B-07). Тест: `test_pause_allowsSlash`.
+
 ---
 
 ## Поведінка в редакторі
@@ -104,7 +123,8 @@ docs/                   # SSOT архітектурні документи
 terraform/              # GCP infrastructure
 deploy/akash/           # Akash SDL manifests
 subgraph/               # The Graph (polygon-amoy)
-contracts/              # Solidity SCC/SFC (Polygon)
+contracts/              # Solidity SCC/SFC/Governance (Polygon)
+  test/                 # Foundry test suites (*.t.sol)
 ```
 
 ---

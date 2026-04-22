@@ -1,18 +1,31 @@
 [profile.default]
 src = "."
+test = "test"
 out = "out"
 libs = ["node_modules"]
-solc_version = "0.8.24"
+solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
 via_ir = false
 remappings = [
-  "@openzeppelin/=node_modules/@openzeppelin/"
+  "@openzeppelin/=node_modules/@openzeppelin/",
+  "forge-std/=node_modules/forge-std/src/"
 ]
-gas_reports = ["SilkenCarbonCoin", "SilkenForestCoin", "StateRootAnchor"]
+gas_reports = ["SilkenCarbonCoin", "SilkenForestCoin", "StateRootAnchor", "SilkenGovernor", "SilkenTimelock", "ProtocolParameters"]
 
-# CI profile: faster builds, no optimizer (for Slither / quick checks)
+# Fuzz testing defaults
+[fuzz]
+runs = 512
+# "Gaia2.0" in ASCII hex, zero-padded to 32 bytes
+seed = "0x47616961322e300000000000000000000000000000000000000000000000dead"
+
+# Invariant testing
+[invariant]
+runs = 128
+depth = 64
+
+# CI profile: faster builds, reduced fuzz for speed
 [profile.ci]
 optimizer = false
 fuzz.runs = 256

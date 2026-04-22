@@ -1115,6 +1115,42 @@ active/draft ──cancel──► cancelled
 
 ---
 
+### `SystemParameter` — Governance-Aware Протокольні Константи
+
+**Призначення:** Реєстр протокольних параметрів, які можуть оновлюватися через DAO governance (on-chain `ProtocolParameters.sol` → `Governance::ParameterSyncWorker`) або адмін-панель. Забезпечує кешовані lookups з fallback на default значення.
+
+**Ключові поля:**
+
+| Поле | Тип | Опис |
+|------|-----|------|
+| `key` | string | Унікальний ідентифікатор (`snake_case`, UNIQUE) |
+| `value` | string | Серіалізоване значення параметра |
+| `value_type` | string | Тип: `integer`, `float`, `decimal`, `string`, `boolean`, `json` |
+| `category` | string | Категорія: `lorenz`, `tokenomics`, `minting`, `alerts`, `hardware`, `insurance`, `general` |
+| `source` | string | Джерело: `default`, `admin`, `governance` |
+| `description` | text | Людський опис параметра |
+| `min_value` | decimal | Мінімальне допустиме значення (опціональне) |
+| `max_value` | decimal | Максимальне допустиме значення (опціональне) |
+| `updated_by_id` | bigint | FK → User (хто оновив) |
+
+**Публічний API:**
+- `SystemParameter.current(:lorenz_sigma, default: 10.0)` — кешований lookup (TTL 24h), повертає typed value або default
+- `SystemParameter.current_values(lorenz_sigma: 10.0, lorenz_rho: 28.0)` — batch lookup кількох параметрів
+- `SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governance")` — оновлення з аудит-трейлом
+
+**Валідації:**
+- `key` — presence, uniqueness, format `/\A[a-z][a-z0-9_]*\z/`
+- `value` — presence
+- `value_type` — presence, inclusion
+- `category`, `source` — presence, inclusion
+- `value_within_bounds` — custom validation при наявності `min_value`/`max_value`
+
+**Кешування:** `after_commit :invalidate_cache`. Ключ: `"system_parameter:#{key}"`. TTL: 24 години.
+
+**Використовується:** `SilkenNet::Attractor` (Lorenz параметри), `ContractHealthCheckService` (slashing threshold), `TokenomicsEvaluatorWorker` (emission threshold), `Governance::ParameterSyncWorker` (sync on-chain → DB).
+
+---
+
 ## 🌱 8. Seeds — Початковий Стан Системи
 
 Порядок видалення при очищенні (від листя до кореня):
