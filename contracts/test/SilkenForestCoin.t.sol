@@ -395,21 +395,27 @@ contract SilkenForestCoinTest is Test {
     }
 
     function test_getPastVotes_snapshotVoting() public {
+        // Cache block.number once and derive all subsequent vm.roll targets
+        // from it. Under viaIR / Yul CSE (used by forge coverage --ir-minimum),
+        // repeated block.number reads may return the same cached value, causing
+        // vm.roll(block.number + 1) to target the same block twice.
+        uint256 mintBlock = block.number;
+
         vm.prank(minter);
         sfc.mint(user1, 1000e18, CLUSTER_ID);
 
-        // Capture snapshot at the block where the first mint happened,
-        // then advance so this block becomes queryable as a past block.
-        uint256 snapshotBlock = block.number;
-        vm.roll(block.number + 1);
+        // Advance past mintBlock so it becomes queryable as a past block.
+        vm.roll(mintBlock + 1);
 
         // Mint more after snapshot (at a later block)
         vm.prank(minter);
         sfc.mint(user1, 500e18, "cluster-2");
-        vm.roll(block.number + 1);
 
-        // Past votes at snapshot should be 1000e18 (not 1500e18)
-        assertEq(sfc.getPastVotes(user1, snapshotBlock), 1000e18);
+        // Advance one more block
+        vm.roll(mintBlock + 2);
+
+        // Past votes at mintBlock should be 1000e18 (not 1500e18)
+        assertEq(sfc.getPastVotes(user1, mintBlock), 1000e18);
         assertEq(sfc.getVotes(user1), 1500e18);
     }
 
