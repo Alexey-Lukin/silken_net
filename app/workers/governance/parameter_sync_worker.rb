@@ -28,25 +28,25 @@ module Governance
 
     # Маппінг on-chain параметрів до SystemParameter ключів.
     # On-chain значення зберігаються як uint256 з 18 decimals (1e18 = 1.0).
-    # При decimals: 18 → ділимо на 1e18 для отримання float.
-    # При decimals: 0 → використовуємо integer as-is.
+    # Всі значення конвертуються: raw_uint256 / 1e18 → Ruby number.
+    # Тип value_type визначає як SystemParameter зберігає результат.
     PARAMETER_MAP = {
       # Lorenz attractor
-      lorenz_sigma:              { value_type: "float",   category: "lorenz",     decimals: 18 },
-      lorenz_rho:                { value_type: "float",   category: "lorenz",     decimals: 18 },
-      lorenz_beta:               { value_type: "float",   category: "lorenz",     decimals: 18 },
-      lorenz_dt:                 { value_type: "float",   category: "lorenz",     decimals: 18 },
-      lorenz_iterations:         { value_type: "integer", category: "lorenz",     decimals: 0 },
-      lorenz_z_min:              { value_type: "float",   category: "lorenz",     decimals: 18 },
-      lorenz_z_max:              { value_type: "float",   category: "lorenz",     decimals: 18 },
-      lorenz_z_target:           { value_type: "float",   category: "lorenz",     decimals: 18 },
+      lorenz_sigma:              { value_type: "float",   category: "lorenz"     },
+      lorenz_rho:                { value_type: "float",   category: "lorenz"     },
+      lorenz_beta:               { value_type: "float",   category: "lorenz"     },
+      lorenz_dt:                 { value_type: "float",   category: "lorenz"     },
+      lorenz_iterations:         { value_type: "integer", category: "lorenz"     },
+      lorenz_z_min:              { value_type: "float",   category: "lorenz"     },
+      lorenz_z_max:              { value_type: "float",   category: "lorenz"     },
+      lorenz_z_target:           { value_type: "float",   category: "lorenz"     },
       # Tokenomics
-      emission_threshold:        { value_type: "integer", category: "tokenomics", decimals: 0 },
-      dynamic_tax_rate:          { value_type: "float",   category: "tokenomics", decimals: 18 },
-      insurance_pool_threshold:  { value_type: "integer", category: "tokenomics", decimals: 0 },
+      emission_threshold:        { value_type: "integer", category: "tokenomics" },
+      dynamic_tax_rate:          { value_type: "float",   category: "tokenomics" },
+      insurance_pool_threshold:  { value_type: "integer", category: "tokenomics" },
       # Slashing
-      slash_threshold:           { value_type: "float",   category: "alerts",     decimals: 18 },
-      stress_threshold:          { value_type: "float",   category: "alerts",     decimals: 18 }
+      slash_threshold:           { value_type: "float",   category: "alerts"     },
+      stress_threshold:          { value_type: "float",   category: "alerts"     }
     }.freeze
 
     # Мінімальний ABI для читання ProtocolParameters.sol.
@@ -70,6 +70,10 @@ module Governance
 
     # RPC timeout для кожного виклику (секунди).
     RPC_TIMEOUT_SECONDS = 10
+
+    # On-chain fixed-point: 18 decimals (1e18 = 1.0), same as ERC-20 wei.
+    FIXED_POINT_DECIMALS = 18
+    FIXED_POINT_DIVISOR = BigDecimal(10**FIXED_POINT_DECIMALS)
 
     def perform
       contract_address = ENV["PROTOCOL_PARAMETERS_CONTRACT_ADDRESS"]
@@ -110,7 +114,7 @@ module Governance
             client.call(contract, "getParameter", on_chain_key)
           end
 
-          converted_value = convert_value(raw_value, config[:decimals])
+          converted_value = convert_from_fixed_point(raw_value, config[:value_type])
 
           # Compare with current SystemParameter (type-aware comparison)
           current = SystemParameter.current(param_key)
@@ -158,21 +162,19 @@ module Governance
       Eth::Util.keccak256(str)
     end
 
-    # Convert raw uint256 to Ruby value based on decimals.
-    # decimals=18: on-chain 10e18 → Ruby 10.0
-    # decimals=0:  on-chain 10000 → Ruby 10000
-    def convert_value(raw_uint256, decimals)
-      if decimals == 0
-        raw_uint256.to_i
-      else
-        BigDecimal(raw_uint256.to_s) / decimals_divisor(decimals)
-      end
-    end
+    # Convert raw uint256 (18-decimal fixed-point) to Ruby value.
+    # All on-chain values use 18 decimals: 10.0 → 10_000000000000000000.
+    # Integer-typed params (iterations=250, emission_threshold=10000) are also
+    # stored as 250e18 / 10000e18 on-chain and converted back to integers here.
+    def convert_from_fixed_point(raw_uint256, value_type)
+      decimal_value = BigDecimal(raw_uint256.to_s) / FIXED_POINT_DIVISOR
 
-    # Memoized divisor for fixed-point conversion (avoids repeated 10**18 computation).
-    def decimals_divisor(decimals)
-      @decimals_divisors ||= {}
-      @decimals_divisors[decimals] ||= BigDecimal(10**decimals)
+      case value_type
+      when "integer"
+        decimal_value.to_i
+      else
+        decimal_value
+      end
     end
 
     # System bot user (User.oracle_executioner) for audit trail.

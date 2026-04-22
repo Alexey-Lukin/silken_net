@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
  *
  *      1. **Snapshot Voting** (GovernorVotes): `getPastVotes(account, blockNumber)` замість `balanceOf()`.
  *         Flash Loan отримується ПІСЛЯ snapshot → не має voting power.
- *      2. **Voting Delay** (GovernorSettings): 7200 блоків (~1 день на Polygon).
+ *      2. **Voting Delay** (GovernorSettings): 43200 блоків (~1 день на Polygon, block time ~2s).
  *         Зловмисник мусить тримати токени протягом delay — Flash Loan неможливий.
  *      3. **Quorum** (GovernorVotesQuorumFraction): 4% від totalSupply().
  *         Запобігає атакам малими обсягами.
@@ -40,14 +40,22 @@ contract SilkenGovernor is
     GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
+    // ─── Polygon PoS Block Time Constants ─────────────────────────────
+    // Polygon PoS average block time ≈ 2 seconds.
+    // 1 day  = 86400s / 2s ≈ 43200 blocks
+    // 7 days = 604800s / 2s ≈ 302400 blocks
+    //
+    // УВАГА: block time на Polygon може варіюватись (1.5–3s).
+    // Ці значення є приблизними для governance UX, не для фінансових розрахунків.
+
     /// @notice Конструктор SilkenGovernor.
     /// @param _token SFC (SilkenForestCoin) — governance token з ERC20Votes.
     /// @param _timelock SilkenTimelock — TimelockController з 48h мінімальною затримкою.
     constructor(IVotes _token, TimelockController _timelock)
         Governor("Silken Governor")
         GovernorSettings(
-            7200,    // votingDelay: ~1 день на Polygon (block time ~2s, ~7200 блоків/день)
-            50400,   // votingPeriod: ~7 днів на Polygon (~7200 блоків/день × 7 днів)
+            43200,   // votingDelay: ~1 день на Polygon (86400s / 2s per block)
+            302400,  // votingPeriod: ~7 днів на Polygon (604800s / 2s per block)
             100e18   // proposalThreshold: 100 SFC для створення пропозиції
         )
         GovernorVotes(_token)

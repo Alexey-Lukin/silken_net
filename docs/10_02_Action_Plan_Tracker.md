@@ -509,7 +509,7 @@
 - **Джерело:** `07_01`, `05_03`
 - **Опис:** SFC voting mechanism — Governance DAO
 - **Статус:** ✅ Реалізовано (ARCH.4 / E.35 / E.1)
-- [x] SilkenGovernor.sol — OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction (4% quorum, 7200 blocks delay, 50400 blocks period, 100 SFC threshold)
+- [x] SilkenGovernor.sol — OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction (4% quorum, 43200 blocks delay ~1 day, 302400 blocks period ~7 days, 100 SFC threshold)
 - [x] SilkenTimelock.sol — TimelockController (48h min delay)
 - [x] ProtocolParameters.sol — on-chain registry з 13 well-known parameter keys (Lorenz, tokenomics, slashing)
 - [x] Governance::ParameterSyncWorker — queue: web3_low, 1×/day, Eth::Contract + Web3::RpcConnectionPool → SystemParameter
@@ -593,7 +593,7 @@
 | E.32 | ✅ (Slither) Smart Contract Audit: Slither в CI (`.github/workflows/solidity_audit.yml`). Foundry toolchain (`contracts/foundry.toml`): solc 0.8.24, EVM cancun, optimizer 200 runs, CI/production profiles. Mythril + Hacken — окремі етапи pre-mainnet | `05_03` | Slither CI ✅ (Сесія 19-20), Mythril + Hacken TODO |
 | E.33 | AlertNotification rate limits: FCM multicast (500 tokens/req), Twilio Notify | `04_02` | Post-TRL 8 |
 | E.34 | dClimate fallback → ForestBountyService (drone/ranger PoPhW) | `04_02` | Post-TRL 6 |
-| E.35 | ✅ Flash Loan defense реалізовано в `SilkenGovernor.sol`: GovernorVotes (`getPastVotes`), GovernorSettings (votingDelay=7200 блоків), GovernorVotesQuorumFraction (4%), GovernorTimelockControl (48h через `SilkenTimelock.sol`) | `05_03` | ✅ Реалізовано |
+| E.35 | ✅ Flash Loan defense реалізовано в `SilkenGovernor.sol`: GovernorVotes (`getPastVotes`), GovernorSettings (votingDelay=43200 блоків ~1 day, votingPeriod=302400 ~7 days), GovernorVotesQuorumFraction (4%), GovernorTimelockControl (48h через `SilkenTimelock.sol`) | `05_03` | ✅ Реалізовано |
 | E.36 | PostGIS Generated Column (geo_boundary) замість тригера | `04_01` | Post-TRL 8 |
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates | `04_01` | >100M рядків/місяць |
 | E.38 | Press-Fit фаски: R ≥ 0.2 мм для зняття напружень у PEEK | `01_01` | Включити у nTop (HW.1) |

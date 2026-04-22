@@ -747,22 +747,22 @@ TokenomicsEvaluatorWorker (dynamic conversion rate)
 | Захист | Механізм | Чому працює |
 |--------|----------|-------------|
 | **Snapshot Voting** | `getPastVotes(account, blockNumber)` замість `balanceOf()` | Голоси рахуються за балансом на момент створення пропозиції, а не поточним. Flash Loan отримується ПІСЛЯ snapshot → не має voting power |
-| **Voting Delay** | Мінімум 1 блок (рекомендовано 1 день / ~7200 блоків на Polygon) між створенням пропозиції та початком голосування | Зловмисник мусить тримати токени протягом delay — Flash Loan неможливий |
+| **Voting Delay** | Мінімум 1 блок (рекомендовано 1 день / ~43200 блоків на Polygon при ~2s block time) між створенням пропозиції та початком голосування | Зловмисник мусить тримати токени протягом delay — Flash Loan неможливий |
 | **Quorum** | Мінімум 4% від `totalSupply()` для прийняття пропозиції | Запобігає атакам малими обсягами |
 | **Timelock** | `TimelockController` з 48h затримкою між прийняттям та виконанням | Дає час для реакції та vetoing |
 | **Vote Weight = Past Balance** | `ERC20Votes._delegate()` + checkpoint system (вже реалізовано в SFC) | Кожен трансфер створює checkpoint; `getPastVotes` читає історичний checkpoint |
 
-**Реалізація (OpenZeppelin Governor):**
+**Реалізація (`contracts/SilkenGovernor.sol`):**
 ```solidity
-// GovernorContract.sol
-contract GaiaGovernor is Governor, GovernorSettings, GovernorCountingSimple,
+// SilkenGovernor.sol — SSOT: contracts/SilkenGovernor.sol
+contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
     GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
 
     constructor(IVotes _token, TimelockController _timelock)
-        Governor("Gaia Governor")
+        Governor("Silken Governor")
         GovernorSettings(
-            7200,    // votingDelay: ~1 day on Polygon (block time ~12s)
-            50400,   // votingPeriod: ~7 days
+            43200,   // votingDelay: ~1 day on Polygon (block time ~2s)
+            302400,  // votingPeriod: ~7 days on Polygon
             100e18   // proposalThreshold: 100 SFC to propose
         )
         GovernorVotesQuorumFraction(4)  // 4% quorum
@@ -771,7 +771,7 @@ contract GaiaGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 }
 ```
 
-> **Важливо:** SFC вже має `ERC20Votes` з auto-delegation — checkpoint система працює. Залишається імплементувати Governor + Timelock контракти.
+> **✅ Реалізовано:** SFC має `ERC20Votes` з auto-delegation — checkpoint система працює. Governor + Timelock контракти реалізовано.
 
 ### Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
 

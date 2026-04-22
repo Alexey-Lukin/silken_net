@@ -118,6 +118,19 @@ contract ProtocolParameters is AccessControl {
         return _parameters[key];
     }
 
+    /// @notice Зчитування параметра з fallback-значенням для невстановлених параметрів.
+    /// @dev Усуває неоднозначність "значення 0" vs "параметр не встановлено".
+    ///      Frontend, subgraph та ParameterSyncWorker повинні використовувати цей метод.
+    /// @param key Keccak256 хеш назви параметра.
+    /// @param defaultValue Значення за замовчуванням, якщо параметр не встановлено.
+    /// @return value Поточне значення або defaultValue.
+    function getParameterOrDefault(bytes32 key, uint256 defaultValue) external view returns (uint256) {
+        if (_parameterSet[key]) {
+            return _parameters[key];
+        }
+        return defaultValue;
+    }
+
     /// @notice Перевірка чи параметр був явно встановлений.
     /// @param key Keccak256 хеш назви параметра.
     /// @return true якщо параметр встановлено через governance.
