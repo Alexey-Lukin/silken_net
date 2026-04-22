@@ -134,7 +134,7 @@ contract SilkenGovernorTest is Test {
         ) = _createSetParameterProposal(
             keccak256("lorenz_sigma"),
             12e18,
-            "Should fail — no tokens"
+            "Should fail - no tokens"
         );
 
         vm.prank(noTokens);
