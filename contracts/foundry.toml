@@ -1,5 +1,6 @@
 [profile.default]
 src = "."
+test = "test"
 out = "out"
 libs = ["node_modules"]
 solc_version = "0.8.24"
@@ -8,7 +9,8 @@ optimizer = true
 optimizer_runs = 200
 via_ir = false
 remappings = [
-  "@openzeppelin/=node_modules/@openzeppelin/"
+  "@openzeppelin/=node_modules/@openzeppelin/",
+  "forge-std/=node_modules/forge-std/src/"
 ]
 gas_reports = ["SilkenCarbonCoin", "SilkenForestCoin", "StateRootAnchor", "SilkenGovernor", "SilkenTimelock", "ProtocolParameters"]
 
