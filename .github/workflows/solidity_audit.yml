@@ -43,7 +43,7 @@ jobs:
         run: forge test -vvv --gas-report
 
       - name: Run coverage (lcov)
-        run: forge coverage --report lcov --report summary
+        run: forge coverage --ir-minimum --report lcov --report summary
 
       - name: Upload coverage to artifacts
         uses: actions/upload-artifact@v4
