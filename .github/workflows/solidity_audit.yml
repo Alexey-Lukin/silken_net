@@ -69,7 +69,7 @@ jobs:
         run: npm ci --prefix contracts
 
       - name: Run Slither
-        uses: crytic/slither-action@v0.4.0
+        uses: crytic/slither-action@v0.4.2
         with:
           target: contracts/
           node-version: '20'
