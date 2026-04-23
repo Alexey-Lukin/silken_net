@@ -33,7 +33,7 @@
 * **Безпека:** Апаратне шифрування AES-256 (пакети EwsAlert).
 
 ### 📡 Рівень 4: Мережа (The Veins)
-* **Протокол:** LoRaWAN (868 MHz). Binary payload 16 bytes.
+* **Протокол:** LoRa mesh 868 МГц (custom TTL-based, DEFAULT_TTL=3). Binary payload 21 bytes (4 DID + 1 RSSI + 16 encrypted).
 * **Топологія:** Directed Mesh (Солдати передають пакети через сусідів).
 * **Шлюз (Королева):** Агрегує пакети та відправляє їх у хмару (опціонально через Starlink Direct-to-Cell).
 * **Резерв:** Helium Network (HNT) як fallback при втраті Queen — будь-який роутер Helium у радіусі 15 км ловить пакет ([деталі → 02_05](02_05_Queen_Hardware_and_Starlink)).
