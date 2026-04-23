@@ -289,7 +289,7 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     jmespath (1.6.2)
-    json (2.19.3)
+    json (2.19.4)
     jwt (3.1.2)
       base64
     kamal (2.11.0)
@@ -669,7 +669,7 @@ GEM
       logger (>= 1.7.0)
       rack (>= 3.2.0)
       redis-client (>= 0.26.0)
-    sidekiq-scheduler (6.0.1)
+    sidekiq-scheduler (6.0.2)
       rufus-scheduler (~> 3.2)
       sidekiq (>= 7.3, < 9)
     signet (0.21.0)
