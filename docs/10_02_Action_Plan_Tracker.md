@@ -1,7 +1,7 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-21 Сесія 19 (ARCH.15 SystemParameter model + E.32 Slither CI)
+> **Останнє оновлення:** 2026-04-23 Сесія 23 (ProtocolParameters named getters + Deploy script)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -590,7 +590,7 @@
 | E.29 | Альтернативні EBFC медіатори (ferrocene, methylene blue) | `01_03` | R&D alternatives |
 | E.30 | InsightGenerator: кліматичні базлайни per region | `04_02` | Post-TRL 7 |
 | E.31 | TinyML OTA: `.tflite` формат (INT8 quantization) + Python ML microservice | `03_03` | Post-TRL 8 |
-| E.32 | ✅ (Slither + Foundry) Smart Contract Audit: Slither в CI (`.github/workflows/solidity_audit.yml`). Foundry toolchain (`contracts/foundry.toml`): solc 0.8.28, EVM cancun, optimizer 200 runs, CI/production profiles. 171 тест у 6 test suites. Coverage via `forge coverage --ir-minimum`. Mythril + Hacken — окремі етапи pre-mainnet | `05_03` | Slither CI ✅ (Сесія 19-20), Foundry tests ✅ (Сесія 22), Mythril + Hacken TODO |
+| E.32 | ✅ (Slither + Foundry) Smart Contract Audit: Slither в CI (`.github/workflows/solidity_audit.yml`). Foundry toolchain (`contracts/foundry.toml`): solc 0.8.28, EVM cancun, optimizer 200 runs, CI/production profiles. 178 тестів у 6 test suites. Coverage via `forge coverage --ir-minimum`. Mythril + Hacken — окремі етапи pre-mainnet | `05_03` | Slither CI ✅ (Сесія 19-20), Foundry tests ✅ (Сесія 22-23), Mythril + Hacken TODO |
 | E.33 | AlertNotification rate limits: FCM multicast (500 tokens/req), Twilio Notify | `04_02` | Post-TRL 8 |
 | E.34 | dClimate fallback → ForestBountyService (drone/ranger PoPhW) | `04_02` | Post-TRL 6 |
 | E.35 | ✅ Flash Loan defense реалізовано в `SilkenGovernor.sol`: GovernorVotes (`getPastVotes`), GovernorSettings (votingDelay=43200 блоків ~1 day, votingPeriod=302400 ~7 days), GovernorVotesQuorumFraction (4%), GovernorTimelockControl (48h через `SilkenTimelock.sol`) | `05_03` | ✅ Реалізовано |
@@ -664,6 +664,7 @@
 | 2026-04-21 | Сесія 19: **ARCH.15** — `SystemParameter` модель для governance-aware backend. Міграція, модель з `.current(:key, default:)` кешований lookup (TTL 24h), 19 seed-параметрів (Lorenz: σ/ρ/β/dt/iterations/z_min/z_max/z_target, tokenomics: emission_threshold/dynamic_tax_rate/insurance_pool_threshold, alerts: fraud/fire/seismic thresholds, hardware: vcap bounds). Factory, spec (валідації, typed_value, кешування, bounds, .set, .current_values). **E.32** — Slither static analysis CI: `.github/workflows/solidity_audit.yml` для 3 Solidity контрактів (SCC/SFC/StateRootAnchor). OpenZeppelin 5.x, pragma 0.8.24, `fail-on: high`. `contracts/package.json` для npm dependencies. |
 | 2026-04-21 | Сесія 20: **E.32 (fix)** — Slither CI fix: pragma 0.8.20→0.8.24 (OZ 5.x ERC20Permit/ERC20Votes вимагають ^0.8.24). `contracts/foundry.toml` додано (evm_version=cancun для mcopy opcode в OZ Bytes.sol). Foundry profiles: default (optimizer 200 runs), ci (no optimizer, fast builds), production (optimizer 1000 runs, via_ir). `slither.config.json` оновлено: `--evm-version cancun`. `.gitignore` доповнено `contracts/out/`, `contracts/cache/`. Docs оновлено: `05_03`, `05_04`, `10_02`. |
 | 2026-04-22 | **ARCH.4/BIZ.4/E.35/E.1** — Governance DAO реалізовано. **SilkenGovernor.sol**: OZ Governor + GovernorVotes (flash loan defense via getPastVotes) + GovernorTimelockControl (48h) + GovernorCountingSimple + GovernorVotesQuorumFraction (4% quorum). votingDelay=43200 blocks (~1 day Polygon 2s), votingPeriod=302400 blocks (~7 days), proposalThreshold=100 SFC. **SilkenTimelock.sol**: TimelockController з 48h мін. затримкою. **ProtocolParameters.sol**: on-chain registry з GOVERNANCE_ROLE, 13 well-known keys, generic setParameter/setParameters + getParameterOrDefault + named getters, admin protection. **Governance::ParameterSyncWorker**: queue web3_low, unique_for 24h, cron 03:30 UTC, Eth::Contract + Web3::RpcConnectionPool, Timeout 10s per call, uniform 18-decimal fixed-point conversion, SystemParameter sync. **E.1** досліджено: SFC voting power коректно зменшується після slashing через ERC20Votes._update → _transferVotingUnits → checkpoint update (OZ v5). Docs оновлено: `05_03`, `10_02`, `foundry.toml`, `sidekiq.yml`. |
+| 2026-04-23 | Сесія 23: **ProtocolParameters** — додано 7 відсутніх named getters: `lorenzDt()`, `lorenzIterations()`, `lorenzZMin()`, `lorenzZMax()`, `lorenzZTarget()`, `insurancePoolThreshold()`, `stressThreshold()`. Тепер всі 13 well-known keys мають convenience getters. 7 нових тестів у `ProtocolParameters.t.sol` (всього 178 Foundry тестів). **Deploy Script** — `contracts/script/Deploy.s.sol` створено: Foundry deployment script для всіх 6 контрактів (SCC, SFC, StateRootAnchor, SilkenTimelock, SilkenGovernor, ProtocolParameters) з правильним порядком залежностей, post-deploy role assignment (Governor → PROPOSER + CANCELLER на Timelock), deployment summary та post-deploy checklist. `foundry.toml` оновлено з `script = "script"`. |
 
 ---
 
