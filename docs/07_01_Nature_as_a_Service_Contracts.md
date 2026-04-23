@@ -383,7 +383,7 @@ WA) через Polygon Hadron необхідно:
 
 ### 🟡 BLOCKER-7: SFC Voting Power зберігається після Slashing (Security Attack Vector)
 
-**Статус:** ✅ ЧАСТКОВО ВИРІШЕНО — `SilkenForestCoin.sol` реалізує `SLASHER_ROLE` + `slash()`. Голосування токени SFC тепер зменшуються при slashing (ERC20Votes `_update` → `_transferVotingUnits` → checkpoint update). Атака через купівлю SFC + навмисне порушення NaaS більше неможлива.
+**Статус:** 🟡 ЧАСТКОВО ВИРІШЕНО — `SilkenForestCoin.sol` реалізує `SLASHER_ROLE` + `slash()`. Голосування токени SFC тепер зменшуються при slashing (ERC20Votes `_update` → `_transferVotingUnits` → checkpoint update). Атака через купівлю SFC + навмисне порушення NaaS більше неможлива.
 
 **Залишковий ризик:** Між нарахуванням SCC slash-події та обробкою `SilkenForestCoin.slash()` існує часовий лаг (бекенд-pipeline + Web3 черга `web3_critical`). Протягом цього вікна (~1–5 хв) учасник технічно може проголосувати. Для додаткового захисту рекомендується Vote Escrow (veToken) при активних NaaS контрактах зі статусом `breached`.
 

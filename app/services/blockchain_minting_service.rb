@@ -419,20 +419,18 @@ class BlockchainMintingService < ApplicationService
   # Виконує eth_call balanceOf на SCC-контракті для адреси DAO Treasury.
   # Результат кешується на 15 хвилин — стан пулу змінюється рідко (лише при страхових виплатах).
   #
-  # [E.46 FIX]: При збої RPC повертаємо false (не накладаємо зайвий 2% податок).
-  # Якщо в кеші є попереднє значення (навіть протерміноване), використовуємо його.
-  # Логіка: "краще тимчасово не донарахувати до пулу, ніж постійно штрафувати мінтинг при RPC degradation."
-  # Моніторинг: помилка логується → Prometheus counter → alert якщо > 3 збої поспіль.
+  # [E.46 FIX]: При збої RPC повертаємо false — не накладаємо 2% Dynamic Tax під час деградації мережі.
+  # Rationale: False negative (пропущений внесок до пулу) безпечніший за false positive
+  # (постійний 2% податок на кожен mint при тривалому RPC outage). Пул поповниться при
+  # наступному успішному виклику. Помилка логується для моніторингу (Sentry + Prometheus).
   def insurance_pool_requires_funding?
     Rails.cache.fetch(TREASURY_CACHE_KEY, expires_in: TREASURY_CACHE_TTL) do
       fetch_treasury_balance_wei < INSURANCE_POOL_THRESHOLD_WEI
     end
   rescue StandardError => e
     Rails.logger.error "🛑 [Web3] DAO Treasury balance check failed (RPC degraded): #{e.message}"
-    # [E.46] Graceful degradation: при RPC-збої пробуємо прочитати попереднє кешоване значення.
-    # Якщо кешу немає — повертаємо false (не накладаємо податок під час деградації RPC).
-    stale = Rails.cache.read(TREASURY_CACHE_KEY)
-    stale.nil? ? false : stale
+    # [E.46] Завжди false при RPC-збої — не штрафуємо мінтинг під час деградації мережі.
+    false
   end
 
   # Повертає баланс DAO Treasury у wei (Integer) для точного порівняння без Float.
