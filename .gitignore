@@ -86,5 +86,6 @@ contracts/node_modules/
 # Foundry build artifacts
 contracts/out/
 contracts/cache/
+contracts/broadcast/
 
 coverage/

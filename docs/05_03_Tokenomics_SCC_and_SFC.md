@@ -852,6 +852,15 @@ SystemParameter.set("lorenz_sigma", "12.0", updated_by: admin, source: "governan
 # OpenZeppelin 5.x через contracts/package.json
 ```
 
+**Foundry Deploy Script (✅ Реалізовано — Сесія 23):**
+```bash
+# contracts/script/Deploy.s.sol — деплой всіх 6 контрактів у правильному порядку:
+# 1. SCC → 2. SFC → 3. StateRootAnchor → 4. Timelock → 5. Governor → 6. ProtocolParameters
+# Потрібні ENV: DEPLOYER_PRIVATE_KEY, ADMIN_ADDRESS, MINTER_ORACLE, SLASHER_ORACLE, ANCHOR_ORACLE
+# Dry-run: forge script script/Deploy.s.sol --rpc-url $RPC_URL
+# Broadcast: FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify
+```
+
 **Mythril (TODO):**
 ```bash
 myth analyze contracts/SilkenCarbonCoin.sol --solv 0.8.28
