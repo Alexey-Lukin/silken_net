@@ -1,7 +1,6 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Останнє оновлення:** 2026-04-23 Сесія 23 (ProtocolParameters named getters + Deploy script)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -646,32 +645,6 @@
 
 ---
 
-## 📝 Журнал оновлень
-
-| Дата | Зміни |
-|------|-------|
-| 2026-04-18 | Створено документ. Аудит 35 docs, codebase, firmware. Інтеграція legacy notes. |
-| 2026-04-18 | Сесії 2-6: S1.3/S1.6-8/S2.4-5/S3.1/S3.4-6/FW.12-15/DIFF.2-6/INF.3/E.2/E.17 виконано. |
-| 2026-04-19 | Сесії 7-8: ARCH.3/DIFF.4/DIFF.6/E.6/E.16/E.21-25/INF.1/INF.4-7/S4.1 виконано. Infrastructure Pivot. |
-| 2026-04-19 | Сесія 9: OBS.1 — Grafana Alloy sidecar → Grafana Cloud (BLOCKERs 1-3 resolved). |
-| 2026-04-19 | Сесія 10: Очищення трекера — видалено виконані задачі, прибрано sprint-групування. Відновлено описи для незавершених пунктів. |
-| 2026-04-19 | Сесії 12-13: Глибокий аудит всіх 35 docs (повне читання, не лише заголовки). Cross-reference codebase. Додано: S5.1-S5.6 (backend), FW.22-FW.23 (firmware), SEC.5-SEC.7 (security), DOC.1-DOC.7 (документаційні невідповідності), OPS.1-OPS.2 (автоматизація), BIZ.6-BIZ.7 (бізнес), ARCH.7-ARCH.17 (архітектурні пропозиції). Всього ~40 нових пунктів. |
-| 2026-04-20 | Сесія 14: **SEC.5** — fail-fast guard `SecurityError` при `WEB3_STRICT_MODE=true` без `CHAINLINK_HMAC_SECRET` + integration test. **DOC.1** — `02_04` Lorenz thresholds → 2.0/45.0/29.0. **DOC.3** — `04_04` TRL 9→8. **DOC.5** — `04_03` endpoint count 82→83. **DOC.6** — `05_02` `peaq_signing_key` → mandatory. **DOC.7** — `05_02` soldier 648→771 рядків. |
-| 2026-04-21 | Сесія 15: **FW.11** — NVIC-рівнева ізоляція `vibration_detected` race condition. **FW.15** — `test_tinyml_pipeline.c` (25 тестів) + `test_encryption.c` (18 тестів). **FW.16** — `Restore_ECB_Mode()` helper з RCC reset + NVIC_SystemReset fallback. **FW.22** — backend warning для `acoustic_events==255` в `TelemetryUnpackerService`. **FW.7/FW.19** — задокументовано Float vs BigDecimal tolerance як "by design" в `03_04`. **FW.5** — BLOCKER-1 збагачено аналізом chaos_seed vs delta_t/vcap впливу на токеноміку (залишено відкритим). **CI** — `firmware_test` job додано до `.github/workflows/ci.yml`. **03_03** — BLOCKER-4 (тести) та BLOCKER-8 (race condition) закрито. Всього 207 firmware тестів (79+58+27+25+18). |
-| 2026-04-21 | Сесія 16: **FW.6** — Lorenz State Persistence: стан (x,y,z) зберігається в RTC DR16-DR18 між циклами STOP2 (BLOCKER-3 закрито). 16 нових C-тестів. **FW.7** — уточнено як TRL 6 mitigation з попередженням про IEEE 754 ARM/x86 drift. **ARCH.18** — додано Fixed-Point Arithmetic (Integer Math) як довгостроковий roadmap для побітового consensus. Документація оновлена: `03_04` (BLOCKER-3), `03_01` (register map DR0-DR19), `05_02` (firmware phases). Всього 223 firmware тести (79+74+27+25+18). |
-| 2026-04-21 | Сесія 17: **S5.2** — `RELEASE_VERSION` ENV додано до deploy.yml (Canopy: git SHA), deploy-production.yml (Production: release tag), config/deploy.yml (Kamal), deploy/akash/deploy.yaml (web+job). Sentry release tracking тепер активний. **SEC.5** — Документовано HMAC bypass security requirement у `04_03` (WEB3_STRICT_MODE=true → SecurityError). **DOC.4** — Пористість узгоджена: CLAUDE.md та copilot-instructions.md оновлені з 70% → 65% (target), діапазон 60-70% (відповідно до `01_01`). **Трекер** — Позначено як виконані: S5.1 (Prometheus метрики), S5.3 (deploy-production.yml), OPS.1 (trl_sync.yml). |
-| 2026-04-21 | Сесія 18: **FW.22** — `acoustic_events` змінено з `uint16_t` на `uint8_t` із saturating increment (`if < 255`) у `soldier/main.c:415`. Packing спрощено (ternary видалено). 8 unit tests. **FW.10** — Temperature-based TX deferral: guard clause `packed_temp < -15 && vcap_voltage < 4000` → `goto phase5_kenosis`. Named constants `COLD_TX_DEFER_TEMP`, `COLD_TX_DEFER_VCAP_MV`. 10 unit tests. **OPS.2** — SSOT Integrity Guard: `.github/workflows/ssot_guard.yml` створено. Перевіряє 6 protected areas (models, firmware, contracts, services). `ssot-bypass` label для обходу. Всього 241 firmware тест (79+92+27+25+18). |
-| 2026-04-21 | Сесія 19: **ARCH.15** — `SystemParameter` модель для governance-aware backend. Міграція, модель з `.current(:key, default:)` кешований lookup (TTL 24h), 19 seed-параметрів (Lorenz: σ/ρ/β/dt/iterations/z_min/z_max/z_target, tokenomics: emission_threshold/dynamic_tax_rate/insurance_pool_threshold, alerts: fraud/fire/seismic thresholds, hardware: vcap bounds). Factory, spec (валідації, typed_value, кешування, bounds, .set, .current_values). **E.32** — Slither static analysis CI: `.github/workflows/solidity_audit.yml` для 3 Solidity контрактів (SCC/SFC/StateRootAnchor). OpenZeppelin 5.x, pragma 0.8.24, `fail-on: high`. `contracts/package.json` для npm dependencies. |
-| 2026-04-21 | Сесія 20: **E.32 (fix)** — Slither CI fix: pragma 0.8.20→0.8.24 (OZ 5.x ERC20Permit/ERC20Votes вимагають ^0.8.24). `contracts/foundry.toml` додано (evm_version=cancun для mcopy opcode в OZ Bytes.sol). Foundry profiles: default (optimizer 200 runs), ci (no optimizer, fast builds), production (optimizer 1000 runs, via_ir). `slither.config.json` оновлено: `--evm-version cancun`. `.gitignore` доповнено `contracts/out/`, `contracts/cache/`. Docs оновлено: `05_03`, `05_04`, `10_02`. |
-| 2026-04-22 | **ARCH.4/BIZ.4/E.35/E.1** — Governance DAO реалізовано. **SilkenGovernor.sol**: OZ Governor + GovernorVotes (flash loan defense via getPastVotes) + GovernorTimelockControl (48h) + GovernorCountingSimple + GovernorVotesQuorumFraction (4% quorum). votingDelay=43200 blocks (~1 day Polygon 2s), votingPeriod=302400 blocks (~7 days), proposalThreshold=100 SFC. **SilkenTimelock.sol**: TimelockController з 48h мін. затримкою. **ProtocolParameters.sol**: on-chain registry з GOVERNANCE_ROLE, 13 well-known keys, generic setParameter/setParameters + getParameterOrDefault + named getters, admin protection. **Governance::ParameterSyncWorker**: queue web3_low, unique_for 24h, cron 03:30 UTC, Eth::Contract + Web3::RpcConnectionPool, Timeout 10s per call, uniform 18-decimal fixed-point conversion, SystemParameter sync. **E.1** досліджено: SFC voting power коректно зменшується після slashing через ERC20Votes._update → _transferVotingUnits → checkpoint update (OZ v5). Docs оновлено: `05_03`, `10_02`, `foundry.toml`, `sidekiq.yml`. |
-| 2026-04-23 | Сесія 23: **ProtocolParameters** — додано 7 відсутніх named getters: `lorenzDt()`, `lorenzIterations()`, `lorenzZMin()`, `lorenzZMax()`, `lorenzZTarget()`, `insurancePoolThreshold()`, `stressThreshold()`. Тепер всі 13 well-known keys мають convenience getters. 7 нових тестів у `ProtocolParameters.t.sol` (всього 178 Foundry тестів). **Deploy Script** — `contracts/script/Deploy.s.sol` створено: Foundry deployment script для всіх 6 контрактів (SCC, SFC, StateRootAnchor, SilkenTimelock, SilkenGovernor, ProtocolParameters) з правильним порядком залежностей, post-deploy role assignment (Governor → PROPOSER + CANCELLER на Timelock), deployment summary та post-deploy checklist. `foundry.toml` оновлено з `script = "script"`. |
-
----
-
 > **Як оновлювати цей документ:**
 > 1. Знайти відповідний пункт (S1.1, FW.3, HW.7, тощо)
 > 2. Змінити `[ ]` → `[x]` для виконаних підзадач
-> 3. Заповнити поля **Сесія** та **Коміт**
-> 4. Додати запис у таблицю **Журнал оновлень**
-> 5. Оновити **Зведену статистику** вгорі (якщо блокер закрито)
-> 6. Оновити поле **Останнє оновлення** у шапці документа
