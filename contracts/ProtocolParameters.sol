@@ -170,6 +170,41 @@ contract ProtocolParameters is AccessControl {
         return _parameters[KEY_DYNAMIC_TAX_RATE];
     }
 
+    /// @notice Крок інтегрування dt атрактора Лоренца. Default: 0.01 (0.01e18).
+    function lorenzDt() external view returns (uint256) {
+        return _parameters[KEY_LORENZ_DT];
+    }
+
+    /// @notice Кількість ітерацій атрактора Лоренца. Default: 250 (250e18).
+    function lorenzIterations() external view returns (uint256) {
+        return _parameters[KEY_LORENZ_ITERATIONS];
+    }
+
+    /// @notice Мінімальне Z-значення (CRITICAL_Z_MIN). Default: 2.0 (2e18).
+    function lorenzZMin() external view returns (uint256) {
+        return _parameters[KEY_LORENZ_Z_MIN];
+    }
+
+    /// @notice Максимальне Z-значення (CRITICAL_Z_MAX). Default: 45.0 (45e18).
+    function lorenzZMax() external view returns (uint256) {
+        return _parameters[KEY_LORENZ_Z_MAX];
+    }
+
+    /// @notice Оптимальне Z-значення (OPTIMAL_Z_TARGET). Default: 29.0 (29e18).
+    function lorenzZTarget() external view returns (uint256) {
+        return _parameters[KEY_LORENZ_Z_TARGET];
+    }
+
+    /// @notice Поріг страхового пулу для Dynamic Tax. Default: 100000 (100000e18).
+    function insurancePoolThreshold() external view returns (uint256) {
+        return _parameters[KEY_INSURANCE_POOL_THRESHOLD];
+    }
+
+    /// @notice Поріг стресу для дерева. Default: 0.30 (0.3e18 = 30%).
+    function stressThreshold() external view returns (uint256) {
+        return _parameters[KEY_STRESS_THRESHOLD];
+    }
+
     // ─── Admin Protection ─────────────────────────────────────────────
 
     /// @dev Захист від видалення останнього DEFAULT_ADMIN_ROLE.

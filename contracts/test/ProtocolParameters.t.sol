@@ -286,6 +286,48 @@ contract ProtocolParametersTest is Test {
         assertEq(params.dynamicTaxRate(), 0.02e18);
     }
 
+    function test_namedGetter_lorenzDt() public {
+        vm.prank(timelock);
+        params.setParameter(keccak256("lorenz_dt"), 0.01e18); // dt = 0.01
+        assertEq(params.lorenzDt(), 0.01e18);
+    }
+
+    function test_namedGetter_lorenzIterations() public {
+        vm.prank(timelock);
+        params.setParameter(keccak256("lorenz_iterations"), 250e18);
+        assertEq(params.lorenzIterations(), 250e18);
+    }
+
+    function test_namedGetter_lorenzZMin() public {
+        vm.prank(timelock);
+        params.setParameter(keccak256("lorenz_z_min"), 2e18);
+        assertEq(params.lorenzZMin(), 2e18);
+    }
+
+    function test_namedGetter_lorenzZMax() public {
+        vm.prank(timelock);
+        params.setParameter(keccak256("lorenz_z_max"), 45e18);
+        assertEq(params.lorenzZMax(), 45e18);
+    }
+
+    function test_namedGetter_lorenzZTarget() public {
+        vm.prank(timelock);
+        params.setParameter(keccak256("lorenz_z_target"), 29e18);
+        assertEq(params.lorenzZTarget(), 29e18);
+    }
+
+    function test_namedGetter_insurancePoolThreshold() public {
+        vm.prank(timelock);
+        params.setParameter(keccak256("insurance_pool_threshold"), 100_000e18);
+        assertEq(params.insurancePoolThreshold(), 100_000e18);
+    }
+
+    function test_namedGetter_stressThreshold() public {
+        vm.prank(timelock);
+        params.setParameter(keccak256("stress_threshold"), 0.3e18); // 30%
+        assertEq(params.stressThreshold(), 0.3e18);
+    }
+
     // ─── Well-Known Key Constants ─────────────────────────────────────
 
     function test_keyConstants_matchSolidityKeccak() public view {
