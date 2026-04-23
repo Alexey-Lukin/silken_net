@@ -1,6 +1,7 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
 > **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
+> **Оновлено:** 2026-04-23 (Повторний аудит: cross-ref docs↔codebase, +33 DOC невідповідності, +11 SW, +3 SEC, +7 ARCH, +14 E.xx)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -84,9 +85,10 @@
 #### S6.1 — Redis SPOF для M2M автентифікації
 - **P1** | `04_03` | **Складність: M** | **🔧 Код**
 - **Опис:** Redis = single point of failure для Gateway M2M auth. Redis down → всі шлюзи заблоковані (503). Відсутній fallback
-- [ ] Дизайн fallback: in-memory cache або DB-backed nonce validation
-- [ ] Реалізація fallback
-- [ ] Тести: Redis down scenario
+- **Варіанти fallback:** (a) DB-backed nonce validation з TTL index (performance overhead, але survives restarts), (b) Upstash Redis Cluster (managed HA, рекомендовано для production), (c) Memcached cluster (не зберігає стан між restarts). **Рекомендація:** Upstash Redis вже використовується — переконатись що включений multi-zone replication
+- [ ] Верифікувати Upstash multi-zone replication у production
+- [ ] Додати graceful degradation: при Redis недоступності → DB-based nonce lookup з TTL
+- [ ] Тести: Redis down scenario → gateways залишаються active
 
 #### S6.2 — Chainlink Functions Router v1 ENV змінні
 - **P1** | `04_02` | **Складність: XS** | **🔧 Операційна**
@@ -131,8 +133,10 @@
 
 #### S6.9 — Hardcoded fallback SCC price $25.50
 - **P3** | `04_02` | **Складність: XS** | **🔧 Код**
-- **Опис:** `PriceOracleService` має hardcoded fallback $25.50. При RPC failure ціна може бути значно неправильною
-- [ ] Зробити fallback конфігурованим через ENV або `ProtocolParameters`
+- **Опис:** `PriceOracleService` має hardcoded fallback $25.50. При RPC failure ціна може бути значно неправильною — фінансовий ризик для SLA contracts
+- **Рекомендація:** Перемістити до `ProtocolParameters` on-chain (governance-controlled) або ENV-var. `ProtocolParameters` є кращим варіантом — прозорість і on-chain управління
+- [ ] Перемістити fallback price до `ProtocolParameters.sol` як `scc_fallback_price_usd_cents`
+- [ ] Backend: `SystemParameter.current(:scc_fallback_price_usd_cents)` замість hardcoded
 
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** | `04_02` | **Складність: L** | **🔧 Архітектурна**
@@ -516,6 +520,31 @@
 - [ ] Firmware: verify signature перед Flash write
 - [ ] Fallback: HMAC-SHA256 якщо Ed25519 не вміщується в SRAM budget
 
+#### SEC.8 — ECB Restoration Race Condition (HAL_CRYP_Init timeout)
+- **Джерело:** `03_05` BLOCKER-6 | **Пріоритет: P1**
+- **Опис:** Після CoAP CBC flush Queen повинна відновити AES-ECB режим для прийому LoRa. `HAL_CRYP_Init()` — blocking call БЕЗ timeout. Якщо AES hardware hung (transient defect, power glitch) → ECB restoration зависне назавжди → вся мережа "мовчить" без error log
+- **Рішення:** RCC peripheral reset (`__HAL_RCC_CRYP_FORCE_RESET()`) як fallback + повторна ініціалізація, `Error_Handler()` якщо другий init також fails
+- [ ] Firmware Queen: додати timeout або watchdog до `HAL_CRYP_Init()` в `Restore_ECB_Mode()`
+- [ ] Firmware Queen: `__HAL_RCC_CRYP_FORCE_RESET()` → `__HAL_RCC_CRYP_RELEASE_RESET()` як recovery
+- [ ] Тест: симуляція hanging CRYP peripheral
+
+#### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
+- **Джерело:** `03_05` | **Пріоритет: P0 (до будь-якого field deploy)**
+- **Опис:** Аудит виявив: перші 4 слова production AES key **ідентичні публічно відомому** FIPS-197 Appendix B AES-128 test vector (стандартний тест-вектор зі специфікації NIST). Будь-який фахівець з криптографії може впізнати цей паттерн. При RDP Level 0 — trivial key extraction
+- **Важливо:** Це ОКРЕМЕ від FW.1 (hardcoded key) — навіть після per-device provisioning, якщо master seed базується на цьому ключі, весь derivation tree скомпрометований
+- [ ] Негайно замінити seed key на криптографічно стійкий random (hardware RNG або аудитований генератор)
+- [ ] Верифікувати що новий master key НЕ є жодним відомим test vector (FIPS-197, NIST, RFC)
+- [ ] Задокументувати процес генерації нового master key у vault (Bitwarden/1Password) — **без коміту ключа в репозиторій**
+- [ ] Після заміни: re-flash всі існуючі прототипи
+
+#### SEC.10 — Emergency TX пакети без MAC/MIC автентифікації
+- **Джерело:** `03_05`, `03_02` | **Пріоритет: P1**
+- **Опис:** EwsAlert panic packets (chainsaw detection, PANIC_TTL=5) відправляються без жодної автентифікації. Зловмисник може: (1) replay легітимний panic packet → false forest fire alert → евакуація/паніка, (2) inject forged panic packets → множинні false alarms → недовіра до системи та страхових виплат
+- **Важливо:** Критичніше за звичайні пакети — emergency TX обходить звичайні rate limits. Вирішується разом з FW.2 (AES-256-CCM), але потребує окремої уваги через life-safety implications
+- [ ] Не відкладати вирішення на "після FW.2" — мінімальний fix: Frame Counter у RTC як anti-replay для panic packets
+- [ ] Верифікувати що `EwsAlert` broadcast застосовує той самий CCM MIC що і звичайні пакети (після FW.2)
+- [ ] Backend: rate limiting на emergency callbacks — не більше N panic alerts/хвилину від одного DID
+
 ---
 
 ## 📝 Документаційні невідповідності (DOC)
@@ -525,7 +554,7 @@
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
 | DOC.1 | nTop ліцензія: 🟡 Очікується (`01_01` §6) vs ✅ Отримана (`01_02` §6) | `01_01`, `01_02` | Оновити `01_01` → ✅ |
-| DOC.2 | Катод/Анод labels інвертовані в `01_01`: Деталь 1 названа "Катод" але це Анод (окислення = анод = мінус). `01_03` правильний | `01_01`, `01_03` | Виправити `01_01` |
+| DOC.2 | Катод/Анод labels плутанина в `01_01`: Деталь 1 (нижня частина) — в `01_01` описана як "Катод / передає Мінус", але у `01_03` правильно ідентифікована як **Анод** (GOx окислення). В `01_01` визначення суперечливе: реально анод є від'ємним полюсом джерела ЕРС, але cathode/anode маркування потребує уніфікації з `01_03` | `01_01`, `01_03` | Уніфікувати термінологію з `01_03` |
 | DOC.3 | "LoRaWAN" використовується в 15+ місцях, але система використовує **custom LoRa mesh** (без LoRaWAN MAC layer, ADR, Join) | `00_01`, `00_02`, README | Замінити на "LoRa mesh" всюди |
 | DOC.4 | "Binary payload 16 bytes" (`00_01`) — це зашифрований inner payload. Повний зовнішній пакет = **21 байт** (4 DID + 1 RSSI + 16 encrypted) | `00_01` | Уточнити: 21B outer, 16B encrypted inner |
 | DOC.5 | LTC3108 згадується у `01_01` §6 (LTspice simulation) — це стара архітектура (streaming potential). Після pivot на EBFC → BQ25570 напряму | `01_01` | Видалити або позначити "legacy" |
@@ -550,13 +579,13 @@
 | DOC.24 | TRL 8 для backend (`04_01`) vs "7-8" в CLAUDE.md | `04_01`, CLAUDE.md | Узгодити |
 | DOC.25 | Soldier firmware "648 рядків" (`05_01`) vs фактично ~771+ рядків | `05_01` | Оновити |
 | DOC.26 | `Pausable` дублюється двічі в SCC OpenZeppelin таблиці | `05_03` | Видалити дублікат |
-| DOC.27 | `signed_at` серіалізується в контролері NaasContract, але **стовпець відсутній** у `db/structure.sql` | `07_01` | Додати міграцію або видалити серіалізацію |
+| DOC.27 | `signed_at` згадується в `07_01` BLOCKER-8 як missing column, але в `contracts_controller.rb` поле відсутнє в `only:` серіалізації — **проблеми немає в коді**. Потрібно закрити BLOCKER-8 в `07_01` | `07_01` | Закрити BLOCKER-8 в `07_01` |
 | DOC.28 | `deploy-production.yml` workflow згадується але **не існує** | `06_01` | Створити або видалити посилання |
 | DOC.29 | BOM досі каже "SIM7070G (або SIM7000G — уточнити)" попри прийняте рішення SIM7070G | `02_05` | Оновити BOM |
 | DOC.30 | OPTIMAL_Z_TARGET=29.0 vs математичний рівноважний z=ρ−1=27.0 — невідповідність без пояснення | `03_04`, `08_02` | Задокументувати rationale або виправити на 27.0 |
 | DOC.31 | TRL 8 заявлено для `09_02` але модулі на TRL 3-4 — TRL-Lock principle (§3 `09_02`) обмежує загальний TRL | `09_02` | Застосувати TRL-Lock |
 | DOC.32 | Akash TRL "6 ✅" але **жоден deploy не проведений** — аргументовано TRL 5 | `06_02` | Понизити до TRL 5 |
-| DOC.33 | "1 SCC/day/tree" (`07_02`) vs "~24 growth_points/day" (`07_01`). При 10,000 pts = 1 SCC → **1 SCC за ~417 днів**, НЕ за 1 день. Критичний вплив на ROI model | `07_01`, `07_02` | Виправити ROI model |
+| DOC.33 | **⚠️ CRITICAL ROI MODEL ERROR**: "1 SCC/day/tree" (`07_02`) vs "~24 growth_points/day" (`07_01`). При 10,000 pts = 1 SCC → **1 SCC за ~417 днів**, НЕ за 1 день. ROI model завищений у 417 разів. Потрібне негайне виправлення перед будь-якими інвестиційними презентаціями | `07_01`, `07_02` | **P0**: виправити ROI model і pitch deck |
 
 ---
 
@@ -698,6 +727,20 @@
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
 | DIFF.1 | `Wallet#lock_and_mint!` threshold = runtime param (не hardcoded) | `04_02` | Informational, no action |
 | DIFF.7 | SNR parameter unused in Queen CIFO eviction | `03_02` | Low priority optimization |
+| E.41 | **Fire events delayed 48h** via dClimate satellite obscuration — **⚠️ life-safety risk**. Mitigation: Forester Guild as Fallback Oracle (E.20) + immediate local broadcast via panic TX (не чекати satellite clearance при chainsaw detection). **Пріоритет: P1** (не відкладати на Post-TRL 6) | `04_02`, `05_01` | P1: interim emergency fallback |
+| E.42 | **TelemetryLog cleanup safety**: видалення записів з `oracle_status='dispatched'` ламає Chainlink callbacks. Cleanup job MUST exclude `dispatched` status — підтверджено в коді | `04_02` | ⚠️ Не видаляти dispatched records |
+| E.43 | **OPTIMAL_Z_TARGET=29.0 vs z_eq=27.0**: математичний рівноважний стан Лоренца при ρ=28 є z=ρ−1=27. Значення 29.0 — навмисний offset (+2σ від equilibrium) для кращої розрізнення класів. Потребує документування rationale або консультації з ЧНУ (Порубльов) | `03_04`, `08_02` | Задокументувати в `03_04` |
+| E.44 | **Sensor University mismatch**: `08_02` згадує "ЧНУ ім. Юрія Федьковича" (Чернівці) але контекст — Черкаський ЧНУ. Можливо два університети або factual error у назві | `08_02` | Уточнити назву університету |
+| E.45 | **SCC/SFC contract addresses** = `0x0000...0` в subgraph.yaml — блокує deploy subgraph на testnet/mainnet | `05_03` | Пов'язано з S3.5 |
+| E.46 | **Insurance pool failsafe → true on RPC failure**: `insurance_pool_requires_funding?` повертає `true` при RPC error → unnecessary 2% tax на кожен mint під час RPC degradation | `04_02`, `05_03` | P2: більш graceful fallback |
+| E.47 | **Solana RPC defaults to Devnet** — production мінтинг USDC мікро-винагород піде на Devnet якщо не встановлений `SOLANA_RPC_URL` | `05_01` | ⚠️ Перевірити ENV перед mainnet |
+| E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
+| E.49 | **Celo RPC fallback mechanism** не вказаний — при збої primary RPC немає автоматичного переключення | `05_01` | P3: додати fallback RPC |
+| E.50 | **Streamr broadcast failures silently dropped** — немає alerting/logging при неможливості доставки P2P real-time broadcast | `05_01` | P3: додати error tracking |
+| E.51 | **Hardcoded oracle balance thresholds** (0.05 MATIC, 0.05 SOL) — рекомендується зробити configurable через `ProtocolParameters` | `05_02` | P3: перемістити до SystemParameter |
+| E.52 | **`unique_for: 1.hour`** в `EthereumAnchorWorker` коді vs `unique_for: 7.days` в документації — потенційна race condition при retry | `05_04` | Верифікувати актуальний код |
+| E.53 | **SFC excluded from state root** — `SilkenForestCoin` total supply не входить у weekly state root hash, хоча SFC є частиною tokenomics | `05_04` | Оцінити додавання до state root |
+| E.54 | **Active tree count excluded from state root** — кількість активних дерев не верифікується на L1 | `05_04` | Оцінити додавання |
 
 ---
 
@@ -722,6 +765,13 @@
 | ARCH.16 | Mobile app для foresters (Phase 2 roadmap) | `00_02` | Post-TRL 7 |
 | ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
 | ARCH.18 | Детерміністична Fixed-Point арифметика (Integer Math): для досягнення побітової ідентичності розрахунків (consensus) між STM32 (Soldier) та GCP/Akash (Backend), необхідно відмовитись від IEEE 754 Floating-Point. Всі вхідні дані мають множитись на 10⁶ (або 10⁸) і розраховуватись у 64-бітних цілих числах (`int64_t` у C, `Integer` у Ruby). Це усуне апаратний drift при розрахунку Атрактора Лоренца. Потребує повного переписування математики в прошивці з урахуванням ризиків переповнення буферів (overflows) під час множення великих чисел. | `03_04`, `05_02` | Post-TRL 7 |
+| ARCH.19 | BSP-кластеризація IoT-графу для заміни flat TTL-mesh при масштабуванні: Binary Space Partitioning дерево на основі географічних координат Queen. Зменшує broadcast collisions та енергоспоживання. Кожна Queen знає тільки своїх сусідів | `08_02` | Post-TRL 7 |
+| ARCH.20 | Petri Net PN-модель Rails моноліту: формальна верифікація відсутності deadlock при 10,000 concurrent IoT connections. Sidekiq + Puma + PostgreSQL modeling. Конволюційний метод для зменшення state space explosion у 10-100 разів | `08_02` | R&D (Супруненко, ЧНУ) |
+| ARCH.21 | Brownout detection + graceful shutdown: PVD IRQ при vcap < 1.8V → збереження Lorenz стану у RTC DR0-DR10 → STOP2. При відновленні живлення — продовжити з того самого стану. Захищає від корупції стану при раптовому знеструмленні | `08_02` | Post-TRL 6 (Firmware) |
+| ARCH.22 | Arithmetic compression для LoRa payload: lambda-exponent (2 байти) замість повного Z (16 байт). Потенційна економія ~34% TX часу (21→~14 bytes). Event-Triggered Reporting: "мовчання = здоров'я" — 24× зниження трафіку | `08_02`, `00_01` | Post-TRL 7 |
+| ARCH.23 | Multi-Attribute Utility Function для автономного рішення TX на MCU: оцінка важливості поточного пакету (Vcap, delta_t, acoustic, bio_status) — відправляти лише якщо utility > threshold. Оцінка: 30-40% зниження TX | `08_02` | Post-TRL 7 (Ярмілко, ЧНУ) |
+| ARCH.24 | CE/FCC/RoHS/EMC/IP68 compliance roadmap для EU/NA ринків: CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH. Кожна сертифікація потребує 3-6 місяців та спеціалізованої лабораторії | `08_02` | Pre-mass production (Косенюк, ЧНУ) |
+| ARCH.25 | Gyroid geometric validation scripts: Python/C++ верифікація 65% пористості per-slice, topological integrity mesh, capillary channel connectivity via BFS (breadth-first search). Запускається після кожного nTop build для запобігання помилкам DMLS | `08_02` | Before DMLS factory order |
 
 ---
 
