@@ -257,7 +257,3 @@ PCBA + Збірка (Черкаси — SVS-ARTA)
 | `02_05_Queen_Hardware_and_Starlink` | Queen CAPEX та Starlink Mother Gateway |
 | `05_03_Tokenomics_SCC_and_SFC` | Механізм мінтингу SCC, Proof of Growth (10k growth_points = 1 SCC) |
 | `07_01_Nature_as_a_Service_Contracts` | Юридична модель NaaS |
-
----
-
-*Документ синхронізовано з Wiki SSOT `07_02_Unit_Economics_and_BOM`. Версія: 2026-03 (архітектурний аудит v2 — коаксіальна «Матрьошка», SMD-антена, PEEK-радом).*
