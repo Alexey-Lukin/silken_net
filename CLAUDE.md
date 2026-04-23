@@ -41,7 +41,7 @@ make -C firmware/test
 
 Цикл пробудження (STOP2 -> active -> STOP2):
 1. **SENSE**: ADC читає Vcap (uint16 мВ), internal temp (int8 °C). DMA 16 кГц -> 512 ADC samples для TinyML.
-2. **TinyML**: CMSIS-NN акустичний inference (4 класи: silence/wind/cavitation/chainsaw). **BLOCKER: `Run_Inference()` закоментована** (main.c:355). `silken_net_audio_model.h` відсутній.
+2. **TinyML**: CMSIS-NN акустичний inference (4 класи: silence/wind/cavitation/chainsaw). **BLOCKER: `Run_Inference()` закоментована** (main.c:413). `silken_net_audio_model.h` відсутній.
 3. **mruby BioContract** (`firmware/bio_contracts/bio_contract.rb`): Lorenz attractor 250 ітерацій (Euler, **Float** — не BigDecimal!). Входи: `chaos_seed` (HRNG), `temp`, `acoustic`. Виходи: `z_val` -> `status` + `growth_points`. Пакує в 1 байт: `[status:2|growth_points:6]`.
 
    Firmware Lorenz константи:
@@ -233,7 +233,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5)
 - **Kamal**: production + canopy. SSH deploy, Traefik reverse proxy, Let's Encrypt SSL.
 - **Akash Network**: децентралізована хмара (ЄС, цензуростійкість). SDL в `deploy/akash/`. **BLOCKER: Sidekiq відсутній в Akash SDL**.
 - **Docker**: `ruby:4.0.1-slim`, multi-stage, `thrust ./bin/rails server`.
-- **Prometheus** (`/metrics` endpoint): 7 метрик (5 counters + 2 gauges). **BLOCKER: Prometheus Server відсутній у Terraform**.
+- **Prometheus** (`/metrics` endpoint): 20 метрик (10 counters + 8 gauges + 2 histograms). **BLOCKER: Prometheus Server відсутній у Terraform**.
 - **Sentry** 6.5.0: налаштований, але **`SENTRY_DSN` відсутній у `.kamal/secrets`**.
 - **Pre-flight**: антена ПЕРЕД живленням на SX1262 (згорить без антени). AES ключ симетричний на всіх вузлах.
 
@@ -262,9 +262,9 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 |---------|------|------|
 | HW-AES-KEY | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82` | Hardcoded AES key — єдиний ключ для всіх вузлів мережі |
 | AES-ECB | `firmware/soldier/main.c:747` | ECB без MAC -> replay/bit-flip attacks |
-| TINYML-COMMENT | `firmware/soldier/main.c:355` | `Run_Inference()` закоментована; model header відсутній |
+| TINYML-COMMENT | `firmware/soldier/main.c:413` | `Run_Inference()` закоментована; model header відсутній |
 | LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | `delta_t`/`vcap` не передаються як входи атрактора |
-| LORENZ-STATE | firmware | Стан (x,y,z) не зберігається між циклами STOP2 через RTC regs |
+| LORENZ-STATE | firmware | ✅ Виправлено: Стан (x,y,z) зберігається в RTC DR16-DR18 + magic marker `0x4C5A5354` (`"LZST"` = "Lorenz State"). Підтверджено в `firmware/soldier/main.c:239-249,746-749` |
 | OPTIMAL-Z | `bio_contract.rb:83` | Коментар каже 20.0, константа 29.0 |
 | QUEEN-UID | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.4): Flash-based UID з fallback |
 | QUEEN-OTA-LOOP | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.5): `ota_is_active` скидається після повного циклу |
