@@ -81,6 +81,71 @@
 - [ ] Створити GCS bucket вручну (`gsutil mb`)
 - [ ] Верифікувати `terraform init` проходить
 
+#### S6.1 — Redis SPOF для M2M автентифікації
+- **P1** | `04_03` | **Складність: M** | **🔧 Код**
+- **Опис:** Redis = single point of failure для Gateway M2M auth. Redis down → всі шлюзи заблоковані (503). Відсутній fallback
+- [ ] Дизайн fallback: in-memory cache або DB-backed nonce validation
+- [ ] Реалізація fallback
+- [ ] Тести: Redis down scenario
+
+#### S6.2 — Chainlink Functions Router v1 ENV змінні
+- **P1** | `04_02` | **Складність: XS** | **🔧 Операційна**
+- **Опис:** Chainlink ABI оновлено до Functions Router v1. Потрібні 3 нові ENV: `CHAINLINK_DATA_VERSION`, `CHAINLINK_CALLBACK_GAS_LIMIT`, `CHAINLINK_DON_ID`
+- [ ] Додати до `.env.example`
+- [ ] Додати до deploy configs (Kamal, Akash SDL)
+- [ ] Задокументувати в `06_01`
+
+#### S6.3 — deploy-production.yml відсутній
+- **P1** | `06_01` | **Складність: S** | **🔧 Код**
+- **Опис:** Workflow для production deploy згадується в документації але не існує. Production deploy неможливий через CI
+- [ ] Створити `.github/workflows/deploy-production.yml`
+- [ ] Інтегрувати з GitHub Releases (`v*.*.*`)
+
+#### S6.4 — Circuit breaker тільки на IoTeX/Chainlink
+- **P2** | `05_01` | **Складність: M** | **🔧 Код**
+- **Опис:** Circuit breaker реалізований лише для IoTeX та Chainlink. Відсутній на 10 інших Web3 мережах (Streamr, Filecoin, peaq, Polygon, Solana, Celo, KlimaDAO, Hadron, The Graph, Ethereum L1)
+- [ ] Додати circuit breaker для Polygon/Solana/Celo (критичні для мінтингу)
+- [ ] Оцінити потребу для інших мереж
+
+#### S6.5 — 30s Kredis lock для мінтингу може бути замалим
+- **P2** | `05_03` | **Складність: S** | **🔧 Код**
+- **Опис:** Якщо мінтинг повільний (RPC congestion), 30s Kredis lock може expire → double-mint risk
+- [ ] Збільшити lock timeout або використати pessimistic DB lock
+- [ ] Тест: slow RPC scenario
+
+#### S6.6 — Missed anchor week не backfilled
+- **P2** | `05_04` | **Складність: S** | **🔧 Код**
+- **Опис:** Якщо weekly `EthereumAnchorWorker` пропускає тиждень (downtime, gas), state root **назавжди втрачається**
+- [ ] Додати backfill mechanism або alerting
+- [ ] Задокументувати process для manual recovery
+
+#### S6.7 — Double-anchoring race condition
+- **P2** | `05_04` | **Складність: S** | **🔧 Код**
+- **Опис:** Timeout → retry → два state roots для одного тижня на L1
+- [ ] Додати idempotency guard (перевірка існуючого anchor перед TX)
+
+#### S6.8 — Weekend telemetry blackouts
+- **P3** | `04_02` | **Складність: XS** | **🔧 Код**
+- **Опис:** Немає GLOBAL_BLACKOUT на вихідних. Телеметрія у вихідні мовчки ігнорується
+- [ ] Задокументувати поведінку або додати weekend handling
+
+#### S6.9 — Hardcoded fallback SCC price $25.50
+- **P3** | `04_02` | **Складність: XS** | **🔧 Код**
+- **Опис:** `PriceOracleService` має hardcoded fallback $25.50. При RPC failure ціна може бути значно неправильною
+- [ ] Зробити fallback конфігурованим через ENV або `ProtocolParameters`
+
+#### S6.10 — MaintenanceRecord — лише лог
+- **P3** | `04_02` | **Складність: L** | **🔧 Архітектурна**
+- **Опис:** MaintenanceRecord — лише запис логу. Немає: призначення задач, оплати, верифікації. Потребує Forester Guild (E.20)
+- [ ] Архітектурний дизайн task assignment
+- [ ] Зв'язати з Forester Guild PoPhW (E.20)
+
+#### S6.11 — No disaster recovery / chain outage strategy
+- **P2** | `05_01` | **Складність: M** | **🔧 Архітектурна**
+- **Опис:** Немає стратегії disaster recovery при виході з ладу однієї з 12 Web3 мереж
+- [ ] Визначити critical path chains (Polygon, Chainlink, IoTeX)
+- [ ] Дизайн graceful degradation для кожної мережі
+
 ---
 
 ## 🔧 Firmware
@@ -459,6 +524,39 @@
 
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
+| DOC.1 | nTop ліцензія: 🟡 Очікується (`01_01` §6) vs ✅ Отримана (`01_02` §6) | `01_01`, `01_02` | Оновити `01_01` → ✅ |
+| DOC.2 | Катод/Анод labels інвертовані в `01_01`: Деталь 1 названа "Катод" але це Анод (окислення = анод = мінус). `01_03` правильний | `01_01`, `01_03` | Виправити `01_01` |
+| DOC.3 | "LoRaWAN" використовується в 15+ місцях, але система використовує **custom LoRa mesh** (без LoRaWAN MAC layer, ADR, Join) | `00_01`, `00_02`, README | Замінити на "LoRa mesh" всюди |
+| DOC.4 | "Binary payload 16 bytes" (`00_01`) — це зашифрований inner payload. Повний зовнішній пакет = **21 байт** (4 DID + 1 RSSI + 16 encrypted) | `00_01` | Уточнити: 21B outer, 16B encrypted inner |
+| DOC.5 | LTC3108 згадується у `01_01` §6 (LTspice simulation) — це стара архітектура (streaming potential). Після pivot на EBFC → BQ25570 напряму | `01_01` | Видалити або позначити "legacy" |
+| DOC.6 | Docker base image: `ruby:4.0.1-slim` в docs vs `ruby:4.0.2-slim` в Dockerfile | `06_01` | Оновити doc → `4.0.2-slim` |
+| DOC.7 | Prometheus метрик: "7 (5c+2g)" в docs vs **20 фактичних** (10 counters + 8 gauges + 2 histograms) у `prometheus.rb` | `06_03` | Оновити doc → 20 метрик |
+| DOC.8 | Пагінація: default limit = 21 в doc vs **20** фактичний (Pagy default) | `04_03` | Виправити doc → 20 |
+| DOC.9 | `find_with_partition_pruning` задокументований для TelemetryLog, але **існує тільки в BlockchainTransaction** | `04_01`, CLAUDE.md | Виправити doc або реалізувати для TelemetryLog |
+| DOC.10 | Dual Computation Integrity описана як ">30% числова дивергенція", але код робить **категоричне порівняння** (homeostasis vs stress) | `05_02`, CLAUDE.md | Виправити doc → "categorical comparison" |
+| DOC.11 | SFC `SLASHER_ROLE`/`slash()` задокументований як відсутній (`07_01` BLOCKER-7), але **реально існує в коді** `SilkenForestCoin.sol:37,148` | `07_01` | Закрити BLOCKER-7 в `07_01` |
+| DOC.12 | LORENZ-STATE BLOCKER позначений як відкритий у CLAUDE.md, але **реалізований в коді**: RTC DR16-DR18 + magic marker `0x4C5A5354` | CLAUDE.md | Закрити BLOCKER |
+| DOC.13 | Dynamic tax (2%) описаний як "тільки batchMint", але код застосовує до **обох** batchMint та single mint | `05_03` | Виправити doc |
+| DOC.14 | "28 Controllers" в doc vs **31 фактичних** | `00_01` | Оновити → 31 |
+| DOC.15 | "31+ Workers" в doc vs **36 фактичних** | `00_01` | Оновити → 36 |
+| DOC.16 | Енергія TX: `02_01` каже 120mA/39mJ, `02_03` §9 каже 15mA/2.475mJ — несумісні значення | `02_01`, `02_03` | Узгодити (120mA = +22dBm коректно) |
+| DOC.17 | RAM budget Queen: §5 header каже "~3.7 KB", але детальна таблиця = **~14.4 KB** (22% of 64KB) | `03_02` | Виправити header |
+| DOC.18 | Кількість метрик варіюється: 7, 10, 12 в різних секціях `06_03` | `06_03` | Уніфікувати → фактичних 20 |
+| DOC.19 | "16 threads × 7 queues" але система має **9 черг** | `06_03` | Виправити → 9 |
+| DOC.20 | Пріоритети черг інвертовані: `05_02` каже uplink=9, має бути **uplink=1** (найвищий) | `05_02` | Виправити нумерацію |
+| DOC.21 | State root hash delimiter: `\|` в коді vs `:` в іншій секції doc | `05_01`, `05_04` | Уніфікувати → `\|` (як в коді) |
+| DOC.22 | SFC `ReentrancyGuard` в file map але **відсутній** у Solidity code block | `05_03` | Виправити doc |
+| DOC.23 | Дублікат endpoint number 27 в API таблиці | `04_03` | Виправити нумерацію |
+| DOC.24 | TRL 8 для backend (`04_01`) vs "7-8" в CLAUDE.md | `04_01`, CLAUDE.md | Узгодити |
+| DOC.25 | Soldier firmware "648 рядків" (`05_01`) vs фактично ~771+ рядків | `05_01` | Оновити |
+| DOC.26 | `Pausable` дублюється двічі в SCC OpenZeppelin таблиці | `05_03` | Видалити дублікат |
+| DOC.27 | `signed_at` серіалізується в контролері NaasContract, але **стовпець відсутній** у `db/structure.sql` | `07_01` | Додати міграцію або видалити серіалізацію |
+| DOC.28 | `deploy-production.yml` workflow згадується але **не існує** | `06_01` | Створити або видалити посилання |
+| DOC.29 | BOM досі каже "SIM7070G (або SIM7000G — уточнити)" попри прийняте рішення SIM7070G | `02_05` | Оновити BOM |
+| DOC.30 | OPTIMAL_Z_TARGET=29.0 vs математичний рівноважний z=ρ−1=27.0 — невідповідність без пояснення | `03_04`, `08_02` | Задокументувати rationale або виправити на 27.0 |
+| DOC.31 | TRL 8 заявлено для `09_02` але модулі на TRL 3-4 — TRL-Lock principle (§3 `09_02`) обмежує загальний TRL | `09_02` | Застосувати TRL-Lock |
+| DOC.32 | Akash TRL "6 ✅" але **жоден deploy не проведений** — аргументовано TRL 5 | `06_02` | Понизити до TRL 5 |
+| DOC.33 | "1 SCC/day/tree" (`07_02`) vs "~24 growth_points/day" (`07_01`). При 10,000 pts = 1 SCC → **1 SCC за ~417 днів**, НЕ за 1 день. Критичний вплив на ROI model | `07_01`, `07_02` | Виправити ROI model |
 
 ---
 
