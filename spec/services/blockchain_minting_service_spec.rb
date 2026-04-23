@@ -583,8 +583,8 @@ end
         allow(mock_client).to receive(:call).and_raise(StandardError, "RPC 429 Too Many Requests")
       end
 
-      it "returns true as safe fallback" do
-        expect(service.send(:insurance_pool_requires_funding?)).to be true
+      it "returns false as safe fallback (E.46: no spurious 2% tax during RPC degradation)" do
+        expect(service.send(:insurance_pool_requires_funding?)).to be false
       end
 
       it "logs the error" do
@@ -598,8 +598,8 @@ end
         allow(mock_client).to receive(:call).and_raise(Timeout::Error, "execution expired")
       end
 
-      it "returns true as safe fallback" do
-        expect(service.send(:insurance_pool_requires_funding?)).to be true
+      it "returns false as safe fallback (E.46: no spurious 2% tax during RPC degradation)" do
+        expect(service.send(:insurance_pool_requires_funding?)).to be false
       end
     end
 
@@ -618,9 +618,9 @@ end
         responses = [ -> { raise StandardError, "RPC error" }, -> { 200_000 * 10**18 } ]
         allow(mock_client).to receive(:call) { responses.shift.call }
 
-        # First call fails → true (not cached)
-        expect(service.send(:insurance_pool_requires_funding?)).to be true
-        # Second call succeeds → false (now cached)
+        # First call fails → false (E.46: not cached, graceful degradation)
+        expect(service.send(:insurance_pool_requires_funding?)).to be false
+        # Second call succeeds → false (pool has sufficient funds, now cached)
         expect(service.send(:insurance_pool_requires_funding?)).to be false
       end
     end

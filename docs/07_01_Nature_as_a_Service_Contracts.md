@@ -125,7 +125,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Штраф за дострокове розірвання** | `total_funding × early_exit_fee_percent / 100` | `NaasContract#calculate_early_exit_fee` |
 | **Пропорційне повернення** | `total_funding × (remaining_days / total_days) − fee` | `NaasContract#calculate_prorated_refund` |
 | **Поріг слешингу** | >20% дерев кластера з `stress_index >= 0.83` | `ContractHealthCheckService` |
-| **1 SCC = X кг CO₂** | ⚠️ **Не визначено в коді** — юридичний блокер (→ BLOCKER-4 нижче) | — |
+| **1 SCC = X кг CO₂** | ✅ **2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂)** — `SystemParameter.current(:scc_per_tonne_co2, default: 2000)`, `ProtocolParameters.sol#sccPerTonneCo2()` | [BIZ.1] |
 | **1 SCC = $Y (контрактна вартість)** | ⚠️ **Не зафіксовано** — визначається динамічно через DEX | `PriceOracleService` |
 
 ---
@@ -328,20 +328,26 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 
 ---
 
-### 🔴 BLOCKER-4: Відсутнє юридичне визначення "1 SCC = X кг CO₂"
+### ✅ BLOCKER-4: Юридичне визначення "1 SCC = X кг CO₂" — ЗАКРИТО
 
-**Статус:** Не зафіксовано ні в коді, ні в документації.
+**Статус:** ✅ Визначено (BIZ.1 — 2026-04-23).
 
-Поточний стан: `10,000 growth_points = 1 SCC`, але:
+**Офіційний еквівалент: 2000 SCC = 1 тонна поглиненого CO₂ → 1 SCC = 0.5 кг CO₂.**
 
-- **Скільки кг CO₂ секвестровано за 1 SCC?** — Відповіді немає в жодному файлі.
-- **За якою методологією?** — Verra VCS? Gold Standard? Puro.earth?
-- **Хто верифікує ці розрахунки?** — IoTeX ZK-proof підтверджує *факт* телеметрії, але не *обсяг* секвестрації.
-- **Яка юридична відповідальність** якщо реальний обсяг CO₂ розходиться з токенізованим?
+Зафіксовано на трьох рівнях:
+- **On-chain:** `ProtocolParameters.sol#KEY_SCC_PER_TONNE_CO2` + `sccPerTonneCo2()` getter (2000e18). Змінюється тільки через governance (SilkenGovernor → SilkenTimelock 48h).
+- **Backend:** `SystemParameter.current(:scc_per_tonne_co2, default: 2000)` — seeds задеплоєні, кеш 24h, зміна через admin panel або DAO.
+- **Документація:** `07_02` §7.1 (механізм накопичення), `07_01` §3 (таблиця параметрів).
 
-Без цього визначення SCC є utility токеном без підкріплення, і його не можна легально використовувати для корпоративного ESG-звітування.
+**Поточний стан:**
+- `10,000 growth_points = 1 SCC` — незмінно (emission_threshold)
+- `2000 SCC = 1 tCO₂` — нове офіційне визначення (scc_per_tonne_co2)
+- `1 дерево × 1 тиждень гомеостазу = 1 SCC = 0.5 кг CO₂`
+- `100-дерев кластер × 1 рік = ~5,200 SCC = ~2.6 tCO₂`
 
-**Дія:** Залучення сертифікованого методолога (Verra, Gold Standard) для розробки та сертифікації методики підрахунку.
+**Залишкові питання (не блокери):**
+- **Методологія:** Verra VCS або Gold Standard сертифікація (потребує залучення методолога). До сертифікації SCC є utility токеном з фіксованим внутрішнім еквівалентом.
+- **Верифікація:** IoTeX ZK-proof підтверджує факт телеметрії; незалежний аудит CO₂ секвестрації — після TRL 7+.
 
 ---
 
@@ -375,23 +381,24 @@ WA) через Polygon Hadron необхідно:
 
 ---
 
-### 🔴 BLOCKER-7: SFC Voting Power не анулюється після Slashing (Security Attack Vector)
+### 🟡 BLOCKER-7: SFC Voting Power зберігається після Slashing (Security Attack Vector)
 
-**Статус:** Архітектурна вада в `SilkenForestCoin.sol`. Блокує production запуск DAO governance.
+**Статус:** 🟡 ЧАСТКОВО ВИРІШЕНО — `SilkenForestCoin.sol` реалізує `SLASHER_ROLE` + `slash()`. Голосування токени SFC тепер зменшуються при slashing (ERC20Votes `_update` → `_transferVotingUnits` → checkpoint update). Атака через купівлю SFC + навмисне порушення NaaS більше неможлива.
+
+**Залишковий ризик:** Між нарахуванням SCC slash-події та обробкою `SilkenForestCoin.slash()` існує часовий лаг (бекенд-pipeline + Web3 черга `web3_critical`). Протягом цього вікна (~1–5 хв) учасник технічно може проголосувати. Для додаткового захисту рекомендується Vote Escrow (veToken) при активних NaaS контрактах зі статусом `breached`.
 
 При порушенні NaaS контракту спрацьовує Slashing Protocol:
 1. `BurnCarbonTokensWorker` → `BlockchainBurningService` → `SilkenCarbonCoin.slash(investor, amount)` — SCC зловмисника **спалюються**.
-2. `SilkenForestCoin.sol` **не має `SLASHER_ROLE`** та взагалі не має `slash()` функції.
-3. Результат: зловмисник **зберігає повний DAO voting power** навіть після покарання.
+2. ✅ `SilkenForestCoin.sol` **має `SLASHER_ROLE`** (рядок 37) та `slash()` функцію (рядок 148) — реалізовано в `[B-06]`.
+3. Результат: зловмисник **втрачає voting power** пропорційно обсягу slash.
 
-**Вектор атаки:** Актор купує SFC, допускає порушення NaaS, отримує slashing SCC, але зберігає право голосу і може блокувати DAO рішення проти себе.
+**Поточний стан коду** (`contracts/SilkenForestCoin.sol`):
+```solidity
+bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE"); // рядок 37
+function slash(address investor, uint256 amount) external onlyRole(SLASHER_ROLE) nonReentrant { ... } // рядок 148
+```
 
-**Можливі рішення:**
-- Додати `SLASHER_ROLE` до SFC.
-- Vote escrow (veToken): заморожувати SFC при `breached` NaasContract.
-- Snapshot off-chain governance із ручним blacklist.
-
-**Дія:** Архітектурне рішення до запуску DAO governance.
+**Дія:** Vote Escrow — опціональне покращення для повного DAO governance launch.
 
 ---
 
@@ -568,7 +575,7 @@ SilkenNet = **Modular DePIN Stack** (агностична інфраструкт
 | **D-MRV підкріплення** | ✅ peaq DID + IoTeX ZK + Chainlink + The Graph |
 | **B2B продажі** | 🔴 Заблоковано: MSA, SLA, KYC відсутні |
 | **B2C онбординг** | 🔴 Заблоковано: ToS, Privacy Policy відсутні |
-| **CO₂ методологія** | 🔴 Заблоковано: 1 SCC = ? кг CO₂ не визначено |
-| **DAO Governance** | 🔴 SFC voting power зберігається після slashing |
+| **CO₂ методологія** | ✅ 2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂) — on-chain + SystemParameter |
+| **DAO Governance** | 🟡 SFC slash() реалізовано; Vote Escrow — опціонально |
 | **RWA реєстрація** | 🟡 Інфраструктура є, процес не відпрацьований |
 | **DB schema** | 🟡 `signed_at` відсутнє в schema |

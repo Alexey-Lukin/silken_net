@@ -563,7 +563,7 @@
 | DOC.8 | Пагінація: default limit = 21 в doc vs **20** фактичний (Pagy default) | `04_03` | Виправити doc → 20 |
 | DOC.9 | `find_with_partition_pruning` задокументований для TelemetryLog, але **існує тільки в BlockchainTransaction** | `04_01`, CLAUDE.md | Виправити doc або реалізувати для TelemetryLog |
 | DOC.10 | Dual Computation Integrity описана як ">30% числова дивергенція", але код робить **категоричне порівняння** (homeostasis vs stress) | `05_02`, CLAUDE.md | Виправити doc → "categorical comparison" |
-| DOC.11 | SFC `SLASHER_ROLE`/`slash()` задокументований як відсутній (`07_01` BLOCKER-7), але **реально існує в коді** `SilkenForestCoin.sol:37,148` | `07_01` | Закрити BLOCKER-7 в `07_01` |
+| ~~DOC.11~~ | ✅ SFC `SLASHER_ROLE`/`slash()` — **ЗАКРИТО**: `07_01` BLOCKER-7 оновлено (2026-04-23) | `07_01` | ✅ Виконано |
 | DOC.12 | LORENZ-STATE BLOCKER позначений як відкритий у CLAUDE.md, але **реалізований в коді**: RTC DR16-DR18 + magic marker `0x4C5A5354` | CLAUDE.md | Закрити BLOCKER |
 | DOC.13 | Dynamic tax (2%) описаний як "тільки batchMint", але код застосовує до **обох** batchMint та single mint | `05_03` | Виправити doc |
 | DOC.14 | "28 Controllers" в doc vs **31 фактичних** | `00_01` | Оновити → 31 |
@@ -579,13 +579,13 @@
 | DOC.24 | TRL 8 для backend (`04_01`) vs "7-8" в CLAUDE.md | `04_01`, CLAUDE.md | Узгодити |
 | DOC.25 | Soldier firmware "648 рядків" (`05_01`) vs фактично ~771+ рядків | `05_01` | Оновити |
 | DOC.26 | `Pausable` дублюється двічі в SCC OpenZeppelin таблиці | `05_03` | Видалити дублікат |
-| DOC.27 | `signed_at` згадується в `07_01` BLOCKER-8 як missing column, але в `contracts_controller.rb` поле відсутнє в `only:` серіалізації — **проблеми немає в коді**. Потрібно закрити BLOCKER-8 в `07_01` | `07_01` | Закрити BLOCKER-8 в `07_01` |
-| DOC.28 | `deploy-production.yml` workflow згадується але **не існує** | `06_01` | Створити або видалити посилання |
+| ~~DOC.27~~ | ✅ `signed_at` — **ЗАКРИТО**: не має в `contracts_controller.rb` `only:`, проблема відсутня | `07_01` | ✅ Виконано |
+| ~~DOC.28~~ | ✅ `deploy-production.yml` — **ЗАКРИТО**: файл існує в `.github/workflows/` | `06_01` | ✅ Виконано |
 | DOC.29 | BOM досі каже "SIM7070G (або SIM7000G — уточнити)" попри прийняте рішення SIM7070G | `02_05` | Оновити BOM |
 | DOC.30 | OPTIMAL_Z_TARGET=29.0 vs математичний рівноважний z=ρ−1=27.0 — невідповідність без пояснення | `03_04`, `08_02` | Задокументувати rationale або виправити на 27.0 |
 | DOC.31 | TRL 8 заявлено для `09_02` але модулі на TRL 3-4 — TRL-Lock principle (§3 `09_02`) обмежує загальний TRL | `09_02` | Застосувати TRL-Lock |
 | DOC.32 | Akash TRL "6 ✅" але **жоден deploy не проведений** — аргументовано TRL 5 | `06_02` | Понизити до TRL 5 |
-| DOC.33 | **⚠️ CRITICAL ROI MODEL ERROR**: "1 SCC/day/tree" (`07_02`) vs "~24 growth_points/day" (`07_01`). При 10,000 pts = 1 SCC → **1 SCC за ~417 днів**, НЕ за 1 день. ROI model завищений у 417 разів. Потрібне негайне виправлення перед будь-якими інвестиційними презентаціями | `07_01`, `07_02` | **P0**: виправити ROI model і pitch deck |
+| ~~DOC.33~~ | ✅ **ROI MODEL ВИПРАВЛЕНО (2026-04-23)**: 1 SCC/тиждень/дерево @ $0.30/SCC, sensitivity table оновлено | `07_01`, `07_02` | ✅ Виконано |
 
 ---
 
@@ -612,13 +612,14 @@
 
 ## 📋 Юридичні / Бізнес
 
-#### BIZ.1 — 1 SCC = ? kg CO₂
+#### BIZ.1 — 1 SCC = ? kg CO₂ ✅
 - **Джерело:** `07_01`
-- **Опис:** CO₂ еквівалент для 1 SCC не визначений — ЮРИДИЧНИЙ БЛОКЕР
-- **Блокує:** Carbon credit marketplace integration
-- [ ] Визначити методологію розрахунку
-- [ ] Додати в код (constants або config)
-- [ ] Задокументувати для carbon registries
+- **Опис:** CO₂ еквівалент для 1 SCC — визначено: **2000 SCC = 1 tCO₂ (1 SCC = 0.5 кг CO₂)**
+- **Статус:** ✅ Реалізовано (2026-04-23)
+- [x] Визначити методологію розрахунку — **2000 SCC = 1 tonne CO₂** (закрито в `07_01` BLOCKER-4)
+- [x] Додати в код — `ProtocolParameters.sol#KEY_SCC_PER_TONNE_CO2 + sccPerTonneCo2()`, `SystemParameter(:scc_per_tonne_co2, value: 2000)`, `db/seeds.rb`
+- [x] Задокументувати — `07_01` §3 + BLOCKER-4, `07_02` §7.1
+- [ ] Сертифікація методології (Verra VCS / Gold Standard) — потребує залучення методолога (Post-TRL 7)
 
 #### BIZ.2 — B2B MSA (Master Service Agreement)
 - **Джерело:** `07_01`

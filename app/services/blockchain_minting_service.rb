@@ -418,14 +418,19 @@ class BlockchainMintingService < ApplicationService
   # [B-05 FIX]: Cached On-Chain Oracle для перевірки стану Parametric Insurance Pool.
   # Виконує eth_call balanceOf на SCC-контракті для адреси DAO Treasury.
   # Результат кешується на 15 хвилин — стан пулу змінюється рідко (лише при страхових виплатах).
-  # Безпечний фолбек: при збої RPC повертає true (краще перефінансувати пул, ніж недофінансувати).
+  #
+  # [E.46 FIX]: При збої RPC повертаємо false — не накладаємо 2% Dynamic Tax під час деградації мережі.
+  # Rationale: False negative (пропущений внесок до пулу) безпечніший за false positive
+  # (постійний 2% податок на кожен mint при тривалому RPC outage). Пул поповниться при
+  # наступному успішному виклику. Помилка логується для моніторингу (Sentry + Prometheus).
   def insurance_pool_requires_funding?
     Rails.cache.fetch(TREASURY_CACHE_KEY, expires_in: TREASURY_CACHE_TTL) do
       fetch_treasury_balance_wei < INSURANCE_POOL_THRESHOLD_WEI
     end
   rescue StandardError => e
-    Rails.logger.error "🛑 [Web3] DAO Treasury balance check failed: #{e.message}"
-    true
+    Rails.logger.error "🛑 [Web3] DAO Treasury balance check failed (RPC degraded): #{e.message}"
+    # [E.46] Завжди false при RPC-збої — не штрафуємо мінтинг під час деградації мережі.
+    false
   end
 
   # Повертає баланс DAO Treasury у wei (Integer) для точного порівняння без Float.

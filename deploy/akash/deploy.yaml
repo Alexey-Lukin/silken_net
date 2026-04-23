@@ -127,6 +127,16 @@ services:
       - PROMETHEUS_AUTH_USER=REQUIRED_SECRET_NOT_SET
       - PROMETHEUS_AUTH_PASSWORD=REQUIRED_SECRET_NOT_SET
 
+      # Chainlink Functions Router v1 — required for oracle dispatch (S6.2).
+      # CHAINLINK_DON_ID: bytes32 identifier, e.g. "fun-polygon-mainnet-1"
+      # CHAINLINK_DATA_VERSION: Functions API version (default: 1)
+      # CHAINLINK_CALLBACK_GAS_LIMIT: gas limit for oracle callback (default: 300000)
+      # CHAINLINK_HMAC_SECRET: secret for X-Chainlink-Signature header verification
+      - CHAINLINK_DON_ID=REQUIRED_SECRET_NOT_SET
+      - CHAINLINK_DATA_VERSION=1
+      - CHAINLINK_CALLBACK_GAS_LIMIT=300000
+      - CHAINLINK_HMAC_SECRET=REQUIRED_SECRET_NOT_SET
+
     # --- Exposed Ports -------------------------------------------------------
     # Maps to: config/deploy.yml → boot.proxy.publish
     expose:
@@ -203,6 +213,11 @@ services:
       - RAILS_ENV=production
       - RELEASE_VERSION=
       - RAILS_MAX_THREADS=3
+      # Chainlink Functions Router v1 — required for ChainlinkDispatchWorker (S6.2)
+      - CHAINLINK_DON_ID=REQUIRED_SECRET_NOT_SET
+      - CHAINLINK_DATA_VERSION=1
+      - CHAINLINK_CALLBACK_GAS_LIMIT=300000
+      - CHAINLINK_HMAC_SECRET=REQUIRED_SECRET_NOT_SET
 
   # ---------------------------------------------------------------------------
   # Alloy Service — Grafana Alloy Metrics Agent (OBS.1)
