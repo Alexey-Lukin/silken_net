@@ -328,6 +328,18 @@ contract ProtocolParametersTest is Test {
         assertEq(params.stressThreshold(), 0.3e18);
     }
 
+    function test_namedGetter_sccPerTonneCo2() public {
+        // [BIZ.1] 2000 SCC = 1 tonne CO2 — D-MRV carbon equivalence
+        vm.prank(timelock);
+        params.setParameter(keccak256("scc_per_tonne_co2"), 2000e18);
+        assertEq(params.sccPerTonneCo2(), 2000e18);
+    }
+
+    function test_namedGetter_sccPerTonneCo2_defaultIsZero() public view {
+        // Unset parameter returns 0 (use getParameterOrDefault for 2000e18 default)
+        assertEq(params.sccPerTonneCo2(), 0);
+    }
+
     // ─── Well-Known Key Constants ─────────────────────────────────────
 
     function test_keyConstants_matchSolidityKeccak() public view {
@@ -344,6 +356,7 @@ contract ProtocolParametersTest is Test {
         assertEq(params.KEY_INSURANCE_POOL_THRESHOLD(), keccak256("insurance_pool_threshold"));
         assertEq(params.KEY_SLASH_THRESHOLD(), keccak256("slash_threshold"));
         assertEq(params.KEY_STRESS_THRESHOLD(), keccak256("stress_threshold"));
+        assertEq(params.KEY_SCC_PER_TONNE_CO2(), keccak256("scc_per_tonne_co2"));
     }
 
     function test_governanceRoleConstant() public view {

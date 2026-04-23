@@ -54,6 +54,10 @@ system_params = [
     min_value: 0, max_value: 0.10, description: "DAO Treasury tax rate (2% default)" },
   { key: "insurance_pool_threshold", value: "100000", value_type: "integer", category: "insurance",
     min_value: 10_000, max_value: 1_000_000, description: "SCC threshold for dynamic tax activation" },
+  # [BIZ.1] CO2 equivalence: 2000 SCC = 1 tonne CO2 absorbed (D-MRV, 1 SCC = 0.5 kg CO2).
+  # Governs: KlimaDAO retirement, Puro.earth CORC issuance, corporate ESG reporting.
+  { key: "scc_per_tonne_co2", value: "2000", value_type: "integer", category: "tokenomics",
+    min_value: 100, max_value: 100_000, description: "SCC tokens equivalent to 1 tonne CO2 absorbed (2000 SCC = 1 tCO2)" },
 
   # --- Fraud Detection (05_02) ---
   { key: "fraud_deviation_threshold", value: "0.30", value_type: "float", category: "alerts",

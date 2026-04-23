@@ -125,7 +125,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Штраф за дострокове розірвання** | `total_funding × early_exit_fee_percent / 100` | `NaasContract#calculate_early_exit_fee` |
 | **Пропорційне повернення** | `total_funding × (remaining_days / total_days) − fee` | `NaasContract#calculate_prorated_refund` |
 | **Поріг слешингу** | >20% дерев кластера з `stress_index >= 0.83` | `ContractHealthCheckService` |
-| **1 SCC = X кг CO₂** | ⚠️ **Не визначено в коді** — юридичний блокер (→ BLOCKER-4 нижче) | — |
+| **1 SCC = X кг CO₂** | ✅ **2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂)** — `SystemParameter.current(:scc_per_tonne_co2, default: 2000)`, `ProtocolParameters.sol#sccPerTonneCo2()` | [BIZ.1] |
 | **1 SCC = $Y (контрактна вартість)** | ⚠️ **Не зафіксовано** — визначається динамічно через DEX | `PriceOracleService` |
 
 ---
@@ -328,20 +328,26 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 
 ---
 
-### 🔴 BLOCKER-4: Відсутнє юридичне визначення "1 SCC = X кг CO₂"
+### ✅ BLOCKER-4: Юридичне визначення "1 SCC = X кг CO₂" — ЗАКРИТО
 
-**Статус:** Не зафіксовано ні в коді, ні в документації.
+**Статус:** ✅ Визначено (BIZ.1 — 2026-04-23).
 
-Поточний стан: `10,000 growth_points = 1 SCC`, але:
+**Офіційний еквівалент: 2000 SCC = 1 тонна поглиненого CO₂ → 1 SCC = 0.5 кг CO₂.**
 
-- **Скільки кг CO₂ секвестровано за 1 SCC?** — Відповіді немає в жодному файлі.
-- **За якою методологією?** — Verra VCS? Gold Standard? Puro.earth?
-- **Хто верифікує ці розрахунки?** — IoTeX ZK-proof підтверджує *факт* телеметрії, але не *обсяг* секвестрації.
-- **Яка юридична відповідальність** якщо реальний обсяг CO₂ розходиться з токенізованим?
+Зафіксовано на трьох рівнях:
+- **On-chain:** `ProtocolParameters.sol#KEY_SCC_PER_TONNE_CO2` + `sccPerTonneCo2()` getter (2000e18). Змінюється тільки через governance (SilkenGovernor → SilkenTimelock 48h).
+- **Backend:** `SystemParameter.current(:scc_per_tonne_co2, default: 2000)` — seeds задеплоєні, кеш 24h, зміна через admin panel або DAO.
+- **Документація:** `07_02` §7.1 (механізм накопичення), `07_01` §3 (таблиця параметрів).
 
-Без цього визначення SCC є utility токеном без підкріплення, і його не можна легально використовувати для корпоративного ESG-звітування.
+**Поточний стан:**
+- `10,000 growth_points = 1 SCC` — незмінно (emission_threshold)
+- `2000 SCC = 1 tCO₂` — нове офіційне визначення (scc_per_tonne_co2)
+- `1 дерево × 1 тиждень гомеостазу = 1 SCC = 0.5 кг CO₂`
+- `100-дерев кластер × 1 рік = ~5,200 SCC = ~2.6 tCO₂`
 
-**Дія:** Залучення сертифікованого методолога (Verra, Gold Standard) для розробки та сертифікації методики підрахунку.
+**Залишкові питання (не блокери):**
+- **Методологія:** Verra VCS або Gold Standard сертифікація (потребує залучення методолога). До сертифікації SCC є utility токеном з фіксованим внутрішнім еквівалентом.
+- **Верифікація:** IoTeX ZK-proof підтверджує факт телеметрії; незалежний аудит CO₂ секвестрації — після TRL 7+.
 
 ---
 
@@ -569,7 +575,7 @@ SilkenNet = **Modular DePIN Stack** (агностична інфраструкт
 | **D-MRV підкріплення** | ✅ peaq DID + IoTeX ZK + Chainlink + The Graph |
 | **B2B продажі** | 🔴 Заблоковано: MSA, SLA, KYC відсутні |
 | **B2C онбординг** | 🔴 Заблоковано: ToS, Privacy Policy відсутні |
-| **CO₂ методологія** | 🔴 Заблоковано: 1 SCC = ? кг CO₂ не визначено |
+| **CO₂ методологія** | ✅ 2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂) — on-chain + SystemParameter |
 | **DAO Governance** | 🟡 SFC slash() реалізовано; Vote Escrow — опціонально |
 | **RWA реєстрація** | 🟡 Інфраструктура є, процес не відпрацьований |
 | **DB schema** | 🟡 `signed_at` відсутнє в schema |

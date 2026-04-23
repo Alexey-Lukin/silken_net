@@ -51,6 +51,9 @@ contract ProtocolParameters is AccessControl {
     bytes32 public constant KEY_DYNAMIC_TAX_RATE = keccak256("dynamic_tax_rate");
     bytes32 public constant KEY_INSURANCE_POOL_THRESHOLD = keccak256("insurance_pool_threshold");
 
+    // Carbon accounting (D-MRV equivalence — BIZ.1)
+    bytes32 public constant KEY_SCC_PER_TONNE_CO2 = keccak256("scc_per_tonne_co2");
+
     // Slashing
     bytes32 public constant KEY_SLASH_THRESHOLD = keccak256("slash_threshold");
     bytes32 public constant KEY_STRESS_THRESHOLD = keccak256("stress_threshold");
@@ -198,6 +201,15 @@ contract ProtocolParameters is AccessControl {
     /// @notice Поріг страхового пулу для Dynamic Tax. Default: 100000 (100000e18).
     function insurancePoolThreshold() external view returns (uint256) {
         return _parameters[KEY_INSURANCE_POOL_THRESHOLD];
+    }
+
+    /// @notice Кількість SCC еквівалентних 1 тонні поглиненого CO₂ (D-MRV еквівалент).
+    ///         Default: 2000 (2000e18). Визначає вагу кожного SCC у вуглецевих реєстрах.
+    ///         1 SCC = 1/2000 tCO₂ = 0.5 kg CO₂.
+    ///         Використовується: KlimaDAO retirement, Puro.earth CORC, ESG звітність.
+    /// @dev [BIZ.1] CO₂ equivalence — закриває юридичний блокер для carbon registry integration.
+    function sccPerTonneCo2() external view returns (uint256) {
+        return _parameters[KEY_SCC_PER_TONNE_CO2];
     }
 
     /// @notice Поріг стресу для дерева. Default: 0.30 (0.3e18 = 30%).
