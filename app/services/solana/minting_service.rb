@@ -37,8 +37,9 @@ module Solana
     BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
     # Мінімальний баланс оракула (SOL) для оплати газу транзакцій.
-    # Аналог перевірки 0.05 MATIC у BlockchainMintingService.
-    MIN_ORACLE_BALANCE_LAMPORTS = 50_000_000 # 0.05 SOL = 50,000,000 lamports
+    # Аналог перевірки MATIC у BlockchainMintingService.
+    # [E.51] Default value — fallback if SystemParameter not seeded yet.
+    DEFAULT_MIN_ORACLE_BALANCE_SOL = 0.05
 
     def initialize(telemetry_log)
       @telemetry_log = telemetry_log
@@ -339,8 +340,11 @@ module Solana
     # [BLOCKER-1 FIX]: Oracle Balance Guard
     # =========================================================================
     # Перевіряє баланс SOL на гаманці оракула перед відправкою транзакції.
-    # Аналогічна перевірка вже існує в BlockchainMintingService для MATIC.
+    # [E.51] Threshold configurable через SystemParameter (governance-aware, 24h cache).
     def verify_oracle_balance!(rpc_url, fee_payer_pubkey)
+      min_balance_sol = (SystemParameter.current(:oracle_min_balance_sol, default: DEFAULT_MIN_ORACLE_BALANCE_SOL) || DEFAULT_MIN_ORACLE_BALANCE_SOL).to_f
+      min_balance_lamports = (min_balance_sol * 1_000_000_000).to_i
+
       payload = {
         jsonrpc: "2.0",
         id: SecureRandom.uuid,
@@ -351,9 +355,9 @@ module Solana
       response = execute_rpc_call(rpc_url, payload)
       balance = response&.dig("result", "value").to_i
 
-      if balance < MIN_ORACLE_BALANCE_LAMPORTS
+      if balance < min_balance_lamports
         raise "🚨 [Solana] Критично низький баланс Оракула: #{balance} lamports " \
-              "(мінімум: #{MIN_ORACLE_BALANCE_LAMPORTS} lamports / 0.05 SOL)"
+              "(мінімум: #{min_balance_lamports} lamports / #{min_balance_sol} SOL)"
       end
     end
 

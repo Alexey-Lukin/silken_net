@@ -559,7 +559,9 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 | **RPC** | `ALCHEMY_ETHEREUM_RPC_URL` |
 
 ```ruby
-state_root = Digest::SHA256.hexdigest("#{total_scc_supply}:#{chain_hash}:#{timestamp}")
+# [DOC.21 FIX] Роздільник: `|` (pipe), не `:` — узгоджено з кодом та docs/05_04.
+# [E.53/E.54] Формула розширена: включає total_sfc та active_tree_count.
+state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{timestamp.iso8601}")
 ```
 
 Цей `bytes32` хеш записується в смарт-контракт на Ethereum Mainnet раз на тиждень. Рівень безпеки Ethereum (сотні мільярдів $) за мінімальну плату за газ.

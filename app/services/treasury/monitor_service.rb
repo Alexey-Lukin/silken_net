@@ -21,41 +21,38 @@ module Treasury
   #   report.each { |r| puts "#{r[:network]}: #{r[:status]}" }
   # =========================================================================
   class MonitorService < ApplicationService
-    # Мінімальні пороги балансу Oracle wallets (у нативній валюті).
-    # Нижче цих порогів — транзакції почнуть fail'итись.
-    THRESHOLDS = {
+    # [E.51] Мінімальні пороги балансу Oracle wallets — configurable через SystemParameter.
+    # Дефолтні значення використовуються як fallback якщо SystemParameter ще не seed-нуті.
+    # Governance: може бути оновлено через ProtocolParameters.sol + ParameterSyncWorker.
+    DEFAULTS = {
+      polygon: { min_balance: 0.05, currency: "MATIC", decimals: 18, param_key: "oracle_min_balance_matic" },
+      solana:  { min_balance: 0.05, currency: "SOL",   decimals: 9,  param_key: "oracle_min_balance_sol" },
+      celo:    { min_balance: 0.05, currency: "CELO",  decimals: 18, param_key: "oracle_min_balance_celo" },
+      ethereum: { min_balance: 0.01, currency: "ETH",  decimals: 18, param_key: "oracle_min_balance_eth" }
+    }.freeze
+
+    # Network-specific configuration (RPC keys, private keys, fallback URLs).
+    NETWORK_CONFIG = {
       polygon: {
         network: "polygon",
-        min_balance_wei: BigDecimal("0.05") * 10**18, # 0.05 MATIC
         env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
-        env_private_key: "ORACLE_PRIVATE_KEY",
-        currency: "MATIC",
-        decimals: 18
+        env_private_key: "ORACLE_PRIVATE_KEY"
       },
       solana: {
         network: "solana",
-        min_balance_wei: 50_000_000, # 0.05 SOL = 50M lamports
         env_rpc_key: "SOLANA_RPC_URL",
-        env_public_key: "SOLANA_FEE_PAYER_PUBKEY",
-        currency: "SOL",
-        decimals: 9
+        env_public_key: "SOLANA_FEE_PAYER_PUBKEY"
       },
       celo: {
         network: "celo",
-        min_balance_wei: BigDecimal("0.05") * 10**18, # 0.05 CELO
         env_rpc_key: "CELO_RPC_URL",
         env_private_key: "ORACLE_PRIVATE_KEY",
-        fallback_rpc: "https://alfajores-forno.celo-testnet.org",
-        currency: "CELO",
-        decimals: 18
+        fallback_rpc: "https://alfajores-forno.celo-testnet.org"
       },
       ethereum: {
         network: "ethereum",
-        min_balance_wei: BigDecimal("0.01") * 10**18, # 0.01 ETH (weekly anchoring only)
         env_rpc_key: "ALCHEMY_ETHEREUM_RPC_URL",
-        env_private_key: "ETHEREUM_ANCHOR_PRIVATE_KEY",
-        currency: "ETH",
-        decimals: 18
+        env_private_key: "ETHEREUM_ANCHOR_PRIVATE_KEY"
       }
     }.freeze
 
@@ -63,7 +60,8 @@ module Treasury
     RPC_TIMEOUT = 10
 
     def perform
-      results = THRESHOLDS.map do |chain_key, config|
+      results = DEFAULTS.map do |chain_key, defaults|
+        config = build_config(chain_key, defaults)
         check_balance(chain_key, config)
       end
 
@@ -77,6 +75,20 @@ module Treasury
     end
 
     private
+
+    # [E.51] Builds config for a chain by merging network config with governance-aware thresholds.
+    # SystemParameter.current reads from 24h cache → no DB hit on every monitor cycle.
+    def build_config(chain_key, defaults)
+      net = NETWORK_CONFIG[chain_key]
+      min_balance = (SystemParameter.current(defaults[:param_key], default: defaults[:min_balance]) || defaults[:min_balance]).to_f
+      min_balance_wei = (BigDecimal(min_balance.to_s) * 10**defaults[:decimals]).to_i
+
+      net.merge(
+        currency: defaults[:currency],
+        decimals: defaults[:decimals],
+        min_balance_wei: min_balance_wei
+      )
+    end
 
     # Перевіряє баланс Oracle-гаманця на конкретній мережі.
     # Повертає Hash з результатом перевірки.

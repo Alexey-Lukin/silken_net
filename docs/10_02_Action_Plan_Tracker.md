@@ -526,8 +526,6 @@
 | DOC.4 | "Binary payload 16 bytes" (`00_01`) — це зашифрований inner payload. Повний зовнішній пакет = **21 байт** (4 DID + 1 RSSI + 16 encrypted) | `00_01` | Уточнити: 21B outer, 16B encrypted inner |
 | DOC.16 | Енергія TX: `02_01` каже 120mA/39mJ, `02_03` §9 каже 15mA/2.475mJ — несумісні значення | `02_01`, `02_03` | Узгодити (120mA = +22dBm коректно) |
 | DOC.17 | RAM budget Queen: §5 header каже "~3.7 KB", але детальна таблиця = **~14.4 KB** (22% of 64KB) | `03_02` | Виправити header |
-| DOC.21 | State root hash delimiter: `\|` в коді vs `:` в іншій секції doc | `05_01`, `05_04` | Уніфікувати → `\|` (як в коді) |
-| DOC.24 | TRL 8 для backend (`04_01`) vs "7-8" в CLAUDE.md | `04_01`, CLAUDE.md | Узгодити |
 | DOC.31 | TRL 8 заявлено для `09_02` але модулі на TRL 3-4 — TRL-Lock principle (§3 `09_02`) обмежує загальний TRL | `09_02` | Застосувати TRL-Lock |
 
 ---
@@ -673,16 +671,12 @@
 | E.41 | **Fire events delayed 48h** via dClimate satellite obscuration — **⚠️ life-safety risk**. Mitigation: Forester Guild as Fallback Oracle (E.20) + immediate local broadcast via panic TX (не чекати satellite clearance при chainsaw detection). **Пріоритет: P1** (не відкладати на Post-TRL 6) | `04_02`, `05_01` | P1: interim emergency fallback |
 | E.42 | **TelemetryLog cleanup safety**: видалення записів з `oracle_status='dispatched'` ламає Chainlink callbacks. Cleanup job MUST exclude `dispatched` status — підтверджено в коді | `04_02` | ⚠️ Не видаляти dispatched records |
 | E.43 | **OPTIMAL_Z_TARGET=29.0 vs z_eq=27.0**: математичний рівноважний стан Лоренца при ρ=28 є z=ρ−1=27. Значення 29.0 — навмисний offset (+2σ від equilibrium) для кращої розрізнення класів. Потребує документування rationale або консультації з ЧНУ (Порубльов) | `03_04`, `08_02` | Задокументувати в `03_04` |
-| E.44 | **Sensor University mismatch**: `08_02` згадує "ЧНУ ім. Юрія Федьковича" (Чернівці) але контекст — Черкаський ЧНУ. Можливо два університети або factual error у назві | `08_02` | Уточнити назву університету |
 | E.45 | **SCC/SFC contract addresses** = `0x0000...0` в subgraph.yaml — блокує deploy subgraph на testnet/mainnet | `05_03` | Пов'язано з S3.5 |
 | E.46 | **Insurance pool failsafe → true on RPC failure**: `insurance_pool_requires_funding?` повертає `true` при RPC error → unnecessary 2% tax на кожен mint під час RPC degradation | `04_02`, `05_03` | P2: більш graceful fallback |
 | E.47 | **Solana RPC defaults to Devnet** — production мінтинг USDC мікро-винагород піде на Devnet якщо не встановлений `SOLANA_RPC_URL` | `05_01` | ⚠️ Перевірити ENV перед mainnet |
 | E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
 | E.49 | **Celo RPC fallback mechanism** не вказаний — при збої primary RPC немає автоматичного переключення | `05_01` | P3: додати fallback RPC |
 | E.50 | **Streamr broadcast failures silently dropped** — немає alerting/logging при неможливості доставки P2P real-time broadcast | `05_01` | P3: додати error tracking |
-| E.51 | **Hardcoded oracle balance thresholds** (0.05 MATIC, 0.05 SOL) — рекомендується зробити configurable через `ProtocolParameters` | `05_02` | P3: перемістити до SystemParameter |
-| E.53 | **SFC excluded from state root** — `SilkenForestCoin` total supply не входить у weekly state root hash, хоча SFC є частиною tokenomics | `05_04` | Оцінити додавання до state root |
-| E.54 | **Active tree count excluded from state root** — кількість активних дерев не верифікується на L1 | `05_04` | Оцінити додавання |
 
 ---
 

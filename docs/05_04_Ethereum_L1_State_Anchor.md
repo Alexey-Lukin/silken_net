@@ -21,7 +21,7 @@
 
 Ethereum L1 State Anchor — це **фінальна печатка** всього стану системи Gaia 2.0. Один раз на тиждень (щопонеділка о 03:00 UTC) `EthereumAnchorWorker` запускає `Ethereum::StateAnchorService`, який:
 
-1. Збирає глобальний стан системи з PostgreSQL (загальний SCC-баланс + останній chain_hash AuditLog + timestamp)
+1. Збирає глобальний стан системи з PostgreSQL (загальний SCC-баланс + загальний SFC supply + кількість активних дерев + останній chain_hash AuditLog + timestamp)
 2. Стискає його в 32-байтний SHA-256 хеш (`state_root`)
 3. Записує `bytes32` хеш у смарт-контракт `StateRootAnchor` на **Ethereum Mainnet** через Alchemy RPC
 
@@ -36,7 +36,8 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 | `EthereumAnchorWorker` | `app/workers/ethereum_anchor_worker.rb` | ✅ Real |
 | `Ethereum::StateAnchorService` | `app/services/ethereum/state_anchor_service.rb` | ✅ Real |
 | `EthereumAnchor` | `app/models/ethereum_anchor.rb` | ✅ Real |
-| Міграція | `db/migrate/20260415140000_create_ethereum_anchors.rb` | ✅ Applied |
+| Міграція (base) | `db/migrate/20260415140000_create_ethereum_anchors.rb` | ✅ Applied |
+| Міграція (E.53/E.54) | `db/migrate/20260424165615_add_sfc_and_tree_count_to_ethereum_anchors.rb` | ✅ Applied |
 | `Web3::RpcConnectionPool` | `app/services/web3/rpc_connection_pool.rb` | ✅ Real |
 | `ApplicationWeb3Worker` | `app/workers/application_web3_worker.rb` | ✅ Real |
 | Cron-розклад | `config/sidekiq.yml` | ✅ Сконфігуровано |
@@ -71,7 +72,7 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 
 ### ✅ BLOCKER-6: Reproducible state_root — збережені компоненти
 
-`generate_state_root` повертає `Hash { state_root, total_scc, chain_hash, anchored_at }`. Всі компоненти зберігаються в `EthereumAnchor`. `EthereumAnchor#verify_state_root` дозволяє зовнішньому аудитору незалежно відтворити хеш: `SHA256("#{total_scc}|#{chain_hash}|#{anchored_at.utc.iso8601}")`.
+`generate_state_root` повертає `Hash { state_root, total_scc, total_sfc, active_tree_count, chain_hash, anchored_at }`. Всі компоненти зберігаються в `EthereumAnchor`. `EthereumAnchor#verify_state_root` дозволяє зовнішньому аудитору незалежно відтворити хеш: `SHA256("#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at.utc.iso8601}")`. [E.53] SFC supply та [E.54] active tree count додані для повноти верифікації.
 
 ---
 
@@ -165,7 +166,7 @@ end
 ### Формула
 
 ```
-state_root = SHA256("#{total_scc}|#{chain_hash}|#{anchored_at.iso8601}")
+state_root = SHA256("#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at.iso8601}")
 ```
 
 де:
@@ -173,6 +174,8 @@ state_root = SHA256("#{total_scc}|#{chain_hash}|#{anchored_at.iso8601}")
 | Поле | Джерело | Тип | Приклад |
 |------|---------|-----|---------|
 | `total_scc` | `Wallet.sum(:scc_balance)` | Decimal (сума всіх SCC-балансів у системі) | `"1250000.5"` |
+| `total_sfc` | `BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount)` | Decimal (сума підтверджених SFC мінтингів) | `"500.0"` |
+| `active_tree_count` | `Tree.active.count` | Integer (кількість активних дерев у екосистемі) | `"4250"` |
 | `chain_hash` | `AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash)` | String або `"GENESIS"` якщо AuditLog порожній | `"a3f8c2..."` |
 | `anchored_at` | `Time.current.utc` | UTC DateTime (зберігається в `EthereumAnchor.anchored_at`) | `2026-03-23T03:00:01Z` |
 
@@ -184,23 +187,32 @@ def generate_state_root
   # між паралельними MintCarbonCoinWorker / AuditLogWorker записами
   ActiveRecord::Base.transaction(isolation: :repeatable_read) do
     # 1. Сума всіх SCC-балансів у системі (cross-chain total supply snapshot)
-    total_scc = Wallet.sum(:scc_balance)
+    #    `.to_d` нормалізує до BigDecimal для консистентного рядкового представлення
+    #    (Active Record sum() повертає Integer 0 коли немає записів, BigDecimal при наявності)
+    total_scc = Wallet.sum(:scc_balance).to_d
 
-    # 2. chain_hash останнього AuditLog (криптографічна ланцюгова прив'язка)
+    # 2. [E.53] Сума підтверджених SFC мінтингів (governance token supply)
+    total_sfc = BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount).to_d
+
+    # 3. [E.54] Кількість активних дерев (ecosystem coverage metric)
+    active_tree_count = Tree.active.count
+
+    # 4. chain_hash останнього AuditLog (криптографічна ланцюгова прив'язка)
     #    order: created_at DESC, id DESC — гарантує детерміновану сортировку при рівному часі
     latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
 
-    # 3. Timestamp моменту формування хешу (зберігається в EthereumAnchor.anchored_at)
+    # 5. Timestamp моменту формування хешу (зберігається в EthereumAnchor.anchored_at)
     timestamp = Time.current.utc
 
-    # 4. Конкатенація через | роздільник
-    payload = "#{total_scc}|#{latest_chain_hash}|#{timestamp.iso8601}"
+    # 6. Конкатенація через | роздільник
+    payload = "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{latest_chain_hash}|#{timestamp.iso8601}"
 
-    # 5. SHA-256 хешування → 64-символьний hex рядок (256 bits / 32 bytes)
+    # 7. SHA-256 хешування → 64-символьний hex рядок (256 bits / 32 bytes)
     state_root = Digest::SHA256.hexdigest(payload)
 
-    # 6. Повернути всі компоненти для збереження в EthereumAnchor (BLOCKER-6)
-    { state_root: state_root, total_scc: total_scc, chain_hash: latest_chain_hash, anchored_at: timestamp }
+    # 8. Повернути всі компоненти для збереження в EthereumAnchor (BLOCKER-6)
+    { state_root: state_root, total_scc: total_scc, total_sfc: total_sfc,
+      active_tree_count: active_tree_count, chain_hash: latest_chain_hash, anchored_at: timestamp }
   end
 end
 ```
@@ -208,7 +220,7 @@ end
 ### Приклад payload та результату
 
 ```
-Payload:  "1250000.5|a3f8c2d1e4b7f9a0c2e5d8b1f4a7e0d3c6b9e2a5f8c1d4e7b0a3f6c9d2e5|2026-03-23T03:00:01Z"
+Payload:  "1250000.5|500.0|4250|a3f8c2d1e4b7f9a0c2e5d8b1f4a7e0d3c6b9e2a5f8c1d4e7b0a3f6c9d2e5|2026-03-23T03:00:01Z"
 Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64 hex chars = 32 bytes)
 ```
 
@@ -216,11 +228,12 @@ Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64
 
 | Включено ✅ | Відсутнє ⚠️ |
 |------------|------------|
-| Загальний SCC supply (всі гаманці) | Кількість активних дерев |
-| Останній AuditLog chain_hash | TelemetryLog count за тиждень |
-| Timestamp виконання (збережений в БД) | Lorenz Z-value статистика |
-| `REPEATABLE READ` snapshot isolation | SFC supply |
-| | Merkle root над індивідуальними tree hashes |
+| Загальний SCC supply (всі гаманці) | TelemetryLog count за тиждень |
+| Загальний SFC supply (підтверджені мінтинги) [E.53] | Lorenz Z-value статистика |
+| Кількість активних дерев [E.54] | Merkle root над індивідуальними tree hashes |
+| Останній AuditLog chain_hash | |
+| Timestamp виконання (збережений в БД) | |
+| `REPEATABLE READ` snapshot isolation | |
 
 > **Примітка:** Це SHA-256 flat commitment, а не повноцінний Merkle Root. Для TRL 9 можна розглянути справжній Merkle Tree над `TelemetryLog.chain_hash` значеннями за тиждень. Незалежна верифікація: `EthereumAnchor#verify_state_root` відтворює хеш з збережених компонентів.
 
@@ -237,10 +250,10 @@ Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64
 generate_state_root()
        │
        ▼
-generate_state_root()  →  { state_root, total_scc, chain_hash, anchored_at }
+generate_state_root()  →  { state_root, total_scc, total_sfc, active_tree_count, chain_hash, anchored_at }
        │
        ▼
-EthereumAnchor.create!(state_root:, total_scc:, chain_hash:, anchored_at:, status: :pending)
+EthereumAnchor.create!(state_root:, total_scc:, total_sfc:, active_tree_count:, chain_hash:, anchored_at:, status: :pending)
        │ Crash recovery: запис існує до TX (якщо процес впаде — запис залишиться в :pending)
        │
        ▼

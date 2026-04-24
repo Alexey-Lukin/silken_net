@@ -51,14 +51,25 @@ module Ethereum
 
     # [BLOCKER-4] Мінімальний баланс ETH на oracle-гаманці для виконання L1 транзакції.
     # 0.01 ETH достатньо для ~3-5 storeStateRoot транзакцій при нормальних gas цінах.
-    MIN_ANCHOR_BALANCE_WEI = 0.01 * (10**18)
+    # [E.51] Default value — fallback if SystemParameter not seeded yet.
+    DEFAULT_MIN_ANCHOR_BALANCE_ETH = 0.01
 
     # Генерує State Root — SHA256 дайджест, що об'єднує:
-    # 1. Сумарний scc_balance усіх гаманців
-    # 2. chain_hash останнього AuditLog
-    # 3. Поточний timestamp (UTC)
+    # 1. Сумарний scc_balance усіх гаманців (SCC supply)
+    # 2. Сумарний SFC balance усіх гаманців (SFC supply) — [E.53]
+    # 3. Кількість активних дерев у екосистемі — [E.54]
+    # 4. chain_hash останнього AuditLog
+    # 5. Поточний timestamp (UTC)
     #
     # [BLOCKER-6] Повертає Hash з усіма компонентами для збереження в EthereumAnchor.
+    #
+    # [E.53] SFC supply включено до state root для повноти верифікації токеноміки.
+    # SFC (SilkenForestCoin) є governance-токеном, його supply впливає на quorum та
+    # voting power в DAO. Виключення з state root дозволяло б непомітну маніпуляцію.
+    #
+    # [E.54] Active tree count включено як метрика покриття екосистеми.
+    # Різка зміна кількості активних дерев без відповідних audit events
+    # може вказувати на маніпуляцію або системну помилку.
     #
     # [SNAPSHOT ISOLATION]: Обчислення state_root відбувається всередині транзакції
     # з рівнем ізоляції REPEATABLE READ. Це гарантує, що Wallet.sum(:scc_balance)
@@ -67,16 +78,20 @@ module Ethereum
     # дані між цими двома SQL-запитами.
     def generate_state_root
       ActiveRecord::Base.transaction(isolation: :repeatable_read) do
-        total_scc = Wallet.sum(:scc_balance)
+        total_scc = Wallet.sum(:scc_balance).to_d
+        total_sfc = BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount).to_d
+        active_tree_count = Tree.active.count
         latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
         timestamp = Time.current.utc
 
-        payload = "#{total_scc}|#{latest_chain_hash}|#{timestamp.iso8601}"
+        payload = "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{latest_chain_hash}|#{timestamp.iso8601}"
         state_root = Digest::SHA256.hexdigest(payload)
 
         {
           state_root: state_root,
           total_scc: total_scc,
+          total_sfc: total_sfc,
+          active_tree_count: active_tree_count,
           chain_hash: latest_chain_hash,
           anchored_at: timestamp
         }
@@ -120,6 +135,8 @@ module Ethereum
         anchor = EthereumAnchor.create!(
           state_root: state_root,
           total_scc: root_data[:total_scc],
+          total_sfc: root_data[:total_sfc],
+          active_tree_count: root_data[:active_tree_count],
           chain_hash: root_data[:chain_hash],
           anchored_at: root_data[:anchored_at],
           status: :pending
@@ -130,11 +147,14 @@ module Ethereum
       anchor_key = Eth::Key.new(priv: ENV.fetch("ETHEREUM_ANCHOR_PRIVATE_KEY"))
 
       # [BLOCKER-4] Inline guard clause — перевірка балансу ETH перед відправленням.
+      # [E.51] Threshold configurable через SystemParameter (governance-aware, 24h cache).
+      min_eth = (SystemParameter.current(:oracle_min_balance_eth, default: DEFAULT_MIN_ANCHOR_BALANCE_ETH) || DEFAULT_MIN_ANCHOR_BALANCE_ETH).to_f
+      min_balance_wei = (min_eth * (10**18)).to_i
       balance = client.get_balance(anchor_key.address)
-      if balance < MIN_ANCHOR_BALANCE_WEI
+      if balance < min_balance_wei
         anchor.update!(status: :failed, error_message: "Insufficient ETH balance: #{balance}")
         raise "🚨 [Ethereum L1] Insufficient anchor wallet balance: #{balance} wei " \
-              "(minimum: #{MIN_ANCHOR_BALANCE_WEI.to_i} wei)"
+              "(minimum: #{min_balance_wei} wei)"
       end
 
       contract_address = ENV.fetch("ETHEREUM_ANCHOR_CONTRACT")

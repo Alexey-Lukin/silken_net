@@ -15,7 +15,7 @@ SilkenNet / Gaia 2.0 — планетарна кіберфізична плат�
 - **Backend**: Rails 8.1 / Ruby 4.0.2 / PostgreSQL / Sidekiq — декодує, верифікує через 12-chain Web3 pipeline, мінтить SCC.
 - **Tokenomics**: Proof of Growth — 10,000 growth_points = 1 SCC (Polygon ERC-20). Слешинг при деградації лісу.
 
-**Поточний TRL**: firmware TRL 6, backend TRL 7-8, hardware TRL 4-5.
+**Поточний TRL**: firmware TRL 6, backend TRL 8, hardware TRL 4-5.
 
 ---
 
