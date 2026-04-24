@@ -37,8 +37,9 @@ class EthereumAnchor < ApplicationRecord
 
   # Перевіряє, чи можна незалежно відтворити state_root з збережених компонентів.
   # Дозволяє зовнішньому аудитору верифікувати хеш без доступу до PostgreSQL.
+  # [E.53/E.54] Формула оновлена: включає total_sfc та active_tree_count.
   def verify_state_root
-    payload = "#{total_scc}|#{chain_hash}|#{anchored_at.utc.iso8601}"
+    payload = "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at.utc.iso8601}"
     expected = Digest::SHA256.hexdigest(payload)
     expected == state_root
   end

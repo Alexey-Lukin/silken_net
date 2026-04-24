@@ -22,11 +22,13 @@ RSpec.describe Ethereum::StateAnchorService do
       expect(result[:state_root]).to match(/\A[a-f0-9]{64}\z/)
     end
 
-    it "includes all components for reproducibility (BLOCKER-6)" do
+    it "includes all components for reproducibility (BLOCKER-6, E.53, E.54)" do
       result = described_class.new.generate_state_root
 
-      expect(result).to include(:state_root, :total_scc, :chain_hash, :anchored_at)
+      expect(result).to include(:state_root, :total_scc, :total_sfc, :active_tree_count, :chain_hash, :anchored_at)
       expect(result[:anchored_at]).to be_a(Time)
+      expect(result[:total_sfc]).to be_a(Numeric)
+      expect(result[:active_tree_count]).to be_a(Integer)
     end
 
     it "incorporates total scc_balance from all wallets" do
@@ -68,13 +70,15 @@ RSpec.describe Ethereum::StateAnchorService do
     end
 
     it "uses GENESIS fallback when no AuditLog exists" do
-      expected_payload = "0.0|GENESIS|#{Time.current.utc.iso8601}"
+      expected_payload = "0.0|0|0|GENESIS|#{Time.current.utc.iso8601}"
       expected_hash = Digest::SHA256.hexdigest(expected_payload)
 
       freeze_time do
         result = described_class.new.generate_state_root
         expect(result[:state_root]).to eq(expected_hash)
         expect(result[:chain_hash]).to eq("GENESIS")
+        expect(result[:total_sfc]).to eq(0)
+        expect(result[:active_tree_count]).to eq(0)
       end
     end
 
@@ -129,13 +133,15 @@ RSpec.describe Ethereum::StateAnchorService do
       expect(result).to be_status_sent
     end
 
-    it "persists state_root components for reproducibility (BLOCKER-6)" do
+    it "persists state_root components for reproducibility (BLOCKER-6, E.53, E.54)" do
       allow(mock_client).to receive(:transact).and_return("0x" + "fa" * 32)
 
       result = described_class.new.anchor_to_l1!
 
       expect(result.state_root).to match(/\A[a-f0-9]{64}\z/)
       expect(result.total_scc).to be_present
+      expect(result.total_sfc).to be_present
+      expect(result.active_tree_count).to be_present
       expect(result.chain_hash).to be_present
       expect(result.anchored_at).to be_present
       expect(result.verify_state_root).to be true
