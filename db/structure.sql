@@ -742,7 +742,9 @@ CREATE TABLE public.ethereum_anchors (
     status integer DEFAULT 0 NOT NULL,
     error_message character varying(500),
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    total_sfc numeric(30,4) DEFAULT 0,
+    active_tree_count integer DEFAULT 0
 );
 
 
@@ -5344,5 +5346,6 @@ SET search_path TO "$user", public;
 INSERT INTO "schema_migrations" (version) VALUES
 ('20260419072056'),
 ('20260419160334'),
-('20260421181059');
+('20260421181059'),
+('20260424165615');
 
