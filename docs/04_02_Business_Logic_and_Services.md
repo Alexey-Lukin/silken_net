@@ -620,6 +620,16 @@
 | **Сервіси** | `InsightGeneratorOrchestratorWorker.perform_async(target_date.to_s)` |
 | **Side Effects** | → `InsightGeneratorOrchestratorWorker` (batch), який після успіху викликає `InsightBatchCallbacks#on_success` → `ClusterHealthCheckWorker`. При відсутності телеметрії: `EwsAlert` GLOBAL_BLACKOUT для кожного активного кластера — **тільки в будні дні** (`target_date.on_weekday?`); вихідні мовчки ігноруються. |
 
+> **[S6.8] Weekend Telemetry Blackout — обґрунтування поведінки:**
+>
+> Система НЕ генерує GLOBAL_BLACKOUT алерти на вихідних (`Saturday`/`Sunday`). Це by design:
+> 1. **Сезонні паттерни EBFC:** У зимовий період метаболізм дерев знижується, delta_t збільшується, і Soldier може не мати достатньо енергії для TX кожну годину. У вихідні дні зниження телеметрії — очікувана поведінка.
+> 2. **False positive reduction:** Оператори (foresters) не на зміні у вихідні — масові false alarm алерти створюють "alert fatigue" і знижують довіру до EWS системи.
+> 3. **Телеметрія НЕ втрачається:** Пакети від Soldiers/Queens продовжують надходити і обробляються через `UnpackTelemetryWorker` як зазвичай. Лише BLACKOUT-алерт (відсутність даних за весь день) не генерується.
+> 4. **Агрегація продовжується:** Якщо дані ІСНУЮТЬ у вихідні — `InsightGeneratorOrchestratorWorker` запускається нормально. Пропускаються лише blackout-алерти.
+>
+> Код: `app/workers/daily_aggregation_worker.rb:45` — `if target_date.on_weekday?`
+
 #### `InsightGeneratorOrchestratorWorker`
 
 | Параметр | Значення |

@@ -313,6 +313,7 @@ end
 | `silkennet_ews_alerts_total` | Counter | `DclimateVerificationWorker` | `alert_type` |
 | `silkennet_oracle_dispatch_duration_seconds` | Histogram | `ChainlinkDispatchWorker` | — |
 | `silkennet_coap_packets_received_total` | Counter | `UnpackTelemetryWorker` | `status` |
+| `silkennet_streamr_broadcast_failures_total` | Counter | `StreamrBroadcastWorker` | — |
 
 **Підсумок реєстру: 10 кастомних метрик (7 оригінальних + 5 нових = 10: 7 counters + 1 histogram + 2 gauges).**
 
@@ -338,7 +339,7 @@ end
 
 Обидві метрики зареєстровані в `config/initializers/prometheus.rb` та інструментовані у відповідних класах. `ORACLE_DISPATCH_DURATION` вимірює повний цикл dispatch (від виклику до отримання request_id). `LORENZ_COMPUTATION_DURATION` вимірює час серверного розрахунку 250 ітерацій Лоренца (Float арифметика).
 
-**Підсумок реєстру: 12 кастомних метрик (7 counters + 3 histograms + 2 gauges). З урахуванням DB Connection Pool (4 gauges), Treasury/Oracle Balance (2 gauges + 1 counter) та Lorenz Computation (1 histogram) — фактичний підсумок: 20 кастомних метрик (10 counters + 8 gauges + 2 histograms).**
+**Підсумок реєстру: 13 кастомних метрик (8 counters + 3 histograms + 2 gauges). З урахуванням DB Connection Pool (4 gauges), Treasury/Oracle Balance (2 gauges + 1 counter) та Lorenz Computation (1 histogram) — фактичний підсумок: 21 кастомна метрика (11 counters + 8 gauges + 2 histograms).**
 
 ### 2.6 Governance Parameter Sync Observability
 

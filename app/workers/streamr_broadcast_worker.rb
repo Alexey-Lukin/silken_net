@@ -17,5 +17,8 @@ class StreamrBroadcastWorker
     # Якщо Streamr недоступний — логуємо помилку та НЕ перекидаємо далі.
     # Це гарантує, що основний pipeline (IoTeX → Chainlink) не постраждає.
     Rails.logger.error "🔇 [Streamr] Трансляція TelemetryLog ##{telemetry_log_id} зазнала невдачі: #{e.message}"
+
+    # [E.50 FIX]: Increment Prometheus counter для alerting при масових збоях.
+    SilkenNet::Metrics::STREAMR_BROADCAST_FAILURES_TOTAL.increment
   end
 end

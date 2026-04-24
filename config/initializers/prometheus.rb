@@ -198,6 +198,13 @@ module SilkenNet
       docstring: "Total missed Ethereum L1 anchor weeks detected (gap > 8 days)"
     )
 
+    # [E.50]: Streamr broadcast failures counter — раніше помилки мовчки логувались без метрик.
+    # Streamr — потік присутності (не фінансовий консенсус), але масові збої потребують alerting.
+    STREAMR_BROADCAST_FAILURES_TOTAL = REGISTRY.counter(
+      :silkennet_streamr_broadcast_failures_total,
+      docstring: "Total Streamr broadcast failures (P2P real-time telemetry delivery)"
+    )
+
     # Snapshot connection pool stats for Prometheus scraping.
     # Called from PrometheusCollector middleware or a periodic job.
     def self.sample_connection_pool!
