@@ -41,8 +41,9 @@ class EthereumAnchorWorker
     gap = Time.current - last_anchor.created_at
     return unless gap > MISSED_ANCHOR_THRESHOLD
 
-    missed_weeks = (gap / 1.week).floor - 1
-    missed_weeks = [ missed_weeks, 1 ].max
+    # Calculate missed weeks: gap/1.week gives total weeks elapsed, subtract 1 for the
+    # current (expected) week. Minimum 1 because we already know gap > MISSED_ANCHOR_THRESHOLD.
+    missed_weeks = [ (gap / 1.week).floor - 1, 1 ].max
 
     Rails.logger.warn(
       "⚠️ [EthereumAnchor] Missed anchor week detected! Last successful anchor: " \
