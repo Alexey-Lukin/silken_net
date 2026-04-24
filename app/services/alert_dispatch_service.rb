@@ -6,6 +6,13 @@ class AlertDispatchService
   DEFAULT_SEISMIC_THRESHOLD = 200
   DEFAULT_PEST_THRESHOLD = 50
 
+  # [SEC.10]: Per-DID rate limiting для emergency/panic alert creation.
+  # Захист від replay attack та injection forged panic packets.
+  # Максимум MAX_ALERTS_PER_DID_PER_WINDOW критичних алертів від одного DID
+  # за DID_RATE_LIMIT_WINDOW. Перевищення → лог + ігнорування.
+  MAX_ALERTS_PER_DID_PER_WINDOW = 5
+  DID_RATE_LIMIT_WINDOW = 1.minute
+
   def self.analyze_and_trigger!(telemetry_log)
     tree = telemetry_log.tree
     cluster = tree.cluster
@@ -120,6 +127,24 @@ class AlertDispatchService
     # Використовуємо Rails.cache (Redis) замість SQL .exists?, щоб не "вбити" Postgres
     silence_key = "ews_silence:#{tree.id}:#{alert_type}"
     return if Rails.cache.exist?(silence_key)
+
+    # --- 🛡️ [SEC.10]: Per-DID Rate Limiting ---
+    # Захист від replay/injection атак: не більше MAX_ALERTS_PER_DID_PER_WINDOW
+    # критичних алертів від одного DID за DID_RATE_LIMIT_WINDOW.
+    # Зловмисник може replay-ити panic packets → множинні false alarms.
+    if severity == :critical
+      rate_key = "ews_did_rate:#{tree.did}"
+      current_count = Rails.cache.read(rate_key).to_i
+
+      if current_count >= MAX_ALERTS_PER_DID_PER_WINDOW
+        Rails.logger.warn "🛡️ [SEC.10] Per-DID rate limit exceeded for #{tree.did}: " \
+                          "#{current_count}/#{MAX_ALERTS_PER_DID_PER_WINDOW} critical alerts in #{DID_RATE_LIMIT_WINDOW}. " \
+                          "Suppressed: #{alert_type}"
+        return
+      end
+
+      Rails.cache.increment(rate_key, 1, expires_in: DID_RATE_LIMIT_WINDOW)
+    end
 
     alert = EwsAlert.create!(
       cluster: cluster, tree: tree, severity: severity,
