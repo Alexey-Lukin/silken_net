@@ -69,15 +69,23 @@ module Api
         rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
           # [S6.1]: Graceful degradation — fallback to Solid Cache (DB-backed)
           # when Redis is unavailable. Gateways remain operational instead of 503.
+          # Note: Solid Cache uses DB UPSERT, providing near-atomic guarantees.
           Rails.logger.warn "⚠️ [M2M Auth] Redis unavailable, falling back to DB-based nonce check: #{e.message}"
 
           fallback_key = "m2m_nonce_fallback:#{nonce_digest}"
-          if Rails.cache.exist?(fallback_key)
+
+          # fetch atomically checks existence and stores on miss.
+          # First caller stores :first_use, subsequent callers get the cached value.
+          result = Rails.cache.fetch(fallback_key, expires_in: 10.minutes) { :first_use }
+
+          unless result == :first_use
             Rails.logger.warn "⚠️ [M2M Replay] Blocked duplicate M2M auth for #{did} (DB fallback, signature reuse)"
             render json: { error: "Replay attack detected" }, status: :unauthorized
             return
           end
-          Rails.cache.write(fallback_key, true, expires_in: 10.minutes)
+
+          # Mark nonce as consumed for subsequent checks
+          Rails.cache.write(fallback_key, :consumed, expires_in: 10.minutes)
         end
 
         # Верифікація Ed25519 підпису: signature = Ed25519.sign(private_key, "#{did}:#{timestamp}")

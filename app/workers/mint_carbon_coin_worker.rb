@@ -43,7 +43,7 @@ class MintCarbonCoinWorker
       end
     end
   rescue Web3CircuitBreaker::CircuitOpenError
-    Rails.logger.warn "⚡ [Polygon] Circuit OPEN — мінтинг TelemetryLog ##{telemetry_log_id || 'batch'} буде повторено пізніше."
+    Rails.logger.warn "⚡ [Polygon] Circuit OPEN — мінтинг буде повторено пізніше."
     raise
   end
 

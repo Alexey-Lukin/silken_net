@@ -132,9 +132,11 @@ class AlertDispatchService
     # Захист від replay/injection атак: не більше MAX_ALERTS_PER_DID_PER_WINDOW
     # критичних алертів від одного DID за DID_RATE_LIMIT_WINDOW.
     # Зловмисник може replay-ити panic packets → множинні false alarms.
+    # Time-bucketed key: автоматично скидається кожну хвилину.
     if severity == :critical
-      rate_key = "ews_did_rate:#{tree.did}"
-      current_count = Rails.cache.read(rate_key).to_i
+      time_bucket = Time.current.to_i / DID_RATE_LIMIT_WINDOW.to_i
+      rate_key = "ews_did_rate:#{tree.did}:#{time_bucket}"
+      current_count = (Rails.cache.read(rate_key) || 0).to_i
 
       if current_count >= MAX_ALERTS_PER_DID_PER_WINDOW
         Rails.logger.warn "🛡️ [SEC.10] Per-DID rate limit exceeded for #{tree.did}: " \
@@ -143,7 +145,7 @@ class AlertDispatchService
         return
       end
 
-      Rails.cache.increment(rate_key, 1, expires_in: DID_RATE_LIMIT_WINDOW)
+      Rails.cache.write(rate_key, current_count + 1, expires_in: DID_RATE_LIMIT_WINDOW * 2)
     end
 
     alert = EwsAlert.create!(
