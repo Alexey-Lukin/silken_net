@@ -133,6 +133,9 @@ class AlertDispatchService
     # критичних алертів від одного DID за DID_RATE_LIMIT_WINDOW.
     # Зловмисник може replay-ити panic packets → множинні false alarms.
     # Time-bucketed key: автоматично скидається кожну хвилину.
+    # Note: Read/write has a small race window, acceptable because:
+    # (1) alert dispatch is typically serial within telemetry processing,
+    # (2) per-type silence filter (5 min) provides additional protection.
     if severity == :critical
       time_bucket = Time.current.to_i / DID_RATE_LIMIT_WINDOW.to_i
       rate_key = "ews_did_rate:#{tree.did}:#{time_bucket}"
