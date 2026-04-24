@@ -50,8 +50,9 @@ class PriceOracleService
 
     def fallback_price
       # [S6.9 FIX]: Governance-aware fallback price via SystemParameter.
-      # Previously hardcoded $25.50 — now configurable via DAO governance
-      # (ProtocolParameters.sol) or admin panel. Defaults to 25.5 if not set.
+      # Previously hardcoded $25.50 — now configurable via admin panel or
+      # DAO governance (ProtocolParameters.sol → Governance::ParameterSyncWorker → SystemParameter).
+      # Defaults to 25.5 if not set in DB.
       SystemParameter.current(:scc_fallback_price_usd, default: 25.5)
     end
 
