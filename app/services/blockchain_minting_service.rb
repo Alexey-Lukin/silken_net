@@ -104,8 +104,10 @@ class BlockchainMintingService < ApplicationService
     oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_MINTER_PRIVATE_KEY") { ENV.fetch("ORACLE_PRIVATE_KEY") })
 
     # [SAFETY]: Перевірка балансу Оракула
+    # [E.51] Threshold configurable через SystemParameter (governance-aware, 24h cache).
+    min_oracle_matic = SystemParameter.current(:oracle_min_balance_matic, default: 0.05).to_f
     balance = client.get_balance(oracle_key.address)
-    raise "🚨 [Web3] Критично низький баланс Оракула: #{balance}" if balance < 0.05 * (10**18)
+    raise "🚨 [Web3] Критично низький баланс Оракула: #{balance}" if balance < min_oracle_matic * (10**18)
 
     # 2. ГРУПУВАННЯ ЗА ТИПОМ ТОКЕНА (SCC та SFC мають різні контракти)
     # ⚡ [ANTI-N+1]: Використовуємо preloaded @wallet_mapping для уникнення повторних запитів

@@ -51,7 +51,8 @@ module Ethereum
 
     # [BLOCKER-4] Мінімальний баланс ETH на oracle-гаманці для виконання L1 транзакції.
     # 0.01 ETH достатньо для ~3-5 storeStateRoot транзакцій при нормальних gas цінах.
-    MIN_ANCHOR_BALANCE_WEI = 0.01 * (10**18)
+    # [E.51] Default value — fallback if SystemParameter not seeded yet.
+    DEFAULT_MIN_ANCHOR_BALANCE_ETH = 0.01
 
     # Генерує State Root — SHA256 дайджест, що об'єднує:
     # 1. Сумарний scc_balance усіх гаманців (SCC supply)
@@ -146,11 +147,14 @@ module Ethereum
       anchor_key = Eth::Key.new(priv: ENV.fetch("ETHEREUM_ANCHOR_PRIVATE_KEY"))
 
       # [BLOCKER-4] Inline guard clause — перевірка балансу ETH перед відправленням.
+      # [E.51] Threshold configurable через SystemParameter (governance-aware, 24h cache).
+      min_eth = SystemParameter.current(:oracle_min_balance_eth, default: DEFAULT_MIN_ANCHOR_BALANCE_ETH).to_f
+      min_balance_wei = (min_eth * (10**18)).to_i
       balance = client.get_balance(anchor_key.address)
-      if balance < MIN_ANCHOR_BALANCE_WEI
+      if balance < min_balance_wei
         anchor.update!(status: :failed, error_message: "Insufficient ETH balance: #{balance}")
         raise "🚨 [Ethereum L1] Insufficient anchor wallet balance: #{balance} wei " \
-              "(minimum: #{MIN_ANCHOR_BALANCE_WEI.to_i} wei)"
+              "(minimum: #{min_balance_wei} wei)"
       end
 
       contract_address = ENV.fetch("ETHEREUM_ANCHOR_CONTRACT")
