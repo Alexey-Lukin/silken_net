@@ -186,7 +186,7 @@ RSpec.describe Ethereum::StateAnchorService do
       end
     end
 
-    it "rescues Net::OpenTimeout and marks anchor as failed" do
+    it "rescues Net::OpenTimeout and keeps anchor as pending (S6.7 double-anchor guard)" do
       allow(mock_client).to receive(:transact).and_raise(Net::OpenTimeout, "execution expired")
 
       expect {
@@ -194,28 +194,31 @@ RSpec.describe Ethereum::StateAnchorService do
       }.to raise_error(RuntimeError, /Ethereum L1 Timeout/)
 
       anchor = EthereumAnchor.last
-      expect(anchor).to be_status_failed
-      expect(anchor.error_message).to include("execution expired")
+      expect(anchor).to be_status_pending
+      expect(anchor.error_message).to include("Timeout")
     end
 
-    it "rescues Net::ReadTimeout and marks anchor as failed" do
+    it "rescues Net::ReadTimeout and keeps anchor as pending (S6.7 double-anchor guard)" do
       allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "Net::ReadTimeout")
 
       expect {
         described_class.new.anchor_to_l1!
       }.to raise_error(RuntimeError, /Ethereum L1 Timeout/)
+
+      anchor = EthereumAnchor.last
+      expect(anchor).to be_status_pending
     end
 
-    it "rescues IOError and marks anchor as failed" do
+    it "rescues IOError and keeps anchor as pending (S6.7 double-anchor guard)" do
       allow(mock_client).to receive(:transact).and_raise(IOError, "Connection reset by peer")
 
-      expect(Rails.logger).to receive(:error).with(/Connection error/)
+      expect(Rails.logger).to receive(:warn).with(/Connection error.*kept as :pending/)
 
       expect {
         described_class.new.anchor_to_l1!
       }.to raise_error(RuntimeError, /Ethereum L1 Connection Error/)
 
-      expect(EthereumAnchor.last).to be_status_failed
+      expect(EthereumAnchor.last).to be_status_pending
     end
 
     it "logs successful anchoring" do
