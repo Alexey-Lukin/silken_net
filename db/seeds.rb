@@ -79,7 +79,11 @@ system_params = [
   { key: "vcap_max_mv", value: "5500", value_type: "integer", category: "hardware",
     min_value: 4500, max_value: 6000, description: "Maximum supercap voltage (mV)" },
   { key: "low_power_mv", value: "3300", value_type: "integer", category: "hardware",
-    min_value: 2800, max_value: 4000, description: "Critical low-power threshold (mV)" }
+    min_value: 2800, max_value: 4000, description: "Critical low-power threshold (mV)" },
+
+  # --- Pricing (04_02, S6.9) ---
+  { key: "scc_fallback_price_usd", value: "25.50", value_type: "float", category: "tokenomics",
+    min_value: 0.01, max_value: 1000.0, description: "SCC fallback price (USD) when Uniswap/RPC unreachable" }
 ]
 
 system_params.each do |attrs|

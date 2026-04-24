@@ -93,9 +93,10 @@
 #### S6.2 — Chainlink Functions Router v1 ENV змінні
 - **P1** | `04_02` | **Складність: XS** | **🔧 Операційна**
 - **Опис:** Chainlink ABI оновлено до Functions Router v1. Потрібні 3 нові ENV: `CHAINLINK_DATA_VERSION`, `CHAINLINK_CALLBACK_GAS_LIMIT`, `CHAINLINK_DON_ID`
-- [ ] Додати до `.env.example`
-- [ ] Додати до deploy configs (Kamal, Akash SDL)
-- [ ] Задокументувати в `06_01`
+- **Статус:** ✅ Виконано. Всі 3 ENVs додані до `.env.example`, `config/deploy.yml` (Kamal), `deploy/akash/deploy.yaml`, `.kamal/secrets`, та задокументовані в `06_01`
+- [x] Додати до `.env.example`
+- [x] Додати до deploy configs (Kamal, Akash SDL)
+- [x] Задокументувати в `06_01`
 
 #### S6.3 — deploy-production.yml відсутній
 - **P1** | `06_01` | **Складність: S** | **🔧 Код**
@@ -135,8 +136,9 @@
 - **P3** | `04_02` | **Складність: XS** | **🔧 Код**
 - **Опис:** `PriceOracleService` має hardcoded fallback $25.50. При RPC failure ціна може бути значно неправильною — фінансовий ризик для SLA contracts
 - **Рекомендація:** Перемістити до `ProtocolParameters` on-chain (governance-controlled) або ENV-var. `ProtocolParameters` є кращим варіантом — прозорість і on-chain управління
-- [ ] Перемістити fallback price до `ProtocolParameters.sol` як `scc_fallback_price_usd_cents`
-- [ ] Backend: `SystemParameter.current(:scc_fallback_price_usd_cents)` замість hardcoded
+- **Статус:** ✅ Виконано. Fallback price перенесено до `SystemParameter.current(:scc_fallback_price_usd)` + `ProtocolParameters.sol#KEY_SCC_FALLBACK_PRICE_USD_CENTS`. Seed parameter додано до `db/seeds.rb`
+- [x] Перемістити fallback price до `ProtocolParameters.sol` як `scc_fallback_price_usd_cents`
+- [x] Backend: `SystemParameter.current(:scc_fallback_price_usd)` замість hardcoded
 
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** | `04_02` | **Складність: L** | **🔧 Архітектурна**

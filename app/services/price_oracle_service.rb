@@ -49,14 +49,16 @@ class PriceOracleService
     end
 
     def fallback_price
-      # Якщо блокчейн не відповідає, беремо останнє відоме значення з бази
-      # або повертаємо базову ціну Series A
-      25.5
+      # [S6.9 FIX]: Governance-aware fallback price via SystemParameter.
+      # Previously hardcoded $25.50 — now configurable via DAO governance
+      # (ProtocolParameters.sol) or admin panel. Defaults to 25.5 if not set.
+      SystemParameter.current(:scc_fallback_price_usd, default: 25.5)
     end
 
     def mock_price
-      # Для розробки: імітуємо легку волатильність навколо 25.5
-      (25.5 + rand(-0.5..0.5)).round(2)
+      # Для розробки: імітуємо легку волатильність навколо fallback price
+      base = fallback_price
+      (base + rand(-0.5..0.5)).round(2)
     end
 
     def quoter_abi
