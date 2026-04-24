@@ -2,6 +2,7 @@
 
 class MintCarbonCoinWorker
   include ApplicationWeb3Worker
+  include Web3CircuitBreaker
   # Web3 Critical черга — мінтинг є час-чутливою фінансовою операцією.
   # Обмеження ретраїв до 5 запобігає нескінченному спаму в RPC Polygon.
   sidekiq_options queue: "web3_critical", retry: 5
@@ -34,11 +35,16 @@ class MintCarbonCoinWorker
   # поля для ефективного partition pruning (O(log N) замість O(P × log N)).
   # Без аргументів — auto-discovery pending транзакцій (fallback/cron).
   def perform(telemetry_log_id = nil, created_at_iso = nil)
-    if telemetry_log_id
-      process_telemetry_log(telemetry_log_id, created_at_iso)
-    else
-      process_pending_transactions
+    with_circuit_breaker("polygon_rpc") do
+      if telemetry_log_id
+        process_telemetry_log(telemetry_log_id, created_at_iso)
+      else
+        process_pending_transactions
+      end
     end
+  rescue Web3CircuitBreaker::CircuitOpenError
+    Rails.logger.warn "⚡ [Polygon] Circuit OPEN — мінтинг буде повторено пізніше."
+    raise
   end
 
   private

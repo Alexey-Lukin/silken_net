@@ -55,8 +55,10 @@ module Api
         # The SHA256 digest of the signature serves as a natural nonce (unique per DID+timestamp).
         # TTL = 10 minutes (covers the ±5 min window with margin).
         # Redis SET NX ensures atomicity: first request wins, replays are rejected.
+        nonce_digest = Digest::SHA256.hexdigest(signature)
+
         begin
-          nonce_key = Kredis.namespaced_key("m2m_nonce:#{Digest::SHA256.hexdigest(signature)}")
+          nonce_key = Kredis.namespaced_key("m2m_nonce:#{nonce_digest}")
           nonce_acquired = Kredis.redis(config: :shared).set(nonce_key, "1", nx: true, ex: 600)
 
           unless nonce_acquired
@@ -65,9 +67,22 @@ module Api
             return
           end
         rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
-          Rails.logger.error "🚨 [M2M Auth] Redis unavailable for nonce check: #{e.message}"
-          render json: { error: "Service temporarily unavailable." }, status: :service_unavailable
-          return
+          # [S6.1]: Graceful degradation — fallback to Solid Cache (DB-backed)
+          # when Redis is unavailable. Gateways remain operational instead of 503.
+          # Note: This fallback has a small TOCTOU window between exist?/write.
+          # Acceptable tradeoff: Redis SET NX (primary path) is fully atomic;
+          # this is the degraded fallback for Redis outage scenarios only.
+          Rails.logger.warn "⚠️ [M2M Auth] Redis unavailable, falling back to DB-based nonce check: #{e.message}"
+
+          fallback_key = "m2m_nonce_fallback:#{nonce_digest}"
+
+          if Rails.cache.exist?(fallback_key)
+            Rails.logger.warn "⚠️ [M2M Replay] Blocked duplicate M2M auth for #{did} (DB fallback, signature reuse)"
+            render json: { error: "Replay attack detected" }, status: :unauthorized
+            return
+          end
+
+          Rails.cache.write(fallback_key, true, expires_in: 10.minutes)
         end
 
         # Верифікація Ed25519 підпису: signature = Ed25519.sign(private_key, "#{did}:#{timestamp}")

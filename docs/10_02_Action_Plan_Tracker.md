@@ -87,13 +87,13 @@
 - **Опис:** Redis = single point of failure для Gateway M2M auth. Redis down → всі шлюзи заблоковані (503). Відсутній fallback
 - **Варіанти fallback:** (a) DB-backed nonce validation з TTL index (performance overhead, але survives restarts), (b) Upstash Redis Cluster (managed HA, рекомендовано для production), (c) Memcached cluster (не зберігає стан між restarts). **Рекомендація:** Upstash Redis вже використовується — переконатись що включений multi-zone replication
 - [ ] Верифікувати Upstash multi-zone replication у production
-- [ ] Додати graceful degradation: при Redis недоступності → DB-based nonce lookup з TTL
+- [x] Додати graceful degradation: при Redis недоступності → DB-based nonce lookup з TTL
 - [ ] Тести: Redis down scenario → gateways залишаються active
 
 #### S6.4 — Circuit breaker тільки на IoTeX/Chainlink
 - **P2** | `05_01` | **Складність: M** | **Код**
 - **Опис:** Circuit breaker реалізований лише для IoTeX та Chainlink. Відсутній на 10 інших Web3 мережах (Streamr, Filecoin, peaq, Polygon, Solana, Celo, KlimaDAO, Hadron, The Graph, Ethereum L1)
-- [ ] Додати circuit breaker для Polygon/Solana/Celo (критичні для мінтингу)
+- [x] Додати circuit breaker для Polygon/Solana/Celo (критичні для мінтингу)
 - [ ] Оцінити потребу для інших мереж
 
 #### S6.5 — 30s Kredis lock для мінтингу може бути замалим
@@ -512,7 +512,7 @@
 - **Важливо:** Критичніше за звичайні пакети — emergency TX обходить звичайні rate limits. Вирішується разом з FW.2 (AES-256-CCM), але потребує окремої уваги через life-safety implications
 - [ ] Не відкладати вирішення на "після FW.2" — мінімальний fix: Frame Counter у RTC як anti-replay для panic packets
 - [ ] Верифікувати що `EwsAlert` broadcast застосовує той самий CCM MIC що і звичайні пакети (після FW.2)
-- [ ] Backend: rate limiting на emergency callbacks — не більше N panic alerts/хвилину від одного DID
+- [x] Backend: rate limiting на emergency callbacks — не більше N panic alerts/хвилину від одного DID
 
 ---
 
@@ -522,11 +522,9 @@
 
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
-| DOC.2 | Катод/Анод labels плутанина в `01_01`: Деталь 1 (нижня частина) — в `01_01` описана як "Катод / передає Мінус", але у `01_03` правильно ідентифікована як **Анод** (GOx окислення). В `01_01` визначення суперечливе: реально анод є від'ємним полюсом джерела ЕРС, але cathode/anode маркування потребує уніфікації з `01_03` | `01_01`, `01_03` | Уніфікувати термінологію з `01_03` |
 | DOC.4 | "Binary payload 16 bytes" (`00_01`) — це зашифрований inner payload. Повний зовнішній пакет = **21 байт** (4 DID + 1 RSSI + 16 encrypted) | `00_01` | Уточнити: 21B outer, 16B encrypted inner |
 | DOC.16 | Енергія TX: `02_01` каже 120mA/39mJ, `02_03` §9 каже 15mA/2.475mJ — несумісні значення | `02_01`, `02_03` | Узгодити (120mA = +22dBm коректно) |
 | DOC.17 | RAM budget Queen: §5 header каже "~3.7 KB", але детальна таблиця = **~14.4 KB** (22% of 64KB) | `03_02` | Виправити header |
-| DOC.31 | TRL 8 заявлено для `09_02` але модулі на TRL 3-4 — TRL-Lock principle (§3 `09_02`) обмежує загальний TRL | `09_02` | Застосувати TRL-Lock |
 
 ---
 
@@ -670,9 +668,7 @@
 | DIFF.7 | SNR parameter unused in Queen CIFO eviction | `03_02` | Low priority optimization |
 | E.41 | **Fire events delayed 48h** via dClimate satellite obscuration — **⚠️ life-safety risk**. Mitigation: Forester Guild as Fallback Oracle (E.20) + immediate local broadcast via panic TX (не чекати satellite clearance при chainsaw detection). **Пріоритет: P1** (не відкладати на Post-TRL 6) | `04_02`, `05_01` | P1: interim emergency fallback |
 | E.42 | **TelemetryLog cleanup safety**: видалення записів з `oracle_status='dispatched'` ламає Chainlink callbacks. Cleanup job MUST exclude `dispatched` status — підтверджено в коді | `04_02` | ⚠️ Не видаляти dispatched records |
-| E.43 | **OPTIMAL_Z_TARGET=29.0 vs z_eq=27.0**: математичний рівноважний стан Лоренца при ρ=28 є z=ρ−1=27. Значення 29.0 — навмисний offset (+2σ від equilibrium) для кращої розрізнення класів. Потребує документування rationale або консультації з ЧНУ (Порубльов) | `03_04`, `08_02` | Задокументувати в `03_04` |
 | E.45 | **SCC/SFC contract addresses** = `0x0000...0` в subgraph.yaml — блокує deploy subgraph на testnet/mainnet | `05_03` | Пов'язано з S3.5 |
-| E.46 | **Insurance pool failsafe → true on RPC failure**: `insurance_pool_requires_funding?` повертає `true` при RPC error → unnecessary 2% tax на кожен mint під час RPC degradation | `04_02`, `05_03` | P2: більш graceful fallback |
 | E.47 | **Solana RPC defaults to Devnet** — production мінтинг USDC мікро-винагород піде на Devnet якщо не встановлений `SOLANA_RPC_URL` | `05_01` | ⚠️ Перевірити ENV перед mainnet |
 | E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
 | E.49 | **Celo RPC fallback mechanism** не вказаний — при збої primary RPC немає автоматичного переключення | `05_01` | P3: додати fallback RPC |

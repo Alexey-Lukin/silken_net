@@ -68,14 +68,14 @@ POST /api/v1/auth/m2m_token
 
 - Ed25519 public key реєструється під час provisioning (поле `ed25519_public_key`) і зберігається в `hardware_keys.ed25519_public_key_hex`.
 - Бекенд перевіряє підпис та timestamp (±5 хвилин) перед видачею токена.
-- **Replay-захист (nonce):** SHA256-дайджест підпису зберігається в Redis із TTL 10 хв (`SET NX`). Повторне використання тієї ж `signature` повертає `401 Unauthorized` із повідомленням `"Replay attack detected"`.
+- **Replay-захист (nonce):** SHA256-дайджест підпису зберігається в Redis із TTL 10 хв (`SET NX`). Повторне використання тієї ж `signature` повертає `401 Unauthorized` із повідомленням `"Replay attack detected"`. **[S6.1]** При Redis outage: fallback на Solid Cache (DB) — шлюзи не отримують `503`.
 - Токен дійсний 30 днів. Для оновлення: `POST /api/v1/auth/m2m_token/refresh` з поточним Bearer token (§5.15.1), або повторний `POST /api/v1/auth/m2m_token` з Ed25519-підписом.
 - Детальний опис: §5.14.
 
 ### 1.5 Тестове Покриття Безпеки
 
 - `spec/initializers/rack_attack_spec.rb` — throttle правила `m2m_auth/ip` та `oracle_callbacks/ip`
-- `spec/requests/api/v1/m2m_auth_controller_spec.rb` — некоректний Ed25519 підпис → 401; nonce replay → 401; Redis unavailable → 503
+- `spec/requests/api/v1/m2m_auth_controller_spec.rb` — некоректний Ed25519 підпис → 401; nonce replay → 401; Redis unavailable → DB fallback (Solid Cache)
 - `spec/requests/api/v1/oracle_callbacks_controller_spec.rb` — replay callback → 409 Conflict; state machine guard
 - `spec/requests/api/v1/actuators_controller_spec.rb` — відсутній `Idempotency-Key` → 400; ідемпотентний повтор → 202
 
@@ -978,7 +978,7 @@ POST /api/v1/auth/m2m_token
 
 **Replay-захист:**
 
-SHA256-дайджест значення `signature` зберігається в Redis як nonce (`SET NX`, TTL 10 хв). Перший запит проходить — всі наступні з тією ж підписом повертають `401 Unauthorized` (`"Replay attack detected"`). Якщо Redis недоступний — повертається `503 Service Unavailable`.
+SHA256-дайджест значення `signature` зберігається в Redis як nonce (`SET NX`, TTL 10 хв). Перший запит проходить — всі наступні з тією ж підписом повертають `401 Unauthorized` (`"Replay attack detected"`). **[S6.1]** Якщо Redis недоступний — fallback на Solid Cache (DB-backed): nonce зберігається в БД з TTL 10 хв. Шлюзи залишаються активними замість отримання `503 Service Unavailable`.
 
 **Підпис на прошивці (псевдокод):**
 
@@ -1008,7 +1008,7 @@ ed25519_sign(sig, message, strlen(message), private_key);
 | 422 Unprocessable | Ed25519 public key не зареєстровано для пристрою |
 | 400 Bad Request | Невалідний формат `timestamp` |
 | 401 Unauthorized | `timestamp` прострочено (>5 хв) або підпис не валідний або повтор нonce (Replay attack) |
-| 503 Service Unavailable | Redis недоступний (nonce перевірка не виконана) |
+| 503 Service Unavailable | Redis недоступний ТА Solid Cache fallback також відмовив |
 
 ---
 

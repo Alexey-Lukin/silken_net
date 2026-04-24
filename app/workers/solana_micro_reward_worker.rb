@@ -2,6 +2,7 @@
 
 class SolanaMicroRewardWorker
   include ApplicationWeb3Worker
+  include Web3CircuitBreaker
 
   # Solana мікро-винагороди мають найнижчий пріоритет серед Web3 операцій.
   # Вони не блокують критичний EVM (Polygon) мінтинг.
@@ -14,8 +15,13 @@ class SolanaMicroRewardWorker
     log = find_telemetry_log_with_pruning(telemetry_log_id, created_at_iso, log_prefix: "[Solana]")
     return unless log
 
-    with_web3_error_handling("Solana", "TelemetryLog ##{telemetry_log_id}") do
-      Solana::MintingService.new(log).mint_micro_reward!
+    with_circuit_breaker("solana_spl") do
+      with_web3_error_handling("Solana", "TelemetryLog ##{telemetry_log_id}") do
+        Solana::MintingService.new(log).mint_micro_reward!
+      end
     end
+  rescue Web3CircuitBreaker::CircuitOpenError
+    Rails.logger.warn "⚡ [Solana] Circuit OPEN — TelemetryLog ##{telemetry_log_id} буде повторено пізніше."
+    raise
   end
 end
