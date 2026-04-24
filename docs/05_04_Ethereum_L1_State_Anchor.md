@@ -122,7 +122,12 @@ class EthereumAnchorWorker
 
   sidekiq_options queue: "web3_low", retry: 5, unique_for: 7.days
 
+  # [S6.6] Maximum gap between anchors before alerting (8 days = 1 week + 1 day buffer).
+  MISSED_ANCHOR_THRESHOLD = 8.days
+
   def perform
+    detect_missed_anchor_weeks!
+
     with_web3_error_handling("Ethereum", "L1 State Anchor") do
       Ethereum::StateAnchorService.new.anchor_to_l1!
     end
@@ -140,6 +145,10 @@ end
 | **Retry** | 5 | Exponential backoff (~2+ годин); достатньо для L1 congestion recovery |
 | **unique_for** | 7.days | Запобігає перетину тижневих anchoring циклів (idempotency guard) |
 | **Mixin** | `ApplicationWeb3Worker` | RPC Rate Limiter (50 req/s), уніфіковане error handling, Prometheus метрики |
+
+**Захист від пропущених тижнів (S6.6):** `detect_missed_anchor_weeks!` перед кожним anchoring перевіряє gap з останнім успішним anchor. Якщо > 8 днів → warning + Prometheus `silkennet_anchor_missed_weeks_total`. Retroactive backfill неможливий (DB state вже змінився), тому поточний state root записується як catch-up.
+
+**Захист від подвійного якорення (S6.7):** При timeout або IOError anchor залишається `pending` (не `failed`), щоб retry через `in_flight` guard знайшов існуючий anchor і відновив його замість створення нового state_root.
 
 **`ApplicationWeb3Worker` надає:**
 - `with_web3_error_handling(chain, resource)` — обгортка з Prometheus лічильниками (`RPC_ERRORS_TOTAL`)

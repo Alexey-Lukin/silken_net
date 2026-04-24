@@ -101,8 +101,9 @@
 #### S6.3 — deploy-production.yml відсутній
 - **P1** | `06_01` | **Складність: S** | **Код**
 - **Опис:** Workflow для production deploy згадується в документації але не існує. Production deploy неможливий через CI
-- [ ] Створити `.github/workflows/deploy-production.yml`
-- [ ] Інтегрувати з GitHub Releases (`v*.*.*`)
+- **Статус:** ✅ Виконано. `.github/workflows/deploy-production.yml` створено з Terraform Apply + Kamal Deploy, triggered by GitHub Release або manual dispatch
+- [x] Створити `.github/workflows/deploy-production.yml`
+- [x] Інтегрувати з GitHub Releases (`v*.*.*`)
 
 #### S6.4 — Circuit breaker тільки на IoTeX/Chainlink
 - **P2** | `05_01` | **Складність: M** | **Код**
@@ -119,13 +120,15 @@
 #### S6.6 — Missed anchor week не backfilled
 - **P2** | `05_04` | **Складність: S** | **Код**
 - **Опис:** Якщо weekly `EthereumAnchorWorker` пропускає тиждень (downtime, gas), state root **назавжди втрачається**
-- [ ] Додати backfill mechanism або alerting
-- [ ] Задокументувати process для manual recovery
+- **Статус:** ✅ Виконано. `EthereumAnchorWorker#detect_missed_anchor_weeks!` додано — перевіряє gap > 8 днів перед кожним anchoring, логує warning та інкрементує Prometheus `silkennet_anchor_missed_weeks_total`. Retroactive backfill неможливий (DB state вже змінився), тому поточний state root записується як catch-up anchor
+- [x] Додати backfill mechanism або alerting
+- [x] Задокументувати process для manual recovery
 
 #### S6.7 — Double-anchoring race condition
 - **P2** | `05_04` | **Складність: S** | **Код**
 - **Опис:** Timeout → retry → два state roots для одного тижня на L1
-- [ ] Додати idempotency guard (перевірка існуючого anchor перед TX)
+- **Статус:** ✅ Виконано. При timeout або IOError anchor залишається `pending` (не `failed`), тому retry через `in_flight` guard знаходить існуючий anchor і відновлює його замість створення нового state_root. Запобігає подвійному якоренню на L1
+- [x] Додати idempotency guard (перевірка існуючого anchor перед TX)
 
 #### S6.8 — Weekend telemetry blackouts
 - **P3** | `04_02` | **Складність: XS** | **Код**
@@ -550,14 +553,14 @@
 |----|----------------|-----------|-----|
 | DOC.2 | Катод/Анод labels плутанина в `01_01`: Деталь 1 (нижня частина) — в `01_01` описана як "Катод / передає Мінус", але у `01_03` правильно ідентифікована як **Анод** (GOx окислення). В `01_01` визначення суперечливе: реально анод є від'ємним полюсом джерела ЕРС, але cathode/anode маркування потребує уніфікації з `01_03` | `01_01`, `01_03` | Уніфікувати термінологію з `01_03` |
 | DOC.4 | "Binary payload 16 bytes" (`00_01`) — це зашифрований inner payload. Повний зовнішній пакет = **21 байт** (4 DID + 1 RSSI + 16 encrypted) | `00_01` | Уточнити: 21B outer, 16B encrypted inner |
-| DOC.10 | Dual Computation Integrity описана як ">30% числова дивергенція", але код робить **категоричне порівняння** (homeostasis vs stress) | `05_02`, CLAUDE.md | Виправити doc → "categorical comparison" |
+| ~~DOC.10~~ | ~~Dual Computation Integrity описана як ">30% числова дивергенція", але код робить **категоричне порівняння** (homeostasis vs stress)~~ | `05_01` | ✅ Виправлено — `05_01` оновлено: "categorical comparison (homeostasis vs stress/anomaly mismatch) → fraud flag". Також виправлено: BigDecimal → Float (відповідно до FW.7 fix) |
 | DOC.16 | Енергія TX: `02_01` каже 120mA/39mJ, `02_03` §9 каже 15mA/2.475mJ — несумісні значення | `02_01`, `02_03` | Узгодити (120mA = +22dBm коректно) |
 | DOC.17 | RAM budget Queen: §5 header каже "~3.7 KB", але детальна таблиця = **~14.4 KB** (22% of 64KB) | `03_02` | Виправити header |
 | DOC.21 | State root hash delimiter: `\|` в коді vs `:` в іншій секції doc | `05_01`, `05_04` | Уніфікувати → `\|` (як в коді) |
 | DOC.24 | TRL 8 для backend (`04_01`) vs "7-8" в CLAUDE.md | `04_01`, CLAUDE.md | Узгодити |
-| DOC.30 | OPTIMAL_Z_TARGET=29.0 vs математичний рівноважний z=ρ−1=27.0 — невідповідність без пояснення | `03_04`, `08_02` | Задокументувати rationale або виправити на 27.0 |
+| ~~DOC.30~~ | ~~OPTIMAL_Z_TARGET=29.0 vs математичний рівноважний z=ρ−1=27.0 — невідповідність без пояснення~~ | `03_04` | ✅ Виправлено — rationale задокументовано: навмисне зміщення +2 від рівноваги для кращої розрізненності класів та біологічного обґрунтування |
 | DOC.31 | TRL 8 заявлено для `09_02` але модулі на TRL 3-4 — TRL-Lock principle (§3 `09_02`) обмежує загальний TRL | `09_02` | Застосувати TRL-Lock |
-| DOC.32 | Akash TRL "6 ✅" але **жоден deploy не проведений** — аргументовано TRL 5 | `06_02` | Понизити до TRL 5 |
+| ~~DOC.32~~ | ~~Akash TRL "6 ✅" але **жоден deploy не проведений** — аргументовано TRL 5~~ | `06_02` | ✅ Виправлено — TRL понижено до 5, дорожня карта оновлена |
 
 ---
 

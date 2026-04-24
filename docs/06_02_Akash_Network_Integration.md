@@ -31,7 +31,7 @@
 | GHCR image mirror | `.github/workflows/mirror-ghcr.yml` | ✅ Вирішено (BLOCKER-4 виправлено) |
 | HTTPS / TLS термінація | `deploy/akash/deploy.yaml` | 🟡 Порт `443` оголошено в SDL; TLS termination через Akash ingress або Cloudflare ще не конфігурована |
 
-- **Поточний TRL:** TRL 6 — SDL повністю конфігурований (`web` + `job` + `alloy`), DB+Redis connectivity вирішені (Cloud SQL Auth Proxy + Upstash TLS), GHCR mirror активний; TRL 7 підтверджується після першого реального деплою на Akash Mainnet
+- **Поточний TRL:** TRL 5 — SDL повністю конфігурований (`web` + `job` + `alloy`), DB+Redis connectivity вирішені (Cloud SQL Auth Proxy + Upstash TLS), GHCR mirror активний; однак жоден реальний деплой на Akash Mainnet не проведений — TRL 6 підтверджується після першого успішного деплою
 - **Пов'язані модулі:**
   - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
@@ -634,15 +634,15 @@ L1  Biophysics            Ti-6Al-4V EBFC            (не залежить ві�
 
 ---
 
-## 8. Дорожня Карта (Path to TRL 6 → 9)
+## 8. Дорожня Карта (Path to TRL 5 → 9)
 
 | TRL | Що потрібно | Статус |
 |-----|------------|--------|
-| **TRL 6** ✅ | SDL-маніфест (`web` + `job` + `alloy`), DB+Redis connectivity, GHCR mirror | ✅ Всі передумови виконані |
-| **TRL 6** ✅ | Вирішити мережеву ізоляцію (Cloud SQL + Redis) | ✅ BLOCKER-1 — Cloud SQL Auth Proxy + Upstash |
-| **TRL 6** ✅ | Додати `job` сервіс в SDL для Sidekiq | ✅ BLOCKER-2 виправлено |
-| **TRL 6** ✅ | Замінити Docker образ на публічний реєстр (GHCR) | ✅ BLOCKER-4 виправлено (`mirror-ghcr.yml`) |
-| **TRL 7** 🎯 | Перший реальний деплой на Akash Mainnet + функціональне тестування CoAP | 🔴 BLOCKER-3 (секрети — заповнити `terraform.tfvars`) |
+| **TRL 5** ✅ | SDL-маніфест (`web` + `job` + `alloy`), DB+Redis connectivity, GHCR mirror | ✅ Всі передумови виконані |
+| **TRL 5** ✅ | Вирішити мережеву ізоляцію (Cloud SQL + Redis) | ✅ BLOCKER-1 — Cloud SQL Auth Proxy + Upstash |
+| **TRL 5** ✅ | Додати `job` сервіс в SDL для Sidekiq | ✅ BLOCKER-2 виправлено |
+| **TRL 5** ✅ | Замінити Docker образ на публічний реєстр (GHCR) | ✅ BLOCKER-4 виправлено (`mirror-ghcr.yml`) |
+| **TRL 6** 🎯 | Перший реальний деплой на Akash Mainnet + функціональне тестування CoAP | 🔴 BLOCKER-3 (секрети — заповнити `terraform.tfvars`) |
 | **TRL 7** 🎯 | Налаштувати TLS через Akash ingress hostname operator або Cloudflare | 🟡 BLOCKER-5 (порт 443 у SDL, TLS не активована) |
 | **TRL 7** 🎯 | GCS bucket для Terraform state | 🟡 BLOCKER-6 (створити вручну перед `terraform init`) |
 | **TRL 8** | Production деплой з Grafana Cloud метриками + alerting | Потребує TRL 7 + GRAFANA_* secrets |
