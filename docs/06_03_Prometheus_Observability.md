@@ -339,7 +339,7 @@ end
 
 Обидві метрики зареєстровані в `config/initializers/prometheus.rb` та інструментовані у відповідних класах. `ORACLE_DISPATCH_DURATION` вимірює повний цикл dispatch (від виклику до отримання request_id). `LORENZ_COMPUTATION_DURATION` вимірює час серверного розрахунку 250 ітерацій Лоренца (Float арифметика).
 
-**Підсумок реєстру: 13 кастомних метрик (8 counters + 3 histograms + 2 gauges). З урахуванням DB Connection Pool (4 gauges), Treasury/Oracle Balance (2 gauges + 1 counter) та Lorenz Computation (1 histogram) — фактичний підсумок: 21 кастомна метрика (11 counters + 8 gauges + 2 histograms).**
+**Підсумок реєстру: 22 кастомні метрики (12 counters + 8 gauges + 2 histograms).**
 
 ### 2.6 Governance Parameter Sync Observability
 
