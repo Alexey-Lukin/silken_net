@@ -526,8 +526,8 @@
 | DOC.4 | "Binary payload 16 bytes" (`00_01`) — це зашифрований inner payload. Повний зовнішній пакет = **21 байт** (4 DID + 1 RSSI + 16 encrypted) | `00_01` | Уточнити: 21B outer, 16B encrypted inner |
 | DOC.16 | Енергія TX: `02_01` каже 120mA/39mJ, `02_03` §9 каже 15mA/2.475mJ — несумісні значення | `02_01`, `02_03` | Узгодити (120mA = +22dBm коректно) |
 | DOC.17 | RAM budget Queen: §5 header каже "~3.7 KB", але детальна таблиця = **~14.4 KB** (22% of 64KB) | `03_02` | Виправити header |
-| DOC.21 | State root hash delimiter: `\|` в коді vs `:` в іншій секції doc | `05_01`, `05_04` | Уніфікувати → `\|` (як в коді) |
-| DOC.24 | TRL 8 для backend (`04_01`) vs "7-8" в CLAUDE.md | `04_01`, CLAUDE.md | Узгодити |
+| ~~DOC.21~~ | ~~State root hash delimiter: `\|` в коді vs `:` в іншій секції doc~~ | ~~`05_01`, `05_04`~~ | ✅ Виправлено — уніфіковано `\|` у `05_01` |
+| ~~DOC.24~~ | ~~TRL 8 для backend (`04_01`) vs "7-8" в CLAUDE.md~~ | ~~`04_01`, CLAUDE.md~~ | ✅ Виправлено — узгоджено TRL 8 |
 | DOC.31 | TRL 8 заявлено для `09_02` але модулі на TRL 3-4 — TRL-Lock principle (§3 `09_02`) обмежує загальний TRL | `09_02` | Застосувати TRL-Lock |
 
 ---
@@ -680,9 +680,9 @@
 | E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
 | E.49 | **Celo RPC fallback mechanism** не вказаний — при збої primary RPC немає автоматичного переключення | `05_01` | P3: додати fallback RPC |
 | E.50 | **Streamr broadcast failures silently dropped** — немає alerting/logging при неможливості доставки P2P real-time broadcast | `05_01` | P3: додати error tracking |
-| E.51 | **Hardcoded oracle balance thresholds** (0.05 MATIC, 0.05 SOL) — рекомендується зробити configurable через `ProtocolParameters` | `05_02` | P3: перемістити до SystemParameter |
-| E.53 | **SFC excluded from state root** — `SilkenForestCoin` total supply не входить у weekly state root hash, хоча SFC є частиною tokenomics | `05_04` | Оцінити додавання до state root |
-| E.54 | **Active tree count excluded from state root** — кількість активних дерев не верифікується на L1 | `05_04` | Оцінити додавання |
+| E.51 | ~~**Hardcoded oracle balance thresholds** (0.05 MATIC, 0.05 SOL) — рекомендується зробити configurable через `ProtocolParameters`~~ | `05_02` | ✅ Виконано — пороги configurable через `SystemParameter` з 24h кешем. Додано seed parameters: `oracle_min_balance_matic`, `oracle_min_balance_sol`, `oracle_min_balance_celo`, `oracle_min_balance_eth`. Оновлено: `Treasury::MonitorService`, `BlockchainMintingService`, `Solana::MintingService`, `Ethereum::StateAnchorService` |
+| E.53 | ~~**SFC excluded from state root** — `SilkenForestCoin` total supply не входить у weekly state root hash, хоча SFC є частиною tokenomics~~ | `05_04` | ✅ Виконано — `total_sfc` додано до state root формули та `EthereumAnchor` моделі. Джерело: `BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount)` |
+| E.54 | ~~**Active tree count excluded from state root** — кількість активних дерев не верифікується на L1~~ | `05_04` | ✅ Виконано — `active_tree_count` додано до state root формули та `EthereumAnchor` моделі. Джерело: `Tree.active.count` |
 
 ---
 
