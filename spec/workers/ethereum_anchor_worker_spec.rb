@@ -84,4 +84,81 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
       }.to raise_error(StandardError, "unexpected error")
     end
   end
+
+  describe "#detect_missed_anchor_weeks! (S6.6)" do
+    let(:mock_service) { instance_double(Ethereum::StateAnchorService) }
+
+    before do
+      allow(Ethereum::StateAnchorService).to receive(:new).and_return(mock_service)
+      allow(mock_service).to receive(:anchor_to_l1!).and_return("0x" + "ab" * 32)
+    end
+
+    it "does not warn when no previous anchors exist (first ever anchor)" do
+      expect(Rails.logger).not_to receive(:warn).with(/Missed anchor week/)
+
+      described_class.new.perform
+    end
+
+    it "does not warn when last anchor is within 8 days" do
+      travel_to(6.days.ago) do
+        EthereumAnchor.create!(
+          state_root: "a" * 64,
+          total_scc: 100.0,
+          chain_hash: "recent_hash",
+          anchored_at: Time.current,
+          status: :sent,
+          tx_hash: "0x#{"bb" * 32}"
+        )
+      end
+
+      expect(Rails.logger).not_to receive(:warn).with(/Missed anchor week/)
+
+      described_class.new.perform
+    end
+
+    it "warns and increments metric when last anchor is older than 8 days" do
+      travel_to(10.days.ago) do
+        EthereumAnchor.create!(
+          state_root: "b" * 64,
+          total_scc: 200.0,
+          chain_hash: "old_hash",
+          anchored_at: Time.current,
+          status: :confirmed,
+          tx_hash: "0x#{"cc" * 32}"
+        )
+      end
+
+      expect(Rails.logger).to receive(:warn).with(/Missed anchor week detected/)
+      expect(SilkenNet::Metrics::ANCHOR_MISSED_WEEKS_TOTAL).to receive(:increment)
+
+      described_class.new.perform
+    end
+
+    it "ignores failed anchors when checking for gaps" do
+      EthereumAnchor.create!(
+        state_root: "c" * 64,
+        total_scc: 300.0,
+        chain_hash: "failed_hash",
+        anchored_at: 2.days.ago,
+        status: :failed,
+        error_message: "some error"
+      )
+
+      # No sent/confirmed anchors exist, so this is treated as first-ever
+      expect(Rails.logger).not_to receive(:warn).with(/Missed anchor week/)
+
+      described_class.new.perform
+    end
+
+    it "does not block anchoring if detection itself fails" do
+      allow(EthereumAnchor).to receive(:where).and_raise(StandardError, "DB error")
+
+      expect(Rails.logger).to receive(:warn).with(/Missed anchor detection failed/)
+      allow(mock_service).to receive(:anchor_to_l1!).and_return("0x" + "dd" * 32)
+
+      described_class.new.perform
+
+      expect(mock_service).to have_received(:anchor_to_l1!)
+    end
+  end
 end

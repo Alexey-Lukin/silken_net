@@ -192,6 +192,12 @@ module SilkenNet
       buckets: [ 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5 ]
     )
 
+    # [S6.6] Missed Ethereum L1 anchor weeks detected
+    ANCHOR_MISSED_WEEKS_TOTAL = REGISTRY.counter(
+      :silkennet_anchor_missed_weeks_total,
+      docstring: "Total missed Ethereum L1 anchor weeks detected (gap > 8 days)"
+    )
+
     # Snapshot connection pool stats for Prometheus scraping.
     # Called from PrometheusCollector middleware or a periodic job.
     def self.sample_connection_pool!

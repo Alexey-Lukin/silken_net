@@ -168,12 +168,26 @@ module Ethereum
 
       anchor
     rescue Net::OpenTimeout, Net::ReadTimeout => e
-      anchor&.update!(status: :failed, error_message: e.message.truncate(500)) if anchor&.persisted?
-      Rails.logger.error "🛑 [Ethereum L1] Timeout: #{e.message}"
+      # [S6.7 DOUBLE-ANCHOR GUARD]: Do NOT mark as :failed on network timeout.
+      # The TX may already be in the Ethereum mempool — marking :failed would cause
+      # the retry to create a NEW state_root, risking double-anchoring on L1.
+      # Keeping status :pending lets the in_flight guard resume this anchor on retry.
+      # Note: error_message truncated to 450 chars to leave room for the ~50-char prefix.
+      if anchor&.persisted?
+        anchor.update!(error_message: "Timeout (TX may be in-flight): #{e.message.truncate(450)}")
+        Rails.logger.warn "⚠️ [Ethereum L1] Timeout — anchor #{anchor.id} kept as :pending " \
+                          "(TX may be in mempool). Next retry will resume. Error: #{e.message}"
+      end
       raise "Ethereum L1 Timeout: #{e.message}"
     rescue IOError => e
-      anchor&.update!(status: :failed, error_message: e.message.truncate(500)) if anchor&.persisted?
-      Rails.logger.error "🛑 [Ethereum L1] Connection error: #{e.message}"
+      # [S6.7 DOUBLE-ANCHOR GUARD]: Same rationale as timeout — connection reset
+      # after transact() means TX may have been broadcast before the socket closed.
+      # Note: error_message truncated to 450 chars to leave room for the ~50-char prefix.
+      if anchor&.persisted?
+        anchor.update!(error_message: "Connection error (TX may be in-flight): #{e.message.truncate(450)}")
+        Rails.logger.warn "⚠️ [Ethereum L1] Connection error — anchor #{anchor.id} kept as :pending " \
+                          "(TX may be in mempool). Next retry will resume. Error: #{e.message}"
+      end
       raise "Ethereum L1 Connection Error: #{e.message}"
     end
   end

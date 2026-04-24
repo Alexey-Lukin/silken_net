@@ -449,10 +449,8 @@ beta  = BigDecimal("8") / BigDecimal("3")
 
 | Компонент | Файл |
 |-----------|------|
-| Серверний Lorenz | `app/services/silken_net/attractor
-
-.rb` (BigDecimal, 18-digit precision) |
-| Dual Computation Integrity | Device Z vs Server Z — divergence > 30% → fraud |
+| Серверний Lorenz | `app/services/silken_net/attractor.rb` (Float, IEEE 754 — ідентично firmware mruby) |
+| Dual Computation Integrity | Device Z vs Server Z — categorical comparison (homeostasis vs stress/anomaly mismatch) → fraud flag |
 | Fraud Guard | `InsightGeneratorService` (flagging) |
 
 ### Крок 3: Паспорт (peaq DID)
