@@ -58,9 +58,8 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
 |---|---|
 | `ERC20` | Стандартний fungible token: `transfer`, `approve`, `transferFrom`, `balanceOf`, `totalSupply` |
 | `AccessControl` | Ієрархія ролей через `bytes32` hash — `grantRole`, `revokeRole`, `hasRole` |
-| `Pausable` | Екстрене заморожування всіх трансферів (override `_update`) |
+| `Pausable` | Екстрене заморожування всіх трансферів (override `_update`). Аварійна зупинка через `pause()` / `unpause()` |
 | `ERC20Permit` | **[PR #253]** Gasless approvals через EIP-2612 / EIP-712 підписи (`permit()`). Дозволяє DEX/P2P marketplace інтеграцію без газу для власників SCC. `nonces(address)` override для MRO сумісності з Nonces. |
-| `Pausable` | Аварійна зупинка всіх переміщень токенів через `pause()` / `unpause()` |
 
 ### SilkenForestCoin (SFC)
 
@@ -68,10 +67,11 @@ contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ER
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
-contract SilkenForestCoin is ERC20, AccessControl, Pausable, ERC20Permit, ERC20Votes { ... }
+contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ERC20Permit, ERC20Votes { ... }
 ```
 
 | Базовий контракт | Призначення |
@@ -79,6 +79,7 @@ contract SilkenForestCoin is ERC20, AccessControl, Pausable, ERC20Permit, ERC20V
 | `ERC20` | Стандартний fungible token |
 | `AccessControl` | Ієрархія ролей |
 | `Pausable` | Аварійна зупинка |
+| `ReentrancyGuard` | Превентивний захист від reentrancy атак |
 | `ERC20Permit` | Gasless approvals через EIP-2612 / EIP-712 підписи (`permit()`) |
 | `ERC20Votes` | Governance voting power для DAO (checkpoint-based, `delegate()`, snapshot) |
 

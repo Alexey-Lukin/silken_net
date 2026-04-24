@@ -96,7 +96,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  L5: BACKEND (Rails 8.1 + Sidekiq)                                  ║
 ║                                                                      ║
-║  [UnpackTelemetryWorker] queue: uplink (prio 9)                     ║
+║  [UnpackTelemetryWorker] queue: uplink (prio 1)                     ║
 ║    Base64 decode → AES-256-CBC decrypt via HardwareKey.binary_key   ║
 ║    "Soft Key Rotation": new_key → fallback previous_key             ║
 ║    Gateway.find_by(uid:) → mark_seen!(new_ip:)                      ║
@@ -123,7 +123,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    → tree.peaq_did saved (UNIQUE index)                              ║
 ║                                                                      ║
 ║  ─────────── КРОК B: IoTeX W3bstream ZK-Verification ────────────── ║
-║  [IotexVerificationWorker] queue: web3_critical (prio 7), retry: 5  ║
+║  [IotexVerificationWorker] queue: web3_critical (prio 6), retry: 5  ║
 ║    Iotex::W3bstreamVerificationService#verify!                       ║
 ║    POST {iotex_w3bstream_url}/verify                                 ║
 ║    Body: { device_id, peaq_did, telemetry_log_id, hardware_sig,     ║
@@ -133,7 +133,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    → ChainlinkDispatchWorker.perform_async(id, created_at_iso)      ║
 ║                                                                      ║
 ║  ─────────── КРОК C: Chainlink Oracle Dispatch ───────────────────── ║
-║  [ChainlinkDispatchWorker] queue: web3_critical (prio 7), retry: 5  ║
+║  [ChainlinkDispatchWorker] queue: web3_critical (prio 6), retry: 5  ║
 ║    Guard: log.verified_by_iotex? == true                             ║
 ║    Chainlink::OracleDispatchService#dispatch!                        ║
 ║    [PROD] Eth::Contract.transact("sendRequest", sub_id, payload)    ║
@@ -323,7 +323,7 @@ Soldier:
 
 **Файли:**
 - `app/controllers/api/v1/provisioning_controller.rb:60`
-- `app/workers/peaq_registration_worker.rb` — queue: `web3` (prio 3), retry: 5
+- `app/workers/peaq_registration_worker.rb` — queue: `web3` (prio 7), retry: 5
 - `app/services/peaq/did_registry_service.rb`
 - `app/services/ed25519_crypto/signing_service.rb`
 
@@ -365,7 +365,7 @@ Body:
 з `TelemetryUnpackerService#commit_telemetry`
 
 **Файли:**
-- `app/workers/iotex_verification_worker.rb` — queue: `web3_critical` (prio 7), retry: 5
+- `app/workers/iotex_verification_worker.rb` — queue: `web3_critical` (prio 6), retry: 5
 - `app/services/iotex/w3bstream_verification_service.rb`
 
 **Статус (Wiki 05_01):** ✅ Real — HTTP POST через W3bstream API
@@ -413,7 +413,7 @@ ChainlinkDispatchWorker.perform_async(telemetry_log_id, created_at_iso)
 **Тригер:** `ChainlinkDispatchWorker.perform_async` з `IotexVerificationWorker`
 
 **Файли:**
-- `app/workers/chainlink_dispatch_worker.rb` — queue: `web3_critical` (prio 7), retry: 5
+- `app/workers/chainlink_dispatch_worker.rb` — queue: `web3_critical` (prio 6), retry: 5
 - `app/services/chainlink/oracle_dispatch_service.rb`
 
 **Статус:** ✅ Real — Chainlink Functions Router v1 ABI. `WEB3_STRICT_MODE=true` вимагає `CHAINLINK_FUNCTIONS_ROUTER` + `CHAINLINK_SUBSCRIPTION_ID` в Production.
@@ -503,7 +503,7 @@ log.update!(oracle_status: "failed")
 ### Крок E: EVM Мінтинг SCC/SFC на Polygon
 
 **Файли:**
-- `app/workers/mint_carbon_coin_worker.rb` — queue: `web3_critical` (prio 7), retry: 5
+- `app/workers/mint_carbon_coin_worker.rb` — queue: `web3_critical` (prio 6), retry: 5
 - `app/services/blockchain_minting_service.rb`
 
 **Trustless Guard Clauses (лише при oracle-driven flow з telemetry_log):**
@@ -546,7 +546,7 @@ Sidekiq::Limiter.window("web3_rpc", 50, :second, wait: 5)  # 50 RPC/sec global
 ### Крок F: Solana Мікро-Винагорода (паралельно з EVM)
 
 **Файли:**
-- `app/workers/solana_micro_reward_worker.rb` — queue: `web3` (prio 3), retry: 3
+- `app/workers/solana_micro_reward_worker.rb` — queue: `web3` (prio 7), retry: 3
 - `app/services/solana/minting_service.rb`
 
 **Статус (Wiki 05_01):** ✅ Real — `sendTransaction` з Ed25519 підписом.
