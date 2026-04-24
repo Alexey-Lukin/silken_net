@@ -563,7 +563,7 @@
 | ~~DOC.6~~ | ✅ Docker base image вже `ruby:4.0.2-slim` в `06_01`. Невідповідність відсутня | `06_01` | ✅ Виконано (раніше) |
 | ~~DOC.7~~ | ✅ Prometheus метрик: оновлено `06_03` → 20 фактичних (10 counters + 8 gauges + 2 histograms) | `06_03` | ✅ Виконано |
 | ~~DOC.8~~ | ✅ Пагінація: виправлено `04_03` default limit 21 → 20 (Pagy default) | `04_03` | ✅ Виконано |
-| DOC.9 | `find_with_partition_pruning` задокументований для TelemetryLog, але **існує тільки в BlockchainTransaction** | `04_01`, CLAUDE.md | Виправити doc або реалізувати для TelemetryLog |
+| ~~DOC.9~~ | ✅ `find_with_partition_pruning` реалізовано для TelemetryLog (аналогічно BlockchainTransaction). Документ `04_01` коректний | `04_01` | ✅ Виконано |
 | DOC.10 | Dual Computation Integrity описана як ">30% числова дивергенція", але код робить **категоричне порівняння** (homeostasis vs stress) | `05_02`, CLAUDE.md | Виправити doc → "categorical comparison" |
 | ~~DOC.11~~ | ✅ SFC `SLASHER_ROLE`/`slash()` — **ЗАКРИТО**: `07_01` BLOCKER-7 оновлено (2026-04-23) | `07_01` | ✅ Виконано |
 | DOC.12 | LORENZ-STATE BLOCKER позначений як відкритий у CLAUDE.md, але **реалізований в коді**: RTC DR16-DR18 + magic marker `0x4C5A5354` | CLAUDE.md | Закрити BLOCKER |
@@ -579,11 +579,11 @@
 | ~~DOC.22~~ | ✅ SFC code block у `05_03` оновлено: додано `import ReentrancyGuard`, `ReentrancyGuard` в contract inheritance, рядок у таблиці базових контрактів | `05_03` | ✅ Виконано |
 | ~~DOC.23~~ | ✅ Дублікат endpoint #27 виправлено, всі ендпоінти перенумеровані (28→84) | `04_03` | ✅ Виконано |
 | DOC.24 | TRL 8 для backend (`04_01`) vs "7-8" в CLAUDE.md | `04_01`, CLAUDE.md | Узгодити |
-| DOC.25 | Soldier firmware "648 рядків" (`05_01`) vs фактично ~771+ рядків | `05_01` | Оновити |
+| ~~DOC.25~~ | ✅ Firmware рядки оновлені в `05_01`: Soldier 648→888, Queen 550→927 | `05_01` | ✅ Виконано |
 | ~~DOC.26~~ | ✅ Дублікат `Pausable` видалено з SCC таблиці у `05_03` (об'єднано в один рядок) | `05_03` | ✅ Виконано |
 | ~~DOC.27~~ | ✅ `signed_at` — **ЗАКРИТО**: не має в `contracts_controller.rb` `only:`, проблема відсутня | `07_01` | ✅ Виконано |
 | ~~DOC.28~~ | ✅ `deploy-production.yml` — **ЗАКРИТО**: файл існує в `.github/workflows/` | `06_01` | ✅ Виконано |
-| DOC.29 | BOM досі каже "SIM7070G (або SIM7000G — уточнити)" попри прийняте рішення SIM7070G | `02_05` | Оновити BOM |
+| ~~DOC.29~~ | ✅ BOM оновлено: "SIM7070G (або SIM7000G — уточнити)" → "SIM7070G ✅ Підтверджено" | `02_05` | ✅ Виконано |
 | DOC.30 | OPTIMAL_Z_TARGET=29.0 vs математичний рівноважний z=ρ−1=27.0 — невідповідність без пояснення | `03_04`, `08_02` | Задокументувати rationale або виправити на 27.0 |
 | DOC.31 | TRL 8 заявлено для `09_02` але модулі на TRL 3-4 — TRL-Lock principle (§3 `09_02`) обмежує загальний TRL | `09_02` | Застосувати TRL-Lock |
 | DOC.32 | Akash TRL "6 ✅" але **жоден deploy не проведений** — аргументовано TRL 5 | `06_02` | Понизити до TRL 5 |
@@ -741,7 +741,7 @@
 | E.49 | **Celo RPC fallback mechanism** не вказаний — при збої primary RPC немає автоматичного переключення | `05_01` | P3: додати fallback RPC |
 | E.50 | **Streamr broadcast failures silently dropped** — немає alerting/logging при неможливості доставки P2P real-time broadcast | `05_01` | P3: додати error tracking |
 | E.51 | **Hardcoded oracle balance thresholds** (0.05 MATIC, 0.05 SOL) — рекомендується зробити configurable через `ProtocolParameters` | `05_02` | P3: перемістити до SystemParameter |
-| E.52 | **`unique_for: 1.hour`** в `EthereumAnchorWorker` коді vs `unique_for: 7.days` в документації — потенційна race condition при retry | `05_04` | Верифікувати актуальний код |
+| ~~E.52~~ | ✅ **Верифіковано (2026-04-24):** Актуальний код: `unique_for: 7.days`. Документи `05_04` та `05_01` виправлені (було `1.hour`) | `05_04`, `05_01` | ✅ Виконано |
 | E.53 | **SFC excluded from state root** — `SilkenForestCoin` total supply не входить у weekly state root hash, хоча SFC є частиною tokenomics | `05_04` | Оцінити додавання до state root |
 | E.54 | **Active tree count excluded from state root** — кількість активних дерев не верифікується на L1 | `05_04` | Оцінити додавання |
 

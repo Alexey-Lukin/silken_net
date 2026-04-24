@@ -496,7 +496,7 @@ if (queen_ack_timeout_count >= HELIUM_FALLBACK_THRESHOLD) {
 | # | Компонент | Специфікація | Фаза | Статус |
 |---|-----------|-------------|------|--------|
 | 1 | **STM32WLE5JC** (LoRa-E5 Mini, Seeed Studio) | ARM Cortex-M4 + SX1262, 868 МГц, 256KB Flash | 1/2.5/3 | ✅ |
-| 2 | **SIM7070G** (або SIM7000G — уточнити) | LTE-M / NB-IoT / GNSS, UART AT, 3.7V | 1/2.5 | ⚠️ Назва уточнюється |
+| 2 | **SIM7070G** | LTE-M / NB-IoT / GNSS, UART AT, 3.7V | 1/2.5 | ✅ Підтверджено |
 | 3 | **Starlink Mini** | LEO satellite terminal, DC 12–48V, 20–40W | 3 only | 📋 Заплановано |
 | 4 | **ESP32-S3** (WiFi co-processor для Starlink Mini) | 240 МГц, WiFi 802.11n, UART | 3 only | ⚠️ Не реалізовано |
 | 5 | **Сонячна панель** | Monocrystalline, 50W (Phase 1/2.5) / 100W (Phase 3 winter) | 1/2.5/3 | ✅ Архітектурно |

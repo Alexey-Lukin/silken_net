@@ -120,7 +120,7 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 class EthereumAnchorWorker
   include ApplicationWeb3Worker
 
-  sidekiq_options queue: "web3_low", retry: 5, unique_for: 1.hour
+  sidekiq_options queue: "web3_low", retry: 5, unique_for: 7.days
 
   def perform
     with_web3_error_handling("Ethereum", "L1 State Anchor") do
@@ -138,7 +138,7 @@ end
 | **Queue** | `web3_low` | Найнижчий Web3-пріоритет — некритичні, але важливі L1 операції |
 | **Priority** | 2 з 9 | Обробляється після всіх критичних Web3-задач |
 | **Retry** | 5 | Exponential backoff (~2+ годин); достатньо для L1 congestion recovery |
-| **unique_for** | 1.hour | Запобігає паралельному запуску тижневих циклів (idempotency guard) |
+| **unique_for** | 7.days | Запобігає перетину тижневих anchoring циклів (idempotency guard) |
 | **Mixin** | `ApplicationWeb3Worker` | RPC Rate Limiter (50 req/s), уніфіковане error handling, Prometheus метрики |
 
 **`ApplicationWeb3Worker` надає:**
