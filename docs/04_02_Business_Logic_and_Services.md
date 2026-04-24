@@ -20,7 +20,7 @@
 |-----------|------|-------------|
 | `ApplicationService` | `app/services/application_service.rb` | Базовий клас для всіх сервісів. Надає `.call(...)` → `new(...).perform` template. |
 | `ApplicationWeb3Worker` | `app/workers/application_web3_worker.rb` | Базовий **модуль** (не клас) для всіх блокчейн-воркерів. Включає: RPC rate limiter (50 rps), уніфіковану обробку помилок (HTTPX/Net timeouts), partition-pruned lookups: `find_telemetry_log_with_pruning(id, created_at_iso)` та `find_blockchain_tx_with_pruning(id, created_at_iso)` — обидва додають `created_at` у `WHERE` для уникнення Global Partition Scan по RANGE-партиціонованих таблицях. |
-| `Web3CircuitBreaker` | `app/workers/concerns/web3_circuit_breaker.rb` | **[NEW]** ActiveSupport Concern із 3-state Circuit Breaker (`:closed` → `:open` → `:half_open`). `FAILURE_THRESHOLD=5` послідовних помилок → `OPEN_TIMEOUT=300с` (5 хв) fail-fast. Стан зберігається в `Rails.cache` (Solid Cache) — працює між Sidekiq-процесами та серверами. Розпізнає transient errors: `HTTPX::TimeoutError`, `Net::ReadTimeout`, `Errno::ECONNREFUSED`, `Web3::HttpClient::RequestError` + wrapped custom errors (`transient_cause?` перевіряє `Exception#cause` рекурсивно). Prometheus metric: `CIRCUIT_BREAKER_REJECTIONS`. Raises `CircuitOpenError` при відкритому circuit. Інтегровано в `IotexVerificationWorker`, `ChainlinkDispatchWorker`. |
+| `Web3CircuitBreaker` | `app/workers/concerns/web3_circuit_breaker.rb` | **[NEW]** ActiveSupport Concern із 3-state Circuit Breaker (`:closed` → `:open` → `:half_open`). `FAILURE_THRESHOLD=5` послідовних помилок → `OPEN_TIMEOUT=300с` (5 хв) fail-fast. Стан зберігається в `Rails.cache` (Solid Cache) — працює між Sidekiq-процесами та серверами. Розпізнає transient errors: `HTTPX::TimeoutError`, `Net::ReadTimeout`, `Errno::ECONNREFUSED`, `Web3::HttpClient::RequestError` + wrapped custom errors (`transient_cause?` перевіряє `Exception#cause` рекурсивно). Prometheus metric: `CIRCUIT_BREAKER_REJECTIONS`. Raises `CircuitOpenError` при відкритому circuit. Інтегровано в `IotexVerificationWorker` (`"iotex_w3bstream"`), `ChainlinkDispatchWorker` (`"chainlink_functions"`), `MintCarbonCoinWorker` (`"polygon_rpc"`), `SolanaMicroRewardWorker` (`"solana_spl"`), `CeloRewardWorker` (`"celo_cusd"`). |
 | `CoapEncryption` | `app/workers/concerns/coap_encryption.rb` | Concern для downlink-воркерів. AES-256-CBC шифрування з випадковим IV, нульовий padding. Формат: `[IV:16][Ciphertext:N×16]`. |
 
 ### Web3 Utility Layer
@@ -52,7 +52,7 @@
 |---|---|
 | **Файл** | `app/services/alert_dispatch_service.rb` |
 | **Вхід** | `TelemetryLog` (через `.analyze_and_trigger!`) або `Tree` + `message` (через `.create_fraud_alert!`) |
-| **Що робить** | Аналізує телеметрію по 5 напрямках: вандалізм (tamper), пожежа/температура, сейсміка, посуха/атрактор, шкідники. Адаптивні пороги (з кластера/породи дерева). Redis-фільтр тиші (5 хвилин per `tree_id:alert_type`). |
+| **Що робить** | Аналізує телеметрію по 5 напрямках: вандалізм (tamper), пожежа/температура, сейсміка, посуха/атрактор, шкідники. Адаптивні пороги (з кластера/породи дерева). Redis-фільтр тиші (5 хвилин per `tree_id:alert_type`). **[SEC.10]** Per-DID rate limiting для critical alerts: `MAX_ALERTS_PER_DID_PER_WINDOW=5` critical alerts за `DID_RATE_LIMIT_WINDOW=1.minute` — захист від replay/injection атак (forged panic packets). Time-bucketed cache key `"ews_did_rate:#{tree.did}:#{time_bucket}"`, TTL = 2 хвилини. Перевищення → warn log + silent drop. |
 | **Зовнішні виклики** | `EmergencyResponseService.call`. `AlertNotificationWorker` більше **не** викликається явно — `EwsAlert.after_create_commit :dispatch_notifications!` ставить job у чергу безпечно після commit транзакції (A-1 Transactional Outbox). |
 | **Вихід** | Створює `EwsAlert`. Інвалідує `oracle_expected_yield_24h` кеш при critical severity. Повертає `nil` (всі дії через side effects). |
 
@@ -77,7 +77,7 @@
 |---|---|
 | **Файл** | `app/services/silken_net/attractor.rb` |
 | **Вхід** | `seed` (Integer/DID), `temp` (Float °C), `acoustic` (Integer events) |
-| **Що робить** | Обчислює Z-значення атрактора Лоренца. σ=10, ρ=28, β=8/3. 250 ітерацій, timestep=0.01. `BigDecimal(18)` для крос-платформної детермінованості. Clamp: σ∈[5,30], ρ∈[10,50]. |
+| **Що робить** | Обчислює Z-значення атрактора Лоренца. σ=10, ρ=28, β=8/3. 250 ітерацій, timestep=0.01. **[FIX FW.7]** `Float` (IEEE 754 double) — ідентично firmware mruby для Dual Computation Integrity. BigDecimal замінено на Float: різна математика давала розбіжність Z на десятки одиниць після 250 ітерацій хаотичної системи. Clamp: σ∈[5,30], ρ∈[10,50]. |
 | **Вихід** | `calculate_z → Float` (rounded 4). `homeostatic? → Boolean`. `generate_trajectory → Array<Float>` (плаский масив x,y,z × 250 для Three.js). |
 | **Примітка** | `generate_trajectory`: перший триплет (індекс 0–2) — початковий seed-стан до інтеграції (`i=0,1,2` → x₀,y₀,z₀); інтеграція Лоренца починається з індексу 3 (`i=3` → крок 1). |
 
@@ -723,6 +723,7 @@
 |----------|----------|
 | **Черга** | `web3_critical` |
 | **Retry** | 5 |
+| **Includes** | `Web3CircuitBreaker` — `with_circuit_breaker("polygon_rpc")` |
 | **Тригер** | `OracleCallbacksController#create` (Chainlink DON webhook) або `TokenomicsEvaluatorWorker` (cron fallback) або `TokenomicsBatchCallbacks#on_success` |
 | **Вхід** | `telemetry_log_id` (опціонально), `created_at_iso` (опціонально) |
 | **Сервіси** | `BlockchainMintingService.call_batch` або `.call` |
@@ -784,6 +785,7 @@
 |----------|----------|
 | **Черга** | `web3` |
 | **Retry** | 3 |
+| **Includes** | `Web3CircuitBreaker` — `with_circuit_breaker("celo_cusd")` |
 | **Тригер** | `ClusterHealthCheckWorker` (при healthy кластері) |
 | **Вхід** | `cluster_id`, `target_date_string` |
 | **Сервіси** | `Celo::CommunityRewardService.new(cluster, date).reward_community!` |
@@ -794,6 +796,7 @@
 |----------|----------|
 | **Черга** | `web3` |
 | **Retry** | 3 |
+| **Includes** | `Web3CircuitBreaker` — `with_circuit_breaker("solana_spl")` |
 | **Тригер** | `OracleCallbacksController#create` (Chainlink DON fulfillment callback, при `oracle_status == "fulfilled"`) |
 | **Вхід** | `telemetry_log_id`, `created_at_iso` (опціонально) |
 | **Сервіси** | `Solana::MintingService.new(log).mint_micro_reward!` |
