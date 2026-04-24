@@ -90,21 +90,6 @@
 - [ ] Додати graceful degradation: при Redis недоступності → DB-based nonce lookup з TTL
 - [ ] Тести: Redis down scenario → gateways залишаються active
 
-#### S6.2 — Chainlink Functions Router v1 ENV змінні
-- **P1** | `04_02` | **Складність: XS** | **🔧 Операційна**
-- **Опис:** Chainlink ABI оновлено до Functions Router v1. Потрібні 3 нові ENV: `CHAINLINK_DATA_VERSION`, `CHAINLINK_CALLBACK_GAS_LIMIT`, `CHAINLINK_DON_ID`
-- **Статус:** ✅ Виконано. Всі 3 ENVs додані до `.env.example`, `config/deploy.yml` (Kamal), `deploy/akash/deploy.yaml`, `.kamal/secrets`, та задокументовані в `06_01`
-- [x] Додати до `.env.example`
-- [x] Додати до deploy configs (Kamal, Akash SDL)
-- [x] Задокументувати в `06_01`
-
-#### S6.3 — deploy-production.yml відсутній
-- **P1** | `06_01` | **Складність: S** | **Код**
-- **Опис:** Workflow для production deploy згадується в документації але не існує. Production deploy неможливий через CI
-- **Статус:** ✅ Виконано. `.github/workflows/deploy-production.yml` створено з Terraform Apply + Kamal Deploy, triggered by GitHub Release або manual dispatch
-- [x] Створити `.github/workflows/deploy-production.yml`
-- [x] Інтегрувати з GitHub Releases (`v*.*.*`)
-
 #### S6.4 — Circuit breaker тільки на IoTeX/Chainlink
 - **P2** | `05_01` | **Складність: M** | **Код**
 - **Опис:** Circuit breaker реалізований лише для IoTeX та Chainlink. Відсутній на 10 інших Web3 мережах (Streamr, Filecoin, peaq, Polygon, Solana, Celo, KlimaDAO, Hadron, The Graph, Ethereum L1)
@@ -117,24 +102,10 @@
 - [ ] Збільшити lock timeout або використати pessimistic DB lock
 - [ ] Тест: slow RPC scenario
 
-#### S6.6 — Missed anchor week не backfilled
-- **P2** | `05_04` | **Складність: S** | **Код**
-- **Опис:** Якщо weekly `EthereumAnchorWorker` пропускає тиждень (downtime, gas), state root **назавжди втрачається**
-- **Статус:** ✅ Виконано. `EthereumAnchorWorker#detect_missed_anchor_weeks!` додано — перевіряє gap > 8 днів перед кожним anchoring, логує warning та інкрементує Prometheus `silkennet_anchor_missed_weeks_total`. Retroactive backfill неможливий (DB state вже змінився), тому поточний state root записується як catch-up anchor
-- [x] Додати backfill mechanism або alerting
-- [x] Задокументувати process для manual recovery
-
-#### S6.7 — Double-anchoring race condition
-- **P2** | `05_04` | **Складність: S** | **Код**
-- **Опис:** Timeout → retry → два state roots для одного тижня на L1
-- **Статус:** ✅ Виконано. При timeout або IOError anchor залишається `pending` (не `failed`), тому retry через `in_flight` guard знаходить існуючий anchor і відновлює його замість створення нового state_root. Запобігає подвійному якоренню на L1
-- [x] Додати idempotency guard (перевірка існуючого anchor перед TX)
-
 #### S6.8 — Weekend telemetry blackouts
 - **P3** | `04_02` | **Складність: XS** | **Код**
 - **Опис:** Немає GLOBAL_BLACKOUT на вихідних. Телеметрія у вихідні мовчки ігнорується
 - [ ] Задокументувати поведінку або додати weekend handling
-
 
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** | `04_02` | **Складність: L** | **Архітектурна**
@@ -553,14 +524,11 @@
 |----|----------------|-----------|-----|
 | DOC.2 | Катод/Анод labels плутанина в `01_01`: Деталь 1 (нижня частина) — в `01_01` описана як "Катод / передає Мінус", але у `01_03` правильно ідентифікована як **Анод** (GOx окислення). В `01_01` визначення суперечливе: реально анод є від'ємним полюсом джерела ЕРС, але cathode/anode маркування потребує уніфікації з `01_03` | `01_01`, `01_03` | Уніфікувати термінологію з `01_03` |
 | DOC.4 | "Binary payload 16 bytes" (`00_01`) — це зашифрований inner payload. Повний зовнішній пакет = **21 байт** (4 DID + 1 RSSI + 16 encrypted) | `00_01` | Уточнити: 21B outer, 16B encrypted inner |
-| ~~DOC.10~~ | ~~Dual Computation Integrity описана як ">30% числова дивергенція", але код робить **категоричне порівняння** (homeostasis vs stress)~~ | `05_01` | ✅ Виправлено — `05_01` оновлено: "categorical comparison (homeostasis vs stress/anomaly mismatch) → fraud flag". Також виправлено: BigDecimal → Float (відповідно до FW.7 fix) |
 | DOC.16 | Енергія TX: `02_01` каже 120mA/39mJ, `02_03` §9 каже 15mA/2.475mJ — несумісні значення | `02_01`, `02_03` | Узгодити (120mA = +22dBm коректно) |
 | DOC.17 | RAM budget Queen: §5 header каже "~3.7 KB", але детальна таблиця = **~14.4 KB** (22% of 64KB) | `03_02` | Виправити header |
 | DOC.21 | State root hash delimiter: `\|` в коді vs `:` в іншій секції doc | `05_01`, `05_04` | Уніфікувати → `\|` (як в коді) |
 | DOC.24 | TRL 8 для backend (`04_01`) vs "7-8" в CLAUDE.md | `04_01`, CLAUDE.md | Узгодити |
-| ~~DOC.30~~ | ~~OPTIMAL_Z_TARGET=29.0 vs математичний рівноважний z=ρ−1=27.0 — невідповідність без пояснення~~ | `03_04` | ✅ Виправлено — rationale задокументовано: навмисне зміщення +2 від рівноваги для кращої розрізненності класів та біологічного обґрунтування |
 | DOC.31 | TRL 8 заявлено для `09_02` але модулі на TRL 3-4 — TRL-Lock principle (§3 `09_02`) обмежує загальний TRL | `09_02` | Застосувати TRL-Lock |
-| ~~DOC.32~~ | ~~Akash TRL "6 ✅" але **жоден deploy не проведений** — аргументовано TRL 5~~ | `06_02` | ✅ Виправлено — TRL понижено до 5, дорожня карта оновлена |
 
 ---
 
@@ -670,7 +638,6 @@
 
 | # | Знахідка | Джерело | Примітка |
 |---|----------|---------|----------|
-| E.1 | ✅ SFC voting power коректно зменшується після slashing — ERC20Votes `_update` → `_transferVotingUnits` → checkpoint update. Підтверджено аналізом OZ v5 | `07_01` | ✅ Досліджено та підтверджено |
 | E.3 | Breadboard video відсутнє (для грантів) | `07_03` | Зняти відео |
 | E.4 | Helium Network fallback — concept є, реалізації немає | `02_05` | Дизайн + реалізація |
 | E.5 | CoAP listener Ruby — масштабується до ~10k вузлів | `06_01` | Series D: Rust/Go proxy |
@@ -725,7 +692,6 @@
 |----|-----------|---------|-----------|
 | ARCH.1 | Fractal topology: L2 Sergeant nodes (H-LDSE hierarchical routing, geohashing) | `00_01` | Post-TRL 7 |
 | ARCH.2 | Ingress Proxy (Rust/Go) + Kafka для >1M packets/hour | `00_01`, `06_01` | Series D |
-| ARCH.4 | ✅ Governance DAO (SFC voting) — protocol constants via on-chain governance. `SilkenGovernor.sol` + `SilkenTimelock.sol` + `ProtocolParameters.sol` + `Governance::ParameterSyncWorker` | `05_03` | ✅ Реалізовано |
 | ARCH.5 | Cross-Registry Export (Verra, Gold Standard, UNFCCC) | `04_02` | Post-TRL 7 |
 | ARCH.6 | Federated Learning auto-retraining (monthly cycle, A/B testing) | `04_02` | Post-TRL 7 |
 | ARCH.7 | Edge Data Fusion: transmit 2-byte λ-exponent замість 16-byte Z payload | `00_01` | Post-TRL 7 |
@@ -736,7 +702,6 @@
 | ARCH.12 | Merkle Tree state root (замість flat SHA-256) для partial verification / ISO 14064 | `05_04` | TRL 9 |
 | ARCH.13 | EigenLayer AVS як альтернатива direct L1 write (~$0.01/week vs $5-15/week) | `05_04` | Research |
 | ARCH.14 | Read-Only PostgreSQL Replicas для analytics та Oracle queries | `00_01`, `06_01` | Post-TRL 7 |
-| ARCH.15 | ✅ SystemParameter model для governance-aware backend (`SystemParameter.current(:lorenz_sigma)`) | `05_03` | ✅ Реалізовано (Сесія 19): модель, міграція, 19 seed-параметрів (Lorenz, tokenomics, alerts, hardware), spec, factory. Кешований lookup з TTL 24h, fallback на default |
 | ARCH.16 | Mobile app для foresters (Phase 2 roadmap) | `00_02` | Post-TRL 7 |
 | ARCH.17 | Bonding Curves для dynamic SCC pricing | `05_03` | TRL 9+ |
 | ARCH.18 | Детерміністична Fixed-Point арифметика (Integer Math): для досягнення побітової ідентичності розрахунків (consensus) між STM32 (Soldier) та GCP/Akash (Backend), необхідно відмовитись від IEEE 754 Floating-Point. Всі вхідні дані мають множитись на 10⁶ (або 10⁸) і розраховуватись у 64-бітних цілих числах (`int64_t` у C, `Integer` у Ruby). Це усуне апаратний drift при розрахунку Атрактора Лоренца. Потребує повного переписування математики в прошивці з урахуванням ризиків переповнення буферів (overflows) під час множення великих чисел. | `03_04`, `05_02` | Post-TRL 7 |
