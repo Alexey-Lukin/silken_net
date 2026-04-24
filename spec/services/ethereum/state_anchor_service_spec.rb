@@ -70,7 +70,7 @@ RSpec.describe Ethereum::StateAnchorService do
     end
 
     it "uses GENESIS fallback when no AuditLog exists" do
-      expected_payload = "0.0|0|0|GENESIS|#{Time.current.utc.iso8601}"
+      expected_payload = "0.0|0.0|0|GENESIS|#{Time.current.utc.iso8601}"
       expected_hash = Digest::SHA256.hexdigest(expected_payload)
 
       freeze_time do

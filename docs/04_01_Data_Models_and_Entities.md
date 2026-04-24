@@ -1082,6 +1082,8 @@ active/draft ──cancel──► cancelled
 |------|-----|------|
 | `state_root` | string(64) | 64-char SHA-256 hex дайджест (`UNIQUE`) |
 | `total_scc` | decimal(30,4) | Загальний SCC-баланс усіх гаманців на момент anchoring |
+| `total_sfc` | decimal(30,4) | Сума підтверджених SFC мінтингів на момент anchoring [E.53] |
+| `active_tree_count` | integer | Кількість активних дерев в екосистемі на момент anchoring [E.54] |
 | `chain_hash` | string | chain_hash останнього `AuditLog` на момент anchoring |
 | `anchored_at` | datetime | UTC-timestamp включений у хеш |
 | `tx_hash` | string(66) | Ethereum TX hash (`0x` + 64 hex chars, `UNIQUE WHERE NOT NULL`) |
@@ -1108,7 +1110,7 @@ active/draft ──cancel──► cancelled
 **Scopes:** `recent`, `successful` (confirmed), `latest_confirmed`.
 
 **Методи:**
-- `verify_state_root` — незалежно відтворює хеш з `total_scc|chain_hash|anchored_at.iso8601` та порівнює з `state_root` (для зовнішнього аудитора)
+- `verify_state_root` — незалежно відтворює хеш з `total_scc|total_sfc|active_tree_count|chain_hash|anchored_at.iso8601` та порівнює з `state_root` (для зовнішнього аудитора)
 - `etherscan_url` — повертає `https://etherscan.io/tx/#{tx_hash}` або `nil`
 
 **Використовується:** `Ethereum::StateAnchorService#anchor_to_l1!` (записує до TX), `EthereumAnchorWorker`.

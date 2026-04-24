@@ -108,8 +108,10 @@ RSpec.describe EthereumAnchor, type: :model do
       freeze_time do
         now = Time.current.utc
         total_scc = BigDecimal("1000.5")
+        total_sfc = BigDecimal("0")
+        active_tree_count = 0
         chain_hash = "test_chain_hash"
-        expected_payload = "#{total_scc}|#{chain_hash}|#{now.iso8601}"
+        expected_payload = "#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{now.iso8601}"
         expected_root = Digest::SHA256.hexdigest(expected_payload)
 
         record = described_class.new(

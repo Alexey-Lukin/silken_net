@@ -78,8 +78,8 @@ module Ethereum
     # дані між цими двома SQL-запитами.
     def generate_state_root
       ActiveRecord::Base.transaction(isolation: :repeatable_read) do
-        total_scc = Wallet.sum(:scc_balance)
-        total_sfc = BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount)
+        total_scc = Wallet.sum(:scc_balance).to_d
+        total_sfc = BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount).to_d
         active_tree_count = Tree.active.count
         latest_chain_hash = AuditLog.order(created_at: :desc, id: :desc).pick(:chain_hash) || "GENESIS"
         timestamp = Time.current.utc

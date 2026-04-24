@@ -21,7 +21,7 @@
 
 Ethereum L1 State Anchor — це **фінальна печатка** всього стану системи Gaia 2.0. Один раз на тиждень (щопонеділка о 03:00 UTC) `EthereumAnchorWorker` запускає `Ethereum::StateAnchorService`, який:
 
-1. Збирає глобальний стан системи з PostgreSQL (загальний SCC-баланс + останній chain_hash AuditLog + timestamp)
+1. Збирає глобальний стан системи з PostgreSQL (загальний SCC-баланс + загальний SFC supply + кількість активних дерев + останній chain_hash AuditLog + timestamp)
 2. Стискає його в 32-байтний SHA-256 хеш (`state_root`)
 3. Записує `bytes32` хеш у смарт-контракт `StateRootAnchor` на **Ethereum Mainnet** через Alchemy RPC
 
@@ -36,7 +36,8 @@ Ethereum L1 State Anchor — це **фінальна печатка** всьог
 | `EthereumAnchorWorker` | `app/workers/ethereum_anchor_worker.rb` | ✅ Real |
 | `Ethereum::StateAnchorService` | `app/services/ethereum/state_anchor_service.rb` | ✅ Real |
 | `EthereumAnchor` | `app/models/ethereum_anchor.rb` | ✅ Real |
-| Міграція | `db/migrate/20260415140000_create_ethereum_anchors.rb` | ✅ Applied |
+| Міграція (base) | `db/migrate/20260415140000_create_ethereum_anchors.rb` | ✅ Applied |
+| Міграція (E.53/E.54) | `db/migrate/20260424165615_add_sfc_and_tree_count_to_ethereum_anchors.rb` | ✅ Applied |
 | `Web3::RpcConnectionPool` | `app/services/web3/rpc_connection_pool.rb` | ✅ Real |
 | `ApplicationWeb3Worker` | `app/workers/application_web3_worker.rb` | ✅ Real |
 | Cron-розклад | `config/sidekiq.yml` | ✅ Сконфігуровано |
@@ -186,10 +187,12 @@ def generate_state_root
   # між паралельними MintCarbonCoinWorker / AuditLogWorker записами
   ActiveRecord::Base.transaction(isolation: :repeatable_read) do
     # 1. Сума всіх SCC-балансів у системі (cross-chain total supply snapshot)
-    total_scc = Wallet.sum(:scc_balance)
+    #    `.to_d` нормалізує до BigDecimal для консистентного рядкового представлення
+    #    (Active Record sum() повертає Integer 0 коли немає записів, BigDecimal при наявності)
+    total_scc = Wallet.sum(:scc_balance).to_d
 
     # 2. [E.53] Сума підтверджених SFC мінтингів (governance token supply)
-    total_sfc = BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount)
+    total_sfc = BlockchainTransaction.where(token_type: :forest_coin, status: :confirmed).sum(:amount).to_d
 
     # 3. [E.54] Кількість активних дерев (ecosystem coverage metric)
     active_tree_count = Tree.active.count
@@ -247,10 +250,10 @@ Result:   "7f4a9b2c1e8d3f6a0b5c8e2d7a4f1b9e3c6d0a7f4b1e8d5c2a9f6b3e0d7a4c1"  (64
 generate_state_root()
        │
        ▼
-generate_state_root()  →  { state_root, total_scc, chain_hash, anchored_at }
+generate_state_root()  →  { state_root, total_scc, total_sfc, active_tree_count, chain_hash, anchored_at }
        │
        ▼
-EthereumAnchor.create!(state_root:, total_scc:, chain_hash:, anchored_at:, status: :pending)
+EthereumAnchor.create!(state_root:, total_scc:, total_sfc:, active_tree_count:, chain_hash:, anchored_at:, status: :pending)
        │ Crash recovery: запис існує до TX (якщо процес впаде — запис залишиться в :pending)
        │
        ▼
