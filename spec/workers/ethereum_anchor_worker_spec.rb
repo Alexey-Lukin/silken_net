@@ -100,14 +100,16 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
     end
 
     it "does not warn when last anchor is within 8 days" do
-      EthereumAnchor.create!(
-        state_root: "a" * 64,
-        total_scc: 100.0,
-        chain_hash: "recent_hash",
-        anchored_at: 6.days.ago,
-        status: :sent,
-        tx_hash: "0x#{"bb" * 32}"
-      )
+      travel_to(6.days.ago) do
+        EthereumAnchor.create!(
+          state_root: "a" * 64,
+          total_scc: 100.0,
+          chain_hash: "recent_hash",
+          anchored_at: Time.current,
+          status: :sent,
+          tx_hash: "0x#{"bb" * 32}"
+        )
+      end
 
       expect(Rails.logger).not_to receive(:warn).with(/Missed anchor week/)
 
@@ -115,14 +117,16 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
     end
 
     it "warns and increments metric when last anchor is older than 8 days" do
-      EthereumAnchor.create!(
-        state_root: "b" * 64,
-        total_scc: 200.0,
-        chain_hash: "old_hash",
-        anchored_at: 10.days.ago,
-        status: :confirmed,
-        tx_hash: "0x#{"cc" * 32}"
-      )
+      travel_to(10.days.ago) do
+        EthereumAnchor.create!(
+          state_root: "b" * 64,
+          total_scc: 200.0,
+          chain_hash: "old_hash",
+          anchored_at: Time.current,
+          status: :confirmed,
+          tx_hash: "0x#{"cc" * 32}"
+        )
+      end
 
       expect(Rails.logger).to receive(:warn).with(/Missed anchor week detected/)
       expect(SilkenNet::Metrics::ANCHOR_MISSED_WEEKS_TOTAL).to receive(:increment)
@@ -150,9 +154,11 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
       allow(EthereumAnchor).to receive(:where).and_raise(StandardError, "DB error")
 
       expect(Rails.logger).to receive(:warn).with(/Missed anchor detection failed/)
-      expect(mock_service).to receive(:anchor_to_l1!).and_return("0x" + "dd" * 32)
+      allow(mock_service).to receive(:anchor_to_l1!).and_return("0x" + "dd" * 32)
 
       described_class.new.perform
+
+      expect(mock_service).to have_received(:anchor_to_l1!)
     end
   end
 end
