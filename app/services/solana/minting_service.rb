@@ -342,7 +342,7 @@ module Solana
     # Перевіряє баланс SOL на гаманці оракула перед відправкою транзакції.
     # [E.51] Threshold configurable через SystemParameter (governance-aware, 24h cache).
     def verify_oracle_balance!(rpc_url, fee_payer_pubkey)
-      min_balance_sol = SystemParameter.current(:oracle_min_balance_sol, default: DEFAULT_MIN_ORACLE_BALANCE_SOL).to_f
+      min_balance_sol = (SystemParameter.current(:oracle_min_balance_sol, default: DEFAULT_MIN_ORACLE_BALANCE_SOL) || DEFAULT_MIN_ORACLE_BALANCE_SOL).to_f
       min_balance_lamports = (min_balance_sol * 1_000_000_000).to_i
 
       payload = {

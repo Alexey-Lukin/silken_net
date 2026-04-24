@@ -80,7 +80,7 @@ module Treasury
     # SystemParameter.current reads from 24h cache → no DB hit on every monitor cycle.
     def build_config(chain_key, defaults)
       net = NETWORK_CONFIG[chain_key]
-      min_balance = SystemParameter.current(defaults[:param_key], default: defaults[:min_balance]).to_f
+      min_balance = (SystemParameter.current(defaults[:param_key], default: defaults[:min_balance]) || defaults[:min_balance]).to_f
       min_balance_wei = (BigDecimal(min_balance.to_s) * 10**defaults[:decimals]).to_i
 
       net.merge(

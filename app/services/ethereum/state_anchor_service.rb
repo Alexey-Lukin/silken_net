@@ -148,7 +148,7 @@ module Ethereum
 
       # [BLOCKER-4] Inline guard clause — перевірка балансу ETH перед відправленням.
       # [E.51] Threshold configurable через SystemParameter (governance-aware, 24h cache).
-      min_eth = SystemParameter.current(:oracle_min_balance_eth, default: DEFAULT_MIN_ANCHOR_BALANCE_ETH).to_f
+      min_eth = (SystemParameter.current(:oracle_min_balance_eth, default: DEFAULT_MIN_ANCHOR_BALANCE_ETH) || DEFAULT_MIN_ANCHOR_BALANCE_ETH).to_f
       min_balance_wei = (min_eth * (10**18)).to_i
       balance = client.get_balance(anchor_key.address)
       if balance < min_balance_wei
