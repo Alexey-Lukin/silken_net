@@ -45,6 +45,10 @@ env:
     - REDIS_URL
     - KREDIS_REDIS_URL
     - SENTRY_DSN
+    - CHAINLINK_FUNCTIONS_ROUTER
+    - CHAINLINK_SUBSCRIPTION_ID
+    - CHAINLINK_HMAC_SECRET
+    - CHAINLINK_DON_ID
   clear:
     # Puma clustered mode — number of forked worker processes.
     # GCP n2-standard-2 has 2 vCPUs, so 2 workers saturate both cores.
@@ -55,6 +59,12 @@ env:
     # Enables Sentry to group errors by deploy and track regressions.
     # See: config/initializers/sentry.rb → config.release
     RELEASE_VERSION: "${RELEASE_VERSION}"
+
+    # Chainlink Functions Router v1 configuration.
+    # DATA_VERSION: Functions API version (default: 1).
+    # CALLBACK_GAS_LIMIT: gas limit for oracle callback response (default: 300000).
+    CHAINLINK_DATA_VERSION: 1
+    CHAINLINK_CALLBACK_GAS_LIMIT: 300000
 
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug

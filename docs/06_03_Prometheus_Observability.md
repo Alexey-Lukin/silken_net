@@ -18,7 +18,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — бібліотеки встановлені, 10 кастомних метрик реалізовані та інструментовані, структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (BLOCKERs 1-3 вирішені); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
+- **Поточний TRL:** TRL 6 — бібліотеки встановлені, 20 кастомних метрик реалізовані та інструментовані (10 counters + 8 gauges + 2 histograms), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (BLOCKERs 1-3 вирішені); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
 - **Пов'язані модулі:**
   - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
@@ -338,7 +338,7 @@ end
 
 Обидві метрики зареєстровані в `config/initializers/prometheus.rb` та інструментовані у відповідних класах. `ORACLE_DISPATCH_DURATION` вимірює повний цикл dispatch (від виклику до отримання request_id). `LORENZ_COMPUTATION_DURATION` вимірює час серверного розрахунку 250 ітерацій Лоренца (Float арифметика).
 
-**Підсумок реєстру: 12 кастомних метрик (7 counters + 3 histograms + 2 gauges).**
+**Підсумок реєстру: 12 кастомних метрик (7 counters + 3 histograms + 2 gauges). З урахуванням DB Connection Pool (4 gauges), Treasury/Oracle Balance (2 gauges + 1 counter) та Lorenz Computation (1 histogram) — фактичний підсумок: 20 кастомних метрик (10 counters + 8 gauges + 2 histograms).**
 
 ### 2.6 Governance Parameter Sync Observability
 
@@ -430,7 +430,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  /metrics endpoint (PrometheusCollector middleware)     │   │
-│  │  ✅ 10 кастомних метрик  ✅ Всі 9 черг                 │   │
+│  │  ✅ 20 кастомних метрик  ✅ Всі 9 черг                 │   │
 │  │  ✅ Basic Auth (PROMETHEUS_AUTH_USER/PASSWORD)          │   │
 │  └──────────────────────────┬──────────────────────────────┘   │
 │                             │ [Alloy scrapes кожні 15s]        │
@@ -564,7 +564,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 1. **Lean** — Один gem, нуль транзитивного bloat. Gemfile залишається чистим.
 2. **Офіційний** — Підтримується самою організацією Prometheus (не community wrapper).
-3. **Thread-safe** — Критично для Sidekiq workers (16 потоків × 7 черг).
+3. **Thread-safe** — Критично для Sidekiq workers (16 потоків × 9 черг).
 4. **Кастомні метрики** — Нам потрібні domain-specific counters (`scc_minted_total`, `rpc_errors_total`), а не generic Rails request histograms. Авто-інструментація Yabeda додає шум.
 5. **Rails 8.1 native** — Працює з `ActiveSupport::Notifications`. Немає конфліктів з framework.
 6. **Без Redis залежності** — Метрики живуть у пам'яті процесу. Без зайвої інфраструктури.

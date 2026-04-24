@@ -340,6 +340,17 @@ contract ProtocolParametersTest is Test {
         assertEq(params.sccPerTonneCo2(), 0);
     }
 
+    function test_namedGetter_sccFallbackPriceUsdCents() public {
+        // [S6.9] $25.50 = 2550 cents — governance-controlled fallback price
+        vm.prank(timelock);
+        params.setParameter(keccak256("scc_fallback_price_usd_cents"), 2550e18);
+        assertEq(params.sccFallbackPriceUsdCents(), 2550e18);
+    }
+
+    function test_namedGetter_sccFallbackPriceUsdCents_defaultIsZero() public view {
+        assertEq(params.sccFallbackPriceUsdCents(), 0);
+    }
+
     // ─── Well-Known Key Constants ─────────────────────────────────────
 
     function test_keyConstants_matchSolidityKeccak() public view {
@@ -357,6 +368,7 @@ contract ProtocolParametersTest is Test {
         assertEq(params.KEY_SLASH_THRESHOLD(), keccak256("slash_threshold"));
         assertEq(params.KEY_STRESS_THRESHOLD(), keccak256("stress_threshold"));
         assertEq(params.KEY_SCC_PER_TONNE_CO2(), keccak256("scc_per_tonne_co2"));
+        assertEq(params.KEY_SCC_FALLBACK_PRICE_USD_CENTS(), keccak256("scc_fallback_price_usd_cents"));
     }
 
     function test_governanceRoleConstant() public view {

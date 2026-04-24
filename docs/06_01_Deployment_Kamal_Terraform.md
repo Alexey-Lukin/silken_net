@@ -674,9 +674,13 @@ ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
 W3BSTREAM_API_URL=https://w3bstream-api.iotex.io
 W3BSTREAM_PROJECT_ID=silken_net_dmrv
 
-# Chainlink Functions (Oracle)
-CHAINLINK_ROUTER_ADDRESS=0x...
+# Chainlink Functions Router v1 (Oracle DON)
+CHAINLINK_FUNCTIONS_ROUTER=0x...
 CHAINLINK_SUBSCRIPTION_ID=...
+CHAINLINK_HMAC_SECRET=...
+CHAINLINK_DON_ID=fun-polygon-mainnet-1
+CHAINLINK_DATA_VERSION=1
+CHAINLINK_CALLBACK_GAS_LIMIT=300000
 
 # peaq DID (Machine Identity)
 PEAQ_NODE_URL=https://peaq-node.example.com

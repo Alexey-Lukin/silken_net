@@ -39,9 +39,9 @@
 * **Резерв:** Helium Network (HNT) як fallback при втраті Queen — будь-який роутер Helium у радіусі 15 км ловить пакет ([деталі → 02_05](02_05_Queen_Hardware_and_Starlink)).
 
 ### 🖥️ Рівень 5: Серверне Ядро (The Engine)
-* **Стек:** Ruby on Rails 8.1 Omakase, PostgreSQL, Redis, Sidekiq (31+ Workers).
+* **Стек:** Ruby on Rails 8.1 Omakase, PostgreSQL, Redis, Sidekiq (37 Workers).
 * **Деплой:** Kamal, Docker, Prometheus (Observability).
-* **Роль:** Декодування (L3), маршрутизація API (28 Controllers), управління бізнес-логікою контрактів (Nature-as-a-Service).
+* **Роль:** Декодування (L3), маршрутизація API (31 Controllers), управління бізнес-логікою контрактів (Nature-as-a-Service).
 * **Вхідний шар IoT:** CoAP/UDP listener (порт 5683) — для планетарного масштабу потребує Ingress Proxy перед Rails ([деталі → 06_01](06_01_Deployment_Kamal_Terraform)).
 
 ---

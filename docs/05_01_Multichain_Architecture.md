@@ -398,7 +398,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **Воркер** | `EthereumAnchorWorker` |
 | **Черга** | `web3_low` (пріоритет 8) |
 | **Retry** | 5 |
-| **Unique** | `unique_for: 1.hour` (запобігає overlapping) |
+| **Unique** | `unique_for: 7.days` (запобігає перетину тижневих циклів) |
 | **ENV** | `ETHEREUM_ANCHOR_PRIVATE_KEY`, `ETHEREUM_ANCHOR_CONTRACT`, `ETHEREUM_MAX_FEE_GWEI`, `ETHEREUM_PRIORITY_FEE_GWEI`, `ETHEREUM_GAS_LIMIT` |
 | **RPC** | `ALCHEMY_ETHEREUM_RPC_URL` |
 | **Спека** | `spec/services/ethereum/state_anchor_service_spec.rb` |
@@ -430,8 +430,8 @@ firmware/soldier/main.c → LoRa TX → Queen → CoAP PUT → UnpackTelemetryWo
 
 | Компонент | Файл |
 |-----------|------|
-| Прошивка Солдата | `firmware/soldier/main.c` (648 рядків C) |
-| Прошивка Королеви | `firmware/queen/main.c` (550 рядків C) |
+| Прошивка Солдата | `firmware/soldier/main.c` (888 рядків C) |
+| Прошивка Королеви | `firmware/queen/main.c` (927 рядків C) |
 | mruby Lorenz (on-device) | `firmware/bio_contracts/bio_contract.rb` |
 | Воркер розпакування | `UnpackTelemetryWorker` (черга: `uplink`, пріоритет 1) |
 | Сервіс розпакування | `TelemetryUnpackerService` (21-байт binary decoding) |

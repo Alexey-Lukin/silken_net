@@ -58,6 +58,9 @@ contract ProtocolParameters is AccessControl {
     bytes32 public constant KEY_SLASH_THRESHOLD = keccak256("slash_threshold");
     bytes32 public constant KEY_STRESS_THRESHOLD = keccak256("stress_threshold");
 
+    // Pricing (S6.9 — governance-controlled fallback price)
+    bytes32 public constant KEY_SCC_FALLBACK_PRICE_USD_CENTS = keccak256("scc_fallback_price_usd_cents");
+
     /// @notice Емітується при зміні будь-якого параметра.
     /// @param key Keccak256 хеш назви параметра.
     /// @param oldValue Попереднє значення (0 якщо раніше не встановлювалось).
@@ -215,6 +218,13 @@ contract ProtocolParameters is AccessControl {
     /// @notice Поріг стресу для дерева. Default: 0.30 (0.3e18 = 30%).
     function stressThreshold() external view returns (uint256) {
         return _parameters[KEY_STRESS_THRESHOLD];
+    }
+
+    /// @notice Fallback ціна SCC у центах USD при недоступності Uniswap/RPC.
+    ///         Default: 2550 (= $25.50). Governance-controlled щоб уникнути
+    ///         фінансового ризику від hardcoded значення. [S6.9]
+    function sccFallbackPriceUsdCents() external view returns (uint256) {
+        return _parameters[KEY_SCC_FALLBACK_PRICE_USD_CENTS];
     }
 
     // ─── Admin Protection ─────────────────────────────────────────────
