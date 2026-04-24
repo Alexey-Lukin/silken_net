@@ -522,11 +522,9 @@
 
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
-| DOC.2 | ✅ Виправлено — Катод/Анод labels уніфіковано з `01_03`: Деталь 1 = **Анод** (GOx окислення, від'ємний полюс EBFC), Деталь 3 = **Катод** (Laccase ORR) | `01_01`, `01_03` | ✅ Уніфіковано |
 | DOC.4 | "Binary payload 16 bytes" (`00_01`) — це зашифрований inner payload. Повний зовнішній пакет = **21 байт** (4 DID + 1 RSSI + 16 encrypted) | `00_01` | Уточнити: 21B outer, 16B encrypted inner |
 | DOC.16 | Енергія TX: `02_01` каже 120mA/39mJ, `02_03` §9 каже 15mA/2.475mJ — несумісні значення | `02_01`, `02_03` | Узгодити (120mA = +22dBm коректно) |
 | DOC.17 | RAM budget Queen: §5 header каже "~3.7 KB", але детальна таблиця = **~14.4 KB** (22% of 64KB) | `03_02` | Виправити header |
-| DOC.31 | ✅ Виправлено — TRL-Lock principle застосовано: загальний TRL = 4 (обмежений модулем 01 Materials/EBFC TRL 3-4) | `09_02` | ✅ Застосовано |
 
 ---
 
@@ -670,9 +668,7 @@
 | DIFF.7 | SNR parameter unused in Queen CIFO eviction | `03_02` | Low priority optimization |
 | E.41 | **Fire events delayed 48h** via dClimate satellite obscuration — **⚠️ life-safety risk**. Mitigation: Forester Guild as Fallback Oracle (E.20) + immediate local broadcast via panic TX (не чекати satellite clearance при chainsaw detection). **Пріоритет: P1** (не відкладати на Post-TRL 6) | `04_02`, `05_01` | P1: interim emergency fallback |
 | E.42 | **TelemetryLog cleanup safety**: видалення записів з `oracle_status='dispatched'` ламає Chainlink callbacks. Cleanup job MUST exclude `dispatched` status — підтверджено в коді | `04_02` | ⚠️ Не видаляти dispatched records |
-| E.43 | ✅ **OPTIMAL_Z_TARGET=29.0 vs z_eq=27.0**: Задокументовано в `03_04` — навмисний offset +2 від рівноваги для кращої розрізненності класів та біологічного обґрунтування (активне здорове дерево демонструє конвекцію вище рівноваги) | `03_04`, `08_02` | ✅ Задокументовано |
 | E.45 | **SCC/SFC contract addresses** = `0x0000...0` в subgraph.yaml — блокує deploy subgraph на testnet/mainnet | `05_03` | Пов'язано з S3.5 |
-| E.46 | ✅ **Insurance pool failsafe → false on RPC failure**: `insurance_pool_requires_funding?` тепер повертає `false` при RPC error — не накладає 2% Dynamic Tax під час деградації мережі. Зафіксовано коментар `[E.46]` в `blockchain_minting_service.rb` | `04_02`, `05_03` | ✅ Виправлено |
 | E.47 | **Solana RPC defaults to Devnet** — production мінтинг USDC мікро-винагород піде на Devnet якщо не встановлений `SOLANA_RPC_URL` | `05_01` | ⚠️ Перевірити ENV перед mainnet |
 | E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
 | E.49 | **Celo RPC fallback mechanism** не вказаний — при збої primary RPC немає автоматичного переключення | `05_01` | P3: додати fallback RPC |
