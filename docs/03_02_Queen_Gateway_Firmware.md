@@ -12,7 +12,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — C-код шлюзу написаний, 59 queen-specific host-based тестів проходять
+- **Поточний TRL:** TRL 6 — C-код шлюзу написаний
 - **Пов'язані модулі:**
   - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
   - Апаратний AES-256 та Безпека → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
@@ -881,7 +881,3 @@ make -C firmware/test queen    # 59 тестів, ~0.1 секунди
 | Factory Flashing | BLOCKER-1 (AES key) блокує масове виробництво |
 
 ---
-
-*Документ створено: 2026-03-24 | Останнє оновлення: 2026-04-18 (Session — PR #273: Queen UID Flash provisioning, IWDG, HRNG fallback entropy, OTA loop fix, CMD_DECRYPT_BUF_SIZE sync, Starlink timeouts) | Автор: AI Agent (Copilot) | Issue: #187*
-*Синхронізовано з: `firmware/queen/main.c`, `firmware/test/test_queen_logic.c`*
-*Виправлені BLOCKER'и: BLOCKER-3 (Queen UID), BLOCKER-5 (IWDG), BLOCKER-7 (CMD_DECRYPT_BUF_SIZE), BLOCKER-8 (HRNG fallback), BLOCKER-9 (OTA infinite loop)*
