@@ -106,7 +106,7 @@ RSpec.describe ClusterEntropyAnalyzerWorker, type: :worker do
       end
     end
 
-    context "ignores old telemetry outside analysis window" do
+    context "when telemetry is outside analysis window" do
       before do
         tree = create(:tree, cluster: cluster, tree_family: tree_family)
         # Create 50 logs outside the 24-hour window
@@ -122,7 +122,7 @@ RSpec.describe ClusterEntropyAnalyzerWorker, type: :worker do
       end
     end
 
-    context "skips records with nil z_value" do
+    context "when records have nil z_value" do
       before do
         tree = create(:tree, cluster: cluster, tree_family: tree_family)
         # Create 50 logs without z_value

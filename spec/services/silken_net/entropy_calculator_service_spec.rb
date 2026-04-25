@@ -36,7 +36,7 @@ RSpec.describe SilkenNet::EntropyCalculatorService do
       end
     end
 
-    context "entropy semantics" do
+    context "with entropy semantics" do
       it "returns 0.0 for all identical values (total order/stress)" do
         values = Array.new(100, 29.0)
         result = described_class.call(values)
@@ -75,7 +75,7 @@ RSpec.describe SilkenNet::EntropyCalculatorService do
       end
     end
 
-    context "edge cases" do
+    context "with edge cases" do
       it "handles negative Z-values" do
         values = Array.new(50) { rand(-10.0..10.0) }
         result = described_class.call(values)
