@@ -10,11 +10,12 @@
 
 ## ✅ Статус
 
-- **Стратегічна цінність:** Наукові публікації ЧНУ = легітимізація технології + Hardware Proof для seed-раунду
+- **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація
 - **Поточний TRL:** TRL 3 — публікаційний план визначено, авторські колективи формуються
 - **Пов'язані модулі:**
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
-  - Кіберфізична валідація → [`8_02_Cybernetic_and_Mathematical_Validation`](8_02_Cybernetic_and_Mathematical_Validation)
+  - Кіберфізична валідація → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation)
+  - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
   - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
   - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
 
@@ -207,6 +208,192 @@ _(Запропонована тема; студент визначається �
 
 ---
 
+## 📊 1B. Публікації ЧДТУ (Data Science та Прикладна Статистика)
+
+> **Контекст:** Кафедра статистики та прикладної математики ЧДТУ (доц. Карапетян А.Р.) забезпечує академічну експертизу Data Science, яка комплементарна до інженерних досліджень ЧНУ ФОТІУС. Повний реєстр 47 Data Science задач — у [`08_04`](08_04_CHDTU_Data_Science_Collaboration).
+
+### Стаття 11: Декомпозиція Часових Рядів Біотелеметрії
+
+**Назва (EN):** _"Time Series Decomposition of Bio-Telemetry from IoT Forest Monitoring"_
+**Журнали:** Sensors (Q1, MDPI) · Environmental Monitoring and Assessment (Q2)
+
+| Автор | Внесок |
+|-------|--------|
+| **Карапетян А.Р.** (ЧДТУ) | STL/MSTL декомпозиція delta_t; ARIMA/SARIMA/Prophet прогнозування; ACF/PACF аналіз Z-траєкторій |
+| Архітектор (Silken Net) | Дизайн системи, структура TelemetryLog, forest_simulator як джерело даних |
+
+**Задачі з реєстру 08_04:** #1 (STL декомпозиція), #2 (прогнозування delta_t), #6 (автокореляційний аналіз)
+
+---
+
+### Стаття 12: Функції Корисності для Автономного Edge AI
+
+**Назва (EN):** _"Utility Functions for Autonomous Decision-Making in Energy-Constrained IoT"_
+**Журнали:** Expert Systems with Applications (Q1) · Decision Support Systems (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Карапетян А.Р.** (ЧДТУ) | MAUT для growth_points (нелінійна, per породу); Bayesian optimization порогів Лоренца; Decision theory для LoRa TX; mechanism design токеноміки |
+| Архітектор (Silken Net) | bio_contract.rb специфіка, ProtocolParameters.sol, InsightGeneratorService |
+
+**Задачі з реєстру 08_04:** #27 (MAUT growth_points), #29 (Edge AI utility), #30 (mechanism design токеноміки)
+
+---
+
+### Стаття 13: Виявлення Аномалій у Масштабних Потоках Лісової Телеметрії
+
+**Назва (EN):** _"Anomaly Detection in Large-Scale Forest Telemetry Streams"_
+**Журнали:** IEEE Internet of Things Journal (Q1) · Information Sciences (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Карапетян А.Р.** (ЧДТУ) | Isolation Forest, LOF; контекстуальне виявлення аномалій (сезонність + біом); CUSUM/EWMA для replay/spoofing; графові методи для скоординованих атак |
+| Архітектор (Silken Net) | insight_generator_service.rb (fraud detection), alert_dispatch_service.rb, Dual Computation Integrity |
+
+**Задачі з реєстру 08_04:** #22 (Isolation Forest), #24 (контекстуальні аномалії), #25 (replay detection), #26 (графові методи)
+
+---
+
+### Стаття 14: Ляпуновські Показники та Рекурентний Аналіз Lorenz-Based Tree Health Index
+
+**Назва (EN):** _"Lyapunov Exponents and Recurrence Analysis of Lorenz-Based Tree Health Index"_
+**Журнали:** Chaos, Solitons & Fractals (Q1) · Nonlinear Dynamics (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Карапетян А.Р.** (ЧДТУ) | Алгоритм Вольфа (Ляпуновські показники), фрактальна розмірність (Grassberger-Procaccia), RQA (DET, LAM, ENT), реконструкція фазового простору (теорема Такенса) |
+| Архітектор (Silken Net) | Lorenz Attractor специфіка (σ=10, ρ=28, β=8/3), silken_net/attractor.rb, bio_contract.rb |
+
+**Задачі з реєстру 08_04:** #7 (Ляпуновські показники), #8 (фрактальна розмірність), #9 (RQA)
+
+---
+
+## 🤝 1C. Міжуніверситетські Публікації (ЧНУ ФОТІУС × ЧДТУ)
+
+> **Принцип:** Де ЧНУ ФОТІУС створює алгоритм або модель — ЧДТУ статистично валідує та розширює. 8 зон перетину ідентифіковано у [`08_04` §8](08_04_CHDTU_Data_Science_Collaboration#8-міжуніверситетська-синергія-чдту--чну-фотіус).
+
+### Стаття 15: Хаотичний Індекс Здоров'я Дерев — Формальна Верифікація та Динамічний Аналіз
+
+**Назва (EN):** _"Chaos-Based Tree Health Index: Formal Verification and Dynamical Analysis"_
+**Журнали:** Chaos, Solitons & Fractals (Q1) · Nonlinear Dynamics (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Порубльов І.М.** (ЧНУ ФОТІУС) | Формальна верифікація Float64 precision, Euler vs RK4, OPTIMAL_Z_TARGET=29.0, аудит BLOCKER-1/-2/-3 |
+| **Карапетян А.Р.** (ЧДТУ) | Ляпуновські показники, фрактальна розмірність, RQA, ентропія, реконструкція фазового простору |
+| Архітектор (Silken Net) | Lorenz Attractor специфіка, Dual Computation Integrity |
+
+**Тип зв'язку:** Послідовний — ФОТІУС верифікує математичну коректність → ЧДТУ аналізує властивості Z-траєкторій на верифікованих даних
+
+---
+
+### Стаття 16: Мультиметодне Виявлення Аномалій у Масштабній Лісовій IoT-Телеметрії
+
+**Назва (EN):** _"Multi-Method Anomaly Detection in Large-Scale Forest IoT Telemetry"_
+**Журнали:** IEEE Internet of Things Journal (Q1) · Knowledge-Based Systems (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Осауленко І.А.** (ЧНУ ФОТІУС) | DBSCAN кластеризація telemetry_logs, Apriori правила для EwsAlert + ParametricInsurance |
+| **Карапетян А.Р.** (ЧДТУ) | Isolation Forest, LOF, Mahalanobis, CUSUM/EWMA, графові методи |
+| Архітектор (Silken Net) | InsightGeneratorService, fraud detection pipeline |
+
+**Тип зв'язку:** Паралельний — ФОТІУС: Data Mining патернів метаболізму, ЧДТУ: статистичне виявлення аномалій
+
+---
+
+### Стаття 17: Генетична Оптимізація зі Статистичною Валідацією для Класифікації Стресу Лісу
+
+**Назва (EN):** _"Genetic Algorithm Optimization with Statistical Validation for Forest Stress Classification"_
+**Журнали:** Neural Networks (Q1) · Pattern Recognition (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Любченко К.М.** (ЧНУ ФОТІУС) | GA-оптимізація ваг InsightGeneratorService (stress_index), 50 поколінь × 100 хромосом |
+| **Карапетян А.Р.** (ЧДТУ) | k-fold CV, SHAP пояснюваність, ROC/PR криві, drift monitoring |
+| Архітектор (Silken Net) | InsightGeneratorService, ai_train.rake, Akash GPU навчання |
+
+**Тип зв'язку:** Комплементарний — ФОТІУС оптимізує ваги (GA), ЧДТУ оцінює якість та пояснюваність (SHAP)
+
+---
+
+### Стаття 18: Дводжерельна Верифікація Здоров'я Лісу — CNN-Супутник та IoT-Сенсори
+
+**Назва (EN):** _"Dual-Source Forest Health Verification: CNN Satellite Classification Validated by Ground-Truth IoT Sensors"_
+**Журнали:** Remote Sensing of Environment (Q1) · Nature Machine Intelligence (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Бушин І.М.** (ЧНУ ФОТІУС) | CNN перенавчання Sentinel-2 → 6 класів, кореляція stress_map ↔ delta_t |
+| **Любченко К.М.** (ЧНУ ФОТІУС) | ANN + RF + GA ensemble класифікатор |
+| **Карапетян А.Р.** (ЧДТУ) | Статистична кореляція NDVI ↔ delta_t ↔ z_value, GAM регресія, Moran's I, Kriging |
+| Архітектор (Silken Net) | dClimate інтеграція, EWS pipeline, CoAP telemetry |
+
+**Тип зв'язку:** Комплементарний — ФОТІУС будує CNN-класифікатор, ЧДТУ валідує кореляцію статистично
+
+---
+
+### Стаття 19: Оптимальна Параметризація Фільтра Калмана для Шумозниження IoT-Сенсорів
+
+**Назва (EN):** _"Optimal Kalman Filter Parametrization for Energy-Harvesting IoT Sensor Noise Reduction"_
+**Журнали:** IEEE Sensors Journal (Q1) · Measurement (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Косенюк Г.В.** (ЧНУ ФОТІУС) | Kalman Filter реалізація на MCU (< 200 байт RAM, < 50 μs), delta_t ± 1.2% → Z ± 2% |
+| **Карапетян А.Р.** (ЧДТУ) | Allan variance шуму, оптимальна частота семплювання, M-estimators калібрація |
+| Архітектор (Silken Net) | STM32WLE5JC специфіка, BQ25570 MPPT, EBFC delta_t сигнал |
+
+**Тип зв'язку:** Послідовний — ФОТІУС реалізує фільтр на MCU → ЧДТУ оптимізує параметри Q/R
+
+---
+
+### Стаття 20: Автономне Прийняття Рішень на Основі Корисності для Енергообмежених Лісових IoT-Агентів
+
+**Назва (EN):** _"Utility-Based Autonomous Decision-Making for Energy-Constrained Forest IoT Agents"_
+**Журнали:** International Journal of Project Management (Q1) · Expert Systems with Applications (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Осауленко І.А.** (ЧНУ ФОТІУС) | Multi-Attribute Utility для LoRa TX (W_energy=0.40, W_data=0.30), firmware C реалізація |
+| **Карапетян А.Р.** (ЧДТУ) | MAUT для growth_points, Bayesian optimization порогів, Decision theory, mechanism design |
+| Архітектор (Silken Net) | bio_contract.rb, firmware TX-рішення, ProtocolParameters.sol |
+
+**Тип зв'язку:** Паралельний — ФОТІУС реалізує MAUT на MCU, ЧДТУ досліджує теоретичні основи та оптимізує
+
+---
+
+### Стаття 21: Перколяційне Параметричне Страхування для IoT-Лісових Мереж
+
+**Назва (EN):** _"Percolation-Based Parametric Insurance for IoT Forest Networks: From Network Physics to Actuarial Science"_
+**Журнали:** Insurance: Mathematics and Economics (Q1) · IEEE Transactions on Reliability (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Порубльов І.М.** (ЧНУ ФОТІУС) | Теорія перколяції (q_c), ланцюги Маркова (TTL-flood relay) |
+| **Онищенко Б.О.** (ЧНУ ФОТІУС) | Стохастичний B&B, Monte Carlo симуляція |
+| **Карапетян А.Р.** (ЧДТУ) | Weibull/Pareto підбір збитків, чиста премія, space-time clustering, basis risk copula |
+| Архітектор (Silken Net) | ParametricInsurance модель, Slashing Protocol (threshold 20%), oracle consensus |
+
+**Тип зв'язку:** Послідовний — ФОТІУС розраховує q_c (фізика мережі) → ЧДТУ використовує q_c як параметр актуарних моделей
+
+---
+
+### Стаття 22: Статистичний Аналіз Часових Рядів Біотелеметрії з Кіберфізичного Моніторингу Лісу
+
+**Назва (EN):** _"Statistical Analysis of Bio-Telemetry Time Series from Cyber-Physical Forest Monitoring"_
+**Журнали:** Computers & Electronics in Agriculture (Q1) · Environmental Modelling & Software (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Осауленко І.А.** (ЧНУ ФОТІУС) | ARIMA / Holt-Winters прогноз delta_t на 30 днів; backend Data Mining pipeline |
+| **Карапетян А.Р.** (ЧДТУ) | STL/MSTL, SARIMA, Prophet, PELT change-point, крос-кореляція, ACF/PACF |
+| Архітектор (Silken Net) | DailyAggregationWorker, telemetry_logs партиціювання, forest_simulator |
+
+**Тип зв'язку:** Паралельний — ФОТІУС: прогнозна модель для PoG, ЧДТУ: повний арсенал декомпозиції та аналізу
+
+---
+
 ## ⚖️ 2. Розподіл Інтелектуальної Власності (IP Framework)
 
 ### Власність Silken Net (Архітектора)
@@ -235,11 +422,28 @@ _(Запропонована тема; студент визначається �
 - Доступ до production API та blockchain ключів
 - Права на ліцензування технології третім сторонам
 
+### Права ЧДТУ (Академічний Партнер)
+
+| Право | Деталі |
+|---|---|
+| Використання симульованих та деанонімізованих даних для досліджень | Необмежено |
+| Включення результатів у навчальну програму кафедри статистики | Необмежено |
+| Подача грантів на основі спільних досліджень | Погоджується з Silken Net |
+| Участь у міжнародних проєктах (Horizon EU, NFDI) | Погоджується з Silken Net |
+| Публікації від імені ЧДТУ (зі Silken Net як co-author) | Вільно |
+| R-скрипти аналізу → open-source в `lib/analytics/r/` | Спільне авторство |
+
+### Що Silken Net НЕ передає ЧДТУ
+
+- Права на комерційну експлуатацію системи (монетизація SCC/SFC)
+- Доступ до production API, blockchain ключів та raw production телеметрії
+- Права на ліцензування технології або моделей третім сторонам
+
 ---
 
 ## 🎓 3. Alumni Bridge (Кадровий Резерв)
 
-### Magister Thesis Factory
+### Magister Thesis Factory (ЧНУ)
 
 Gaia 2.0 стає офіційним **полігоном для магістерських робіт** студентів ФОТІУС та природничих факультетів ЧНУ:
 
@@ -256,6 +460,22 @@ Gaia 2.0 стає офіційним **полігоном для магісте�
 | Радіотехніка | "Радіотехнічна оптимізація мікропотужних IoT-пристроїв у лісовому середовищі" | Косенюк |
 | Управління проєктами | "Методи кластерного аналізу та теорії прийняття рішень в управлінні R&D-портфелями кіберфізичних стартапів" | Осауленко |
 | Прикладна математика | "Генетичні алгоритми для оптимізації ML-моделей класифікації стресу лісу" | Любченко |
+
+### Студентські Роботи ЧДТУ (Карапетян А.Р.)
+
+Кафедра статистики та прикладної математики ЧДТУ забезпечує окремий потік студентських робіт на базі Silken Net:
+
+| Рівень | Тема | Задачі з реєстру 08_04 |
+|--------|------|------------------------|
+| **Магістерська** | "Прогнозування засухи через аналіз часових рядів delta_t" | #1, #2, #3, #6 |
+| **Магістерська** | "Побудова функції корисності для Edge AI IoT-агентів" | #27, #29, #30 |
+| **Магістерська** | "Методи виявлення аномалій у масивах біотелеметрії" | #22, #23, #24, #25 |
+| **Магістерська** | "Статистична кореляція супутникових та сенсорних даних" | #33, #34, #35, #36 |
+| **Бакалаврська** | "Аналіз розподілів growth_points на мові R" | #5, #14, #20 |
+| **Бакалаврська** | "Візуалізація атрактора Лоренца та рекурентні графіки" | #9, #11, #12 |
+| **Бакалаврська** | "Порівняльний аналіз класифікаторів стресу дерев" | #15, #16, #17 |
+| **Курсова** | "Описова статистика телеметрії Silken Net (R)" | #5, #37, #40 |
+| **Курсова** | "Автокореляційний аналіз Z-значень (R)" | #6, #12, #13 |
 
 **Strategic value:** Кожен магістрант — потенційний member команди розгортання Silken Net в Україні та світі. Університет готує кадри, проєкт отримує кваліфіковану робочу силу.
 
