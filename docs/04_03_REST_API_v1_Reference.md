@@ -7,7 +7,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Впроваджено Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
-- **Кількість ендпоінтів:** 83 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`)
+- **Кількість ендпоінтів:** 84 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`, `GET /api/v1/system_audits`)
 - **Базовий URL:** `https://<host>/api/v1`
 - **Формат відповідей:** JSON (якщо не вказано інше)
 - **Пов'язані модулі:**

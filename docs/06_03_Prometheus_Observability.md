@@ -18,7 +18,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — бібліотеки встановлені, 20 кастомних метрик реалізовані та інструментовані (10 counters + 8 gauges + 2 histograms), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (BLOCKERs 1-3 вирішені); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
+- **Поточний TRL:** TRL 6 — бібліотеки встановлені, 22 кастомні метрики реалізовані та інструментовані (12 counters + 8 gauges + 2 histograms), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (BLOCKERs 1-3 вирішені); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
 - **Пов'язані модулі:**
   - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
@@ -431,7 +431,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  /metrics endpoint (PrometheusCollector middleware)     │   │
-│  │  ✅ 20 кастомних метрик  ✅ Всі 9 черг                 │   │
+│  │  ✅ 22 кастомні метрики  ✅ Всі 9 черг                 │   │
 │  │  ✅ Basic Auth (PROMETHEUS_AUTH_USER/PASSWORD)          │   │
 │  └──────────────────────────┬──────────────────────────────┘   │
 │                             │ [Alloy scrapes кожні 15s]        │

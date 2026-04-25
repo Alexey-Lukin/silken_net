@@ -206,7 +206,10 @@ CoAP таймаути збільшені для Starlink DTC (worst-case RTT 600
 ```c
 // djb2 хеш STM32 HW UID (0x1FFF7590) XOR HAL_GetTick() XOR XOR_MASK(i)
 // Кожен bit-shift для i ∈ {0,1,2,3} гарантує різні слова IV
-batch_iv[i] = djb2_uid_hash ^ (HAL_GetTick() << (i * 8)) ^ (i * RNG_FALLBACK_XOR_MASK);
+uint32_t tick     = HAL_GetTick();
+uint32_t uid_hash = djb2_hash(queen_uid, strlen(queen_uid));
+batch_iv[i] = tick ^ (uid_hash << i) ^ ((uint32_t)i * RNG_FALLBACK_XOR_MASK)
+            ^ (tick >> (8U * i));
 ```
 
 Оскільки STM32 HW UID унікальний для кожного чіпу, IV більше не буде однаковим навіть при масовому blackout-відновленні. Повністю усуває IV Reuse Attack у сценарії "всі Queens перезавантажились одночасно".
@@ -456,7 +459,8 @@ Buffer size: binary_batch_buffer[2048] — достатньо з запасом
    HAL_RNG_Init(&hrng)  ← ініціалізація тільки перед використанням
    for i in 0..3:
      if HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK:
-       batch_iv[i] = HAL_GetTick() ^ (i * 0x5A5A5A5AUL)  ← IV fallback
+       tick = HAL_GetTick(); uid_hash = djb2_hash(queen_uid, strlen(queen_uid));
+        batch_iv[i] = tick ^ (uid_hash << i) ^ (i * 0xA5A5A5A5UL) ^ (tick >> (8*i))  ← IV fallback
    HAL_RNG_DeInit(&hrng)  ← деініціалізація зразу після
 
 3. Switch CRYP: hcryp.Init.Algorithm = CRYP_AES_CBC
@@ -474,7 +478,7 @@ static uint8_t encrypted_batch_buffer[2048 + 16];  ← static (не стек!)
 **Два різні HRNG fallback — не плутати:**
 | Місце | Fallback при HRNG fail | Маска | Пояснення |
 |-------|------------------------|-------|-----------|
-| CBC IV generation (batch) | `HAL_GetTick() ^ (i * 0x5A5A5A5AUL)` | per-word, різна для кожного слова | XOR з індексом гарантує різні слова IV навіть якщо tick однаковий — мінімальна ентропія без нульових слів |
+| CBC IV generation (batch) | `tick ^ (uid_hash << i) ^ (i * 0xA5A5A5A5UL) ^ (tick >> (8*i))` | per-word, 4 різні слова IV | djb2(UID) + подвійний tick shift (ліворуч і право) + маска — гарантує 4 унікальних слова навіть при однаковому tick та однаковому UID |
 | Jitter regeneration після flush | `HAL_GetTick() ^ RNG_FALLBACK_XOR_MASK` | `0xA5A5A5A5UL` (одна константа) | Один tick, одна маска — простий jitter, криптостійкість не потрібна |
 | Startup jitter (один раз) | `HAL_GetTick()` (без XOR!) | без маски — рядок 228 | Startup: tick вже унікальний бо залежить від часу включення живлення; жодна маска не додає ентропії у цьому контексті; jitter — не криптографічна операція |
 
