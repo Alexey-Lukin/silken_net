@@ -187,6 +187,44 @@ Silken Net використовує **Lorenz Attractor** ([`03_04`](03_04_mruby_
      Tree.codit_phase → модифікатор stress_index (не вважати Фазу 1 за стрес)
 ```
 
+**Завдання В: Конкретний Gap у calculate_stress_index_heuristic**
+
+Поточна реалізація евристики (`app/services/insight_generator_service.rb:252`) ігнорує `sap_deviation` повністю:
+
+```ruby
+# ПОТОЧНИЙ КОД (app/services/insight_generator_service.rb:252)
+def calculate_stress_index_heuristic(max_status, avg_temp, _max_acoustic, avg_z)
+  return 1.0 if max_status >= 2  # anomaly/tamper → max stress
+  base_stress = (max_status == 1 ? 0.6 : 0.0)
+  base_stress += 0.2 if avg_z.abs > 2.0
+  base_stress += 0.1 if avg_temp > 35.0 || avg_temp < -5.0
+  [ base_stress, 0.99 ].min
+  # ⚠️ sap_deviation (delta_t відхилення від baseline) = НЕ ВИКОРИСТОВУЄТЬСЯ
+  # Навіть при -20% sap_deviation → stress_index = 0.0 якщо max_status == 0
+end
+
+# ML-шлях (якщо модель завантажена) ВИКОРИСТОВУЄ sap_deviation як feature:
+# features = [avg_temp, avg_vcap, avg_z, sap_deviation, max_acoustic]
+# Але heuristic fallback — ні.
+```
+
+**Завдання Боєчка:** визначити медично обґрунтований поріг для `sap_deviation`, що відповідає «preclinical stress»:
+
+```
+Аналогія:
+  Медичний "прихований стрес" = підвищений кортизол при нормальному ЧСС
+  Silken Net "прихований стрес" = sap_deviation < -15% при bio_status = homeostasis
+
+Пропонована доробка InsightGeneratorService (після валідації Боєчком):
+  base_stress += 0.25 if sap_deviation < -0.15  # preclinical zone (Боєчко)
+  base_stress += 0.40 if sap_deviation < -0.25  # stress onset (Боєчко)
+  # Якщо sap_deviation > +0.30 → FRAUD_DEVIATION_THRESHOLD (вже є в коді)
+
+Новий insight_type: :preclinical_stress_detected
+  Trigger: stress_index ∈ [0.2, 0.55] та sap_deviation_trend < -10%/тиждень
+  → EwsAlert.severity = :warning (не critical) + ЧДТУ Карапетян (SARIMA прогноз)
+```
+
 ---
 
 ### 1.3. Бушуєва Інна — EBFC Ензимна Іммобілізація
@@ -331,6 +369,27 @@ Ti-6Al-4V містить ~6% алюмінію та ~4% ванадію. При ф
      - Молібдат натрію (Na₂MoO₄) — мікроелемент для рослин
 ```
 
+**Завдання В: Кодбейс-інтеграція — TreeFamily та видо-специфічні токсикологічні пороги**
+
+```
+Модель TreeFamily (app/models/tree_family.rb) вже має JSONB поле biological_properties:
+  store_accessor :biological_properties,
+    :sap_flow_index,          # індекс потоку ксилеми для виду
+    :bark_thickness,           # товщина кори (мм)
+    :foliage_density,          # щільність крони
+    :fire_resistance_rating    # рейтинг пожежної стійкості
+
+Суховой додає токсикологічні пороги для кожного виду (Pinus, Quercus, Fagus):
+  store_accessor :biological_properties,
+    :vanadium_lc50_ug_l,    # LC50 V⁵⁺ для ксилеми конкретного виду (µg/L)
+    :aluminum_lc50_ug_l,    # LC50 Al³⁺ (µg/L)
+    :safety_margin_v,        # Safety Margin = LC50(V) / C_measured (ціль > 100×)
+    :8hq_phytotox_threshold  # поріг фітотоксичності 8-HQ (µg/L)
+
+Результат: InsightGeneratorService може розраховувати ion_risk_index на базі
+  реальних ICP-MS даних (від Гусака) та видо-специфічних порогів (від Суховоя)
+```
+
 **Зв'язок із ЧНУ (Гусак, [`08_01`](08_01_University_R_and_D_Protocols) §1.2):**
 
 | ЧМА (Суховой) — Токсикологія | ЧНУ (Гусак) — Фізика дифузії |
@@ -450,12 +509,13 @@ Self-healing покриття ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) §
 |-----------|------|------|-------------|
 | Lorenz Attractor (backend) | `app/services/silken_net/attractor.rb` | Z-value → bio_status класифікація | Боєчко (біомаркери стресу → калібрація порогів Z) |
 | Lorenz BioContract (firmware) | `firmware/bio_contracts/bio_contract.rb` | growth_points = f(z_value), 250 ітерацій Euler | Боєчко (recovery curve → CODIT-aware growth_points) |
-| InsightGeneratorService | `app/services/insight_generator_service.rb` | stress_index (0-1), fraud detection, 30% deviation | Боєчко (:preclinical_stress insight_type) |
-| Tree model | `app/models/tree.rb` | bio_status enum, voltage_mv, AASM states | Губенко (CODIT phase → tree state transitions) |
-| TelemetryUnpackerService | `app/services/telemetry_unpacker_service.rb` | 21-byte decode: voltage_mv, delta_t, temperature_c | Бушуєва (EBFC voltage → enzyme degradation tracking) |
-| TelemetryLog | `app/models/telemetry_log.rb` | bio_status, z_value, growth_points, delta_t | Всі (CODIT-phase-aware аналіз телеметрії) |
-| DeviceCalibration | `app/models/device_calibration.rb` | offset/coefficient correction, drift detection | Бушуєва (enzyme degradation → calibration drift) |
-| TreeFamily | `app/models/tree_family.rb` | species, carbon_sequestration_coefficient | Суховой (species-specific toxicity thresholds) |
+| InsightGeneratorService | `app/services/insight_generator_service.rb` | stress_index (0-1), ML + heuristic fallback. **Heuristic ignores `sap_deviation`** — це прямий R&D-gap для Боєчка | Боєчко (:preclinical_stress, sap_deviation threshold) |
+| TreeFamily | `app/models/tree_family.rb` | `attractor_thresholds` → `{min: critical_z_min, max: critical_z_max, baseline: baseline_impedance}`. `healthy_z?(z_value)`. `biological_properties` JSONB (`sap_flow_index, bark_thickness, foliage_density`). `stress_level(impedance)` | Боєчко (species-specific Z bounds); Суховой (додати `vanadium_lc50_ug_l`, `aluminum_lc50_ug_l` у `biological_properties`) |
+| Tree model | `app/models/tree.rb` | `bio_status` enum, `latest_stress_index`, AASM states. Delegates `attractor_thresholds` to `tree_family` | Губенко (CODIT phase → tree state transitions) |
+| TelemetryUnpackerService | `app/services/telemetry_unpacker_service.rb` | 21-byte decode: `voltage_mv` (Vcap), `delta_t`, `temperature_c` → зберігає у `TelemetryLog.sap_flow` | Бушуєва (EBFC `voltage_mv` → enzyme degradation tracking) |
+| TelemetryLog | `app/models/telemetry_log.rb` | `bio_status`, `z_value`, `growth_points`, `delta_t`, `sap_flow`. `FRAUD_DEVIATION_THRESHOLD = 0.30` (в InsightGeneratorService) | Всі (CODIT-phase-aware аналіз телеметрії) |
+| DeviceCalibration | `app/models/device_calibration.rb` | `vcap_coefficient`, `temperature_offset_c`, `impedance_offset_ohms`. `sensor_drift_critical?`. Scope: `critical_drift` | Бушуєва (enzyme degradation → `vcap_coefficient` дрейф вниз → drift_critical = True) |
+| Wallet | `app/models/wallet.rb` | `lock_and_mint!` — 10,000 growth_points = 1 SCC. `carbon_sequestration_coefficient` через TreeFamily | Боєчко (CODIT recovery curve → не карати growth_points в Фазі 1) |
 
 ---
 
@@ -483,7 +543,7 @@ Self-healing покриття ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) §
   │ • DFT        │ теорет.  │   стабільність   │ концент│ • EIS        │
   │   адсорбції  │ модель   │ • Chitosan/Nafion│ рації  │ • SEM        │
   │ • Charge     │          │   оптимізація    │ V/Al   │ • Кіркендалл │
-  │   transfer   │          │ • Тоскикологія   │        │   модель     │
+  │   transfer   │          │ • Токсикологія   │        │   модель     │
   └──────────────┘          └──────────────────┘        └──────────────┘
                                     │
                                     ▼
@@ -627,7 +687,68 @@ Self-healing покриття ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) §
 
 ---
 
-## 🔗 8. Промпт для Першого Контакту
+## 🤝 8. Рекомендації щодо Координації
+
+### Порядок підключення (паралельний до ЧНУ)
+
+1. **Q2 2026 — Перша зустріч ЧМА** → після першого контакту з ЧНУ (08_01 §1, Гусак/Мінаєв), щоб мати конкретні хімічні дані для презентації
+2. **Q3 2026 — Підписання MoU** → після верифікації профілів через офіційний сайт ЧМА; паралельно з MoU ЧНУ
+3. **Q4 2026 — Перший дата-передача** → ЧНУ (Гусак) передає ICP-MS протокол → ЧМА (Суховой) починає Safety Margin розрахунок
+
+### Git-based Collaboration
+
+```
+# ЧМА отримує доступ до GitHub Wiki (read-only) та docs/ (read PR drafts)
+# Їхній вхідний формат:
+docs/protocols/ebfc/enzyme_stability_protocol_v1.md   # Бушуєва
+docs/protocols/self_healing/8hq_capsules_v1.md        # Глущенко
+docs/reports/toxicology/vanadium_safety_margin_v1.md  # Суховой
+docs/reports/xylemo/stress_calibration_curve_v1.md    # Боєчко
+
+# Після верифікації Архітектором → вноситься у 01_02, 01_03, 08_01 як cite
+```
+
+### Заборонений доступ (security boundary)
+
+- Firmware source code (`firmware/`) та `HardwareKey` записи — поза зоною ЧМА
+- Production API endpoints та PostgreSQL — поза зоною ЧМА
+- Тільки узгоджені лабораторні протоколи та академічні datasheets передаються через захищений канал (PDF + SHA256 hash)
+
+---
+
+## 🗺️ 9. Стратегія Входу до ЧМА
+
+### Крок 1: Губенко Інна (Ректор) — Головний Entry Point
+
+Губенко — **Ректор ЧМА** — це найвища адміністративна точка входу: одна зустріч відкриває доступ до кафедри фармацевтичних дисциплін (Бушуєва, Суховой, Глущенко) та кафедри фізіології (Боєчко). Водночас як ректор вона є **повноцінним науковим партнером** (стаття 30 — ксилемоінтеграція).
+
+> _"Інно Валеріївно, я — розробник кіберфізичної системи моніторингу лісів. Ми фактично створюємо «зубний імплант для дерева» — пористий титановий скаффолд, що проростає ксилемою. Клітинна реакція дерева на чужорідне тіло — stress-shielding, інкапсуляція — це ваша зона компетенції як медичного науковця. Ми хочемо зробити ЧМА офіційним біомедичним партнером першої в Україні IoT-платформи для лісів — з публікаціями Q1 у Biomaterials та Acta Biomaterialia."_
+
+### Крок 2: Бушуєва Інна (кафедра фармацевтичних дисциплін) — EBFC Валідація
+
+Пріоритетний науковий партнер: стаття 28 (Biosensors and Bioelectronics Q1) — найближча до публікації, оскільки in vitro протокол не потребує спеціального обладнання, тільки фармацевтичний стенд ЧМА.
+
+> _"Інно Іванівно, у мене класична задача фармацевтичної хімії — стабілізація глюкозооксидази та лакцази в кислому рослинному середовищі (pH 4.5–5.5) на 20 років. Ваш досвід з іммобілізацією ферментів та захисними матрицями — це єдине, чого мені не вистачає для whitepaper. Це стаття Biosensors and Bioelectronics Q1."_
+
+### Крок 3: Суховой Геннадій + Глущенко Олександр (через Бушуєву)
+
+Суховой і Глущенко — **однорідна група** з кафедри фармацевтичних дисциплін: Суховой — токсикологічна безпека металів, Глущенко — синтез мікрокапсул. Залучати після першої зустрічі з Бушуєвою (вона відчиняє двері всередині кафедри).
+
+### Крок 4: Боєчко Владислав (фізіологія стресу) — Backend ML Calibration
+
+Найвища цінність для Proof of Growth системи, але найскладніший для першого контакту — немає прямої точки перетину без розуміння кодбейсу. Промоутер всередині академії — Губенко або Бушуєва.
+
+> _"Владиславе Анатолійовичу, маємо ML-модель класифікації стресу лісу (InsightGeneratorService), яка потребує медично обґрунтованих порогів для sap flow deviation. Ваші маркери фізіологічного виснаження — це те, що перетворить наш евристичний алгоритм на наукову публікацію."_
+
+### Координація з ЧНУ (паралельно)
+
+- Узгодити з Гусаком: ЧМА отримує результати ICP-MS аналізу → Суховой оцінює токсикологічний вплив
+- Узгодити з Мінаєвим: ЧМА отримує DFT-розрахунок charge transfer → Бушуєва проектує оптимальний захисний шар
+- Узгодити зі Спрягайлом: склад синтетичного ксилемного соку «Xylem-Sim» → стенд Бушуєвої (08_01 §2)
+
+---
+
+## 🔗 10. Промпт для Першого Контакту
 
 > _"Шановні колеги, я — розробник кіберфізичної системи моніторингу лісів Silken Net. Наша система використовує ензимний біопаливний елемент (EBFC), вбудований у титановий гіроїдний анкер, для живлення IoT-сенсорів безпосередньо від дерева._
 >
@@ -642,7 +763,7 @@ Self-healing покриття ([`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) §
 
 ---
 
-## 🔗 9. Пов'язані Документи
+## 🔗 11. Пов'язані Документи
 
 - [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols) — ЧНУ: фізико-хімічна верифікація хардверу (Мінаєв — DFT, Гусак — дифузія, Спрягайло — біо-хаб)
 - [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation) — ЧНУ ФОТІУС: кіберфізична валідація firmware/backend
