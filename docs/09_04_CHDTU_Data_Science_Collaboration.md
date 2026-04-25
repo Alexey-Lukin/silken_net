@@ -104,7 +104,7 @@ Silken Net будує тристоронню академічну екосист
 
 ### 3.2. Атрактор Лоренца — Аналіз Хаотичної Динаміки
 
-**Поточний стан:** Lorenz ODE system (σ=10, ρ=28, β=8/3) інтегрується методом Ейлера (250 ітерацій, DT=0.01). Z-значення класифікує стан дерева: homeostasis (Z < 2.0), stress (2.0–45.0), anomaly (Z > 45.0). Dual Computation Integrity: firmware (Float64) vs backend (Float64 для паритету, BigDecimal доступний).
+**Поточний стан:** Lorenz ODE system (σ=10, ρ=28, β=8/3) інтегрується методом Ейлера (250 ітерацій, DT=0.01). Z-значення класифікує стан дерева: stress (Z < 2.0, status=1, ранній сигнал посухи), homeostasis (2.0 ≤ Z ≤ 45.0, status=0, здоровий хаос, OPTIMAL_Z_TARGET=29.0), anomaly (Z > 45.0, status=2, критичний стрес). Dual Computation Integrity: firmware (Float64) vs backend (Float64 для паритету, BigDecimal доступний). Деталі: [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor).
 
 **Код:** `app/services/silken_net/attractor.rb` (121 рядок), `firmware/bio_contracts/bio_contract.rb`
 
@@ -362,15 +362,23 @@ created_at (partition key)
 
 ```ruby
 # Rails console → CSV для R-аналізу
-TelemetryLog.where(created_at: 1.month.ago..).select(
-  :tree_id, :voltage_mv, :temperature_c, :delta_t,
-  :acoustic_events, :bio_status, :z_value, :growth_points,
-  :created_at
-).find_each do |log|
-  csv << [log.tree_id, log.voltage_mv, log.temperature_c,
-          log.delta_t, log.acoustic_events, log.bio_status,
-          log.z_value, log.growth_points, log.created_at.iso8601]
+require "csv"
+
+CSV.open("telemetry_export.csv", "w") do |csv|
+  csv << %w[tree_id voltage_mv temperature_c delta_t
+            acoustic_events bio_status z_value growth_points created_at]
+
+  TelemetryLog.where(created_at: 1.month.ago..).select(
+    :tree_id, :voltage_mv, :temperature_c, :delta_t,
+    :acoustic_events, :bio_status, :z_value, :growth_points,
+    :created_at
+  ).find_each do |log|
+    csv << [log.tree_id, log.voltage_mv, log.temperature_c,
+            log.delta_t, log.acoustic_events, log.bio_status,
+            log.z_value, log.growth_points, log.created_at.iso8601]
+  end
 end
+# Результат: telemetry_export.csv — готовий для read.csv() в R
 ```
 
 ---
