@@ -4,7 +4,7 @@
 
 Аудит алгоритмічної та кіберфізичної бази Gaia 2.0 силами кафедр ФОТІУС (Факультет обчислювальної техніки, інтелектуальних та управляючих систем). Перетворення "програмного коду" на "науково доведену кіберфізичну модель". Отримання академічного підтвердження:
 
-1. Математичної коректності Атрактора Лоренца (Float32/Float64 precision у mruby на MCU, крос-верифікація з BigDecimal(18) backend, накопичення похибки за 250 ітерацій Ейлера; аудит BLOCKER-1/-2/-3/-4/-6 з 03_04)
+1. Математичної коректності Атрактора Лоренца (Float64 precision у mruby на MCU, крос-верифікація з Float64 backend для Dual Computation Integrity, накопичення похибки за 250 ітерацій Ейлера; аудит BLOCKER-1/-2/-3/-4/-6 з 03_04)
 2. Надійності існуючого TTL-flood relay при стохастичних енергетичних відмовах вузлів: математичне обґрунтування порогів PANIC_TTL=5 та DEFAULT_TTL=3
 3. Архітектурної цілісності 12-ланцюгової Web3-системи як ієрархічної управляючої системи
 4. Апаратної оптимізації SPI/DMA-шини STM32WLE5 для зниження енергоспоживання (Модуль 02)
@@ -30,7 +30,7 @@
 24. Data Mining та теорія прийняття рішень Edge AI: алгоритми автономного прийняття рішень STM32WLE5JC щодо часу активації LoRa TX на основі динаміки delta\_t; backend Data Mining для виявлення прихованих патернів метаболізму в масивах телеметрії Lorenz Attractor (Модуль 06)
 25. Генетична оптимізація ML-моделі backend: використання еволюційних алгоритмів для знаходження глобально оптимальних вагових коефіцієнтів `InsightGeneratorService` (stress_index classification) без ризику застрягання у локальних мінімумах; навчання у хмарному GPU-кластері (Akash або GCP) → деплой у Rails (Модуль 04\_02)
 26. Синтез супутникових та анкерних даних через AI: класифікація NDVI-знімків (ANN + Random Forest + GA) з їх зіставленням із мікротелеметрією анкерів для раннього прогнозування посух, хвороб та пожеж — коли зовнішніх ознак ще немає, але метаболізм дерева вже змінився (глобальний моніторинг)
-27. Мінімізація булевих функцій та верифікація смарт-контрактів: застосування Master of Logic (КНФ/ДНФ мінімізація) для скорочення логічних умов пробудження радіомодуля STM32WLE5JC та формальна верифікація Solana біо-контрактів на повноту, замкнутість та несуперечність перед деплоєм (Модуль 06, Модуль 07)
+27. Мінімізація булевих функцій та верифікація смарт-контрактів: застосування Master of Logic (КНФ/ДНФ мінімізація) для скорочення логічних умов пробудження радіомодуля STM32WLE5JC та формальна верифікація Polygon Solidity контрактів (SCC, SFC, StateRootAnchor) на повноту, замкнутість та несуперечність перед деплоєм (Модуль 06, Модуль 07)
 
 ---
 
@@ -43,6 +43,7 @@
   - TinyML → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
   - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
+  - ЧДТУ Data Science (міжуніверситетська синергія) → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
 
 ---
 
@@ -55,7 +56,7 @@
 - **Зустріч із Косенюком** — RF-оптимізація SMD-антени + PEEK-радомом (VSWR, діаграма, Link Budget); FEC для телеметрії + Hash Method для Web3-потоків; стохастична фільтрація Edge AI; CE/FCC/EMC сертифікація капсули
 - **Зустріч із Бушиним** — CNN-синтез супутникових та анкерних даних; BSP-кластеризація IoT-графу; Web/DB архітектура дашбордів; консультація з фізики DMLS-друку Ti-6Al-4V
 - **Зустріч із Осауленком** — кластерний аналіз R&D-портфеля (Shape Up пріоритизація); теорія несилової взаємодії для мультидисциплінарних команд; Потрійна спіраль (ЧНУ + ActiveBridge + держава); теорія прийняття рішень та Data Mining для Edge AI
-- **Зустріч із Любченком** — генетичні алгоритми для оптимізації backend ML-моделі `InsightGeneratorService` (stress_index classification); класифікація супутникових знімків (ANN + Random Forest + GA) для синтезу з анкерними даними; Master of Logic — мінімізація КНФ/ДНФ для Edge AI та верифікація смарт-контрактів Solana
+- **Зустріч із Любченком** — генетичні алгоритми для оптимізації backend ML-моделі `InsightGeneratorService` (stress_index classification); класифікація супутникових знімків (ANN + Random Forest + GA) для синтезу з анкерними даними; Master of Logic — мінімізація КНФ/ДНФ для Edge AI та верифікація Polygon Solidity контрактів (SCC, SFC, StateRootAnchor)
 
 ---
 
@@ -1043,8 +1044,8 @@ Ruby on Rails з сервером Puma (multi-threaded) + Sidekiq workers (multi
 
 Places (ресурси та стани):
   p1: HTTP request queue (CoAP → Rails API endpoint /api/v1/telemetry)
-  p2: Puma thread pool (config.puma threads: MIN=5, MAX=25 per pod)
-  p3: PostgreSQL connection pool (pool: 25 у database.yml)
+  p2: Puma thread pool (config.puma threads: 3 per worker, WEB_CONCURRENCY workers)
+  p3: PostgreSQL connection pool (pool: 5 per worker per DB у database.yml)
   p4: Sidekiq job queue "uplink" (priority 1 — найвищий, UnpackTelemetryWorker)
   p5: Sidekiq job queue "alerts" (priority 2, EwsAlertWorker)
   p6: Sidekiq job queue "web3_critical" (priority 6, MintingWorker)
@@ -1067,7 +1068,7 @@ Transitions (операції):
 
 **Завдання Б: Моделювання Мікросервісної Декомпозиції (Майбутнє Масштабування)**
 
-Якщо Lorenz Attractor обчислення (Модуль 03\_04, BigDecimal 18 цифр, 250 ітерацій) стане bottleneck — його можна винести у окремий мікросервіс. Методологія аналізу моделей мікросервісів Супруненко дозволяє **верифікувати нову архітектуру на PN-моделі до написання коду**:
+Якщо Lorenz Attractor обчислення (Модуль 03\_04, Float64 — ідентично firmware, 250 ітерацій) стане bottleneck — його можна винести у окремий мікросервіс. Методологія аналізу моделей мікросервісів Супруненко дозволяє **верифікувати нову архітектуру на PN-моделі до написання коду**:
 
 ```
 Монолітна модель → PN-декомпозиція → Мікросервісна модель (цільова архітектура після розблокування Akash):
@@ -1152,7 +1153,7 @@ Shape Up cycle integration:
 
 **Конкретний запит (зведений):**
 
-> _"Оксано Олександрівно, у мене класична задача, яка описана у вашій публікації 2023 (Combined Approach to Modeling of Software Functioning) — але у реальному production-масштабі. Rails-моноліт, 31 Sidekiq worker, 9 черг суворих пріоритетів, тисячі паралельних IoT з'єднань від лісових датчиків. Потребую: (1) PN-модель всієї архітектури з верифікацією deadlock-free; (2) ваш метод згортки для зниження state explosion — розмірність модель просто нереальна без нього; (3) формалізація аналізу вимог для SSOT Wiki. Це стаття Q1 IEEE Transactions on Software Engineering + реальний промисловий кейс."_
+> _"Оксано Олександрівно, у мене класична задача, яка описана у вашій публікації 2023 (Combined Approach to Modeling of Software Functioning) — але у реальному production-масштабі. Rails-моноліт, 36+ Sidekiq workers, 9 черг суворих пріоритетів, тисячі паралельних IoT з'єднань від лісових датчиків. Потребую: (1) PN-модель всієї архітектури з верифікацією deadlock-free; (2) ваш метод згортки для зниження state explosion — розмірність модель просто нереальна без нього; (3) формалізація аналізу вимог для SSOT Wiki. Це стаття Q1 IEEE Transactions on Software Engineering + реальний промисловий кейс."_
 
 ---
 
@@ -1228,15 +1229,15 @@ Shape Up cycle integration:
   Рівень згоди (модель Осауленка): θ = -0.4 → помірний антагонізм
 
 Конфлікт 2: Firmware-інженери (Ярмілко) vs. Математики (Порубльов)
-  Firmware: "Float32 достатньо для Lorenz на MCU — RAM обмежена"
-  Математик: "BigDecimal(18) обов'язково — Float32 дає катастрофічне розходження"
+  Firmware: "Float (Float64 у mruby) достатньо для Lorenz на MCU — RAM обмежена"
+  Математик: "BigDecimal(18) для вищої точності — Float64 може давати розходження"
   Рівень згоди: θ = -0.6 → сильний антагонізм
 
 Метод врегулювання (Осауленко):
   1. Квантифікація конфлікту: θ ∈ [-1, +1]
   2. Матриця компромісних рішень:
      Конфлікт 1: капсула 28мм (Keep-Out 5мм) → θ = +0.2 (збіжність)
-     Конфлікт 2: mruby/Float32 on-device + BigDecimal(18) на backend → θ = +0.8
+     Конфлікт 2: mruby/Float64 on-device + Float64 на backend (Dual Computation Integrity, [FIX FW.7]) → θ = +0.8
   3. Математичне обґрунтування компромісу → прийнятне для ВСІХ сторін
 ```
 
@@ -1414,7 +1415,7 @@ float compute_utility(DecisionUtility_t *u) {
 
 **Чому Любченко є стратегічно необхідним для Silken Net:**
 
-'Silken Net' функціонує в парадигмі **"AI-Native DeepTech Framework"** — штучний інтелект є не надбудовою, а ядром системи. Backend `InsightGeneratorService` виконує добову класифікацію стресу дерев на основі телеметрії (delta_t, lorenz_z, temp, acoustic). Традиційний gradient descent застрягає у локальних мінімумах при оптимізації вагових коефіцієнтів на нерегулярних біологічних часових рядах різних лісових екосистем. Любченко — єдиний у ФОТІУС, чия публікація 2022 дає **готовий математичний апарат** для цього виклику: GA-оптимізація ML-моделей. Додатково, його програма Master of Logic дозволяє формально верифікувати логіку Solana смарт-контрактів — щось, чого жоден з інших науковців не може.
+'Silken Net' функціонує в парадигмі **"AI-Native DeepTech Framework"** — штучний інтелект є не надбудовою, а ядром системи. Backend `InsightGeneratorService` виконує добову класифікацію стресу дерев на основі телеметрії (delta_t, lorenz_z, temp, acoustic). Традиційний gradient descent застрягає у локальних мінімумах при оптимізації вагових коефіцієнтів на нерегулярних біологічних часових рядах різних лісових екосистем. Любченко — єдиний у ФОТІУС, чия публікація 2022 дає **готовий математичний апарат** для цього виклику: GA-оптимізація ML-моделей. Додатково, його програма Master of Logic дозволяє формально верифікувати логіку смарт-контрактів (Polygon Solidity: SCC, SFC, StateRootAnchor) — щось, чого жоден з інших науковців не може.
 
 ---
 
@@ -1585,35 +1586,29 @@ THEN TX
 Примітка: при мільярдах анкерів − це тисячі кВт·год збереженої енергії.
 ```
 
-**Верифікація Solana смарт-контрактів:**
+**Верифікація логіки смарт-контрактів (Polygon Solidity + концептуальна Solana):**
+
+> **Примітка:** Поточна реалізація мінтингу SCC — на **Polygon** через Solidity контракт `SilkenCarbonCoin.sol` (директорія `contracts/`). Solana використовується лише для USDC мікро-винагород (`Solana::MintingService`). Нижче — концептуальна ілюстрація застосування Master of Logic до логіки мінтингу (незалежно від мережі).
 
 ```
-Solana програма (Rust): bio_contract.rs
+Логіка мінтингу SCC (Polygon, реалізована в BlockchainMintingService):
 
-pub fn verify_growth(
-    ctx: Context<VerifyGrowth>,
-    growth_points: u64,
-    lorenz_z: f64,
-    tinyml_class: u8,
-) -> Result<()> {
-    // Логічне дерево:
-    // growth_points >= 10000 AND lorenz_z > Z_MIN AND tinyml_class NOT IN STRESS
-    // → mint 1 SCC
-    require!(growth_points >= MIN_GROWTH_POINTS, ErrorCode::InsufficientGrowth);
-    require!(lorenz_z > Z_CRITICAL_MIN, ErrorCode::TreeUnderStress);
-    require!(!STRESS_CLASSES.contains(&tinyml_class), ErrorCode::PestDetected);
-    ...
-}
+Guard clauses перед мінтингом:
+  require: verified_by_iotex? (ZK-proof верифікація)
+  require: oracle_status_fulfilled? (Chainlink callback)
+  require: hadron_kyc_status == "approved" (KYC/Compliance)
+  require: growth_points >= 10_000 (Proof of Growth threshold)
 
 Перевірка Master of Logic:
   P1: growth_points >= 10000
-  P2: lorenz_z > Z_CRITICAL_MIN
-  P3: tinyml_class NOT IN {3,4,5} (STRESS_CLASSES)
-  Висновок C: mint SCC
+  P2: verified_by_iotex == true
+  P3: oracle_status == "fulfilled"
+  P4: hadron_kyc_status == "approved"
+  Висновок C: mint 1 SCC
 
-  Питання: чи С слідує з P1 AND P2 AND P3?
+  Питання: чи С слідує з P1 AND P2 AND P3 AND P4?
   Master of Logic: побудова CNF → резолюція → перевірка логічного слідування
-  Результат: "Так, C є логічним наслідком P1, P2, P3 — без суперечностей"
+  Результат: "Так, C є логічним наслідком P1, P2, P3, P4 — без суперечностей"
 
   Додатково: перевірка на повноту (чи є "сліпі зони" де мінтинг неможливий
               при коректних даних?) → виявлено та виправлено перед деплоєм.
@@ -1623,7 +1618,7 @@ pub fn verify_growth(
 
 **Промпт для зустрічі з Любченком:**
 
-> _"Костянтине Миколайовичу, у мене три задачі, де ваша кваліфікація унікальна. Перша: генетичні алгоритми для оптимізації ML-моделі backend `InsightGeneratorService` (stress_index класифікація дерев) — ваша публікація 2022 дала мені ідею застосувати GA замість gradient descent для нерегулярних біологічних часових рядів. Друга: класифікація Sentinel-2 через ваш ансамблевий метод (ANN + RF + GA) для синтезу супутникових та анкерних даних. Третя: Master of Logic для мінімізації умов пробудження радіомодуля та верифікації Solana смарт-контрактів. Це матеріал для двох статей Scopus Q1 та ваша роль як Chief AI Architect проєкту."_
+> _"Костянтине Миколайовичу, у мене три задачі, де ваша кваліфікація унікальна. Перша: генетичні алгоритми для оптимізації ML-моделі backend `InsightGeneratorService` (stress_index класифікація дерев) — ваша публікація 2022 дала мені ідею застосувати GA замість gradient descent для нерегулярних біологічних часових рядів. Друга: класифікація Sentinel-2 через ваш ансамблевий метод (ANN + RF + GA) для синтезу супутникових та анкерних даних. Третя: Master of Logic для мінімізації умов пробудження радіомодуля та формальної верифікації Polygon Solidity контрактів (SCC/SFC). Це матеріал для двох статей Scopus Q1 та ваша роль як Chief AI Architect проєкту."_
 
 ---
 
@@ -1678,7 +1673,7 @@ pub fn verify_growth(
 #### Підгрупа Б: Математика Атрактора Лоренца (Модуль 03\_04)
 
 - Формальна верифікація Lorenz Attractor (σ=10, ρ=28, β=8/3, 250 ітерацій, метод Ейлера з DT=0.01)
-- **Float32 (mruby) vs Float64 (Ruby) vs BigDecimal(18) (Rails):** кількісне порівняння накопичення похибки Z за 250 ітерацій (BLOCKER-4 з 03_04)
+- **Float64 (mruby) vs Float64 (Ruby backend) vs BigDecimal(18) (теоретична альтернатива):** кількісне порівняння накопичення похибки Z за 250 ітерацій (BLOCKER-4 з 03_04). **Поточний стан:** backend навмисно переведений на Float64 ([FIX FW.7]) для Dual Computation Integrity — BigDecimal давав розходження Z на десятки одиниць. Завдання Порубльова: формально обґрунтувати чи Float64 паритет є достатнім для Proof of Growth, чи потрібен перехід на RK4 для зменшення похибки Ейлера
 - Аналіз чутливості Z-значення до варіації `chaos_seed` (HRNG) — статистичний розподіл `growth_points`
 - Рекомендація щодо числового методу: чи є поточний Euler + DT=0.01 достатнім для Proof of Growth, чи потребує переходу на RK4 (BLOCKER-5 з 03_04; RK4 потребує 4× більше обчислень — критично для EBFC-живлення)
 - Верифікація константи `OPTIMAL_Z_TARGET = 29.0`:
@@ -1686,7 +1681,7 @@ pub fn verify_growth(
   завдання Порубльова — встановити, чи значення 29.0 є навмисним зміщенням або помилкою (BLOCKER-2 у 03\_04, **коментар виправлено** — тепер коректно каже 29.0, але математичне питання залишається відкритим);
   результат аудиту визначить офіційне значення для юридичних параметричних страхових контрактів
 - **Аудит BLOCKER-1 (03\_04):** В поточній реалізації `calculate_state(chaos_seed, temp, acoustic)` — `delta_t` та `vcap` **не передаються** у атрактор (хоча архітектурна специфікація передбачає `calculate_state(delta_t, vcap)`). Завдання: математично обґрунтувати, який з варіантів коректніший як model of tree homeostasis — стохастичний (HRNG seed) чи детермінований (delta_t, vcap)
-- **Аудит BLOCKER-3 (03\_04):** Стан `(x, y, z)` **не зберігається** між циклами STOP2 — кожне пробудження починає траєкторію з нуля. Завдання: рекомендувати архітектурне рішення (A: прийняти "snapshot модель"; B: зберігати у RTC DR 3×float)
+- **Аудит BLOCKER-3 (03\_04):** ✅ **Виправлено.** Стан `(x, y, z)` тепер зберігається у RTC Backup Registers DR16-DR18 з маркером валідності `0x4C5A5354` ("LZST") у DR19 (`firmware/soldier/main.c:239-249, 344-346`). Завдання Порубльова: верифікувати математичний вплив збереження стану — чи continuous trajectory дає статистично інший розподіл Z порівняно зі snapshot-моделлю (пробудження з нуля)
 - **Аудит BLOCKER-6 (03\_04):** ✅ **Код виправлено** (`deviation.round` замість `deviation.to_i`). Завдання Порубльова: верифікувати математичний вплив виправлення на розподіл `growth_points` — чи усуває `.round` нечутливість у зоні ±0.5 від OPTIMAL_Z_TARGET повністю, чи потрібне додаткове коригування
 
 #### Підгрупа В: Надійність LoRa Flood Relay — Марков + Перколяція (Модулі 03\_02, 07)
@@ -1808,7 +1803,7 @@ pub fn verify_growth(
 
 #### Підгрупа А: Petri Net PN-Модель Rails Моноліту (Модуль 08)
 
-- Побудова PN-моделі Rails-моноліту: places = {HTTP queue, Puma thread pool (5–25), PostgreSQL connection pool (25), Sidekiq "uplink" / "alerts" / "web3\_critical" queues, active DB transaction}; transitions = {accept\_request, acquire\_db\_conn, enqueue\_sidekiq, process\_telemetry, trigger\_ews, mint\_scc}
+- Побудова PN-моделі Rails-моноліту: places = {HTTP queue, Puma thread pool (3 threads × WEB\_CONCURRENCY workers), PostgreSQL connection pool (5 per worker per DB), Sidekiq "uplink" / "alerts" / "web3\_critical" queues, active DB transaction}; transitions = {accept\_request, acquire\_db\_conn, enqueue\_sidekiq, process\_telemetry, trigger\_ews, mint\_scc}
 - Reachability analysis: чи може PostgreSQL connection pool (place p3) вичерпатись при 10,000 concurrent IoT requests? (peak: 167 pkt/s @ 10k nodes × 60s cycle)
 - Deadlock detection: пошук станів де t2 (acquire\_db) та t4 (process\_telemetry) одночасно очікують p3 → алгоритмічне виявлення mutual exclusion порушень
 - Boundedness verification: черга "uplink" (priority 1 — найвищий) bounded при пікових навантаженнях → доказ що telemetry\_logs INSERT не переповнює буфер
@@ -1816,7 +1811,7 @@ pub fn verify_growth(
 #### Підгрупа Б: Convolution Method для State Explosion (Модуль 08)
 
 - Ідентифікація «лінійних ділянок» PN-моделі без критичних властивостей: HTTP accept → Puma serialize → enqueue Sidekiq (детермінована, без shared places → безпечна для згортки)
-- Застосування Convolution Method: кожна безпечна ділянка → один абстрактний transition T\_ingest; типова редукція: -4 places, -4 transitions на кожен Sidekiq worker (×31 workers → суттєве зменшення розмірності)
+- Застосування Convolution Method: кожна безпечна ділянка → один абстрактний transition T\_ingest; типова редукція: -4 places, -4 transitions на кожен Sidekiq worker (×36+ workers → суттєве зменшення розмірності)
 - Аналіз зредукованої PN-моделі: reachability graph керований → deadlock / race condition пошук займає хвилини замість днів
 - Deliverable: верифікований звіт «Rails 8.1 monolith is deadlock-free and queue-bounded under 10,000 concurrent IoT connections» → Scope: технічна документація Silken Net + наукова публікація
 
@@ -1876,8 +1871,8 @@ pub fn verify_growth(
 #### Підгрупа В: Master of Logic — Мінімізація та Верифікація (Модуль 06, 07)
 
 - Мінімізація умов TX firmware: побудова таблиці істинності (4 вхідні змінні = 16 комбінацій); застосування Master of Logic (Квайн–МакКласкі); отримання мінімальної ДНФ; C-реалізація у `firmware/soldier/main.c`; benchmark: логічні операції ДО vs ПІСЛЯ мінімізації
-- Верифікація Solana контрактів: формалізація `bio_contract.rs` як системи булевих функцій (P1: growth\_points >= 10000; P2: lorenz\_z > Z\_MIN; P3: tinyml\_class NOT STRESS); перевірка Master of Logic на повноту (completeness), замкнутість (closure), несуперечність (consistency) та логічне слідування висновку C = "mint SCC"
-- Deliverable: сертифікат верифікації "Solana bio\_contract.rs є логічно повним та несуперечним" + технічний звіт для аудиторів DAO; PR у `contracts/` з формальними специфікаціями
+- Верифікація смарт-контрактів Polygon: формалізація guard clauses мінтингу `BlockchainMintingService` як системи булевих функцій (P1: growth\_points >= 10000; P2: verified\_by\_iotex?; P3: oracle\_status\_fulfilled?; P4: hadron\_kyc\_status == "approved"); перевірка Master of Logic на повноту (completeness), замкнутість (closure), несуперечність (consistency) та логічне слідування висновку C = "mint SCC". Аналогічно — формальна верифікація Solidity контрактів `SilkenCarbonCoin.sol`, `SilkenForestCoin.sol` (директорія `contracts/`)
+- Deliverable: сертифікат верифікації "Minting guard clauses та Solidity contracts є логічно повними та несуперечними" + технічний звіт для аудиторів DAO; PR у `contracts/` з формальними специфікаціями
 
 ---
 
