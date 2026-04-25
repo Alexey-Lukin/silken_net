@@ -205,6 +205,15 @@ module SilkenNet
       docstring: "Total Streamr broadcast failures (P2P real-time telemetry delivery)"
     )
 
+    # [ENTROPY MONITOR]: Shannon entropy of Z-value distribution per cluster.
+    # Healthy forest: ≈ 0.75-0.95 (diverse Z-values). Pre-stress: < 0.65.
+    # Updated by QuantumStressAnalyzerWorker (queue: alerts, hourly).
+    CLUSTER_ENTROPY_SCORE = REGISTRY.gauge(
+      :silkennet_cluster_entropy_score,
+      docstring: "Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0)",
+      labels: [ :cluster_id ]
+    )
+
     # Snapshot connection pool stats for Prometheus scraping.
     # Called from PrometheusCollector middleware or a periodic job.
     def self.sample_connection_pool!
