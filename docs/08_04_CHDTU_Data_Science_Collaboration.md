@@ -242,7 +242,7 @@ Silken Net будує багаторівневу академічну екоси
 
 ### 3.2. Атрактор Лоренца — Аналіз Хаотичної Динаміки
 
-**Поточний стан:** Lorenz ODE system (σ=10, ρ=28, β=8/3) інтегрується методом Ейлера (250 ітерацій, DT=0.01). Z-значення класифікує стан дерева: stress (Z < 2.0, status=1, ранній сигнал посухи), homeostasis (2.0 ≤ Z ≤ 45.0, status=0, здоровий хаос, OPTIMAL_Z_TARGET=29.0), anomaly (Z > 45.0, status=2, критичний стрес). Dual Computation Integrity: firmware (Float64) vs backend (Float64 для паритету, BigDecimal доступний). Деталі: [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor).
+**Поточний стан:** Lorenz ODE system (σ=10, ρ=28, β=8/3) інтегрується методом Ейлера (250 ітерацій, DT=0.01). Z-значення класифікує стан дерева: stress (Z < 2.0, status=1, ранній сигнал посухи), homeostasis (2.0 ≤ Z ≤ 45.0, status=0, здоровий хаос, OPTIMAL_Z_TARGET=29.0), anomaly (Z > 45.0, status=2, критичний стрес). Dual Computation Integrity: firmware (Float64) vs backend (Float64 для паритету, BigDecimal доступний). Формальна верифікація precision (Float64 vs RK4), валідність OPTIMAL_Z_TARGET=29.0 та неперервність стану між циклами STOP2 — **ЧНУ ФОТІУС Порубльов** (→ [`08_02` §1.2](08_02_Cybernetic_and_Mathematical_Validation)); задачі #7–13 нижче виконуються на **верифікованих** Z-траєкторіях → Стаття 15 [`08_03`](08_03_Joint_Publications_and_IP_Strategy). Деталі атрактора: [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor).
 
 **Код:** `app/services/silken_net/attractor.rb` (121 рядок), `firmware/bio_contracts/bio_contract.rb`
 
@@ -385,6 +385,8 @@ Silken Net будує багаторівневу академічну екоси
 | 45 | Автоматичне виявлення аномалій у системних метриках | Prophet anomaly detection, STL residuals | Q2 |
 | 46 | SLO-аналіз: P99 латентності мінтингу SCC | Percentile estimation, bootstrap CI | Q2 |
 | 47 | Кореляція системного навантаження з якістю телеметрії | Causal inference, Granger causality | Q2 |
+
+> **Реєстр задач ФЕТР та ПМКТ:** R&D-завдання для RF-верифікації (кафедра радіотехніки ФЕТР, Гончаров) і акустичної валідації (кафедра ПМКТ, Базіло/Бондаренко) описані у форматі конкретних завдань (А/Б/В) у §1.2 та §1.3 відповідно — апаратно-лабораторний формат, а не числовий аналітичний реєстр. Публікації: стаття 23 (ФЕТР) та 24 (ПМКТ) у [`08_03`](08_03_Joint_Publications_and_IP_Strategy).
 
 ---
 
@@ -718,7 +720,7 @@ end
 
 3. **Quarterly Sync:** Щоквартальна зустріч Архітектор + Карапетян (ЧДТУ) + Гончаров (ЧДТУ ФЕТР) + Базіло (ЧДТУ ПМКТ) + Онищенко/Супруненко (ФОТІУС) для синхронізації результатів та планування спільних публікацій.
 
-4. **Git-based Collaboration:** ЧДТУ R-скрипти → `lib/analytics/r/`, ФОТІУС Python/C → `lib/analytics/python/`, ПМКТ калібрувальні дані → `lib/datasets/acoustic_training/`. Обидва інтегруються через CI/CD (09_03).
+4. **Git-based Collaboration:** ЧДТУ R-скрипти → `lib/analytics/r/`, ФОТІУС Python/C → `lib/analytics/python/`, ФЕТР RF-вимірювальні дані (S11, path loss, EMC) → `lib/measurements/rf/`, ПМКТ акустичні калібрувальні дані → `lib/datasets/acoustic_training/`. Всі інтегруються через CI/CD ([`09_03`](09_03_GitHub_Projects_and_Ops_Automation)).
 
 5. **Потрійна Спіраль 2.0:** Модель Осауленка (08_02 §1.7) розширюється з ЧНУ → ЧНУ + ЧДТУ як наукова вершина спіралі. Три кафедри ЧДТУ + ЧНУ ФОТІУС = ширша академічна база для грантових заявок (Horizon Europe, NFDI).
 
