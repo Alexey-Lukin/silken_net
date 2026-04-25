@@ -112,7 +112,8 @@ RSpec.describe Analytics::EntropyCalculatorService do
         values = Array.new(100) { rand(2.0..45.0) }
         result = described_class.call(values)
 
-        expect(result.to_s.split(".").last.length).to be <= 4
+        # Verify precision: multiplying by 10000, rounding, and dividing back should be idempotent
+        expect((result * 10_000).round / 10_000.0).to eq(result)
       end
     end
   end

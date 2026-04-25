@@ -21,7 +21,8 @@ RSpec.describe QuantumStressAnalyzerWorker, type: :worker do
 
     context "with insufficient telemetry data" do
       it "does not update cluster entropy_score" do
-        create_list(:telemetry_log, 10, tree: create(:tree, cluster: cluster, tree_family: tree_family))
+        tree = create(:tree, cluster: cluster, tree_family: tree_family)
+        create_list(:telemetry_log, 10, tree: tree)
 
         described_class.new.perform(cluster.id)
 

@@ -31,6 +31,9 @@ class QuantumStressAnalyzerWorker
 
     # 1. ЗБІР Z-ЗНАЧЕНЬ (Partition-Aware Query)
     # Запит включає created_at для partition pruning на RANGE-партиціонованій таблиці.
+    # NOTE: Використовуємо WHERE created_at >= cutoff (а не find_with_partition_pruning),
+    # бо тут потрібен масовий pluck по діапазону дат, не точковий lookup по id.
+    # PostgreSQL query planner автоматично виконає partition pruning по RANGE constraint.
     cutoff = ANALYSIS_WINDOW.ago
     z_values = TelemetryLog
       .joins(:tree)
