@@ -18,6 +18,7 @@
   - EBFC → [`01_03_EBFC_Enzymatic_Bio_Fuel_Cell`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)
   - Кіберфізична валідація → [`8_02_Cybernetic_and_Mathematical_Validation`](8_02_Cybernetic_and_Mathematical_Validation)
   - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
+  - ЧДТУ: Data Science, RF-верифікація, акустична валідація → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
 
 ---
 
@@ -320,6 +321,8 @@ T_lab = 313 K (40°C, контрольована піч)
 - Hardware Proof для pitch deck та whitepaper
 - Кадровий резерв (магістранти ФОТІУС)
 - Легітимація в очах кліматичних фондів та інвесторів
+
+> **Зв'язок із ЧДТУ:** Паралельно з ЧНУ ведеться партнерство з ЧДТУ за трьома напрямами: Data Science (Карапетян), RF-верифікація розрахунків Косенюка (Гончаров, ФЕТР), акустична валідація фононної лінзи гіроїда (Базіло, Бондаренко, ПМКТ). Деталі — [`08_04`](08_04_CHDTU_Data_Science_Collaboration). ЧНУ створює теорію та розрахунки, ЧДТУ верифікує їх інструментально.
 
 ### 3.5. Мова Розмови з Науковцями
 

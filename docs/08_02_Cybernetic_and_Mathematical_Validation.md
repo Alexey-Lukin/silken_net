@@ -43,7 +43,7 @@
   - TinyML → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
   - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
-  - ЧДТУ Data Science (міжуніверситетська синергія) → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
+  - ЧДТУ Data Science, RF-верифікація, акустика (міжуніверситетська синергія) → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
 
 ---
 
@@ -226,6 +226,8 @@ void HAL_PWR_PVDCallback(void) {  // Power Voltage Detector IRQ
 - **Fuzzy Dedup (Модуль 06):** Методологія фільтрації нечітких дублікатів телеметрії (suppress TX)
 - **Dependability Framework (Модуль 06):** Brownout detection + graceful shutdown + state recovery через RTC DR-регістри
 - **Reliability Analysis (Модуль 03\_01):** Аналіз відмовостійкості TTL-flood relay мережі Солдатів при стохастичних енергетичних відмовах; формальна верифікація state machine (STOP2 ↔ Sense ↔ Compute ↔ TX)
+
+> **Міжуніверситетська синергія (ЧДТУ ПМКТ):** Якість вхідного акустичного сигналу для SPI/DMA pipeline Ярмілка залежить від апаратних характеристик п'єзосенсора та фононної лінзи гіроїда. Кафедра ПМКТ ЧДТУ (проф. Базіло К.В., проф. Бондаренко М.О.) створює акустичний стенд для інструментальної валідації ефекту фокусування звуку та генерації калібрувального датасету для TinyML (BLOCKER з [`03_03`](03_03_TinyML_Acoustic_Inference): `Run_Inference()` закоментована, `silken_net_audio_model.h` відсутній). Деталі — [`08_04` §1.3](08_04_CHDTU_Data_Science_Collaboration). Спільна публікація — стаття 24 у [`08_03`](08_03_Joint_Publications_and_IP_Strategy).
 
 ---
 
@@ -488,6 +490,8 @@ bool should_transmit(uint8_t *new_pkt, uint8_t *last_pkt, uint8_t threshold) {
      діаметр 28 / 30 мм) для вибору оптимальної геометрії
   4. Верифікація: КСВ < 1.5 для 1000 серійних зразків (виробничий допуск ±5%)
 ```
+
+> **Міжуніверситетська синергія (ЧДТУ ФЕТР):** Лабораторна верифікація розрахунків Косенюка виконується у RF-лабораторії ФЕТР ЧДТУ (Декан Гончаров А., кафедра радіотехніки). ФЕТР надає VNA, EMC-камеру та стенди для натурних вимірювань path loss у лісі. Деталі — [`08_04` §1.2](08_04_CHDTU_Data_Science_Collaboration). Спільна публікація — стаття 23 у [`08_03`](08_03_Joint_Publications_and_IP_Strategy).
 
 **Завдання Б: 3D-Діаграма Спрямованості з Ti-Анкером як Ground Plane**
 
