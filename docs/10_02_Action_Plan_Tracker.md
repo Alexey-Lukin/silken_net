@@ -99,13 +99,9 @@
 #### S6.5 — 30s Kredis lock для мінтингу може бути замалим
 - **P2** | `05_03` | **Складність: S** | **Код**
 - **Опис:** Якщо мінтинг повільний (RPC congestion), 30s Kredis lock може expire → double-mint risk
-- [ ] Збільшити lock timeout або використати pessimistic DB lock
+- **Статус:** ✅ Виконано. Lock timeout збільшено з 30s до 120s у `BlockchainMintingService`. Коментар пояснює worst-case scenario: dry-run + binary search isolation (до 6 рівнів × 2 eth_call) + individual mints ≈ ~130s. Burning та Celo сервіси залишені на 30s — вони використовують тільки одиночний `transact()`.
+- [x] Збільшити lock timeout або використати pessimistic DB lock
 - [ ] Тест: slow RPC scenario
-
-#### S6.8 — Weekend telemetry blackouts
-- **P3** | `04_02` | **Складність: XS** | **Код**
-- **Опис:** Немає GLOBAL_BLACKOUT на вихідних. Телеметрія у вихідні мовчки ігнорується
-- [ ] Задокументувати поведінку або додати weekend handling
 
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** | `04_02` | **Складність: L** | **Архітектурна**
@@ -522,9 +518,7 @@
 
 | ID | Невідповідність | Документи | Дія |
 |----|----------------|-----------|-----|
-| DOC.4 | "Binary payload 16 bytes" (`00_01`) — це зашифрований inner payload. Повний зовнішній пакет = **21 байт** (4 DID + 1 RSSI + 16 encrypted) | `00_01` | Уточнити: 21B outer, 16B encrypted inner |
-| DOC.16 | Енергія TX: `02_01` каже 120mA/39mJ, `02_03` §9 каже 15mA/2.475mJ — несумісні значення | `02_01`, `02_03` | Узгодити (120mA = +22dBm коректно) |
-| DOC.17 | RAM budget Queen: §5 header каже "~3.7 KB", але детальна таблиця = **~14.4 KB** (22% of 64KB) | `03_02` | Виправити header |
+
 
 ---
 
@@ -672,7 +666,6 @@
 | E.47 | **Solana RPC defaults to Devnet** — production мінтинг USDC мікро-винагород піде на Devnet якщо не встановлений `SOLANA_RPC_URL` | `05_01` | ⚠️ Перевірити ENV перед mainnet |
 | E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
 | E.49 | **Celo RPC fallback mechanism** не вказаний — при збої primary RPC немає автоматичного переключення | `05_01` | P3: додати fallback RPC |
-| E.50 | **Streamr broadcast failures silently dropped** — немає alerting/logging при неможливості доставки P2P real-time broadcast | `05_01` | P3: додати error tracking |
 
 ---
 

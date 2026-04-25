@@ -131,8 +131,13 @@ class BlockchainMintingService < ApplicationService
     begin
       tx_hash = nil
 
-      # [ОПТИМІЗАЦІЯ]: Скорочуємо час локу, бо ми більше не чекаємо підтвердження блоку
-      Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
+      # [S6.5 FIX]: Збільшено lock timeout з 30s до 120s для batch operations.
+      # Хоча ми не чекаємо підтвердження блоку (fire-and-forget), batch minting може включати:
+      #   - Dry-run eth_call (~3-5s)
+      #   - Binary Search Isolation при revert: до MAX_BINARY_SEARCH_DEPTH=6 рівнів × 2 eth_call = ~36s
+      #   - Fallback individual mints для poisoned records: до ~30 × transact() = ~90s
+      # Загальний worst case: ~130s. З 30s lock виникає double-mint ризик при RPC congestion.
+      Kredis.lock(lock_key, expires_in: 120.seconds, after_timeout: :raise) do
         # Переводимо всі транзакції в статус обробки
         txs.each do |tx|
           tx.update!(status: :processing)
