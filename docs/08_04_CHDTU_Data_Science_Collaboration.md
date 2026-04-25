@@ -743,6 +743,7 @@ end
 - [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols) — ЧНУ: фізико-хімічна верифікація хардверу
 - [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation) — ЧНУ ФОТІУС: кіберфізична валідація (Косенюк — RF-розрахунки, Ярмілко — SPI/DMA)
 - [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy) — стратегія публікацій та IP
+- [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration) — ЧІПБ: пожежна безпека, параметричне страхування та SOP
 - [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK) — геометрія гіроїда (фононна лінза)
 - [`02_01_Hardware_Architecture_and_BOM`](02_01_Hardware_Architecture_and_BOM) — апаратна архітектура (SMD-антена, PEEK-радом)
 - [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference) — TinyML акустична класифікація (BLOCKER: inference закоментована)

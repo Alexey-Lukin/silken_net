@@ -10,12 +10,13 @@
 
 ## ✅ Статус
 
-- **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація
+- **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) + ЧІПБ = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація + пожежна безпека та параметричне страхування
 - **Поточний TRL:** TRL 3 — публікаційний план визначено, авторські колективи формуються
 - **Пов'язані модулі:**
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
   - Кіберфізична валідація → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation)
   - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
+  - ЧІПБ: Пожежна безпека та SOP → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
   - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
   - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
 
@@ -377,6 +378,8 @@ _(Запропонована тема; студент визначається �
 
 **Тип зв'язку:** Послідовний — ФОТІУС розраховує q_c (фізика мережі) → ЧДТУ використовує q_c як параметр актуарних моделей
 
+> **Розширення (ЧІПБ):** Стаття 25 у [`08_05`](08_05_CHIPB_Fire_Safety_Integration) §4 додає QRA-обґрунтування threshold_value та юридичну валідацію тригерів (Зобенко, ЧІПБ), а стаття 27 — предиктивну fire model delta_t → FWI (Куліца, ЧІПБ). Три статті утворюють повну вертикаль: мережна фізика (21) → страхова математика (25) → пожежна модель (27).
+
 ---
 
 ### Стаття 22: Статистичний Аналіз Часових Рядів Біотелеметрії з Кіберфізичного Моніторингу Лісу
@@ -430,6 +433,57 @@ _«Експериментальне дослідження радіохарак�
 
 **Магістерська робота (Науковий керівник — Базіло або Бондаренко, ЧДТУ ПМКТ):**
 _«Дослідження акустичних властивостей пористих TPMS-структур зі сплаву Ti-6Al-4V для пасивної фільтрації ультразвукових емісій біологічних об'єктів»_
+
+---
+
+## 📊 1D. Публікації ЧІПБ (Пожежна Безпека, Параметричне Страхування та SOP)
+
+> **Контекст:** ЧІПБ забезпечує академічну експертизу у валідації тригерів параметричного страхування, розробці SOP для фізичного реагування, предиктивному моделюванні пожеж та актуарному обґрунтуванні блокчейн-оракулів. Повний реєстр задач — у [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration).
+
+### Стаття 25: Наукове Обґрунтування Тригерів Параметричного Страхування для IoT-Лісових Мереж
+
+**Назва (EN):** _"Scientific Validation of Parametric Insurance Triggers for Autonomous Forest IoT Networks: Quantitative Risk Assessment and Actuarial Modeling of Fire, Drought, and Pest Events"_
+**Журнали:** Insurance: Mathematics and Economics (Q1) · Natural Hazards and Earth System Sciences (Q1) · Journal of Risk and Insurance (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Зобенко Н.** (ЧІПБ) | QRA для 3 trigger_events, юридичне обґрунтування threshold_value, градація слешингу |
+| **Куліца О.** (ЧІПБ) | Предиктивна модель поширення вогню, delta_t → FWI, калібрування FIRE_FRP_THRESHOLD_MW |
+| **Карапетян А.Р.** (ЧДТУ) | Weibull/Pareto loss distribution, basis risk copula, space-time clustering |
+| **Порубльов І.М.** (ЧНУ ФОТІУС) | Теорія перколяції (q_c), ланцюги Маркова для TTL-mesh |
+| Архітектор (Silken Net) | ParametricInsurance модель, Etherisc DIP Oracle, ContractHealthCheckService |
+
+**Тип зв'язку:** Послідовний (4 ланки) — ФОТІУС (q_c мережі) → ЧДТУ (статистичні моделі) → ЧІПБ (QRA + fire model) → Архітектор (on-chain integration)
+
+---
+
+### Стаття 26: Інтеграція Кіберфізичних Систем Раннього Попередження з Протоколами Фізичного Реагування ДСНС
+
+**Назва (EN):** _"Bridging Cyber-Physical Early Warning Systems with Physical Emergency Response Protocols: SOP Design for IoT-Monitored Forest Ecosystems"_
+**Журнали:** International Journal of Disaster Risk Reduction (Q1) · Safety Science (Q1) · Fire Safety Journal (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Биченко А.** (ЧІПБ) | Протокол конверсії EwsAlert → ДСНС dispatch, інтеграція з «Пульт-112», drone reconnaissance |
+| **Ротар В.** (ЧІПБ) | 7 SOP-документів per alert_type, протоколи для форестерів та патрулів |
+| **Несен І.** (ЧІПБ) | Протокол екстракції анкера, інструмент деінсталяції, post-extraction SOP |
+| Архітектор (Silken Net) | EmergencyResponseService, EwsAlert, ActuatorCommand, PANIC_TTL firmware |
+
+---
+
+### Стаття 27: Предиктивне Моделювання Лісових Пожеж через Мікро-Телеметрію Біосенсорів
+
+**Назва (EN):** _"Predictive Forest Fire Modeling Through Micro-Telemetry of Bio-Fuel Cell Sensors: Linking Sap Flow Dynamics to Fire Weather Index"_
+**Журнали:** International Journal of Wildland Fire (Q1) · Fire Technology (Q1) · Environmental Modelling & Software (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Куліца О.** (ЧІПБ) | Модель delta_t → FWI, фізика горіння лісової підстилки, time-to-ignition per forest type |
+| **Карапетян А.Р.** (ЧДТУ) | STL декомпозиція delta_t, SARIMA прогнозування засухи, кореляція NDVI ↔ delta_t |
+| **Косенюк Г.В.** (ЧНУ ФОТІУС) | Kalman Filter delta_t на MCU (< 200 байт RAM), стохастична фільтрація |
+| Архітектор (Silken Net) | EBFC delta_t специфіка, dClimate Cosmic Eye, AlertDispatchService |
+
+**Тип зв'язку:** Послідовний — ФОТІУС фільтрує сигнал (Kalman) → ЧДТУ аналізує тренд (SARIMA) → ЧІПБ будує предиктивну fire model
 
 ---
 

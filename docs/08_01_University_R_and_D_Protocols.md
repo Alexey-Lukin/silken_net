@@ -19,6 +19,7 @@
   - Кіберфізична валідація → [`8_02_Cybernetic_and_Mathematical_Validation`](8_02_Cybernetic_and_Mathematical_Validation)
   - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
   - ЧДТУ: Data Science, RF-верифікація, акустична валідація → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
+  - ЧІПБ: Пожежна безпека, параметричне страхування, SOP → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
 
 ---
 

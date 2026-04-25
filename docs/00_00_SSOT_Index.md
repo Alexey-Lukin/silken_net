@@ -79,14 +79,15 @@ _Юриспруденція, фінанси та масштабування._
 - [07\_02\_Unit\_Economics\_and\_BOM](07_02_Unit_Economics_and_BOM)
 - [07\_03\_Grant\_Applications\_Tracker](07_03_Grant_Applications_Tracker)
 
-## 🎓 Модуль 08: Академічна Інтеграція (ChNU Research Hub)
+## 🎓 Модуль 08: Академічна Інтеграція (University Research Hub)
 
-_Завдання для лабораторій ЧНУ (TRL 1-4)._
+_Завдання для лабораторій ЧНУ, ЧДТУ та ЧІПБ (TRL 1-4)._
 
 - [08\_01\_University\_R\_and\_D\_Protocols](08_01_University_R_and_D_Protocols) (Chemistry & Physics)
 - [08\_02\_Cybernetic\_and\_Mathematical\_Validation](08_02_Cybernetic_and_Mathematical_Validation) (FOTIUS Hub)
 - [08\_03\_Joint\_Publications\_and\_IP\_Strategy](08_03_Joint_Publications_and_IP_Strategy) (Strategy & IP)
 - [08\_04\_CHDTU\_Data\_Science\_Collaboration](08_04_CHDTU_Data_Science_Collaboration) (ЧДТУ: Data Science, статистика та оптимізація)
+- [08\_05\_CHIPB\_Fire\_Safety\_Integration](08_05_CHIPB_Fire_Safety_Integration) (ЧІПБ: Пожежна безпека, параметричне страхування та SOP)
 
 ## 🚀 Модуль 09: Управління та Масштабування (The Path)
 
