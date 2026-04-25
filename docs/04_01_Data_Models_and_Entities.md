@@ -969,7 +969,7 @@ active/draft ──cancel──► cancelled
 |------|----------|
 | `status` | `active(0) / resolved(1) / ignored(2)` |
 | `severity` | `low(0) / medium(1) / critical(2)` |
-| `alert_type` | `severe_drought(0) / insect_epidemic(1) / vandalism_breach(2) / fire_detected(3) / seismic_anomaly(4) / system_fault(5) / quantum_pre_stress(6)` (prefix: true) |
+| `alert_type` | `severe_drought(0) / insect_epidemic(1) / vandalism_breach(2) / fire_detected(3) / seismic_anomaly(4) / system_fault(5) / entropy_anomaly(6)` (prefix: true) |
 | `satellite_status` | `unverified(0) / verified(1) / rejected_fraud(2) / inconclusive(3)` (prefix: :satellite) |
 
 **AASM:** `mark_resolved`, `ignore`, `reopen` (resolved/ignored→active).

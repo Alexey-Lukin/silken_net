@@ -21,7 +21,7 @@ class EwsAlert < ApplicationRecord
     fire_detected: 3,     # Пожежа
     seismic_anomaly: 4,   # Землетрус
     system_fault: 5,      # Поломка шлюзу/актуатора/сенсора
-    quantum_pre_stress: 6 # Зниження ентропії Z-розподілу (передстресовий сигнал)
+    entropy_anomaly: 6    # Зниження ентропії Z-розподілу (передстресовий сигнал)
   }, prefix: true
 
   # [COSMIC EYE]: Статус супутникової верифікації через dClimate.

@@ -73,13 +73,13 @@ class QuantumStressAnalyzerWorker
 
   def create_pre_stress_alert!(cluster, entropy_score, sample_count)
     # Redis Silence Filter — узгоджено з AlertDispatchService
-    silence_key = "ews_silence:cluster:#{cluster.id}:quantum_pre_stress"
+    silence_key = "ews_silence:cluster:#{cluster.id}:entropy_anomaly"
     return if Rails.cache.exist?(silence_key)
 
     EwsAlert.create!(
       cluster: cluster,
       severity: :medium,
-      alert_type: :quantum_pre_stress,
+      alert_type: :entropy_anomaly,
       message: "🎲 ПЕРЕДСТРЕСОВИЙ СИГНАЛ: Ентропія Z-розподілу кластера #{cluster.name} " \
                "знизилась до #{entropy_score} (поріг: #{CRITICAL_ENTROPY_THRESHOLD}). " \
                "Аналіз #{sample_count} вимірювань за останні 24 години вказує на " \
@@ -92,7 +92,7 @@ class QuantumStressAnalyzerWorker
     Rails.cache.delete("oracle_expected_yield_24h")
 
     Rails.logger.warn(
-      "🚨 [EWS Entropy] quantum_pre_stress | Cluster #{cluster.name} | " \
+      "🚨 [EWS Entropy] entropy_anomaly | Cluster #{cluster.name} | " \
       "entropy=#{entropy_score} < #{CRITICAL_ENTROPY_THRESHOLD}"
     )
   end

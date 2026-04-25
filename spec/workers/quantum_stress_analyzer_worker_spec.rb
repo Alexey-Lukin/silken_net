@@ -73,11 +73,11 @@ RSpec.describe QuantumStressAnalyzerWorker, type: :worker do
         end
       end
 
-      it "creates a quantum_pre_stress EwsAlert" do
+      it "creates a entropy_anomaly EwsAlert" do
         expect { described_class.new.perform(cluster.id) }.to change(EwsAlert, :count).by(1)
 
         alert = EwsAlert.last
-        expect(alert.alert_type).to eq("quantum_pre_stress")
+        expect(alert.alert_type).to eq("entropy_anomaly")
         expect(alert.severity).to eq("medium")
         expect(alert.cluster_id).to eq(cluster.id)
         expect(alert.message).to include("ПЕРЕДСТРЕСОВИЙ СИГНАЛ")
