@@ -29,6 +29,7 @@
   - ФОТІУС кіберфізика → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation) (Mesh надійність, PN-верифікація)
   - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
   - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration) (Актуарна аналітика, anomaly detection)
+  - ЧМА: Біохімія EBFC, токсикологія → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
 
 ---
 

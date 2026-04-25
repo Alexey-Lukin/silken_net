@@ -10,13 +10,14 @@
 
 ## ✅ Статус
 
-- **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) + ЧІПБ = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація + пожежна безпека та параметричне страхування
+- **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) + ЧІПБ + ЧМА = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація + пожежна безпека та параметричне страхування + біохімічна валідація EBFC та токсикологія
 - **Поточний TRL:** TRL 3 — публікаційний план визначено, авторські колективи формуються
 - **Пов'язані модулі:**
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
   - Кіберфізична валідація → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation)
   - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
   - ЧІПБ: Пожежна безпека та SOP → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
+  - ЧМА: Біохімія EBFC, токсикологія металів → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
   - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
   - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
 
@@ -484,6 +485,60 @@ _«Дослідження акустичних властивостей пори
 | Архітектор (Silken Net) | EBFC delta_t специфіка, dClimate Cosmic Eye, AlertDispatchService |
 
 **Тип зв'язку:** Послідовний — ФОТІУС фільтрує сигнал (Kalman) → ЧДТУ аналізує тренд (SARIMA) → ЧІПБ будує предиктивну fire model
+
+---
+
+## 🧬 1E. Публікації ЧМА (Біохімія EBFC, Токсикологія, Ксилемоінтеграція)
+
+> **Контекст:** ЧМА (Черкаська медична академія) забезпечує біохімічну валідацію EBFC-ферментів, токсикологічну оцінку вивільнення іонів V/Al з Ti-6Al-4V, медичну аналогію ксилемоінтеграції та фармацевтичну хімію self-healing покриттів. Повний реєстр задач — у [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration).
+
+### Стаття 28: Біохімічна Валідація Enzymatic Bio-Fuel Cell для Дерево-Живленого IoT
+
+**Назва (EN):** _"Biochemical Validation of Enzymatic Bio-Fuel Cell for Tree-Powered IoT: Enzyme Immobilization Stability, Protective Matrix Optimization, and In Vitro Performance in Simulated Xylem Sap"_
+**Журнали:** Biosensors and Bioelectronics (Q1) · Journal of Power Sources (Q1) · Electrochimica Acta (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Бушуєва І.** (ЧМА) | In vitro стабільність GOx/FAD-GDH/Laccase, оптимізація Chitosan+Nafion, 12-тижневий тест EBFC |
+| **Мінаєв Б.Ф.** (ЧНУ) | DFT-моделювання адсорбції ферментів на TiO₂, квантовий вихід charge transfer |
+| **Глущенко О.** (ЧМА) | Характеризація Os redox polymer стабільності, cross-linking оптимізація |
+| Архітектор (Silken Net) | EBFC архітектура (01_03), BQ25570 Cold Start вимоги, firmware delta_t специфіка |
+
+**Тип зв'язку:** Комплементарний — ЧНУ: теоретична модель (DFT), ЧМА: in vitro валідація, Silken Net: системні вимоги
+
+---
+
+### Стаття 29: Токсикологічна Оцінка Ti-6Al-4V Гіроїдних Анкерів для Лісових Кіберфізичних Систем
+
+**Назва (EN):** _"Phytotoxicological Assessment of Ti-6Al-4V TPMS Gyroid Anchors for Forest Cyber-Physical Systems: Vanadium and Aluminum Ion Release, Bioaccumulation, and 20-Year Safety Modeling"_
+**Журнали:** Environmental Pollution (Q1) · Science of The Total Environment (Q1) · Chemosphere (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Суховой Г.** (ЧМА) | Фітотоксичність V/Al для Pinus sylvestris, Safety Margin, хронічна біоакумуляція |
+| **Гусак А.М.** (ЧНУ) | Математична модель дифузії V/Al (Кіркендалл, 20 років), ICP-MS аналіз |
+| **Глущенко О.** (ЧМА) | Оцінка фітотоксичності 8-HQ self-healing покриття, альтернативні інгібітори |
+| **Спрягайло О.В.** (ЧНУ) | Склад ксилемного соку Pinus sylvestris, фітоценологічний контекст Черкаського бору |
+| Архітектор (Silken Net) | Ti-6Al-4V специфікація (01_02), self-healing концепт, 20-річна цільова довговічність |
+
+**Тип зв'язку:** Послідовний — ЧНУ (Гусак) вимірює концентрації + модель → ЧМА (Суховой) оцінює біологічний вплив + Safety Margin
+
+---
+
+### Стаття 30: Ксилемоінтеграція як Аналогія Остеоінтеграції — Біомедичний Підхід до Рослинних Імплантів
+
+**Назва (EN):** _"Xylemointegration as Osseointegration Analogy: A Biomedical Approach to Plant Implant Design for Long-Term Forest Cyber-Physical Systems"_
+**Журнали:** Acta Biomaterialia (Q1) · Biomaterials (Q1) · Journal of Materials Science: Materials in Medicine (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Губенко І.** (ЧМА) | Медична валідація CODIT-моделі через аналогію з остеоінтеграцією, stress-shielding |
+| **Боєчко В.** (ЧМА) | Фізіологія стресу: recovery curve, preclinical stress signature, CODIT-aware калібрація |
+| **Спрягайло О.В.** (ЧНУ) | Ботанічна верифікація CODIT у Pinus sylvestris, сезонні дані Черкаського бору |
+| **Гусак А.М.** (ЧНУ) | FEM-моделювання термо-механічних напруг при contact Ti-6Al-4V ↔ деревина |
+| Архітектор (Silken Net) | Концепція ксилемоінтеграції (01_04), гіроїд (01_01), firmware bio_contract |
+
+**Тип зв'язку:** Комплементарний — ЧМА: медична аналогія + стресова фізіологія, ЧНУ: ботанічні дані + фізика матеріалів
 
 ---
 
