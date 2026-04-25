@@ -669,7 +669,8 @@ CREATE TABLE public.clusters (
     environmental_settings jsonb,
     health_index double precision,
     active_trees_count bigint DEFAULT 0 NOT NULL,
-    geo_boundary public.geometry(Geometry,4326)
+    geo_boundary public.geometry(Geometry,4326),
+    entropy_score double precision
 );
 
 
@@ -5347,5 +5348,6 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260419072056'),
 ('20260419160334'),
 ('20260421181059'),
-('20260424165615');
+('20260424165615'),
+('20260425123403');
 

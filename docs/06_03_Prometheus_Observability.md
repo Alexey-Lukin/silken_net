@@ -341,7 +341,26 @@ end
 
 **Підсумок реєстру: 22 кастомні метрики (12 counters + 8 gauges + 2 histograms).**
 
-### 2.6 Governance Parameter Sync Observability
+### 2.6 Entropy Monitor Metric (Quantum Pre-Stress Detector)
+
+| Metric Name | Тип | Файл | Labels |
+|-------------|-----|------|--------|
+| `silkennet_cluster_entropy_score` | Gauge | `ClusterEntropyAnalyzerWorker` | `cluster_id` |
+
+Нормалізована ентропія Шеннона Z-розподілу кластера (0.0–1.0). Оновлюється `ClusterEntropyAnalyzerWorker` (queue: `alerts`, рекомендовано: щогодинний cron). Здоровий ліс: ≈ 0.75-0.95. Критичний поріг: < 0.65 → `EwsAlert(entropy_anomaly)`.
+
+**Grafana Alert Rule (операційна задача):**
+```yaml
+- alert: ClusterEntropyLow
+  expr: silkennet_cluster_entropy_score < 0.65
+  for: 30m
+  annotations:
+    summary: "Передстресовий сигнал: кластер {{ $labels.cluster_id }} — ентропія {{ $value }}"
+```
+
+**Підсумок реєстру: 23 кастомні метрики (12 counters + 9 gauges + 2 histograms).**
+
+### 2.7 Governance Parameter Sync Observability
 
 `Governance::ParameterSyncWorker` (queue: `web3_low`, cron: 03:30 UTC щоденно) моніторинг:
 
