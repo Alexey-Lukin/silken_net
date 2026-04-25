@@ -301,6 +301,7 @@ kamal deploy
 - [`09_01`](docs/09_01_AI_Native_Concurrent_Engineering.md) — AI-Native Concurrent Engineering (Shape Up)
 - [`09_02`](docs/09_02_Strategic_Roadmap_and_TRL_Matrix.md) — матриця TRL та roadmap
 - [`09_03`](docs/09_03_GitHub_Projects_and_Ops_Automation.md) — GitHub Projects V2 + CI/CD автоматизація
+- [`09_04`](docs/09_04_CHDTU_Data_Science_Collaboration.md) — ЧДТУ: Data Science, статистика та оптимізація
 
 **Тестування (Модуль 10)**
 - [`10_01`](docs/10_01_View_Component_Testing_Guide.md) — 30 best practices для тестування Phlex-компонентів

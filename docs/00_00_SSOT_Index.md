@@ -94,6 +94,7 @@ _Операційна система проєкту, TRL та AI-інжинір�
 - [09\_01\_AI\_Native\_Concurrent\_Engineering](09_01_AI_Native_Concurrent_Engineering) (Shape Up та паралельні потоки)
 - [09\_02\_Strategic\_Roadmap\_and\_TRL\_Matrix](09_02_Strategic_Roadmap_and_TRL_Matrix) (Матриця готовності та фази)
 - [09\_03\_GitHub\_Projects\_and\_Ops\_Automation](09_03_GitHub_Projects_and_Ops_Automation) (Автоматизація через GitHub V2)
+- [09\_04\_CHDTU\_Data\_Science\_Collaboration](09_04_CHDTU_Data_Science_Collaboration) (ЧДТУ: Data Science, статистика та оптимізація)
 
 ## 📋 Модуль 10: Тестування та Операційний Трекінг
 
