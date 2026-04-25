@@ -296,12 +296,12 @@ kamal deploy
 - [`08_01`](docs/08_01_University_R_and_D_Protocols.md) — партнерство з ЧНУ
 - [`08_02`](docs/8_02_Cybernetic_and_Mathematical_Validation.md) — кіберфізична валідація ФОТІУС
 - [`08_03`](docs/08_03_Joint_Publications_and_IP_Strategy.md) — спільні публікації та стратегія IP
+- [`08_04`](docs/08_04_CHDTU_Data_Science_Collaboration.md) — ЧДТУ: Data Science, статистика та оптимізація
 
 **Управління та Масштабування (Модуль 09)**
 - [`09_01`](docs/09_01_AI_Native_Concurrent_Engineering.md) — AI-Native Concurrent Engineering (Shape Up)
 - [`09_02`](docs/09_02_Strategic_Roadmap_and_TRL_Matrix.md) — матриця TRL та roadmap
 - [`09_03`](docs/09_03_GitHub_Projects_and_Ops_Automation.md) — GitHub Projects V2 + CI/CD автоматизація
-- [`09_04`](docs/09_04_CHDTU_Data_Science_Collaboration.md) — ЧДТУ: Data Science, статистика та оптимізація
 
 **Тестування (Модуль 10)**
 - [`10_01`](docs/10_01_View_Component_Testing_Guide.md) — 30 best practices для тестування Phlex-компонентів

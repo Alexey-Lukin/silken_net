@@ -43,6 +43,7 @@
   - TinyML → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
   - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
+  - ЧДТУ Data Science (міжуніверситетська синергія) → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
 
 ---
 

@@ -86,6 +86,7 @@ _Завдання для лабораторій ЧНУ (TRL 1-4)._
 - [08\_01\_University\_R\_and\_D\_Protocols](08_01_University_R_and_D_Protocols) (Chemistry & Physics)
 - [08\_02\_Cybernetic\_and\_Mathematical\_Validation](08_02_Cybernetic_and_Mathematical_Validation) (FOTIUS Hub)
 - [08\_03\_Joint\_Publications\_and\_IP\_Strategy](08_03_Joint_Publications_and_IP_Strategy) (Strategy & IP)
+- [08\_04\_CHDTU\_Data\_Science\_Collaboration](08_04_CHDTU_Data_Science_Collaboration) (ЧДТУ: Data Science, статистика та оптимізація)
 
 ## 🚀 Модуль 09: Управління та Масштабування (The Path)
 
@@ -94,7 +95,6 @@ _Операційна система проєкту, TRL та AI-інжинір�
 - [09\_01\_AI\_Native\_Concurrent\_Engineering](09_01_AI_Native_Concurrent_Engineering) (Shape Up та паралельні потоки)
 - [09\_02\_Strategic\_Roadmap\_and\_TRL\_Matrix](09_02_Strategic_Roadmap_and_TRL_Matrix) (Матриця готовності та фази)
 - [09\_03\_GitHub\_Projects\_and\_Ops\_Automation](09_03_GitHub_Projects_and_Ops_Automation) (Автоматизація через GitHub V2)
-- [09\_04\_CHDTU\_Data\_Science\_Collaboration](09_04_CHDTU_Data_Science_Collaboration) (ЧДТУ: Data Science, статистика та оптимізація)
 
 ## 📋 Модуль 10: Тестування та Операційний Трекінг
 
