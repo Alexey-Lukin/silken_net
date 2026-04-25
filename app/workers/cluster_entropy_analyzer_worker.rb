@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class QuantumStressAnalyzerWorker
+class ClusterEntropyAnalyzerWorker
   include Sidekiq::Job
 
   # Черга `alerts` (пріоритет 2) — це частина Early Warning System.
@@ -44,7 +44,7 @@ class QuantumStressAnalyzerWorker
       .map(&:to_f)
 
     # 2. ОБЧИСЛЕННЯ ЕНТРОПІЇ
-    entropy_score = Analytics::EntropyCalculatorService.call(z_values)
+    entropy_score = SilkenNet::EntropyCalculatorService.call(z_values)
 
     # Недостатньо даних для аналізу — пропускаємо без помилки
     return if entropy_score.nil?

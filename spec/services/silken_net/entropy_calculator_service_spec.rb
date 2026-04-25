@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe Analytics::EntropyCalculatorService do
+RSpec.describe SilkenNet::EntropyCalculatorService do
   describe ".call" do
     context "with insufficient data" do
       it "returns nil for empty array" do

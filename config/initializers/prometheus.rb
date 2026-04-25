@@ -207,7 +207,7 @@ module SilkenNet
 
     # [ENTROPY MONITOR]: Shannon entropy of Z-value distribution per cluster.
     # Healthy forest: ≈ 0.75-0.95 (diverse Z-values). Pre-stress: < 0.65.
-    # Updated by QuantumStressAnalyzerWorker (queue: alerts, hourly).
+    # Updated by ClusterEntropyAnalyzerWorker (queue: alerts, hourly).
     CLUSTER_ENTROPY_SCORE = REGISTRY.gauge(
       :silkennet_cluster_entropy_score,
       docstring: "Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0)",

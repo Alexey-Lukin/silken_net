@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe QuantumStressAnalyzerWorker, type: :worker do
+RSpec.describe ClusterEntropyAnalyzerWorker, type: :worker do
   let(:organization) { create(:organization) }
   let(:cluster) { create(:cluster, organization: organization) }
   let(:tree_family) { create(:tree_family) }

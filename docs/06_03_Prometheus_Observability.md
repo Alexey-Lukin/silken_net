@@ -345,9 +345,9 @@ end
 
 | Metric Name | Тип | Файл | Labels |
 |-------------|-----|------|--------|
-| `silkennet_cluster_entropy_score` | Gauge | `QuantumStressAnalyzerWorker` | `cluster_id` |
+| `silkennet_cluster_entropy_score` | Gauge | `ClusterEntropyAnalyzerWorker` | `cluster_id` |
 
-Нормалізована ентропія Шеннона Z-розподілу кластера (0.0–1.0). Оновлюється `QuantumStressAnalyzerWorker` (queue: `alerts`, рекомендовано: щогодинний cron). Здоровий ліс: ≈ 0.75-0.95. Критичний поріг: < 0.65 → `EwsAlert(entropy_anomaly)`.
+Нормалізована ентропія Шеннона Z-розподілу кластера (0.0–1.0). Оновлюється `ClusterEntropyAnalyzerWorker` (queue: `alerts`, рекомендовано: щогодинний cron). Здоровий ліс: ≈ 0.75-0.95. Критичний поріг: < 0.65 → `EwsAlert(entropy_anomaly)`.
 
 **Grafana Alert Rule (операційна задача):**
 ```yaml

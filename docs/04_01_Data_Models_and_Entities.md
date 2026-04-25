@@ -273,7 +273,7 @@ dormant ──reactivate──► active
 | `geo_boundary` | geometry (PostGIS) | Полігон сектора для ST_Contains |
 | `geojson_polygon` | jsonb | GeoJSON-представлення (синхронізується тригером → див. примітку нижче) |
 | `health_index` | decimal | Денормалізований індекс `1.0 - stress_index` (0..1) |
-| `entropy_score` | float | Нормалізована ентропія Шеннона Z-розподілу (0..1). Оновлюється `QuantumStressAnalyzerWorker` |
+| `entropy_score` | float | Нормалізована ентропія Шеннона Z-розподілу (0..1). Оновлюється `ClusterEntropyAnalyzerWorker` |
 | `active_trees_count` | bigint | Counter cache (оновлюється Tree callbacks) |
 | `climate_type` | string | Кліматичний тип зони (напр. "temperate_continental") |
 | `environmental_settings` | jsonb | `custom_fire_threshold`, `seismic_sensitivity_threshold`, `timezone` |

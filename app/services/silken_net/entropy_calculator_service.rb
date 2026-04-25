@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Analytics
+module SilkenNet
   # = ===================================================================
   # 🎲 ENTROPY CALCULATOR SERVICE (Shannon Entropy of Z-Value Distributions)
   # = ===================================================================
@@ -22,7 +22,7 @@ module Analytics
   #   H_norm = H / log₂(num_bins)  ∈ [0.0, 1.0]
   #
   # Використання:
-  #   Analytics::EntropyCalculatorService.call([29.1, 28.5, 30.2, 27.8, ...])
+  #   SilkenNet::EntropyCalculatorService.call([29.1, 28.5, 30.2, 27.8, ...])
   #   => 0.87  (висока ентропія — гомеостаз)
   #
   class EntropyCalculatorService < ApplicationService

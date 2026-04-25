@@ -90,11 +90,11 @@
 | **Що робить** | Haversine distance calculation між двома GPS-точками. |
 | **Вихід** | `haversine_distance_m → Float` (метри). |
 
-### `Analytics::EntropyCalculatorService`
+### `SilkenNet::EntropyCalculatorService`
 
 | | |
 |---|---|
-| **Файл** | `app/services/analytics/entropy_calculator_service.rb` |
+| **Файл** | `app/services/silken_net/entropy_calculator_service.rb` |
 | **Вхід** | `z_values` (Array\<Float>) — масив Z-значень атрактора Лоренца з кластера |
 | **Що робить** | Обчислює нормалізовану ентропію Шеннона для розподілу Z-значень. Фіксоване бінування по діапазону [2.0, 45.0] (homeostasis zone Лоренца). 20 бінів, ширина ~2.15. Мінімум 30 точок даних для статистичної значущості. Здоровий ліс: diverse Z → entropy ≈ 0.75-0.95. Стрес: homogeneous Z → entropy < 0.5. |
 | **Чому Z-value, а не HRNG seed** | `chaos_seed` (HRNG) НЕ передається у 21-байтному LoRa-пакеті (03_01, Phase 2). Backend використовує z_value як проксі. Див. ЧДТУ task #12 (08_04). |
@@ -542,7 +542,7 @@
 
 ---
 
-#### `QuantumStressAnalyzerWorker`
+#### `ClusterEntropyAnalyzerWorker`
 
 | Параметр | Значення |
 |----------|----------|
@@ -550,7 +550,7 @@
 | **Retry** | 3 |
 | **Тригер** | Періодичний (рекомендовано: щогодини через Sidekiq cron) |
 | **Вхід** | `cluster_id` (Integer) |
-| **Сервіси** | `Analytics::EntropyCalculatorService.call(z_values)` |
+| **Сервіси** | `SilkenNet::EntropyCalculatorService.call(z_values)` |
 | **Side Effects** | Оновлює `cluster.entropy_score` (денормалізація). При entropy < `CRITICAL_ENTROPY_THRESHOLD` (0.65) створює `EwsAlert` (type: `entropy_anomaly`, severity: `medium`). Redis silence filter: 1 год per cluster. Prometheus gauge: `silkennet_cluster_entropy_score`. Інвалідація кешу `oracle_expected_yield_24h`. |
 | **Примітка** | Аналізує Z-значення за останні 24 години (partition-aware query). Мінімум 30 точок даних для статистичної значущості. Alignment: ЧДТУ task #12 (08_04). Чому Z-value, а не HRNG seed: `chaos_seed` НЕ передається у 21-байтному пакеті (03_01, Phase 2). |
 
