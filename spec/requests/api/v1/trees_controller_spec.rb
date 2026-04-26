@@ -129,6 +129,38 @@ RSpec.describe Api::V1::TreesController, type: :request do
         source_id: 99
       )
     end
+    let(:expected_json_response) do
+      {
+        "data" => [
+          {
+            "date" => "2026-04-25T10:30:00Z",
+            "event_type" => "telemetry",
+            "icon" => "🌿",
+            "title" => "Telemetry Logged",
+            "description" => "Stable readings",
+            "severity" => "warning",
+            "source_type" => "TelemetryLog",
+            "source_id" => 77
+          },
+          {
+            "date" => nil,
+            "event_type" => "maintenance",
+            "icon" => "🔧",
+            "title" => "Maintenance Scheduled",
+            "description" => "Awaiting technician",
+            "severity" => "info",
+            "source_type" => "MaintenanceRecord",
+            "source_id" => 99
+          }
+        ],
+        "pagy" => {
+          "page" => 2,
+          "limit" => 20,
+          "count" => 21,
+          "pages" => 2
+        }
+      }
+    end
 
     before do
       allow(TreeChronicleService).to receive(:call).and_return(
@@ -141,39 +173,7 @@ RSpec.describe Api::V1::TreesController, type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(TreeChronicleService).to have_received(:call).with(tree: own_tree, page: 2, per_page: 20)
-
-      expect(response.parsed_body).to eq(
-        {
-          "data" => [
-            {
-              "date" => "2026-04-25T10:30:00Z",
-              "event_type" => "telemetry",
-              "icon" => "🌿",
-              "title" => "Telemetry Logged",
-              "description" => "Stable readings",
-              "severity" => "warning",
-              "source_type" => "TelemetryLog",
-              "source_id" => 77
-            },
-            {
-              "date" => nil,
-              "event_type" => "maintenance",
-              "icon" => "🔧",
-              "title" => "Maintenance Scheduled",
-              "description" => "Awaiting technician",
-              "severity" => "info",
-              "source_type" => "MaintenanceRecord",
-              "source_id" => 99
-            }
-          ],
-          "pagy" => {
-            "page" => 2,
-            "limit" => 20,
-            "count" => 21,
-            "pages" => 2
-          }
-        }
-      )
+      expect(response.parsed_body).to eq(expected_json_response)
     end
 
     it "renders the chronicle turbo frame as HTML" do
