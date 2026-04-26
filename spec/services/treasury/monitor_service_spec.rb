@@ -236,7 +236,7 @@ RSpec.describe Treasury::MonitorService do
 
   describe "fetch_evm_balance" do
     it "returns 0 when private_key is blank" do
-      saved = ENV.delete("ORACLE_PRIVATE_KEY")
+      stub_const("ENV", ENV.to_h.except("ORACLE_PRIVATE_KEY"))
       service = described_class.new
       config = described_class::NETWORK_CONFIG[:polygon].merge(
         currency: "MATIC", decimals: 18, min_balance_wei: 50_000_000_000_000_000
@@ -244,8 +244,6 @@ RSpec.describe Treasury::MonitorService do
 
       result = service.send(:fetch_evm_balance, config)
       expect(result).to eq(0)
-    ensure
-      ENV["ORACLE_PRIVATE_KEY"] = saved
     end
 
     it "uses fallback RPC for Celo" do
@@ -266,7 +264,7 @@ RSpec.describe Treasury::MonitorService do
 
   describe "fetch_solana_balance" do
     it "returns 0 when fee_payer pubkey is blank" do
-      saved = ENV.delete("SOLANA_FEE_PAYER_PUBKEY")
+      stub_const("ENV", ENV.to_h.except("SOLANA_FEE_PAYER_PUBKEY"))
       service = described_class.new
       config = described_class::NETWORK_CONFIG[:solana].merge(
         currency: "SOL", decimals: 9, min_balance_wei: 50_000_000
@@ -274,8 +272,6 @@ RSpec.describe Treasury::MonitorService do
 
       result = service.send(:fetch_solana_balance, config)
       expect(result).to eq(0)
-    ensure
-      ENV["SOLANA_FEE_PAYER_PUBKEY"] = saved
     end
 
     it "handles nil parsed_body gracefully" do

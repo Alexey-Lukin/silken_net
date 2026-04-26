@@ -179,21 +179,23 @@ RSpec.describe Web3CircuitBreaker do
       end
 
       it "detects transient cause in deeply nested exceptions" do
-        custom_error = Class.new(StandardError)
         wrapper_error = Class.new(StandardError)
 
-        # Simulate: Errno::ECONNREFUSED → custom_error → wrapper_error
+        # Simulate a wrapper_error whose cause is an Errno::ECONNREFUSED
+        error_with_cause = nil
         begin
           begin
             raise Errno::ECONNREFUSED, "connection refused"
           rescue Errno::ECONNREFUSED
-            raise custom_error, "inner wrap"
+            raise wrapper_error, "outer wrap"
           end
-        rescue custom_error
-          expect {
-            instance.test_call(service_name) { raise wrapper_error, "outer wrap" }
-          }.to raise_error(wrapper_error)
+        rescue wrapper_error => e
+          error_with_cause = e
         end
+
+        expect {
+          instance.test_call(service_name) { raise error_with_cause }
+        }.to raise_error(wrapper_error)
 
         count = Rails.cache.read("circuit_breaker:#{service_name}:failures").to_i
         expect(count).to eq(1)

@@ -354,9 +354,9 @@ static void test_homeostasis_edge_z_max(void) {
 
 static void test_extreme_temp_acoustic_combo(void) {
     /* Extreme combo: temp=-128 (int8_t min) + acoustic=255
-     * sigma = 10.0 + 255*0.1 = 35.5 → clamped to 30.0
-     * rho = 28.0 + (-128*0.2) = 28.0 - 25.6 = 2.4 → clamped to 10.0
-     * Should produce valid (finite) Z result */
+     * sigma = 10.0 + 255*0.1 = 35.5 → clamped DOWN to 30.0
+     * rho = 28.0 + (-128*0.2) = 28.0 - 25.6 = 2.4 → clamped UP to 10.0
+     * Both parameters hit their clamp limits. Should produce valid (finite) Z. */
     double z = calculate_z_axis(42, -128, 255);
     ASSERT(!isnan(z) && !isinf(z),
            "test_extreme_temp_minus128_acoustic_255_valid");

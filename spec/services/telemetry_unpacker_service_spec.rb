@@ -508,7 +508,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "logs warning when acoustic_events is 255 (saturated)" do
         chunk = build_chunk(did_hex, -70, 3500, 25, 255, 100, 0, 3)
 
-        expect(Rails.logger).to receive(:warn).with(/Acoustic Overflow/).at_least(:once)
+        expect(Rails.logger).to receive(:warn).with(/Acoustic Overflow/).once
         described_class.call(chunk)
       end
 
