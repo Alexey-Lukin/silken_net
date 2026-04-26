@@ -14,6 +14,7 @@
   - Контракти → [`07_01_Nature_as_a_Service_Contracts`](07_01_Nature_as_a_Service_Contracts)
   - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
+  - СЄУ (консорціум, гранти Horizon Europe) → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
 - **Готові артефакти:** Технічна документація Wiki, BOM, демо Attractor, збірна інструкція
 - **Пов'язані модулі:** Мультичейн — `05_01_Multichain_Architecture`, Токеноміка — `05_03_Tokenomics_SCC_and_SFC`
 
@@ -181,3 +182,48 @@ Q4 2026:   Seed-раунд (climate/deeptech фонди)
            ▼
 2027:      Scale-out: 1,000 дерев → NaaS-контракти → Carbon Credits
 ```
+
+---
+
+## 🏛️ 8. Академічні Гранти (Horizon Europe & Ethereum Foundation)
+
+> **Стратегічний рівень:** Web3-екосистемні гранти (секції 1-7) покривають технічну інфраструктуру. Horizon Europe та Ethereum Foundation гранти легітимізують проєкт для інституційних інвесторів та ESG-регуляторів ЄС.
+
+### Horizon Europe CLUSTER 6 (Climate, Energy, Mobility)
+
+| Параметр | Деталі |
+|---|---|
+| **Програма** | Horizon Europe CLUSTER 6 — Biodiversity Monitoring, Digital Twins |
+| **Тип** | Research and Innovation Action (RIA) або EIC Pathfinder/Accelerator |
+| **Орієнтовний бюджет** | €3–5M на 4 роки |
+| **Вимоги до консорціуму** | Мін. 3 країни ЄС; Ukraine є асоційованою країною (partial eligibility) |
+| **Статус** | Не подано — потребує підготовки |
+| **Академічний лідер консорціуму** | **СЄУ (Аблязова Наталія Рауфівна)** — координація, управління консорціумом, Triple Helix модель (ЧНУ/ЧДТУ/СЄУ + ActiveBridge + лісові господарства) |
+
+**Структура консорціуму для Horizon Europe:**
+
+```
+WP1 Coordination & Dissemination → СЄУ (Аблязова Н., Гедз М.)
+WP2 Hardware & Materials          → ЧНУ (Гусак, Мінаєв) + Silken Net
+WP3 Firmware & Edge AI            → ЧНУ ФОТІУС (Осауленко) + ЧДТУ
+WP4 D-MRV Methodology             → СЄУ (Гедз М.) + ЧДТУ (Карапетян)
+WP5 Legal & Compliance            → СЄУ (Аблязов Д., Ус Г.)
+WP6 Industrial Design             → СЄУ (Денисенко, Теліженко)
+WP7 Exploitation & IPR            → ActiveBridge + Silken Net
+```
+
+**Зв'язок з кодбейсом:** Horizon Europe вимагає Open Science — `StateRootAnchor.sol` (публічна верифікація), Filecoin-архів телеметрії, The Graph subgraph (публічний доступ до даних).
+
+### Ethereum Foundation Academic Grants
+
+| Параметр | Деталі |
+|---|---|
+| **Програма** | Ethereum Foundation Academic Grants Round |
+| **Тип** | Research grant до $150K |
+| **Фокус** | ZK-proofs, DePIN, on-chain verifiable data, public goods |
+| **Статус** | Не подано |
+| **Академічний лідер** | **СЄУ (Аблязова Н.) + ЧНУ ФОТІУС (Осауленко)** |
+
+**Тема заявки:** _"Trustless D-MRV: IoTeX W3bstream ZK-proofs for biological homeostasis verification on STM32WLE5JC edge devices"_ — пов'язано з `IotexVerificationWorker`, `Iotex::W3bstreamVerificationService` та `05_02_Proof_of_Growth_Pipeline`.
+
+> **Детально про консорціум та грантову стратегію:** [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) §1.4 (Аблязова Н.).

@@ -295,7 +295,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 - **Service Level Agreement (SLA)** — параметри якості: час реакції на інциденти, uptime гарантії, умови відшкодування при недоступності системи.
 - **Subscription Order Form** — документ на конкретний `NaasContract` (кластер, тривалість, `total_funding`, `cancellation_terms`).
 
-**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів.
+**Дія:** Залучення юридичного консультанта (бажано з досвідом Web3 / ReFi) для підготовки шаблонів. **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович, к.ю.н., доцент кафедри публічного та приватного права) — розробка шаблонів MSA, Term Sheet та Carbon Credit Purchase Agreement згідно з MiCA та українським законодавством. Детально: [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) §1.3.
 
 ---
 
@@ -324,7 +324,7 @@ Polygon Hadron Identity Platform надає технічну верифікац�
 - Яка юрисдикція? (ЄС — AMLD5, США — BSA, міжнародні — FATF)
 - Скільки коштує ліцензія на надання таких послуг?
 
-**Дія:** Консультація з compliance-спеціалістом та вибір KYC-провайдера (Sumsub, Veriff, або Polygon Hadron).
+**Дія:** Консультація з compliance-спеціалістом та вибір KYC-провайдера (Sumsub, Veriff, або Polygon Hadron). **Академічний шлях вирішення:** СЄУ (Аблязов Денис Едуардович) — юридична рамка KYC/AML для B2B клієнтів у контексті ERC-3643 та AMLD5/FATF регулювань; СЄУ (Ус Галина Олександрівна) — бухгалтерська класифікація KYC витрат та compliance-процесів у корпоративному обліку. Детально: [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) §1.3.
 
 ---
 
