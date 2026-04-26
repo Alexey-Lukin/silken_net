@@ -155,6 +155,38 @@ RSpec.describe TelemetryLog, type: :model do
     end
   end
 
+  describe ".find_with_partition_pruning" do
+    let!(:log) { create(:telemetry_log) }
+
+    it "finds a log by id alone" do
+      expect(described_class.find_with_partition_pruning(log.id)).to eq(log)
+    end
+
+    it "finds a log by id and created_at Time" do
+      expect(described_class.find_with_partition_pruning(log.id, log.created_at)).to eq(log)
+    end
+
+    it "finds a log by id and created_at ISO8601 string" do
+      expect(described_class.find_with_partition_pruning(log.id, log.created_at.iso8601)).to eq(log)
+    end
+
+    it "raises when the record does not exist" do
+      expect {
+        described_class.find_with_partition_pruning(-1)
+      }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+
+    it "raises when the timestamp points to a different partition window" do
+      expect {
+        described_class.find_with_partition_pruning(log.id, "2020-01-01T00:00:00Z")
+      }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+
+    it "falls back to an id lookup when created_at cannot be parsed" do
+      expect(described_class.find_with_partition_pruning(log.id, "not-a-date")).to eq(log)
+    end
+  end
+
   describe "no ActiveRecord validations on hot path" do
     it "does not validate presence of sensor fields" do
       log = described_class.new(tree: create(:tree), bio_status: :homeostasis)
