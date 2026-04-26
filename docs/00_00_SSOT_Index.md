@@ -89,6 +89,7 @@ _Завдання для лабораторій ЧНУ, ЧДТУ, ЧІПБ та 
 - [08\_04\_CHDTU\_Data\_Science\_Collaboration](08_04_CHDTU_Data_Science_Collaboration) (ЧДТУ: Data Science, статистика та оптимізація)
 - [08\_05\_CHIPB\_Fire\_Safety\_Integration](08_05_CHIPB_Fire_Safety_Integration) (ЧІПБ: Пожежна безпека, параметричне страхування та SOP)
 - [08\_06\_CHMA\_Biomedical\_Integration](08_06_CHMA_Biomedical_Integration) (ЧМА: Біохімія EBFC, токсикологія металів, ксилемоінтеграція)
+- [08\_07\_SEU\_Economics\_and\_Legal\_Integration](08_07_SEU_Economics_and_Legal_Integration) (СЄУ: Токеноміка NaaS, RWA-легалізація, промисловий дизайн)
 
 ## 🚀 Модуль 09: Управління та Масштабування (The Path)
 

@@ -299,6 +299,7 @@ kamal deploy
 - [`08_04`](docs/08_04_CHDTU_Data_Science_Collaboration.md) — ЧДТУ: Data Science, статистика та оптимізація
 - [`08_05`](docs/08_05_CHIPB_Fire_Safety_Integration.md) — ЧІПБ: пожежна безпека, параметричне страхування, SOP
 - [`08_06`](docs/08_06_CHMA_Biomedical_Integration.md) — ЧМА: біомедична валідація EBFC, токсикологія Ti-6Al-4V, ксилемоінтеграція
+- [`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md) — СЄУ: макроекономіка NaaS, RWA-легалізація, промисловий дизайн PEEK-радому
 
 **Управління та Масштабування (Модуль 09)**
 - [`09_01`](docs/09_01_AI_Native_Concurrent_Engineering.md) — AI-Native Concurrent Engineering (Shape Up)
@@ -325,7 +326,7 @@ kamal deploy
 | Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
 | Ti-6Al-4V гіроїдний анкер | 4 | Очікується nTop ліцензія |
 | EBFC (GOx/Laccase ферменти) | 3 | Лабораторний етап (ЧНУ + ЧМА) |
-| Академічна мережа (ЧНУ/ФОТІУС/ЧДТУ/ЧІПБ/ЧМА) | 3 | 5 університетів, 30+ публікацій Q1 pipeline |
+| Академічна мережа (ЧНУ/ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 3 | 6 університетів, 33+ публікацій Q1 pipeline |
 | Розгортання GCP + Kamal | 4 | Код існує, деплой не проводився |
 
 ---

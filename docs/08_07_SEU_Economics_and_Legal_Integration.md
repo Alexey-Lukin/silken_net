@@ -62,15 +62,21 @@
 
 Silken Net емітує SCC-токени через Proof of Growth pipeline ([`05_02`](05_02_Proof_of_Growth_Pipeline)): кожні 10,000 `growth_points` = 1 SCC. Інституційні інвестори (DAO, ESG-фонди, корпорації) перед купівлею SCC вимагають **науково обґрунтовану фінансову модель**, що доводить: емісія токенів прив'язана до реальних фізичних процесів (ріст біомаси дерева), а не "надрукована з повітря".
 
+**Обов'язкове читання перед початком роботи:**
+- [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC) — повна специфікація dual-token системи (SCC utility + SFC governance), ієрархія ролей (MINTER/SLASHER/ADMIN), Dynamic Tax механізм, потік мінтингу та slashing, Subgraph індексація
+- [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture) §0 — модульний DePIN стек (12 мереж): чому кожна мережа існує, рольова карта від peaq Identity до Ethereum L1 Finality
+- [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline) — повний trustless пайплайн від EBFC до on-chain SCC, 4 рівні верифікації, конверсія 10,000 growth_points = 1 SCC
+- [`05_04_Ethereum_L1_State_Anchor`](05_04_Ethereum_L1_State_Anchor) — щотижнева SHA-256 фіналізація state_root в Ethereum Mainnet, reproducible verification
+
 **Поточний стан у кодбейсі:**
 
 ```ruby
-# app/services/blockchain_minting_service.rb — Dynamic Tax
+# app/services/blockchain_minting_service.rb — Dynamic Tax (детально: 05_03 §Dynamic Tax)
 DYNAMIC_TAX_RATE = BigDecimal("0.02")           # 2% від емісії → DAO Treasury
 INSURANCE_POOL_THRESHOLD = 100_000               # SCC; якщо pool < поріг — Tax ON
 INSURANCE_POOL_THRESHOLD_WEI = INSURANCE_POOL_THRESHOLD * 10**18
 
-# contracts/ProtocolParameters.sol — on-chain параметри (governance-controlled)
+# contracts/ProtocolParameters.sol — on-chain параметри (governance-controlled, 05_03 §Governance)
 # KEY_EMISSION_THRESHOLD     — скільки growth_points = 1 SCC (default: 10,000)
 # KEY_DYNAMIC_TAX_RATE       — ставка Dynamic Tax (default: 2%, 18 decimals)
 # KEY_INSURANCE_POOL_THRESHOLD — поріг Insurance Pool (default: 100,000 SCC)
@@ -79,6 +85,13 @@ INSURANCE_POOL_THRESHOLD_WEI = INSURANCE_POOL_THRESHOLD * 10**18
 
 # contracts/SilkenCarbonCoin.sol — MAX_SUPPLY = 1,000,000,000 SCC (1B)
 # contracts/SilkenForestCoin.sol — MAX_SUPPLY = 100,000,000 SFC (100M)
+
+# SilkenGovernor.sol (05_01 §6 Governance DAO):
+#   votingDelay = 43200 blocks (~1 день Polygon)
+#   votingPeriod = 302400 blocks (~7 днів)
+#   proposalThreshold = 100 SFC
+#   quorum = 4% від totalSupply
+#   Flash Loan Defense: snapshot voting (getPastVotes), 48h timelock
 ```
 
 **Проблема:** Поточна модель побудована інженером (Архітектор), а не макроекономістом. Інвестори запитують:
@@ -143,10 +156,12 @@ INSURANCE_POOL_THRESHOLD_WEI = INSURANCE_POOL_THRESHOLD * 10**18
 
 Корпорації, що купують SCC для ESG-звітності, стикаються з фундаментальною бухгалтерською проблемою: **як провести через баланс купівлю утилітарного токена на Polygon, мікро-нагороди у USDC на Solana та виплати у cUSD на Celo?** Жоден із 5 існуючих університетських партнерів не має компетенції в корпоративному обліку та податковій оптимізації.
 
-**Поточний стан у кодбейсі:**
+**Обов'язкове читання:**
+- [`05_01`](05_01_Multichain_Architecture) §8 (Solana Micro-Rewards), §9 (Celo ReFi), §10 (KlimaDAO ESG) — повна специфікація трьох платіжних потоків, що потребують бухгалтерського mapping
+- [`05_03`](05_03_Tokenomics_SCC_and_SFC) §Dynamic Tax — механізм 2% відрахування при `batchMint`, умови активації (`insurance_pool_requires_funding?`), кешування 15 хв
+- [`05_03`](05_03_Tokenomics_SCC_and_SFC) §Потік Slashing — як `BurnCarbonTokensWorker` автоматично спалює SCC при >20% stressed trees, що впливає на баланс інвестора
 
-```ruby
-# app/models/wallet.rb — балансові поля
+**Поточний стан у кодбейсі:**
 validates :balance, numericality: { greater_than_or_equal_to: 0 }         # growth_points
 validates :locked_balance, numericality: { greater_than_or_equal_to: 0 }   # заблоковано для мінтингу
 validates :esg_retired_balance, numericality: { greater_than_or_equal_to: 0 } # KlimaDAO retired
@@ -216,10 +231,13 @@ validates :toucan_bridged_balance, numericality: { greater_than_or_equal_to: 0 }
 
 Silken Net токенізує лісові ділянки як Real World Assets (RWA) через Polygon Hadron Identity Platform ([`05_01`](05_01_Multichain_Architecture) §7). Це створює юридичний ланцюг: дерево в Черкаському борі → Machine DID (peaq) → SCC токен (Polygon ERC-20) → KYC/KYB (Hadron ERC-3643) → гаманець інвестора в Берліні. Кожна ланка потребує правового "заземлення" в юрисдикції — українській та європейській.
 
-**Поточний стан у кодбейсі:**
+**Обов'язкове читання:**
+- [`05_01`](05_01_Multichain_Architecture) §7 (Polygon Hadron) — два потоки: `verify_investor!` (KYC) та `register_asset!` (RWA); `WEB3_STRICT_MODE` поведінка
+- [`05_01`](05_01_Multichain_Architecture) §6 (Polygon Primary EVM) — Guard Clauses (verified_by_iotex + oracle_status + hadron_kyc), Governance DAO pipeline
+- [`05_03`](05_03_Tokenomics_SCC_and_SFC) §Ієрархія Ролей — MINTER_ROLE, SLASHER_ROLE, DEFAULT_ADMIN_ROLE та їх розділення
+- [`07_01`](07_01_Nature_as_a_Service_Contracts) §1.1 (B2B Corporate) — KYC/KYB через Hadron, INSURANCE_PREMIUM_RATE 5%
 
-```ruby
-# app/services/polygon/hadron_compliance_service.rb — KYC/RWA реєстрація
+**Поточний стан у кодбейсі:**
 class HadronComplianceService
   # verify_investor!(wallet) — перевіряє KYC → wallet.hadron_kyc_status = "approved"/"rejected"
   # register_asset!(naas_contract) — реєструє лісову ділянку як RWA → naas_contract.hadron_asset_id
@@ -355,10 +373,13 @@ Silken Net має 6 університетських партнерів (ЧНУ,
 
 Silken Net позиціонує себе як D-MRV (Digital Measurement, Reporting, Verification) — цифрову альтернативу Verra VCS та Gold Standard. Для визнання SCC-кредитів на добровільному вуглецевому ринку потрібна **академічна сертифікація методології збору даних**. Гедз як фахівець з аудиту та управління якістю може розробити ISO-подібний фреймворк для D-MRV.
 
-**Поточний стан у кодбейсі:**
+**Обов'язкове читання:**
+- [`05_02`](05_02_Proof_of_Growth_Pipeline) — повна схема trustless пайплайну від Soldier → Queen → Rails → peaq → IoTeX → Chainlink → Polygon → Solana; ключовий інваріант (всі guard clauses)
+- [`05_04`](05_04_Ethereum_L1_State_Anchor) — SHA-256 state_root = `"#{total_scc}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{anchored_at}"`, reproducible verification, MIN_ANCHOR_INTERVAL = 6 днів
+- [`05_03`](05_03_Tokenomics_SCC_and_SFC) §Потік Мінтингу — від TokenomicsEvaluatorWorker до BlockchainConfirmationWorker; Guard Clauses (IoTeX ZK + Chainlink Oracle + Hadron KYC)
+- [`05_01`](05_01_Multichain_Architecture) §0 — модульний DePIN стек: 6 рівнів довіри (Identity → Verification → Oracle → Execution → Memory → Finality)
 
-```ruby
-# Proof of Growth Pipeline (05_02) — 4 рівні верифікації:
+**Поточний стан у кодбейсі:**
 # 1. TelemetryUnpackerService — AES-256-CBC decrypt, 21-byte decode, Lorenz server-side
 # 2. IotexVerificationWorker — IoTeX W3bstream ZK-proof (verified_by_iotex: true)
 # 3. ChainlinkDispatchWorker — Oracle consensus (oracle_status: "fulfilled")

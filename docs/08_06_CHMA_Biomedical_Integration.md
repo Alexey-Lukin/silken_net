@@ -30,6 +30,7 @@
   - Публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
   - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration) (статистична валідація)
   - ЧІПБ пожежна безпека → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
+  - СЄУ: Токеноміка NaaS, RWA-легалізація → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
 
 ---
 

@@ -46,6 +46,7 @@
   - ЧДТУ Data Science, RF-верифікація, акустика (міжуніверситетська синергія) → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
   - ЧІПБ: Пожежна безпека, параметричне страхування, SOP → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
   - ЧМА: Біохімія EBFC, токсикологія металів, ксилемоінтеграція → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
+  - СЄУ: Токеноміка NaaS, RWA-легалізація, промисловий дизайн → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
 
 ---
 

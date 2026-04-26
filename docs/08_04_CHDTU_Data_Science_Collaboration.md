@@ -745,6 +745,7 @@ end
 - [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy) — стратегія публікацій та IP
 - [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration) — ЧІПБ: пожежна безпека, параметричне страхування та SOP
 - [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration) — ЧМА: біохімія EBFC, токсикологія металів, ксилемоінтеграція
+- [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) — СЄУ: токеноміка NaaS, RWA-легалізація, промисловий дизайн
 - [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK) — геометрія гіроїда (фононна лінза)
 - [`02_01_Hardware_Architecture_and_BOM`](02_01_Hardware_Architecture_and_BOM) — апаратна архітектура (SMD-антена, PEEK-радом)
 - [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference) — TinyML акустична класифікація (BLOCKER: inference закоментована)

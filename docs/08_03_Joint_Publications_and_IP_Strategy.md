@@ -10,7 +10,7 @@
 
 ## ✅ Статус
 
-- **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) + ЧІПБ + ЧМА = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація + пожежна безпека та параметричне страхування + біохімічна валідація EBFC та токсикологія
+- **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) + ЧІПБ + ЧМА + СЄУ = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація + пожежна безпека та параметричне страхування + біохімічна валідація EBFC та токсикологія + макроекономічна валідація токеноміки та правова архітектура RWA
 - **Поточний TRL:** TRL 3 — публікаційний план визначено, авторські колективи формуються
 - **Пов'язані модулі:**
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
@@ -18,6 +18,7 @@
   - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
   - ЧІПБ: Пожежна безпека та SOP → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
   - ЧМА: Біохімія EBFC, токсикологія металів → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
+  - СЄУ: Токеноміка NaaS, RWA-легалізація → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
   - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
   - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
 
@@ -542,6 +543,57 @@ _«Дослідження акустичних властивостей пори
 
 ---
 
+## 💼 1F. Публікації СЄУ (Токеноміка, Право, Промисловий Дизайн)
+
+> **Контекст:** СЄУ (Східноєвропейський університет ім. Рауфа Аблязова) забезпечує академічну експертизу в макроекономічній валідації токеноміки NaaS, правовій архітектурі RWA-токенізації (Polygon Hadron / MiCA), аудиті методології D-MRV, промисловому дизайні PEEK-радому та UX/візуалізації даних для B2B-інвесторів. Повний реєстр задач — у [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration).
+
+### Стаття 31: Макроекономічне Обґрунтування Proof of Growth Токеноміки
+
+**Назва (EN):** _"Macroeconomic Foundations of Proof-of-Growth Tokenomics: Deflationary Dynamics, Dynamic Tax Mechanisms, and Supply-Demand Equilibrium in Nature-as-a-Service Carbon Markets"_
+**Журнали:** Ecological Economics (Q1) · Journal of Environmental Economics and Management (Q1) · Resource and Energy Economics (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Чудаєва І.Б.** (СЄУ) | Макроекономічна модель SCC-ринку (supply/demand/equilibrium), stress-testing 3 сценаріїв масштабування, порівняння SCC vs Verra VCU |
+| **Ус Г.О.** (СЄУ) | Unit-економіка кластера, sensitivity analysis ROI, ESG Accounting Framework |
+| **Карапетян А.Р.** (ЧДТУ) | Monte Carlo симуляція 10K сценаріїв, статистична валідація моделі |
+| Архітектор (Silken Net) | ProtocolParameters.sol, BlockchainMintingService (Dynamic Tax), 05_03 Tokenomics |
+
+**Тип зв'язку:** Послідовний — СЄУ (Чудаєва) будує економічну модель → ЧДТУ (Карапетян) валідує Monte Carlo → СЄУ (Ус) інтегрує в корпоративний Accounting Framework
+
+---
+
+### Стаття 32: Правова Архітектура Токенізації Лісових RWA через ERC-3643
+
+**Назва (EN):** _"Legal Architecture for Forest Real World Asset Tokenization: ERC-3643 Compliance, MiCA Regulatory Framework, and Cross-Border Carbon Credit Enforcement"_
+**Журнали:** Journal of Financial Regulation (Q1) · European Business Organization Law Review (Q1) · Computer Law & Security Review (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Аблязов Д.Е.** (СЄУ) | MiCA класифікація SCC (utility vs security), юридичний mapping peaq DID → кадастр, NaaS Term Sheet + MSA шаблони |
+| **Гедз М.Й.** (СЄУ) | ISO 14064 mapping D-MRV pipeline, ICROA Code of Best Practice аудит |
+| Архітектор (Silken Net) | HadronComplianceService (KYC/RWA), ERC-3643, Guard Clauses, 05_01 §7 Polygon Hadron |
+
+**Тип зв'язку:** Комплементарний — Аблязов: правова рамка, Гедз: методологічний аудит, Silken Net: технічна імплементація
+
+---
+
+### Стаття 33: Біомімікрічний Промисловий Дизайн Антивандальної IoT-Капсули для Лісового Середовища
+
+**Назва (EN):** _"Biomimetic Industrial Design of Anti-Vandal IoT Capsule for Forest Environments: PEEK Radome Form Factor, Bark Camouflage, and Field Ergonomics for Tree-Embedded Cyber-Physical Systems"_
+**Журнали:** Design Studies (Q1) · Journal of Mechanical Design (Q1) · Materials & Design (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Денисенко Ю.М.** (СЄУ) | 3D CAD-модель PEEK-радому з текстурою кори Pinus sylvestris, stress concentration analysis, FDM-прототип |
+| **Теліженко О.В.** (СЄУ) | Кольорове/композиційне кодування, візуалізація для pitch deck |
+| **Гусак А.М.** (ЧНУ) | FEM-моделювання stress-strain текстурованої поверхні PEEK |
+| Архітектор (Silken Net) | 01_01 Деталь 4 (PEEK радом), 02_01 §5 (SMD антена, Keep-Out Zone), IP68 вимоги |
+
+**Тип зв'язку:** Послідовний — ЧНУ (Гусак): матеріалознавчі обмеження → СЄУ (Денисенко): дизайн у межах обмежень → СЄУ (Теліженко): візуалізація
+
+---
+
 ## ⚖️ 2. Розподіл Інтелектуальної Власності (IP Framework)
 
 ### Власність Silken Net (Архітектора)
@@ -588,6 +640,26 @@ _«Дослідження акустичних властивостей пори
 - Права на комерційну експлуатацію системи (монетизація SCC/SFC)
 - Доступ до production API, blockchain ключів та raw production телеметрії
 - Права на ліцензування технології або моделей третім сторонам
+
+### Права СЄУ (Академічний Партнер — Економіка, Право, Дизайн)
+
+| Право | Деталі |
+|---|---|
+| Використання публічних даних токеноміки та юніт-економіки для досліджень | Необмежено |
+| Включення результатів у навчальну програму відповідних кафедр | Необмежено |
+| Подача грантів на основі спільних досліджень | Погоджується з Silken Net |
+| Участь у міжнародних проєктах (Horizon EU, Ethereum Foundation) | Погоджується з Silken Net |
+| Публікації від імені СЄУ (зі Silken Net як co-author) | Вільно |
+| Юридичні шаблони NaaS (Term Sheet, MSA) → `docs/legal/` | Спільне авторство (Аблязов Д.) |
+| ESG Accounting Framework → `docs/esg/` | Спільне авторство (Ус) |
+| 3D CAD-моделі PEEK-радому → `docs/cad/` | Спільне авторство (Денисенко) |
+
+### Що Silken Net НЕ передає СЄУ
+
+- Права на комерційну експлуатацію системи (монетизація SCC/SFC)
+- Доступ до production API, blockchain ключів та raw production телеметрії
+- Права на ліцензування технології або моделей третім сторонам
+- Private keys від Oracle, Slasher, Admin ролей смарт-контрактів
 
 ---
 
@@ -644,6 +716,20 @@ Gaia 2.0 стає офіційним **полігоном для магісте�
 | **Бакалаврська** | "Створення калібрувального акустичного датасету для навчання TinyML моделей класифікації звуків лісу" |
 
 **Strategic value:** Кожен магістрант — потенційний member команди розгортання Silken Net в Україні та світі. Університет готує кадри, проєкт отримує кваліфіковану робочу силу.
+
+### Студентські Роботи СЄУ (Токеноміка, Право, Дизайн)
+
+| Рівень | Тема | Науковий керівник |
+|--------|------|-------------------|
+| **Магістерська** | "Макроекономічне моделювання токеноміки Nature-as-a-Service" | Чудаєва |
+| **Магістерська** | "ESG Accounting Framework для блокчейн-верифікованих вуглецевих кредитів" | Ус |
+| **Магістерська** | "Правові аспекти токенізації Real World Assets у контексті MiCA" | Аблязов Д. |
+| **Магістерська** | "Управління мультидисциплінарними консорціумами за моделлю Потрійної Спіралі" | Аблязова Н. |
+| **Бакалаврська** | "Промисловий дизайн антивандальної капсули для лісового IoT" | Денисенко |
+| **Бакалаврська** | "UX-дизайн B2B дашборду для ESG-інвесторів" | Теліженко |
+| **Бакалаврська** | "Аудит методології D-MRV за стандартом ISO 14064" | Гедз |
+| **Курсова** | "Sensitivity analysis юніт-економіки IoT-кластера" | Ус |
+| **Курсова** | "Порівняльний аналіз SCC та Verra VCU" | Чудаєва |
 
 ---
 

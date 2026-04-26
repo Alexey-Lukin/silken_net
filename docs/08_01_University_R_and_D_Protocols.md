@@ -21,12 +21,7 @@
   - ЧДТУ: Data Science, RF-верифікація, акустична валідація → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
   - ЧІПБ: Пожежна безпека, параметричне страхування, SOP → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
   - ЧМА: Біохімія EBFC, токсикологія металів, ксилемоінтеграція → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
-
----
-
-## 🛑 Блокери
-
-- **Акселерований тест біосумісності не проведено** — блокує seed pitch deck та whitepaper
+  - СЄУ: Токеноміка NaaS, RWA-легалізація, промисловий дизайн → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration) — блокує seed pitch deck та whitepaper
 - **Синтез штучного ксилемного соку Pinus sylvestris (Черкаський бір)** — потребує контакту з ботаніками
 - **ICP-MS аналіз вивільнення іонів Ti/Al/V** — необхідне університетське обладнання
 - **Перший контакт з деканом Онищенком (ФОТІУС)** — 🟡 ЗАПЛАНОВАНО — перший візит до ЧНУ планується найближчим часом
