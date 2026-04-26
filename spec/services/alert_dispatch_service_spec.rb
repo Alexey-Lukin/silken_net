@@ -205,6 +205,250 @@ RSpec.describe AlertDispatchService, type: :service do
     end
   end
 
+  describe "adaptive thresholds" do
+    let(:family_custom) { create(:tree_family, fire_resistance_rating: 80, sap_flow_index: 2.0) }
+    let(:tree_custom) { create(:tree, cluster: cluster, tree_family: family_custom) }
+
+    it "uses family fire_resistance_rating when cluster has no custom threshold" do
+      log = instance_double(TelemetryLog,
+        tree: tree_custom,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3500,
+        temperature_c: 70,  # above default 60 but below family's 80
+        bio_status_anomaly?: false,
+        bio_status_stress?: false,
+        acoustic_events: 10,
+        z_value: 20.0
+      )
+
+      expect {
+        described_class.analyze_and_trigger!(log)
+      }.not_to change(EwsAlert, :count)
+    end
+
+    it "triggers fire alert when temperature reaches family's custom threshold" do
+      log = instance_double(TelemetryLog,
+        tree: tree_custom,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3500,
+        temperature_c: 80,  # exactly at family's fire_resistance_rating
+        bio_status_anomaly?: false,
+        bio_status_stress?: false,
+        acoustic_events: 10,
+        z_value: 20.0
+      )
+
+      expect {
+        described_class.analyze_and_trigger!(log)
+      }.to change(EwsAlert, :count).by(1)
+
+      expect(EwsAlert.last.alert_type).to eq("fire_detected")
+    end
+
+    it "uses cluster custom_fire_threshold over family rating when available" do
+      cluster.update_column(:custom_fire_threshold, 90)
+
+      log = instance_double(TelemetryLog,
+        tree: tree_custom,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3500,
+        temperature_c: 85,  # above family's 80 but below cluster's 90
+        bio_status_anomaly?: false,
+        bio_status_stress?: false,
+        acoustic_events: 10,
+        z_value: 20.0
+      )
+
+      expect {
+        described_class.analyze_and_trigger!(log)
+      }.not_to change(EwsAlert, :count)
+    end
+
+    it "adapts pest_limit by sap_flow_index" do
+      # pest_limit = 50 * 2.0 = 100
+      log = instance_double(TelemetryLog,
+        tree: tree_custom,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3500,
+        temperature_c: 25,
+        bio_status_anomaly?: false,
+        bio_status_stress?: false,
+        acoustic_events: 90,  # above default 50 but below adapted 100
+        z_value: 20.0
+      )
+
+      expect {
+        described_class.analyze_and_trigger!(log)
+      }.not_to change(EwsAlert, :count)
+    end
+
+    it "triggers pest alert when acoustic_events exceed adapted pest_limit" do
+      log = instance_double(TelemetryLog,
+        tree: tree_custom,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3500,
+        temperature_c: 25,
+        bio_status_anomaly?: false,
+        bio_status_stress?: false,
+        acoustic_events: 110,  # above adapted 100, below seismic 200
+        z_value: 20.0
+      )
+
+      described_class.analyze_and_trigger!(log)
+      pest_alert = EwsAlert.where(alert_type: :insect_epidemic).last
+      expect(pest_alert).to be_present
+    end
+  end
+
+  describe "silence key behavior" do
+    it "prevents duplicate alerts of same type within 5 minutes" do
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3500,
+        temperature_c: 25,
+        bio_status_anomaly?: false,
+        bio_status_stress?: false,
+        acoustic_events: 250,
+        z_value: 20.0
+      )
+
+      expect {
+        described_class.analyze_and_trigger!(log)
+      }.to change(EwsAlert, :count).by(1)
+
+      # Same alert type should be silenced
+      expect {
+        described_class.analyze_and_trigger!(log)
+      }.not_to change(EwsAlert, :count)
+    end
+  end
+
+  describe "rate limiting (SEC.10)" do
+    it "suppresses critical alerts after MAX_ALERTS_PER_DID_PER_WINDOW" do
+      # Create unique trees to avoid per-type silence
+      trees = 6.times.map { create(:tree, cluster: cluster, tree_family: family) }
+
+      trees.first(5).each do |t|
+        log = instance_double(TelemetryLog,
+          tree: t,
+          bio_status_tamper_detected?: true,
+          voltage_mv: 50
+        )
+        described_class.analyze_and_trigger!(log)
+      end
+
+      # DID is per-device, so 5 different trees won't hit the rate limit
+      # Test with same tree instead
+      same_tree = trees.first
+      6.times do |i|
+        Rails.cache.delete("ews_silence:#{same_tree.id}:vandalism_breach")
+        log = instance_double(TelemetryLog,
+          tree: same_tree,
+          bio_status_tamper_detected?: true,
+          voltage_mv: 50
+        )
+        described_class.analyze_and_trigger!(log)
+      end
+
+      # After 5 alerts, rate limiting kicks in
+      Rails.cache.delete("ews_silence:#{same_tree.id}:vandalism_breach")
+      log = instance_double(TelemetryLog,
+        tree: same_tree,
+        bio_status_tamper_detected?: true,
+        voltage_mv: 50
+      )
+      expect {
+        described_class.analyze_and_trigger!(log)
+      }.not_to change(EwsAlert, :count)
+    end
+  end
+
+  describe "voltage boundary (100mV)" do
+    it "triggers system_fault at exactly 99mV" do
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 99,
+        temperature_c: 25,
+        bio_status_anomaly?: false,
+        bio_status_stress?: false,
+        acoustic_events: 10,
+        z_value: 20.0
+      )
+
+      described_class.analyze_and_trigger!(log)
+      expect(EwsAlert.last.alert_type).to eq("system_fault")
+    end
+
+    it "does not trigger system_fault at exactly 100mV" do
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 100,
+        temperature_c: 25,
+        bio_status_anomaly?: false,
+        bio_status_stress?: false,
+        acoustic_events: 10,
+        z_value: 20.0
+      )
+
+      expect {
+        described_class.analyze_and_trigger!(log)
+      }.not_to change(EwsAlert, :count)
+    end
+  end
+
+  describe "EmergencyResponseService integration" do
+    it "calls EmergencyResponseService with the created alert" do
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: true,
+        voltage_mv: 50
+      )
+
+      described_class.analyze_and_trigger!(log)
+
+      expect(EmergencyResponseService).to have_received(:call).with(kind_of(EwsAlert))
+    end
+  end
+
+  describe "bio_status_anomaly fires without temperature check" do
+    it "triggers fire_detected when bio_status is anomaly even with normal temperature" do
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3500,
+        temperature_c: 25,  # normal temperature
+        bio_status_anomaly?: true,
+        bio_status_stress?: false,
+        acoustic_events: 10,
+        z_value: 20.0
+      )
+
+      described_class.analyze_and_trigger!(log)
+      expect(EwsAlert.last.alert_type).to eq("fire_detected")
+    end
+  end
+
+  describe "drought with stress bio_status" do
+    it "creates drought alert with stress message when bio_status is stress" do
+      log = instance_double(TelemetryLog,
+        tree: tree,
+        bio_status_tamper_detected?: false,
+        voltage_mv: 3500,
+        temperature_c: 25,
+        bio_status_anomaly?: false,
+        bio_status_stress?: true,
+        acoustic_events: 10,
+        z_value: 20.0
+      )
+
+      described_class.analyze_and_trigger!(log)
+      expect(EwsAlert.last.message).to include("ПОСУХА")
+    end
+  end
+
   describe ".create_fraud_alert!" do
     before do
       allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)

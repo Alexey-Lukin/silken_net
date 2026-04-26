@@ -250,4 +250,186 @@ RSpec.describe MintingRollbackService do
       expect(wallet.locked_balance).to eq(original_locked)
     end
   end
+
+  describe "Solana transaction handling" do
+    let!(:telemetry_log) { create(:telemetry_log, :verified_telemetry, tree: tree) }
+
+    it "checks Solana RPC for transaction status when network is solana" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "5abc" + SecureRandom.hex(30), locked_points: 10_000,
+                  network: :solana)
+
+      # Mock Solana getTransaction response — confirmed (no error)
+      allow(Web3::HttpClient).to receive(:post).and_return(
+        { "result" => { "meta" => { "err" => nil }, "slot" => 12345 } }
+      )
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      tx.reload
+      expect(tx.status).to eq("confirmed")
+    end
+
+    it "escalates Solana transaction to manual_review when result is nil (pending)" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "5def" + SecureRandom.hex(30), locked_points: 10_000,
+                  network: :solana)
+
+      allow(Web3::HttpClient).to receive(:post).and_return(
+        { "result" => nil }
+      )
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      tx.reload
+      expect(tx.status).to eq("manual_review")
+    end
+
+    it "rolls back Solana transaction when meta.err is present (reverted)" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "5ghi" + SecureRandom.hex(30), locked_points: 10_000,
+                  network: :solana)
+
+      allow(Web3::HttpClient).to receive(:post).and_return(
+        { "result" => { "meta" => { "err" => { "InstructionError" => [ 0, "Custom" ] } } } }
+      )
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      tx.reload
+      wallet.reload
+      expect(tx.status).to eq("failed")
+      expect(wallet.locked_balance).to eq(0)
+    end
+
+    it "returns :unknown when SOLANA_RPC_URL is not set" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "5jkl" + SecureRandom.hex(30), locked_points: 10_000,
+                  network: :solana)
+
+      stub_const("ENV", ENV.to_h.except("SOLANA_RPC_URL"))
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      tx.reload
+      expect(tx.status).to eq("manual_review")
+    end
+  end
+
+  describe "receipt edge cases" do
+    it "treats empty hash receipt as pending" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000)
+
+      mock_client = instance_double(Eth::Client)
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+      allow(mock_client).to receive(:eth_get_transaction_receipt).and_return({})
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      tx.reload
+      expect(tx.status).to eq("manual_review")
+    end
+
+    it "treats receipt with integer status 1 as confirmed" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000)
+
+      mock_client = instance_double(Eth::Client)
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+      allow(mock_client).to receive(:eth_get_transaction_receipt)
+        .and_return({ "status" => 1 })
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      tx.reload
+      expect(tx.status).to eq("confirmed")
+    end
+
+    it "treats receipt with status 0x0 as reverted" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000)
+
+      mock_client = instance_double(Eth::Client)
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+      allow(mock_client).to receive(:eth_get_transaction_receipt)
+        .and_return({ "status" => "0x0" })
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      tx.reload
+      wallet.reload
+      expect(tx.status).to eq("failed")
+      expect(wallet.locked_balance).to eq(0)
+    end
+  end
+
+  describe "locked_points fallback" do
+    let!(:telemetry_log) { create(:telemetry_log, :verified_telemetry, tree: tree) }
+
+    it "calculates refund from amount when locked_points is nil" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
+                  tx_hash: nil, amount: 1)
+      tx.update_column(:locked_points, nil)
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      tx.reload
+      expect(tx.status).to eq("failed")
+      expect(tx.notes).to include("Rollback")
+    end
+  end
+
+  describe "zero locked_balance" do
+    it "handles wallet with zero locked_balance gracefully" do
+      wallet.update!(balance: 20_000, locked_balance: 0)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
+                  tx_hash: nil, locked_points: 10_000)
+
+      expect {
+        described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+      }.not_to raise_error
+
+      tx.reload
+      expect(tx.status).to eq("failed")
+    end
+  end
+
+  describe "find_telemetry_log with invalid ISO8601" do
+    it "falls back to search without partition pruning for malformed date" do
+      log = create(:telemetry_log, :verified_telemetry, tree: tree)
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
+
+      # Should not raise, even with invalid date
+      expect {
+        described_class.call(telemetry_log_id: log.id_value, created_at_iso: "not-a-date")
+      }.not_to raise_error
+    end
+  end
+
+  describe "Celo network routing" do
+    it "uses CELO_RPC_URL for Celo network transactions" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000,
+                  network: :celo)
+
+      mock_client = instance_double(Eth::Client)
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+      allow(mock_client).to receive(:eth_get_transaction_receipt).and_return(nil)
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      expect(Web3::RpcConnectionPool).to have_received(:client_for).with("CELO_RPC_URL", anything)
+    end
+  end
 end

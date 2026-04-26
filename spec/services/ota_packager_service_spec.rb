@@ -141,5 +141,108 @@ RSpec.describe OtaPackagerService do
         expect(recalculated_crc).not_to eq(original_crc)
       end
     end
+
+    context "with LoRa MTU (11-byte chunks)" do
+      let(:payload) { "\xAA" * 33 } # 33 bytes / 11 = 3 chunks
+
+      it "produces correct number of chunks for LoRa" do
+        result = described_class.prepare(firmware, chunk_size: described_class::LORA_MTU)
+        packages = result[:packages].to_a
+
+        expect(packages.size).to eq(3)
+        expect(result[:manifest][:total_chunks]).to eq(3)
+      end
+
+      it "each LoRa chunk has correct header with 0x99 marker" do
+        packages = described_class.prepare(firmware, chunk_size: described_class::LORA_MTU)[:packages].to_a
+        packages.each_with_index do |pkg, i|
+          marker, index, total = pkg[0..4].unpack("Cnn")
+          expect(marker).to eq(0x99)
+          expect(index).to eq(i)
+          expect(total).to eq(3)
+        end
+      end
+    end
+
+    context "with single-byte payload" do
+      let(:payload) { "\xFF" }
+
+      it "produces exactly one package" do
+        packages = described_class.prepare(firmware)[:packages].to_a
+        expect(packages.size).to eq(1)
+      end
+
+      it "package contains 5 header + 1 data + 2 CRC = 8 bytes" do
+        package = described_class.prepare(firmware)[:packages].first
+        expect(package.bytesize).to eq(8)
+      end
+    end
+
+    context "with exact block-size payload (512 bytes)" do
+      let(:payload) { "\xBB" * 512 }
+
+      it "produces exactly one chunk" do
+        result = described_class.prepare(firmware, chunk_size: 512)
+        packages = result[:packages].to_a
+        expect(packages.size).to eq(1)
+        expect(result[:manifest][:total_chunks]).to eq(1)
+      end
+
+      it "chunk data section is exactly 512 bytes" do
+        package = described_class.prepare(firmware, chunk_size: 512)[:packages].first
+        # 5 header + 512 data + 2 CRC = 519
+        expect(package.bytesize).to eq(519)
+      end
+    end
+
+    context "manifest format" do
+      let(:payload) { "\xAA\xBB\xCC\xDD" }
+
+      it "checksum is uppercase hexadecimal CRC32" do
+        result = described_class.prepare(firmware)
+        expect(result[:manifest][:checksum]).to match(/\A[0-9A-F]+\z/)
+      end
+
+      it "checksum matches Zlib.crc32 of payload" do
+        result = described_class.prepare(firmware)
+        expected = Zlib.crc32(payload).to_s(16).upcase
+        expect(result[:manifest][:checksum]).to eq(expected)
+      end
+
+      it "sha256 comes from firmware object" do
+        result = described_class.prepare(firmware)
+        expect(result[:manifest][:sha256]).to eq("abc123")
+      end
+    end
+
+    context "CRC16-CCITT known values" do
+      it "produces correct CRC for known input" do
+        svc = described_class.new(firmware, 512)
+        # CRC16-CCITT of empty string should be 0xFFFF (initial value)
+        crc = svc.send(:crc16_ccitt, "")
+        expect(crc).to eq(0xFFFF)
+      end
+
+      it "produces non-zero CRC for non-empty input" do
+        svc = described_class.new(firmware, 512)
+        crc = svc.send(:crc16_ccitt, "123456789")
+        expect(crc).to be_a(Integer)
+        expect(crc).to be > 0
+        expect(crc).to be <= 0xFFFF
+      end
+    end
+
+    context "packages return lazy Enumerator" do
+      let(:payload) { "\xAA" * 10_000 }
+
+      it "returns Enumerator that generates packages on demand" do
+        result = described_class.prepare(firmware, chunk_size: 512)
+        packages = result[:packages]
+
+        expect(packages).to be_a(Enumerator)
+        first_package = packages.first
+        expect(first_package).to be_a(String)
+      end
+    end
   end
 end

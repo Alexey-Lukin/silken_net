@@ -46,10 +46,13 @@
 | Treasury::MonitorService | ✅ 330L+ | 🟢 **Повне** | **build_config, missing credentials, humanize edge cases, multiple alerts** |
 | TreeChronicleService | ✅ 350L+ | 🟢 **Повне** | **Pagination edges, nil wallet, boundary stress_index, mixed sources** |
 | Chainlink::OracleDispatchService | ✅ 240L+ | 🟢 **Повне** | **WEB3_STRICT_MODE, missing DON_ID, nil payload fields, ABI validation** |
-| AlertDispatchService | ✅ 244L | 🟢 Добре | Rate limiting, Redis silence |
+| AlertDispatchService | ✅ 420L+ | 🟢 **Повне** | **Adaptive thresholds, silence keys, rate limiting (SEC.10), voltage/fire boundaries, EmergencyResponseService call** |
 | HardwareKeyService | ✅ 209L | 🟢 Добре | HKDF derivation |
-| MintingRollbackService | ✅ 253L | 🟢 Добре | |
+| MintingRollbackService | ✅ 400L+ | 🟢 **Повне** | **Solana tx status, receipt edge cases, Celo routing, locked_points nil fallback, invalid ISO8601** |
 | EmergencyResponseService | ✅ 250L | 🟢 Добре | |
+| OtaPackagerService | ✅ 230L+ | 🟢 **Повне** | **LoRa MTU chunks, single-byte payload, exact block-size, CRC16 known vectors, manifest format** |
+| Etherisc::ClaimService | ✅ 120L+ | 🟢 **Повне** | **nil policy_id, missing ENV keys, ABI validation** |
+| Ed25519Crypto::SigningService | ✅ 270L+ | 🟢 **Повне** | **Empty/large messages, hex validation edges, uppercase hex, nil/integer message coercion** |
 
 ### 1.3 Workers (41 spec files)
 
@@ -60,7 +63,7 @@
 | InsurancePayoutWorker | ✅ 274L | 🟢 Добре | |
 | ActuatorCommandWorker | ✅ 224L | 🟢 Добре | Idempotency |
 | **Web3CircuitBreaker (concern)** | ✅ 320L+ | 🟢 **Повне** | **transient_cause?, reset_circuit!, remaining_open_seconds, all error types, record_failure! threshold** |
-| CoapEncryption (concern) | ✅ 72L | 🟢 Добре | AES-256-CBC |
+| CoapEncryption (concern) | ✅ 150L+ | 🟢 **Повне** | **All mod-16 payload sizes (1,15,17,31,32,33), binary data, null-byte padding, IV uniqueness** |
 
 ### 1.4 Controllers (30 spec files)
 

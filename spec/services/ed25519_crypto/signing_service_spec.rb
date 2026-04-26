@@ -172,5 +172,105 @@ RSpec.describe Ed25519Crypto::SigningService do
 
       expect(result).to be true
     end
+
+    it "signs and verifies empty message" do
+      keypair = described_class.generate_keypair
+      signature = described_class.sign(keypair[:seed_hex], "")
+      result = described_class.verify(keypair[:public_key_hex], signature, "")
+
+      expect(result).to be true
+    end
+
+    it "signs and verifies very large message (1MB)" do
+      keypair = described_class.generate_keypair
+      large_message = "A" * (1024 * 1024)
+
+      signature = described_class.sign(keypair[:seed_hex], large_message)
+      result = described_class.verify(keypair[:public_key_hex], signature, large_message)
+
+      expect(result).to be true
+    end
+  end
+
+  describe "validate_hex! edge cases" do
+    it "raises for seed with 63 hex chars (1 char short)" do
+      expect {
+        described_class.public_key_from_seed("a" * 63)
+      }.to raise_error(Ed25519Crypto::SigningService::SigningError, /must be exactly 32 bytes/)
+    end
+
+    it "raises for seed with 65 hex chars (1 char over)" do
+      expect {
+        described_class.public_key_from_seed("a" * 65)
+      }.to raise_error(Ed25519Crypto::SigningService::SigningError, /must be exactly 32 bytes/)
+    end
+
+    it "accepts uppercase hex in seed" do
+      keypair = described_class.generate_keypair
+      uppercase_seed = keypair[:seed_hex].upcase
+
+      # Should not raise
+      pubkey = described_class.public_key_from_seed(uppercase_seed)
+      expect(pubkey).to match(/\A[0-9a-f]{64}\z/)
+    end
+
+    it "raises for hex string with spaces" do
+      expect {
+        described_class.public_key_from_seed("ab cd " * 11)
+      }.to raise_error(Ed25519Crypto::SigningService::SigningError)
+    end
+
+    it "raises for hex string with 0x prefix" do
+      expect {
+        described_class.public_key_from_seed("0x" + "a" * 62)
+      }.to raise_error(Ed25519Crypto::SigningService::SigningError, /must be a valid hex string/)
+    end
+  end
+
+  describe ".sign edge cases" do
+    let(:keypair) { described_class.generate_keypair }
+
+    it "handles nil message (converts to empty string via .to_s)" do
+      # nil.to_s = ""
+      sig1 = described_class.sign(keypair[:seed_hex], nil)
+      sig2 = described_class.sign(keypair[:seed_hex], "")
+
+      expect(sig1).to eq(sig2)
+    end
+
+    it "handles integer message (converts via .to_s)" do
+      sig = described_class.sign(keypair[:seed_hex], 42)
+      expect(sig).to match(/\A[0-9a-f]{128}\z/)
+
+      # Verify with string equivalent
+      result = described_class.verify(keypair[:public_key_hex], sig, "42")
+      expect(result).to be true
+    end
+  end
+
+  describe ".verify edge cases" do
+    let(:keypair) { described_class.generate_keypair }
+
+    it "returns false for correct-length but wrong-bytes public key" do
+      wrong_pubkey = "0" * 64
+      signature = described_class.sign(keypair[:seed_hex], "test")
+
+      result = described_class.verify(wrong_pubkey, signature, "test")
+      expect(result).to be false
+    end
+
+    it "returns false when message has trailing whitespace" do
+      signature = described_class.sign(keypair[:seed_hex], "test")
+      result = described_class.verify(keypair[:public_key_hex], signature, "test ")
+
+      expect(result).to be false
+    end
+
+    it "returns false when message is truncated" do
+      signature = described_class.sign(keypair[:seed_hex], "test message")
+      result = described_class.verify(keypair[:public_key_hex], signature, "test")
+
+      expect(result).to be false
+    end
   end
 end
