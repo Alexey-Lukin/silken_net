@@ -184,6 +184,73 @@ RSpec.describe HardwareKeyService, type: :service do
     end
   end
 
+  # =========================================================================
+  # HKDF DERIVATION DETAILS
+  # =========================================================================
+  describe ".derive_device_key with HKDF" do
+    before do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("test-master-key-for-hkdf-derive!")
+    end
+
+    it "uses SHA256 as hash algorithm" do
+      expect(OpenSSL::KDF).to receive(:hkdf).with(
+        anything,
+        hash_including(hash: "SHA256")
+      ).and_call_original
+
+      described_class.derive_device_key("TEST-DEVICE-001")
+    end
+
+    it "uses HKDF_INFO constant as info parameter" do
+      expect(OpenSSL::KDF).to receive(:hkdf).with(
+        anything,
+        hash_including(info: "silken-aes-256-device-key")
+      ).and_call_original
+
+      described_class.derive_device_key("TEST-DEVICE-002")
+    end
+
+    it "returns exactly 64 hex characters (32 bytes)" do
+      key = described_class.derive_device_key("TEST-DEVICE-003")
+      expect(key.length).to eq(64)
+      expect(key).to match(/\A[0-9A-F]+\z/)
+    end
+
+    it "uses device_uid as HKDF salt" do
+      expect(OpenSSL::KDF).to receive(:hkdf).with(
+        anything,
+        hash_including(salt: "UNIQUE-UID-123")
+      ).and_call_original
+
+      described_class.derive_device_key("UNIQUE-UID-123")
+    end
+  end
+
+  describe ".derive_device_key logging" do
+    it "logs warning when PROVISIONING_MASTER_KEY is blank" do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
+
+      expect(Rails.logger).to receive(:warn).with(/PROVISIONING_MASTER_KEY не встановлено/)
+
+      described_class.derive_device_key("DEVICE-X")
+    end
+  end
+
+  # =========================================================================
+  # PROVISION CONFLICT
+  # =========================================================================
+  describe ".provision idempotency" do
+    it "raises on duplicate provision for same device" do
+      described_class.provision(tree)
+
+      expect {
+        described_class.provision(tree)
+      }.to raise_error(ActiveRecord::RecordInvalid)
+    end
+  end
+
   describe "key update downlink" do
     it "enqueues ActuatorCommandWorker during gateway rotation" do
       gateway = create(:gateway, :online, cluster: cluster, ip_address: "192.168.1.1")

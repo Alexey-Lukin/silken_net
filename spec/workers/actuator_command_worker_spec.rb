@@ -199,6 +199,95 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
     end
   end
 
+  # =========================================================================
+  # AASM TRANSITION (dispatch!)
+  # =========================================================================
+  describe "dispatch! AASM transition" do
+    it "transitions command to dispatched state before CoAP send" do
+      states = []
+      allow(CoapClient).to receive(:put) do |_url, _payload|
+        cmd = ActuatorCommand.find(command.id)
+        states << cmd.status
+        double(success?: true, code: "2.04")
+      end
+
+      described_class.new.perform(command.id)
+
+      expect(states).to include("dispatched")
+    end
+  end
+
+  # =========================================================================
+  # ACTUATOR MARK_ACTIVE! TRANSITION
+  # =========================================================================
+  describe "actuator.mark_active!" do
+    it "sets actuator state to active after acknowledgement" do
+      expect(actuator.state).to eq("idle")
+
+      described_class.new.perform(command.id)
+
+      actuator.reload
+      expect(actuator.state).to eq("active")
+    end
+  end
+
+  # =========================================================================
+  # FULL ENCRYPTION ROUNDTRIP
+  # =========================================================================
+  describe "encryption roundtrip" do
+    it "includes CMD: prefix and idempotency_token in decrypted payload" do
+      captured_payload = nil
+      allow(CoapClient).to receive(:put) do |_url, payload|
+        captured_payload = payload
+        double(success?: true, code: "2.04")
+      end
+
+      described_class.new.perform(command.id)
+
+      # Decrypt the captured payload
+      iv = captured_payload[0, 16]
+      ciphertext = captured_payload[16..]
+      binary_key = key_record.binary_previous_key || key_record.binary_key
+
+      decipher = OpenSSL::Cipher.new("aes-256-cbc")
+      decipher.decrypt
+      decipher.key = binary_key
+      decipher.iv = iv
+      decipher.padding = 0
+      plaintext = decipher.update(ciphertext) + decipher.final
+
+      expect(plaintext).to start_with("CMD:")
+      expect(plaintext).to include(command.command_payload)
+      expect(plaintext).to include(command.duration_seconds.to_s)
+      expect(plaintext).to include(command.idempotency_token)
+    end
+  end
+
+  # =========================================================================
+  # RESET ACTUATOR STATE WORKER SCHEDULING
+  # =========================================================================
+  describe "ResetActuatorStateWorker scheduling" do
+    it "schedules reset for the command duration" do
+      described_class.new.perform(command.id)
+
+      job = ResetActuatorStateWorker.jobs.last
+      expect(job["args"]).to eq([command.id])
+    end
+  end
+
+  # =========================================================================
+  # SIDEKIQ OPTIONS
+  # =========================================================================
+  describe "sidekiq configuration" do
+    it "uses downlink queue" do
+      expect(described_class.get_sidekiq_options["queue"]).to eq("downlink")
+    end
+
+    it "retries 3 times" do
+      expect(described_class.get_sidekiq_options["retry"]).to eq(3)
+    end
+  end
+
   describe "perform — nil response from CoAP" do
     it "raises when response is nil" do
       allow(CoapClient).to receive(:put).and_return(nil)

@@ -29,9 +29,9 @@
 | Gateway | ✅ 394L | 🟢 Повне | AASM, mark_seen!, online? |
 | HardwareKey | ✅ 295L | 🟢 Повне | AES key encryption, LRU cache |
 | EwsAlert | ✅ 669L | 🟢 Повне | Alert types, severity levels |
-| TelemetryLog | ✅ 252L | 🟢 Добре | Partitioned, oracle_status enum |
-| Cluster | ✅ 282L | 🟢 Добре | |
-| AuditLog | ✅ 269L | 🟢 Добре | Chain integrity |
+| TelemetryLog | ✅ 320L+ | 🟢 **Повне** | **oracle_status enum, associations, in_timeframe/vandalized scopes, bio_status enum** |
+| Cluster | ✅ 380L+ | 🟢 **Повне** | **Associations, store_accessor validations, recalculate_health_index! with AiInsight, alphabetical scope** |
+| AuditLog | ✅ 400L+ | 🟢 **Повне** | **chain_payload determinism, metadata ordering, tamper detection, deleted record chain break, bulk advisory lock** |
 | **Firmwareable (concern)** | ✅ 230L+ | 🟢 **Повне** | **AASM transitions тестуються: всі 7 подій, invalid transitions, lifecycle** |
 
 ### 1.2 Services (43 spec files)
@@ -42,14 +42,14 @@
 | TelemetryUnpackerService | ✅ 550L+ | 🟢 **Повне** | **check_z_divergence!, update_health_streak!, boundary sensors, acoustic overflow** |
 | InsightGeneratorService | ✅ 670L | 🟢 Повне | Fraud guard, cleanup_old_logs! |
 | SilkenNet::Attractor | ✅ 218L | 🟢 Повне | Float precision, deterministic chaos |
-| BlockchainBurningService | ✅ 317L | 🟢 Добре | |
+| BlockchainBurningService | ✅ 420L+ | 🟢 **Повне** | **SLASHER_KEY fallback (E.2), Prometheus SCC_SLASHED_TOTAL, AiInsight+source_tree combined ratio, damage_ratio cap** |
 | Treasury::MonitorService | ✅ 330L+ | 🟢 **Повне** | **build_config, missing credentials, humanize edge cases, multiple alerts** |
 | TreeChronicleService | ✅ 350L+ | 🟢 **Повне** | **Pagination edges, nil wallet, boundary stress_index, mixed sources** |
 | Chainlink::OracleDispatchService | ✅ 240L+ | 🟢 **Повне** | **WEB3_STRICT_MODE, missing DON_ID, nil payload fields, ABI validation** |
 | AlertDispatchService | ✅ 420L+ | 🟢 **Повне** | **Adaptive thresholds, silence keys, rate limiting (SEC.10), voltage/fire boundaries, EmergencyResponseService call** |
-| HardwareKeyService | ✅ 209L | 🟢 Добре | HKDF derivation |
+| HardwareKeyService | ✅ 280L+ | 🟢 **Повне** | **HKDF SHA256/info/salt params, key length, derive_device_key logging, provision conflict** |
 | MintingRollbackService | ✅ 400L+ | 🟢 **Повне** | **Solana tx status, receipt edge cases, Celo routing, locked_points nil fallback, invalid ISO8601** |
-| EmergencyResponseService | ✅ 250L | 🟢 Добре | |
+| EmergencyResponseService | ✅ 350L+ | 🟢 **Повне** | **Mixed valve+siren fire response, command attributes (org_id, idempotency, priority, expires_at), online/offline gateway filter** |
 | OtaPackagerService | ✅ 230L+ | 🟢 **Повне** | **LoRa MTU chunks, single-byte payload, exact block-size, CRC16 known vectors, manifest format** |
 | Etherisc::ClaimService | ✅ 120L+ | 🟢 **Повне** | **nil policy_id, missing ENV keys, ABI validation** |
 | Ed25519Crypto::SigningService | ✅ 270L+ | 🟢 **Повне** | **Empty/large messages, hex validation edges, uppercase hex, nil/integer message coercion** |
@@ -58,10 +58,10 @@
 
 | Воркер | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
-| UnpackTelemetryWorker | ✅ 333L | 🟢 Добре | Queue, retry, partition pruning |
+| UnpackTelemetryWorker | ✅ 430L+ | 🟢 **Повне** | **Sentry tags, broadcast_raw_hex format, gateway.mark_seen! IP/timestamp, sidekiq config** |
 | Governance::ParameterSyncWorker | ✅ 450L | 🟢 Повне | |
-| InsurancePayoutWorker | ✅ 274L | 🟢 Добре | |
-| ActuatorCommandWorker | ✅ 224L | 🟢 Добре | Idempotency |
+| InsurancePayoutWorker | ✅ 340L+ | 🟢 **Повне** | **Sidekiq config, satellite mixed alert types, severe_drought block, Etherisc recovery** |
+| ActuatorCommandWorker | ✅ 320L+ | 🟢 **Повне** | **dispatch! AASM transition, mark_active!, encryption roundtrip, ResetActuatorStateWorker scheduling, sidekiq config** |
 | **Web3CircuitBreaker (concern)** | ✅ 320L+ | 🟢 **Повне** | **transient_cause?, reset_circuit!, remaining_open_seconds, all error types, record_failure! threshold** |
 | CoapEncryption (concern) | ✅ 150L+ | 🟢 **Повне** | **All mod-16 payload sizes (1,15,17,31,32,33), binary data, null-byte padding, IV uniqueness** |
 

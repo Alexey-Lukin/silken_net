@@ -330,6 +330,108 @@ RSpec.describe AuditLog, type: :model do
     end
   end
 
+  # =========================================================================
+  # CHAIN_PAYLOAD DETERMINISM
+  # =========================================================================
+  describe "#chain_payload" do
+    it "produces deterministic payload from business fields" do
+      user = create(:user)
+      log = create(:audit_log, user: user, organization: user.organization,
+                   action: "test_action", metadata: { "b" => 2, "a" => 1 })
+
+      payload1 = log.chain_payload
+      payload2 = log.chain_payload
+      expect(payload1).to eq(payload2)
+    end
+
+    it "sorts metadata keys for deterministic hashing" do
+      user = create(:user)
+      log = create(:audit_log, user: user, organization: user.organization,
+                   metadata: { "z_key" => "last", "a_key" => "first" })
+
+      payload = log.chain_payload
+      # Sorted order: a_key before z_key
+      expect(payload).to include('"a_key":"first"')
+    end
+
+    it "handles nil metadata gracefully" do
+      user = create(:user)
+      log = create(:audit_log, user: user, organization: user.organization, metadata: nil)
+
+      expect { log.chain_payload }.not_to raise_error
+    end
+
+    it "handles empty hash metadata" do
+      user = create(:user)
+      log = create(:audit_log, user: user, organization: user.organization, metadata: {})
+
+      expect { log.chain_payload }.not_to raise_error
+    end
+  end
+
+  # =========================================================================
+  # TAMPER DETECTION (MODIFIED CHAIN_HASH)
+  # =========================================================================
+  describe ".verify_chain_integrity — advanced tampering" do
+    it "detects tampering when metadata is modified after creation" do
+      user = create(:user)
+      log = create(:audit_log, user: user, organization: user.organization,
+                   action: "create", metadata: { "status" => "active" })
+
+      # Verify chain is valid before tampering
+      result = described_class.verify_chain_integrity(user.organization_id)
+      expect(result[:valid]).to be true
+
+      # Tamper with metadata (bypass callbacks)
+      log.update_column(:metadata, { "status" => "hacked" }.to_json)
+
+      result = described_class.verify_chain_integrity(user.organization_id)
+      expect(result[:valid]).to be false
+      expect(result[:broken_at]).to eq(log.id)
+    end
+
+    it "detects chain break when middle record is deleted" do
+      user = create(:user)
+      log1 = create(:audit_log, user: user, organization: user.organization, action: "first")
+      log2 = create(:audit_log, user: user, organization: user.organization, action: "second")
+      _log3 = create(:audit_log, user: user, organization: user.organization, action: "third")
+
+      # Delete middle record (breaks chain)
+      log2.delete
+
+      result = described_class.verify_chain_integrity(user.organization_id)
+      # Chain should break at log3, because its previous_hash references log2 which is gone
+      expect(result[:valid]).to be false
+    end
+  end
+
+  # =========================================================================
+  # BULK_RECORD! ADVISORY LOCK
+  # =========================================================================
+  describe ".bulk_record! chain ordering" do
+    it "chains hashes correctly across multiple bulk entries" do
+      user = create(:user)
+
+      # First: single record
+      create(:audit_log, user: user, organization: user.organization, action: "pre_bulk")
+
+      # Then: bulk insert
+      entries = 3.times.map do |i|
+        {
+          user_id: user.id,
+          organization_id: user.organization_id,
+          action: "bulk_#{i}"
+        }
+      end
+      described_class.bulk_record!(entries)
+
+      # Verify entire chain is intact
+      result = described_class.verify_chain_integrity(user.organization_id)
+      expect(result[:valid]).to be true
+      expect(result[:verified_count]).to eq(4) # 1 pre_bulk + 3 bulk
+    end
+  end
+
   describe "compute_chain_hash Prosopite integration" do
     it "calls Prosopite.pause and resume when Prosopite is defined" do
       # Prosopite is defined in test env via rails_helper

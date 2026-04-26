@@ -273,6 +273,131 @@ RSpec.describe Cluster, type: :model do
     end
   end
 
+  # =========================================================================
+  # ASSOCIATIONS
+  # =========================================================================
+  describe "associations" do
+    it "belongs to organization" do
+      assoc = described_class.reflect_on_association(:organization)
+      expect(assoc.macro).to eq(:belongs_to)
+    end
+
+    it "has many trees" do
+      assoc = described_class.reflect_on_association(:trees)
+      expect(assoc.macro).to eq(:has_many)
+    end
+
+    it "has many gateways" do
+      assoc = described_class.reflect_on_association(:gateways)
+      expect(assoc.macro).to eq(:has_many)
+    end
+
+    it "has many naas_contracts with restrict_with_error" do
+      assoc = described_class.reflect_on_association(:naas_contracts)
+      expect(assoc.macro).to eq(:has_many)
+      expect(assoc.options[:dependent]).to eq(:restrict_with_error)
+    end
+
+    it "has many ews_alerts with delete_all" do
+      assoc = described_class.reflect_on_association(:ews_alerts)
+      expect(assoc.macro).to eq(:has_many)
+      expect(assoc.options[:dependent]).to eq(:delete_all)
+    end
+
+    it "has many ai_insights as analyzable" do
+      assoc = described_class.reflect_on_association(:ai_insights)
+      expect(assoc.macro).to eq(:has_many)
+      expect(assoc.options[:as]).to eq(:analyzable)
+    end
+  end
+
+  # =========================================================================
+  # STORE ACCESSOR VALIDATIONS
+  # =========================================================================
+  describe "store_accessor validations" do
+    it "rejects non-numeric custom_fire_threshold" do
+      cluster = build(:cluster, custom_fire_threshold: "abc")
+      expect(cluster).not_to be_valid
+      expect(cluster.errors[:custom_fire_threshold]).to be_present
+    end
+
+    it "rejects zero custom_fire_threshold" do
+      cluster = build(:cluster, custom_fire_threshold: 0)
+      expect(cluster).not_to be_valid
+    end
+
+    it "accepts positive custom_fire_threshold" do
+      cluster = build(:cluster, custom_fire_threshold: 75)
+      expect(cluster).to be_valid
+    end
+
+    it "rejects negative seismic_sensitivity_threshold" do
+      cluster = build(:cluster, seismic_sensitivity_threshold: -1)
+      expect(cluster).not_to be_valid
+    end
+
+    it "accepts nil seismic_sensitivity_threshold" do
+      cluster = build(:cluster, seismic_sensitivity_threshold: nil)
+      expect(cluster).to be_valid
+    end
+  end
+
+  # =========================================================================
+  # RECALCULATE_HEALTH_INDEX! WITH INSIGHT DATA
+  # =========================================================================
+  describe "#recalculate_health_index! with AiInsight" do
+    it "computes health_index from AiInsight stress_index" do
+      cluster = create(:cluster)
+      create(:ai_insight,
+             analyzable: cluster,
+             insight_type: :daily_health_summary,
+             target_date: cluster.local_yesterday,
+             stress_index: 0.3)
+
+      result = cluster.recalculate_health_index!
+      expect(result).to eq(0.7)
+      expect(cluster.reload.health_index).to eq(0.7)
+    end
+
+    it "returns 1.0 when stress_index is 0" do
+      cluster = create(:cluster)
+      create(:ai_insight,
+             analyzable: cluster,
+             insight_type: :daily_health_summary,
+             target_date: cluster.local_yesterday,
+             stress_index: 0.0)
+
+      result = cluster.recalculate_health_index!
+      expect(result).to eq(1.0)
+    end
+
+    it "returns 0.0 when stress_index is 1.0 (full stress)" do
+      cluster = create(:cluster)
+      create(:ai_insight,
+             analyzable: cluster,
+             insight_type: :daily_health_summary,
+             target_date: cluster.local_yesterday,
+             stress_index: 1.0)
+
+      result = cluster.recalculate_health_index!
+      expect(result).to eq(0.0)
+    end
+  end
+
+  # =========================================================================
+  # .alphabetical SCOPE
+  # =========================================================================
+  describe ".alphabetical" do
+    it "orders clusters by name ascending" do
+      z_cluster = create(:cluster, name: "Zeta Sector")
+      a_cluster = create(:cluster, name: "Alpha Sector")
+
+      result = described_class.alphabetical
+      expect(result.first).to eq(a_cluster)
+      expect(result.last).to eq(z_cluster)
+    end
+  end
+
   describe "normalizes non-Hash geojson_polygon" do
     it "passes through a string value unchanged" do
       cluster = build(:cluster, geojson_polygon: "not-a-hash")
