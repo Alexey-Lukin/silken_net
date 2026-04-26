@@ -10,12 +10,15 @@
 
 ## ✅ Статус
 
-- **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація
+- **Стратегічна цінність:** Наукові публікації ЧНУ + ЧДТУ (3 кафедри) + ЧІПБ + ЧМА + СЄУ = легітимізація технології + Hardware Proof для seed-раунду + Data Science валідація + RF-верифікація + акустична валідація + пожежна безпека та параметричне страхування + біохімічна валідація EBFC та токсикологія + макроекономічна валідація токеноміки та правова архітектура RWA
 - **Поточний TRL:** TRL 3 — публікаційний план визначено, авторські колективи формуються
 - **Пов'язані модулі:**
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
   - Кіберфізична валідація → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation)
   - ЧДТУ Data Science → [`08_04_CHDTU_Data_Science_Collaboration`](08_04_CHDTU_Data_Science_Collaboration)
+  - ЧІПБ: Пожежна безпека та SOP → [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration)
+  - ЧМА: Біохімія EBFC, токсикологія металів → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
+  - СЄУ: Токеноміка NaaS, RWA-легалізація → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
   - Юніт-економіка → [`07_02_Unit_Economics_and_BOM`](07_02_Unit_Economics_and_BOM)
   - Токеноміка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
 
@@ -377,6 +380,8 @@ _(Запропонована тема; студент визначається �
 
 **Тип зв'язку:** Послідовний — ФОТІУС розраховує q_c (фізика мережі) → ЧДТУ використовує q_c як параметр актуарних моделей
 
+> **Розширення (ЧІПБ):** Стаття 25 у [`08_05`](08_05_CHIPB_Fire_Safety_Integration) §4 додає QRA-обґрунтування threshold_value та юридичну валідацію тригерів (Зобенко, ЧІПБ), а стаття 27 — предиктивну fire model delta_t → FWI (Куліца, ЧІПБ). Три статті утворюють повну вертикаль: мережна фізика (21) → страхова математика (25) → пожежна модель (27).
+
 ---
 
 ### Стаття 22: Статистичний Аналіз Часових Рядів Біотелеметрії з Кіберфізичного Моніторингу Лісу
@@ -433,6 +438,162 @@ _«Дослідження акустичних властивостей пори
 
 ---
 
+## 📊 1D. Публікації ЧІПБ (Пожежна Безпека, Параметричне Страхування та SOP)
+
+> **Контекст:** ЧІПБ забезпечує академічну експертизу у валідації тригерів параметричного страхування, розробці SOP для фізичного реагування, предиктивному моделюванні пожеж та актуарному обґрунтуванні блокчейн-оракулів. Повний реєстр задач — у [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration).
+
+### Стаття 25: Наукове Обґрунтування Тригерів Параметричного Страхування для IoT-Лісових Мереж
+
+**Назва (EN):** _"Scientific Validation of Parametric Insurance Triggers for Autonomous Forest IoT Networks: Quantitative Risk Assessment and Actuarial Modeling of Fire, Drought, and Pest Events"_
+**Журнали:** Insurance: Mathematics and Economics (Q1) · Natural Hazards and Earth System Sciences (Q1) · Journal of Risk and Insurance (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Зобенко Н.** (ЧІПБ) | QRA для 3 trigger_events, юридичне обґрунтування threshold_value, градація слешингу |
+| **Куліца О.** (ЧІПБ) | Предиктивна модель поширення вогню, delta_t → FWI, калібрування FIRE_FRP_THRESHOLD_MW |
+| **Карапетян А.Р.** (ЧДТУ) | Weibull/Pareto loss distribution, basis risk copula, space-time clustering |
+| **Порубльов І.М.** (ЧНУ ФОТІУС) | Теорія перколяції (q_c), ланцюги Маркова для TTL-mesh |
+| Архітектор (Silken Net) | ParametricInsurance модель, Etherisc DIP Oracle, ContractHealthCheckService |
+
+**Тип зв'язку:** Послідовний (4 ланки) — ФОТІУС (q_c мережі) → ЧДТУ (статистичні моделі) → ЧІПБ (QRA + fire model) → Архітектор (on-chain integration)
+
+---
+
+### Стаття 26: Інтеграція Кіберфізичних Систем Раннього Попередження з Протоколами Фізичного Реагування ДСНС
+
+**Назва (EN):** _"Bridging Cyber-Physical Early Warning Systems with Physical Emergency Response Protocols: SOP Design for IoT-Monitored Forest Ecosystems"_
+**Журнали:** International Journal of Disaster Risk Reduction (Q1) · Safety Science (Q1) · Fire Safety Journal (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Биченко А.** (ЧІПБ) | Протокол конверсії EwsAlert → ДСНС dispatch, інтеграція з «Пульт-112», drone reconnaissance |
+| **Ротар В.** (ЧІПБ) | 7 SOP-документів per alert_type, протоколи для форестерів та патрулів |
+| **Несен І.** (ЧІПБ) | Протокол екстракції анкера, інструмент деінсталяції, post-extraction SOP |
+| Архітектор (Silken Net) | EmergencyResponseService, EwsAlert, ActuatorCommand, PANIC_TTL firmware |
+
+---
+
+### Стаття 27: Предиктивне Моделювання Лісових Пожеж через Мікро-Телеметрію Біосенсорів
+
+**Назва (EN):** _"Predictive Forest Fire Modeling Through Micro-Telemetry of Bio-Fuel Cell Sensors: Linking Sap Flow Dynamics to Fire Weather Index"_
+**Журнали:** International Journal of Wildland Fire (Q1) · Fire Technology (Q1) · Environmental Modelling & Software (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Куліца О.** (ЧІПБ) | Модель delta_t → FWI, фізика горіння лісової підстилки, time-to-ignition per forest type |
+| **Карапетян А.Р.** (ЧДТУ) | STL декомпозиція delta_t, SARIMA прогнозування засухи, кореляція NDVI ↔ delta_t |
+| **Косенюк Г.В.** (ЧНУ ФОТІУС) | Kalman Filter delta_t на MCU (< 200 байт RAM), стохастична фільтрація |
+| Архітектор (Silken Net) | EBFC delta_t специфіка, dClimate Cosmic Eye, AlertDispatchService |
+
+**Тип зв'язку:** Послідовний — ФОТІУС фільтрує сигнал (Kalman) → ЧДТУ аналізує тренд (SARIMA) → ЧІПБ будує предиктивну fire model
+
+---
+
+## 🧬 1E. Публікації ЧМА (Біохімія EBFC, Токсикологія, Ксилемоінтеграція)
+
+> **Контекст:** ЧМА (Черкаська медична академія) забезпечує біохімічну валідацію EBFC-ферментів, токсикологічну оцінку вивільнення іонів V/Al з Ti-6Al-4V, медичну аналогію ксилемоінтеграції та фармацевтичну хімію self-healing покриттів. Повний реєстр задач — у [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration).
+
+### Стаття 28: Біохімічна Валідація Enzymatic Bio-Fuel Cell для Дерево-Живленого IoT
+
+**Назва (EN):** _"Biochemical Validation of Enzymatic Bio-Fuel Cell for Tree-Powered IoT: Enzyme Immobilization Stability, Protective Matrix Optimization, and In Vitro Performance in Simulated Xylem Sap"_
+**Журнали:** Biosensors and Bioelectronics (Q1) · Journal of Power Sources (Q1) · Electrochimica Acta (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Бушуєва І.** (ЧМА) | In vitro стабільність GOx/FAD-GDH/Laccase, оптимізація Chitosan+Nafion, 12-тижневий тест EBFC |
+| **Мінаєв Б.Ф.** (ЧНУ) | DFT-моделювання адсорбції ферментів на TiO₂, квантовий вихід charge transfer |
+| **Глущенко О.** (ЧМА) | Характеризація Os redox polymer стабільності, cross-linking оптимізація |
+| Архітектор (Silken Net) | EBFC архітектура (01_03), BQ25570 Cold Start вимоги, firmware delta_t специфіка |
+
+**Тип зв'язку:** Комплементарний — ЧНУ: теоретична модель (DFT), ЧМА: in vitro валідація, Silken Net: системні вимоги
+
+---
+
+### Стаття 29: Токсикологічна Оцінка Ti-6Al-4V Гіроїдних Анкерів для Лісових Кіберфізичних Систем
+
+**Назва (EN):** _"Phytotoxicological Assessment of Ti-6Al-4V TPMS Gyroid Anchors for Forest Cyber-Physical Systems: Vanadium and Aluminum Ion Release, Bioaccumulation, and 20-Year Safety Modeling"_
+**Журнали:** Environmental Pollution (Q1) · Science of The Total Environment (Q1) · Chemosphere (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Суховой Г.** (ЧМА) | Фітотоксичність V/Al для Pinus sylvestris, Safety Margin, хронічна біоакумуляція |
+| **Гусак А.М.** (ЧНУ) | Математична модель дифузії V/Al (Кіркендалл, 20 років), ICP-MS аналіз |
+| **Глущенко О.** (ЧМА) | Оцінка фітотоксичності 8-HQ self-healing покриття, альтернативні інгібітори |
+| **Спрягайло О.В.** (ЧНУ) | Склад ксилемного соку Pinus sylvestris, фітоценологічний контекст Черкаського бору |
+| Архітектор (Silken Net) | Ti-6Al-4V специфікація (01_02), self-healing концепт, 20-річна цільова довговічність |
+
+**Тип зв'язку:** Послідовний — ЧНУ (Гусак) вимірює концентрації + модель → ЧМА (Суховой) оцінює біологічний вплив + Safety Margin
+
+---
+
+### Стаття 30: Ксилемоінтеграція як Аналогія Остеоінтеграції — Біомедичний Підхід до Рослинних Імплантів
+
+**Назва (EN):** _"Xylemointegration as Osseointegration Analogy: A Biomedical Approach to Plant Implant Design for Long-Term Forest Cyber-Physical Systems"_
+**Журнали:** Acta Biomaterialia (Q1) · Biomaterials (Q1) · Journal of Materials Science: Materials in Medicine (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Губенко І.** (ЧМА) | Медична валідація CODIT-моделі через аналогію з остеоінтеграцією, stress-shielding |
+| **Боєчко В.** (ЧМА) | Фізіологія стресу: recovery curve, preclinical stress signature, CODIT-aware калібрація |
+| **Спрягайло О.В.** (ЧНУ) | Ботанічна верифікація CODIT у Pinus sylvestris, сезонні дані Черкаського бору |
+| **Гусак А.М.** (ЧНУ) | FEM-моделювання термо-механічних напруг при contact Ti-6Al-4V ↔ деревина |
+| Архітектор (Silken Net) | Концепція ксилемоінтеграції (01_04), гіроїд (01_01), firmware bio_contract |
+
+**Тип зв'язку:** Комплементарний — ЧМА: медична аналогія + стресова фізіологія, ЧНУ: ботанічні дані + фізика матеріалів
+
+---
+
+## 💼 1F. Публікації СЄУ (Токеноміка, Право, Промисловий Дизайн)
+
+> **Контекст:** СЄУ (Східноєвропейський університет ім. Рауфа Аблязова) забезпечує академічну експертизу в макроекономічній валідації токеноміки NaaS, правовій архітектурі RWA-токенізації (Polygon Hadron / MiCA), аудиті методології D-MRV, промисловому дизайні PEEK-радому та UX/візуалізації даних для B2B-інвесторів. Повний реєстр задач — у [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration).
+
+### Стаття 31: Макроекономічне Обґрунтування Proof of Growth Токеноміки
+
+**Назва (EN):** _"Macroeconomic Foundations of Proof-of-Growth Tokenomics: Deflationary Dynamics, Dynamic Tax Mechanisms, and Supply-Demand Equilibrium in Nature-as-a-Service Carbon Markets"_
+**Журнали:** Ecological Economics (Q1) · Journal of Environmental Economics and Management (Q1) · Resource and Energy Economics (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Чудаєва І.Б.** (СЄУ) | Макроекономічна модель SCC-ринку (supply/demand/equilibrium), stress-testing 3 сценаріїв масштабування, порівняння SCC vs Verra VCU |
+| **Ус Г.О.** (СЄУ) | Unit-економіка кластера, sensitivity analysis ROI, ESG Accounting Framework |
+| **Карапетян А.Р.** (ЧДТУ) | Monte Carlo симуляція 10K сценаріїв, статистична валідація моделі |
+| Архітектор (Silken Net) | ProtocolParameters.sol, BlockchainMintingService (Dynamic Tax), 05_03 Tokenomics |
+
+**Тип зв'язку:** Послідовний — СЄУ (Чудаєва) будує економічну модель → ЧДТУ (Карапетян) валідує Monte Carlo → СЄУ (Ус) інтегрує в корпоративний Accounting Framework
+
+---
+
+### Стаття 32: Правова Архітектура Токенізації Лісових RWA через ERC-3643
+
+**Назва (EN):** _"Legal Architecture for Forest Real World Asset Tokenization: ERC-3643 Compliance, MiCA Regulatory Framework, and Cross-Border Carbon Credit Enforcement"_
+**Журнали:** Journal of Financial Regulation (Q1) · European Business Organization Law Review (Q1) · Computer Law & Security Review (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Аблязов Д.Е.** (СЄУ) | MiCA класифікація SCC (utility vs security), юридичний mapping peaq DID → кадастр, NaaS Term Sheet + MSA шаблони |
+| **Гедз М.Й.** (СЄУ) | ISO 14064 mapping D-MRV pipeline, ICROA Code of Best Practice аудит |
+| Архітектор (Silken Net) | HadronComplianceService (KYC/RWA), ERC-3643, Guard Clauses, 05_01 §7 Polygon Hadron |
+
+**Тип зв'язку:** Комплементарний — Аблязов: правова рамка, Гедз: методологічний аудит, Silken Net: технічна імплементація
+
+---
+
+### Стаття 33: Біомімікрічний Промисловий Дизайн Антивандальної IoT-Капсули для Лісового Середовища
+
+**Назва (EN):** _"Biomimetic Industrial Design of Anti-Vandal IoT Capsule for Forest Environments: PEEK Radome Form Factor, Bark Camouflage, and Field Ergonomics for Tree-Embedded Cyber-Physical Systems"_
+**Журнали:** Design Studies (Q1) · Journal of Mechanical Design (Q1) · Materials & Design (Q1)
+
+| Автор | Внесок |
+|-------|--------|
+| **Денисенко Ю.М.** (СЄУ) | 3D CAD-модель PEEK-радому з текстурою кори Pinus sylvestris, stress concentration analysis, FDM-прототип |
+| **Теліженко О.В.** (СЄУ) | Кольорове/композиційне кодування, візуалізація для pitch deck |
+| **Гусак А.М.** (ЧНУ) | FEM-моделювання stress-strain текстурованої поверхні PEEK |
+| Архітектор (Silken Net) | 01_01 Деталь 4 (PEEK радом), 02_01 §5 (SMD антена, Keep-Out Zone), IP68 вимоги |
+
+**Тип зв'язку:** Послідовний — ЧНУ (Гусак): матеріалознавчі обмеження → СЄУ (Денисенко): дизайн у межах обмежень → СЄУ (Теліженко): візуалізація
+
+---
+
 ## ⚖️ 2. Розподіл Інтелектуальної Власності (IP Framework)
 
 ### Власність Silken Net (Архітектора)
@@ -479,6 +640,26 @@ _«Дослідження акустичних властивостей пори
 - Права на комерційну експлуатацію системи (монетизація SCC/SFC)
 - Доступ до production API, blockchain ключів та raw production телеметрії
 - Права на ліцензування технології або моделей третім сторонам
+
+### Права СЄУ (Академічний Партнер — Економіка, Право, Дизайн)
+
+| Право | Деталі |
+|---|---|
+| Використання публічних даних токеноміки та юніт-економіки для досліджень | Необмежено |
+| Включення результатів у навчальну програму відповідних кафедр | Необмежено |
+| Подача грантів на основі спільних досліджень | Погоджується з Silken Net |
+| Участь у міжнародних проєктах (Horizon EU, Ethereum Foundation) | Погоджується з Silken Net |
+| Публікації від імені СЄУ (зі Silken Net як co-author) | Вільно |
+| Юридичні шаблони NaaS (Term Sheet, MSA) → `docs/legal/` | Спільне авторство (Аблязов Д.) |
+| ESG Accounting Framework → `docs/esg/` | Спільне авторство (Ус) |
+| 3D CAD-моделі PEEK-радому → `docs/cad/` | Спільне авторство (Денисенко) |
+
+### Що Silken Net НЕ передає СЄУ
+
+- Права на комерційну експлуатацію системи (монетизація SCC/SFC)
+- Доступ до production API, blockchain ключів та raw production телеметрії
+- Права на ліцензування технології або моделей третім сторонам
+- Private keys від Oracle, Slasher, Admin ролей смарт-контрактів
 
 ---
 
@@ -535,6 +716,20 @@ Gaia 2.0 стає офіційним **полігоном для магісте�
 | **Бакалаврська** | "Створення калібрувального акустичного датасету для навчання TinyML моделей класифікації звуків лісу" |
 
 **Strategic value:** Кожен магістрант — потенційний member команди розгортання Silken Net в Україні та світі. Університет готує кадри, проєкт отримує кваліфіковану робочу силу.
+
+### Студентські Роботи СЄУ (Токеноміка, Право, Дизайн)
+
+| Рівень | Тема | Науковий керівник |
+|--------|------|-------------------|
+| **Магістерська** | "Макроекономічне моделювання токеноміки Nature-as-a-Service" | Чудаєва |
+| **Магістерська** | "ESG Accounting Framework для блокчейн-верифікованих вуглецевих кредитів" | Ус |
+| **Магістерська** | "Правові аспекти токенізації Real World Assets у контексті MiCA" | Аблязов Д. |
+| **Магістерська** | "Управління мультидисциплінарними консорціумами за моделлю Потрійної Спіралі" | Аблязова Н. |
+| **Бакалаврська** | "Промисловий дизайн антивандальної капсули для лісового IoT" | Денисенко |
+| **Бакалаврська** | "UX-дизайн B2B дашборду для ESG-інвесторів" | Теліженко |
+| **Бакалаврська** | "Аудит методології D-MRV за стандартом ISO 14064" | Гедз |
+| **Курсова** | "Sensitivity analysis юніт-економіки IoT-кластера" | Ус |
+| **Курсова** | "Порівняльний аналіз SCC та Verra VCU" | Чудаєва |
 
 ---
 

@@ -556,8 +556,10 @@
 
 #### BIZ.2 — B2B MSA (Master Service Agreement)
 - **Джерело:** `07_01`
-- [ ] Створити юридичний шаблон
-- [ ] Review з юристом
+- **Академічний партнер:** СЄУ (Аблязов Д.Е., к.ю.н.) → [`08_07`](08_07_SEU_Economics_and_Legal_Integration) §1.3
+- [ ] Організувати юридичну консультацію з Аблязовим Д.Е. (СЄУ) — MiCA, ERC-3643, RWA
+- [ ] Створити юридичний шаблон MSA (Term Sheet + Carbon Credit Purchase Agreement)
+- [ ] Review з практикуючим юристом
 
 #### BIZ.3 — B2C ToS / Privacy Policy
 - **Джерело:** `07_01`
@@ -621,6 +623,16 @@
 - **Блокує:** Старт публікацій
 - [ ] Юридичне оформлення IP-договору
 - [ ] Підпис обома сторонами
+
+#### UNI.8 — Перший контакт з ректоратом СЄУ
+- **Джерело:** `08_07`
+- **Блокує:** Economic Whitepaper, Legal Framework, NaaS юридичні шаблони (07_01 BLOCKER-1, BLOCKER-3)
+- [ ] Підготувати pitch для ректора (Чудаєва І.Б.) — акцент: Research + Scopus + Horizon Europe
+- [ ] Перша зустріч з Чудаєвою (ректор) або Аблязовою Н. (президент)
+- [ ] Верифікувати посади та наукові профілі всіх 7 науковців через офіційний сайт СЄУ
+- [ ] Підписати Меморандум про співпрацю між СЄУ та Silken Net
+- [ ] Організувати спільну зустріч: Аблязов Д. (право) + юрист Silken Net → MSA шаблони
+- [ ] Організувати спільну зустріч: Ус Г.О. (облік) → ESG Accounting Framework
 
 ---
 
@@ -710,7 +722,7 @@
 | 05 Web3 Pipeline | 8-9 | 9 | SFC address |
 | 06 DevOps | 7 | 9 | Docker registry, TLS |
 | 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS |
-| 08 University R&D | 2 | 6 | ЧНУ partnership |
+| 08 University R&D | 2 | 6 | ЧНУ + СЄУ partnership (6 ВНЗ) |
 | 09 Project Management | 7 | 9 | — |
 | 10 Security | 5 | 9 | Multisig, RDP, Factory |
 

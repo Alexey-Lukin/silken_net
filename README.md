@@ -294,9 +294,12 @@ kamal deploy
 
 **Наука та R&D (Модуль 08)**
 - [`08_01`](docs/08_01_University_R_and_D_Protocols.md) — партнерство з ЧНУ
-- [`08_02`](docs/8_02_Cybernetic_and_Mathematical_Validation.md) — кіберфізична валідація ФОТІУС
+- [`08_02`](docs/08_02_Cybernetic_and_Mathematical_Validation.md) — кіберфізична валідація ФОТІУС
 - [`08_03`](docs/08_03_Joint_Publications_and_IP_Strategy.md) — спільні публікації та стратегія IP
 - [`08_04`](docs/08_04_CHDTU_Data_Science_Collaboration.md) — ЧДТУ: Data Science, статистика та оптимізація
+- [`08_05`](docs/08_05_CHIPB_Fire_Safety_Integration.md) — ЧІПБ: пожежна безпека, параметричне страхування, SOP
+- [`08_06`](docs/08_06_CHMA_Biomedical_Integration.md) — ЧМА: біомедична валідація EBFC, токсикологія Ti-6Al-4V, ксилемоінтеграція
+- [`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md) — СЄУ: макроекономіка NaaS, RWA-легалізація, промисловий дизайн PEEK-радому
 
 **Управління та Масштабування (Модуль 09)**
 - [`09_01`](docs/09_01_AI_Native_Concurrent_Engineering.md) — AI-Native Concurrent Engineering (Shape Up)
@@ -305,6 +308,7 @@ kamal deploy
 
 **Тестування (Модуль 10)**
 - [`10_01`](docs/10_01_View_Component_Testing_Guide.md) — 30 best practices для тестування Phlex-компонентів
+- [`10_02`](docs/10_02_Action_Plan_Tracker.md) — трекер незавершених задач (DOC/SW/SEC/ARCH аудит)
 
 ---
 
@@ -321,7 +325,8 @@ kamal deploy
 | Прошивка Королеви (C + SIM7070G) | 6 | 59 тестів проходять |
 | Апаратна капсула (BOM, MPPT) | 6 | Архітектура заморожена |
 | Ti-6Al-4V гіроїдний анкер | 4 | Очікується nTop ліцензія |
-| EBFC (GOx/Laccase ферменти) | 3 | Лабораторний етап (ЧНУ) |
+| EBFC (GOx/Laccase ферменти) | 3 | Лабораторний етап (ЧНУ + ЧМА) |
+| Академічна мережа (ЧНУ/ФОТІУС/ЧДТУ/ЧІПБ/ЧМА/СЄУ) | 3 | 6 університетів, 33+ публікацій Q1 pipeline |
 | Розгортання GCP + Kamal | 4 | Код існує, деплой не проводився |
 
 ---
