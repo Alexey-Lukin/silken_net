@@ -112,7 +112,7 @@ RSpec.describe Api::V1::TreesController, type: :request do
     let(:dated_entry) do
       build_chronicle_entry(
         title: "Telemetry Logged",
-        date: Time.zone.parse("2026-04-25 10:30:00 UTC"),
+        date: Time.zone.parse("2025-04-25 10:30:00 UTC"),
         description: "Stable readings",
         severity: :warning,
         source_id: 77
@@ -133,7 +133,7 @@ RSpec.describe Api::V1::TreesController, type: :request do
       {
         "data" => [
           {
-            "date" => "2026-04-25T10:30:00Z",
+            "date" => "2025-04-25T10:30:00Z",
             "event_type" => "telemetry",
             "icon" => "🌿",
             "title" => "Telemetry Logged",

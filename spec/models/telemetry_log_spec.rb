@@ -177,6 +177,8 @@ RSpec.describe TelemetryLog, type: :model do
     end
 
     it "raises when the timestamp points to a different partition window" do
+      # The lookup narrows created_at to a one-second range around the provided timestamp.
+      # Supplying a distant timestamp should therefore miss the record and raise.
       expect {
         described_class.find_with_partition_pruning(log.id, "2020-01-01T00:00:00Z")
       }.to raise_error(ActiveRecord::RecordNotFound)
