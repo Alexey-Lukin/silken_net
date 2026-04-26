@@ -166,5 +166,183 @@ RSpec.describe TreeChronicleService do
         expect(dates).to eq(dates.sort.reverse)
       end
     end
+
+    context "with no wallet" do
+      it "returns empty blockchain entries when wallet is nil" do
+        allow(tree).to receive(:wallet).and_return(nil)
+
+        result = described_class.call(tree: tree)
+        minting_entries = result[:entries].select { |e| e.event_type == :minting }
+        expect(minting_entries).to be_empty
+      end
+    end
+
+    context "with unresolved alerts" do
+      it "does not include recovery entry for unresolved alert" do
+        create(:ews_alert, tree: tree, cluster: cluster,
+               alert_type: :severe_drought, severity: :medium,
+               message: "Drought detected")
+
+        result = described_class.call(tree: tree)
+        recovery_entries = result[:entries].select { |e| e.event_type == :recovery }
+
+        expect(recovery_entries).to be_empty
+      end
+    end
+
+    context "with resolved alert but nil resolved_at" do
+      it "does not include recovery entry when resolved_at is nil" do
+        alert = create(:ews_alert, tree: tree, cluster: cluster,
+                       alert_type: :severe_drought, severity: :medium,
+                       message: "Drought detected")
+        alert.update_columns(status: "resolved", resolved_at: nil)
+
+        result = described_class.call(tree: tree)
+        recovery_entries = result[:entries].select { |e| e.event_type == :recovery }
+
+        expect(recovery_entries).to be_empty
+      end
+    end
+
+    context "with BlockchainTransaction fallback date" do
+      it "uses created_at when confirmed_at is nil" do
+        wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x" + "a" * 40)
+        create(:blockchain_transaction, wallet: wallet,
+               status: :confirmed, token_type: :carbon_coin,
+               confirmed_at: nil, tx_hash: "0x" + SecureRandom.hex(32))
+
+        result = described_class.call(tree: tree)
+        minting_entry = result[:entries].find { |e| e.event_type == :minting }
+
+        expect(minting_entry).to be_present
+        expect(minting_entry.date).to be_present
+      end
+    end
+
+    context "with stress_index boundary values" do
+      it "formats homeostasis for stress_index 0.29 (below stress threshold)" do
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 1.day.ago, stress_index: 0.29,
+               reasoning: { "avg_z" => "24.3" })
+
+        result = described_class.call(tree: tree)
+        entry = result[:entries].first
+
+        expect(entry.event_type).to eq(:homeostasis)
+        expect(entry.severity).to eq(:stable)
+      end
+
+      it "formats stress for stress_index exactly 0.3" do
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 1.day.ago, stress_index: 0.3,
+               reasoning: { "max_temp" => "42" })
+
+        result = described_class.call(tree: tree)
+        entry = result[:entries].first
+
+        expect(entry.event_type).to eq(:stress)
+        expect(entry.severity).to eq(:warning)
+      end
+
+      it "formats stress with warning severity for stress_index 0.79" do
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 1.day.ago, stress_index: 0.79)
+
+        result = described_class.call(tree: tree)
+        entry = result[:entries].first
+
+        expect(entry.severity).to eq(:warning)
+      end
+
+      it "formats stress with critical severity for stress_index exactly 0.8" do
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 1.day.ago, stress_index: 0.8)
+
+        result = described_class.call(tree: tree)
+        entry = result[:entries].first
+
+        expect(entry.severity).to eq(:critical)
+      end
+    end
+
+    context "pagination edge cases" do
+      it "clamps page to 1 when page is 0" do
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 1.day.ago, stress_index: 0.1)
+
+        result = described_class.call(tree: tree, page: 0)
+        expect(result[:entries]).not_to be_empty
+        expect(result[:pagy].page).to eq(1)
+      end
+
+      it "clamps page to 1 when page is negative" do
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 1.day.ago, stress_index: 0.1)
+
+        result = described_class.call(tree: tree, page: -5)
+        expect(result[:entries]).not_to be_empty
+        expect(result[:pagy].page).to eq(1)
+      end
+
+      it "clamps per_page to 100 when exceeding maximum" do
+        result = described_class.call(tree: tree, per_page: 200)
+        # Should not raise, per_page clamped internally
+        expect(result[:entries]).to be_an(Array)
+      end
+
+      it "clamps per_page to 1 when below minimum" do
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 1.day.ago, stress_index: 0.1)
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 2.days.ago, stress_index: 0.1, model_source: "test2")
+
+        result = described_class.call(tree: tree, per_page: 0)
+        expect(result[:entries].size).to eq(1)
+      end
+
+      it "returns empty entries for page beyond total" do
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 1.day.ago, stress_index: 0.1)
+
+        result = described_class.call(tree: tree, page: 999)
+        expect(result[:entries]).to be_empty
+      end
+    end
+
+    context "with mixed event sources" do
+      it "collects entries from all four sources and sorts chronologically" do
+        # Create one entry from each source
+        create(:ai_insight, :daily_health_summary, analyzable: tree,
+               target_date: 4.days.ago, stress_index: 0.1, model_source: "mixed_test")
+        create(:ews_alert, tree: tree, cluster: cluster,
+               alert_type: :fire_detected, severity: :critical,
+               message: "Fire!", created_at: 3.days.ago)
+        user = create(:user, organization: organization)
+        create(:maintenance_record, maintainable: tree, user: user,
+               action_type: :inspection, performed_at: 2.days.ago)
+        wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x" + "b" * 40)
+        create(:blockchain_transaction, wallet: wallet,
+               status: :confirmed, token_type: :carbon_coin,
+               confirmed_at: 1.day.ago, tx_hash: "0x" + SecureRandom.hex(32))
+
+        result = described_class.call(tree: tree)
+
+        event_types = result[:entries].map(&:event_type)
+        expect(event_types).to include(:homeostasis, :alert, :maintenance, :minting)
+
+        # Verify chronological order (newest first)
+        dates = result[:entries].map(&:date)
+        expect(dates).to eq(dates.sort.reverse)
+      end
+    end
+
+    context "pagy .prev compatibility alias" do
+      it "defines .prev method on pagy for Pagination component" do
+        result = described_class.call(tree: tree)
+        expect(result[:pagy]).to respond_to(:prev)
+      end
+    end
   end
 end

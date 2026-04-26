@@ -148,5 +148,186 @@ RSpec.describe Web3CircuitBreaker do
         expect(result).to eq("b works")
       end
     end
+
+    context "with wrapped errors (transient_cause?)" do
+      it "counts failures for custom errors with transient root cause" do
+        custom_error = Class.new(StandardError)
+
+        Web3CircuitBreaker::FAILURE_THRESHOLD.times do
+          begin
+            raise Errno::ECONNREFUSED, "connection refused"
+          rescue Errno::ECONNREFUSED
+            expect {
+              instance.test_call(service_name) { raise custom_error, "dispatch failed" }
+            }.to raise_error(custom_error)
+          end
+        end
+
+        count = Rails.cache.read("circuit_breaker:#{service_name}:failures").to_i
+        expect(count).to eq(Web3CircuitBreaker::FAILURE_THRESHOLD)
+      end
+
+      it "does not count failures for custom errors without transient cause" do
+        custom_error = Class.new(StandardError)
+
+        expect {
+          instance.test_call(service_name) { raise custom_error, "validation error" }
+        }.to raise_error(custom_error)
+
+        count = Rails.cache.read("circuit_breaker:#{service_name}:failures").to_i
+        expect(count).to eq(0)
+      end
+
+      it "detects transient cause in deeply nested exceptions" do
+        custom_error = Class.new(StandardError)
+        wrapper_error = Class.new(StandardError)
+
+        # Simulate: Errno::ECONNREFUSED → custom_error → wrapper_error
+        begin
+          begin
+            raise Errno::ECONNREFUSED, "connection refused"
+          rescue Errno::ECONNREFUSED
+            raise custom_error, "inner wrap"
+          end
+        rescue custom_error
+          expect {
+            instance.test_call(service_name) { raise wrapper_error, "outer wrap" }
+          }.to raise_error(wrapper_error)
+        end
+
+        count = Rails.cache.read("circuit_breaker:#{service_name}:failures").to_i
+        expect(count).to eq(1)
+      end
+    end
+
+    context "with all CIRCUIT_BREAKER_ERRORS types" do
+      Web3CircuitBreaker::CIRCUIT_BREAKER_ERRORS.each do |error_class|
+        it "counts #{error_class.name} as a circuit breaker failure" do
+          expect {
+            instance.test_call(service_name) { raise error_class, "test #{error_class}" }
+          }.to raise_error(error_class)
+
+          count = Rails.cache.read("circuit_breaker:#{service_name}:failures").to_i
+          expect(count).to eq(1)
+        end
+      end
+    end
+  end
+
+  describe "#reset_circuit!" do
+    it "deletes both failure count and opened_at keys" do
+      Rails.cache.write("circuit_breaker:#{service_name}:failures", 10)
+      Rails.cache.write("circuit_breaker:#{service_name}:opened_at", Time.current.to_f)
+
+      instance.test_call(service_name) { "success" }
+
+      expect(Rails.cache.read("circuit_breaker:#{service_name}:failures")).to be_nil
+      expect(Rails.cache.read("circuit_breaker:#{service_name}:opened_at")).to be_nil
+    end
+  end
+
+  describe "#remaining_open_seconds" do
+    it "returns 0 when circuit has no opened_at" do
+      remaining = instance.send(:remaining_open_seconds, service_name)
+      expect(remaining).to eq(0)
+    end
+
+    it "returns positive seconds when circuit was recently opened" do
+      Rails.cache.write("circuit_breaker:#{service_name}:opened_at", Time.current.to_f)
+
+      remaining = instance.send(:remaining_open_seconds, service_name)
+      expect(remaining).to be > 0
+      expect(remaining).to be <= Web3CircuitBreaker::OPEN_TIMEOUT
+    end
+
+    it "returns 0 when timeout has elapsed" do
+      Rails.cache.write(
+        "circuit_breaker:#{service_name}:opened_at",
+        (Time.current - Web3CircuitBreaker::OPEN_TIMEOUT - 10).to_f
+      )
+
+      remaining = instance.send(:remaining_open_seconds, service_name)
+      expect(remaining).to eq(0)
+    end
+  end
+
+  describe "#transient_cause?" do
+    it "returns false when error has no cause" do
+      error = StandardError.new("no cause")
+      result = instance.send(:transient_cause?, error)
+      expect(result).to be false
+    end
+
+    it "returns true when direct cause is a transient error" do
+      begin
+        raise Errno::ECONNREFUSED, "connection refused"
+      rescue Errno::ECONNREFUSED
+        error = StandardError.new("wrapped")
+        begin
+          raise error
+        rescue StandardError => e
+          result = instance.send(:transient_cause?, e)
+          expect(result).to be true
+        end
+      end
+    end
+  end
+
+  describe "#circuit_state" do
+    it "returns :closed when failures are below threshold" do
+      Rails.cache.write("circuit_breaker:#{service_name}:failures", 3)
+
+      state = instance.send(:circuit_state, service_name)
+      expect(state).to eq(:closed)
+    end
+
+    it "returns :open when failures >= threshold and timeout not elapsed" do
+      Rails.cache.write("circuit_breaker:#{service_name}:failures", Web3CircuitBreaker::FAILURE_THRESHOLD)
+      Rails.cache.write("circuit_breaker:#{service_name}:opened_at", Time.current.to_f)
+
+      state = instance.send(:circuit_state, service_name)
+      expect(state).to eq(:open)
+    end
+
+    it "returns :half_open when failures >= threshold and timeout elapsed" do
+      Rails.cache.write("circuit_breaker:#{service_name}:failures", Web3CircuitBreaker::FAILURE_THRESHOLD)
+      Rails.cache.write(
+        "circuit_breaker:#{service_name}:opened_at",
+        (Time.current - Web3CircuitBreaker::OPEN_TIMEOUT - 1).to_f
+      )
+
+      state = instance.send(:circuit_state, service_name)
+      expect(state).to eq(:half_open)
+    end
+
+    it "returns :closed when failures below threshold even if opened_at exists" do
+      Rails.cache.write("circuit_breaker:#{service_name}:failures", 2)
+      Rails.cache.write("circuit_breaker:#{service_name}:opened_at", Time.current.to_f)
+
+      state = instance.send(:circuit_state, service_name)
+      expect(state).to eq(:closed)
+    end
+  end
+
+  describe "#record_failure!" do
+    it "increments failure count" do
+      instance.send(:record_failure!, service_name)
+      expect(Rails.cache.read("circuit_breaker:#{service_name}:failures").to_i).to eq(1)
+
+      instance.send(:record_failure!, service_name)
+      expect(Rails.cache.read("circuit_breaker:#{service_name}:failures").to_i).to eq(2)
+    end
+
+    it "writes opened_at when reaching threshold" do
+      (Web3CircuitBreaker::FAILURE_THRESHOLD - 1).times do
+        instance.send(:record_failure!, service_name)
+      end
+
+      expect(Rails.cache.read("circuit_breaker:#{service_name}:opened_at")).to be_nil
+
+      instance.send(:record_failure!, service_name)
+
+      expect(Rails.cache.read("circuit_breaker:#{service_name}:opened_at")).to be_present
+    end
   end
 end

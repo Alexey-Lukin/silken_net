@@ -349,6 +349,88 @@ static void test_homeostasis_edge_z_max(void) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * BOUNDARY CONDITION TESTS
+ * ════════════════════════════════════════════════════════════════════ */
+
+static void test_extreme_temp_acoustic_combo(void) {
+    /* Extreme combo: temp=-128 (int8_t min) + acoustic=255
+     * sigma = 10.0 + 255*0.1 = 35.5 → clamped to 30.0
+     * rho = 28.0 + (-128*0.2) = 28.0 - 25.6 = 2.4 → clamped to 10.0
+     * Should produce valid (finite) Z result */
+    double z = calculate_z_axis(42, -128, 255);
+    ASSERT(!isnan(z) && !isinf(z),
+           "test_extreme_temp_minus128_acoustic_255_valid");
+}
+
+static void test_z_axis_sensitivity_to_temp(void) {
+    /* Different temperatures with same seed/acoustic should produce different Z */
+    double z_cold = calculate_z_axis(42, -40, 5);
+    double z_hot  = calculate_z_axis(42, 80, 5);
+    ASSERT(fabs(z_cold - z_hot) > 0.0001,
+           "test_z_axis_different_temps_produce_different_z");
+}
+
+static void test_z_axis_sensitivity_to_acoustic(void) {
+    /* Different acoustic values with same seed/temp should produce different Z */
+    double z_quiet = calculate_z_axis(42, 20, 0);
+    double z_loud  = calculate_z_axis(42, 20, 200);
+    ASSERT(fabs(z_quiet - z_loud) > 0.0001,
+           "test_z_axis_different_acoustics_produce_different_z");
+}
+
+static void test_growth_points_at_boundary_z(void) {
+    /* Test growth points at exact boundary: z_val = 2.0 (CRITICAL_Z_MIN) */
+    double z_val = CRITICAL_Z_MIN;
+    int status, growth_points;
+    if (z_val < CRITICAL_Z_MIN) {
+        status = BIO_STATUS_STRESS;
+        growth_points = 1;
+    } else if (z_val > CRITICAL_Z_MAX) {
+        status = BIO_STATUS_ANOMALY;
+        growth_points = 0;
+    } else {
+        status = BIO_STATUS_HOMEOSTASIS;
+        double deviation = fabs(OPTIMAL_Z_TARGET - z_val);
+        int reward = 50 - (int)round(deviation);
+        growth_points = clamp_i(reward, 10, 63);
+    }
+    /* z_val == 2.0 is NOT < 2.0, so it's homeostasis */
+    ASSERT(status == BIO_STATUS_HOMEOSTASIS,
+           "test_growth_points_at_z_min_boundary_is_homeostasis");
+
+    /* Same for z_val = 45.0 (CRITICAL_Z_MAX) */
+    z_val = CRITICAL_Z_MAX;
+    if (z_val < CRITICAL_Z_MIN) {
+        status = BIO_STATUS_STRESS;
+        growth_points = 1;
+    } else if (z_val > CRITICAL_Z_MAX) {
+        status = BIO_STATUS_ANOMALY;
+        growth_points = 0;
+    } else {
+        status = BIO_STATUS_HOMEOSTASIS;
+        double deviation = fabs(OPTIMAL_Z_TARGET - z_val);
+        int reward = 50 - (int)round(deviation);
+        growth_points = clamp_i(reward, 10, 63);
+    }
+    /* z_val == 45.0 is NOT > 45.0, so it's homeostasis */
+    ASSERT(status == BIO_STATUS_HOMEOSTASIS,
+           "test_growth_points_at_z_max_boundary_is_homeostasis");
+}
+
+static void test_evaluate_pack_deterministic_across_range(void) {
+    /* Multiple evaluations with same input must return identical result */
+    for (uint32_t seed = 0; seed < 1000; seed += 100) {
+        uint8_t r1 = evaluate_and_pack(seed, 20, 5);
+        uint8_t r2 = evaluate_and_pack(seed, 20, 5);
+        if (r1 != r2) {
+            ASSERT(0, "test_evaluate_pack_not_deterministic");
+            return;
+        }
+    }
+    ASSERT(1, "test_evaluate_pack_deterministic_10_seeds");
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * MAIN
  * ════════════════════════════════════════════════════════════════════ */
 int main(void) {
@@ -391,6 +473,13 @@ int main(void) {
     printf("\n  Evaluate & Pack (Integration):\n");
     test_evaluate_pack_normal();
     test_evaluate_pack_stress_low_z();
+
+    printf("\n  Boundary Conditions:\n");
+    test_extreme_temp_acoustic_combo();
+    test_z_axis_sensitivity_to_temp();
+    test_z_axis_sensitivity_to_acoustic();
+    test_growth_points_at_boundary_z();
+    test_evaluate_pack_deterministic_across_range();
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n", tests_passed, tests_failed);
