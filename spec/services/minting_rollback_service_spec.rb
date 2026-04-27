@@ -255,6 +255,8 @@ RSpec.describe MintingRollbackService do
     let!(:telemetry_log) { create(:telemetry_log, :verified_telemetry, tree: tree) }
     let(:solana_address) { "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM" }
 
+    before { ENV["SOLANA_RPC_URL"] ||= "https://api.devnet.solana.com" }
+
     # Helper: wraps a Hash into Web3::HttpClient::Response (as real HttpClient.post returns)
     def solana_response(hash)
       Web3::HttpClient::Response.new(JSON.generate(hash))
