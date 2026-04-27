@@ -205,8 +205,15 @@ RSpec.describe Web3CircuitBreaker do
     context "with all CIRCUIT_BREAKER_ERRORS types" do
       Web3CircuitBreaker::CIRCUIT_BREAKER_ERRORS.each do |error_class|
         it "counts #{error_class.name} as a circuit breaker failure" do
+          # Some error classes require specific constructor arguments
+          error_instance = begin
+            error_class.new("test #{error_class}")
+          rescue ArgumentError
+            error_class.new("test", "#{error_class}")
+          end
+
           expect {
-            instance.test_call(service_name) { raise error_class, "test #{error_class}" }
+            instance.test_call(service_name) { raise error_instance }
           }.to raise_error(error_class)
 
           count = Rails.cache.read("circuit_breaker:#{service_name}:failures").to_i
@@ -218,7 +225,8 @@ RSpec.describe Web3CircuitBreaker do
 
   describe "#reset_circuit!" do
     it "deletes both failure count and opened_at keys" do
-      Rails.cache.write("circuit_breaker:#{service_name}:failures", 10)
+      # Set failures below threshold so circuit stays closed
+      Rails.cache.write("circuit_breaker:#{service_name}:failures", 3)
       Rails.cache.write("circuit_breaker:#{service_name}:opened_at", Time.current.to_f)
 
       instance.test_call(service_name) { "success" }

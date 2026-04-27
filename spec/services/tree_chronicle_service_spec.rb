@@ -266,7 +266,7 @@ RSpec.describe TreeChronicleService do
       end
     end
 
-    context "pagination edge cases" do
+    context "with pagination edge cases" do
       it "clamps page to 1 when page is 0" do
         create(:ai_insight, :daily_health_summary, analyzable: tree,
                target_date: 1.day.ago, stress_index: 0.1)
@@ -338,7 +338,7 @@ RSpec.describe TreeChronicleService do
       end
     end
 
-    context "pagy .prev compatibility alias" do
+    context "with pagy .prev compatibility alias" do
       it "defines .prev method on pagy for Pagination component" do
         result = described_class.call(tree: tree)
         expect(result[:pagy]).to respond_to(:prev)

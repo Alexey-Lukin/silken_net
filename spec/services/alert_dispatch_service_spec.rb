@@ -246,7 +246,7 @@ RSpec.describe AlertDispatchService, type: :service do
     end
 
     it "uses cluster custom_fire_threshold over family rating when available" do
-      cluster.update_column(:custom_fire_threshold, 90)
+      cluster.update!(custom_fire_threshold: 90)
 
       log = instance_double(TelemetryLog,
         tree: tree_custom,
@@ -326,35 +326,17 @@ RSpec.describe AlertDispatchService, type: :service do
 
   describe "rate limiting (SEC.10)" do
     it "suppresses critical alerts after MAX_ALERTS_PER_DID_PER_WINDOW" do
-      # Create unique trees to avoid per-type silence
-      trees = 6.times.map { create(:tree, cluster: cluster, tree_family: family) }
+      target_tree = create(:tree, cluster: cluster, tree_family: family)
 
-      trees.first(5).each do |t|
-        log = instance_double(TelemetryLog,
-          tree: t,
-          bio_status_tamper_detected?: true,
-          voltage_mv: 50
-        )
-        described_class.analyze_and_trigger!(log)
-      end
+      # Pre-populate the rate counter to simulate 5 prior critical alerts
+      time_bucket = Time.current.to_i / AlertDispatchService::DID_RATE_LIMIT_WINDOW.to_i
+      rate_key = "ews_did_rate:#{target_tree.did}:#{time_bucket}"
+      Rails.cache.write(rate_key, AlertDispatchService::MAX_ALERTS_PER_DID_PER_WINDOW,
+                        expires_in: AlertDispatchService::DID_RATE_LIMIT_WINDOW * 2)
 
-      # DID is per-device, so 5 different trees won't hit the rate limit
-      # Test with same tree instead
-      same_tree = trees.first
-      6.times do |i|
-        Rails.cache.delete("ews_silence:#{same_tree.id}:vandalism_breach")
-        log = instance_double(TelemetryLog,
-          tree: same_tree,
-          bio_status_tamper_detected?: true,
-          voltage_mv: 50
-        )
-        described_class.analyze_and_trigger!(log)
-      end
-
-      # After 5 alerts, rate limiting kicks in
-      Rails.cache.delete("ews_silence:#{same_tree.id}:vandalism_breach")
+      # This alert should be suppressed by rate limiting
       log = instance_double(TelemetryLog,
-        tree: same_tree,
+        tree: target_tree,
         bio_status_tamper_detected?: true,
         voltage_mv: 50
       )

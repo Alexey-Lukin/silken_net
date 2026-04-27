@@ -420,7 +420,8 @@ RSpec.describe AuditLog, type: :model do
         {
           user_id: user.id,
           organization_id: user.organization_id,
-          action: "bulk_#{i}"
+          action: "bulk_#{i}",
+          ip_address: "127.0.0.1"
         }
       end
       described_class.bulk_record!(entries)

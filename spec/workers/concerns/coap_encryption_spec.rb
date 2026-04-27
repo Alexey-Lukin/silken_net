@@ -120,8 +120,8 @@ RSpec.describe CoapEncryption do
       cipher.padding = 0
 
       decrypted = cipher.update(ciphertext) + cipher.final
-      # Binary payload with null bytes — compare raw bytes
-      expect(decrypted.byteslice(0, binary_payload.bytesize)).to eq(binary_payload)
+      # Binary payload with null bytes — compare raw bytes (force same encoding)
+      expect(decrypted.byteslice(0, binary_payload.bytesize)).to eq(binary_payload.b)
     end
 
     it "pads with only null bytes (firmware-compatible)" do

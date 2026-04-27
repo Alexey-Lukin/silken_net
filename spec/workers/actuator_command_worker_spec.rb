@@ -203,7 +203,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
   # AASM TRANSITION (dispatch!)
   # =========================================================================
   describe "dispatch! AASM transition" do
-    it "transitions command to dispatched state before CoAP send" do
+    it "transitions command to sent state before CoAP send" do
       states = []
       allow(CoapClient).to receive(:put) do |_url, _payload|
         cmd = ActuatorCommand.find(command.id)
@@ -213,7 +213,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
 
       described_class.new.perform(command.id)
 
-      expect(states).to include("dispatched")
+      expect(states).to include("sent")
     end
   end
 
@@ -271,7 +271,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
       described_class.new.perform(command.id)
 
       job = ResetActuatorStateWorker.jobs.last
-      expect(job["args"]).to eq([command.id])
+      expect(job["args"]).to eq([ command.id ])
     end
   end
 

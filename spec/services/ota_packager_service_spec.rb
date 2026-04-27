@@ -195,7 +195,7 @@ RSpec.describe OtaPackagerService do
       end
     end
 
-    context "manifest format" do
+    context "when manifest format is validated" do
       let(:payload) { "\xAA\xBB\xCC\xDD" }
 
       it "checksum is uppercase hexadecimal CRC32" do
@@ -215,7 +215,9 @@ RSpec.describe OtaPackagerService do
       end
     end
 
-    context "CRC16-CCITT known values" do
+    context "when CRC16-CCITT produces known values" do
+      let(:payload) { "\xAA\xBB\xCC" }
+
       it "produces correct CRC for known input" do
         svc = described_class.new(firmware, 512)
         # CRC16-CCITT of empty string should be 0xFFFF (initial value)
@@ -232,7 +234,7 @@ RSpec.describe OtaPackagerService do
       end
     end
 
-    context "packages return lazy Enumerator" do
+    context "when packages return lazy Enumerator" do
       let(:payload) { "\xAA" * 10_000 }
 
       it "returns Enumerator that generates packages on demand" do

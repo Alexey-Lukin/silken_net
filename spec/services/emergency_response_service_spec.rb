@@ -245,8 +245,8 @@ RSpec.describe EmergencyResponseService do
 
       expect(valve_cmds.count).to eq(4) # 14400 / 3600 = 4
       expect(siren_cmds.count).to eq(1) # 3600 / 3600 = 1
-      expect(valve_cmds.pluck(:command_payload).uniq).to eq(["OPEN_VALVE"])
-      expect(siren_cmds.pluck(:command_payload).uniq).to eq(["ACTIVATE_SIREN"])
+      expect(valve_cmds.pluck(:command_payload).uniq).to eq([ "OPEN_VALVE" ])
+      expect(siren_cmds.pluck(:command_payload).uniq).to eq([ "ACTIVATE_SIREN" ])
     end
   end
 

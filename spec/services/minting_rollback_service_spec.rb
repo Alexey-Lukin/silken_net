@@ -258,7 +258,7 @@ RSpec.describe MintingRollbackService do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
                   tx_hash: "5abc" + SecureRandom.hex(30), locked_points: 10_000,
-                  network: :solana)
+                  blockchain_network: "solana", to_address: "SoLAddr1234567890abcdefg")
 
       # Mock Solana getTransaction response — confirmed (no error)
       allow(Web3::HttpClient).to receive(:post).and_return(
@@ -275,7 +275,7 @@ RSpec.describe MintingRollbackService do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
                   tx_hash: "5def" + SecureRandom.hex(30), locked_points: 10_000,
-                  network: :solana)
+                  blockchain_network: "solana", to_address: "SoLAddr1234567890abcdefg")
 
       allow(Web3::HttpClient).to receive(:post).and_return(
         { "result" => nil }
@@ -291,7 +291,7 @@ RSpec.describe MintingRollbackService do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
                   tx_hash: "5ghi" + SecureRandom.hex(30), locked_points: 10_000,
-                  network: :solana)
+                  blockchain_network: "solana", to_address: "SoLAddr1234567890abcdefg")
 
       allow(Web3::HttpClient).to receive(:post).and_return(
         { "result" => { "meta" => { "err" => { "InstructionError" => [ 0, "Custom" ] } } } }
@@ -309,7 +309,7 @@ RSpec.describe MintingRollbackService do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
                   tx_hash: "5jkl" + SecureRandom.hex(30), locked_points: 10_000,
-                  network: :solana)
+                  blockchain_network: "solana", to_address: "SoLAddr1234567890abcdefg")
 
       stub_const("ENV", ENV.to_h.except("SOLANA_RPC_URL"))
 
@@ -421,7 +421,7 @@ RSpec.describe MintingRollbackService do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
                   tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000,
-                  network: :celo)
+                  blockchain_network: "celo")
 
       mock_client = instance_double(Eth::Client)
       allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)

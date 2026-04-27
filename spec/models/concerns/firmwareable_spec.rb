@@ -68,40 +68,40 @@ RSpec.describe Firmwareable do
     describe "schedule_update event" do
       it "transitions from fw_idle to fw_pending" do
         expect(tree).to be_firmware_fw_idle
-        tree.firmware_schedule_update!
+        tree.schedule_update!
         expect(tree).to be_firmware_fw_pending
       end
 
       it "transitions from fw_completed to fw_pending" do
         tree.update_column(:firmware_update_status, :fw_completed)
         tree.reload
-        tree.firmware_schedule_update!
+        tree.schedule_update!
         expect(tree).to be_firmware_fw_pending
       end
 
       it "transitions from fw_failed to fw_pending" do
         tree.update_column(:firmware_update_status, :fw_failed)
         tree.reload
-        tree.firmware_schedule_update!
+        tree.schedule_update!
         expect(tree).to be_firmware_fw_pending
       end
 
       it "raises error when transitioning from fw_downloading" do
         tree.update_column(:firmware_update_status, :fw_downloading)
         tree.reload
-        expect { tree.firmware_schedule_update! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.schedule_update! }.to raise_error(AASM::InvalidTransition)
       end
 
       it "raises error when transitioning from fw_verifying" do
         tree.update_column(:firmware_update_status, :fw_verifying)
         tree.reload
-        expect { tree.firmware_schedule_update! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.schedule_update! }.to raise_error(AASM::InvalidTransition)
       end
 
       it "raises error when transitioning from fw_flashing" do
         tree.update_column(:firmware_update_status, :fw_flashing)
         tree.reload
-        expect { tree.firmware_schedule_update! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.schedule_update! }.to raise_error(AASM::InvalidTransition)
       end
     end
 
@@ -109,12 +109,12 @@ RSpec.describe Firmwareable do
       it "transitions from fw_pending to fw_downloading" do
         tree.update_column(:firmware_update_status, :fw_pending)
         tree.reload
-        tree.firmware_start_download!
+        tree.start_download!
         expect(tree).to be_firmware_fw_downloading
       end
 
       it "raises error when transitioning from fw_idle" do
-        expect { tree.firmware_start_download! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.start_download! }.to raise_error(AASM::InvalidTransition)
       end
     end
 
@@ -122,14 +122,14 @@ RSpec.describe Firmwareable do
       it "transitions from fw_downloading to fw_verifying" do
         tree.update_column(:firmware_update_status, :fw_downloading)
         tree.reload
-        tree.firmware_start_verification!
+        tree.start_verification!
         expect(tree).to be_firmware_fw_verifying
       end
 
       it "raises error when transitioning from fw_pending" do
         tree.update_column(:firmware_update_status, :fw_pending)
         tree.reload
-        expect { tree.firmware_start_verification! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.start_verification! }.to raise_error(AASM::InvalidTransition)
       end
     end
 
@@ -137,14 +137,14 @@ RSpec.describe Firmwareable do
       it "transitions from fw_verifying to fw_flashing" do
         tree.update_column(:firmware_update_status, :fw_verifying)
         tree.reload
-        tree.firmware_start_flashing!
+        tree.start_flashing!
         expect(tree).to be_firmware_fw_flashing
       end
 
       it "raises error when transitioning from fw_downloading" do
         tree.update_column(:firmware_update_status, :fw_downloading)
         tree.reload
-        expect { tree.firmware_start_flashing! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.start_flashing! }.to raise_error(AASM::InvalidTransition)
       end
     end
 
@@ -152,14 +152,14 @@ RSpec.describe Firmwareable do
       it "transitions from fw_flashing to fw_completed" do
         tree.update_column(:firmware_update_status, :fw_flashing)
         tree.reload
-        tree.firmware_complete_update!
+        tree.complete_update!
         expect(tree).to be_firmware_fw_completed
       end
 
       it "raises error when transitioning from fw_verifying" do
         tree.update_column(:firmware_update_status, :fw_verifying)
         tree.reload
-        expect { tree.firmware_complete_update! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.complete_update! }.to raise_error(AASM::InvalidTransition)
       end
     end
 
@@ -168,19 +168,19 @@ RSpec.describe Firmwareable do
         it "transitions from #{from_state} to fw_failed" do
           tree.update_column(:firmware_update_status, from_state)
           tree.reload
-          tree.firmware_fail_update!
+          tree.fail_update!
           expect(tree).to be_firmware_fw_failed
         end
       end
 
       it "raises error when transitioning from fw_idle" do
-        expect { tree.firmware_fail_update! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.fail_update! }.to raise_error(AASM::InvalidTransition)
       end
 
       it "raises error when transitioning from fw_completed" do
         tree.update_column(:firmware_update_status, :fw_completed)
         tree.reload
-        expect { tree.firmware_fail_update! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.fail_update! }.to raise_error(AASM::InvalidTransition)
       end
     end
 
@@ -188,25 +188,25 @@ RSpec.describe Firmwareable do
       it "transitions from fw_failed to fw_idle" do
         tree.update_column(:firmware_update_status, :fw_failed)
         tree.reload
-        tree.firmware_reset_firmware!
+        tree.reset_firmware!
         expect(tree).to be_firmware_fw_idle
       end
 
       it "transitions from fw_completed to fw_idle" do
         tree.update_column(:firmware_update_status, :fw_completed)
         tree.reload
-        tree.firmware_reset_firmware!
+        tree.reset_firmware!
         expect(tree).to be_firmware_fw_idle
       end
 
       it "raises error when transitioning from fw_downloading" do
         tree.update_column(:firmware_update_status, :fw_downloading)
         tree.reload
-        expect { tree.firmware_reset_firmware! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.reset_firmware! }.to raise_error(AASM::InvalidTransition)
       end
 
       it "raises error when transitioning from fw_idle" do
-        expect { tree.firmware_reset_firmware! }.to raise_error(AASM::InvalidTransition)
+        expect { tree.reset_firmware! }.to raise_error(AASM::InvalidTransition)
       end
     end
 
@@ -214,35 +214,35 @@ RSpec.describe Firmwareable do
       it "completes the full fw_idle -> fw_pending -> fw_downloading -> fw_verifying -> fw_flashing -> fw_completed -> fw_idle cycle" do
         expect(tree).to be_firmware_fw_idle
 
-        tree.firmware_schedule_update!
+        tree.schedule_update!
         expect(tree).to be_firmware_fw_pending
 
-        tree.firmware_start_download!
+        tree.start_download!
         expect(tree).to be_firmware_fw_downloading
 
-        tree.firmware_start_verification!
+        tree.start_verification!
         expect(tree).to be_firmware_fw_verifying
 
-        tree.firmware_start_flashing!
+        tree.start_flashing!
         expect(tree).to be_firmware_fw_flashing
 
-        tree.firmware_complete_update!
+        tree.complete_update!
         expect(tree).to be_firmware_fw_completed
 
-        tree.firmware_reset_firmware!
+        tree.reset_firmware!
         expect(tree).to be_firmware_fw_idle
       end
     end
 
     describe "failure recovery lifecycle" do
       it "handles failure during download and retry" do
-        tree.firmware_schedule_update!
-        tree.firmware_start_download!
+        tree.schedule_update!
+        tree.start_download!
 
-        tree.firmware_fail_update!
+        tree.fail_update!
         expect(tree).to be_firmware_fw_failed
 
-        tree.firmware_schedule_update!
+        tree.schedule_update!
         expect(tree).to be_firmware_fw_pending
       end
     end

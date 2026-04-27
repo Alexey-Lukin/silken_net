@@ -404,7 +404,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     end
 
     describe "check_z_divergence!" do
-      let!(:tree_family) { create(:tree_family, organization: organization) }
+      let!(:tree_family) { create(:tree_family) }
       let!(:tree_with_family) do
         t = create(:tree, did: format("SNET-%08X", "0000AC01".to_i(16)), cluster: cluster, tree_family: tree_family)
         t.create_device_calibration! if t.device_calibration.nil?
@@ -439,7 +439,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       it "increments fraud metric when device says homeostasis but server Z is unhealthy" do
         service = described_class.new("", nil)
-        allow(tree_family).to receive(:healthy_z?).and_return(false)
+        allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(false)
         attributes = { z_value: 50.0, bio_status: :homeostasis }
 
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
@@ -448,7 +448,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       it "does not flag when both device and server agree on healthy" do
         service = described_class.new("", nil)
-        allow(tree_family).to receive(:healthy_z?).and_return(true)
+        allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(true)
         attributes = { z_value: 25.0, bio_status: :homeostasis }
 
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
@@ -457,7 +457,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       it "does not flag when both device and server agree on unhealthy" do
         service = described_class.new("", nil)
-        allow(tree_family).to receive(:healthy_z?).and_return(false)
+        allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(false)
         attributes = { z_value: 50.0, bio_status: :stress }
 
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
@@ -508,14 +508,18 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "logs warning when acoustic_events is 255 (saturated)" do
         chunk = build_chunk(did_hex, -70, 3500, 25, 255, 100, 0, 3)
 
+        allow(Rails.logger).to receive(:warn).and_call_original
         expect(Rails.logger).to receive(:warn).with(/Acoustic Overflow/).once
+
         described_class.call(chunk)
       end
 
       it "does not log warning for acoustic_events below 255" do
         chunk = build_chunk(did_hex, -70, 3500, 25, 254, 100, 0, 3)
 
+        allow(Rails.logger).to receive(:warn).and_call_original
         expect(Rails.logger).not_to receive(:warn).with(/Acoustic Overflow/)
+
         described_class.call(chunk)
       end
     end
