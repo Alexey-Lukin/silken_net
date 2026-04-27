@@ -412,7 +412,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       end
 
       it "skips when tree_family is nil" do
-        tree_no_family = create(:tree, did: format("SNET-%08X", "0000AC02".to_i(16)), cluster: cluster, tree_family: nil)
+        tree_no_family = create(:tree, did: format("SNET-%08X", "0000AC02".to_i(16)), cluster: cluster, tree_family: tree_family)
+        # Simulate nil tree_family by stubbing the association
+        allow(tree_no_family).to receive(:tree_family).and_return(nil)
         service = described_class.new("", nil)
         attributes = { z_value: 50.0, bio_status: :homeostasis }
 

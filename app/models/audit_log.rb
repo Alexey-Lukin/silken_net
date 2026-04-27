@@ -46,7 +46,7 @@ class AuditLog < ApplicationRecord
 
     now = Time.current
     rows = entries.map do |entry|
-      entry.reverse_merge(created_at: now, updated_at: now).stringify_keys
+      entry.reverse_merge(created_at: now, updated_at: now, metadata: {}).stringify_keys
     end
 
     transaction do
