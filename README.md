@@ -309,6 +309,7 @@ kamal deploy
 **Тестування (Модуль 10)**
 - [`10_01`](docs/10_01_View_Component_Testing_Guide.md) — 30 best practices для тестування Phlex-компонентів
 - [`10_02`](docs/10_02_Action_Plan_Tracker.md) — трекер незавершених задач (DOC/SW/SEC/ARCH аудит)
+- [`10_03`](docs/10_03_Test_Coverage_Matrix.md) — карта покриття тестами (RSpec, Firmware C, Foundry Solidity)
 
 ---
 

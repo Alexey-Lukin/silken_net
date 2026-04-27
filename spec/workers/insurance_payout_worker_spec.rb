@@ -199,6 +199,47 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
       end
     end
 
+    # =========================================================================
+    # SIDEKIQ CONFIGURATION
+    # =========================================================================
+    it "uses critical queue" do
+      expect(described_class.get_sidekiq_options["queue"]).to eq("critical")
+    end
+
+    it "retries 10 times" do
+      expect(described_class.get_sidekiq_options["retry"]).to eq(10)
+    end
+
+    # =========================================================================
+    # SATELLITE VERIFICATION — MULTIPLE ALERT TYPES
+    # =========================================================================
+    context "with mixed alert types (fire + vandalism)" do
+      before do
+        allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+        allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
+        allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
+        allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
+      end
+
+      it "blocks payout only when fire/drought alerts are unverified" do
+        # Non-fire alert — should NOT block
+        create(:ews_alert, cluster: cluster, tree: tree, alert_type: :vandalism_breach, severity: :critical)
+
+        expect {
+          described_class.new.perform(insurance.id)
+        }.to change(BlockchainTransaction, :count).by(1)
+      end
+
+      it "blocks payout when severe_drought alert is unverified" do
+        create(:ews_alert, cluster: cluster, tree: tree, alert_type: :severe_drought,
+               severity: :critical, satellite_status: :unverified)
+
+        described_class.new.perform(insurance.id)
+
+        expect(BlockchainMintingService).not_to have_received(:call)
+      end
+    end
+
     context "when insurance uses Etherisc DIP" do
       let(:etherisc_insurance) do
         create(:parametric_insurance, :triggered,

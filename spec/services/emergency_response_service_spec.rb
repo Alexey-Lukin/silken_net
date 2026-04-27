@@ -228,6 +228,93 @@ RSpec.describe EmergencyResponseService do
     end
   end
 
+  # =========================================================================
+  # FIRE: MIXED ACTUATOR TYPES (valve + siren)
+  # =========================================================================
+  describe "fire_detected dispatches both valves and sirens" do
+    let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
+
+    it "creates valve AND siren commands for fire alert" do
+      valve = create(:actuator, :water_valve, gateway: gateway, state: :idle)
+      siren = create(:actuator, :fire_siren, gateway: gateway, state: :idle)
+
+      described_class.call(alert)
+
+      valve_cmds = ActuatorCommand.where(actuator: valve, ews_alert: alert)
+      siren_cmds = ActuatorCommand.where(actuator: siren, ews_alert: alert)
+
+      expect(valve_cmds.count).to eq(4) # 14400 / 3600 = 4
+      expect(siren_cmds.count).to eq(1) # 3600 / 3600 = 1
+      expect(valve_cmds.pluck(:command_payload).uniq).to eq([ "OPEN_VALVE" ])
+      expect(siren_cmds.pluck(:command_payload).uniq).to eq([ "ACTIVATE_SIREN" ])
+    end
+  end
+
+  # =========================================================================
+  # COMMAND ATTRIBUTES (org_id, idempotency, priority, expires_at)
+  # =========================================================================
+  describe "command attributes" do
+    let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree) }
+
+    it "sets organization_id from cluster for Turbo broadcast" do
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      described_class.call(alert)
+
+      cmd = ActuatorCommand.last
+      expect(cmd.organization_id).to eq(cluster.organization_id)
+    end
+
+    it "assigns unique idempotency_token to each command" do
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      described_class.call(alert)
+
+      tokens = ActuatorCommand.where(ews_alert: alert).pluck(:idempotency_token)
+      expect(tokens.uniq.size).to eq(tokens.size) # all unique
+      expect(tokens).to all(match(/\A[0-9a-f\-]{36}\z/)) # UUID format
+    end
+
+    it "sets priority to high for emergency commands" do
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      described_class.call(alert)
+
+      cmd = ActuatorCommand.last
+      expect(cmd.priority).to eq("high")
+    end
+
+    it "sets expires_at to 15 minutes from now" do
+      create(:actuator, :water_valve, gateway: gateway, state: :idle)
+
+      described_class.call(alert)
+
+      cmd = ActuatorCommand.last
+      expect(cmd.expires_at).to be_within(1.minute).of(15.minutes.from_now)
+    end
+  end
+
+  # =========================================================================
+  # MIXED GATEWAY ONLINE/OFFLINE
+  # =========================================================================
+  describe "only uses actuators from online gateways" do
+    let(:alert) { create(:ews_alert, :drought, cluster: cluster, tree: tree) }
+
+    it "ignores actuators from offline gateways" do
+      online_gw = create(:gateway, :online, cluster: cluster)
+      offline_gw = create(:gateway, cluster: cluster, last_seen_at: 3.hours.ago)
+
+      online_actuator = create(:actuator, :water_valve, gateway: online_gw, state: :idle)
+      _offline_actuator = create(:actuator, :water_valve, gateway: offline_gw, state: :idle)
+
+      described_class.call(alert)
+
+      actuator_ids = ActuatorCommand.where(ews_alert: alert).pluck(:actuator_id).uniq
+      expect(actuator_ids).to include(online_actuator.id)
+      expect(actuator_ids).not_to include(_offline_actuator.id)
+    end
+  end
+
   describe "cluster with nil organization" do
     before do
       allow(ActuatorCommandWorker).to receive(:perform_async)

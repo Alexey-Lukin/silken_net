@@ -189,6 +189,115 @@ RSpec.describe TelemetryLog, type: :model do
     end
   end
 
+  # =========================================================================
+  # ORACLE_STATUS ENUM (Proof of Growth Pipeline)
+  # =========================================================================
+  describe "oracle_status enum" do
+    let(:tree) { create(:tree) }
+
+    it "defaults to pending for new records" do
+      log = create(:telemetry_log, tree: tree)
+      expect(log.oracle_status).to eq("pending")
+    end
+
+    it "supports dispatched status" do
+      log = create(:telemetry_log, tree: tree, oracle_status: :dispatched)
+      expect(log).to be_oracle_status_dispatched
+    end
+
+    it "supports fulfilled status" do
+      log = create(:telemetry_log, tree: tree, oracle_status: :fulfilled)
+      expect(log).to be_oracle_status_fulfilled
+    end
+
+    it "supports failed status" do
+      log = create(:telemetry_log, tree: tree, oracle_status: :failed)
+      expect(log).to be_oracle_status_failed
+    end
+
+    it "raises on invalid oracle_status value" do
+      expect {
+        create(:telemetry_log, tree: tree, oracle_status: :invalid_status)
+      }.to raise_error(ArgumentError)
+    end
+  end
+
+  # =========================================================================
+  # ASSOCIATIONS
+  # =========================================================================
+  describe "associations" do
+    it "belongs to tree" do
+      assoc = described_class.reflect_on_association(:tree)
+      expect(assoc.macro).to eq(:belongs_to)
+    end
+
+    it "belongs to gateway (optional, via queen_uid)" do
+      assoc = described_class.reflect_on_association(:gateway)
+      expect(assoc.macro).to eq(:belongs_to)
+      expect(assoc.options[:optional]).to be true
+    end
+
+    it "belongs to bio_contract_firmware (optional)" do
+      assoc = described_class.reflect_on_association(:bio_contract_firmware)
+      expect(assoc.macro).to eq(:belongs_to)
+      expect(assoc.options[:optional]).to be true
+    end
+  end
+
+  # =========================================================================
+  # ADDITIONAL SCOPES
+  # =========================================================================
+  describe ".in_timeframe" do
+    it "filters logs within the given time range" do
+      tree = create(:tree)
+      inside = create(:telemetry_log, tree: tree, created_at: 1.hour.ago)
+      outside = create(:telemetry_log, tree: tree, created_at: 3.days.ago)
+
+      result = described_class.in_timeframe(2.hours.ago, Time.current)
+      expect(result).to include(inside)
+      expect(result).not_to include(outside)
+    end
+  end
+
+  describe ".vandalized" do
+    it "returns only tamper_detected records" do
+      tree = create(:tree)
+      tampered = create(:telemetry_log, :tampered, tree: tree)
+      healthy = create(:telemetry_log, :healthy, tree: tree)
+
+      result = described_class.vandalized
+      expect(result).to include(tampered)
+      expect(result).not_to include(healthy)
+    end
+  end
+
+  # =========================================================================
+  # BIO_STATUS ENUM
+  # =========================================================================
+  describe "bio_status enum" do
+    let(:tree) { create(:tree) }
+
+    it "supports homeostasis status" do
+      log = build(:telemetry_log, tree: tree, bio_status: :homeostasis)
+      expect(log).to be_bio_status_homeostasis
+    end
+
+    it "supports stress status" do
+      log = build(:telemetry_log, tree: tree, bio_status: :stress)
+      expect(log).to be_bio_status_stress
+    end
+
+    it "supports anomaly status" do
+      log = build(:telemetry_log, tree: tree, bio_status: :anomaly)
+      expect(log).to be_bio_status_anomaly
+    end
+
+    it "supports tamper_detected status" do
+      log = build(:telemetry_log, tree: tree, bio_status: :tamper_detected)
+      expect(log).to be_bio_status_tamper_detected
+    end
+  end
+
   describe "no ActiveRecord validations on hot path" do
     it "does not validate presence of sensor fields" do
       log = described_class.new(tree: create(:tree), bio_status: :homeostasis)

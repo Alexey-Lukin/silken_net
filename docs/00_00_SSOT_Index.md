@@ -105,3 +105,4 @@ _Гайди з тестування, трекер плану дій та ауд�
 
 - [10\_01\_View\_Component\_Testing\_Guide](10_01_View_Component_Testing_Guide) (30 Best Practices для Phlex RSpec)
 - [10\_02\_Action\_Plan\_Tracker](10_02_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
+- [10\_03\_Test\_Coverage\_Matrix](10_03_Test_Coverage_Matrix) (Карта покриття тестами: RSpec, Firmware C, Foundry Solidity)

@@ -280,6 +280,94 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
   end
 
   # -----------------------------------------------------------------------
+  # SENTRY CONTEXT TAGGING
+  # -----------------------------------------------------------------------
+  describe "Sentry context" do
+    it "sets gateway_uid tag via Sentry.set_tags" do
+      raw_data = "SENTRY_TEST"
+      encrypted = encrypt_payload(raw_data, key_record.binary_key)
+      encoded = Base64.strict_encode64(encrypted)
+
+      expect(Sentry).to receive(:set_tags).with(gateway_uid: gateway.uid)
+
+      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+    end
+
+    it "sets 'unknown' tag when gateway_uid is nil" do
+      raw_data = "SENTRY_TEST"
+      encrypted = encrypt_payload(raw_data, key_record.binary_key)
+      encoded = Base64.strict_encode64(encrypted)
+
+      expect(Sentry).to receive(:set_tags).with(gateway_uid: "unknown")
+
+      described_class.new.perform(encoded, gateway.ip_address, nil)
+    end
+  end
+
+  # -----------------------------------------------------------------------
+  # BROADCAST_RAW_HEX FORMAT
+  # -----------------------------------------------------------------------
+  describe "broadcast_raw_hex" do
+    it "broadcasts hex payload with space-separated byte pairs" do
+      raw_data = "\xDE\xAD\xBE\xEF"
+      encrypted = encrypt_payload(raw_data, key_record.binary_key)
+      encoded = Base64.strict_encode64(encrypted)
+
+      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      expect(ActionCable.server).to have_received(:broadcast).with(
+        "telemetry_live_stream",
+        hash_including(
+          hex: a_string_matching(/\A[0-9a-f]{2}( [0-9a-f]{2})+\z/),
+          at: a_string_matching(/\d{2}:\d{2}:\d{2}\.\d{3}/)
+        )
+      )
+    end
+  end
+
+  # -----------------------------------------------------------------------
+  # GATEWAY MARK_SEEN! IP UPDATE
+  # -----------------------------------------------------------------------
+  describe "gateway.mark_seen! IP update" do
+    it "updates gateway IP when sender IP differs" do
+      raw_data = "IP_UPDATE_TEST"
+      encrypted = encrypt_payload(raw_data, key_record.binary_key)
+      encoded = Base64.strict_encode64(encrypted)
+
+      described_class.new.perform(encoded, "192.168.50.50", gateway.uid)
+
+      gateway.reload
+      expect(gateway.ip_address).to eq("192.168.50.50")
+    end
+
+    it "updates gateway last_seen_at" do
+      raw_data = "SEEN_TEST"
+      encrypted = encrypt_payload(raw_data, key_record.binary_key)
+      encoded = Base64.strict_encode64(encrypted)
+
+      gateway.update_column(:last_seen_at, 1.day.ago)
+
+      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      gateway.reload
+      expect(gateway.last_seen_at).to be_within(5.seconds).of(Time.current)
+    end
+  end
+
+  # -----------------------------------------------------------------------
+  # SIDEKIQ OPTIONS
+  # -----------------------------------------------------------------------
+  describe "sidekiq configuration" do
+    it "uses uplink queue" do
+      expect(described_class.get_sidekiq_options["queue"]).to eq("uplink")
+    end
+
+    it "retries 3 times" do
+      expect(described_class.get_sidekiq_options["retry"]).to eq(3)
+    end
+  end
+
+  # -----------------------------------------------------------------------
   # S2.4: Prometheus metric COAP_PACKETS_RECEIVED_TOTAL
   # -----------------------------------------------------------------------
   describe "Prometheus metrics (S2.4)" do

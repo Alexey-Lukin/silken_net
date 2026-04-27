@@ -68,5 +68,87 @@ RSpec.describe CoapEncryption do
       result = worker.coap_encrypt(payload, key)
       expect(result.bytesize).to eq(32) # 16 IV + 16 ciphertext
     end
+
+    it "handles 1-byte payload with correct padding" do
+      result = worker.coap_encrypt("X", key)
+      # 1 byte + 15 bytes padding = 16 bytes ciphertext + 16 IV = 32
+      expect(result.bytesize).to eq(32)
+    end
+
+    it "handles 15-byte payload (1 byte short of block)" do
+      result = worker.coap_encrypt("A" * 15, key)
+      # 15 bytes + 1 byte padding = 16 bytes ciphertext + 16 IV = 32
+      expect(result.bytesize).to eq(32)
+    end
+
+    it "handles 17-byte payload (1 byte over block)" do
+      result = worker.coap_encrypt("B" * 17, key)
+      # 17 bytes + 15 bytes padding = 32 bytes ciphertext + 16 IV = 48
+      expect(result.bytesize).to eq(48)
+    end
+
+    it "handles 31-byte payload (1 byte short of 2 blocks)" do
+      result = worker.coap_encrypt("C" * 31, key)
+      # 31 bytes + 1 byte padding = 32 bytes ciphertext + 16 IV = 48
+      expect(result.bytesize).to eq(48)
+    end
+
+    it "handles 32-byte payload (exact 2 blocks)" do
+      result = worker.coap_encrypt("D" * 32, key)
+      # 32 bytes + 0 padding = 32 bytes ciphertext + 16 IV = 48
+      expect(result.bytesize).to eq(48)
+    end
+
+    it "handles 33-byte payload (1 byte over 2 blocks)" do
+      result = worker.coap_encrypt("E" * 33, key)
+      # 33 bytes + 15 padding = 48 bytes ciphertext + 16 IV = 64
+      expect(result.bytesize).to eq(64)
+    end
+
+    it "correctly handles binary payload with null bytes" do
+      binary_payload = "\x00\x01\x02\xFF\xFE\xFD"
+      encrypted = worker.coap_encrypt(binary_payload, key)
+
+      # Decrypt and verify
+      iv = encrypted.byteslice(0, 16)
+      ciphertext = encrypted.byteslice(16..)
+
+      cipher = OpenSSL::Cipher.new("aes-256-cbc")
+      cipher.decrypt
+      cipher.key = key
+      cipher.iv = iv
+      cipher.padding = 0
+
+      decrypted = cipher.update(ciphertext) + cipher.final
+      # Binary payload with null bytes — compare raw bytes (force same encoding)
+      expect(decrypted.byteslice(0, binary_payload.bytesize)).to eq(binary_payload.b)
+    end
+
+    it "pads with only null bytes (firmware-compatible)" do
+      payload = "HELLO"
+      encrypted = worker.coap_encrypt(payload, key)
+
+      iv = encrypted.byteslice(0, 16)
+      ciphertext = encrypted.byteslice(16..)
+
+      cipher = OpenSSL::Cipher.new("aes-256-cbc")
+      cipher.decrypt
+      cipher.key = key
+      cipher.iv = iv
+      cipher.padding = 0
+
+      decrypted = cipher.update(ciphertext) + cipher.final
+      padding = decrypted.byteslice(payload.bytesize..)
+      expect(padding.bytes).to all(eq(0))
+    end
+
+    it "generates different IV for each encryption" do
+      ivs = 10.times.map do
+        encrypted = worker.coap_encrypt("test", key)
+        encrypted.byteslice(0, 16)
+      end
+
+      expect(ivs.uniq.size).to eq(10)
+    end
   end
 end

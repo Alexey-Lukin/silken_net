@@ -72,5 +72,66 @@ RSpec.describe Etherisc::ClaimService do
         described_class.new(insurance).claim!
       }.to raise_error(StandardError, "RPC timeout")
     end
+
+    it "converts nil etherisc_policy_id to 0" do
+      insurance.update_column(:etherisc_policy_id, nil)
+
+      described_class.new(insurance).claim!
+
+      expect(mock_client).to have_received(:transact).with(
+        mock_contract, "triggerClaim", 0,
+        sender_key: mock_key, legacy: false
+      )
+    end
+
+    it "converts non-numeric policy_id to 0" do
+      insurance.update_column(:etherisc_policy_id, "abc")
+
+      described_class.new(insurance).claim!
+
+      expect(mock_client).to have_received(:transact).with(
+        mock_contract, "triggerClaim", 0,
+        sender_key: mock_key, legacy: false
+      )
+    end
+
+    it "returns a string tx_hash" do
+      result = described_class.new(insurance).claim!
+      expect(result).to be_a(String)
+      expect(result).to start_with("0x")
+    end
+
+    it "raises KeyError when ORACLE_PRIVATE_KEY is not set" do
+      allow(ENV).to receive(:fetch).with("ORACLE_PRIVATE_KEY").and_raise(KeyError, "key not found: \"ORACLE_PRIVATE_KEY\"")
+
+      expect {
+        described_class.new(insurance).claim!
+      }.to raise_error(KeyError)
+    end
+
+    it "raises KeyError when ETHERISC_DIP_CONTRACT_ADDRESS is not set" do
+      allow(ENV).to receive(:fetch).with("ETHERISC_DIP_CONTRACT_ADDRESS").and_raise(KeyError, "key not found: \"ETHERISC_DIP_CONTRACT_ADDRESS\"")
+
+      expect {
+        described_class.new(insurance).claim!
+      }.to raise_error(KeyError)
+    end
+  end
+
+  describe "ETHERISC_CLAIM_ABI" do
+    it "is valid JSON" do
+      abi = JSON.parse(described_class::ETHERISC_CLAIM_ABI)
+      expect(abi).to be_an(Array)
+      expect(abi.first["name"]).to eq("triggerClaim")
+    end
+
+    it "has correct function signature" do
+      abi = JSON.parse(described_class::ETHERISC_CLAIM_ABI)
+      func = abi.first
+      expect(func["type"]).to eq("function")
+      expect(func["stateMutability"]).to eq("nonpayable")
+      expect(func["inputs"].size).to eq(1)
+      expect(func["inputs"].first["type"]).to eq("uint256")
+    end
   end
 end

@@ -137,5 +137,108 @@ RSpec.describe Chainlink::OracleDispatchService do
         service.dispatch!
       }.to raise_error(described_class::DispatchError, /Chainlink on-chain dispatch failed/)
     end
+
+    it "raises DispatchError when WEB3_STRICT_MODE is true and credentials missing" do
+      stub_const("ENV", ENV.to_h.merge(
+        "WEB3_STRICT_MODE" => "true"
+      ).except("CHAINLINK_FUNCTIONS_ROUTER", "CHAINLINK_SUBSCRIPTION_ID"))
+
+      service = described_class.new(telemetry_log_local)
+
+      expect {
+        service.dispatch!
+      }.to raise_error(described_class::DispatchError, /WEB3_STRICT_MODE/)
+    end
+
+    it "uses stub mode when WEB3_STRICT_MODE is not true" do
+      stub_const("ENV", ENV.to_h.merge(
+        "WEB3_STRICT_MODE" => "false"
+      ).except("CHAINLINK_FUNCTIONS_ROUTER", "CHAINLINK_SUBSCRIPTION_ID"))
+
+      service = described_class.new(telemetry_log_local)
+      request_id = service.dispatch!
+
+      expect(request_id).to start_with("chainlink-req-")
+    end
+
+    it "raises DispatchError when CHAINLINK_DON_ID is missing in on-chain mode" do
+      stub_const("ENV", ENV.to_h.merge(
+        "CHAINLINK_FUNCTIONS_ROUTER" => "0x1234567890abcdef1234567890abcdef12345678",
+        "CHAINLINK_SUBSCRIPTION_ID" => "42",
+        "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
+        "ORACLE_PRIVATE_KEY" => "a" * 64
+      ).except("CHAINLINK_DON_ID"))
+
+      service = described_class.new(telemetry_log_local)
+
+      mock_client = double("Eth::Client")
+      mock_key = double("Eth::Key")
+      mock_contract = double("Eth::Contract")
+
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+      allow(Eth::Key).to receive(:new).and_return(mock_key)
+      allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
+
+      expect {
+        service.dispatch!
+      }.to raise_error(described_class::DispatchError, /CHAINLINK_DON_ID/)
+    end
+
+    it "builds payload with nil z_value without crashing" do
+      telemetry_log_local.update_column(:z_value, nil)
+      telemetry_log_local.reload
+      service = described_class.new(telemetry_log_local)
+
+      payload = service.send(:build_chainlink_payload)
+      expect(payload[:lorenz_state][:z_value]).to eq(0.0)
+    end
+
+    it "builds payload with nil peaq_did" do
+      tree_local.update_column(:peaq_did, nil)
+      tree_local.reload
+      service = described_class.new(telemetry_log_local)
+
+      payload = service.send(:build_chainlink_payload)
+      expect(payload[:peaq_did]).to be_nil
+    end
+
+    it "builds payload with nil zk_proof_ref" do
+      telemetry_log_local.update_column(:zk_proof_ref, nil)
+      telemetry_log_local.reload
+      service = described_class.new(telemetry_log_local)
+
+      payload = service.send(:build_chainlink_payload)
+      expect(payload[:zk_proof_ref]).to be_nil
+    end
+
+    it "includes created_at in ISO8601 format for partition pruning" do
+      service = described_class.new(telemetry_log_local)
+      payload = service.send(:build_chainlink_payload)
+
+      expect(payload[:created_at]).to match(/\d{4}-\d{2}-\d{2}T/)
+    end
+  end
+
+  describe "functions_router_abi" do
+    it "returns valid JSON ABI structure" do
+      service = described_class.new(telemetry_log)
+      abi_json = service.send(:functions_router_abi)
+
+      abi = JSON.parse(abi_json)
+      expect(abi).to be_an(Array)
+      expect(abi.first["name"]).to eq("sendRequest")
+      expect(abi.first["type"]).to eq("function")
+      expect(abi.first["inputs"].size).to eq(5)
+    end
+
+    it "includes all required Chainlink Functions Router v1 parameters" do
+      service = described_class.new(telemetry_log)
+      abi = JSON.parse(service.send(:functions_router_abi))
+
+      input_names = abi.first["inputs"].map { |i| i["name"] }
+      expect(input_names).to contain_exactly(
+        "subscriptionId", "data", "dataVersion", "callbackGasLimit", "donId"
+      )
+    end
   end
 end

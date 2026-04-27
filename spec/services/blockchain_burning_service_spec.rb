@@ -300,6 +300,102 @@ RSpec.describe BlockchainBurningService do
     end
   end
 
+  # =========================================================================
+  # ORACLE_SLASHER_PRIVATE_KEY FALLBACK (E.2 Role Separation)
+  # =========================================================================
+  describe "key selection (E.2 Role Separation)" do
+    let(:tree_burn) { create(:tree, cluster: cluster) }
+    let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }
+
+    before do
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
+    end
+
+    it "uses ORACLE_SLASHER_PRIVATE_KEY when available" do
+      ENV["ORACLE_SLASHER_PRIVATE_KEY"] = "0x#{'b' * 64}"
+
+      described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
+
+      expect(Eth::Key).to have_received(:new).with(priv: "0x#{'b' * 64}")
+    ensure
+      ENV.delete("ORACLE_SLASHER_PRIVATE_KEY")
+    end
+
+    it "falls back to ORACLE_PRIVATE_KEY when slasher key is missing" do
+      ENV.delete("ORACLE_SLASHER_PRIVATE_KEY")
+
+      described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
+
+      expect(Eth::Key).to have_received(:new).with(priv: "0x#{'a' * 64}")
+    end
+  end
+
+  # =========================================================================
+  # PROMETHEUS METRICS (SCC_SLASHED_TOTAL)
+  # =========================================================================
+  describe "Prometheus metric (SCC_SLASHED_TOTAL)" do
+    let(:tree_burn) { create(:tree, cluster: cluster) }
+    let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }
+
+    it "increments SCC_SLASHED_TOTAL after successful slash" do
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 500, status: :confirmed)
+      allow(mock_client).to receive(:transact).and_return("0x" + "f" * 64)
+
+      metric = SilkenNet::Metrics::SCC_SLASHED_TOTAL
+      before_val = metric.get
+
+      described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
+
+      expect(metric.get).to be > before_val
+    end
+  end
+
+  # =========================================================================
+  # DAMAGE RATIO WITH AiInsight + SOURCE_TREE COMBINED
+  # =========================================================================
+  describe "damage_ratio with AiInsight and source_tree" do
+    let!(:tree1) { create(:tree, cluster: cluster) }
+    let!(:tree2) { create(:tree, cluster: cluster) }
+
+    before do
+      tree1.wallet.blockchain_transactions.create!(
+        amount: 1000, token_type: :carbon_coin, status: :confirmed,
+        to_address: organization.crypto_public_address, tx_hash: "0x#{'a' * 64}")
+      tree2.wallet.blockchain_transactions.create!(
+        amount: 1000, token_type: :carbon_coin, status: :confirmed,
+        to_address: organization.crypto_public_address, tx_hash: "0x#{'b' * 64}")
+    end
+
+    it "prefers AiInsight ratio over source_tree ratio" do
+      # AiInsight says 2/2 trees critical = 100% damage
+      create(:ai_insight, analyzable: tree1, insight_type: :daily_health_summary,
+             target_date: cluster.local_yesterday, stress_index: 1.0)
+      create(:ai_insight, analyzable: tree2, insight_type: :daily_health_summary,
+             target_date: cluster.local_yesterday, stress_index: 1.0)
+
+      described_class.call(organization.id, naas_contract.id, source_tree: tree1)
+
+      expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
+        # 100% of 2000 = 2000 tokens
+        expected_wei = (2000.0 * (10**18)).to_i
+        expect(amount_in_wei).to eq(expected_wei)
+      end
+    end
+
+    it "caps damage_ratio at 1.0 maximum" do
+      # Even with many critical trees, ratio can't exceed 1.0
+      create(:ai_insight, analyzable: tree1, insight_type: :daily_health_summary,
+             target_date: cluster.local_yesterday, stress_index: 1.0)
+      create(:ai_insight, analyzable: tree2, insight_type: :daily_health_summary,
+             target_date: cluster.local_yesterday, stress_index: 1.0)
+
+      # All trees critical → ratio = 2/2 = 1.0 (capped)
+      described_class.call(organization.id, naas_contract.id)
+
+      expect(mock_client).to have_received(:transact)
+    end
+  end
+
   describe "nil tx_hash from transact" do
     let(:tree_burn) { create(:tree, cluster: cluster) }
     let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }

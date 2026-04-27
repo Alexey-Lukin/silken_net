@@ -135,12 +135,15 @@ class MintingRollbackService < ApplicationService
     solana_url = ENV.fetch("SOLANA_RPC_URL", nil)
     return :unknown unless solana_url
 
-    response = Web3::HttpClient.post(solana_url, {
-      jsonrpc: "2.0", id: 1, method: "getTransaction",
-      params: [ tx.tx_hash, { encoding: "json", commitment: "confirmed" } ]
-    })
+    response = Web3::HttpClient.post(solana_url,
+      body: {
+        jsonrpc: "2.0", id: 1, method: "getTransaction",
+        params: [ tx.tx_hash, { encoding: "json", commitment: "confirmed" } ]
+      },
+      service_name: "Solana"
+    )
 
-    result = response&.dig("result")
+    result = response.parsed_body&.dig("result")
     return :pending if result.nil?
 
     if result.dig("meta", "err").nil?

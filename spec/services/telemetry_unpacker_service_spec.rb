@@ -359,6 +359,247 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         data = [ 0, 4200, 22, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
         expect(service.send(:valid_sensor_data?, data)).to be true
       end
+
+      it "accepts voltage at lower boundary (0 mV)" do
+        service = described_class.new("", nil)
+        data = [ 0, 0, 22, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
+        expect(service.send(:valid_sensor_data?, data)).to be true
+      end
+
+      it "accepts voltage at upper boundary (5000 mV)" do
+        service = described_class.new("", nil)
+        data = [ 0, 5000, 22, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
+        expect(service.send(:valid_sensor_data?, data)).to be true
+      end
+
+      it "rejects voltage just above upper boundary (5001 mV)" do
+        service = described_class.new("", nil)
+        data = [ 0, 5001, 22, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
+        expect(service.send(:valid_sensor_data?, data)).to be false
+      end
+
+      it "accepts temperature at lower boundary (-45°C)" do
+        service = described_class.new("", nil)
+        data = [ 0, 3500, -45, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
+        expect(service.send(:valid_sensor_data?, data)).to be true
+      end
+
+      it "accepts temperature at upper boundary (90°C)" do
+        service = described_class.new("", nil)
+        data = [ 0, 3500, 90, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
+        expect(service.send(:valid_sensor_data?, data)).to be true
+      end
+
+      it "rejects temperature just above upper boundary (91°C)" do
+        service = described_class.new("", nil)
+        data = [ 0, 3500, 91, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
+        expect(service.send(:valid_sensor_data?, data)).to be false
+      end
+
+      it "rejects temperature just below lower boundary (-46°C)" do
+        service = described_class.new("", nil)
+        data = [ 0, 3500, -46, 5, 120, 0, 5, "\x00\x00\x00\x00" ]
+        expect(service.send(:valid_sensor_data?, data)).to be false
+      end
+    end
+
+    describe "check_z_divergence!" do
+      let!(:tree_family) { create(:tree_family) }
+      let!(:tree_with_family) do
+        t = create(:tree, did: format("SNET-%08X", "0000AC01".to_i(16)), cluster: cluster, tree_family: tree_family)
+        t.create_device_calibration! if t.device_calibration.nil?
+        t
+      end
+
+      it "skips when tree_family is nil" do
+        tree_no_family = create(:tree, did: format("SNET-%08X", "0000AC02".to_i(16)), cluster: cluster, tree_family: tree_family)
+        # Simulate nil tree_family by stubbing the association
+        allow(tree_no_family).to receive(:tree_family).and_return(nil)
+        service = described_class.new("", nil)
+        attributes = { z_value: 50.0, bio_status: :homeostasis }
+
+        # Should not raise or log — silently skips
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        service.send(:check_z_divergence!, tree_no_family, attributes)
+      end
+
+      it "skips when server_z is nil" do
+        service = described_class.new("", nil)
+        attributes = { z_value: nil, bio_status: :homeostasis }
+
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        service.send(:check_z_divergence!, tree_with_family, attributes)
+      end
+
+      it "skips when device_bio_status is nil" do
+        service = described_class.new("", nil)
+        attributes = { z_value: 25.0, bio_status: nil }
+
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        service.send(:check_z_divergence!, tree_with_family, attributes)
+      end
+
+      it "increments fraud metric when device says homeostasis but server Z is unhealthy" do
+        service = described_class.new("", nil)
+        allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(false)
+        attributes = { z_value: 50.0, bio_status: :homeostasis }
+
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        service.send(:check_z_divergence!, tree_with_family, attributes)
+      end
+
+      it "does not flag when both device and server agree on healthy" do
+        service = described_class.new("", nil)
+        allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(true)
+        attributes = { z_value: 25.0, bio_status: :homeostasis }
+
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        service.send(:check_z_divergence!, tree_with_family, attributes)
+      end
+
+      it "does not flag when both device and server agree on unhealthy" do
+        service = described_class.new("", nil)
+        allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(false)
+        attributes = { z_value: 50.0, bio_status: :stress }
+
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        service.send(:check_z_divergence!, tree_with_family, attributes)
+      end
+    end
+
+    describe "update_health_streak!" do
+      it "increments health_streak when log is healthy" do
+        tree.update_column(:health_streak, 5)
+        tree.reload
+        log = create(:telemetry_log, tree: tree, bio_status: :homeostasis)
+        allow(log).to receive(:healthy?).and_return(true)
+
+        service = described_class.new("", nil)
+        service.send(:update_health_streak!, tree, log)
+
+        expect(tree.reload.health_streak).to eq(6)
+      end
+
+      it "resets health_streak to 0 when log is unhealthy" do
+        tree.update_column(:health_streak, 10)
+        tree.reload
+        log = create(:telemetry_log, tree: tree, bio_status: :stress)
+        allow(log).to receive(:healthy?).and_return(false)
+
+        service = described_class.new("", nil)
+        service.send(:update_health_streak!, tree, log)
+
+        expect(tree.reload.health_streak).to eq(0)
+      end
+
+      it "syncs in-memory tree state after SQL update" do
+        tree.update_column(:health_streak, 3)
+        tree.reload
+        log = create(:telemetry_log, tree: tree, bio_status: :homeostasis)
+        allow(log).to receive(:healthy?).and_return(true)
+
+        service = described_class.new("", nil)
+        service.send(:update_health_streak!, tree, log)
+
+        # Verify in-memory state was updated (without reload)
+        expect(tree.health_streak).to eq(4)
+      end
+    end
+
+    describe "acoustic_events overflow warning" do
+      it "logs warning when acoustic_events is 255 (saturated)" do
+        chunk = build_chunk(did_hex, -70, 3500, 25, 255, 100, 0, 3)
+
+        allow(Rails.logger).to receive(:warn).and_call_original
+        expect(Rails.logger).to receive(:warn).with(/Acoustic Overflow/).once
+
+        described_class.call(chunk)
+      end
+
+      it "does not log warning for acoustic_events below 255" do
+        chunk = build_chunk(did_hex, -70, 3500, 25, 254, 100, 0, 3)
+
+        allow(Rails.logger).to receive(:warn).and_call_original
+        expect(Rails.logger).not_to receive(:warn).with(/Acoustic Overflow/)
+
+        described_class.call(chunk)
+      end
+    end
+
+    describe "multiple chunks in batch" do
+      let(:did_hex2) { "0000ABCE" }
+      let(:extracted_did2) { format("SNET-%08X", did_hex2.to_i(16)) }
+      let!(:tree2) do
+        t = create(:tree, did: extracted_did2)
+        t.create_device_calibration! if t.device_calibration.nil?
+        t
+      end
+
+      it "processes multiple valid chunks in a single batch" do
+        chunk1 = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+        chunk2 = build_chunk(did_hex2, -80, 4000, 20, 3, 150, 0, 3)
+        batch = chunk1 + chunk2
+
+        expect { described_class.call(batch) }.to change(TelemetryLog, :count).by(2)
+      end
+
+      it "skips invalid chunks while processing valid ones" do
+        valid_chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+        invalid_chunk = build_chunk("FFFFFFFF", -70, 3500, 25, 5, 100, 0, 3) # unknown DID
+        batch = valid_chunk + invalid_chunk
+
+        expect { described_class.call(batch) }.to change(TelemetryLog, :count).by(1)
+      end
+    end
+
+    describe "RSSI inversion" do
+      it "correctly inverts RSSI from unsigned to negative" do
+        # RSSI -70 → stored as 70 (unsigned) in packet → read back as -70
+        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+        described_class.call(chunk)
+        log = TelemetryLog.last
+        expect(log.rssi).to eq(-70)
+      end
+
+      it "correctly handles RSSI -128 (worst signal)" do
+        chunk = build_chunk(did_hex, -128, 3500, 25, 5, 100, 0, 3)
+
+        described_class.call(chunk)
+        log = TelemetryLog.last
+        expect(log.rssi).to eq(-128)
+      end
+    end
+
+    describe "growth_points extraction from status_byte" do
+      it "extracts growth_points from lower 6 bits" do
+        # status_byte = 0b00_101010 = 42 → bio_status=homeostasis(0), growth_points=42
+        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 42, 3)
+
+        described_class.call(chunk)
+        log = TelemetryLog.last
+        expect(log.growth_points).to eq(42)
+        expect(log.bio_status).to eq("homeostasis")
+      end
+
+      it "extracts max growth_points (63) correctly" do
+        # status_byte = 0b00_111111 = 63
+        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 63, 3)
+
+        described_class.call(chunk)
+        log = TelemetryLog.last
+        expect(log.growth_points).to eq(63)
+      end
+
+      it "extracts both status and growth_points from combined byte" do
+        # status_byte = 0b01_001010 = 74 → bio_status=stress(1), growth_points=10
+        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 74, 3)
+
+        described_class.call(chunk)
+        log = TelemetryLog.last
+        expect(log.growth_points).to eq(10)
+        expect(log.bio_status).to eq("stress")
+      end
     end
   end
 end
