@@ -255,6 +255,11 @@ RSpec.describe MintingRollbackService do
     let!(:telemetry_log) { create(:telemetry_log, :verified_telemetry, tree: tree) }
     let(:solana_address) { "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM" }
 
+    # Helper: wraps a Hash into Web3::HttpClient::Response (as real HttpClient.post returns)
+    def solana_response(hash)
+      Web3::HttpClient::Response.new(JSON.generate(hash))
+    end
+
     it "checks Solana RPC for transaction status when network is solana" do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
@@ -263,7 +268,7 @@ RSpec.describe MintingRollbackService do
 
       # Mock Solana getTransaction response — confirmed (no error)
       allow(Web3::HttpClient).to receive(:post).and_return(
-        { "result" => { "meta" => { "err" => nil }, "slot" => 12345 } }
+        solana_response("result" => { "meta" => { "err" => nil }, "slot" => 12345 })
       )
 
       described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
@@ -279,7 +284,7 @@ RSpec.describe MintingRollbackService do
                   blockchain_network: "solana", to_address: solana_address)
 
       allow(Web3::HttpClient).to receive(:post).and_return(
-        { "result" => nil }
+        solana_response("result" => nil)
       )
 
       described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
@@ -295,7 +300,7 @@ RSpec.describe MintingRollbackService do
                   blockchain_network: "solana", to_address: solana_address)
 
       allow(Web3::HttpClient).to receive(:post).and_return(
-        { "result" => { "meta" => { "err" => { "InstructionError" => [ 0, "Custom" ] } } } }
+        solana_response("result" => { "meta" => { "err" => { "InstructionError" => [ 0, "Custom" ] } } })
       )
 
       described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
