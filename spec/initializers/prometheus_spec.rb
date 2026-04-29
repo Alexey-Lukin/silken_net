@@ -176,4 +176,39 @@ RSpec.describe SilkenNet::Metrics do
       expect(described_class::LORENZ_COMPUTATION_DURATION).to be_a(Prometheus::Client::Histogram)
     end
   end
+
+  # -----------------------------------------------------------------------
+  # FW.22 / S2.3: Acoustic overflow and RPC circuit breaker metrics
+  # -----------------------------------------------------------------------
+
+  describe "FW.22 / S2.3 — acoustic overflow and circuit breaker metrics" do
+    it "registers telemetry_acoustic_overflow_total counter" do
+      metric = described_class::REGISTRY.get(:silkennet_telemetry_acoustic_overflow_total)
+      expect(metric).to be_a(Prometheus::Client::Counter)
+    end
+
+    it "increments telemetry_acoustic_overflow_total counter" do
+      metric = described_class::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL
+      before_val = metric.get
+
+      metric.increment
+
+      expect(metric.get).to eq(before_val + 1.0)
+    end
+
+    it "registers rpc_circuit_breaker_open gauge with provider label" do
+      metric = described_class::REGISTRY.get(:silkennet_rpc_circuit_breaker_open)
+      expect(metric).to be_a(Prometheus::Client::Gauge)
+    end
+
+    it "sets rpc_circuit_breaker_open gauge for a provider" do
+      metric = described_class::RPC_CIRCUIT_BREAKER_OPEN
+
+      metric.set(1.0, labels: { provider: "alchemy.example.com:443" })
+      expect(metric.get(labels: { provider: "alchemy.example.com:443" })).to eq(1.0)
+
+      metric.set(0.0, labels: { provider: "alchemy.example.com:443" })
+      expect(metric.get(labels: { provider: "alchemy.example.com:443" })).to eq(0.0)
+    end
+  end
 end

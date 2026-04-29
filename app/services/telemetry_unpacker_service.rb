@@ -126,6 +126,8 @@ class TelemetryUnpackerService < ApplicationService
         "⚠️ [Acoustic Overflow] DID #{hex_did}: acoustic_events=255 (saturated). " \
         "Real count may exceed 255 — firmware uint8 payload limit reached."
       )
+      # [S2.3]: Prometheus counter for Grafana alerting on acoustic overflow
+      SilkenNet::Metrics::TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL.increment
     end
 
     # 4. МАТЕМАТИКА АТРАКТОРА (The Chaos Engine)

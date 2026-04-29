@@ -116,6 +116,8 @@ module Web3
         # Cooldown минув — закриваємо circuit breaker (half-open → test)
         @failure_counts[url] = 0
         @circuit_opened_at.delete(url)
+        # [S2.2]: Скидаємо gauge при переході з open → half-open після cooldown
+        set_circuit_breaker_gauge(mask_url(url), 0.0)
         true
       else
         false
@@ -131,9 +133,14 @@ module Web3
         @failure_counts[url] += 1
         masked = mask_url(url)
 
+        # [S2.2]: Інкрементуємо Prometheus RPC_ERRORS_TOTAL для Grafana alerting
+        increment_rpc_error_metric(masked, error)
+
         if @failure_counts[url] >= MAX_FAILURES && !@circuit_opened_at.key?(url)
           @circuit_opened_at[url] = Time.current
           Rails.logger.warn "🔌 [RPC] Circuit breaker OPEN для #{masked}: #{error.class} — #{error.message}"
+          # [S2.2]: Оновлюємо gauge circuit breaker стану
+          set_circuit_breaker_gauge(masked, 1.0)
         else
           Rails.logger.warn "🔌 [RPC] Збій #{masked} (#{@failure_counts[url]}/#{MAX_FAILURES}): #{error.class}"
         end
@@ -145,8 +152,17 @@ module Web3
 
     def record_success(url)
       @mutex.synchronize do
+        was_open = circuit_open?(url)
         @failure_counts[url] = 0
         @circuit_opened_at.delete(url)
+
+        # [S2.2]: Скидаємо gauge при відновленні провайдера
+        # Цей шлях активується коли ВСІ circuit breakers відкриті і
+        # available_urls fallback (рядок 103) повертає всі URL без cooldown-скидання.
+        if was_open
+          masked = mask_url(url)
+          set_circuit_breaker_gauge(masked, 0.0)
+        end
       end
     end
 
@@ -166,6 +182,37 @@ module Web3
       "#{uri.host}:#{uri.port}"
     rescue URI::InvalidURIError
       url.first(30)
+    end
+
+    # [S2.2]: Prometheus RPC error counter — labeled by provider and error type
+    def increment_rpc_error_metric(provider, error)
+      error_type = classify_error(error)
+      SilkenNet::Metrics::RPC_ERRORS_TOTAL.increment(
+        labels: { network: provider, error_type: error_type }
+      )
+    rescue StandardError
+      # Metrics must never break the hot path
+    end
+
+    # [S2.2]: Prometheus circuit breaker gauge update
+    def set_circuit_breaker_gauge(provider, value)
+      SilkenNet::Metrics::RPC_CIRCUIT_BREAKER_OPEN.set(
+        value, labels: { provider: provider }
+      )
+    rescue StandardError
+      # Metrics must never break the hot path
+    end
+
+    def classify_error(error)
+      case error
+      when Net::ReadTimeout, Net::OpenTimeout then "timeout"
+      when Errno::ECONNREFUSED, Errno::ECONNRESET then "connection_refused"
+      when Errno::EHOSTUNREACH then "host_unreachable"
+      when SocketError then "dns_error"
+      when IOError then "io_error"
+      else
+        rate_limited?(error) ? "rate_limited" : "unknown"
+      end
     end
   end
 end

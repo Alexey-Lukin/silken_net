@@ -205,6 +205,24 @@ module SilkenNet
       docstring: "Total Streamr broadcast failures (P2P real-time telemetry delivery)"
     )
 
+    # [FW.22 / S2.3]: Acoustic events overflow counter.
+    # Firmware saturates acoustic_events at uint8 max (255).
+    # Value 255 indicates real count may be higher — sensor data loss.
+    # Enables Grafana alerting on acoustic overflow events.
+    TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL = REGISTRY.counter(
+      :silkennet_telemetry_acoustic_overflow_total,
+      docstring: "Total telemetry packets with acoustic_events=255 (uint8 saturation)"
+    )
+
+    # [S2.2]: Web3 RPC circuit breaker state gauge.
+    # Tracks which RPC providers are currently in circuit-open (disabled) state.
+    # 1.0 = circuit open (provider disabled), 0.0 = circuit closed (provider healthy).
+    RPC_CIRCUIT_BREAKER_OPEN = REGISTRY.gauge(
+      :silkennet_rpc_circuit_breaker_open,
+      docstring: "Whether RPC provider circuit breaker is open (1=open/disabled, 0=closed/healthy)",
+      labels: [ :provider ]
+    )
+
     # [ENTROPY MONITOR]: Shannon entropy of Z-value distribution per cluster.
     # Healthy forest: ≈ 0.75-0.95 (diverse Z-values). Pre-stress: < 0.65.
     # Updated by ClusterEntropyAnalyzerWorker (queue: alerts, hourly).

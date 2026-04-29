@@ -18,7 +18,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — бібліотеки встановлені, 22 кастомні метрики реалізовані та інструментовані (12 counters + 8 gauges + 2 histograms), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (BLOCKERs 1-3 вирішені); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
+- **Поточний TRL:** TRL 6 — бібліотеки встановлені, 25 кастомних метрик реалізовані та інструментовані (13 counters + 10 gauges + 2 histograms), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (BLOCKERs 1-3 вирішені); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
 - **Пов'язані модулі:**
   - Розгортання → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
@@ -358,7 +358,7 @@ end
     summary: "Передстресовий сигнал: кластер {{ $labels.cluster_id }} — ентропія {{ $value }}"
 ```
 
-**Підсумок реєстру: 23 кастомні метрики (12 counters + 9 gauges + 2 histograms).**
+**Підсумок реєстру: 23 кастомні метрики (12 counters + 9 gauges + 2 histograms) до Sprint S2.2/FW.22.**
 
 ### 2.7 Governance Parameter Sync Observability
 
@@ -373,6 +373,34 @@ end
 | **Failure Alerts** | Sentry + Sidekiq retry exhaustion | 3 retries, unique_for 24h |
 
 > **Перспектива:** Коли обсяг governance-операцій зростатиме, можна додати dedicated counter `silkennet_governance_params_synced_total` з label `status` (synced/skipped/error) та histogram `silkennet_governance_sync_duration_seconds`.
+
+### 2.8 Circuit Breaker та Acoustic Overflow метрики (S2.2/S2.3/FW.22)
+
+2 нові метрики для покращення observability circuit breaker'а та acoustic overflow:
+
+| Metric Name | Тип | Файл | Labels | Бізнес-значення |
+|-------------|-----|------|--------|-----------------|
+| `silkennet_telemetry_acoustic_overflow_total` | Counter | `TelemetryUnpackerService` | — | Лічильник пакетів з `acoustic_events=255` (uint8 saturation). Для Grafana alerting: `rate() > 0` = firmware data loss |
+| `silkennet_rpc_circuit_breaker_open` | Gauge | `Web3::ResilientClient` | `provider` | Стан circuit breaker: 1.0 = open (провайдер виключений), 0.0 = closed (здоровий). Для дашборду S2.2 |
+
+Додатково: `silkennet_rpc_errors_total` тепер інструментовано безпосередньо в `Web3::ResilientClient#record_failure` з класифікацією error_type (timeout, connection_refused, host_unreachable, dns_error, io_error, rate_limited, unknown).
+
+**Grafana Alert Rules (операційні задачі):**
+```yaml
+- alert: AcousticOverflow
+  expr: rate(silkennet_telemetry_acoustic_overflow_total[5m]) > 0
+  for: 5m
+  annotations:
+    summary: "Acoustic sensor data loss: firmware uint8 saturation detected"
+
+- alert: RpcCircuitBreakerOpen
+  expr: silkennet_rpc_circuit_breaker_open == 1
+  for: 2m
+  annotations:
+    summary: "RPC provider {{ $labels.provider }} circuit breaker open"
+```
+
+**Підсумок реєстру: 25 кастомних метрик (13 counters + 10 gauges + 2 histograms).**
 
 ---
 
