@@ -1089,4 +1089,75 @@ end
       end
     end
   end
+
+  describe "Kredis lock behavior (S6.5)" do
+    it "acquires Kredis lock with 120 second timeout for minting" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100,
+        token_type: :carbon_coin,
+        status: :pending,
+        to_address: wallet.crypto_public_address,
+        locked_points: 1000
+      )
+
+      expect(Kredis).to receive(:lock).with(
+        anything,
+        expires_in: 120.seconds,
+        after_timeout: :raise
+      ).and_yield
+
+      described_class.call(tx.id)
+    end
+
+    it "raises when lock cannot be acquired (concurrent minting prevention)" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100,
+        token_type: :carbon_coin,
+        status: :pending,
+        to_address: wallet.crypto_public_address,
+        locked_points: 1000
+      )
+
+      # Simulate lock timeout (another process holds the lock)
+      allow(Kredis).to receive(:lock).and_raise(Kredis::LockError, "Lock timeout")
+
+      expect { described_class.call(tx.id) }.to raise_error(Kredis::LockError)
+    end
+
+    it "releases lock even when RPC call fails (no lock leak)" do
+      allow(mock_client).to receive(:transact).and_raise(StandardError, "Slow RPC timeout")
+
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+
+      tx = wallet.blockchain_transactions.create!(
+        amount: 100,
+        token_type: :carbon_coin,
+        status: :pending,
+        to_address: wallet.crypto_public_address,
+        locked_points: 1000
+      )
+
+      lock_released = false
+      allow(Kredis).to receive(:lock) do |*, **, &block|
+        block.call
+        lock_released = true
+      rescue StandardError
+        lock_released = true
+        raise
+      end
+
+      expect { described_class.call(tx.id) }.to raise_error(StandardError, "Slow RPC timeout")
+      expect(lock_released).to be true
+    end
+  end
 end

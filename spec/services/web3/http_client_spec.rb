@@ -8,12 +8,16 @@ RSpec.describe Web3::HttpClient do
 
   before do
     Web3::HttpClient.reset! # rubocop:disable RSpec/DescribedClass
+    Web3::HttpClient.reset_circuit_breakers! # rubocop:disable RSpec/DescribedClass
     allow(HTTPX).to receive(:plugin).with(:persistent).and_return(mock_session)
     allow(mock_session).to receive(:with).and_return(configured_session)
     allow(mock_session).to receive(:close)
   end
 
-  after { Web3::HttpClient.reset! } # rubocop:disable RSpec/DescribedClass
+  after do
+    Web3::HttpClient.reset! # rubocop:disable RSpec/DescribedClass
+    Web3::HttpClient.reset_circuit_breakers! # rubocop:disable RSpec/DescribedClass
+  end
 
   describe ".post" do
     it "sends a POST request with JSON body and returns Response" do
@@ -164,6 +168,137 @@ RSpec.describe Web3::HttpClient do
       described_class.post("https://api.example.com/first", body: { a: 1 })
       described_class.get("https://api.example.com/second")
       described_class.post("https://api.example.com/third", body: { b: 2 })
+    end
+  end
+
+  describe "circuit breaker (S6.4)" do
+    let(:timeout_error) { HTTPX::TimeoutError.new(nil, "execution expired") }
+    let(:error_response) { instance_double(HTTPX::ErrorResponse, error: timeout_error) }
+
+    before do
+      allow(error_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(true)
+    end
+
+    def make_failing_post(service_name: "Filecoin")
+      described_class.post("https://api.example.com/data",
+        body: { key: "value" },
+        service_name: service_name
+      )
+    rescue Web3::HttpClient::RequestError
+      # expected
+    end
+
+    def make_successful_post(service_name: "Filecoin")
+      response_body = instance_double(HTTPX::Response::Body, to_s: '{"ok": true}')
+      success_response = instance_double(HTTPX::Response, status: 200, body: response_body)
+      allow(success_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(false)
+      allow(configured_session).to receive(:post).and_return(success_response)
+
+      described_class.post("https://api.example.com/data",
+        body: { key: "value" },
+        service_name: service_name
+      )
+    end
+
+    it "opens circuit after MAX_FAILURES consecutive failures" do
+      allow(configured_session).to receive(:post).and_return(error_response)
+
+      Web3::HttpClient::MAX_FAILURES.times { make_failing_post }
+
+      expect {
+        make_failing_post
+      }.to raise_error(Web3::HttpClient::CircuitOpenError, /circuit breaker is open/)
+    end
+
+    it "resets failure count on success" do
+      allow(configured_session).to receive(:post).and_return(error_response)
+      2.times { make_failing_post }
+
+      make_successful_post
+
+      status = Web3::HttpClient.circuit_status("Filecoin") # rubocop:disable RSpec/DescribedClass
+      expect(status[:failures]).to eq(0)
+      expect(status[:circuit_open]).to be false
+    end
+
+    it "does not affect other services" do
+      allow(configured_session).to receive(:post).and_return(error_response)
+
+      Web3::HttpClient::MAX_FAILURES.times { make_failing_post(service_name: "Streamr") }
+
+      # Filecoin should still work
+      expect {
+        make_successful_post(service_name: "Filecoin")
+      }.not_to raise_error
+    end
+
+    it "reopens circuit after CIRCUIT_OPEN_DURATION" do
+      allow(configured_session).to receive(:post).and_return(error_response)
+
+      Web3::HttpClient::MAX_FAILURES.times { make_failing_post }
+
+      # Simulate time passing beyond circuit open duration
+      allow(Time).to receive(:current).and_return(Time.current + Web3::HttpClient::CIRCUIT_OPEN_DURATION + 1)
+
+      status = Web3::HttpClient.circuit_status("Filecoin") # rubocop:disable RSpec/DescribedClass
+      expect(status[:available]).to be true
+    end
+
+    it "is case-insensitive for service names" do
+      allow(configured_session).to receive(:post).and_return(error_response)
+
+      Web3::HttpClient::MAX_FAILURES.times { make_failing_post(service_name: "FILECOIN") }
+
+      expect {
+        described_class.post("https://api.example.com/data",
+          body: { key: "value" },
+          service_name: "filecoin"
+        )
+      }.to raise_error(Web3::HttpClient::CircuitOpenError)
+    end
+
+    it "reports circuit status via circuit_status" do
+      status = Web3::HttpClient.circuit_status("Filecoin") # rubocop:disable RSpec/DescribedClass
+      expect(status).to include(
+        service: "Filecoin",
+        failures: 0,
+        circuit_open: false,
+        available: true
+      )
+    end
+
+    it "blocks GET requests when circuit is open" do
+      allow(configured_session).to receive(:post).and_return(error_response)
+
+      Web3::HttpClient::MAX_FAILURES.times { make_failing_post(service_name: "TheGraph") }
+
+      expect {
+        described_class.get("https://api.example.com/query", service_name: "TheGraph")
+      }.to raise_error(Web3::HttpClient::CircuitOpenError)
+    end
+  end
+
+  describe ".reset_circuit_breakers!" do
+    it "clears all circuit breaker state" do
+      timeout_error = HTTPX::TimeoutError.new(nil, "expired")
+      error_response = instance_double(HTTPX::ErrorResponse, error: timeout_error)
+      allow(error_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(true)
+      allow(configured_session).to receive(:post).and_return(error_response)
+
+      Web3::HttpClient::MAX_FAILURES.times do
+        described_class.post("https://api.example.com/data",
+          body: { key: "value" },
+          service_name: "Streamr"
+        )
+      rescue Web3::HttpClient::RequestError
+        # expected
+      end
+
+      described_class.reset_circuit_breakers!
+
+      status = Web3::HttpClient.circuit_status("Streamr") # rubocop:disable RSpec/DescribedClass
+      expect(status[:failures]).to eq(0)
+      expect(status[:available]).to be true
     end
   end
 
