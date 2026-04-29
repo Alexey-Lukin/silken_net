@@ -1127,9 +1127,9 @@ end
       )
 
       # Simulate lock timeout (another process holds the lock)
-      allow(Kredis).to receive(:lock).and_raise(Kredis::LockError, "Lock timeout")
+      allow(Kredis).to receive(:lock).and_raise(Kredis::LockTimeout, "Lock timeout")
 
-      expect { described_class.call(tx.id) }.to raise_error(Kredis::LockError)
+      expect { described_class.call(tx.id) }.to raise_error(Kredis::LockTimeout)
     end
 
     it "releases lock even when RPC call fails (no lock leak)" do
