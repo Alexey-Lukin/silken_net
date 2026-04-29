@@ -33,6 +33,7 @@ app/views/layouts/dashboard_layout.rb → spec/views/layouts/dashboard_layout_sp
 Хелпер працює для 95% випадків. Перевизначай тільки коли:
 - Компонент приймає блок (DataTable)
 - Потрібна кастомна логіка рендерингу (layout wrapping)
+- Layout-компоненти (`DashboardLayout`, `AuthLayout`) потребують `content:` параметр
 - Сигнатура `initialize` конфліктує з `**kwargs`
 
 ### 5. `let(:component_class)` — видалити (deprecated)

@@ -14,7 +14,7 @@ module Api
       # --- ПОРТАЛ ВХОДУ ---
       def new
         respond_to do |format|
-          format.html { render Sessions::New.new }
+          format.html { render_auth_page(title: "Login Portal", component: Sessions::New.new) }
         end
       end
 
@@ -113,7 +113,11 @@ module Api
         respond_to do |format|
           format.json { render json: { error: "Невірні координати доступу." }, status: :unauthorized }
           format.html do
-            render Sessions::New.new(flash_alert: "Access Denied: Invalid Credentials."), status: :unauthorized
+            render_auth_page(
+              title: "Login Portal",
+              component: Sessions::New.new(flash_alert: "Access Denied: Invalid Credentials."),
+              status: :unauthorized
+            )
           end
         end
       end

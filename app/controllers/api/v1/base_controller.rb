@@ -73,15 +73,23 @@ module Api
       # 3. PHLEX INTEGRATION (The Visual Oracle)
       # Метод для рендерингу Phlex-компонентів всередині нашого DashboardLayout.
       # Використовується, коли контролер відповідає на .html запит.
+      # Content component передається як параметр — НЕ через блок,
+      # оскільки блок виконується в контексті контролера (Ruby closure),
+      # і `render` всередині блоку викликає контролерний render (DoubleRenderError).
       def render_dashboard(title:, component:)
         render DashboardLayout.new(
           title: title,
           current_user: current_user,
           current_path: request.path,
-          ews_alert_count: ews_alert_count_cached
-        ) do
-          render component
-        end
+          ews_alert_count: ews_alert_count_cached,
+          content: component
+        )
+      end
+
+      # Метод для рендерингу standalone auth-сторінок (login, forgot/reset password).
+      # Забезпечує повний HTML-документ з CSS/JS includes без sidebar/DashboardLayout.
+      def render_auth_page(title: "Access Portal", component:, status: :ok)
+        render AuthLayout.new(title: title, content: component), status: status
       end
 
       # 4. СТАНДАРТИ ВІДПОВІДЕЙ (The Oracle's Voice)

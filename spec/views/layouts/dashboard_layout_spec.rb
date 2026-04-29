@@ -2,19 +2,12 @@
 
 require "rails_helper"
 
-# DashboardLayout uses ActionView helpers (csp_meta_tag, csrf_meta_tags,
-# stylesheet_link_tag, javascript_importmap_tags) not included in Phlex by default.
-# Also, as a layout component, view_template(&block) uses yield — we patch to provide
-# an empty content block so specs don't raise LocalJumpError.
+# DashboardLayout includes Phlex::Rails::Layout which provides real Rails view helpers.
+# However, stylesheet_link_tag and javascript_importmap_tags require compiled assets
+# (Propshaft/Tailwind) that are not available in the test environment.
+# We stub only the asset-resolving helpers to avoid Propshaft::MissingAssetError.
 unless DashboardLayout.instance_variable_get(:@test_patched)
   DashboardLayout.prepend(Module.new do
-    def view_template(&block)
-      block ||= proc { }
-      super(&block)
-    end
-
-    def csp_meta_tag(**_opts) = ""
-    def csrf_meta_tags = ""
     def stylesheet_link_tag(*_args, **_opts) = ""
     def javascript_importmap_tags(*_args, **_opts) = ""
   end)
@@ -34,21 +27,31 @@ RSpec.describe DashboardLayout do
     u
   end
 
+  # Minimal content component for testing layout rendering.
+  let(:content_stub) do
+    Class.new(ApplicationComponent) do
+      def view_template
+        div(id: "test-content") { "Layout Content Rendered" }
+      end
+    end.new
+  end
+  let(:html) { render_layout(content: content_stub) }
+
   def render_layout(title: "Dashboard", current_path: "/api/v1/dashboard",
-                    ews_alert_count: 0, user: nil)
+                    ews_alert_count: 0, user: nil, content: nil)
     current_user = user || mock_user
     ApplicationController.renderer.render(
       component_class.new(
         title: title,
         current_user: current_user,
         current_path: current_path,
-        ews_alert_count: ews_alert_count
+        ews_alert_count: ews_alert_count,
+        content: content
       ),
       layout: false
     )
   end
 
-  let(:html) { render_layout }
 
   describe "page title in head" do
     it "renders the title with Silken Net prefix" do
@@ -134,14 +137,29 @@ RSpec.describe DashboardLayout do
     end
   end
 
+  describe "content rendering" do
+    it "renders the content component inside the main area" do
+      expect(html).to include("Layout Content Rendered")
+    end
+
+    it "renders content inside test-content div" do
+      expect(html).to include("test-content")
+    end
+
+    it "renders without errors when content is nil" do
+      html = render_layout(content: nil)
+      expect(html).to include("Citadel")
+    end
+  end
+
   describe "ews_alert_count" do
     it "renders without errors when ews_alert_count is 0" do
-      html = render_layout(ews_alert_count: 0)
+      html = render_layout(ews_alert_count: 0, content: content_stub)
       expect(html).to include("Citadel")
     end
 
     it "renders without errors when ews_alert_count is positive" do
-      html = render_layout(ews_alert_count: 7)
+      html = render_layout(ews_alert_count: 7, content: content_stub)
       expect(html).to include("Citadel")
     end
   end
