@@ -222,7 +222,9 @@ module Web3
       end
     end
 
-    # [S6.4]: Initialize thread-safe circuit breaker state
+    # [S6.4]: Circuit breaker state — shared across all threads (protected by @mutex).
+    # @failure_counts tracks consecutive failures per service_name (downcased).
+    # @circuit_opened_at records when circuit was opened for cooldown timing.
     @mutex = Mutex.new
     @failure_counts = Hash.new(0)
     @circuit_opened_at = {}
