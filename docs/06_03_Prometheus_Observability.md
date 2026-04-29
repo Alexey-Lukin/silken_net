@@ -358,9 +358,23 @@ end
     summary: "Передстресовий сигнал: кластер {{ $labels.cluster_id }} — ентропія {{ $value }}"
 ```
 
-**Підсумок реєстру: 23 кастомні метрики (12 counters + 9 gauges + 2 histograms).**
+**Підсумок реєстру: 23 кастомні метрики (12 counters + 9 gauges + 2 histograms) до Sprint S2.2/FW.22.**
 
-### 2.7.1 Circuit Breaker та Acoustic Overflow метрики (S2.2/S2.3/FW.22)
+### 2.7 Governance Parameter Sync Observability
+
+`Governance::ParameterSyncWorker` (queue: `web3_low`, cron: 03:30 UTC щоденно) моніторинг:
+
+| Аспект | Механізм | Деталі |
+|--------|----------|--------|
+| **Sidekiq Queue** | `silkennet_sidekiq_queue_size{queue="web3_low"}` | Gauge, вже покрито `refresh_sidekiq_gauges` |
+| **Sidekiq Latency** | `silkennet_sidekiq_queue_latency_seconds{queue="web3_low"}` | Gauge, вже покрито |
+| **RPC Errors** | `silkennet_rpc_errors_total{network="polygon"}` | Counter, через `ApplicationWeb3Worker` |
+| **Sync Logging** | `Rails.logger.info` | `synced: N, skipped: M` per run (structured JSON в production) |
+| **Failure Alerts** | Sentry + Sidekiq retry exhaustion | 3 retries, unique_for 24h |
+
+> **Перспектива:** Коли обсяг governance-операцій зростатиме, можна додати dedicated counter `silkennet_governance_params_synced_total` з label `status` (synced/skipped/error) та histogram `silkennet_governance_sync_duration_seconds`.
+
+### 2.8 Circuit Breaker та Acoustic Overflow метрики (S2.2/S2.3/FW.22)
 
 2 нові метрики для покращення observability circuit breaker'а та acoustic overflow:
 
@@ -387,20 +401,6 @@ end
 ```
 
 **Підсумок реєстру: 25 кастомних метрик (13 counters + 10 gauges + 2 histograms).**
-
-### 2.7 Governance Parameter Sync Observability
-
-`Governance::ParameterSyncWorker` (queue: `web3_low`, cron: 03:30 UTC щоденно) моніторинг:
-
-| Аспект | Механізм | Деталі |
-|--------|----------|--------|
-| **Sidekiq Queue** | `silkennet_sidekiq_queue_size{queue="web3_low"}` | Gauge, вже покрито `refresh_sidekiq_gauges` |
-| **Sidekiq Latency** | `silkennet_sidekiq_queue_latency_seconds{queue="web3_low"}` | Gauge, вже покрито |
-| **RPC Errors** | `silkennet_rpc_errors_total{network="polygon"}` | Counter, через `ApplicationWeb3Worker` |
-| **Sync Logging** | `Rails.logger.info` | `synced: N, skipped: M` per run (structured JSON в production) |
-| **Failure Alerts** | Sentry + Sidekiq retry exhaustion | 3 retries, unique_for 24h |
-
-> **Перспектива:** Коли обсяг governance-операцій зростатиме, можна додати dedicated counter `silkennet_governance_params_synced_total` з label `status` (synced/skipped/error) та histogram `silkennet_governance_sync_duration_seconds`.
 
 ---
 
