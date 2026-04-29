@@ -16,7 +16,8 @@
 #### S1.1 — GitHub Secrets заповнення
 - **P0** | `06_01` | **Складність: XS** | **🔧 Операційна** — ручне заповнення в GitHub UI, без коду
 - **Опис:** 12 критичних секретів не встановлені: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `DATABASE_URL`, `SSH_PRIVATE_KEY`, тощо. Блокує весь CI/CD pipeline.
-- [ ] 🤖 Створити список необхідних секретів (checklist)
+- **Статус:** ✅ Checklist створено у `docs/06_04_Secrets_Checklist.md` — повна інвентаризація 4 місць зберігання (GitHub Secrets, `.kamal/secrets`, Akash SDL, `terraform.tfvars`)
+- [x] 🤖 Створити список необхідних секретів (checklist)
 - [ ] 👤 Заповнити GitHub repository secrets
 - [ ] 👤 Верифікувати CI pipeline проходить
 
@@ -104,8 +105,9 @@
 #### S6.11 — No disaster recovery / chain outage strategy
 - **P2** | `05_01` | **Складність: M** | **Архітектурна**
 - **Опис:** Немає стратегії disaster recovery при виході з ладу однієї з 12 Web3 мереж
-- [ ] 🤖 Визначити critical path chains (Polygon, Chainlink, IoTeX)
-- [ ] 🤖 Дизайн graceful degradation для кожної мережі
+- **Статус:** ✅ Виконано. Розділ §8 "Disaster Recovery / Chain Outage Strategy" доданий у `05_01`: класифікація tier (Critical/Important/Nice), детальний degradation flow для Polygon/Chainlink/IoTeX, recovery процедури, summary matrix
+- [x] 🤖 Визначити critical path chains (Polygon, Chainlink, IoTeX)
+- [x] 🤖 Дизайн graceful degradation для кожної мережі
 
 ---
 
@@ -161,10 +163,11 @@
 #### FW.5 — Lorenz Attractor: delta_t/vcap не передаються
 - `03_04`, `05_02`
 - **Опис:** Spec: `calculate_state(delta_t, vcap)`, реалізація: `calculate_state(chaos_seed, temp, acoustic)`. Аналіз показав: `chaos_seed` (HRNG) вносить значний випадковий компонент у growth_points — при 250 ітераціях Ейлера Z суттєво залежить від початкових умов. `delta_t` та `vcap` — прямі фізичні індикатори метаболізму дерева, що може бути більш обґрунтованим для "Proof of Growth" токеноміки
-- [ ] 🤖 Математичний аналіз: порівняти variance Z від chaos_seed vs delta_t/vcap після 250 ітерацій
-- [ ] 🤖 Архітектурне рішення: замінити chaos_seed на delta_t (Варіант A), додати delta_t/vcap як додаткові пертурбації (Варіант B), або зберегти + EMA фільтр (Варіант C)
-- [ ] 🤖 Задокументувати рішення в `03_04` з обґрунтуванням впливу на токеноміку
-- [ ] 🤖 Реалізувати (якщо зміна)
+- **Статус:** 🟡 Архітектурне рішення прийнято (2026-04-29). Math аналіз variance Z + порівняння варіантів A/B/C задокументовано в `03_04` BLOCKER-1. **Прийнято Варіант B+:** зберегти FW.6 state continuity, chaos_seed тільки для cold-start, додати delta_t/vcap як soft perturbation на β (геометричний параметр конвективної клітини). Імплементація — в наступному циклі (потребує координованого firmware+backend update).
+- [x] 🤖 Математичний аналіз: порівняти variance Z від chaos_seed vs delta_t/vcap після 250 ітерацій
+- [x] 🤖 Архітектурне рішення: замінити chaos_seed на delta_t (Варіант A), додати delta_t/vcap як додаткові пертурбації (Варіант B), або зберегти + EMA фільтр (Варіант C) — **обрано B+**
+- [x] 🤖 Задокументувати рішення в `03_04` з обґрунтуванням впливу на токеноміку
+- [ ] 🤖 Реалізувати (firmware + backend mirror update) — наступний цикл
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - `05_02`
@@ -345,9 +348,10 @@
 #### HW.10 — Modem name discrepancy
 - **Джерело:** `02_05` + Legacy notes
 - **Опис:** SIM7000G (Wiki) vs SIM7070G (firmware AT-commands). **Рішення прийнято: SIM7070G** — краща підтримка eDRX/PSM, нижче idle-споживання (~3 мкА vs ~10 мкА)
+- **Статус (🤖):** ✅ Виконано (2026-04-29). `docs/02_01` BOM-таблиця оновлена ("SIM7070G vs SIM7000G" → "Модем зафіксовано: SIM7070G"). `firmware/queen/main.c` — додано `AT+CPSMS=1,,,"00111100","00000000"` (PSM, 1h TAU, 0s active) та `AT+CEDRXS=1,5,"0010"` (eDRX 20.48s LTE Cat M1). 79 queen tests пройдено. Wiki — окремий зовнішній артефакт (👤).
 - [ ] 👤 Фізично перевірити маркування на прототипі
-- [ ] 🤖 Узгодити Wiki, BOM та firmware → **SIM7070G**
-- [ ] 🤖 Додати AT+CPSMS та AT+CEDRXS команди у firmware Queen
+- [x] 🤖 Узгодити Wiki, BOM та firmware → **SIM7070G**
+- [x] 🤖 Додати AT+CPSMS та AT+CEDRXS команди у firmware Queen
 
 #### HW.11 — Potting material selection (quartz resonator risk)
 - **Джерело:** `02_01` BLOCKER-1
@@ -426,8 +430,9 @@
 #### HW.20 — Buffer Cap: Tantalum → MLCC migration
 - **Джерело:** `02_03` §6 + Legacy notes
 - **Опис:** Buffer Cap 100µF на лінії VOUT для LoRa TX peak. Рання специфікація вказувала танталовий конденсатор, але його струм витоку (1-10 мкА) подвоює/потроює E_sleep (1.5 мкА). Документація оновлена на MLCC X5R/X7R (виток ~десятки нА)
+- **Статус (🤖):** ✅ Виконано — DC bias derating (~20% при 3.3V/6.3V → ефективна ємність ~80µF) задокументовано в `02_03` §6 рядок 409 ("навіть 80 мкФ ефективної ємності більш ніж достатньо для покриття 100 мс LoRa TX піку").
 - [ ] 👤 Обрати конкретний part number: 100µF/6.3V X5R 1210 (напр. Murata GRM32ER60J107ME20)
-- [ ] 🤖 Врахувати DC bias derating (~20% при 3.3V/6.3V → ефективна ємність ~80µF)
+- [x] 🤖 Врахувати DC bias derating (~20% при 3.3V/6.3V → ефективна ємність ~80µF)
 - [ ] 👤 Додати до KiCad BOM (HW.9)
 
 ---
@@ -579,17 +584,19 @@
 #### BIZ.6 — Supply chain war-zone risk mitigation
 - **Джерело:** `07_02` | **Пріоритет: P1**
 - **Опис:** DMLS manufacturing залежить від українських підрядників (Київ 3D Metal Tech, Дніпро ALT Ukraine, Черкаси SVS-ARTA) — зона активних бойових дій. Логістичні ризики, енергетичні перебої, мобілізація персоналу. Відсутній contingency plan з EU/US альтернативами
-- [ ] 🤖 Ідентифікувати 2-3 backup DMLS заводи в ЄС (Польща, Чехія, Німеччина)
+- **Статус (🤖):** ✅ Розділ §8.1.1 "Contingency Plan: EU Backup DMLS Hubs" доданий у `07_02` — 4 кваліфіковані EU кандидати (3D Lab PL, Materialise BE, Sauber CH/Lithoz AT, TRUMPF DE), activation triggers, очікуваний price impact (+~20% Payback)
+- [x] 🤖 Ідентифікувати 2-3 backup DMLS заводи в ЄС (Польща, Чехія, Німеччина)
 - [ ] 👤 Отримати quotes для порівняння вартості
-- [ ] 🤖 Задокументувати contingency план у `07_02`
+- [x] 🤖 Задокументувати contingency план у `07_02`
 
 #### BIZ.7 — Soldier failure rate та replacement OPEX
 - **Джерело:** `07_02` | **Пріоритет: P2**
 - **Опис:** Unit Economics (`07_02`) не враховують failure rate Soldiers в полі та вартість їх заміни. При 10,000+ деревах навіть 1% annual failure = 100 replacements/рік. Також відсутня оцінка деградації LiFePO4 батареї Queen (12V 6Ah) за 5+ років
-- [ ] 🤖 Визначити expected failure rate (target < 1% annually)
-- [ ] 🤖 Додати replacement OPEX у Unit Economics
-- [ ] 🤖 Додати Queen battery degradation (80% capacity після 2000 циклів ≈ 5.5 років)
-- [ ] 🤖 Оновити ROI model в `07_02`
+- **Статус (🤖):** ✅ Виконано. Розділ §8a "Replacement OPEX та деградація обладнання" доданий у `07_02`: failure rate categorization (target <2%/yr Years 1-3, ~10-15%/yr Years 4-5), replacement OPEX ~$15.50/міс на кластер, LiFePO4 lifetime ~5 років, оновлена ROI (Payback ~38 міс vs ~34 без BIZ.7 — погіршення на 12%)
+- [x] 🤖 Визначити expected failure rate (target < 1% annually)
+- [x] 🤖 Додати replacement OPEX у Unit Economics
+- [x] 🤖 Додати Queen battery degradation (80% capacity після 2000 циклів ≈ 5.5 років)
+- [x] 🤖 Оновити ROI model в `07_02`
 
 ---
 

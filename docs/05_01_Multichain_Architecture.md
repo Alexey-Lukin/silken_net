@@ -630,3 +630,120 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 | 12 | Ethereum L1 | Finality | `EthereumAnchorWorker` | `web3_low` | 3 | `0 3 * * 1` |
 | 13 | Cross-chain | Treasury | `TreasuryMonitorWorker` | `web3_low` | 3 | `*/15 * * * *` |
 | 14 | Polygon | Gas Optimization | `MintBatchCollectorWorker` | `web3` | 3 | `*/5 * * * *` |
+
+---
+
+## 🚨 8. Disaster Recovery / Chain Outage Strategy (S6.11)
+
+> **Принцип:** SilkenNet залежить від 12 незалежних мереж — імовірність того, що **жодна** з них не матиме outage за рік близька до нуля. Ця секція визначає, як система деградує grace при відмові кожної мережі, яким мережам категорично не можна "впасти" без zero-downtime fallback, та які інженерні відповіді закладені в Rails backend / контракти.
+
+### 8.1. Класифікація мереж за критичністю
+
+| Tier | Критерій | Мережі |
+|---|---|---|
+| **🔴 Critical Path** | Якщо мережа `down` — Proof of Growth pipeline зупиняється, нові SCC не мінтяться, користувачі не отримують винагороду | **Polygon, Chainlink, IoTeX** |
+| **🟠 Important** | Outage блокує конкретний use case (винагороди, KYC), але core economics працює | **Solana, Hadron, peaq** |
+| **🟢 Nice-to-have** | Outage не впливає на користувацький досвід; дані зберігаються в backend та відправляються після відновлення | **Streamr, Filecoin, The Graph, Celo, KlimaDAO, Ethereum L1** |
+
+### 8.2. Critical Path: Polygon
+
+**Роль:** Primary EVM — SCC/SFC мінтинг, slashing, governance, parameter registry, ProtocolParameters.
+
+**Причини outage:** RPC overload (Alchemy/Infura down), Polygon validator stop, MATIC gas spike, contract pause (адмін multisig).
+
+**Поточні захисти:**
+- `Web3::ResilientClient` з MAX_FAILURES=3, CIRCUIT_OPEN_DURATION=60s, fallback cascade Primary→Secondary→Public RPC.
+- Sidekiq retry з exponential backoff (5 retries для `web3_critical`).
+- `BlockchainTransaction` AASM має стан `manual_review` коли tx_hash отримано але стан невідомий — кошти заблоковано до ручної звірки (no double-spend).
+- `MintBatchCollectorWorker` агрегує до 100 мінтів у `batchMint` — якщо один payload poisoned, Binary Search isolation дозволяє відрахувати решту валідних.
+
+**Graceful degradation при Polygon down:**
+
+1. **`web3_critical` queue depth growing** → trigger Grafana alert.
+2. **TelemetryLog продовжує збиратись** з `oracle_status: pending` — нічого не втрачається, бо телеметрія партиціонована та зберігається в Postgres.
+3. **`MintCarbonCoinWorker`** retry до 5 разів; на 6+ потрапляє у DeadSet — **операційна задача для адміна**: перезапустити після відновлення RPC.
+4. **Альтернативний RPC**: уже передбачено через `Web3::RpcConnectionPool#fallback_env_keys`. Production checklist: завжди мати **3 незалежні Polygon RPC** (Alchemy + Infura + Ankr/QuickNode/Public).
+5. **Багатогодинний outage (>4h):** ручний switch на Polygon Mumbai/Amoy testnet з replay у production після відновлення (потребує адміністративного рішення; **НЕ автоматично**, бо економіка тестнету ≠ mainnet).
+
+**Boundary case — Polygon hard fork / chain split:**
+- Призупинити `MintCarbonCoinWorker` (Sidekiq pause) — **операційна процедура**.
+- Дочекатись ясності: yкий fork буде canonical (community+exchanges).
+- Replay queue після стабілізації; перевірити, що contract addresses не змінились.
+
+### 8.3. Critical Path: Chainlink (Functions / DON)
+
+**Роль:** Oracle dispatch trigger — без Chainlink callback `MintCarbonCoinWorker` не виконується (guard clause `oracle_status_fulfilled?`).
+
+**Причини outage:** DON node majority offline, Functions Router upgrade, subscription зашпілений.
+
+**Поточні захисти:**
+- `ChainlinkDispatchWorker` retry 5 з backoff на `web3_critical`.
+- Subscription balance моніториться через `TreasuryMonitorWorker` (`*/15 * * * *`).
+- `oracle_callbacks` ендпоінт публічний — будь-який Chainlink node з валідним HMAC може викликати; не залежить від конкретного node-id.
+
+**Graceful degradation при Chainlink down:**
+
+1. **`web3_critical` queue зростає** — Grafana alert.
+2. **TelemetryLog accumulate з `oracle_status: dispatched`** — і `E.42` гарантує: **cleanup job НЕ видаляє dispatched records**, callbacks гарантовано приймуться після відновлення.
+3. **Manual oracle bypass** (тільки super_admin): існує `OracleManualFulfillmentService` (якщо немає — запланувати) для ручного просування `dispatched → fulfilled`. **Юридично:** використовувати ТІЛЬКИ при доведеному multi-day Chainlink outage та з реліз-тегом для аудиту.
+4. **Альтернативний Oracle Provider:** UMA (Optimistic Oracle), Pyth, RedStone — **архітектурний задаток**, не реалізовано. Дизайн потребує redundancy шляху в `Chainlink::OracleDispatchService` (ARCH-todo).
+
+### 8.4. Critical Path: IoTeX W3bstream
+
+**Роль:** ZK-proof verification — перший gate у guard clause (`verified_by_iotex?`).
+
+**Причини outage:** W3bstream node down, prover overload, API key revoked.
+
+**Поточні захисти:**
+- `IotexVerificationWorker` + `Web3CircuitBreaker` (queue: `web3_critical`, retry 5).
+- `verified_by_iotex` зберігається в TelemetryLog — після відновлення verification вмикається без перебудови pipeline.
+
+**Graceful degradation при IoTeX down:**
+
+1. **TelemetryLog `verified_by_iotex: false`** залишається unverified.
+2. **MintCarbonCoinWorker НЕ запускає мінт** (guard clause failure) — це **бажана поведінка**: краще нульова емісія, ніж unverified мінтинг.
+3. **Multi-day outage policy:** для збереження user trust розглянути **temporary reduced minting** через альтернативну верифікацію (наприклад, server-side attestation + Forester Guild Proof-of-Physical-Work, E.20). Реалізація — post-TRL 7.
+
+### 8.5. Important Tier: Solana, Hadron, peaq
+
+| Мережа | Outage Impact | Graceful Degradation |
+|---|---|---|
+| **Solana** | USDC мікро-винагороди не нараховуються | `SolanaMicroRewardWorker` retry 3 → DeadSet. Користувацький досвід зберігається — winnings накопичуються в Polygon SCC, USDC друкується retroactively через `Solana::CatchupWorker` (запланувати) |
+| **Hadron (KYC)** | Нові KYC submissions не верифікуються | `wallet.hadron_kyc_status: pending` → mint blocked для нового користувача, але існуючі approved wallets не зачеплено. Hot-fix: `WEB3_STRICT_MODE=false` (тимчасово, з аудиторським логом) для unblock в emergency |
+| **peaq** | Нові provisioning DID не реєструються | `PeaqRegistrationWorker` retry 5; нові Soldiers/Queens отримують локальний DID `did:peaq:0x...` (deterministic SHA256(uid+created_at)), реєстрація push-up при відновленні |
+
+### 8.6. Nice-to-have Tier (Streamr, Filecoin, The Graph, Celo, Klima, L1)
+
+Outage цих мереж **не блокує** core flow:
+- **Streamr** — broadcast retry на `low` queue; підписники downstream втратять live feed, але дані зберігаються в Postgres.
+- **Filecoin/IPFS** — IPFS pinning через Pinata fallback; outage означає затримку довготривалого архіву на дні.
+- **The Graph** — read-only; UI показує `cached_data` або `stale` indicator.
+- **Celo** — community rewards (cUSD) затримуються; `CeloRewardWorker` retry 3.
+- **KlimaDAO** — ESG retirement затримується; non-blocking для основного pipeline.
+- **Ethereum L1 anchoring** — щотижневий, толерантний до 3-5 днів затримки; `EthereumAnchorWorker` cron `0 3 * * 1` спрацює наступного тижня.
+
+### 8.7. Cross-cutting Recommendations
+
+1. **Treasury per-chain** з 30-day operational gas reserve. `TreasuryMonitorWorker` (`*/15 * * * *`) тригерить alert при < 7-day reserve.
+2. **Per-chain RPC redundancy:** мінімум **3 RPC providers** для кожного `Web3::ResilientClient` (Primary/Secondary/Public).
+3. **Status page** (Grafana Cloud public dashboard або Statuspage.io) — публічний індикатор для community + B2B клієнтів. Автоматично оновлюється з `silkennet_rpc_circuit_breaker_open` метрики.
+4. **Chaos Engineering** (E.27): post-TRL 7 — періодично симулювати chain outage в canopy (`SOLANA_RPC_URL=invalid`), фіксувати behaviour, тримати runbook актуальним.
+5. **Runbook per chain:** для кожної з 12 мереж задокументовано: detection signal, Grafana alert, immediate action (≤15 min), escalation (>1h), recovery procedure. **Ця частина — операційна (адмін)**, не код.
+
+### 8.8. Summary Matrix
+
+| Мережа | Tier | Single Point of Failure? | Auto-recovery? | Manual escalation |
+|---|---|---|---|---|
+| Polygon | 🔴 Critical | Mitigated by `Web3::ResilientClient` cascade | Yes (RPC fallback + Sidekiq retry) | Multi-day outage → admin investigation |
+| Chainlink | 🔴 Critical | Yes (single Oracle provider) | Partial (DON-internal redundancy) | Multi-day → manual fulfillment OR alt Oracle (UMA/Pyth) |
+| IoTeX | 🔴 Critical | Yes | Sidekiq retry | Multi-day → temporary minting freeze |
+| Solana | 🟠 Important | RPC fallback potencial | Yes | Catchup worker after restore |
+| Hadron | 🟠 Important | Yes | No | Strict-mode override (emergency) |
+| peaq | 🟠 Important | No (local DID generation) | Yes | — |
+| Streamr | 🟢 Nice | No | Yes | — |
+| Filecoin | 🟢 Nice | Pinata fallback | Yes | — |
+| The Graph | 🟢 Nice | No (read-only) | Yes | — |
+| Celo | 🟢 Nice | RPC fallback | Yes | — |
+| KlimaDAO | 🟢 Nice | No | Yes | — |
+| Ethereum L1 | �� Nice | No | Yes (cron retry) | — |
+
