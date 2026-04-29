@@ -157,6 +157,8 @@ module Web3
         @circuit_opened_at.delete(url)
 
         # [S2.2]: Скидаємо gauge при відновленні провайдера
+        # Цей шлях активується коли ВСІ circuit breakers відкриті і
+        # available_urls fallback (рядок 103) повертає всі URL без cooldown-скидання.
         if was_open
           masked = mask_url(url)
           set_circuit_breaker_gauge(masked, 0.0)
