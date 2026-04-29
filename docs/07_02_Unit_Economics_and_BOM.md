@@ -215,10 +215,38 @@ Month 34:   +$72   (чиста ліквідність для DAO та власн
 2. **Дніпро (ALT Ukraine):** Власне виробництво принтерів Alfa-280 та лабораторія матеріалознавства. Резервний хаб.
 3. **Черкаси (SVS-ARTA / Місцеві PCBA):** SMD-пайка (роботом), заливка компаундом Sylgard 184, фінальна збірка (**«Marriage»**) плат із титановими анкерами та PEEK-радомами.
 
+### 8.1.1. Contingency Plan: EU Backup DMLS Hubs (BIZ.6)
+
+> **Ризик:** усі три первинні підрядники розташовані в Україні — зоні активних бойових дій. Логістичні ризики (блокування коридорів), енергетичні перебої (rolling blackouts впливають на DMLS-цикл — переривання друку = bad part), мобілізація персоналу. Без EU/US альтернатив проєкт уразливий до single-region collapse.
+
+**Стратегічний принцип:** мати у backlog щонайменше **2 кваліфіковані EU-альтернативи** з підтвердженою здатністю друкувати Ti-6Al-4V Grade 23 (ELI), TPMS-гіроїди ≥60% пористості, ISO 13485 (медичні імпланти).
+
+| Кандидат | Регіон | Технологія / Машина | Сертифікати | Статус |
+|---|---|---|---|---|
+| **3D Lab (Варшава, PL)** | EU-East | EOS M290, TruPrint 3000 | ISO 13485, AS9100 | 🔴 Не контактовано — **отримати quote** |
+| **Materialise NV (Льовен, BE)** | EU-West | EOS M290, GE Concept Laser M2 | ISO 13485, FDA-registered | 🔴 Не контактовано — глобальний бренд, висока вартість, eta 8-12 тиж |
+| **Sauber Technologies (Хінвіль, CH)** / **Lithoz GmbH (Відень, AT)** | EU-Central | EOS M400, SLM Solutions NXG | ISO 13485 | 🔴 Не контактовано — швейцарська якість, премія ~30% над UA |
+| **TRUMPF Additive (Дітцинген, DE)** | EU-Central | TruPrint 3000 (in-house demo) | ISO 9001 | 🔴 Власні принтери — only buy or contract production |
+
+**Очікуваний ціновий impact:** EU DMLS вартість анкера ~$30–$50 (vs $15–$30 в UA) — Unit Economics залишається життєздатним при ціні SCC ≥ $0.30/SCC (див. §7.2 Sensitivity Analysis), термін окупності зростає на ~20%.
+
+**Activation triggers:**
+- Якщо UA-підрядник не може гарантувати поставку >4 тижнів поспіль → activate Tier-1 EU backup (3D Lab PL).
+- Якщо логістичний коридор UA→EU перерізаний (блокада/знищення інфраструктури) → 100% production у EU.
+- Якщо потрібно ISO 13485 audit для медичного класу (тригер сертифікації NaaS) → Materialise або Sauber від початку.
+
+**Дії (👤 операційні):**
+- [ ] Отримати quotes від 2-3 EU підрядників (мінімальна партія 100 шт)
+- [ ] Підписати NDA та framework agreement з Tier-1 кандидатом (без зобов'язання обсягу)
+- [ ] Передати nTop CAD + factory spec (HW.1, HW.2) кожному підряднику для валідації feasibility
+- [ ] Замовити пробну партію 10 шт у Tier-1 EU підрядника для quality benchmarking vs UA
+
 ### 8.2. Логістика
 
 ```
-DMLS-завод (Київ / Дніпро)
+DMLS-завод (Київ / Дніпро) [Primary]
+                 OR
+DMLS-завод (Варшава / Льовен) [EU Backup, BIZ.6]
   │  Анкери (партія)
   ▼
 PCBA + Збірка (Черкаси — SVS-ARTA)
@@ -231,6 +259,73 @@ PCBA + Збірка (Черкаси — SVS-ARTA)
 ```
 
 ---
+
+## 🔧 8a. Replacement OPEX та деградація обладнання (BIZ.7)
+
+> **Принцип:** Unit Economics §6 показує OPEX зв'язку та амортизацію Queen, але **не враховує польовий failure rate Soldiers** (вандалізм, falling branches, EBFC-collapse) та **деградацію LiFePO4 Queen** з часом. Ця секція додає realistic life-cycle costs.
+
+### 8a.1. Soldier Failure Rate (Польові втрати)
+
+**Очікувані модальності відмов:**
+
+| Категорія | Очікувана частка | Причина |
+|---|---|---|
+| EBFC degradation (Gen 1.0 enzyme lifespan) | ~50% | Залежить від HW.5 (3-5 років для Gen 1.0). На році 4-5 втрата >50% потужності |
+| Mechanical (упале гілля, лесорубники, тваринна шкода) | ~20% | Незалежно від конструкції; статистика з аналогів IoT моніторингу лісів |
+| RF / antenna damage (Vandalism, surge) | ~10% | Знижено PEEK-радомом, але не нуль |
+| Tree death / cut-down | ~15% | Forester removes node |
+| Electronics random failure (component-level) | ~5% | MTBF STM32WLE5JC > 1M годин — domіnated by EBFC |
+
+**Цільовий blended annual failure rate (Years 1-3):** **<2% / рік**.
+**Очікуваний failure rate (Years 4-5, до Gen 2.0 EBFC):** ~10–15% / рік (через enzyme degradation).
+
+### 8a.2. Replacement OPEX
+
+При кластері **100 дерев** та blended failure ~5% на рік (середнє по 5 рокам):
+- 5 заміна Soldier × $35 (CAPEX) = $175 / рік
+- 5 інсталяцій × $2.20 (праця) = $11 / рік
+- **Total Replacement OPEX: ~$15.50 / місяць** на кластер 100 дерев
+
+**Оновлений OPEX (доповнення до §6):**
+
+| Стаття | Сума / міс |
+|---|---|
+| Зв'язок Queen (eSIM) | ~$1.50 |
+| Хмара / RPC | ~$5.00 |
+| Амортизація Queen (заміна шлюзу) | ~$3.50 |
+| **Soldier replacements (BIZ.7, ~5% annual)** | **~$15.50** |
+| **Сумарний OPEX на кластер (з replacements)** | **~$25–$30 / місяць** |
+
+### 8a.3. Queen LiFePO4 Battery Degradation
+
+Технічна довідка LiFePO4 12V 6Ah cell (BOM §4 рядок 4):
+- **Cycle life:** ~2000 повних циклів до 80% capacity
+- **Daily depth-of-discharge** Queen у нормі: ~25-30% (eSIM idle + hourly flush)
+- **Циклів на рік:** ~365 (1 cycle/day equivalent при 25% DoD)
+- **Час до 80% capacity:** ~5.5 років (2000 циклів / 365 cycles/year ≈ 5.48 yr)
+- **Calendar aging:** додаткова втрата ~3% capacity/рік незалежно від циклів → ефективний lifetime до 80% при змішаному використанні: **~5 років**
+
+**Імплікація для OPEX:**
+- Battery replacement раз на 5 років: $22 (LiFePO4) + 0.5 год інженерної праці ($25) = $47 / 60 міс = **$0.78/міс на кластер**
+- При жорстких умовах (-30°C зими, активний charging при низьких температурах без BMS температурного захисту — див. HW.16) lifetime скорочується до 3 років → $1.30/міс
+- **Recommendation:** включити battery health check (`vbat_mv` через GatewayTelemetryWorker) у моніторинг, тригерити preventive replacement при capacity < 85%.
+
+### 8a.4. Оновлена ROI модель
+
+**Baseline (з урахуванням BIZ.7 OPEX):**
+- Кластер 100 дерев: ~433 SCC/місяць (як §7.2)
+- Дохід: 433 × $0.30 = $130 / місяць
+- OPEX (з replacements + battery): ~$26 / місяць
+- **Net = $130 − $26 = $104 / місяць**
+- **Payback Period: $4,000 / $104 ≈ ~38 місяців** (vs ~34 без BIZ.7 врахувань — погіршення на ~12%)
+
+**При $1.00/SCC (ReFi premium):**
+- Net = $433 − $26 = $407 / місяць
+- **Payback Period: ~10 місяців** (мало змінюється — premium absorbs the OPEX increase)
+
+> **Висновок BIZ.7:** Replacement OPEX додає ~12% до Payback Period у baseline, але не змінює фундаментальну життєздатність моделі. Критично — **інвестувати в EBFC Gen 2.0** (HW.5 — FAD-GDH + Laccase + ZIF, 20-25 років) для зниження failure rate до <1%/рік у Years 4+ → довгостроковий gross margin.
+
+
 
 ## 📈 9. Порівняльна таблиця: Стара vs Нова Архітектура
 

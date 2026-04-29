@@ -266,6 +266,27 @@ int main(void)
   SIM7070_SendATCommand("AT\r\n", 500);
   SIM7070_SendATCommand("AT+CNMP=38\r\n", 1000);
 
+  // [HW.10] Power Saving Mode (PSM) + Extended DRX (eDRX) для NB-IoT/LTE-M.
+  // Знижує idle-споживання з ~10 мкА (SIM7000G baseline) до ~3 мкА (SIM7070G PSM)
+  // між hourly CoAP flush-циклами. Налаштування узгоджене з 02_05.
+  //
+  // AT+CPSMS=<mode>,,,<TAU>,<Active-Time>:
+  //   mode=1 → enable PSM
+  //   TAU="00100001" → 1 hour
+  //     Per 3GPP TS 24.008 §10.5.7.4a (T3412 extended timer):
+  //     bits 8-6 (MSB) = unit  → 001 = "1 hour"
+  //     bits 5-1       = value → 00001 = 1
+  //     => 1 × 1 hour = 1 hour TAU (узгоджено з hourly CoAP flush cycle)
+  //   Active="00000000" → 0 sec (no active window after RX → одразу в PSM)
+  //     Per 3GPP §10.5.7.3 (T3324):
+  //     bits 8-6 unit=000 (2s), bits 5-1 value=00000 → 0 × 2s = 0 sec
+  SIM7070_SendATCommand("AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n", 1000);
+
+  // AT+CEDRXS=<mode>,<AcT>,<Requested_eDRX>:
+  //   mode=1 → enable eDRX, AcT=5 → LTE Cat M1
+  //   eDRX="0010" → 20.48 sec (paging window — короткий для downlink-сприйнятливості)
+  SIM7070_SendATCommand("AT+CEDRXS=1,5,\"0010\"\r\n", 1000);
+
   // 4. Відкриваємо вуха: Королева переходить у режим безперервного слухання
   Radio.Rx(LORA_RX_INFINITE);
 
