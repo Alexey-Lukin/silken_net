@@ -116,6 +116,8 @@ module Web3
         # Cooldown минув — закриваємо circuit breaker (half-open → test)
         @failure_counts[url] = 0
         @circuit_opened_at.delete(url)
+        # [S2.2]: Скидаємо gauge при переході з open → half-open після cooldown
+        set_circuit_breaker_gauge(mask_url(url), 0.0)
         true
       else
         false
