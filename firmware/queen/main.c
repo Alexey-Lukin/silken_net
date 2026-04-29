@@ -272,9 +272,15 @@ int main(void)
   //
   // AT+CPSMS=<mode>,,,<TAU>,<Active-Time>:
   //   mode=1 → enable PSM
-  //   TAU="00111100"   → 1 hour (Periodic Tracking Area Update)
+  //   TAU="00100001" → 1 hour
+  //     Per 3GPP TS 24.008 §10.5.7.4a (T3412 extended timer):
+  //     bits 8-6 (MSB) = unit  → 001 = "1 hour"
+  //     bits 5-1       = value → 00001 = 1
+  //     => 1 × 1 hour = 1 hour TAU (узгоджено з hourly CoAP flush cycle)
   //   Active="00000000" → 0 sec (no active window after RX → одразу в PSM)
-  SIM7070_SendATCommand("AT+CPSMS=1,,,\"00111100\",\"00000000\"\r\n", 1000);
+  //     Per 3GPP §10.5.7.3 (T3324):
+  //     bits 8-6 unit=000 (2s), bits 5-1 value=00000 → 0 × 2s = 0 sec
+  SIM7070_SendATCommand("AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n", 1000);
 
   // AT+CEDRXS=<mode>,<AcT>,<Requested_eDRX>:
   //   mode=1 → enable eDRX, AcT=5 → LTE Cat M1

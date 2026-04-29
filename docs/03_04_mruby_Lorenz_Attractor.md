@@ -95,14 +95,14 @@ BETA_VCAP_COEFF    = 0.001   # 1 mV вище vcap → β +0.001 (high-energy sta
 BETA_LIMITS        = (2.0..4.0)  # clamp: класичний β ≈ 2.667 ± 50%
 
 # У ДОДАТОК до існуючих local_sigma / local_rho:
-local_beta = BASE_BETA + (delta_t_ms_decrement × BETA_DELTA_T_COEFF) +
-                         (vcap_mv_centered    × BETA_VCAP_COEFF)
+local_beta = BASE_BETA + (delta_t_improvement_ms × BETA_DELTA_T_COEFF) +
+                         (vcap_mv_centered       × BETA_VCAP_COEFF)
 local_beta = local_beta.clamp(*BETA_LIMITS)
 ```
 
 де:
-- `delta_t_ms_decrement = max(0, baseline_delta_t_ms - current_delta_t_ms)` — чим швидше зарядився EBFC порівняно з baseline (наприклад, 60_000 мс), тим більший позитивний вплив на β
-- `vcap_mv_centered = vcap_mv - 3300` — відхилення від nominal 3.3 V
+- `delta_t_improvement_ms = max(0, baseline_delta_t_ms - current_delta_t_ms)` — *швидкісне покращення* відносно baseline (наприклад, 60_000 мс): чим швидше зарядився EBFC за поточний цикл, тим **більший позитивний** вплив на β. Якщо delta_t гірший за baseline → внесок 0 (clamp at zero).
+- `vcap_mv_centered = vcap_mv - 3300` — відхилення від nominal 3.3 V (може бути від'ємним при просадці)
 
 **Фізична інтерпретація:** β у системі Лоренца — геометричний параметр форми конвективної клітини. У моделі флоеми це інтенсивність циркуляції соку. Здорове дерево з активним EBFC має:
 - швидший заряд (delta_t короткий) → активніший метаболізм

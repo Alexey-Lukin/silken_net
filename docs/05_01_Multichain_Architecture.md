@@ -685,7 +685,7 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 
 1. **`web3_critical` queue зростає** — Grafana alert.
 2. **TelemetryLog accumulate з `oracle_status: dispatched`** — і `E.42` гарантує: **cleanup job НЕ видаляє dispatched records**, callbacks гарантовано приймуться після відновлення.
-3. **Manual oracle bypass** (тільки super_admin): існує `OracleManualFulfillmentService` (якщо немає — запланувати) для ручного просування `dispatched → fulfilled`. **Юридично:** використовувати ТІЛЬКИ при доведеному multi-day Chainlink outage та з реліз-тегом для аудиту.
+3. **Manual oracle bypass** (тільки super_admin): **планується створення** `OracleManualFulfillmentService` (станом на 2026-04-29 не реалізовано — окремий ARCH-todo) для ручного просування `dispatched → fulfilled` при доведеному multi-day Chainlink outage. **Юридично:** використовувати ТІЛЬКИ з реліз-тегом для аудиту та письмовим narrowing у runbook.
 4. **Альтернативний Oracle Provider:** UMA (Optimistic Oracle), Pyth, RedStone — **архітектурний задаток**, не реалізовано. Дизайн потребує redundancy шляху в `Chainlink::OracleDispatchService` (ARCH-todo).
 
 ### 8.4. Critical Path: IoTeX W3bstream
