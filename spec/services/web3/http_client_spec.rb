@@ -184,8 +184,10 @@ RSpec.describe Web3::HttpClient do
         body: { key: "value" },
         service_name: service_name
       )
+    rescue Web3::HttpClient::CircuitOpenError
+      raise # re-raise CircuitOpenError so tests can assert on it
     rescue Web3::HttpClient::RequestError
-      # expected
+      # expected — swallow non-circuit errors (timeouts, connection failures)
     end
 
     def make_successful_post(service_name: "Filecoin")
