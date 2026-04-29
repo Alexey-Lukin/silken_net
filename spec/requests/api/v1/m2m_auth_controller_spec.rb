@@ -151,6 +151,54 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
       end
     end
 
+    context "when Redis is unavailable (S6.1 graceful degradation)" do
+      before do
+        # Simulate Redis being completely unavailable
+        allow(Kredis).to receive(:redis).and_raise(Redis::BaseConnectionError, "Connection refused")
+      end
+
+      it "falls back to DB-based nonce and issues token successfully" do
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: timestamp, signature: signature },
+             as: :json
+
+        expect(response).to have_http_status(:created)
+        expect(response.parsed_body["token"]).to be_present
+        expect(response.parsed_body["device_uid"]).to eq(gateway.uid)
+      end
+
+      it "still blocks replay attacks via DB fallback" do
+        # First request — succeeds via DB fallback
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: timestamp, signature: signature },
+             as: :json
+        expect(response).to have_http_status(:created)
+
+        # Replay — same signature, should be blocked by DB nonce
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: timestamp, signature: signature },
+             as: :json
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.parsed_body["error"]).to include("Replay")
+      end
+
+      it "allows different signatures during Redis outage" do
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: timestamp, signature: signature },
+             as: :json
+        expect(response).to have_http_status(:created)
+
+        new_timestamp = (Time.current + 1.second).iso8601
+        new_message = "#{gateway.uid}:#{new_timestamp}"
+        new_signature = Ed25519Crypto::SigningService.sign(seed_hex, new_message)
+
+        post "/api/v1/auth/m2m_token",
+             params: { did: gateway.uid, timestamp: new_timestamp, signature: new_signature },
+             as: :json
+        expect(response).to have_http_status(:created)
+      end
+    end
+
     it "does not require Bearer token authentication" do
       post "/api/v1/auth/m2m_token",
            params: { did: gateway.uid, timestamp: timestamp, signature: signature },

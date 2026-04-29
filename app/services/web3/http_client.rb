@@ -21,6 +21,8 @@ module Web3
   # - Уніфіковані таймаути з конфігурацією per-service
   # - Стандартну обробку помилок (таймаути, HTTP-коди, JSON-парсинг)
   # - Єдиний формат логування помилок
+  # - [S6.4]: Per-service circuit breaker — тимчасово вимикає сервіс після
+  #   MAX_FAILURES послідовних збоїв, запобігаючи cascade failure
   #
   # Використання:
   #   response = Web3::HttpClient.post(url,
@@ -35,9 +37,17 @@ module Web3
     DEFAULT_OPEN_TIMEOUT = 10
     DEFAULT_READ_TIMEOUT = 30
 
+    # [S6.4]: Circuit breaker thresholds (aligned with Web3::ResilientClient)
+    MAX_FAILURES = 3
+    CIRCUIT_OPEN_DURATION = 60 # seconds
+
     THREAD_KEY = :web3_httpx_session
 
     class RequestError < StandardError; end
+
+    # [S6.4]: Raised when circuit breaker is open for a service.
+    # Callers can rescue this separately to implement fallback logic.
+    class CircuitOpenError < RequestError; end
 
     class << self
       # Виконує HTTP POST запит з JSON body.
@@ -50,6 +60,8 @@ module Web3
       # @param service_name [String] ім'я сервісу для логування помилок
       # @return [Response] обгортка з body та parsed_body
       def post(url, body:, headers: {}, open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT, service_name: "HTTP")
+        check_circuit!(service_name)
+
         request_headers = { "content-type" => "application/json" }.merge(headers)
 
         response = session
@@ -59,7 +71,12 @@ module Web3
           )
           .post(url, body: JSON.generate(body))
 
-        handle_response(response, service_name:)
+        result = handle_response(response, service_name:)
+        record_success(service_name)
+        result
+      rescue RequestError
+        record_failure(service_name)
+        raise
       end
 
       # Виконує HTTP GET запит.
@@ -71,6 +88,8 @@ module Web3
       # @param service_name [String] ім'я сервісу для логування помилок
       # @return [Response] обгортка з body та parsed_body
       def get(url, headers: {}, open_timeout: DEFAULT_OPEN_TIMEOUT, read_timeout: DEFAULT_READ_TIMEOUT, service_name: "HTTP")
+        check_circuit!(service_name)
+
         response = session
           .with(
             timeout: { connect_timeout: open_timeout, read_timeout: read_timeout },
@@ -78,7 +97,12 @@ module Web3
           )
           .get(url)
 
-        handle_response(response, service_name:)
+        result = handle_response(response, service_name:)
+        record_success(service_name)
+        result
+      rescue RequestError
+        record_failure(service_name)
+        raise
       end
 
       # Скидає кешовану HTTPX-сесію в поточному потоці.
@@ -89,6 +113,30 @@ module Web3
         Thread.current[THREAD_KEY] = nil
       end
 
+      # [S6.4]: Скидає всі circuit breakers. Використовується в тестах.
+      def reset_circuit_breakers!
+        @mutex.synchronize do
+          @failure_counts.clear
+          @circuit_opened_at.clear
+        end
+      end
+
+      # [S6.4]: Повертає стан circuit breaker для вказаного сервісу (для моніторингу / Prometheus).
+      #
+      # @param service_name [String] ім'я сервісу
+      # @return [Hash] з ключами :service, :failures, :circuit_open, :available
+      def circuit_status(service_name)
+        key = service_name.downcase
+        @mutex.synchronize do
+          {
+            service: service_name,
+            failures: @failure_counts[key],
+            circuit_open: circuit_open?(key),
+            available: provider_available?(key)
+          }
+        end
+      end
+
       private
 
       # Thread-safe persistent HTTPX session.
@@ -96,6 +144,59 @@ module Web3
       # З'єднання перевикористовуються для всіх origins (Pinata, Streamr, Solana тощо).
       def session
         Thread.current[THREAD_KEY] ||= HTTPX.plugin(:persistent)
+      end
+
+      # [S6.4]: Circuit breaker check — raises CircuitOpenError if service is temporarily disabled.
+      def check_circuit!(service_name)
+        key = service_name.downcase
+        @mutex.synchronize do
+          return if provider_available?(key)
+
+          Rails.logger.warn "🔌 [#{service_name}] Circuit breaker OPEN — request blocked (cooldown #{CIRCUIT_OPEN_DURATION}s)"
+          raise CircuitOpenError, "#{service_name} circuit breaker is open — service temporarily unavailable"
+        end
+      end
+
+      # [S6.4]: Records a failure for the service. Opens circuit after MAX_FAILURES.
+      def record_failure(service_name)
+        key = service_name.downcase
+        @mutex.synchronize do
+          @failure_counts[key] += 1
+
+          if @failure_counts[key] >= MAX_FAILURES && !@circuit_opened_at.key?(key)
+            @circuit_opened_at[key] = Time.current
+            Rails.logger.warn "🔌 [#{service_name}] Circuit breaker OPEN after #{MAX_FAILURES} consecutive failures"
+          end
+        end
+      end
+
+      # [S6.4]: Records a success — resets failure count and closes circuit.
+      def record_success(service_name)
+        key = service_name.downcase
+        @mutex.synchronize do
+          @failure_counts.delete(key)
+          @circuit_opened_at.delete(key)
+        end
+      end
+
+      def provider_available?(key)
+        return true unless circuit_open?(key)
+
+        opened_at = @circuit_opened_at[key]
+        return true unless opened_at
+
+        if Time.current - opened_at >= CIRCUIT_OPEN_DURATION
+          # Cooldown expired — close circuit breaker (half-open → test)
+          @failure_counts.delete(key)
+          @circuit_opened_at.delete(key)
+          true
+        else
+          false
+        end
+      end
+
+      def circuit_open?(key)
+        @failure_counts[key] >= MAX_FAILURES
       end
 
       def handle_response(response, service_name:)
@@ -120,6 +221,13 @@ module Web3
         raise RequestError, "#{service_name} connection error: #{e.message}"
       end
     end
+
+    # [S6.4]: Circuit breaker state — shared across all threads (protected by @mutex).
+    # @failure_counts tracks consecutive failures per service_name (downcased).
+    # @circuit_opened_at records when circuit was opened for cooldown timing.
+    @mutex = Mutex.new
+    @failure_counts = Hash.new(0)
+    @circuit_opened_at = {}
 
     # Lightweight wrapper for HTTP response with lazy JSON parsing
     class Response
