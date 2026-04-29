@@ -52,7 +52,7 @@
 
 **Поточний mesh relay (Soldier↔Soldier)** працює стохастично: Солдат А TX → якщо Солдат Б випадково слухає ефір у своїх 600 мс RX-вікна (Phase 4.5) → пакет ретранслюється. Без TDMA/CAD mesh relay **ненадійний** за межами прямої видимості Королеви.
 
-> **Деталі реалізації:** [03_01 §1.9](03_01_Firmware_Lifecycle_and_DMA) (Phase 4.5: RX Window), [03_02 §1](03_02_Queen_Gateway_Firmware) (LoRa Reception)
+> **Деталі реалізації:** [03_01 Phase 4.5](03_01_Firmware_Lifecycle_and_DMA) (RX Window + Проблема Рандеву), [03_02 §1](03_02_Queen_Gateway_Firmware) (LoRa Reception)
 
 ### 🖥️ Рівень 5: Серверне Ядро (The Engine)
 * **Стек:** Ruby on Rails 8.1 Omakase, PostgreSQL, Redis, Sidekiq (37 Workers).

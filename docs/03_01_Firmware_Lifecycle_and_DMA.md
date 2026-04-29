@@ -542,8 +542,8 @@ _rx_payload[0] == OTA_MARKER (0x99)
 | Рівень | Механізм | Статус | Задача |
 |--------|----------|--------|--------|
 | L1: Зона Королеви | `Radio.Rx(LORA_RX_INFINITE)` — Queen завжди слухає | ✅ Реалізовано | — |
-| L2: Синхронні Вікна (TDMA) | RTC-координоване пробудження: кожні N хвилин, ~2 сек RX. Queen beacon → Time Sync → спільний розклад | ❌ Не реалізовано | [ARCH.26](../docs/10_02_Action_Plan_Tracker), [FW.20](../docs/10_02_Action_Plan_Tracker) |
-| L3: CAD Preamble Detection | SX1262 `Radio.StartCad()`: wake кожну секунду на ~2 мс, "нюхає" LoRa-преамбулу. Для PANIC mode (chainsaw) | ❌ Не реалізовано | [ARCH.26](../docs/10_02_Action_Plan_Tracker) |
+| L2: Синхронні Вікна (TDMA) | RTC-координоване пробудження: кожні N хвилин, ~2 сек RX. Queen beacon → Time Sync → спільний розклад | ❌ Не реалізовано | [ARCH.26](10_02_Action_Plan_Tracker), [FW.20](10_02_Action_Plan_Tracker) |
+| L3: CAD Preamble Detection | SX1262 `Radio.StartCad()`: wake кожну секунду на ~2 мс, "нюхає" LoRa-преамбулу. Для PANIC mode (chainsaw) | ❌ Не реалізовано | [ARCH.26](10_02_Action_Plan_Tracker) |
 
 ---
 

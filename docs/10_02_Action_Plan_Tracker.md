@@ -230,7 +230,7 @@
 - **Рішення:** Протокол Time Sync через Queen downlink. Queen має точний час через LTE/NTP. Періодично Queen надсилає OTA-корекцію часу. Аналог LoRaWAN MAC command `DeviceTimeReq`
 - **Залежності:** Є передумовою для ARCH.26 (TDMA Sync Windows). Без FW.20 синхронні вікна неможливі — годинники дрейфують і вузли "промахуються" повз спільне RX-вікно
 - [ ] Firmware Queen: додати time correction у CoAP ACK або окремий downlink command
-- [ ] Firmware Queen: реалізувати periodic beacon broadcast (UTC timestamp + network schedule) — спільна задача з ARCH.26
+- [ ] Firmware Queen: реалізувати periodic beacon broadcast (UTC timestamp + network schedule) — забезпечує базову синхронізацію часу для ARCH.26
 - [ ] Firmware Soldier: прийняти та застосувати RTC correction
 - [ ] Backend: включити server UTC timestamp у downlink payload
 - [ ] Тести: перевірити drift compensation при ΔT = ±60°C
