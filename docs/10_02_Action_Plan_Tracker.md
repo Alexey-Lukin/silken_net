@@ -1,7 +1,5 @@
 # 10_02 — Action Plan Tracker (Залишок робіт)
 
-> **Створено:** 2026-04-18 (Аудит 35 документів `00_00` → `09_03`)
-> **Оновлено:** 2026-04-23 (Повторний аудит: cross-ref docs↔codebase, +33 DOC невідповідності, +11 SW, +3 SEC, +7 ARCH, +14 E.xx)
 > **Принцип:** Цей документ містить ТІЛЬКИ незавершені задачі. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`).
 
 ---
@@ -89,19 +87,6 @@
 - [ ] Верифікувати Upstash multi-zone replication у production
 - [x] Додати graceful degradation: при Redis недоступності → DB-based nonce lookup з TTL
 - [x] Тести: Redis down scenario → gateways залишаються active
-
-#### S6.4 — Circuit breaker тільки на IoTeX/Chainlink
-- **P2** | `05_01` | **Складність: M** | **Код**
-- **Опис:** Circuit breaker реалізований лише для IoTeX та Chainlink. Відсутній на 10 інших Web3 мережах (Streamr, Filecoin, peaq, Polygon, Solana, Celo, KlimaDAO, Hadron, The Graph, Ethereum L1)
-- [x] Додати circuit breaker для Polygon/Solana/Celo (критичні для мінтингу)
-- [x] Оцінити потребу для інших мереж — реалізовано per-service circuit breaker у `Web3::HttpClient` (Streamr, Filecoin, Peaq, Hadron, The Graph, Solana). MAX_FAILURES=3, cooldown 60s. `CircuitOpenError` дозволяє fallback
-
-#### S6.5 — 30s Kredis lock для мінтингу може бути замалим
-- **P2** | `05_03` | **Складність: S** | **Код**
-- **Опис:** Якщо мінтинг повільний (RPC congestion), 30s Kredis lock може expire → double-mint risk
-- **Статус:** ✅ Виконано. Lock timeout збільшено з 30s до 120s у `BlockchainMintingService`. Коментар пояснює worst-case scenario: dry-run + binary search isolation (до 6 рівнів × 2 eth_call) + individual mints ≈ ~130s. Burning та Celo сервіси залишені на 30s — вони використовують тільки одиночний `transact()`.
-- [x] Збільшити lock timeout або використати pessimistic DB lock
-- [x] Тест: slow RPC scenario
 
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** | `04_02` | **Складність: L** | **Архітектурна**
