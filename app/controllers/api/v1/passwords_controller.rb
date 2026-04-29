@@ -18,7 +18,7 @@ module Api
       # GET /api/v1/forgot_password
       def new
         respond_to do |format|
-          format.html { render Passwords::Forgot.new }
+          format.html { render_auth_page(title: "Recovery", component: Passwords::Forgot.new) }
         end
       end
 
@@ -42,7 +42,7 @@ module Api
       # GET /api/v1/reset_password?token=xxx
       def edit
         respond_to do |format|
-          format.html { render Passwords::Reset.new(token: params[:token]) }
+          format.html { render_auth_page(title: "Reset Password", component: Passwords::Reset.new(token: params[:token])) }
         end
       end
 
@@ -63,7 +63,10 @@ module Api
           respond_to do |format|
             format.json { render json: { error: "Пароль повинен містити мінімум 12 символів." }, status: :unprocessable_content }
             format.html do
-              render Passwords::Reset.new(token: params[:token], flash_alert: "Пароль повинен містити мінімум 12 символів.")
+              render_auth_page(
+                title: "Reset Password",
+                component: Passwords::Reset.new(token: params[:token], flash_alert: "Пароль повинен містити мінімум 12 символів.")
+              )
             end
           end
           return
@@ -73,7 +76,10 @@ module Api
           respond_to do |format|
             format.json { render json: { error: "Паролі не співпадають." }, status: :unprocessable_content }
             format.html do
-              render Passwords::Reset.new(token: params[:token], flash_alert: "Паролі не співпадають.")
+              render_auth_page(
+                title: "Reset Password",
+                component: Passwords::Reset.new(token: params[:token], flash_alert: "Паролі не співпадають.")
+              )
             end
           end
           return

@@ -49,28 +49,33 @@ ApplicationComponent (Phlex::HTML)
 │            ButtonTo, AssetPath, FormAuthenticityToken
 │   Визначає: tokens(), TailwindMerge::Merger, CUSTOM_TEXT_SCALE
 │
-├── app/views/shared/        # Reusable примітиви (рівень фреймворку)
-│   ├── ui/                  # Загальні UI-елементи
-│   │   ├── StatusBadge      ← AASM стан → семантичний колір
-│   │   ├── StatCard         ← Картка метрики дашборду
-│   │   ├── DataTable        ← Таблиця з налаштовуваними стовпцями
-│   │   ├── Pagination       ← Pagy-навігація prev/next
-│   │   ├── EmptyState       ← Плейсхолдер (grid або table-row режим)
-│   │   ├── MetaRow          ← Рядок відображення ключ-значення
-│   │   ├── ActionBadge      ← Бейдж типу дії аудиту
-│   │   ├── PhotoCard        ← Фото ActiveStorage з hover-оверлеєм
-│   │   ├── RelativeTime     ← "5 хвилин тому" з підказкою
-│   │   ├── Skeleton         ← Скелетон завантаження (6 варіантів)
-│   │   └── ThemeSwitcher    ← Перемикач темної/світлої теми
-│   ├── iot/
-│   │   └── MetricValue      ← Числове значення сенсора з точністю та одиницею
-│   └── web3/
-│       └── Address          ← Ethereum-адреса з обрізанням + копіюванням
+├── app/views/layouts/          # Layout-обгортки (include Phlex::Rails::Layout)
+│   ├── DashboardLayout         ← Основний layout (sidebar + top bar + breadcrumbs)
+│   │                             Приймає content: параметр з domain component
+│   └── AuthLayout              ← Легкий layout для login/password (без sidebar)
 │
-└── app/views/components/    # Доменні компоненти рівня сторінки
+├── app/views/shared/           # Reusable примітиви (рівень фреймворку)
+│   ├── ui/                     # Загальні UI-елементи
+│   │   ├── StatusBadge         ← AASM стан → семантичний колір
+│   │   ├── StatCard            ← Картка метрики дашборду
+│   │   ├── DataTable           ← Таблиця з налаштовуваними стовпцями
+│   │   ├── Pagination          ← Pagy-навігація prev/next
+│   │   ├── EmptyState          ← Плейсхолдер (grid або table-row режим)
+│   │   ├── MetaRow             ← Рядок відображення ключ-значення
+│   │   ├── ActionBadge         ← Бейдж типу дії аудиту
+│   │   ├── PhotoCard           ← Фото ActiveStorage з hover-оверлеєм
+│   │   ├── RelativeTime        ← "5 хвилин тому" з підказкою
+│   │   ├── Skeleton            ← Скелетон завантаження (6 варіантів)
+│   │   └── ThemeSwitcher       ← Перемикач темної/світлої теми
+│   ├── iot/
+│   │   └── MetricValue         ← Числове значення сенсора з точністю та одиницею
+│   └── web3/
+│       └── Address             ← Ethereum-адреса з обрізанням + копіюванням
+│
+└── app/views/components/       # Доменні компоненти рівня сторінки
     ├── navigation/Sidebar
     ├── dashboard/Home, Map, MapNode, EventRow
-    ├── trees/Index, Show
+    ├── trees/Index, Show, Chronicle
     ├── wallets/Index, Show, BalanceDisplay, BalanceFrame, MetadataFrame, TransactionRow
     ├── alerts/Index, Row, Badge
     ├── telemetry/LiveStream, LogEntry
@@ -100,14 +105,38 @@ ApplicationComponent (Phlex::HTML)
 ### Потік Рендерингу
 
 ```
-HTTP Request
+HTTP Request (Dashboard pages)
     └─► Controller (тонкий — попередньо завантажує всі дані, без бізнес-логіки)
-            └─► render DomainComponent.new(data:)
-                    └─► view_template
-                            ├─► render Views::Shared::UI::StatusBadge.new(...)
-                            ├─► render Views::Shared::UI::DataTable.new(...) { rows }
-                            └─► turbo_stream_from / turbo_frame_tag (lazy)
+            └─► render_dashboard(title:, component:)
+                    └─► render DashboardLayout.new(content: component)
+                            └─► DashboardLayout.view_template
+                                    ├─► render Navigation::Sidebar.new(...)
+                                    └─► render @content  ← Domain Component
+                                            ├─► render Views::Shared::UI::StatusBadge.new(...)
+                                            ├─► render Views::Shared::UI::DataTable.new(...) { rows }
+                                            └─► turbo_stream_from / turbo_frame_tag (lazy)
+
+HTTP Request (Auth pages — login, forgot/reset password)
+    └─► Controller
+            └─► render_auth_page(title:, component:)
+                    └─► render AuthLayout.new(content: component)
+                            └─► AuthLayout.view_template
+                                    └─► render @content  ← Auth Component (Sessions::New, etc.)
 ```
+
+> **⚠️ Важливо:** Content component передається як параметр `content:` — **НЕ через блок**.
+> Ruby closure блоку виконується в контексті контролера, тому `render` всередині блоку
+> викликає `ActionController::API#render` (DoubleRenderError), а не `Phlex::HTML#render`.
+
+### Layout Компоненти
+
+| Layout | Файл | Включає | Призначення |
+|---|---|---|---|
+| `DashboardLayout` | `app/views/layouts/dashboard_layout.rb` | `Phlex::Rails::Layout` | Основний layout з sidebar, top bar, breadcrumbs |
+| `AuthLayout` | `app/views/layouts/auth_layout.rb` | `Phlex::Rails::Layout` | Легкий layout для login/password сторінок |
+
+Обидва layout-компоненти включають `Phlex::Rails::Layout`, який автоматично додає необхідні
+Rails view helpers: `csp_meta_tag`, `csrf_meta_tags`, `stylesheet_link_tag`, `javascript_importmap_tags`.
 
 ---
 
@@ -478,8 +507,8 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Provisioning` | `New`, `Success` | `hardware_key:` |
 | `AccountSecurity` | `Show` | `user:` |
 | `Notifications` | `Settings` | `settings:` |
-| `Sessions` | `New` | — |
-| `Passwords` | `Forgot`, `Reset` | — |
+| `Sessions` | `New` | `flash_alert:`, `flash_notice:` — рендериться через `AuthLayout` |
+| `Passwords` | `Forgot`, `Reset` | `token:`, `flash_alert:` — рендериться через `AuthLayout` |
 
 ---
 
