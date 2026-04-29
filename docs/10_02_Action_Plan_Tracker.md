@@ -29,6 +29,7 @@
 #### S2.2 — Grafana Cloud dashboards
 - **P0** | `06_03` | **Складність: S** | **🔧 Операційна** — налаштування в Grafana Cloud UI, без коду
 - **Опис:** Grafana Cloud SaaS — метрики доступні, дашборди створюються в UI
+- [x] Backend: `silkennet_rpc_circuit_breaker_open` gauge (labeled `provider`) та `silkennet_rpc_errors_total` (labeled `network`, `error_type`) інструментовані в `Web3::ResilientClient` — відкриття/закриття circuit breaker та класифікація помилок (timeout/connection_refused/rate_limited тощо)
 - [ ] Dashboard: Sidekiq queues (9 черг, size + latency)
 - [ ] Dashboard: Web3 RPC errors by network
 - [ ] Dashboard: Telemetry ingest rate + fraud detection
@@ -38,6 +39,7 @@
 #### S2.3 — Grafana Cloud alerting rules
 - **P0** | `06_03` | **Складність: S** | **🔧 Операційна** — налаштування в Grafana Cloud UI, без коду
 - **Опис:** Grafana Cloud Alerting замінює потребу в self-hosted Alertmanager
+- [x] Backend: `silkennet_telemetry_acoustic_overflow_total` counter реалізований в `TelemetryUnpackerService` (інкрементується при `acoustic_events == 255`) — готовий для alert rule `rate() > 0`
 - [ ] Alert: `web3_critical` queue depth > 100
 - [ ] Alert: `silkennet_telemetry_fraud_detected_total` rate > 0
 - [ ] Alert: `silkennet_rpc_errors_total` rate > 10/min
@@ -237,6 +239,7 @@
 - [x] Firmware: обмежити `acoustic_events` до `uint8_t` з saturating increment (cap at 255)
 - [ ] АБО: виділити 2 байти в payload (потребує перепакування — пов'язано з FW.2 CCM transition)
 - [x] Backend: додати warning якщо `acoustic_events == 255` (ймовірний overflow) — реалізовано в `TelemetryUnpackerService`
+- [x] Backend: `TELEMETRY_ACOUSTIC_OVERFLOW_TOTAL.increment` при `acoustic_events == 255` — Prometheus counter для Grafana alerting реалізовано в `TelemetryUnpackerService`
 
 #### FW.23 — OTA firmware broadcast: ECB без автентифікації
 - `03_05` | `firmware/queen/main.c`
