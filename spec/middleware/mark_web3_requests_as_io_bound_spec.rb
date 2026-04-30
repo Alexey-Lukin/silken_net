@@ -56,11 +56,21 @@ RSpec.describe MarkWeb3RequestsAsIoBound do
       middleware.call(env_for(method: "GET", path: "/api/v1/oracle_callbacks"))
     end
 
-    it "does NOT mark close-but-not-equal paths (e.g. trailing slash, prefix)" do
+    it "does NOT mark a path with trailing slash" do
       expect(io_bound_callback).not_to receive(:call)
 
       middleware.call(env_for(method: "POST", path: "/api/v1/oracle_callbacks/"))
+    end
+
+    it "does NOT mark a path with extra suffix segments" do
+      expect(io_bound_callback).not_to receive(:call)
+
       middleware.call(env_for(method: "POST", path: "/api/v1/oracle_callbacks/extra"))
+    end
+
+    it "does NOT mark a different API version (e.g. /api/v2)" do
+      expect(io_bound_callback).not_to receive(:call)
+
       middleware.call(env_for(method: "POST", path: "/api/v2/oracle_callbacks"))
     end
   end
