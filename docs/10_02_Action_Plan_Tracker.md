@@ -7,6 +7,42 @@
 > - 👤 **Операційна** — потрібен власник (hardware, зовнішні UI/дашборди, секрети, зустрічі, юрист, фізична лабораторія)
 > - 🔗 **Заблоковано** — чекає іншої задачі або рішення
 
+> **Останній аудит:** 2026-04-30 — повне сканування `docs/00_00 → 09_03` (~28K рядків) + крос-валідація з кодбейсом. Нові знахідки інтегровані нижче (нумерація: S6.12+, FW.24+, SEC.11+, INF.4+, UNI.4+, BIZ.8+, OPS.3+, ARCH.27+, E.50+, DOC.x таблиця заповнена).
+
+---
+
+## 🚨 Top-Critical Path (рекомендований порядок виконання)
+
+> Виведено окремо, щоб видно «що варто робити прямо зараз». Це **не нові задачі**, а індекс уже існуючих пунктів, які блокують найбільше іншого.
+
+### Перед будь-яким польовим деплоєм (life-safety + security)
+1. **SEC.9** — замінити master AES key (FIPS-197 test vector) на криптостійкий random — **P0**
+2. **SEC.11** — Provisioning master key production guard (raise при відсутності ENV) — **P0**
+3. **FW.1 + SEC.3** — Per-device HKDF provisioning + Factory Flashing pipeline — **P0**
+4. **FW.2** — AES-256-CCM (вирішує одразу: ECB→CCM, MIC, FW.23 OTA auth, SEC.10 panic auth, FW.29 disambiguation) — **P0**
+5. **SEC.1** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet — **P0**
+
+### Перед production-запуском Web3 mintingу
+6. **S1.1** — заповнити GitHub Secrets (`DATABASE_PASSWORD`, `GCP_SA_KEY`, `SSH_PRIVATE_KEY`, ...) — **P0**
+7. **E.45 / S3.5** — підставити реальну адресу SCC/SFC у `subgraph.yaml` — **P0**
+8. **E.47** — встановити `SOLANA_RPC_URL` mainnet (інакше Devnet за замовчуванням) — **P0**
+9. **S6.12** — аудит `TokenomicsEvaluatorWorker` оракул-guards bypass для не-oracle flow — **P1**
+10. **INF.4 + INF.6** — TLS termination + CoAP Proxy verification на Akash ingress — **P1**
+
+### Парк аналітики/спостережуваності перед першим Akash deploy
+11. **S2.1 + S2.2 + S2.3** — Grafana Cloud dashboards & alerts після першого `/metrics` пуш — **P0** (ops)
+12. **S5.2** — `RELEASE_VERSION` ENV для Sentry release tracking (вже інстальовано — потрібна верифікація) — **P2**
+
+### Лабораторно-критичний шлях (TRL 4→6 hardware)
+13. **HW.7** — BQ25570 VBAT_OV резистори: виміряти і замінити SMD якщо мисматч — **P1** (блокує PCBA freeze)
+14. **HW.13 / ARCH.29-MPPT** — P-V крива EBFC + перейти з 50% VOC на 65% — **P1**
+15. **HW.3** — 12-тижневий Arrhenius accelerated aging тест (синтетичний ксилемний сік) — **P1** (блокує seed)
+
+### Академічний critical path
+16. **UNI.1** — Перша зустріч з деканом Онищенком (ChNU FOTIUS) — **P0** (блокує всі публікації Q1)
+17. **UNI.8** — Перший контакт з ректоратом СЄУ — **P0** (блокує MSA / B2B legal)
+18. **UNI.13 / UNI.14** — Верифікувати посади науковців ЧМА і СЄУ через офіційні сайти — **P0**
+
 ---
 
 ## 🛣️ Software / Backend / DevOps
@@ -69,6 +105,34 @@
 - **Опис:** SDL відкриває HTTP (port 80), CoAP UDP (5683), та port 443 (додано Сесія 6). Але TLS termination не налаштовано. Browsers block WebSocket from HTTPS → HTTP
 - [ ] 👤 Налаштувати TLS (Akash ingress `*.ingress.akash.pub` або Cloudflare)
 
+#### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
+- **P1** | `06_02` BLOCKER-5, `06_01` | **Складність: S** | **🔧 Операційна + Док**
+- **Опис:** Розширення INF.3. Не прийнято архітектурне рішення: (a) Akash hostname operator + Let's Encrypt автоматизація, (b) Cloudflare Proxy перед Akash (DDoS + WAF, але ще одна mw залежність), (c) Traefik у Kamal (тільки GCP path). Вибір впливає на CoAP UDP (Cloudflare НЕ proxies UDP — потребує separate Spectrum або direct ingress)
+- [ ] 👤 Прийняти архітектурне рішення (Cloudflare Proxy для HTTPS + direct UDP для CoAP — рекомендовано)
+- [ ] 🤖 Документувати у `06_02` runbook: pre-flight checklist + verification commands
+- [ ] 🤖 Якщо Akash hostname — додати automation у `terraform/`
+
+#### INF.5 — `PROMETHEUS_ALLOWED_IPS` ENV не задокументована
+- **P2** | `06_03` §2.3, `06_04_Secrets_Checklist.md` | **Складність: XS** | **🤖 Док**
+- **Опис:** `/metrics` endpoint захищений IP allowlist + Basic Auth. Але `PROMETHEUS_ALLOWED_IPS` ENV відсутній у `.env.example` та `06_04_Secrets_Checklist.md`. Ризик: при Akash deploy внутрішні IPs не відповідають RFC 1918 (наприклад, Cilium CNI використовує 10.x ranges, але Akash може дати інші)
+- **Статус (✅ виконано):** Доданий запис у `06_04_Secrets_Checklist.md` §3.3 з прикладами для GCP-only / Akash / Cloudflare Proxy / Grafana Cloud direct scrape сценаріїв та поясненням взаємодії з `PRIVATE_RANGES` whitelist у `PrometheusCollector` middleware.
+- [x] 🤖 Додати `PROMETHEUS_ALLOWED_IPS` у `06_04_Secrets_Checklist.md`
+- [x] 🤖 Документувати у `06_03` як визначити правильний CIDR для Akash deployment (включено у §3.3 `06_04` з прикладами)
+
+#### INF.6 — CoAP Proxy на Ingress Anchor: відсутня verification
+- **P1** | `06_01` Pre-Flight Checklist | **Складність: S** | **🤖 Код + Док**
+- **Опис:** Ingress Anchor (Kamal Traefik або Akash ingress) повинен проксіювати CoAP UDP port 5683. Документація рекомендує перевірити, але **точна команда verification відсутня**. Без перевірки можлива ситуація: HTTP ingress активний, але UDP заблокований → шлюзи не можуть пушити телеметрію (silent failure)
+- **Статус (✅ виконано):** Додано рядок **#6** у Pre-Flight Checklist `06_01` з повними командами: `coap-client -m post` для CoAP smoke test + альтернатива через `nc`, troubleshooting checklist (GCP firewall, Ingress Anchor socat, Akash SDL UDP expose, Sidekiq daemon).
+- [x] 🤖 Додати у `06_01` команду: `coap-client -m post -e "test" coap://<ingress-host>:5683/health` + очікуваний response
+- [ ] 🤖 Smoke test workflow у CI: post-deploy CoAP health check (потребує CI workflow — окрема задача)
+- [x] 🤖 Документувати точний HAProxy/socat/Traefik UDP config для кожного варіанту deploy (включено у troubleshooting секцію)
+
+#### INF.7 — Grafana Alloy `ALLOY_CONFIG_BASE64` manual encoding workflow
+- **P2** | `06_03` BLOCKER-1, `06_02` BLOCKER-3 | **Складність: XS** | **🤖 Док**
+- **Опис:** При Terraform deploy `ALLOY_CONFIG_BASE64` генерується через `filebase64()`. Для manual SDL deploy (без Terraform) — workflow енкодування не задокументовано. Якщо OPS-engineer використовує `base64 -w 0 alloy-config.yaml` замість правильного — можливі line-break artifacts → Alloy crash
+- [ ] 🤖 Додати у `06_02` runbook: точна команда `base64 -w 0 < alloy-config.yaml | tr -d '\n'` + sanity check
+- [ ] 🤖 Helper script у `deploy/akash/encode-alloy-config.sh`
+
 #### S4.3 — Akash SDL secrets
 - **P3** | `06_02` | **Складність: XS** | **🔧 Операційна** — заповнити 4 змінні у `deploy.yaml`
 - **Опис:** `REQUIRED_SECRET_NOT_SET` для 4 критичних змінних
@@ -108,6 +172,64 @@
 - **Статус:** ✅ Виконано. Розділ §8 "Disaster Recovery / Chain Outage Strategy" доданий у `05_01`: класифікація tier (Critical/Important/Nice), детальний degradation flow для Polygon/Chainlink/IoTeX, recovery процедури, summary matrix
 - [x] 🤖 Визначити critical path chains (Polygon, Chainlink, IoTeX)
 - [x] 🤖 Дизайн graceful degradation для кожної мережі
+
+#### S6.12 — TokenomicsEvaluatorWorker: oracle-guards bypass для не-oracle flow
+- **P1** | `04_02` §4.2.2 (BlockchainMintingService) | **Складність: M** | **🤖 Аудит**
+- **Опис:** Документація явно заявляє: «Guards (`verified_by_iotex?`, `oracle_status_fulfilled?`, `hadron_kyc_status=="approved"`) активні лише при `telemetry_log` (oracle-driven flow); tokenomics flow працює без прямої прив'язки до log — growth_points вже верифіковані pipeline'ом». **Ризик:** якщо `TokenomicsEvaluatorWorker` довіряє upstream pipeline без власної перевірки, можливе мінтінг неверифікованих growth_points при пошкодженні pipeline upstream
+- [ ] 🤖 Code audit: чи `TokenomicsEvaluatorWorker` виконує незалежну верифікацію oracle/IoTeX/KYC або тільки довіряє upstream?
+- [ ] 🤖 Документувати інваріант: «всі шляхи до `Wallet#lock_and_mint!` повинні мати explicit oracle-verification gate»
+- [ ] 🤖 Додати spec coverage: tokenomics flow з фейковим (unverified) growth_points → expect to be rejected
+
+#### S6.13 — Ed25519 hardware signature: SHA256 fallback не задокументований як production-acceptable
+- **P2** | `04_02` §4.2.2 (SendToW3bstreamService, BLOCKER-06) | **Складність: S** | **🤖 Код**
+- **Опис:** Primary path — Ed25519 через `hardware_key.binary_key`; fallback — SHA256 hash коли `HardwareKey` відсутній (legacy/dev). SHA256 fallback **слабший** і **не задокументований** як прийнятний у production. Невідомо: чи fallback тригериться у production (logging/Prometheus counter відсутній)
+- **Статус (✅ виконано):** Prometheus counter `silkennet_w3bstream_signature_fallback_total{reason}` доданий у `config/initializers/prometheus.rb` та інкрементується у `Iotex::W3bstreamVerificationService#hardware_signature` (labels: `missing_hardware_key` / `missing_binary_key`). Тести: `spec/services/iotex/w3bstream_verification_service_spec.rb` (existing fallback test verified passing). Grafana alert: > 0 у production protrygnem alert.
+- [x] 🤖 Додати Prometheus counter `silkennet_w3bstream_signature_fallback_total{type=sha256}`
+- [x] 🤖 Якщо counter > 0 у production → alert (Grafana rule — потребує конфігурації після INF.1+S2.3)
+- [ ] 🤖 Документувати в `04_02`: при яких умовах SHA256 fallback допустимий і як його блокувати у `WEB3_STRICT_MODE=true`
+
+#### S6.14 — peaq_signing_key: відсутня rotation policy
+- **P2** | `04_02` §4.2.2 (GeneratePeaqDidService, BLOCKER-08) | **Складність: M** | **🤖 Архітектура + Док**
+- **Опис:** `peaq_signing_key` — обов'язковий (W3C DID compliance), raise `RegistrationError` при відсутності. Але немає процесу для: (1) ротації ключа без зламу існуючих DID, (2) emergency revocation при компрометації, (3) синхронізації між staging/production
+- [ ] 🤖 Дизайн key rotation policy (overlap window, migration strategy)
+- [ ] 🤖 Документувати emergency revocation runbook
+- [ ] 👤 Vault-store production peaq_signing_key (Bitwarden/1Password)
+
+#### S6.15 — Chainlink Functions Router ABI v1: ризик version drift
+- **P2** | `04_02` §4.2.2 (DispatchToChainlinkService, BLOCKER-09) | **Складність: S** | **🤖 Код**
+- **Опис:** ABI оновлено на Functions Router v1 (5 параметрів — `CHAINLINK_DATA_VERSION`, `CHAINLINK_CALLBACK_GAS_LIMIT`, `CHAINLINK_DON_ID`, ...). Немає fallback на старіший ABI. При наступному upgrade Chainlink router або зміні DON ID — пайплайн впаде без graceful degradation
+- [ ] 🤖 Додати `Web3::ChainlinkRouterVersion` enum + ABI registry для multi-version підтримки
+- [ ] 🤖 Health check: розпарсити router contract code → перевірити сигнатуру `sendRequest()` при бутстрапі сервісу
+- [ ] 🤖 Документувати в `04_02` процес upgrade ABI
+
+#### S6.16 — oracle_status partition pruning: відсутній моніторинг
+- **P2** | `04_01` (TelemetryLog), `04_02` | **Складність: S** | **🤖 Код + Док**
+- **Опис:** `TelemetryLog.find_with_partition_pruning(id, created_at)` — partition-aware O(log N) lookup. Усі workers повинні передавати `created_at_iso` для коректної prune. **Невідомо:** чи всі workers передають? Немає моніторингу partition scans (всі або одна?). Якщо worker забуде — запит сканує всі партиції (degraded performance)
+- [ ] 🤖 Audit всіх workers/services що читають TelemetryLog: чи передають `created_at_iso`?
+- [ ] 🤖 Додати Prometheus histogram `silkennet_telemetry_log_lookup_partitions_scanned` — alert якщо > 1
+- [ ] 🤖 Документувати інваріант у `04_01` + `04_02`
+
+#### S6.17 — Dynamic Tax (2%) hardcoded — потребує on-chain governance
+- **P2** | `05_03` (HYBRID PROTOCOL GAIA), `BlockchainMintingService` | **Складність: M** | **🤖 Архітектура**
+- **Опис:** `DYNAMIC_TAX_RATE = BigDecimal("0.02")` hardcoded у `BlockchainMintingService`. Для true governance це має бути on-chain параметр через `ProtocolParameters` контракт (як `OPTIMAL_Z_TARGET`, `CRITICAL_Z_MIN/MAX`). Поточно — application-level override без DAO voting
+- **Залежність:** BIZ.4 ✅ (ProtocolParameters інфраструктура вже існує) — лише треба додати ключ
+- [ ] 🤖 Додати `KEY_DYNAMIC_TAX_RATE` у `ProtocolParameters.sol`
+- [ ] 🤖 `BlockchainMintingService` читає ставку через `Governance::ParameterSyncWorker` → `SystemParameter`
+- [ ] 🤖 Migration: seed `SystemParameter(:dynamic_tax_rate, value: 200)` (basis points)
+
+#### S6.18 — M2M nonce TTL=600s: justification не задокументовано
+- **P3** | `04_03` M2M auth, `app/controllers/api/v1/m2m_auth_controller.rb` | **Складність: XS** | **🤖 Док**
+- **Опис:** TTL = 600 сек (10 хв) задокументовано як «cover ±5 min window with margin». Чому саме 10 хв, а не 5 або 15 — не пояснено. У security review може бути зауваження
+- **Статус (✅ виконано):** Inline-коментар у `m2m_auth_controller.rb` розширено до 9 рядків з повним обґрунтуванням (timestamp window 5 хв + margin 5 хв = 10 хв; чому не 5 — leading-edge replay; чому не 15+ — Redis memory без security gain). Параграф «TTL = 10 хв — обґрунтування [S6.18]» додано у `04_03_REST_API_v1_Reference.md` §5.15.
+- [x] 🤖 Додати inline-коментар + параграф у `04_03` з обґрунтуванням
+
+#### S6.19 — M2M Redis fallback: TOCTOU window не виміряний
+- **P2** | `app/controllers/api/v1/m2m_auth_controller.rb` (lines 69–82) | **Складність: S** | **🤖 Код + спостереж.**
+- **Опис:** При недоступному Redis → DB-backed nonce cache. У коментарі коду визнано: `if Rails.cache.exist?(fallback_key)` then write — race condition можлива між check і write. Acceptable tradeoff для degraded fallback path. Невідомо: який % auth-запитів реально потрапляє у fallback path? Як часто Redis unavailable?
+- **Статус (✅ виконано):** Prometheus counter `silkennet_m2m_nonce_fallback_total` додано у `config/initializers/prometheus.rb` та інкрементується у `m2m_auth_controller.rb#create` rescue block. Документовано у `04_03` §5.15 «Спостережуваність [S6.19]» з alerting threshold (rate > 0.1% req/h → escalate Upstash multi-zone).
+- [x] 🤖 Prometheus counter `silkennet_m2m_nonce_fallback_total` (Redis outage detector)
+- [x] 🤖 Якщо fallback path > 0.1% requests за 1h → alert (Grafana rule — потребує конфігурації після S2.3)
+- [x] 🤖 Документувати у `04_03` runbook: «якщо fallback active довше N хв — escalate Upstash multi-zone»
 
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
 - **High** | `06_05` | **Складність: XS** | **🔧 Операційна** — верифікація після першого реального деплою, без коду
@@ -276,6 +398,48 @@
 - [ ] 🤖 Firmware Queen: верифікація підпису/HMAC перед relay
 - [ ] 🤖 Firmware Soldier: верифікація перед Flash write (`MRUBY_CONTRACT_FLASH_ADDR`)
 - [ ] 🤖 Magic check `0x45544952 ("RITE")` + HMAC verification = dual gate
+
+#### FW.24 — DID fallback magic constant (0x511CEE01) — collision risk
+- `firmware/soldier/main.c` (Generate_DID), `firmware/test/test_soldier_logic.c` | **P2**
+- **Опис:** Коли STM32 unique ID XOR дає 0 (теоретично можливо при відмові UID-блоку), використовується fallback magic constant `0x511CEE01`. Якщо два пристрої одночасно мають defective UID → колізія DID. Імовірність низька (~2.3e-10), але детермінована: якщо у партії є два дефекти → повна катастрофа провіженінгу
+- **Статус (✅ часткове — backend guard виконано):** Backend `Api::V1::ProvisioningController#register` тепер відхиляє `hardware_uid` чиї останні 8 hex символів збігаються з firmware fallback magic `511CEE01` (case-insensitive). Тест: `spec/requests/api/v1/provisioning_controller_spec.rb` context "[FW.24]" — exact match, lower-case match, та non-magic UID negative cases. Це блокує колізії та реєстраційні атаки. Firmware-side зміна (HRNG fallback при defective UID) — окрема задача, потребує firmware build pipeline.
+- [ ] 🤖 Замінити magic constant на HRNG-based fallback (запит RNG hardware при boot, якщо UID невалідний) — firmware-side
+- [x] 🤖 Backend: відхиляти провіженінг DID, що дорівнює fallback magic
+- [x] 🤖 Тести: симуляція UID = `511CEE01` та `AABBCCDD511CEE01` → expect 422; non-magic suffix → not blocked
+
+#### FW.25 — TinyML DSP preprocessing (FFT/MFCC) — undefined
+- `03_03` BLOCKER-5 | `firmware/soldier/main.c` | **P1** (блокує FW.4)
+- **Опис:** Поточна архітектура передає лише лінійну нормалізацію [0.0, 1.0] до TinyML моделі. **Невідомо**, чи модель очікує raw time-domain, чи частотні ознаки (FFT/MFCC). Залежить від `silken_net_audio_model.h` (відсутній). Якщо потрібен MFCC — це додає ~5-15 KB Flash + ~40 µs CPU на inference
+- [ ] 👤 Узгодити з ML-партнером (Бушин ChNU або CHDTU): який preprocessing вбудований у модель?
+- [ ] 🤖 Якщо MFCC — оцінити Flash/RAM/CPU budget і інтегрувати CMSIS-DSP
+- [ ] 🤖 Тести: золотий вектор inference (наперед відома класифікація)
+
+#### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
+- `03_03` BLOCKER-3 | `firmware/soldier/main.c` | **P1**
+- **Опис:** Точна величина `TENSOR_ARENA_SIZE` невідома з коду — документація оцінює ~8-16 KB. Ніколи не виміряно через `arm-none-eabi-size`. Якщо tensor arena > 46 KB → stack overflow при Lorenz обчисленнях (250 ітерацій mruby + Lorenz state)
+- [ ] 🤖 Запустити `arm-none-eabi-size firmware/soldier/build/soldier.elf` після додавання моделі (FW.4) → виміряти `.bss + .data`
+- [ ] 🤖 Якщо > 46 KB — оптимізувати модель (INT8 quantization, prune)
+- [ ] 🤖 CI gate: build fail якщо `.bss + .data > 50 KB`
+
+#### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
+- `03_02` §5 | **P2**
+- **Опис:** Queen транслює OTA chunks послідовно через LoRa без перевірки чи Soldier активно слухає. Якщо Soldier у STOP2 під час broadcast — chunk втрачається без retry. Документація **не описує recovery механізм** для пропущених chunks. Без TDMA Sync Windows (ARCH.26) — broadcast ненадійний
+- [ ] 🤖 Дизайн ACK-aggregation: Queen чекає consolidated ACK після всіх chunks → re-broadcast пропущених
+- [ ] 🤖 Magic re-request: Soldier при Flash write detects gap → request specific chunks via uplink (vector OTA)
+- [ ] 🔗 Залежить від ARCH.26 (TDMA для координованого RX вікна)
+
+#### FW.28 — Acoustic events read-and-clear atomicity
+- `03_03` §4.2, `03_01` §1.6 (Bit-Pack) | **P2**
+- **Опис:** Після Phase 2 (Bit-Pack) `acoustic_events` скидається у 0. Якщо DMA-буфер (16 кГц аудіо) наповнюється між пакетом А (TX) та пакетом Б (next wakeup) — TinyML inference у проміжку може стати втраченою подією. Документація не описує атомарність read-and-clear
+- [ ] 🤖 Firmware: атомарна `__disable_irq()` секція навколо `pack_byte = (status<<6)|growth_points; acoustic_events = 0;`
+- [ ] 🤖 Документувати у `03_03` invariant: усі inference-події між wakeup_N та wakeup_(N+1) → потрапляють у пакет N
+
+#### FW.29 — Panic packet (0xFF) vs saturated acoustic_events (255) — disambiguation
+- `03_03` §5.3 | **P1**
+- **Опис:** Panic пакети (chainsaw detection) форматуються з маркером `0xFF` (255). Saturated acoustic_events теж досягає 255 (FW.22 cap). **Без MAC/MIC** Queen не може розрізнити: bit-flip атака може перетворити нормальний пакет з 255 events на panic broadcast → false fire alert. Вирішується разом з FW.2 (CCM MIC), але потребує окремого дизайну на канальному рівні
+- [ ] 🤖 Дизайн: окреме поле `panic_flag:1 bit` у StatusByte (звільнити 1 біт від growth_points 6→5)
+- [ ] 🤖 АБО: panic packets мають окремий destination header byte
+- [ ] 🔗 Інтегрувати з FW.2 CCM transition
 
 ---
 
@@ -530,14 +694,34 @@
 - [ ] 🔗 Верифікувати що `EwsAlert` broadcast застосовує той самий CCM MIC що і звичайні пакети (після FW.2)
 - [x] Backend: rate limiting на emergency callbacks — не більше N panic alerts/хвилину від одного DID
 
+#### SEC.11 — Provisioning master key: відсутня production guard
+- **Джерело:** `06_04_Secrets_Checklist.md` §2.1, `app/services/hardware_key_service.rb` | **Пріоритет: P0**
+- **Опис:** `PROVISIONING_MASTER_KEY` повинен raise при відсутності ENV у `Rails.env.production?`. Поточний fallback на raw AES key — критична security regression (допустима **тільки** у TRL 4 lab mode). Документація рекомендує guard у контролері/сервісі, але реалізація не задокументована як виконана. Ризик: production deploy без ENV → AES keys generated з deterministic seed → trivial extraction
+- **Статус (✅ виконано):** `HardwareKeyService.derive_device_key` тепер raise `SecurityError` коли `Rails.env.production?` AND `ENV["PROVISIONING_MASTER_KEY"].blank?`. Tests: `spec/services/hardware_key_service_spec.rb` — context "without PROVISIONING_MASTER_KEY in production [SEC.11]" перевіряє що (a) `derive_device_key` raises, (b) `provision` raises та НЕ створює HardwareKey запис. Lab/test/dev модус продовжує працювати з SecureRandom fallback.
+- [x] 🤖 `HardwareKeyService.derive_device_key` raise `SecurityError` якщо `PROVISIONING_MASTER_KEY` blank AND `Rails.env.production?`
+- [x] 🤖 Тести: `Rails.env.stub(:production?).and_return(true)` + missing ENV → expect SecurityError
+- [ ] 🤖 Pre-deploy CI gate: assert ENV present у `production` environment (потребує deploy.yml workflow зміни — окрема задача)
+
 ---
 
 ## 📝 Документаційні невідповідності (DOC)
 
-> Виявлені при cross-reference аудиті всіх 35 документів. Потребують узгодження між docs, firmware та backend.
+> Виявлені при cross-reference аудиті всіх 47 документів (2026-04-30). Потребують узгодження між docs, firmware та backend. **Не блокери виконання, але блокери для аудиту і онбордингу.**
 
-| ID | Невідповідність | Документи | Дія |
-|----|----------------|-----------|-----|
+| ID | Невідповідність | Документи / Файли | Дія |
+|----|----------------|-------------------|-----|
+| DOC.1 | Документація AES master key суперечлива: `03_05` лінія 531-537 каже «навмисно не публікується», а лінія 538 натякає що перші 4 слова збігаються з FIPS-197 Appendix B test vector. Скоординувати після SEC.9 (заміна seed key) | `03_05`, `firmware/soldier/main.c:66-67` | Після SEC.9 видалити test-vector згадку, оновити обидва параграфи |
+| DOC.2 | Mesh DID 3-slot anti-pingpong cache (LIFO eviction) **реалізовано** у `firmware/soldier/main.c` (DR12 packed bit fields), але **не специфіковано формально** у `03_01_Firmware_Lifecycle_and_DMA.md` | `03_01`, `firmware/soldier/main.c` | Додати §1.x «Mesh Relay Anti-Pingpong Algorithm» з псевдокодом + RTC layout таблицею |
+| DOC.3 | RTC Backup Domain magic markers (`0x4C5A5354 "LZST"` для Lorenz state, magic для EMA) **використовуються в коді**, але **не зведені у спец-таблицю** у docs. Розкладку DR0..DR23 потрібно винести у одну точку істини | `03_01` §2, firmware | Створити канонічну RTC Backup Domain Layout таблицю в `03_01` |
+| DOC.4 | Lorenz first-boot vs continuation logic розкидана між `03_04` §2.1 (опис `calculate_state_continued`) та `03_01` §6 (RTC magic check). Потрібна одна точка істини | `03_04`, `03_01` | Об'єднати у `03_04` §2.1 з cross-ref на RTC layout |
+| DOC.5 | Tailwind CSS v4 `@theme` блоки (`app/assets/tailwind/application.css`) — джерело істини для design tokens, але `app/views/components/application_component.rb#CUSTOM_TEXT_SCALE` **дублює** конфігурацію у Ruby. При додаванні нового token у CSS — Ruby конфіг **не auto-sync**ається з TailwindMerge, що може давати silent class collision | `04_04`, `app/assets/tailwind/application.css`, `app/views/components/application_component.rb` | Документувати у `04_04`: «при зміні `@theme` блоку — оновити `CUSTOM_TEXT_SCALE`/`CUSTOM_COLOR_TOKENS` Ruby константи» + lint-rule |
+| DOC.6 | Component registry у `04_04` §6 показує hierarchy, але не специфікує namespacing convention (29 directories у `app/views/components/`). Нові контриб'ютори не знають де розмістити компонент | `04_04`, `app/views/components/` | Додати у `04_04` §6 правила: «alerts/, trees/, contracts/, ...» + decision tree |
+| DOC.7 | `04_02` §4.2.2 (BlockchainMintingService) описує що guards активні тільки для oracle-driven flow, але tokenomics flow проходить **без явного guard chain**. Зв'язок між цими шляхами не пояснений у `05_02_Proof_of_Growth_Pipeline.md` | `04_02`, `05_02` | Об'єднати у `05_02` §4: діаграма «всі шляхи до `Wallet#lock_and_mint!`» з invariant'ами кожного |
+| DOC.8 | TelemetryLog cleanup job (з constraint «не видаляти `oracle_status='dispatched'`») — реалізовано в коді, але **не задокументовано у Services Registry** (`04_02` §11). Новий розробник може запустити ad-hoc cleanup без знання обмеження | `04_02` §11, відповідний worker | Додати запис у Services Registry + warning у `04_01` модель |
+| DOC.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації |
+| DOC.10 | Старий модем SIM7000G згадується в Wiki + старих docs. Поточно — **SIM7070G** (зафіксовано у `02_01` BOM + firmware). Wiki пункт треба очистити (HW.10) | Wiki, `02_05` | 👤 Wiki update (зовнішній артефакт) |
+| DOC.11 | TailwindCSS v3 → v4 migration: `04_04` каже «v4 поточна», але немає migration guide для розробника, що працює зі старим code branch / fork | `04_04` | Додати «v3 → v4 differences cheatsheet» |
+| DOC.12 | M2M nonce TTL = 600 сек обрано «з margin», але **обґрунтування не задокументовано**. Питання: чому не 5 хв (точно `±` window) або 15 хв (повний margin)? | `04_03` M2M auth | Додати inline-коментар у controller + параграф у `04_03` |
 
 
 ---
@@ -560,6 +744,27 @@
 - [x] Створити `.github/workflows/ssot_guard.yml`
 - [x] Визначити mapping: які файли потребують яких doc updates
 - [ ] 👤 Налаштувати як required check на `main` branch
+
+#### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
+- **Джерело:** `08_01` §1.1-1.3, `08_02` §1, `08_03`, `09_01` | **Складність: L** | **🤖 Методологія + Док**
+- **Опис:** 25+ паралельних R&D-задач розподілені між 8+ науковцями (ChNU FOTIUS + ChDTU + ChIPB + ChMA + СЄУ). Поточно — ad-hoc розподіл. Запропоновано: 4-кластерна структура (A: Hardware/EBFC, B: Verification/Math, C: Scaling/Cloud, D: Compliance/Legal) + Shape Up 6-week cycles + Convolution Method для скорочення PN-state explosion 10-100×
+- [ ] 🤖 Дизайн kanban-mapping: 4 кластери у GitHub Projects V2 + label conventions
+- [ ] 🤖 Документувати у `09_01` Shape Up cycle template + betting table процедуру
+- [ ] 👤 Перший betting cycle після UNI.1 (декан) та UNI.8 (СЄУ)
+
+#### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
+- **Джерело:** `09_03`, `08_01` | **Складність: M** | **🤖 Код**
+- **Опис:** TRL-матриця прив'язана до seasons (Q1/Q2/Q3/Q4), але навчальний рік ChNU/ChDTU має семестри (вересень-грудень, лютий-травень). Без mapping — milestone-deadlines не синхронізовані з академічним календарем (наприклад, фінальні захисти магістерських у червні)
+- [ ] 🤖 Додати у `09_03` mapping: семестр ↔ TRL milestone
+- [ ] 🤖 Розширити `trl_sync.yml` на запис академічних semestriv як окремий field у Projects V2
+- [ ] 👤 Узгодити календар з 8 науковцями (UNI.5)
+
+#### OPS.5 — EU DMLS quotes від 2-3 backup підрядників
+- **Джерело:** `07_02` §8.1.1 | **Складність: S** | **🔧 Операційна**
+- **Опис:** BIZ.6 ✅ ідентифікував 4 EU кандидати (3D Lab PL, Materialise BE, Sauber CH/Lithoz AT, TRUMPF DE). Наступний крок — отримати quotes на пробну партію 10 шт. для benchmarking + frame agreement letter
+- [ ] 👤 Запит quotes у 3D Lab PL (priority 1) + Materialise BE (priority 2)
+- [ ] 👤 Заповнити порівняльну таблицю у `07_02` §8.1.1
+- [ ] 👤 Letter of Intent / Frame Agreement з top vendor
 
 ---
 
@@ -618,11 +823,43 @@
 - [x] 🤖 Додати Queen battery degradation (80% capacity після 2000 циклів ≈ 5.5 років)
 - [x] 🤖 Оновити ROI model в `07_02`
 
+#### BIZ.8 — EU DMLS Frame Agreement (extension of BIZ.6)
+- **Джерело:** `07_02` §8.1.1 | **Пріоритет: P1**
+- **Опис:** BIZ.6 ✅ ідентифікував кандидатів. Наступний рівень — формальний frame agreement з sample part quotes для активації при war-zone disruption. Без цього contingency — лише на папері (~3 місяці lead-time на onboarding нового підрядника якщо буде emergency)
+- [ ] 👤 NDA + RFQ зі 3D Lab PL (priority 1)
+- [ ] 👤 Sample part order (10 шт.) для quality benchmark vs UA-вендорів
+- [ ] 👤 Frame Agreement: pricing locked at +20% premium з 30-day activation clause
+
+#### BIZ.9 — Незалежний carbon credit методолог (Verra/Gold Standard)
+- **Джерело:** `07_01` §3, `07_02` §7.3 | **Пріоритет: P2** (Post-TRL 7)
+- **Опис:** BIZ.1 ✅ визначив `2000 SCC = 1 tCO₂` через ProtocolParameters. Для конвертації SCC з utility token у сертифіковані kg CO₂ для institutional buyers (ESG, retiring) — потрібна **independent methodology audit** від акредитованого реєстра (Verra VCS / Gold Standard / Puro.earth)
+- [ ] 👤 Engagement акредитованого carbon methodologist (cost ~$50-100k)
+- [ ] 👤 Подача Project Description Document (PDD) у Verra
+- [ ] 🔗 Залежить від HW.3 (lab data Arrhenius) + UNI.6/UNI.7 (DFT + diffusion publications)
+
+#### BIZ.10 — Multi-party IP Contract + NDA framework
+- **Джерело:** `08_03`, `08_05`, `08_06`, `08_07` | **Пріоритет: P1**
+- **Опис:** 5-сторонній партнерський фреймворк ChNU + ChDTU + ChIPB + ChMA + СЄУ + Silken Net. Потребує: (1) bilateral NDA з кожною установою для preprint sharing, (2) шаблон IP-договору щодо спільного авторства Q1 публікацій, (3) патентні права на анкер-дизайн/EBFC-протокол, (4) clear royalty structure при комерціалізації
+- [ ] 👤 Залучити патентний повірений (Україна + EU)
+- [ ] 👤 Bilateral NDA з кожною з 5 установ (паралельно з UNI.4-14)
+- [ ] 👤 Master IP Framework Agreement (post-перших зустрічей)
+- [ ] 🔗 Залежить від UNI.1 (декан) + UNI.8 (СЄУ) + UNI.9 (ChDTU) + UNI.12 (ChIPB) + UNI.13 (ChMA)
+
+#### BIZ.11 — RWA pilot реєстрація лісової ділянки через Polygon Hadron
+- **Джерело:** `07_01` BLOCKER-6 | **Пріоритет: P2**
+- **Опис:** Hadron (ERC-3643 KYC/Compliance) — обраний шлях для RWA tokenization. Потрібна пілотна реєстрація **однієї** реальної лісової ділянки з: (1) кадастровими документами, (2) незалежною оцінкою біомаси (LIDAR + ground truth), (3) Hadron compliance attestation
+- [ ] 👤 Знайти партнера-лісокористувача в Україні (post-war або Carpathian region)
+- [ ] 👤 Кадастровий експерт + biomass appraisal company
+- [ ] 🤖 Hadron integration spec: `Hadron::TokenizeForestPlotService` + KYC flow
+- [ ] 🔗 Залежить від BIZ.2 (MSA template)
+
 ---
 
-## 🎓 Академічні блокери (ЧНУ)
+## 🎓 Академічні блокери (5 установ)
 
-#### UNI.1 — Перший контакт з деканом Онищенком
+> **Поточний стан:** Партнерство з 5+ академічними установами — ChNU (фізико-хімія + ФОТІУС), ChDTU (Data Science + RF + акустика), ChIPB-NUTSU (пожежна безпека), ChMA (біохімія + токсикологія), СЄУ (правова + економічна архітектура). UNI.1-3, UNI.8 — раніше ідентифіковані; нижче — розширення на всі 5 установ.
+
+#### UNI.1 — Перший контакт з деканом Онищенком (ChNU FOTIUS)
 - **Джерело:** `08_01`
 - **Блокує:** Всю лабораторну роботу, 10 публікацій, 11 магістерських
 - [ ] 👤 Призначити зустріч
@@ -646,7 +883,70 @@
 - [ ] 👤 Юридичне оформлення IP-договору
 - [ ] 👤 Підпис обома сторонами
 
-#### UNI.8 — Перший контакт з ректоратом СЄУ
+#### UNI.4 — ChNU школа Мінаєва: DFT-моделювання EBFC
+- **Джерело:** `08_01` §1.1, `08_03` Стаття 1 | **Пріоритет: P1**
+- **Опис:** Квантово-хімічна симуляція генерації потокового потенціалу на TiO₂-поверхні гіроїда + адсорбція органічних кислот ксилеми. Школа Мінаєва (ChNU) — світовий рівень DFT досліджень. Цільовий результат: стаття Q1 *Electrochimica Acta*. Блокує seed pitch deck (немає академічного credibility для EBFC механізму)
+- [ ] 👤 Зустріч з представниками школи Мінаєва (через декана факультету хімії)
+- [ ] 👤 NDA + IP framework (BIZ.10)
+- [ ] 👤 Спільна заявка на грант MES Ukraine / Horizon Europe
+
+#### UNI.5 — ChNU школа Гусака: дифузійна деградація 20-років (Kirkendall effect)
+- **Джерело:** `08_01` §1.2, `08_03` Стаття 2 | **Пріоритет: P1**
+- **Опис:** Математичне моделювання ефекту Кіркендалла на межі Ti-6Al-4V / xylem sap + 12-тижневий accelerated тест за Arrhenius (40°C). Школа Гусака — спеціалізація на diffusion-controlled corrosion. Цільовий результат: стаття Q1 *Corrosion Science*. Блокує investor-grade credibility щодо 20+ years longevity claim
+- **Залежність:** HW.3 (Arrhenius test) — для emperichnoi верифікації моделі
+- [ ] 👤 Зустріч зі школою Гусака
+- [ ] 👤 Спільний експеримент з HW.3
+- [ ] 👤 Co-authored paper draft
+
+#### UNI.9 — ChDTU Карапетян: Data Science колаборація
+- **Джерело:** `08_04` §1.1 | **Пріоритет: P1**
+- **Опис:** ChDTU має R-кластер для тренування ML моделей. А.Р. Карапетян — головний кандидат для статистики телеметрії (anomaly detection, fraud), магістерські теми, спільні публікації
+- [ ] 👤 Формальна зустріч з Карапетяном (cold contact через ChDTU rectorat)
+- [ ] 👤 Узгодити кафедральну тему «Statistics of Bio-IoT Telemetry»
+- [ ] 👤 2-3 магістерських теми на 2026-2027 academic year
+- [ ] 🤖 SLA для R-кластеру (доступ для тренування `silken_forest.marshal` post-TRL 7)
+
+#### UNI.10 — ChDTU Гончаров (ФЕТР): RF верифікація + EMC pre-compliance
+- **Джерело:** `08_04` §1.2 | **Пріоритет: P1**
+- **Опис:** А.А. Гончаров (ФЕТР ChDTU) має VNA + спектроаналізатор + anechoic chamber. Потрібен для: (a) VNA вимір SMD-антени під PEEK-радомом (HW.17 verification), (b) натурні Link Budget вимірювання у лісі (SF=7-9, 50/100/150/200/250 м), (c) EMC pre-compliance тести для CE/FCC (E.11)
+- [ ] 👤 Формальна зустріч + access agreement до RF-лабораторії
+- [ ] 👤 VNA-вимір 3-5 варіантів PEEK-кришки (товщина 1.5/2.0/2.5 мм)
+- [ ] 👤 Link Budget field test (потребує польової експедиції)
+- [ ] 🔗 Залежить від HW.9 (PCB) + HW.17 (radome prototype)
+
+#### UNI.11 — ChDTU Базіло+Бондаренко (ПМКТ): акустична валідація фононної лінзи
+- **Джерело:** `08_04` §1.3 | **Пріоритет: P2**
+- **Опис:** ПМКТ (Прикладна механіка + комп'ютерні технології) ChDTU — спеціалізація п'єзоелектрика + акустичні метаматеріали. Потрібно: EIS-характеризація п'єзодиска 25-150 кГц (TinyML cavitation detection), верифікація гіроїдного фокусування (phonon lens) для кавітації ксилеми. Цільовий результат: стаття Q1 *IEEE Transactions on Biomedical Engineering*
+- [ ] 👤 Формальна зустріч з Базіло + Бондаренко
+- [ ] 👤 EIS-протокол для п'єзодиска (постачання зразка)
+- [ ] 👤 Acoustic стенд-тест для гіроїда (cross-ref HW.1)
+
+#### UNI.12 — ChIPB-NUTSU: пожежна безпека + параметричне страхування
+- **Джерело:** `08_05` | **Пріоритет: P1**
+- **Опис:** Черкаський інститут пожежної безпеки + Національний університет цивільного захисту України (НУЦЗУ). Потрібно: (1) валідація тригерів параметричного страхування (FRP threshold, confidence levels — з dClimate flow), (2) розробка SOP для 7 типів EwsAlert (drought/insect_epidemic/vandalism/fire/seismic/fault/entropy), (3) інтеграція з ДСНС API (якщо існує)
+- [ ] 👤 Cold contact з ректоратом ChIPB
+- [ ] 👤 Перша зустріч + презентація fire-safety stack
+- [ ] 👤 Joint SOP development workshop (cross-ref ARCH.31)
+- [ ] 🔗 Залежить від UNI.14 (СЄУ legal) для structuring параметричного страхування
+
+#### UNI.13 — ChMA: біохімія EBFC + токсикологія
+- **Джерело:** `08_06` | **Пріоритет: P2**
+- **Опис:** Черкаська медична академія (ChMA). Потрібно: (1) валідація FAD-GDH + Laccase інгібіції при pH ксилеми (4.5-5.5), (2) токсикологічні тести іонів Ti/Al/V (поглинання деревом, безпека для ecosystem). **⚠️ Посади науковців у docs не верифіковані** через офіційний сайт ChMA — критичний блокер
+- [ ] 👤 **СПОЧАТКУ:** Верифікувати посади всіх науковців ChMA через офіційний сайт
+- [ ] 👤 Cold contact з ректором ChMA
+- [ ] 👤 Joint biochemistry protocol для EBFC Gen 2.0 (cross-ref HW.5)
+
+#### UNI.14 — СЄУ: токеноміка RWA + правова архітектура
+- **Джерело:** `08_07` | **Пріоритет: P1**
+- **Опис:** Розширення UNI.8. СЄУ — національний університет; потрібно: (1) MSA/Term Sheet для B2B контрактів (Аблязов Д. — право, к.ю.н.), (2) KYC/AML процес для юридичних осіб (Hadron flow), (3) структура DAO як юридичної особи (cooperative? Swiss Verein?), (4) ESG Accounting Framework (Ус Г.О. — облік). **⚠️ Посади 7 науковців СЄУ потребують верифікації** через офіційний сайт
+- [x] 🤖 Підготувати pitch для ректора (Чудаєва І.Б.) — ✅ 10-хвилинний pitch-документ додано в `08_07` §6
+- [ ] 👤 Перша зустріч з Чудаєвою (ректор) або Аблязовою Н. (президент) — UNI.8
+- [ ] 👤 Верифікувати посади та наукові профілі всіх 7 науковців СЄУ
+- [ ] 👤 Меморандум про співпрацю СЄУ ↔ Silken Net
+- [ ] 👤 Joint workshop: Аблязов Д. (право) + Silken Net legal → MSA шаблони
+- [ ] 👤 Joint workshop: Ус Г.О. (облік) → ESG Accounting Framework
+
+#### UNI.8 — Перший контакт з ректоратом СЄУ (legacy ID — see UNI.14)
 - **Джерело:** `08_07`
 - **Блокує:** Economic Whitepaper, Legal Framework, NaaS юридичні шаблони (07_01 BLOCKER-1, BLOCKER-3)
 - [x] 🤖 Підготувати pitch для ректора (Чудаєва І.Б.) — ✅ 10-хвилинний pitch-документ додано в `08_07` §6. 4 блоки: проблема/ринок → що побудовано → 5 напрямів для СЄУ → що отримає СЄУ. Матеріали для зустрічі специфіковані
@@ -700,6 +1000,15 @@
 | E.47 | **Solana RPC defaults to Devnet** — production мінтинг USDC мікро-винагород піде на Devnet якщо не встановлений `SOLANA_RPC_URL` | `05_01` | ⚠️ Перевірити ENV перед mainnet |
 | E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
 | E.49 | **Celo RPC fallback mechanism** не вказаний — при збої primary RPC немає автоматичного переключення | `05_01` | P3: додати fallback RPC |
+| E.50 | **Edge fuzzy_distance dedup function** на STM32WLE5JC: <1 мс CPU, <128 байт RAM, ціль — 30-40% TX зниження за рахунок suppression near-duplicate пакетів | `08_02` §1.3 (Vector 1, Ярмілко) | Post-TRL 7 (R&D — Ярмілко) |
+| E.51 | **Monte Carlo TTL-flood симуляція** для обґрунтування `PANIC_TTL=5` та `DEFAULT_TTL=3`: цільовий P_delivery ≥ 0.99 при 20-30% одночасних відмов вузлів. Виходи: math-обґрунтування для seed deck | `08_02` §1.2 (Vector 2) | Post-TRL 6 (Порубльов, ЧНУ) |
+| E.52 | **GA-оптимізація ваг `silken_forest.marshal`** ML моделі на Akash GPU кластері — генетичний алгоритм для `InsightGeneratorService` stress_index класифікації | `08_02` §1.6 (Любченко) | Post-TRL 7 |
+| E.53 | **VNA-вимір SMD-антени під PEEK радомом** — VSWR <1.5 на 868 МГц для 3-5 варіантів товщини PEEK (1.5/2.0/2.5 мм) у вологому/сухому стані. Лабораторна задача (cross-ref UNI.10 ChDTU Гончаров) | `08_02` §1.3 + `02_01` | P1, blocked by HW.17 + UNI.10 |
+| E.54 | **SOP документи для 7 типів EwsAlert** — стандартизовані інструкції UA+EN: severe_drought, insect_epidemic, vandalism_breach, fire_detected, seismic_anomaly, system_fault, entropy_anomaly. Інтеграція як inline UI у Phlex (cross-ref ARCH.31) | `08_05` | P1, joint with ChIPB-NUTSU (UNI.12) |
+| E.55 | **Multi-party NDA + IP framework** для 5-сторонньої академічної співпраці (ChNU + ChDTU + ChIPB + ChMA + СЄУ + Silken Net) — base-line для всіх UNI.x публікацій | `08_03`, `08_05`, `08_06`, `08_07` | P1, cross-ref BIZ.10 |
+| E.56 | **DSP preprocessing для TinyML** — невідомо чи модель очікує raw time-domain чи MFCC. Якщо MFCC → +5-15 KB Flash + 40 µs CPU (CMSIS-DSP) | `03_03` BLOCKER-5 | P1, cross-ref FW.25 |
+| E.57 | **TENSOR_ARENA_SIZE budget verification** — ніколи не виміряно через `arm-none-eabi-size`. Ризик stack overflow якщо > 46 KB | `03_03` BLOCKER-3 | P1, cross-ref FW.26 |
+| E.58 | **Lorenz state continuity** після brownout: документація specifies повний (x,y,z) save в RTC Backup, але недостатня формалізація first-boot vs continuation logic. Магічний marker `LZST` (0x4C5A5354) реалізовано — потребує канонічної таблиці RTC layout | `03_04`, `03_01` | P2, cross-ref DOC.3, DOC.4 |
 
 ---
 
@@ -730,6 +1039,13 @@
 | ARCH.24 | CE/FCC/RoHS/EMC/IP68 compliance roadmap для EU/NA ринків: CE-RED (868 МГц LoRa), FCC Part 15/90, RoHS-2, IP68 (IEC 60529), REACH. Кожна сертифікація потребує 3-6 місяців та спеціалізованої лабораторії | `08_02` | Pre-mass production (Косенюк, ЧНУ) |
 | ARCH.25 | Gyroid geometric validation scripts: Python/C++ верифікація 65% пористості per-slice, topological integrity mesh, capillary channel connectivity via BFS (breadth-first search). Запускається після кожного nTop build для запобігання помилкам DMLS | `08_02` | Before DMLS factory order |
 | ARCH.26 | **Синхронні Вікна (TDMA) та CAD Preamble Detection — вирішення Проблеми Рандеву для mesh relay.** Поточна архітектура: Queen always-on (`Radio.Rx(LORA_RX_INFINITE)`), Soldier має лише 600 мс post-TX RX window — mesh relay між Солдатами стохастичний і ненадійний за межами прямої видимості Queen. **Три рівні рішення:** (L1) Queen always-on ✅ реалізовано; (L2) TDMA Sync Windows — Queen транслює beacon з точним часом (NTP через LTE), Солдати синхронізують RTC, кожні 15 хвилин координоване 2-секундне RX-вікно для mesh relay. Залежить від FW.20 (LoRa Time Sync); (L3) CAD — SX1262 `Radio.StartCad()` дозволяє wake на ~2 мс/секунду для детекції LoRa-преамбули без повного RX. Критично для PANIC mode: Солдат при chainsaw detection посилає довгу преамбулу (~1 сек), сусідні Провідники ловлять через CAD навіть між TDMA-вікнами. **Firmware зміни:** Soldier: CAD periodic wakeup (LPTIM або RTC sub-second alarm), beacon RX handler, RTC sync logic. Queen: beacon TX (periodic broadcast з UTC timestamp + network schedule). **Енергобюджет:** CAD wake 1/сек × 2 мс × 4.5 мА = ~9 µA середнє — допустимо для Провідників (дерева з високим vcap), неприйнятно для слабких Солдатів. Рольова диференціація: Солдат (TX-only, глухий) vs Провідник (TX+CAD, еліта з надлишком енергії). | `00_01`, `03_01`, `03_02` | Post-TRL 6 (Firmware + Queen beacon) |
+| ARCH.27 | **Node Role Differentiation (Soldier vs Provisioner) у firmware** — ARCH.26 передбачає рольову диференціацію (Soldier=TX-only, Provisioner=TX+CAD), але **firmware компілюється ідентично для обох ролей**. Runtime role не персистована у Flash/RTC. Без role-aware logic — неможливо реалізувати енерго-диференційовану mesh relay | `00_01`, `03_01` | Post-TRL 6 (передумова для ARCH.26 L3) |
+| ARCH.28 | **RTC Backup Domain allocation policy** — DR0..DR23 регістри активно використовуються (Lorenz state, mesh cache, EMA, FW.18 thresholds). Резерв вичерпується. Потрібна формальна політика: (a) канонічна таблиця у `03_01`, (b) procedure для додавання нової фічі (review impact на existing fields), (c) consideration для Flash-based key-value store як overflow | `03_01` §2 | Post-TRL 6 (документація + майбутнє розширення) |
+| ARCH.29 | **RTOS Deadlock-Free верифікація через Petri Nets** — формальна PN-модель firmware tasks (Sensing/Compute/TX/OTA/WDT) на Soldier + reachability graph аналіз для доведення відсутності circular wait. Відрізняється від ARCH.20 (Petri Net Rails моноліт) тим що моделює embedded RTOS scheduling | `08_02` §1.2 (Ярмілко) | Post-TRL 6 (R&D — Ярмілко, ЧНУ) |
+| ARCH.30 | **Parallel CFD gyroid simulation на Akash GPU** — domain decomposition алгоритм для 3D TPMS-симуляцій на heterogeneous GPU вузлах Akash. Скорочує CFD lead-time з ~2 годин до real-time валідації геометрії перед DMLS order. Cross-ref ARCH.25 (gyroid validation scripts) | `08_02` §1.4 (Онищенко) | Post-TRL 7 (методологія + Akash GPU integration) |
+| ARCH.31 | **SOP-в-Phlex inline UI для EwsAlert** — інтеграція 7 SOP документів (drought/epidemic/vandalism/fire/seismic/fault/entropy) як inline-інструкцій, що показуються при кліку на EwsAlert у дашборді. UX: forester отримує немедіане runbook замість пошуку у документах | `08_05` + `04_02` | Post-TRL 6, cross-ref E.54 + UNI.12 |
+| ARCH.32 | **Shape Up 6-week cycle Petri Net formalization** — формальна верифікація фази Shape Up (betting table → build → cool-down) щоб довести: будь-яка фіча може бути завершена у межах cycle constraints. Цільова стаття Q1 *IEEE Transactions on Software Engineering* | `08_02`, `09_01` | Post-TRL 7 (методологія + R&D, Супруненко ЧНУ) |
+| ARCH.33 | **ECDH P-256 key exchange як альтернатива HKDF-only provisioning** — мерехтливий розгляд: замість per-device HKDF (FW.1) використати ECDH у factory або field provisioning. Plus: Perfect Forward Secrecy без shared master key. Minus: Curve25519/P-256 потребує ~512 байт SRAM + 50 мс CPU на handshake | `08_02` §1.1 (Vector 2, Ярмілко), `03_05` | Research alternative (узгодити з FW.17 Hash Ratchet) |
 
 ---
 
@@ -745,12 +1061,53 @@
 | 05 Web3 Pipeline | 8-9 | 9 | SFC address |
 | 06 DevOps | 7 | 9 | Docker registry, TLS |
 | 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS |
-| 08 University R&D | 2 | 6 | ЧНУ + СЄУ partnership (6 ВНЗ) |
-| 09 Project Management | 7 | 9 | — |
-| 10 Security | 5 | 9 | Multisig, RDP, Factory |
+| 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
+| 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
+| 10 Security | 5 | 9 | SEC.9 master key, SEC.11 prod guard, Multisig, RDP, Factory |
+
+---
+
+## 📈 Аудит-сесія 2026-04-30 — підсумок нових знахідок
+
+> Повне сканування `docs/00_00 → 09_03` (~28K рядків) + крос-валідація з кодбейсом, у режимі **«документуємо, не фіксимо»**.
+
+**Додано 50+ нових пунктів (без дублікатів існуючих ID):**
+
+| Розділ | Нові ID | Кількість | Найвищий пріоритет |
+|--------|---------|-----------|--------------------|
+| Software/Backend | S6.12 – S6.19 | 8 | P1 (S6.12 oracle guards) |
+| Firmware | FW.24 – FW.29 | 6 | P1 (FW.25, FW.26, FW.29) |
+| Security | SEC.11 | 1 | **P0 (provisioning prod guard)** |
+| Infrastructure | INF.4 – INF.7 | 4 | P1 (INF.4 TLS, INF.6 CoAP) |
+| Operations | OPS.3 – OPS.5 | 3 | P1 (OPS.5 EU quotes) |
+| Business | BIZ.8 – BIZ.11 | 4 | P1 (BIZ.10 multi-party IP) |
+| University | UNI.4, UNI.5, UNI.9 – UNI.14 | 8 | P0 (UNI.13/14 верифікація посад) |
+| Engineering | E.50 – E.58 | 9 | P1 (E.53, E.54, E.55, E.56, E.57) |
+| Architecture | ARCH.27 – ARCH.33 | 7 | P1 (ARCH.27 role differentiation) |
+| Documentation (DOC table) | DOC.1 – DOC.12 | 12 | (audit/onboarding cleanup) |
+
+**P0 нові пункти (критичний шлях):**
+- **SEC.11** — Provisioning master key production guard (raise при відсутності `PROVISIONING_MASTER_KEY` у production)
+- **UNI.13** — Верифікувати посади науковців ЧМА через офіційний сайт (блокує joint publications)
+- **UNI.14** — Верифікувати посади 7 науковців СЄУ через офіційний сайт (блокує MSA)
+
+**Ключові code↔docs невідповідності зафіксовано у DOC table** (12 пунктів):
+- AES master key contradictions (DOC.1) — резолвиться після SEC.9
+- Mesh anti-pingpong + RTC magic markers + Lorenz state continuity — undocumented у спеці (DOC.2-4)
+- TailwindCSS v4 sync + component registry — onboarding gaps (DOC.5-6, DOC.11)
+- Tokenomics flow guard chain pictorial gap (DOC.7)
+- TelemetryLog cleanup constraint missing у services registry (DOC.8)
+- TX energy figures + SIM modem + M2M TTL — historic doc trail (DOC.9, DOC.10, DOC.12)
+
+**Закриті як не-задачі (вирішено / неактуально):**
+- Acoustic events overflow ✅ (FW.22 сесія 18, відображено в існуючому tracker)
+- Modem name discrepancy ✅ (HW.10 — SIM7070G fixed, відображено)
+- Lorenz state RTC persistence ✅ (DR16-DR18 + magic `LZST`, як підтверджено в custom_instruction; tracker уже відображає це у LORENZ-STATE рядку BLOCKER-list)
 
 ---
 
 > **Як оновлювати цей документ:**
 > 1. Знайти відповідний пункт (S1.1, FW.3, HW.7, тощо)
 > 2. Змінити `[ ]` → `[x]` для виконаних підзадач
+> 3. Для нових знахідок — додавати у відповідну секцію + посилання на джерело docs
+> 4. Раз на квартал — повний docs audit з оновленням «Top-Critical Path» секції зверху

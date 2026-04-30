@@ -3,6 +3,14 @@
 module Api
   module V1
     class ProvisioningController < BaseController
+      # [FW.24]: Firmware Soldier має fallback DID (`0x511CEE01`), що використовується
+      # коли STM32 unique ID XOR дає 0 (defective UID block). Backend MUST reject
+      # таких пристроїв при provisioning, щоб уникнути колізій (два дефектні пристрої
+      # отримають однаковий DID `SNET-511CEE01`). Зловмисник також може спробувати
+      # зареєструвати "магічний" UID для накладання на легітимні firmware fallback'и.
+      # Class-level constant — system-wide invariant tied to firmware behavior.
+      FIRMWARE_FALLBACK_DID_MAGIC = "511CEE01"
+
       before_action :authorize_forester!
 
       # --- ТЕРМІНАЛ ІНІЦІАЦІЇ ---
@@ -25,6 +33,21 @@ module Api
       # --- РИТУАЛ ПРИВ'ЯЗКИ ---
       def register
         uid = provisioning_params[:hardware_uid]
+
+        # [FW.24 GUARD]: Reject hardware_uid, останні 8 hex символів якого збігаються
+        # з firmware DID fallback magic (`FIRMWARE_FALLBACK_DID_MAGIC`, class-level
+        # constant). DID генерується як `"SNET-#{uid.last(8).upcase}"`,
+        # отже якщо UID закінчується на `511CEE01` — DID буде `SNET-511CEE01` (firmware
+        # fallback). Перевірка hex/case-insensitive.
+        normalized_suffix = uid.to_s.strip.upcase.last(8)
+        if normalized_suffix == FIRMWARE_FALLBACK_DID_MAGIC
+          render json: {
+            error: "Hardware UID закінчується магічним fallback значенням (#{FIRMWARE_FALLBACK_DID_MAGIC}). " \
+                   "Це резервоване firmware значення для defective STM32 UID — реєстрація заборонена. " \
+                   "Перепрошийте пристрій та повторно зчитайте unique ID."
+          }, status: :unprocessable_content
+          return
+        end
 
         # [ЗАХИСТ ВІД ПОДВІЙНОЇ ІНІЦІАЦІЇ]: Перевіряємо чи hardware_uid вже зареєстрований
         if HardwareKey.exists?(device_uid: uid.to_s.strip.upcase)

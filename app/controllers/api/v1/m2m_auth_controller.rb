@@ -53,7 +53,16 @@ module Api
 
         # [M2M REPLAY FIX]: Nonce check — each signature can only be used once.
         # The SHA256 digest of the signature serves as a natural nonce (unique per DID+timestamp).
-        # TTL = 10 minutes (covers the ±5 min window with margin).
+        # [S6.18 TTL JUSTIFICATION]: TTL = 10 minutes (600s).
+        #   - Timestamp validity window: ±5 min (covers clock drift between gateway RTC and server).
+        #   - Maximum signature lifetime: 10 min (gateway-side staleness + server-side delay margin).
+        #   - Why not 5 min: a signature created at the trailing edge of the timestamp window
+        #     (i.e., 5 minutes ago, still within timestamp tolerance) and replayed immediately
+        #     would slip through if TTL == window. 10 min = window + margin guarantees nonce
+        #     coverage for the entire period a signature could be considered valid.
+        #   - Why not 15+ min: longer TTL increases Redis memory footprint per gateway (negligible
+        #     individually, but at 100k+ devices and burst auth flows it adds up) without
+        #     additional security benefit since timestamps older than 5 min are already rejected.
         # Redis SET NX ensures atomicity: first request wins, replays are rejected.
         nonce_digest = Digest::SHA256.hexdigest(signature)
 
@@ -72,6 +81,9 @@ module Api
           # Note: This fallback has a small TOCTOU window between exist?/write.
           # Acceptable tradeoff: Redis SET NX (primary path) is fully atomic;
           # this is the degraded fallback for Redis outage scenarios only.
+          # [S6.19]: Counter інкрементується для Grafana alerting на Redis outage.
+          # Якщо counter rate > 0.1% requests/h → escalate до multi-zone Upstash.
+          SilkenNet::Metrics::M2M_NONCE_FALLBACK_TOTAL.increment
           Rails.logger.warn "⚠️ [M2M Auth] Redis unavailable, falling back to DB-based nonce check: #{e.message}"
 
           fallback_key = "m2m_nonce_fallback:#{nonce_digest}"

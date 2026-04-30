@@ -139,6 +139,34 @@ RSpec.describe HardwareKeyService, type: :service do
         expect(result1).not_to eq(result2)
       end
     end
+
+    # =========================================================================
+    # SEC.11: PRODUCTION GUARD
+    # =========================================================================
+    # Backend SecureRandom fallback would generate keys that do NOT match
+    # firmware HKDF derivation → silent system breakage + key exposure via
+    # provisioning response. Must raise in production.
+    context "without PROVISIONING_MASTER_KEY in production [SEC.11]" do
+      before do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
+        allow(Rails.env).to receive(:production?).and_return(true)
+      end
+
+      it "raises SecurityError instead of falling back to SecureRandom" do
+        expect {
+          described_class.derive_device_key("DEVICE-PROD-A")
+        }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY ENV is required in production/)
+      end
+
+      it "blocks .provision in production without ENV (no HardwareKey created)" do
+        expect {
+          described_class.provision(tree)
+        }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY/)
+
+        expect(HardwareKey.find_by(device_uid: tree.did)).to be_nil
+      end
+    end
   end
 
   describe ".rotate" do

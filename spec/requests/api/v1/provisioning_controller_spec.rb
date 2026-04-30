@@ -49,6 +49,50 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       expect(response.parsed_body["error"]).to include("вже зареєстрований")
     end
 
+    # =========================================================================
+    # FW.24: Reject DID matching firmware fallback magic constant
+    # =========================================================================
+    # Firmware Soldier використовує magic 0x511CEE01 коли STM32 unique ID XOR == 0.
+    # Backend MUST reject hardware_uid'и, останні 8 hex символів яких збігаються,
+    # щоб уникнути колізій (defective devices) та реєстраційних атак.
+    context "with hardware_uid matching firmware fallback magic [FW.24]" do
+      it "rejects exact-match magic UID" do
+        magic_params = valid_params.deep_merge(
+          provisioning: { hardware_uid: "511CEE01" }
+        )
+        post "/api/v1/provisioning/register", params: magic_params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["error"]).to include("511CEE01")
+        expect(response.parsed_body["error"]).to include("fallback")
+      end
+
+      it "rejects UID whose last 8 hex chars match magic (case-insensitive)" do
+        magic_params = valid_params.deep_merge(
+          provisioning: { hardware_uid: "AABBCCDD511cee01" }
+        )
+        post "/api/v1/provisioning/register", params: magic_params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["error"]).to include("511CEE01")
+      end
+
+      it "does NOT reject UIDs that contain magic earlier in the string" do
+        # Magic only matters in last 8 chars (those that form the DID suffix)
+        non_magic_params = valid_params.deep_merge(
+          provisioning: { hardware_uid: "511CEE01CAFEBABE" }
+        )
+        post "/api/v1/provisioning/register", params: non_magic_params, headers: headers, as: :json
+
+        # FW.24 guard MUST NOT trigger for this UID. The response body must not
+        # mention the fallback magic — it may still be 422 for unrelated validation
+        # reasons (other tests cover the happy path).
+        body_text = response.body.to_s
+        expect(body_text).not_to include("fallback")
+        expect(body_text).not_to include("511CEE01")
+      end
+    end
+
     context "when registering a new gateway" do
       let(:gateway_params) do
         {

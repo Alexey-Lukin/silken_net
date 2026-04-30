@@ -205,6 +205,29 @@ module SilkenNet
       docstring: "Total Streamr broadcast failures (P2P real-time telemetry delivery)"
     )
 
+    # [S6.13]: W3bstream Ed25519 → SHA256 hardware-signature fallback counter.
+    # `Iotex::W3bstreamVerificationService#hardware_signature` падає з Ed25519
+    # (provisioned hardware key) на SHA256 fallback коли HardwareKey відсутній.
+    # SHA256 НЕ підтверджує апаратне походження. У production WEB3_STRICT_MODE=true
+    # це має блокуватись окремим guard. Counter дозволяє Grafana alerting:
+    # > 0 у production protrygnem alert (configurations not strict, або data leak).
+    W3BSTREAM_SIGNATURE_FALLBACK_TOTAL = REGISTRY.counter(
+      :silkennet_w3bstream_signature_fallback_total,
+      docstring: "Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature",
+      labels: [ :reason ]
+    )
+
+    # [S6.19]: M2M nonce Redis → DB fallback counter.
+    # `Api::V1::M2mAuthController#create` падає з Redis SET NX на DB-backed
+    # nonce cache коли Redis недоступний (Upstash outage / network blip).
+    # Fallback path має малий TOCTOU window (acceptable у degraded mode).
+    # Counter дозволяє виміряти actual outage frequency та alert якщо
+    # > 0.1% requests за 1h → escalate до multi-zone Redis.
+    M2M_NONCE_FALLBACK_TOTAL = REGISTRY.counter(
+      :silkennet_m2m_nonce_fallback_total,
+      docstring: "Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator)"
+    )
+
     # [FW.22 / S2.3]: Acoustic events overflow counter.
     # Firmware saturates acoustic_events at uint8 max (255).
     # Value 255 indicates real count may be higher — sensor data loss.
