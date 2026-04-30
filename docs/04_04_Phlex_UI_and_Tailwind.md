@@ -183,6 +183,24 @@ end
 | Реєстрація `CUSTOM_TEXT_SCALE` | Запобігає TailwindMerge трактувати `text-tiny` (font-size) і `text-status-warning-text` (color) як конфліктуючі класи |
 | Без DB-запитів у `initialize` | Всі дані передаються як аргументи конструктора; компоненти — чисті функції рендерингу |
 
+#### Sync `@theme` ↔ Ruby Token Constants [DOC.5]
+
+> **Lint-rule (manual review checklist):** при будь-якій зміні `@theme` блоку в `app/assets/tailwind/application.css` обов'язково оновити **три точки** одночасно. Інакше TailwindMerge не "побачить" нові семантичні групи і дозволить silent class collision (наприклад, `text-mega text-status-danger-text` обидва пройдуть, хоча `text-mega` — нова шкала шрифту, а `text-status-danger-text` — колір; їх **не повинно** ставити в одну групу).
+
+| `@theme` запис у `application.css` | Ruby-константа в `application_component.rb` | Що оновити |
+|------------------------------------|---------------------------------------------|------------|
+| `--font-size-<name>` (новий розмір типографіки) | `CUSTOM_TEXT_SCALE` | додати `<name>` у масив |
+| `--color-<group>-<name>` (нова семантична група кольорів — наприклад `--color-token-*`) | (майбутня константа `CUSTOM_COLOR_TOKENS`, якщо буде потрібна окрема група) | реєструвати у `self.merger` config |
+| Видалення/перейменування існуючого токена | відповідна константа | синхронно видалити/перейменувати |
+
+**Рекомендований workflow при зміні токенів:**
+1. Відредагувати `@theme` блок у `application.css`.
+2. Запустити `grep -r "<old_token_name>" app/views/components/ app/views/shared/` — знайти всі використання.
+3. Оновити `CUSTOM_TEXT_SCALE` (або відповідну константу) у `application_component.rb`.
+4. Запустити RSpec component specs (`bundle exec rspec spec/components/`) — TailwindMerge помилки виявляться як unexpected class collisions у snapshot-тестах.
+
+> **Чому це не автоматизовано:** Tailwind v4 не експортує `@theme` як JSON/Ruby-сумісний формат. Парсинг CSS у Ruby — фрагільний (CSS comments, nested `@layer`, тощо). Простіше тримати **дві точки істини під дисципліною code review** ніж писати/підтримувати парсер. Якщо це стане bottleneck — кандидат на окремий `bin/check-tailwind-tokens` rake task.
+
 ---
 
 ## 3. Tailwind Дизайн-Токени
@@ -251,6 +269,37 @@ end
 | `shadow-sm dark:shadow-none` | `shadow-lg` скрізь |
 
 > **Виняток:** Доменні page-компоненти (не shared/ui) можуть використовувати raw Tailwind кольори (наприклад, `border-emerald-900`, `bg-zinc-950`) для кіберпанк-естетики, оскільки вони не переповикористовуються у різних контекстах.
+
+### 3.6 Tailwind v3 → v4 Cheatsheet [DOC.11]
+
+> **Контекст:** Проект використовує **Tailwind CSS v4** (нативно, без PostCSS-плагіна). Якщо ви прийшли з v3-кодової бази (зокрема старого fork'а / зовнішнього прикладу), нижче — найкритичніші відмінності, які впливають на наші файли.
+
+| Аспект | Tailwind v3 (legacy) | Tailwind v4 (поточний) |
+|--------|---------------------|------------------------|
+| **Конфігурація** | `tailwind.config.js` (JS-об'єкт `theme.extend.colors`) | `@theme { --color-*: ... }` блок у CSS, **видалено** `tailwind.config.js` |
+| **Tokens SSOT** | JS дублює CSS-змінні | CSS — єдина точка істини; Tailwind v4 автогенерує utility-класи з `@theme` змінних |
+| **Підключення** | `@tailwind base; @tailwind components; @tailwind utilities;` (3 директиви) | `@import "tailwindcss";` (1 рядок) |
+| **Кастомні утиліти** | `@layer utilities { .my-class { ... } }` | `@utility my-class { ... }` (нова синтаксис, працює як first-class) |
+| **Темні режими** | `darkMode: 'class'` у JS-конфігу + `dark:` префікс | `@variant dark` у CSS + `dark:` префікс (без JS-конфігу) |
+| **Opacity-модифікатори** | `bg-red-500/50` (потребує JIT) | `bg-red-500/50` (нативно, працює завжди) |
+| **CSS-змінні в utility** | потрібен arbitrary-value: `bg-[var(--my-color)]` | автоматично: будь-який `--color-X` у `@theme` → `bg-X` |
+| **Container queries** | потрібен плагін | вбудовано: `@container`, `@max-md:`, `@min-lg:` |
+| **PostCSS-залежність** | потрібен `postcss.config.js` + `tailwindcss/nesting` | необов'язково (CLI або Vite-плагін достатньо) |
+| **Браузери** | IE11/legacy via `target: 'modern'` | Chrome 111+, Safari 16.4+, Firefox 128+ (немає legacy fallback) |
+
+**Конкретні наслідки для нашого репо:**
+- `config/tailwind.config.js` **видалено** (S1.7). Якщо ви бачите цей файл у старому fork'у — НЕ копіювати назад.
+- `app/assets/tailwind/application.css` — **єдиний** файл-джерело для дизайн-токенів. `@theme { --color-gaia-*: ... }` блок є SSOT.
+- `CUSTOM_TEXT_SCALE` у `ApplicationComponent` — **компенсація** того, що TailwindMerge не має доступу до v4 `@theme` (див. [DOC.5](#sync-theme--ruby-token-constants-doc5)).
+- При перенесенні стороннього компонента з v3-екосистеми: (а) видалити будь-які JS-конфіги, (б) перенести `theme.extend.colors` у `@theme` блок, (в) перевірити що arbitrary-кольори не використовують raw hex (мають бути семантичні токени), (г) запустити RSpec component specs.
+
+**Що НЕ змінилось:**
+- Utility-класи (`bg-*`, `text-*`, `flex`, `grid`) — синтаксис ідентичний.
+- Responsive-префікси (`sm:`, `md:`, `lg:`, `xl:`).
+- State-варіанти (`hover:`, `focus:`, `disabled:`, `aria-*:`).
+- `dark:` префікс синтаксично той самий — змінилось лише як він конфігурується.
+
+> **Migration anti-pattern:** не вмикайте назад `postcss.config.js` з `tailwindcss/nesting` — v4 нативно підтримує CSS Nesting рівня браузера. Старий PostCSS-плагін і v4-нативний nesting можуть конфліктувати.
 
 ---
 
@@ -509,6 +558,63 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Notifications` | `Settings` | `settings:` |
 | `Sessions` | `New` | `flash_alert:`, `flash_notice:` — рендериться через `AuthLayout` |
 | `Passwords` | `Forgot`, `Reset` | `token:`, `flash_alert:` — рендериться через `AuthLayout` |
+
+### 6.5 Namespacing Convention — Куди Розмістити Новий Компонент [DOC.6]
+
+При зростанні `app/views/components/` (29+ директорій станом на цю редакцію) нові розробники регулярно розміщують компонент у "майже правильному" місці. Це призводить до дрейфу: один і той самий патерн у `alerts/`, `ews_alerts/` і `notifications/`. Нижченаведене **decision tree** усуває неоднозначність.
+
+```
+START: Що це за компонент?
+│
+├── (а) Чисто візуальний примітив без бізнес-логіки
+│       (button, badge, table-wrapper, skeleton)
+│       → app/views/shared/ui/                                [§6.1]
+│       Приклади: StatusBadge, StatCard, DataTable, Skeleton
+│
+├── (б) IoT / hardware-specific відображення
+│       (sensor value, calibration display, telemetry sparkline)
+│       → app/views/shared/iot/                               [§6.2]
+│       Приклади: MetricValue (mV, °C, σ)
+│
+├── (в) Web3 / blockchain-specific відображення
+│       (address, tx hash, chain badge)
+│       → app/views/shared/web3/                              [§6.3]
+│       Приклади: Address (truncated 0x... з clipboard)
+│
+└── (г) Доменний компонент рівня сторінки
+        (одна конкретна модель або use-case)
+        → app/views/components/<resource_name>/               [§6.4]
+        │
+        ├── Ресурс відповідає AR-моделі (Tree, Wallet, Gateway)?
+        │     → component/<plural_resource_name>/<action_or_part>.rb
+        │       Приклади: trees/show.rb, wallets/balance_frame.rb
+        │
+        ├── Ресурс — domain concept без явної AR-моделі
+        │   (Dashboard, OracleVisions, Reports)?
+        │     → component/<concept>/<action_or_part>.rb
+        │       Приклади: dashboard/home.rb, oracle_visions/forecast_card.rb
+        │
+        └── Auth / session / global UI shell?
+              → component/<context>/<part>.rb
+                Приклади: sessions/new.rb, navigation/sidebar.rb
+```
+
+**Правила іменування файлів:**
+- Папка = `snake_case` множина моделі (`trees/`, `wallets/`, `gateways/`).
+- Файл = `snake_case` action / part (`index.rb`, `show.rb`, `balance_frame.rb`, `transaction_row.rb`).
+- Class = `CamelCase` namespaced: `Trees::Show`, `Wallets::BalanceFrame`.
+- **Не дублювати** `<Resource>::<Resource>Show` — Rails-style: `Trees::Show`, не `Trees::TreeShow`.
+
+**Anti-patterns (що НЕ робити):**
+- ❌ `app/views/components/shared_status_badge.rb` — generic-примітив **повинен** бути в `shared/ui/`.
+- ❌ `app/views/components/alerts/wallet_balance.rb` — компонент гаманця **не належить** до namespace тривог.
+- ❌ Один файл з декількома компонентами через `class Inner < ApplicationComponent` — кожен компонент = окремий файл.
+- ❌ DB-запити в `initialize` (наприклад, `@cluster = Cluster.find(...)`) — передавати вже завантажені об'єкти.
+
+**Коли створювати новий namespace:**
+- Створено новий ресурс/контролер у `config/routes.rb`.
+- 2+ компоненти спільної доменної логіки (один компонент = inline у parent, два — підстава для namespace).
+- Існуючий namespace має >10 компонентів і чітко розділяється на підсистеми (наприклад `Trees::*` → `Trees::Show::*` для секцій сторінки).
 
 ---
 

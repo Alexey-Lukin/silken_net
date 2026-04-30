@@ -547,6 +547,50 @@ _rx_payload[0] == OTA_MARKER (0x99)
 
 ---
 
+### 1.9.1 Mesh Relay Anti-Pingpong Algorithm [DOC.2]
+
+> **SSOT:** алгоритм описано тут; персистенція кешу — у §2 (RTC Backup Domain Layout, регістри `DR8 / DR9 / DR11`).
+
+Mesh-relay у §1.9 повторює прийнятий 16-байтний шифрований пакет від іншого Солдата, але **тільки якщо** його DID не "вже бачили" у недавньому минулому. Без цього два Солдати у радіусі прямої видимості один одного утворюють `pingpong`-цикл (TTL зменшується до 0, але кожна сторона ретранслює ту саму DID нескінченно за рахунок дрейфу годинника).
+
+**Структура кешу (LIFO, 3 слоти, FW.21):**
+
+| Слот | RTC регістр | Заповнюється коли |
+|------|-------------|-------------------|
+| `recent_mesh_dids[0]` | `DR8` | LIFO push — найновіший acceptance |
+| `recent_mesh_dids[1]` | `DR9` | shift з [0] |
+| `recent_mesh_dids[2]` | `DR11` | shift з [1] (eviction) |
+
+> **Чому 3 слоти, а не 8 (як було у v1.x):** EMA-блок `FW.21` ([§14](#-14-ema-exponential-moving-average-на-soldier--fw21-)) забрав DR10/DR12 під `ema_delta_t_x100` і запакований `ema_vcap_x10`. Скорочення кешу до 3-х слотів вистачає для типової щільності 2-3 сусідні Солдати в радіусі — більше слотів давало б маргінальний appendix, але блокувало EMA.
+
+**Псевдокод (виконується у фазі 1.9, гілка "Сценарій Б: Mesh Relay"):**
+
+```text
+on_lora_rx(payload, did_from_packet):
+    if ttl <= 0:                              return  # видалити: пакет догорів
+    if did_from_packet == tree_did:           return  # власне відлуння
+    for slot in 0..2:                         # anti-pingpong cache
+        if recent_mesh_dids[slot] == did_from_packet:
+            return                            # вже ретранслювали → drop
+    # acceptance: записуємо у LIFO (slot[2] витісняється)
+    recent_mesh_dids[2] = recent_mesh_dids[1]
+    recent_mesh_dids[1] = recent_mesh_dids[0]
+    recent_mesh_dids[0] = did_from_packet
+    decrement(ttl)
+    re_encrypt(payload)                       # AES-256-ECB з нашим ключем
+    has_mesh_relay = 1                        # → буде відправлено у фазі 4
+    persist_to_rtc(DR8, recent_mesh_dids[0])
+    persist_to_rtc(DR9, recent_mesh_dids[1])
+    persist_to_rtc(DR11, recent_mesh_dids[2])
+```
+
+**Властивості:**
+- **LIFO eviction** замість FIFO/LRU обрано через простоту (3 mov-операції замість циклу пошуку).
+- **Persistence через STOP2:** кеш виживає глибокий сон і повне знеструмлення з RTC Backup живленням. При full power-loss (включно з RTC) — кеш скидається у нулі, але `tree_did != 0` у DR7 захищає від ретрансляції власних пакетів.
+- **Невразливість до DID-spoofing у короткому вікні:** якщо зловмисник інжектує пакети з DID реального сусіднього дерева, перший пройде, але всі наступні будуть drop'нуті. Atttacker мусить сатурувати весь radio space — що видно через `acoustic_events` (FW.18) і `panic TX` (SEC.10).
+
+---
+
 ### 1.10 Phase 5: STOP2 Deep Sleep (2.1 µA)
 
 ```c
@@ -577,7 +621,11 @@ HAL_CRYP_Init(&hcryp);
 
 ---
 
-## 🗺️ 2. Soldier RTC Backup Register Map (DR0..DR19)
+## 🗺️ 2. Soldier RTC Backup Register Map (DR0..DR19) — Canonical SSOT [DOC.3]
+
+> **SSOT (єдина точка істини):** ця таблиця — **єдине** канонічне джерело розкладки RTC Backup Domain Soldier'а. Будь-яка зміна (додавання нового поля, перепакування біт-полів, новий магічний маркер) **повинна** починатися з оновлення цієї таблиці. Документація `03_04` (Lorenz state), `03_03` (TinyML EMA) та firmware-код посилаються на цю таблицю, а не дублюють її.
+
+> **Політика розширення (cross-ref [ARCH.28](10_02_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). DR13/DR14/DR15 — **єдиний резерв**. Перед додаванням нової фічі: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні.
 
 RTC Backup Domain не скидається при STOP2 та більшості реботів (окрім повного знеструмлення або `HAL_RTCEx_BKUPWrite` з нулями).
 
@@ -607,6 +655,20 @@ RTC Backup Domain не скидається при STOP2 та більшості
 > **DR7 — Незмінний DID:** Записується один раз при першому старті (`tree_did == 0`). Якщо `tree_did != 0` при наступних стартах, запис пропускається. Це гарантує унікальність ідентифікатора навіть після OTA-ребуту.
 
 > **DR16-DR19 — Стан Лоренца (FW.6):** Зберігається/відновлюється при кожному циклі STOP2. При первинному старті або після повного знеструмлення (DR19 ≠ `0x4C5A5354`) система переходить у режим ініціалізації від `chaos_seed`. NaN/Inf перевірка через `isfinite()` захищає від бітових помилок у Backup Domain. STM32WLE5 підтримує 20 backup registers (DR0-DR19) — всі тепер зайняті.
+
+### 2.1 Magic Markers (Канонічна Таблиця) [DOC.3]
+
+Маркери валідності використовуються для розрізнення "регістр містить осмислені дані з попереднього циклу" vs "регістр у defaulted-стані після cold boot / RTC корупції / `HAL_RTCEx_BKUPWrite(0)`". Якщо маркер не збігається — відповідний блок ініціалізується з нуля.
+
+| Магічний маркер | Значення (hex) | ASCII | Регістр-прапор | Захищає блок | Документ |
+|-----------------|----------------|-------|----------------|--------------|----------|
+| `LORENZ_STATE_MAGIC` | `0x4C5A5354` | `"LZST"` | `DR19` | `DR16/DR17/DR18` (lorenz_x/y/z) | [03_04 §2.1](03_04_mruby_Lorenz_Attractor.md#21-звідки-беруться-вхідні-параметри) |
+| `EMA_VALID_FLAG` (8 біт у DR12) | `0xA5` (high byte) | — | `DR12[31:24]` | `DR10` (ema_delta_t), `DR12[15:0]` (ema_vcap_x10) | [§14.3](#143-persistence--rtc-backup-registers-dr10--dr12-packed) |
+| `tree_did != 0` | будь-яке non-zero | — | `DR7` (self) | `DR7` (захист від перезапису DID при OTA) | [§7](#-7-did-generation-народження) |
+
+> **DR12 packed format (FW.21):** `[valid:8 | count:8 | ema_vcap_x10:16]`. `valid == 0xA5` означає що EMA fields ініціалізовано та накопичено ≥1 семпл. При cold boot DR12 == 0 → `valid != 0xA5` → EMA reset.
+
+> **Чому різні маркери:** Lorenz (`"LZST"`) використовує цілий 32-бітний маркер у виділеному регістрі тому що `(0.0, 0.0, 0.0)` — валідний (хоч і нетиповий) стан атрактора, тому zero-check недостатній. EMA використовує 8-бітний sentinel у packed-регістрі через дефіцит DR-простору.
 
 ---
 
