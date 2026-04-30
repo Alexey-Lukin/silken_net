@@ -15,6 +15,7 @@
 - **Цільовий масштаб:** мільйони → мільярди → трильйони дерев. Кожна оптимізація per-request множиться на planetary scale, тому 17%-50% поліпшень з changelog не є косметикою.
 - **Конфігураційний SSOT:** `config/puma.rb`
 - **Архітектура runtime:** `Thruster (HTTP/2, TLS) → Puma (clustered, preload_app!) → Rails 8.1`
+- **Покриття backlog'у (станом на цей PR):** ✅ PUMA-IO-1, ✅ PUMA-DBG-1, ✅ PUMA-DSL-1; ⬜ PUMA-CTL-1 (N/A); 🟡 PUMA-RACK-1 (Low, backlog); 🟡 PUMA-IPV6-1 (чекає реального деплою).
 
 ---
 
@@ -127,18 +128,18 @@ bind "tcp://0.0.0.0:#{ENV.fetch('PORT', 3000)}"
 
 При `RAILS_MAX_THREADS=3` (наш дефолт) три повільні Web3-callbacks блокують увесь worker. CPU простоює, але нові запити в черзі. З `max_io_threads` ми можемо мати 3 CPU-bound треди + 16 IO-bound тредів на воркер — без OOM-ризику, бо IO-треди майже не споживають RAM.
 
-**План впровадження (двохетапний, тут НЕ виконуємо повністю):**
+**Реалізовано (PUMA-IO-1):**
 
-1. **Етап 1 (зараз — лише документуємо):** додати в `config/puma.rb`:
-   ```ruby
-   max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16)
-   ```
-2. **Етап 2 (окремий PR):** Rack middleware `MarkWeb3RequestsAsIoBound` що ставить `env["puma.mark_as_io_bound"] = true` для:
-   - `/api/v1/oracle_callbacks` (Chainlink callback)
-   - `/api/v1/provisioning/register` (peaq DID + Hadron)
-   - будь-який endpoint з тегом `io_bound` у controller (декларативний opt-in).
+1. **`config/puma.rb`** — додано `max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i` (секція 1b).
+2. **`app/middleware/mark_web3_requests_as_io_bound.rb`** — Rack middleware що викликає `env["puma.mark_as_io_bound"]&.call` для двох конкретних endpoints:
+   - `POST /api/v1/oracle_callbacks` (Chainlink HMAC + DB + Web3)
+   - `POST /api/v1/provisioning/register` (peaq DID + Hadron HTTP)
+3. **`config/application.rb`** — middleware зареєстровано після `PrometheusCollector` (щоб `/metrics` scrape не флагувався як IO-bound).
+4. **`spec/middleware/mark_web3_requests_as_io_bound_spec.rb`** — 8 specs покривають happy path, негативні випадки (метод/префікс), opt-in через `silken_net.io_bound` env hint, та backward-compat коли env-key відсутній (rack-test, Falcon, single-mode dev).
 
-**Рішення зараз:** **не додаємо** в puma.rb до того моменту, як з'явиться middleware — інакше це no-op конфіг, що тільки додає шум. Створено task-нагадування у backlog (див. секцію "Подальші кроки").
+**Важливе уточнення про API:** `env["puma.mark_as_io_bound"]` — це **лямбда**, яку Puma 8 виставляє ДО виклику Rack-додатка (`puma/response.rb:75`). Додаток її **викликає** (`&.call`), не присвоює `true`. Раніше doc казав «set to true» — це було невірне розуміння, виправлено.
+
+**Майбутній opt-in для нових endpoints:** додати path у `IO_BOUND_PATHS` константу, або перед-ехеном `before_action { request.env["silken_net.io_bound"] = true }` у контролері — middleware підхопить декларативно.
 
 ### F-2 (Puma 8.0): `single` / `cluster` DSL hooks ⭐⭐
 
@@ -154,9 +155,7 @@ single do
 end
 ```
 
-**Цінність для нас:** у `development` Puma запускається в single mode (`workers 0`), і `before_fork`/`before_worker_boot` ніколи не викликаються — зараз це OK, але код виглядає так, ніби стосується всіх режимів. `cluster do ... end` робить намір явним.
-
-**Рішення:** **не змінюємо зараз.** Поточний код працює коректно (хуки no-op у single mode). Refactor — у наступному cosmetic-PR, якщо буде потреба додавати different single-mode logic.
+**Реалізовано (PUMA-DSL-1):** `before_fork` + `before_worker_boot` обгорнуто в `cluster do … end` блок у `config/puma.rb` (секція 6). Семантично нічого не змінилось — single-mode dev і раніше ігнорував ці хуки — але тепер це декларативно зафіксовано в коді.
 
 ### F-3 (Puma 8.0): `shutdown_debug` з параметром `on_force: true` ⭐⭐
 
@@ -164,7 +163,9 @@ end
 
 **Цінність:** наш `worker_timeout=60s` спрацьовує саме тоді, коли Web3 RPC завис. Дамп backtrace в цей момент = критична діагностика, яка покаже, на якому виклику завис worker. Без `on_force` — занадто шумно, бо на canopy ми робимо часті deploys (Kamal phased restart).
 
-**Рішення:** **додамо в окремому PR разом з Sentry breadcrumb** (потребує `SENTRY_DSN` — він зараз BLOCKER, див. `06_04_Secrets_Checklist`).
+**Реалізовано (PUMA-DBG-1):** `shutdown_debug on_force: true` додано в `config/puma.rb` (секція 4b).
+
+> **Зауваження про залежність від SENTRY_DSN:** початково цей пункт мав помітку "Depends on `SENTRY_DSN`", але `06_03 BLOCKER-4` показує що `SENTRY_DSN` уже доданий до `.kamal/secrets:33` та `config/deploy.yml:47 (env.secret)` — Sentry активний у production. Сам `shutdown_debug` пише backtraces в STDERR, які потрапляють у GCP Cloud Logging як structured JSON (`06_03 §3.3`) з `sentry_trace_id` для cross-reference у Sentry UI. Окрема Sentry-breadcrumb-інтеграція не потрібна на рівні Puma DSL.
 
 ### F-4 (Puma 8.0): `update_thread_pool_min_max` runtime API
 
@@ -201,10 +202,12 @@ Auto-enabled, без конфіг. **Прийнято автоматично** �
 ### F-9 (Puma 7.0): `rack.response_finished` callback
 
 Дозволяє зареєструвати callback, що викличеться після того як response повністю надіслано клієнту. Корисно для:
-- `Idempotency-Key` cleanup в Redis після успішної відповіді
+- Винесення `Rails.cache.write(...)` запису Idempotency-Key поза critical path відповіді
 - Audit-log запис без блокування response
 
-**Рішення:** **тримаємо в backlog**. Зараз цей патерн реалізовано через `after_action` у контролерах. Міграція на `rack.response_finished` дасть точніший момент (response **flushed**, не просто згенерований).
+**Уточнення про поточний стан:** наш `actuators#execute` використовує **TTL-based** Idempotency-Key (24h `Rails.cache.write` у Solid Cache, файл `app/controllers/api/v1/actuators_controller.rb:88-90`). Ніякого active "cleanup" немає — eviction відбувається через TTL. Тобто PUMA-RACK-1 — це **не** "cleanup", а **перенесення write-операції** поза response path: `Rails.cache.write` ~1-2ms додає latency до відповіді, з `rack.response_finished` ці 1-2ms відбуватимуться ПІСЛЯ flush. Виграш реальний, але мікроскопічний при такому навантаженні.
+
+**Рішення:** **тримаємо в backlog (Low)**. Поточний 1-2ms у Solid Cache PostgreSQL не блокер ні в TRL 6, ні в TRL 8. Перегляд при переході на planetary scale (мільйони актуаторних команд/добу).
 
 ### F-10 (Puma 8.0/7.2/7.0): Чисті performance-wins (без конфігу)
 
@@ -219,9 +222,11 @@ Auto-enabled, без конфіг. **Прийнято автоматично** �
 
 ### F-11 (Puma 7.2): Restrict control server to `stats`
 
-`Puma::ControlCLI` тепер можна заборонити все крім `stats` (read-only mode). Наш control_url не експонується назовні (тільки локальний UNIX-socket для Prometheus exporter), але як **defence-in-depth** варто додати в Kamal-конфіг при налаштуванні Prometheus exporter (`06_03_Prometheus_Observability`).
+`Puma::ControlCLI` тепер можна заборонити все крім `stats` (read-only mode).
 
-**Рішення:** додати у задачі для PR з Prometheus integration.
+**Уточнення про нашу архітектуру:** ми **не активуємо Puma control server** (`grep -rn "activate_control_app\|control_url" config/` → 0 hits). Наш `/metrics` endpoint обслуговується окремою Rack middleware `PrometheusCollector` з власним IP-allowlist + Basic Auth (`06_03 §2.2`). Grafana Alloy скрейпить саме її, не Puma control. Тому `restrict_to :stats` не може застосуватися — нема control server, який би треба було рестрикнути.
+
+**Рішення:** **N/A для нашої архітектури.** Якщо в майбутньому ми вирішимо додати Puma control server (наприклад, для `pumactl status` operational tooling), тоді одразу додавати `restrict_to: %w[stats]`.
 
 ### F-12 (Puma 7.2): `WEB_CONCURRENCY=""` no longer crashes
 
@@ -258,23 +263,49 @@ sudo docker logs silken_net-web-1 --tail 200
 
 ### `config/puma.rb`
 
-1. `on_worker_boot do` → `before_worker_boot do` (BC-1)
-2. Оновлено coментарі до preload_app! (BC-3) і before_fork (відсилка на цей doc).
+1. `on_worker_boot do` → `before_worker_boot do` (BC-1) — назва Puma-7-compliant.
+2. `max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i` (PUMA-IO-1, F-1) — секція 1b.
+3. `shutdown_debug on_force: true` (PUMA-DBG-1, F-3) — секція 4b. Дамп backtraces всіх тредів **тільки** при SIGKILL після `worker_timeout`, у логи (з кореляцією `sentry_trace_id` через structured JSON у GCP Cloud Logging).
+4. `before_fork` + `before_worker_boot` обгорнуто в `cluster do … end` (PUMA-DSL-1, F-2) — семантично явно що ці хуки не виконуються в single mode (dev).
+5. Оновлено коментарі до `preload_app!` (BC-3) і `before_fork` (відсилка на цей doc).
 
-Жодної функціональної зміни поведінки — лише назва хука та коментарі. Семантика 100% збережена.
+### `app/middleware/mark_web3_requests_as_io_bound.rb` (новий)
+
+Rack middleware (PUMA-IO-1) що викликає `env["puma.mark_as_io_bound"]&.call` — **callback-лямбду**, яку Puma 8 виставляє ДО Rack-додатка — для конкретних IO-bound endpoints:
+- `POST /api/v1/oracle_callbacks` (Chainlink HMAC + Web3 RPC dry-run)
+- `POST /api/v1/provisioning/register` (peaq DID registration + Hadron KYC)
+
+Підтримує per-controller opt-in через `request.env["silken_net.io_bound"] = true` (декларативний `before_action` patten для майбутніх endpoints). Безпечний для не-Puma серверів (rack-test, Falcon) — `&.call` no-op коли env-key відсутній.
+
+### `config/application.rb`
+
+Реєстрація `MarkWeb3RequestsAsIoBound` після `PrometheusCollector` (щоб `/metrics` scrape не флагувався як IO-bound — він і так локальний і швидкий).
+
+### `spec/middleware/mark_web3_requests_as_io_bound_spec.rb` (новий)
+
+8 RSpec прикладів покривають:
+- Happy path для двох allowlisted endpoints.
+- Негативні: інший метод (GET), близькі-але-не-точні шляхи (trailing slash, prefix, версія `/v2/`), нерелевантні endpoints.
+- `silken_net.io_bound` env hint (controller opt-in).
+- Backward compat: відсутній `puma.mark_as_io_bound` env-key (rack-test, Falcon, single-mode dev) — middleware no-op, не raise.
+- Forwarding до downstream app у всіх випадках.
+
+Pure-Rack spec (без `rails_helper`) — не залежить від PostgreSQL чи Sidekiq.
+
+Семантика runtime поведінки сервера на під-Puma-бою у production змінюється точково для двох endpoints; для всіх інших — без змін.
 
 ---
 
 ## 🧭 Подальші кроки (backlog)
 
-| ID | Опис | Пріоритет | Залежить від |
-|---|---|---|---|
-| PUMA-IO-1 | Rack middleware `MarkWeb3RequestsAsIoBound` + `max_io_threads 16` у puma.rb (F-1) | **High** | — |
-| PUMA-DBG-1 | `shutdown_debug on_force: true` + інтеграція з Sentry breadcrumb (F-3) | Medium | `SENTRY_DSN` (06_04 BLOCKER) |
-| PUMA-CTL-1 | Restrict control server to `stats` для Prometheus exporter (F-11) | Medium | `06_03_Prometheus_Observability` |
-| PUMA-RACK-1 | Перенести `Idempotency-Key` cleanup на `rack.response_finished` (F-9) | Low | — |
-| PUMA-IPV6-1 | Перевірити IPv6 listen після першого Kamal-деплою на canopy (BC-8) | High | перший реальний деплой |
-| PUMA-DSL-1 | Refactor у `cluster do ... end` блок (F-2) | Low | косметика |
+| ID | Опис | Пріоритет | Статус | Залежить від |
+|---|---|---|---|---|
+| PUMA-IO-1 | Rack middleware `MarkWeb3RequestsAsIoBound` + `max_io_threads 16` у puma.rb (F-1) | High | ✅ **Виконано** (цей PR) | — |
+| PUMA-DBG-1 | `shutdown_debug on_force: true` (F-3) | Medium | ✅ **Виконано** (цей PR) | ~~`SENTRY_DSN`~~ — насправді не блокер, див. F-3 |
+| PUMA-DSL-1 | Refactor у `cluster do … end` блок (F-2) | Low | ✅ **Виконано** (цей PR) | косметика |
+| PUMA-CTL-1 | Restrict control server to `stats` (F-11) | — | ⬜ **N/A** — control server не активований у нашій архітектурі, див. F-11 | — |
+| PUMA-RACK-1 | Перенести `Rails.cache.write` Idempotency-Key поза response path через `rack.response_finished` (F-9) | Low | 🟡 Backlog | планетарний масштаб |
+| PUMA-IPV6-1 | Перевірити IPv6 listen після першого Kamal-деплою на canopy (BC-8) | High | 🟡 Чекає першого реального деплою | перший реальний деплой |
 
 ---
 
