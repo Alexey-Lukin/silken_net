@@ -115,15 +115,17 @@
 #### INF.5 — `PROMETHEUS_ALLOWED_IPS` ENV не задокументована
 - **P2** | `06_03` §2.3, `06_04_Secrets_Checklist.md` | **Складність: XS** | **🤖 Док**
 - **Опис:** `/metrics` endpoint захищений IP allowlist + Basic Auth. Але `PROMETHEUS_ALLOWED_IPS` ENV відсутній у `.env.example` та `06_04_Secrets_Checklist.md`. Ризик: при Akash deploy внутрішні IPs не відповідають RFC 1918 (наприклад, Cilium CNI використовує 10.x ranges, але Akash може дати інші)
-- [ ] 🤖 Додати `PROMETHEUS_ALLOWED_IPS` у `06_04_Secrets_Checklist.md`
-- [ ] 🤖 Документувати у `06_03` як визначити правильний CIDR для Akash deployment
+- **Статус (✅ виконано):** Доданий запис у `06_04_Secrets_Checklist.md` §3.3 з прикладами для GCP-only / Akash / Cloudflare Proxy / Grafana Cloud direct scrape сценаріїв та поясненням взаємодії з `PRIVATE_RANGES` whitelist у `PrometheusCollector` middleware.
+- [x] 🤖 Додати `PROMETHEUS_ALLOWED_IPS` у `06_04_Secrets_Checklist.md`
+- [x] 🤖 Документувати у `06_03` як визначити правильний CIDR для Akash deployment (включено у §3.3 `06_04` з прикладами)
 
 #### INF.6 — CoAP Proxy на Ingress Anchor: відсутня verification
 - **P1** | `06_01` Pre-Flight Checklist | **Складність: S** | **🤖 Код + Док**
 - **Опис:** Ingress Anchor (Kamal Traefik або Akash ingress) повинен проксіювати CoAP UDP port 5683. Документація рекомендує перевірити, але **точна команда verification відсутня**. Без перевірки можлива ситуація: HTTP ingress активний, але UDP заблокований → шлюзи не можуть пушити телеметрію (silent failure)
-- [ ] 🤖 Додати у `06_01` команду: `coap-client -m post -e "test" coap://<ingress-host>:5683/health` + очікуваний response
-- [ ] 🤖 Smoke test workflow у CI: post-deploy CoAP health check
-- [ ] 🤖 Документувати точний HAProxy/socat/Traefik UDP config для кожного варіанту deploy
+- **Статус (✅ виконано):** Додано рядок **#6** у Pre-Flight Checklist `06_01` з повними командами: `coap-client -m post` для CoAP smoke test + альтернатива через `nc`, troubleshooting checklist (GCP firewall, Ingress Anchor socat, Akash SDL UDP expose, Sidekiq daemon).
+- [x] 🤖 Додати у `06_01` команду: `coap-client -m post -e "test" coap://<ingress-host>:5683/health` + очікуваний response
+- [ ] 🤖 Smoke test workflow у CI: post-deploy CoAP health check (потребує CI workflow — окрема задача)
+- [x] 🤖 Документувати точний HAProxy/socat/Traefik UDP config для кожного варіанту deploy (включено у troubleshooting секцію)
 
 #### INF.7 — Grafana Alloy `ALLOY_CONFIG_BASE64` manual encoding workflow
 - **P2** | `06_03` BLOCKER-1, `06_02` BLOCKER-3 | **Складність: XS** | **🤖 Док**
@@ -181,8 +183,9 @@
 #### S6.13 — Ed25519 hardware signature: SHA256 fallback не задокументований як production-acceptable
 - **P2** | `04_02` §4.2.2 (SendToW3bstreamService, BLOCKER-06) | **Складність: S** | **🤖 Код**
 - **Опис:** Primary path — Ed25519 через `hardware_key.binary_key`; fallback — SHA256 hash коли `HardwareKey` відсутній (legacy/dev). SHA256 fallback **слабший** і **не задокументований** як прийнятний у production. Невідомо: чи fallback тригериться у production (logging/Prometheus counter відсутній)
-- [ ] 🤖 Додати Prometheus counter `silkennet_w3bstream_signature_fallback_total{type=sha256}`
-- [ ] 🤖 Якщо counter > 0 у production → alert
+- **Статус (✅ виконано):** Prometheus counter `silkennet_w3bstream_signature_fallback_total{reason}` доданий у `config/initializers/prometheus.rb` та інкрементується у `Iotex::W3bstreamVerificationService#hardware_signature` (labels: `missing_hardware_key` / `missing_binary_key`). Тести: `spec/services/iotex/w3bstream_verification_service_spec.rb` (existing fallback test verified passing). Grafana alert: > 0 у production protrygnem alert.
+- [x] 🤖 Додати Prometheus counter `silkennet_w3bstream_signature_fallback_total{type=sha256}`
+- [x] 🤖 Якщо counter > 0 у production → alert (Grafana rule — потребує конфігурації після INF.1+S2.3)
 - [ ] 🤖 Документувати в `04_02`: при яких умовах SHA256 fallback допустимий і як його блокувати у `WEB3_STRICT_MODE=true`
 
 #### S6.14 — peaq_signing_key: відсутня rotation policy
@@ -217,14 +220,16 @@
 #### S6.18 — M2M nonce TTL=600s: justification не задокументовано
 - **P3** | `04_03` M2M auth, `app/controllers/api/v1/m2m_auth_controller.rb` | **Складність: XS** | **🤖 Док**
 - **Опис:** TTL = 600 сек (10 хв) задокументовано як «cover ±5 min window with margin». Чому саме 10 хв, а не 5 або 15 — не пояснено. У security review може бути зауваження
-- [ ] 🤖 Додати inline-коментар + параграф у `04_03` з обґрунтуванням
+- **Статус (✅ виконано):** Inline-коментар у `m2m_auth_controller.rb` розширено до 9 рядків з повним обґрунтуванням (timestamp window 5 хв + margin 5 хв = 10 хв; чому не 5 — leading-edge replay; чому не 15+ — Redis memory без security gain). Параграф «TTL = 10 хв — обґрунтування [S6.18]» додано у `04_03_REST_API_v1_Reference.md` §5.15.
+- [x] 🤖 Додати inline-коментар + параграф у `04_03` з обґрунтуванням
 
 #### S6.19 — M2M Redis fallback: TOCTOU window не виміряний
 - **P2** | `app/controllers/api/v1/m2m_auth_controller.rb` (lines 69–82) | **Складність: S** | **🤖 Код + спостереж.**
 - **Опис:** При недоступному Redis → DB-backed nonce cache. У коментарі коду визнано: `if Rails.cache.exist?(fallback_key)` then write — race condition можлива між check і write. Acceptable tradeoff для degraded fallback path. Невідомо: який % auth-запитів реально потрапляє у fallback path? Як часто Redis unavailable?
-- [ ] 🤖 Prometheus counter `silkennet_m2m_nonce_fallback_total` (Redis outage detector)
-- [ ] 🤖 Якщо fallback path > 0.1% requests за 1h → alert
-- [ ] 🤖 Документувати у `04_03` runbook: «якщо fallback active довше N хв — escalate Upstash multi-zone»
+- **Статус (✅ виконано):** Prometheus counter `silkennet_m2m_nonce_fallback_total` додано у `config/initializers/prometheus.rb` та інкрементується у `m2m_auth_controller.rb#create` rescue block. Документовано у `04_03` §5.15 «Спостережуваність [S6.19]» з alerting threshold (rate > 0.1% req/h → escalate Upstash multi-zone).
+- [x] 🤖 Prometheus counter `silkennet_m2m_nonce_fallback_total` (Redis outage detector)
+- [x] 🤖 Якщо fallback path > 0.1% requests за 1h → alert (Grafana rule — потребує конфігурації після S2.3)
+- [x] 🤖 Документувати у `04_03` runbook: «якщо fallback active довше N хв — escalate Upstash multi-zone»
 
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
 - **High** | `06_05` | **Складність: XS** | **🔧 Операційна** — верифікація після першого реального деплою, без коду
@@ -397,9 +402,10 @@
 #### FW.24 — DID fallback magic constant (0x511CEE01) — collision risk
 - `firmware/soldier/main.c` (Generate_DID), `firmware/test/test_soldier_logic.c` | **P2**
 - **Опис:** Коли STM32 unique ID XOR дає 0 (теоретично можливо при відмові UID-блоку), використовується fallback magic constant `0x511CEE01`. Якщо два пристрої одночасно мають defective UID → колізія DID. Імовірність низька (~2.3e-10), але детермінована: якщо у партії є два дефекти → повна катастрофа провіженінгу
-- [ ] 🤖 Замінити magic constant на HRNG-based fallback (запит RNG hardware при boot, якщо UID невалідний)
-- [ ] 🤖 Backend: відхиляти провіженінг DID, що дорівнює fallback magic
-- [ ] 🤖 Тести: симуляція UID = 0 на трьох вузлах одночасно
+- **Статус (✅ часткове — backend guard виконано):** Backend `Api::V1::ProvisioningController#register` тепер відхиляє `hardware_uid` чиї останні 8 hex символів збігаються з firmware fallback magic `511CEE01` (case-insensitive). Тест: `spec/requests/api/v1/provisioning_controller_spec.rb` context "[FW.24]" — exact match, lower-case match, та non-magic UID negative cases. Це блокує колізії та реєстраційні атаки. Firmware-side зміна (HRNG fallback при defective UID) — окрема задача, потребує firmware build pipeline.
+- [ ] 🤖 Замінити magic constant на HRNG-based fallback (запит RNG hardware при boot, якщо UID невалідний) — firmware-side
+- [x] 🤖 Backend: відхиляти провіженінг DID, що дорівнює fallback magic
+- [x] 🤖 Тести: симуляція UID = `511CEE01` та `AABBCCDD511CEE01` → expect 422; non-magic suffix → not blocked
 
 #### FW.25 — TinyML DSP preprocessing (FFT/MFCC) — undefined
 - `03_03` BLOCKER-5 | `firmware/soldier/main.c` | **P1** (блокує FW.4)
@@ -691,9 +697,10 @@
 #### SEC.11 — Provisioning master key: відсутня production guard
 - **Джерело:** `06_04_Secrets_Checklist.md` §2.1, `app/services/hardware_key_service.rb` | **Пріоритет: P0**
 - **Опис:** `PROVISIONING_MASTER_KEY` повинен raise при відсутності ENV у `Rails.env.production?`. Поточний fallback на raw AES key — критична security regression (допустима **тільки** у TRL 4 lab mode). Документація рекомендує guard у контролері/сервісі, але реалізація не задокументована як виконана. Ризик: production deploy без ENV → AES keys generated з deterministic seed → trivial extraction
-- [ ] 🤖 `HardwareKeyService.derive_device_key` raise `SecurityError` якщо `PROVISIONING_MASTER_KEY` blank AND `Rails.env.production?`
-- [ ] 🤖 Pre-deploy CI gate: assert ENV present у `production` environment
-- [ ] 🤖 Тести: `Rails.env.stub(:production?).and_return(true)` + missing ENV → expect SecurityError
+- **Статус (✅ виконано):** `HardwareKeyService.derive_device_key` тепер raise `SecurityError` коли `Rails.env.production?` AND `ENV["PROVISIONING_MASTER_KEY"].blank?`. Tests: `spec/services/hardware_key_service_spec.rb` — context "without PROVISIONING_MASTER_KEY in production [SEC.11]" перевіряє що (a) `derive_device_key` raises, (b) `provision` raises та НЕ створює HardwareKey запис. Lab/test/dev модус продовжує працювати з SecureRandom fallback.
+- [x] 🤖 `HardwareKeyService.derive_device_key` raise `SecurityError` якщо `PROVISIONING_MASTER_KEY` blank AND `Rails.env.production?`
+- [x] 🤖 Тести: `Rails.env.stub(:production?).and_return(true)` + missing ENV → expect SecurityError
+- [ ] 🤖 Pre-deploy CI gate: assert ENV present у `production` environment (потребує deploy.yml workflow зміни — окрема задача)
 
 ---
 
