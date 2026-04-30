@@ -56,7 +56,11 @@ workers ENV.fetch("WEB_CONCURRENCY", 2)
 #
 # IMPORTANT: preload_app! means connections opened in the master (ActiveRecord,
 # Redis) are inherited by workers as stale file descriptors. The before_fork
-# and on_worker_boot hooks below handle reconnection safely.
+# and before_worker_boot hooks below handle reconnection safely.
+#
+# Note (Puma 8.0+): preload_app! is now the default in clustered mode, so this
+# line is technically redundant. We keep it explicit for clarity and to guard
+# against future default changes. See docs/06_05_Puma_8_Upgrade_Notes.md
 preload_app!
 
 # ---------------------------------------------------------------------------
@@ -92,7 +96,7 @@ port ENV.fetch("PORT", 3000)
 # 6a. Before fork — master disconnects shared resources
 before_fork do
   # Disconnect all ActiveRecord connection pools (primary, cache, queue, cable).
-  # Workers will establish their own connections on first use via on_worker_boot.
+  # Workers will establish their own connections on first use via before_worker_boot.
   ActiveRecord::Base.connection_handler.clear_all_connections!(:all)
 
   # Shutdown the Sidekiq client Redis connection pool inherited from the
@@ -104,7 +108,11 @@ before_fork do
 end
 
 # 6b. After fork — each worker establishes its own connections
-on_worker_boot do
+#
+# Note (Puma 7.0): the `on_worker_boot` hook was renamed to `before_worker_boot`.
+# The old name is preserved as a deprecated alias but emits warnings. We use
+# the new name to be Puma 8-clean. See docs/06_05_Puma_8_Upgrade_Notes.md.
+before_worker_boot do
   # Re-establish ActiveRecord connections for all databases.
   # Rails 8 multi-database (primary, cache, queue, cable) automatically
   # creates pools for each `connects_to` database on first query, but
