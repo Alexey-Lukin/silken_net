@@ -94,10 +94,10 @@ uint8_t has_mesh_relay = 0;           // Прапорець: 1 - є пакет �
 
 // Кеш "пліток" (Wall to Wall Cobwebs). Пам'ятаємо останні чужі DID,
 // щоб не ганяти їхні дані по колу (захист від пінг-понгу).
-// [FW.21] Зменшено з 8 до 2 слотів: 6 RTC Backup-регістрів (DR10..DR15)
-// віддано під EMA-стан та резерв. 2 слоти достатньо для захисту від
-// найчастішого випадку A→B→A; глибший mesh-ring контролюється TTL.
-#define MESH_DID_CACHE_SIZE 2
+// [FW.21] 3 слоти. Зменшено з 8 до 3 (DR8, DR9, DR11): 5 регістрів (DR10, DR12-DR15)
+// віддано під EMA-стан та резерв. 3 слоти достатньо для блокування echo A→B→A
+// та найкоротшого циклу A→B→C→A; глибший mesh-ring контролюється TTL.
+#define MESH_DID_CACHE_SIZE 3
 uint32_t recent_mesh_dids[MESH_DID_CACHE_SIZE] = {0};
 
 volatile uint8_t lora_rx_flag = 0;
@@ -142,27 +142,29 @@ static inline float uint32_to_float(uint32_t u) {
 // Експоненціальне ковзне середнє для delta_t (швидкість метаболізму EBFC)
 // та vcap (заряд іоністора). Зменшує ADC-/RTC-шум приблизно в 3× перед
 // тим, як ці сигнали потраплять до Атрактора (FW.5 Variant B+).
-// Зберігаємо стан між циклами STOP2 у RTC Backup Registers DR10-DR12,
-// які звільнено від anti-pingpong (8 → 2 слоти).
-// DR10 = ema_delta_t × 100 (fixed-point 0.01 с)
-// DR11 = ema_vcap × 10     (fixed-point 0.1 мВ)
-// DR12 = [valid:8 | count:8 | reserved:16],  EMA_VALID_MAGIC = 0x45 ('E')
+// Зберігаємо стан між циклами STOP2 у RTC Backup Registers DR10 та DR12,
+// щільно упакованих, щоб звільнити DR11 під 3-й слот anti-pingpong.
+// DR10 = ema_delta_t × 100 (fixed-point 0.01 с, full uint32)
+// DR12 = [valid:8 | count:8 | ema_vcap_x10:16],  EMA_VALID_MAGIC = 0x45 ('E')
+//   - vcap_x10 ∈ [0..55000] для реального діапазону 0..5500 мВ ⊆ uint16 [0..65535]
 // При першому старті (DR12 != MAGIC) — ініціалізуємо EMA = raw поточного циклу.
 // Перші 3 цикли warmup — споживач (mruby) має брати raw-значення.
 #define EMA_ALPHA_NUM     2       // α = 2/10 = 0.2
 #define EMA_ALPHA_DEN     10
 #define EMA_VALID_MAGIC   0x45    // 'E' — маркер ініціалізованого фільтра
 #define EMA_WARMUP_CYCLES 3       // циклів до повного довіри EMA
+#define EMA_VCAP_X10_MASK 0xFFFFu // нижні 16 біт DR12 — упакований ema_vcap_x10
 
-uint32_t ema_delta_t_x100 = 0;    // EMA delta_t × 100
-uint32_t ema_vcap_x10     = 0;    // EMA vcap × 10
-uint8_t  ema_valid        = 0;    // EMA_VALID_MAGIC після першого Update
-uint8_t  ema_count        = 0;    // saturating counter @ 255
+uint32_t ema_delta_t_x100 = 0;    // EMA delta_t × 100 (DR10 full u32)
+uint32_t ema_vcap_x10     = 0;    // EMA vcap × 10 (DR12 [15:0]; внутрішньо u32 для overflow-safety)
+uint8_t  ema_valid        = 0;    // EMA_VALID_MAGIC після першого Update (DR12 [31:24])
+uint8_t  ema_count        = 0;    // saturating counter @ 255 (DR12 [23:16])
 
 // Оновлюємо фільтр одним новим зразком.
 // Cold-path (valid != MAGIC) — EMA = raw; warm-path — α-згладжування.
 // Чисто цілочисельна арифметика, без FPU. delta_t обмежено інтервалом
 // сну (~1 год = 360 000 у × 100), тож множення не переповнюють uint32_t.
+// vcap_x10 обмежено реальним діапазоном EBFC: max 5500 × 10 = 55 000 ⊆ uint16.
 static void EMA_Update(uint32_t raw_dt_sec, uint16_t raw_vcap_mv) {
     uint32_t raw_dt_x100  = raw_dt_sec * 100u;
     uint32_t raw_vcap_x10 = (uint32_t)raw_vcap_mv * 10u;
@@ -184,8 +186,10 @@ static void EMA_Update(uint32_t raw_dt_sec, uint16_t raw_vcap_mv) {
     if (ema_count < 255) ema_count++;
 }
 
-// Зчитуємо згладжені значення в оригінальних одиницях (секунди / мВ).
+// Зчитуємо згладжені значення в оригінальних одиницях (секунди / мВ / мс).
+// EMA_Get_DeltaT_Ms() — конвертація в мілісекунди для β-пертурбації mruby (FW.5).
 static inline uint32_t EMA_Get_DeltaT_Sec(void) { return ema_delta_t_x100 / 100u; }
+static inline uint32_t EMA_Get_DeltaT_Ms (void) { return ema_delta_t_x100 * 10u; }
 static inline uint16_t EMA_Get_Vcap_Mv  (void) { return (uint16_t)(ema_vcap_x10 / 10u); }
 
 // Прапорець "фільтр прогрівся" — true після ≥ EMA_WARMUP_CYCLES зразків.
@@ -282,14 +286,15 @@ int main(void)
   }
 
   // Відновлюємо пам'ять останніх почутих DID з вічних регістрів
-  // [FW.21] 2 слоти (DR8..DR9). DR10..DR15 звільнено під EMA та резерв.
+  // [FW.21] 3 слоти: DR8, DR9, DR11. DR10/DR12 — EMA, DR13..DR15 — резерв.
   recent_mesh_dids[0] = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR8);
   recent_mesh_dids[1] = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR9);
+  recent_mesh_dids[2] = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR11);
 
   // =========================================================================
-  // [FW.21] ВІДНОВЛЕННЯ EMA-ФІЛЬТРА (RTC DR10-DR12)
+  // [FW.21] ВІДНОВЛЕННЯ EMA-ФІЛЬТРА (RTC DR10 + DR12 packed)
   // =========================================================================
-  // DR12 [valid:8 | count:8 | reserved:16]. Якщо EMA_VALID_MAGIC ('E') —
+  // DR12 [valid:8 | count:8 | ema_vcap_x10:16]. Якщо EMA_VALID_MAGIC ('E') —
   // продовжуємо згладжувати з попередніх wakeup-циклів. Інакше — cold-start
   // на наступному EMA_Update (warmup 3 цикли).
   {
@@ -297,7 +302,7 @@ int main(void)
       uint8_t  v        = (uint8_t)((ema_meta >> 24) & 0xFFu);
       if (v == EMA_VALID_MAGIC) {
           ema_delta_t_x100 = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR10);
-          ema_vcap_x10     = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR11);
+          ema_vcap_x10     = (uint32_t)(ema_meta & EMA_VCAP_X10_MASK);
           ema_valid        = v;
           ema_count        = (uint8_t)((ema_meta >> 16) & 0xFFu);
       }
@@ -547,17 +552,32 @@ int main(void)
 
       if (lorenz_state_valid) {
           // [FW.6] ПРОДОВЖЕННЯ ТРАЄКТОРІЇ: використовуємо збережений стан
-          // calculate_state_continued(x_prev, y_prev, z_prev, temp, acoustic)
-          // → [payload_byte, x_final, y_final, z_final]
-          mrb_value args[5];
+          // [FW.5 B+] calculate_state_continued(x_prev, y_prev, z_prev, temp,
+          //                                    acoustic, delta_t_ms, vcap_mv)
+          //   → [payload_byte, x_final, y_final, z_final]
+          // delta_t_ms / vcap_mv — EMA-згладжені, якщо фільтр прогрівся;
+          // інакше — raw значення поточного циклу (warmup safety).
+          mrb_value args[7];
           args[0] = mrb_float_value(mrb, (double)lorenz_x);
           args[1] = mrb_float_value(mrb, (double)lorenz_y);
           args[2] = mrb_float_value(mrb, (double)lorenz_z);
           args[3] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура
           args[4] = mrb_fixnum_value(lora_payload[7]); // Акустика
 
+          uint32_t lorenz_dt_ms;
+          uint16_t lorenz_vcap_mv;
+          if (EMA_Is_Warmed_Up()) {
+              lorenz_dt_ms   = EMA_Get_DeltaT_Ms();
+              lorenz_vcap_mv = EMA_Get_Vcap_Mv();
+          } else {
+              lorenz_dt_ms   = (uint32_t)delta_t_seconds * 1000u;
+              lorenz_vcap_mv = vcap_voltage;
+          }
+          args[5] = mrb_fixnum_value((mrb_int)lorenz_dt_ms);
+          args[6] = mrb_fixnum_value((mrb_int)lorenz_vcap_mv);
+
           mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
-              mrb_intern_lit(mrb, "calculate_state_continued"), 5, args);
+              mrb_intern_lit(mrb, "calculate_state_continued"), 7, args);
 
           if (!mrb->exc && mrb_array_p(ruby_result) && RARRAY_LEN(ruby_result) == 4) {
               // Витягуємо payload_byte та оновлений стан
@@ -573,13 +593,26 @@ int main(void)
           }
       } else {
           // ПЕРВИННИЙ СТАРТ: chaos_seed визначає початковий стан
-          mrb_value args[3];
+          // [FW.5 B+] calculate_state(seed, temp, acoustic, delta_t_ms, vcap_mv)
+          mrb_value args[5];
           args[0] = mrb_fixnum_value(chaos_seed);
           args[1] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура (Зимовий щит)
           args[2] = mrb_fixnum_value(lora_payload[7]); // Акустика
 
+          uint32_t lorenz_dt_ms;
+          uint16_t lorenz_vcap_mv;
+          if (EMA_Is_Warmed_Up()) {
+              lorenz_dt_ms   = EMA_Get_DeltaT_Ms();
+              lorenz_vcap_mv = EMA_Get_Vcap_Mv();
+          } else {
+              lorenz_dt_ms   = (uint32_t)delta_t_seconds * 1000u;
+              lorenz_vcap_mv = vcap_voltage;
+          }
+          args[3] = mrb_fixnum_value((mrb_int)lorenz_dt_ms);
+          args[4] = mrb_fixnum_value((mrb_int)lorenz_vcap_mv);
+
           mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
-              mrb_intern_lit(mrb, "calculate_state"), 3, args);
+              mrb_intern_lit(mrb, "calculate_state"), 5, args);
 
           // Байт 10: Біо-Контракт (Токеноміка)
           if (!mrb->exc) {
@@ -802,18 +835,20 @@ int main(void)
     }
 
     // Зберігаємо кеш DID-ів у вічну пам'ять перед сном
-    // [FW.21] 2 слоти (DR8..DR9); DR10..DR15 зайняті EMA + резерв
+    // [FW.21] 3 слоти (DR8, DR9, DR11); DR10 + DR12 — EMA, DR13..DR15 — резерв
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR8, recent_mesh_dids[0]);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR9, recent_mesh_dids[1]);
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR11, recent_mesh_dids[2]);
 
     // [FW.21] Зберігаємо стан EMA-фільтра перед STOP2.
-    // DR10 = ema_delta_t_x100, DR11 = ema_vcap_x10,
-    // DR12 = [valid:8 | count:8 | reserved:16]. Без перевірки valid —
+    // DR10 = ema_delta_t_x100 (full u32),
+    // DR12 = [valid:8 | count:8 | ema_vcap_x10:16]. Без перевірки valid —
     // навіть cold-state коректно записується (на BOOT його просто проігнорують).
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR10, ema_delta_t_x100);
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR11, ema_vcap_x10);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR12,
-        ((uint32_t)ema_valid << 24) | ((uint32_t)ema_count << 16));
+        ((uint32_t)ema_valid << 24) |
+        ((uint32_t)ema_count << 16) |
+        (ema_vcap_x10 & EMA_VCAP_X10_MASK));
 
     // [FW.6] Зберігаємо стан Атрактора Лоренца перед STOP2
     // Якщо стан валідний — записуємо (x, y, z) + маркер LORENZ_STATE_MAGIC
