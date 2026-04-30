@@ -55,7 +55,7 @@ class HardwareKeyService
               "PROVISIONING_MASTER_KEY ENV is required in production. " \
               "Backend SecureRandom fallback would generate keys that do NOT match " \
               "firmware HKDF derivation, causing silent breakage and key exposure via " \
-              "provisioning response. See SEC.11 у docs/10_02_Action_Plan_Tracker.md."
+              "provisioning response. See SEC.11 in docs/10_02_Action_Plan_Tracker.md."
       end
 
       Rails.logger.warn "⚠️ [Zero-Trust] PROVISIONING_MASTER_KEY не встановлено. " \
