@@ -19,7 +19,7 @@
  * CONSTANTS (from soldier/main.c)
  * ════════════════════════════════════════════════════════════════════ */
 #define MRUBY_CONTRACT_FLASH_ADDR  0x0803F000
-#define MESH_DID_CACHE_SIZE        8  /* [FIX] expanded from 3 → 8 */
+#define MESH_DID_CACHE_SIZE        3  /* [FW.21] 3 slots; DR8/DR9/DR11 mesh, DR10/DR12 EMA */
 #define OTA_BUFFER_SIZE            1024
 #define OTA_CHUNK_MAP_SIZE         256
 
@@ -464,7 +464,8 @@ TEST(test_mesh_push_then_known) {
     ASSERT_TRUE(Mesh_DID_Is_Known(0xAAAA));
 }
 
-TEST(test_mesh_8_slots_all_known) {
+TEST(test_mesh_3_slots_all_known) {
+    /* [FW.21] 3 slots: push 3 → all three remembered. */
     Mesh_DID_Cache_Init();
     for (uint32_t i = 1; i <= MESH_DID_CACHE_SIZE; i++)
         Mesh_DID_Cache_Push(i * 0x1111);
@@ -472,33 +473,36 @@ TEST(test_mesh_8_slots_all_known) {
         ASSERT_TRUE(Mesh_DID_Is_Known(i * 0x1111));
 }
 
-TEST(test_mesh_9th_evicts_oldest) {
+TEST(test_mesh_4th_evicts_oldest) {
+    /* With 3 slots, pushing a 4th entry evicts the oldest. */
     Mesh_DID_Cache_Init();
     for (uint32_t i = 1; i <= MESH_DID_CACHE_SIZE; i++)
         Mesh_DID_Cache_Push(i);
-    /* Push 9th — evicts DID=1 (oldest) */
+    /* Push 4th — evicts DID=1 (oldest) */
     Mesh_DID_Cache_Push(99);
     ASSERT_FALSE(Mesh_DID_Is_Known(1)); /* evicted */
     ASSERT_TRUE(Mesh_DID_Is_Known(2));  /* still there */
+    ASSERT_TRUE(Mesh_DID_Is_Known(3));  /* still there */
     ASSERT_TRUE(Mesh_DID_Is_Known(99)); /* new */
 }
 
 TEST(test_mesh_pingpong_scenario) {
     /* Two trees A and B keep bouncing a packet.
-     * With only 3 slots (old code), if 3 other DIDs fill the cache,
-     * A's DID gets evicted and the packet bounces infinitely.
-     * With 8 slots, this is prevented for up to 8 unique DIDs. */
+     * With 3 slots, the immediate echo A→B→A→B is still blocked
+     * AND a one-hop A→B→C→A also stays blocked (B + C still cached when
+     * the packet returns). Deeper rings (4+ unique relayers) are intentionally
+     * accepted — TTL is the deeper-ring guard. */
     Mesh_DID_Cache_Init();
     uint32_t tree_b = 0xBBBB;
 
     /* Tree A receives from B, caches B */
     Mesh_DID_Cache_Push(tree_b);
 
-    /* 6 other trees' packets arrive */
-    for (uint32_t i = 0; i < 6; i++)
-        Mesh_DID_Cache_Push(0x1000 + i);
+    /* 2 other trees' packets arrive — B still in 3-slot window */
+    Mesh_DID_Cache_Push(0x1000);
+    Mesh_DID_Cache_Push(0x2000);
 
-    /* Tree A receives from B again — with 8 slots, B should still be cached */
+    /* Tree A receives from B again — B should still be cached */
     ASSERT_TRUE(Mesh_DID_Is_Known(tree_b));
 }
 
@@ -1197,6 +1201,226 @@ TEST(test_tx_defer_boundary_vcap_4001) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * FW.21 — EXPONENTIAL MOVING AVERAGE (delta_t / vcap)
+ *
+ * Mirrors the production EMA in firmware/soldier/main.c.
+ * α = 0.2 (integer fixed-point: 2/10), warmup = 3 cycles, state in SRAM.
+ * Cross-ref: docs/03_01 §14, docs/10_02 FW.21.
+ * ════════════════════════════════════════════════════════════════════ */
+
+#define FW21_EMA_ALPHA_NUM     2
+#define FW21_EMA_ALPHA_DEN     10
+#define FW21_EMA_VALID_MAGIC   0x45
+#define FW21_EMA_WARMUP_CYCLES 3
+
+typedef struct {
+    uint32_t delta_t_x100;
+    uint32_t vcap_x10;
+    uint8_t  valid;
+    uint8_t  count;
+} Fw21EmaState;
+
+static void Fw21_EMA_Update(Fw21EmaState *ema, uint32_t raw_dt_sec, uint16_t raw_vcap_mv) {
+    uint32_t raw_dt_x100  = raw_dt_sec * 100u;
+    uint32_t raw_vcap_x10 = (uint32_t)raw_vcap_mv * 10u;
+
+    if (ema->valid != FW21_EMA_VALID_MAGIC || ema->count == 0) {
+        ema->delta_t_x100 = raw_dt_x100;
+        ema->vcap_x10     = raw_vcap_x10;
+        ema->valid        = FW21_EMA_VALID_MAGIC;
+        ema->count        = 1;
+        return;
+    }
+
+    ema->delta_t_x100 = (FW21_EMA_ALPHA_NUM * raw_dt_x100 +
+                         (FW21_EMA_ALPHA_DEN - FW21_EMA_ALPHA_NUM) * ema->delta_t_x100)
+                        / FW21_EMA_ALPHA_DEN;
+    ema->vcap_x10     = (FW21_EMA_ALPHA_NUM * raw_vcap_x10 +
+                         (FW21_EMA_ALPHA_DEN - FW21_EMA_ALPHA_NUM) * ema->vcap_x10)
+                        / FW21_EMA_ALPHA_DEN;
+    if (ema->count < 255) ema->count++;
+}
+
+static uint32_t Fw21_EMA_Get_DeltaT_Sec(const Fw21EmaState *ema) {
+    return ema->delta_t_x100 / 100u;
+}
+static uint16_t Fw21_EMA_Get_Vcap_Mv(const Fw21EmaState *ema) {
+    return (uint16_t)(ema->vcap_x10 / 10u);
+}
+static uint8_t Fw21_EMA_Is_Warmed_Up(const Fw21EmaState *ema) {
+    return (ema->valid == FW21_EMA_VALID_MAGIC) && (ema->count >= FW21_EMA_WARMUP_CYCLES);
+}
+
+TEST(test_ema_cold_start) {
+    /* First call on uninitialised state: EMA equals raw input, no smoothing. */
+    Fw21EmaState ema = {0};
+    Fw21_EMA_Update(&ema, 3600u, 4500);
+    ASSERT_EQ(Fw21_EMA_Get_DeltaT_Sec(&ema), 3600u);
+    ASSERT_EQ(Fw21_EMA_Get_Vcap_Mv(&ema), 4500);
+    ASSERT_EQ(ema.valid, FW21_EMA_VALID_MAGIC);
+    ASSERT_EQ(ema.count, 1);
+    /* count < 3 → not warmed up yet */
+    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
+}
+
+TEST(test_ema_second_cycle_smoothing) {
+    /* After cold start with 3600s/4500mV, feed 4000s/5000mV.
+       Expected: EMA_dt = 0.2·4000 + 0.8·3600 = 3680
+                 EMA_vcap = 0.2·5000 + 0.8·4500 = 4600 */
+    Fw21EmaState ema = {0};
+    Fw21_EMA_Update(&ema, 3600u, 4500);
+    Fw21_EMA_Update(&ema, 4000u, 5000);
+    ASSERT_EQ(Fw21_EMA_Get_DeltaT_Sec(&ema), 3680u);
+    ASSERT_EQ(Fw21_EMA_Get_Vcap_Mv(&ema), 4600);
+    ASSERT_EQ(ema.count, 2);
+}
+
+TEST(test_ema_convergence) {
+    /* After ~20 iterations of constant input, EMA converges to that input. */
+    Fw21EmaState ema = {0};
+    for (int i = 0; i < 20; i++) {
+        Fw21_EMA_Update(&ema, 1000u, 4000);
+    }
+    /* Within 1% of the steady-state value (geometric decay (0.8)^20 ≈ 0.012). */
+    uint32_t dt = Fw21_EMA_Get_DeltaT_Sec(&ema);
+    uint16_t vc = Fw21_EMA_Get_Vcap_Mv(&ema);
+    ASSERT_TRUE(dt >= 990u && dt <= 1010u);
+    ASSERT_TRUE(vc >= 3960  && vc <= 4040);
+    ASSERT_TRUE(Fw21_EMA_Is_Warmed_Up(&ema));
+}
+
+TEST(test_ema_noise_rejection) {
+    /* A single spike (5×) on top of a steady 1000s baseline should move EMA
+       far less than the raw spike — verifies smoothing strength.
+       After warm-up at 1000s, one shot of 5000s yields:
+         EMA = 0.2·5000 + 0.8·1000 = 1800 (vs raw 5000 → 5×). */
+    Fw21EmaState ema = {0};
+    for (int i = 0; i < 10; i++) Fw21_EMA_Update(&ema, 1000u, 4000);
+    Fw21_EMA_Update(&ema, 5000u, 4000);
+    /* EMA jumped only to ~1800, raw was 5000 — at least 3× rejection. */
+    ASSERT_TRUE(Fw21_EMA_Get_DeltaT_Sec(&ema) <= 1800u + 5);
+    /* And the spike was attenuated by far more than half. */
+    ASSERT_TRUE(Fw21_EMA_Get_DeltaT_Sec(&ema) < 5000u / 2u);
+}
+
+TEST(test_ema_warmup_flag) {
+    /* count < 3 ⇒ not warmed up; count ≥ 3 ⇒ warmed up. */
+    Fw21EmaState ema = {0};
+    Fw21_EMA_Update(&ema, 1000u, 4000);
+    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
+    Fw21_EMA_Update(&ema, 1000u, 4000);
+    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
+    Fw21_EMA_Update(&ema, 1000u, 4000);
+    ASSERT_TRUE(Fw21_EMA_Is_Warmed_Up(&ema));
+}
+
+TEST(test_ema_count_saturates_at_255) {
+    /* Counter must saturate at 255 — must never wrap to 0 (which would
+       reset the warmup flag and make EMA_Is_Warmed_Up() flap). */
+    Fw21EmaState ema = {0};
+    for (int i = 0; i < 300; i++) Fw21_EMA_Update(&ema, 1000u, 4000);
+    ASSERT_EQ(ema.count, 255);
+    ASSERT_TRUE(Fw21_EMA_Is_Warmed_Up(&ema));
+}
+
+TEST(test_ema_zero_inputs_are_valid) {
+    /* delta_t = 0 (impossible in practice but defensive) and vcap = 0
+       (cold-boot before EBFC starts) must not crash or produce overflow.
+       Cold-start with zeros: EMA = 0; subsequent 1000/4000 sample:
+         EMA_dt = 0.2·1000 + 0.8·0 = 200
+         EMA_vcap = 0.2·4000 + 0.8·0 = 800 */
+    Fw21EmaState ema = {0};
+    Fw21_EMA_Update(&ema, 0u, 0);
+    ASSERT_EQ(Fw21_EMA_Get_DeltaT_Sec(&ema), 0u);
+    ASSERT_EQ(Fw21_EMA_Get_Vcap_Mv(&ema), 0);
+    Fw21_EMA_Update(&ema, 1000u, 4000);
+    ASSERT_EQ(Fw21_EMA_Get_DeltaT_Sec(&ema), 200u);
+    ASSERT_EQ(Fw21_EMA_Get_Vcap_Mv(&ema), 800);
+}
+
+TEST(test_ema_no_overflow_at_max_inputs) {
+    /* Worst-case: delta_t = 86400s (24h) and vcap = 5500mV (over-charged).
+       Verify no uint32_t overflow during EMA update.
+       Max raw_dt_x100 = 86400·100 = 8_640_000.
+       Worst-case numerator = 2·8_640_000 + 8·8_640_000 = 86_400_000 ≈ 0.02·2^32.
+       After 50 iterations the EMA must converge to the input. */
+    Fw21EmaState ema = {0};
+    for (int i = 0; i < 50; i++) {
+        Fw21_EMA_Update(&ema, 86400u, 5500);
+    }
+    uint32_t dt = Fw21_EMA_Get_DeltaT_Sec(&ema);
+    uint16_t vc = Fw21_EMA_Get_Vcap_Mv(&ema);
+    /* Within 1% of 86400 / 5500. */
+    ASSERT_TRUE(dt >= 85500u && dt <= 86400u);
+    ASSERT_TRUE(vc >= 5440  && vc <= 5500);
+}
+
+/* ---------- RTC DR10+DR12 pack/unpack mirrors firmware boot/save logic ----------
+ * NOTE: DR11 is owned by the 3rd anti-pingpong slot (mesh DID cache 8→3).
+ * EMA vcap_x10 (≤55000 ≤ 2^16) is packed into the LOW 16 bits of DR12.
+ * DR12 layout: [valid:8 | count:8 | ema_vcap_x10:16].
+ */
+
+#define FW21_EMA_VCAP_X10_MASK 0xFFFFu
+
+static void Fw21_EMA_Save_To_RTC(const Fw21EmaState *ema, RTC_HandleTypeDef *h) {
+    HAL_RTCEx_BKUPWrite(h, RTC_BKP_DR10, ema->delta_t_x100);
+    HAL_RTCEx_BKUPWrite(h, RTC_BKP_DR12,
+        ((uint32_t)ema->valid << 24) |
+        ((uint32_t)ema->count << 16) |
+        (ema->vcap_x10 & FW21_EMA_VCAP_X10_MASK));
+}
+
+static void Fw21_EMA_Load_From_RTC(Fw21EmaState *ema, RTC_HandleTypeDef *h) {
+    uint32_t meta = HAL_RTCEx_BKUPRead(h, RTC_BKP_DR12);
+    uint8_t  v    = (uint8_t)((meta >> 24) & 0xFFu);
+    if (v == FW21_EMA_VALID_MAGIC) {
+        ema->delta_t_x100 = HAL_RTCEx_BKUPRead(h, RTC_BKP_DR10);
+        ema->vcap_x10     = (uint32_t)(meta & FW21_EMA_VCAP_X10_MASK);
+        ema->valid        = v;
+        ema->count        = (uint8_t)((meta >> 16) & 0xFFu);
+    } else {
+        ema->delta_t_x100 = 0;
+        ema->vcap_x10     = 0;
+        ema->valid        = 0;
+        ema->count        = 0;
+    }
+}
+
+TEST(test_ema_rtc_save_load_roundtrip) {
+    /* Save EMA state → wipe RAM → load back → values match. Mirrors the
+       cycle of "STOP2 wakeup → RAM lost → restore from RTC backup". */
+    _rtc_bkp_reset_all();
+    RTC_HandleTypeDef hrtc_mock = {0};
+
+    Fw21EmaState ema = {0};
+    for (int i = 0; i < 5; i++) Fw21_EMA_Update(&ema, 3600u, 4500);
+    Fw21_EMA_Save_To_RTC(&ema, &hrtc_mock);
+
+    Fw21EmaState restored = {0};
+    Fw21_EMA_Load_From_RTC(&restored, &hrtc_mock);
+
+    ASSERT_EQ(restored.delta_t_x100, ema.delta_t_x100);
+    ASSERT_EQ(restored.vcap_x10,     ema.vcap_x10);
+    ASSERT_EQ(restored.valid,        ema.valid);
+    ASSERT_EQ(restored.count,        ema.count);
+    ASSERT_TRUE(Fw21_EMA_Is_Warmed_Up(&restored));
+}
+
+TEST(test_ema_rtc_first_boot_no_magic) {
+    /* Empty RTC (DR12 magic missing) → load yields cold state. */
+    _rtc_bkp_reset_all();
+    RTC_HandleTypeDef hrtc_mock = {0};
+
+    Fw21EmaState restored = {0xDEADBEEFu, 0xCAFE, 0xFFu, 0xFFu};
+    Fw21_EMA_Load_From_RTC(&restored, &hrtc_mock);
+
+    ASSERT_EQ(restored.valid, 0);
+    ASSERT_EQ(restored.count, 0);
+    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&restored));
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -1229,8 +1453,8 @@ int main(void)
     printf("\n  Mesh Dedup (Anti-Pingpong):\n");
     RUN(test_mesh_empty_cache_unknown);
     RUN(test_mesh_push_then_known);
-    RUN(test_mesh_8_slots_all_known);
-    RUN(test_mesh_9th_evicts_oldest);
+    RUN(test_mesh_3_slots_all_known);
+    RUN(test_mesh_4th_evicts_oldest);
     RUN(test_mesh_pingpong_scenario);
     RUN(test_mesh_relay_own_echo);
     RUN(test_mesh_relay_ttl_zero);
@@ -1318,6 +1542,18 @@ int main(void)
     RUN(test_tx_defer_extreme_cold_zero_vcap);
     RUN(test_tx_defer_boundary_vcap_3999);
     RUN(test_tx_defer_boundary_vcap_4001);
+
+    printf("\n  EMA — delta_t / vcap smoothing (FW.21):\n");
+    RUN(test_ema_cold_start);
+    RUN(test_ema_second_cycle_smoothing);
+    RUN(test_ema_convergence);
+    RUN(test_ema_noise_rejection);
+    RUN(test_ema_warmup_flag);
+    RUN(test_ema_count_saturates_at_255);
+    RUN(test_ema_zero_inputs_are_valid);
+    RUN(test_ema_no_overflow_at_max_inputs);
+    RUN(test_ema_rtc_save_load_roundtrip);
+    RUN(test_ema_rtc_first_boot_no_magic);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

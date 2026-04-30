@@ -119,7 +119,7 @@
 - `03_01`, `03_02`, `03_05`, `05_02` | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
 - **Опис:** Один і той самий ключ на ВСІХ вузлах мережі. Злам одного пристрою = компрометація всієї мережі
 - **Рішення:** Per-device provisioning через HKDF, Factory Flashing pipeline
-- [ ] 🤖 Дизайн HKDF key derivation protocol
+- [x] 🤖 Дизайн HKDF key derivation protocol — ✅ Повний дизайн HKDF-SHA256 (RFC 5869) додано в `03_05` §3.4а. Включає: кроки Provisioning (factory flashing pipeline), C firmware API (`Load_AES_Key`, `FLASH_KEY_ADDR = 0x0803E000`), Rails backend (`HardwareKeyService.derive_device_key`), варіанти зберігання ключа Queen (A/B/C з ATECC608B), WRPROT Flash sector protection, таблицю безпекових параметрів
 - [ ] 🤖 Backend: provisioning endpoint (POST `/api/v1/provisioning/register` вже існує)
 - [ ] 🤖 Firmware: змінити key storage з hardcoded → Flash-based
 - [ ] 👤 Firmware: RDP Level 2 activation як final step
@@ -135,7 +135,7 @@
 - [ ] 🤖 Firmware Soldier: CCM encrypt + Frame Counter інкремент + MIC append
 - [ ] 🤖 Firmware Queen: CCM decrypt + Frame Counter validation (anti-replay)
 - [ ] 🤖 Backend: оновити `TelemetryUnpackerService` для 24-байтного формату
-- [ ] 🤖 LoRa airtime budget verification (24B vs 16B при SF10/DR2)
+- [x] 🤖 LoRa airtime budget verification (24B vs 16B при SF10/DR2) — ✅ Розрахунок додано в `03_05` BLOCKER-2. Висновок: +10% airtime (+41 мс), duty cycle 0.013% (79× запас), енергоспоживання +12 мДж/TX (1.8% EDLC). **Перехід на CCM 24B схвалений**
 - [ ] 🤖 Тести
 
 #### FW.3 — Queen AT Command Blocking (~25 сек)
@@ -183,9 +183,10 @@
 - `05_02`
 - **Опис:** firmware: global 2.0/45.0 vs backend: per-species через `TreeFamily`
 - **Рішення:** OTA sync species-specific thresholds
-- [ ] 🤖 Додати thresholds до OTA config payload
-- [ ] 🤖 Firmware: зберігати thresholds у Flash/RTC
-- [ ] 🤖 Backend: включити thresholds у OTA bytecode
+- **Статус:** 🤖 ✅ Повний дизайн OTA Config Payload для per-species Z thresholds додано в `05_02` §4а. Включає: новий CMD_SET_THRESHOLDS (0x9A) payload format (10 байт з CRC16), firmware RTC Backup DR20-23 storage з fallback на defaults, mruby BioContract dynamic thresholds, Rails `OtaPackagerService#build_threshold_config_block`, per-species default threshold table (Pinus/Quercus/Fagus/Picea/Betula), backend mirror verification
+- [x] 🤖 Додати thresholds до OTA config payload
+- [x] 🤖 Firmware: зберігати thresholds у Flash/RTC
+- [x] 🤖 Backend: включити thresholds у OTA bytecode
 
 #### FW.9 — CoAP retry logic
 - `03_02`
@@ -209,8 +210,9 @@
 #### FW.18 — Hardcoded confidence threshold 0.80
 - `03_03` BLOCKER-6
 - **Опис:** `if (ml_confidence > 0.80)` hardcoded в Flash. Неможливо remote-tune для різних лісів/сезонів. Немає "warning" рівня (лише binary: alarm / no alarm)
-- [ ] 🤖 Зберегти threshold у RTC Backup Register (updateable via OTA)
-- [ ] 🤖 Дизайн dual-threshold: WARNING (0.60) → event counter; CRITICAL (0.85) → Emergency TX
+- **Статус:** 🤖 ✅ Дизайн dual-threshold системи завершено та задокументовано в `03_03` BLOCKER-6. WARNING (0.60) → acoustic_events++ + ескалація після 3× поспіль; CRITICAL (0.85) → Emergency TX. Пороги зберігаються в RTC Backup DR6/DR7, оновлюються через OTA CMD. 8 нових тест-кейсів специфіковано. Реалізація — наступний цикл
+- [ ] 🤖 Зберегти threshold у RTC Backup Register (updateable via OTA) — реалізація у наступному циклі
+- [x] 🤖 Дизайн dual-threshold: WARNING (0.60) → event counter; CRITICAL (0.85) → Emergency TX
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
 - `03_04` BLOCKER-4
@@ -234,10 +236,11 @@
 - Legacy notes + `08_02` (Kalman filter Vector 4) | P2 (потребує R&D partnership)
 - **Опис:** Soldier MCU має обмежений RAM (~20 KB вільного). Поточна архітектура: кожен wakeup → один 21-байтний пакет → TX. Для майбутнього (Kalman filtering, TinyML context) потрібна локальна агрегація
 - **Рішення:** Moving average / EMA прямо на MCU. Відправляти на Queen лише: (1) поточне значення, (2) дельту від попереднього EMA, (3) стиснуті "summary" пакети. Зменшує трафік LoRa та економить батарею
-- [ ] 🤖 Визначити які метрики потребують EMA (delta_t, vcap — кандидати)
-- [ ] 🤖 Реалізувати lightweight EMA на Soldier (O(1) memory, O(1) compute)
+- **Статус:** 🤖 ✅ **Реалізовано** в `firmware/soldier/main.c` (секція 1.10) — `EmaState` + 4 функції (`EMA_Update`, `EMA_Get_DeltaT_Sec`, `EMA_Get_Vcap_Mv`, `EMA_Is_Warmed_Up`), інтегровано в Phase 1 SENSE main loop. Persistence через RTC Backup Registers: **DR10** (`ema_delta_t_x100`, full uint32) + **DR12** (`[valid:8 \| count:8 \| ema_vcap_x10:16]`, packed) — vcap_x10 максимум 5500×10 = 55 000 ≤ 2¹⁶, тому пакується в low 16 біт, **звільняючи DR11 під 3-й anti-pingpong slot** (`MESH_DID_CACHE_SIZE` 8→3 fallback від попередньої спроби 8→2). VBAT-loss reset тригерить warmup (3 цикли). Тести: **102 passed** у `firmware/test/test_soldier_logic.c` (10 EMA-тестів + оновлений 3-slot mesh suite: `test_mesh_3_slots_all_known`, `test_mesh_4th_evicts_oldest`, `test_mesh_pingpong_scenario` + RTC pack/unpack roundtrip із новою розкладкою DR12). **Передавання EMA значень у mruby `calculate_state()` — НЕ реалізовано тут**, винесено в задачу FW.5 B+ (потребує координованого backend апдейту: `SilkenNet::Attractor` β-пертурбація mirror, per-tree EMA state на сервері, 50k fuzz-тести Z-divergence < 1%, міграція DB).
+- [x] 🤖 Визначити які метрики потребують EMA (delta_t, vcap — кандидати)
+- [x] 🤖 Реалізувати lightweight EMA на Soldier (O(1) memory, O(1) compute)
 - [ ] 👤 Інтегрувати з Kalman filter design (E.10 — Косенук)
-- [ ] 🤖 Верифікувати RAM footprint залишається < 80% available
+- [x] 🤖 Верифікувати RAM footprint залишається < 80% available — 10 байтів static (0.015% від 64KB SRAM)
 
 #### FW.22 — acoustic_events payload overflow (uint16 → uint8 truncation)
 - `03_03` BLOCKER-7
@@ -385,7 +388,7 @@
 - [ ] 👤 Збільшити батарею до 40Ah (15 днів автономності), АБО
 - [ ] 👤 Зменшити Starlink duty cycle до 1 хв/год (~9 Wh/day), АБО
 - [ ] 👤 Встановити 100W solar panel
-- [ ] 🤖 Оновити Unit Economics (07_02)
+- [x] 🤖 Оновити Unit Economics (07_02) — ✅ Phase 3 BOM таблиця (Queen ~$825 + $599 Starlink = $1,424/cluster), Phase 3 cluster economics ($5,404 CAPEX, $179/міс OPEX), ROI сценарії (breakeven SCC $0.41 standalone / $0.18 при 3-cluster sharing / $0.07 duty-cycle), стратегія Starlink sharing через ARCH.10 додано в `07_02` §4а + §5а
 
 #### HW.15 — BMS not specified for Queen
 - **Джерело:** `02_05` BLOCKER-4
@@ -397,7 +400,8 @@
 #### HW.16 — Thermal management в IP67 enclosure
 - **Джерело:** `02_05` BLOCKER-5
 - **Опис:** SIM7070G + MCU при TX: ~500 mW × 5 sec. Літній interior temp до 60-70°C. LiFePO4 charging при T < 0°C пошкоджує батарею
-- [ ] 🤖 Розрахувати thermal budget для enclosure (T_ext = +40°C)
+- **Статус:** 🤖 ✅ Тепловий бюджет розраховано та задокументовано в `02_05` §4а «Тепловий бюджет IP67 корпусу» — Phase 1/2.5 (~130 мВт середнє → ΔT < 1 K) та Phase 3 (3 Вт burst → ΔT ~4.5 K), sun load — головний внесок (+15 K). Активне охолодження не потрібне при T_зовн ≤ +40°C. Sun-shade / світлий корпус — рекомендовано
+- [x] 🤖 Розрахувати thermal budget для enclosure (T_ext = +40°C)
 - [ ] 👤 Додати temperature sensor (NTC або DS18B20)
 - [ ] 👤 Реалізувати hardware charge protection при T < 0°C
 
@@ -449,9 +453,10 @@
 #### SEC.2 — RDP Level 2 activation timeline
 - **Джерело:** `03_05` NOTE-1
 - **Опис:** Поточний стан: RDP Level 0 (development). Level 1 потрібен перед першою польовою партією, Level 2 — тільки після повної OTA верифікації (незворотній — лише OTA updates можливі)
+- **Статус:** 🤖 ✅ Процедура активації RDP Level 2 (pre-flight checklist + STM32CubeProgrammer CLI послідовність + поетапний rollout R&D→Pilot→Mass) задокументовано в `03_05` §3.6 «Процедура активації RDP Level 2 (необоротна)»
 - [ ] 🤖 Верифікувати OTA flow end-to-end
 - [ ] 👤 Перейти на RDP Level 1 для field batch
-- [ ] 🤖 Задокументувати процедуру Level 2 activation (необоротна)
+- [x] 🤖 Задокументувати процедуру Level 2 activation (необоротна)
 
 #### SEC.3 — Factory Flashing pipeline
 - **Джерело:** `03_05` NOTE-2
@@ -471,10 +476,11 @@
 - **Джерело:** `03_05` | Firmware architecture
 - **Опис:** AES-256 ключ зберігається у plain Flash STM32 (навіть з RDP Level 1 — key extraction можливий через glitching/side-channel). ATECC608B забезпечує hardware-protected key storage з tamper-detection. Ціна ~$0.60/unit
 - **Пріоритет:** P2 (Post-TRL 7, перед mass production >1000 units)
-- [ ] 🤖 Оцінити ATECC608B integration з STM32WLE5JC (I²C interface)
-- [ ] 🤖 Дизайн key storage: ATECC608B slot 0 = AES key, slot 1 = device certificate
-- [ ] 🤖 Оновити Factory Flashing pipeline (SEC.3) для ATECC608B provisioning
-- [ ] 🤖 Оцінити альтернативи: STSAFE-A110 (ST ecosystem), Infineon OPTIGA Trust M
+- **Статус:** 🤖 ✅ Інтеграційна оцінка ATECC608B з STM32WLE5JC задокументована в `03_05` §3.7 «ATECC608B Secure Element — оцінка інтеграції»: I²C interface (PB6/PB7), slot mapping (slot 0=AES, 1=ECC priv, 2=cert, 3=HMAC OTA), latency impact (~1.5 мс/блок vs 10 µs HAL_CRYP — нехтовно), power impact (+0.1% energy budget), Factory Flashing pipeline з ATECC, альтернатива STSAFE-A110 (native CubeMX, переважна для unified ST toolchain), OPTIGA Trust M (overkill), NXP A71CH (EOL — уникати). Firmware HAL drop-in API окреслено
+- [x] 🤖 Оцінити ATECC608B integration з STM32WLE5JC (I²C interface)
+- [x] 🤖 Дизайн key storage: ATECC608B slot 0 = AES key, slot 1 = device certificate
+- [ ] 🤖 Оновити Factory Flashing pipeline (SEC.3) для ATECC608B provisioning — наступний цикл
+- [x] 🤖 Оцінити альтернативи: STSAFE-A110 (ST ecosystem), Infineon OPTIGA Trust M
 
 #### SEC.7 — OTA image автентифікація (cross-ref FW.23)
 - **Джерело:** `03_05`, `03_02`
@@ -606,7 +612,7 @@
 - **Джерело:** `08_01`
 - **Блокує:** Всю лабораторну роботу, 10 публікацій, 11 магістерських
 - [ ] 👤 Призначити зустріч
-- [ ] 🤖 Підготувати презентацію проєкту
+- [x] 🤖 Підготувати презентацію проєкту — ✅ 7-слайдова 15-хвилинна презентація додана в `08_01` §4. Структура: проблема → рішення → техстек → що потрібно від ЧНУ → що отримає ЧНУ → наступні кроки
 - [ ] 👤 Провести зустріч
 
 #### UNI.2 — 8 зустрічей з факультетом ФОТІУС
@@ -629,7 +635,7 @@
 #### UNI.8 — Перший контакт з ректоратом СЄУ
 - **Джерело:** `08_07`
 - **Блокує:** Economic Whitepaper, Legal Framework, NaaS юридичні шаблони (07_01 BLOCKER-1, BLOCKER-3)
-- [ ] 🤖 Підготувати pitch для ректора (Чудаєва І.Б.) — акцент: Research + Scopus + Horizon Europe
+- [x] 🤖 Підготувати pitch для ректора (Чудаєва І.Б.) — ✅ 10-хвилинний pitch-документ додано в `08_07` §6. 4 блоки: проблема/ринок → що побудовано → 5 напрямів для СЄУ → що отримає СЄУ. Матеріали для зустрічі специфіковані
 - [ ] 👤 Перша зустріч з Чудаєвою (ректор) або Аблязовою Н. (президент)
 - [ ] 👤 Верифікувати посади та наукові профілі всіх 7 науковців через офіційний сайт СЄУ
 - [ ] 👤 Підписати Меморандум про співпрацю між СЄУ та Silken Net

@@ -108,7 +108,26 @@
 | 3 | **Живлення (Solar)** | Сонячна панель 10 Вт + MPPT контролер CN3791. | $15.00 |
 | 4 | **Акумулятор** | LiFePO4 12V 6 Ah + BMS (температурний захист −30 °C). | $22.00 |
 | 5 | **Корпус & Монтаж** | ABS/PC IP67 корпус + кріплення на стовбур. | $12.50 |
-| — | **Разом за 1 Queen:** | **LTE-M шлюз агрегації на 100–300 дерев** | **~$80.00** |
+| — | **Разом за 1 Queen (Phase 1/2.5):** | **LTE-M / Starlink DTC, 100–300 дерев** | **~$80.00** |
+
+#### 🤖 4а. Queen BOM — Phase 3 (Starlink Mini) — HW.14
+
+> **Cross-ref:** [10_02 HW.14](10_02_Action_Plan_Tracker) — оновлення Unit Economics ✅
+
+**Phase 3** застосовується для ультра-віддалених локацій (Амазонія, Тайга, Африка) де Starlink DTC (Phase 2.5) недоступний або потрібна вища пропускна здатність. Конфігурація використовує фізичний Starlink Mini термінал (20–40 Вт) з ESP32-S3 або SIM8200G-M2 co-processor.
+
+| # | Підсистема | Phase 1/2.5 | Phase 3 (Starlink Mini) | Δ Вартість |
+|---|---|---|---|---|
+| 1 | MCU & LoRa | STM32WLE5JC + SMA 5 dBi | Ідентично | — |
+| 2 | Uplink | SIM7070G + eSIM ($18.50) | SIM8200G-M2 **або** ESP32-S3 + WiFi | +$15–$30 |
+| 3 | Satellite Terminal | Відсутній (DTC через SIM) | **Starlink Mini** ($599 одноразово + $150/міс) | +$599 CAPEX |
+| 4 | Solar | 10 Вт ($15.00) | **100 Вт** (для 25–40 Вт Starlink) | +$50.00 |
+| 5 | Акумулятор | LiFePO4 12V 6 Ah ($22.00) | **LiFePO4 12V 40 Ah** (15 днів автономності взимку) | +$55.00 |
+| 6 | MPPT | CN3791 (10 Вт вхід) | **Victron SmartSolar MPPT 75/15** (100 Вт вхід) | +$45.00 |
+| 7 | Корпус | IP67 ABS ($12.50) | IP67 Large ABS (Starlink + electronics) | +$25.00 |
+| — | **Разом за 1 Queen (Phase 3):** | **~$80** | **~$825 + $599 Starlink = ~$1,424** | **+$1,344** |
+
+> **Примітка:** $599 Starlink Mini — одноразова CAPEX для одного кластера. При розгортанні 10 кластерів у одному районі можливий sharing: 1 Starlink на 3–5 Queens через Queen-to-Queen mesh (ARCH.10, Post-TRL 8), що знижує Starlink cost до $120–$200 на кластер.
 
 ---
 
@@ -131,6 +150,53 @@
 ### 5.3. Підсумок
 
 > **Базова вартість запуску 1 кластера: ~$4,000** — або **$40 на 1 дерево «під ключ»**.
+
+#### 🤖 5а. Phase 3 (Starlink Mini) Cluster Economics — HW.14
+
+> **Cross-ref:** [10_02 HW.14](10_02_Action_Plan_Tracker), `02_05` §4 Power Tree, BLOCKER-2.
+
+Для ультра-віддалених локацій де LTE-M / Starlink DTC недоступний (Phase 3):
+
+| Статтia CAPEX | Phase 1/2.5 | Phase 3 (Starlink Mini) |
+|---|---|---|
+| 100 × Soldier | $3,500 | $3,500 |
+| 1 × Queen hardware | $80 | $825 |
+| Starlink Mini terminal | — | $599 |
+| Інсталяція | $420 | $480 (складніша монтажна точка, сонячна панель) |
+| **Разом Phase 3 CAPEX** | **$4,000** | **$5,404** |
+| **CAPEX на 1 дерево** | **$40** | **$54** |
+
+**Phase 3 OPEX:**
+
+| Стаття | Phase 1/2.5 | Phase 3 |
+|---|---|---|
+| Зв'язок Queen (eSIM) | ~$1.50 | ~$0 (Starlink включений) |
+| Starlink Residential | — | **$150/місяць** |
+| Хмара / RPC | ~$5.00 | ~$5.00 |
+| Амортизація Queen | ~$3.50 | ~$8.00 (складніша компонентна база) |
+| Soldier replacements (BIZ.7) | ~$15.50 | ~$15.50 |
+| **Разом OPEX Phase 3** | **~$25–30** | **~$179/місяць** |
+
+**Phase 3 ROI @ $0.30/SCC:**
+- Дохід: ~$130/місяць (100 SCC/тижень × $0.30, ідентично Phase 1/2.5)
+- Net: $130 − $179 = **−$49/місяць** 🔴 → **Phase 3 unprofitable при $0.30**
+- Breakeven SCC price: $179 / 433 SCC = **$0.41/SCC**
+
+**Phase 3 ROI @ $1.00/SCC (ReFi premium):**
+- Net: $433 − $179 = **$254/місяць**
+- Payback: $5,404 / $254 ≈ **~21 місяців** (vs ~10 для Phase 1/2.5)
+
+**Рекомендації HW.14:**
+1. **Phase 3 viable лише при SCC ≥ $0.41** — вимагає ReFi premium або Blue Carbon market
+2. **Starlink sharing:** розгортати ≥3 кластери на 1 Starlink термінал → Starlink cost per cluster $50/міс → breakeven $0.18/SCC ✅
+3. **Duty cycling:** Starlink 1 хв/год замість 5 хв/год → OPEX $30/міс (близько Phase 1/2.5)
+4. **Альтернатива Helium Network:** E.4 — якщо покриття є, кратно нижчий OPEX
+
+| Сценарій Phase 3 | OPEX/міс | Breakeven SCC | Payback @$1.00 |
+|---|---|---|---|
+| 1 Starlink / 1 cluster (baseline) | $179 | $0.41 | ~21 міс |
+| 1 Starlink / 3 clusters shared | $79 | $0.18 | ~15 міс |
+| Duty cycle 1 хв/год | $30 | $0.07 | ~10 міс |
 
 ---
 

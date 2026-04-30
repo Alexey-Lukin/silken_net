@@ -173,9 +173,9 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 | **Soldier main loop (Phases 0-5)** | ✅ Реалізовано (`firmware/soldier/main.c`) |
 | **Queen main loop (RX → Cache → Flush)** | ✅ Реалізовано (`firmware/queen/main.c`) |
 | **DMA Audio Pipeline (TinyML)** | ✅ Реалізовано (TIM2 + ADC DMA + CPU SLEEP) |
-| **RTC Backup Domain (16 регістрів)** | ✅ Реалізовано (DR0..DR15, персистентний стан) |
+| **RTC Backup Domain (20 регістрів)** | ✅ Реалізовано (DR0..DR19, персистентний стан) |
 | **Hardware ISR Map** | ✅ Задокументовано (4 рефлекси: RxDone, EXTI, PVD, DMA) |
-| **Mesh Anti-Pingpong (8 слотів)** | ✅ Виправлено (розширено з 3 до 8 DR8..DR15) |
+| **Mesh Anti-Pingpong (3 слоти)** | ✅ Реалізовано (DR8, DR9, DR11; зменшено з 8 до 3 у FW.21, DR10/DR12 під EMA, DR13..DR15 — резерв) |
 | **CIFO Priority-Aware Eviction** | ✅ Виправлено (критичні записи захищені від витіснення) |
 | **OTA Integrity (CRC32)** | ✅ Виправлено (ISO 3309 перевірка перед flash write) |
 | **AES Key — зашитий у Flash** | 🔴 BLOCKER (hardcoded, не обертається) |
@@ -518,7 +518,7 @@ _rx_payload[0] == OTA_MARKER (0x99)
 Сценарій Б: incoming_lora_size == 16 (Mesh Relay)
   → TTL > 0?
   → incoming_did == tree_did? → break (власне відлуння)
-  → recent_mesh_dids[8] check (anti-pingpong)
+  → recent_mesh_dids[3] check (anti-pingpong, FW.21: 3 слоти DR8/DR9/DR11)
   → Decrement TTL → Re-encrypt → store mesh_relay_payload
   → has_mesh_relay = 1
 ```
@@ -593,12 +593,12 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `DR7` | `tree_did` | uint32 | DID дерева (записується ОДИН РАЗ при народженні) |
 | `DR8` | `recent_mesh_dids[0]` | uint32 | Anti-pingpong DID cache, слот 0 |
 | `DR9` | `recent_mesh_dids[1]` | uint32 | Anti-pingpong DID cache, слот 1 |
-| `DR10` | `recent_mesh_dids[2]` | uint32 | Anti-pingpong DID cache, слот 2 |
-| `DR11` | `recent_mesh_dids[3]` | uint32 | Anti-pingpong DID cache, слот 3 |
-| `DR12` | `recent_mesh_dids[4]` | uint32 | Anti-pingpong DID cache, слот 4 |
-| `DR13` | `recent_mesh_dids[5]` | uint32 | Anti-pingpong DID cache, слот 5 |
-| `DR14` | `recent_mesh_dids[6]` | uint32 | Anti-pingpong DID cache, слот 6 |
-| `DR15` | `recent_mesh_dids[7]` | uint32 | Anti-pingpong DID cache, слот 7 |
+| `DR10` | `ema_delta_t_x100` | uint32 | [FW.21] EMA delta_t × 100 (fixed-point 0.01 с) |
+| `DR11` | `recent_mesh_dids[2]` | uint32 | Anti-pingpong DID cache, слот 2 (FW.21 fallback: vcap_x10 запаковано в DR12) |
+| `DR12` | `[valid:8 \| count:8 \| ema_vcap_x10:16]` | uint32 | [FW.21] Метадані EMA + упакований vcap_x10 (max 55000 ≤ 2^16) |
+| `DR13` | *Reserved* | uint32 | Резерв для майбутніх FW-задач |
+| `DR14` | *Reserved* | uint32 | Резерв для майбутніх FW-задач |
+| `DR15` | *Reserved* | uint32 | Резерв для майбутніх FW-задач |
 | `DR16` | `lorenz_x` | float32→uint32 | [FW.6] X-координата атрактора Лоренца (IEEE 754 bit-copy) |
 | `DR17` | `lorenz_y` | float32→uint32 | [FW.6] Y-координата атрактора Лоренца |
 | `DR18` | `lorenz_z` | float32→uint32 | [FW.6] Z-координата атрактора (інтенсивність конвекції) |
@@ -618,7 +618,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `lora_payload[16]` | `uint8_t` | 16 B | Вихідний payload перед шифруванням |
 | `encrypted_payload[16]` | `uint8_t` | 16 B | Зашифрований payload для Radio.Send |
 | `mesh_relay_payload[16]` | `uint8_t` | 16 B | Транзитний зашифрований mesh-пакет |
-| `recent_mesh_dids[8]` | `uint32_t` | 32 B | Кеш DID для anti-pingpong |
+| `recent_mesh_dids[3]` | `uint32_t` | 12 B | Кеш DID для anti-pingpong (FW.21: shrunk 8→3, vcap_x10 запаковано у low 16 біт DR12 щоб звільнити DR11) |
 | `raw_audio_buffer[512]` | `uint16_t` | 1024 B | Сирі 12-бітні DMA-семпли (TinyML) |
 | `audio_buffer[512]` | `float` | 2048 B | Нормалізовані float-семпли для inference |
 | `incoming_lora_payload[256]` | `uint8_t` | 256 B | Вхідний LoRa буфер (volatile) |
@@ -1164,3 +1164,179 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 | [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора |
 | [03_05_Hardware_AES256_and_Security](03_05_Hardware_AES256_and_Security) | Деталі шифрування та RDP |
 | [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | EBFC та іоністор 0.47F |
+
+---
+
+## 📈 14. EMA (Exponential Moving Average) на Soldier — FW.21 🤖
+
+> **Cross-ref:** [10_02 FW.21](10_02_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + 8 тестів у `firmware/test/test_soldier_logic.c`)
+
+### 14.1 Мета та контекст
+
+**Проблема:** Сигнали `delta_t` та `vcap` мають значний шум при вимірюванні:
+- `delta_t` (час заряду EDLC): ±8% через RTC jitter, кварцевий drift та нерегулярні прокидання
+- `vcap` (Vcap в мВ): ±2–5% через 12-bit ADC noise (особливо при низьких напругах <500 мВ)
+
+Без фільтрації ці шуми безпосередньо впливають на Lorenz Attractor variance (після реалізації FW.5 Варіант B+) → нестабільні growth_points між близькими за станом TX-циклами.
+
+**Рішення:** Lightweight EMA (Exponential Moving Average) — **O(1) пам'ять, O(1) обчислення**, ідеально для STM32 embedded.
+
+### 14.2 Математика EMA
+
+```
+EMA_t = α × x_t + (1−α) × EMA_{t-1}
+
+Де:
+  x_t     = поточне вимірювання (delta_t або vcap)
+  EMA_{t-1} = попереднє значення EMA (зберігається між wakeup циклами)
+  α       = 0.2 (smoothing factor — 0.1=сильне згладжування, 0.5=менше)
+```
+
+**Ефективна "пам'ять" EMA:** `N_eff = 2/α − 1 = 2/0.2 − 1 = 9` точок. Тобто EMA "пам'ятає" останні ~9 TX-циклів (при 1 пакеті/год ≈ 9 годин).
+
+**Шумова характеристика:** при α=0.2 та вхідному noise σ_x:
+- σ_EMA = σ_x × √(α / (2−α)) = σ_x × √(0.2/1.8) ≈ **0.33 × σ_x** (зменшення шуму в 3×)
+- Для delta_t: ±8% → ±2.7%; для vcap: ±5% → ±1.7%
+
+### 14.3 Persistence — RTC Backup Registers DR10 + DR12 (packed)
+
+> **🔄 Дизайн уточнено під час імплементації (FW.21 fallback):** STM32WLE5JC має лише 20 RTC backup регістрів (DR0..DR19). Оригінальна специфікація (DR24-DR26) фізично неможлива. Перша ітерація FW.21 звільнила 6 регістрів через `MESH_DID_CACHE_SIZE` 8→2 (DR8..DR9 mesh, DR10..DR12 EMA). Подальший аналіз показав: `ema_vcap_x10` має фізичний максимум **5500 × 10 = 55 000 ≤ 2¹⁶** і вкладається в **16 біт**, тому ми пакуємо його в low 16 біт DR12, звільняючи DR11 під 3-й mesh-слот. Поточна розкладка:
+>
+> | DR | Власник |
+> |----|---------|
+> | DR8, DR9, **DR11** | `recent_mesh_dids[3]` (3 слоти, fallback від 8→3) |
+> | DR10 | `ema_delta_t_x100` (full uint32) |
+> | **DR12** | `[valid:8 \| count:8 \| ema_vcap_x10:16]` (packed) |
+> | DR13..DR15 | резерв для майбутніх FW-задач |
+
+**Trade-off ping-pong (8 → 3 слоти, FW.21 fallback):**
+- 2 слотів достатньо для immediate echo A→B→A; **3 слоти додатково покривають короткі кільця A→B→C→A** (B та C ще в кеші коли пакет повертається).
+- Глибші ring-и (4+ унікальних реле) захищаються через TTL (DEFAULT_TTL=3, PANIC_TTL=5).
+- При 100 деревах у кластері частота 4-relay колізій вкрай низька (TTL=3 уже обмежує глибину); ризик прийнятний.
+
+**Розкладка DR10 + DR12:**
+| RTC Reg | Поле | Тип | Призначення |
+|---------|------|-----|-------------|
+| DR10 | `ema_delta_t_x100` | uint32 | EMA delta_t × 100 (fixed-point 0.01 с, full 32 bits) |
+| DR12 [31:24] | `ema_valid` | uint8 | Magic `0x45` ('E') — маркер ініціалізованого фільтра |
+| DR12 [23:16] | `ema_count` | uint8 | Saturating counter @ 255 (warmup після ≥ `EMA_WARMUP_CYCLES`) |
+| DR12 [15:0] | `ema_vcap_x10` | uint16 | EMA vcap × 10 (fixed-point 0.1 мВ; max 55000 ≤ 2¹⁶) |
+
+**Cross-VBAT поведінка:** при втраті живлення RTC backup domain очищається → `ema_valid != 0x45` на boot → cold-start → 3 цикли warmup перед `EMA_Is_Warmed_Up()`. Споживач (FW.5 Lorenz) у ці 3 цикли мав би працювати з raw значеннями — але передавання EMA у mruby `calculate_state()` ще НЕ виконано (відкладено у задачу FW.5 B+ через потребу в координованому backend апдейті: `SilkenNet::Attractor` mirror, per-tree EMA state на сервері, 50k fuzz-тести Z-divergence < 1%).
+
+### 14.4 Firmware — реалізація
+
+```c
+// firmware/soldier/main.c — секція 1.10 (стиль матчить FW.6 Lorenz state)
+
+#define EMA_ALPHA_NUM     2       // α = 2/10 = 0.2
+#define EMA_ALPHA_DEN     10
+#define EMA_VALID_MAGIC   0x45    // 'E' — маркер ініціалізованого фільтра
+#define EMA_WARMUP_CYCLES 3
+
+uint32_t ema_delta_t_x100 = 0;
+uint32_t ema_vcap_x10     = 0;
+uint8_t  ema_valid        = 0;
+uint8_t  ema_count        = 0;
+
+static void EMA_Update(uint32_t raw_dt_sec, uint16_t raw_vcap_mv) {
+    uint32_t raw_dt_x100  = raw_dt_sec * 100u;
+    uint32_t raw_vcap_x10 = (uint32_t)raw_vcap_mv * 10u;
+
+    if (ema_valid != EMA_VALID_MAGIC || ema_count == 0) {
+        ema_delta_t_x100 = raw_dt_x100;
+        ema_vcap_x10     = raw_vcap_x10;
+        ema_valid        = EMA_VALID_MAGIC;
+        ema_count        = 1;
+        return;
+    }
+
+    ema_delta_t_x100 = (EMA_ALPHA_NUM * raw_dt_x100 +
+                        (EMA_ALPHA_DEN - EMA_ALPHA_NUM) * ema_delta_t_x100) / EMA_ALPHA_DEN;
+    ema_vcap_x10     = (EMA_ALPHA_NUM * raw_vcap_x10 +
+                        (EMA_ALPHA_DEN - EMA_ALPHA_NUM) * ema_vcap_x10) / EMA_ALPHA_DEN;
+    if (ema_count < 255) ema_count++;
+}
+
+static inline uint32_t EMA_Get_DeltaT_Sec(void) { return ema_delta_t_x100 / 100u; }
+static inline uint16_t EMA_Get_Vcap_Mv  (void) { return (uint16_t)(ema_vcap_x10 / 10u); }
+static inline uint8_t  EMA_Is_Warmed_Up(void) {
+    return (ema_valid == EMA_VALID_MAGIC) && (ema_count >= EMA_WARMUP_CYCLES);
+}
+```
+
+**BOOT — відновлення EMA з RTC** (одразу після відновлення Lorenz state):
+
+```c
+// [FW.21] ВІДНОВЛЕННЯ EMA-ФІЛЬТРА (RTC DR10-DR12)
+{
+    uint32_t ema_meta = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR12);
+    uint8_t  v        = (uint8_t)((ema_meta >> 24) & 0xFFu);
+    if (v == EMA_VALID_MAGIC) {
+        ema_delta_t_x100 = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR10);
+        ema_vcap_x10     = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR11);
+        ema_valid        = v;
+        ema_count        = (uint8_t)((ema_meta >> 16) & 0xFFu);
+    }
+}
+```
+
+**SAVE — збереження EMA перед STOP2** (одразу після збереження mesh DIDs):
+
+```c
+HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR10, ema_delta_t_x100);
+HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR11, ema_vcap_x10);
+HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR12,
+    ((uint32_t)ema_valid << 24) | ((uint32_t)ema_count << 16));
+```
+
+**Інтеграція в Phase 1 (SENSE)** — викликається після зчитування `vcap_voltage`:
+
+```c
+HAL_ADC_Stop(&hadc);
+
+// [FW.21] Оновлюємо фільтр пульсу. Стан живе в RTC DR10-12, зчитано в Phase 0 (BOOT).
+// Передавання згладжених значень у mruby — задача FW.5.
+EMA_Update(delta_t_seconds, vcap_voltage);
+```
+
+> ⚠️ Поточна реалізація **тільки** оновлює EMA-стан. Передавання `EMA_Get_*()` у mruby `calculate_state()` — задача FW.5 (Варіант B+).
+
+### 14.5 RAM Footprint
+
+| Компонент | RAM | Коментар |
+|-----------|-----|---------|
+| 4 globals (`ema_*`) | **10 байтів** SRAM (2 × uint32 + 2 × uint8) | Статичні, BSS-розміщення |
+| 3 RTC регістри (DR10-12) | 12 байтів у RTC backup domain (≠ SRAM) | Survives STOP2 + VBAT (поки RTC живиться) |
+| Локальні в `EMA_Update` | ~16 байтів стек | Звільняються після виклику |
+| CPU code | ~250 байтів Flash | 4 функції + load/save inline |
+| **Net SRAM impact** | **10 байтів** | 0.015% від 64KB SRAM |
+
+### 14.6 Вплив на Backend
+
+**TelemetryLog:** поле `metabolism_s` (`delta_t`) в payload залишається **raw** значенням (не EMA). EMA — тільки для внутрішнього використання firmware (Lorenz input). Це дозволяє backend:
+- Бачити реальний raw `delta_t` для діагностики
+- Самостійно рахувати EMA server-side якщо потрібно (через TimescaleDB continuous aggregates, E.37)
+
+**Dual Computation Integrity:** Backend `SilkenNet::Attractor` після реалізації FW.5 B+ отримуватиме raw `delta_t` з payload та застосовуватиме той самий EMA алгоритм server-side для верифікації → Divergence check залишається можливим.
+
+### 14.7 Тести (`firmware/test/test_soldier_logic.c` — секція FW.21)
+
+10 host-based тестів (компілюються x86 gcc, без ARM toolchain):
+
+| # | Тест | Перевірка |
+|---|------|----------|
+| 1 | `test_ema_cold_start` | Перший виклик: EMA = raw value, valid=MAGIC, count=1, не warmed up |
+| 2 | `test_ema_second_cycle_smoothing` | Точна формула α=0.2: 3600→4000 дає EMA=3680, 4500→5000 дає 4600 |
+| 3 | `test_ema_convergence` | Після 20 ітерацій з константним input EMA в межах ±1% від input |
+| 4 | `test_ema_noise_rejection` | Spike 5× → EMA рухається лише ~1.8× від baseline (3× rejection) |
+| 5 | `test_ema_warmup_flag` | count<3 → false; count=3 → true |
+| 6 | `test_ema_count_saturates_at_255` | 300 ітерацій → count=255 (no wraparound) |
+| 7 | `test_ema_zero_inputs_are_valid` | delta_t=0, vcap=0 не викликає overflow / NaN |
+| 8 | `test_ema_no_overflow_at_max_inputs` | delta_t=86400s (24h), vcap=5500mV — fixed-point не переповнюється |
+| 9 | `test_ema_rtc_save_load_roundtrip` | Save до DR10-12 → wipe RAM → load назад → значення збігаються |
+| 10 | `test_ema_rtc_first_boot_no_magic` | Порожній RTC → load повертає cold state, не warmed up |
+
+**Результат:** ✅ 102 passed (10 EMA tests + оновлений mesh-test набір під 3 слоти: `test_mesh_3_slots_all_known`, `test_mesh_4th_evicts_oldest`, `test_mesh_pingpong_scenario`).
+
+

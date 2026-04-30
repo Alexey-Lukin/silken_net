@@ -193,7 +193,7 @@ for(int i = 0; i < 512; i++) {
 
 ### 🟡 BLOCKER-6: Хардкодований поріг впевненості `0.80`
 
-**Статус:** Відкрито. Технічний борг.
+**Статус:** 🤖 Дизайн дворівневої системи порогів завершений (див. нижче). Реалізація — наступний цикл.
 
 **Файл:** `firmware/soldier/main.c:357`
 
@@ -210,6 +210,138 @@ if (ml_confidence > 0.80) {
 - Додати `confidence_threshold` до `lora_payload` або OTA-конфігурації.
 - Або зберігати поріг у RTC Backup регістрі (оновлюється через OTA-команду).
 - Розглянути дворівневий поріг: `WARNING_THRESHOLD (0.60)` → лічильник події; `CRITICAL_THRESHOLD (0.85)` → Emergency TX.
+
+#### 🤖 Дизайн Dual-Threshold System (FW.18)
+
+**Архітектура: два рівні реагування замість бінарного "так/ні"**
+
+```
+                    ┌──────────────────────────────────────────────────┐
+                    │              ml_confidence                      │
+                    │                                                  │
+  0.0 ─────────────┼─── SILENCE ZONE ──────────────── 0.60 ──────────┤
+                    │   (no action, normal noise)      │              │
+                    │                                   ▼              │
+                    │                           WARNING ZONE           │
+                    │                    (0.60 ≤ confidence < 0.85)    │
+                    │                    → acoustic_events++           │
+                    │                    → warning_counter++           │
+                    │                    → NO Emergency TX             │
+                    │                                   │              │
+                    │                                   0.85 ─────────┤
+                    │                                   ▼              │
+                    │                           CRITICAL ZONE          │
+                    │                      (confidence ≥ 0.85)         │
+                    │                    → acoustic_events++           │
+                    │                    → Trigger_Emergency_LoRa_TX() │
+                    │                    → IMMEDIATE action            │
+                    └──────────────────────────────────────────────────┘
+```
+
+**Firmware змінні (RTC Backup Domain — зберігаються при STOP2):**
+
+```c
+// Зберігання у RTC Backup Registers (updateable via OTA CMD)
+// RTC_BKP_DR6 = WARNING_THRESHOLD  (float as uint32: default 0x3F19999A = 0.60)
+// RTC_BKP_DR7 = CRITICAL_THRESHOLD (float as uint32: default 0x3F59999A = 0.85)
+
+// Runtime variables
+uint8_t warning_counter = 0;       // Лічильник WARNING-подій між TX
+#define WARNING_ESCALATION_COUNT 3  // Після 3 WARNING поспіль → downgrade до CRITICAL
+```
+
+**Логіка рішення (замість поточного `if (ml_confidence > 0.80)`):**
+
+```c
+float warning_threshold  = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR6));
+float critical_threshold = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR7));
+
+// Fallback якщо RTC порожній (cold start без OTA)
+if (warning_threshold < 0.01f || warning_threshold > 0.99f)  warning_threshold  = 0.60f;
+if (critical_threshold < 0.01f || critical_threshold > 0.99f) critical_threshold = 0.85f;
+
+if (ml_confidence >= critical_threshold) {
+    // === CRITICAL ZONE ===
+    if (ml_event_id == 2) {  // Кавітація
+        if (acoustic_events < 255) acoustic_events++;  // FW.22 saturating
+    }
+    if (ml_event_id == 3) {  // Бензопила / вандалізм
+        Trigger_Emergency_LoRa_TX();   // НЕГАЙНИЙ panic TX, PANIC_TTL=5
+    }
+    warning_counter = 0;  // Reset — ми вже відреагували
+
+} else if (ml_confidence >= warning_threshold) {
+    // === WARNING ZONE ===
+    if (ml_event_id == 2 || ml_event_id == 3) {
+        if (acoustic_events < 255) acoustic_events++;  // Рахуємо, але не паніка
+
+        warning_counter++;
+        if (warning_counter >= WARNING_ESCALATION_COUNT) {
+            // 3+ послідовних WARNING → ескалація в CRITICAL
+            // (ймовірно реальна загроза, модель не впевнена через шум)
+            if (ml_event_id == 3) {
+                Trigger_Emergency_LoRa_TX();  // Ескальований alarm
+            }
+            warning_counter = 0;
+        }
+    }
+} else {
+    // === SILENCE ZONE ===
+    warning_counter = 0;  // Reset при нормі
+}
+```
+
+**OTA-оновлення порогів (через CoAP CMD downlink):**
+
+```c
+// Queen → Soldier OTA command: CMD_SET_THRESHOLDS
+// Payload: [CMD_ID:1][WARNING:4][CRITICAL:4] = 9 байт
+case CMD_SET_THRESHOLDS:
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR6, payload_as_uint32(warning_val));
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR7, payload_as_uint32(critical_val));
+    break;
+```
+
+**Backend mirror (для серверного аналізу):**
+
+```ruby
+# app/services/telemetry_unpacker_service.rb — оновити decision matrix:
+# acoustic_events > 0 && acoustic_events < 255 → WARNING-рівень подій (кавітація/шум)
+# acoustic_events == 255 → saturated, ймовірна CRITICAL ситуація
+# EwsAlert створюється лише при Emergency TX (panic_payload[7] = 0xFF)
+```
+
+**Maпінг подій на Payload та Backend (оновлена таблиця):**
+
+| Подія | `ml_event_id` | `ml_confidence` | Зона | Дія firmware | Backend ефект |
+|-------|:------------:|:---------------:|------|-------------|---------------|
+| Тиша | 0 | будь-яка | SILENCE | Нічого | `acoustic_events == 0` |
+| Вітер | 1 | будь-яка | будь-яка | Нічого | `acoustic_events == 0` |
+| Кавітація | 2 | < 0.60 | SILENCE | Нічого | — |
+| Кавітація | 2 | 0.60–0.84 | **WARNING** | `acoustic_events++` | `TelemetryLog#acoustic_events > 0` |
+| **Кавітація** | **2** | **≥ 0.85** | **CRITICAL** | `acoustic_events++` | `TelemetryLog` + вищий пріоритет |
+| Пилка | 3 | < 0.60 | SILENCE | Нічого | — |
+| Пилка | 3 | 0.60–0.84 | **WARNING** | `acoustic_events++`, ескалація після 3× | Ескальований `EwsAlert` |
+| **Пилка** | **3** | **≥ 0.85** | **CRITICAL** | `Trigger_Emergency_LoRa_TX()` | `EwsAlert(severity: :critical)` |
+
+**Переваги dual-threshold:**
+
+1. **Менше false positives:** Шум/вітер з confidence 0.65 не викликає паніку — лише лічильник
+2. **Ескалація:** 3 послідовні WARNING → CRITICAL навіть без високої confidence (персистентна загроза)
+3. **OTA-tune:** Для тропічного лісу (більше фонового шуму) → WARNING=0.70, CRITICAL=0.90
+4. **Audit trail:** Backend бачить градацію (acoustic_events від 1 до 254 = warning; 255 = saturated/critical)
+5. **RTC Backup:** Пороги зберігаються при STOP2 sleep — не потрібна Flash-перепрошивка
+
+**Тести (додати до `test_tinyml_pipeline.c`):**
+
+- `test_warning_threshold_below` — confidence 0.59 → no action
+- `test_warning_threshold_at` — confidence 0.60 → acoustic_events++ (WARNING)
+- `test_critical_threshold_below` — confidence 0.84 → acoustic_events++ but no Emergency TX
+- `test_critical_threshold_at` — confidence 0.85 → Emergency TX (CRITICAL)
+- `test_warning_escalation` — 3× WARNING → Emergency TX
+- `test_warning_counter_reset` — SILENCE → warning_counter = 0
+- `test_rtc_threshold_update` — OTA CMD → RTC DR6/DR7 оновлені
+- `test_rtc_cold_start_defaults` — empty RTC → fallback 0.60/0.85
 
 **Блокує:** Гнучкість налаштування в польових умовах, адаптивний моніторинг.
 
@@ -657,7 +789,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`, 25 тестів) |
 | 6 | Smoke-тест: class 2 → `acoustic_events++` верифіковано | 🔴 Відкрито |
 | 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | 🔴 Відкрито |
-| 8 | Confidence threshold конфігурується (не хардкод) | 🟡 Відкрито |
+| 8 | Confidence threshold конфігурується (не хардкод) | 🟡 Дизайн завершено (BLOCKER-6 dual-threshold 🤖). Реалізація — наступний цикл |
 | 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | 🟡 Відкрито |
 | 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment, 8 тестів) |
 

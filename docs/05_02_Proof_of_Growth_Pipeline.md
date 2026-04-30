@@ -234,7 +234,130 @@ end
 
 **Точка входу з C:** `calculate_state(seed, temp, acoustic)` → `payload_byte` (uint8_t).
 
-#### Фаза 3 — PACK + ENCRYPT
+---
+
+#### 🤖 FW.8 — OTA Sync для Per-Species Lorenz Thresholds (Дизайн)
+
+> **Cross-ref:** [10_02 FW.8](10_02_Action_Plan_Tracker) — дизайн завершено ✅
+
+**Проблема:** `CRITICAL_Z_MIN`, `CRITICAL_Z_MAX`, `OPTIMAL_Z_TARGET` hardcoded у Flash. Сосна (*Pinus sylvestris*) і дуб (*Quercus robur*) мають різний діапазон нормальної конвективної активності — один пороговий набір дає хибні anomaly alerts для одного виду при нормальному стані іншого.
+
+**Рішення:** синхронізувати per-species пороги через OTA Config Payload — без перекомпіляції firmware.
+
+##### 4а.1 Нова структура OTA Config Payload
+
+Поточний OTA downlink передає лише mruby bytecode (bio_contract). Додаємо окремий **Config Block** як перший фрагмент batch:
+
+```
+OTA Batch Downlink Format (розширений):
+  [CMD_TYPE:1] [PAYLOAD_LEN:2] [PAYLOAD:N]
+
+Типи команд:
+  CMD_OTA_BYTECODE    = 0x99   (існуючий — mruby chunks)
+  CMD_SET_THRESHOLDS  = 0x9A   (НОВИЙ — per-species Z thresholds)
+  CMD_SET_ML_THRESH   = 0x9B   (НОВИЙ — TinyML dual-threshold з FW.18)
+  CMD_TIME_SYNC       = 0x9C   (НОВИЙ — RTC correction, FW.20)
+  CMD_FACTORY_RESET   = 0xFE   (зарезервовано)
+```
+
+**CMD_SET_THRESHOLDS payload (10 байт):**
+
+```
+Байти  Поле                   Тип    Опис
+0–1    z_min_fixed            int16  CRITICAL_Z_MIN × 100 (наприклад, 200 = 2.0)
+2–3    z_max_fixed            int16  CRITICAL_Z_MAX × 100 (наприклад, 4500 = 45.0)
+4–5    z_optimal_fixed        int16  OPTIMAL_Z_TARGET × 100 (наприклад, 2900 = 29.0)
+6      species_id             uint8  0=Pinus, 1=Quercus, 2=Fagus, 3=Picea, 0xFF=custom
+7      config_version         uint8  Version counter (anti-replay для конфігурації)
+8–9    checksum               uint16 CRC16 байтів 0..7
+```
+
+**Розшифровується AES-256-CCM (після FW.2) або AES-256-CBC (поточний).**
+
+##### 4а.2 Firmware — зберігання у RTC Backup Domain
+
+```c
+// firmware/soldier/main.c — нові RTC Backup Register слоти:
+
+// RTC_BKP_DR20 — CRITICAL_Z_MIN × 100 (int16_t у lower 16 bits)
+// RTC_BKP_DR21 — CRITICAL_Z_MAX × 100 (int16_t у lower 16 bits)
+// RTC_BKP_DR22 — OPTIMAL_Z_TARGET × 100 (int16_t у lower 16 bits)
+// RTC_BKP_DR23 — [config_version:8 | species_id:8]
+
+#define THRESHOLD_MAGIC   0x5448524D  // "THRM" — маркер валідності
+
+// Читання (з fallback на defaults якщо RTC порожній):
+float Get_Critical_Z_Min(void) {
+    if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR23) >> 24 != 0x54) {  // check "T"
+        return 2.0f;  // default Pinus sylvestris
+    }
+    return (float)((int16_t)HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR20)) / 100.0f;
+}
+
+// OTA CMD handler:
+case CMD_SET_THRESHOLDS:
+    if (verify_crc16(cmd_payload, 8) == *(uint16_t*)(cmd_payload + 8)) {
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR20, (int16_t)(cmd_payload[0]|(cmd_payload[1]<<8)));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR21, (int16_t)(cmd_payload[2]|(cmd_payload[3]<<8)));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR22, (int16_t)(cmd_payload[4]|(cmd_payload[5]<<8)));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR23,
+            THRESHOLD_MAGIC | (cmd_payload[7] << 8) | cmd_payload[6]);
+    }
+    break;
+```
+
+**У bio_contract.rb (mruby) — замість hardcoded констант:**
+
+```ruby
+# BioContract — зчитує пороги з C-side через mrb_define_method або mrb_const_set
+# Firmware C-code передає через mrb_fixnum_value() до виклику:
+# args[4] = mrb_fixnum_value(z_min_x100)   # ← NEW
+# args[5] = mrb_fixnum_value(z_max_x100)   # ← NEW
+# args[6] = mrb_fixnum_value(z_opt_x100)   # ← NEW
+
+CRITICAL_Z_MIN    = mrb_get_arg(4) / 100.0   # dynamic
+CRITICAL_Z_MAX    = mrb_get_arg(5) / 100.0   # dynamic
+OPTIMAL_Z_TARGET  = mrb_get_arg(6) / 100.0   # dynamic
+```
+
+##### 4а.3 Backend — OtaPackagerService та TreeFamily
+
+```ruby
+# app/services/ota_packager_service.rb — додати:
+def build_threshold_config_block(tree)
+  species = tree.tree_family
+  # TreeFamily вже має per-species Lorenz params:
+  z_min    = (species.critical_z_min    * 100).round.to_i
+  z_max    = (species.critical_z_max    * 100).round.to_i
+  z_opt    = (species.optimal_z_target  * 100).round.to_i
+  species_id = SPECIES_ID_MAP[species.species_code] || 0xFF
+  version  = (tree.ota_config_version + 1) & 0xFF
+
+  payload = [z_min, z_max, z_opt, species_id, version].pack("s<s<s<CC")
+  crc = Digest::CRC16.checksum(payload)
+  payload + [crc].pack("S<")
+
+  [CMD_SET_THRESHOLDS].pack("C") + [payload.bytesize].pack("S<") + payload
+end
+```
+
+##### 4а.4 Per-Species Default Thresholds
+
+| Вид дерева | `critical_z_min` | `critical_z_max` | `optimal_z_target` | Обґрунтування |
+|---|---|---|---|---|
+| *Pinus sylvestris* (Сосна звичайна) | **2.0** | **45.0** | **29.0** | Базові (поточні) |
+| *Quercus robur* (Дуб звичайний) | **3.0** | **42.0** | **27.0** | Нижчий піковий стрес, менша варіативність |
+| *Fagus sylvatica* (Бук лісовий) | **2.5** | **43.0** | **28.0** | Помірний діапазон |
+| *Picea abies* (Ялина звичайна) | **1.5** | **46.0** | **30.0** | Ширший діапазон гомеостазу |
+| *Betula pendula* (Береза бородавчаста) | **2.0** | **44.0** | **28.5** | Подібна до сосни |
+
+> **Джерело значень:** Попередні пороги (сосна). Точні значення інших видів потребують калібрування з Lorenz trajectory analysis. **Рекомендовано:** запросити ботанічний baseline від Спрягайла/Гаврилюка (ЧНУ, `08_01`).
+
+##### 4а.5 Backend Mirror (TelemetryUnpackerService)
+
+Backend вже має `TreeFamily#critical_z_min|max|optimal_z_target` через `calculate_z` pipeline. Після реалізації FW.8, сервер також надсилає ці пороги на пристрій та верифікує що `z_value` в `TelemetryLog` відповідає тим самим порогам що використовуються firmware → Dual Computation Integrity.
+
+---
 
 **21-байтний пакет (binary packet format):**
 ```
@@ -259,7 +382,7 @@ end
 
 - `Radio.Send(21 bytes)` @ 868 МГц (Europe/Ukraine)
 - **Mesh relay:** TTL-based (DEFAULT_TTL=3, PANIC_TTL=5)
-- **Anti-pingpong:** seen-set `recent_mesh_dids[8]` у RTC Backup Registers
+- **Anti-pingpong:** seen-set `recent_mesh_dids[3]` у RTC Backup Registers DR8/DR9/DR11 (FW.21: shrunk 8→3; DR10 + DR12 під EMA, vcap_x10 запаковано в low 16 біт DR12)
 - **Emergency TX:** якщо `ml_event_id == 3` (Пилка) → `Trigger_Emergency_LoRa_TX` з PANIC_TTL
 
 ---
