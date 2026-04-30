@@ -186,10 +186,10 @@ static void EMA_Update(uint32_t raw_dt_sec, uint16_t raw_vcap_mv) {
     if (ema_count < 255) ema_count++;
 }
 
-// Зчитуємо згладжені значення в оригінальних одиницях (секунди / мВ / мс).
-// EMA_Get_DeltaT_Ms() — конвертація в мілісекунди для β-пертурбації mruby (FW.5).
+// Зчитуємо згладжені значення в оригінальних одиницях (секунди / мВ).
+// Конвертації у мілісекунди для β-пертурбації mruby — задача FW.5 B+
+// (потребує координованого backend апдейту, тут не реалізовано).
 static inline uint32_t EMA_Get_DeltaT_Sec(void) { return ema_delta_t_x100 / 100u; }
-static inline uint32_t EMA_Get_DeltaT_Ms (void) { return ema_delta_t_x100 * 10u; }
 static inline uint16_t EMA_Get_Vcap_Mv  (void) { return (uint16_t)(ema_vcap_x10 / 10u); }
 
 // Прапорець "фільтр прогрівся" — true після ≥ EMA_WARMUP_CYCLES зразків.
@@ -552,32 +552,21 @@ int main(void)
 
       if (lorenz_state_valid) {
           // [FW.6] ПРОДОВЖЕННЯ ТРАЄКТОРІЇ: використовуємо збережений стан
-          // [FW.5 B+] calculate_state_continued(x_prev, y_prev, z_prev, temp,
-          //                                    acoustic, delta_t_ms, vcap_mv)
-          //   → [payload_byte, x_final, y_final, z_final]
-          // delta_t_ms / vcap_mv — EMA-згладжені, якщо фільтр прогрівся;
-          // інакше — raw значення поточного циклу (warmup safety).
-          mrb_value args[7];
+          // calculate_state_continued(x_prev, y_prev, z_prev, temp, acoustic)
+          // → [payload_byte, x_final, y_final, z_final]
+          // [FW.21] EMA значення (delta_t_ms / vcap_mv) ще НЕ передаються в mruby.
+          // EMA_Update() оновлює стан, EMA_Get_*() доступні, але передавання у
+          // calculate_state() — задача FW.5 B+ (потребує координованого backend
+          // апдейту: SilkenNet::Attractor mirror + per-tree EMA state + 50k fuzz).
+          mrb_value args[5];
           args[0] = mrb_float_value(mrb, (double)lorenz_x);
           args[1] = mrb_float_value(mrb, (double)lorenz_y);
           args[2] = mrb_float_value(mrb, (double)lorenz_z);
           args[3] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура
           args[4] = mrb_fixnum_value(lora_payload[7]); // Акустика
 
-          uint32_t lorenz_dt_ms;
-          uint16_t lorenz_vcap_mv;
-          if (EMA_Is_Warmed_Up()) {
-              lorenz_dt_ms   = EMA_Get_DeltaT_Ms();
-              lorenz_vcap_mv = EMA_Get_Vcap_Mv();
-          } else {
-              lorenz_dt_ms   = (uint32_t)delta_t_seconds * 1000u;
-              lorenz_vcap_mv = vcap_voltage;
-          }
-          args[5] = mrb_fixnum_value((mrb_int)lorenz_dt_ms);
-          args[6] = mrb_fixnum_value((mrb_int)lorenz_vcap_mv);
-
           mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
-              mrb_intern_lit(mrb, "calculate_state_continued"), 7, args);
+              mrb_intern_lit(mrb, "calculate_state_continued"), 5, args);
 
           if (!mrb->exc && mrb_array_p(ruby_result) && RARRAY_LEN(ruby_result) == 4) {
               // Витягуємо payload_byte та оновлений стан
@@ -593,26 +582,14 @@ int main(void)
           }
       } else {
           // ПЕРВИННИЙ СТАРТ: chaos_seed визначає початковий стан
-          // [FW.5 B+] calculate_state(seed, temp, acoustic, delta_t_ms, vcap_mv)
-          mrb_value args[5];
+          // [FW.21] EMA не передається — див. коментар вище (FW.5 B+ задача).
+          mrb_value args[3];
           args[0] = mrb_fixnum_value(chaos_seed);
           args[1] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура (Зимовий щит)
           args[2] = mrb_fixnum_value(lora_payload[7]); // Акустика
 
-          uint32_t lorenz_dt_ms;
-          uint16_t lorenz_vcap_mv;
-          if (EMA_Is_Warmed_Up()) {
-              lorenz_dt_ms   = EMA_Get_DeltaT_Ms();
-              lorenz_vcap_mv = EMA_Get_Vcap_Mv();
-          } else {
-              lorenz_dt_ms   = (uint32_t)delta_t_seconds * 1000u;
-              lorenz_vcap_mv = vcap_voltage;
-          }
-          args[3] = mrb_fixnum_value((mrb_int)lorenz_dt_ms);
-          args[4] = mrb_fixnum_value((mrb_int)lorenz_vcap_mv);
-
           mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
-              mrb_intern_lit(mrb, "calculate_state"), 5, args);
+              mrb_intern_lit(mrb, "calculate_state"), 3, args);
 
           // Байт 10: Біо-Контракт (Токеноміка)
           if (!mrb->exc) {

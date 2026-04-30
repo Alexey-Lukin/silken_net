@@ -175,7 +175,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 | **DMA Audio Pipeline (TinyML)** | ✅ Реалізовано (TIM2 + ADC DMA + CPU SLEEP) |
 | **RTC Backup Domain (20 регістрів)** | ✅ Реалізовано (DR0..DR19, персистентний стан) |
 | **Hardware ISR Map** | ✅ Задокументовано (4 рефлекси: RxDone, EXTI, PVD, DMA) |
-| **Mesh Anti-Pingpong (2 слоти)** | ✅ Реалізовано (DR8..DR9; зменшено з 8 до 2 у FW.21, DR10..DR15 звільнено під EMA + резерв) |
+| **Mesh Anti-Pingpong (3 слоти)** | ✅ Реалізовано (DR8, DR9, DR11; зменшено з 8 до 3 у FW.21, DR10/DR12 під EMA, DR13..DR15 — резерв) |
 | **CIFO Priority-Aware Eviction** | ✅ Виправлено (критичні записи захищені від витіснення) |
 | **OTA Integrity (CRC32)** | ✅ Виправлено (ISO 3309 перевірка перед flash write) |
 | **AES Key — зашитий у Flash** | 🔴 BLOCKER (hardcoded, не обертається) |
@@ -518,7 +518,7 @@ _rx_payload[0] == OTA_MARKER (0x99)
 Сценарій Б: incoming_lora_size == 16 (Mesh Relay)
   → TTL > 0?
   → incoming_did == tree_did? → break (власне відлуння)
-  → recent_mesh_dids[2] check (anti-pingpong)
+  → recent_mesh_dids[3] check (anti-pingpong, FW.21: 3 слоти DR8/DR9/DR11)
   → Decrement TTL → Re-encrypt → store mesh_relay_payload
   → has_mesh_relay = 1
 ```
@@ -593,12 +593,12 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `DR7` | `tree_did` | uint32 | DID дерева (записується ОДИН РАЗ при народженні) |
 | `DR8` | `recent_mesh_dids[0]` | uint32 | Anti-pingpong DID cache, слот 0 |
 | `DR9` | `recent_mesh_dids[1]` | uint32 | Anti-pingpong DID cache, слот 1 |
-| `DR10` | `recent_mesh_dids[2]` | uint32 | Anti-pingpong DID cache, слот 2 |
-| `DR11` | `recent_mesh_dids[3]` | uint32 | Anti-pingpong DID cache, слот 3 |
-| `DR12` | `recent_mesh_dids[4]` | uint32 | Anti-pingpong DID cache, слот 4 |
-| `DR13` | `recent_mesh_dids[5]` | uint32 | Anti-pingpong DID cache, слот 5 |
-| `DR14` | `recent_mesh_dids[6]` | uint32 | Anti-pingpong DID cache, слот 6 |
-| `DR15` | `recent_mesh_dids[7]` | uint32 | Anti-pingpong DID cache, слот 7 |
+| `DR10` | `ema_delta_t_x100` | uint32 | [FW.21] EMA delta_t × 100 (fixed-point 0.01 с) |
+| `DR11` | `recent_mesh_dids[2]` | uint32 | Anti-pingpong DID cache, слот 2 (FW.21 fallback: vcap_x10 запаковано в DR12) |
+| `DR12` | `[valid:8 \| count:8 \| ema_vcap_x10:16]` | uint32 | [FW.21] Метадані EMA + упакований vcap_x10 (max 55000 ≤ 2^16) |
+| `DR13` | *Reserved* | uint32 | Резерв для майбутніх FW-задач |
+| `DR14` | *Reserved* | uint32 | Резерв для майбутніх FW-задач |
+| `DR15` | *Reserved* | uint32 | Резерв для майбутніх FW-задач |
 | `DR16` | `lorenz_x` | float32→uint32 | [FW.6] X-координата атрактора Лоренца (IEEE 754 bit-copy) |
 | `DR17` | `lorenz_y` | float32→uint32 | [FW.6] Y-координата атрактора Лоренца |
 | `DR18` | `lorenz_z` | float32→uint32 | [FW.6] Z-координата атрактора (інтенсивність конвекції) |
@@ -618,7 +618,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `lora_payload[16]` | `uint8_t` | 16 B | Вихідний payload перед шифруванням |
 | `encrypted_payload[16]` | `uint8_t` | 16 B | Зашифрований payload для Radio.Send |
 | `mesh_relay_payload[16]` | `uint8_t` | 16 B | Транзитний зашифрований mesh-пакет |
-| `recent_mesh_dids[2]` | `uint32_t` | 8 B | Кеш DID для anti-pingpong (FW.21: shrunk 8→2) |
+| `recent_mesh_dids[3]` | `uint32_t` | 12 B | Кеш DID для anti-pingpong (FW.21: shrunk 8→3, vcap_x10 запаковано у low 16 біт DR12 щоб звільнити DR11) |
 | `raw_audio_buffer[512]` | `uint16_t` | 1024 B | Сирі 12-бітні DMA-семпли (TinyML) |
 | `audio_buffer[512]` | `float` | 2048 B | Нормалізовані float-семпли для inference |
 | `incoming_lora_payload[256]` | `uint8_t` | 256 B | Вхідний LoRa буфер (volatile) |
@@ -1198,23 +1198,31 @@ EMA_t = α × x_t + (1−α) × EMA_{t-1}
 - σ_EMA = σ_x × √(α / (2−α)) = σ_x × √(0.2/1.8) ≈ **0.33 × σ_x** (зменшення шуму в 3×)
 - Для delta_t: ±8% → ±2.7%; для vcap: ±5% → ±1.7%
 
-### 14.3 Persistence — RTC Backup Registers DR10-DR12
+### 14.3 Persistence — RTC Backup Registers DR10 + DR12 (packed)
 
-> **🔄 Дизайн уточнено під час імплементації:** STM32WLE5JC має лише 20 RTC backup регістрів (DR0..DR19). Оригінальна специфікація (DR24-DR26) фізично неможлива. Замість зберігати EMA в SRAM, ми **звільнили 6 регістрів** з anti-pingpong кешу (`MESH_DID_CACHE_SIZE` 8 → 2 слоти, `recent_mesh_dids` тепер DR8..DR9), і використали DR10..DR12 для EMA. DR13..DR15 — резерв для майбутніх FW-задач.
+> **🔄 Дизайн уточнено під час імплементації (FW.21 fallback):** STM32WLE5JC має лише 20 RTC backup регістрів (DR0..DR19). Оригінальна специфікація (DR24-DR26) фізично неможлива. Перша ітерація FW.21 звільнила 6 регістрів через `MESH_DID_CACHE_SIZE` 8→2 (DR8..DR9 mesh, DR10..DR12 EMA). Подальший аналіз показав: `ema_vcap_x10` має фізичний максимум **5500 × 10 = 55 000 ≤ 2¹⁶** і вкладається в **16 біт**, тому ми пакуємо його в low 16 біт DR12, звільняючи DR11 під 3-й mesh-слот. Поточна розкладка:
+>
+> | DR | Власник |
+> |----|---------|
+> | DR8, DR9, **DR11** | `recent_mesh_dids[3]` (3 слоти, fallback від 8→3) |
+> | DR10 | `ema_delta_t_x100` (full uint32) |
+> | **DR12** | `[valid:8 \| count:8 \| ema_vcap_x10:16]` (packed) |
+> | DR13..DR15 | резерв для майбутніх FW-задач |
 
-**Trade-off ping-pong (8 → 2 слоти):**
-- 2 слотів достатньо для блокування найчастішого випадку: A→B→A immediate echo (B на верхівці кешу при поверненні).
-- Глибший mesh-ring (3+ унікальних реле) тепер захищається лише через TTL (DEFAULT_TTL=3, PANIC_TTL=5), що залишається первинним обмежувачем.
-- При 100 деревах у кластері частота 3-relay колізій низька (TTL=3 уже обмежує глибину); ризик прийнятний.
+**Trade-off ping-pong (8 → 3 слоти, FW.21 fallback):**
+- 2 слотів достатньо для immediate echo A→B→A; **3 слоти додатково покривають короткі кільця A→B→C→A** (B та C ще в кеші коли пакет повертається).
+- Глибші ring-и (4+ унікальних реле) захищаються через TTL (DEFAULT_TTL=3, PANIC_TTL=5).
+- При 100 деревах у кластері частота 4-relay колізій вкрай низька (TTL=3 уже обмежує глибину); ризик прийнятний.
 
-**Розкладка DR10-DR12:**
+**Розкладка DR10 + DR12:**
 | RTC Reg | Поле | Тип | Призначення |
 |---------|------|-----|-------------|
-| DR10 | `ema_delta_t_x100` | uint32 | EMA delta_t × 100 (fixed-point 0.01 с) |
-| DR11 | `ema_vcap_x10` | uint32 | EMA vcap × 10 (fixed-point 0.1 мВ) |
-| DR12 | `[valid:8 \| count:8 \| reserved:16]` | uint32 | Magic `0x45` ('E') + saturating counter |
+| DR10 | `ema_delta_t_x100` | uint32 | EMA delta_t × 100 (fixed-point 0.01 с, full 32 bits) |
+| DR12 [31:24] | `ema_valid` | uint8 | Magic `0x45` ('E') — маркер ініціалізованого фільтра |
+| DR12 [23:16] | `ema_count` | uint8 | Saturating counter @ 255 (warmup після ≥ `EMA_WARMUP_CYCLES`) |
+| DR12 [15:0] | `ema_vcap_x10` | uint16 | EMA vcap × 10 (fixed-point 0.1 мВ; max 55000 ≤ 2¹⁶) |
 
-**Cross-VBAT поведінка:** при втраті живлення RTC backup domain очищається → `ema_valid != 0x45` на boot → cold-start → 3 цикли warmup перед `EMA_Is_Warmed_Up()`. Споживач (FW.5 Lorenz) у ці 3 цикли працює з raw значеннями.
+**Cross-VBAT поведінка:** при втраті живлення RTC backup domain очищається → `ema_valid != 0x45` на boot → cold-start → 3 цикли warmup перед `EMA_Is_Warmed_Up()`. Споживач (FW.5 Lorenz) у ці 3 цикли мав би працювати з raw значеннями — але передавання EMA у mruby `calculate_state()` ще НЕ виконано (відкладено у задачу FW.5 B+ через потребу в координованому backend апдейті: `SilkenNet::Attractor` mirror, per-tree EMA state на сервері, 50k fuzz-тести Z-divergence < 1%).
 
 ### 14.4 Firmware — реалізація
 
@@ -1329,6 +1337,6 @@ EMA_Update(delta_t_seconds, vcap_voltage);
 | 9 | `test_ema_rtc_save_load_roundtrip` | Save до DR10-12 → wipe RAM → load назад → значення збігаються |
 | 10 | `test_ema_rtc_first_boot_no_magic` | Порожній RTC → load повертає cold state, не warmed up |
 
-**Результат:** ✅ 10/10 passed. Plus mesh-test набір переписано під 2 слоти (`test_mesh_2_slots_all_known`, `test_mesh_3rd_evicts_oldest`, `test_mesh_pingpong_scenario`). Загальна тестова метрика soldier: **102 passed** (раніше 92).
+**Результат:** ✅ 102 passed (10 EMA tests + оновлений mesh-test набір під 3 слоти: `test_mesh_3_slots_all_known`, `test_mesh_4th_evicts_oldest`, `test_mesh_pingpong_scenario`).
 
 

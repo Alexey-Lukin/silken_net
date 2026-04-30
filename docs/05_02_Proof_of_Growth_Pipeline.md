@@ -382,7 +382,7 @@ Backend вже має `TreeFamily#critical_z_min|max|optimal_z_target` чере�
 
 - `Radio.Send(21 bytes)` @ 868 МГц (Europe/Ukraine)
 - **Mesh relay:** TTL-based (DEFAULT_TTL=3, PANIC_TTL=5)
-- **Anti-pingpong:** seen-set `recent_mesh_dids[2]` у RTC Backup Registers DR8..DR9 (FW.21: shrunk 8→2; DR10..DR15 під EMA)
+- **Anti-pingpong:** seen-set `recent_mesh_dids[3]` у RTC Backup Registers DR8/DR9/DR11 (FW.21: shrunk 8→3; DR10 + DR12 під EMA, vcap_x10 запаковано в low 16 біт DR12)
 - **Emergency TX:** якщо `ml_event_id == 3` (Пилка) → `Trigger_Emergency_LoRa_TX` з PANIC_TTL
 
 ---

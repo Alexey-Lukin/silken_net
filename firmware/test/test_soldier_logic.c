@@ -19,7 +19,7 @@
  * CONSTANTS (from soldier/main.c)
  * ════════════════════════════════════════════════════════════════════ */
 #define MRUBY_CONTRACT_FLASH_ADDR  0x0803F000
-#define MESH_DID_CACHE_SIZE        2  /* [FW.21] shrunk 8 → 2; DR10-DR15 freed for EMA */
+#define MESH_DID_CACHE_SIZE        3  /* [FW.21] 3 slots; DR8/DR9/DR11 mesh, DR10/DR12 EMA */
 #define OTA_BUFFER_SIZE            1024
 #define OTA_CHUNK_MAP_SIZE         256
 
@@ -464,8 +464,8 @@ TEST(test_mesh_push_then_known) {
     ASSERT_TRUE(Mesh_DID_Is_Known(0xAAAA));
 }
 
-TEST(test_mesh_2_slots_all_known) {
-    /* [FW.21] Shrunk to 2 slots: push 2 → both known. */
+TEST(test_mesh_3_slots_all_known) {
+    /* [FW.21] 3 slots: push 3 → all three remembered. */
     Mesh_DID_Cache_Init();
     for (uint32_t i = 1; i <= MESH_DID_CACHE_SIZE; i++)
         Mesh_DID_Cache_Push(i * 0x1111);
@@ -473,32 +473,34 @@ TEST(test_mesh_2_slots_all_known) {
         ASSERT_TRUE(Mesh_DID_Is_Known(i * 0x1111));
 }
 
-TEST(test_mesh_3rd_evicts_oldest) {
-    /* With 2 slots, pushing a 3rd entry evicts the oldest. */
+TEST(test_mesh_4th_evicts_oldest) {
+    /* With 3 slots, pushing a 4th entry evicts the oldest. */
     Mesh_DID_Cache_Init();
     for (uint32_t i = 1; i <= MESH_DID_CACHE_SIZE; i++)
         Mesh_DID_Cache_Push(i);
-    /* Push 3rd — evicts DID=1 (oldest) */
+    /* Push 4th — evicts DID=1 (oldest) */
     Mesh_DID_Cache_Push(99);
     ASSERT_FALSE(Mesh_DID_Is_Known(1)); /* evicted */
     ASSERT_TRUE(Mesh_DID_Is_Known(2));  /* still there */
+    ASSERT_TRUE(Mesh_DID_Is_Known(3));  /* still there */
     ASSERT_TRUE(Mesh_DID_Is_Known(99)); /* new */
 }
 
 TEST(test_mesh_pingpong_scenario) {
     /* Two trees A and B keep bouncing a packet.
-     * With 2 slots, the immediate echo A→B→A→B is still blocked
-     * (B is the most recent push, so A re-receiving from B finds it cached).
-     * Deeper rings (3+ unique relayers) are intentionally accepted —
-     * TTL is the deeper-ring guard. */
+     * With 3 slots, the immediate echo A→B→A→B is still blocked
+     * AND a one-hop A→B→C→A also stays blocked (B + C still cached when
+     * the packet returns). Deeper rings (4+ unique relayers) are intentionally
+     * accepted — TTL is the deeper-ring guard. */
     Mesh_DID_Cache_Init();
     uint32_t tree_b = 0xBBBB;
 
     /* Tree A receives from B, caches B */
     Mesh_DID_Cache_Push(tree_b);
 
-    /* 1 other tree's packet arrives — B still in 2-slot window */
+    /* 2 other trees' packets arrive — B still in 3-slot window */
     Mesh_DID_Cache_Push(0x1000);
+    Mesh_DID_Cache_Push(0x2000);
 
     /* Tree A receives from B again — B should still be cached */
     ASSERT_TRUE(Mesh_DID_Is_Known(tree_b));
@@ -1353,13 +1355,20 @@ TEST(test_ema_no_overflow_at_max_inputs) {
     ASSERT_TRUE(vc >= 5440  && vc <= 5500);
 }
 
-/* ---------- RTC DR10-DR12 pack/unpack mirrors firmware boot/save logic ---------- */
+/* ---------- RTC DR10+DR12 pack/unpack mirrors firmware boot/save logic ----------
+ * NOTE: DR11 is owned by the 3rd anti-pingpong slot (mesh DID cache 8→3).
+ * EMA vcap_x10 (≤55000 ≤ 2^16) is packed into the LOW 16 bits of DR12.
+ * DR12 layout: [valid:8 | count:8 | ema_vcap_x10:16].
+ */
+
+#define FW21_EMA_VCAP_X10_MASK 0xFFFFu
 
 static void Fw21_EMA_Save_To_RTC(const Fw21EmaState *ema, RTC_HandleTypeDef *h) {
     HAL_RTCEx_BKUPWrite(h, RTC_BKP_DR10, ema->delta_t_x100);
-    HAL_RTCEx_BKUPWrite(h, RTC_BKP_DR11, ema->vcap_x10);
     HAL_RTCEx_BKUPWrite(h, RTC_BKP_DR12,
-        ((uint32_t)ema->valid << 24) | ((uint32_t)ema->count << 16));
+        ((uint32_t)ema->valid << 24) |
+        ((uint32_t)ema->count << 16) |
+        (ema->vcap_x10 & FW21_EMA_VCAP_X10_MASK));
 }
 
 static void Fw21_EMA_Load_From_RTC(Fw21EmaState *ema, RTC_HandleTypeDef *h) {
@@ -1367,7 +1376,7 @@ static void Fw21_EMA_Load_From_RTC(Fw21EmaState *ema, RTC_HandleTypeDef *h) {
     uint8_t  v    = (uint8_t)((meta >> 24) & 0xFFu);
     if (v == FW21_EMA_VALID_MAGIC) {
         ema->delta_t_x100 = HAL_RTCEx_BKUPRead(h, RTC_BKP_DR10);
-        ema->vcap_x10     = HAL_RTCEx_BKUPRead(h, RTC_BKP_DR11);
+        ema->vcap_x10     = (uint32_t)(meta & FW21_EMA_VCAP_X10_MASK);
         ema->valid        = v;
         ema->count        = (uint8_t)((meta >> 16) & 0xFFu);
     } else {
@@ -1444,8 +1453,8 @@ int main(void)
     printf("\n  Mesh Dedup (Anti-Pingpong):\n");
     RUN(test_mesh_empty_cache_unknown);
     RUN(test_mesh_push_then_known);
-    RUN(test_mesh_2_slots_all_known);
-    RUN(test_mesh_3rd_evicts_oldest);
+    RUN(test_mesh_3_slots_all_known);
+    RUN(test_mesh_4th_evicts_oldest);
     RUN(test_mesh_pingpong_scenario);
     RUN(test_mesh_relay_own_echo);
     RUN(test_mesh_relay_ttl_zero);
