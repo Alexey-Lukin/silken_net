@@ -691,6 +691,73 @@ total = base + bonus    # max: 10_000 + 63×100 = 16_300 lamports = 0.016 USDC
 
 ---
 
+## Усі Шляхи до `Wallet#lock_and_mint!` (Guard Inventory) [DOC.7]
+
+> **Контекст:** `Wallet#lock_and_mint!(points, threshold, token_type)` — атомарна операція з `pessimistic_lock`, що конвертує `growth_points` у SCC (10 000 = 1 SCC). У системі **п'ять окремих шляхів** її викликають, кожен зі своїм guard chain. Раніше зв'язок між цими шляхами був розкиданий між `04_02 §4.2.2` (oracle path) та різними воркерами (tokenomics path). Ця секція — єдина точка істини; будь-який новий шлях повинен бути доданий сюди.
+
+```
+                                ┌─────────────────────────────────────┐
+                                │  Wallet#lock_and_mint!(points,      │
+                                │                       threshold,    │
+                                │                       token_type)   │
+                                │  • pessimistic_lock                 │
+                                │  • atomic: balance -= points,       │
+                                │            locked += points,        │
+                                │            queue MintCarbonCoinJob  │
+                                └──────────────┬──────────────────────┘
+                                               ▲
+        ┌─────────────────────────────────────┼─────────────────────────────────────┐
+        │                                      │                                      │
+   PATH 1                                  PATH 2                                  PATH 3
+   Oracle-driven                           Tokenomics                              Slashing recovery
+   (per-telemetry, hot path)               (hourly batch)                          (after burn rollback)
+        │                                      │                                      │
+   ▼                                      ▼                                          ▼
+   MintCarbonCoinWorker          TokenomicsEvaluatorWorker            MintingRollbackService
+   (web3_critical #6)            (default #5)                         (critical #3)
+        │                                      │                                      │
+   GUARDS:                       GUARDS:                              GUARDS:
+   ✓ verified_by_iotex?          ✓ wallet.balance >= threshold        ✓ original burn TX confirmed
+   ✓ oracle_status_fulfilled?    ✓ kyc_status == "approved"           ✓ rollback authorized by admin
+   ✓ hadron_kyc_status==approved ✓ NOT in cooldown window              ✓ idempotency by tx_hash
+   ✓ chainlink_request_id match  ✗ (does NOT need oracle)              ✗ (bypasses oracle)
+   (raises if any fails)         (silently skips if any fails)         (raises + Sentry capture)
+
+        │                                      │                                      │
+        └──────────────────┬───────────────────┴──────────────────┬───────────────────┘
+                           │                                      │
+                    PATH 4                                  PATH 5
+                    Solana micro-rewards                    Manual admin (super_admin only)
+                    (parallel rail, NOT SCC)                (rake task, audit-logged)
+                           │                                      │
+                    SolanaMicroRewardWorker                MintingAdminController
+                    (web3 #7)                              (admin/super_admin)
+                           │                                      │
+                    GUARDS:                                GUARDS:
+                    ✓ wallet.solana_address present        ✓ Pundit policy: super_admin only
+                    ✓ NOT main lock_and_mint! (parallel)   ✓ Confirmation token (re-typed)
+                    ✗ (calls Solana::MintingService        ✓ AuditLog entry created
+                       directly, NOT lock_and_mint!)
+```
+
+### Інваріанти для всіх шляхів
+
+| Інваріант | Path 1 | Path 2 | Path 3 | Path 5 | Контроль |
+|-----------|--------|--------|--------|--------|----------|
+| Pessimistic lock на Wallet | ✅ | ✅ | ✅ | ✅ | `Wallet#lock_and_mint!` сам бере lock |
+| Idempotency (повторний виклик не подвоює) | ✅ за `chainlink_request_id` | ✅ за `evaluation_period_id` | ✅ за `original_tx_hash` | ✅ за `confirmation_token` | DB unique constraint |
+| `BlockchainTransaction.aasm: pending` створено | ✅ | ✅ | ✅ | ✅ | `MintCarbonCoinJob` |
+| Rate limit (per wallet, anti-DoS) | ✅ Sidekiq уніфікований | ✅ cron | ⚠️ unbounded (admin-driven) | ⚠️ unbounded | Sidekiq + Pundit |
+| WEB3_STRICT_MODE respected (raises на missing Web3 ENV) | ✅ | ✅ | ✅ | ✅ | shared `web3_strict_check!` |
+
+> **PATH 4 (Solana) НЕ викликає `lock_and_mint!`** — Solana — паралельна рейка з прямим SPL Transfer без локування growth_points. growth_points і SCC mint обробляються Path 1, Solana — окрема мікро-винагорода, що не торкається balance/locked_balance.
+
+> **TokenomicsEvaluatorWorker bypass [S6.12]:** Path 2 НЕ перевіряє `verified_by_iotex?` / `oracle_status_fulfilled?`. Це **навмисно**: tokenomics-flow агрегує підтверджені (= уже мінтнуті через Path 1) growth_points за період і нараховує бонус-винагороди. Без цього розмежування — циклічна залежність "не можна нарахувати бонус, доки оракул не підтвердив сам бонус". Документовано в `S6.12` action item.
+
+> **Path 3 raises замість silent-skip:** Slashing rollback — фінансово-критична операція. Беззвучне ігнорування призвело б до асиметрії "burn застосовано, mint-rollback пропущено → дисбаланс supply". Тому будь-який guard fail у Path 3 → exception + Sentry.
+
+---
+
 ## Схема Полів БД (Proof of Growth State Machine)
 
 ```

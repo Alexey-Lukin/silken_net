@@ -199,6 +199,17 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 
 ### 2.1 Звідки Беруться Вхідні Параметри
 
+> **First-Boot vs Continuation — канонічна логіка [DOC.4]**
+>
+> Bio-Contract має **дві точки входу** з C-коду залежно від стану RTC Backup Domain. Розкладка регістрів та магічний маркер `LZST = 0x4C5A5354` — у [03_01 §2 + §2.1 (Canonical SSOT)](03_01_Firmware_Lifecycle_and_DMA.md#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3); тут описано лише **гілкування виклику**:
+>
+> | Умова | Виклик mruby | Аргументи | Призначення |
+> |-------|--------------|-----------|-------------|
+> | `DR19 == 0x4C5A5354` AND `isfinite(x,y,z)` | `Attractor.calculate_state_continued(x, y, z, temp, acoustic)` | (Float, Float, Float, Int, Int) | **Continuation:** продовження безперервної траєкторії з попереднього циклу STOP2. Дерево "пам'ятає" свій стан між пробудженнями — це і є фізичний сенс continuity: 100 пробуджень/добу складаються в одну довгу траєкторію хаосу. |
+> | `DR19 ≠ 0x4C5A5354` OR `!isfinite(x,y,z)` | `BioContract.calculate_state(seed, temp, acoustic)` | (Int, Int, Int) | **First-boot / Recovery:** генерація початкових координат з `chaos_seed` (HRNG). Тригери: (a) перший старт після production flashing, (b) повне знеструмлення з втратою RTC живлення, (c) бітова корупція DR16..DR19 (захист через `isfinite()`), (d) explicit reset через `HAL_RTCEx_BKUPWrite(DR19, 0)`. |
+>
+> **Інваріант:** після кожного успішного циклу C-код **зобов'язаний** записати нові `(x, y, z)` у DR16/DR17/DR18 і встановити `DR19 = 0x4C5A5354`. Якщо запис проривається після обчислення але до запису — наступний цикл деградує до first-boot (acceptable, але втрачається continuity).
+
 ```
 firmware/soldier/main.c — ФАЗА 1 (SENSE + State Restore)
 │

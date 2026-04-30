@@ -475,6 +475,8 @@ any ──report_fault──► faulty
 
 > ⚡ **KENOSIS TITAN:** Валідації видалено з hot path. Перевірка відбувається в `TelemetryUnpackerService.valid_sensor_data?` до INSERT.
 
+> ⚠️ **CLEANUP CONSTRAINT [DOC.8]:** Будь-який cleanup-скрипт або ad-hoc DELETE на `telemetry_logs` **повинен виключати** записи з `oracle_status = 'dispatched'`. Ці записи очікують callback від Chainlink DON; видалення призведе до `RecordNotFound` у `OracleCallbacksController` → 5 марних retry → loss of mint. Канонічне виконання cleanup — `InsightGeneratorService.cleanup_old_logs!` (викликається з `InsightBatchCallbacks` на завершенні денного циклу). Не дублюйте логіку в нових воркерах — викликайте сервіс. Cross-ref: [04_02 §3 InsightGeneratorService](04_02_Business_Logic_and_Services.md#insightgeneratorservice), [05_02 PATH 1 Oracle-driven](05_02_Proof_of_Growth_Pipeline.md#усі-шляхи-до-walletlock_and_mint-guard-inventory-doc7).
+
 ---
 
 ### `GatewayTelemetryLog` — Діагностика Королеви

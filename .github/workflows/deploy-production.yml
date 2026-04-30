@@ -18,8 +18,42 @@ env:
   TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
 jobs:
+  verify-secrets:
+    name: Verify Required Secrets [SEC.11]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert PROVISIONING_MASTER_KEY is present
+        env:
+          PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
+        run: |
+          if [ -z "$PROVISIONING_MASTER_KEY" ]; then
+            echo "::error::PROVISIONING_MASTER_KEY secret is missing." \
+                 "Production deploy without this ENV would force HardwareKeyService" \
+                 "into deterministic-seed fallback (lab-only mode), enabling trivial" \
+                 "AES key extraction. Refusing to deploy. See SEC.11 in docs/10_02."
+            exit 1
+          fi
+          KEY_LEN=${#PROVISIONING_MASTER_KEY}
+          if [ "$KEY_LEN" -lt 64 ]; then
+            echo "::error::PROVISIONING_MASTER_KEY is suspiciously short ($KEY_LEN chars)." \
+                 "Expected: >=64 hex characters (256-bit key). See SEC.11 + SEC.9."
+            exit 1
+          fi
+          echo "PROVISIONING_MASTER_KEY present (length: $KEY_LEN chars). OK."
+
+      - name: Assert KAMAL_MASTER_KEY is present
+        env:
+          KAMAL_MASTER_KEY: ${{ secrets.KAMAL_MASTER_KEY }}
+        run: |
+          if [ -z "$KAMAL_MASTER_KEY" ]; then
+            echo "::error::KAMAL_MASTER_KEY secret is missing - Kamal deploy will fail."
+            exit 1
+          fi
+          echo "KAMAL_MASTER_KEY present. OK."
+
   terraform:
     name: Terraform Apply
+    needs: verify-secrets
     runs-on: ubuntu-latest
 
     defaults:
