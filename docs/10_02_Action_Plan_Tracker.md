@@ -135,7 +135,7 @@
 - [ ] 🤖 Firmware Soldier: CCM encrypt + Frame Counter інкремент + MIC append
 - [ ] 🤖 Firmware Queen: CCM decrypt + Frame Counter validation (anti-replay)
 - [ ] 🤖 Backend: оновити `TelemetryUnpackerService` для 24-байтного формату
-- [ ] 🤖 LoRa airtime budget verification (24B vs 16B при SF10/DR2)
+- [x] 🤖 LoRa airtime budget verification (24B vs 16B при SF10/DR2) — ✅ Розрахунок додано в `03_05` BLOCKER-2. Висновок: +10% airtime (+41 мс), duty cycle 0.013% (79× запас), енергоспоживання +12 мДж/TX (1.8% EDLC). **Перехід на CCM 24B схвалений**
 - [ ] 🤖 Тести
 
 #### FW.3 — Queen AT Command Blocking (~25 сек)
@@ -209,8 +209,9 @@
 #### FW.18 — Hardcoded confidence threshold 0.80
 - `03_03` BLOCKER-6
 - **Опис:** `if (ml_confidence > 0.80)` hardcoded в Flash. Неможливо remote-tune для різних лісів/сезонів. Немає "warning" рівня (лише binary: alarm / no alarm)
-- [ ] 🤖 Зберегти threshold у RTC Backup Register (updateable via OTA)
-- [ ] 🤖 Дизайн dual-threshold: WARNING (0.60) → event counter; CRITICAL (0.85) → Emergency TX
+- **Статус:** 🤖 ✅ Дизайн dual-threshold системи завершено та задокументовано в `03_03` BLOCKER-6. WARNING (0.60) → acoustic_events++ + ескалація після 3× поспіль; CRITICAL (0.85) → Emergency TX. Пороги зберігаються в RTC Backup DR6/DR7, оновлюються через OTA CMD. 8 нових тест-кейсів специфіковано. Реалізація — наступний цикл
+- [ ] 🤖 Зберегти threshold у RTC Backup Register (updateable via OTA) — реалізація у наступному циклі
+- [x] 🤖 Дизайн dual-threshold: WARNING (0.60) → event counter; CRITICAL (0.85) → Emergency TX
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
 - `03_04` BLOCKER-4
@@ -609,7 +610,7 @@
 - **Джерело:** `08_01`
 - **Блокує:** Всю лабораторну роботу, 10 публікацій, 11 магістерських
 - [ ] 👤 Призначити зустріч
-- [ ] 🤖 Підготувати презентацію проєкту
+- [x] 🤖 Підготувати презентацію проєкту — ✅ 7-слайдова 15-хвилинна презентація додана в `08_01` §4. Структура: проблема → рішення → техстек → що потрібно від ЧНУ → що отримає ЧНУ → наступні кроки
 - [ ] 👤 Провести зустріч
 
 #### UNI.2 — 8 зустрічей з факультетом ФОТІУС
@@ -632,7 +633,7 @@
 #### UNI.8 — Перший контакт з ректоратом СЄУ
 - **Джерело:** `08_07`
 - **Блокує:** Economic Whitepaper, Legal Framework, NaaS юридичні шаблони (07_01 BLOCKER-1, BLOCKER-3)
-- [ ] 🤖 Підготувати pitch для ректора (Чудаєва І.Б.) — акцент: Research + Scopus + Horizon Europe
+- [x] 🤖 Підготувати pitch для ректора (Чудаєва І.Б.) — ✅ 10-хвилинний pitch-документ додано в `08_07` §6. 4 блоки: проблема/ринок → що побудовано → 5 напрямів для СЄУ → що отримає СЄУ. Матеріали для зустрічі специфіковані
 - [ ] 👤 Перша зустріч з Чудаєвою (ректор) або Аблязовою Н. (президент)
 - [ ] 👤 Верифікувати посади та наукові профілі всіх 7 науковців через офіційний сайт СЄУ
 - [ ] 👤 Підписати Меморандум про співпрацю між СЄУ та Silken Net
