@@ -397,7 +397,8 @@
 #### HW.16 — Thermal management в IP67 enclosure
 - **Джерело:** `02_05` BLOCKER-5
 - **Опис:** SIM7070G + MCU при TX: ~500 mW × 5 sec. Літній interior temp до 60-70°C. LiFePO4 charging при T < 0°C пошкоджує батарею
-- [ ] 🤖 Розрахувати thermal budget для enclosure (T_ext = +40°C)
+- **Статус:** 🤖 ✅ Тепловий бюджет розраховано та задокументовано в `02_05` §4а «Тепловий бюджет IP67 корпусу» — Phase 1/2.5 (~130 мВт середнє → ΔT < 1 K) та Phase 3 (3 Вт burst → ΔT ~4.5 K), sun load — головний внесок (+15 K). Активне охолодження не потрібне при T_зовн ≤ +40°C. Sun-shade / світлий корпус — рекомендовано
+- [x] 🤖 Розрахувати thermal budget для enclosure (T_ext = +40°C)
 - [ ] 👤 Додати temperature sensor (NTC або DS18B20)
 - [ ] 👤 Реалізувати hardware charge protection при T < 0°C
 
@@ -449,9 +450,10 @@
 #### SEC.2 — RDP Level 2 activation timeline
 - **Джерело:** `03_05` NOTE-1
 - **Опис:** Поточний стан: RDP Level 0 (development). Level 1 потрібен перед першою польовою партією, Level 2 — тільки після повної OTA верифікації (незворотній — лише OTA updates можливі)
+- **Статус:** 🤖 ✅ Процедура активації RDP Level 2 (pre-flight checklist + STM32CubeProgrammer CLI послідовність + поетапний rollout R&D→Pilot→Mass) задокументовано в `03_05` §3.6 «Процедура активації RDP Level 2 (необоротна)»
 - [ ] 🤖 Верифікувати OTA flow end-to-end
 - [ ] 👤 Перейти на RDP Level 1 для field batch
-- [ ] 🤖 Задокументувати процедуру Level 2 activation (необоротна)
+- [x] 🤖 Задокументувати процедуру Level 2 activation (необоротна)
 
 #### SEC.3 — Factory Flashing pipeline
 - **Джерело:** `03_05` NOTE-2
@@ -471,10 +473,11 @@
 - **Джерело:** `03_05` | Firmware architecture
 - **Опис:** AES-256 ключ зберігається у plain Flash STM32 (навіть з RDP Level 1 — key extraction можливий через glitching/side-channel). ATECC608B забезпечує hardware-protected key storage з tamper-detection. Ціна ~$0.60/unit
 - **Пріоритет:** P2 (Post-TRL 7, перед mass production >1000 units)
-- [ ] 🤖 Оцінити ATECC608B integration з STM32WLE5JC (I²C interface)
-- [ ] 🤖 Дизайн key storage: ATECC608B slot 0 = AES key, slot 1 = device certificate
-- [ ] 🤖 Оновити Factory Flashing pipeline (SEC.3) для ATECC608B provisioning
-- [ ] 🤖 Оцінити альтернативи: STSAFE-A110 (ST ecosystem), Infineon OPTIGA Trust M
+- **Статус:** 🤖 ✅ Інтеграційна оцінка ATECC608B з STM32WLE5JC задокументована в `03_05` §3.7 «ATECC608B Secure Element — оцінка інтеграції»: I²C interface (PB6/PB7), slot mapping (slot 0=AES, 1=ECC priv, 2=cert, 3=HMAC OTA), latency impact (~1.5 мс/блок vs 10 µs HAL_CRYP — нехтовно), power impact (+0.1% energy budget), Factory Flashing pipeline з ATECC, альтернатива STSAFE-A110 (native CubeMX, переважна для unified ST toolchain), OPTIGA Trust M (overkill), NXP A71CH (EOL — уникати). Firmware HAL drop-in API окреслено
+- [x] 🤖 Оцінити ATECC608B integration з STM32WLE5JC (I²C interface)
+- [x] 🤖 Дизайн key storage: ATECC608B slot 0 = AES key, slot 1 = device certificate
+- [ ] 🤖 Оновити Factory Flashing pipeline (SEC.3) для ATECC608B provisioning — наступний цикл
+- [x] 🤖 Оцінити альтернативи: STSAFE-A110 (ST ecosystem), Infineon OPTIGA Trust M
 
 #### SEC.7 — OTA image автентифікація (cross-ref FW.23)
 - **Джерело:** `03_05`, `03_02`

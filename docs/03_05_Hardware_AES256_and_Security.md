@@ -584,6 +584,207 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 
 ---
 
+### 3.6 Процедура активації RDP Level 2 (необоротна) 🤖
+
+**Cross-ref:** [10_02 SEC.2](10_02_Action_Plan_Tracker), §3.3 «Апаратний Захист Flash».
+
+> ⚠️ **Активація RDP Level 2 — одностороння, незворотна дія.** Після `Apply` чіп фізично втрачає SWD інтерфейс назавжди. Цю процедуру виконують **тільки** після того, як OTA-пайплайн повністю верифікований у полі.
+
+**Pre-flight checklist (обов'язково ДО натискання Apply):**
+
+- [ ] OTA flow end-to-end протестований: `OtaPackagerService` → CoAP downlink → Queen broadcast → Soldier Flash write → magic check `0x45544952` ("RITE") → reboot → нова прошивка живе у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`.
+- [ ] OTA verification: щонайменше **2 успішні цикли** оновлення на тому ж пристрої (не лише бенчмарки).
+- [ ] OTA rollback тестований: якщо новий bytecode falls back до embedded `lorenz_bytecode[]` при corrupt magic.
+- [ ] Provisioning HKDF flow завершено (BLOCKER-1 mitigation): унікальний `aes_key` записано в protected sector, master_key генерується HRNG (не FIPS-197 test vector).
+- [ ] FW.2 (CCM) integrated: інакше після RDP-2 вже не можна «полагодити» AES-ECB вразливість через SWD reflash.
+- [ ] Watchdog (IWDG) тестовано: якщо firmware зависає, IWDG перезавантажує MCU без SWD (BLOCKER-6 в `02_05` ✅).
+- [ ] Final firmware version task-snapshot задокументовано у `RELEASE_VERSION` ENV (Sentry release tracking) та git tag `vX.Y.Z`.
+- [ ] Spare batch (≥10 одиниць) залишено на RDP Level 1 для in-field troubleshooting (RDP-1 дозволяє стирати+перепрошивати, але не зчитувати → ключ безпечний).
+
+**Послідовність активації (per device, factory line):**
+
+```bash
+# 1. Final firmware flash (тестова прошивка вже видалена)
+STM32_Programmer_CLI -c port=SWD freq=4000 \
+    -d firmware/soldier/build/soldier.bin 0x08000000 \
+    -v
+
+# 2. Provisioning: записати unique_aes_key через protected sector
+#    (тимчасово RDP=0, ключ деривується HKDF(master_key, device_uid))
+STM32_Programmer_CLI -c port=SWD \
+    -d provisioning/<device_uid>.key 0x0803E000 \
+    -v
+
+# 3. Burn Option Bytes: PCROP лок на сектор з ключем (опційно — додатковий бар'єр)
+STM32_Programmer_CLI -c port=SWD \
+    -ob PCROP1A_STRT=0x0803E000 PCROP1A_END=0x0803EFFF PCROP_RDP=DISABLE
+
+# 4. Активація RDP Level 1 (дозволяє sanity check у полі)
+STM32_Programmer_CLI -c port=SWD -ob RDP=0xBB
+# Очікуваний результат: наступний Read-Out → масове стирання Flash + SRAM
+
+# 5. Smoke test: чи MCU bootує? чи telemetry виходить через LoRa? чи приймається OTA?
+#    (24-годинне burn-in у camera оточення з симульованим ENV)
+
+# 6. ✋ STOP — рішення про RDP-2 ухвалюється офіційно (Engineering signoff)
+#    На цьому етапі ще можна перепрошити через SWD (RDP-1 = write-allowed)
+
+# 7. Активація RDP Level 2 — НЕЗВОРОТНО
+STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
+# ⚠️ ВСЕ. SWD назавжди вимкнений. Перепрошивка лише через OTA.
+```
+
+**Recovery options після RDP-2:** **жодних.** SWD інтерфейс фізично відключений у кремнії. Якщо OTA зламається → пристрій — електронне сміття. Тому checklist вище — обов'язковий.
+
+**Поетапний rollout (рекомендовано):**
+
+| Етап | RDP Level | Кількість | Призначення |
+|------|-----------|-----------|-------------|
+| Прототип / R&D | Level 0 | ~50 | Розробка, дебаг, SWD доступ |
+| Field pilot (пілотний ліс) | Level 1 | 100–500 | Field sanity, OTA verification, recovery still possible |
+| Mass production batch | Level 2 | 10,000+ | **Тільки** після ≥3 місяців stable OTA на Level-1 партії |
+
+**Документ-tracker:** після кожного batch активації — оновити `docs/10_02` SEC.2 (👤 — secrets / process).
+
+---
+
+### 3.7 ATECC608B Secure Element — оцінка інтеграції 🤖
+
+**Cross-ref:** [10_02 SEC.6](10_02_Action_Plan_Tracker), §3.2 «Відсутній Secure Element».
+
+**Контекст:** навіть з RDP Level 2, key extraction теоретично можливий через **side-channel attacks** (DPA, EM analysis) або **fault injection** (voltage/clock glitching). Для batches > 1000 одиниць — це attractive target. Виділений Secure Element зберігає ключ у tamper-resistant ASIC з вбудованим detection.
+
+**Кандидат: Microchip ATECC608B**
+
+| Параметр | Значення |
+|----------|----------|
+| Інтерфейс | I²C (стандартний 100/400 кГц) або SWI (1-pin) |
+| Slot capacity | 16 slots × 32–72 байти |
+| Криптографія | ECC P-256, ECDH, ECDSA, AES-128, SHA-256, HMAC, KDF |
+| Корпус | UDFN-8, SOIC-8 |
+| Споживання | ~14 mA active, ~150 nA sleep |
+| Робочий діапазон | −40 … +85°C ✅ (industrial) |
+| Tamper-resistance | Active shield, voltage/temp/glitch detectors |
+| Ціна (10k MOQ) | ~$0.60–0.80/unit |
+| Datasheet | [DS40002239](https://www.microchip.com/atecc608b) |
+
+**Архітектура інтеграції з STM32WLE5JC:**
+
+```
+                   ┌──────────────────────┐
+                   │   STM32WLE5JC        │
+                   │                      │
+                   │   I²C1 (PB6/PB7)     │◀──┐
+                   └────────┬─────────────┘   │
+                            │                  │
+                       I²C │ + GND, VCC        │
+                            ▼                  │
+                   ┌──────────────────────┐    │
+                   │   ATECC608B          │    │
+                   │                      │    │
+                   │   Slot 0: AES key    │    │
+                   │   Slot 1: ECC priv   │    │
+                   │   Slot 2: device cert│    │
+                   │   Slot 3: master HMAC│    │
+                   └──────────────────────┘    │
+                                                │
+                   Provisioning через Backend  │
+                   (один раз, на заводі) ──────┘
+```
+
+**Slot mapping (рекомендований):**
+
+| Slot | Тип | Призначення | Read | Write |
+|------|-----|-------------|------|-------|
+| 0 | AES-128 key | LoRa Soldier↔Queen sym key | ❌ never | One-time (factory) |
+| 1 | ECC P-256 private | Device identity (peaq DID signing) | ❌ never | One-time (factory) |
+| 2 | Public key cert | X.509 device cert | ✅ open | Factory |
+| 3 | HMAC-SHA256 key | OTA image HMAC verification (FW.23) | ❌ never | One-time |
+| 4–15 | Reserved | Future use (key rotation, new chains) | — | — |
+
+**Ключові переваги перед RDP Level 2 (наявні):**
+
+| Аспект | RDP Level 2 (поточне рішення) | + ATECC608B |
+|--------|-------------------------------|-------------|
+| Key storage | MCU Flash (SWD off) | Окремий ASIC (tamper-evident) |
+| Side-channel resistance | Слабка (стандартний CMOS) | DPA-resistant by design |
+| Glitch attacks | Mitigated через RDP-2 | Detected → ASIC self-erase |
+| Key never exposed | ❌ Ключ в MCU SRAM під час `HAL_CRYP_Init()` | ✅ Шифрування виконується **всередині** ATECC; MCU отримує лише ciphertext |
+| ECDSA/ECDH support | Software (slow on Cortex-M4) | Hardware accelerator (~50 мс/sign) |
+| Cost impact | $0 | +$0.60/unit (10k MOQ) |
+
+**API integration sketch (firmware):**
+
+Заміна `HAL_CRYP_AESECB_Encrypt(...)` на ATECC608B-driven:
+
+```c
+// Замість HAL_CRYP_AESECB_Encrypt():
+atca_status_t status = atcab_aes_encrypt(
+    /*key_id=*/ 0,           // Slot 0
+    /*key_block=*/ 0,
+    plaintext,
+    ciphertext
+);
+// Затримка: ~1.5 мс per block (vs ~10 µs HAL_CRYP) — прийнятно для 16-байтних LoRa пакетів
+```
+
+**Latency impact:** ATECC608B AES-ECB ~1.5 мс/блок vs ~10 µs MCU HAL_CRYP. Для одного 16-байтного LoRa пакету — нехтовно. Для CBC batch (50 × 16 байт = 800 байт) — додаткові ~75 мс на flush — **прийнятно** (CoAP flush триває кілька сек у будь-якому разі).
+
+**Power impact:**
+- Active (1.5 мс): 14 мА × 3.3V = 46 мВт. На 1 LoRa пакет → ~70 мкДж.
+- Sleep: 150 нА (нехтовно у бюджеті Soldier `E_sleep ≈ 1.5 мкА`)
+- За 1 хв (1 wakeup) → +0.1% до total energy budget. ✅
+
+**Footprint (PCB):**
+- UDFN-8: 2×3 мм
+- SOIC-8: 4×5 мм
+- I²C: 2 GPIO (PB6/PB7) + 2 pull-ups (4.7 kΩ × 2)
+- Загалом: ~3% PCB area для Soldier (KiCad layout у HW.9)
+
+**Альтернативи:**
+
+| Чіп | Виробник | Особливості | Висновок |
+|-----|----------|-------------|----------|
+| **ATECC608B** | Microchip | Зрілий ecosystem, ESP/STM32 libraries, AWS IoT default | ⭐ Рекомендовано |
+| **STSAFE-A110** | STMicroelectronics | Same vendor як STM32 → unified toolchain (CubeMX), краща інтеграція | Сильна альтернатива |
+| **OPTIGA Trust M** | Infineon | TPM 2.0 features, X.509 PKI heavy | Overkill для нашого use case |
+| **NXP A71CH** | NXP | EOL announced 2024 | ❌ Не використовувати |
+
+**Рекомендація:** ATECC608B або STSAFE-A110. Final pick — після завершення KiCad layout (HW.9) і перевірки I²C bus utilization (вже використовується для DS18B20 в `02_05` §4а?). STSAFE-A110 має невелику перевагу через native CubeMX-інтеграцію — економить ~3 дні firmware-розробки.
+
+**Factory Flashing impact (cross-ref §3.4):**
+
+При інтеграції ATECC608B пайплайн виглядає так:
+
+```
+[Завод]
+  1. Reflow PCBA (ATECC608B запаяний, але config zone не locked)
+  2. Power-up → STM32 talks to ATECC608B over I²C
+  3. STM32 → backend: POST /api/v1/provisioning/register {device_uid}
+  4. Backend → returns: {aes_key, ecc_keypair, cert_chain}
+  5. STM32 → ATECC608B: write Slot 0 (AES), Slot 1 (ECC), Slot 2 (cert)
+  6. STM32 → ATECC608B: LOCK config zone + data zone (irreversible на ASIC рівні)
+  7. STM32CubeProgrammer → RDP Level 1 (на самому MCU)
+  8. Final: пакування, shipping mode, лак
+```
+
+**Подвійний lock (defense in depth):**
+- ATECC608B: data zone locked → ключі неможливо ні прочитати, ні переписати
+- STM32 RDP Level 1/2: SWD заблоковано → firmware не можна змінити
+
+**Дорожня карта:**
+
+- [ ] 🤖 (наступний цикл) Завершити оцінку: ATECC608B vs STSAFE-A110 матриця, узгоджена з KiCad floorplan
+- [ ] 🤖 Update §3.4 Factory Flashing pipeline з SE-варіантом
+- [ ] 🤖 Інтеграція з Backend `Provisioning::HardwareKeyService` (генерація ECC keypair + cert)
+- [ ] 🤖 Firmware HAL: drop-in replacement `Crypto_AES_Encrypt_Block()` що внутрішньо викликає ATECC або HAL_CRYP залежно від `#define USE_SECURE_ELEMENT`
+- [ ] 👤 Замовити evaluation kit (Microchip ATECC608B-MAH-DAO або ST STSAFE-A110) для bench-test
+- [ ] 👤 Прийняти final BOM рішення перед першим mass production batch (>1000 unit)
+
+**Пріоритет:** P2 — для TRL 6/7 RDP Level 2 (§3.6) є достатнім захистом. Secure Element — обов'язковий перед mass production (>10 000 unit) або для high-value deployments (urban / commercial sites).
+
+---
+
 ## 🎲 4. Генерація Вектора Ініціалізації (IV)
 
 ### 4.1 Soldier: IV відсутній (ECB Mode)
@@ -778,8 +979,9 @@ HAL_CRYP_Init(&hcryp);
 | **Унікальність ключа** | 🔴 Спільний для всіх вузлів | КРИТИЧНО: one-key compromise = total network compromise |
 | **ECB для LoRa** | 🔴 Детермінований | Рекомендовано: AES-256-CCM з 24-байтним пакетом (Frame Counter + MIC) |
 | **MAC/MIC** | 🔴 Відсутній | Вирішується переходом на CCM (MIC апаратно генерується) |
-| **RDP Protection** | 🟡 OPEN | Level 0 (розробка). Level 1/2 — фінальний крок Factory Flashing (розділ 3.3) |
+| **RDP Protection** | 🟡 OPEN | Level 0 (розробка). Level 1/2 — фінальний крок Factory Flashing (розділ 3.3). Pre-flight checklist та незворотна процедура задокументовані у §3.6 🤖 |
 | **Factory Flashing Pipeline** | 🟡 OPEN | Архітектура визначена (розділ 3.4), provisioning endpoint (`/api/v1/provisioning/register`) існує |
 | **Shipping Mode (Геркон)** | 🟡 OPEN | Концепт визначено (розділ 3.5); компонент не доданий до BOM |
+| **Secure Element (ATECC608B)** | 🟡 OPEN (P2) | Оцінка інтеграції завершена у §3.7 🤖 — рекомендовано перед mass production >10k unit; альтернатива STSAFE-A110 |
 | **Key Rotation** | 🔴 Відсутній | Рекомендовано: Hash Ratchet KDF (PFS без передачі ключа по мережі) |
 | **HRNG Fallback** | ✅ Виправлено | djb2(STM32_HW_UID) XOR tick — унікальний на кожній Queen (PR #273) |
