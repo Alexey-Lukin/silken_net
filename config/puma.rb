@@ -81,7 +81,7 @@ workers ENV.fetch("WEB_CONCURRENCY", 2)
 #
 # Note (Puma 8.0+): preload_app! is now the default in clustered mode, so this
 # line is technically redundant. We keep it explicit for clarity and to guard
-# against future default changes. See docs/06_05_Puma_8_Upgrade_Notes.md
+# against future default changes. See docs/06_05_Puma_Configuration.md
 preload_app!
 
 # ---------------------------------------------------------------------------
@@ -155,7 +155,7 @@ cluster do
   #
   # Note (Puma 7.0): the `on_worker_boot` hook was renamed to `before_worker_boot`.
   # The old name is preserved as a deprecated alias but emits warnings. We use
-  # the new name to be Puma 7.0+ compliant. See docs/06_05_Puma_8_Upgrade_Notes.md.
+  # the new name to be Puma 7.0+ compliant. See docs/06_05_Puma_Configuration.md.
   before_worker_boot do
     # Re-establish ActiveRecord connections for all databases.
     # Rails 8 multi-database (primary, cache, queue, cable) automatically

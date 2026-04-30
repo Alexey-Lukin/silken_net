@@ -34,7 +34,7 @@
 #   controller `before_action` for declarative, per-action flagging.
 #
 # Cross-references:
-#   - docs/06_05_Puma_8_Upgrade_Notes.md (PUMA-IO-1, F-1)
+#   - docs/06_05_Puma_Configuration.md (IO-bound thread pool)
 #   - config/puma.rb (`max_io_threads 16`)
 #   - https://github.com/puma/puma/blob/master/docs/architecture.md#io-bound-requests
 class MarkWeb3RequestsAsIoBound

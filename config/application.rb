@@ -33,7 +33,7 @@ module SilkenNet
     # [PUMA-IO-1]: Mark Web3-heavy endpoints (oracle_callbacks, provisioning)
     # as IO-bound for Puma 8.0+ thread pool, so slow third-party RPC calls
     # don't starve the worker. Inserted AFTER PrometheusCollector so /metrics
-    # scrapes are not flagged. See docs/06_05_Puma_8_Upgrade_Notes.md (F-1).
+    # scrapes are not flagged. See docs/06_05_Puma_Configuration.md.
     require_relative "../app/middleware/mark_web3_requests_as_io_bound"
     config.middleware.use MarkWeb3RequestsAsIoBound
 
