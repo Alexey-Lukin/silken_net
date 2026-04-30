@@ -189,8 +189,15 @@ RSpec.describe "Rack::Attack", type: :request do
   # -----------------------------------------------------------------------
   describe "throttled response" do
     it "returns JSON with error message and Retry-After header" do
-      301.times do
-        get "/api/v1/login", headers: { "REMOTE_ADDR" => "2.3.4.5" }
+      # Trigger the logins/ip throttle (limit: 10/min, POST only) — 11 requests
+      # reliably exceeds the threshold without relying on the global 300-req
+      # throttle period timing. Requests 1–10 reach the app (401 each; fail2ban
+      # counter stays at 10 < FAIL2BAN_MAXRETRY=15). Request 11 is intercepted
+      # by Rack::Attack before reaching the app and returns 429.
+      11.times do
+        post "/api/v1/login",
+          params: { email: "test@example.com", password: "wrong" },
+          headers: { "REMOTE_ADDR" => "2.3.4.5" }
       end
 
       expect(response).to have_http_status(:too_many_requests)
