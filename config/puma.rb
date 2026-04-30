@@ -111,7 +111,7 @@ end
 #
 # Note (Puma 7.0): the `on_worker_boot` hook was renamed to `before_worker_boot`.
 # The old name is preserved as a deprecated alias but emits warnings. We use
-# the new name to be Puma 8-clean. See docs/06_05_Puma_8_Upgrade_Notes.md.
+# the new name to be Puma 7.0+ compliant. See docs/06_05_Puma_8_Upgrade_Notes.md.
 before_worker_boot do
   # Re-establish ActiveRecord connections for all databases.
   # Rails 8 multi-database (primary, cache, queue, cable) automatically

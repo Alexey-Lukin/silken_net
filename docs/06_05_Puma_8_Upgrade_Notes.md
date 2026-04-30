@@ -138,7 +138,7 @@ bind "tcp://0.0.0.0:#{ENV.fetch('PORT', 3000)}"
    - `/api/v1/provisioning/register` (peaq DID + Hadron)
    - будь-який endpoint з тегом `io_bound` у controller (декларативний opt-in).
 
-**Рішення зараз:** **не додаємо** в puma.rb до того моменту, як з'явиться middleware — інакше це no-op конфіг, що тільки додає шум. Створено task-нагадування в trackerí (див. секцію "Подальші кроки").
+**Рішення зараз:** **не додаємо** в puma.rb до того моменту, як з'явиться middleware — інакше це no-op конфіг, що тільки додає шум. Створено task-нагадування у backlog (див. секцію "Подальші кроки").
 
 ### F-2 (Puma 8.0): `single` / `cluster` DSL hooks ⭐⭐
 
@@ -158,9 +158,9 @@ end
 
 **Рішення:** **не змінюємо зараз.** Поточний код працює коректно (хуки no-op у single mode). Refactor — у наступному cosmetic-PR, якщо буде потреба додавати different single-mode logic.
 
-### F-3 (Puma 8.0): `shutdown_debug on_force: true` ⭐⭐
+### F-3 (Puma 8.0): `shutdown_debug` з параметром `on_force: true` ⭐⭐
 
-Дамп backtraces ВСІХ тредів лише при **forced** shutdown (SIGKILL після `worker_timeout`), не при graceful. Раніше `shutdown_debug` спамив навіть при нормальному restart.
+Дамп backtraces ВСІХ тредів лише при **forced** shutdown (SIGKILL після `worker_timeout`), не при graceful. Раніше `shutdown_debug` (без `on_force: true`) спамив навіть при нормальному restart.
 
 **Цінність:** наш `worker_timeout=60s` спрацьовує саме тоді, коли Web3 RPC завис. Дамп backtrace в цей момент = критична діагностика, яка покаже, на якому виклику завис worker. Без `on_force` — занадто шумно, бо на canopy ми робимо часті deploys (Kamal phased restart).
 
@@ -233,8 +233,14 @@ Auto-enabled, без конфіг. **Прийнято автоматично** �
 
 **Документуємо runbook:**
 ```bash
-# на Kamal-хості
-sudo docker exec silken_net-web-1 sh -c 'kill -PWR 1'
+# на Kamal-хості. У нашому контейнері PID 1 — це Thruster (CMD: thrust ./bin/rails server),
+# а Puma — child. Знаходимо Puma master PID через pgrep.
+sudo docker exec silken_net-web-1 sh -c '
+  PID=$(pgrep -f "puma .*cluster" | head -1)
+  [ -z "$PID" ] && PID=$(pgrep -f "puma" | head -1)
+  echo "Puma master PID: $PID"
+  kill -PWR "$PID"
+'
 sudo docker logs silken_net-web-1 --tail 200
 ```
 
