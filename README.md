@@ -286,6 +286,8 @@ kamal deploy
 - [`06_01`](docs/06_01_Deployment_Kamal_Terraform.md) — Kamal + Terraform (GCP) + Web3 ENV
 - [`06_02`](docs/06_02_Akash_Network_Integration.md) — децентралізована хмара Akash
 - [`06_03`](docs/06_03_Prometheus_Observability.md) — Prometheus + Grafana + Sentry
+- [`06_04`](docs/06_04_Secrets_Checklist.md) — інвентаризація секретів (GitHub Secrets, Kamal, Akash, Terraform)
+- [`06_05`](docs/06_05_Puma_Configuration.md) — Puma 8: IO-bound thread pool, shutdown debug, кластерні хуки
 
 **Бізнес та Фінанси (Модуль 07)**
 - [`07_01`](docs/07_01_Nature_as_a_Service_Contracts.md) — NaaS контракти та страхування

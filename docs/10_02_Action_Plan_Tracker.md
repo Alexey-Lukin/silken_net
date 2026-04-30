@@ -109,6 +109,20 @@
 - [x] 🤖 Визначити critical path chains (Polygon, Chainlink, IoTeX)
 - [x] 🤖 Дизайн graceful degradation для кожної мережі
 
+#### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
+- **High** | `06_05` | **Складність: XS** | **🔧 Операційна** — верифікація після першого реального деплою, без коду
+- **Опис:** Puma 8.0+ за замовчуванням bind'иться на `tcp://[::]:3000` (dual-stack) якщо є non-loopback IPv6 інтерфейс. Thruster конектиться до Puma по `127.0.0.1:3000`. Linux `IPV6_V6ONLY=0` = `[::]:3000` приймає і v4, і v6 → має працювати. Перевірка потрібна для впевненості.
+- [ ] 👤 Після першого деплою canopy: `kamal app exec -i 'ss -tlnp | grep 3000'` — очікуємо `tcp6 LISTEN [::]:3000`
+- [ ] 👤 `curl -fsS http://127.0.0.1:3000/up` і `curl -fsS http://[::1]:3000/up` — обидва 200
+- [ ] 👤 Задокументувати результат у `06_05_Puma_Configuration.md` (IPv6 runbook section)
+
+#### PUMA-RACK-1 — Idempotency-Key write поза response path
+- **Low** | `06_05` | **Складність: S** | **🤖 Код** — актуально при planetary scale
+- **Опис:** `actuators#execute` зберігає Idempotency-Key через `Rails.cache.write(..., expires_in: 24.hours)` у Solid Cache (PostgreSQL). Виклик ~1-2ms додає latency до відповіді. `rack.response_finished` callback (Puma 7.0+) дозволяє виконати write ПІСЛЯ flush response до клієнта. Поточний 1-2ms не блокер (TRL 6–8), але при мільйонах актуаторних команд/добу — значуща економія latency p50.
+- [ ] 🤖 Перенести `Rails.cache.write(cache_key, response_body, ...)` в `actuators#execute` на `rack.response_finished` callback: `env["rack.response_finished"] << -> { Rails.cache.write(...) }`
+- [ ] 🤖 Верифікувати що TTL та logic незмінні, додати spec coverage
+- 🔗 Залежить від: planetary scale milestone (перегляд при > 1M actuator commands/добу)
+
 ---
 
 ## 🔧 Firmware

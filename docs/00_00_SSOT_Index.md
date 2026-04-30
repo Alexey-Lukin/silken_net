@@ -70,6 +70,8 @@ _Деплой, моніторинг та децентралізовані обч
 - [06\_01\_Deployment\_Kamal\_Terraform](06_01_Deployment_Kamal_Terraform) (Canopy vs Production)
 - [06\_02\_Akash\_Network\_Integration](06_02_Akash_Network_Integration)
 - [06\_03\_Prometheus\_Observability](06_03_Prometheus_Observability) (Метрики, Grafana, Alerting)
+- [06\_04\_Secrets\_Checklist](06_04_Secrets_Checklist) (Інвентаризація секретів: GitHub Secrets, Kamal, Akash, Terraform)
+- [06\_05\_Puma\_Configuration](06_05_Puma_Configuration) (Puma 8: IO-bound pool, shutdown debug, кластерні хуки, runbook'и)
 
 ## 🟤 Модуль 07: Економіка та Бізнес (Nature-as-a-Service)
 

@@ -30,6 +30,27 @@ threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
 threads threads_count, threads_count
 
 # ---------------------------------------------------------------------------
+# 1b. Max IO threads — Web3 RPC concurrency without OOM (Puma 8.0+)
+# ---------------------------------------------------------------------------
+# When a request handler calls `env["puma.mark_as_io_bound"]&.call`, Puma
+# treats that worker thread as IO-bound and is allowed to spawn additional
+# threads beyond `max_threads` (up to `max_threads + max_io_threads`) without
+# blocking the regular CPU pool.
+#
+# Why this matters for SilkenNet (PUMA-IO-1, F-1 in 06_05):
+#   `oracle_callbacks#create` and `provisioning#register` synchronously call
+#   IoTeX W3bstream / Polygon RPC / Hadron KYC over HTTP. At RAILS_MAX_THREADS=3
+#   three slow callbacks would block the entire worker. Marking these requests
+#   as IO-bound lets up to 16 of them run concurrently per worker, while CPU
+#   work (telemetry decoding, Lorenz attractor) remains capped at 3 threads.
+#
+# Endpoints opted-in via `MarkWeb3RequestsAsIoBound` middleware
+# (see `app/middleware/mark_web3_requests_as_io_bound.rb`).
+#
+# Default 0 means "no IO-thread bonus" — fully backward-compatible.
+max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i
+
+# ---------------------------------------------------------------------------
 # 2. Workers — forked processes (clustered mode)
 # ---------------------------------------------------------------------------
 # Each worker is a forked copy of the master process. Set to the number of
@@ -56,7 +77,11 @@ workers ENV.fetch("WEB_CONCURRENCY", 2)
 #
 # IMPORTANT: preload_app! means connections opened in the master (ActiveRecord,
 # Redis) are inherited by workers as stale file descriptors. The before_fork
-# and on_worker_boot hooks below handle reconnection safely.
+# and before_worker_boot hooks below handle reconnection safely.
+#
+# Note (Puma 8.0+): preload_app! is now the default in clustered mode, so this
+# line is technically redundant. We keep it explicit for clarity and to guard
+# against future default changes. See docs/06_05_Puma_Configuration.md
 preload_app!
 
 # ---------------------------------------------------------------------------
@@ -75,6 +100,23 @@ preload_app!
 worker_timeout ENV.fetch("PUMA_WORKER_TIMEOUT", 60)
 
 # ---------------------------------------------------------------------------
+# 4b. Forced-shutdown debugging — backtrace dump on SIGKILL (Puma 8.0+)
+# ---------------------------------------------------------------------------
+# When `worker_timeout` fires (60s above), Puma SIGKILLs the worker. With
+# `shutdown_debug on_force: true` Puma writes the backtraces of ALL threads
+# to STDERR right before kill. This is the only way to learn which Web3 RPC
+# call (or DB query) hung the worker.
+#
+# `on_force: true` means dumps happen ONLY on forced shutdown — graceful
+# Kamal phased restarts stay quiet (no log spam). Without `on_force` Puma
+# would dump on every restart, drowning real incidents.
+#
+# Backtraces flow through Rails structured-JSON logger (`06_03 §3.3`) into
+# GCP Cloud Logging, where the `sentry_trace_id` field correlates them with
+# Sentry events. PUMA-DBG-1 in `06_05`. (F-3)
+shutdown_debug on_force: true
+
+# ---------------------------------------------------------------------------
 # 5. Port
 # ---------------------------------------------------------------------------
 # Thruster listens on PORT (default 80 in production Docker) and reverse-
@@ -88,33 +130,44 @@ port ENV.fetch("PORT", 3000)
 # Redis sockets opened during boot become invalid in forked workers (the
 # underlying file descriptors are shared, causing socket hijacking and
 # protocol desync). These hooks disconnect before fork and reconnect after.
+#
+# The `cluster do … end` block (Puma 8.0+ DSL, F-2 in 06_05) makes the intent
+# explicit: these hooks NEVER run in single mode (`workers 0`, our default
+# in `RAILS_ENV=development`). Previously the same hooks were defined at the
+# top level and Puma silently ignored them in single mode — correct behavior
+# but obscure. PUMA-DSL-1.
+cluster do
+  # 6a. Before fork — master disconnects shared resources
+  before_fork do
+    # Disconnect all ActiveRecord connection pools (primary, cache, queue, cable).
+    # Workers will establish their own connections on first use via before_worker_boot.
+    ActiveRecord::Base.connection_handler.clear_all_connections!(:all)
 
-# 6a. Before fork — master disconnects shared resources
-before_fork do
-  # Disconnect all ActiveRecord connection pools (primary, cache, queue, cable).
-  # Workers will establish their own connections on first use via on_worker_boot.
-  ActiveRecord::Base.connection_handler.clear_all_connections!(:all)
-
-  # Shutdown the Sidekiq client Redis connection pool inherited from the
-  # master. Each worker re-establishes its own pool from the initializer.
-  if defined?(Sidekiq)
-    config = Sidekiq.default_configuration
-    config.redis_pool.shutdown(&:close) if config.respond_to?(:redis_pool)
+    # Shutdown the Sidekiq client Redis connection pool inherited from the
+    # master. Each worker re-establishes its own pool from the initializer.
+    if defined?(Sidekiq)
+      config = Sidekiq.default_configuration
+      config.redis_pool.shutdown(&:close) if config.respond_to?(:redis_pool)
+    end
   end
-end
 
-# 6b. After fork — each worker establishes its own connections
-on_worker_boot do
-  # Re-establish ActiveRecord connections for all databases.
-  # Rails 8 multi-database (primary, cache, queue, cable) automatically
-  # creates pools for each `connects_to` database on first query, but
-  # calling establish_connection ensures the primary pool is ready immediately.
-  ActiveRecord::Base.establish_connection
+  # 6b. After fork — each worker establishes its own connections
+  #
+  # Note (Puma 7.0): the `on_worker_boot` hook was renamed to `before_worker_boot`.
+  # The old name is preserved as a deprecated alias but emits warnings. We use
+  # the new name to be Puma 7.0+ compliant. See docs/06_05_Puma_Configuration.md.
+  before_worker_boot do
+    # Re-establish ActiveRecord connections for all databases.
+    # Rails 8 multi-database (primary, cache, queue, cable) automatically
+    # creates pools for each `connects_to` database on first query, but
+    # calling establish_connection ensures the primary pool is ready immediately.
+    ActiveRecord::Base.establish_connection
 
-  # Clear cached Kredis Redis connections inherited from the master.
-  # Kredis uses a separate Redis DB (DB 1) for distributed locks.
-  # New connections are lazily established on first use in the worker.
-  Kredis.clear_all if defined?(Kredis)
+    # Clear cached Kredis Redis connections inherited from the master.
+    # Kredis uses a separate Redis DB (DB 1) for distributed locks.
+    # New connections are lazily established on first use in the worker.
+    Kredis.clear_all if defined?(Kredis)
+  end
 end
 
 # ---------------------------------------------------------------------------
