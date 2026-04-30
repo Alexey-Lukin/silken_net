@@ -236,11 +236,11 @@
 - Legacy notes + `08_02` (Kalman filter Vector 4) | P2 (потребує R&D partnership)
 - **Опис:** Soldier MCU має обмежений RAM (~20 KB вільного). Поточна архітектура: кожен wakeup → один 21-байтний пакет → TX. Для майбутнього (Kalman filtering, TinyML context) потрібна локальна агрегація
 - **Рішення:** Moving average / EMA прямо на MCU. Відправляти на Queen лише: (1) поточне значення, (2) дельту від попереднього EMA, (3) стиснуті "summary" пакети. Зменшує трафік LoRa та економить батарею
-- **Статус:** 🤖 ✅ Повний дизайн EMA додано в `03_01` §14. Включає: математику α=0.2 (шумозниження 3×), firmware C API (`EMA_Update`, `EMA_Save/Load_To_RTC`, RTC DR24-26), інтеграцію у main loop, RAM footprint (12 bytes stack), вплив на backend (raw payload + server-side EMA mirror), 8 тест-кейсів. Реалізація залежить від FW.5 B+
+- **Статус:** 🤖 ✅ **Реалізовано** в `firmware/soldier/main.c` (секція 1.10) — `EmaState` + 4 функції (`EMA_Update`, `EMA_Get_DeltaT_Sec`, `EMA_Get_Vcap_Mv`, `EMA_Is_Warmed_Up`), інтегровано в Phase 1 SENSE main loop. Тести: 8 host-based unit-тестів у `firmware/test/test_soldier_logic.c` (cold-start, smoothing, convergence, noise-rejection 3×, warmup flag, count saturation @ 255, zero/MAX edge cases) — всі pass. Soldier suite: 100 tests passed (раніше 92). Дизайн оновлено в `03_01` §14: persistence через **static SRAM** (retained STOP2), бо STM32WLE5JC має лише 20 RTC backup регістрів і всі зайняті — VBAT-loss reset тригерить warmup (3 цикли). Передавання EMA значень у mruby `calculate_state()` — задача FW.5 (наступний цикл).
 - [x] 🤖 Визначити які метрики потребують EMA (delta_t, vcap — кандидати)
 - [x] 🤖 Реалізувати lightweight EMA на Soldier (O(1) memory, O(1) compute)
 - [ ] 👤 Інтегрувати з Kalman filter design (E.10 — Косенук)
-- [x] 🤖 Верифікувати RAM footprint залишається < 80% available
+- [x] 🤖 Верифікувати RAM footprint залишається < 80% available — 10 байтів static (0.015% від 64KB SRAM)
 
 #### FW.22 — acoustic_events payload overflow (uint16 → uint8 truncation)
 - `03_03` BLOCKER-7
