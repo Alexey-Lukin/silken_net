@@ -617,6 +617,180 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 
 ---
 
+### 3.4а HKDF Key Derivation Protocol Design 🤖
+
+> **Cross-ref:** [10_02 FW.1](10_02_Action_Plan_Tracker) — дизайн завершено ✅
+
+**Мета:** замінити один hardcoded `aes_key[8]` на МЕРЕЖУ унікальних ключів, де кожен пристрій має свій ключ, а компрометація одного не розкриває решту. Весь дизайн базується на HKDF (RFC 5869) — стандартному HMAC-based Key Derivation Function.
+
+#### Криптографічна основа: HKDF-SHA256
+
+```
+HKDF(master_key, device_uid, info) → unique_device_key (32 bytes)
+
+Де:
+  master_key  = 32-байтний секрет (генерується HRNG, зберігається у Rails Vault)
+  device_uid  = 8-байтний унікальний ідентифікатор пристрою (STM32 UID96 або DID)
+  info        = ASCII string "silkennet-v1-aes256" (context binding)
+  output len  = 32 байти (256 bits для AES-256)
+```
+
+**Властивості HKDF:**
+- Якщо зловмисник знає `unique_device_key[i]`, він не може відновити `master_key` або `unique_device_key[j]` — однонаправлена функція
+- Два пристрої з однаковим `device_uid` отримають однаковий ключ (детерміновано) — важливо для Queen, яка повинна знати ключ кожного Soldier у своєму кластері
+- SHA-256 внутрішньо — апаратно прискорений на STM32WLE5JC (SHA256 у криптомодулі)
+
+#### Схема Provisioning (повна послідовність)
+
+```
+═══════════════════════════════════════════════════════════════════════
+STEP 1: Генерація MASTER KEY (одноразово, до виробництва)
+═══════════════════════════════════════════════════════════════════════
+
+Backend (Rails):
+  master_key = SecureRandom.bytes(32)       # CSPRNG, 256 bits
+  # Зберегти у HardwareKey master record (id: 0, device_uid: "MASTER")
+  # AR Encryption: at-rest encryption у Vault (HardwareKey#aes_key_hex)
+  # ⚠️ НІКОЛИ не комітити master_key у репозиторій!
+  # Зберегти у Bitwarden / 1Password / HashiCorp Vault (апаратний HSM у production)
+
+═══════════════════════════════════════════════════════════════════════
+STEP 2: Factory Flashing (конвеєр на заводі)
+═══════════════════════════════════════════════════════════════════════
+
+[Заводський стенд]
+  a) Прошивка базового firmware:
+     STM32CubeProgrammer --write firmware_base.hex   # aes_key[8] = {0,0,...,0}
+     Firmware reads device_uid = HAL_GetUID() → 12 bytes (STM32 unique ID)
+     DID = "SNET-" + hex(CRC32(device_uid))
+
+  b) Provisioning запит (UART або WiFi через тестовий стенд):
+     POST /api/v1/provisioning/register
+       { device_uid: "<hex_uid>", firmware_version: <ver> }
+
+  c) Backend: ProvisioningController#register
+     device_key = HKDF_SHA256(master_key, device_uid, "silkennet-v1-aes256")
+     HardwareKey.create!(device_uid:, aes_key_hex: device_key.unpack1("H*"))
+     Response: { did: "SNET-XXXXXXXX", aes_key: "<32-byte hex>" }
+
+  d) Заводський стенд записує унікальний ключ:
+     STM32CubeProgrammer --write-option-bytes key_address=0x0803E000 key=<hex>
+     # 0x0803E000 = FLASH_KEY_SECTOR (Protected Flash Sector, perma-protected)
+     # АБО ATECC608B slot 0 (якщо Secure Element присутній — SEC.6)
+
+  e) Lock:
+     STM32CubeProgrammer --set-rdp-level 1    # Pilot batch
+     # (Level 2 після верифікації OTA — SEC.2)
+
+═══════════════════════════════════════════════════════════════════════
+STEP 3: Runtime — Soldier читає свій ключ
+═══════════════════════════════════════════════════════════════════════
+
+firmware/soldier/main.c:
+  // Замість hardcoded uint32_t aes_key[8] = {...}:
+  uint8_t aes_key[32] __attribute__((section(".key_sector")));  // mapped to 0x0803E000
+  // При ініціалізації:
+  memcpy(hcryp.Init.pKey, aes_key, 32);    // Читаємо з protected Flash
+
+═══════════════════════════════════════════════════════════════════════
+STEP 4: Queen — знає ключі ВСІХ своїх Soldiers
+═══════════════════════════════════════════════════════════════════════
+
+Варіант A (рекомендований для TRL 7):
+  Queen теж provisioned із ключем:
+    queen_key = HKDF_SHA256(master_key, queen_uid, "silkennet-v1-aes256")
+  Але для декриптування Soldier-пакетів потрібна інша стратегія.
+
+Варіант B (production-ready):
+  Queen зберігає ALL keys у своїй Flash (CIFO-based key table):
+    key_table[50] → 50 × 32 bytes = 1600 bytes (допустимо для 64KB Flash)
+    Завантажуються через CoAP downlink від Rails після provisioning
+
+Варіант C (альтернатива, ATECC608B):
+  Queen містить ATECC608B → Queen знає master_key у захищеному чіпі →
+  обчислює HKDF(master_key, incoming_DID) on-the-fly під час decrypt
+
+  ⚠️ Варіант C потребує завантаження master_key у ATECC608B на заводі —
+  одна точка компрометації, але захищена апаратно.
+```
+
+#### Rails Backend — API та зберігання
+
+```ruby
+# app/services/hardware_key_service.rb — доповнити:
+
+# Генерація унікального ключа для нового пристрою
+def self.derive_device_key(device_uid)
+  master_key = fetch_master_key_from_vault!  # Rails Credentials або HashiCorp Vault
+  # HKDF (RFC 5869) pure-Ruby або OpenSSL
+  prk  = OpenSSL::HMAC.digest("SHA256", master_key, device_uid)  # Extract step
+  info = "silkennet-v1-aes256"
+  okm  = OpenSSL::HMAC.digest("SHA256", prk, info + "\x01")      # Expand step
+  okm[0, 32]  # 256 bits
+end
+
+# app/controllers/api/v1/provisioning_controller.rb
+def register
+  device_uid = params.require(:device_uid)
+  device_key = HardwareKeyService.derive_device_key(device_uid)
+  key = HardwareKey.create!(
+    device_uid: device_uid,
+    aes_key_hex: device_key.unpack1("H*")
+  )
+  render json: { did: tree.did, aes_key: device_key.unpack1("H*") }
+end
+```
+
+#### Firmware — зчитування ключа з Protected Flash Sector
+
+```c
+// firmware/soldier/main.c — замінити hardcoded секцію:
+
+// Flash Protected Key Sector (0x0803E000 — 4 KB, protected via WRPROT option bytes)
+#define FLASH_KEY_ADDR   0x0803E000UL
+
+void Load_AES_Key(void)
+{
+    uint32_t *key_ptr = (uint32_t *)FLASH_KEY_ADDR;
+    // Перевірка що ключ не порожній (provisioned)
+    uint32_t key_sum = 0;
+    for (int i = 0; i < 8; i++) key_sum |= key_ptr[i];
+    if (key_sum == 0) {
+        // Ключ не записаний → ERROR_HANDLER (пристрій не provisioned)
+        Error_Handler();
+    }
+    memcpy(hcryp.Init.pKey, key_ptr, 32);  // Копіюємо у CRYP init структуру
+}
+
+// HAL_CRYP_Init_With_Loaded_Key() — викликається в main() після Load_AES_Key()
+```
+
+#### Захист Flash Key Sector (WRPROT)
+
+```
+STM32CubeProgrammer → Option Bytes → Write Protection:
+  Сектор 0x0803E000 (Page 127, якщо 4KB sectors) → Write-Protected ON
+
+Результат: навіть якщо SWD відкритий (RDP Level 0 у R&D) —
+  запис у ключовий сектор неможливий без зняття WRPROT
+  (зняття стирає відповідну сторінку Flash!)
+```
+
+#### Безпекові параметри
+
+| Параметр | Значення | Обґрунтування |
+|----------|---------|---------------|
+| KDF алгоритм | HKDF-SHA256 (RFC 5869) | Стандарт NIST SP 800-56C, апаратний SHA256 у STM32 |
+| Master key size | 256 bits | AES-256 рівень безпеки |
+| Context string | `"silkennet-v1-aes256"` | Domain separation для різних ключів майбутніх протоколів |
+| Master key storage | Rails Vault (AR Encryption) + HSM у production | Never in-repo |
+| Device key storage | Protected Flash Sector + ATECC608B (post-TRL 7) | Фізичний захист |
+| Backup/rotate | Dual-key grace period (HardwareKey#previous_aes_key_hex) | Zero-downtime rotation |
+
+> **Cross-ref:** SEC.3 Factory Flashing pipeline, SEC.6 ATECC608B, SEC.2 RDP Level 2.
+
+---
+
 ### 3.5 Режим Транспортування — Shipping Mode (Геркон / Reed Switch)
 
 **Проблема:** Між заводом та лісом Солдат лежить у коробці тижнями. Якщо він прокинеться від вібрації під час перевезення — марно витратить енергію іоністора (якого може не вистачити для першого TX).

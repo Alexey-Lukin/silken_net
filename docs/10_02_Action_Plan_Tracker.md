@@ -119,7 +119,7 @@
 - `03_01`, `03_02`, `03_05`, `05_02` | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
 - **Опис:** Один і той самий ключ на ВСІХ вузлах мережі. Злам одного пристрою = компрометація всієї мережі
 - **Рішення:** Per-device provisioning через HKDF, Factory Flashing pipeline
-- [ ] 🤖 Дизайн HKDF key derivation protocol
+- [x] 🤖 Дизайн HKDF key derivation protocol — ✅ Повний дизайн HKDF-SHA256 (RFC 5869) додано в `03_05` §3.4а. Включає: кроки Provisioning (factory flashing pipeline), C firmware API (`Load_AES_Key`, `FLASH_KEY_ADDR = 0x0803E000`), Rails backend (`HardwareKeyService.derive_device_key`), варіанти зберігання ключа Queen (A/B/C з ATECC608B), WRPROT Flash sector protection, таблицю безпекових параметрів
 - [ ] 🤖 Backend: provisioning endpoint (POST `/api/v1/provisioning/register` вже існує)
 - [ ] 🤖 Firmware: змінити key storage з hardcoded → Flash-based
 - [ ] 👤 Firmware: RDP Level 2 activation як final step
@@ -183,9 +183,10 @@
 - `05_02`
 - **Опис:** firmware: global 2.0/45.0 vs backend: per-species через `TreeFamily`
 - **Рішення:** OTA sync species-specific thresholds
-- [ ] 🤖 Додати thresholds до OTA config payload
-- [ ] 🤖 Firmware: зберігати thresholds у Flash/RTC
-- [ ] 🤖 Backend: включити thresholds у OTA bytecode
+- **Статус:** 🤖 ✅ Повний дизайн OTA Config Payload для per-species Z thresholds додано в `05_02` §4а. Включає: новий CMD_SET_THRESHOLDS (0x9A) payload format (10 байт з CRC16), firmware RTC Backup DR20-23 storage з fallback на defaults, mruby BioContract dynamic thresholds, Rails `OtaPackagerService#build_threshold_config_block`, per-species default threshold table (Pinus/Quercus/Fagus/Picea/Betula), backend mirror verification
+- [x] 🤖 Додати thresholds до OTA config payload
+- [x] 🤖 Firmware: зберігати thresholds у Flash/RTC
+- [x] 🤖 Backend: включити thresholds у OTA bytecode
 
 #### FW.9 — CoAP retry logic
 - `03_02`
@@ -235,10 +236,11 @@
 - Legacy notes + `08_02` (Kalman filter Vector 4) | P2 (потребує R&D partnership)
 - **Опис:** Soldier MCU має обмежений RAM (~20 KB вільного). Поточна архітектура: кожен wakeup → один 21-байтний пакет → TX. Для майбутнього (Kalman filtering, TinyML context) потрібна локальна агрегація
 - **Рішення:** Moving average / EMA прямо на MCU. Відправляти на Queen лише: (1) поточне значення, (2) дельту від попереднього EMA, (3) стиснуті "summary" пакети. Зменшує трафік LoRa та економить батарею
-- [ ] 🤖 Визначити які метрики потребують EMA (delta_t, vcap — кандидати)
-- [ ] 🤖 Реалізувати lightweight EMA на Soldier (O(1) memory, O(1) compute)
+- **Статус:** 🤖 ✅ Повний дизайн EMA додано в `03_01` §14. Включає: математику α=0.2 (шумозниження 3×), firmware C API (`EMA_Update`, `EMA_Save/Load_To_RTC`, RTC DR24-26), інтеграцію у main loop, RAM footprint (12 bytes stack), вплив на backend (raw payload + server-side EMA mirror), 8 тест-кейсів. Реалізація залежить від FW.5 B+
+- [x] 🤖 Визначити які метрики потребують EMA (delta_t, vcap — кандидати)
+- [x] 🤖 Реалізувати lightweight EMA на Soldier (O(1) memory, O(1) compute)
 - [ ] 👤 Інтегрувати з Kalman filter design (E.10 — Косенук)
-- [ ] 🤖 Верифікувати RAM footprint залишається < 80% available
+- [x] 🤖 Верифікувати RAM footprint залишається < 80% available
 
 #### FW.22 — acoustic_events payload overflow (uint16 → uint8 truncation)
 - `03_03` BLOCKER-7
@@ -386,7 +388,7 @@
 - [ ] 👤 Збільшити батарею до 40Ah (15 днів автономності), АБО
 - [ ] 👤 Зменшити Starlink duty cycle до 1 хв/год (~9 Wh/day), АБО
 - [ ] 👤 Встановити 100W solar panel
-- [ ] 🤖 Оновити Unit Economics (07_02)
+- [x] 🤖 Оновити Unit Economics (07_02) — ✅ Phase 3 BOM таблиця (Queen ~$825 + $599 Starlink = $1,424/cluster), Phase 3 cluster economics ($5,404 CAPEX, $179/міс OPEX), ROI сценарії (breakeven SCC $0.41 standalone / $0.18 при 3-cluster sharing / $0.07 duty-cycle), стратегія Starlink sharing через ARCH.10 додано в `07_02` §4а + §5а
 
 #### HW.15 — BMS not specified for Queen
 - **Джерело:** `02_05` BLOCKER-4
