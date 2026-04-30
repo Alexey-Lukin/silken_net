@@ -36,7 +36,7 @@ jobs:
             exit 1
           fi
           KEY_LEN=${#PROVISIONING_MASTER_KEY}
-          if [ "$KEY_LEN" -lt 32 ]; then
+          if [ "$KEY_LEN" -lt 64 ]; then
             echo "::error::PROVISIONING_MASTER_KEY is suspiciously short ($KEY_LEN chars)." \
                  "Expected: >=64 hex characters (256-bit key)."
             exit 1
