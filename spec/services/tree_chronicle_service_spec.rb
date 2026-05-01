@@ -337,12 +337,5 @@ RSpec.describe TreeChronicleService do
         expect(dates).to eq(dates.sort.reverse)
       end
     end
-
-    context "with pagy .prev compatibility alias" do
-      it "defines .prev method on pagy for Pagination component" do
-        result = described_class.call(tree: tree)
-        expect(result[:pagy]).to respond_to(:prev)
-      end
-    end
   end
 end

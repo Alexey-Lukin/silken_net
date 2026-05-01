@@ -17,7 +17,7 @@ RSpec.describe Maintenance::PhotosPage do
     pg = OpenStruct.new(
       count: count, page: page, last: [ (count / 6.0).ceil, 1 ].max,
       from: 7, to: [ count, 12 ].min,
-      prev: 1, next: next_page, vars: { items: 6 }
+      previous: 1, next: next_page, vars: { items: 6 }
     )
     pg.define_singleton_method(:series) { [ 1, 2 ] }
     pg

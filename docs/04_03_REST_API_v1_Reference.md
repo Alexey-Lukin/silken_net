@@ -696,8 +696,8 @@ POST /api/v1/auth/m2m_token
     "id": 12,
     "version": "1.4.2",
     "target_hardware": "STM32WLE5JC",
-    "file_size": 245760,
-    "checksum": "A3F2...",
+    "target_hardware_type": "Tree",
+    "binary_sha256": "A3F2...",
     "created_at": "2026-03-22T17:00:00Z"
   }
 }

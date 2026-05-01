@@ -6,7 +6,7 @@ RSpec.describe Maintenance::Index do
   def mock_pagy(count: 2, page: 1)
     pg = OpenStruct.new(
       count: count, page: page, last: 1, from: 1, to: count,
-      prev: nil, next: nil, vars: { items: 50 }
+      previous: nil, next: nil, vars: { items: 50 }
     )
     pg.define_singleton_method(:series) { [ 1 ] }
     pg

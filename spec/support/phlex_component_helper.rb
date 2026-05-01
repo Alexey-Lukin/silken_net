@@ -73,7 +73,7 @@ module PhlexComponentHelper
       last: last,
       from: 1,
       to: count,
-      prev: page > 1 ? page - 1 : nil,
+      previous: page > 1 ? page - 1 : nil,
       next: page < last ? page + 1 : nil,
       vars: { items: 21 }
     )

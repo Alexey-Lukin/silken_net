@@ -20,7 +20,7 @@ app/views/layouts/dashboard_layout.rb → spec/views/layouts/dashboard_layout_sp
 всіх файлів у `spec/views/`. Він надає:
 - `render_component(**kwargs)` — автоматично обирає `.call` чи `ApplicationController.renderer.render`
 - `component_class` — синонім `described_class`
-- `mock_pagy(count:, page:, last:)` — стандартний Pagy double
+- `mock_pagy(count:, page:, last:)` — стандартний Pagy double (uses `previous:` not `prev:` — Pagy 43+)
 - `mock_model(klass, id:, **attrs)` — OpenStruct з model_name/to_key/to_param
 
 ### 3. Рендеринг: renderer vs .call
