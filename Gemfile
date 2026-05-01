@@ -69,11 +69,11 @@ group :development, :test do
 end
 
 group :development do
+  gem "dotenv-rails"
   gem "lookbook"
   gem "rails-schema"
   gem "view_component"
   gem "web-console"
-  gem "dotenv-rails"
 end
 
 group :test do
