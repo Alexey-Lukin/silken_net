@@ -2,10 +2,16 @@
 
 module Api
   module V1
-    class BaseController < ActionController::API
-      include ActionController::HttpAuthentication::Token::ControllerMethods
-      include ActionController::MimeResponds
-      include ActionController::Helpers
+    class BaseController < ActionController::Base
+      # Phlex components (DashboardLayout, AuthLayout) generate complete HTML documents,
+      # so Rails must not wrap their output in application.html.erb.
+      layout false
+
+      # API clients send Bearer tokens, not CSRF tokens.
+      # :null_session clears session data instead of raising an exception,
+      # keeping cookie-based Dashboard sessions secure while allowing token auth.
+      protect_from_forgery with: :null_session
+
       include Pagy::Method
       include Pundit::Authorization
 

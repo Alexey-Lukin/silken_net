@@ -126,7 +126,7 @@ HTTP Request (Auth pages — login, forgot/reset password, no-organization quara
 
 > **⚠️ Важливо:** Content component передається як параметр `content:` — **НЕ через блок**.
 > Ruby closure блоку виконується в контексті контролера, тому `render` всередині блоку
-> викликає `ActionController::API#render` (DoubleRenderError), а не `Phlex::HTML#render`.
+> викликає `ActionController::Base#render` (DoubleRenderError), а не `Phlex::HTML#render`.
 
 ### Layout Компоненти
 
