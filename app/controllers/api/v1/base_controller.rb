@@ -2,11 +2,11 @@
 
 module Api
   module V1
-    class BaseController < ActionController::API
+    class BaseController < ActionController::Base
       include ActionController::HttpAuthentication::Token::ControllerMethods
-      include ActionController::MimeResponds
-      include ActionController::Helpers
       include Pagy::Method
+
+      protect_from_forgery with: :null_session
       include Pundit::Authorization
 
       # --- ПОРЯДОК ЗАХИСТУ ---
