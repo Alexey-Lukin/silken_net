@@ -2,10 +2,15 @@
 
 module Api
   module V1
-    class BaseController < ActionController::API
-      include ActionController::HttpAuthentication::Token::ControllerMethods
-      include ActionController::MimeResponds
-      include ActionController::Helpers
+    class BaseController < ActionController::Base
+      # Phlex components (DashboardLayout, AuthLayout) generate complete HTML documents,
+      # so Rails must not wrap their output in application.html.erb.
+      layout false
+
+      # Full CSRF protection for session-based Dashboard requests.
+      # Bearer-token API requests bypass via handle_unverified_request below.
+      protect_from_forgery with: :exception
+
       include Pagy::Method
       include Pundit::Authorization
 
@@ -27,6 +32,20 @@ module Api
       helper_method :current_user, :signed_in?
 
       private
+
+      # 0. CSRF BYPASS FOR BEARER TOKEN REQUESTS
+      # Bearer-token API requests are immune to CSRF by design: browsers never
+      # auto-attach Authorization headers in cross-origin requests (unlike cookies).
+      # For these requests, skip the :exception strategy and let normal auth proceed.
+      # Session-based Dashboard requests without a valid CSRF token raise
+      # ActionController::InvalidAuthenticityToken (the strictest protection).
+      def handle_unverified_request
+        raise ActionController::InvalidAuthenticityToken unless bearer_token_request?
+      end
+
+      def bearer_token_request?
+        request.authorization&.start_with?("Bearer ")
+      end
 
       # 1. АВТЕНТИФІКАЦІЯ (The Handshake)
       # Підтримуємо як сесійні куки (для Дашборду), так і Bearer Tokens (для Мобільного додатка)

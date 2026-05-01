@@ -338,6 +338,9 @@ dormant ──reactivate──► active
 | `firmware_version` | string | Версія прошивки STM32 (SemVer) |
 | `altitude` | numeric | Висота над рівнем моря (м) |
 
+> **Примітка:** `firmware_hash` НЕ є полем Gateway. Хеш прошивки зберігається в моделі `Firmware`
+> і відстежується під час OTA-оновлення. UI-компоненти використовують `try(:firmware_hash)` з safe fallback.
+
 **AASM State Machine (column: `state`):**
 
 ```

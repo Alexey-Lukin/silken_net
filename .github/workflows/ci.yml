@@ -111,6 +111,9 @@ jobs:
         with:
           bundler-cache: true
 
+      - name: Build Tailwind CSS
+        run: bin/rails tailwindcss:build
+
       - name: Run tests
         env:
           RAILS_ENV: test
@@ -150,6 +153,9 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+
+      - name: Build Tailwind CSS
+        run: bin/rails tailwindcss:build
 
       - name: Run Feature Tests
         env:

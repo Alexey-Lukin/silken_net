@@ -115,7 +115,7 @@ module Gateways
           config_row("Cluster", @gateway.cluster&.name || "UNASSIGNED")
           config_row("Sleep Interval", "#{@gateway.config_sleep_interval_s || 60}s")
           config_row("Firmware Version", @gateway.firmware_version || "—")
-          config_row("Firmware Hash", @gateway.firmware_hash&.first(16) || "—")
+          config_row("Firmware Hash", @gateway.try(:firmware_hash)&.first(16) || "—")
           config_row("Mesh Mode", "Enabled")
 
           button(
@@ -134,7 +134,7 @@ module Gateways
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Hardware Cryptography" }
         div(class: "space-y-2 text-tiny font-mono") do
           p(class: "text-gray-600") { "Hardware UID:" }
-          p(class: "text-emerald-500 truncate") { @gateway.hardware_key&.uid || "UNDEFINED" }
+          p(class: "text-emerald-500 truncate") { @gateway.hardware_key&.device_uid || "UNDEFINED" }
 
           div(class: "mt-4 flex items-center gap-2 text-emerald-800") do
             span(class: "h-2 w-2 bg-emerald-900 rounded-full")

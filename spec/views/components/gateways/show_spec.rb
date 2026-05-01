@@ -13,7 +13,7 @@ RSpec.describe Gateways::Show do
                    sleep_interval: 120, firmware_version: "2.1.0",
                    firmware_hash: "a1b2c3d4e5f67890abcdef1234567890", hardware_key_uid: "HK-001")
     cluster = OpenStruct.new(name: cluster_name)
-    hardware_key = OpenStruct.new(uid: hardware_key_uid)
+    hardware_key = OpenStruct.new(device_uid: hardware_key_uid)
 
     gw = OpenStruct.new(
       uid: uid,

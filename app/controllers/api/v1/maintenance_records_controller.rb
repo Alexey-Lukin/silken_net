@@ -4,7 +4,7 @@ module Api
   module V1
     class MaintenanceRecordsController < BaseController
       before_action :authorize_forester!
-      before_action :set_record, only: [ :show, :update, :verify, :photos ]
+      before_action :set_record, only: [ :show, :edit, :update, :verify, :photos ]
 
       # --- ЖУРНАЛ ВТРУЧАНЬ ---
       def index
@@ -100,6 +100,18 @@ module Api
             )
           end
         end
+      end
+
+      # --- ФОРМА РЕДАГУВАННЯ ---
+      # GET /api/v1/maintenance_records/:id/edit
+      def edit
+        render_dashboard(
+          title: "Edit Record // ##{@record.id}",
+          component: Maintenance::Form.new(
+            record: @record,
+            existing_photos: @record.photos.limit(6).to_a
+          )
+        )
       end
 
       # --- ПАГІНАЦІЯ ФОТО (Turbo Frame Load More) ---
