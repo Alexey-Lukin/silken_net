@@ -8,10 +8,10 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8
-- **Дата аудиту:** 2026-04-26
+- **Дата аудиту:** 2026-05-01
 - **Кількість тестів:**
   - RSpec (Ruby): ~290+ spec files, ~49,000+ lines
-  - Firmware (C): 247 tests (79 soldier + 92 queen + 33 bio-contract + 25 tinyml + 18 encryption)
+  - Firmware (C): 264 tests (105 soldier + 83 queen + 33 bio-contract + 25 tinyml + 18 encryption)
   - Foundry (Solidity): 6 test suites, ~115+ tests
 
 ---
@@ -95,21 +95,23 @@
 
 ## 🔧 2. Firmware Test Coverage
 
-### 2.1 Soldier (test_soldier_logic.c — 92 tests)
+### 2.1 Soldier (test_soldier_logic.c — 105 tests)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
 | Payload Pack/Unpack | 20+ | 🟢 Повне |
-| Mesh Dedup (Anti-pingpong) | 8 | 🟢 Повне |
+| Mesh Dedup (Anti-pingpong, 3-slot FW.21) | 8 | 🟢 Повне |
 | OTA Chunk Assembly + CRC32 | 15+ | 🟢 Повне |
 | Bio-Contract Byte Parse | 8+ | 🟢 Повне |
-| Panic Payload | 4 | 🟢 Повне |
+| Panic Payload | 6 | 🟢 Повне — **[FW.29]** `test_panic_flag_set_in_emergency_payload`, `test_normal_payload_panic_flag_clear` |
 | OnRxDone Size Validation | 5 | 🟢 Повне |
 | Lorenz State Persistence (FW.6) | 9 | 🟢 Повне |
-| Acoustic Saturating Increment (FW.22) | 6 | 🟢 Повне |
+| Acoustic Saturating Increment (FW.22) | 6 | 🟢 Повне — включаючи atomic snapshot (FW.28) |
 | RSSI Clamping | 7 | 🟢 Повне |
+| EMA Filter (FW.21) | 10 | 🟢 Повне |
+| DID Generation (FW.24) | 5 | 🟢 Повне — **[FW.24]** `test_did_hrng_fallback_not_magic` |
 
-### 2.2 Queen (test_queen_logic.c — 79 tests)
+### 2.2 Queen (test_queen_logic.c — 83 tests)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -120,6 +122,9 @@
 | OTA Chunk Assembly + Bitmap | 15 | 🟢 Повне |
 | Queen UID Flash Read | 8+ | 🟢 Повне |
 | RSSI Clamping | 7 | 🟢 Повне |
+| ECB/CBC Restoration | 3 | 🟢 Повне |
+| HRNG IV Generation | 5 | 🟢 Повне |
+| **CoAP Retry (FW.9)** | **4** | 🟢 **Нове** — `test_coap_retry_constants`, константи `COAP_MAX_RETRIES`, `UART_RX_BUF_SIZE` |
 
 ### 2.3 Bio-Contract (test_bio_contract.c — 33 tests)
 
@@ -176,7 +181,7 @@
 |-------|------------|------|
 | Mock AES | 🔴 CRITICAL | `hal_mock.h` копіює plaintext→ciphertext; реальна AES верифікація неможлива без ARM HW |
 | Mock TinyML | 🟠 HIGH | `Run_Inference()` повертає фіксовані класи; реальна модель не тестується |
-| AT Command UART | 🟠 HIGH | SIM7070G modem I/O не тестується (апаратна залежність) |
+| AT Command UART | 🟡 MEDIUM | SIM7070G modem I/O не тестується повністю (апаратна залежність). Константи retry та таймаутів верифіковані `test_coap_retry_constants` (FW.9) |
 | DMA Audio Timing | 🟠 HIGH | 512-sample DMA transfer timing не верифікується на host |
 
 ### 4.2 Solidity
@@ -207,7 +212,7 @@
 | Views | 85 | 10,001 | ~2.0x |
 | Policies | 14 | 1,416 | ~2.5x |
 | Blueprints | 9 | 1,081 | ~2.0x |
-| Firmware (C) | 5 | ~3,500 | 247 tests |
+| Firmware (C) | 5 | ~3,500 | 264 tests |
 | Solidity | 6 | ~2,000 | 115+ tests |
 | **Total** | **288+** | **~52,000+** | — |
 

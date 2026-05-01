@@ -1180,7 +1180,7 @@ active/draft ──cancel──► cancelled
 
 **Кешування:** `after_commit :invalidate_cache`. Ключ: `"system_parameter:#{key}"`. TTL: 24 години.
 
-**Використовується:** `SilkenNet::Attractor` (Lorenz параметри), `ContractHealthCheckService` (slashing threshold), `TokenomicsEvaluatorWorker` (emission threshold), `Governance::ParameterSyncWorker` (sync on-chain → DB).
+**Використовується:** `SilkenNet::Attractor` (Lorenz параметри), `ContractHealthCheckService` (slashing threshold), `TokenomicsEvaluatorWorker` (emission threshold), `BlockchainMintingService` (dynamic_tax_rate, insurance_pool_threshold — читаються через `SystemParameter.current` для on-chain параметрів мінтингу), `Governance::ParameterSyncWorker` (sync on-chain → DB).
 
 ---
 
