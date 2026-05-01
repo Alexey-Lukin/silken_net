@@ -167,6 +167,7 @@
 - **Sentry DSN**: rotate у Sentry UI → оновити `SENTRY_DSN` → redeploy.
 - **Chainlink HMAC**: координовано з backend deploy (зміна на льоту викличе rejected callbacks).
 - **Oracle/Anchor private keys**: deploy новий гаманець → revoke старий → перевести залишок газу → redeploy.
+- **peaq_signing_key** (Ed25519 DID signing): планова ротація кожні 90 днів або при зміні персоналу. Dual-Key Grace Period 72 години (див. §5.4 нижче та `04_02_Business_Logic_and_Services.md` §S6.14).
 
 ### 5.3. Аудит виконання
 
@@ -180,6 +181,124 @@ grep -E "^[A-Z][A-Z0-9_]*=" .kamal/secrets | cut -d= -f1 | sort -u
 # Перевірка Akash SDL
 grep -E "^\s+[A-Z_]+:" deploy/akash/deploy.yaml | head -50
 ```
+
+### 5.4. Emergency Revocation Runbook — `peaq_signing_key` (S6.14)
+
+> **Threat Model:** Компрометація `peaq_signing_key` дозволяє зловмиснику реєструвати фейкові DIDs на peaq network від імені SilkenNet. Кожен фейковий DID може бути прив'язаний до неіснуючого дерева → фейковий Proof of Growth → несанкціонований мінтинг SCC.
+
+#### Крок 1: Detection (моніторинг)
+
+Ознаки компрометації:
+- Аномальні `POST /api/v1/provisioning/register` запити без відповідного hardware provisioning flow
+- DIDs зареєстровані в peaq мережі, які не мають відповідних `Tree` записів у БД
+- Незвичні патерни: масова реєстрація DIDs, реєстрація з невідомих IP
+
+```bash
+# Аудит DID реєстрацій за останні 24 години
+bin/rails runner "
+  recent = Tree.where('peaq_did IS NOT NULL AND created_at > ?', 24.hours.ago)
+  puts \"DIDs registered last 24h: #{recent.count}\"
+  recent.find_each { |t| puts \"  #{t.did} -> #{t.peaq_did} at #{t.created_at}\" }
+"
+```
+
+#### Крок 2: Containment (< 15 хвилин)
+
+**2a. Негайна заміна ключа в credentials:**
+
+```bash
+RAILS_CREDENTIALS_EDITOR=vim bin/rails credentials:edit
+# 1. Скопіювати поточний peaq_signing_key → peaq_signing_key_previous
+# 2. Згенерувати новий ключ:
+#    ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"
+# 3. Замінити peaq_signing_key на новий ключ
+# 4. Зберегти та вийти
+```
+
+**2b. Негайний redeploy:**
+
+```bash
+# Zero-downtime deploy через Kamal
+kamal deploy
+
+# АБО якщо потрібен лише перезапуск додатку (без нового Docker image):
+kamal app boot
+```
+
+**2c. (Опціонально) Тимчасова зупинка реєстрації:**
+
+Якщо масштаб компрометації невідомий — тимчасово заблокувати provisioning endpoint:
+
+```bash
+# Додати feature flag або ENV
+# В production console:
+bin/rails runner "Rails.cache.write('provisioning_suspended', true, expires_in: 24.hours)"
+```
+
+#### Крок 3: Investigation (аудит)
+
+```bash
+# Визначити часовий діапазон компрометації
+bin/rails runner "
+  # Всі DID реєстрації за останній тиждень (або з моменту підозри)
+  compromise_start = Time.parse('2025-XX-XXTXX:XX:XXZ')  # замінити на estimated time
+  compromise_end   = Time.current
+
+  suspect_trees = Tree.where(
+    'peaq_did IS NOT NULL AND created_at BETWEEN ? AND ?',
+    compromise_start, compromise_end
+  )
+  puts \"Potentially compromised DIDs: #{suspect_trees.count}\"
+  suspect_trees.find_each do |t|
+    puts \"  Tree ##{t.id}: did=#{t.did}, peaq_did=#{t.peaq_did}, org=#{t.organization_id}\"
+  end
+"
+```
+
+Перевірити:
+- Чи є відповідний `HardwareKey` для кожного підозрілого `Tree`
+- Чи є `TelemetryLog` записи від цих пристроїв
+- Чи збігається `peaq_did` з тим, що зареєстровано на peaq chain (cross-reference через `peaq_node_url`)
+
+#### Крок 4: Recovery
+
+```bash
+# Позначити потенційно компрометовані DIDs
+bin/rails runner "
+  compromise_start = Time.parse('2025-XX-XXTXX:XX:XXZ')
+  compromise_end   = Time.parse('2025-XX-XXTXX:XX:XXZ')
+
+  affected = Tree.where(
+    'peaq_did IS NOT NULL AND created_at BETWEEN ? AND ?',
+    compromise_start, compromise_end
+  )
+  affected.update_all(peaq_did_compromised: true)
+  puts \"Flagged #{affected.count} trees as peaq_did_compromised\"
+"
+```
+
+- Заблокувати мінтинг для compromised DIDs (guard clause в `BlockchainMintingService`)
+- За необхідності — повторно зареєструвати легітимні DIDs з новим ключем
+
+#### Крок 5: Post-Incident
+
+1. **Ротація пов'язаних секретів:**
+   - M2M tokens (якщо gateway використовував той самий credentials файл)
+   - API keys, якщо є підозра на ширшу компрометацію credentials
+   - `RAILS_MASTER_KEY` (якщо вектор атаки — витік master key)
+
+2. **Документація інциденту:**
+   - Timeline компрометації
+   - Кількість affected DIDs
+   - Root cause analysis
+   - Corrective actions
+
+3. **Превентивні заходи:**
+   - Увімкнути scheduled rotation (кожні 90 днів) — `04_02` §S6.14
+   - Налаштувати alerting на аномальні provisioning патерни
+   - Розглянути HSM/Vault для зберігання signing keys замість Rails credentials
+
+> **Зв'язок:** Key Rotation Policy → `docs/04_02_Business_Logic_and_Services.md` §S6.14
 
 ---
 

@@ -219,6 +219,47 @@
 | **Зовнішні виклики** | `Ed25519Crypto::SigningService.sign`, `Web3::HttpClient.post` → `peaq_node_url/did/register` |
 | **Вихід** | `did_string` (String, напр. `did:peaq:0x8a9b...`). Raises `RegistrationError`. |
 
+#### S6.14 — Key Rotation Policy for `peaq_signing_key`
+
+`peaq_signing_key` — Ed25519 seed (32 bytes hex) що зберігається в Rails encrypted credentials. Використовується виключно в `Peaq::DidRegistryService` для підпису W3C DID-документів при реєстрації дерев на peaq network. Компрометація цього ключа дозволяє зловмиснику реєструвати фейкові DIDs від імені платформи.
+
+**1. Overlap Window (Dual-Key Grace Period)**
+
+При ротації ключа необхідно забезпечити безперервність реєстрації:
+
+1. Згенерувати новий Ed25519 keypair: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`
+2. В credentials зберігати ОБА ключі:
+   - `peaq_signing_key` — новий ключ (використовується для всіх нових реєстрацій)
+   - `peaq_signing_key_previous` — старий ключ (валідний протягом overlap window)
+3. Backend приймає підписи від обох ключів протягом **72-годинного overlap window**
+4. Після закінчення overlap window: видалити `peaq_signing_key_previous` з credentials
+
+**2. Migration Strategy**
+
+- Усі нові DID реєстрації під час overlap використовують **новий** ключ
+- Існуючі DIDs зберігають оригінальні підписи (immutable on peaq chain)
+- Повторна реєстрація **НЕ** потрібна — DID-документи є append-only на peaq
+- `verification_method` у proof вказує на конкретний ключ (`#key-1`, `#key-2`), тому старі proof залишаються валідними
+
+**3. Scheduled Rotation**
+
+| Тригер | Інтервал |
+|--------|----------|
+| Планова ротація | Кожні **90 днів** |
+| Зміна персоналу | Негайно (при звільненні/зміні ролі інженера з доступом до credentials) |
+| Підозра на компрометацію | Негайно (див. Emergency Revocation Runbook у `06_04_Secrets_Checklist.md` §5.4) |
+
+**4. Credentials Layout (після ротації)**
+
+```yaml
+# config/credentials.yml.enc (decrypted view)
+peaq_signing_key: "new_key_hex_64_chars"
+peaq_signing_key_previous: "old_key_hex_64_chars"  # видалити через 72 години
+peaq_node_url: "https://peaq-node.example.com"
+```
+
+> **Зв'язок:** Emergency Revocation Runbook → `docs/06_04_Secrets_Checklist.md` §5.4
+
 ### `Chainlink::OracleDispatchService`
 
 | | |
