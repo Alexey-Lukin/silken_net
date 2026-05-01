@@ -92,6 +92,33 @@ module Api
         render AuthLayout.new(title: title, content: component), status: status
       end
 
+      # Гарантує, що у поточного користувача є призначена організація.
+      # Усі ~18 dashboard-контролерів читають `current_user.organization` напряму;
+      # без цього guard'а NoMethodError на `nil.organization` ховає реальну проблему
+      # (системний бот / щойно створений акаунт без onboarding).
+      #
+      # Контролер опт-ін через `before_action :ensure_organization!`.
+      # JSON клієнти отримують 422 з машинно-читабельним кодом помилки.
+      # HTML клієнти бачать стилізовану Phlex-сторінку всередині AuthLayout
+      # (узгоджено з docs/04_04_Phlex_UI_and_Tailwind.md — UI лише через Phlex).
+      def ensure_organization!
+        return if current_user&.organization
+
+        respond_to do |format|
+          format.json do
+            render json: { error: "No organization assigned to this account.", code: "no_organization" },
+                   status: :unprocessable_content
+          end
+          format.html do
+            render_auth_page(
+              title: "Access Denied",
+              component: Errors::NoOrganization.new,
+              status: :unprocessable_content
+            )
+          end
+        end
+      end
+
       # 4. СТАНДАРТИ ВІДПОВІДЕЙ (The Oracle's Voice)
       def render_unauthorized
         render json: { error: "Необхідна автентифікація. Брама закрита." }, status: :unauthorized

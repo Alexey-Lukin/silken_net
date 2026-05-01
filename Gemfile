@@ -73,6 +73,7 @@ group :development do
   gem "rails-schema"
   gem "view_component"
   gem "web-console"
+  gem "dotenv-rails"
 end
 
 group :test do

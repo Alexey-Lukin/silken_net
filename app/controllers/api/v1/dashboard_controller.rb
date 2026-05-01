@@ -3,6 +3,8 @@
 module Api
   module V1
     class DashboardController < BaseController
+      before_action :ensure_organization!, only: :index
+
       def index
         org = current_user.organization
 
