@@ -3,14 +3,15 @@
 require "rails_helper"
 
 RSpec.describe OracleVisions::Index do
-  def mock_insight(insight_type: "drought", confidence_score: 74,
+  def mock_insight(insight_type: "drought", probability_score: 74,
                    target_date: 1.day.from_now.utc,
-                   description: "Moisture deficit expected.", yield_impact: "-0.04%")
+                   summary: "Moisture deficit expected.", yield_impact: "-0.04%")
     OpenStruct.new(
       insight_type: insight_type,
-      confidence_score: confidence_score,
+      probability_score: probability_score,
       target_date: target_date,
-      payload: { "description" => description, "yield_impact" => yield_impact }
+      summary: summary,
+      prediction_data: { "yield_impact" => yield_impact }
     )
   end
 
@@ -30,7 +31,7 @@ RSpec.describe OracleVisions::Index do
   end
 
   let(:clusters) { [ mock_cluster(id: 1, name: "Carpathian-Alpha") ] }
-  let(:visions) { [ mock_insight, mock_insight(insight_type: "frost_risk", confidence_score: 88) ] }
+  let(:visions) { [ mock_insight, mock_insight(insight_type: "frost_risk", probability_score: 88) ] }
   let(:html) { render_component(visions: visions, yield_forecast: "12.45", clusters: clusters) }
 
   describe "header section" do
@@ -67,12 +68,12 @@ RSpec.describe OracleVisions::Index do
       expect(html).to include("frost_risk")
     end
 
-    it "renders confidence scores for each vision" do
+    it "renders probability scores for each vision" do
       expect(html).to include("74%")
       expect(html).to include("88%")
     end
 
-    it "renders descriptions from payload" do
+    it "renders summaries for each vision" do
       expect(html).to include("Moisture deficit expected.")
     end
   end

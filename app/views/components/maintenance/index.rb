@@ -94,7 +94,7 @@ module Maintenance
       tr(class: "hover:bg-emerald-950/10 transition-colors group") do
         td(class: "p-4 text-emerald-100") { "#{record.user&.first_name} #{record.user&.last_name}" }
         td(class: "p-4 text-emerald-500 text-tiny") do
-          "#{record.maintainable_type} // #{record.maintainable&.try(:did) || record.maintainable&.try(:uid) || '—'}"
+          "#{record.maintainable_type} // #{record.maintainable&.display_identifier || '—'}"
         end
         td(class: "p-4") { action_badge(record.action_type) }
         td(class: "p-4 text-right text-gray-400") do

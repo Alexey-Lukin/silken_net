@@ -16,8 +16,8 @@ RSpec.describe Maintenance::Index do
     OpenStruct.new(first_name: first_name, last_name: last_name)
   end
 
-  def mock_maintainable(did: "SNET-00000042", uid: nil)
-    OpenStruct.new(did: did, uid: uid)
+  def mock_maintainable(display_identifier: "SNET-00000042")
+    OpenStruct.new(display_identifier: display_identifier)
   end
 
   def mock_record(id: 1, action_type: "inspection", performed_at: 2.hours.ago,

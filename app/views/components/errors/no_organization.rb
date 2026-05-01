@@ -1,21 +1,28 @@
 # frozen_string_literal: true
 
-# Standalone Phlex component rendered inside AuthLayout when an authenticated
-# user has no organization assigned (for example, the system Oracle Executioner
-# bot, or a brand-new account awaiting admin onboarding).
+# Standalone Phlex page rendered inside AuthLayout when an authenticated user
+# has no organization assigned (наприклад, системний бот Oracle Executioner,
+# або щойно створений акаунт у процесі onboarding).
 #
-# Mirrors the cyber-noir aesthetic of the auth pages (Sessions::New,
-# Passwords::Forgot) so the user lands on a recognizable surface instead of an
-# unstyled HTML fragment. See docs/04_04_Phlex_UI_and_Tailwind.md.
+# Стиль: domain page-component (auth-сторінка), тому використовує raw emerald
+# Tailwind токени узгоджено з Sessions::New / Passwords::Forgot
+# (див. docs/04_04 §3.4 — виняток для domain page-components).
 module Errors
   class NoOrganization < ApplicationComponent
     def view_template
-      main(class: "min-h-screen flex items-center justify-center p-4 relative overflow-hidden", role: "main") do
-        div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]", aria_hidden: "true")
+      main(
+        class: "min-h-screen flex items-center justify-center p-4 relative overflow-hidden",
+        role: "main"
+      ) do
+        div(
+          class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]",
+          aria_hidden: "true"
+        )
 
         div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
-          div(class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-6") do
-            render_header
+          render_header
+
+          div(class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
             render_message
             render_logout_link
           end
@@ -26,26 +33,36 @@ module Errors
     private
 
     def render_header
-      div(class: "text-center space-y-3") do
-        p(class: "text-mini uppercase tracking-[0.4em] text-emerald-700") { "Citadel // Access Denied" }
-        h1(class: "text-2xl font-light text-emerald-100") { "No Organization Assigned" }
+      div(class: "text-center mb-10 space-y-2") do
+        div(class: "inline-block h-12 w-12 border border-status-danger-accent rotate-45 mb-4 relative", aria_hidden: "true") do
+          div(class: "absolute inset-1 bg-status-danger-accent animate-pulse")
+        end
+        h1(class: "text-3xl font-extralight text-white tracking-[0.3em] uppercase") { "Quarantine" }
+        p(class: "text-tiny text-emerald-700 uppercase tracking-[0.5em]") { "No Organization Assigned" }
       end
     end
 
     def render_message
-      div(class: "border-t border-emerald-900/50 pt-6 space-y-3 text-compact text-gray-400 leading-relaxed") do
-        p { "Your account is not currently linked to any organization in the Forest Matrix." }
-        p { "Contact your administrator to be assigned to a cluster, or sign in with a provisioned identity." }
+      div(class: "space-y-4 text-compact text-emerald-300/80 leading-relaxed") do
+        p do
+          plain "Your account is not currently linked to any organization in the Forest Matrix. "
+          plain "Without a Cluster, the Citadel cannot scope telemetry, wallets, or alerts."
+        end
+        p(class: "text-tiny text-emerald-700 uppercase tracking-widest") do
+          "Contact your administrator to be onboarded into a cluster."
+        end
       end
     end
 
     def render_logout_link
       div(class: "pt-4 border-t border-emerald-900/30 text-center") do
         button_to(
+          "← Sign Out",
           api_v1_logout_path,
           method: :delete,
-          class: "text-mini uppercase tracking-widest text-emerald-600 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors bg-transparent border-0"
-        ) { "← Sign Out" }
+          aria: { label: "Sign out" },
+          class: "text-tiny text-emerald-900 uppercase tracking-widest hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors bg-transparent border-0 cursor-pointer"
+        )
       end
     end
   end

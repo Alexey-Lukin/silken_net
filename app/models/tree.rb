@@ -6,6 +6,11 @@ class Tree < ApplicationRecord
   include GeoLocatable
   include NormalizeIdentifier
 
+  # Polymorphic identifier для UI/serializers (наприклад, MaintenanceRecord з
+  # maintainable: Tree | Gateway). Дозволяє писати `record.maintainable.display_identifier`
+  # замість `&.try(:did) || &.try(:uid)` duck-typing у 3 callsites.
+  alias_attribute :display_identifier, :did
+
   # --- ЗВ'ЯЗКИ (The Fabric of the Forest) ---
   belongs_to :cluster, optional: true
   belongs_to :tiny_ml_model, optional: true
