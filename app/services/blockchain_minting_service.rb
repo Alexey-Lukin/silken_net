@@ -6,13 +6,16 @@ require "bigdecimal"
 class BlockchainMintingService < ApplicationService
   # [HYBRID PROTOCOL GAIA]: Dynamic Minting Tax для фінансування DAO Treasury / Parametric Insurance Pool.
   # 2% від кожного карбонового мінтингу направляється до DAO Treasury, якщо страховий пул потребує фінансування.
-  DYNAMIC_TAX_RATE = BigDecimal("0.02")
+  # [S6.17]: Ставка тепер читається з SystemParameter (governance-aware, synced from on-chain ProtocolParameters.sol).
+  DEFAULT_DYNAMIC_TAX_RATE = BigDecimal("0.02")
 
   # [B-05 FIX]: Цільовий поріг балансу DAO Treasury (у токенах SCC).
   # Якщо баланс DAO Treasury < порогу — Dynamic Tax активний (2% від емісії).
   # Якщо баланс >= порогу — податок вимикається, інвестори отримують 100%.
-  INSURANCE_POOL_THRESHOLD = 100_000
-  INSURANCE_POOL_THRESHOLD_WEI = INSURANCE_POOL_THRESHOLD * 10**18
+  # [S6.17]: Поріг тепер читається з SystemParameter (governance-aware).
+  DEFAULT_INSURANCE_POOL_THRESHOLD = 100_000
+
+  WEI_MULTIPLIER = 10**18
 
   # Мінімальний ABI для читання балансу ERC-20 (balanceOf).
   BALANCE_OF_ABI = [
@@ -343,7 +346,7 @@ class BlockchainMintingService < ApplicationService
 
     txs.each do |tx|
       if token_type == "carbon_coin" && insurance_pool_requires_funding?
-        tax_amount = (tx.amount * DYNAMIC_TAX_RATE).round(4)
+        tax_amount = (tx.amount * dynamic_tax_rate).round(4)
         forester_amount = tx.amount - tax_amount
 
         recipients.push(tx.to_address, ENV.fetch("DAO_TREASURY_ADDRESS"))
@@ -432,7 +435,7 @@ class BlockchainMintingService < ApplicationService
   # наступному успішному виклику. Помилка логується для моніторингу (Sentry + Prometheus).
   def insurance_pool_requires_funding?
     Rails.cache.fetch(TREASURY_CACHE_KEY, expires_in: TREASURY_CACHE_TTL) do
-      fetch_treasury_balance_wei < INSURANCE_POOL_THRESHOLD_WEI
+      fetch_treasury_balance_wei < insurance_pool_threshold_wei
     end
   rescue StandardError => e
     Rails.logger.error "🛑 [Web3] DAO Treasury balance check failed (RPC degraded): #{e.message}"
@@ -474,5 +477,22 @@ class BlockchainMintingService < ApplicationService
       target: "wallet_balance_#{wallet.id}",
       html: Wallets::BalanceDisplay.new(wallet: wallet).call
     )
+  end
+
+  # [S6.17] Governance-aware Dynamic Tax Rate.
+  # Reads from SystemParameter (synced from on-chain ProtocolParameters.sol via ParameterSyncWorker).
+  # Falls back to DEFAULT_DYNAMIC_TAX_RATE if not set.
+  def dynamic_tax_rate
+    BigDecimal(SystemParameter.current(:dynamic_tax_rate, default: DEFAULT_DYNAMIC_TAX_RATE).to_s)
+  end
+
+  # [S6.17] Governance-aware Insurance Pool Threshold.
+  def insurance_pool_threshold
+    SystemParameter.current(:insurance_pool_threshold, default: DEFAULT_INSURANCE_POOL_THRESHOLD).to_i
+  end
+
+  # [S6.17] Computed threshold in wei for on-chain balance comparison.
+  def insurance_pool_threshold_wei
+    insurance_pool_threshold * WEI_MULTIPLIER
   end
 end
