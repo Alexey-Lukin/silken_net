@@ -1243,7 +1243,7 @@ static uint8_t test_parse_modem_response(const char* response)
         if (buf[i] == 'O' && buf[i+1] == 'K') return 1;
     }
     // Search for "ERROR"
-    for (uint8_t i = 0; i < UART_RX_BUF_SIZE - 4 && buf[i] != '\0'; i++) {
+    for (uint8_t i = 0; i < UART_RX_BUF_SIZE - 5 && buf[i] != '\0'; i++) {
         if (buf[i] == 'E' && buf[i+1] == 'R' &&
             buf[i+2] == 'R' && buf[i+3] == 'O' &&
             buf[i+4] == 'R') return 0;

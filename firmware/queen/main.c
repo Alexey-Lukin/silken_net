@@ -593,7 +593,7 @@ static uint8_t SIM7070_SendATCommand_WithResponse(const char* command, uint32_t 
             if (uart_rx_buf[i] == 'O' && uart_rx_buf[i+1] == 'K') return 1;
         }
         // Search for "ERROR"
-        for (uint8_t i = 0; i < UART_RX_BUF_SIZE - 4 && uart_rx_buf[i] != '\0'; i++) {
+        for (uint8_t i = 0; i < UART_RX_BUF_SIZE - 5 && uart_rx_buf[i] != '\0'; i++) {
             if (uart_rx_buf[i] == 'E' && uart_rx_buf[i+1] == 'R' &&
                 uart_rx_buf[i+2] == 'R' && uart_rx_buf[i+3] == 'O' &&
                 uart_rx_buf[i+4] == 'R') return 0;
