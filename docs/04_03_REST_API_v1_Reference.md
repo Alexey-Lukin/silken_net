@@ -26,8 +26,9 @@ API підтримує **два паралельні механізми** авт
 > оскільки контролер обслуговує як JSON API (Bearer token), так і HTML Dashboard (Phlex + Session Cookie).
 > `ActionController::Base` надає `ActionView::Rendering` з `view_context`, необхідним для Phlex `render_in`.
 > Рейковий layout вимкнено (`layout false`) — Phlex-компоненти (`DashboardLayout`, `AuthLayout`) генерують
-> повний HTML-документ самостійно. CSRF захист: `protect_from_forgery with: :null_session` — API-клієнти
-> з Bearer token не блокуються, а Dashboard-сесії залишаються захищеними.
+> повний HTML-документ самостійно. CSRF захист: `protect_from_forgery with: :exception` (найсуворіша стратегія).
+> Bearer-token запити обходять CSRF через `handle_unverified_request` — браузери ніколи не прикріплюють
+> `Authorization` header автоматично при cross-origin запитах, тому Bearer-token запити імунні до CSRF за дизайном.
 
 ### 1.1 Bearer Token (для API-клієнтів та прошивки Gateway)
 

@@ -7,10 +7,9 @@ module Api
       # so Rails must not wrap their output in application.html.erb.
       layout false
 
-      # API clients send Bearer tokens, not CSRF tokens.
-      # :null_session clears session data instead of raising an exception,
-      # keeping cookie-based Dashboard sessions secure while allowing token auth.
-      protect_from_forgery with: :null_session
+      # Full CSRF protection for session-based Dashboard requests.
+      # Bearer-token API requests bypass via handle_unverified_request below.
+      protect_from_forgery with: :exception
 
       include Pagy::Method
       include Pundit::Authorization
@@ -33,6 +32,20 @@ module Api
       helper_method :current_user, :signed_in?
 
       private
+
+      # 0. CSRF BYPASS FOR BEARER TOKEN REQUESTS
+      # Bearer-token API requests are immune to CSRF by design: browsers never
+      # auto-attach Authorization headers in cross-origin requests (unlike cookies).
+      # For these requests, skip the :exception strategy and let normal auth proceed.
+      # Session-based Dashboard requests without a valid CSRF token raise
+      # ActionController::InvalidAuthenticityToken (the strictest protection).
+      def handle_unverified_request
+        raise ActionController::InvalidAuthenticityToken unless bearer_token_request?
+      end
+
+      def bearer_token_request?
+        request.authorization&.start_with?("Bearer ")
+      end
 
       # 1. АВТЕНТИФІКАЦІЯ (The Handshake)
       # Підтримуємо як сесійні куки (для Дашборду), так і Bearer Tokens (для Мобільного додатка)
