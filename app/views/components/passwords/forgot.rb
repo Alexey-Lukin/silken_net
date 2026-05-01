@@ -10,28 +10,42 @@ module Passwords
     end
 
     def view_template
-      main(class: "min-h-screen bg-black flex items-center justify-center p-4 font-mono relative overflow-hidden") do
-        div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]")
+      doctype
+      html(lang: "en") do
+        head do
+          title { "Silken Net // Recovery" }
+          meta(name: "viewport", content: "width=device-width,initial-scale=1")
+          link(rel: "icon", href: "/icon.png", type: "image/png")
+          csp_meta_tag
+          csrf_meta_tags
+          stylesheet_link_tag "application", "tailwind", "data-turbo-track": "reload"
+          javascript_importmap_tags
+        end
+        body(class: "bg-black font-mono") do
+          main(class: "min-h-screen flex items-center justify-center p-4 relative overflow-hidden") do
+            div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]")
 
-        div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
-          render_header
+            div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
+              render_header
 
-          form(action: api_v1_forgot_password_path, method: "post", class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
-            input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
+              form(action: api_v1_forgot_password_path, method: "post", class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do
+                input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
 
-            render_flash_messages
+                render_flash_messages
 
-            div(class: "space-y-6") do
-              field_container("Email Address") do
-                input(type: "email", name: "email", class: input_classes, placeholder: "architect@silken.net", required: true)
+                div(class: "space-y-6") do
+                  field_container("Email Address") do
+                    input(type: "email", name: "email", class: input_classes, placeholder: "architect@silken.net", required: true)
+                  end
+                end
+
+                div(class: "pt-4") do
+                  button(type: "submit", class: submit_classes) { "SEND RESET LINK" }
+                end
+
+                render_back_link
               end
             end
-
-            div(class: "pt-4") do
-              button(type: "submit", class: submit_classes) { "SEND RESET LINK" }
-            end
-
-            render_back_link
           end
         end
       end

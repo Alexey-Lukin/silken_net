@@ -43,7 +43,8 @@ threads threads_count, threads_count
 # Defaults:
 #   GCP  (2 vCPU):  WEB_CONCURRENCY=2 → 2 workers × 3 threads = 6 threads
 #   Akash (4 CPU):  WEB_CONCURRENCY=4 → 4 workers × 3 threads = 12 threads
-workers ENV.fetch("WEB_CONCURRENCY", 2)
+default_workers = ENV.fetch("RAILS_ENV", "development") == "development" ? 0 : 2
+workers ENV.fetch("WEB_CONCURRENCY", default_workers)
 
 # ---------------------------------------------------------------------------
 # 3. Preload — Copy-on-Write memory optimization

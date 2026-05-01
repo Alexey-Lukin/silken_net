@@ -8,6 +8,10 @@ class ApplicationComponent < Phlex::HTML
   include Phlex::Rails::Helpers::ButtonTo
   include Phlex::Rails::Helpers::AssetPath
   include Phlex::Rails::Helpers::FormAuthenticityToken
+  include Phlex::Rails::Helpers::CSPMetaTag
+  include Phlex::Rails::Helpers::CSRFMetaTags
+  include Phlex::Rails::Helpers::StyleSheetLinkTag
+  include Phlex::Rails::Helpers::JavaScriptImportmapTags
   include Phlex::SVG::StandardElements
   include ActionView::RecordIdentifier
 

@@ -8,34 +8,46 @@ module Sessions
     end
 
     def view_template
-      # Використовуємо окремий мінімалістичний лейаут для входу
-      main(class: "min-h-screen bg-black flex items-center justify-center p-4 font-mono relative overflow-hidden", role: "main") do
-        # Фоновий ефект Матриці/Міцелію
-        div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]", aria_hidden: "true")
+      doctype
+      html(lang: "en") do
+        head do
+          title { "Silken Net // Citadel" }
+          meta(name: "viewport", content: "width=device-width,initial-scale=1")
+          link(rel: "icon", href: "/icon.png", type: "image/png")
+          csp_meta_tag
+          csrf_meta_tags
+          stylesheet_link_tag "application", "tailwind", "data-turbo-track": "reload"
+          javascript_importmap_tags
+        end
+        body(class: "bg-black font-mono") do
+          main(class: "min-h-screen flex items-center justify-center p-4 relative overflow-hidden", role: "main") do
+            div(class: "absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]", aria_hidden: "true")
 
-        div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
-          render_portal_header
+            div(class: "w-full max-w-md animate-in zoom-in duration-700 relative z-10") do
+              render_portal_header
 
-          form_with(url: api_v1_login_path, method: :post, class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do |f|
-            render_flash_messages
+              form_with(url: api_v1_login_path, method: :post, class: "p-8 border border-emerald-900 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] space-y-8") do |f|
+                render_flash_messages
 
-            div(class: "space-y-6") do
-              field_container("Identity (Email)") do
-                f.email_field :email, class: input_classes, placeholder: "architect@silken.net", required: true
-              end
+                div(class: "space-y-6") do
+                  field_container("Identity (Email)") do
+                    f.email_field :email, class: input_classes, placeholder: "architect@silken.net", required: true
+                  end
 
-              field_container("Access Code (Password)") do
-                f.password_field :password, class: input_classes, placeholder: "••••••••", required: true
+                  field_container("Access Code (Password)") do
+                    f.password_field :password, class: input_classes, placeholder: "••••••••", required: true
+                  end
+                end
+
+                div(class: "pt-4") do
+                  f.submit "AUTHENTICATE", class: "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-[0.4em] hover:bg-emerald-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                end
+
+                render_forgot_password_link
+                render_social_providers
+                render_footer_seal
               end
             end
-
-            div(class: "pt-4") do
-              f.submit "AUTHENTICATE", class: "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-[0.4em] hover:bg-emerald-500 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.2)]"
-            end
-
-            render_forgot_password_link
-            render_social_providers
-            render_footer_seal
           end
         end
       end

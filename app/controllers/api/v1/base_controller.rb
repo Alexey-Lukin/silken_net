@@ -3,6 +3,9 @@
 module Api
   module V1
     class BaseController < ActionController::API
+      include ActionView::Rendering
+      include ActionController::ContentSecurityPolicy
+      helper Importmap::ImportmapTagsHelper
       include ActionController::HttpAuthentication::Token::ControllerMethods
       include ActionController::MimeResponds
       include ActionController::Helpers
@@ -78,10 +81,9 @@ module Api
           title: title,
           current_user: current_user,
           current_path: request.path,
-          ews_alert_count: ews_alert_count_cached
-        ) do
-          render component
-        end
+          ews_alert_count: ews_alert_count_cached,
+          content: component
+        )
       end
 
       # 4. СТАНДАРТИ ВІДПОВІДЕЙ (The Oracle's Voice)

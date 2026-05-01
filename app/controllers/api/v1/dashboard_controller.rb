@@ -6,6 +6,14 @@ module Api
       def index
         org = current_user.organization
 
+        unless org
+          respond_to do |format|
+            format.json { render json: { error: "No organization assigned." }, status: :unprocessable_entity }
+            format.html { render html: "<p style='font-family:monospace;padding:2rem'>No organization assigned to this account. Contact an administrator.</p>".html_safe, layout: false }
+          end
+          return
+        end
+
         @stats = Rails.cache.fetch("dashboard_stats_org_#{org.id}", expires_in: 2.minutes) do
           # Агрегація Війська (scoped to organization)
           total_trees = org.trees.count

@@ -5,14 +5,15 @@ class DashboardLayout < ApplicationComponent
   # @param current_user [User] authenticated user (passed from controller)
   # @param current_path [String] request path for nav highlighting + breadcrumbs
   # @param ews_alert_count [Integer] pre-computed unresolved alert count (eager-load in controller)
-  def initialize(title:, current_user:, current_path: "/", ews_alert_count: 0)
+  def initialize(title:, current_user:, current_path: "/", ews_alert_count: 0, content: nil)
     @title = title
     @current_user = current_user
     @current_path = current_path
     @ews_alert_count = ews_alert_count
+    @content = content
   end
 
-  def view_template(&block)
+  def view_template
     doctype
     html(class: "h-full") do
       render_head
@@ -35,7 +36,7 @@ class DashboardLayout < ApplicationComponent
 
             div(class: "flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar relative z-10") do
               div(class: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8") do
-                yield
+                render @content if @content
               end
             end
           end
