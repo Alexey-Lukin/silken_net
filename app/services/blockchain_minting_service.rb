@@ -482,13 +482,15 @@ class BlockchainMintingService < ApplicationService
   # [S6.17] Governance-aware Dynamic Tax Rate.
   # Reads from SystemParameter (synced from on-chain ProtocolParameters.sol via ParameterSyncWorker).
   # Falls back to DEFAULT_DYNAMIC_TAX_RATE if not set.
+  # Memoized per service instance to avoid N+1 queries inside batch loops.
   def dynamic_tax_rate
-    BigDecimal(SystemParameter.current(:dynamic_tax_rate, default: DEFAULT_DYNAMIC_TAX_RATE).to_s)
+    @dynamic_tax_rate ||= BigDecimal(SystemParameter.current(:dynamic_tax_rate, default: DEFAULT_DYNAMIC_TAX_RATE).to_s)
   end
 
   # [S6.17] Governance-aware Insurance Pool Threshold.
+  # Memoized per service instance to avoid N+1 queries inside batch loops.
   def insurance_pool_threshold
-    SystemParameter.current(:insurance_pool_threshold, default: DEFAULT_INSURANCE_POOL_THRESHOLD).to_i
+    @insurance_pool_threshold ||= SystemParameter.current(:insurance_pool_threshold, default: DEFAULT_INSURANCE_POOL_THRESHOLD).to_i
   end
 
   # [S6.17] Computed threshold in wei for on-chain balance comparison.
