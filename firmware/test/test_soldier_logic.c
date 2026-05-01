@@ -22,6 +22,7 @@
 #define MESH_DID_CACHE_SIZE        3  /* [FW.21] 3 slots; DR8/DR9/DR11 mesh, DR10/DR12 EMA */
 #define OTA_BUFFER_SIZE            1024
 #define OTA_CHUNK_MAP_SIZE         256
+#define PANIC_FLAG_BIT             0x80  /* [FW.29] Bit 7 of StatusByte: panic flag */
 
 /* ════════════════════════════════════════════════════════════════════
  * EXTRACTED PURE-LOGIC FUNCTIONS
@@ -61,8 +62,8 @@ static void Pack_Soldier_Payload(
     lora_payload[8] = (uint8_t)(delta_t_seconds >> 8);
     lora_payload[9] = (uint8_t)(delta_t_seconds & 0xFF);
 
-    /* Byte 10: Bio-contract packed byte */
-    lora_payload[10] = bio_contract_byte;
+    /* Byte 10: Bio-contract packed byte — [FW.29] clear PANIC_FLAG_BIT */
+    lora_payload[10] = bio_contract_byte & 0x7F;
 
     /* Byte 11: TTL */
     lora_payload[11] = ttl;
@@ -107,7 +108,15 @@ static UnpackedPayload Unpack_Soldier_Payload(const uint8_t* p)
 static uint32_t Generate_DID(uint32_t uid0, uint32_t uid1, uint32_t uid2, uint32_t random)
 {
     uint32_t did = uid0 ^ (uid1 << 5) ^ (uid2 >> 3) ^ random;
-    if (did == 0) did = 0x511CEE01;
+    // [FW.24] HRNG-based fallback: avoid deterministic DID collision
+    if (did == 0) {
+        RNG_HandleTypeDef hrng_local = { .Instance = RNG };
+        uint32_t rng_fallback = 0;
+        for (int i = 0; i < 3 && rng_fallback == 0; i++) {
+            HAL_RNG_GenerateRandomNumber(&hrng_local, &rng_fallback);
+        }
+        did = (rng_fallback != 0) ? rng_fallback : (HAL_GetTick() ^ 0x511CEE01);
+    }
     return did;
 }
 
@@ -275,6 +284,7 @@ static void Build_Panic_Payload(uint8_t* payload, uint32_t did)
     payload[2] = (uint8_t)(did >> 8);
     payload[3] = (uint8_t)(did & 0xFF);
     payload[7] = 0xFF;   /* Panic marker in acoustic byte */
+    payload[10] = PANIC_FLAG_BIT; /* [FW.29] Panic flag in StatusByte */
     payload[11] = 5;     /* Extended TTL for emergency */
 }
 
@@ -359,7 +369,8 @@ TEST(test_pack_metabolism_big_endian) {
 TEST(test_pack_bio_contract) {
     uint8_t p[16];
     Pack_Soldier_Payload(p, 1, 0, 0, 0, 0, 0xC5, 3, 0); /* status=3, gp=5 */
-    ASSERT_EQ(p[10], 0xC5);
+    /* [FW.29] Bit 7 masked off: 0xC5 & 0x7F = 0x45 */
+    ASSERT_EQ(p[10], 0x45);
 }
 
 TEST(test_pack_ttl) {
@@ -408,7 +419,8 @@ TEST(test_pack_max_values) {
     ASSERT_EQ(u.temp, 127);
     ASSERT_EQ(u.acoustic, 255);
     ASSERT_EQ(u.metabolism, 0xFFFF);
-    ASSERT_EQ(u.bio_status, 3);
+    /* [FW.29] Bit 7 masked: Pack_BioContract(3,63)=0xFF & 0x7F=0x7F → status=1, gp=63 */
+    ASSERT_EQ(u.bio_status, 1);
     ASSERT_EQ(u.growth_points, 63);
     ASSERT_EQ(u.ttl, 255);
     ASSERT_EQ(u.firmware_version, 0xFFFF);
@@ -426,9 +438,11 @@ TEST(test_pack_zero_values) {
  * ════════════════════════════════════════════════════════════════════ */
 
 TEST(test_did_non_zero_guarantee) {
-    /* If XOR produces 0, fallback to 0x511CEE01 */
+    /* [FW.24] If XOR produces 0, HRNG fallback is used (mock returns 42) */
     uint32_t did = Generate_DID(0, 0, 0, 0);
-    ASSERT_EQ(did, (long long)0x511CEE01);
+    ASSERT_NE(did, (long long)0);
+    /* With HRNG mock returning 42, should get 42 instead of 0x511CEE01 */
+    ASSERT_EQ(did, 42);
 }
 
 TEST(test_did_deterministic) {
@@ -761,7 +775,33 @@ TEST(test_panic_other_bytes_zero) {
     ASSERT_EQ(p[6], 0);
     ASSERT_EQ(p[8], 0);
     ASSERT_EQ(p[9], 0);
-    ASSERT_EQ(p[10], 0);
+    /* p[10] now has PANIC_FLAG_BIT set (FW.29) — tested separately */
+}
+
+/* [FW.29] Panic flag disambiguation tests */
+TEST(test_panic_flag_set_in_emergency_payload) {
+    uint8_t p[16];
+    Build_Panic_Payload(p, 0xDEADBEEF);
+    ASSERT_TRUE(p[10] & PANIC_FLAG_BIT);
+    ASSERT_EQ(p[10], PANIC_FLAG_BIT);
+}
+
+TEST(test_normal_payload_panic_flag_clear) {
+    uint8_t p[16];
+    /* Even with bio_contract_byte that has bit 7 set, Pack masks it off */
+    Pack_Soldier_Payload(p, 0x12345678, 3000, 25, 200, 120, 0xFF, 3, 1);
+    ASSERT_FALSE(p[10] & PANIC_FLAG_BIT);
+    /* Also test that status/growth_points are preserved in lower 7 bits */
+    ASSERT_EQ(p[10], 0x7F);
+}
+
+/* [FW.24] DID HRNG fallback test */
+TEST(test_did_hrng_fallback_not_magic) {
+    /* When XOR gives 0, HRNG provides fallback — result should NOT be 0x511CEE01 */
+    uint32_t did = Generate_DID(0, 0, 0, 0);
+    ASSERT_NE(did, (long long)0);
+    /* Mock HRNG returns 42, so result should be 42, not the old magic constant */
+    ASSERT_NE(did, (long long)0x511CEE01);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1449,6 +1489,7 @@ int main(void)
     RUN(test_did_deterministic);
     RUN(test_did_unique_per_device);
     RUN(test_did_random_changes_output);
+    RUN(test_did_hrng_fallback_not_magic);
 
     printf("\n  Mesh Dedup (Anti-Pingpong):\n");
     RUN(test_mesh_empty_cache_unknown);
@@ -1495,6 +1536,8 @@ int main(void)
     RUN(test_panic_acoustic_marker);
     RUN(test_panic_extended_ttl);
     RUN(test_panic_other_bytes_zero);
+    RUN(test_panic_flag_set_in_emergency_payload);
+    RUN(test_normal_payload_panic_flag_clear);
 
     printf("\n  OnRxDone Boundary:\n");
     RUN(test_onrxdone_normal_16);

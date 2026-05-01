@@ -58,6 +58,8 @@
 // Fixed 1000 ms is insufficient for Starlink worst case.
 #define COAP_BASE_TIMEOUT_MS  2000       // Base timeout for CoAP session setup
 #define COAP_SEND_TIMEOUT_MS  5000       // Timeout for data send (includes Starlink worst case)
+#define COAP_MAX_RETRIES      3          // [FW.9] Maximum CoAP send retry attempts
+#define UART_RX_BUF_SIZE      128        // [FW.9] UART RX buffer for modem response parsing
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -571,6 +573,35 @@ static void Restore_ECB_Mode(void)
     }
 }
 
+// [FW.9] UART RX buffer for modem response parsing
+static uint8_t uart_rx_buf[UART_RX_BUF_SIZE];
+
+// [FW.9] Send AT command and wait for OK/ERROR response instead of blind delay.
+// Returns: 1 = OK received, 0 = ERROR or timeout
+static uint8_t SIM7070_SendATCommand_WithResponse(const char* command, uint32_t timeout_ms)
+{
+    memset(uart_rx_buf, 0, UART_RX_BUF_SIZE);
+    HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000);
+
+    // Read response with timeout
+    HAL_StatusTypeDef status = HAL_UART_Receive(&huart1, uart_rx_buf, UART_RX_BUF_SIZE - 1, timeout_ms);
+
+    // Check for OK in response (even if timeout due to partial read)
+    if (status == HAL_OK || status == HAL_TIMEOUT) {
+        // Search for "OK" in received data
+        for (uint8_t i = 0; i < UART_RX_BUF_SIZE - 1 && uart_rx_buf[i] != '\0'; i++) {
+            if (uart_rx_buf[i] == 'O' && uart_rx_buf[i+1] == 'K') return 1;
+        }
+        // Search for "ERROR"
+        for (uint8_t i = 0; i < UART_RX_BUF_SIZE - 4 && uart_rx_buf[i] != '\0'; i++) {
+            if (uart_rx_buf[i] == 'E' && uart_rx_buf[i+1] == 'R' &&
+                uart_rx_buf[i+2] == 'R' && uart_rx_buf[i+3] == 'O' &&
+                uart_rx_buf[i+4] == 'R') return 0;
+        }
+    }
+    return 0; // Timeout without OK
+}
+
 // =========================================================================
 // ПАКЕТНЕ ВІДПРАВЛЕННЯ ЧЕРЕЗ CoAP (Бінарний масив поверх UDP)
 // =========================================================================
@@ -669,39 +700,52 @@ void Flush_Cache_To_Rails(void)
     // UART RX is implemented (AT-blind issue 2.3). Without UART response parsing
     // we cannot detect send failure, so retry logic would be dead code.
 
-    // Ініціалізація CoAP сесії (UDP)
-    SIM7070_SendATCommand("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n",
-                          COAP_BASE_TIMEOUT_MS);
+    // [FW.9] CoAP send with retry logic — parse modem response instead of blind delay
+    uint8_t send_success = 0;
+    for (uint8_t retry = 0; retry < COAP_MAX_RETRIES && !send_success; retry++) {
+        // Refresh watchdog before each attempt
+        HAL_IWDG_Refresh(&hiwdg);
 
-    // 1. Початок команди.
-    // URI-Path: /telemetry/batch/<queen_uid> — сервер ідентифікує шлюз за UID,
-    // а не за IP, що вирішує проблему Starlink NAT та динамічних адрес.
-    snprintf(at_tx_buffer, sizeof(at_tx_buffer),
-             "AT+CCOAPSEND=0,2,\"telemetry/batch/%s\",%d,\"",
-             queen_uid, total_size * 2);
-    HAL_UART_Transmit(&huart1, (uint8_t*)at_tx_buffer, strlen(at_tx_buffer), 100);
+        // Open CoAP session
+        if (!SIM7070_SendATCommand_WithResponse("AT+CCOAPNEW=\"coap://api.silkennet.com:5683\"\r\n",
+                                                 COAP_BASE_TIMEOUT_MS)) {
+            continue; // Session open failed, retry
+        }
 
-    // 2. Перетворюємо зашифрований буфер у Hex-рядок на льоту і відправляємо в модем
-    char hex_byte[3];
-    for (int i = 0; i < total_size; i++) {
-        snprintf(hex_byte, sizeof(hex_byte), "%02x", encrypted_batch_buffer[i]);
-        HAL_UART_Transmit(&huart1, (uint8_t*)hex_byte, 2, 10);
+        // Build and send hex-encoded batch
+        snprintf(at_tx_buffer, sizeof(at_tx_buffer),
+                 "AT+CCOAPSEND=0,2,\"telemetry/batch/%s\",%d,\"",
+                 queen_uid, total_size * 2);
+        HAL_UART_Transmit(&huart1, (uint8_t*)at_tx_buffer, strlen(at_tx_buffer), 100);
+
+        char hex_byte[3];
+        for (int i = 0; i < total_size; i++) {
+            snprintf(hex_byte, sizeof(hex_byte), "%02x", encrypted_batch_buffer[i]);
+            HAL_UART_Transmit(&huart1, (uint8_t*)hex_byte, 2, 10);
+        }
+        HAL_UART_Transmit(&huart1, (uint8_t*)"\"\r\n", 3, 100);
+
+        // Wait for modem send confirmation with response parsing
+        HAL_IWDG_Refresh(&hiwdg);
+
+        // Read modem response instead of blind HAL_Delay
+        memset(uart_rx_buf, 0, UART_RX_BUF_SIZE);
+        HAL_StatusTypeDef rx_status = HAL_UART_Receive(&huart1, uart_rx_buf, UART_RX_BUF_SIZE - 1, COAP_SEND_TIMEOUT_MS);
+
+        if (rx_status == HAL_OK || rx_status == HAL_TIMEOUT) {
+            for (uint8_t j = 0; j < UART_RX_BUF_SIZE - 1 && uart_rx_buf[j] != '\0'; j++) {
+                if (uart_rx_buf[j] == 'O' && uart_rx_buf[j+1] == 'K') {
+                    send_success = 1;
+                    break;
+                }
+            }
+        }
+
+        HAL_IWDG_Refresh(&hiwdg);
+
+        // Close CoAP session
+        SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
     }
-
-    // 3. Завершуємо команду (Закриваємо лапки і імітуємо натискання Enter)
-    HAL_UART_Transmit(&huart1, (uint8_t*)"\"\r\n", 3, 100);
-
-    // Чекаємо, поки модем надішле дані через ефір та отримає UDP ACK від сервера.
-    // [PLAN 2.11] Збільшено з 2000 до 5000 мс для Starlink DTC worst-case latency.
-    // Refresh IWDG before AND after the blocking delay — the delay alone consumes
-    // ~19% of the 26.6s watchdog window. Without pre-refresh, time accumulated from
-    // cache packing + AES encryption + CCOAPNEW could push past the IWDG threshold.
-    HAL_IWDG_Refresh(&hiwdg);
-    HAL_Delay(COAP_SEND_TIMEOUT_MS);
-    HAL_IWDG_Refresh(&hiwdg);
-
-    // Закриваємо CoAP сесію, звільняючи ресурси модему
-    SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
 
     // [FIX FW.16: ECB Restoration with error recovery]
     // Flush_Cache_To_Rails() переключає CRYP на CBC для шифрування батча.
