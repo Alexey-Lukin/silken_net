@@ -33,6 +33,13 @@
 #define VCAP_LISTEN_THRESHOLD 2800
 #define PANIC_TTL             5
 
+/* [FW.18] Dual-threshold TinyML constants — mirror firmware/soldier/main.c §1.5а */
+#define TINYML_DEFAULT_WARNING       0.60f
+#define TINYML_DEFAULT_CRITICAL      0.85f
+#define TINYML_THRESHOLD_MIN_VALID   0.01f
+#define TINYML_THRESHOLD_MAX_VALID   0.99f
+#define TINYML_WARNING_ESCALATION    3
+
 /* TinyML event class IDs */
 #define ML_CLASS_SILENCE    0
 #define ML_CLASS_WIND       1
@@ -102,6 +109,81 @@ static void Process_TinyML(
             Trigger_Emergency_LoRa_TX();
         }
     }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * [FW.18] DUAL-THRESHOLD TINYML — pure-logic extraction
+ *   Mirror of firmware/soldier/main.c §1.11 helpers and Phase 1.5 zones.
+ *   IEEE 754 bit-copy uint32↔float for RTC roundtrip simulation.
+ * ══════════════════════════════════════════════════════════════════ */
+
+static inline uint32_t test_float_to_uint32(float f) {
+    uint32_t u; memcpy(&u, &f, sizeof(u)); return u;
+}
+static inline float test_uint32_to_float(uint32_t u) {
+    float f; memcpy(&f, &u, sizeof(f)); return f;
+}
+
+static float TinyML_Validate_Threshold(float raw, float fallback_default) {
+    if (!isfinite(raw)) return fallback_default;
+    if (raw < TINYML_THRESHOLD_MIN_VALID) return fallback_default;
+    if (raw > TINYML_THRESHOLD_MAX_VALID) return fallback_default;
+    return raw;
+}
+
+static void TinyML_Apply_Thresholds(float warn_raw, float crit_raw,
+                                     float* warn_out, float* crit_out) {
+    float w = TinyML_Validate_Threshold(warn_raw, TINYML_DEFAULT_WARNING);
+    float c = TinyML_Validate_Threshold(crit_raw, TINYML_DEFAULT_CRITICAL);
+    if (!(w < c)) {
+        w = TINYML_DEFAULT_WARNING;
+        c = TINYML_DEFAULT_CRITICAL;
+    }
+    *warn_out = w;
+    *crit_out = c;
+}
+
+/* Dual-threshold decision: replicates the SILENCE/WARNING/CRITICAL zones
+ * from firmware/soldier/main.c (FW.18). Updates acoustic_events (uint8_t
+ * with saturating increment) and warning_counter (uint8_t saturating @ 255).
+ * Returns 1 if Trigger_Emergency_LoRa_TX() was called this invocation. */
+static int Process_TinyML_Dual(
+    uint8_t ml_event_id,
+    float ml_confidence,
+    float warning_threshold,
+    float critical_threshold,
+    uint8_t* acoustic_events,
+    uint8_t* warning_counter)
+{
+    int emergency = 0;
+    if (ml_confidence >= critical_threshold) {
+        /* CRITICAL ZONE */
+        if (ml_event_id == ML_CLASS_CAVITATION) {
+            if (*acoustic_events < 255) (*acoustic_events)++;
+        } else if (ml_event_id == ML_CLASS_CHAINSAW) {
+            if (*acoustic_events < 255) (*acoustic_events)++;
+            Trigger_Emergency_LoRa_TX();
+            emergency = 1;
+        }
+        *warning_counter = 0;
+    } else if (ml_confidence >= warning_threshold) {
+        /* WARNING ZONE */
+        if (ml_event_id == ML_CLASS_CAVITATION || ml_event_id == ML_CLASS_CHAINSAW) {
+            if (*acoustic_events < 255) (*acoustic_events)++;
+            if (*warning_counter < 255) (*warning_counter)++;
+            if (*warning_counter >= TINYML_WARNING_ESCALATION) {
+                if (ml_event_id == ML_CLASS_CHAINSAW) {
+                    Trigger_Emergency_LoRa_TX();
+                    emergency = 1;
+                }
+                *warning_counter = 0;
+            }
+        }
+    } else {
+        /* SILENCE ZONE */
+        *warning_counter = 0;
+    }
+    return emergency;
 }
 
 /* Acoustic events saturation for payload packing (FW.12/FW.22) */
@@ -491,6 +573,259 @@ TEST(test_mixed_events_only_cavitation_counts)
 }
 
 /* ══════════════════════════════════════════════════════════════════
+ * 7. [FW.18] DUAL-THRESHOLD CONFIDENCE ZONES
+ * ══════════════════════════════════════════════════════════════════ */
+
+TEST(test_dual_threshold_silence_zone_no_action)
+{
+    reset_mocks();
+    uint8_t events = 5, warn = 2;
+    int em = Process_TinyML_Dual(ML_CLASS_CAVITATION, 0.59f,
+                                  TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                                  &events, &warn);
+    ASSERT_EQ(em, 0);
+    ASSERT_EQ(events, 5);     /* Не змінено */
+    ASSERT_EQ(warn, 0);       /* SILENCE → reset */
+    ASSERT_EQ(mock_emergency_tx_called, 0);
+}
+
+TEST(test_dual_threshold_warning_zone_at_boundary)
+{
+    /* confidence == warning_threshold → WARNING ZONE (≥, не >) */
+    reset_mocks();
+    uint8_t events = 0, warn = 0;
+    Process_TinyML_Dual(ML_CLASS_CAVITATION, TINYML_DEFAULT_WARNING,
+                        TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                        &events, &warn);
+    ASSERT_EQ(events, 1);     /* WARNING: acoustic_events++ */
+    ASSERT_EQ(warn, 1);       /* WARNING: counter++ */
+    ASSERT_EQ(mock_emergency_tx_called, 0);
+}
+
+TEST(test_dual_threshold_critical_just_below_no_emergency)
+{
+    /* confidence 0.84 < critical 0.85 → WARNING for chainsaw, NOT Emergency */
+    reset_mocks();
+    uint8_t events = 0, warn = 0;
+    int em = Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.84f,
+                                  TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                                  &events, &warn);
+    ASSERT_EQ(em, 0);
+    ASSERT_EQ(events, 1);     /* Counted as WARNING */
+    ASSERT_EQ(warn, 1);
+    ASSERT_EQ(mock_emergency_tx_called, 0);
+}
+
+TEST(test_dual_threshold_critical_zone_at_boundary)
+{
+    /* confidence == critical_threshold → CRITICAL (≥) */
+    reset_mocks();
+    uint8_t events = 0, warn = 2;
+    int em = Process_TinyML_Dual(ML_CLASS_CHAINSAW, TINYML_DEFAULT_CRITICAL,
+                                  TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                                  &events, &warn);
+    ASSERT_EQ(em, 1);         /* Emergency TX triggered */
+    ASSERT_EQ(events, 1);
+    ASSERT_EQ(warn, 0);       /* CRITICAL resets counter */
+    ASSERT_EQ(mock_emergency_tx_called, 1);
+}
+
+TEST(test_dual_threshold_warning_escalation_chainsaw)
+{
+    /* 3 послідовних WARNING для chainsaw → ескальований Emergency TX */
+    reset_mocks();
+    uint8_t events = 0, warn = 0;
+    int em1 = Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.70f,
+                                   TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                                   &events, &warn);
+    ASSERT_EQ(em1, 0);
+    ASSERT_EQ(warn, 1);
+    int em2 = Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.70f,
+                                   TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                                   &events, &warn);
+    ASSERT_EQ(em2, 0);
+    ASSERT_EQ(warn, 2);
+    int em3 = Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.70f,
+                                   TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                                   &events, &warn);
+    ASSERT_EQ(em3, 1);                    /* Escalated */
+    ASSERT_EQ(warn, 0);                   /* Reset after escalation */
+    ASSERT_EQ(events, 3);                 /* All three counted */
+    ASSERT_EQ(mock_emergency_tx_called, 1);
+}
+
+TEST(test_dual_threshold_warning_no_escalation_for_cavitation)
+{
+    /* Кавітація (class 2) у WARNING-зоні не ескалюється навіть при 5×.
+     * Тільки chainsaw отримує fallback Emergency TX. */
+    reset_mocks();
+    uint8_t events = 0, warn = 0;
+    for (int i = 0; i < 5; i++) {
+        Process_TinyML_Dual(ML_CLASS_CAVITATION, 0.70f,
+                            TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                            &events, &warn);
+    }
+    ASSERT_EQ(mock_emergency_tx_called, 0);
+    ASSERT_EQ(events, 5);
+    /* warn буде або 2 (5%3 reset cycle), або інше значення — головне, що
+     * за весь прогін Emergency TX не викликали жодного разу */
+}
+
+TEST(test_dual_threshold_silence_resets_counter_between_warnings)
+{
+    /* WARNING → WARNING → SILENCE (скидає лічильник) → WARNING → НЕ ескалюється */
+    reset_mocks();
+    uint8_t events = 0, warn = 0;
+    Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.70f,
+                        TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                        &events, &warn);
+    Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.70f,
+                        TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                        &events, &warn);
+    ASSERT_EQ(warn, 2);
+    /* SILENCE — наприклад низька confidence */
+    Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.30f,
+                        TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                        &events, &warn);
+    ASSERT_EQ(warn, 0);     /* Reset */
+    Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.70f,
+                        TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                        &events, &warn);
+    ASSERT_EQ(warn, 1);     /* Тільки 1 — не ескалюємо */
+    ASSERT_EQ(mock_emergency_tx_called, 0);
+}
+
+TEST(test_dual_threshold_chainsaw_critical_resets_counter)
+{
+    /* WARNING-WARNING → потім різко CRITICAL → counter скидається на 0,
+     * наступний WARNING починає новий рахунок з 1, не 3 */
+    reset_mocks();
+    uint8_t events = 0, warn = 0;
+    Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.70f,
+                        TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                        &events, &warn);
+    Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.70f,
+                        TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                        &events, &warn);
+    ASSERT_EQ(warn, 2);
+    Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.95f,    /* CRITICAL */
+                        TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                        &events, &warn);
+    ASSERT_EQ(warn, 0);
+    ASSERT_EQ(mock_emergency_tx_called, 1);
+}
+
+TEST(test_dual_threshold_silence_with_chainsaw_class_no_emergency)
+{
+    /* Низька confidence для chainsaw → SILENCE → НЕ Emergency, навіть для класу 3 */
+    reset_mocks();
+    uint8_t events = 0, warn = 0;
+    int em = Process_TinyML_Dual(ML_CLASS_CHAINSAW, 0.10f,
+                                  TINYML_DEFAULT_WARNING, TINYML_DEFAULT_CRITICAL,
+                                  &events, &warn);
+    ASSERT_EQ(em, 0);
+    ASSERT_EQ(events, 0);
+    ASSERT_EQ(mock_emergency_tx_called, 0);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * 8. [FW.18] THRESHOLD VALIDATION & RTC ROUNDTRIP
+ * ══════════════════════════════════════════════════════════════════ */
+
+TEST(test_validate_threshold_in_range)
+{
+    ASSERT_FLOAT_EQ(TinyML_Validate_Threshold(0.55f, 0.60f), 0.55f, 0.0001f);
+    ASSERT_FLOAT_EQ(TinyML_Validate_Threshold(0.95f, 0.60f), 0.95f, 0.0001f);
+}
+
+TEST(test_validate_threshold_below_min_falls_back)
+{
+    ASSERT_FLOAT_EQ(TinyML_Validate_Threshold(0.005f, 0.60f), 0.60f, 0.0001f);
+    ASSERT_FLOAT_EQ(TinyML_Validate_Threshold(0.0f, 0.85f), 0.85f, 0.0001f);
+    ASSERT_FLOAT_EQ(TinyML_Validate_Threshold(-1.0f, 0.85f), 0.85f, 0.0001f);
+}
+
+TEST(test_validate_threshold_above_max_falls_back)
+{
+    ASSERT_FLOAT_EQ(TinyML_Validate_Threshold(1.0f, 0.60f), 0.60f, 0.0001f);
+    ASSERT_FLOAT_EQ(TinyML_Validate_Threshold(99.0f, 0.85f), 0.85f, 0.0001f);
+}
+
+TEST(test_validate_threshold_nan_falls_back)
+{
+    float nan_val = (float)NAN;
+    ASSERT_FLOAT_EQ(TinyML_Validate_Threshold(nan_val, 0.60f), 0.60f, 0.0001f);
+}
+
+TEST(test_apply_thresholds_cold_boot_zeros)
+{
+    /* RTC cold boot: read returns 0x00000000 = float 0.0f → both invalid */
+    float w = 0, c = 0;
+    float zero = test_uint32_to_float(0x00000000);
+    TinyML_Apply_Thresholds(zero, zero, &w, &c);
+    ASSERT_FLOAT_EQ(w, TINYML_DEFAULT_WARNING, 0.0001f);
+    ASSERT_FLOAT_EQ(c, TINYML_DEFAULT_CRITICAL, 0.0001f);
+}
+
+TEST(test_apply_thresholds_inverted_falls_back_both)
+{
+    /* warn ≥ crit → invariant broken → BOTH default (atomic rollback) */
+    float w = 0, c = 0;
+    TinyML_Apply_Thresholds(0.90f, 0.50f, &w, &c);
+    ASSERT_FLOAT_EQ(w, TINYML_DEFAULT_WARNING, 0.0001f);
+    ASSERT_FLOAT_EQ(c, TINYML_DEFAULT_CRITICAL, 0.0001f);
+}
+
+TEST(test_apply_thresholds_equal_falls_back_both)
+{
+    /* warn == crit → no WARNING zone possible → defaults */
+    float w = 0, c = 0;
+    TinyML_Apply_Thresholds(0.70f, 0.70f, &w, &c);
+    ASSERT_FLOAT_EQ(w, TINYML_DEFAULT_WARNING, 0.0001f);
+    ASSERT_FLOAT_EQ(c, TINYML_DEFAULT_CRITICAL, 0.0001f);
+}
+
+TEST(test_apply_thresholds_valid_pair_passes_through)
+{
+    /* Tropical forest config: WARNING=0.70, CRITICAL=0.90 — has been OTA-applied */
+    float w = 0, c = 0;
+    TinyML_Apply_Thresholds(0.70f, 0.90f, &w, &c);
+    ASSERT_FLOAT_EQ(w, 0.70f, 0.0001f);
+    ASSERT_FLOAT_EQ(c, 0.90f, 0.0001f);
+}
+
+TEST(test_apply_thresholds_partial_corruption_one_default)
+{
+    /* warn corrupted (out of range) → warn=default; crit valid → crit kept,
+     * but if default warn (0.60) ≥ crit valid (0.55) → BOTH default */
+    float w = 0, c = 0;
+    TinyML_Apply_Thresholds(99.0f, 0.95f, &w, &c);
+    /* warn=0.60 (default), crit=0.95 (valid). 0.60 < 0.95 → kept as is. */
+    ASSERT_FLOAT_EQ(w, TINYML_DEFAULT_WARNING, 0.0001f);
+    ASSERT_FLOAT_EQ(c, 0.95f, 0.0001f);
+}
+
+TEST(test_threshold_rtc_roundtrip_bit_exact)
+{
+    /* Save → Load via uint32 bit-copy (mirrors RTC_BKP_DR13/DR14 path) */
+    float original_warn = 0.62f;
+    float original_crit = 0.88f;
+    uint32_t saved_w = test_float_to_uint32(original_warn);
+    uint32_t saved_c = test_float_to_uint32(original_crit);
+    /* simulate STOP2 + restore */
+    float loaded_w = test_uint32_to_float(saved_w);
+    float loaded_c = test_uint32_to_float(saved_c);
+    ASSERT_FLOAT_EQ(loaded_w, original_warn, 0.0f);   /* bit-exact */
+    ASSERT_FLOAT_EQ(loaded_c, original_crit, 0.0f);
+
+    /* Apply with realistic inputs from RTC roundtrip */
+    float w_applied = 0, c_applied = 0;
+    TinyML_Apply_Thresholds(loaded_w, loaded_c, &w_applied, &c_applied);
+    ASSERT_FLOAT_EQ(w_applied, 0.62f, 0.0001f);
+    ASSERT_FLOAT_EQ(c_applied, 0.88f, 0.0001f);
+}
+
+/* ══════════════════════════════════════════════════════════════════
  * MAIN
  * ══════════════════════════════════════════════════════════════════ */
 int main(void)
@@ -537,6 +872,31 @@ int main(void)
     printf("\n  Multi-Cycle Accumulation:\n");
     RUN(test_multiple_cavitation_events_accumulate);
     RUN(test_mixed_events_only_cavitation_counts);
+
+    printf("\n  [FW.18] Dual-Threshold Confidence Zones:\n");
+    RUN(test_dual_threshold_silence_zone_no_action);
+    RUN(test_dual_threshold_warning_zone_at_boundary);
+    RUN(test_dual_threshold_critical_just_below_no_emergency);
+    RUN(test_dual_threshold_critical_zone_at_boundary);
+    RUN(test_dual_threshold_warning_escalation_chainsaw);
+    RUN(test_dual_threshold_warning_no_escalation_for_cavitation);
+    RUN(test_dual_threshold_silence_resets_counter_between_warnings);
+    RUN(test_dual_threshold_chainsaw_critical_resets_counter);
+    RUN(test_dual_threshold_silence_with_chainsaw_class_no_emergency);
+
+    printf("\n  [FW.18] Threshold Validation & RTC Roundtrip:\n");
+    RUN(test_validate_threshold_in_range);
+    RUN(test_validate_threshold_below_min_falls_back);
+    RUN(test_validate_threshold_above_max_falls_back);
+    RUN(test_validate_threshold_nan_falls_back);
+    RUN(test_apply_thresholds_cold_boot_zeros);
+    RUN(test_apply_thresholds_inverted_falls_back_both);
+    RUN(test_apply_thresholds_equal_falls_back_both);
+    RUN(test_apply_thresholds_valid_pair_passes_through);
+    RUN(test_apply_thresholds_partial_corruption_one_default);
+    RUN(test_threshold_rtc_roundtrip_bit_exact);
+
+    (void)_prev;
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n", tests_run - tests_failed, tests_failed);

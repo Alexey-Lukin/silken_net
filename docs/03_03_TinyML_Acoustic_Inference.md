@@ -35,7 +35,7 @@
 | **`silken_net_audio_model.h`** | 🔴 BLOCKER — **відсутній у репозиторії** |
 | **Tensor Arena (SRAM budget)** | 🔴 BLOCKER — розмір невідомий з коду (визначений у `.h`) |
 | **DSP preprocessing (FFT/MFCC)** | 🟡 ВІДСУТНІЙ — тільки лінійна нормалізація |
-| **Confidence threshold (0.80)** | 🟡 OPEN — хардкодований, не налаштовується |
+| **Confidence threshold (0.80)** | ✅ FW.18: dual-threshold у RTC DR13/DR14 (defaults 0.60/0.85), OTA-tunable (dispatcher deferred до FW.8) |
 | **Decision: Cavitation → acoustic_events++** | ✅ Реалізовано (але мертве: inference закоментована) |
 | **Decision: Chainsaw → Emergency LoRa TX** | ✅ Реалізовано (але мертве: inference закоментована) |
 | **Host-based tests для аудіо-пайплайну** | ✅ Реалізовано (`firmware/test/test_tinyml_pipeline.c`, 25 тестів) |
@@ -193,23 +193,18 @@ for(int i = 0; i < 512; i++) {
 
 ### 🟡 BLOCKER-6: Хардкодований поріг впевненості `0.80`
 
-**Статус:** 🤖 Дизайн дворівневої системи порогів завершений (див. нижче). Реалізація — наступний цикл.
+**Статус:** 🤖 ✅ **Реалізовано (FW.18, partial)** — RTC-storage та dual-threshold decision logic у `firmware/soldier/main.c` (секція 1.5а + Phase 1.5). Деривація OTA CMD dispatcher на Soldier — deferred до спільного циклу з FW.8 (`CMD_SET_THRESHOLDS` 0x9A потребує єдиного CMD-фреймворку, який поки існує лише в Queen-firmware, див. `03_02` §6).
 
-**Файл:** `firmware/soldier/main.c:357`
+**Файл (історичний):** `firmware/soldier/main.c:357` — рядок `if (ml_confidence > 0.80)` замінено на dual-threshold zone-логіку.
 
-```c
-if (ml_confidence > 0.80) {
-```
+**Проблема (вирішено для firmware-частини):**
+1. ~~Поріг 80% хардкодований у Flash. Зміна вимагає повної перекомпіляції та перепрошивки.~~ → Тепер обидва пороги завантажуються з RTC `DR13/DR14` на boot, дефолти 0.60/0.85.
+2. ~~Неможливо дистанційно налаштувати (через OTA), що критично для польових умов.~~ → RTC-storage готовий, OTA CMD dispatcher на Soldier deferred до FW.8 cycle.
+3. ~~Відсутня градація: бінарне `так/ні`.~~ → Реалізовано SILENCE / WARNING / CRITICAL зони з ескалацією.
 
-**Проблема:**
-1. Поріг 80% хардкодований у Flash. Зміна вимагає повної перекомпіляції та перепрошивки.
-2. Неможливо дистанційно налаштувати (через OTA), що критично для польових умов (різні типи лісу, шум, сезони).
-3. Відсутня градація: при `ml_confidence = 0.79` → ніякої дії, при `0.81` → повна тривога. Немає "попереднього сигналу" при 0.50–0.79.
-
-**Необхідна дія:**
-- Додати `confidence_threshold` до `lora_payload` або OTA-конфігурації.
-- Або зберігати поріг у RTC Backup регістрі (оновлюється через OTA-команду).
-- Розглянути дворівневий поріг: `WARNING_THRESHOLD (0.60)` → лічильник події; `CRITICAL_THRESHOLD (0.85)` → Emergency TX.
+**Необхідна дія (виконана):**
+- ✅ Зберігати поріг у RTC Backup регістрі (оновлюється через OTA-команду — інфраструктура готова, dispatcher deferred).
+- ✅ Дворівневий поріг: `WARNING_THRESHOLD (0.60)` → лічильник події; `CRITICAL_THRESHOLD (0.85)` → Emergency TX.
 
 #### 🤖 Дизайн Dual-Threshold System (FW.18)
 
@@ -241,44 +236,50 @@ if (ml_confidence > 0.80) {
 **Firmware змінні (RTC Backup Domain — зберігаються при STOP2):**
 
 ```c
-// Зберігання у RTC Backup Registers (updateable via OTA CMD)
-// RTC_BKP_DR6 = WARNING_THRESHOLD  (float as uint32: default 0x3F19999A = 0.60)
-// RTC_BKP_DR7 = CRITICAL_THRESHOLD (float as uint32: default 0x3F59999A = 0.85)
+// Зберігання у RTC Backup Registers (updateable via OTA CMD).
+// SSOT для розташування — 03_01 §2 (Soldier RTC Backup Map).
+// DR13 = WARNING_THRESHOLD  (float як uint32 bit-copy: default 0x3F19999A = 0.60f)
+// DR14 = CRITICAL_THRESHOLD (float як uint32 bit-copy: default 0x3F59999A = 0.85f)
+//
+// Magic-маркер не використовується: cold boot RTC=0x00000000 → float 0.0f →
+// не проходить діапазон [TINYML_THRESHOLD_MIN_VALID=0.01, MAX_VALID=0.99] →
+// TinyML_Validate_Threshold() віддає дефолт. Інваріант warning<critical
+// атомарно відновлюється через TinyML_Apply_Thresholds().
 
 // Runtime variables
 uint8_t warning_counter = 0;       // Лічильник WARNING-подій між TX
-#define WARNING_ESCALATION_COUNT 3  // Після 3 WARNING поспіль → downgrade до CRITICAL
+                                    // (SRAM зберігається в STOP2; reset при VBAT-loss/IWDG)
+#define TINYML_WARNING_ESCALATION 3 // Після 3 WARNING поспіль → ескалація CRITICAL
 ```
+
+> **⚠️ Історичне уточнення:** Оригінальний дизайн використовував `RTC_BKP_DR6/DR7`, але після оновлення SSOT-таблиці RTC у `03_01` §2 (FW.21 розширення EMA) ці регістри зайняті: `DR6 = mesh_relay_payload[12..15]`, `DR7 = tree_did`. Реалізація FW.18 використовує **DR13/DR14** з резерву `DR13..DR15`, що залишився після FW.21.
 
 **Логіка рішення (замість поточного `if (ml_confidence > 0.80)`):**
 
 ```c
-float warning_threshold  = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR6));
-float critical_threshold = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR7));
+// На boot: TinyML_Apply_Thresholds() завантажує валідовану пару з DR13/DR14
+// у глобальні tinyml_warning_threshold / tinyml_critical_threshold.
+// При cold boot або корупції — дефолти 0.60/0.85.
 
-// Fallback якщо RTC порожній (cold start без OTA)
-if (warning_threshold < 0.01f || warning_threshold > 0.99f)  warning_threshold  = 0.60f;
-if (critical_threshold < 0.01f || critical_threshold > 0.99f) critical_threshold = 0.85f;
-
-if (ml_confidence >= critical_threshold) {
+if (ml_confidence >= tinyml_critical_threshold) {
     // === CRITICAL ZONE ===
     if (ml_event_id == 2) {  // Кавітація
         if (acoustic_events < 255) acoustic_events++;  // FW.22 saturating
-    }
-    if (ml_event_id == 3) {  // Бензопила / вандалізм
+    } else if (ml_event_id == 3) {  // Бензопила / вандалізм
+        if (acoustic_events < 255) acoustic_events++;
         Trigger_Emergency_LoRa_TX();   // НЕГАЙНИЙ panic TX, PANIC_TTL=5
     }
     warning_counter = 0;  // Reset — ми вже відреагували
 
-} else if (ml_confidence >= warning_threshold) {
+} else if (ml_confidence >= tinyml_warning_threshold) {
     // === WARNING ZONE ===
     if (ml_event_id == 2 || ml_event_id == 3) {
         if (acoustic_events < 255) acoustic_events++;  // Рахуємо, але не паніка
-
-        warning_counter++;
-        if (warning_counter >= WARNING_ESCALATION_COUNT) {
-            // 3+ послідовних WARNING → ескалація в CRITICAL
-            // (ймовірно реальна загроза, модель не впевнена через шум)
+        if (warning_counter < 255) warning_counter++;
+        if (warning_counter >= TINYML_WARNING_ESCALATION) {
+            // 3+ послідовних WARNING → ескалація. Тільки бензопила отримує
+            // fallback Emergency TX — кавітація рідко погіршується через шум,
+            // тож ескалація обмежується саме ml_event_id == 3.
             if (ml_event_id == 3) {
                 Trigger_Emergency_LoRa_TX();  // Ескальований alarm
             }
@@ -291,16 +292,33 @@ if (ml_confidence >= critical_threshold) {
 }
 ```
 
-**OTA-оновлення порогів (через CoAP CMD downlink):**
+**OTA-оновлення порогів (через CoAP CMD downlink) — DEFERRED до FW.8 cycle:**
 
 ```c
-// Queen → Soldier OTA command: CMD_SET_THRESHOLDS
+// Queen → Soldier OTA command: CMD_SET_THRESHOLDS (0x9A — coordinated with FW.8)
 // Payload: [CMD_ID:1][WARNING:4][CRITICAL:4] = 9 байт
-case CMD_SET_THRESHOLDS:
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR6, payload_as_uint32(warning_val));
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR7, payload_as_uint32(critical_val));
-    break;
+//
+// Виконується після TinyML_Apply_Thresholds() валідації, не як raw write —
+// інакше зловмисник може записати warn=0.99/crit=0.50 і ефективно вимкнути
+// ескалацію. Apply гарантує інваріант warn<crit та діапазон.
+//
+// case CMD_SET_THRESHOLDS:
+//     {
+//         float w = bytes_to_float(&payload[1]);
+//         float c = bytes_to_float(&payload[5]);
+//         TinyML_Apply_Thresholds(w, c, &tinyml_warning_threshold,
+//                                  &tinyml_critical_threshold);
+//         // Phase 5 writeback автоматично персистить оновлені значення.
+//         break;
+//     }
 ```
+
+**Стан:** Soldier-side OTA CMD dispatcher на момент FW.18 не реалізовано.
+Поточний Soldier-firmware обробляє лише `OTA_MARKER (0x99)` (bytecode chunks
+у Flash) — виділеного `CMD:` фреймворку для Soldier немає (тоді як Queen
+має його у вигляді `if cmd_decrypt_buf starts "CMD:"`, див. `03_02` §6).
+Імплементація CMD-dispatcher на Soldier очікує спільного циклу з [FW.8] —
+обидва завдання потребують одного й того ж downlink-фреймворку.
 
 **Backend mirror (для серверного аналізу):**
 
@@ -332,18 +350,34 @@ case CMD_SET_THRESHOLDS:
 4. **Audit trail:** Backend бачить градацію (acoustic_events від 1 до 254 = warning; 255 = saturated/critical)
 5. **RTC Backup:** Пороги зберігаються при STOP2 sleep — не потрібна Flash-перепрошивка
 
-**Тести (додати до `test_tinyml_pipeline.c`):**
+**Тести (реалізовано в `firmware/test/test_tinyml_pipeline.c`):**
 
-- `test_warning_threshold_below` — confidence 0.59 → no action
-- `test_warning_threshold_at` — confidence 0.60 → acoustic_events++ (WARNING)
-- `test_critical_threshold_below` — confidence 0.84 → acoustic_events++ but no Emergency TX
-- `test_critical_threshold_at` — confidence 0.85 → Emergency TX (CRITICAL)
-- `test_warning_escalation` — 3× WARNING → Emergency TX
-- `test_warning_counter_reset` — SILENCE → warning_counter = 0
-- `test_rtc_threshold_update` — OTA CMD → RTC DR6/DR7 оновлені
-- `test_rtc_cold_start_defaults` — empty RTC → fallback 0.60/0.85
+19 нових host-based unit tests (44 total у TinyML suite):
 
-**Блокує:** Гнучкість налаштування в польових умовах, адаптивний моніторинг.
+*Dual-Threshold Confidence Zones (9):*
+- `test_dual_threshold_silence_zone_no_action` — confidence < warning → no action
+- `test_dual_threshold_warning_zone_at_boundary` — c == warning → WARNING (≥, не >)
+- `test_dual_threshold_critical_just_below_no_emergency` — 0.84 → WARNING для chainsaw, не Emergency
+- `test_dual_threshold_critical_zone_at_boundary` — c == critical → Emergency TX
+- `test_dual_threshold_warning_escalation_chainsaw` — 3× WARNING → fallback Emergency
+- `test_dual_threshold_warning_no_escalation_for_cavitation` — кавітація не ескалюється навіть при 5×
+- `test_dual_threshold_silence_resets_counter_between_warnings` — SILENCE → counter=0
+- `test_dual_threshold_chainsaw_critical_resets_counter` — CRITICAL після WARNING-серії → counter=0
+- `test_dual_threshold_silence_with_chainsaw_class_no_emergency` — клас 3 + низька confidence → no emergency
+
+*Threshold Validation & RTC Roundtrip (10):*
+- `test_validate_threshold_in_range` — 0.55 / 0.95 → kept
+- `test_validate_threshold_below_min_falls_back` — 0.005 / 0.0 / negative → default
+- `test_validate_threshold_above_max_falls_back` — 1.0 / 99.0 → default
+- `test_validate_threshold_nan_falls_back` — NaN → default
+- `test_apply_thresholds_cold_boot_zeros` — RTC = 0x00 → defaults
+- `test_apply_thresholds_inverted_falls_back_both` — warn ≥ crit → atomic rollback
+- `test_apply_thresholds_equal_falls_back_both` — warn == crit → defaults
+- `test_apply_thresholds_valid_pair_passes_through` — tropical config (0.70/0.90) → kept
+- `test_apply_thresholds_partial_corruption_one_default` — частковий fallback з invariant check
+- `test_threshold_rtc_roundtrip_bit_exact` — float32 ↔ uint32 bit-copy через DR13/DR14
+
+**Блокує:** ~~Гнучкість налаштування~~ → закрито на firmware-рівні. Залишковий блокер: OTA CMD dispatcher на Soldier (DEFERRED → FW.8 cycle).
 
 ---
 
@@ -789,7 +823,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`, 25 тестів) |
 | 6 | Smoke-тест: class 2 → `acoustic_events++` верифіковано | 🔴 Відкрито |
 | 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | 🔴 Відкрито |
-| 8 | Confidence threshold конфігурується (не хардкод) | 🟡 Дизайн завершено (BLOCKER-6 dual-threshold 🤖). Реалізація — наступний цикл |
+| 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests. OTA CMD dispatcher на Soldier — deferred до FW.8 cycle |
 | 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | 🟡 Відкрито |
 | 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment, 8 тестів) |
 

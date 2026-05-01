@@ -11,7 +11,7 @@
 - **Дата аудиту:** 2026-05-01
 - **Кількість тестів:**
   - RSpec (Ruby): ~290+ spec files, ~49,000+ lines
-  - Firmware (C): 264 tests (105 soldier + 83 queen + 33 bio-contract + 25 tinyml + 18 encryption)
+  - Firmware (C): 283 tests (105 soldier + 83 queen + 33 bio-contract + 44 tinyml + 18 encryption)
   - Foundry (Solidity): 6 test suites, ~115+ tests
 
 ---
@@ -148,15 +148,17 @@
 | IV Handling | 3 | 🟢 | |
 | Encrypt/Decrypt Verify | 3 | 🟢 | Mock HAL |
 
-### 2.5 TinyML Pipeline (test_tinyml_pipeline.c — 25 tests)
+### 2.5 TinyML Pipeline (test_tinyml_pipeline.c — 44 tests)
 
 | Область | Тести | Покриття | ⚠️ |
 |---------|-------|----------|-----|
 | Audio Normalization | 5 | 🟢 | |
-| Confidence Threshold | 5 | 🟢 | Mock inference |
+| Confidence Threshold (legacy 0.80 binary) | 5 | 🟢 | Mock inference |
 | Event Classification | 5 | 🟢 | |
 | Saturation (FW.22) | 5 | 🟢 | |
 | Vibration Guard (FW.11) | 5 | 🟢 | |
+| **[FW.18] Dual-Threshold Zones** | **9** | 🟢 **Нове** | SILENCE/WARNING/CRITICAL + escalation 3× для chainsaw, no-escalation для cavitation, counter reset |
+| **[FW.18] Threshold Validation & RTC Roundtrip** | **10** | 🟢 **Нове** | range/NaN/cold-boot/inversion fallbacks + IEEE 754 bit-exact roundtrip через DR13/DR14 |
 
 ---
 

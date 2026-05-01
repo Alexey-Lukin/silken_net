@@ -659,7 +659,7 @@ HAL_CRYP_Init(&hcryp);
 
 > **SSOT (єдина точка істини):** ця таблиця — **єдине** канонічне джерело розкладки RTC Backup Domain Soldier'а. Будь-яка зміна (додавання нового поля, перепакування біт-полів, новий магічний маркер) **повинна** починатися з оновлення цієї таблиці. Документація `03_04` (Lorenz state), `03_03` (TinyML EMA) та firmware-код посилаються на цю таблицю, а не дублюють її.
 
-> **Політика розширення (cross-ref [ARCH.28](10_02_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). DR13/DR14/DR15 — **єдиний резерв**. Перед додаванням нової фічі: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні.
+> **Політика розширення (cross-ref [ARCH.28](10_02_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). Після [FW.18] вільний залишився **лише DR15**. Перед додаванням нової фічі: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні.
 
 RTC Backup Domain не скидається при STOP2 та більшості реботів (окрім повного знеструмлення або `HAL_RTCEx_BKUPWrite` з нулями).
 
@@ -678,9 +678,9 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `DR10` | `ema_delta_t_x100` | uint32 | [FW.21] EMA delta_t × 100 (fixed-point 0.01 с) |
 | `DR11` | `recent_mesh_dids[2]` | uint32 | Anti-pingpong DID cache, слот 2 (FW.21 fallback: vcap_x10 запаковано в DR12) |
 | `DR12` | `[valid:8 \| count:8 \| ema_vcap_x10:16]` | uint32 | [FW.21] Метадані EMA + упакований vcap_x10 (max 55000 ≤ 2^16) |
-| `DR13` | *Reserved* | uint32 | Резерв для майбутніх FW-задач |
-| `DR14` | *Reserved* | uint32 | Резерв для майбутніх FW-задач |
-| `DR15` | *Reserved* | uint32 | Резерв для майбутніх FW-задач |
+| `DR13` | `tinyml_warning_threshold` | float32→uint32 | [FW.18] WARNING-зона TinyML confidence (default 0.60f, range [0.01, 0.99]) |
+| `DR14` | `tinyml_critical_threshold` | float32→uint32 | [FW.18] CRITICAL-зона TinyML confidence (default 0.85f, range [0.01, 0.99]) |
+| `DR15` | *Reserved* | uint32 | Резерв для майбутніх FW-задач (єдиний вільний регістр) |
 | `DR16` | `lorenz_x` | float32→uint32 | [FW.6] X-координата атрактора Лоренца (IEEE 754 bit-copy) |
 | `DR17` | `lorenz_y` | float32→uint32 | [FW.6] Y-координата атрактора Лоренца |
 | `DR18` | `lorenz_z` | float32→uint32 | [FW.6] Z-координата атрактора (інтенсивність конвекції) |
@@ -688,7 +688,9 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 > **DR7 — Незмінний DID:** Записується один раз при першому старті (`tree_did == 0`). Якщо `tree_did != 0` при наступних стартах, запис пропускається. Це гарантує унікальність ідентифікатора навіть після OTA-ребуту.
 
-> **DR16-DR19 — Стан Лоренца (FW.6):** Зберігається/відновлюється при кожному циклі STOP2. При первинному старті або після повного знеструмлення (DR19 ≠ `0x4C5A5354`) система переходить у режим ініціалізації від `chaos_seed`. NaN/Inf перевірка через `isfinite()` захищає від бітових помилок у Backup Domain. STM32WLE5 підтримує 20 backup registers (DR0-DR19). DR13-DR15 зарезервовано для майбутніх FW-задач.
+> **DR16-DR19 — Стан Лоренца (FW.6):** Зберігається/відновлюється при кожному циклі STOP2. При первинному старті або після повного знеструмлення (DR19 ≠ `0x4C5A5354`) система переходить у режим ініціалізації від `chaos_seed`. NaN/Inf перевірка через `isfinite()` захищає від бітових помилок у Backup Domain. STM32WLE5 підтримує 20 backup registers (DR0-DR19). Після [FW.18] DR13/DR14 зайнято TinyML-порогами; DR15 — єдиний вільний резерв.
+
+> **DR13/DR14 — TinyML confidence thresholds (FW.18):** Замість hardcoded `0.80` у `firmware/soldier/main.c` Phase 1.5 використовуються два пороги, що зчитуються на boot з RTC (IEEE 754 bit-copy через `uint32_to_float`) та валідуються діапазоном `[TINYML_THRESHOLD_MIN_VALID=0.01, TINYML_THRESHOLD_MAX_VALID=0.99]`. Magic-маркер не використовується (cold boot DR=0x00000000 → float 0.0f → invalid → fallback на дефолт). Інваріант `warning < critical` гарантується через `TinyML_Apply_Thresholds()` — при інверсії або рівності обидва пороги атомарно відкочуються на дефолти 0.60/0.85. Phase 5 writeback (`DR13/DR14`) персистить OTA-set значення через STOP2; деталі логіки і таблиця зон — [03_03 §214 BLOCKER-6](03_03_TinyML_Acoustic_Inference.md#-blocker-6-хардкодований-поріг-впевненості-080).
 
 ### 2.1 Magic Markers (Канонічна Таблиця) [DOC.3]
 
