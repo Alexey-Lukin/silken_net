@@ -114,7 +114,15 @@ module ApplicationWeb3Worker
         scope = scope.where(created_at: Time.iso8601(created_at_iso))
       rescue ArgumentError
         # Некоректний формат — шукаємо без partition pruning
+        # [S6.16]: трекаємо як degraded path — некоректний ISO-формат призводить
+        # до глобального сканування всіх партицій (O(P × log N)).
+        SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
+          .increment(labels: { caller: "ApplicationWeb3Worker:invalid_iso8601" })
       end
+    else
+      # [S6.16]: відсутній created_at_iso — гарячий шлях не повинен туди потрапляти.
+      SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
+        .increment(labels: { caller: "ApplicationWeb3Worker:missing_created_at_iso" })
     end
 
     log = scope.first

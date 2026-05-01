@@ -752,7 +752,13 @@ total = base + bonus    # max: 10_000 + 63×100 = 16_300 lamports = 0.016 USDC
 
 > **PATH 4 (Solana) НЕ викликає `lock_and_mint!`** — Solana — паралельна рейка з прямим SPL Transfer без локування growth_points. growth_points і SCC mint обробляються Path 1, Solana — окрема мікро-винагорода, що не торкається balance/locked_balance.
 
-> **TokenomicsEvaluatorWorker bypass [S6.12]:** Path 2 НЕ перевіряє `verified_by_iotex?` / `oracle_status_fulfilled?`. Це **навмисно**: tokenomics-flow агрегує підтверджені (= уже мінтнуті через Path 1) growth_points за період і нараховує бонус-винагороди. Без цього розмежування — циклічна залежність "не можна нарахувати бонус, доки оракул не підтвердив сам бонус". Документовано в `S6.12` action item.
+> **TokenomicsEvaluatorWorker bypass [S6.12] — фактичний інваріант:** Path 2 НЕ перевіряє `verified_by_iotex?` / `oracle_status_fulfilled?`. Це **навмисно**, але обґрунтування потребує точності:
+>
+> - `growth_points` зараховуються у `wallet.balance` через `Wallet#credit!` у `TelemetryUnpackerService.commit_telemetry` **до** проходження пакетом IoTeX/Chainlink. Тобто upstream-перевірка для Path 2 — це **AES-256-CBC decrypt + `valid_sensor_data?`** (per-packet integrity perimeter), а **не** повний oracle pipeline.
+> - Path 1 (oracle-driven mint per-telemetry) і Path 2 (hourly tokenomics aggregate) — **окремі шляхи мінтингу для тих самих growth_points**: Path 1 мінтить за конкретним verified `telemetry_log`, Path 2 агрегує накопичений `wallet.balance`. Без розмежування — циклічна залежність "не можна нарахувати tokenomics-bonus, доки oracle не підтвердив сам bonus".
+> - **Hadron KYC є справжнім security perimeter Path 2** — `BlockchainMintingService` raise `Compliance Breach` для будь-якого `hadron_kyc_status != "approved"` незалежно від присутності `telemetry_log`. Це блокує ескалацію fake-`growth_points` (з compromised AES-key) у мінт через non-KYC wallet.
+> - Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]" (3 examples).
+> - **Залишковий ризик (документований):** компрометація AES-key конкретного дерева → fake `growth_points` зараховуються `Wallet#credit!` → Path 2 щогодини мінтить SCC якщо wallet KYC-approved. Mitigation track: per-device HKDF key provisioning (FW.1 / SEC.3) + AES-256-CCM з MIC (FW.2) — обидва P0 у roadmap до польового deploy.
 
 > **Path 3 raises замість silent-skip:** Slashing rollback — фінансово-критична операція. Беззвучне ігнорування призвело б до асиметрії "burn застосовано, mint-rollback пропущено → дисбаланс supply". Тому будь-який guard fail у Path 3 → exception + Sentry.
 

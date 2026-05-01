@@ -248,6 +248,21 @@ module SilkenNet
       labels: [ :provider ]
     )
 
+    # [S6.16]: TelemetryLog lookup without partition pruning (degraded path).
+    # Incremented when a caller looks up a TelemetryLog without supplying
+    # `created_at_iso`. Without it, PostgreSQL must scan ALL monthly partitions
+    # (Global Partition Scan) — O(P × log N) instead of O(log N). At billions
+    # of rows this becomes a multi-second query that blocks the request thread.
+    # Acceptable in cold paths (admin tools, manual rollback); ALERT if seen
+    # in hot path (oracle callbacks, web3 workers) — indicates upstream worker
+    # forgot to pass `created_at_iso`. Grafana rule:
+    #     rate(silkennet_telemetry_log_unpruned_lookups_total{caller=~"oracle.*|.*Worker"}[5m]) > 0
+    TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL = REGISTRY.counter(
+      :silkennet_telemetry_log_unpruned_lookups_total,
+      docstring: "Total TelemetryLog lookups without partition pruning (degraded path; missing or invalid ISO8601 created_at_iso)",
+      labels: [ :caller ]
+    )
+
     # [ENTROPY MONITOR]: Shannon entropy of Z-value distribution per cluster.
     # Healthy forest: ≈ 0.75-0.95 (diverse Z-values). Pre-stress: < 0.65.
     # Updated by ClusterEntropyAnalyzerWorker (queue: alerts, hourly).

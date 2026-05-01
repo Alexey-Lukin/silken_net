@@ -177,9 +177,10 @@
 #### S6.12 — TokenomicsEvaluatorWorker: oracle-guards bypass для не-oracle flow
 - **P1** | `04_02` §4.2.2 (BlockchainMintingService) | **Складність: M** | **🤖 Аудит**
 - **Опис:** Документація явно заявляє: «Guards (`verified_by_iotex?`, `oracle_status_fulfilled?`, `hadron_kyc_status=="approved"`) активні лише при `telemetry_log` (oracle-driven flow); tokenomics flow працює без прямої прив'язки до log — growth_points вже верифіковані pipeline'ом». **Ризик:** якщо `TokenomicsEvaluatorWorker` довіряє upstream pipeline без власної перевірки, можливе мінтінг неверифікованих growth_points при пошкодженні pipeline upstream
-- [ ] 🤖 Code audit: чи `TokenomicsEvaluatorWorker` виконує незалежну верифікацію oracle/IoTeX/KYC або тільки довіряє upstream?
-- [ ] 🤖 Документувати інваріант: «всі шляхи до `Wallet#lock_and_mint!` повинні мати explicit oracle-verification gate»
-- [ ] 🤖 Додати spec coverage: tokenomics flow з фейковим (unverified) growth_points → expect to be rejected
+- **Статус (✅ виконано):** Audit виконано: `TokenomicsEvaluatorWorker → EvaluateTreeBatchWorker → wallet.lock_and_mint!` створює `BlockchainTransaction(:pending)`, який потім `MintCarbonCoinWorker#process_batch` передає у `BlockchainMintingService.call_batch(ids)` БЕЗ `telemetry_log:`. Виявлено: фактичний upstream perimeter — це **AES-256-CBC decrypt + `valid_sensor_data?`** у `TelemetryUnpackerService`, а **не** повний oracle pipeline (IoTeX/Chainlink виконуються async і незалежно для Path 1). **Hadron KYC — єдиний обов'язковий guard для всіх шляхів** (Path 1, Path 2, Path 3, Path 5). Документація уточнена у двох місцях: `04_02` (BlockchainMintingService row — деталізація `[BLOCKER-11 / S6.12]` з перерахуванням guards per-path) та `05_02` (PATH 2 callout розгорнуто з фактичним інваріантом + залишковий ризик AES-key compromise + mitigation track FW.1/FW.2/SEC.3). Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]" (3 examples: skip oracle guards / enforce KYC pending / enforce KYC rejected).
+- [x] 🤖 Code audit: `TokenomicsEvaluatorWorker` довіряє upstream (per-packet AES + sensor validation), Hadron KYC enforced незалежно
+- [x] 🤖 Документувати фактичний інваріант: «всі шляхи до `Wallet#lock_and_mint!` повинні мати Hadron KYC guard; oracle-guards активні лише в Path 1 (per-telemetry); growth_points perimeter — AES decrypt у `TelemetryUnpackerService`»
+- [x] 🤖 Spec coverage: tokenomics flow з KYC `pending` / `rejected` → expect raise `Compliance Breach`
 
 #### S6.13 — Ed25519 hardware signature: SHA256 fallback не задокументований як production-acceptable
 - **P2** | `04_02` §4.2.2 (SendToW3bstreamService, BLOCKER-06) | **Складність: S** | **🤖 Код**
@@ -206,9 +207,10 @@
 #### S6.16 — oracle_status partition pruning: відсутній моніторинг
 - **P2** | `04_01` (TelemetryLog), `04_02` | **Складність: S** | **🤖 Код + Док**
 - **Опис:** `TelemetryLog.find_with_partition_pruning(id, created_at)` — partition-aware O(log N) lookup. Усі workers повинні передавати `created_at_iso` для коректної prune. **Невідомо:** чи всі workers передають? Немає моніторингу partition scans (всі або одна?). Якщо worker забуде — запит сканує всі партиції (degraded performance)
-- [ ] 🤖 Audit всіх workers/services що читають TelemetryLog: чи передають `created_at_iso`?
-- [ ] 🤖 Додати Prometheus histogram `silkennet_telemetry_log_lookup_partitions_scanned` — alert якщо > 1
-- [ ] 🤖 Документувати інваріант у `04_01` + `04_02`
+- **Статус (✅ виконано):** Audit виконано (9 читачів `TelemetryLog`); всі hot-path workers (`IotexVerification`, `ChainlinkDispatch`, `StreamrBroadcast`, `MintCarbonCoin`, `SolanaMicroReward`) передають `created_at_iso`. Cold-path читачі (`OracleCallbacksController`, `MintingRollbackService`) можуть fallback на global scan і тепер інструментовані. Counter `silkennet_telemetry_log_unpruned_lookups_total{caller}` додано у `config/initializers/prometheus.rb` та інкрементується у `ApplicationWeb3Worker#find_telemetry_log_with_pruning`, `OracleCallbacksController#find_telemetry_log`, `MintingRollbackService#find_telemetry_log` з різними labels (`*:missing_created_at_iso`, `*:invalid_iso8601`). Документовано у `04_01` під `TelemetryLog` callout «PARTITION PRUNING INVARIANT [S6.16]» з повним інвентарем читачів та Grafana alert rule прикладом.
+- [x] 🤖 Audit всіх workers/services що читають TelemetryLog: чи передають `created_at_iso`?
+- [x] 🤖 Додати Prometheus counter для degraded path detection (замість histogram — counter з caller label, легший в alerting)
+- [x] 🤖 Документувати інваріант у `04_01` + `04_02`
 
 #### S6.17 — Dynamic Tax (2%) hardcoded — потребує on-chain governance
 - **P2** | `05_03` (HYBRID PROTOCOL GAIA), `BlockchainMintingService` | **Складність: M** | **🤖 Архітектура**

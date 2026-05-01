@@ -136,7 +136,7 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
 
       let(:telemetry_log) { create(:telemetry_log, tree: tree) }
 
-      context "in development/test environment (WEB3_STRICT_MODE unset)" do
+      context "when in development/test environment (WEB3_STRICT_MODE unset)" do
         it "logs a warning and proceeds with SHA256 fallback" do
           response = Web3::HttpClient::Response.new({ "proof_id" => "zk-proof-fallback" }.to_json)
           allow(Web3::HttpClient).to receive(:post).and_return(response)
@@ -161,7 +161,7 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
         end
       end
 
-      context "in production environment" do
+      context "when in production environment" do
         before { allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production")) }
 
         it "raises VerificationError (fail-closed) and does not call W3bstream" do

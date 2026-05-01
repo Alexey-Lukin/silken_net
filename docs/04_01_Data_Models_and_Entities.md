@@ -477,6 +477,31 @@ any ──report_fault──► faulty
 
 > ⚠️ **CLEANUP CONSTRAINT [DOC.8]:** Будь-який cleanup-скрипт або ad-hoc DELETE на `telemetry_logs` **повинен виключати** записи з `oracle_status = 'dispatched'`. Ці записи очікують callback від Chainlink DON; видалення призведе до `RecordNotFound` у `OracleCallbacksController` → 5 марних retry → loss of mint. Канонічне виконання cleanup — `InsightGeneratorService.cleanup_old_logs!` (викликається з `InsightBatchCallbacks` на завершенні денного циклу). Не дублюйте логіку в нових воркерах — викликайте сервіс. Cross-ref: [04_02 §3 InsightGeneratorService](04_02_Business_Logic_and_Services.md#insightgeneratorservice), [05_02 PATH 1 Oracle-driven](05_02_Proof_of_Growth_Pipeline.md#усі-шляхи-до-walletlock_and_mint-guard-inventory-doc7).
 
+> ⚡ **PARTITION PRUNING INVARIANT [S6.16]:** `telemetry_logs` — RANGE-партиціонована по `created_at` (місячні партиції). PostgreSQL застосовує partition pruning **тільки** коли `WHERE` містить literal/parameter на `created_at`. Без цього → Global Partition Scan (`O(P × log N)`) — на масштабі мільярдів рядків це секунди замість мілісекунд.
+>
+> **Інваріант:** усі читачі `TelemetryLog` за PK повинні передавати `created_at_iso` (ISO 8601) разом з `id`. Sidekiq workers, що ставлять у чергу follow-up jobs, **зобов'язані** передавати `log.created_at.iso8601(6)` як аргумент.
+>
+> **Інвентар читачів:**
+>
+> | Читач | Файл | Шлях pruning | Source `created_at` |
+> |-------|------|--------------|---------------------|
+> | `IotexVerificationWorker#find_log` | `app/workers/iotex_verification_worker.rb` | ✅ manual `find_by(id:, created_at:)` | sidekiq arg `created_at_iso` |
+> | `ChainlinkDispatchWorker#find_log` | `app/workers/chainlink_dispatch_worker.rb` | ✅ manual `find_by(id:, created_at:)` | sidekiq arg `created_at_iso` |
+> | `StreamrBroadcastWorker` | `app/workers/streamr_broadcast_worker.rb` | ✅ manual `find_by(id:, created_at:)` | sidekiq arg `created_at_iso` |
+> | `MintCarbonCoinWorker#find_telemetry_log` | `app/workers/mint_carbon_coin_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg |
+> | `SolanaMicroRewardWorker` | `app/workers/solana_micro_reward_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg |
+> | `Api::V1::OracleCallbacksController#find_telemetry_log` | `app/controllers/api/v1/oracle_callbacks_controller.rb` | ⚠️ pruning якщо `params[:created_at]` присутній; інакше degraded scan | Chainlink DON callback param |
+> | `MintingRollbackService#find_telemetry_log` | `app/services/minting_rollback_service.rb` | ⚠️ pruning якщо `@created_at_iso` присутній; інакше degraded scan | admin tool / cold path |
+> | `InsightGeneratorService.cleanup_old_logs!` | `app/services/insight_generator_service.rb` | ✅ range scan (`created_at <= threshold`) — pruning по верхній межі | scheduled cron |
+> | `DailyAggregationWorker` | `app/workers/daily_aggregation_worker.rb` | ✅ `created_at: day_range` — 1-2 партиції | scheduled cron |
+>
+> **Observability (degraded path detector):** Counter `silkennet_telemetry_log_unpruned_lookups_total{caller}` інкрементується у трьох точках, де `created_at` може бути відсутнім або malformed:
+> - `ApplicationWeb3Worker:missing_created_at_iso` / `:invalid_iso8601` — sidekiq worker не передав argument; **hot path → ALERT**.
+> - `OracleCallbacksController:missing_created_at` / `:invalid_iso8601` — Chainlink DON callback без `created_at` query param; **hot path → ALERT** (виправити Chainlink Functions JS source).
+> - `MintingRollbackService:missing_created_at_iso` / `:invalid_iso8601` — admin manual rollback; **cold path, acceptable**, але трекати для прозорості.
+>
+> Grafana alert rule (приклад): `rate(silkennet_telemetry_log_unpruned_lookups_total{caller=~"ApplicationWeb3Worker.*|OracleCallbacksController.*"}[5m]) > 0`.
+
 ---
 
 ### `GatewayTelemetryLog` — Діагностика Королеви
