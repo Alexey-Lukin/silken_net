@@ -64,6 +64,48 @@
 1. **Рекомендовано:** Terraform-шаблон `deploy.yaml.tpl` через `terraform/akash/` — секрети підставляються з `terraform.tfvars` (в `.gitignore`).
 2. Akash Console UI — ручне введення ENV змінних через веб-інтерфейс перед деплоєм.
 
+#### `ALLOY_CONFIG_BASE64` — кодування для manual SDL deploy [INF.7]
+
+При Terraform-деплої `ALLOY_CONFIG_BASE64` генерується автоматично через `filebase64("../../deploy/akash/config.alloy")` у `terraform/akash/main.tf` — **не використовуйте скрипт нижче для Terraform-флоу**.
+
+При **manual deploy** (Akash Console UI або `akash tx deployment create` без Terraform) використовуйте helper-скрипт `deploy/akash/encode-alloy-config.sh`:
+
+```bash
+# Друк base64-значення у stdout (paste-ready, без trailing newline)
+./deploy/akash/encode-alloy-config.sh
+
+# Тільки sanity-перевірка (без друку секрету в stdout)
+./deploy/akash/encode-alloy-config.sh --check
+# ✅ deploy/akash/config.alloy: 2096 bytes → 2796 base64 chars (single line, round-trip OK)
+
+# Кастомний шлях до Alloy config
+ALLOY_CONFIG=path/to/custom.alloy ./deploy/akash/encode-alloy-config.sh
+```
+
+**Що скрипт гарантує (і чому це важливо):**
+
+1. **Single-line output** — `base64` без `-w 0` на GNU coreutils переносить рядки на 76-у колонку. Перенесення зламає `echo $ALLOY_CONFIG_BASE64 | base64 -d` у `services.alloy.args` (shell інтерпретує newline як кінець значення → отримаємо truncated config + Alloy crash з парс-помилкою River-формату).
+2. **Кросплатформова сумісність** — детектує BSD/macOS `base64` (немає `-w`) і застосовує `| tr -d '\n'`.
+3. **Round-trip verification** — декодує результат назад і порівнює з джерелом байт-в-байт. Ловить CRLF / BOM / append-byte помилки до того як вони потраплять у Akash deployment.
+
+**Куди вставляти результат:**
+
+```yaml
+# deploy/akash/deploy.yaml — services.alloy.env
+- ALLOY_CONFIG_BASE64=Ly8gPT09PT09PT09PT09PT0...   # ← вставити вивід скрипта (одним рядком)
+```
+
+> ⚠️ **Не комітьте заповнений `deploy.yaml`** — це не секрет, але змішує конфіг із data, що ускладнює diff. Якщо часто деплоїте manually, зберігайте заповнений файл як `deploy/akash/deploy.local.yaml` (у `.gitignore`).
+
+**Перевірка після деплою:**
+
+```bash
+# Через akash provider lease-logs — знайти стартовий лог Alloy
+akash provider lease-logs --service alloy ...
+# Очікуємо: "level=info msg=\"server listening\" addr=0.0.0.0:12345"
+# При помилці декодування Alloy впаде з: "could not parse config file"
+```
+
 ---
 
 ### 🟡 BLOCKER-5: TLS термінація не конфігурована

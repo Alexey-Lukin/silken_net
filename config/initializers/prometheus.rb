@@ -208,9 +208,11 @@ module SilkenNet
     # [S6.13]: W3bstream Ed25519 → SHA256 hardware-signature fallback counter.
     # `Iotex::W3bstreamVerificationService#hardware_signature` падає з Ed25519
     # (provisioned hardware key) на SHA256 fallback коли HardwareKey відсутній.
-    # SHA256 НЕ підтверджує апаратне походження. У production WEB3_STRICT_MODE=true
-    # це має блокуватись окремим guard. Counter дозволяє Grafana alerting:
-    # > 0 у production protrygnem alert (configurations not strict, або data leak).
+    # SHA256 НЕ підтверджує апаратне походження. У production / WEB3_STRICT_MODE=true
+    # сервіс fail-closed: інкрементує counter та одразу raise VerificationError
+    # (counter все одно інкрементується для observability). Поза production —
+    # warn-and-continue (legacy/dev). Grafana alert: > 0 у production = bug
+    # (бо raise вже спрацював) АБО legacy fallback використовується у не-prod.
     W3BSTREAM_SIGNATURE_FALLBACK_TOTAL = REGISTRY.counter(
       :silkennet_w3bstream_signature_fallback_total,
       docstring: "Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature",

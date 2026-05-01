@@ -130,8 +130,9 @@
 #### INF.7 — Grafana Alloy `ALLOY_CONFIG_BASE64` manual encoding workflow
 - **P2** | `06_03` BLOCKER-1, `06_02` BLOCKER-3 | **Складність: XS** | **🤖 Док**
 - **Опис:** При Terraform deploy `ALLOY_CONFIG_BASE64` генерується через `filebase64()`. Для manual SDL deploy (без Terraform) — workflow енкодування не задокументовано. Якщо OPS-engineer використовує `base64 -w 0 alloy-config.yaml` замість правильного — можливі line-break artifacts → Alloy crash
-- [ ] 🤖 Додати у `06_02` runbook: точна команда `base64 -w 0 < alloy-config.yaml | tr -d '\n'` + sanity check
-- [ ] 🤖 Helper script у `deploy/akash/encode-alloy-config.sh`
+- **Статус (✅ виконано):** Helper-скрипт `deploy/akash/encode-alloy-config.sh` додано (cross-platform GNU/BSD `base64` detection, single-line guarantee, round-trip verification, `--check` режим). Runbook у `06_02` BLOCKER-3 розширено секцією «`ALLOY_CONFIG_BASE64` — кодування для manual SDL deploy [INF.7]» з прикладами використання, поясненням чому `-w 0` важливе, та командою верифікації через `akash provider lease-logs`.
+- [x] 🤖 Додати у `06_02` runbook: точна команда `base64 -w 0 < alloy-config.yaml | tr -d '\n'` + sanity check
+- [x] 🤖 Helper script у `deploy/akash/encode-alloy-config.sh`
 
 #### S4.3 — Akash SDL secrets
 - **P3** | `06_02` | **Складність: XS** | **🔧 Операційна** — заповнити 4 змінні у `deploy.yaml`
@@ -183,10 +184,10 @@
 #### S6.13 — Ed25519 hardware signature: SHA256 fallback не задокументований як production-acceptable
 - **P2** | `04_02` §4.2.2 (SendToW3bstreamService, BLOCKER-06) | **Складність: S** | **🤖 Код**
 - **Опис:** Primary path — Ed25519 через `hardware_key.binary_key`; fallback — SHA256 hash коли `HardwareKey` відсутній (legacy/dev). SHA256 fallback **слабший** і **не задокументований** як прийнятний у production. Невідомо: чи fallback тригериться у production (logging/Prometheus counter відсутній)
-- **Статус (✅ виконано):** Prometheus counter `silkennet_w3bstream_signature_fallback_total{reason}` доданий у `config/initializers/prometheus.rb` та інкрементується у `Iotex::W3bstreamVerificationService#hardware_signature` (labels: `missing_hardware_key` / `missing_binary_key`). Тести: `spec/services/iotex/w3bstream_verification_service_spec.rb` (existing fallback test verified passing). Grafana alert: > 0 у production protrygnem alert.
+- **Статус (✅ виконано):** Prometheus counter `silkennet_w3bstream_signature_fallback_total{reason}` доданий у `config/initializers/prometheus.rb` та інкрементується у `Iotex::W3bstreamVerificationService#hardware_signature` (labels: `missing_hardware_key` / `missing_binary_key`). **Strict-mode guard додано:** при `Rails.env.production?` OR `ENV["WEB3_STRICT_MODE"]=="true"` сервіс fail-closed — counter інкрементується для observability, потім raise `VerificationError` без виклику W3bstream. Поза production без strict-mode — warn-log + SHA256 fallback (legacy/dev only). Tests: `spec/services/iotex/w3bstream_verification_service_spec.rb` — context "when HardwareKey is missing [S6.13]" покриває 5 сценаріїв (dev warn+continue, dev counter increment, production raise, production counter increment, WEB3_STRICT_MODE поза production raises). Документація у `04_02` (`Iotex::W3bstreamVerificationService` row) розширена описом fail-closed semantics та recovery шляху (`POST /api/v1/provisioning/register`).
 - [x] 🤖 Додати Prometheus counter `silkennet_w3bstream_signature_fallback_total{type=sha256}`
 - [x] 🤖 Якщо counter > 0 у production → alert (Grafana rule — потребує конфігурації після INF.1+S2.3)
-- [ ] 🤖 Документувати в `04_02`: при яких умовах SHA256 fallback допустимий і як його блокувати у `WEB3_STRICT_MODE=true`
+- [x] 🤖 Документувати в `04_02`: при яких умовах SHA256 fallback допустимий і як його блокувати у `WEB3_STRICT_MODE=true`
 
 #### S6.14 — peaq_signing_key: відсутня rotation policy
 - **P2** | `04_02` §4.2.2 (GeneratePeaqDidService, BLOCKER-08) | **Складність: M** | **🤖 Архітектура + Док**

@@ -123,5 +123,92 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
         }.to raise_error(Iotex::W3bstreamVerificationService::VerificationError, /iotex_api_key не налаштовано/)
       end
     end
+
+    # [S6.13]: SHA256 fallback допустимий лише поза production / WEB3_STRICT_MODE.
+    # У production fail-closed: відсутність HardwareKey → VerificationError, бо
+    # SHA256 не доводить апаратне походження пакета (anyone with tree.did може
+    # підробити «підпис»).
+    context "when HardwareKey is missing [S6.13]" do
+      before do
+        allow(Rails.application.credentials).to receive_messages(iotex_w3bstream_url: "https://w3bstream.example.com", iotex_api_key: "test-api-key-123")
+        allow(tree).to receive(:hardware_key).and_return(nil)
+      end
+
+      let(:telemetry_log) { create(:telemetry_log, tree: tree) }
+
+      context "in development/test environment (WEB3_STRICT_MODE unset)" do
+        it "logs a warning and proceeds with SHA256 fallback" do
+          response = Web3::HttpClient::Response.new({ "proof_id" => "zk-proof-fallback" }.to_json)
+          allow(Web3::HttpClient).to receive(:post).and_return(response)
+          allow(Rails.logger).to receive(:warn)
+
+          service = described_class.new(telemetry_log)
+          expect(service.verify!).to eq("zk-proof-fallback")
+
+          expect(Rails.logger).to have_received(:warn).with(/HardwareKey відсутній.*SHA256 fallback/)
+        end
+
+        it "increments W3BSTREAM_SIGNATURE_FALLBACK_TOTAL with reason=missing_hardware_key" do
+          response = Web3::HttpClient::Response.new({ "proof_id" => "zk-proof-fallback" }.to_json)
+          allow(Web3::HttpClient).to receive(:post).and_return(response)
+          counter = SilkenNet::Metrics::W3BSTREAM_SIGNATURE_FALLBACK_TOTAL
+          before_count = counter.get(labels: { reason: "missing_hardware_key" }) || 0
+
+          described_class.new(telemetry_log).verify!
+
+          after_count = counter.get(labels: { reason: "missing_hardware_key" })
+          expect(after_count).to eq(before_count + 1)
+        end
+      end
+
+      context "in production environment" do
+        before { allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production")) }
+
+        it "raises VerificationError (fail-closed) and does not call W3bstream" do
+          expect(Web3::HttpClient).not_to receive(:post)
+
+          service = described_class.new(telemetry_log)
+
+          expect {
+            service.verify!
+          }.to raise_error(
+            Iotex::W3bstreamVerificationService::VerificationError,
+            /SHA256 fallback заборонений у production/
+          )
+        end
+
+        it "still increments the fallback metric for observability" do
+          counter = SilkenNet::Metrics::W3BSTREAM_SIGNATURE_FALLBACK_TOTAL
+          before_count = counter.get(labels: { reason: "missing_hardware_key" }) || 0
+
+          expect {
+            described_class.new(telemetry_log).verify!
+          }.to raise_error(Iotex::W3bstreamVerificationService::VerificationError)
+
+          after_count = counter.get(labels: { reason: "missing_hardware_key" })
+          expect(after_count).to eq(before_count + 1)
+        end
+      end
+
+      context "with WEB3_STRICT_MODE=true outside production" do
+        around do |example|
+          ENV["WEB3_STRICT_MODE"] = "true"
+          example.run
+        ensure
+          ENV.delete("WEB3_STRICT_MODE")
+        end
+
+        it "raises VerificationError (strict mode honored regardless of Rails.env)" do
+          service = described_class.new(telemetry_log)
+
+          expect {
+            service.verify!
+          }.to raise_error(
+            Iotex::W3bstreamVerificationService::VerificationError,
+            /SHA256 fallback заборонений/
+          )
+        end
+      end
+    end
   end
 end
