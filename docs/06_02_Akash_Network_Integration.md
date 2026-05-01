@@ -29,7 +29,8 @@
 | Ingress Anchor (GCP) | `e2-micro` зі статичним IP | ✅ Замінює важкі web VM |
 | Multi-replica ActionCable | Solid Cable (PostgreSQL LISTEN/NOTIFY) | ✅ Вирішено (BLOCKER-8) |
 | GHCR image mirror | `.github/workflows/mirror-ghcr.yml` | ✅ Вирішено (BLOCKER-4 виправлено) |
-| HTTPS / TLS термінація | `deploy/akash/deploy.yaml` | 🟡 Порт `443` оголошено в SDL; TLS termination через Akash ingress або Cloudflare ще не конфігурована |
+| HTTPS / TLS термінація | `deploy/akash/deploy.yaml` | 🟡 Порт `443` оголошено в SDL; Rails-side `force_ssl`/`assume_ssl` + HSTS активні; TLS termination через Akash ingress або Cloudflare ще не конфігурована (BLOCKER-5) |
+| Rails security hardening | `config/environments/production.rb`, `config/initializers/` | ✅ `force_ssl`, `assume_ssl`, HSTS (1рік), `X-Frame-Options: DENY`, CSP, Permissions-Policy, session cookie hardening |
 
 - **Поточний TRL:** TRL 5 — SDL повністю конфігурований (`web` + `job` + `alloy`), DB+Redis connectivity вирішені (Cloud SQL Auth Proxy + Upstash TLS), GHCR mirror активний; однак жоден реальний деплой на Akash Mainnet не проведений — TRL 6 підтверджується після першого успішного деплою
 - **Пов'язані модулі:**
@@ -401,6 +402,9 @@ params:
 | `RAILS_ENV` | `production` | Відкрита | ✅ | Rails environment — production режим обов'язковий |
 | `RAILS_MAX_THREADS` | `3` | Відкрита | — | Кількість Puma threads на worker. Має відповідати `pool` у `database.yml` |
 | `WEB_CONCURRENCY` | `4` | Відкрита | — | Кількість Puma worker processes. Встановлено рівним CPU units (4 vCPU) |
+| `RAILS_ALLOWED_HOSTS` | *(потрібно встановити)* | Відкрита | ⚠️ | Comma-separated allowlist хостів (DNS-rebinding захист). Напр. `api.silkennet.com,.silkennet.com`. Без цього Rails логує `[SECURITY]` при старті. |
+| `DISABLE_SSL` | *(не встановлювати)* | Відкрита | — | `true` лише якщо Akash ingress або Cloudflare термінує TLS і Rails сам не повинен форсувати HTTPS. За замовчуванням `force_ssl`/`assume_ssl` активні. |
+| `CSP_ENFORCE` | *(не встановлювати)* | Відкрита | — | `true` для переводу CSP з report-only у enforced. Рекомендується після burn-in (1–2 тижні спостережень). |
 
 **Terraform-шаблон додає змінні динамічно** (`deploy.yaml.tpl`):
 
@@ -622,6 +626,7 @@ akash tx deployment close \
 | **Persistent Disk** | Docker volume | 10 GiB (`beta3`) | ✅ Аналогічно |
 | **Порт 80 (HTTP)** | ✅ | ✅ | ✅ |
 | **Порт 443 (HTTPS)** | ✅ (Kamal proxy) | 🟡 В SDL, TLS термінація не конфігурована | 🟡 BLOCKER-5 |
+| **Rails security headers** | ✅ `force_ssl`, HSTS, CSP, X-Frame: DENY, Permissions-Policy | ✅ (ті самі Rails initializers) | ✅ Однакова конфігурація |
 | **Порт 5683 (CoAP/UDP)** | ✅ | ✅ (через Ingress Anchor) | ✅ |
 | **Database** | Cloud SQL private IP | ✅ Cloud SQL Auth Proxy (in-container) | ✅ BLOCKER-1 вирішено |
 | **Redis** | Memorystore private | ✅ Upstash serverless Redis (TLS) | ✅ BLOCKER-1 вирішено |
