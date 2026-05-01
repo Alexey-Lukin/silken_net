@@ -203,7 +203,7 @@ terraform apply
 | **Платформа** | Akash Network (окремий SDL або namespace) | Akash Network |
 | **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-micro`) | Cloud SQL (HA) + Ingress Anchor (`e2-micro`) |
 | **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | Upstash Serverless Redis (TLS, `rediss://`) |
-| **SSL/HTTPS** | Вимкнено або Let's Encrypt через Ingress Anchor | Let's Encrypt через Ingress Anchor |
+| **SSL/HTTPS** | ✅ `force_ssl` + HSTS (1рік, subdomains, preload). `DISABLE_SSL=true` для override | ✅ `force_ssl` + HSTS (1рік, subdomains, preload) |
 | **DB** | Окрема або спільна Cloud SQL | `silken_net_production` (HA) |
 | **Puma workers** | `WEB_CONCURRENCY: 2` | `WEB_CONCURRENCY: 2` |
 
@@ -411,9 +411,19 @@ env:
     - KREDIS_REDIS_URL
   clear:
     WEB_CONCURRENCY: 2
+    RAILS_ALLOWED_HOSTS: api.silkennet.com,.silkennet.com  # DNS rebinding protection
+    # DISABLE_SSL: "true"   # розкоментувати якщо Akash ingress або Cloudflare термінує TLS
+    # CSP_ENFORCE: "true"   # розкоментувати після burn-in спостереження CSP violation репортів
 ```
 
-### Rollback та Аліаси
+> **Нові ENV змінні безпеки** (деталі у `06_04_Secrets_Checklist §2.1`):
+>
+> | ENV | Тип | Default | Опис |
+> |-----|-----|---------|------|
+> | `RAILS_ALLOWED_HOSTS` | `env.clear` | — (попередження) | Comma-separated allowlist для DNS-rebinding захисту. ⚠️ Обов'язково у production. |
+> | `DISABLE_SSL` | `env.clear` | `false` | Вимикає `force_ssl`/`assume_ssl`. Тільки якщо TLS термінується upstream (Cloudflare/Akash ingress). |
+> | `ALLOW_ALL_HOSTS` | `env.clear` | `false` | Заглушує попередження `[SECURITY]` якщо `RAILS_ALLOWED_HOSTS` не встановлено. |
+> | `CSP_ENFORCE` | `env.clear` | `false` | Переводить CSP з report-only у enforced. Рекомендується після burn-in (1–2 тижні). |
 
 ```bash
 kamal rollback
@@ -585,6 +595,13 @@ akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from s
 ☐ 14. LoRa-антени підключені до всіх плат (Pre-Flight #4)
 
 ☐ 15. AES-ключ Soldier = AES-ключ Queen (побітово) (Pre-Flight #5)
+
+☐ 16. Встановити RAILS_ALLOWED_HOSTS у Kamal env.clear / Akash SDL
+       Приклад: RAILS_ALLOWED_HOSTS=api.silkennet.com,.silkennet.com
+       Без цього Rails логує [SECURITY] попередження при кожному старті.
+
+☐ 17. Вирішити CSP burn-in: спостерігати violation-репорти 1-2 тижні,
+       потім встановити CSP_ENFORCE=true в env.clear для enforced режиму.
 ```
 
 ---

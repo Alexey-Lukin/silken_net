@@ -181,6 +181,25 @@
 - [ ] 🤖 `BlockchainMintingService` читає ставку через `Governance::ParameterSyncWorker` → `SystemParameter`
 - [ ] 🤖 Migration: seed `SystemParameter(:dynamic_tax_rate, value: 200)` (basis points)
 
+#### S6.18 — Rails web security hardening (maquina-app/rails-claude-code §8 audit)
+- **P1** | `06_01`, `06_02`, `06_04` | **Складність: M** | **🤖 Код + Конфігурація**
+- **Опис:** Повний security audit Rails-шару по категоріях: PROD (SSL/HSTS), CSRF, HDR (Security Headers), CSP, SESS (Session cookie), RATE, AUTH, GEM (brakeman/bundler-audit), CI, DATA, FWKD.
+- **Статус (✅ виконано):**
+  - **PROD** (`config/environments/production.rb`) — `force_ssl`, `assume_ssl`, HSTS (1 рік, subdomains, preload) активовані. `ssl_options` виключає `/up` та `/metrics` для health probe / Prometheus scrape. `config.hosts` з `RAILS_ALLOWED_HOSTS` ENV; при відсутності — boot-time `[SECURITY]` попередження замість silent відкриття.
+  - **CSP** (`config/initializers/content_security_policy.rb`) — реальна CSP налаштована під фактичні залежності кодбейсу: `script-src` self + `https://ga.jspm.io` (Leaflet importmap), `style-src` self + `https://unpkg.com` + `unsafe-inline` (Leaflet runtime styles), `img-src` self + `https://*.basemaps.cartocdn.com` (CartoDB tiles) + `https://www.transparenttextures.com` (decorative texture), `connect-src` self (Solid Cable same-origin). Nonce для inline `<script>`. Report-only за замовчуванням.
+  - **HDR** (`config/initializers/security_headers.rb`) — `X-Frame-Options: DENY`, `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`, `X-XSS-Protection: 0`, повний `Permissions-Policy` (camera/mic/geo/USB/payment/FLoC/Topics/browsing-topics — всі заборонені).
+  - **SESS** (`config/initializers/session_store.rb`) — `:cookie_store` з `httponly: true`, `secure: Rails.env.production?`, `same_site: :lax`, `expire_after: 14.days`, namespaced key `_silken_net_session`.
+  - **Без змін (вже відповідає):** CSRF (`ActionController::API` + Rails 8.1 defaults), RATE (Rack::Attack), AUTH (Pundit + Argon2id + Ed25519), GEM (brakeman 0 warnings, bundler-audit 0 CVEs), CI (brakeman + bundler-audit + importmap audit), DATA (AR Encryption + `filter_parameters`), FWKD (`load_defaults 8.1`).
+  - **Нові ENV** задокументовані у `docs/06_04_Secrets_Checklist §2.1`, `docs/06_01 deploy.yml snippet`, `docs/06_02 SDL env table`, `.env.example`.
+- [x] 🤖 Активувати `force_ssl`, `assume_ssl`, HSTS у `production.rb`
+- [x] 🤖 Активувати `config.hosts` (DNS-rebinding захист) з boot-time warning
+- [x] 🤖 Написати реальну CSP, обрізану під фактичні залежності (jspm/unpkg/cartocdn/transparenttextures)
+- [x] 🤖 Створити `security_headers.rb` (X-Frame DENY, COOP/CORP, Permissions-Policy)
+- [x] 🤖 Створити `session_store.rb` (secure/httponly/same_site/expire_after)
+- [x] 🤖 Оновити `.env.example`, `docs/06_01`, `docs/06_02`, `docs/06_04` з новими ENV
+- [ ] 👤 Встановити `RAILS_ALLOWED_HOSTS=api.silkennet.com,.silkennet.com` у Kamal `env.clear` / Akash SDL **перед першим production деплоєм**
+- [ ] 👤 Після 1–2 тижнів спостережень CSP violation-репортів — встановити `CSP_ENFORCE=true` (переведення CSP з report-only у enforced)
+
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
 - **High** | `06_05` | **Складність: XS** | **🔧 Операційна** — верифікація після першого реального деплою, без коду
 - **Опис:** Puma 8.0+ за замовчуванням bind'иться на `tcp://[::]:3000` (dual-stack) якщо є non-loopback IPv6 інтерфейс. Thruster конектиться до Puma по `127.0.0.1:3000`. Linux `IPV6_V6ONLY=0` = `[::]:3000` приймає і v4, і v6 → має працювати. Перевірка потрібна для впевненості.
@@ -982,7 +1001,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS |
 | 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
 | 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
-| 10 Security | 5 | 9 | SEC.9 master key, SEC.11 prod guard, Multisig, RDP, Factory |
+| 10 Security | 6 | 9 | SEC.9 master key, SEC.11 prod guard, Multisig, RDP, Factory (Rails web layer ✅ S6.18) |
 
 ---
 
