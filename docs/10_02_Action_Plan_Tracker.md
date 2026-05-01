@@ -310,9 +310,12 @@
 #### FW.18 — Hardcoded confidence threshold 0.80
 - `03_03` BLOCKER-6
 - **Опис:** `if (ml_confidence > 0.80)` hardcoded в Flash. Неможливо remote-tune для різних лісів/сезонів. Немає "warning" рівня (лише binary: alarm / no alarm)
-- **Статус:** 🤖 ✅ Дизайн dual-threshold системи завершено та задокументовано в `03_03` BLOCKER-6. WARNING (0.60) → acoustic_events++ + ескалація після 3× поспіль; CRITICAL (0.85) → Emergency TX. Пороги зберігаються в RTC Backup DR6/DR7, оновлюються через OTA CMD. 8 нових тест-кейсів специфіковано. Реалізація — наступний цикл
-- [ ] 🤖 Зберегти threshold у RTC Backup Register (updateable via OTA) — реалізація у наступному циклі
+- **Статус:** 🤖 ✅ Реалізовано (firmware-частина): RTC-storage у `DR13/DR14` + dual-threshold decision logic + Phase 5 writeback + 19 host-tests (44 у TinyML suite, 283 загалом). Hardcoded `0.80` повністю замінено зонами SILENCE/WARNING/CRITICAL з ескалацією. **Уточнення розташування:** оригінальний дизайн вказував `DR6/DR7`, але після FW.21 ці регістри зайняті (`DR6 = mesh_relay_payload[12..15]`, `DR7 = tree_did`); канонічна SSOT-таблиця в `03_01` §2 показує `DR13/DR14` як вільний резерв (єдиний залишок `DR15`). **Залишковий блокер:** OTA CMD dispatcher на Soldier (`CMD_SET_THRESHOLDS` 0x9A) deferred до спільного циклу з FW.8 — обидва завдання потребують єдиного downlink-CMD-фреймворку, який поки існує лише в Queen-firmware.
+- [x] 🤖 Зберегти threshold у RTC Backup Register (updateable via OTA) — RTC + decision logic + tests; OTA dispatcher deferred → FW.8
 - [x] 🤖 Дизайн dual-threshold: WARNING (0.60) → event counter; CRITICAL (0.85) → Emergency TX
+- [x] 🤖 Реалізація dual-threshold zones з warning_counter ескалацією (3× → fallback Emergency для chainsaw)
+- [x] 🤖 19 host-тестів: 9 zones + 10 validation/RTC roundtrip
+- [x] 🤖 Доку оновлено: `03_03` BLOCKER-6 (DR6/DR7 → DR13/DR14, ✅ partial), `03_01` §2 (RTC map), `10_03` §2.5 (test count 25→44)
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
 - `03_04` BLOCKER-4
@@ -380,9 +383,11 @@
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
 - `03_02` §5 | **P2**
 - **Опис:** Queen транслює OTA chunks послідовно через LoRa без перевірки чи Soldier активно слухає. Якщо Soldier у STOP2 під час broadcast — chunk втрачається без retry. Документація **не описує recovery механізм** для пропущених chunks. Без TDMA Sync Windows (ARCH.26) — broadcast ненадійний
-- [ ] 🤖 Дизайн ACK-aggregation: Queen чекає consolidated ACK після всіх chunks → re-broadcast пропущених
-- [ ] 🤖 Magic re-request: Soldier при Flash write detects gap → request specific chunks via uplink (vector OTA)
-- [ ] 🔗 Залежить від ARCH.26 (TDMA для координованого RX вікна)
+- **Статус:** 🤖 ✅ Дизайн обох recovery-механізмів завершено та задокументовано в `03_02` §5.X. (1) **ACK-Aggregation (Дизайн A):** Queen чекає 10-сек aggregation window після broadcast, Soldier'и відправляють bitmap-ACK; aggregated_missing → targeted re-broadcast. Імплементація залежить від ARCH.26 TDMA — без скоординованих RX-вікон 100 Soldier'ів = collision storm. (2) **Magic Re-Request (Дизайн B):** Soldier при `ota_chunks_received < ota_total_chunks` після 5-хв таймауту відправляє uplink-pacкет з `REREQUEST_MARKER (0x55)` + missing-bitmap; Queen ретранслює лише missing chunks (60-90% energy saving vs повний wave). Дизайн B feasible **без ARCH.26** — використовує існуючий `random_jitter % 500ms` (FW.10) для collision avoidance. Рекомендація: реалізовувати B першим, A — спільно з ARCH.26.
+- [x] 🤖 Дизайн ACK-aggregation: Queen чекає consolidated ACK після всіх chunks → re-broadcast пропущених (`03_02` §5.X.2)
+- [x] 🤖 Magic re-request: Soldier при detected gap → request specific chunks via uplink (vector OTA, `03_02` §5.X.3)
+- [ ] 🔗 Залежить від ARCH.26 (TDMA для координованого RX вікна) — лише для Дизайну A; B можна реалізувати незалежно
+- [ ] 🤖 Імплементація Дизайну B (firmware/soldier + firmware/queen) — наступний цикл
 
 #### FW.29 — Panic packet (0xFF) vs saturated acoustic_events (255) — disambiguation
 - `03_03` §5.3 | **P1**

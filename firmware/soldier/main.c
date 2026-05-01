@@ -99,8 +99,12 @@ float ml_confidence = 0.0;        // Рівень впевненості мод�
 //
 // Persistence: DR13 (warning), DR14 (critical) як IEEE 754 float у uint32
 // (bit-copy, без magic — валідуємо діапазоном [TINYML_THRESHOLD_MIN_VALID,
-// TINYML_THRESHOLD_MAX_VALID]). При cold-start або корупції — fallback на
-// дефолти TINYML_DEFAULT_WARNING / TINYML_DEFAULT_CRITICAL з 03_03 BLOCKER-6.
+// TINYML_THRESHOLD_MAX_VALID]). Cold boot RTC = 0x00000000 → bit-cast у
+// float = 0.0f → НЕ потрапляє у валідний діапазон [0.01, 0.99] →
+// TinyML_Validate_Threshold() віддає TINYML_DEFAULT_*. Аналогічно при NaN/Inf
+// (наприклад, після VBAT-loss + bit-flip). При cold-start або корупції —
+// fallback на дефолти TINYML_DEFAULT_WARNING / TINYML_DEFAULT_CRITICAL з
+// 03_03 BLOCKER-6.
 //
 // SSOT для розташування RTC регістрів: 03_01 §2 (Soldier RTC Backup Map).
 // DR13/DR14 — частина «реєрву DR13..DR15», виділеного після FW.21 fallback.

@@ -714,6 +714,182 @@ Guard 5: if (offset + payload_len > sizeof(pending_ota_bytecode)=8192) → retur
 
 ---
 
+### 5.X [FW.27] OTA Broadcast Reliability — ACK-Aggregation + Magic Re-Request (DESIGN)
+
+> **Статус:** 🤖 Дизайн завершено. Повна імплементація залежить від [ARCH.26 TDMA Sync Windows](10_02_Action_Plan_Tracker) — без скоординованого RX-вікна на Soldier'ах ACK-aggregation марна. Поточний broadcast — fire-and-forget, що документується тут чесно.
+
+#### 5.X.1 Проблема, яку вирішує
+
+Поточний OTA-broadcast Queen (§5) працює послідовно через LoRa без жодної перевірки доставки:
+
+```
+Queen Broadcast Loop:
+  for chunk_idx in 0..total_chunks:
+      LoRa.Send(chunk[chunk_idx])
+      HAL_Delay(60ms)  # pacing
+  ota_is_active = 0
+```
+
+**Проблеми:**
+
+1. **Soldier у STOP2:** Якщо вузол спить під час трансляції конкретного `chunk_idx` — chunk втрачається без жодної індикації Queen.
+2. **LoRa collision:** Інший Soldier (mesh relay) може заглушити наш broadcast — Queen цього не дізнається.
+3. **RF dead zone:** Деякі вузли можуть бути поза радіо-видимістю Queen — жоден chunk до них не доходить взагалі.
+4. **Bitmap fragmentation:** Soldier-side `ota_chunk_received[256]` фіксує отримані chunks, але:
+   - При `ota_chunks_received < ota_total_chunks` після broadcast вузол навіки чекає на missing chunks (CRC32 не пройде, Flash write не виконається).
+   - Eventually `IWDG` reset → `ota_buffer` очищується → весь broadcast потрібен заново.
+
+**Поточна mitigation:** Жодної. Є тільки **Wave-based broadcast** (§5.5) — Queen транслює всю партію після кожного нового CoAP-batch від Rails. Це надає природний retry, але:
+- Затримка між waves = 1 година (CoAP flush interval)
+- Жодна гарантія, що `chunk_idx` пропущений у wave N буде успішним у wave N+1 (той самий Soldier може бути в STOP2 знову)
+- Energy waste: вузли отримують повторні chunks, які вже у Flash
+
+#### 5.X.2 Дизайн A: ACK-Aggregation (Queen-side coordination)
+
+**Ідея:** Queen після broadcast чекає коротке *aggregation window* (10-15 секунд) і слухає uplink від Soldier'ів. Кожен Soldier формує **bitmap-ACK** з його локального `ota_chunk_received[]` і відправляє `[ACK_MARKER:1][DID:4][bitmap:N]` (N = `ceil(total_chunks/8)`, для 16 chunks → 2 байти).
+
+```
+Queen Broadcast Loop (з FW.27 ACK-aggregation):
+  for retry_round in 0..MAX_BROADCAST_ROUNDS=3:
+      missing_mask = (round == 0) ? ALL : aggregated_missing_from_acks
+      for chunk_idx in 0..total_chunks:
+          if (missing_mask & (1 << chunk_idx)):
+              LoRa.Send(chunk[chunk_idx])
+              HAL_Delay(60ms)
+
+      # Aggregation Window (10s)
+      LoRa.Rx(ACK_AGGREGATION_TIMEOUT_MS=10000)
+      received_acks = []
+      while (within_window):
+          if (lora_rx_flag and starts_with ACK_MARKER):
+              parse_ack(payload) → {did, bitmap}
+              received_acks.append(bitmap)
+
+      # Compute aggregated missing: union of all reported gaps
+      aggregated_missing = OR(~bitmap for bitmap in received_acks)
+      if (aggregated_missing == 0): break  # all confirmed
+
+  ota_is_active = 0
+```
+
+**Format ACK-пакета (LoRa uplink Soldier→Queen):**
+
+```
+[ACK_MARKER:1][DID:4][TOTAL_CHUNKS:2][BITMAP:ceil(total/8)]
+  0xA0           BE         BE              LSB-first
+
+# Для 16 chunks: загальний розмір = 1+4+2+2 = 9 байт + AES padding to 16 → 1 LoRa frame
+```
+
+**Soldier-side: тригер ACK після broadcast wave:**
+
+Soldier мав би передбачити закінчення broadcast (наприклад, `ota_chunks_received` не змінювався протягом останніх 5 секунд → broadcast скінчився) і відправити ACK у aggregation-вікно. Але **це вимагає TDMA Sync (ARCH.26)** — без узгодженого годинника Soldier не знає, коли почати TX, щоб не зіткнутися з іншими Soldier'ами.
+
+**Чому DESIGN, а не імплементація:**
+
+- TDMA не реалізована → 100 Soldier'ів одночасно відправляли б ACK → collision storm.
+- Поточний `Trigger_Emergency_LoRa_TX()` має `random_jitter % 500ms` (FW.10) — для broadcast-ACK довелось би розширити цей jitter до пропорційного до кількості сусідніх вузлів, що знову вимагає координації.
+- ACK-bitmap-aggregation потребує Queen RAM (`union_bitmap[ceil(OTA_MAX_CHUNKS/8)] = 2 байти` × до 100 unique DIDs у CIFO cache). Це окрема структура поза CIFO.
+
+#### 5.X.3 Дизайн B: Magic Re-Request (Soldier-initiated vector OTA)
+
+**Ідея:** Soldier при `ota_chunks_received < ota_total_chunks` після таймауту (наприклад, **5 хвилин без нових chunks**) ініціює uplink-запит конкретних missing chunks через звичайний LoRa TX → Queen приймає, ретранслює лише ці chunks.
+
+**Soldier-side state machine (новий):**
+
+```c
+// firmware/soldier/main.c — додатковий стан OTA
+uint32_t ota_last_chunk_rx_tick = 0;
+#define OTA_REREQUEST_TIMEOUT_MS  300000  // 5 хв без нових chunks → re-request
+#define REREQUEST_MARKER          0x55    // Окремий маркер uplink-запиту
+
+// У Phase 4.5 після обробки RX:
+if (ota_total_chunks > 0 &&
+    ota_chunks_received < ota_total_chunks &&
+    (HAL_GetTick() - ota_last_chunk_rx_tick) > OTA_REREQUEST_TIMEOUT_MS) {
+    // Збираємо missing-bitmap і шлемо запит
+    Send_OTA_ReRequest(ota_chunk_received, ota_total_chunks);
+}
+
+void Send_OTA_ReRequest(uint8_t* received_map, uint16_t total) {
+    uint8_t req_payload[16] = {0};
+    req_payload[0] = REREQUEST_MARKER;             // 0x55
+    req_payload[1] = (uint8_t)(tree_did >> 24);
+    req_payload[2] = (uint8_t)(tree_did >> 16);
+    req_payload[3] = (uint8_t)(tree_did >> 8);
+    req_payload[4] = (uint8_t)(tree_did & 0xFF);
+    req_payload[5] = (uint8_t)(total & 0xFF);      // up to OTA_MAX_CHUNKS=16
+    // Bitmap of missing (NOT received): bytes 6-7 для 16 chunks
+    for (uint16_t i = 0; i < total && i < 16; i++) {
+        if (!received_map[i]) {
+            req_payload[6 + (i >> 3)] |= (1 << (i & 7));
+        }
+    }
+    // PAD bytes 8-10, TTL=DEFAULT_TTL у [11], FW version у [12-13]
+    req_payload[11] = DEFAULT_TTL;
+    req_payload[12] = (uint8_t)(FIRMWARE_VERSION_ID >> 8);
+    req_payload[13] = (uint8_t)(FIRMWARE_VERSION_ID & 0xFF);
+
+    // AES-256-ECB шифрування + TX (як стандартний uplink-пакет)
+    HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
+                      (uint32_t*)encrypted_payload, 1000);
+    Radio.Send(encrypted_payload, 16);
+}
+```
+
+**Queen-side: розпізнавання `REREQUEST_MARKER` в LoRa RX:**
+
+```c
+// У Process_LoRa_RX() поряд з існуючим CIFO insert:
+if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
+    // Не йде в CIFO, не йде у CoAP — тригерить локальний replay
+    uint32_t requestor_did = ((uint32_t)decrypted_lora_buffer[1] << 24) |
+                              ((uint32_t)decrypted_lora_buffer[2] << 16) |
+                              ((uint32_t)decrypted_lora_buffer[3] << 8) |
+                              (uint32_t)decrypted_lora_buffer[4];
+    uint16_t total = decrypted_lora_buffer[5];
+    uint16_t missing_mask = ((uint16_t)decrypted_lora_buffer[6]) |
+                             ((uint16_t)decrypted_lora_buffer[7] << 8);
+
+    // Replay only missing chunks. pending_ota_bytecode має бути ще в RAM
+    // (інакше — ігноруємо, Soldier ребутнеться через IWDG).
+    if (ota_is_active || ota_total_chunks > 0) {
+        for (uint16_t i = 0; i < total && i < OTA_MAX_CHUNKS; i++) {
+            if (missing_mask & (1 << i)) {
+                Send_OTA_Chunk(i, /*from*/pending_ota_bytecode);
+                HAL_Delay(60);
+            }
+        }
+    }
+    return;  // Не класифікуємо як telemetry
+}
+```
+
+**Переваги Magic Re-Request:**
+
+1. **Self-healing:** Soldier ініціює recovery без потреби в TDMA — у нього вже є jitter (`random_jitter % 500ms`) для уникнення collision з іншими uplink-пакетами.
+2. **Targeted re-broadcast:** Queen відправляє лише missing chunks → 60-90% energy saving vs повторний wave.
+3. **Vector OTA на одному пакеті:** 1 ACK-payload фіксує до 16 missing chunks одночасно (bitmap до OTA_MAX_CHUNKS).
+4. **Power-aware throttle:** Soldier перевіряє `vcap_voltage > VCAP_LISTEN_THRESHOLD` (2800 мВ) перед re-request — слабкі вузли не споживають енергію на uplink.
+
+**Обмеження / залишкові ризики:**
+
+1. **Queen `pending_ota_bytecode` lifetime:** Якщо Queen вже відкинула буфер (наприклад, після повного `ota_is_active=0` cycle), re-request неможливо обслужити — потрібен повторний CoAP push з Rails. Можливе рішення: Queen зберігає останній OTA SHA-256 у Flash і перевіряє при re-request чи це той самий контракт.
+2. **REREQUEST_MARKER (0x55) collision:** Маркер 0x55 вибраний так, щоб не конфліктувати з `OTA_MARKER (0x99)` та telemetry (DID byte 0 рідко 0x55, але можливо). Альтернатива — окреме AES-key namespace, що потребує SEC.3 (per-device HKDF).
+3. **Replay window:** Зловмисник може resend REREQUEST → Queen знов ретранслює → battery drain. Mitigation: Queen дедуплікує REREQUEST за `(DID, missing_bitmap)` на 5 хв (cmd_dedup_ring already існує в queen-firmware §6).
+
+#### 5.X.4 Інтеграція ARCH.26 (TDMA) → повна імплементація FW.27
+
+Коли TDMA з'явиться:
+
+1. **Aggregation window** (Дизайн A) стає feasible — Soldier'и розподіляються між слотами всередині 10-секундного вікна.
+2. **Magic Re-Request** (Дизайн B) залишається корисним як safety net поза TDMA-вікнами.
+3. Обидва дизайни ортогональні: A покриває collective recovery, B — individual recovery.
+
+**Black-list рекомендація:** реалізовувати **Дизайн B (Magic Re-Request)** першим — він не вимагає TDMA, дає 80% користі з 20% складності. Дизайн A реалізовуємо одночасно з ARCH.26.
+
+---
+
 ## 🛡️ 6. Actuator Command Dedup (Idempotency Ring Buffer)
 
 ### Проблема, яку вирішує

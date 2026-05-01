@@ -656,7 +656,7 @@ TEST(test_dual_threshold_warning_escalation_chainsaw)
 
 TEST(test_dual_threshold_warning_no_escalation_for_cavitation)
 {
-    /* Кавітація (clas 2) у WARNING-зоні не ескалюється навіть при 5×.
+    /* Кавітація (class 2) у WARNING-зоні не ескалюється навіть при 5×.
      * Тільки chainsaw отримує fallback Emergency TX. */
     reset_mocks();
     uint8_t events = 0, warn = 0;
