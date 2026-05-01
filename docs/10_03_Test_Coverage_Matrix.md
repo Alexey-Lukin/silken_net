@@ -11,7 +11,7 @@
 - **Дата аудиту:** 2026-05-01
 - **Кількість тестів:**
   - RSpec (Ruby): ~290+ spec files, ~49,000+ lines
-  - Firmware (C): 283 tests (105 soldier + 83 queen + 33 bio-contract + 44 tinyml + 18 encryption)
+  - Firmware (C): 302 tests (113 soldier + 91 queen + 33 bio-contract + 44 tinyml + 21 encryption)
   - Foundry (Solidity): 6 test suites, ~115+ tests
 
 ---
@@ -95,7 +95,7 @@
 
 ## 🔧 2. Firmware Test Coverage
 
-### 2.1 Soldier (test_soldier_logic.c — 105 tests)
+### 2.1 Soldier (test_soldier_logic.c — 113 tests)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -110,8 +110,9 @@
 | RSSI Clamping | 7 | 🟢 Повне |
 | EMA Filter (FW.21) | 10 | 🟢 Повне |
 | DID Generation (FW.24) | 5 | 🟢 Повне — **[FW.24]** `test_did_hrng_fallback_not_magic` |
+| **[FW.1] Flash Key Loading** | **8** | 🟢 **Нове** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler, FLASH_KEY_ADDR 0x0803E000 |
 
-### 2.2 Queen (test_queen_logic.c — 83 tests)
+### 2.2 Queen (test_queen_logic.c — 91 tests)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -125,6 +126,7 @@
 | ECB/CBC Restoration | 3 | 🟢 Повне |
 | HRNG IV Generation | 5 | 🟢 Повне |
 | **CoAP Retry (FW.9)** | **4** | 🟢 **Нове** — `test_coap_retry_constants`, константи `COAP_MAX_RETRIES`, `UART_RX_BUF_SIZE` |
+| **[FW.1] Flash Key Loading** | **8** | 🟢 **Нове** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler, FLASH_KEY_ADDR 0x0803E000 |
 
 ### 2.3 Bio-Contract (test_bio_contract.c — 33 tests)
 
@@ -138,7 +140,7 @@
 | Evaluate & Pack Integration | 2 | 🟢 Повне |
 | **Boundary Conditions** | **5** | 🟢 **Нове** |
 
-### 2.4 Encryption (test_encryption.c — 18 tests)
+### 2.4 Encryption (test_encryption.c — 21 tests)
 
 | Область | Тести | Покриття | ⚠️ |
 |---------|-------|----------|-----|
@@ -147,6 +149,7 @@
 | Error Recovery (FW.16) | 3 | 🟢 | |
 | IV Handling | 3 | 🟢 | |
 | Encrypt/Decrypt Verify | 3 | 🟢 | Mock HAL |
+| **[FW.1] Flash Key Integration** | **3** | 🟢 **Нове** | `Load_AES_Key()` → CRYP init integration, key-zero rejection, magic validation |
 
 ### 2.5 TinyML Pipeline (test_tinyml_pipeline.c — 44 tests)
 

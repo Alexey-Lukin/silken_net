@@ -192,22 +192,22 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 ### 🔴 BLOCKER-1: Hardcoded AES-256 Key у Flash-пам'яті
 
 **Статус:** Відкрито. Критичний ризик безпеки для масового виробництва.
+> 🟡 Firmware part completed: `Load_AES_Key()` reads per-device key from Protected Flash Sector (0x0803E000). Hardcoded key removed. `Error_Handler()` if not provisioned. Залишається: factory flashing pipeline, RDP Level 2 activation.
 
 **Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
 
 ```c
-// Однаковий ключ у ВСІХ вузлах мережі Silken Net
-uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
-                       0x1A2B3C4D, 0x5E6F7A8B, 0x9C0D1E2F, 0x3A4B5C6D};
+// [FW.1] Hardcoded key removed. Key loaded from Protected Flash Sector via Load_AES_Key().
+uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init()
 ```
 
 **Ризики:**
-1. **Єдина точка відмови:** Злам одного Солдата → компроментація всієї мережі.
+1. **~~Єдина точка відмови:~~** ✅ Firmware тепер підтримує per-device key (Flash-based). Залишається factory provisioning pipeline.
 2. **Неможливість ротації:** Замінити ключ без перепрошивки всіх вузлів неможливо.
 3. **Flash читається через JTAG/SWD:** Якщо не активований RDP Level 2 (Readout Protection), ключ тривіально витягується.
 
 **Необхідна дія:**
-- Провізіонувати унікальний ключ на кожен пристрій через захищений канал (`POST /api/v1/provisioning/register`) під час Factory Flashing.
+- ~~Провізіонувати унікальний ключ на кожен пристрій через захищений канал (`POST /api/v1/provisioning/register`) під час Factory Flashing.~~ ✅ Firmware ready — `Load_AES_Key()` реалізовано.
 - Активувати RDP Level 2 як фінальний крок Factory Flashing (необоротно блокує JTAG).
 - Перенести ключ у `FLASH_KEYR`-захищену зону або окремий secure element.
 - Реалізувати механізм ротації ключів через OTA (окрема задача `03_05`).

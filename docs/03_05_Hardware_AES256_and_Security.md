@@ -45,6 +45,7 @@
 ### 🔴 BLOCKER-1: Hardcoded AES-256 Key у Flash-пам'яті (Ідентичний на всіх вузлах)
 
 **Статус:** Відкрито. **Критичний ризик безпеки для масового виробництва.**
+> 🟡 Firmware part completed: `Load_AES_Key()` reads per-device key from Protected Flash Sector (0x0803E000). Hardcoded key removed. `Error_Handler()` if not provisioned. Залишається: factory flashing pipeline, RDP Level 2 activation.
 
 **Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
 

@@ -38,7 +38,7 @@
 | **RSSI Clamp (int16 → int8)** | ✅ Виправлено (SX1262 може давати < -128 dBm) |
 | **Thundering Herd Jitter (HRNG)** | ✅ Виправлено (0–60 секунд рандомне зміщення) |
 | **AT Command Timeout (blind delay)** | 🔴 BLOCKER (немає парсингу відповіді модему) |
-| **Hardcoded AES Key у Flash** | 🔴 BLOCKER (єдиний ключ на всю мережу) |
+| **Hardcoded AES Key у Flash** | 🟡 BLOCKER (firmware fixed — `Load_AES_Key()`, needs factory pipeline + RDP L2) |
 | **Queen UID hardcoded "QUEEN-001"** | ✅ Виправлено (Flash-based provisioning з fallback на STM32 HW UID) |
 | **Error_Handler без IWDG у Queen** | ✅ Виправлено (IWDG додано з timeout ~26 с + refresh у main loop) |
 | **No CoAP retry logic** | ✅ Виправлено (FW.9) — `SIM7070_SendATCommand_WithResponse`, max 3 retry, парсинг `OK`/`ERROR` |
@@ -54,21 +54,22 @@
 ### 🔴 BLOCKER-1: Hardcoded AES-256 Key у Flash-пам'яті
 
 **Статус:** Відкрито. Критичний ризик безпеки для масового виробництва.
+> 🟡 Firmware part completed: `Load_AES_Key()` reads per-device key from Protected Flash Sector (0x0803E000). Hardcoded key removed. `Error_Handler()` if not provisioned. Залишається: factory flashing pipeline, RDP Level 2 activation.
+
 **Файл:** `firmware/queen/main.c:81-82`
 
 ```c
-// Однаковий ключ у ВСІХ вузлах мережі Silken Net
-uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
-                       0x1A2B3C4D, 0x5E6F7A8B, 0x9C0D1E2F, 0x3A4B5C6D};
+// [FW.1] Hardcoded key removed. Key loaded from Protected Flash Sector via Load_AES_Key().
+uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init()
 ```
 
 **Ризики:**
-1. **Єдина точка відмови:** Фізичний злам однієї Королеви → компрометація всієї мережі LoRa.
+1. **~~Єдина точка відмови:~~** ✅ Firmware тепер підтримує per-device key (Flash-based). Залишається factory provisioning pipeline.
 2. **JTAG/SWD читання Flash:** Без активованого RDP Level 2 ключ тривіально витягується.
 3. **Неможливість ротації без перепрошивки:** При компрометації треба рефлешити всі вузли.
 
 **Необхідна дія:**
-- Провізіонувати унікальний ключ на кожну Королеву через `POST /api/v1/provisioning/register` (Factory Flashing).
+- ~~Провізіонувати унікальний ключ на кожну Королеву через `POST /api/v1/provisioning/register` (Factory Flashing).~~ ✅ Firmware ready — `Load_AES_Key()` реалізовано.
 - Активувати RDP Level 2 як фінальний крок флешингу (блокує JTAG назавжди).
 - Перенести ключ у захищений регіон Flash або окремий secure element.
 
