@@ -89,6 +89,33 @@ volatile uint8_t audio_ready = 0; // Прапорець завершення р�
 uint8_t ml_event_id = 0;          // Результат: 0-Тиша, 1-Вітер, 2-Кавітація, 3-Пилка
 float ml_confidence = 0.0;        // Рівень впевненості моделі (0.0 - 1.0)
 
+// === 1.5а. ДВОРІВНЕВА СИСТЕМА ПОРОГІВ TINYML (FW.18) ===
+// Замість hardcoded 0.80 — дві зони впевненості, що зберігаються в RTC
+// Backup Domain і можуть оновлюватись через OTA CMD без перепрошивки.
+//
+//   confidence < WARNING   → SILENCE (нічого, reset warning_counter)
+//   WARNING ≤ c < CRITICAL → WARNING (acoustic_events++, лічимо ескалацію)
+//   confidence ≥ CRITICAL  → CRITICAL (acoustic_events++ або Emergency TX)
+//
+// Persistence: DR13 (warning), DR14 (critical) як IEEE 754 float у uint32
+// (bit-copy, без magic — валідуємо діапазоном [TINYML_THRESHOLD_MIN_VALID,
+// TINYML_THRESHOLD_MAX_VALID]). При cold-start або корупції — fallback на
+// дефолти TINYML_DEFAULT_WARNING / TINYML_DEFAULT_CRITICAL з 03_03 BLOCKER-6.
+//
+// SSOT для розташування RTC регістрів: 03_01 §2 (Soldier RTC Backup Map).
+// DR13/DR14 — частина «реєрву DR13..DR15», виділеного після FW.21 fallback.
+#define TINYML_DEFAULT_WARNING       0.60f
+#define TINYML_DEFAULT_CRITICAL      0.85f
+#define TINYML_THRESHOLD_MIN_VALID   0.01f
+#define TINYML_THRESHOLD_MAX_VALID   0.99f
+#define TINYML_WARNING_ESCALATION    3   // 3× WARNING поспіль → ескалація CRITICAL
+
+float   tinyml_warning_threshold  = TINYML_DEFAULT_WARNING;
+float   tinyml_critical_threshold = TINYML_DEFAULT_CRITICAL;
+uint8_t warning_counter           = 0;   // Послідовні WARNING-події між cold-boot;
+                                          // SRAM зберігається в STOP2, скидається
+                                          // лише при VBAT-loss / IWDG / NVIC reset.
+
 // === 1.8. ПАМ'ЯТЬ ЕСТАФЕТИ (Directed Mesh) ТА OTA ===
 uint8_t mesh_relay_payload[16] = {0}; // Буфер для чужого 16-байтного пакета
 uint8_t has_mesh_relay = 0;           // Прапорець: 1 - є пакет для ретрансляції
@@ -199,6 +226,35 @@ static inline uint8_t EMA_Is_Warmed_Up(void) {
     return (ema_valid == EMA_VALID_MAGIC) && (ema_count >= EMA_WARMUP_CYCLES);
 }
 
+// === 1.11. ВАЛІДАЦІЯ ПОРОГІВ TINYML (FW.18) ===
+// Перевірка одного порогу: повертає raw, якщо він у дозволеному робочому
+// діапазоні [MIN_VALID, MAX_VALID] і не NaN/Inf, інакше — fallback_default.
+// Вимагається <math.h> для isfinite() (вже включений у secція Includes).
+//
+// Окрема функція дозволяє покрити логіку на хості без HAL_RTCEx_BKUPRead.
+static inline float TinyML_Validate_Threshold(float raw, float fallback_default) {
+    if (!isfinite(raw)) return fallback_default;
+    if (raw < TINYML_THRESHOLD_MIN_VALID) return fallback_default;
+    if (raw > TINYML_THRESHOLD_MAX_VALID) return fallback_default;
+    return raw;
+}
+
+// Перевірка пари: гарантує warning < critical, інакше дефолти на обидва.
+// Зберігає інваріант зон (SILENCE < WARNING < CRITICAL) навіть при частково
+// корумпованому RTC або злочинно сформованому OTA payload.
+static inline void TinyML_Apply_Thresholds(float warn_raw, float crit_raw,
+                                            float* warn_out, float* crit_out) {
+    float w = TinyML_Validate_Threshold(warn_raw, TINYML_DEFAULT_WARNING);
+    float c = TinyML_Validate_Threshold(crit_raw, TINYML_DEFAULT_CRITICAL);
+    if (!(w < c)) {
+        // Інверсія/рівність → відкочуємо обидва на дефолти
+        w = TINYML_DEFAULT_WARNING;
+        c = TINYML_DEFAULT_CRITICAL;
+    }
+    *warn_out = w;
+    *crit_out = c;
+}
+
 // === 2. РУДА СВІДОМОСТІ (Байт-код mruby) ===
 // Скомпільований скрипт Атрактора Лоренца.
 // Цей масив генерується на Mac командою mrbc.
@@ -307,6 +363,23 @@ int main(void)
           ema_valid        = v;
           ema_count        = (uint8_t)((ema_meta >> 16) & 0xFFu);
       }
+  }
+
+  // =========================================================================
+  // [FW.18] ВІДНОВЛЕННЯ ПОРОГІВ TINYML (RTC DR13/DR14)
+  // =========================================================================
+  // DR13 = warning_threshold (IEEE 754 float як uint32, bit-copy).
+  // DR14 = critical_threshold. Без виділеного magic-маркера: cold-boot RTC
+  // читається як 0x00000000 → float 0.0f → не проходить діапазон [0.01, 0.99]
+  // → TinyML_Validate_Threshold() віддає дефолт. Якщо обидва RTC-значення
+  // валідні, але інверсія (warn ≥ crit) — TinyML_Apply_Thresholds() відкочує
+  // обидва на дефолти, гарантуючи інваріант зон. SSOT: 03_03 BLOCKER-6 §214.
+  {
+      float rtc_warn = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR13));
+      float rtc_crit = uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR14));
+      TinyML_Apply_Thresholds(rtc_warn, rtc_crit,
+                              &tinyml_warning_threshold,
+                              &tinyml_critical_threshold);
   }
 
   // =========================================================================
@@ -496,14 +569,42 @@ int main(void)
             // 5. Запускаємо "Свідомість" (Шаховий розтин звуку)
             // ml_event_id = Run_Inference(audio_buffer, &ml_confidence);
 
-            if (ml_confidence > 0.80) {
+            // [FW.18] Dual-Threshold Decision Logic (заміна hardcoded 0.80).
+            // Пороги завантажуються з RTC DR13/DR14 на boot з валідацією
+            // [TINYML_THRESHOLD_MIN_VALID..MAX_VALID]; OTA може оновити їх
+            // через CMD-фреймворк (deferred, спільно з FW.8). SILENCE/WARNING/
+            // CRITICAL зони — див. 03_03 §214 (BLOCKER-6 design).
+            if (ml_confidence >= tinyml_critical_threshold) {
+                // === CRITICAL ZONE === — повна впевненість моделі
                 if (ml_event_id == 2) {
-                    // Це підтверджена кавітація ксилеми!
+                    // Підтверджена кавітація ксилеми
                     if (acoustic_events < 255) acoustic_events++;
                 } else if (ml_event_id == 3) {
-                    // Тривога: Аномальна вібрація (Бензопила / Вандалізм)
+                    // Бензопила/вандалізм — НЕГАЙНИЙ panic TX (PANIC_TTL=5)
+                    if (acoustic_events < 255) acoustic_events++;
                     Trigger_Emergency_LoRa_TX();
                 }
+                // Будь-яке CRITICAL-рішення скидає лічильник ескалації
+                warning_counter = 0;
+            } else if (ml_confidence >= tinyml_warning_threshold) {
+                // === WARNING ZONE === — модель сумнівається, але подія є
+                if (ml_event_id == 2 || ml_event_id == 3) {
+                    if (acoustic_events < 255) acoustic_events++;
+                    if (warning_counter < 255) warning_counter++;
+                    if (warning_counter >= TINYML_WARNING_ESCALATION) {
+                        // 3+ послідовних WARNING → ескалюємо реальну загрозу.
+                        // Тільки для бензопили — кавітація рідко погіршується
+                        // через шум, тому не виправдовує fallback Emergency TX.
+                        if (ml_event_id == 3) {
+                            Trigger_Emergency_LoRa_TX();
+                        }
+                        warning_counter = 0;
+                    }
+                }
+                // Тиша/вітер у WARNING-зоні: не паніка, лічильник не рухаємо
+            } else {
+                // === SILENCE ZONE === — впевненість нижча за WARNING
+                warning_counter = 0;
             }
         }
     }
@@ -848,6 +949,15 @@ int main(void)
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR18, float_to_uint32(lorenz_z));
         HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC);
     }
+
+    // [FW.18] Зберігаємо TinyML-пороги перед STOP2 (DR13/DR14).
+    // На стандартному циклі значення не змінюються (writeback того, що
+    // прочитали). Це робиться, щоб OTA-set значення (CMD_SET_THRESHOLDS,
+    // deferred) пережили STOP2 та повне знеструмлення RTC ⇒ при VBAT-loss
+    // RTC обнуляється, на boot Apply_Thresholds() повертає дефолти, і ці
+    // дефолти знову персистяться для наступного циклу.
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, float_to_uint32(tinyml_warning_threshold));
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, float_to_uint32(tinyml_critical_threshold));
 
     // [FIX: AUDIT Energy] Вимикаємо периферію перед STOP2 для мінімального споживання.
     // Без де-ініціалізації ці модулі тягнуть мікроампери навіть у STOP2.
