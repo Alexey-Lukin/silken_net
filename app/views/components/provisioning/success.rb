@@ -14,7 +14,7 @@ module Provisioning
           p(class: "text-sm text-gray-500 font-mono") { "Node has been woven into the Silken Net." }
 
           div(class: "mt-10 p-6 bg-zinc-950 border border-emerald-900 text-left space-y-6") do
-            render_data_point("Assigned DID", @device.did)
+            render_data_point("Assigned DID", @device.try(:did) || @device.try(:uid))
             render_data_point("Hardware UID", @device.uid || "N/A")
 
             if @aes_key.present?

@@ -102,7 +102,7 @@ module Maintenance
           end
         end
         a(
-          href: edit_api_v1_maintenance_record_path(@record),
+          href: api_v1_maintenance_record_path(@record),
           class: "inline-block mt-4 px-4 py-2 border border-emerald-900 text-emerald-900 " \
                  "hover:border-emerald-500 hover:text-emerald-500 uppercase text-mini tracking-widest transition-all"
         ) { "Attach Evidence →" }
@@ -172,7 +172,7 @@ module Maintenance
 
         div(class: "pt-4 border-t border-emerald-900/30") do
           a(
-            href: edit_api_v1_maintenance_record_path(@record),
+            href: api_v1_maintenance_record_path(@record),
             class: "block w-full text-center py-2 border border-emerald-900 text-mini uppercase " \
                    "text-emerald-700 hover:border-emerald-500 hover:text-emerald-500 transition-all"
           ) { "Edit Record →" }
