@@ -26,7 +26,7 @@ module Api
           format.json do
             render json: {
               data: @firmwares.as_json(
-                only: [ :id, :version, :target_hardware, :file_size, :created_at, :checksum ],
+                only: [ :id, :version, :target_hardware_type, :created_at, :binary_sha256 ],
                 methods: [ :deployment_count ]
               ),
               pagy: pagy_metadata(@pagy)
