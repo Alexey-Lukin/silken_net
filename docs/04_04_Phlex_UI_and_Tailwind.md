@@ -1069,3 +1069,48 @@ class MyComponentPreview < Lookbook::Preview
   end
 end
 ```
+
+---
+
+## 11. Міграція з ActionController::API на ActionController::Base
+
+### Контекст
+
+`Api::V1::BaseController` раніше успадковував `ActionController::API`. Це було змінено на `ActionController::Base`
+(з `layout false`), оскільки `ActionController::API` не надає `ActionView::Rendering` з `view_context`,
+необхідним для Phlex `render_in`. При `ActionController::API` Phlex-компоненти повертали порожній body
+з HTTP 200 — тести проходили, бо перевіряли лише `have_http_status(:ok)`, не вміст відповіді.
+
+### Виявлені та виправлені баги
+
+Після переходу Phlex-компоненти почали реально рендеритись, що виявило приховані помилки:
+
+| Компонент | Баг | Виправлення |
+|-----------|-----|-------------|
+| `Gateways::Show` | `@gateway.firmware_hash` — колонка не існує на Gateway | Замінено на `@gateway.try(:firmware_hash)` (safe fallback) |
+| `Gateways::Show` | `@gateway.hardware_key&.uid` — HardwareKey має `device_uid`, не `uid` | Замінено на `@gateway.hardware_key&.device_uid` |
+| `Provisioning::Success` | `@device.did` — Gateway має `uid`, не `did` | Замінено на `@device.try(:did) \|\| @device.try(:uid)` |
+| `Maintenance::Show` | `edit_api_v1_maintenance_record_path` — маршрут `:edit` не існував | Додано маршрут `:edit` та дію контролера `edit` |
+
+### CI: Компіляція Tailwind CSS
+
+Tailwind CSS повинен бути скомпільований перед тестами. Крок `bin/rails tailwindcss:build`
+додано до CI workflow перед запуском rspec (обидва jobs: `test` та `feature-test`).
+Layout-компоненти (`AuthLayout`, `DashboardLayout`) використовують `stylesheet_link_tag "tailwind"`,
+що вимагає наявності скомпільованого `tailwind.css` у `app/assets/builds/`.
+
+### Правила
+
+1. **Компоненти НЕ ПОВИННІ звертатись до методів/колонок моделей, що не існують** — навіть якщо
+   компонент "працював" під `ActionController::API`, перехід на `ActionController::Base` виявить
+   баг як `NoMethodError` під час рендерингу.
+2. **Тести view-компонентів повинні використовувати моки з полями, що відповідають реальній схемі БД**
+   (наприклад, `device_uid`, а не `uid` для HardwareKey).
+3. **`bin/rails tailwindcss:build` обов'язковий перед тестами**, якщо layout-компоненти посилаються
+   на скомпільовані CSS-файли.
+
+### CSRF Захист
+
+`protect_from_forgery with: :exception` (найсуворіша стратегія). Bearer-token запити обходять CSRF
+через `handle_unverified_request` — браузери ніколи не прикріплюють `Authorization` header автоматично
+при cross-origin запитах, тому Bearer-token запити імунні до CSRF за дизайном.

@@ -264,34 +264,7 @@ it "test that status works" do
 
 ---
 
-## Known Issues Found During ActionController::Base Migration
-
-When `BaseController` was switched from `ActionController::API` to `ActionController::Base`,
-Phlex components began actually rendering in tests (previously, `ActionController::API`
-silently returned empty body). This exposed several pre-existing bugs:
-
-### Bugs Fixed
-
-| Component | Bug | Fix |
-|-----------|-----|-----|
-| `Gateways::Show` | `@gateway.firmware_hash` — column doesn't exist on Gateway | Changed to `@gateway.try(:firmware_hash)` (safe fallback) |
-| `Gateways::Show` | `@gateway.hardware_key&.uid` — HardwareKey has `device_uid`, not `uid` | Changed to `@gateway.hardware_key&.device_uid` |
-| `Provisioning::Success` | `@device.did` — Gateway has `uid`, not `did` | Changed to `@device.try(:did) \|\| @device.try(:uid)` |
-| `Maintenance::Show` | `edit_api_v1_maintenance_record_path` — `:edit` route doesn't exist | Changed to `api_v1_maintenance_record_path` (show route) |
-
-### CI Fix
-
-Tailwind CSS must be compiled before tests. Added `bin/rails tailwindcss:build`
-step to CI workflow before running rspec (both `test` and `feature-test` jobs).
-
-### Lesson Learned
-
-**Best Practice #31**: When testing Phlex components that render full HTML documents
-(layouts with `stylesheet_link_tag`, `javascript_importmap_tags`), ensure CSS/JS assets
-are compiled. If using `tailwindcss-rails`, run `bin/rails tailwindcss:build` before tests.
-Components must NOT reference model methods/columns that don't exist — even if the
-component "works" under `ActionController::API`, switching to `ActionController::Base`
-will expose the bug as `NoMethodError` at render time.
+## Checklist для code review
 
 - [ ] Файл дзеркалить шлях компонента (BP #1)
 - [ ] Використовує `render_component` з хелпера або обґрунтовано перевизначає (BP #2-4)

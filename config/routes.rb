@@ -117,7 +117,7 @@ Rails.application.routes.draw do
         patch :resolve, on: :member
       end
 
-      resources :maintenance_records, only: [ :index, :new, :create, :show, :update ] do
+      resources :maintenance_records, only: [ :index, :new, :create, :show, :edit, :update ] do
         patch :verify,  on: :member
         get   :photos,  on: :member
         resources :photos, only: [ :destroy ],
