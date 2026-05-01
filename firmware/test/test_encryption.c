@@ -68,18 +68,58 @@ static void reset_crypto_mocks(void)
  * EXTRACTED LOGIC (from queen/main.c)
  * ══════════════════════════════════════════════════════════════════ */
 
-/* AES key (same as in queen/main.c) */
-static uint32_t test_aes_key[8] = {
-    0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
-    0x1A2B3C4D, 0x5E6F7A8B, 0x9C0D1E2F, 0x3A4B5C6D
-};
+/* [FW.1] Flash-based AES key provisioning constants */
+#define FLASH_KEY_ADDR             ((uintptr_t)_mock_flash_key_region)
+#define FLASH_KEY_WORDS            8
+#define FLASH_KEY_MAGIC            0x534B4559UL  /* "SKEY" */
+
+/* [FW.1] Error_Handler for Load_AES_Key */
+static void Error_Handler(void) { _mock_error_handler_called++; }
+
+/* AES key — now loaded from Flash by Load_AES_Key() */
+static uint32_t test_aes_key[8] = {0};
+
+/* [FW.1] Load AES Key from Flash (extracted from soldier/queen main.c) */
+static void Load_AES_Key(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_KEY_ADDR;
+
+    if (flash_ptr[0] != FLASH_KEY_MAGIC) {
+        Error_Handler();
+        return;
+    }
+
+    uint32_t key_or = 0;
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
+        key_or |= flash_ptr[1 + i];
+    }
+    if (key_or == 0) {
+        Error_Handler();
+        return;
+    }
+
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
+        test_aes_key[i] = flash_ptr[1 + i];
+    }
+}
 
 /* Simulated CRYP handle */
 static CRYP_HandleTypeDef test_cryp;
 
+/* Standard test key for provisioning */
+static const uint32_t _enc_test_key[8] = {
+    0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
+    0x1A2B3C4D, 0x5E6F7A8B, 0x9C0D1E2F, 0x3A4B5C6D
+};
+
 /* Initialize CRYP in ECB mode (default state for LoRa) */
 static void Init_CRYP_ECB(void)
 {
+    /* [FW.1] Provision test key into mock Flash before loading */
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, _enc_test_key);
+    _mock_error_handler_reset();
+    Load_AES_Key();
+
     test_cryp.Init.Algorithm = CRYP_AES_ECB;
     test_cryp.Init.KeySize = CRYP_KEYSIZE_256B;
     test_cryp.Init.DataType = CRYP_DATATYPE_32B;
@@ -455,6 +495,76 @@ TEST(test_encrypt_in_cbc_mode)
 }
 
 /* ══════════════════════════════════════════════════════════════════
+ * [FW.1] FLASH KEY + CRYP INIT INTEGRATION TESTS
+ * ══════════════════════════════════════════════════════════════════ */
+
+TEST(test_load_key_then_cryp_init_uses_flash_key)
+{
+    /* Full init sequence: Load_AES_Key → MX_CRYP_Init → pKey points to Flash-loaded key */
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(test_aes_key, 0, sizeof(test_aes_key));
+
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, _enc_test_key);
+    Load_AES_Key();
+    ASSERT_EQ(_mock_error_handler_called, 0);
+
+    /* Simulate MX_CRYP_Init (same as in firmware) */
+    test_cryp.Init.Algorithm = CRYP_AES_ECB;
+    test_cryp.Init.KeySize = CRYP_KEYSIZE_256B;
+    test_cryp.Init.DataType = CRYP_DATATYPE_32B;
+    test_cryp.Init.pKey = test_aes_key;
+    HAL_CRYP_Init(&test_cryp);
+
+    /* pKey should point to test_aes_key which now has Flash-loaded values */
+    ASSERT_EQ(test_cryp.Init.pKey[0], 0x2B7E1516);
+    ASSERT_EQ(test_cryp.Init.pKey[7], 0x3A4B5C6D);
+}
+
+TEST(test_no_key_means_no_cryp_init)
+{
+    /* If Flash not provisioned, Error_Handler fires before MX_CRYP_Init */
+    _mock_flash_key_reset();  /* 0xFFFFFFFF — unprogrammed */
+    _mock_error_handler_reset();
+    memset(test_aes_key, 0, sizeof(test_aes_key));
+
+    Load_AES_Key();
+    ASSERT_EQ(_mock_error_handler_called > 0, 1);
+
+    /* test_aes_key should still be zeros — MX_CRYP_Init should NOT be called */
+    ASSERT_EQ(test_aes_key[0], 0);
+    ASSERT_EQ(test_aes_key[7], 0);
+}
+
+TEST(test_key_loaded_before_ecb_restore_preserves_key)
+{
+    /* After Flash key load + ECB restore cycle, pKey still points to valid key */
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, _enc_test_key);
+    Load_AES_Key();
+    Init_CRYP_ECB();
+
+    /* Switch to CBC then restore ECB */
+    uint32_t iv[4] = {1, 2, 3, 4};
+    test_cryp.Init.Algorithm = CRYP_AES_CBC;
+    test_cryp.Init.pInitVect = iv;
+    HAL_CRYP_Init(&test_cryp);
+
+    /* Restore ECB */
+    reset_crypto_mocks();
+    Restore_ECB_Mode_Testable(&test_cryp, Mock_HAL_CRYP_Init,
+        Mock_RCC_CRYP_FORCE_RESET, Mock_RCC_CRYP_RELEASE_RESET,
+        Mock_NVIC_SystemReset);
+
+    /* Key should still be the provisioned one */
+    ASSERT_EQ(test_cryp.Init.pKey[0], 0x2B7E1516);
+    ASSERT_EQ(test_cryp.Init.pKey[7], 0x3A4B5C6D);
+    ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_ECB);
+}
+
+/* ══════════════════════════════════════════════════════════════════
  * MAIN
  * ══════════════════════════════════════════════════════════════════ */
 int main(void)
@@ -492,6 +602,11 @@ int main(void)
     RUN(test_encrypt_in_ecb_mode);
     RUN(test_decrypt_in_ecb_mode);
     RUN(test_encrypt_in_cbc_mode);
+
+    printf("\n  Flash Key + CRYP Init Integration (FW.1):\n");
+    RUN(test_load_key_then_cryp_init_uses_flash_key);
+    RUN(test_no_key_means_no_cryp_init);
+    RUN(test_key_loaded_before_ecb_restore_preserves_key);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n", tests_run - tests_failed, tests_failed);

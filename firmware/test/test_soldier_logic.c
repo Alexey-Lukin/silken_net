@@ -24,9 +24,44 @@
 #define OTA_CHUNK_MAP_SIZE         256
 #define PANIC_FLAG_BIT             0x80  /* [FW.29] Bit 7 of StatusByte: panic flag */
 
+/* [FW.1] Flash-based AES key provisioning constants */
+#define FLASH_KEY_ADDR             ((uintptr_t)_mock_flash_key_region)
+#define FLASH_KEY_WORDS            8
+#define FLASH_KEY_MAGIC            0x534B4559UL  /* "SKEY" */
+
+/* [FW.1] Error_Handler mock for Load_AES_Key tests */
+static void Error_Handler(void) { _mock_error_handler_called++; }
+
+/* [FW.1] AES key array (same as in soldier/main.c) */
+static uint32_t aes_key[8] = {0};
+
 /* ════════════════════════════════════════════════════════════════════
  * EXTRACTED PURE-LOGIC FUNCTIONS
  * ════════════════════════════════════════════════════════════════════ */
+
+/* ---------- [FW.1] Load AES Key from Flash ---------- */
+static void Load_AES_Key(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_KEY_ADDR;
+
+    if (flash_ptr[0] != FLASH_KEY_MAGIC) {
+        Error_Handler();
+        return;
+    }
+
+    uint32_t key_or = 0;
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
+        key_or |= flash_ptr[1 + i];
+    }
+    if (key_or == 0) {
+        Error_Handler();
+        return;
+    }
+
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
+        aes_key[i] = flash_ptr[1 + i];
+    }
+}
 
 /* ---------- Payload packing (Phase 2) ---------- */
 static void Pack_Soldier_Payload(
@@ -1461,6 +1496,132 @@ TEST(test_ema_rtc_first_boot_no_magic) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * 12. [FW.1] FLASH-BASED AES KEY LOADING TESTS
+ * ════════════════════════════════════════════════════════════════════ */
+
+/* Helper: standard provisioned test key */
+static const uint32_t _test_provisioned_key[8] = {
+    0xAABBCCDD, 0x11223344, 0x55667788, 0x99AABBCC,
+    0xDDEEFF00, 0x12345678, 0x9ABCDEF0, 0xFEDCBA98
+};
+
+TEST(test_load_key_provisioned_success) {
+    /* Flash has magic + valid key → aes_key loaded, no error */
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0, sizeof(aes_key));
+
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, _test_provisioned_key);
+    Load_AES_Key();
+
+    ASSERT_EQ(_mock_error_handler_called, 0);
+    for (int i = 0; i < 8; i++) {
+        ASSERT_EQ(aes_key[i], _test_provisioned_key[i]);
+    }
+}
+
+TEST(test_load_key_unprovisioned_flash_error) {
+    /* Flash is 0xFFFFFFFF (unprogrammed) → Error_Handler called */
+    _mock_flash_key_reset();  /* fills with 0xFF */
+    _mock_error_handler_reset();
+    memset(aes_key, 0, sizeof(aes_key));
+
+    Load_AES_Key();
+
+    ASSERT_TRUE(_mock_error_handler_called > 0);
+    /* aes_key should remain zeros (unchanged) */
+    for (int i = 0; i < 8; i++) {
+        ASSERT_EQ(aes_key[i], 0);
+    }
+}
+
+TEST(test_load_key_magic_present_key_all_zeros_error) {
+    /* Magic is correct but key is all zeros → Error_Handler */
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0, sizeof(aes_key));
+
+    uint32_t zero_key[8] = {0};
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, zero_key);
+    Load_AES_Key();
+
+    ASSERT_TRUE(_mock_error_handler_called > 0);
+}
+
+TEST(test_load_key_wrong_magic_error) {
+    /* Wrong magic marker → Error_Handler */
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0, sizeof(aes_key));
+
+    _mock_flash_key_provision(0xDEADBEEF, _test_provisioned_key);
+    Load_AES_Key();
+
+    ASSERT_TRUE(_mock_error_handler_called > 0);
+    /* Key should NOT be loaded */
+    for (int i = 0; i < 8; i++) {
+        ASSERT_EQ(aes_key[i], 0);
+    }
+}
+
+TEST(test_load_key_partial_key_accepted) {
+    /* Only one non-zero word in key → valid (key_or != 0) */
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0, sizeof(aes_key));
+
+    uint32_t partial_key[8] = {0, 0, 0, 0, 0, 0, 0, 0x00000001};
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, partial_key);
+    Load_AES_Key();
+
+    ASSERT_EQ(_mock_error_handler_called, 0);
+    ASSERT_EQ(aes_key[7], 0x00000001);
+}
+
+TEST(test_load_key_preserves_all_8_words) {
+    /* All 8 words of key are correctly copied */
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0xAA, sizeof(aes_key));
+
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, _test_provisioned_key);
+    Load_AES_Key();
+
+    ASSERT_EQ(_mock_error_handler_called, 0);
+    ASSERT_EQ(aes_key[0], 0xAABBCCDD);
+    ASSERT_EQ(aes_key[1], 0x11223344);
+    ASSERT_EQ(aes_key[2], 0x55667788);
+    ASSERT_EQ(aes_key[3], 0x99AABBCC);
+    ASSERT_EQ(aes_key[4], 0xDDEEFF00);
+    ASSERT_EQ(aes_key[5], 0x12345678);
+    ASSERT_EQ(aes_key[6], 0x9ABCDEF0);
+    ASSERT_EQ(aes_key[7], 0xFEDCBA98);
+}
+
+TEST(test_load_key_magic_value_correct) {
+    /* Verify FLASH_KEY_MAGIC = "SKEY" = 0x534B4559 */
+    ASSERT_EQ(FLASH_KEY_MAGIC, 0x534B4559UL);
+}
+
+TEST(test_load_key_second_load_overwrites) {
+    /* Loading a new key overwrites the previous one */
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, _test_provisioned_key);
+    Load_AES_Key();
+    ASSERT_EQ(aes_key[0], 0xAABBCCDD);
+
+    /* Load a different key */
+    uint32_t key2[8] = {0x11111111, 0x22222222, 0x33333333, 0x44444444,
+                        0x55555555, 0x66666666, 0x77777777, 0x88888888};
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, key2);
+    Load_AES_Key();
+    ASSERT_EQ(aes_key[0], 0x11111111);
+    ASSERT_EQ(aes_key[7], 0x88888888);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -1597,6 +1758,16 @@ int main(void)
     RUN(test_ema_no_overflow_at_max_inputs);
     RUN(test_ema_rtc_save_load_roundtrip);
     RUN(test_ema_rtc_first_boot_no_magic);
+
+    printf("\n  Flash-Based AES Key Loading (FW.1):\n");
+    RUN(test_load_key_provisioned_success);
+    RUN(test_load_key_unprovisioned_flash_error);
+    RUN(test_load_key_magic_present_key_all_zeros_error);
+    RUN(test_load_key_wrong_magic_error);
+    RUN(test_load_key_partial_key_accepted);
+    RUN(test_load_key_preserves_all_8_words);
+    RUN(test_load_key_magic_value_correct);
+    RUN(test_load_key_second_load_overwrites);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

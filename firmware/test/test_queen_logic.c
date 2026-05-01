@@ -20,6 +20,17 @@
 #define UUID_STR_LEN          36
 #define CMD_DECRYPT_BUF_SIZE  544
 
+/* [FW.1] Flash-based AES key provisioning constants */
+#define FLASH_KEY_ADDR             ((uintptr_t)_mock_flash_key_region)
+#define FLASH_KEY_WORDS            8
+#define FLASH_KEY_MAGIC            0x534B4559UL  /* "SKEY" */
+
+/* [FW.1] Error_Handler mock for Load_AES_Key tests */
+static void Error_Handler(void) { _mock_error_handler_called++; }
+
+/* [FW.1] AES key array (same as in queen/main.c) */
+static uint32_t aes_key[8] = {0};
+
 /* ── Data structures (from queen/main.c) ────────────────────────────── */
 typedef struct {
     uint32_t uid;
@@ -78,6 +89,30 @@ static void ota_assembly_reset(void)
 /* ════════════════════════════════════════════════════════════════════
  * EXTRACTED FUNCTIONS (matching queen/main.c with bug fixes marked)
  * ════════════════════════════════════════════════════════════════════ */
+
+/* ---------- [FW.1] Load AES Key from Flash ---------- */
+static void Load_AES_Key(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_KEY_ADDR;
+
+    if (flash_ptr[0] != FLASH_KEY_MAGIC) {
+        Error_Handler();
+        return;
+    }
+
+    uint32_t key_or = 0;
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
+        key_or |= flash_ptr[1 + i];
+    }
+    if (key_or == 0) {
+        Error_Handler();
+        return;
+    }
+
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
+        aes_key[i] = flash_ptr[1 + i];
+    }
+}
 
 /* DJB2 hash — identical to queen/main.c */
 static uint32_t djb2_hash(const char* str, uint8_t len)
@@ -1276,6 +1311,116 @@ TEST(test_coap_response_parser_timeout) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * 10. [FW.1] FLASH-BASED AES KEY LOADING TESTS
+ * ════════════════════════════════════════════════════════════════════ */
+
+/* Helper: standard provisioned test key */
+static const uint32_t _queen_test_key[8] = {
+    0xAABBCCDD, 0x11223344, 0x55667788, 0x99AABBCC,
+    0xDDEEFF00, 0x12345678, 0x9ABCDEF0, 0xFEDCBA98
+};
+
+TEST(test_queen_load_key_provisioned_success) {
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0, sizeof(aes_key));
+
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, _queen_test_key);
+    Load_AES_Key();
+
+    ASSERT_EQ(_mock_error_handler_called, 0);
+    for (int i = 0; i < 8; i++) {
+        ASSERT_EQ(aes_key[i], _queen_test_key[i]);
+    }
+}
+
+TEST(test_queen_load_key_unprovisioned_error) {
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0, sizeof(aes_key));
+
+    Load_AES_Key();
+
+    ASSERT_TRUE(_mock_error_handler_called > 0);
+    for (int i = 0; i < 8; i++) {
+        ASSERT_EQ(aes_key[i], 0);
+    }
+}
+
+TEST(test_queen_load_key_all_zeros_error) {
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0, sizeof(aes_key));
+
+    uint32_t zero_key[8] = {0};
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, zero_key);
+    Load_AES_Key();
+
+    ASSERT_TRUE(_mock_error_handler_called > 0);
+}
+
+TEST(test_queen_load_key_wrong_magic_error) {
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0, sizeof(aes_key));
+
+    _mock_flash_key_provision(0xBADDCAFE, _queen_test_key);
+    Load_AES_Key();
+
+    ASSERT_TRUE(_mock_error_handler_called > 0);
+    for (int i = 0; i < 8; i++) {
+        ASSERT_EQ(aes_key[i], 0);
+    }
+}
+
+TEST(test_queen_load_key_partial_key_accepted) {
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0, sizeof(aes_key));
+
+    uint32_t partial_key[8] = {0, 0, 0, 0, 0, 0, 0, 0x00000001};
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, partial_key);
+    Load_AES_Key();
+
+    ASSERT_EQ(_mock_error_handler_called, 0);
+    ASSERT_EQ(aes_key[7], 0x00000001);
+}
+
+TEST(test_queen_load_key_preserves_8_words) {
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+    memset(aes_key, 0xAA, sizeof(aes_key));
+
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, _queen_test_key);
+    Load_AES_Key();
+
+    ASSERT_EQ(_mock_error_handler_called, 0);
+    ASSERT_EQ(aes_key[0], 0xAABBCCDD);
+    ASSERT_EQ(aes_key[3], 0x99AABBCC);
+    ASSERT_EQ(aes_key[7], 0xFEDCBA98);
+}
+
+TEST(test_queen_load_key_magic_value_correct) {
+    ASSERT_EQ(FLASH_KEY_MAGIC, 0x534B4559UL);
+}
+
+TEST(test_queen_load_key_overwrite) {
+    _mock_flash_key_reset();
+    _mock_error_handler_reset();
+
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, _queen_test_key);
+    Load_AES_Key();
+    ASSERT_EQ(aes_key[0], 0xAABBCCDD);
+
+    uint32_t key2[8] = {0x01010101, 0x02020202, 0x03030303, 0x04040404,
+                        0x05050505, 0x06060606, 0x07070707, 0x08080808};
+    _mock_flash_key_provision(FLASH_KEY_MAGIC, key2);
+    Load_AES_Key();
+    ASSERT_EQ(aes_key[0], 0x01010101);
+    ASSERT_EQ(aes_key[7], 0x08080808);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -1390,6 +1535,16 @@ int main(void)
     RUN(test_coap_response_parser_ok);
     RUN(test_coap_response_parser_error);
     RUN(test_coap_response_parser_timeout);
+
+    printf("\n  Flash-Based AES Key Loading (FW.1):\n");
+    RUN(test_queen_load_key_provisioned_success);
+    RUN(test_queen_load_key_unprovisioned_error);
+    RUN(test_queen_load_key_all_zeros_error);
+    RUN(test_queen_load_key_wrong_magic_error);
+    RUN(test_queen_load_key_partial_key_accepted);
+    RUN(test_queen_load_key_preserves_8_words);
+    RUN(test_queen_load_key_magic_value_correct);
+    RUN(test_queen_load_key_overwrite);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

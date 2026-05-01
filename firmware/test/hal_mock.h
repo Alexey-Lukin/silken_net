@@ -208,4 +208,32 @@ static inline void NVIC_SystemReset(void) {}
 /* Flash stubs for OTA */
 static inline void Write_OTA_Contract_To_Flash(uint8_t* d, uint16_t s) { (void)d; (void)s; }
 
+/* ── [FW.1] Flash Key Region Mock ──────────────────────────────────── */
+/*
+ * Simulates the Protected Flash Sector at FLASH_KEY_ADDR (0x0803E000).
+ * Layout: [magic:4][key[0]:4][key[1]:4]...[key[7]:4] = 9 × uint32_t = 36 bytes.
+ *
+ * Tests set _mock_flash_key_region[] directly, then call Load_AES_Key()
+ * which reads from (const uint32_t *)FLASH_KEY_ADDR.
+ * The FLASH_KEY_ADDR macro is redefined below to point to this array.
+ */
+#define MOCK_FLASH_KEY_REGION_WORDS  9  /* 1 magic + 8 key words */
+static uint32_t _mock_flash_key_region[MOCK_FLASH_KEY_REGION_WORDS] = {0};
+
+static inline void _mock_flash_key_reset(void) {
+    memset(_mock_flash_key_region, 0xFF, sizeof(_mock_flash_key_region));
+}
+
+/* Write a valid provisioned key into the mock Flash region */
+static inline void _mock_flash_key_provision(uint32_t magic, const uint32_t key[8]) {
+    _mock_flash_key_region[0] = magic;
+    for (int i = 0; i < 8; i++) {
+        _mock_flash_key_region[1 + i] = key[i];
+    }
+}
+
+/* Error_Handler mock — trackable for tests */
+static int _mock_error_handler_called = 0;
+static inline void _mock_error_handler_reset(void) { _mock_error_handler_called = 0; }
+
 #endif /* HAL_MOCK_H */

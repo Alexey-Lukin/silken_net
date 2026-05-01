@@ -75,9 +75,12 @@ CRYP_HandleTypeDef hcryp; // Апаратний криптопроцесор AES
 /* USER CODE BEGIN PV */
 
 // === 0. КЛЮЧІ ОХОРОНИ (Trading Post) ===
-// Секретний 256-бітний ключ мережі Silken Net (Gaia 2.0 Standard)
-uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
-                       0x1A2B3C4D, 0x5E6F7A8B, 0x9C0D1E2F, 0x3A4B5C6D};
+// [FW.1] AES-256 key — завантажується з Protected Flash Sector при boot.
+// Factory Flashing записує per-device ключ (HKDF-SHA256) на адресу FLASH_KEY_ADDR
+// через SWD. Формат Flash: [FLASH_KEY_MAGIC:4][key[0]:4]...[key[7]:4] = 36 байт.
+// Якщо ключ не provisioned — Error_Handler() (пристрій не може працювати без ключа).
+// Hardcoded значення нижче — ТІЛЬКИ для ініціалізації змінної до виклику Load_AES_Key().
+uint32_t aes_key[8] = {0};
 
 // === 1. ОРГАНИ ЧУТТЯ ТА ПАМ'ЯТЬ ===
 volatile uint8_t vibration_detected = 0; // Прапорець переривання від п'єзодиска
@@ -295,6 +298,10 @@ static void MX_CRYP_Init(void); // Ініціалізація шифруванн
 void Record_Audio_Wave(float* buffer, uint16_t length);
 void Trigger_Emergency_LoRa_TX(void);
 void Write_OTA_Contract_To_Flash(uint8_t* data, uint16_t size);
+
+// [FW.1] Завантаження AES-256 ключа з Protected Flash Sector.
+// Викликається в main() ПЕРЕД MX_CRYP_Init().
+static void Load_AES_Key(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -322,7 +329,8 @@ int main(void)
   MX_RNG_Init();
   MX_RTC_Init();
   MX_SUBGHZ_Init();
-  MX_CRYP_Init(); // Вмикаємо апаратний AES
+  Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
+  MX_CRYP_Init(); // Вмикаємо апаратний AES (використовує aes_key, вже завантажений)
 
   /* USER CODE BEGIN 2 */
 
@@ -1080,6 +1088,50 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     // Ця функція викликається апаратно, коли DMA запише 512-й байт.
     // Вона миттєво виводить процесор зі стану SLEEP для аналізу.
     audio_ready = 1;
+}
+
+// =========================================================================
+// [FW.1] ЗАВАНТАЖЕННЯ AES-256 КЛЮЧА З PROTECTED FLASH SECTOR
+// =========================================================================
+// Формат Flash-регіону на FLASH_KEY_ADDR (0x0803E000):
+//   [0] FLASH_KEY_MAGIC (0x534B4559 = "SKEY") — маркер provisioned ключа
+//   [1..8] aes_key[0..7] — 8 × uint32_t = 256 bits AES-256 key
+//
+// Якщо magic відсутній або ключ нульовий — пристрій не provisioned,
+// Error_Handler() викликає software reset. Пристрій не може працювати
+// без валідного ключа (BLOCKER-1 mitigation).
+//
+// Записується при Factory Flashing через SWD:
+//   STM32CubeProgrammer --write key_payload.bin 0x0803E000
+// Ключ деривується на backend: HKDF-SHA256(master_key, device_uid, "silkennet-v1-aes256")
+// Див. docs/03_05 §3.4а для повного протоколу.
+static void Load_AES_Key(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_KEY_ADDR;
+
+    // 1. Перевірка magic marker — чи ключ записаний при provisioning
+    if (flash_ptr[0] != FLASH_KEY_MAGIC) {
+        // Flash не provisioned (0xFFFFFFFF або стертий).
+        // Пристрій не може шифрувати/дешифрувати без ключа.
+        Error_Handler();
+        return;  // unreachable (Error_Handler resets), але для static analysis
+    }
+
+    // 2. Перевірка що ключ не нульовий (magic є, але ключ порожній — corrupted provisioning)
+    uint32_t key_or = 0;
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
+        key_or |= flash_ptr[1 + i];
+    }
+    if (key_or == 0) {
+        // Magic записано, але ключ = 0x00...00 — невалідний стан
+        Error_Handler();
+        return;
+    }
+
+    // 3. Копіюємо ключ з Flash у RAM (aes_key використовується MX_CRYP_Init)
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
+        aes_key[i] = flash_ptr[1 + i];
+    }
 }
 
 // Функція конфігурації апаратного AES (Створюється автоматично CubeMX)
