@@ -47,6 +47,15 @@
 #define COLD_TX_DEFER_TEMP        (-15)      // Temperature threshold for TX deferral (°C)
 #define COLD_TX_DEFER_VCAP_MV     4000       // Vcap threshold for TX deferral (mV)
 #define PANIC_FLAG_BIT            0x80       // [FW.29] Bit 7 of StatusByte: panic disambiguation
+
+// [FW.1] Flash-based AES key provisioning — per-device unique key via HKDF.
+// Factory Flashing writes device_key to protected Flash sector 0x0803E000
+// via SWD (STM32CubeProgrammer). Key is derived from master_key via HKDF-SHA256
+// on the backend (HardwareKeyService.derive_device_key).
+// See docs/03_05 §3.4а for full protocol design.
+#define FLASH_KEY_ADDR            0x0803E000UL  // Protected Flash sector for AES-256 key
+#define FLASH_KEY_WORDS           8             // 8 × uint32_t = 32 bytes = 256 bits
+#define FLASH_KEY_MAGIC           0x534B4559UL  // "SKEY" — magic marker for provisioned key
 /* USER CODE BEGIN PD */
 /* USER CODE END PD */
 
