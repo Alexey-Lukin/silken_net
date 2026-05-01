@@ -110,7 +110,15 @@ module Api
             scope = scope.where(created_at: parsed_time)
           rescue ArgumentError => e
             Rails.logger.warn "⚠️ [Oracle Callback] Malformed created_at ignored: #{e.message}"
+            # [S6.16]: malformed → fallback на повне сканування партицій
+            SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
+              .increment(labels: { caller: "OracleCallbacksController:invalid_iso8601" })
           end
+        else
+          # [S6.16]: callback без created_at — Chainlink DON має його передавати.
+          # Якщо рахунок зростає — оновити Chainlink Functions JS source та DON config.
+          SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
+            .increment(labels: { caller: "OracleCallbacksController:missing_created_at" })
         end
 
         scope.order(created_at: :desc).first!

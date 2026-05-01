@@ -133,6 +133,85 @@ end
         expect(tx2.tx_hash).to eq(fake_tx_hash)
       end
     end
+
+    # [S6.12]: Tokenomics-flow інваріанти.
+    # `TokenomicsEvaluatorWorker` → `EvaluateTreeBatchWorker` → `wallet.lock_and_mint!`
+    # → `BlockchainTransaction(:pending)` → `MintCarbonCoinWorker#process_batch`
+    # → `BlockchainMintingService.call_batch(ids)` БЕЗ `telemetry_log:` параметра.
+    #
+    # Інваріант (фактичний, як описано у `05_02 §S6.12` PATH 2):
+    # 1. Без `telemetry_log:` IoTeX/Chainlink guards СВІДОМО пропускаються —
+    #    growth_points було зараховано через `Wallet#credit!` після AES-decrypt
+    #    + `valid_sensor_data?` у `TelemetryUnpackerService`.
+    # 2. Hadron KYC guard АКТИВНИЙ для всіх шляхів — це security perimeter
+    #    тokenomics-flow проти non-compliant wallets.
+    # 3. Якщо KYC не approved — raise ComplianceError, мінт не відбувається,
+    #    `locked_points` залишаються заблокованими у Wallet (потребують admin
+    #    розблокування або повторної KYC-верифікації).
+    context "when tokenomics flow without telemetry_log [S6.12]" do
+      it "skips IoTeX/Chainlink guards but enforces Hadron KYC" do
+        tree = create(:tree)
+        wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+
+        tx = wallet.blockchain_transactions.create!(
+          amount: 100,
+          token_type: :carbon_coin,
+          status: :pending,
+          to_address: wallet.crypto_public_address,
+          locked_points: 1000
+        )
+
+        # Ні з telemetry_log, ні з verified_by_iotex/oracle_status — все одно мінт проходить
+        # бо growth_points вже зараховані через upstream pipeline (per-packet AES-decrypt).
+        expect { described_class.call_batch([ tx.id ]) }.not_to raise_error
+
+        tx.reload
+        expect(tx.status).to eq("sent")
+      end
+
+      it "rejects mint when wallet is NOT Hadron KYC approved (security perimeter)" do
+        tree = create(:tree)
+        wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "pending")
+
+        tx = wallet.blockchain_transactions.create!(
+          amount: 100,
+          token_type: :carbon_coin,
+          status: :pending,
+          to_address: wallet.crypto_public_address,
+          locked_points: 1000
+        )
+
+        expect(mock_client).not_to receive(:transact)
+
+        expect {
+          described_class.call_batch([ tx.id ])
+        }.to raise_error(/Compliance Breach: Wallet is not Hadron KYC approved/)
+
+        # Транзакція залишається `pending` — locked_points не звільнені, чекають reconciliation.
+        tx.reload
+        expect(tx.status).to eq("pending")
+      end
+
+      it "rejects mint when wallet KYC is rejected (terminal state)" do
+        tree = create(:tree)
+        wallet = tree.wallet
+        wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "rejected")
+
+        tx = wallet.blockchain_transactions.create!(
+          amount: 100,
+          token_type: :carbon_coin,
+          status: :pending,
+          to_address: wallet.crypto_public_address,
+          locked_points: 1000
+        )
+
+        expect {
+          described_class.call_batch([ tx.id ])
+        }.to raise_error(/Compliance Breach/)
+      end
+    end
   end
 
   describe "oracle balance check" do

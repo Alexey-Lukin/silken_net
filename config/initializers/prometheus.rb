@@ -208,9 +208,11 @@ module SilkenNet
     # [S6.13]: W3bstream Ed25519 → SHA256 hardware-signature fallback counter.
     # `Iotex::W3bstreamVerificationService#hardware_signature` падає з Ed25519
     # (provisioned hardware key) на SHA256 fallback коли HardwareKey відсутній.
-    # SHA256 НЕ підтверджує апаратне походження. У production WEB3_STRICT_MODE=true
-    # це має блокуватись окремим guard. Counter дозволяє Grafana alerting:
-    # > 0 у production protrygnem alert (configurations not strict, або data leak).
+    # SHA256 НЕ підтверджує апаратне походження. У production / WEB3_STRICT_MODE=true
+    # сервіс fail-closed: інкрементує counter та одразу raise VerificationError
+    # (counter все одно інкрементується для observability). Поза production —
+    # warn-and-continue (legacy/dev). Grafana alert: > 0 у production = bug
+    # (бо raise вже спрацював) АБО legacy fallback використовується у не-prod.
     W3BSTREAM_SIGNATURE_FALLBACK_TOTAL = REGISTRY.counter(
       :silkennet_w3bstream_signature_fallback_total,
       docstring: "Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature",
@@ -244,6 +246,21 @@ module SilkenNet
       :silkennet_rpc_circuit_breaker_open,
       docstring: "Whether RPC provider circuit breaker is open (1=open/disabled, 0=closed/healthy)",
       labels: [ :provider ]
+    )
+
+    # [S6.16]: TelemetryLog lookup without partition pruning (degraded path).
+    # Incremented when a caller looks up a TelemetryLog without supplying
+    # `created_at_iso`. Without it, PostgreSQL must scan ALL monthly partitions
+    # (Global Partition Scan) — O(P × log N) instead of O(log N). At billions
+    # of rows this becomes a multi-second query that blocks the request thread.
+    # Acceptable in cold paths (admin tools, manual rollback); ALERT if seen
+    # in hot path (oracle callbacks, web3 workers) — indicates upstream worker
+    # forgot to pass `created_at_iso`. Grafana rule:
+    #     rate(silkennet_telemetry_log_unpruned_lookups_total{caller=~"oracle.*|.*Worker"}[5m]) > 0
+    TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL = REGISTRY.counter(
+      :silkennet_telemetry_log_unpruned_lookups_total,
+      docstring: "Total TelemetryLog lookups without partition pruning (degraded path; missing or invalid ISO8601 created_at_iso)",
+      labels: [ :caller ]
     )
 
     # [ENTROPY MONITOR]: Shannon entropy of Z-value distribution per cluster.

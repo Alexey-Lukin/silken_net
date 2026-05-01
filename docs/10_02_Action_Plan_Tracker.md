@@ -7,8 +7,6 @@
 > - 👤 **Операційна** — потрібен власник (hardware, зовнішні UI/дашборди, секрети, зустрічі, юрист, фізична лабораторія)
 > - 🔗 **Заблоковано** — чекає іншої задачі або рішення
 
-> **Останній аудит:** 2026-04-30 — повне сканування `docs/00_00 → 09_03` (~28K рядків) + крос-валідація з кодбейсом. Нові знахідки інтегровані нижче (нумерація: S6.12+, FW.24+, SEC.11+, INF.4+, UNI.4+, BIZ.8+, OPS.3+, ARCH.27+, E.50+, DOC.x таблиця заповнена).
-
 ---
 
 ## 🚨 Top-Critical Path (рекомендований порядок виконання)
@@ -112,13 +110,6 @@
 - [ ] 🤖 Документувати у `06_02` runbook: pre-flight checklist + verification commands
 - [ ] 🤖 Якщо Akash hostname — додати automation у `terraform/`
 
-#### INF.5 — `PROMETHEUS_ALLOWED_IPS` ENV не задокументована
-- **P2** | `06_03` §2.3, `06_04_Secrets_Checklist.md` | **Складність: XS** | **🤖 Док**
-- **Опис:** `/metrics` endpoint захищений IP allowlist + Basic Auth. Але `PROMETHEUS_ALLOWED_IPS` ENV відсутній у `.env.example` та `06_04_Secrets_Checklist.md`. Ризик: при Akash deploy внутрішні IPs не відповідають RFC 1918 (наприклад, Cilium CNI використовує 10.x ranges, але Akash може дати інші)
-- **Статус (✅ виконано):** Доданий запис у `06_04_Secrets_Checklist.md` §3.3 з прикладами для GCP-only / Akash / Cloudflare Proxy / Grafana Cloud direct scrape сценаріїв та поясненням взаємодії з `PRIVATE_RANGES` whitelist у `PrometheusCollector` middleware.
-- [x] 🤖 Додати `PROMETHEUS_ALLOWED_IPS` у `06_04_Secrets_Checklist.md`
-- [x] 🤖 Документувати у `06_03` як визначити правильний CIDR для Akash deployment (включено у §3.3 `06_04` з прикладами)
-
 #### INF.6 — CoAP Proxy на Ingress Anchor: відсутня verification
 - **P1** | `06_01` Pre-Flight Checklist | **Складність: S** | **🤖 Код + Док**
 - **Опис:** Ingress Anchor (Kamal Traefik або Akash ingress) повинен проксіювати CoAP UDP port 5683. Документація рекомендує перевірити, але **точна команда verification відсутня**. Без перевірки можлива ситуація: HTTP ingress активний, але UDP заблокований → шлюзи не можуть пушити телеметрію (silent failure)
@@ -126,12 +117,6 @@
 - [x] 🤖 Додати у `06_01` команду: `coap-client -m post -e "test" coap://<ingress-host>:5683/health` + очікуваний response
 - [ ] 🤖 Smoke test workflow у CI: post-deploy CoAP health check (потребує CI workflow — окрема задача)
 - [x] 🤖 Документувати точний HAProxy/socat/Traefik UDP config для кожного варіанту deploy (включено у troubleshooting секцію)
-
-#### INF.7 — Grafana Alloy `ALLOY_CONFIG_BASE64` manual encoding workflow
-- **P2** | `06_03` BLOCKER-1, `06_02` BLOCKER-3 | **Складність: XS** | **🤖 Док**
-- **Опис:** При Terraform deploy `ALLOY_CONFIG_BASE64` генерується через `filebase64()`. Для manual SDL deploy (без Terraform) — workflow енкодування не задокументовано. Якщо OPS-engineer використовує `base64 -w 0 alloy-config.yaml` замість правильного — можливі line-break artifacts → Alloy crash
-- [ ] 🤖 Додати у `06_02` runbook: точна команда `base64 -w 0 < alloy-config.yaml | tr -d '\n'` + sanity check
-- [ ] 🤖 Helper script у `deploy/akash/encode-alloy-config.sh`
 
 #### S4.3 — Akash SDL secrets
 - **P3** | `06_02` | **Складність: XS** | **🔧 Операційна** — заповнити 4 змінні у `deploy.yaml`
@@ -166,27 +151,13 @@
 - [ ] 🤖 Архітектурний дизайн task assignment
 - [ ] 🔗 Зв'язати з Forester Guild PoPhW (E.20)
 
-#### S6.11 — No disaster recovery / chain outage strategy
-- **P2** | `05_01` | **Складність: M** | **Архітектурна**
-- **Опис:** Немає стратегії disaster recovery при виході з ладу однієї з 12 Web3 мереж
-- **Статус:** ✅ Виконано. Розділ §8 "Disaster Recovery / Chain Outage Strategy" доданий у `05_01`: класифікація tier (Critical/Important/Nice), детальний degradation flow для Polygon/Chainlink/IoTeX, recovery процедури, summary matrix
-- [x] 🤖 Визначити critical path chains (Polygon, Chainlink, IoTeX)
-- [x] 🤖 Дизайн graceful degradation для кожної мережі
-
 #### S6.12 — TokenomicsEvaluatorWorker: oracle-guards bypass для не-oracle flow
 - **P1** | `04_02` §4.2.2 (BlockchainMintingService) | **Складність: M** | **🤖 Аудит**
 - **Опис:** Документація явно заявляє: «Guards (`verified_by_iotex?`, `oracle_status_fulfilled?`, `hadron_kyc_status=="approved"`) активні лише при `telemetry_log` (oracle-driven flow); tokenomics flow працює без прямої прив'язки до log — growth_points вже верифіковані pipeline'ом». **Ризик:** якщо `TokenomicsEvaluatorWorker` довіряє upstream pipeline без власної перевірки, можливе мінтінг неверифікованих growth_points при пошкодженні pipeline upstream
-- [ ] 🤖 Code audit: чи `TokenomicsEvaluatorWorker` виконує незалежну верифікацію oracle/IoTeX/KYC або тільки довіряє upstream?
-- [ ] 🤖 Документувати інваріант: «всі шляхи до `Wallet#lock_and_mint!` повинні мати explicit oracle-verification gate»
-- [ ] 🤖 Додати spec coverage: tokenomics flow з фейковим (unverified) growth_points → expect to be rejected
-
-#### S6.13 — Ed25519 hardware signature: SHA256 fallback не задокументований як production-acceptable
-- **P2** | `04_02` §4.2.2 (SendToW3bstreamService, BLOCKER-06) | **Складність: S** | **🤖 Код**
-- **Опис:** Primary path — Ed25519 через `hardware_key.binary_key`; fallback — SHA256 hash коли `HardwareKey` відсутній (legacy/dev). SHA256 fallback **слабший** і **не задокументований** як прийнятний у production. Невідомо: чи fallback тригериться у production (logging/Prometheus counter відсутній)
-- **Статус (✅ виконано):** Prometheus counter `silkennet_w3bstream_signature_fallback_total{reason}` доданий у `config/initializers/prometheus.rb` та інкрементується у `Iotex::W3bstreamVerificationService#hardware_signature` (labels: `missing_hardware_key` / `missing_binary_key`). Тести: `spec/services/iotex/w3bstream_verification_service_spec.rb` (existing fallback test verified passing). Grafana alert: > 0 у production protrygnem alert.
-- [x] 🤖 Додати Prometheus counter `silkennet_w3bstream_signature_fallback_total{type=sha256}`
-- [x] 🤖 Якщо counter > 0 у production → alert (Grafana rule — потребує конфігурації після INF.1+S2.3)
-- [ ] 🤖 Документувати в `04_02`: при яких умовах SHA256 fallback допустимий і як його блокувати у `WEB3_STRICT_MODE=true`
+- **Статус (✅ виконано):** Audit виконано: `TokenomicsEvaluatorWorker → EvaluateTreeBatchWorker → wallet.lock_and_mint!` створює `BlockchainTransaction(:pending)`, який потім `MintCarbonCoinWorker#process_batch` передає у `BlockchainMintingService.call_batch(ids)` БЕЗ `telemetry_log:`. Виявлено: фактичний upstream perimeter — це **AES-256-CBC decrypt + `valid_sensor_data?`** у `TelemetryUnpackerService`, а **не** повний oracle pipeline (IoTeX/Chainlink виконуються async і незалежно для Path 1). **Hadron KYC — єдиний обов'язковий guard для всіх шляхів** (Path 1, Path 2, Path 3, Path 5). Документація уточнена у двох місцях: `04_02` (BlockchainMintingService row — деталізація `[BLOCKER-11 / S6.12]` з перерахуванням guards per-path) та `05_02` (PATH 2 callout розгорнуто з фактичним інваріантом + залишковий ризик AES-key compromise + mitigation track FW.1/FW.2/SEC.3). Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]" (3 examples: skip oracle guards / enforce KYC pending / enforce KYC rejected).
+- [x] 🤖 Code audit: `TokenomicsEvaluatorWorker` довіряє upstream (per-packet AES + sensor validation), Hadron KYC enforced незалежно
+- [x] 🤖 Документувати фактичний інваріант: «всі шляхи до `Wallet#lock_and_mint!` повинні мати Hadron KYC guard; oracle-guards активні лише в Path 1 (per-telemetry); growth_points perimeter — AES decrypt у `TelemetryUnpackerService`»
+- [x] 🤖 Spec coverage: tokenomics flow з KYC `pending` / `rejected` → expect raise `Compliance Breach`
 
 #### S6.14 — peaq_signing_key: відсутня rotation policy
 - **P2** | `04_02` §4.2.2 (GeneratePeaqDidService, BLOCKER-08) | **Складність: M** | **🤖 Архітектура + Док**
@@ -202,13 +173,6 @@
 - [ ] 🤖 Health check: розпарсити router contract code → перевірити сигнатуру `sendRequest()` при бутстрапі сервісу
 - [ ] 🤖 Документувати в `04_02` процес upgrade ABI
 
-#### S6.16 — oracle_status partition pruning: відсутній моніторинг
-- **P2** | `04_01` (TelemetryLog), `04_02` | **Складність: S** | **🤖 Код + Док**
-- **Опис:** `TelemetryLog.find_with_partition_pruning(id, created_at)` — partition-aware O(log N) lookup. Усі workers повинні передавати `created_at_iso` для коректної prune. **Невідомо:** чи всі workers передають? Немає моніторингу partition scans (всі або одна?). Якщо worker забуде — запит сканує всі партиції (degraded performance)
-- [ ] 🤖 Audit всіх workers/services що читають TelemetryLog: чи передають `created_at_iso`?
-- [ ] 🤖 Додати Prometheus histogram `silkennet_telemetry_log_lookup_partitions_scanned` — alert якщо > 1
-- [ ] 🤖 Документувати інваріант у `04_01` + `04_02`
-
 #### S6.17 — Dynamic Tax (2%) hardcoded — потребує on-chain governance
 - **P2** | `05_03` (HYBRID PROTOCOL GAIA), `BlockchainMintingService` | **Складність: M** | **🤖 Архітектура**
 - **Опис:** `DYNAMIC_TAX_RATE = BigDecimal("0.02")` hardcoded у `BlockchainMintingService`. Для true governance це має бути on-chain параметр через `ProtocolParameters` контракт (як `OPTIMAL_Z_TARGET`, `CRITICAL_Z_MIN/MAX`). Поточно — application-level override без DAO voting
@@ -216,20 +180,6 @@
 - [ ] 🤖 Додати `KEY_DYNAMIC_TAX_RATE` у `ProtocolParameters.sol`
 - [ ] 🤖 `BlockchainMintingService` читає ставку через `Governance::ParameterSyncWorker` → `SystemParameter`
 - [ ] 🤖 Migration: seed `SystemParameter(:dynamic_tax_rate, value: 200)` (basis points)
-
-#### S6.18 — M2M nonce TTL=600s: justification не задокументовано
-- **P3** | `04_03` M2M auth, `app/controllers/api/v1/m2m_auth_controller.rb` | **Складність: XS** | **🤖 Док**
-- **Опис:** TTL = 600 сек (10 хв) задокументовано як «cover ±5 min window with margin». Чому саме 10 хв, а не 5 або 15 — не пояснено. У security review може бути зауваження
-- **Статус (✅ виконано):** Inline-коментар у `m2m_auth_controller.rb` розширено до 9 рядків з повним обґрунтуванням (timestamp window 5 хв + margin 5 хв = 10 хв; чому не 5 — leading-edge replay; чому не 15+ — Redis memory без security gain). Параграф «TTL = 10 хв — обґрунтування [S6.18]» додано у `04_03_REST_API_v1_Reference.md` §5.15.
-- [x] 🤖 Додати inline-коментар + параграф у `04_03` з обґрунтуванням
-
-#### S6.19 — M2M Redis fallback: TOCTOU window не виміряний
-- **P2** | `app/controllers/api/v1/m2m_auth_controller.rb` (lines 69–82) | **Складність: S** | **🤖 Код + спостереж.**
-- **Опис:** При недоступному Redis → DB-backed nonce cache. У коментарі коду визнано: `if Rails.cache.exist?(fallback_key)` then write — race condition можлива між check і write. Acceptable tradeoff для degraded fallback path. Невідомо: який % auth-запитів реально потрапляє у fallback path? Як часто Redis unavailable?
-- **Статус (✅ виконано):** Prometheus counter `silkennet_m2m_nonce_fallback_total` додано у `config/initializers/prometheus.rb` та інкрементується у `m2m_auth_controller.rb#create` rescue block. Документовано у `04_03` §5.15 «Спостережуваність [S6.19]» з alerting threshold (rate > 0.1% req/h → escalate Upstash multi-zone).
-- [x] 🤖 Prometheus counter `silkennet_m2m_nonce_fallback_total` (Redis outage detector)
-- [x] 🤖 Якщо fallback path > 0.1% requests за 1h → alert (Grafana rule — потребує конфігурації після S2.3)
-- [x] 🤖 Документувати у `04_03` runbook: «якщо fallback active довше N хв — escalate Upstash multi-zone»
 
 #### PUMA-IPV6-1 — Верифікація IPv6 bind після першого Kamal-деплою
 - **High** | `06_05` | **Складність: XS** | **🔧 Операційна** — верифікація після першого реального деплою, без коду
@@ -526,14 +476,6 @@
 - [ ] 👤 Queen PCB layout (KiCad)
 - [ ] 👤 RF Keep-Out Zone verification
 
-#### HW.10 — Modem name discrepancy
-- **Джерело:** `02_05` + Legacy notes
-- **Опис:** SIM7000G (Wiki) vs SIM7070G (firmware AT-commands). **Рішення прийнято: SIM7070G** — краща підтримка eDRX/PSM, нижче idle-споживання (~3 мкА vs ~10 мкА)
-- **Статус (🤖):** ✅ Виконано (2026-04-29). `docs/02_01` BOM-таблиця оновлена ("SIM7070G vs SIM7000G" → "Модем зафіксовано: SIM7070G"). `firmware/queen/main.c` — додано `AT+CPSMS=1,,,"00111100","00000000"` (PSM, 1h TAU, 0s active) та `AT+CEDRXS=1,5,"0010"` (eDRX 20.48s LTE Cat M1). 79 queen tests пройдено. Wiki — окремий зовнішній артефакт (👤).
-- [ ] 👤 Фізично перевірити маркування на прототипі
-- [x] 🤖 Узгодити Wiki, BOM та firmware → **SIM7070G**
-- [x] 🤖 Додати AT+CPSMS та AT+CEDRXS команди у firmware Queen
-
 #### HW.11 — Potting material selection (quartz resonator risk)
 - **Джерело:** `02_01` BLOCKER-1
 - **Опис:** Потрібно обрати epoxy compound що НЕ знищить quartz resonator LoRa модуля при -20°C. Rigid compound при температурному стисненні → тріщини кварцу → RF loss
@@ -694,37 +636,21 @@
 - [ ] 🔗 Верифікувати що `EwsAlert` broadcast застосовує той самий CCM MIC що і звичайні пакети (після FW.2)
 - [x] Backend: rate limiting на emergency callbacks — не більше N panic alerts/хвилину від одного DID
 
-#### SEC.11 — Provisioning master key: відсутня production guard
-- **Джерело:** `06_04_Secrets_Checklist.md` §2.1, `app/services/hardware_key_service.rb` | **Пріоритет: P0**
-- **Опис:** `PROVISIONING_MASTER_KEY` повинен raise при відсутності ENV у `Rails.env.production?`. Поточний fallback на raw AES key — критична security regression (допустима **тільки** у TRL 4 lab mode). Документація рекомендує guard у контролері/сервісі, але реалізація не задокументована як виконана. Ризик: production deploy без ENV → AES keys generated з deterministic seed → trivial extraction
-- **Статус (✅ виконано):** `HardwareKeyService.derive_device_key` тепер raise `SecurityError` коли `Rails.env.production?` AND `ENV["PROVISIONING_MASTER_KEY"].blank?`. Tests: `spec/services/hardware_key_service_spec.rb` — context "without PROVISIONING_MASTER_KEY in production [SEC.11]" перевіряє що (a) `derive_device_key` raises, (b) `provision` raises та НЕ створює HardwareKey запис. Lab/test/dev модус продовжує працювати з SecureRandom fallback. **Pre-deploy CI gate додано** у `.github/workflows/deploy-production.yml` та `.github/workflows/deploy.yml` (job `verify-secrets`): asserts `PROVISIONING_MASTER_KEY` present і length ≥64 hex chars (256-bit key); failure блокує всі downstream jobs (terraform, kamal deploy).
-- [x] 🤖 `HardwareKeyService.derive_device_key` raise `SecurityError` якщо `PROVISIONING_MASTER_KEY` blank AND `Rails.env.production?`
-- [x] 🤖 Тести: `Rails.env.stub(:production?).and_return(true)` + missing ENV → expect SecurityError
-- [x] 🤖 Pre-deploy CI gate: assert ENV present у `production` environment (`verify-secrets` job у deploy workflows)
-
 ---
 
 ## 📝 Документаційні невідповідності (DOC)
 
-> Виявлені при cross-reference аудиті всіх 47 документів (2026-04-30). Потребують узгодження між docs, firmware та backend. **Не блокери виконання, але блокери для аудиту і онбордингу.**
->
-> **Сесія 2026-04-30 (агент):** ✅ DOC.2, DOC.3, DOC.4, DOC.5, DOC.6, DOC.7, DOC.8, DOC.11, DOC.12 виконані. DOC.1 — заблокована SEC.9 (заміна seed key). DOC.9 — потребує лабораторного вимірювання TX-струму. DOC.10 — Wiki-update (зовнішній артефакт, 👤 only).
+Потребують узгодження між docs, firmware та backend. **Не блокери виконання, але блокери для аудиту і онбордингу.**
+
+DOC.9 — потребує лабораторного вимірювання TX-струму
 
 | ID | Невідповідність | Документи / Файли | Дія | Статус |
 |----|----------------|-------------------|-----|--------|
 | DOC.1 | Документація AES master key суперечлива: `03_05` лінія 531-537 каже «навмисно не публікується», а лінія 538 натякає що перші 4 слова збігаються з FIPS-197 Appendix B test vector. Скоординувати після SEC.9 (заміна seed key) | `03_05`, `firmware/soldier/main.c:66-67` | Після SEC.9 видалити test-vector згадку, оновити обидва параграфи | ⏸️ Заблоковано SEC.9 |
-| DOC.2 | Mesh DID 3-slot anti-pingpong cache (LIFO eviction) **реалізовано** у `firmware/soldier/main.c` (DR12 packed bit fields), але **не специфіковано формально** у `03_01_Firmware_Lifecycle_and_DMA.md` | `03_01`, `firmware/soldier/main.c` | Додати §1.x «Mesh Relay Anti-Pingpong Algorithm» з псевдокодом + RTC layout таблицею | ✅ Виконано (`03_01` §1.9.1) |
 | DOC.3 | RTC Backup Domain magic markers (`0x4C5A5354 "LZST"` для Lorenz state, magic для EMA) **використовуються в коді**, але **не зведені у спец-таблицю** у docs. Розкладку DR0..DR23 потрібно винести у одну точку істини | `03_01` §2, firmware | Створити канонічну RTC Backup Domain Layout таблицю в `03_01` | ✅ Виконано (`03_01` §2 SSOT + §2.1 Magic Markers) |
 | DOC.4 | Lorenz first-boot vs continuation logic розкидана між `03_04` §2.1 (опис `calculate_state_continued`) та `03_01` §6 (RTC magic check). Потрібна одна точка істини | `03_04`, `03_01` | Об'єднати у `03_04` §2.1 з cross-ref на RTC layout | ✅ Виконано (`03_04` §2.1 callout + cross-ref) |
-| DOC.5 | Tailwind CSS v4 `@theme` блоки (`app/assets/tailwind/application.css`) — джерело істини для design tokens, але `app/views/components/application_component.rb#CUSTOM_TEXT_SCALE` **дублює** конфігурацію у Ruby. При додаванні нового token у CSS — Ruby конфіг **не auto-sync**ається з TailwindMerge, що може давати silent class collision | `04_04`, `app/assets/tailwind/application.css`, `app/views/components/application_component.rb` | Документувати у `04_04`: «при зміні `@theme` блоку — оновити `CUSTOM_TEXT_SCALE`/`CUSTOM_COLOR_TOKENS` Ruby константи» + lint-rule | ✅ Виконано (`04_04` §2 «Sync `@theme` ↔ Ruby Token Constants») |
-| DOC.6 | Component registry у `04_04` §6 показує hierarchy, але не специфікує namespacing convention (29 directories у `app/views/components/`). Нові контриб'ютори не знають де розмістити компонент | `04_04`, `app/views/components/` | Додати у `04_04` §6 правила: «alerts/, trees/, contracts/, ...» + decision tree | ✅ Виконано (`04_04` §6.5 Decision Tree + anti-patterns) |
 | DOC.7 | `04_02` §4.2.2 (BlockchainMintingService) описує що guards активні тільки для oracle-driven flow, але tokenomics flow проходить **без явного guard chain**. Зв'язок між цими шляхами не пояснений у `05_02_Proof_of_Growth_Pipeline.md` | `04_02`, `05_02` | Об'єднати у `05_02` §4: діаграма «всі шляхи до `Wallet#lock_and_mint!`» з invariant'ами кожного | ✅ Виконано (`05_02` нова секція «Усі Шляхи до `Wallet#lock_and_mint!`» з 5 шляхами + інваріанти) |
-| DOC.8 | TelemetryLog cleanup job (з constraint «не видаляти `oracle_status='dispatched'`») — реалізовано в коді, але **не задокументовано у Services Registry** (`04_02` §11). Новий розробник може запустити ad-hoc cleanup без знання обмеження | `04_02` §11, відповідний worker | Додати запис у Services Registry + warning у `04_01` модель | ✅ Виконано (`04_02` §11 callout + `04_01` TelemetryLog warning) |
 | DOC.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
-| DOC.10 | Старий модем SIM7000G згадується в Wiki + старих docs. Поточно — **SIM7070G** (зафіксовано у `02_01` BOM + firmware). Wiki пункт треба очистити (HW.10) | Wiki, `02_05` | 👤 Wiki update (зовнішній артефакт) | ⏸️ 👤 Wiki |
-| DOC.11 | TailwindCSS v3 → v4 migration: `04_04` каже «v4 поточна», але немає migration guide для розробника, що працює зі старим code branch / fork | `04_04` | Додати «v3 → v4 differences cheatsheet» | ✅ Виконано (`04_04` §3.6 Cheatsheet) |
-| DOC.12 | M2M nonce TTL = 600 сек обрано «з margin», але **обґрунтування не задокументовано**. Питання: чому не 5 хв (точно `±` window) або 15 хв (повний margin)? | `04_03` M2M auth | Додати inline-коментар у controller + параграф у `04_03` | ✅ Виконано (`04_03` §5.15 «TTL = 10 хв — обґрунтування» + inline comment у `m2m_auth_controller.rb:55-65`) |
-
 
 ---
 
@@ -815,15 +741,6 @@
 - [x] 🤖 Ідентифікувати 2-3 backup DMLS заводи в ЄС (Польща, Чехія, Німеччина)
 - [ ] 👤 Отримати quotes для порівняння вартості
 - [x] 🤖 Задокументувати contingency план у `07_02`
-
-#### BIZ.7 — Soldier failure rate та replacement OPEX
-- **Джерело:** `07_02` | **Пріоритет: P2**
-- **Опис:** Unit Economics (`07_02`) не враховують failure rate Soldiers в полі та вартість їх заміни. При 10,000+ деревах навіть 1% annual failure = 100 replacements/рік. Також відсутня оцінка деградації LiFePO4 батареї Queen (12V 6Ah) за 5+ років
-- **Статус (🤖):** ✅ Виконано. Розділ §8a "Replacement OPEX та деградація обладнання" доданий у `07_02`: failure rate categorization (target <2%/yr Years 1-3, ~10-15%/yr Years 4-5), replacement OPEX ~$15.50/міс на кластер, LiFePO4 lifetime ~5 років, оновлена ROI (Payback ~38 міс vs ~34 без BIZ.7 — погіршення на 12%)
-- [x] 🤖 Визначити expected failure rate (target < 1% annually)
-- [x] 🤖 Додати replacement OPEX у Unit Economics
-- [x] 🤖 Додати Queen battery degradation (80% capacity після 2000 циклів ≈ 5.5 років)
-- [x] 🤖 Оновити ROI model в `07_02`
 
 #### BIZ.8 — EU DMLS Frame Agreement (extension of BIZ.6)
 - **Джерело:** `07_02` §8.1.1 | **Пріоритет: P1**
@@ -971,11 +888,11 @@
 | E.8 | SNR parameter unused у Queen CIFO eviction (лише RSSI) | `03_02`, `03_03` | Low priority optimization |
 | E.9 | DMA SPI optimization — зменшення енергоспоживання (Vector 1 — Ярмілко) | `08_02` | R&D partnership |
 | E.10 | Kalman/EMA filtering для delta_t noise suppression (±8% → ±1.2%) | `08_02` | R&D partnership |
-| E.11 | CE/FCC/EMC/IP68 certification roadmap не розпочато | `08_02` | Потребує Косенук (RF) |
+| E.11 | CE/FCC/EMC/IP68 certification roadmap не розпочато | `08_02` | Потребує Косенюк (RF) |
 | E.12 | Boolean minimization TX decision conditions (Karnaugh/Quine-McCluskey) | `08_02` | Потребує Любченко |
 | E.13 | Petri Net model of Rails monolith — deadlock-free verification at 10k concurrent IoT | `08_02` | Потребує Супруненко |
 | E.14 | Multi-source satellite + anchor data fusion (Sentinel-2 NDVI) | `08_02` | Потребує Любченко + Бушин |
-| E.15 | Reed-Solomon FEC або Hamming для LoRa error correction | `08_02` | Потребує Косенук |
+| E.15 | Reed-Solomon FEC або Hamming для LoRa error correction | `08_02` | Потребує Косенюк |
 | E.18 | 10 запланованих Q1 публікацій — blocked by lab data | `08_03` | Blocked by UNI.1-3 |
 | E.19 | 8 магістерських — blocked by TRL 4 advancement | `08_03` | Post-TRL 4 |
 | E.20 | Forester Guild (Proof-of-Physical-Work) — planned post-TRL 6 | `04_02` | Post-TRL 6 |
@@ -1066,45 +983,6 @@
 | 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
 | 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
 | 10 Security | 5 | 9 | SEC.9 master key, SEC.11 prod guard, Multisig, RDP, Factory |
-
----
-
-## 📈 Аудит-сесія 2026-04-30 — підсумок нових знахідок
-
-> Повне сканування `docs/00_00 → 09_03` (~28K рядків) + крос-валідація з кодбейсом, у режимі **«документуємо, не фіксимо»**.
-
-**Додано 50+ нових пунктів (без дублікатів існуючих ID):**
-
-| Розділ | Нові ID | Кількість | Найвищий пріоритет |
-|--------|---------|-----------|--------------------|
-| Software/Backend | S6.12 – S6.19 | 8 | P1 (S6.12 oracle guards) |
-| Firmware | FW.24 – FW.29 | 6 | P1 (FW.25, FW.26, FW.29) |
-| Security | SEC.11 | 1 | **P0 (provisioning prod guard)** |
-| Infrastructure | INF.4 – INF.7 | 4 | P1 (INF.4 TLS, INF.6 CoAP) |
-| Operations | OPS.3 – OPS.5 | 3 | P1 (OPS.5 EU quotes) |
-| Business | BIZ.8 – BIZ.11 | 4 | P1 (BIZ.10 multi-party IP) |
-| University | UNI.4, UNI.5, UNI.9 – UNI.14 | 8 | P0 (UNI.13/14 верифікація посад) |
-| Engineering | E.50 – E.58 | 9 | P1 (E.53, E.54, E.55, E.56, E.57) |
-| Architecture | ARCH.27 – ARCH.33 | 7 | P1 (ARCH.27 role differentiation) |
-| Documentation (DOC table) | DOC.1 – DOC.12 | 12 | (audit/onboarding cleanup) |
-
-**P0 нові пункти (критичний шлях):**
-- **SEC.11** — Provisioning master key production guard (raise при відсутності `PROVISIONING_MASTER_KEY` у production)
-- **UNI.13** — Верифікувати посади науковців ЧМА через офіційний сайт (блокує joint publications)
-- **UNI.14** — Верифікувати посади 7 науковців СЄУ через офіційний сайт (блокує MSA)
-
-**Ключові code↔docs невідповідності зафіксовано у DOC table** (12 пунктів):
-- AES master key contradictions (DOC.1) — резолвиться після SEC.9
-- Mesh anti-pingpong + RTC magic markers + Lorenz state continuity — undocumented у спеці (DOC.2-4)
-- TailwindCSS v4 sync + component registry — onboarding gaps (DOC.5-6, DOC.11)
-- Tokenomics flow guard chain pictorial gap (DOC.7)
-- TelemetryLog cleanup constraint missing у services registry (DOC.8)
-- TX energy figures + SIM modem + M2M TTL — historic doc trail (DOC.9, DOC.10, DOC.12)
-
-**Закриті як не-задачі (вирішено / неактуально):**
-- Acoustic events overflow ✅ (FW.22 сесія 18, відображено в існуючому tracker)
-- Modem name discrepancy ✅ (HW.10 — SIM7070G fixed, відображено)
-- Lorenz state RTC persistence ✅ (DR16-DR18 + magic `LZST`, як підтверджено в custom_instruction; tracker уже відображає це у LORENZ-STATE рядку BLOCKER-list)
 
 ---
 

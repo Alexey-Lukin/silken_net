@@ -48,15 +48,22 @@ module Iotex
         message = "#{@tree.did}:#{@telemetry_log.id_value}:#{@telemetry_log.created_at.to_i}"
         Ed25519Crypto::SigningService.sign(hardware_key.binary_key, message)
       else
-        # Fallback для пристроїв без provisioned key (legacy/dev).
-        # У production WEB3_STRICT_MODE=true заблокує це через окремий guard.
-        # [S6.13]: Counter інкрементується для Grafana alerting — > 0 у production
-        # вказує на дрейф конфігурації або компрометацію зв'язку HardwareKey.
-        SilkenNet::Metrics::W3BSTREAM_SIGNATURE_FALLBACK_TOTAL.increment(
-          labels: { reason: hardware_key.nil? ? "missing_hardware_key" : "missing_binary_key" }
-        )
-        Rails.logger.warn "⚠️ [W3bstream] HardwareKey відсутній для Tree #{@tree.did}. " \
-                          "Використовуємо SHA256 fallback (не підтверджує апаратне походження)."
+        # [S6.13]: Fallback допустимий ТІЛЬКИ для legacy/dev (TRL ≤ 5, lab benches).
+        # У production / WEB3_STRICT_MODE — fail-closed: SHA256 не доводить апаратне
+        # походження, тому пакет з відсутнім HardwareKey не може отримати ZK-proof
+        # рівноцінний справжньому Ed25519-підпису.
+        reason = hardware_key.nil? ? "missing_hardware_key" : "missing_binary_key"
+        SilkenNet::Metrics::W3BSTREAM_SIGNATURE_FALLBACK_TOTAL.increment(labels: { reason: reason })
+
+        if Rails.env.production? || ENV["WEB3_STRICT_MODE"] == "true"
+          raise VerificationError,
+                "HardwareKey відсутній для Tree #{@tree.did} (reason=#{reason}). " \
+                "SHA256 fallback заборонений у production / WEB3_STRICT_MODE=true — " \
+                "потрібно provision'ити пристрій через POST /api/v1/provisioning/register."
+        end
+
+        Rails.logger.warn "⚠️ [W3bstream] HardwareKey відсутній для Tree #{@tree.did} (#{reason}). " \
+                          "Використовуємо SHA256 fallback (legacy/dev лише; не підтверджує апаратне походження)."
         Digest::SHA256.hexdigest("#{@tree.did}:#{@telemetry_log.id_value}:#{@telemetry_log.created_at.to_i}")
       end
     end

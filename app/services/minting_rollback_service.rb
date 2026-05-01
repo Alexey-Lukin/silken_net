@@ -58,7 +58,15 @@ class MintingRollbackService < ApplicationService
         scope = scope.where(created_at: Time.iso8601(@created_at_iso))
       rescue ArgumentError
         # Некоректний формат — шукаємо без partition pruning
+        # [S6.16]: degraded path — записуємо counter для observability
+        SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
+          .increment(labels: { caller: "MintingRollbackService:invalid_iso8601" })
       end
+    else
+      # [S6.16]: rollback викликається без created_at_iso (legacy шлях, admin tool) —
+      # acceptable у cold path, але трекаємо для прозорості.
+      SilkenNet::Metrics::TELEMETRY_LOG_UNPRUNED_LOOKUPS_TOTAL
+        .increment(labels: { caller: "MintingRollbackService:missing_created_at_iso" })
     end
     scope.first
   end
