@@ -60,7 +60,7 @@ module Settings
         input(
           type: "text",
           name: name,
-          value: value,
+          value: value&.to_s,
           placeholder: placeholder,
           class: "w-full bg-zinc-950 border border-emerald-900/50 text-compact font-mono text-emerald-400 px-4 py-3 focus-visible:border-emerald-500 focus-visible:outline-none transition-colors"
         )

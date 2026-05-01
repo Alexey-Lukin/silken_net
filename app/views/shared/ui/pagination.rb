@@ -4,7 +4,7 @@ module Views
   module Shared
     module UI
       class Pagination < ApplicationComponent
-        # @param pagy [Pagy] pagination metadata (must respond to :last, :prev, :next, :page)
+        # @param pagy [Pagy] pagination metadata (must respond to :last, :previous, :next, :page)
         # @param url_helper [#call] lambda that builds page URL, e.g. ->(page:) { path(page: page) }
         def initialize(pagy:, url_helper:)
           raise ArgumentError, "pagy must respond to :page" unless pagy.respond_to?(:page)
@@ -21,9 +21,9 @@ module Views
             role: "navigation",
             class: nav_classes
           ) do
-            if @pagy.prev
+            if @pagy.previous
               a(
-                href: @url_helper.call(page: @pagy.prev),
+                href: @url_helper.call(page: @pagy.previous),
                 aria_label: "Go to previous page",
                 class: page_link_classes
               ) { "← Previous" }

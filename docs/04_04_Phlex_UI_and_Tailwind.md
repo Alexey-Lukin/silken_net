@@ -116,12 +116,12 @@ HTTP Request (Dashboard pages)
                                             ├─► render Views::Shared::UI::DataTable.new(...) { rows }
                                             └─► turbo_stream_from / turbo_frame_tag (lazy)
 
-HTTP Request (Auth pages — login, forgot/reset password)
+HTTP Request (Auth pages — login, forgot/reset password, no-organization quarantine)
     └─► Controller
             └─► render_auth_page(title:, component:)
                     └─► render AuthLayout.new(content: component)
                             └─► AuthLayout.view_template
-                                    └─► render @content  ← Auth Component (Sessions::New, etc.)
+                                    └─► render @content  ← Auth Component (Sessions::New, Errors::NoOrganization, etc.)
 ```
 
 > **⚠️ Важливо:** Content component передається як параметр `content:` — **НЕ через блок**.
@@ -558,6 +558,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Notifications` | `Settings` | `settings:` |
 | `Sessions` | `New` | `flash_alert:`, `flash_notice:` — рендериться через `AuthLayout` |
 | `Passwords` | `Forgot`, `Reset` | `token:`, `flash_alert:` — рендериться через `AuthLayout` |
+| `Errors` | `NoOrganization` | Quarantine-сторінка для користувачів без організації — рендериться через `AuthLayout` |
 
 ### 6.5 Namespacing Convention — Куди Розмістити Новий Компонент [DOC.6]
 

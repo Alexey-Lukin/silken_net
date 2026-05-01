@@ -6,7 +6,7 @@ RSpec.describe Views::Shared::UI::Pagination do
   let(:url_helper) { ->(page:) { "/items?page=#{page}" } }
 
   describe "with a middle page" do
-    let(:pagy) { OpenStruct.new(page: 3, last: 10, prev: 2, next: 4) }
+    let(:pagy) { OpenStruct.new(page: 3, last: 10, previous: 2, next: 4) }
     let(:html) { render_component(pagy: pagy, url_helper: url_helper) }
 
     it "renders the nav element" do
@@ -29,7 +29,7 @@ RSpec.describe Views::Shared::UI::Pagination do
   end
 
   describe "with the first page" do
-    let(:pagy) { OpenStruct.new(page: 1, last: 5, prev: nil, next: 2) }
+    let(:pagy) { OpenStruct.new(page: 1, last: 5, previous: nil, next: 2) }
     let(:html) { render_component(pagy: pagy, url_helper: url_helper) }
 
     it "does not render a previous link" do
@@ -47,7 +47,7 @@ RSpec.describe Views::Shared::UI::Pagination do
   end
 
   describe "with the last page" do
-    let(:pagy) { OpenStruct.new(page: 5, last: 5, prev: 4, next: nil) }
+    let(:pagy) { OpenStruct.new(page: 5, last: 5, previous: 4, next: nil) }
     let(:html) { render_component(pagy: pagy, url_helper: url_helper) }
 
     it "renders a previous link" do
@@ -61,7 +61,7 @@ RSpec.describe Views::Shared::UI::Pagination do
   end
 
   describe "with a single page" do
-    let(:pagy) { OpenStruct.new(page: 1, last: 1, prev: nil, next: nil) }
+    let(:pagy) { OpenStruct.new(page: 1, last: 1, previous: nil, next: nil) }
     let(:html) { render_component(pagy: pagy, url_helper: url_helper) }
 
     it "renders nothing when only one page exists" do
@@ -70,7 +70,7 @@ RSpec.describe Views::Shared::UI::Pagination do
   end
 
   describe "design system compliance" do
-    let(:pagy) { OpenStruct.new(page: 2, last: 5, prev: 1, next: 3) }
+    let(:pagy) { OpenStruct.new(page: 2, last: 5, previous: 1, next: 3) }
     let(:html) { render_component(pagy: pagy, url_helper: url_helper) }
 
     it "uses text-gaia-text-muted for page info" do
@@ -95,7 +95,7 @@ RSpec.describe Views::Shared::UI::Pagination do
   end
 
   describe "accessibility" do
-    let(:pagy) { OpenStruct.new(page: 2, last: 5, prev: 1, next: 3) }
+    let(:pagy) { OpenStruct.new(page: 2, last: 5, previous: 1, next: 3) }
     let(:html) { render_component(pagy: pagy, url_helper: url_helper) }
 
     it "includes role=navigation on nav element" do
@@ -120,7 +120,7 @@ RSpec.describe Views::Shared::UI::Pagination do
   end
 
   describe "with focus-visible support" do
-    let(:pagy) { OpenStruct.new(page: 2, last: 5, prev: 1, next: 3) }
+    let(:pagy) { OpenStruct.new(page: 2, last: 5, previous: 1, next: 3) }
     let(:html) { render_component(pagy: pagy, url_helper: url_helper) }
 
     it "uses focus-visible ring for keyboard navigation" do

@@ -7,7 +7,7 @@ RSpec.describe Maintenance::PhotoGallery do
     pg = OpenStruct.new(
       count: count, page: page, last: [ (count / 6.0).ceil, 1 ].max,
       from: 1, to: [ count, 6 ].min,
-      prev: nil, next: next_page, vars: { items: 6 }
+      previous: nil, next: next_page, vars: { items: 6 }
     )
     pg.define_singleton_method(:series) { [ 1 ] }
     pg

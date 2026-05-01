@@ -5,16 +5,17 @@ require "rails_helper"
 RSpec.describe OracleVisions::ForecastCard do
   def mock_insight(
     insight_type: "drought",
-    confidence_score: 74,
+    probability_score: 74,
     target_date: Time.utc(2025, 8, 15, 12, 0, 0),
-    description: "Severe moisture deficit expected in sector.",
+    summary: "Severe moisture deficit expected in sector.",
     yield_impact: "-0.12%"
   )
     OpenStruct.new(
       insight_type: insight_type,
-      confidence_score: confidence_score,
+      probability_score: probability_score,
       target_date: target_date,
-      payload: { "description" => description, "yield_impact" => yield_impact }
+      summary: summary,
+      prediction_data: { "yield_impact" => yield_impact }
     )
   end
 
@@ -34,26 +35,26 @@ RSpec.describe OracleVisions::ForecastCard do
     end
   end
 
-  describe "confidence_score display" do
-    it "renders the confidence score as percentage" do
-      html = render_component(insight: mock_insight(confidence_score: 40))
+  describe "probability_score display" do
+    it "renders the probability score as percentage" do
+      html = render_component(insight: mock_insight(probability_score: 40))
       expect(html).to include("40%")
     end
 
     it "renders score 87 correctly" do
-      html = render_component(insight: mock_insight(confidence_score: 87))
+      html = render_component(insight: mock_insight(probability_score: 87))
       expect(html).to include("87%")
     end
 
     it "uses the confidence bar width matching score" do
-      html = render_component(insight: mock_insight(confidence_score: 65))
+      html = render_component(insight: mock_insight(probability_score: 65))
       expect(html).to include("width: 65%")
     end
   end
 
-  describe "description" do
-    it "renders the payload description" do
-      html = render_component(insight: mock_insight(description: "Severe moisture deficit expected."))
+  describe "summary" do
+    it "renders the insight summary" do
+      html = render_component(insight: mock_insight(summary: "Severe moisture deficit expected."))
       expect(html).to include("Severe moisture deficit expected.")
     end
   end
@@ -103,12 +104,12 @@ RSpec.describe OracleVisions::ForecastCard do
 
   describe "confidence color" do
     it "uses green color for normal insights" do
-      html = render_component(insight: mock_insight(insight_type: "drought", confidence_score: 74))
+      html = render_component(insight: mock_insight(insight_type: "drought", probability_score: 74))
       expect(html).to include("#10b981")
     end
 
     it "uses red color for high-confidence emergency insights" do
-      html = render_component(insight: mock_insight(insight_type: "emergency", confidence_score: 95))
+      html = render_component(insight: mock_insight(insight_type: "emergency", probability_score: 95))
       expect(html).to include("#ef4444")
     end
   end

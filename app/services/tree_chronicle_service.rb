@@ -40,10 +40,6 @@ class TreeChronicleService < ApplicationService
 
     pagy = Pagy::Offset.new(count: total, page: @page, limit: @per_page)
 
-    # [COMPAT]: Shared::UI::Pagination uses .prev (legacy convention),
-    # but Pagy 43 renamed it to .previous. Define alias for compatibility.
-    pagy.define_singleton_method(:prev) { previous } unless pagy.respond_to?(:prev)
-
     { entries: page_entries, pagy: pagy }
   end
 

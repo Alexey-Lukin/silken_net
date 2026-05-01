@@ -141,7 +141,7 @@ RSpec.describe Maintenance::Form do
       )
       photo.define_singleton_method(:variant) { |_style| "variant_thumb" }
 
-      mock_pg = OpenStruct.new(count: 1, page: 1, last: 1, from: 1, to: 1, prev: nil, next: nil, vars: { items: 6 })
+      mock_pg = OpenStruct.new(count: 1, page: 1, last: 1, from: 1, to: 1, previous: nil, next: nil, vars: { items: 6 })
       mock_pg.define_singleton_method(:series) { [ 1 ] }
 
       original_new = Pagy.method(:new)

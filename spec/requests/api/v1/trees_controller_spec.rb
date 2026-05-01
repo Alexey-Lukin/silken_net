@@ -15,7 +15,7 @@ RSpec.describe Api::V1::TreesController, type: :request do
       last: pages,
       from: 1,
       to: count,
-      prev: page > 1 ? page - 1 : nil,
+      previous: page > 1 ? page - 1 : nil,
       next: page < pages ? page + 1 : nil,
       vars: { items: limit }
     ).tap do |pagy|

@@ -6,6 +6,9 @@ class Gateway < ApplicationRecord
   include GeoLocatable
   include NormalizeIdentifier
 
+  # Polymorphic identifier для UI/serializers (див. Tree#display_identifier).
+  alias_attribute :display_identifier, :uid
+
   # --- ЗВ'ЯЗКИ (The Fabric of the Forest) ---
   belongs_to :cluster
 

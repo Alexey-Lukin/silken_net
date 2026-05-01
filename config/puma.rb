@@ -64,7 +64,13 @@ max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i
 # Defaults:
 #   GCP  (2 vCPU):  WEB_CONCURRENCY=2 → 2 workers × 3 threads = 6 threads
 #   Akash (4 CPU):  WEB_CONCURRENCY=4 → 4 workers × 3 threads = 12 threads
-workers ENV.fetch("WEB_CONCURRENCY", 2)
+#
+# In development we run single-mode (workers=0) by default, which matches the
+# `cluster do … end` block below — the connection-lifecycle hooks intentionally
+# never fire in single mode. This makes `bin/rails server` predictable for
+# debuggers (binding.irb / debug gem) and avoids the master/worker fork dance.
+default_workers = ENV.fetch("RAILS_ENV", "development") == "development" ? 0 : 2
+workers ENV.fetch("WEB_CONCURRENCY", default_workers)
 
 # ---------------------------------------------------------------------------
 # 3. Preload — Copy-on-Write memory optimization

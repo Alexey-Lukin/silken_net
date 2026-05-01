@@ -31,16 +31,19 @@ max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i       # секція 1b
 ### 2. Workers
 
 ```ruby
-workers ENV.fetch("WEB_CONCURRENCY", 2)
+default_workers = ENV.fetch("RAILS_ENV", "development") == "development" ? 0 : 2
+workers ENV.fetch("WEB_CONCURRENCY", default_workers)
 ```
 
 | Platform | vCPU | `WEB_CONCURRENCY` | RSS budget |
 |---|---|---|---|
 | Akash SDL | 4 CPU units | 4 | ~4 × 300 MB = 1.2 GB |
 | GCP Kamal (n2-standard-2) | 2 vCPU | 2 | ~2 × 300 MB = 600 MB |
-| Local dev | 8–16 cores | 2 (default) | безпечно |
+| Local dev | 8–16 cores | 0 (single-mode) | ~300 MB |
 
-**Чому не `:auto`:** `workers :auto` (Puma 7.2+) визначає count через `Etc.nprocessors`. На 16-core dev-ноутбуці це 16 workers × ~300 MB RSS = OOM при звичайному `bundle exec rails s`. Залишаємо явний `ENV.fetch("WEB_CONCURRENCY", 2)`.
+**Development (workers=0):** У development Puma запускається в single-mode (без fork). Це відповідає блоку `cluster do … end` в `puma.rb`, чиї хуки reconnect-after-fork **ніколи** не виконуються в single mode. Single-mode спрощує debugging (`binding.irb`, `debug` gem) та уникає master/worker fork-танцю.
+
+**Чому не `:auto`:** `workers :auto` (Puma 7.2+) визначає count через `Etc.nprocessors`. На 16-core dev-ноутбуці це 16 workers × ~300 MB RSS = OOM при звичайному `bundle exec rails s`. Залишаємо явний `ENV.fetch` з dev-specific default `0`.
 
 ### 3. Preload app
 

@@ -26,7 +26,7 @@ RSpec.describe Maintenance::Show do
   def mock_pagy_photos(count: 0, page: 1)
     pg = OpenStruct.new(
       count: count, page: page, last: 1, from: 1, to: count,
-      prev: nil, next: nil, vars: { items: 6 }
+      previous: nil, next: nil, vars: { items: 6 }
     )
     pg.define_singleton_method(:series) { [ 1 ] }
     pg

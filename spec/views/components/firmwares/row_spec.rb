@@ -3,12 +3,12 @@
 require "rails_helper"
 
 RSpec.describe Firmwares::Row do
-  def mock_firmware(id: 1, version: "1.4.2", target_hardware: "stm32_l0", checksum: "abcdef1234567890AABB", created_at: Time.new(2024, 3, 15, 10, 30))
+  def mock_firmware(id: 1, version: "1.4.2", target_hardware_type: "stm32_l0", binary_sha256: "abcdef1234567890AABB", created_at: Time.new(2024, 3, 15, 10, 30))
     OpenStruct.new(
       id: id,
       version: version,
-      target_hardware: target_hardware,
-      checksum: checksum,
+      target_hardware_type: target_hardware_type,
+      binary_sha256: binary_sha256,
       created_at: created_at,
       to_param: id.to_s,
       model_name: OpenStruct.new(param_key: "firmware", route_key: "firmwares", singular_route_key: "firmware")
@@ -22,11 +22,11 @@ RSpec.describe Firmwares::Row do
       expect(html).to include("v1.4.2")
     end
 
-    it "displays the target hardware" do
+    it "displays the target hardware type" do
       expect(html).to include("stm32_l0")
     end
 
-    it "displays truncated checksum (first 16 chars)" do
+    it "displays truncated binary_sha256 (first 16 chars)" do
       expect(html).to include("abcdef1234567890")
     end
 
@@ -51,9 +51,9 @@ RSpec.describe Firmwares::Row do
     end
   end
 
-  describe "nil checksum" do
-    it "displays N/A when checksum is nil" do
-      html = render_component(firmware: mock_firmware(checksum: nil))
+  describe "nil binary_sha256" do
+    it "displays N/A when binary_sha256 is nil" do
+      html = render_component(firmware: mock_firmware(binary_sha256: nil))
       expect(html).to include("N/A")
     end
   end

@@ -160,7 +160,7 @@ module Maintenance
         div(class: "space-y-3 text-tiny font-mono") do
           meta_row("Technician", "#{@user&.first_name} #{@user&.last_name}")
           meta_row("Role", @user&.role.to_s.upcase)
-          meta_row("Target", "#{@record.maintainable_type} // #{@record.maintainable&.did || @record.maintainable&.uid}")
+          meta_row("Target", "#{@record.maintainable_type} // #{@record.maintainable&.display_identifier || '—'}")
           meta_row("Action", @record.action_type.to_s.upcase)
           meta_row("Photos", @pagy_photos.count.to_s)
           if @record.ews_alert_id

@@ -9,8 +9,8 @@ module Firmwares
     def view_template
       tr(class: "hover:bg-emerald-950/10 transition-colors group") do
         td(class: "p-4 text-emerald-100 font-bold font-mono") { "v#{@firmware.version}" }
-        td(class: "p-4 text-emerald-600 uppercase font-mono text-tiny") { @firmware.target_hardware }
-        td(class: "p-4 text-gray-600 font-mono text-tiny") { @firmware.checksum&.first(16) || "N/A" }
+        td(class: "p-4 text-emerald-600 uppercase font-mono text-tiny") { @firmware.target_hardware_type }
+        td(class: "p-4 text-gray-600 font-mono text-tiny") { @firmware.binary_sha256&.first(16) || "N/A" }
         td(class: "p-4 text-gray-500 font-mono text-tiny") { @firmware.created_at.strftime("%d.%m.%y // %H:%M") }
 
         td(class: "p-4 text-right") do

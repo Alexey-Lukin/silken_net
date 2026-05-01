@@ -10,7 +10,7 @@ module OracleVisions
       div(class: "p-6 border border-emerald-900 bg-zinc-950 group relative overflow-hidden transition-all hover:border-emerald-500") do
         # Неоновий індикатор впевненості Оракула
         div(class: "absolute top-0 right-0 p-4 font-mono text-2xl opacity-40 group-hover:opacity-100 transition-opacity", style: "color: #{confidence_color}") do
-          plain "#{@insight.confidence_score}%"
+          plain "#{@insight.probability_score}%"
         end
 
         header_section
@@ -36,9 +36,9 @@ module OracleVisions
     def render_mini_trend
       div(class: "h-1 w-full bg-emerald-950 my-4") do
         div(class: "h-full shadow-[0_0_15px_#10b981] transition-all duration-1000",
-            style: "width: #{@insight.confidence_score}%; background-color: #{confidence_color}")
+            style: "width: #{@insight.probability_score}%; background-color: #{confidence_color}")
       end
-      p(class: "text-compact text-gray-400 italic leading-relaxed") { @insight.payload["description"] }
+      p(class: "text-compact text-gray-400 italic leading-relaxed") { @insight.summary }
     end
 
     def impact_assessment
@@ -46,7 +46,7 @@ module OracleVisions
       div(class: "mt-4 pt-4 border-t border-emerald-900/50 flex justify-between items-center") do
         span(class: "text-mini uppercase text-gray-600") { "Economic Impact" }
         span(class: tokens("text-xs font-mono", impact_text_color)) do
-          plain "#{@insight.payload['yield_impact'] || '-0.04%'} SCC"
+          plain "#{@insight.prediction_data&.dig('yield_impact') || '-0.04%'} SCC"
         end
       end
     end
@@ -63,12 +63,12 @@ module OracleVisions
     end
 
     def confidence_color
-      return "#ef4444" if @insight.confidence_score > 90 && @insight.insight_type == "emergency"
+      return "#ef4444" if @insight.probability_score.to_f > 90 && @insight.insight_type == "emergency"
       "#10b981"
     end
 
     def impact_text_color
-      @insight.payload["yield_impact"].to_f < 0 ? "text-red-500" : "text-emerald-500"
+      @insight.prediction_data&.dig("yield_impact").to_f < 0 ? "text-red-500" : "text-emerald-500"
     end
   end
 end
