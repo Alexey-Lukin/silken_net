@@ -1087,8 +1087,7 @@ end
 
 | Компонент | Баг | Виправлення |
 |-----------|-----|-------------|
-| `Gateways::Show` | `@gateway.firmware_hash` — колонка не існує на Gateway | Замінено на `@gateway.try(:firmware_hash)` (safe fallback) |
-| `Gateways::Show` | `@gateway.hardware_key&.uid` — HardwareKey має `device_uid`, не `uid` | Замінено на `@gateway.hardware_key&.device_uid` |
+| `Gateways::Show` | (1) `@gateway.firmware_hash` — колонка не існує; (2) `hardware_key&.uid` — HardwareKey має `device_uid`, не `uid` | (1) `try(:firmware_hash)` safe fallback; (2) `.device_uid` |
 | `Provisioning::Success` | `@device.did` — Gateway має `uid`, не `did` | Замінено на `@device.try(:did) \|\| @device.try(:uid)` |
 | `Maintenance::Show` | `edit_api_v1_maintenance_record_path` — маршрут `:edit` не існував | Додано маршрут `:edit` та дію контролера `edit` |
 
