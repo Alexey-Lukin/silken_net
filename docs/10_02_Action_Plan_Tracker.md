@@ -295,14 +295,6 @@
 - [x] 🤖 Firmware: зберігати thresholds у Flash/RTC
 - [x] 🤖 Backend: включити thresholds у OTA bytecode
 
-#### FW.9 — CoAP retry logic
-- `03_02`
-- **Опис:** Після AT+CCOAPSEND: `HAL_Delay(2000)` без парсингу відповіді. ACK miss → весь кеш втрачається
-- **Статус:** ✅ Виконано. UART RX response parsing (`SIM7070_SendATCommand_WithResponse`), retry loop (max 3 спроб), configurable `COAP_MAX_RETRIES`. При збої CoAP — retry з новою сесією. 4 unit tests (retry constants, OK/ERROR/timeout parsing).
-- [x] 🤖 Парсинг UART RX для `OK`/`ERROR` відповіді модему
-- [x] 🤖 Double-buffering або persistent buffer для retry
-- [x] 🤖 Configurable retry count
-
 ### 🟢 P2 — Низькопріоритетні
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
@@ -371,15 +363,6 @@
 - [ ] 🤖 Firmware Soldier: верифікація перед Flash write (`MRUBY_CONTRACT_FLASH_ADDR`)
 - [ ] 🤖 Magic check `0x45544952 ("RITE")` + HMAC verification = dual gate
 
-#### FW.24 — DID fallback magic constant (0x511CEE01) — collision risk
-- `firmware/soldier/main.c` (Generate_DID), `firmware/test/test_soldier_logic.c` | **P2**
-- **Опис:** Коли STM32 unique ID XOR дає 0 (теоретично можливо при відмові UID-блоку), використовується fallback magic constant `0x511CEE01`. Якщо два пристрої одночасно мають defective UID → колізія DID. Імовірність низька (~2.3e-10), але детермінована: якщо у партії є два дефекти → повна катастрофа провіженінгу
-- **Статус (✅ часткове — backend guard виконано):** Backend `Api::V1::ProvisioningController#register` тепер відхиляє `hardware_uid` чиї останні 8 hex символів збігаються з firmware fallback magic `511CEE01` (case-insensitive). Тест: `spec/requests/api/v1/provisioning_controller_spec.rb` context "[FW.24]" — exact match, lower-case match, та non-magic UID negative cases. Це блокує колізії та реєстраційні атаки. Firmware-side зміна (HRNG fallback при defective UID) — окрема задача, потребує firmware build pipeline.
-- **Статус (✅ firmware-side виконано):** HRNG fallback реалізовано: 3 спроби `HAL_RNG_GenerateRandomNumber`, fallback на `HAL_GetTick() ^ 0x511CEE01` тільки якщо всі HRNG спроби повернули 0. Backend guard залишається активним. Unit test: `test_did_hrng_fallback_not_magic`.
-- [x] 🤖 Замінити magic constant на HRNG-based fallback (запит RNG hardware при boot, якщо UID невалідний) — firmware-side
-- [x] 🤖 Backend: відхиляти провіженінг DID, що дорівнює fallback magic
-- [x] 🤖 Тести: симуляція UID = `511CEE01` та `AABBCCDD511CEE01` → expect 422; non-magic suffix → not blocked
-
 #### FW.25 — TinyML DSP preprocessing (FFT/MFCC) — undefined
 - `03_03` BLOCKER-5 | `firmware/soldier/main.c` | **P1** (блокує FW.4)
 - **Опис:** Поточна архітектура передає лише лінійну нормалізацію [0.0, 1.0] до TinyML моделі. **Невідомо**, чи модель очікує raw time-domain, чи частотні ознаки (FFT/MFCC). Залежить від `silken_net_audio_model.h` (відсутній). Якщо потрібен MFCC — це додає ~5-15 KB Flash + ~40 µs CPU на inference
@@ -400,13 +383,6 @@
 - [ ] 🤖 Дизайн ACK-aggregation: Queen чекає consolidated ACK після всіх chunks → re-broadcast пропущених
 - [ ] 🤖 Magic re-request: Soldier при Flash write detects gap → request specific chunks via uplink (vector OTA)
 - [ ] 🔗 Залежить від ARCH.26 (TDMA для координованого RX вікна)
-
-#### FW.28 — Acoustic events read-and-clear atomicity
-- `03_03` §4.2, `03_01` §1.6 (Bit-Pack) | **P2**
-- **Опис:** Після Phase 2 (Bit-Pack) `acoustic_events` скидається у 0. Якщо DMA-буфер (16 кГц аудіо) наповнюється між пакетом А (TX) та пакетом Б (next wakeup) — TinyML inference у проміжку може стати втраченою подією. Документація не описує атомарність read-and-clear
-- **Статус:** ✅ Виконано. `__disable_irq()` / `__enable_irq()` critical section навколо read + reset `acoustic_events` у Phase 2 (Bit-Pack). Snapshot зберігається в локальній змінній `acoustic_snapshot`. Документовано invariant.
-- [x] 🤖 Firmware: атомарна `__disable_irq()` секція навколо `pack_byte = (status<<6)|growth_points; acoustic_events = 0;`
-- [x] 🤖 Документувати у `03_03` invariant: усі inference-події між wakeup_N та wakeup_(N+1) → потрапляють у пакет N
 
 #### FW.29 — Panic packet (0xFF) vs saturated acoustic_events (255) — disambiguation
 - `03_03` §5.3 | **P1**
@@ -636,15 +612,6 @@
 - [ ] 🤖 Firmware: verify signature перед Flash write
 - [ ] 🤖 Fallback: HMAC-SHA256 якщо Ed25519 не вміщується в SRAM budget
 
-#### SEC.8 — ECB Restoration Race Condition (HAL_CRYP_Init timeout)
-- **Джерело:** `03_05` BLOCKER-6 | **Пріоритет: P1**
-- **Опис:** Після CoAP CBC flush Queen повинна відновити AES-ECB режим для прийому LoRa. `HAL_CRYP_Init()` — blocking call БЕЗ timeout. Якщо AES hardware hung (transient defect, power glitch) → ECB restoration зависне назавжди → вся мережа "мовчить" без error log
-- **Рішення:** RCC peripheral reset (`__HAL_RCC_CRYP_FORCE_RESET()`) як fallback + повторна ініціалізація, `Error_Handler()` якщо другий init також fails
-- **Статус:** ✅ Вже реалізовано (FW.16). `Restore_ECB_Mode()` має: (1) перший `HAL_CRYP_Init`, (2) при збої — `__HAL_RCC_CRYP_FORCE_RESET()` + `__HAL_RCC_CRYP_RELEASE_RESET()`, (3) повторний init, (4) при повторному збої — `NVIC_SystemReset()`. Тести: 3 test cases (`test_ecb_restore_first_init_success`, `test_ecb_restore_first_fail_rcc_reset_then_success`, `test_ecb_restore_both_fail_nvic_system_reset`).
-- [x] 🤖 Firmware Queen: додати timeout або watchdog до `HAL_CRYP_Init()` в `Restore_ECB_Mode()` — реалізовано як RCC reset + NVIC_SystemReset fallback
-- [x] 🤖 Firmware Queen: `__HAL_RCC_CRYP_FORCE_RESET()` → `__HAL_RCC_CRYP_RELEASE_RESET()` як recovery
-- [x] 🤖 Тест: симуляція hanging CRYP peripheral — 3 тести покривають всі сценарії
-
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
 - **Джерело:** `03_05` | **Пріоритет: P0 (до будь-якого field deploy)**
 - **Опис:** Аудит виявив: перші 4 слова production AES key **ідентичні публічно відомому** FIPS-197 Appendix B AES-128 test vector (стандартний тест-вектор зі специфікації NIST). Будь-який фахівець з криптографії може впізнати цей паттерн. При RDP Level 0 — trivial key extraction
@@ -673,7 +640,6 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | ID | Невідповідність | Документи / Файли | Дія | Статус |
 |----|----------------|-------------------|-----|--------|
 | DOC.1 | Документація AES master key суперечлива: `03_05` лінія 531-537 каже «навмисно не публікується», а лінія 538 натякає що перші 4 слова збігаються з FIPS-197 Appendix B test vector. Скоординувати після SEC.9 (заміна seed key) | `03_05`, `firmware/soldier/main.c:66-67` | Після SEC.9 видалити test-vector згадку, оновити обидва параграфи | ⏸️ Заблоковано SEC.9 |
-| DOC.3 | RTC Backup Domain magic markers (`0x4C5A5354 "LZST"` для Lorenz state, magic для EMA) **використовуються в коді**, але **не зведені у спец-таблицю** у docs. Розкладку DR0..DR23 потрібно винести у одну точку істини | `03_01` §2, firmware | Створити канонічну RTC Backup Domain Layout таблицю в `03_01` | ✅ Виконано (`03_01` §2 SSOT + §2.1 Magic Markers) |
 | DOC.4 | Lorenz first-boot vs continuation logic розкидана між `03_04` §2.1 (опис `calculate_state_continued`) та `03_01` §6 (RTC magic check). Потрібна одна точка істини | `03_04`, `03_01` | Об'єднати у `03_04` §2.1 з cross-ref на RTC layout | ✅ Виконано (`03_04` §2.1 callout + cross-ref) |
 | DOC.7 | `04_02` §4.2.2 (BlockchainMintingService) описує що guards активні тільки для oracle-driven flow, але tokenomics flow проходить **без явного guard chain**. Зв'язок між цими шляхами не пояснений у `05_02_Proof_of_Growth_Pipeline.md` | `04_02`, `05_02` | Об'єднати у `05_02` §4: діаграма «всі шляхи до `Wallet#lock_and_mint!`» з invariant'ами кожного | ✅ Виконано (`05_02` нова секція «Усі Шляхи до `Wallet#lock_and_mint!`» з 5 шляхами + інваріанти) |
 | DOC.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
