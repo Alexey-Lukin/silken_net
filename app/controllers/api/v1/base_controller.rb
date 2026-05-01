@@ -5,10 +5,14 @@ module Api
     class BaseController < ActionController::API
       include ActionView::Rendering
       include ActionController::ContentSecurityPolicy
+      include ActionController::RequestForgeryProtection
       helper Importmap::ImportmapTagsHelper
+      helper Turbo::StreamsHelper
       include ActionController::HttpAuthentication::Token::ControllerMethods
       include ActionController::MimeResponds
       include ActionController::Helpers
+
+      protect_from_forgery with: :exception, if: -> { request.format.html? }
       include Pagy::Method
       include Pundit::Authorization
 
@@ -87,6 +91,19 @@ module Api
       end
 
       # 4. СТАНДАРТИ ВІДПОВІДЕЙ (The Oracle's Voice)
+      # ActionView::Rendering#render_to_body (included above) sits before ActionController::Rendering in MRO
+      # and calls _render_template for every option — including json: — causing ActionView::MissingTemplate.
+      def render_to_body(options = {})
+        if options.key?(:json)
+          _process_options(options)
+          self.content_type = "application/json"
+          json = options[:json]
+          json.is_a?(String) ? json : json.to_json
+        else
+          super
+        end
+      end
+
       def render_unauthorized
         render json: { error: "Необхідна автентифікація. Брама закрита." }, status: :unauthorized
       end
