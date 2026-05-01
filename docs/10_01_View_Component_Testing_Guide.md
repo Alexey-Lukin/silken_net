@@ -264,7 +264,7 @@ it "test that status works" do
 
 ---
 
-## Known Issues Found During ActionController::Base Migration (v2.0)
+## Known Issues Found During ActionController::Base Migration
 
 When `BaseController` was switched from `ActionController::API` to `ActionController::Base`,
 Phlex components began actually rendering in tests (previously, `ActionController::API`
