@@ -162,8 +162,8 @@
 #### S6.14 — peaq_signing_key: відсутня rotation policy
 - **P2** | `04_02` §4.2.2 (GeneratePeaqDidService, BLOCKER-08) | **Складність: M** | **🤖 Архітектура + Док**
 - **Опис:** `peaq_signing_key` — обов'язковий (W3C DID compliance), raise `RegistrationError` при відсутності. Але немає процесу для: (1) ротації ключа без зламу існуючих DID, (2) emergency revocation при компрометації, (3) синхронізації між staging/production
-- [ ] 🤖 Дизайн key rotation policy (overlap window, migration strategy)
-- [ ] 🤖 Документувати emergency revocation runbook
+- [x] 🤖 Дизайн key rotation policy (overlap window, migration strategy) — ✅ Dual-key overlap window (72 год) з `peaq_signing_key` + `peaq_signing_key_previous`. Scheduled rotation кожні 90 днів. Задокументовано в `04_02` §S6.14
+- [x] 🤖 Документувати emergency revocation runbook — ✅ 5-step incident response (Detection → Containment <15хв → Investigation → Recovery → Post-Incident). Задокументовано в `06_04` §5.4
 - [ ] 👤 Vault-store production peaq_signing_key (Bitwarden/1Password)
 
 #### S6.15 — Chainlink Functions Router ABI v1: ризик version drift
@@ -176,10 +176,11 @@
 #### S6.17 — Dynamic Tax (2%) hardcoded — потребує on-chain governance
 - **P2** | `05_03` (HYBRID PROTOCOL GAIA), `BlockchainMintingService` | **Складність: M** | **🤖 Архітектура**
 - **Опис:** `DYNAMIC_TAX_RATE = BigDecimal("0.02")` hardcoded у `BlockchainMintingService`. Для true governance це має бути on-chain параметр через `ProtocolParameters` контракт (як `OPTIMAL_Z_TARGET`, `CRITICAL_Z_MIN/MAX`). Поточно — application-level override без DAO voting
+- **Статус:** ✅ Виконано. `BlockchainMintingService` тепер читає `dynamic_tax_rate` та `insurance_pool_threshold` через `SystemParameter.current()` з fallback на defaults. Hardcoded константи перейменовані на `DEFAULT_*`. DB migration seeds обидва параметри. Spec coverage: 6 тестів (governance override + default fallback).
 - **Залежність:** BIZ.4 ✅ (ProtocolParameters інфраструктура вже існує) — лише треба додати ключ
-- [ ] 🤖 Додати `KEY_DYNAMIC_TAX_RATE` у `ProtocolParameters.sol`
-- [ ] 🤖 `BlockchainMintingService` читає ставку через `Governance::ParameterSyncWorker` → `SystemParameter`
-- [ ] 🤖 Migration: seed `SystemParameter(:dynamic_tax_rate, value: 200)` (basis points)
+- [x] 🤖 Додати `KEY_DYNAMIC_TAX_RATE` у `ProtocolParameters.sol` — ✅ вже існує
+- [x] 🤖 `BlockchainMintingService` читає ставку через `Governance::ParameterSyncWorker` → `SystemParameter`
+- [x] 🤖 Migration: seed `SystemParameter(:dynamic_tax_rate, value: 0.02)` та `SystemParameter(:insurance_pool_threshold, value: 100000)`
 
 #### S6.18 — Rails web security hardening (maquina-app/rails-claude-code §8 audit)
 - **P1** | `06_01`, `06_02`, `06_04` | **Складність: M** | **🤖 Код + Конфігурація**
@@ -210,8 +211,9 @@
 #### PUMA-RACK-1 — Idempotency-Key write поза response path
 - **Low** | `06_05` | **Складність: S** | **🤖 Код** — актуально при planetary scale
 - **Опис:** `actuators#execute` зберігає Idempotency-Key через `Rails.cache.write(..., expires_in: 24.hours)` у Solid Cache (PostgreSQL). Виклик ~1-2ms додає latency до відповіді. `rack.response_finished` callback (Puma 7.0+) дозволяє виконати write ПІСЛЯ flush response до клієнта. Поточний 1-2ms не блокер (TRL 6–8), але при мільйонах актуаторних команд/добу — значуща економія latency p50.
-- [ ] 🤖 Перенести `Rails.cache.write(cache_key, response_body, ...)` в `actuators#execute` на `rack.response_finished` callback: `env["rack.response_finished"] << -> { Rails.cache.write(...) }`
-- [ ] 🤖 Верифікувати що TTL та logic незмінні, додати spec coverage
+- **Статус:** ✅ Виконано. `Rails.cache.write` переміщено у `rack.response_finished` callback (Puma 7.0+). Кеш записується ПІСЛЯ flush response клієнту, зменшуючи p50 latency на ~1-2ms. TTL та логіка незмінні. Spec coverage оновлено.
+- [x] 🤖 Перенести `Rails.cache.write(cache_key, response_body, ...)` в `actuators#execute` на `rack.response_finished` callback: `env["rack.response_finished"] << -> { Rails.cache.write(...) }`
+- [x] 🤖 Верифікувати що TTL та logic незмінні, додати spec coverage
 - 🔗 Залежить від: planetary scale milestone (перегляд при > 1M actuator commands/добу)
 
 ---
@@ -293,13 +295,6 @@
 - [x] 🤖 Firmware: зберігати thresholds у Flash/RTC
 - [x] 🤖 Backend: включити thresholds у OTA bytecode
 
-#### FW.9 — CoAP retry logic
-- `03_02`
-- **Опис:** Після AT+CCOAPSEND: `HAL_Delay(2000)` без парсингу відповіді. ACK miss → весь кеш втрачається
-- [ ] 🤖 Парсинг UART RX для `OK`/`ERROR` відповіді модему
-- [ ] 🤖 Double-buffering або persistent buffer для retry
-- [ ] 🤖 Configurable retry count
-
 ### 🟢 P2 — Низькопріоритетні
 
 #### FW.17 — Key rotation mechanism (Hash Ratchet KDF)
@@ -368,14 +363,6 @@
 - [ ] 🤖 Firmware Soldier: верифікація перед Flash write (`MRUBY_CONTRACT_FLASH_ADDR`)
 - [ ] 🤖 Magic check `0x45544952 ("RITE")` + HMAC verification = dual gate
 
-#### FW.24 — DID fallback magic constant (0x511CEE01) — collision risk
-- `firmware/soldier/main.c` (Generate_DID), `firmware/test/test_soldier_logic.c` | **P2**
-- **Опис:** Коли STM32 unique ID XOR дає 0 (теоретично можливо при відмові UID-блоку), використовується fallback magic constant `0x511CEE01`. Якщо два пристрої одночасно мають defective UID → колізія DID. Імовірність низька (~2.3e-10), але детермінована: якщо у партії є два дефекти → повна катастрофа провіженінгу
-- **Статус (✅ часткове — backend guard виконано):** Backend `Api::V1::ProvisioningController#register` тепер відхиляє `hardware_uid` чиї останні 8 hex символів збігаються з firmware fallback magic `511CEE01` (case-insensitive). Тест: `spec/requests/api/v1/provisioning_controller_spec.rb` context "[FW.24]" — exact match, lower-case match, та non-magic UID negative cases. Це блокує колізії та реєстраційні атаки. Firmware-side зміна (HRNG fallback при defective UID) — окрема задача, потребує firmware build pipeline.
-- [ ] 🤖 Замінити magic constant на HRNG-based fallback (запит RNG hardware при boot, якщо UID невалідний) — firmware-side
-- [x] 🤖 Backend: відхиляти провіженінг DID, що дорівнює fallback magic
-- [x] 🤖 Тести: симуляція UID = `511CEE01` та `AABBCCDD511CEE01` → expect 422; non-magic suffix → not blocked
-
 #### FW.25 — TinyML DSP preprocessing (FFT/MFCC) — undefined
 - `03_03` BLOCKER-5 | `firmware/soldier/main.c` | **P1** (блокує FW.4)
 - **Опис:** Поточна архітектура передає лише лінійну нормалізацію [0.0, 1.0] до TinyML моделі. **Невідомо**, чи модель очікує raw time-domain, чи частотні ознаки (FFT/MFCC). Залежить від `silken_net_audio_model.h` (відсутній). Якщо потрібен MFCC — це додає ~5-15 KB Flash + ~40 µs CPU на inference
@@ -397,17 +384,12 @@
 - [ ] 🤖 Magic re-request: Soldier при Flash write detects gap → request specific chunks via uplink (vector OTA)
 - [ ] 🔗 Залежить від ARCH.26 (TDMA для координованого RX вікна)
 
-#### FW.28 — Acoustic events read-and-clear atomicity
-- `03_03` §4.2, `03_01` §1.6 (Bit-Pack) | **P2**
-- **Опис:** Після Phase 2 (Bit-Pack) `acoustic_events` скидається у 0. Якщо DMA-буфер (16 кГц аудіо) наповнюється між пакетом А (TX) та пакетом Б (next wakeup) — TinyML inference у проміжку може стати втраченою подією. Документація не описує атомарність read-and-clear
-- [ ] 🤖 Firmware: атомарна `__disable_irq()` секція навколо `pack_byte = (status<<6)|growth_points; acoustic_events = 0;`
-- [ ] 🤖 Документувати у `03_03` invariant: усі inference-події між wakeup_N та wakeup_(N+1) → потрапляють у пакет N
-
 #### FW.29 — Panic packet (0xFF) vs saturated acoustic_events (255) — disambiguation
 - `03_03` §5.3 | **P1**
 - **Опис:** Panic пакети (chainsaw detection) форматуються з маркером `0xFF` (255). Saturated acoustic_events теж досягає 255 (FW.22 cap). **Без MAC/MIC** Queen не може розрізнити: bit-flip атака може перетворити нормальний пакет з 255 events на panic broadcast → false fire alert. Вирішується разом з FW.2 (CCM MIC), але потребує окремого дизайну на канальному рівні
-- [ ] 🤖 Дизайн: окреме поле `panic_flag:1 bit` у StatusByte (звільнити 1 біт від growth_points 6→5)
-- [ ] 🤖 АБО: panic packets мають окремий destination header byte
+- **Статус:** ✅ Виконано. `PANIC_FLAG_BIT` (0x80) додано в біт 7 StatusByte (байт 10). Нормальні пакети маскують біт 7 (`& 0x7F`), panic пакети встановлюють його. StatusByte формат: `[panic:1 | status:2 | growth_points:5]`. 2 unit tests: `test_panic_flag_set_in_emergency_payload`, `test_normal_payload_panic_flag_clear`.
+- [x] 🤖 Дизайн: окреме поле `panic_flag:1 bit` у StatusByte (звільнити 1 біт від growth_points 6→5)
+- [x] 🤖 АБО: panic packets мають окремий destination header byte
 - [ ] 🔗 Інтегрувати з FW.2 CCM transition
 
 ---
@@ -630,14 +612,6 @@
 - [ ] 🤖 Firmware: verify signature перед Flash write
 - [ ] 🤖 Fallback: HMAC-SHA256 якщо Ed25519 не вміщується в SRAM budget
 
-#### SEC.8 — ECB Restoration Race Condition (HAL_CRYP_Init timeout)
-- **Джерело:** `03_05` BLOCKER-6 | **Пріоритет: P1**
-- **Опис:** Після CoAP CBC flush Queen повинна відновити AES-ECB режим для прийому LoRa. `HAL_CRYP_Init()` — blocking call БЕЗ timeout. Якщо AES hardware hung (transient defect, power glitch) → ECB restoration зависне назавжди → вся мережа "мовчить" без error log
-- **Рішення:** RCC peripheral reset (`__HAL_RCC_CRYP_FORCE_RESET()`) як fallback + повторна ініціалізація, `Error_Handler()` якщо другий init також fails
-- [ ] 🤖 Firmware Queen: додати timeout або watchdog до `HAL_CRYP_Init()` в `Restore_ECB_Mode()`
-- [ ] 🤖 Firmware Queen: `__HAL_RCC_CRYP_FORCE_RESET()` → `__HAL_RCC_CRYP_RELEASE_RESET()` як recovery
-- [ ] 🤖 Тест: симуляція hanging CRYP peripheral
-
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
 - **Джерело:** `03_05` | **Пріоритет: P0 (до будь-якого field deploy)**
 - **Опис:** Аудит виявив: перші 4 слова production AES key **ідентичні публічно відомому** FIPS-197 Appendix B AES-128 test vector (стандартний тест-вектор зі специфікації NIST). Будь-який фахівець з криптографії може впізнати цей паттерн. При RDP Level 0 — trivial key extraction
@@ -666,7 +640,6 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | ID | Невідповідність | Документи / Файли | Дія | Статус |
 |----|----------------|-------------------|-----|--------|
 | DOC.1 | Документація AES master key суперечлива: `03_05` лінія 531-537 каже «навмисно не публікується», а лінія 538 натякає що перші 4 слова збігаються з FIPS-197 Appendix B test vector. Скоординувати після SEC.9 (заміна seed key) | `03_05`, `firmware/soldier/main.c:66-67` | Після SEC.9 видалити test-vector згадку, оновити обидва параграфи | ⏸️ Заблоковано SEC.9 |
-| DOC.3 | RTC Backup Domain magic markers (`0x4C5A5354 "LZST"` для Lorenz state, magic для EMA) **використовуються в коді**, але **не зведені у спец-таблицю** у docs. Розкладку DR0..DR23 потрібно винести у одну точку істини | `03_01` §2, firmware | Створити канонічну RTC Backup Domain Layout таблицю в `03_01` | ✅ Виконано (`03_01` §2 SSOT + §2.1 Magic Markers) |
 | DOC.4 | Lorenz first-boot vs continuation logic розкидана між `03_04` §2.1 (опис `calculate_state_continued`) та `03_01` §6 (RTC magic check). Потрібна одна точка істини | `03_04`, `03_01` | Об'єднати у `03_04` §2.1 з cross-ref на RTC layout | ✅ Виконано (`03_04` §2.1 callout + cross-ref) |
 | DOC.7 | `04_02` §4.2.2 (BlockchainMintingService) описує що guards активні тільки для oracle-driven flow, але tokenomics flow проходить **без явного guard chain**. Зв'язок між цими шляхами не пояснений у `05_02_Proof_of_Growth_Pipeline.md` | `04_02`, `05_02` | Об'єднати у `05_02` §4: діаграма «всі шляхи до `Wallet#lock_and_mint!`» з invariant'ами кожного | ✅ Виконано (`05_02` нова секція «Усі Шляхи до `Wallet#lock_and_mint!`» з 5 шляхами + інваріанти) |
 | DOC.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |

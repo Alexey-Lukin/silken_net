@@ -539,10 +539,10 @@ end
     end
   end
 
-  describe "DYNAMIC_TAX_RATE constant" do
+  describe "DEFAULT_DYNAMIC_TAX_RATE constant [S6.17]" do
     it "is defined as BigDecimal 0.02" do
-      expect(described_class::DYNAMIC_TAX_RATE).to eq(BigDecimal("0.02"))
-      expect(described_class::DYNAMIC_TAX_RATE).to be_a(BigDecimal)
+      expect(described_class::DEFAULT_DYNAMIC_TAX_RATE).to eq(BigDecimal("0.02"))
+      expect(described_class::DEFAULT_DYNAMIC_TAX_RATE).to be_a(BigDecimal)
     end
   end
 
@@ -705,9 +705,9 @@ end
     end
   end
 
-  describe "INSURANCE_POOL_THRESHOLD constant" do
+  describe "DEFAULT_INSURANCE_POOL_THRESHOLD constant [S6.17]" do
     it "is defined as 100_000" do
-      expect(described_class::INSURANCE_POOL_THRESHOLD).to eq(100_000)
+      expect(described_class::DEFAULT_INSURANCE_POOL_THRESHOLD).to eq(100_000)
     end
   end
 

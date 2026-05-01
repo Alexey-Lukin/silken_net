@@ -16,6 +16,7 @@
 typedef int HAL_StatusTypeDef;
 #define HAL_OK   0
 #define HAL_ERROR 1
+#define HAL_TIMEOUT 3
 
 typedef struct { int dummy; } ADC_HandleTypeDef;
 typedef struct { int dummy; } TIM_HandleTypeDef;
@@ -160,6 +161,9 @@ static inline int HAL_CRYP_Decrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t
 
 static inline int HAL_UART_Transmit(UART_HandleTypeDef *h, uint8_t *d, uint16_t s, uint32_t t) {
     (void)h; (void)d; (void)s; (void)t; return HAL_OK;
+}
+static inline int HAL_UART_Receive(UART_HandleTypeDef *h, uint8_t *d, uint16_t s, uint32_t t) {
+    (void)h; (void)d; (void)s; (void)t; return HAL_TIMEOUT;
 }
 
 /* Temperature macro stub */

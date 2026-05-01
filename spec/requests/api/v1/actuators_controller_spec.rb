@@ -94,6 +94,9 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
         expect(response).to have_http_status(:accepted)
         first_command_id = response.parsed_body["command_id"]
 
+        # Simulate rack.response_finished callbacks (Puma invokes these after flush)
+        Array(request.env["rack.response_finished"]).each { |cb| cb.call(request.env) }
+
         # Retry with same Idempotency-Key — should return cached response
         post "/api/v1/actuators/#{own_actuator.id}/execute",
              params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
@@ -101,6 +104,29 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
 
         expect(response).to have_http_status(:accepted)
         expect(response.parsed_body["command_id"]).to eq(first_command_id)
+      end
+
+      it "writes idempotency cache via rack.response_finished callback" do
+        idempotency_key = SecureRandom.uuid
+        cache_key = "idempotency:actuator:#{own_actuator.id}:#{Digest::SHA256.hexdigest(idempotency_key)}"
+
+        post "/api/v1/actuators/#{own_actuator.id}/execute",
+             params: { action_payload: "OPEN_VALVE", duration_seconds: 30 },
+             headers: headers.merge("Idempotency-Key" => idempotency_key), as: :json
+
+        expect(response).to have_http_status(:accepted)
+
+        # In test env, rack.response_finished callbacks are collected but not
+        # automatically invoked. Execute them manually to verify the cache write.
+        callbacks = request.env["rack.response_finished"]
+        expect(callbacks).to be_present
+
+        callbacks.each { |cb| cb.call(request.env) }
+
+        cached = Rails.cache.read(cache_key)
+        expect(cached).to be_present
+        expect(cached[:command_id]).to eq(response.parsed_body["command_id"])
+        expect(cached[:status]).to eq("accepted")
       end
 
       it "creates separate commands for different Idempotency-Keys" do

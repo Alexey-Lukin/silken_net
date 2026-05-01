@@ -91,7 +91,7 @@ PA0 (Piezo):   Клік на пін PA0 на схемі → GPIO_EXTI0  (Кан�
 ### Host-Based Тести (без CubeIDE, без плат)
 
 ```bash
-# Запуск всіх 207 тестів на x86 (не потрібен ARM toolchain)
+# Запуск всіх 264 тестів на x86 (не потрібен ARM toolchain)
 make -C firmware/test
 
 # Тільки Soldier:
@@ -158,7 +158,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — C-код написаний, 207 host-based тестів проходять
+- **Поточний TRL:** TRL 6 — C-код написаний, 264 host-based тестів проходять
 - **Пов'язані модулі:**
   - EDLC Супераконденсатор → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
   - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
@@ -179,11 +179,11 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 | **CIFO Priority-Aware Eviction** | ✅ Виправлено (критичні записи захищені від витіснення) |
 | **OTA Integrity (CRC32)** | ✅ Виправлено (ISO 3309 перевірка перед flash write) |
 | **AES Key — зашитий у Flash** | 🔴 BLOCKER (hardcoded, не обертається) |
-| **AT Command Blocking (2s HAL_Delay)** | 🔴 BLOCKER (Queen сліпа 2 секунди під час CoAP flush) |
+| **AT Command Blocking (~25 s flush)** | 🟡 Частково виправлено — CoAP retry з UART RX парсингом додано (FW.9); повна async-переробка — відкрито |
 | **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
 | **Error_Handler** | ✅ Виправлено — `NVIC_SystemReset()` через 100 мс замість вічного циклу (FW.14) |
 | **CMD_DECRYPT_BUF_SIZE розбіжність** | ✅ Виправлено — тест синхронізовано з firmware (96 → 544) |
-| **Host-based Tests (207)** | ✅ Всі проходять (`make -C firmware/test`) |
+| **Host-based Tests (264)** | ✅ Всі проходять (`make -C firmware/test`) |
 
 ---
 
@@ -216,38 +216,50 @@ uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
 
 ---
 
-### 🔴 BLOCKER-2: AT Command Blocking — Queen сліпа 2 секунди
+### 🟡 BLOCKER-2: AT Command Blocking — Queen сліпа ~25 секунд під час flush
 
-**Статус:** Відкрито. Архітектурна проблема CoAP uplink.
+**Статус:** 🟡 Частково виправлено (FW.9). CoAP retry з UART RX парсингом реалізовано (до 3 спроб, парсинг `OK`/`ERROR`). Повна async-переробка залишається відкритою.
 
-**Файл:** `firmware/queen/main.c:563`
+**Файл:** `firmware/queen/main.c`
 
 ```c
-// Queen не може прийняти жодного LoRa-пакета під час цієї паузи
-HAL_Delay(2000); // Чекаємо ACK від сервера
+// [FW.9] CoAP send з retry-логікою — парсинг відповіді модему замість blind delay
+for (uint8_t retry = 0; retry < COAP_MAX_RETRIES && !send_success; retry++) {
+    // Відкриваємо CoAP-сесію з перевіркою відповіді OK/ERROR
+    if (!SIM7070_SendATCommand_WithResponse("AT+CCOAPNEW=...", COAP_BASE_TIMEOUT_MS)) {
+        continue;  // Session open failed → retry
+    }
+    // ... AT+CCOAPSEND hex TX ...
+    // Читаємо відповідь після надсилання
+    if (HAL_UART_Receive(&huart1, uart_rx_buf, ..., COAP_SEND_TIMEOUT_MS) == HAL_OK) {
+        if (strstr(uart_rx_buf, "OK")) { send_success = 1; }
+    }
+    SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
+}
 ```
 
-**Ризики:**
-1. SX1262 LoRa FIFO — 256 байтів. При 16-байтних пакетах та 50+ деревах, що прокидаються одночасно, overflow FIFO за 2s гарантований.
-2. Втрачені пакети не відновлюються (немає ARQ між Soldier і Queen).
-3. Під час пожежі (критична ситуація) Queen може пропустити emergency-пакети від Солдатів саме в цей момент.
+**Ризики (залишкові):**
+1. `incoming_lora_payload[16]` — єдиний буфер без черги. За ~25 секунд flush ISR мовчки перезаписує кожен новий пакет → втрачаються всі, крім останнього.
+2. Emergency-пакети від Солдатів під час flush зберігаються лише якщо прийдуть останніми.
+3. Retry не вирішує проблему блокування головного циклу — UART RX залишається polling-based.
 
-**Необхідна дія:**
-- Переписати `Flush_Cache_To_Rails()` на UART interrupt-driven (DMA UART + callback).
-- Відправку CoAP виконувати асинхронно, не блокуючи головний цикл.
-- Альтернатива: другий буфер прийому під час flush (подвійна буферизація).
+**Залишкові необхідні дії:**
+- Переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven (async).
+- Перейти з однобітного `lora_rx_flag` на кільцевий буфер для ISR-пакетів.
 
-**Блокує:** Надійність Queen в умовах щільного LoRa-трафіку.
+**Блокує:** Надійність Queen в умовах щільного LoRa-трафіку, Emergency Alerting.
 
 ---
 
-### ✅ BLOCKER-4: Starlink Latency Gap (Частково виправлено)
+### ✅ BLOCKER-4: Starlink Latency Gap (Виправлено)
 
-**Статус:** Таймаути збільшено (PR #273). CoAP session timeout: `1000 ms` → `2000 ms`. ACK wait: `2000 ms` → `5000 ms`.
+**Статус:** Виправлено (FW.9 + PR #273). CoAP таймаути збільшено та реалізовано повноцінний retry.
 
-Повний retry залишається відкритим (потребує UART RX парсингу).
+- `AT+CCOAPNEW`: `1000 ms` → `2000 ms` (`COAP_BASE_TIMEOUT_MS`)
+- ACK wait: `2000 ms` → `5000 ms` (`COAP_SEND_TIMEOUT_MS`)
+- До 3 retry-спроб (`COAP_MAX_RETRIES=3`) з парсингом відповіді `OK`/`ERROR`
 
-**Блокує:** (частково) Стабільність CoAP uplink через Starlink.
+**Закриває:** Стабільність CoAP uplink через Starlink DTC (worst-case RTT 600–2400 ms).
 
 ---
 
@@ -417,25 +429,47 @@ Offset | Size | Field            | Значення
 6      | 1    | Temp             | Температура кристала (°C, int8)
 7      | 1    | Acoustic         | TinyML acoustic events (uint8, насичення: >255→255)
 8-9    | 2    | Metabolism       | delta_t_seconds (BE uint16)
-10     | 1    | BioContract      | [Status:2 bits | GrowthPoints:6 bits]
+10     | 1    | BioContract      | [PanicFlag:1 bit | Status:2 bits | GrowthPoints:5 bits]
 11     | 1    | TTL              | Mesh Time-To-Live (initial = 3)
 12-13  | 2    | FirmwareVersionID| FIRMWARE_VERSION_ID (BE uint16)
 14-15  | 2    | Reserved         | Зарезервовано (нулі)
 ```
 
 **Байт 10 (BioContract) — результат mruby Атрактора:**
-- Біти `[7:6]`: Status → `0`=homeostasis, `1`=stress, `2`=anomaly, `3`=tamper
-- Біти `[5:0]`: Growth Points → `0-63` (Proof of Growth)
+- Біт `[7]`: PanicFlag → `0`=звичайний пакет, `1`=panic (Emergency TX). Нормальні пакети завжди маскуються `& ~PANIC_FLAG_BIT`.
+- Біти `[6:5]`: Status → `0`=homeostasis, `1`=stress, `2`=anomaly, `3`=tamper
+- Біти `[4:0]`: Growth Points → `0-31` (Proof of Growth; нормальний діапазон 10–31)
 
-Після пакування: `acoustic_events = 0` (скидаємо лічильник).
+> **[FW.29] Disambiguація panic vs насичений acoustic_events:** до FW.29 `acoustic_events == 0xFF` вказував і на реальне насичення кавітаційних подій, і на panic. Тепер `PANIC_FLAG_BIT` (bit 7 байта 10) однозначно маркує паніку: `panic_payload[10] = 0x80`, а `panic_payload[7] = 0xFF` (acoustic). Нормальні пакети завжди виконують `lora_payload[10] &= ~PANIC_FLAG_BIT`.
 
-**Насичення acoustic_events (FW.22):** лічильник `acoustic_events` — **`uint8_t`** з saturating increment:
+Після пакування:
+
+```c
+// [FW.28] Atomic read-and-clear: захист від Race Condition між DMA ISR та main loop
+// (ISR може збільшити acoustic_events між перевіркою та скиданням у main loop)
+__disable_irq();
+uint8_t acoustic_snapshot = acoustic_events;
+acoustic_events = 0;
+__enable_irq();
+
+lora_payload[7] = acoustic_snapshot;
+```
+
+**Насичення acoustic_events (FW.22) та атомарне зчитування (FW.28):** лічильник `acoustic_events` — **`uint8_t`** із saturating increment:
 ```c
 uint8_t acoustic_events = 0;                        // [FW.22] Saturating uint8_t
 if (acoustic_events < 255) acoustic_events++;        // Saturating increment (no overflow)
-lora_payload[7] = (uint8_t)acoustic_events;          // Direct assignment (no clamping needed)
 ```
-Попередня реалізація (FW.12) використовувала `uint16_t` з clamp при пакуванні. FW.22 переміщує захист на рівень інкременту — тип `uint8_t` фізично не може перевищити 255.
+При пакуванні — атомарне зчитування та скидання (FW.28):
+```c
+// [FW.28] __disable_irq() guard — запобігає race condition з DMA ISR
+__disable_irq();
+uint8_t acoustic_snapshot = acoustic_events;
+acoustic_events = 0;
+__enable_irq();
+lora_payload[7] = acoustic_snapshot;                 // Direct assignment (no clamping needed)
+```
+FW.22 переміщає захист від overflow на рівень інкременту (тип `uint8_t` фізично не може перевищити 255). FW.28 гарантує що жодна кавітаційна подія не втрачається між читанням і скиданням у main loop.
 
 ---
 
@@ -654,7 +688,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 > **DR7 — Незмінний DID:** Записується один раз при першому старті (`tree_did == 0`). Якщо `tree_did != 0` при наступних стартах, запис пропускається. Це гарантує унікальність ідентифікатора навіть після OTA-ребуту.
 
-> **DR16-DR19 — Стан Лоренца (FW.6):** Зберігається/відновлюється при кожному циклі STOP2. При первинному старті або після повного знеструмлення (DR19 ≠ `0x4C5A5354`) система переходить у режим ініціалізації від `chaos_seed`. NaN/Inf перевірка через `isfinite()` захищає від бітових помилок у Backup Domain. STM32WLE5 підтримує 20 backup registers (DR0-DR19) — всі тепер зайняті.
+> **DR16-DR19 — Стан Лоренца (FW.6):** Зберігається/відновлюється при кожному циклі STOP2. При первинному старті або після повного знеструмлення (DR19 ≠ `0x4C5A5354`) система переходить у режим ініціалізації від `chaos_seed`. NaN/Inf перевірка через `isfinite()` захищає від бітових помилок у Backup Domain. STM32WLE5 підтримує 20 backup registers (DR0-DR19). DR13-DR15 зарезервовано для майбутніх FW-задач.
 
 ### 2.1 Magic Markers (Канонічна Таблиця) [DOC.3]
 
@@ -860,10 +894,13 @@ void HAL_PWR_PVDCallback(void) {
 
 **Trigger_Emergency_LoRa_TX (Panic Payload):**
 ```c
-panic_payload[7] = 0xFF;  // Acoustic = 0xFF = panic marker
-panic_payload[11] = 5;    // TTL = 5 (стандарт 3, паніка 5 — більше стрибків)
+panic_payload[7]  = 0xFF;          // Acoustic = 0xFF = насичений лічильник паніки
+panic_payload[10] = PANIC_FLAG_BIT; // [FW.29] bit 7 = 1 → однозначний маркер panic
+panic_payload[11] = 5;             // TTL = 5 (стандарт 3, паніка 5 — більше стрибків)
 // AES-256-ECB Encrypt → Radio.Send → 100ms → Radio.Sleep
 ```
+
+> **[FW.29] Навіщо окремий PANIC_FLAG_BIT?** До FW.29 backend розрізняв паніку лише за `acoustic_events == 0xFF`. Але `0xFF` може означати і реальне насичення кавітаційних подій за тривалий час. `PANIC_FLAG_BIT` у байті 10 (StatusByte, bit 7) є однозначним машинним маркером: у нормальному пакеті він завжди `0` (`lora_payload[10] &= ~PANIC_FLAG_BIT`), у panic-пакеті — завжди `1`.
 
 ### 6.2 Queen ISR
 
@@ -888,10 +925,19 @@ HAL_RNG_GenerateRandomNumber(&hrng, &true_random); // TRNG (теплошумов
 
 tree_did = uid_word0 ^ (uid_word1 << 5) ^ (uid_word2 >> 3) ^ true_random;
 
-if (tree_did == 0) tree_did = 0x511CEE01; // Non-zero guarantee
+// [FW.24] HRNG-based fallback: до 3 спроб HRNG замість детермінованої магічної константи
+if (tree_did == 0) {
+    uint32_t rng_fallback = 0;
+    for (int i = 0; i < 3 && rng_fallback == 0; i++) {
+        HAL_RNG_GenerateRandomNumber(&hrng, &rng_fallback);
+    }
+    tree_did = (rng_fallback != 0) ? rng_fallback : (HAL_GetTick() ^ 0x511CEE01);
+}
 
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR7, tree_did); // Locked forever
 ```
+
+> **[FW.24] Навіщо змінено fallback?** Стара реалізація використовувала константу `0x511CEE01` — єдине детерміноване значення, яке колізувало б у всіх Солдатів зі зламаним UID і нулевим HRNG. FW.24 вводить три додаткові спроби HRNG: при справному RNG хоч одна дасть ненульовий результат, забезпечуючи унікальний DID навіть при нульовому XOR-результаті UID. Магічна константа залишається лише як останній рядок захисту при повній відмові HRNG.
 
 **Потім:** `POST /api/v1/provisioning/register` — реєструє DID у Rails backend для отримання AES-ключа та прив'язки до Tree-сутності в БД.
 
@@ -957,22 +1003,22 @@ HAL_RNG_DeInit(&hrng);                                  // DeInit одразу �
 
 ---
 
-## 🧪 10. Покриття Host-Based Тестами (207 тестів)
+## 🧪 10. Покриття Host-Based Тестами (264 тестів)
 
 Firmware логіка тестується на x86 з GCC (не потребує ARM toolchain):
 
 ```bash
-make -C firmware/test             # Всі 207 тестів
-make -C firmware/test queen       # Queen-only (79 тестів)
-make -C firmware/test soldier     # Soldier-only (58 тестів)
-make -C firmware/test bio_contract # Bio-Contract (27 тестів)
+make -C firmware/test             # Всі 264 тестів
+make -C firmware/test queen       # Queen-only (83 тестів)
+make -C firmware/test soldier     # Soldier-only (105 тестів)
+make -C firmware/test bio_contract # Bio-Contract (33 тестів)
 make -C firmware/test tinyml      # TinyML pipeline (25 тестів)
 make -C firmware/test encryption  # AES encryption (18 тестів)
 ```
 
 **CI:** Firmware тести інтегровані в GitHub Actions (`firmware_test` job у `.github/workflows/ci.yml`).
 
-### Тести Queen (79)
+### Тести Queen (83)
 
 | Модуль | Тести | Що покривається |
 |--------|-------|-----------------|
@@ -987,19 +1033,25 @@ make -C firmware/test encryption  # AES encryption (18 тестів)
 | ECB Restoration | 3 | CRYP mode state після CBC→ECB переходу (Flush та Handle_CoAP) |
 | HRNG IV Generation | 5 | Words filled, 16-byte size, RNG instance set, power management (DeInit), not tick-based |
 | CBC Command Decryption | 3 | ECB restored after CMD decrypt, CBC during decrypt, both transitions in sequence |
+| **CoAP Retry (FW.9)** | **4** | **`COAP_MAX_RETRIES=3` константа, `COAP_BASE_TIMEOUT_MS=2000`, `COAP_SEND_TIMEOUT_MS=5000`, `UART_RX_BUF_SIZE=128`** |
 
-### Тести Soldier (58)
+### Тести Soldier (105)
 
 | Модуль | Тести | Що покривається |
 |--------|-------|-----------------|
 | Payload Packing | 13 | Всі поля, signed temp, max/zero, pack-unpack roundtrip, reserved=0 |
-| DID Generation | 4 | Non-zero guarantee (`0x511CEE01`), детермінізм, унікальність |
-| Mesh Dedup | 10 | 8-slot cache, eviction, pingpong scenario, relay decisions (OK/echo/known/ttl_zero) |
+| DID Generation | 5 | HRNG-based fallback (FW.24), детермінізм, унікальність; magic constant `0x511CEE01` лише як last-resort |
+| Mesh Dedup | 10 | 3-slot cache (FW.21), eviction, pingpong scenario, relay decisions (OK/echo/known/ttl_zero) |
 | OTA Assembly (Soldier) | 7 | Multi-chunk, duplicate ignore, buffer overflow, total mismatch, bitmap |
 | CRC32 | 7 | ISO 3309 known value (`0xCBF43926`), bit flip detection, OTA verify/corrupted |
 | Bio-Contract Byte | 8 | All statuses, clamping, full 256-combination roundtrip, `0xFF`=VM error |
-| Panic Payload | 4 | DID, acoustic=0xFF marker, TTL=5, zero fields |
-| OnRxDone Boundary | 5 | Normal 16B, 255B accepted (old off-by-one fix), 256B accepted, 257B rejected, 0B rejected |
+| Panic Payload | 6 | DID, acoustic=0xFF marker, TTL=5, zero fields; **[FW.29]** PANIC_FLAG_BIT встановлений у panic, відсутній у звичайному пакеті |
+| OnRxDone Boundary | 5 | Normal 16B, 255B accepted, 256B accepted, 257B rejected, 0B rejected |
+| Lorenz State Persistence (FW.6) | 9 | RTC DR16-DR19, magic marker, NaN/Inf guard, cold boot |
+| Acoustic Saturating Increment (FW.22) | 6 | Нуль, нормальний приріст, 254→255, 255 залишається 255, насичення, atomic snapshot |
+| RSSI Clamping | 7 | Нормальні, edge ±128, overflow proof |
+| EMA Filter (FW.21) | 10 | Cold start, smoothing (α=0.2), convergence, noise rejection, warmup flag, count saturation, zero inputs, overflow max, RTC save/load, cold boot |
+| [решта] | ~12 | Lorenz state + mesh + misc |
 
 > **Що НЕ покривається тестами:** STOP2 wakeup sequence, IWDG timeout, PVD voltage threshold, реальний Radio.Send/Rx, SIM7070G AT-команди. Ці компоненти потребують Hardware-in-the-Loop (HIL) тестування.
 

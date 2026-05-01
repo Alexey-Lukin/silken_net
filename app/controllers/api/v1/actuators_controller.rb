@@ -84,9 +84,16 @@ module Api
           format.json do
             response_body = { command_id: @command.id, status: "accepted" }
 
-            # Store in idempotency cache for 24 hours
+            # [PUMA-RACK-1]: Store in idempotency cache AFTER response is flushed to client.
+            # rack.response_finished callback (Puma 7.0+) executes after the response body
+            # is sent, saving ~1-2ms from the critical path.
             if idempotency_key.present?
-              Rails.cache.write(cache_key, response_body, expires_in: 24.hours)
+              cached_key = cache_key
+              cached_body = response_body
+              request.env["rack.response_finished"] ||= []
+              request.env["rack.response_finished"] << ->(_env) {
+                Rails.cache.write(cached_key, cached_body, expires_in: 24.hours)
+              }
             end
 
             render json: response_body, status: :accepted

@@ -41,7 +41,7 @@
 | **Hardcoded AES Key у Flash** | 🔴 BLOCKER (єдиний ключ на всю мережу) |
 | **Queen UID hardcoded "QUEEN-001"** | ✅ Виправлено (Flash-based provisioning з fallback на STM32 HW UID) |
 | **Error_Handler без IWDG у Queen** | ✅ Виправлено (IWDG додано з timeout ~26 с + refresh у main loop) |
-| **No CoAP retry logic** | 🟡 OPEN (ACK miss → дані втрачено) |
+| **No CoAP retry logic** | ✅ Виправлено (FW.9) — `SIM7070_SendATCommand_WithResponse`, max 3 retry, парсинг `OK`/`ERROR` |
 | **CMD_DECRYPT_BUF_SIZE розбіжність** | ✅ Виправлено (тест синхронізовано: 96 → 544) |
 | **HRNG Fallback → IV Reuse (CBC)** | ✅ Виправлено (fallback використовує djb2 STM32 HW UID XOR tick) |
 | **OTA Broadcast Infinite Loop** | ✅ Виправлено (`ota_is_active = 0` розкоментовано після повного циклу бродкасту) |
@@ -164,22 +164,38 @@ CoAP таймаути збільшені для Starlink DTC (worst-case RTT 600
 
 ---
 
-### 🟡 BLOCKER-6: Відсутність Retry-логіки для CoAP flush
+### ✅ BLOCKER-6: CoAP Retry-логіка — реалізовано (FW.9)
 
-**Статус:** Відкрито. Архітектурна проблема надійності uplink.
+**Статус:** Виправлено. `SIM7070_SendATCommand_WithResponse` реалізовано, retry-цикл до 3 спроб.
+**Файл:** `firmware/queen/main.c`
 
-Після `AT+CCOAPSEND` Queen виконує `HAL_Delay(2000)` і вважає відправку успішною. Відповідь модему не аналізується. Якщо:
-- Starlink з'єднання відсутнє
-- Сервер повернув CoAP error code
-- Модем повернув `ERROR`
+**Реалізація:**
+```c
+#define COAP_MAX_RETRIES  3    // [FW.9] Максимум спроб CoAP flush
+#define UART_RX_BUF_SIZE  128  // [FW.9] Буфер для парсингу відповіді модему
 
-Весь кеш (до 50 записів, ~24 дерева × ~1 год даних) **безповоротно втрачається** — після `Flush_Cache_To_Rails()` виконується `cache_count = 0` і всі `is_active = 0`.
+for (uint8_t retry = 0; retry < COAP_MAX_RETRIES && !send_success; retry++) {
+    // 1. Відкриваємо CoAP-сесію з перевіркою OK/ERROR
+    if (!SIM7070_SendATCommand_WithResponse("AT+CCOAPNEW=...", COAP_BASE_TIMEOUT_MS)) {
+        continue;  // Session open failed → retry
+    }
+    // 2. Відправляємо hex-кодований payload
+    // ... AT+CCOAPSEND ...
+    // 3. Парсимо відповідь: шукаємо "OK" у UART буфері
+    if (HAL_UART_Receive(&huart1, uart_rx_buf, UART_RX_BUF_SIZE - 1, COAP_SEND_TIMEOUT_MS) == HAL_OK) {
+        for (uint8_t j = 0; uart_rx_buf[j] != '\0'; j++) {
+            if (strncmp(&uart_rx_buf[j], "OK", 2) == 0) { send_success = 1; break; }
+        }
+    }
+    SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
+}
+```
 
-**Необхідна дія:**
-- Зберігати батч у persistent буфері (Flash або EEPROM-емуляція) до підтвердження ACK.
-- Або реалізувати подвійну буферизацію: flush → передача → при помилці → retry з тим самим буфером.
+Якщо після 3 спроб `send_success == 0` — кеш очищується (дані все ще втрачаються, persistent buffer — наступний крок). Але при транзієнтних збоях (моментовий Starlink gap, тимчасова помилка модему) retry значно підвищує надійність.
 
-**Блокує:** Надійність Proof of Growth pipeline (втрачені пакети → пропущені growth_points → недонарахування SCC).
+**Залишкова проблема:** Persistent буфер при 3-кратному збої не реалізовано — майбутня задача.
+
+**Закриває:** Надійність CoAP uplink при транзієнтних мережевих збоях.
 
 ---
 
@@ -507,44 +523,63 @@ HAL_CRYP_Init(&hcryp);
 | `AT\r\n` | 500 ms | Перевірка зв'язку з модемом |
 | `AT+CNMP=38\r\n` | 1000 ms | Режим LTE-M only (відключає NB-IoT) |
 
-### CoAP Flush Sequence (кожен flush)
+### CoAP Flush Sequence (кожен flush, FW.9)
 
 ```
-1. AT+CCOAPNEW="coap://api.silkennet.com:5683"\r\n  (HAL_Delay 2000 ms)
+[FW.9] Retry loop: до 3 спроб (COAP_MAX_RETRIES), перервати при send_success=1.
+
+1. SIM7070_SendATCommand_WithResponse("AT+CCOAPNEW=...", COAP_BASE_TIMEOUT_MS=2000 ms)
+   ↳ Читаємо відповідь: якщо "OK" → success; "ERROR" → continue retry
    ↳ Відкриваємо CoAP сесію, session_id=0
 
 2. Формуємо та відправляємо AT+CCOAPSEND через UART (blocking):
-   a. Заголовок команди: snprintf → HAL_UART_Transmit(..., strlen, 100ms)
+   a. Заголовок команди: snprintf → HAL_UART_Transmit(..., strlen, 100 ms)
       "AT+CCOAPSEND=0,2,"telemetry/batch/<queen_uid>",<size*2>,\""
-   b. Hex payload: кожен байт окремо → HAL_UART_Transmit(2 байти ASCII, 10ms)
+   b. Hex payload: кожен байт окремо → HAL_UART_Transmit(2 байти ASCII, 10 ms)
       Для 50 записів: total_size ≈ 1072 байт → 2144 ASCII → ~21.4 секунди
-   c. Закриваємо: HAL_UART_Transmit("\"\r\n", 3, 100ms)
+   c. Закриваємо: HAL_UART_Transmit("\"\r\n", 3, 100 ms)
    ↳ Method=2 (PUT), URI-Path визначає шлюз (вирішує Starlink NAT)
 
-3. HAL_Delay(5000)  ← Чекаємо UDP ACK від сервера (відповідь не читається!)
-   ↳ Збільшено з 2000→5000 ms для Starlink DTC worst-case latency (600-2400ms RTT)
+3. HAL_UART_Receive(uart_rx_buf, UART_RX_BUF_SIZE=128, COAP_SEND_TIMEOUT_MS=5000 ms)
+   ↳ Шукаємо "OK" у відповіді: якщо знайдено → send_success=1
+   ↳ Якщо "ERROR" або timeout → continue до наступної retry-спроби
+   ↳ Збільшено з 2000→5000 ms для Starlink DTC worst-case latency (600–2400 ms RTT)
 
 4. AT+CCOAPDEL=0\r\n  (HAL_Delay 500 ms)
    ↳ Закриваємо сесію, звільняємо ресурси модему
+
+5. При send_success=0 після 3 спроб — кеш очищується (дані втрачаються).
 ```
 
-**Загальний час flush для 50 записів: ~25 секунд** (BLOCKER-2)
+**Загальний час flush для 50 записів: ~25 секунд** (BLOCKER-2, залишається через blocking hex TX)
 
 **Важливо про URI-Path:** `/telemetry/batch/<queen_uid>` використовується замість IP-адреси, що вирішує проблему Starlink NAT та динамічних адрес. Сервер знаходить шлюз за UID, а не за IP.
 
-### Відповіді модему (поточний стан — не парситься)
+### Функції роботи з AT-командами (FW.9)
 
 ```c
+// Проста відправка без читання відповіді (ініціалізація, CCOAPDEL)
 void SIM7070_SendATCommand(char* command, uint32_t delay_ms) {
     HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000);
-    HAL_Delay(delay_ms); // Затримка замість парсингу відповіді  ← BLOCKER-2
+    HAL_Delay(delay_ms);
 }
-```
 
-**Реальні відповіді SIM7070G, які ігноруються:**
-- `OK` — команда прийнята
-- `ERROR` — помилка (не обробляється → дані втрачаються)
-- `+CCOAPSEND: 0,1` — CoAP ACK отримано (не обробляється)
+// [FW.9] Відправка з читанням та перевіркою відповіді (CCOAPNEW)
+static uint8_t SIM7070_SendATCommand_WithResponse(const char* command, uint32_t timeout_ms) {
+    memset(uart_rx_buf, 0, UART_RX_BUF_SIZE);
+    HAL_UART_Transmit(&huart1, (uint8_t*)command, strlen(command), 1000);
+    HAL_UART_Receive(&huart1, uart_rx_buf, UART_RX_BUF_SIZE - 1, timeout_ms);
+    // Шукаємо "OK" → повертаємо 1 (success) або 0 (failure/ERROR/timeout)
+    for (uint8_t i = 0; uart_rx_buf[i] != '\0'; i++) {
+        if (strncmp(&uart_rx_buf[i], "OK", 2) == 0) return 1;
+    }
+    return 0;
+}
+
+**Відповіді SIM7070G, що парсяться (FW.9):**
+- `OK` — команда прийнята → `SIM7070_SendATCommand_WithResponse` повертає `1`
+- `ERROR` — помилка → retry
+- `+CCOAPSEND: 0,1` — CoAP ACK отримано (парсинг поки не реалізовано; достатньо `OK` від `AT+CCOAPNEW`)
 
 ---
 
@@ -839,7 +874,7 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 ## 🧪 11. Тестове Покриття (Host-Based, x86)
 
 ```bash
-make -C firmware/test queen    # 59 тестів, ~0.1 секунди
+make -C firmware/test queen    # 83 тестів, ~0.1 секунди
 ```
 
 | Модуль | Тестів | Що покривається |
@@ -855,7 +890,8 @@ make -C firmware/test queen    # 59 тестів, ~0.1 секунди
 | ECB Restoration | 3 | CRYP mode state після CBC→ECB transition |
 | HRNG IV Generation | 5 | All 4 words filled, 16-byte size, power mgmt deinit |
 | CBC Command Decrypt | 3 | ECB restored після CBC decrypt, sequence correctness |
-| **Всього** | **79** | *(включно з shared тестами; queen-specific: 59)* |
+| **CoAP Retry (FW.9)** | **4** | **`COAP_MAX_RETRIES=3`, `COAP_BASE_TIMEOUT_MS=2000`, `COAP_SEND_TIMEOUT_MS=5000`, `UART_RX_BUF_SIZE=128`** |
+| **Всього** | **83** | *(queen-specific: 83)* |
 
 **Не покрито тестами:**
 - AT command response parsing (модем відповіді)

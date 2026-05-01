@@ -46,6 +46,7 @@
 #define DEFAULT_TTL               3          // Стандартний TTL для пакетів
 #define COLD_TX_DEFER_TEMP        (-15)      // Temperature threshold for TX deferral (°C)
 #define COLD_TX_DEFER_VCAP_MV     4000       // Vcap threshold for TX deferral (mV)
+#define PANIC_FLAG_BIT            0x80       // [FW.29] Bit 7 of StatusByte: panic disambiguation
 /* USER CODE BEGIN PD */
 /* USER CODE END PD */
 
@@ -352,8 +353,14 @@ int main(void)
       // 3. Формуємо криптографічний хеш-ідентифікатор (Digital Twin Address)
       tree_did = uid_word0 ^ (uid_word1 << 5) ^ (uid_word2 >> 3) ^ true_random;
 
-      // Гарантуємо, що DID ніколи не дорівнює 0
-      if (tree_did == 0) tree_did = 0x511CEE01;
+      // [FW.24] HRNG-based fallback: avoid deterministic DID collision from defective UID
+      if (tree_did == 0) {
+          uint32_t rng_fallback = 0;
+          for (int i = 0; i < 3 && rng_fallback == 0; i++) {
+              HAL_RNG_GenerateRandomNumber(&hrng, &rng_fallback);
+          }
+          tree_did = (rng_fallback != 0) ? rng_fallback : (HAL_GetTick() ^ 0x511CEE01);
+      }
 
       // Назавжди блокуємо цей DID у вічній пам'яті
       HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR7, tree_did);
@@ -518,10 +525,16 @@ int main(void)
     // Байт 6: Температура (°C)
     lora_payload[6] = (int8_t)__LL_ADC_CALC_TEMPERATURE(3300, internal_temp, LL_ADC_RESOLUTION_12B);
 
+    // [FW.28] Atomic read-and-clear: prevent lost acoustic events from DMA interrupt
+    __disable_irq();
+    uint8_t acoustic_snapshot = acoustic_events;
+    acoustic_events = 0;
+    __enable_irq();
+
     // Байт 7: Акустичні події (Відфільтровані TinyML)
     // [FW.22]: acoustic_events is now uint8_t with saturating increment,
     // so no clamping needed — value is already in [0, 255].
-    lora_payload[7] = (uint8_t)acoustic_events;
+    lora_payload[7] = acoustic_snapshot;
 
     // Байти 8-9: Швидкість заряду (Секунди)
     lora_payload[8] = (uint8_t)(delta_t_seconds >> 8);
@@ -535,9 +548,6 @@ int main(void)
     // Дозволяє серверу знати яка прошивка на кожному дереві, для OTA targeting.
     lora_payload[12] = (uint8_t)(FIRMWARE_VERSION_ID >> 8);
     lora_payload[13] = (uint8_t)(FIRMWARE_VERSION_ID & 0xFF);
-
-    // Обнуляємо лічильник після архівації
-    acoustic_events = 0;
 
     // =========================================================================
     // ФАЗА 3: ПЛАВКА (Запуск Ruby та Атрактора Лоренца)
@@ -613,6 +623,9 @@ int main(void)
       // Якщо VM не запустилася при старті через нестачу пам'яті
       lora_payload[10] = BIO_STATUS_VM_ERROR;
     }
+
+    // [FW.29] Clear PANIC_FLAG_BIT in normal packets — bit 7 is reserved for panic only
+    lora_payload[10] &= ~PANIC_FLAG_BIT;
 
     // =========================================================================
     // ФАЗА 4: ПЕРЕДАЧА ДАНИХ (AES-256 + Mesh)
@@ -918,6 +931,9 @@ void Trigger_Emergency_LoRa_TX(void)
 
     // 2. Встановлюємо код паніки (0xFF у байт акустики)
     panic_payload[7] = 0xFF;
+
+    // [FW.29] Set PANIC_FLAG in StatusByte for unambiguous panic detection
+    panic_payload[10] = PANIC_FLAG_BIT;
 
     // 3. Збільшуємо TTL до 5, щоб пакет вижив довше і точно дійшов
     panic_payload[11] = PANIC_TTL;

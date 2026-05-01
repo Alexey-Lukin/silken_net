@@ -34,7 +34,7 @@
 | **Відсутність MAC/MIC для LoRa-пакетів** | 🔴 BLOCKER (вирішується CCM — апаратний MIC + Frame Counter) |
 | **HRNG Fallback — передбачуваний seed** | ✅ Виправлено (djb2 STM32 HW UID XOR tick — унікальний на кожній Queen) |
 | **Відсутність ротації ключів (Key Rotation)** | 🟡 OPEN (рекомендовано Hash Ratchet KDF — PFS без передачі ключа) |
-| **Ідентичний ключ Soldier та Queen (симетрія при прошивці)** | 🔴 BLOCKER (єдина точка компрометації + операційний ризик мовчазної втрати телеметрії при мисматчі) |
+| **ECB Restoration Race (HAL_CRYP_Init failure)** | ✅ Виправлено (SEC.8) — RCC reset + `NVIC_SystemReset()` при апаратному збої |
 
 ---
 
@@ -295,54 +295,30 @@ batch_iv[i] = uid_hash ^ (HAL_GetTick() << (i * 8)) ^ (i * RNG_FALLBACK_XOR_MASK
 
 ---
 
-### 🟡 BLOCKER-6: Відсутній Захист Від Downgrade Attack (ECB Restoration Race)
+### ✅ BLOCKER-6: Захист від ECB Restoration Race — реалізовано (SEC.8)
 
-**Статус:** Відкрито. Потенційна умова гонки.
+**Статус:** Виправлено (SEC.8). ECB-відновлення тепер захищене RCC-скиданням та `NVIC_SystemReset()`.
+**Файл:** `firmware/queen/main.c`
 
-**Файли:** `firmware/queen/main.c:568-575`
-
+**Реалізація:**
 ```c
-// [FIX: CRITICAL — ECB Restoration]
-// Flush_Cache_To_Rails() переключає CRYP на CBC для шифрування батча.
-// Якщо не повернути ECB, всі наступні HAL_CRYP_Decrypt() для LoRa-пакетів
-// від Солдатів будуть використовувати CBC замість ECB → сміття → втрата даних
 hcryp.Init.Algorithm = CRYP_AES_ECB;
 hcryp.Init.pInitVect = NULL;
-HAL_CRYP_Init(&hcryp);
+
+if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
+    // Жорсткий апаратний скид крипто-блоку через регістри RCC
+    __HAL_RCC_CRYP_FORCE_RESET();
+    __HAL_RCC_CRYP_RELEASE_RESET();
+    // Повторна ініціалізація після апаратного reset
+    if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
+        NVIC_SystemReset();  // Повний перезапуск MCU — крипто-блок незворотньо несправний
+    }
+}
 ```
 
-**Аналіз:**
+`__HAL_RCC_CRYP_FORCE_RESET()` скидає всі регістри AES-блоку до Power-On Reset стану. Якщо і повторна ініціалізація не вдається — `NVIC_SystemReset()` перезапускає весь MCU. Queen відновиться і повернеться до нормальної роботи, замість того щоб мовчки продовжувати розшифровувати LoRa-пакети у невірному режимі.
 
-- `Flush_Cache_To_Rails()` переключає CRYP з ECB → CBC, виконує шифрування батча, потім явно відновлює ECB. Цей механізм виправлено (зафіксовано як `[FIX: CRITICAL]`).
-- Проблема: `HAL_CRYP_Init()` є **блокуючим** викликом без таймауту в джерелі прошивки. Якщо периферійний блок AES "завис" (апаратний дефект), відновлення ECB може не відбутись.
-- `Handle_CoAP_Command()` виконує аналогічне CBC→ECB відновлення (`firmware/queen/main.c:659-662`). Якщо функція поверне `return` через помилку розміру (`aligned > CMD_DECRYPT_BUF_SIZE`), ECB також відновлюється. Але якщо `HAL_CRYP_Decrypt()` сам завершиться помилкою — відновлення не гарантоване.
-
-**Необхідна дія:**
-
-- Обгорнути відновлення ECB у захисний патерн із перевіркою повернення `HAL_CRYP_Init()`.
-- **При помилці `HAL_CRYP_Init()` — виконати жорсткий апаратний скид (RCC Reset) криптопериферії:**
-
-  ```c
-  hcryp.Init.Algorithm = CRYP_AES_ECB;
-  hcryp.Init.pInitVect = NULL;
-
-  if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
-      // Жорсткий апаратний скид крипто-блоку через регістри RCC
-      __HAL_RCC_CRYP_FORCE_RESET();
-      __HAL_RCC_CRYP_RELEASE_RESET();
-
-      // Повторна ініціалізація після апаратного reset
-      if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
-          Error_Handler(); // Або NVIC_SystemReset() — повний перезапуск MCU
-      }
-  }
-  ```
-
-  **Логіка:** `__HAL_RCC_CRYP_FORCE_RESET()` скидає всі регістри периферійного блоку AES у стан після Power-On Reset. Це єдиний спосіб відновити "зависший" апаратний блок без перезавантаження всього MCU.
-
-- Додати watchdog або перевірку стану `hcryp.State` перед кожним `HAL_CRYP_Encrypt/Decrypt`.
-
-**Блокує:** Надійність криптографічного пайплайну Queen при апаратних збоях.
+**Закриває:** Надійність криптографічного пайплайну Queen при апаратних збоях.
 
 ---
 
