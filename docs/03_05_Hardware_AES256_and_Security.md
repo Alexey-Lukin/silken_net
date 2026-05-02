@@ -788,30 +788,27 @@ HMAC-SHA256(K_ota, full_bytecode || version_id || total_chunks) → 32 bytes
 
 **Чому HMAC-SHA256, а не Ed25519/ECDSA:**
 - HMAC обчислюється апаратно через SHA256 у STM32WLE5JC CRYP-блоці (**~3 мс на 8 KB image**) проти ~80 мс для Ed25519 verify (програмно)
-- 32-байтний tag симетричного ключа поміщається у **2 LoRa-чанки** (vs 64 байти Ed25519 sig → 6 чанків)
+- 32-байтний tag поміщається у 3 LoRa-чанки (vs 64 байти Ed25519 sig → 6 чанків)
 - Симетричне рішення прийнятне ТОМУ ЩО `K_ota` per-кластер, не глобальний (компрометація Queen ≠ компрометація всієї мережі)
-- Перехід на ECDSA P-256 (slot 1 ATECC608B, post-TRL 7) описаний нижче як міграційний шлях
+- При billion-tree масштабі — міграційний шлях на ECDSA P-256 (slot 1 ATECC608B, post-TRL 7) описаний нижче
 
 #### Wire Format — `[0x9B] HMAC-Trailer` Chunk
 
-OTA-broadcast розширюється на **один додатковий LoRa-чанк** після останнього bytecode chunk. Існуючий формат `[0x99]` для bytecode chunks не змінюється — backward-compatible на рівні decoding (старі firmware ігнорують невідомий маркер `0x9B`, нові — обробляють).
+OTA-broadcast emit'ить 3 додаткові LoRa-чанки `[0x9B]` після останнього bytecode chunk. Існуючий формат `[0x99]` для bytecode chunks не змінюється — окремий маркер дає чисте розділення payload-і-tag шарів (audit trail у логах Queen, простіший parser у firmware).
 
 ```
 LoRa Reflex Shot чанки (16 байт після AES-256-ECB encrypt):
 
-Chunks 0..N-2:                                Marker
-  [0x99][idx:2][total:2][bytecode:11]          ← Існуючий формат (без змін)
+Chunks 0..N-1:                                Marker
+  [0x99][idx:2][total:2][bytecode:11]          ← Bytecode chunks
 
-Chunks N-1:                                   Marker
-  [0x99][idx:2][total:2][bytecode:11]          ← Останній bytecode chunk
-
-Chunk N (NEW — HMAC trailer #1):              Marker
+Chunk N (HMAC trailer #1):                    Marker
   [0x9B][0x00][0x01][total:2][hmac[0..10]]     ← Перші 11 байтів HMAC tag
 
-Chunk N+1 (NEW — HMAC trailer #2):            Marker
+Chunk N+1 (HMAC trailer #2):                  Marker
   [0x9B][0x00][0x02][total:2][hmac[11..21]]    ← Наступні 11 байтів
 
-Chunk N+2 (NEW — HMAC trailer #3):            Marker
+Chunk N+2 (HMAC trailer #3):                  Marker
   [0x9B][0x00][0x03][total:2][hmac[22..31]||PAD:1]  ← Останні 10 байт + 1 байт padding
 ```
 
@@ -934,15 +931,6 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 **Рекомендація:** Queen НЕ верифікує (Stateless-Relay підхід) — це залишає Queen-firmware простим і дозволяє Backend → Soldier end-to-end автентифікацію без довіри до проміжного Queen. Якщо Queen скомпрометовано — Soldier'и все одно відкинуть підмінений image на Gate 2.
 
-#### Migration Path: HMAC → ECDSA-P256 (post-TRL 7)
-
-При наявності ATECC608B (§3.7):
-1. Backend підписує image через ECDSA-P256 з master key
-2. Public key distributed у Soldier flash (slot 2 ATECC608B або Protected Flash)
-3. Wire format розширюється: `[0x9B][seg_idx:2][total:2][sig_segment]` → 6 чанків замість 3 (sig 64B)
-4. Verify ~80 мс vs 3 мс HMAC — прийнятно для OTA (рідкісна операція)
-5. **Перевага:** компрометація Soldier НЕ дозволяє підписувати OTA (асиметричні ключі)
-
 #### Безпекові параметри
 
 | Параметр | Значення | Обґрунтування |
@@ -952,23 +940,30 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 | `K_ota` size | 256 біт | Match HMAC output size |
 | `K_ota` scope | Per-cluster (HKDF salt = `"cluster:#{id}"`) | Ізоляція кластерів, broadcast-сумісність |
 | Domain separation | `info: "silken-ota-hmac-v1"` | Окремо від `"silken-aes-256-device-key"` (FW.1) |
-| Magic marker | `0x45544952` ("RITE" LE) | Існуючий, без змін — backward-compat |
+| Magic marker | `0x45544952` ("RITE" LE) | Існуючий u-boot-style format-integrity marker (Gate 1) |
 | HMAC input | `bytecode \|\| version_id \|\| total_chunks` | Anti-replay + anti-truncation |
 | Comparison | `secure_compare` (constant-time) | Захист від timing attack |
 | Wire overhead | +3 LoRa chunks (+~180 мс broadcast) | < 0.5% від загальної OTA-сесії 745 чанків |
-| Backward-compat | Старі firmware ігнорують `0x9B` chunks | Поетапне розгортання |
+| Implementation | Mandatory з дня 1 | Pre-production, no fallback path needed |
 
-#### Roll-out Strategy (Staged)
+#### Implementation Plan
 
-Реалізація потребує синхронної готовності backend + firmware. Поетапний план:
+Реалізація — три синхронні зміни (один coordinated commit, no backward-compat shim):
 
-| Етап | Backend | Firmware Soldier | Firmware Queen | Стан |
-|------|---------|------------------|----------------|------|
-| 0 (now) | OTA без HMAC | Magic check лише | Stateless relay | ✅ Поточний |
-| 1 | `OTA_HMAC_SIGNING=true` ENV; emit chunks `0x9B` | Ігнорує `0x9B` (forward-compat) | Forward-compat | Можна merge без firmware update |
-| 2 | + `OtaHmacKeyService.fetch_for` per-cluster | Verify HMAC перед Flash write (Gate 2) | Опційний intermediate gate | Coordinated firmware release |
-| 3 | Default ON; ENV видалено | Required HMAC; no-HMAC OTA відхиляється | — | Production hardening |
-| 4 (post-TRL 7) | Migrate to ECDSA-P256 | Verify через ATECC608B slot 2 | — | Asymmetric authenticity |
+| Компонент | Зміна |
+|-----------|-------|
+| **Backend** (`OtaPackagerService`) | Завжди обчислювати HMAC та emit'ити 3 trailer-чанки `[0x9B]` після bytecode. Додати `OtaHmacKeyService.fetch_for(cluster_id)` (HKDF derivation) |
+| **Firmware Soldier** | Парсити `[0x9B]` chunks у RAM (32-байтний `received_hmac_tag`), виконувати dual-gate verification перед `HAL_FLASH_Program(MRUBY_CONTRACT_FLASH_ADDR, ...)` |
+| **Firmware Queen** | Stateless-relay, без verification (Backend → Soldier end-to-end) — повторюємо `[0x9B]` chunks у broadcast-циклі так само як `[0x99]` |
+
+#### Future Evolution: HMAC → ECDSA-P256 (post-TRL 7)
+
+Архітектурний шлях (не fallback) при додаванні ATECC608B (§3.7) для billion-tree масштабу де компрометація одного Queen не повинна дозволяти підпис нових images:
+1. Backend підписує image через ECDSA-P256 з master key (HSM)
+2. Public key розповсюджується у Soldier flash (slot 2 ATECC608B або Protected Flash)
+3. Wire format: `[0x9B][seg_idx:2][total:2][sig_segment]` → 6 чанків (64B sig)
+4. Verify ~80 мс vs 3 мс HMAC — прийнятно для рідкісної OTA-операції
+5. Компрометація Soldier НЕ дозволяє підписувати OTA (асиметричні ключі — асимметрія довіри)
 
 #### Test Coverage Plan
 
