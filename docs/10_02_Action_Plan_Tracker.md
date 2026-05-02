@@ -15,7 +15,7 @@
 
 ### Перед будь-яким польовим деплоєм (life-safety + security)
 1. **SEC.9** — замінити master AES key (FIPS-197 test vector) на криптостійкий random — **P0**
-2. **SEC.11** — Provisioning master key production guard (raise при відсутності ENV) — **P0**
+2. ~~**SEC.11** — Provisioning master key production guard (raise при відсутності ENV)~~ — **✅ DONE 2026-05-02** (Lorenz Seed Provenance hard cutover + sole HKDF mode)
 3. **FW.1 + SEC.3** — Per-device HKDF provisioning + Factory Flashing pipeline — **P0**
 4. **FW.2** — AES-256-CCM (вирішує одразу: ECB→CCM, MIC, FW.23 OTA auth, SEC.10 panic auth, FW.29 disambiguation) — **P0**
 5. **SEC.1** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet — **P0**
@@ -227,10 +227,10 @@
 - **Опис:** Один і той самий ключ на ВСІХ вузлах мережі. Злам одного пристрою = компрометація всієї мережі
 - **Рішення:** Per-device provisioning через HKDF, Factory Flashing pipeline
 - [x] 🤖 Дизайн HKDF key derivation protocol — ✅ Повний дизайн HKDF-SHA256 (RFC 5869) додано в `03_05` §3.4а. Включає: кроки Provisioning (factory flashing pipeline), C firmware API (`Load_AES_Key`, `FLASH_KEY_ADDR = 0x0803E000`), Rails backend (`HardwareKeyService.derive_device_key`), варіанти зберігання ключа Queen (A/B/C з ATECC608B), WRPROT Flash sector protection, таблицю безпекових параметрів
-- [x] 🤖 Backend: provisioning endpoint (POST `/api/v1/provisioning/register` вже існує) — ✅ Аудит підтвердив відповідність HKDF-дизайну з `03_05` §3.4а. Контроллер `Api::V1::ProvisioningController#register` (179 рядків) виконує: FW.24 magic-UID guard → duplicate check → атомарну транзакцію (Tree/Gateway + HardwareKey + MaintenanceRecord(installation)) → опційну реєстрацію Ed25519 публічного ключа → enqueue `PeaqRegistrationWorker` (тільки для Tree) → JSON-відповідь без `aes_key` у HKDF mode (Zero-Trust) і з `aes_key` + warning у TRL4 lab mode. SEC.11 production guard (`HardwareKeyService.derive_device_key`) raise'ить `SecurityError` при відсутньому `PROVISIONING_MASTER_KEY` у production. RBAC: `authorize_forester!`. Контракт відповідає `04_03 §POST /api/v1/provisioning/register`.
+- [x] 🤖 Backend: provisioning endpoint (POST `/api/v1/provisioning/register` вже існує) — ✅ Аудит підтвердив відповідність HKDF-дизайну з `03_05` §3.4а. Контроллер `Api::V1::ProvisioningController#register` виконує: FW.24 magic-UID guard → duplicate check → атомарну транзакцію (Tree/Gateway + HardwareKey + MaintenanceRecord(installation)) → опційну реєстрацію Ed25519 публічного ключа → enqueue `PeaqRegistrationWorker` (тільки для Tree) → JSON-відповідь БЕЗ `aes_key`/`lorenz_seed`/`warning` (Zero-Trust, єдиний режим після SEC.11 hard cutover). `HardwareKeyService.derive_device_key` raise'ить `SecurityError` при відсутньому `PROVISIONING_MASTER_KEY` (no SecureRandom fallback ANYWHERE). RBAC: `authorize_forester!`. Контракт відповідає `04_03 §POST /api/v1/provisioning/register`.
 - [x] 🤖 Firmware: змінити key storage з hardcoded → Flash-based (`Load_AES_Key()` в soldier/queen main.c — FLASH_KEY_ADDR 0x0803E000, magic "SKEY")
 - [ ] 👤 Firmware: RDP Level 2 activation як final step
-- [x] 🤖 End-to-end тест provisioning flow — ✅ Додано `spec/integration/provisioning_e2e_spec.rb` (8 examples, all passing). Покриває без моків `HardwareKeyService`: (1) HKDF determinism — persisted `aes_key_hex` точно збігається з незалежно повторно деривованим ключем (firmware-equivalence assertion); (2) atomic creation Tree+HardwareKey+MaintenanceRecord з DID/UID у notes + enqueue `PeaqRegistrationWorker`; (3) gateway flow з Ed25519 public key persistence та БЕЗ peaq enqueue; (4) `binary_key.bytesize == 32` (firmware-readable AES-256); (5) TRL4 lab mode повертає `aes_key`+warning, HKDF mode НЕ повертає; (6) SEC.11 production guard raise'ить `SecurityError` без DB side effects; (7) FW.24 magic UID rejection без DB side effects; (8) duplicate UID → 409 без DB side effects.
+- [x] 🤖 End-to-end тест provisioning flow — ✅ `spec/integration/provisioning_e2e_spec.rb` покриває без моків `HardwareKeyService`: (1) HKDF determinism — persisted `aes_key_hex` точно збігається з незалежно повторно деривованим ключем (firmware-equivalence assertion); (2) atomic creation Tree+HardwareKey+MaintenanceRecord з DID/UID у notes + enqueue `PeaqRegistrationWorker`; (3) gateway flow з Ed25519 public key persistence та БЕЗ peaq enqueue; (4) `binary_key.bytesize == 32` (firmware-readable AES-256); (5) Zero-Trust assertion — response НІКОЛИ не містить `aes_key`/`lorenz_seed`/`warning` (єдиний режим після SEC.11 cutover); (6) SEC.11 hard-cutover guard raise'ить `SecurityError` без DB side effects при відсутньому `PROVISIONING_MASTER_KEY`; (7) FW.24 magic UID rejection без DB side effects; (8) duplicate UID → 409 без DB side effects.
 
 #### FW.2 — AES-256-ECB без MAC/MIC
 - `03_05` | `firmware/soldier/main.c:747`, `firmware/queen/main.c:781`
@@ -638,30 +638,25 @@
 - [ ] 🔗 Верифікувати що `EwsAlert` broadcast застосовує той самий CCM MIC що і звичайні пакети (після FW.2)
 - [x] Backend: rate limiting на emergency callbacks — не більше N panic alerts/хвилину від одного DID
 
-#### SEC.11 — Raw DID як seed Lorenz атрактора (Dual Computation Integrity bypass)
-- **Джерело:** `03_06` (повний дизайн SSOT) | `03_04` BLOCKER-1 cross-ref | **Пріоритет: P1**
-- **Опис:** Поточний firmware mruby `bio_contract.rb` стартує атрактор з `(x₀,y₀,z₀)` виведених із `chaos_seed = HRNG()` (Soldier-side) і **DID** (server-side mirror). DID їде відкритим текстом у заголовку LoRa-пакета (`[DID:4]`, поза AES-блоком). Чотири фундаментальні вади: (1) публічний seed → атакер з open-source формулою Лоренца обчислює очікуваний Z для будь-якого дерева → підробляє телеметрію з валідним StatusByte, `check_z_divergence!` мовчить; (2) сусідні DID видаються послідовно → перші ~30 ітерацій Ейлера дають майже ідентичні траєкторії (знижена статистична ентропія); (3) семантична помилка категорій — DID *identifier*, не *key*; (4) відсутність forward secrecy — одне дерево все життя стартує з тієї ж точки.
-- **Наслідок для DCI:** `check_z_divergence!` змушений бути **категоричним** (homeostasis/stress/anomaly enum), а не числовим, бо публічний DID не дозволяє використовувати точне `(server_z − device_z).abs < ε` без розкриття алгоритму атакеру. Атакер з `Z_fake = 28.0` проходить перевірку.
-- **Прийняте рішення (2026-05-02):** **Гібрид варіантів A + B + D** — повний дизайн у `docs/03_06_Lorenz_Seed_Provenance.md` §4.
-  - **A** — `K_seed = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info=DID, len=32)`, виводиться при provisioning, зберігається в `hardware_keys.lorenz_seed_hex` (AR Encryption non-deterministic) і в Soldier Flash (поряд з `K_aes`).
-  - **B** — daily epoch rotation: `(x₀,y₀,z₀) = unpack_signed_unit_floats(HMAC-SHA256(K_seed, "init|" || epoch_day_be)[0..23])`. Forward secrecy ≤ 24 год, синхронізовано через FW.20 `CMD_TIME_SYNC`.
-  - **D** — cold-start derive відбувається лише після VBAT loss (рідкісна подія); у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init.
-  - Варіант **C** (per-packet seed) відкинуто — overhead на STM32WLE5JC не виправдовує marginal security gain над B + continuation.
-- **Ефект на DCI:** після SEC.11 обидві сторони стартують з byte-identical `(x₀,y₀,z₀)` (HMAC-SHA256 detrministic). Float divergence між ARM та x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` стає числовим: `(server_z - device_z).abs < 0.001` — 9 порядків запасу над архітектурним drift, fake-телеметрія детектується з ~99.99% recall.
-- **Залежності:** Reuse існуючої `PROVISIONING_MASTER_KEY` infra (нуль нових сервісів). Synергізує з FW.20 (час потрібен ± 1 година) і FW.6 (RTC continuation вже працює).
-- **Threat model post-SEC.11** (`03_06` §7): sniff LoRa → відтворити Z ❌; replay вчорашнього пакета ❌ (epoch_day змінився); compromise одного `K_seed` ⚠️ (вузол уразливий ≤ 24 год, інші — ні); compromise `PROVISIONING_MASTER_KEY` 🚨 (cascading — окрема rotation strategy SEC.9).
-- [ ] 🤖 Schema migration: `hardware_keys.lorenz_seed_hex`, `telemetry_logs.lorenz_state_x/y/z`, `telemetry_logs.cold_start_flag`
-- [ ] 🤖 `SilkenNet::SeedDerivation` сервіс (HKDF + HMAC-SHA256 + signed-unit-float unpack) + 8-10 specs
-- [ ] 🤖 `HardwareKey#binary_lorenz_seed` (AR Encryption non-deterministic, як `binary_key`)
-- [ ] 🤖 `Attractor.calculate_z_from_state(x0, y0, z0, σ, ρ, β, n)` — новий API; legacy `calculate_z(chaos_seed, ...)` deprecate-then-delete (pre-prod, без shim'ів)
-- [ ] 🤖 `TelemetryUnpackerService` — per-tree seed dispatch; numeric divergence (`< 0.001`) включити після 100% field migration, до того — категоричний як fallback
-- [ ] 🤖 `Provisioning::RegistrationService` — генерувати + повертати `K_seed` поряд з `K_aes`
-- [ ] 🤖 Firmware: HKDF/HMAC через mbedTLS (вже linkована для AES); ~4KB image overhead; Flash sector для `K_seed` поряд з `K_aes`
-- [ ] 🤖 Firmware `bio_contract.rb` — приймати `(x₀,y₀,z₀)` як args, видалити DID-derive code path
-- [ ] 🤖 `firmware/test/test_seed_derivation.c` — host-based parity test (1000-case fuzz: byte-exact `(x₀,y₀,z₀)` match із backend `SeedDerivation`)
-- [ ] 🤖 100-case end-to-end parity: random `(K_seed, epoch_day, σ, ρ, β)` → Z-divergence < 1e-9 firmware vs backend
-- [ ] 🤖 Field migration endpoint: `POST /api/v1/provisioning/upgrade_seed` — re-provision існуючих вузлів upon first uplink post-deploy
-- [ ] 🤖 Flip `check_z_divergence!` на numeric tolerance band після 100% migration
+#### SEC.11 — Lorenz Seed Provenance (Dual Computation Integrity hardening) — **✅ DONE**
+- **Джерело:** `03_04` BLOCKER-1 cross-ref, `03_05` §3.4а K_seed | **Пріоритет: P1** | **Закрито:** 2026-05-02 (PR `copilot/update-documents-and-tests`)
+- **Опис (історичний):** Firmware mruby `bio_contract.rb` стартував атрактор з `(x₀,y₀,z₀)` виведених із `chaos_seed = HRNG()` (Soldier-side) і `DID` (server-side mirror). DID їде відкритим текстом у заголовку LoRa-пакета (`[DID:4]`, поза AES-блоком). Чотири фундаментальні вади: (1) публічний seed → атакер з open-source формулою Лоренца обчислює очікуваний Z для будь-якого дерева → підробляє телеметрію з валідним StatusByte, `check_z_divergence!` мовчить; (2) сусідні DID видаються послідовно → перші ~30 ітерацій Ейлера дають майже ідентичні траєкторії (знижена статистична ентропія); (3) семантична помилка категорій — DID *identifier*, не *key*; (4) відсутність forward secrecy.
+- **Прийнятий дизайн (гібрид A + B + D):** `K_seed = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed|<DID>", len=32)`, виведений при provisioning, збережений в `hardware_keys.lorenz_seed_hex` (AR Encryption non-deterministic) і в Soldier Flash. Daily epoch rotation: `(x₀,y₀,z₀) = unpack_signed_unit_floats(HMAC-SHA256(K_seed, "init|" || epoch_day_be)[0..23])` — forward secrecy ≤ 24 год, синхронізовано через FW.20 `CMD_TIME_SYNC`. Cold-start derive відбувається лише після VBAT loss (рідкісна подія); у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init. Документація — у §03_04 §2.1 (entry-point), §03_05 §3.4а (HKDF info-string), §04_01 (HardwareKey + TelemetryLog колонки), §04_02 (`SilkenNet::SeedDerivation`), §04_03 (provisioning контракт), §05_02 (DCI pipeline).
+- **Ефект на DCI:** обидві сторони стартують з byte-identical `(x₀,y₀,z₀)`. Float divergence між ARM та x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` зберігає категоричну невідповідність і отримує hook для числового tolerance band — flip під feature-flag після інструментального вимірювання реального drift.
+- **Hard-cutover deliverables (pre-prod, без shim'ів):**
+  - [x] 🤖 Schema migration `db/migrate/20260502090000_add_lorenz_seed_provenance_columns.rb` — `hardware_keys.lorenz_seed_hex` (RANGE-partitioned `telemetry_logs` отримує `lorenz_state_x/y/z` + `cold_start_flag` через DDL на parent + всі live partitions)
+  - [x] 🤖 `SilkenNet::SeedDerivation` (HKDF-SHA256 + HMAC-SHA256 + signed-unit-float unpack) + 17 examples в `spec/services/silken_net/seed_derivation_spec.rb`
+  - [x] 🤖 `HardwareKey#binary_lorenz_seed` (AR Encryption non-deterministic, як `binary_key`); `lorenz_seed_hex` validated `presence: true`
+  - [x] 🤖 `Attractor.calculate_z_from_state(x0, y0, z0, σ, ρ, β, n)` — sole entry-point; legacy `calculate_z(chaos_seed, ...)` та `calculate_z_continued` ВИДАЛЕНО (не deprecated — hard cutover)
+  - [x] 🤖 `TelemetryUnpackerService` — single K_seed-derived path; raises `MissingLorenzSeedError` при відсутньому K_seed; persist `lorenz_state_x/y/z` + `cold_start_flag` на кожному uplink; chaining continuation з попереднього `TelemetryLog` tail
+  - [x] 🤖 `HardwareKeyService.provision` — деривує AES key + K_seed одним викликом (single source of truth); raises `SecurityError` без `PROVISIONING_MASTER_KEY` (no SecureRandom fallback ANYWHERE — навіть у dev/test, тести pin-ять `PROVISIONING_MASTER_KEY` в `spec/rails_helper.rb`)
+  - [x] 🤖 `ProvisioningController#register` — НІКОЛИ не повертає `aes_key`/`lorenz_seed`/`warning` (Zero-Trust)
+  - [x] 🔥 Firmware `bio_contracts/bio_contract.rb` — sole entry-point `calculate_state(x_prev, y_prev, z_prev, …)`; chaos_seed і всі legacy сигнатури видалено
+  - [x] 🔥 `firmware/test/test_bio_contract.c` — нова сигнатура `calculate_z_axis(x, y, z, …)`; `seed_to_xyz()` test helper для детермінованих фікстур
+  - [x] 🔥 `firmware/test/test_seed_derivation.c` — host-based parity test (OpenSSL HKDF/HMAC = mbedTLS на MCU), 13 examples
+  - [x] 🤖 `db/seeds.rb` + `spec/factories/hardware_keys.rb` — populate `lorenz_seed_hex`
+  - [x] 🤖 `docs/03_06_Lorenz_Seed_Provenance.md` — DELETED, контент розподілено в `03_04`/`03_05`/`04_02`/`05_02` (див. вище)
+- **Свідомо НЕ робимо** (pre-prod, no field devices, no prototypes, no firmware in flight): `POST /api/v1/provisioning/upgrade_seed` field-migration endpoint, TRL4 lab-mode response, SecureRandom fallback в `Rails.env != production`.
 
 ---
 
@@ -1008,7 +1003,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | 07 Business | 5 | 8 | CO₂ methodology, MSA, ToS |
 | 08 University R&D | 2 | 6 | 5-сторонній партнерський фреймворк (ChNU + ChDTU + ChIPB + ChMA + СЄУ) — UNI.4-14 |
 | 09 Project Management | 7 | 9 | OPS.3 R&D portfolio, OPS.4 semester sync |
-| 10 Security | 6 | 9 | SEC.9 master key, SEC.11 prod guard, Multisig, RDP, Factory (Rails web layer ✅ S6.18) |
+| 10 Security | 7 | 9 | SEC.9 master key, ✅ SEC.11 Lorenz seed provenance, Multisig, RDP, Factory (Rails web layer ✅ S6.18) |
 
 ---
 

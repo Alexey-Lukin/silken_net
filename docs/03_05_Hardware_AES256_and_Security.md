@@ -768,6 +768,122 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 
 ---
 
+### 3.4в Lorenz K_seed Derivation (SEC.11) 🤖
+
+> **Cross-ref:** [10_02 SEC.11](10_02_Action_Plan_Tracker) — ✅ DONE 2026-05-02 (hard cutover, pre-prod)
+
+**Мета:** криптографічно стійкий механізм виведення початкової точки `(x₀, y₀, z₀)` атрактора Лоренца для кожного Soldier-вузла. Замінює попередній підхід "raw DID як seed", який мав фундаментальні безпекові вади і робив `check_z_divergence!` категоричним замість числового. Деталі — у [03_04 §2.1 + §3 Крок 1](03_04_mruby_Lorenz_Attractor); тут — лише cryptographic protocol layer.
+
+#### Чотири фундаментальні вади до SEC.11
+
+1. **Публічний seed → публічна траєкторія.** DID їде відкритим текстом у заголовку LoRa-пакета (`[DID:4]`, поза AES). Атакер з open-source формулою Лоренца обчислює `Z(DID, temp, acoustic, dt, vcap)` для будь-якого дерева → підробляє телеметрію з валідним StatusByte, `check_z_divergence!` мовчить.
+2. **Кореляція сусідніх DID.** Provisioning видає DID послідовно (`SNET-AC0001AB`, `…AC`). Перші ~30 ітерацій Ейлера дві сусідні крони мають майже ідентичні траєкторії → знижена статистична ентропія.
+3. **Семантична помилка категорій.** DID — *identifier*. Identifier-as-key — класичний антипатерн, бо identifier має бути входом до KDF, ніколи виходом.
+4. **Відсутність forward secrecy.** Одне дерево все життя стартує з тієї ж точки. Один підроблений рецепт працює довічно.
+
+#### Прийнятий дизайн: гібрид A + B + D
+
+```
+═══════════════════════════════════════════════════════════════════════
+PROVISIONING (one-time, разом з AES key)
+═══════════════════════════════════════════════════════════════════════
+
+K_seed = HKDF-SHA256(
+  ikm     = PROVISIONING_MASTER_KEY,        # той самий master, що для AES key
+  salt    = "silken-lorenz-v1",             # ВІДМІННИЙ від AES salt → domain separation
+  info    = "silken-lorenz-seed|<DID>",     # ВІДМІННИЙ info-string від AES
+  length  = 32 bytes
+)
+
+Backend storage:
+  HardwareKey.create!(
+    device_uid:      DID,
+    aes_key_hex:     <derived per §3.4а>,
+    lorenz_seed_hex: <K_seed hex, AR Encryption non-deterministic>
+  )
+
+Soldier storage:
+  K_seed → protected Flash sector (поряд з K_aes; той самий RDP захист).
+  НІКОЛИ не передається через LoRa або UART; обидві сторони деривують
+  незалежно з PROVISIONING_MASTER_KEY.
+
+═══════════════════════════════════════════════════════════════════════
+COLD START (boot після VBAT loss; рідка подія, місяці-роки)
+═══════════════════════════════════════════════════════════════════════
+
+epoch_day = current_unix_ts / 86400              # daily rotation, UTC
+salt_info = "init|" || pack_be(epoch_day, 8)     # 13 bytes total
+digest    = HMAC-SHA256(K_seed, salt_info)       # 32 bytes
+x₀ = bytes_to_signed_unit_float(digest[ 0.. 7])  # ∈ [-1, +1]
+y₀ = bytes_to_signed_unit_float(digest[ 8..15])
+z₀ = bytes_to_signed_unit_float(digest[16..23])
+# Зберегти (x₀,y₀,z₀) у RTC DR16-DR18 з magic "LZST" (FW.6)
+
+bytes_to_signed_unit_float(b8):
+  u64 = unpack_be_uint64(b8)
+  return (u64 / (UINT64_MAX / 2.0)) - 1.0
+
+═══════════════════════════════════════════════════════════════════════
+STEADY-STATE (FW.6 continuation; кожне пробудження)
+═══════════════════════════════════════════════════════════════════════
+
+(x_prev, y_prev, z_prev) = read RTC DR16-DR18 (warm) АБО cold-start (rare)
+[payload_byte, x_f, y_f, z_f] = mruby BioContract.calculate_state(
+                                  x_prev, y_prev, z_prev,
+                                  temp, acoustic, delta_t_s, vcap_mv)
+write RTC DR16-DR18 = (x_f, y_f, z_f); DR19 = "LZST"
+
+═══════════════════════════════════════════════════════════════════════
+SERVER MIRROR (TelemetryUnpackerService, byte-identical mathematics)
+═══════════════════════════════════════════════════════════════════════
+
+IF prev_telemetry_log.lorenz_state_(x|y|z) IS NULL:
+  cold_start_flag = true
+  K_seed_bin = hardware_key.binary_lorenz_seed
+  epoch_day  = telemetry_log.created_at.to_i / 86400
+  (x₀,y₀,z₀) = SilkenNet::SeedDerivation.derive_initial_state(K_seed_bin, epoch_day)
+ELSE:
+  cold_start_flag = false
+  (x₀,y₀,z₀) = (prev.lorenz_state_x, prev.lorenz_state_y, prev.lorenz_state_z)
+
+server_z, x_f, y_f, z_f = Attractor.calculate_z_from_state(
+                            x₀, y₀, z₀, temp, acoustic, delta_t_s, vcap_mv)
+log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
+            cold_start_flag: cold_start_flag)
+```
+
+#### Криптографічні гарантії в одному рядку
+
+> `K_seed` ніколи не залишає пристрій і сервер. `(x₀, y₀, z₀)` — функція від (`K_seed`, `epoch_day`). DID у формулі **не існує** як seed — він використовується лише як `info`-string у HKDF (namespace separator), що криптографічно безпечно і не вносить уразливості.
+
+#### Threat model post-SEC.11
+
+| Загроза | Захист |
+|---------|--------|
+| Sniff LoRa-пакет → відтворити Z | ❌ (без `K_seed` Z непередбачуваний) |
+| Compromise одного `K_seed` (фізичний доступ до пристрою) | ⚠️ Один пристрій уразливий ≤ 24 год; інші — ні |
+| Compromise `PROVISIONING_MASTER_KEY` | 🚨 Каскадне — потрібна окрема rotation strategy (SEC.9) |
+| Replay вчорашнього валідного пакета | ❌ (`epoch_day` змінився, Z більше не валідний) |
+| Підроблений `cold_start_flag = true` від device | Mitigation: server відкидає `cold_start` якщо < 7 днів від попередньої телеметрії |
+| ARM ↔ x86 IEEE-754 drift > 0.001 | Емпірично < 1e-12; tolerance band 9 порядків запасу при flip на numeric |
+
+#### Реалізація
+
+| Компонент | Файл |
+|-----------|------|
+| Backend HKDF + HMAC + initial-state derive | `app/services/silken_net/seed_derivation.rb` |
+| Backend AR Encryption поле | `HardwareKey#lorenz_seed_hex` (validated `presence: true`) |
+| Backend dispatch | `app/services/telemetry_unpacker_service.rb` (raises `MissingLorenzSeedError` без K_seed) |
+| Backend attractor entry-point | `Attractor.calculate_z_from_state(x₀, y₀, z₀, …)` |
+| Firmware mbedTLS bridge | `firmware/soldier/main.c` (HKDF/HMAC через `mbedtls_md_hmac`) |
+| Firmware mruby entry-point | `firmware/bio_contracts/bio_contract.rb#calculate_state(x_prev, y_prev, z_prev, …)` |
+| Host-parity test | `firmware/test/test_seed_derivation.c` (OpenSSL HKDF/HMAC = mbedTLS на MCU) |
+| Backend specs | `spec/services/silken_net/seed_derivation_spec.rb` |
+
+> **Cross-ref:** [03_04 §2.1 First-Boot vs Continuation](03_04_mruby_Lorenz_Attractor#21-звідки-беруться-вхідні-параметри); [05_02 §Dual Computation Integrity](05_02_Proof_of_Growth_Pipeline); SEC.9 master-key rotation.
+
+---
+
 ### 3.4б OTA Authentication Protocol Design (FW.23) 🤖
 
 > **Cross-ref:** [10_02 FW.23](10_02_Action_Plan_Tracker) — дизайн завершено ✅
