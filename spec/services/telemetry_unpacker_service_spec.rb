@@ -491,6 +491,86 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
       end
+
+      # [FW.31] Numeric tolerance band feature-flag.
+      # Categorical default is preserved; numeric branch only fires when
+      # `GAIA_DCI_NUMERIC_TOLERANCE=true` AND `device_z` is present in
+      # the attributes hash (which today never happens — the LoRa packet
+      # does not carry raw Z; hook is wired for a future packet revision
+      # post-FW.2 CCM transition).
+      describe "[FW.31] numeric tolerance band" do
+        let(:service) { described_class.new("", nil) }
+
+        before do
+          allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(true)
+        end
+
+        it "does NOT run the numeric branch when feature-flag is off (default)" do
+          stub_const("ENV", ENV.to_h.except("GAIA_DCI_NUMERIC_TOLERANCE", "GAIA_DCI_NUMERIC_EPSILON"))
+          # Categorical agreement (both healthy) → no fraud
+          attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 999.0 }
+
+          # Even with absurd device_z drift, when toggle is off the
+          # categorical pathway is the only one that runs and stays silent.
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+          service.send(:check_z_divergence!, tree_with_family, attributes)
+        end
+
+        it "runs numeric branch and stays silent when drift is within ε" do
+          stub_const("ENV", ENV.to_h.merge(
+            "GAIA_DCI_NUMERIC_TOLERANCE" => "true",
+            "GAIA_DCI_NUMERIC_EPSILON" => "0.001"
+          ))
+          attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 25.0005 }
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+          service.send(:check_z_divergence!, tree_with_family, attributes)
+        end
+
+        it "increments fraud metric when drift exceeds ε (numeric mismatch)" do
+          stub_const("ENV", ENV.to_h.merge(
+            "GAIA_DCI_NUMERIC_TOLERANCE" => "true",
+            "GAIA_DCI_NUMERIC_EPSILON" => "0.001"
+          ))
+          # |25.0 - 25.5| = 0.5 ≫ 0.001 — numeric branch fires.
+          # Categorical also passes (both healthy) → only ONE increment from numeric.
+          attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 25.5 }
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment).once
+          service.send(:check_z_divergence!, tree_with_family, attributes)
+        end
+
+        it "uses DEFAULT_DCI_EPSILON (0.001) when GAIA_DCI_NUMERIC_EPSILON is unset" do
+          stub_const("ENV", ENV.to_h.merge("GAIA_DCI_NUMERIC_TOLERANCE" => "true").except("GAIA_DCI_NUMERIC_EPSILON"))
+          # |25.0 - 25.0005| = 0.0005 < 0.001 (default) → silent.
+          attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 25.0005 }
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+          service.send(:check_z_divergence!, tree_with_family, attributes)
+          expect(service.send(:numeric_dci_epsilon)).to eq(described_class::DEFAULT_DCI_EPSILON)
+        end
+
+        it "falls back to DEFAULT_DCI_EPSILON when GAIA_DCI_NUMERIC_EPSILON is malformed" do
+          stub_const("ENV", ENV.to_h.merge(
+            "GAIA_DCI_NUMERIC_TOLERANCE" => "true",
+            "GAIA_DCI_NUMERIC_EPSILON" => "not-a-float"
+          ))
+
+          expect(service.send(:numeric_dci_epsilon)).to eq(described_class::DEFAULT_DCI_EPSILON)
+        end
+
+        it "skips numeric branch when device_z is absent (current LoRa packet shape)" do
+          stub_const("ENV", ENV.to_h.merge(
+            "GAIA_DCI_NUMERIC_TOLERANCE" => "true",
+            "GAIA_DCI_NUMERIC_EPSILON" => "0.001"
+          ))
+          # No device_z key — feature-flagged hook cannot fire.
+          attributes = { z_value: 25.0, bio_status: :homeostasis }
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+          service.send(:check_z_divergence!, tree_with_family, attributes)
+        end
+      end
     end
 
     describe "update_health_streak!" do

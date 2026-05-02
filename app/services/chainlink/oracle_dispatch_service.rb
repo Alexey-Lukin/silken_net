@@ -162,6 +162,13 @@ module Chainlink
     # if the RPC client does not expose `eth_getCode`. We intentionally
     # do not raise here — `selector_present_in_code?` returns false on
     # blank input, and `pick_router_version` handles the fallback chain.
+    #
+    # The dual `Hash` / `String` shape handles two real-world RPC client
+    # return contracts: `Eth::Client` returns the raw `result` field as a
+    # String, while some pooled / instrumented wrappers (and JSON-RPC
+    # transports configured with `raw_response: true`) return the full
+    # `{ "id" => ..., "result" => "0x...", ... }` envelope. Normalising
+    # here keeps the probe ergonomically simple for both cases.
     def fetch_router_code(client, router_address)
       if client.respond_to?(:eth_get_code)
         result = client.eth_get_code(router_address, "latest")

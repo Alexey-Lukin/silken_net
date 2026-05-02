@@ -114,7 +114,7 @@
 - **Опис:** Ingress Anchor (Kamal Traefik або Akash ingress) повинен проксіювати CoAP UDP port 5683. Документація рекомендує перевірити, але **точна команда verification відсутня**. Без перевірки можлива ситуація: HTTP ingress активний, але UDP заблокований → шлюзи не можуть пушити телеметрію (silent failure)
 - **Статус (✅ виконано):** Додано рядок **#6** у Pre-Flight Checklist `06_01` з повними командами: `coap-client -m post` для CoAP smoke test + альтернатива через `nc`, troubleshooting checklist (GCP firewall, Ingress Anchor socat, Akash SDL UDP expose, Sidekiq daemon).
 - [x] 🤖 Додати у `06_01` команду: `coap-client -m post -e "test" coap://<ingress-host>:5683/health` + очікуваний response
-- [ ] 🤖 Smoke test workflow у CI: post-deploy CoAP health check (потребує CI workflow — окрема задача)
+- [x] 🤖 Smoke test workflow у CI: post-deploy CoAP health check — ✅ `.github/workflows/coap_smoke.yml` додано: `workflow_dispatch` (з custom host/port/path/timeout) + `workflow_call` (для виклику з `deploy.yml` / `deploy-production.yml` як post-deploy gate). Кроки: `apt-get install libcoap2-bin` → `timeout ${COAP_TIMEOUT} coap-client -m post -e ... -B ... -v 9 coap://${host}:${port}${path}` → fail при connection timeout або `5.xx` response, success при `2.xx` / `4.04` (daemon alive). При фейлі emit'иться `::error::` блок з troubleshooting checklist (GCP firewall / socat / Akash SDL / coap_listener.rb) дзеркально до Pre-Flight #6 у `06_01`.
 - [x] 🤖 Документувати точний HAProxy/socat/Traefik UDP config для кожного варіанту deploy (включено у troubleshooting секцію)
 
 #### S4.3 — Akash SDL secrets
@@ -415,8 +415,8 @@
 - **Умова для flip:** потрібно виміряти реальний drift `server_z − device_z` на цільовому ARM hardware (STM32WLE5JC vs GCP x86-64) з тією ж Float/mruby compile-flag комбінацією. Очікуваний drift < 0.001 — це значно менше розміру одного growth_points step (~1 unit), тому false-слешинг малоймовірний.
 - **Вплив після flip:** fraud detection стає **числовим** — дозволяє виявляти не лише категоричні (homeostasis vs stress) помилки, але й систематичне зміщення Z (наприклад, replay атаку з правильним status-byte але неправильним Z magnitude).
 - [ ] 👤 Лабораторне вимірювання: запустити однакові тест-вектори на STM32WLE5JC + GCP x86-64, виміряти `|server_z - device_z|` distribution (N=10,000)
-- [ ] 🤖 Після вимірювання: flip `check_z_divergence!` до числового `|server_z - device_z| < ε` під ENV feature-flag (`GAIA_DCI_NUMERIC_TOLERANCE`)
-- [ ] 🤖 Специфікація: оновити `03_04` §BLOCKER-2 з виміряним drift + обраним ε
+- [x] 🤖 Після вимірювання: flip `check_z_divergence!` до числового `|server_z - device_z| < ε` під ENV feature-flag (`GAIA_DCI_NUMERIC_TOLERANCE`) — ✅ Code-ready (2026-05-02). `TelemetryUnpackerService#check_z_divergence!` тепер має numeric-branch під двома ENV: `GAIA_DCI_NUMERIC_TOLERANCE=true` (off за замовчанням → нульова поведінкова зміна для production) + `GAIA_DCI_NUMERIC_EPSILON` (Float, default = `DEFAULT_DCI_EPSILON = 0.001`, malformed value graceful fallback). Numeric branch виконується **лише** коли `attributes[:device_z]` присутній — сьогодні LoRa packet (21B) не несе raw Z, тож branch інертний у production до post-FW.2 packet revision. 6 нових spec examples у `spec/services/telemetry_unpacker_service_spec.rb` describe `[FW.31] numeric tolerance band`: toggle off / within ε silent / drift > ε fraud / default ε constant / malformed ENV fallback / device_z missing. Awaits 👤 lab measurement реального ARM↔x86 IEEE-754 drift.
+- [ ] 🤖 Специфікація: оновити `03_04` §BLOCKER-2 з виміряним drift + обраним ε (потребує лабораторних даних, попередньо ε=0.001)
 
 ---
 

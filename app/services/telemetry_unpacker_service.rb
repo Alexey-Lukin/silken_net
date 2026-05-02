@@ -251,6 +251,19 @@ class TelemetryUnpackerService < ApplicationService
   # [FW.8] Use Tree#effective_lorenz_thresholds (cluster override >
   # tree_family > global default) so divergence stays consistent with
   # the thresholds firmware was provisioned with.
+  # [FW.31] Numeric tolerance band lives behind two ENV feature flags —
+  # disabled by default to preserve current categorical behaviour:
+  #   - `GAIA_DCI_NUMERIC_TOLERANCE=true` — enables the numeric branch.
+  #   - `GAIA_DCI_NUMERIC_EPSILON` (Float, default `0.001`) — the
+  #     allowed absolute drift between server_z and the reported
+  #     device_z BEFORE flagging fraud.
+  # The numeric branch fires only when `attributes[:device_z]` is
+  # present (currently never — the LoRa packet does not carry raw Z).
+  # Will become active once a future packet revision (post-FW.2 CCM
+  # transition) embeds device_z explicitly. Lab measurement on real
+  # STM32WLE5JC vs GCP x86-64 must inform the final ε value.
+  DEFAULT_DCI_EPSILON = 0.001
+
   def check_z_divergence!(tree, attributes)
     server_z = attributes[:z_value]
     device_bio_status = attributes[:bio_status]
@@ -260,6 +273,23 @@ class TelemetryUnpackerService < ApplicationService
     server_healthy = server_z.between?(thresholds[:min], thresholds[:max])
     device_healthy = device_bio_status == :homeostasis
 
+    # [FW.31] Optional numeric drift check (feature-flagged, default off).
+    # Runs IN ADDITION to the categorical check below — never replaces it.
+    # When the device packet does carry a raw Z value (future packet
+    # revision), drift > ε is treated as a fraud signal even if the
+    # categorical buckets agree (catches systematic Z offset attacks).
+    if numeric_dci_tolerance_enabled? && attributes[:device_z].present?
+      drift = (server_z.to_f - attributes[:device_z].to_f).abs
+      if drift > numeric_dci_epsilon
+        Rails.logger.warn(
+          "🔍 [Z Divergence Numeric] DID #{tree.did}: " \
+          "server_z=#{server_z}, device_z=#{attributes[:device_z]}, " \
+          "drift=#{drift}, ε=#{numeric_dci_epsilon}. Numeric DCI mismatch."
+        )
+        SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
+      end
+    end
+
     if device_healthy != server_healthy
       Rails.logger.warn(
         "🔍 [Z Divergence] DID #{tree.did}: device=#{device_bio_status}, " \
@@ -268,6 +298,25 @@ class TelemetryUnpackerService < ApplicationService
       )
       SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
     end
+  end
+
+  # [FW.31] Feature-flag — defaults to false so production behaviour
+  # is unchanged until the lab measurement of real ARM↔x86 Float drift
+  # confirms a safe ε.
+  def numeric_dci_tolerance_enabled?
+    ENV["GAIA_DCI_NUMERIC_TOLERANCE"].to_s.downcase == "true"
+  end
+
+  # [FW.31] Allowed absolute drift `|server_z - device_z|` before fraud
+  # is flagged. ENV override falls back to `DEFAULT_DCI_EPSILON` when
+  # the value is missing or fails Float coercion.
+  def numeric_dci_epsilon
+    raw = ENV["GAIA_DCI_NUMERIC_EPSILON"]
+    return DEFAULT_DCI_EPSILON if raw.blank?
+
+    Float(raw)
+  rescue ArgumentError, TypeError
+    DEFAULT_DCI_EPSILON
   end
 
   def commit_telemetry(tree, attributes)
