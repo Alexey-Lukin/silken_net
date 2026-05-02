@@ -16,13 +16,25 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   let(:extracted_did) { format("SNET-%08X", did_hex.to_i(16)) }
 
   let!(:tree) { create(:tree, did: extracted_did) }
+  # [SEC.11] HardwareKey with K_seed is required for every uplink —
+  # TelemetryUnpackerService raises MissingLorenzSeedError otherwise.
+  let!(:hardware_key) do
+    HardwareKey.create!(
+      device_uid: extracted_did,
+      aes_key_hex: SecureRandom.hex(32).upcase,
+      lorenz_seed_hex: SecureRandom.hex(32).upcase
+    )
+  end
 
   before do
     tree.create_device_calibration! if tree.device_calibration.nil?
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
     allow(AlertDispatchService).to receive(:analyze_and_trigger!)
-    allow(SilkenNet::Attractor).to receive(:calculate_z).and_return(0.5)
+    # [SEC.11] Pin the post-cutover entry-point so attribute-level
+    # assertions are stable. Returns [z, x, y, z_final] tuple.
+    allow(SilkenNet::Attractor).to receive(:calculate_z_from_state)
+      .and_return([ 0.5, 0.1, 0.2, 0.3 ])
     allow(IotexVerificationWorker).to receive(:perform_async)
     allow(StreamrBroadcastWorker).to receive(:perform_async)
   end
@@ -163,7 +175,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
   describe "error handling" do
     it "logs error and continues when process_chunk raises" do
-      allow(SilkenNet::Attractor).to receive(:calculate_z).and_raise(StandardError.new("test error"))
+      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_raise(StandardError.new("test error"))
 
       chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
 
@@ -208,6 +220,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "sets queen_uid from gateway when gateway is present" do
         tree_r2 = create(:tree, did: format("SNET-%08X", "0000AB01".to_i(16)), cluster: cluster)
         tree_r2.create_device_calibration! if tree_r2.device_calibration.nil?
+        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
         did_int = "0000AB01".to_i(16)
         did_bytes = [ did_int ].pack("N")
@@ -295,6 +308,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "sets firmware_version_id when firmware_id is positive" do
         tree_r2 = create(:tree, did: format("SNET-%08X", "0000AB01".to_i(16)), cluster: cluster)
         tree_r2.create_device_calibration! if tree_r2.device_calibration.nil?
+        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
         did_int = "0000AB01".to_i(16)
         did_bytes = [ did_int ].pack("N")
@@ -313,6 +327,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "sets firmware_version_id to nil when firmware_id is zero" do
         tree_r2 = create(:tree, did: format("SNET-%08X", "0000AB01".to_i(16)), cluster: cluster)
         tree_r2.create_device_calibration! if tree_r2.device_calibration.nil?
+        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
         did_int = "0000AB01".to_i(16)
         did_bytes = [ did_int ].pack("N")
@@ -543,6 +558,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       let!(:tree2) do
         t = create(:tree, did: extracted_did2)
         t.create_device_calibration! if t.device_calibration.nil?
+        HardwareKey.create!(device_uid: t.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
         t
       end
 
@@ -611,6 +627,56 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         expect(log.growth_points).to eq(10)
         expect(log.bio_status).to eq("stress")
       end
+    end
+  end
+
+  # [SEC.11] Per-tree dispatch between legacy DID-as-seed and the
+  # [SEC.11] K_seed-derived initial-state path is the SOLE attractor
+  # entry-point. Every Tree must have a provisioned HardwareKey with
+  # `lorenz_seed_hex`; missing seeds raise MissingLorenzSeedError.
+  describe "Lorenz seed provenance [SEC.11]" do
+    before do
+      # Allow the real attractor for these scenarios so we can observe
+      # the call signature and persisted trajectory tail.
+      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_call_original
+    end
+
+    it "raises MissingLorenzSeedError when a tree has no HardwareKey" do
+      hardware_key.destroy!
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+      expect { described_class.call(chunk) }
+        .to raise_error(TelemetryUnpackerService::MissingLorenzSeedError, /no provisioned K_seed/)
+    end
+
+    it "persists trajectory tail and marks cold_start_flag on the first packet" do
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+      described_class.call(chunk)
+
+      log = TelemetryLog.last
+      expect(log.cold_start_flag).to be(true)
+      expect(log.lorenz_state_x).to be_a(Float).and be_finite
+      expect(log.lorenz_state_y).to be_a(Float).and be_finite
+      expect(log.lorenz_state_z).to be_a(Float).and be_finite
+    end
+
+    it "chains continuation from the previous TelemetryLog tail (cold_start_flag=false)" do
+      # First packet — cold start, persists a tail.
+      described_class.call(build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3))
+      first_tail = TelemetryLog.last.slice(:lorenz_state_x, :lorenz_state_y, :lorenz_state_z)
+
+      # Second packet — should chain from first_tail.
+      described_class.call(build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3))
+      second = TelemetryLog.last
+      expect(second.cold_start_flag).to be(false)
+
+      # Verify chaining: server Z must equal calculate_z_from_state(first_tail, ...)
+      expected = SilkenNet::Attractor.calculate_z_from_state(
+        first_tail["lorenz_state_x"], first_tail["lorenz_state_y"],
+        first_tail["lorenz_state_z"], 25.0, 5, 100, 3500
+      )
+      expect(second.z_value).to eq(expected.first)
     end
   end
 end

@@ -376,7 +376,7 @@ POST /api/v1/auth/m2m_token
 | `longitude` | Float | ✅ | Довгота GPS |
 | `ed25519_public_key` | String (HEX) | Опційно | Ed25519 public key для M2M Auth (Gateway) |
 
-**Success Response `201 Created` (Production — HKDF mode):**
+**Success Response `201 Created` (єдиний режим — HKDF, hard cutover):**
 
 ```json
 {
@@ -391,21 +391,7 @@ POST /api/v1/auth/m2m_token
 }
 ```
 
-> **Zero-Trust: AES-ключ не передається по мережі.** Бекенд та прошивка незалежно деривують однаковий ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")`. Встановіть `PROVISIONING_MASTER_KEY` в ENV для активації Production режиму.
-
-**Success Response `201 Created` (TRL4 lab mode — `PROVISIONING_MASTER_KEY` не встановлено):**
-
-```json
-{
-  "did": "SNET-A1B2C3D4",
-  "aes_key": "2B7E151628AED2A6ABF7158809CF4F3C",
-  "key_derivation": "hkdf-sha256",
-  "warning": "TRL4 lab mode: AES key included in response. Set PROVISIONING_MASTER_KEY for production HKDF derivation.",
-  "device": { ... }
-}
-```
-
-> **`aes_key` в TRL4 mode повертається лише один раз** для ручного прошивання на лабораторному стенді. Зберігайте в захищеній пам'яті (Flash Option Bytes або OTP-region). Деталі: `docs/FIRMWARE.md`. Повторний запит для того ж `hardware_uid` поверне HTTP 409.
+> **Zero-Trust: жодних секретів у відповіді.** Бекенд та прошивка незалежно деривують однаковий 32-байтний AES-ключ через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: device_uid, info: "silken-aes-256-device-key")` (cross-ref: [03_05 §3.4а](03_05_Hardware_AES256_and_Security#34а-hkdf-key-derivation-protocol-design-)) **та** 32-байтний `K_seed` для атрактора Лоренца через `HKDF-SHA256(ikm: PROVISIONING_MASTER_KEY, salt: "silken-lorenz-v1", info: "silken-lorenz-seed|<DID>")` ([SEC.11], cross-ref: [03_05 §3.4в](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-)). Обидва секрети зберігаються в `HardwareKey` (AR Encryption non-deterministic) і **ніколи не передаються** через HTTP/мережу. `PROVISIONING_MASTER_KEY` повинен бути встановлений у ENV — інакше endpoint повертає `503 Service Unavailable` (no fallback). Прошивка отримує обидва секрети під час physical Factory Flashing через окремий захищений канал (UART/JTAG, поза цим API).
 
 **Conflict Response `409 Conflict`:**
 

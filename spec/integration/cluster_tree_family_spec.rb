@@ -167,15 +167,17 @@ RSpec.describe "Cluster health and tree family management" do
   end
 
   describe "SilkenNet::Attractor calculations" do
-    it "computes deterministic z values" do
-      z1 = SilkenNet::Attractor.calculate_z(12345, 25.0, 5)
-      z2 = SilkenNet::Attractor.calculate_z(12345, 25.0, 5)
-      expect(z1).to eq(z2) # Deterministic
+    # [SEC.11] Post-cutover the attractor takes (x₀, y₀, z₀) directly.
+    # These tests exercise that surface with deterministic inputs.
+    it "computes deterministic z values for identical (x₀, y₀, z₀)" do
+      z1 = SilkenNet::Attractor.calculate_z_from_state(0.1, 0.2, 0.3, 25.0, 5).first
+      z2 = SilkenNet::Attractor.calculate_z_from_state(0.1, 0.2, 0.3, 25.0, 5).first
+      expect(z1).to eq(z2)
     end
 
     it "returns different values for different inputs" do
-      z1 = SilkenNet::Attractor.calculate_z(12345, 25.0, 5)
-      z2 = SilkenNet::Attractor.calculate_z(99999, 50.0, 80)
+      z1 = SilkenNet::Attractor.calculate_z_from_state(0.1, 0.2, 0.3, 25.0, 5).first
+      z2 = SilkenNet::Attractor.calculate_z_from_state(-0.4, 0.5, -0.1, 50.0, 80).first
       expect(z1).not_to eq(z2)
     end
 
@@ -187,7 +189,7 @@ RSpec.describe "Cluster health and tree family management" do
     end
 
     it "generates trajectory as flat array" do
-      trajectory = SilkenNet::Attractor.generate_trajectory(12345, 25.0, 5)
+      trajectory = SilkenNet::Attractor.generate_trajectory(0.1, 0.2, 0.3, 25.0, 5)
       expect(trajectory.length).to eq(SilkenNet::Attractor::ITERATIONS * 3)
       expect(trajectory).to all(be_a(Float))
     end

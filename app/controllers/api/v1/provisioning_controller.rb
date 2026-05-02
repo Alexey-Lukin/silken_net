@@ -67,7 +67,10 @@ module Api
 
           if @device.save
             # КРИПТОГРАФІЧНА ПРОПИСКА
-            @key_hex = HardwareKeyService.provision(@device)
+            # [SEC.11] HardwareKeyService.provision derives both the AES
+            # key and the Lorenz K_seed in one call — single source of
+            # truth for "create HardwareKey at provisioning time".
+            HardwareKeyService.provision(@device)
 
             # [M2M Auth]: Реєструємо Ed25519 public key для M2M автентифікації шлюзу
             if provisioning_params[:ed25519_public_key].present?
@@ -90,32 +93,23 @@ module Api
 
             respond_to do |format|
               format.json do
-                # [P0 BLOCKER FIX]: AES ключ НЕ передається через мережу.
-                # Обидві сторони (бекенд + прошивка) деривують ключ незалежно через HKDF.
-                # Повертаємо лише DID та підтвердження провізіонування.
-                response_body = {
+                # [P0 BLOCKER FIX] [SEC.11] Neither the AES key nor the
+                # Lorenz K_seed is ever returned over the network. Both
+                # backend and firmware derive them independently via HKDF
+                # from PROVISIONING_MASTER_KEY. Response carries only the
+                # DID and a derivation marker.
+                render json: {
                   did: device_identifier,
                   device: @device.as_json(only: [ :id, :did, :status, :cluster_id ]),
                   key_derivation: "hkdf-sha256"
-                }
-
-                # TRL 4 lab mode: якщо PROVISIONING_MASTER_KEY не встановлено,
-                # повертаємо ключ для ручного прошивання на лабораторному стенді.
-                if ENV["PROVISIONING_MASTER_KEY"].blank?
-                  response_body[:aes_key] = @key_hex
-                  response_body[:warning] = "TRL4 lab mode: AES key included in response. " \
-                                            "Set PROVISIONING_MASTER_KEY for production HKDF derivation."
-                end
-
-                render json: response_body, status: :created
+                }, status: :created
               end
               format.html do
-                # [A-2 FIX]: В Production HKDF mode ключ не передається до UI-компонента.
-                # Zero-Trust: ключ деривується незалежно на прошивці.
-                display_key = ENV["PROVISIONING_MASTER_KEY"].blank? ? @key_hex : nil
+                # [SEC.11] HKDF derivation is the only mode — UI never
+                # sees the raw AES key.
                 render_dashboard(
                   title: "Initiation Successful",
-                  component: Provisioning::Success.new(device: @device, aes_key: display_key)
+                  component: Provisioning::Success.new(device: @device, aes_key: nil)
                 )
               end
             end

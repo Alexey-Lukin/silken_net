@@ -1,6 +1,9 @@
 module Provisioning
   class Success < ApplicationComponent
-    def initialize(device:, aes_key:)
+    # [SEC.11] `aes_key` kwarg retained for backwards-spec-compat but
+    # always nil at runtime — HKDF is the sole derivation mode and the
+    # key never leaves the backend over the wire.
+    def initialize(device:, aes_key: nil)
       @device = device
       @aes_key = aes_key
     end
@@ -18,11 +21,7 @@ module Provisioning
             render_data_point("Assigned DID", @device.try(:did) || @device.try(:uid))
             render_data_point("Hardware UID", @device.uid || "N/A")
 
-            if @aes_key.present?
-              render_lab_mode_key
-            else
-              render_hkdf_mode_notice
-            end
+            render_hkdf_mode_notice
           end
 
           div(class: "pt-10") do
@@ -41,21 +40,13 @@ module Provisioning
       end
     end
 
-    # TRL4 lab mode: AES key is shown for manual flashing
-    def render_lab_mode_key
-      div(class: "pt-4 border-t border-emerald-900/30") do
-        p(class: "text-mini text-red-500 uppercase tracking-widest mb-2") { "CRITICAL: AES-256 SESSION KEY" }
-        div(class: "p-4 bg-black border border-red-900 text-red-400 font-mono text-sm break-all") { @aes_key }
-        p(class: "mt-2 text-micro text-gray-700 uppercase italic") { "Write this to STM32 non-volatile memory now. It will never be shown again." }
-      end
-    end
-
-    # Production HKDF mode: key is derived independently on firmware
+    # [SEC.11] HKDF is the sole mode — both backend and firmware derive
+    # the AES key + Lorenz K_seed independently from PROVISIONING_MASTER_KEY.
     def render_hkdf_mode_notice
       div(class: "pt-4 border-t border-emerald-900/30") do
         p(class: "text-mini text-emerald-600 uppercase tracking-widest mb-2") { "HKDF MODE: ZERO-TRUST KEY DERIVATION" }
         div(class: "p-4 bg-black border border-emerald-900 text-emerald-400 font-mono text-sm") do
-          plain "AES-256 key is derived independently via "
+          plain "AES-256 key and Lorenz K_seed are derived independently via "
           strong { "HKDF-SHA256" }
           plain " on both backend and firmware. No key transmission required."
         end

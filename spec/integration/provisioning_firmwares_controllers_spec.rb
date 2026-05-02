@@ -43,7 +43,9 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
       expect(response).to have_http_status(:created)
       json = response.parsed_body
       expect(json["did"]).to be_present
-      expect(json["aes_key"]).to be_present
+      # [SEC.11] Zero-Trust: aes_key is never returned in the response.
+      # K_seed stays in-process; the response only confirms provisioning.
+      expect(json["aes_key"]).to be_nil
     end
 
     it "POST /api/v1/provisioning/register provisions a gateway" do

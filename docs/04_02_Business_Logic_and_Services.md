@@ -42,9 +42,9 @@
 |---|---|
 | **Файл** | `app/services/telemetry_unpacker_service.rb` |
 | **Вхід** | `binary_batch` (сирий бінарний батч), `gateway_id` (Integer, опціонально — `nil` якщо шлюз невідомий) |
-| **Що робить** | Розрізає бінарний батч на 21-байтні чанки (`[DID:4][RSSI:1][Payload:16]`). Калібрує сенсорні дані, обчислює Z-значення атрактора Лоренца, записує `TelemetryLog`. Детектує `firmware_mismatch`. Маршрутизує "нульовий" пакет Королеви до `GatewayTelemetryWorker`. **[FW.5]** Передає `metabolism_s` та `voltage_mv` у `Attractor.calculate_z` для β-пертурбації. **[FW.8]** `check_z_divergence!` використовує `tree.effective_lorenz_thresholds` (3-tier: cluster override → tree_family → global). |
-| **Зовнішні виклики** | `SilkenNet::Attractor.calculate_z(seed, temp, acoustic, metabolism_s, voltage_mv)`, `AlertDispatchService.analyze_and_trigger!`, `IotexVerificationWorker.perform_async`, `StreamrBroadcastWorker.perform_async`, `GatewayTelemetryWorker.perform_async` |
-| **Вихід / Side Effects** | Створює `TelemetryLog` записи. Оновлює `tree.latest_voltage_mv`, `tree.health_streak`. Нараховує `wallet.balance` (growth_points). Позначає `tree.firmware_update_status = :fw_pending` при mismatch. |
+| **Що робить** | Розрізає бінарний батч на 21-байтні чанки (`[DID:4][RSSI:1][Payload:16]`). Калібрує сенсорні дані, обчислює Z-значення атрактора Лоренца, записує `TelemetryLog`. Детектує `firmware_mismatch`. Маршрутизує "нульовий" пакет Королеви до `GatewayTelemetryWorker`. **[FW.5]** Передає `metabolism_s` та `voltage_mv` у `Attractor.calculate_z_from_state` для β-пертурбації. **[FW.8]** `check_z_divergence!` використовує `tree.effective_lorenz_thresholds` (3-tier: cluster override → tree_family → global). **[SEC.11]** Per-tree Lorenz state dispatch: для кожного дерева читає попередній `TelemetryLog.lorenz_state_x/y/z` (warm continuation, mirror RTC DR16-DR18); якщо tail відсутній (cold start після VBAT loss або перший uplink) — деривує `(x₀,y₀,z₀)` з `hardware_keys.binary_lorenz_seed` через `SilkenNet::SeedDerivation.derive_initial_state(K_seed, epoch_day)` і ставить `cold_start_flag = true`. Persist'ить нові `lorenz_state_*` після обчислення Z. Raise `MissingLorenzSeedError` якщо дерево не має provisioned `K_seed` (hard cutover — production guarantee). |
+| **Зовнішні виклики** | `SilkenNet::Attractor.calculate_z_from_state(x_prev, y_prev, z_prev, temp, acoustic, metabolism_s, voltage_mv)`, `SilkenNet::SeedDerivation.derive_initial_state` (cold-start only), `AlertDispatchService.analyze_and_trigger!`, `IotexVerificationWorker.perform_async`, `StreamrBroadcastWorker.perform_async`, `GatewayTelemetryWorker.perform_async` |
+| **Вихід / Side Effects** | Створює `TelemetryLog` записи (з `lorenz_state_x/y/z` + `cold_start_flag` [SEC.11]). Оновлює `tree.latest_voltage_mv`, `tree.health_streak`. Нараховує `wallet.balance` (growth_points). Позначає `tree.firmware_update_status = :fw_pending` при mismatch. |
 
 ### `AlertDispatchService`
 
@@ -76,11 +76,24 @@
 | | |
 |---|---|
 | **Файл** | `app/services/silken_net/attractor.rb` |
-| **Вхід** | `seed` (Integer/DID), `temp` (Float °C), `acoustic` (Integer events), `delta_t_s` (Integer с, default: `BASELINE_DELTA_T_S=60`), `vcap_mv` (Integer мВ, default: `NOMINAL_VCAP_MV=3300`) |
-| **Що робить** | Обчислює Z-значення атрактора Лоренца. σ=10, ρ=28, β=8/3 (base). 250 ітерацій, timestep=0.01. **[FIX FW.7]** `Float` (IEEE 754 double) — ідентично firmware mruby для Dual Computation Integrity. BigDecimal замінено на Float: різна математика давала розбіжність Z на десятки одиниць після 250 ітерацій хаотичної системи. Clamp: σ∈[5,30], ρ∈[10,50]. **[FW.5]** β-пертурбація від EBFC-метаболізму: `perturb_beta(delta_t_s, vcap_mv)` → β∈[2.0,4.0]; дзеркальна математика з firmware (verified: 500-case fuzz, 0 mismatches). |
-| **Вихід** | `calculate_z → Float` (rounded 4). `homeostatic? → Boolean`. `generate_trajectory → Array<Float>` (плаский масив x,y,z × 250 для Three.js). |
+| **Вхід** | `(x_prev, y_prev, z_prev)` (Float×3, ∈ ℝ — попередня точка фазового простору або K_seed-derived cold start), `temp` (Float °C), `acoustic` (Integer events), `delta_t_s` (Integer с, default: `BASELINE_DELTA_T_S=60`), `vcap_mv` (Integer мВ, default: `NOMINAL_VCAP_MV=3300`) |
+| **Що робить** | Обчислює Z-значення атрактора Лоренца. σ=10, ρ=28, β=8/3 (base). 250 ітерацій, timestep=0.01. **[FIX FW.7]** `Float` (IEEE 754 double) — ідентично firmware mruby для Dual Computation Integrity. BigDecimal замінено на Float: різна математика давала розбіжність Z на десятки одиниць після 250 ітерацій хаотичної системи. Clamp: σ∈[5,30], ρ∈[10,50]. **[FW.5]** β-пертурбація від EBFC-метаболізму: `perturb_beta(delta_t_s, vcap_mv)` → β∈[2.0,4.0]; дзеркальна математика з firmware (verified: 500-case fuzz, 0 mismatches). **[SEC.11]** Sole entry-point — `calculate_z_from_state(x_prev, y_prev, z_prev, …)`. Legacy `calculate_z(seed, …)` видалено (hard cutover). DID не є входом — `(x_prev, y_prev, z_prev)` приходять з попереднього `TelemetryLog.lorenz_state_*` (warm) або з `SeedDerivation.derive_initial_state(K_seed, epoch_day)` (cold). |
+| **Вихід** | `calculate_z_from_state → [z_rounded, x_final, y_final, z_final]` (Float×4). `homeostatic? → Boolean`. `generate_trajectory(x₀, y₀, z₀, …) → Array<Float>` (плаский масив x,y,z × 250 для Three.js). |
 | **Константи** | `BASELINE_DELTA_T_S=60`, `NOMINAL_VCAP_MV=3300`, `BETA_DELTA_T_COEFF=0.0001`, `BETA_VCAP_COEFF=0.001`, `BETA_MIN=2.0`, `BETA_MAX=4.0` |
-| **Примітка** | `generate_trajectory`: перший триплет (індекс 0–2) — початковий seed-стан до інтеграції (`i=0,1,2` → x₀,y₀,z₀); інтеграція Лоренца починається з індексу 3 (`i=3` → крок 1). |
+| **Примітка** | `generate_trajectory`: перший триплет (індекс 0–2) — початкова точка `(x₀, y₀, z₀)` до інтеграції; інтеграція Лоренца починається з індексу 3 (`i=3` → крок 1). |
+
+### `SilkenNet::SeedDerivation` 🔐 [SEC.11]
+
+| | |
+|---|---|
+| **Файл** | `app/services/silken_net/seed_derivation.rb` |
+| **Вхід** | `derive_seed(device_uid:)` — DID/UID пристрою; `derive_initial_state(seed_bin:, epoch_day:)` — 32-байтний `K_seed` + UTC epoch day (`Time.now.utc.to_i / 86_400`) |
+| **Що робить** | Криптографічна основа для `(x₀, y₀, z₀)` атрактора Лоренца. **`derive_seed`:** виводить per-device `K_seed = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed\|<DID>", len=32)`. Викликається при provisioning з `HardwareKeyService#provision`. **`derive_initial_state`:** обчислює `digest = HMAC-SHA256(K_seed, "init\|" + epoch_day_be)`; розпаковує в `(x₀, y₀, z₀) ∈ [-1, +1]³` через `bytes_to_signed_unit_float` (8 байт → big-endian uint64 → / (UINT64_MAX/2.0) - 1.0). Daily `epoch_day` rotation дає forward secrecy ≤ 24 год. Hard cutover: raise `SecurityError` без `PROVISIONING_MASTER_KEY` (no SecureRandom fallback ANYWHERE — навіть у dev/test, які pin-ять ключ у `spec/rails_helper.rb`). |
+| **Вихід** | `derive_seed → 32-byte binary String`; `derive_initial_state → [x0, y0, z0]` (Float×3) |
+| **Алгоритм та парність** | OpenSSL HKDF-SHA256 (RFC 5869) + HMAC-SHA256. Host-parity test `firmware/test/test_seed_derivation.c` валідує OpenSSL ↔ mbedTLS байт-ідентичність на детермінованих векторах + 100-case fuzz. Backend ↔ firmware деривують `(x₀, y₀, z₀)` byte-identical для тієї самої пари `(K_seed, epoch_day)`. |
+| **Викликається з** | `HardwareKeyService#provision` (provisioning), `TelemetryUnpackerService` (cold-start dispatch) |
+| **Зовнішні виклики** | `OpenSSL::KDF.hkdf`, `OpenSSL::HMAC.digest("SHA256", …)` |
+| **Безпека** | `K_seed` ніколи не залишає Ruby-процес у відкритому вигляді (in-process derivation з `ENV["PROVISIONING_MASTER_KEY"]`). DID використовується лише як `info`-string у HKDF (namespace separator) — криптографічно безпечно. Cross-ref: [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-), [03_04 §3 Крок 1](03_04_mruby_Lorenz_Attractor#крок-1-походження-початкових-координат-x₀-y₀-z₀-sec11). |
 
 ### `SilkenNet::GeoUtils`
 
@@ -328,9 +341,9 @@ peaq_node_url: "https://peaq-node.example.com"
 |---|---|
 | **Файл** | `app/services/hardware_key_service.rb` |
 | **Вхід** | `.provision(device)` або `.rotate(device_uid)` |
-| **Що робить** | **Provision**: генерує новий 32-байтний AES-256 ключ, зберігає у `HardwareKey`. **Rotate**: Dual-Key Handshake — старий ключ → `previous_aes_key_hex`, генерує новий, відправляє Downlink `sys/key_update` шифрований старим ключем. Захист від подвійної ротації (`RotationPendingError`). |
-| **Зовнішні виклики** | `ActuatorCommandWorker.perform_async` (для key update downlink) |
-| **Вихід** | `new_hex_key` (String, 64 символи). Raises `RotationPendingError`. |
+| **Що робить** | **Provision**: атомарно деривує AES-256 ключ (`derive_device_key`) і `K_seed` для атрактора Лоренца (`SilkenNet::SeedDerivation.derive_seed`), зберігає обидва у `HardwareKey` (`aes_key_hex` + `lorenz_seed_hex` [SEC.11]). HKDF-only — raise `SecurityError` без `PROVISIONING_MASTER_KEY` (no SecureRandom fallback ANYWHERE; pre-prod hard cutover). **Rotate**: Dual-Key Handshake — старий AES ключ → `previous_aes_key_hex`, генерує новий, відправляє Downlink `sys/key_update` шифрований старим ключем. Захист від подвійної ротації (`RotationPendingError`). |
+| **Зовнішні виклики** | `OpenSSL::KDF.hkdf` (через `SilkenNet::SeedDerivation`), `ActuatorCommandWorker.perform_async` (для key update downlink) |
+| **Вихід** | Provision: `HardwareKey` instance з обома секретами. Rotate: `new_hex_key` (String, 64 символи). Raises `RotationPendingError`, `SecurityError`. |
 
 ### `OtaPackagerService`
 
@@ -1010,7 +1023,11 @@ peaq_node_url: "https://peaq-node.example.com"
 CoAP UDP (port 5683)
   └─→ UnpackTelemetryWorker [uplink]
         ├─→ TelemetryUnpackerService
-        │     ├─→ SilkenNet::Attractor.calculate_z
+        │     ├─→ [SEC.11] resolve (x_prev, y_prev, z_prev):
+        │     │     ├─ warm: prev TelemetryLog.lorenz_state_x/y/z
+        │     │     └─ cold: SilkenNet::SeedDerivation.derive_initial_state(K_seed, epoch_day)
+        │     ├─→ SilkenNet::Attractor.calculate_z_from_state
+        │     │     └─ persist log.lorenz_state_x/y/z + cold_start_flag
         │     ├─→ AlertDispatchService.analyze_and_trigger!
         │     │     └─→ EmergencyResponseService.call
         │     │           └─→ ActuatorCommandWorker [downlink]
@@ -1359,7 +1376,7 @@ AuditLogWorker → запис факту оновлення моделі
 
 $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} = xy - \beta z \end{cases}$$
 
-Константи: σ = 10.0, ρ = 28.0, β = 8/3. Адаптивні параметри: акустика → σ (clamped 5–30), температура → ρ (clamped 10–50). DID дерева задає унікальні початкові умови. 250 ітерацій × 0.01 timestep. BigDecimal 18 знаків.
+Константи: σ = 10.0, ρ = 28.0, β = 8/3. Адаптивні параметри: акустика → σ (clamped 5–30), температура → ρ (clamped 10–50), `delta_t_s`/`vcap_mv` → β (clamped 2–4) [FW.5]. **[SEC.11]** Початкова точка `(x₀, y₀, z₀)` ∈ [-1, +1]³ деривується з per-device `K_seed` через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` (cold start) або читається з попереднього `TelemetryLog.lorenz_state_x/y/z` (warm continuation, mirror RTC DR16-DR18). DID **не** є входом атрактора — лише identifier (та `info`-string у HKDF при provisioning K_seed). 250 ітерацій × 0.01 timestep. **[FIX FW.7]** Float (IEEE 754 double) — байт-ідентично з firmware mruby для Dual Computation Integrity.
 
 Використовується для ідентифікації стресу дерева через відхилення траєкторії z у фазовому просторі. Верифікується ZK-proof через IoTeX W3bstream.
 
@@ -1370,7 +1387,7 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 1. **Zero-Trust:** Кожен пакет шифрується AES-256 (Hardware-bound ключ у `HardwareKey`).
 2. **Idempotency:** Всі фінансові воркери мають захист від повторного виконання (status guards / pessimistic lock).
 3. **Resilience:** Система підтримує 10+ ретраїв для Web3 операцій та 3–5 для апаратних команд.
-4. **BigDecimal:** Розрахунки Атрактора виконуються з 18 знаками точності для крос-платформної детермінованості вироків.
+4. **Float Determinism:** Розрахунки Атрактора виконуються з Float (IEEE 754 double) ідентично firmware mruby для Dual Computation Integrity (BigDecimal вилучено — давав розбіжність Z після 250 ітерацій хаотичної системи).
 5. **ZK-Proof Guard:** Мінтинг токенів неможливий без IoTeX W3bstream верифікації (`verified_by_iotex? == true`).
 6. **Chainlink Guard:** Децентралізований оракул обов'язковий перед емісією — запобігає single-point-of-failure.
 7. **Hadron KYC:** Інституційні інвестори мусять пройти KYC/KYB через Polygon Hadron (ERC-3643) перед отриманням RWA-токенів.

@@ -4,6 +4,10 @@ FactoryBot.define do
   factory :hardware_key do
     sequence(:device_uid, 900_000) { |n| "SNET-%08X" % n }
     aes_key_hex { SecureRandom.hex(32).upcase }
+    # [SEC.11] K_seed is required by the model. Random hex is fine for
+    # factory-built records — specs that need an HKDF-derived value
+    # call SilkenNet::SeedDerivation.derive_seed directly.
+    lorenz_seed_hex { SecureRandom.hex(32).upcase }
     previous_aes_key_hex { nil }
 
     trait :for_tree do

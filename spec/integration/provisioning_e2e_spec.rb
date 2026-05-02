@@ -70,9 +70,9 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
   end
 
   # ---------------------------------------------------------------------------
-  # 1. HKDF Production Mode — Zero-Trust key derivation
+  # 1. HKDF Mode — Zero-Trust key derivation [SEC.11 sole mode]
   # ---------------------------------------------------------------------------
-  describe "HKDF production mode (PROVISIONING_MASTER_KEY set)" do
+  describe "HKDF mode (PROVISIONING_MASTER_KEY set)" do
     let(:master_key) { "e2e-master-key-32bytes-hkdf-test" }
 
     before do
@@ -197,52 +197,15 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
   end
 
   # ---------------------------------------------------------------------------
-  # 2. TRL4 Lab Mode — random fallback, key returned in response
+  # 2. SEC.11 — Hard cutover guard
   # ---------------------------------------------------------------------------
-  describe "TRL4 lab mode (PROVISIONING_MASTER_KEY blank)" do
+  # Without PROVISIONING_MASTER_KEY backend would diverge silently from
+  # firmware HKDF derivation. There is no SecureRandom fallback (SEC.11
+  # hard cutover): provisioning MUST raise and create no rows.
+  describe "SEC.11 — without PROVISIONING_MASTER_KEY" do
     before do
       allow(ENV).to receive(:[]).and_call_original
       allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
-      allow(Rails.env).to receive(:production?).and_return(false)
-    end
-
-    let(:tree_params) do
-      {
-        provisioning: {
-          hardware_uid: "AABBCCDD55667788",
-          device_type: "tree",
-          cluster_id: cluster.id,
-          family_id: tree_family.id,
-          latitude: 49.4285,
-          longitude: 32.0620
-        }
-      }
-    end
-
-    it "returns aes_key + warning in response, persists matching HardwareKey" do
-      post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
-      expect(response).to have_http_status(:created)
-
-      body = response.parsed_body
-      expect(body["aes_key"]).to match(/\A[0-9A-F]{64}\z/)
-      expect(body["warning"]).to include("TRL4 lab mode")
-
-      hw_key = HardwareKey.find_by!(device_uid: body["did"])
-      expect(hw_key.aes_key_hex).to eq(body["aes_key"])
-    end
-  end
-
-  # ---------------------------------------------------------------------------
-  # 3. SEC.11 — Production guard
-  # ---------------------------------------------------------------------------
-  # Backend SecureRandom fallback in production would generate keys that do
-  # NOT match firmware HKDF derivation → silent system breakage AND key would
-  # leak via the JSON response. Provisioning MUST raise and create no rows.
-  describe "SEC.11 — production env without PROVISIONING_MASTER_KEY" do
-    before do
-      allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
-      allow(Rails.env).to receive(:production?).and_return(true)
     end
 
     let(:tree_params) do
@@ -260,15 +223,14 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
 
     it "raises SecurityError and creates no Tree/HardwareKey/MaintenanceRecord, enqueues no worker" do
       # SecurityError inherits from Exception (NOT StandardError), so the
-      # controller's `rescue StandardError` does NOT catch it. In a real
-      # production request the Rack middleware stack would convert this into
-      # a generic 500 response — the critical guarantee we assert here is
-      # that the Active Record transaction is rolled back: no Tree, no
-      # HardwareKey, no MaintenanceRecord rows, no peaq enqueue.
+      # controller's `rescue StandardError` does NOT catch it. The critical
+      # guarantee we assert here is that the Active Record transaction is
+      # rolled back: no Tree, no HardwareKey, no MaintenanceRecord rows,
+      # no peaq enqueue.
       expect {
         expect {
           post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
-        }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY ENV is required in production/)
+        }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY/)
       }.to not_change(Tree, :count)
        .and not_change(HardwareKey, :count)
        .and not_change(MaintenanceRecord, :count)
@@ -326,7 +288,8 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
     let!(:existing) do
       HardwareKey.create!(
         device_uid: "DUPE0000DDEE11FF",
-        aes_key_hex: SecureRandom.hex(32).upcase
+        aes_key_hex: SecureRandom.hex(32).upcase,
+        lorenz_seed_hex: SecureRandom.hex(32).upcase
       )
     end
 

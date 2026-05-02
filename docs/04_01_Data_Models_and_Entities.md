@@ -382,7 +382,7 @@ any ──report_fault──► faulty
 
 **Включає:** `NormalizeIdentifier`
 
-**Призначення:** AES-256 ключ для розшифровки пакетів від Солдата або Королеви. Зашифрований на рівні AR Encryption (non-deterministic).
+**Призначення:** Per-device криптографічний матеріал — AES-256 ключ для LoRa/CoAP пакетів плюс **Lorenz `K_seed` [SEC.11]** для деривації стартових координат атрактора. Обидва секрети шифруються AR Encryption (non-deterministic) і деривуються незалежно firmware ↔ backend через HKDF з `PROVISIONING_MASTER_KEY` — ніколи не передаються через мережу.
 
 **Асоціації:**
 - `belongs_to :tree` via `device_uid/did` (optional)
@@ -394,18 +394,21 @@ any ──report_fault──► faulty
 | Поле | Тип | Опис |
 |------|-----|------|
 | `device_uid` | string | Унікальний ідентифікатор пристрою |
-| `aes_key_hex` | string (encrypted) | 64 HEX символи (AES-256). AR Encryption non-deterministic |
-| `previous_aes_key_hex` | string (encrypted) | Попередній ключ (Grace Period при ротації) |
+| `aes_key_hex` | string (encrypted) | 64 HEX символи (AES-256). AR Encryption non-deterministic. HKDF info-string: `"silken-aes-256-device-key"`. Cross-ref [03_05 §3.4а](03_05_Hardware_AES256_and_Security#34а-hkdf-key-derivation-protocol-design-) |
+| `previous_aes_key_hex` | string (encrypted) | Попередній AES ключ (Grace Period при ротації) |
+| `lorenz_seed_hex` | string (encrypted) | **[SEC.11]** 64 HEX символи `K_seed` для атрактора Лоренца. AR Encryption non-deterministic. HKDF info-string: `"silken-lorenz-seed\|<DID>"`, salt: `"silken-lorenz-v1"`. Validated `presence: true` (hard cutover — кожен пристрій ОБОВ'ЯЗКОВО має K_seed). Cross-ref [03_05 §3.4в](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-) |
+| `ed25519_public_key_hex` | string | Публічний ключ Gateway для M2M JWT signing (`POST /api/v1/auth/m2m_token`). Тільки для Gateway, не Tree |
 | `rotated_at` | datetime | Час останньої ротації |
 
 **Ключові методи:**
 
 | Метод | Опис |
 |-------|------|
-| `binary_key` | `[aes_key_hex].pack("H*")` — мемоізовано |
+| `binary_key` | `[aes_key_hex].pack("H*")` — мемоізовано (32 байти, AES-256) |
+| `binary_lorenz_seed` | **[SEC.11]** `[lorenz_seed_hex].pack("H*")` — мемоізовано (32 байти `K_seed`); входить у `SilkenNet::SeedDerivation.derive_initial_state(seed_bin, epoch_day)` |
 | `cached_binary_key` | In-process LRU (SinLruRedux::ThreadSafeCache, max 10 000 entries). Ключ: `versioned_cache_key` — включає `updated_at` для самоінвалідації. Ключі не залишають Ruby-процес (немає Redis-serialize) |
 | `versioned_cache_key` | `"#{device_uid}:v:#{updated_at.to_f}"` — при будь-якому `update!` `updated_at` змінюється → новий ключ → стара запис ніколи не збігається (Cache Key Versioning). Усуває race condition між `COMMIT` і `after_commit` |
-| `binary_previous_key` | Попередній ключ у байтах (Grace Period) |
+| `binary_previous_key` | Попередній AES ключ у байтах (Grace Period) |
 | `rotate_key!` | М'яка ротація: старий → `previous_aes_key_hex`, новий генерується. Deprecated — використовуйте `HardwareKeyService.rotate` |
 | `clear_grace_period!` | Очищення `previous_aes_key_hex` після підтвердження синхронізації |
 | `owner` | `tree || gateway` |

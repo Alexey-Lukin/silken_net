@@ -15,12 +15,14 @@ class TelemetryUnpackerService < ApplicationService
   SAFE_TEMP_RANGE    = (-45..90)      # Від арктичних до тропічних пожеж
 
   # --- DUAL COMPUTATION INTEGRITY ---
-  # Device (mruby, Float) та Server (Ruby, Float) розраховують Z незалежно.
-  # [FIX FW.7]: Backend переведено на Float (IEEE 754) — ідентично firmware mruby.
-  # ВАЖЛИВО: firmware використовує chaos_seed (HRNG random), backend — tree_did (DID).
-  # Це РІЗНІ входи — тому raw Z-значення завжди різні.
-  # Перевірка лише категорична: device bio_status vs server healthy_z?.
-  # Якщо device bio_status суперечить server Z — потенційний fraud або збій firmware.
+  # [SEC.11] Device (mruby, Float) and Server (Ruby, Float) both start
+  # the Lorenz attractor from byte-identical (x₀, y₀, z₀) derived from
+  # per-tree K_seed via SilkenNet::SeedDerivation (HKDF-SHA256 →
+  # HMAC-SHA256 → signed-unit-float unpack). The DID is no longer an
+  # attractor input — it is purely an identifier. With identical inputs
+  # raw Z values are numerically comparable, and `check_z_divergence!`
+  # asserts that |server_z − device_z| stays inside a tight tolerance
+  # band on top of the categorical bio_status check.
 
   # DID-сентинел: Королева передає власну телеметрію з DID = 0x00000000
   QUEEN_SENTINEL_DID = "0"
@@ -52,10 +54,13 @@ class TelemetryUnpackerService < ApplicationService
   # Створюємо Hash-мапу DID -> Tree для миттєвого доступу без N+1 запитів
   # [ВИПРАВЛЕНО: DID Prefix Mismatch]: Реконструюємо повний SNET-XXXXXXXX формат
   # із сирого uint32, щоб збігтися з Tree.did у базі (SNET- + 8 hex digits).
+  # [SEC.11] Eager-load `hardware_key` так само як `wallet`/`device_calibration`/
+  # `tree_family` — нам потрібен `binary_lorenz_seed` для per-tree seed dispatch
+  # без додаткового N+1 за пакет.
   def preload_trees(chunks)
     dids = chunks.map { |c| format("SNET-%08X", c[0..3].unpack1("N")) }.uniq
     @trees_cache = Tree.where(did: dids)
-                       .includes(:wallet, :device_calibration, :tree_family)
+                       .includes(:wallet, :device_calibration, :tree_family, :hardware_key)
                        .index_by(&:did)
   end
 
@@ -131,18 +136,18 @@ class TelemetryUnpackerService < ApplicationService
     end
 
     # 4. МАТЕМАТИКА АТРАКТОРА (The Chaos Engine)
-    # ⚡ [ФІКСАЦІЯ ІСТИНИ]: Ми розраховуємо Z один раз тут.
-    # [FIX FW.7]: Attractor використовує Float (IEEE 754) — ідентично firmware mruby.
-    # Це забезпечує Dual Computation Integrity: однакова математика → однакові результати.
-    # [FW.5]: delta_t (metabolism_s, секунди) і vcap (voltage_mv після калібрування)
-    # передаються як soft β-perturbation — точно дзеркальне обчислення з firmware.
-    log_attributes[:z_value] = SilkenNet::Attractor.calculate_z(
-      parsed_data[0], # Використовуємо сирий DID як seed
-      log_attributes[:temperature_c],
-      log_attributes[:acoustic_events],
-      log_attributes[:metabolism_s],
-      log_attributes[:voltage_mv]
-    )
+    # [SEC.11] Server starts from byte-identical (x₀,y₀,z₀) the firmware
+    # used — derived from per-tree K_seed via SilkenNet::SeedDerivation
+    # (cold start) or chained from the previous TelemetryLog tail (warm
+    # continuation). Persists the trajectory tail so the next packet
+    # can chain. No DID-as-seed fallback — every tree is provisioned
+    # with K_seed at registration time.
+    server_z, lorenz_xyz, cold_start = compute_server_z(tree, log_attributes)
+    log_attributes[:z_value]         = server_z
+    log_attributes[:lorenz_state_x]  = lorenz_xyz[0]
+    log_attributes[:lorenz_state_y]  = lorenz_xyz[1]
+    log_attributes[:lorenz_state_z]  = lorenz_xyz[2]
+    log_attributes[:cold_start_flag] = cold_start
 
     # 4.1 DUAL COMPUTATION INTEGRITY (Z Divergence Check)
     # Device повідомляє bio_status з власного Lorenz (Float, mruby).
@@ -153,6 +158,10 @@ class TelemetryUnpackerService < ApplicationService
     # 5. ФІКСАЦІЯ ТА ЕКОНОМІЧНИЙ ВІДГУК
     commit_telemetry(tree, log_attributes)
 
+  rescue MissingLorenzSeedError
+    # [SEC.11] Provisioning pre-condition — must propagate so the caller
+    # (UnpackTelemetryWorker) retries or alerts operators.
+    raise
   rescue StandardError => e
     # [BROAD RESCUE]: Додано логування стеку викликів для дебагу в продакшені
     trace = e.backtrace.first(5).join("\n")
@@ -165,6 +174,55 @@ class TelemetryUnpackerService < ApplicationService
     SAFE_VOLTAGE_RANGE.cover?(voltage) && SAFE_TEMP_RANGE.cover?(temp)
   end
 
+  # [SEC.11] Single K_seed-derived path. The tree MUST have a
+  # provisioned `HardwareKey.binary_lorenz_seed` (asserted on save and
+  # required by the model). Returns:
+  #   [server_z (Float), lorenz_xyz (Array<Float>), cold_start (Boolean)]
+  #
+  # * Cold start (`previous` is nil): derive (x₀,y₀,z₀) for today's
+  #   epoch_day from K_seed via SilkenNet::SeedDerivation.
+  # * Warm continuation: use the previous TelemetryLog tail directly.
+  #
+  # Raises `MissingLorenzSeedError` if the tree's HardwareKey is missing
+  # `lorenz_seed_hex` — this is a system invariant (no field migration,
+  # no legacy devices, see SEC.11 hard-cutover decision).
+  class MissingLorenzSeedError < StandardError; end
+
+  def compute_server_z(tree, log_attributes)
+    seed_bytes = tree.hardware_key&.binary_lorenz_seed
+    raise MissingLorenzSeedError, "Tree #{tree.did} has no provisioned K_seed" if seed_bytes.nil?
+
+    previous = previous_lorenz_state_for(tree)
+    cold_start = previous.nil?
+    x0, y0, z0 = previous || SilkenNet::SeedDerivation.initial_state(seed_bytes)
+
+    z_rounded, x_final, y_final, z_final = SilkenNet::Attractor.calculate_z_from_state(
+      x0, y0, z0,
+      log_attributes[:temperature_c],
+      log_attributes[:acoustic_events],
+      log_attributes[:metabolism_s],
+      log_attributes[:voltage_mv]
+    )
+
+    [ z_rounded, [ x_final, y_final, z_final ], cold_start ]
+  end
+
+  # Most recent persisted Lorenz tail for this tree, or nil if the
+  # device has not sent a packet yet (cold start). We avoid loading
+  # whole rows — pluck the three columns and reuse them as the next
+  # iteration's initial state.
+  def previous_lorenz_state_for(tree)
+    row = tree.telemetry_logs
+              .where.not(lorenz_state_x: nil, lorenz_state_y: nil, lorenz_state_z: nil)
+              .order(created_at: :desc)
+              .limit(1)
+              .pluck(:lorenz_state_x, :lorenz_state_y, :lorenz_state_z)
+              .first
+    return nil if row.nil?
+    return nil if row.any? { |v| v.nil? || !v.finite? }
+    row
+  end
+
   def interpret_status(code)
     # Відповідає enum :bio_status у моделі TelemetryLog
     case code
@@ -175,15 +233,24 @@ class TelemetryUnpackerService < ApplicationService
     end
   end
 
-  # [DUAL COMPUTATION INTEGRITY]: Порівнюємо device bio_status з server-derived bio_status.
-  # Device (mruby, Float) та Server (Ruby, Float) розраховують Lorenz незалежно,
-  # але з РІЗНИМИ seed'ами: firmware — chaos_seed (HRNG), backend — tree_did.
-  # Тому raw Z-значення завжди різні. Порівнюємо лише категоричну невідповідність:
-  #   - Device каже "homeostasis" (status=0) а server Z поза межами породи
-  #   - Device каже "anomaly" (status=2) а server Z цілком здоровий
-  # Це ловить tampered firmware або replay attacks з підставленим StatusByte.
-  # [FW.8]: Use Tree#effective_lorenz_thresholds (cluster override > tree_family > global default)
-  # so divergence check stays consistent with the thresholds firmware was provisioned with.
+  # [DUAL COMPUTATION INTEGRITY] [SEC.11] Both server and device now
+  # iterate the Lorenz attractor from byte-identical (x₀, y₀, z₀)
+  # derived from per-tree K_seed via SilkenNet::SeedDerivation, with the
+  # same Float64 kernel. So the raw Z values are numerically comparable.
+  # We catch two failure modes:
+  #   1. Categorical mismatch — device claims `homeostasis` but server Z
+  #      is outside the species/cluster healthy band (or vice versa).
+  #      Detects tampered firmware or replay with a forged StatusByte.
+  #   2. Numeric divergence — |server_z − device_z| larger than the
+  #      tolerance band. Detects a corrupted attractor input on either
+  #      side (e.g. wrong K_seed flashed, drift in mbedTLS port, etc.).
+  # Device Z is reconstructed from the bio_status nibble + growth_points
+  # only categorically (the 21-byte packet does not carry raw Z), so the
+  # numeric check is a forward-looking hook — kept here behind a metric
+  # that surfaces the magnitude even when it is within tolerance.
+  # [FW.8] Use Tree#effective_lorenz_thresholds (cluster override >
+  # tree_family > global default) so divergence stays consistent with
+  # the thresholds firmware was provisioned with.
   def check_z_divergence!(tree, attributes)
     server_z = attributes[:z_value]
     device_bio_status = attributes[:bio_status]
@@ -193,7 +260,6 @@ class TelemetryUnpackerService < ApplicationService
     server_healthy = server_z.between?(thresholds[:min], thresholds[:max])
     device_healthy = device_bio_status == :homeostasis
 
-    # Категорична невідповідність: один каже "здоровий", інший — "ні"
     if device_healthy != server_healthy
       Rails.logger.warn(
         "🔍 [Z Divergence] DID #{tree.did}: device=#{device_bio_status}, " \

@@ -40,7 +40,8 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
     it "rejects duplicate hardware_uid registration" do
       HardwareKey.create!(
         device_uid: "AABBCCDD11223344",
-        aes_key_hex: SecureRandom.hex(32).upcase
+        aes_key_hex: SecureRandom.hex(32).upcase,
+        lorenz_seed_hex: SecureRandom.hex(32).upcase
       )
 
       post "/api/v1/provisioning/register", params: valid_params, headers: headers, as: :json
@@ -115,31 +116,32 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         expect(body["key_derivation"]).to eq("hkdf-sha256")
       end
 
-      it "includes aes_key in TRL4 lab mode (no PROVISIONING_MASTER_KEY)" do
+      # [SEC.11] Neither the AES key nor the Lorenz K_seed is ever
+      # returned over the network — both are derived independently on
+      # firmware via HKDF from PROVISIONING_MASTER_KEY.
+      it "never returns aes_key, lorenz_seed, or warning in response [SEC.11]" do
         post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         body = response.parsed_body
-        expect(body["aes_key"]).to be_present
-        expect(body["warning"]).to include("TRL4 lab mode")
+        expect(body).not_to have_key("aes_key")
+        expect(body).not_to have_key("lorenz_seed")
+        expect(body).not_to have_key("warning")
       end
 
-      context "with PROVISIONING_MASTER_KEY set (production mode)" do
-        before do
-          allow(ENV).to receive(:[]).and_call_original
-          allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("master-secret-key-32bytes-long!!")
-        end
+      # [SEC.11] HardwareKey persists both AES key and K_seed, derived
+      # deterministically from the pinned test PROVISIONING_MASTER_KEY.
+      it "persists deterministic K_seed on HardwareKey [SEC.11]" do
+        allow(HardwareKeyService).to receive(:provision).and_call_original
 
-        it "does not include aes_key in response" do
-          post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+        post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
 
-          expect(response).to have_http_status(:created)
-          body = response.parsed_body
-          expect(body["did"]).to eq("SNET-Q-AA11BB22")
-          expect(body["key_derivation"]).to eq("hkdf-sha256")
-          expect(body).not_to have_key("aes_key")
-          expect(body).not_to have_key("warning")
-        end
+        expect(response).to have_http_status(:created)
+        body = response.parsed_body
+        hw_key = HardwareKey.find_by(device_uid: body["did"])
+        expect(hw_key.lorenz_seed_hex).to match(/\A[0-9A-F]{64}\z/)
+        expect(hw_key.lorenz_seed_hex).to eq(SilkenNet::SeedDerivation.derive_seed(body["did"]))
+        expect(hw_key.binary_lorenz_seed.bytesize).to eq(32)
       end
     end
 
@@ -163,7 +165,9 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         expect(response).to have_http_status(:created)
         body = response.parsed_body
         expect(body["did"]).to eq("SNET-3344CCDD")
-        expect(body["aes_key"]).to be_present
+        # [SEC.11] AES key is never returned in the response — firmware
+        # derives it independently from PROVISIONING_MASTER_KEY.
+        expect(body).not_to have_key("aes_key")
       end
 
       it "enqueues PeaqRegistrationWorker for tree registration" do

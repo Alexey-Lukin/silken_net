@@ -78,14 +78,15 @@ static double perturb_beta(uint16_t delta_t_s, uint16_t vcap_mv) {
     return clamp_d(beta, BETA_MIN, BETA_MAX);
 }
 
-/* Lorenz attractor Z-axis calculation (matches bio_contract.rb Attractor.calculate_z_axis).
- * [FW.5]: delta_t_s and vcap_mv now drive a soft β perturbation. */
-static double calculate_z_axis(uint32_t seed, int8_t temp, uint8_t acoustic,
+/* Lorenz attractor Z-axis calculation.
+ * [SEC.11] After the seed-provenance hard cutover, the kernel takes
+ * initial (x₀, y₀, z₀) directly — there is no `seed` input. The test
+ * harness uses a small `seed_to_xyz()` helper to keep the per-test
+ * setup terse; production firmware feeds (x₀, y₀, z₀) derived from
+ * K_seed via mbedTLS HKDF/HMAC. */
+static double calculate_z_axis(double x, double y, double z,
+                               int8_t temp, uint8_t acoustic,
                                uint16_t delta_t_s, uint16_t vcap_mv) {
-    double x = ((double)(seed % 1000) / 500.0) - 1.0;
-    double y = ((double)((seed >> 4) % 1000) / 500.0) - 1.0;
-    double z = ((double)((seed >> 8) % 1000) / 500.0) - 1.0;
-
     double local_sigma = BASE_SIGMA + (acoustic * 0.1);
     double local_rho   = BASE_RHO + (temp * 0.2);
     double local_beta  = perturb_beta(delta_t_s, vcap_mv);
@@ -106,13 +107,28 @@ static double calculate_z_axis(uint32_t seed, int8_t temp, uint8_t acoustic,
     return z;
 }
 
-/* StatusByte packing (matches bio_contract.rb BioContract.evaluate_and_pack) */
+/* Test-only helper: generate deterministic (x, y, z) from a 32-bit
+ * seed value the same way the legacy DID-derived path used to. Lets
+ * the test cases keep their compact "seed=N" notation while still
+ * exercising the post-SEC.11 (x₀, y₀, z₀) entry-point. */
+static void seed_to_xyz(uint32_t seed, double *x, double *y, double *z) {
+    *x = ((double)(seed % 1000) / 500.0) - 1.0;
+    *y = ((double)((seed >> 4) % 1000) / 500.0) - 1.0;
+    *z = ((double)((seed >> 8) % 1000) / 500.0) - 1.0;
+}
+
+static double calculate_z_axis_from_seed(uint32_t seed, int8_t temp, uint8_t acoustic,
+                                         uint16_t delta_t_s, uint16_t vcap_mv) {
+    double x, y, z;
+    seed_to_xyz(seed, &x, &y, &z);
+    return calculate_z_axis(x, y, z, temp, acoustic, delta_t_s, vcap_mv);
+}
+
+/* StatusByte packing (matches bio_contract.rb BioContract.pack_status_byte).
+ * `seed` is just a deterministic test-input generator (see seed_to_xyz). */
 static uint8_t evaluate_and_pack(uint32_t seed, int8_t temp, uint8_t acoustic) {
-    /* Default to baseline metabolism — historical behavior for tests that
-     * don't exercise FW.5 inputs. Tests that need β-perturbation use
-     * evaluate_and_pack_full() below. */
-    double z_val = calculate_z_axis(seed, temp, acoustic,
-                                    BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z_val = calculate_z_axis_from_seed(seed, temp, acoustic,
+                                              BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
 
     int status = 0;
     int growth_points = 0;
@@ -197,21 +213,21 @@ static void test_rho_clamp_extreme_cold(void) {
 
 static void test_z_axis_normal_conditions(void) {
     /* Normal: seed=12345, temp=20, acoustic=5 */
-    double z = calculate_z_axis(12345, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z = calculate_z_axis_from_seed(12345, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(z > -100.0 && z < 100.0,
            "test_z_axis_normal_returns_finite");
 }
 
 static void test_z_axis_zero_seed(void) {
     /* Edge case: seed=0 */
-    double z = calculate_z_axis(0, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z = calculate_z_axis_from_seed(0, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(!isnan(z) && !isinf(z),
            "test_z_axis_zero_seed_returns_valid");
 }
 
 static void test_z_axis_max_seed(void) {
     /* Edge case: seed=0xFFFFFFFF */
-    double z = calculate_z_axis(0xFFFFFFFF, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z = calculate_z_axis_from_seed(0xFFFFFFFF, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(!isnan(z) && !isinf(z),
            "test_z_axis_max_seed_returns_valid");
 }
@@ -303,16 +319,16 @@ static void test_iterations_count(void) {
 
 static void test_z_axis_deterministic(void) {
     /* Same inputs must produce same Z (deterministic chaos) */
-    double z1 = calculate_z_axis(42, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
-    double z2 = calculate_z_axis(42, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z1 = calculate_z_axis_from_seed(42, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z2 = calculate_z_axis_from_seed(42, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(fabs(z1 - z2) < 0.0001,
            "test_z_axis_deterministic_same_inputs");
 }
 
 static void test_z_axis_different_seeds(void) {
     /* Different seeds should (very likely) produce different Z */
-    double z1 = calculate_z_axis(100, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
-    double z2 = calculate_z_axis(999, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z1 = calculate_z_axis_from_seed(100, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z2 = calculate_z_axis_from_seed(999, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(fabs(z1 - z2) > 0.001,
            "test_z_axis_different_seeds_different_z");
 }
@@ -384,23 +400,23 @@ static void test_extreme_temp_acoustic_combo(void) {
      * sigma = 10.0 + 255*0.1 = 35.5 → clamped DOWN to 30.0
      * rho = 28.0 + (-128*0.2) = 28.0 - 25.6 = 2.4 → clamped UP to 10.0
      * Both parameters hit their clamp limits. Should produce valid (finite) Z. */
-    double z = calculate_z_axis(42, -128, 255, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z = calculate_z_axis_from_seed(42, -128, 255, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(!isnan(z) && !isinf(z),
            "test_extreme_temp_minus128_acoustic_255_valid");
 }
 
 static void test_z_axis_sensitivity_to_temp(void) {
     /* Different temperatures with same seed/acoustic should produce different Z */
-    double z_cold = calculate_z_axis(42, -40, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
-    double z_hot  = calculate_z_axis(42, 80, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z_cold = calculate_z_axis_from_seed(42, -40, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z_hot  = calculate_z_axis_from_seed(42, 80, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(fabs(z_cold - z_hot) > 0.0001,
            "test_z_axis_different_temps_produce_different_z");
 }
 
 static void test_z_axis_sensitivity_to_acoustic(void) {
     /* Different acoustic values with same seed/temp should produce different Z */
-    double z_quiet = calculate_z_axis(42, 20, 0, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
-    double z_loud  = calculate_z_axis(42, 20, 200, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z_quiet = calculate_z_axis_from_seed(42, 20, 0, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z_loud  = calculate_z_axis_from_seed(42, 20, 200, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(fabs(z_quiet - z_loud) > 0.0001,
            "test_z_axis_different_acoustics_produce_different_z");
 }
@@ -519,15 +535,15 @@ static void test_beta_perturbation_clamped_to_min(void) {
 static void test_z_axis_metabolism_changes_z(void) {
     /* Same chaotic seed/temp/acoustic, but different metabolism:
      * fast (high β) vs slow (baseline β) — Z trajectories diverge */
-    double z_fast = calculate_z_axis(42, 20, 5, 10, 3500);   /* 50 s improvement, +200 mV */
-    double z_baseline = calculate_z_axis(42, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z_fast = calculate_z_axis_from_seed(42, 20, 5, 10, 3500);   /* 50 s improvement, +200 mV */
+    double z_baseline = calculate_z_axis_from_seed(42, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(fabs(z_fast - z_baseline) > 0.0001,
            "test_z_axis_metabolism_inputs_change_trajectory");
 }
 
 static void test_z_axis_finite_under_extreme_metabolism(void) {
     /* Even with extreme metabolism inputs, β is clamped → trajectory bounded */
-    double z = calculate_z_axis(42, 20, 5, 0, 0xFFFF);
+    double z = calculate_z_axis_from_seed(42, 20, 5, 0, 0xFFFF);
     ASSERT(!isnan(z) && !isinf(z),
            "test_z_axis_extreme_metabolism_stays_finite");
 }

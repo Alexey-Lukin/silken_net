@@ -3,6 +3,11 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require "spec_helper"
 ENV["RAILS_ENV"] ||= "test"
+# [SEC.11] PROVISIONING_MASTER_KEY is required by HardwareKeyService and
+# SilkenNet::SeedDerivation — there is no SecureRandom fallback. Pin a
+# stable test-mode value so the whole suite shares deterministic AES /
+# K_seed derivation.
+ENV["PROVISIONING_MASTER_KEY"] ||= "silken-net-test-master-key-32b!!"
 require_relative "../config/environment"
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?

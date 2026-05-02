@@ -291,7 +291,7 @@ gateways = []
     state: :active
   )
   # [СИНХРОНІЗОВАНО]: HardwareKey використовує aes_key_hex
-  HardwareKey.create!(device_uid: uid, aes_key_hex: SecureRandom.hex(32).upcase)
+  HardwareKey.create!(device_uid: uid, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
   Actuator.create!(
     gateway: gw,
@@ -316,7 +316,7 @@ amazon_gw = Gateway.create!(
   last_seen_at: Time.current,
   state: :active
 )
-HardwareKey.create!(device_uid: amazon_gw.uid, aes_key_hex: SecureRandom.hex(32).upcase)
+HardwareKey.create!(device_uid: amazon_gw.uid, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
 fire_siren = Actuator.create!(
   gateway: amazon_gw,
@@ -369,7 +369,7 @@ cherkasy_trees = []
     tiny_ml_model: family == pine ? bark_beetle_model : nil
   )
 
-  HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(32).upcase)
+  HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
   # Wallet створюється через after_create в Tree, тут лише оновлюємо
   tree.wallet.update!(
@@ -423,7 +423,7 @@ puts "🌴 Висаджуємо 20 Солдатів у Amazon Sector..."
     tree_family: family
   )
 
-  HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(32).upcase)
+  HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
   tree.wallet.update!(
     balance: rand(2000..8000),

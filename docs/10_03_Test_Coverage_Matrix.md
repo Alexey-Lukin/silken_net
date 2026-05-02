@@ -8,10 +8,10 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8
-- **Дата аудиту:** 2026-05-01
+- **Дата аудиту:** 2026-05-02 (SEC.11 Lorenz Seed Provenance hard cutover)
 - **Кількість тестів:**
-  - RSpec (Ruby): ~295+ spec files, ~52,000+ lines
-  - Firmware (C): 302 tests (113 soldier + 91 queen + 33 bio-contract + 44 tinyml + 21 encryption)
+  - RSpec (Ruby): ~296+ spec files, ~52,200+ lines (+ `silken_net/seed_derivation_spec.rb` 16 examples — SEC.11)
+  - Firmware (C): 324 tests (113 soldier + 91 queen + 42 bio-contract + 44 tinyml + 21 encryption + **13 seed_derivation [SEC.11]**)
   - Foundry (Solidity): 6 test suites, ~115+ tests
 
 ---
@@ -27,7 +27,7 @@
 | BlockchainTransaction | ✅ 533L | 🟢 Повне | AASM transitions, partition pruning |
 | User | ✅ 543L | 🟢 Повне | Argon2, roles, OAuth, MFA |
 | Gateway | ✅ 394L | 🟢 Повне | AASM, mark_seen!, online? |
-| HardwareKey | ✅ 295L | 🟢 Повне | AES key encryption, LRU cache |
+| HardwareKey | ✅ 295L | 🟢 Повне | AES key encryption, LRU cache, **[SEC.11] `lorenz_seed_hex` validation, `binary_lorenz_seed` AR Encryption non-deterministic** |
 | EwsAlert | ✅ 669L | 🟢 Повне | Alert types, severity levels |
 | TelemetryLog | ✅ 320L+ | 🟢 **Повне** | **oracle_status enum, associations, in_timeframe/vandalized scopes, bio_status enum** |
 | TreeFamily | ✅ 290L+ | 🟢 **Повне** | **attractor_thresholds (optimal key FW.8), effective_optimal_z_target, biological_properties** |
@@ -40,9 +40,10 @@
 | Сервіс | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
 | BlockchainMintingService | ✅ 1092L | 🟢 Повне | batchMint, guard clauses, binary search |
-| TelemetryUnpackerService | ✅ 560L+ | 🟢 **Повне** | **check_z_divergence! (effective_lorenz_thresholds FW.8), update_health_streak!, boundary sensors, acoustic overflow, [FW.5] delta_t/vcap β-perturbation** |
+| TelemetryUnpackerService | ✅ 560L+ | 🟢 **Повне** | **check_z_divergence! (effective_lorenz_thresholds FW.8), update_health_streak!, boundary sensors, acoustic overflow, [FW.5] delta_t/vcap β-perturbation, [SEC.11] per-tree warm/cold dispatch, lorenz_state persist, MissingLorenzSeedError, cold_start_flag** |
 | InsightGeneratorService | ✅ 670L | 🟢 Повне | Fraud guard, cleanup_old_logs! |
-| SilkenNet::Attractor | ✅ 310L+ | 🟢 Повне | Float precision, deterministic chaos, **[FW.5] perturb_beta, parity-fuzz 500 cases (0 mismatches)** |
+| SilkenNet::Attractor | ✅ 310L+ | 🟢 Повне | Float precision, deterministic chaos, **[FW.5] perturb_beta, parity-fuzz 500 cases (0 mismatches), [SEC.11] sole `calculate_z_from_state` API (legacy `calculate_z(seed,…)` removed)** |
+| **SilkenNet::SeedDerivation** [SEC.11] | ✅ 16 examples | 🟢 **Нове** | **HKDF-SHA256 (RFC 5869) + HMAC-SHA256 + signed-unit-float unpack; raises `SecurityError` без `PROVISIONING_MASTER_KEY`; firmware-equivalence vectors з `firmware/test/test_seed_derivation.c`; daily epoch_day rotation; (x₀,y₀,z₀) ∈ [-1,+1]³ deterministic** |
 | BlockchainBurningService | ✅ 420L+ | 🟢 **Повне** | **SLASHER_KEY fallback (E.2), Prometheus SCC_SLASHED_TOTAL, AiInsight+source_tree combined ratio, damage_ratio cap** |
 | Treasury::MonitorService | ✅ 330L+ | 🟢 **Повне** | **build_config, missing credentials, humanize edge cases, multiple alerts** |
 | TreeChronicleService | ✅ 350L+ | 🟢 **Повне** | **Pagination edges, nil wallet, boundary stress_index, mixed sources** |
@@ -131,7 +132,7 @@
 | **CoAP Retry (FW.9)** | **4** | 🟢 **Нове** — `test_coap_retry_constants`, константи `COAP_MAX_RETRIES`, `UART_RX_BUF_SIZE` |
 | **[FW.1] Flash Key Loading** | **8** | 🟢 **Нове** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler, FLASH_KEY_ADDR 0x0803E000 |
 
-### 2.3 Bio-Contract (test_bio_contract.c — 33 tests)
+### 2.3 Bio-Contract (test_bio_contract.c — 42 tests)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -154,6 +155,18 @@
 | IV Handling | 3 | 🟢 | |
 | Encrypt/Decrypt Verify | 3 | 🟢 | Mock HAL |
 | **[FW.1] Flash Key Integration** | **3** | 🟢 **Нове** | `Load_AES_Key()` → CRYP init integration, key-zero rejection, magic validation |
+
+### 2.6 Seed Derivation Host-Parity (test_seed_derivation.c — 13 tests) [SEC.11] 🆕
+
+| Область | Тести | Покриття |
+|---------|-------|----------|
+| HKDF-SHA256 RFC 5869 known-vector (simple UID) | 1 | 🟢 OpenSSL ↔ mbedTLS байт-ідентично |
+| `derive_initial_state` bounds (x₀,y₀,z₀ ∈ [-1,+1]) | 3 | 🟢 По кожній координаті окремо |
+| Epoch rotation (`epoch_day +1` змінює всі координати) | 1 | 🟢 Forward secrecy ≤ 24 год |
+| Determinism (same `K_seed`, same `epoch_day` → bit-identical state) | 1 | 🟢 Повторювальність |
+| `bytes_to_signed_unit_float` boundary (zero → -1, max → +1, mid → ~0) | 3 | 🟢 IEEE-754 unpack |
+| Mixed-seed shape (різні `K_seed` → різні координати) | 1 | 🟢 Distinct seeds → distinct trajectories |
+| Initial state shape для відомого `(K_seed, epoch_day)` (mixed seed) | 3 | 🟢 Backend-firmware parity vector |
 
 ### 2.5 TinyML Pipeline (test_tinyml_pipeline.c — 44 tests)
 
@@ -221,7 +234,7 @@
 | Views | 85 | 10,001 | ~2.0x |
 | Policies | 14 | 1,416 | ~2.5x |
 | Blueprints | 9 | 1,081 | ~2.0x |
-| Firmware (C) | 5 | ~3,700 | 302 tests |
+| Firmware (C) | 6 | ~3,800 | **324 tests (+13 SEC.11)** |
 | Solidity | 6 | ~2,000 | 115+ tests |
 | **Total** | **288+** | **~53,600+** | — |
 
