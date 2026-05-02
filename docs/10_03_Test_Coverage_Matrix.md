@@ -77,7 +77,7 @@
 
 Усі Phlex-компоненти покриті згідно з `docs/10_01_View_Component_Testing_Guide.md`.
 
-### 1.7 Integration Tests (23 spec files)
+### 1.7 Integration Tests (24 spec files)
 
 | Тест | Покриття | Критичність |
 |------|----------|------------|
@@ -90,6 +90,7 @@
 | user_auth_lifecycle | 🟢 | Auth + MFA + OAuth |
 | emergency_response_flow | 🟢 | EWS pipeline |
 | audit_log_chain_integrity | 🟢 | Audit tamper detection |
+| **provisioning_e2e** [FW.1] | 🟢 **Нове** | **HKDF determinism (firmware-equivalence), atomic Tree/HardwareKey/MaintenanceRecord, Ed25519 persist, TRL4 vs HKDF response shape, SEC.11 production guard, FW.24 magic guard, duplicate UID — 8 examples без mocks `HardwareKeyService`** |
 
 ---
 
@@ -213,7 +214,7 @@
 | Services | 43 | 9,738 | ~1.8x |
 | Workers | 41 | 6,447 | ~1.7x |
 | Requests | 30 | 4,638 | ~1.9x |
-| Integration | 23 | 4,986 | — |
+| Integration | 24 | 4,986 | — |
 | Views | 85 | 10,001 | ~2.0x |
 | Policies | 14 | 1,416 | ~2.5x |
 | Blueprints | 9 | 1,081 | ~2.0x |

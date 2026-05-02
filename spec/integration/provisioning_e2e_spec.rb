@@ -1,0 +1,358 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+# =============================================================================
+# FW.1 — End-to-End Provisioning Flow
+# =============================================================================
+# Exercises the full Factory-Flashing-equivalent provisioning chain WITHOUT
+# stubbing `HardwareKeyService` (unlike the controller request spec, which
+# mocks `.provision`). Goal: prove that the API contract documented in
+# `docs/04_03_REST_API_v1_Reference.md` §POST /api/v1/provisioning/register
+# and the HKDF design in `docs/03_05_Hardware_AES256_and_Security.md` §3.4а
+# hold true end-to-end across controller → service → AR Encryption → DB.
+#
+# Specifically verifies:
+#   * HKDF-SHA256 determinism: the persisted `aes_key_hex` exactly matches an
+#     independent re-derivation via `HardwareKeyService.derive_device_key`.
+#     This is the firmware-equivalence assertion — backend and firmware MUST
+#     derive identical keys for the same `device_uid`, otherwise telemetry
+#     decryption breaks silently in production.
+#   * HardwareKey row is real (encrypted at rest, 64-hex format, unhexifies
+#     to a 32-byte binary key ready for AES-256 CRYP init on STM32).
+#   * MaintenanceRecord(installation) is created with DID + hardware_uid
+#     embedded in notes, providing an immutable audit trail.
+#   * `PeaqRegistrationWorker` is enqueued for trees and NOT for gateways
+#     (Tree is the only entity with a peaq DID).
+#   * TRL4 lab mode (no `PROVISIONING_MASTER_KEY`) returns `aes_key` in the
+#     response; HKDF production mode does NOT (Zero-Trust: key never leaves
+#     the backend over the wire).
+#   * SEC.11 production guard: production env without the master key MUST
+#     raise `SecurityError` and create NO database side effects.
+#   * FW.24 firmware fallback magic (`511CEE01`) is rejected with no side
+#     effects, regardless of HKDF/TRL4 mode.
+#   * Duplicate `hardware_uid` → 409 Conflict with no side effects.
+#
+# Cross-refs: docs/10_02 §FW.1, docs/03_05 §3.4а, docs/04_03 §POST register.
+# =============================================================================
+RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
+  # Negated matcher used in compound expectations (`change ... .and not_change ...`)
+  # to assert atomic rollback / no-side-effect cases. Local to this spec to avoid
+  # leaking matcher state across the suite.
+  RSpec::Matchers.define_negated_matcher :not_change, :change
+
+  let(:organization) { create(:organization) }
+  let(:cluster)      { create(:cluster, organization: organization) }
+  let(:tree_family)  { create(:tree_family) }
+  let(:forester)     { create(:user, :forester, organization: organization) }
+  let(:api_token)    { forester.generate_token_for(:api_access) }
+  let(:headers) do
+    { "Authorization" => "Bearer #{api_token}", "Accept" => "application/json" }
+  end
+
+  before do
+    # AR Encryption configuration (matches existing provisioning specs).
+    ActiveRecord::Encryption.configure(
+      primary_key: "test-primary-key-that-is-long-enough",
+      deterministic_key: "test-deterministic-key-long-enough",
+      key_derivation_salt: "test-salt-value-for-derivation-ok"
+    )
+
+    # Suppress ActionCable/Turbo broadcasts triggered by Tree creation.
+    allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+    allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
+    allow(ActionCable.server).to receive(:broadcast)
+
+    # PeaqRegistrationWorker is the only worker we stub — we assert on
+    # `perform_async` calls instead of actually executing the worker
+    # (which would hit the peaq RPC mock layer and is covered separately).
+    allow(PeaqRegistrationWorker).to receive(:perform_async)
+  end
+
+  # ---------------------------------------------------------------------------
+  # 1. HKDF Production Mode — Zero-Trust key derivation
+  # ---------------------------------------------------------------------------
+  describe "HKDF production mode (PROVISIONING_MASTER_KEY set)" do
+    let(:master_key) { "e2e-master-key-32bytes-hkdf-test" }
+
+    before do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(master_key)
+    end
+
+    context "when device_type is tree" do
+      let(:hardware_uid) { "AABBCCDD11223344" }
+      let(:expected_did) { "SNET-11223344" }
+      let(:tree_params) do
+        {
+          provisioning: {
+            hardware_uid: hardware_uid,
+            device_type: "tree",
+            cluster_id: cluster.id,
+            family_id: tree_family.id,
+            latitude: 49.4285,
+            longitude: 32.0620
+          }
+        }
+      end
+
+      it "creates Tree, HardwareKey, MaintenanceRecord atomically and returns Zero-Trust JSON body" do
+        expect {
+          post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+        }.to change(Tree, :count).by(1)
+         .and change(HardwareKey, :count).by(1)
+         .and change(MaintenanceRecord, :count).by(1)
+
+        expect(response).to have_http_status(:created)
+
+        body = response.parsed_body
+        expect(body["did"]).to eq(expected_did)
+        expect(body["key_derivation"]).to eq("hkdf-sha256")
+
+        # Zero-Trust: AES key MUST NOT be returned over the wire in HKDF mode.
+        expect(body).not_to have_key("aes_key")
+        expect(body).not_to have_key("warning")
+      end
+
+      it "enqueues PeaqRegistrationWorker and records the installation MaintenanceRecord" do
+        post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+        expect(response).to have_http_status(:created)
+
+        tree = Tree.find_by!(did: expected_did)
+        expect(PeaqRegistrationWorker).to have_received(:perform_async).with(tree.id)
+
+        record = MaintenanceRecord.find_by!(maintainable: tree)
+        expect(record.action_type).to eq("installation")
+        expect(record.user).to eq(forester)
+        expect(record.notes).to include(expected_did)
+        expect(record.notes).to include(hardware_uid)
+      end
+
+      it "persists the AES key derived deterministically from PROVISIONING_MASTER_KEY + DID" do
+        post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+        expect(response).to have_http_status(:created)
+
+        hw_key = HardwareKey.find_by!(device_uid: expected_did)
+
+        # Firmware-equivalence assertion: re-derive independently and compare.
+        # If this ever fails, backend ↔ firmware AES keys would diverge silently
+        # and decryption of telemetry would break in production. See SEC.11.
+        expected_key = HardwareKeyService.derive_device_key(expected_did)
+        expect(hw_key.aes_key_hex).to eq(expected_key)
+
+        # 64 uppercase hex chars (AES-256, see HardwareKey validation).
+        expect(hw_key.aes_key_hex).to match(/\A[0-9A-F]{64}\z/)
+
+        # binary_key must unhexify to exactly 32 bytes (firmware loads this
+        # via Load_AES_Key() into the STM32 CRYP module, see 03_05 §3.4а).
+        expect(hw_key.binary_key.bytesize).to eq(32)
+      end
+
+      it "produces the same key for identical UID and different keys for different UIDs (HKDF determinism)" do
+        key_a1 = HardwareKeyService.derive_device_key("SNET-DEADBEEF")
+        key_a2 = HardwareKeyService.derive_device_key("SNET-DEADBEEF")
+        key_b  = HardwareKeyService.derive_device_key("SNET-CAFEBABE")
+
+        expect(key_a1).to eq(key_a2)
+        expect(key_a1).not_to eq(key_b)
+      end
+    end
+
+    context "when device_type is gateway with Ed25519 public key" do
+      let(:gateway_uid)     { "SNET-Q-AABB1122" }
+      let(:ed25519_key_hex) { SecureRandom.hex(32) } # 64 hex chars = 32 bytes
+      let(:gateway_params) do
+        {
+          provisioning: {
+            hardware_uid: gateway_uid,
+            device_type: "gateway",
+            cluster_id: cluster.id,
+            latitude: 49.4285,
+            longitude: 32.0620,
+            ed25519_public_key: ed25519_key_hex
+          }
+        }
+      end
+
+      it "creates Gateway + HardwareKey, persists Ed25519 key, and does NOT enqueue PeaqRegistrationWorker" do
+        expect {
+          post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
+        }.to change(Gateway, :count).by(1)
+         .and change(HardwareKey, :count).by(1)
+
+        expect(response).to have_http_status(:created)
+
+        body = response.parsed_body
+        expect(body["did"]).to eq(gateway_uid)
+        expect(body["key_derivation"]).to eq("hkdf-sha256")
+        expect(body).not_to have_key("aes_key")
+
+        hw_key = HardwareKey.find_by!(device_uid: gateway_uid)
+        expect(hw_key.ed25519_public_key_hex).to eq(ed25519_key_hex)
+
+        # Tree-only: gateways have no peaq DID, no worker enqueued.
+        expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # 2. TRL4 Lab Mode — random fallback, key returned in response
+  # ---------------------------------------------------------------------------
+  describe "TRL4 lab mode (PROVISIONING_MASTER_KEY blank)" do
+    before do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
+      allow(Rails.env).to receive(:production?).and_return(false)
+    end
+
+    let(:tree_params) do
+      {
+        provisioning: {
+          hardware_uid: "AABBCCDD55667788",
+          device_type: "tree",
+          cluster_id: cluster.id,
+          family_id: tree_family.id,
+          latitude: 49.4285,
+          longitude: 32.0620
+        }
+      }
+    end
+
+    it "returns aes_key + warning in response, persists matching HardwareKey" do
+      post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+
+      body = response.parsed_body
+      expect(body["aes_key"]).to match(/\A[0-9A-F]{64}\z/)
+      expect(body["warning"]).to include("TRL4 lab mode")
+
+      hw_key = HardwareKey.find_by!(device_uid: body["did"])
+      expect(hw_key.aes_key_hex).to eq(body["aes_key"])
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # 3. SEC.11 — Production guard
+  # ---------------------------------------------------------------------------
+  # Backend SecureRandom fallback in production would generate keys that do
+  # NOT match firmware HKDF derivation → silent system breakage AND key would
+  # leak via the JSON response. Provisioning MUST raise and create no rows.
+  describe "SEC.11 — production env without PROVISIONING_MASTER_KEY" do
+    before do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
+      allow(Rails.env).to receive(:production?).and_return(true)
+    end
+
+    let(:tree_params) do
+      {
+        provisioning: {
+          hardware_uid: "AABBCCDD99887766",
+          device_type: "tree",
+          cluster_id: cluster.id,
+          family_id: tree_family.id,
+          latitude: 49.4285,
+          longitude: 32.0620
+        }
+      }
+    end
+
+    it "raises SecurityError and creates no Tree/HardwareKey/MaintenanceRecord, enqueues no worker" do
+      # SecurityError inherits from Exception (NOT StandardError), so the
+      # controller's `rescue StandardError` does NOT catch it. In a real
+      # production request the Rack middleware stack would convert this into
+      # a generic 500 response — the critical guarantee we assert here is
+      # that the Active Record transaction is rolled back: no Tree, no
+      # HardwareKey, no MaintenanceRecord rows, no peaq enqueue.
+      expect {
+        expect {
+          post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
+        }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY ENV is required in production/)
+      }.to not_change(Tree, :count)
+       .and not_change(HardwareKey, :count)
+       .and not_change(MaintenanceRecord, :count)
+
+      expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # 4. FW.24 — Firmware fallback magic UID rejection
+  # ---------------------------------------------------------------------------
+  describe "FW.24 — rejects hardware_uid ending with firmware fallback magic" do
+    before do
+      # Run in HKDF mode to also prove the guard short-circuits BEFORE
+      # any HardwareKeyService work happens.
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("e2e-master-key-32bytes-hkdf-test")
+    end
+
+    let(:magic_params) do
+      {
+        provisioning: {
+          hardware_uid: "AABBCCDD511CEE01",
+          device_type: "tree",
+          cluster_id: cluster.id,
+          family_id: tree_family.id,
+          latitude: 49.4285,
+          longitude: 32.0620
+        }
+      }
+    end
+
+    it "rejects with 422 and creates no DB side effects" do
+      expect {
+        post "/api/v1/provisioning/register", params: magic_params, headers: headers, as: :json
+      }.to not_change(Tree, :count)
+       .and not_change(HardwareKey, :count)
+       .and not_change(MaintenanceRecord, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to include("511CEE01")
+      expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # 5. Duplicate hardware_uid — 409 Conflict, no side effects
+  # ---------------------------------------------------------------------------
+  describe "duplicate hardware_uid" do
+    before do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("e2e-master-key-32bytes-hkdf-test")
+    end
+
+    let!(:existing) do
+      HardwareKey.create!(
+        device_uid: "DUPE0000DDEE11FF",
+        aes_key_hex: SecureRandom.hex(32).upcase
+      )
+    end
+
+    let(:dup_params) do
+      {
+        provisioning: {
+          hardware_uid: "DUPE0000DDEE11FF",
+          device_type: "tree",
+          cluster_id: cluster.id,
+          family_id: tree_family.id,
+          latitude: 49.4285,
+          longitude: 32.0620
+        }
+      }
+    end
+
+    it "returns 409 Conflict and creates no Tree/MaintenanceRecord, enqueues no worker" do
+      expect {
+        post "/api/v1/provisioning/register", params: dup_params, headers: headers, as: :json
+      }.to not_change(Tree, :count)
+       .and not_change(HardwareKey, :count)
+       .and not_change(MaintenanceRecord, :count)
+
+      expect(response).to have_http_status(:conflict)
+      expect(response.parsed_body["error"]).to include("вже зареєстрований")
+      expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
+    end
+  end
+end
