@@ -192,6 +192,8 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
   end
 
   describe "OtaPackagerService.build_threshold_config_block" do
+    subject(:block) { OtaPackagerService.build_threshold_config_block(tree, config_version: 7) }
+
     let(:org) { create(:organization) }
     let(:family) do
       create(:tree_family, :scots_pine, critical_z_min: 2.0, critical_z_max: 45.0,
@@ -203,8 +205,6 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
       cluster = create(:cluster, organization: org)
       create(:tree, cluster: cluster, tree_family: family)
     end
-
-    subject(:block) { OtaPackagerService.build_threshold_config_block(tree, config_version: 7) }
 
     it "produces a 13-byte binary string" do
       expect(block).to be_a(String)
