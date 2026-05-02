@@ -15,7 +15,6 @@
 
 ### Перед будь-яким польовим деплоєм (life-safety + security)
 1. **SEC.9** — замінити master AES key (FIPS-197 test vector) на криптостійкий random — **P0**
-2. ~~**SEC.11** — Provisioning master key production guard (raise при відсутності ENV)~~ — **✅ DONE 2026-05-02** (Lorenz Seed Provenance hard cutover + sole HKDF mode)
 3. **FW.1 + SEC.3** — Per-device HKDF provisioning + Factory Flashing pipeline — **P0**
 4. **FW.2** — AES-256-CCM (вирішує одразу: ECB→CCM, MIC, FW.23 OTA auth, SEC.10 panic auth, FW.29 disambiguation) — **P0**
 5. **SEC.1** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet — **P0**
@@ -172,15 +171,6 @@
 - [ ] 🤖 Додати `Web3::ChainlinkRouterVersion` enum + ABI registry для multi-version підтримки
 - [ ] 🤖 Health check: розпарсити router contract code → перевірити сигнатуру `sendRequest()` при бутстрапі сервісу
 - [ ] 🤖 Документувати в `04_02` процес upgrade ABI
-
-#### S6.17 — Dynamic Tax (2%) hardcoded — потребує on-chain governance
-- **P2** | `05_03` (HYBRID PROTOCOL GAIA), `BlockchainMintingService` | **Складність: M** | **🤖 Архітектура**
-- **Опис:** `DYNAMIC_TAX_RATE = BigDecimal("0.02")` hardcoded у `BlockchainMintingService`. Для true governance це має бути on-chain параметр через `ProtocolParameters` контракт (як `OPTIMAL_Z_TARGET`, `CRITICAL_Z_MIN/MAX`). Поточно — application-level override без DAO voting
-- **Статус:** ✅ Виконано. `BlockchainMintingService` тепер читає `dynamic_tax_rate` та `insurance_pool_threshold` через `SystemParameter.current()` з fallback на defaults. Hardcoded константи перейменовані на `DEFAULT_*`. DB migration seeds обидва параметри. Spec coverage: 6 тестів (governance override + default fallback).
-- **Залежність:** BIZ.4 ✅ (ProtocolParameters інфраструктура вже існує) — лише треба додати ключ
-- [x] 🤖 Додати `KEY_DYNAMIC_TAX_RATE` у `ProtocolParameters.sol` — ✅ вже існує
-- [x] 🤖 `BlockchainMintingService` читає ставку через `Governance::ParameterSyncWorker` → `SystemParameter`
-- [x] 🤖 Migration: seed `SystemParameter(:dynamic_tax_rate, value: 0.02)` та `SystemParameter(:insurance_pool_threshold, value: 100000)`
 
 #### S6.18 — Rails web security hardening (maquina-app/rails-claude-code §8 audit)
 - **P1** | `06_01`, `06_02`, `06_04` | **Складність: M** | **🤖 Код + Конфігурація**
@@ -695,7 +685,6 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | ID | Невідповідність | Документи / Файли | Дія | Статус |
 |----|----------------|-------------------|-----|--------|
 | DOC.1 | Документація AES master key суперечлива: `03_05` лінія 531-537 каже «навмисно не публікується», а лінія 538 натякає що перші 4 слова збігаються з FIPS-197 Appendix B test vector. Скоординувати після SEC.9 (заміна seed key) | `03_05`, `firmware/soldier/main.c:66-67` | Після SEC.9 видалити test-vector згадку, оновити обидва параграфи | ⏸️ Заблоковано SEC.9 |
-| DOC.4 | Lorenz first-boot vs continuation logic розкидана між `03_04` §2.1 (опис `calculate_state_continued`) та `03_01` §6 (RTC magic check). Потрібна одна точка істини | `03_04`, `03_01` | Об'єднати у `03_04` §2.1 з cross-ref на RTC layout | ✅ Виконано (`03_04` §2.1 callout + cross-ref) |
 | DOC.7 | `04_02` §4.2.2 (BlockchainMintingService) описує що guards активні тільки для oracle-driven flow, але tokenomics flow проходить **без явного guard chain**. Зв'язок між цими шляхами не пояснений у `05_02_Proof_of_Growth_Pipeline.md` | `04_02`, `05_02` | Об'єднати у `05_02` §4: діаграма «всі шляхи до `Wallet#lock_and_mint!`» з invariant'ами кожного | ✅ Виконано (`05_02` нова секція «Усі Шляхи до `Wallet#lock_and_mint!`» з 5 шляхами + інваріанти) |
 | DOC.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
 
