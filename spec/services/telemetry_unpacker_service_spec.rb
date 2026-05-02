@@ -411,14 +411,25 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         t
       end
 
-      it "skips when tree_family is nil" do
+      it "[FW.8] uses global defaults when tree_family is nil (governance fallback)" do
         tree_no_family = create(:tree, did: format("SNET-%08X", "0000AC02".to_i(16)), cluster: cluster, tree_family: tree_family)
         # Simulate nil tree_family by stubbing the association
         allow(tree_no_family).to receive(:tree_family).and_return(nil)
         service = described_class.new("", nil)
+        # z=50 is ABOVE global default Tree::GLOBAL_LORENZ_Z_MAX (45.0)
+        # device says "homeostasis" → divergence MUST be detected (server_healthy=false)
         attributes = { z_value: 50.0, bio_status: :homeostasis }
 
-        # Should not raise or log — silently skips
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        service.send(:check_z_divergence!, tree_no_family, attributes)
+      end
+
+      it "[FW.8] no divergence when z_value is within global defaults and family is nil" do
+        tree_no_family = create(:tree, did: format("SNET-%08X", "0000AC03".to_i(16)), cluster: cluster, tree_family: tree_family)
+        allow(tree_no_family).to receive(:tree_family).and_return(nil)
+        service = described_class.new("", nil)
+        attributes = { z_value: 25.0, bio_status: :homeostasis } # well within 2..45
+
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
         service.send(:check_z_divergence!, tree_no_family, attributes)
       end

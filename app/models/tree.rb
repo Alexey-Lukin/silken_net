@@ -35,6 +35,13 @@ class Tree < ApplicationRecord
   # --- ДЕЛЕГУВАННЯ ---
   delegate :name, :attractor_thresholds, to: :tree_family, prefix: true
 
+  # [FW.8] Global Lorenz defaults — match firmware/bio_contracts/bio_contract.rb
+  # BioContract::CRITICAL_Z_MIN/MAX/OPTIMAL_Z_TARGET. Used as final fallback when
+  # neither cluster override nor tree_family per-species value is set.
+  GLOBAL_LORENZ_Z_MIN     = 2.0
+  GLOBAL_LORENZ_Z_MAX     = 45.0
+  GLOBAL_LORENZ_Z_OPTIMAL = 29.0
+
   # --- СТАН (The Lifecycle) ---
   enum :status, { active: 0, dormant: 1, removed: 2, deceased: 3 }, default: :active
 
@@ -185,6 +192,28 @@ class Tree < ApplicationRecord
       target: "map_node_#{id}",
       html: Dashboard::MapNode.new(tree: self).call
     )
+  end
+
+  # [FW.8] Effective Lorenz thresholds with three-level priority chain (governance):
+  #   1. Cluster-level per-species override (cluster.lorenz_overrides_for(scientific_name))
+  #      — a cluster may host trees of several species; each species gets its own
+  #        biome-adjusted overrides set by org admin.
+  #   2. TreeFamily per-species value
+  #   3. Global default (BioContract::CRITICAL_Z_MIN/MAX/OPTIMAL_Z_TARGET)
+  #
+  # Returns Hash{ min:, max:, optimal: } of Float values.
+  # SSOT consumed by:
+  #   - TelemetryUnpackerService for Z divergence checks
+  #   - OtaPackagerService when emitting CMD_SET_THRESHOLDS (0x9A) to Soldier
+  def effective_lorenz_thresholds
+    family    = tree_family
+    overrides = cluster && family&.scientific_name ? cluster.lorenz_overrides_for(family.scientific_name) : {}
+
+    {
+      min:     overrides[:min]     || family&.critical_z_min&.to_f || GLOBAL_LORENZ_Z_MIN,
+      max:     overrides[:max]     || family&.critical_z_max&.to_f || GLOBAL_LORENZ_Z_MAX,
+      optimal: overrides[:optimal] || family&.effective_optimal_z_target || GLOBAL_LORENZ_Z_OPTIMAL
+    }
   end
 
   private
