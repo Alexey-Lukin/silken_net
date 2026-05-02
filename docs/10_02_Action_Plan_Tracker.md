@@ -168,9 +168,10 @@
 #### S6.15 — Chainlink Functions Router ABI v1: ризик version drift
 - **P2** | `04_02` §4.2.2 (DispatchToChainlinkService, BLOCKER-09) | **Складність: S** | **🤖 Код**
 - **Опис:** ABI оновлено на Functions Router v1 (5 параметрів — `CHAINLINK_DATA_VERSION`, `CHAINLINK_CALLBACK_GAS_LIMIT`, `CHAINLINK_DON_ID`, ...). Немає fallback на старіший ABI. При наступному upgrade Chainlink router або зміні DON ID — пайплайн впаде без graceful degradation
-- [ ] 🤖 Додати `Web3::ChainlinkRouterVersion` enum + ABI registry для multi-version підтримки
-- [ ] 🤖 Health check: розпарсити router contract code → перевірити сигнатуру `sendRequest()` при бутстрапі сервісу
-- [ ] 🤖 Документувати в `04_02` процес upgrade ABI
+- **Статус (✅ виконано):** `Web3::ChainlinkRouterVersion` registry додано (`app/services/web3/chainlink_router_version.rb`) — enum `VERSION_ORDER`, `REGISTRY` (v1: ABI + canonical signature `sendRequest(uint64,bytes,uint16,uint32,bytes32)` + keccak256 selector `0x461d2762`), `active_version` (з ENV `CHAINLINK_ROUTER_VERSION`, default `:v1`), `fallback_for(version)`, `selector_present_in_code?(code_hex, version)` для bytecode probe. `Chainlink::OracleDispatchService` тепер: (1) делегує `functions_router_abi` у registry; (2) `pick_router_version` робить `eth_getCode` probe перед dispatch — якщо активна версія selector відсутній у байт-коді Router'а, спробує fallback на попередню registered версію; (3) raises `DispatchError` якщо ні активна, ні fallback версія не присутні; (4) `CHAINLINK_ROUTER_BYTECODE_CHECK=false` вимикає probe для staging/dev RPC що не експортують `eth_getCode`. Spec coverage: 17 examples в `spec/services/web3/chainlink_router_version_spec.rb` (active/fallback/abi/selector/case-insensitive bytecode match) + 5 додаткових в `oracle_dispatch_service_spec.rb` (delegation / dispatch with v1 / mismatch raise / unknown ENV → DispatchError / probe disabled / no eth_getCode).
+- [x] 🤖 Додати `Web3::ChainlinkRouterVersion` enum + ABI registry для multi-version підтримки
+- [x] 🤖 Health check: розпарсити router contract code → перевірити сигнатуру `sendRequest()` при бутстрапі сервісу
+- [x] 🤖 Документувати в `04_02` процес upgrade ABI
 
 #### S6.18 — Rails web security hardening (maquina-app/rails-claude-code §8 audit)
 - **P1** | `06_01`, `06_02`, `06_04` | **Складність: M** | **🤖 Код + Конфігурація**

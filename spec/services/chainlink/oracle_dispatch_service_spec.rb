@@ -102,7 +102,10 @@ RSpec.describe Chainlink::OracleDispatchService do
         "CHAINLINK_SUBSCRIPTION_ID" => "42",
         "CHAINLINK_DON_ID" => "0x#{"d" * 64}",
         "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
-        "ORACLE_PRIVATE_KEY" => "a" * 64
+        "ORACLE_PRIVATE_KEY" => "a" * 64,
+        # [S6.15] Skip bytecode probe in this legacy mock-based test —
+        # the dedicated `[S6.15]` describe block exercises the probe.
+        "CHAINLINK_ROUTER_BYTECODE_CHECK" => "false"
       ))
 
       service = described_class.new(telemetry_log_local)
@@ -111,7 +114,7 @@ RSpec.describe Chainlink::OracleDispatchService do
       mock_key = double("Eth::Key")
       mock_contract = double("Eth::Contract")
 
-      allow(Eth::Client).to receive(:create).and_return(mock_client)
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
       allow(Eth::Key).to receive(:new).and_return(mock_key)
       allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
       allow(mock_client).to receive(:transact).and_return("0xtx_hash_123")
@@ -126,12 +129,13 @@ RSpec.describe Chainlink::OracleDispatchService do
         "CHAINLINK_SUBSCRIPTION_ID" => "42",
         "CHAINLINK_DON_ID" => "0x#{"d" * 64}",
         "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
-        "ORACLE_PRIVATE_KEY" => "a" * 64
+        "ORACLE_PRIVATE_KEY" => "a" * 64,
+        "CHAINLINK_ROUTER_BYTECODE_CHECK" => "false"
       ))
 
       service = described_class.new(telemetry_log_local)
 
-      allow(Eth::Client).to receive(:create).and_raise(StandardError, "RPC timeout")
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_raise(StandardError, "RPC timeout")
 
       expect {
         service.dispatch!
@@ -166,7 +170,8 @@ RSpec.describe Chainlink::OracleDispatchService do
         "CHAINLINK_FUNCTIONS_ROUTER" => "0x1234567890abcdef1234567890abcdef12345678",
         "CHAINLINK_SUBSCRIPTION_ID" => "42",
         "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
-        "ORACLE_PRIVATE_KEY" => "a" * 64
+        "ORACLE_PRIVATE_KEY" => "a" * 64,
+        "CHAINLINK_ROUTER_BYTECODE_CHECK" => "false"
       ).except("CHAINLINK_DON_ID"))
 
       service = described_class.new(telemetry_log_local)
@@ -239,6 +244,84 @@ RSpec.describe Chainlink::OracleDispatchService do
       expect(input_names).to contain_exactly(
         "subscriptionId", "data", "dataVersion", "callbackGasLimit", "donId"
       )
+    end
+
+    it "[S6.15] delegates to Web3::ChainlinkRouterVersion registry" do
+      service = described_class.new(telemetry_log)
+      registry_abi = Web3::ChainlinkRouterVersion.abi_for(:v1)
+
+      expect(JSON.parse(service.send(:functions_router_abi))).to eq(registry_abi)
+    end
+  end
+
+  # [S6.15] Boot-time bytecode probe + graceful fallback. The registry
+  # owns the selector + ABI, the service only orchestrates the probe.
+  describe "[S6.15] Chainlink Router version verification" do
+    let(:router_address) { "0x1234567890abcdef1234567890abcdef12345678" }
+    let(:active_selector) { Web3::ChainlinkRouterVersion.selector_for(:v1).delete_prefix("0x") }
+    let(:bytecode_with_v1) { "0x6080604052#{active_selector}1461004f" }
+    let(:bytecode_without_v1) { "0x6080604052deadbeef1461004f" }
+
+    let(:mock_client) { double("Eth::Client") }
+    let(:mock_key) { double("Eth::Key") }
+    let(:mock_contract) { double("Eth::Contract") }
+
+    before do
+      stub_const("ENV", ENV.to_h.merge(
+        "CHAINLINK_FUNCTIONS_ROUTER" => router_address,
+        "CHAINLINK_SUBSCRIPTION_ID" => "42",
+        "CHAINLINK_DON_ID" => "0x#{"d" * 64}",
+        "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
+        "ORACLE_PRIVATE_KEY" => "a" * 64
+      ))
+
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+      allow(Eth::Key).to receive(:new).and_return(mock_key)
+      allow(Eth::Contract).to receive(:from_abi).and_return(mock_contract)
+      allow(mock_client).to receive(:transact).and_return("0xtx_hash_v1_ok")
+    end
+
+    it "dispatches when bytecode exposes the active version selector" do
+      allow(mock_client).to receive(:eth_get_code).and_return(bytecode_with_v1)
+
+      service = described_class.new(telemetry_log)
+      expect(service.dispatch!).to eq("0xtx_hash_v1_ok")
+    end
+
+    it "raises DispatchError when bytecode lacks the selector and no fallback exists" do
+      allow(mock_client).to receive(:eth_get_code).and_return(bytecode_without_v1)
+
+      service = described_class.new(telemetry_log)
+      expect {
+        service.dispatch!
+      }.to raise_error(described_class::DispatchError, /не експортує очікуваний/)
+    end
+
+    it "wraps UnsupportedVersionError raised during ABI lookup in DispatchError" do
+      stub_const("ENV", ENV.to_h.merge("CHAINLINK_ROUTER_VERSION" => "v99"))
+
+      service = described_class.new(telemetry_log)
+      expect {
+        service.dispatch!
+      }.to raise_error(described_class::DispatchError, /ABI registry error/)
+    end
+
+    it "skips bytecode probe when CHAINLINK_ROUTER_BYTECODE_CHECK=false" do
+      stub_const("ENV", ENV.to_h.merge("CHAINLINK_ROUTER_BYTECODE_CHECK" => "false"))
+      # eth_get_code must NOT be called when the probe is disabled
+      expect(mock_client).not_to receive(:eth_get_code)
+
+      service = described_class.new(telemetry_log)
+      expect(service.dispatch!).to eq("0xtx_hash_v1_ok")
+    end
+
+    it "tolerates RPC clients that do not expose eth_get_code (treats as missing selector)" do
+      # No eth_get_code method on the client → fetch_router_code returns nil
+      # → selector probe fails → DispatchError (no fallback registered yet).
+      service = described_class.new(telemetry_log)
+      expect {
+        service.dispatch!
+      }.to raise_error(described_class::DispatchError, /не експортує очікуваний/)
     end
   end
 end

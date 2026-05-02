@@ -47,7 +47,8 @@
 | BlockchainBurningService | ✅ 420L+ | 🟢 **Повне** | **SLASHER_KEY fallback (E.2), Prometheus SCC_SLASHED_TOTAL, AiInsight+source_tree combined ratio, damage_ratio cap** |
 | Treasury::MonitorService | ✅ 330L+ | 🟢 **Повне** | **build_config, missing credentials, humanize edge cases, multiple alerts** |
 | TreeChronicleService | ✅ 350L+ | 🟢 **Повне** | **Pagination edges, nil wallet, boundary stress_index, mixed sources** |
-| Chainlink::OracleDispatchService | ✅ 240L+ | 🟢 **Повне** | **WEB3_STRICT_MODE, missing DON_ID, nil payload fields, ABI validation** |
+| Chainlink::OracleDispatchService | ✅ 240L+ | 🟢 **Повне** | **WEB3_STRICT_MODE, missing DON_ID, nil payload fields, ABI validation, [S6.15] Web3::ChainlinkRouterVersion delegation + bytecode probe + graceful fallback + probe-disabled mode (5 examples)** |
+| **Web3::ChainlinkRouterVersion** [S6.15] | ✅ 17 examples | 🟢 **Нове** | **active_version (default v1, blank ENV, unsupported raise), abi_for(:v1) shape + 5 inputs, selector_for(:v1) = `0x461d2762`, signature_for canonical, fallback_for(:v1) = nil (oldest), selector_present_in_code? (case-insensitive substring, blank/nil tolerant), supported?** |
 | AlertDispatchService | ✅ 420L+ | 🟢 **Повне** | **Adaptive thresholds, silence keys, rate limiting (SEC.10), voltage/fire boundaries, EmergencyResponseService call** |
 | HardwareKeyService | ✅ 280L+ | 🟢 **Повне** | **HKDF SHA256/info/salt params, key length, derive_device_key logging, provision conflict** |
 | MintingRollbackService | ✅ 400L+ | 🟢 **Повне** | **Solana tx status, receipt edge cases, Celo routing, locked_points nil fallback, invalid ISO8601** |
