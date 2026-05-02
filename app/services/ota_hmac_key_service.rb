@@ -21,9 +21,9 @@ require "openssl"
 # "silken-aes-256-device-key") — це гарантує, що навіть при компрометації
 # одного К-вектора, інші ключі залишаються непохитними.
 #
-# Шифрові виклики (HKDF) повторюваним делегуванням мають консистентний
-# pattern із HardwareKeyService — `SecurityError` без master key (SEC.11
-# hard cutover, no SecureRandom fallback in production).
+# Шифрові виклики (HKDF) тут слідують тому самому патерну, що й
+# HardwareKeyService: `SecurityError` без master key (SEC.11 hard cutover,
+# no SecureRandom fallback in production).
 #
 # Див. docs/03_05 §3.4б для повного протоколу.
 class OtaHmacKeyService

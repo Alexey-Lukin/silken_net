@@ -920,7 +920,21 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 
 ---
 
-### 3.4б OTA Authentication Protocol Design (FW.23) 🤖
+### 3.4б OTA Authentication Protocol Design (FW.23) ✅ Реалізовано (2026-05-02)
+
+**Статус реалізації:**
+
+| Шар | Файл | Що зроблено |
+|-----|------|-------------|
+| Backend (HKDF) | `app/services/ota_hmac_key_service.rb` | `OtaHmacKeyService.fetch_for(cluster_id)` — HKDF-SHA256, info `"silken-ota-hmac-v1"`, raise `SecurityError` без `PROVISIONING_MASTER_KEY` (SEC.11 hard cutover) |
+| Backend (signing) | `app/services/ota_packager_service.rb` | `compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)` + `build_hmac_trailer_chunks(tag, lora_total_chunks)` (3× `[0x9B][seg_idx:2 BE][total:2 BE][hmac:11]`) + `prepare(..., cluster_id:)` opt-in з `manifest[:hmac_signed/lora_total_chunks/total_packages/hmac_cluster_id]` |
+| Firmware Queen | `firmware/queen/main.c` | Stateless relay: `Handle_CoAP_Command` зберігає 3 trailer-блоки у `pending_ota_hmac_chunks[3][16]`; reflex broadcast loop додає Phase 1 (HMAC trailer) після Phase 0 (bytecode); 60 ms pacing |
+| Firmware Soldier | `firmware/soldier/main.c` | `Parse_HMAC_Trailer_Chunk` (32-byte `received_hmac_tag` посегментно) + `Hmac_Constant_Time_Compare` + `OTA_Verify_Dual_Gate` (Gate 1 magic 0x45544952 "RITE" + Gate 2 HMAC compare); fail-safe затирання magic у RAM-bytecode при negative gate |
+| Backend specs | `spec/services/ota_hmac_key_service_spec.rb` (16 examples), `spec/services/ota_packager_service_spec.rb` (+21), `spec/integration/ota_firmware_flow_spec.rb` (+7 e2e) | determinism / domain separation / anti-replay / anti-truncation / per-cluster isolation / manifest metadata / package ordering / blank input / SEC.11 |
+| Firmware host-tests | `firmware/test/test_soldier_logic.c` (+13), `test_queen_logic.c` (+4) | 3-chunk assemble (in-order/out-of-order) / reject seg_idx>3 / dual-gate magic-fail / dual-gate hmac-fail / both-pass / cleanup-on-failure / constant-time first/last byte / Queen relay segments assemble / wrong marker reject / overwrite same segment |
+
+**Залишковий TODO (не блокує цикл):** реальна mbedTLS HMAC-SHA256 деривація на STM32 HASH-peripheral у Soldier (`Phase 4.5 OTA assembly` має `TODO: Compute expected HMAC via mbedTLS` — потребує лабораторної ARM-збірки з mbedTLS link integration; до того гейт-логіка перевірена host-tests, runtime call вимкнений у бойовій збірці. Аналог FW.30 cold-start mbedTLS placeholder.).
+
 
 > **Cross-ref:** [10_02 FW.23](10_02_Action_Plan_Tracker) — дизайн завершено ✅
 > **Залежність:** Реалізація staging'ується після FW.1 (per-device HKDF) — потребує спільної master-secret інфраструктури.

@@ -8,10 +8,10 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8
-- **Дата аудиту:** 2026-05-02 (SEC.11 Lorenz Seed Provenance hard cutover)
+- **Дата аудиту:** 2026-05-02 (FW.27-B + FW.23 + FW.18 dispatcher cycle)
 - **Кількість тестів:**
-  - RSpec (Ruby): ~296+ spec files, ~52,200+ lines (+ `silken_net/seed_derivation_spec.rb` 16 examples — SEC.11)
-  - Firmware (C): 341 tests (130 soldier + 91 queen + 42 bio-contract + 44 tinyml + 21 encryption + **13 seed_derivation [SEC.11]**). Soldier suite +6 від 124 за рахунок **[FW.5 B+]** EMA → mruby args[5..6] selection (cold defaults / warmup phase / post-warmup forwarding / boundary clamps).
+  - RSpec (Ruby): ~298+ spec files, ~52,700+ lines (+ `ota_hmac_key_service_spec.rb` 16 examples [FW.23], `ota_packager_service_spec.rb` +21 examples [FW.23], `ota_firmware_flow_spec.rb` +7 e2e [FW.23], `silken_net/seed_derivation_spec.rb` 16 examples [SEC.11])
+  - Firmware (C): **413** tests (180 soldier + 113 queen + 42 bio-contract + 44 tinyml + 21 encryption + **13 seed_derivation [SEC.11]**). +46 від 367: **[FW.27-B]** Soldier 12 bitmap + Queen 10 dedup; **[FW.23]** Soldier 13 dual-gate + Queen 4 trailer relay; **[FW.18]** 7 OTA CMD dispatcher.
   - Foundry (Solidity): 6 test suites, ~115+ tests
 
 ---
@@ -53,7 +53,8 @@
 | HardwareKeyService | ✅ 280L+ | 🟢 **Повне** | **HKDF SHA256/info/salt params, key length, derive_device_key logging, provision conflict** |
 | MintingRollbackService | ✅ 400L+ | 🟢 **Повне** | **Solana tx status, receipt edge cases, Celo routing, locked_points nil fallback, invalid ISO8601** |
 | EmergencyResponseService | ✅ 350L+ | 🟢 **Повне** | **Mixed valve+siren fire response, command attributes (org_id, idempotency, priority, expires_at), online/offline gateway filter** |
-| OtaPackagerService | ✅ 240L+ | 🟢 **Повне** | **[FW.8] build_threshold_config_block (CMD_SET_THRESHOLDS 0x9A, CRC16, species_id, effective_lorenz_thresholds), LoRa MTU chunks, single-byte payload, exact block-size, CRC16 known vectors, manifest format** |
+| OtaPackagerService | ✅ 415L+ | 🟢 **Повне** | **[FW.8] build_threshold_config_block (CMD_SET_THRESHOLDS 0x9A, CRC16, species_id, effective_lorenz_thresholds); [FW.23] compute_hmac_tag (deterministic + anti-replay через version_id + anti-truncation через total_chunks + per-cluster K_ota isolation), build_hmac_trailer_chunks (3× 16-byte LoRa-формат, 0x9B marker, seg_idx 1/2/3 BE, payload reconstructs 32-byte HMAC), prepare(cluster_id:) opt-in (3 trailer chunks appended, manifest exposes lora_total_chunks/hmac_signed/hmac_cluster_id, backward-compat без cluster_id); LoRa MTU chunks, single-byte payload, exact block-size, CRC16 known vectors, manifest format** |
+| **OtaHmacKeyService [FW.23]** | ✅ 9 examples | 🟢 **Нове** | **HKDF-SHA256 derivation з info `"silken-ota-hmac-v1"` (domain separation від HardwareKeyService AES key); deterministic per cluster_id; ArgumentError на blank cluster_id; SecurityError без `PROVISIONING_MASTER_KEY` (SEC.11 hard cutover, no SecureRandom fallback); fetch_binary_for повертає 32-byte ASCII-8BIT** |
 | Etherisc::ClaimService | ✅ 120L+ | 🟢 **Повне** | **nil policy_id, missing ENV keys, ABI validation** |
 | Ed25519Crypto::SigningService | ✅ 270L+ | 🟢 **Повне** | **Empty/large messages, hex validation edges, uppercase hex, nil/integer message coercion** |
 
@@ -88,7 +89,7 @@
 | blockchain_minting_burning_flow | 🟢 | SCC minting + slashing |
 | wallet_tokenomics_flow | 🟢 | Growth points → SCC |
 | proof_of_growth_chaos_engineering | 🟢 | Fault tolerance |
-| ota_firmware_flow | 🟢 | OTA lifecycle |
+| ota_firmware_flow | 🟢 | OTA lifecycle + **[FW.23] e2e dual-gate** (7 нових: backend-signs trailer chunks, manifest lora_total_chunks cross-check, HMAC reconstruct backend↔soldier match, magic+hmac both-pass acceptance, anti-tamper bytecode flip rejection, anti-replay version_id mismatch, anti-truncation total_chunks mismatch) |
 | gateway_lifecycle | 🟢 | Gateway AASM |
 | user_auth_lifecycle | 🟢 | Auth + MFA + OAuth |
 | emergency_response_flow | 🟢 | EWS pipeline |
@@ -184,6 +185,11 @@
 | Vibration Guard (FW.11) | 5 | 🟢 | |
 | **[FW.18] Dual-Threshold Zones** | **9** | 🟢 **Нове** | SILENCE/WARNING/CRITICAL + escalation 3× для chainsaw, no-escalation для cavitation, counter reset |
 | **[FW.18] Threshold Validation & RTC Roundtrip** | **10** | 🟢 **Нове** | range/NaN/cold-boot/inversion fallbacks + IEEE 754 bit-exact roundtrip через DR13/DR14 |
+| **[FW.18] OTA CMD dispatcher (`0x9D`)** | **7** | 🟢 **Нове** | downlink-CMD framework на Soldier'і — frame layout / CRC16 / range / inversion / short_frame; опкод-карта `0x99=OTA / 0x9A=Lorenz Z / 0x9B=HMAC trailer / 0x9C=TIME_SYNC / 0x9D=audio thresholds` |
+| **[FW.27-B] Magic Re-Request — Soldier bitmap** | **12** | 🟢 **Нове** | Build_OTA_ReRequest_Payload: full/partial/edge/cap@72 + DID/total BE-pack + 5-хв timeout trigger |
+| **[FW.27-B] Magic Re-Request — Queen handler** | **10** | 🟢 **Нове** | Process_LoRa_RX accepts/rejects; cmd_dedup_ring replay-protection; різні bitmap'и не дедуплюються (`djb2_hash_bytes` length-strict NUL-safe); REREQUEST не потрапляє у CIFO/CoAP path; total_chunks mismatch reject |
+| **[FW.23] HMAC trailer parser + dual-gate (Soldier)** | **13** | 🟢 **Нове** | 3-чанковий збір печатки (in-order/out-of-order), reject seg_idx>3/wrong marker/short, dual-gate: magic-fail / hmac-fail / both-pass / cleanup-on-failure / constant-time first-byte / constant-time last-byte |
+| **[FW.23] HMAC trailer relay (Queen)** | **4** | 🟢 **Нове** | 3 segments assemble, seg_idx=4 reject, wrong marker reject, overwrite same segment |
 
 ---
 

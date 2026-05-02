@@ -821,6 +821,23 @@ Main loop: decrypt → if ota_is_active:
 
 Chunk-розмір для LoRa OTA: **11 байт** корисного коду (з 16-байтного AES-блоку вираховуємо 5 байт заголовку).
 
+### 4.5а Downlink Opcode Map — Canonical SSOT [DOC.4]
+
+Карта маркерів downlink-пакетів (CoAP Rails→Queen та LoRa Queen→Soldier). Будь-який новий downlink-CMD **повинен** додаватися сюди до імплементації, щоб уникнути колізій. Опкоди розташовані у безпечному діапазоні `0x99..0x9F` (значення байтів, що не зустрічаються як прийнятні DID-prefixes у telemetry uplink — DID generated as `crc32` із низькою імовірністю старшого байта `0x99..0x9F`).
+
+| Опкод | Назва | Напрямок | Лінк | Документ | Статус |
+|-------|-------|----------|------|----------|--------|
+| `0x55` | OTA_REQ_MARKER (Magic Re-Request) | Soldier→Queen | LoRa **uplink** | [03_02 §5.X.3](03_02_Queen_Gateway_Firmware.md) | ✅ FW.27-B (2026-05-02) |
+| `0x99` | OTA_MARKER (bytecode chunks) | Rails→Queen→Soldier | CoAP/LoRa | §4.4 + 03_02 §5 | ✅ |
+| `0x9A` | CMD_SET_THRESHOLDS (Lorenz Z per-tree) | Rails→Queen→Soldier | CoAP/LoRa | [05_02 §4а.1](05_02_Web3_Pipeline_and_Tokenomics.md) | 🟡 FW.8 (Queen-side; Soldier dispatcher TBD) |
+| `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [03_05 §3.4б](03_05_Hardware_AES256_and_Security.md) | ✅ FW.23 (2026-05-02) |
+| `0x9C` | CMD_TIME_SYNC (envelope) | Rails→Queen | CoAP | §11 (FW.20) | ✅ FW.20 |
+| `0x9D` | CMD_SET_AUDIO_THRESHOLDS (TinyML per-Soldier) | Rails→Queen→Soldier | CoAP/LoRa | [03_03 BLOCKER-6](03_03_TinyML_Acoustic_Inference.md) | ✅ FW.18 (2026-05-02) |
+| `0x9E` | _reserved_ | — | — | — | вільний |
+| `0x9F` | _reserved_ | — | — | — | вільний |
+
+> **Політика розширення:** перед додаванням нового опкоду — (1) перевірити цю таблицю, (2) обрати наступний вільний з `0x9E..0x9F`, (3) задокументувати тут І у відповідному функціональному документі (03_02/03_05/05_02). Якщо `0x9E..0x9F` вичерпано — обговорити перепакування або новий безпечний діапазон.
+
 ### 4.6 CoAP Downlink → OTA RAM Assembly
 
 Queen отримує великі OTA-пакети від Rails через CoAP (`Handle_CoAP_Command`):

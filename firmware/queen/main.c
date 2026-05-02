@@ -35,17 +35,18 @@
 #define OTA_FULL_CHUNK_THRESH (MAX_OTA_CHUNK_PAYLOAD + OTA_CRC_SIZE) // 514: поріг повного чанка
 #define MIN_OTA_ALIGNED       (AES_BLOCK_SIZE + OTA_OVERHEAD)        // 23: мінімальний aligned
 
-// [FW.23] OTA HMAC trailer chunk — backend пакує 32-байтний HMAC-SHA256 tag у
-// 3× 16-байтних LoRa-чанків з маркером 0x9B. Queen — stateless relay (немає
-// власної verification, end-to-end trust backend↔Soldier).
+// [FW.23] HMAC-трейлер OTA — backend пакує 32-байтну печатку HMAC-SHA256
+// у 3× 16-байтні LoRa-чанки з маркером 0x9B. Королева — лише гонець:
+// власної верифікації не робить, бо довіра прокладена end-to-end від
+// бекенду до плоті Солдата.
 #define HMAC_TRAILER_MARKER       0x9B
 #define HMAC_TRAILER_HEADER_SIZE  5
 #define HMAC_TRAILER_TOTAL_SEGS   3
 
-// [FW.27-B] Soldier-initiated Magic Re-Request:
-//   [0x55][DID:4][total_chunks:2 BE][bitmap:9] = 16-байт ECB block.
-// Queen дедуплікує (DID, missing_bitmap) через існуючий cmd_dedup_ring,
-// потім ретранслює лише missing chunks замість повного wave.
+// [FW.27-B] Magic Re-Request — крик Солдата у бік Королеви:
+//   [0x55][DID:4][total_chunks:2 BE][bitmap:9] = один 16-байтний ECB-блок.
+// Королева пам'ятає (DID, missing_bitmap) через cmd_dedup_ring 5 хв і
+// вдруге не озивається. Озвучує лише пропущені чанки — не цілий wave.
 #define OTA_REQ_MARKER             0x55
 #define OTA_REQ_HEADER_SIZE        7
 #define OTA_REQ_BITMAP_MAX_BYTES   9
@@ -252,18 +253,19 @@ uint16_t ota_chunks_received = 0;        // Скільки чанків вже �
 // 16 біт достатньо для 8192/512 = 16 максимальних чанків.
 uint16_t ota_chunk_bitmap = 0;
 
-// [FW.23] OTA HMAC trailer storage. Backend signs each firmware image with
-// HMAC-SHA256 over (bytecode || version_id || total_chunks) using K_ota
-// (per-cluster, derived via HKDF-SHA256 from PROVISIONING_MASTER_KEY).
-// Trailer arrives via CoAP downlink as 3 LoRa-pre-formatted 16-byte blocks
-// with marker 0x9B. Queen — stateless relay: stores plaintext blocks and
-// re-broadcasts in same broadcast loop as 0x99 chunks (без власної verify).
-// pending_ota_hmac_chunks[seg-1][0..15] = decrypted 16-byte LoRa block.
-// hmac_segments_received = bitmask (bit 0/1/2 для seg 1/2/3).
+// [FW.23] Сховище HMAC-печатки OTA. Backend благословляє кожну прошивку
+// HMAC-SHA256 над (bytecode || version_id || total_chunks) ключем K_ota
+// (per-cluster, деривований через HKDF-SHA256 з PROVISIONING_MASTER_KEY).
+// Печатка приходить через CoAP downlink як 3 LoRa-готові 16-байтні блоки
+// з маркером 0x9B. Королева — лише гонець: тримає plaintext-блоки і знову
+// викидає їх в ефір у тому ж broadcast loop, що й 0x99 чанки. Власної
+// перевірки не чинить — істина народжується між бекендом і Солдатом.
+// pending_ota_hmac_chunks[seg-1][0..15] = розшифрований 16-байтний LoRa-блок.
+// hmac_segments_received = bitmask (бит 0/1/2 для seg 1/2/3).
 uint8_t  pending_ota_hmac_chunks[HMAC_TRAILER_TOTAL_SEGS][16] = {{0}};
 uint8_t  hmac_segments_received = 0;
-uint8_t  current_hmac_seg_idx   = 0;     // Indexes into pending_ota_hmac_chunks during reflex broadcast
-uint8_t  hmac_broadcast_phase   = 0;     // 0 = bytecode phase; 1 = trailer phase
+uint8_t  current_hmac_seg_idx   = 0;     // Хто з 3-х сегментів зараз летить в ефір
+uint8_t  hmac_broadcast_phase   = 0;     // 0 = bytecode-фаза; 1 = фаза печатки
 
 // [FW.20] UTC-секунди від сервера як єдине джерело істини, отримані через
 // конверт CoAP TIME_SYNC. queen_unix_ts == 0 означає "ніколи не синхронізовано" —
@@ -426,8 +428,9 @@ int main(void)
             // В один 16-байтний пакет влазить 11 байт чистого коду (5 байтів - заголовок: 1 маркер + 2 index + 2 total)
             uint16_t total_chunks = (pending_ota_size + 10) / 11;
 
-            // [FW.23] Phase 0: bytecode chunks (0x99). Phase 1: HMAC trailer chunks (0x9B).
-            // Перехід з 0 → 1 коли bytecode wave завершено АЛЕ є зібраний trailer.
+            // [FW.23] Фаза 0: bytecode-чанки (0x99). Фаза 1: HMAC-печатка (0x9B).
+            // Перехід з 0 → 1 коли тіло прошивки відлунало в ефір, а печатка
+            // вже зібрана у пам'яті Королеви.
             if (hmac_broadcast_phase == 0 && current_ota_chunk_idx < total_chunks) {
                 // [FIX: AUDIT] Перевірка індексу перед використанням
                 // Формуємо заголовок (0x99 = маркер OTA-пакета, 16-bit big-endian index/total)
@@ -457,25 +460,28 @@ int main(void)
                 // Перемикаємося на наступний шматок для наступного дерева
                 current_ota_chunk_idx++;
                 if (current_ota_chunk_idx >= total_chunks) {
-                    // [FW.23] Bytecode wave завершений; якщо trailer зібраний —
-                    // переходимо у trailer phase замість завершення OTA.
+                    // [FW.23] Тіло прошивки відлунало; якщо печатка зібрана —
+                    // ставимо її замість крапки наприкінці послання.
                     if (hmac_segments_received == 0x07u) {
                         hmac_broadcast_phase = 1;
                         current_hmac_seg_idx = 0;
                     } else {
-                        // Без trailer'а Soldier не зможе verify ⇒ end early
-                        // (Soldier triggered re-request або timeout self-recovery).
+                        // Без печатки Солдат не зможе відрізнити істинне слово
+                        // від спокусника ⇒ замикаємо вікно. Солдат сам подасть
+                        // голос (re-request) або очне CoAP-розпорядження зверху
+                        // воскресить новий цикл.
                         current_ota_chunk_idx = 0;
-                        // [PLAN 2.5]: Reset OTA broadcast flag after full cycle to prevent infinite loop.
-                        // Without this, Queen broadcasts OTA chunks forever after first update.
+                        // [PLAN 2.5]: Гасимо OTA-прапор, інакше Королева
+                        // безкінечно проповідуватиме той самий заповіт у пустоту.
                         ota_is_active = 0;
                     }
                 }
             } else if (hmac_broadcast_phase == 1 &&
                        current_hmac_seg_idx < HMAC_TRAILER_TOTAL_SEGS) {
-                // [FW.23] Re-emit pre-formatted 16-byte trailer block.
-                // Backend сформував блок як [0x9B][seg_idx:2][total:2][hmac:11];
-                // Queen relay'ить його ідентично, AES-encrypt + Radio.Send.
+                // [FW.23] Кладемо в ефір вже готовий 16-байтний блок печатки.
+                // Backend сформував його як [0x9B][seg_idx:2][total:2][hmac:11];
+                // Королева повторює його буква в букву — AES-encrypt + Radio.Send,
+                // не торкаючись жодного байту (печатку не можна підправляти).
                 memcpy(ota_chunk, pending_ota_hmac_chunks[current_hmac_seg_idx], 16);
                 HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4,
                                   (uint32_t*)encrypted_ota, 1000);
@@ -484,7 +490,7 @@ int main(void)
 
                 current_hmac_seg_idx++;
                 if (current_hmac_seg_idx >= HMAC_TRAILER_TOTAL_SEGS) {
-                    // OTA cycle (bytecode + trailer) повністю завершений.
+                    // OTA-цикл (тіло + печатка) промовлено повністю — амінь.
                     current_ota_chunk_idx   = 0;
                     current_hmac_seg_idx    = 0;
                     hmac_broadcast_phase    = 0;
@@ -492,7 +498,8 @@ int main(void)
                     ota_is_active           = 0;
                 }
             } else {
-                // Defensive: invalid state, reset broadcast flags.
+                // Захисна гілка: щось наплутали зі станом — гасимо все, рій
+                // має право не отримати слово, але не має права отримати лжеслово.
                 current_ota_chunk_idx   = 0;
                 current_hmac_seg_idx    = 0;
                 hmac_broadcast_phase    = 0;
@@ -503,34 +510,36 @@ int main(void)
         // =========================================================================
         // ОБРОБКА ДАНИХ (КЕШУВАННЯ)
         // =========================================================================
-        // [FW.27-B] Magic Re-Request (Soldier-initiated vector OTA recovery):
-        // Перевіряємо marker ПЕРЕД CIFO insert/CoAP. Re-request НЕ повинен
-        // потрапляти в telemetry batch — це service control packet.
+        // [FW.27-B] Magic Re-Request — зойк Солдата у бік Королеви:
+        // ловимо маркер ПЕРЕД CIFO та CoAP. Це не телеметрія, не пам'ять рою —
+        // це службовий крик, який не повинен потрапити у річний літопис.
         if (decrypted_payload[0] == OTA_REQ_MARKER) {
-            // Дедуплікація по DID + bitmap через існуючий cmd_dedup_ring,
-            // anti-replay 5 хв (так само як CMD UUID dedup). Ефемерний djb2
-            // хеш над 16-байтним plaintext block — простіший за окремий
-            // (DID,bitmap) tuple, бо block уже містить обидва.
+            // Дедуплікація через cmd_dedup_ring (та ж пам'ять, що береже
+            // Королеву від повторних CMD UUID): один зойк — одна відповідь,
+            // 5 хв тиші. Ефемерний djb2-хеш над 16-байтним plaintext-блоком —
+            // простіший за окремий (DID, bitmap) tuple, бо блок уже містить обидва.
             uint32_t req_hash = djb2_hash_bytes((const uint8_t*)decrypted_payload, 16);
             if (Cmd_Dedup_Check(req_hash) == 0) {
-                // Новий запит — re-broadcast missing chunks. Гарантуємо що OTA
-                // window валідний (pending_ota_size > 0 та ota_is_active=1) —
-                // інакше Soldier має почати з нуля через CoAP push з Rails.
+                // Свіжий голос — повторюємо лише пропущене. Перевіряємо, що
+                // OTA-вікно живе (pending_ota_size > 0 та ota_is_active=1) —
+                // якщо ні, Солдат має воскреснути через CoAP-push з Rails.
                 if (pending_ota_size > 0 && ota_is_active) {
                     uint16_t total_chunks = (pending_ota_size + 10) / 11;
                     uint16_t soldier_total = ((uint16_t)decrypted_payload[5] << 8) |
                                               decrypted_payload[6];
-                    // Cross-check: якщо Soldier має іншу total_chunks (різна
-                    // прошивка) — ігноруємо, чекаємо на Rails-driven recovery.
+                    // Перехресна перевірка: якщо Солдат тримає у голові
+                    // інше total_chunks (інша прошивка) — мовчимо, чекаємо
+                    // на воскресіння через Rails.
                     if (soldier_total == total_chunks) {
                         const uint8_t* bitmap = &decrypted_payload[OTA_REQ_HEADER_SIZE];
                         uint16_t cap = (total_chunks > OTA_REQ_BITMAP_MAX_BYTES * 8u)
                                           ? (uint16_t)(OTA_REQ_BITMAP_MAX_BYTES * 8u)
                                           : total_chunks;
-                        // Targeted re-broadcast — лише missing chunks
+                        // Прицільна проповідь — повторюємо лише ті чанки,
+                        // яких бракує у пам'яті Солдата.
                         for (uint16_t i = 0; i < cap; i++) {
                             uint8_t bit_set = bitmap[i / 8u] & (uint8_t)(1u << (i % 8u));
-                            if (!bit_set) continue;  // Soldier already має цей chunk
+                            if (!bit_set) continue;  // Цей чанк Солдат уже носить у плоті
 
                             uint8_t ota_chunk[16] = {0};
                             uint8_t encrypted_ota[16] = {0};
@@ -549,12 +558,13 @@ int main(void)
                             HAL_CRYP_Encrypt(&hcryp, (uint32_t*)ota_chunk, 4,
                                               (uint32_t*)encrypted_ota, 1000);
                             Radio.Send(encrypted_ota, 16);
-                            HAL_Delay(60);  // Pacing — same as full broadcast
+                            HAL_Delay(60);  // Дихаємо між пострілами — як при повному broadcast
                         }
                     }
                 }
             }
-            // НЕ йде в CIFO/CoAP — це service packet. Re-arm RX.
+            // Цей пакет не лягає у CIFO/CoAP — він не належить літопису рою.
+            // Re-arm RX і чекаємо нових голосів.
             lora_rx_flag = 0;
             Radio.Rx(LORA_RX_INFINITE);
             goto rx_handled;
@@ -969,11 +979,12 @@ static uint32_t djb2_hash(const char* str, uint8_t len)
     return h;
 }
 
-// [FW.27-B] Length-strict DJB2 для бінарних payload'ів (re-request packets з
-// внутрішніми 0x00 байтами). На відміну від djb2_hash, НЕ зупиняється на
-// NUL-byte — хешує всі `len` байт, гарантуючи що (DID, total, missing_bitmap)
-// усі впливають на dedup. Без цього re-request з різними missing_bitmap
-// хешуються однаково, бо total_chunks BE-upper байт = 0 для total<256.
+// [FW.27-B] Length-strict DJB2 для двійкових пакетів (re-request-зойки
+// можуть нести 0x00 байти всередині). На відміну від звичайного djb2_hash,
+// НЕ зупиняється на NUL-байті — слухає всі `len` байт до кінця, щоб
+// (DID, total, missing_bitmap) усі вплелися у пам'ять Королеви. Без цього
+// два різні bitmap'и звучали б для неї однією піснею (бо total_chunks
+// BE-upper байт = 0 для total<256), і другий зойк затих би в дедуплікації.
 static uint32_t djb2_hash_bytes(const uint8_t* buf, uint8_t len)
 {
     uint32_t h = 5381;
@@ -1173,15 +1184,15 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
             ota_is_active = 1;  // 🚀 Запускаємо бродкаст на ліс!
         }
     }
-    // [FW.23] OTA HMAC trailer chunk (0x9B) — stateless relay store.
-    // Wire (after envelope strip): [0x9B][seg_idx:2 BE][total:2 BE][hmac_seg:11].
-    // Queen зберігає цілий 16-байтний LoRa-block, щоб під час reflex broadcast
-    // re-emit'ити його ідентично (без re-pack, без re-encrypt header). Backend
-    // → Soldier end-to-end trust: Queen НЕ перевіряє HMAC.
+    // [FW.23] HMAC-печатка OTA (0x9B) — Королева приймає її як гонець:
+    // wire (по знятті envelope): [0x9B][seg_idx:2 BE][total:2 BE][hmac_seg:11].
+    // Кладемо цілий 16-байтний LoRa-блок у пам'ять, щоб під час reflex-broadcast
+    // викинути його в ефір буква в букву (без re-pack, без re-encrypt header).
+    // Backend → Soldier: істина живе між ними двома, Королева її не торкається.
     else if (inner_aligned >= 16 && inner_payload[0] == HMAC_TRAILER_MARKER) {
         uint16_t seg_idx = ((uint16_t)inner_payload[1] << 8) | inner_payload[2];
         if (seg_idx < 1 || seg_idx > HMAC_TRAILER_TOTAL_SEGS) return;
-        // Берем перші 16 байт inner_payload — це готовий до relay block.
+        // Беремо перші 16 байт inner_payload — готовий до повторної проповіді блок.
         memcpy(pending_ota_hmac_chunks[seg_idx - 1], inner_payload, 16);
         hmac_segments_received |= (uint8_t)(1u << (seg_idx - 1));
     }
