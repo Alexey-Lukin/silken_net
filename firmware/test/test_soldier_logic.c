@@ -2295,6 +2295,538 @@ TEST(test_thresholds_unmapped_species_id_0xFF_accepted) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * 14. FW.27-B Magic Re-Request — Soldier-initiated vector OTA recovery
+ * ════════════════════════════════════════════════════════════════════
+ * Wire (16-byte AES-256-ECB block):
+ *   [0]    OTA_REQ_MARKER (0x55)
+ *   [1..4] DID big-endian
+ *   [5..6] total_chunks big-endian (cross-check with Queen)
+ *   [7..15] missing_bitmap (LSB-first; bit i ⇔ chunk_idx i missing)
+ *
+ * Triggered when ota_chunks_received < ota_total_chunks AND
+ * (HAL_GetTick() - ota_last_chunk_rx_tick) > OTA_REREQUEST_TIMEOUT_MS (5 min).
+ * ════════════════════════════════════════════════════════════════════ */
+#define S_OTA_REQ_MARKER             0x55
+#define S_OTA_REQ_HEADER_SIZE        7
+#define S_OTA_REQ_BITMAP_MAX_BYTES   9
+#define S_OTA_REQ_PACKET_SIZE        16
+#define S_OTA_REREQUEST_TIMEOUT_MS   300000UL
+
+/* Pure-logic mirror of Build_OTA_ReRequest_Payload (in soldier/main.c).
+ * Returns 1 if any chunk is missing (TX), 0 if all received (skip TX). */
+static uint8_t Test_Build_OTA_ReRequest_Payload(uint32_t did,
+                                                 uint16_t total_chunks,
+                                                 const uint8_t* chunks_received,
+                                                 uint16_t       chunks_received_size,
+                                                 uint8_t out[S_OTA_REQ_PACKET_SIZE])
+{
+    if (total_chunks == 0)                         return 0;
+    if (chunks_received == NULL || out == NULL)    return 0;
+
+    memset(out, 0, S_OTA_REQ_PACKET_SIZE);
+    out[0] = S_OTA_REQ_MARKER;
+    out[1] = (uint8_t)(did >> 24);
+    out[2] = (uint8_t)(did >> 16);
+    out[3] = (uint8_t)(did >> 8);
+    out[4] = (uint8_t)(did & 0xFFu);
+    out[5] = (uint8_t)(total_chunks >> 8);
+    out[6] = (uint8_t)(total_chunks & 0xFFu);
+
+    uint16_t cap = (total_chunks > S_OTA_REQ_BITMAP_MAX_BYTES * 8u)
+                       ? (uint16_t)(S_OTA_REQ_BITMAP_MAX_BYTES * 8u)
+                       : total_chunks;
+    uint8_t any_missing = 0;
+    for (uint16_t i = 0; i < cap; i++) {
+        uint8_t got = (i < chunks_received_size) ? chunks_received[i] : 0;
+        if (!got) {
+            out[S_OTA_REQ_HEADER_SIZE + (i / 8u)] |= (uint8_t)(1u << (i % 8u));
+            any_missing = 1;
+        }
+    }
+    return any_missing;
+}
+
+/* Pure timeout decision — mirror of Phase 4.5 epilogue check. */
+static uint8_t Test_OTA_Should_ReRequest(uint16_t total, uint16_t received,
+                                          uint32_t last_rx_tick, uint32_t now_tick)
+{
+    if (total == 0)             return 0;
+    if (received >= total)      return 0;
+    if (last_rx_tick == 0)      return 0;
+    if ((now_tick - last_rx_tick) <= S_OTA_REREQUEST_TIMEOUT_MS) return 0;
+    return 1;
+}
+
+TEST(test_rereq_full_bitmap_when_no_chunks) {
+    uint32_t did = 0xDEADBEEFu;
+    uint16_t total = 16;
+    uint8_t chunks[16] = {0};
+    uint8_t out[16] = {0};
+
+    uint8_t any = Test_Build_OTA_ReRequest_Payload(did, total, chunks, 16, out);
+    ASSERT_EQ(any, 1);
+    ASSERT_EQ(out[0], S_OTA_REQ_MARKER);
+    /* DID big-endian */
+    ASSERT_EQ(out[1], 0xDE); ASSERT_EQ(out[2], 0xAD);
+    ASSERT_EQ(out[3], 0xBE); ASSERT_EQ(out[4], 0xEF);
+    /* total big-endian */
+    ASSERT_EQ(out[5], 0x00); ASSERT_EQ(out[6], 0x10);
+    /* bitmap byte 0 = 0xFF (chunks 0..7 missing), byte 1 = 0xFF (chunks 8..15) */
+    ASSERT_EQ(out[7], 0xFF);
+    ASSERT_EQ(out[8], 0xFF);
+    /* unused bitmap bytes zero */
+    for (int i = 9; i < 16; i++) ASSERT_EQ(out[i], 0x00);
+}
+
+TEST(test_rereq_partial_bitmap) {
+    /* Got chunks 0,2,4,5; missing 1,3 ⇒ bitmap byte 0 = 0b00001010 = 0x0A */
+    uint16_t total = 6;
+    uint8_t chunks[6] = {1, 0, 1, 0, 1, 1};
+    uint8_t out[16] = {0};
+
+    uint8_t any = Test_Build_OTA_ReRequest_Payload(0x01020304u, total, chunks, 6, out);
+    ASSERT_EQ(any, 1);
+    ASSERT_EQ(out[7], 0x0A);
+    /* No bitmap bits beyond cap=6 */
+    ASSERT_EQ(out[8], 0);
+}
+
+TEST(test_rereq_no_missing_returns_zero) {
+    uint16_t total = 8;
+    uint8_t chunks[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+    uint8_t out[16] = {0};
+
+    uint8_t any = Test_Build_OTA_ReRequest_Payload(0x12345678u, total, chunks, 8, out);
+    ASSERT_EQ(any, 0);  /* No TX needed */
+}
+
+TEST(test_rereq_total_zero_skipped) {
+    uint8_t chunks[1] = {0};
+    uint8_t out[16] = {0};
+    uint8_t any = Test_Build_OTA_ReRequest_Payload(0x1u, 0, chunks, 1, out);
+    ASSERT_EQ(any, 0);
+}
+
+TEST(test_rereq_did_endian_consistent) {
+    uint32_t did = 0xCAFEBABEu;
+    uint16_t total = 1;
+    uint8_t chunks[1] = {0};
+    uint8_t out[16] = {0};
+
+    Test_Build_OTA_ReRequest_Payload(did, total, chunks, 1, out);
+    ASSERT_EQ(out[1], 0xCA); ASSERT_EQ(out[2], 0xFE);
+    ASSERT_EQ(out[3], 0xBA); ASSERT_EQ(out[4], 0xBE);
+}
+
+TEST(test_rereq_bitmap_capped_at_72_chunks) {
+    /* 100 chunks → only first 72 covered by 9-byte bitmap. Beyond cap stays 0. */
+    uint16_t total = 100;
+    uint8_t chunks[100] = {0};
+    uint8_t out[16] = {0};
+
+    Test_Build_OTA_ReRequest_Payload(0x1u, total, chunks, 100, out);
+    /* All 9 bitmap bytes 0xFF (72 chunks all "missing"); high bits beyond 72 are unset */
+    for (int i = 0; i < 9; i++) ASSERT_EQ(out[7 + i], 0xFF);
+}
+
+TEST(test_rereq_chunk_71_set_72_unset) {
+    /* Boundary case: chunks 0..71 missing → bit 71 (byte 8 bit 7) should be set. */
+    uint16_t total = 72;
+    uint8_t chunks[72] = {0};
+    uint8_t out[16] = {0};
+
+    Test_Build_OTA_ReRequest_Payload(0x1u, total, chunks, 72, out);
+    /* Byte 8 (offset 7+8=15) covers bits 64..71 → all 8 bits set = 0xFF */
+    ASSERT_EQ(out[15], 0xFF);
+}
+
+TEST(test_rereq_should_trigger_after_5min) {
+    /* total=10, received=3, last_rx 6 minutes ago → trigger */
+    uint32_t last_rx = 1000;
+    uint32_t now     = 1000 + (6UL * 60UL * 1000UL);
+    ASSERT_EQ(Test_OTA_Should_ReRequest(10, 3, last_rx, now), 1);
+}
+
+TEST(test_rereq_should_NOT_trigger_below_5min) {
+    /* total=10, received=3, last_rx 4 min 59 sec ago → DO NOT trigger */
+    uint32_t last_rx = 1000;
+    uint32_t now     = 1000 + (4UL * 60UL * 1000UL) + (59UL * 1000UL);
+    ASSERT_EQ(Test_OTA_Should_ReRequest(10, 3, last_rx, now), 0);
+}
+
+TEST(test_rereq_should_NOT_trigger_when_complete) {
+    uint32_t last_rx = 1000;
+    uint32_t now     = 1000 + (10UL * 60UL * 1000UL);
+    ASSERT_EQ(Test_OTA_Should_ReRequest(10, 10, last_rx, now), 0);
+}
+
+TEST(test_rereq_should_NOT_trigger_when_window_inactive) {
+    /* total=0 ⇒ no OTA window */
+    ASSERT_EQ(Test_OTA_Should_ReRequest(0, 0, 1000, 1000000), 0);
+}
+
+TEST(test_rereq_should_NOT_trigger_when_last_tick_zero) {
+    /* last_rx_tick == 0 ⇒ window not yet observed any chunk */
+    ASSERT_EQ(Test_OTA_Should_ReRequest(10, 0, 0, 1000000), 0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * 15. FW.23 OTA HMAC trailer — wire format + dual-gate verification
+ * ════════════════════════════════════════════════════════════════════ */
+#define S_HMAC_TRAILER_MARKER       0x9B
+#define S_HMAC_TRAILER_HEADER_SIZE  5
+#define S_HMAC_TRAILER_SEG_BYTES    11
+#define S_HMAC_TAG_BYTES            32
+#define S_HMAC_TRAILER_TOTAL_SEGS   3
+#define S_OTA_RITE_MAGIC            0x45544952u  /* "RITE" little-endian */
+
+/* Pure-logic mirror of Parse_HMAC_Trailer_Chunk (in soldier/main.c). */
+static int Test_Parse_HMAC_Trailer_Chunk(const uint8_t* chunk, uint16_t chunk_size,
+                                          uint8_t tag_out[S_HMAC_TAG_BYTES],
+                                          uint8_t* segments_received_inout)
+{
+    if (chunk == NULL || tag_out == NULL || segments_received_inout == NULL) return -1;
+    if (chunk_size < S_HMAC_TRAILER_HEADER_SIZE + S_HMAC_TRAILER_SEG_BYTES)  return -1;
+    if (chunk[0] != S_HMAC_TRAILER_MARKER)                                   return 0;
+
+    uint16_t seg_idx = ((uint16_t)chunk[1] << 8) | chunk[2];
+    if (seg_idx < 1 || seg_idx > S_HMAC_TRAILER_TOTAL_SEGS)                  return -1;
+
+    uint8_t base = (uint8_t)((seg_idx - 1) * S_HMAC_TRAILER_SEG_BYTES);
+    uint8_t copy_len = S_HMAC_TRAILER_SEG_BYTES;
+    if (seg_idx == S_HMAC_TRAILER_TOTAL_SEGS) {
+        copy_len = (uint8_t)(S_HMAC_TAG_BYTES - base);
+    }
+    memcpy(&tag_out[base], &chunk[S_HMAC_TRAILER_HEADER_SIZE], copy_len);
+    *segments_received_inout |= (uint8_t)(1u << (seg_idx - 1));
+    return 1;
+}
+
+/* Constant-time compare — same as Hmac_Constant_Time_Compare. */
+static int Test_HMAC_CT_Compare(const uint8_t* a, const uint8_t* b, size_t len)
+{
+    if (a == NULL || b == NULL) return 1;
+    uint8_t diff = 0;
+    for (size_t i = 0; i < len; i++) diff |= (uint8_t)(a[i] ^ b[i]);
+    return (int)diff;
+}
+
+/* Dual-gate logic mirror of OTA_Verify_Dual_Gate. */
+static int Test_OTA_Verify_Dual_Gate(const uint8_t* bytecode, uint16_t bc_size,
+                                       const uint8_t expected[S_HMAC_TAG_BYTES],
+                                       const uint8_t received[S_HMAC_TAG_BYTES])
+{
+    if (bytecode == NULL || expected == NULL || received == NULL) return 0;
+    if (bc_size < 4)                                              return 0;
+
+    uint32_t magic = ((uint32_t)bytecode[0])       |
+                     ((uint32_t)bytecode[1] <<  8) |
+                     ((uint32_t)bytecode[2] << 16) |
+                     ((uint32_t)bytecode[3] << 24);
+    if (magic != S_OTA_RITE_MAGIC)                                return 0;
+
+    if (Test_HMAC_CT_Compare(expected, received, S_HMAC_TAG_BYTES) != 0) return 0;
+    return 1;
+}
+
+/* Helper: build one of 3 backend HMAC trailer chunks (16-byte plaintext block).
+ * seg_idx ∈ {1,2,3}. Caller passes 32-byte tag; this packs segment.            */
+static void compose_hmac_trailer_chunk(uint8_t seg_idx, uint16_t total_chunks,
+                                        const uint8_t tag[S_HMAC_TAG_BYTES],
+                                        uint8_t out[16])
+{
+    memset(out, 0, 16);
+    out[0] = S_HMAC_TRAILER_MARKER;
+    out[1] = (uint8_t)(seg_idx >> 8);
+    out[2] = (uint8_t)(seg_idx & 0xFFu);
+    out[3] = (uint8_t)(total_chunks >> 8);
+    out[4] = (uint8_t)(total_chunks & 0xFFu);
+
+    uint8_t base = (uint8_t)((seg_idx - 1) * S_HMAC_TRAILER_SEG_BYTES);
+    uint8_t copy_len = S_HMAC_TRAILER_SEG_BYTES;
+    if (seg_idx == S_HMAC_TRAILER_TOTAL_SEGS) {
+        copy_len = (uint8_t)(S_HMAC_TAG_BYTES - base);
+    }
+    memcpy(&out[S_HMAC_TRAILER_HEADER_SIZE], &tag[base], copy_len);
+}
+
+TEST(test_hmac_trailer_three_chunks_assemble_full_tag) {
+    uint8_t expected[32];
+    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xA0 + i);
+
+    uint8_t recv[32] = {0};
+    uint8_t segs = 0;
+
+    for (uint8_t s = 1; s <= 3; s++) {
+        uint8_t chunk[16];
+        compose_hmac_trailer_chunk(s, 5, expected, chunk);
+        int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+        ASSERT_EQ(rc, 1);
+    }
+    ASSERT_EQ(segs, 0x07);
+    ASSERT_EQ(memcmp(recv, expected, 32), 0);
+}
+
+TEST(test_hmac_trailer_out_of_order_chunks) {
+    /* seg_idx 3, then 1, then 2 — final tag still matches expected. */
+    uint8_t expected[32];
+    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xC0 + i);
+
+    uint8_t recv[32] = {0};
+    uint8_t segs = 0;
+    uint8_t chunk[16];
+
+    compose_hmac_trailer_chunk(3, 5, expected, chunk);
+    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    compose_hmac_trailer_chunk(1, 5, expected, chunk);
+    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    compose_hmac_trailer_chunk(2, 5, expected, chunk);
+    Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+
+    ASSERT_EQ(segs, 0x07);
+    ASSERT_EQ(memcmp(recv, expected, 32), 0);
+}
+
+TEST(test_hmac_trailer_rejects_wrong_marker) {
+    uint8_t chunk[16] = {0};
+    chunk[0] = 0x99;  /* OTA bytecode marker, not 0x9B */
+    uint8_t recv[32] = {0};
+    uint8_t segs = 0;
+    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    ASSERT_EQ(rc, 0);  /* not our marker */
+    ASSERT_EQ(segs, 0);
+}
+
+TEST(test_hmac_trailer_rejects_seg_idx_zero) {
+    uint8_t chunk[16] = {0};
+    chunk[0] = S_HMAC_TRAILER_MARKER;
+    chunk[1] = 0; chunk[2] = 0;  /* seg_idx = 0 invalid */
+    uint8_t recv[32] = {0};
+    uint8_t segs = 0;
+    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    ASSERT_EQ(rc, -1);
+}
+
+TEST(test_hmac_trailer_rejects_seg_idx_above_3) {
+    uint8_t chunk[16] = {0};
+    chunk[0] = S_HMAC_TRAILER_MARKER;
+    chunk[1] = 0; chunk[2] = 4;  /* seg_idx = 4 invalid */
+    uint8_t recv[32] = {0};
+    uint8_t segs = 0;
+    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs);
+    ASSERT_EQ(rc, -1);
+}
+
+TEST(test_hmac_trailer_rejects_undersized_chunk) {
+    uint8_t chunk[8] = {0};
+    chunk[0] = S_HMAC_TRAILER_MARKER;
+    uint8_t recv[32] = {0};
+    uint8_t segs = 0;
+    int rc = Test_Parse_HMAC_Trailer_Chunk(chunk, 8, recv, &segs);
+    ASSERT_EQ(rc, -1);
+}
+
+TEST(test_dual_gate_both_pass_returns_1) {
+    uint8_t bytecode[5] = {0x52, 0x49, 0x54, 0x45, 0xCC};  /* "RITE" + payload */
+    uint8_t expected[32]; uint8_t received[32];
+    for (int i = 0; i < 32; i++) { expected[i] = (uint8_t)i; received[i] = (uint8_t)i; }
+    ASSERT_EQ(Test_OTA_Verify_Dual_Gate(bytecode, 5, expected, received), 1);
+}
+
+TEST(test_dual_gate_magic_fail_returns_0) {
+    uint8_t bytecode[5] = {0x00, 0x00, 0x00, 0x00, 0xCC};  /* No magic */
+    uint8_t expected[32] = {0}; uint8_t received[32] = {0};
+    ASSERT_EQ(Test_OTA_Verify_Dual_Gate(bytecode, 5, expected, received), 0);
+}
+
+TEST(test_dual_gate_hmac_fail_returns_0) {
+    uint8_t bytecode[4] = {0x52, 0x49, 0x54, 0x45};  /* magic ok */
+    uint8_t expected[32]; uint8_t received[32];
+    for (int i = 0; i < 32; i++) { expected[i] = (uint8_t)i; received[i] = (uint8_t)i; }
+    received[15] ^= 0x01;  /* one-bit flip in middle of tag */
+    ASSERT_EQ(Test_OTA_Verify_Dual_Gate(bytecode, 4, expected, received), 0);
+}
+
+TEST(test_dual_gate_short_bytecode_returns_0) {
+    /* < 4 bytes can't even hold magic */
+    uint8_t bytecode[3] = {0x52, 0x49, 0x54};
+    uint8_t expected[32] = {0}; uint8_t received[32] = {0};
+    ASSERT_EQ(Test_OTA_Verify_Dual_Gate(bytecode, 3, expected, received), 0);
+}
+
+TEST(test_dual_gate_constant_time_compare_zero_diff) {
+    /* Identical inputs → 0 (equal) */
+    uint8_t a[32]; for (int i = 0; i < 32; i++) a[i] = (uint8_t)i;
+    ASSERT_EQ(Test_HMAC_CT_Compare(a, a, 32), 0);
+}
+
+TEST(test_dual_gate_constant_time_compare_first_byte_diff) {
+    uint8_t a[32]; uint8_t b[32];
+    for (int i = 0; i < 32; i++) { a[i] = (uint8_t)i; b[i] = (uint8_t)i; }
+    b[0] ^= 0xFF;
+    ASSERT_NE(Test_HMAC_CT_Compare(a, b, 32), 0);
+}
+
+TEST(test_dual_gate_constant_time_compare_last_byte_diff) {
+    /* Last-byte difference must be detected — accumulator design. */
+    uint8_t a[32]; uint8_t b[32];
+    for (int i = 0; i < 32; i++) { a[i] = (uint8_t)i; b[i] = (uint8_t)i; }
+    b[31] ^= 0x01;
+    ASSERT_NE(Test_HMAC_CT_Compare(a, b, 32), 0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * 16. FW.18 OTA CMD Dispatcher — CMD_SET_AUDIO_THRESHOLDS (0x9D)
+ * ════════════════════════════════════════════════════════════════════
+ * Wire (10 bytes total):
+ *   [0]    0x9D marker
+ *   [1..2] payload_len LE = 7
+ *   [3..4] warn_x100 (s16 LE)
+ *   [5..6] crit_x100 (s16 LE)
+ *   [7]    config_version
+ *   [8..9] crc16-ccitt LE over body[3..7]
+ * ════════════════════════════════════════════════════════════════════ */
+#define S_CMD_AUDIO_MARKER         0x9D
+#define S_CMD_AUDIO_HEADER_SIZE    3
+#define S_CMD_AUDIO_BODY_SIZE      5
+#define S_CMD_AUDIO_FRAME_SIZE     10
+#define S_CMD_AUDIO_PAYLOAD_LEN    7
+
+static void compose_audio_thresholds_frame(int16_t warn_x100, int16_t crit_x100,
+                                            uint8_t version, uint8_t out[10])
+{
+    memset(out, 0, 10);
+    out[0] = S_CMD_AUDIO_MARKER;
+    out[1] = (uint8_t)(S_CMD_AUDIO_PAYLOAD_LEN & 0xFFu);
+    out[2] = (uint8_t)((S_CMD_AUDIO_PAYLOAD_LEN >> 8) & 0xFFu);
+
+    uint16_t uw = (uint16_t)warn_x100;
+    uint16_t uc = (uint16_t)crit_x100;
+    out[3] = (uint8_t)(uw & 0xFFu);
+    out[4] = (uint8_t)((uw >> 8) & 0xFFu);
+    out[5] = (uint8_t)(uc & 0xFFu);
+    out[6] = (uint8_t)((uc >> 8) & 0xFFu);
+    out[7] = version;
+
+    uint16_t crc = soldier_crc16_ccitt(&out[3], S_CMD_AUDIO_BODY_SIZE);
+    out[8] = (uint8_t)(crc & 0xFFu);
+    out[9] = (uint8_t)((crc >> 8) & 0xFFu);
+}
+
+/* TinyML threshold validate/apply — mirrors firmware sanitize logic. */
+#define S_TINYML_MIN_VALID  0.01f
+#define S_TINYML_MAX_VALID  0.99f
+#define S_TINYML_DEFAULT_W  0.60f
+#define S_TINYML_DEFAULT_C  0.85f
+
+static float Test_TinyML_Validate(float raw, float fallback) {
+    if (raw < S_TINYML_MIN_VALID || raw > S_TINYML_MAX_VALID) return fallback;
+    return raw;
+}
+
+static void Test_TinyML_Apply(float wr, float cr, float* w_out, float* c_out) {
+    float w = Test_TinyML_Validate(wr, S_TINYML_DEFAULT_W);
+    float c = Test_TinyML_Validate(cr, S_TINYML_DEFAULT_C);
+    if (!(w < c)) { w = S_TINYML_DEFAULT_W; c = S_TINYML_DEFAULT_C; }
+    *w_out = w; *c_out = c;
+}
+
+/* Mirror of Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS. */
+static uint8_t Test_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
+                                                     uint16_t frame_size,
+                                                     float* warn_out, float* crit_out,
+                                                     uint8_t* version_out)
+{
+    if (frame == NULL || warn_out == NULL || crit_out == NULL)         return 0;
+    if (frame_size < S_CMD_AUDIO_FRAME_SIZE)                           return 0;
+    if (frame[0] != S_CMD_AUDIO_MARKER)                                return 0;
+
+    uint16_t plen = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
+    if (plen != S_CMD_AUDIO_PAYLOAD_LEN)                               return 0;
+
+    const uint8_t* body = frame + S_CMD_AUDIO_HEADER_SIZE;
+    uint16_t expected = soldier_crc16_ccitt(body, S_CMD_AUDIO_BODY_SIZE);
+    uint16_t received = (uint16_t)body[5] | ((uint16_t)body[6] << 8);
+    if (expected != received)                                          return 0;
+
+    int16_t warn_x100 = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
+    int16_t crit_x100 = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
+    uint8_t version   = body[4];
+
+    if (warn_x100 < 1 || warn_x100 > 99)                               return 0;
+    if (crit_x100 < 1 || crit_x100 > 99)                               return 0;
+
+    Test_TinyML_Apply((float)warn_x100 / 100.0f, (float)crit_x100 / 100.0f,
+                      warn_out, crit_out);
+    if (version_out) *version_out = version;
+    return 1;
+}
+
+TEST(test_audio_dispatcher_accepts_default_60_85) {
+    uint8_t frame[10];
+    compose_audio_thresholds_frame(60, 85, 1, frame);
+
+    float w = 0.0f, c = 0.0f; uint8_t v = 0;
+    uint8_t ok = Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v);
+    ASSERT_EQ(ok, 1);
+    /* float compare with tolerance */
+    ASSERT_EQ((int)(w * 100.0f + 0.5f), 60);
+    ASSERT_EQ((int)(c * 100.0f + 0.5f), 85);
+    ASSERT_EQ(v, 1);
+}
+
+TEST(test_audio_dispatcher_rejects_wrong_marker) {
+    uint8_t frame[10];
+    compose_audio_thresholds_frame(60, 85, 1, frame);
+    frame[0] = 0x9C;  /* corrupt marker */
+    float w=0, c=0; uint8_t v=0;
+    ASSERT_EQ(Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v), 0);
+}
+
+TEST(test_audio_dispatcher_rejects_bad_crc) {
+    uint8_t frame[10];
+    compose_audio_thresholds_frame(60, 85, 1, frame);
+    frame[8] ^= 0xFF;  /* corrupt CRC */
+    float w=0, c=0; uint8_t v=0;
+    ASSERT_EQ(Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v), 0);
+}
+
+TEST(test_audio_dispatcher_rejects_warn_geq_crit_via_apply_default) {
+    /* warn=85, crit=60 — both pass body range check (1..99) but APPLY rolls
+     * them back to defaults via TinyML_Apply (inversion safety). Parser
+     * returns 1 (frame is well-formed); apply returns defaults. */
+    uint8_t frame[10];
+    compose_audio_thresholds_frame(85, 60, 1, frame);
+    float w=0, c=0; uint8_t v=0;
+    uint8_t ok = Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v);
+    ASSERT_EQ(ok, 1);
+    /* Applied thresholds = defaults (0.60 / 0.85) */
+    ASSERT_EQ((int)(w * 100.0f + 0.5f), 60);
+    ASSERT_EQ((int)(c * 100.0f + 0.5f), 85);
+}
+
+TEST(test_audio_dispatcher_rejects_short_frame) {
+    uint8_t frame[10];
+    compose_audio_thresholds_frame(60, 85, 1, frame);
+    float w=0, c=0; uint8_t v=0;
+    ASSERT_EQ(Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 9, &w, &c, &v), 0);
+}
+
+TEST(test_audio_dispatcher_rejects_warn_zero) {
+    uint8_t frame[10];
+    compose_audio_thresholds_frame(0, 85, 1, frame);
+    float w=0, c=0; uint8_t v=0;
+    ASSERT_EQ(Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v), 0);
+}
+
+TEST(test_audio_dispatcher_rejects_crit_above_99) {
+    uint8_t frame[10];
+    compose_audio_thresholds_frame(60, 100, 1, frame);
+    float w=0, c=0; uint8_t v=0;
+    ASSERT_EQ(Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &w, &c, &v), 0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -2488,6 +3020,44 @@ int main(void)
     RUN(test_thresholds_rejects_z_above_plus_100);
     RUN(test_thresholds_rejects_short_frame);
     RUN(test_thresholds_unmapped_species_id_0xFF_accepted);
+
+    printf("\n  Magic Re-Request (FW.27-B):\n");
+    RUN(test_rereq_full_bitmap_when_no_chunks);
+    RUN(test_rereq_partial_bitmap);
+    RUN(test_rereq_no_missing_returns_zero);
+    RUN(test_rereq_total_zero_skipped);
+    RUN(test_rereq_did_endian_consistent);
+    RUN(test_rereq_bitmap_capped_at_72_chunks);
+    RUN(test_rereq_chunk_71_set_72_unset);
+    RUN(test_rereq_should_trigger_after_5min);
+    RUN(test_rereq_should_NOT_trigger_below_5min);
+    RUN(test_rereq_should_NOT_trigger_when_complete);
+    RUN(test_rereq_should_NOT_trigger_when_window_inactive);
+    RUN(test_rereq_should_NOT_trigger_when_last_tick_zero);
+
+    printf("\n  HMAC Trailer + Dual-Gate (FW.23):\n");
+    RUN(test_hmac_trailer_three_chunks_assemble_full_tag);
+    RUN(test_hmac_trailer_out_of_order_chunks);
+    RUN(test_hmac_trailer_rejects_wrong_marker);
+    RUN(test_hmac_trailer_rejects_seg_idx_zero);
+    RUN(test_hmac_trailer_rejects_seg_idx_above_3);
+    RUN(test_hmac_trailer_rejects_undersized_chunk);
+    RUN(test_dual_gate_both_pass_returns_1);
+    RUN(test_dual_gate_magic_fail_returns_0);
+    RUN(test_dual_gate_hmac_fail_returns_0);
+    RUN(test_dual_gate_short_bytecode_returns_0);
+    RUN(test_dual_gate_constant_time_compare_zero_diff);
+    RUN(test_dual_gate_constant_time_compare_first_byte_diff);
+    RUN(test_dual_gate_constant_time_compare_last_byte_diff);
+
+    printf("\n  CMD_SET_AUDIO_THRESHOLDS Dispatcher (FW.18):\n");
+    RUN(test_audio_dispatcher_accepts_default_60_85);
+    RUN(test_audio_dispatcher_rejects_wrong_marker);
+    RUN(test_audio_dispatcher_rejects_bad_crc);
+    RUN(test_audio_dispatcher_rejects_warn_geq_crit_via_apply_default);
+    RUN(test_audio_dispatcher_rejects_short_frame);
+    RUN(test_audio_dispatcher_rejects_warn_zero);
+    RUN(test_audio_dispatcher_rejects_crit_above_99);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

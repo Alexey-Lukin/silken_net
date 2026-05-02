@@ -792,7 +792,9 @@ Soldier мав би передбачити закінчення broadcast (на�
 - Поточний `Trigger_Emergency_LoRa_TX()` має `random_jitter % 500ms` (FW.10) — для broadcast-ACK довелось би розширити цей jitter до пропорційного до кількості сусідніх вузлів, що знову вимагає координації.
 - ACK-bitmap-aggregation потребує Queen RAM (`union_bitmap[ceil(OTA_MAX_CHUNKS/8)] = 2 байти` × до 100 unique DIDs у CIFO cache). Це окрема структура поза CIFO.
 
-#### 5.X.3 Дизайн B: Magic Re-Request (Soldier-initiated vector OTA)
+#### 5.X.3 Дизайн B: Magic Re-Request (Soldier-initiated vector OTA) — ✅ Реалізовано (2026-05-02)
+
+**Статус:** ✅ Реалізовано у `firmware/soldier/main.c` (`Build_OTA_ReRequest_Payload`, OTA_REQ_MARKER 0x55, OTA_REREQUEST_TIMEOUT_MS=300000) + `firmware/queen/main.c` (`Process_LoRa_RX` REREQUEST handler перед CIFO/CoAP, `djb2_hash_bytes` length-strict NUL-safe replay-protection через `cmd_dedup_ring`). 22 host-тести (12 Soldier + 10 Queen) у `firmware/test/test_soldier_logic.c` + `test_queen_logic.c`. Опціонально (поза цим циклом): зберегти останній OTA SHA-256 у Queen Flash для cross-check на re-request — поки не реалізовано, після `ota_is_active=0` буфер `pending_ota_bytecode` може бути перезаписаний наступним CoAP-push'ем, тоді re-request не обслуговується (Solider має чекати наступного Rails-driven OTA cycle).
 
 **Ідея:** Soldier при `ota_chunks_received < ota_total_chunks` після таймауту (наприклад, **5 хвилин без нових chunks**) ініціює uplink-запит конкретних missing chunks через звичайний LoRa TX → Queen приймає, ретранслює лише ці chunks.
 

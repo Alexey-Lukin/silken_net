@@ -345,16 +345,32 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Зовнішні виклики** | `OpenSSL::KDF.hkdf` (через `SilkenNet::SeedDerivation`), `ActuatorCommandWorker.perform_async` (для key update downlink) |
 | **Вихід** | Provision: `HardwareKey` instance з обома секретами. Rotate: `new_hex_key` (String, 64 символи). Raises `RotationPendingError`, `SecurityError`. |
 
+### `OtaHmacKeyService` 🔐 [FW.23]
+
+| | |
+|---|---|
+| **Файл** | `app/services/ota_hmac_key_service.rb` |
+| **Вхід** | `cluster_id` (Integer або String) |
+| **Що робить** | Per-cluster OTA HMAC ключ `K_ota` для аутентифікації bytecode на Soldier (dual-gate). Дериває `K_ota = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="cluster:#{id}", info="silken-ota-hmac-v1", len=32)`. **Domain separation** від `HardwareKeyService` AES device-key (info `"silken-aes-256-device-key"`) — компрометація одного K-вектора не розкриває інших. Слідує патерну SEC.11: raise `SecurityError` без `PROVISIONING_MASTER_KEY` (no SecureRandom fallback в production; dev/test pin-ять ключ у `spec/rails_helper.rb`). |
+| **Зовнішні виклики** | `OpenSSL::KDF.hkdf` |
+| **Публічні методи** | `.fetch_for(cluster_id) → String` (64-символьний HEX, upper); `.fetch_binary_for(cluster_id) → String` (32 binary bytes) — для прямого `OpenSSL::HMAC.digest` |
+| **Вихід** | 64-символьний HEX або 32-байтна binary-string. |
+| **Cross-ref** | [03_05 §3.4б](03_05_Hardware_AES256_and_Security.md) — повний протокол OTA HMAC dual-gate. |
+
 ### `OtaPackagerService`
 
 | | |
 |---|---|
 | **Файл** | `app/services/ota_packager_service.rb` |
-| **Вхід** | `firmware` (BioContractFirmware або TinyMlModel), `chunk_size:` (default 512 bytes CoAP) |
-| **Що робить** | Фрагментує `firmware.binary_payload` на чанки. Додає заголовок `[0x99][Index:uint16][Total:uint16]` + CRC16-CCITT per chunk. |
+| **Вхід** | `firmware` (BioContractFirmware або TinyMlModel), `chunk_size:` (default 512 bytes CoAP), `cluster_id:` (опціонально — Integer/String; вмикає HMAC trailer [FW.23]) |
+| **Що робить** | Фрагментує `firmware.binary_payload` на чанки. Додає заголовок `[0x99][Index:uint16][Total:uint16]` + CRC16-CCITT per chunk. **[FW.23]** При `cluster_id:` — після bytecode-чанків емітує 3 HMAC trailer-чанки (детально нижче). |
 | **[FW.8] `build_threshold_config_block(tree)`** | Клас-метод. Будує `CMD_SET_THRESHOLDS` (0x9A) OTA Config Block для передачі per-species Lorenz порогів на Soldier без перекомпіляції. Читає `tree.effective_lorenz_thresholds` → упаковує у 10-байтовий payload: `[z_min×100:int16_le][z_max×100:int16_le][z_opt×100:int16_le][species_id:uint8][config_version:uint8][crc16:uint16_le]`. Prefixed: `[CMD_SET_THRESHOLDS:1][len:uint16_le][payload]`. |
-| **OTA Command Constants** | `CMD_OTA_BYTECODE=0x99` (mruby chunks), `CMD_SET_THRESHOLDS=0x9A` (FW.8 Z thresholds), `CMD_SET_ML_THRESH=0x9B` (FW.18 TinyML dual-threshold), `CMD_TIME_SYNC=0x9C` (FW.20 RTC correction) |
-| **Вихід** | `{ manifest: { version, total_size, checksum, sha256, total_chunks }, packages: Enumerator }`. |
+| **[FW.23] `compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)`** | Клас-метод. Обчислює HMAC-SHA256 по `bytecode \|\| version_id_be(4) \|\| lora_total_chunks_be(2)`. Anti-replay: `version_id` прив'язує тег до конкретної ревізії. Anti-truncation: `lora_total_chunks` в тезі — скидання будь-якого trailing-чанку детектується як HMAC mismatch на Soldier. Повертає 32-byte binary digest. |
+| **[FW.23] `build_hmac_trailer_chunks(hmac_tag, lora_total_chunks)`** | Клас-метод. Розбиває 32-байтний тег на 3 LoRa-форматованих 16-байтових блоки: `[0x9B][seg_idx:2 BE][lora_total:2 BE][hmac_seg:11]`. Сегмент 3 має 10 реальних байт + 1 NUL PAD. Queen relay-ює їх stateless; Soldier збирає через `Parse_HMAC_Trailer_Chunk`. |
+| **OTA Command Constants (SSOT)** | `CMD_OTA_BYTECODE=0x99` (mruby chunks), `CMD_SET_THRESHOLDS=0x9A` (FW.8 Lorenz Z), `CMD_HMAC_TRAILER=0x9B` (FW.23 OTA HMAC печатка), `CMD_TIME_SYNC=0x9C` (FW.20 RTC correction), `CMD_SET_AUDIO_THRESHOLDS=0x9D` (FW.18 TinyML confidence thresholds). Повна карта опкодів: [03_01 §4.5а](03_01_Firmware_Lifecycle_and_DMA.md). |
+| **HMAC Constants** | `HMAC_TAG_BYTES=32`, `HMAC_TRAILER_SEGMENTS=3`, `HMAC_SEG_BYTES=11`, `HMAC_TRAILER_BLOCK=16` |
+| **Вихід (без cluster_id)** | `{ manifest: { version, total_size, checksum, sha256, total_chunks }, packages: Enumerator<16-byte blocks> }` |
+| **Вихід (з cluster_id)** | `{ manifest: { version, total_size, checksum, sha256, total_chunks, lora_total_chunks, total_packages, hmac_signed: true, hmac_cluster_id }, packages: Enumerator<bytecode_chunks + 3 trailer_chunks> }` — `total_packages = total_chunks + 3`; `OtaTransmissionWorker` ітерує по `packages` без змін у логіці pacing. |
 
 ---
 
@@ -673,8 +689,8 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Retry** | false (самостійна retry-логіка) |
 | **Тригер** | Ручний запуск через API або після OTA mismatch detection |
 | **Вхід** | `queen_uid`, `firmware_type` (`mruby`/`firmware`/`tinyml`/`weights`), `record_id`, `chunk_index` (default 0), `retry_count` (default 0) |
-| **Сервіси** | `OtaPackagerService.prepare` |
-| **Side Effects** | CoAP PUT до Queen (AES-256-CBC). Pacing: `perform_in(0.4.seconds, ...)` між чанками. Turbo Stream `OtaProgressBar`. При `sidekiq_retries_exhausted`: `gateway.update!(state: :faulty)` — запобігає Gateway stuck у `:updating`. |
+| **Сервіси** | `OtaPackagerService.prepare(firmware, cluster_id: cluster.id)` |
+| **Side Effects** | CoAP PUT до Queen (AES-256-CBC). Pacing: `perform_in(0.4.seconds, ...)` між чанками. **[FW.23]** При `cluster_id:` — `packages` Enumerator автоматично містить 3 HMAC trailer-чанки `[0x9B]` після bytecode; логіка pacing без змін. Queen relay-ює `[0x9B]`-чанки stateless; Soldier верифікує dual-gate перед FLASH write. Turbo Stream `OtaProgressBar` відображає `total_packages` (bytecode + 3 trailer). При `sidekiq_retries_exhausted`: `gateway.update!(state: :faulty)` — запобігає Gateway stuck у `:updating`. |
 
 #### `ResetActuatorStateWorker`
 

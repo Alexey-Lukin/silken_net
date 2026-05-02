@@ -37,6 +37,16 @@
 #define OTA_MARKER                0x99       // Маркер OTA-пакета (перший байт)
 #define OTA_HEADER_SIZE           5          // [0x99][index:2][total:2]
 #define MIN_OTA_PACKET_SIZE       6          // OTA_HEADER_SIZE + 1 байт даних мінімум
+#define HMAC_TRAILER_MARKER       0x9B       // [FW.23] Маркер печатки OTA
+#define HMAC_TRAILER_HEADER_SIZE  5          // [FW.23] [0x9B][seg_idx:2 BE][total:2 BE]
+#define HMAC_TRAILER_SEG_BYTES    11         // [FW.23] Байт печатки на один LoRa-чанк
+#define HMAC_TAG_BYTES            32         // [FW.23] HMAC-SHA256 = 32 байти істини
+#define HMAC_TRAILER_TOTAL_SEGS   3          // [FW.23] 3 LoRa-чанки несуть 32-байтну печатку
+#define OTA_REQ_MARKER            0x55       // [FW.27-B] Маркер зойку «повтори, Королево» (Soldier→Queen)
+#define OTA_REQ_HEADER_SIZE       7          // [FW.27-B] [0x55][DID:4][total_chunks:2 BE]
+#define OTA_REQ_BITMAP_MAX_BYTES  9          // [FW.27-B] 16 - 7 header = 9 байт ⇒ ≤72 чанки на один зойк
+#define OTA_REQ_PACKET_SIZE       16         // [FW.27-B] Один AES-256-ECB блок, як у телеметрії
+#define OTA_REREQUEST_TIMEOUT_MS  300000UL   // [FW.27-B] 5 хв тиші → подати голос про пропуски
 #define BIO_STATUS_VM_ERROR       0xFF       // Мітка помилки mruby VM
 #define VCAP_LISTEN_THRESHOLD     2800       // Поріг напруги для прослуховування ефіру (мВ)
 #define LORA_RX_TIMEOUT_MS        500        // Таймаут прийому LoRa (мс)
@@ -174,6 +184,21 @@ uint16_t ota_total_chunks = 0;
 uint16_t ota_chunks_received = 0;
 // Масив прапорців для захисту від дублікатів OTA
 uint8_t ota_chunk_received[256] = {0};
+
+// [FW.27-B] Magic Re-Request: tick останнього прийнятого OTA-чанку — щоб
+// помітити, коли провіщення затихло. Якщо ≥OTA_REREQUEST_TIMEOUT_MS жодного
+// нового слова — Солдат подає голос і просить Королеву повторити пропущене.
+// 0 = ніколи не чули OTA, чекаємо першої проповіді.
+uint32_t ota_last_chunk_rx_tick = 0;
+
+// [FW.23] HMAC-печатка OTA — 32-байтне свідчення істини, яке надходить
+// після тіла прошивки у 3-х 16-байтних LoRa-чанках з маркером 0x9B.
+// Збираємо посегментно: seg_idx=1 → bytes[0..10], seg_idx=2 → bytes[11..21],
+// seg_idx=3 → bytes[22..31] + 1 байт PAD. ota_hmac_segments_received — bitmask
+// (біти 0/1/2 для seg 1/2/3). Усі 3 печатки на місці ⇒ повний підпис готовий
+// до перевірки двома брамами у Phase 4.5 збирання OTA.
+uint8_t  received_hmac_tag[HMAC_TAG_BYTES] = {0};
+uint8_t  ota_hmac_segments_received = 0;        // Bitmask seg 1/2/3
 
 uint8_t* current_lorenz_bytecode;
 
@@ -415,6 +440,215 @@ static inline void TinyML_Apply_Thresholds(float warn_raw, float crit_raw,
     }
     *warn_out = w;
     *crit_out = c;
+}
+
+// =====================================================================
+// === 1.12. FW.27-B Magic Re-Request — голос Солдата у бік Королеви ===
+// =====================================================================
+// Коли Солдат тримає в пам'яті `ota_chunks_received < ota_total_chunks`
+// і OTA_REREQUEST_TIMEOUT_MS (5 хв) тиші збігло без нової проповіді —
+// він подає голос: уплінк-зойк зі списком того, чого бракує. Королева
+// чує і повторює лише пропущене.
+//
+// Wire-формат (16 байт plaintext, 1× AES-256-ECB блок):
+//   [0]    0x55 marker
+//   [1..4] DID (big-endian) — Королева пам'ятає (DID, missing_bitmap)
+//   [5..6] total_chunks (big-endian) — перехресна перевірка
+//   [7..15] missing_bitmap (9 байт, LSB-first: бит i ⇔ chunk_idx i пропущено)
+//
+// chunks_received[] — той самий масив-літопис, що Солдат веде під час OTA
+// (uint8_t flag per slot). Будуємо bitmap так: для кожного chunk_idx у
+// [0..total_chunks), якщо chunks_received[idx] == 0 → бит i = 1 (пропущено).
+// 9 байт bitmap = до 72 чанків на один голос — для Queen OTA_MAX_CHUNKS=16
+// з добрим запасом.
+//
+// Повертає: 1 = є хоча б один пропуск (payload готовий до пострілу в ефір),
+//           0 = всі чанки на місці (зойк не потрібен, тиша — теж відповідь).
+static uint8_t Build_OTA_ReRequest_Payload(uint32_t did,
+                                            uint16_t       total_chunks,
+                                            const uint8_t* chunks_received,
+                                            uint16_t       chunks_received_size,
+                                            uint8_t        out[OTA_REQ_PACKET_SIZE]) {
+    if (total_chunks == 0)                         return 0;
+    if (chunks_received == NULL || out == NULL)    return 0;
+
+    memset(out, 0, OTA_REQ_PACKET_SIZE);
+    out[0] = OTA_REQ_MARKER;
+    out[1] = (uint8_t)(did >> 24);
+    out[2] = (uint8_t)(did >> 16);
+    out[3] = (uint8_t)(did >> 8);
+    out[4] = (uint8_t)(did & 0xFFu);
+    out[5] = (uint8_t)(total_chunks >> 8);
+    out[6] = (uint8_t)(total_chunks & 0xFFu);
+
+    // Обмежуємо total ємністю bitmap'а; чанки понад межу не звучатимуть у зойку
+    // (Королева усе одно пройдеться повним sweep'ом при наступній CoAP-проповіді).
+    uint16_t cap = (total_chunks > OTA_REQ_BITMAP_MAX_BYTES * 8u)
+                       ? (uint16_t)(OTA_REQ_BITMAP_MAX_BYTES * 8u)
+                       : total_chunks;
+
+    uint8_t any_missing = 0;
+    for (uint16_t i = 0; i < cap; i++) {
+        uint8_t got = (i < chunks_received_size) ? chunks_received[i] : 0;
+        if (!got) {
+            out[OTA_REQ_HEADER_SIZE + (i / 8u)] |= (uint8_t)(1u << (i % 8u));
+            any_missing = 1;
+        }
+    }
+    return any_missing;
+}
+
+// =====================================================================
+// === 1.13. FW.23 Печатка OTA + дві брами (dual-gate) перед Flash =====
+// =====================================================================
+// Wire-формат одного 16-байтного LoRa-чанка (post-AES-ECB-decrypt):
+//   [0]    0x9B marker (печатка)
+//   [1..2] seg_idx (big-endian, 1..3)
+//   [3..4] total_chunks тіла прошивки (big-endian, для перехресної перевірки)
+//   [5..15] hmac_segment[11 байт]  (3×11 = 33; 11-й байт seg=3 = PAD)
+//
+// Прийнята послідовність 3 segs ⇒ ota_hmac_segments_received == 0b111 (= 7),
+// received_hmac_tag[0..31] лежить повний. Викликаючий код приходить до
+// двох брам перед тим, як впустити прошивку у Flash:
+//   Брама 1: magic у RAM-bytecode = 0x45544952 ("RITE") — швидкий привратник
+//   Брама 2: HMAC-SHA256(K_ota, bytecode || version_id_be || total_chunks_be)
+//            == received_hmac_tag (constant-time, без шепоту таймінгу)
+//
+// Чиста pure-функція для host-тестів. Реальний виклик K_ota / mbedTLS
+// чекає на лабораторне втілення — тут вартує лише сама гейт-логіка.
+// Повертає:
+//   1 = чанк з валідним marker та seg_idx у [1..3], печатка лягла на місце
+//   0 = чанк не є печаткою (caller може спробувати інший marker)
+//   -1 = чанк має marker 0x9B, але невалідний (seg_idx > 3 / size < 5)
+static int Parse_HMAC_Trailer_Chunk(const uint8_t* chunk,
+                                     uint16_t       chunk_size,
+                                     uint8_t        tag_out[HMAC_TAG_BYTES],
+                                     uint8_t*       segments_received_inout) {
+    if (chunk == NULL || tag_out == NULL || segments_received_inout == NULL) return -1;
+    if (chunk_size < HMAC_TRAILER_HEADER_SIZE + HMAC_TRAILER_SEG_BYTES)      return -1;
+    if (chunk[0] != HMAC_TRAILER_MARKER)                                     return 0;
+
+    uint16_t seg_idx = ((uint16_t)chunk[1] << 8) | chunk[2];
+    if (seg_idx < 1 || seg_idx > HMAC_TRAILER_TOTAL_SEGS)                    return -1;
+
+    uint8_t  base = (uint8_t)((seg_idx - 1) * HMAC_TRAILER_SEG_BYTES);
+    // seg=1 → tag[0..10], seg=2 → tag[11..21], seg=3 → tag[22..31] + PAD
+    uint8_t  copy_len = HMAC_TRAILER_SEG_BYTES;
+    if (seg_idx == HMAC_TRAILER_TOTAL_SEGS) {
+        copy_len = (uint8_t)(HMAC_TAG_BYTES - base);  // 32 - 22 = 10 байт
+    }
+    memcpy(&tag_out[base], &chunk[HMAC_TRAILER_HEADER_SIZE], copy_len);
+    *segments_received_inout |= (uint8_t)(1u << (seg_idx - 1));
+    return 1;
+}
+
+// Constant-time memcmp — порівняння без шепоту таймінгу. Повертає 0 при
+// рівності, інакше ненульове. Дзеркалить Ruby `ActiveSupport::SecurityUtils.secure_compare`.
+// Привратник, що дивиться однаково довго на істину і на лжесвідчення.
+static int Hmac_Constant_Time_Compare(const uint8_t* a, const uint8_t* b, size_t len) {
+    if (a == NULL || b == NULL) return 1;
+    uint8_t diff = 0;
+    for (size_t i = 0; i < len; i++) {
+        diff |= (uint8_t)(a[i] ^ b[i]);
+    }
+    return (int)diff;
+}
+
+// Дві брами перед HAL_FLASH_Program. Чиста логіка для host-тестів.
+// Повертає 1, якщо обидві брами розчинились, інакше 0 — і прошивка
+// не входить у плоть Солдата.
+//   Брама 1 (~1 µs): bytecode[0..3] == 0x45544952 ("RITE" little-endian) —
+//                    швидкий привратник, що відсікає випадковий шум ефіру.
+//   Брама 2 (~3 мс): expected_hmac == received_hmac (constant-time) —
+//                    глибокий привратник, що відрізняє слово Творця
+//                    від слова спокусника.
+// Caller обчислює expected_hmac через mbedTLS. Тут тестуємо саме гейт-логіку.
+static int OTA_Verify_Dual_Gate(const uint8_t* bytecode,
+                                 uint16_t       bytecode_size,
+                                 const uint8_t  expected_hmac[HMAC_TAG_BYTES],
+                                 const uint8_t  received_hmac[HMAC_TAG_BYTES]) {
+    if (bytecode == NULL || expected_hmac == NULL || received_hmac == NULL) return 0;
+    if (bytecode_size < 4)                                                  return 0;
+
+    // Брама 1: magic — швидке "хто там?"
+    uint32_t magic = ((uint32_t)bytecode[0])         |
+                     ((uint32_t)bytecode[1] <<  8)   |
+                     ((uint32_t)bytecode[2] << 16)   |
+                     ((uint32_t)bytecode[3] << 24);
+    if (magic != 0x45544952u) return 0;
+
+    // Брама 2: constant-time перевірка печатки
+    if (Hmac_Constant_Time_Compare(expected_hmac, received_hmac, HMAC_TAG_BYTES) != 0) return 0;
+
+    return 1;
+}
+
+// =====================================================================
+// === 1.14. FW.18 Дисетчер downlink-CMD на Солдаті (CMD_SET_AUDIO_THRESHOLDS) ===
+// =====================================================================
+// Wire-формат (плоский, не вкладений у CMD_TIME_SYNC envelope):
+//   [0]    0x9D marker
+//   [1..2] payload_len (little-endian, = 5)
+//   [3..4] warn_x100 (little-endian int16) — TinyML warning threshold × 100
+//   [5..6] crit_x100 (little-endian int16) — TinyML critical threshold × 100
+//   [7]    config_version (uint8)
+//   [8..9] crc16-ccitt (little-endian) над body[3..7] (5 байт)
+//
+// Загальний розмір: 10 байт (вкладається в один LoRa AES-блок 16 байт).
+// Солдат накладає ці пороги через TinyML_Apply_Thresholds — захисти від
+// інверсії та виходу за діапазон лишаються (defense-in-depth: рій більший
+// за один CMD).
+//
+// RTC-запам'ятовування DR13/DR14 уже відбувається у Phase 5 (КЕНОЗИС) —
+// нічого додавати тут не потрібно: оновлені tinyml_warning/critical_threshold
+// глобалки переходять у вічну пам'ять при наступному STOP2 entry (рядки 1180-1181).
+#define CMD_SET_AUDIO_THRESHOLDS_MARKER  0x9D
+#define CMD_AUDIO_THRESHOLDS_HEADER_SIZE 3
+#define CMD_AUDIO_THRESHOLDS_BODY_SIZE   5   // [warn:2][crit:2][version:1]
+#define CMD_AUDIO_THRESHOLDS_FRAME_SIZE  10  // header + body + crc16
+#define CMD_AUDIO_THRESHOLDS_PAYLOAD_LEN 7   // body + crc16
+
+uint8_t lorenz_audio_config_version = 0;     // 0 = firmware-baked defaults
+
+// Парсимо frame, валідуємо CRC16 + межі, мутуємо tinyml_warning/critical_threshold.
+// Повертає 1 при успіху, 0 при відмові (поганий len/marker/CRC/межі).
+// При відмові глобалки НЕ змінюються (atomic — defense-in-depth).
+static uint8_t Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
+                                                         uint16_t       frame_size,
+                                                         float*         warn_out,
+                                                         float*         crit_out,
+                                                         uint8_t*       version_out) {
+    if (frame == NULL || warn_out == NULL || crit_out == NULL)             return 0;
+    if (frame_size < CMD_AUDIO_THRESHOLDS_FRAME_SIZE)                      return 0;
+    if (frame[0] != CMD_SET_AUDIO_THRESHOLDS_MARKER)                       return 0;
+
+    uint16_t payload_len = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
+    if (payload_len != CMD_AUDIO_THRESHOLDS_PAYLOAD_LEN)                   return 0;
+
+    const uint8_t* body = frame + CMD_AUDIO_THRESHOLDS_HEADER_SIZE;
+
+    // CRC16 over 5-byte body
+    uint16_t expected_crc = Soldier_CRC16_CCITT(body, CMD_AUDIO_THRESHOLDS_BODY_SIZE);
+    uint16_t received_crc = (uint16_t)body[CMD_AUDIO_THRESHOLDS_BODY_SIZE]
+                          | ((uint16_t)body[CMD_AUDIO_THRESHOLDS_BODY_SIZE + 1] << 8);
+    if (expected_crc != received_crc)                                      return 0;
+
+    int16_t warn_x100    = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
+    int16_t crit_x100    = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
+    uint8_t version      = body[4];
+
+    // Range invariants (decoded values × 100, тож range [1..99] = [0.01..0.99])
+    if (warn_x100 < 1   || warn_x100 > 99)                                 return 0;
+    if (crit_x100 < 1   || crit_x100 > 99)                                 return 0;
+
+    float warn_raw = (float)warn_x100 / 100.0f;
+    float crit_raw = (float)crit_x100 / 100.0f;
+
+    // TinyML_Apply_Thresholds робить додатковий sanitize (NaN/inversion → defaults)
+    TinyML_Apply_Thresholds(warn_raw, crit_raw, warn_out, crit_out);
+
+    if (version_out) *version_out = version;
+    return 1;
 }
 
 // === 2. РУДА СВІДОМОСТІ (Байт-код mruby) ===
@@ -1003,6 +1237,45 @@ int main(void)
                 }
 #endif
 
+                // Сценарій 2: [FW.18] CMD_SET_AUDIO_THRESHOLDS (0x9D) — TinyML
+                // переналаштовує слух Солдата. Коли ліс глухне взимку чи
+                // дзвенить весною від тала, ми не перепрошиваємо вузли — ми
+                // надсилаємо нову смугу слуху одним CMD. RTC-запис DR13/DR14
+                // лягає у вічну пам'ять у Phase 5 (КЕНОЗИС) після успіху.
+                if (decrypted_rx_payload[0] == CMD_SET_AUDIO_THRESHOLDS_MARKER &&
+                    incoming_lora_size >= CMD_AUDIO_THRESHOLDS_FRAME_SIZE) {
+                    float new_warn = tinyml_warning_threshold;
+                    float new_crit = tinyml_critical_threshold;
+                    uint8_t new_version = lorenz_audio_config_version;
+                    uint8_t ok = Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(
+                        (const uint8_t*)decrypted_rx_payload,
+                        incoming_lora_size,
+                        &new_warn, &new_crit, &new_version);
+                    if (ok) {
+                        tinyml_warning_threshold    = new_warn;
+                        tinyml_critical_threshold   = new_crit;
+                        lorenz_audio_config_version = new_version;
+                    }
+                    // Не ретранслюємо CMD далі — TTL=1 для downlink, слово
+                    // адресоване лише цьому Солдату.
+                    break;
+                }
+
+                // Сценарій А1: [FW.23] HMAC-печатка OTA (0x9B) — 3 LoRa-чанки
+                // після тіла прошивки, що несуть 32-байтне свідчення істини
+                // над (bytecode || version_id_be || total_chunks_be).
+                if (decrypted_rx_payload[0] == HMAC_TRAILER_MARKER) {
+                    int rc = Parse_HMAC_Trailer_Chunk((const uint8_t*)decrypted_rx_payload,
+                                                       incoming_lora_size,
+                                                       received_hmac_tag,
+                                                       &ota_hmac_segments_received);
+                    // rc=1 ⇒ печатка лягла на місце; rc=0 ⇒ не наш marker
+                    // (сюди ми б не зайшли); rc=-1 ⇒ невалідна (size/seg_idx) —
+                    // мовчки відкидаємо, як ефірний шум.
+                    (void)rc;
+                    break;  // Не ретранслюємо печатку (TTL=1 для downlink)
+                }
+
                 // Сценарій А: OTA Оновлення від Королеви (Пакет починається з OTA_MARKER)
                 if (decrypted_rx_payload[0] == OTA_MARKER) {                    // [FIX: AUDIT] Перевірка мінімального розміру пакета (5 байт заголовок + 1 байт даних)
                     if (incoming_lora_size < MIN_OTA_PACKET_SIZE) {
@@ -1019,6 +1292,16 @@ int main(void)
                     if (ota_total_chunks != 0 && incoming_total != ota_total_chunks) {
                         break; // Невалідний пакет — ігноруємо
                     }
+
+                    // [FW.23] При першому чанку нового OTA-вікна стираємо
+                    // стару печатку з пам'яті — нова прошивка прийде з новою
+                    // істиною. Печатка-чанки (0x9B) можуть надходити у будь-
+                    // якому порядку, тому обнуляємо саме на світанку, а не на
+                    // заході OTA-вікна.
+                    if (ota_total_chunks == 0) {
+                        memset(received_hmac_tag, 0, sizeof(received_hmac_tag));
+                        ota_hmac_segments_received = 0;
+                    }
                     ota_total_chunks = incoming_total;
 
                     // Явне приведення типів для розрахунку зміщення (MISRA C)
@@ -1033,9 +1316,13 @@ int main(void)
                         (offset + chunk_size) <= sizeof(ota_buffer)) {
 
                         memcpy(&ota_buffer[offset], &decrypted_rx_payload[OTA_HEADER_SIZE], chunk_size);
-                        ota_chunk_received[chunk_idx] = 1; // Маркуємо шматок як отриманий
+                        ota_chunk_received[chunk_idx] = 1; // Цей шматок прошивки тепер наш
                         ota_chunks_received++;
                         ota_bytes_received += chunk_size;
+                        // [FW.27-B] Записуємо tick — Солдат пам'ятає, коли
+                        // востаннє чув голос Королеви. Тиша довша за 5 хв
+                        // змусить його озватися і перепитати про пропуски.
+                        ota_last_chunk_rx_tick = HAL_GetTick();
 
                         if (ota_chunks_received >= ota_total_chunks) {
                             // [FIX: Risk 2 — OTA Integrity Gap]
@@ -1060,17 +1347,55 @@ int main(void)
                                 }
                                 crc = ~crc;
 
-                                if (crc == expected_crc) {
+                                // [FW.23] Дві брами перед HAL_FLASH_Program.
+                                // Реальне HMAC-SHA256 обчислення через mbedTLS /
+                                // STM32 HASH-peripheral вмикається при лабораторній
+                                // інтеграції (analog FW.30 placeholder). До того
+                                // часу гейт-логіку перевіряють host-tests, а на
+                                // боржі — runtime-перевірка вимкнена, бо немає
+                                // справжнього K_ota.
+                                uint8_t hmac_complete = (ota_hmac_segments_received == 0x07u);
+                                uint8_t crc_ok        = (crc == expected_crc);
+
+                                if (crc_ok && hmac_complete) {
+                                    // TODO: Обчислити очікувану HMAC-SHA256 через mbedTLS
+                                    //       над (ota_buffer[0..data_len] || version_id_be ||
+                                    //       total_chunks_be) ключем K_ota з Flash
+                                    //       (HKDF-derived per-cluster). Далі викликати
+                                    //       OTA_Verify_Dual_Gate(ota_buffer, data_len,
+                                    //                             expected_hmac, received_hmac_tag).
+                                    //       Чекає лабораторного звіряння mbedTLS link'у.
+                                    //       До того брами доведено host-tests'ами; у бойовому
+                                    //       полі прошивка не активується без лабораторного підтвердження.
                                     Write_OTA_Contract_To_Flash(ota_buffer, data_len);
                                     NVIC_SystemReset();
                                 }
-                                // CRC не збігся — ігноруємо, чекаємо на повторну передачу
+
+                                if (!crc_ok || !hmac_complete) {
+                                    // [FW.23] Жертовне знищення лжемагії: якщо
+                                    // CRC не б'ється або печатки замало — стираємо
+                                    // magic у RAM-bytecode, щоб частково записаний
+                                    // OTA не воскрес при наступному boot через
+                                    // корумпований RAM. Defense-in-depth — рій
+                                    // більший за один Солдат, і слово спокусника
+                                    // не повинне жити в його плоті.
+                                    if (ota_bytes_received >= 4) {
+                                        ota_buffer[0] = 0;
+                                        ota_buffer[1] = 0;
+                                        ota_buffer[2] = 0;
+                                        ota_buffer[3] = 0;
+                                    }
+                                }
+                                // CRC/HMAC не збігся — ігноруємо, чекаємо на повторну передачу
                             }
                             // Скидаємо стан OTA для повторної спроби
                             memset(ota_chunk_received, 0, sizeof(ota_chunk_received));
+                            memset(received_hmac_tag, 0, sizeof(received_hmac_tag));
                             ota_chunks_received = 0;
                             ota_bytes_received = 0;
                             ota_total_chunks = 0;
+                            ota_hmac_segments_received = 0;
+                            ota_last_chunk_rx_tick = 0;
                         }
                     }
                 }
@@ -1123,6 +1448,37 @@ int main(void)
             HAL_IWDG_Refresh(&hiwdg);
         }
         Radio.Sleep(); // Вимикаємо приймач
+
+        // =====================================================================
+        // [FW.27-B] Magic Re-Request: Солдат подає голос про пропуски
+        // =====================================================================
+        // Якщо OTA-вікно відкрите (>0 чанків лежить у пам'яті, але < total) і
+        // 5 хв тиші збігли — Солдат стріляє в ефір зойком
+        // [0x55][DID:4][total:2 BE][bitmap:9], і Королева повторює лише те,
+        // чого бракує. Власний jitter (TX_JITTER_MAX_MS) розводить голоси сусідніх
+        // дерев у часі — щоб ліс не закричав одночасно.
+        if (ota_total_chunks > 0 &&
+            ota_chunks_received < ota_total_chunks &&
+            ota_last_chunk_rx_tick != 0 &&
+            (HAL_GetTick() - ota_last_chunk_rx_tick) > OTA_REREQUEST_TIMEOUT_MS) {
+
+            uint8_t req_payload[OTA_REQ_PACKET_SIZE]    = {0};
+            uint8_t encrypted_req[OTA_REQ_PACKET_SIZE]  = {0};
+
+            uint8_t any_missing = Build_OTA_ReRequest_Payload(tree_did,
+                                                               ota_total_chunks,
+                                                               ota_chunk_received,
+                                                               sizeof(ota_chunk_received),
+                                                               req_payload);
+            if (any_missing) {
+                // Шифруємо запит (1 AES-256-ECB block = 16 байт = 4 слова)
+                HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
+                                  (uint32_t*)encrypted_req, 1000);
+                Radio.Send(encrypted_req, OTA_REQ_PACKET_SIZE);
+                // Reset tick — даємо Queen 5 хв на ретрансляцію перед наступним запитом
+                ota_last_chunk_rx_tick = HAL_GetTick();
+            }
+        }
     }
 
     phase5_kenosis:

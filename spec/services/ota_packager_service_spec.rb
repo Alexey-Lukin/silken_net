@@ -247,4 +247,167 @@ RSpec.describe OtaPackagerService do
       end
     end
   end
+
+  # =========================================================================
+  # [FW.23] OTA HMAC-SHA256 dual-gate authentication
+  # =========================================================================
+  describe "HMAC trailer (FW.23)" do
+    let(:hmac_firmware) do
+      instance_double(BioContractFirmware,
+                       id: 42,
+                       version: "1.0.0",
+                       binary_payload: payload,
+                       binary_sha256: "abc123")
+    end
+    let(:cluster_id) { "cluster-test-1" }
+
+    describe ".compute_hmac_tag" do
+      let(:payload) { "RITE\x03\x00\x00\x00\xAA\xBB\xCC".b }
+
+      it "returns 32-byte binary digest" do
+        tag = described_class.compute_hmac_tag(payload, 42, 5, cluster_id: cluster_id)
+        expect(tag.bytesize).to eq(32)
+        expect(tag.encoding).to eq(Encoding::ASCII_8BIT)
+      end
+
+      it "is deterministic for fixed (bytecode, version_id, total, cluster_id)" do
+        tag1 = described_class.compute_hmac_tag(payload, 42, 5, cluster_id: cluster_id)
+        tag2 = described_class.compute_hmac_tag(payload, 42, 5, cluster_id: cluster_id)
+        expect(tag1).to eq(tag2)
+      end
+
+      it "anti-replay: changing version_id changes tag" do
+        tag1 = described_class.compute_hmac_tag(payload, 42, 5, cluster_id: cluster_id)
+        tag2 = described_class.compute_hmac_tag(payload, 43, 5, cluster_id: cluster_id)
+        expect(tag1).not_to eq(tag2)
+      end
+
+      it "anti-truncation: changing total_chunks changes tag" do
+        tag1 = described_class.compute_hmac_tag(payload, 42, 5, cluster_id: cluster_id)
+        tag2 = described_class.compute_hmac_tag(payload, 42, 4, cluster_id: cluster_id)
+        expect(tag1).not_to eq(tag2)
+      end
+
+      it "differs across cluster_ids (per-cluster K_ota isolation)" do
+        tag_a = described_class.compute_hmac_tag(payload, 42, 5, cluster_id: "cluster-A")
+        tag_b = described_class.compute_hmac_tag(payload, 42, 5, cluster_id: "cluster-B")
+        expect(tag_a).not_to eq(tag_b)
+      end
+
+      it "raises ArgumentError on empty bytecode" do
+        expect {
+          described_class.compute_hmac_tag("", 42, 5, cluster_id: cluster_id)
+        }.to raise_error(ArgumentError, /bytecode/)
+      end
+
+      it "raises ArgumentError on zero total_chunks" do
+        expect {
+          described_class.compute_hmac_tag(payload, 42, 0, cluster_id: cluster_id)
+        }.to raise_error(ArgumentError, /lora_total_chunks/)
+      end
+
+      it "raises ArgumentError on nil version_id" do
+        expect {
+          described_class.compute_hmac_tag(payload, nil, 5, cluster_id: cluster_id)
+        }.to raise_error(ArgumentError, /version_id/)
+      end
+    end
+
+    describe ".build_hmac_trailer_chunks" do
+      let(:hmac_tag) { ("\xAA" * 32).b }
+
+      it "returns exactly 3 chunks" do
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+        expect(chunks.size).to eq(3)
+      end
+
+      it "each chunk is exactly 16 bytes (LoRa AES block)" do
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+        chunks.each { |c| expect(c.bytesize).to eq(16) }
+      end
+
+      it "first byte of each chunk is HMAC marker 0x9B" do
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+        chunks.each { |c| expect(c.unpack1("C")).to eq(0x9B) }
+      end
+
+      it "encodes seg_idx 1, 2, 3 in big-endian (bytes 1..2)" do
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+        seg_indices = chunks.map { |c| c[1..2].unpack1("n") }
+        expect(seg_indices).to eq([ 1, 2, 3 ])
+      end
+
+      it "encodes lora_total_chunks consistently in bytes 3..4 (BE)" do
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+        totals = chunks.map { |c| c[3..4].unpack1("n") }
+        expect(totals).to all(eq(5))
+      end
+
+      it "concatenated payloads (bytes 5..) reconstruct the original 32-byte tag" do
+        chunks = described_class.build_hmac_trailer_chunks(hmac_tag, 5)
+        # seg=1: bytes 0..10, seg=2: bytes 11..21, seg=3: bytes 22..31 + 1 PAD
+        reconstructed = chunks[0][5..15] + chunks[1][5..15] + chunks[2][5..14]
+        expect(reconstructed.b).to eq(hmac_tag)
+      end
+
+      it "raises ArgumentError on wrong tag length" do
+        expect {
+          described_class.build_hmac_trailer_chunks("\xAA" * 16, 5)
+        }.to raise_error(ArgumentError, /32 bytes/)
+      end
+    end
+
+    describe ".prepare with cluster_id (HMAC enabled)" do
+      let(:payload) { ("R" * 60).b }  # 60 bytes → ~6 LoRa chunks
+
+      it "appends 3 trailer packages after bytecode chunks" do
+        bytecode_only = described_class.prepare(hmac_firmware, chunk_size: 512).fetch(:packages).to_a.size
+        with_hmac     = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:packages).to_a.size
+
+        expect(with_hmac).to eq(bytecode_only + 3)
+      end
+
+      it "exposes hmac_signed metadata in manifest" do
+        manifest = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:manifest)
+        expect(manifest[:hmac_signed]).to be true
+        expect(manifest[:hmac_cluster_id]).to eq(cluster_id)
+        expect(manifest[:total_packages]).to eq(manifest[:total_chunks] + 3)
+      end
+
+      it "exposes lora_total_chunks for cross-check with bytecode 0x99 header" do
+        manifest = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:manifest)
+        expected_lora_total = (60 + 10) / 11  # ceil(60/11) = 6
+        expect(manifest[:lora_total_chunks]).to eq(expected_lora_total)
+      end
+
+      it "trailer chunks all have 0x9B marker" do
+        packages = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:packages).to_a
+        trailer = packages.last(3)
+        trailer.each { |t| expect(t.unpack1("C")).to eq(0x9B) }
+      end
+
+      it "bytecode chunks come BEFORE trailer chunks (order matters for Soldier window)" do
+        packages = described_class.prepare(hmac_firmware, chunk_size: 512, cluster_id: cluster_id).fetch(:packages).to_a
+        last_bytecode_idx = packages.size - 4
+        expect(packages[last_bytecode_idx].unpack1("C")).to eq(0x99)
+        expect(packages[last_bytecode_idx + 1].unpack1("C")).to eq(0x9B)
+      end
+    end
+
+    describe ".prepare without cluster_id (legacy / un-signed)" do
+      let(:payload) { ("R" * 60).b }
+
+      it "does NOT include trailer chunks (backward compat)" do
+        packages = described_class.prepare(hmac_firmware, chunk_size: 512).fetch(:packages).to_a
+        markers = packages.map { |p| p.unpack1("C") }
+        expect(markers).to all(eq(0x99))
+      end
+
+      it "manifest does not include hmac metadata" do
+        manifest = described_class.prepare(hmac_firmware, chunk_size: 512).fetch(:manifest)
+        expect(manifest).not_to have_key(:hmac_signed)
+        expect(manifest).not_to have_key(:total_packages)
+      end
+    end
+  end
 end

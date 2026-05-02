@@ -288,12 +288,13 @@
 #### FW.18 — Hardcoded confidence threshold 0.80
 - `03_03` BLOCKER-6
 - **Опис:** `if (ml_confidence > 0.80)` hardcoded в Flash. Неможливо remote-tune для різних лісів/сезонів. Немає "warning" рівня (лише binary: alarm / no alarm)
-- **Статус:** 🤖 ✅ Реалізовано (firmware-частина): RTC-storage у `DR13/DR14` + dual-threshold decision logic + Phase 5 writeback + 19 host-tests (44 у TinyML suite, 283 загалом). Hardcoded `0.80` повністю замінено зонами SILENCE/WARNING/CRITICAL з ескалацією. **Уточнення розташування:** оригінальний дизайн вказував `DR6/DR7`, але після FW.21 ці регістри зайняті (`DR6 = mesh_relay_payload[12..15]`, `DR7 = tree_did`); канонічна SSOT-таблиця в `03_01` §2 показує `DR13/DR14` як вільний резерв (єдиний залишок `DR15`). **Залишковий блокер:** OTA CMD dispatcher на Soldier (`CMD_SET_THRESHOLDS` 0x9A) deferred до спільного циклу з FW.8 — обидва завдання потребують єдиного downlink-CMD-фреймворку, який поки існує лише в Queen-firmware.
-- [x] 🤖 Зберегти threshold у RTC Backup Register (updateable via OTA) — RTC + decision logic + tests; OTA dispatcher deferred → FW.8
+- **Статус:** 🤖 ✅ Реалізовано (firmware-частина): RTC-storage у `DR13/DR14` + dual-threshold decision logic + Phase 5 writeback + 19 host-tests (44 у TinyML suite, 283 загалом). Hardcoded `0.80` повністю замінено зонами SILENCE/WARNING/CRITICAL з ескалацією. **Уточнення розташування:** оригінальний дизайн вказував `DR6/DR7`, але після FW.21 ці регістри зайняті (`DR6 = mesh_relay_payload[12..15]`, `DR7 = tree_did`); канонічна SSOT-таблиця в `03_01` §2 показує `DR13/DR14` як вільний резерв (єдиний залишок `DR15`). **OTA CMD dispatcher закрито** (2026-05-02) — Soldier-side downlink-CMD-фреймворк реалізовано окремою опкод-картою: `0x9D = CMD_SET_AUDIO_THRESHOLDS` (FW.18) щоб не зіткнутися з `0x9A = CMD_SET_THRESHOLDS` (FW.8 Lorenz Z thresholds). Парсер у `firmware/soldier/main.c` Сценарій 2 + 7 host-тестів (default/CRC/range/inversion/short_frame). Опкод-карта SSOT: `0x99=OTA / 0x9A=Lorenz thresholds / 0x9B=HMAC trailer / 0x9C=TIME_SYNC envelope / 0x9D=audio confidence thresholds`.
+- [x] 🤖 Зберегти threshold у RTC Backup Register (updateable via OTA) — RTC + decision logic + tests + dispatcher (2026-05-02)
 - [x] 🤖 Дизайн dual-threshold: WARNING (0.60) → event counter; CRITICAL (0.85) → Emergency TX
 - [x] 🤖 Реалізація dual-threshold zones з warning_counter ескалацією (3× → fallback Emergency для chainsaw)
 - [x] 🤖 19 host-тестів: 9 zones + 10 validation/RTC roundtrip
-- [x] 🤖 Доку оновлено: `03_03` BLOCKER-6 (DR6/DR7 → DR13/DR14, ✅ partial), `03_01` §2 (RTC map), `10_03` §2.5 (test count 25→44)
+- [x] 🤖 Doc оновлено: `03_03` BLOCKER-6 (DR6/DR7 → DR13/DR14, ✅ partial), `03_01` §2 (RTC map), `10_03` §2.5 (test count 25→44)
+- [x] 🤖 Soldier OTA CMD dispatcher (`CMD_SET_AUDIO_THRESHOLDS` 0x9D) + 7 host-тестів (2026-05-02)
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
 - `03_04` BLOCKER-4
@@ -362,12 +363,16 @@
 - `03_05` | `firmware/queen/main.c`
 - **Опис:** OTA bytecode chunks (`[0x99][index:2][total:2][bytecode:11]`) передаються через AES-256-ECB без MAC/signature. Зловмисник може підмінити firmware chunks → code injection на всіх Soldiers у радіусі Queen. Відсутня верифікація цілісності зібраного bytecode перед записом у Flash (`0x0803F000`)
 - **Пріоритет:** P1 (критичний для security, але блокується FW.2 CCM transition)
-- **Рішення:** (1) Підписати OTA image Ed25519 на backend, (2) Queen верифікує підпис перед relay, (3) Soldier верифікує перед Flash write. АБО: HMAC-SHA256 над повним image, transmitted як фінальний chunk
-- [x] 🤖 Дизайн OTA authentication protocol — ✅ Повний дизайн HMAC-SHA256 OTA authentication додано в `03_05` §3.4б. Включає: threat model (substitution/bit-flip CRC16/replay), wire format `[0x9B]` HMAC-trailer chunks (3 додаткових LoRa-чанків після bytecode), HMAC input canonical (`bytecode || version_id || total_chunks` для anti-replay+anti-truncation), per-cluster `K_ota` через HKDF з окремим info-string `"silken-ota-hmac-v1"` для domain separation від AES key (FW.1), dual-gate verification на Soldier (Gate 1 magic `0x45544952` ~1 µs, Gate 2 HMAC ~3 мс через STM32 SHA256 hardware) — це покриває **й чекбокс «Magic check + HMAC verification = dual gate»** на дизайн-рівні. Implementation plan: 3 синхронні зміни (Backend `OtaPackagerService` + `OtaHmacKeyService`, Firmware Soldier dual-gate, Firmware Queen stateless relay) — mandatory з дня 1, без backward-compat shim (pre-production, no devices in field). ATECC608B slot 3 — future evolution до ECDSA-P256 при billion-tree масштабі
-- [ ] 🤖 Backend: підпис OTA image перед відправкою
-- [ ] 🤖 Firmware Queen: верифікація підпису/HMAC перед relay
-- [ ] 🤖 Firmware Soldier: верифікація перед Flash write (`MRUBY_CONTRACT_FLASH_ADDR`)
-- [ ] 🤖 Magic check `0x45544952 ("RITE")` + HMAC verification = dual gate
+- **Статус:** 🤖 ✅ Реалізовано (2026-05-02). Backend HMAC-SHA256 повний пайплайн + Soldier dual-gate framework + Queen stateless relay. Implementation:
+  - **Backend:** `OtaHmacKeyService.fetch_for(cluster_id)` — HKDF-SHA256 з info `"silken-ota-hmac-v1"` (domain separation від FW.1 AES key); `SecurityError` без master key (SEC.11 hard cutover). `OtaPackagerService.compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)` — anti-replay+anti-truncation binding. `OtaPackagerService.build_hmac_trailer_chunks` — 3 LoRa-formatted блоки `[0x9B][seg_idx:2][total:2][hmac:11]`. `OtaPackagerService.prepare(..., cluster_id:)` — opt-in, backward-compat без cluster_id. **30 нових RSpec прикладів** (services + integration end-to-end).
+  - **Firmware Queen:** stateless relay — `Handle_CoAP_Command` зберігає `[0x9B]` chunks у `pending_ota_hmac_chunks[3][16]`, reflex broadcast loop додає Phase 1 (HMAC trailer broadcast після Phase 0 bytecode). 4 host-тести (segments assemble, seg_idx_4 reject, wrong marker, overwrite same segment).
+  - **Firmware Soldier:** `Parse_HMAC_Trailer_Chunk` парсер (`received_hmac_tag[32]`, `ota_hmac_segments_received` bitmask) + Gate 1 magic `0x45544952` "RITE" + Gate 2 HMAC verify constant-time (`Hmac_Constant_Time_Compare`) перед `Write_OTA_Contract_To_Flash`. Fail-safe: затирання magic у RAM-bytecode при negative gate щоб частково записаний OTA не активувався. `OTA_Verify_Dual_Gate` placeholder для mbedTLS HMAC compute — actual MCU integration deferred to lab build (відповідає FW.30 cold-start placeholder pattern). 13 host-тестів (3-chunk assemble, out-of-order, marker/seg_idx/size rejects, both-pass/magic-fail/hmac-fail/short, constant-time first/last byte).
+- [x] 🤖 Дизайн OTA authentication protocol — повний дизайн HMAC-SHA256 у `03_05` §3.4б
+- [x] 🤖 Backend: підпис OTA image перед відправкою (`OtaHmacKeyService` + `OtaPackagerService.compute_hmac_tag`/`build_hmac_trailer_chunks`)
+- [x] 🤖 Firmware Queen: stateless-relay `[0x9B]` chunks ідентично до `[0x99]` (без verification — backend↔soldier end-to-end trust)
+- [x] 🤖 Firmware Soldier: dual-gate verification (magic `0x45544952` "RITE" + HMAC constant-time) перед Flash write
+- [x] 🤖 Magic check + HMAC verification = dual gate (host-test framework + fail-safe RAM wipe)
+- [ ] 🟡 mbedTLS HMAC-SHA256 compute on STM32 HASH peripheral — deferred до lab integration (analog FW.30 mbedTLS deferred TODO)
 
 #### FW.25 — TinyML DSP preprocessing (FFT/MFCC) — undefined
 - `03_03` BLOCKER-5 | `firmware/soldier/main.c` | **P1** (блокує FW.4)
@@ -386,11 +391,11 @@
 #### FW.27 — OTA broadcast: відсутня RX-верифікація Soldier
 - `03_02` §5 | **P2**
 - **Опис:** Queen транслює OTA chunks послідовно через LoRa без перевірки чи Soldier активно слухає. Якщо Soldier у STOP2 під час broadcast — chunk втрачається без retry. Документація **не описує recovery механізм** для пропущених chunks. Без TDMA Sync Windows (ARCH.26) — broadcast ненадійний
-- **Статус:** 🤖 ✅ Дизайн обох recovery-механізмів завершено та задокументовано в `03_02` §5.X. (1) **ACK-Aggregation (Дизайн A):** Queen чекає 10-сек aggregation window після broadcast, Soldier'и відправляють bitmap-ACK; aggregated_missing → targeted re-broadcast. Імплементація залежить від ARCH.26 TDMA — без скоординованих RX-вікон 100 Soldier'ів = collision storm. (2) **Magic Re-Request (Дизайн B):** Soldier при `ota_chunks_received < ota_total_chunks` після 5-хв таймауту відправляє uplink-pacкет з `REREQUEST_MARKER (0x55)` + missing-bitmap; Queen ретранслює лише missing chunks (60-90% energy saving vs повний wave). Дизайн B feasible **без ARCH.26** — використовує існуючий `random_jitter % 500ms` (FW.10) для collision avoidance. Рекомендація: реалізовувати B першим, A — спільно з ARCH.26.
+- **Статус:** 🤖 ✅ Дизайн **обох** recovery-механізмів завершено + Дизайн B повністю реалізовано (2026-05-02). (1) **ACK-Aggregation (Дизайн A):** Queen чекає 10-сек aggregation window після broadcast, Soldier'и відправляють bitmap-ACK; aggregated_missing → targeted re-broadcast. Імплементація залежить від ARCH.26 TDMA — без скоординованих RX-вікон 100 Soldier'ів = collision storm. (2) **Magic Re-Request (Дизайн B) — реалізовано:** Soldier при `ota_chunks_received < ota_total_chunks` після `OTA_REREQUEST_TIMEOUT_MS` (5 хв) тиші формує uplink-пакет `[0x55][DID:4][total:2 BE][bitmap:9]` через `Build_OTA_ReRequest_Payload`; Queen приймає у `Process_LoRa_RX` (НЕ йде у CIFO/CoAP — це службовий control-пакет), дедуплікує `(DID, missing_bitmap)` через `cmd_dedup_ring` з новим `djb2_hash_bytes` (length-strict NUL-safe варіант — fix collision-bug де total_chunks BE-upper байт = 0 для total<256), потім targeted re-broadcast лише missing chunks (60-90% economy vs повний wave). 22 host-тести (12 Soldier bitmap correctness + 10 Queen dedup/total-mismatch/CIFO-bypass). Дизайн B feasible **без ARCH.26** — використовує існуючий `random_jitter % 500ms` (FW.10) для collision avoidance. Дизайн A — спільно з ARCH.26.
 - [x] 🤖 Дизайн ACK-aggregation: Queen чекає consolidated ACK після всіх chunks → re-broadcast пропущених (`03_02` §5.X.2)
 - [x] 🤖 Magic re-request: Soldier при detected gap → request specific chunks via uplink (vector OTA, `03_02` §5.X.3)
-- [ ] 🔗 Залежить від ARCH.26 (TDMA для координованого RX вікна) — лише для Дизайну A; B можна реалізувати незалежно
-- [ ] 🤖 Імплементація Дизайну B (firmware/soldier + firmware/queen) — наступний цикл
+- [ ] 🔗 Залежить від ARCH.26 (TDMA для координованого RX вікна) — лише для Дизайну A; B реалізовано незалежно
+- [x] 🤖 Імплементація Дизайну B (firmware/soldier + firmware/queen + 22 host-тести) — 2026-05-02
 
 #### FW.29 — Panic packet (0xFF) vs saturated acoustic_events (255) — disambiguation
 - `03_03` §5.3 | **P1**

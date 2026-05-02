@@ -124,6 +124,16 @@ static uint32_t djb2_hash(const char* str, uint8_t len)
     return h;
 }
 
+/* [FW.27-B] Length-strict DJB2 — does NOT stop at NUL byte. */
+static uint32_t djb2_hash_bytes(const uint8_t* buf, uint8_t len)
+{
+    uint32_t h = 5381;
+    for (uint8_t i = 0; i < len; i++) {
+        h = ((h << 5) + h) + buf[i];
+    }
+    return h;
+}
+
 /* Command dedup ring — identical to queen/main.c */
 static uint8_t Cmd_Dedup_Check(uint32_t hash)
 {
@@ -1605,6 +1615,227 @@ TEST(test_time_beacon_ts_zero_caller_responsibility) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * 11. FW.27-B Magic Re-Request Handler (Queen-side)
+ * ════════════════════════════════════════════════════════════════════
+ * Queen recognizes 0x55 marker in decrypted LoRa RX path:
+ *   - Dedups (DID, missing_bitmap) via existing cmd_dedup_ring (5-min replay)
+ *   - Targeted re-broadcast: only chunks where bitmap bit is set (missing)
+ *   - Does NOT enter CIFO cache, does NOT go to CoAP — pure service packet
+ * ════════════════════════════════════════════════════════════════════ */
+#define Q_OTA_REQ_MARKER             0x55
+#define Q_OTA_REQ_HEADER_SIZE        7
+#define Q_OTA_REQ_BITMAP_MAX_BYTES   9
+
+/* Pure-logic decision: should Queen re-broadcast in response to this packet?
+ * Returns: 1 = re-broadcast, 0 = drop (non-rerequest, dedup, or invalid). */
+static uint8_t Test_Should_Handle_Rerequest(const uint8_t* decrypted,
+                                              uint16_t pending_size,
+                                              uint8_t  ota_active)
+{
+    if (decrypted[0] != Q_OTA_REQ_MARKER) return 0;
+
+    uint32_t hash = djb2_hash_bytes(decrypted, 16);
+    if (Cmd_Dedup_Check(hash) == 1) return 0;  /* duplicate */
+
+    if (pending_size == 0 || !ota_active) return 0;
+
+    uint16_t total_chunks  = (pending_size + 10) / 11;
+    uint16_t soldier_total = ((uint16_t)decrypted[5] << 8) | decrypted[6];
+    if (soldier_total != total_chunks) return 0;
+
+    return 1;
+}
+
+static uint16_t Test_Count_Missing_From_Bitmap(const uint8_t* decrypted,
+                                                 uint16_t total_chunks)
+{
+    uint16_t cap = (total_chunks > Q_OTA_REQ_BITMAP_MAX_BYTES * 8u)
+                      ? (uint16_t)(Q_OTA_REQ_BITMAP_MAX_BYTES * 8u)
+                      : total_chunks;
+    uint16_t missing = 0;
+    const uint8_t* bm = &decrypted[Q_OTA_REQ_HEADER_SIZE];
+    for (uint16_t i = 0; i < cap; i++) {
+        if (bm[i / 8u] & (uint8_t)(1u << (i % 8u))) missing++;
+    }
+    return missing;
+}
+
+static void compose_rereq_packet(uint32_t did, uint16_t total,
+                                   const uint8_t* missing_bitmap,
+                                   uint8_t bitmap_bytes,
+                                   uint8_t out[16])
+{
+    memset(out, 0, 16);
+    out[0] = Q_OTA_REQ_MARKER;
+    out[1] = (uint8_t)(did >> 24);
+    out[2] = (uint8_t)(did >> 16);
+    out[3] = (uint8_t)(did >> 8);
+    out[4] = (uint8_t)(did & 0xFFu);
+    out[5] = (uint8_t)(total >> 8);
+    out[6] = (uint8_t)(total & 0xFFu);
+    if (missing_bitmap && bitmap_bytes <= Q_OTA_REQ_BITMAP_MAX_BYTES) {
+        memcpy(&out[Q_OTA_REQ_HEADER_SIZE], missing_bitmap, bitmap_bytes);
+    }
+}
+
+TEST(test_rereq_queen_accepts_valid_packet) {
+    reset_dedup();
+    uint8_t bm[1] = {0xFF};  /* chunks 0..7 missing */
+    uint8_t pkt[16];
+    /* pending_size=88 → total=8 chunks; soldier_total=8 matches. */
+    compose_rereq_packet(0xDEADBEEFu, 8, bm, 1, pkt);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 88, 1), 1);
+}
+
+TEST(test_rereq_queen_dedups_replay) {
+    reset_dedup();
+    uint8_t bm[1] = {0xFF};
+    uint8_t pkt[16];
+    compose_rereq_packet(0xCAFEBABEu, 8, bm, 1, pkt);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 88, 1), 1);
+    /* Replay — dedup */
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 88, 1), 0);
+}
+
+TEST(test_rereq_queen_different_bitmaps_not_deduped) {
+    reset_dedup();
+    uint8_t bm1[1] = {0xFF}; uint8_t bm2[1] = {0x0F};
+    uint8_t pkt1[16], pkt2[16];
+    compose_rereq_packet(0xAAAAAAAAu, 8, bm1, 1, pkt1);
+    compose_rereq_packet(0xAAAAAAAAu, 8, bm2, 1, pkt2);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt1, 88, 1), 1);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt2, 88, 1), 1);
+}
+
+TEST(test_rereq_queen_drops_when_no_active_ota) {
+    reset_dedup();
+    uint8_t bm[1] = {0xFF};
+    uint8_t pkt[16];
+    compose_rereq_packet(0x1u, 8, bm, 1, pkt);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 88, 0), 0);
+}
+
+TEST(test_rereq_queen_drops_when_pending_empty) {
+    reset_dedup();
+    uint8_t bm[1] = {0xFF};
+    uint8_t pkt[16];
+    compose_rereq_packet(0x1u, 8, bm, 1, pkt);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 0, 1), 0);
+}
+
+TEST(test_rereq_queen_drops_when_total_mismatch) {
+    reset_dedup();
+    uint8_t bm[1] = {0xFF};
+    uint8_t pkt[16];
+    /* Soldier reports total=8, but Queen pending_size=11 ⇒ total=1 */
+    compose_rereq_packet(0x1u, 8, bm, 1, pkt);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 11, 1), 0);
+}
+
+TEST(test_rereq_queen_drops_non_rerequest_marker) {
+    reset_dedup();
+    uint8_t pkt[16] = {0};
+    pkt[0] = 0x99;
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 88, 1), 0);
+    /* Critical: must NOT consume a dedup slot */
+    uint8_t bm[1] = {0xFF};
+    uint8_t valid[16];
+    compose_rereq_packet(0x1u, 8, bm, 1, valid);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(valid, 88, 1), 1);
+}
+
+TEST(test_rereq_queen_count_missing_full_bitmap) {
+    uint8_t pkt[16] = {0};
+    uint8_t bm[2] = {0xFF, 0xFF};
+    compose_rereq_packet(0x1u, 16, bm, 2, pkt);
+    ASSERT_EQ(Test_Count_Missing_From_Bitmap(pkt, 16), 16);
+}
+
+TEST(test_rereq_queen_count_missing_partial) {
+    /* bitmap = 0xAA = 0b10101010 → 4 bits set */
+    uint8_t pkt[16] = {0};
+    uint8_t bm[1] = {0xAA};
+    compose_rereq_packet(0x1u, 8, bm, 1, pkt);
+    ASSERT_EQ(Test_Count_Missing_From_Bitmap(pkt, 8), 4);
+}
+
+TEST(test_rereq_queen_count_zero_when_all_received) {
+    uint8_t pkt[16] = {0};
+    uint8_t bm[1] = {0x00};
+    compose_rereq_packet(0x1u, 8, bm, 1, pkt);
+    ASSERT_EQ(Test_Count_Missing_From_Bitmap(pkt, 8), 0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * 12. FW.23 OTA HMAC Trailer Relay (Queen-side)
+ * ════════════════════════════════════════════════════════════════════ */
+#define Q_HMAC_TRAILER_MARKER       0x9B
+#define Q_HMAC_TRAILER_TOTAL_SEGS   3
+
+static uint8_t q_pending_hmac_chunks[Q_HMAC_TRAILER_TOTAL_SEGS][16] = {{0}};
+static uint8_t q_hmac_segments_received = 0;
+
+static uint8_t Test_Queen_Store_HMAC_Trailer(const uint8_t* inner_payload,
+                                                uint16_t inner_aligned)
+{
+    if (inner_aligned < 16)                             return 0;
+    if (inner_payload[0] != Q_HMAC_TRAILER_MARKER)      return 0;
+    uint16_t seg_idx = ((uint16_t)inner_payload[1] << 8) | inner_payload[2];
+    if (seg_idx < 1 || seg_idx > Q_HMAC_TRAILER_TOTAL_SEGS) return 0;
+    memcpy(q_pending_hmac_chunks[seg_idx - 1], inner_payload, 16);
+    q_hmac_segments_received |= (uint8_t)(1u << (seg_idx - 1));
+    return 1;
+}
+
+static void reset_hmac_relay(void) {
+    memset(q_pending_hmac_chunks, 0, sizeof(q_pending_hmac_chunks));
+    q_hmac_segments_received = 0;
+}
+
+TEST(test_queen_relay_stores_3_hmac_chunks) {
+    reset_hmac_relay();
+    for (uint8_t s = 1; s <= 3; s++) {
+        uint8_t chunk[16] = {0};
+        chunk[0] = Q_HMAC_TRAILER_MARKER;
+        chunk[1] = 0; chunk[2] = s;
+        chunk[3] = 0; chunk[4] = 5;
+        chunk[5] = (uint8_t)(0xA0 + s);
+        ASSERT_EQ(Test_Queen_Store_HMAC_Trailer(chunk, 16), 1);
+    }
+    ASSERT_EQ(q_hmac_segments_received, 0x07);
+}
+
+TEST(test_queen_relay_rejects_seg_idx_4) {
+    reset_hmac_relay();
+    uint8_t chunk[16] = {0};
+    chunk[0] = Q_HMAC_TRAILER_MARKER;
+    chunk[1] = 0; chunk[2] = 4;
+    ASSERT_EQ(Test_Queen_Store_HMAC_Trailer(chunk, 16), 0);
+    ASSERT_EQ(q_hmac_segments_received, 0);
+}
+
+TEST(test_queen_relay_rejects_wrong_marker) {
+    reset_hmac_relay();
+    uint8_t chunk[16] = {0};
+    chunk[0] = 0x99;
+    ASSERT_EQ(Test_Queen_Store_HMAC_Trailer(chunk, 16), 0);
+}
+
+TEST(test_queen_relay_overwrites_same_segment) {
+    reset_hmac_relay();
+    uint8_t chunk[16] = {0};
+    chunk[0] = Q_HMAC_TRAILER_MARKER;
+    chunk[1] = 0; chunk[2] = 1;
+    chunk[5] = 0xAA;
+    Test_Queen_Store_HMAC_Trailer(chunk, 16);
+    ASSERT_EQ(q_pending_hmac_chunks[0][5], 0xAA);
+    chunk[5] = 0xBB;
+    Test_Queen_Store_HMAC_Trailer(chunk, 16);
+    ASSERT_EQ(q_pending_hmac_chunks[0][5], 0xBB);
+    ASSERT_EQ(q_hmac_segments_received, 0x01);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -1739,6 +1970,24 @@ int main(void)
     RUN(test_time_beacon_plaintext_layout);
     RUN(test_time_beacon_distinct_from_ota);
     RUN(test_time_beacon_ts_zero_caller_responsibility);
+
+    printf("\n  Magic Re-Request Handler (FW.27-B):\n");
+    RUN(test_rereq_queen_accepts_valid_packet);
+    RUN(test_rereq_queen_dedups_replay);
+    RUN(test_rereq_queen_different_bitmaps_not_deduped);
+    RUN(test_rereq_queen_drops_when_no_active_ota);
+    RUN(test_rereq_queen_drops_when_pending_empty);
+    RUN(test_rereq_queen_drops_when_total_mismatch);
+    RUN(test_rereq_queen_drops_non_rerequest_marker);
+    RUN(test_rereq_queen_count_missing_full_bitmap);
+    RUN(test_rereq_queen_count_missing_partial);
+    RUN(test_rereq_queen_count_zero_when_all_received);
+
+    printf("\n  HMAC Trailer Relay (FW.23):\n");
+    RUN(test_queen_relay_stores_3_hmac_chunks);
+    RUN(test_queen_relay_rejects_seg_idx_4);
+    RUN(test_queen_relay_rejects_wrong_marker);
+    RUN(test_queen_relay_overwrites_same_segment);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);
