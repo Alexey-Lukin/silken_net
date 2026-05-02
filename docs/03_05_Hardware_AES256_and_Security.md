@@ -896,9 +896,16 @@ void Try_Apply_Ota_Bytecode(void)
   memcpy(hmac_input + pending_ota_size,     &pending_ota_version, 4);
   memcpy(hmac_input + pending_ota_size + 4, &ota_total_expected_chunks, 2);
 
-  HMAC_SHA256_HW(K_ota, hmac_input, input_len, computed_hmac);  // STM32 CRYP block
+  HMAC_SHA256_HW(K_ota, hmac_input, input_len, computed_hmac);  // Wrapper навколо
+                                                                // HAL_HASHEx_SHA256_Start
+                                                                // (STM32 HASH peripheral)
+                                                                // — буде реалізовано
+                                                                // у firmware/soldier/crypto_utils.c
 
   // Constant-time comparison (захист від timing attack):
+  // secure_compare — буде реалізовано як volatile-XOR loop у firmware/soldier/crypto_utils.c
+  // (аналог OpenSSL CRYPTO_memcmp / Rails ActiveSupport::SecurityUtils.secure_compare).
+  // НЕ використовувати memcmp — early-exit при першому розходженні витоку timing info.
   if (!secure_compare(computed_hmac, received_hmac_tag, 32)) {
     log_error("OTA: HMAC mismatch — possible substitution attack");
     pending_ota_bytecode[0..3] = 0x00;        // Затираємо magic, щоб next reboot
