@@ -21,7 +21,7 @@
 | `ApplicationService` | `app/services/application_service.rb` | Базовий клас для всіх сервісів. Надає `.call(...)` → `new(...).perform` template. |
 | `ApplicationWeb3Worker` | `app/workers/application_web3_worker.rb` | Базовий **модуль** (не клас) для всіх блокчейн-воркерів. Включає: RPC rate limiter (50 rps), уніфіковану обробку помилок (HTTPX/Net timeouts), partition-pruned lookups: `find_telemetry_log_with_pruning(id, created_at_iso)` та `find_blockchain_tx_with_pruning(id, created_at_iso)` — обидва додають `created_at` у `WHERE` для уникнення Global Partition Scan по RANGE-партиціонованих таблицях. |
 | `Web3CircuitBreaker` | `app/workers/concerns/web3_circuit_breaker.rb` | **[NEW]** ActiveSupport Concern із 3-state Circuit Breaker (`:closed` → `:open` → `:half_open`). `FAILURE_THRESHOLD=5` послідовних помилок → `OPEN_TIMEOUT=300с` (5 хв) fail-fast. Стан зберігається в `Rails.cache` (Solid Cache) — працює між Sidekiq-процесами та серверами. Розпізнає transient errors: `HTTPX::TimeoutError`, `Net::ReadTimeout`, `Errno::ECONNREFUSED`, `Web3::HttpClient::RequestError` + wrapped custom errors (`transient_cause?` перевіряє `Exception#cause` рекурсивно). Prometheus metric: `CIRCUIT_BREAKER_REJECTIONS`. Raises `CircuitOpenError` при відкритому circuit. Інтегровано в `IotexVerificationWorker` (`"iotex_w3bstream"`), `ChainlinkDispatchWorker` (`"chainlink_functions"`), `MintCarbonCoinWorker` (`"polygon_rpc"`), `SolanaMicroRewardWorker` (`"solana_spl"`), `CeloRewardWorker` (`"celo_cusd"`). |
-| `CoapEncryption` | `app/workers/concerns/coap_encryption.rb` | Concern для downlink-воркерів. AES-256-CBC шифрування з випадковим IV, нульовий padding. Формат: `[IV:16][Ciphertext:N×16]`. |
+| `CoapEncryption` | `app/workers/concerns/coap_encryption.rb` | Concern для downlink-воркерів. AES-256-CBC шифрування з випадковим IV, нульовий padding. **[FW.20]** Перед шифруванням автоматично огортає payload у TIME_SYNC envelope: `[0x9C: 1 byte][timestamp_be: 4 bytes (big-endian uint32)]`. Формат після шифрування: `[IV:16][Ciphertext:N×16]` де Ciphertext = зашифровано(`[0x9C][ts:4][original_payload]`). Soldier розпаковує конверт після дешифровки і коригує свій RTC. |
 
 ### Web3 Utility Layer
 
@@ -42,8 +42,8 @@
 |---|---|
 | **Файл** | `app/services/telemetry_unpacker_service.rb` |
 | **Вхід** | `binary_batch` (сирий бінарний батч), `gateway_id` (Integer, опціонально — `nil` якщо шлюз невідомий) |
-| **Що робить** | Розрізає бінарний батч на 21-байтні чанки (`[DID:4][RSSI:1][Payload:16]`). Калібрує сенсорні дані, обчислює Z-значення атрактора Лоренца, записує `TelemetryLog`. Детектує `firmware_mismatch`. Маршрутизує "нульовий" пакет Королеви до `GatewayTelemetryWorker`. |
-| **Зовнішні виклики** | `SilkenNet::Attractor.calculate_z`, `AlertDispatchService.analyze_and_trigger!`, `IotexVerificationWorker.perform_async`, `StreamrBroadcastWorker.perform_async`, `GatewayTelemetryWorker.perform_async` |
+| **Що робить** | Розрізає бінарний батч на 21-байтні чанки (`[DID:4][RSSI:1][Payload:16]`). Калібрує сенсорні дані, обчислює Z-значення атрактора Лоренца, записує `TelemetryLog`. Детектує `firmware_mismatch`. Маршрутизує "нульовий" пакет Королеви до `GatewayTelemetryWorker`. **[FW.5]** Передає `metabolism_s` та `voltage_mv` у `Attractor.calculate_z` для β-пертурбації. **[FW.8]** `check_z_divergence!` використовує `tree.effective_lorenz_thresholds` (3-tier: cluster override → tree_family → global). |
+| **Зовнішні виклики** | `SilkenNet::Attractor.calculate_z(seed, temp, acoustic, metabolism_s, voltage_mv)`, `AlertDispatchService.analyze_and_trigger!`, `IotexVerificationWorker.perform_async`, `StreamrBroadcastWorker.perform_async`, `GatewayTelemetryWorker.perform_async` |
 | **Вихід / Side Effects** | Створює `TelemetryLog` записи. Оновлює `tree.latest_voltage_mv`, `tree.health_streak`. Нараховує `wallet.balance` (growth_points). Позначає `tree.firmware_update_status = :fw_pending` при mismatch. |
 
 ### `AlertDispatchService`
@@ -76,9 +76,10 @@
 | | |
 |---|---|
 | **Файл** | `app/services/silken_net/attractor.rb` |
-| **Вхід** | `seed` (Integer/DID), `temp` (Float °C), `acoustic` (Integer events) |
-| **Що робить** | Обчислює Z-значення атрактора Лоренца. σ=10, ρ=28, β=8/3. 250 ітерацій, timestep=0.01. **[FIX FW.7]** `Float` (IEEE 754 double) — ідентично firmware mruby для Dual Computation Integrity. BigDecimal замінено на Float: різна математика давала розбіжність Z на десятки одиниць після 250 ітерацій хаотичної системи. Clamp: σ∈[5,30], ρ∈[10,50]. |
+| **Вхід** | `seed` (Integer/DID), `temp` (Float °C), `acoustic` (Integer events), `delta_t_s` (Integer с, default: `BASELINE_DELTA_T_S=60`), `vcap_mv` (Integer мВ, default: `NOMINAL_VCAP_MV=3300`) |
+| **Що робить** | Обчислює Z-значення атрактора Лоренца. σ=10, ρ=28, β=8/3 (base). 250 ітерацій, timestep=0.01. **[FIX FW.7]** `Float` (IEEE 754 double) — ідентично firmware mruby для Dual Computation Integrity. BigDecimal замінено на Float: різна математика давала розбіжність Z на десятки одиниць після 250 ітерацій хаотичної системи. Clamp: σ∈[5,30], ρ∈[10,50]. **[FW.5]** β-пертурбація від EBFC-метаболізму: `perturb_beta(delta_t_s, vcap_mv)` → β∈[2.0,4.0]; дзеркальна математика з firmware (verified: 500-case fuzz, 0 mismatches). |
 | **Вихід** | `calculate_z → Float` (rounded 4). `homeostatic? → Boolean`. `generate_trajectory → Array<Float>` (плаский масив x,y,z × 250 для Three.js). |
+| **Константи** | `BASELINE_DELTA_T_S=60`, `NOMINAL_VCAP_MV=3300`, `BETA_DELTA_T_COEFF=0.0001`, `BETA_VCAP_COEFF=0.001`, `BETA_MIN=2.0`, `BETA_MAX=4.0` |
 | **Примітка** | `generate_trajectory`: перший триплет (індекс 0–2) — початковий seed-стан до інтеграції (`i=0,1,2` → x₀,y₀,z₀); інтеграція Лоренца починається з індексу 3 (`i=3` → крок 1). |
 
 ### `SilkenNet::GeoUtils`
@@ -338,6 +339,8 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Файл** | `app/services/ota_packager_service.rb` |
 | **Вхід** | `firmware` (BioContractFirmware або TinyMlModel), `chunk_size:` (default 512 bytes CoAP) |
 | **Що робить** | Фрагментує `firmware.binary_payload` на чанки. Додає заголовок `[0x99][Index:uint16][Total:uint16]` + CRC16-CCITT per chunk. |
+| **[FW.8] `build_threshold_config_block(tree)`** | Клас-метод. Будує `CMD_SET_THRESHOLDS` (0x9A) OTA Config Block для передачі per-species Lorenz порогів на Soldier без перекомпіляції. Читає `tree.effective_lorenz_thresholds` → упаковує у 10-байтовий payload: `[z_min×100:int16_le][z_max×100:int16_le][z_opt×100:int16_le][species_id:uint8][config_version:uint8][crc16:uint16_le]`. Prefixed: `[CMD_SET_THRESHOLDS:1][len:uint16_le][payload]`. |
+| **OTA Command Constants** | `CMD_OTA_BYTECODE=0x99` (mruby chunks), `CMD_SET_THRESHOLDS=0x9A` (FW.8 Z thresholds), `CMD_SET_ML_THRESH=0x9B` (FW.18 TinyML dual-threshold), `CMD_TIME_SYNC=0x9C` (FW.20 RTC correction) |
 | **Вихід** | `{ manifest: { version, total_size, checksum, sha256, total_chunks }, packages: Enumerator }`. |
 
 ---

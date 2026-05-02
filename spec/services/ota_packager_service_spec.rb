@@ -68,7 +68,7 @@ RSpec.describe OtaPackagerService do
 
         # Recalculate CRC
         svc = described_class.new(firmware, 512)
-        expected_crc = svc.send(:crc16_ccitt, payload_without_crc)
+        expected_crc = svc.class.crc16_ccitt(payload_without_crc)
 
         expect(crc_in_packet).to eq(expected_crc)
       end
@@ -136,7 +136,7 @@ RSpec.describe OtaPackagerService do
         corrupted_payload = corrupted[0..-3]
 
         svc = described_class.new(firmware, 512)
-        recalculated_crc = svc.send(:crc16_ccitt, corrupted_payload)
+        recalculated_crc = svc.class.crc16_ccitt(corrupted_payload)
 
         expect(recalculated_crc).not_to eq(original_crc)
       end
@@ -221,13 +221,13 @@ RSpec.describe OtaPackagerService do
       it "produces correct CRC for known input" do
         svc = described_class.new(firmware, 512)
         # CRC16-CCITT of empty string should be 0xFFFF (initial value)
-        crc = svc.send(:crc16_ccitt, "")
+        crc = svc.class.crc16_ccitt("")
         expect(crc).to eq(0xFFFF)
       end
 
       it "produces non-zero CRC for non-empty input" do
         svc = described_class.new(firmware, 512)
-        crc = svc.send(:crc16_ccitt, "123456789")
+        crc = svc.class.crc16_ccitt("123456789")
         expect(crc).to be_a(Integer)
         expect(crc).to be > 0
         expect(crc).to be <= 0xFFFF

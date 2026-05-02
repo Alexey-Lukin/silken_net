@@ -222,11 +222,18 @@ RSpec.describe TreeFamily, type: :model do
   # METHODS
   # =========================================================================
   describe "#attractor_thresholds" do
-    it "returns a hash with min, max, and baseline as floats" do
+    it "returns a hash with min, max, optimal, and baseline as floats" do
       family = build(:tree_family, critical_z_min: 5.0, critical_z_max: 45.0, baseline_impedance: 1200)
 
       result = family.attractor_thresholds
-      expect(result).to eq({ min: 5.0, max: 45.0, baseline: 1200.0 })
+      expect(result).to eq({ min: 5.0, max: 45.0, optimal: 29.0, baseline: 1200.0 })
+    end
+
+    it "[FW.8] uses per-species optimal_z_target when set" do
+      family = build(:tree_family, critical_z_min: 5.0, critical_z_max: 45.0, baseline_impedance: 1200)
+      family.optimal_z_target = 27.5
+
+      expect(family.attractor_thresholds[:optimal]).to eq(27.5)
     end
 
     it "converts decimal values to floats" do

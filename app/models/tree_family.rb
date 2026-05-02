@@ -29,12 +29,19 @@ class TreeFamily < ApplicationRecord
                  :sap_flow_index,
                  :bark_thickness,
                  :foliage_density,
-                 :fire_resistance_rating
+                 :fire_resistance_rating,
+                 :optimal_z_target
 
   # [ВИПРАВЛЕНО: Типізація JSONB-полів]:
   # Виганяємо "Data Type Phantom" — гарантуємо, що параметри для TinyML є числами
   validates :sap_flow_index, :bark_thickness, :foliage_density, :fire_resistance_rating,
             numericality: true,
+            allow_nil: true
+
+  # [FW.8] Per-species OPTIMAL_Z_TARGET (Lorenz attractor sweet spot for max CO2 sequestration).
+  # Default 29.0 mirrors firmware/bio_contracts/bio_contract.rb BioContract::OPTIMAL_Z_TARGET.
+  validates :optimal_z_target,
+            numericality: { greater_than: :critical_z_min, less_than: :critical_z_max },
             allow_nil: true
 
   # --- КОЛБЕКИ ---
@@ -48,12 +55,20 @@ class TreeFamily < ApplicationRecord
 
   # Повертає параметри для математичної моделі Атрактора Лоренца
   # Використовується в SilkenNet::Attractor та InsightGeneratorService
+  # [FW.8] optimal_z_target — per-species sweet spot (default 29.0)
   def attractor_thresholds
     {
       min: critical_z_min.to_f,
       max: critical_z_max.to_f,
+      optimal: effective_optimal_z_target,
       baseline: baseline_impedance.to_f
     }
+  end
+
+  # [FW.8] Effective OPTIMAL_Z_TARGET — per-species value or global default 29.0.
+  # Mirrored on firmware as BioContract::OPTIMAL_Z_TARGET.
+  def effective_optimal_z_target
+    optimal_z_target.present? ? optimal_z_target.to_f : 29.0
   end
 
   # [Hot Path Cache]: Кешована версія attractor_thresholds для обробки телеметрії.
@@ -110,7 +125,8 @@ class TreeFamily < ApplicationRecord
   end
 
   def thresholds_changed?
-    saved_change_to_critical_z_min? || saved_change_to_critical_z_max? || saved_change_to_baseline_impedance?
+    saved_change_to_critical_z_min? || saved_change_to_critical_z_max? ||
+      saved_change_to_baseline_impedance? || saved_change_to_biological_properties?
   end
 
   def invalidate_thresholds_cache

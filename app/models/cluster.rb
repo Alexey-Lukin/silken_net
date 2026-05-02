@@ -24,7 +24,8 @@ class Cluster < ApplicationRecord
   store_accessor :environmental_settings,
                  :custom_fire_threshold,
                  :seismic_sensitivity_threshold,
-                 :timezone
+                 :timezone,
+                 :lorenz_overrides_by_species
 
   # --- ВАЛІДАЦІЇ ТА НОРМАЛІЗАЦІЯ ---
   validates :name, presence: true, uniqueness: true
@@ -32,6 +33,13 @@ class Cluster < ApplicationRecord
 
   validates :custom_fire_threshold, :seismic_sensitivity_threshold,
             numericality: { greater_than: 0 }, allow_nil: true
+
+  # [FW.8] Per-species Lorenz threshold overrides for this cluster.
+  # Schema: { "<scientific_name>" => { "min" => Float, "max" => Float, "optimal" => Float } }
+  # A cluster may host trees of several species; each species gets its own
+  # biome-adjusted overrides. Unspecified keys fall through to TreeFamily defaults.
+  # Governance flow: organization-scoped admin sets overrides per species.
+  validate :validate_lorenz_overrides_by_species
 
   normalizes :geojson_polygon, with: ->(json) { json.is_a?(Hash) ? json.deep_stringify_keys : json }
 
@@ -120,7 +128,86 @@ class Cluster < ApplicationRecord
     naas_contracts.active.order(created_at: :desc).first
   end
 
+  # [FW.8] Per-species Lorenz overrides for trees of `scientific_name` in this cluster.
+  # Returns Hash{ min:, max:, optimal: } with Float-or-nil values. Used by
+  # Tree#effective_lorenz_thresholds to override TreeFamily defaults for a specific
+  # biome (e.g., subarctic Pinus needs different bounds than Mediterranean Pinus).
+  # Returns all-nil hash if no override is configured for that species.
+  def lorenz_overrides_for(scientific_name)
+    overrides = lorenz_overrides_by_species.is_a?(Hash) ? lorenz_overrides_by_species[scientific_name.to_s] : nil
+    overrides = {} unless overrides.is_a?(Hash)
+
+    {
+      min:     numeric_or_nil(overrides["min"]),
+      max:     numeric_or_nil(overrides["max"]),
+      optimal: numeric_or_nil(overrides["optimal"])
+    }
+  end
+
   private
+
+  def numeric_or_nil(value)
+    return nil if value.nil?
+    Float(value)
+  rescue ArgumentError, TypeError
+    nil
+  end
+
+  # [FW.8] Validate per-species Lorenz overrides JSONB shape:
+  #   - top-level value must be a Hash
+  #   - keys must be non-empty Strings (scientific names)
+  #   - per-species value must be a Hash with optional numeric min/max/optimal
+  #   - if min and max are both set, min < max
+  #   - if optimal is set, it lies between min and max (using each present bound)
+  def validate_lorenz_overrides_by_species
+    raw = lorenz_overrides_by_species
+    return if raw.nil?
+
+    unless raw.is_a?(Hash)
+      errors.add(:lorenz_overrides_by_species, "must be a Hash keyed by scientific_name")
+      return
+    end
+
+    raw.each do |species, bounds|
+      if species.to_s.strip.empty?
+        errors.add(:lorenz_overrides_by_species, "has a blank species key")
+        next
+      end
+      unless bounds.is_a?(Hash)
+        errors.add(:lorenz_overrides_by_species, "value for '#{species}' must be a Hash")
+        next
+      end
+
+      min = numeric_or_nil(bounds["min"])
+      max = numeric_or_nil(bounds["max"])
+      optimal = numeric_or_nil(bounds["optimal"])
+
+      bounds.each_key do |k|
+        unless %w[min max optimal].include?(k.to_s)
+          errors.add(:lorenz_overrides_by_species, "unknown key '#{k}' for species '#{species}'")
+        end
+      end
+
+      %w[min max optimal].each do |k|
+        next if bounds[k].nil?
+        if numeric_or_nil(bounds[k]).nil?
+          errors.add(:lorenz_overrides_by_species, "'#{k}' for species '#{species}' must be numeric")
+        end
+      end
+
+      if min && max && min >= max
+        errors.add(:lorenz_overrides_by_species, "'min' must be < 'max' for species '#{species}'")
+      end
+      if optimal && min && optimal <= min
+        errors.add(:lorenz_overrides_by_species, "'optimal' must be > 'min' for species '#{species}'")
+      end
+      if optimal && max && optimal >= max
+        errors.add(:lorenz_overrides_by_species, "'optimal' must be < 'max' for species '#{species}'")
+      end
+    end
+  end
+
+  public
 
   def compute_geo_center
     return nil unless mapped?
@@ -135,4 +222,6 @@ class Cluster < ApplicationRecord
 
     { lat: avg_lat, lng: avg_lng }
   end
+
+  private :compute_geo_center
 end

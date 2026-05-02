@@ -10,7 +10,7 @@
 - **Поточний TRL:** TRL 8
 - **Дата аудиту:** 2026-05-01
 - **Кількість тестів:**
-  - RSpec (Ruby): ~290+ spec files, ~49,000+ lines
+  - RSpec (Ruby): ~295+ spec files, ~52,000+ lines
   - Firmware (C): 302 tests (113 soldier + 91 queen + 33 bio-contract + 44 tinyml + 21 encryption)
   - Foundry (Solidity): 6 test suites, ~115+ tests
 
@@ -30,7 +30,8 @@
 | HardwareKey | ✅ 295L | 🟢 Повне | AES key encryption, LRU cache |
 | EwsAlert | ✅ 669L | 🟢 Повне | Alert types, severity levels |
 | TelemetryLog | ✅ 320L+ | 🟢 **Повне** | **oracle_status enum, associations, in_timeframe/vandalized scopes, bio_status enum** |
-| Cluster | ✅ 380L+ | 🟢 **Повне** | **Associations, store_accessor validations, recalculate_health_index! with AiInsight, alphabetical scope** |
+| TreeFamily | ✅ 290L+ | 🟢 **Повне** | **attractor_thresholds (optimal key FW.8), effective_optimal_z_target, biological_properties** |
+| Cluster | ✅ 380L+ | 🟢 **Повне** | **lorenz_overrides_by_species validation (FW.8), lorenz_overrides_for, Associations, store_accessor validations, recalculate_health_index! with AiInsight, alphabetical scope** |
 | AuditLog | ✅ 400L+ | 🟢 **Повне** | **chain_payload determinism, metadata ordering, tamper detection, deleted record chain break, bulk advisory lock** |
 | **Firmwareable (concern)** | ✅ 230L+ | 🟢 **Повне** | **AASM transitions тестуються: всі 7 подій, invalid transitions, lifecycle** |
 
@@ -39,9 +40,9 @@
 | Сервіс | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
 | BlockchainMintingService | ✅ 1092L | 🟢 Повне | batchMint, guard clauses, binary search |
-| TelemetryUnpackerService | ✅ 550L+ | 🟢 **Повне** | **check_z_divergence!, update_health_streak!, boundary sensors, acoustic overflow** |
+| TelemetryUnpackerService | ✅ 560L+ | 🟢 **Повне** | **check_z_divergence! (effective_lorenz_thresholds FW.8), update_health_streak!, boundary sensors, acoustic overflow, [FW.5] delta_t/vcap β-perturbation** |
 | InsightGeneratorService | ✅ 670L | 🟢 Повне | Fraud guard, cleanup_old_logs! |
-| SilkenNet::Attractor | ✅ 218L | 🟢 Повне | Float precision, deterministic chaos |
+| SilkenNet::Attractor | ✅ 310L+ | 🟢 Повне | Float precision, deterministic chaos, **[FW.5] perturb_beta, parity-fuzz 500 cases (0 mismatches)** |
 | BlockchainBurningService | ✅ 420L+ | 🟢 **Повне** | **SLASHER_KEY fallback (E.2), Prometheus SCC_SLASHED_TOTAL, AiInsight+source_tree combined ratio, damage_ratio cap** |
 | Treasury::MonitorService | ✅ 330L+ | 🟢 **Повне** | **build_config, missing credentials, humanize edge cases, multiple alerts** |
 | TreeChronicleService | ✅ 350L+ | 🟢 **Повне** | **Pagination edges, nil wallet, boundary stress_index, mixed sources** |
@@ -50,7 +51,7 @@
 | HardwareKeyService | ✅ 280L+ | 🟢 **Повне** | **HKDF SHA256/info/salt params, key length, derive_device_key logging, provision conflict** |
 | MintingRollbackService | ✅ 400L+ | 🟢 **Повне** | **Solana tx status, receipt edge cases, Celo routing, locked_points nil fallback, invalid ISO8601** |
 | EmergencyResponseService | ✅ 350L+ | 🟢 **Повне** | **Mixed valve+siren fire response, command attributes (org_id, idempotency, priority, expires_at), online/offline gateway filter** |
-| OtaPackagerService | ✅ 230L+ | 🟢 **Повне** | **LoRa MTU chunks, single-byte payload, exact block-size, CRC16 known vectors, manifest format** |
+| OtaPackagerService | ✅ 240L+ | 🟢 **Повне** | **[FW.8] build_threshold_config_block (CMD_SET_THRESHOLDS 0x9A, CRC16, species_id, effective_lorenz_thresholds), LoRa MTU chunks, single-byte payload, exact block-size, CRC16 known vectors, manifest format** |
 | Etherisc::ClaimService | ✅ 120L+ | 🟢 **Повне** | **nil policy_id, missing ENV keys, ABI validation** |
 | Ed25519Crypto::SigningService | ✅ 270L+ | 🟢 **Повне** | **Empty/large messages, hex validation edges, uppercase hex, nil/integer message coercion** |
 
@@ -63,7 +64,7 @@
 | InsurancePayoutWorker | ✅ 340L+ | 🟢 **Повне** | **Sidekiq config, satellite mixed alert types, severe_drought block, Etherisc recovery** |
 | ActuatorCommandWorker | ✅ 320L+ | 🟢 **Повне** | **dispatch! AASM transition, mark_active!, encryption roundtrip, ResetActuatorStateWorker scheduling, sidekiq config** |
 | **Web3CircuitBreaker (concern)** | ✅ 320L+ | 🟢 **Повне** | **transient_cause?, reset_circuit!, remaining_open_seconds, all error types, record_failure! threshold** |
-| CoapEncryption (concern) | ✅ 150L+ | 🟢 **Повне** | **All mod-16 payload sizes (1,15,17,31,32,33), binary data, null-byte padding, IV uniqueness** |
+| **CoapEncryption (concern)** | ✅ 175L+ | 🟢 **Повне** | **[FW.20] TIME_SYNC envelope (0x9C marker + ts:4 big-endian), All mod-16 payload sizes (1,15,17,31,32,33), binary data, null-byte padding, IV uniqueness** |
 
 ### 1.4 Controllers (30 spec files)
 
@@ -77,7 +78,7 @@
 
 Усі Phlex-компоненти покриті згідно з `docs/10_01_View_Component_Testing_Guide.md`.
 
-### 1.7 Integration Tests (23 spec files)
+### 1.7 Integration Tests (24 spec files)
 
 | Тест | Покриття | Критичність |
 |------|----------|------------|
@@ -90,6 +91,8 @@
 | user_auth_lifecycle | 🟢 | Auth + MFA + OAuth |
 | emergency_response_flow | 🟢 | EWS pipeline |
 | audit_log_chain_integrity | 🟢 | Audit tamper detection |
+| **fw8_threshold_governance** [FW.8] | 🟢 **Нове** | **3-tier effective_lorenz_thresholds, cluster override > tree_family > global, build_threshold_config_block CRC16, lorenz_overrides_by_species validation, coap_encryption FW.20 envelope — 18 examples** |
+| **provisioning_e2e** [FW.1] | 🟢 **Нове** | **HKDF determinism (firmware-equivalence), atomic Tree/HardwareKey/MaintenanceRecord, Ed25519 persist, TRL4 vs HKDF response shape, SEC.11 production guard, FW.24 magic guard, duplicate UID — 8 examples без mocks `HardwareKeyService`** |
 
 ---
 
@@ -138,7 +141,8 @@
 | StatusByte Encoding | 2 | 🟢 Повне |
 | Growth Points Logic | 7 | 🟢 Повне |
 | Evaluate & Pack Integration | 2 | 🟢 Повне |
-| **Boundary Conditions** | **5** | 🟢 **Нове** |
+| Boundary Conditions | 5 | 🟢 Повне |
+| **[FW.5] β-Perturbation** | **4** | 🟢 **Нове** — `test_beta_nominal_no_perturbation`, `test_beta_fast_charge_increases_beta`, `test_beta_high_vcap_increases_beta`, `test_beta_clamp_upper_limit` |
 
 ### 2.4 Encryption (test_encryption.c — 21 tests)
 
@@ -209,17 +213,17 @@
 
 | Шар | Spec Files | Total Lines | Ratio (spec/src) |
 |-----|------------|-------------|------------------|
-| Models | 32 | 9,831 | ~2.2x |
-| Services | 43 | 9,738 | ~1.8x |
-| Workers | 41 | 6,447 | ~1.7x |
+| Models | 32 | 10,100+ | ~2.2x |
+| Services | 43 | 10,500+ | ~1.8x |
+| Workers | 41 | 6,600+ | ~1.7x |
 | Requests | 30 | 4,638 | ~1.9x |
-| Integration | 23 | 4,986 | — |
+| Integration | 24 | 5,280+ | — |
 | Views | 85 | 10,001 | ~2.0x |
 | Policies | 14 | 1,416 | ~2.5x |
 | Blueprints | 9 | 1,081 | ~2.0x |
-| Firmware (C) | 5 | ~3,500 | 264 tests |
+| Firmware (C) | 5 | ~3,700 | 302 tests |
 | Solidity | 6 | ~2,000 | 115+ tests |
-| **Total** | **288+** | **~52,000+** | — |
+| **Total** | **288+** | **~53,600+** | — |
 
 ---
 

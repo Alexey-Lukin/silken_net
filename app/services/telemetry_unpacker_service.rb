@@ -134,10 +134,14 @@ class TelemetryUnpackerService < ApplicationService
     # ⚡ [ФІКСАЦІЯ ІСТИНИ]: Ми розраховуємо Z один раз тут.
     # [FIX FW.7]: Attractor використовує Float (IEEE 754) — ідентично firmware mruby.
     # Це забезпечує Dual Computation Integrity: однакова математика → однакові результати.
+    # [FW.5]: delta_t (metabolism_s, секунди) і vcap (voltage_mv після калібрування)
+    # передаються як soft β-perturbation — точно дзеркальне обчислення з firmware.
     log_attributes[:z_value] = SilkenNet::Attractor.calculate_z(
       parsed_data[0], # Використовуємо сирий DID як seed
       log_attributes[:temperature_c],
-      log_attributes[:acoustic_events]
+      log_attributes[:acoustic_events],
+      log_attributes[:metabolism_s],
+      log_attributes[:voltage_mv]
     )
 
     # 4.1 DUAL COMPUTATION INTEGRITY (Z Divergence Check)
@@ -178,22 +182,22 @@ class TelemetryUnpackerService < ApplicationService
   #   - Device каже "homeostasis" (status=0) а server Z поза межами породи
   #   - Device каже "anomaly" (status=2) а server Z цілком здоровий
   # Це ловить tampered firmware або replay attacks з підставленим StatusByte.
+  # [FW.8]: Use Tree#effective_lorenz_thresholds (cluster override > tree_family > global default)
+  # so divergence check stays consistent with the thresholds firmware was provisioned with.
   def check_z_divergence!(tree, attributes)
-    tree_family = tree.tree_family
-    return unless tree_family # Без породи — перевірка неможлива
-
     server_z = attributes[:z_value]
     device_bio_status = attributes[:bio_status]
     return if server_z.nil? || device_bio_status.nil?
 
-    server_healthy = tree_family.healthy_z?(server_z)
+    thresholds = tree.effective_lorenz_thresholds
+    server_healthy = server_z.between?(thresholds[:min], thresholds[:max])
     device_healthy = device_bio_status == :homeostasis
 
     # Категорична невідповідність: один каже "здоровий", інший — "ні"
     if device_healthy != server_healthy
       Rails.logger.warn(
         "🔍 [Z Divergence] DID #{tree.did}: device=#{device_bio_status}, " \
-        "server_z=#{server_z}, healthy_range=#{tree_family.critical_z_min}..#{tree_family.critical_z_max}. " \
+        "server_z=#{server_z}, healthy_range=#{thresholds[:min]}..#{thresholds[:max]}. " \
         "Dual Computation Integrity mismatch."
       )
       SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment

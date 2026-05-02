@@ -105,7 +105,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    Chunk: [DID:4][RSSI:1][Payload:16] = 21 bytes                    ║
 ║    Format: "N n c C n C C a4" (unpack)                              ║
 ║    DeviceCalibration: normalize ADC → фізичні одиниці               ║
-║    SilkenNet::Attractor.calculate_z(seed, temp, acust) → z_value    ║
+║    SilkenNet::Attractor.calculate_z(seed, temp, acust, delta_t_s, vcap_mv) → z_value    ║
 ║    growth_points = status_byte & 0x3F (нижні 6 бітів)              ║
 ║    bio_status = status_byte >> 6 (верхні 2 біти)                    ║
 ║    AlertDispatchService.analyze_and_trigger!(log)                    ║
@@ -203,13 +203,20 @@ DT = 0.01
 ITERATIONS = 250
 SIGMA_LIMITS = (5.0..30.0)
 RHO_LIMITS   = (10.0..50.0)
+# [FW.5] β-perturbation від EBFC-метаболізму
+BETA_DELTA_T_COEFF = 0.0001  # 1 с швидше baseline → β +0.0001
+BETA_VCAP_COEFF    = 0.001   # 1 mV вище nominal → β +0.001
+BETA_LIMITS        = (2.0..4.0)
+BASELINE_DELTA_T_S = 60
+NOMINAL_VCAP_MV    = 3300
 
-def self.calculate_z_axis(seed, temp, acoustic)
+def self.calculate_z_axis(seed, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
   x = ((seed % 1000) / 500.0) - 1.0
   y = (((seed >> 4) % 1000) / 500.0) - 1.0
   z = (((seed >> 8) % 1000) / 500.0) - 1.0
   # local_sigma, local_rho: perturbation + clamp
-  ITERATIONS.times { dx/dy/dz → Euler integration (Float) }
+  # [FW.5] local_beta: perturb_beta(delta_t_s, vcap_mv) → β ∈ [2.0, 4.0]
+  ITERATIONS.times { dx/dy/dz → Euler integration (local_beta in dz) }
   z  # Ruby Float, НЕ BigDecimal
 end
 ```
@@ -323,15 +330,14 @@ OPTIMAL_Z_TARGET  = mrb_get_arg(6) / 100.0   # dynamic
 ##### 4а.3 Backend — OtaPackagerService та TreeFamily
 
 ```ruby
-# app/services/ota_packager_service.rb — додати:
+# app/services/ota_packager_service.rb — [FW.8] РЕАЛІЗОВАНО (Rails-сторона)
 def build_threshold_config_block(tree)
-  species = tree.tree_family
-  # TreeFamily вже має per-species Lorenz params:
-  z_min    = (species.critical_z_min    * 100).round.to_i
-  z_max    = (species.critical_z_max    * 100).round.to_i
-  z_opt    = (species.optimal_z_target  * 100).round.to_i
-  species_id = SPECIES_ID_MAP[species.species_code] || 0xFF
-  version  = (tree.ota_config_version + 1) & 0xFF
+  thresholds = tree.effective_lorenz_thresholds  # 3-tier: cluster > family > global
+  z_min      = (thresholds[:min]     * 100).round.to_i
+  z_max      = (thresholds[:max]     * 100).round.to_i
+  z_opt      = (thresholds[:optimal] * 100).round.to_i
+  species_id = SPECIES_ID_MAP[tree.tree_family.scientific_name] || 0xFF
+  version    = (tree.ota_config_version.to_i + 1) & 0xFF
 
   payload = [z_min, z_max, z_opt, species_id, version].pack("s<s<s<CC")
   crc = Digest::CRC16.checksum(payload)
@@ -340,6 +346,8 @@ def build_threshold_config_block(tree)
   [CMD_SET_THRESHOLDS].pack("C") + [payload.bytesize].pack("S<") + payload
 end
 ```
+
+> **Статус [FW.8]:** ✅ Rails-сторона реалізована. Firmware C-side (обробник `CMD_SET_THRESHOLDS`, зберігання у RTC DR20-DR23) — TODO у наступному PR. До реалізації C-side, Soldier використовує хардкодовані значення `CRITICAL_Z_MIN=2.0`, `CRITICAL_Z_MAX=45.0`, `OPTIMAL_Z_TARGET=29.0`.
 
 ##### 4а.4 Per-Species Default Thresholds
 

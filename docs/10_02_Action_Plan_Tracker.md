@@ -227,10 +227,10 @@
 - **Опис:** Один і той самий ключ на ВСІХ вузлах мережі. Злам одного пристрою = компрометація всієї мережі
 - **Рішення:** Per-device provisioning через HKDF, Factory Flashing pipeline
 - [x] 🤖 Дизайн HKDF key derivation protocol — ✅ Повний дизайн HKDF-SHA256 (RFC 5869) додано в `03_05` §3.4а. Включає: кроки Provisioning (factory flashing pipeline), C firmware API (`Load_AES_Key`, `FLASH_KEY_ADDR = 0x0803E000`), Rails backend (`HardwareKeyService.derive_device_key`), варіанти зберігання ключа Queen (A/B/C з ATECC608B), WRPROT Flash sector protection, таблицю безпекових параметрів
-- [ ] 🤖 Backend: provisioning endpoint (POST `/api/v1/provisioning/register` вже існує)
+- [x] 🤖 Backend: provisioning endpoint (POST `/api/v1/provisioning/register` вже існує) — ✅ Аудит підтвердив відповідність HKDF-дизайну з `03_05` §3.4а. Контроллер `Api::V1::ProvisioningController#register` (179 рядків) виконує: FW.24 magic-UID guard → duplicate check → атомарну транзакцію (Tree/Gateway + HardwareKey + MaintenanceRecord(installation)) → опційну реєстрацію Ed25519 публічного ключа → enqueue `PeaqRegistrationWorker` (тільки для Tree) → JSON-відповідь без `aes_key` у HKDF mode (Zero-Trust) і з `aes_key` + warning у TRL4 lab mode. SEC.11 production guard (`HardwareKeyService.derive_device_key`) raise'ить `SecurityError` при відсутньому `PROVISIONING_MASTER_KEY` у production. RBAC: `authorize_forester!`. Контракт відповідає `04_03 §POST /api/v1/provisioning/register`.
 - [x] 🤖 Firmware: змінити key storage з hardcoded → Flash-based (`Load_AES_Key()` в soldier/queen main.c — FLASH_KEY_ADDR 0x0803E000, magic "SKEY")
 - [ ] 👤 Firmware: RDP Level 2 activation як final step
-- [ ] 🤖 End-to-end тест provisioning flow
+- [x] 🤖 End-to-end тест provisioning flow — ✅ Додано `spec/integration/provisioning_e2e_spec.rb` (8 examples, all passing). Покриває без моків `HardwareKeyService`: (1) HKDF determinism — persisted `aes_key_hex` точно збігається з незалежно повторно деривованим ключем (firmware-equivalence assertion); (2) atomic creation Tree+HardwareKey+MaintenanceRecord з DID/UID у notes + enqueue `PeaqRegistrationWorker`; (3) gateway flow з Ed25519 public key persistence та БЕЗ peaq enqueue; (4) `binary_key.bytesize == 32` (firmware-readable AES-256); (5) TRL4 lab mode повертає `aes_key`+warning, HKDF mode НЕ повертає; (6) SEC.11 production guard raise'ить `SecurityError` без DB side effects; (7) FW.24 magic UID rejection без DB side effects; (8) duplicate UID → 409 без DB side effects.
 
 #### FW.2 — AES-256-ECB без MAC/MIC
 - `03_05` | `firmware/soldier/main.c:747`, `firmware/queen/main.c:781`
@@ -267,14 +267,15 @@
 
 ### 🟠 P1 — Важливі
 
-#### FW.5 — Lorenz Attractor: delta_t/vcap не передаються
+#### ✅ FW.5 — Lorenz Attractor: β-пертурбація від delta_t/vcap — РЕАЛІЗОВАНО
 - `03_04`, `05_02`
-- **Опис:** Spec: `calculate_state(delta_t, vcap)`, реалізація: `calculate_state(chaos_seed, temp, acoustic)`. Аналіз показав: `chaos_seed` (HRNG) вносить значний випадковий компонент у growth_points — при 250 ітераціях Ейлера Z суттєво залежить від початкових умов. `delta_t` та `vcap` — прямі фізичні індикатори метаболізму дерева, що може бути більш обґрунтованим для "Proof of Growth" токеноміки
-- **Статус:** 🟡 Архітектурне рішення прийнято (2026-04-29). Math аналіз variance Z + порівняння варіантів A/B/C задокументовано в `03_04` BLOCKER-1. **Прийнято Варіант B+:** зберегти FW.6 state continuity, chaos_seed тільки для cold-start, додати delta_t/vcap як soft perturbation на β (геометричний параметр конвективної клітини). Імплементація — в наступному циклі (потребує координованого firmware+backend update).
+- **Опис:** Spec: `calculate_state(delta_t, vcap)`, реалізація: `calculate_state(chaos_seed, temp, acoustic)`. Аналіз показав: `chaos_seed` (HRNG) вносить значний випадковий компонент у growth_points — при 250 ітераціях Ейлера Z суттєво залежить від початкових умов. `delta_t` та `vcap` — прямі фізичні індикатори метаболізму дерева.
+- **Статус:** ✅ **Реалізовано (2026-04-30). Варіант B+:** зберегти FW.6 state continuity, chaos_seed тільки для cold-start; `delta_t_s`/`vcap_mv` передаються як soft β-perturbation. Firmware `bio_contract.rb` та backend `SilkenNet::Attractor` оновлені координовано. 500-case parity fuzz: 0 mismatches. `TelemetryUnpackerService` передає `metabolism_s`/`voltage_mv`.
 - [x] 🤖 Математичний аналіз: порівняти variance Z від chaos_seed vs delta_t/vcap після 250 ітерацій
 - [x] 🤖 Архітектурне рішення: замінити chaos_seed на delta_t (Варіант A), додати delta_t/vcap як додаткові пертурбації (Варіант B), або зберегти + EMA фільтр (Варіант C) — **обрано B+**
 - [x] 🤖 Задокументувати рішення в `03_04` з обґрунтуванням впливу на токеноміку
-- [ ] 🤖 Реалізувати (firmware + backend mirror update) — наступний цикл
+- [x] 🤖 Реалізувати (firmware mruby + backend mirror update, 500-case fuzz)
+- [ ] ⬜ Передавання args[5..6] у C (EMA delta_t_ms/vcap_mv з RTC DR10/DR12 у mruby args) — наступний крок
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - `05_02`
@@ -287,13 +288,14 @@
 - [ ] 👤 Верифікувати `MRB_USE_FLOAT` при першому lab-тестуванні (залишковий ризик)
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
-- `05_02`
+- `05_02`, `04_01`, `04_02`
 - **Опис:** firmware: global 2.0/45.0 vs backend: per-species через `TreeFamily`
 - **Рішення:** OTA sync species-specific thresholds
-- **Статус:** 🤖 ✅ Повний дизайн OTA Config Payload для per-species Z thresholds додано в `05_02` §4а. Включає: новий CMD_SET_THRESHOLDS (0x9A) payload format (10 байт з CRC16), firmware RTC Backup DR20-23 storage з fallback на defaults, mruby BioContract dynamic thresholds, Rails `OtaPackagerService#build_threshold_config_block`, per-species default threshold table (Pinus/Quercus/Fagus/Picea/Betula), backend mirror verification
-- [x] 🤖 Додати thresholds до OTA config payload
-- [x] 🤖 Firmware: зберігати thresholds у Flash/RTC
-- [x] 🤖 Backend: включити thresholds у OTA bytecode
+- **Статус:** ✅ **Rails-сторона реалізована (2026-04-30).** `Tree#effective_lorenz_thresholds` (3-tier priority: Cluster override > TreeFamily > global), `TreeFamily#optimal_z_target` / `effective_optimal_z_target`, `Cluster#lorenz_overrides_by_species` JSONB з валідацією, `OtaPackagerService.build_threshold_config_block` (CMD_SET_THRESHOLDS 0x9A, CRC16), `TelemetryUnpackerService#check_z_divergence!` оновлено. Integration spec `fw8_threshold_governance_spec.rb` (18 examples). ⬜ Firmware C-side (обробник `CMD_SET_THRESHOLDS`, RTC DR20-23) — наступний крок.
+- [x] 🤖 Додати thresholds до OTA config payload (build_threshold_config_block)
+- [x] 🤖 Backend: effective_lorenz_thresholds 3-tier + Cluster lorenz_overrides_by_species
+- [x] 🤖 Integration tests: fw8_threshold_governance_spec.rb
+- [ ] ⬜ Firmware C-side: обробник CMD_SET_THRESHOLDS (0x9A) + RTC DR20-23 storage
 
 ### 🟢 P2 — Низькопріоритетні
 
@@ -329,10 +331,12 @@
 - **Опис:** Дешеві кварцові резонатори / внутрішні осцилятори STM32 мають температурний дрейф. При -20°C та +40°C RTC годинник Soldier йде з різною швидкістю. За кілька місяців "час дерева" розсинхронізується з "часом бекенду" на хвилини або години. Впливає на: (1) `created_at` timestamp → partition pruning errors, (2) HMAC/nonce replay protection windows, (3) cron-like wakeup scheduling, (4) **TDMA Синхронні Вікна** (ARCH.26) — без синхронізації годинників координований mesh relay неможливий
 - **Рішення:** Протокол Time Sync через Queen downlink. Queen має точний час через LTE/NTP. Періодично Queen надсилає OTA-корекцію часу. Аналог LoRaWAN MAC command `DeviceTimeReq`
 - **Залежності:** Є передумовою для ARCH.26 (TDMA Sync Windows). Без FW.20 синхронні вікна неможливі — годинники дрейфують і вузли "промахуються" повз спільне RX-вікно
-- [ ] 🤖 Firmware Queen: додати time correction у CoAP ACK або окремий downlink command
+- **Статус:** 🟡 Backend envelope реалізовано: `CoapEncryption.coap_encrypt` обгортає всі downlink-payloadи у `[0x9C][unix_ts_be:4][payload]` перед AES-256-CBC (`app/workers/concerns/coap_encryption.rb`). 47/47 specs зелені (`coap_encryption_spec`, `actuator_command_worker_spec`). Marker `0x9C = CMD_TIME_SYNC` обраний disjoint від `CMD_OTA_BYTECODE = 0x99` і ASCII `"CMD:"`. Year-2106 wrap покритий тестом. **Firmware Queen handler — TODO** (приймати envelope, парсити ts, оновити RTC, далі обробляти inner payload).
+- [x] 🤖 Backend: включити server UTC timestamp у downlink payload — `[0x9C][unix_ts_be:4][payload]` envelope
+- [x] 🤖 Backend specs: round-trip, monotonicity, year-2106 wrap, structural marker — 47/47 зелені
+- [ ] 🤖 Firmware Queen: парсити CMD_TIME_SYNC envelope, оновити RTC, route inner payload (CMD/0x99)
 - [ ] 🤖 Firmware Queen: реалізувати periodic beacon broadcast (UTC timestamp + network schedule) — забезпечує базову синхронізацію часу для ARCH.26
-- [ ] 🤖 Firmware Soldier: прийняти та застосувати RTC correction
-- [ ] 🤖 Backend: включити server UTC timestamp у downlink payload
+- [ ] 🤖 Firmware Soldier: прийняти та застосувати RTC correction (через mesh relay від Queen)
 - [ ] 🤖 Тести: перевірити drift compensation при ΔT = ±60°C
 
 #### FW.21 — Edge data aggregation (RAM-aware Soldier)
@@ -360,7 +364,7 @@
 - **Опис:** OTA bytecode chunks (`[0x99][index:2][total:2][bytecode:11]`) передаються через AES-256-ECB без MAC/signature. Зловмисник може підмінити firmware chunks → code injection на всіх Soldiers у радіусі Queen. Відсутня верифікація цілісності зібраного bytecode перед записом у Flash (`0x0803F000`)
 - **Пріоритет:** P1 (критичний для security, але блокується FW.2 CCM transition)
 - **Рішення:** (1) Підписати OTA image Ed25519 на backend, (2) Queen верифікує підпис перед relay, (3) Soldier верифікує перед Flash write. АБО: HMAC-SHA256 над повним image, transmitted як фінальний chunk
-- [ ] 🤖 Дизайн OTA authentication protocol
+- [x] 🤖 Дизайн OTA authentication protocol — ✅ Повний дизайн HMAC-SHA256 OTA authentication додано в `03_05` §3.4б. Включає: threat model (substitution/bit-flip CRC16/replay), wire format `[0x9B]` HMAC-trailer chunks (3 додаткових LoRa-чанків після bytecode), HMAC input canonical (`bytecode || version_id || total_chunks` для anti-replay+anti-truncation), per-cluster `K_ota` через HKDF з окремим info-string `"silken-ota-hmac-v1"` для domain separation від AES key (FW.1), dual-gate verification на Soldier (Gate 1 magic `0x45544952` ~1 µs, Gate 2 HMAC ~3 мс через STM32 SHA256 hardware) — це покриває **й чекбокс «Magic check + HMAC verification = dual gate»** на дизайн-рівні. Implementation plan: 3 синхронні зміни (Backend `OtaPackagerService` + `OtaHmacKeyService`, Firmware Soldier dual-gate, Firmware Queen stateless relay) — mandatory з дня 1, без backward-compat shim (pre-production, no devices in field). ATECC608B slot 3 — future evolution до ECDSA-P256 при billion-tree масштабі
 - [ ] 🤖 Backend: підпис OTA image перед відправкою
 - [ ] 🤖 Firmware Queen: верифікація підпису/HMAC перед relay
 - [ ] 🤖 Firmware Soldier: верифікація перед Flash write (`MRUBY_CONTRACT_FLASH_ADDR`)
@@ -633,6 +637,31 @@
 - [ ] 🤖 Не відкладати вирішення на "після FW.2" — мінімальний fix: Frame Counter у RTC як anti-replay для panic packets
 - [ ] 🔗 Верифікувати що `EwsAlert` broadcast застосовує той самий CCM MIC що і звичайні пакети (після FW.2)
 - [x] Backend: rate limiting на emergency callbacks — не більше N panic alerts/хвилину від одного DID
+
+#### SEC.11 — Raw DID як seed Lorenz атрактора (Dual Computation Integrity bypass)
+- **Джерело:** `03_06` (повний дизайн SSOT) | `03_04` BLOCKER-1 cross-ref | **Пріоритет: P1**
+- **Опис:** Поточний firmware mruby `bio_contract.rb` стартує атрактор з `(x₀,y₀,z₀)` виведених із `chaos_seed = HRNG()` (Soldier-side) і **DID** (server-side mirror). DID їде відкритим текстом у заголовку LoRa-пакета (`[DID:4]`, поза AES-блоком). Чотири фундаментальні вади: (1) публічний seed → атакер з open-source формулою Лоренца обчислює очікуваний Z для будь-якого дерева → підробляє телеметрію з валідним StatusByte, `check_z_divergence!` мовчить; (2) сусідні DID видаються послідовно → перші ~30 ітерацій Ейлера дають майже ідентичні траєкторії (знижена статистична ентропія); (3) семантична помилка категорій — DID *identifier*, не *key*; (4) відсутність forward secrecy — одне дерево все життя стартує з тієї ж точки.
+- **Наслідок для DCI:** `check_z_divergence!` змушений бути **категоричним** (homeostasis/stress/anomaly enum), а не числовим, бо публічний DID не дозволяє використовувати точне `(server_z − device_z).abs < ε` без розкриття алгоритму атакеру. Атакер з `Z_fake = 28.0` проходить перевірку.
+- **Прийняте рішення (2026-05-02):** **Гібрид варіантів A + B + D** — повний дизайн у `docs/03_06_Lorenz_Seed_Provenance.md` §4.
+  - **A** — `K_seed = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info=DID, len=32)`, виводиться при provisioning, зберігається в `hardware_keys.lorenz_seed_hex` (AR Encryption non-deterministic) і в Soldier Flash (поряд з `K_aes`).
+  - **B** — daily epoch rotation: `(x₀,y₀,z₀) = unpack_signed_unit_floats(HMAC-SHA256(K_seed, "init|" || epoch_day_be)[0..23])`. Forward secrecy ≤ 24 год, синхронізовано через FW.20 `CMD_TIME_SYNC`.
+  - **D** — cold-start derive відбувається лише після VBAT loss (рідкісна подія); у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init.
+  - Варіант **C** (per-packet seed) відкинуто — overhead на STM32WLE5JC не виправдовує marginal security gain над B + continuation.
+- **Ефект на DCI:** після SEC.11 обидві сторони стартують з byte-identical `(x₀,y₀,z₀)` (HMAC-SHA256 detrministic). Float divergence між ARM та x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` стає числовим: `(server_z - device_z).abs < 0.001` — 9 порядків запасу над архітектурним drift, fake-телеметрія детектується з ~99.99% recall.
+- **Залежності:** Reuse існуючої `PROVISIONING_MASTER_KEY` infra (нуль нових сервісів). Synергізує з FW.20 (час потрібен ± 1 година) і FW.6 (RTC continuation вже працює).
+- **Threat model post-SEC.11** (`03_06` §7): sniff LoRa → відтворити Z ❌; replay вчорашнього пакета ❌ (epoch_day змінився); compromise одного `K_seed` ⚠️ (вузол уразливий ≤ 24 год, інші — ні); compromise `PROVISIONING_MASTER_KEY` 🚨 (cascading — окрема rotation strategy SEC.9).
+- [ ] 🤖 Schema migration: `hardware_keys.lorenz_seed_hex`, `telemetry_logs.lorenz_state_x/y/z`, `telemetry_logs.cold_start_flag`
+- [ ] 🤖 `SilkenNet::SeedDerivation` сервіс (HKDF + HMAC-SHA256 + signed-unit-float unpack) + 8-10 specs
+- [ ] 🤖 `HardwareKey#binary_lorenz_seed` (AR Encryption non-deterministic, як `binary_key`)
+- [ ] 🤖 `Attractor.calculate_z_from_state(x0, y0, z0, σ, ρ, β, n)` — новий API; legacy `calculate_z(chaos_seed, ...)` deprecate-then-delete (pre-prod, без shim'ів)
+- [ ] 🤖 `TelemetryUnpackerService` — per-tree seed dispatch; numeric divergence (`< 0.001`) включити після 100% field migration, до того — категоричний як fallback
+- [ ] 🤖 `Provisioning::RegistrationService` — генерувати + повертати `K_seed` поряд з `K_aes`
+- [ ] 🤖 Firmware: HKDF/HMAC через mbedTLS (вже linkована для AES); ~4KB image overhead; Flash sector для `K_seed` поряд з `K_aes`
+- [ ] 🤖 Firmware `bio_contract.rb` — приймати `(x₀,y₀,z₀)` як args, видалити DID-derive code path
+- [ ] 🤖 `firmware/test/test_seed_derivation.c` — host-based parity test (1000-case fuzz: byte-exact `(x₀,y₀,z₀)` match із backend `SeedDerivation`)
+- [ ] 🤖 100-case end-to-end parity: random `(K_seed, epoch_day, σ, ρ, β)` → Z-divergence < 1e-9 firmware vs backend
+- [ ] 🤖 Field migration endpoint: `POST /api/v1/provisioning/upgrade_seed` — re-provision існуючих вузлів upon first uplink post-deploy
+- [ ] 🤖 Flip `check_z_divergence!` на numeric tolerance band після 100% migration
 
 ---
 
