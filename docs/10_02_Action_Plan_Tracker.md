@@ -228,7 +228,7 @@
 - **Рішення:** Per-device provisioning через HKDF, Factory Flashing pipeline
 - [x] 🤖 Дизайн HKDF key derivation protocol — ✅ Повний дизайн HKDF-SHA256 (RFC 5869) додано в `03_05` §3.4а. Включає: кроки Provisioning (factory flashing pipeline), C firmware API (`Load_AES_Key`, `FLASH_KEY_ADDR = 0x0803E000`), Rails backend (`HardwareKeyService.derive_device_key`), варіанти зберігання ключа Queen (A/B/C з ATECC608B), WRPROT Flash sector protection, таблицю безпекових параметрів
 - [ ] 🤖 Backend: provisioning endpoint (POST `/api/v1/provisioning/register` вже існує)
-- [ ] 🤖 Firmware: змінити key storage з hardcoded → Flash-based
+- [x] 🤖 Firmware: змінити key storage з hardcoded → Flash-based (`Load_AES_Key()` в soldier/queen main.c — FLASH_KEY_ADDR 0x0803E000, magic "SKEY")
 - [ ] 👤 Firmware: RDP Level 2 activation як final step
 - [ ] 🤖 End-to-end тест provisioning flow
 

@@ -60,6 +60,15 @@
 #define COAP_SEND_TIMEOUT_MS  5000       // Timeout for data send (includes Starlink worst case)
 #define COAP_MAX_RETRIES      3          // [FW.9] Maximum CoAP send retry attempts
 #define UART_RX_BUF_SIZE      128        // [FW.9] UART RX buffer for modem response parsing
+
+// [FW.1] Flash-based AES key provisioning — per-device unique key via HKDF.
+// Factory Flashing writes device_key to protected Flash sector 0x0803E000
+// via SWD (STM32CubeProgrammer). Key is derived from master_key via HKDF-SHA256
+// on the backend (HardwareKeyService.derive_device_key).
+// See docs/03_05 §3.4а for full protocol design.
+#define FLASH_KEY_ADDR            0x0803E000UL  // Protected Flash sector for AES-256 key
+#define FLASH_KEY_WORDS           8             // 8 × uint32_t = 32 bytes = 256 bits
+#define FLASH_KEY_MAGIC           0x534B4559UL  // "SKEY" — magic marker for provisioned key
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -78,10 +87,12 @@ IWDG_HandleTypeDef hiwdg; // [PLAN 2.6] Independent Watchdog для auto-recover
 // =========================================================================
 // === 0. КЛЮЧІ ОХОРОНИ (Trading Post) ===
 // =========================================================================
-// Секретний 256-бітний ключ мережі Silken Net (Gaia 2.0 Standard).
-// МАЄ БУТИ ІДЕНТИЧНИМ ключу, зашитому в усіх Солдатах.
-uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
-                       0x1A2B3C4D, 0x5E6F7A8B, 0x9C0D1E2F, 0x3A4B5C6D};
+// [FW.1] AES-256 key — завантажується з Protected Flash Sector при boot.
+// Factory Flashing записує per-device ключ (HKDF-SHA256) на адресу FLASH_KEY_ADDR
+// через SWD. Формат Flash: [FLASH_KEY_MAGIC:4][key[0]:4]...[key[7]:4] = 36 байт.
+// Якщо ключ не provisioned — Error_Handler() (пристрій не може працювати без ключа).
+// Ініціалізація нулями — значення перезаписується Load_AES_Key() перед MX_CRYP_Init().
+uint32_t aes_key[8] = {0};
 
 // Унікальний ідентифікатор цієї Королеви.
 // [PLAN 2.4] Replaced hardcoded "QUEEN-001" with Flash-based UID.
@@ -222,6 +233,8 @@ void Flush_Cache_To_Rails(void);
 static uint32_t djb2_hash(const char* str, uint8_t len);
 uint8_t Cmd_Dedup_Check(uint32_t hash);
 void Handle_CoAP_Command(uint8_t* payload, uint16_t len);
+// [FW.1] Завантаження AES-256 ключа з Protected Flash Sector.
+static void Load_AES_Key(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -245,7 +258,8 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init(); // UART для розмови з SIM7070G (115200 baud)
   MX_SUBGHZ_Init();
-  MX_CRYP_Init();        // Вмикаємо апаратний модуль AES
+  Load_AES_Key();        // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
+  MX_CRYP_Init();        // Вмикаємо апаратний модуль AES (використовує aes_key, вже завантажений)
   MX_IWDG_Init();        // [PLAN 2.6] Watchdog: auto-reset ~26 sec after hang
 
   /* USER CODE BEGIN 2 */
@@ -936,6 +950,50 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
             current_ota_chunk_idx = 0;
             ota_is_active = 1;  // 🚀 Запускаємо бродкаст на ліс!
         }
+    }
+}
+
+// =========================================================================
+// [FW.1] ЗАВАНТАЖЕННЯ AES-256 КЛЮЧА З PROTECTED FLASH SECTOR
+// =========================================================================
+// Формат Flash-регіону на FLASH_KEY_ADDR (0x0803E000):
+//   [0] FLASH_KEY_MAGIC (0x534B4559 = "SKEY") — маркер provisioned ключа
+//   [1..8] aes_key[0..7] — 8 × uint32_t = 256 bits AES-256 key
+//
+// Якщо magic відсутній або ключ нульовий — пристрій не provisioned,
+// Error_Handler() викликає software reset. Пристрій не може працювати
+// без валідного ключа (BLOCKER-1 mitigation).
+//
+// Записується при Factory Flashing через SWD:
+//   STM32CubeProgrammer --write key_payload.bin 0x0803E000
+// Ключ деривується на backend: HKDF-SHA256(master_key, device_uid, "silkennet-v1-aes256")
+// Див. docs/03_05 §3.4а для повного протоколу.
+static void Load_AES_Key(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_KEY_ADDR;
+
+    // 1. Перевірка magic marker — чи ключ записаний при provisioning
+    if (flash_ptr[0] != FLASH_KEY_MAGIC) {
+        // Flash не provisioned (0xFFFFFFFF або стертий).
+        // Пристрій не може шифрувати/дешифрувати без ключа.
+        Error_Handler();
+        return;  // unreachable (Error_Handler resets), але для static analysis
+    }
+
+    // 2. Перевірка що ключ не нульовий (magic є, але ключ порожній — corrupted provisioning)
+    uint32_t key_or = 0;
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
+        key_or |= flash_ptr[1 + i];
+    }
+    if (key_or == 0) {
+        // Magic записано, але ключ = 0x00...00 — невалідний стан
+        Error_Handler();
+        return;
+    }
+
+    // 3. Копіюємо ключ з Flash у RAM (aes_key використовується MX_CRYP_Init)
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
+        aes_key[i] = flash_ptr[1 + i];
     }
 }
 

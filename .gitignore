@@ -74,6 +74,8 @@ lib/assets/silken_forest.marshal.sha256
 firmware/test/test_queen
 firmware/test/test_soldier
 firmware/test/test_bio_contract
+firmware/test/test_tinyml
+firmware/test/test_encryption
 
 # Subgraph build artifacts (The Graph)
 subgraph/build/
