@@ -78,7 +78,7 @@ module SilkenNet
     def initial_state(seed_bytes, epoch_day = current_epoch_day)
       raise ArgumentError, "seed_bytes must be 32 bytes" unless seed_bytes&.bytesize == SEED_BYTES
 
-      epoch_be = [epoch_day].pack("Q>") # 8-byte big-endian
+      epoch_be = [ epoch_day ].pack("Q>") # 8-byte big-endian
       info     = "#{HMAC_INFO}|".b + epoch_be
       digest   = OpenSSL::HMAC.digest(HKDF_HASH, seed_bytes, info)
 

@@ -200,7 +200,7 @@ class TelemetryUnpackerService < ApplicationService
       log_attributes[:voltage_mv]
     )
 
-    [z_rounded, [x_final, y_final, z_final], cold_start]
+    [ z_rounded, [ x_final, y_final, z_final ], cold_start ]
   end
 
   # Most recent persisted Lorenz tail for this tree, or nil if the

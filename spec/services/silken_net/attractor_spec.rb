@@ -27,7 +27,7 @@ RSpec.describe SilkenNet::Attractor do
       result = described_class.calculate_z_from_state(0.1, 0.2, 0.3, 20.0, 5)
       expect(result).to be_an(Array)
       expect(result.size).to eq(4)
-      result.each { |v| expect(v).to be_a(Float).and be_finite }
+      expect(result).to all(be_a(Float).and(be_finite))
     end
 
     it "is deterministic for identical inputs" do
@@ -55,14 +55,13 @@ RSpec.describe SilkenNet::Attractor do
     end
 
     it "stays finite under extreme inputs" do
-      [
+      results = [
         described_class.calculate_z_from_state(0.0, 0.0, 0.0, 200.0, 5),
         described_class.calculate_z_from_state(0.0, 0.0, 0.0, 22.0, 500),
         described_class.calculate_z_from_state(0.0, 0.0, 0.0, 25.0, 10, 0, 65_535),
         described_class.calculate_z_from_state(-1.0, -1.0, -1.0, -40.0, 0)
-      ].each do |result|
-        result.each { |v| expect(v).to be_finite }
-      end
+      ]
+      expect(results.flatten).to all(be_finite)
     end
   end
 

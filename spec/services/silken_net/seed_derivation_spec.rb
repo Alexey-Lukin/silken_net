@@ -68,10 +68,7 @@ RSpec.describe SilkenNet::SeedDerivation do
       expect(x0).to be_a(Float)
       expect(y0).to be_a(Float)
       expect(z0).to be_a(Float)
-      [x0, y0, z0].each do |v|
-        expect(v).to be_finite
-        expect(v).to be_between(-1.0, 1.0)
-      end
+      expect([ x0, y0, z0 ]).to all(be_finite.and(be_between(-1.0, 1.0)))
     end
 
     it "is deterministic for the same (seed, epoch_day)" do
@@ -119,7 +116,7 @@ RSpec.describe SilkenNet::SeedDerivation do
     end
 
     it "maps midpoint bytes near 0.0" do
-      midpoint = [0x80, 0, 0, 0, 0, 0, 0, 0].pack("C*")
+      midpoint = [ 0x80, 0, 0, 0, 0, 0, 0, 0 ].pack("C*")
       v = described_class.signed_unit_float(midpoint)
       expect(v).to be_within(1e-9).of(0.0)
     end
