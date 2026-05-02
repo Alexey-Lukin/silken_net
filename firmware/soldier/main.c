@@ -200,7 +200,22 @@ static inline float uint32_to_float(uint32_t u) {
     return f;
 }
 
-// === 1.10. ЗГЛАДЖУВАЧ ПУЛЬСУ (FW.21: EMA Persistence) ===
+// [FW.20-S1] LoRa time-sync beacon from Queen.
+// 16-byte plaintext layout (after AES-256-ECB decrypt):
+//   [0x9C][unix_ts_be:u32][reserved:0×4][TTL][magic 'B'][padding:0×5]
+// Soldier inspects byte 0 of decrypted RX payload — distinct from OTA (0x99),
+// telemetry (DID-prefixed, never starts with 0x9C), and CMD: text. Beacon is
+// not relayed (TTL=1) — Soldiers consume it locally to correct RTC drift.
+#define BEACON_MARKER             0x9C
+#define BEACON_MAGIC_BYTE         0x42  // 'B'
+#define BEACON_PLAINTEXT_SIZE     16
+
+// [FW.20-S1] Soldier-side authoritative UTC seconds + last_sync_tick for drift.
+// Used by Derive_Cold_Start_State to compute epoch_day deterministically (matches
+// backend SilkenNet::SeedDerivation). Without a synchronised value we fall back
+// to the legacy RTC-date approximation.
+volatile uint32_t soldier_unix_ts            = 0;
+volatile uint32_t soldier_unix_ts_local_tick = 0;
 // Експоненціальне ковзне середнє для delta_t (швидкість метаболізму EBFC)
 // та vcap (заряд іоністора). Зменшує ADC-/RTC-шум приблизно в 3× перед
 // тим, як ці сигнали потраплять до Атрактора (FW.5 Variant B+).
@@ -835,9 +850,30 @@ int main(void)
                 uint16_t blocks = incoming_lora_size / 4;
                 HAL_CRYP_Decrypt(&hcryp, (uint32_t*)incoming_lora_payload, blocks, (uint32_t*)decrypted_rx_payload, 1000);
 
+                // Сценарій 0: [FW.20-S1] Time-sync beacon від Королеви (0x9C marker).
+                // Treat as 16-byte ECB packet with plaintext [0x9C][ts_be:4][...].
+                // Update soldier_unix_ts/local_tick so cold-start derivation
+                // can compute epoch_day precisely (matches backend HKDF input).
+                if (incoming_lora_size == BEACON_PLAINTEXT_SIZE &&
+                    decrypted_rx_payload[0] == BEACON_MARKER &&
+                    decrypted_rx_payload[10] == BEACON_MAGIC_BYTE) {
+
+                    uint32_t beacon_ts = ((uint32_t)decrypted_rx_payload[1] << 24) |
+                                         ((uint32_t)decrypted_rx_payload[2] << 16) |
+                                         ((uint32_t)decrypted_rx_payload[3] << 8)  |
+                                         (uint32_t)decrypted_rx_payload[4];
+
+                    if (beacon_ts != 0) {
+                        soldier_unix_ts            = beacon_ts;
+                        soldier_unix_ts_local_tick = HAL_GetTick();
+                    }
+
+                    // Beacon TTL=1: do NOT relay. Drop the packet, sleep early.
+                    break;
+                }
+
                 // Сценарій А: OTA Оновлення від Королеви (Пакет починається з OTA_MARKER)
-                if (decrypted_rx_payload[0] == OTA_MARKER) {
-                    // [FIX: AUDIT] Перевірка мінімального розміру пакета (5 байт заголовок + 1 байт даних)
+                if (decrypted_rx_payload[0] == OTA_MARKER) {                    // [FIX: AUDIT] Перевірка мінімального розміру пакета (5 байт заголовок + 1 байт даних)
                     if (incoming_lora_size < MIN_OTA_PACKET_SIZE) {
                         lora_rx_flag = 0;
                         break;

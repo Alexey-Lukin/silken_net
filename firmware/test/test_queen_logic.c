@@ -292,6 +292,62 @@ static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.20] CMD_TIME_SYNC envelope unwrap (extracted from Handle_CoAP_Command).
+ * Backend wraps every downlink in [0x9C][unix_ts_be:4][inner_payload].
+ * Queen strips the 5-byte envelope, persists ts via Apply_Server_Time_Test,
+ * and returns the inner-payload pointer + length so the caller routes via
+ * existing CMD: / 0x99 logic.
+ * ════════════════════════════════════════════════════════════════════ */
+#define CMD_TIME_SYNC_MARKER       0x9C
+#define CMD_TIME_SYNC_HEADER_SIZE  5
+#define BEACON_MARKER              0x9C
+#define BEACON_TTL                 1
+#define BEACON_MAGIC_BYTE          'B'
+
+static uint32_t test_queen_unix_ts            = 0;
+static uint32_t test_queen_unix_ts_local_tick = 0;
+
+static void Apply_Server_Time_Test(uint32_t server_unix_ts)
+{
+    test_queen_unix_ts            = server_unix_ts;
+    test_queen_unix_ts_local_tick = 1000;  /* Mock HAL_GetTick() */
+}
+
+/* Strip TIME_SYNC envelope from `buf` of length `aligned`.
+ * Returns: number of bytes stripped (0 = no envelope found, kept as-is).
+ *          On success, *inner = buf + 5 and *inner_len = aligned - 5.
+ *          On envelope-only (no inner payload), *inner_len = 0. */
+static uint8_t Strip_Time_Sync_Envelope(uint8_t* buf, uint16_t aligned,
+                                         uint8_t** inner, uint16_t* inner_len)
+{
+    if (aligned >= CMD_TIME_SYNC_HEADER_SIZE && buf[0] == CMD_TIME_SYNC_MARKER) {
+        uint32_t ts = ((uint32_t)buf[1] << 24) | ((uint32_t)buf[2] << 16) |
+                      ((uint32_t)buf[3] << 8)  | (uint32_t)buf[4];
+        Apply_Server_Time_Test(ts);
+        *inner     = buf + CMD_TIME_SYNC_HEADER_SIZE;
+        *inner_len = (uint16_t)(aligned - CMD_TIME_SYNC_HEADER_SIZE);
+        return CMD_TIME_SYNC_HEADER_SIZE;
+    }
+    *inner     = buf;
+    *inner_len = aligned;
+    return 0;
+}
+
+/* Build 16-byte LoRa time-sync beacon plaintext (FW.20-Q2).
+ * Layout: [0x9C][ts_be:4][reserved:0×4][TTL=1][magic 'B'][padding:0×5] */
+static void Build_Time_Beacon_Plaintext(uint32_t unix_ts, uint8_t out[16])
+{
+    memset(out, 0, 16);
+    out[0]  = BEACON_MARKER;
+    out[1]  = (uint8_t)(unix_ts >> 24);
+    out[2]  = (uint8_t)(unix_ts >> 16);
+    out[3]  = (uint8_t)(unix_ts >> 8);
+    out[4]  = (uint8_t)(unix_ts & 0xFFu);
+    out[9]  = BEACON_TTL;
+    out[10] = (uint8_t)BEACON_MAGIC_BYTE;
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * TEST FRAMEWORK
  * ════════════════════════════════════════════════════════════════════ */
 static int tests_passed = 0;
@@ -1421,6 +1477,134 @@ TEST(test_queen_load_key_overwrite) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.20] CMD_TIME_SYNC envelope + LoRa time beacon
+ * ════════════════════════════════════════════════════════════════════ */
+
+TEST(test_time_sync_envelope_strips_5_bytes) {
+    test_queen_unix_ts = 0;
+
+    /* [0x9C][unix_ts_be: 0x65000000][inner: "CMD:OPEN:..."] */
+    uint8_t buf[32] = {
+        0x9C, 0x65, 0x00, 0x00, 0x00,
+        'C','M','D',':','O','P','E','N',':','6','0',':','4','2',':',
+        'a','b','c','d','-','1','-','2','-','3','-','4'
+    };
+    uint8_t* inner = NULL;
+    uint16_t inner_len = 0;
+
+    uint8_t stripped = Strip_Time_Sync_Envelope(buf, 32, &inner, &inner_len);
+
+    ASSERT_EQ(stripped, 5);
+    ASSERT_EQ(inner_len, 27);
+    ASSERT_EQ(memcmp(inner, "CMD:OPEN:60:42:abcd-1-2-3-4", 27), 0);
+    ASSERT_EQ(test_queen_unix_ts, 0x65000000U);
+}
+
+TEST(test_time_sync_envelope_no_marker_keeps_payload_unchanged) {
+    test_queen_unix_ts = 0xDEADBEEFu;  /* sentinel: must not be overwritten */
+
+    /* Legacy payload without 0x9C envelope (bare "CMD:..."). */
+    uint8_t buf[16] = {'C','M','D',':','O','P','E','N',':','6','0',
+                       ':','4','2',':','a'};
+    uint8_t* inner = NULL;
+    uint16_t inner_len = 0;
+
+    uint8_t stripped = Strip_Time_Sync_Envelope(buf, 16, &inner, &inner_len);
+
+    ASSERT_EQ(stripped, 0);
+    ASSERT_EQ(inner_len, 16);
+    ASSERT_EQ(inner, buf);
+    ASSERT_EQ(test_queen_unix_ts, 0xDEADBEEFu);  /* unchanged */
+}
+
+TEST(test_time_sync_envelope_only_no_inner) {
+    test_queen_unix_ts = 0;
+
+    /* Server "ping" — only envelope, no inner payload (5 bytes total). */
+    uint8_t buf[16] = {0x9C, 0x12, 0x34, 0x56, 0x78, 0,0,0,0,0,0,0,0,0,0,0};
+    uint8_t* inner = NULL;
+    uint16_t inner_len = 0;
+
+    uint8_t stripped = Strip_Time_Sync_Envelope(buf, 5, &inner, &inner_len);
+
+    ASSERT_EQ(stripped, 5);
+    ASSERT_EQ(inner_len, 0);
+    ASSERT_EQ(test_queen_unix_ts, 0x12345678U);
+}
+
+TEST(test_time_sync_envelope_too_short_no_unwrap) {
+    test_queen_unix_ts = 0xCAFEBABEu;
+
+    /* aligned < CMD_TIME_SYNC_HEADER_SIZE — even if byte 0 is 0x9C. */
+    uint8_t buf[4] = {0x9C, 0x12, 0x34, 0x56};
+    uint8_t* inner = NULL;
+    uint16_t inner_len = 0;
+
+    uint8_t stripped = Strip_Time_Sync_Envelope(buf, 4, &inner, &inner_len);
+
+    ASSERT_EQ(stripped, 0);
+    ASSERT_EQ(inner_len, 4);
+    ASSERT_EQ(test_queen_unix_ts, 0xCAFEBABEu);
+}
+
+TEST(test_time_sync_envelope_routes_ota_marker) {
+    /* Verify envelope strip exposes 0x99 OTA payload to the inner-routing logic. */
+    test_queen_unix_ts = 0;
+
+    uint8_t buf[16] = {
+        0x9C, 0x00, 0x00, 0x10, 0x00,    /* ts = 0x00001000 */
+        0x99, 0x00, 0x05, 0x00, 0x10,    /* OTA marker, idx=5, total=16 */
+        'b','y','t','e','c','d'           /* opaque bytecode */
+    };
+    uint8_t* inner = NULL;
+    uint16_t inner_len = 0;
+
+    Strip_Time_Sync_Envelope(buf, 16, &inner, &inner_len);
+
+    ASSERT_EQ(inner_len, 11);
+    ASSERT_EQ(inner[0], 0x99);              /* now routed as OTA */
+    ASSERT_EQ(test_queen_unix_ts, 0x1000U);
+}
+
+TEST(test_time_beacon_plaintext_layout) {
+    uint8_t out[16];
+    Build_Time_Beacon_Plaintext(0xAABBCCDDu, out);
+
+    ASSERT_EQ(out[0], BEACON_MARKER);
+    ASSERT_EQ(out[1], 0xAA);
+    ASSERT_EQ(out[2], 0xBB);
+    ASSERT_EQ(out[3], 0xCC);
+    ASSERT_EQ(out[4], 0xDD);
+    /* reserved bytes 5..8 must be zero (TDMA slot space) */
+    for (int i = 5; i <= 8; i++) ASSERT_EQ(out[i], 0);
+    ASSERT_EQ(out[9],  BEACON_TTL);          /* TTL=1, no relay */
+    ASSERT_EQ(out[10], (uint8_t)BEACON_MAGIC_BYTE); /* 'B' */
+    /* padding bytes 11..15 must be zero */
+    for (int i = 11; i < 16; i++) ASSERT_EQ(out[i], 0);
+}
+
+TEST(test_time_beacon_distinct_from_ota) {
+    /* The beacon marker (0x9C) must NOT collide with the OTA marker (0x99)
+     * Soldier uses to gate Flash writes. This is a regression sentinel. */
+    uint8_t out[16];
+    Build_Time_Beacon_Plaintext(0x12345678u, out);
+    ASSERT_NE(out[0], 0x99);
+    ASSERT_EQ(out[0], 0x9C);
+}
+
+TEST(test_time_beacon_ts_zero_caller_responsibility) {
+    /* The packet builder must produce the exact bytes for ts=0. Suppression
+     * (skip TX when not yet synchronised) is the caller's job — see
+     * Broadcast_Time_Beacon() in queen/main.c. This guards against a future
+     * refactor that pushes suppression into the builder and breaks tests. */
+    uint8_t out[16];
+    Build_Time_Beacon_Plaintext(0, out);
+    ASSERT_EQ(out[0], BEACON_MARKER);
+    ASSERT_EQ(out[1], 0);
+    ASSERT_EQ(out[10], (uint8_t)BEACON_MAGIC_BYTE);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -1545,6 +1729,16 @@ int main(void)
     RUN(test_queen_load_key_preserves_8_words);
     RUN(test_queen_load_key_magic_value_correct);
     RUN(test_queen_load_key_overwrite);
+
+    printf("\n  Time Sync Envelope + Beacon (FW.20):\n");
+    RUN(test_time_sync_envelope_strips_5_bytes);
+    RUN(test_time_sync_envelope_no_marker_keeps_payload_unchanged);
+    RUN(test_time_sync_envelope_only_no_inner);
+    RUN(test_time_sync_envelope_too_short_no_unwrap);
+    RUN(test_time_sync_envelope_routes_ota_marker);
+    RUN(test_time_beacon_plaintext_layout);
+    RUN(test_time_beacon_distinct_from_ota);
+    RUN(test_time_beacon_ts_zero_caller_responsibility);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

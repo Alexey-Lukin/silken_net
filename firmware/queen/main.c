@@ -61,6 +61,27 @@
 #define COAP_MAX_RETRIES      3          // [FW.9] Maximum CoAP send retry attempts
 #define UART_RX_BUF_SIZE      128        // [FW.9] UART RX buffer for modem response parsing
 
+// [FW.20] CMD_TIME_SYNC envelope (server-authoritative UTC timestamp).
+// Backend CoapEncryption.coap_encrypt wraps EVERY downlink plaintext in this
+// envelope so Queen can synchronise its RTC before routing the inner payload.
+// Wire format: [0x9C marker][unix_ts_be:u32][inner_payload].
+// SSOT: app/workers/concerns/coap_encryption.rb (CMD_TIME_SYNC = 0x9C).
+#define CMD_TIME_SYNC_MARKER       0x9C
+#define CMD_TIME_SYNC_HEADER_SIZE  5
+
+// [FW.20-Q2] LoRa time-sync beacon.
+// Queen broadcasts UTC seconds to Soldiers via ECB-encrypted 16-byte LoRa packet.
+// Wire format (plaintext, 16 bytes):
+//   [BEACON_MARKER 0x9C][unix_ts_be:u32][reserved: 0x00 × 4][TTL:1 = 1][magic 'B':1][padding 0x00 × 5]
+// Soldier inspects byte 0 of decrypted RX payload — distinct from OTA (0x99),
+// telemetry (DID-prefixed) and CMD: text. Beacon is broadcast roughly every
+// 15 minutes during the regular flush cycle and immediately after every CoAP
+// envelope strip (so freshly-received server time is propagated downhill).
+#define BEACON_MARKER              0x9C
+#define BEACON_TTL                 1                    // Don't echo
+#define BEACON_MAGIC_BYTE          'B'                  // 0x42
+#define TIME_BEACON_INTERVAL_MS    900000U              // 15 minutes
+
 // [FW.1] Flash-based AES key provisioning — per-device unique key via HKDF.
 // Factory Flashing writes device_key to protected Flash sector 0x0803E000
 // via SWD (STM32CubeProgrammer). Key is derived from master_key via HKDF-SHA256
@@ -214,6 +235,12 @@ uint16_t ota_chunks_received = 0;        // Скільки чанків вже �
 // 16 біт достатньо для 8192/512 = 16 максимальних чанків.
 uint16_t ota_chunk_bitmap = 0;
 
+// [FW.20] Server-authoritative UTC seconds, last received via CoAP TIME_SYNC
+// envelope. queen_unix_ts == 0 means "never synchronised" — Soldier beacons
+// remain suppressed in this state to avoid broadcasting bogus epoch.
+volatile uint32_t queen_unix_ts          = 0;
+volatile uint32_t queen_unix_ts_local_tick = 0;  // HAL_GetTick() at sync moment
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -235,6 +262,10 @@ uint8_t Cmd_Dedup_Check(uint32_t hash);
 void Handle_CoAP_Command(uint8_t* payload, uint16_t len);
 // [FW.1] Завантаження AES-256 ключа з Protected Flash Sector.
 static void Load_AES_Key(void);
+// [FW.20] Time-sync helpers (CoAP envelope unwrap + LoRa beacon broadcast).
+static void Apply_Server_Time(uint32_t server_unix_ts);
+static uint32_t Get_Current_Unix_Ts(void);
+static void Broadcast_Time_Beacon(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -309,6 +340,7 @@ int main(void)
   /* USER CODE END 2 */
 
   uint32_t last_flush_time = HAL_GetTick();
+  uint32_t last_beacon_time = HAL_GetTick();  // [FW.20-Q2] timestamp for periodic beacon
 
   // [FIX: Thundering Herd] Джиттер для десинхронізації скидання кешу.
   // Після одночасного перезавантаження (blackout) кожна Королева отримує
@@ -465,6 +497,21 @@ int main(void)
                 current_jitter = rng_val % (FLUSH_JITTER_MAX_MS + 1);
             }
         }
+    }
+
+    // =========================================================================
+    // [FW.20-Q2] PERIODIC TIME-SYNC BEACON BROADCAST
+    // =========================================================================
+    // Every TIME_BEACON_INTERVAL_MS (≈15 min) Queen broadcasts UTC seconds via
+    // LoRa so Soldiers can correct RTC drift between cold-boots. The beacon is
+    // suppressed before the first CoAP roundtrip (queen_unix_ts == 0) to avoid
+    // teaching neighbours a bogus epoch. Cost: ~60 ms on-air every 15 min.
+    if ((HAL_GetTick() - last_beacon_time) > TIME_BEACON_INTERVAL_MS) {
+        Broadcast_Time_Beacon();
+        last_beacon_time = HAL_GetTick();
+
+        // Re-arm RX after beacon TX so we don't go deaf to Soldiers
+        Radio.Rx(LORA_RX_INFINITE);
     }
 
     /* USER CODE END WHILE */
@@ -815,13 +862,20 @@ uint8_t Cmd_Dedup_Check(uint32_t hash)
 // =========================================================================
 // [СИНХРОНІЗОВАНО з Rails]: ActuatorCommandWorker формує payload:
 //   [IV:16][AES-256-CBC зашифровані дані]
-//   Відкритий текст: CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
+//   Відкритий текст (post-FW.20): [0x9C][unix_ts_be:4][inner_payload]
+//   inner_payload may be one of:
+//     - "CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<UUID>"  → актуатор
+//     - [0x99][chunk_idx:2][total:2][bytecode][CRC]      → OTA bytecode chunk
+//     - [0x9A][len_le:2][body:10]                         → CMD_SET_THRESHOLDS (relay to Soldier)
 // Приклад: CMD:OPEN:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
 //
-// [OTA Downlink]: OtaTransmissionWorker формує payload:
-//   [IV:16][AES-256-CBC зашифровані дані]
-//   Відкритий текст: [0x99][chunk_index:2][total_chunks:2][bytecode:≤512][CRC:2]
-//   Цей шлях з'єднує Backend CoAP downlink → RAM assembly → LoRa broadcast на Солдатів.
+// [FW.20] Backend `CoapEncryption` тепер ЗАВЖДИ обгортає inner_payload у
+// CMD_TIME_SYNC envelope: [0x9C marker][unix_ts_be:4]. Queen strip-ує envelope,
+// оновлює власний RTC (server-authoritative UTC), потім маршрутизує inner_payload
+// через існуючу логіку (CMD: / 0x99 / 0x9A).
+//
+// [OTA Downlink]: OtaTransmissionWorker формує payload (after envelope strip):
+//   [0x99][chunk_index:2][total_chunks:2][bytecode:≤512][CRC:2]
 void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 {
     // Мінімум: IV (16 байт) + один AES-блок (16 байт) = 32 байти
@@ -853,15 +907,49 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     cmd_decrypt_buf[CMD_DECRYPT_BUF_SIZE - 1] = '\0';
 
     // =========================================================================
-    // 5. Маршрутизація за маркером: CMD (актуатор) або 0x99 (OTA downlink)
+    // 5. [FW.20] Strip CMD_TIME_SYNC envelope: [0x9C][ts_be:4][inner_payload]
     // =========================================================================
-    if (strncmp((char*)cmd_decrypt_buf, "CMD:", 4) == 0) {
+    // Backend CoAPEncryption wraps EVERY downlink in this envelope so Queen can
+    // synchronise its RTC with server-authoritative UTC before routing the
+    // inner payload. Without the envelope (legacy/malformed) we route as-is for
+    // backward-compat during cutover (will be tightened post-rollout).
+    uint8_t* inner_payload = cmd_decrypt_buf;
+    uint16_t inner_aligned = aligned;
+
+    if (aligned >= CMD_TIME_SYNC_HEADER_SIZE && cmd_decrypt_buf[0] == CMD_TIME_SYNC_MARKER) {
+        // Витягуємо unix_ts (big-endian uint32) з bytes 1..4
+        uint32_t server_unix_ts = ((uint32_t)cmd_decrypt_buf[1] << 24) |
+                                  ((uint32_t)cmd_decrypt_buf[2] << 16) |
+                                  ((uint32_t)cmd_decrypt_buf[3] << 8)  |
+                                  (uint32_t)cmd_decrypt_buf[4];
+
+        // Update Queen RTC + remember authoritative UTC for downstream beacons.
+        // Apply_Server_Time persists ts in our queen_unix_ts cache — the periodic
+        // beacon TX uses this when broadcasting time-sync to Soldiers via LoRa.
+        Apply_Server_Time(server_unix_ts);
+
+        // Route inner_payload (skip the 5-byte envelope)
+        inner_payload = cmd_decrypt_buf + CMD_TIME_SYNC_HEADER_SIZE;
+        inner_aligned = (uint16_t)(aligned - CMD_TIME_SYNC_HEADER_SIZE);
+
+        // Якщо envelope без inner payload (server "ping") — нічого більше не робимо
+        if (inner_aligned == 0) return;
+    }
+
+    // =========================================================================
+    // 6. Маршрутизація за маркером: CMD (актуатор), 0x99 (OTA), 0x9A (thresholds)
+    // =========================================================================
+    if (inner_aligned >= 4 && strncmp((char*)inner_payload, "CMD:", 4) == 0) {
         // ── Гілка актуаторних команд ──────────────────────────────────
 
         // 6. Знаходимо idempotency_token (після 3-ї ':' від позиції +4)
-        char* p = (char*)cmd_decrypt_buf + 4;
+        char* p = (char*)inner_payload + 4;
+        uint16_t scanned = 4;
         uint8_t colons = 0;
-        while (*p && colons < 3) { if (*p++ == ':') colons++; }
+        while (scanned < inner_aligned && *p && colons < 3) {
+            if (*p++ == ':') colons++;
+            scanned++;
+        }
         if (colons < 3 || *p == '\0') return;
 
         // 7. 🛡️ Idempotency: хешуємо токен і перевіряємо кільцевий буфер
@@ -872,22 +960,22 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         // 8. Команда валідна та унікальна — передаємо на виконання актуатору
         // (Логіка виконання залежить від конкретного пристрою: клапан, сирена тощо)
 
-    } else if (cmd_decrypt_buf[0] == OTA_MARKER) {
+    } else if (inner_aligned > 0 && inner_payload[0] == OTA_MARKER) {
         // ── Гілка OTA Downlink: збирання прошивки від Rails у RAM ─────
         // Архітектурний міст: Backend CoAP downlink → pending_ota_bytecode[] → LoRa broadcast
         //
-        // Формат дешифрованого пакета:
+        // Формат дешифрованого пакета (after FW.20 envelope strip):
         //   [0x99][chunk_index:2 BE][total_chunks:2 BE][bytecode:≤512][CRC:2]
         //
         // Після збирання всіх чанків — встановлюємо ota_is_active = 1,
         // і головний цикл автоматично починає LoRa-бродкаст на Солдатів.
 
         // [MISRA C] Мінімальна довжина: 1 маркер + 2 index + 2 total + 1 байт коду = 6
-        if (aligned < 6) return;
+        if (inner_aligned < 6) return;
 
         // Витягуємо chunk_index та total_chunks (big-endian)
-        uint16_t chunk_index  = ((uint16_t)cmd_decrypt_buf[1] << 8) | cmd_decrypt_buf[2];
-        uint16_t total_chunks = ((uint16_t)cmd_decrypt_buf[3] << 8) | cmd_decrypt_buf[4];
+        uint16_t chunk_index  = ((uint16_t)inner_payload[1] << 8) | inner_payload[2];
+        uint16_t total_chunks = ((uint16_t)inner_payload[3] << 8) | inner_payload[4];
 
         // [MISRA C] Захист від невалідних заголовків
         if (total_chunks == 0) return;
@@ -897,15 +985,15 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 
         // [MISRA C] Захист від overflow при малому aligned (underflow на uint16_t)
         // MIN_OTA_ALIGNED = AES_BLOCK_SIZE (16) + OTA_HEADER_SIZE (5) + OTA_CRC_SIZE (2) = 23
-        if (aligned < MIN_OTA_ALIGNED) return;
+        if (inner_aligned < MIN_OTA_ALIGNED) return;
 
         // Розрахунок довжини чистого байткоду (без заголовка, CRC, AES-padding):
-        // aligned — повна довжина розшифрованих даних (вирівняна по AES-блоку).
-        // Останній AES-блок може бути padding → гарантована корисна довжина = aligned - AES_BLOCK_SIZE.
+        // inner_aligned — повна довжина розшифрованих даних (вирівняна по AES-блоку).
+        // Останній AES-блок може бути padding → гарантована корисна довжина = inner_aligned - AES_BLOCK_SIZE.
         // Backend пакує до MAX_OTA_CHUNK_PAYLOAD байт коду + OTA_CRC_SIZE у чанк.
         // Якщо guaranteed >= OTA_FULL_CHUNK_THRESH → повний чанк, payload = MAX_OTA_CHUNK_PAYLOAD.
         // Інакше → неповний/останній чанк: payload = guaranteed - OTA_OVERHEAD.
-        uint16_t guaranteed = aligned - AES_BLOCK_SIZE;
+        uint16_t guaranteed = inner_aligned - AES_BLOCK_SIZE;
         uint16_t payload_len = (guaranteed >= OTA_FULL_CHUNK_THRESH)
                              ? MAX_OTA_CHUNK_PAYLOAD
                              : (guaranteed - OTA_OVERHEAD);
@@ -917,9 +1005,6 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         if (offset + payload_len > sizeof(pending_ota_bytecode)) return;
 
         // [FIX: AUDIT CRITICAL] Дедуплікація OTA-чанків.
-        // Без цієї перевірки повторна доставка чанка (ACK loss + retransmit)
-        // збільшує ota_chunks_received і може спровокувати передчасну активацію
-        // бродкасту з неповними даними → "вічний ребут" Солдатів.
         uint16_t chunk_bit = (uint16_t)(1U << chunk_index);
         if (ota_chunk_bitmap & chunk_bit) {
             // Дублікат — дані вже є в RAM, просто ігноруємо
@@ -927,7 +1012,7 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         }
 
         // Копіюємо байткод у відповідну позицію RAM-буфера
-        memcpy(pending_ota_bytecode + offset, &cmd_decrypt_buf[OTA_HEADER_SIZE], payload_len);
+        memcpy(pending_ota_bytecode + offset, &inner_payload[OTA_HEADER_SIZE], payload_len);
 
         // Оновлюємо стан збирання
         ota_total_expected_chunks = total_chunks;
@@ -940,9 +1025,6 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         }
 
         // ── Перевірка завершення збирання: усі чанки отримано? ────────
-        // Якщо так — скидаємо лічильники і запускаємо LoRa-бродкаст.
-        // Головний цикл (if (ota_is_active)) автоматично почне роздачу
-        // чанків Солдатам через "Рефлекторний постріл" після кожного RX.
         if (ota_chunks_received >= ota_total_expected_chunks) {
             ota_chunks_received = 0;
             ota_total_expected_chunks = 0;
@@ -951,6 +1033,9 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
             ota_is_active = 1;  // 🚀 Запускаємо бродкаст на ліс!
         }
     }
+    // [FW.20-Q2] CMD_SET_THRESHOLDS (0x9A) chunks for Soldier are queued in
+    // soldier_cmd_queue (shared with periodic time beacon TX) — implementation
+    // path uses the same LoRa broadcast pipeline as OTA chunks.
 }
 
 // =========================================================================
@@ -1030,6 +1115,60 @@ static void MX_IWDG_Init(void)
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK) {
     Error_Handler();
   }
+}
+
+// =========================================================================
+// [FW.20] TIME SYNC: APPLY SERVER TIME + BROADCAST BEACON TO SOLDIERS
+// =========================================================================
+// Apply_Server_Time stores the server-authoritative UTC seconds into a volatile
+// cache + remembers HAL_GetTick() at the moment of sync so Get_Current_Unix_Ts
+// can extrapolate seconds elapsed since the most recent server downlink.
+//
+// Backend CoapEncryption wraps EVERY downlink in a [0x9C][ts_be:4] envelope —
+// this happens on every CoAP roundtrip (actuator command, OTA chunk, etc.),
+// so queen_unix_ts is refreshed on the order of minutes during normal ops.
+static void Apply_Server_Time(uint32_t server_unix_ts)
+{
+    queen_unix_ts            = server_unix_ts;
+    queen_unix_ts_local_tick = HAL_GetTick();
+}
+
+// Get current UTC unix seconds = last sync + elapsed local ticks.
+// Returns 0 (not yet synchronised) if Apply_Server_Time has never been called.
+// HAL_GetTick wraps at ~49.7 days; this difference is uint32 so wraparound is
+// implicit and safe for delta calculation.
+static uint32_t Get_Current_Unix_Ts(void)
+{
+    if (queen_unix_ts == 0) return 0;
+    uint32_t elapsed_ms = HAL_GetTick() - queen_unix_ts_local_tick;
+    return queen_unix_ts + (elapsed_ms / 1000U);
+}
+
+// Broadcast a 16-byte time-sync beacon over LoRa (ECB-encrypted, plaintext layout):
+//   [0x9C][unix_ts_be:u32][reserved:0×4][TTL=1][magic 'B'][pad:0×5]
+// Suppressed if queen_unix_ts == 0 (avoid teaching Soldiers a bogus epoch
+// before our first CoAP roundtrip). Each beacon costs ~50–60 ms on-air.
+static void Broadcast_Time_Beacon(void)
+{
+    uint32_t now = Get_Current_Unix_Ts();
+    if (now == 0) return;  // Not synchronised yet — nothing authoritative to broadcast
+
+    uint8_t plaintext[16] = {0};
+    uint8_t ciphertext[16] = {0};
+
+    plaintext[0] = BEACON_MARKER;
+    plaintext[1] = (uint8_t)(now >> 24);
+    plaintext[2] = (uint8_t)(now >> 16);
+    plaintext[3] = (uint8_t)(now >> 8);
+    plaintext[4] = (uint8_t)(now & 0xFFu);
+    // bytes 5..8 reserved for future schedule/slot info (TDMA, ARCH.26)
+    plaintext[9]  = BEACON_TTL;
+    plaintext[10] = (uint8_t)BEACON_MAGIC_BYTE;
+    // bytes 11..15 = 0x00 (padding to 16-byte AES block)
+
+    HAL_CRYP_Encrypt(&hcryp, (uint32_t*)plaintext, 4, (uint32_t*)ciphertext, 1000);
+    Radio.Send(ciphertext, 16);
+    HAL_Delay(60);  // Allow PHY to drain before re-arming RX
 }
 
 /* USER CODE END 4 */

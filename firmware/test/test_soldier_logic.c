@@ -1986,6 +1986,100 @@ TEST(test_cbridge_unified_7arg_signature) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.20-S1] Time-Sync Beacon RX (Soldier)
+ * ════════════════════════════════════════════════════════════════════ */
+#define S_BEACON_MARKER          0x9C
+#define S_BEACON_MAGIC_BYTE      'B'
+#define S_BEACON_PLAINTEXT_SIZE  16
+#define S_OTA_MARKER             0x99
+
+/* Soldier-side authoritative UTC (mirrors soldier_unix_ts in main.c). */
+static uint32_t test_soldier_unix_ts            = 0;
+static uint32_t test_soldier_unix_ts_local_tick = 0;
+
+/* Extract from soldier/main.c RX branch:
+ *  if (size == 16 && plaintext[0] == 0x9C && plaintext[10] == 'B') -> consume.
+ * Returns: 1 = beacon consumed (don't relay/route further), 0 = not a beacon. */
+static int Recv_Time_Beacon(const uint8_t* plaintext, uint16_t size)
+{
+    if (size != S_BEACON_PLAINTEXT_SIZE) return 0;
+    if (plaintext[0]  != S_BEACON_MARKER)     return 0;
+    if (plaintext[10] != S_BEACON_MAGIC_BYTE) return 0;
+
+    uint32_t ts = ((uint32_t)plaintext[1] << 24) | ((uint32_t)plaintext[2] << 16) |
+                  ((uint32_t)plaintext[3] << 8)  | (uint32_t)plaintext[4];
+    if (ts == 0) return 1;  /* Frame is well-formed but ts=0 — drop without persisting */
+
+    test_soldier_unix_ts            = ts;
+    test_soldier_unix_ts_local_tick = 12345;
+    return 1;
+}
+
+TEST(test_beacon_rx_sets_unix_ts) {
+    test_soldier_unix_ts = 0;
+    uint8_t plain[16] = {
+        0x9C, 0x65, 0xAB, 0xCD, 0xEF, 0,0,0,0, 1, 'B', 0,0,0,0,0
+    };
+    int consumed = Recv_Time_Beacon(plain, 16);
+    ASSERT_EQ(consumed, 1);
+    ASSERT_EQ(test_soldier_unix_ts, 0x65ABCDEFu);
+}
+
+TEST(test_beacon_rx_rejects_wrong_marker) {
+    test_soldier_unix_ts = 0xDEADBEEFu;
+    uint8_t plain[16] = {
+        0x99,  /* OTA marker — must NOT trigger beacon path */
+        0x65, 0xAB, 0xCD, 0xEF, 0,0,0,0, 1, 'B', 0,0,0,0,0
+    };
+    int consumed = Recv_Time_Beacon(plain, 16);
+    ASSERT_EQ(consumed, 0);
+    ASSERT_EQ(test_soldier_unix_ts, 0xDEADBEEFu);
+}
+
+TEST(test_beacon_rx_rejects_wrong_magic_byte) {
+    test_soldier_unix_ts = 0xDEADBEEFu;
+    uint8_t plain[16] = {
+        0x9C, 0x65, 0xAB, 0xCD, 0xEF, 0,0,0,0, 1, 'X' /* wrong magic */, 0,0,0,0,0
+    };
+    int consumed = Recv_Time_Beacon(plain, 16);
+    ASSERT_EQ(consumed, 0);
+    ASSERT_EQ(test_soldier_unix_ts, 0xDEADBEEFu);
+}
+
+TEST(test_beacon_rx_rejects_wrong_size) {
+    test_soldier_unix_ts = 0xDEADBEEFu;
+    uint8_t plain[16] = {
+        0x9C, 0x65, 0xAB, 0xCD, 0xEF, 0,0,0,0, 1, 'B', 0,0,0,0,0
+    };
+    int consumed = Recv_Time_Beacon(plain, 15);  /* not 16 */
+    ASSERT_EQ(consumed, 0);
+    ASSERT_EQ(test_soldier_unix_ts, 0xDEADBEEFu);
+}
+
+TEST(test_beacon_rx_ts_zero_well_formed_but_dropped) {
+    /* Beacon shape valid but ts=0 — Soldier MUST NOT teach itself epoch 0. */
+    test_soldier_unix_ts = 0xDEADBEEFu;
+    uint8_t plain[16] = {
+        0x9C, 0,0,0,0, 0,0,0,0, 1, 'B', 0,0,0,0,0
+    };
+    int consumed = Recv_Time_Beacon(plain, 16);
+    ASSERT_EQ(consumed, 1);                        /* still consumed (don't relay) */
+    ASSERT_EQ(test_soldier_unix_ts, 0xDEADBEEFu);  /* but ts unchanged */
+}
+
+TEST(test_beacon_rx_does_not_collide_with_ota) {
+    /* OTA chunk path (byte0=0x99) must be untouched by beacon recv. */
+    test_soldier_unix_ts = 0;
+    uint8_t plain[16] = {
+        S_OTA_MARKER, 0,0, 0,1,                  /* idx=0, total=1 */
+        'b','y','t','e','c','o','d','e', 0,0,0   /* 11 bytes payload */
+    };
+    int consumed = Recv_Time_Beacon(plain, 16);
+    ASSERT_EQ(consumed, 0);                       /* falls through to OTA branch */
+    ASSERT_EQ(test_soldier_unix_ts, 0u);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -2157,6 +2251,14 @@ int main(void)
 
     printf("\n  C-Bridge 7-Arg Signature (FW.30):\n");
     RUN(test_cbridge_unified_7arg_signature);
+
+    printf("\n  Time-Sync Beacon RX (FW.20-S1):\n");
+    RUN(test_beacon_rx_sets_unix_ts);
+    RUN(test_beacon_rx_rejects_wrong_marker);
+    RUN(test_beacon_rx_rejects_wrong_magic_byte);
+    RUN(test_beacon_rx_rejects_wrong_size);
+    RUN(test_beacon_rx_ts_zero_well_formed_but_dropped);
+    RUN(test_beacon_rx_does_not_collide_with_ota);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);
