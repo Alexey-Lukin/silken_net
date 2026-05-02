@@ -109,14 +109,6 @@
 - [ ] 🤖 Документувати у `06_02` runbook: pre-flight checklist + verification commands
 - [ ] 🤖 Якщо Akash hostname — додати automation у `terraform/`
 
-#### INF.6 — CoAP Proxy на Ingress Anchor: відсутня verification
-- **P1** | `06_01` Pre-Flight Checklist | **Складність: S** | **🤖 Код + Док**
-- **Опис:** Ingress Anchor (Kamal Traefik або Akash ingress) повинен проксіювати CoAP UDP port 5683. Документація рекомендує перевірити, але **точна команда verification відсутня**. Без перевірки можлива ситуація: HTTP ingress активний, але UDP заблокований → шлюзи не можуть пушити телеметрію (silent failure)
-- **Статус (✅ виконано):** Додано рядок **#6** у Pre-Flight Checklist `06_01` з повними командами: `coap-client -m post` для CoAP smoke test + альтернатива через `nc`, troubleshooting checklist (GCP firewall, Ingress Anchor socat, Akash SDL UDP expose, Sidekiq daemon).
-- [x] 🤖 Додати у `06_01` команду: `coap-client -m post -e "test" coap://<ingress-host>:5683/health` + очікуваний response
-- [x] 🤖 Smoke test workflow у CI: post-deploy CoAP health check — ✅ `.github/workflows/coap_smoke.yml` додано: `workflow_dispatch` (з custom host/port/path/timeout) + `workflow_call` (для виклику з `deploy.yml` / `deploy-production.yml` як post-deploy gate). Кроки: `apt-get install libcoap2-bin` → `timeout ${COAP_TIMEOUT} coap-client -m post -e ... -B ... -v 9 coap://${host}:${port}${path}` → fail при connection timeout або `5.xx` response, success при `2.xx` / `4.04` (daemon alive). При фейлі emit'иться `::error::` блок з troubleshooting checklist (GCP firewall / socat / Akash SDL / coap_listener.rb) дзеркально до Pre-Flight #6 у `06_01`.
-- [x] 🤖 Документувати точний HAProxy/socat/Traefik UDP config для кожного варіанту deploy (включено у troubleshooting секцію)
-
 #### S4.3 — Akash SDL secrets
 - **P3** | `06_02` | **Складність: XS** | **🔧 Операційна** — заповнити 4 змінні у `deploy.yaml`
 - **Опис:** `REQUIRED_SECRET_NOT_SET` для 4 критичних змінних
@@ -164,14 +156,6 @@
 - [x] 🤖 Дизайн key rotation policy (overlap window, migration strategy) — ✅ Dual-key overlap window (72 год) з `peaq_signing_key` + `peaq_signing_key_previous`. Scheduled rotation кожні 90 днів. Задокументовано в `04_02` §S6.14
 - [x] 🤖 Документувати emergency revocation runbook — ✅ 5-step incident response (Detection → Containment <15хв → Investigation → Recovery → Post-Incident). Задокументовано в `06_04` §5.4
 - [ ] 👤 Vault-store production peaq_signing_key (Bitwarden/1Password)
-
-#### S6.15 — Chainlink Functions Router ABI v1: ризик version drift
-- **P2** | `04_02` §4.2.2 (DispatchToChainlinkService, BLOCKER-09) | **Складність: S** | **🤖 Код**
-- **Опис:** ABI оновлено на Functions Router v1 (5 параметрів — `CHAINLINK_DATA_VERSION`, `CHAINLINK_CALLBACK_GAS_LIMIT`, `CHAINLINK_DON_ID`, ...). Немає fallback на старіший ABI. При наступному upgrade Chainlink router або зміні DON ID — пайплайн впаде без graceful degradation
-- **Статус (✅ виконано):** `Web3::ChainlinkRouterVersion` registry додано (`app/services/web3/chainlink_router_version.rb`) — enum `VERSION_ORDER`, `REGISTRY` (v1: ABI + canonical signature `sendRequest(uint64,bytes,uint16,uint32,bytes32)` + keccak256 selector `0x461d2762`), `active_version` (з ENV `CHAINLINK_ROUTER_VERSION`, default `:v1`), `fallback_for(version)`, `selector_present_in_code?(code_hex, version)` для bytecode probe. `Chainlink::OracleDispatchService` тепер: (1) делегує `functions_router_abi` у registry; (2) `pick_router_version` робить `eth_getCode` probe перед dispatch — якщо активна версія selector відсутній у байт-коді Router'а, спробує fallback на попередню registered версію; (3) raises `DispatchError` якщо ні активна, ні fallback версія не присутні; (4) `CHAINLINK_ROUTER_BYTECODE_CHECK=false` вимикає probe для staging/dev RPC що не експортують `eth_getCode`. Spec coverage: 17 examples в `spec/services/web3/chainlink_router_version_spec.rb` (active/fallback/abi/selector/case-insensitive bytecode match) + 5 додаткових в `oracle_dispatch_service_spec.rb` (delegation / dispatch with v1 / mismatch raise / unknown ENV → DispatchError / probe disabled / no eth_getCode).
-- [x] 🤖 Додати `Web3::ChainlinkRouterVersion` enum + ABI registry для multi-version підтримки
-- [x] 🤖 Health check: розпарсити router contract code → перевірити сигнатуру `sendRequest()` при бутстрапі сервісу
-- [x] 🤖 Документувати в `04_02` процес upgrade ABI
 
 #### S6.18 — Rails web security hardening (maquina-app/rails-claude-code §8 audit)
 - **P1** | `06_01`, `06_02`, `06_04` | **Складність: M** | **🤖 Код + Конфігурація**
