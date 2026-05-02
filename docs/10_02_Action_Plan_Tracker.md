@@ -645,7 +645,7 @@
 - **Ефект на DCI:** обидві сторони стартують з byte-identical `(x₀,y₀,z₀)`. Float divergence між ARM та x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` зберігає категоричну невідповідність і отримує hook для числового tolerance band — flip під feature-flag після інструментального вимірювання реального drift.
 - **Hard-cutover deliverables (pre-prod, без shim'ів):**
   - [x] 🤖 Schema migration `db/migrate/20260502090000_add_lorenz_seed_provenance_columns.rb` — `hardware_keys.lorenz_seed_hex` (RANGE-partitioned `telemetry_logs` отримує `lorenz_state_x/y/z` + `cold_start_flag` через DDL на parent + всі live partitions)
-  - [x] 🤖 `SilkenNet::SeedDerivation` (HKDF-SHA256 + HMAC-SHA256 + signed-unit-float unpack) + 17 examples в `spec/services/silken_net/seed_derivation_spec.rb`
+  - [x] 🤖 `SilkenNet::SeedDerivation` (HKDF-SHA256 + HMAC-SHA256 + signed-unit-float unpack) + 16 examples в `spec/services/silken_net/seed_derivation_spec.rb`
   - [x] 🤖 `HardwareKey#binary_lorenz_seed` (AR Encryption non-deterministic, як `binary_key`); `lorenz_seed_hex` validated `presence: true`
   - [x] 🤖 `Attractor.calculate_z_from_state(x0, y0, z0, σ, ρ, β, n)` — sole entry-point; legacy `calculate_z(chaos_seed, ...)` та `calculate_z_continued` ВИДАЛЕНО (не deprecated — hard cutover)
   - [x] 🤖 `TelemetryUnpackerService` — single K_seed-derived path; raises `MissingLorenzSeedError` при відсутньому K_seed; persist `lorenz_state_x/y/z` + `cold_start_flag` на кожному uplink; chaining continuation з попереднього `TelemetryLog` tail

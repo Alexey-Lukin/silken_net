@@ -56,17 +56,18 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║  [STM32WLE5JC SOLDIER]                                               ║
 ║   ФАЗА 1: SENSE                                                      ║
 ║     ADC → Vcap (мВ), Temp (°C), IWDG heartbeat                      ║
-║     RNG → chaos_seed (32-bit entropy)                                ║
 ║     DMA 16kHz → raw_audio_buffer[512] → TinyML inference             ║
 ║     delta_t_seconds = tick - last_wakeup_timestamp (метаболізм EBFC) ║
 ║                                                                      ║
-║   ФАЗА 2: mruby BioContract (on-device Lorenz)                      ║
-║     [FW.6] Два режими:                                               ║
-║       A) Продовження (DR19 == MAGIC): відновлення (x,y,z) з DR16-18  ║
-║          calculate_state_continued(x, y, z, temp, acust)             ║
-║          → [status_byte, x_final, y_final, z_final]                  ║
-║       B) Первинний старт (DR19 ≠ MAGIC): chaos_seed → (x₀,y₀,z₀)   ║
-║          calculate_state(seed, temp, acust) → status_byte            ║
+║   ФАЗА 2: mruby BioContract (on-device Lorenz) [SEC.11 + FW.6]      ║
+║     ЄДИНА сигнатура (hard cutover): calculate_state(x,y,z,t,a,m,v)  ║
+║       A) Warm continuation (RTC DR19 == "LZST"): (x,y,z) ← DR16-18   ║
+║       B) Cold start (DR19 ≠ MAGIC, після VBAT loss):                 ║
+║          K_seed (Flash) + epoch_day = unix_ts/86400                  ║
+║          digest = HMAC-SHA256(K_seed, "init|" || epoch_day_be)       ║
+║          (x₀,y₀,z₀) = bytes_to_signed_unit_floats(digest[0..23])    ║
+║          ↳ identifier-as-key антипатерн (raw DID seed) ВИДАЛЕНО      ║
+║     250 ітерацій Lorenz Euler → (x_final,y_final,z_final) → DR16-18  ║
 ║     bio_contract.rb :: BioContract.evaluate_and_pack → status_byte  ║
 ║     status_byte = [bio_status:2 bits | growth_points:6 bits]        ║
 ║                                                                      ║
@@ -105,7 +106,12 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    Chunk: [DID:4][RSSI:1][Payload:16] = 21 bytes                    ║
 ║    Format: "N n c C n C C a4" (unpack)                              ║
 ║    DeviceCalibration: normalize ADC → фізичні одиниці               ║
-║    SilkenNet::Attractor.calculate_z(seed, temp, acust, delta_t_s, vcap_mv) → z_value    ║
+║    SilkenNet::Attractor.calculate_z_from_state(x_prev,y_prev,z_prev, ║
+║      temp, acust, delta_t_s, vcap_mv) → z_value [SEC.11 sole API]   ║
+║      ├─ warm: (x_prev,y_prev,z_prev) ← prev TelemetryLog.lorenz_state║
+║      └─ cold: SeedDerivation.derive_initial_state(K_seed, epoch_day) ║
+║              + telemetry_log.cold_start_flag = true                  ║
+║    persist tail → telemetry_log.lorenz_state_x/y/z (mirror RTC)     ║
 ║    growth_points = status_byte & 0x3F (нижні 6 бітів)              ║
 ║    bio_status = status_byte >> 6 (верхні 2 біти)                    ║
 ║    AlertDispatchService.analyze_and_trigger!(log)                    ║
@@ -183,7 +189,8 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 | `internal_temp` | ADC → внутрішній датчик | int8 (°C, −45..90) |
 | `acoustic_events` | DMA 16 кГц → TinyML CMSIS-NN | uint8 (0–255) |
 | `delta_t_seconds` | `HAL_GetTick() - last_wakeup_timestamp` | uint32 (EBFC метаболізм) |
-| `chaos_seed` | `HAL_RNG_GenerateRandomNumber` | uint32 (апаратна ентропія) |
+
+> **[SEC.11]** `chaos_seed = HAL_RNG_GenerateRandomNumber()` як вхід Лоренца — **видалено** (hard cutover). Початкова точка `(x₀, y₀, z₀)` тепер деривується з per-device `K_seed` (Flash) через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` лише при cold-start після VBAT loss; у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init. HRNG залишається лише для AES IV jitter, mesh anti-pingpong та CoAP nonce. Деталі — [03_05 §3.4в](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-).
 
 **TinyML класи** (`silken_net_audio_model.h`): 0=Тиша, 1=Вітер, 2=Кавітація, 3=Пилка.
 
@@ -210,10 +217,9 @@ BETA_LIMITS        = (2.0..4.0)
 BASELINE_DELTA_T_S = 60
 NOMINAL_VCAP_MV    = 3300
 
-def self.calculate_z_axis(seed, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
-  x = ((seed % 1000) / 500.0) - 1.0
-  y = (((seed >> 4) % 1000) / 500.0) - 1.0
-  z = (((seed >> 8) % 1000) / 500.0) - 1.0
+def self.calculate_z_axis(x, y, z, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
+  # [SEC.11] (x, y, z) приходять як аргументи: warm — з RTC DR16-18,
+  # cold — з K_seed/epoch_day (див. evaluate_and_pack нижче). DID не є входом.
   # local_sigma, local_rho: perturbation + clamp
   # [FW.5] local_beta: perturb_beta(delta_t_s, vcap_mv) → β ∈ [2.0, 4.0]
   ITERATIONS.times { dx/dy/dz → Euler integration (local_beta in dz) }
@@ -227,8 +233,9 @@ CRITICAL_Z_MIN  = 2.0   # Порóг посухи (HARDCODED у firmware!)
 CRITICAL_Z_MAX  = 45.0  # Поріг критичного стресу (HARDCODED!)
 OPTIMAL_Z_TARGET = 29.0 # Ідеальний стан конвекції (HARDCODED!)
 
-def self.evaluate_and_pack(seed, temp, acoustic)
-  z_val = Attractor.calculate_z_axis(seed, temp, acoustic)
+def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+  # (x_prev, y_prev, z_prev): warm — з RTC DR16-18; cold — з SEC.11 K_seed/epoch_day
+  z_val = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
   if    z_val < CRITICAL_Z_MIN  → status=1, growth_points=1  # stress
   elsif z_val > CRITICAL_Z_MAX  → status=2, growth_points=0  # anomaly
   else                          → status=0                    # homeostasis
@@ -239,7 +246,7 @@ def self.evaluate_and_pack(seed, temp, acoustic)
 end
 ```
 
-**Точка входу з C:** `calculate_state(seed, temp, acoustic)` → `payload_byte` (uint8_t).
+**Точка входу з C:** `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)` → `payload_byte` (uint8_t). Сигнатура `calculate_state(seed, …)` ВИДАЛЕНА (SEC.11 hard cutover, pre-prod, no shim).
 
 ---
 
@@ -818,6 +825,75 @@ blockchain_transactions
 | `ENV["FOREST_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |
 | `ENV["DAO_TREASURY_ADDRESS"]` | `BlockchainMintingService` (Dynamic Tax) | ✅ Так |
 | `ENV["SOLANA_RPC_URL"]` | `Solana::MintingService` | ✅ Так |
+| `ENV["PROVISIONING_MASTER_KEY"]` [SEC.11] | `SilkenNet::SeedDerivation`, `HardwareKeyService` | ✅ Так — без неї `SecurityError` (no SecureRandom fallback ANYWHERE; pre-prod hard cutover) |
+
+---
+
+## 🔬 SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity
+
+> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation-); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [10_02 SEC.11](10_02_Action_Plan_Tracker).
+
+### Чому це частина Proof of Growth, а не суто security task
+
+`Wallet#lock_and_mint!` карбує SCC лише коли `bio_status == homeostasis` витримує ZK-верифікацію та oracle-консенсус. До SEC.11 атакер з знанням open-source формули Лоренца та публічного DID (їде відкритим текстом у `[DID:4]` префіксі LoRa-пакета) міг **підрахувати очікуваний Z для будь-якого дерева** і підробити телеметрію з валідним `status_byte`. `check_z_divergence!` мовчав, бо порівнював категорії (homeostasis/stress/anomaly), не саму величину Z — Float vs BigDecimal drift після 250 ітерацій Ейлера робив числове порівняння неможливим. Identifier-as-key антипатерн.
+
+### Hard cutover (pre-prod, 2026-05-02)
+
+| Шар | Зміна | Файл / артефакт |
+|-----|-------|----------|
+| Schema | Нові колонки `hardware_keys.lorenz_seed_hex` (NOT NULL), `telemetry_logs.lorenz_state_x/y/z`, `telemetry_logs.cold_start_flag` | `db/migrate/20260502090000_add_lorenz_seed_provenance_columns.rb` |
+| Crypto core | `SilkenNet::SeedDerivation` — HKDF-SHA256 + HMAC-SHA256 + signed-unit-float unpack; raises `SecurityError` без `PROVISIONING_MASTER_KEY` (no fallback) | `app/services/silken_net/seed_derivation.rb` (17 specs) |
+| Provisioning | `HardwareKeyService.provision` атомарно деривує AES key + K_seed одним викликом | `app/services/hardware_key_service.rb` |
+| Attractor | Sole entry-point `Attractor.calculate_z_from_state(x_prev, y_prev, z_prev, …)`; legacy `calculate_z(seed, …)` ВИДАЛЕНО | `app/services/silken_net/attractor.rb` |
+| Unpacker | Per-tree dispatch: warm tail з попереднього `TelemetryLog.lorenz_state_*`, cold start з `K_seed/epoch_day` + `cold_start_flag = true`; persist tail | `app/services/telemetry_unpacker_service.rb` |
+| Firmware | mruby `bio_contract.rb` єдина сигнатура `calculate_state(x, y, z, …)`; chaos_seed та DID-as-seed видалено | `firmware/bio_contracts/bio_contract.rb` |
+| Parity | Host-test OpenSSL HKDF/HMAC ↔ mbedTLS на MCU, 13 examples (детерміновані вектори + 100-case fuzz mirror Ruby) | `firmware/test/test_seed_derivation.c` |
+
+### Cold-start vs Warm continuation dispatch у `TelemetryUnpackerService`
+
+```ruby
+prev_tail = tree.telemetry_logs
+              .where.not(lorenz_state_x: nil)
+              .order(created_at: :desc)
+              .first
+
+if prev_tail
+  # Warm path (норма) — дзеркалить firmware FW.6 RTC DR16-DR18 continuation
+  x0, y0, z0 = prev_tail.lorenz_state_x, prev_tail.lorenz_state_y, prev_tail.lorenz_state_z
+  cold_start = false
+else
+  # Cold path — лише після VBAT loss / провізіонування / повного reboot
+  raise MissingLorenzSeedError unless tree.hardware_key&.binary_lorenz_seed.present?
+  epoch_day  = telemetry_log.created_at.utc.to_i / 86_400
+  x0, y0, z0 = SilkenNet::SeedDerivation.derive_initial_state(
+                 seed_bin:  tree.hardware_key.binary_lorenz_seed,
+                 epoch_day: epoch_day
+               )
+  cold_start = true
+end
+
+z = SilkenNet::Attractor.calculate_z_from_state(
+      x0, y0, z0, temp_c, acoustic, metabolism_s, voltage_mv
+    )
+
+telemetry_log.update!(
+  z_value:         z,
+  lorenz_state_x:  Attractor.last_state[:x],
+  lorenz_state_y:  Attractor.last_state[:y],
+  lorenz_state_z:  Attractor.last_state[:z],
+  cold_start_flag: cold_start
+)
+```
+
+**Інваріант:** обидві сторони (Soldier mruby + backend Ruby) стартують з **байт-ідентичного** `(x₀, y₀, z₀)` для тієї самої пари `(K_seed, epoch_day)`. Daily epoch rotation (UTC, 86400 сек) синхронізована через FW.20 `CMD_TIME_SYNC` → forward secrecy ≤ 24 год.
+
+### Ефект на Dual Computation Integrity
+
+**До SEC.11** — `check_z_divergence!` категоричний (3-zone homeostasis/stress/anomaly): атакер з `Z_fake = 28.0` проходив. Tolerance band = ширина категорії.
+
+**Після SEC.11** — обидві сторони мають однакову початкову точку, тому Float vs Float drift між ARM та x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично після FW.7 closure). `check_z_divergence!` зберігає категоричну невідповідність як safety net і отримує hook для числового tolerance band (`(server_z - device_z).abs > 0.001`) — flip під feature-flag після інструментального вимірювання реального drift у польових умовах. Атакер без знання `K_seed` не може передбачити очікуваний Z → fake-телеметрія falls within `< 0.001` band з ймовірністю ~`6/45000` → детекція ≈ 99.99%.
+
+> **Свідомо НЕ робимо** (pre-prod, no field devices, no prototypes, no firmware in flight): `POST /api/v1/provisioning/upgrade_seed` field-migration endpoint, TRL4 lab-mode response з `lorenz_seed` в JSON, SecureRandom fallback в `Rails.env != production`. SEC.9 (rotation `PROVISIONING_MASTER_KEY`) — окрема задача, не блокує SEC.11.
 
 ---
 
@@ -854,29 +930,18 @@ uint32_t aes_key[8] = {0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C,
 
 ---
 
-### BLOCKER-02: Lorenz Attractor — Float у firmware vs BigDecimal(18) на сервері [P1]
+### BLOCKER-02: ✅ ЗАКРИТО — Lorenz Float vs BigDecimal divergence + DID-as-seed
 
-**Файли:**
+> **Закрито (2026-05-02):** дві ортогональні зміни усунули блокер.
+> 1. **FW.7 (попередня сесія):** `app/services/silken_net/attractor.rb` переведено з `BigDecimal(18)` на Float (IEEE 754 double), байт-ідентично з firmware mruby. Накопичена похибка за 250 ітерацій Ейлера — < 1e-12 (емпірично).
+> 2. **SEC.11 (поточна сесія, hard cutover):** початкова точка `(x₀, y₀, z₀)` тепер деривується з per-device `K_seed` через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` на обох сторонах байт-ідентично. DID видалено зі входів атрактора повністю (був identifier-as-key антипатерн). `check_z_divergence!` отримав hook для числового tolerance band (`< 0.001`) — flip під feature-flag після інструментального drift вимірювання у польових умовах.
+>
+> Деталі — секція **«SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity»** вище.
+
+**Історичний контекст** (для розуміння еволюції рішення):
 - `firmware/bio_contracts/bio_contract.rb` — `BASE_BETA = 8.0 / 3.0` (Ruby Float)
-- `app/services/silken_net/attractor.rb` — `BASE_BETA = ("8.0".to_d / "3.0".to_d).round(18)` (BigDecimal)
-
-```ruby
-# Firmware (mruby):
-BASE_BETA = 8.0 / 3.0   # → 2.6666666666666665 (IEEE 754 Float64)
-
-# Backend (Rails):
-BASE_BETA = ("8.0".to_d / "3.0".to_d).round(18)  # → 2.666666666666666667
-```
-
-**Наслідок:** Після 250 ітерацій Euler integration, накопичена похибка
-Float vs BigDecimal призводить до різних значень Z на пристрої та сервері.
-Це означає, що `growth_points` у пакеті (обчислені on-device) та `growth_points`
-у `TelemetryLog` (зчитані з `status_byte`) можуть відрізнятись від `z_value`
-(обчисленого сервером через `SilkenNet::Attractor.calculate_z`).
-
-**Потрібно:** Або перейти на integer-math у firmware (помножити всі значення на
-фіксований масштаб), або документувати, що on-device та backend Z — це
-**різні** числа (один для локального рішення, інший для фінансового консенсусу).
+- `app/services/silken_net/attractor.rb` (до FW.7) — `BASE_BETA = ("8.0".to_d / "3.0".to_d).round(18)` (BigDecimal)
+- Різна математика (Float vs BigDecimal) давала розбіжність Z на десятки одиниць після 250 ітерацій хаотичної системи. Plus identifier-as-key антипатерн робив `check_z_divergence!` неможливим як числову перевірку.
 
 ---
 
@@ -914,7 +979,7 @@ tree_family.critical_z_max  # може бути 40.0 для дуба, 55.0 дл�
 | # | Блокер | Область | Вплив | Пріоритет |
 |---|--------|---------|-------|-----------|
 | 01 | AES ключ захардкоджений у firmware | Security | Компрометація всіх пристроїв | P0 |
-| 02 | Float vs BigDecimal Lorenz divergence | Correctness | Різні Z на device vs server | P1 |
+| 02 | ~~Float vs BigDecimal Lorenz divergence~~ + ~~DID-as-seed identifier-as-key антипатерн~~ | Correctness + Security | ✅ Закрито (FW.7 + SEC.11, 2026-05-02) | — |
 | 03 | CRITICAL_Z thresholds: global vs per-species | Correctness | Некоректний bio_status | P1 |
 
 **Легенда пріоритетів:**
