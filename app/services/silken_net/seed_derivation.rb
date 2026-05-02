@@ -46,22 +46,18 @@ module SilkenNet
 
     # Derive a 32-byte K_seed for a device. Returns the upper-cased HEX
     # representation (64 chars) so it can be stored in the same column
-    # shape as `aes_key_hex`.
+    # shape as `aes_key_hex`. Always requires PROVISIONING_MASTER_KEY —
+    # there is no SecureRandom fallback (SEC.11 hard cutover, see
+    # docs/03_05 §3.4а).
     def derive_seed(device_uid)
       master_key = ENV["PROVISIONING_MASTER_KEY"]
 
       if master_key.blank?
-        if Rails.env.production?
-          raise SecurityError,
-                "PROVISIONING_MASTER_KEY ENV is required in production. " \
-                "Backend SecureRandom fallback would generate K_seed values that do " \
-                "NOT match firmware HKDF derivation, breaking Dual Computation " \
-                "Integrity. See SEC.11 in docs/10_02_Action_Plan_Tracker.md."
-        end
-
-        Rails.logger.warn "⚠️ [SeedDerivation] PROVISIONING_MASTER_KEY не встановлено. " \
-                          "Використовується SecureRandom (TRL 4 lab mode). БЛОКУЄ Production."
-        return SecureRandom.hex(SEED_BYTES).upcase
+        raise SecurityError,
+              "PROVISIONING_MASTER_KEY ENV is required. Without it backend " \
+              "would generate K_seed values that do NOT match firmware HKDF " \
+              "derivation, breaking Dual Computation Integrity. " \
+              "See SEC.11 in docs/10_02_Action_Plan_Tracker.md."
       end
 
       derived = OpenSSL::KDF.hkdf(

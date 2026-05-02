@@ -16,13 +16,25 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   let(:extracted_did) { format("SNET-%08X", did_hex.to_i(16)) }
 
   let!(:tree) { create(:tree, did: extracted_did) }
+  # [SEC.11] HardwareKey with K_seed is required for every uplink —
+  # TelemetryUnpackerService raises MissingLorenzSeedError otherwise.
+  let!(:hardware_key) do
+    HardwareKey.create!(
+      device_uid: extracted_did,
+      aes_key_hex: SecureRandom.hex(32).upcase,
+      lorenz_seed_hex: SecureRandom.hex(32).upcase
+    )
+  end
 
   before do
     tree.create_device_calibration! if tree.device_calibration.nil?
     allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
     allow_any_instance_of(Tree).to receive(:broadcast_map_update)
     allow(AlertDispatchService).to receive(:analyze_and_trigger!)
-    allow(SilkenNet::Attractor).to receive(:calculate_z).and_return(0.5)
+    # [SEC.11] Pin the post-cutover entry-point so attribute-level
+    # assertions are stable. Returns [z, x, y, z_final] tuple.
+    allow(SilkenNet::Attractor).to receive(:calculate_z_from_state)
+      .and_return([ 0.5, 0.1, 0.2, 0.3 ])
     allow(IotexVerificationWorker).to receive(:perform_async)
     allow(StreamrBroadcastWorker).to receive(:perform_async)
   end
@@ -615,54 +627,37 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   end
 
   # [SEC.11] Per-tree dispatch between legacy DID-as-seed and the
-  # post-SEC.11 K_seed-derived initial-state path.
-  describe "Lorenz seed provenance dispatch [SEC.11]" do
+  # [SEC.11] K_seed-derived initial-state path is the SOLE attractor
+  # entry-point. Every Tree must have a provisioned HardwareKey with
+  # `lorenz_seed_hex`; missing seeds raise MissingLorenzSeedError.
+  describe "Lorenz seed provenance [SEC.11]" do
     before do
       # Allow the real attractor for these scenarios so we can observe
-      # the call signature instead of asserting on a stubbed return.
-      allow(SilkenNet::Attractor).to receive(:calculate_z).and_call_original
+      # the call signature and persisted trajectory tail.
       allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_call_original
     end
 
-    it "uses calculate_z (legacy path) when the tree has no K_seed" do
+    it "raises MissingLorenzSeedError when a tree has no HardwareKey" do
+      hardware_key.destroy!
       chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
 
-      expect(SilkenNet::Attractor).to receive(:calculate_z).at_least(:once).and_return(0.42)
-      expect(SilkenNet::Attractor).not_to receive(:calculate_z_from_state)
-
-      described_class.call(chunk)
-
-      log = TelemetryLog.last
-      expect(log.lorenz_state_x).to be_nil
-      expect(log.lorenz_state_y).to be_nil
-      expect(log.lorenz_state_z).to be_nil
-      expect(log.cold_start_flag).to be(false)
-      expect(log.z_value).to eq(0.42)
+      expect { described_class.call(chunk) }
+        .to raise_error(TelemetryUnpackerService::MissingLorenzSeedError, /no provisioned K_seed/)
     end
 
-    it "uses calculate_z_from_state and persists trajectory tail when K_seed exists" do
-      HardwareKey.create!(
-        device_uid: extracted_did,
-        aes_key_hex: ("AB" * 32),
-        lorenz_seed_hex: ("CD" * 32)
-      )
+    it "persists trajectory tail and marks cold_start_flag on the first packet" do
       chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
 
       described_class.call(chunk)
 
       log = TelemetryLog.last
-      expect(log.cold_start_flag).to be(true) # first packet → cold start
+      expect(log.cold_start_flag).to be(true)
       expect(log.lorenz_state_x).to be_a(Float).and be_finite
       expect(log.lorenz_state_y).to be_a(Float).and be_finite
       expect(log.lorenz_state_z).to be_a(Float).and be_finite
     end
 
     it "chains continuation from the previous TelemetryLog tail (cold_start_flag=false)" do
-      HardwareKey.create!(
-        device_uid: extracted_did,
-        aes_key_hex: ("AB" * 32),
-        lorenz_seed_hex: ("CD" * 32)
-      )
       # First packet — cold start, persists a tail.
       described_class.call(build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3))
       first_tail = TelemetryLog.last.slice(:lorenz_state_x, :lorenz_state_y, :lorenz_state_z)

@@ -23,8 +23,18 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
 
     before do
       tree.create_device_calibration! if tree.device_calibration.nil?
+      # [SEC.11] HardwareKey with K_seed is required by
+      # TelemetryUnpackerService — every tree gets one at provisioning.
+      tree.create_hardware_key!(
+        device_uid: tree.did,
+        aes_key_hex: SecureRandom.hex(32).upcase,
+        lorenz_seed_hex: SecureRandom.hex(32).upcase
+      )
       allow(AlertDispatchService).to receive(:analyze_and_trigger!)
-      allow(SilkenNet::Attractor).to receive(:calculate_z).and_return(25.0)
+      # [SEC.11] Sole entry-point is calculate_z_from_state — pin to a
+      # deterministic Z so the integration assertions are stable.
+      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state)
+        .and_return([ 25.0, 0.1, 0.2, 0.3 ])
     end
 
     # Helper: build a 21-byte telemetry chunk [DID:4][RSSI:1][Payload:16]

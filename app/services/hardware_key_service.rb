@@ -47,27 +47,18 @@ class HardwareKeyService
   # Деривація AES-256 ключа з master_key та device_uid через HKDF.
   # Повертає 64-символьний HEX-рядок (32 байти).
   #
-  # [SEC.11 PRODUCTION GUARD]: У production без `PROVISIONING_MASTER_KEY` ENV
-  # backend сгенерує SecureRandom — який НЕ збігається з firmware HKDF деривацією
-  # → AES ключі backend ↔ firmware розходяться → silent system breakage.
-  # Окрім того, fallback повертає AES ключ у мережу через provisioning response,
-  # що є критичною security regression. Тому у production raise SecurityError.
-  # SecureRandom fallback допустимий ТІЛЬКИ у dev/test/lab mode (TRL 4).
+  # [SEC.11] Always requires PROVISIONING_MASTER_KEY — there is no
+  # SecureRandom fallback. Without master_key the backend would generate
+  # values that do NOT match firmware HKDF derivation → silent system
+  # breakage. Tests pin a stable value in spec/rails_helper.rb.
   def self.derive_device_key(device_uid)
     master_key = ENV["PROVISIONING_MASTER_KEY"]
 
     if master_key.blank?
-      if Rails.env.production?
-        raise SecurityError,
-              "PROVISIONING_MASTER_KEY ENV is required in production. " \
-              "Backend SecureRandom fallback would generate keys that do NOT match " \
-              "firmware HKDF derivation, causing silent breakage and key exposure via " \
-              "provisioning response. See SEC.11 in docs/10_02_Action_Plan_Tracker.md."
-      end
-
-      Rails.logger.warn "⚠️ [Zero-Trust] PROVISIONING_MASTER_KEY не встановлено. " \
-                        "Використовується SecureRandom (TRL 4 lab mode). БЛОКУЄ Production."
-      return SecureRandom.hex(KEY_SIZE_BYTES).upcase
+      raise SecurityError,
+            "PROVISIONING_MASTER_KEY ENV is required. Backend cannot derive " \
+            "device AES key without it (would silently diverge from firmware " \
+            "HKDF). See SEC.11 in docs/10_02_Action_Plan_Tracker.md."
     end
 
     derived = OpenSSL::KDF.hkdf(

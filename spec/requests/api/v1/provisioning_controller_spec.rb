@@ -40,7 +40,8 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
     it "rejects duplicate hardware_uid registration" do
       HardwareKey.create!(
         device_uid: "AABBCCDD11223344",
-        aes_key_hex: SecureRandom.hex(32).upcase
+        aes_key_hex: SecureRandom.hex(32).upcase,
+        lorenz_seed_hex: SecureRandom.hex(32).upcase
       )
 
       post "/api/v1/provisioning/register", params: valid_params, headers: headers, as: :json
@@ -115,64 +116,32 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         expect(body["key_derivation"]).to eq("hkdf-sha256")
       end
 
-      it "includes aes_key in TRL4 lab mode (no PROVISIONING_MASTER_KEY)" do
+      # [SEC.11] Neither the AES key nor the Lorenz K_seed is ever
+      # returned over the network — both are derived independently on
+      # firmware via HKDF from PROVISIONING_MASTER_KEY.
+      it "never returns aes_key, lorenz_seed, or warning in response [SEC.11]" do
         post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         body = response.parsed_body
-        expect(body["aes_key"]).to be_present
-        expect(body["warning"]).to include("TRL4 lab mode")
+        expect(body).not_to have_key("aes_key")
+        expect(body).not_to have_key("lorenz_seed")
+        expect(body).not_to have_key("warning")
       end
 
-      # [SEC.11] Lab-mode response also surfaces the freshly-derived
-      # K_seed so the burn-in tool can write both blobs into Flash in
-      # one operation.
-      it "includes lorenz_seed and persists it on HardwareKey [SEC.11]" do
+      # [SEC.11] HardwareKey persists both AES key and K_seed, derived
+      # deterministically from the pinned test PROVISIONING_MASTER_KEY.
+      it "persists deterministic K_seed on HardwareKey [SEC.11]" do
         allow(HardwareKeyService).to receive(:provision).and_call_original
 
         post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:created)
         body = response.parsed_body
-        expect(body["lorenz_seed"]).to match(/\A[0-9A-F]{64}\z/)
-
         hw_key = HardwareKey.find_by(device_uid: body["did"])
-        expect(hw_key.lorenz_seed_hex).to eq(body["lorenz_seed"])
+        expect(hw_key.lorenz_seed_hex).to match(/\A[0-9A-F]{64}\z/)
+        expect(hw_key.lorenz_seed_hex).to eq(SilkenNet::SeedDerivation.derive_seed(body["did"]))
         expect(hw_key.binary_lorenz_seed.bytesize).to eq(32)
-      end
-
-      context "with PROVISIONING_MASTER_KEY set (production mode)" do
-        before do
-          allow(ENV).to receive(:[]).and_call_original
-          allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("master-secret-key-32bytes-long!!")
-        end
-
-        it "does not include aes_key in response" do
-          post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
-
-          expect(response).to have_http_status(:created)
-          body = response.parsed_body
-          expect(body["did"]).to eq("SNET-Q-AA11BB22")
-          expect(body["key_derivation"]).to eq("hkdf-sha256")
-          expect(body).not_to have_key("aes_key")
-          expect(body).not_to have_key("warning")
-        end
-
-        # [SEC.11] HKDF mode also withholds the seed from the response —
-        # firmware re-derives it independently from PROVISIONING_MASTER_KEY.
-        it "does not include lorenz_seed in HKDF mode but persists it on HardwareKey [SEC.11]" do
-          allow(HardwareKeyService).to receive(:provision).and_call_original
-
-          post "/api/v1/provisioning/register", params: gateway_params, headers: headers, as: :json
-
-          expect(response).to have_http_status(:created)
-          body = response.parsed_body
-          expect(body).not_to have_key("lorenz_seed")
-
-          hw_key = HardwareKey.find_by(device_uid: body["did"])
-          expect(hw_key.lorenz_seed_hex).to match(/\A[0-9A-F]{64}\z/)
-          expect(hw_key.lorenz_seed_hex).to eq(SilkenNet::SeedDerivation.derive_seed(body["did"]))
-        end
       end
     end
 
@@ -196,7 +165,9 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         expect(response).to have_http_status(:created)
         body = response.parsed_body
         expect(body["did"]).to eq("SNET-3344CCDD")
-        expect(body["aes_key"]).to be_present
+        # [SEC.11] AES key is never returned in the response — firmware
+        # derives it independently from PROVISIONING_MASTER_KEY.
+        expect(body).not_to have_key("aes_key")
       end
 
       it "enqueues PeaqRegistrationWorker for tree registration" do
@@ -352,95 +323,6 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       post "/api/v1/provisioning/register", params: invalid_params, headers: html_headers
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/html")
-    end
-  end
-
-  # [SEC.11] Field-migration endpoint: back-fills `lorenz_seed_hex` for
-  # devices that were provisioned before SEC.11.
-  describe "POST /api/v1/provisioning/upgrade_seed" do
-    let!(:legacy_hw_key) do
-      HardwareKey.create!(
-        device_uid: "SNET-LEGACY01",
-        aes_key_hex: SecureRandom.hex(32).upcase,
-        lorenz_seed_hex: nil
-      )
-    end
-
-    it "back-fills lorenz_seed_hex for a legacy device" do
-      post "/api/v1/provisioning/upgrade_seed",
-           params: { hardware_uid: "SNET-LEGACY01" },
-           headers: headers, as: :json
-
-      expect(response).to have_http_status(:ok)
-      body = response.parsed_body
-      expect(body["upgraded"]).to be(true)
-      expect(body["did"]).to eq("SNET-LEGACY01")
-
-      legacy_hw_key.reload
-      expect(legacy_hw_key.lorenz_seed_hex).to match(/\A[0-9A-F]{64}\z/)
-    end
-
-    it "is idempotent — second call is a no-op" do
-      post "/api/v1/provisioning/upgrade_seed",
-           params: { hardware_uid: "SNET-LEGACY01" },
-           headers: headers, as: :json
-      first_seed = legacy_hw_key.reload.lorenz_seed_hex
-
-      post "/api/v1/provisioning/upgrade_seed",
-           params: { hardware_uid: "SNET-LEGACY01" },
-           headers: headers, as: :json
-
-      expect(response).to have_http_status(:ok)
-      body = response.parsed_body
-      expect(body["upgraded"]).to be(false)
-      expect(legacy_hw_key.reload.lorenz_seed_hex).to eq(first_seed)
-    end
-
-    it "returns 404 for unknown hardware_uid" do
-      post "/api/v1/provisioning/upgrade_seed",
-           params: { hardware_uid: "SNET-MISSING0" },
-           headers: headers, as: :json
-
-      expect(response).to have_http_status(:not_found)
-    end
-
-    it "returns 422 when hardware_uid param is missing" do
-      post "/api/v1/provisioning/upgrade_seed", params: {}, headers: headers, as: :json
-      expect(response).to have_http_status(:unprocessable_content)
-    end
-
-    it "includes lorenz_seed in the response when in lab mode" do
-      allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
-
-      post "/api/v1/provisioning/upgrade_seed",
-           params: { hardware_uid: "SNET-LEGACY01" },
-           headers: headers, as: :json
-
-      expect(response).to have_http_status(:ok)
-      body = response.parsed_body
-      expect(body["lorenz_seed"]).to match(/\A[0-9A-F]{64}\z/)
-      expect(body["warning"]).to include("TRL4 lab mode")
-    end
-
-    it "withholds lorenz_seed in HKDF mode (firmware re-derives independently)" do
-      allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return("master-secret-key-32bytes-long!!")
-
-      post "/api/v1/provisioning/upgrade_seed",
-           params: { hardware_uid: "SNET-LEGACY01" },
-           headers: headers, as: :json
-
-      expect(response).to have_http_status(:ok)
-      body = response.parsed_body
-      expect(body).not_to have_key("lorenz_seed")
-      expect(body["upgraded"]).to be(true)
-    end
-
-    it "rejects unauthenticated callers" do
-      post "/api/v1/provisioning/upgrade_seed",
-           params: { hardware_uid: "SNET-LEGACY01" }, as: :json
-      expect(response.status).to be_in([ 401, 403 ])
     end
   end
 end

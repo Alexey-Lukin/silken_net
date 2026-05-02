@@ -23,7 +23,8 @@ RSpec.describe HardwareKeyService, type: :service do
       HardwareKey.create!(
         device_uid: tree.did,
         aes_key_hex: original_key,
-        previous_aes_key_hex: nil
+        previous_aes_key_hex: nil,
+        lorenz_seed_hex: SecureRandom.hex(32).upcase
       )
     end
 
@@ -130,36 +131,19 @@ RSpec.describe HardwareKeyService, type: :service do
       end
     end
 
-    context "without PROVISIONING_MASTER_KEY (TRL4 lab mode)" do
-      it "falls back to SecureRandom and generates random key" do
-        result1 = described_class.derive_device_key("DEVICE-A")
-        result2 = described_class.derive_device_key("DEVICE-A")
-
-        # Random: same UID but different keys each time
-        expect(result1).not_to eq(result2)
-      end
-    end
-
-    # =========================================================================
-    # SEC.11: PRODUCTION GUARD
-    # =========================================================================
-    # Backend SecureRandom fallback would generate keys that do NOT match
-    # firmware HKDF derivation → silent system breakage + key exposure via
-    # provisioning response. Must raise in production.
-    context "without PROVISIONING_MASTER_KEY in production [SEC.11]" do
+    context "without PROVISIONING_MASTER_KEY [SEC.11 hard cutover]" do
       before do
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
-        allow(Rails.env).to receive(:production?).and_return(true)
       end
 
-      it "raises SecurityError instead of falling back to SecureRandom" do
+      it "raises SecurityError — no SecureRandom fallback" do
         expect {
-          described_class.derive_device_key("DEVICE-PROD-A")
-        }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY ENV is required in production/)
+          described_class.derive_device_key("DEVICE-A")
+        }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY/)
       end
 
-      it "blocks .provision in production without ENV (no HardwareKey created)" do
+      it "blocks .provision (no HardwareKey created)" do
         expect {
           described_class.provision(tree)
         }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY/)
@@ -174,7 +158,8 @@ RSpec.describe HardwareKeyService, type: :service do
       HardwareKey.create!(
         device_uid: tree.did,
         aes_key_hex: original_key,
-        previous_aes_key_hex: nil
+        previous_aes_key_hex: nil,
+        lorenz_seed_hex: SecureRandom.hex(32).upcase
       )
     end
 
@@ -195,7 +180,8 @@ RSpec.describe HardwareKeyService, type: :service do
       gw_hw_key = HardwareKey.create!(
         device_uid: gateway.uid,
         aes_key_hex: gw_key_hex,
-        previous_aes_key_hex: nil
+        previous_aes_key_hex: nil,
+        lorenz_seed_hex: SecureRandom.hex(32).upcase
       )
 
       new_key = described_class.rotate(gateway.uid)
@@ -255,17 +241,6 @@ RSpec.describe HardwareKeyService, type: :service do
     end
   end
 
-  describe ".derive_device_key logging" do
-    it "logs warning when PROVISIONING_MASTER_KEY is blank" do
-      allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
-
-      expect(Rails.logger).to receive(:warn).with(/PROVISIONING_MASTER_KEY не встановлено/)
-
-      described_class.derive_device_key("DEVICE-X")
-    end
-  end
-
   # =========================================================================
   # PROVISION CONFLICT
   # =========================================================================
@@ -282,7 +257,7 @@ RSpec.describe HardwareKeyService, type: :service do
   describe "key update downlink" do
     it "enqueues ActuatorCommandWorker during gateway rotation" do
       gateway = create(:gateway, :online, cluster: cluster, ip_address: "192.168.1.1")
-      HardwareKey.create!(device_uid: gateway.uid, aes_key_hex: SecureRandom.hex(32).upcase)
+      HardwareKey.create!(device_uid: gateway.uid, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
       new_key = described_class.rotate(gateway.uid)
       expect(new_key).to be_present
@@ -293,7 +268,7 @@ RSpec.describe HardwareKeyService, type: :service do
       # Tree model has neither ip_address nor gateway method,
       # so trigger_key_update_downlink returns early
       tree_device = create(:tree, cluster: cluster)
-      HardwareKey.create!(device_uid: tree_device.did, aes_key_hex: SecureRandom.hex(32).upcase)
+      HardwareKey.create!(device_uid: tree_device.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
       new_key = described_class.rotate(tree_device.did)
       expect(new_key).to be_present

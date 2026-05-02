@@ -46,29 +46,13 @@ RSpec.describe SilkenNet::SeedDerivation do
       end
     end
 
-    context "without PROVISIONING_MASTER_KEY in test env (lab fallback)" do
+    context "without PROVISIONING_MASTER_KEY [SEC.11 hard cutover]" do
       before do
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
       end
 
-      it "falls back to SecureRandom (random hex per call)" do
-        a = described_class.derive_seed(device_uid)
-        b = described_class.derive_seed(device_uid)
-        expect(a).to match(/\A[0-9A-F]{64}\z/)
-        expect(b).to match(/\A[0-9A-F]{64}\z/)
-        expect(a).not_to eq(b)
-      end
-    end
-
-    context "without PROVISIONING_MASTER_KEY in production [SEC.11]" do
-      before do
-        allow(ENV).to receive(:[]).and_call_original
-        allow(ENV).to receive(:[]).with("PROVISIONING_MASTER_KEY").and_return(nil)
-        allow(Rails.env).to receive(:production?).and_return(true)
-      end
-
-      it "raises SecurityError instead of falling back to SecureRandom" do
+      it "raises SecurityError — no SecureRandom fallback" do
         expect {
           described_class.derive_seed(device_uid)
         }.to raise_error(SecurityError, /PROVISIONING_MASTER_KEY/)

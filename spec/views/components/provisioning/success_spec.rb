@@ -50,20 +50,22 @@ RSpec.describe Provisioning::Success do
     end
   end
 
-  describe "lab mode (with AES key)" do
+  describe "lab mode (legacy aes_key kwarg)" do
+    # [SEC.11] aes_key kwarg is still accepted for backwards-spec-compat
+    # but the component no longer renders it — there is no lab mode.
     let(:aes_key) { "AABBCCDDEEFF00112233445566778899AABBCCDDEEFF00112233445566778899" }
     let(:html)    { render_component(device: device, aes_key: aes_key) }
 
-    it "renders CRITICAL AES-256 SESSION KEY notice" do
-      expect(html).to include("AES-256 SESSION KEY")
+    it "does not render an AES-256 SESSION KEY notice" do
+      expect(html).not_to include("AES-256 SESSION KEY")
     end
 
-    it "renders the AES key" do
-      expect(html).to include(aes_key)
+    it "does not leak the AES key into the rendered HTML" do
+      expect(html).not_to include(aes_key)
     end
 
-    it "renders warning to write to STM32 memory" do
-      expect(html).to include("STM32")
+    it "renders the HKDF mode notice instead" do
+      expect(html).to include("HKDF MODE")
     end
   end
 

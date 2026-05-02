@@ -16,6 +16,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
     HardwareKey.create!(
       device_uid: gateway.uid,
       aes_key_hex: SecureRandom.hex(32).upcase,
+      lorenz_seed_hex: SecureRandom.hex(32).upcase,
       ed25519_public_key_hex: public_key_hex
     )
   end
@@ -213,6 +214,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
         HardwareKey.create!(
           device_uid: orphan_uid,
           aes_key_hex: SecureRandom.hex(32).upcase,
+      lorenz_seed_hex: SecureRandom.hex(32).upcase,
           ed25519_public_key_hex: public_key_hex
         )
         ts = Time.current.iso8601
@@ -235,6 +237,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
         HardwareKey.create!(
           device_uid: empty_gw.uid,
           aes_key_hex: SecureRandom.hex(32).upcase,
+      lorenz_seed_hex: SecureRandom.hex(32).upcase,
           ed25519_public_key_hex: public_key_hex
         )
         ts = Time.current.iso8601

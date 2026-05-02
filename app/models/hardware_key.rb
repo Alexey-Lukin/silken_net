@@ -61,12 +61,13 @@ class HardwareKey < ApplicationRecord
                                      format: { with: /\A[0-9a-fA-F]+\z/ },
                                      allow_nil: true
 
-  # [SEC.11] K_seed: 64 HEX chars (32 bytes). Optional during the
-  # backwards-compat window; once the field migration completes every
-  # record will have one and we can flip this to `presence: true`.
-  validates :lorenz_seed_hex, length: { is: 64 },
-                              format: { with: /\A[0-9A-F]+\z/i },
-                              allow_nil: true
+  # [SEC.11] K_seed: 64 HEX chars (32 bytes). Required — every device
+  # gets one at provisioning (HardwareKeyService.provision derives both
+  # AES key and K_seed in a single call). No field-migration window:
+  # this is a pre-production hard cutover.
+  validates :lorenz_seed_hex, presence: true,
+                              length: { is: 64 },
+                              format: { with: /\A[0-9A-F]+\z/i }
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # КРИПТОГРАФІЧНІ МЕТОДИ
@@ -92,9 +93,9 @@ class HardwareKey < ApplicationRecord
     @binary_previous_key ||= [ previous_aes_key_hex ].pack("H*")
   end
 
-  # [SEC.11] Raw 32 bytes of K_seed for SilkenNet::SeedDerivation. Nil
-  # when the device pre-dates SEC.11 — TelemetryUnpackerService handles
-  # the categorical-fallback branch in that case.
+  # [SEC.11] Raw 32 bytes of K_seed for SilkenNet::SeedDerivation.
+  # Always present in steady state — `lorenz_seed_hex` is required. Nil
+  # only on unsaved records that have not yet been provisioned.
   def binary_lorenz_seed
     return nil if lorenz_seed_hex.blank?
     @binary_lorenz_seed ||= [ lorenz_seed_hex ].pack("H*")

@@ -4,73 +4,58 @@ module SilkenNet
   # =========================================================================
   # 1. МАТЕМАТИЧНЕ ЯДРО (Теорія Хаосу)
   # =========================================================================
+  # [SEC.11] After the Lorenz Seed Provenance hard cutover, the
+  # attractor has NO concept of `chaos_seed` or DID-derived initial
+  # coordinates. The C-side supplies (x₀, y₀, z₀) directly — either:
+  #   * (x, y, z) restored from RTC DR16-DR18 (warm STOP2 continuation,
+  #     FW.6), or
+  #   * (x₀, y₀, z₀) derived on-device from per-device K_seed via
+  #     mbedTLS HKDF-SHA256 → HMAC-SHA256 → signed-unit-float unpack
+  #     (SEC.11 cold start after VBAT loss).
+  # Both branches yield byte-identical (x, y, z) on backend (Ruby) and
+  # firmware (mruby) for the same inputs — that is what makes Dual
+  # Computation Integrity numerically comparable on top of the
+  # categorical bio_status check.
+  # =========================================================================
   class Attractor
-    # Класичні константи Лоренца
     BASE_SIGMA = 10.0
     BASE_RHO   = 28.0
-    BASE_BETA  = 8.0 / 3.0 # [FIX: Attractor Sync] Було 2.666 (обрізано), тепер точне значення
+    BASE_BETA  = 8.0 / 3.0  # 2.6666666666666665 — bit-identical to backend
 
-    # Крок інтегрування та глибина симуляції
     DT = 0.01
-    ITERATIONS = 250 # Даємо системі час вийти на траєкторію хаосу
+    ITERATIONS = 250
 
-    # [FIX: Attractor Sync] Межі стабільності, ідентичні серверу
-    # (app/services/silken_net/attractor.rb). Без clamp при екстремальних
-    # показниках температури/акустики система вилітає в нескінченність.
     SIGMA_MIN = 5.0
     SIGMA_MAX = 30.0
     RHO_MIN   = 10.0
     RHO_MAX   = 50.0
 
-    # [FW.5] β-perturbation від EBFC-метаболізму:
-    # delta_t (час заряду іоністора) та vcap (напруга) — фізично значущі
-    # індикатори здоров'я. Ми мапимо їх на β (геометричний параметр конвективної
-    # клітини у системі Лоренца): швидший заряд + стабільна vcap → активніший
-    # метаболізм → β зростає → траєкторія тяжіє до OPTIMAL_Z_TARGET → більше GP.
-    BETA_DELTA_T_COEFF = 0.0001  # 1 с швидше за baseline → β +0.0001
-    BETA_VCAP_COEFF    = 0.001   # 1 mV вище nominal → β +0.001
-    BETA_MIN           = 2.0     # clamp: класичний β ≈ 2.667 ± 50%
+    # [FW.5] β-perturbation від EBFC-метаболізму. Дзеркало
+    # app/services/silken_net/attractor.rb#perturb_beta.
+    BETA_DELTA_T_COEFF = 0.0001
+    BETA_VCAP_COEFF    = 0.001
+    BETA_MIN           = 2.0
     BETA_MAX           = 4.0
-    BASELINE_DELTA_T_S = 60      # 60 с очікуваний час заряду EBFC
-    NOMINAL_VCAP_MV    = 3300    # 3.3 V nominal
+    BASELINE_DELTA_T_S = 60
+    NOMINAL_VCAP_MV    = 3300
 
-    # [FW.6] Обчислення Z з початковим станом від chaos_seed.
-    # Використовується при першому старті або коли RTC backup стерто.
-    # [FW.5] delta_t_s та vcap_mv — soft β-perturbation; при cold-start значення
-    # зазвичай baseline (delta_t_s≈BASELINE_DELTA_T_S, vcap_mv≈NOMINAL_VCAP_MV),
-    # тому β залишається близьким до 8/3.
-    def self.calculate_z_axis(seed, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
-      x = ((seed % 1000) / 500.0) - 1.0
-      y = (((seed >> 4) % 1000) / 500.0) - 1.0
-      z = (((seed >> 8) % 1000) / 500.0) - 1.0
-
-      x, y, z = iterate(x, y, z, temp, acoustic, delta_t_s, vcap_mv)
-      z
-    end
-
-    # [FW.6] Обчислення Z з ПРОДОВЖЕННЯМ від збереженого стану (x_prev, y_prev, z_prev).
-    # Реалізує безперервну траєкторію атрактора між циклами STOP2.
-    # Повертає масив [z, x_final, y_final, z_final] для збереження у RTC.
-    def self.calculate_z_axis_continued(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
+    # Sole entry-point: takes initial (x, y, z) directly. Returns
+    # [z, x_final, y_final, z_final] for RTC persistence.
+    def self.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
       x, y, z = iterate(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
       [ z, x, y, z ]
     end
 
-    # Спільне ядро ітерацій Лоренца — уникаємо дублювання коду
+    # Спільне ядро ітерацій Лоренца.
     def self.iterate(x, y, z, temp, acoustic, delta_t_s, vcap_mv)
-      # Пертурбація системи: акустика та температура змінюють константи
       local_sigma = BASE_SIGMA + (acoustic * 0.1)
-      local_rho = BASE_RHO + (temp * 0.2)
+      local_rho   = BASE_RHO + (temp * 0.2)
 
-      # [FIX: Attractor Sync] Clamp — запобігаємо вибуху при екстремальних вхідних
       local_sigma = SIGMA_MIN if local_sigma < SIGMA_MIN
       local_sigma = SIGMA_MAX if local_sigma > SIGMA_MAX
       local_rho = RHO_MIN if local_rho < RHO_MIN
       local_rho = RHO_MAX if local_rho > RHO_MAX
 
-      # [FW.5] β-perturbation від метаболізму EBFC.
-      # delta_t_improvement_s ≥ 0 — лише позитивний внесок (швидше за baseline).
-      # vcap_centered може бути від'ємним при просадці — від β-зменшення захищає clamp.
       delta_t_improvement_s = BASELINE_DELTA_T_S - delta_t_s
       delta_t_improvement_s = 0 if delta_t_improvement_s < 0
       vcap_centered = vcap_mv - NOMINAL_VCAP_MV
@@ -98,58 +83,39 @@ module SilkenNet
   # 2. ЛОГІКА ПРИЙНЯТТЯ РІШЕНЬ ТА ТОКЕНОМІКА (Біо-Контракт)
   # =========================================================================
   class BioContract
-    # Межі детермінованого хаосу здорового дерева
-    CRITICAL_Z_MIN = 2.0  # Падіння нижче = втрата тургору / посуха
-    CRITICAL_Z_MAX = 45.0 # Стрибок вище = аномальний стрес / втручання
-
-    # Ідеальний стан конвекції для максимізації поглинання CO2
+    CRITICAL_Z_MIN = 2.0
+    CRITICAL_Z_MAX = 45.0
     OPTIMAL_Z_TARGET = 29.0
 
-    def self.evaluate_and_pack(seed, temp, acoustic, delta_t_s = Attractor::BASELINE_DELTA_T_S, vcap_mv = Attractor::NOMINAL_VCAP_MV)
-      z_val = Attractor.calculate_z_axis(seed, temp, acoustic, delta_t_s, vcap_mv)
-      pack_status_byte(z_val)
-    end
-
-    # [FW.6] Evaluate з продовженням стану. Повертає [payload_byte, x, y, z].
-    def self.evaluate_and_pack_continued(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = Attractor::BASELINE_DELTA_T_S, vcap_mv = Attractor::NOMINAL_VCAP_MV)
-      z_val, x_final, y_final, z_final = Attractor.calculate_z_axis_continued(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+    # Sole evaluation entry-point. Returns [payload_byte, x, y, z] —
+    # C-side persists the trajectory tail back to RTC DR16-DR18.
+    def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = Attractor::BASELINE_DELTA_T_S, vcap_mv = Attractor::NOMINAL_VCAP_MV)
+      z_val, x_final, y_final, z_final = Attractor.calculate_z_axis(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
       payload_byte = pack_status_byte(z_val)
       [ payload_byte, x_final, y_final, z_final ]
     end
 
-    # Спільна логіка пакування Z → status_byte
+    # Спільна логіка пакування Z → status_byte.
     def self.pack_status_byte(z_val)
       status = 0
-      growth_points = 0 # Бали росту (Proof of Growth)
+      growth_points = 0
 
-      # ФІНАНСОВА ЛОГІКА
       if z_val < CRITICAL_Z_MIN
-        status = 1 # Сигнал раннього попередження (Посуха)
-        growth_points = 1 # Мінімальна генерація, дерево виживає
+        status = 1
+        growth_points = 1
       elsif z_val > CRITICAL_Z_MAX
-        status = 2 # Аномалія (Критичний стрес)
-        growth_points = 0 # Емісія зупиняється
+        status = 2
+        growth_points = 0
       else
-        status = 0 # Гомеостаз (Здоровий Хаос)
-
-        # Розрахунок винагороди: чим ближче стан дерева до ідеалу (29.0),
-        # тим ефективніше воно депонує вуглець і більше балів отримує.
+        status = 0
         deviation = (OPTIMAL_Z_TARGET - z_val).abs
-
-        # Базова нагорода 50 балів мінус штраф за відхилення.
-        # [FIX FW.13]: Explicit clamp замість ternary + окремих guard'ів.
-        # В homeostasis zone deviation ∈ [0, 27], тому reward ∈ [23, 50] — завжди > 0.
-        # Але clamp(10, 63) захищає від edge cases + об'єднує guard'и нижче.
         reward = 50 - deviation.round
         growth_points = reward.clamp(10, 63)
       end
 
-      # Захист від переповнення для 6-бітного простору (максимум 63)
       growth_points = growth_points.clamp(0, 63)
 
-      # ПАКУВАННЯ АКТИВУ
-      # Зсуваємо статус на 6 бітів вліво і додаємо бали росту.
-      # [ Статус (2 біти) | Growth Points (6 бітів) ]
+      # [ Status (2 bits) | Growth Points (6 bits) ]
       (status << 6) | growth_points
     end
   end
@@ -158,34 +124,10 @@ end
 # =========================================================================
 # 3. ТОЧКА ВХОДУ (Міст між C та Ruby)
 # =========================================================================
-
-# [FW.6] Первинний виклик (перший старт або RTC скинуто).
-# [FW.5] delta_t_s/vcap_mv — soft β-perturbation; firmware/soldier/main.c
-#        передає EMA-згладжені значення з RTC DR10/DR12 (FW.21).
-# C-ядро у файлі main.c знає лише про існування цієї функції.
-def calculate_state(seed, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S, vcap_mv = SilkenNet::Attractor::NOMINAL_VCAP_MV)
-  SilkenNet::BioContract.evaluate_and_pack(seed, temp, acoustic, delta_t_s, vcap_mv)
-end
-
-# [FW.6 / SEC.11] Continuation entry-point. Accepts the trajectory state
-# directly as Floats — there is no notion of `chaos_seed` or DID inside
-# this contract any more. The C-side calls this with either:
-#   * (x, y, z) restored from RTC DR16-DR18 (FW.6 warm continuation), or
-#   * (x₀, y₀, z₀) derived from K_seed via SilkenNet::SeedDerivation
-#     (SEC.11 cold start after VBAT loss).
-# Both branches yield byte-identical (x, y, z) on backend and firmware
-# for the same inputs, which is what makes Dual Computation Integrity
-# numerically comparable.
-# Returns [payload_byte, x_final, y_final, z_final] so the C-side can
-# persist the trajectory tail back to RTC DR16-DR18.
-def calculate_state_continued(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S, vcap_mv = SilkenNet::Attractor::NOMINAL_VCAP_MV)
-  SilkenNet::BioContract.evaluate_and_pack_continued(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
-end
-
-# [SEC.11] Same math as `calculate_state_continued`, exposed under a
-# semantically distinct name for the K_seed-derived cold-start path.
-# Kept as a thin wrapper so the OTA bytecode signature can name the
-# branch the C-side took without depending on call-site semantics.
-def calculate_state_from_coords(x0, y0, z0, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S, vcap_mv = SilkenNet::Attractor::NOMINAL_VCAP_MV)
-  SilkenNet::BioContract.evaluate_and_pack_continued(x0, y0, z0, temp, acoustic, delta_t_s, vcap_mv)
+# [SEC.11] Sole entry-point. C-side passes (x, y, z) — either restored
+# from RTC DR16-DR18 (FW.6 warm continuation) or freshly derived from
+# K_seed via mbedTLS HKDF/HMAC (SEC.11 cold start). Returns
+# [payload_byte, x_final, y_final, z_final] for RTC persistence.
+def calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S, vcap_mv = SilkenNet::Attractor::NOMINAL_VCAP_MV)
+  SilkenNet::BioContract.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
 end
