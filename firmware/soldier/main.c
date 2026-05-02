@@ -1221,18 +1221,24 @@ static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
 
     // Спрощений epoch_day (дні від 2000-01-01 як proxy для UTC epoch_day).
     // На MCU без повноцінного time_t — рахуємо від BCD дати RTC.
-    // Для DCI парності з backend потрібен UTC unix epoch / 86400 —
-    // це буде скориговано через FW.20 CMD_TIME_SYNC.
+    // ⚠️ TEMPORARY: Month*30 approximation накопичує помилку ~1-2 дні/місяць.
+    // До інтеграції FW.20 CMD_TIME_SYNC (NTP через Queen) cold-start координати
+    // можуть відрізнятися від backend при cross-month boot. Це впливає ТІЛЬКИ
+    // на cold-start (рідкісна подія після VBAT loss); warm continuation через
+    // RTC DR16-DR18 не залежить від epoch_day.
     uint32_t approx_days = (uint32_t)(sDate.Year + 2000 - 1970) * 365UL
                          + (uint32_t)(sDate.Month - 1) * 30UL
                          + (uint32_t)sDate.Date;
 
     // Детерміністична деривація з K_seed + epoch_day.
-    // Використовуємо просте хешування (XOR fold + rotation) як placeholder
-    // для повноцінного HMAC-SHA256. Це забезпечує:
+    // Використовуємо просте хешування (XOR fold + Knuth multiplicative hash)
+    // як placeholder для повноцінного HMAC-SHA256. Константи 2654435761,
+    // 2246822519, 3266489917 — Knuth's multiplicative hash primes (golden ratio
+    // approximations для 32-bit). Це забезпечує:
     // - різні початкові точки для різних днів
     // - різні початкові точки для різних K_seed
     // - координати ∈ [-1, +1]
+    // НЕ є криптографічно стійким — достатньо для TRL 6 lab testing.
     uint32_t hash[3] = {0};
     for (int i = 0; i < 32; i++) {
         uint32_t byte_val = lorenz_seed[i];

@@ -1818,7 +1818,8 @@ TEST(test_cold_start_state_changes_with_seed) {
     Load_Lorenz_Seed();
     Derive_Cold_Start_State(&x1, &y1, &z1);
 
-    uint32_t other_seed[8] = {0xFF, 0xEE, 0xDD, 0xCC, 0xBB, 0xAA, 0x99, 0x88};
+    uint32_t other_seed[8] = {0xFF112233, 0xEE445566, 0xDD778899, 0xCCAABBCC,
+                              0xBBDDEEFF, 0xAA001122, 0x99334455, 0x88667788};
     _mock_flash_seed_reset();
     _mock_flash_seed_provision(FLASH_SEED_MAGIC, other_seed);
     Load_Lorenz_Seed();
