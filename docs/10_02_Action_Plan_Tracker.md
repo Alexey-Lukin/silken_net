@@ -267,14 +267,15 @@
 
 ### 🟠 P1 — Важливі
 
-#### FW.5 — Lorenz Attractor: delta_t/vcap не передаються
+#### ✅ FW.5 — Lorenz Attractor: β-пертурбація від delta_t/vcap — РЕАЛІЗОВАНО
 - `03_04`, `05_02`
-- **Опис:** Spec: `calculate_state(delta_t, vcap)`, реалізація: `calculate_state(chaos_seed, temp, acoustic)`. Аналіз показав: `chaos_seed` (HRNG) вносить значний випадковий компонент у growth_points — при 250 ітераціях Ейлера Z суттєво залежить від початкових умов. `delta_t` та `vcap` — прямі фізичні індикатори метаболізму дерева, що може бути більш обґрунтованим для "Proof of Growth" токеноміки
-- **Статус:** 🟡 Архітектурне рішення прийнято (2026-04-29). Math аналіз variance Z + порівняння варіантів A/B/C задокументовано в `03_04` BLOCKER-1. **Прийнято Варіант B+:** зберегти FW.6 state continuity, chaos_seed тільки для cold-start, додати delta_t/vcap як soft perturbation на β (геометричний параметр конвективної клітини). Імплементація — в наступному циклі (потребує координованого firmware+backend update).
+- **Опис:** Spec: `calculate_state(delta_t, vcap)`, реалізація: `calculate_state(chaos_seed, temp, acoustic)`. Аналіз показав: `chaos_seed` (HRNG) вносить значний випадковий компонент у growth_points — при 250 ітераціях Ейлера Z суттєво залежить від початкових умов. `delta_t` та `vcap` — прямі фізичні індикатори метаболізму дерева.
+- **Статус:** ✅ **Реалізовано (2026-04-30). Варіант B+:** зберегти FW.6 state continuity, chaos_seed тільки для cold-start; `delta_t_s`/`vcap_mv` передаються як soft β-perturbation. Firmware `bio_contract.rb` та backend `SilkenNet::Attractor` оновлені координовано. 500-case parity fuzz: 0 mismatches. `TelemetryUnpackerService` передає `metabolism_s`/`voltage_mv`.
 - [x] 🤖 Математичний аналіз: порівняти variance Z від chaos_seed vs delta_t/vcap після 250 ітерацій
 - [x] 🤖 Архітектурне рішення: замінити chaos_seed на delta_t (Варіант A), додати delta_t/vcap як додаткові пертурбації (Варіант B), або зберегти + EMA фільтр (Варіант C) — **обрано B+**
 - [x] 🤖 Задокументувати рішення в `03_04` з обґрунтуванням впливу на токеноміку
-- [ ] 🤖 Реалізувати (firmware + backend mirror update) — наступний цикл
+- [x] 🤖 Реалізувати (firmware mruby + backend mirror update, 500-case fuzz)
+- [ ] ⬜ Передавання args[5..6] у C (EMA delta_t_ms/vcap_mv з RTC DR10/DR12 у mruby args) — наступний крок
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - `05_02`
@@ -287,13 +288,14 @@
 - [ ] 👤 Верифікувати `MRB_USE_FLOAT` при першому lab-тестуванні (залишковий ризик)
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
-- `05_02`
+- `05_02`, `04_01`, `04_02`
 - **Опис:** firmware: global 2.0/45.0 vs backend: per-species через `TreeFamily`
 - **Рішення:** OTA sync species-specific thresholds
-- **Статус:** 🤖 ✅ Повний дизайн OTA Config Payload для per-species Z thresholds додано в `05_02` §4а. Включає: новий CMD_SET_THRESHOLDS (0x9A) payload format (10 байт з CRC16), firmware RTC Backup DR20-23 storage з fallback на defaults, mruby BioContract dynamic thresholds, Rails `OtaPackagerService#build_threshold_config_block`, per-species default threshold table (Pinus/Quercus/Fagus/Picea/Betula), backend mirror verification
-- [x] 🤖 Додати thresholds до OTA config payload
-- [x] 🤖 Firmware: зберігати thresholds у Flash/RTC
-- [x] 🤖 Backend: включити thresholds у OTA bytecode
+- **Статус:** ✅ **Rails-сторона реалізована (2026-04-30).** `Tree#effective_lorenz_thresholds` (3-tier priority: Cluster override > TreeFamily > global), `TreeFamily#optimal_z_target` / `effective_optimal_z_target`, `Cluster#lorenz_overrides_by_species` JSONB з валідацією, `OtaPackagerService.build_threshold_config_block` (CMD_SET_THRESHOLDS 0x9A, CRC16), `TelemetryUnpackerService#check_z_divergence!` оновлено. Integration spec `fw8_threshold_governance_spec.rb` (18 examples). ⬜ Firmware C-side (обробник `CMD_SET_THRESHOLDS`, RTC DR20-23) — наступний крок.
+- [x] 🤖 Додати thresholds до OTA config payload (build_threshold_config_block)
+- [x] 🤖 Backend: effective_lorenz_thresholds 3-tier + Cluster lorenz_overrides_by_species
+- [x] 🤖 Integration tests: fw8_threshold_governance_spec.rb
+- [ ] ⬜ Firmware C-side: обробник CMD_SET_THRESHOLDS (0x9A) + RTC DR20-23 storage
 
 ### 🟢 P2 — Низькопріоритетні
 

@@ -156,21 +156,22 @@ normalize_identifier :device_uid  # HardwareKey
 | `critical_z_min` | decimal | Мінімум Z-значення атрактора (нижня межа гомеостазу) |
 | `critical_z_max` | decimal | Максимум Z-значення атрактора (`> critical_z_min`) |
 | `carbon_sequestration_coefficient` | decimal | Коефіцієнт секвестрації (> 0) для зваженого нарахування SCC |
-| `biological_properties` | jsonb | `sap_flow_index`, `bark_thickness`, `foliage_density`, `fire_resistance_rating` |
+| `biological_properties` | jsonb | `sap_flow_index`, `bark_thickness`, `foliage_density`, `fire_resistance_rating`, `optimal_z_target` |
 
 **Ключові методи:**
 
 | Метод | Повертає | Опис |
 |-------|----------|------|
-| `attractor_thresholds` | `{min:, max:, baseline:}` | Параметри для Lorenz attractor |
+| `attractor_thresholds` | `{min:, max:, optimal:, baseline:}` | Параметри для Lorenz attractor (включає `optimal_z_target` з FW.8) |
 | `attractor_thresholds_cached` | Hash | Кешована версія (24 год) для hot path |
+| `effective_optimal_z_target` | Float | [FW.8] `optimal_z_target || 29.0` — per-species sweet spot або global default |
 | `death_threshold_impedance` | Float | `baseline_impedance * 0.3` — "Межа Смерті" |
 | `healthy_z?(z_value)` | Boolean | Чи Z у межах гомеостазу |
 | `stress_level(impedance)` | Symbol | `:normal / :warning / :critical / :dead` |
 | `weighted_growth_points(raw)` | Float | `raw * carbon_sequestration_coefficient` |
 | `display_name` | String | "Quercus robur (Дуб звичайний)" або просто назва |
 
-**Callbacks:** `after_update :invalidate_thresholds_cache` — при зміні порогів Атрактора.
+**Callbacks:** `after_update :invalidate_thresholds_cache` — при зміні порогів Атрактора або `biological_properties` (включає `optimal_z_target`).
 
 ---
 
@@ -225,6 +226,9 @@ dormant ──reactivate──► active
 - `VCAP_MAX_MV = 5500` — повний заряд іоністора
 - `LOW_POWER_MV = 3300` — поріг критичного рівня
 - `DID_FORMAT = /\ASNET-[0-9A-F]{8}\z/`
+- `GLOBAL_LORENZ_Z_MIN = 2.0` — [FW.8] global fallback (дзеркало `BioContract::CRITICAL_Z_MIN`)
+- `GLOBAL_LORENZ_Z_MAX = 45.0` — [FW.8] global fallback
+- `GLOBAL_LORENZ_Z_OPTIMAL = 29.0` — [FW.8] global fallback
 
 **Ключові методи:**
 
@@ -236,6 +240,7 @@ dormant ──reactivate──► active
 | `low_power?` | `voltage > 0 && voltage < 3300` |
 | `under_threat?` | `ews_alerts.unresolved.exists?` |
 | `broadcast_map_update` | Turbo Stream → `geospatial_matrix` |
+| `effective_lorenz_thresholds` | [FW.8] `{ min:, max:, optimal: }` з 3-рівневим пріоритетом: Cluster override → TreeFamily → Global default. Використовується `TelemetryUnpackerService#check_z_divergence!` та `OtaPackagerService.build_threshold_config_block`. |
 
 **Callbacks:**
 - `after_create :build_default_wallet` — автоматично створює Wallet
@@ -276,7 +281,15 @@ dormant ──reactivate──► active
 | `entropy_score` | float | Нормалізована ентропія Шеннона Z-розподілу (0..1). Оновлюється `ClusterEntropyAnalyzerWorker` |
 | `active_trees_count` | bigint | Counter cache (оновлюється Tree callbacks) |
 | `climate_type` | string | Кліматичний тип зони (напр. "temperate_continental") |
-| `environmental_settings` | jsonb | `custom_fire_threshold`, `seismic_sensitivity_threshold`, `timezone` |
+| `environmental_settings` | jsonb | `custom_fire_threshold`, `seismic_sensitivity_threshold`, `timezone`, `lorenz_overrides_by_species` |
+
+> **`lorenz_overrides_by_species`** [FW.8] — JSONB hash з per-species Lorenz thresholds для цього кластера. Ключ: `scientific_name` (string); значення: `{ "z_min": Float, "z_max": Float, "z_optimal": Float }`. Дозволяє override для конкретного виду тільки в цьому кластері. Підлягає валідації через `validate_lorenz_overrides_by_species`. Приклад:
+> ```json
+> {
+>   "Pinus sylvestris": { "z_min": 1.5, "z_max": 46.0, "z_optimal": 30.0 },
+>   "Quercus robur":    { "z_min": 3.0, "z_max": 42.0, "z_optimal": 27.0 }
+> }
+> ```
 
 **Ключові методи:**
 
@@ -291,6 +304,7 @@ dormant ──reactivate──► active
 | `active_contract` | Останній активний NaasContract (з ORDER BY) |
 | `active_threats?` | `ews_alerts.unresolved.critical.exists?` |
 | `mapped?` | Чи є GeoJSON координати |
+| `lorenz_overrides_for(scientific_name)` | [FW.8] Повертає `{ min:, max:, optimal: }` або `nil` для даного виду. Читає `lorenz_overrides_by_species[scientific_name]`. |
 
 **Scopes:** `alphabetical`, `containing_point(lat, lng)`, `under_threat`.
 
