@@ -235,14 +235,16 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
   # FULL ENCRYPTION ROUNDTRIP
   # =========================================================================
   describe "encryption roundtrip" do
-    it "includes CMD: prefix and idempotency_token in decrypted payload" do
+    it "[FW.20] wraps payload with CMD_TIME_SYNC envelope; inner CMD: payload survives roundtrip" do
       captured_payload = nil
       allow(CoapClient).to receive(:put) do |_url, payload|
         captured_payload = payload
         double(success?: true, code: "2.04")
       end
 
+      before_ts = Time.now.utc.to_i
       described_class.new.perform(command.id)
+      after_ts = Time.now.utc.to_i
 
       # Decrypt the captured payload
       iv = captured_payload[0, 16]
@@ -256,10 +258,16 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
       decipher.padding = 0
       plaintext = decipher.update(ciphertext) + decipher.final
 
-      expect(plaintext).to start_with("CMD:")
-      expect(plaintext).to include(command.command_payload)
-      expect(plaintext).to include(command.duration_seconds.to_s)
-      expect(plaintext).to include(command.idempotency_token)
+      # [FW.20] Plaintext = [0x9C][ts:4][CMD:...][zero-padding]
+      expect(plaintext.bytes.first).to eq(CoapEncryption::CMD_TIME_SYNC)
+      ts = plaintext.byteslice(1, 4).unpack1("N")
+      expect(ts).to be_between(before_ts, after_ts)
+
+      inner = plaintext.byteslice(CoapEncryption::TIME_SYNC_HEADER_SIZE..)
+      expect(inner).to start_with("CMD:")
+      expect(inner).to include(command.command_payload)
+      expect(inner).to include(command.duration_seconds.to_s)
+      expect(inner).to include(command.idempotency_token)
     end
   end
 
