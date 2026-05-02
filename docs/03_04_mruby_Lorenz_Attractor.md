@@ -36,7 +36,7 @@
 | **Z → growth_points конвертація** | ✅ Реалізовано |
 | **Bit-packing `[Status:2&#124;GrowthPoints:6]`** | ✅ Реалізовано |
 | **Backend дзеркало** (`SilkenNet::Attractor` у Rails) | ✅ Реалізовано |
-| **`delta_t` та `vcap` як β-пертурбація атрактора** | ✅ Реалізовано (FW.5) — β обчислюється з `delta_t_s` і `vcap_mv`; firmware та backend дзеркальні; 500-case parity fuzz 0 mismatches |
+| **`delta_t` та `vcap` як β-пертурбація атрактора** | ✅ Реалізовано (FW.5 + FW.5 B+) — β обчислюється з `delta_t_s` і `vcap_mv`; firmware та backend дзеркальні; 500-case parity fuzz 0 mismatches. **FW.5 B+ final step (2026-05-02):** firmware C-bridge передає **EMA-згладжені** значення (`EMA_Get_DeltaT_Sec()` / `EMA_Get_Vcap_Mv()`) у mruby `args[5..6]` після warmup (`count ≥ EMA_WARMUP_CYCLES = 3`); до того — нейтральні defaults (60 c / 3300 mV) = baseline → β-перетурбація = 0. 6 нових host-тестів у `firmware/test/test_soldier_logic.c` (cold-boot, warmup-phase, post-warmup forwarding, boundary clamps).
 | **Збереження стану (x, y, z) між циклами сну** | ✅ Реалізовано (FW.6) — RTC DR16-DR18 + DR19 маркер валідності |
 | **Float32 vs Float64 верифікація** | ✅ Виправлено — backend переведено на Float (IEEE 754), ідентично firmware |
 | **Коментар OPTIMAL_Z_TARGET (20.0 vs 29.0)** | ✅ Виправлено — коментар виправлено на 29.0 |

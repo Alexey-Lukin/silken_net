@@ -265,7 +265,7 @@
 - [x] 🤖 Архітектурне рішення: замінити chaos_seed на delta_t (Варіант A), додати delta_t/vcap як додаткові пертурбації (Варіант B), або зберегти + EMA фільтр (Варіант C) — **обрано B+**
 - [x] 🤖 Задокументувати рішення в `03_04` з обґрунтуванням впливу на токеноміку
 - [x] 🤖 Реалізувати (firmware mruby + backend mirror update, 500-case fuzz)
-- [ ] ⬜ Передавання args[5..6] у C (EMA delta_t_ms/vcap_mv з RTC DR10/DR12 у mruby args) — **заблоковано FW.30** (C-bridge спочатку треба оновити до нової 7-arg сигнатури SEC.11)
+- [x] 🤖 Передавання args[5..6] у C (EMA delta_t_s/vcap_mv з RTC DR10/DR12 у mruby args) — ✅ Виконано (2026-05-02). `firmware/soldier/main.c` біля `mrb_funcall_argv("calculate_state", 7, ...)`: warmup-guard `EMA_Is_Warmed_Up()` → `EMA_Get_DeltaT_Sec()` / `EMA_Get_Vcap_Mv()`; до warmup — нейтральні defaults `60 c` / `3300 mV` (= `BASELINE_DELTA_T_S` / `NOMINAL_VCAP_MV` у `bio_contract.rb`, β-перетурбація = 0). 6 host-тестів у `firmware/test/test_soldier_logic.c` блок `EMA → mruby calculate_state args[5..6]`: cold-boot defaults / warmup-phase defaults / warmed-up forwarding / boundary vcap=5500 / fast charge dt=1 / zero-input после warmup. 130 soldier tests passed, +6 від 124.
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - `05_02`

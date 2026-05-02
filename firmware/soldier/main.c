@@ -730,17 +730,27 @@ int main(void)
       if (lorenz_state_valid) {
           // [SEC.11 / FW.30] Єдиний виклик calculate_state з 7 аргументами.
           // Повертає [payload_byte, x_final, y_final, z_final].
-          // [FW.21] EMA значення (delta_t_ms / vcap_mv) ще НЕ передаються в mruby.
-          // Поки що передаємо defaults (60 с, 3300 мВ). Задача FW.5 B+: передавання
-          // EMA-згладжених значень через args[5..6].
+          // [FW.5 B+] EMA-згладжені delta_t_s / vcap_mv передаються в args[5..6]
+          // лише після того, як фільтр прогрівся (EMA_Is_Warmed_Up — count ≥
+          // EMA_WARMUP_CYCLES). До цього подаємо нейтральні defaults (60 с, 3300
+          // мВ) — це не зміщує β-clamp у `bio_contract.rb` (BETA_MIN/MAX 2.0..4.0)
+          // і відповідає baseline (BASELINE_DELTA_T_S=60, NOMINAL_VCAP_MV=3300),
+          // тобто β-перетурбація = 0 у warmup-фазі.
+          uint32_t delta_t_for_lorenz = 60u;       // FW.5 baseline
+          uint16_t vcap_for_lorenz    = 3300u;     // FW.5 nominal
+          if (EMA_Is_Warmed_Up()) {
+              delta_t_for_lorenz = EMA_Get_DeltaT_Sec();
+              vcap_for_lorenz    = EMA_Get_Vcap_Mv();
+          }
+
           mrb_value args[7];
           args[0] = mrb_float_value(mrb, (double)lorenz_x);
           args[1] = mrb_float_value(mrb, (double)lorenz_y);
           args[2] = mrb_float_value(mrb, (double)lorenz_z);
           args[3] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура
           args[4] = mrb_fixnum_value(lora_payload[7]); // Акустика
-          args[5] = mrb_fixnum_value(60);   // delta_t_s default (FW.5 B+ TODO: EMA_Get_DeltaT_Sec())
-          args[6] = mrb_fixnum_value(3300); // vcap_mv default (FW.5 B+ TODO: EMA_Get_Vcap_Mv())
+          args[5] = mrb_fixnum_value((mrb_int)delta_t_for_lorenz); // [FW.5 B+] EMA delta_t_s
+          args[6] = mrb_fixnum_value((mrb_int)vcap_for_lorenz);    // [FW.5 B+] EMA vcap_mv
 
           mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
               mrb_intern_lit(mrb, "calculate_state"), 7, args);
