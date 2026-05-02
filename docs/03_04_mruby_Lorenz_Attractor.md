@@ -42,7 +42,7 @@
 | **Коментар OPTIMAL_Z_TARGET (20.0 vs 29.0)** | ✅ Виправлено — коментар виправлено на 29.0 |
 | **`deviation.to_i` (Truncation замість Round)** | ✅ Виправлено — `deviation.round` |
 | **K_seed-derived `(x₀, y₀, z₀)` cold start (заміна `chaos_seed`/DID-as-seed)** | ✅ Реалізовано (SEC.11, 2026-05-02) — `SilkenNet::SeedDerivation` (HKDF + HMAC), firmware mbedTLS bridge, host-parity test 13 examples |
-| **Єдина mruby сигнатура `calculate_state(x_prev, y_prev, z_prev, …)`** | ✅ Реалізовано (SEC.11) — `calculate_state_continued` видалено, dual-path C-міст замінено на single-path |
+| **Єдина mruby сигнатура `calculate_state(x_prev, y_prev, z_prev, …)`** | ✅ Реалізовано (SEC.11 + FW.30) — `calculate_state_continued` видалено, dual-path C-міст у `firmware/soldier/main.c` замінено на single-path 7-arg виклик `calculate_state(x,y,z,temp,acoustic,delta_t_s,vcap_mv)`. Cold-start через K_seed замість `chaos_seed`. 11 нових host-тестів |
 | **`telemetry_logs.lorenz_state_x/y/z` + `cold_start_flag` (chaining server-side)** | ✅ Реалізовано (SEC.11) — `TelemetryUnpackerService` persist'ить tail кожного uplink; наступний пакет дзеркалить firmware-side RTC continuation |
 
 ---
@@ -135,8 +135,8 @@ z0 = bytes_to_signed_unit_float(digest[16,  8])
 
 **Реалізація (hard cutover, без shim'ів):**
 - Backend: `app/services/silken_net/seed_derivation.rb` (HKDF + HMAC + signed-unit-float unpack), `HardwareKey#binary_lorenz_seed` (AR Encryption non-deterministic, validated `presence: true`), `Attractor.calculate_z_from_state(x₀, y₀, z₀, …)` (єдиний entry-point), `TelemetryUnpackerService` (raises `MissingLorenzSeedError` без `K_seed`; persist `lorenz_state_x/y/z` + `cold_start_flag`; chain continuation з попереднього tail).
-- Firmware: `bio_contract.rb#calculate_state(x_prev, y_prev, z_prev, …)` (єдина сигнатура; chaos_seed/DID-derive code path видалено), C-міст з mbedTLS HMAC bridge для cold-start.
-- Tests: `firmware/test/test_seed_derivation.c` (OpenSSL host-parity, 13 examples), `spec/services/silken_net/seed_derivation_spec.rb` (17 examples).
+- Firmware: `bio_contract.rb#calculate_state(x_prev, y_prev, z_prev, …)` (єдина сигнатура; chaos_seed/DID-derive code path видалено), C-міст у `firmware/soldier/main.c` оновлено (FW.30): unified 7-arg `mrb_funcall_argv("calculate_state", 7, ...)` для обох warm/cold paths; `Load_Lorenz_Seed()` зчитує K_seed з Flash (`FLASH_SEED_ADDR = FLASH_KEY_ADDR + 36`, magic `"LSED"`); `Derive_Cold_Start_State()` — placeholder hash деривація (TODO: mbedTLS HMAC-SHA256).
+- Tests: `firmware/test/test_seed_derivation.c` (OpenSSL host-parity, 13 examples), `firmware/test/test_soldier_logic.c` (11 нових FW.30 тестів: 6 seed loading + 4 cold-start derivation + 1 C-bridge 7-arg), `spec/services/silken_net/seed_derivation_spec.rb` (17 examples).
 
 **Threat model post-SEC.11:** sniff LoRa → відтворити Z ❌ (без `K_seed` непередбачуваний); replay вчорашнього пакета ❌ (`epoch_day` змінився); compromise одного `K_seed` ⚠️ (вузол уразливий ≤ 24 год, інші — ні); compromise `PROVISIONING_MASTER_KEY` 🚨 (cascading — окрема rotation strategy SEC.9).
 
