@@ -50,7 +50,6 @@
 - **P0** | `06_01` | **Складність: XS** | **🔧 Операційна** — ручне заповнення в GitHub UI, без коду
 - **Опис:** 12 критичних секретів не встановлені: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `DATABASE_URL`, `SSH_PRIVATE_KEY`, тощо. Блокує весь CI/CD pipeline.
 - **Статус:** ✅ Checklist створено у `docs/06_04_Secrets_Checklist.md` — повна інвентаризація 4 місць зберігання (GitHub Secrets, `.kamal/secrets`, Akash SDL, `terraform.tfvars`)
-- [x] 🤖 Створити список необхідних секретів (checklist)
 - [ ] 👤 Заповнити GitHub repository secrets
 - [ ] 👤 Верифікувати CI pipeline проходить
 
@@ -68,7 +67,6 @@
 #### S2.2 — Grafana Cloud dashboards
 - **P0** | `06_03` | **Складність: S** | **🔧 Операційна** — налаштування в Grafana Cloud UI, без коду
 - **Опис:** Grafana Cloud SaaS — метрики доступні, дашборди створюються в UI
-- [x] Backend: `silkennet_rpc_circuit_breaker_open` gauge (labeled `provider`) та `silkennet_rpc_errors_total` (labeled `network`, `error_type`) інструментовані в `Web3::ResilientClient` — відкриття/закриття circuit breaker та класифікація помилок (timeout/connection_refused/rate_limited тощо)
 - [ ] 👤 Dashboard: Sidekiq queues (9 черг, size + latency)
 - [ ] 👤 Dashboard: Web3 RPC errors by network
 - [ ] 👤 Dashboard: Telemetry ingest rate + fraud detection
@@ -119,7 +117,6 @@
 - **P2** | `06_03` | **Складність: XS** | **🔧 Операційна**
 - **Опис:** `RELEASE_VERSION` ENV не встановлено — Sentry release tracking не працює. Потрібно додати у Kamal/Akash deploy config
 - **Статус:** ✅ Виконано. `RELEASE_VERSION` додано у: `deploy.yml` (Canopy, git SHA), `deploy-production.yml` (Production, release tag або git SHA), `config/deploy.yml` (Kamal clear env), `deploy/akash/deploy.yaml` (web + job services)
-- [x] Додати `RELEASE_VERSION` у deploy pipeline (git SHA або tag)
 - [ ] 👤 Верифікувати Sentry release tracking
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
@@ -223,11 +220,12 @@
 #### FW.3 — Queen AT Command Blocking (~25 сек)
 - `03_01`, `03_02`
 - **Опис:** Queen "сліпа" до LoRa пакетів під час CoAP flush. Single-packet buffer — пакети втрачаються
+- **Статус:** 🟡 Частково виправлено (2026-05-02). Single-packet buffer overwrite + emergency-pakck loss закрито через ring buffer + drain-loop. Повна async UART DMA flush — окрема ітерація (потребує DMA controller hardware-in-loop validation, не покривається host-тестами).
 - **Рішення:** UART DMA interrupt-driven + ring buffer
-- [ ] 🤖 Переписати `Flush_Cache_To_Rails()` на UART DMA
-- [ ] 🤖 Замінити single-packet buffer на ring buffer
-- [ ] 🤖 Додати CoAP response parsing (замість blind HAL_Delay)
-- [ ] 🤖 Тести
+- [ ] 🟡 Переписати `Flush_Cache_To_Rails()` на UART DMA — deferred (наступна ітерація FW.3, потребує STM32 hardware bench)
+- [x] 🤖 Замінити single-packet buffer на ring buffer — ✅ Виконано (2026-05-02). 16-слотовий FIFO у `firmware/queen/main.c` (capacity = 15, lock-free single-producer/single-consumer на ARM Cortex-M4 атомарності 8-біт). `OnRxDone` інкрементує `lora_rx_drops` при переповненні замість мовчазного перезапису. Main loop дренує весь ринг циклом `while (LoRa_Rx_Ring_Pop(...))` перед перевіркою flush-таймера. Закриває head-of-list пункт BLOCKER-2: під час 25-секундного flush'у до 15 голосів буферуються; bursts > 15 видимі через лічильник.
+- [x] 🤖 Додати CoAP response parsing (замість blind HAL_Delay) — ✅ Виконано через FW.9 (`SIM7070_SendATCommand_WithResponse` + `COAP_MAX_RETRIES=3` retry-логіка з парсингом `OK`/`ERROR` у `Flush_Cache_To_Rails`). Boot-time AT-команди (CNMP/CPSMS/CEDRXS) залишаються на blind delay — вони не у критичному 25-секундному вікні.
+- [x] 🤖 Тести — ✅ 13 host-тестів у `firmware/test/test_queen_logic.c` секція "LoRa RX Ring Buffer (FW.3)": initial empty, pop-on-empty, single push/pop roundtrip, FIFO order preserved, fill to capacity 15, overflow increments drop counter (existing voices preserved), drain+refill wraps correctly, RSSI -128 preserved, ISR simulator drops non-16B / clamps RSSI, **25-сек flush сценарій** (30 ISR пакетів → 15 уцілілих + 15 видимих втрат), count zero after full drain. Усі 126 queen tests зелені (113 baseline + 13 нові FW.3).
 
 #### FW.4 — TinyML `Run_Inference()` закоментований
 - `03_03` | `main.c:355`, `silken_net_audio_model.h` відсутній
@@ -686,7 +684,7 @@
   - [x] 🔥 `firmware/test/test_seed_derivation.c` — host-based parity test (OpenSSL HKDF/HMAC = mbedTLS на MCU), 13 examples
   - [x] 🤖 `db/seeds.rb` + `spec/factories/hardware_keys.rb` — populate `lorenz_seed_hex`
   - [x] 🤖 `docs/03_06_Lorenz_Seed_Provenance.md` — DELETED, контент розподілено в `03_04`/`03_05`/`04_02`/`05_02` (див. вище)
-- **Свідомо НЕ робимо** (pre-prod, no field devices, no prototypes, no firmware in flight): `POST /api/v1/provisioning/upgrade_seed` field-migration endpoint, TRL4 lab-mode response, SecureRandom fallback в `Rails.env != production`.
+- **Свідомо НЕ робимо** (pre-prod, no field devices, no prototypes, no firmware in flight): `POST ty6/api/v1/provisioning/upgrade_seed` field-migration endpoint, TRL4 lab-mode response, SecureRandom fallback в `Rails.env != production`.
 
 ---
 

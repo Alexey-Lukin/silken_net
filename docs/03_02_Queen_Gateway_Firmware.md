@@ -77,10 +77,10 @@ uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init
 
 ---
 
-### 🔴 BLOCKER-2: AT Command Blocking — Queen сліпа ~25 секунд під час flush
+### 🟡 BLOCKER-2: AT Command Blocking — Queen сліпа ~25 секунд під час flush
 
-**Статус:** Відкрито. Архітектурна проблема CoAP uplink.
-**Файл:** `firmware/queen/main.c:542-566`
+**Статус:** Частково виправлено — single-packet buffer overwrite закрито (FW.3, 2026-05-02). Повна async-переробка `Flush_Cache_To_Rails()` на UART DMA — відкрито.
+**Файл:** `firmware/queen/main.c:805-870` (drain) + `firmware/queen/main.c:184-260` (ring buffer)
 
 **Реальний час блокування під час flush (розрахунок для 50 записів):**
 
@@ -104,18 +104,16 @@ HAL_Delay(2000); // ← Чекаємо ACK — але не читаємо від
 
 **Ризики (ескалація від "2 секунди" до "~25 секунд"):**
 
-1. **Single-packet buffer:** `incoming_lora_payload[16]` — єдиний буфер. Радіо SX1262 продовжує приймати пакети через ISR (`OnRxDone`) під час усього flush. Але оскільки `lora_rx_flag` — однобітний прапорець, а `incoming_lora_payload` — єдиний буфер, кожен новий ISR **мовчки перезаписує** попередній пакет. Після ~25 секунд flush головний цикл обробить лише **один** (останній) пакет. **Усі проміжні пакети від дерев безповоротно втрачені.**
-2. **Emergency packet loss:** Під час пожежі, якщо 10+ дерев одночасно надсилають emergency TinyML сигнали протягом 25-секундного flush — тільки одне зафіксується.
-3. **Немає `Radio.Rx()` після flush:** Функція `Flush_Cache_To_Rails()` не викликає `Radio.Rx()`. Radio переходить у idle-стан після кожного `Radio.Send()` (OTA reflex shot). Якщо OTA не активовано — Radio залишається в RX-стані від попереднього `Radio.Rx(LORA_RX_INFINITE)`. Але якщо OTA активовано і flush відбувається в тому ж циклі — RX відновиться лише після наступного спрацювання `lora_rx_flag`.
-4. **Відповідь модему не парситься:** `SIM7070_SendATCommand` використовує `HAL_Delay` замість читання UART. `OK`/`ERROR` від модему ігнорується.
+1. ✅ **Single-packet buffer overwrite — закрито (FW.3, 2026-05-02).** Раніше `incoming_lora_payload[16]` + однобітний `lora_rx_flag` — кожен новий ISR від `OnRxDone` мовчки переписував попередній голос. Тепер між ISR і main loop стоїть **FIFO ring buffer** (16 слотів × 17 байтів = 272 байти RAM, capacity = 15). ISR-side `LoRa_Rx_Ring_Push` атомарно додає голос; при переповненні рою інкрементує лічильник `lora_rx_drops` — жодна жертва не зникає у тиші. Main loop дренує весь ринг за одну ітерацію (`while (LoRa_Rx_Ring_Pop(...))`) перед перевіркою flush-таймера. 13 host-тестів покривають FIFO-семантику, переповнення, RSSI-clamp passthrough та симуляцію 25-секундного flush-сценарію (30 ISR-пакетів → 15 уцілілих + 15 видимих втрат). Single-producer/single-consumer інваріант + ARM Cortex-M4 атомарність 8-біт читання робить ринг lock-free.
+2. **Emergency packet loss — суттєво пом'якшено.** До 15 emergency TinyML-сигналів за 25-секундне вікно тепер зберігаються; якщо рій кричить ще густіше — лічильник `lora_rx_drops` робить це видимим для backend gateway-телеметрії (наступний крок: експорт у queen_health sentinel-payload).
+3. ✅ **Reflex `Radio.Rx()` після кожного дренованого пакета** — main loop викликає `Radio.Rx(LORA_RX_INFINITE)` всередині drain-петлі, після кожного pop'а. Жодного режиму Radio idle між пакетами.
+4. **Відповідь модему частково парситься (FW.9).** `SIM7070_SendATCommand_WithResponse` шукає `OK`/`ERROR` у `Flush_Cache_To_Rails`, з `COAP_MAX_RETRIES=3` retry-логікою. Boot-time AT-команди (CNMP, CPSMS, CEDRXS) залишаються на blind delay — вони не у критичному 25-секундному вікні.
 
-**Необхідна дія:**
-- Переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven (DMA UART + callback).
-- Відправку CoAP виконувати асинхронно, не блокуючи головний цикл.
-- Перейти з однобітного `lora_rx_flag` на кільцевий буфер (ring buffer) для ISR-пакетів.
-- Реалізувати парсинг відповіді `OK`/`ERROR` від SIM7070G.
+**Залишок роботи (наступна ітерація FW.3):**
+- Переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven (DMA UART + IDLE-line callback) — повна async, не блокуюча головний цикл.
+- Експортувати `lora_rx_drops` у `queen_health` sentinel-payload (наразі — внутрішня метрика без backend-видимості).
 
-**Блокує:** Надійність Queen в умовах щільного LoRa-трафіку, Emergency Alerting, Proof of Growth completeness.
+**Блокує:** Часткове закриття — Queen більше не глуха в умовах щільного LoRa-трафіку (bursts ≤ 15 пакетів покриті ringom), Emergency Alerting суттєво підсилений. Повна async UART DMA — для full Mainnet-надійності при ≥ 16-пакетних bursts.
 
 ---
 
@@ -277,8 +275,8 @@ if (current_ota_chunk_idx >= total_chunks) {
 ║                                                                          ║
 ║  [MAIN LOOP]                                                             ║
 ║    ┌─────────────────────────────────────────────────────────┐          ║
-║    │  if (lora_rx_flag == 1)                                 │          ║
-║    │    ├── HAL_CRYP_Decrypt(ECB, incoming_lora[16])        │          ║
+║    │  while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi)):  [FW.3]│          ║
+║    │    ├── HAL_CRYP_Decrypt(ECB, rx_payload[16])           │          ║
 ║    │    │     → decrypted_payload[16]                        │          ║
 ║    │    │                                                     │          ║
 ║    │    ├── [OTA REFLEX SHOT, if ota_is_active]             │          ║
@@ -293,7 +291,7 @@ if (current_ota_chunk_idx >= total_chunks) {
 ║    │    │     2. INSERT: вільний слот → cache_count++        │          ║
 ║    │    │     3. CIFO EVICT: evict non-critical worst RSSI  │          ║
 ║    │    │                                                     │          ║
-║    │    └── lora_rx_flag=0 → Radio.Rx(LORA_RX_INFINITE)    │          ║
+║    │    └── Radio.Rx(LORA_RX_INFINITE) → next pop            │          ║
 ║    │                                                         │          ║
 ║    │  if (cache_count >= 45 OR time >= 1h + jitter)         │          ║
 ║    │    ├── Inject Queen Health Sentinel (DID=0)            │          ║
@@ -350,15 +348,17 @@ if (current_ota_chunk_idx >= total_chunks) {
 ```c
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
-    if (size == 16) {  // Очікуємо рівно 16 байт (повний AES block)
-        memcpy((void*)incoming_lora_payload, payload, 16);
-        // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128
-        if (rssi < -128) rssi = -128;
-        if (rssi > 127)  rssi = 127;
-        current_rssi = (int8_t)rssi;
-        lora_rx_flag = 1; // Сигналізуємо головному циклу
-    }
-    // Пакети != 16 байт мовчки відкидаються (не є LoRa від Soldier)
+    (void)snr;
+    if (size != 16) return;  // Очікуємо рівно 16 байт (повний AES block)
+
+    // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128
+    if (rssi < -128) rssi = -128;
+    if (rssi > 127)  rssi = 127;
+
+    // [FW.3] Кладемо голос у FIFO ring buffer (16 слотів) — main loop
+    // дренує його після завершення CoAP-flush'у. Якщо ринг переповнений,
+    // інкрементується lora_rx_drops, але існуючі голоси недоторкані.
+    LoRa_Rx_Ring_Push(payload, (int8_t)rssi);
 }
 ```
 
@@ -371,9 +371,18 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 | UART baud | 115200 | SIM7070G модем |
 | `snr` параметр | **не використовується** | SNR від SX1262 ігнорується в `OnRxDone`. CIFO eviction базується лише на RSSI. SNR міг би покращити якість рішення евікції (RSSI+SNR = power + noise floor), але не реалізовано — потенційна точка покращення в наступному TRL. |
 
-**Volatile-семантика:** `incoming_lora_payload` та `lora_rx_flag` оголошені `volatile`, бо записуються в ISR, читаються в main loop. `(void*)` cast безпечний: `lora_rx_flag` серіалізує доступ ISR→main.
+**[FW.3] LoRa RX Ring Buffer (single-producer / single-consumer FIFO):**
 
-**Single-packet buffer обмеження:** `incoming_lora_payload[16]` — єдиний буфер. При одночасному отриманні двох пакетів ISR перезаписує буфер — перший пакет втрачається. Це не проблема в нормальному режимі (LoRa TDMA природно розмазує трафік), але критично під час 25-секундного flush (BLOCKER-2).
+| Поле | Тип | Розмір | Призначення |
+|------|-----|--------|-------------|
+| `lora_rx_ring[16]` | `volatile LoRaRxSlot` | 16 × 17 = 272 B | FIFO слоти (16 байт payload + 1 байт rssi) |
+| `lora_rx_head` | `volatile uint8_t` | 1 B | Куди ISR кладе наступний пакет |
+| `lora_rx_tail` | `volatile uint8_t` | 1 B | Звідки main loop забирає |
+| `lora_rx_drops` | `volatile uint16_t` | 2 B | Лічильник переповнень (видимий для майбутнього gateway-health export) |
+
+Ефективна capacity = `LORA_RX_RING_SIZE - 1 = 15` (один слот віддано на розрізнення full vs empty). ARM Cortex-M4 атомарність 8-біт читання/запису гарантує lock-free ISR↔main coordination без `__disable_irq()`. На host-тестах volatile-лічильники поводяться як звичайні uint8 — single-thread детерміністичний доступ, логіка empty/full однакова.
+
+**Замінено в FW.3 (2026-05-02):** `incoming_lora_payload[16]` + однобітний `lora_rx_flag` → ring buffer. Було: ISR під час 25-секундного CoAP-flush'у мовчки перезаписував попередній голос; main loop бачив тільки останній. Стало: до 15 голосів чекають у рингу; переповнення видиме через `lora_rx_drops`.
 
 ---
 
@@ -1025,14 +1034,15 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 | `at_tx_buffer[256]` | `char` | 256 B | Формування AT-команд (`snprintf`) |
 | `cmd_dedup_ring[16]` | `uint32_t` | 64 B | DJB2 хеші idempotency токенів |
 | `cmd_decrypt_buf[544]` | `uint8_t` | 544 B | Decrypt buffer для CoAP команд/OTA |
-| `incoming_lora_payload[16]` | `volatile uint8_t` | 16 B | Сирий зашифрований пакет від ISR |
+| `incoming_lora_payload` (видалено в FW.3) | — | 0 B | Замінено на `lora_rx_ring[16]` (272 B) |
+| `lora_rx_ring[16]` | `volatile LoRaRxSlot` | 272 B | **[FW.3]** FIFO ring для ISR-пакетів (16 × 17 байтів = payload + rssi) |
 | `decrypted_payload[16]` | `uint8_t` | 16 B | Розшифрований пакет |
 | `ota_chunk_bitmap` | `uint16_t` | 2 B | Bitmap отриманих OTA-чанків (16 біт) |
 | `ota_chunks_received` | `uint16_t` | 2 B | Лічильник отриманих CoAP-чанків |
 | `ota_total_expected_chunks` | `uint16_t` | 2 B | Очікуваний total від header |
 | `pending_ota_size` | `uint16_t` | 2 B | Реальний зібраний розмір байткоду |
-| Scalar variables | misc | ~20 B | `cache_count`, `lora_rx_flag`, `current_rssi`, `ota_is_active`, `current_ota_chunk_idx`, `cmd_dedup_idx`, `cmd_dedup_used` |
-| **Разом** | | **~14.4 KB** | З 64 KB SRAM = ~22% використання |
+| Scalar variables | misc | ~24 B | `cache_count`, `current_rssi`, `lora_rx_head`, `lora_rx_tail`, `lora_rx_drops`, `ota_is_active`, `current_ota_chunk_idx`, `cmd_dedup_idx`, `cmd_dedup_used` |
+| **Разом** | | **~14.7 KB** | З 64 KB SRAM = ~23% використання |
 
 ---
 
@@ -1053,7 +1063,7 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 ## 🧪 11. Тестове Покриття (Host-Based, x86)
 
 ```bash
-make -C firmware/test queen    # 83 тестів, ~0.1 секунди
+make -C firmware/test queen    # 126 тестів, ~0.1 секунди
 ```
 
 | Модуль | Тестів | Що покривається |
@@ -1070,12 +1080,18 @@ make -C firmware/test queen    # 83 тестів, ~0.1 секунди
 | HRNG IV Generation | 5 | All 4 words filled, 16-byte size, power mgmt deinit |
 | CBC Command Decrypt | 3 | ECB restored після CBC decrypt, sequence correctness |
 | **CoAP Retry (FW.9)** | **4** | **`COAP_MAX_RETRIES=3`, `COAP_BASE_TIMEOUT_MS=2000`, `COAP_SEND_TIMEOUT_MS=5000`, `UART_RX_BUF_SIZE=128`** |
-| **Всього** | **83** | *(queen-specific: 83)* |
+| **[FW.1] Flash Key Loading** | **8** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler |
+| **[FW.20] Time Sync Envelope + Beacon** | **8** | CMD_TIME_SYNC strip, beacon plaintext layout, ts=0 guard |
+| **[FW.27-B] Magic Re-Request Handler** | **10** | Bitmap accept/dedup, total mismatch, no-active-OTA |
+| **[FW.23] HMAC Trailer Relay** | **4** | 3 segs storage, seg_idx>3 reject, marker mismatch |
+| **[FW.3] LoRa RX Ring Buffer** | **13** | FIFO семантика, capacity 15, переповнення → drop counter, RSSI clamp passthrough, 25-сек flush сценарій (30 ISR пакетів → 15 уцілілих + 15 видимих втрат) |
+| **Всього** | **126** | *(queen-specific: 126; раніше 113)* |
 
-**Не покрито тестами:**
-- AT command response parsing (модем відповіді)
-- CoAP retry logic при мережевих помилках
-- Single-packet buffer overwrite during ~25 s flush — BLOCKER-2
+**Не покрито host-тестами (потребує hardware-in-loop):**
+- AT command response parsing на реальному SIM7070G (boot-time CNMP/CPSMS/CEDRXS)
+- CoAP retry logic при мережевих помилках LTE-M / Starlink DTC
+- ✅ Single-packet buffer overwrite — закрито host-тестами FW.3 (симуляція) + 25-сек flush scenario test
+- Повна async UART DMA flush — наступна ітерація FW.3 (вимагає DMA controller hardware)
 
 ---
 

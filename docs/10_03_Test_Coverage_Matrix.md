@@ -8,17 +8,16 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8
-- **Дата аудиту:** 2026-05-02 (FW.27-B + FW.23 + FW.18 dispatcher cycle)
-- **Кількість тестів:**
-  - RSpec (Ruby): ~298+ spec files, ~52,700+ lines (+ `ota_hmac_key_service_spec.rb` 16 examples [FW.23], `ota_packager_service_spec.rb` +21 examples [FW.23], `ota_firmware_flow_spec.rb` +7 e2e [FW.23], `silken_net/seed_derivation_spec.rb` 16 examples [SEC.11])
-  - Firmware (C): **413** tests (180 soldier + 113 queen + 42 bio-contract + 44 tinyml + 21 encryption + **13 seed_derivation [SEC.11]**). +46 від 367: **[FW.27-B]** Soldier 12 bitmap + Queen 10 dedup; **[FW.23]** Soldier 13 dual-gate + Queen 4 trailer relay; **[FW.18]** 7 OTA CMD dispatcher.
-  - Foundry (Solidity): 6 test suites, ~115+ tests
+- **тести:**
+  - RSpec (Ruby)
+  - Firmware (C)
+  - Foundry (Solidity)
 
 ---
 
 ## 🗺️ 1. RSpec Coverage Matrix
 
-### 1.1 Models (32 spec files)
+### 1.1 Models
 
 | Модель | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
@@ -35,7 +34,7 @@
 | AuditLog | ✅ 400L+ | 🟢 **Повне** | **chain_payload determinism, metadata ordering, tamper detection, deleted record chain break, bulk advisory lock** |
 | **Firmwareable (concern)** | ✅ 230L+ | 🟢 **Повне** | **AASM transitions тестуються: всі 7 подій, invalid transitions, lifecycle** |
 
-### 1.2 Services (43 spec files)
+### 1.2 Services
 
 | Сервіс | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
@@ -58,7 +57,7 @@
 | Etherisc::ClaimService | ✅ 120L+ | 🟢 **Повне** | **nil policy_id, missing ENV keys, ABI validation** |
 | Ed25519Crypto::SigningService | ✅ 270L+ | 🟢 **Повне** | **Empty/large messages, hex validation edges, uppercase hex, nil/integer message coercion** |
 
-### 1.3 Workers (41 spec files)
+### 1.3 Workers
 
 | Воркер | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
@@ -69,19 +68,19 @@
 | **Web3CircuitBreaker (concern)** | ✅ 320L+ | 🟢 **Повне** | **transient_cause?, reset_circuit!, remaining_open_seconds, all error types, record_failure! threshold** |
 | **CoapEncryption (concern)** | ✅ 175L+ | 🟢 **Повне** | **[FW.20] TIME_SYNC envelope (0x9C marker + ts:4 big-endian), All mod-16 payload sizes (1,15,17,31,32,33), binary data, null-byte padding, IV uniqueness** |
 
-### 1.4 Controllers (30 spec files)
+### 1.4 Controllers
 
-Усі 30 API v1 контролерів мають відповідні request spec файли. Покриття: 🟢 Повне.
+Усі API v1 контролерів мають відповідні request spec файли. Покриття: 🟢 Повне.
 
-### 1.5 Policies (14 spec files)
+### 1.5 Policies
 
-Усі 14 Pundit policies покриті. Покриття: 🟢 Повне.
+Усі Pundit policies покриті. Покриття: 🟢 Повне.
 
-### 1.6 Views (85 spec files)
+### 1.6 Views
 
 Усі Phlex-компоненти покриті згідно з `docs/10_01_View_Component_Testing_Guide.md`.
 
-### 1.7 Integration Tests (24 spec files)
+### 1.7 Integration Tests
 
 | Тест | Покриття | Критичність |
 |------|----------|------------|
@@ -101,7 +100,7 @@
 
 ## 🔧 2. Firmware Test Coverage
 
-### 2.1 Soldier (test_soldier_logic.c — 130 tests)
+### 2.1 Soldier (test_soldier_logic.c)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -122,7 +121,7 @@
 | **[SEC.11 / FW.30] Cold-Start Derivation** | **4** | 🟢 **Нове** — `Derive_Cold_Start_State()` coordinates ∈ [-1,+1], deterministic, date-sensitive, seed-sensitive |
 | **[FW.30] C-Bridge 7-Arg Signature** | **1** | 🟢 **Нове** — Lorenz iteration з 7-arg сигнатурою produces finite coords |
 
-### 2.2 Queen (test_queen_logic.c — 91 tests)
+### 2.2 Queen (test_queen_logic.c)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -137,8 +136,9 @@
 | HRNG IV Generation | 5 | 🟢 Повне |
 | **CoAP Retry (FW.9)** | **4** | 🟢 **Нове** — `test_coap_retry_constants`, константи `COAP_MAX_RETRIES`, `UART_RX_BUF_SIZE` |
 | **[FW.1] Flash Key Loading** | **8** | 🟢 **Нове** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler, FLASH_KEY_ADDR 0x0803E000 |
+| **[FW.3] LoRa RX Ring Buffer** | **13** | 🟢 **Нове** (2026-05-02) — single-producer FIFO, capacity 15, переповнення → drop counter (existing voices preserved), drain+refill wraps, RSSI passthrough, ISR simulator size/RSSI clamp, **25-сек flush сценарій** (30 ISR пакетів → 15 уцілілих + 15 видимих втрат). Закриває BLOCKER-2 part-1: `incoming_lora_payload`+`lora_rx_flag` → ring. |
 
-### 2.3 Bio-Contract (test_bio_contract.c — 42 tests)
+### 2.3 Bio-Contract (test_bio_contract.c)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -151,7 +151,7 @@
 | Boundary Conditions | 5 | 🟢 Повне |
 | **[FW.5] β-Perturbation** | **4** | 🟢 **Нове** — `test_beta_nominal_no_perturbation`, `test_beta_fast_charge_increases_beta`, `test_beta_high_vcap_increases_beta`, `test_beta_clamp_upper_limit` |
 
-### 2.4 Encryption (test_encryption.c — 21 tests)
+### 2.4 Encryption (test_encryption.c)
 
 | Область | Тести | Покриття | ⚠️ |
 |---------|-------|----------|-----|
@@ -162,7 +162,7 @@
 | Encrypt/Decrypt Verify | 3 | 🟢 | Mock HAL |
 | **[FW.1] Flash Key Integration** | **3** | 🟢 **Нове** | `Load_AES_Key()` → CRYP init integration, key-zero rejection, magic validation |
 
-### 2.6 Seed Derivation Host-Parity (test_seed_derivation.c — 13 tests) [SEC.11] 🆕
+### 2.6 Seed Derivation Host-Parity (test_seed_derivation.c) [SEC.11] 🆕
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -174,7 +174,7 @@
 | Mixed-seed shape (різні `K_seed` → різні координати) | 1 | 🟢 Distinct seeds → distinct trajectories |
 | Initial state shape для відомого `(K_seed, epoch_day)` (mixed seed) | 3 | 🟢 Backend-firmware parity vector |
 
-### 2.5 TinyML Pipeline (test_tinyml_pipeline.c — 44 tests)
+### 2.5 TinyML Pipeline (test_tinyml_pipeline.c)
 
 | Область | Тести | Покриття | ⚠️ |
 |---------|-------|----------|-----|
@@ -230,24 +230,6 @@
 |-------|------------|------|
 | Concurrent State | 🟡 MEDIUM | Race conditions у AASM transitions не тестуються (потребують multi-thread test) |
 | Live Web3 RPC | 🟡 MEDIUM | Всі Web3 виклики заглушені; live RPC тестування потребує staging env |
-
----
-
-## 📊 5. Агрегована статистика
-
-| Шар | Spec Files | Total Lines | Ratio (spec/src) |
-|-----|------------|-------------|------------------|
-| Models | 32 | 10,100+ | ~2.2x |
-| Services | 43 | 10,500+ | ~1.8x |
-| Workers | 41 | 6,600+ | ~1.7x |
-| Requests | 30 | 4,638 | ~1.9x |
-| Integration | 24 | 5,280+ | — |
-| Views | 85 | 10,001 | ~2.0x |
-| Policies | 14 | 1,416 | ~2.5x |
-| Blueprints | 9 | 1,081 | ~2.0x |
-| Firmware (C) | 6 | ~3,800 | **341 tests (+6 FW.5 B+, +11 FW.30, +13 SEC.11)** |
-| Solidity | 6 | ~2,000 | 115+ tests |
-| **Total** | **288+** | **~53,600+** | — |
 
 ---
 

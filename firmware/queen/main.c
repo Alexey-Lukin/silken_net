@@ -180,13 +180,84 @@ static uint8_t Read_Queen_UID_From_Flash(void)
 // =========================================================================
 // === 1. ПАМ'ЯТЬ КОРОЛЕВИ (Прийом Даних) ===
 // =========================================================================
-volatile uint8_t lora_rx_flag = 0;      // Прапорець: 1 - пакет спіймано
-// [FIX: AUDIT] volatile — записуються в OnRxDone ISR, читаються в main loop
-volatile uint8_t incoming_lora_payload[16]; // Сирий 16-байтний зашифрований пакет
+// [FW.3] LoRa RX ring buffer — кільцевий прихисток голосів рою.
+//
+// Раніше тут жив однобітний `lora_rx_flag` + `incoming_lora_payload[16]`:
+// одне вухо, одна паща. Поки головний цикл відбував 25-секундний кенозис у
+// CoAP-каналі (батч → SIM7070G → Rails), кожен новий ISR від OnRxDone
+// мовчки писав поверх попереднього голосу — і пам'ять Королеви тримала
+// тільки останній шепіт лісу. Усі проміжні крики (включно з emergency
+// chainsaw-сигналами) пропадали безслідно — це було серце BLOCKER-2.
+//
+// Тепер між ISR (продюсер) і main loop (споживач) лежить FIFO-ринг:
+// 16 слотів × 17 байтів = 272 байти RAM. Single-producer / single-consumer,
+// тому head і tail — окремі volatile-лічильники без mutex'а
+// (атомарні uint8_t-записи на ARM Cortex-M4). Capacity = 15 (один слот
+// віддано на розрізнення full vs empty — класична FIFO-математика).
+// При переповненні ISR не псує існуючі голоси: інкрементує
+// `lora_rx_drops`, щоб слід жертви залишився видимим для майбутньої
+// gateway-телеметрії та аудиту.
+#define LORA_RX_RING_SIZE      16U                   // степінь двійки → дешеве modulo
+#define LORA_RX_RING_MASK      (LORA_RX_RING_SIZE - 1U)
+
+typedef struct {
+    uint8_t  payload[16];
+    int8_t   rssi;
+} LoRaRxSlot;
+
+static volatile LoRaRxSlot lora_rx_ring[LORA_RX_RING_SIZE];
+static volatile uint8_t    lora_rx_head  = 0;     // Куди ISR кладе наступний голос
+static volatile uint8_t    lora_rx_tail  = 0;     // Звідки main loop забирає
+static volatile uint16_t   lora_rx_drops = 0;     // Лічильник переповнень рингу
+
 uint8_t decrypted_payload[16];          // Розшифрований пакет від Солдата
-volatile int8_t current_rssi = 0;       // Рівень сигналу
+volatile int8_t current_rssi = 0;       // RSSI поточного оброблюваного пакета (для downstream-кешу)
 
 char at_tx_buffer[256];                 // Буфер для формування AT-команд
+
+// === LoRa RX Ring Helpers ================================================
+// Single-producer (ISR) / single-consumer (main loop): кожен інлайн —
+// чисте читання volatile-лічильника. Без disable_irq/enable_irq, без
+// глобальних блокувань. Якщо на платформі не Cortex-M4 (наприклад,
+// host-тест на x86), volatile-лічильники все одно працюють детерміновано
+// у single-thread-режимі — саме тому логіка кільця тестується host-side.
+
+static inline uint8_t LoRa_Rx_Ring_Empty(void) {
+    return (uint8_t)(lora_rx_head == lora_rx_tail);
+}
+
+static inline uint8_t LoRa_Rx_Ring_Count(void) {
+    return (uint8_t)((lora_rx_head - lora_rx_tail) & LORA_RX_RING_MASK);
+}
+
+// ISR-сторона: прийняти 16-байтний шифроблок + RSSI у пам'ять рою.
+// Якщо ринг наповнено по вінця (next == tail) — мовчазного переповнення
+// не дозволяємо: існуючі голоси недоторкані, лише інкрементуємо
+// `lora_rx_drops`, щоб ця жертва залишила слід.
+static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi) {
+    uint8_t next = (uint8_t)((lora_rx_head + 1U) & LORA_RX_RING_MASK);
+    if (next == lora_rx_tail) {
+        // Ринг повний — голос лісу не вмістився. Backend дізнається про
+        // це через лічильник у наступному gateway-health пакеті.
+        lora_rx_drops++;
+        return;
+    }
+    // memcpy на volatile-вказівник: каст знімає volatile, але це безпечно,
+    // бо тільки ISR пише в head-слот (single-producer інваріант).
+    memcpy((void*)lora_rx_ring[lora_rx_head].payload, payload, 16);
+    lora_rx_ring[lora_rx_head].rssi = rssi;
+    lora_rx_head = next;
+}
+
+// Main-loop сторона: витягти один голос (snapshot у локальні non-volatile
+// буфери), просунути tail. Повертає 1 якщо є пакет, 0 — якщо ринг порожній.
+static inline uint8_t LoRa_Rx_Ring_Pop(uint8_t *out_payload, int8_t *out_rssi) {
+    if (lora_rx_head == lora_rx_tail) return 0;
+    memcpy(out_payload, (const void*)lora_rx_ring[lora_rx_tail].payload, 16);
+    *out_rssi = lora_rx_ring[lora_rx_tail].rssi;
+    lora_rx_tail = (uint8_t)((lora_rx_tail + 1U) & LORA_RX_RING_MASK);
+    return 1;
+}
 
 // =========================================================================
 // === 1.5. EDGE КЕШУВАННЯ (CIFO & Дедуплікація) ===
@@ -407,14 +478,22 @@ int main(void)
     // =========================================================================
     // ФАЗА ОЧІКУВАННЯ ТА ОБРОБКИ РАДІОЕФІРУ
     // =========================================================================
-
-    // Якщо апаратне переривання OnRxDone спіймало пакет від Солдата
-    if (lora_rx_flag == 1)
+    // [FW.3] Дренуємо весь ринг за одну ітерацію main loop'а: кожен пакет,
+    // що накопичився від попереднього циклу (включно з тими, що прилетіли
+    // під час CoAP-flush'у), отримає свій декрипт + CIFO-вставку + (за
+    // потреби) reflex OTA-постріл. Якщо ринг порожній — while-петля
+    // мовчки пропускається.
     {
-        // 1. РОЗШИФРОВУЄМО ПАКЕТ
-        // Розшифровуємо 4 слова (16 байт) апаратним модулем
-        // (void*) cast strips volatile — safe: lora_rx_flag serializes ISR→main access.
-        HAL_CRYP_Decrypt(&hcryp, (uint32_t*)(void*)incoming_lora_payload, 4, (uint32_t*)decrypted_payload, 1000);
+        uint8_t  rx_payload[16];
+        int8_t   rx_rssi = 0;
+
+        while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi))
+        {
+            current_rssi = rx_rssi;  // зберігаємо для downstream-кешу та логів
+
+            // 1. РОЗШИФРОВУЄМО ПАКЕТ
+            // 4 слова × 32 біти = 16 байт = один AES-256-ECB блок.
+            HAL_CRYP_Decrypt(&hcryp, (uint32_t*)rx_payload, 4, (uint32_t*)decrypted_payload, 1000);
 
         // =========================================================================
         // РЕФЛЕКТОРНИЙ ПОСТРІЛ (OTA BROADCAST)
@@ -564,10 +643,9 @@ int main(void)
                 }
             }
             // Цей пакет не лягає у CIFO/CoAP — він не належить літопису рою.
-            // Re-arm RX і чекаємо нових голосів.
-            lora_rx_flag = 0;
+            // Re-arm RX і переходимо до наступного голосу у рингу.
             Radio.Rx(LORA_RX_INFINITE);
-            goto rx_handled;
+            continue;
         }
 
         // Витягуємо унікальний ID Солдата (перші 4 байти - DID)
@@ -579,11 +657,10 @@ int main(void)
         // Замість миттєвої відправки, складаємо в CIFO-кеш
         Process_And_Cache_Data(sender_id, decrypted_payload, current_rssi);
 
-        // Очищаємо прапорець і знову відкриваємо вуха
-        lora_rx_flag = 0;
+        // Re-arm RX перед забором наступного голосу з рингу
         Radio.Rx(LORA_RX_INFINITE);
-    rx_handled: ;
-    }
+        }  // while (LoRa_Rx_Ring_Pop ...)
+    }      // drain block (rx_payload/rx_rssi scope)
 
     // =========================================================================
     // СКИДАННЯ КЕШУ НА СЕРВЕР (GCCS Batching -> UDP/CoAP)
@@ -662,22 +739,25 @@ int main(void)
 // =========================================================================
 // АПАРАТНИЙ РЕФЛЕКС РАДІО (Вуха Королеви)
 // =========================================================================
+// [FW.3] OnRxDone більше не пише в єдиний "пащу-буфер" з прапорцем —
+// він кладе кожен голос у FIFO-ринг. Якщо рій кричить швидше, ніж main
+// loop встигає обертати CIFO-кеш + CoAP-канал, переповнення фіксується
+// у лічильник (lora_rx_drops), а не мовчазним перезаписом. Так жоден
+// emergency-сигнал не зникає в кенозисі CoAP-flush'у.
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
+    (void)snr;  // SNR не використовується у CIFO-логіці (FW.3 acceptance)
+
     // Очікуємо рівно 16 байт (повний зашифрований блок AES-256)
-    if (size == 16)
-    {
-        // (void*) cast removes volatile qualifier for HAL function — safe because
-        // ISR is sole writer and main loop does not read until lora_rx_flag is set.
-        memcpy((void*)incoming_lora_payload, payload, 16);
-        // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128.
-        // Clamp до int8_t діапазону перед приведенням, щоб запобігти
-        // overflow (наприклад, -130 → 126, що б отруїло CIFO eviction).
-        if (rssi < -128) rssi = -128;
-        if (rssi > 127) rssi = 127;
-        current_rssi = (int8_t)rssi;
-        lora_rx_flag = 1; // Сигналізуємо головному циклу
-    }
+    if (size != 16) return;
+
+    // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128.
+    // Clamp до int8_t діапазону перед приведенням, щоб запобігти
+    // overflow (наприклад, -130 → 126, що б отруїло CIFO eviction).
+    if (rssi < -128) rssi = -128;
+    if (rssi > 127)  rssi = 127;
+
+    LoRa_Rx_Ring_Push(payload, (int8_t)rssi);
 }
 
 // =========================================================================
