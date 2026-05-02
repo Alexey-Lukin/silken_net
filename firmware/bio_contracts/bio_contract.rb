@@ -25,6 +25,9 @@ module SilkenNet
     DT = 0.01
     ITERATIONS = 250
 
+    # Межі стабільності (Chaos Clamps) — ідентичні серверу
+    # (app/services/silken_net/attractor.rb). Без clamp при екстремальних
+    # показниках температури/акустики система вилітає в нескінченність.
     SIGMA_MIN = 5.0
     SIGMA_MAX = 30.0
     RHO_MIN   = 10.0
@@ -32,12 +35,17 @@ module SilkenNet
 
     # [FW.5] β-perturbation від EBFC-метаболізму. Дзеркало
     # app/services/silken_net/attractor.rb#perturb_beta.
-    BETA_DELTA_T_COEFF = 0.0001
-    BETA_VCAP_COEFF    = 0.001
-    BETA_MIN           = 2.0
+    # delta_t (час заряду іоністора) та vcap (напруга) — фізично значущі
+    # індикатори здоров'я дерева. Мапимо їх на β (геометричний параметр
+    # конвективної клітини у системі Лоренца): швидший заряд + стабільна
+    # vcap → активніший метаболізм → β зростає → траєкторія тяжіє до
+    # OPTIMAL_Z_TARGET → більше growth_points.
+    BETA_DELTA_T_COEFF = 0.0001  # 1 с швидше за baseline → β +0.0001
+    BETA_VCAP_COEFF    = 0.001   # 1 mV вище nominal → β +0.001
+    BETA_MIN           = 2.0     # clamp: класичний β ≈ 2.667 ± 50%
     BETA_MAX           = 4.0
-    BASELINE_DELTA_T_S = 60
-    NOMINAL_VCAP_MV    = 3300
+    BASELINE_DELTA_T_S = 60      # очікуваний час заряду EBFC, секунди
+    NOMINAL_VCAP_MV    = 3300    # 3.3 V nominal
 
     # Sole entry-point: takes initial (x, y, z) directly. Returns
     # [z, x_final, y_final, z_final] for RTC persistence.
@@ -51,11 +59,14 @@ module SilkenNet
       local_sigma = BASE_SIGMA + (acoustic * 0.1)
       local_rho   = BASE_RHO + (temp * 0.2)
 
+      # [FIX: Attractor Sync] Clamp — запобігаємо вибуху при екстремальних вхідних
       local_sigma = SIGMA_MIN if local_sigma < SIGMA_MIN
       local_sigma = SIGMA_MAX if local_sigma > SIGMA_MAX
       local_rho = RHO_MIN if local_rho < RHO_MIN
       local_rho = RHO_MAX if local_rho > RHO_MAX
 
+      # [FW.5] Лише позитивний внесок delta_t: чим швидше за baseline → тим більше β.
+      # vcap_centered може бути від'ємним при просадці — від β-зменшення захищає clamp.
       delta_t_improvement_s = BASELINE_DELTA_T_S - delta_t_s
       delta_t_improvement_s = 0 if delta_t_improvement_s < 0
       vcap_centered = vcap_mv - NOMINAL_VCAP_MV
@@ -83,9 +94,9 @@ module SilkenNet
   # 2. ЛОГІКА ПРИЙНЯТТЯ РІШЕНЬ ТА ТОКЕНОМІКА (Біо-Контракт)
   # =========================================================================
   class BioContract
-    CRITICAL_Z_MIN = 2.0
-    CRITICAL_Z_MAX = 45.0
-    OPTIMAL_Z_TARGET = 29.0
+    CRITICAL_Z_MIN = 2.0   # Падіння нижче = втрата тургору / посуха
+    CRITICAL_Z_MAX = 45.0  # Стрибок вище = аномальний стрес / втручання
+    OPTIMAL_Z_TARGET = 29.0  # Ідеальний стан конвекції — максимальне поглинання CO2
 
     # Sole evaluation entry-point. Returns [payload_byte, x, y, z] —
     # C-side persists the trajectory tail back to RTC DR16-DR18.
@@ -98,21 +109,25 @@ module SilkenNet
     # Спільна логіка пакування Z → status_byte.
     def self.pack_status_byte(z_val)
       status = 0
-      growth_points = 0
+      growth_points = 0  # Бали росту (Proof of Growth)
 
       if z_val < CRITICAL_Z_MIN
-        status = 1
-        growth_points = 1
+        status = 1  # Сигнал раннього попередження (посуха / втрата тургору)
+        growth_points = 1  # Мінімальна генерація — дерево виживає
       elsif z_val > CRITICAL_Z_MAX
-        status = 2
-        growth_points = 0
+        status = 2  # Аномалія (критичний стрес)
+        growth_points = 0  # Емісія зупиняється
       else
-        status = 0
+        status = 0  # Гомеостаз (здоровий хаос)
         deviation = (OPTIMAL_Z_TARGET - z_val).abs
+        # Базова нагорода 50 балів мінус штраф за відхилення від OPTIMAL_Z_TARGET.
+        # [FIX FW.13] Explicit clamp замість окремих guard'ів — в homeostasis
+        # deviation ∈ [0, 27], reward ∈ [23, 50]; clamp(10, 63) захищає від edge cases.
         reward = 50 - deviation.round
         growth_points = reward.clamp(10, 63)
       end
 
+      # Захист від переповнення для 6-бітного простору (максимум 63)
       growth_points = growth_points.clamp(0, 63)
 
       # [ Status (2 bits) | Growth Points (6 bits) ]

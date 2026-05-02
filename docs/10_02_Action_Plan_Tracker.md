@@ -275,7 +275,7 @@
 - [x] 🤖 Архітектурне рішення: замінити chaos_seed на delta_t (Варіант A), додати delta_t/vcap як додаткові пертурбації (Варіант B), або зберегти + EMA фільтр (Варіант C) — **обрано B+**
 - [x] 🤖 Задокументувати рішення в `03_04` з обґрунтуванням впливу на токеноміку
 - [x] 🤖 Реалізувати (firmware mruby + backend mirror update, 500-case fuzz)
-- [ ] ⬜ Передавання args[5..6] у C (EMA delta_t_ms/vcap_mv з RTC DR10/DR12 у mruby args) — наступний крок
+- [ ] ⬜ Передавання args[5..6] у C (EMA delta_t_ms/vcap_mv з RTC DR10/DR12 у mruby args) — **заблоковано FW.30** (C-bridge спочатку треба оновити до нової 7-arg сигнатури SEC.11)
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - `05_02`
@@ -400,6 +400,31 @@
 - [x] 🤖 Дизайн: окреме поле `panic_flag:1 bit` у StatusByte (звільнити 1 біт від growth_points 6→5)
 - [x] 🤖 АБО: panic packets мають окремий destination header byte
 - [ ] 🔗 Інтегрувати з FW.2 CCM transition
+
+#### FW.30 — SEC.11 C-bridge gap: `firmware/soldier/main.c` mruby виклик не оновлено
+- `firmware/soldier/main.c:685-740`, `firmware/bio_contracts/bio_contract.rb` | **P1** | 🔗 Блокує FW.5 B+
+- **Опис:** SEC.11 cutover змінив API `bio_contract.rb` (видалено `calculate_state_continued` і старий 3-arg `calculate_state(seed, ...)`; залишена лише єдина сигнатура `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)`). Проте `firmware/soldier/main.c` **не було оновлено** разом з mruby-скриптом:
+  - warm path (рядок 701): викликає `calculate_state_continued` з 5 args → **mruby NoMethodError** → `BIO_STATUS_VM_ERROR` на кожному теплому старті
+  - cold path (рядок 724): викликає `calculate_state(chaos_seed, temp, acoustic)` з 3 args → **ArgumentError** (нова сигнатура очікує 7 args); крім того, вручну повторює `seed→(x,y,z)` перетворення (рядки 731-735) замість mbedTLS HKDF cold-start
+- **Наслідок:** поточна пара (main.c + новий bio_contract bytecode) **не функціонує**. Пристрої працюють на старому OTA-байткоді (до SEC.11). Новий bytecode OTA-деплоїти до виправлення main.c — неможливо.
+- **Рішення:** оновити `firmware/soldier/main.c` mruby-секцію:
+  - Об'єднати warm/cold paths в один виклик `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s_default, vcap_mv_default)` (7 args; `delta_t_s`/`vcap_mv` default поки без EMA — FW.5 B+ наступний крок)
+  - Cold-start: замість `chaos_seed → seed→xyz` перетворення — mbedTLS HKDF-SHA256 cold-start derive із K_seed у Flash (такий самий алгоритм як у firmware/test/test_seed_derivation.c)
+  - Додати `firmware/test/` тест для нової C-bridge сигнатури
+- [x] 🤖 Дизайн нової C-bridge сигнатури (7-arg + cold-start HKDF path)
+- [ ] 🤖 Firmware `soldier/main.c` — оновити mruby виклики до нової єдиної 7-arg сигнатури (warm + cold paths)
+- [ ] 🤖 Firmware cold-start — замінити `chaos_seed` path на mbedTLS HKDF cold-start (дзеркало `firmware/test/test_seed_derivation.c`)
+- [ ] 🤖 `firmware/test/` — додати C-bridge integration test (нова сигнатура)
+- [ ] 🔗 Після FW.30 — FW.5 B+ (передавання EMA delta_t/vcap як args[5..6]) стає незалежним кроком
+
+#### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
+- `app/services/telemetry_unpacker_service.rb`, `docs/03_04` §BLOCKER-2 | **P2**
+- **Опис:** Після SEC.11 обидві сторони стартують з byte-identical `(x₀,y₀,z₀)` і виконують ідентичну Float IEEE-754 математику. Емпіричний Float divergence ARM↔x86 за 250 ітерацій < 1e-12. Проте `check_z_divergence!` зберігає **категоричну** перевірку (homeostasis/stress/anomaly enum match) замість числового `|server_z − device_z| < ε`. Числовий tolerance band (`ε < 0.001`) вже закоментований як "готовий до flip" у docs/03_04 §BLOCKER-2.
+- **Умова для flip:** потрібно виміряти реальний drift `server_z − device_z` на цільовому ARM hardware (STM32WLE5JC vs GCP x86-64) з тією ж Float/mruby compile-flag комбінацією. Очікуваний drift < 0.001 — це значно менше розміру одного growth_points step (~1 unit), тому false-слешинг малоймовірний.
+- **Вплив після flip:** fraud detection стає **числовим** — дозволяє виявляти не лише категоричні (homeostasis vs stress) помилки, але й систематичне зміщення Z (наприклад, replay атаку з правильним status-byte але неправильним Z magnitude).
+- [ ] 👤 Лабораторне вимірювання: запустити однакові тест-вектори на STM32WLE5JC + GCP x86-64, виміряти `|server_z - device_z|` distribution (N=10,000)
+- [ ] 🤖 Після вимірювання: flip `check_z_divergence!` до числового `|server_z - device_z| < ε` під ENV feature-flag (`GAIA_DCI_NUMERIC_TOLERANCE`)
+- [ ] 🤖 Специфікація: оновити `03_04` §BLOCKER-2 з виміряним drift + обраним ε
 
 ---
 

@@ -11,20 +11,28 @@ module SilkenNet
   # between server-Z and device-Z — both sides start from byte-identical
   # initial coordinates and run the same iteration kernel.
   class Attractor
-    # [FIX FW.7] Float (IEEE 754 double), bit-identical to firmware mruby.
+    # [FIX FW.7] Float (IEEE 754 double) — bit-identical to firmware mruby.
+    # BigDecimal давав "юридичну точність", але РІЗНУ від firmware: після 250 ітерацій
+    # хаотичного Лоренца Z-значення розходились на десятки одиниць.
+    # Dual Computation Integrity вимагає ОДНАКОВОЇ математики на обох сторонах.
+    # Фінансові розрахунки (growth_points → SCC мінтинг) виконуються ПІСЛЯ верифікації Z.
     BASE_SIGMA = 10.0
     BASE_RHO   = 28.0
-    BASE_BETA  = 8.0 / 3.0  # 2.6666666666666665
+    BASE_BETA  = 8.0 / 3.0  # IEEE 754: 2.6666666666666665 — ідентично firmware
 
     DT = 0.01
     ITERATIONS = 250
 
-    # Chaos clamps — захищають σ/ρ від "вибуху" при екстремальних
-    # температурах/акустиці.
+    # Межі стабільності (Chaos Clamps) — захищають σ/ρ від "вибуху"
+    # при екстремальних температурах/акустиці.
     SIGMA_LIMITS = (5.0..30.0)
     RHO_LIMITS   = (10.0..50.0)
 
-    # [FW.5] β-perturbation від EBFC-метаболізму. Дзеркало firmware.
+    # [FW.5] β-perturbation від EBFC-метаболізму. Дзеркало firmware/bio_contracts/bio_contract.rb.
+    # delta_t (час заряду іоністора, секунди) та vcap (mV після калібрування) —
+    # фізично значущі індикатори здоров'я дерева. Мапимо їх на β (геометричний
+    # параметр конвективної клітини): швидший заряд + стабільна vcap → активніший
+    # метаболізм → β зростає → Z тяжіє до OPTIMAL_Z_TARGET → більше growth_points.
     BETA_DELTA_T_COEFF = 0.0001  # 1 с швидше за baseline → β +0.0001
     BETA_VCAP_COEFF    = 0.001   # 1 mV вище nominal → β +0.001
     BETA_LIMITS        = (2.0..4.0)
@@ -108,6 +116,10 @@ module SilkenNet
     end
 
     # Спільне ядро ітерацій Лоренца.
+    # [FIX FW.7] Float арифметика без round() між ітераціями — ідентично firmware mruby.
+    # mruby на MCU виконує x += dx * DT без будь-якого округлення між ітераціями.
+    # Overflow bounded: з clamped σ∈[5,30] та ρ∈[10,50] → |x|<25, |y|<35, |z|<50
+    # після 250 ітерацій — далеко від Float64 overflow.
     private_class_method def self.iterate_lorenz(x, y, z, local_sigma, local_rho, local_beta)
       ITERATIONS.times do
         dx = local_sigma * (y - x)
