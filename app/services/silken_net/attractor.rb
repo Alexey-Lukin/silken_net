@@ -39,9 +39,15 @@ module SilkenNet
     # `TelemetryLog.lorenz_state_*`.
     def self.calculate_z_from_state(x0, y0, z0, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
       start_time  = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      local_sigma = (BASE_SIGMA + (acoustic * 0.1)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
-      local_rho   = (BASE_RHO + (temp * 0.2)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
-      local_beta  = perturb_beta(delta_t_s, vcap_mv)
+      # [FIX] Coerce all inputs to Float — DeviceCalibration returns
+      # BigDecimal from the DB, and a single BigDecimal operand infects
+      # every multiplication in the Lorenz loop with arbitrary-precision
+      # arithmetic (exponential precision growth → apparent hang).
+      temp_f      = temp.to_f
+      acoustic_f  = acoustic.to_f
+      local_sigma = (BASE_SIGMA + (acoustic_f * 0.1)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
+      local_rho   = (BASE_RHO + (temp_f * 0.2)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
+      local_beta  = perturb_beta(delta_t_s.to_f, vcap_mv.to_f)
 
       x, y, z = iterate_lorenz(x0.to_f, y0.to_f, z0.to_f, local_sigma, local_rho, local_beta)
 
@@ -66,9 +72,9 @@ module SilkenNet
       x = x0.to_f
       y = y0.to_f
       z = z0.to_f
-      local_sigma = (BASE_SIGMA + (acoustic * 0.1)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
-      local_rho   = (BASE_RHO + (temp * 0.2)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
-      local_beta  = perturb_beta(delta_t_s, vcap_mv)
+      local_sigma = (BASE_SIGMA + (acoustic.to_f * 0.1)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
+      local_rho   = (BASE_RHO + (temp.to_f * 0.2)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
+      local_beta  = perturb_beta(delta_t_s.to_f, vcap_mv.to_f)
 
       Array.new(ITERATIONS * 3) do |i|
         if i % 3 == 0 && i > 0

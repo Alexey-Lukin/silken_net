@@ -158,6 +158,10 @@ class TelemetryUnpackerService < ApplicationService
     # 5. ФІКСАЦІЯ ТА ЕКОНОМІЧНИЙ ВІДГУК
     commit_telemetry(tree, log_attributes)
 
+  rescue MissingLorenzSeedError
+    # [SEC.11] Provisioning pre-condition — must propagate so the caller
+    # (UnpackTelemetryWorker) retries or alerts operators.
+    raise
   rescue StandardError => e
     # [BROAD RESCUE]: Додано логування стеку викликів для дебагу в продакшені
     trace = e.backtrace.first(5).join("\n")

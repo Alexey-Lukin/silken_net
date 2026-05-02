@@ -175,7 +175,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
   describe "error handling" do
     it "logs error and continues when process_chunk raises" do
-      allow(SilkenNet::Attractor).to receive(:calculate_z).and_raise(StandardError.new("test error"))
+      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_raise(StandardError.new("test error"))
 
       chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
 
@@ -220,6 +220,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "sets queen_uid from gateway when gateway is present" do
         tree_r2 = create(:tree, did: format("SNET-%08X", "0000AB01".to_i(16)), cluster: cluster)
         tree_r2.create_device_calibration! if tree_r2.device_calibration.nil?
+        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
         did_int = "0000AB01".to_i(16)
         did_bytes = [ did_int ].pack("N")
@@ -307,6 +308,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "sets firmware_version_id when firmware_id is positive" do
         tree_r2 = create(:tree, did: format("SNET-%08X", "0000AB01".to_i(16)), cluster: cluster)
         tree_r2.create_device_calibration! if tree_r2.device_calibration.nil?
+        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
         did_int = "0000AB01".to_i(16)
         did_bytes = [ did_int ].pack("N")
@@ -325,6 +327,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       it "sets firmware_version_id to nil when firmware_id is zero" do
         tree_r2 = create(:tree, did: format("SNET-%08X", "0000AB01".to_i(16)), cluster: cluster)
         tree_r2.create_device_calibration! if tree_r2.device_calibration.nil?
+        HardwareKey.create!(device_uid: tree_r2.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
         did_int = "0000AB01".to_i(16)
         did_bytes = [ did_int ].pack("N")
@@ -555,6 +558,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       let!(:tree2) do
         t = create(:tree, did: extracted_did2)
         t.create_device_calibration! if t.device_calibration.nil?
+        HardwareKey.create!(device_uid: t.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
         t
       end
 
