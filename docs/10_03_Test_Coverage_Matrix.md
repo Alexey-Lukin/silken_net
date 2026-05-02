@@ -11,7 +11,7 @@
 - **Дата аудиту:** 2026-05-02 (SEC.11 Lorenz Seed Provenance hard cutover)
 - **Кількість тестів:**
   - RSpec (Ruby): ~296+ spec files, ~52,200+ lines (+ `silken_net/seed_derivation_spec.rb` 16 examples — SEC.11)
-  - Firmware (C): 324 tests (113 soldier + 91 queen + 42 bio-contract + 44 tinyml + 21 encryption + **13 seed_derivation [SEC.11]**)
+  - Firmware (C): 335 tests (124 soldier + 91 queen + 42 bio-contract + 44 tinyml + 21 encryption + **13 seed_derivation [SEC.11]**)
   - Foundry (Solidity): 6 test suites, ~115+ tests
 
 ---
@@ -99,7 +99,7 @@
 
 ## 🔧 2. Firmware Test Coverage
 
-### 2.1 Soldier (test_soldier_logic.c — 113 tests)
+### 2.1 Soldier (test_soldier_logic.c — 124 tests)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -115,6 +115,9 @@
 | EMA Filter (FW.21) | 10 | 🟢 Повне |
 | DID Generation (FW.24) | 5 | 🟢 Повне — **[FW.24]** `test_did_hrng_fallback_not_magic` |
 | **[FW.1] Flash Key Loading** | **8** | 🟢 **Нове** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler, FLASH_KEY_ADDR 0x0803E000 |
+| **[SEC.11 / FW.30] Flash Seed Loading** | **6** | 🟢 **Нове** — `Load_Lorenz_Seed()` magic check ("LSED"), provisioned/unprovisioned/wrong magic/zero seed, non-fatal (без Error_Handler) |
+| **[SEC.11 / FW.30] Cold-Start Derivation** | **4** | 🟢 **Нове** — `Derive_Cold_Start_State()` coordinates ∈ [-1,+1], deterministic, date-sensitive, seed-sensitive |
+| **[FW.30] C-Bridge 7-Arg Signature** | **1** | 🟢 **Нове** — Lorenz iteration з 7-arg сигнатурою produces finite coords |
 
 ### 2.2 Queen (test_queen_logic.c — 91 tests)
 
@@ -234,7 +237,7 @@
 | Views | 85 | 10,001 | ~2.0x |
 | Policies | 14 | 1,416 | ~2.5x |
 | Blueprints | 9 | 1,081 | ~2.0x |
-| Firmware (C) | 6 | ~3,800 | **324 tests (+13 SEC.11)** |
+| Firmware (C) | 6 | ~3,800 | **335 tests (+11 FW.30, +13 SEC.11)** |
 | Solidity | 6 | ~2,000 | 115+ tests |
 | **Total** | **288+** | **~53,600+** | — |
 

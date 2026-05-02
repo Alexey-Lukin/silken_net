@@ -742,6 +742,42 @@ void Load_AES_Key(void)
 // HAL_CRYP_Init_With_Loaded_Key() — викликається в main() після Load_AES_Key()
 ```
 
+#### [FW.30] Lorenz K_seed — зчитування з Protected Flash Sector
+
+K_seed зберігається одразу після AES ключа у тій самій Protected Flash сторінці:
+
+```c
+// firmware/soldier/main.c — [SEC.11 / FW.30]:
+
+// Flash layout: [KEY_MAGIC:4][AES_KEY:32] | [SEED_MAGIC:4][K_SEED:32]
+//               ^FLASH_KEY_ADDR (0x0803E000)  ^FLASH_SEED_ADDR (+36)
+#define FLASH_SEED_ADDR   (FLASH_KEY_ADDR + 36)  // 0x0803E024
+#define FLASH_SEED_WORDS  8                        // 8 × uint32_t = 32 bytes
+#define FLASH_SEED_MAGIC  0x4C534544UL             // "LSED" — Lorenz Seed
+
+uint8_t lorenz_seed[32] = {0};
+uint8_t lorenz_seed_valid = 0;
+
+void Load_Lorenz_Seed(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_SEED_ADDR;
+    if (flash_ptr[0] != FLASH_SEED_MAGIC) { lorenz_seed_valid = 0; return; }
+    uint32_t seed_or = 0;
+    for (int i = 0; i < FLASH_SEED_WORDS; i++) seed_or |= flash_ptr[1 + i];
+    if (seed_or == 0) { lorenz_seed_valid = 0; return; }
+    for (int i = 0; i < FLASH_SEED_WORDS; i++) {
+        uint32_t word = flash_ptr[1 + i];
+        lorenz_seed[i*4+0] = (uint8_t)(word >> 24);
+        lorenz_seed[i*4+1] = (uint8_t)(word >> 16);
+        lorenz_seed[i*4+2] = (uint8_t)(word >>  8);
+        lorenz_seed[i*4+3] = (uint8_t)(word & 0xFF);
+    }
+    lorenz_seed_valid = 1;
+}
+```
+
+> **Відмінності від Load_AES_Key():** (1) відсутність K_seed не є фатальною — `Error_Handler()` НЕ викликається (warm continuation через RTC все ще працює); (2) big-endian byte order для сумісності з HMAC-SHA256; (3) magic marker `"LSED"` відрізняється від `"SKEY"` для захисту від помилкового cross-read.
+
 #### Захист Flash Key Sector (WRPROT)
 
 ```

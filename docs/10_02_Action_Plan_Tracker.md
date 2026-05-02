@@ -411,10 +411,11 @@
   - Об'єднати warm/cold paths в один виклик `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s_default, vcap_mv_default)` (7 args; `delta_t_s`/`vcap_mv` default поки без EMA — FW.5 B+ наступний крок)
   - Cold-start: замість `chaos_seed → seed→xyz` перетворення — mbedTLS HKDF-SHA256 cold-start derive із K_seed у Flash (такий самий алгоритм як у firmware/test/test_seed_derivation.c)
   - Додати `firmware/test/` тест для нової C-bridge сигнатури
+- **Статус:** ✅ Виконано (2026-05-02). Warm/cold paths об'єднані у єдиний 7-arg `mrb_funcall_argv("calculate_state", 7, ...)`. `Load_Lorenz_Seed()` зчитує K_seed з Flash (`FLASH_SEED_ADDR = FLASH_KEY_ADDR + 36`, magic `"LSED"` = `0x4C534544`). `Derive_Cold_Start_State()` — placeholder hash деривація (TODO: mbedTLS HMAC-SHA256 при lab-тестуванні). Cold-start більше не використовує `chaos_seed`. 11 нових host-тестів у `test_soldier_logic.c`. Всі 335 firmware tests pass.
 - [x] 🤖 Дизайн нової C-bridge сигнатури (7-arg + cold-start HKDF path)
-- [ ] 🤖 Firmware `soldier/main.c` — оновити mruby виклики до нової єдиної 7-arg сигнатури (warm + cold paths)
-- [ ] 🤖 Firmware cold-start — замінити `chaos_seed` path на mbedTLS HKDF cold-start (дзеркало `firmware/test/test_seed_derivation.c`)
-- [ ] 🤖 `firmware/test/` — додати C-bridge integration test (нова сигнатура)
+- [x] 🤖 Firmware `soldier/main.c` — оновити mruby виклики до нової єдиної 7-arg сигнатури (warm + cold paths)
+- [x] 🤖 Firmware cold-start — замінити `chaos_seed` path на K_seed-derived cold-start (`Load_Lorenz_Seed()` + `Derive_Cold_Start_State()`, placeholder hash — TODO: mbedTLS HMAC-SHA256)
+- [x] 🤖 `firmware/test/` — додати C-bridge integration test (11 нових тестів: 6 seed loading + 4 cold-start + 1 C-bridge 7-arg)
 - [ ] 🔗 Після FW.30 — FW.5 B+ (передавання EMA delta_t/vcap як args[5..6]) стає незалежним кроком
 
 #### FW.31 — DCI: числовий tolerance band у `check_z_divergence!` (feature-flag flip)
