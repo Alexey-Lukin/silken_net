@@ -228,18 +228,32 @@ volatile uint32_t soldier_unix_ts_local_tick = 0;
 // над 8-байтним body ПЕРЕД хвостовим CRC. Дзеркало на Ruby-боці —
 // OtaPackagerService.crc16_ccitt (байт-у-байт ідентично).
 //
-// Збереження: ⚠️ ТІЛЬКИ В RAM. STM32WLE5JC має лише 20 RTC Backup Register'ів
-// (DR0..DR19), які повністю зайняті: DR0-2 (acoustic/wakeup/relay), DR3-6
-// (mesh payload), DR7 (DID), DR8/9/11 (anti-pingpong), DR10/12 (EMA),
-// DR13/14 (TinyML thresholds), DR16-19 (Lorenz state). Єдиний вільний DR15
-// (4 байти) — недостатньо для 8 байт body. SSOT: 03_01 §2 (Canonical Backup Map).
+// 🟡 СТАТУС: Deferred TRL-7 (FW.8). Парсер залишено як freeze-контракт
+// wire-формату + повний host-test bank (12 кейсів у test_soldier_logic.c),
+// АЛЕ виклик у LoRa RX-гілці захищений `#if FW8_PARSER_ENABLED` і за
+// замовчуванням ВИМКНЕНИЙ. Бекенд `OtaPackagerService.build_threshold_
+// config_block` — теж лише class method, у production-pipeline нікуди
+// не передається.
 //
-// Наслідок: при VBAT-loss значення скидаються до firmware-defaults, які
-// віддзеркалюють SSOT bio_contract.rb (CRITICAL_Z_MIN=2.0, CRITICAL_Z_MAX=45.0,
-// OPTIMAL_Z_TARGET=29.0). Бекенд має періодично (раз на ~24 год або після
-// сплеска паніки) повторно надсилати CMD_SET_THRESHOLDS, щоб ліс знову мав
-// per-species пороги. Альтернатива через окремий Flash sector — задача
-// для FW.32 (поки не пріоритезована).
+// ПРИЧИНА defer: STM32WLE5JC має лише 20 RTC Backup Register'ів (DR0..DR19),
+// вони повністю зайняті: DR0-2 (acoustic/wakeup/relay), DR3-6 (mesh payload),
+// DR7 (DID), DR8/9/11 (anti-pingpong), DR10/12 (EMA), DR13/14 (TinyML),
+// DR16-19 (Lorenz state). Єдиний вільний DR15 (4 байти) — недостатньо для
+// 8-байтного body порогів. SSOT: 03_01 §2 (Canonical Backup Map).
+//
+// Альтернативи відкинуто:
+//   • Flash sector — 2 KB на 8 байт, wear ~10k erase × at-most-daily re-send
+//     дає 27 років, але erase ~30 мс блокує LoRa RX → конфлікт з anti-pingpong
+//     RX-вікном після TX. Не виправдано для feature, що на TRL-6 нічого не
+//     змінює (всі 5 видів зараз використовують ті самі firmware-defaults).
+//   • RAM-only з re-send щодня × 100k дерев = ~5% всього NB-IoT downlink
+//     заради no-op feature. Чесніше відкласти.
+//
+// ВІДНОВЛЕННЯ: коли FW.21 EMA-рефакторинг звільнить хоча б 1 регістр (можливо
+// при щільнішій упаковці DR8/9/11 anti-pingpong), FW.8 повертається з
+// RTC-персистенс (8 байт body → 2 регістри) — `#define FW8_PARSER_ENABLED 1`,
+// додати boot-restore + KENOSIS-write блок.
+#define FW8_PARSER_ENABLED                0  // 🟡 Deferred TRL-7 (див. блок вище)
 #define CMD_SET_THRESHOLDS_MARKER         0x9A
 #define CMD_THRESHOLDS_HEADER_SIZE        3   // [маркер:1][len_le:2]
 #define CMD_THRESHOLDS_BODY_SIZE          8   // 6 + 1 + 1
@@ -971,12 +985,15 @@ int main(void)
                 }
 
                 // Сценарій 1: [FW.8] CMD_SET_THRESHOLDS (0x9A) — Z-пороги Лоренца.
-                // Формат на дроті від OtaPackagerService.build_threshold_config_block:
-                //   [0x9A][len_le:2 = 10][body:8][crc16_le:2] = 13 байт
-                // Одиничний LoRa-пакет (вміщується в один 16-байтний ECB-блок із padding).
-                // Солдат перевіряє CRC16, застосовує значення до lorenz_z_*_x100 globals.
-                // RTC-персистенс ВИМКНЕНО (немає вільного DR — деталі в секції 1.10
-                // вище). При VBAT-loss бекенд дошле через наступний CMD_SET_THRESHOLDS.
+                // 🟡 Deferred TRL-7. Парсер `Soldier_Handle_CMD_SET_THRESHOLDS`
+                // залишено + 12 host-тестів як freeze-контракт wire-формату,
+                // але в production-цикл ВИМКНЕНО (`FW8_PARSER_ENABLED 0`).
+                // Деталі — у блоці-преамбулі біля визначення макроса.
+                // Бекенд `OtaPackagerService.build_threshold_config_block` —
+                // лише class method, у downlink pipeline не передається.
+                // Коли FW.21 рефакторинг звільнить RTC-регістр, повернути:
+                // `#define FW8_PARSER_ENABLED 1` + boot-restore + KENOSIS-write.
+#if FW8_PARSER_ENABLED
                 if (decrypted_rx_payload[0] == CMD_SET_THRESHOLDS_MARKER &&
                     incoming_lora_size >= CMD_THRESHOLDS_FRAME_SIZE) {
                     Soldier_Handle_CMD_SET_THRESHOLDS(decrypted_rx_payload,
@@ -984,6 +1001,7 @@ int main(void)
                     // Незалежно від результату парсингу — не ретранслюємо (TTL=1)
                     break;
                 }
+#endif
 
                 // Сценарій А: OTA Оновлення від Королеви (Пакет починається з OTA_MARKER)
                 if (decrypted_rx_payload[0] == OTA_MARKER) {                    // [FIX: AUDIT] Перевірка мінімального розміру пакета (5 байт заголовок + 1 байт даних)

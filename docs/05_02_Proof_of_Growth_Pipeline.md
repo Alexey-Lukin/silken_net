@@ -290,6 +290,27 @@ OTA Batch Downlink Format (розширений):
 
 ##### 4а.2 Firmware — зберігання у RTC Backup Domain
 
+> ⚠️ **DEPRECATED — DR20-DR23 не існують на STM32WLE5JC.**
+> STM32WLE5JC має лише 20 RTC Backup Register'ів: **DR0..DR19**. Канонічна
+> SSOT-таблиця в `03_01 §2` показує, що всі 20 регістрів зайняті (DR0-2:
+> acoustic/wakeup/relay; DR3-6: mesh payload; DR7: DID; DR8/9/11: anti-pingpong;
+> DR10/12: EMA; DR13/14: TinyML thresholds; DR16-19: Lorenz state; DR15: 4-байтний
+> резерв — недостатньо для 8-байтного body порогів).
+>
+> Наслідок: **FW.8 (CMD_SET_THRESHOLDS) — Deferred TRL-7.** Парсер
+> `Soldier_Handle_CMD_SET_THRESHOLDS` написано як freeze-контракт wire-формату
+> (`firmware/soldier/main.c` + 12 host-тестів), але виклик у production-цикл
+> захищено `#define FW8_PARSER_ENABLED 0`. Бекенд
+> `OtaPackagerService.build_threshold_config_block` теж залишається лише як
+> class method без інтеграції з downlink-pipeline.
+>
+> Розблокування: коли FW.21 EMA-рефакторинг або щільніша упаковка DR8/9/11
+> звільнить хоча б 1 регістр — тоді `FW8_PARSER_ENABLED 1` + boot-restore +
+> KENOSIS-write блок. Документація прикладу нижче залишається лише як
+> **wire-формат-контракт** (узгоджений з Ruby `OtaPackagerService` 13-байтним
+> кадром); імена `RTC_BKP_DR20..DR23` слід читати як placeholder для
+> майбутньої перерозкладки.
+
 ```c
 // firmware/soldier/main.c — нові RTC Backup Register слоти:
 
