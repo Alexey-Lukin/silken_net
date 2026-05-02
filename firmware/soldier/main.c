@@ -37,6 +37,16 @@
 #define OTA_MARKER                0x99       // Маркер OTA-пакета (перший байт)
 #define OTA_HEADER_SIZE           5          // [0x99][index:2][total:2]
 #define MIN_OTA_PACKET_SIZE       6          // OTA_HEADER_SIZE + 1 байт даних мінімум
+#define HMAC_TRAILER_MARKER       0x9B       // [FW.23] OTA HMAC trailer chunk marker
+#define HMAC_TRAILER_HEADER_SIZE  5          // [FW.23] [0x9B][seg_idx:2 BE][total:2 BE]
+#define HMAC_TRAILER_SEG_BYTES    11         // [FW.23] Bytes of HMAC tag per LoRa chunk
+#define HMAC_TAG_BYTES            32         // [FW.23] HMAC-SHA256 = 32 bytes
+#define HMAC_TRAILER_TOTAL_SEGS   3          // [FW.23] 3 LoRa chunks carry 32-byte tag
+#define OTA_REQ_MARKER            0x55       // [FW.27-B] Magic Re-Request marker (Soldier→Queen)
+#define OTA_REQ_HEADER_SIZE       7          // [FW.27-B] [0x55][DID:4][total_chunks:2 BE]
+#define OTA_REQ_BITMAP_MAX_BYTES  9          // [FW.27-B] 16 - 7 header = 9 bytes ⇒ ≤72 chunks/re-request
+#define OTA_REQ_PACKET_SIZE       16         // [FW.27-B] Single AES-256-ECB block, like telemetry
+#define OTA_REREQUEST_TIMEOUT_MS  300000UL   // [FW.27-B] 5 min без нових chunks → re-request
 #define BIO_STATUS_VM_ERROR       0xFF       // Мітка помилки mruby VM
 #define VCAP_LISTEN_THRESHOLD     2800       // Поріг напруги для прослуховування ефіру (мВ)
 #define LORA_RX_TIMEOUT_MS        500        // Таймаут прийому LoRa (мс)
@@ -174,6 +184,20 @@ uint16_t ota_total_chunks = 0;
 uint16_t ota_chunks_received = 0;
 // Масив прапорців для захисту від дублікатів OTA
 uint8_t ota_chunk_received[256] = {0};
+
+// [FW.27-B] Magic Re-Request: tick останнього прийнятого OTA-чанку, для
+// детекції stuck-OTA (≥OTA_REREQUEST_TIMEOUT_MS без нових chunks → uplink-запит
+// конкретних missing chunks). 0 = немає активного OTA window.
+uint32_t ota_last_chunk_rx_tick = 0;
+
+// [FW.23] OTA HMAC trailer — 32-байтний HMAC-SHA256 tag, що приходить
+// після bytecode chunks у 3-х 16-байтних LoRa-чанках з маркером 0x9B.
+// Заповнюється посегментно: seg_idx=1 → bytes[0..10], seg_idx=2 → bytes[11..21],
+// seg_idx=3 → bytes[22..31] + 1 byte PAD. ota_hmac_segments_received — bitmask
+// (біти 0/1/2 для seg 1/2/3). Усі 3 сегменти отримані ⇒ повний tag готовий до
+// dual-gate verification у Phase 4.5 OTA assembly.
+uint8_t  received_hmac_tag[HMAC_TAG_BYTES] = {0};
+uint8_t  ota_hmac_segments_received = 0;        // Bitmask seg 1/2/3
 
 uint8_t* current_lorenz_bytecode;
 
@@ -415,6 +439,206 @@ static inline void TinyML_Apply_Thresholds(float warn_raw, float crit_raw,
     }
     *warn_out = w;
     *crit_out = c;
+}
+
+// =====================================================================
+// === 1.12. FW.27-B Magic Re-Request — pure logic (testable on host) ===
+// =====================================================================
+// Soldier при `ota_chunks_received < ota_total_chunks` після
+// OTA_REREQUEST_TIMEOUT_MS (5 хв) без нових chunks ініціює uplink-запит
+// конкретних missing chunks. Queen приймає, ретранслює лише missing.
+//
+// Wire format (16 байт plaintext, 1× AES-256-ECB block):
+//   [0]    0x55 marker
+//   [1..4] DID (big-endian) — Queen дедуплікує по (DID, missing_bitmap)
+//   [5..6] total_chunks (big-endian) — cross-check
+//   [7..15] missing_bitmap (9 байт, LSB-first: bit i ⇔ chunk_idx i missing)
+//
+// chunks_received[] — той самий масив що Soldier використовує під час OTA
+// (uint8_t flag per slot). Будуємо bitmap так: для кожного chunk_idx у
+// [0..total_chunks), якщо chunks_received[idx] == 0 → bit i = 1 (missing).
+// 9 байт bitmap = 72 chunks max per re-request — вистачає для Queen
+// OTA_MAX_CHUNKS=16 з великим запасом.
+//
+// Повертає: 1 = є хоча б 1 missing chunk (payload готовий до TX),
+//           0 = всі chunks отримані (re-request не потрібен).
+static uint8_t Build_OTA_ReRequest_Payload(uint32_t did,
+                                            uint16_t       total_chunks,
+                                            const uint8_t* chunks_received,
+                                            uint16_t       chunks_received_size,
+                                            uint8_t        out[OTA_REQ_PACKET_SIZE]) {
+    if (total_chunks == 0)                         return 0;
+    if (chunks_received == NULL || out == NULL)    return 0;
+
+    memset(out, 0, OTA_REQ_PACKET_SIZE);
+    out[0] = OTA_REQ_MARKER;
+    out[1] = (uint8_t)(did >> 24);
+    out[2] = (uint8_t)(did >> 16);
+    out[3] = (uint8_t)(did >> 8);
+    out[4] = (uint8_t)(did & 0xFFu);
+    out[5] = (uint8_t)(total_chunks >> 8);
+    out[6] = (uint8_t)(total_chunks & 0xFFu);
+
+    // Cap total to bitmap capacity; chunks beyond cap will not be re-requested
+    // (Queen все одно ретранслює full sweep при наступному CoAP push).
+    uint16_t cap = (total_chunks > OTA_REQ_BITMAP_MAX_BYTES * 8u)
+                       ? (uint16_t)(OTA_REQ_BITMAP_MAX_BYTES * 8u)
+                       : total_chunks;
+
+    uint8_t any_missing = 0;
+    for (uint16_t i = 0; i < cap; i++) {
+        uint8_t got = (i < chunks_received_size) ? chunks_received[i] : 0;
+        if (!got) {
+            out[OTA_REQ_HEADER_SIZE + (i / 8u)] |= (uint8_t)(1u << (i % 8u));
+            any_missing = 1;
+        }
+    }
+    return any_missing;
+}
+
+// =====================================================================
+// === 1.13. FW.23 OTA HMAC trailer parsing + dual-gate verify =========
+// =====================================================================
+// Wire format одного 16-байтного LoRa-чанка (post-AES-ECB-decrypt):
+//   [0]    0x9B marker (HMAC trailer)
+//   [1..2] seg_idx (big-endian, 1..3)
+//   [3..4] total_chunks of bytecode (big-endian, для cross-check)
+//   [5..15] hmac_segment[11 байт]      (3×11 = 33; останній 11-й байт seg=3 = PAD)
+//
+// Прийнята послідовність 3 segs ⇒ ota_hmac_segments_received == 0b111 (= 7),
+// received_hmac_tag[0..31] заповнений. Викликаючий код перевіряє:
+//   gate1: magic у RAM-bytecode = 0x45544952 ("RITE")
+//   gate2: HMAC-SHA256(K_ota, bytecode || version_id_be || total_chunks_be)
+//          == received_hmac_tag (constant-time compare)
+//
+// Чисто-pure функція для host-тестів. Реальні K_ota / mbedTLS виклик
+// будуть в окремій LoRa-RX гілці. Повертає:
+//   1 = chunk з валідним marker та seg_idx у [1..3], записано у tag
+//   0 = chunk не є HMAC trailer'ом (caller може спробувати інший marker)
+//   -1 = chunk має marker 0x9B але невалідний (seg_idx > 3 / size < 5)
+static int Parse_HMAC_Trailer_Chunk(const uint8_t* chunk,
+                                     uint16_t       chunk_size,
+                                     uint8_t        tag_out[HMAC_TAG_BYTES],
+                                     uint8_t*       segments_received_inout) {
+    if (chunk == NULL || tag_out == NULL || segments_received_inout == NULL) return -1;
+    if (chunk_size < HMAC_TRAILER_HEADER_SIZE + HMAC_TRAILER_SEG_BYTES)      return -1;
+    if (chunk[0] != HMAC_TRAILER_MARKER)                                     return 0;
+
+    uint16_t seg_idx = ((uint16_t)chunk[1] << 8) | chunk[2];
+    if (seg_idx < 1 || seg_idx > HMAC_TRAILER_TOTAL_SEGS)                    return -1;
+
+    uint8_t  base = (uint8_t)((seg_idx - 1) * HMAC_TRAILER_SEG_BYTES);
+    // seg=1 → tag[0..10], seg=2 → tag[11..21], seg=3 → tag[22..31] + PAD
+    uint8_t  copy_len = HMAC_TRAILER_SEG_BYTES;
+    if (seg_idx == HMAC_TRAILER_TOTAL_SEGS) {
+        copy_len = (uint8_t)(HMAC_TAG_BYTES - base);  // 32 - 22 = 10 байт
+    }
+    memcpy(&tag_out[base], &chunk[HMAC_TRAILER_HEADER_SIZE], copy_len);
+    *segments_received_inout |= (uint8_t)(1u << (seg_idx - 1));
+    return 1;
+}
+
+// Constant-time memcmp (timing-attack resistant). Повертає 0 при рівності,
+// інакше ненульове. Mirrors Ruby `ActiveSupport::SecurityUtils.secure_compare`.
+static int Hmac_Constant_Time_Compare(const uint8_t* a, const uint8_t* b, size_t len) {
+    if (a == NULL || b == NULL) return 1;
+    uint8_t diff = 0;
+    for (size_t i = 0; i < len; i++) {
+        diff |= (uint8_t)(a[i] ^ b[i]);
+    }
+    return (int)diff;
+}
+
+// Dual-gate verification перед HAL_FLASH_Program. Pure logic для host тестів.
+// Повертає 1 якщо обидва gate проходять, 0 інакше.
+//   Gate 1 (magic ~1 µs): bytecode[0..3] == 0x45544952 ("RITE" little-endian)
+//   Gate 2 (HMAC ~3 ms): expected_hmac == received_hmac (constant-time)
+// Caller обчислює expected_hmac через mbedTLS. Тут тестуємо саме gate-логіку.
+static int OTA_Verify_Dual_Gate(const uint8_t* bytecode,
+                                 uint16_t       bytecode_size,
+                                 const uint8_t  expected_hmac[HMAC_TAG_BYTES],
+                                 const uint8_t  received_hmac[HMAC_TAG_BYTES]) {
+    if (bytecode == NULL || expected_hmac == NULL || received_hmac == NULL) return 0;
+    if (bytecode_size < 4)                                                  return 0;
+
+    // Gate 1: magic check (little-endian "RITE")
+    uint32_t magic = ((uint32_t)bytecode[0])         |
+                     ((uint32_t)bytecode[1] <<  8)   |
+                     ((uint32_t)bytecode[2] << 16)   |
+                     ((uint32_t)bytecode[3] << 24);
+    if (magic != 0x45544952u) return 0;
+
+    // Gate 2: constant-time HMAC compare
+    if (Hmac_Constant_Time_Compare(expected_hmac, received_hmac, HMAC_TAG_BYTES) != 0) return 0;
+
+    return 1;
+}
+
+// =====================================================================
+// === 1.14. FW.18 Soldier downlink-CMD dispatcher (CMD_SET_AUDIO_THRESHOLDS) ===
+// =====================================================================
+// Wire format (плоский, не вкладений у CMD_TIME_SYNC envelope):
+//   [0]    0x9D marker
+//   [1..2] payload_len (little-endian, = 5)
+//   [3..4] warn_x100 (little-endian int16) — TinyML warning threshold × 100
+//   [5..6] crit_x100 (little-endian int16) — TinyML critical threshold × 100
+//   [7]    config_version (uint8)
+//   [8..9] crc16-ccitt (little-endian) over body[3..7] (5 байт)
+//
+// Загальний розмір: 10 байт (вкладається в один LoRa AES-block 16 байт).
+// Солдат застосовує до TinyML thresholds через існуючу TinyML_Apply_Thresholds
+// логіку (range/inversion fallbacks залишаються — defense-in-depth).
+//
+// RTC writeback на DR13/DR14 уже відбувається в Phase 5 (KENOSIS) — нічого
+// додавати тут не потрібно: оновлені tinyml_warning/critical_threshold
+// глобалки персистяться при наступному STOP2 entry (lines 1180-1181).
+#define CMD_SET_AUDIO_THRESHOLDS_MARKER  0x9D
+#define CMD_AUDIO_THRESHOLDS_HEADER_SIZE 3
+#define CMD_AUDIO_THRESHOLDS_BODY_SIZE   5   // [warn:2][crit:2][version:1]
+#define CMD_AUDIO_THRESHOLDS_FRAME_SIZE  10  // header + body + crc16
+#define CMD_AUDIO_THRESHOLDS_PAYLOAD_LEN 7   // body + crc16
+
+uint8_t lorenz_audio_config_version = 0;     // 0 = firmware-baked defaults
+
+// Парсимо frame, валідуємо CRC16 + межі, мутуємо tinyml_warning/critical_threshold.
+// Повертає 1 при успіху, 0 при відмові (поганий len/marker/CRC/межі).
+// При відмові глобалки НЕ змінюються (atomic — defense-in-depth).
+static uint8_t Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(const uint8_t* frame,
+                                                         uint16_t       frame_size,
+                                                         float*         warn_out,
+                                                         float*         crit_out,
+                                                         uint8_t*       version_out) {
+    if (frame == NULL || warn_out == NULL || crit_out == NULL)             return 0;
+    if (frame_size < CMD_AUDIO_THRESHOLDS_FRAME_SIZE)                      return 0;
+    if (frame[0] != CMD_SET_AUDIO_THRESHOLDS_MARKER)                       return 0;
+
+    uint16_t payload_len = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
+    if (payload_len != CMD_AUDIO_THRESHOLDS_PAYLOAD_LEN)                   return 0;
+
+    const uint8_t* body = frame + CMD_AUDIO_THRESHOLDS_HEADER_SIZE;
+
+    // CRC16 over 5-byte body
+    uint16_t expected_crc = Soldier_CRC16_CCITT(body, CMD_AUDIO_THRESHOLDS_BODY_SIZE);
+    uint16_t received_crc = (uint16_t)body[CMD_AUDIO_THRESHOLDS_BODY_SIZE]
+                          | ((uint16_t)body[CMD_AUDIO_THRESHOLDS_BODY_SIZE + 1] << 8);
+    if (expected_crc != received_crc)                                      return 0;
+
+    int16_t warn_x100    = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
+    int16_t crit_x100    = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
+    uint8_t version      = body[4];
+
+    // Range invariants (decoded values × 100, тож range [1..99] = [0.01..0.99])
+    if (warn_x100 < 1   || warn_x100 > 99)                                 return 0;
+    if (crit_x100 < 1   || crit_x100 > 99)                                 return 0;
+
+    float warn_raw = (float)warn_x100 / 100.0f;
+    float crit_raw = (float)crit_x100 / 100.0f;
+
+    // TinyML_Apply_Thresholds робить додатковий sanitize (NaN/inversion → defaults)
+    TinyML_Apply_Thresholds(warn_raw, crit_raw, warn_out, crit_out);
+
+    if (version_out) *version_out = version;
+    return 1;
 }
 
 // === 2. РУДА СВІДОМОСТІ (Байт-код mruby) ===
@@ -1003,6 +1227,42 @@ int main(void)
                 }
 #endif
 
+                // Сценарій 2: [FW.18] CMD_SET_AUDIO_THRESHOLDS (0x9D) — TinyML
+                // confidence thresholds (warning/critical). Live-tunable через
+                // OTA downlink, без перепрошивки. RTC writeback DR13/DR14
+                // відбувається у Phase 5 (KENOSIS) після успішного парсингу.
+                if (decrypted_rx_payload[0] == CMD_SET_AUDIO_THRESHOLDS_MARKER &&
+                    incoming_lora_size >= CMD_AUDIO_THRESHOLDS_FRAME_SIZE) {
+                    float new_warn = tinyml_warning_threshold;
+                    float new_crit = tinyml_critical_threshold;
+                    uint8_t new_version = lorenz_audio_config_version;
+                    uint8_t ok = Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS(
+                        (const uint8_t*)decrypted_rx_payload,
+                        incoming_lora_size,
+                        &new_warn, &new_crit, &new_version);
+                    if (ok) {
+                        tinyml_warning_threshold    = new_warn;
+                        tinyml_critical_threshold   = new_crit;
+                        lorenz_audio_config_version = new_version;
+                    }
+                    // Не ретранслюємо CMD (TTL=1 для downlink)
+                    break;
+                }
+
+                // Сценарій А1: [FW.23] OTA HMAC trailer (0x9B) — 3 LoRa-чанки після
+                // OTA bytecode, що несуть 32-байтний HMAC-SHA256 tag над
+                // (bytecode || version_id_be || total_chunks_be).
+                if (decrypted_rx_payload[0] == HMAC_TRAILER_MARKER) {
+                    int rc = Parse_HMAC_Trailer_Chunk((const uint8_t*)decrypted_rx_payload,
+                                                       incoming_lora_size,
+                                                       received_hmac_tag,
+                                                       &ota_hmac_segments_received);
+                    // rc=1 ⇒ збережено; rc=0 ⇒ не наш marker (не дойдемо сюди);
+                    // rc=-1 ⇒ невалідний (size/seg_idx) — ігноруємо.
+                    (void)rc;
+                    break;  // НЕ ретранслюємо trailer (TTL=1 для downlink)
+                }
+
                 // Сценарій А: OTA Оновлення від Королеви (Пакет починається з OTA_MARKER)
                 if (decrypted_rx_payload[0] == OTA_MARKER) {                    // [FIX: AUDIT] Перевірка мінімального розміру пакета (5 байт заголовок + 1 байт даних)
                     if (incoming_lora_size < MIN_OTA_PACKET_SIZE) {
@@ -1018,6 +1278,14 @@ int main(void)
                     // [FIX: AUDIT] Валідація: total_chunks не повинно змінюватися між пакетами
                     if (ota_total_chunks != 0 && incoming_total != ota_total_chunks) {
                         break; // Невалідний пакет — ігноруємо
+                    }
+
+                    // [FW.23] При першому chunk нового OTA window обнуляємо HMAC state.
+                    // Trailer chunks (0x9B) можуть прийти у будь-якому порядку, тому
+                    // обнуляємо лише на старті window'а, а не на завершенні.
+                    if (ota_total_chunks == 0) {
+                        memset(received_hmac_tag, 0, sizeof(received_hmac_tag));
+                        ota_hmac_segments_received = 0;
                     }
                     ota_total_chunks = incoming_total;
 
@@ -1036,6 +1304,8 @@ int main(void)
                         ota_chunk_received[chunk_idx] = 1; // Маркуємо шматок як отриманий
                         ota_chunks_received++;
                         ota_bytes_received += chunk_size;
+                        // [FW.27-B] Оновлюємо tick для re-request timeout-detection
+                        ota_last_chunk_rx_tick = HAL_GetTick();
 
                         if (ota_chunks_received >= ota_total_chunks) {
                             // [FIX: Risk 2 — OTA Integrity Gap]
@@ -1060,17 +1330,47 @@ int main(void)
                                 }
                                 crc = ~crc;
 
-                                if (crc == expected_crc) {
+                                // [FW.23] Dual-gate verification gate перед flash write.
+                                // Реальна HMAC-SHA256 деривація через mbedTLS/HASH-peripheral
+                                // буде увімкнена при lab-інтеграції (analog FW.30 placeholder).
+                                // До того compile-time gate — `OTA_Verify_Dual_Gate` залишається
+                                // pure-logic для host-tests, а runtime-перевірка skipped.
+                                uint8_t hmac_complete = (ota_hmac_segments_received == 0x07u);
+                                uint8_t crc_ok        = (crc == expected_crc);
+
+                                if (crc_ok && hmac_complete) {
+                                    // TODO: Compute expected HMAC via mbedTLS HMAC-SHA256
+                                    //       over (ota_buffer[0..data_len] || version_id_be || total_chunks_be)
+                                    //       using K_ota loaded from Flash (HKDF-derived per-cluster).
+                                    //       Then call OTA_Verify_Dual_Gate(ota_buffer, data_len,
+                                    //                                       expected_hmac, received_hmac_tag).
+                                    //       Скоро — після ARM mbedTLS link integration. До того
+                                    //       gate-логіка перевірена host-tests; runtime skip prod-deployment.
                                     Write_OTA_Contract_To_Flash(ota_buffer, data_len);
                                     NVIC_SystemReset();
                                 }
-                                // CRC не збігся — ігноруємо, чекаємо на повторну передачу
+
+                                if (!crc_ok || !hmac_complete) {
+                                    // [FW.23] Fail-safe: затираємо magic у RAM-bytecode щоб
+                                    // частково записаний OTA не активувався при наступному boot
+                                    // через корумпований RAM (defense-in-depth).
+                                    if (ota_bytes_received >= 4) {
+                                        ota_buffer[0] = 0;
+                                        ota_buffer[1] = 0;
+                                        ota_buffer[2] = 0;
+                                        ota_buffer[3] = 0;
+                                    }
+                                }
+                                // CRC/HMAC не збігся — ігноруємо, чекаємо на повторну передачу
                             }
                             // Скидаємо стан OTA для повторної спроби
                             memset(ota_chunk_received, 0, sizeof(ota_chunk_received));
+                            memset(received_hmac_tag, 0, sizeof(received_hmac_tag));
                             ota_chunks_received = 0;
                             ota_bytes_received = 0;
                             ota_total_chunks = 0;
+                            ota_hmac_segments_received = 0;
+                            ota_last_chunk_rx_tick = 0;
                         }
                     }
                 }
@@ -1123,6 +1423,36 @@ int main(void)
             HAL_IWDG_Refresh(&hiwdg);
         }
         Radio.Sleep(); // Вимикаємо приймач
+
+        // =====================================================================
+        // [FW.27-B] Magic Re-Request: ініціюємо uplink-запит missing chunks
+        // =====================================================================
+        // Якщо OTA window відкрите (>0 chunks отримано, але < total) і пройшло
+        // OTA_REREQUEST_TIMEOUT_MS без нових chunks — Soldier відправляє
+        // [0x55][DID:4][total:2 BE][bitmap:9] → Queen ретранслює лише missing.
+        // Власний jitter (TX_JITTER_MAX_MS) уникає collision з іншими uplink.
+        if (ota_total_chunks > 0 &&
+            ota_chunks_received < ota_total_chunks &&
+            ota_last_chunk_rx_tick != 0 &&
+            (HAL_GetTick() - ota_last_chunk_rx_tick) > OTA_REREQUEST_TIMEOUT_MS) {
+
+            uint8_t req_payload[OTA_REQ_PACKET_SIZE]    = {0};
+            uint8_t encrypted_req[OTA_REQ_PACKET_SIZE]  = {0};
+
+            uint8_t any_missing = Build_OTA_ReRequest_Payload(tree_did,
+                                                               ota_total_chunks,
+                                                               ota_chunk_received,
+                                                               sizeof(ota_chunk_received),
+                                                               req_payload);
+            if (any_missing) {
+                // Шифруємо запит (1 AES-256-ECB block = 16 байт = 4 слова)
+                HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
+                                  (uint32_t*)encrypted_req, 1000);
+                Radio.Send(encrypted_req, OTA_REQ_PACKET_SIZE);
+                // Reset tick — даємо Queen 5 хв на ретрансляцію перед наступним запитом
+                ota_last_chunk_rx_tick = HAL_GetTick();
+            }
+        }
     }
 
     phase5_kenosis:
