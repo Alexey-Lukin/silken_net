@@ -11,7 +11,7 @@
 - **Дата аудиту:** 2026-05-02 (SEC.11 Lorenz Seed Provenance hard cutover)
 - **Кількість тестів:**
   - RSpec (Ruby): ~296+ spec files, ~52,200+ lines (+ `silken_net/seed_derivation_spec.rb` 16 examples — SEC.11)
-  - Firmware (C): 335 tests (124 soldier + 91 queen + 42 bio-contract + 44 tinyml + 21 encryption + **13 seed_derivation [SEC.11]**)
+  - Firmware (C): 341 tests (130 soldier + 91 queen + 42 bio-contract + 44 tinyml + 21 encryption + **13 seed_derivation [SEC.11]**). Soldier suite +6 від 124 за рахунок **[FW.5 B+]** EMA → mruby args[5..6] selection (cold defaults / warmup phase / post-warmup forwarding / boundary clamps).
   - Foundry (Solidity): 6 test suites, ~115+ tests
 
 ---
@@ -40,14 +40,15 @@
 | Сервіс | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
 | BlockchainMintingService | ✅ 1092L | 🟢 Повне | batchMint, guard clauses, binary search |
-| TelemetryUnpackerService | ✅ 560L+ | 🟢 **Повне** | **check_z_divergence! (effective_lorenz_thresholds FW.8), update_health_streak!, boundary sensors, acoustic overflow, [FW.5] delta_t/vcap β-perturbation, [SEC.11] per-tree warm/cold dispatch, lorenz_state persist, MissingLorenzSeedError, cold_start_flag** |
+| TelemetryUnpackerService | ✅ 560L+ | 🟢 **Повне** | **check_z_divergence! (effective_lorenz_thresholds FW.8), update_health_streak!, boundary sensors, acoustic overflow, [FW.5] delta_t/vcap β-perturbation, [SEC.11] per-tree warm/cold dispatch, lorenz_state persist, MissingLorenzSeedError, cold_start_flag, [FW.31] numeric tolerance band feature-flag (6 examples: toggle off / within ε / drift > ε / default ε constant / malformed ENV fallback / device_z absent)** |
 | InsightGeneratorService | ✅ 670L | 🟢 Повне | Fraud guard, cleanup_old_logs! |
 | SilkenNet::Attractor | ✅ 310L+ | 🟢 Повне | Float precision, deterministic chaos, **[FW.5] perturb_beta, parity-fuzz 500 cases (0 mismatches), [SEC.11] sole `calculate_z_from_state` API (legacy `calculate_z(seed,…)` removed)** |
 | **SilkenNet::SeedDerivation** [SEC.11] | ✅ 16 examples | 🟢 **Нове** | **HKDF-SHA256 (RFC 5869) + HMAC-SHA256 + signed-unit-float unpack; raises `SecurityError` без `PROVISIONING_MASTER_KEY`; firmware-equivalence vectors з `firmware/test/test_seed_derivation.c`; daily epoch_day rotation; (x₀,y₀,z₀) ∈ [-1,+1]³ deterministic** |
 | BlockchainBurningService | ✅ 420L+ | 🟢 **Повне** | **SLASHER_KEY fallback (E.2), Prometheus SCC_SLASHED_TOTAL, AiInsight+source_tree combined ratio, damage_ratio cap** |
 | Treasury::MonitorService | ✅ 330L+ | 🟢 **Повне** | **build_config, missing credentials, humanize edge cases, multiple alerts** |
 | TreeChronicleService | ✅ 350L+ | 🟢 **Повне** | **Pagination edges, nil wallet, boundary stress_index, mixed sources** |
-| Chainlink::OracleDispatchService | ✅ 240L+ | 🟢 **Повне** | **WEB3_STRICT_MODE, missing DON_ID, nil payload fields, ABI validation** |
+| Chainlink::OracleDispatchService | ✅ 240L+ | 🟢 **Повне** | **WEB3_STRICT_MODE, missing DON_ID, nil payload fields, ABI validation, [S6.15] Web3::ChainlinkRouterVersion delegation + bytecode probe + graceful fallback + probe-disabled mode (5 examples)** |
+| **Web3::ChainlinkRouterVersion** [S6.15] | ✅ 17 examples | 🟢 **Нове** | **active_version (default v1, blank ENV, unsupported raise), abi_for(:v1) shape + 5 inputs, selector_for(:v1) = `0x461d2762`, signature_for canonical, fallback_for(:v1) = nil (oldest), selector_present_in_code? (case-insensitive substring, blank/nil tolerant), supported?** |
 | AlertDispatchService | ✅ 420L+ | 🟢 **Повне** | **Adaptive thresholds, silence keys, rate limiting (SEC.10), voltage/fire boundaries, EmergencyResponseService call** |
 | HardwareKeyService | ✅ 280L+ | 🟢 **Повне** | **HKDF SHA256/info/salt params, key length, derive_device_key logging, provision conflict** |
 | MintingRollbackService | ✅ 400L+ | 🟢 **Повне** | **Solana tx status, receipt edge cases, Celo routing, locked_points nil fallback, invalid ISO8601** |
@@ -99,7 +100,7 @@
 
 ## 🔧 2. Firmware Test Coverage
 
-### 2.1 Soldier (test_soldier_logic.c — 124 tests)
+### 2.1 Soldier (test_soldier_logic.c — 130 tests)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -113,6 +114,7 @@
 | Acoustic Saturating Increment (FW.22) | 6 | 🟢 Повне — включаючи atomic snapshot (FW.28) |
 | RSSI Clamping | 7 | 🟢 Повне |
 | EMA Filter (FW.21) | 10 | 🟢 Повне |
+| **[FW.5 B+] EMA → mruby args[5..6]** | **6** | 🟢 **Нове** — cold-boot baseline defaults (60 s / 3300 mV), warmup-phase defaults, post-warmup EMA forwarding, boundary clamps (vcap=5500, dt=1, zero-input) |
 | DID Generation (FW.24) | 5 | 🟢 Повне — **[FW.24]** `test_did_hrng_fallback_not_magic` |
 | **[FW.1] Flash Key Loading** | **8** | 🟢 **Нове** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler, FLASH_KEY_ADDR 0x0803E000 |
 | **[SEC.11 / FW.30] Flash Seed Loading** | **6** | 🟢 **Нове** — `Load_Lorenz_Seed()` magic check ("LSED"), provisioned/unprovisioned/wrong magic/zero seed, non-fatal (без Error_Handler) |
@@ -237,7 +239,7 @@
 | Views | 85 | 10,001 | ~2.0x |
 | Policies | 14 | 1,416 | ~2.5x |
 | Blueprints | 9 | 1,081 | ~2.0x |
-| Firmware (C) | 6 | ~3,800 | **335 tests (+11 FW.30, +13 SEC.11)** |
+| Firmware (C) | 6 | ~3,800 | **341 tests (+6 FW.5 B+, +11 FW.30, +13 SEC.11)** |
 | Solidity | 6 | ~2,000 | 115+ tests |
 | **Total** | **288+** | **~53,600+** | — |
 

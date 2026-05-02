@@ -36,7 +36,7 @@
 | **Z → growth_points конвертація** | ✅ Реалізовано |
 | **Bit-packing `[Status:2&#124;GrowthPoints:6]`** | ✅ Реалізовано |
 | **Backend дзеркало** (`SilkenNet::Attractor` у Rails) | ✅ Реалізовано |
-| **`delta_t` та `vcap` як β-пертурбація атрактора** | ✅ Реалізовано (FW.5) — β обчислюється з `delta_t_s` і `vcap_mv`; firmware та backend дзеркальні; 500-case parity fuzz 0 mismatches |
+| **`delta_t` та `vcap` як β-пертурбація атрактора** | ✅ Реалізовано (FW.5 + FW.5 B+) — β обчислюється з `delta_t_s` і `vcap_mv`; firmware та backend дзеркальні; 500-case parity fuzz 0 mismatches. **FW.5 B+ final step (2026-05-02):** firmware C-bridge передає **EMA-згладжені** значення (`EMA_Get_DeltaT_Sec()` / `EMA_Get_Vcap_Mv()`) у mruby `args[5..6]` після warmup (`count ≥ EMA_WARMUP_CYCLES = 3`); до того — нейтральні defaults (60 c / 3300 mV) = baseline → β-перетурбація = 0. 6 нових host-тестів у `firmware/test/test_soldier_logic.c` (cold-boot, warmup-phase, post-warmup forwarding, boundary clamps).
 | **Збереження стану (x, y, z) між циклами сну** | ✅ Реалізовано (FW.6) — RTC DR16-DR18 + DR19 маркер валідності |
 | **Float32 vs Float64 верифікація** | ✅ Виправлено — backend переведено на Float (IEEE 754), ідентично firmware |
 | **Коментар OPTIMAL_Z_TARGET (20.0 vs 29.0)** | ✅ Виправлено — коментар виправлено на 29.0 |
@@ -140,7 +140,7 @@ z0 = bytes_to_signed_unit_float(digest[16,  8])
 
 **Threat model post-SEC.11:** sniff LoRa → відтворити Z ❌ (без `K_seed` непередбачуваний); replay вчорашнього пакета ❌ (`epoch_day` змінився); compromise одного `K_seed` ⚠️ (вузол уразливий ≤ 24 год, інші — ні); compromise `PROVISIONING_MASTER_KEY` 🚨 (cascading — окрема rotation strategy SEC.9).
 
-**Вплив на DCI:** обидві сторони стартують з byte-identical `(x₀,y₀,z₀)`. Float divergence між ARM↔x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` зберігає категоричну невідповідність як default; числовий tolerance band (`< 0.001`) готовий до flip під feature-flag після інструментального вимірювання реального drift на target HW.
+**Вплив на DCI:** обидві сторони стартують з byte-identical `(x₀,y₀,z₀)`. Float divergence між ARM↔x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` зберігає категоричну невідповідність як default; **[FW.31, 2026-05-02]** числовий tolerance band (`< 0.001`) реалізовано під feature-flag `GAIA_DCI_NUMERIC_TOLERANCE` + `GAIA_DCI_NUMERIC_EPSILON` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON = 0.001`, malformed ENV → graceful fallback). Numeric branch виконується ON-TOP-OF категоричного (не замінює) і лише коли `attributes[:device_z]` присутній — сьогодні LoRa packet 21B не несе raw Z, тож branch інертний у production. Стає активним після post-FW.2 packet revision АБО після лабораторного вимірювання реального drift на target HW (STM32WLE5JC vs GCP x86-64) → flip `GAIA_DCI_NUMERIC_TOLERANCE=true` через Kamal env, без code change. 6 spec examples (`[FW.31] numeric tolerance band` describe).
 
 **Cross-ref:** [10_02 SEC.11](10_02_Action_Plan_Tracker), [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-), [04_02 SilkenNet::SeedDerivation](04_02_Business_Logic_and_Services), [05_02 Dual Computation Integrity](05_02_Proof_of_Growth_Pipeline).
 

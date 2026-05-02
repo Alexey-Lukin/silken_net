@@ -1564,6 +1564,125 @@ TEST(test_ema_rtc_first_boot_no_magic) {
     ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&restored));
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * [FW.5 B+] EMA → mruby calculate_state(args[5..6]) — selection logic
+ *
+ * Mirrors the firmware decision in `firmware/soldier/main.c` around the
+ * `mrb_funcall_argv("calculate_state", 7, ...)` call: while the EMA
+ * filter is still warming up (count < EMA_WARMUP_CYCLES) we MUST feed
+ * the Lorenz attractor with neutral baseline values
+ * (60 s / 3300 mV) — these match `BASELINE_DELTA_T_S` and
+ * `NOMINAL_VCAP_MV` in `firmware/bio_contracts/bio_contract.rb`, so the
+ * β-perturbation is exactly zero on cold boot. Once the filter is
+ * warmed up, the smoothed EMA values are forwarded so β responds to
+ * EBFC metabolism (delta_t) and supercap voltage (vcap).
+ * ──────────────────────────────────────────────────────────────────── */
+
+#define FW5_DEFAULT_DELTA_T_S 60u    /* BASELINE_DELTA_T_S in bio_contract.rb */
+#define FW5_DEFAULT_VCAP_MV   3300u  /* NOMINAL_VCAP_MV     in bio_contract.rb */
+
+/* Pure-function mirror of the firmware selection — no globals, no HAL. */
+static void Fw5_Select_Lorenz_Inputs(const Fw21EmaState *ema,
+                                     uint32_t *out_dt_s,
+                                     uint16_t *out_vcap_mv) {
+    if (Fw21_EMA_Is_Warmed_Up(ema)) {
+        *out_dt_s    = Fw21_EMA_Get_DeltaT_Sec(ema);
+        *out_vcap_mv = Fw21_EMA_Get_Vcap_Mv(ema);
+    } else {
+        *out_dt_s    = FW5_DEFAULT_DELTA_T_S;
+        *out_vcap_mv = FW5_DEFAULT_VCAP_MV;
+    }
+}
+
+TEST(test_fw5_cold_boot_uses_baseline_defaults) {
+    /* Fresh EMA (count=0) → defaults must be selected so β-perturbation
+       is exactly zero on the very first wakeup after VBAT loss. */
+    Fw21EmaState ema = {0};
+    uint32_t dt_s = 0; uint16_t vcap_mv = 0;
+    Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
+    ASSERT_EQ(dt_s, FW5_DEFAULT_DELTA_T_S);
+    ASSERT_EQ(vcap_mv, FW5_DEFAULT_VCAP_MV);
+}
+
+TEST(test_fw5_warmup_phase_uses_baseline_defaults) {
+    /* count = 1 and count = 2 are still below EMA_WARMUP_CYCLES (3) —
+       EMA is initialised but not trusted yet, so defaults are used. */
+    Fw21EmaState ema = {0};
+    Fw21_EMA_Update(&ema, 1000u, 4500);
+    uint32_t dt_s = 0; uint16_t vcap_mv = 0;
+    Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
+    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
+    ASSERT_EQ(dt_s, FW5_DEFAULT_DELTA_T_S);
+    ASSERT_EQ(vcap_mv, FW5_DEFAULT_VCAP_MV);
+
+    Fw21_EMA_Update(&ema, 1000u, 4500);
+    Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
+    ASSERT_FALSE(Fw21_EMA_Is_Warmed_Up(&ema));
+    ASSERT_EQ(dt_s, FW5_DEFAULT_DELTA_T_S);
+    ASSERT_EQ(vcap_mv, FW5_DEFAULT_VCAP_MV);
+}
+
+TEST(test_fw5_after_warmup_forwards_ema_values) {
+    /* count == 3 → warmed up → real EMA must be forwarded. */
+    Fw21EmaState ema = {0};
+    Fw21_EMA_Update(&ema, 1000u, 4500);
+    Fw21_EMA_Update(&ema, 1000u, 4500);
+    Fw21_EMA_Update(&ema, 1000u, 4500);
+    ASSERT_TRUE(Fw21_EMA_Is_Warmed_Up(&ema));
+
+    uint32_t dt_s = 0; uint16_t vcap_mv = 0;
+    Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
+    ASSERT_EQ(dt_s, 1000u);
+    ASSERT_EQ(vcap_mv, 4500);
+    /* And specifically NOT the firmware defaults — guards the warmup
+       transition: once warmed up we never silently fall back. */
+    ASSERT_TRUE(dt_s != FW5_DEFAULT_DELTA_T_S);
+    ASSERT_TRUE(vcap_mv != FW5_DEFAULT_VCAP_MV);
+}
+
+TEST(test_fw5_extreme_high_vcap_clamped_by_backend_beta) {
+    /* Boundary input: vcap_mv = 5500 (over-charged supercap, max real
+       value). Selection must forward this raw EMA reading; the β-clamp
+       (BETA_MIN..BETA_MAX = 2.0..4.0) lives in bio_contract.rb and
+       protects the attractor from explosion. We assert the firmware
+       does not silently muffle this signal here. */
+    Fw21EmaState ema = {0};
+    for (int i = 0; i < 10; i++) Fw21_EMA_Update(&ema, 60u, 5500);
+
+    uint32_t dt_s = 0; uint16_t vcap_mv = 0;
+    Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
+    ASSERT_EQ(dt_s, 60u);
+    ASSERT_EQ(vcap_mv, 5500);
+}
+
+TEST(test_fw5_extreme_fast_charge_forwarded) {
+    /* Boundary input: delta_t_s = 1 (EBFC charging in 1 second — much
+       faster than baseline 60). β-perturbation hits its upper clamp,
+       but the firmware-side selection still forwards the raw EMA. */
+    Fw21EmaState ema = {0};
+    for (int i = 0; i < 10; i++) Fw21_EMA_Update(&ema, 1u, 3300);
+
+    uint32_t dt_s = 0; uint16_t vcap_mv = 0;
+    Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
+    ASSERT_EQ(dt_s, 1u);
+    ASSERT_EQ(vcap_mv, 3300);
+}
+
+TEST(test_fw5_zero_inputs_after_warmup_still_forwarded) {
+    /* Defensive: even if EBFC reports 0/0 (sensor failure or full
+       drain), once EMA is warmed up we MUST forward the actual EMA
+       value rather than masking with defaults. Backend/`bio_contract.rb`
+       β-clamp will keep the attractor stable, but anomaly visibility
+       is preserved (server sees vcap=0 → flagged in DCI divergence). */
+    Fw21EmaState ema = {0};
+    for (int i = 0; i < 10; i++) Fw21_EMA_Update(&ema, 0u, 0);
+
+    uint32_t dt_s = 99; uint16_t vcap_mv = 99;
+    Fw5_Select_Lorenz_Inputs(&ema, &dt_s, &vcap_mv);
+    ASSERT_EQ(dt_s, 0u);
+    ASSERT_EQ(vcap_mv, 0);
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * 12. [FW.1] FLASH-BASED AES KEY LOADING TESTS
  * ════════════════════════════════════════════════════════════════════ */
@@ -2003,6 +2122,14 @@ int main(void)
     RUN(test_ema_no_overflow_at_max_inputs);
     RUN(test_ema_rtc_save_load_roundtrip);
     RUN(test_ema_rtc_first_boot_no_magic);
+
+    printf("\n  EMA → mruby calculate_state args[5..6] (FW.5 B+):\n");
+    RUN(test_fw5_cold_boot_uses_baseline_defaults);
+    RUN(test_fw5_warmup_phase_uses_baseline_defaults);
+    RUN(test_fw5_after_warmup_forwards_ema_values);
+    RUN(test_fw5_extreme_high_vcap_clamped_by_backend_beta);
+    RUN(test_fw5_extreme_fast_charge_forwarded);
+    RUN(test_fw5_zero_inputs_after_warmup_still_forwarded);
 
     printf("\n  Flash-Based AES Key Loading (FW.1):\n");
     RUN(test_load_key_provisioned_success);

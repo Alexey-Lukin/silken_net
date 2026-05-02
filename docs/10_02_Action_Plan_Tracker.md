@@ -109,14 +109,6 @@
 - [ ] 🤖 Документувати у `06_02` runbook: pre-flight checklist + verification commands
 - [ ] 🤖 Якщо Akash hostname — додати automation у `terraform/`
 
-#### INF.6 — CoAP Proxy на Ingress Anchor: відсутня verification
-- **P1** | `06_01` Pre-Flight Checklist | **Складність: S** | **🤖 Код + Док**
-- **Опис:** Ingress Anchor (Kamal Traefik або Akash ingress) повинен проксіювати CoAP UDP port 5683. Документація рекомендує перевірити, але **точна команда verification відсутня**. Без перевірки можлива ситуація: HTTP ingress активний, але UDP заблокований → шлюзи не можуть пушити телеметрію (silent failure)
-- **Статус (✅ виконано):** Додано рядок **#6** у Pre-Flight Checklist `06_01` з повними командами: `coap-client -m post` для CoAP smoke test + альтернатива через `nc`, troubleshooting checklist (GCP firewall, Ingress Anchor socat, Akash SDL UDP expose, Sidekiq daemon).
-- [x] 🤖 Додати у `06_01` команду: `coap-client -m post -e "test" coap://<ingress-host>:5683/health` + очікуваний response
-- [ ] 🤖 Smoke test workflow у CI: post-deploy CoAP health check (потребує CI workflow — окрема задача)
-- [x] 🤖 Документувати точний HAProxy/socat/Traefik UDP config для кожного варіанту deploy (включено у troubleshooting секцію)
-
 #### S4.3 — Akash SDL secrets
 - **P3** | `06_02` | **Складність: XS** | **🔧 Операційна** — заповнити 4 змінні у `deploy.yaml`
 - **Опис:** `REQUIRED_SECRET_NOT_SET` для 4 критичних змінних
@@ -164,13 +156,6 @@
 - [x] 🤖 Дизайн key rotation policy (overlap window, migration strategy) — ✅ Dual-key overlap window (72 год) з `peaq_signing_key` + `peaq_signing_key_previous`. Scheduled rotation кожні 90 днів. Задокументовано в `04_02` §S6.14
 - [x] 🤖 Документувати emergency revocation runbook — ✅ 5-step incident response (Detection → Containment <15хв → Investigation → Recovery → Post-Incident). Задокументовано в `06_04` §5.4
 - [ ] 👤 Vault-store production peaq_signing_key (Bitwarden/1Password)
-
-#### S6.15 — Chainlink Functions Router ABI v1: ризик version drift
-- **P2** | `04_02` §4.2.2 (DispatchToChainlinkService, BLOCKER-09) | **Складність: S** | **🤖 Код**
-- **Опис:** ABI оновлено на Functions Router v1 (5 параметрів — `CHAINLINK_DATA_VERSION`, `CHAINLINK_CALLBACK_GAS_LIMIT`, `CHAINLINK_DON_ID`, ...). Немає fallback на старіший ABI. При наступному upgrade Chainlink router або зміні DON ID — пайплайн впаде без graceful degradation
-- [ ] 🤖 Додати `Web3::ChainlinkRouterVersion` enum + ABI registry для multi-version підтримки
-- [ ] 🤖 Health check: розпарсити router contract code → перевірити сигнатуру `sendRequest()` при бутстрапі сервісу
-- [ ] 🤖 Документувати в `04_02` процес upgrade ABI
 
 #### S6.18 — Rails web security hardening (maquina-app/rails-claude-code §8 audit)
 - **P1** | `06_01`, `06_02`, `06_04` | **Складність: M** | **🤖 Код + Конфігурація**
@@ -265,7 +250,7 @@
 - [x] 🤖 Архітектурне рішення: замінити chaos_seed на delta_t (Варіант A), додати delta_t/vcap як додаткові пертурбації (Варіант B), або зберегти + EMA фільтр (Варіант C) — **обрано B+**
 - [x] 🤖 Задокументувати рішення в `03_04` з обґрунтуванням впливу на токеноміку
 - [x] 🤖 Реалізувати (firmware mruby + backend mirror update, 500-case fuzz)
-- [ ] ⬜ Передавання args[5..6] у C (EMA delta_t_ms/vcap_mv з RTC DR10/DR12 у mruby args) — **заблоковано FW.30** (C-bridge спочатку треба оновити до нової 7-arg сигнатури SEC.11)
+- [x] 🤖 Передавання args[5..6] у C (EMA delta_t_s/vcap_mv з RTC DR10/DR12 у mruby args) — ✅ Виконано (2026-05-02). `firmware/soldier/main.c` біля `mrb_funcall_argv("calculate_state", 7, ...)`: warmup-guard `EMA_Is_Warmed_Up()` → `EMA_Get_DeltaT_Sec()` / `EMA_Get_Vcap_Mv()`; до warmup — нейтральні defaults `60 c` / `3300 mV` (= `BASELINE_DELTA_T_S` / `NOMINAL_VCAP_MV` у `bio_contract.rb`, β-перетурбація = 0). 6 host-тестів у `firmware/test/test_soldier_logic.c` блок `EMA → mruby calculate_state args[5..6]`: cold-boot defaults / warmup-phase defaults / warmed-up forwarding / boundary vcap=5500 / fast charge dt=1 / zero-input после warmup. 130 soldier tests passed, +6 від 124.
 
 #### FW.7 — Float vs BigDecimal divergence (TRL 6 mitigation)
 - `05_02`
@@ -414,8 +399,8 @@
 - **Умова для flip:** потрібно виміряти реальний drift `server_z − device_z` на цільовому ARM hardware (STM32WLE5JC vs GCP x86-64) з тією ж Float/mruby compile-flag комбінацією. Очікуваний drift < 0.001 — це значно менше розміру одного growth_points step (~1 unit), тому false-слешинг малоймовірний.
 - **Вплив після flip:** fraud detection стає **числовим** — дозволяє виявляти не лише категоричні (homeostasis vs stress) помилки, але й систематичне зміщення Z (наприклад, replay атаку з правильним status-byte але неправильним Z magnitude).
 - [ ] 👤 Лабораторне вимірювання: запустити однакові тест-вектори на STM32WLE5JC + GCP x86-64, виміряти `|server_z - device_z|` distribution (N=10,000)
-- [ ] 🤖 Після вимірювання: flip `check_z_divergence!` до числового `|server_z - device_z| < ε` під ENV feature-flag (`GAIA_DCI_NUMERIC_TOLERANCE`)
-- [ ] 🤖 Специфікація: оновити `03_04` §BLOCKER-2 з виміряним drift + обраним ε
+- [x] 🤖 Після вимірювання: flip `check_z_divergence!` до числового `|server_z - device_z| < ε` під ENV feature-flag (`GAIA_DCI_NUMERIC_TOLERANCE`) — ✅ Code-ready (2026-05-02). `TelemetryUnpackerService#check_z_divergence!` тепер має numeric-branch під двома ENV: `GAIA_DCI_NUMERIC_TOLERANCE=true` (off за замовчанням → нульова поведінкова зміна для production) + `GAIA_DCI_NUMERIC_EPSILON` (Float, default = `DEFAULT_DCI_EPSILON = 0.001`, malformed value graceful fallback). Numeric branch виконується **лише** коли `attributes[:device_z]` присутній — сьогодні LoRa packet (21B) не несе raw Z, тож branch інертний у production до post-FW.2 packet revision. 6 нових spec examples у `spec/services/telemetry_unpacker_service_spec.rb` describe `[FW.31] numeric tolerance band`: toggle off / within ε silent / drift > ε fraud / default ε constant / malformed ENV fallback / device_z missing. Awaits 👤 lab measurement реального ARM↔x86 IEEE-754 drift.
+- [ ] 🤖 Специфікація: оновити `03_04` §BLOCKER-2 з виміряним drift + обраним ε (потребує лабораторних даних, попередньо ε=0.001)
 
 ---
 

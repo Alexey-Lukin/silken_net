@@ -81,10 +81,12 @@ module Chainlink
       client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
       oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
 
+      version = pick_router_version(client, router_address)
+
       contract = Eth::Contract.from_abi(
         name: "FunctionsRouter",
         address: router_address,
-        abi: functions_router_abi
+        abi: functions_router_abi(version)
       )
 
       # [BLOCKER-09 FIX]: Передаємо всі обов'язкові параметри Chainlink Functions Router v1.
@@ -103,30 +105,87 @@ module Chainlink
         legacy: false
       )
 
-      Rails.logger.info "🔗 [Chainlink] On-chain request submitted. TX: #{tx_hash}"
+      Rails.logger.info "🔗 [Chainlink] On-chain request submitted (router=#{version}). TX: #{tx_hash}"
       tx_hash
+    rescue Web3::ChainlinkRouterVersion::UnsupportedVersionError,
+           Web3::ChainlinkRouterVersion::MissingAbiError => e
+      raise DispatchError, "Chainlink router ABI registry error: #{e.message}"
     rescue StandardError => e
       raise DispatchError, "Chainlink on-chain dispatch failed: #{e.message}"
     end
 
+    # [S6.15] Resolve which Chainlink Functions Router ABI version to use.
+    # 1. Read the active version from `CHAINLINK_ROUTER_VERSION` ENV (defaults v1).
+    # 2. Pull the deployed Router bytecode (`eth_getCode`) and verify the
+    #    expected `sendRequest` selector is present in the dispatch table.
+    # 3. If verification fails, attempt the previous registered version
+    #    (graceful fallback during a Router upgrade window).
+    # 4. If no fallback is registered, raise a `DispatchError` — refuse
+    #    to submit a request against an unknown ABI shape.
+    #
+    # When `CHAINLINK_ROUTER_BYTECODE_CHECK=false` (for staging/dev RPC
+    # endpoints that strip `eth_getCode`), the bytecode probe is skipped
+    # and the active version is trusted as-is.
+    def pick_router_version(client, router_address)
+      active = Web3::ChainlinkRouterVersion.active_version
+      return active unless bytecode_check_enabled?
+
+      code_hex = fetch_router_code(client, router_address)
+
+      if Web3::ChainlinkRouterVersion.selector_present_in_code?(code_hex, active)
+        return active
+      end
+
+      fallback = Web3::ChainlinkRouterVersion.fallback_for(active)
+      if fallback && Web3::ChainlinkRouterVersion.selector_present_in_code?(code_hex, fallback)
+        Rails.logger.warn(
+          "🔗 [Chainlink] Router #{router_address} bytecode does not expose " \
+          "active version #{active} selector " \
+          "(#{Web3::ChainlinkRouterVersion.selector_for(active)}); " \
+          "falling back to #{fallback}."
+        )
+        return fallback
+      end
+
+      raise DispatchError,
+            "Chainlink Router #{router_address} не експортує очікуваний " \
+            "`#{Web3::ChainlinkRouterVersion.signature_for(active)}` селектор " \
+            "(#{Web3::ChainlinkRouterVersion.selector_for(active)}). " \
+            "Перевір CHAINLINK_FUNCTIONS_ROUTER та CHAINLINK_ROUTER_VERSION."
+    end
+
+    def bytecode_check_enabled?
+      ENV.fetch("CHAINLINK_ROUTER_BYTECODE_CHECK", "true") == "true"
+    end
+
+    # Returns hex-encoded bytecode (with or without `0x` prefix), or nil
+    # if the RPC client does not expose `eth_getCode`. We intentionally
+    # do not raise here — `selector_present_in_code?` returns false on
+    # blank input, and `pick_router_version` handles the fallback chain.
+    #
+    # The dual `Hash` / `String` shape handles two real-world RPC client
+    # return contracts: `Eth::Client` returns the raw `result` field as a
+    # String, while some pooled / instrumented wrappers (and JSON-RPC
+    # transports configured with `raw_response: true`) return the full
+    # `{ "id" => ..., "result" => "0x...", ... }` envelope. Normalising
+    # here keeps the probe ergonomically simple for both cases.
+    def fetch_router_code(client, router_address)
+      if client.respond_to?(:eth_get_code)
+        result = client.eth_get_code(router_address, "latest")
+        return result.is_a?(Hash) ? result["result"] : result
+      end
+      nil
+    rescue StandardError => e
+      Rails.logger.warn "🔗 [Chainlink] eth_getCode probe failed: #{e.message}"
+      nil
+    end
+
     # [BLOCKER-09 FIX]: Актуальний ABI Chainlink Functions Router v1 (Polygon Mainnet).
     # Додані обов'язкові параметри: dataVersion, callbackGasLimit, donId.
-    def functions_router_abi
-      [
-        {
-          "inputs" => [
-            { "internalType" => "uint64", "name" => "subscriptionId", "type" => "uint64" },
-            { "internalType" => "bytes", "name" => "data", "type" => "bytes" },
-            { "internalType" => "uint16", "name" => "dataVersion", "type" => "uint16" },
-            { "internalType" => "uint32", "name" => "callbackGasLimit", "type" => "uint32" },
-            { "internalType" => "bytes32", "name" => "donId", "type" => "bytes32" }
-          ],
-          "name" => "sendRequest",
-          "outputs" => [ { "internalType" => "bytes32", "name" => "requestId", "type" => "bytes32" } ],
-          "stateMutability" => "nonpayable",
-          "type" => "function"
-        }
-      ].to_json
+    # [S6.15]: ABI delegated to Web3::ChainlinkRouterVersion registry so
+    # adding a future Router upgrade only requires a new registry entry.
+    def functions_router_abi(version = Web3::ChainlinkRouterVersion.active_version)
+      Web3::ChainlinkRouterVersion.abi_for(version).to_json
     end
   end
 end
