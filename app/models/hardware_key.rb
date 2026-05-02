@@ -10,6 +10,10 @@ class HardwareKey < ApplicationRecord
   # два однакові ключі в базі виглядатимуть по-різному.
   encrypts :aes_key_hex
   encrypts :previous_aes_key_hex
+  # [SEC.11] Lorenz K_seed — same shielding as the AES key. Optional
+  # only because pre-SEC.11 records were provisioned without it; field
+  # migration via POST /api/v1/provisioning/upgrade_seed back-fills.
+  encrypts :lorenz_seed_hex
 
   # ---------------------------------------------------------------------------
   # SCALABILITY: Zero Cryptographic Jitter — усунення «Double Crypto Tax»
@@ -57,6 +61,13 @@ class HardwareKey < ApplicationRecord
                                      format: { with: /\A[0-9a-fA-F]+\z/ },
                                      allow_nil: true
 
+  # [SEC.11] K_seed: 64 HEX chars (32 bytes). Optional during the
+  # backwards-compat window; once the field migration completes every
+  # record will have one and we can flip this to `presence: true`.
+  validates :lorenz_seed_hex, length: { is: 64 },
+                              format: { with: /\A[0-9A-F]+\z/i },
+                              allow_nil: true
+
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
   # КРИПТОГРАФІЧНІ МЕТОДИ
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -79,6 +90,14 @@ class HardwareKey < ApplicationRecord
   def binary_previous_key
     return nil if previous_aes_key_hex.blank?
     @binary_previous_key ||= [ previous_aes_key_hex ].pack("H*")
+  end
+
+  # [SEC.11] Raw 32 bytes of K_seed for SilkenNet::SeedDerivation. Nil
+  # when the device pre-dates SEC.11 — TelemetryUnpackerService handles
+  # the categorical-fallback branch in that case.
+  def binary_lorenz_seed
+    return nil if lorenz_seed_hex.blank?
+    @binary_lorenz_seed ||= [ lorenz_seed_hex ].pack("H*")
   end
 
   # [DEPRECATED]: Use HardwareKeyService.rotate(device_uid) instead.

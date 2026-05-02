@@ -167,9 +167,25 @@ def calculate_state(seed, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASE
   SilkenNet::BioContract.evaluate_and_pack(seed, temp, acoustic, delta_t_s, vcap_mv)
 end
 
-# [FW.6] Виклик з продовженням стану (RTC зберіг x,y,z з попереднього циклу).
-# Повертає масив [payload_byte, x_final, y_final, z_final].
-# C-код витягує payload_byte з args[0] і зберігає x,y,z у RTC DR16-DR18.
+# [FW.6 / SEC.11] Continuation entry-point. Accepts the trajectory state
+# directly as Floats — there is no notion of `chaos_seed` or DID inside
+# this contract any more. The C-side calls this with either:
+#   * (x, y, z) restored from RTC DR16-DR18 (FW.6 warm continuation), or
+#   * (x₀, y₀, z₀) derived from K_seed via SilkenNet::SeedDerivation
+#     (SEC.11 cold start after VBAT loss).
+# Both branches yield byte-identical (x, y, z) on backend and firmware
+# for the same inputs, which is what makes Dual Computation Integrity
+# numerically comparable.
+# Returns [payload_byte, x_final, y_final, z_final] so the C-side can
+# persist the trajectory tail back to RTC DR16-DR18.
 def calculate_state_continued(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S, vcap_mv = SilkenNet::Attractor::NOMINAL_VCAP_MV)
   SilkenNet::BioContract.evaluate_and_pack_continued(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)
+end
+
+# [SEC.11] Same math as `calculate_state_continued`, exposed under a
+# semantically distinct name for the K_seed-derived cold-start path.
+# Kept as a thin wrapper so the OTA bytecode signature can name the
+# branch the C-side took without depending on call-site semantics.
+def calculate_state_from_coords(x0, y0, z0, temp, acoustic, delta_t_s = SilkenNet::Attractor::BASELINE_DELTA_T_S, vcap_mv = SilkenNet::Attractor::NOMINAL_VCAP_MV)
+  SilkenNet::BioContract.evaluate_and_pack_continued(x0, y0, z0, temp, acoustic, delta_t_s, vcap_mv)
 end

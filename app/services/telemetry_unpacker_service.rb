@@ -52,10 +52,13 @@ class TelemetryUnpackerService < ApplicationService
   # Створюємо Hash-мапу DID -> Tree для миттєвого доступу без N+1 запитів
   # [ВИПРАВЛЕНО: DID Prefix Mismatch]: Реконструюємо повний SNET-XXXXXXXX формат
   # із сирого uint32, щоб збігтися з Tree.did у базі (SNET- + 8 hex digits).
+  # [SEC.11] Eager-load `hardware_key` так само як `wallet`/`device_calibration`/
+  # `tree_family` — нам потрібен `binary_lorenz_seed` для per-tree seed dispatch
+  # без додаткового N+1 за пакет.
   def preload_trees(chunks)
     dids = chunks.map { |c| format("SNET-%08X", c[0..3].unpack1("N")) }.uniq
     @trees_cache = Tree.where(did: dids)
-                       .includes(:wallet, :device_calibration, :tree_family)
+                       .includes(:wallet, :device_calibration, :tree_family, :hardware_key)
                        .index_by(&:did)
   end
 
@@ -136,13 +139,20 @@ class TelemetryUnpackerService < ApplicationService
     # Це забезпечує Dual Computation Integrity: однакова математика → однакові результати.
     # [FW.5]: delta_t (metabolism_s, секунди) і vcap (voltage_mv після калібрування)
     # передаються як soft β-perturbation — точно дзеркальне обчислення з firmware.
-    log_attributes[:z_value] = SilkenNet::Attractor.calculate_z(
-      parsed_data[0], # Використовуємо сирий DID як seed
-      log_attributes[:temperature_c],
-      log_attributes[:acoustic_events],
-      log_attributes[:metabolism_s],
-      log_attributes[:voltage_mv]
-    )
+    # [SEC.11] Якщо у дерева є provisioned K_seed — обчислюємо Z з тих самих
+    # (x₀,y₀,z₀), що ними стартував firmware (HKDF + epoch_day) і зберігаємо
+    # хвіст траєкторії на TelemetryLog#lorenz_state_*. Це фундамент для
+    # численного `check_z_divergence!` після завершення field migration.
+    # Поки на дереві ще не виконано upgrade_seed — використовуємо legacy
+    # DID-as-seed шлях (категоричне порівняння нижче).
+    server_z, lorenz_xyz, cold_start = compute_server_z(tree, parsed_data, log_attributes)
+    log_attributes[:z_value] = server_z
+    if lorenz_xyz
+      log_attributes[:lorenz_state_x] = lorenz_xyz[0]
+      log_attributes[:lorenz_state_y] = lorenz_xyz[1]
+      log_attributes[:lorenz_state_z] = lorenz_xyz[2]
+      log_attributes[:cold_start_flag] = cold_start
+    end
 
     # 4.1 DUAL COMPUTATION INTEGRITY (Z Divergence Check)
     # Device повідомляє bio_status з власного Lorenz (Float, mruby).
@@ -163,6 +173,66 @@ class TelemetryUnpackerService < ApplicationService
     voltage = data[1]
     temp = data[2]
     SAFE_VOLTAGE_RANGE.cover?(voltage) && SAFE_TEMP_RANGE.cover?(temp)
+  end
+
+  # [SEC.11] Per-tree dispatch between the legacy DID-as-seed path and
+  # the post-SEC.11 K_seed-derived initial-state path. Returns:
+  #   [server_z (Float), lorenz_xyz (Array<Float>|nil), cold_start (Boolean)]
+  #
+  # When `tree.hardware_key.binary_lorenz_seed` is present we are on the
+  # numeric-divergence track:
+  #   * if the previous TelemetryLog has a stored (x,y,z) — continue the
+  #     trajectory from there (cold_start_flag = false)
+  #   * otherwise derive (x₀,y₀,z₀) for today's epoch_day from K_seed
+  #     (cold_start_flag = true) — same path the firmware takes after a
+  #     VBAT loss reboot.
+  #
+  # Without K_seed we keep the legacy `calculate_z(seed=raw_did, ...)`
+  # so the categorical fallback in `check_z_divergence!` still works
+  # for un-migrated devices.
+  def compute_server_z(tree, parsed_data, log_attributes)
+    seed_bytes = tree.hardware_key&.binary_lorenz_seed
+
+    if seed_bytes
+      previous = previous_lorenz_state_for(tree)
+      cold_start = previous.nil?
+      x0, y0, z0 = previous || SilkenNet::SeedDerivation.initial_state(seed_bytes)
+
+      z_rounded, x_final, y_final, z_final = SilkenNet::Attractor.calculate_z_from_state(
+        x0, y0, z0,
+        log_attributes[:temperature_c],
+        log_attributes[:acoustic_events],
+        log_attributes[:metabolism_s],
+        log_attributes[:voltage_mv]
+      )
+
+      [z_rounded, [x_final, y_final, z_final], cold_start]
+    else
+      z_rounded = SilkenNet::Attractor.calculate_z(
+        parsed_data[0], # legacy raw DID as seed
+        log_attributes[:temperature_c],
+        log_attributes[:acoustic_events],
+        log_attributes[:metabolism_s],
+        log_attributes[:voltage_mv]
+      )
+      [z_rounded, nil, false]
+    end
+  end
+
+  # Most recent persisted Lorenz tail for this tree, or nil if the
+  # device has never sent a packet under SEC.11. We avoid loading whole
+  # rows — pluck three columns and reuse them as the next iteration's
+  # initial state.
+  def previous_lorenz_state_for(tree)
+    row = tree.telemetry_logs
+              .where.not(lorenz_state_x: nil, lorenz_state_y: nil, lorenz_state_z: nil)
+              .order(created_at: :desc)
+              .limit(1)
+              .pluck(:lorenz_state_x, :lorenz_state_y, :lorenz_state_z)
+              .first
+    return nil if row.nil?
+    return nil if row.any? { |v| v.nil? || !v.finite? }
+    row
   end
 
   def interpret_status(code)

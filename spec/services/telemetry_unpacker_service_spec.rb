@@ -613,4 +613,71 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       end
     end
   end
+
+  # [SEC.11] Per-tree dispatch between legacy DID-as-seed and the
+  # post-SEC.11 K_seed-derived initial-state path.
+  describe "Lorenz seed provenance dispatch [SEC.11]" do
+    before do
+      # Allow the real attractor for these scenarios so we can observe
+      # the call signature instead of asserting on a stubbed return.
+      allow(SilkenNet::Attractor).to receive(:calculate_z).and_call_original
+      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_call_original
+    end
+
+    it "uses calculate_z (legacy path) when the tree has no K_seed" do
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+      expect(SilkenNet::Attractor).to receive(:calculate_z).at_least(:once).and_return(0.42)
+      expect(SilkenNet::Attractor).not_to receive(:calculate_z_from_state)
+
+      described_class.call(chunk)
+
+      log = TelemetryLog.last
+      expect(log.lorenz_state_x).to be_nil
+      expect(log.lorenz_state_y).to be_nil
+      expect(log.lorenz_state_z).to be_nil
+      expect(log.cold_start_flag).to be(false)
+      expect(log.z_value).to eq(0.42)
+    end
+
+    it "uses calculate_z_from_state and persists trajectory tail when K_seed exists" do
+      HardwareKey.create!(
+        device_uid: extracted_did,
+        aes_key_hex: ("AB" * 32),
+        lorenz_seed_hex: ("CD" * 32)
+      )
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+      described_class.call(chunk)
+
+      log = TelemetryLog.last
+      expect(log.cold_start_flag).to be(true) # first packet → cold start
+      expect(log.lorenz_state_x).to be_a(Float).and be_finite
+      expect(log.lorenz_state_y).to be_a(Float).and be_finite
+      expect(log.lorenz_state_z).to be_a(Float).and be_finite
+    end
+
+    it "chains continuation from the previous TelemetryLog tail (cold_start_flag=false)" do
+      HardwareKey.create!(
+        device_uid: extracted_did,
+        aes_key_hex: ("AB" * 32),
+        lorenz_seed_hex: ("CD" * 32)
+      )
+      # First packet — cold start, persists a tail.
+      described_class.call(build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3))
+      first_tail = TelemetryLog.last.slice(:lorenz_state_x, :lorenz_state_y, :lorenz_state_z)
+
+      # Second packet — should chain from first_tail.
+      described_class.call(build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3))
+      second = TelemetryLog.last
+      expect(second.cold_start_flag).to be(false)
+
+      # Verify chaining: server Z must equal calculate_z_from_state(first_tail, ...)
+      expected = SilkenNet::Attractor.calculate_z_from_state(
+        first_tail["lorenz_state_x"], first_tail["lorenz_state_y"],
+        first_tail["lorenz_state_z"], 25.0, 5, 100, 3500
+      )
+      expect(second.z_value).to eq(expected.first)
+    end
+  end
 end

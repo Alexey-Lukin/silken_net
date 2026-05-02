@@ -320,4 +320,40 @@ RSpec.describe SilkenNet::Attractor do
       expect(fast.first).not_to eq(base.first)
     end
   end
+
+  # [SEC.11] calculate_z_from_state — backend-side attractor entry-point
+  # that mirrors the firmware Soldier when (x₀, y₀, z₀) come from K_seed
+  # rather than from chaos_seed/DID. Same iteration kernel as
+  # calculate_z_continued; separate spec section for documentation.
+  describe ".calculate_z_from_state" do
+    it "returns [z_rounded, x_final, y_final, z_final]" do
+      result = described_class.calculate_z_from_state(0.1, 0.2, 0.3, 20.0, 5)
+      expect(result).to be_an(Array)
+      expect(result.size).to eq(4)
+      result.each { |v| expect(v).to be_a(Float).and be_finite }
+    end
+
+    it "produces the same result as calculate_z_continued for identical inputs" do
+      from_state = described_class.calculate_z_from_state(0.5, -0.5, 0.7, 22.0, 8, 45, 3450)
+      continued  = described_class.calculate_z_continued(0.5, -0.5, 0.7, 22.0, 8, 45, 3450)
+      expect(from_state).to eq(continued)
+    end
+
+    it "is sensitive to the initial state (different x₀ → different Z)" do
+      a = described_class.calculate_z_from_state(0.1, 0.2, 0.3, 20.0, 5)
+      b = described_class.calculate_z_from_state(0.9, 0.2, 0.3, 20.0, 5)
+      expect(a.first).not_to eq(b.first)
+    end
+
+    it "stays finite under extreme metabolism inputs" do
+      result = described_class.calculate_z_from_state(0.0, 0.0, 0.0, 25.0, 10, 0, 65_535)
+      result.each { |v| expect(v).to be_finite }
+    end
+
+    it "is deterministic for the same (x0, y0, z0, temp, acoustic, delta_t, vcap)" do
+      a = described_class.calculate_z_from_state(0.42, -0.17, 0.31, 18.5, 4, 55, 3290)
+      b = described_class.calculate_z_from_state(0.42, -0.17, 0.31, 18.5, 4, 55, 3290)
+      expect(a).to eq(b)
+    end
+  end
 end

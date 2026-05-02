@@ -23,15 +23,22 @@ class HardwareKeyService
   #
   # Формула: AES_KEY = HKDF-SHA256(ikm: master_key, salt: device_uid, info: "silken-aes-256-device-key")
   #
+  # [SEC.11] Provisioning тепер також деривує Lorenz K_seed через
+  # SilkenNet::SeedDerivation і зберігає його разом із AES ключем.
+  # Метод повертає AES hex (для backwards-compat з існуючими callers);
+  # K_seed читається з створеного `HardwareKey.lorenz_seed_hex`.
+  #
   # Ключ НІКОЛИ не передається по мережі. Якщо PROVISIONING_MASTER_KEY не встановлено,
   # повертаємося до SecureRandom (TRL 4 lab mode) з попередженням у логах.
   def self.provision(device)
     device_uid = device.respond_to?(:did) ? device.did : device.uid
     new_hex_key = derive_device_key(device_uid)
+    lorenz_seed = SilkenNet::SeedDerivation.derive_seed(device_uid)
 
     HardwareKey.create!(
       device_uid: device_uid,
-      aes_key_hex: new_hex_key
+      aes_key_hex: new_hex_key,
+      lorenz_seed_hex: lorenz_seed
     )
 
     new_hex_key

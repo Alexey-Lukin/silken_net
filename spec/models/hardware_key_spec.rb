@@ -199,6 +199,36 @@ RSpec.describe HardwareKey, type: :model do
     end
   end
 
+  # [SEC.11] Lorenz K_seed lifecycle is parallel to the AES key:
+  # encrypted at rest, optional during the field-migration window,
+  # and exposed as raw bytes for SilkenNet::SeedDerivation consumers.
+  describe "#binary_lorenz_seed" do
+    it "returns nil when lorenz_seed_hex is blank" do
+      hw_key = build(:hardware_key, lorenz_seed_hex: nil)
+      expect(hw_key.binary_lorenz_seed).to be_nil
+    end
+
+    it "returns raw 32 bytes when seed is present" do
+      seed_hex = "AB" * 32
+      hw_key   = build(:hardware_key, lorenz_seed_hex: seed_hex)
+      expect(hw_key.binary_lorenz_seed.bytesize).to eq(32)
+      expect(hw_key.binary_lorenz_seed).to eq([ seed_hex ].pack("H*"))
+    end
+
+    it "memoizes the unpacked bytes" do
+      hw_key = build(:hardware_key, lorenz_seed_hex: "CD" * 32)
+      first  = hw_key.binary_lorenz_seed
+      second = hw_key.binary_lorenz_seed
+      expect(first).to equal(second)
+    end
+
+    it "validates lorenz_seed_hex length and HEX format when provided" do
+      expect(build(:hardware_key, lorenz_seed_hex: "AB" * 31)).not_to be_valid
+      expect(build(:hardware_key, lorenz_seed_hex: ("XY" * 32))).not_to be_valid
+      expect(build(:hardware_key, lorenz_seed_hex: ("AB" * 32))).to be_valid
+    end
+  end
+
   describe "#rotate_key!" do
     it "moves the current key to previous_aes_key_hex" do
       hw_key      = create(:hardware_key)

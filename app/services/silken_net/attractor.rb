@@ -67,6 +67,31 @@ module SilkenNet
       [ z.round(4), x, y, z ]
     end
 
+    # [SEC.11] Compute Z from explicit initial coordinates (x₀, y₀, z₀)
+    # rather than deriving them from a `seed`. This is the post-SEC.11
+    # entry-point: backend feeds the same (x₀, y₀, z₀) the firmware used
+    # — derived from K_seed via SilkenNet::SeedDerivation — so device-Z
+    # and server-Z become byte-comparable and `check_z_divergence!` can
+    # be flipped to a numeric tolerance band once the field migration
+    # is complete.
+    #
+    # Returns [z_rounded, x_final, y_final, z_final] like
+    # `calculate_z_continued` so the caller can persist the trajectory
+    # tail on `TelemetryLog.lorenz_state_*`.
+    def self.calculate_z_from_state(x0, y0, z0, temp, acoustic, delta_t_s = BASELINE_DELTA_T_S, vcap_mv = NOMINAL_VCAP_MV)
+      start_time  = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      local_sigma = (BASE_SIGMA + (acoustic * 0.1)).clamp(SIGMA_LIMITS.min, SIGMA_LIMITS.max)
+      local_rho   = (BASE_RHO + (temp * 0.2)).clamp(RHO_LIMITS.min, RHO_LIMITS.max)
+      local_beta  = perturb_beta(delta_t_s, vcap_mv)
+
+      x, y, z = iterate_lorenz(x0.to_f, y0.to_f, z0.to_f, local_sigma, local_rho, local_beta)
+
+      duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
+      SilkenNet::Metrics::LORENZ_COMPUTATION_DURATION.observe(duration) if defined?(SilkenNet::Metrics)
+
+      [ z.round(4), x, y, z ]
+    end
+
     def self.homeostatic?(z_value, tree_family)
       z_value.between?(tree_family.critical_z_min, tree_family.critical_z_max)
     end

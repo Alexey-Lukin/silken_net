@@ -184,6 +184,9 @@ Rails.application.routes.draw do
       # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       resources :provisioning, only: [ :new ] do
         post :register, on: :collection
+        # [SEC.11] Field migration endpoint — back-fills `lorenz_seed_hex`
+        # for devices provisioned before SEC.11 on first uplink post-deploy.
+        post :upgrade_seed, on: :collection
       end
     end
   end

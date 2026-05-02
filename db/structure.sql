@@ -1011,7 +1011,8 @@ CREATE TABLE public.hardware_keys (
     device_uid character varying,
     previous_aes_key_hex character varying,
     rotated_at timestamp(6) without time zone,
-    ed25519_public_key_hex character varying
+    ed25519_public_key_hex character varying,
+    lorenz_seed_hex character varying
 );
 
 
@@ -1342,7 +1343,11 @@ CREATE TABLE public.telemetry_logs (
     verified_by_iotex boolean DEFAULT false NOT NULL,
     zk_proof_ref character varying,
     chainlink_request_id character varying,
-    oracle_status character varying DEFAULT 'pending'::character varying
+    oracle_status character varying DEFAULT 'pending'::character varying,
+    lorenz_state_x double precision,
+    lorenz_state_y double precision,
+    lorenz_state_z double precision,
+    cold_start_flag boolean DEFAULT false NOT NULL
 )
 PARTITION BY RANGE (created_at);
 
@@ -1392,7 +1397,11 @@ CREATE TABLE public.telemetry_logs_default (
     verified_by_iotex boolean DEFAULT false NOT NULL,
     zk_proof_ref character varying,
     chainlink_request_id character varying,
-    oracle_status character varying DEFAULT 'pending'::character varying
+    oracle_status character varying DEFAULT 'pending'::character varying,
+    lorenz_state_x double precision,
+    lorenz_state_y double precision,
+    lorenz_state_z double precision,
+    cold_start_flag boolean DEFAULT false NOT NULL
 );
 
 
@@ -1422,7 +1431,11 @@ CREATE TABLE public.telemetry_logs_y2026m01 (
     verified_by_iotex boolean DEFAULT false NOT NULL,
     zk_proof_ref character varying,
     chainlink_request_id character varying,
-    oracle_status character varying DEFAULT 'pending'::character varying
+    oracle_status character varying DEFAULT 'pending'::character varying,
+    lorenz_state_x double precision,
+    lorenz_state_y double precision,
+    lorenz_state_z double precision,
+    cold_start_flag boolean DEFAULT false NOT NULL
 );
 
 
@@ -1452,7 +1465,11 @@ CREATE TABLE public.telemetry_logs_y2026m02 (
     verified_by_iotex boolean DEFAULT false NOT NULL,
     zk_proof_ref character varying,
     chainlink_request_id character varying,
-    oracle_status character varying DEFAULT 'pending'::character varying
+    oracle_status character varying DEFAULT 'pending'::character varying,
+    lorenz_state_x double precision,
+    lorenz_state_y double precision,
+    lorenz_state_z double precision,
+    cold_start_flag boolean DEFAULT false NOT NULL
 );
 
 
@@ -1482,7 +1499,11 @@ CREATE TABLE public.telemetry_logs_y2026m03 (
     verified_by_iotex boolean DEFAULT false NOT NULL,
     zk_proof_ref character varying,
     chainlink_request_id character varying,
-    oracle_status character varying DEFAULT 'pending'::character varying
+    oracle_status character varying DEFAULT 'pending'::character varying,
+    lorenz_state_x double precision,
+    lorenz_state_y double precision,
+    lorenz_state_z double precision,
+    cold_start_flag boolean DEFAULT false NOT NULL
 );
 
 
@@ -1512,7 +1533,11 @@ CREATE TABLE public.telemetry_logs_y2026m04 (
     verified_by_iotex boolean DEFAULT false NOT NULL,
     zk_proof_ref character varying,
     chainlink_request_id character varying,
-    oracle_status character varying DEFAULT 'pending'::character varying
+    oracle_status character varying DEFAULT 'pending'::character varying,
+    lorenz_state_x double precision,
+    lorenz_state_y double precision,
+    lorenz_state_z double precision,
+    cold_start_flag boolean DEFAULT false NOT NULL
 );
 
 
@@ -1542,7 +1567,11 @@ CREATE TABLE public.telemetry_logs_y2026m05 (
     verified_by_iotex boolean DEFAULT false NOT NULL,
     zk_proof_ref character varying,
     chainlink_request_id character varying,
-    oracle_status character varying DEFAULT 'pending'::character varying
+    oracle_status character varying DEFAULT 'pending'::character varying,
+    lorenz_state_x double precision,
+    lorenz_state_y double precision,
+    lorenz_state_z double precision,
+    cold_start_flag boolean DEFAULT false NOT NULL
 );
 
 
@@ -1572,7 +1601,11 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
     verified_by_iotex boolean DEFAULT false NOT NULL,
     zk_proof_ref character varying,
     chainlink_request_id character varying,
-    oracle_status character varying DEFAULT 'pending'::character varying
+    oracle_status character varying DEFAULT 'pending'::character varying,
+    lorenz_state_x double precision,
+    lorenz_state_y double precision,
+    lorenz_state_z double precision,
+    cold_start_flag boolean DEFAULT false NOT NULL
 );
 
 
@@ -5350,5 +5383,6 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260421181059'),
 ('20260424165615'),
 ('20260425123403'),
-('20260501160000');
+('20260501160000'),
+('20260502090000');
 

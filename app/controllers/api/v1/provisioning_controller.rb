@@ -67,7 +67,12 @@ module Api
 
           if @device.save
             # КРИПТОГРАФІЧНА ПРОПИСКА
+            # [SEC.11] HardwareKeyService.provision derives both the AES
+            # key and the Lorenz K_seed in one call — single source of
+            # truth for "create HardwareKey at provisioning time".
             @key_hex = HardwareKeyService.provision(@device)
+            hw_key = HardwareKey.find_by(device_uid: device_identifier)
+            @lorenz_seed_hex = hw_key&.lorenz_seed_hex
 
             # [M2M Auth]: Реєструємо Ed25519 public key для M2M автентифікації шлюзу
             if provisioning_params[:ed25519_public_key].present?
@@ -103,6 +108,9 @@ module Api
                 # повертаємо ключ для ручного прошивання на лабораторному стенді.
                 if ENV["PROVISIONING_MASTER_KEY"].blank?
                   response_body[:aes_key] = @key_hex
+                  # [SEC.11] Lorenz K_seed mirrors the AES key in lab mode
+                  # so the Flash burn-in tool can write both blobs at once.
+                  response_body[:lorenz_seed] = @lorenz_seed_hex
                   response_body[:warning] = "TRL4 lab mode: AES key included in response. " \
                                             "Set PROVISIONING_MASTER_KEY for production HKDF derivation."
                 end
@@ -129,6 +137,60 @@ module Api
       rescue StandardError => e
         Rails.logger.error "🚨 [Provisioning] Збій ініціації: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
         render json: { error: "Збій у ядрі Океану. Повідомте Архітектора." }, status: :internal_server_error
+      end
+
+      # [SEC.11] Field-migration endpoint. Existing devices provisioned
+      # before SEC.11 have an AES key but no `lorenz_seed_hex`. Upon their
+      # first uplink post-deploy, the field-ops tool calls this endpoint
+      # with the device's DID; backend deterministically re-derives K_seed
+      # from `PROVISIONING_MASTER_KEY` (HKDF-SHA256) and persists it on
+      # `hardware_keys.lorenz_seed_hex`. Idempotent — re-deriving the same
+      # K_seed yields the identical hex. The endpoint is a no-op for
+      # devices that already have a seed (`status: ok, upgraded: false`).
+      def upgrade_seed
+        device_uid = params.require(:hardware_uid).to_s.strip.upcase
+        hw_key = HardwareKey.find_by(device_uid: device_uid)
+
+        if hw_key.nil?
+          render json: { error: "Hardware key not found for #{device_uid}." },
+                 status: :not_found
+          return
+        end
+
+        if hw_key.lorenz_seed_hex.present?
+          render json: {
+            did: device_uid,
+            upgraded: false,
+            key_derivation: "hkdf-sha256",
+            note: "K_seed already provisioned — no-op."
+          }, status: :ok
+          return
+        end
+
+        seed_hex = SilkenNet::SeedDerivation.derive_seed(device_uid)
+        hw_key.update!(lorenz_seed_hex: seed_hex)
+
+        response_body = {
+          did: device_uid,
+          upgraded: true,
+          key_derivation: "hkdf-sha256"
+        }
+
+        # Lab mode: surface the freshly-derived seed so an operator can
+        # flash the Soldier Flash sector by hand. In production HKDF
+        # mode firmware re-derives the same value independently.
+        if ENV["PROVISIONING_MASTER_KEY"].blank?
+          response_body[:lorenz_seed] = seed_hex
+          response_body[:warning] = "TRL4 lab mode: K_seed included in response. " \
+                                    "Set PROVISIONING_MASTER_KEY for production HKDF derivation."
+        end
+
+        render json: response_body, status: :ok
+      rescue ActionController::ParameterMissing => e
+        render json: { error: e.message }, status: :unprocessable_content
+      rescue SecurityError => e
+        Rails.logger.error "🚨 [Provisioning::UpgradeSeed] #{e.message}"
+        render json: { error: e.message }, status: :service_unavailable
       end
 
       private
