@@ -329,10 +329,12 @@
 - **Опис:** Дешеві кварцові резонатори / внутрішні осцилятори STM32 мають температурний дрейф. При -20°C та +40°C RTC годинник Soldier йде з різною швидкістю. За кілька місяців "час дерева" розсинхронізується з "часом бекенду" на хвилини або години. Впливає на: (1) `created_at` timestamp → partition pruning errors, (2) HMAC/nonce replay protection windows, (3) cron-like wakeup scheduling, (4) **TDMA Синхронні Вікна** (ARCH.26) — без синхронізації годинників координований mesh relay неможливий
 - **Рішення:** Протокол Time Sync через Queen downlink. Queen має точний час через LTE/NTP. Періодично Queen надсилає OTA-корекцію часу. Аналог LoRaWAN MAC command `DeviceTimeReq`
 - **Залежності:** Є передумовою для ARCH.26 (TDMA Sync Windows). Без FW.20 синхронні вікна неможливі — годинники дрейфують і вузли "промахуються" повз спільне RX-вікно
-- [ ] 🤖 Firmware Queen: додати time correction у CoAP ACK або окремий downlink command
+- **Статус:** 🟡 Backend envelope реалізовано: `CoapEncryption.coap_encrypt` обгортає всі downlink-payloadи у `[0x9C][unix_ts_be:4][payload]` перед AES-256-CBC (`app/workers/concerns/coap_encryption.rb`). 47/47 specs зелені (`coap_encryption_spec`, `actuator_command_worker_spec`). Marker `0x9C = CMD_TIME_SYNC` обраний disjoint від `CMD_OTA_BYTECODE = 0x99` і ASCII `"CMD:"`. Year-2106 wrap покритий тестом. **Firmware Queen handler — TODO** (приймати envelope, парсити ts, оновити RTC, далі обробляти inner payload).
+- [x] 🤖 Backend: включити server UTC timestamp у downlink payload — `[0x9C][unix_ts_be:4][payload]` envelope
+- [x] 🤖 Backend specs: round-trip, monotonicity, year-2106 wrap, structural marker — 47/47 зелені
+- [ ] 🤖 Firmware Queen: парсити CMD_TIME_SYNC envelope, оновити RTC, route inner payload (CMD/0x99)
 - [ ] 🤖 Firmware Queen: реалізувати periodic beacon broadcast (UTC timestamp + network schedule) — забезпечує базову синхронізацію часу для ARCH.26
-- [ ] 🤖 Firmware Soldier: прийняти та застосувати RTC correction
-- [ ] 🤖 Backend: включити server UTC timestamp у downlink payload
+- [ ] 🤖 Firmware Soldier: прийняти та застосувати RTC correction (через mesh relay від Queen)
 - [ ] 🤖 Тести: перевірити drift compensation при ΔT = ±60°C
 
 #### FW.21 — Edge data aggregation (RAM-aware Soldier)
@@ -633,6 +635,31 @@
 - [ ] 🤖 Не відкладати вирішення на "після FW.2" — мінімальний fix: Frame Counter у RTC як anti-replay для panic packets
 - [ ] 🔗 Верифікувати що `EwsAlert` broadcast застосовує той самий CCM MIC що і звичайні пакети (після FW.2)
 - [x] Backend: rate limiting на emergency callbacks — не більше N panic alerts/хвилину від одного DID
+
+#### SEC.11 — Raw DID як seed Lorenz атрактора (Dual Computation Integrity bypass)
+- **Джерело:** `03_06` (повний дизайн SSOT) | `03_04` BLOCKER-1 cross-ref | **Пріоритет: P1**
+- **Опис:** Поточний firmware mruby `bio_contract.rb` стартує атрактор з `(x₀,y₀,z₀)` виведених із `chaos_seed = HRNG()` (Soldier-side) і **DID** (server-side mirror). DID їде відкритим текстом у заголовку LoRa-пакета (`[DID:4]`, поза AES-блоком). Чотири фундаментальні вади: (1) публічний seed → атакер з open-source формулою Лоренца обчислює очікуваний Z для будь-якого дерева → підробляє телеметрію з валідним StatusByte, `check_z_divergence!` мовчить; (2) сусідні DID видаються послідовно → перші ~30 ітерацій Ейлера дають майже ідентичні траєкторії (знижена статистична ентропія); (3) семантична помилка категорій — DID *identifier*, не *key*; (4) відсутність forward secrecy — одне дерево все життя стартує з тієї ж точки.
+- **Наслідок для DCI:** `check_z_divergence!` змушений бути **категоричним** (homeostasis/stress/anomaly enum), а не числовим, бо публічний DID не дозволяє використовувати точне `(server_z − device_z).abs < ε` без розкриття алгоритму атакеру. Атакер з `Z_fake = 28.0` проходить перевірку.
+- **Прийняте рішення (2026-05-02):** **Гібрид варіантів A + B + D** — повний дизайн у `docs/03_06_Lorenz_Seed_Provenance.md` §4.
+  - **A** — `K_seed = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info=DID, len=32)`, виводиться при provisioning, зберігається в `hardware_keys.lorenz_seed_hex` (AR Encryption non-deterministic) і в Soldier Flash (поряд з `K_aes`).
+  - **B** — daily epoch rotation: `(x₀,y₀,z₀) = unpack_signed_unit_floats(HMAC-SHA256(K_seed, "init|" || epoch_day_be)[0..23])`. Forward secrecy ≤ 24 год, синхронізовано через FW.20 `CMD_TIME_SYNC`.
+  - **D** — cold-start derive відбувається лише після VBAT loss (рідкісна подія); у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init.
+  - Варіант **C** (per-packet seed) відкинуто — overhead на STM32WLE5JC не виправдовує marginal security gain над B + continuation.
+- **Ефект на DCI:** після SEC.11 обидві сторони стартують з byte-identical `(x₀,y₀,z₀)` (HMAC-SHA256 detrministic). Float divergence між ARM та x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` стає числовим: `(server_z - device_z).abs < 0.001` — 9 порядків запасу над архітектурним drift, fake-телеметрія детектується з ~99.99% recall.
+- **Залежності:** Reuse існуючої `PROVISIONING_MASTER_KEY` infra (нуль нових сервісів). Synергізує з FW.20 (час потрібен ± 1 година) і FW.6 (RTC continuation вже працює).
+- **Threat model post-SEC.11** (`03_06` §7): sniff LoRa → відтворити Z ❌; replay вчорашнього пакета ❌ (epoch_day змінився); compromise одного `K_seed` ⚠️ (вузол уразливий ≤ 24 год, інші — ні); compromise `PROVISIONING_MASTER_KEY` 🚨 (cascading — окрема rotation strategy SEC.9).
+- [ ] 🤖 Schema migration: `hardware_keys.lorenz_seed_hex`, `telemetry_logs.lorenz_state_x/y/z`, `telemetry_logs.cold_start_flag`
+- [ ] 🤖 `SilkenNet::SeedDerivation` сервіс (HKDF + HMAC-SHA256 + signed-unit-float unpack) + 8-10 specs
+- [ ] 🤖 `HardwareKey#binary_lorenz_seed` (AR Encryption non-deterministic, як `binary_key`)
+- [ ] 🤖 `Attractor.calculate_z_from_state(x0, y0, z0, σ, ρ, β, n)` — новий API; legacy `calculate_z(chaos_seed, ...)` deprecate-then-delete (pre-prod, без shim'ів)
+- [ ] 🤖 `TelemetryUnpackerService` — per-tree seed dispatch; numeric divergence (`< 0.001`) включити після 100% field migration, до того — категоричний як fallback
+- [ ] 🤖 `Provisioning::RegistrationService` — генерувати + повертати `K_seed` поряд з `K_aes`
+- [ ] 🤖 Firmware: HKDF/HMAC через mbedTLS (вже linkована для AES); ~4KB image overhead; Flash sector для `K_seed` поряд з `K_aes`
+- [ ] 🤖 Firmware `bio_contract.rb` — приймати `(x₀,y₀,z₀)` як args, видалити DID-derive code path
+- [ ] 🤖 `firmware/test/test_seed_derivation.c` — host-based parity test (1000-case fuzz: byte-exact `(x₀,y₀,z₀)` match із backend `SeedDerivation`)
+- [ ] 🤖 100-case end-to-end parity: random `(K_seed, epoch_day, σ, ρ, β)` → Z-divergence < 1e-9 firmware vs backend
+- [ ] 🤖 Field migration endpoint: `POST /api/v1/provisioning/upgrade_seed` — re-provision існуючих вузлів upon first uplink post-deploy
+- [ ] 🤖 Flip `check_z_divergence!` на numeric tolerance band після 100% migration
 
 ---
 
