@@ -182,7 +182,7 @@ RSpec.describe CoapEncryption do
     end
 
     it "different inner payloads share the same envelope structure (marker first byte)" do
-      [ "X", "CMD:OPEN", "\x99\x00\x01\x00\x05" + ("\xAB".b * 11) ].each do |payload|
+      [ "X".b, "CMD:OPEN".b, "\x99\x00\x01\x00\x05".b + ("\xAB".b * 11) ].each do |payload|
         decrypted = decrypt(worker.coap_encrypt(payload, key))
         expect(decrypted.bytes.first).to eq(0x9C),
           "Expected 0x9C envelope marker for payload #{payload.inspect}"

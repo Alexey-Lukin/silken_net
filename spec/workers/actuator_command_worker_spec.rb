@@ -151,8 +151,11 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
       decipher.padding = 0
 
       plaintext = decipher.update(ciphertext) + decipher.final
-      expect(plaintext).to start_with("CMD:")
-      expect(plaintext).to include(command.idempotency_token)
+      # FW.20: payload is wrapped as [0x9C][unix_ts_be:4][inner], inner starts with "CMD:"
+      expect(plaintext.bytes.first).to eq(0x9C)
+      inner = plaintext.byteslice(5..)
+      expect(inner).to start_with("CMD:")
+      expect(inner).to include(command.idempotency_token)
     end
   end
 
