@@ -1986,6 +1986,315 @@ TEST(test_cbridge_unified_7arg_signature) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.20-S1] Time-Sync Beacon RX (Soldier)
+ * ════════════════════════════════════════════════════════════════════ */
+#define S_BEACON_MARKER          0x9C
+#define S_BEACON_MAGIC_BYTE      'B'
+#define S_BEACON_PLAINTEXT_SIZE  16
+#define S_OTA_MARKER             0x99
+
+/* Soldier-side authoritative UTC (mirrors soldier_unix_ts in main.c). */
+static uint32_t test_soldier_unix_ts            = 0;
+static uint32_t test_soldier_unix_ts_local_tick = 0;
+
+/* Extract from soldier/main.c RX branch:
+ *  if (size == 16 && plaintext[0] == 0x9C && plaintext[10] == 'B') -> consume.
+ * Returns: 1 = beacon consumed (don't relay/route further), 0 = not a beacon. */
+static int Recv_Time_Beacon(const uint8_t* plaintext, uint16_t size)
+{
+    if (size != S_BEACON_PLAINTEXT_SIZE) return 0;
+    if (plaintext[0]  != S_BEACON_MARKER)     return 0;
+    if (plaintext[10] != S_BEACON_MAGIC_BYTE) return 0;
+
+    uint32_t ts = ((uint32_t)plaintext[1] << 24) | ((uint32_t)plaintext[2] << 16) |
+                  ((uint32_t)plaintext[3] << 8)  | (uint32_t)plaintext[4];
+    if (ts == 0) return 1;  /* Frame is well-formed but ts=0 — drop without persisting */
+
+    test_soldier_unix_ts            = ts;
+    test_soldier_unix_ts_local_tick = 12345;
+    return 1;
+}
+
+TEST(test_beacon_rx_sets_unix_ts) {
+    test_soldier_unix_ts = 0;
+    uint8_t plain[16] = {
+        0x9C, 0x65, 0xAB, 0xCD, 0xEF, 0,0,0,0, 1, 'B', 0,0,0,0,0
+    };
+    int consumed = Recv_Time_Beacon(plain, 16);
+    ASSERT_EQ(consumed, 1);
+    ASSERT_EQ(test_soldier_unix_ts, 0x65ABCDEFu);
+}
+
+TEST(test_beacon_rx_rejects_wrong_marker) {
+    test_soldier_unix_ts = 0xDEADBEEFu;
+    uint8_t plain[16] = {
+        0x99,  /* OTA marker — must NOT trigger beacon path */
+        0x65, 0xAB, 0xCD, 0xEF, 0,0,0,0, 1, 'B', 0,0,0,0,0
+    };
+    int consumed = Recv_Time_Beacon(plain, 16);
+    ASSERT_EQ(consumed, 0);
+    ASSERT_EQ(test_soldier_unix_ts, 0xDEADBEEFu);
+}
+
+TEST(test_beacon_rx_rejects_wrong_magic_byte) {
+    test_soldier_unix_ts = 0xDEADBEEFu;
+    uint8_t plain[16] = {
+        0x9C, 0x65, 0xAB, 0xCD, 0xEF, 0,0,0,0, 1, 'X' /* wrong magic */, 0,0,0,0,0
+    };
+    int consumed = Recv_Time_Beacon(plain, 16);
+    ASSERT_EQ(consumed, 0);
+    ASSERT_EQ(test_soldier_unix_ts, 0xDEADBEEFu);
+}
+
+TEST(test_beacon_rx_rejects_wrong_size) {
+    test_soldier_unix_ts = 0xDEADBEEFu;
+    uint8_t plain[16] = {
+        0x9C, 0x65, 0xAB, 0xCD, 0xEF, 0,0,0,0, 1, 'B', 0,0,0,0,0
+    };
+    int consumed = Recv_Time_Beacon(plain, 15);  /* not 16 */
+    ASSERT_EQ(consumed, 0);
+    ASSERT_EQ(test_soldier_unix_ts, 0xDEADBEEFu);
+}
+
+TEST(test_beacon_rx_ts_zero_well_formed_but_dropped) {
+    /* Beacon shape valid but ts=0 — Soldier MUST NOT teach itself epoch 0. */
+    test_soldier_unix_ts = 0xDEADBEEFu;
+    uint8_t plain[16] = {
+        0x9C, 0,0,0,0, 0,0,0,0, 1, 'B', 0,0,0,0,0
+    };
+    int consumed = Recv_Time_Beacon(plain, 16);
+    ASSERT_EQ(consumed, 1);                        /* still consumed (don't relay) */
+    ASSERT_EQ(test_soldier_unix_ts, 0xDEADBEEFu);  /* but ts unchanged */
+}
+
+TEST(test_beacon_rx_does_not_collide_with_ota) {
+    /* OTA chunk path (byte0=0x99) must be untouched by beacon recv. */
+    test_soldier_unix_ts = 0;
+    uint8_t plain[16] = {
+        S_OTA_MARKER, 0,0, 0,1,                  /* idx=0, total=1 */
+        'b','y','t','e','c','o','d','e', 0,0,0   /* 11 bytes payload */
+    };
+    int consumed = Recv_Time_Beacon(plain, 16);
+    ASSERT_EQ(consumed, 0);                       /* falls through to OTA branch */
+    ASSERT_EQ(test_soldier_unix_ts, 0u);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.8] CMD_SET_THRESHOLDS frame parsing (Soldier side).
+ * Mirrors backend OtaPackagerService.build_threshold_config_block — any
+ * change to the wire format MUST update both this test bank and the Ruby
+ * service simultaneously (cross-stack contract).
+ * ════════════════════════════════════════════════════════════════════ */
+#define S_CMD_SET_THRESHOLDS_MARKER  0x9A
+#define S_CMD_THRESHOLDS_FRAME_SIZE  13
+#define S_CMD_THRESHOLDS_PAYLOAD_LEN 10
+#define S_CMD_THRESHOLDS_BODY_SIZE   8
+
+/* Soldier CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF). Reference impl —
+ * the firmware version lives in soldier/main.c and must agree byte-for-byte. */
+static uint16_t soldier_crc16_ccitt(const uint8_t* data, uint16_t len)
+{
+    uint16_t crc = 0xFFFFu;
+    for (uint16_t i = 0; i < len; i++) {
+        crc ^= ((uint16_t)data[i]) << 8;
+        for (uint8_t b = 0; b < 8; b++) {
+            crc = (crc & 0x8000u) ? (uint16_t)((crc << 1) ^ 0x1021u)
+                                  : (uint16_t)(crc << 1);
+        }
+    }
+    return crc;
+}
+
+/* Compose a backend-style frame: [0x9A][len_le=10][body:8][crc_le:2]. */
+static void compose_threshold_frame(int16_t z_min_x100, int16_t z_max_x100,
+                                     int16_t z_opt_x100, uint8_t species,
+                                     uint8_t version, uint8_t out[13])
+{
+    out[0] = S_CMD_SET_THRESHOLDS_MARKER;
+    out[1] = (uint8_t)(S_CMD_THRESHOLDS_PAYLOAD_LEN & 0xFFu);
+    out[2] = (uint8_t)((S_CMD_THRESHOLDS_PAYLOAD_LEN >> 8) & 0xFFu);
+
+    uint16_t u_min = (uint16_t)z_min_x100;
+    uint16_t u_max = (uint16_t)z_max_x100;
+    uint16_t u_opt = (uint16_t)z_opt_x100;
+    out[3] = (uint8_t)(u_min & 0xFFu);
+    out[4] = (uint8_t)((u_min >> 8) & 0xFFu);
+    out[5] = (uint8_t)(u_max & 0xFFu);
+    out[6] = (uint8_t)((u_max >> 8) & 0xFFu);
+    out[7] = (uint8_t)(u_opt & 0xFFu);
+    out[8] = (uint8_t)((u_opt >> 8) & 0xFFu);
+    out[9]  = species;
+    out[10] = version;
+
+    uint16_t crc = soldier_crc16_ccitt(&out[3], S_CMD_THRESHOLDS_BODY_SIZE);
+    out[11] = (uint8_t)(crc & 0xFFu);
+    out[12] = (uint8_t)((crc >> 8) & 0xFFu);
+}
+
+/* Pure-logic mirror of Soldier_Handle_CMD_SET_THRESHOLDS (in soldier/main.c).
+ * Returns 1 on accept (mutates *out_z_min/max/opt/species/version), 0 on reject.
+ * Kept in sync with the firmware impl by review — invariants tested below. */
+static uint8_t Test_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame, uint16_t size,
+                                               int16_t* out_z_min, int16_t* out_z_max,
+                                               int16_t* out_z_opt,
+                                               uint8_t* out_species, uint8_t* out_version)
+{
+    if (size < S_CMD_THRESHOLDS_FRAME_SIZE)              return 0;
+    if (frame[0] != S_CMD_SET_THRESHOLDS_MARKER)         return 0;
+
+    uint16_t plen = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
+    if (plen != S_CMD_THRESHOLDS_PAYLOAD_LEN)            return 0;
+
+    const uint8_t* body = frame + 3;
+    uint16_t expected = soldier_crc16_ccitt(body, S_CMD_THRESHOLDS_BODY_SIZE);
+    uint16_t received = (uint16_t)body[8] | ((uint16_t)body[9] << 8);
+    if (expected != received)                            return 0;
+
+    int16_t z_min = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
+    int16_t z_max = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
+    int16_t z_opt = (int16_t)((uint16_t)body[4] | ((uint16_t)body[5] << 8));
+
+    if (!(z_min < z_max))                                return 0;
+    if (z_opt < z_min || z_opt > z_max)                  return 0;
+    if (z_min < -10000 || z_max > 10000)                 return 0;
+
+    *out_z_min   = z_min;
+    *out_z_max   = z_max;
+    *out_z_opt   = z_opt;
+    *out_species = body[6];
+    *out_version = body[7];
+    return 1;
+}
+
+TEST(test_thresholds_accepts_default_pinus_sylvestris) {
+    /* species_id=0 (Pinus sylvestris), version=1, defaults from bio_contract.rb */
+    uint8_t frame[13];
+    compose_threshold_frame(200, 4500, 2900, 0, 1, frame);
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 1);
+    ASSERT_EQ(mn, 200);
+    ASSERT_EQ(mx, 4500);
+    ASSERT_EQ(op, 2900);
+    ASSERT_EQ(sp, 0);
+    ASSERT_EQ(ver, 1);
+}
+
+TEST(test_thresholds_accepts_negative_z_min) {
+    /* Some species can have z_min in the negative band. */
+    uint8_t frame[13];
+    compose_threshold_frame(-500, 3500, 1500, 4, 7, frame);  /* Betula pendula */
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 1);
+    ASSERT_EQ(mn, -500);
+    ASSERT_EQ(mx, 3500);
+    ASSERT_EQ(op, 1500);
+}
+
+TEST(test_thresholds_rejects_wrong_marker) {
+    uint8_t frame[13];
+    compose_threshold_frame(200, 4500, 2900, 0, 1, frame);
+    frame[0] = 0x99;  /* OTA marker — not us */
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 0);
+}
+
+TEST(test_thresholds_rejects_wrong_payload_len) {
+    uint8_t frame[13];
+    compose_threshold_frame(200, 4500, 2900, 0, 1, frame);
+    frame[1] = 9;  /* expected 10 */
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 0);
+}
+
+TEST(test_thresholds_rejects_bad_crc) {
+    uint8_t frame[13];
+    compose_threshold_frame(200, 4500, 2900, 0, 1, frame);
+    frame[11] ^= 0xFF;  /* flip low CRC byte */
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 0);
+}
+
+TEST(test_thresholds_rejects_bit_flip_in_body) {
+    uint8_t frame[13];
+    compose_threshold_frame(200, 4500, 2900, 0, 1, frame);
+    frame[3] ^= 0x01;  /* corrupt body — CRC will mismatch */
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 0);
+}
+
+TEST(test_thresholds_rejects_z_min_geq_z_max) {
+    /* Collapsed zone (z_min == z_max) — invariant violation. */
+    uint8_t frame[13];
+    compose_threshold_frame(2900, 2900, 2900, 0, 1, frame);
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 0);
+}
+
+TEST(test_thresholds_rejects_z_opt_outside_band) {
+    /* z_opt = 5000 but z_max = 4500 → reject. */
+    uint8_t frame[13];
+    compose_threshold_frame(200, 4500, 5000, 0, 1, frame);
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 0);
+}
+
+TEST(test_thresholds_rejects_z_below_minus_100) {
+    /* |z_min| ≤ 100.00 → ≤ 10000 absolute. -15000 == -150.00 → reject. */
+    uint8_t frame[13];
+    compose_threshold_frame(-15000, 4500, 0, 0, 1, frame);
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 0);
+}
+
+TEST(test_thresholds_rejects_z_above_plus_100) {
+    uint8_t frame[13];
+    compose_threshold_frame(200, 15000, 5000, 0, 1, frame);
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 0);
+}
+
+TEST(test_thresholds_rejects_short_frame) {
+    uint8_t frame[12] = {0};  /* one byte short */
+    frame[0] = S_CMD_SET_THRESHOLDS_MARKER;
+    frame[1] = S_CMD_THRESHOLDS_PAYLOAD_LEN;
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0xFF, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 12, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 0);
+}
+
+TEST(test_thresholds_unmapped_species_id_0xFF_accepted) {
+    /* Backend uses 0xFF for unmapped species — must still parse. */
+    uint8_t frame[13];
+    compose_threshold_frame(200, 4500, 2900, 0xFF, 1, frame);
+
+    int16_t mn=0, mx=0, op=0; uint8_t sp=0, ver=0;
+    uint8_t ok = Test_Handle_CMD_SET_THRESHOLDS(frame, 13, &mn, &mx, &op, &sp, &ver);
+    ASSERT_EQ(ok, 1);
+    ASSERT_EQ(sp, 0xFF);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -2157,6 +2466,28 @@ int main(void)
 
     printf("\n  C-Bridge 7-Arg Signature (FW.30):\n");
     RUN(test_cbridge_unified_7arg_signature);
+
+    printf("\n  Time-Sync Beacon RX (FW.20-S1):\n");
+    RUN(test_beacon_rx_sets_unix_ts);
+    RUN(test_beacon_rx_rejects_wrong_marker);
+    RUN(test_beacon_rx_rejects_wrong_magic_byte);
+    RUN(test_beacon_rx_rejects_wrong_size);
+    RUN(test_beacon_rx_ts_zero_well_formed_but_dropped);
+    RUN(test_beacon_rx_does_not_collide_with_ota);
+
+    printf("\n  CMD_SET_THRESHOLDS Frame Parsing (FW.8):\n");
+    RUN(test_thresholds_accepts_default_pinus_sylvestris);
+    RUN(test_thresholds_accepts_negative_z_min);
+    RUN(test_thresholds_rejects_wrong_marker);
+    RUN(test_thresholds_rejects_wrong_payload_len);
+    RUN(test_thresholds_rejects_bad_crc);
+    RUN(test_thresholds_rejects_bit_flip_in_body);
+    RUN(test_thresholds_rejects_z_min_geq_z_max);
+    RUN(test_thresholds_rejects_z_opt_outside_band);
+    RUN(test_thresholds_rejects_z_below_minus_100);
+    RUN(test_thresholds_rejects_z_above_plus_100);
+    RUN(test_thresholds_rejects_short_frame);
+    RUN(test_thresholds_unmapped_species_id_0xFF_accepted);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

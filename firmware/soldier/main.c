@@ -200,7 +200,135 @@ static inline float uint32_to_float(uint32_t u) {
     return f;
 }
 
-// === 1.10. ЗГЛАДЖУВАЧ ПУЛЬСУ (FW.21: EMA Persistence) ===
+// [FW.20-S1] LoRa-маяк синхронізації часу від Королеви.
+// 16-байтний відкритий текст (після AES-256-ECB decrypt):
+//   [0x9C][unix_ts_be:u32][резерв:0×4][TTL][магія 'B'][padding:0×5]
+// Солдат дивиться на байт 0 розшифрованого RX-payload — відрізняється від
+// OTA (0x99), телеметрії (починається з DID, ніколи не 0x9C) та текстового
+// CMD:. Маяк НЕ ретранслюємо (TTL=1) — споживаємо локально, щоб виправити
+// дрейф RTC.
+#define BEACON_MARKER             0x9C
+#define BEACON_MAGIC_BYTE         0x42  // 'B'
+#define BEACON_PLAINTEXT_SIZE     16
+
+// [FW.20-S1] Солдатські UTC-секунди як єдине джерело істини + локальний tick
+// останньої синхронізації для розрахунку дрейфу. Використовується
+// Derive_Cold_Start_State() для детермінованого epoch_day (точно як у
+// бекенді SilkenNet::SeedDerivation). Без синхронізованого значення
+// фолбек на застарілу RTC-date-апроксимацію.
+volatile uint32_t soldier_unix_ts            = 0;
+volatile uint32_t soldier_unix_ts_local_tick = 0;
+
+// [FW.8] CMD_SET_THRESHOLDS (0x9A) — пер-деревні Z-пороги Лоренца, що приходять
+// через OTA. Формат на дроті виробляється бекендом
+// app/services/ota_packager_service.rb#build_threshold_config_block:
+//   [маркер 0x9A][len_le:2 = 10][z_min_x100:s16le][z_max_x100:s16le]
+//   [z_opt_x100:s16le][species_id:u8][config_version:u8][crc16_le:u16] = 13 байт
+// Алгоритм CRC16: CRC-16/CCITT-FALSE (поліном 0x1021, init 0xFFFF, без рефлексії)
+// над 8-байтним body ПЕРЕД хвостовим CRC. Дзеркало на Ruby-боці —
+// OtaPackagerService.crc16_ccitt (байт-у-байт ідентично).
+//
+// 🟡 СТАТУС: Deferred TRL-7 (FW.8). Парсер залишено як freeze-контракт
+// wire-формату + повний host-test bank (12 кейсів у test_soldier_logic.c),
+// АЛЕ виклик у LoRa RX-гілці захищений `#if FW8_PARSER_ENABLED` і за
+// замовчуванням ВИМКНЕНИЙ. Бекенд `OtaPackagerService.build_threshold_
+// config_block` — теж лише class method, у production-pipeline нікуди
+// не передається.
+//
+// ПРИЧИНА defer: STM32WLE5JC має лише 20 RTC Backup Register'ів (DR0..DR19),
+// вони повністю зайняті: DR0-2 (acoustic/wakeup/relay), DR3-6 (mesh payload),
+// DR7 (DID), DR8/9/11 (anti-pingpong), DR10/12 (EMA), DR13/14 (TinyML),
+// DR16-19 (Lorenz state). Єдиний вільний DR15 (4 байти) — недостатньо для
+// 8-байтного body порогів. SSOT: 03_01 §2 (Canonical Backup Map).
+//
+// Альтернативи відкинуто:
+//   • Flash sector — 2 KB на 8 байт, wear ~10k erase × at-most-daily re-send
+//     дає 27 років, але erase ~30 мс блокує LoRa RX → конфлікт з anti-pingpong
+//     RX-вікном після TX. Не виправдано для feature, що на TRL-6 нічого не
+//     змінює (всі 5 видів зараз використовують ті самі firmware-defaults).
+//   • RAM-only з re-send щодня × 100k дерев = ~5% всього NB-IoT downlink
+//     заради no-op feature. Чесніше відкласти.
+//
+// ВІДНОВЛЕННЯ: коли FW.21 EMA-рефакторинг звільнить хоча б 1 регістр (можливо
+// при щільнішій упаковці DR8/9/11 anti-pingpong), FW.8 повертається з
+// RTC-персистенс (8 байт body → 2 регістри) — `#define FW8_PARSER_ENABLED 1`,
+// додати boot-restore + KENOSIS-write блок.
+#define FW8_PARSER_ENABLED                0  // 🟡 Deferred TRL-7 (див. блок вище)
+#define CMD_SET_THRESHOLDS_MARKER         0x9A
+#define CMD_THRESHOLDS_HEADER_SIZE        3   // [маркер:1][len_le:2]
+#define CMD_THRESHOLDS_BODY_SIZE          8   // 6 + 1 + 1
+#define CMD_THRESHOLDS_FRAME_SIZE         13  // header + body + crc16
+#define CMD_THRESHOLDS_PAYLOAD_LEN        10  // body + crc16 (повторює бекенд)
+#define LORENZ_DEFAULT_Z_MIN_X100         200    // 2.00
+#define LORENZ_DEFAULT_Z_MAX_X100         4500   // 45.00
+#define LORENZ_DEFAULT_Z_OPT_X100         2900   // 29.00
+
+int16_t lorenz_z_min_x100      = LORENZ_DEFAULT_Z_MIN_X100;
+int16_t lorenz_z_max_x100      = LORENZ_DEFAULT_Z_MAX_X100;
+int16_t lorenz_z_opt_x100      = LORENZ_DEFAULT_Z_OPT_X100;
+uint8_t lorenz_species_id      = 0xFF;  // unmapped (OtaPackagerService::DEFAULT_SPECIES_ID)
+uint8_t lorenz_config_version  = 0;     // 0 = firmware-baked defaults
+
+// CRC-16/CCITT-FALSE (поліном 0x1021, init 0xFFFF). Дзеркало
+// OtaPackagerService.crc16_ccitt — байт-ідентично для будь-якого input.
+static uint16_t Soldier_CRC16_CCITT(const uint8_t* data, uint16_t len)
+{
+    uint16_t crc = 0xFFFFu;
+    for (uint16_t i = 0; i < len; i++) {
+        crc ^= ((uint16_t)data[i]) << 8;
+        for (uint8_t b = 0; b < 8; b++) {
+            crc = (crc & 0x8000u) ? (uint16_t)((crc << 1) ^ 0x1021u)
+                                   : (uint16_t)(crc << 1);
+        }
+    }
+    return crc;
+}
+
+// Опрацювати фрейм CMD_SET_THRESHOLDS, що прийшов через LoRa-broadcast.
+// Повертає: 1 = прийнято й застосовано, 0 = відкинуто (поганий len/CRC/межі).
+// При успіху мутує глобалки lorenz_z_*_x100 + lorenz_species_id +
+// lorenz_config_version. Жодного RTC-write — значення живуть у RAM до VBAT-loss
+// (див. коментар-преамбулу до CMD_SET_THRESHOLDS_MARKER щодо обмеження апаратури).
+static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
+                                                  uint16_t       frame_size)
+{
+    if (frame_size < CMD_THRESHOLDS_FRAME_SIZE)            return 0;
+    if (frame[0] != CMD_SET_THRESHOLDS_MARKER)             return 0;
+
+    // Бекенд пише payload_len як little-endian uint16
+    uint16_t payload_len = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
+    if (payload_len != CMD_THRESHOLDS_PAYLOAD_LEN)         return 0;
+
+    const uint8_t* body = frame + CMD_THRESHOLDS_HEADER_SIZE;
+
+    // Перевіряємо CRC16 по 8-байтному body ПЕРЕД хвостовим CRC
+    uint16_t expected_crc = Soldier_CRC16_CCITT(body, CMD_THRESHOLDS_BODY_SIZE);
+    uint16_t received_crc = (uint16_t)body[CMD_THRESHOLDS_BODY_SIZE]
+                          | ((uint16_t)body[CMD_THRESHOLDS_BODY_SIZE + 1] << 8);
+    if (expected_crc != received_crc)                      return 0;
+
+    // Розпаковуємо знакові 16-бітні little-endian z_min, z_max, z_opt
+    int16_t z_min = (int16_t)((uint16_t)body[0] | ((uint16_t)body[1] << 8));
+    int16_t z_max = (int16_t)((uint16_t)body[2] | ((uint16_t)body[3] << 8));
+    int16_t z_opt = (int16_t)((uint16_t)body[4] | ((uint16_t)body[5] << 8));
+    uint8_t species_id     = body[6];
+    uint8_t config_version = body[7];
+
+    // Перевірка інваріантів (не довіряємо ефіру навіть після CRC):
+    //   - z_min строго менший за z_max (інакше зона колапсує);
+    //   - z_opt має бути в [z_min, z_max];
+    //   - усі значення в правдоподібному діапазоні Z (-100.00..+100.00 → ±10000).
+    if (!(z_min < z_max))                                  return 0;
+    if (z_opt < z_min || z_opt > z_max)                    return 0;
+    if (z_min < -10000 || z_max > 10000)                   return 0;
+
+    lorenz_z_min_x100      = z_min;
+    lorenz_z_max_x100      = z_max;
+    lorenz_z_opt_x100      = z_opt;
+    lorenz_species_id      = species_id;
+    lorenz_config_version  = config_version;
+    return 1;
+}
 // Експоненціальне ковзне середнє для delta_t (швидкість метаболізму EBFC)
 // та vcap (заряд іоністора). Зменшує ADC-/RTC-шум приблизно в 3× перед
 // тим, як ці сигнали потраплять до Атрактора (FW.5 Variant B+).
@@ -434,8 +562,7 @@ int main(void)
 
   // =========================================================================
   // [FW.6] ВІДНОВЛЕННЯ СТАНУ АТРАКТОРА ЛОРЕНЦА (RTC DR16-DR19)
-  // =========================================================================
-  // Перевіряємо маркер валідності в DR19. Якщо LORENZ_STATE_MAGIC —
+  // =========================================================================  // Перевіряємо маркер валідності в DR19. Якщо LORENZ_STATE_MAGIC —
   // відновлюємо (x, y, z) з попереднього циклу для безперервної траєкторії.
   // [SEC.11 / FW.30] Інакше — cold-start з K_seed (HKDF/HMAC derivation).
   {
@@ -835,9 +962,49 @@ int main(void)
                 uint16_t blocks = incoming_lora_size / 4;
                 HAL_CRYP_Decrypt(&hcryp, (uint32_t*)incoming_lora_payload, blocks, (uint32_t*)decrypted_rx_payload, 1000);
 
+                // Сценарій 0: [FW.20-S1] Маяк синхронізації часу від Королеви (0x9C).
+                // 16-байтний ECB-пакет з відкритим текстом [0x9C][ts_be:4][...].
+                // Оновлюємо soldier_unix_ts/local_tick — cold-start derivation
+                // тоді точно обчислить epoch_day (дзеркало бекенду HKDF input).
+                if (incoming_lora_size == BEACON_PLAINTEXT_SIZE &&
+                    decrypted_rx_payload[0] == BEACON_MARKER &&
+                    decrypted_rx_payload[10] == BEACON_MAGIC_BYTE) {
+
+                    uint32_t beacon_ts = ((uint32_t)decrypted_rx_payload[1] << 24) |
+                                         ((uint32_t)decrypted_rx_payload[2] << 16) |
+                                         ((uint32_t)decrypted_rx_payload[3] << 8)  |
+                                         (uint32_t)decrypted_rx_payload[4];
+
+                    if (beacon_ts != 0) {
+                        soldier_unix_ts            = beacon_ts;
+                        soldier_unix_ts_local_tick = HAL_GetTick();
+                    }
+
+                    // TTL=1: НЕ ретранслюємо. Виходимо з RX-циклу, йдемо спати.
+                    break;
+                }
+
+                // Сценарій 1: [FW.8] CMD_SET_THRESHOLDS (0x9A) — Z-пороги Лоренца.
+                // 🟡 Deferred TRL-7. Парсер `Soldier_Handle_CMD_SET_THRESHOLDS`
+                // залишено + 12 host-тестів як freeze-контракт wire-формату,
+                // але в production-цикл ВИМКНЕНО (`FW8_PARSER_ENABLED 0`).
+                // Деталі — у блоці-преамбулі біля визначення макроса.
+                // Бекенд `OtaPackagerService.build_threshold_config_block` —
+                // лише class method, у downlink pipeline не передається.
+                // Коли FW.21 рефакторинг звільнить RTC-регістр, повернути:
+                // `#define FW8_PARSER_ENABLED 1` + boot-restore + KENOSIS-write.
+#if FW8_PARSER_ENABLED
+                if (decrypted_rx_payload[0] == CMD_SET_THRESHOLDS_MARKER &&
+                    incoming_lora_size >= CMD_THRESHOLDS_FRAME_SIZE) {
+                    Soldier_Handle_CMD_SET_THRESHOLDS(decrypted_rx_payload,
+                                                      incoming_lora_size);
+                    // Незалежно від результату парсингу — не ретранслюємо (TTL=1)
+                    break;
+                }
+#endif
+
                 // Сценарій А: OTA Оновлення від Королеви (Пакет починається з OTA_MARKER)
-                if (decrypted_rx_payload[0] == OTA_MARKER) {
-                    // [FIX: AUDIT] Перевірка мінімального розміру пакета (5 байт заголовок + 1 байт даних)
+                if (decrypted_rx_payload[0] == OTA_MARKER) {                    // [FIX: AUDIT] Перевірка мінімального розміру пакета (5 байт заголовок + 1 байт даних)
                     if (incoming_lora_size < MIN_OTA_PACKET_SIZE) {
                         lora_rx_flag = 0;
                         break;

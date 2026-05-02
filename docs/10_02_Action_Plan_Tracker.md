@@ -266,11 +266,12 @@
 - `05_02`, `04_01`, `04_02`
 - **Опис:** firmware: global 2.0/45.0 vs backend: per-species через `TreeFamily`
 - **Рішення:** OTA sync species-specific thresholds
-- **Статус:** ✅ **Rails-сторона реалізована (2026-04-30).** `Tree#effective_lorenz_thresholds` (3-tier priority: Cluster override > TreeFamily > global), `TreeFamily#optimal_z_target` / `effective_optimal_z_target`, `Cluster#lorenz_overrides_by_species` JSONB з валідацією, `OtaPackagerService.build_threshold_config_block` (CMD_SET_THRESHOLDS 0x9A, CRC16), `TelemetryUnpackerService#check_z_divergence!` оновлено. Integration spec `fw8_threshold_governance_spec.rb` (18 examples). ⬜ Firmware C-side (обробник `CMD_SET_THRESHOLDS`, RTC DR20-23) — наступний крок.
+- **Статус:** 🟡 **Deferred TRL-7.** Rails-сторона реалізована (2026-04-30); firmware-парсер написано як freeze-контракт (`Soldier_Handle_CMD_SET_THRESHOLDS` у `firmware/soldier/main.c` + 12 host-тестів у `test_soldier_logic.c`), АЛЕ виклик у production-цикл захищено `#define FW8_PARSER_ENABLED 0`. Бекенд `OtaPackagerService.build_threshold_config_block` — лише class method, через `OtaTransmissionWorker` не передається. **Причина defer:** STM32WLE5JC має лише 20 RTC Backup Register'ів (DR0..DR19), повністю зайнятих (SSOT: `03_01 §2`). Єдиний вільний DR15 (4 байти) — недостатньо для 8-байтного body порогів. Flash-варіант відкинуто (wear + erase-time LoRa-deafness). На TRL-6 всі 5 видів використовують ті самі firmware-defaults, тому feature нічого не змінює. **Розблокування:** після FW.21 EMA-рефакторингу або щільнішої упаковки DR8/9/11 — якщо звільниться 1 регістр, увімкнути `FW8_PARSER_ENABLED 1` + boot-restore + KENOSIS-write блок.
 - [x] 🤖 Додати thresholds до OTA config payload (build_threshold_config_block)
 - [x] 🤖 Backend: effective_lorenz_thresholds 3-tier + Cluster lorenz_overrides_by_species
 - [x] 🤖 Integration tests: fw8_threshold_governance_spec.rb
-- [ ] ⬜ Firmware C-side: обробник CMD_SET_THRESHOLDS (0x9A) + RTC DR20-23 storage
+- [x] 🤖 Firmware C-side parser: `Soldier_Handle_CMD_SET_THRESHOLDS` + 12 host-тестів (frame layout, CRC16, invariants) — freeze-контракт
+- [ ] 🟡 **Deferred TRL-7:** Активувати `FW8_PARSER_ENABLED 1` після того, як FW.21 рефакторинг звільнить хоча б 1 RTC Backup register
 
 ### 🟢 P2 — Низькопріоритетні
 
@@ -306,13 +307,36 @@
 - **Опис:** Дешеві кварцові резонатори / внутрішні осцилятори STM32 мають температурний дрейф. При -20°C та +40°C RTC годинник Soldier йде з різною швидкістю. За кілька місяців "час дерева" розсинхронізується з "часом бекенду" на хвилини або години. Впливає на: (1) `created_at` timestamp → partition pruning errors, (2) HMAC/nonce replay protection windows, (3) cron-like wakeup scheduling, (4) **TDMA Синхронні Вікна** (ARCH.26) — без синхронізації годинників координований mesh relay неможливий
 - **Рішення:** Протокол Time Sync через Queen downlink. Queen має точний час через LTE/NTP. Періодично Queen надсилає OTA-корекцію часу. Аналог LoRaWAN MAC command `DeviceTimeReq`
 - **Залежності:** Є передумовою для ARCH.26 (TDMA Sync Windows). Без FW.20 синхронні вікна неможливі — годинники дрейфують і вузли "промахуються" повз спільне RX-вікно
-- **Статус:** 🟡 Backend envelope реалізовано: `CoapEncryption.coap_encrypt` обгортає всі downlink-payloadи у `[0x9C][unix_ts_be:4][payload]` перед AES-256-CBC (`app/workers/concerns/coap_encryption.rb`). 47/47 specs зелені (`coap_encryption_spec`, `actuator_command_worker_spec`). Marker `0x9C = CMD_TIME_SYNC` обраний disjoint від `CMD_OTA_BYTECODE = 0x99` і ASCII `"CMD:"`. Year-2106 wrap покритий тестом. **Firmware Queen handler — TODO** (приймати envelope, парсити ts, оновити RTC, далі обробляти inner payload).
+- **Статус:** 🟡 Backend envelope + Queen handler + 1-hop beacon реалізовано. `CoapEncryption.coap_encrypt` обгортає всі downlink-payloadи у `[0x9C][unix_ts_be:4][payload]` перед AES-256-CBC (`app/workers/concerns/coap_encryption.rb`). Queen `Handle_CoAP_Command` зрізає 5-байтний конверт, оновлює `queen_unix_ts` через `Apply_Server_Time`, маршрутизує inner payload через існуючу логіку (CMD: / 0x99 OTA / 0x9A thresholds). Queen `Broadcast_Time_Beacon()` транслює 16-байтний LoRa ECB-маяк `[0x9C][ts_be:4][reserved:4][TTL=1]['B'][pad:5]` кожні 15 хв (придушено доки `queen_unix_ts == 0`). Soldier RX-гілка приймає маяк (`size==16 && [0]==0x9C && [10]=='B'`), оновлює `soldier_unix_ts`, **не релеїть (TTL=1)** — see FW.20-S2. 47/47 backend specs + 14 нових host-тестів (8 envelope/beacon у `test_queen_logic.c` + 6 beacon RX у `test_soldier_logic.c`).
 - [x] 🤖 Backend: включити server UTC timestamp у downlink payload — `[0x9C][unix_ts_be:4][payload]` envelope
 - [x] 🤖 Backend specs: round-trip, monotonicity, year-2106 wrap, structural marker — 47/47 зелені
-- [ ] 🤖 Firmware Queen: парсити CMD_TIME_SYNC envelope, оновити RTC, route inner payload (CMD/0x99)
-- [ ] 🤖 Firmware Queen: реалізувати periodic beacon broadcast (UTC timestamp + network schedule) — забезпечує базову синхронізацію часу для ARCH.26
-- [ ] 🤖 Firmware Soldier: прийняти та застосувати RTC correction (через mesh relay від Queen)
-- [ ] 🤖 Тести: перевірити drift compensation при ΔT = ±60°C
+- [x] 🤖 Firmware Queen: парсити CMD_TIME_SYNC envelope, оновити RTC, route inner payload (CMD/0x99/0x9A)
+- [x] 🤖 Firmware Queen: реалізувати periodic beacon broadcast (15-хв, ECB 16-байт LoRa)
+- [x] 🤖 Firmware Soldier: прийняти beacon, оновити `soldier_unix_ts` (1-hop reach)
+- [ ] 🟡 **FW.20-S2** (deferred TRL-7): Soldier mesh-relay часу для дерев поза 1-hop зоною Королеви — окремий чекбокс нижче
+- [ ] 🤖 Тести: перевірити drift compensation при ΔT = ±60°C (lab)
+
+#### FW.20-S2 — Mesh time-sync relay (Soldier-to-Soldier)
+- 🟡 **Deferred TRL-7** | Залежність: ARCH.26 TDMA, replay-protection через монотонні UTC nonces
+- **Опис:** FW.20 beacon від Королеви має `TTL=1` — Soldiers поза прямою радіозоною Королеви ніколи не отримують серверний UTC. Для поточного TRL-6 це **НЕ блокер**, тому що єдиний споживач `soldier_unix_ts` — `Derive_Cold_Start_State()` (FW.30, HKDF), де `epoch_day = unix_ts / 86400` має 24-годинну гранулярність. RTC дрейф STM32WLE5JC у LSE-режимі ±20 ppm = ±10.6 хв/рік ≪ ±12 год толерантності. Soldier, синхронізований навіть один раз при provisioning, має валідний `epoch_day` 30+ років.
+- **Коли стає блокером:**
+  - **ARCH.26 TDMA Sync Windows** — sub-second слоти потребують ±10 мс, дрейф ±1.7 сек/день вб'є TDMA за 6 годин
+  - **HMAC replay-protection через монотонні UTC nonces** — drift attacker може повторити старі пакети
+  - **Корельовані події у логах** (масштабна fire detection) — потребують ±1 сек синхронності між 100+ деревами
+  - **Insurance audit timing** — slashing-events вимагають точного timestamp на дереві, а не на Королеві
+- **Дизайн (для майбутньої реалізації):**
+  - **Mesh-relay beacon з TTL ≥ 2** + anti-storm dedup bitmap (новий слот, недоступний при поточних DR0..DR19, чекає звільнення регістрів)
+  - **Per-hop drift compensation:** релей додає `(HAL_GetTick() - rx_tick) / 1000` до оригінального `unix_ts`
+  - **Authoritativeness flag** у байті 9 маяка: `is_authoritative:1` (від Королеви) vs `is_relayed:1` (від Soldier'а). Релей-маяки нижчий пріоритет — Soldier бере найновіший authoritative і ігнорує relay якщо authoritative younger ніж 24 год
+  - **Альтернатива — gossip protocol:** piggyback `unix_ts` на регулярні telemetry uplinks (4 байти у мікро-payload). Дешевше радіо, без додаткового маяка, але лише 1-hop reach
+  - **Гібрид:** Королева broadcast → 1-hop relay → 1-hop gossip = 3-hop reach без сторму
+  - **Drift-monitoring:** Soldier періодично порівнює `soldier_unix_ts` з derived-from-tick; якщо |delta| > N год → панічний пакет до Королеви про sync-запит
+- [ ] 🟡 Дизайн anti-storm dedup bitmap (потребує вільного RTC регістра або щільнішої упаковки)
+- [ ] 🟡 Per-hop drift compensation у beacon-релей логіці
+- [ ] 🟡 Authoritativeness flag (1 біт у байті 9 поточного beacon-формату)
+- [ ] 🟡 Gossip-piggyback як альтернатива (мікро-payload у telemetry uplink)
+- [ ] 🟡 Drift-monitoring + panic sync-запит від Soldier до Королеви
+
 
 #### FW.21 — Edge data aggregation (RAM-aware Soldier)
 - Legacy notes + `08_02` (Kalman filter Vector 4) | P2 (потребує R&D partnership)
