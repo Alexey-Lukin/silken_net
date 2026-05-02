@@ -134,10 +134,14 @@ class TelemetryUnpackerService < ApplicationService
     # ⚡ [ФІКСАЦІЯ ІСТИНИ]: Ми розраховуємо Z один раз тут.
     # [FIX FW.7]: Attractor використовує Float (IEEE 754) — ідентично firmware mruby.
     # Це забезпечує Dual Computation Integrity: однакова математика → однакові результати.
+    # [FW.5]: delta_t (metabolism_s, секунди) і vcap (voltage_mv після калібрування)
+    # передаються як soft β-perturbation — точно дзеркальне обчислення з firmware.
     log_attributes[:z_value] = SilkenNet::Attractor.calculate_z(
       parsed_data[0], # Використовуємо сирий DID як seed
       log_attributes[:temperature_c],
-      log_attributes[:acoustic_events]
+      log_attributes[:acoustic_events],
+      log_attributes[:metabolism_s],
+      log_attributes[:voltage_mv]
     )
 
     # 4.1 DUAL COMPUTATION INTEGRITY (Z Divergence Check)

@@ -37,6 +37,14 @@
 #define CRITICAL_Z_MAX   45.0
 #define OPTIMAL_Z_TARGET 29.0
 
+/* [FW.5] β-perturbation constants — must mirror bio_contract.rb */
+#define BETA_DELTA_T_COEFF  0.0001
+#define BETA_VCAP_COEFF     0.001
+#define BETA_MIN            2.0
+#define BETA_MAX            4.0
+#define BASELINE_DELTA_T_S  60
+#define NOMINAL_VCAP_MV     3300
+
 #define BIO_STATUS_HOMEOSTASIS 0
 #define BIO_STATUS_STRESS      1
 #define BIO_STATUS_ANOMALY     2
@@ -58,14 +66,29 @@ static int clamp_i(int val, int lo, int hi) {
     return val;
 }
 
-/* Lorenz attractor Z-axis calculation (matches bio_contract.rb Attractor.calculate_z_axis) */
-static double calculate_z_axis(uint32_t seed, int8_t temp, uint8_t acoustic) {
+/* [FW.5] β perturbation helper — mirrors SilkenNet::Attractor.perturb_beta */
+static double perturb_beta(uint16_t delta_t_s, uint16_t vcap_mv) {
+    double dt_improvement = (double)BASELINE_DELTA_T_S - (double)delta_t_s;
+    if (dt_improvement < 0.0) dt_improvement = 0.0;
+    double vcap_centered = (double)vcap_mv - (double)NOMINAL_VCAP_MV;
+
+    double beta = (8.0 / 3.0) +
+                  (dt_improvement * BETA_DELTA_T_COEFF) +
+                  (vcap_centered  * BETA_VCAP_COEFF);
+    return clamp_d(beta, BETA_MIN, BETA_MAX);
+}
+
+/* Lorenz attractor Z-axis calculation (matches bio_contract.rb Attractor.calculate_z_axis).
+ * [FW.5]: delta_t_s and vcap_mv now drive a soft β perturbation. */
+static double calculate_z_axis(uint32_t seed, int8_t temp, uint8_t acoustic,
+                               uint16_t delta_t_s, uint16_t vcap_mv) {
     double x = ((double)(seed % 1000) / 500.0) - 1.0;
     double y = ((double)((seed >> 4) % 1000) / 500.0) - 1.0;
     double z = ((double)((seed >> 8) % 1000) / 500.0) - 1.0;
 
     double local_sigma = BASE_SIGMA + (acoustic * 0.1);
     double local_rho   = BASE_RHO + (temp * 0.2);
+    double local_beta  = perturb_beta(delta_t_s, vcap_mv);
 
     local_sigma = clamp_d(local_sigma, SIGMA_MIN, SIGMA_MAX);
     local_rho   = clamp_d(local_rho, RHO_MIN, RHO_MAX);
@@ -73,7 +96,7 @@ static double calculate_z_axis(uint32_t seed, int8_t temp, uint8_t acoustic) {
     for (int i = 0; i < ITERATIONS; i++) {
         double dx = local_sigma * (y - x);
         double dy = x * (local_rho - z) - y;
-        double dz = (x * y) - (BASE_BETA * z);
+        double dz = (x * y) - (local_beta * z);
 
         x += dx * DT_STEP;
         y += dy * DT_STEP;
@@ -85,7 +108,11 @@ static double calculate_z_axis(uint32_t seed, int8_t temp, uint8_t acoustic) {
 
 /* StatusByte packing (matches bio_contract.rb BioContract.evaluate_and_pack) */
 static uint8_t evaluate_and_pack(uint32_t seed, int8_t temp, uint8_t acoustic) {
-    double z_val = calculate_z_axis(seed, temp, acoustic);
+    /* Default to baseline metabolism — historical behavior for tests that
+     * don't exercise FW.5 inputs. Tests that need β-perturbation use
+     * evaluate_and_pack_full() below. */
+    double z_val = calculate_z_axis(seed, temp, acoustic,
+                                    BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
 
     int status = 0;
     int growth_points = 0;
@@ -170,21 +197,21 @@ static void test_rho_clamp_extreme_cold(void) {
 
 static void test_z_axis_normal_conditions(void) {
     /* Normal: seed=12345, temp=20, acoustic=5 */
-    double z = calculate_z_axis(12345, 20, 5);
+    double z = calculate_z_axis(12345, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(z > -100.0 && z < 100.0,
            "test_z_axis_normal_returns_finite");
 }
 
 static void test_z_axis_zero_seed(void) {
     /* Edge case: seed=0 */
-    double z = calculate_z_axis(0, 20, 5);
+    double z = calculate_z_axis(0, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(!isnan(z) && !isinf(z),
            "test_z_axis_zero_seed_returns_valid");
 }
 
 static void test_z_axis_max_seed(void) {
     /* Edge case: seed=0xFFFFFFFF */
-    double z = calculate_z_axis(0xFFFFFFFF, 20, 5);
+    double z = calculate_z_axis(0xFFFFFFFF, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(!isnan(z) && !isinf(z),
            "test_z_axis_max_seed_returns_valid");
 }
@@ -276,16 +303,16 @@ static void test_iterations_count(void) {
 
 static void test_z_axis_deterministic(void) {
     /* Same inputs must produce same Z (deterministic chaos) */
-    double z1 = calculate_z_axis(42, 25, 10);
-    double z2 = calculate_z_axis(42, 25, 10);
+    double z1 = calculate_z_axis(42, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z2 = calculate_z_axis(42, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(fabs(z1 - z2) < 0.0001,
            "test_z_axis_deterministic_same_inputs");
 }
 
 static void test_z_axis_different_seeds(void) {
     /* Different seeds should (very likely) produce different Z */
-    double z1 = calculate_z_axis(100, 25, 10);
-    double z2 = calculate_z_axis(999, 25, 10);
+    double z1 = calculate_z_axis(100, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z2 = calculate_z_axis(999, 25, 10, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(fabs(z1 - z2) > 0.001,
            "test_z_axis_different_seeds_different_z");
 }
@@ -357,23 +384,23 @@ static void test_extreme_temp_acoustic_combo(void) {
      * sigma = 10.0 + 255*0.1 = 35.5 → clamped DOWN to 30.0
      * rho = 28.0 + (-128*0.2) = 28.0 - 25.6 = 2.4 → clamped UP to 10.0
      * Both parameters hit their clamp limits. Should produce valid (finite) Z. */
-    double z = calculate_z_axis(42, -128, 255);
+    double z = calculate_z_axis(42, -128, 255, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(!isnan(z) && !isinf(z),
            "test_extreme_temp_minus128_acoustic_255_valid");
 }
 
 static void test_z_axis_sensitivity_to_temp(void) {
     /* Different temperatures with same seed/acoustic should produce different Z */
-    double z_cold = calculate_z_axis(42, -40, 5);
-    double z_hot  = calculate_z_axis(42, 80, 5);
+    double z_cold = calculate_z_axis(42, -40, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z_hot  = calculate_z_axis(42, 80, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(fabs(z_cold - z_hot) > 0.0001,
            "test_z_axis_different_temps_produce_different_z");
 }
 
 static void test_z_axis_sensitivity_to_acoustic(void) {
     /* Different acoustic values with same seed/temp should produce different Z */
-    double z_quiet = calculate_z_axis(42, 20, 0);
-    double z_loud  = calculate_z_axis(42, 20, 200);
+    double z_quiet = calculate_z_axis(42, 20, 0, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    double z_loud  = calculate_z_axis(42, 20, 200, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
     ASSERT(fabs(z_quiet - z_loud) > 0.0001,
            "test_z_axis_different_acoustics_produce_different_z");
 }
@@ -431,6 +458,81 @@ static void test_evaluate_pack_deterministic_across_range(void) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.5] β-PERTURBATION FROM EBFC METABOLISM (delta_t / vcap)
+ * ════════════════════════════════════════════════════════════════════ */
+
+static void test_beta_perturbation_baseline_returns_classic(void) {
+    /* delta_t = baseline (60 s), vcap = nominal (3300 mV) → β = 8/3 */
+    double beta = perturb_beta(BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    ASSERT(fabs(beta - (8.0 / 3.0)) < 1e-15,
+           "test_beta_baseline_equals_classic_8_div_3");
+}
+
+static void test_beta_perturbation_faster_charge_increases_beta(void) {
+    /* delta_t = 30 s (30 s improvement vs 60 s baseline) → β += 30 * 0.0001 = +0.003 */
+    double beta = perturb_beta(30, NOMINAL_VCAP_MV);
+    double expected = (8.0 / 3.0) + 30.0 * 0.0001;
+    ASSERT(fabs(beta - expected) < 1e-15,
+           "test_beta_faster_charge_30s_adds_0_003");
+}
+
+static void test_beta_perturbation_slower_charge_no_decrease(void) {
+    /* delta_t = 120 s (slower than baseline) → improvement clamped to 0 → β unchanged */
+    double beta = perturb_beta(120, NOMINAL_VCAP_MV);
+    ASSERT(fabs(beta - (8.0 / 3.0)) < 1e-15,
+           "test_beta_slower_charge_clamped_to_baseline");
+}
+
+static void test_beta_perturbation_high_vcap_increases_beta(void) {
+    /* vcap = 3500 mV (200 mV above nominal) → β += 200 * 0.001 = +0.2 */
+    double beta = perturb_beta(BASELINE_DELTA_T_S, 3500);
+    double expected = (8.0 / 3.0) + 200.0 * 0.001;
+    ASSERT(fabs(beta - expected) < 1e-15,
+           "test_beta_high_vcap_adds_0_2");
+}
+
+static void test_beta_perturbation_low_vcap_decreases_beta(void) {
+    /* vcap = 3000 mV (300 mV below nominal) → β -= 300 * 0.001 = -0.3 */
+    double beta = perturb_beta(BASELINE_DELTA_T_S, 3000);
+    double expected = (8.0 / 3.0) - 300.0 * 0.001;
+    ASSERT(fabs(beta - expected) < 1e-15,
+           "test_beta_low_vcap_subtracts_0_3");
+}
+
+static void test_beta_perturbation_clamped_to_max(void) {
+    /* Extreme: delta_t = 0 (60 s improvement), vcap = 5000 (1700 mV above)
+     * β += 60*0.0001 + 1700*0.001 = 0.006 + 1.7 = 1.706
+     * raw = 8/3 + 1.706 = 4.373 → clamped to 4.0 */
+    double beta = perturb_beta(0, 5000);
+    ASSERT(fabs(beta - BETA_MAX) < 1e-15,
+           "test_beta_extreme_high_clamped_to_4_0");
+}
+
+static void test_beta_perturbation_clamped_to_min(void) {
+    /* Extreme low vcap: delta_t = 60 (no improvement), vcap = 0 (3300 mV below)
+     * β -= 3300*0.001 = -3.3 → raw = 8/3 - 3.3 = -0.633 → clamped to 2.0 */
+    double beta = perturb_beta(BASELINE_DELTA_T_S, 0);
+    ASSERT(fabs(beta - BETA_MIN) < 1e-15,
+           "test_beta_extreme_low_clamped_to_2_0");
+}
+
+static void test_z_axis_metabolism_changes_z(void) {
+    /* Same chaotic seed/temp/acoustic, but different metabolism:
+     * fast (high β) vs slow (baseline β) — Z trajectories diverge */
+    double z_fast = calculate_z_axis(42, 20, 5, 10, 3500);   /* 50 s improvement, +200 mV */
+    double z_baseline = calculate_z_axis(42, 20, 5, BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
+    ASSERT(fabs(z_fast - z_baseline) > 0.0001,
+           "test_z_axis_metabolism_inputs_change_trajectory");
+}
+
+static void test_z_axis_finite_under_extreme_metabolism(void) {
+    /* Even with extreme metabolism inputs, β is clamped → trajectory bounded */
+    double z = calculate_z_axis(42, 20, 5, 0, 0xFFFF);
+    ASSERT(!isnan(z) && !isinf(z),
+           "test_z_axis_extreme_metabolism_stays_finite");
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * MAIN
  * ════════════════════════════════════════════════════════════════════ */
 int main(void) {
@@ -480,6 +582,17 @@ int main(void) {
     test_z_axis_sensitivity_to_acoustic();
     test_growth_points_at_boundary_z();
     test_evaluate_pack_deterministic_across_range();
+
+    printf("\n  [FW.5] β-Perturbation from EBFC Metabolism:\n");
+    test_beta_perturbation_baseline_returns_classic();
+    test_beta_perturbation_faster_charge_increases_beta();
+    test_beta_perturbation_slower_charge_no_decrease();
+    test_beta_perturbation_high_vcap_increases_beta();
+    test_beta_perturbation_low_vcap_decreases_beta();
+    test_beta_perturbation_clamped_to_max();
+    test_beta_perturbation_clamped_to_min();
+    test_z_axis_metabolism_changes_z();
+    test_z_axis_finite_under_extreme_metabolism();
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n", tests_passed, tests_failed);
