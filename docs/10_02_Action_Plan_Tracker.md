@@ -50,7 +50,6 @@
 - **P0** | `06_01` | **Складність: XS** | **🔧 Операційна** — ручне заповнення в GitHub UI, без коду
 - **Опис:** 12 критичних секретів не встановлені: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `DATABASE_URL`, `SSH_PRIVATE_KEY`, тощо. Блокує весь CI/CD pipeline.
 - **Статус:** ✅ Checklist створено у `docs/06_04_Secrets_Checklist.md` — повна інвентаризація 4 місць зберігання (GitHub Secrets, `.kamal/secrets`, Akash SDL, `terraform.tfvars`)
-- [x] 🤖 Створити список необхідних секретів (checklist)
 - [ ] 👤 Заповнити GitHub repository secrets
 - [ ] 👤 Верифікувати CI pipeline проходить
 
@@ -68,7 +67,6 @@
 #### S2.2 — Grafana Cloud dashboards
 - **P0** | `06_03` | **Складність: S** | **🔧 Операційна** — налаштування в Grafana Cloud UI, без коду
 - **Опис:** Grafana Cloud SaaS — метрики доступні, дашборди створюються в UI
-- [x] Backend: `silkennet_rpc_circuit_breaker_open` gauge (labeled `provider`) та `silkennet_rpc_errors_total` (labeled `network`, `error_type`) інструментовані в `Web3::ResilientClient` — відкриття/закриття circuit breaker та класифікація помилок (timeout/connection_refused/rate_limited тощо)
 - [ ] 👤 Dashboard: Sidekiq queues (9 черг, size + latency)
 - [ ] 👤 Dashboard: Web3 RPC errors by network
 - [ ] 👤 Dashboard: Telemetry ingest rate + fraud detection
@@ -119,7 +117,6 @@
 - **P2** | `06_03` | **Складність: XS** | **🔧 Операційна**
 - **Опис:** `RELEASE_VERSION` ENV не встановлено — Sentry release tracking не працює. Потрібно додати у Kamal/Akash deploy config
 - **Статус:** ✅ Виконано. `RELEASE_VERSION` додано у: `deploy.yml` (Canopy, git SHA), `deploy-production.yml` (Production, release tag або git SHA), `config/deploy.yml` (Kamal clear env), `deploy/akash/deploy.yaml` (web + job services)
-- [x] Додати `RELEASE_VERSION` у deploy pipeline (git SHA або tag)
 - [ ] 👤 Верифікувати Sentry release tracking
 
 #### S5.6 — GCS bucket для Terraform state (chicken-and-egg)
@@ -687,7 +684,7 @@
   - [x] 🔥 `firmware/test/test_seed_derivation.c` — host-based parity test (OpenSSL HKDF/HMAC = mbedTLS на MCU), 13 examples
   - [x] 🤖 `db/seeds.rb` + `spec/factories/hardware_keys.rb` — populate `lorenz_seed_hex`
   - [x] 🤖 `docs/03_06_Lorenz_Seed_Provenance.md` — DELETED, контент розподілено в `03_04`/`03_05`/`04_02`/`05_02` (див. вище)
-- **Свідомо НЕ робимо** (pre-prod, no field devices, no prototypes, no firmware in flight): `POST /api/v1/provisioning/upgrade_seed` field-migration endpoint, TRL4 lab-mode response, SecureRandom fallback в `Rails.env != production`.
+- **Свідомо НЕ робимо** (pre-prod, no field devices, no prototypes, no firmware in flight): `POST ty6/api/v1/provisioning/upgrade_seed` field-migration endpoint, TRL4 lab-mode response, SecureRandom fallback в `Rails.env != production`.
 
 ---
 
