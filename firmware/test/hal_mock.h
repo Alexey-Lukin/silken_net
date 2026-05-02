@@ -236,4 +236,44 @@ static inline void _mock_flash_key_provision(uint32_t magic, const uint32_t key[
 static int _mock_error_handler_called = 0;
 static inline void _mock_error_handler_reset(void) { _mock_error_handler_called = 0; }
 
+/* ── [SEC.11 / FW.30] Flash Lorenz Seed Region Mock ───────────────── */
+/*
+ * Simulates the Protected Flash Sector at FLASH_SEED_ADDR (FLASH_KEY_ADDR + 36).
+ * Layout: [magic:4][seed[0]:4][seed[1]:4]...[seed[7]:4] = 9 × uint32_t = 36 bytes.
+ */
+#define MOCK_FLASH_SEED_REGION_WORDS 9  /* 1 magic + 8 seed words */
+static uint32_t _mock_flash_seed_region[MOCK_FLASH_SEED_REGION_WORDS] = {0};
+
+static inline void _mock_flash_seed_reset(void) {
+    memset(_mock_flash_seed_region, 0xFF, sizeof(_mock_flash_seed_region));
+}
+
+static inline void _mock_flash_seed_provision(uint32_t magic, const uint32_t seed[8]) {
+    _mock_flash_seed_region[0] = magic;
+    for (int i = 0; i < 8; i++) {
+        _mock_flash_seed_region[1 + i] = seed[i];
+    }
+}
+
+/* ── [SEC.11 / FW.30] RTC Date/Time Mock for cold-start derivation ── */
+typedef struct { uint8_t Hours; uint8_t Minutes; uint8_t Seconds; } RTC_TimeTypeDef;
+typedef struct { uint8_t Date; uint8_t Month; uint8_t Year; /* years since 2000 */ } RTC_DateTypeDef;
+#define RTC_FORMAT_BIN 0
+
+/* Mock date: 2026-05-02 → Year=26, Month=5, Date=2 */
+static uint8_t _mock_rtc_year  = 26;
+static uint8_t _mock_rtc_month = 5;
+static uint8_t _mock_rtc_date  = 2;
+
+static inline int HAL_RTC_GetTime(RTC_HandleTypeDef *h, RTC_TimeTypeDef *t, int fmt) {
+    (void)h; (void)fmt;
+    t->Hours = 12; t->Minutes = 0; t->Seconds = 0;
+    return HAL_OK;
+}
+static inline int HAL_RTC_GetDate(RTC_HandleTypeDef *h, RTC_DateTypeDef *d, int fmt) {
+    (void)h; (void)fmt;
+    d->Year = _mock_rtc_year; d->Month = _mock_rtc_month; d->Date = _mock_rtc_date;
+    return HAL_OK;
+}
+
 #endif /* HAL_MOCK_H */

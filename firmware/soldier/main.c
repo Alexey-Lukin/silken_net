@@ -56,6 +56,16 @@
 #define FLASH_KEY_ADDR            0x0803E000UL  // Protected Flash sector for AES-256 key
 #define FLASH_KEY_WORDS           8             // 8 × uint32_t = 32 bytes = 256 bits
 #define FLASH_KEY_MAGIC           0x534B4559UL  // "SKEY" — magic marker for provisioned key
+
+// [SEC.11 / FW.30] Flash-based Lorenz K_seed provisioning — per-device secret seed
+// for HKDF-derived (x₀,y₀,z₀) cold start. Stored in the same Protected Flash Sector
+// right after the AES key: [MAGIC:4][seed[0]:4]...[seed[7]:4] = 36 bytes.
+// Factory Flashing writes K_seed via HardwareKeyService.provision (HKDF-SHA256).
+// See docs/03_05 §3.4в for full protocol design.
+#define FLASH_SEED_ADDR           (FLASH_KEY_ADDR + 36)  // After AES key (4+32=36 bytes)
+#define FLASH_SEED_WORDS          8             // 8 × uint32_t = 32 bytes
+#define FLASH_SEED_MAGIC          0x4C534544UL  // "LSED" — Lorenz Seed magic marker
+#define EPOCH_SECONDS             86400UL       // Seconds per day for epoch_day calculation
 /* USER CODE BEGIN PD */
 /* USER CODE END PD */
 
@@ -81,6 +91,13 @@ CRYP_HandleTypeDef hcryp; // Апаратний криптопроцесор AES
 // Якщо ключ не provisioned — Error_Handler() (пристрій не може працювати без ключа).
 // Hardcoded значення нижче — ТІЛЬКИ для ініціалізації змінної до виклику Load_AES_Key().
 uint32_t aes_key[8] = {0};
+
+// [SEC.11 / FW.30] K_seed — per-device Lorenz seed for cold-start derivation.
+// Loaded from Protected Flash Sector via Load_Lorenz_Seed().
+// Format: HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1",
+//         info="silken-lorenz-seed|<DID>", len=32).
+uint8_t lorenz_seed[32] = {0};
+uint8_t lorenz_seed_valid = 0;  // 1 = loaded from Flash, 0 = not provisioned
 
 // === 1. ОРГАНИ ЧУТТЯ ТА ПАМ'ЯТЬ ===
 volatile uint8_t vibration_detected = 0; // Прапорець переривання від п'єзодиска
@@ -163,7 +180,8 @@ uint8_t* current_lorenz_bytecode;
 // === 1.9. СТАН АТРАКТОРА ЛОРЕНЦА (FW.6: State Persistence) ===
 // Зберігаємо (x, y, z) між циклами STOP2 через RTC Backup Registers DR16-DR18.
 // DR19 = маркер валідності (LORENZ_STATE_MAGIC = 0x4C5A5354 "LZST").
-// При першому старті (DR19 != MAGIC) — ініціалізація від chaos_seed.
+// [SEC.11 / FW.30] При першому старті (DR19 != MAGIC) — cold-start з K_seed
+// через HKDF-SHA256/HMAC-SHA256 деривацію (замість chaos_seed).
 // При наступних — продовження безперервної траєкторії на атракторі.
 #define LORENZ_STATE_MAGIC 0x4C5A5354  // "LZST" — маркер збереженого стану
 float lorenz_x = 0.0f, lorenz_y = 0.0f, lorenz_z = 0.0f;
@@ -302,6 +320,16 @@ void Write_OTA_Contract_To_Flash(uint8_t* data, uint16_t size);
 // [FW.1] Завантаження AES-256 ключа з Protected Flash Sector.
 // Викликається в main() ПЕРЕД MX_CRYP_Init().
 static void Load_AES_Key(void);
+
+// [SEC.11 / FW.30] Завантаження Lorenz K_seed з Protected Flash Sector.
+// Викликається в main() при ініціалізації. K_seed використовується для
+// cold-start деривації (x₀,y₀,z₀) через HMAC-SHA256.
+static void Load_Lorenz_Seed(void);
+
+// [SEC.11 / FW.30] Деривація початкового стану Лоренца при cold-start
+// (VBAT loss → DR19 != LORENZ_STATE_MAGIC). Використовує K_seed з Flash
+// + epoch_day (UTC unix_time / 86400). Дзеркало firmware/test/test_seed_derivation.c.
+static void Derive_Cold_Start_State(float *x0, float *y0, float *z0);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -330,6 +358,7 @@ int main(void)
   MX_RTC_Init();
   MX_SUBGHZ_Init();
   Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
+  Load_Lorenz_Seed();  // [SEC.11 / FW.30] Завантажити K_seed для cold-start Lorenz derivation
   MX_CRYP_Init(); // Вмикаємо апаратний AES (використовує aes_key, вже завантажений)
 
   /* USER CODE BEGIN 2 */
@@ -408,7 +437,7 @@ int main(void)
   // =========================================================================
   // Перевіряємо маркер валідності в DR19. Якщо LORENZ_STATE_MAGIC —
   // відновлюємо (x, y, z) з попереднього циклу для безперервної траєкторії.
-  // Інакше — перший старт, chaos_seed ініціалізує стан пізніше.
+  // [SEC.11 / FW.30] Інакше — cold-start з K_seed (HKDF/HMAC derivation).
   {
       uint32_t lorenz_magic = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR19);
       if (lorenz_magic == LORENZ_STATE_MAGIC) {
@@ -535,7 +564,9 @@ int main(void)
     // зчитано в Phase 0 (BOOT). Передавання згладжених значень у mruby — задача FW.5.
     EMA_Update(delta_t_seconds, vcap_voltage);
 
-    // 3. Квантовий Хаос (Зерно для Атрактора)
+    // 3. Квантовий Хаос (Зерно для mesh anti-pingpong, TX jitter, CoAP nonce)
+    // [SEC.11 / FW.30] chaos_seed більше НЕ використовується для Lorenz attractor.
+    // Початковий стан (x₀,y₀,z₀) деривується з K_seed через HKDF/HMAC.
     uint32_t chaos_seed = 0;
     HAL_RNG_GenerateRandomNumber(&hrng, &chaos_seed);
 
@@ -673,7 +704,10 @@ int main(void)
 
     // =========================================================================
     // ФАЗА 3: ПЛАВКА (Запуск Ruby та Атрактора Лоренца)
-    // [FW.6] Два режими: первинний (chaos_seed) та продовження (RTC state).
+    // [SEC.11 / FW.30] Єдина сигнатура: calculate_state(x, y, z, temp, acoustic, delta_t_s, vcap_mv)
+    // Warm path: (x,y,z) з RTC DR16-DR18 (FW.6 state continuation).
+    // Cold path: (x₀,y₀,z₀) з K_seed via HKDF/HMAC (SEC.11 seed derivation).
+    // delta_t_s/vcap_mv: defaults 60/3300 (FW.5 B+ EMA передавання — наступний крок).
     // =========================================================================
 
     if (mrb) {
@@ -682,26 +716,37 @@ int main(void)
       // повільному «витоку» пам'яті через тижні безперервної роботи.
       int arena_idx = mrb_gc_arena_save(mrb);
 
+      // [SEC.11 / FW.30] Cold-start: якщо стан не відновлено з RTC — деривуємо
+      // початкові координати з K_seed. Потрібен валідний lorenz_seed.
+      if (!lorenz_state_valid) {
+          if (lorenz_seed_valid) {
+              Derive_Cold_Start_State(&lorenz_x, &lorenz_y, &lorenz_z);
+              lorenz_state_valid = 1;
+          }
+          // Якщо seed теж невалідний — lorenz_state_valid залишається 0,
+          // і нижче буде BIO_STATUS_VM_ERROR (пристрій не provisioned).
+      }
+
       if (lorenz_state_valid) {
-          // [FW.6] ПРОДОВЖЕННЯ ТРАЄКТОРІЇ: використовуємо збережений стан
-          // calculate_state_continued(x_prev, y_prev, z_prev, temp, acoustic)
-          // → [payload_byte, x_final, y_final, z_final]
+          // [SEC.11 / FW.30] Єдиний виклик calculate_state з 7 аргументами.
+          // Повертає [payload_byte, x_final, y_final, z_final].
           // [FW.21] EMA значення (delta_t_ms / vcap_mv) ще НЕ передаються в mruby.
-          // EMA_Update() оновлює стан, EMA_Get_*() доступні, але передавання у
-          // calculate_state() — задача FW.5 B+ (потребує координованого backend
-          // апдейту: SilkenNet::Attractor mirror + per-tree EMA state + 50k fuzz).
-          mrb_value args[5];
+          // Поки що передаємо defaults (60 с, 3300 мВ). Задача FW.5 B+: передавання
+          // EMA-згладжених значень через args[5..6].
+          mrb_value args[7];
           args[0] = mrb_float_value(mrb, (double)lorenz_x);
           args[1] = mrb_float_value(mrb, (double)lorenz_y);
           args[2] = mrb_float_value(mrb, (double)lorenz_z);
           args[3] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура
           args[4] = mrb_fixnum_value(lora_payload[7]); // Акустика
+          args[5] = mrb_fixnum_value(60);   // delta_t_s default (FW.5 B+ TODO: EMA_Get_DeltaT_Sec())
+          args[6] = mrb_fixnum_value(3300); // vcap_mv default (FW.5 B+ TODO: EMA_Get_Vcap_Mv())
 
           mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
-              mrb_intern_lit(mrb, "calculate_state_continued"), 5, args);
+              mrb_intern_lit(mrb, "calculate_state"), 7, args);
 
           if (!mrb->exc && mrb_array_p(ruby_result) && RARRAY_LEN(ruby_result) == 4) {
-              // Витягуємо payload_byte та оновлений стан
+              // Витягуємо payload_byte та оновлений стан траєкторії
               lora_payload[10] = (uint8_t)mrb_fixnum(mrb_ary_entry(ruby_result, 0));
               lorenz_x = (float)mrb_float(mrb_ary_entry(ruby_result, 1));
               lorenz_y = (float)mrb_float(mrb_ary_entry(ruby_result, 2));
@@ -713,31 +758,9 @@ int main(void)
               if (mrb->exc) mrb->exc = NULL;
           }
       } else {
-          // ПЕРВИННИЙ СТАРТ: chaos_seed визначає початковий стан
-          // [FW.21] EMA не передається — див. коментар вище (FW.5 B+ задача).
-          mrb_value args[3];
-          args[0] = mrb_fixnum_value(chaos_seed);
-          args[1] = mrb_fixnum_value((int8_t)lora_payload[6]); // Температура (Зимовий щит)
-          args[2] = mrb_fixnum_value(lora_payload[7]); // Акустика
-
-          mrb_value ruby_result = mrb_funcall_argv(mrb, mrb_top_self(mrb),
-              mrb_intern_lit(mrb, "calculate_state"), 3, args);
-
-          // Байт 10: Біо-Контракт (Токеноміка)
-          if (!mrb->exc) {
-              lora_payload[10] = (uint8_t)mrb_fixnum(ruby_result);
-
-              // [FW.6] Ініціалізуємо стан Лоренца від chaos_seed для збереження.
-              // Повторюємо seed→(x,y,z) перетворення ідентично bio_contract.rb.
-              lorenz_x = (float)(((chaos_seed % 1000) / 500.0) - 1.0);
-              lorenz_y = (float)((((chaos_seed >> 4) % 1000) / 500.0) - 1.0);
-              lorenz_z = (float)((((chaos_seed >> 8) % 1000) / 500.0) - 1.0);
-              lorenz_state_valid = 1;
-          } else {
-              // [FIX: AUDIT] Обробка помилки mruby — позначаємо status=tamper
-              lora_payload[10] = BIO_STATUS_VM_ERROR;
-              mrb->exc = NULL; // Скидаємо виняток для наступної ітерації
-          }
+          // [SEC.11 / FW.30] Ні RTC state, ні K_seed не доступні.
+          // Пристрій не provisioned або Flash пошкоджений.
+          lora_payload[10] = BIO_STATUS_VM_ERROR;
       }
 
       mrb_gc_arena_restore(mrb, arena_idx);
@@ -1132,6 +1155,97 @@ static void Load_AES_Key(void)
     for (int i = 0; i < FLASH_KEY_WORDS; i++) {
         aes_key[i] = flash_ptr[1 + i];
     }
+}
+
+// [SEC.11 / FW.30] Завантаження Lorenz K_seed з Protected Flash Sector.
+// Flash layout: [FLASH_SEED_MAGIC:4][seed_word[0]:4]...[seed_word[7]:4] = 36 bytes.
+// Якщо seed не provisioned — lorenz_seed_valid = 0 (пристрій працює, але cold-start
+// видасть BIO_STATUS_VM_ERROR замість деривованих координат).
+// НЕ викликає Error_Handler() — на відміну від AES key, відсутність K_seed не є
+// фатальною (warm continuation через RTC все ще працює).
+static void Load_Lorenz_Seed(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_SEED_ADDR;
+
+    // 1. Перевірка magic marker
+    if (flash_ptr[0] != FLASH_SEED_MAGIC) {
+        lorenz_seed_valid = 0;
+        return;
+    }
+
+    // 2. Перевірка що seed не нульовий
+    uint32_t seed_or = 0;
+    for (int i = 0; i < FLASH_SEED_WORDS; i++) {
+        seed_or |= flash_ptr[1 + i];
+    }
+    if (seed_or == 0) {
+        lorenz_seed_valid = 0;
+        return;
+    }
+
+    // 3. Копіюємо seed з Flash у RAM (big-endian byte order for HMAC)
+    for (int i = 0; i < FLASH_SEED_WORDS; i++) {
+        uint32_t word = flash_ptr[1 + i];
+        lorenz_seed[i * 4 + 0] = (uint8_t)(word >> 24);
+        lorenz_seed[i * 4 + 1] = (uint8_t)(word >> 16);
+        lorenz_seed[i * 4 + 2] = (uint8_t)(word >> 8);
+        lorenz_seed[i * 4 + 3] = (uint8_t)(word & 0xFF);
+    }
+    lorenz_seed_valid = 1;
+}
+
+// [SEC.11 / FW.30] Деривація початкового стану Лоренца при cold-start.
+// Алгоритм (дзеркало SilkenNet::SeedDerivation.derive_initial_state):
+//   1. epoch_day = RTC_unix_time / 86400
+//   2. info = "init|" || epoch_day_be8
+//   3. digest = HMAC-SHA256(K_seed, info)
+//   4. (x₀,y₀,z₀) = signed_unit_float(digest[0..7], digest[8..15], digest[16..23])
+//
+// На MCU це виконується через mbedTLS (mbedtls_md_hmac).
+// Для host-based тестів та до першого lab-тесту з mbedTLS — використовуємо
+// спрощену деривацію через апаратний HRNG XOR K_seed, яка гарантує:
+//   - детермінованість при однаковому K_seed + epoch_day
+//   - різні (x₀,y₀,z₀) при різних epoch_day
+//   - координати ∈ [-1, +1]
+// Повноцінний mbedTLS HMAC-SHA256 буде інтегрований при lab-тестуванні.
+//
+// TODO(FW.30-mbedtls): замінити на mbedtls_md_hmac(MBEDTLS_MD_SHA256, ...)
+// після верифікації на цільовому STM32WLE5JC.
+static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
+{
+    // Отримуємо epoch_day з RTC
+    RTC_TimeTypeDef sTime = {0};
+    RTC_DateTypeDef sDate = {0};
+    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+    // Спрощений epoch_day (дні від 2000-01-01 як proxy для UTC epoch_day).
+    // На MCU без повноцінного time_t — рахуємо від BCD дати RTC.
+    // Для DCI парності з backend потрібен UTC unix epoch / 86400 —
+    // це буде скориговано через FW.20 CMD_TIME_SYNC.
+    uint32_t approx_days = (uint32_t)(sDate.Year + 2000 - 1970) * 365UL
+                         + (uint32_t)(sDate.Month - 1) * 30UL
+                         + (uint32_t)sDate.Date;
+
+    // Детерміністична деривація з K_seed + epoch_day.
+    // Використовуємо просте хешування (XOR fold + rotation) як placeholder
+    // для повноцінного HMAC-SHA256. Це забезпечує:
+    // - різні початкові точки для різних днів
+    // - різні початкові точки для різних K_seed
+    // - координати ∈ [-1, +1]
+    uint32_t hash[3] = {0};
+    for (int i = 0; i < 32; i++) {
+        uint32_t byte_val = lorenz_seed[i];
+        uint32_t mix = byte_val + (uint32_t)i + 1;
+        hash[0] ^= (mix << ((i * 7) % 24)) ^ (approx_days * (2654435761UL + (uint32_t)i));
+        hash[1] ^= (mix << ((i * 11) % 24)) ^ ((approx_days + 1) * (2246822519UL + (uint32_t)i));
+        hash[2] ^= (mix << ((i * 13) % 24)) ^ ((approx_days + 2) * (3266489917UL + (uint32_t)i));
+    }
+
+    // Мапимо uint32 → [-1.0, +1.0] (signed unit float)
+    *x0 = ((float)(hash[0] % 2000000) / 1000000.0f) - 1.0f;
+    *y0 = ((float)(hash[1] % 2000000) / 1000000.0f) - 1.0f;
+    *z0 = ((float)(hash[2] % 2000000) / 1000000.0f) - 1.0f;
 }
 
 // Функція конфігурації апаратного AES (Створюється автоматично CubeMX)
