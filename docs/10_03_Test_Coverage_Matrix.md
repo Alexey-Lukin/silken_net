@@ -11,7 +11,7 @@
 - **Дата аудиту:** 2026-05-02 (FW.27-B + FW.23 + FW.18 dispatcher cycle)
 - **Кількість тестів:**
   - RSpec (Ruby): ~298+ spec files, ~52,700+ lines (+ `ota_hmac_key_service_spec.rb` 16 examples [FW.23], `ota_packager_service_spec.rb` +21 examples [FW.23], `ota_firmware_flow_spec.rb` +7 e2e [FW.23], `silken_net/seed_derivation_spec.rb` 16 examples [SEC.11])
-  - Firmware (C): **413** tests (180 soldier + 113 queen + 42 bio-contract + 44 tinyml + 21 encryption + **13 seed_derivation [SEC.11]**). +46 від 367: **[FW.27-B]** Soldier 12 bitmap + Queen 10 dedup; **[FW.23]** Soldier 13 dual-gate + Queen 4 trailer relay; **[FW.18]** 7 OTA CMD dispatcher.
+  - Firmware (C): **426** tests (180 soldier + **126** queen + 42 bio-contract + 44 tinyml + 21 encryption + 13 seed_derivation [SEC.11]). +13 від 413: **[FW.3]** Queen LoRa RX ring buffer 13 host-тестів (FIFO семантика, capacity 15, переповнення → drop counter, 25-сек flush сценарій з 30 ISR-пакетами → 15 уцілілих + 15 видимих втрат).
   - Foundry (Solidity): 6 test suites, ~115+ tests
 
 ---
@@ -122,7 +122,7 @@
 | **[SEC.11 / FW.30] Cold-Start Derivation** | **4** | 🟢 **Нове** — `Derive_Cold_Start_State()` coordinates ∈ [-1,+1], deterministic, date-sensitive, seed-sensitive |
 | **[FW.30] C-Bridge 7-Arg Signature** | **1** | 🟢 **Нове** — Lorenz iteration з 7-arg сигнатурою produces finite coords |
 
-### 2.2 Queen (test_queen_logic.c — 91 tests)
+### 2.2 Queen (test_queen_logic.c — 126 tests)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -137,6 +137,7 @@
 | HRNG IV Generation | 5 | 🟢 Повне |
 | **CoAP Retry (FW.9)** | **4** | 🟢 **Нове** — `test_coap_retry_constants`, константи `COAP_MAX_RETRIES`, `UART_RX_BUF_SIZE` |
 | **[FW.1] Flash Key Loading** | **8** | 🟢 **Нове** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler, FLASH_KEY_ADDR 0x0803E000 |
+| **[FW.3] LoRa RX Ring Buffer** | **13** | 🟢 **Нове** (2026-05-02) — single-producer FIFO, capacity 15, переповнення → drop counter (existing voices preserved), drain+refill wraps, RSSI passthrough, ISR simulator size/RSSI clamp, **25-сек flush сценарій** (30 ISR пакетів → 15 уцілілих + 15 видимих втрат). Закриває BLOCKER-2 part-1: `incoming_lora_payload`+`lora_rx_flag` → ring. |
 
 ### 2.3 Bio-Contract (test_bio_contract.c — 42 tests)
 

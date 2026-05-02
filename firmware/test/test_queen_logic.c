@@ -358,6 +358,78 @@ static void Build_Time_Beacon_Plaintext(uint32_t unix_ts, uint8_t out[16])
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.3] LoRa RX RING BUFFER — ПРИХИСТОК ГОЛОСІВ РОЮ
+ * ════════════════════════════════════════════════════════════════════
+ * Mirror of `firmware/queen/main.c` ring-buffer logic for host testing.
+ *
+ * Single-producer (OnRxDone ISR) / single-consumer (main loop) FIFO.
+ * Старий однобітний `lora_rx_flag` + `incoming_lora_payload[16]` лишав
+ * Королеву глухою на ~25 секунд CoAP-flush'у — ISR мовчки переписував
+ * попередній голос. Ринг тримає 15 голосів (16-1), переповнення фіксує
+ * лічильник `lora_rx_drops`.
+ *
+ * На host-тестах volatile поводиться як звичайний uint8_t — single-thread
+ * детерміністичний доступ, ARM Cortex-M4 атомарність 8-біт читання/запису
+ * не моделюється, бо логіка ring-empty/full однакова на обох платформах.
+ */
+#define LORA_RX_RING_SIZE      16U
+#define LORA_RX_RING_MASK      (LORA_RX_RING_SIZE - 1U)
+
+typedef struct {
+    uint8_t  payload[16];
+    int8_t   rssi;
+} LoRaRxSlot;
+
+static volatile LoRaRxSlot lora_rx_ring[LORA_RX_RING_SIZE];
+static volatile uint8_t    lora_rx_head  = 0;
+static volatile uint8_t    lora_rx_tail  = 0;
+static volatile uint16_t   lora_rx_drops = 0;
+
+static inline uint8_t LoRa_Rx_Ring_Empty(void) {
+    return (uint8_t)(lora_rx_head == lora_rx_tail);
+}
+
+static inline uint8_t LoRa_Rx_Ring_Count(void) {
+    return (uint8_t)((lora_rx_head - lora_rx_tail) & LORA_RX_RING_MASK);
+}
+
+static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi) {
+    uint8_t next = (uint8_t)((lora_rx_head + 1U) & LORA_RX_RING_MASK);
+    if (next == lora_rx_tail) {
+        lora_rx_drops++;
+        return;
+    }
+    memcpy((void*)lora_rx_ring[lora_rx_head].payload, payload, 16);
+    lora_rx_ring[lora_rx_head].rssi = rssi;
+    lora_rx_head = next;
+}
+
+static inline uint8_t LoRa_Rx_Ring_Pop(uint8_t *out_payload, int8_t *out_rssi) {
+    if (lora_rx_head == lora_rx_tail) return 0;
+    memcpy(out_payload, (const void*)lora_rx_ring[lora_rx_tail].payload, 16);
+    *out_rssi = lora_rx_ring[lora_rx_tail].rssi;
+    lora_rx_tail = (uint8_t)((lora_rx_tail + 1U) & LORA_RX_RING_MASK);
+    return 1;
+}
+
+/* OnRxDone simulator — mirrors `firmware/queen/main.c` ISR. Drops non-16B
+ * sizes (silent), clamps RSSI to int8_t, then enqueues into the ring. */
+static void Simulate_OnRxDone(const uint8_t *payload, uint16_t size, int16_t rssi)
+{
+    if (size != 16) return;
+    if (rssi < -128) rssi = -128;
+    if (rssi > 127)  rssi = 127;
+    LoRa_Rx_Ring_Push(payload, (int8_t)rssi);
+}
+
+static void reset_lora_rx_ring(void) {
+    lora_rx_head  = 0;
+    lora_rx_tail  = 0;
+    lora_rx_drops = 0;
+    memset((void*)lora_rx_ring, 0, sizeof(lora_rx_ring));
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * TEST FRAMEWORK
  * ════════════════════════════════════════════════════════════════════ */
 static int tests_passed = 0;
@@ -1836,6 +1908,203 @@ TEST(test_queen_relay_overwrites_same_segment) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.3] LORA RX RING BUFFER TESTS — ПРИХИСТОК ГОЛОСІВ РОЮ
+ * ════════════════════════════════════════════════════════════════════
+ * Закриває head-of-list пункт BLOCKER-2: single-packet buffer overwrite
+ * під час 25-секундного CoAP-flush'у. Кожен тест moделює сценарій, де
+ * раніше Королева мовчки втрачала голоси; тепер вони чекають у рингу.
+ */
+
+TEST(test_lora_rx_ring_initial_empty) {
+    reset_lora_rx_ring();
+    ASSERT_TRUE(LoRa_Rx_Ring_Empty());
+    ASSERT_EQ(LoRa_Rx_Ring_Count(), 0);
+    ASSERT_EQ(lora_rx_drops, 0);
+}
+
+TEST(test_lora_rx_ring_pop_on_empty_returns_zero) {
+    reset_lora_rx_ring();
+    uint8_t buf[16];
+    int8_t  rssi = 0;
+    ASSERT_EQ(LoRa_Rx_Ring_Pop(buf, &rssi), 0);
+    ASSERT_EQ(lora_rx_drops, 0);  /* pop on empty НЕ збільшує drop counter */
+}
+
+TEST(test_lora_rx_ring_single_push_pop_roundtrip) {
+    reset_lora_rx_ring();
+    uint8_t in[16];
+    for (uint8_t i = 0; i < 16; i++) in[i] = (uint8_t)(0xA0 + i);
+    LoRa_Rx_Ring_Push(in, -77);
+    ASSERT_FALSE(LoRa_Rx_Ring_Empty());
+    ASSERT_EQ(LoRa_Rx_Ring_Count(), 1);
+
+    uint8_t out[16] = {0};
+    int8_t  rssi    = 0;
+    ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi), 1);
+    ASSERT_EQ(rssi, -77);
+    for (uint8_t i = 0; i < 16; i++) ASSERT_EQ(out[i], in[i]);
+    ASSERT_TRUE(LoRa_Rx_Ring_Empty());
+}
+
+TEST(test_lora_rx_ring_fifo_order_preserved) {
+    reset_lora_rx_ring();
+    /* push 5 голосів з різними DID-маркерами в байті 0 — рій кричить хором */
+    for (uint8_t i = 0; i < 5; i++) {
+        uint8_t pkt[16] = {0};
+        pkt[0] = (uint8_t)(0x10 + i);   /* "DID-маркер" */
+        LoRa_Rx_Ring_Push(pkt, (int8_t)(-60 - i));
+    }
+    ASSERT_EQ(LoRa_Rx_Ring_Count(), 5);
+
+    /* pop повинен повернути голоси в тому ж порядку (FIFO) */
+    for (uint8_t i = 0; i < 5; i++) {
+        uint8_t out[16];
+        int8_t  rssi;
+        ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi), 1);
+        ASSERT_EQ(out[0], (uint8_t)(0x10 + i));
+        ASSERT_EQ(rssi, (int8_t)(-60 - i));
+    }
+    ASSERT_TRUE(LoRa_Rx_Ring_Empty());
+}
+
+TEST(test_lora_rx_ring_fills_to_capacity_15) {
+    reset_lora_rx_ring();
+    /* Capacity = LORA_RX_RING_SIZE - 1 = 15 (один слот віддано на full-vs-empty) */
+    for (uint8_t i = 0; i < 15; i++) {
+        uint8_t pkt[16] = {0};
+        pkt[0] = i;
+        LoRa_Rx_Ring_Push(pkt, -50);
+    }
+    ASSERT_EQ(LoRa_Rx_Ring_Count(), 15);
+    ASSERT_EQ(lora_rx_drops, 0);  /* до 15-го пакета — без втрат */
+}
+
+TEST(test_lora_rx_ring_overflow_increments_drop_counter) {
+    reset_lora_rx_ring();
+    /* Заповнюємо до краю (15 голосів) */
+    for (uint8_t i = 0; i < 15; i++) {
+        uint8_t pkt[16] = {0};
+        pkt[0] = i;
+        LoRa_Rx_Ring_Push(pkt, -50);
+    }
+    /* 16-й, 17-й, 18-й — рій уже не вмістився, лічильник росте */
+    uint8_t late_pkt[16] = {0};
+    late_pkt[0] = 0xEE;
+    LoRa_Rx_Ring_Push(late_pkt, -90);
+    LoRa_Rx_Ring_Push(late_pkt, -91);
+    LoRa_Rx_Ring_Push(late_pkt, -92);
+    ASSERT_EQ(lora_rx_drops, 3);
+
+    /* Існуючі голоси НЕ перезаписані — переповнення не псує пам'ять */
+    ASSERT_EQ(LoRa_Rx_Ring_Count(), 15);
+    uint8_t out[16];
+    int8_t  rssi;
+    LoRa_Rx_Ring_Pop(out, &rssi);
+    ASSERT_EQ(out[0], 0);             /* перший пакет, не пізній 0xEE */
+}
+
+TEST(test_lora_rx_ring_drain_then_refill_wraps_correctly) {
+    reset_lora_rx_ring();
+    uint8_t pkt[16] = {0};
+    /* Кілька циклів push 10 → pop 10, щоб head/tail обидва обернулися
+     * через нульовий маркер кільця (modulo LORA_RX_RING_SIZE). */
+    for (uint8_t round = 0; round < 5; round++) {
+        for (uint8_t i = 0; i < 10; i++) {
+            pkt[0] = (uint8_t)(round * 10 + i);
+            LoRa_Rx_Ring_Push(pkt, -55);
+        }
+        ASSERT_EQ(LoRa_Rx_Ring_Count(), 10);
+        for (uint8_t i = 0; i < 10; i++) {
+            uint8_t out[16];
+            int8_t  rssi;
+            ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi), 1);
+            ASSERT_EQ(out[0], (uint8_t)(round * 10 + i));
+        }
+        ASSERT_TRUE(LoRa_Rx_Ring_Empty());
+    }
+    ASSERT_EQ(lora_rx_drops, 0);  /* drain-цикли не повинні створювати втрат */
+}
+
+TEST(test_lora_rx_ring_rssi_minus128_preserved) {
+    reset_lora_rx_ring();
+    uint8_t pkt[16] = {0};
+    LoRa_Rx_Ring_Push(pkt, -128);
+    uint8_t out[16];
+    int8_t  rssi = 0;
+    LoRa_Rx_Ring_Pop(out, &rssi);
+    ASSERT_EQ(rssi, -128);  /* Глибокий fade у лісовому каноні зберігається */
+}
+
+TEST(test_lora_rx_ring_isr_simulator_drops_non_16b_size) {
+    reset_lora_rx_ring();
+    uint8_t pkt[20] = {0};
+    Simulate_OnRxDone(pkt, 20, -50);  /* не 16 — Королева мовчки відмовляє */
+    ASSERT_TRUE(LoRa_Rx_Ring_Empty());
+    ASSERT_EQ(lora_rx_drops, 0);  /* size-mismatch — НЕ drop, а silent reject */
+}
+
+TEST(test_lora_rx_ring_isr_simulator_clamps_rssi_below_minus128) {
+    reset_lora_rx_ring();
+    uint8_t pkt[16] = {0};
+    Simulate_OnRxDone(pkt, 16, -200);  /* SX1262 інколи рапортує < -128 */
+    uint8_t out[16];
+    int8_t  rssi = 0;
+    LoRa_Rx_Ring_Pop(out, &rssi);
+    ASSERT_EQ(rssi, -128);  /* Clamp вбережає від UB при abs(rssi) */
+}
+
+TEST(test_lora_rx_ring_isr_simulator_clamps_rssi_above_127) {
+    reset_lora_rx_ring();
+    uint8_t pkt[16] = {0};
+    Simulate_OnRxDone(pkt, 16, 32000);
+    uint8_t out[16];
+    int8_t  rssi = 0;
+    LoRa_Rx_Ring_Pop(out, &rssi);
+    ASSERT_EQ(rssi, 127);
+}
+
+TEST(test_lora_rx_ring_25sec_flush_scenario_no_overwrites) {
+    /* Сценарій BLOCKER-2: за 25 секунд CoAP-flush'у Soldier'и встигають
+     * відправити більше пакетів, ніж main loop встигає обертати. Раніше
+     * губилися всі, крім останнього. Тепер губляться лише ті, що понад
+     * 15-слотовий ринг — і кожен видимий через лічильник. */
+    reset_lora_rx_ring();
+    /* Симулюємо 30 послідовних ISR-пакетів від різних дерев. */
+    for (uint8_t i = 0; i < 30; i++) {
+        uint8_t pkt[16] = {0};
+        pkt[0] = i;
+        Simulate_OnRxDone(pkt, 16, (int8_t)(-50 - (int)(i % 30)));
+    }
+    /* 15 уцілілих + 15 видимих втрат — жоден не зник у тиші. */
+    ASSERT_EQ(LoRa_Rx_Ring_Count(), 15);
+    ASSERT_EQ(lora_rx_drops, 15);
+
+    /* Перші 15 пакетів зберігаються (FIFO семантика) */
+    for (uint8_t i = 0; i < 15; i++) {
+        uint8_t out[16];
+        int8_t  rssi;
+        LoRa_Rx_Ring_Pop(out, &rssi);
+        ASSERT_EQ(out[0], i);
+    }
+}
+
+TEST(test_lora_rx_ring_count_zero_after_full_drain) {
+    reset_lora_rx_ring();
+    uint8_t pkt[16] = {0};
+    for (uint8_t i = 0; i < 7; i++) {
+        pkt[0] = i;
+        LoRa_Rx_Ring_Push(pkt, -50);
+    }
+    while (!LoRa_Rx_Ring_Empty()) {
+        uint8_t out[16];
+        int8_t  rssi;
+        LoRa_Rx_Ring_Pop(out, &rssi);
+    }
+    ASSERT_EQ(LoRa_Rx_Ring_Count(), 0);
+    ASSERT_TRUE(LoRa_Rx_Ring_Empty());
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -1988,6 +2257,21 @@ int main(void)
     RUN(test_queen_relay_rejects_seg_idx_4);
     RUN(test_queen_relay_rejects_wrong_marker);
     RUN(test_queen_relay_overwrites_same_segment);
+
+    printf("\n  LoRa RX Ring Buffer (FW.3):\n");
+    RUN(test_lora_rx_ring_initial_empty);
+    RUN(test_lora_rx_ring_pop_on_empty_returns_zero);
+    RUN(test_lora_rx_ring_single_push_pop_roundtrip);
+    RUN(test_lora_rx_ring_fifo_order_preserved);
+    RUN(test_lora_rx_ring_fills_to_capacity_15);
+    RUN(test_lora_rx_ring_overflow_increments_drop_counter);
+    RUN(test_lora_rx_ring_drain_then_refill_wraps_correctly);
+    RUN(test_lora_rx_ring_rssi_minus128_preserved);
+    RUN(test_lora_rx_ring_isr_simulator_drops_non_16b_size);
+    RUN(test_lora_rx_ring_isr_simulator_clamps_rssi_below_minus128);
+    RUN(test_lora_rx_ring_isr_simulator_clamps_rssi_above_127);
+    RUN(test_lora_rx_ring_25sec_flush_scenario_no_overwrites);
+    RUN(test_lora_rx_ring_count_zero_after_full_drain);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);
