@@ -3429,7 +3429,8 @@ TEST(test_fw20s2_relay_happy_path_with_drift_compensation) {
     uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
                       ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
     ASSERT_EQ(out_ts, 1714000005u);
-    /* Auth-біт явно зник, TTL декрементовано до 1 */
+    /* Auth-біт явно скинуто (expected — relay-маяки не authoritative,
+     * це anti-storm інваріант freeze-contract'у), TTL декрементовано до 1 */
     ASSERT_FALSE(out[9] & FW20S2_MESH_AUTH_FLAG);
     ASSERT_EQ(out[9] & FW20S2_MESH_TTL_MASK, 1u);
     /* Marker + magic збережені — дзеркало Queen wire-формату */
@@ -3565,7 +3566,7 @@ TEST(test_fw20s2_relay_two_hop_chain_kills_authoritativeness) {
     /* Симулюємо A→Provisioner→B: вихід першого relay'у НЕ повинен
      * пройти guard повторно (auth=0) — це anti-storm freeze-contract. */
     uint8_t in1[16], out1[16], out2[16];
-    Test_Build_Mesh_Beacon(in1, 1714000000u, 3, 1);  /* TTL=3, щоб теоретично було чим relay'ити */
+    Test_Build_Mesh_Beacon(in1, 1714000000u, 3, 1);  /* TTL=3 (достатньо для relay), але auth=0 після першого hop'а запобігає повторному relay'у */
     TestBeaconRelayResult r1 = Test_Try_Relay_Time_Beacon(
         in1, FW20S2_MESH_ROLE_PROVISIONER, 0, 2000u, out1);
     ASSERT_EQ(r1, FW20S2_RELAY_OK);
