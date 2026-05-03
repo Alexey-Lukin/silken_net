@@ -1,5 +1,129 @@
 # 03_01: Життєвий Цикл Прошивки та DMA (Фази 0–5, Watchdog, STOP2)
 
+## 🎯 Мета
+
+Зафіксувати детермінований життєвий цикл (Main Loop) вузлів **Soldier** (датчик дерева) та **Queen** (шлюз-агрегатор), переходи між станами сну та апаратні переривання (ISR) мікроконтролера STM32WLE5JC. Документ слугує SSOT для Factory Flashing (масового виробництва) та OTA-розгортання.
+
+---
+
+## ✅ Статус
+
+- **Поточний TRL:** TRL 6 — C-код написаний, host-based тести
+- **Пов'язані модулі:**
+  - EDLC Супераконденсатор → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
+  - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
+  - TinyML Акустичний Інференс → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
+  - mruby Атрактор Лоренца → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
+  - Апаратний AES-256 та Безпека → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+
+---
+
+| Компонент | Стан |
+|-----------|------|
+| **Soldier main loop (Phases 0-5)** | ✅ Реалізовано (`firmware/soldier/main.c`) |
+| **Queen main loop (RX → Cache → Flush)** | ✅ Реалізовано (`firmware/queen/main.c`) |
+| **DMA Audio Pipeline (TinyML)** | ✅ Реалізовано (TIM2 + ADC DMA + CPU SLEEP) |
+| **RTC Backup Domain (20 регістрів)** | ✅ Реалізовано (DR0..DR19, персистентний стан) |
+| **Hardware ISR Map** | ✅ Задокументовано (4 рефлекси: RxDone, EXTI, PVD, DMA) |
+| **Mesh Anti-Pingpong (3 слоти)** | ✅ Реалізовано (DR8, DR9, DR11; зменшено з 8 до 3 у FW.21, DR10/DR12 під EMA, DR13..DR15 — резерв) |
+| **CIFO Priority-Aware Eviction** | ✅ Виправлено (критичні записи захищені від витіснення) |
+| **OTA Integrity (CRC32)** | ✅ Виправлено (ISO 3309 перевірка перед flash write) |
+| **AES Key — зашитий у Flash** | 🔴 BLOCKER (hardcoded, не обертається) |
+| **AT Command Blocking (~25 s flush)** | 🟡 Частково виправлено — CoAP retry з UART RX парсингом (FW.9) + LoRa RX **ring buffer** (FW.3, 2026-05-02) → під час flush'у Queen більше НЕ губить пакети ≤ 15 burst; повна async UART DMA — відкрито |
+| **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
+| **Error_Handler** | ✅ Виправлено — `NVIC_SystemReset()` через 100 мс замість вічного циклу (FW.14) |
+| **CMD_DECRYPT_BUF_SIZE розбіжність** | ✅ Виправлено — тест синхронізовано з firmware (96 → 544) |
+| **Host-based Tests (264)** | ✅ Всі проходять (`make -C firmware/test`) |
+
+---
+
+## 🛑 Блокери
+
+### 🔴 BLOCKER-1: Hardcoded AES-256 Key у Flash-пам'яті
+
+**Статус:** Відкрито. Критичний ризик безпеки для масового виробництва.
+> 🟡 Firmware part completed: `Load_AES_Key()` reads per-device key from Protected Flash Sector (0x0803E000). Hardcoded key removed. `Error_Handler()` if not provisioned. Залишається: factory flashing pipeline, RDP Level 2 activation.
+
+**Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
+
+```c
+// [FW.1] Hardcoded key removed. Key loaded from Protected Flash Sector via Load_AES_Key().
+uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init()
+```
+
+**Ризики:**
+1. **~~Єдина точка відмови:~~** ✅ Firmware тепер підтримує per-device key (Flash-based). Залишається factory provisioning pipeline.
+2. **Неможливість ротації:** Замінити ключ без перепрошивки всіх вузлів неможливо.
+3. **Flash читається через JTAG/SWD:** Якщо не активований RDP Level 2 (Readout Protection), ключ тривіально витягується.
+
+**Необхідна дія:**
+- ~~Провізіонувати унікальний ключ на кожен пристрій через захищений канал (`POST /api/v1/provisioning/register`) під час Factory Flashing.~~ ✅ Firmware ready — `Load_AES_Key()` реалізовано.
+- Активувати RDP Level 2 як фінальний крок Factory Flashing (необоротно блокує JTAG).
+- Перенести ключ у `FLASH_KEYR`-захищену зону або окремий secure element.
+- Реалізувати механізм ротації ключів через OTA (окрема задача `03_05`).
+
+**Блокує:** Factory Flashing, масове виробництво.
+
+---
+
+### 🟡 BLOCKER-2: AT Command Blocking — Queen сліпа ~25 секунд під час flush
+
+**Статус:** 🟡 Частково виправлено. **FW.9** — CoAP retry з UART RX парсингом (до 3 спроб, парсинг `OK`/`ERROR`). **FW.3 (2026-05-02)** — LoRa RX ring buffer заміняє single-packet `incoming_lora_payload[16]` + `lora_rx_flag` на 16-слотовий FIFO; ISR-side `LoRa_Rx_Ring_Push` ловить кожен голос рою, навіть коли main loop у CoAP-каналі. Повна async UART DMA-переробка `Flush_Cache_To_Rails()` залишається відкритою.
+
+**Файл:** `firmware/queen/main.c`
+
+```c
+// [FW.9] CoAP send з retry-логікою — парсинг відповіді модему замість blind delay
+for (uint8_t retry = 0; retry < COAP_MAX_RETRIES && !send_success; retry++) {
+    if (!SIM7070_SendATCommand_WithResponse("AT+CCOAPNEW=...", COAP_BASE_TIMEOUT_MS)) {
+        continue;  // Session open failed → retry
+    }
+    // ... AT+CCOAPSEND hex TX ...
+    if (HAL_UART_Receive(&huart1, uart_rx_buf, ..., COAP_SEND_TIMEOUT_MS) == HAL_OK) {
+        if (strstr(uart_rx_buf, "OK")) { send_success = 1; }
+    }
+    SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
+}
+
+// [FW.3] Ring buffer — single-producer (ISR) / single-consumer (main loop)
+typedef struct { uint8_t payload[16]; int8_t rssi; } LoRaRxSlot;
+static volatile LoRaRxSlot lora_rx_ring[16];
+static volatile uint8_t    lora_rx_head, lora_rx_tail;
+static volatile uint16_t   lora_rx_drops;   // переповнення видиме для backend
+
+void OnRxDone(uint8_t *p, uint16_t sz, int16_t rssi, int8_t snr) {
+    if (sz != 16) return;
+    if (rssi < -128) rssi = -128;  if (rssi > 127) rssi = 127;
+    LoRa_Rx_Ring_Push(p, (int8_t)rssi);   // ISR-side enqueue
+}
+// main loop: while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi)) { decrypt + cache + Radio.Rx() }
+```
+
+**Ризики (залишкові, після FW.3):**
+1. ✅ Single-packet overwrite — закрито (FW.3). До 15 голосів буферуються; переповнення фіксує `lora_rx_drops`.
+2. Bursts > 15 пакетів за 25-секундне вікно — все ще пропадають, але видимо. Це відкритий ризик для масових fire-events; потребує full async UART DMA.
+3. Retry не вирішує проблему блокування головного циклу — UART RX залишається polling-based під час hex TX (~21 секунда).
+
+**Залишкові необхідні дії:**
+- Переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven (async hex TX через `HAL_UART_Transmit_DMA` + IDLE-line callback для RX).
+- Експортувати `lora_rx_drops` у queen_health sentinel-payload (наразі — лише внутрішня RAM-метрика).
+
+**Блокує:** Mainnet-надійність Queen при пожежі-сценарії (≥ 16 emergency packets); звичайний LoRa-трафік (1 пакет / кілька сек) повністю покритий ringom.
+
+---
+
+### ✅ BLOCKER-4: Starlink Latency Gap (Виправлено)
+
+**Статус:** Виправлено (FW.9 + PR #273). CoAP таймаути збільшено та реалізовано повноцінний retry.
+
+- `AT+CCOAPNEW`: `1000 ms` → `2000 ms` (`COAP_BASE_TIMEOUT_MS`)
+- ACK wait: `2000 ms` → `5000 ms` (`COAP_SEND_TIMEOUT_MS`)
+- До 3 retry-спроб (`COAP_MAX_RETRIES=3`) з парсингом відповіді `OK`/`ERROR`
+
+**Закриває:** Стабільність CoAP uplink через Starlink DTC (worst-case RTT 600–2400 ms).
+
+---
+
 ## 🛠️ Інструментарій Розробки
 
 ### STM32CubeIDE
@@ -147,130 +271,6 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 ```
 
 Обидва USB-кабелі підключаються до Mac одночасно. STM32CubeIDE автоматично знаходить ST-LINK; для логів — `screen /dev/cu.usbserial-* 115200` або Serial Monitor у CubeIDE.
-
----
-
-## 🎯 Мета
-
-Зафіксувати детермінований життєвий цикл (Main Loop) вузлів **Soldier** (датчик дерева) та **Queen** (шлюз-агрегатор), переходи між станами сну та апаратні переривання (ISR) мікроконтролера STM32WLE5JC. Документ слугує SSOT для Factory Flashing (масового виробництва) та OTA-розгортання.
-
----
-
-## ✅ Статус
-
-- **Поточний TRL:** TRL 6 — C-код написаний, 264 host-based тестів проходять
-- **Пов'язані модулі:**
-  - EDLC Супераконденсатор → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
-  - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
-  - TinyML Акустичний Інференс → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
-  - mruby Атрактор Лоренца → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
-  - Апаратний AES-256 та Безпека → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
-
----
-
-| Компонент | Стан |
-|-----------|------|
-| **Soldier main loop (Phases 0-5)** | ✅ Реалізовано (`firmware/soldier/main.c`) |
-| **Queen main loop (RX → Cache → Flush)** | ✅ Реалізовано (`firmware/queen/main.c`) |
-| **DMA Audio Pipeline (TinyML)** | ✅ Реалізовано (TIM2 + ADC DMA + CPU SLEEP) |
-| **RTC Backup Domain (20 регістрів)** | ✅ Реалізовано (DR0..DR19, персистентний стан) |
-| **Hardware ISR Map** | ✅ Задокументовано (4 рефлекси: RxDone, EXTI, PVD, DMA) |
-| **Mesh Anti-Pingpong (3 слоти)** | ✅ Реалізовано (DR8, DR9, DR11; зменшено з 8 до 3 у FW.21, DR10/DR12 під EMA, DR13..DR15 — резерв) |
-| **CIFO Priority-Aware Eviction** | ✅ Виправлено (критичні записи захищені від витіснення) |
-| **OTA Integrity (CRC32)** | ✅ Виправлено (ISO 3309 перевірка перед flash write) |
-| **AES Key — зашитий у Flash** | 🔴 BLOCKER (hardcoded, не обертається) |
-| **AT Command Blocking (~25 s flush)** | 🟡 Частково виправлено — CoAP retry з UART RX парсингом (FW.9) + LoRa RX **ring buffer** (FW.3, 2026-05-02) → під час flush'у Queen більше НЕ губить пакети ≤ 15 burst; повна async UART DMA — відкрито |
-| **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
-| **Error_Handler** | ✅ Виправлено — `NVIC_SystemReset()` через 100 мс замість вічного циклу (FW.14) |
-| **CMD_DECRYPT_BUF_SIZE розбіжність** | ✅ Виправлено — тест синхронізовано з firmware (96 → 544) |
-| **Host-based Tests (264)** | ✅ Всі проходять (`make -C firmware/test`) |
-
----
-
-## 🛑 Блокери
-
-### 🔴 BLOCKER-1: Hardcoded AES-256 Key у Flash-пам'яті
-
-**Статус:** Відкрито. Критичний ризик безпеки для масового виробництва.
-> 🟡 Firmware part completed: `Load_AES_Key()` reads per-device key from Protected Flash Sector (0x0803E000). Hardcoded key removed. `Error_Handler()` if not provisioned. Залишається: factory flashing pipeline, RDP Level 2 activation.
-
-**Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
-
-```c
-// [FW.1] Hardcoded key removed. Key loaded from Protected Flash Sector via Load_AES_Key().
-uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init()
-```
-
-**Ризики:**
-1. **~~Єдина точка відмови:~~** ✅ Firmware тепер підтримує per-device key (Flash-based). Залишається factory provisioning pipeline.
-2. **Неможливість ротації:** Замінити ключ без перепрошивки всіх вузлів неможливо.
-3. **Flash читається через JTAG/SWD:** Якщо не активований RDP Level 2 (Readout Protection), ключ тривіально витягується.
-
-**Необхідна дія:**
-- ~~Провізіонувати унікальний ключ на кожен пристрій через захищений канал (`POST /api/v1/provisioning/register`) під час Factory Flashing.~~ ✅ Firmware ready — `Load_AES_Key()` реалізовано.
-- Активувати RDP Level 2 як фінальний крок Factory Flashing (необоротно блокує JTAG).
-- Перенести ключ у `FLASH_KEYR`-захищену зону або окремий secure element.
-- Реалізувати механізм ротації ключів через OTA (окрема задача `03_05`).
-
-**Блокує:** Factory Flashing, масове виробництво.
-
----
-
-### 🟡 BLOCKER-2: AT Command Blocking — Queen сліпа ~25 секунд під час flush
-
-**Статус:** 🟡 Частково виправлено. **FW.9** — CoAP retry з UART RX парсингом (до 3 спроб, парсинг `OK`/`ERROR`). **FW.3 (2026-05-02)** — LoRa RX ring buffer заміняє single-packet `incoming_lora_payload[16]` + `lora_rx_flag` на 16-слотовий FIFO; ISR-side `LoRa_Rx_Ring_Push` ловить кожен голос рою, навіть коли main loop у CoAP-каналі. Повна async UART DMA-переробка `Flush_Cache_To_Rails()` залишається відкритою.
-
-**Файл:** `firmware/queen/main.c`
-
-```c
-// [FW.9] CoAP send з retry-логікою — парсинг відповіді модему замість blind delay
-for (uint8_t retry = 0; retry < COAP_MAX_RETRIES && !send_success; retry++) {
-    if (!SIM7070_SendATCommand_WithResponse("AT+CCOAPNEW=...", COAP_BASE_TIMEOUT_MS)) {
-        continue;  // Session open failed → retry
-    }
-    // ... AT+CCOAPSEND hex TX ...
-    if (HAL_UART_Receive(&huart1, uart_rx_buf, ..., COAP_SEND_TIMEOUT_MS) == HAL_OK) {
-        if (strstr(uart_rx_buf, "OK")) { send_success = 1; }
-    }
-    SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
-}
-
-// [FW.3] Ring buffer — single-producer (ISR) / single-consumer (main loop)
-typedef struct { uint8_t payload[16]; int8_t rssi; } LoRaRxSlot;
-static volatile LoRaRxSlot lora_rx_ring[16];
-static volatile uint8_t    lora_rx_head, lora_rx_tail;
-static volatile uint16_t   lora_rx_drops;   // переповнення видиме для backend
-
-void OnRxDone(uint8_t *p, uint16_t sz, int16_t rssi, int8_t snr) {
-    if (sz != 16) return;
-    if (rssi < -128) rssi = -128;  if (rssi > 127) rssi = 127;
-    LoRa_Rx_Ring_Push(p, (int8_t)rssi);   // ISR-side enqueue
-}
-// main loop: while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi)) { decrypt + cache + Radio.Rx() }
-```
-
-**Ризики (залишкові, після FW.3):**
-1. ✅ Single-packet overwrite — закрито (FW.3). До 15 голосів буферуються; переповнення фіксує `lora_rx_drops`.
-2. Bursts > 15 пакетів за 25-секундне вікно — все ще пропадають, але видимо. Це відкритий ризик для масових fire-events; потребує full async UART DMA.
-3. Retry не вирішує проблему блокування головного циклу — UART RX залишається polling-based під час hex TX (~21 секунда).
-
-**Залишкові необхідні дії:**
-- Переписати `Flush_Cache_To_Rails()` на UART DMA interrupt-driven (async hex TX через `HAL_UART_Transmit_DMA` + IDLE-line callback для RX).
-- Експортувати `lora_rx_drops` у queen_health sentinel-payload (наразі — лише внутрішня RAM-метрика).
-
-**Блокує:** Mainnet-надійність Queen при пожежі-сценарії (≥ 16 emergency packets); звичайний LoRa-трафік (1 пакет / кілька сек) повністю покритий ringom.
-
----
-
-### ✅ BLOCKER-4: Starlink Latency Gap (Виправлено)
-
-**Статус:** Виправлено (FW.9 + PR #273). CoAP таймаути збільшено та реалізовано повноцінний retry.
-
-- `AT+CCOAPNEW`: `1000 ms` → `2000 ms` (`COAP_BASE_TIMEOUT_MS`)
-- ACK wait: `2000 ms` → `5000 ms` (`COAP_SEND_TIMEOUT_MS`)
-- До 3 retry-спроб (`COAP_MAX_RETRIES=3`) з парсингом відповіді `OK`/`ERROR`
-
-**Закриває:** Стабільність CoAP uplink через Starlink DTC (worst-case RTT 600–2400 ms).
 
 ---
 
