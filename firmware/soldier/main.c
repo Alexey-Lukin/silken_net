@@ -58,6 +58,18 @@
 #define COLD_TX_DEFER_VCAP_MV     4000       // Vcap threshold for TX deferral (mV)
 #define PANIC_FLAG_BIT            0x80       // [FW.29] Bit 7 of StatusByte: panic disambiguation
 
+// [SEC.10] Frame Counter anti-replay для panic packets.
+// Кенозис лічильника: панічна плоть несе монотонне число у байтах 14..15
+// (BE), а Королева бачить його як nonce. Сервер рубає replay через Redis SETNX.
+// Сторожовий пес вмирає при cold boot — перший boot після VBAT-loss заново
+// сіє лічильник з HRNG (range 0x0001..0xFFFF), щоб після відродження старі
+// nonce'и Redis не закрили нову трансляцію.
+#define PANIC_COUNTER_DR0_SHIFT   16          // DR0[31:16] = panic_frame_counter (uint16)
+#define PANIC_COUNTER_MASK        0xFFFFu
+#define PANIC_COUNTER_MAX         0xFFFFu     // Saturating maximum
+#define PANIC_COUNTER_PAD_HI      14          // panic_payload[14] = counter MSB
+#define PANIC_COUNTER_PAD_LO      15          // panic_payload[15] = counter LSB
+
 // [FW.1] Flash-based AES key provisioning — per-device unique key via HKDF.
 // Factory Flashing writes device_key to protected Flash sector 0x0803E000
 // via SWD (STM32CubeProgrammer). Key is derived from master_key via HKDF-SHA256
@@ -76,6 +88,21 @@
 #define FLASH_SEED_WORDS          8             // 8 × uint32_t = 32 bytes
 #define FLASH_SEED_MAGIC          0x4C534544UL  // "LSED" — Lorenz Seed magic marker
 #define EPOCH_SECONDS             86400UL       // Seconds per day for epoch_day calculation
+
+// [ARCH.27] Node Role Differentiation — плоть і кров mesh-розшарування.
+// Один і той самий бінарник прошивки тече венами Солдата та Провідника;
+// роль розрізняється єдиним 32-бітним словом у тій самій Protected Flash
+// сторінці одразу після K_seed (теж під WRPROT). Magic-слово саме служить
+// носієм ролі — без додаткового sentinel-байту. Сторінка не provisioned
+// або корумпована → fallback на ROLE_SOLDIER (безпечний дефолт).
+//
+// Layout: [KEY_MAGIC:4][AES_KEY:32] | [SEED_MAGIC:4][K_SEED:32] | [ROLE_WORD:4]
+//          ^FLASH_KEY_ADDR (0x0803E000) ^FLASH_SEED_ADDR (+36)    ^FLASH_ROLE_ADDR (+72)
+#define FLASH_ROLE_ADDR           (FLASH_KEY_ADDR + 72)  // After K_seed (36+36=72 bytes)
+#define ROLE_SOLDIER_MAGIC        0x534F4C44UL  // "SOLD" — звичайний Солдат-датчик
+#define ROLE_PROVISIONER_MAGIC    0x50524F56UL  // "PROV" — Провідник для CAD relay (ARCH.26)
+#define ROLE_SOLDIER              0
+#define ROLE_PROVISIONER          1
 /* USER CODE BEGIN PD */
 /* USER CODE END PD */
 
@@ -115,6 +142,27 @@ uint8_t acoustic_events = 0;           // Відфільтровані мікр�
 uint32_t last_wakeup_timestamp = 0;    // Час попереднього пробудження
 uint32_t delta_t_seconds = 0;          // Швидкість заряду іоністора (Метаболізм)
 uint32_t tree_did = 0;                 // Decentralized Identity (Гаманець Дерева)
+
+// [SEC.10] Лічильник panic-кадрів — пакується у DR0[31:16] поряд з
+// acoustic_events у DR0[7:0] (DR0[15:8] резервовано). Сторожовий пес
+// панічного каналу: інкрементується (saturating) перед кожним
+// Trigger_Emergency_LoRa_TX, передається у байтах 14..15 panic_payload (BE),
+// сервер рубає replay через Redis SETNX nonce-key. Cold-boot RTC reset
+// → 0 → код Phase 0 пересіє з HRNG (range 0x0001..0xFFFF), щоб не
+// зіткнутися з ще-не-протухлими nonce'ами попереднього втілення.
+uint16_t panic_frame_counter = 0;
+
+// [ARCH.27] Роль вузла — читається з FLASH_ROLE_ADDR при boot.
+// Глобальний прапорець, який ARCH.26 (CAD relay) і FW.20-S2 (mesh time
+// authoritativeness) будуть споживати без додаткової логіки тут.
+volatile uint8_t g_node_role = ROLE_SOLDIER;  // Безпечний дефолт
+
+// [FW.20-S2] Authoritativeness flag останнього прийнятого Queen-маяку.
+// Біт 7 байту 9 у beacon-плейтексті: 1 = пряма трансляція від Королеви,
+// 0 = relay-маяк (deferred TRL-7) або cold-boot. Зберігається у RAM
+// (не персистимо у RTC — beacon приходить регулярно, ~15 хв). Логіки
+// арбітражу між двома Queen ще НЕ додано — це повний FW.20-S2.
+volatile uint8_t time_source_authoritative = 0;
 
 // Пейлоад залишається 16 байтів (бо розмір блоку AES завжди 128 біт)
 // [DID:4] [Vcap:2] [Temp:1] [Acoustic:1] [Time:2] [Chaos:1] [TTL:1] [Pad:4]
@@ -235,6 +283,11 @@ static inline float uint32_to_float(uint32_t u) {
 #define BEACON_MARKER             0x9C
 #define BEACON_MAGIC_BYTE         0x42  // 'B'
 #define BEACON_PLAINTEXT_SIZE     16
+// [FW.20-S2] Біт 7 байту 9: 1 = маяк прямо від Королеви (authoritative),
+// 0 = relay-маяк через Провідника (deferred TRL-7) або легасі-формат.
+// TTL фактично займає нижні 7 біт (max 127); у поточних beacons TTL=1.
+#define BEACON_AUTH_FLAG          0x80
+#define BEACON_TTL_MASK           0x7F
 
 // [FW.20-S1] Солдатські UTC-секунди як єдине джерело істини + локальний tick
 // останньої синхронізації для розрахунку дрейфу. Використовується
@@ -687,6 +740,7 @@ static void Load_AES_Key(void);
 // Викликається в main() при ініціалізації. K_seed використовується для
 // cold-start деривації (x₀,y₀,z₀) через HMAC-SHA256.
 static void Load_Lorenz_Seed(void);
+static void Load_Node_Role(void);  // [ARCH.27] Прочитати роль вузла з Flash
 
 // [SEC.11 / FW.30] Деривація початкового стану Лоренца при cold-start
 // (VBAT loss → DR19 != LORENZ_STATE_MAGIC). Використовує K_seed з Flash
@@ -721,6 +775,7 @@ int main(void)
   MX_SUBGHZ_Init();
   Load_AES_Key();  // [FW.1] Завантажити per-device ключ з Flash ПЕРЕД ініціалізацією CRYP
   Load_Lorenz_Seed();  // [SEC.11 / FW.30] Завантажити K_seed для cold-start Lorenz derivation
+  Load_Node_Role();    // [ARCH.27] Завантажити роль вузла (Soldier/Provisioner) з Flash
   MX_CRYP_Init(); // Вмикаємо апаратний AES (використовує aes_key, вже завантажений)
 
   /* USER CODE BEGIN 2 */
@@ -737,7 +792,28 @@ int main(void)
   HAL_PWR_EnableBkUpAccess();
 
   // 2. Відновлюємо пам'ять з RTC (якщо було перезавантаження)
-  acoustic_events = (uint16_t)HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
+  // [SEC.10] DR0 спакована: [panic_frame_counter:16 | reserved:8 | acoustic_events:8].
+  // При cold-boot DR0 == 0 → лічильник пересіємо з HRNG нижче, щоб уникнути
+  // колізії з nonce'ами Redis від попереднього втілення вузла.
+  {
+      uint32_t dr0_raw = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
+      acoustic_events     = (uint8_t)(dr0_raw & 0xFFu);
+      panic_frame_counter = (uint16_t)((dr0_raw >> PANIC_COUNTER_DR0_SHIFT) & PANIC_COUNTER_MASK);
+      if (panic_frame_counter == 0) {
+          // [SEC.10] Cold-boot resync: HRNG-сів значення у [1, 0xFFFF],
+          // щоб panic-stream після перезавантаження не зустрів живі
+          // nonce-ключі попереднього циклу.
+          uint32_t r = 0;
+          if (HAL_RNG_GenerateRandomNumber(&hrng, &r) == HAL_OK) {
+              panic_frame_counter = (uint16_t)((r & PANIC_COUNTER_MASK) | 0x0001u);
+          } else {
+              // HRNG fallback: time-based seed; колізія з попередніми
+              // nonce-ключами малоймовірна (1/65535) і деградує лише
+              // частково — replay-вікно скорочується, не зникає.
+              panic_frame_counter = (uint16_t)((HAL_GetTick() & PANIC_COUNTER_MASK) | 0x0001u);
+          }
+      }
+  }
   last_wakeup_timestamp = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1);
   has_mesh_relay = (uint8_t)HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR2); // Відновлюємо прапорець естафети
 
@@ -1214,6 +1290,15 @@ int main(void)
                         soldier_unix_ts_local_tick = HAL_GetTick();
                     }
 
+                    // [FW.20-S2] Зчитуємо authoritativeness прапорець з байту 9
+                    // (біт 7). 1 = пряма трансляція від Королеви; 0 = relay
+                    // або легасі-маяк (попередня прошивка слала TTL=1 чисто).
+                    // Логіки арбітражу між двома маяками ще НЕ додано —
+                    // це повний FW.20-S2; зараз лише фіксуємо у RAM, щоб
+                    // upper layers (CAD relay) могли консультуватись.
+                    time_source_authoritative =
+                        (decrypted_rx_payload[9] & BEACON_AUTH_FLAG) ? 1 : 0;
+
                     // TTL=1: НЕ ретранслюємо. Виходимо з RX-циклу, йдемо спати.
                     break;
                 }
@@ -1485,7 +1570,10 @@ int main(void)
     // =========================================================================
     // ФАЗА 5: КЕНОЗИС (Абсолютний сон та збереження)
     // =========================================================================
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, acoustic_events);
+    // [SEC.10] DR0 packed: [panic_frame_counter:16 | reserved:8 | acoustic_events:8]
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
+        ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+        (uint32_t)acoustic_events);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp);
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR2, has_mesh_relay);
 
@@ -1586,18 +1674,42 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 // =========================================================================
-// АПАРАТНИЙ РЕФЛЕКС СМЕРТІ (PVD Interrupt)
+// АПАРАТНИЙ РЕФЛЕКС СМЕРТІ (PVD Interrupt) — ARCH.21
 // =========================================================================
 // Ця функція миттєво викликається апаратно, якщо напруга падає нижче 2.2V
+// (PWR_PVDLEVEL_7). Брауноут — то крик ксилеми, що задихається; ми маємо
+// мікросекунди до того, як SRAM почне корумпуватись. Симетрія до Phase 5:
+// ховаємо у RTC Backup Domain все, що дозволить наступному boot'у продовжити
+// траєкторію Лоренца без "холодного" cold-start через HKDF.
 void HAL_PWR_PVDCallback(void)
 {
-    // 1. Немає часу на математику. Терміново ховаємо дані у вічну пам'ять!
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, acoustic_events);
+    // 1. [SEC.10] Спакована плоть DR0 — рятуємо лічильник panic-кадрів і
+    //    acoustic_events єдиним 32-бітним словом, щоб panic-replay захист
+    //    не зник при брауноуті між Phase 5 циклами.
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
+        ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+        (uint32_t)acoustic_events);
 
-    // 2. Жорстко вимикаємо всі периферійні пристрої (Радіо)
+    // 2. [ARCH.21] Зберігаємо timestamp пробудження, щоб delta_t після
+    //    відновлення живлення не стрибнув на гігантське значення.
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp);
+
+    // 3. [ARCH.21] Зберігаємо стан Лоренца (DR16-DR19) симетрично до
+    //    Phase 5. Без цього rescue брауноут = втрата траєкторії =
+    //    cold-start через HKDF на наступному boot'і = розрив growth_points
+    //    streak = false slashing проти живого здорового дерева.
+    if (lorenz_state_valid) {
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR16, float_to_uint32(lorenz_x));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR17, float_to_uint32(lorenz_y));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR18, float_to_uint32(lorenz_z));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC);
+    }
+
+    // 4. Жорстко вимикаємо радіо (живиться окремо, але RX state-machine
+    //    тримає піковий струм).
     Radio.Sleep();
 
-    // 3. Падаємо у глибокий сон (Кома), поки напруга не підніметься знову
+    // 5. Падаємо у глибокий сон (Кома), поки напруга не підніметься знову
     HAL_SuspendTick();
     HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
 }
@@ -1609,6 +1721,17 @@ void Trigger_Emergency_LoRa_TX(void)
 {
     uint8_t panic_payload[16] = {0};
     uint8_t encrypted_panic[16] = {0};
+
+    // [SEC.10] Інкрементуємо лічильник panic-кадрів (saturating @ 0xFFFF)
+    // ПЕРЕД пакуванням, щоб кожен зойк ніс новий nonce. Перший виклик
+    // після cold-boot отримає HRNG-сів значення з Phase 0, тому колізія
+    // з Redis-nonce'ами попереднього втілення малоймовірна.
+    if (panic_frame_counter < PANIC_COUNTER_MAX) {
+        panic_frame_counter++;
+    }
+    // Сатурація на 0xFFFF — після 65535 panic-кадрів без cold-boot
+    // лічильник застигає; це ознака "вузол під безперервною атакою/
+    // катастрофою" і сама по собі є тривожним сигналом для backend.
 
     // 1. Пакуємо DID дерева
     panic_payload[0] = (uint8_t)(tree_did >> 24);
@@ -1624,6 +1747,17 @@ void Trigger_Emergency_LoRa_TX(void)
 
     // 3. Збільшуємо TTL до 5, щоб пакет вижив довше і точно дійшов
     panic_payload[11] = PANIC_TTL;
+
+    // [SEC.10] Лічильник panic-кадрів у байтах PAD 14..15 (BE).
+    // Бекенд читає `pad_data[2..3].unpack1("n")` як nonce для SETNX.
+    panic_payload[PANIC_COUNTER_PAD_HI] = (uint8_t)(panic_frame_counter >> 8);
+    panic_payload[PANIC_COUNTER_PAD_LO] = (uint8_t)(panic_frame_counter & 0xFFu);
+
+    // [SEC.10] Персистимо новий лічильник у DR0 НЕГАЙНО, до того як
+    // PVD-брауноут або soft-reset встигне поглинути нас перед Phase 5.
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
+        ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
+        (uint32_t)acoustic_events);
 
     // 4. Шифруємо AES-256 і миттєво вистрілюємо
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)panic_payload, 4, (uint32_t*)encrypted_panic, 1000);
@@ -1725,6 +1859,36 @@ static void Load_Lorenz_Seed(void)
         lorenz_seed[i * 4 + 3] = (uint8_t)(word & 0xFF);
     }
     lorenz_seed_valid = 1;
+}
+
+// [ARCH.27] Завантаження ролі вузла з Protected Flash Sector.
+// Flash layout: один uint32_t magic-word на FLASH_ROLE_ADDR.
+//   0x534F4C44 ("SOLD") → ROLE_SOLDIER
+//   0x50524F56 ("PROV") → ROLE_PROVISIONER
+//   будь-що інше (0xFFFFFFFF unprovisioned, 0x00000000 erased, корупція) →
+//   fallback на ROLE_SOLDIER (безпечний дефолт — більшість вузлів є датчиками).
+//
+// Не виконує Error_Handler() — навіть unprovisioned вузол має працювати
+// як звичайний Солдат, поки factory flashing pipeline не запише роль.
+//
+// Прапорець читається при boot до MX_CRYP_Init, і ARCH.26 (CAD relay) разом
+// з FW.20-S2 (mesh time authoritativeness) будуть споживати його через
+// глобальний `g_node_role` без додаткової перевірки Flash.
+static void Load_Node_Role(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_ROLE_ADDR;
+    uint32_t role_word = flash_ptr[0];
+
+    if (role_word == ROLE_PROVISIONER_MAGIC) {
+        g_node_role = ROLE_PROVISIONER;
+    } else if (role_word == ROLE_SOLDIER_MAGIC) {
+        g_node_role = ROLE_SOLDIER;
+    } else {
+        // Unprovisioned (0xFFFFFFFF), erased (0x00000000), або корупція —
+        // безпечний дефолт. Сторожовий пес ролі вибирає мовчання Солдата
+        // замість непередбачуваної поведінки.
+        g_node_role = ROLE_SOLDIER;
+    }
 }
 
 // [SEC.11 / FW.30] Деривація початкового стану Лоренца при cold-start.

@@ -313,6 +313,9 @@ static uint8_t Assemble_OTA_Chunk(uint8_t* decrypted, uint16_t aligned)
 #define BEACON_MARKER              0x9C
 #define BEACON_TTL                 1
 #define BEACON_MAGIC_BYTE          'B'
+/* [FW.20-S2] Authoritativeness flag — біт 7 байту 9. */
+#define BEACON_AUTH_FLAG           0x80
+#define BEACON_BYTE9_AUTHORITATIVE ((uint8_t)(BEACON_AUTH_FLAG | BEACON_TTL))
 
 static uint32_t test_queen_unix_ts            = 0;
 static uint32_t test_queen_unix_ts_local_tick = 0;
@@ -343,8 +346,9 @@ static uint8_t Strip_Time_Sync_Envelope(uint8_t* buf, uint16_t aligned,
     return 0;
 }
 
-/* Build 16-byte LoRa time-sync beacon plaintext (FW.20-Q2).
- * Layout: [0x9C][ts_be:4][reserved:0×4][TTL=1][magic 'B'][padding:0×5] */
+/* Build 16-byte LoRa time-sync beacon plaintext (FW.20-Q2 + FW.20-S2).
+ * Layout: [0x9C][ts_be:4][reserved:0×4][AuthFlag|TTL][magic 'B'][padding:0×5]
+ * Byte 9 post-FW.20-S2: 0x81 (auth=1 | ttl=1) — Королева завжди authoritative. */
 static void Build_Time_Beacon_Plaintext(uint32_t unix_ts, uint8_t out[16])
 {
     memset(out, 0, 16);
@@ -353,7 +357,7 @@ static void Build_Time_Beacon_Plaintext(uint32_t unix_ts, uint8_t out[16])
     out[2]  = (uint8_t)(unix_ts >> 16);
     out[3]  = (uint8_t)(unix_ts >> 8);
     out[4]  = (uint8_t)(unix_ts & 0xFFu);
-    out[9]  = BEACON_TTL;
+    out[9]  = BEACON_BYTE9_AUTHORITATIVE;  /* [FW.20-S2] bit7=1 + TTL=1 */
     out[10] = (uint8_t)BEACON_MAGIC_BYTE;
 }
 
@@ -1659,7 +1663,7 @@ TEST(test_time_beacon_plaintext_layout) {
     ASSERT_EQ(out[4], 0xDD);
     /* reserved bytes 5..8 must be zero (TDMA slot space) */
     for (int i = 5; i <= 8; i++) ASSERT_EQ(out[i], 0);
-    ASSERT_EQ(out[9],  BEACON_TTL);          /* TTL=1, no relay */
+    ASSERT_EQ(out[9],  BEACON_BYTE9_AUTHORITATIVE);  /* [FW.20-S2] auth=1 | ttl=1 */
     ASSERT_EQ(out[10], (uint8_t)BEACON_MAGIC_BYTE); /* 'B' */
     /* padding bytes 11..15 must be zero */
     for (int i = 11; i < 16; i++) ASSERT_EQ(out[i], 0);
@@ -1684,6 +1688,31 @@ TEST(test_time_beacon_ts_zero_caller_responsibility) {
     ASSERT_EQ(out[0], BEACON_MARKER);
     ASSERT_EQ(out[1], 0);
     ASSERT_EQ(out[10], (uint8_t)BEACON_MAGIC_BYTE);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.20-S2] Queen Beacon — Authoritativeness Flag (byte 9, bit 7)
+ * ════════════════════════════════════════════════════════════════════
+ * Queen завжди транслює authoritative-маяки (єдине джерело UTC у мережі).
+ * Майбутні relay-маяки (Provisioner, ARCH.27 + ARCH.26) транслюватимуть
+ * з очищеним битом 7. Soldier RX обирає authoritative для синхронізації.
+ */
+TEST(test_fw20s2_queen_beacon_byte9_has_auth_bit_set) {
+    uint8_t out[16];
+    Build_Time_Beacon_Plaintext(0xAABBCCDDu, out);
+    /* Біт 7 встановлено: пряма Королевська трансляція. */
+    ASSERT_TRUE(out[9] & BEACON_AUTH_FLAG);
+    /* Нижні 7 біт = TTL=1, без луни в ефірі. */
+    ASSERT_EQ(out[9] & 0x7F, BEACON_TTL);
+}
+
+TEST(test_fw20s2_queen_beacon_byte9_exact_value) {
+    /* Регресійна точка: байт 9 повинен бути ТОЧНО 0x81 у поточному
+     * пост-FW.20-S2 форматі (auth=1 | ttl=1). Зміна цього значення
+     * без оновлення Soldier RX-парсера = тиха втрата синхронізації часу. */
+    uint8_t out[16];
+    Build_Time_Beacon_Plaintext(0x12345678u, out);
+    ASSERT_EQ(out[9], 0x81);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2239,6 +2268,8 @@ int main(void)
     RUN(test_time_beacon_plaintext_layout);
     RUN(test_time_beacon_distinct_from_ota);
     RUN(test_time_beacon_ts_zero_caller_responsibility);
+    RUN(test_fw20s2_queen_beacon_byte9_has_auth_bit_set);
+    RUN(test_fw20s2_queen_beacon_byte9_exact_value);
 
     printf("\n  Magic Re-Request Handler (FW.27-B):\n");
     RUN(test_rereq_queen_accepts_valid_packet);

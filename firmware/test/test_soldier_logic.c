@@ -2827,6 +2827,373 @@ TEST(test_audio_dispatcher_rejects_crit_above_99) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [SEC.10] Frame Counter anti-replay для panic packets
+ * ════════════════════════════════════════════════════════════════════
+ * Логіка пакування DR0[31:16] = panic_frame_counter, DR0[7:0] = acoustic.
+ * Counter=0 cold-boot → reseed (HRNG); transmit BE у panic_payload[14..15].
+ */
+#define PANIC_COUNTER_DR0_SHIFT   16
+#define PANIC_COUNTER_MASK        0xFFFFu
+#define PANIC_COUNTER_MAX         0xFFFFu
+#define PANIC_COUNTER_PAD_HI      14
+#define PANIC_COUNTER_PAD_LO      15
+
+/* Pack DR0: spacked plot of acoustic_events + panic_frame_counter. */
+static uint32_t Pack_DR0(uint16_t panic_counter, uint8_t acoustic) {
+    return ((uint32_t)panic_counter << PANIC_COUNTER_DR0_SHIFT) | (uint32_t)acoustic;
+}
+static uint16_t Unpack_DR0_Counter(uint32_t dr0) {
+    return (uint16_t)((dr0 >> PANIC_COUNTER_DR0_SHIFT) & PANIC_COUNTER_MASK);
+}
+static uint8_t Unpack_DR0_Acoustic(uint32_t dr0) {
+    return (uint8_t)(dr0 & 0xFFu);
+}
+
+/* Mirror of Trigger_Emergency_LoRa_TX counter+payload logic. */
+static void Build_Panic_Payload_With_Counter(uint8_t* payload, uint32_t did,
+                                              uint16_t* counter_inout) {
+    /* Saturating increment ПЕРЕД пакуванням */
+    if (*counter_inout < PANIC_COUNTER_MAX) (*counter_inout)++;
+
+    memset(payload, 0, 16);
+    payload[0] = (uint8_t)(did >> 24);
+    payload[1] = (uint8_t)(did >> 16);
+    payload[2] = (uint8_t)(did >> 8);
+    payload[3] = (uint8_t)(did & 0xFF);
+    payload[7] = 0xFF;
+    payload[10] = PANIC_FLAG_BIT;
+    payload[11] = 5;
+    payload[PANIC_COUNTER_PAD_HI] = (uint8_t)(*counter_inout >> 8);
+    payload[PANIC_COUNTER_PAD_LO] = (uint8_t)(*counter_inout & 0xFFu);
+}
+
+/* Mirror of Phase 0 cold-boot reseed logic. */
+static uint16_t Restore_Panic_Counter(uint32_t dr0_raw, uint32_t hrng_value) {
+    uint16_t c = Unpack_DR0_Counter(dr0_raw);
+    if (c == 0) {
+        /* HRNG reseed: ensure non-zero result */
+        c = (uint16_t)((hrng_value & PANIC_COUNTER_MASK) | 0x0001u);
+    }
+    return c;
+}
+
+TEST(test_sec10_dr0_pack_roundtrip) {
+    /* Симетричне пакування counter + acoustic у одному 32-бітному слові. */
+    uint32_t packed = Pack_DR0(0xABCD, 0x42);
+    ASSERT_EQ(Unpack_DR0_Counter(packed), 0xABCD);
+    ASSERT_EQ(Unpack_DR0_Acoustic(packed), 0x42);
+}
+
+TEST(test_sec10_dr0_pack_independence) {
+    /* Зміна acoustic не торкається counter і навпаки. */
+    uint32_t p1 = Pack_DR0(0x1234, 0xFF);
+    uint32_t p2 = Pack_DR0(0x1234, 0x00);
+    ASSERT_EQ(Unpack_DR0_Counter(p1), Unpack_DR0_Counter(p2));
+    ASSERT_NE(Unpack_DR0_Acoustic(p1), Unpack_DR0_Acoustic(p2));
+
+    uint32_t p3 = Pack_DR0(0x0000, 0x55);
+    uint32_t p4 = Pack_DR0(0xFFFF, 0x55);
+    ASSERT_NE(Unpack_DR0_Counter(p3), Unpack_DR0_Counter(p4));
+    ASSERT_EQ(Unpack_DR0_Acoustic(p3), Unpack_DR0_Acoustic(p4));
+}
+
+TEST(test_sec10_counter_increments_before_tx) {
+    /* Лічильник інкрементується ПЕРЕД пакуванням — кожен зойк ніс новий nonce. */
+    uint8_t p[16];
+    uint16_t counter = 5;
+    Build_Panic_Payload_With_Counter(p, 0xDEADBEEF, &counter);
+    ASSERT_EQ(counter, 6);
+    ASSERT_EQ(p[PANIC_COUNTER_PAD_HI], 0x00);
+    ASSERT_EQ(p[PANIC_COUNTER_PAD_LO], 0x06);
+}
+
+TEST(test_sec10_counter_big_endian_in_pad) {
+    /* Бекенд читає pad_data[2..3].unpack1("n") → BE order. */
+    uint8_t p[16];
+    uint16_t counter = 0x1233; /* після інкременту → 0x1234 */
+    Build_Panic_Payload_With_Counter(p, 1, &counter);
+    ASSERT_EQ(counter, 0x1234);
+    ASSERT_EQ(p[PANIC_COUNTER_PAD_HI], 0x12);
+    ASSERT_EQ(p[PANIC_COUNTER_PAD_LO], 0x34);
+}
+
+TEST(test_sec10_counter_saturates_at_max) {
+    /* На 0xFFFF лічильник застигає — без цього wrap заплутав би backend. */
+    uint8_t p[16];
+    uint16_t counter = PANIC_COUNTER_MAX;
+    Build_Panic_Payload_With_Counter(p, 1, &counter);
+    ASSERT_EQ(counter, PANIC_COUNTER_MAX);
+    ASSERT_EQ(p[PANIC_COUNTER_PAD_HI], 0xFF);
+    ASSERT_EQ(p[PANIC_COUNTER_PAD_LO], 0xFF);
+}
+
+TEST(test_sec10_counter_just_below_max_increments_once) {
+    uint8_t p[16];
+    uint16_t counter = PANIC_COUNTER_MAX - 1;
+    Build_Panic_Payload_With_Counter(p, 1, &counter);
+    ASSERT_EQ(counter, PANIC_COUNTER_MAX);
+}
+
+TEST(test_sec10_cold_boot_reseed_from_hrng) {
+    /* DR0 == 0 → cold-boot, лічильник пересіюється з HRNG → не нуль. */
+    uint16_t c = Restore_Panic_Counter(0x00000000, 0xDEADBEEF);
+    ASSERT_NE(c, 0);
+    /* Lower 16 bits of HRNG are 0xBEEF; OR'd with 1 stays 0xBEEF. */
+    ASSERT_EQ(c, 0xBEEF);
+}
+
+TEST(test_sec10_cold_boot_reseed_zero_hrng_not_zero) {
+    /* Навіть якщо HRNG поверне нуль (вкрай малоймовірно) — fallback OR з 0x0001. */
+    uint16_t c = Restore_Panic_Counter(0x00000000, 0x00000000);
+    ASSERT_EQ(c, 0x0001);
+}
+
+TEST(test_sec10_warm_boot_preserves_counter) {
+    /* DR0 ненульовий → warm-boot, counter відновлюється напряму без HRNG. */
+    uint32_t dr0 = Pack_DR0(0x1234, 0x42);
+    uint16_t c = Restore_Panic_Counter(dr0, 0xDEADBEEF);
+    ASSERT_EQ(c, 0x1234);
+}
+
+TEST(test_sec10_panic_counter_does_not_overlap_did) {
+    /* Лічильник у байтах 14..15 НЕ переписує DID (байти 0..3). */
+    uint8_t p[16];
+    uint16_t counter = 0xAAAA;
+    Build_Panic_Payload_With_Counter(p, 0xCAFEBABE, &counter);
+    ASSERT_EQ(p[0], 0xCA);
+    ASSERT_EQ(p[1], 0xFE);
+    ASSERT_EQ(p[2], 0xBA);
+    ASSERT_EQ(p[3], 0xBE);
+}
+
+TEST(test_sec10_panic_counter_does_not_overlap_panic_flag) {
+    /* PANIC_FLAG_BIT у байті 10 не зачіпається counter'ом у 14..15. */
+    uint8_t p[16];
+    uint16_t counter = 0xFFFE;
+    Build_Panic_Payload_With_Counter(p, 1, &counter);
+    ASSERT_TRUE(p[10] & PANIC_FLAG_BIT);
+    ASSERT_EQ(p[11], 5); /* PANIC_TTL */
+}
+
+TEST(test_sec10_dr0_acoustic_preserved_through_panic_writeback) {
+    /* Сценарій: panic-TX персистить DR0 НЕГАЙНО, acoustic не повинно зникнути. */
+    uint8_t p[16];
+    uint16_t counter = 100;
+    uint8_t acoustic = 47;
+    Build_Panic_Payload_With_Counter(p, 1, &counter);
+    /* Імітуємо writeback DR0 одразу після інкременту — як у firmware. */
+    uint32_t dr0 = Pack_DR0(counter, acoustic);
+    ASSERT_EQ(Unpack_DR0_Acoustic(dr0), 47);
+    ASSERT_EQ(Unpack_DR0_Counter(dr0), 101);
+}
+
+TEST(test_sec10_two_panics_have_distinct_counters) {
+    /* Два послідовні зойки несуть різні nonce — це сама суть anti-replay. */
+    uint8_t p1[16], p2[16];
+    uint16_t counter = 42;
+    Build_Panic_Payload_With_Counter(p1, 1, &counter);
+    Build_Panic_Payload_With_Counter(p2, 1, &counter);
+    uint16_t n1 = ((uint16_t)p1[PANIC_COUNTER_PAD_HI] << 8) | p1[PANIC_COUNTER_PAD_LO];
+    uint16_t n2 = ((uint16_t)p2[PANIC_COUNTER_PAD_HI] << 8) | p2[PANIC_COUNTER_PAD_LO];
+    ASSERT_EQ(n1, 43);
+    ASSERT_EQ(n2, 44);
+    ASSERT_NE(n1, n2);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [ARCH.21] Brownout PVD save Lorenz state
+ * ════════════════════════════════════════════════════════════════════
+ * Симуляція HAL_PWR_PVDCallback: рятує DR0 (packed) + DR1 + DR16-DR19
+ * перед STOP2. Ключова інваріанта: на наступному boot Lorenz state
+ * валідний (magic == LORENZ_STATE_MAGIC) і всі координати збереглись.
+ */
+
+/* Mirror of HAL_PWR_PVDCallback save sequence. */
+static void Simulate_PVD_Brownout_Save(uint16_t panic_counter, uint8_t acoustic,
+                                        uint32_t last_wakeup_ts,
+                                        float lx, float ly, float lz,
+                                        int lorenz_valid) {
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
+        Pack_DR0(panic_counter, acoustic));
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_ts);
+    if (lorenz_valid) {
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR16, test_float_to_uint32(lx));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR17, test_float_to_uint32(ly));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR18, test_float_to_uint32(lz));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC);
+    }
+}
+
+TEST(test_arch21_pvd_saves_lorenz_state) {
+    _rtc_bkp_reset_all();
+    Simulate_PVD_Brownout_Save(123, 5, 99999, -5.5f, 8.8f, 27.3f, 1);
+
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR19), LORENZ_STATE_MAGIC);
+    ASSERT_FLOAT_EQ(test_uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR16)), -5.5f, 0.0f);
+    ASSERT_FLOAT_EQ(test_uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR17)), 8.8f, 0.0f);
+    ASSERT_FLOAT_EQ(test_uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR18)), 27.3f, 0.0f);
+}
+
+TEST(test_arch21_pvd_preserves_packed_dr0) {
+    /* Брауноут має зберегти і panic_frame_counter, і acoustic_events
+     * у спільному 32-бітному слові — без цього SEC.10 anti-replay
+     * прорветься після кожного просідання живлення. */
+    _rtc_bkp_reset_all();
+    Simulate_PVD_Brownout_Save(0xABCD, 0x42, 0, 0, 0, 0, 0);
+
+    uint32_t dr0 = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
+    ASSERT_EQ(Unpack_DR0_Counter(dr0), 0xABCD);
+    ASSERT_EQ(Unpack_DR0_Acoustic(dr0), 0x42);
+}
+
+TEST(test_arch21_pvd_preserves_last_wakeup_for_delta_t) {
+    /* Без DR1 rescue delta_t стрибне на астрономічне значення після boot. */
+    _rtc_bkp_reset_all();
+    Simulate_PVD_Brownout_Save(1, 0, 0xCAFEBABEu, 0, 0, 0, 0);
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1), 0xCAFEBABEu);
+}
+
+TEST(test_arch21_pvd_skips_lorenz_when_invalid) {
+    /* lorenz_state_valid==0 → не пишемо magic, щоб наступний boot пішов
+     * через cold-start HKDF-деривацію (SEC.11), а не зловив corrupted state. */
+    _rtc_bkp_reset_all();
+    Simulate_PVD_Brownout_Save(1, 0, 0, 1.0f, 2.0f, 3.0f, 0);
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR19), 0);
+}
+
+TEST(test_arch21_pvd_save_then_restore_roundtrip) {
+    /* End-to-end: brownout зберіг → reboot читає → state неперервний. */
+    _rtc_bkp_reset_all();
+    Simulate_PVD_Brownout_Save(7, 12, 1000, -2.5f, 3.5f, 25.0f, 1);
+
+    /* Симуляція boot-restore (Phase 0). */
+    uint32_t dr0 = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
+    uint16_t restored_counter = Unpack_DR0_Counter(dr0);
+    uint8_t restored_acoustic = Unpack_DR0_Acoustic(dr0);
+    uint32_t magic = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR19);
+
+    ASSERT_EQ(restored_counter, 7);
+    ASSERT_EQ(restored_acoustic, 12);
+    ASSERT_EQ(magic, LORENZ_STATE_MAGIC);
+
+    float restored_z = test_uint32_to_float(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR18));
+    ASSERT_FLOAT_EQ(restored_z, 25.0f, 0.0f);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [ARCH.27] Node Role Differentiation у Flash
+ * ════════════════════════════════════════════════════════════════════
+ */
+#define ARCH27_FLASH_ROLE_ADDR     ((uintptr_t)_mock_flash_role_region)
+#define ROLE_SOLDIER_MAGIC         0x534F4C44UL  /* "SOLD" */
+#define ROLE_PROVISIONER_MAGIC     0x50524F56UL  /* "PROV" */
+#define ROLE_SOLDIER               0
+#define ROLE_PROVISIONER           1
+
+static uint32_t _mock_flash_role_region[1] = {0xFFFFFFFFu};
+static volatile uint8_t test_g_node_role = ROLE_SOLDIER;
+
+/* Mirror of Load_Node_Role from soldier/main.c. */
+static void Test_Load_Node_Role(void) {
+    const uint32_t *flash_ptr = (const uint32_t *)ARCH27_FLASH_ROLE_ADDR;
+    uint32_t role_word = flash_ptr[0];
+    if (role_word == ROLE_PROVISIONER_MAGIC) {
+        test_g_node_role = ROLE_PROVISIONER;
+    } else if (role_word == ROLE_SOLDIER_MAGIC) {
+        test_g_node_role = ROLE_SOLDIER;
+    } else {
+        test_g_node_role = ROLE_SOLDIER;  /* Безпечний дефолт */
+    }
+}
+
+TEST(test_arch27_role_soldier_magic_loads_soldier) {
+    _mock_flash_role_region[0] = ROLE_SOLDIER_MAGIC;
+    test_g_node_role = 0xFF;  /* sentinel */
+    Test_Load_Node_Role();
+    ASSERT_EQ(test_g_node_role, ROLE_SOLDIER);
+}
+
+TEST(test_arch27_role_provisioner_magic_loads_provisioner) {
+    _mock_flash_role_region[0] = ROLE_PROVISIONER_MAGIC;
+    test_g_node_role = 0xFF;
+    Test_Load_Node_Role();
+    ASSERT_EQ(test_g_node_role, ROLE_PROVISIONER);
+}
+
+TEST(test_arch27_role_unprovisioned_falls_back_to_soldier) {
+    /* Flash erased state = 0xFFFFFFFF; вузол повинен працювати як Солдат. */
+    _mock_flash_role_region[0] = 0xFFFFFFFFu;
+    test_g_node_role = ROLE_PROVISIONER;  /* поплутати */
+    Test_Load_Node_Role();
+    ASSERT_EQ(test_g_node_role, ROLE_SOLDIER);
+}
+
+TEST(test_arch27_role_zero_flash_falls_back_to_soldier) {
+    /* Програмний erase часто дає 0x00000000 — теж невалідне magic. */
+    _mock_flash_role_region[0] = 0x00000000u;
+    test_g_node_role = ROLE_PROVISIONER;
+    Test_Load_Node_Role();
+    ASSERT_EQ(test_g_node_role, ROLE_SOLDIER);
+}
+
+TEST(test_arch27_role_corrupted_magic_falls_back_to_soldier) {
+    /* Бітові помилки в Flash — теж не повинні підняти Provisioner-роль. */
+    _mock_flash_role_region[0] = 0x534F4C45u;  /* "SOLE" замість "SOLD" */
+    Test_Load_Node_Role();
+    ASSERT_EQ(test_g_node_role, ROLE_SOLDIER);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.20-S2] Authoritativeness flag у beacon байті 9
+ * ════════════════════════════════════════════════════════════════════
+ * Soldier RX зчитує бит 7 байту 9 → time_source_authoritative.
+ */
+#define FW20S2_BEACON_AUTH_FLAG  0x80
+#define FW20S2_BEACON_TTL_MASK   0x7F
+
+static volatile uint8_t test_time_source_authoritative = 0;
+
+/* Mirror of Recv_Time_Beacon (FW.20-S2 extension). */
+static int Recv_Time_Beacon_With_Auth(const uint8_t* p, uint16_t size) {
+    if (size != 16) return 0;
+    if (p[0] != 0x9C) return 0;
+    if (p[10] != 'B') return 0;
+    uint32_t ts = ((uint32_t)p[1] << 24) | ((uint32_t)p[2] << 16) |
+                  ((uint32_t)p[3] << 8) | (uint32_t)p[4];
+    if (ts == 0) return 1;
+    /* [FW.20-S2] зчитуємо authoritativeness прапорець */
+    test_time_source_authoritative = (p[9] & FW20S2_BEACON_AUTH_FLAG) ? 1 : 0;
+    return 1;
+}
+
+TEST(test_fw20s2_authoritative_beacon_sets_flag) {
+    test_time_source_authoritative = 0;
+    /* Byte 9 = 0x81 (auth=1 | ttl=1) — як Queen транслює пост-FW.20-S2. */
+    uint8_t b[16] = { 0x9C, 0,0,0x10,0, 0,0,0,0, 0x81, 'B', 0,0,0,0,0 };
+    int consumed = Recv_Time_Beacon_With_Auth(b, 16);
+    ASSERT_EQ(consumed, 1);
+    ASSERT_EQ(test_time_source_authoritative, 1);
+}
+
+TEST(test_fw20s2_relay_beacon_clears_flag) {
+    test_time_source_authoritative = 1;
+    /* Byte 9 = 0x02 (auth=0 | ttl=2) — relay від Провідника (deferred). */
+    uint8_t b[16] = { 0x9C, 0,0,0x10,0, 0,0,0,0, 0x02, 'B', 0,0,0,0,0 };
+    int consumed = Recv_Time_Beacon_With_Auth(b, 16);
+    ASSERT_EQ(consumed, 1);
+    ASSERT_EQ(test_time_source_authoritative, 0);
+}
+
+TEST(test_fw20s2_legacy_beacon_byte9_zero_clears_flag) {
+    /* Легасі-формат не існує у польових прошивках (beacon з'явився після FW.20),
+     * але якщо хтось підкинув маяк з byte9=0 — він має бути НЕ-authoritative. */
+    test_time_source_authoritative = 1;
+    uint8_t b[16] = { 0x9C, 0,0,0x10,0, 0,0,0,0, 0x00, 'B', 0,0,0,0,0 };
+    Recv_Time_Beacon_With_Auth(b, 16);
+    ASSERT_EQ(test_time_source_authoritative, 0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -3058,6 +3425,40 @@ int main(void)
     RUN(test_audio_dispatcher_rejects_short_frame);
     RUN(test_audio_dispatcher_rejects_warn_zero);
     RUN(test_audio_dispatcher_rejects_crit_above_99);
+
+    printf("\n  Panic Frame Counter Anti-Replay (SEC.10):\n");
+    RUN(test_sec10_dr0_pack_roundtrip);
+    RUN(test_sec10_dr0_pack_independence);
+    RUN(test_sec10_counter_increments_before_tx);
+    RUN(test_sec10_counter_big_endian_in_pad);
+    RUN(test_sec10_counter_saturates_at_max);
+    RUN(test_sec10_counter_just_below_max_increments_once);
+    RUN(test_sec10_cold_boot_reseed_from_hrng);
+    RUN(test_sec10_cold_boot_reseed_zero_hrng_not_zero);
+    RUN(test_sec10_warm_boot_preserves_counter);
+    RUN(test_sec10_panic_counter_does_not_overlap_did);
+    RUN(test_sec10_panic_counter_does_not_overlap_panic_flag);
+    RUN(test_sec10_dr0_acoustic_preserved_through_panic_writeback);
+    RUN(test_sec10_two_panics_have_distinct_counters);
+
+    printf("\n  Brownout PVD Lorenz Save (ARCH.21):\n");
+    RUN(test_arch21_pvd_saves_lorenz_state);
+    RUN(test_arch21_pvd_preserves_packed_dr0);
+    RUN(test_arch21_pvd_preserves_last_wakeup_for_delta_t);
+    RUN(test_arch21_pvd_skips_lorenz_when_invalid);
+    RUN(test_arch21_pvd_save_then_restore_roundtrip);
+
+    printf("\n  Node Role Differentiation (ARCH.27):\n");
+    RUN(test_arch27_role_soldier_magic_loads_soldier);
+    RUN(test_arch27_role_provisioner_magic_loads_provisioner);
+    RUN(test_arch27_role_unprovisioned_falls_back_to_soldier);
+    RUN(test_arch27_role_zero_flash_falls_back_to_soldier);
+    RUN(test_arch27_role_corrupted_magic_falls_back_to_soldier);
+
+    printf("\n  Beacon Authoritativeness Flag (FW.20-S2):\n");
+    RUN(test_fw20s2_authoritative_beacon_sets_flag);
+    RUN(test_fw20s2_relay_beacon_clears_flag);
+    RUN(test_fw20s2_legacy_beacon_byte9_zero_clears_flag);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);
