@@ -537,6 +537,24 @@ Radio.Send(encrypted_payload, 16);
 
 **Mesh Relay:** Якщо `has_mesh_relay == 1`, Soldier відправляє чужий зашифрований пакет (зі зменшеним TTL) перед власним. Це забезпечує ретрансляцію для дерев поза прямою видимістю Queen.
 
+#### 1.8а Cold-Temperature TX Deferral (FW.10)
+
+> **Кенозис холодом:** при `temp < -15°C` AND `vcap < 4000 mV` Solider свідомо пропускає TX-вікно (Should_Defer_TX повертає 1). Логіка — захистити EBFC від глибокої розрядки в умовах, коли ксилема замерзла і регенерація заряду тимчасово зупинена. Поріг температури суворо `<` (не `<=`), тому рівно `-15°C` не вважається холодом — це freeze-contract проти випадкової зміни оператора порівняння.
+
+**Граничні випадки** (`firmware/test/test_soldier_logic.c` §FW.10, 13 host-тестів):
+
+| Сценарій | T (°C) | vcap (mV) | Defer? | Тест |
+|---------|--------|-----------|--------|------|
+| Звичайна робота | +20 | 3500 | ❌ | `test_tx_defer_warm_and_low_vcap` |
+| Boundary @ -15°C, low vcap | -15 | 0 | ❌ | `test_tx_defer_boundary_minus15_zero_vcap` (✨ 2026-05-03) |
+| Холод -16°C, low vcap | -16 | 3999 | ✅ | `test_tx_defer_minus16_low_vcap` |
+| Холод -16°C, threshold vcap | -16 | 4001 | ❌ | `test_tx_defer_boundary_vcap_4001` |
+| Холод + battery-backed | -30 | 5000 | ❌ | `test_tx_defer_cold_but_very_high_vcap` |
+| Екстремальний холод + battery | -40 | 5500 | ❌ | `test_tx_defer_extreme_cold_high_vcap_battery_backed` (✨ 2026-05-03) |
+| Warm -5°C + low vcap | -5 | 1000 | ❌ | `test_tx_defer_warm_minus5_low_vcap` (✨ 2026-05-03) |
+
+> **Cross-ref:** `10_02 FW.10` — закрито через цю секцію.
+
 ---
 
 ### 1.9 Phase 4.5: RX Window (OTA + Mesh)
@@ -716,6 +734,68 @@ RTC Backup Domain не скидається при STOP2 та більшості
 > **DR12 packed format (FW.21):** `[valid:8 | count:8 | ema_vcap_x10:16]`. `valid == 0xA5` означає що EMA fields ініціалізовано та накопичено ≥1 семпл. При cold boot DR12 == 0 → `valid != 0xA5` → EMA reset.
 
 > **Чому різні маркери:** Lorenz (`"LZST"`) використовує цілий 32-бітний маркер у виділеному регістрі тому що `(0.0, 0.0, 0.0)` — валідний (хоч і нетиповий) стан атрактора, тому zero-check недостатній. EMA використовує 8-бітний sentinel у packed-регістрі через дефіцит DR-простору.
+
+### 2.2 Procedure для додавання нової RTC Backup фічі [ARCH.28]
+
+> **Кенозис інженерії:** перш ніж претендувати на регістр — перевір, чи можна щільніше упакувати існуючий. STM32WLE5JC має ЛИШЕ 20 backup-регістрів (`DR0..DR19`); після `[FW.18]` + `[SEC.10]` залишився **єдиний DR15**. Реальні приклади того, як ми відмовилися від нового регістра на користь packing'у:
+>
+> - **`[SEC.10]` panic frame counter (uint16) → DR0[31:16]** — спакували поряд з `acoustic_events` у DR0[7:0]. Без packing'у пішов би DR15, і ми залишилися б без жодного резерву.
+> - **`[FW.21]` EMA `ema_vcap_x10` (max 55000 ≤ 2¹⁶) → DR12[15:0]** — спакували разом з `valid:8 | count:8`. Це звільнило DR11 під 3-й слот anti-pingpong (без packing'у `MESH_DID_CACHE_SIZE` упав би з 3 до 2).
+> - **`[ARCH.27]` Node Role flag → Flash, не RTC** — magic-word `"SOLD"`/`"PROV"` живе у Protected Flash sector (`FLASH_KEY_ADDR + 72`), бо при cold-boot/VBAT-loss роль не повинна змінюватися. RTC було б помилкою.
+
+**Чек-листа ПЕРЕД тим, як просити регістр:**
+
+1. **SSOT-рев'ю.** Прочитати §2 (цю таблицю) ПОВНІСТЮ. Чи поле справді потребує переживання STOP2? Якщо ні — RAM-only достатньо. Якщо так, але переживає лише warm-boot, а не VBAT-loss → теж RAM (SRAM зберігається у STOP2).
+2. **Packing-аудит.** Перевірити для кожного існуючого packed-регістру (DR0, DR12), чи є вільні бітові щілини для нового поля. Реальні розміри:
+   - `DR0[15:8]` — 8 біт зарезервовано (vacant).
+   - `DR12[31:24]` — `valid:8` зайнято, але вільних бітів немає.
+   - Більшість «full uint32» регістрів використовують лише частину діапазону (наприклад, `last_wakeup_timestamp` у DR1 — це секунди від boot, рідко перевищує 24 біт за реалістичний час до VBAT-loss).
+3. **ASCII bit-field діаграма.** ОБОВ'ЯЗКОВО для будь-якого packed-регістру. Приклад з DR0:
+   ```
+   DR0 = [panic_frame_counter:16][reserved:8][acoustic_events:8]
+          ↑              MSB                          LSB ↑
+          PANIC_COUNTER_DR0_SHIFT=16                  raw uint8
+   ```
+   Без діаграми наступна людина (або ти за рік) не зрозумієш порядок бітів.
+4. **Magic marker policy.** Якщо `0` — валідне значення поля (як `(0.0, 0.0, 0.0)` для Lorenz state), то ОБОВ'ЯЗКОВО потрібен окремий 32-бітний marker у сусідньому регістрі АБО 8-бітний sentinel у packed-регістрі. Маркер додати у §2.1. Якщо `0` валідно інтерпретується як «cold-boot default» (як `tinyml_warning_threshold == 0.0f` → fallback `TINYML_DEFAULT_WARNING`), маркер не потрібен — достатньо range-check.
+5. **Restore guard.** При читанні з RTC ПЕРЕД використанням — `isfinite()` для float, magic-check для structured fields, range-validation для цілочисельних. Захищає від bit-flip у backup domain (рідкісне, але документоване ST явище у high-radiation environments).
+6. **Host-test bank.** Кожна нова фіча, що торкається RTC, повинна мати ≥3 host-тести: (a) cold-boot fallback, (b) warm-boot roundtrip, (c) corruption/bit-flip відкочується на default. Приклади: `test_arch21_pvd_*` (5 тестів), `test_sec10_dr0_*` (13 тестів).
+7. **Doc update.** Оновити §2 канонічну таблицю + §2.1 magic markers + cross-link з 10_02 (відповідний ID).
+
+**Якщо DR15 виявиться зайнятий:** перейти до §2.3 — Flash-based KV store як overflow strategy.
+
+### 2.3 Overflow strategy: Flash-based KV store [ARCH.28]
+
+> **Коли DR15 буде використано:** наступна фіча, що потребує RTC-resident state з переживанням VBAT-loss, не отримає регістра. Це не катастрофа — нижче три життєздатні шляхи (deferred TRL-7, реалізація НЕ потрібна зараз, лише фіксуємо дизайн).
+
+| Шлях | Опис | Плюси | Мінуси | Коли вибирати |
+|------|------|-------|--------|--------------|
+| **A. STM32 Flash sector emulated EEPROM** | Один sector (2 KB на STM32WLE5JC) під key-value store. Ключ = 32-bit ID фічі, value = 0..N байт. Wear-leveling через journal-style append + periodic compact. | Безкоштовно (Flash вже є), велика ємність (~512 entries). | Erase ~30 мс блокує LoRa RX → конфлікт з anti-pingpong post-TX RX-вікном. Wear ~10k cycles per sector — обмежує частоту запису. | Поля, що оновлюються рідко (≤1×/добу): species_id, config_version, calibration constants. |
+| **B. ATECC608B EEPROM slots** | Якщо `[SEC.6]` прийняте — secure element має 12 slots × 36 bytes data slots + monotonic counters. | Tamper-protected, не впливає на main Flash. Counters апаратно monotonic — ідеально для anti-replay. | +$0.60/unit BOM. I²C latency ~1.5 мс/блок. | Security-sensitive state: rotation counters, signing certificates, key versions. Synergy з `[FW.17]` Hash Ratchet. |
+| **C. Bit-перепакування** | Перейти на 16-бітні розрядні поля для тих uint32, що використовують реально <2¹⁶ діапазон (наприклад, `last_wakeup_timestamp` секунди від boot, рідко >18 год = 65 К секунд). | Нульова BOM-вартість, нульова latency. | Ризикує overflow'ом при патологічних сценаріях (вузол прокинувся у режимі OTA на >18 год, потрапив у IWDG storm, тощо). Складніше debug'ити. | Останній крок перед Flash-KV: коли packing може дати +1-2 регістри на дешеві поля. |
+
+**Рекомендований порядок при наступній витрати DR15:** (1) спершу аудит packing'у (§2.2 крок 2) → (2) шлях C якщо є кандидати → (3) шлях A для рідко-оновлюваних → (4) шлях B якщо ATECC608B вже на платі. Ніколи не дублювати дані між RTC і Flash «про всяк випадок» — це джерело розсинхронізації.
+
+### 2.4 Helper macros sketch (RTC_BKUP_Read32 / Write32) [ARCH.28]
+
+Поточний код використовує `HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DRn)` / `HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DRn, val)` напряму у ~12 місцях `firmware/soldier/main.c` + ~3 у `firmware/queen/main.c`. Це робоче рішення для TRL-6, але втрачаємо логування. Майбутній рефакторинг (deferred):
+
+```c
+// Запропоновані обгортки (ще НЕ застосовані — це freeze-контракт SSOT для §2):
+#define RTC_BKUP_READ32(reg)         HAL_RTCEx_BKUPRead(&hrtc, (reg))
+#define RTC_BKUP_WRITE32(reg, val)   HAL_RTCEx_BKUPWrite(&hrtc, (reg), (uint32_t)(val))
+// Опційно — debug-build trace:
+#if RTC_BKUP_TRACE_ENABLED
+  #define RTC_BKUP_WRITE32(reg, val) do { \
+      DBG_RTC("DR" #reg " <- 0x%08lX", (uint32_t)(val)); \
+      HAL_RTCEx_BKUPWrite(&hrtc, (reg), (uint32_t)(val)); \
+  } while (0)
+#endif
+```
+
+> **Чому НЕ застосовуємо зараз:** заміна 15 викликів торкається hot path (Phase 5 STOP2-write і ARCH.21 PVD callback) — кожне торкання потребує перевірки усіх 5 host-тестів `test_arch21_pvd_*` + 13 `test_sec10_*` + усього існуючого test-bank. Користь — лише консистентність + опційне трасування. ROI на TRL-6 негативний; повернутися до цього при рефакторингу під RTOS (ARCH.29) або при першому реальному debug-сесії з польового пристрою.
+
+> **Cross-link:** `10_02 ARCH.28` — RTC Backup Domain allocation policy.
 
 ---
 

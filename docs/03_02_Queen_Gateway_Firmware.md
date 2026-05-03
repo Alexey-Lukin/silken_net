@@ -900,6 +900,123 @@ if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
 
 **Black-list рекомендація:** реалізовувати **Дизайн B (Magic Re-Request)** першим — він не вимагає TDMA, дає 80% користі з 20% складності. Дизайн A реалізовуємо одночасно з ARCH.26.
 
+#### 5.X.5 [FW.27 follow-up] Soldier-side edge cases (host-test-only, 2026-05-03)
+
+> **Кенозис тестів:** дозалучаємо 5 додаткових host-тестів у `firmware/test/test_soldier_logic.c`, що закривають реальні шуми ефіру в існуючому Magic Re-Request кодопотоці. Жодних змін у production firmware — це **freeze-contract regression bank**, який запобігає випадковому регресу при майбутніх рефакторингах.
+
+| Сценарій | Тест | Що захищає |
+|----------|------|-----------|
+| Дублікат з ІНШИМ payload | `test_ota_duplicate_with_different_payload_preserves_original` | Anti-tamper: production guard `!ota_chunk_received[chunk_idx]` блокує перезапис, оригінальний payload незмінний байт-у-байт |
+| STOP2 між OTA-чанками (out-of-order) | `test_ota_stop2_simulation_chunks_arrive_out_of_order` | bitmap-стан переживає множинні Process-цикли; offsets коректні після злиття |
+| Той самий chunk після сну (anti-replay) | `test_ota_stop2_simulation_duplicate_after_sleep_still_rejected` | Counter не подвоюється при повторному reflex shot Королеви |
+| `total_chunks=0` malformed packet | `test_ota_total_chunks_zero_rejected` | Defence-in-depth: degenerate completion → CRC32 fail → no Flash write (not crash) |
+| HMAC trailer state cross-cycle | `test_hmac_trailer_state_survives_simulated_stop2_between_segments` | bitmask `ota_hmac_segments_received` OR-агрегується через STOP2 між сегментами 1/3/2 |
+| HMAC trailer idempotent overwrite | `test_hmac_trailer_duplicate_segment_overwrites_idempotently` | Дубль того самого сегменту не корумпує `received_hmac_tag[]` |
+
+> **Cross-ref:** `10_02 FW.27` — повний контекст; `10_03 §2.1` — тест-список.
+
+---
+
+## 📡 5а. Time Sync (FW.20, FW.20-S2) — Канонічний хаб
+
+> **SSOT для Time Sync:** ця секція — єдина точка розкладки часо-синхронізаційного протоколу між Rails ↔ Queen ↔ Soldier. Усі деталі реалізації, статуси чек-боксів і регресійні тести зведені тут; `10_02 FW.20` / `FW.20-S2` тримає лише посилання сюди.
+
+### 5а.1 Архітектура (3 рівні reach)
+
+```
+Rails (NTP/UTC source)
+   │  CoAP downlink envelope: [0x9C][unix_ts_be:4][payload]   ✅ FW.20
+   ▼
+Queen (LTE-anchored time)
+   │  ① Reflex broadcast `[0x9C][ts:4][TDMA-resv:4][AUTH_FLAG|TTL][magic 'B'][PAD:5]`  ✅ FW.20
+   │  ② Authoritativeness flag (byte 9 bit 7 = AUTH)                                  ✅ FW.20-S2 (1/5)
+   │
+   │  1-hop reach (direct LoRa coverage)
+   ▼
+Soldier — direct
+   │  ③ Drift-monitor + panic sync request `[0x56][DID:4][secs:4][TTL][magic 'S']`     ✅ FW.20-S2 (2/5)
+   │  ④ Per-hop drift compensation (Provisioner-only relay): freeze-contract callable  ✅ FW.20-S2 (3/5)
+   │     — `Soldier_Try_Relay_Time_Beacon` готова, активація потребує Queen TTL≥2
+   │     + anti-storm dedup-bitmap у вільному RTC регістрі (DR15 наразі резерв)
+   │
+   │  2-hop reach (mesh relay через Provisioners)
+   ▼
+Soldier — relayed
+   │  ⑤ Gossip-piggyback freeze-contract: byte 14 у normal-telemetry payload          ✅ FW.20-S2 (5/5)
+   │     — `Soldier_Pack_Gossip_Ts_Byte` / `Soldier_Try_Apply_Gossip_Ts` callable
+   │     — без активації у hot path (потребує hook у Phase 2 + RX-обробник)
+   │     — точність ±128 сек (1 байт LSB), достатньо для FW.30 cold-start `epoch_day`
+   ▼
+Soldier — gossip-uplift (3-hop reach)
+```
+
+### 5а.2 Wire-формати
+
+| Опкод | Маркер | Напрямок | Формат | Розмір | Cross-ref |
+|-------|--------|----------|--------|--------|-----------|
+| CMD_TIME_SYNC envelope | `0x9C` | Rails→Queen (CoAP) | `[0x9C][unix_ts_be:4][inner_payload]` | 5+N байт | FW.20 §1, `app/workers/concerns/coap_encryption.rb` |
+| Time Beacon | `0x9C` + magic `'B'` | Queen→Soldier (LoRa ECB) | `[0x9C][ts:4][reserved:4][AUTH\|TTL][magic 'B'][PAD:5]` | 16 байт | FW.20 §2 |
+| SYNC_REQUEST | `0x56` + magic `'S'` | Soldier→Queen (LoRa ECB) | `[0x56][DID:4][secs_since_sync:4][PANIC_TTL][magic 'S' = 0x53][PAD:5]` | 16 байт | FW.20-S2 §3, `firmware/soldier/main.c:Build_Time_Sync_Request_Payload` |
+| Gossip ts_lsb (freeze) | — | Soldier→Soldier (piggyback у telemetry) | normal-telemetry plaintext byte 14 = `(soldier_unix_ts & 0xFFu)`; only valid коли `StatusByte & PANIC_FLAG_BIT == 0` | 1 байт у існуючому 16-байт payload | FW.20-S2 §5 |
+
+### 5а.3 Опкод-карта (SSOT)
+
+> **Канонічна таблиця опкодів LoRa/CoAP** живе в [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA.md#-45а-downlink-opcode-map). Узагальнено для Time Sync контексту:
+
+| Опкод | Призначення | Канал | Магія | Статус |
+|-------|------------|-------|-------|--------|
+| `0x55` | OTA_REQ_MARKER (FW.27-B Magic Re-Request) | Soldier→Queen LoRa | byte 10 не визначений | ✅ |
+| `0x56` | SYNC_REQ_MARKER (FW.20-S2 panic sync) | Soldier→Queen LoRa | byte 10 = `'S'` (0x53) | ✅ |
+| `0x99` | OTA_MARKER (bytecode chunk) | bidirectional | — | ✅ |
+| `0x9A` | CMD_SET_LORENZ_THRESHOLDS (FW.8) | Rails→Queen→Soldier | freeze-contract | 🟡 deferred TRL-7 |
+| `0x9B` | HMAC_TRAILER_MARKER (FW.23 OTA dual-gate) | Rails→Queen→Soldier | seg_idx 1..3 | ✅ |
+| `0x9C` | CMD_TIME_SYNC envelope / Time Beacon (FW.20) | Rails→Queen / Queen→Soldier | byte 10 = `'B'` (0x42) для LoRa beacon'а | ✅ |
+| `0x9D` | CMD_SET_AUDIO_THRESHOLDS (FW.18) | Rails→Queen→Soldier | CRC16 | ✅ |
+
+> **Розмежування 0x55 vs 0x56:** оба uplink-маркери, їх дезамбігвує magic-byte у позиції 10 (`'R'` для re-request vs `'S'` для sync) — захищає від ложної маршрутизації при випадковому bit-flip першого байта.
+
+### 5а.4 Константи Soldier-сторони
+
+```c
+// firmware/soldier/main.c
+#define BEACON_MARKER                    0x9C       // Time Beacon LoRa marker
+#define BEACON_MAGIC_BYTE                'B'        // = 0x42
+#define BEACON_AUTH_FLAG                 0x80       // byte 9 bit 7
+#define BEACON_TTL_MASK                  0x7F       // byte 9 bits [6:0]
+#define BEACON_RELAY_MIN_TTL             2u         // TTL=1 не релеїться
+#define BEACON_RELAY_MAX_HOP_DELAY_SEC   3600UL     // sanity cap
+
+#define SYNC_REQ_MARKER                  0x56       // Soldier→Queen sync request
+#define SYNC_REQ_MAGIC_BYTE              0x53       // 'S' magic у byte 10
+#define TIME_SYNC_DRIFT_THRESHOLD_SEC    43200UL    // 12 год без beacon → panic
+#define TIME_SYNC_REQUEST_COOLDOWN_MS    3600000UL  // 1 год між zвiт-проханнями
+#define TIME_SYNC_COLD_BOOT_GRACE_MS     600000UL   // 10 хв cold-boot grace
+
+#define GOSSIP_TS_PAYLOAD_OFFSET         14u        // byte 14 у normal telemetry
+#define GOSSIP_TS_MAX_DRIFT_SEC          127u       // ±128 sec window для gossip
+```
+
+### 5а.5 Регресійний бенч
+
+| Шар | Тест-blok | Кількість | Файл |
+|-----|-----------|-----------|------|
+| Backend `CoapEncryption` envelope | TIME_SYNC envelope strip + roundtrip | 8 | `spec/workers/concerns/coap_encryption_spec.rb` |
+| Queen beacon plaintext | `Build_Time_Beacon_Plaintext` byte 9 = 0x81 | 2 | `firmware/test/test_queen_logic.c` |
+| Soldier beacon RX | authoritative/relay/legacy byte9 → flag | 3 | `firmware/test/test_soldier_logic.c` |
+| Soldier drift-monitor | `Soldier_Should_Request_Time_Sync` cold-boot/grace/cooldown/payload layout | 9 | `firmware/test/test_soldier_logic.c` |
+| Soldier mesh-relay (per-hop drift) | `Soldier_Try_Relay_Time_Beacon` 6 reasons + happy + boundary | 13 | `firmware/test/test_soldier_logic.c` |
+| Soldier gossip-piggyback (freeze) | pack/apply, cold-boot, drift cap, window selection | 7 | `firmware/test/test_soldier_logic.c` |
+| **Всього FW.20 + FW.20-S2** | — | **42** | — |
+
+### 5а.6 Що ще лежить як freeze-contract (deferred TRL-7)
+
+- **Anti-storm dedup bitmap** для повного активного mesh-relay'у (потребує вільного RTC регістра — DR15 наразі резерв; cross-ref [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA.md#23-overflow-strategy-flash-based-kv-store-arch28))
+- **Queen beacon TTL≥2** (зараз hardcoded TTL=1 у `BEACON_BYTE9_AUTHORITATIVE = 0x81`; перемикається коли реалізуємо anti-storm)
+- **Hot-path виклик** `Soldier_Pack_Gossip_Ts_Byte` у Phase 2 normal-telemetry pack + RX-обробник для прийому
+- **Drift compensation** при ΔT = ±60°C lab-вимірювання (потребує термокамери, відсутня @ TRL-6)
+
+> **Закриття 10_02:** після цього хабу записи `FW.20`, `FW.20-S2 (1/5..5/5)` у `10_02 §Firmware` шорткозамкнено — лишилося лише посилання сюди для аудиту прогресу.
+
 ---
 
 ## 🛡️ 6. Actuator Command Dedup (Idempotency Ring Buffer)

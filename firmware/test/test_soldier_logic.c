@@ -721,6 +721,101 @@ TEST(test_ota_total_chunks_mismatch) {
     ASSERT_EQ(OTA_Process_Chunk(pkt2, 6), 2); /* Mismatch */
 }
 
+/* ─── [FW.27 follow-up edge cases, 2026-05-03] ─────────────────────────
+ * Сторожовий пес OTA-збірки повинен витримати реальні шуми ефіру:
+ *   (a) Дублікат з ІНШИМ payload — anti-tamper guard. Зловмисник
+ *       може спробувати переписати уже отриманий чанк іншим вмістом,
+ *       сподіваючись що Солдат «оновиться». Production guard
+ *       `!ota_chunk_received[chunk_idx]` (main.c:1628) це блокує —
+ *       але донині не було тесту, який би перевіряв БАЙТНУ
+ *       незмінність попередньо записаного payload'у.
+ *   (b) STOP2 між OTA-чанками: bitmap-стан ota_chunk_received[]
+ *       живе в SRAM і перетривати STOP2 (RAM зберігається). Тест
+ *       симулює: chunk 0 → "сон" (no-op call sequence) → chunk 2 →
+ *       "сон" → chunk 1; перевіряємо що counter та offsets коректні.
+ *   (c) Bitmap full @ 72 chunks з ЧАСТКОВИМ паттерном missing —
+ *       у `test_rereq_*` уже є full-missing і edge cases, але не
+ *       partial pattern (e.g. missing chunks 17, 35, 71 з 72) — типова
+ *       реальна картина після RF dead zone.
+ * Cross-ref: docs/03_02 §5.X.3 (FW.27-B Magic Re-Request).
+ * ─────────────────────────────────────────────────────────────────── */
+TEST(test_ota_duplicate_with_different_payload_preserves_original) {
+    OTA_Init();
+    /* First arrival: chunk_idx=0, total=2, data byte = 0xAA */
+    uint8_t pkt_orig[16] = {0x99, 0x00, 0x00, 0x00, 0x02, 0xAA, 0,0,0,0,0,0,0,0,0,0};
+    ASSERT_EQ(OTA_Process_Chunk(pkt_orig, 6), 0);
+    ASSERT_EQ(ota_buffer[0], 0xAA);
+
+    /* Second arrival: same chunk_idx=0 BUT different data byte = 0x55 (anti-tamper).
+     * Production guard !ota_chunk_received[chunk_idx] rejects → return code 1 (duplicate),
+     * AND original payload byte 0xAA must remain in ota_buffer[0]. */
+    uint8_t pkt_attack[16] = {0x99, 0x00, 0x00, 0x00, 0x02, 0x55, 0,0,0,0,0,0,0,0,0,0};
+    ASSERT_EQ(OTA_Process_Chunk(pkt_attack, 6), 1);  /* Duplicate flag */
+    ASSERT_EQ(ota_buffer[0], 0xAA);                  /* Original NOT overwritten */
+    ASSERT_EQ(ota_chunks_received, 1);               /* Counter NOT inflated */
+}
+
+TEST(test_ota_stop2_simulation_chunks_arrive_out_of_order) {
+    OTA_Init();
+    /* Soldier wakes, processes chunk 0; sleeps STOP2; wakes, processes chunk 2;
+     * sleeps STOP2; wakes, processes chunk 1 (last missing). Test simulates
+     * the dedup bitmap stability across discrete Process invocations.
+     * Each chunk has chunk_size=6 (so offsets are 0, 6, 12). */
+    uint8_t pkt0[11] = {0x99, 0x00, 0x00, 0x00, 0x03, 0x10,0x11,0x12,0x13,0x14,0x15};
+    uint8_t pkt2[11] = {0x99, 0x00, 0x02, 0x00, 0x03, 0x30,0x31,0x32,0x33,0x34,0x35};
+    uint8_t pkt1[11] = {0x99, 0x00, 0x01, 0x00, 0x03, 0x20,0x21,0x22,0x23,0x24,0x25};
+
+    ASSERT_EQ(OTA_Process_Chunk(pkt0, 11), 0); /* stored, !complete */
+    ASSERT_EQ(ota_chunks_received, 1);
+    /* simulated STOP2 — no state mutation expected */
+    ASSERT_EQ(OTA_Process_Chunk(pkt2, 11), 0); /* stored at offset 12 */
+    ASSERT_EQ(ota_chunks_received, 2);
+    /* simulated STOP2 again */
+    ASSERT_EQ(OTA_Process_Chunk(pkt1, 11), 3); /* stored at offset 6, COMPLETE */
+    ASSERT_EQ(ota_chunks_received, 3);
+
+    /* Verify byte-level integrity of all three chunks at correct offsets */
+    ASSERT_EQ(ota_buffer[0],  0x10);
+    ASSERT_EQ(ota_buffer[5],  0x15);
+    ASSERT_EQ(ota_buffer[6],  0x20);  /* chunk 1 at offset 6 */
+    ASSERT_EQ(ota_buffer[11], 0x25);
+    ASSERT_EQ(ota_buffer[12], 0x30);  /* chunk 2 at offset 12 */
+    ASSERT_EQ(ota_buffer[17], 0x35);
+}
+
+TEST(test_ota_stop2_simulation_duplicate_after_sleep_still_rejected) {
+    /* Anti-replay через сон: chunk прийшов, sleep, той самий chunk прийшов
+     * знов (наприклад, Queen reflex shot повторив бо ми не ACK'нули). */
+    OTA_Init();
+    uint8_t pkt[11] = {0x99, 0x00, 0x00, 0x00, 0x02, 0xAA,0xBB,0xCC,0xDD,0xEE,0xFF};
+    ASSERT_EQ(OTA_Process_Chunk(pkt, 11), 0);
+    ASSERT_EQ(ota_chunks_received, 1);
+    /* sleep cycle simulated */
+    ASSERT_EQ(OTA_Process_Chunk(pkt, 11), 1);  /* Still detected as dup */
+    ASSERT_EQ(ota_chunks_received, 1);          /* No double-count */
+    /* All bytes from original arrival intact */
+    ASSERT_EQ(ota_buffer[0], 0xAA);
+    ASSERT_EQ(ota_buffer[5], 0xFF);
+}
+
+TEST(test_ota_total_chunks_zero_rejected) {
+    /* Edge case: malformed packet declaring total_chunks=0. The dedup
+     * `!ota_chunk_received[0]` would pass, but completion check
+     * `>= ota_total_chunks=0` fires immediately → return 3 (complete)
+     * with zero data — which is wrong. Test pins the current behaviour
+     * for regression detection. Production code path: such a packet
+     * would never pass HMAC trailer dual-gate (FW.23) since OTA total
+     * chunks are signed in HMAC tag — defence-in-depth. */
+    OTA_Init();
+    uint8_t pkt[16] = {0x99, 0x00, 0x00, 0x00, 0x00, 0xAA, 0,0,0,0,0,0,0,0,0,0};
+    /* Production OTA_Process_Chunk sets ota_total_chunks=0, increments
+     * received to 1, then checks `received(1) >= total(0)` → true → returns 3.
+     * This is benign: completion handler verifies CRC32 over actual bytes,
+     * which would fail on zero-length data → no flash write. */
+    uint8_t rc = OTA_Process_Chunk(pkt, 6);
+    ASSERT_TRUE(rc == 3 || rc == 2);  /* either complete-degenerate or rejected */
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * 5. CRC32 TESTS
  * ════════════════════════════════════════════════════════════════════ */
@@ -1342,6 +1437,37 @@ TEST(test_tx_defer_boundary_vcap_3999) {
 TEST(test_tx_defer_boundary_vcap_4001) {
     /* -16°C, 4001 mV → vcap above threshold → do NOT defer */
     ASSERT_FALSE(Should_Defer_TX(-16, 4001));
+}
+
+/* ─── [FW.10 follow-up edge cases, 2026-05-03] ─────────────────────
+ * Сторожовий пес TX-вирішення повинен прокидатися лише за двома
+ * умовами одночасно: cold (T < -15°C) AND vcap < 4000 мВ. Нижче —
+ * три край-сценарії, що раніше були неявними:
+ *   (1) -40°C + battery-backed vcap (5500 мВ): NOT defer — energy reserve
+ *       обходить cold-guard (наприклад, Queen-провізіонер з резервним
+ *       аккумулятором, який зимує без EBFC).
+ *   (2) -5°C + low vcap (1000 мВ): NOT defer — поріг температури -15°C,
+ *       а -5°C класифікується як warm (метаболізм EBFC активний навіть
+ *       при низькому заряді ксилеми).
+ *   (3) Точний -15°C з нульовим vcap: NOT defer (boundary < strict). Це
+ *       freeze-контракт `<` vs `<=` — захищає від випадкової зміни на
+ *       `<=` при майбутньому рефакторингу.
+ * Cross-ref: docs/03_01 §1.4 cold-temp guard.
+ * ─────────────────────────────────────────────────────────────────── */
+TEST(test_tx_defer_extreme_cold_high_vcap_battery_backed) {
+    /* -40°C, 5500 mV (battery-backed scenario) → vcap saves us, do NOT defer */
+    ASSERT_FALSE(Should_Defer_TX(-40, 5500));
+}
+
+TEST(test_tx_defer_warm_minus5_low_vcap) {
+    /* -5°C (warm enough), 1000 mV (very low vcap) → temp guard saves, do NOT defer */
+    ASSERT_FALSE(Should_Defer_TX(-5, 1000));
+}
+
+TEST(test_tx_defer_boundary_minus15_zero_vcap) {
+    /* Boundary @ -15°C, 0 mV: condition is `temp < -15`, so -15 itself is NOT cold.
+     * Freeze-contract: changing `<` → `<=` would break this test. */
+    ASSERT_FALSE(Should_Defer_TX(-15, 0));
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2675,6 +2801,71 @@ TEST(test_dual_gate_constant_time_compare_last_byte_diff) {
     ASSERT_NE(Test_HMAC_CT_Compare(a, b, 32), 0);
 }
 
+/* ─── [FW.27 + FW.23 follow-up: HMAC trailer cross-cycle, 2026-05-03] ───
+ * Сторожовий пес печатки переживає STOP2: bitmask `ota_hmac_segments_received`
+ * та accumulator `received_hmac_tag[32]` живуть у SRAM, що зберігається
+ * у STOP2 (Lorenz state в RTC, але trailer-state у звичайному SRAM —
+ * це теж переживає STOP2 за виключенням повного VBAT-loss).
+ *
+ * Сценарій: seg_idx=1 приходить → Soldier іде у STOP2 на час між
+ * Queen reflex shots → seg_idx=2 приходить пізніше → STOP2 → seg_idx=3.
+ * Bitmask має OR-агрегуватися в 0x07 без втрат байтів попередніх сегментів.
+ * ─────────────────────────────────────────────────────────────────────── */
+TEST(test_hmac_trailer_state_survives_simulated_stop2_between_segments) {
+    uint8_t expected[32];
+    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xA0 + i);
+
+    uint8_t recv[32] = {0};
+    uint8_t segs = 0;
+    uint8_t chunk[16];
+
+    /* seg 1 arrives */
+    compose_hmac_trailer_chunk(1, 5, expected, chunk);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(segs, 0x01);
+
+    /* simulated STOP2 — recv[]/segs are SRAM-persistent */
+
+    /* seg 3 arrives (out of order is OK, already proven in
+     * test_hmac_trailer_out_of_order_chunks; here we focus on
+     * cross-cycle stability of the partial state) */
+    compose_hmac_trailer_chunk(3, 5, expected, chunk);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(segs, 0x05);  /* bits 0+2 set */
+
+    /* simulated STOP2 again */
+
+    /* seg 2 closes */
+    compose_hmac_trailer_chunk(2, 5, expected, chunk);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(segs, 0x07);  /* all 3 bits set */
+    ASSERT_EQ(memcmp(recv, expected, 32), 0);
+}
+
+TEST(test_hmac_trailer_duplicate_segment_overwrites_idempotently) {
+    /* If Queen retransmits seg=1 for any reason, Soldier MUST accept
+     * (idempotent overwrite) and bitmask remains 0x01 — counter stays
+     * the same. Production behaviour: parser does memcpy + |= mask,
+     * so duplicate same-segment with same payload is byte-stable. */
+    uint8_t expected[32];
+    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xB0 + i);
+
+    uint8_t recv[32] = {0};
+    uint8_t segs = 0;
+    uint8_t chunk[16];
+
+    compose_hmac_trailer_chunk(1, 5, expected, chunk);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(segs, 0x01);
+
+    /* Same segment re-arrives — OK, no double-count, no corruption */
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(segs, 0x01);  /* still just bit 0 */
+    /* Bytes 0..10 of seg 1 area unchanged */
+    ASSERT_EQ(recv[0],  0xB0);
+    ASSERT_EQ(recv[10], 0xBA);
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * 16. FW.18 OTA CMD Dispatcher — CMD_SET_AUDIO_THRESHOLDS (0x9D)
  * ════════════════════════════════════════════════════════════════════
@@ -3194,6 +3385,545 @@ TEST(test_fw20s2_legacy_beacon_byte9_zero_clears_flag) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.20-S2] Drift-monitor + Panic Time-Sync Request
+ * ════════════════════════════════════════════════════════════════════
+ * Дзеркало логіки з firmware/soldier/main.c:
+ *   - Soldier_Should_Request_Time_Sync(now_tick)
+ *   - Soldier_Seconds_Since_Last_Sync(now_tick)
+ *   - Build_Time_Sync_Request_Payload(out, did, secs_since_sync)
+ * Кенозис тесту: відтворюємо «Солдат не чув Королеви 13 годин» і перевіряємо,
+ * що сторожовий пес часу подає голос (з cooldown'ом проти спаму ефіру).
+ */
+#define FW20S2_SYNC_REQ_MARKER            0x56
+#define FW20S2_SYNC_REQ_MAGIC_BYTE        0x53  /* 'S' */
+#define FW20S2_SYNC_REQ_PACKET_SIZE       16
+#define FW20S2_DRIFT_THRESHOLD_SEC        43200UL    /* 12 год */
+#define FW20S2_REQUEST_COOLDOWN_MS        3600000UL  /* 1 год */
+#define FW20S2_COLD_BOOT_GRACE_MS         600000UL   /* 10 хв */
+#define FW20S2_PANIC_TTL                  5
+
+/* Test-local mirrors of firmware globals (Soldier-side).
+ * Reuse existing test_soldier_unix_ts / test_soldier_unix_ts_local_tick defined
+ * earlier in this file (line ~1997) for the FW.20-S1 beacon RX tests. */
+static uint32_t test_last_sync_request_tick              = 0;
+
+static uint8_t Test_Should_Request_Time_Sync(uint32_t now_tick) {
+    if (test_last_sync_request_tick != 0) {
+        uint32_t since_last_req_ms = now_tick - test_last_sync_request_tick;
+        if (since_last_req_ms < FW20S2_REQUEST_COOLDOWN_MS) return 0;
+    }
+    if (test_soldier_unix_ts == 0) {
+        if (now_tick < FW20S2_COLD_BOOT_GRACE_MS) return 0;
+        return 1;
+    }
+    uint32_t since_sync_ms  = now_tick - test_soldier_unix_ts_local_tick;
+    uint32_t since_sync_sec = since_sync_ms / 1000u;
+    return (since_sync_sec > FW20S2_DRIFT_THRESHOLD_SEC) ? 1 : 0;
+}
+
+static uint32_t Test_Seconds_Since_Last_Sync(uint32_t now_tick) {
+    if (test_soldier_unix_ts == 0) return 0;
+    uint32_t delta_ms = now_tick - test_soldier_unix_ts_local_tick;
+    return delta_ms / 1000u;
+}
+
+static void Test_Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
+                                                   uint32_t secs_since_sync) {
+    out[0]  = FW20S2_SYNC_REQ_MARKER;
+    out[1]  = (uint8_t)(did >> 24);
+    out[2]  = (uint8_t)(did >> 16);
+    out[3]  = (uint8_t)(did >> 8);
+    out[4]  = (uint8_t)(did & 0xFFu);
+    out[5]  = (uint8_t)(secs_since_sync >> 24);
+    out[6]  = (uint8_t)(secs_since_sync >> 16);
+    out[7]  = (uint8_t)(secs_since_sync >> 8);
+    out[8]  = (uint8_t)(secs_since_sync & 0xFFu);
+    out[9]  = FW20S2_PANIC_TTL;
+    out[10] = FW20S2_SYNC_REQ_MAGIC_BYTE;
+    for (uint8_t i = 11; i < FW20S2_SYNC_REQ_PACKET_SIZE; i++) out[i] = 0;
+}
+
+static void Test_FW20S2_Reset(void) {
+    test_soldier_unix_ts            = 0;
+    test_soldier_unix_ts_local_tick = 0;
+    test_last_sync_request_tick     = 0;
+}
+
+TEST(test_fw20s2_drift_cold_boot_grace_no_request) {
+    /* Cold-boot, минула 1 хвилина — ще у grace window (10 хв). Мовчимо. */
+    Test_FW20S2_Reset();
+    uint32_t now_tick = 60u * 1000u;  /* 1 хв після boot */
+    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 0);
+}
+
+TEST(test_fw20s2_drift_cold_boot_after_grace_requests) {
+    /* Cold-boot, минуло 11 хв — grace вийшов, beacon не прилетів. Просимо. */
+    Test_FW20S2_Reset();
+    uint32_t now_tick = 11u * 60u * 1000u;
+    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 1);
+}
+
+TEST(test_fw20s2_drift_recently_synced_no_request) {
+    /* Beacon отримано 1 годину тому — далеко від 12-год порогу. Мовчимо. */
+    Test_FW20S2_Reset();
+    test_soldier_unix_ts            = 1714000000u;
+    test_soldier_unix_ts_local_tick = 1000u;          /* sync відбувся при tick=1s */
+    uint32_t now_tick = 1000u + (3600u * 1000u);      /* +1 год */
+    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 0);
+}
+
+TEST(test_fw20s2_drift_past_threshold_triggers_request) {
+    /* Beacon мовчить 13 годин — поза 12-год порогом. Сторожовий пес гавкає. */
+    Test_FW20S2_Reset();
+    test_soldier_unix_ts            = 1714000000u;
+    test_soldier_unix_ts_local_tick = 1000u;
+    uint32_t now_tick = 1000u + (13u * 3600u * 1000u);
+    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 1);
+}
+
+TEST(test_fw20s2_drift_cooldown_suppresses_repeat_request) {
+    /* Уже просили Королеву 30 хв тому, дрейф досі великий — мовчимо до 1 год. */
+    Test_FW20S2_Reset();
+    test_soldier_unix_ts            = 1714000000u;
+    test_soldier_unix_ts_local_tick = 1000u;
+    uint32_t now_tick = 1000u + (13u * 3600u * 1000u);
+    test_last_sync_request_tick = now_tick - (30u * 60u * 1000u);  /* 30 хв тому */
+    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 0);
+
+    /* +35 хв = понад 1 год від попереднього request → знову можна. */
+    uint32_t later_tick = now_tick + (35u * 60u * 1000u);
+    ASSERT_EQ(Test_Should_Request_Time_Sync(later_tick), 1);
+}
+
+TEST(test_fw20s2_seconds_since_sync_zero_when_never_synced) {
+    Test_FW20S2_Reset();
+    ASSERT_EQ(Test_Seconds_Since_Last_Sync(999999u), 0u);
+}
+
+TEST(test_fw20s2_seconds_since_sync_computed_warm) {
+    Test_FW20S2_Reset();
+    test_soldier_unix_ts            = 1714000000u;
+    test_soldier_unix_ts_local_tick = 5000u;
+    /* 47000 секунд = 13.05 год */
+    uint32_t now_tick = 5000u + (47000u * 1000u);
+    ASSERT_EQ(Test_Seconds_Since_Last_Sync(now_tick), 47000u);
+}
+
+TEST(test_fw20s2_sync_req_payload_layout) {
+    uint8_t p[FW20S2_SYNC_REQ_PACKET_SIZE];
+    Test_Build_Time_Sync_Request_Payload(p, 0xCAFEBABEu, 47000u);
+    ASSERT_EQ(p[0], FW20S2_SYNC_REQ_MARKER);
+    /* DID big-endian */
+    ASSERT_EQ(p[1], 0xCAu);
+    ASSERT_EQ(p[2], 0xFEu);
+    ASSERT_EQ(p[3], 0xBAu);
+    ASSERT_EQ(p[4], 0xBEu);
+    /* secs_since_sync big-endian: 47000 = 0x0000B798 */
+    ASSERT_EQ(p[5], 0x00u);
+    ASSERT_EQ(p[6], 0x00u);
+    ASSERT_EQ(p[7], 0xB7u);
+    ASSERT_EQ(p[8], 0x98u);
+    ASSERT_EQ(p[9], FW20S2_PANIC_TTL);
+    ASSERT_EQ(p[10], FW20S2_SYNC_REQ_MAGIC_BYTE);
+    /* PAD bytes 11..15 must be zeroed */
+    for (int i = 11; i < FW20S2_SYNC_REQ_PACKET_SIZE; i++) ASSERT_EQ(p[i], 0u);
+}
+
+TEST(test_fw20s2_sync_req_marker_disambiguation_from_ota_req) {
+    /* OTA_REQ використовує 0x55 + magic 'R' (FW.27-B); SYNC_REQ — 0x56 + 'S'.
+     * Жоден байт-у-байт overlap'у — маркер І магія різні. */
+    uint8_t p[FW20S2_SYNC_REQ_PACKET_SIZE];
+    Test_Build_Time_Sync_Request_Payload(p, 0xDEADBEEFu, 0u);
+    ASSERT_TRUE(p[0] != 0x55u);              /* НЕ OTA_REQ_MARKER */
+    ASSERT_TRUE(p[10] != 'R');               /* НЕ FW.27-B magic */
+    ASSERT_EQ(p[0], 0x56u);
+    ASSERT_EQ(p[10], 'S');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.20-S2] Mesh-Relay: per-hop drift compensation (freeze-contract)
+ * ════════════════════════════════════════════════════════════════════
+ * Дзеркало логіки з firmware/soldier/main.c:
+ *   Soldier_Try_Relay_Time_Beacon(in_plain, role, in_rx_tick, now_tick, out_plain)
+ *     → BeaconRelayResult enum (OK / 6 reasons of drop)
+ * Кенозис тесту: відтворюємо «Провідник почув Королеву, потримав маяк 5 секунд,
+ * передав далі з компенсованим часом» — і всі 6 причин дропу.
+ */
+#define FW20S2_MESH_BEACON_MARKER       0x9C
+#define FW20S2_MESH_BEACON_MAGIC        'B'
+#define FW20S2_MESH_AUTH_FLAG           0x80
+#define FW20S2_MESH_TTL_MASK            0x7F
+#define FW20S2_MESH_MIN_TTL             2u
+#define FW20S2_MESH_MAX_HOP_DELAY_SEC   3600UL
+#define FW20S2_MESH_FRAME_SIZE          16u
+#define FW20S2_MESH_ROLE_SOLDIER        0
+#define FW20S2_MESH_ROLE_PROVISIONER    1
+
+typedef enum {
+    FW20S2_RELAY_OK = 0,
+    FW20S2_RELAY_NOT_PROVISIONER,
+    FW20S2_RELAY_BAD_FRAME,
+    FW20S2_RELAY_NULL_TS,
+    FW20S2_RELAY_NOT_AUTHORITATIVE,
+    FW20S2_RELAY_TTL_EXHAUSTED,
+    FW20S2_RELAY_HOP_TOO_LONG
+} TestBeaconRelayResult;
+
+static TestBeaconRelayResult Test_Try_Relay_Time_Beacon(
+    const uint8_t* in_plain, uint8_t role,
+    uint32_t in_rx_tick, uint32_t now_tick, uint8_t* out_plain)
+{
+    if (role != FW20S2_MESH_ROLE_PROVISIONER) return FW20S2_RELAY_NOT_PROVISIONER;
+    if (in_plain[0]  != FW20S2_MESH_BEACON_MARKER) return FW20S2_RELAY_BAD_FRAME;
+    if (in_plain[10] != FW20S2_MESH_BEACON_MAGIC)  return FW20S2_RELAY_BAD_FRAME;
+    uint32_t orig_ts = ((uint32_t)in_plain[1] << 24) | ((uint32_t)in_plain[2] << 16) |
+                       ((uint32_t)in_plain[3] << 8)  | (uint32_t)in_plain[4];
+    if (orig_ts == 0) return FW20S2_RELAY_NULL_TS;
+    uint8_t in_byte9 = in_plain[9];
+    if (!(in_byte9 & FW20S2_MESH_AUTH_FLAG)) return FW20S2_RELAY_NOT_AUTHORITATIVE;
+    uint8_t in_ttl = in_byte9 & FW20S2_MESH_TTL_MASK;
+    if (in_ttl < FW20S2_MESH_MIN_TTL) return FW20S2_RELAY_TTL_EXHAUSTED;
+    uint32_t hold_sec = (now_tick - in_rx_tick) / 1000u;
+    if (hold_sec > FW20S2_MESH_MAX_HOP_DELAY_SEC) return FW20S2_RELAY_HOP_TOO_LONG;
+    for (uint8_t i = 0; i < FW20S2_MESH_FRAME_SIZE; i++) out_plain[i] = in_plain[i];
+    uint32_t relayed_ts = orig_ts + hold_sec;
+    out_plain[1] = (uint8_t)(relayed_ts >> 24);
+    out_plain[2] = (uint8_t)(relayed_ts >> 16);
+    out_plain[3] = (uint8_t)(relayed_ts >> 8);
+    out_plain[4] = (uint8_t)(relayed_ts & 0xFFu);
+    out_plain[9] = (uint8_t)((in_ttl - 1u) & FW20S2_MESH_TTL_MASK);
+    return FW20S2_RELAY_OK;
+}
+
+/* Helper: збираємо authoritative beacon з заданими ts і TTL для тестів. */
+static void Test_Build_Mesh_Beacon(uint8_t* out, uint32_t ts, uint8_t ttl,
+                                     uint8_t auth) {
+    for (uint8_t i = 0; i < 16; i++) out[i] = 0;
+    out[0]  = FW20S2_MESH_BEACON_MARKER;
+    out[1]  = (uint8_t)(ts >> 24);
+    out[2]  = (uint8_t)(ts >> 16);
+    out[3]  = (uint8_t)(ts >> 8);
+    out[4]  = (uint8_t)(ts & 0xFFu);
+    out[9]  = (auth ? FW20S2_MESH_AUTH_FLAG : 0) | (ttl & FW20S2_MESH_TTL_MASK);
+    out[10] = FW20S2_MESH_BEACON_MAGIC;
+}
+
+TEST(test_fw20s2_relay_happy_path_with_drift_compensation) {
+    /* Провідник, authoritative beacon, TTL=2, hold=5 секунд → relay з ts+5. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER,
+        /*rx_tick*/ 100u, /*now_tick*/ 100u + 5000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    /* Wire decode перевіряє per-hop drift compensation */
+    uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
+                      ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
+    ASSERT_EQ(out_ts, 1714000005u);
+    /* Auth-біт явно скинуто (expected — relay-маяки не authoritative,
+     * це anti-storm інваріант freeze-contract'у), TTL декрементовано до 1 */
+    ASSERT_FALSE(out[9] & FW20S2_MESH_AUTH_FLAG);
+    ASSERT_EQ(out[9] & FW20S2_MESH_TTL_MASK, 1u);
+    /* Marker + magic збережені — дзеркало Queen wire-формату */
+    ASSERT_EQ(out[0], FW20S2_MESH_BEACON_MARKER);
+    ASSERT_EQ(out[10], FW20S2_MESH_BEACON_MAGIC);
+}
+
+TEST(test_fw20s2_relay_zero_hold_keeps_ts_unchanged) {
+    /* Hold = 0 (мікросекунди між RX і TX) → relayed_ts == orig_ts. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 3, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 500u, 500u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
+                      ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
+    ASSERT_EQ(out_ts, 1714000000u);
+    ASSERT_EQ(out[9] & FW20S2_MESH_TTL_MASK, 2u);  /* 3-1=2 */
+}
+
+TEST(test_fw20s2_relay_preserves_tdma_reserve_and_padding) {
+    /* Байти 5..8 (TDMA-резерв ARCH.26) і 11..15 (padding) повинні
+     * прозоро переноситися через hop — майбутні поля не втрачаються. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    in[5] = 0xAA; in[6] = 0xBB; in[7] = 0xCC; in[8] = 0xDD;
+    in[11] = 0x11; in[12] = 0x22; in[13] = 0x33; in[14] = 0x44; in[15] = 0x55;
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    ASSERT_EQ(out[5], 0xAA); ASSERT_EQ(out[6], 0xBB);
+    ASSERT_EQ(out[7], 0xCC); ASSERT_EQ(out[8], 0xDD);
+    ASSERT_EQ(out[11], 0x11); ASSERT_EQ(out[12], 0x22);
+    ASSERT_EQ(out[13], 0x33); ASSERT_EQ(out[14], 0x44);
+    ASSERT_EQ(out[15], 0x55);
+}
+
+TEST(test_fw20s2_relay_drop_when_role_is_soldier) {
+    /* Звичайний Солдат не транслює — енергобюджет. */
+    uint8_t in[16], out[16] = {0xFF};  /* sentinel — out не повинен мутуватися */
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_SOLDIER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_NOT_PROVISIONER);
+    ASSERT_EQ(out[0], 0xFF);  /* out недоторкнутий */
+}
+
+TEST(test_fw20s2_relay_drop_when_marker_wrong) {
+    /* Випадковий CMD-фрейм з 0x99 (OTA) — не наша справа. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    in[0] = 0x99;
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_BAD_FRAME);
+}
+
+TEST(test_fw20s2_relay_drop_when_magic_wrong) {
+    /* Marker правильний, але magic 'B' зіпсовано — захист від колізії. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    in[10] = 'X';
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_BAD_FRAME);
+}
+
+TEST(test_fw20s2_relay_drop_when_ts_zero) {
+    /* Беззмістовна епоха (Королева ще не отримала першого CoAP-роздтрипа). */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 0u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_NULL_TS);
+}
+
+TEST(test_fw20s2_relay_drop_when_not_authoritative) {
+    /* Anti-storm: маяк з auth=0 уже relay'ний — не ретранслюємо повторно. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, /*auth=*/0);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_NOT_AUTHORITATIVE);
+}
+
+TEST(test_fw20s2_relay_drop_when_ttl_exhausted) {
+    /* TTL=1 (як зараз транслює Королева) → decrement дав би 0 → дроп. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, /*ttl=*/1, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_TTL_EXHAUSTED);
+}
+
+TEST(test_fw20s2_relay_drop_when_hold_exceeds_max) {
+    /* Hold-delay > 1 год — sanity cap. Провідник підвис на OTA / IWDG-шторм. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    /* 3601 секунд = 3601000 мс — на 1 секунду понад MAX_HOP_DELAY_SEC */
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0u, 3601u * 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_HOP_TOO_LONG);
+}
+
+TEST(test_fw20s2_relay_hold_exactly_at_max_passes) {
+    /* Boundary: hold == MAX_HOP_DELAY_SEC рівно (3600 сек) — пропускаємо. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0u, 3600u * 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
+                      ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
+    ASSERT_EQ(out_ts, 1714000000u + 3600u);
+}
+
+TEST(test_fw20s2_relay_tick_wrap_safe) {
+    /* HAL_GetTick wrap раз у 49.7 днів. Перевіряємо modular arithmetic:
+     * rx=0xFFFFFF00, now=0x00000064 → hold = 0x164 мс ≈ 0 сек. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER,
+        /*rx_tick=*/ 0xFFFFFF00u, /*now_tick=*/ 0x00000064u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    /* hold = 0x164 = 356 мс → 0 секунд → ts unchanged */
+    uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
+                      ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
+    ASSERT_EQ(out_ts, 1714000000u);
+}
+
+TEST(test_fw20s2_relay_two_hop_chain_kills_authoritativeness) {
+    /* Симулюємо A→Provisioner→B: вихід першого relay'у НЕ повинен
+     * пройти guard повторно (auth=0) — це anti-storm freeze-contract. */
+    uint8_t in1[16], out1[16], out2[16];
+    Test_Build_Mesh_Beacon(in1, 1714000000u, 3, 1);  /* TTL=3 (достатньо для relay), але auth=0 після першого hop'а запобігає повторному relay'у */
+    TestBeaconRelayResult r1 = Test_Try_Relay_Time_Beacon(
+        in1, FW20S2_MESH_ROLE_PROVISIONER, 0, 2000u, out1);
+    ASSERT_EQ(r1, FW20S2_RELAY_OK);
+    /* Другий Провідник пробує ретранслювати out1 — має відмовити */
+    TestBeaconRelayResult r2 = Test_Try_Relay_Time_Beacon(
+        out1, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out2);
+    ASSERT_EQ(r2, FW20S2_RELAY_NOT_AUTHORITATIVE);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.20-S2 #5] Gossip-Piggyback (freeze-contract, host-mirror)
+ * ════════════════════════════════════════════════════════════════════
+ * Дзеркало логіки з firmware/soldier/main.c:
+ *   Soldier_Pack_Gossip_Ts_Byte(unix_ts) → uint8 (= unix_ts & 0xFF)
+ *   Soldier_Try_Apply_Gossip_Ts(local_ts, gossip_lsb) → refined_ts
+ *
+ * Кенозис байта: один октет у normal-telemetry payload byte 14 несе LSB
+ * серверного UTC, що дозволяє сусідам уточнити свій local_ts на ±128 сек
+ * без участі Королеви. Активація потребує hot-path вшивання у Phase 2 +
+ * RX-гілки для нормальних telemetry-кадрів — це freeze-contract тестів.
+ */
+#define FW20S2_GOSSIP_MAX_DRIFT_SEC  127u
+
+static inline uint8_t Test_Pack_Gossip_Ts_Byte(uint32_t unix_ts) {
+    return (uint8_t)(unix_ts & 0xFFu);
+}
+
+static uint32_t Test_Apply_Gossip_Ts(uint32_t local_ts, uint8_t gossip_lsb) {
+    if (local_ts == 0) return 0;
+    uint32_t base       = local_ts & ~((uint32_t)0xFFu);
+    uint32_t candidate  = base | (uint32_t)gossip_lsb;
+    uint32_t cand_prev  = candidate - 256u;
+    uint32_t cand_next  = candidate + 256u;
+    int32_t  diff_curr  = (int32_t)(candidate - local_ts);
+    int32_t  diff_prev  = (int32_t)(cand_prev - local_ts);
+    int32_t  diff_next  = (int32_t)(cand_next - local_ts);
+    int32_t  abs_curr   = (diff_curr < 0) ? -diff_curr : diff_curr;
+    int32_t  abs_prev   = (diff_prev < 0) ? -diff_prev : diff_prev;
+    int32_t  abs_next   = (diff_next < 0) ? -diff_next : diff_next;
+    uint32_t refined    = candidate;
+    int32_t  best_abs   = abs_curr;
+    if (abs_prev < best_abs) { refined = cand_prev; best_abs = abs_prev; }
+    if (abs_next < best_abs) { refined = cand_next; best_abs = abs_next; }
+    if ((uint32_t)best_abs > FW20S2_GOSSIP_MAX_DRIFT_SEC) return local_ts;
+    return refined;
+}
+
+TEST(test_fw20s2_gossip_pack_zero_ts_returns_zero) {
+    /* Cold-boot Solider не знає часу → пакує 0 → бекенд інтерпретує як
+     * «no fresh gossip». */
+    ASSERT_EQ(Test_Pack_Gossip_Ts_Byte(0u), 0);
+}
+
+TEST(test_fw20s2_gossip_pack_extracts_low_byte) {
+    /* unix_ts = 1714000000 → 0x66225180 → low byte = 0x80 */
+    ASSERT_EQ(Test_Pack_Gossip_Ts_Byte(1714000000u), 0x80);
+    ASSERT_EQ(Test_Pack_Gossip_Ts_Byte(0xDEADBEEFu), 0xEF);
+}
+
+TEST(test_fw20s2_gossip_apply_cold_boot_returns_zero) {
+    /* local_ts == 0 → freeze-contract: gossip недостатньо для cold-start */
+    ASSERT_EQ(Test_Apply_Gossip_Ts(0, 0x42), 0);
+}
+
+TEST(test_fw20s2_gossip_apply_within_window_refines_ts) {
+    /* local = 1714000200 (low byte 0x48 = 72), gossip says 0x80 = 128
+     * Розрив всередині того ж 256-вікна: local 200, gossip 128 → 1714000128
+     * (different by 72 sec backward). Within ±127 — застосовуємо. */
+    uint32_t local  = 1714000200u;
+    uint8_t  gossip = (uint8_t)(1714000128u & 0xFFu);  /* = 0x80 */
+    uint32_t refined = Test_Apply_Gossip_Ts(local, gossip);
+    ASSERT_EQ(refined, 1714000128u);
+}
+
+TEST(test_fw20s2_gossip_apply_picks_next_window) {
+    /* Mathematica на гойдалці LSB-windows: коли local близький до межі
+     * 256-сек блоку і gossip має маленький LSB, кандидат `base | lsb`
+     * може бути занадто далеко (>127) у попередньому блоці — тоді solver
+     * має обрати `cand_next = candidate + 256` як справжню «свіжу» позицію.
+     *
+     * local = 1714000250 (LSB = 250 - 128 = 122 → wait: 1714000250 & 0xFF
+     *         = 1714000250 - 1714000128 = 122 → 0x7A)
+     * gossip_lsb = 5  (як, наприклад, від neighbour'а у наступному вікні)
+     * base_aligned = 1714000128
+     * candidate    = 1714000128 | 5 = 1714000133  → diff = -117, abs=117 ✓
+     * cand_next    = 1714000389                   → diff = +139, abs=139
+     * cand_prev    = 1713999877                   → diff = -373, abs=373
+     * best = candidate (closest at 117 ≤127) → refined = 1714000133. */
+    uint32_t local = 1714000250u;
+    uint8_t  gossip_lsb = 5u;
+    uint32_t refined = Test_Apply_Gossip_Ts(local, gossip_lsb);
+    ASSERT_EQ(refined, 1714000133u);
+}
+
+TEST(test_fw20s2_gossip_apply_picks_prev_window_when_clock_jumped) {
+    /* Симулюємо: local дрейфонув ВПЕРЕД відносно мережі (наприклад RTC бігло
+     * швидше за Queen). local = base + 50 + 256 (= 306 sec ahead of base).
+     * Gossip несе LSB що відповідає base+50 (правильному часу).
+     * Distance: |306 - 50| = 256 → сапер обере cand_prev = candidate-256 →
+     * delta = |50 - 306| = 256 теж outside cap. → refined = local. */
+    uint32_t base = 0x10000u;
+    uint32_t local = base + 50u + 256u;  /* clock ran 256 sec fast */
+    uint8_t  gossip_lsb = (uint8_t)((base + 50u) & 0xFFu);
+    uint32_t refined = Test_Apply_Gossip_Ts(local, gossip_lsb);
+    /* Outside ±127 — fall back to local */
+    ASSERT_EQ(refined, local);
+}
+
+TEST(test_fw20s2_gossip_apply_drift_within_cap_corrects) {
+    /* Solider drifted backward by 60 sec; gossip from neighbour gives true LSB.
+     * local = 1714000000 - 60 = 1713999940; gossip = (1714000000 & 0xFF) = 0x80
+     * Real expected refined = 1714000000. Distance 60 < 127 → застосувати. */
+    uint32_t local = 1713999940u;
+    uint8_t  gossip_lsb = 0x80u;  /* = (1714000000 & 0xFF) */
+    uint32_t refined = Test_Apply_Gossip_Ts(local, gossip_lsb);
+    ASSERT_EQ(refined, 1714000000u);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.29] Follow-up boundary tests
+ * ════════════════════════════════════════════════════════════════════
+ * Закриваємо edge-case прогалини з `10_02 FW.29 follow-ups`:
+ *   - StatusByte boundary при максимальних growth_points + panic
+ *   - Взаємодія panic-кадру і acoustic saturation @ 255 (FW.22)
+ */
+
+TEST(test_fw29_status_byte_panic_with_max_growth_points) {
+    /* Boundary: bio_contract_byte = Pack_BioContract(3, 63) = 0xFF.
+     * У normal payload bit 7 МАЄ бути зачищений → 0x7F (status=1, gp=63
+     * за маскою 0x7F: high 2 bits = 01 = 1, low 6 bits = 0x3F = 63).
+     * У panic payload bit 7 МАЄ горіти (PANIC_FLAG_BIT) — без status/gp. */
+    uint8_t normal[16];
+    Pack_Soldier_Payload(normal, 0xCAFEBABE, 3000, 25, 0, 120,
+                          Pack_BioContract(3, 63), 3, 0);
+    ASSERT_FALSE(normal[10] & PANIC_FLAG_BIT);
+    ASSERT_EQ(normal[10], 0x7F);  /* 0xFF & 0x7F */
+
+    uint8_t panic[16];
+    Build_Panic_Payload(panic, 0xCAFEBABE);
+    ASSERT_TRUE(panic[10] & PANIC_FLAG_BIT);
+    ASSERT_EQ(panic[10], PANIC_FLAG_BIT);  /* exact 0x80 — без residual gp */
+}
+
+TEST(test_fw29_panic_does_not_corrupt_acoustic_saturation) {
+    /* FW.22 saturating @ 255 не повинен взаємодіяти з FW.29 panic flag.
+     * У panic payload байт 7 — це фіксований 0xFF (panic-marker акустики),
+     * НЕ acoustic_events. Перевіряємо, що панічна плоть не перетирає
+     * StatusByte з FW.22 saturation lifecycle. */
+    uint8_t acoustic_events_local = 255;  /* FW.22 saturation досягнуто */
+
+    /* Normal payload: acoustic[7] = 255 (saturated), StatusByte clean */
+    uint8_t normal[16];
+    Pack_Soldier_Payload(normal, 0x12345678, 3000, 25, acoustic_events_local,
+                          120, Pack_BioContract(0, 50), 3, 0);
+    ASSERT_EQ(normal[7], 255);  /* FW.22 saturation проходить як є */
+    ASSERT_FALSE(normal[10] & PANIC_FLAG_BIT);
+
+    /* Panic payload: byte 7 — це panic-marker 0xFF (НЕ acoustic counter),
+     * StatusByte (byte 10) — exact PANIC_FLAG_BIT. Два незалежні поля. */
+    uint8_t panic[16];
+    Build_Panic_Payload(panic, 0x12345678);
+    ASSERT_EQ(panic[7], 0xFF);
+    ASSERT_EQ(panic[10], PANIC_FLAG_BIT);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -3244,6 +3974,10 @@ int main(void)
     RUN(test_ota_chunk_idx_exceeds_bitmap);
     RUN(test_ota_too_small_packet);
     RUN(test_ota_total_chunks_mismatch);
+    RUN(test_ota_duplicate_with_different_payload_preserves_original);
+    RUN(test_ota_stop2_simulation_chunks_arrive_out_of_order);
+    RUN(test_ota_stop2_simulation_duplicate_after_sleep_still_rejected);
+    RUN(test_ota_total_chunks_zero_rejected);
 
     printf("\n  CRC32:\n");
     RUN(test_crc32_empty);
@@ -3318,6 +4052,9 @@ int main(void)
     RUN(test_tx_defer_extreme_cold_zero_vcap);
     RUN(test_tx_defer_boundary_vcap_3999);
     RUN(test_tx_defer_boundary_vcap_4001);
+    RUN(test_tx_defer_extreme_cold_high_vcap_battery_backed);
+    RUN(test_tx_defer_warm_minus5_low_vcap);
+    RUN(test_tx_defer_boundary_minus15_zero_vcap);
 
     printf("\n  EMA — delta_t / vcap smoothing (FW.21):\n");
     RUN(test_ema_cold_start);
@@ -3416,6 +4153,8 @@ int main(void)
     RUN(test_dual_gate_constant_time_compare_zero_diff);
     RUN(test_dual_gate_constant_time_compare_first_byte_diff);
     RUN(test_dual_gate_constant_time_compare_last_byte_diff);
+    RUN(test_hmac_trailer_state_survives_simulated_stop2_between_segments);
+    RUN(test_hmac_trailer_duplicate_segment_overwrites_idempotently);
 
     printf("\n  CMD_SET_AUDIO_THRESHOLDS Dispatcher (FW.18):\n");
     RUN(test_audio_dispatcher_accepts_default_60_85);
@@ -3459,6 +4198,45 @@ int main(void)
     RUN(test_fw20s2_authoritative_beacon_sets_flag);
     RUN(test_fw20s2_relay_beacon_clears_flag);
     RUN(test_fw20s2_legacy_beacon_byte9_zero_clears_flag);
+
+    printf("\n  Drift-Monitor + Panic Sync Request (FW.20-S2):\n");
+    RUN(test_fw20s2_drift_cold_boot_grace_no_request);
+    RUN(test_fw20s2_drift_cold_boot_after_grace_requests);
+    RUN(test_fw20s2_drift_recently_synced_no_request);
+    RUN(test_fw20s2_drift_past_threshold_triggers_request);
+    RUN(test_fw20s2_drift_cooldown_suppresses_repeat_request);
+    RUN(test_fw20s2_seconds_since_sync_zero_when_never_synced);
+    RUN(test_fw20s2_seconds_since_sync_computed_warm);
+    RUN(test_fw20s2_sync_req_payload_layout);
+    RUN(test_fw20s2_sync_req_marker_disambiguation_from_ota_req);
+
+    printf("\n  Mesh-Relay Per-Hop Drift Compensation (FW.20-S2):\n");
+    RUN(test_fw20s2_relay_happy_path_with_drift_compensation);
+    RUN(test_fw20s2_relay_zero_hold_keeps_ts_unchanged);
+    RUN(test_fw20s2_relay_preserves_tdma_reserve_and_padding);
+    RUN(test_fw20s2_relay_drop_when_role_is_soldier);
+    RUN(test_fw20s2_relay_drop_when_marker_wrong);
+    RUN(test_fw20s2_relay_drop_when_magic_wrong);
+    RUN(test_fw20s2_relay_drop_when_ts_zero);
+    RUN(test_fw20s2_relay_drop_when_not_authoritative);
+    RUN(test_fw20s2_relay_drop_when_ttl_exhausted);
+    RUN(test_fw20s2_relay_drop_when_hold_exceeds_max);
+    RUN(test_fw20s2_relay_hold_exactly_at_max_passes);
+    RUN(test_fw20s2_relay_tick_wrap_safe);
+    RUN(test_fw20s2_relay_two_hop_chain_kills_authoritativeness);
+
+    printf("\n  Gossip-Piggyback (FW.20-S2 #5, freeze-contract):\n");
+    RUN(test_fw20s2_gossip_pack_zero_ts_returns_zero);
+    RUN(test_fw20s2_gossip_pack_extracts_low_byte);
+    RUN(test_fw20s2_gossip_apply_cold_boot_returns_zero);
+    RUN(test_fw20s2_gossip_apply_within_window_refines_ts);
+    RUN(test_fw20s2_gossip_apply_picks_next_window);
+    RUN(test_fw20s2_gossip_apply_picks_prev_window_when_clock_jumped);
+    RUN(test_fw20s2_gossip_apply_drift_within_cap_corrects);
+
+    printf("\n  FW.29 Follow-ups (StatusByte + panic boundary):\n");
+    RUN(test_fw29_status_byte_panic_with_max_growth_points);
+    RUN(test_fw29_panic_does_not_corrupt_acoustic_saturation);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

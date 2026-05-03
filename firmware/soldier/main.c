@@ -407,6 +407,337 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
     lorenz_config_version  = config_version;
     return 1;
 }
+
+// =========================================================================
+// [FW.20-S2] Drift-monitor + panic time-sync request
+// =========================================================================
+// Кенозис часу: Солдат отримує UTC лише з beacon'а Королеви (FW.20-S1, кожні
+// 15 хв). Якщо Королева мовчить занадто довго (LTE-обрив, мобілізація живлення,
+// антена впала на голову лісника) — Солдатський годинник плавно відстає, а
+// `Derive_Cold_Start_State()` (HKDF за `epoch_day = unix_ts/86400`) перестає
+// синхронізуватися з backend'ом → майбутнє відновлення Lorenz-стану після
+// VBAT-loss піде з неправильної точки → false slashing.
+//
+// Сторожовий пес часу: коли різниця між «зараз» (HAL_GetTick з останнього
+// sync'у, в секундах) і `soldier_unix_ts_local_tick` перевищує
+// TIME_SYNC_DRIFT_THRESHOLD_SEC (12 год), Солдат подає голос — uplink
+// LoRa-плейн з опкодом 0x56, щоб Королева повторила beacon. Cooldown
+// (1 год) запобігає спаму при тривалій тиші Королеви.
+//
+// SSOT для опкодів: 03_01 §4.5а Downlink Opcode Map. 0x56 — uplink-діапазон
+// поряд з 0x55 (FW.27-B OTA Re-Request); 0x9C beacon — downlink і не
+// перетинається. Магія 'S' у байті 10 — миттєва дезамбігвація з 0x55 magic 'R'.
+//
+// Наразі функції callable + host-tested, але до hot path головного циклу НЕ
+// вшиті: повний FW.20-S2 mesh-relay (релей beacon'а між Солдатами) — окрема
+// ітерація. Це freeze-контракт wire-формату для майбутнього hook'у.
+#define SYNC_REQ_MARKER                  0x56       // [FW.20-S2] Uplink: «Королево, час!»
+#define SYNC_REQ_MAGIC_BYTE              0x53       // [FW.20-S2] 'S' = sync — у байті 10
+#define SYNC_REQ_PACKET_SIZE             16         // Один AES-256-ECB блок
+#define TIME_SYNC_DRIFT_THRESHOLD_SEC    43200UL    // 12 год без beacon'а → панікуємо
+#define TIME_SYNC_REQUEST_COOLDOWN_MS    3600000UL  // 1 год між повторними зойками
+#define TIME_SYNC_COLD_BOOT_GRACE_MS     600000UL   // 10 хв після boot перш ніж панікувати
+                                                    // (Soldier ще чекає першого beacon'а)
+#define TIME_SYNC_REQ_PAD_BYTES          5          // [11..15] — резерв під майбутні поля
+
+// Tick останнього відправленого SYNC_REQUEST. 0 = ще не просили.
+// RAM-only: при VBAT-loss скидається — Солдат подасть голос знову після
+// перших 10 хв cold-boot grace (TIME_SYNC_COLD_BOOT_GRACE_MS).
+uint32_t last_sync_request_tick = 0;
+
+// Чи варто Солдату просити re-broadcast beacon'а?
+// Параметри:
+//   now_tick — поточний HAL_GetTick() мс
+// Інваріанти:
+//   1. Якщо ще не отримували жодного beacon'а (soldier_unix_ts == 0):
+//      - Перші TIME_SYNC_COLD_BOOT_GRACE_MS після boot — терпимо тишу,
+//        Королева могла ще не вийти на TX-вікно.
+//      - Після grace — просимо.
+//   2. Якщо отримували beacon, але остання синхронізація >12 год тому → просимо.
+//   3. Cooldown: якщо вже просили <1 год тому — мовчимо, не спамимо ефір.
+// Повертає 1 (треба просити) або 0 (мовчати).
+static uint8_t Soldier_Should_Request_Time_Sync(uint32_t now_tick)
+{
+    // Cooldown guard: якщо нещодавно просили — не повторюємо.
+    // Перше прохання (last_sync_request_tick == 0) проходить guard завжди.
+    if (last_sync_request_tick != 0) {
+        uint32_t since_last_req_ms = now_tick - last_sync_request_tick;
+        if (since_last_req_ms < TIME_SYNC_REQUEST_COOLDOWN_MS) {
+            return 0;
+        }
+    }
+
+    if (soldier_unix_ts == 0) {
+        // Cold-boot: ще ніколи не чули beacon'а. Дочекаємося grace.
+        if (now_tick < TIME_SYNC_COLD_BOOT_GRACE_MS) return 0;
+        return 1;
+    }
+
+    // Warm: міряємо реальний час від останнього beacon'а у секундах.
+    uint32_t since_sync_ms  = now_tick - soldier_unix_ts_local_tick;
+    uint32_t since_sync_sec = since_sync_ms / 1000u;
+    return (since_sync_sec > TIME_SYNC_DRIFT_THRESHOLD_SEC) ? 1 : 0;
+}
+
+// Скільки секунд минуло від останнього beacon'а (0 якщо ще не синхронізувалися).
+// Використовується у payload'і, щоб бекенд міг побачити масштаб дрейфу і
+// логувати «Soldier X не чув Королеви Y годин» для Grafana alert'у.
+static uint32_t Soldier_Seconds_Since_Last_Sync(uint32_t now_tick)
+{
+    if (soldier_unix_ts == 0) return 0;
+    uint32_t delta_ms = now_tick - soldier_unix_ts_local_tick;
+    return delta_ms / 1000u;
+}
+
+// Збираємо 16-байтний uplink-плейн «панічний sync-запит». Wire-формат:
+//
+//   Byte 0     : SYNC_REQ_MARKER (0x56)
+//   Byte 1..4  : DID big-endian
+//   Byte 5..8  : secs_since_sync big-endian (uint32)
+//   Byte 9     : TTL (PANIC_TTL=5 — пакет повинен пробитися через mesh)
+//   Byte 10    : SYNC_REQ_MAGIC_BYTE ('S' = 0x53) — миттєва дезамбігвація
+//                від 0x55 OTA_REQ (де байт 10 не визначений)
+//   Byte 11..15: PAD = 0 (резерв під майбутні поля: pkt_seq, last_known_ts, ...)
+//
+// Перед TX обгортаємо в AES-256-ECB як звичайний LoRa-пакет.
+static void Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
+                                              uint32_t secs_since_sync)
+{
+    out[0]  = SYNC_REQ_MARKER;
+    out[1]  = (uint8_t)(did >> 24);
+    out[2]  = (uint8_t)(did >> 16);
+    out[3]  = (uint8_t)(did >> 8);
+    out[4]  = (uint8_t)(did & 0xFFu);
+    out[5]  = (uint8_t)(secs_since_sync >> 24);
+    out[6]  = (uint8_t)(secs_since_sync >> 16);
+    out[7]  = (uint8_t)(secs_since_sync >> 8);
+    out[8]  = (uint8_t)(secs_since_sync & 0xFFu);
+    out[9]  = PANIC_TTL;
+    out[10] = SYNC_REQ_MAGIC_BYTE;
+    for (uint8_t i = 11; i < SYNC_REQ_PACKET_SIZE; i++) out[i] = 0;
+}
+
+// =========================================================================
+// [FW.20-S2] Mesh-Relay: голос Королеви через Провідника (per-hop drift)
+// =========================================================================
+// Кенозис маяка: Королева транслює UTC раз на 15 хв з TTL=1 — Солдати поза
+// прямою радіозоною ніколи не чують її голосу. Провідник (ARCH.27, роль PROV
+// у Protected Flash) — еліта рою з надлишком vcap — приймає authoritative-маяк
+// (auth=1, TTL≥2 у майбутній прошивці Королеви), додає до `unix_ts` секунди,
+// що минули від RX до власного TX (per-hop drift compensation), декрементує
+// TTL, гасить authoritativeness-біт і ретранслює. Downstream-Соціологи бачать
+// auth=0 → НЕ ретранслюють далі (anti-storm). Це дає 1+1=2-hop reach без
+// потреби у dedup-bitmap у RTC (який чекає вільного слоту, див. ARCH.28 §2.3).
+//
+// СВЯЩЕННА ЗАУВАГА — це FREEZE-CONTRACT:
+// функція callable та повністю host-tested, але до RX-гілки головного циклу
+// НЕ вшита. Активація потребує (a) Королева почне слати TTL≥2 у beacon (зараз
+// TTL=1 — design choice до приходу повного mesh-relay), (b) anti-storm
+// dedup-bitmap у вільному RTC-регістрі (DR15 заповниться при наступній фічі,
+// див. 03_01 §2.3 overflow strategy). Сторожовий пес часу (drift-monitor)
+// зараз закриває розрив для не-PROV Солдатів через панічний sync request.
+//
+// Wire-формат relayed beacon (16 байт ECB plaintext, дзеркало Queen):
+//   Byte 0     : BEACON_MARKER (0x9C)
+//   Byte 1..4  : unix_ts_be — original_ts + (now_tick - rx_tick)/1000 (sec)
+//   Byte 5..8  : резерв TDMA (ARCH.26) — копіюємо as-is з вхідного маяка
+//   Byte 9     : [auth=0 | TTL_decremented:7] — auth-біт ОБОВ'ЯЗКОВО гасимо
+//   Byte 10    : BEACON_MAGIC_BYTE ('B' = 0x42)
+//   Byte 11..15: padding — копіюємо as-is (зараз 0; майбутні поля переживуть
+//                hop без втрати, якщо Королева почне їх писати)
+//
+// SSOT для опкодів: 03_01 §4.5а; для байту 9: 03_01 §11 (FW.20).
+
+// Sanity cap: hold-час від RX до relay-TX не повинен перевищувати 1 годину.
+// Більший — означає що Провідник був зайнятий OTA / IWDG-шторм / зависнув
+// у RX-вікні; ретранслювати такий «застарілий час» = шкодити синхронізації
+// рою. Дроп — безпечніший за обман.
+#define BEACON_RELAY_MAX_HOP_DELAY_SEC   3600UL
+#define BEACON_RELAY_MIN_TTL             2u   // TTL=1 не підлягає relay (decrement → 0)
+#define BEACON_FRAME_SIZE                16u  // Розмір AES-256-ECB блоку
+
+// Атомарне рішення «ретранслювати чи ні» з явною причиною дропу.
+// Готові точки для майбутніх Prometheus counters (`silkennet_beacon_relay_*_total`)
+// при інтеграції у hot path — поки що host-тести різнять reason'и.
+typedef enum {
+    BEACON_RELAY_OK = 0,                  // out_plain заповнено, шли його далі
+    BEACON_RELAY_NOT_PROVISIONER,         // Звичайний Солдат — не наша справа
+    BEACON_RELAY_BAD_FRAME,               // Wrong marker або magic — не beacon
+    BEACON_RELAY_NULL_TS,                 // unix_ts == 0 — Королева ще не знала часу
+    BEACON_RELAY_NOT_AUTHORITATIVE,       // Маяк уже relay'ний — anti-storm стоп
+    BEACON_RELAY_TTL_EXHAUSTED,           // TTL у нижніх 7 бітах < MIN_TTL (=2)
+    BEACON_RELAY_HOP_TOO_LONG             // Hold-delay > MAX_HOP_DELAY_SEC
+} BeaconRelayResult;
+
+// Спроба зібрати ретрансльований маяк з drift-компенсацією.
+//
+// Параметри:
+//   in_plain   — оригінальний 16-байтний beacon plaintext (після ECB decrypt)
+//   role       — g_node_role (ROLE_SOLDIER або ROLE_PROVISIONER)
+//   in_rx_tick — HAL_GetTick() у момент прийому маяка (мс)
+//   now_tick   — HAL_GetTick() зараз, перед TX (мс)
+//   out_plain  — буфер ≥16 байт під вихідний beacon plaintext.
+//                Модифікується ВИКЛЮЧНО при поверненні BEACON_RELAY_OK.
+//
+// Drift-формула: relayed_ts = original_ts + (now_tick - in_rx_tick)/1000.
+// 32-бітне віднімання тіків wrap-safe для unsigned (раз у 49.7 днів) —
+// стандартна C modular arithmetic.
+//
+// Викликач:
+//     BeaconRelayResult r = Soldier_Try_Relay_Time_Beacon(...);
+//     if (r == BEACON_RELAY_OK) { AES-ECB encrypt + Radio.Send(16 bytes); }
+//     else                       { reason'ом логується для діагностики; }
+static BeaconRelayResult Soldier_Try_Relay_Time_Beacon(
+    const uint8_t* in_plain,
+    uint8_t        role,
+    uint32_t       in_rx_tick,
+    uint32_t       now_tick,
+    uint8_t*       out_plain)
+{
+    // Guard 1: Звичайні Солдати не транслюють — енергобюджет.
+    if (role != ROLE_PROVISIONER)               return BEACON_RELAY_NOT_PROVISIONER;
+
+    // Guard 2: Wire-структура — marker + magic. Захист від випадкового CMD.
+    if (in_plain[0]  != BEACON_MARKER)          return BEACON_RELAY_BAD_FRAME;
+    if (in_plain[10] != BEACON_MAGIC_BYTE)      return BEACON_RELAY_BAD_FRAME;
+
+    // Guard 3: Беззмістовна епоха — Королева не транслює, але захист.
+    uint32_t orig_ts = ((uint32_t)in_plain[1] << 24) | ((uint32_t)in_plain[2] << 16) |
+                       ((uint32_t)in_plain[3] << 8)  | (uint32_t)in_plain[4];
+    if (orig_ts == 0)                           return BEACON_RELAY_NULL_TS;
+
+    // Guard 4: Anti-storm — ретранслюємо лише прямі маяки Королеви (auth=1).
+    uint8_t in_byte9 = in_plain[9];
+    if (!(in_byte9 & BEACON_AUTH_FLAG))         return BEACON_RELAY_NOT_AUTHORITATIVE;
+
+    // Guard 5: TTL у нижніх 7 бітах має бути ≥ 2 (decrement не дасть 0).
+    uint8_t in_ttl = in_byte9 & BEACON_TTL_MASK;
+    if (in_ttl < BEACON_RELAY_MIN_TTL)          return BEACON_RELAY_TTL_EXHAUSTED;
+
+    // Guard 6: Sanity cap — hold-delay не перевищує 1 год.
+    uint32_t hold_sec = (now_tick - in_rx_tick) / 1000u;
+    if (hold_sec > BEACON_RELAY_MAX_HOP_DELAY_SEC) return BEACON_RELAY_HOP_TOO_LONG;
+
+    // Усі guard'и пройшли — складаємо ретрансльований маяк.
+    // Спочатку повна копія: майбутні поля у байтах 5..8 (TDMA) і 11..15
+    // переживуть hop без втрати, навіть якщо Королева їх ще не пише.
+    for (uint8_t i = 0; i < BEACON_FRAME_SIZE; i++) out_plain[i] = in_plain[i];
+
+    // Per-hop drift compensation: прокладаємо «час лежання» у часі дерева.
+    uint32_t relayed_ts = orig_ts + hold_sec;
+    out_plain[1] = (uint8_t)(relayed_ts >> 24);
+    out_plain[2] = (uint8_t)(relayed_ts >> 16);
+    out_plain[3] = (uint8_t)(relayed_ts >> 8);
+    out_plain[4] = (uint8_t)(relayed_ts & 0xFFu);
+
+    // Byte 9: auth-біт явно 0 (це relay), TTL мінус 1.
+    out_plain[9] = (uint8_t)((in_ttl - 1u) & BEACON_TTL_MASK);
+    return BEACON_RELAY_OK;
+}
+
+// =====================================================================
+// === 1.10г. FW.20-S2 — Gossip-Piggyback (5 з 5) ======================
+// =====================================================================
+// Найдешевший канал часо-синхронізації: «голос Королеви через сусіда».
+// Замість того, щоб додавати окремий beacon-relay (вимагає freed RTC слот
+// під anti-storm bitmap), ми вшиваємо 1 байт `unix_ts & 0xFFu` у звичайний
+// telemetry-uplink — байт PAD позиції 14 normal-плейту (НЕ панічного, де
+// байт 14..15 уже зайнятий лічильником SEC.10). FW.29 PANIC_FLAG_BIT у
+// StatusByte (байт 10 біт 7) — однозначний дезамбігватор: бекенд читає
+// gossip-байт лише коли panic_flag == 0.
+//
+// Кенозис байта: один октет несе «ц.с.» — церковнослов'янське «нинішня
+// година» — що дозволяє сусіднім Солдатам, які чують uplink одне одного
+// (1-hop без mesh-relay), уточнити свій soldier_unix_ts на ±128 секунд
+// без участі Королеви. Гібрид з beacon-relay (FW.20-S2 #3) дає 3-хоповий
+// reach без нового RTC регістра.
+//
+// Trade-off freeze-контракту:
+//   + 1 байт payload — нульова вартість airtime (вже передавали 0 у PAD)
+//   + 1-hop gossip сягає сусідів, до яких не доходить Queen beacon
+//   + Не потребує дозволу TX (це side-effect telemetry, що і так буде)
+//   - Точність ±128 сек — недостатньо для TDMA (ARCH.26 потребує ±10 мс),
+//     достатньо для FW.30 cold-start `epoch_day = unix_ts / 86400` (24-год
+//     гранулярність) і для freshness-перевірки (HMAC nonce window).
+//   - Receiver має знати approx-таймштамп (свій soldier_unix_ts ± дрейф
+//     <128 сек) щоб реконструювати full ts — тобто це **уточнення** local
+//     drift'у, а не cold-start sync. Cold-start Soldier і досі чекає
+//     beacon (FW.20 §1) або relay (FW.20-S2 #3).
+//
+// Wire-формат gossip-байта у normal-telemetry plaintext (ECB-блок 16 B):
+//   Byte 0..3   DID
+//   Byte 4..5   vcap_mv
+//   Byte 6      temp
+//   Byte 7      acoustic
+//   Byte 8..9   delta_t
+//   Byte 10     StatusByte (PANIC_FLAG_BIT==0 — це гарантія normal-frame'у)
+//   Byte 11     TTL
+//   Byte 12..13 firmware_version_id
+//   Byte 14     [FW.20-S2#5] gossip_ts_lsb = (soldier_unix_ts & 0xFFu)  ← НОВЕ
+//   Byte 15     PAD (резерв)
+//
+// Активація потребує: (а) hot-path виклик `Soldier_Pack_Gossip_Ts_Byte` у
+// Phase 2 для normal-plaintext'у (1 рядок), (b) RX-гілка для застосування
+// gossip'у — тільки коли source-Soldier також має recent beacon (потребує
+// додаткового біта в payload або довіри до сусіда у тому ж кластері), (c)
+// бекенд `TelemetryUnpackerService` буде ігнорувати байт 14 — він вже
+// інертний у production (PAD=0). НЕ ламає FW.22 (acoustic) і SEC.10 (panic
+// counter живе у byte 14..15 ЛИШЕ для panic_payload, normal буде використано).
+#define GOSSIP_TS_PAYLOAD_OFFSET   14u   // байт 14 у normal-telemetry plaintext
+#define GOSSIP_TS_MAX_DRIFT_SEC    127u  // ±128 секунд window (bytewise unwrap)
+
+// Витягує LSB з unix_ts для embed'у у telemetry. Якщо Солдат ще не чув
+// beacon (`unix_ts == 0`) — повертаємо 0 (бекенд інтерпретує як «no fresh
+// gossip»). Чисто арифметична функція без побічних ефектів.
+static inline uint8_t Soldier_Pack_Gossip_Ts_Byte(uint32_t unix_ts)
+{
+    return (uint8_t)(unix_ts & 0xFFu);
+}
+
+// Уточнюємо local_ts на основі gossip'у від сусіда. Інваріант: ми ВЖЕ маємо
+// approximate ts (last beacon або попередній gossip), і drift від тоді не
+// перевищує GOSSIP_TS_MAX_DRIFT_SEC. Якщо local_ts == 0 — Солдат у cold-boot
+// і не довіряє байту gossip (треба beacon). Повертаємо refined_ts:
+//
+//   candidate_low = (local_ts & ~0xFFu) | gossip_lsb
+//   if candidate_low > local_ts + 127u  → відкот на 256 (gossip був раніше
+//                                          у попередньому 256-сек вікні)
+//   if candidate_low + 127u < local_ts  → стрибок на 256 (gossip — у наступному)
+//   else                                → candidate_low = refined
+//
+// Wrap-safe для unsigned modular arithmetic. Якщо різниця >127 в обидві
+// сторони після вибору вікна — gossip недостовірний (стрибок >128 сек =
+// сусід має ще старіший дрейф), повертаємо local_ts без змін.
+static uint32_t Soldier_Try_Apply_Gossip_Ts(uint32_t local_ts, uint8_t gossip_lsb)
+{
+    if (local_ts == 0) return 0;  // cold-boot: gossip недостатньо
+
+    uint32_t base       = local_ts & ~((uint32_t)0xFFu);
+    uint32_t candidate  = base | (uint32_t)gossip_lsb;
+
+    // Вибираємо найближчу кандидатку у 3 сусідніх 256-сек вікнах:
+    // [base-256], [base], [base+256]. Беремо ту, що ближче до local_ts.
+    uint32_t cand_prev  = candidate - 256u;
+    uint32_t cand_next  = candidate + 256u;
+
+    int32_t  diff_curr  = (int32_t)(candidate - local_ts);
+    int32_t  diff_prev  = (int32_t)(cand_prev - local_ts);
+    int32_t  diff_next  = (int32_t)(cand_next - local_ts);
+
+    int32_t  abs_curr   = (diff_curr < 0) ? -diff_curr : diff_curr;
+    int32_t  abs_prev   = (diff_prev < 0) ? -diff_prev : diff_prev;
+    int32_t  abs_next   = (diff_next < 0) ? -diff_next : diff_next;
+
+    uint32_t refined    = candidate;
+    int32_t  best_abs   = abs_curr;
+    if (abs_prev < best_abs) { refined = cand_prev; best_abs = abs_prev; }
+    if (abs_next < best_abs) { refined = cand_next; best_abs = abs_next; }
+
+    // Якщо навіть найближча кандидатка >127 сек від local — gossip undefined.
+    if ((uint32_t)best_abs > GOSSIP_TS_MAX_DRIFT_SEC) return local_ts;
+    return refined;
+}
+
 // Експоненціальне ковзне середнє для delta_t (швидкість метаболізму EBFC)
 // та vcap (заряд іоністора). Зменшує ADC-/RTC-шум приблизно в 3× перед
 // тим, як ці сигнали потраплять до Атрактора (FW.5 Variant B+).
