@@ -348,17 +348,19 @@ if (current_ota_chunk_idx >= total_chunks) {
 ```c
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
-    (void)snr;
+    // [E.8] SNR більше не відкидається — він плюметься у ринг і використовується
+    //       як tiebreaker у CIFO eviction (Process_And_Cache_Data).
     if (size != 16) return;  // Очікуємо рівно 16 байт (повний AES block)
 
     // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128
     if (rssi < -128) rssi = -128;
     if (rssi > 127)  rssi = 127;
 
-    // [FW.3] Кладемо голос у FIFO ring buffer (16 слотів) — main loop
-    // дренує його після завершення CoAP-flush'у. Якщо ринг переповнений,
-    // інкрементується lora_rx_drops, але існуючі голоси недоторкані.
-    LoRa_Rx_Ring_Push(payload, (int8_t)rssi);
+    // [FW.3 + E.8] Кладемо голос (payload + rssi + snr) у FIFO ring buffer
+    // (16 слотів) — main loop дренує його після завершення CoAP-flush'у.
+    // Якщо ринг переповнений, інкрементується lora_rx_drops, але існуючі
+    // голоси недоторкані.
+    LoRa_Rx_Ring_Push(payload, (int8_t)rssi, snr);
 }
 ```
 
@@ -369,13 +371,13 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 | Розмір пакета | 16 байт | Повний AES-256 блок |
 | Таймаут RX | `LORA_RX_INFINITE = 0xFFFFFF` | Нескінченне очікування |
 | UART baud | 115200 | SIM7070G модем |
-| `snr` параметр | **не використовується** | SNR від SX1262 ігнорується в `OnRxDone`. CIFO eviction базується лише на RSSI. SNR міг би покращити якість рішення евікції (RSSI+SNR = power + noise floor), але не реалізовано — потенційна точка покращення в наступному TRL. |
+| `snr` параметр | **використовується як CIFO tiebreaker (E.8)** | SX1262 SNR плюметься через ring buffer у `EdgeCache.snr`. У `Process_And_Cache_Data` він активується **лише** як tiebreaker: коли два non-critical (status=0) записи мають **однаковий** найгірший RSSI — той з нижчим SNR (шумніший канал → пакет імовірніше прийшов через інтерференцію та став stale) виганяється першим. RSSI залишається primary key, `bio_status` priority undisturbed. 7 host-тестів у `firmware/test/test_queen_logic.c` (`test_e8_*`). |
 
 **[FW.3] LoRa RX Ring Buffer (single-producer / single-consumer FIFO):**
 
 | Поле | Тип | Розмір | Призначення |
 |------|-----|--------|-------------|
-| `lora_rx_ring[16]` | `volatile LoRaRxSlot` | 16 × 17 = 272 B | FIFO слоти (16 байт payload + 1 байт rssi) |
+| `lora_rx_ring[16]` | `volatile LoRaRxSlot` | 16 × 18 = 288 B | FIFO слоти (16 байт payload + 1 байт rssi + 1 байт snr — [E.8]) |
 | `lora_rx_head` | `volatile uint8_t` | 1 B | Куди ISR кладе наступний пакет |
 | `lora_rx_tail` | `volatile uint8_t` | 1 B | Звідки main loop забирає |
 | `lora_rx_drops` | `volatile uint16_t` | 2 B | Лічильник переповнень (видимий для майбутнього gateway-health export) |
@@ -397,10 +399,11 @@ typedef struct {
     uint32_t uid;        // DID дерева (4 байти)
     uint8_t payload[16]; // Останні розшифровані дані
     int8_t  rssi;        // Сила сигналу (dBm)
+    int8_t  snr;         // [E.8] SNR (dB) — tiebreaker у CIFO eviction
     uint8_t is_active;   // 1 = слот зайнятий
 } EdgeCache;
 
-EdgeCache forest_cache[CACHE_MAX_ENTRIES]; // 50 × 22 байти = 1100 байт
+EdgeCache forest_cache[CACHE_MAX_ENTRIES]; // 50 × 23 байти = 1150 байт
 uint8_t cache_count = 0;
 ```
 
@@ -430,23 +433,27 @@ uint8_t cache_count = 0;
 ### Логіка евікції — псевдокод
 
 ```
-best_evict_idx = -1,  best_evict_rssi = 127 (найгірший кандидат серед некритичних)
-fallback_idx   =  0,  fallback_rssi   = 127 (найгірший серед усіх)
+best_evict_idx = -1,  best_evict_rssi = 127, best_evict_snr = 127  (найгірший кандидат серед некритичних)
+fallback_idx   =  0,  fallback_rssi   = 127, fallback_snr   = 127  (найгірший серед усіх)
 
 for i in 0..49:
   if NOT is_active[i]: continue  // [FIX: AUDIT] пропускаємо неактивні
 
-  if rssi[i] < fallback_rssi:
-    fallback_rssi = rssi[i]; fallback_idx = i
+  // [E.8] При рівному RSSI tiebreaker — нижчий SNR (шумніший канал → preferred to evict).
+  if rssi[i] < fallback_rssi  OR  (rssi[i] == fallback_rssi AND snr[i] < fallback_snr):
+    fallback_rssi = rssi[i]; fallback_snr = snr[i]; fallback_idx = i
 
-  if bio_status[i] == 0 AND rssi[i] < best_evict_rssi:
-    best_evict_rssi = rssi[i]; best_evict_idx = i
+  if bio_status[i] == 0 AND
+     (rssi[i] < best_evict_rssi  OR  (rssi[i] == best_evict_rssi AND snr[i] < best_evict_snr)):
+    best_evict_rssi = rssi[i]; best_evict_snr = snr[i]; best_evict_idx = i
 
 evict_idx = (best_evict_idx >= 0) ? best_evict_idx : fallback_idx
-// Перезаписуємо слот новим uid/payload/rssi (is_active вже = 1, cache_count не змінюється)
+// Перезаписуємо слот новим uid/payload/rssi/snr (is_active вже = 1, cache_count не змінюється)
 ```
 
 **Чому priority-aware важливо:** Без цього виправлення дерево на межі пожежі (найгірший RSSI = найслабший сигнал = найдальше від Queen) могло бути витіснено саме в момент критичного сигналу. Тепер такі записи захищені.
+
+**[E.8] SNR як tiebreaker:** RSSI вимірює потужність прийому (відстань / preposition), але два пакети можуть прийти з однаковим RSSI: один по чистому каналу, інший — крізь interference. SX1262 повертає і RSSI, і SNR (Signal-to-Noise Ratio). Раніше `(void)snr;` відкидав SNR. Тепер SNR plumb'иться повз ISR → ring buffer → `EdgeCache.snr` і використовується **виключно** як tiebreaker при рівному RSSI: нижчий SNR (шумніший канал → пакет імовірніше прийшов через колізію / multipath і вже стале) — preferred for eviction. RSSI залишається primary key, `bio_status` priority undisturbed. Покриття: 7 host-тестів `test_e8_*` у `firmware/test/test_queen_logic.c`.
 
 ### Тригери Flush
 

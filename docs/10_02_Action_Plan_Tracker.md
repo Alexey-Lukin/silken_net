@@ -927,7 +927,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.4 | Helium Network fallback — concept є, реалізації немає | `02_05` | Дизайн + реалізація |
 | E.5 | CoAP listener Ruby — масштабується до ~10k вузлів | `06_01` | Series D: Rust/Go proxy |
 | E.7 | dClimate mock mode — потрібна реальна інтеграція для Production | `05_01` | Пов'язано з S3.2 |
-| E.8 | SNR parameter unused у Queen CIFO eviction (лише RSSI) | `03_02`, `03_03` | Low priority optimization |
+| E.8 | ✅ SNR parameter wired into Queen CIFO eviction (tiebreaker) | `03_02`, `10_03` | Реалізовано (2026-05-03): `LoRaRxSlot.snr` + `EdgeCache.snr` + `OnRxDone` plumbing + tiebreaker logic у `Process_And_Cache_Data` (нижчий SNR при рівному RSSI = preferred to evict). 7 нових host-тестів: persisted, dedup updates SNR, tiebreaker triggers on equal RSSI, doesn't override worse RSSI, respects critical priority, fallback path tiebreaker, ring carries SNR ISR→consumer. 128 → 135 queen tests; всі test_soldier/test_bio_contract/test_tinyml/test_encryption/test_seed_derivation залишилися зеленими. RAM budget (.bss + .data) у межах 50 KB gate. |
 | E.9 | DMA SPI optimization — зменшення енергоспоживання (Vector 1 — Ярмілко) | `08_02` | R&D partnership |
 | E.10 | Kalman/EMA filtering для delta_t noise suppression (±8% → ±1.2%) | `08_02` | R&D partnership |
 | E.11 | CE/FCC/EMC/IP68 certification roadmap не розпочато | `08_02` | Потребує Косенюк (RF) |
@@ -954,7 +954,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.39 | **EBFC Gen 2.0:** FAD-GDH + Laccase/nanozymes + ZIF (20-25 років) | `01_03` §3 | ЧНУ lab testing |
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
 | DIFF.1 | `Wallet#lock_and_mint!` threshold = runtime param (не hardcoded) | `04_02` | Informational, no action |
-| DIFF.7 | SNR parameter unused in Queen CIFO eviction | `03_02` | Low priority optimization |
+| DIFF.7 | ✅ SNR parameter wired into Queen CIFO eviction as tiebreaker — див. E.8 | `03_02`, `10_03` | Реалізовано (2026-05-03) |
 | E.41 | **Fire events delayed 48h** via dClimate satellite obscuration — **⚠️ life-safety risk**. Mitigation: Forester Guild as Fallback Oracle (E.20) + immediate local broadcast via panic TX (не чекати satellite clearance при chainsaw detection). **Пріоритет: P1** (не відкладати на Post-TRL 6) | `04_02`, `05_01` | P1: interim emergency fallback |
 | E.42 | **TelemetryLog cleanup safety**: видалення записів з `oracle_status='dispatched'` ламає Chainlink callbacks. Cleanup job MUST exclude `dispatched` status — підтверджено в коді | `04_02` | ⚠️ Не видаляти dispatched records |
 | E.45 | **SCC/SFC contract addresses** = `0x0000...0` в subgraph.yaml — блокує deploy subgraph на testnet/mainnet | `05_03` | Пов'язано з S3.5 |

@@ -36,6 +36,7 @@ typedef struct {
     uint32_t uid;
     uint8_t  payload[16];
     int8_t   rssi;
+    int8_t   snr;          /* [E.8] SNR — CIFO eviction tiebreaker */
     uint8_t  is_active;
 } EdgeCache;
 
@@ -147,14 +148,16 @@ static uint8_t Cmd_Dedup_Check(uint32_t hash)
     return 0;
 }
 
-/* CIFO cache — with priority-aware eviction FIX (Risk 3) */
-static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
+/* CIFO cache — with priority-aware eviction FIX (Risk 3) and
+ * [E.8] SNR-aware tiebreaker for non-critical entries with equal RSSI. */
+static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, int8_t snr)
 {
     /* 1. DEDUP */
     for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
         if (forest_cache[i].is_active && forest_cache[i].uid == uid) {
             memcpy(forest_cache[i].payload, payload, 16);
             forest_cache[i].rssi = rssi;
+            forest_cache[i].snr  = snr;
             return;
         }
     }
@@ -166,6 +169,7 @@ static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
                 forest_cache[i].uid = uid;
                 memcpy(forest_cache[i].payload, payload, 16);
                 forest_cache[i].rssi = rssi;
+                forest_cache[i].snr  = snr;
                 forest_cache[i].is_active = 1;
                 cache_count++;
                 return;
@@ -176,25 +180,34 @@ static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
     /* 3. CIFO eviction — priority-aware:
      * Prefer evicting non-critical (bio_status == 0) with worst RSSI.
      * Fall back to absolute worst RSSI if ALL are critical.
+     * [E.8] When two candidates have EQUAL RSSI, lower SNR wins eviction
+     *       (noisier link → packet more likely stale/unreliable).
      * [FIX: AUDIT] Only consider is_active entries for eviction. */
     int best_evict_idx = -1;
     int8_t best_evict_rssi = 127;
+    int8_t best_evict_snr  = 127;
     int fallback_idx = 0;
     int8_t fallback_rssi = 127;
+    int8_t fallback_snr  = 127;
 
     for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
         if (!forest_cache[i].is_active) continue; /* [FIX] skip inactive */
 
         uint8_t bio_status = (forest_cache[i].payload[10] >> 6) & 0x03;
 
-        if (forest_cache[i].rssi < fallback_rssi) {
+        if (forest_cache[i].rssi < fallback_rssi ||
+            (forest_cache[i].rssi == fallback_rssi && forest_cache[i].snr < fallback_snr)) {
             fallback_rssi = forest_cache[i].rssi;
-            fallback_idx = i;
+            fallback_snr  = forest_cache[i].snr;
+            fallback_idx  = i;
         }
 
-        if (bio_status == 0 && forest_cache[i].rssi < best_evict_rssi) {
+        if (bio_status == 0 &&
+            (forest_cache[i].rssi < best_evict_rssi ||
+             (forest_cache[i].rssi == best_evict_rssi && forest_cache[i].snr < best_evict_snr))) {
             best_evict_rssi = forest_cache[i].rssi;
-            best_evict_idx = i;
+            best_evict_snr  = forest_cache[i].snr;
+            best_evict_idx  = i;
         }
     }
 
@@ -203,6 +216,7 @@ static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
     forest_cache[evict].uid = uid;
     memcpy(forest_cache[evict].payload, payload, 16);
     forest_cache[evict].rssi = rssi;
+    forest_cache[evict].snr  = snr;
 }
 
 /* Batch packing — matches Flush_Cache_To_Rails packing logic.
@@ -382,6 +396,7 @@ static void Build_Time_Beacon_Plaintext(uint32_t unix_ts, uint8_t out[16])
 typedef struct {
     uint8_t  payload[16];
     int8_t   rssi;
+    int8_t   snr;          /* [E.8] SX1262 SNR — CIFO eviction tiebreaker */
 } LoRaRxSlot;
 
 static volatile LoRaRxSlot lora_rx_ring[LORA_RX_RING_SIZE];
@@ -397,7 +412,7 @@ static inline uint8_t LoRa_Rx_Ring_Count(void) {
     return (uint8_t)((lora_rx_head - lora_rx_tail) & LORA_RX_RING_MASK);
 }
 
-static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi) {
+static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi, int8_t snr) {
     uint8_t next = (uint8_t)((lora_rx_head + 1U) & LORA_RX_RING_MASK);
     if (next == lora_rx_tail) {
         lora_rx_drops++;
@@ -405,25 +420,28 @@ static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi) {
     }
     memcpy((void*)lora_rx_ring[lora_rx_head].payload, payload, 16);
     lora_rx_ring[lora_rx_head].rssi = rssi;
+    lora_rx_ring[lora_rx_head].snr  = snr;
     lora_rx_head = next;
 }
 
-static inline uint8_t LoRa_Rx_Ring_Pop(uint8_t *out_payload, int8_t *out_rssi) {
+static inline uint8_t LoRa_Rx_Ring_Pop(uint8_t *out_payload, int8_t *out_rssi, int8_t *out_snr) {
     if (lora_rx_head == lora_rx_tail) return 0;
     memcpy(out_payload, (const void*)lora_rx_ring[lora_rx_tail].payload, 16);
     *out_rssi = lora_rx_ring[lora_rx_tail].rssi;
+    *out_snr  = lora_rx_ring[lora_rx_tail].snr;
     lora_rx_tail = (uint8_t)((lora_rx_tail + 1U) & LORA_RX_RING_MASK);
     return 1;
 }
 
 /* OnRxDone simulator — mirrors `firmware/queen/main.c` ISR. Drops non-16B
- * sizes (silent), clamps RSSI to int8_t, then enqueues into the ring. */
-static void Simulate_OnRxDone(const uint8_t *payload, uint16_t size, int16_t rssi)
+ * sizes (silent), clamps RSSI to int8_t, then enqueues into the ring.
+ * [E.8] SNR carried through unchanged (caller-provided int8_t already in range). */
+static void Simulate_OnRxDone(const uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
     if (size != 16) return;
     if (rssi < -128) rssi = -128;
     if (rssi > 127)  rssi = 127;
-    LoRa_Rx_Ring_Push(payload, (int8_t)rssi);
+    LoRa_Rx_Ring_Push(payload, (int8_t)rssi, snr);
 }
 
 static void reset_lora_rx_ring(void) {
@@ -432,6 +450,11 @@ static void reset_lora_rx_ring(void) {
     lora_rx_drops = 0;
     memset((void*)lora_rx_ring, 0, sizeof(lora_rx_ring));
 }
+
+/* [E.8] SNR sink for tests that exercise ring-buffer plumbing without
+ * caring about the SNR value itself. New SNR-aware tests use dedicated
+ * locals instead of this sink. */
+static int8_t snr_sink = 0;
 
 /* ════════════════════════════════════════════════════════════════════
  * TEST FRAMEWORK
@@ -595,7 +618,7 @@ TEST(test_dedup_stress_100) {
 TEST(test_cache_insert_single) {
     reset_cache();
     uint8_t p[16] = {0};
-    Process_And_Cache_Data(0xAABBCCDD, p, -70);
+    Process_And_Cache_Data(0xAABBCCDD, p, -70, 0);
     ASSERT_EQ(cache_count, 1);
     ASSERT_EQ(forest_cache[0].uid, (long long)0xAABBCCDD);
     ASSERT_EQ(forest_cache[0].rssi, -70);
@@ -606,8 +629,8 @@ TEST(test_cache_dedup_updates_data) {
     reset_cache();
     uint8_t p1[16] = {0}, p2[16] = {0};
     p2[7] = 42;
-    Process_And_Cache_Data(0x11, p1, -50);
-    Process_And_Cache_Data(0x11, p2, -40);
+    Process_And_Cache_Data(0x11, p1, -50, 0);
+    Process_And_Cache_Data(0x11, p2, -40, 0);
     ASSERT_EQ(cache_count, 1);
     ASSERT_EQ(forest_cache[0].payload[7], 42);
     ASSERT_EQ(forest_cache[0].rssi, -40);
@@ -616,9 +639,9 @@ TEST(test_cache_dedup_updates_data) {
 TEST(test_cache_dedup_preserves_others) {
     reset_cache();
     uint8_t p[16] = {0};
-    Process_And_Cache_Data(0xAA, p, -50);
-    Process_And_Cache_Data(0xBB, p, -60);
-    Process_And_Cache_Data(0xAA, p, -30);
+    Process_And_Cache_Data(0xAA, p, -50, 0);
+    Process_And_Cache_Data(0xBB, p, -60, 0);
+    Process_And_Cache_Data(0xAA, p, -30, 0);
     ASSERT_EQ(cache_count, 2);
 }
 
@@ -626,7 +649,7 @@ TEST(test_cache_fill_50) {
     reset_cache();
     uint8_t p[16] = {0};
     for (uint32_t i = 0; i < CACHE_MAX_ENTRIES; i++)
-        Process_And_Cache_Data(i + 1, p, (int8_t)(-(int8_t)(50 + (i % 40))));
+        Process_And_Cache_Data(i + 1, p, (int8_t)(-(int8_t)(50 + (i % 40))), 0);
     ASSERT_EQ(cache_count, CACHE_MAX_ENTRIES);
 }
 
@@ -634,10 +657,10 @@ TEST(test_cache_cifo_evicts_worst_rssi) {
     reset_cache();
     uint8_t healthy[16] = {0};
     for (uint32_t i = 0; i < 49; i++)
-        Process_And_Cache_Data(i + 1, healthy, -50);
-    Process_And_Cache_Data(0xFA12, healthy, -90);
+        Process_And_Cache_Data(i + 1, healthy, -50, 0);
+    Process_And_Cache_Data(0xFA12, healthy, -90, 0);
 
-    Process_And_Cache_Data(0xA0, healthy, -30);
+    Process_And_Cache_Data(0xA0, healthy, -30, 0);
 
     int found_far = 0, found_new = 0;
     for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
@@ -652,13 +675,13 @@ TEST(test_cache_cifo_protects_critical_stress) {
     reset_cache();
     uint8_t critical[16] = {0};
     critical[10] = (1 << 6);
-    Process_And_Cache_Data(0xC1, critical, -90);
+    Process_And_Cache_Data(0xC1, critical, -90, 0);
 
     uint8_t healthy[16] = {0};
     for (uint32_t i = 1; i < 50; i++)
-        Process_And_Cache_Data(i + 100, healthy, -50);
+        Process_And_Cache_Data(i + 100, healthy, -50, 0);
 
-    Process_And_Cache_Data(0xBEEF, healthy, -20);
+    Process_And_Cache_Data(0xBEEF, healthy, -20, 0);
 
     int found = 0;
     for (int i = 0; i < CACHE_MAX_ENTRIES; i++)
@@ -670,13 +693,13 @@ TEST(test_cache_cifo_protects_anomaly) {
     reset_cache();
     uint8_t anomaly[16] = {0};
     anomaly[10] = (2 << 6);
-    Process_And_Cache_Data(0xA1, anomaly, -95);
+    Process_And_Cache_Data(0xA1, anomaly, -95, 0);
 
     uint8_t healthy[16] = {0};
     for (uint32_t i = 1; i < 50; i++)
-        Process_And_Cache_Data(i + 200, healthy, -60);
+        Process_And_Cache_Data(i + 200, healthy, -60, 0);
 
-    Process_And_Cache_Data(0xDE, healthy, -10);
+    Process_And_Cache_Data(0xDE, healthy, -10, 0);
 
     int found = 0;
     for (int i = 0; i < CACHE_MAX_ENTRIES; i++)
@@ -688,13 +711,13 @@ TEST(test_cache_cifo_protects_tamper) {
     reset_cache();
     uint8_t tamper[16] = {0};
     tamper[10] = (3 << 6);
-    Process_And_Cache_Data(0xDA, tamper, -100);
+    Process_And_Cache_Data(0xDA, tamper, -100, 0);
 
     uint8_t healthy[16] = {0};
     for (uint32_t i = 1; i < 50; i++)
-        Process_And_Cache_Data(i + 300, healthy, -55);
+        Process_And_Cache_Data(i + 300, healthy, -55, 0);
 
-    Process_And_Cache_Data(0xFE, healthy, -15);
+    Process_And_Cache_Data(0xFE, healthy, -15, 0);
 
     int found = 0;
     for (int i = 0; i < CACHE_MAX_ENTRIES; i++)
@@ -708,9 +731,9 @@ TEST(test_cache_cifo_fallback_all_critical) {
     critical[10] = (2 << 6);
 
     for (uint32_t i = 0; i < 50; i++)
-        Process_And_Cache_Data(i + 1, critical, (int8_t)(-(int8_t)(50 + i)));
+        Process_And_Cache_Data(i + 1, critical, (int8_t)(-(int8_t)(50 + i)), 0);
 
-    Process_And_Cache_Data(0xDE, critical, -10);
+    Process_And_Cache_Data(0xDE, critical, -10, 0);
 
     int found = 0;
     for (int i = 0; i < CACHE_MAX_ENTRIES; i++)
@@ -721,23 +744,23 @@ TEST(test_cache_cifo_fallback_all_critical) {
 TEST(test_cache_uid_zero) {
     reset_cache();
     uint8_t p[16] = {0};
-    Process_And_Cache_Data(0, p, -40);
+    Process_And_Cache_Data(0, p, -40, 0);
     ASSERT_EQ(cache_count, 1);
-    Process_And_Cache_Data(0, p, -30);
+    Process_And_Cache_Data(0, p, -30, 0);
     ASSERT_EQ(cache_count, 1);
 }
 
 TEST(test_cache_rssi_minus128) {
     reset_cache();
     uint8_t p[16] = {0};
-    Process_And_Cache_Data(1, p, -128);
+    Process_And_Cache_Data(1, p, -128, 0);
     ASSERT_EQ(forest_cache[0].rssi, -128);
 }
 
 TEST(test_cache_rssi_zero) {
     reset_cache();
     uint8_t p[16] = {0};
-    Process_And_Cache_Data(1, p, 0);
+    Process_And_Cache_Data(1, p, 0, 0);
     ASSERT_EQ(forest_cache[0].rssi, 0);
 }
 
@@ -745,9 +768,177 @@ TEST(test_cache_eviction_preserves_count) {
     reset_cache();
     uint8_t p[16] = {0};
     for (uint32_t i = 0; i < 50; i++)
-        Process_And_Cache_Data(i + 1, p, -50);
-    Process_And_Cache_Data(999, p, -30);
+        Process_And_Cache_Data(i + 1, p, -50, 0);
+    Process_And_Cache_Data(999, p, -30, 0);
     ASSERT_EQ(cache_count, 50);
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * [E.8] SNR-aware CIFO eviction tiebreaker
+ *
+ * SX1262 повертає і RSSI (сила сигналу), і SNR (якість каналу). До цієї
+ * зміни Queen ігнорувала SNR (`(void)snr` у `OnRxDone`). Тепер SNR є
+ * tiebreaker'ом у CIFO eviction: коли два non-critical (status=0) записи
+ * мають ОДНАКОВИЙ найгірший RSSI, той з нижчим SNR (шумніший канал)
+ * виганяється першим — пакет, що прийшов через інтерференцію, з більшою
+ * ймовірністю стає stale до наступного flush.
+ * ──────────────────────────────────────────────────────────────────── */
+
+TEST(test_e8_snr_field_persisted_in_cache) {
+    /* Базова перевірка: SNR зберігається у EdgeCache (раніше не існувало). */
+    reset_cache();
+    uint8_t p[16] = {0};
+    Process_And_Cache_Data(0xC0FFEE, p, -65, 7);
+    ASSERT_EQ(forest_cache[0].rssi, -65);
+    ASSERT_EQ(forest_cache[0].snr, 7);
+    ASSERT_EQ(forest_cache[0].is_active, 1);
+}
+
+TEST(test_e8_snr_dedup_updates_snr_too) {
+    /* DEDUP-шлях: повторний пакет від того ж DID оновлює і RSSI, і SNR. */
+    reset_cache();
+    uint8_t p[16] = {0};
+    Process_And_Cache_Data(0x11, p, -50, -10);  /* шумна перша посилка */
+    Process_And_Cache_Data(0x11, p, -45, 8);    /* друга — чистіша */
+    ASSERT_EQ(forest_cache[0].rssi, -45);
+    ASSERT_EQ(forest_cache[0].snr, 8);
+    ASSERT_EQ(cache_count, 1);
+}
+
+TEST(test_e8_snr_tiebreaker_evicts_lower_snr_when_rssi_equal) {
+    /* Сценарій: 50 non-critical записів усі з RSSI = -70.
+     * Один з них (slot 25) має ХУЖЧИЙ SNR (-15 vs усі решта 5).
+     * При вставці 51-го запису саме slot 25 (worst SNR) має бути витіснений,
+     * а не випадковий перший знайдений з RSSI=-70. */
+    reset_cache();
+    uint8_t healthy[16] = {0};   /* status=0 (homeostasis), gp=0 → byte[10]=0 */
+
+    for (uint32_t i = 0; i < 50; i++) {
+        int8_t snr = (i == 25) ? -15 : 5;  /* slot 25 — шумний канал */
+        Process_And_Cache_Data(i + 1, healthy, -70, snr);
+    }
+
+    /* Verify: index 25 holds UID=26 with worst SNR before eviction. */
+    ASSERT_EQ(forest_cache[25].uid, 26U);
+    ASSERT_EQ(forest_cache[25].snr, -15);
+
+    /* Insert one more — eviction triggered. New entry must land at slot 25. */
+    Process_And_Cache_Data(0xBEEF, healthy, -50, 10);
+
+    int found_new = 0;
+    int found_evicted = 0;
+    for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
+        if (forest_cache[i].uid == 0xBEEF) found_new = 1;
+        if (forest_cache[i].uid == 26U) found_evicted = 1;
+    }
+    ASSERT_EQ(found_new, 1);
+    ASSERT_EQ(found_evicted, 0);  /* worst-SNR entry was evicted */
+    /* And the new entry should be at slot 25 (where the evictee was). */
+    ASSERT_EQ(forest_cache[25].uid, (long long)0xBEEF);
+}
+
+TEST(test_e8_snr_tiebreaker_does_not_override_worse_rssi) {
+    /* Інваріант: SNR — лише tiebreaker, RSSI primary.
+     * Запис з ГІРШИМ RSSI має бути витіснений раніше, навіть якщо він має
+     * кращий SNR за конкурента. */
+    reset_cache();
+    uint8_t healthy[16] = {0};
+
+    for (uint32_t i = 0; i < 49; i++)
+        Process_And_Cache_Data(i + 1, healthy, -60, 5);
+
+    /* Один запис із ГІРШИМ RSSI, але ВЕЛИКИМ (чистим) SNR. */
+    Process_And_Cache_Data(0xFA12, healthy, -90, 12);
+
+    Process_And_Cache_Data(0xA0, healthy, -30, 0);  /* 51-а вставка → eviction */
+
+    int found_far = 0, found_new = 0;
+    for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
+        if (forest_cache[i].uid == 0xFA12) found_far = 1;
+        if (forest_cache[i].uid == 0xA0)   found_new = 1;
+    }
+    /* RSSI -90 worst → evicted regardless of its SNR being ВИЩИМ.
+     * Захищає від регресії, де SNR-pref був би помилково primary. */
+    ASSERT_EQ(found_far, 0);
+    ASSERT_EQ(found_new, 1);
+}
+
+TEST(test_e8_snr_tiebreaker_respects_critical_priority) {
+    /* Подвійна перевірка: критичний (status=1, stress) запис із ХУДШИМИ
+     * RSSI+SNR все одно зберігається. SNR-tiebreaker НЕ підриває captain
+     * `bio_status` rule. */
+    reset_cache();
+    uint8_t healthy[16] = {0};
+    uint8_t critical[16] = {0};
+    critical[10] = (uint8_t)(1 << 6);  /* status=1 (stress) */
+
+    /* 1 critical з найгіршими RSSI+SNR. */
+    Process_And_Cache_Data(0xC1, critical, -95, -20);
+
+    /* 49 healthy із кращим RSSI=-50 та різним SNR (включно з низьким). */
+    for (uint32_t i = 0; i < 49; i++) {
+        int8_t snr = (i == 10) ? -18 : 6;  /* один healthy із дуже шумним каналом */
+        Process_And_Cache_Data(i + 100, healthy, -50, snr);
+    }
+
+    Process_And_Cache_Data(0xBEEF, healthy, -20, 8);  /* 51-а вставка */
+
+    int found_critical = 0, found_noisy_healthy = 0;
+    for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
+        if (forest_cache[i].uid == 0xC1) found_critical = 1;
+        if (forest_cache[i].uid == 110U) found_noisy_healthy = 1;  /* i==10 → uid=110 */
+    }
+    ASSERT_EQ(found_critical, 1);          /* critical never evicted */
+    ASSERT_EQ(found_noisy_healthy, 0);     /* noisy healthy evicted instead */
+}
+
+TEST(test_e8_snr_fallback_tiebreaker_when_all_critical) {
+    /* Якщо ВСІ записи критичні — використовується fallback eviction.
+     * Тут також SNR є tiebreaker для однакових (worst) RSSI. */
+    reset_cache();
+    uint8_t critical[16] = {0};
+    critical[10] = (uint8_t)(1 << 6);  /* status=1 */
+
+    /* 50 critical записів усі з RSSI=-70, slot 7 — з найгіршим SNR. */
+    for (uint32_t i = 0; i < 50; i++) {
+        int8_t snr = (i == 7) ? -25 : 0;
+        Process_And_Cache_Data(i + 1, critical, -70, snr);
+    }
+
+    ASSERT_EQ(forest_cache[7].uid, 8U);
+    ASSERT_EQ(forest_cache[7].snr, -25);
+
+    Process_And_Cache_Data(0xCAFEBABE, critical, -10, 5);
+
+    /* Fallback path має витіснити uid=8 (worst SNR серед однакового RSSI). */
+    int found_evicted = 0, found_new = 0;
+    for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
+        if (forest_cache[i].uid == 8U) found_evicted = 1;
+        if (forest_cache[i].uid == (long long)0xCAFEBABEU) found_new = 1;
+    }
+    ASSERT_EQ(found_evicted, 0);
+    ASSERT_EQ(found_new, 1);
+}
+
+TEST(test_e8_ring_carries_snr_from_isr_to_consumer) {
+    /* Plumbing-check: SNR від ISR-стимулятора доходить до споживача без втрат.
+     * Це закриває регресію на випадок, якщо ринг колись повернеться до
+     * 2-арг сигнатури і SNR знову загубиться. */
+    reset_lora_rx_ring();
+    uint8_t pkt[16] = {0xDE, 0xAD, 0xBE, 0xEF};
+    Simulate_OnRxDone(pkt, 16, -77, -12);
+    Simulate_OnRxDone(pkt, 16, -77,   8);
+
+    uint8_t out[16] = {0};
+    int8_t  rssi = 0, snr = 0;
+
+    ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi, &snr), 1);
+    ASSERT_EQ(rssi, -77);
+    ASSERT_EQ(snr,  -12);
+
+    ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi, &snr), 1);
+    ASSERT_EQ(rssi, -77);
+    ASSERT_EQ(snr,    8);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -758,7 +949,7 @@ TEST(test_batch_single_21_bytes) {
     reset_cache();
     uint8_t p[16];
     memset(p, 0xAA, 16);
-    Process_And_Cache_Data(0x01020304, p, -85);
+    Process_And_Cache_Data(0x01020304, p, -85, 0);
     uint16_t offset = Pack_Cache_To_Batch();
     ASSERT_EQ(offset, 21);
     ASSERT_EQ(binary_batch_buffer[0], 0x01);
@@ -772,7 +963,7 @@ TEST(test_batch_single_21_bytes) {
 TEST(test_batch_rssi_minus128_safe) {
     reset_cache();
     uint8_t p[16] = {0};
-    Process_And_Cache_Data(1, p, -128);
+    Process_And_Cache_Data(1, p, -128, 0);
     Pack_Cache_To_Batch();
     ASSERT_EQ(binary_batch_buffer[4], 128);
 }
@@ -781,14 +972,14 @@ TEST(test_batch_50_entries) {
     reset_cache();
     uint8_t p[16] = {0};
     for (uint32_t i = 0; i < 50; i++)
-        Process_And_Cache_Data(i + 1, p, -50);
+        Process_And_Cache_Data(i + 1, p, -50, 0);
     ASSERT_EQ(Pack_Cache_To_Batch(), 50 * 21);
 }
 
 TEST(test_batch_clears_cache) {
     reset_cache();
     uint8_t p[16] = {0};
-    Process_And_Cache_Data(1, p, -50);
+    Process_And_Cache_Data(1, p, -50, 0);
     Pack_Cache_To_Batch();
     ASSERT_EQ(cache_count, 0);
     ASSERT_EQ(forest_cache[0].is_active, 0);
@@ -802,7 +993,7 @@ TEST(test_batch_empty) {
 TEST(test_batch_did_endian) {
     reset_cache();
     uint8_t p[16] = {0};
-    Process_And_Cache_Data(0xDEADBEEF, p, -50);
+    Process_And_Cache_Data(0xDEADBEEF, p, -50, 0);
     Pack_Cache_To_Batch();
     ASSERT_EQ(binary_batch_buffer[0], 0xDE);
     ASSERT_EQ(binary_batch_buffer[1], 0xAD);
@@ -814,7 +1005,7 @@ TEST(test_batch_payload_preserved) {
     reset_cache();
     uint8_t p[16];
     for (int i = 0; i < 16; i++) p[i] = (uint8_t)(i * 17);
-    Process_And_Cache_Data(1, p, -50);
+    Process_And_Cache_Data(1, p, -50, 0);
     Pack_Cache_To_Batch();
     for (int i = 0; i < 16; i++)
         ASSERT_EQ(binary_batch_buffer[5 + i], (uint8_t)(i * 17));
@@ -823,9 +1014,9 @@ TEST(test_batch_payload_preserved) {
 TEST(test_batch_reinsert_after_pack) {
     reset_cache();
     uint8_t p[16] = {0};
-    Process_And_Cache_Data(1, p, -50);
+    Process_And_Cache_Data(1, p, -50, 0);
     Pack_Cache_To_Batch();
-    Process_And_Cache_Data(2, p, -60);
+    Process_And_Cache_Data(2, p, -60, 0);
     ASSERT_EQ(cache_count, 1);
 }
 
@@ -1193,7 +1384,7 @@ TEST(test_queen_health_in_cache) {
     reset_cache();
     uint8_t p[16];
     Build_Queen_Health(p, 5, 60);
-    Process_And_Cache_Data(0, p, 0);
+    Process_And_Cache_Data(0, p, 0, 0);
     ASSERT_EQ(cache_count, 1);
     ASSERT_EQ(forest_cache[0].uid, 0);
     ASSERT_EQ(forest_cache[0].rssi, 0);
@@ -1204,7 +1395,7 @@ TEST(test_queen_health_in_batch) {
     reset_cache();
     uint8_t p[16];
     Build_Queen_Health(p, 10, 300);
-    Process_And_Cache_Data(0, p, 0);
+    Process_And_Cache_Data(0, p, 0, 0);
     uint16_t offset = Pack_Cache_To_Batch();
     ASSERT_EQ(offset, 21);
     /* DID = 0 in big-endian */
@@ -1222,8 +1413,8 @@ TEST(test_queen_health_dedup) {
     uint8_t p1[16], p2[16];
     Build_Queen_Health(p1, 10, 100);
     Build_Queen_Health(p2, 20, 200);
-    Process_And_Cache_Data(0, p1, 0);
-    Process_And_Cache_Data(0, p2, 0);
+    Process_And_Cache_Data(0, p1, 0, 0);
+    Process_And_Cache_Data(0, p2, 0, 0);
     ASSERT_EQ(cache_count, 1);
     /* Should have the latest data */
     ASSERT_EQ(forest_cache[0].payload[7], 20);
@@ -1955,7 +2146,7 @@ TEST(test_lora_rx_ring_pop_on_empty_returns_zero) {
     reset_lora_rx_ring();
     uint8_t buf[16];
     int8_t  rssi = 0;
-    ASSERT_EQ(LoRa_Rx_Ring_Pop(buf, &rssi), 0);
+    ASSERT_EQ(LoRa_Rx_Ring_Pop(buf, &rssi, &snr_sink), 0);
     ASSERT_EQ(lora_rx_drops, 0);  /* pop on empty НЕ збільшує drop counter */
 }
 
@@ -1963,13 +2154,13 @@ TEST(test_lora_rx_ring_single_push_pop_roundtrip) {
     reset_lora_rx_ring();
     uint8_t in[16];
     for (uint8_t i = 0; i < 16; i++) in[i] = (uint8_t)(0xA0 + i);
-    LoRa_Rx_Ring_Push(in, -77);
+    LoRa_Rx_Ring_Push(in, -77, 0);
     ASSERT_FALSE(LoRa_Rx_Ring_Empty());
     ASSERT_EQ(LoRa_Rx_Ring_Count(), 1);
 
     uint8_t out[16] = {0};
     int8_t  rssi    = 0;
-    ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi), 1);
+    ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi, &snr_sink), 1);
     ASSERT_EQ(rssi, -77);
     for (uint8_t i = 0; i < 16; i++) ASSERT_EQ(out[i], in[i]);
     ASSERT_TRUE(LoRa_Rx_Ring_Empty());
@@ -1981,7 +2172,7 @@ TEST(test_lora_rx_ring_fifo_order_preserved) {
     for (uint8_t i = 0; i < 5; i++) {
         uint8_t pkt[16] = {0};
         pkt[0] = (uint8_t)(0x10 + i);   /* "DID-маркер" */
-        LoRa_Rx_Ring_Push(pkt, (int8_t)(-60 - i));
+        LoRa_Rx_Ring_Push(pkt, (int8_t)(-60 - i), 0);
     }
     ASSERT_EQ(LoRa_Rx_Ring_Count(), 5);
 
@@ -1989,7 +2180,7 @@ TEST(test_lora_rx_ring_fifo_order_preserved) {
     for (uint8_t i = 0; i < 5; i++) {
         uint8_t out[16];
         int8_t  rssi;
-        ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi), 1);
+        ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi, &snr_sink), 1);
         ASSERT_EQ(out[0], (uint8_t)(0x10 + i));
         ASSERT_EQ(rssi, (int8_t)(-60 - i));
     }
@@ -2002,7 +2193,7 @@ TEST(test_lora_rx_ring_fills_to_capacity_15) {
     for (uint8_t i = 0; i < 15; i++) {
         uint8_t pkt[16] = {0};
         pkt[0] = i;
-        LoRa_Rx_Ring_Push(pkt, -50);
+        LoRa_Rx_Ring_Push(pkt, -50, 0);
     }
     ASSERT_EQ(LoRa_Rx_Ring_Count(), 15);
     ASSERT_EQ(lora_rx_drops, 0);  /* до 15-го пакета — без втрат */
@@ -2014,21 +2205,21 @@ TEST(test_lora_rx_ring_overflow_increments_drop_counter) {
     for (uint8_t i = 0; i < 15; i++) {
         uint8_t pkt[16] = {0};
         pkt[0] = i;
-        LoRa_Rx_Ring_Push(pkt, -50);
+        LoRa_Rx_Ring_Push(pkt, -50, 0);
     }
     /* 16-й, 17-й, 18-й — рій уже не вмістився, лічильник росте */
     uint8_t late_pkt[16] = {0};
     late_pkt[0] = 0xEE;
-    LoRa_Rx_Ring_Push(late_pkt, -90);
-    LoRa_Rx_Ring_Push(late_pkt, -91);
-    LoRa_Rx_Ring_Push(late_pkt, -92);
+    LoRa_Rx_Ring_Push(late_pkt, -90, 0);
+    LoRa_Rx_Ring_Push(late_pkt, -91, 0);
+    LoRa_Rx_Ring_Push(late_pkt, -92, 0);
     ASSERT_EQ(lora_rx_drops, 3);
 
     /* Існуючі голоси НЕ перезаписані — переповнення не псує пам'ять */
     ASSERT_EQ(LoRa_Rx_Ring_Count(), 15);
     uint8_t out[16];
     int8_t  rssi;
-    LoRa_Rx_Ring_Pop(out, &rssi);
+    LoRa_Rx_Ring_Pop(out, &rssi, &snr_sink);
     ASSERT_EQ(out[0], 0);             /* перший пакет, не пізній 0xEE */
 }
 
@@ -2040,13 +2231,13 @@ TEST(test_lora_rx_ring_drain_then_refill_wraps_correctly) {
     for (uint8_t round = 0; round < 5; round++) {
         for (uint8_t i = 0; i < 10; i++) {
             pkt[0] = (uint8_t)(round * 10 + i);
-            LoRa_Rx_Ring_Push(pkt, -55);
+            LoRa_Rx_Ring_Push(pkt, -55, 0);
         }
         ASSERT_EQ(LoRa_Rx_Ring_Count(), 10);
         for (uint8_t i = 0; i < 10; i++) {
             uint8_t out[16];
             int8_t  rssi;
-            ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi), 1);
+            ASSERT_EQ(LoRa_Rx_Ring_Pop(out, &rssi, &snr_sink), 1);
             ASSERT_EQ(out[0], (uint8_t)(round * 10 + i));
         }
         ASSERT_TRUE(LoRa_Rx_Ring_Empty());
@@ -2057,17 +2248,17 @@ TEST(test_lora_rx_ring_drain_then_refill_wraps_correctly) {
 TEST(test_lora_rx_ring_rssi_minus128_preserved) {
     reset_lora_rx_ring();
     uint8_t pkt[16] = {0};
-    LoRa_Rx_Ring_Push(pkt, -128);
+    LoRa_Rx_Ring_Push(pkt, -128, 0);
     uint8_t out[16];
     int8_t  rssi = 0;
-    LoRa_Rx_Ring_Pop(out, &rssi);
+    LoRa_Rx_Ring_Pop(out, &rssi, &snr_sink);
     ASSERT_EQ(rssi, -128);  /* Глибокий fade у лісовому каноні зберігається */
 }
 
 TEST(test_lora_rx_ring_isr_simulator_drops_non_16b_size) {
     reset_lora_rx_ring();
     uint8_t pkt[20] = {0};
-    Simulate_OnRxDone(pkt, 20, -50);  /* не 16 — Королева мовчки відмовляє */
+    Simulate_OnRxDone(pkt, 20, -50, 0);  /* не 16 — Королева мовчки відмовляє */
     ASSERT_TRUE(LoRa_Rx_Ring_Empty());
     ASSERT_EQ(lora_rx_drops, 0);  /* size-mismatch — НЕ drop, а silent reject */
 }
@@ -2075,20 +2266,20 @@ TEST(test_lora_rx_ring_isr_simulator_drops_non_16b_size) {
 TEST(test_lora_rx_ring_isr_simulator_clamps_rssi_below_minus128) {
     reset_lora_rx_ring();
     uint8_t pkt[16] = {0};
-    Simulate_OnRxDone(pkt, 16, -200);  /* SX1262 інколи рапортує < -128 */
+    Simulate_OnRxDone(pkt, 16, -200, 0);  /* SX1262 інколи рапортує < -128 */
     uint8_t out[16];
     int8_t  rssi = 0;
-    LoRa_Rx_Ring_Pop(out, &rssi);
+    LoRa_Rx_Ring_Pop(out, &rssi, &snr_sink);
     ASSERT_EQ(rssi, -128);  /* Clamp вбережає від UB при abs(rssi) */
 }
 
 TEST(test_lora_rx_ring_isr_simulator_clamps_rssi_above_127) {
     reset_lora_rx_ring();
     uint8_t pkt[16] = {0};
-    Simulate_OnRxDone(pkt, 16, 32000);
+    Simulate_OnRxDone(pkt, 16, 32000, 0);
     uint8_t out[16];
     int8_t  rssi = 0;
-    LoRa_Rx_Ring_Pop(out, &rssi);
+    LoRa_Rx_Ring_Pop(out, &rssi, &snr_sink);
     ASSERT_EQ(rssi, 127);
 }
 
@@ -2102,7 +2293,7 @@ TEST(test_lora_rx_ring_25sec_flush_scenario_no_overwrites) {
     for (uint8_t i = 0; i < 30; i++) {
         uint8_t pkt[16] = {0};
         pkt[0] = i;
-        Simulate_OnRxDone(pkt, 16, (int8_t)(-50 - (int)(i % 30)));
+        Simulate_OnRxDone(pkt, 16, (int8_t)(-50 - (int)(i % 30)), 0);
     }
     /* 15 уцілілих + 15 видимих втрат — жоден не зник у тиші. */
     ASSERT_EQ(LoRa_Rx_Ring_Count(), 15);
@@ -2112,7 +2303,7 @@ TEST(test_lora_rx_ring_25sec_flush_scenario_no_overwrites) {
     for (uint8_t i = 0; i < 15; i++) {
         uint8_t out[16];
         int8_t  rssi;
-        LoRa_Rx_Ring_Pop(out, &rssi);
+        LoRa_Rx_Ring_Pop(out, &rssi, &snr_sink);
         ASSERT_EQ(out[0], i);
     }
 }
@@ -2122,12 +2313,12 @@ TEST(test_lora_rx_ring_count_zero_after_full_drain) {
     uint8_t pkt[16] = {0};
     for (uint8_t i = 0; i < 7; i++) {
         pkt[0] = i;
-        LoRa_Rx_Ring_Push(pkt, -50);
+        LoRa_Rx_Ring_Push(pkt, -50, 0);
     }
     while (!LoRa_Rx_Ring_Empty()) {
         uint8_t out[16];
         int8_t  rssi;
-        LoRa_Rx_Ring_Pop(out, &rssi);
+        LoRa_Rx_Ring_Pop(out, &rssi, &snr_sink);
     }
     ASSERT_EQ(LoRa_Rx_Ring_Count(), 0);
     ASSERT_TRUE(LoRa_Rx_Ring_Empty());
@@ -2174,6 +2365,15 @@ int main(void)
     RUN(test_cache_rssi_minus128);
     RUN(test_cache_rssi_zero);
     RUN(test_cache_eviction_preserves_count);
+
+    printf("\n  CIFO SNR Tiebreaker (E.8):\n");
+    RUN(test_e8_snr_field_persisted_in_cache);
+    RUN(test_e8_snr_dedup_updates_snr_too);
+    RUN(test_e8_snr_tiebreaker_evicts_lower_snr_when_rssi_equal);
+    RUN(test_e8_snr_tiebreaker_does_not_override_worse_rssi);
+    RUN(test_e8_snr_tiebreaker_respects_critical_priority);
+    RUN(test_e8_snr_fallback_tiebreaker_when_all_critical);
+    RUN(test_e8_ring_carries_snr_from_isr_to_consumer);
 
     printf("\n  Batch Packing:\n");
     RUN(test_batch_single_21_bytes);
