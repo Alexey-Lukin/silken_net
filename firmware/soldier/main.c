@@ -407,6 +407,116 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
     lorenz_config_version  = config_version;
     return 1;
 }
+
+// =========================================================================
+// [FW.20-S2] Drift-monitor + panic time-sync request
+// =========================================================================
+// Кенозис часу: Солдат отримує UTC лише з beacon'а Королеви (FW.20-S1, кожні
+// 15 хв). Якщо Королева мовчить занадто довго (LTE-обрив, мобілізація живлення,
+// антена впала на голову лісника) — Солдатський годинник плавно відстає, а
+// `Derive_Cold_Start_State()` (HKDF за `epoch_day = unix_ts/86400`) перестає
+// синхронізуватися з backend'ом → майбутнє відновлення Lorenz-стану після
+// VBAT-loss піде з неправильної точки → false slashing.
+//
+// Сторожовий пес часу: коли різниця між «зараз» (HAL_GetTick з останнього
+// sync'у, в секундах) і `soldier_unix_ts_local_tick` перевищує
+// TIME_SYNC_DRIFT_THRESHOLD_SEC (12 год), Солдат подає голос — uplink
+// LoRa-плейн з опкодом 0x56, щоб Королева повторила beacon. Cooldown
+// (1 год) запобігає спаму при тривалій тиші Королеви.
+//
+// SSOT для опкодів: 03_01 §4.5а Downlink Opcode Map. 0x56 — uplink-діапазон
+// поряд з 0x55 (FW.27-B OTA Re-Request); 0x9C beacon — downlink і не
+// перетинається. Магія 'S' у байті 10 — миттєва дезамбігвація з 0x55 magic 'R'.
+//
+// Наразі функції callable + host-tested, але до hot path головного циклу НЕ
+// вшиті: повний FW.20-S2 mesh-relay (релей beacon'а між Солдатами) — окрема
+// ітерація. Це freeze-контракт wire-формату для майбутнього hook'у.
+#define SYNC_REQ_MARKER                  0x56       // [FW.20-S2] Uplink: «Королево, час!»
+#define SYNC_REQ_MAGIC_BYTE              0x53       // [FW.20-S2] 'S' = sync — у байті 10
+#define SYNC_REQ_PACKET_SIZE             16         // Один AES-256-ECB блок
+#define TIME_SYNC_DRIFT_THRESHOLD_SEC    43200UL    // 12 год без beacon'а → панікуємо
+#define TIME_SYNC_REQUEST_COOLDOWN_MS    3600000UL  // 1 год між повторними зойками
+#define TIME_SYNC_COLD_BOOT_GRACE_MS     600000UL   // 10 хв після boot перш ніж панікувати
+                                                    // (Soldier ще чекає першого beacon'а)
+#define TIME_SYNC_REQ_PAD_BYTES          5          // [11..15] — резерв під майбутні поля
+
+// Tick останнього відправленого SYNC_REQUEST. 0 = ще не просили.
+// RAM-only: при VBAT-loss скидається — Солдат подасть голос знову після
+// перших 10 хв cold-boot grace (TIME_SYNC_COLD_BOOT_GRACE_MS).
+uint32_t last_sync_request_tick = 0;
+
+// Чи варто Солдату просити re-broadcast beacon'а?
+// Параметри:
+//   now_tick — поточний HAL_GetTick() мс
+// Інваріанти:
+//   1. Якщо ще не отримували жодного beacon'а (soldier_unix_ts == 0):
+//      - Перші TIME_SYNC_COLD_BOOT_GRACE_MS після boot — терпимо тишу,
+//        Королева могла ще не вийти на TX-вікно.
+//      - Після grace — просимо.
+//   2. Якщо отримували beacon, але остання синхронізація >12 год тому → просимо.
+//   3. Cooldown: якщо вже просили <1 год тому — мовчимо, не спамимо ефір.
+// Повертає 1 (треба просити) або 0 (мовчати).
+static uint8_t Soldier_Should_Request_Time_Sync(uint32_t now_tick)
+{
+    // Cooldown guard: якщо нещодавно просили — не повторюємо.
+    // Перше прохання (last_sync_request_tick == 0) проходить guard завжди.
+    if (last_sync_request_tick != 0) {
+        uint32_t since_last_req_ms = now_tick - last_sync_request_tick;
+        if (since_last_req_ms < TIME_SYNC_REQUEST_COOLDOWN_MS) {
+            return 0;
+        }
+    }
+
+    if (soldier_unix_ts == 0) {
+        // Cold-boot: ще ніколи не чули beacon'а. Дочекаємося grace.
+        if (now_tick < TIME_SYNC_COLD_BOOT_GRACE_MS) return 0;
+        return 1;
+    }
+
+    // Warm: міряємо реальний час від останнього beacon'а у секундах.
+    uint32_t since_sync_ms  = now_tick - soldier_unix_ts_local_tick;
+    uint32_t since_sync_sec = since_sync_ms / 1000u;
+    return (since_sync_sec > TIME_SYNC_DRIFT_THRESHOLD_SEC) ? 1 : 0;
+}
+
+// Скільки секунд минуло від останнього beacon'а (0 якщо ще не синхронізувалися).
+// Використовується у payload'і, щоб бекенд міг побачити масштаб дрейфу і
+// логувати «Soldier X не чув Королеви Y годин» для Grafana alert'у.
+static uint32_t Soldier_Seconds_Since_Last_Sync(uint32_t now_tick)
+{
+    if (soldier_unix_ts == 0) return 0;
+    uint32_t delta_ms = now_tick - soldier_unix_ts_local_tick;
+    return delta_ms / 1000u;
+}
+
+// Збираємо 16-байтний uplink-плейн «панічний sync-запит». Wire-формат:
+//
+//   Byte 0     : SYNC_REQ_MARKER (0x56)
+//   Byte 1..4  : DID big-endian
+//   Byte 5..8  : secs_since_sync big-endian (uint32)
+//   Byte 9     : TTL (PANIC_TTL=5 — пакет повинен пробитися через mesh)
+//   Byte 10    : SYNC_REQ_MAGIC_BYTE ('S' = 0x53) — миттєва дезамбігвація
+//                від 0x55 OTA_REQ (де байт 10 не визначений)
+//   Byte 11..15: PAD = 0 (резерв під майбутні поля: pkt_seq, last_known_ts, ...)
+//
+// Перед TX обгортаємо в AES-256-ECB як звичайний LoRa-пакет.
+static void Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
+                                              uint32_t secs_since_sync)
+{
+    out[0]  = SYNC_REQ_MARKER;
+    out[1]  = (uint8_t)(did >> 24);
+    out[2]  = (uint8_t)(did >> 16);
+    out[3]  = (uint8_t)(did >> 8);
+    out[4]  = (uint8_t)(did & 0xFFu);
+    out[5]  = (uint8_t)(secs_since_sync >> 24);
+    out[6]  = (uint8_t)(secs_since_sync >> 16);
+    out[7]  = (uint8_t)(secs_since_sync >> 8);
+    out[8]  = (uint8_t)(secs_since_sync & 0xFFu);
+    out[9]  = PANIC_TTL;
+    out[10] = SYNC_REQ_MAGIC_BYTE;
+    for (uint8_t i = 11; i < SYNC_REQ_PACKET_SIZE; i++) out[i] = 0;
+}
+
 // Експоненціальне ковзне середнє для delta_t (швидкість метаболізму EBFC)
 // та vcap (заряд іоністора). Зменшує ADC-/RTC-шум приблизно в 3× перед
 // тим, як ці сигнали потраплять до Атрактора (FW.5 Variant B+).

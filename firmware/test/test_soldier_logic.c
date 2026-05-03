@@ -3194,6 +3194,209 @@ TEST(test_fw20s2_legacy_beacon_byte9_zero_clears_flag) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.20-S2] Drift-monitor + Panic Time-Sync Request
+ * ════════════════════════════════════════════════════════════════════
+ * Дзеркало логіки з firmware/soldier/main.c:
+ *   - Soldier_Should_Request_Time_Sync(now_tick)
+ *   - Soldier_Seconds_Since_Last_Sync(now_tick)
+ *   - Build_Time_Sync_Request_Payload(out, did, secs_since_sync)
+ * Кенозис тесту: відтворюємо «Солдат не чув Королеви 13 годин» і перевіряємо,
+ * що сторожовий пес часу подає голос (з cooldown'ом проти спаму ефіру).
+ */
+#define FW20S2_SYNC_REQ_MARKER            0x56
+#define FW20S2_SYNC_REQ_MAGIC_BYTE        0x53  /* 'S' */
+#define FW20S2_SYNC_REQ_PACKET_SIZE       16
+#define FW20S2_DRIFT_THRESHOLD_SEC        43200UL    /* 12 год */
+#define FW20S2_REQUEST_COOLDOWN_MS        3600000UL  /* 1 год */
+#define FW20S2_COLD_BOOT_GRACE_MS         600000UL   /* 10 хв */
+#define FW20S2_PANIC_TTL                  5
+
+/* Test-local mirrors of firmware globals (Soldier-side).
+ * Reuse existing test_soldier_unix_ts / test_soldier_unix_ts_local_tick defined
+ * earlier in this file (line ~1997) for the FW.20-S1 beacon RX tests. */
+static uint32_t test_last_sync_request_tick              = 0;
+
+static uint8_t Test_Should_Request_Time_Sync(uint32_t now_tick) {
+    if (test_last_sync_request_tick != 0) {
+        uint32_t since_last_req_ms = now_tick - test_last_sync_request_tick;
+        if (since_last_req_ms < FW20S2_REQUEST_COOLDOWN_MS) return 0;
+    }
+    if (test_soldier_unix_ts == 0) {
+        if (now_tick < FW20S2_COLD_BOOT_GRACE_MS) return 0;
+        return 1;
+    }
+    uint32_t since_sync_ms  = now_tick - test_soldier_unix_ts_local_tick;
+    uint32_t since_sync_sec = since_sync_ms / 1000u;
+    return (since_sync_sec > FW20S2_DRIFT_THRESHOLD_SEC) ? 1 : 0;
+}
+
+static uint32_t Test_Seconds_Since_Last_Sync(uint32_t now_tick) {
+    if (test_soldier_unix_ts == 0) return 0;
+    uint32_t delta_ms = now_tick - test_soldier_unix_ts_local_tick;
+    return delta_ms / 1000u;
+}
+
+static void Test_Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
+                                                   uint32_t secs_since_sync) {
+    out[0]  = FW20S2_SYNC_REQ_MARKER;
+    out[1]  = (uint8_t)(did >> 24);
+    out[2]  = (uint8_t)(did >> 16);
+    out[3]  = (uint8_t)(did >> 8);
+    out[4]  = (uint8_t)(did & 0xFFu);
+    out[5]  = (uint8_t)(secs_since_sync >> 24);
+    out[6]  = (uint8_t)(secs_since_sync >> 16);
+    out[7]  = (uint8_t)(secs_since_sync >> 8);
+    out[8]  = (uint8_t)(secs_since_sync & 0xFFu);
+    out[9]  = FW20S2_PANIC_TTL;
+    out[10] = FW20S2_SYNC_REQ_MAGIC_BYTE;
+    for (uint8_t i = 11; i < FW20S2_SYNC_REQ_PACKET_SIZE; i++) out[i] = 0;
+}
+
+static void Test_FW20S2_Reset(void) {
+    test_soldier_unix_ts            = 0;
+    test_soldier_unix_ts_local_tick = 0;
+    test_last_sync_request_tick     = 0;
+}
+
+TEST(test_fw20s2_drift_cold_boot_grace_no_request) {
+    /* Cold-boot, минула 1 хвилина — ще у grace window (10 хв). Мовчимо. */
+    Test_FW20S2_Reset();
+    uint32_t now_tick = 60u * 1000u;  /* 1 хв після boot */
+    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 0);
+}
+
+TEST(test_fw20s2_drift_cold_boot_after_grace_requests) {
+    /* Cold-boot, минуло 11 хв — grace вийшов, beacon не прилетів. Просимо. */
+    Test_FW20S2_Reset();
+    uint32_t now_tick = 11u * 60u * 1000u;
+    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 1);
+}
+
+TEST(test_fw20s2_drift_recently_synced_no_request) {
+    /* Beacon отримано 1 годину тому — далеко від 12-год порогу. Мовчимо. */
+    Test_FW20S2_Reset();
+    test_soldier_unix_ts            = 1714000000u;
+    test_soldier_unix_ts_local_tick = 1000u;          /* sync відбувся при tick=1s */
+    uint32_t now_tick = 1000u + (3600u * 1000u);      /* +1 год */
+    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 0);
+}
+
+TEST(test_fw20s2_drift_past_threshold_triggers_request) {
+    /* Beacon мовчить 13 годин — поза 12-год порогом. Сторожовий пес гавкає. */
+    Test_FW20S2_Reset();
+    test_soldier_unix_ts            = 1714000000u;
+    test_soldier_unix_ts_local_tick = 1000u;
+    uint32_t now_tick = 1000u + (13u * 3600u * 1000u);
+    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 1);
+}
+
+TEST(test_fw20s2_drift_cooldown_suppresses_repeat_request) {
+    /* Уже просили Королеву 30 хв тому, дрейф досі великий — мовчимо до 1 год. */
+    Test_FW20S2_Reset();
+    test_soldier_unix_ts            = 1714000000u;
+    test_soldier_unix_ts_local_tick = 1000u;
+    uint32_t now_tick = 1000u + (13u * 3600u * 1000u);
+    test_last_sync_request_tick = now_tick - (30u * 60u * 1000u);  /* 30 хв тому */
+    ASSERT_EQ(Test_Should_Request_Time_Sync(now_tick), 0);
+
+    /* +35 хв = понад 1 год від попереднього request → знову можна. */
+    uint32_t later_tick = now_tick + (35u * 60u * 1000u);
+    ASSERT_EQ(Test_Should_Request_Time_Sync(later_tick), 1);
+}
+
+TEST(test_fw20s2_seconds_since_sync_zero_when_never_synced) {
+    Test_FW20S2_Reset();
+    ASSERT_EQ(Test_Seconds_Since_Last_Sync(999999u), 0u);
+}
+
+TEST(test_fw20s2_seconds_since_sync_computed_warm) {
+    Test_FW20S2_Reset();
+    test_soldier_unix_ts            = 1714000000u;
+    test_soldier_unix_ts_local_tick = 5000u;
+    /* 47000 секунд = 13.05 год */
+    uint32_t now_tick = 5000u + (47000u * 1000u);
+    ASSERT_EQ(Test_Seconds_Since_Last_Sync(now_tick), 47000u);
+}
+
+TEST(test_fw20s2_sync_req_payload_layout) {
+    uint8_t p[FW20S2_SYNC_REQ_PACKET_SIZE];
+    Test_Build_Time_Sync_Request_Payload(p, 0xCAFEBABEu, 47000u);
+    ASSERT_EQ(p[0], FW20S2_SYNC_REQ_MARKER);
+    /* DID big-endian */
+    ASSERT_EQ(p[1], 0xCAu);
+    ASSERT_EQ(p[2], 0xFEu);
+    ASSERT_EQ(p[3], 0xBAu);
+    ASSERT_EQ(p[4], 0xBEu);
+    /* secs_since_sync big-endian: 47000 = 0x0000B798 */
+    ASSERT_EQ(p[5], 0x00u);
+    ASSERT_EQ(p[6], 0x00u);
+    ASSERT_EQ(p[7], 0xB7u);
+    ASSERT_EQ(p[8], 0x98u);
+    ASSERT_EQ(p[9], FW20S2_PANIC_TTL);
+    ASSERT_EQ(p[10], FW20S2_SYNC_REQ_MAGIC_BYTE);
+    /* PAD bytes 11..15 must be zeroed */
+    for (int i = 11; i < FW20S2_SYNC_REQ_PACKET_SIZE; i++) ASSERT_EQ(p[i], 0u);
+}
+
+TEST(test_fw20s2_sync_req_marker_disambiguation_from_ota_req) {
+    /* OTA_REQ використовує 0x55 + magic 'R' (FW.27-B); SYNC_REQ — 0x56 + 'S'.
+     * Жоден байт-у-байт overlap'у — маркер І магія різні. */
+    uint8_t p[FW20S2_SYNC_REQ_PACKET_SIZE];
+    Test_Build_Time_Sync_Request_Payload(p, 0xDEADBEEFu, 0u);
+    ASSERT_TRUE(p[0] != 0x55u);              /* НЕ OTA_REQ_MARKER */
+    ASSERT_TRUE(p[10] != 'R');               /* НЕ FW.27-B magic */
+    ASSERT_EQ(p[0], 0x56u);
+    ASSERT_EQ(p[10], 'S');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.29] Follow-up boundary tests
+ * ════════════════════════════════════════════════════════════════════
+ * Закриваємо edge-case прогалини з `10_02 FW.29 follow-ups`:
+ *   - StatusByte boundary при максимальних growth_points + panic
+ *   - Взаємодія panic-кадру і acoustic saturation @ 255 (FW.22)
+ */
+
+TEST(test_fw29_status_byte_panic_with_max_growth_points) {
+    /* Boundary: bio_contract_byte = Pack_BioContract(3, 63) = 0xFF.
+     * У normal payload bit 7 МАЄ бути зачищений → 0x7F (status=1, gp=63
+     * за маскою 0x7F: high 2 bits = 01 = 1, low 6 bits = 0x3F = 63).
+     * У panic payload bit 7 МАЄ горіти (PANIC_FLAG_BIT) — без status/gp. */
+    uint8_t normal[16];
+    Pack_Soldier_Payload(normal, 0xCAFEBABE, 3000, 25, 0, 120,
+                          Pack_BioContract(3, 63), 3, 0);
+    ASSERT_FALSE(normal[10] & PANIC_FLAG_BIT);
+    ASSERT_EQ(normal[10], 0x7F);  /* 0xFF & 0x7F */
+
+    uint8_t panic[16];
+    Build_Panic_Payload(panic, 0xCAFEBABE);
+    ASSERT_TRUE(panic[10] & PANIC_FLAG_BIT);
+    ASSERT_EQ(panic[10], PANIC_FLAG_BIT);  /* exact 0x80 — без residual gp */
+}
+
+TEST(test_fw29_panic_does_not_corrupt_acoustic_saturation) {
+    /* FW.22 saturating @ 255 не повинен взаємодіяти з FW.29 panic flag.
+     * У panic payload байт 7 — це фіксований 0xFF (panic-marker акустики),
+     * НЕ acoustic_events. Перевіряємо, що панічна плоть не перетирає
+     * StatusByte з FW.22 saturation lifecycle. */
+    uint8_t acoustic_events_local = 255;  /* FW.22 saturation досягнуто */
+
+    /* Normal payload: acoustic[7] = 255 (saturated), StatusByte clean */
+    uint8_t normal[16];
+    Pack_Soldier_Payload(normal, 0x12345678, 3000, 25, acoustic_events_local,
+                          120, Pack_BioContract(0, 50), 3, 0);
+    ASSERT_EQ(normal[7], 255);  /* FW.22 saturation проходить як є */
+    ASSERT_FALSE(normal[10] & PANIC_FLAG_BIT);
+
+    /* Panic payload: byte 7 — це panic-marker 0xFF (НЕ acoustic counter),
+     * StatusByte (byte 10) — exact PANIC_FLAG_BIT. Два незалежні поля. */
+    uint8_t panic[16];
+    Build_Panic_Payload(panic, 0x12345678);
+    ASSERT_EQ(panic[7], 0xFF);
+    ASSERT_EQ(panic[10], PANIC_FLAG_BIT);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -3459,6 +3662,21 @@ int main(void)
     RUN(test_fw20s2_authoritative_beacon_sets_flag);
     RUN(test_fw20s2_relay_beacon_clears_flag);
     RUN(test_fw20s2_legacy_beacon_byte9_zero_clears_flag);
+
+    printf("\n  Drift-Monitor + Panic Sync Request (FW.20-S2):\n");
+    RUN(test_fw20s2_drift_cold_boot_grace_no_request);
+    RUN(test_fw20s2_drift_cold_boot_after_grace_requests);
+    RUN(test_fw20s2_drift_recently_synced_no_request);
+    RUN(test_fw20s2_drift_past_threshold_triggers_request);
+    RUN(test_fw20s2_drift_cooldown_suppresses_repeat_request);
+    RUN(test_fw20s2_seconds_since_sync_zero_when_never_synced);
+    RUN(test_fw20s2_seconds_since_sync_computed_warm);
+    RUN(test_fw20s2_sync_req_payload_layout);
+    RUN(test_fw20s2_sync_req_marker_disambiguation_from_ota_req);
+
+    printf("\n  FW.29 Follow-ups (StatusByte + panic boundary):\n");
+    RUN(test_fw29_status_byte_panic_with_max_growth_points);
+    RUN(test_fw29_panic_does_not_corrupt_acoustic_saturation);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

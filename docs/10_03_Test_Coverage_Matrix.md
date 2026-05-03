@@ -108,7 +108,7 @@
 | Mesh Dedup (Anti-pingpong, 3-slot FW.21) | 8 | 🟢 Повне |
 | OTA Chunk Assembly + CRC32 | 15+ | 🟢 Повне |
 | Bio-Contract Byte Parse | 8+ | 🟢 Повне |
-| Panic Payload | 6 | 🟢 Повне — **[FW.29]** `test_panic_flag_set_in_emergency_payload`, `test_normal_payload_panic_flag_clear` |
+| Panic Payload | 8 | 🟢 Повне — **[FW.29]** `test_panic_flag_set_in_emergency_payload`, `test_normal_payload_panic_flag_clear`, **[FW.29 follow-up]** `test_fw29_status_byte_panic_with_max_growth_points` (0xFF boundary masking), `test_fw29_panic_does_not_corrupt_acoustic_saturation` (saturation @ 255 + panic flag незалежні) |
 | OnRxDone Size Validation | 5 | 🟢 Повне |
 | Lorenz State Persistence (FW.6) | 9 | 🟢 Повне |
 | Acoustic Saturating Increment (FW.22) | 6 | 🟢 Повне — включаючи atomic snapshot (FW.28) |
@@ -124,6 +124,8 @@
 | **[ARCH.21] Brownout PVD Lorenz Save** | **5** | 🟢 **Нове (2026-05-03)** — `HAL_PWR_PVDCallback` saves Lorenz state (DR16-DR19 + magic), packed DR0 preserved (counter+acoustic), last_wakeup persists for delta_t continuity, lorenz_invalid skips magic write, save→reboot roundtrip |
 | **[ARCH.27] Node Role Differentiation** | **5** | 🟢 **Нове (2026-05-03)** — `Load_Node_Role()` SOLD magic / PROV magic / unprovisioned 0xFFFFFFFF / zero / corrupted magic → all fallback paths to ROLE_SOLDIER |
 | **[FW.20-S2] Authoritativeness Flag (Soldier RX)** | **3** | 🟢 **Нове (2026-05-03)** — beacon byte 9 bit 7: authoritative beacon sets flag, relay beacon clears, legacy byte9=0 clears |
+| **[FW.20-S2] Drift-Monitor + Panic Sync Request** | **9** | 🟢 **Нове (2026-05-03)** — `Soldier_Should_Request_Time_Sync` cold-boot grace silence (10 хв), cold-boot post-grace request, warm recently-synced silence (1 год), warm past-threshold trigger (>12 год), cooldown suppression + post-cooldown release (1 год); `Soldier_Seconds_Since_Last_Sync` zero-when-never-synced + warm-computed; `Build_Time_Sync_Request_Payload` layout (0x56 marker + DID BE + secs BE + PANIC_TTL + magic 'S' + PAD zeroed); marker disambiguation від OTA_REQ (0x55/'R') |
+| **[FW.29] Follow-up boundary (StatusByte + panic/saturation)** | **2** | 🟢 **Нове (2026-05-03)** — Pack_BioContract(3,63)=0xFF: normal payload masks bit 7 → 0x7F, panic payload sets exact PANIC_FLAG_BIT (0x80) без residual gp; FW.22 saturation @ 255 в acoustic_events + панічна плоть byte 7 = 0xFF marker — два незалежні поля без перетину |
 
 ### 2.2 Queen (test_queen_logic.c)
 
