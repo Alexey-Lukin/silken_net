@@ -301,43 +301,26 @@
 - [x] Задокументувати tolerance підхід (категоричний, не числовий) в `03_04` BLOCKER-4
 - [ ] 👤 Верифікувати mruby compile flags (`MRB_USE_FLOAT` у Makefile або mrbconf.h) при lab-тестуванні
 
-#### FW.20 — LoRa Time Sync (clock drift compensation)
-- Legacy notes | P2 (не блокує TRL 6, критичний для TRL 7+)
-- **Опис:** Дешеві кварцові резонатори / внутрішні осцилятори STM32 мають температурний дрейф. При -20°C та +40°C RTC годинник Soldier йде з різною швидкістю. За кілька місяців "час дерева" розсинхронізується з "часом бекенду" на хвилини або години. Впливає на: (1) `created_at` timestamp → partition pruning errors, (2) HMAC/nonce replay protection windows, (3) cron-like wakeup scheduling, (4) **TDMA Синхронні Вікна** (ARCH.26) — без синхронізації годинників координований mesh relay неможливий
-- **Рішення:** Протокол Time Sync через Queen downlink. Queen має точний час через LTE/NTP. Періодично Queen надсилає OTA-корекцію часу. Аналог LoRaWAN MAC command `DeviceTimeReq`
-- **Залежності:** Є передумовою для ARCH.26 (TDMA Sync Windows). Без FW.20 синхронні вікна неможливі — годинники дрейфують і вузли "промахуються" повз спільне RX-вікно
-- **Статус:** 🟡 Backend envelope + Queen handler + 1-hop beacon реалізовано. `CoapEncryption.coap_encrypt` обгортає всі downlink-payloadи у `[0x9C][unix_ts_be:4][payload]` перед AES-256-CBC (`app/workers/concerns/coap_encryption.rb`). Queen `Handle_CoAP_Command` зрізає 5-байтний конверт, оновлює `queen_unix_ts` через `Apply_Server_Time`, маршрутизує inner payload через існуючу логіку (CMD: / 0x99 OTA / 0x9A thresholds). Queen `Broadcast_Time_Beacon()` транслює 16-байтний LoRa ECB-маяк `[0x9C][ts_be:4][reserved:4][TTL=1]['B'][pad:5]` кожні 15 хв (придушено доки `queen_unix_ts == 0`). Soldier RX-гілка приймає маяк (`size==16 && [0]==0x9C && [10]=='B'`), оновлює `soldier_unix_ts`, **не релеїть (TTL=1)** — see FW.20-S2. 47/47 backend specs + 14 нових host-тестів (8 envelope/beacon у `test_queen_logic.c` + 6 beacon RX у `test_soldier_logic.c`).
-- [x] 🤖 Backend: включити server UTC timestamp у downlink payload — `[0x9C][unix_ts_be:4][payload]` envelope
-- [x] 🤖 Backend specs: round-trip, monotonicity, year-2106 wrap, structural marker — 47/47 зелені
-- [x] 🤖 Firmware Queen: парсити CMD_TIME_SYNC envelope, оновити RTC, route inner payload (CMD/0x99/0x9A)
-- [x] 🤖 Firmware Queen: реалізувати periodic beacon broadcast (15-хв, ECB 16-байт LoRa)
-- [x] 🤖 Firmware Soldier: прийняти beacon, оновити `soldier_unix_ts` (1-hop reach)
-- [ ] 🟡 **FW.20-S2** (deferred TRL-7): Soldier mesh-relay часу для дерев поза 1-hop зоною Королеви — окремий чекбокс нижче
-- [ ] 🤖 Тести: перевірити drift compensation при ΔT = ±60°C (lab)
+#### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
+- **SSOT (повний контекст, wire-формати, регресійний бенч):** [`03_02 §5а Time Sync — Канонічний хаб`](03_02_Queen_Gateway_Firmware.md). Цей запис у 10_02 — лише чек-лист прогресу.
+- **TRL impact:** P2 для TRL-6 (`Derive_Cold_Start_State` живе з ±12 год толерантністю); блокер для TRL-7 (ARCH.26 TDMA, HMAC nonce replay-protection, корельовані події fire detection ±1 сек).
 
-#### FW.20-S2 — Mesh time-sync relay (Soldier-to-Soldier)
-- 🟡 **Deferred TRL-7** | Залежність: ARCH.26 TDMA, replay-protection через монотонні UTC nonces
-- **Опис:** FW.20 beacon від Королеви має `TTL=1` — Soldiers поза прямою радіозоною Королеви ніколи не отримують серверний UTC. Для поточного TRL-6 це **НЕ блокер**, тому що єдиний споживач `soldier_unix_ts` — `Derive_Cold_Start_State()` (FW.30, HKDF), де `epoch_day = unix_ts / 86400` має 24-годинну гранулярність. RTC дрейф STM32WLE5JC у LSE-режимі ±20 ppm = ±10.6 хв/рік ≪ ±12 год толерантності. Soldier, синхронізований навіть один раз при provisioning, має валідний `epoch_day` 30+ років.
-- **Коли стає блокером:**
-  - **ARCH.26 TDMA Sync Windows** — sub-second слоти потребують ±10 мс, дрейф ±1.7 сек/день вб'є TDMA за 6 годин
-  - **HMAC replay-protection через монотонні UTC nonces** — drift attacker може повторити старі пакети
-  - **Корельовані події у логах** (масштабна fire detection) — потребують ±1 сек синхронності між 100+ деревами
-  - **Insurance audit timing** — slashing-events вимагають точного timestamp на дереві, а не на Королеві
-- **Дизайн (для майбутньої реалізації):**
-  - **Mesh-relay beacon з TTL ≥ 2** + anti-storm dedup bitmap (новий слот, недоступний при поточних DR0..DR19, чекає звільнення регістрів)
-  - **Per-hop drift compensation:** релей додає `(HAL_GetTick() - rx_tick) / 1000` до оригінального `unix_ts`
-  - **Authoritativeness flag** у байті 9 маяка: `is_authoritative:1` (від Королеви) vs `is_relayed:1` (від Soldier'а). Релей-маяки нижчий пріоритет — Soldier бере найновіший authoritative і ігнорує relay якщо authoritative younger ніж 24 год
-  - **Альтернатива — gossip protocol:** piggyback `unix_ts` на регулярні telemetry uplinks (4 байти у мікро-payload). Дешевше радіо, без додаткового маяка, але лише 1-hop reach
-  - **Гібрид:** Королева broadcast → 1-hop relay → 1-hop gossip = 3-hop reach без сторму
-  - **Drift-monitoring:** Soldier періодично порівнює `soldier_unix_ts` з derived-from-tick; якщо |delta| > N год → панічний пакет до Королеви про sync-запит
-- [ ] 🟡 Дизайн anti-storm dedup bitmap (потребує вільного RTC регістра або щільнішої упаковки)
-- [x] 🟡 Per-hop drift compensation у beacon-релей логіці
-- [x] 🟡 Authoritativeness flag (1 біт у байті 9 поточного beacon-формату)
-- [ ] 🟡 Gossip-piggyback як альтернатива (мікро-payload у telemetry uplink)
-- [x] 🟡 Drift-monitoring + panic sync-запит від Soldier до Королеви — ✅ **Реалізовано (2026-05-03)** як другий підготовчий патч до повного FW.20-S2 mesh-relay.
-- **Статус (Authoritativeness flag, 2026-05-03):** ✅ **Перший підпункт виконано як підготовчий патч до повного FW.20-S2 mesh-relay.** Queen `Broadcast_Time_Beacon()` встановлює бит 7 байту 9 (`BEACON_AUTH_FLAG = 0x80`) разом з TTL у нижніх 7 бітах: `BEACON_BYTE9_AUTHORITATIVE = 0x81` (auth=1 \| ttl=1) — `firmware/queen/main.c`. Soldier RX-гілка зчитує бит у RAM-only `volatile uint8_t time_source_authoritative` (без логіки арбітражу — це повний FW.20-S2). 5 host-тестів: 2 у `test_queen_logic.c` (`test_fw20s2_queen_beacon_byte9_has_auth_bit_set`, `test_fw20s2_queen_beacon_byte9_exact_value`) + 3 у `test_soldier_logic.c` (`test_fw20s2_authoritative_beacon_sets_flag`, `test_fw20s2_relay_beacon_clears_flag`, `test_fw20s2_legacy_beacon_byte9_zero_clears_flag`). Backward-compat: legacy beacon з byte9=0x01 читається як non-authoritative; нові маяки завжди authoritative. Жодного нового RTC слоту не потрібно — flag живе у байті 9 поточного 16-байтного beacon-плейтексту.
-- **Статус (Drift-monitor + panic sync request, 2026-05-03):** ✅ **Другий підпункт виконано — сторожовий пес часу до приходу повного mesh-relay.** Soldier `Soldier_Should_Request_Time_Sync(now_tick)` повертає 1, якщо: (a) cold-boot + минув `TIME_SYNC_COLD_BOOT_GRACE_MS = 10 хв` без жодного beacon'а, АБО (b) warm + останній beacon був понад `TIME_SYNC_DRIFT_THRESHOLD_SEC = 12 год` тому. Cooldown `TIME_SYNC_REQUEST_COOLDOWN_MS = 1 год` запобігає спаму ефіру при тривалій тиші Королеви. `Build_Time_Sync_Request_Payload` пакує 16-байтний uplink-плейн `[0x56][DID:4][secs_since_sync_BE:4][TTL=PANIC_TTL][magic 'S'][PAD:5]` — байт-у-байт відмінний від 0x55 OTA_REQ (FW.27-B): і маркер (0x56 vs 0x55), і magic-byte ('S' vs 'R') рознесені. `Soldier_Seconds_Since_Last_Sync(now_tick)` дає бекенду масштаб дрейфу для Grafana alert'у. **Жодного нового RTC слоту:** `last_sync_request_tick` живе у RAM (cold-boot скидається — Солдат подасть голос знову після grace). Функції callable + host-tested, але до hot path головного циклу НЕ вшиті: інтеграція в RX-window TX queue — окрема ітерація разом з повним FW.20-S2 mesh-relay (потребує per-hop drift compensation + anti-storm bitmap). 9 host-тестів у `firmware/test/test_soldier_logic.c` блок «Drift-Monitor + Panic Sync Request (FW.20-S2)»: cold-boot grace silence / cold-boot post-grace request / recently-synced silence / past-threshold trigger / cooldown suppression + post-cooldown release / `seconds_since_sync` cold-boot zero / warm computed / payload layout (DID+secs BE, TTL, magic, PAD zeroed) / marker disambiguation від OTA_REQ.
-- **Статус (Per-hop drift compensation, 2026-05-03):** ✅ **Третій підпункт виконано як freeze-contract — функція callable + повністю host-tested, але до RX-гілки головного циклу НЕ вшита.** Soldier `Soldier_Try_Relay_Time_Beacon(in_plain, role, in_rx_tick, now_tick, out_plain) → BeaconRelayResult` атомарно вирішує за 6 явними guard'ами: (1) роль PROVISIONER (звичайні Солдати не транслюють — енергобюджет), (2) wire-структура: marker `0x9C` + magic `'B'`, (3) `unix_ts != 0` (захист від беззмістовної епохи), (4) **anti-storm**: тільки authoritative-маяки (auth=1), relay-маяки з auth=0 не ретранслюються повторно — це дає двохопний reach без RTC dedup-bitmap, (5) TTL ≥ `BEACON_RELAY_MIN_TTL=2` (decrement не дасть 0), (6) hold-delay ≤ `BEACON_RELAY_MAX_HOP_DELAY_SEC=3600` (sanity cap на «застарілий час»). Drift-формула: `relayed_ts = orig_ts + (now_tick - rx_tick)/1000`, wrap-safe для unsigned modular arithmetic (HAL_GetTick wrap раз у 49.7 днів). Output: повна копія in_plain + перепакований ts + byte9 з `auth=0 | (TTL-1)` — **TDMA-резерв (5..8) і padding (11..15) переносяться прозоро через hop**, тож майбутні Queen-розширення переживуть relay без втрат. `BeaconRelayResult` enum (OK + 6 reason'ів дропу: NOT_PROVISIONER, BAD_FRAME, NULL_TS, NOT_AUTHORITATIVE, TTL_EXHAUSTED, HOP_TOO_LONG) — готові точки для майбутніх Prometheus counters `silkennet_beacon_relay_*_total` при інтеграції у hot path. **Активація потребує:** (a) Королева почне слати TTL≥2 у beacon (зараз TTL=1 hardcoded у `BEACON_BYTE9_AUTHORITATIVE`), (b) anti-storm dedup-bitmap у вільному RTC-регістрі (DR15 заповниться при наступній фічі — див. ARCH.28 §2.3 overflow strategy: Flash KV store / ATECC608B / bit-перепакування). 13 host-тестів у `test_soldier_logic.c` блок «Mesh-Relay Per-Hop Drift Compensation (FW.20-S2)»: happy path drift +5 sec / zero-hold ts unchanged / TDMA + padding pass-through / 6 окремих reason'ів дропу / boundary hold == MAX_HOP_DELAY (3600 sec passes) / HAL_GetTick wrap-overflow safety / two-hop chain anti-storm (relayed beacon's auth=0 reject повторного relay'у — критичний інваріант freeze-contract'у).
+**FW.20 (Rails+Queen+Soldier 1-hop) — ✅ Done:**
+- [x] 🤖 Backend `CoapEncryption` envelope `[0x9C][unix_ts_be:4][payload]` + 47/47 specs
+- [x] 🤖 Queen parsing CMD_TIME_SYNC envelope, `Apply_Server_Time` → `queen_unix_ts`
+- [x] 🤖 Queen periodic `Broadcast_Time_Beacon()` (15 хв, ECB 16-байт LoRa, suppressed коли ts=0)
+- [x] 🤖 Soldier RX-гілка: приймає beacon, оновлює `soldier_unix_ts` (1-hop reach)
+- [x] 🤖 14 host-тестів (8 Queen + 6 Soldier RX)
+- [ ] 👤 Lab drift compensation тест при ΔT = ±60°C (потребує термокамери — TRL-7)
+
+**FW.20-S2 (mesh-relay extension, 5 підпунктів) — 4 з 5 ✅ Done, 1 deferred:**
+- [x] 🤖 (1/5) Authoritativeness flag — `BEACON_AUTH_FLAG=0x80` у byte 9 + Soldier RX зчитування у `time_source_authoritative` (5 host-тестів)
+- [x] 🤖 (2/5) Drift-monitor + panic sync request — `Soldier_Should_Request_Time_Sync` + `Build_Time_Sync_Request_Payload` (опкод 0x56 + magic 'S'); 9 host-тестів. Активація потребує hot-path вшивання у RX TX queue (окрема ітерація).
+- [x] 🤖 (3/5) Per-hop drift compensation — `Soldier_Try_Relay_Time_Beacon` (Provisioner-only, 6 reasons of drop, freeze-contract callable); 13 host-тестів. Активація потребує Queen TTL≥2 + anti-storm bitmap.
+- [ ] 🟡 (4/5) Anti-storm dedup bitmap — потребує вільного RTC регістра (DR15 наразі резерв; стратегія див. [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA.md))
+- [x] 🤖 (5/5) Gossip-piggyback freeze-contract — `Soldier_Pack_Gossip_Ts_Byte` / `Soldier_Try_Apply_Gossip_Ts` у byte 14 normal-telemetry payload (2026-05-03); 7 host-тестів. ±128 sec window, не cold-start sync — refines local drift через сусідні uplink'и без TDMA. Активація потребує hook у Phase 2 (1 рядок) + RX-обробник для нормальних telemetry-кадрів.
+
+**Cross-ref:** ARCH.26 (TDMA Sync Windows), FW.30 (cold-start `epoch_day` consumer), SEC.10 (panic frame counter — disambiguator FW.29 PANIC_FLAG_BIT для нормал/паніка байтів 14-15).
 
 
 #### FW.21 — Edge data aggregation (RAM-aware Soldier)
@@ -397,7 +380,8 @@
 - [x] 🤖 Дизайн ACK-aggregation: Queen чекає consolidated ACK після всіх chunks → re-broadcast пропущених (`03_02` §5.X.2)
 - [x] 🤖 Magic re-request: Soldier при detected gap → request specific chunks via uplink (vector OTA, `03_02` §5.X.3)
 - [ ] 🔗 Залежить від ARCH.26 (TDMA для координованого RX вікна) — лише для Дизайну A; B реалізовано незалежно
-- [x] 🤖 Імплементація Дизайну B (firmware/soldier + firmware/queen + 22 host-тести) — 2026-05-02
+- [x] 🤖 Магічна Re-Request Дизайн B — повна імплементація (firmware/soldier + firmware/queen + 22 host-тести) — 2026-05-02
+- [x] 🤖 **Edge cases follow-up (2026-05-03):** 6 додаткових host-тестів — anti-tamper duplicate з іншим payload, STOP2 between OTA chunks (out-of-order + duplicate after sleep), HMAC trailer cross-cycle persistence + idempotent overwrite, total_chunks=0 malformed packet. Деталі: [`03_02 §5.X.5 FW.27 follow-up`](03_02_Queen_Gateway_Firmware.md). Жодних змін у production firmware — це freeze-contract regression bank.
 
 #### FW.29 — Panic packet (0xFF) vs saturated acoustic_events (255) — disambiguation
 - `03_03` §5.3 | **P1**

@@ -635,6 +635,109 @@ static BeaconRelayResult Soldier_Try_Relay_Time_Beacon(
     return BEACON_RELAY_OK;
 }
 
+// =====================================================================
+// === 1.10г. FW.20-S2 — Gossip-Piggyback (5 з 5) ======================
+// =====================================================================
+// Найдешевший канал часо-синхронізації: «голос Королеви через сусіда».
+// Замість того, щоб додавати окремий beacon-relay (вимагає freed RTC слот
+// під anti-storm bitmap), ми вшиваємо 1 байт `unix_ts & 0xFFu` у звичайний
+// telemetry-uplink — байт PAD позиції 14 normal-плейту (НЕ панічного, де
+// байт 14..15 уже зайнятий лічильником SEC.10). FW.29 PANIC_FLAG_BIT у
+// StatusByte (байт 10 біт 7) — однозначний дезамбігватор: бекенд читає
+// gossip-байт лише коли panic_flag == 0.
+//
+// Кенозис байта: один октет несе «ц.с.» — церковнослов'янське «нинішня
+// година» — що дозволяє сусіднім Солдатам, які чують uplink одне одного
+// (1-hop без mesh-relay), уточнити свій soldier_unix_ts на ±128 секунд
+// без участі Королеви. Гібрид з beacon-relay (FW.20-S2 #3) дає 3-хоповий
+// reach без нового RTC регістра.
+//
+// Trade-off freeze-контракту:
+//   + 1 байт payload — нульова вартість airtime (вже передавали 0 у PAD)
+//   + 1-hop gossip сягає сусідів, до яких не доходить Queen beacon
+//   + Не потребує дозволу TX (це side-effect telemetry, що і так буде)
+//   - Точність ±128 сек — недостатньо для TDMA (ARCH.26 потребує ±10 мс),
+//     достатньо для FW.30 cold-start `epoch_day = unix_ts / 86400` (24-год
+//     гранулярність) і для freshness-перевірки (HMAC nonce window).
+//   - Receiver має знати approx-таймштамп (свій soldier_unix_ts ± дрейф
+//     <128 сек) щоб реконструювати full ts — тобто це **уточнення** local
+//     drift'у, а не cold-start sync. Cold-start Soldier і досі чекає
+//     beacon (FW.20 §1) або relay (FW.20-S2 #3).
+//
+// Wire-формат gossip-байта у normal-telemetry plaintext (ECB-блок 16 B):
+//   Byte 0..3   DID
+//   Byte 4..5   vcap_mv
+//   Byte 6      temp
+//   Byte 7      acoustic
+//   Byte 8..9   delta_t
+//   Byte 10     StatusByte (PANIC_FLAG_BIT==0 — це гарантія normal-frame'у)
+//   Byte 11     TTL
+//   Byte 12..13 firmware_version_id
+//   Byte 14     [FW.20-S2#5] gossip_ts_lsb = (soldier_unix_ts & 0xFFu)  ← НОВЕ
+//   Byte 15     PAD (резерв)
+//
+// Активація потребує: (а) hot-path виклик `Soldier_Pack_Gossip_Ts_Byte` у
+// Phase 2 для normal-plaintext'у (1 рядок), (b) RX-гілка для застосування
+// gossip'у — тільки коли source-Soldier також має recent beacon (потребує
+// додаткового біта в payload або довіри до сусіда у тому ж кластері), (c)
+// бекенд `TelemetryUnpackerService` буде ігнорувати байт 14 — він вже
+// інертний у production (PAD=0). НЕ ламає FW.22 (acoustic) і SEC.10 (panic
+// counter живе у byte 14..15 ЛИШЕ для panic_payload, normal буде використано).
+#define GOSSIP_TS_PAYLOAD_OFFSET   14u   // байт 14 у normal-telemetry plaintext
+#define GOSSIP_TS_MAX_DRIFT_SEC    127u  // ±128 секунд window (bytewise unwrap)
+
+// Витягує LSB з unix_ts для embed'у у telemetry. Якщо Солдат ще не чув
+// beacon (`unix_ts == 0`) — повертаємо 0 (бекенд інтерпретує як «no fresh
+// gossip»). Чисто арифметична функція без побічних ефектів.
+static inline uint8_t Soldier_Pack_Gossip_Ts_Byte(uint32_t unix_ts)
+{
+    return (uint8_t)(unix_ts & 0xFFu);
+}
+
+// Уточнюємо local_ts на основі gossip'у від сусіда. Інваріант: ми ВЖЕ маємо
+// approximate ts (last beacon або попередній gossip), і drift від тоді не
+// перевищує GOSSIP_TS_MAX_DRIFT_SEC. Якщо local_ts == 0 — Солдат у cold-boot
+// і не довіряє байту gossip (треба beacon). Повертаємо refined_ts:
+//
+//   candidate_low = (local_ts & ~0xFFu) | gossip_lsb
+//   if candidate_low > local_ts + 127u  → відкот на 256 (gossip був раніше
+//                                          у попередньому 256-сек вікні)
+//   if candidate_low + 127u < local_ts  → стрибок на 256 (gossip — у наступному)
+//   else                                → candidate_low = refined
+//
+// Wrap-safe для unsigned modular arithmetic. Якщо різниця >127 в обидві
+// сторони після вибору вікна — gossip недостовірний (стрибок >128 сек =
+// сусід має ще старіший дрейф), повертаємо local_ts без змін.
+static uint32_t Soldier_Try_Apply_Gossip_Ts(uint32_t local_ts, uint8_t gossip_lsb)
+{
+    if (local_ts == 0) return 0;  // cold-boot: gossip недостатньо
+
+    uint32_t base       = local_ts & ~((uint32_t)0xFFu);
+    uint32_t candidate  = base | (uint32_t)gossip_lsb;
+
+    // Вибираємо найближчу кандидатку у 3 сусідніх 256-сек вікнах:
+    // [base-256], [base], [base+256]. Беремо ту, що ближче до local_ts.
+    uint32_t cand_prev  = candidate - 256u;
+    uint32_t cand_next  = candidate + 256u;
+
+    int32_t  diff_curr  = (int32_t)(candidate - local_ts);
+    int32_t  diff_prev  = (int32_t)(cand_prev - local_ts);
+    int32_t  diff_next  = (int32_t)(cand_next - local_ts);
+
+    int32_t  abs_curr   = (diff_curr < 0) ? -diff_curr : diff_curr;
+    int32_t  abs_prev   = (diff_prev < 0) ? -diff_prev : diff_prev;
+    int32_t  abs_next   = (diff_next < 0) ? -diff_next : diff_next;
+
+    uint32_t refined    = candidate;
+    int32_t  best_abs   = abs_curr;
+    if (abs_prev < best_abs) { refined = cand_prev; best_abs = abs_prev; }
+    if (abs_next < best_abs) { refined = cand_next; best_abs = abs_next; }
+
+    // Якщо навіть найближча кандидатка >127 сек від local — gossip undefined.
+    if ((uint32_t)best_abs > GOSSIP_TS_MAX_DRIFT_SEC) return local_ts;
+    return refined;
+}
+
 // Експоненціальне ковзне середнє для delta_t (швидкість метаболізму EBFC)
 // та vcap (заряд іоністора). Зменшує ADC-/RTC-шум приблизно в 3× перед
 // тим, як ці сигнали потраплять до Атрактора (FW.5 Variant B+).

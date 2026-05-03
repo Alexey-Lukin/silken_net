@@ -537,6 +537,24 @@ Radio.Send(encrypted_payload, 16);
 
 **Mesh Relay:** Якщо `has_mesh_relay == 1`, Soldier відправляє чужий зашифрований пакет (зі зменшеним TTL) перед власним. Це забезпечує ретрансляцію для дерев поза прямою видимістю Queen.
 
+#### 1.8а Cold-Temperature TX Deferral (FW.10)
+
+> **Кенозис холодом:** при `temp < -15°C` AND `vcap < 4000 mV` Solider свідомо пропускає TX-вікно (Should_Defer_TX повертає 1). Логіка — захистити EBFC від глибокої розрядки в умовах, коли ксилема замерзла і регенерація заряду тимчасово зупинена. Поріг температури суворо `<` (не `<=`), тому рівно `-15°C` не вважається холодом — це freeze-contract проти випадкової зміни оператора порівняння.
+
+**Граничні випадки** (`firmware/test/test_soldier_logic.c` §FW.10, 13 host-тестів):
+
+| Сценарій | T (°C) | vcap (mV) | Defer? | Тест |
+|---------|--------|-----------|--------|------|
+| Звичайна робота | +20 | 3500 | ❌ | `test_tx_defer_warm_and_low_vcap` |
+| Boundary @ -15°C, low vcap | -15 | 0 | ❌ | `test_tx_defer_boundary_minus15_zero_vcap` (✨ 2026-05-03) |
+| Холод -16°C, low vcap | -16 | 3999 | ✅ | `test_tx_defer_minus16_low_vcap` |
+| Холод -16°C, threshold vcap | -16 | 4001 | ❌ | `test_tx_defer_boundary_vcap_4001` |
+| Холод + battery-backed | -30 | 5000 | ❌ | `test_tx_defer_cold_but_very_high_vcap` |
+| Екстремальний холод + battery | -40 | 5500 | ❌ | `test_tx_defer_extreme_cold_high_vcap_battery_backed` (✨ 2026-05-03) |
+| Warm -5°C + low vcap | -5 | 1000 | ❌ | `test_tx_defer_warm_minus5_low_vcap` (✨ 2026-05-03) |
+
+> **Cross-ref:** `10_02 FW.10` — закрито через цю секцію.
+
 ---
 
 ### 1.9 Phase 4.5: RX Window (OTA + Mesh)

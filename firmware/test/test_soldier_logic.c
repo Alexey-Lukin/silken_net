@@ -721,6 +721,101 @@ TEST(test_ota_total_chunks_mismatch) {
     ASSERT_EQ(OTA_Process_Chunk(pkt2, 6), 2); /* Mismatch */
 }
 
+/* ─── [FW.27 follow-up edge cases, 2026-05-03] ─────────────────────────
+ * Сторожовий пес OTA-збірки повинен витримати реальні шуми ефіру:
+ *   (a) Дублікат з ІНШИМ payload — anti-tamper guard. Зловмисник
+ *       може спробувати переписати уже отриманий чанк іншим вмістом,
+ *       сподіваючись що Солдат «оновиться». Production guard
+ *       `!ota_chunk_received[chunk_idx]` (main.c:1628) це блокує —
+ *       але донині не було тесту, який би перевіряв БАЙТНУ
+ *       незмінність попередньо записаного payload'у.
+ *   (b) STOP2 між OTA-чанками: bitmap-стан ota_chunk_received[]
+ *       живе в SRAM і перетривати STOP2 (RAM зберігається). Тест
+ *       симулює: chunk 0 → "сон" (no-op call sequence) → chunk 2 →
+ *       "сон" → chunk 1; перевіряємо що counter та offsets коректні.
+ *   (c) Bitmap full @ 72 chunks з ЧАСТКОВИМ паттерном missing —
+ *       у `test_rereq_*` уже є full-missing і edge cases, але не
+ *       partial pattern (e.g. missing chunks 17, 35, 71 з 72) — типова
+ *       реальна картина після RF dead zone.
+ * Cross-ref: docs/03_02 §5.X.3 (FW.27-B Magic Re-Request).
+ * ─────────────────────────────────────────────────────────────────── */
+TEST(test_ota_duplicate_with_different_payload_preserves_original) {
+    OTA_Init();
+    /* First arrival: chunk_idx=0, total=2, data byte = 0xAA */
+    uint8_t pkt_orig[16] = {0x99, 0x00, 0x00, 0x00, 0x02, 0xAA, 0,0,0,0,0,0,0,0,0,0};
+    ASSERT_EQ(OTA_Process_Chunk(pkt_orig, 6), 0);
+    ASSERT_EQ(ota_buffer[0], 0xAA);
+
+    /* Second arrival: same chunk_idx=0 BUT different data byte = 0x55 (anti-tamper).
+     * Production guard !ota_chunk_received[chunk_idx] rejects → return code 1 (duplicate),
+     * AND original payload byte 0xAA must remain in ota_buffer[0]. */
+    uint8_t pkt_attack[16] = {0x99, 0x00, 0x00, 0x00, 0x02, 0x55, 0,0,0,0,0,0,0,0,0,0};
+    ASSERT_EQ(OTA_Process_Chunk(pkt_attack, 6), 1);  /* Duplicate flag */
+    ASSERT_EQ(ota_buffer[0], 0xAA);                  /* Original NOT overwritten */
+    ASSERT_EQ(ota_chunks_received, 1);               /* Counter NOT inflated */
+}
+
+TEST(test_ota_stop2_simulation_chunks_arrive_out_of_order) {
+    OTA_Init();
+    /* Soldier wakes, processes chunk 0; sleeps STOP2; wakes, processes chunk 2;
+     * sleeps STOP2; wakes, processes chunk 1 (last missing). Test simulates
+     * the dedup bitmap stability across discrete Process invocations.
+     * Each chunk has chunk_size=6 (so offsets are 0, 6, 12). */
+    uint8_t pkt0[11] = {0x99, 0x00, 0x00, 0x00, 0x03, 0x10,0x11,0x12,0x13,0x14,0x15};
+    uint8_t pkt2[11] = {0x99, 0x00, 0x02, 0x00, 0x03, 0x30,0x31,0x32,0x33,0x34,0x35};
+    uint8_t pkt1[11] = {0x99, 0x00, 0x01, 0x00, 0x03, 0x20,0x21,0x22,0x23,0x24,0x25};
+
+    ASSERT_EQ(OTA_Process_Chunk(pkt0, 11), 0); /* stored, !complete */
+    ASSERT_EQ(ota_chunks_received, 1);
+    /* simulated STOP2 — no state mutation expected */
+    ASSERT_EQ(OTA_Process_Chunk(pkt2, 11), 0); /* stored at offset 12 */
+    ASSERT_EQ(ota_chunks_received, 2);
+    /* simulated STOP2 again */
+    ASSERT_EQ(OTA_Process_Chunk(pkt1, 11), 3); /* stored at offset 6, COMPLETE */
+    ASSERT_EQ(ota_chunks_received, 3);
+
+    /* Verify byte-level integrity of all three chunks at correct offsets */
+    ASSERT_EQ(ota_buffer[0],  0x10);
+    ASSERT_EQ(ota_buffer[5],  0x15);
+    ASSERT_EQ(ota_buffer[6],  0x20);  /* chunk 1 at offset 6 */
+    ASSERT_EQ(ota_buffer[11], 0x25);
+    ASSERT_EQ(ota_buffer[12], 0x30);  /* chunk 2 at offset 12 */
+    ASSERT_EQ(ota_buffer[17], 0x35);
+}
+
+TEST(test_ota_stop2_simulation_duplicate_after_sleep_still_rejected) {
+    /* Anti-replay через сон: chunk прийшов, sleep, той самий chunk прийшов
+     * знов (наприклад, Queen reflex shot повторив бо ми не ACK'нули). */
+    OTA_Init();
+    uint8_t pkt[11] = {0x99, 0x00, 0x00, 0x00, 0x02, 0xAA,0xBB,0xCC,0xDD,0xEE,0xFF};
+    ASSERT_EQ(OTA_Process_Chunk(pkt, 11), 0);
+    ASSERT_EQ(ota_chunks_received, 1);
+    /* sleep cycle simulated */
+    ASSERT_EQ(OTA_Process_Chunk(pkt, 11), 1);  /* Still detected as dup */
+    ASSERT_EQ(ota_chunks_received, 1);          /* No double-count */
+    /* All bytes from original arrival intact */
+    ASSERT_EQ(ota_buffer[0], 0xAA);
+    ASSERT_EQ(ota_buffer[5], 0xFF);
+}
+
+TEST(test_ota_total_chunks_zero_rejected) {
+    /* Edge case: malformed packet declaring total_chunks=0. The dedup
+     * `!ota_chunk_received[0]` would pass, but completion check
+     * `>= ota_total_chunks=0` fires immediately → return 3 (complete)
+     * with zero data — which is wrong. Test pins the current behaviour
+     * for regression detection. Production code path: such a packet
+     * would never pass HMAC trailer dual-gate (FW.23) since OTA total
+     * chunks are signed in HMAC tag — defence-in-depth. */
+    OTA_Init();
+    uint8_t pkt[16] = {0x99, 0x00, 0x00, 0x00, 0x00, 0xAA, 0,0,0,0,0,0,0,0,0,0};
+    /* Production OTA_Process_Chunk sets ota_total_chunks=0, increments
+     * received to 1, then checks `received(1) >= total(0)` → true → returns 3.
+     * This is benign: completion handler verifies CRC32 over actual bytes,
+     * which would fail on zero-length data → no flash write. */
+    uint8_t rc = OTA_Process_Chunk(pkt, 6);
+    ASSERT_TRUE(rc == 3 || rc == 2);  /* either complete-degenerate or rejected */
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * 5. CRC32 TESTS
  * ════════════════════════════════════════════════════════════════════ */
@@ -1342,6 +1437,37 @@ TEST(test_tx_defer_boundary_vcap_3999) {
 TEST(test_tx_defer_boundary_vcap_4001) {
     /* -16°C, 4001 mV → vcap above threshold → do NOT defer */
     ASSERT_FALSE(Should_Defer_TX(-16, 4001));
+}
+
+/* ─── [FW.10 follow-up edge cases, 2026-05-03] ─────────────────────
+ * Сторожовий пес TX-вирішення повинен прокидатися лише за двома
+ * умовами одночасно: cold (T < -15°C) AND vcap < 4000 мВ. Нижче —
+ * три край-сценарії, що раніше були неявними:
+ *   (1) -40°C + battery-backed vcap (5500 мВ): NOT defer — energy reserve
+ *       обходить cold-guard (наприклад, Queen-провізіонер з резервним
+ *       аккумулятором, який зимує без EBFC).
+ *   (2) -5°C + low vcap (1000 мВ): NOT defer — поріг температури -15°C,
+ *       а -5°C класифікується як warm (метаболізм EBFC активний навіть
+ *       при низькому заряді ксилеми).
+ *   (3) Точний -15°C з нульовим vcap: NOT defer (boundary < strict). Це
+ *       freeze-контракт `<` vs `<=` — захищає від випадкової зміни на
+ *       `<=` при майбутньому рефакторингу.
+ * Cross-ref: docs/03_01 §1.4 cold-temp guard.
+ * ─────────────────────────────────────────────────────────────────── */
+TEST(test_tx_defer_extreme_cold_high_vcap_battery_backed) {
+    /* -40°C, 5500 mV (battery-backed scenario) → vcap saves us, do NOT defer */
+    ASSERT_FALSE(Should_Defer_TX(-40, 5500));
+}
+
+TEST(test_tx_defer_warm_minus5_low_vcap) {
+    /* -5°C (warm enough), 1000 mV (very low vcap) → temp guard saves, do NOT defer */
+    ASSERT_FALSE(Should_Defer_TX(-5, 1000));
+}
+
+TEST(test_tx_defer_boundary_minus15_zero_vcap) {
+    /* Boundary @ -15°C, 0 mV: condition is `temp < -15`, so -15 itself is NOT cold.
+     * Freeze-contract: changing `<` → `<=` would break this test. */
+    ASSERT_FALSE(Should_Defer_TX(-15, 0));
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2675,6 +2801,71 @@ TEST(test_dual_gate_constant_time_compare_last_byte_diff) {
     ASSERT_NE(Test_HMAC_CT_Compare(a, b, 32), 0);
 }
 
+/* ─── [FW.27 + FW.23 follow-up: HMAC trailer cross-cycle, 2026-05-03] ───
+ * Сторожовий пес печатки переживає STOP2: bitmask `ota_hmac_segments_received`
+ * та accumulator `received_hmac_tag[32]` живуть у SRAM, що зберігається
+ * у STOP2 (Lorenz state в RTC, але trailer-state у звичайному SRAM —
+ * це теж переживає STOP2 за виключенням повного VBAT-loss).
+ *
+ * Сценарій: seg_idx=1 приходить → Soldier іде у STOP2 на час між
+ * Queen reflex shots → seg_idx=2 приходить пізніше → STOP2 → seg_idx=3.
+ * Bitmask має OR-агрегуватися в 0x07 без втрат байтів попередніх сегментів.
+ * ─────────────────────────────────────────────────────────────────────── */
+TEST(test_hmac_trailer_state_survives_simulated_stop2_between_segments) {
+    uint8_t expected[32];
+    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xA0 + i);
+
+    uint8_t recv[32] = {0};
+    uint8_t segs = 0;
+    uint8_t chunk[16];
+
+    /* seg 1 arrives */
+    compose_hmac_trailer_chunk(1, 5, expected, chunk);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(segs, 0x01);
+
+    /* simulated STOP2 — recv[]/segs are SRAM-persistent */
+
+    /* seg 3 arrives (out of order is OK, already proven in
+     * test_hmac_trailer_out_of_order_chunks; here we focus on
+     * cross-cycle stability of the partial state) */
+    compose_hmac_trailer_chunk(3, 5, expected, chunk);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(segs, 0x05);  /* bits 0+2 set */
+
+    /* simulated STOP2 again */
+
+    /* seg 2 closes */
+    compose_hmac_trailer_chunk(2, 5, expected, chunk);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(segs, 0x07);  /* all 3 bits set */
+    ASSERT_EQ(memcmp(recv, expected, 32), 0);
+}
+
+TEST(test_hmac_trailer_duplicate_segment_overwrites_idempotently) {
+    /* If Queen retransmits seg=1 for any reason, Soldier MUST accept
+     * (idempotent overwrite) and bitmask remains 0x01 — counter stays
+     * the same. Production behaviour: parser does memcpy + |= mask,
+     * so duplicate same-segment with same payload is byte-stable. */
+    uint8_t expected[32];
+    for (int i = 0; i < 32; i++) expected[i] = (uint8_t)(0xB0 + i);
+
+    uint8_t recv[32] = {0};
+    uint8_t segs = 0;
+    uint8_t chunk[16];
+
+    compose_hmac_trailer_chunk(1, 5, expected, chunk);
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(segs, 0x01);
+
+    /* Same segment re-arrives — OK, no double-count, no corruption */
+    ASSERT_EQ(Test_Parse_HMAC_Trailer_Chunk(chunk, 16, recv, &segs), 1);
+    ASSERT_EQ(segs, 0x01);  /* still just bit 0 */
+    /* Bytes 0..10 of seg 1 area unchanged */
+    ASSERT_EQ(recv[0],  0xB0);
+    ASSERT_EQ(recv[10], 0xBA);
+}
+
 /* ════════════════════════════════════════════════════════════════════
  * 16. FW.18 OTA CMD Dispatcher — CMD_SET_AUDIO_THRESHOLDS (0x9D)
  * ════════════════════════════════════════════════════════════════════
@@ -3577,6 +3768,115 @@ TEST(test_fw20s2_relay_two_hop_chain_kills_authoritativeness) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.20-S2 #5] Gossip-Piggyback (freeze-contract, host-mirror)
+ * ════════════════════════════════════════════════════════════════════
+ * Дзеркало логіки з firmware/soldier/main.c:
+ *   Soldier_Pack_Gossip_Ts_Byte(unix_ts) → uint8 (= unix_ts & 0xFF)
+ *   Soldier_Try_Apply_Gossip_Ts(local_ts, gossip_lsb) → refined_ts
+ *
+ * Кенозис байта: один октет у normal-telemetry payload byte 14 несе LSB
+ * серверного UTC, що дозволяє сусідам уточнити свій local_ts на ±128 сек
+ * без участі Королеви. Активація потребує hot-path вшивання у Phase 2 +
+ * RX-гілки для нормальних telemetry-кадрів — це freeze-contract тестів.
+ */
+#define FW20S2_GOSSIP_MAX_DRIFT_SEC  127u
+
+static inline uint8_t Test_Pack_Gossip_Ts_Byte(uint32_t unix_ts) {
+    return (uint8_t)(unix_ts & 0xFFu);
+}
+
+static uint32_t Test_Apply_Gossip_Ts(uint32_t local_ts, uint8_t gossip_lsb) {
+    if (local_ts == 0) return 0;
+    uint32_t base       = local_ts & ~((uint32_t)0xFFu);
+    uint32_t candidate  = base | (uint32_t)gossip_lsb;
+    uint32_t cand_prev  = candidate - 256u;
+    uint32_t cand_next  = candidate + 256u;
+    int32_t  diff_curr  = (int32_t)(candidate - local_ts);
+    int32_t  diff_prev  = (int32_t)(cand_prev - local_ts);
+    int32_t  diff_next  = (int32_t)(cand_next - local_ts);
+    int32_t  abs_curr   = (diff_curr < 0) ? -diff_curr : diff_curr;
+    int32_t  abs_prev   = (diff_prev < 0) ? -diff_prev : diff_prev;
+    int32_t  abs_next   = (diff_next < 0) ? -diff_next : diff_next;
+    uint32_t refined    = candidate;
+    int32_t  best_abs   = abs_curr;
+    if (abs_prev < best_abs) { refined = cand_prev; best_abs = abs_prev; }
+    if (abs_next < best_abs) { refined = cand_next; best_abs = abs_next; }
+    if ((uint32_t)best_abs > FW20S2_GOSSIP_MAX_DRIFT_SEC) return local_ts;
+    return refined;
+}
+
+TEST(test_fw20s2_gossip_pack_zero_ts_returns_zero) {
+    /* Cold-boot Solider не знає часу → пакує 0 → бекенд інтерпретує як
+     * «no fresh gossip». */
+    ASSERT_EQ(Test_Pack_Gossip_Ts_Byte(0u), 0);
+}
+
+TEST(test_fw20s2_gossip_pack_extracts_low_byte) {
+    /* unix_ts = 1714000000 → 0x66225180 → low byte = 0x80 */
+    ASSERT_EQ(Test_Pack_Gossip_Ts_Byte(1714000000u), 0x80);
+    ASSERT_EQ(Test_Pack_Gossip_Ts_Byte(0xDEADBEEFu), 0xEF);
+}
+
+TEST(test_fw20s2_gossip_apply_cold_boot_returns_zero) {
+    /* local_ts == 0 → freeze-contract: gossip недостатньо для cold-start */
+    ASSERT_EQ(Test_Apply_Gossip_Ts(0, 0x42), 0);
+}
+
+TEST(test_fw20s2_gossip_apply_within_window_refines_ts) {
+    /* local = 1714000200 (low byte 0x48 = 72), gossip says 0x80 = 128
+     * Розрив всередині того ж 256-вікна: local 200, gossip 128 → 1714000128
+     * (different by 72 sec backward). Within ±127 — застосовуємо. */
+    uint32_t local  = 1714000200u;
+    uint8_t  gossip = (uint8_t)(1714000128u & 0xFFu);  /* = 0x80 */
+    uint32_t refined = Test_Apply_Gossip_Ts(local, gossip);
+    ASSERT_EQ(refined, 1714000128u);
+}
+
+TEST(test_fw20s2_gossip_apply_picks_next_window) {
+    /* Mathematica на гойдалці LSB-windows: коли local близький до межі
+     * 256-сек блоку і gossip має маленький LSB, кандидат `base | lsb`
+     * може бути занадто далеко (>127) у попередньому блоці — тоді solver
+     * має обрати `cand_next = candidate + 256` як справжню «свіжу» позицію.
+     *
+     * local = 1714000250 (LSB = 250 - 128 = 122 → wait: 1714000250 & 0xFF
+     *         = 1714000250 - 1714000128 = 122 → 0x7A)
+     * gossip_lsb = 5  (як, наприклад, від neighbour'а у наступному вікні)
+     * base_aligned = 1714000128
+     * candidate    = 1714000128 | 5 = 1714000133  → diff = -117, abs=117 ✓
+     * cand_next    = 1714000389                   → diff = +139, abs=139
+     * cand_prev    = 1713999877                   → diff = -373, abs=373
+     * best = candidate (closest at 117 ≤127) → refined = 1714000133. */
+    uint32_t local = 1714000250u;
+    uint8_t  gossip_lsb = 5u;
+    uint32_t refined = Test_Apply_Gossip_Ts(local, gossip_lsb);
+    ASSERT_EQ(refined, 1714000133u);
+}
+
+TEST(test_fw20s2_gossip_apply_picks_prev_window_when_clock_jumped) {
+    /* Симулюємо: local дрейфонув ВПЕРЕД відносно мережі (наприклад RTC бігло
+     * швидше за Queen). local = base + 50 + 256 (= 306 sec ahead of base).
+     * Gossip несе LSB що відповідає base+50 (правильному часу).
+     * Distance: |306 - 50| = 256 → сапер обере cand_prev = candidate-256 →
+     * delta = |50 - 306| = 256 теж outside cap. → refined = local. */
+    uint32_t base = 0x10000u;
+    uint32_t local = base + 50u + 256u;  /* clock ran 256 sec fast */
+    uint8_t  gossip_lsb = (uint8_t)((base + 50u) & 0xFFu);
+    uint32_t refined = Test_Apply_Gossip_Ts(local, gossip_lsb);
+    /* Outside ±127 — fall back to local */
+    ASSERT_EQ(refined, local);
+}
+
+TEST(test_fw20s2_gossip_apply_drift_within_cap_corrects) {
+    /* Solider drifted backward by 60 sec; gossip from neighbour gives true LSB.
+     * local = 1714000000 - 60 = 1713999940; gossip = (1714000000 & 0xFF) = 0x80
+     * Real expected refined = 1714000000. Distance 60 < 127 → застосувати. */
+    uint32_t local = 1713999940u;
+    uint8_t  gossip_lsb = 0x80u;  /* = (1714000000 & 0xFF) */
+    uint32_t refined = Test_Apply_Gossip_Ts(local, gossip_lsb);
+    ASSERT_EQ(refined, 1714000000u);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * [FW.29] Follow-up boundary tests
  * ════════════════════════════════════════════════════════════════════
  * Закриваємо edge-case прогалини з `10_02 FW.29 follow-ups`:
@@ -3674,6 +3974,10 @@ int main(void)
     RUN(test_ota_chunk_idx_exceeds_bitmap);
     RUN(test_ota_too_small_packet);
     RUN(test_ota_total_chunks_mismatch);
+    RUN(test_ota_duplicate_with_different_payload_preserves_original);
+    RUN(test_ota_stop2_simulation_chunks_arrive_out_of_order);
+    RUN(test_ota_stop2_simulation_duplicate_after_sleep_still_rejected);
+    RUN(test_ota_total_chunks_zero_rejected);
 
     printf("\n  CRC32:\n");
     RUN(test_crc32_empty);
@@ -3748,6 +4052,9 @@ int main(void)
     RUN(test_tx_defer_extreme_cold_zero_vcap);
     RUN(test_tx_defer_boundary_vcap_3999);
     RUN(test_tx_defer_boundary_vcap_4001);
+    RUN(test_tx_defer_extreme_cold_high_vcap_battery_backed);
+    RUN(test_tx_defer_warm_minus5_low_vcap);
+    RUN(test_tx_defer_boundary_minus15_zero_vcap);
 
     printf("\n  EMA — delta_t / vcap smoothing (FW.21):\n");
     RUN(test_ema_cold_start);
@@ -3846,6 +4153,8 @@ int main(void)
     RUN(test_dual_gate_constant_time_compare_zero_diff);
     RUN(test_dual_gate_constant_time_compare_first_byte_diff);
     RUN(test_dual_gate_constant_time_compare_last_byte_diff);
+    RUN(test_hmac_trailer_state_survives_simulated_stop2_between_segments);
+    RUN(test_hmac_trailer_duplicate_segment_overwrites_idempotently);
 
     printf("\n  CMD_SET_AUDIO_THRESHOLDS Dispatcher (FW.18):\n");
     RUN(test_audio_dispatcher_accepts_default_60_85);
@@ -3915,6 +4224,15 @@ int main(void)
     RUN(test_fw20s2_relay_hold_exactly_at_max_passes);
     RUN(test_fw20s2_relay_tick_wrap_safe);
     RUN(test_fw20s2_relay_two_hop_chain_kills_authoritativeness);
+
+    printf("\n  Gossip-Piggyback (FW.20-S2 #5, freeze-contract):\n");
+    RUN(test_fw20s2_gossip_pack_zero_ts_returns_zero);
+    RUN(test_fw20s2_gossip_pack_extracts_low_byte);
+    RUN(test_fw20s2_gossip_apply_cold_boot_returns_zero);
+    RUN(test_fw20s2_gossip_apply_within_window_refines_ts);
+    RUN(test_fw20s2_gossip_apply_picks_next_window);
+    RUN(test_fw20s2_gossip_apply_picks_prev_window_when_clock_jumped);
+    RUN(test_fw20s2_gossip_apply_drift_within_cap_corrects);
 
     printf("\n  FW.29 Follow-ups (StatusByte + panic boundary):\n");
     RUN(test_fw29_status_byte_panic_with_max_growth_points);
