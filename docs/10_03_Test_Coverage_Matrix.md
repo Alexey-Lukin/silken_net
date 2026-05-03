@@ -149,6 +149,7 @@
 | **[FW.1] Flash Key Loading** | **8** | 🟢 **Нове** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler, FLASH_KEY_ADDR 0x0803E000 |
 | **[FW.3] LoRa RX Ring Buffer** | **13** | 🟢 **Нове** (2026-05-02) — single-producer FIFO, capacity 15, переповнення → drop counter (existing voices preserved), drain+refill wraps, RSSI passthrough, ISR simulator size/RSSI clamp, **25-сек flush сценарій** (30 ISR пакетів → 15 уцілілих + 15 видимих втрат). Закриває BLOCKER-2 part-1: `incoming_lora_payload`+`lora_rx_flag` → ring. |
 | **[FW.20-S2] Authoritativeness Flag (Queen TX)** | **2** | 🟢 **Нове (2026-05-03)** — `Build_Time_Beacon_Plaintext` byte 9 = `BEACON_BYTE9_AUTHORITATIVE` (0x81 = auth bit \| TTL=1); regression-точка на exact byte value |
+| **[E.8] CIFO SNR Tiebreaker** | **7** | 🟢 **Нове (2026-05-03)** — `LoRaRxSlot.snr` + `EdgeCache.snr` plumbing + tiebreaker logic у `Process_And_Cache_Data` коли два non-critical записи мають однаковий RSSI: persisted у cache, dedup updates SNR, tiebreaker triggers on equal RSSI, doesn't override worse RSSI (RSSI primary, SNR tiebreaker), respects critical priority (status≠0 captain rule undisturbed), fallback path tiebreaker (all-critical scenario), ring carries SNR ISR→consumer end-to-end. 128 → 135 queen tests. SX1262 SNR більше не `(void)snr` |
 
 ### 2.3 Bio-Contract (test_bio_contract.c)
 

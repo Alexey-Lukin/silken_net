@@ -208,6 +208,7 @@ static uint8_t Read_Queen_UID_From_Flash(void)
 typedef struct {
     uint8_t  payload[16];
     int8_t   rssi;
+    int8_t   snr;   // [E.8] SX1262 SNR (dB, signed). Used as CIFO eviction tiebreaker.
 } LoRaRxSlot;
 
 static volatile LoRaRxSlot lora_rx_ring[LORA_RX_RING_SIZE];
@@ -217,6 +218,7 @@ static volatile uint16_t   lora_rx_drops = 0;     // Лічильник пере
 
 uint8_t decrypted_payload[16];          // Розшифрований пакет від Солдата
 volatile int8_t current_rssi = 0;       // RSSI поточного оброблюваного пакета (для downstream-кешу)
+volatile int8_t current_snr  = 0;       // [E.8] SNR поточного оброблюваного пакета (CIFO tiebreaker)
 
 char at_tx_buffer[256];                 // Буфер для формування AT-команд
 
@@ -235,11 +237,13 @@ static inline uint8_t LoRa_Rx_Ring_Count(void) {
     return (uint8_t)((lora_rx_head - lora_rx_tail) & LORA_RX_RING_MASK);
 }
 
-// ISR-сторона: прийняти 16-байтний шифроблок + RSSI у пам'ять рою.
+// ISR-сторона: прийняти 16-байтний шифроблок + RSSI + SNR у пам'ять рою.
 // Якщо ринг наповнено по вінця (next == tail) — мовчазного переповнення
 // не дозволяємо: існуючі голоси недоторкані, лише інкрементуємо
 // `lora_rx_drops`, щоб ця жертва залишила слід.
-static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi) {
+// [E.8] SNR (Signal-to-Noise Ratio) тепер плюметься повз ISR — використовується
+// як tiebreaker у CIFO eviction коли два non-critical записи мають однаковий RSSI.
+static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi, int8_t snr) {
     uint8_t next = (uint8_t)((lora_rx_head + 1U) & LORA_RX_RING_MASK);
     if (next == lora_rx_tail) {
         // Ринг повний — голос лісу не вмістився. Backend дізнається про
@@ -251,15 +255,17 @@ static inline void LoRa_Rx_Ring_Push(const uint8_t *payload, int8_t rssi) {
     // бо тільки ISR пише в head-слот (single-producer інваріант).
     memcpy((void*)lora_rx_ring[lora_rx_head].payload, payload, 16);
     lora_rx_ring[lora_rx_head].rssi = rssi;
+    lora_rx_ring[lora_rx_head].snr  = snr;
     lora_rx_head = next;
 }
 
 // Main-loop сторона: витягти один голос (snapshot у локальні non-volatile
 // буфери), просунути tail. Повертає 1 якщо є пакет, 0 — якщо ринг порожній.
-static inline uint8_t LoRa_Rx_Ring_Pop(uint8_t *out_payload, int8_t *out_rssi) {
+static inline uint8_t LoRa_Rx_Ring_Pop(uint8_t *out_payload, int8_t *out_rssi, int8_t *out_snr) {
     if (lora_rx_head == lora_rx_tail) return 0;
     memcpy(out_payload, (const void*)lora_rx_ring[lora_rx_tail].payload, 16);
     *out_rssi = lora_rx_ring[lora_rx_tail].rssi;
+    *out_snr  = lora_rx_ring[lora_rx_tail].snr;
     lora_rx_tail = (uint8_t)((lora_rx_tail + 1U) & LORA_RX_RING_MASK);
     return 1;
 }
@@ -273,6 +279,7 @@ typedef struct {
     uint32_t uid;               // DID дерева
     uint8_t payload[16];        // Останні розшифровані дані
     int8_t rssi;                // Сила сигналу
+    int8_t snr;                 // [E.8] SNR — tiebreaker у CIFO eviction
     uint8_t is_active;          // 1 - якщо слот зайнятий
 } EdgeCache;
 
@@ -362,7 +369,7 @@ static void MX_IWDG_Init(void); // [PLAN 2.6] Independent Watchdog — auto-reco
 /* USER CODE BEGIN PFP */
 // Функції-обгортки для роботи з модемом та транзитом
 void SIM7070_SendATCommand(char* command, uint32_t delay_ms);
-void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi);
+void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, int8_t snr);
 void Flush_Cache_To_Rails(void);
 // [СИНХРОНІЗОВАНО з Rails]: Обробка вхідних CoAP-команд від сервера
 static uint32_t djb2_hash(const char* str, uint8_t len);
@@ -491,10 +498,12 @@ int main(void)
     {
         uint8_t  rx_payload[16];
         int8_t   rx_rssi = 0;
+        int8_t   rx_snr  = 0;
 
-        while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi))
+        while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi, &rx_snr))
         {
             current_rssi = rx_rssi;  // зберігаємо для downstream-кешу та логів
+            current_snr  = rx_snr;   // [E.8] SNR-tiebreaker у CIFO
 
             // 1. РОЗШИФРОВУЄМО ПАКЕТ
             // 4 слова × 32 біти = 16 байт = один AES-256-ECB блок.
@@ -660,7 +669,7 @@ int main(void)
                              (uint32_t)decrypted_payload[3];
 
         // Замість миттєвої відправки, складаємо в CIFO-кеш
-        Process_And_Cache_Data(sender_id, decrypted_payload, current_rssi);
+        Process_And_Cache_Data(sender_id, decrypted_payload, current_rssi, current_snr);
 
         // Re-arm RX перед забором наступного голосу з рингу
         Radio.Rx(LORA_RX_INFINITE);
@@ -690,7 +699,7 @@ int main(void)
                 queen_health[7] = cache_count;
                 // Byte 10: Status = homeostasis (0), growth_points = cache_count (proxy for health)
                 queen_health[10] = (cache_count < QUEEN_HEALTH_GP_MAX) ? cache_count : QUEEN_HEALTH_GP_MAX;
-                Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пакет)
+                Process_And_Cache_Data(0, queen_health, 0, 0); // RSSI=0, SNR=0 (локальний пакет)
             }
             Flush_Cache_To_Rails();
             last_flush_time = HAL_GetTick(); // Оновлюємо таймер
@@ -751,7 +760,9 @@ int main(void)
 // emergency-сигнал не зникає в кенозисі CoAP-flush'у.
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
-    (void)snr;  // SNR не використовується у CIFO-логіці (FW.3 acceptance)
+    // [E.8] SNR більше не відкидається — він плюметься у ринг і використовується
+    // як tiebreaker у CIFO eviction (Process_And_Cache_Data) коли два non-critical
+    // записи мають однаковий RSSI. Нижчий SNR = шумніший канал = preferred to evict.
 
     // Очікуємо рівно 16 байт (повний зашифрований блок AES-256)
     if (size != 16) return;
@@ -762,13 +773,19 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
     if (rssi < -128) rssi = -128;
     if (rssi > 127)  rssi = 127;
 
-    LoRa_Rx_Ring_Push(payload, (int8_t)rssi);
+    LoRa_Rx_Ring_Push(payload, (int8_t)rssi, snr);
 }
 
 // =========================================================================
 // ЛОГІКА КЕШУ (Дедуплікація та CIFO)
 // =========================================================================
-void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
+// [E.8] CIFO eviction тепер враховує і RSSI, і SNR. RSSI — primary key (сила
+// сигналу = відстань / preposition). SNR — tiebreaker для випадків, коли
+// два кандидати мають ОДНАКОВИЙ RSSI: нижчий SNR = шумніший канал = пакет
+// прийшов через інтерференцію → preferred for eviction. Це покращує якість
+// кешу під час grueling LoRa-collision storms (емерджентний rain-attenuation,
+// сусідні шлюзи на тому ж SF).
+void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, int8_t snr)
 {
     // 1. ДЕДУПЛІКАЦІЯ: Шукаємо, чи є вже це дерево в кеші
     for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
@@ -776,6 +793,7 @@ void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
             // Оновлюємо дані на найсвіжіші (бо дерево могло надіслати новий статус)
             memcpy(forest_cache[i].payload, payload, 16);
             forest_cache[i].rssi = rssi;
+            forest_cache[i].snr  = snr;
             return;
         }
     }
@@ -787,6 +805,7 @@ void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
                 forest_cache[i].uid = uid;
                 memcpy(forest_cache[i].payload, payload, 16);
                 forest_cache[i].rssi = rssi;
+                forest_cache[i].snr  = snr;
                 forest_cache[i].is_active = 1;
                 cache_count++;
                 return;
@@ -798,12 +817,15 @@ void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
     // але саме це дерево може бути на межі зони пожежі (критичний статус).
     // Нова логіка: спочатку шукаємо некритичне (status=0) дерево з найгіршим RSSI.
     // Якщо ВСІ записи критичні — використовуємо fallback на абсолютно найгірший RSSI.
+    // [E.8] При рівному RSSI tiebreaker — нижчий SNR (шумніший канал → evict).
     else {
         int best_evict_idx = -1;
         int8_t best_evict_rssi = 127;
+        int8_t best_evict_snr  = 127;
 
         int fallback_idx = 0;
         int8_t fallback_rssi = 127;
+        int8_t fallback_snr  = 127;
 
         for(int i = 0; i < CACHE_MAX_ENTRIES; i++) {
             // [FIX: AUDIT] Перевіряємо is_active щоб не порівнювати неініціалізовані RSSI
@@ -812,16 +834,22 @@ void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
             // bio_status з байта 10 пейлоада: біти [7:6]
             uint8_t bio_status = (forest_cache[i].payload[10] >> 6) & 0x03;
 
-            // Абсолютний fallback — найгірший RSSI серед усіх
-            if (forest_cache[i].rssi < fallback_rssi) {
+            // Абсолютний fallback — найгірший RSSI (з SNR tiebreaker) серед усіх
+            if (forest_cache[i].rssi < fallback_rssi ||
+                (forest_cache[i].rssi == fallback_rssi && forest_cache[i].snr < fallback_snr)) {
                 fallback_rssi = forest_cache[i].rssi;
-                fallback_idx = i;
+                fallback_snr  = forest_cache[i].snr;
+                fallback_idx  = i;
             }
 
             // Перевага: витісняємо некритичне (homeostasis, status=0) з найгіршим RSSI
-            if (bio_status == 0 && forest_cache[i].rssi < best_evict_rssi) {
+            // [E.8] При рівному RSSI — нижчий SNR (шумніший канал) виграє конкурс на eviction.
+            if (bio_status == 0 &&
+                (forest_cache[i].rssi < best_evict_rssi ||
+                 (forest_cache[i].rssi == best_evict_rssi && forest_cache[i].snr < best_evict_snr))) {
                 best_evict_rssi = forest_cache[i].rssi;
-                best_evict_idx = i;
+                best_evict_snr  = forest_cache[i].snr;
+                best_evict_idx  = i;
             }
         }
 
@@ -830,6 +858,7 @@ void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi)
         forest_cache[evict_idx].uid = uid;
         memcpy(forest_cache[evict_idx].payload, payload, 16);
         forest_cache[evict_idx].rssi = rssi;
+        forest_cache[evict_idx].snr  = snr;
     }
 }
 
