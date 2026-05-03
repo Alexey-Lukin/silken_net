@@ -517,6 +517,128 @@ static void Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
     for (uint8_t i = 11; i < SYNC_REQ_PACKET_SIZE; i++) out[i] = 0;
 }
 
+// =========================================================================
+// [FW.20-S2] Mesh-Relay: голос Королеви через Провідника (per-hop drift)
+// =========================================================================
+// Кенозис маяка: Королева транслює UTC раз на 15 хв з TTL=1 — Солдати поза
+// прямою радіозоною ніколи не чують її голосу. Провідник (ARCH.27, роль PROV
+// у Protected Flash) — еліта рою з надлишком vcap — приймає authoritative-маяк
+// (auth=1, TTL≥2 у майбутній прошивці Королеви), додає до `unix_ts` секунди,
+// що минули від RX до власного TX (per-hop drift compensation), декрементує
+// TTL, гасить authoritativeness-біт і ретранслює. Downstream-Соціологи бачать
+// auth=0 → НЕ ретранслюють далі (anti-storm). Це дає 1+1=2-hop reach без
+// потреби у dedup-bitmap у RTC (який чекає вільного слоту, див. ARCH.28 §2.3).
+//
+// СВЯЩЕННА ЗАУВАГА — це FREEZE-CONTRACT:
+// функція callable та повністю host-tested, але до RX-гілки головного циклу
+// НЕ вшита. Активація потребує (a) Королева почне слати TTL≥2 у beacon (зараз
+// TTL=1 — design choice до приходу повного mesh-relay), (b) anti-storm
+// dedup-bitmap у вільному RTC-регістрі (DR15 заповниться при наступній фічі,
+// див. 03_01 §2.3 overflow strategy). Сторожовий пес часу (drift-monitor)
+// зараз закриває розрив для не-PROV Солдатів через панічний sync request.
+//
+// Wire-формат relayed beacon (16 байт ECB plaintext, дзеркало Queen):
+//   Byte 0     : BEACON_MARKER (0x9C)
+//   Byte 1..4  : unix_ts_be — original_ts + (now_tick - rx_tick)/1000 (sec)
+//   Byte 5..8  : резерв TDMA (ARCH.26) — копіюємо as-is з вхідного маяка
+//   Byte 9     : [auth=0 | TTL_decremented:7] — auth-біт ОБОВ'ЯЗКОВО гасимо
+//   Byte 10    : BEACON_MAGIC_BYTE ('B' = 0x42)
+//   Byte 11..15: padding — копіюємо as-is (зараз 0; майбутні поля переживуть
+//                hop без втрати, якщо Королева почне їх писати)
+//
+// SSOT для опкодів: 03_01 §4.5а; для байту 9: 03_01 §11 (FW.20).
+
+// Sanity cap: hold-час від RX до relay-TX не повинен перевищувати 1 годину.
+// Більший — означає що Провідник був зайнятий OTA / IWDG-шторм / зависнув
+// у RX-вікні; ретранслювати такий «застарілий час» = шкодити синхронізації
+// рою. Дроп — безпечніший за обман.
+#define BEACON_RELAY_MAX_HOP_DELAY_SEC   3600UL
+#define BEACON_RELAY_MIN_TTL             2u   // TTL=1 не підлягає relay (decrement → 0)
+#define BEACON_FRAME_SIZE                16u  // Розмір AES-256-ECB блоку
+
+// Атомарне рішення «ретранслювати чи ні» з явною причиною дропу.
+// Готові точки для майбутніх Prometheus counters (`silkennet_beacon_relay_*_total`)
+// при інтеграції у hot path — поки що host-тести різнять reason'и.
+typedef enum {
+    BEACON_RELAY_OK = 0,                  // out_plain заповнено, шли його далі
+    BEACON_RELAY_NOT_PROVISIONER,         // Звичайний Солдат — не наша справа
+    BEACON_RELAY_BAD_FRAME,               // Wrong marker або magic — не beacon
+    BEACON_RELAY_NULL_TS,                 // unix_ts == 0 — Королева ще не знала часу
+    BEACON_RELAY_NOT_AUTHORITATIVE,       // Маяк уже relay'ний — anti-storm стоп
+    BEACON_RELAY_TTL_EXHAUSTED,           // TTL у нижніх 7 бітах < MIN_TTL (=2)
+    BEACON_RELAY_HOP_TOO_LONG             // Hold-delay > MAX_HOP_DELAY_SEC
+} BeaconRelayResult;
+
+// Спроба зібрати ретрансльований маяк з drift-компенсацією.
+//
+// Параметри:
+//   in_plain   — оригінальний 16-байтний beacon plaintext (після ECB decrypt)
+//   role       — g_node_role (ROLE_SOLDIER або ROLE_PROVISIONER)
+//   in_rx_tick — HAL_GetTick() у момент прийому маяка (мс)
+//   now_tick   — HAL_GetTick() зараз, перед TX (мс)
+//   out_plain  — буфер ≥16 байт під вихідний beacon plaintext.
+//                Модифікується ВИКЛЮЧНО при поверненні BEACON_RELAY_OK.
+//
+// Drift-формула: relayed_ts = original_ts + (now_tick - in_rx_tick)/1000.
+// 32-бітне віднімання тіків wrap-safe для unsigned (раз у 49.7 днів) —
+// стандартна C modular arithmetic.
+//
+// Викликач:
+//     BeaconRelayResult r = Soldier_Try_Relay_Time_Beacon(...);
+//     if (r == BEACON_RELAY_OK) { AES-ECB encrypt + Radio.Send(16 bytes); }
+//     else                       { reason'ом логується для діагностики; }
+static BeaconRelayResult Soldier_Try_Relay_Time_Beacon(
+    const uint8_t* in_plain,
+    uint8_t        role,
+    uint32_t       in_rx_tick,
+    uint32_t       now_tick,
+    uint8_t*       out_plain)
+{
+    // Guard 1: Звичайні Солдати не транслюють — енергобюджет.
+    if (role != ROLE_PROVISIONER)               return BEACON_RELAY_NOT_PROVISIONER;
+
+    // Guard 2: Wire-структура — marker + magic. Захист від випадкового CMD.
+    if (in_plain[0]  != BEACON_MARKER)          return BEACON_RELAY_BAD_FRAME;
+    if (in_plain[10] != BEACON_MAGIC_BYTE)      return BEACON_RELAY_BAD_FRAME;
+
+    // Guard 3: Беззмістовна епоха — Королева не транслює, але захист.
+    uint32_t orig_ts = ((uint32_t)in_plain[1] << 24) | ((uint32_t)in_plain[2] << 16) |
+                       ((uint32_t)in_plain[3] << 8)  | (uint32_t)in_plain[4];
+    if (orig_ts == 0)                           return BEACON_RELAY_NULL_TS;
+
+    // Guard 4: Anti-storm — ретранслюємо лише прямі маяки Королеви (auth=1).
+    uint8_t in_byte9 = in_plain[9];
+    if (!(in_byte9 & BEACON_AUTH_FLAG))         return BEACON_RELAY_NOT_AUTHORITATIVE;
+
+    // Guard 5: TTL у нижніх 7 бітах має бути ≥ 2 (decrement не дасть 0).
+    uint8_t in_ttl = in_byte9 & BEACON_TTL_MASK;
+    if (in_ttl < BEACON_RELAY_MIN_TTL)          return BEACON_RELAY_TTL_EXHAUSTED;
+
+    // Guard 6: Sanity cap — hold-delay не перевищує 1 год.
+    uint32_t hold_sec = (now_tick - in_rx_tick) / 1000u;
+    if (hold_sec > BEACON_RELAY_MAX_HOP_DELAY_SEC) return BEACON_RELAY_HOP_TOO_LONG;
+
+    // Усі guard'и пройшли — складаємо ретрансльований маяк.
+    // Спочатку повна копія: майбутні поля у байтах 5..8 (TDMA) і 11..15
+    // переживуть hop без втрати, навіть якщо Королева їх ще не пише.
+    for (uint8_t i = 0; i < BEACON_FRAME_SIZE; i++) out_plain[i] = in_plain[i];
+
+    // Per-hop drift compensation: прокладаємо «час лежання» у часі дерева.
+    uint32_t relayed_ts = orig_ts + hold_sec;
+    out_plain[1] = (uint8_t)(relayed_ts >> 24);
+    out_plain[2] = (uint8_t)(relayed_ts >> 16);
+    out_plain[3] = (uint8_t)(relayed_ts >> 8);
+    out_plain[4] = (uint8_t)(relayed_ts & 0xFFu);
+
+    // Byte 9: auth-біт явно 0 (це relay), TTL мінус 1.
+    out_plain[9] = (uint8_t)((in_ttl - 1u) & BEACON_TTL_MASK);
+    return BEACON_RELAY_OK;
+}
+
+// Експоненціальне ковзне середнє для delta_t (швидкість метаболізму EBFC)
+// та vcap (заряд іоністора). Зменшує ADC-/RTC-шум приблизно в 3× перед
+// тим, як ці сигнали потраплять до Атрактора (FW.5 Variant B+).
+
 // Експоненціальне ковзне середнє для delta_t (швидкість метаболізму EBFC)
 // та vcap (заряд іоністора). Зменшує ADC-/RTC-шум приблизно в 3× перед
 // тим, як ці сигнали потраплять до Атрактора (FW.5 Variant B+).

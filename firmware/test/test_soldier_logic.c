@@ -3350,6 +3350,232 @@ TEST(test_fw20s2_sync_req_marker_disambiguation_from_ota_req) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.20-S2] Mesh-Relay: per-hop drift compensation (freeze-contract)
+ * ════════════════════════════════════════════════════════════════════
+ * Дзеркало логіки з firmware/soldier/main.c:
+ *   Soldier_Try_Relay_Time_Beacon(in_plain, role, in_rx_tick, now_tick, out_plain)
+ *     → BeaconRelayResult enum (OK / 6 reasons of drop)
+ * Кенозис тесту: відтворюємо «Провідник почув Королеву, потримав маяк 5 секунд,
+ * передав далі з компенсованим часом» — і всі 6 причин дропу.
+ */
+#define FW20S2_MESH_BEACON_MARKER       0x9C
+#define FW20S2_MESH_BEACON_MAGIC        'B'
+#define FW20S2_MESH_AUTH_FLAG           0x80
+#define FW20S2_MESH_TTL_MASK            0x7F
+#define FW20S2_MESH_MIN_TTL             2u
+#define FW20S2_MESH_MAX_HOP_DELAY_SEC   3600UL
+#define FW20S2_MESH_FRAME_SIZE          16u
+#define FW20S2_MESH_ROLE_SOLDIER        0
+#define FW20S2_MESH_ROLE_PROVISIONER    1
+
+typedef enum {
+    FW20S2_RELAY_OK = 0,
+    FW20S2_RELAY_NOT_PROVISIONER,
+    FW20S2_RELAY_BAD_FRAME,
+    FW20S2_RELAY_NULL_TS,
+    FW20S2_RELAY_NOT_AUTHORITATIVE,
+    FW20S2_RELAY_TTL_EXHAUSTED,
+    FW20S2_RELAY_HOP_TOO_LONG
+} TestBeaconRelayResult;
+
+static TestBeaconRelayResult Test_Try_Relay_Time_Beacon(
+    const uint8_t* in_plain, uint8_t role,
+    uint32_t in_rx_tick, uint32_t now_tick, uint8_t* out_plain)
+{
+    if (role != FW20S2_MESH_ROLE_PROVISIONER) return FW20S2_RELAY_NOT_PROVISIONER;
+    if (in_plain[0]  != FW20S2_MESH_BEACON_MARKER) return FW20S2_RELAY_BAD_FRAME;
+    if (in_plain[10] != FW20S2_MESH_BEACON_MAGIC)  return FW20S2_RELAY_BAD_FRAME;
+    uint32_t orig_ts = ((uint32_t)in_plain[1] << 24) | ((uint32_t)in_plain[2] << 16) |
+                       ((uint32_t)in_plain[3] << 8)  | (uint32_t)in_plain[4];
+    if (orig_ts == 0) return FW20S2_RELAY_NULL_TS;
+    uint8_t in_byte9 = in_plain[9];
+    if (!(in_byte9 & FW20S2_MESH_AUTH_FLAG)) return FW20S2_RELAY_NOT_AUTHORITATIVE;
+    uint8_t in_ttl = in_byte9 & FW20S2_MESH_TTL_MASK;
+    if (in_ttl < FW20S2_MESH_MIN_TTL) return FW20S2_RELAY_TTL_EXHAUSTED;
+    uint32_t hold_sec = (now_tick - in_rx_tick) / 1000u;
+    if (hold_sec > FW20S2_MESH_MAX_HOP_DELAY_SEC) return FW20S2_RELAY_HOP_TOO_LONG;
+    for (uint8_t i = 0; i < FW20S2_MESH_FRAME_SIZE; i++) out_plain[i] = in_plain[i];
+    uint32_t relayed_ts = orig_ts + hold_sec;
+    out_plain[1] = (uint8_t)(relayed_ts >> 24);
+    out_plain[2] = (uint8_t)(relayed_ts >> 16);
+    out_plain[3] = (uint8_t)(relayed_ts >> 8);
+    out_plain[4] = (uint8_t)(relayed_ts & 0xFFu);
+    out_plain[9] = (uint8_t)((in_ttl - 1u) & FW20S2_MESH_TTL_MASK);
+    return FW20S2_RELAY_OK;
+}
+
+/* Helper: збираємо authoritative beacon з заданими ts і TTL для тестів. */
+static void Test_Build_Mesh_Beacon(uint8_t* out, uint32_t ts, uint8_t ttl,
+                                     uint8_t auth) {
+    for (uint8_t i = 0; i < 16; i++) out[i] = 0;
+    out[0]  = FW20S2_MESH_BEACON_MARKER;
+    out[1]  = (uint8_t)(ts >> 24);
+    out[2]  = (uint8_t)(ts >> 16);
+    out[3]  = (uint8_t)(ts >> 8);
+    out[4]  = (uint8_t)(ts & 0xFFu);
+    out[9]  = (auth ? FW20S2_MESH_AUTH_FLAG : 0) | (ttl & FW20S2_MESH_TTL_MASK);
+    out[10] = FW20S2_MESH_BEACON_MAGIC;
+}
+
+TEST(test_fw20s2_relay_happy_path_with_drift_compensation) {
+    /* Провідник, authoritative beacon, TTL=2, hold=5 секунд → relay з ts+5. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER,
+        /*rx_tick*/ 100u, /*now_tick*/ 100u + 5000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    /* Wire decode перевіряє per-hop drift compensation */
+    uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
+                      ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
+    ASSERT_EQ(out_ts, 1714000005u);
+    /* Auth-біт явно зник, TTL декрементовано до 1 */
+    ASSERT_FALSE(out[9] & FW20S2_MESH_AUTH_FLAG);
+    ASSERT_EQ(out[9] & FW20S2_MESH_TTL_MASK, 1u);
+    /* Marker + magic збережені — дзеркало Queen wire-формату */
+    ASSERT_EQ(out[0], FW20S2_MESH_BEACON_MARKER);
+    ASSERT_EQ(out[10], FW20S2_MESH_BEACON_MAGIC);
+}
+
+TEST(test_fw20s2_relay_zero_hold_keeps_ts_unchanged) {
+    /* Hold = 0 (мікросекунди між RX і TX) → relayed_ts == orig_ts. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 3, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 500u, 500u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
+                      ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
+    ASSERT_EQ(out_ts, 1714000000u);
+    ASSERT_EQ(out[9] & FW20S2_MESH_TTL_MASK, 2u);  /* 3-1=2 */
+}
+
+TEST(test_fw20s2_relay_preserves_tdma_reserve_and_padding) {
+    /* Байти 5..8 (TDMA-резерв ARCH.26) і 11..15 (padding) повинні
+     * прозоро переноситися через hop — майбутні поля не втрачаються. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    in[5] = 0xAA; in[6] = 0xBB; in[7] = 0xCC; in[8] = 0xDD;
+    in[11] = 0x11; in[12] = 0x22; in[13] = 0x33; in[14] = 0x44; in[15] = 0x55;
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    ASSERT_EQ(out[5], 0xAA); ASSERT_EQ(out[6], 0xBB);
+    ASSERT_EQ(out[7], 0xCC); ASSERT_EQ(out[8], 0xDD);
+    ASSERT_EQ(out[11], 0x11); ASSERT_EQ(out[12], 0x22);
+    ASSERT_EQ(out[13], 0x33); ASSERT_EQ(out[14], 0x44);
+    ASSERT_EQ(out[15], 0x55);
+}
+
+TEST(test_fw20s2_relay_drop_when_role_is_soldier) {
+    /* Звичайний Солдат не транслює — енергобюджет. */
+    uint8_t in[16], out[16] = {0xFF};  /* sentinel — out не повинен мутуватися */
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_SOLDIER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_NOT_PROVISIONER);
+    ASSERT_EQ(out[0], 0xFF);  /* out недоторкнутий */
+}
+
+TEST(test_fw20s2_relay_drop_when_marker_wrong) {
+    /* Випадковий CMD-фрейм з 0x99 (OTA) — не наша справа. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    in[0] = 0x99;
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_BAD_FRAME);
+}
+
+TEST(test_fw20s2_relay_drop_when_magic_wrong) {
+    /* Marker правильний, але magic 'B' зіпсовано — захист від колізії. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    in[10] = 'X';
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_BAD_FRAME);
+}
+
+TEST(test_fw20s2_relay_drop_when_ts_zero) {
+    /* Беззмістовна епоха (Королева ще не отримала першого CoAP-роздтрипа). */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 0u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_NULL_TS);
+}
+
+TEST(test_fw20s2_relay_drop_when_not_authoritative) {
+    /* Anti-storm: маяк з auth=0 уже relay'ний — не ретранслюємо повторно. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, /*auth=*/0);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_NOT_AUTHORITATIVE);
+}
+
+TEST(test_fw20s2_relay_drop_when_ttl_exhausted) {
+    /* TTL=1 (як зараз транслює Королева) → decrement дав би 0 → дроп. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, /*ttl=*/1, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_TTL_EXHAUSTED);
+}
+
+TEST(test_fw20s2_relay_drop_when_hold_exceeds_max) {
+    /* Hold-delay > 1 год — sanity cap. Провідник підвис на OTA / IWDG-шторм. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    /* 3601 секунд = 3601000 мс — на 1 секунду понад MAX_HOP_DELAY_SEC */
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0u, 3601u * 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_HOP_TOO_LONG);
+}
+
+TEST(test_fw20s2_relay_hold_exactly_at_max_passes) {
+    /* Boundary: hold == MAX_HOP_DELAY_SEC рівно (3600 сек) — пропускаємо. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER, 0u, 3600u * 1000u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
+                      ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
+    ASSERT_EQ(out_ts, 1714000000u + 3600u);
+}
+
+TEST(test_fw20s2_relay_tick_wrap_safe) {
+    /* HAL_GetTick wrap раз у 49.7 днів. Перевіряємо modular arithmetic:
+     * rx=0xFFFFFF00, now=0x00000064 → hold = 0x164 мс ≈ 0 сек. */
+    uint8_t in[16], out[16];
+    Test_Build_Mesh_Beacon(in, 1714000000u, 2, 1);
+    TestBeaconRelayResult r = Test_Try_Relay_Time_Beacon(
+        in, FW20S2_MESH_ROLE_PROVISIONER,
+        /*rx_tick=*/ 0xFFFFFF00u, /*now_tick=*/ 0x00000064u, out);
+    ASSERT_EQ(r, FW20S2_RELAY_OK);
+    /* hold = 0x164 = 356 мс → 0 секунд → ts unchanged */
+    uint32_t out_ts = ((uint32_t)out[1] << 24) | ((uint32_t)out[2] << 16) |
+                      ((uint32_t)out[3] << 8)  | (uint32_t)out[4];
+    ASSERT_EQ(out_ts, 1714000000u);
+}
+
+TEST(test_fw20s2_relay_two_hop_chain_kills_authoritativeness) {
+    /* Симулюємо A→Provisioner→B: вихід першого relay'у НЕ повинен
+     * пройти guard повторно (auth=0) — це anti-storm freeze-contract. */
+    uint8_t in1[16], out1[16], out2[16];
+    Test_Build_Mesh_Beacon(in1, 1714000000u, 3, 1);  /* TTL=3, щоб теоретично було чим relay'ити */
+    TestBeaconRelayResult r1 = Test_Try_Relay_Time_Beacon(
+        in1, FW20S2_MESH_ROLE_PROVISIONER, 0, 2000u, out1);
+    ASSERT_EQ(r1, FW20S2_RELAY_OK);
+    /* Другий Провідник пробує ретранслювати out1 — має відмовити */
+    TestBeaconRelayResult r2 = Test_Try_Relay_Time_Beacon(
+        out1, FW20S2_MESH_ROLE_PROVISIONER, 0, 1000u, out2);
+    ASSERT_EQ(r2, FW20S2_RELAY_NOT_AUTHORITATIVE);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * [FW.29] Follow-up boundary tests
  * ════════════════════════════════════════════════════════════════════
  * Закриваємо edge-case прогалини з `10_02 FW.29 follow-ups`:
@@ -3673,6 +3899,21 @@ int main(void)
     RUN(test_fw20s2_seconds_since_sync_computed_warm);
     RUN(test_fw20s2_sync_req_payload_layout);
     RUN(test_fw20s2_sync_req_marker_disambiguation_from_ota_req);
+
+    printf("\n  Mesh-Relay Per-Hop Drift Compensation (FW.20-S2):\n");
+    RUN(test_fw20s2_relay_happy_path_with_drift_compensation);
+    RUN(test_fw20s2_relay_zero_hold_keeps_ts_unchanged);
+    RUN(test_fw20s2_relay_preserves_tdma_reserve_and_padding);
+    RUN(test_fw20s2_relay_drop_when_role_is_soldier);
+    RUN(test_fw20s2_relay_drop_when_marker_wrong);
+    RUN(test_fw20s2_relay_drop_when_magic_wrong);
+    RUN(test_fw20s2_relay_drop_when_ts_zero);
+    RUN(test_fw20s2_relay_drop_when_not_authoritative);
+    RUN(test_fw20s2_relay_drop_when_ttl_exhausted);
+    RUN(test_fw20s2_relay_drop_when_hold_exceeds_max);
+    RUN(test_fw20s2_relay_hold_exactly_at_max_passes);
+    RUN(test_fw20s2_relay_tick_wrap_safe);
+    RUN(test_fw20s2_relay_two_hop_chain_kills_authoritativeness);
 
     printf("\n  FW.29 Follow-ups (StatusByte + panic boundary):\n");
     RUN(test_fw29_status_byte_panic_with_max_growth_points);
