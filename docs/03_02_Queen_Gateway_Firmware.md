@@ -1082,6 +1082,7 @@ make -C firmware/test queen    # 126 тестів, ~0.1 секунди
 | **CoAP Retry (FW.9)** | **4** | **`COAP_MAX_RETRIES=3`, `COAP_BASE_TIMEOUT_MS=2000`, `COAP_SEND_TIMEOUT_MS=5000`, `UART_RX_BUF_SIZE=128`** |
 | **[FW.1] Flash Key Loading** | **8** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler |
 | **[FW.20] Time Sync Envelope + Beacon** | **8** | CMD_TIME_SYNC strip, beacon plaintext layout, ts=0 guard |
+| **[FW.20-S2] Beacon Authoritativeness Flag** | **2** | byte 9 bit 7 (`BEACON_AUTH_FLAG=0x80`) — Королева транслює `byte9 = 0x81` (auth=1 \| TTL=1). Підготовчий патч до повного mesh-relay: relay-маяки від Провідників матимуть auth=0, Soldier-ам арбітруватиме authoritative першим. Layout `[0x9C][ts_be:4][reserved:0×4][AUTH_FLAG\|TTL][magic 'B'][padding:0×5]`. |
 | **[FW.27-B] Magic Re-Request Handler** | **10** | Bitmap accept/dedup, total mismatch, no-active-OTA |
 | **[FW.23] HMAC Trailer Relay** | **4** | 3 segs storage, seg_idx>3 reject, marker mismatch |
 | **[FW.3] LoRa RX Ring Buffer** | **13** | FIFO семантика, capacity 15, переповнення → drop counter, RSSI clamp passthrough, 25-сек flush сценарій (30 ISR пакетів → 15 уцілілих + 15 видимих втрат) |

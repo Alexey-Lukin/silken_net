@@ -759,4 +759,104 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       expect(second.z_value).to eq(expected.first)
     end
   end
+
+  # [SEC.10] Frame Counter anti-replay для panic packets. Сторожовий пес
+  # панічного каналу — Redis SETNX по nonce-ключу; replay повторює тот
+  # самий counter, ми його рубаємо у логах ДО створення TelemetryLog.
+  describe "panic frame counter anti-replay [SEC.10]" do
+    # Helper: 21-byte chunk з panic flag (bit 7 у status_byte) і counter
+    # у байтах 14..15 (= bytes 2..3 of 4-byte PAD a4).
+    def build_panic_chunk(did_hex, panic_counter, firmware_id: 0)
+      did_int = did_hex.to_i(16)
+      header = [ did_int ].pack("N")
+      rssi_byte = [ 70 ].pack("C")  # rssi inverted, -70 result
+      pad = [ firmware_id, panic_counter ].pack("n n")  # 4 bytes: fw_id BE + counter BE
+      payload = [ did_int, 3500, 25, 0xFF, 100,
+                  TelemetryUnpackerService::PANIC_FLAG_BIT, 5, pad ].pack("N n c C n C C a4")
+      header + rssi_byte + payload
+    end
+
+    before do
+      Rails.cache.clear
+      allow(SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL).to receive(:increment)
+    end
+
+    it "accepts a fresh panic packet (counter=42) and creates a log" do
+      chunk = build_panic_chunk(did_hex, 42)
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
+    end
+
+    it "rejects a replayed panic packet (same counter twice)" do
+      chunk = build_panic_chunk(did_hex, 42)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      # Replay — exact same chunk, same counter
+      expect { described_class.call(chunk) }.not_to change(TelemetryLog, :count)
+      expect(SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL).to have_received(:increment).once
+    end
+
+    it "accepts two panic packets with different counters from same DID" do
+      expect { described_class.call(build_panic_chunk(did_hex, 100)) }
+        .to change(TelemetryLog, :count).by(1)
+      expect { described_class.call(build_panic_chunk(did_hex, 101)) }
+        .to change(TelemetryLog, :count).by(1)
+      expect(SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
+    end
+
+    it "accepts same counter from different DIDs (nonce key includes DID)" do
+      other_did_hex = "0000BEEF"
+      other_extracted = format("SNET-%08X", other_did_hex.to_i(16))
+      create(:tree, did: other_extracted)
+      HardwareKey.create!(
+        device_uid: other_extracted,
+        aes_key_hex: SecureRandom.hex(32).upcase,
+        lorenz_seed_hex: SecureRandom.hex(32).upcase
+      )
+
+      expect { described_class.call(build_panic_chunk(did_hex, 42)) }
+        .to change(TelemetryLog, :count).by(1)
+      expect { described_class.call(build_panic_chunk(other_did_hex, 42)) }
+        .to change(TelemetryLog, :count).by(1)
+    end
+
+    it "skips replay check for non-panic packets (PANIC_FLAG_BIT = 0)" do
+      # Normal packet, no panic flag, counter byte position = 0
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      # Same chunk twice — no SEC.10 check on non-panic packets, both pass
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+    end
+
+    it "skips replay check when panic flag set but counter==0 (legacy firmware)" do
+      # Pre-SEC.10 firmware емітить panic-flag без counter → counter=0.
+      # Ми не блокуємо, бо counter=0 == "no anti-replay protection available";
+      # rate-limit на AlertDispatchService рівні все ще працює.
+      chunk1 = build_panic_chunk(did_hex, 0)
+      chunk2 = build_panic_chunk(did_hex, 0)
+      expect { described_class.call(chunk1) }.to change(TelemetryLog, :count).by(1)
+      expect { described_class.call(chunk2) }.to change(TelemetryLog, :count).by(1)
+      expect(SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL).not_to have_received(:increment)
+    end
+
+    it "preserves firmware_id alongside counter in PAD (FW.22 + SEC.10 coexistence)" do
+      # bytes 12..13 = firmware_id, bytes 14..15 = panic_counter.
+      # Перевіряємо, що обидва правильно розпарсилися.
+      chunk = build_panic_chunk(did_hex, 7, firmware_id: 0x0042)
+      described_class.call(chunk)
+      log = TelemetryLog.last
+      expect(log.firmware_version_id).to eq(0x0042)
+    end
+
+    it "writes nonce key with TTL ≈ 25 hours (replay window guard)" do
+      expect(Rails.cache).to receive(:write).with(
+        "silken:panic:nonce:#{extracted_did}:42",
+        "1",
+        hash_including(expires_in: TelemetryUnpackerService::PANIC_NONCE_TTL,
+                       unless_exist: true)
+      ).and_call_original
+
+      described_class.call(build_panic_chunk(did_hex, 42))
+    end
+  end
 end

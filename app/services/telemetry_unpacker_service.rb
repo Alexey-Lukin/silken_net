@@ -9,6 +9,16 @@ class TelemetryUnpackerService < ApplicationService
   PAYLOAD_FORMAT = "N n c C n C C a4"
   FIRMWARE_PAD_INDEX = 7 # Індекс елемента a4 у розпакованому масиві
 
+  # [SEC.10] Frame Counter anti-replay для panic packets.
+  # PANIC_FLAG_BIT = бит 7 у status_byte (firmware FW.29). Soldier
+  # інкрементує `panic_frame_counter` (uint16) перед кожним
+  # Trigger_Emergency_LoRa_TX і пакує його BE у байти 14..15 LoRa
+  # пейлоаду — це останні 2 байти 4-байтного PAD a4. Перші 2 байти PAD
+  # тримають firmware_version_id (FW.22).
+  PANIC_FLAG_BIT             = 0x80
+  PANIC_NONCE_TTL            = 25.hours       # Трохи довше за 24h replay-вікно
+  PANIC_NONCE_KEY_PREFIX     = "silken:panic:nonce"
+
   # --- МЕЖІ РЕАЛЬНОСТІ (Sanity Bounds) ---
   # Виключаємо сенсорний шум: ADC глюки, що виходять за межі фізики
   SAFE_VOLTAGE_RANGE = (0..5000)      # 0 - 5В
@@ -110,6 +120,25 @@ class TelemetryUnpackerService < ApplicationService
     pad_data = parsed_data[FIRMWARE_PAD_INDEX]
     firmware_id = pad_data[0..1].unpack1("n")
 
+    # [SEC.10] Frame Counter anti-replay для panic packets.
+    # Соломонова сторожа панічного каналу: panic_frame_counter (BE у байтах
+    # 14..15 = pad_data[2..3]) інкрементується soldier'ом перед кожним
+    # emergency TX. Тут ми ловимо повторюваний nonce через Redis SETNX —
+    # replay одного «chainsaw detected» = false fire alert + евакуація +
+    # втрата довіри до системи. Поза-panic пакети нічого не платять
+    # (counter-перевірка пропускається).
+    if (status_byte & PANIC_FLAG_BIT).nonzero?
+      panic_counter = pad_data[2..3].to_s.unpack1("n").to_i
+      if panic_counter.positive? && panic_replayed?(hex_did, panic_counter)
+        Rails.logger.warn(
+          "🛡️ [SEC.10] Panic replay rejected for #{hex_did}: counter=#{panic_counter} " \
+          "already seen within #{PANIC_NONCE_TTL.inspect} window."
+        )
+        SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL.increment
+        return
+      end
+    end
+
     log_attributes = {
       queen_uid: @gateway&.uid,
       rssi: actual_rssi,
@@ -172,6 +201,21 @@ class TelemetryUnpackerService < ApplicationService
     voltage = data[1]
     temp = data[2]
     SAFE_VOLTAGE_RANGE.cover?(voltage) && SAFE_TEMP_RANGE.cover?(temp)
+  end
+
+  # [SEC.10] Panic Frame Counter anti-replay. Atomic SETNX через Rails.cache
+  # (Redis у production). Повертає `true` коли nonce-ключ вже існує (це replay
+  # від уже-баченого counter'а), `false` коли ключ свіжий і ми його щойно
+  # встановили. TTL 25h гарантує, що nonce переживає 24-годинне replay-вікно
+  # і ще трохи. Cold-boot вузла не зламає цей захист — firmware пересіє
+  # panic_frame_counter з HRNG (range 0x0001..0xFFFF), тож імовірність
+  # зіткнення з живим nonce попереднього втілення ≈ 1/65535.
+  def panic_replayed?(hex_did, counter)
+    nonce_key = "#{PANIC_NONCE_KEY_PREFIX}:#{hex_did}:#{counter}"
+    # write returns false on Redis if `unless_exist: true` and key already exists.
+    # Rails.cache (RedisCacheStore) supports the `unless_exist:` option for SETNX.
+    inserted = Rails.cache.write(nonce_key, "1", expires_in: PANIC_NONCE_TTL, unless_exist: true)
+    !inserted
   end
 
   # [SEC.11] Single K_seed-derived path. The tree MUST have a

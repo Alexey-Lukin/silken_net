@@ -133,6 +133,8 @@
 
 **Блокує:** Безпечна робота системи, SRAM planning, OTA updates.
 
+**[FW.26] CI gate активовано (2026-05-03):** `make -C firmware/test size-check` запускає host gcc проти `test_soldier` + `test_queen`, рахує `.bss + .data` і fail'ить якщо > 51200 байт (50 KB). Інтегровано як step у `firmware_test` job у `.github/workflows/ci.yml`. Поточна baseline: soldier=2.5 KB, queen=12.4 KB — комфортно < 50 KB запасу. Host build — placeholder (mock-структури, host-stdlib), але поділяє ті ж глобальні буфери (`raw_audio_buffer`, OTA chunk map, EMA state, mesh cache etc.), що і ARM build, тому регресія тут = регресія на target. ARM `arm-none-eabi-size` gate (`firmware_ram_budget` job) живе паралельно і автоматично активується після появи ELF artifacts (post-FW.4 lab build). Майбутні розширення (FW.21 EMA вже додав ~1 KB, ARCH.21 PVD save +0 B, FW.26 model TBD) пройдуть через свідомий budget review.
+
 ---
 
 ### ✅ BLOCKER-4: Host-based тести для TinyML аудіо-пайплайну (Реалізовано)

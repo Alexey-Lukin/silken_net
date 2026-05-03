@@ -98,6 +98,11 @@
 #define BEACON_MARKER              0x9C
 #define BEACON_TTL                 1                    // Без луни в ефірі
 #define BEACON_MAGIC_BYTE          'B'                  // 0x42
+// [FW.20-S2] Authoritativeness flag — біт 7 байту 9. Королева є єдиним
+// authoritative джерелом часу (1); майбутні relay-маяки від Провідників
+// (ARCH.27, ARCH.26) транслюватимуть з 0. TTL фактично у нижніх 7 бітах.
+#define BEACON_AUTH_FLAG           0x80
+#define BEACON_BYTE9_AUTHORITATIVE ((uint8_t)(BEACON_AUTH_FLAG | BEACON_TTL))
 #define TIME_BEACON_INTERVAL_MS    900000U              // 15 хвилин
 
 // [FW.1] Flash-based AES key provisioning — per-device unique key via HKDF.
@@ -1408,7 +1413,10 @@ static void Broadcast_Time_Beacon(void)
     plaintext[3] = (uint8_t)(now >> 8);
     plaintext[4] = (uint8_t)(now & 0xFFu);
     // байти 5..8 зарезервовано під майбутню розкладку TDMA-слотів (ARCH.26)
-    plaintext[9]  = BEACON_TTL;
+    // [FW.20-S2] Байт 9: біт 7 = authoritativeness (Королева=1), нижні 7
+    // біт = TTL (поточний BEACON_TTL=1, без ретрансляції). Соціолог-Солдат
+    // зчитує цей біт у time_source_authoritative для майбутньої mesh-арбітрації.
+    plaintext[9]  = BEACON_BYTE9_AUTHORITATIVE;
     plaintext[10] = (uint8_t)BEACON_MAGIC_BYTE;
     // байти 11..15 = 0x00 (padding до 16-байтного AES-блоку)
 

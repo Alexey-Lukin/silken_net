@@ -39,7 +39,7 @@
 | Сервіс | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
 | BlockchainMintingService | ✅ 1092L | 🟢 Повне | batchMint, guard clauses, binary search |
-| TelemetryUnpackerService | ✅ 560L+ | 🟢 **Повне** | **check_z_divergence! (effective_lorenz_thresholds FW.8), update_health_streak!, boundary sensors, acoustic overflow, [FW.5] delta_t/vcap β-perturbation, [SEC.11] per-tree warm/cold dispatch, lorenz_state persist, MissingLorenzSeedError, cold_start_flag, [FW.31] numeric tolerance band feature-flag (6 examples: toggle off / within ε / drift > ε / default ε constant / malformed ENV fallback / device_z absent)** |
+| TelemetryUnpackerService | ✅ 560L+ | 🟢 **Повне** | **check_z_divergence! (effective_lorenz_thresholds FW.8), update_health_streak!, boundary sensors, acoustic overflow, [FW.5] delta_t/vcap β-perturbation, [SEC.11] per-tree warm/cold dispatch, lorenz_state persist, MissingLorenzSeedError, cold_start_flag, [FW.31] numeric tolerance band feature-flag (6 examples), [SEC.10] panic Frame Counter anti-replay (8 examples: fresh accept, replay reject via Redis SETNX, distinct counters/DIDs accepted, non-panic skip, legacy counter=0 skip, FW.22 firmware_id coexistence, TTL ≈ 25h guard)** |
 | InsightGeneratorService | ✅ 670L | 🟢 Повне | Fraud guard, cleanup_old_logs! |
 | SilkenNet::Attractor | ✅ 310L+ | 🟢 Повне | Float precision, deterministic chaos, **[FW.5] perturb_beta, parity-fuzz 500 cases (0 mismatches), [SEC.11] sole `calculate_z_from_state` API (legacy `calculate_z(seed,…)` removed)** |
 | **SilkenNet::SeedDerivation** [SEC.11] | ✅ 16 examples | 🟢 **Нове** | **HKDF-SHA256 (RFC 5869) + HMAC-SHA256 + signed-unit-float unpack; raises `SecurityError` без `PROVISIONING_MASTER_KEY`; firmware-equivalence vectors з `firmware/test/test_seed_derivation.c`; daily epoch_day rotation; (x₀,y₀,z₀) ∈ [-1,+1]³ deterministic** |
@@ -120,6 +120,10 @@
 | **[SEC.11 / FW.30] Flash Seed Loading** | **6** | 🟢 **Нове** — `Load_Lorenz_Seed()` magic check ("LSED"), provisioned/unprovisioned/wrong magic/zero seed, non-fatal (без Error_Handler) |
 | **[SEC.11 / FW.30] Cold-Start Derivation** | **4** | 🟢 **Нове** — `Derive_Cold_Start_State()` coordinates ∈ [-1,+1], deterministic, date-sensitive, seed-sensitive |
 | **[FW.30] C-Bridge 7-Arg Signature** | **1** | 🟢 **Нове** — Lorenz iteration з 7-arg сигнатурою produces finite coords |
+| **[SEC.10] Panic Frame Counter Anti-Replay** | **13** | 🟢 **Нове (2026-05-03)** — DR0 packed pack/unpack roundtrip + independence; counter increments before TX; BE order у PAD[14..15]; saturating @ 0xFFFF; cold-boot HRNG reseed (range 0x0001..0xFFFF); zero-HRNG fallback не дає 0; warm-boot preserve; counter не перетинається з DID/PANIC_FLAG/firmware_id; two panics distinct counters |
+| **[ARCH.21] Brownout PVD Lorenz Save** | **5** | 🟢 **Нове (2026-05-03)** — `HAL_PWR_PVDCallback` saves Lorenz state (DR16-DR19 + magic), packed DR0 preserved (counter+acoustic), last_wakeup persists for delta_t continuity, lorenz_invalid skips magic write, save→reboot roundtrip |
+| **[ARCH.27] Node Role Differentiation** | **5** | 🟢 **Нове (2026-05-03)** — `Load_Node_Role()` SOLD magic / PROV magic / unprovisioned 0xFFFFFFFF / zero / corrupted magic → all fallback paths to ROLE_SOLDIER |
+| **[FW.20-S2] Authoritativeness Flag (Soldier RX)** | **3** | 🟢 **Нове (2026-05-03)** — beacon byte 9 bit 7: authoritative beacon sets flag, relay beacon clears, legacy byte9=0 clears |
 
 ### 2.2 Queen (test_queen_logic.c)
 
@@ -137,6 +141,7 @@
 | **CoAP Retry (FW.9)** | **4** | 🟢 **Нове** — `test_coap_retry_constants`, константи `COAP_MAX_RETRIES`, `UART_RX_BUF_SIZE` |
 | **[FW.1] Flash Key Loading** | **8** | 🟢 **Нове** | `Load_AES_Key()` magic check, key-not-provisioned → Error_Handler, FLASH_KEY_ADDR 0x0803E000 |
 | **[FW.3] LoRa RX Ring Buffer** | **13** | 🟢 **Нове** (2026-05-02) — single-producer FIFO, capacity 15, переповнення → drop counter (existing voices preserved), drain+refill wraps, RSSI passthrough, ISR simulator size/RSSI clamp, **25-сек flush сценарій** (30 ISR пакетів → 15 уцілілих + 15 видимих втрат). Закриває BLOCKER-2 part-1: `incoming_lora_payload`+`lora_rx_flag` → ring. |
+| **[FW.20-S2] Authoritativeness Flag (Queen TX)** | **2** | 🟢 **Нове (2026-05-03)** — `Build_Time_Beacon_Plaintext` byte 9 = `BEACON_BYTE9_AUTHORITATIVE` (0x81 = auth bit \| TTL=1); regression-точка на exact byte value |
 
 ### 2.3 Bio-Contract (test_bio_contract.c)
 
