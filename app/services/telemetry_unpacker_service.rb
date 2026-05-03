@@ -129,7 +129,7 @@ class TelemetryUnpackerService < ApplicationService
     # (counter-перевірка пропускається).
     if (status_byte & PANIC_FLAG_BIT).nonzero?
       panic_counter = pad_data[2..3].to_s.unpack1("n").to_i
-      if panic_counter.positive? && panic_replay?(hex_did, panic_counter)
+      if panic_counter.positive? && panic_replayed?(hex_did, panic_counter)
         Rails.logger.warn(
           "🛡️ [SEC.10] Panic replay rejected for #{hex_did}: counter=#{panic_counter} " \
           "already seen within #{PANIC_NONCE_TTL.inspect} window."
@@ -204,13 +204,13 @@ class TelemetryUnpackerService < ApplicationService
   end
 
   # [SEC.10] Panic Frame Counter anti-replay. Atomic SETNX через Rails.cache
-  # (Redis у production). Повертає `true` коли nonce-ключ вже існує (replay),
-  # `false` коли ключ свіжий і ми його щойно встановили. TTL 25h гарантує,
-  # що nonce переживає 24-годинне replay-вікно і ще трохи. Cold-boot вузла
-  # не зламає цей захист — firmware пересіє panic_frame_counter з HRNG
-  # (range 0x0001..0xFFFF), тож імовірність зіткнення з живим nonce
-  # попереднього втілення ≈ 1/65535.
-  def panic_replay?(hex_did, counter)
+  # (Redis у production). Повертає `true` коли nonce-ключ вже існує (це replay
+  # від уже-баченого counter'а), `false` коли ключ свіжий і ми його щойно
+  # встановили. TTL 25h гарантує, що nonce переживає 24-годинне replay-вікно
+  # і ще трохи. Cold-boot вузла не зламає цей захист — firmware пересіє
+  # panic_frame_counter з HRNG (range 0x0001..0xFFFF), тож імовірність
+  # зіткнення з живим nonce попереднього втілення ≈ 1/65535.
+  def panic_replayed?(hex_did, counter)
     nonce_key = "#{PANIC_NONCE_KEY_PREFIX}:#{hex_did}:#{counter}"
     # write returns false on Redis if `unless_exist: true` and key already exists.
     # Rails.cache (RedisCacheStore) supports the `unless_exist:` option for SETNX.

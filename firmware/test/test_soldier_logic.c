@@ -2838,7 +2838,7 @@ TEST(test_audio_dispatcher_rejects_crit_above_99) {
 #define PANIC_COUNTER_PAD_HI      14
 #define PANIC_COUNTER_PAD_LO      15
 
-/* Pack DR0: spacked plot of acoustic_events + panic_frame_counter. */
+/* Pack DR0: packed plot of acoustic_events + panic_frame_counter. */
 static uint32_t Pack_DR0(uint16_t panic_counter, uint8_t acoustic) {
     return ((uint32_t)panic_counter << PANIC_COUNTER_DR0_SHIFT) | (uint32_t)acoustic;
 }
@@ -2898,7 +2898,7 @@ TEST(test_sec10_dr0_pack_independence) {
 }
 
 TEST(test_sec10_counter_increments_before_tx) {
-    /* Лічильник інкрементується ПЕРЕД пакуванням — кожен зойк ніс новий nonce. */
+    /* Лічильник інкрементується ПЕРЕД пакуванням — кожен panic-пакет ніс новий nonce. */
     uint8_t p[16];
     uint16_t counter = 5;
     Build_Panic_Payload_With_Counter(p, 0xDEADBEEF, &counter);
@@ -2988,7 +2988,7 @@ TEST(test_sec10_dr0_acoustic_preserved_through_panic_writeback) {
 }
 
 TEST(test_sec10_two_panics_have_distinct_counters) {
-    /* Два послідовні зойки несуть різні nonce — це сама суть anti-replay. */
+    /* Два послідовні panic-пакети несуть різні nonce — це сама суть anti-replay. */
     uint8_t p1[16], p2[16];
     uint16_t counter = 42;
     Build_Panic_Payload_With_Counter(p1, 1, &counter);

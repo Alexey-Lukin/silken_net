@@ -676,8 +676,8 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 | Регістр | Змінна | Тип | Опис |
 |---------|--------|-----|------|
-| `DR0` | `acoustic_events` | uint8 | Лічильник акустичних подій (кавітація), saturating [0, 255] |
-| `DR1` | `last_wakeup_timestamp` | uint32 | Час останнього пробудження (HAL_GetTick/1000) |
+| `DR0` | `[panic_frame_counter:16 \| reserved:8 \| acoustic_events:8]` | uint32 packed | **[SEC.10 + FW.22]** Спакована плоть: лічильник panic-кадрів anti-replay (uint16, monotonic + saturating @ 0xFFFF) у high 16 біт + лічильник акустичних подій (uint8, saturating [0,255]) у low 8 біт. Біти [23:16] зарезервовано. Пакетне збереження економить регістр — без packing був би потрібен новий слот, що залишило б DR15 єдиним вільним. Cold-boot DR0=0 → `panic_frame_counter` пересіюється з HRNG (range 0x0001..0xFFFF) для уникнення колізії з ще-не-протухлими Redis nonce-ключами попереднього втілення. |
+| `DR1` | `last_wakeup_timestamp` | uint32 | Час останнього пробудження (HAL_GetTick/1000). [ARCH.21] Зберігається при PVD-брауноуті для delta_t continuity після recovery. |
 | `DR2` | `has_mesh_relay` | uint8 | Прапорець: 1 = є пакет для ретрансляції |
 | `DR3` | `mesh_relay_payload[0..3]` | uint32 | Транзитний пакет, байти 0-3 |
 | `DR4` | `mesh_relay_payload[4..7]` | uint32 | Транзитний пакет, байти 4-7 |
@@ -691,7 +691,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 | `DR12` | `[valid:8 \| count:8 \| ema_vcap_x10:16]` | uint32 | [FW.21] Метадані EMA + упакований vcap_x10 (max 55000 ≤ 2^16) |
 | `DR13` | `tinyml_warning_threshold` | float32→uint32 | [FW.18] WARNING-зона TinyML confidence (default 0.60f, range [0.01, 0.99]) |
 | `DR14` | `tinyml_critical_threshold` | float32→uint32 | [FW.18] CRITICAL-зона TinyML confidence (default 0.85f, range [0.01, 0.99]) |
-| `DR15` | *Reserved* | uint32 | Резерв для майбутніх FW-задач (єдиний вільний регістр) |
+| `DR15` | *Reserved* | uint32 | Резерв для майбутніх FW-задач (єдиний вільний регістр — збережено через [SEC.10] DR0 packing) |
 | `DR16` | `lorenz_x` | float32→uint32 | [FW.6] X-координата атрактора Лоренца (IEEE 754 bit-copy) |
 | `DR17` | `lorenz_y` | float32→uint32 | [FW.6] Y-координата атрактора Лоренца |
 | `DR18` | `lorenz_z` | float32→uint32 | [FW.6] Z-координата атрактора (інтенсивність конвекції) |
@@ -909,24 +909,45 @@ Cmd_Dedup_Check(hash):
 |----------|--------|-----|-----------|
 | `OnRxDone(payload, size, rssi, snr)` | LoRa RX complete (SX1262) | `memcpy` → volatile buffer, RSSI clamp [-128,127], `lora_rx_flag = 1` | Апаратний |
 | `HAL_GPIO_EXTI_Callback(GPIO_PIN_0)` | Piezo EXTI (п'єзодиск) | `vibration_detected = 1` | EXTI Line 0 |
-| `HAL_PWR_PVDCallback()` | Vcap < 2.2V | BKUPWrite DR0, Radio.Sleep, Enter STOP2 | NMI-рівень |
+| `HAL_PWR_PVDCallback()` | Vcap < 2.2V | **[ARCH.21]** BKUPWrite packed DR0 (`panic_counter` + `acoustic`) + DR1 (`last_wakeup`) + DR16-DR19 (Lorenz state + magic), Radio.Sleep, Enter STOP2 | NMI-рівень |
 | `HAL_ADC_ConvCpltCallback()` | DMA buffer повний (512 семплів) | `audio_ready = 1` | DMA IRQ |
 
-**PVD — аварійний рефлекс смерті:**
+**PVD — аварійний рефлекс смерті [ARCH.21]:**
 ```c
 void HAL_PWR_PVDCallback(void) {
-    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, acoustic_events); // Рятуємо найважливіше
-    Radio.Sleep();                                              // Не витрачати енергію
+    // [SEC.10] Spakovana DR0: panic_counter в high 16 + acoustic в low 8 біт
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
+        ((uint32_t)panic_frame_counter << 16) | (uint32_t)acoustic_events);
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp); // delta_t continuity
+    // [ARCH.21] Сторожовий пес траєкторії — рятуємо Lorenz state симетрично до Phase 5.
+    // Без цього rescue брауноут = втрата траєкторії = cold-start через HKDF на наступному
+    // boot'і = розрив growth_points streak = false slashing.
+    if (lorenz_state_valid) {
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR16, float_to_uint32(lorenz_x));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR17, float_to_uint32(lorenz_y));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR18, float_to_uint32(lorenz_z));
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR19, LORENZ_STATE_MAGIC);
+    }
+    Radio.Sleep();
     HAL_SuspendTick();
-    HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);               // Кома до відновлення напруги
+    HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
 }
 ```
 
-**Trigger_Emergency_LoRa_TX (Panic Payload):**
+**Trigger_Emergency_LoRa_TX (Panic Payload + SEC.10 Frame Counter):**
 ```c
+// [SEC.10] Інкрементуємо лічильник panic-кадрів (saturating @ 0xFFFF) ПЕРЕД пакуванням.
+if (panic_frame_counter < 0xFFFF) panic_frame_counter++;
+
 panic_payload[7]  = 0xFF;          // Acoustic = 0xFF = насичений лічильник паніки
 panic_payload[10] = PANIC_FLAG_BIT; // [FW.29] bit 7 = 1 → однозначний маркер panic
 panic_payload[11] = 5;             // TTL = 5 (стандарт 3, паніка 5 — більше стрибків)
+// [SEC.10] Counter BE у байтах 14..15 (вільні PAD bytes після firmware_id у 12..13)
+panic_payload[14] = (uint8_t)(panic_frame_counter >> 8);
+panic_payload[15] = (uint8_t)(panic_frame_counter & 0xFF);
+// Persist negайно у DR0 — до Phase 5 могло не дойти при PVD/reset
+HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
+    ((uint32_t)panic_frame_counter << 16) | (uint32_t)acoustic_events);
 // AES-256-ECB Encrypt → Radio.Send → 100ms → Radio.Sleep
 ```
 

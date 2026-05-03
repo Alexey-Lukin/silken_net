@@ -399,14 +399,24 @@ static void MX_CRYP_Init(void)
 | Byte 0 | Byte 1 | Byte 2 | Byte 3 | Byte 4 | Byte 5 | Byte 6 | Byte 7 |
 |       DID (Device ID, 4 байти, big-endian)        |   0    |   0    |   0    | 0xFF   |
 +--------+--------+--------+--------+--------+--------+--------+--------+
-| Byte 8 | Byte 9 |Byte 10 |Byte 11 |Byte 12 | ...   | ...   |Byte 15 |
-|   0    |   0    |   0    |PANIC_TTL|   0   |   0    |   0    |   0    |
+| Byte 8 | Byte 9 |Byte 10 |Byte 11 |Byte 12 |Byte 13 |Byte 14 |Byte 15 |
+|   0    |   0    | PANIC_FLAG_BIT |PANIC_TTL| FW_HI | FW_LO  |CTR_HI  |CTR_LO  |
 +--------+--------+--------+--------+--------+--------+--------+--------+
 ```
 
 - Byte 7 = `0xFF` → код паніки (максимальна акустична подія)
+- Byte 10 = `PANIC_FLAG_BIT` (0x80) → **[FW.29]** однозначний disambiguation panic vs saturated acoustic
 - Byte 11 = `PANIC_TTL` (= 5, збільшений TTL для досягнення Queen через більше стрибків)
-- Решта байтів = нулі
+- Bytes 12-13 = `firmware_version_id` BE (FW.22)
+- Bytes 14-15 = **[SEC.10]** `panic_frame_counter` BE (uint16, monotonic + saturating @ 0xFFFF)
+
+**[SEC.10] Frame Counter anti-replay для panic packets (2026-05-03):**
+
+Сторожовий пес панічного каналу до приходу повного FW.2 CCM. Counter інкрементується перед кожним `Trigger_Emergency_LoRa_TX`, упаковується BE у вільні PAD-байти (14..15), персистується у packed `RTC_BKP_DR0[31:16]` поряд з `acoustic_events[7:0]` — **без використання нових RTC слотів** (DR15 залишається вільним). Cold-boot resync через HRNG (range 0x0001..0xFFFF) уникає колізії з ще-не-протухлими Redis nonce-ключами попереднього втілення (probability ≈ 1/65536). На брауноуті `HAL_PWR_PVDCallback` (ARCH.21) теж зберігає packed DR0.
+
+**Backend-сторона:** `TelemetryUnpackerService` детектує panic через `status_byte & PANIC_FLAG_BIT`, читає counter з `pad_data[2..3].unpack1("n")`, виконує SETNX через `Rails.cache.write(unless_exist: true)` з ключем `silken:panic:nonce:{hex_did}:{counter}` і TTL 25 годин. При replay → log warning + Prometheus metric `silkennet_panic_replay_rejected_total` increment + early return (TelemetryLog не створюється, AlertDispatchService не викликається). Counter==0 (legacy firmware без SEC.10) пропускає перевірку — rate-limit на AlertDispatchService рівні залишається активним.
+
+**Не закриває повністю SEC.10:** counter не криптографічно прив'язаний до payload (немає MIC). Bit-flip атака на encrypted byte 10 може створити фальшивий panic flag, але новий counter буде передбачуваний (sequence) → backend SETNX зловить повторення; injection unique-counter packet з валідним AES-блоком майже неможливий (атакеру треба знати master AES key — тоді він уже виграв партію). Повний захист — FW.2 CCM з MIC, ця імплементація — мінімальний life-safety fix до того.
 
 **Шифрування (однаковий алгоритм для обох типів пакетів):**
 ```c
@@ -777,6 +787,37 @@ void Load_Lorenz_Seed(void)
 ```
 
 > **Відмінності від Load_AES_Key():** (1) відсутність K_seed не є фатальною — `Error_Handler()` НЕ викликається (warm continuation через RTC все ще працює); (2) big-endian byte order для сумісності з HMAC-SHA256; (3) magic marker `"LSED"` відрізняється від `"SKEY"` для захисту від помилкового cross-read.
+
+#### [ARCH.27] Node Role — окремий Flash slot після K_seed (2026-05-03)
+
+`g_node_role` персистується у тому ж Protected Flash Sector одразу після K_seed — **без створення нового сектора**:
+
+```c
+// Flash layout: [KEY_MAGIC:4][AES_KEY:32] | [SEED_MAGIC:4][K_SEED:32] | [ROLE:4]
+//               ^FLASH_KEY_ADDR (0x0803E000)  ^FLASH_SEED_ADDR (+36)    ^FLASH_ROLE_ADDR (+72 = 0x0803E048)
+#define FLASH_ROLE_ADDR        (FLASH_KEY_ADDR + 72)   // 0x0803E048
+#define ROLE_SOLDIER_MAGIC     0x534F4C44UL            // "SOLD"
+#define ROLE_PROVISIONER_MAGIC 0x50524F56UL            // "PROV"
+#define ROLE_SOLDIER           0
+#define ROLE_PROVISIONER       1
+
+volatile uint8_t g_node_role = ROLE_SOLDIER;  // безпечний дефолт
+
+void Load_Node_Role(void)
+{
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_ROLE_ADDR;
+    uint32_t role_word = flash_ptr[0];
+    if      (role_word == ROLE_PROVISIONER_MAGIC) g_node_role = ROLE_PROVISIONER;
+    else if (role_word == ROLE_SOLDIER_MAGIC)     g_node_role = ROLE_SOLDIER;
+    else                                          g_node_role = ROLE_SOLDIER; // fallback
+}
+```
+
+> **Чому fallback на Soldier:** більшість вузлів — звичайні датчики (Soldier=TX-only). Provisioner (TX+CAD) — еліта з надлишком енергії, явно прошивається factory pipeline'ом. Корупція/erase Flash (`0xFFFFFFFF` unprovisioned, `0x00000000` erased, бітові помилки) → безпечний дефолт без CAD-режиму, який спалив би слабкого Солдата енерго-голодним радіо.
+
+> **Споживачі прапорця:** ARCH.26 L3 (CAD relay), повний FW.20-S2 (mesh time-sync relay) — без додаткової логіки в `HardwareKeyService`/backend; це чистий firmware-flag. Backend не повинен довіряти claimed role з пакету (TX-сторона може брехати) — `g_node_role` локально визначає поведінку, серверна сторона вирішує доверу через ECC підпис при provisioning.
+
+> **5 host-тестів** у `test_soldier_logic.c`: SOLD / PROV / unprovisioned 0xFFFFFFFF / zero / corrupted magic → all fallback paths.
 
 #### Захист Flash Key Sector (WRPROT)
 

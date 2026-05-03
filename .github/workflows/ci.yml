@@ -21,7 +21,7 @@ jobs:
         run: make -C firmware/test
 
       - name: '[FW.26] Static RAM budget gate (host build placeholder)'
-        # Host gcc build size as a placeholder gate doки arm-none-eabi
+        # Host gcc build size як placeholder gate доки arm-none-eabi
         # cross-compile pipeline не активний. Той самий 50 KB threshold;
         # ловить регресії розмірів у статичних буферах ще до lab build.
         run: make -C firmware/test size-check

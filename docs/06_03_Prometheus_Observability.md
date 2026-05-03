@@ -292,6 +292,7 @@ end
 | `silkennet_rpc_errors_total` | `SilkenNet::Metrics::RPC_ERRORS_TOTAL` | `network`, `error_type` (timeout, connection) | `ApplicationWeb3Worker` (4 точки: рядки 76, 80, 84, 88) | Кожна RPC-помилка по всіх 12 блокчейн-мережах |
 | `silkennet_telemetry_processed_total` | `SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL` | — | `TelemetryUnpackerService` (рядок 154) | Кожен успішно оброблений telemetry chunk |
 | `silkennet_telemetry_fraud_detected_total` | `SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL` | — | `TelemetryUnpackerService` (рядки 79, 87) | Відхилені пакети (sensor noise, unknown DID, tamper) |
+| `silkennet_panic_replay_rejected_total` | `SilkenNet::Metrics::PANIC_REPLAY_REJECTED_TOTAL` | — | `TelemetryUnpackerService` (SEC.10 panic Frame Counter) | **[SEC.10]** Panic-пакети відкинуті як replay через Redis SETNX nonce. Сторожовий пес панічного каналу — кожен сплеск тут означає або legitimate retransmission (LoRa mesh duplicate) або replay-attack. Grafana alert при різкому стрибку → можливий attacker injection forged panic packets. |
 
 #### Gauges (поточне значення — оновлюються при кожному scrape)
 
