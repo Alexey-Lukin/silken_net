@@ -13,7 +13,7 @@ CC       = gcc
 CFLAGS   = -Wall -Wextra -Wpedantic -std=c11 -I. -O2
 BINDIR   = .
 
-.PHONY: all queen soldier bio_contract tinyml encryption seed_derivation clean
+.PHONY: all queen soldier bio_contract tinyml encryption seed_derivation size-check clean
 
 all: queen soldier bio_contract tinyml encryption seed_derivation
 
@@ -60,3 +60,40 @@ $(BINDIR)/test_seed_derivation: test_seed_derivation.c
 clean:
 	rm -f $(BINDIR)/test_queen $(BINDIR)/test_soldier $(BINDIR)/test_bio_contract \
 	      $(BINDIR)/test_tinyml $(BINDIR)/test_encryption $(BINDIR)/test_seed_derivation
+
+# [FW.26] CI gate — Static RAM budget check (.bss + .data ≤ 50 KB).
+#
+# STM32WLE5JC має 64 KB SRAM; runtime stack ~8 KB, heap mruby ~4 KB,
+# Tensor Arena (FW.4) ~8-32 KB. Решту 50 KB ділять усі статичні буфери,
+# глобали і фрейми. Цей gate ловить тиху регресію розмірів (нові buffers,
+# розширення EMA-вікон, OTA масивів тощо) до того, як вона з'їсть
+# залишковий простір TinyML.
+#
+# Використовуємо host `size` проти host-тест build як ПЛАЦХОЛЬДЕР, доки
+# lab build з arm-none-eabi-size не активний. Host build містить ті ж
+# глобальні буфери (raw_audio_buffer, audio_buffer, OTA chunk map etc.),
+# що і firmware build, тому регресія тут = регресія на target.
+#
+# Threshold 51200 bytes = 50 KB (ділимо 64 KB SRAM на буфери і кошти
+# виконання, залишаючи runtime ~14 KB запасу). Перевищення → exit 1.
+SIZE_LIMIT_BYTES ?= 51200
+SIZE_TOOL ?= size
+
+size-check: $(BINDIR)/test_soldier $(BINDIR)/test_queen
+	@echo "[FW.26] Static RAM budget check (.bss + .data ≤ 50 KB)"
+	@echo "──────────────────────────────────────────────────────"
+	@$(SIZE_TOOL) $(BINDIR)/test_soldier $(BINDIR)/test_queen
+	@echo "──────────────────────────────────────────────────────"
+	@for bin in $(BINDIR)/test_soldier $(BINDIR)/test_queen; do \
+	  total=$$($(SIZE_TOOL) -B "$$bin" 2>/dev/null | awk 'NR==2 {print $$2 + $$3}'); \
+	  if [ -z "$$total" ]; then \
+	    total=$$($(SIZE_TOOL) "$$bin" | awk 'NR==2 {print $$2 + $$3}'); \
+	  fi; \
+	  printf "  %-50s %8d bytes (.bss + .data)\n" "$$bin" "$$total"; \
+	  if [ "$$total" -gt "$(SIZE_LIMIT_BYTES)" ]; then \
+	    echo "❌ FAIL: $$bin exceeds $(SIZE_LIMIT_BYTES) bytes (.bss + .data = $$total)"; \
+	    echo "   Reduce static buffers or refactor to stack/heap before merging."; \
+	    exit 1; \
+	  fi; \
+	done
+	@echo "✅ All binaries within 50 KB static RAM budget."

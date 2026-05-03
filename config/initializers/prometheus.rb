@@ -60,6 +60,15 @@ module SilkenNet
       docstring: "Total telemetry packets rejected (sensor noise, unknown DID, tamper)"
     )
 
+    # [SEC.10] Panic packets rejected as replay (Frame Counter nonce collision).
+    # Сторожовий пес панічного каналу — кожен сплеск тут означає або
+    # legitimate retransmission (LoRa mesh duplicate) або replay-attack.
+    # Grafana alert при різкому стрибку → можливий attacker injection.
+    PANIC_REPLAY_REJECTED_TOTAL = REGISTRY.counter(
+      :silkennet_panic_replay_rejected_total,
+      docstring: "Panic packets rejected as replay via SEC.10 Frame Counter SETNX nonce"
+    )
+
     # -----------------------------------------------------------------------
     # ⚙️ SIDEKIQ QUEUE METRICS (Gauges — sampled at scrape time)
     # -----------------------------------------------------------------------
