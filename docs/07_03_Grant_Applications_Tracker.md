@@ -199,18 +199,23 @@ Q4 2026:   Seed-раунд (climate/deeptech фонди)
 | **Вимоги до консорціуму** | Мін. 3 країни ЄС; Ukraine є асоційованою країною (partial eligibility) |
 | **Статус** | Не подано — потребує підготовки |
 | **Академічний лідер консорціуму** | **СЄУ (Аблязова Наталія Рауфівна)** — координація, управління консорціумом, Triple Helix модель (ЧНУ/ЧДТУ/СЄУ + ActiveBridge + лісові господарства) |
+| **Парасоль ЧНУ (інституційний)** | **В.о. ректора Кирилюк Є.М.** (директор ННІ економіки і права) — підпис парасольового MoU ЧНУ↔Silken Net, ко-PI WP-Bioeconomy; **проректор з науки Спрягайло О.В.** — ко-PI WP-Biodiversity, регіональний contact з Черкаською ОДА, ПЗФ-сумісність pilot'у. Деталі: [`08_01` §1.3, §1.4 та блок «🔗 Перехресна синергія»](08_01_University_R_and_D_Protocols), [`08_03` §1G](08_03_Joint_Publications_and_IP_Strategy). |
 
 **Структура консорціуму для Horizon Europe:**
 
 ```
-WP1 Coordination & Dissemination → СЄУ (Аблязова Н., Гедз М.)
-WP2 Hardware & Materials          → ЧНУ (Гусак, Мінаєв) + Silken Net
-WP3 Firmware & Edge AI            → ЧНУ ФОТІУС (Осауленко) + ЧДТУ
-WP4 D-MRV Methodology             → СЄУ (Гедз М.) + ЧДТУ (Карапетян)
-WP5 Legal & Compliance            → СЄУ (Аблязов Д., Ус Г.)
+WP1 Coordination & Dissemination → СЄУ (Аблязова Н., Гедз М.) + ЧНУ парасоль (Кирилюк Є.М.)
+WP2 Hardware & Materials          → ЧНУ (Гусак, Мінаєв) + ЧМА (токсикологія) + Silken Net
+WP3 Firmware & Edge AI            → ЧНУ ФОТІУС (Осауленко, Порубльов, Ярмілко) + ЧДТУ (Карапетян)
+WP4 D-MRV Methodology             → СЄУ (Гедз М.) + ЧДТУ (Карапетян) + ЧНУ біо-хаб (Спрягайло — ground truth)
+WP5 Legal & Compliance            → СЄУ (Аблязов Д., Ус Г.) + ЧНУ біо-хаб (Спрягайло — ПЗФ-сумісність)
 WP6 Industrial Design             → СЄУ (Денисенко, Теліженко)
-WP7 Exploitation & IPR            → ActiveBridge + Silken Net
+WP7 Bioeconomy & Tokenized Markets → ЧНУ ректорат (Кирилюк Є.М.) + СЄУ (Чудаєва) — теоретична рамка SCC/NaaS
+WP8 Biodiversity Baseline (Cluster 6) → ЧНУ біо-хаб (Спрягайло, Гаврилюк) + ЧДТУ ПМКТ (Базіло, Бондаренко) — Cherkasy Soundscape Library
+WP9 Exploitation & IPR            → ActiveBridge + Silken Net
 ```
+
+> **Twin-pack publication backbone (cross-ref `08_03` §1G):** Стаття 34 (Кирилюк ↔ Lorenz синергетика) обґрунтовує WP7; Стаття 35 (Кирилюк ↔ Спрягайло біоекономіка) і Стаття 24a (Спрягайло ↔ Mongabay) — WP8. Подання до журналу Q1 за 2–3 місяці до Horizon-deadline переводить заявку з категорії «концепт» у «published research» (вирішальне для evaluators).
 
 **Зв'язок з кодбейсом:** Horizon Europe вимагає Open Science — `StateRootAnchor.sol` (публічна верифікація), Filecoin-архів телеметрії, The Graph subgraph (публічний доступ до даних).
 
