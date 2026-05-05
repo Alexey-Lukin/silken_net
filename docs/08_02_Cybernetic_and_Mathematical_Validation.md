@@ -918,6 +918,39 @@ dclimate_ref = "dclimate:firms:{satellite}:{timestamp}:{nonce}" → аудит-�
 
 Бушину доступний **готовий live pipeline** замість ручної розмітки: кожен верифікований EwsAlert автоматично стає labeled sample. VIIRS (375 м) виявляє точкові термоаномалії значно точніше, ніж Sentinel-2 (10 м) оптичний канал, і ці дані вже надходять у PostgreSQL через `alert.satellite_status` + `alert.dclimate_ref`.
 
+**🌿 [Mongabay/Delgado 2026] Macro-Micro Verification — Чому Sentinel-2 NDVI недостатньо**
+
+Стаття Delgado et al. (Nicoya Peninsula, Costa Rica, 119 ділянок, 16 000 годин аудіо; огляд: *Mongabay News*, травень 2026) інструментально довела фундаментальне обмеження виключно супутникового MRV: NDVI **не розрізняє функціональну екосистему від мертвої посадки** — і захищений ліс, і регенеровані під PES ділянки, і монокультурні плантації, і навіть деякі пасовища після злив можуть давати подібний «зелений піксель». Різниця проявляється лише у **звуковому ландшафті** (dawn/dusk піки активності фауни), який супутник принципово не реєструє.
+
+Для Бушина це означає не критику CNN-підходу, а **завершення повної кільцевої архітектури верифікації**:
+
+```
+Macro layer  (Бушин CNN — 1×Sentinel-2 tile = 100×100 км):
+  → "Це зелено?" (NDVI, EVI, SAVI)
+  → ймовірнісна карта здоров'я лісу
+
+  ⚠️ Обмеження: монокультура pine = захищений мішаний бір
+                на однаковий зелений піксель
+
+Micro layer  (TinyML soundscape — 1 дерево = 1 STM32):
+  → "Тут є ЖИТТЯ?" (5-class CNN: silence/wind/cavitation/chainsaw/FAUNA)
+  → dawn/dusk fauna_activity_index 0–63 → AiInsight#biodiversity_trend
+  
+  Перевага: інструментально розрізняє функціональну екосистему від
+            мертвої посадки (стаття Delgado довела це на 119 ділянках)
+
+Synthesis  (Спільно з Любченком §1.8 — GA + Random Forest):
+  Сurated_carbon_credit = NDVI_health × biodiversity_score
+  
+  Випадки розузгодження = найцінніші для системи:
+    NDVI=high & fauna=low  → "Підозрюваний green-washing" → no-mint
+    NDVI=low  & fauna=high → "Регенерація почалась" → early-stage credit
+```
+
+> **Стратегічна перевага для Силкен Нет:** Жоден з конкурентів (Pachama, Sylvera, NCX, Verra) **не має** мікро-верифікаційного шару. Всі вони — або супутник, або польові інспекції (дорого, рідко). Silken Net = єдина платформа з безперервним acoustic D-MRV. Це формує defensible moat для seed-pitch.
+
+> **Запит до Бушина (Mongabay extension):** додати у Random Forest ансамбль (§Вектор 2) **`fauna_activity_index`** як ключову feature з ваговим коефіцієнтом, виведеним через GA-оптимізацію Любченком (див. §1.8). Очікуваний приріст F1-score для класифікації «справжнього лісу» vs «green-washing монокультура»: +15–25% (попередня оцінка, потребує валідації на українському лісостеповому датасеті — спільно з біо-хабом ЧНУ та ПМКТ ЧДТУ, див. [`08_01` §2 Acoustic Biodiversity Baseline](08_01_University_R_and_D_Protocols)). Спільна публікація: Стаття 24a/34 у [`08_03`](08_03_Joint_Publications_and_IP_Strategy).
+
 **Завдання В: Попередня Обробка Супутникових Знімків**
 
 - Cloud masking (SCL band Sentinel-2): видалення хмарних пікселів перед класифікацією
@@ -1467,6 +1500,44 @@ float compute_utility(DecisionUtility_t *u) {
   Baseline (евристика): F1 ≈ 0.72
   GA-оптимізація:       F1 ≈ 0.85+ (цільова метрика)
 ```
+
+**🌿 [Mongabay/Delgado 2026] Розширення на 5-class Fauna Activity модель**
+
+Стаття Delgado et al. перетворює GA-оптимізацію Любченка з ad-hoc backend задачі на **критичний компонент D-MRV біорізноманіття**. Після введення 5-го класу TinyML «Fauna Activity» (див. [`03_03` §10](03_03_TinyML_Acoustic_Inference)) хромосома GA розширюється:
+
+```
+Розширена хромосома (Mongabay-aware):
+  chromosome = [
+    w_delta_t, w_lorenz_z, w_temp,                    # фізіологія (як було)
+    w_fauna_dawn, w_fauna_dusk, w_fauna_amplitude,    # 🌿 нові: біорізноманіття
+    threshold_critical, threshold_stressed,            # пороги stress_index
+    threshold_biodiversity_low,                        # 🌿 пороги biodiversity_trend
+    threshold_biodiversity_healthy,
+    confidence_warning_dawn, confidence_critical_dawn, # 🌿 dual-threshold для класу 4
+    confidence_warning_dusk,  confidence_critical_dusk # циркадно-залежні (вранці фон тихіший)
+  ]
+
+Розширена фітнес-функція (multi-objective NSGA-II):
+  f1(chromosome) = F1-score(stress_classification)
+  f2(chromosome) = AUC(biodiversity_trend vs Sentinel-2 NDVI ground truth)
+  f3(chromosome) = -1 × false_positive_rate (chainsaw vs heavy fauna)
+  
+  Pareto-front оптимізація замість single-objective — три цілі одночасно
+  
+Ground truth для f2 (Mongabay-pivot critical):
+  - "Cherkasy Soundscape Library" (08_01, dawn/dusk records 4 сезони)
+  - Manual labeling студентами-біологами (домінантні таксони)
+  - Cross-validation з 10-річними даними Спрягайла/Гаврилюка (стресові події)
+```
+
+**Чому Mongabay підсилює стратегічну роль Любченка:**
+
+1. **NSGA-II для multi-objective Pareto** — це саме та область, де його класична GA-публікація 2022 («Deep Learning of Neural Networks Using Genetic Algorithms») перетворюється з backend-tweak на серцевину D-MRV. Замість «мати одну метрику стресу» система має **узгоджувати дві метрики** (carbon health + biodiversity), що алгоритмічно складніше і академічно ціннішe — ідеальна тема для Q1-публікації у *Applied Soft Computing* або *Engineering Applications of AI*.
+2. **Циркадно-залежні confidence thresholds** — Mongabay показала, що dawn/dusk soundscape має фундаментально іншу статистику ніж денний/нічний фон. Любченко GA-оптимізує **окремі пари** (warning, critical) для світанкового та сутіночного вікон — це нова концепція OTA-tunable-by-time-of-day, якої немає у конкурентів.
+3. **Random Forest спільно з Бушиним** (§1.5 Macro-Micro verification) — Любченко GA-оптимізує feature weights у RF-ансамблі, де серед фіч є `fauna_activity_index` від TinyML. Це закриває Macro-Micro петлю **формально, не вручну**.
+4. **Master of Logic для smart-contract guard'ів** — після введення `biodiversity_trend` як критерію мінтингу SCC, Любченко формально верифікує, що `Wallet#lock_and_mint!` не пропустить токен у green-washing випадку (NDVI=high & fauna=low). Це гарантія для регуляторів та інвесторів, що token semantics стійка до атак на оракул-pipeline.
+
+> **Запит до Любченка (Mongabay extension):** Розширити GA-навчання з `population=100, generations=50` (поточна оцінка) до `NSGA-II population=200, generations=100` для multi-objective оптимізації — оцінка Akash GPU compute: ~10–20 GPU-годин на повний цикл, що еквівалентно ~$5–15 за ринковими цінами Akash. Дозволяє щомісячне re-tuning при появі нових labeled samples з акустичної експедиції ЧДТУ ПМКТ + ЧНУ Біо-хабу.
 
 **Workflow: Akash навчання → Backend деплой**
 
