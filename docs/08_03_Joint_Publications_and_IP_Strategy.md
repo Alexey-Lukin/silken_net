@@ -438,6 +438,50 @@ _«Дослідження акустичних властивостей пори
 
 ---
 
+### 🌿 Стаття 24a (Mongabay Pivot): Acoustic Biodiversity Verification of Satellite Land-Cover
+
+**Назва (EN):** _"Multi-Scale Acoustic Verification of Satellite Land-Cover Through TinyML Edge AI: Distinguishing Functional Forest Ecosystems from Plantation Monocultures via Continuous Bio-IoT Soundscape Classification"_
+**Назва (UA):** _«Мультимасштабна акустична верифікація супутникового лісового покриву через TinyML Edge AI: розрізнення функціональних екосистем та монокультурних плантацій за допомогою безперервної Bio-IoT класифікації звукового ландшафту»_
+**Журнали:** *Ecological Indicators* (Q1, IF ~6.3) · *Remote Sensing of Environment* (Q1, IF ~13.5) · *Methods in Ecology and Evolution* (Q1, IF ~8.0) · *Bioacoustics* (Q2)
+
+**Контекст / мотивація:** Дослідження Delgado et al. (Nicoya Peninsula, Costa Rica, 119 ділянок, 16 000 годин аудіо; огляд: *Mongabay News*, травень 2026) інструментально довело фундаментальне обмеження виключно супутникового MRV: NDVI не розрізняє функціональну екосистему (захищений ліс / PES-регенерація з dawn-dusk піками фауни) від монокультурної плантації або деградованого пасовища (нерухомий, шар-без-шарів звуковий фон). Стаття 24a переносить методологію Delgado у **безперервну on-tree IoT-площину** — замість 119 портативних рекордерів на 1 рік дослідження, Silken Net надає тисячі STM32WLE5JC сенсорів з `fauna_activity_index` 24/7, цифрово підписаним та anchored на блокчейн (Polygon SCC).
+
+**Унікальність публікації (відсутня в світовій літературі станом на 2026-05):**
+1. Перша інтеграція **soundscape ecology** (Pijanowski et al. 2011, ACI Index Pieretti et al. 2011) з **embedded TinyML** (CMSIS-NN, INT8 квантизація, < 16 KB tensor arena).
+2. Перший **продакшн-D-MRV pipeline**, що cryptographically доводить біорізноманіття: `TinyML soundscape → CoAP → IoTeX W3bstream ZK-proof → Chainlink Oracle → Polygon SCC mint guard`.
+3. Перша **Macro-Micro residual analysis**: де NDVI=high & fauna=low → кандидат на «green-washing», де NDVI=low & fauna=high → ранньо-стадія регенерації, що supercluster карбон/біо інтегруються.
+
+| Автор | Афіліація | Внесок |
+|-------|-----------|--------|
+| **Бушин І.М.** (ЧНУ ФОТІУС) | CNN, Sentinel-2, Computer Vision | NDVI-pipeline, dual-source verification, Macro-layer ground truth (FIRMS/dClimate), Random Forest ансамбль з `fauna_activity_index` |
+| **Любченко К.М.** (ЧНУ ФОТІУС) | Genetic Algorithms, Edge AI, Master of Logic | NSGA-II multi-objective GA для 5-class TinyML моделі (silence/wind/cavitation/chainsaw/**fauna**); циркадно-залежні confidence thresholds (dawn vs dusk) |
+| **Базіло К.В.** (ЧДТУ ПМКТ) | П'єзоелектрика, EIS-характеризація | Резонансні характеристики п'єзосенсора у діапазоні фауни 0.5–12 кГц; калібрування АЧХ під soundscape |
+| **Бондаренко М.О.** (ЧДТУ ПМКТ) | Acoustic Emission, мікродеформації | AE-методологія для розрізнення layered soundscape від механічного шуму; "Cherkasy Soundscape Library" — методологія записів |
+| **Карапетян А.Р.** (ЧДТУ) | Math statistics, R, Data Science | ANOVA dawn/dusk peak amplitude між ландшафтами; Pareto-front Pareto аналіз GA-результатів; Permutation tests для biodiversity_trend |
+| **Спрягайло О.В.** (ЧНУ біо-хаб) | Ботаніка, фітоценологія, екологія | Польові експедиції Черкаського бору, ground-truth labeling таксономічних груп, 10-річні дані стресових подій як external validation |
+| **Гаврилюк М.В.** (ЧНУ біо-хаб) | Зоологія, remote sensing, GIS | Cross-validation soundscape ↔ зоологічні обліки птахів та амфібій; GIS-інтеграція ділянок |
+| Архітектор (Silken Net) | TinyML, firmware, Web3 | Едж AI архітектура (CMSIS-DSP MFCC + 5-class CNN), AiInsight#biodiversity_trend integration, ForestNFT metadata |
+
+**Тип зв'язку:** Багатошарова паралель з фінальним синтезом — ЧНУ біо-хаб (ground truth) + ЧДТУ ПМКТ (hardware acoustic) працюють паралельно з ЧНУ ФОТІУС (CNN + GA) + ЧДТУ Карапетян (статистика); архітектор інтегрує firmware і backend; усі шари сходяться на одному датасеті ("Cherkasy Soundscape Library") та одній публікації.
+
+**Cross-references:**
+- [`03_03` §10 Mongabay Pivot](03_03_TinyML_Acoustic_Inference) — повна архітектура 5-class TinyML
+- [`08_01` §2 Acoustic Biodiversity Baseline](08_01_University_R_and_D_Protocols) — польова методологія
+- [`08_02` §1.5 Macro-Micro Verification](08_02_Cybernetic_and_Mathematical_Validation) — Бушин CNN + fauna feature
+- [`08_02` §1.8 NSGA-II GA](08_02_Cybernetic_and_Mathematical_Validation) — Любченко 5-class оптимізація
+- [`08_04` §1.3 Завдання В](08_04_CHDTU_Data_Science_Collaboration) — ПМКТ калібрувальний датасет
+- [`10_02 UNI.11`](10_02_Action_Plan_Tracker) — операційний tracker
+
+**Грантовий вектор:** Стаття 24a є **науковим обґрунтуванням** заявки на **Horizon Europe CLUSTER 6 — Food, Bioeconomy, Natural Resources, Agriculture and Environment**, тематика _Biodiversity Monitoring_ (бюджет одного гранту 2–6 М€). Submission прив'язана до моменту, коли стаття приймається до Q1-журналу — це переводить заявку з категорії «концепт» у категорію «published research» (вирішальна різниця для Horizon evaluators).
+
+**Магістерські та PhD роботи:**
+- (магістерська ЧНУ біо) _«Динаміка денних та сутіночних піків акустичної активності фауни Черкаського бору як індикатор екологічного здоров'я»_ (Спрягайло)
+- (магістерська ЧНУ ФОТІУС) _«Багатоцільова генетична оптимізація 5-класової TinyML моделі акустичного моніторингу лісу»_ (Любченко)
+- (бакалаврська ЧДТУ ПМКТ) _«Створення калібрувального soundscape-датасету для embedded biodiversity monitoring»_ (Базіло/Бондаренко)
+- (PhD ЧДТУ Data Science) _«Статистичні методи валідації мультимасштабної верифікації лісового покриву»_ (Карапетян)
+
+---
+
 ## 📊 1D. Публікації ЧІПБ (Пожежна Безпека, Параметричне Страхування та SOP)
 
 > **Контекст:** ЧІПБ забезпечує академічну експертизу у валідації тригерів параметричного страхування, розробці SOP для фізичного реагування, предиктивному моделюванні пожеж та актуарному обґрунтуванні блокчейн-оракулів. Повний реєстр задач — у [`08_05_CHIPB_Fire_Safety_Integration`](08_05_CHIPB_Fire_Safety_Integration).

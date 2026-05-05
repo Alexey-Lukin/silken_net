@@ -230,13 +230,14 @@
 #### FW.4 — TinyML `Run_Inference()` закоментований
 - `03_03` | `main.c:355`, `silken_net_audio_model.h` відсутній
 - **Опис:** `Run_Inference()` закоментована; model header відсутній
-- **Блокує:** Acoustic detection (chainsaw, cavitation, wind)
+- **Блокує:** Acoustic detection (chainsaw, cavitation, wind), Mongabay biodiversity pivot
 - [ ] 👤 Тренування моделі (4 класи: silence/wind/cavitation/chainsaw)
 - [ ] 👤 Генерація `silken_net_audio_model.h`
 - [ ] 🔗 DSP preprocessing (FFT/MFCC або вбудований у модель)
 - [ ] 🔗 Verify Tensor Arena size (< 54 KB)
 - [ ] 🔗 Розкоментувати `Run_Inference()`
 - [ ] 🔗 Host-based тести
+- [ ] 🌿 **FW.4-EXT (Mongabay pivot, post-TRL 7):** Розширення моделі з 4 → **5 класів** з додаванням `4 = fauna_activity` (циркадний dawn/dusk soundscape) — див. [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference.md). Залежить від калібрувального датасету ЧДТУ ПМКТ + ЧНУ Біо-хабу (UNI.11 + UNI.13a). Альтернативна архітектура: спектральний descriptor ACI (Acoustic Complexity Index) на STM32 без NN, як TRL-7 інкремент
 
 ### 🟠 P1 — Важливі
 
@@ -359,11 +360,12 @@
 - [ ] 🟡 mbedTLS HMAC-SHA256 compute on STM32 HASH peripheral — deferred до lab integration (analog FW.30 mbedTLS deferred TODO)
 
 #### FW.25 — TinyML DSP preprocessing (FFT/MFCC) — undefined
-- `03_03` BLOCKER-5 | `firmware/soldier/main.c` | **P1** (блокує FW.4)
-- **Опис:** Поточна архітектура передає лише лінійну нормалізацію [0.0, 1.0] до TinyML моделі. **Невідомо**, чи модель очікує raw time-domain, чи частотні ознаки (FFT/MFCC). Залежить від `silken_net_audio_model.h` (відсутній). Якщо потрібен MFCC — це додає ~5-15 KB Flash + ~40 µs CPU на inference
-- [ ] 👤 Узгодити з ML-партнером (Бушин ChNU або CHDTU): який preprocessing вбудований у модель?
-- [ ] 🤖 Якщо MFCC — оцінити Flash/RAM/CPU budget і інтегрувати CMSIS-DSP
+- `03_03` BLOCKER-5 | `firmware/soldier/main.c` | **P0 (Mongabay pivot)** — раніше P1, переведено у P0 після [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference.md): без MFCC принципово неможливо розрізнити layered soundscape (комахи + птахи + амфібії dawn/dusk) від шуму вітру у часовій області. Блокує FW.4-EXT (5-class fauna)
+- **Опис:** Поточна архітектура передає лише лінійну нормалізацію [0.0, 1.0] до TinyML моделі. **Невідомо**, чи модель очікує raw time-domain, чи частотні ознаки (FFT/MFCC). Залежить від `silken_net_audio_model.h` (відсутній). Якщо потрібен MFCC — це додає ~5-15 KB Flash + ~40 µs CPU на inference. **Mongabay підсилення (травень 2026):** Delgado et al. на 119 ділянках Коста-Ріки інструментально показали, що `forest cover ≠ forest function` — і це розрізнення доступне лише через спектральну структуру звуку, а не часову. MFCC стає обов'язковим компонентом, не опціональним
+- [ ] 👤 Узгодити з ML-партнером (Бушин ЧНУ ФОТІУС або Любченко): який preprocessing вбудований у модель?
+- [ ] 🤖 Якщо MFCC — оцінити Flash/RAM/CPU budget і інтегрувати CMSIS-DSP (`arm_rfft_fast_f32`, `arm_dct4_f32`)
 - [ ] 🤖 Тести: золотий вектор inference (наперед відома класифікація)
+- [ ] 🌿 Cross-ref UNI.11 + UNI.13a: акустичний датасет dawn/dusk Черкаського бору
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано
 - `03_03` BLOCKER-3 | `firmware/soldier/main.c` | **P1**
@@ -814,6 +816,15 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [ ] 🤖 Hadron integration spec: `Hadron::TokenizeForestPlotService` + KYC flow
 - [ ] 🔗 Залежить від BIZ.2 (MSA template)
 
+#### 🌿 BIZ.12 — Horizon Europe CLUSTER 6 заявка (Biodiversity Monitoring, Mongabay pivot)
+- **Джерело:** `03_03` §10 + `08_03` Стаття 24a + E.59 | **Пріоритет: P1 (стратегічна заявка, post-publication)**
+- **Опис:** Horizon Europe CLUSTER 6 — Food, Bioeconomy, Natural Resources, Agriculture and Environment, тематика _Biodiversity Monitoring_ (бюджет однієї дії 2–6 М€, terms 36–48 місяців). Mongabay/Delgado pivot робить Silken Net природним кандидатом: єдиний планетарний D-MRV проєкт з безперервною micro-acoustic верифікацією біорізноманіття на on-tree IoT-сенсорах. Заявка прив'язана до моменту, коли Стаття 24a (`08_03`) приймається до Q1-журналу — це переводить заявку з категорії «концепт» у категорію «published research» (вирішальна різниця для Horizon evaluators)
+- [ ] 👤 Identify call topic (HORIZON-CL6-202X-BIODIV-* — щорічно оновлюється)
+- [ ] 👤 Сформувати consortium: Silken Net (coordinator) + ЧНУ ФОТІУС (Бушин/Любченко) + ЧДТУ (Карапетян/Базіло/Бондаренко) + ЧНУ біо-хаб (Спрягайло/Гаврилюк) + 1–2 EU академічні партнери (рекомендовано: Linköping University через зв'язок Мінаєв-KTH/`08_01`, або іспанський CSIC bioacoustics group)
+- [ ] 👤 Submission прив'язати до моменту acceptance Статті 24a (08_03) → "published research" status
+- [ ] 🔗 Залежить від E.59 / FW.4-EXT (5-class TinyML модель — навіть на TRL 5 рівні достатньо для гранту)
+- [ ] 🔗 Залежить від UNI.13a (Cherkasy Soundscape Library — preliminary data для Section "Methodology" заявки)
+
 ---
 
 ## 🎓 Академічні блокери (5 установ)
@@ -876,11 +887,23 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [ ] 🔗 Залежить від HW.9 (PCB) + HW.17 (radome prototype)
 
 #### UNI.11 — ChDTU Базіло+Бондаренко (ПМКТ): акустична валідація фононної лінзи
-- **Джерело:** `08_04` §1.3 | **Пріоритет: P2**
-- **Опис:** ПМКТ (Прикладна механіка + комп'ютерні технології) ChDTU — спеціалізація п'єзоелектрика + акустичні метаматеріали. Потрібно: EIS-характеризація п'єзодиска 25-150 кГц (TinyML cavitation detection), верифікація гіроїдного фокусування (phonon lens) для кавітації ксилеми. Цільовий результат: стаття Q1 *IEEE Transactions on Biomedical Engineering*
+- **Джерело:** `08_04` §1.3 | **Пріоритет: P2 (P1 для Mongabay pivot)**
+- **Опис:** ПМКТ (Прикладна механіка + комп'ютерні технології) ChDTU — спеціалізація п'єзоелектрика + акустичні метаматеріали. Потрібно: EIS-характеризація п'єзодиска 25-150 кГц (TinyML cavitation detection), верифікація гіроїдного фокусування (phonon lens) для кавітації ксилеми. Цільовий результат: стаття Q1 *IEEE Transactions on Biomedical Engineering*. **🌿 Mongabay pivot (травень 2026):** ТЗ розширено — калібрувальний акустичний датасет повинен включати **записи лісового фону на світанку та в сутінках** (Cherkasy Soundscape Library) для тренування 5-го класу TinyML «Fauna Activity» (див. [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference.md), [`08_03` Стаття 24a](../docs/08_03_Joint_Publications_and_IP_Strategy.md))
 - [ ] 👤 Формальна зустріч з Базіло + Бондаренко
 - [ ] 👤 EIS-протокол для п'єзодиска (постачання зразка)
 - [ ] 👤 Acoustic стенд-тест для гіроїда (cross-ref HW.1)
+- [ ] 🌿 **dawn/dusk recordings (Mongabay):** методологія польових записів спільно з ЧНУ Біо-хабом (UNI.13a / Спрягайло-Гаврилюк) — AudioMoth-клас рекордери, 4 сезони, мінімум 30 хв на світанку + 30 хв у сутінках на ділянку, домінантні таксономічні групи labeled
+
+#### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay pivot)
+- **Джерело:** `08_01` §1.3 + §2 (Homeostasis Baseline крок 5) | **Пріоритет: P1 (новий, Mongabay)**
+- **Опис:** Стаття Delgado et al. (Nicoya Peninsula, Costa Rica, 119 ділянок, 16 000 годин аудіо; огляд: *Mongabay News*, травень 2026) інструментально довела: NDVI бачить покрив, але не функцію екосистеми; dawn/dusk piіки фауни — надійний маркер реального біорізноманіття. Українським аналогом цього дослідження стає **«Cherkasy Soundscape Library»** — польові записи на світанку та в сутінках Черкаського бору в усі 4 сезони, спільно з кафедрою ПМКТ ЧДТУ (UNI.11). Результат: ground truth для тренування 5-class TinyML моделі (FW.4-EXT) + co-authored Q1 publication ([`08_03` Стаття 24a](../docs/08_03_Joint_Publications_and_IP_Strategy.md))
+- [ ] 👤 Формальна зустріч з О.В. Спрягайлом (проректор з науки) + М.В. Гаврилюком (директор ННІ природничих та аграрних наук)
+- [ ] 👤 Узгодити участь студентів-біологів у польових експедиціях (наукова практика)
+- [ ] 👤 Joint methodology workshop: ЧНУ біо-хаб + ЧДТУ ПМКТ — узгодження протоколу польових записів (рекордер, висота, тривалість, метадані)
+- [ ] 👤 Перші expedition runs: 4 ділянки × 4 сезони × dawn+dusk → ~32 запису на baseline cycle
+- [ ] 🔗 Manual labeling студентами (комахи / птахи / амфібії; інтенсивність 0–63) → labeled dataset для GA-оптимізації Любченком (UNI.6 / E.52-EXT)
+- [ ] 🔗 Cross-validation з 10-річними даними стресових подій (Спрягайло) — external validation
+- [ ] 🔗 Інтеграція у Horizon Europe CLUSTER 6 grant заявку (Biodiversity Monitoring) — підтримка BIZ-секції
 
 #### UNI.12 — ChIPB-NUTSU: пожежна безпека + параметричне страхування
 - **Джерело:** `08_05` | **Пріоритет: P1**
@@ -970,6 +993,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.56 | **DSP preprocessing для TinyML** — невідомо чи модель очікує raw time-domain чи MFCC. Якщо MFCC → +5-15 KB Flash + 40 µs CPU (CMSIS-DSP) | `03_03` BLOCKER-5 | P1, cross-ref FW.25 |
 | E.57 | **TENSOR_ARENA_SIZE budget verification** — ніколи не виміряно через `arm-none-eabi-size`. Ризик stack overflow якщо > 46 KB | `03_03` BLOCKER-3 | P1, cross-ref FW.26 |
 | E.58 | **Lorenz state continuity** після brownout: документація specifies повний (x,y,z) save в RTC Backup, але недостатня формалізація first-boot vs continuation logic. Магічний marker `LZST` (0x4C5A5354) реалізовано — потребує канонічної таблиці RTC layout | `03_04`, `03_01` | P2, cross-ref DOC.3, DOC.4 |
+| 🌿 E.59 | **Mongabay biodiversity pivot — acoustic D-MRV** — стратегічний pivot Silken Net від карбонового MRV до повноцінного D-MRV біорізноманіття після Delgado et al. (Nicoya Peninsula, 119 ділянок, 16 000 год аудіо; *Mongabay News*, травень 2026). Включає: (1) FW.4-EXT 5-class TinyML модель з класом `fauna_activity`; (2) FW.25 DSP MFCC з P1→P0; (3) UNI.11+UNI.13a Cherkasy Soundscape Library (ЧДТУ ПМКТ + ЧНУ Біо-хаб); (4) 08_02 §1.5 Macro-Micro verification (Бушин CNN + fauna feature); (5) 08_02 §1.8 NSGA-II multi-objective GA (Любченко); (6) 08_03 Стаття 24a co-authored Q1 publication; (7) Horizon Europe CLUSTER 6 (Biodiversity Monitoring) grant vector; (8) AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score"; (9) ринкова диференціація — defensible moat проти Pachama/Sylvera/NCX (тільки Silken Net має micro-acoustic verification layer) | `03_03` §10 + `08_01` §1.3+§2 + `08_02` §1.5+§1.8 + `08_03` Стаття 24a | **P1 strategic** — координує FW.4-EXT, FW.25, UNI.11, UNI.13a |
 
 ---
 
