@@ -325,7 +325,7 @@ Silken Net має 6 університетських партнерів (ЧНУ,
      - 6 університетів + ActiveBridge + Silken Net
      - Який юридичний формат? (асоціація / договір про спільну діяльність / ГО)
   2. Розподіл ролей:
-     ЧНУ = hard science (фізика, хімія, біоценологія)
+     ЧНУ = hard science (фізика, хімія, біоценологія) + ректорат-парасоль (Кирилюк Є.М. — підпис MoU, WP-Bioeconomy ко-PI; Спрягайло О.В. — WP-Biodiversity ко-PI, ПЗФ-канал до Черкаської ОДА; деталі: [`08_01` §1.3–§1.4](08_01_University_R_and_D_Protocols), [`08_03` §1G](08_03_Joint_Publications_and_IP_Strategy))
      ФОТІУС = cybernetics (firmware, backend, math)
      ЧДТУ = data (statistics, RF, acoustics)
      ЧІПБ = safety (fire, SOP, ДСНС)
