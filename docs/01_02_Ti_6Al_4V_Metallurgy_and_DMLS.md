@@ -374,5 +374,3 @@ nTop — провідний інструмент для генерації мі�
 - [wiki/08_01_University_R_and_D_Protocols](https://github.com/Alexey-Lukin/silken_net/wiki/08_01_University_R_and_D_Protocols) — R&D протоколи ЧНУ
 
 ---
-
-_Документ оновлено: Reverse Shaping Cycle 1 + Batch Integration Session 2. Дата: 2026-03-24._
