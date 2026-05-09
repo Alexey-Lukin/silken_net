@@ -10,6 +10,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: pg_trgm; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION pg_trgm; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching based on trigrams';
+
+
+--
 -- Name: postgis; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -691,6 +705,135 @@ CREATE SEQUENCE public.clusters_id_seq
 --
 
 ALTER SEQUENCE public.clusters_id_seq OWNED BY public.clusters.id;
+
+
+--
+-- Name: codex_citations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_citations (
+    id bigint NOT NULL,
+    codex_node_id bigint NOT NULL,
+    citable_type character varying NOT NULL,
+    citable_id bigint NOT NULL,
+    created_by_user_id bigint NOT NULL,
+    note character varying(140),
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_citations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.codex_citations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: codex_citations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.codex_citations_id_seq OWNED BY public.codex_citations.id;
+
+
+--
+-- Name: codex_nodes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_nodes (
+    id bigint NOT NULL,
+    codex_realm_id bigint NOT NULL,
+    slug character varying NOT NULL,
+    codex_uid character varying NOT NULL,
+    title_uk character varying NOT NULL,
+    title_en character varying NOT NULL,
+    subtitle_uk character varying,
+    subtitle_en character varying,
+    archetype_key character varying NOT NULL,
+    context_md text,
+    cyber_meaning_md text,
+    lore_md text,
+    latitude numeric(10,6),
+    longitude numeric(10,6),
+    geo_region character varying,
+    lifecycle_status integer DEFAULT 5 NOT NULL,
+    external_refs jsonb DEFAULT '[]'::jsonb NOT NULL,
+    seed_origin integer DEFAULT 0 NOT NULL,
+    discoverable_after_minutes integer,
+    attunement_count integer DEFAULT 0 NOT NULL,
+    comments_count integer DEFAULT 0 NOT NULL,
+    view_count integer DEFAULT 0 NOT NULL,
+    discovery_count integer DEFAULT 0 NOT NULL,
+    citation_count integer DEFAULT 0 NOT NULL,
+    attunement_elo integer DEFAULT 1500 NOT NULL,
+    match_count integer DEFAULT 0 NOT NULL,
+    published_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    geo_point public.geography(Point,4326)
+);
+
+
+--
+-- Name: codex_nodes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.codex_nodes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: codex_nodes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.codex_nodes_id_seq OWNED BY public.codex_nodes.id;
+
+
+--
+-- Name: codex_realms; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_realms (
+    id bigint NOT NULL,
+    slug character varying NOT NULL,
+    name_uk character varying NOT NULL,
+    name_en character varying NOT NULL,
+    glyph character varying NOT NULL,
+    accent_token character varying NOT NULL,
+    description_md text,
+    "position" integer DEFAULT 0 NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_realms_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.codex_realms_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: codex_realms_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.codex_realms_id_seq OWNED BY public.codex_realms.id;
 
 
 --
@@ -2036,6 +2179,27 @@ ALTER TABLE ONLY public.clusters ALTER COLUMN id SET DEFAULT nextval('public.clu
 
 
 --
+-- Name: codex_citations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_citations ALTER COLUMN id SET DEFAULT nextval('public.codex_citations_id_seq'::regclass);
+
+
+--
+-- Name: codex_nodes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_nodes ALTER COLUMN id SET DEFAULT nextval('public.codex_nodes_id_seq'::regclass);
+
+
+--
+-- Name: codex_realms id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_realms ALTER COLUMN id SET DEFAULT nextval('public.codex_realms_id_seq'::regclass);
+
+
+--
 -- Name: device_calibrations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2254,6 +2418,30 @@ ALTER TABLE ONLY public.blockchain_transactions
 
 ALTER TABLE ONLY public.clusters
     ADD CONSTRAINT clusters_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: codex_citations codex_citations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_citations
+    ADD CONSTRAINT codex_citations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: codex_nodes codex_nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_nodes
+    ADD CONSTRAINT codex_nodes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: codex_realms codex_realms_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_realms
+    ADD CONSTRAINT codex_realms_pkey PRIMARY KEY (id);
 
 
 --
@@ -3096,17 +3284,17 @@ CREATE INDEX idx_ai_insights_polymorphic_type_date ON public.ai_insights USING b
 
 
 --
--- Name: idx_ai_insights_reasoning_gin; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ai_insights_reasoning_gin ON public.ai_insights USING gin (reasoning);
-
-
---
 -- Name: idx_ai_insights_reasoning_fts; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_ai_insights_reasoning_fts ON public.ai_insights USING gin (to_tsvector('simple'::regconfig, COALESCE((reasoning ->> 'description'::text), ''::text)));
+
+
+--
+-- Name: idx_ai_insights_reasoning_gin; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_insights_reasoning_gin ON public.ai_insights USING gin (reasoning);
 
 
 --
@@ -3121,6 +3309,41 @@ CREATE INDEX idx_ai_insights_target_date ON public.ai_insights USING btree (targ
 --
 
 CREATE UNIQUE INDEX idx_ai_insights_unique_report ON public.ai_insights USING btree (analyzable_type, analyzable_id, target_date, insight_type, model_source);
+
+
+--
+-- Name: idx_codex_citations_unique_per_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_codex_citations_unique_per_user ON public.codex_citations USING btree (codex_node_id, citable_type, citable_id, created_by_user_id);
+
+
+--
+-- Name: idx_codex_nodes_geo_point; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_nodes_geo_point ON public.codex_nodes USING gist (geo_point);
+
+
+--
+-- Name: idx_codex_nodes_realm_elo_desc; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_nodes_realm_elo_desc ON public.codex_nodes USING btree (codex_realm_id, attunement_elo DESC);
+
+
+--
+-- Name: idx_codex_nodes_title_en_trgm; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_nodes_title_en_trgm ON public.codex_nodes USING gin (title_en public.gin_trgm_ops);
+
+
+--
+-- Name: idx_codex_nodes_title_uk_trgm; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_nodes_title_uk_trgm ON public.codex_nodes USING gin (title_uk public.gin_trgm_ops);
 
 
 --
@@ -3345,6 +3568,76 @@ CREATE INDEX index_clusters_on_geo_boundary ON public.clusters USING gist (geo_b
 --
 
 CREATE INDEX index_clusters_on_organization_id ON public.clusters USING btree (organization_id);
+
+
+--
+-- Name: index_codex_citations_on_citable_type_and_citable_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_citations_on_citable_type_and_citable_id ON public.codex_citations USING btree (citable_type, citable_id);
+
+
+--
+-- Name: index_codex_citations_on_codex_node_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_citations_on_codex_node_id ON public.codex_citations USING btree (codex_node_id);
+
+
+--
+-- Name: index_codex_citations_on_created_by_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_citations_on_created_by_user_id ON public.codex_citations USING btree (created_by_user_id);
+
+
+--
+-- Name: index_codex_nodes_on_archetype_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_nodes_on_archetype_key ON public.codex_nodes USING btree (archetype_key);
+
+
+--
+-- Name: index_codex_nodes_on_codex_uid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_codex_nodes_on_codex_uid ON public.codex_nodes USING btree (codex_uid);
+
+
+--
+-- Name: index_codex_nodes_on_geo_region; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_nodes_on_geo_region ON public.codex_nodes USING btree (geo_region);
+
+
+--
+-- Name: index_codex_nodes_on_lifecycle_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_nodes_on_lifecycle_status ON public.codex_nodes USING btree (lifecycle_status);
+
+
+--
+-- Name: index_codex_nodes_on_slug; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_codex_nodes_on_slug ON public.codex_nodes USING btree (slug);
+
+
+--
+-- Name: index_codex_realms_on_position; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_realms_on_position ON public.codex_realms USING btree ("position");
+
+
+--
+-- Name: index_codex_realms_on_slug; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_codex_realms_on_slug ON public.codex_realms USING btree (slug);
 
 
 --
@@ -5116,6 +5409,14 @@ ALTER TABLE ONLY public.trees
 
 
 --
+-- Name: codex_citations fk_rails_0e53879778; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_citations
+    ADD CONSTRAINT fk_rails_0e53879778 FOREIGN KEY (created_by_user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: audit_logs fk_rails_13aa3bd6ad; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5145,6 +5446,14 @@ ALTER TABLE ONLY public.ews_alerts
 
 ALTER TABLE ONLY public.audit_logs
     ADD CONSTRAINT fk_rails_1f26bc34ae FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: codex_nodes fk_rails_1fee2ba745; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_nodes
+    ADD CONSTRAINT fk_rails_1fee2ba745 FOREIGN KEY (codex_realm_id) REFERENCES public.codex_realms(id);
 
 
 --
@@ -5201,6 +5510,14 @@ ALTER TABLE ONLY public.maintenance_records
 
 ALTER TABLE ONLY public.identities
     ADD CONSTRAINT fk_rails_5373344100 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: codex_citations fk_rails_54273725c2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_citations
+    ADD CONSTRAINT fk_rails_54273725c2 FOREIGN KEY (codex_node_id) REFERENCES public.codex_nodes(id);
 
 
 --
@@ -5356,19 +5673,19 @@ ALTER TABLE ONLY public.device_calibrations
 
 
 --
--- Name: telemetry_logs fk_telemetry_logs_tree_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE public.telemetry_logs
-    ADD CONSTRAINT fk_telemetry_logs_tree_id FOREIGN KEY (tree_id) REFERENCES public.trees(id);
-
-
---
 -- Name: system_parameters fk_rails_system_parameters_updated_by; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.system_parameters
     ADD CONSTRAINT fk_rails_system_parameters_updated_by FOREIGN KEY (updated_by_id) REFERENCES public.users(id);
+
+
+--
+-- Name: telemetry_logs fk_telemetry_logs_tree_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.telemetry_logs
+    ADD CONSTRAINT fk_telemetry_logs_tree_id FOREIGN KEY (tree_id) REFERENCES public.trees(id);
 
 
 --
@@ -5378,11 +5695,5 @@ ALTER TABLE ONLY public.system_parameters
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260419072056'),
-('20260419160334'),
-('20260421181059'),
-('20260424165615'),
-('20260425123403'),
-('20260501160000'),
-('20260502090000');
+('20260509120000');
 

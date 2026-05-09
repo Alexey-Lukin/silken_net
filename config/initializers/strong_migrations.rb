@@ -3,7 +3,12 @@
 # Strong Migrations — захист від небезпечних міграцій у продакшні.
 # При масштабуванні до мільярдів записів (телеметрія, транзакції, дерева)
 # навіть "проста" ALTER TABLE може заблокувати таблицю на десятки хвилин.
-StrongMigrations.start_after = 20260312000000
+#
+# `start_after` вказує на найсвіжіший squash-anchor (init_consolidated).
+# Всі майбутні міграції з timestamp > 20260509120000 проходять
+# Strong Migrations перевірки. Bump цього значення під час кожного
+# наступного squash (див. db/migrate/<ts>_init_consolidated.rb).
+StrongMigrations.start_after = 20260509120000
 
 # Час очікування lock-у на таблицю перед відміною міграції.
 # 10 секунд — безпечний ліміт для IoT uplink pipeline (телеметрія не чекатиме довше).
