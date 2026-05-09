@@ -35,6 +35,7 @@ module Navigation
           # subsequent phases (their nav entries land alongside).
           section_group("Library") do
             nav_item("Codex Atlas", api_v1_codex_nodes_path, "book")
+            nav_item("My Fraction", api_v1_codex_my_fraction_path, "shield")
           end
 
           # ОПЕРАЦІЙНИЙ КОНТУР
@@ -159,6 +160,8 @@ module Navigation
       when "activity" then "〰"
       when "tree" then "🌳"
       when "clipboard" then "▤"
+      when "book" then "📖"
+      when "shield" then "🛡"
       else "○"
       end
     end

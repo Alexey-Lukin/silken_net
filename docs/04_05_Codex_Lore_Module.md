@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 (Phase 1 Foundation + Phase 2 Community done — read-only Atlas live з 79-record seed corpus, social layer з coments + attunements + Solid Cable broadcasts, full spec coverage). Phases 3-6 в плані.
+- **Поточний TRL:** TRL 6 (Phases 1+2+3 done — read-only Atlas з 79-record seed corpus, social layer (comments + attunements + Solid Cable), identity layer (Fraction + 7-day cooldown + AuditLog hook), full spec coverage 199 examples codex-slice). Phases 4-6 в плані.
 - **Стек:** Rails 8.1 · PostgreSQL 16 (`pg_trgm`, `postgis`, `pgcrypto`) · Phlex · Tailwind v4 · Sidekiq (existing 9 queues) · Pundit · ActionCable (Solid Cable).
 - **Жодних нових gem-залежностей.**
 - **Пов'язані модулі:**
@@ -693,15 +693,75 @@ db/seeds/codex/
 - [x] `bundle exec brakeman` — 0 нових warnings
 - [x] **Bug-fix from Phase 1 caught:** `Codex::Show` використовував `unsafe_raw` (не існує в Phlex 2.4); замінено на `raw safe(...)` у `show.rb` + `comments/item.rb`. Phase 1 рендер не падав тому що Show ніколи не виконувався тестами.
 
-### Phase 3: Identity 🛡 (planned)
-- [ ] Migration `CreateCodexFractions`
-- [ ] Model `Codex::Fraction` + `User#codex_fraction has_one`
-- [ ] `Codex::FractionChangeService` (7-day cooldown, AuditLog)
-- [ ] Endpoint: `POST /api/v1/codex/fractions`
-- [ ] UI: `Codex::Fraction::Picker` wizard
-- [ ] `Codex::FractionAuditWorker` (queue `default`)
-- [ ] Profile integration (показати фракцію у `Users::Profile`)
-- [ ] Specs
+### Phase 3: Identity 🛡 (✅ done)
+
+**Migration & schema:**
+- [x] Міграція `20260509140000_create_codex_fractions.rb` — single table з UNIQUE `user_id` (DB-рівень — race-proof), FK `codex_node_id` (on_delete: restrict — не можна видалити Node з активними фракціями), `archetype_key` (денормалізація з Node), `chosen_at` (immutable since-date), `last_changed_at` (cooldown anchor), `house_color_token` (optional Tailwind). Indices: BTREE на `archetype_key`, `codex_node_id`, `last_changed_at DESC`.
+
+**Models:**
+- [x] `Codex::Fraction` — `COOLDOWN = 7.days` константа, `node_lifecycle_pickable` валідатор (rejects `destroyed`/`extinct`, дозволяє `mythical`), helpers `cooldown_active?`/`cooldown_until`/`seconds_until_unlocked`, scopes `ordered`/`by_archetype`.
+
+**User association add-on:**
+- [x] `User has_one :codex_fraction, class_name: "Codex::Fraction", dependent: :destroy` — безпечний destroy (фракція не є модераційним артефактом).
+
+**Service:**
+- [x] `Codex::FractionChangeService.call(user:, node:)` — атомарний `find_or_initialize_by(user_id:)` → save → enqueue audit. Cooldown enforcement як structured Result (success: false, errors: ["cooldown_active"], cooldown_until). Validation rejection (lifecycle blocked, unsaved user/node) як Result success: false. `chosen_at` immutable; `archetype_key` + `house_color_token` денормалізуються з Node + realm.accent_token. Audit enqueue failure не rollback'ить мутацію (rescue StandardError → nil).
+
+**Pundit:**
+- [x] `Codex::FractionPolicy` — `index?/show?/create?` для будь-якого автентифікованого; `update?/destroy?` own-only. **Cooldown НЕ перевіряється тут** — Pundit відповідає на "may this user act?", а не "is the action permissible *right now*?" — останнє є business-rule concern сервісу.
+
+**Worker:**
+- [x] `Codex::FractionAuditWorker` (queue `default` per ADR-CDX-4, retry 3) — пише `AuditLog(action: "codex.fraction.chosen", auditable: fraction, metadata: {codex_node_id, archetype_key, previous_node_id, changed_at})`. **No-op коли `user.organization_id` nil** (audit ledger є per-org by design — orphans типу `oracle.executioner@system` бот не пишуть до журналу).
+
+**Routes:**
+- [x] `POST /api/v1/codex/fractions` (create — обробляє і initial pick і re-pick), `GET /api/v1/codex/fractions/me` (current), `GET /api/v1/codex/fractions/picker?realm=<slug>` (Turbo Frame fragment).
+
+**Controller:**
+- [x] `Api::V1::Codex::FractionsController` — `#create` (delegate to service, 201/429/422), `#me` (Card HTML or 204 JSON), `#picker` (active realm-filtered grid, виключає `destroyed`/`extinct`, limit 48).
+
+**Blueprint:**
+- [x] `Codex::FractionBlueprint` — full payload: `id, codex_node_id, archetype_key, house_color_token, chosen_at, last_changed_at, user_id, node_slug, node_title_uk, node_title_en, realm_slug, cooldown_until` (ISO8601), `cooldown_active` (bool).
+
+**Phlex components (gaia-* tokens, no legacy palette):**
+- [x] `Codex::Fractions::Card` — read-only summary card з empty-state CTA та "Change →" linkout
+- [x] `Codex::Fractions::Cooldown` — status pill (Open / Locked · Nd Mh)
+- [x] `Codex::Fractions::Picker` — Turbo Frame з realm-tabs + node grid + POST форми
+- [x] `Codex::Fractions::ProfileBadge` — 1-row teaser для `Users::Profile` (gaia-* island, не торкає legacy emerald palette профілю)
+
+**Profile integration:**
+- [x] `Users::Profile` отримує новий optional kwarg `codex_fraction:` (default nil, eager-loaded в `Api::V1::UsersController#show` + `#me`)
+- [x] Новий `render_codex_fraction` метод рендерить `ProfileBadge` як окремий gaia-* island
+
+**Sidebar:**
+- [x] `Navigation::Sidebar` — додано "My Fraction" entry під "Library" group з icon `shield`. Розширено `render_icon` (додано `book` + `shield` гліфи).
+
+**Anti-abuse:**
+- [x] `Rack::Attack` rule `codex/fractions` — 60 attempts / 1 day / actor (cooldown service-side defends 7 днів; throttle захищає від rapid-fire replay/scripting).
+
+**Specs (per docs/10_01):**
+- [x] `spec/factories/codex.rb` — додано `:codex_fraction`
+- [x] `spec/models/codex/fraction_spec.rb` (8 examples) — uniqueness, lifecycle rejection, cooldown helpers, scopes
+- [x] `spec/services/codex/fraction_change_service_spec.rb` (6 examples) — happy paths (initial + re-pick), cooldown enforcement, validation rejections, unsaved entities
+- [x] `spec/policies/codex/fraction_policy_spec.rb` (3 examples) — auth gates, own-only writes
+- [x] `spec/workers/codex/fraction_audit_worker_spec.rb` (4 examples) — sidekiq config, AuditLog write, organization-less no-op, unknown id no-op
+- [x] `spec/requests/api/v1/codex/fractions_controller_spec.rb` (10 examples) — POST guards (auth, 201, 429 cooldown, 404 unknown slug, 422 extinct), GET /me (auth, 204, 200+blueprint), GET /picker (auth, frame render)
+- [x] `spec/views/components/codex/fractions/card_spec.rb` (3 examples) — empty-state, filled state, gaia-* tokens compliance
+- [x] `spec/views/components/codex/fractions/picker_spec.rb` (6 examples) — header/tabs/grid render, active realm highlight, Current marker, disabled-during-cooldown, empty-state, tokens compliance
+
+**Total Phase 3: 39 new examples → Phase 1+2+3 = 199 examples / 0 failures (codex slice)**
+
+**Quality gates:**
+- [x] `bundle exec rspec` (codex slice + Users::Profile) — 236 examples / 0 failures
+- [x] `bundle exec rubocop` (Phase 3 + touched files, 74 files) — clean (10 auto-correctable Layout/SpaceInsideArrayLiteralBrackets застосовано)
+- [x] `bundle exec brakeman` — 0 нових warnings
+
+**Docs synced:**
+- [x] `docs/04_01` — model count 31 → 32 + Codex::Fraction subsection
+- [x] `docs/04_02` — Phase 3 service / worker / controller note
+- [x] `docs/04_03` — endpoint count 88 → 91 + 3 нових рядки (#92/#93/#94)
+- [x] `docs/04_04` — додано Card/Cooldown/Picker/ProfileBadge до Codex Phlex registry
+- [x] `docs/04_05` — §14 Phase 3 ticked + §15 Session 4 ADR + TRL note
+- [x] `docs/10_03` — Phase 3 рядки (model/service/policy/worker/request/view)
 
 ### Phase 4: Battle ⚔ (planned)
 - [ ] Migration `CreateCodexMatches` (PARTITIONED RANGE by created_at)
@@ -797,5 +857,28 @@ db/seeds/codex/
   - Stimulus controllers `codex--attune` / `codex--comment` (data-attributes виставлені, JS файли — у Phase 3+ batch razom з Fraction Picker)
   - Comment edit / hide UI endpoints (тільки create зараз; admin-hide через Phase 6 admin CRUD).
   - Solid Cable Turbo Stream `<turbo-cable-stream-source>` тег у Show — broadcasts вже працюють, рендер subscriber-тегу разом із Phase 4 `Battle::Arena` Stimulus refactor.
+
+### 2026-05-09 (Session 4) — Phase 3 implementation, Identity layer
+
+- **Done (full Phase 3):**
+  - Schema: одна нова міграція `20260509140000_create_codex_fractions.rb` → `codex_fractions` з UNIQUE `user_id` (DB-рівень — race-proof між контролером та сервісом), FK `codex_node_id` `on_delete: :restrict` (не можна видалити Node з активними фракціями), денормалізованим `archetype_key` для index-only фільтрів, immutable `chosen_at` + mutable `last_changed_at` як cooldown-anchor.
+  - Model: `Codex::Fraction` з `COOLDOWN = 7.days`, `cooldown_active?` / `cooldown_until` / `seconds_until_unlocked` helpers, lifecycle-валідатор (`destroyed`/`extinct` rejected, `mythical` allowed).
+  - User: `has_one :codex_fraction, dependent: :destroy` (безпечний — фракція не є моделарційним артефактом).
+  - Service: `Codex::FractionChangeService.call(user:, node:)` — єдина точка мутації. Атомарний `find_or_initialize_by` + cooldown gate + denormalisation з Node + enqueue audit. Result-struct API; cooldown blocked та lifecycle blocked повертаються як `Result(success: false, errors: [...], cooldown_until: ...)` — handled, не raise. Audit enqueue failure rescue'иться (audit є async by design — transient failure не повинна rollback'ити user-facing мутацію).
+  - Pundit: `Codex::FractionPolicy` — index/show/create для всіх auth, update/destroy own-only. **Cooldown НЕ перевіряється у policy** — Pundit це authorization, cooldown це business rule сервісу.
+  - Worker: `Codex::FractionAuditWorker` (queue `default` per ADR-CDX-4, retry 3) → `AuditLog(action: "codex.fraction.chosen")` з rich metadata (codex_node_id, archetype_key, previous_node_id, changed_at). **Skip-when-no-org** — `audit_logs.organization_id` NOT NULL, ledger є per-org chained-hash; orphans (system bots типу `oracle.executioner@system`) — no-op.
+  - Routes: `POST /codex/fractions` + `GET /codex/fractions/me` + `GET /codex/fractions/picker?realm=`.
+  - Controller: `FractionsController` — три ендпоінти, всі через service-as-thin-shell. POST → 201/429/422; me → 204 або Card; picker → Picker frame з active-realm filter, виключає `destroyed`/`extinct`.
+  - Phlex: 4 нові компоненти (Card, Cooldown, Picker, ProfileBadge) — всі gaia-* tokens, no raw `bg-white`/`text-gray-*`/`bg-emerald-*`. ProfileBadge — gaia-* island усередині legacy emerald `Users::Profile` (не torkaê існуючу палітру).
+  - Sidebar: додано "My Fraction" entry з icon `shield` під "Library" group.
+  - Anti-abuse: `Rack::Attack` rule `codex/fractions` — 60 attempts/day/actor (cooldown 7 днів service-side, throttle захищає rapid replay).
+  - Specs: +39 нових examples → загалом **199 examples / 0 failures** у codex slice (236 з Users::Profile).
+- **Spec-craft notes:**
+  - При використанні `archetype_key` в фабриках/тестах — мусить бути в `Codex::ARCHETYPES` registry (`config/initializers/codex_archetypes.rb` або `app/models/codex.rb`). "cold_wallet"/"hot_wallet" не існують; для тестів обираємо `nlos_routing` / `mesh_sharding` з registry.
+  - `:status_warning` token (НЕ `:status_warn`) — повна назва обов'язкова, щоб TailwindCSS його зкомпілював. CI lint це не ловить — лише runtime render.
+- **Phase 1 cleanup confirmed:** Profile integration виявила, що `Users::Profile` використовує legacy emerald palette (border-emerald-900, bg-zinc-950, text-emerald-* etc.). Phase 3 НЕ переробляє цей файл — тільки додає окремий gaia-* island через `render_codex_fraction`. Повний rebrand Profile — окремий PR (post-Phase-6).
+- **Deferred to subsequent phases:**
+  - Stimulus controllers `codex--attune` / `codex--comment` / `codex--fraction-picker` — data-attributes виставлені, JS файли batch'ом разом з Phase 4 `Battle::Arena` (matrix-rain animation вже існує — використається там).
+  - "What is your fraction?" onboarding wizard для нових користувачів — Phase 6 cross-domain stitch.
 
 ---

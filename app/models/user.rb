@@ -28,6 +28,13 @@ class User < ApplicationRecord
            class_name: "Codex::Attunement",
            dependent: :destroy
 
+  # Phase 3: a user has at most one active fraction (DB-level UNIQUE).
+  # `dependent: :destroy` is safe — a fraction is not a moderation
+  # artefact; deleting the user erases their identity claim cleanly.
+  has_one :codex_fraction,
+          class_name: "Codex::Fraction",
+          dependent: :destroy
+
   # --- НОРМАЛІЗАЦІЯ ТА ВАЛІДАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }

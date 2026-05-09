@@ -7,7 +7,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Впроваджено Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
-- **Кількість ендпоінтів:** 88 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`, `GET /api/v1/system_audits`; плюс Codex-група: 3 read-ендпоінти + 3 community write-ендпоінти Phase 2)
+- **Кількість ендпоінтів:** 91 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`, `GET /api/v1/system_audits`; плюс Codex-група: 3 read-ендпоінти + 3 community write-ендпоінти Phase 2 + 3 identity-ендпоінти Phase 3)
 - **Базовий URL:** `https://<host>/api/v1`
 - **Формат відповідей:** JSON (якщо не вказано інше)
 - **Пов'язані модулі:**
@@ -280,6 +280,9 @@ POST /api/v1/auth/m2m_token
 | 89 | POST | `/api/v1/codex/nodes/:slug/attunements` | `codex/attunements#create` | 🔑 Auth | **Phase 2:** toggle ON. `attunement[intensity]` (1..5, default 3), `attunement[quote]` (≤ 280). Idempotent (UNIQUE per user+node) — re-POST оновлює, не дублює. Тригерить `Codex::AttunementBroadcastWorker`. Rack::Attack: 120 / 1h / actor. |
 | 90 | DELETE | `/api/v1/codex/nodes/:slug/attunements/me` | `codex/attunements#destroy_me` | 🔑 Auth | **Phase 2:** toggle OFF. Безпечний no-op якщо attunement відсутній. Завжди тригерить broadcast. |
 | 91 | POST | `/api/v1/codex/nodes/:slug/comments` | `codex/comments#create` | 🔑 Auth | **Phase 2:** новий коментар (≤ 2 KiB markdown). `Idempotency-Key` обов'язковий для `Content-Type: application/json` (24h TTL). Підтримує `comment[parent_id]` для одного рівня вкладеності. Inline broadcast у `codex_node_<id>_comments` Solid Cable канал. Rack::Attack: 60 / 10min / actor. |
+| 92 | POST | `/api/v1/codex/fractions` | `codex/fractions#create` | 🔑 Auth | **Phase 3:** обрати/змінити фракцію. Body: `{ fraction: { node_slug } }`. Success → 201 + `FractionBlueprint`. Cooldown active (7 днів) → 429 + `cooldown_until`. Lifecycle `destroyed`/`extinct` → 422. Тригерить `Codex::FractionAuditWorker` (queue `default`). Rack::Attack: 60 / 1day / actor. |
+| 93 | GET | `/api/v1/codex/fractions/me` | `codex/fractions#me` | 🔑 Auth | **Phase 3:** поточна фракція caller'а. JSON: `FractionBlueprint` або 204 коли немає; HTML: `Codex::Fractions::Card` Phlex компонент (для Turbo Frame embed). |
+| 94 | GET | `/api/v1/codex/fractions/picker` | `codex/fractions#picker` | 🔑 Auth | **Phase 3:** Turbo Frame фрагмент з grid pickable nodes (`?realm=<slug>`). Виключає `destroyed`/`extinct` lifecycle. Підсвічує current fraction; disable-кнопки під час cooldown. |
 
 **Легенда:**
 

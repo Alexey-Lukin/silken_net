@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 31 моделі (26 ядра + 5 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
+Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 32 моделей (26 ядра + 6 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
 
 ---
 
@@ -1259,6 +1259,20 @@ Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (е
 **Scopes:** `for_node(node)`, `for_user(user)`, `ordered` (за `created_at DESC`).
 
 **Workflow:** `Codex::AttunementsController` (create/destroy_me) → `Codex::AttunementBroadcastWorker.perform_async(node_id, user_id)` (queue: `default`) → broadcasts `attunement_count` на public-канал `codex_node_<id>_attunements` + `attuned: bool` на private-канал `codex_node_<id>_attunements_user_<uid>`.
+
+### `Codex::Fraction` — Особиста Ідентичність (Phase 3)
+
+**Атрибути:** `user_id` (FK UNIQUE — DB-рівень), `codex_node_id` (FK), `archetype_key` (string ≤ 64, денормалізація з Node для index-only фільтрів), `chosen_at` / `last_changed_at` (timestamps), `house_color_token` (≤ 64 chars, optional Tailwind токен типу `gaia-primary`).
+
+**Унікальність:** UNIQUE `(user_id)` — користувач має максимум одну активну фракцію. UNIQUE на DB-рівні (а не лише в моделі) ⇒ жодний race-condition між контролером та сервісом не може лишити дві активні фракції.
+
+**Constants:** `COOLDOWN = 7.days`. Helpers: `cooldown_active?`, `cooldown_until`, `seconds_until_unlocked`.
+
+**Validations:** lifecycle вузла НЕ повинен бути `destroyed` чи `extinct` (вшито в `node_lifecycle_pickable` валідатор). `mythical` дозволяється — міф є валідною ідентичністю.
+
+**Association:** `User has_one :codex_fraction, dependent: :destroy`. Безпечний destroy — фракція не є модераційним артефактом, видалення користувача чисто стирає його identity claim.
+
+**Workflow:** `Codex::FractionChangeService` — єдина точка мутації. Перевіряє cooldown, атомарно `find_or_initialize_by(user_id:)` → save → enqueue `Codex::FractionAuditWorker` (queue `default`, ADR-CDX-4) → AuditLog `action: "codex.fraction.chosen"` (тільки коли user має organization, бо ledger є per-org).
 
 ---
 

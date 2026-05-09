@@ -128,6 +128,16 @@ Rack::Attack.throttle("codex/comments", limit: 60, period: 10.minutes) do |reque
   end
 end
 
+# Fraction picks: cooldown is 7 days at the service layer; the throttle
+# defends against rapid-fire attempts (replay, brute-force scripting) and
+# scoping bugs. 60 attempts / 24 hours / actor — generous enough that real
+# users never hit it but tight enough to dampen abuse.
+Rack::Attack.throttle("codex/fractions", limit: 60, period: 1.day) do |request|
+  if request.path == "/api/v1/codex/fractions" && request.post?
+    request.env["HTTP_AUTHORIZATION"].presence || request.ip
+  end
+end
+
 # ---------------------------------------------------------------------------
 # 6. FAIL2BAN — ban IPs that return too many 401/404 errors
 #

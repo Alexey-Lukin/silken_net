@@ -38,6 +38,7 @@
 | **Codex::Citation** [Codex Phase 1] | ✅ part of 38 examples | 🟢 **Нове** | **polymorphic citable, anti-dup unique index (codex_node_id, citable_type, citable_id), counter cache → Codex::Node.citation_count** |
 | **Codex::Comment** [Codex Phase 2] | ✅ 15 examples | 🟢 **Нове** | **polymorphic commentable, BODY_MAX (2 KiB) cap, FLAG_REASONS allow-list, parent_must_be_top_level (rejects reply-to-reply), parent_must_share_commentable (rejects cross-node parent), counter cache → comments_count, scopes (visible/hidden/top_level/chronological), `editable_by?(user)` 24h grace, soft-hide via hidden_at + hidden_by_admin** |
 | **Codex::Attunement** [Codex Phase 2] | ✅ 10 examples | 🟢 **Нове** | **INTENSITY_RANGE (1..5) валідація + DB CHECK, QUOTE_MAX (280) length, UNIQUE (user_id, codex_node_id) на model + DB, counter cache → attunement_count, before_validation default_started_at, scopes (for_node/for_user/ordered)** |
+| **Codex::Fraction** [Codex Phase 3] | ✅ 8 examples | 🟢 **Нове** | **UNIQUE user_id (DB-level race-proof), node_lifecycle_pickable validator (rejects destroyed/extinct, allows mythical), `COOLDOWN = 7.days`, helpers cooldown_active?/cooldown_until/seconds_until_unlocked, scopes ordered/by_archetype, archetype_key denormalisation** |
 
 ### 1.2 Services
 
@@ -63,6 +64,7 @@
 | Ed25519Crypto::SigningService | ✅ 270L+ | 🟢 **Повне** | **Empty/large messages, hex validation edges, uppercase hex, nil/integer message coercion** |
 | **Codex::NodeImportService** [Codex Phase 1] | ✅ 7 examples | 🟢 **Нове** | **empty seed dir Result success?, minimal YAML upsert, idempotent re-run (no duplicates), DAO `seed_origin` preservation, per-file error isolation, full 79-record corpus load (4 realms + 79 nodes from default SEED_ROOT)** |
 | **Codex::MarkdownRenderer** [Codex Phase 1] | ✅ 11 examples | 🟢 **Нове** | **nil/blank → html_safe empty, paragraphs, h1/h2/h3 → h2/h3/h4 mapping, bold/italic/code/lists/blockquotes, safe http(s) links з `rel="noopener noreferrer" target="_blank"`, `javascript:` scheme rewrite to `#`, `<script>` tag stripping via `Rails::HTML5::SafeListSanitizer`, raw HTML escape-then-transform** |
+| **Codex::FractionChangeService** [Codex Phase 3] | ✅ 6 examples | 🟢 **Нове** | **happy path initial pick (denorm archetype_key + house_color_token, enqueue audit, chosen_at = last_changed_at), happy path re-pick (chosen_at immutable, last_changed_at refreshed, previous_node_id captured), cooldown_blocked Result-struct API, lifecycle rejection (extinct/destroyed), unsaved user/node guards** |
 
 ### 1.3 Workers
 
@@ -75,6 +77,7 @@
 | **Web3CircuitBreaker (concern)** | ✅ 320L+ | 🟢 **Повне** | **transient_cause?, reset_circuit!, remaining_open_seconds, all error types, record_failure! threshold** |
 | **CoapEncryption (concern)** | ✅ 175L+ | 🟢 **Повне** | **[FW.20] TIME_SYNC envelope (0x9C marker + ts:4 big-endian), All mod-16 payload sizes (1,15,17,31,32,33), binary data, null-byte padding, IV uniqueness** |
 | **Codex::AttunementBroadcastWorker** [Codex Phase 2] | ✅ 5 examples | 🟢 **Нове** | **sidekiq_options queue=`default` retry=3, public broadcast `codex_node_<id>_attunements` з пост-commit лічильником, private envelope `codex_node_<id>_attunements_user_<uid>` з `attuned: bool`, no-op для unknown node, `attuned: false` після видалення attunement** |
+| **Codex::FractionAuditWorker** [Codex Phase 3] | ✅ 4 examples | 🟢 **Нове** | **sidekiq_options queue=`default` retry=3, AuditLog write з action="codex.fraction.chosen" + auditable_type=Codex::Fraction + metadata (codex_node_id, archetype_key, previous_node_id, changed_at), no-op для users without organization_id (per-org ledger guarantee), no-op для unknown user/fraction id** |
 
 ### 1.4 Controllers
 
@@ -90,6 +93,11 @@
 - `Api::V1::Codex::AttunementsController#destroy_me` — DELETE removes own + broadcasts; safe no-op коли немає рядка; ніколи не видаляє чужий attunement
 - `Api::V1::Codex::CommentsController#create` (6 examples) — 401 guard, comments_count інкремент, ActionCable broadcast у `codex_node_<id>_comments`, body_html у відповіді (sanitised markdown), `Idempotency-Key` 400 коли пропущено для JSON, retry з тим же ключем повертає cached response, 422 для body > BODY_MAX, parent_id support
 
+**Codex Phase 3 (нове, 10 request examples):**
+- `Api::V1::Codex::FractionsController#create` (5 examples) — 401 guard, 201 + Blueprint на initial pick, FractionAuditWorker enqueue, 429 + cooldown_until ISO коли cooldown active, 404 unknown slug, 422 на extinct/destroyed lifecycle
+- `Api::V1::Codex::FractionsController#me` (3 examples) — 401 guard, 204 коли fraction nil, 200 + Blueprint payload коли set
+- `Api::V1::Codex::FractionsController#picker` (2 examples) — 401 guard, HTML frame render з активним realm + node title
+
 ### 1.5 Policies
 
 Усі Pundit policies покриті. Покриття: 🟢 Повне.
@@ -99,6 +107,8 @@
 **Codex Phase 2 (нове, 12 examples):**
 - `Codex::CommentPolicy` (8) — index/show only for auth, hidden ховається від не-admin, create для всіх auth, update/destroy для автора в межах EDIT_GRACE або admin+, hide? тільки admin+, Scope ховає hidden від non-admin
 - `Codex::AttunementPolicy` (4) — read для auth, write own-only, anonymous deny на create
+
+**Codex Phase 3 (нове, 3 examples):** `Codex::FractionPolicy` — index/show/create для будь-якого автентифікованого, anonymous deny, update/destroy own-only. Cooldown business-rule НЕ в policy (живе в `FractionChangeService`).
 
 ### 1.6 Views
 
@@ -110,6 +120,10 @@
 - `Codex::Attunements::Toggle` (8) — DOM id `codex_node_<id>_attunement_count`, "Attune"/"Attuned" label switch + POST/DELETE method override, Stimulus `codex--attune` data values, success token коли attuned, focus-visible accessibility, no raw `bg-white`/`text-gray-*`
 - `Codex::Comments::Thread` (6) — DOM id `codex_node_<id>_comments` (broadcast target), empty-state copy, composer renders only коли current_user present, Stimulus controller wiring, gaia-* tokens
 - `Codex::Comments::Item` (5) — DOM id `codex_comment_<id>`, sanitised markdown render, ISO timestamp, hidden-state notice (без body), gaia-* tokens
+
+**Codex Phase 3 (нове, 9 examples):**
+- `Codex::Fractions::Card` (3) — empty-state CTA коли fraction nil, filled state з archetype + Since-date + "Change" + Cooldown pill, gaia-* tokens compliance (no `bg-white`/`text-gray-*`)
+- `Codex::Fractions::Picker` (6) — header/realm-tabs/grid render, active realm highlight (`bg-gaia-primary`), Current marker для own fraction, disable-button + "Locked" коли cooldown active на іншому node, empty-state для пустого realm, tokens compliance
 
 ### 1.7 Integration Tests
 

@@ -205,6 +205,13 @@ Rails.application.routes.draw do
                  as: :my_attunement
           resources :comments, only: [ :create ]
         end
+
+        # Phase 3 — Identity layer. One active fraction per user (UNIQUE
+        # user_id at DB level). The collection POST handles both initial
+        # pick and re-pick; cooldown is enforced by the service.
+        resources :fractions, only: [ :create ]
+        get  "fractions/me",     to: "fractions#me",     as: :my_fraction
+        get  "fractions/picker", to: "fractions#picker", as: :fraction_picker
       end
     end
   end

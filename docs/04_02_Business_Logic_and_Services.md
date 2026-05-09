@@ -567,6 +567,37 @@ peaq_node_url: "https://peaq-node.example.com"
 - `Api::V1::Codex::AttunementsController` — `find_or_initialize_by` + counter cache + worker enqueue. Idempotent toggle: re-POST оновлює `intensity`/`quote`, ніколи не дублює.
 - `Api::V1::Codex::CommentsController` — `Idempotency-Key` обов'язковий для JSON writes (24h TTL у `Rails.cache`); inline `ActionCable.server.broadcast` на `codex_node_<id>_comments` з `Codex::CommentBlueprint`-серіалізацією.
 
+### `Codex::FractionChangeService` (Phase 3)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/fraction_change_service.rb` |
+| **Вхід** | `user:` (User), `node:` (Codex::Node), `now:` (Time, injectable for specs) |
+| **Що робить** | Єдина точка мутації фракції. Two outcomes (success): **initial pick** — створює рядок з `chosen_at` = `last_changed_at` = now; **re-pick** — оновлює `codex_node_id` + `archetype_key` (денормалізація) + `last_changed_at`, `chosen_at` залишається immutable. Перед мутацією перевіряє cooldown (7 днів). Денормалізує `archetype_key` з Node і `house_color_token` з realm.accent_token. Enqueue `FractionAuditWorker` тільки після успішного save. |
+| **Failure** (handled) | Cooldown active → `Result(success: false, errors: ["cooldown_active"], cooldown_until: ...)`. Lifecycle blocked → `Result(success: false, errors: ["node is not pickable"])`. Всі handled, не raise. |
+| **Зовнішні виклики** | `Codex::FractionAuditWorker.perform_async` (transient enqueue failure не rollback'ить мутацію — audit є async by design) |
+| **Вихід** | `Result` Struct (`success?`, `fraction`, `cooldown_until`, `previous_node_id`, `errors`) |
+| **Інвокери** | `Api::V1::Codex::FractionsController#create` |
+
+### `Codex::FractionAuditWorker` (Phase 3)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/codex/fraction_audit_worker.rb` |
+| **Черга** | `default` (#5) — ADR-CDX-4 |
+| **Retry** | 3 |
+| **Вхід** | `user_id` (Integer), `fraction_id` (Integer), `previous_node_id` (Integer or nil) |
+| **Що робить** | Записує `AuditLog(action: "codex.fraction.chosen", auditable: fraction, metadata: {codex_node_id, archetype_key, previous_node_id, changed_at})` через звичайний `create!` (immutable chain hash compute через before_create callback). |
+| **No-op коли** | user не має `organization_id` (системні боти типу `oracle.executioner@system`); user/fraction не знайдено в DB. |
+| **Інвокери** | `Codex::FractionChangeService` |
+
+### Phase 3 controller (FractionsController)
+
+`Api::V1::Codex::FractionsController` — 3 ендпоінти, всі делегують до сервісу:
+- `#create` — `Codex::FractionChangeService.call(user:, node:)`. Success → 201 + Blueprint. Cooldown → 429 + `cooldown_until`. Validation → 422.
+- `#me` — рендерить `Codex::Fractions::Card` (HTML) або 204 (JSON, коли fraction nil).
+- `#picker` — рендерить `Codex::Fractions::Picker` Turbo Frame для `?realm=<slug>`.
+
 ---
 
 ## ⚙️ 11. Реєстр Воркерів (Workers Registry)

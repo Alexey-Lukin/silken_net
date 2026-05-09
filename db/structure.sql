@@ -10,13 +10,6 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
--- *not* creating schema, since initdb creates it
-
-
---
 -- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
 --
 
@@ -828,6 +821,42 @@ CREATE SEQUENCE public.codex_comments_id_seq
 --
 
 ALTER SEQUENCE public.codex_comments_id_seq OWNED BY public.codex_comments.id;
+
+
+--
+-- Name: codex_fractions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_fractions (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    codex_node_id bigint NOT NULL,
+    archetype_key character varying(64) NOT NULL,
+    chosen_at timestamp(6) without time zone NOT NULL,
+    last_changed_at timestamp(6) without time zone NOT NULL,
+    house_color_token character varying(64),
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_fractions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.codex_fractions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: codex_fractions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.codex_fractions_id_seq OWNED BY public.codex_fractions.id;
 
 
 --
@@ -2289,6 +2318,13 @@ ALTER TABLE ONLY public.codex_comments ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: codex_fractions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_fractions ALTER COLUMN id SET DEFAULT nextval('public.codex_fractions_id_seq'::regclass);
+
+
+--
 -- Name: codex_nodes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2545,6 +2581,14 @@ ALTER TABLE ONLY public.codex_citations
 
 ALTER TABLE ONLY public.codex_comments
     ADD CONSTRAINT codex_comments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: codex_fractions codex_fractions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_fractions
+    ADD CONSTRAINT codex_fractions_pkey PRIMARY KEY (id);
 
 
 --
@@ -3757,6 +3801,41 @@ CREATE INDEX index_codex_comments_on_parent_id ON public.codex_comments USING bt
 --
 
 CREATE INDEX index_codex_comments_on_user_id ON public.codex_comments USING btree (user_id);
+
+
+--
+-- Name: index_codex_fractions_on_archetype_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_fractions_on_archetype_key ON public.codex_fractions USING btree (archetype_key);
+
+
+--
+-- Name: index_codex_fractions_on_codex_node_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_fractions_on_codex_node_id ON public.codex_fractions USING btree (codex_node_id);
+
+
+--
+-- Name: index_codex_fractions_on_last_changed_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_fractions_on_last_changed_at ON public.codex_fractions USING btree (last_changed_at DESC);
+
+
+--
+-- Name: index_codex_fractions_on_node; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_fractions_on_node ON public.codex_fractions USING btree (codex_node_id);
+
+
+--
+-- Name: index_codex_fractions_on_user_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_codex_fractions_on_user_unique ON public.codex_fractions USING btree (user_id);
 
 
 --
@@ -5593,6 +5672,14 @@ ALTER TABLE ONLY public.audit_logs
 
 
 --
+-- Name: codex_fractions fk_rails_161f00043c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_fractions
+    ADD CONSTRAINT fk_rails_161f00043c FOREIGN KEY (codex_node_id) REFERENCES public.codex_nodes(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: wallets fk_rails_1c72cbc225; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5833,6 +5920,14 @@ ALTER TABLE ONLY public.actuators
 
 
 --
+-- Name: codex_fractions fk_rails_dd6e7bdcf8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_fractions
+    ADD CONSTRAINT fk_rails_dd6e7bdcf8 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: maintenance_records fk_rails_e28c02059b; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5903,6 +5998,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260509140000'),
 ('20260509130000'),
 ('20260509120000');
 

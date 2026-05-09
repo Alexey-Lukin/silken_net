@@ -60,4 +60,13 @@ FactoryBot.define do
     intensity { 3 }
     quote { nil }
   end
+
+  factory :codex_fraction, class: "Codex::Fraction" do
+    association :user
+    association :node, factory: :codex_node
+    archetype_key { Codex::ARCHETYPES.first }
+    chosen_at        { Time.current }
+    last_changed_at  { Time.current }
+    house_color_token { "gaia-primary" }
+  end
 end
