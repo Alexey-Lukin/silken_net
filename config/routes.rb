@@ -185,6 +185,21 @@ Rails.application.routes.draw do
       resources :provisioning, only: [ :new ] do
         post :register, on: :collection
       end
+
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      # 📖 КОДЕКС АРХЕТИПІВ (Codex / Lore Module)
+      # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      # SSOT: docs/04_05_Codex_Lore_Module.md
+      # Phase 1 (Foundation): read-only Atlas (realms + nodes index/show).
+      # Subsequent phases add attunements, fractions, matches, discoveries,
+      # citations and admin CRUD — registered in their own PRs.
+      namespace :codex do
+        resources :realms, only: [ :index ]
+        # Nodes are addressed by slug (not numeric id) — `to_param` overrides
+        # `id`, and the route constraint locks the parameter shape.
+        resources :nodes, only: [ :index, :show ], param: :slug,
+                  constraints: { slug: %r{[a-z0-9][a-z0-9-]*} }
+      end
     end
   end
 end
