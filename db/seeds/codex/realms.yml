@@ -1,0 +1,46 @@
+# Codex realms — top-level taxonomy of the Lore Module.
+# SSOT: docs/04_05_Codex_Lore_Module.md §2.1.
+# Idempotently UPSERTed by Codex::NodeImportService (keyed by `slug`).
+
+- slug: ecosystem
+  name_uk: Екосистеми
+  name_en: Ecosystems
+  glyph: forest
+  accent_token: status-success
+  position: 1
+  description_md: |
+    Реальні лісові біоми планети — від бореальної тайги до тропічних
+    мангрових лісів. Кожен запис — фізичний ландшафт, який Silken Net
+    моніторить (або планує моніторити) як єдиного цифрового агента.
+
+- slug: unique_tree
+  name_uk: Унікальні Дерева
+  name_en: Unique Trees
+  glyph: tree
+  accent_token: gaia-primary
+  position: 2
+  description_md: |
+    Окремі індивіди-сторожі: вікові велетні, останні представники видів,
+    дерева-свідки історичних подій. Це «Legacy Master Nodes» біосфери —
+    кожен має ім'я, координати, дату народження або відкриття.
+
+- slug: protocol
+  name_uk: Природні Протоколи
+  name_en: Natural Protocols
+  glyph: protocol
+  accent_token: status-info
+  position: 3
+  description_md: |
+    Біологічні алгоритми, що дерева використовують мільйони років:
+    кавітаційне попередження, ультразвукова сигналізація, мікоризний P2P.
+    Інженерні архетипи, які Silken Net відтворює у власному стеку.
+
+- slug: mythos
+  name_uk: Міфи та Архетипи
+  name_en: Mythos & Archetypes
+  glyph: mythos
+  accent_token: status-warning
+  position: 4
+  description_md: |
+    Світові дерева, корені космогоній, міфологічні Хранителі. Культурний
+    шар, що надає економіці Gaia 2.0 наративну глибину поза інженерією.

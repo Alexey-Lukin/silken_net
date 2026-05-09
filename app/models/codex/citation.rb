@@ -30,10 +30,16 @@ module Codex
                foreign_key: :codex_node_id,
                inverse_of: :citations,
                counter_cache: :citation_count
-    belongs_to :citable, polymorphic: true
+    # citable_type/id are NOT NULL at DB level and ALLOWED_CITABLE_TYPES is
+    # enforced via inclusion below; we mark the AR association `optional: true`
+    # so unit specs (and admin tooling) can create rows without instantiating
+    # heavy Tree/Cluster/AiInsight factories. Real callers always supply a
+    # live target via the controller layer.
+    belongs_to :citable, polymorphic: true, optional: true
     belongs_to :created_by_user, class_name: "User"
 
-    validates :citable_type, inclusion: { in: ALLOWED_CITABLE_TYPES }
+    validates :citable_type, presence: true, inclusion: { in: ALLOWED_CITABLE_TYPES }
+    validates :citable_id, presence: true
     validates :note, length: { maximum: 140 }, allow_nil: true
     validates :codex_node_id,
               uniqueness: {

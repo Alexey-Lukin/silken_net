@@ -1,0 +1,611 @@
+# Codex::Node corpus — Realm: ecosystem (32 records).
+# Source-of-truth: doc plan §1 (lore appendix). Idempotent UPSERT by slug.
+# `cyber_meaning_md` is the verbatim canonical interpretation from the lore
+# bundle; `context_md` carries factual baseline data.
+
+- slug: cherkasy-bir
+  realm: ecosystem
+  codex_uid: CDX-ECO-0001
+  title_uk: Черкаський бір
+  title_en: Cherkasy Pine Forest
+  subtitle_uk: Сосновий собор Дніпра
+  subtitle_en: Pine cathedral of the Dnipro
+  archetype_key: ecosystem_genesis_cluster
+  lifecycle_status: 3
+  geo_region: cherkasy-bir
+  latitude: 49.4444
+  longitude: 31.9889
+  context_md: |
+    Реліктовий сосновий масив на лівому березі Дніпра. Ключовий полігон
+    Silken Net — місце розгортання Genesis Cluster.
+  cyber_meaning_md: |
+    Наш Genesis Cluster на 100 дерев; точка фізичного входу, де теорія
+    стає залізом, а університети — частиною консорціуму.
+
+- slug: kholodnyi-yar
+  realm: ecosystem
+  codex_uid: CDX-ECO-0002
+  title_uk: Холодний Яр
+  title_en: Kholodnyi Yar
+  subtitle_uk: Полігон NLOS-маршрутизації
+  subtitle_en: NLOS routing testbed
+  archetype_key: nlos_routing
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.0000
+  longitude: 31.9667
+  context_md: |
+    Лісовий масив у Чигиринському районі Черкащини, історичне ядро
+    козацького руху; глибокі яри та різкі перепади висот.
+  cyber_meaning_md: |
+    Полігон Non-Line-of-Sight (NLOS) Routing; яри та перепади висот для
+    тестування маршрутизації Mesh-мережі без прямої радіовидимості.
+
+- slug: trakhtemyriv
+  realm: ecosystem
+  codex_uid: CDX-ECO-0003
+  title_uk: Трахтемирівський півострів
+  title_en: Trakhtemyriv Peninsula
+  subtitle_uk: Air-Gapped Sandbox
+  subtitle_en: Air-gapped sandbox
+  archetype_key: air_gapped_sandbox
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.8333
+  longitude: 31.4500
+  context_md: |
+    Заповідний півострів між Дніпром та Канівським водосховищем,
+    практично без постійного населення.
+  cyber_meaning_md: |
+    Air-Gapped Sandbox; ізольований контур абсолютної тиші для еталонного
+    калібрування акустичного "нуля" системи без антропогенного шуму.
+
+- slug: moshnohorskyi-kryazh
+  realm: ecosystem
+  codex_uid: CDX-ECO-0004
+  title_uk: Мошногірський кряж
+  title_en: Moshnohorskyi Ridge
+  subtitle_uk: Тест на ентропію та System Overwrite
+  subtitle_en: Entropy and system overwrite test
+  archetype_key: system_overwrite
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.5667
+  longitude: 31.8333
+  context_md: |
+    Лісовий кряж біля с. Мошни, з руїнами садибних споруд XIX-XX ст.,
+    поглинутих лісом.
+  cyber_meaning_md: |
+    Лабораторія того, як дикий ліс поглинає легасі-архітектуру (руїни),
+    перевіряючи довговічність вживлення наших анкерів.
+
+- slug: irdynske-bog
+  realm: ecosystem
+  codex_uid: CDX-ECO-0005
+  title_uk: Ірдинське болото
+  title_en: Irdyn Bog
+  subtitle_uk: Хардверний стрес-тест на IP68
+  subtitle_en: Hardware IP68 stress test
+  archetype_key: ip68_stress_test
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.3833
+  longitude: 31.8500
+  context_md: |
+    Велике низинне болото Черкащини, гідрологічна пам'ятка природи з
+    кислотним та постійно вологим середовищем.
+  cyber_meaning_md: |
+    Перевірка титану та біопаливних елементів на корозію в екстремально
+    кислотному і постійно вологому середовищі.
+
+- slug: kaniv-reserve
+  realm: ecosystem
+  codex_uid: CDX-ECO-0006
+  title_uk: Канівський природний заповідник
+  title_en: Kaniv Nature Reserve
+  subtitle_uk: Erosion Alert
+  subtitle_en: Erosion alert testbed
+  archetype_key: erosion_alert
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.7167
+  longitude: 31.5167
+  context_md: |
+    Один з найстаріших природних заповідників України, лесові кручі над
+    Дніпром із активними зсувними процесами.
+  cyber_meaning_md: |
+    Тестування градієнтної телеметрії та стресу дерев (через `delta_t`)
+    під час постійної боротьби зі зсувами ґрунту на кручах.
+
+- slug: tyasmyn-canyon
+  realm: ecosystem
+  codex_uid: CDX-ECO-0007
+  title_uk: Тясминський каньйон
+  title_en: Tyasmyn Canyon
+  subtitle_uk: Акустичний полігон
+  subtitle_en: Acoustic multipath testbed
+  archetype_key: acoustic_multipath
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.0667
+  longitude: 32.4500
+  context_md: |
+    Гранітний каньйон річки Тясмин на Черкащині, з різкими стінами, що
+    створюють потужне акустичне відлуння.
+  cyber_meaning_md: |
+    Акустичний полігон багатопроменевого поширення звуку; відлуння від
+    гранітних скель для тренування нейромереж розпізнавати справжню
+    бензопилу серед шумів.
+
+- slug: sofiivka-park
+  realm: ecosystem
+  codex_uid: CDX-ECO-0008
+  title_uk: Дендропарк «Софіївка»
+  title_en: Sofiyivka Arboretum
+  subtitle_uk: Стенд керованої топології
+  subtitle_en: Managed smart-grid testbed
+  archetype_key: managed_smart_grid
+  lifecycle_status: 3
+  geo_region: uman
+  latitude: 48.7592
+  longitude: 30.2225
+  context_md: |
+    Один з найвидатніших ландшафтних парків Європи, м. Умань (1796 р.).
+    Математично спроєктована геометрія алей, водойм і насаджень.
+  cyber_meaning_md: |
+    Стенд керованої топології (Managed Smart Grid); порівняння роботи
+    радіоалгоритмів у математично вивіреному ландшафті проти природного
+    хаосу.
+
+- slug: simyrenko-orchards-mliyiv
+  realm: ecosystem
+  codex_uid: CDX-ECO-0009
+  title_uk: Сади Симиренка / Мліїв
+  title_en: Symyrenko Orchards / Mliyiv
+  subtitle_uk: Полігон біологічних форків
+  subtitle_en: Biological fork testbed
+  archetype_key: biological_fork
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.2667
+  longitude: 31.7000
+  context_md: |
+    Мліївський інститут помології ім. Л.П. Симиренка — еталонна база
+    плодового різноманіття та щепленої генетики.
+  cyber_meaning_md: |
+    Тестування шини даних (ксилеми) в умовах агро-щеплень, коли крона і
+    корінь мають різні генетичні коди.
+
+- slug: floodplain-zolotonosha
+  realm: ecosystem
+  codex_uid: CDX-ECO-0010
+  title_uk: Заплавні ліси Лівобережжя / Золотоношка
+  title_en: Floodplain Forests of the Left Bank / Zolotonoshka
+  subtitle_uk: Тест на Delay-Tolerant Networking
+  subtitle_en: Delay-tolerant networking testbed
+  archetype_key: delay_tolerant_network
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.6500
+  longitude: 32.0500
+  context_md: |
+    Заплавні ліси у басейні річки Золотоношка, що сезонно підтоплюються
+    у весняну повінь.
+  cyber_meaning_md: |
+    Виживання вузлів під час весняного затоплення під воду з локальним
+    кешуванням та подальшою синхронізацією.
+
+- slug: korsun-shevchenko-park
+  realm: ecosystem
+  codex_uid: CDX-ECO-0011
+  title_uk: Корсунь-Шевченківський парк
+  title_en: Korsun-Shevchenkivskyi Park
+  subtitle_uk: Мережевий шардінг
+  subtitle_en: Mesh sharding testbed
+  archetype_key: mesh_sharding
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.4167
+  longitude: 31.2667
+  context_md: |
+    Парк-пам'ятка садово-паркового мистецтва XVIII ст., розташований на
+    гранітних островах посеред порогів річки Рось.
+  cyber_meaning_md: |
+    Передача пакетів даних між ізольованими гранітними островами
+    (сабнетами) над бурхливою течією води, що поглинає радіосигнал.
+
+- slug: bialowieza
+  realm: ecosystem
+  codex_uid: CDX-ECO-0012
+  title_uk: Біловезька пуща
+  title_en: Białowieża Forest
+  subtitle_uk: Еталон реліктового пралісу
+  subtitle_en: Relict primeval forest reference
+  archetype_key: relict_oracle
+  lifecycle_status: 2
+  geo_region: bialowieza
+  latitude: 52.7000
+  longitude: 23.8667
+  context_md: |
+    Один з останніх первісних рівнинних лісів Європи; UNESCO World
+    Heritage; межа Польща/Білорусь.
+  cyber_meaning_md: |
+    База для європейського гранту, де мережа виступає криптографічним
+    оракулом недоторканості біосфери.
+
+- slug: schwarzwald
+  realm: ecosystem
+  codex_uid: CDX-ECO-0013
+  title_uk: Шварцвальд
+  title_en: Schwarzwald (Black Forest)
+  subtitle_uk: Лабораторія кліматичного стресу
+  subtitle_en: Climate stress laboratory
+  archetype_key: climate_stress_lab
+  lifecycle_status: 2
+  geo_region: baden-wurttemberg
+  latitude: 48.0000
+  longitude: 8.2000
+  context_md: |
+    Гірський масив на південному заході Німеччини; один з найбільш
+    ретельно моніторених лісів планети, з документованою посушливою
+    деградацією 2018-2020.
+  cyber_meaning_md: |
+    Ідеальне місце для тестування предиктивної аналітики загибелі
+    хвойних лісів через посуху.
+
+- slug: lvm-latvia
+  realm: ecosystem
+  codex_uid: CDX-ECO-0014
+  title_uk: Латвійські державні ліси (LVM)
+  title_en: Latvian State Forests (LVM)
+  subtitle_uk: Взірець цифрової держави
+  subtitle_en: Digital-state benchmark
+  archetype_key: esg_macro_scale
+  lifecycle_status: 3
+  geo_region: latvia
+  latitude: 56.8796
+  longitude: 24.6032
+  context_md: |
+    Державне підприємство, що управляє ~1.6 млн га лісів Латвії з
+    повною цифровою інвентаризацією.
+  cyber_meaning_md: |
+    Полігон для макро-масштабування та повної інтеграції лісової
+    телеметрії в національні ESG-звіти.
+
+- slug: amazon-rainforest
+  realm: ecosystem
+  codex_uid: CDX-ECO-0015
+  title_uk: Амазонський дощовий ліс
+  title_en: Amazon Rainforest
+  subtitle_uk: Глобальний системний регулятор
+  subtitle_en: Planetary system regulator
+  archetype_key: planetary_regulator
+  lifecycle_status: 2
+  geo_region: amazon
+  latitude: -3.4653
+  longitude: -62.2159
+  context_md: |
+    Найбільший масив тропічних лісів планети, ~5.5 млн км²; ~17% втрачено
+    станом на 2024.
+  cyber_meaning_md: |
+    Нагадування про те, що Silken Net має стати "цифровим екзокортексом"
+    для легенів планети.
+
+- slug: boreal-taiga
+  realm: ecosystem
+  codex_uid: CDX-ECO-0016
+  title_uk: Тайга / Бореальний ліс
+  title_en: Taiga / Boreal Forest
+  subtitle_uk: Масив екстремального виживання
+  subtitle_en: Extreme-survival biome
+  archetype_key: extreme_survival
+  lifecycle_status: 3
+  geo_region: boreal-belt
+  latitude: 60.0000
+  longitude: 100.0000
+  context_md: |
+    Найбільший лісовий біом планети, ~17 млн км², від Скандинавії через
+    Сибір до Канади. Зимові температури -50°C.
+  cyber_meaning_md: |
+    ТЗ для розробки апаратних вузлів, здатних десятиліттями працювати в
+    глибокому енергозбереженні та холоді.
+
+- slug: sequoiadendron-forest
+  realm: ecosystem
+  codex_uid: CDX-ECO-0017
+  title_uk: Ліси секвоядендронів
+  title_en: Sequoiadendron Forests
+  subtitle_uk: Гіганти стійкості
+  subtitle_en: Giants of resilience
+  archetype_key: resilient_architecture
+  lifecycle_status: 3
+  geo_region: sierra-nevada-ca
+  latitude: 36.5786
+  longitude: -118.6831
+  context_md: |
+    Гайки гігантських секвоядендронів (*Sequoiadendron giganteum*) у
+    Sierra Nevada, Каліфорнія; кора 30+ см товщиною — пасивний
+    вогнезахист.
+  cyber_meaning_md: |
+    Приклад того, як архітектура (кора/корпус) може бути пасивно
+    захищеною від пожеж та зовнішніх втручань.
+
+- slug: aokigahara
+  realm: ecosystem
+  codex_uid: CDX-ECO-0018
+  title_uk: Аокігахара
+  title_en: Aokigahara
+  subtitle_uk: Аномальна зона тиші та магнетизму
+  subtitle_en: Anomalous silence and magnetic zone
+  archetype_key: rf_anomaly_zone
+  lifecycle_status: 3
+  geo_region: mt-fuji
+  latitude: 35.4667
+  longitude: 138.6167
+  context_md: |
+    Густий ліс на застиглій лаві біля підніжжя Фудзіями; підвищена
+    магнітна аномалія через вкраплення базальту.
+  cyber_meaning_md: |
+    Підкреслює необхідність розрахунків RF-покриття в складних
+    геологічних умовах.
+
+- slug: sundarban-mangroves
+  realm: ecosystem
+  codex_uid: CDX-ECO-0019
+  title_uk: Сундарбан / Мангри
+  title_en: Sundarbans / Mangroves
+  subtitle_uk: Динамічний кордон стихій
+  subtitle_en: Dynamic boundary of elements
+  archetype_key: dynamic_boundary
+  lifecycle_status: 2
+  geo_region: bay-of-bengal
+  latitude: 21.9497
+  longitude: 89.1833
+  context_md: |
+    Найбільший мангровий ліс планети у дельті Гангу-Брахмапутри,
+    Бангладеш/Індія; солона вода, припливи, підвищення рівня моря.
+  cyber_meaning_md: |
+    Вчить наші сенсори працювати на межі між землею та водою, де
+    протоколи мають бути максимально гнучкими.
+
+- slug: krzywy-las
+  realm: ecosystem
+  codex_uid: CDX-ECO-0020
+  title_uk: Кривий ліс
+  title_en: Krzywy Las (Crooked Forest)
+  subtitle_uk: Геометрична аномалія
+  subtitle_en: Geometric anomaly
+  archetype_key: mesh_logic_anomaly
+  lifecycle_status: 3
+  geo_region: west-pomerania
+  latitude: 53.4172
+  longitude: 14.4825
+  context_md: |
+    400 сосен біля Гриджфіно, Польща, з характерним 90° вигином у
+    основі стовбура; точна причина невідома (1930-ті насадження).
+  cyber_meaning_md: |
+    Нагадування, що Mesh-мережа має будуватися на логіці зв'язків, а не
+    на прямих лініях чи ідеальній сітці.
+
+- slug: dragon-tree-forest
+  realm: ecosystem
+  codex_uid: CDX-ECO-0021
+  title_uk: Ліс драконового дерева
+  title_en: Dragon Blood Tree Forest
+  subtitle_uk: Майстер-клас із біомімікрії
+  subtitle_en: Biomimicry masterclass
+  archetype_key: biomimetic_passive_harvest
+  lifecycle_status: 2
+  geo_region: socotra
+  latitude: 12.4634
+  longitude: 53.8237
+  context_md: |
+    Ендемічний ліс *Dracaena cinnabari* на острові Сокотра, Ємен. Крона
+    у формі парасолі конденсує туман у крапельки роси.
+  cyber_meaning_md: |
+    Приклад того, як форма капсули може пасивно збирати енергію чи
+    вологу з навколишнього середовища.
+
+- slug: daintree-rainforest
+  realm: ecosystem
+  codex_uid: CDX-ECO-0022
+  title_uk: Дейнтрі
+  title_en: Daintree Rainforest
+  subtitle_uk: Найдавніший безперервний код
+  subtitle_en: Oldest continuous code
+  archetype_key: self_learning_edge
+  lifecycle_status: 3
+  geo_region: queensland
+  latitude: -16.1699
+  longitude: 145.4187
+  context_md: |
+    Тропічний ліс на півночі Квінсленду, Австралія; одна з найдавніших
+    непереривних лісових екосистем планети — ~180 млн років.
+  cyber_meaning_md: |
+    Вузол, що надихає на створення алгоритмів Edge AI, які здатні
+    самонавчатися мільйони ітерацій.
+
+- slug: sagano-bamboo
+  realm: ecosystem
+  codex_uid: CDX-ECO-0023
+  title_uk: Бамбуковий ліс Сагано
+  title_en: Sagano Bamboo Forest
+  subtitle_uk: Акустичний еталон
+  subtitle_en: Acoustic reference grove
+  archetype_key: acoustic_reference
+  lifecycle_status: 3
+  geo_region: kyoto
+  latitude: 35.0170
+  longitude: 135.6720
+  context_md: |
+    Бамбуковий гай в Арасіямі, Кіото; визнаний Японією одним з 100
+    "звукових пейзажів країни".
+  cyber_meaning_md: |
+    Пряме завдання для команди ЧДТУ з розпізнавання частотних сигнатур
+    бензопил та структурних шумів лісу.
+
+- slug: living-root-bridges
+  realm: ecosystem
+  codex_uid: CDX-ECO-0024
+  title_uk: Живі кореневі мости
+  title_en: Living Root Bridges
+  subtitle_uk: Маніфест антикрихкості
+  subtitle_en: Antifragility manifesto
+  archetype_key: antifragile_infrastructure
+  lifecycle_status: 3
+  geo_region: meghalaya
+  latitude: 25.2580
+  longitude: 91.7320
+  context_md: |
+    Мости штату Мегхалая (Індія), сплетені з повітряних коренів
+    *Ficus elastica*; тримають 50+ людей, з кожним роком міцніші.
+  cyber_meaning_md: |
+    Інфраструктура, яка завдяки навантаженню стає міцнішою, що є ідеалом
+    для наших біо-цифрових інтерфейсів.
+
+- slug: prototaxites-paleozoic
+  realm: ecosystem
+  codex_uid: CDX-ECO-0025
+  title_uk: Палеозойський ліс (Прототаксити)
+  title_en: Paleozoic Forest (Prototaxites)
+  subtitle_uk: Прадавній append-only log
+  subtitle_en: Primordial append-only log
+  archetype_key: append_only_log
+  lifecycle_status: 1
+  context_md: |
+    Гігантські копальні організми (можливо — лишайники), 6-8 м заввишки,
+    що домінували суходолом 420-370 млн років тому.
+  cyber_meaning_md: |
+    Нагадування, що збереження даних у твердій структурі (камені/
+    блокчейні) є фундаментальним законом.
+
+- slug: petrified-forest-az
+  realm: ecosystem
+  codex_uid: CDX-ECO-0026
+  title_uk: Скам'янілий ліс Арізони
+  title_en: Petrified Forest, Arizona
+  subtitle_uk: Портування вуглецю на кремній
+  subtitle_en: Carbon-to-silicon porting
+  archetype_key: carbon_to_silicon
+  lifecycle_status: 1
+  geo_region: petrified-forest-np
+  latitude: 35.0833
+  longitude: -109.7875
+  context_md: |
+    Petrified Forest National Park, Аризона; стовбури тріасових дерев
+    (~225 млн років) перетворилися на кварц і халцедон.
+  cyber_meaning_md: |
+    Метафора перетворення швидкоплинної біології у вічний цифровий код
+    на кристалах кварцу.
+
+- slug: eucalyptus-forests
+  realm: ecosystem
+  codex_uid: CDX-ECO-0027
+  title_uk: Евкаліптові ліси
+  title_en: Eucalyptus Forests
+  subtitle_uk: Chaos Engineering у дії
+  subtitle_en: Chaos engineering in action
+  archetype_key: chaos_engineering
+  lifecycle_status: 3
+  geo_region: australia
+  latitude: -33.8688
+  longitude: 151.2093
+  context_md: |
+    Евкаліпти Австралії накопичують ефірні олії та залежать від
+    регулярних низових пожеж для скидання насіння (серотинія).
+  cyber_meaning_md: |
+    Система, що провокує пожежу для тотального оновлення, — патерн для
+    стрес-тестування нашої стійкості.
+
+- slug: kelp-forests
+  realm: ecosystem
+  codex_uid: CDX-ECO-0028
+  title_uk: Келпові ліси
+  title_en: Kelp Forests
+  subtitle_uk: Флюїдна топологія
+  subtitle_en: Fluid topology
+  archetype_key: fluid_topology
+  lifecycle_status: 2
+  geo_region: pacific
+  latitude: 36.6177
+  longitude: -121.9166
+  context_md: |
+    Підводні ліси макроцистиса (*Macrocystis pyrifera*) уздовж тихоокеанського
+    узбережжя; росте до 60 см на день.
+  cyber_meaning_md: |
+    Приклад того, як вузли можуть бути динамічними та живитися всією
+    площею поверхні з навколишнього середовища.
+
+- slug: monteverde-cloud-forest
+  realm: ecosystem
+  codex_uid: CDX-ECO-0029
+  title_uk: Хмарні ліси Монтеверде
+  title_en: Monteverde Cloud Forest
+  subtitle_uk: Ambient Energy Harvesting
+  subtitle_en: Ambient energy harvesting
+  archetype_key: ambient_energy_harvest
+  lifecycle_status: 2
+  geo_region: costa-rica
+  latitude: 10.3000
+  longitude: -84.8000
+  context_md: |
+    Туманний ліс на Кордильєрі-де-Тіларан, Коста-Рика; дерева
+    конденсують вологу з туману через епіфіти (понад 25% водопостачання).
+  cyber_meaning_md: |
+    Ліс, що витягує життя з туману, — ТЗ для живлення наших сенсорів без
+    прямого сонця чи батарей.
+
+- slug: tsingy-stone-forest
+  realm: ecosystem
+  codex_uid: CDX-ECO-0030
+  title_uk: Кам'яний ліс Цінгі
+  title_en: Tsingy de Bemaraha
+  subtitle_uk: Екстремальна геометрія
+  subtitle_en: Extreme geometry
+  archetype_key: extreme_geometry
+  lifecycle_status: 3
+  geo_region: madagascar
+  latitude: -19.1333
+  longitude: 44.7500
+  context_md: |
+    Тропічний "кам'яний ліс" з гострих вапнякових пік (до 80 м), де
+    проростають окремі дерева у тріщинах.
+  cyber_meaning_md: |
+    Доказ того, що мережа (коріння/дані) може проростати крізь
+    найгостріші та найворожіші фізичні перепони.
+
+- slug: deadvlei
+  realm: ecosystem
+  codex_uid: CDX-ECO-0031
+  title_uk: Мертвий ліс Дедвлей
+  title_en: Deadvlei
+  subtitle_uk: Immutable Cold Storage
+  subtitle_en: Immutable cold storage
+  archetype_key: immutable_cold_storage
+  lifecycle_status: 1
+  geo_region: namib
+  latitude: -24.7592
+  longitude: 15.2925
+  context_md: |
+    Висохла глиняна западина у пустелі Наміб; камелії-верблюжатники, що
+    загинули ~900 років тому, не згнили через екстремальну сухість.
+  cyber_meaning_md: |
+    Дерева, що стали скульптурами 900 років тому, — еталон незмінності
+    стану даних при нульовій ентропії.
+
+- slug: mycorrhizal-underground
+  realm: ecosystem
+  codex_uid: CDX-ECO-0032
+  title_uk: Підземний мікоризний ліс
+  title_en: Underground Mycorrhizal Network
+  subtitle_uk: Layer 0 Blockchain
+  subtitle_en: Planetary layer-0 blockchain
+  archetype_key: layer_zero_blockchain
+  lifecycle_status: 3
+  context_md: |
+    Глобальна мережа симбіозу між корінням рослин і нитками грибниці
+    (*Glomeromycota*, *Basidiomycota*); ~80% усіх судинних рослин планети
+    залучені у мікоризу.
+  cyber_meaning_md: |
+    Всесвітня P2P-мережа, що здійснює транзакції ресурсів через ідеальні
+    "смарт-контракти" симбіозу.
