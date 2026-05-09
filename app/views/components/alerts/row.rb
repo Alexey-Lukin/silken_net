@@ -3,8 +3,15 @@
 # app/views/components/alerts/row.rb
 module Alerts
   class Row < ApplicationComponent
-    def initialize(alert:)
+    # `citations:` is an optional, pre-fetched Array<Codex::Citation> for THIS
+    # alert. When the parent `Alerts::Index` renders many rows it computes
+    # `Codex::Citation.bulk_for(@alerts)` ONCE and threads each row's slice
+    # in here, eliminating the N+1 that Prosopite caught. When `citations`
+    # is nil (single-row Turbo Stream replace, e.g. resolve action) we fall
+    # back to a per-row query — that's at most one extra round-trip.
+    def initialize(alert:, citations: nil)
       @alert = alert
+      @citations = citations
     end
 
     def view_template
@@ -30,7 +37,7 @@ module Alerts
     # of the alerts table doesn't bleed through.
     def render_codex_citations
       return unless defined?(::Codex::Citation)
-      citations = ::Codex::Citation.for_target(@alert).includes(:node).limit(10)
+      citations = @citations || ::Codex::Citation.for_target(@alert).includes(:node).limit(10)
       return if citations.empty?
 
       div(class: "mt-2") do

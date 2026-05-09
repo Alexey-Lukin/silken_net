@@ -153,13 +153,18 @@ class EwsAlert < ApplicationRecord
 
   # [REAL-TIME]: Новий алерт з'являється у стрічці кластера миттєво.
   # broadcast_prepend_later_to вставляє рядок на початок списку тривог.
+  #
+  # Codex citations: a freshly-created alert has zero citations yet — pass
+  # an empty array so `Alerts::Row` skips the per-broadcast lookup. This
+  # also keeps Prosopite happy when many alerts broadcast in sequence
+  # (e.g. fraud-detection batch in `InsightGeneratorService`).
   def broadcast_new_alert
     return unless cluster
 
     Turbo::StreamsChannel.broadcast_prepend_later_to(
       [ cluster, :alerts ],
       target: "alerts_list",
-      html: render_phlex(Alerts::Row.new(alert: self))
+      html: render_phlex(Alerts::Row.new(alert: self, citations: []))
     )
   end
 

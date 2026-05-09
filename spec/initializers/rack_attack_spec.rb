@@ -235,8 +235,14 @@ RSpec.describe "Rack::Attack", type: :request do
   # -----------------------------------------------------------------------
   describe "configuration" do
     it "registers all expected throttle rules" do
+      # Order doesn't matter — `contain_exactly` is set-equality.
+      # The 4 codex/* throttles were added in Phase 2..4 to protect the
+      # write-heavy Codex endpoints (comments, attunements, fraction picks,
+      # battle votes) from spammy clients without affecting the legitimate
+      # forester+ workflow.
       expect(Rack::Attack.throttles.keys).to contain_exactly(
-        "req/ip", "telemetry/uid", "logins/ip", "m2m_auth/ip", "oracle_callbacks/ip"
+        "req/ip", "telemetry/uid", "logins/ip", "m2m_auth/ip", "oracle_callbacks/ip",
+        "codex/comments", "codex/attunements", "codex/fractions", "codex/battle/votes"
       )
     end
 

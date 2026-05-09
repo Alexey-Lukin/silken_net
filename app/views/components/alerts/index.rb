@@ -28,7 +28,23 @@ module Alerts
               end
             end
             tbody(id: "alerts_list", class: "divide-y divide-emerald-900/30") do
-              @alerts.each { |alert| render Alerts::Row.new(alert: alert) }
+              # Phase 6 — single bulk citation lookup for the entire page (kills the
+              # per-row N+1 that Prosopite caught). Returns a Hash keyed by
+              # `[citable_type, citable_id]` so each row's slice is O(1) to fetch.
+              # `defined?` guard keeps non-Codex deployments green.
+              citations_by_target = if defined?(::Codex::Citation) && @alerts.any?
+                ::Codex::Citation.bulk_for(@alerts.to_a)
+              else
+                {}
+              end
+
+              @alerts.each do |alert|
+                key = [ ::Codex::Citation.polymorphic_type_for(alert), alert.id ]
+                render Alerts::Row.new(
+                  alert: alert,
+                  citations: citations_by_target[key] || []
+                )
+              end
             end
           end
         end
