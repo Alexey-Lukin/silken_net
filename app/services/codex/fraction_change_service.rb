@@ -55,9 +55,15 @@ module Codex
       end
 
       ::Codex::Fraction.transaction do
-        # Re-read inside transaction to close the TOCTOU window between
-        # find_or_initialize and the actual write.
-        fraction.lock! if fraction.persisted?
+        # Re-read with pessimistic lock inside the transaction to close the
+        # TOCTOU window between find_or_initialize and the actual write.
+        # Only lock when the row already exists — new records cannot be locked.
+        if fraction.persisted?
+          fraction.lock!
+          # Re-check cooldown inside the transaction after acquiring the lock;
+          # another concurrent request may have just changed last_changed_at.
+          return cooldown_blocked(fraction) if fraction.cooldown_active?(@now)
+        end
         fraction.codex_node_id    = @node.id
         fraction.archetype_key    = @node.archetype_key
         fraction.house_color_token = @node.realm.accent_token

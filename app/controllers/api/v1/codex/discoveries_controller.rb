@@ -13,7 +13,7 @@ module Api
           authorize ::Codex::Discovery, :index?
 
           scope = policy_scope(::Codex::Discovery).includes(:node).recent
-          @pagy, @discoveries = pagy(scope, items: 21)
+          @pagy, @discoveries = pagy(scope, limit: 21)
 
           respond_to do |format|
             format.json do

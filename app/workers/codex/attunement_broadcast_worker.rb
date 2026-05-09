@@ -7,7 +7,7 @@
 # any web3_* queue. The hot Proof-of-Growth pipeline must not be slowed by
 # UI broadcasts.
 #
-# Two channels (per docs/04_05 §8):
+# Two channels (per docs/04_05 ADR-CDX-7):
 #   * `codex_node_<id>_attunements` — public counter for the host node;
 #   * `codex_node_<id>_attunements_user_<uid>` — private "did I attune?"
 #     state for the acting user only.

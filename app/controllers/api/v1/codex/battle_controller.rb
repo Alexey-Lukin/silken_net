@@ -55,16 +55,19 @@ module Api
                        status: :created
               end
               format.html do
-                # Echo a fresh Arena frame so the Stimulus client can
-                # turbo-stream the next pair without a full reload.
+                # Echo a fresh Arena frame so Turbo can swap the next pair
+                # without a full reload. Fall back to an error state if the
+                # selector cannot produce a new pair (e.g. realm exhausted).
                 next_pair = ::Codex::PairSelectorService.call(
                   user: current_user, realm: result.match.realm
                 )
                 render(
                   ::Codex::Battle::Arena.new(
-                    left: next_pair.left, right: next_pair.right,
-                    pair_seed: next_pair.pair_seed, realm: next_pair.realm,
-                    error: nil
+                    left: next_pair.success? ? next_pair.left  : nil,
+                    right: next_pair.success? ? next_pair.right : nil,
+                    pair_seed: next_pair.success? ? next_pair.pair_seed : nil,
+                    realm: next_pair.realm || result.match.realm,
+                    error: next_pair.success? ? nil : next_pair.error
                   ),
                   status: :created
                 )

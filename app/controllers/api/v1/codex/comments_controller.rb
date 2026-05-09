@@ -75,7 +75,7 @@ module Api
           Rails.cache.write(key, payload, expires_in: IDEMPOTENCY_TTL)
         end
 
-        # Per docs/04_05 §8 — broadcast on a per-node topic so the Show
+        # Per docs/04_05 — broadcast on a per-node topic so the Show
         # page (subscribed via Turbo Stream) receives the new row instantly.
         def broadcast_comment(comment)
           ActionCable.server.broadcast(

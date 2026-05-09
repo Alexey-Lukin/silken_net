@@ -26,13 +26,18 @@ module Api
             end
             format.html do
               realms = ::Codex::Realm.ordered.to_a
+              nodes_counts = ::Codex::Node
+                               .where(codex_realm_id: realms.map(&:id))
+                               .group(:codex_realm_id)
+                               .count
               render_dashboard(
                 title: "Codex Atlas",
                 component: ::Codex::Index.new(
                   nodes: @nodes,
                   pagy: @pagy,
                   realms: realms,
-                  active_realm_slug: params[:realm].presence
+                  active_realm_slug: params[:realm].presence,
+                  nodes_counts: nodes_counts
                 )
               )
             end

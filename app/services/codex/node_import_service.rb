@@ -16,7 +16,7 @@ require "yaml"
 #   * nodes/<realm>.yml   — array of node hashes; each MUST set `realm:`
 #                            (the realm slug) and a globally unique `slug`.
 #
-# See docs/04_05_Codex_Lore_Module.md §9.
+# See docs/04_05_Codex_Lore_Module.md ADR-CDX-2 and ADR-CDX-3.
 module Codex
   class NodeImportService
     Result = Struct.new(:realms_upserted, :nodes_upserted, :errors, keyword_init: true) do

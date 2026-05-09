@@ -12,7 +12,7 @@
 # Strategy:
 #   1. Convert a small subset of markdown to safe HTML primitives.
 #   2. Pass through Rails Sanitizer with an explicit safelist (mirrors the
-#      tag set declared in the SSOT — docs/04_05 §12).
+#      tag set declared in the SSOT — docs/04_05 ADR-CDX-5).
 #   3. Always return an html_safe string.
 #
 # This keeps the attack surface tiny (no `<script>`, no event handlers,

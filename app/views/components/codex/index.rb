@@ -3,11 +3,14 @@
 # Codex::Index — Atlas grid of lore cards.
 module Codex
   class Index < ApplicationComponent
-    def initialize(nodes:, pagy:, realms:, active_realm_slug: nil)
+    # @param nodes_counts [Hash<Integer,Integer>] realm_id → node count, pre-computed
+    #   by the controller to avoid a second GROUP BY query here.
+    def initialize(nodes:, pagy:, realms:, active_realm_slug: nil, nodes_counts: nil)
       @nodes = nodes
       @pagy = pagy
       @realms = realms
       @active_realm_slug = active_realm_slug
+      @nodes_counts = nodes_counts
     end
 
     def view_template
@@ -50,9 +53,10 @@ module Codex
       end
     end
 
-    # Cheap per-render aggregation; counts are tiny (~4 realms).
+    # Use controller-supplied counts when available; fall back to a local
+    # GROUP BY only when rendering in isolation (e.g. ViewComponent previews).
     def realm_counts
-      @realm_counts ||= ::Codex::Node.group(:codex_realm_id).count
+      @nodes_counts || ::Codex::Node.group(:codex_realm_id).count
     end
   end
 end

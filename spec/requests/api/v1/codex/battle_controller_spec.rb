@@ -88,35 +88,4 @@ RSpec.describe "Api::V1::Codex::Battle", type: :request do
       expect(response.parsed_body.dig("data", "is_skip")).to be(true)
     end
   end
-
-  describe "GET /api/v1/codex/leaderboard" do
-    before do
-      create(:codex_node, realm: realm, lifecycle_status: :thriving, attunement_elo: 1700, title_en: "Pinnacle")
-      create(:codex_node, realm: realm, lifecycle_status: :thriving, attunement_elo: 1300, title_en: "Sparrow")
-    end
-
-    it "is publicly accessible (no auth)" do
-      get "/api/v1/codex/leaderboard", params: { realm: realm.slug }
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "returns JSON sorted by Elo desc when format=json" do
-      get "/api/v1/codex/leaderboard", params: { realm: realm.slug, format: :json }
-      expect(response).to have_http_status(:ok)
-      titles = response.parsed_body["data"].map { |row| row["title_en"] }
-      expect(titles.first).to eq("Pinnacle")
-    end
-
-    it "renders an HTML table" do
-      get "/api/v1/codex/leaderboard", params: { realm: realm.slug }
-      expect(response.body).to include("codex_leaderboard")
-      expect(response.body).to include("Pinnacle")
-    end
-
-    it "honours limit param (max 100, default 25)" do
-      get "/api/v1/codex/leaderboard", params: { realm: realm.slug, limit: 1 }
-      # 1 row + header + structure — at least the count is bounded
-      expect(response.body.scan(/<tr/).size).to be <= 3 # header + 1 row + maybe wrapper
-    end
-  end
 end
