@@ -1,6 +1,6 @@
 # 04_05. Codex (Шар Лору) — Філософія дизайну, ADR, відкладена робота
 
-> **Статус (Phase 8 — Stimulus-аудит + баг-фікси):** Фази 1–7 — **DONE**, живуть у коді.
+> **Статус (Phase 8 — Stimulus-аудит + баг-фікси + REST/CoC рефактор):** Фази 1–7 — **DONE**, живуть у коді.
 > SSOT реалізації переніс у канонічні docs:
 >
 > | Аспект | Канонічний документ |
@@ -179,6 +179,7 @@ Codex з multi-step Battle settlement *буде* залежати. Див. `04_0
 | 6 — Cross-domain stitch 🪡 (Citations, Admin CRUD, +3 адаптери) | ✅ done | ~45 | Stimulus: 2 залишено, 3 видалено (§ 3.1) |
 | 7 — PR cleanup pass | ✅ done | — | migration squash, N+1 fix, citation `polymorphic_type_for` |
 | 8 — Stimulus-аудит + баг-фікси | ✅ done | — | EloMath `\|\|`, Redis GETDEL, PII, TOCTOU fraction, nil-safe audit |
+| 8a — REST/CoC рефактор | ✅ done | — | `BattleController` → `MatchesController#new/#create`; `destroy_me` → `destroy`; `me` → `index`/`show`; Phlex `Codex::Battle::Arena` UI-назва лишилась |
 
 > Історія посесійних ADR-нотаток для Phases 1–6 зберігається в git log
 > `docs/04_05_Codex_Lore_Module.md` (`git log -p --follow`) та в merged PR.

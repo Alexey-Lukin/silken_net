@@ -5,11 +5,15 @@ module Api
     module Codex
       # GET /api/v1/codex/discoveries/me — paginated list of own unlocks.
       #
+      # Routes to `#index` (RESTful: returns a *collection* scoped to the
+      # current user). The `/me` path segment is a URL-level convention for
+      # self-resources.
+      #
       # Response:
       #   * JSON  → `{ data: [DiscoveryBlueprint, ...], meta: {pagy} }`
       #   * HTML  → fragment list (Phlex `Codex::Discoveries::List`)
       class DiscoveriesController < BaseController
-        def me
+        def index
           authorize ::Codex::Discovery, :index?
 
           scope = policy_scope(::Codex::Discovery).includes(:node).recent

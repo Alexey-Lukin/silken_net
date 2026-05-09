@@ -3,13 +3,19 @@
 module Api
   module V1
     module Codex
-      # GET  /api/v1/codex/battle/pair?realm=<slug>  → Turbo Frame Arena
-      # POST /api/v1/codex/battle/votes              → record vote / skip
+      # `Codex::Match` is the resource (a single Battle Arena duel). REST
+      # actions:
+      #   GET  /api/v1/codex/matches/new   → Turbo Frame Arena with the next pair
+      #   POST /api/v1/codex/matches       → record vote / skip
       #
-      # Both endpoints route through `Codex::MatchPolicy` (auth required).
-      # Vote-rate Rack::Attack rule: 60 / 1 minute / actor.
-      class BattleController < BaseController
-        def pair
+      # The "Battle Arena" naming is preserved at the UX layer (Phlex
+      # `Codex::Battle::Arena` component) — it's a UI label, not a REST noun.
+      #
+      # Both actions route through `Codex::MatchPolicy` (auth required).
+      # Rack::Attack rule: 60 POSTs / 1 minute / actor — see
+      # `config/initializers/rack_attack.rb` (`codex/matches/create`).
+      class MatchesController < BaseController
+        def new
           authorize ::Codex::Match.new(user_id: current_user.id), :create?
 
           realm = resolve_realm(params[:realm])
@@ -34,7 +40,7 @@ module Api
           )
         end
 
-        def vote
+        def create
           authorize ::Codex::Match.new(user_id: current_user.id), :create?
 
           pair_seed   = params[:pair_seed].to_s.strip

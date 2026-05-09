@@ -6,7 +6,7 @@
 # matches the project standard (`BlockchainTransaction.find_with_partition_pruning`).
 #
 # Lifecycle:
-#   1. `Api::V1::Codex::BattleController#pair` issues a pair via
+#   1. `Api::V1::Codex::MatchesController#new` issues a pair via
 #      `Codex::PairSelectorService` — returns two pickable nodes plus a
 #      HMAC-signed `pair_seed` and a Redis nonce.
 #   2. User submits the vote: `Codex::VoteRecorderService` validates the

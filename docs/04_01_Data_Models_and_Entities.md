@@ -1258,7 +1258,7 @@ Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (е
 
 **Scopes:** `for_node(node)`, `for_user(user)`, `ordered` (за `created_at DESC`).
 
-**Workflow:** `Codex::AttunementsController` (create/destroy_me) → `Codex::AttunementBroadcastWorker.perform_async(node_id, user_id)` (queue: `default`) → broadcasts `attunement_count` на public-канал `codex_node_<id>_attunements` + `attuned: bool` на private-канал `codex_node_<id>_attunements_user_<uid>`.
+**Workflow:** `Codex::AttunementsController` (create/destroy) → `Codex::AttunementBroadcastWorker.perform_async(node_id, user_id)` (queue: `default`) → broadcasts `attunement_count` на public-канал `codex_node_<id>_attunements` + `attuned: bool` на private-канал `codex_node_<id>_attunements_user_<uid>`.
 
 ### `Codex::Fraction` — Особиста Ідентичність (Phase 3)
 
@@ -1289,8 +1289,8 @@ Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (е
 **FKs БЕЗ cascade на user/realm/node delete** — battle history є audit-grade; `_default` партиція рятує від data loss при clock-skew рядках.
 
 **Workflow:**
-1. `BattleController#pair` → `PairSelectorService` обирає anchor (weighted by inverse `match_count`) + opponent в Elo-bucket ±200 → HMAC-SHA256 seed зберігається у Redis з TTL 5 хв.
-2. `BattleController#vote` → `VoteRecorderService` consume'ить seed (DEL → replay-proof), створює Match-row, обчислює Elo deltas, enqueue `EloRecomputeWorker.perform_async(left_id, right_id, delta_left, delta_right)`.
+1. `MatchesController#new` → `PairSelectorService` обирає anchor (weighted by inverse `match_count`) + opponent в Elo-bucket ±200 → HMAC-SHA256 seed зберігається у Redis з TTL 5 хв.
+2. `MatchesController#create` → `VoteRecorderService` consume'ить seed (atomic GETDEL → replay-proof), створює Match-row, обчислює Elo deltas, enqueue `EloRecomputeWorker.perform_async(left_id, right_id, delta_left, delta_right)`.
 3. `EloRecomputeWorker` (queue `low`) атомарно `UPDATE codex_nodes SET attunement_elo = attunement_elo + ?, match_count = match_count + 1` для обох вузлів у транзакції.
 
 ### `Codex::Discovery` — Unlock Log (Phase 5) — `codex_discoveries`

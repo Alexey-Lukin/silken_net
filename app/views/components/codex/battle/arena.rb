@@ -89,7 +89,7 @@ module Codex
 
       def render_pick_form(node)
         form(
-          action: api_v1_codex_votes_battle_path,
+          action: api_v1_codex_matches_path,
           method: "post",
 
         ) do
@@ -110,7 +110,7 @@ module Codex
 
       def render_skip
         form(
-          action: api_v1_codex_votes_battle_path,
+          action: api_v1_codex_matches_path,
           method: "post",
           class: "flex justify-end",
 

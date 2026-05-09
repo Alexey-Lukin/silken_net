@@ -559,7 +559,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Retry** | 3 |
 | **Вхід** | `node_id` (Integer), `user_id` (Integer) |
 | **Що робить** | Re-load Node (post-commit `attunement_count`) → `ActionCable.server.broadcast` на public `codex_node_<id>_attunements` (з лічильником) + private `codex_node_<id>_attunements_user_<uid>` (з `attuned: bool`). |
-| **Інвокери** | `Codex::AttunementsController#create / #destroy_me` |
+| **Інвокери** | `Codex::AttunementsController#create / #destroy` |
 | **Тригер** | toggle attunement → live counter via Solid Cable |
 
 ### Phase 2 controllers (без окремого Service-шару — логіка тонка)
@@ -599,7 +599,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Вхід** | `user:`, `realm:` (default first ordered), `now:` (injectable clock) |
 | **Що робить** | Pickable nodes у realm (lifecycle ∉ destroyed/extinct) → anchor через `ORDER BY RANDOM() LIMIT 8` + min `match_count` → opponent з Elo bucket ±200; fallback на будь-який інший вузол. Підписує `pair_seed = HMAC-SHA256(secret_key_base, "user_id|realm_id|ts|left_id|right_id")[0..64]`. Зберігає у Redis `codex:pair_seed:<seed>` TTL 5 хв з payload `"user_id|realm_id|left_id|right_id|ts"`. |
 | **Failure** | `not enough nodes`, `no realm available`, unsaved user — handled через `Result(success: false, error: ...)`. |
-| **Інвокери** | `BattleController#pair`, `BattleController#vote` (для next-pair after vote) |
+| **Інвокери** | `MatchesController#new`, `MatchesController#create` (для next-pair after vote) |
 
 ### `Codex::VoteRecorderService` (Phase 4)
 
@@ -609,7 +609,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Вхід** | `user:`, `pair_seed:`, `winner_slug:` (or nil for skip), `skip:` (Boolean) |
 | **Що робить** | Атомарно DEL'ить Redis seed (replay-proof), створює `Codex::Match` + обчислює Elo deltas через `EloMath` (K=32, decay при `match_count > 30` на обох sides), enqueue `EloRecomputeWorker`. Skip → 0/0 deltas, але рядок все одно зберігається (для PairSelector avoidance heuristics). |
 | **Failure** | `seed_invalid_or_consumed`, `seed_user_mismatch`, `winner_not_in_pair`, `nodes_missing`, validation — handled via Result struct. |
-| **Інвокери** | `BattleController#vote` |
+| **Інвокери** | `MatchesController#create` |
 
 ### `Codex::EloMath` (Phase 4 — pure module)
 

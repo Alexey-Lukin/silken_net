@@ -39,7 +39,7 @@ module Api
           end
         end
 
-        def destroy_me
+        def destroy
           attunement = ::Codex::Attunement.find_by(user_id: current_user.id, codex_node_id: @node.id)
           if attunement
             authorize attunement, :destroy?

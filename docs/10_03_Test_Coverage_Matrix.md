@@ -101,7 +101,7 @@
 
 **Codex Phase 2 (нове, 14 request examples):**
 - `Api::V1::Codex::AttunementsController#create` (8 examples) — 401 guard, idempotent re-POST оновлює row (не дублює), counter cache інкремент, worker enqueue, validation 422 для intensity > 5, 404 для unknown slug
-- `Api::V1::Codex::AttunementsController#destroy_me` — DELETE removes own + broadcasts; safe no-op коли немає рядка; ніколи не видаляє чужий attunement
+- `Api::V1::Codex::AttunementsController#destroy` — DELETE removes own + broadcasts; safe no-op коли немає рядка; ніколи не видаляє чужий attunement
 - `Api::V1::Codex::CommentsController#create` (6 examples) — 401 guard, comments_count інкремент, ActionCable broadcast у `codex_node_<id>_comments`, body_html у відповіді (sanitised markdown), `Idempotency-Key` 400 коли пропущено для JSON, retry з тим же ключем повертає cached response, 422 для body > BODY_MAX, parent_id support
 
 **Codex Phase 3 (нове, 10 request examples):**
@@ -110,8 +110,8 @@
 - `Api::V1::Codex::FractionsController#picker` (2 examples) — 401 guard, HTML frame render з активним realm + node title
 
 **Codex Phase 4 (нове, 10 request examples):**
-- `Api::V1::Codex::BattleController#pair` (3 examples) — 401 guard, frame render з hidden `pair_seed` 64-hex, empty-state 422 коли realm < 2 pickable nodes
-- `Api::V1::Codex::BattleController#vote` (4 examples) — 401 guard, 201 + Blueprint + EloRecomputeWorker enqueue + Match.count change, 403 `seed_invalid_or_consumed` на replay, skip=true support
+- `Api::V1::Codex::MatchesController#new` (3 examples) — 401 guard, frame render з hidden `pair_seed` 64-hex, empty-state 422 коли realm < 2 pickable nodes
+- `Api::V1::Codex::MatchesController#create` (4 examples) — 401 guard, 201 + Blueprint + EloRecomputeWorker enqueue + Match.count change, 403 `seed_invalid_or_consumed` на replay, skip=true support
 - `Api::V1::Codex::LeaderboardController#index` (3 examples) — public (no auth), JSON sorted by Elo desc, HTML table render, limit clamp
 
 **Codex Phase 5 (нове, 12 request examples):**

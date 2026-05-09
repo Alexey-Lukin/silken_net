@@ -11,7 +11,7 @@ RSpec.describe Codex::Battle::Arena, type: :view_component do
     helpers = ActionController::Base.helpers
     Class.new(described_class) do
       define_method(:helpers) { helpers }
-      define_method(:api_v1_codex_votes_battle_path) { "/api/v1/codex/battle/votes" }
+      define_method(:api_v1_codex_matches_path) { "/api/v1/codex/matches" }
     end.new(**kwargs).call
   end
 
@@ -24,7 +24,7 @@ RSpec.describe Codex::Battle::Arena, type: :view_component do
     expect(html).to include("Elo: 1550")
     expect(html).to include("Elo: 1450")
     expect(html).to include('value="deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"')
-    expect(html).to include('action="/api/v1/codex/battle/votes"')
+    expect(html).to include('action="/api/v1/codex/matches"')
   end
 
   it "shows the error pill when service signals 'not enough nodes'" do

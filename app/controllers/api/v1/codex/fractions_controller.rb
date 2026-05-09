@@ -7,6 +7,9 @@ module Api
       # GET  /api/v1/codex/fractions/me       — caller's current fraction (or 204 when none)
       # GET  /api/v1/codex/fractions/picker?realm=… — Turbo Frame fragment with picker grid
       #
+      # `GET /me` routes to `#show` (REST: a single user-singleton resource).
+      # The `/me` path segment is a URL-level convention for self-resources.
+      #
       # All three endpoints route through `Codex::FractionPolicy` via Pundit;
       # the cooldown gate lives in `Codex::FractionChangeService`.
       class FractionsController < BaseController
@@ -50,7 +53,7 @@ module Api
           end
         end
 
-        def me
+        def show
           fraction = current_user.codex_fraction
           authorize fraction || ::Codex::Fraction.new(user_id: current_user.id), :show?
 

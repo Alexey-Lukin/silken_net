@@ -201,7 +201,7 @@ Rails.application.routes.draw do
                   constraints: { slug: %r{[a-z0-9][a-z0-9-]*} } do
           # Phase 2 — Community layer.
           resources :attunements, only: [ :create ]
-          delete "attunements/me", to: "attunements#destroy_me",
+          delete "attunements/me", to: "attunements#destroy",
                  as: :my_attunement
           resources :comments, only: [ :create ]
         end
@@ -210,18 +210,20 @@ Rails.application.routes.draw do
         # user_id at DB level). The collection POST handles both initial
         # pick and re-pick; cooldown is enforced by the service.
         resources :fractions, only: [ :create ]
-        get  "fractions/me",     to: "fractions#me",     as: :my_fraction
+        get  "fractions/me",     to: "fractions#show",   as: :my_fraction
         get  "fractions/picker", to: "fractions#picker", as: :fraction_picker
 
-        # Phase 4 — Battle layer.
-        get  "battle/pair",  to: "battle#pair",  as: :pair_battle
-        post "battle/votes", to: "battle#vote",  as: :votes_battle
-        get  "leaderboard",  to: "leaderboard#index", as: :leaderboard
+        # Phase 4 — Battle layer. The resource is `Codex::Match`; the
+        # "Battle Arena" name is a UX label, not a REST noun.
+        # `new` returns the next pair to vote on (Turbo Frame Arena).
+        # `create` records the vote (or skip).
+        resources :matches, only: [ :new, :create ]
+        get "leaderboard",  to: "leaderboard#index", as: :leaderboard
 
         # Phase 5 — Discovery layer. End-users only read their own
         # collection; unlocks happen via `Codex::DiscoveryProbeWorker`,
         # never via an end-user POST.
-        get "discoveries/me", to: "discoveries#me", as: :my_discoveries
+        get "discoveries/me", to: "discoveries#index", as: :my_discoveries
 
         # Phase 6 — Cross-domain stitch. Citations are forester+ create,
         # own/admin+ destroy. Read happens in-line in target view
