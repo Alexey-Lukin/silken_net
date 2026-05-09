@@ -524,6 +524,34 @@ peaq_node_url: "https://peaq-node.example.com"
 
 ---
 
+## 📖 10b. Codex (Lore Layer) Сервіси
+
+Сервіси Lore-шару Gaia 2.0. Повна специфікація: **`docs/04_05_Codex_Lore_Module.md`**.
+
+### `Codex::NodeImportService`
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/node_import_service.rb` |
+| **Вхід** | `root:` (Pathname, default `Rails.root.join("db/seeds/codex")`), `logger:` (default `Rails.logger`) |
+| **Що робить** | Idempotent UPSERT seed-корпусу: 4 `Codex::Realm` + 79 `Codex::Node` з YAML-файлів. Ключ — `slug`. Зберігає DAO-промотовані `seed_origin`. Помилки на одному файлі не зривають весь імпорт (per-file `transaction` + isolated rescue). |
+| **Зовнішні виклики** | — (file I/O + DB) |
+| **Вихід** | `Result` (Struct) з полями `realms_upserted`, `nodes_upserted`, `errors` + `success?` |
+| **Інвокери** | `bin/rails codex:seed` (rake), `db/seeds.rb` (dev only) |
+
+### `Codex::MarkdownRenderer`
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/markdown_renderer.rb` |
+| **Вхід** | `markdown` (String, nullable) |
+| **Що робить** | Мінімальний markdown→HTML рендер з білим списком тегів (`p`, `h2..h4`, `ul/ol/li`, `strong`, `em`, `blockquote`, `code`, `pre`, `a`, `br`) і атрибутів (`href`, `rel`, `target`). `<script>` та інші теги стрипаються `Rails::HTML5::SafeListSanitizer`. URL-схеми `javascript:` / `data:` переписуються на `#` ще до санітайзера. Завжди повертає `html_safe`. |
+| **Зовнішні виклики** | — (in-memory) |
+| **Вихід** | `ActiveSupport::SafeBuffer` (html_safe) |
+| **Інвокери** | `Codex::Show` Phlex компонент (для `context_md`/`cyber_meaning_md`/`lore_md`); Phase 2 `Codex::Comment#body_html`. |
+
+---
+
 ## ⚙️ 11. Реєстр Воркерів (Workers Registry)
 
 ### Пріоритети черг (9 рівнів, строге дотримання)

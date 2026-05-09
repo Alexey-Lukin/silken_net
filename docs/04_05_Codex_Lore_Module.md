@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 (specification + Phase 1 in progress).
+- **Поточний TRL:** TRL 6 (Phase 1 Foundation done — read-only Atlas live, 79-record seed corpus, full spec coverage). Phases 2-6 в плані.
 - **Стек:** Rails 8.1 · PostgreSQL 16 (`pg_trgm`, `postgis`, `pgcrypto`) · Phlex · Tailwind v4 · Sidekiq (existing 9 queues) · Pundit · ActionCable (Solid Cable).
 - **Жодних нових gem-залежностей.**
 - **Пов'язані модулі:**
@@ -533,80 +533,90 @@ db/seeds/codex/
 
 > **Інструкція для агентів наступних сесій:** оновлюйте цей розділ після кожного завершеного під-завдання. Чекбокс `[x]` = виконано і протестовано (RSpec/Rubocop зелені). Чекбокс `[ ]` = не зроблено. Усі рішення/відхилення документуйте у §15.
 
-### Phase 1: Foundation 🌱 (in progress)
+### Phase 1: Foundation 🌱 (✅ done)
 
 **Migration & schema:**
-- [ ] Міграція `CreateCodexRealms`, `CreateCodexNodes`, `CreateCodexCitations` (з GIST/pg_trgm/UNIQUE/FK)
-- [ ] Оновлено `db/structure.sql` через `bin/rails db:schema:dump`
+- [x] Міграція `CreateCodexFoundationTables` (consolidated into `20260509120000_init_consolidated.rb` after migration squash) — 3 таблиці з GIST/pg_trgm/UNIQUE/FK
+- [x] Оновлено `db/structure.sql`
 
 **Models:**
-- [ ] `Codex::Realm` (валідації slug формат, accent_token)
-- [ ] `Codex::Node` (enums `lifecycle_status`, `seed_origin`, ARCHETYPES registry, GeoLocatable, ActiveStorage attachments, sanitization helper)
-- [ ] `Codex::Citation` (polymorphic citable, counter_cache, UNIQUE guard)
-- [ ] `Codex::ARCHETYPES` константа (frozen list з ~40 archetype_key слагів)
-- [ ] `Codex::MarkdownRenderer` сервіс (sanitize safelist)
+- [x] `Codex::Realm` (валідації slug формат, accent_token, `name(locale)`, `ordered` scope)
+- [x] `Codex::Node` (enums `lifecycle_status`+`seed_origin` з prefix, ARCHETYPES registry 79 keys, `GeoLocatable` concern, ActiveStorage `cover_image`+`gallery`, scopes `for_realm`/`search_title`/`by_archetype`/`by_lifecycle`/`ordered_by_elo`, `sync_geo_point` PostGIS hook, slug normalization, `external_refs` JSONB validator)
+- [x] `Codex::Citation` (polymorphic citable, counter_cache `citation_count`, UNIQUE guard)
+- [x] `Codex::ARCHETYPES` константа (frozen 79-key registry: 32 ecosystem + 29 unique_tree + 8 protocol + 10 mythos)
+- [x] `Codex::MarkdownRenderer` (Rails sanitizer, `rel`/`target` safelist, javascript: scheme rewrite)
 
 **User association add-ons:**
-- [ ] `User has_many :codex_citations, foreign_key: :created_by_user_id`
+- [ ] `User has_many :codex_citations, foreign_key: :created_by_user_id` *(відкладено до Phase 6 — citation creation endpoint)*
 
 **Policies:**
-- [ ] `Codex::ApplicationPolicy` (база)
-- [ ] `Codex::NodePolicy`
-- [ ] `Codex::CitationPolicy`
-- [ ] `Codex::RealmPolicy`
+- [x] `Codex::ApplicationPolicy` (база: read for any authed user, write false)
+- [x] `Codex::NodePolicy` (Scope ховає чернетки для не-super_admin)
+- [x] `Codex::CitationPolicy`
+- [x] `Codex::RealmPolicy`
 
 **Routes:**
-- [ ] `namespace :codex` під `/api/v1/`: `realms#index`, `nodes#index`, `nodes#show`
+- [x] `namespace :codex` під `/api/v1/`: `realms#index`, `nodes#index`, `nodes#show` (param `:slug`)
 
 **Controllers:**
-- [ ] `Api::V1::Codex::RealmsController#index` (JSON + HTML)
-- [ ] `Api::V1::Codex::NodesController#index` (filters: realm, lifecycle_status, q, archetype)
-- [ ] `Api::V1::Codex::NodesController#show` (slug-based)
+- [x] `Api::V1::Codex::RealmsController#index` (JSON + HTML)
+- [x] `Api::V1::Codex::NodesController#index` (filters: realm, lifecycle_status, q, archetype; Pagy 21/page)
+- [x] `Api::V1::Codex::NodesController#show` (slug-based, atomic `view_count++`)
 
 **Phlex components (read-only Atlas):**
-- [ ] `Views::Shared::UI::StatusBadge` — додати lifecycle мапінги
-- [ ] `Codex::Index`
-- [ ] `Codex::Show`
-- [ ] `Codex::RealmTabs`
-- [ ] `Codex::NodeCard` (адаптер навколо PhotoCard для cover_image+badge)
+- [x] `Views::Shared::UI::StatusBadge` — додано lifecycle мапінги (`mythical`/`extinct`/`endangered`/`thriving`/`destroyed`/`unknown`)
+- [x] `Codex::Index`
+- [x] `Codex::Show`
+- [x] `Codex::RealmTabs`
+- [x] `Codex::NodeCard`
 
 **Navigation:**
-- [ ] `Navigation::Sidebar` — секція «Library» з пунктом "Codex Atlas" (інші — disabled placeholders для майбутніх фаз)
-- [ ] `render_icon` — додати `book`, `swords`, `shield`, `trophy`
+- [x] `Navigation::Sidebar` — секція «Library» між Strategic Insight і Forest Ops з пунктом "Codex Atlas"
+- [x] `render_icon` — додані необхідні гліфи
 
 **Blueprints (для JSON):**
-- [ ] `Codex::RealmBlueprint`
-- [ ] `Codex::NodeBlueprint` (`:default`, `:show`)
+- [x] `Codex::RealmBlueprint`
+- [x] `Codex::NodeBlueprint` (`:default`, `:show` view з лор-полями)
 
 **Seeds (79 записів):**
-- [ ] `db/seeds/codex/realms.yml` (4)
-- [ ] `db/seeds/codex/nodes/ecosystems.yml` (32)
-- [ ] `db/seeds/codex/nodes/unique_trees.yml` (29)
-- [ ] `db/seeds/codex/nodes/protocols.yml` (8)
-- [ ] `db/seeds/codex/nodes/mythos.yml` (10)
-- [ ] `Codex::NodeImportService` (UPSERT по slug, ідемпотентний)
-- [ ] Hook у `db/seeds.rb` після User/Organization
+- [x] `db/seeds/codex/realms.yml` (4)
+- [x] `db/seeds/codex/nodes/ecosystems.yml` (32)
+- [x] `db/seeds/codex/nodes/unique_trees.yml` (29)
+- [x] `db/seeds/codex/nodes/protocols.yml` (8)
+- [x] `db/seeds/codex/nodes/mythos.yml` (10)
+- [x] `Codex::NodeImportService` (UPSERT по slug, ідемпотентний, зберігає DAO `seed_origin`)
+- [x] **Production-safe rake task** `bin/rails codex:seed` (НЕ через `db:seeds.rb`, бо seeds не виконується на проді)
+- [x] Hook у `db/seeds.rb` теж присутній — для dev convenience
 
-**Specs:**
-- [ ] `spec/models/codex/realm_spec.rb`
-- [ ] `spec/models/codex/node_spec.rb`
-- [ ] `spec/models/codex/citation_spec.rb`
-- [ ] `spec/services/codex/node_import_service_spec.rb`
-- [ ] `spec/policies/codex/node_policy_spec.rb`
-- [ ] `spec/requests/api/v1/codex/realms_controller_spec.rb`
-- [ ] `spec/requests/api/v1/codex/nodes_controller_spec.rb`
-- [ ] `spec/factories/codex_realms.rb`, `codex_nodes.rb`, `codex_citations.rb`
+**Specs (per docs/10_01 + docs/10_03):**
+- [x] `spec/factories/codex.rb` (`:codex_realm`, `:codex_node`, `:codex_citation`)
+- [x] `spec/models/codex/{realm,node,citation}_spec.rb` (38 examples)
+- [x] `spec/services/codex/node_import_service_spec.rb` (7 examples)
+- [x] `spec/services/codex/markdown_renderer_spec.rb` (11 examples)
+- [x] `spec/policies/codex/node_policy_spec.rb` (7 examples)
+- [x] `spec/requests/api/v1/codex/realms_controller_spec.rb` (3 examples)
+- [x] `spec/requests/api/v1/codex/nodes_controller_spec.rb` (9 examples)
+- [x] `spec/views/components/codex/node_card_spec.rb` (10 examples)
+
+**Total: 85 examples / 0 failures**
 
 **Docs:**
-- [x] `docs/04_05_Codex_Lore_Module.md` (цей файл) створено
-- [ ] `docs/04_01` — лічильник 26 → 34, додати розділ Codex (8 таблиць)
-- [ ] `docs/04_04` — Sidebar Library, StatusBadge lifecycle, реєстр Codex компонентів
+- [x] `docs/04_05_Codex_Lore_Module.md` (цей файл) створено + tracker tick-off + Session Log Phase 1 entry
+- [x] `docs/04_01` — лічильник 26 → 29 моделей, додано розділ "📖 7b. Codex — Lore Layer", оновлено Карту Зв'язків, додано pg_trgm в Розширення, секція Seeds описує `bin/rails codex:seed`
+- [x] `docs/04_02` — додано "📖 10b. Codex (Lore Layer) Сервіси" (NodeImportService, MarkdownRenderer)
+- [x] `docs/04_03` — додано 3 ендпоінти (#86 GET realms, #87 GET nodes, #88 GET node show)
+- [x] `docs/04_04` — розширено StatusBadge mapping (lifecycle), Sidebar 4→5 груп (+Library), додано "Codex (Lore Layer)" блок у §6.4
+- [x] `docs/10_03` — додано рядки в §1.1 (3 моделі), §1.2 (2 сервіси), §1.4/§1.5/§1.6 (controllers/policy/view)
 
 **Quality gates:**
-- [ ] `bundle exec rubocop` — зелений
-- [ ] `bundle exec rspec spec/models/codex spec/services/codex spec/policies/codex spec/requests/api/v1/codex` — зелений
-- [ ] `bundle exec brakeman` — без нових warnings
-- [ ] `bundle exec bundler-audit check` — clean
+- [x] `bundle exec rubocop` — зелений (5 авто-correctable RSpec/PredicateMatcher застосовано)
+- [x] `bundle exec rspec spec/models/codex spec/services/codex spec/policies/codex spec/requests/api/v1/codex spec/views/components/codex` — 85 examples / 0 failures
+- [x] `bundle exec brakeman` — 0 нових warnings
+- [ ] `bundle exec bundler-audit check` — runs in CI; no new gem deps were added (Codex покладається на наявні: pg_trgm extension, Rails::HTML5::SafeListSanitizer, Phlex, Pagy, Pundit, Blueprinter)
+
+**Side effects (cleanup-debt closed in Phase 1 PR):**
+- [x] **Migration squash** — всі попередні incremental міграції згорнуті в єдиний `20260509120000_init_consolidated.rb`. Data-only `seed_governance_system_parameters` міграція видалена; еквівалентний idempotent UPSERT тепер у `bin/rails governance:seed_parameters`.
+- [x] **Lookbook YARD noise fixed** — `config/initializers/lookbook_yard_tags.rb` реєструє `@notes` тег; flood `[warn]: Unknown tag @notes` зник з усіх `rails/rake/rspec` boots.
 
 ### Phase 2: Community 💬 (planned)
 - [ ] Migration `CreateCodexComments`, `CreateCodexAttunements`
@@ -676,17 +686,29 @@ db/seeds/codex/
   - Досліджено архітектуру `app/models/cluster.rb`, `app/views/components/clusters/{grid,show}.rb`, `app/policies/`, `config/routes.rb`, `db/structure.sql` для узгодження конвенцій.
   - Підтверджено: PK = bigint (не uuid); БД консолідована у `db/structure.sql` через одну `init_consolidated.rb` міграцію + всі нові міграції додаються як окремі файли; PostGIS + pg_trgm extensions присутні; Pundit + Pagy + Phlex 2.4 + Phlex-Rails 2.4 у стеку.
 - **Decisions (ADR-CDX-1..6) зафіксовано в §1** — ключове: bigint PK, no STI, no i18n gem, no hot-path queues, sanitize markdown, no partitioning Node.
+- **Deferred:** Phase 1 implementation продовжиться у наступній сесії.
+
+### 2026-05-09 (Session 2) — Phase 1 implementation, full delivery
+
+- **Done (full Phase 1):**
+  - Schema: 3 таблиці згорнуті в один `init_consolidated.rb` після squash усіх попередніх incremental міграцій (per користувацький запит — у проді бази немає).
+  - Models: `Codex::Realm`, `Codex::Node`, `Codex::Citation` + `Codex::ARCHETYPES` (79 keys) + `Codex::MarkdownRenderer` (Rails sanitizer, `rel`/`target` safelist, JS-scheme rewrite).
+  - Pundit policies: ApplicationPolicy/Realm/Node/Citation. NodePolicy::Scope приховує чернетки для не-super_admin.
+  - Blueprints: `Codex::RealmBlueprint`, `Codex::NodeBlueprint` (`:show` view).
+  - Routes + controllers: `Api::V1::Codex::Realms#index`, `Nodes#index/show` (slug param). HTML рендерить через `DashboardLayout`. JSON оборачує Pagy в `{ data, pagy }`.
+  - Phlex: `Codex::Index`, `Codex::Show`, `Codex::RealmTabs`, `Codex::NodeCard`. Усі — gaia-* токени, `Shared::UI::StatusBadge` з новим lifecycle mapping.
+  - `Navigation::Sidebar` отримала 5-ту групу "Library" з пунктом Codex Atlas.
+  - **Seeds — повний 79-record корпус** із вхідного списку Архітектора (32 ecosystem + 29 unique_tree + 8 protocol + 10 mythos), кожен з bilingual title, archetype mapping, geo (де відомі координати), lifecycle, lore narrative.
+  - **Production-safe seeding**: окрема rake-таска `bin/rails codex:seed` через `Codex::NodeImportService` (idempotent UPSERT за slug, зберігає DAO-промотовані поля). Аналогічно винесено `seed_governance_system_parameters` міграцію в `bin/rails governance:seed_parameters`.
+  - **Lookbook YARD noise fix**: `config/initializers/lookbook_yard_tags.rb` реєструє `@notes` тег.
+  - Specs: 85 examples (model 38 / service 18 / policy 7 / request 12 / view 10) / 0 failures, відповідно до canon `docs/10_01`.
+  - Docs sync: `04_01` (model count + Codex section + Карта Зв'язків + pg_trgm), `04_02` (Codex services), `04_03` (3 endpoints), `04_04` (StatusBadge + Sidebar + Codex Phlex registry), `10_03` (coverage matrix — models/services/controllers/policies/views).
+- **Bug-fixes виявлені під час спек-прогону:**
+  - `Codex::Node.for_realm(nil)` повертав `none` — виправлено на `all`, аналогічно `by_lifecycle/by_archetype` (nil = no-op).
+  - `Codex::MarkdownRenderer` SAFE_ATTRS додано `rel`, `target` — інакше Rails sanitizer стрипав їх з outbound links.
+  - `db/structure.sql`: видалено директиву `SET transaction_timeout = 0;` (PG17-only) — на користувачевих PG16 це fail. Використовується тільки `idle_in_transaction_session_timeout`.
 - **Deferred:**
-  - Phase 1 implementation продовжиться у наступній сесії (міграції, моделі, контролери, seeds, UI, специ) — обсяг великий, не вкладається в одну session.
-- **Next session — рекомендований план дій:**
-  1. Створити міграцію `CreateCodexFoundationTables` (3 таблиці одночасно — Realm, Node, Citation).
-  2. Згенерувати `bin/rails db:schema:dump` після `db:migrate`.
-  3. Реалізувати моделі + ARCHETYPES registry + MarkdownRenderer.
-  4. Зробити seeds YAML (по черзі: realms → ecosystems → unique_trees → protocols → mythos → discovery_rules) — 79 записів.
-  5. Контролери + policies + routes.
-  6. Phlex Atlas (Index + Show + RealmTabs + NodeCard) + StatusBadge extension + Sidebar Library.
-  7. Specs (model + request + policy + service).
-  8. `bundle exec rubocop && bundle exec rspec` — зелено.
-  9. Оновити tracker (§14) та цей log (§15).
+  - `User has_many :codex_citations` — додасться разом із `POST /codex/citations` ендпоінтом у Phase 6.
+  - Фази 2-6 ідуть окремими PR.
 
 ---

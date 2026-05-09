@@ -273,6 +273,10 @@ POST /api/v1/auth/m2m_token
 | **⚙️ Системний Моніторинг** | | | | | |
 | 84 | GET | `/api/v1/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
 | 85 | GET | `/api/v1/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
+| **📖 Codex (Lore Layer)** | | | | | |
+| 86 | GET | `/api/v1/codex/realms` | `codex/realms#index` | 🔑 Auth | Список 4 шарів Codex (ecosystem / unique_tree / protocol / mythos), упорядкованих за `position` |
+| 87 | GET | `/api/v1/codex/nodes` | `codex/nodes#index` | 🔑 Auth | Каталог lore-вузлів. Фільтри: `?realm=`, `?lifecycle_status=`, `?archetype=`, `?q=` (trigram-fuzzy ILIKE по обох locale). Пагінація Pagy `?page=&limit=21`. Сортування: `attunement_elo DESC, id ASC`. |
+| 88 | GET | `/api/v1/codex/nodes/:slug` | `codex/nodes#show` | 🔑 Auth | Деталі lore-вузла за `slug` (не за `id`). Атомарно інкрементить `view_count` через `update_all`. Чернетки (`published_at IS NULL`) приховані для не-super_admin. |
 
 **Легенда:**
 

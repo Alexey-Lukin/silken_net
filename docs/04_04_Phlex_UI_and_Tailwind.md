@@ -420,16 +420,16 @@ render Views::Shared::UI::StatusBadge.new(status: "confirmed", class: "mt-2")
 
 | AASM Стани | Семантичний Стиль |
 |---|---|
-| `pending`, `issued`, `dormant`, `maintenance_needed` | `bg-status-warning text-status-warning-text` |
+| `pending`, `issued`, `dormant`, `maintenance_needed`, `endangered` (Codex lifecycle) | `bg-status-warning text-status-warning-text` |
 | `processing`, `triggered`, `updating` | `+ animate-pulse` |
 | `manual_review` | `bg-status-warning text-status-warning-text + animate-pulse` — **[DOUBLE-SPEND GUARD]**: tx_hash існує або стан невідомий, потребує ручної звірки |
-| `confirmed`, `fulfilled` | `bg-status-success text-status-success-text` |
+| `confirmed`, `fulfilled`, `thriving` (Codex lifecycle) | `bg-status-success text-status-success-text` |
 | `sent`, `paid`, `maintenance` | `bg-status-info text-status-info-text` |
-| `failed`, `active` (EwsAlert), `breached`, `deceased`, `faulty` | `bg-status-danger text-status-danger-text` |
-| `acknowledged` | `bg-status-active text-status-active-text` |
-| `idle`, `draft`, `expired`, `offline`, `resolved`, `cancelled`, `removed` | `bg-status-neutral text-status-neutral-text` |
+| `failed`, `active` (EwsAlert), `breached`, `deceased`, `faulty`, `destroyed` (Codex lifecycle) | `bg-status-danger text-status-danger-text` |
+| `acknowledged`, `mythical` (Codex lifecycle) | `bg-status-active text-status-active-text` |
+| `idle`, `draft`, `expired`, `offline`, `resolved`, `cancelled`, `removed`, `unknown` (Codex lifecycle), `extinct` (Codex lifecycle) | `bg-status-neutral text-status-neutral-text` |
 | `ignored` | `bg-status-neutral text-status-neutral-text opacity-30 line-through` |
-| `resolved`, `cancelled`, `removed` | `+ opacity-50` (застосовується через модифікатор) |
+| `resolved`, `cancelled`, `removed`, `extinct` (Codex) | `+ opacity-50` (застосовується через модифікатор) |
 
 > **Примітка щодо `active`:** Стан `active` маппиться на `status-danger` при використанні з `EwsAlert` (нерозв'язаний сигнал загрози). Для інших сутностей (наприклад, `Tree` зі `status: "active"`) той самий рядок відповідає `DEFAULT_STYLE` нейтральному fallback, оскільки `StatusBadge` маппить лише стани, явно перелічені у `STYLES`. Доменні компоненти (наприклад, `Trees::Show`) застосовують власну логіку кольорів inline.
 
@@ -480,7 +480,7 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
-| `Navigation::Sidebar` | `navigation/sidebar.rb` | `current_path:`, `ews_alert_count:` | Повна навігаційна бічна панель з 4 групами секцій (Strategic, Forest Ops, Neural Network, Administration), виділенням активного стану, бейджем EWS-сигналів, пульсуючим статусом |
+| `Navigation::Sidebar` | `navigation/sidebar.rb` | `current_path:`, `ews_alert_count:` | Повна навігаційна бічна панель з 5 групами секцій (Strategic Insight, **Library** (Codex), Forest Ops, Neural Network, Administration), виділенням активного стану, бейджем EWS-сигналів, пульсуючим статусом |
 
 #### Дашборд
 
@@ -534,6 +534,15 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Firmwares::Form` | `firmwares/form.rb` | `firmware:` | Поля форми прошивки |
 | `Firmwares::Row` | `firmwares/row.rb` | `firmware:` | Один рядок списку прошивок |
 | `Firmwares::OtaProgressBar` | `firmwares/ota_progress_bar.rb` | `uid:`, `percent:`, `current:`, `total:`, `status:` | Анімований прогрес-бар OTA; Turbo target `ota_progress_{uid}` |
+
+#### Codex (Lore Layer)
+
+| Компонент | Файл | Props | Опис |
+|---|---|---|---|
+| `Codex::Index` | `codex/index.rb` | `nodes:`, `pagy:`, `realms:`, `active_realm_slug:` | Сторінка-каталог lore-вузлів (Atlas). Сітка карток (`NodeCard`), вкладки шарів (`RealmTabs`), пагінація `Shared::UI::Pagination`, порожній стан `Shared::UI::EmptyState` |
+| `Codex::Show` | `codex/show.rb` | `node:` | Детальна сторінка lore-вузла. Bilingual title/subtitle, 3 markdown-блоки (`context_md` → `Codex::MarkdownRenderer`), `Shared::UI::StatusBadge` для `lifecycle_status`, зовнішні посилання, мета-рядки (Elo, view_count) |
+| `Codex::RealmTabs` | `codex/realm_tabs.rb` | `realms:`, `active_slug:` | Горизонтальні вкладки шарів. Active token: `bg-gaia-primary text-gaia-primary-text` |
+| `Codex::NodeCard` | `codex/node_card.rb` | `node:` | Картка одного lore-вузла. ActiveStorage `cover_image` з placeholder-гліфом per realm, lifecycle-бейдж, footer з Elo+geo_region. Linkable до `/api/v1/codex/nodes/:slug`. |
 
 #### Інші Доменні Компоненти
 

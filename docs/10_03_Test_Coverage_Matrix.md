@@ -33,6 +33,9 @@
 | Cluster | ✅ 380L+ | 🟢 **Повне** | **lorenz_overrides_by_species validation (FW.8), lorenz_overrides_for, Associations, store_accessor validations, recalculate_health_index! with AiInsight, alphabetical scope** |
 | AuditLog | ✅ 400L+ | 🟢 **Повне** | **chain_payload determinism, metadata ordering, tamper detection, deleted record chain break, bulk advisory lock** |
 | **Firmwareable (concern)** | ✅ 230L+ | 🟢 **Повне** | **AASM transitions тестуються: всі 7 подій, invalid transitions, lifecycle** |
+| **Codex::Realm** [Codex Phase 1] | ✅ part of 38 examples | 🟢 **Нове** | **`ordered` scope, bilingual `name(locale)`, slug uniqueness, accent_token validation, has_many :nodes** |
+| **Codex::Node** [Codex Phase 1] | ✅ part of 38 examples | 🟢 **Нове** | **slug normalization (downcase, `_` → `-`), CODEX_UID format guard (CDX-{ECO\|TRE\|PRT\|MYT}-NNNN), bilingual title helpers, lifecycle/seed_origin enums (prefix), `for_realm`/`search_title` (pg_trgm ILIKE)/`by_archetype`/`by_lifecycle`/`ordered_by_elo` scopes, `sync_geo_point` PostGIS hook (lat/lng → SRID=4326 POINT), `external_refs` array-of-hashes validator, archetype_key inclusion in `Codex::ARCHETYPES` (79 keys), Active Storage `cover_image`+`gallery`** |
+| **Codex::Citation** [Codex Phase 1] | ✅ part of 38 examples | 🟢 **Нове** | **polymorphic citable, anti-dup unique index (codex_node_id, citable_type, citable_id), counter cache → Codex::Node.citation_count** |
 
 ### 1.2 Services
 
@@ -56,6 +59,8 @@
 | **OtaHmacKeyService [FW.23]** | ✅ 9 examples | 🟢 **Нове** | **HKDF-SHA256 derivation з info `"silken-ota-hmac-v1"` (domain separation від HardwareKeyService AES key); deterministic per cluster_id; ArgumentError на blank cluster_id; SecurityError без `PROVISIONING_MASTER_KEY` (SEC.11 hard cutover, no SecureRandom fallback); fetch_binary_for повертає 32-byte ASCII-8BIT** |
 | Etherisc::ClaimService | ✅ 120L+ | 🟢 **Повне** | **nil policy_id, missing ENV keys, ABI validation** |
 | Ed25519Crypto::SigningService | ✅ 270L+ | 🟢 **Повне** | **Empty/large messages, hex validation edges, uppercase hex, nil/integer message coercion** |
+| **Codex::NodeImportService** [Codex Phase 1] | ✅ 7 examples | 🟢 **Нове** | **empty seed dir Result success?, minimal YAML upsert, idempotent re-run (no duplicates), DAO `seed_origin` preservation, per-file error isolation, full 79-record corpus load (4 realms + 79 nodes from default SEED_ROOT)** |
+| **Codex::MarkdownRenderer** [Codex Phase 1] | ✅ 11 examples | 🟢 **Нове** | **nil/blank → html_safe empty, paragraphs, h1/h2/h3 → h2/h3/h4 mapping, bold/italic/code/lists/blockquotes, safe http(s) links з `rel="noopener noreferrer" target="_blank"`, `javascript:` scheme rewrite to `#`, `<script>` tag stripping via `Rails::HTML5::SafeListSanitizer`, raw HTML escape-then-transform** |
 
 ### 1.3 Workers
 
@@ -72,13 +77,22 @@
 
 Усі API v1 контролерів мають відповідні request spec файли. Покриття: 🟢 Повне.
 
+**Codex Phase 1 (нове, 12 request examples):**
+- `Api::V1::Codex::RealmsController#index` — 401 без token, ordered by `position`, bilingual JSON shape
+- `Api::V1::Codex::NodesController#index` — 401 guard, sorted `attunement_elo DESC`, фільтри `realm` / `lifecycle_status` / `q` (trigram)
+- `Api::V1::Codex::NodesController#show` — slug-routing, atomic `view_count` increment, 404 для unknown slug + draft-приховування для не-super_admin
+
 ### 1.5 Policies
 
 Усі Pundit policies покриті. Покриття: 🟢 Повне.
 
+**Codex Phase 1 (нове, 7 examples):** `Codex::NodePolicy` — index?/show? для будь-якого автентифікованого, anonymous deny, write-операції тільки для super_admin, `Scope#resolve` приховує чернетки (`published_at IS NULL`) для не-super_admin.
+
 ### 1.6 Views
 
 Усі Phlex-компоненти покриті згідно з `docs/10_01_View_Component_Testing_Guide.md`.
+
+**Codex Phase 1 (нове, 10 examples):** `Codex::NodeCard` — bilingual title rendering, codex_uid + realm pill + lifecycle badge (status-* token), slug-based href, footer (Elo + geo_region), edge cases (placeholder glyph коли `cover_image` не attached, `—` коли `geo_region` blank, suppress subtitle), design system compliance (no raw `bg-white`/`text-gray-*`, custom text-scale `mini`/`tiny`/`micro`, `focus-visible:ring-2`).
 
 ### 1.7 Integration Tests
 
