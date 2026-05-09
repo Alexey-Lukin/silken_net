@@ -49,6 +49,14 @@ module SilkenNet
       g.fixture_replacement :factory_bot, dir: "spec/factories"
     end
 
+    # Prepend a custom PostgreSQL bin path to PATH if configured via POSTGRES_BIN_PATH.
+    # Useful when multiple PG versions are installed and the server version differs from
+    # the default pg_dump/psql binaries in PATH (e.g. PG17 server, PG16 client in PATH).
+    # Set POSTGRES_BIN_PATH in .env or .env.development.local (gitignored).
+    if (pg_bin = ENV["POSTGRES_BIN_PATH"]).present? && !ENV["PATH"].to_s.include?(pg_bin)
+      ENV["PATH"] = "#{pg_bin}:#{ENV["PATH"]}"
+    end
+
     # Lookbook component previews path
     config.lookbook.preview_paths = [ root.join("spec/components/previews").to_s ] if defined?(Lookbook)
   end
