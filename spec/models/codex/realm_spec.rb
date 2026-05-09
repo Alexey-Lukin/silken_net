@@ -68,4 +68,26 @@ RSpec.describe Codex::Realm do
       expect(realm.display_name(:en)).to eq("Ecosystems")
     end
   end
+
+  describe "#display_glyph" do
+    it "translates the seeded forest keyword to a pine emoji" do
+      expect(build(:codex_realm, glyph: "forest").display_glyph).to eq("🌲")
+    end
+
+    it "returns the deciduous tree for the unique_tree realm keyword" do
+      expect(build(:codex_realm, glyph: "tree").display_glyph).to eq("🌳")
+    end
+
+    it "returns the atom symbol for the protocol realm keyword" do
+      expect(build(:codex_realm, glyph: "protocol").display_glyph).to eq("⚛")
+    end
+
+    it "returns the six-pointed star for the mythos realm keyword" do
+      expect(build(:codex_realm, glyph: "mythos").display_glyph).to eq("✶")
+    end
+
+    it "returns DEFAULT_DISPLAY_GLYPH for an unknown keyword (forward-compat for new realms)" do
+      expect(build(:codex_realm, glyph: "space").display_glyph).to eq(described_class::DEFAULT_DISPLAY_GLYPH)
+    end
+  end
 end

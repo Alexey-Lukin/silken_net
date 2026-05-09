@@ -16,10 +16,9 @@ class PartitionMaintenanceWorker
   def perform
     today = Time.current.utc.to_date
     months = [ today.beginning_of_month, (today + 1.month).beginning_of_month ]
+    created = 0  # initialised early so the Sentry rescue payload is always defined
 
     Rails.logger.info "🗂️ [Partition Maintenance] Перевірка партицій для #{months.map { _1.strftime('%Y-%m') }.join(', ')}..."
-
-    created = 0
 
     PARTITIONED_TABLES.each do |table_name|
       months.each do |month_start|

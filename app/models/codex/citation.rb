@@ -58,8 +58,14 @@ module Codex
     # gracefully no-op when the target is a non-AR mock.
     def self.polymorphic_type_for(target)
       klass = target.class
-      return klass.base_class.name if klass.respond_to?(:base_class) && klass.base_class.name
-      klass.name
+      if klass.respond_to?(:base_class) && klass.base_class.name.present?
+        return klass.base_class.name
+      end
+      # Explicit nil contract — anonymous classes (`Class.new { ... }.new`)
+      # have `klass.name == nil`. Returning `nil` lets `for_target` and
+      # `bulk_for` short-circuit to `none` / `{}` instead of building a
+      # `WHERE citable_type = NULL` query.
+      klass.name.presence
     end
 
     # `for_target(target)` — all citations on a single Tree / Cluster / etc.

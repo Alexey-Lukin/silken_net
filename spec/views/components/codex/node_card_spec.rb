@@ -4,9 +4,16 @@ require "rails_helper"
 
 RSpec.describe Codex::NodeCard do
   def mock_realm(slug: "ecosystem", glyph: "forest", name_en: "Ecosystems", accent_token: "gaia-primary")
-    OpenStruct.new(
+    realm = OpenStruct.new(
       slug: slug, glyph: glyph, name_en: name_en, accent_token: accent_token
     )
+    # Mirror the real `Codex::Realm#display_glyph` lookup so the mock matches
+    # the production API surface; otherwise components that call it on a mock
+    # would silently fall through to the default placeholder glyph.
+    realm.define_singleton_method(:display_glyph) do
+      ::Codex::Realm::DISPLAY_GLYPHS.fetch(glyph.to_s, ::Codex::Realm::DEFAULT_DISPLAY_GLYPH)
+    end
+    realm
   end
 
   def mock_node(**overrides)

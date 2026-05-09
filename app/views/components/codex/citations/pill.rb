@@ -12,8 +12,9 @@
 #     This turns the strip from a flat row of chips into a glanceable
 #     Realm distribution — a forester can see "this tree leans Mythos"
 #     without reading any names.
-#   * Realm glyph prefix from `realm.glyph` (data, not a hardcoded case
-#     statement) so adding a 5th realm needs only a DB row, not a deploy.
+#   * Realm glyph prefix from `Realm#display_glyph` (data + lookup table in
+#     the model — see `Codex::Realm::DISPLAY_GLYPHS`) so adding a 5th realm
+#     needs only an entry in that hash, not a hunt through view code.
 #   * Subtle hover lift (translate-y) + border glow — confirms interactivity
 #     without resorting to a colour change that would clash with the realm tint.
 #
@@ -46,7 +47,7 @@ module Codex
       }.freeze
       DEFAULT_ACCENT_TEXT_CLASS = "text-gaia-text-muted"
 
-      DEFAULT_GLYPH = "◆"
+      DEFAULT_GLYPH = ::Codex::Realm::DEFAULT_DISPLAY_GLYPH
 
       # @param citation [Codex::Citation] eager-loaded with `:node` (and
       #   ideally with `node: :realm` to avoid a per-pill realm query).
@@ -115,7 +116,7 @@ module Codex
       end
 
       def glyph(node)
-        node.realm&.glyph.presence || DEFAULT_GLYPH
+        node.realm&.display_glyph || DEFAULT_GLYPH
       end
 
       def realm_slug(node)

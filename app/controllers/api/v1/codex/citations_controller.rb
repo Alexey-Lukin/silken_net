@@ -83,6 +83,12 @@ module Api
           "Cluster"      => -> { Cluster },
           "AiInsight"    => -> { AiInsight },
           "EwsAlert"     => -> { EwsAlert },
+          # `OracleVision` is the lore-facing rename of `AiInsight` (see
+          # `Views::Components::OracleVisions::*`). The class itself was not
+          # extracted — Phlex components alias the AR record at the view
+          # boundary. The lambda checks `defined?(::OracleVision)` so the
+          # day someone DOES extract a real `OracleVision < AiInsight` STI
+          # subclass, this entry starts pointing to it without a code change.
           "OracleVision" => -> { defined?(::OracleVision) ? ::OracleVision : AiInsight },
           "NaasContract" => -> { NaasContract }
         }.freeze

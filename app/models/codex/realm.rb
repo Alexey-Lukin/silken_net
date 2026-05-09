@@ -32,5 +32,22 @@ module Codex
     def display_name(locale = I18n.locale)
       locale.to_s.start_with?("uk") ? name_uk : name_en
     end
+
+    # Lookup table: `glyph` column stores a stable English keyword
+    # (`forest`, `tree`, `protocol`, `mythos`) — `display_glyph` translates
+    # it to a unicode character at the rendering boundary. SSOT used by
+    # `Codex::NodeCard` and `Codex::Citations::Pill` so adding a 5th realm
+    # only needs one new entry here, not a hunt through view code.
+    DISPLAY_GLYPHS = {
+      "forest"   => "🌲",
+      "tree"     => "🌳",
+      "protocol" => "⚛",
+      "mythos"   => "✶"
+    }.freeze
+    DEFAULT_DISPLAY_GLYPH = "○"
+
+    def display_glyph
+      DISPLAY_GLYPHS.fetch(glyph.to_s, DEFAULT_DISPLAY_GLYPH)
+    end
   end
 end

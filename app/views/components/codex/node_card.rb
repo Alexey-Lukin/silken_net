@@ -87,14 +87,12 @@ module Codex
       end
     end
 
-    def glyph_for_realm(key)
-      case key
-      when "forest"   then "🌲"
-      when "tree"     then "🌳"
-      when "protocol" then "⚛"
-      when "mythos"   then "✶"
-      else "○"
-      end
+    def glyph_for_realm(_key)
+      # Deprecated wrapper — superseded by `Codex::Realm#display_glyph` which
+      # is the SSOT for keyword-to-glyph mapping. Kept as a thin shim for
+      # backwards compat with any external caller; new code should use
+      # `node.realm&.display_glyph`.
+      @node.realm&.display_glyph || ::Codex::Realm::DEFAULT_DISPLAY_GLYPH
     end
   end
 end
