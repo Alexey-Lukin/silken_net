@@ -42,11 +42,8 @@ RSpec.describe Codex::Battle::Arena, type: :view_component do
     expect(html).to include("bg-gaia-surface")
   end
 
-  it "wires the codex--battle Stimulus controller" do
+  it "does not wire any Stimulus controller (plain forms, Turbo Frame handles response)" do
     html = render_arena(left: left, right: right, pair_seed: "x" * 64, realm: realm)
-    expect(html).to include('data-controller="codex--battle"')
-    expect(html).to include('data-codex--battle-target="card"')
-    expect(html).to include('data-codex--battle-target="form"')
-    expect(html).to include('data-codex--battle-target="skip"')
+    expect(html).not_to include('data-controller=')
   end
 end

@@ -7,8 +7,7 @@ class Codex::CommentBlueprint < Blueprinter::Base
 
   field(:author) do |comment|
     {
-      id: comment.user_id,
-      email_address: comment.user&.email_address
+      id: comment.user_id
     }
   end
 

@@ -68,4 +68,11 @@ RSpec.describe Codex::Fractions::Picker, type: :view_component do
     expect(html).not_to include("text-gray-")
     expect(html).to include("bg-gaia-surface")
   end
+
+  it "adds a native Turbo confirm dialog on the Pick button (no Stimulus needed)" do
+    html = render_picker(realms: [ realm ], active_realm: realm, nodes: [ node ])
+    expect(html).to include("data-turbo-confirm=")
+    expect(html).to include("Re-pick is locked for 7 days")
+    expect(html).not_to include('data-controller=')
+  end
 end

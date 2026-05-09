@@ -32,17 +32,29 @@ RSpec.describe Codex::EloMath do
       expect(d_r).to be > 16
     end
 
-    it "halves K once both nodes are past the decay threshold" do
+    it "halves K once either node is past the decay threshold" do
       d_fresh, _ = described_class.deltas(
         left_elo: 1500, right_elo: 1500, winner: :left,
         match_count_left: 0, match_count_right: 0
       )
       d_decay, _ = described_class.deltas(
         left_elo: 1500, right_elo: 1500, winner: :left,
-        match_count_left: 31, match_count_right: 31
+        match_count_left: 31, match_count_right: 0
       )
       expect(d_decay).to be < d_fresh
       expect(d_decay).to eq(described_class::K_DECAY / 2)
+    end
+
+    it "also decays when only the right node is established" do
+      d_fresh, _ = described_class.deltas(
+        left_elo: 1500, right_elo: 1500, winner: :left,
+        match_count_left: 0, match_count_right: 0
+      )
+      d_decay, _ = described_class.deltas(
+        left_elo: 1500, right_elo: 1500, winner: :left,
+        match_count_left: 0, match_count_right: 31
+      )
+      expect(d_decay).to be < d_fresh
     end
 
     it "raises on bad winner" do

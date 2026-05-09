@@ -55,6 +55,9 @@ module Codex
       end
 
       ::Codex::Fraction.transaction do
+        # Re-read inside transaction to close the TOCTOU window between
+        # find_or_initialize and the actual write.
+        fraction.lock! if fraction.persisted?
         fraction.codex_node_id    = @node.id
         fraction.archetype_key    = @node.archetype_key
         fraction.house_color_token = @node.realm.accent_token

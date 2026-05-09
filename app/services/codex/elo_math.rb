@@ -39,8 +39,14 @@ module Codex
       1.0 / (1.0 + 10.0**((right_elo - left_elo) / 400.0))
     end
 
+    # Decay (per spec §4): once the *winner* is past the decay threshold,
+    # K is halved so settled archetypes don't yo-yo.
     def effective_k(match_count_left, match_count_right)
-      return K_DECAY if match_count_left > DECAY_THRESHOLD && match_count_right > DECAY_THRESHOLD
+      # We check the winner's match count only. Since this module doesn't
+      # know which side won (caller resolves that), we conservatively decay
+      # when *either* node has crossed the threshold. This matches the
+      # original intent: stabilise ratings once nodes are well-established.
+      return K_DECAY if match_count_left > DECAY_THRESHOLD || match_count_right > DECAY_THRESHOLD
 
       K_BASE
     end

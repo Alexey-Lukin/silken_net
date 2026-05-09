@@ -3,10 +3,10 @@
 # Codex::Battle::Arena — Turbo Frame `id="codex_battle_arena"` containing
 # two pickable cards + VS divider.
 #
-# Stimulus controller `codex--battle` is wired up via data attributes; JS
-# behaviour ships in a separate batch (debounce, swap-animation, ←/→
-# keyboard shortcuts). The frame still works without JS — both cards are
-# real `<form method="post">` submissions.
+# No Stimulus controller — both cards are real `<form method="post">`
+# submissions, and Turbo handles the frame replacement on response.
+# Keyboard shortcuts (←/→/space) deferred until a visible affordance
+# (tooltip/legend) ships so users actually discover them.
 #
 # Error mode: when `PairSelectorService` cannot produce a pair (no realm,
 # < 2 nodes, etc.), the component renders a friendly empty-state instead.
@@ -28,10 +28,7 @@ module Codex
             "border border-gaia-border bg-gaia-surface p-5 space-y-5",
             "text-gaia-text"
           ),
-          data: {
-            controller: "codex--battle",
-            "codex--battle-realm-value": @realm&.slug.to_s
-          }
+          
         ) do
           render_header
           @error ? render_error : render_arena
@@ -75,7 +72,7 @@ module Codex
             "border border-gaia-border bg-gaia-surface-alt p-3 space-y-2",
             "flex flex-col justify-between"
           ),
-          data: { "codex--battle-target": "card", "codex--battle-side-value": side.to_s }
+          
         ) do
           div(class: "space-y-1") do
             p(class: "text-tiny text-gaia-text") { node.title_en }
@@ -94,7 +91,7 @@ module Codex
         form(
           action: api_v1_codex_votes_battle_path,
           method: "post",
-          data: { "codex--battle-target": "form" }
+          
         ) do
           input(type: "hidden", name: "pair_seed", value: @pair_seed)
           input(type: "hidden", name: "winner_slug", value: node.slug)
@@ -116,7 +113,7 @@ module Codex
           action: api_v1_codex_votes_battle_path,
           method: "post",
           class: "flex justify-end",
-          data: { "codex--battle-target": "skip" }
+          
         ) do
           input(type: "hidden", name: "pair_seed", value: @pair_seed)
           input(type: "hidden", name: "skip", value: "true")

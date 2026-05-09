@@ -69,7 +69,7 @@ module Codex
         end
       end
 
-      unlocked.uniq
+      unlocked.uniq(&:id)
     end
 
     private

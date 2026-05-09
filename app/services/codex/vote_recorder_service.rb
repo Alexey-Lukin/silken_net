@@ -80,10 +80,10 @@ module Codex
     private
 
     def consume_seed
-      raw = nil
       r = Kredis.redis(config: :shared)
-      raw = r.get("#{REDIS_PREFIX}#{@pair_seed}")
-      r.del("#{REDIS_PREFIX}#{@pair_seed}") if raw
+      key = "#{REDIS_PREFIX}#{@pair_seed}"
+      # Atomic get-and-delete: avoids TOCTOU race between get and del.
+      raw = r.call("GETDEL", key)
       return nil unless raw
 
       user_id, realm_id, left_id, right_id, _ts = raw.to_s.split("|").map(&:to_i)

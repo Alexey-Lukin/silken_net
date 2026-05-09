@@ -1,179 +1,185 @@
-# 04_05. Codex (Lore Layer) — Design Philosophy, ADRs, Deferred Work
+# 04_05. Codex (Шар Лору) — Філософія дизайну, ADR, відкладена робота
 
-> **Status (Phase 7 cleanup):** Phases 1–6 are **DONE** and live in code. The implementation
-> SSOT moved to the canonical docs:
+> **Статус (Phase 8 — Stimulus-аудит + баг-фікси):** Фази 1–7 — **DONE**, живуть у коді.
+> SSOT реалізації переніс у канонічні docs:
 >
-> | Aspect | Canonical doc |
+> | Аспект | Канонічний документ |
 > |---|---|
-> | DB tables / models / enums / partitioning | `04_01_Data_Models_and_Entities.md` § 7b |
-> | Services / workers / Sidekiq queue assignment | `04_02_Business_Logic_and_Services.md` (Codex subsections) |
-> | REST API `/api/v1/codex/*` (≈ 25 routes) | `04_03_REST_API_v1_Reference.md` § 4 (rows #86–#109) |
-> | Phlex components / design tokens / ActionCable channels | `04_04_Phlex_UI_and_Tailwind.md` § 6.4 + § 8.1 |
-> | Seed data | `db/seeds/codex/*.rb` + `lib/seeds/codex/*.yml` |
+> | DB-таблиці / моделі / enum'и / партиціювання | `04_01_Data_Models_and_Entities.md` § 7b |
+> | Сервіси / воркери / призначення черг Sidekiq | `04_02_Business_Logic_and_Services.md` (підрозділи Codex) |
+> | REST API `/api/v1/codex/*` (≈ 25 маршрутів) | `04_03_REST_API_v1_Reference.md` § 4 (рядки #86–#109) |
+> | Phlex-компоненти / дизайн-токени / ActionCable-канали | `04_04_Phlex_UI_and_Tailwind.md` § 6.4 + § 8.1 |
+> | Seed-дані | `db/seeds/codex/*.rb` + `lib/seeds/codex/*.yml` |
 >
-> This file now keeps **only** what is *not* yet in code: design philosophy
-> (so future maintainers understand *why* the schema looks the way it does),
-> the formal ADR registry, and the open Phase 6+ work.
+> Тут залишається **тільки** те, чого *ще немає* в коді: філософія дизайну
+> (щоб майбутні мейнтейнери розуміли *чому* схема виглядає саме так),
+> реєстр формальних ADR, та відкладена робота Phase 6+.
 
 ---
 
-## 1. Why a Lore Layer Exists
+## 1. Навіщо існує Шар Лору
 
-The Codex turns the operational telemetry stack (Tree → Cluster → Alert → Wallet)
-into a **narrative substrate**. Each Tree under a forester is bound to one or
-more **archetypes** (`Codex::Node`s such as `cold_wallet`, `relict_oracle`,
-`chainsaw_protocol`) via a polymorphic `Codex::Citation`. The result is two-way:
+Codex перетворює операційний стек телеметрії (Tree → Cluster → Alert → Wallet)
+на **наративний субстрат**. Кожне Дерево лісника прив'язане до одного чи
+кількох **архетипів** (`Codex::Node`, наприклад `cold_wallet`, `relict_oracle`,
+`chainsaw_protocol`) через поліморфний `Codex::Citation`. Результат двосторонній:
 
-- **Lore → Operations:** A `mythical` Node lights up a Cluster's badge in the UI;
-  a Forester citing `chainsaw_protocol` on a `chainsaw_detected` alert turns
-  the row into auditable, lore-linked forensic data.
-- **Operations → Lore:** Every uplink, every match, every fraction pick can
-  unlock a `Codex::Discovery` for the user — gamifying the boring middle of
-  long observation windows. Discovery rules are stored in
-  `codex_discovery_rules` so the **DAO can add new rules without a redeploy**.
+- **Лор → Операції:** `mythical` Node підсвічує бейдж Cluster у UI;
+  лісник, який цитує `chainsaw_protocol` на `chainsaw_detected` алерті,
+  перетворює рядок на аудитовані, лор-пов'язані форензик-дані.
+- **Операції → Лор:** Кожен uplink, кожен матч, кожен вибір фракції може
+  відкрити `Codex::Discovery` для користувача — гейміфікує нудну середину
+  довгих вікон спостереження. Правила discovery зберігаються в
+  `codex_discovery_rules`, тому **DAO може додавати нові правила без редеплою**.
 
-The four Realms (`ecosystem | unique_tree | protocol | mythos`) are **data, not
-code** — see ADR-CDX-2.
+Чотири Realm'и (`ecosystem | unique_tree | protocol | mythos`) — це **дані, не
+код** — див. ADR-CDX-2.
 
 ---
 
 ## 2. Architecture Decision Records (ADR-CDX-1 … ADR-CDX-7)
 
-These are load-bearing decisions. Anyone touching `codex_*` MUST read them
-before changing the schema or the queue assignments.
+Це несучі рішення. Будь-хто, хто чіпає `codex_*`, МУСИТЬ прочитати їх
+перед зміною схеми або призначення черг.
 
-### ADR-CDX-1 — `bigint` PKs
+### ADR-CDX-1 — `bigint` PK
 
-`codex_*` tables use `bigserial` PKs (consistent with the rest of the monolith;
-`uuid` is reserved for external identifiers like `idempotency_token`). The
-human-readable identifier is `codex_uid` (`CDX-XXX-####`) computed from
-`(realm_short_code, slug_hash)`; it is *not* the PK.
+Таблиці `codex_*` використовують `bigserial` PK (консистентно з рештою моноліту;
+`uuid` зарезервований для зовнішніх ідентифікаторів типу `idempotency_token`).
+Людино-читабельний ідентифікатор — `codex_uid` (`CDX-XXX-####`), обчислюється з
+`(realm_short_code, slug_hash)`; це *не* PK.
 
-### ADR-CDX-2 — No STI, Realms are rows
+### ADR-CDX-2 — Без STI, Realm'и — це рядки таблиці
 
-`Codex::Realm` is a table (4 rows seeded). `Codex::Node` carries `realm_id +
-archetype_key` instead of being subclassed. Adding a 5th realm
-(`space`, `myco`, …) is a DAO proposal + an INSERT, not a deploy.
+`Codex::Realm` — це таблиця (4 рядки seed). `Codex::Node` тримає `realm_id +
+archetype_key` замість наслідування. Додавання 5-го realm'у
+(`space`, `myco`, …) — це DAO-пропозиція + INSERT, не деплой.
 
-### ADR-CDX-3 — Bilingual without an i18n gem
+### ADR-CDX-3 — Двомовність без i18n-гему
 
-`title_uk/_en`, `subtitle_uk/_en`, `body_md_uk/_en` are native columns.
-Rationale: Ukrainian + English are the SSOT languages, additional locales are
-not on the roadmap, and we save one JOIN + one gem dependency. If a third
-locale ever appears, migrate by adding columns; do **not** retrofit `globalize`.
+`title_uk/_en`, `subtitle_uk/_en`, `body_md_uk/_en` — нативні колонки.
+Обґрунтування: українська + англійська — це SSOT-мови, додаткові локалі
+не заплановані, і ми економимо один JOIN + одну залежність від гему. Якщо
+з'явиться третя мова — мігрувати додаванням колонок; **не** ретрофітити `globalize`.
 
-### ADR-CDX-4 — Codex never touches the hot path
+### ADR-CDX-4 — Codex ніколи не чіпає гарячий шлях
 
-No Codex worker runs in `uplink (#1)`, `alerts (#2)`, `critical (#3)`,
-`downlink (#4)`, or `web3_critical (#6)`. Permitted queues:
+Жоден Codex-воркер не працює в чергах `uplink (#1)`, `alerts (#2)`, `critical (#3)`,
+`downlink (#4)`, або `web3_critical (#6)`. Дозволені черги:
 
-| Worker | Queue |
+| Воркер | Черга |
 |---|---|
 | `Codex::AttunementBroadcastWorker` | `default (#5)` |
 | `Codex::FractionAuditWorker` | `default (#5)` |
 | `Codex::DiscoveryProbeWorker` | `default (#5)` |
 | `Codex::EloRecomputeWorker` | `low (#9)` |
 
-Rule of thumb: **gamification cannot starve a tree's telemetry**. If a Codex
-feature ever needs a faster queue, that triggers a fresh ADR.
+Правило: **гейміфікація не може голодувати телеметрію дерева**. Якщо Codex-фічі
+колись знадобиться швидша черга — це тригерить новий ADR.
 
-### ADR-CDX-5 — Markdown sanitisation
+### ADR-CDX-5 — Санітизація Markdown
 
-`*_md` columns are server-side rendered through `Codex::MarkdownRenderer`
-(Rails `Rails::HTML5::SafeListSanitizer`) with this allow-list:
+`*_md` колонки рендеряться на сервері через `Codex::MarkdownRenderer`
+(Rails `Rails::HTML5::SafeListSanitizer`) з allow-list:
 `p, h2, h3, h4, ul, ol, li, strong, em, blockquote, code, pre, a[href]`.
-Hard length limits enforced in the model: `body_md_*` ≤ 8 KiB,
-`subtitle_*` ≤ 2 KiB. Raw HTML never reaches the DOM.
+Жорсткі ліміти довжини в моделі: `body_md_*` ≤ 8 КіБ,
+`subtitle_*` ≤ 2 КіБ. Сирий HTML ніколи не потрапляє в DOM.
 
-### ADR-CDX-6 — Partition only `codex_matches`
+### ADR-CDX-6 — Партиціювання тільки `codex_matches`
 
-`codex_nodes` is capped at ~10K rows (DAO governance) → unpartitioned.
-`codex_matches` is RANGE-partitioned by `created_at` (Battle Arena is the
-write-heavy surface, 100M+ rows expected). `PartitionMaintenanceWorker` is
-responsible for monthly partitions — see `04_02` § DOC.11.
+`codex_nodes` обмежено ~10K рядків (DAO governance) → без партицій.
+`codex_matches` партиціюється RANGE по `created_at` (Battle Arena — write-heavy
+поверхня, очікується 100M+ рядків). `PartitionMaintenanceWorker` відповідає
+за щомісячні партиції — див. `04_02` § DOC.11.
 
-### ADR-CDX-7 — Discovery is presence-gated, fail-open
+### ADR-CDX-7 — Discovery gated by presence, fail-open
 
-`Codex::DiscoveryProbeWorker.perform_async` is called from three places:
-`EloRecomputeWorker` (match milestone), `FractionChangeService` (fraction
-choice), `AttunementsController#create` (attunement streak). All three are
-**fail-open**: a Sidekiq enqueue hiccup MUST NOT roll back the user-facing
-operation. Probe results are read through `Codex::PresenceTracker` (Redis Set
-TTL 10 min) so the worker fans out only to users who are actually online —
-this keeps Discovery O(active_users), not O(all_users).
+`Codex::DiscoveryProbeWorker.perform_async` викликається з трьох місць:
+`EloRecomputeWorker` (milestone матчу), `FractionChangeService` (вибір фракції),
+`AttunementsController#create` (streak attunement). Усі три —
+**fail-open**: збій enqueue у Sidekiq НЕ ПОВИНЕН відкочувати user-facing операцію.
+Результати probe читаються через `Codex::PresenceTracker` (Redis Set TTL 10 хв),
+тому воркер розсилає тільки онлайн-користувачам — це тримає Discovery
+O(active_users), не O(all_users).
 
 ---
 
-## 3. Open Work (Phase 6+ — not yet in code)
+## 3. Відкрита робота (Phase 6+ — ще не в коді)
 
-> Items marked `[ ]` are **deferred** by design — they don't block merge of
-> the Codex module but are tracked here so they don't get lost.
+> Пункти з `[ ]` — **відкладені** навмисно — не блокують merge Codex-модуля,
+> але трекаються тут, щоб не загубилися.
 
-### 3.1 Phase 6 — Stimulus + onboarding (frontend polish)
+### 3.1 Phase 6 — Stimulus + onboarding (фронтенд полірування)
 
-- [ ] **`codex--reveal` Stimulus controller** — animation for the
-  `Codex::Discoveries::Toast` component. The `data-controller="codex--reveal"`
-  attribute is already wired in the Phlex component; the JS file is missing.
-  Without it the toast still appears via the Turbo Stream broadcast — the
-  controller only adds the matrix-rain reveal effect.
-- [ ] **`codex--battle` Stimulus controller** — keyboard shortcuts (`←`/`→`
-  to vote, `space` to skip) and skip-cooldown UX hints. Forms work without it.
-- [ ] **`codex--attune` Stimulus controller** — optimistic counter increment
-  before the `attunement_count` ActionCable broadcast lands. Forms work without it.
-- [ ] **`codex--fraction-picker` Stimulus controller** — realm-tab transition
-  animation; non-JS fallback uses Turbo Frame navigation.
-- [ ] **"Choose your fraction" onboarding wizard** — first-login modal that
-  routes new users to `/api/v1/codex/fractions/picker`. Ship this *after*
-  the Stimulus controllers so the wizard feels native, not a redirect chain.
+**Аудит Stimulus (Phase 8):** проведено повний аналіз чи кожен контролер
+виправданий. Результат:
+
+- [x] **`codex--reveal`** — ✅ залишений. Авто-dismiss тоста через 8 с + пауза
+  на hover. Без JS тост залишається назавжди — це broken UX.
+  Файл: `app/javascript/controllers/codex/reveal_controller.js`.
+- [x] **`codex--comment`** — ✅ залишений. Cmd/Ctrl+Enter submit + scroll-to-new +
+  reset textarea. Індустріальний стандарт (Slack/GitHub/Linear).
+  Файл: `app/javascript/controllers/codex/comment_controller.js`.
+- [x] **`codex--attune`** — ❌ видалений. Turbo Stream broadcast від
+  `AttunementBroadcastWorker` оновлює лічильник за <100мс. Optimistic UI =
+  over-engineering + bug surface (race conditions, код з помилкою
+  `method = "post" : "post"`). `data-controller` знятий з `Toggle`.
+- [x] **`codex--fraction-picker`** — ❌ видалений. Замінений на нативний
+  `data-turbo-confirm="..."` на кнопці Pick — 1 атрибут замість 64 рядків JS.
+  Серверна cooldown-валідація залишається авторитетною.
+- [x] **`codex--battle`** — ❌ видалений (deferred). Keyboard-шорткати (←/→/space)
+  без видимої підказки = discoverability fail. Повернути коли буде tooltip/legend.
+- [ ] **"Choose your fraction" onboarding wizard** — first-login модалка, що
+  перенаправляє нових юзерів на `/api/v1/codex/fractions/picker`.
 
 ### 3.2 Wiki + README
 
-- [ ] Add a **"Lore Layer"** one-liner to the project `README.md`.
-- [ ] Update the GitHub Wiki sidebar with a top-level "Codex" entry pointing
-  at `04_01 §7b → 04_02 → 04_03 → 04_04 → 04_05`.
+- [ ] Додати **"Lore Layer"** one-liner до `README.md` проєкту.
+- [ ] Оновити бічну панель GitHub Wiki з top-level "Codex" записом:
+  `04_01 §7b → 04_02 → 04_03 → 04_04 → 04_05`.
 
-### 3.3 Sidekiq Pro hardening (cross-cuts the whole project)
+### 3.3 Sidekiq Pro (cross-cuts весь проєкт)
 
-Codex specifically uses `Sidekiq::Batch` callbacks in places where, today,
-the `sidekiq_pro.rb` shim makes `on(:success)` a no-op. This is fine for
-Phase 1–6 (no Codex code path depends on a Batch callback) but the **next**
-Codex iteration that introduces multi-step Battle settlement *will* depend
-on it. See the cross-project tracker in `04_02` § DOC.10.
+Codex використовує `Sidekiq::Batch` callbacks там, де сьогодні
+`sidekiq_pro.rb` shim робить `on(:success)` no-op. Це ОК для Phase 1–6
+(жоден Codex-шлях не залежить від Batch callback), але **наступна** ітерація
+Codex з multi-step Battle settlement *буде* залежати. Див. `04_02` § DOC.10.
 
-### 3.4 Future vision (not scheduled)
+### 3.4 Майбутнє бачення (не заплановано)
 
-- **Federated Codex** — let other forester guilds attach their own Realms
-  via signed manifests (peaq DID-based attestation).
-- **Cultural state-root anchor** — fold the top-100 most-cited nodes into
-  the weekly Ethereum L1 anchor (`05_04`), giving Codex on-chain finality.
-  Deferred beyond TRL 8.
+- **Federated Codex** — інші гільдії лісників можуть підключати свої Realm'и
+  через підписані маніфести (peaq DID-based attestation).
+- **Культурний state-root anchor** — включити топ-100 найбільш цитованих nodes
+  у тижневий Ethereum L1 anchor (`05_04`), даючи Codex on-chain finality.
+  Відкладено за межі TRL 8.
 
 ---
 
-## 4. Quality Gates (must stay green)
+## 4. Quality Gates (мають залишатися зеленими)
 
-| Gate | Where | Owner |
+| Gate | Де | Власник |
 |---|---|---|
-| 449+ Codex specs (`spec/{models,services,policies,requests/api/v1,views/components,workers,blueprints}/codex/**`) | `bundle exec rspec` | Phase author |
-| `bundle exec rubocop` 0 offenses on `app/**/codex/**`, `spec/**/codex/**` | CI | Phase author |
-| Brakeman 0 warnings on `app/controllers/api/v1/codex/**` (citable_type allow-list lives in `Codex::CitationsController::CITABLE_CLASS_MAP`) | CI | Phase author |
-| `Codex::Citation.bulk_for(targets)` used in every collection view that renders the strip (no per-row N+1) | Code review | Phase author |
-| All shared Codex Phlex components use `gaia-*` / `status-*` tokens only — no raw `bg-white` / `text-gray-*` / `bg-emerald-*` | Code review | Phase author |
+| 300+ Codex specs (`spec/{models,services,policies,requests/api/v1,views/components,workers,blueprints}/codex/**`) | `bundle exec rspec` | Автор фази |
+| `bundle exec rubocop` 0 offenses на `app/**/codex/**`, `spec/**/codex/**` | CI | Автор фази |
+| Brakeman 0 warnings на `app/controllers/api/v1/codex/**` (`citable_type` allow-list у `Codex::CitationsController::CITABLE_CLASS_MAP`) | CI | Автор фази |
+| `Codex::Citation.bulk_for(targets)` використано в кожному collection view, що рендерить strip (без per-row N+1) | Code review | Автор фази |
+| Усі shared Codex Phlex-компоненти використовують тільки `gaia-*` / `status-*` токени — без `bg-white` / `text-gray-*` / `bg-emerald-*` | Code review | Автор фази |
 
 ---
 
-## 5. Tracker (compact)
+## 5. Трекер (компактний)
 
-| Phase | Status | Spec count | Notes |
+| Фаза | Статус | Кількість спеків | Нотатки |
 |---|---|---|---|
 | 1 — Foundation 🌱 (Realms, Nodes, atlas read-only) | ✅ done | ~95 | seeds: 4 realms + 79 nodes |
-| 2 — Community 💬 (Comments, Attunements) | ✅ done | ~85 | soft-hide moderation |
-| 3 — Identity 🛡 (Fractions, Picker, ProfileBadge) | ✅ done | ~70 | 7-day cooldown |
+| 2 — Community 💬 (Comments, Attunements) | ✅ done | ~85 | soft-hide модерація |
+| 3 — Identity 🛡 (Fractions, Picker, ProfileBadge) | ✅ done | ~70 | 7-денний cooldown |
 | 4 — Battle ⚔ (Pair selector, Vote recorder, Elo) | ✅ done | ~80 | `codex_matches` RANGE-partitioned |
-| 5 — Discovery 🔓 (Engine + 5 adapters + Presence) | ✅ done | ~75 | DAO-tunable rules |
-| 6 — Cross-domain stitch 🪡 (Citations, Admin CRUD, +3 adapters) | ✅ done in code | ~45 | open: Stimulus JS + onboarding wizard (§ 3.1) |
-| 7 — PR cleanup pass | ✅ done | — | migration squash, N+1 fix in Alerts::Index, citation `polymorphic_type_for` |
+| 5 — Discovery 🔓 (Engine + 5 адаптерів + Presence) | ✅ done | ~75 | DAO-tunable правила |
+| 6 — Cross-domain stitch 🪡 (Citations, Admin CRUD, +3 адаптери) | ✅ done | ~45 | Stimulus: 2 залишено, 3 видалено (§ 3.1) |
+| 7 — PR cleanup pass | ✅ done | — | migration squash, N+1 fix, citation `polymorphic_type_for` |
+| 8 — Stimulus-аудит + баг-фікси | ✅ done | — | EloMath `\|\|`, Redis GETDEL, PII, TOCTOU fraction, nil-safe audit |
 
-> History of session-by-session ADR notes for Phases 1–6 is preserved in the
-> git log of `docs/04_05_Codex_Lore_Module.md` (`git log -p --follow`) and in
-> the merged PRs. Re-emitting it here would duplicate `04_01..04_04`.
+> Історія посесійних ADR-нотаток для Phases 1–6 зберігається в git log
+> `docs/04_05_Codex_Lore_Module.md` (`git log -p --follow`) та в merged PR.
+> Дублювати тут — означає дублювати `04_01..04_04`.

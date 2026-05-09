@@ -21,7 +21,7 @@ module Codex
             "border border-gaia-border bg-gaia-surface p-5 space-y-5",
             "text-gaia-text"
           ),
-          data: { controller: "codex--fraction-picker" }
+          
         ) do
           render_header
           render_realm_tabs
@@ -110,8 +110,7 @@ module Codex
 
         form(
           action: api_v1_codex_fractions_path,
-          method: "post",
-          data: { "codex--fraction-picker-target": "form" }
+          method: "post"
         ) do
           input(type: "hidden", name: "fraction[node_slug]", value: node.slug)
           button(
@@ -122,7 +121,8 @@ module Codex
               "text-tiny uppercase tracking-[0.3em]",
               "focus-visible:ring-2 focus-visible:ring-gaia-primary",
               cooldown_locked ? locked_classes : open_classes
-            )
+            ),
+            data: cooldown_locked ? {} : { turbo_confirm: "Pick \"#{node.slug}\"? Re-pick is locked for 7 days." }
           ) { cooldown_locked ? "Locked" : "Pick" }
         end
       end

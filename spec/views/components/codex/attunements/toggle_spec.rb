@@ -38,11 +38,9 @@ RSpec.describe Codex::Attunements::Toggle do
       expect(html).to include('value="delete"')
     end
 
-    it "wires the Stimulus controller and exposes attuned/node-id values" do
+    it "does not wire any Stimulus controller (Turbo Stream handles live updates)" do
       html = render_toggle(node: node, attuned: true, count: 1)
-      expect(html).to include('data-controller="codex--attune"')
-      expect(html).to include('data-codex--attune-attuned-value="true"')
-      expect(html).to include('data-codex--attune-node-id-value="42"')
+      expect(html).not_to include('data-controller=')
     end
   end
 
