@@ -747,6 +747,16 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 
 > ⚠️ **DOC.8 — Cleanup constraint (TelemetryLog):** Будь-який cleanup-воркер на `telemetry_logs` **зобов'язаний** виключати `oracle_status = 'dispatched'`. Ці записи знаходяться в open Chainlink-callback flight; їх видалення зламає `OracleCallbacksController` (RecordNotFound + 5 retry без мінтингу). Канонічне виконання — `InsightGeneratorService.cleanup_old_logs!` (тригериться з `InsightBatchCallbacks` після успішного денного циклу). Не реалізуйте паралельні cleanup-job'и — викликайте сервіс. Cross-ref: [04_01 TelemetryLog model warning](04_01_Data_Models_and_Entities.md#telemetrylog--сирий-пакет-телеметрії).
 
+> ⚠️ **DOC.10 — Sidekiq Pro shims active (Phase 7 deferred upgrade):** Кодова база викликає `Sidekiq::Batch`, `Sidekiq::Limiter`, `expires_in:`, але ліцензований гем `sidekiq-pro` поки що **не в Gemfile**. `config/initializers/sidekiq_pro.rb` надає no-op shim-и щоб тести й dev-середовище не падали — у production це означає що `on(:success)` колбеки **не спрацьовують**, rate-limiter `web3_rpc 50/sec` **не діє**, а `expires_in: 5.minutes` на uplink-задачах **не TTL-ить** stale jobs. Перед billion-tree запуском треба:
+> 1. Додати `gem "sidekiq-pro", "~> 8.1"` (потребує license token у `BUNDLE_GEMS__CONTRIBSYS__COM`).
+> 2. Видалити shim і замість нього у `sidekiq_pro.rb` зробити `raise "sidekiq-pro required" unless defined?(Sidekiq::Pro)`.
+> 3. Розщепити Sidekiq на 4 процеси з queue-pinning (uplink окремо, web3_* окремо, critical/alerts/downlink окремо, default/low окремо) — single-process × 15 threads не витягне peak ~ N_trees / 3600 jobs/sec.
+> 4. Увімкнути `super_fetch` (zero job-loss на SIGKILL/OOM) для `uplink`, `web3_critical`, `critical`.
+> 5. Увімкнути `reliable_push` у клієнті (захист enqueue-у від Redis failover).
+> 6. Збільшити Redis pool: `pool_size = concurrency + 5` (зараз буфер = 0).
+
+> ✅ **DOC.11 — Cron / partition guardian:** `PartitionMaintenanceWorker` запускається `30 0 * * *` UTC (cron у `config/sidekiq.yml`), створює партиції на поточний + наступний місяць для **4 RANGE-таблиць**: `telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`, `codex_matches` (Phase 4 — Codex Battle Arena). Phase 7 додав `Sentry.capture_exception` у `rescue` блок щоб тиха помилка партиціювання не призвела до `no partition of relation` PostgreSQL крешу 1-го числа місяця. Якщо додаєте нову RANGE-таблицю — внесіть її в `PartitionMaintenanceWorker::PARTITIONED_TABLES` І оновіть `spec/workers/partition_maintenance_worker_spec.rb` (очікуване число OK-ліній = `tables × 2 months`).
+
 ---
 
 ### 📡 Uplink — Вхідна Телеметрія

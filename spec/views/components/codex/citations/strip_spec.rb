@@ -15,8 +15,9 @@ RSpec.describe Codex::Citations::Strip, type: :view_component do
 
   it "renders an empty-state when no citations attached" do
     html = render_strip(target: tree, citations: [])
-    expect(html).to include("No lore citations yet")
+    expect(html).to include("Untold.")
     expect(html).to include("codex_citations_tree_#{tree.id}")
+    expect(html).to include('aria-live="polite"')
   end
 
   it "renders one Pill per citation" do
