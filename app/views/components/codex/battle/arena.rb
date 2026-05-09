@@ -28,7 +28,7 @@ module Codex
             "border border-gaia-border bg-gaia-surface p-5 space-y-5",
             "text-gaia-text"
           ),
-          
+
         ) do
           render_header
           @error ? render_error : render_arena
@@ -72,7 +72,7 @@ module Codex
             "border border-gaia-border bg-gaia-surface-alt p-3 space-y-2",
             "flex flex-col justify-between"
           ),
-          
+
         ) do
           div(class: "space-y-1") do
             p(class: "text-tiny text-gaia-text") { node.title_en }
@@ -91,7 +91,7 @@ module Codex
         form(
           action: api_v1_codex_votes_battle_path,
           method: "post",
-          
+
         ) do
           input(type: "hidden", name: "pair_seed", value: @pair_seed)
           input(type: "hidden", name: "winner_slug", value: node.slug)
@@ -113,7 +113,7 @@ module Codex
           action: api_v1_codex_votes_battle_path,
           method: "post",
           class: "flex justify-end",
-          
+
         ) do
           input(type: "hidden", name: "pair_seed", value: @pair_seed)
           input(type: "hidden", name: "skip", value: "true")

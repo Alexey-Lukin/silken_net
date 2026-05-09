@@ -26,7 +26,7 @@ module Codex
             p(
               class: "text-tiny text-gaia-text-muted font-mono",
               id: dom_count_id,
-              
+
             ) { @count.to_s }
           end
 

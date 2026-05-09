@@ -21,7 +21,7 @@ module Codex
             "border border-gaia-border bg-gaia-surface p-5 space-y-5",
             "text-gaia-text"
           ),
-          
+
         ) do
           render_header
           render_realm_tabs
