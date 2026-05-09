@@ -49,11 +49,24 @@ module Codex
                 message: "already cited on this entity by this user"
               }
 
+    # Polymorphic class-name resolver. Works equally well for:
+    #   * ActiveRecord models (uses `base_class` so STI subclasses fold)
+    #   * Plain Ruby objects / OpenStruct test doubles (falls back to `class.name`)
+    #   * Anonymous classes from `Class.new` (skips them — `nil` returned so
+    #     callers short-circuit to "no citations").
+    # Returning `nil` instead of raising lets callers like `render_codex_citations`
+    # gracefully no-op when the target is a non-AR mock.
+    def self.polymorphic_type_for(target)
+      klass = target.class
+      return klass.base_class.name if klass.respond_to?(:base_class) && klass.base_class.name
+      klass.name
+    end
+
     # `for_target(target)` — all citations on a single Tree / Cluster / etc.
-    # Use `target.class.base_class.name` so STI subclasses fold to the parent
-    # (citation rows always store the canonical type name).
+    # See `polymorphic_type_for` for STI / mock semantics.
     scope :for_target, ->(target) {
-      where(citable_type: target.class.base_class.name, citable_id: target.id)
+      type = polymorphic_type_for(target)
+      type ? where(citable_type: type, citable_id: target.id) : none
     }
 
     # `for_targets(scope)` — bulk lookup for collection views (e.g. an
@@ -64,8 +77,9 @@ module Codex
       return {} if targets.blank?
 
       grouped = Hash.new { |h, k| h[k] = [] }
-      targets_by_type = targets.group_by { |t| t.class.base_class.name }
+      targets_by_type = targets.group_by { |t| polymorphic_type_for(t) }
       targets_by_type.each do |type, list|
+        next if type.nil?
         ids = list.map(&:id)
         where(citable_type: type, citable_id: ids)
           .includes(:node)
