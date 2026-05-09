@@ -120,6 +120,11 @@ RSpec.describe Codex::NodeImportService do
     end
 
     it "loads the canonical 79-record corpus from the default SEED_ROOT" do
+      # Intentional non-hermetic guardrail: this example loads the actual
+      # `db/seeds/codex/*.yml` files and asserts the curated corpus
+      # (4 realms + 79 nodes) is intact. Failure here means the lore
+      # corpus has been corrupted or accidentally trimmed — surface that
+      # immediately rather than silently shipping a half-empty Codex.
       result = described_class.call
       expect(result).to be_success
       expect(result.realms_upserted).to eq(4)
