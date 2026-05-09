@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 (Phase 1 Foundation done — read-only Atlas live, 79-record seed corpus, full spec coverage). Phases 2-6 в плані.
+- **Поточний TRL:** TRL 6 (Phase 1 Foundation + Phase 2 Community done — read-only Atlas live з 79-record seed corpus, social layer з coments + attunements + Solid Cable broadcasts, full spec coverage). Phases 3-6 в плані.
 - **Стек:** Rails 8.1 · PostgreSQL 16 (`pg_trgm`, `postgis`, `pgcrypto`) · Phlex · Tailwind v4 · Sidekiq (existing 9 queues) · Pundit · ActionCable (Solid Cable).
 - **Жодних нових gem-залежностей.**
 - **Пов'язані модулі:**
@@ -618,16 +618,80 @@ db/seeds/codex/
 - [x] **Migration squash** — всі попередні incremental міграції згорнуті в єдиний `20260509120000_init_consolidated.rb`. Data-only `seed_governance_system_parameters` міграція видалена; еквівалентний idempotent UPSERT тепер у `bin/rails governance:seed_parameters`.
 - [x] **Lookbook YARD noise fixed** — `config/initializers/lookbook_yard_tags.rb` реєструє `@notes` тег; flood `[warn]: Unknown tag @notes` зник з усіх `rails/rake/rspec` boots.
 
-### Phase 2: Community 💬 (planned)
-- [ ] Migration `CreateCodexComments`, `CreateCodexAttunements`
-- [ ] Models `Codex::Comment` (polymorphic), `Codex::Attunement`
-- [ ] Counter caches (`comments_count`, `attunement_count`)
-- [ ] Policies `CommentPolicy`, `AttunementPolicy`
-- [ ] Endpoints: comment create, attunement toggle, attunement delete
-- [ ] `Codex::AttunementBroadcastWorker` (queue `default`)
-- [ ] ActionCable channels `Codex::CommentChannel`, `Codex::AttunementChannel`
-- [ ] UI: comment thread у `Codex::Show`, attunement toggle button
-- [ ] Specs
+### Phase 2: Community 💬 (✅ done)
+
+**Migration & schema:**
+- [x] Міграція `20260509130000_create_codex_community_tables.rb` (нова форма — після squash всі нові міграції файли окремо)
+- [x] `codex_comments` (polymorphic, self-FK `parent_id`, soft-hide pair, BTREE `(commentable_type, commentable_id, created_at DESC)`)
+- [x] `codex_attunements` (UNIQUE `(user_id, codex_node_id)`, DB CHECK `intensity BETWEEN 1 AND 5`, `started_at` default `now()`)
+- [x] Counter columns (`comments_count`, `attunement_count`) уже були на `codex_nodes` із Phase 1 — без ALTER TABLE
+- [x] Оновлено `db/structure.sql` (5699 → 5908 рядків)
+
+**Models:**
+- [x] `Codex::Comment` (polymorphic `commentable`, `parent_must_be_top_level` + `parent_must_share_commentable` валідації, `BODY_MAX = 2 KiB`, `EDIT_GRACE = 24h`, `FLAG_REASONS`, scopes `visible/hidden/top_level/chronological`, `editable_by?(user)` helper)
+- [x] `Codex::Attunement` (`INTENSITY_RANGE = (1..5)`, `QUOTE_MAX = 280`, counter_cache, `for_node/for_user/ordered` scopes, before_validation `default_started_at`)
+
+**User association add-ons:**
+- [x] `User has_many :codex_comments, dependent: :restrict_with_error` (модерація-trail захищена)
+- [x] `User has_many :codex_attunements, dependent: :destroy`
+
+**Policies:**
+- [x] `Codex::CommentPolicy` (own ≤ 24h або admin+ → hide, не destroy; Scope ховає hidden від не-admin)
+- [x] `Codex::AttunementPolicy` (read all-auth; write own-only)
+
+**Routes:**
+- [x] Nested під `nodes`: `POST /attunements`, `DELETE /attunements/me`, `POST /comments`
+
+**Controllers:**
+- [x] `Api::V1::Codex::AttunementsController#create` (`find_or_initialize_by` + counter cache)
+- [x] `Api::V1::Codex::AttunementsController#destroy_me` (idempotent — no-op якщо рядка нема)
+- [x] `Api::V1::Codex::CommentsController#create` (`Idempotency-Key` обов'язковий для JSON, 24h cache TTL, inline ActionCable broadcast)
+
+**Worker:**
+- [x] `Codex::AttunementBroadcastWorker` (queue `default`, retry 3) — public + private channels
+
+**Blueprints:**
+- [x] `Codex::CommentBlueprint` (з `body_html` через `MarkdownRenderer`, `replies_count`, `hidden` flag)
+- [x] `Codex::AttunementBlueprint`
+
+**Phlex components:**
+- [x] `Codex::Attunements::Toggle` (POST/DELETE form, gaia-* tokens, `data-controller=codex--attune`)
+- [x] `Codex::Comments::Thread` (DOM id `codex_node_<id>_comments` — Solid Cable target)
+- [x] `Codex::Comments::Item` (sanitised markdown, ISO timestamp, hidden-state styling)
+- [x] `Codex::Comments::Form` (textarea `maxlength: BODY_MAX`)
+- [x] `Codex::Show` extended з Toggle + Thread (props: `current_user:`, `comments:`, `current_user_attuned:`)
+
+**ActionCable broadcasts (Solid Cable топіки):**
+- [x] `codex_node_<id>_comments` — нові коментарі (з blueprint payload)
+- [x] `codex_node_<id>_attunements` — public attunement counter
+- [x] `codex_node_<id>_attunements_user_<uid>` — private `attuned: bool` envelope
+
+**Anti-abuse (`Rack::Attack`):**
+- [x] `codex/attunements` — 120 / 1h / actor (per `docs/04_05` §12)
+- [x] `codex/comments` — 60 / 10min / actor
+
+**Specs (per docs/10_01 + docs/10_03):**
+- [x] `spec/factories/codex.rb` додано `:codex_comment`, `:codex_attunement`
+- [x] `spec/models/codex/comment_spec.rb` (15 examples) + `attunement_spec.rb` (10 examples)
+- [x] `spec/policies/codex/comment_policy_spec.rb` (8 examples) + `attunement_policy_spec.rb` (4 examples)
+- [x] `spec/requests/api/v1/codex/attunements_controller_spec.rb` (8 examples) + `comments_controller_spec.rb` (6 examples)
+- [x] `spec/workers/codex/attunement_broadcast_worker_spec.rb` (5 examples)
+- [x] `spec/views/components/codex/attunements/toggle_spec.rb` (8 examples) + `comments/{thread,item}_spec.rb` (6 + 5 examples)
+
+**Total Phase 1+2: 160 examples / 0 failures**
+
+**Docs synced:**
+- [x] `docs/04_01` — model count 29 → 31, додано підрозділи `Codex::Comment` + `Codex::Attunement`
+- [x] `docs/04_02` — додано `AttunementBroadcastWorker` + Phase 2 controllers note до 10b
+- [x] `docs/04_03` — endpoint count 85 → 88, додано рядки #89/#90/#91 з throttle-deтalями
+- [x] `docs/04_04` — додано Toggle/Thread/Item/Form у Codex Phlex-блок + ActionCable топіки
+- [x] `docs/10_03` — Phase 2 моделі / policies / requests / worker / views рядки
+
+**Quality gates:**
+- [x] `bundle exec rspec` (codex slice) — 160 examples / 0 failures
+- [x] `bundle exec rubocop` (codex + touched files) — clean (2 авто-correctable RSpec/ExpectChange застосовано)
+- [x] `bundle exec brakeman` — 0 нових warnings
+- [x] **Bug-fix from Phase 1 caught:** `Codex::Show` використовував `unsafe_raw` (не існує в Phlex 2.4); замінено на `raw safe(...)` у `show.rb` + `comments/item.rb`. Phase 1 рендер не падав тому що Show ніколи не виконувався тестами.
 
 ### Phase 3: Identity 🛡 (planned)
 - [ ] Migration `CreateCodexFractions`
@@ -709,6 +773,29 @@ db/seeds/codex/
   - `db/structure.sql`: видалено директиву `SET transaction_timeout = 0;` (PG17-only) — на користувачевих PG16 це fail. Використовується тільки `idle_in_transaction_session_timeout`.
 - **Deferred:**
   - `User has_many :codex_citations` — додасться разом із `POST /codex/citations` ендпоінтом у Phase 6.
-  - Фази 2-6 ідуть окремими PR.
+  - Фази 3-6 ідуть окремими PR.
+
+### 2026-05-09 (Session 3) — Phase 2 implementation, Community layer
+
+- **Done (full Phase 2):**
+  - Schema: одна нова міграція `20260509130000_create_codex_community_tables.rb` (post-squash convention) → 2 таблиці (`codex_comments` polymorphic + self-FK + soft-hide; `codex_attunements` UNIQUE per user+node з DB CHECK `intensity BETWEEN 1 AND 5`). Counter columns уже були. `db/structure.sql` оновлено (5699 → 5908 рядків).
+  - Models: `Codex::Comment` з кастомними валідаціями `parent_must_be_top_level` + `parent_must_share_commentable` (одно-рівневий тред + integrity counter cache); `Codex::Attunement` з `INTENSITY_RANGE`/`QUOTE_MAX` константами та counter_cache.
+  - User додано `has_many :codex_comments, dependent: :restrict_with_error` (модерація-trail) + `:codex_attunements, dependent: :destroy`.
+  - Pundit: `CommentPolicy` (own ≤ 24h або admin+ → `hide?` ≠ `destroy?`; Scope ховає hidden від не-admin), `AttunementPolicy` (write own-only).
+  - Routes: nested під `nodes` (`POST /attunements`, `DELETE /attunements/me`, `POST /comments`).
+  - Controllers: `AttunementsController#create` (`find_or_initialize_by` → idempotent re-POST оновлює) + `#destroy_me` (no-op safe); `CommentsController#create` (Idempotency-Key обов'язковий для JSON, 24h Rails.cache TTL, inline `ActionCable.server.broadcast`).
+  - Worker: `Codex::AttunementBroadcastWorker` (queue `default` per ADR-CDX-4, retry 3) → public counter + private `attuned: bool` envelope.
+  - Phlex: `Attunements::Toggle` + `Comments::{Thread,Item,Form}`, інтегровано в `Codex::Show` (нові props `current_user:`, `comments:`, `current_user_attuned:`). DOM ids `codex_node_<id>_comments` / `codex_comment_<id>` / `codex_node_<id>_attunement_count` — таргети для Solid Cable broadcasts.
+  - Anti-abuse: `Rack::Attack` правила `codex/attunements` (120/h/actor) + `codex/comments` (60/10min/actor).
+  - Specs: +75 нових examples (model 25 / policy 12 / request 14 / worker 5 / view 19) → загалом **160 examples / 0 failures**.
+- **Bug-fix from Phase 1 caught during Phase 2 view-spec rendering:**
+  - `Codex::Show` використовував `unsafe_raw` (метод не існує в Phlex 2.4 — лише `raw`); замінено на `raw safe(Codex::MarkdownRenderer.render(...))` у `show.rb` + `comments/item.rb`. Phase 1 рендер ніколи не виконувався у тестах (Show не було в spec coverage), тому баг проліз. Phase 2 додає Item spec який рендерить markdown — i зловив це одразу.
+- **Spec-craft notes (для майбутніх phase авторів):**
+  - Phlex view component тести під `Class.new(Component)` мусять also wrap nested рендерені компоненти через override `render` (приклад: `Comments::Thread` рендерить `Comments::Form`, тому test wraps both).
+  - Для Rails 8 request specs з JSON body: `params: hash, as: :json` (НЕ `params: hash.to_json`); `as: :json` додатково виставляє `format.json?` так, щоб `respond_to format.json` гілка спрацьовувала замість `format.html { redirect_to ... }` → 302.
+- **Deferred to subsequent phases:**
+  - Stimulus controllers `codex--attune` / `codex--comment` (data-attributes виставлені, JS файли — у Phase 3+ batch razom з Fraction Picker)
+  - Comment edit / hide UI endpoints (тільки create зараз; admin-hide через Phase 6 admin CRUD).
+  - Solid Cable Turbo Stream `<turbo-cable-stream-source>` тег у Show — broadcasts вже працюють, рендер subscriber-тегу разом із Phase 4 `Battle::Arena` Stimulus refactor.
 
 ---

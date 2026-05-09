@@ -47,4 +47,17 @@ FactoryBot.define do
     sequence(:citable_id)
     note { "Cited from a maintenance run." }
   end
+
+  factory :codex_comment, class: "Codex::Comment" do
+    association :user
+    commentable factory: :codex_node
+    body_md { "Hello from a **comment**." }
+  end
+
+  factory :codex_attunement, class: "Codex::Attunement" do
+    association :user
+    association :node, factory: :codex_node
+    intensity { 3 }
+    quote { nil }
+  end
 end

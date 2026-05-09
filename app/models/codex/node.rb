@@ -57,6 +57,22 @@ module Codex
              inverse_of: :node,
              dependent: :destroy
 
+    has_many :attunements,
+             class_name: "Codex::Attunement",
+             foreign_key: :codex_node_id,
+             inverse_of: :node,
+             dependent: :destroy
+
+    # Polymorphic comments: filter by commentable_type so a stray Comment
+    # written against a different Codex resource never leaks into a
+    # Node's thread.
+    has_many :comments,
+             -> { where(commentable_type: "Codex::Node") },
+             class_name: "Codex::Comment",
+             foreign_key: :commentable_id,
+             inverse_of: :commentable,
+             dependent: :destroy
+
     has_one_attached  :cover_image
     has_many_attached :gallery
 

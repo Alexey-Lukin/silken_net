@@ -3,16 +3,31 @@
 # Codex::Show — single node deep-dive.
 module Codex
   class Show < ApplicationComponent
-    def initialize(node:)
+    def initialize(node:, current_user: nil, comments: [], current_user_attuned: false)
       @node = node
+      @current_user = current_user
+      @comments = comments
+      @current_user_attuned = current_user_attuned
     end
 
     def view_template
       div(class: "space-y-8") do
         render_hero
         div(class: "grid grid-cols-1 xl:grid-cols-3 gap-8") do
-          div(class: "xl:col-span-2 space-y-6") { render_lore_columns }
-          aside(class: "space-y-4") { render_meta_panel }
+          div(class: "xl:col-span-2 space-y-6") do
+            render_lore_columns
+            render Codex::Comments::Thread.new(
+              node: @node, comments: @comments, current_user: @current_user
+            )
+          end
+          aside(class: "space-y-4") do
+            render Codex::Attunements::Toggle.new(
+              node: @node,
+              current_user_attuned: @current_user_attuned,
+              count: @node.attunement_count
+            )
+            render_meta_panel
+          end
         end
       end
     end
@@ -40,7 +55,7 @@ module Codex
         section(class: "space-y-2") do
           h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { "Context" }
           div(class: "prose prose-sm dark:prose-invert max-w-none text-gaia-text") do
-            unsafe_raw Codex::MarkdownRenderer.render(@node.context_md)
+            raw safe(Codex::MarkdownRenderer.render(@node.context_md))
           end
         end
       end
@@ -50,7 +65,7 @@ module Codex
           h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-primary") { "Cyber Meaning" }
           div(class: "bg-gaia-surface-alt p-4 border-l-2 border-gaia-primary") do
             div(class: "prose prose-sm dark:prose-invert max-w-none text-gaia-text") do
-              unsafe_raw Codex::MarkdownRenderer.render(@node.cyber_meaning_md)
+              raw safe(Codex::MarkdownRenderer.render(@node.cyber_meaning_md))
             end
           end
         end
@@ -60,7 +75,7 @@ module Codex
         section(class: "space-y-2") do
           h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { "Lore" }
           div(class: "prose prose-sm dark:prose-invert max-w-none text-gaia-text") do
-            unsafe_raw Codex::MarkdownRenderer.render(@node.lore_md)
+            raw safe(Codex::MarkdownRenderer.render(@node.lore_md))
           end
         end
       end

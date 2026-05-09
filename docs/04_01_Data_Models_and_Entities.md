@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 29 моделей (26 ядра + 3 шар Codex / Lore), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
+Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 31 моделі (26 ядра + 5 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
 
 ---
 
@@ -1204,7 +1204,7 @@ active/draft ──cancel──► cancelled
 
 ## 📖 7b. Codex — Lore Layer (Кодекс Архетипів)
 
-Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки). Повна специфікація: **`docs/04_05_Codex_Lore_Module.md`**. Phase 1 додає 3 моделі. Phase 2-5 розширять цей шар (`Codex::Comment`, `Attunement`, `Match`, `Discovery`, `Fraction`).
+Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки) + соціальний шар (коментарі, attunements). Повна специфікація: **`docs/04_05_Codex_Lore_Module.md`**. Phase 1 додає 3 моделі (Realm/Node/Citation), Phase 2 — 2 моделі (Comment/Attunement) + ActionCable broadcast. Phase 3-5 розширять цей шар (`Match`, `Discovery`, `Fraction`).
 
 ### `Codex::Realm` — Шар (4 семантичні групи)
 
@@ -1233,6 +1233,32 @@ Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (е
 **Атрибути:** `codex_node_id` (FK), `citable_type` + `citable_id` (поліморфне), `created_by_user_id`, `note`, `created_at`. Унікальний індекс `(codex_node_id, citable_type, citable_id)` запобігає дублюванню. Counter cache → `Codex::Node.citation_count`.
 
 **Призначення:** будь-яка доменна сутність (`Tree`, `Cluster`, `EwsAlert`, `OracleVision`, `BlockchainTransaction`) може отримати "пілюлю-посилання" на Codex-запис. Phase 6 додасть `CitationPill` UI-примітив.
+
+### `Codex::Comment` — Коментар (Phase 2)
+
+**Атрибути:** `commentable_type` + `commentable_id` (поліморфне; Phase 2 пише лише `"Codex::Node"`), `user_id` (FK), `parent_id` (self-FK, **один рівень вкладеності** — модельна валідація, не DB-CHECK), `body_md` (≤ 2 KiB), модераційні поля `flagged_at`/`flag_reason` (з `FLAG_REASONS = %w[spam abuse offtopic other]`), soft-hide пара `hidden_at`/`hidden_by_admin_id`. Counter cache → `Codex::Node.comments_count`.
+
+**Scopes:** `visible` (`hidden_at IS NULL`), `hidden`, `top_level` (`parent_id IS NULL`), `chronological`. **Helper:** `editable_by?(user)` — true якщо користувач = автор ∧ створено ≤ 24 годин тому (`EDIT_GRACE`).
+
+**Валідації:** `parent_must_be_top_level` (rejects reply-to-reply), `parent_must_share_commentable` (rejects cross-node parent).
+
+**ActionCable:** `Codex::CommentsController#create` після `comment.save` робить `ActionCable.server.broadcast("codex_node_<id>_comments", { node_id, comment_id, data: serialized })` через `Codex::CommentBlueprint`.
+
+**Модерація:** автор може edit/destroy ≤ 24h, admin+ може **hide** (`hidden_at` set), але **не destroy** — журнал модерації лишається tamper-evident.
+
+### `Codex::Attunement` — Семантична Прив'язка (Phase 2)
+
+**Атрибути:** `user_id` (FK), `codex_node_id` (FK), `intensity` (1..5, DB CHECK + model validation), `quote` (≤ 280 chars, optional особистий девіз), `started_at` (default = `now()`).
+
+**Унікальність:** UNIQUE `(user_id, codex_node_id)` — на DB-рівні + на моделі. Re-POST оновлює існуючий рядок (idempotent toggle), ніколи не дублює.
+
+**Counter cache:** `Codex::Node.attunement_count`.
+
+**Constants:** `INTENSITY_RANGE = (1..5)`, `QUOTE_MAX = 280`.
+
+**Scopes:** `for_node(node)`, `for_user(user)`, `ordered` (за `created_at DESC`).
+
+**Workflow:** `Codex::AttunementsController` (create/destroy_me) → `Codex::AttunementBroadcastWorker.perform_async(node_id, user_id)` (queue: `default`) → broadcasts `attunement_count` на public-канал `codex_node_<id>_attunements` + `attuned: bool` на private-канал `codex_node_<id>_attunements_user_<uid>`.
 
 ---
 

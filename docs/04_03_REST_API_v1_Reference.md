@@ -7,7 +7,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Впроваджено Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
-- **Кількість ендпоінтів:** 85 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`, `GET /api/v1/system_audits`)
+- **Кількість ендпоінтів:** 88 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`, `GET /api/v1/system_audits`; плюс Codex-група: 3 read-ендпоінти + 3 community write-ендпоінти Phase 2)
 - **Базовий URL:** `https://<host>/api/v1`
 - **Формат відповідей:** JSON (якщо не вказано інше)
 - **Пов'язані модулі:**
@@ -277,6 +277,9 @@ POST /api/v1/auth/m2m_token
 | 86 | GET | `/api/v1/codex/realms` | `codex/realms#index` | 🔑 Auth | Список 4 шарів Codex (ecosystem / unique_tree / protocol / mythos), упорядкованих за `position` |
 | 87 | GET | `/api/v1/codex/nodes` | `codex/nodes#index` | 🔑 Auth | Каталог lore-вузлів. Фільтри: `?realm=`, `?lifecycle_status=`, `?archetype=`, `?q=` (trigram-fuzzy ILIKE по обох locale). Пагінація Pagy `?page=&limit=21`. Сортування: `attunement_elo DESC, id ASC`. |
 | 88 | GET | `/api/v1/codex/nodes/:slug` | `codex/nodes#show` | 🔑 Auth | Деталі lore-вузла за `slug` (не за `id`). Атомарно інкрементить `view_count` через `update_all`. Чернетки (`published_at IS NULL`) приховані для не-super_admin. |
+| 89 | POST | `/api/v1/codex/nodes/:slug/attunements` | `codex/attunements#create` | 🔑 Auth | **Phase 2:** toggle ON. `attunement[intensity]` (1..5, default 3), `attunement[quote]` (≤ 280). Idempotent (UNIQUE per user+node) — re-POST оновлює, не дублює. Тригерить `Codex::AttunementBroadcastWorker`. Rack::Attack: 120 / 1h / actor. |
+| 90 | DELETE | `/api/v1/codex/nodes/:slug/attunements/me` | `codex/attunements#destroy_me` | 🔑 Auth | **Phase 2:** toggle OFF. Безпечний no-op якщо attunement відсутній. Завжди тригерить broadcast. |
+| 91 | POST | `/api/v1/codex/nodes/:slug/comments` | `codex/comments#create` | 🔑 Auth | **Phase 2:** новий коментар (≤ 2 KiB markdown). `Idempotency-Key` обов'язковий для `Content-Type: application/json` (24h TTL). Підтримує `comment[parent_id]` для одного рівня вкладеності. Inline broadcast у `codex_node_<id>_comments` Solid Cable канал. Rack::Attack: 60 / 10min / actor. |
 
 **Легенда:**
 

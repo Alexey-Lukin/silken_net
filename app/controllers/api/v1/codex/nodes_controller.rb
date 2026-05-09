@@ -51,9 +51,23 @@ module Api
               render json: ::Codex::NodeBlueprint.render_as_hash(@node, view: :show)
             end
             format.html do
+              comments = policy_scope(::Codex::Comment)
+                           .where(commentable_type: "Codex::Node", commentable_id: @node.id)
+                           .top_level
+                           .chronological
+                           .includes(:user)
+                           .last(50)
+              attuned = ::Codex::Attunement
+                          .exists?(user_id: current_user&.id, codex_node_id: @node.id)
+
               render_dashboard(
                 title: "Codex · #{@node.title}",
-                component: ::Codex::Show.new(node: @node)
+                component: ::Codex::Show.new(
+                  node: @node,
+                  current_user: current_user,
+                  comments: comments,
+                  current_user_attuned: attuned
+                )
               )
             end
           end

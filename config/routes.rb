@@ -198,7 +198,13 @@ Rails.application.routes.draw do
         # Nodes are addressed by slug (not numeric id) — `to_param` overrides
         # `id`, and the route constraint locks the parameter shape.
         resources :nodes, only: [ :index, :show ], param: :slug,
-                  constraints: { slug: %r{[a-z0-9][a-z0-9-]*} }
+                  constraints: { slug: %r{[a-z0-9][a-z0-9-]*} } do
+          # Phase 2 — Community layer.
+          resources :attunements, only: [ :create ]
+          delete "attunements/me", to: "attunements#destroy_me",
+                 as: :my_attunement
+          resources :comments, only: [ :create ]
+        end
       end
     end
   end

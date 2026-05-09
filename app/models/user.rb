@@ -16,6 +16,18 @@ class User < ApplicationRecord
   has_many :maintenance_records, dependent: :restrict_with_error
   has_many :audit_logs, dependent: :restrict_with_error
 
+  # --- CODEX (Lore Layer) ---
+  # Phase 2: User-authored social activity in the Codex.
+  # `restrict_with_error` keeps the moderation history intact: deleting a
+  # user with active comments/attunements requires explicit cleanup, never
+  # an accidental cascade.
+  has_many :codex_comments,
+           class_name: "Codex::Comment",
+           dependent: :restrict_with_error
+  has_many :codex_attunements,
+           class_name: "Codex::Attunement",
+           dependent: :destroy
+
   # --- НОРМАЛІЗАЦІЯ ТА ВАЛІДАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }

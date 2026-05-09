@@ -548,7 +548,24 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Що робить** | Мінімальний markdown→HTML рендер з білим списком тегів (`p`, `h2..h4`, `ul/ol/li`, `strong`, `em`, `blockquote`, `code`, `pre`, `a`, `br`) і атрибутів (`href`, `rel`, `target`). `<script>` та інші теги стрипаються `Rails::HTML5::SafeListSanitizer`. URL-схеми `javascript:` / `data:` переписуються на `#` ще до санітайзера. Завжди повертає `html_safe`. |
 | **Зовнішні виклики** | — (in-memory) |
 | **Вихід** | `ActiveSupport::SafeBuffer` (html_safe) |
-| **Інвокери** | `Codex::Show` Phlex компонент (для `context_md`/`cyber_meaning_md`/`lore_md`); Phase 2 `Codex::Comment#body_html`. |
+| **Інвокери** | `Codex::Show` Phlex компонент (для `context_md`/`cyber_meaning_md`/`lore_md`), `Codex::Comments::Item` (для `body_md`), `Codex::CommentBlueprint#body_html`. |
+
+### `Codex::AttunementBroadcastWorker` (Phase 2)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/codex/attunement_broadcast_worker.rb` |
+| **Черга** | `default` (#5) — ADR-CDX-4 (UI broadcasts ніколи не на hot path) |
+| **Retry** | 3 |
+| **Вхід** | `node_id` (Integer), `user_id` (Integer) |
+| **Що робить** | Re-load Node (post-commit `attunement_count`) → `ActionCable.server.broadcast` на public `codex_node_<id>_attunements` (з лічильником) + private `codex_node_<id>_attunements_user_<uid>` (з `attuned: bool`). |
+| **Інвокери** | `Codex::AttunementsController#create / #destroy_me` |
+| **Тригер** | toggle attunement → live counter via Solid Cable |
+
+### Phase 2 controllers (без окремого Service-шару — логіка тонка)
+
+- `Api::V1::Codex::AttunementsController` — `find_or_initialize_by` + counter cache + worker enqueue. Idempotent toggle: re-POST оновлює `intensity`/`quote`, ніколи не дублює.
+- `Api::V1::Codex::CommentsController` — `Idempotency-Key` обов'язковий для JSON writes (24h TTL у `Rails.cache`); inline `ActionCable.server.broadcast` на `codex_node_<id>_comments` з `Codex::CommentBlueprint`-серіалізацією.
 
 ---
 

@@ -10,6 +10,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
 -- Name: pg_trgm; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -708,6 +722,42 @@ ALTER SEQUENCE public.clusters_id_seq OWNED BY public.clusters.id;
 
 
 --
+-- Name: codex_attunements; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_attunements (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    codex_node_id bigint NOT NULL,
+    intensity integer DEFAULT 3 NOT NULL,
+    quote character varying,
+    started_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT codex_attunements_intensity_range CHECK (((intensity >= 1) AND (intensity <= 5)))
+);
+
+
+--
+-- Name: codex_attunements_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.codex_attunements_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: codex_attunements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.codex_attunements_id_seq OWNED BY public.codex_attunements.id;
+
+
+--
 -- Name: codex_citations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -739,6 +789,45 @@ CREATE SEQUENCE public.codex_citations_id_seq
 --
 
 ALTER SEQUENCE public.codex_citations_id_seq OWNED BY public.codex_citations.id;
+
+
+--
+-- Name: codex_comments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_comments (
+    id bigint NOT NULL,
+    commentable_type character varying NOT NULL,
+    commentable_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    parent_id bigint,
+    body_md text NOT NULL,
+    flagged_at timestamp(6) without time zone,
+    flag_reason character varying,
+    hidden_by_admin_id bigint,
+    hidden_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_comments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.codex_comments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: codex_comments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.codex_comments_id_seq OWNED BY public.codex_comments.id;
 
 
 --
@@ -2179,10 +2268,24 @@ ALTER TABLE ONLY public.clusters ALTER COLUMN id SET DEFAULT nextval('public.clu
 
 
 --
+-- Name: codex_attunements id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_attunements ALTER COLUMN id SET DEFAULT nextval('public.codex_attunements_id_seq'::regclass);
+
+
+--
 -- Name: codex_citations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.codex_citations ALTER COLUMN id SET DEFAULT nextval('public.codex_citations_id_seq'::regclass);
+
+
+--
+-- Name: codex_comments id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_comments ALTER COLUMN id SET DEFAULT nextval('public.codex_comments_id_seq'::regclass);
 
 
 --
@@ -2421,11 +2524,27 @@ ALTER TABLE ONLY public.clusters
 
 
 --
+-- Name: codex_attunements codex_attunements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_attunements
+    ADD CONSTRAINT codex_attunements_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: codex_citations codex_citations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.codex_citations
     ADD CONSTRAINT codex_citations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: codex_comments codex_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_comments
+    ADD CONSTRAINT codex_comments_pkey PRIMARY KEY (id);
 
 
 --
@@ -3571,6 +3690,27 @@ CREATE INDEX index_clusters_on_organization_id ON public.clusters USING btree (o
 
 
 --
+-- Name: index_codex_attunements_on_codex_node_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_attunements_on_codex_node_id ON public.codex_attunements USING btree (codex_node_id);
+
+
+--
+-- Name: index_codex_attunements_on_user_and_node_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_codex_attunements_on_user_and_node_unique ON public.codex_attunements USING btree (user_id, codex_node_id);
+
+
+--
+-- Name: index_codex_attunements_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_attunements_on_user_id ON public.codex_attunements USING btree (user_id);
+
+
+--
 -- Name: index_codex_citations_on_citable_type_and_citable_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3589,6 +3729,34 @@ CREATE INDEX index_codex_citations_on_codex_node_id ON public.codex_citations US
 --
 
 CREATE INDEX index_codex_citations_on_created_by_user_id ON public.codex_citations USING btree (created_by_user_id);
+
+
+--
+-- Name: index_codex_comments_on_commentable_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_comments_on_commentable_and_created_at ON public.codex_comments USING btree (commentable_type, commentable_id, created_at DESC);
+
+
+--
+-- Name: index_codex_comments_on_hidden_by_admin_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_comments_on_hidden_by_admin_id ON public.codex_comments USING btree (hidden_by_admin_id);
+
+
+--
+-- Name: index_codex_comments_on_parent_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_comments_on_parent_id ON public.codex_comments USING btree (parent_id);
+
+
+--
+-- Name: index_codex_comments_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_comments_on_user_id ON public.codex_comments USING btree (user_id);
 
 
 --
@@ -5489,6 +5657,14 @@ ALTER TABLE ONLY public.trees
 
 
 --
+-- Name: codex_attunements fk_rails_357c7a5e9f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_attunements
+    ADD CONSTRAINT fk_rails_357c7a5e9f FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: clusters fk_rails_43af04cf6d; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5521,6 +5697,14 @@ ALTER TABLE ONLY public.codex_citations
 
 
 --
+-- Name: codex_attunements fk_rails_635fb6d94d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_attunements
+    ADD CONSTRAINT fk_rails_635fb6d94d FOREIGN KEY (codex_node_id) REFERENCES public.codex_nodes(id);
+
+
+--
 -- Name: gateways fk_rails_637a591322; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5534,6 +5718,14 @@ ALTER TABLE ONLY public.gateways
 
 ALTER TABLE ONLY public.actuator_commands
     ADD CONSTRAINT fk_rails_6458121e3f FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: codex_comments fk_rails_7581ceae51; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_comments
+    ADD CONSTRAINT fk_rails_7581ceae51 FOREIGN KEY (parent_id) REFERENCES public.codex_comments(id);
 
 
 --
@@ -5577,6 +5769,14 @@ ALTER TABLE ONLY public.naas_contracts
 
 
 --
+-- Name: codex_comments fk_rails_aea90685ae; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_comments
+    ADD CONSTRAINT fk_rails_aea90685ae FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: active_storage_attachments fk_rails_c3b3935057; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5614,6 +5814,14 @@ ALTER TABLE ONLY public.naas_contracts
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT fk_rails_d7b9ff90af FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: codex_comments fk_rails_d80b9c5904; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_comments
+    ADD CONSTRAINT fk_rails_d80b9c5904 FOREIGN KEY (hidden_by_admin_id) REFERENCES public.users(id);
 
 
 --
@@ -5695,5 +5903,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260509130000'),
 ('20260509120000');
 

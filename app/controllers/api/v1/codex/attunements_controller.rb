@@ -1,0 +1,75 @@
+# frozen_string_literal: true
+
+module Api
+  module V1
+    module Codex
+      # POST   /api/v1/codex/nodes/:slug/attunements        — toggle ON
+      # DELETE /api/v1/codex/nodes/:slug/attunements/me     — toggle OFF
+      #
+      # Idempotent by design: re-POSTing for an existing pair updates only
+      # the supplied attributes (intensity/quote) and never duplicates the
+      # row, thanks to the UNIQUE (user_id, codex_node_id) DB constraint.
+      class AttunementsController < BaseController
+        before_action :set_node
+
+        def create
+          attrs = attunement_params
+          authorize ::Codex::Attunement.new(
+            user_id: current_user.id, codex_node_id: @node.id
+          )
+
+          attunement = ::Codex::Attunement
+                         .find_or_initialize_by(user_id: current_user.id, codex_node_id: @node.id)
+          attunement.intensity = attrs[:intensity] if attrs[:intensity].present?
+          attunement.quote     = attrs[:quote]     if attrs.key?(:quote)
+          attunement.intensity ||= 3
+
+          if attunement.save
+            ::Codex::AttunementBroadcastWorker.perform_async(@node.id, current_user.id)
+            respond_to do |format|
+              format.json do
+                render json: { data: ::Codex::AttunementBlueprint.render_as_hash(attunement) },
+                       status: :created
+              end
+              format.html { redirect_to api_v1_codex_node_path(@node.slug), notice: "Attunement saved." }
+            end
+          else
+            render_validation(attunement)
+          end
+        end
+
+        def destroy_me
+          attunement = ::Codex::Attunement.find_by(user_id: current_user.id, codex_node_id: @node.id)
+          if attunement
+            authorize attunement, :destroy?
+            attunement.destroy
+            ::Codex::AttunementBroadcastWorker.perform_async(@node.id, current_user.id)
+          end
+
+          respond_to do |format|
+            format.json { head :no_content }
+            format.html { redirect_to api_v1_codex_node_path(@node.slug), notice: "Attunement removed." }
+          end
+        end
+
+        private
+
+        def set_node
+          @node = ::Codex::Node.find_by!(slug: params[:node_slug])
+        end
+
+        def attunement_params
+          # `permit` returns a strong-params hash; cast to a regular hash
+          # so `key?(:quote)` works correctly when the client wants to
+          # explicitly clear the quote with `quote: nil`.
+          params.fetch(:attunement, {}).permit(:intensity, :quote).to_h.symbolize_keys
+        end
+
+        def render_validation(record)
+          render json: { errors: record.errors.full_messages },
+                 status: :unprocessable_entity
+        end
+      end
+    end
+  end
+end

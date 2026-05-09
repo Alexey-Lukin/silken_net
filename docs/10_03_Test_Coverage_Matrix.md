@@ -36,6 +36,8 @@
 | **Codex::Realm** [Codex Phase 1] | ✅ part of 38 examples | 🟢 **Нове** | **`ordered` scope, bilingual `name(locale)`, slug uniqueness, accent_token validation, has_many :nodes** |
 | **Codex::Node** [Codex Phase 1] | ✅ part of 38 examples | 🟢 **Нове** | **slug normalization (downcase, `_` → `-`), CODEX_UID format guard (CDX-{ECO\|TRE\|PRT\|MYT}-NNNN), bilingual title helpers, lifecycle/seed_origin enums (prefix), `for_realm`/`search_title` (pg_trgm ILIKE)/`by_archetype`/`by_lifecycle`/`ordered_by_elo` scopes, `sync_geo_point` PostGIS hook (lat/lng → SRID=4326 POINT), `external_refs` array-of-hashes validator, archetype_key inclusion in `Codex::ARCHETYPES` (79 keys), Active Storage `cover_image`+`gallery`** |
 | **Codex::Citation** [Codex Phase 1] | ✅ part of 38 examples | 🟢 **Нове** | **polymorphic citable, anti-dup unique index (codex_node_id, citable_type, citable_id), counter cache → Codex::Node.citation_count** |
+| **Codex::Comment** [Codex Phase 2] | ✅ 15 examples | 🟢 **Нове** | **polymorphic commentable, BODY_MAX (2 KiB) cap, FLAG_REASONS allow-list, parent_must_be_top_level (rejects reply-to-reply), parent_must_share_commentable (rejects cross-node parent), counter cache → comments_count, scopes (visible/hidden/top_level/chronological), `editable_by?(user)` 24h grace, soft-hide via hidden_at + hidden_by_admin** |
+| **Codex::Attunement** [Codex Phase 2] | ✅ 10 examples | 🟢 **Нове** | **INTENSITY_RANGE (1..5) валідація + DB CHECK, QUOTE_MAX (280) length, UNIQUE (user_id, codex_node_id) на model + DB, counter cache → attunement_count, before_validation default_started_at, scopes (for_node/for_user/ordered)** |
 
 ### 1.2 Services
 
@@ -72,6 +74,7 @@
 | ActuatorCommandWorker | ✅ 320L+ | 🟢 **Повне** | **dispatch! AASM transition, mark_active!, encryption roundtrip, ResetActuatorStateWorker scheduling, sidekiq config** |
 | **Web3CircuitBreaker (concern)** | ✅ 320L+ | 🟢 **Повне** | **transient_cause?, reset_circuit!, remaining_open_seconds, all error types, record_failure! threshold** |
 | **CoapEncryption (concern)** | ✅ 175L+ | 🟢 **Повне** | **[FW.20] TIME_SYNC envelope (0x9C marker + ts:4 big-endian), All mod-16 payload sizes (1,15,17,31,32,33), binary data, null-byte padding, IV uniqueness** |
+| **Codex::AttunementBroadcastWorker** [Codex Phase 2] | ✅ 5 examples | 🟢 **Нове** | **sidekiq_options queue=`default` retry=3, public broadcast `codex_node_<id>_attunements` з пост-commit лічильником, private envelope `codex_node_<id>_attunements_user_<uid>` з `attuned: bool`, no-op для unknown node, `attuned: false` після видалення attunement** |
 
 ### 1.4 Controllers
 
@@ -82,17 +85,31 @@
 - `Api::V1::Codex::NodesController#index` — 401 guard, sorted `attunement_elo DESC`, фільтри `realm` / `lifecycle_status` / `q` (trigram)
 - `Api::V1::Codex::NodesController#show` — slug-routing, atomic `view_count` increment, 404 для unknown slug + draft-приховування для не-super_admin
 
+**Codex Phase 2 (нове, 14 request examples):**
+- `Api::V1::Codex::AttunementsController#create` (8 examples) — 401 guard, idempotent re-POST оновлює row (не дублює), counter cache інкремент, worker enqueue, validation 422 для intensity > 5, 404 для unknown slug
+- `Api::V1::Codex::AttunementsController#destroy_me` — DELETE removes own + broadcasts; safe no-op коли немає рядка; ніколи не видаляє чужий attunement
+- `Api::V1::Codex::CommentsController#create` (6 examples) — 401 guard, comments_count інкремент, ActionCable broadcast у `codex_node_<id>_comments`, body_html у відповіді (sanitised markdown), `Idempotency-Key` 400 коли пропущено для JSON, retry з тим же ключем повертає cached response, 422 для body > BODY_MAX, parent_id support
+
 ### 1.5 Policies
 
 Усі Pundit policies покриті. Покриття: 🟢 Повне.
 
 **Codex Phase 1 (нове, 7 examples):** `Codex::NodePolicy` — index?/show? для будь-якого автентифікованого, anonymous deny, write-операції тільки для super_admin, `Scope#resolve` приховує чернетки (`published_at IS NULL`) для не-super_admin.
 
+**Codex Phase 2 (нове, 12 examples):**
+- `Codex::CommentPolicy` (8) — index/show only for auth, hidden ховається від не-admin, create для всіх auth, update/destroy для автора в межах EDIT_GRACE або admin+, hide? тільки admin+, Scope ховає hidden від non-admin
+- `Codex::AttunementPolicy` (4) — read для auth, write own-only, anonymous deny на create
+
 ### 1.6 Views
 
 Усі Phlex-компоненти покриті згідно з `docs/10_01_View_Component_Testing_Guide.md`.
 
 **Codex Phase 1 (нове, 10 examples):** `Codex::NodeCard` — bilingual title rendering, codex_uid + realm pill + lifecycle badge (status-* token), slug-based href, footer (Elo + geo_region), edge cases (placeholder glyph коли `cover_image` не attached, `—` коли `geo_region` blank, suppress subtitle), design system compliance (no raw `bg-white`/`text-gray-*`, custom text-scale `mini`/`tiny`/`micro`, `focus-visible:ring-2`).
+
+**Codex Phase 2 (нове, 19 examples):**
+- `Codex::Attunements::Toggle` (8) — DOM id `codex_node_<id>_attunement_count`, "Attune"/"Attuned" label switch + POST/DELETE method override, Stimulus `codex--attune` data values, success token коли attuned, focus-visible accessibility, no raw `bg-white`/`text-gray-*`
+- `Codex::Comments::Thread` (6) — DOM id `codex_node_<id>_comments` (broadcast target), empty-state copy, composer renders only коли current_user present, Stimulus controller wiring, gaia-* tokens
+- `Codex::Comments::Item` (5) — DOM id `codex_comment_<id>`, sanitised markdown render, ISO timestamp, hidden-state notice (без body), gaia-* tokens
 
 ### 1.7 Integration Tests
 

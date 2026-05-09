@@ -540,9 +540,19 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | Компонент | Файл | Props | Опис |
 |---|---|---|---|
 | `Codex::Index` | `codex/index.rb` | `nodes:`, `pagy:`, `realms:`, `active_realm_slug:` | Сторінка-каталог lore-вузлів (Atlas). Сітка карток (`NodeCard`), вкладки шарів (`RealmTabs`), пагінація `Shared::UI::Pagination`, порожній стан `Shared::UI::EmptyState` |
-| `Codex::Show` | `codex/show.rb` | `node:` | Детальна сторінка lore-вузла. Bilingual title/subtitle, 3 markdown-блоки (`context_md` → `Codex::MarkdownRenderer`), `Shared::UI::StatusBadge` для `lifecycle_status`, зовнішні посилання, мета-рядки (Elo, view_count) |
+| `Codex::Show` | `codex/show.rb` | `node:`, `current_user:`, `comments:`, `current_user_attuned:` | Детальна сторінка lore-вузла. Bilingual title/subtitle, 3 markdown-блоки (`context_md` → `Codex::MarkdownRenderer`), `Shared::UI::StatusBadge` для `lifecycle_status`, зовнішні посилання, мета-рядки (Elo, view_count). Phase 2: рендерить `Codex::Attunements::Toggle` + `Codex::Comments::Thread`. |
 | `Codex::RealmTabs` | `codex/realm_tabs.rb` | `realms:`, `active_slug:` | Горизонтальні вкладки шарів. Active token: `bg-gaia-primary text-gaia-primary-text` |
 | `Codex::NodeCard` | `codex/node_card.rb` | `node:` | Картка одного lore-вузла. ActiveStorage `cover_image` з placeholder-гліфом per realm, lifecycle-бейдж, footer з Elo+geo_region. Linkable до `/api/v1/codex/nodes/:slug`. |
+| `Codex::Attunements::Toggle` | `codex/attunements/toggle.rb` | `node:`, `current_user_attuned:`, `count:` | **Phase 2.** Кнопка "Attune"/"Attuned" + лічильник. POST/DELETE на nested-route. Stimulus `codex--attune` (optimistic UI), Solid Cable target `codex_node_<id>_attunement_count`. |
+| `Codex::Comments::Thread` | `codex/comments/thread.rb` | `node:`, `comments:`, `current_user:` | **Phase 2.** Список коментарів (хронологічно) + composer (тільки для авторизованих). DOM id `codex_node_<id>_comments` — таргет для Solid Cable broadcast. Stimulus `codex--comment`. |
+| `Codex::Comments::Item` | `codex/comments/item.rb` | `comment:` | **Phase 2.** Один рядок коментаря (sanitised markdown через `MarkdownRenderer`, ISO timestamp). Hidden-state — italic + opacity-50 + повідомлення модератора. DOM id `codex_comment_<id>`. |
+| `Codex::Comments::Form` | `codex/comments/form.rb` | `node:` | **Phase 2.** Composer (textarea + Post). `maxlength: Codex::Comment::BODY_MAX`. Stimulus targets `codex--comment.body` / `.form`. |
+
+**ActionCable топіки (Phase 2):**
+
+- `codex_node_<id>_comments` — public broadcast нових коментарів (з `Codex::CommentBlueprint` payload).
+- `codex_node_<id>_attunements` — public broadcast лічильника attunement.
+- `codex_node_<id>_attunements_user_<uid>` — private envelope з `attuned: bool` для конкретного користувача.
 
 #### Інші Доменні Компоненти
 
