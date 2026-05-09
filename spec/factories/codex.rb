@@ -69,4 +69,20 @@ FactoryBot.define do
     last_changed_at  { Time.current }
     house_color_token { "gaia-primary" }
   end
+
+  factory :codex_match, class: "Codex::Match" do
+    association :user
+    association :realm, factory: :codex_realm
+    transient do
+      left  { create(:codex_node, realm: realm) }
+      right { create(:codex_node, realm: realm) }
+    end
+    codex_realm_id  { realm.id }
+    left_node_id    { left.id }
+    right_node_id   { right.id }
+    winner_node_id  { left.id }
+    pair_seed       { SecureRandom.hex(16) }
+    elo_delta_left  { 16 }
+    elo_delta_right { -16 }
+  end
 end

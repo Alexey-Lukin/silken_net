@@ -212,6 +212,14 @@ Rails.application.routes.draw do
         resources :fractions, only: [ :create ]
         get  "fractions/me",     to: "fractions#me",     as: :my_fraction
         get  "fractions/picker", to: "fractions#picker", as: :fraction_picker
+
+        # Phase 4 — Battle layer. The Arena fetches a HMAC-signed pair via
+        # `GET /battle/pair`; the user submits via `POST /battle/votes`.
+        # Replay protection is service-side (Redis nonce). Read-only
+        # leaderboard is publicly accessible per spec §6.
+        get  "battle/pair",  to: "battle#pair",  as: :pair_battle
+        post "battle/votes", to: "battle#vote",  as: :votes_battle
+        get  "leaderboard",  to: "leaderboard#index", as: :leaderboard
       end
     end
   end

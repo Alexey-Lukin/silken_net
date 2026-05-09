@@ -591,6 +591,45 @@ peaq_node_url: "https://peaq-node.example.com"
 | **No-op коли** | user не має `organization_id` (системні боти типу `oracle.executioner@system`); user/fraction не знайдено в DB. |
 | **Інвокери** | `Codex::FractionChangeService` |
 
+### `Codex::PairSelectorService` (Phase 4)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/pair_selector_service.rb` |
+| **Вхід** | `user:`, `realm:` (default first ordered), `now:` (injectable clock) |
+| **Що робить** | Pickable nodes у realm (lifecycle ∉ destroyed/extinct) → anchor через `ORDER BY RANDOM() LIMIT 8` + min `match_count` → opponent з Elo bucket ±200; fallback на будь-який інший вузол. Підписує `pair_seed = HMAC-SHA256(secret_key_base, "user_id|realm_id|ts|left_id|right_id")[0..64]`. Зберігає у Redis `codex:pair_seed:<seed>` TTL 5 хв з payload `"user_id|realm_id|left_id|right_id|ts"`. |
+| **Failure** | `not enough nodes`, `no realm available`, unsaved user — handled через `Result(success: false, error: ...)`. |
+| **Інвокери** | `BattleController#pair`, `BattleController#vote` (для next-pair after vote) |
+
+### `Codex::VoteRecorderService` (Phase 4)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/vote_recorder_service.rb` |
+| **Вхід** | `user:`, `pair_seed:`, `winner_slug:` (or nil for skip), `skip:` (Boolean) |
+| **Що робить** | Атомарно DEL'ить Redis seed (replay-proof), створює `Codex::Match` + обчислює Elo deltas через `EloMath` (K=32, decay при `match_count > 30` на обох sides), enqueue `EloRecomputeWorker`. Skip → 0/0 deltas, але рядок все одно зберігається (для PairSelector avoidance heuristics). |
+| **Failure** | `seed_invalid_or_consumed`, `seed_user_mismatch`, `winner_not_in_pair`, `nodes_missing`, validation — handled via Result struct. |
+| **Інвокери** | `BattleController#vote` |
+
+### `Codex::EloMath` (Phase 4 — pure module)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/elo_math.rb` |
+| **API** | `EloMath.deltas(left_elo:, right_elo:, winner:, match_count_left:, match_count_right:)` → `[delta_left, delta_right]`. `EloMath.expected(left, right)` → win probability. |
+| **Constants** | `K_BASE = 32`, `K_DECAY = 16`, `DECAY_THRESHOLD = 30`. K halves once both nodes pass the threshold (settled archetypes don't yo-yo). |
+
+### `Codex::EloRecomputeWorker` (Phase 4)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/codex/elo_recompute_worker.rb` |
+| **Черга** | `low` (#9) — ADR-CDX-4 (Battle never blocks Proof-of-Growth hot-path) |
+| **Retry** | 3 |
+| **Вхід** | `left_node_id`, `right_node_id`, `delta_left`, `delta_right` |
+| **Що робить** | Pre-computed deltas передаються як args (не recompute у воркері — what the Arena UI showed at vote-time is what gets persisted). Атомарно `UPDATE codex_nodes SET attunement_elo = attunement_elo + ?, match_count = match_count + 1` для обох вузлів у транзакції. No SELECT-then-UPDATE race. |
+| **Інвокери** | `Codex::VoteRecorderService` |
+
 ### Phase 3 controller (FractionsController)
 
 `Api::V1::Codex::FractionsController` — 3 ендпоінти, всі делегують до сервісу:

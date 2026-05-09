@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 (Phases 1+2+3 done — read-only Atlas з 79-record seed corpus, social layer (comments + attunements + Solid Cable), identity layer (Fraction + 7-day cooldown + AuditLog hook), full spec coverage 199 examples codex-slice). Phases 4-6 в плані.
+- **Поточний TRL:** TRL 6 (Phases 1+2+3+4 done — read-only Atlas з 79-record seed corpus, social layer (comments + attunements + Solid Cable), identity layer (Fraction + 7-day cooldown + AuditLog hook), battle layer (partitioned `codex_matches`, HMAC pair_seed + Redis nonce replay-proof, K=32 Elo with decay-after-30, low-queue async recompute, Arena + Leaderboard UI, +93 specs → 290 total). Phases 5-6 в плані.
 - **Стек:** Rails 8.1 · PostgreSQL 16 (`pg_trgm`, `postgis`, `pgcrypto`) · Phlex · Tailwind v4 · Sidekiq (existing 9 queues) · Pundit · ActionCable (Solid Cable).
 - **Жодних нових gem-залежностей.**
 - **Пов'язані модулі:**
@@ -763,17 +763,74 @@ db/seeds/codex/
 - [x] `docs/04_05` — §14 Phase 3 ticked + §15 Session 4 ADR + TRL note
 - [x] `docs/10_03` — Phase 3 рядки (model/service/policy/worker/request/view)
 
-### Phase 4: Battle ⚔ (planned)
-- [ ] Migration `CreateCodexMatches` (PARTITIONED RANGE by created_at)
-- [ ] Model `Codex::Match` (composite PK `(id, created_at)`)
-- [ ] `Codex::PairSelectorService` (HMAC-SHA256 + Redis nonce)
-- [ ] `Codex::EloRecomputeWorker` (queue `low`, K-factor 32)
-- [ ] Endpoints: `GET /battle/pair`, `POST /battle/votes`, `GET /leaderboard`
-- [ ] UI: `Codex::Battle::Arena` (Turbo Frame + Stimulus `codex--battle`)
-- [ ] UI: `Codex::Leaderboard::Table`
-- [ ] `Rack::Attack` rules (60 votes/min, 120 attunements/h)
-- [ ] Patch `PartitionMaintenanceWorker` — додати `codex_matches`
-- [ ] Specs (model, service, worker, request, system)
+### Phase 4: Battle ⚔ (✅ done)
+
+**Migration & schema:**
+- [x] Міграція `20260509150000_create_codex_matches.rb` — partitioned RANGE by `created_at`, composite PK `(id, created_at)`, FKs до users/realms/nodes (NO cascade — audit-grade), `_default` партиція + 6 monthly windows seeded inline, 4 indices (`user_id+created_at DESC`, `(left_node_id, right_node_id)`, `realm_id`, `pair_seed`).
+
+**PartitionMaintenanceWorker patch:**
+- [x] Додано `codex_matches` у `PARTITIONED_TABLES` — month-rollover тепер автоматичний.
+
+**Models:**
+- [x] `Codex::Match` з composite PK awareness (`self.primary_key = [:id, :created_at]`), 4 валідатори (`winner_must_be_one_of_the_pair`, `left_and_right_differ`, `pair_belongs_to_same_realm`, presence/length для `pair_seed`), scopes `for_user`/`for_realm`/`recent`, `skip?` helper.
+
+**Services:**
+- [x] `Codex::PairSelectorService.call(user:, realm:, now:)` — pickable nodes filter + weighted-anchor (random sample of 8, min match_count) + bucket-opponent (±200 Elo, fallback to any other) + HMAC-SHA256 seed + Redis nonce TTL 5 min. Result struct.
+- [x] `Codex::VoteRecorderService.call(user:, pair_seed:, winner_slug:, skip:)` — atomic Redis DEL (replay-proof), Match.create!, EloMath compute, EloRecomputeWorker enqueue. Skip → 0/0 deltas, but row persists for selection-heuristic. Result struct з `seed_invalid_or_consumed`/`seed_user_mismatch`/`winner_not_in_pair`/`nodes_missing` failure modes.
+- [x] `Codex::EloMath` (pure module) — `expected(left_elo, right_elo)`, `deltas(...) → [delta_left, -delta_left]`, K=32 base / K=16 decay коли обидва nodes мають match_count > 30. Unit-testable без DB/Redis.
+
+**Worker:**
+- [x] `Codex::EloRecomputeWorker` (queue `low` per ADR-CDX-4, retry 3) — pre-computed deltas як args (deterministic from user POV); атомарне `UPDATE codex_nodes SET attunement_elo = attunement_elo + ?, match_count = match_count + 1` в транзакції на обох nodes. No SELECT-then-UPDATE race.
+
+**Pundit:**
+- [x] `Codex::MatchPolicy` — index/create для будь-якого autenticated; show — own only; Scope ховає чужі матчі.
+
+**Routes:**
+- [x] `GET /api/v1/codex/battle/pair`, `POST /api/v1/codex/battle/votes`, `GET /api/v1/codex/leaderboard` (last is public — `skip_before_action :authenticate_user!`).
+
+**Controllers:**
+- [x] `Api::V1::Codex::BattleController` — `#pair` (delegate to PairSelector, error-state Arena при failure) + `#vote` (delegate to VoteRecorder; HTML response рендерить наступну Arena одразу — Stimulus client може turbo-stream без повного reload). 403 на seed replay; 422 на validation.
+- [x] `Api::V1::Codex::LeaderboardController` — public (`skip_before_action :authenticate_user!`). `?realm=<slug>&limit=<N, max=100, default=25>`. JSON масив + HTML Table.
+
+**Blueprint:**
+- [x] `Codex::MatchBlueprint` — id, codex_realm_id, left/right/winner_node_id, pair_seed, deltas, created_at, user_id, computed `is_skip`, `winner_slug`.
+
+**Phlex (gaia-* tokens):**
+- [x] `Codex::Battle::Arena` — Turbo Frame з двома cards + VS divider + Skip; Stimulus `codex--battle` data wires; error-state status-warning pill
+- [x] `Codex::Leaderboard::Table` — light HTML `<table>` (rank / title / Elo / matches / lifecycle); empty-state copy
+
+**Sidebar:**
+- [x] Додано "Battle Arena" (icon `swords`) і "Leaderboard" (icon `trophy`) під "Library" group; розширено `render_icon` (swords + trophy emoji)
+
+**Anti-abuse:**
+- [x] `Rack::Attack` rule `codex/battle/votes` — 60 votes / 1 minute / actor (per spec §6)
+
+**Specs (per docs/10_01):**
+- [x] `spec/factories/codex.rb` — додано `:codex_match` factory з transient `left`/`right` nodes
+- [x] `spec/models/codex/match_spec.rb` (8 examples) — factory, всі 4 валідатори, scopes
+- [x] `spec/services/codex/elo_math_spec.rb` (5 examples) — expected math, deltas zero-sum, upset reward, decay threshold, ArgumentError
+- [x] `spec/services/codex/pair_selector_service_spec.rb` (7 examples) — happy path (HMAC seed shape + realm match), Redis storage + TTL, default realm fallback, < 2 nodes failure, no-realm failure, unsaved user, Elo bucketing invariant (±200 для cluster anchors)
+- [x] `spec/services/codex/vote_recorder_service_spec.rb` (8 examples) — winner pick + worker enqueue + zero-sum deltas, skip recording (0/0), replay protection (DEL on first use), missing seed, winner not in pair, seed_user_mismatch
+- [x] `spec/workers/codex/elo_recompute_worker_spec.rb` (4 examples) — sidekiq config, atomic increments, race-safe sequential calls (UPDATE … SET col = col + ?), unknown id no-op
+- [x] `spec/policies/codex/match_policy_spec.rb` (4 examples) — index/create gates, show own-only, Scope filters
+- [x] `spec/requests/api/v1/codex/battle_controller_spec.rb` (10 examples) — `pair` (auth, frame render with hidden seed, empty-state 422), `vote` (auth, 201 + worker enqueue, 403 replay, skip support), `leaderboard` (public, JSON sorted by Elo desc, HTML table, limit clamp)
+- [x] `spec/views/components/codex/battle/arena_spec.rb` (4 examples) — frame render with Elo + match counts, error pill state, gaia-* tokens, Stimulus targets
+- [x] `spec/views/components/codex/leaderboard/table_spec.rb` (3 examples) — header + rows ordered as given, empty-state, gaia-* tokens
+
+**Total Phase 4: 53 new examples → Phase 1+2+3+4 cumulative: 290 examples / 0 failures (codex slice + Users::Profile)**
+
+**Quality gates:**
+- [x] `bundle exec rspec` (full slice + Users::Profile) — 290 examples / 0 failures
+- [x] `bundle exec rubocop` (Phase 4 + touched files, 92 files) — clean (0 offenses)
+- [x] `bundle exec brakeman` — 0 нових warnings
+
+**Docs synced:**
+- [x] `docs/04_01` — model count 32 → 33 + Codex::Match subsection
+- [x] `docs/04_02` — Phase 4 PairSelectorService + VoteRecorderService + EloMath + EloRecomputeWorker
+- [x] `docs/04_03` — endpoint count 91 → 94 + 3 нових рядки (#95/#96/#97)
+- [x] `docs/04_04` — додано `Codex::Battle::Arena` + `Codex::Leaderboard::Table` до Phlex registry; sidebar entries
+- [x] `docs/04_05` — §14 Phase 4 ticked + §15 Session 5 ADR + TRL note
+- [x] `docs/10_03` — Phase 4 рядки
 
 ### Phase 5: Discovery 🔓 (planned)
 - [ ] Migration `CreateCodexDiscoveries`, `CreateCodexDiscoveryRules`
@@ -859,6 +916,48 @@ db/seeds/codex/
   - Solid Cable Turbo Stream `<turbo-cable-stream-source>` тег у Show — broadcasts вже працюють, рендер subscriber-тегу разом із Phase 4 `Battle::Arena` Stimulus refactor.
 
 ### 2026-05-09 (Session 4) — Phase 3 implementation, Identity layer
+
+- **Done (full Phase 3):**
+  - Schema: одна нова міграція `20260509140000_create_codex_fractions.rb` → `codex_fractions` з UNIQUE `user_id` (DB-рівень — race-proof між контролером та сервісом), FK `codex_node_id` `on_delete: :restrict` (не можна видалити Node з активними фракціями), денормалізованим `archetype_key` для index-only фільтрів, immutable `chosen_at` + mutable `last_changed_at` як cooldown-anchor.
+  - Model: `Codex::Fraction` з `COOLDOWN = 7.days`, `cooldown_active?` / `cooldown_until` / `seconds_until_unlocked` helpers, lifecycle-валідатор (`destroyed`/`extinct` rejected, `mythical` allowed).
+  - User: `has_one :codex_fraction, dependent: :destroy` (безпечний — фракція не є моделарційним артефактом).
+  - Service: `Codex::FractionChangeService.call(user:, node:)` — єдина точка мутації. Атомарний `find_or_initialize_by` + cooldown gate + denormalisation з Node + enqueue audit. Result-struct API; cooldown blocked та lifecycle blocked повертаються як `Result(success: false, errors: [...], cooldown_until: ...)` — handled, не raise. Audit enqueue failure rescue'иться (audit є async by design — transient failure не повинна rollback'ити user-facing мутацію).
+  - Pundit: `Codex::FractionPolicy` — index/show/create для всіх auth, update/destroy own-only. **Cooldown НЕ перевіряється у policy** — Pundit це authorization, cooldown це business rule сервісу.
+  - Worker: `Codex::FractionAuditWorker` (queue `default` per ADR-CDX-4, retry 3) → `AuditLog(action: "codex.fraction.chosen")` з rich metadata (codex_node_id, archetype_key, previous_node_id, changed_at). **Skip-when-no-org** — `audit_logs.organization_id` NOT NULL, ledger є per-org chained-hash; orphans (system bots типу `oracle.executioner@system`) — no-op.
+  - Routes: `POST /codex/fractions` + `GET /codex/fractions/me` + `GET /codex/fractions/picker?realm=`.
+  - Controller: `FractionsController` — три ендпоінти, всі через service-as-thin-shell. POST → 201/429/422; me → 204 або Card; picker → Picker frame з active-realm filter, виключає `destroyed`/`extinct`.
+  - Phlex: 4 нові компоненти (Card, Cooldown, Picker, ProfileBadge) — всі gaia-* tokens, no raw `bg-white`/`text-gray-*`/`bg-emerald-*`. ProfileBadge — gaia-* island усередині legacy emerald `Users::Profile` (не torkaê існуючу палітру).
+  - Sidebar: додано "My Fraction" entry з icon `shield` під "Library" group.
+  - Anti-abuse: `Rack::Attack` rule `codex/fractions` — 60 attempts/day/actor (cooldown 7 днів service-side, throttle захищає rapid replay).
+  - Specs: +39 нових examples → загалом **199 examples / 0 failures** у codex slice (236 з Users::Profile).
+
+---
+
+### 2026-05-09 (Session 5) — Phase 4 implementation, Battle layer
+
+- **Done (full Phase 4):**
+  - Schema: `codex_matches` як partitioned RANGE by `created_at` (mirrors blockchain_transactions / telemetry_logs). Composite PK `(id, created_at)` дозволяє O(log N) lookup всередині партиції. `_default` партиція + 6 monthly windows seeded inline; `PartitionMaintenanceWorker` тепер обслуговує `codex_matches` так само як `telemetry_logs`. FKs БЕЗ cascade — battle history є audit-grade.
+  - Model: `Codex::Match` — composite PK awareness, валідатори що `winner_node_id ∈ [left, right, nil]`, `left ≠ right`, обидва nodes належать тому ж realm.
+  - Service split: `PairSelectorService` (read-side, fingerprints pair) і `VoteRecorderService` (write-side, consume seed + create row). Розділення спрощує тестування і дозволяє кожному мати свій failure surface.
+  - HMAC pair_seed: `HMAC-SHA256(secret_key_base, "user_id|realm_id|ts|left_id|right_id")[0..64]` зберігається у Redis `codex:pair_seed:<seed>` TTL 5 хв з payload що включає всі IDs + ts. На vote: `r.get` + `r.del` — replay-proof навіть всередині TTL вікна. `seed_user_mismatch` failure захищає від stolen-seed attacks.
+  - Elo math: окремий pure module `Codex::EloMath` (DB-free, Redis-free, Sidekiq-free — unit-testable). K=32 base, K=16 decay коли обидва nodes мають match_count > 30 (settled archetypes don't yo-yo). Skip → 0/0 deltas, але рядок зберігається (PairSelector avoidance heuristics).
+  - Worker: `EloRecomputeWorker` queue `low` per ADR-CDX-4 (Battle never blocks Proof-of-Growth uplink). Pre-computed deltas як args (deterministic from user POV — what UI showed at vote-time persists, навіть якщо паралельний vote змінив Elo між цими двома операціями). Атомарне `UPDATE … SET col = col + ?` — no SELECT-then-UPDATE race; transaction wraps both nodes' updates.
+  - Routes: 3 нові ендпоінти. Leaderboard публічний (`skip_before_action :authenticate_user!`) per spec §6.
+  - Controller: `BattleController#vote` HTML response рендерить наступну Arena одразу — Stimulus client може turbo-stream без повного reload (плавна UX без зайвого fetch'а). 403 `seed_invalid_or_consumed` differentiated від 422 validation failures.
+  - Phlex: 2 нові компоненти (Arena, Leaderboard::Table) — gaia-* tokens only. Arena має non-JS fallback (real `<form method="post">`) — Stimulus controller `codex--battle` тільки додає debounce/swap-animation/keyboard shortcuts (JS файл відкладено до Phase 4+ batch разом з `codex--attune`/`codex--comment`/`codex--fraction-picker`).
+  - Sidebar: "Battle Arena" + "Leaderboard" entries з icons `swords`/`trophy`.
+  - Anti-abuse: `Rack::Attack` rule `codex/battle/votes` 60/min/actor (per spec §6).
+  - Specs: +53 нові examples → загалом **290 examples / 0 failures** у codex slice + Users::Profile.
+- **Spec-craft notes:**
+  - Composite PK + partitioned table: Rails 7+ підтримує `self.primary_key = [:id, :created_at]` нативно — спецам не потрібно нічого спеціального.
+  - Route helper naming: `namespace :api do namespace :v1 do namespace :codex do post "battle/votes", as: :votes_battle` дає `api_v1_codex_votes_battle_path` (не `votes_api_v1_codex_battle_path`). `bundle exec rails routes -g battle` — найшвидший спосіб перевірити.
+  - Phlex spec helpers: компоненти що викликають Rails URL helpers потрібно тестувати через `Class.new(described_class) do define_method(:api_v1_codex_votes_battle_path) { "..." } end` — інакше `method_missing` через `Phlex::Rails::SGML#method_missing` ховає реальну помилку від `LazyRouteSet`.
+  - Redis: env потребує запущеного `redis-server` (sandbox setup команди: `apt-get install -y redis-server` + `redis-server --daemonize yes`). Specs які touchать `Kredis.redis(config: :shared)` mocking-free — в test env Redis обовʼязковий.
+- **Deferred to subsequent phases:**
+  - Stimulus controllers `codex--battle` (debounce, swap-animation, ←/→ keyboard) — JS файл batch'ом разом з Phase 5 `codex--reveal` для Discovery toast.
+  - "Battle Arena" як full-page Turbo navigation з вкладеним Arena frame (поки що pair endpoint повертає голий frame — без layout chrome).
+
+---
 
 - **Done (full Phase 3):**
   - Schema: одна нова міграція `20260509140000_create_codex_fractions.rb` → `codex_fractions` з UNIQUE `user_id` (DB-рівень — race-proof між контролером та сервісом), FK `codex_node_id` `on_delete: :restrict` (не можна видалити Node з активними фракціями), денормалізованим `archetype_key` для index-only фільтрів, immutable `chosen_at` + mutable `last_changed_at` як cooldown-anchor.

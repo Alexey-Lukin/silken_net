@@ -138,6 +138,16 @@ Rack::Attack.throttle("codex/fractions", limit: 60, period: 1.day) do |request|
   end
 end
 
+# Battle votes: per docs/04_05 §6 — 60 votes / 1 minute / actor.
+# Service-side replay protection is already in place (Redis nonce
+# consumed on first vote); this throttle prevents bot-driven scrubbing
+# of the rate-limited Elo surface.
+Rack::Attack.throttle("codex/battle/votes", limit: 60, period: 1.minute) do |request|
+  if request.path == "/api/v1/codex/battle/votes" && request.post?
+    request.env["HTTP_AUTHORIZATION"].presence || request.ip
+  end
+end
+
 # ---------------------------------------------------------------------------
 # 6. FAIL2BAN — ban IPs that return too many 401/404 errors
 #

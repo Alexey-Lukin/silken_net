@@ -35,6 +35,8 @@ module Navigation
           # subsequent phases (their nav entries land alongside).
           section_group("Library") do
             nav_item("Codex Atlas", api_v1_codex_nodes_path, "book")
+            nav_item("Battle Arena", api_v1_codex_pair_battle_path, "swords")
+            nav_item("Leaderboard", api_v1_codex_leaderboard_path, "trophy")
             nav_item("My Fraction", api_v1_codex_my_fraction_path, "shield")
           end
 
@@ -162,6 +164,8 @@ module Navigation
       when "clipboard" then "▤"
       when "book" then "📖"
       when "shield" then "🛡"
+      when "swords" then "⚔"
+      when "trophy" then "🏆"
       else "○"
       end
     end

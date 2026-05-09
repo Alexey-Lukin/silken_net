@@ -39,6 +39,7 @@
 | **Codex::Comment** [Codex Phase 2] | ✅ 15 examples | 🟢 **Нове** | **polymorphic commentable, BODY_MAX (2 KiB) cap, FLAG_REASONS allow-list, parent_must_be_top_level (rejects reply-to-reply), parent_must_share_commentable (rejects cross-node parent), counter cache → comments_count, scopes (visible/hidden/top_level/chronological), `editable_by?(user)` 24h grace, soft-hide via hidden_at + hidden_by_admin** |
 | **Codex::Attunement** [Codex Phase 2] | ✅ 10 examples | 🟢 **Нове** | **INTENSITY_RANGE (1..5) валідація + DB CHECK, QUOTE_MAX (280) length, UNIQUE (user_id, codex_node_id) на model + DB, counter cache → attunement_count, before_validation default_started_at, scopes (for_node/for_user/ordered)** |
 | **Codex::Fraction** [Codex Phase 3] | ✅ 8 examples | 🟢 **Нове** | **UNIQUE user_id (DB-level race-proof), node_lifecycle_pickable validator (rejects destroyed/extinct, allows mythical), `COOLDOWN = 7.days`, helpers cooldown_active?/cooldown_until/seconds_until_unlocked, scopes ordered/by_archetype, archetype_key denormalisation** |
+| **Codex::Match** [Codex Phase 4] | ✅ 8 examples | 🟢 **Нове** | **Composite PK `(id, created_at)` (RANGE-partitioned), 4 валідатори (winner_in_pair, left ≠ right, same-realm, pair_seed presence), scopes for_user/for_realm/recent, skip? helper, FKs without cascade (audit-grade)** |
 
 ### 1.2 Services
 
@@ -65,6 +66,9 @@
 | **Codex::NodeImportService** [Codex Phase 1] | ✅ 7 examples | 🟢 **Нове** | **empty seed dir Result success?, minimal YAML upsert, idempotent re-run (no duplicates), DAO `seed_origin` preservation, per-file error isolation, full 79-record corpus load (4 realms + 79 nodes from default SEED_ROOT)** |
 | **Codex::MarkdownRenderer** [Codex Phase 1] | ✅ 11 examples | 🟢 **Нове** | **nil/blank → html_safe empty, paragraphs, h1/h2/h3 → h2/h3/h4 mapping, bold/italic/code/lists/blockquotes, safe http(s) links з `rel="noopener noreferrer" target="_blank"`, `javascript:` scheme rewrite to `#`, `<script>` tag stripping via `Rails::HTML5::SafeListSanitizer`, raw HTML escape-then-transform** |
 | **Codex::FractionChangeService** [Codex Phase 3] | ✅ 6 examples | 🟢 **Нове** | **happy path initial pick (denorm archetype_key + house_color_token, enqueue audit, chosen_at = last_changed_at), happy path re-pick (chosen_at immutable, last_changed_at refreshed, previous_node_id captured), cooldown_blocked Result-struct API, lifecycle rejection (extinct/destroyed), unsaved user/node guards** |
+| **Codex::EloMath** [Codex Phase 4] | ✅ 5 examples | 🟢 **Нове** | **expected(left, right) win probability (0.5 для рівних, > 0.6 при +200 Elo), zero-sum deltas, upset reward (delta_underdog > delta_favourite), decay threshold (K halves once both nodes pass match_count > 30), ArgumentError for bad winner symbol** |
+| **Codex::PairSelectorService** [Codex Phase 4] | ✅ 7 examples | 🟢 **Нове** | **happy path (HMAC seed shape `\A[0-9a-f]{64}\z` + same-realm distinct nodes), Redis seed storage під codex:pair_seed:<seed> + TTL 5 хв, default realm fallback, < 2 pickable nodes failure, no-realm failure, unsaved user, Elo bucketing invariant (для cluster anchors діє ±200)** |
+| **Codex::VoteRecorderService** [Codex Phase 4] | ✅ 8 examples | 🟢 **Нове** | **winner pick → Match.create + EloRecomputeWorker enqueue + zero-sum deltas, skip recording (0/0 deltas + row), replay protection (seed DEL on first use, second call → seed_invalid_or_consumed), missing seed, winner_not_in_pair, seed_user_mismatch (stolen-seed defence)** |
 
 ### 1.3 Workers
 
@@ -78,6 +82,7 @@
 | **CoapEncryption (concern)** | ✅ 175L+ | 🟢 **Повне** | **[FW.20] TIME_SYNC envelope (0x9C marker + ts:4 big-endian), All mod-16 payload sizes (1,15,17,31,32,33), binary data, null-byte padding, IV uniqueness** |
 | **Codex::AttunementBroadcastWorker** [Codex Phase 2] | ✅ 5 examples | 🟢 **Нове** | **sidekiq_options queue=`default` retry=3, public broadcast `codex_node_<id>_attunements` з пост-commit лічильником, private envelope `codex_node_<id>_attunements_user_<uid>` з `attuned: bool`, no-op для unknown node, `attuned: false` після видалення attunement** |
 | **Codex::FractionAuditWorker** [Codex Phase 3] | ✅ 4 examples | 🟢 **Нове** | **sidekiq_options queue=`default` retry=3, AuditLog write з action="codex.fraction.chosen" + auditable_type=Codex::Fraction + metadata (codex_node_id, archetype_key, previous_node_id, changed_at), no-op для users without organization_id (per-org ledger guarantee), no-op для unknown user/fraction id** |
+| **Codex::EloRecomputeWorker** [Codex Phase 4] | ✅ 4 examples | 🟢 **Нове** | **sidekiq_options queue=`low` retry=3 (ADR-CDX-4 — Battle never blocks Proof-of-Growth), atomic `UPDATE … SET col = col + ?` для обох nodes у транзакції (no SELECT-then-UPDATE race), sequential calls accumulate коректно, unknown id no-op (update_all returns 0)** |
 
 ### 1.4 Controllers
 
@@ -98,6 +103,11 @@
 - `Api::V1::Codex::FractionsController#me` (3 examples) — 401 guard, 204 коли fraction nil, 200 + Blueprint payload коли set
 - `Api::V1::Codex::FractionsController#picker` (2 examples) — 401 guard, HTML frame render з активним realm + node title
 
+**Codex Phase 4 (нове, 10 request examples):**
+- `Api::V1::Codex::BattleController#pair` (3 examples) — 401 guard, frame render з hidden `pair_seed` 64-hex, empty-state 422 коли realm < 2 pickable nodes
+- `Api::V1::Codex::BattleController#vote` (4 examples) — 401 guard, 201 + Blueprint + EloRecomputeWorker enqueue + Match.count change, 403 `seed_invalid_or_consumed` на replay, skip=true support
+- `Api::V1::Codex::LeaderboardController#index` (3 examples) — public (no auth), JSON sorted by Elo desc, HTML table render, limit clamp
+
 ### 1.5 Policies
 
 Усі Pundit policies покриті. Покриття: 🟢 Повне.
@@ -109,6 +119,8 @@
 - `Codex::AttunementPolicy` (4) — read для auth, write own-only, anonymous deny на create
 
 **Codex Phase 3 (нове, 3 examples):** `Codex::FractionPolicy` — index/show/create для будь-якого автентифікованого, anonymous deny, update/destroy own-only. Cooldown business-rule НЕ в policy (живе в `FractionChangeService`).
+
+**Codex Phase 4 (нове, 4 examples):** `Codex::MatchPolicy` — index/create для будь-якого autenticated; anonymous deny на index/create; show only on own record; Scope ховає чужі матчі та returns none для anonymous. Throttling — Rack::Attack, не policy.
 
 ### 1.6 Views
 
@@ -124,6 +136,10 @@
 **Codex Phase 3 (нове, 9 examples):**
 - `Codex::Fractions::Card` (3) — empty-state CTA коли fraction nil, filled state з archetype + Since-date + "Change" + Cooldown pill, gaia-* tokens compliance (no `bg-white`/`text-gray-*`)
 - `Codex::Fractions::Picker` (6) — header/realm-tabs/grid render, active realm highlight (`bg-gaia-primary`), Current marker для own fraction, disable-button + "Locked" коли cooldown active на іншому node, empty-state для пустого realm, tokens compliance
+
+**Codex Phase 4 (нове, 7 examples):**
+- `Codex::Battle::Arena` (4) — frame render з двома cards + VS divider + hidden seed inputs + Elo & match counters, error-state pill коли service signals "not enough nodes" (без winner_slug форм), gaia-* tokens compliance, Stimulus `codex--battle` controller + `card`/`form`/`skip` targets wired
+- `Codex::Leaderboard::Table` (3) — header + Top-N caption + ordered rows ("Apex" before "Mid"), empty-state copy ("No ranked nodes yet."), gaia-* tokens compliance
 
 ### 1.7 Integration Tests
 

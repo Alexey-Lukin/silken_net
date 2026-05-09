@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 32 моделей (26 ядра + 6 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
+Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 33 моделей (26 ядра + 7 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
 
 ---
 
@@ -1273,6 +1273,25 @@ Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (е
 **Association:** `User has_one :codex_fraction, dependent: :destroy`. Безпечний destroy — фракція не є модераційним артефактом, видалення користувача чисто стирає його identity claim.
 
 **Workflow:** `Codex::FractionChangeService` — єдина точка мутації. Перевіряє cooldown, атомарно `find_or_initialize_by(user_id:)` → save → enqueue `Codex::FractionAuditWorker` (queue `default`, ADR-CDX-4) → AuditLog `action: "codex.fraction.chosen"` (тільки коли user має organization, бо ledger є per-org).
+
+### `Codex::Match` — Battle Arena Duel (Phase 4) — `codex_matches` (PARTITIONED RANGE by `created_at`)
+
+**Атрибути:** `id` + `created_at` (composite PK, як у `blockchain_transactions`), `user_id` (FK), `codex_realm_id` (FK — denormalised для leaderboard scoping без JOIN), `left_node_id` / `right_node_id` (FKs), `winner_node_id` (FK, nullable — NULL = skip), `pair_seed` (varchar 64, HMAC-SHA256), `elo_delta_left` / `elo_delta_right` (integer, K=32 — `EloMath.deltas`).
+
+**Партиціювання:** RANGE по `created_at`. `_default` партиція + 6 monthly windows seeded inline у міграції; `PartitionMaintenanceWorker` додає нові партиції щомісяця (включено `codex_matches` у `PARTITIONED_TABLES` список).
+
+**Індекси:** BTREE `(user_id, created_at DESC)` (own-history feed), BTREE `(left_node_id, right_node_id)` (replay-protection lookups), BTREE `codex_realm_id` (leaderboard), BTREE `pair_seed` (unique-by-seed scrub queries).
+
+**Validations:** `winner_node_id ∈ [left, right, nil]`, `left ≠ right`, обидва nodes мають належати тому ж realm що і `codex_realm_id`.
+
+**Scopes:** `for_user(user)`, `for_realm(realm_id)`, `recent` (created_at DESC).
+
+**FKs БЕЗ cascade на user/realm/node delete** — battle history є audit-grade; `_default` партиція рятує від data loss при clock-skew рядках.
+
+**Workflow:**
+1. `BattleController#pair` → `PairSelectorService` обирає anchor (weighted by inverse `match_count`) + opponent в Elo-bucket ±200 → HMAC-SHA256 seed зберігається у Redis з TTL 5 хв.
+2. `BattleController#vote` → `VoteRecorderService` consume'ить seed (DEL → replay-proof), створює Match-row, обчислює Elo deltas, enqueue `EloRecomputeWorker.perform_async(left_id, right_id, delta_left, delta_right)`.
+3. `EloRecomputeWorker` (queue `low`) атомарно `UPDATE codex_nodes SET attunement_elo = attunement_elo + ?, match_count = match_count + 1` для обох вузлів у транзакції.
 
 ---
 

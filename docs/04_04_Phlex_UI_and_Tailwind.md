@@ -551,6 +551,8 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Codex::Fractions::Cooldown` | `codex/fractions/cooldown.rb` | `fraction:` | **Phase 3.** Status pill ("Open" / "Locked · Nd Mh"). Tokens: `status-success` / `status-warning`. |
 | `Codex::Fractions::Picker` | `codex/fractions/picker.rb` | `realms:`, `active_realm:`, `nodes:`, `current_fraction:` | **Phase 3.** Turbo Frame grid pickable nodes для активного realm. Realm tabs (active = `bg-gaia-primary`), node cards з POST формою на `/codex/fractions`, disable button під час cooldown. DOM id `codex_fraction_picker`. |
 | `Codex::Fractions::ProfileBadge` | `codex/fractions/profile_badge.rb` | `fraction:` | **Phase 3.** 1-row teaser для `Users::Profile`. Embed live в `render_codex_fraction` секцію. Стоїть на gaia-* tokens — не торкає legacy emerald palette профілю. |
+| `Codex::Battle::Arena` | `codex/battle/arena.rb` | `left:`, `right:`, `pair_seed:`, `realm:`, `error:` | **Phase 4.** Turbo Frame `id="codex_battle_arena"` з двома cards (Title + Archetype + `Elo: N · Mm`) + VS-divider + Skip. POST форми на `/codex/battle/votes` (один winner_slug per форма + окрема skip-форма). Stimulus controller `codex--battle` з targets `card`/`form`/`skip`. Error-state pill при `not enough nodes`. |
+| `Codex::Leaderboard::Table` | `codex/leaderboard/table.rb` | `realm:`, `nodes:`, `limit:` | **Phase 4.** Read-only top-N Elo board. HTML `<table>` з колонками rank / Title / Elo / Matches / Lifecycle. Рендериться публічно (`/codex/leaderboard` без auth). Empty-state copy коли `nodes.empty?`. |
 
 **ActionCable топіки (Phase 2):**
 

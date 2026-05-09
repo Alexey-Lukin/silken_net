@@ -860,6 +860,178 @@ ALTER SEQUENCE public.codex_fractions_id_seq OWNED BY public.codex_fractions.id;
 
 
 --
+-- Name: codex_matches; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_matches (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    codex_realm_id bigint NOT NULL,
+    left_node_id bigint NOT NULL,
+    right_node_id bigint NOT NULL,
+    winner_node_id bigint,
+    pair_seed character varying(64) NOT NULL,
+    elo_delta_left integer DEFAULT 0 NOT NULL,
+    elo_delta_right integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+)
+PARTITION BY RANGE (created_at);
+
+
+--
+-- Name: codex_matches_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.codex_matches_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: codex_matches_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.codex_matches_id_seq OWNED BY public.codex_matches.id;
+
+
+--
+-- Name: codex_matches_default; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_matches_default (
+    id bigint DEFAULT nextval('public.codex_matches_id_seq'::regclass) NOT NULL,
+    user_id bigint NOT NULL,
+    codex_realm_id bigint NOT NULL,
+    left_node_id bigint NOT NULL,
+    right_node_id bigint NOT NULL,
+    winner_node_id bigint,
+    pair_seed character varying(64) NOT NULL,
+    elo_delta_left integer DEFAULT 0 NOT NULL,
+    elo_delta_right integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_matches_y2026m04; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_matches_y2026m04 (
+    id bigint DEFAULT nextval('public.codex_matches_id_seq'::regclass) NOT NULL,
+    user_id bigint NOT NULL,
+    codex_realm_id bigint NOT NULL,
+    left_node_id bigint NOT NULL,
+    right_node_id bigint NOT NULL,
+    winner_node_id bigint,
+    pair_seed character varying(64) NOT NULL,
+    elo_delta_left integer DEFAULT 0 NOT NULL,
+    elo_delta_right integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_matches_y2026m05; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_matches_y2026m05 (
+    id bigint DEFAULT nextval('public.codex_matches_id_seq'::regclass) NOT NULL,
+    user_id bigint NOT NULL,
+    codex_realm_id bigint NOT NULL,
+    left_node_id bigint NOT NULL,
+    right_node_id bigint NOT NULL,
+    winner_node_id bigint,
+    pair_seed character varying(64) NOT NULL,
+    elo_delta_left integer DEFAULT 0 NOT NULL,
+    elo_delta_right integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_matches_y2026m06; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_matches_y2026m06 (
+    id bigint DEFAULT nextval('public.codex_matches_id_seq'::regclass) NOT NULL,
+    user_id bigint NOT NULL,
+    codex_realm_id bigint NOT NULL,
+    left_node_id bigint NOT NULL,
+    right_node_id bigint NOT NULL,
+    winner_node_id bigint,
+    pair_seed character varying(64) NOT NULL,
+    elo_delta_left integer DEFAULT 0 NOT NULL,
+    elo_delta_right integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_matches_y2026m07; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_matches_y2026m07 (
+    id bigint DEFAULT nextval('public.codex_matches_id_seq'::regclass) NOT NULL,
+    user_id bigint NOT NULL,
+    codex_realm_id bigint NOT NULL,
+    left_node_id bigint NOT NULL,
+    right_node_id bigint NOT NULL,
+    winner_node_id bigint,
+    pair_seed character varying(64) NOT NULL,
+    elo_delta_left integer DEFAULT 0 NOT NULL,
+    elo_delta_right integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_matches_y2026m08; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_matches_y2026m08 (
+    id bigint DEFAULT nextval('public.codex_matches_id_seq'::regclass) NOT NULL,
+    user_id bigint NOT NULL,
+    codex_realm_id bigint NOT NULL,
+    left_node_id bigint NOT NULL,
+    right_node_id bigint NOT NULL,
+    winner_node_id bigint,
+    pair_seed character varying(64) NOT NULL,
+    elo_delta_left integer DEFAULT 0 NOT NULL,
+    elo_delta_right integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_matches_y2026m09; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_matches_y2026m09 (
+    id bigint DEFAULT nextval('public.codex_matches_id_seq'::regclass) NOT NULL,
+    user_id bigint NOT NULL,
+    codex_realm_id bigint NOT NULL,
+    left_node_id bigint NOT NULL,
+    right_node_id bigint NOT NULL,
+    winner_node_id bigint,
+    pair_seed character varying(64) NOT NULL,
+    elo_delta_left integer DEFAULT 0 NOT NULL,
+    elo_delta_right integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: codex_nodes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2129,6 +2301,55 @@ ALTER TABLE ONLY public.blockchain_transactions ATTACH PARTITION public.blockcha
 
 
 --
+-- Name: codex_matches_default; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches ATTACH PARTITION public.codex_matches_default DEFAULT;
+
+
+--
+-- Name: codex_matches_y2026m04; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches ATTACH PARTITION public.codex_matches_y2026m04 FOR VALUES FROM ('2026-04-01 00:00:00') TO ('2026-05-01 00:00:00');
+
+
+--
+-- Name: codex_matches_y2026m05; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches ATTACH PARTITION public.codex_matches_y2026m05 FOR VALUES FROM ('2026-05-01 00:00:00') TO ('2026-06-01 00:00:00');
+
+
+--
+-- Name: codex_matches_y2026m06; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches ATTACH PARTITION public.codex_matches_y2026m06 FOR VALUES FROM ('2026-06-01 00:00:00') TO ('2026-07-01 00:00:00');
+
+
+--
+-- Name: codex_matches_y2026m07; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches ATTACH PARTITION public.codex_matches_y2026m07 FOR VALUES FROM ('2026-07-01 00:00:00') TO ('2026-08-01 00:00:00');
+
+
+--
+-- Name: codex_matches_y2026m08; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches ATTACH PARTITION public.codex_matches_y2026m08 FOR VALUES FROM ('2026-08-01 00:00:00') TO ('2026-09-01 00:00:00');
+
+
+--
+-- Name: codex_matches_y2026m09; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches ATTACH PARTITION public.codex_matches_y2026m09 FOR VALUES FROM ('2026-09-01 00:00:00') TO ('2026-10-01 00:00:00');
+
+
+--
 -- Name: gateway_telemetry_logs_default; Type: TABLE ATTACH; Schema: public; Owner: -
 --
 
@@ -2322,6 +2543,13 @@ ALTER TABLE ONLY public.codex_comments ALTER COLUMN id SET DEFAULT nextval('publ
 --
 
 ALTER TABLE ONLY public.codex_fractions ALTER COLUMN id SET DEFAULT nextval('public.codex_fractions_id_seq'::regclass);
+
+
+--
+-- Name: codex_matches id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches ALTER COLUMN id SET DEFAULT nextval('public.codex_matches_id_seq'::regclass);
 
 
 --
@@ -2589,6 +2817,70 @@ ALTER TABLE ONLY public.codex_comments
 
 ALTER TABLE ONLY public.codex_fractions
     ADD CONSTRAINT codex_fractions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: codex_matches codex_matches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches
+    ADD CONSTRAINT codex_matches_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: codex_matches_default codex_matches_default_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches_default
+    ADD CONSTRAINT codex_matches_default_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: codex_matches_y2026m04 codex_matches_y2026m04_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches_y2026m04
+    ADD CONSTRAINT codex_matches_y2026m04_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: codex_matches_y2026m05 codex_matches_y2026m05_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches_y2026m05
+    ADD CONSTRAINT codex_matches_y2026m05_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: codex_matches_y2026m06 codex_matches_y2026m06_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches_y2026m06
+    ADD CONSTRAINT codex_matches_y2026m06_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: codex_matches_y2026m07 codex_matches_y2026m07_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches_y2026m07
+    ADD CONSTRAINT codex_matches_y2026m07_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: codex_matches_y2026m08 codex_matches_y2026m08_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches_y2026m08
+    ADD CONSTRAINT codex_matches_y2026m08_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: codex_matches_y2026m09 codex_matches_y2026m09_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_matches_y2026m09
+    ADD CONSTRAINT codex_matches_y2026m09_pkey PRIMARY KEY (id, created_at);
 
 
 --
@@ -3325,6 +3617,230 @@ CREATE INDEX blockchain_transactions_y2026m06_wallet_id_idx ON public.blockchain
 --
 
 CREATE INDEX blockchain_transactions_y2026m06_wallet_id_status_idx ON public.blockchain_transactions_y2026m06 USING btree (wallet_id, status);
+
+
+--
+-- Name: idx_codex_matches_realm; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_matches_realm ON ONLY public.codex_matches USING btree (codex_realm_id);
+
+
+--
+-- Name: codex_matches_default_codex_realm_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_default_codex_realm_id_idx ON public.codex_matches_default USING btree (codex_realm_id);
+
+
+--
+-- Name: idx_codex_matches_pair; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_matches_pair ON ONLY public.codex_matches USING btree (left_node_id, right_node_id);
+
+
+--
+-- Name: codex_matches_default_left_node_id_right_node_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_default_left_node_id_right_node_id_idx ON public.codex_matches_default USING btree (left_node_id, right_node_id);
+
+
+--
+-- Name: idx_codex_matches_pair_seed; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_matches_pair_seed ON ONLY public.codex_matches USING btree (pair_seed);
+
+
+--
+-- Name: codex_matches_default_pair_seed_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_default_pair_seed_idx ON public.codex_matches_default USING btree (pair_seed);
+
+
+--
+-- Name: idx_codex_matches_user_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_matches_user_created ON ONLY public.codex_matches USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: codex_matches_default_user_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_default_user_id_created_at_idx ON public.codex_matches_default USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: codex_matches_y2026m04_codex_realm_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m04_codex_realm_id_idx ON public.codex_matches_y2026m04 USING btree (codex_realm_id);
+
+
+--
+-- Name: codex_matches_y2026m04_left_node_id_right_node_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m04_left_node_id_right_node_id_idx ON public.codex_matches_y2026m04 USING btree (left_node_id, right_node_id);
+
+
+--
+-- Name: codex_matches_y2026m04_pair_seed_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m04_pair_seed_idx ON public.codex_matches_y2026m04 USING btree (pair_seed);
+
+
+--
+-- Name: codex_matches_y2026m04_user_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m04_user_id_created_at_idx ON public.codex_matches_y2026m04 USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: codex_matches_y2026m05_codex_realm_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m05_codex_realm_id_idx ON public.codex_matches_y2026m05 USING btree (codex_realm_id);
+
+
+--
+-- Name: codex_matches_y2026m05_left_node_id_right_node_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m05_left_node_id_right_node_id_idx ON public.codex_matches_y2026m05 USING btree (left_node_id, right_node_id);
+
+
+--
+-- Name: codex_matches_y2026m05_pair_seed_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m05_pair_seed_idx ON public.codex_matches_y2026m05 USING btree (pair_seed);
+
+
+--
+-- Name: codex_matches_y2026m05_user_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m05_user_id_created_at_idx ON public.codex_matches_y2026m05 USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: codex_matches_y2026m06_codex_realm_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m06_codex_realm_id_idx ON public.codex_matches_y2026m06 USING btree (codex_realm_id);
+
+
+--
+-- Name: codex_matches_y2026m06_left_node_id_right_node_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m06_left_node_id_right_node_id_idx ON public.codex_matches_y2026m06 USING btree (left_node_id, right_node_id);
+
+
+--
+-- Name: codex_matches_y2026m06_pair_seed_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m06_pair_seed_idx ON public.codex_matches_y2026m06 USING btree (pair_seed);
+
+
+--
+-- Name: codex_matches_y2026m06_user_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m06_user_id_created_at_idx ON public.codex_matches_y2026m06 USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: codex_matches_y2026m07_codex_realm_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m07_codex_realm_id_idx ON public.codex_matches_y2026m07 USING btree (codex_realm_id);
+
+
+--
+-- Name: codex_matches_y2026m07_left_node_id_right_node_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m07_left_node_id_right_node_id_idx ON public.codex_matches_y2026m07 USING btree (left_node_id, right_node_id);
+
+
+--
+-- Name: codex_matches_y2026m07_pair_seed_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m07_pair_seed_idx ON public.codex_matches_y2026m07 USING btree (pair_seed);
+
+
+--
+-- Name: codex_matches_y2026m07_user_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m07_user_id_created_at_idx ON public.codex_matches_y2026m07 USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: codex_matches_y2026m08_codex_realm_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m08_codex_realm_id_idx ON public.codex_matches_y2026m08 USING btree (codex_realm_id);
+
+
+--
+-- Name: codex_matches_y2026m08_left_node_id_right_node_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m08_left_node_id_right_node_id_idx ON public.codex_matches_y2026m08 USING btree (left_node_id, right_node_id);
+
+
+--
+-- Name: codex_matches_y2026m08_pair_seed_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m08_pair_seed_idx ON public.codex_matches_y2026m08 USING btree (pair_seed);
+
+
+--
+-- Name: codex_matches_y2026m08_user_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m08_user_id_created_at_idx ON public.codex_matches_y2026m08 USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: codex_matches_y2026m09_codex_realm_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m09_codex_realm_id_idx ON public.codex_matches_y2026m09 USING btree (codex_realm_id);
+
+
+--
+-- Name: codex_matches_y2026m09_left_node_id_right_node_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m09_left_node_id_right_node_id_idx ON public.codex_matches_y2026m09 USING btree (left_node_id, right_node_id);
+
+
+--
+-- Name: codex_matches_y2026m09_pair_seed_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m09_pair_seed_idx ON public.codex_matches_y2026m09 USING btree (pair_seed);
+
+
+--
+-- Name: codex_matches_y2026m09_user_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codex_matches_y2026m09_user_id_created_at_idx ON public.codex_matches_y2026m09 USING btree (user_id, created_at DESC);
 
 
 --
@@ -5029,6 +5545,251 @@ ALTER INDEX public.index_blockchain_transactions_on_wallet_id_and_status ATTACH 
 
 
 --
+-- Name: codex_matches_default_codex_realm_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_realm ATTACH PARTITION public.codex_matches_default_codex_realm_id_idx;
+
+
+--
+-- Name: codex_matches_default_left_node_id_right_node_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair ATTACH PARTITION public.codex_matches_default_left_node_id_right_node_id_idx;
+
+
+--
+-- Name: codex_matches_default_pair_seed_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair_seed ATTACH PARTITION public.codex_matches_default_pair_seed_idx;
+
+
+--
+-- Name: codex_matches_default_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.codex_matches_pkey ATTACH PARTITION public.codex_matches_default_pkey;
+
+
+--
+-- Name: codex_matches_default_user_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_user_created ATTACH PARTITION public.codex_matches_default_user_id_created_at_idx;
+
+
+--
+-- Name: codex_matches_y2026m04_codex_realm_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_realm ATTACH PARTITION public.codex_matches_y2026m04_codex_realm_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m04_left_node_id_right_node_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair ATTACH PARTITION public.codex_matches_y2026m04_left_node_id_right_node_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m04_pair_seed_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair_seed ATTACH PARTITION public.codex_matches_y2026m04_pair_seed_idx;
+
+
+--
+-- Name: codex_matches_y2026m04_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.codex_matches_pkey ATTACH PARTITION public.codex_matches_y2026m04_pkey;
+
+
+--
+-- Name: codex_matches_y2026m04_user_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_user_created ATTACH PARTITION public.codex_matches_y2026m04_user_id_created_at_idx;
+
+
+--
+-- Name: codex_matches_y2026m05_codex_realm_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_realm ATTACH PARTITION public.codex_matches_y2026m05_codex_realm_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m05_left_node_id_right_node_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair ATTACH PARTITION public.codex_matches_y2026m05_left_node_id_right_node_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m05_pair_seed_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair_seed ATTACH PARTITION public.codex_matches_y2026m05_pair_seed_idx;
+
+
+--
+-- Name: codex_matches_y2026m05_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.codex_matches_pkey ATTACH PARTITION public.codex_matches_y2026m05_pkey;
+
+
+--
+-- Name: codex_matches_y2026m05_user_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_user_created ATTACH PARTITION public.codex_matches_y2026m05_user_id_created_at_idx;
+
+
+--
+-- Name: codex_matches_y2026m06_codex_realm_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_realm ATTACH PARTITION public.codex_matches_y2026m06_codex_realm_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m06_left_node_id_right_node_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair ATTACH PARTITION public.codex_matches_y2026m06_left_node_id_right_node_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m06_pair_seed_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair_seed ATTACH PARTITION public.codex_matches_y2026m06_pair_seed_idx;
+
+
+--
+-- Name: codex_matches_y2026m06_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.codex_matches_pkey ATTACH PARTITION public.codex_matches_y2026m06_pkey;
+
+
+--
+-- Name: codex_matches_y2026m06_user_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_user_created ATTACH PARTITION public.codex_matches_y2026m06_user_id_created_at_idx;
+
+
+--
+-- Name: codex_matches_y2026m07_codex_realm_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_realm ATTACH PARTITION public.codex_matches_y2026m07_codex_realm_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m07_left_node_id_right_node_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair ATTACH PARTITION public.codex_matches_y2026m07_left_node_id_right_node_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m07_pair_seed_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair_seed ATTACH PARTITION public.codex_matches_y2026m07_pair_seed_idx;
+
+
+--
+-- Name: codex_matches_y2026m07_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.codex_matches_pkey ATTACH PARTITION public.codex_matches_y2026m07_pkey;
+
+
+--
+-- Name: codex_matches_y2026m07_user_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_user_created ATTACH PARTITION public.codex_matches_y2026m07_user_id_created_at_idx;
+
+
+--
+-- Name: codex_matches_y2026m08_codex_realm_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_realm ATTACH PARTITION public.codex_matches_y2026m08_codex_realm_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m08_left_node_id_right_node_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair ATTACH PARTITION public.codex_matches_y2026m08_left_node_id_right_node_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m08_pair_seed_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair_seed ATTACH PARTITION public.codex_matches_y2026m08_pair_seed_idx;
+
+
+--
+-- Name: codex_matches_y2026m08_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.codex_matches_pkey ATTACH PARTITION public.codex_matches_y2026m08_pkey;
+
+
+--
+-- Name: codex_matches_y2026m08_user_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_user_created ATTACH PARTITION public.codex_matches_y2026m08_user_id_created_at_idx;
+
+
+--
+-- Name: codex_matches_y2026m09_codex_realm_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_realm ATTACH PARTITION public.codex_matches_y2026m09_codex_realm_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m09_left_node_id_right_node_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair ATTACH PARTITION public.codex_matches_y2026m09_left_node_id_right_node_id_idx;
+
+
+--
+-- Name: codex_matches_y2026m09_pair_seed_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_pair_seed ATTACH PARTITION public.codex_matches_y2026m09_pair_seed_idx;
+
+
+--
+-- Name: codex_matches_y2026m09_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.codex_matches_pkey ATTACH PARTITION public.codex_matches_y2026m09_pkey;
+
+
+--
+-- Name: codex_matches_y2026m09_user_id_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_codex_matches_user_created ATTACH PARTITION public.codex_matches_y2026m09_user_id_created_at_idx;
+
+
+--
 -- Name: gateway_telemetry_logs_default_gateway_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -5648,6 +6409,14 @@ ALTER TABLE public.gateway_telemetry_logs
 
 
 --
+-- Name: codex_matches fk_rails_06bb4d7429; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.codex_matches
+    ADD CONSTRAINT fk_rails_06bb4d7429 FOREIGN KEY (right_node_id) REFERENCES public.codex_nodes(id);
+
+
+--
 -- Name: trees fk_rails_06cda60c51; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5688,6 +6457,14 @@ ALTER TABLE ONLY public.wallets
 
 
 --
+-- Name: codex_matches fk_rails_1cc902369a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.codex_matches
+    ADD CONSTRAINT fk_rails_1cc902369a FOREIGN KEY (left_node_id) REFERENCES public.codex_nodes(id);
+
+
+--
 -- Name: ews_alerts fk_rails_1d5041378e; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5725,6 +6502,14 @@ ALTER TABLE ONLY public.parametric_insurances
 
 ALTER TABLE ONLY public.wallets
     ADD CONSTRAINT fk_rails_28077d4aa2 FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: codex_matches fk_rails_2faed72d91; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.codex_matches
+    ADD CONSTRAINT fk_rails_2faed72d91 FOREIGN KEY (winner_node_id) REFERENCES public.codex_nodes(id);
 
 
 --
@@ -5896,6 +6681,14 @@ ALTER TABLE ONLY public.naas_contracts
 
 
 --
+-- Name: codex_matches fk_rails_ce591c906d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.codex_matches
+    ADD CONSTRAINT fk_rails_ce591c906d FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: users fk_rails_d7b9ff90af; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5952,6 +6745,14 @@ ALTER TABLE ONLY public.actuator_commands
 
 
 --
+-- Name: codex_matches fk_rails_efe23a52d0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE public.codex_matches
+    ADD CONSTRAINT fk_rails_efe23a52d0 FOREIGN KEY (codex_realm_id) REFERENCES public.codex_realms(id);
+
+
+--
 -- Name: parametric_insurances fk_rails_f74e36606e; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5998,6 +6799,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260509150000'),
 ('20260509140000'),
 ('20260509130000'),
 ('20260509120000');
