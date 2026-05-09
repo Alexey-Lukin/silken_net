@@ -83,7 +83,7 @@ module Trees
     # of `Trees::Show` (legacy) doesn't bleed through.
     def render_codex_citations
       return unless defined?(::Codex::Citation)
-      citations = ::Codex::Citation.for_target(@tree).includes(:node).limit(20)
+      citations = ::Codex::Citation.for_target(@tree).includes(node: :realm).limit(20)
       return if citations.empty?
 
       div(class: "mt-3") do

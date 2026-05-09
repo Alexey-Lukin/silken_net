@@ -37,7 +37,7 @@ module Alerts
     # of the alerts table doesn't bleed through.
     def render_codex_citations
       return unless defined?(::Codex::Citation)
-      citations = @citations || ::Codex::Citation.for_target(@alert).includes(:node).limit(10)
+      citations = @citations || ::Codex::Citation.for_target(@alert).includes(node: :realm).limit(10)
       return if citations.empty?
 
       div(class: "mt-2") do

@@ -29,7 +29,7 @@ module OracleVisions
     # prophecy). Inert when no citations exist.
     def render_codex_citations
       return unless defined?(::Codex::Citation)
-      citations = ::Codex::Citation.for_target(@insight).includes(:node).limit(10)
+      citations = ::Codex::Citation.for_target(@insight).includes(node: :realm).limit(10)
       return if citations.empty?
 
       div(class: "mt-3 pt-3 border-t border-emerald-900/50") do

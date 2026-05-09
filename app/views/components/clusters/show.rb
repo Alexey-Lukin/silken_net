@@ -66,7 +66,7 @@ module Clusters
     # `cherkasy-bir` Codex Node). Inert when no citations exist.
     def render_codex_citations
       return unless defined?(::Codex::Citation)
-      citations = ::Codex::Citation.for_target(@cluster).includes(:node).limit(20)
+      citations = ::Codex::Citation.for_target(@cluster).includes(node: :realm).limit(20)
       return if citations.empty?
 
       div(class: "mt-3") do

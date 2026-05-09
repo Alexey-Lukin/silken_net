@@ -73,6 +73,10 @@ module Codex
     # alerts table rendering N rows). Avoids N+1 by fetching all citations
     # for the given target collection in one query, returning a Hash keyed
     # by `[citable_type, citable_id]` so callers can index in O(1).
+    #
+    # Eager-loads `node: :realm` because `Codex::Citations::Pill` derives
+    # the realm-tinted accent border from `node.realm.accent_token` — fetching
+    # citations alone would re-introduce a per-pill query for each pill rendered.
     def self.bulk_for(targets)
       return {} if targets.blank?
 
@@ -82,7 +86,7 @@ module Codex
         next if type.nil?
         ids = list.map(&:id)
         where(citable_type: type, citable_id: ids)
-          .includes(:node)
+          .includes(node: :realm)
           .order(created_at: :asc)
           .each { |c| grouped[[ type, c.citable_id ]] << c }
       end
