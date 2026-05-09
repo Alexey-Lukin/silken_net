@@ -630,6 +630,56 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Що робить** | Pre-computed deltas передаються як args (не recompute у воркері — what the Arena UI showed at vote-time is what gets persisted). Атомарно `UPDATE codex_nodes SET attunement_elo = attunement_elo + ?, match_count = match_count + 1` для обох вузлів у транзакції. No SELECT-then-UPDATE race. |
 | **Інвокери** | `Codex::VoteRecorderService` |
 
+### `Codex::PresenceTracker` (Phase 5)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/presence_tracker.rb` |
+| **API** | `.touch(user_id:, tree_id:)` / `.leave(user_id:, tree_id:)` / `.observers_for_tree(tree_id) → Array<Integer>` / `.observed?(tree_id) → Boolean` |
+| **Storage** | Redis Set `codex:presence:tree:<tree_id>` of user_ids, TTL 10 min refreshed on every `touch`. |
+| **Що робить** | Records "user U is currently observing tree T" so the Discovery hook in `TelemetryUnpackerService` can fan out probes only when someone is watching. Cheap `SMEMBERS`/`EXISTS` calls; rescues all Redis exceptions → `[]` / `false`. **Never blocks `uplink`.** |
+| **Caller** | A future Stimulus heartbeat controller on `Tree::Show` (every 60 s while page is visible). |
+
+### `Codex::DiscoveryEngine` (Phase 5 — pure rule evaluator)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/discovery_engine.rb` |
+| **API** | `Codex::DiscoveryEngine.evaluate(user:, trigger_type:, payload: {})` → `Array<Codex::Node>` (nodes the user just unlocked) |
+| **Reads** | `Codex::DiscoveryRule.cached_active_by_condition` (1-hour TTL, busted on rule mutation). |
+| **Adapters** | Hash `ADAPTERS` keyed by `condition_type` symbol. Phase 5 ships 4 of 7: `tree_observation_minutes` (Wallet→Tree→TelemetryLog count proxy), `match_count` (with optional `realm_slug` filter), `attunement_streak_days` (consecutive trailing days), `oracle_dispatched` (TelemetryLog `oracle_status IN (dispatched, fulfilled)`). |
+| **Skips** | rules whose Node is already in this user's `Codex::Discovery`; unknown `condition_type` → debug log + skip; unsaved user → `[]`. |
+
+### `Codex::DiscoveryProbeWorker` (Phase 5)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/codex/discovery_probe_worker.rb` |
+| **Черга** | `default` (#5) — ADR-CDX-4 (Discovery is cosmetic; never blocks Proof-of-Growth) |
+| **Retry** | 3 |
+| **Вхід** | `user_id`, `trigger_type` (string), `payload` (hash with optional `trigger_ref_type` / `trigger_ref_id` / `tree_id`) |
+| **Що робить** | Calls `Codex::DiscoveryEngine.evaluate`; for each unlocked Node, atomically `find_or_create_by(user_id:, codex_node_id:)`; broadcasts on `codex:discoveries:user:<user_id>` only when `previously_new_record?` → race-safe single broadcast across concurrent workers. Rescues `RecordNotUnique` / `RecordInvalid` from concurrent inserts. |
+| **Інвокери** | `TelemetryUnpackerService.commit_telemetry` (presence-gated fan-out), `Codex::EloRecomputeWorker` (match_milestone — Phase 6 wire-up), `Codex::FractionChangeService` (fraction_choice — Phase 6 wire-up), `Codex::AttunementsController` (attunement_streak — Phase 6 wire-up). |
+
+### `Codex::DiscoveryRuleImportService` (Phase 5)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/discovery_rule_import_service.rb` |
+| **API** | `Codex::DiscoveryRuleImportService.call(path: SEED_PATH)` → `Result(created:, updated:, skipped:)` |
+| **Що робить** | Idempotent UPSERT loader for `db/seeds/codex/discovery_rules.yml`. UPSERT key = `name`. Resolves `node_slug` to `Codex::Node` (skip + warn if missing — supports any seed-run order). Resolves `created_by_user_email` to `User`, falls back to `User.oracle_executioner` for system-owned seeds. |
+| **Caller** | `db/seeds.rb` (after `Codex::NodeImportService`). |
+
+### TelemetryUnpackerService Discovery hook (Phase 5)
+
+The finalizer `commit_telemetry` ends with a fire-and-forget `enqueue_codex_discovery_probes(tree, log)` that:
+
+1. `defined?(::Codex::PresenceTracker)` guard (graceful in Phase-1-only deploys).
+2. `observers = Codex::PresenceTracker.observers_for_tree(tree.id)` — cheap Redis `SMEMBERS`.
+3. `return if observers.empty?` — most packets fire **zero** Sidekiq jobs.
+4. `observers.each { |uid| Codex::DiscoveryProbeWorker.perform_async(uid, "telemetry_observation", payload) }` with `payload` containing `tree_id`, `trigger_ref_type: "TelemetryLog"`, `trigger_ref_id: log.id_value`.
+5. `rescue StandardError` → log warn → uplink finalisation continues. Discovery is cosmetic; Redis/Sidekiq hiccup must never abort the uplink batch.
+
 ### Phase 3 controller (FractionsController)
 
 `Api::V1::Codex::FractionsController` — 3 ендпоінти, всі делегують до сервісу:

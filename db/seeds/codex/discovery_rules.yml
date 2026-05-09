@@ -1,0 +1,51 @@
+# Codex::DiscoveryRule seed registry — Phase 5.
+#
+# Each entry is a row in `codex_discovery_rules`, idempotently upserted
+# by the `Codex::DiscoveryRuleImportService` (run from `db/seeds.rb`).
+# `created_by_user_email` is resolved to `User#id` at import-time and
+# falls back to `User.oracle_executioner` when the email is unknown.
+#
+# Adding a rule here is the *editing-by-PR* equivalent of the DAO
+# CRUD endpoint at `POST /api/v1/codex/admin/discovery_rules`.
+#
+# Tip: keep `params` keys snake_case strings — they round-trip through
+# JSONB and are already consumed by the per-condition adapters in
+# `Codex::DiscoveryEngine::ADAPTERS` exactly as written here.
+
+- name: ten-matches-mythos
+  node_slug: yggdrasil
+  condition_type: match_count
+  threshold_value: 10
+  active: true
+  params:
+    realm_slug: mythos
+
+- name: first-match-overall
+  node_slug: protocol-codit
+  condition_type: match_count
+  threshold_value: 1
+  active: true
+  params: {}
+
+- name: weekly-attunement-streak
+  node_slug: protocol-acoustic-cavitation
+  condition_type: attunement_streak_days
+  threshold_value: 7
+  active: true
+  params: {}
+
+- name: oracle-veteran
+  node_slug: cherkasy-bir
+  condition_type: oracle_dispatched
+  threshold_value: 5
+  active: true
+  params: {}
+
+- name: long-observer
+  node_slug: roots-darwin-brain
+  condition_type: tree_observation_minutes
+  threshold_value: 600   # 10 hours
+  active: true
+  params:
+    window_days: 30
+    effective_period_minutes: 5

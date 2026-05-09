@@ -414,6 +414,33 @@ class TelemetryUnpackerService < ApplicationService
       weighted_points = tree.tree_family&.weighted_growth_points(growth_points) || growth_points
       tree.wallet.credit!(weighted_points) if weighted_points.positive?
     end
+
+    # [Codex Phase 5 — Discovery hook]
+    # Fire-and-forget probes for each user actively observing this tree.
+    # Cheap Redis SMEMBERS; empty when nobody is watching → zero Sidekiq
+    # cost. Failures (Redis down, Sidekiq misconfig) are swallowed —
+    # Discovery is cosmetic, must never block uplink finalisation.
+    enqueue_codex_discovery_probes(tree, log)
+  end
+
+  # [Codex Phase 5] Fans the Discovery probe out to one Sidekiq job per
+  # active observer. PresenceTracker rescues internally → returns [].
+  def enqueue_codex_discovery_probes(tree, log)
+    return unless defined?(::Codex::PresenceTracker)
+
+    observers = ::Codex::PresenceTracker.observers_for_tree(tree.id)
+    return if observers.empty?
+
+    payload = {
+      "tree_id"          => tree.id,
+      "trigger_ref_type" => "TelemetryLog",
+      "trigger_ref_id"   => log.id_value
+    }
+    observers.each do |user_id|
+      ::Codex::DiscoveryProbeWorker.perform_async(user_id, "telemetry_observation", payload)
+    end
+  rescue StandardError => e
+    Rails.logger.warn "[TelemetryUnpacker] codex hook failed: #{e.class}: #{e.message}"
   end
 
   # [KENOSIS TITAN]: Денормалізований лічильник "одужання" (Anti-Flapping).

@@ -85,4 +85,23 @@ FactoryBot.define do
     elo_delta_left  { 16 }
     elo_delta_right { -16 }
   end
+
+  factory :codex_discovery, class: "Codex::Discovery" do
+    association :user
+    association :node, factory: :codex_node
+    codex_node_id  { node.id }
+    trigger_type   { :telemetry_observation }
+    unlocked_at    { Time.current }
+  end
+
+  factory :codex_discovery_rule, class: "Codex::DiscoveryRule" do
+    association :node, factory: :codex_node
+    association :created_by_user, factory: :user
+    codex_node_id    { node.id }
+    sequence(:name) { |n| "rule-#{n}" }
+    condition_type   { :match_count }
+    threshold_value  { 1 }
+    params           { {} }
+    active           { true }
+  end
 end

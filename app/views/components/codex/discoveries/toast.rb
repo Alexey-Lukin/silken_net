@@ -1,0 +1,88 @@
+# frozen_string_literal: true
+
+# Codex::Discoveries::Toast — Turbo Stream payload for a freshly-unlocked
+# Codex card.
+#
+# Render contract: this component renders a single `<div>` that the
+# Stimulus `codex--reveal` controller will pop in with the matrix-rain
+# animation. The dashboard layout is expected to expose a Turbo Stream
+# target `codex_discovery_feed` (a sticky region in the bottom-right).
+#
+# Animation policy: keep the markup self-sufficient — text, archetype
+# pill, "Visit" link. The reveal controller handles fade-in; absent JS,
+# the toast still appears (just without animation).
+#
+# Namespacing: lives under `Codex::Discoveries::*` (plural) to avoid a
+# Zeitwerk const-clash with the `Codex::Discovery` AR model class.
+module Codex
+  module Discoveries
+    class Toast < ApplicationComponent
+      def initialize(node:, trigger_type:, unlocked_at:)
+        @node         = node
+        @trigger_type = trigger_type.to_s
+        @unlocked_at  = unlocked_at
+      end
+
+      def view_template
+        div(
+          class: tokens(
+            "border border-gaia-border bg-gaia-surface text-gaia-text",
+            "p-3 space-y-1 max-w-sm shadow"
+          ),
+          data: { controller: "codex--reveal", "codex--reveal-trigger-value": @trigger_type }
+        ) do
+          render_header
+          render_title
+          render_meta
+          render_cta
+        end
+      end
+
+      private
+
+      def render_header
+        div(class: "flex items-center justify-between") do
+          span(class: "text-mini uppercase tracking-[0.3em] font-mono text-gaia-text-muted") do
+            "Codex Unlocked"
+          end
+          span(class: tokens(
+            "text-mini font-mono uppercase tracking-widest",
+            "text-status-success-text bg-status-success px-2"
+          )) { trigger_label }
+        end
+      end
+
+      def render_title
+        h4(class: "text-tiny text-gaia-text") { @node.title_en }
+      end
+
+      def render_meta
+        p(class: "text-mini text-gaia-text-muted font-mono") do
+          [ @node.archetype_key, @unlocked_at&.strftime("%H:%M UTC") ].compact.join(" · ")
+        end
+      end
+
+      def render_cta
+        a(
+          href: "/api/v1/codex/nodes/#{@node.slug}",
+          class: tokens(
+            "inline-block text-mini uppercase tracking-[0.3em]",
+            "text-gaia-primary hover:underline focus-visible:ring-2 focus-visible:ring-gaia-primary"
+          )
+        ) { "→ Visit" }
+      end
+
+      def trigger_label
+        case @trigger_type
+        when "telemetry_observation" then "Observed"
+        when "match_milestone"       then "Battle"
+        when "fraction_choice"       then "Pact"
+        when "attunement_streak"     then "Streak"
+        when "oracle_seasonal"       then "Oracle"
+        when "manual_unlock"         then "Granted"
+        else "Unlocked"
+        end
+      end
+    end
+  end
+end

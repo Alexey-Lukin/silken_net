@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 33 моделей (26 ядра + 7 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
+Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 35 моделей (26 ядра + 9 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4; Discovery, DiscoveryRule у Phase 5), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
 
 ---
 
@@ -1292,6 +1292,33 @@ Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (е
 1. `BattleController#pair` → `PairSelectorService` обирає anchor (weighted by inverse `match_count`) + opponent в Elo-bucket ±200 → HMAC-SHA256 seed зберігається у Redis з TTL 5 хв.
 2. `BattleController#vote` → `VoteRecorderService` consume'ить seed (DEL → replay-proof), створює Match-row, обчислює Elo deltas, enqueue `EloRecomputeWorker.perform_async(left_id, right_id, delta_left, delta_right)`.
 3. `EloRecomputeWorker` (queue `low`) атомарно `UPDATE codex_nodes SET attunement_elo = attunement_elo + ?, match_count = match_count + 1` для обох вузлів у транзакції.
+
+### `Codex::Discovery` — Unlock Log (Phase 5) — `codex_discoveries`
+
+**Атрибути:** `user_id` (FK, `on_delete: :cascade`), `codex_node_id` (FK, `on_delete: :restrict` — counter_cache → `discovery_count`), `trigger_type` (integer enum: `telemetry_observation` / `manual_unlock` / `match_milestone` / `fraction_choice` / `attunement_streak` / `oracle_seasonal`, prefix `triggered_by`), polymorphic `(trigger_ref_type, trigger_ref_id)` (БЕЗ FK — Discovery survives partition drops & match archival), `unlocked_at` (timestamp).
+
+**Індекси:** UNIQUE `(user_id, codex_node_id)` (anti-double-unlock на DB-рівні), BTREE `(trigger_ref_type, trigger_ref_id)`, BTREE `(user_id, unlocked_at DESC)` (own-collection feed).
+
+**Validations:** `unlocked_at` presence; `before_validation :default_unlocked_at on: :create` для зручності API.
+
+**Scopes:** `for_user(user)`, `recent` (unlocked_at DESC).
+
+**Workflow:**
+1. Trigger fires (TelemetryUnpackerService finalizer / EloRecomputeWorker / FractionChangeService / AttunementsController) → `Codex::DiscoveryProbeWorker.perform_async(user_id, trigger_type, payload)`.
+2. Worker → `Codex::DiscoveryEngine.evaluate(user:, trigger_type:, payload:)` → `Array<Codex::Node>` (skips already-unlocked).
+3. Worker `find_or_create_by(user_id:, codex_node_id:)` + `previously_new_record?` → ActionCable broadcast тільки на справжньому create (race-safe).
+
+### `Codex::DiscoveryRule` — DAO Rule Registry (Phase 5) — `codex_discovery_rules`
+
+**Атрибути:** `name` (varchar, ≤ 120, унікальний на logical level), `codex_node_id` (FK, на яку картку правило unlocks), `condition_type` (integer enum: `tree_observation_minutes` / `acoustic_class_count` / `cluster_visited` / `match_count` / `attunement_streak_days` / `firmware_version_seen` / `oracle_dispatched`, prefix `condition`), `threshold_value` (integer, ≥ 1), `params` (JSONB, default `{}`), `active` (boolean), `created_by_user_id` (FK to users, `on_delete: :restrict` — audit trail).
+
+**Індекс:** BTREE `(active, condition_type)` (hot-path `active_only` filter for `cached_active_by_condition`).
+
+**Validations:** `name`/`threshold_value` presence; `params_must_be_hash`.
+
+**Caching:** `Rails.cache.fetch("codex.discovery_rules.v1", expires_in: 1.hour)` busted `after_commit` (create/update/destroy). DAO-зміни візуальні всім worker'ам у ≤ 1 сек.
+
+**CRUD:** admin+ через `Api::V1::Codex::Admin::DiscoveryRulesController`. Seeds через `Codex::DiscoveryRuleImportService` (idempotent UPSERT by `name`, `db/seeds/codex/discovery_rules.yml`).
 
 ---
 

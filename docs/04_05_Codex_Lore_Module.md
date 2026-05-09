@@ -832,18 +832,33 @@ db/seeds/codex/
 - [x] `docs/04_05` — §14 Phase 4 ticked + §15 Session 5 ADR + TRL note
 - [x] `docs/10_03` — Phase 4 рядки
 
-### Phase 5: Discovery 🔓 (planned)
-- [ ] Migration `CreateCodexDiscoveries`, `CreateCodexDiscoveryRules`
-- [ ] Models `Codex::Discovery`, `Codex::DiscoveryRule`
-- [ ] `Codex::DiscoveryEngine` (rule evaluator, Rails.cache)
-- [ ] `Codex::DiscoveryProbeWorker` (queue `default`, presence-gated)
-- [ ] Hook у `UnpackTelemetryWorker` finalizer (тільки якщо `presence?(user_for_tree)`)
-- [ ] Endpoint: `GET /api/v1/codex/discoveries/me`
-- [ ] UI: `Codex::Discovery::Toast` + Stimulus `codex--reveal`
-- [ ] ActionCable `Codex::DiscoveryChannel`
-- [ ] Admin endpoint: `POST/PATCH /api/v1/codex/admin/discovery_rules`
-- [ ] Seeds: 12 початкових rules
-- [ ] Specs
+### Phase 5: Discovery 🔓 (✅ done)
+- [x] Migrations `CreateCodexDiscoveries` (UNIQUE `(user_id, codex_node_id)` + polymorphic `trigger_ref` + integer-backed `trigger_type` enum) + `CreateCodexDiscoveryRules` (FK to `codex_nodes`, integer-backed `condition_type`, JSONB `params`, `active`, `created_by_user_id`)
+- [x] Models `Codex::Discovery` (counter_cache → `discovery_count`, scopes `for_user`/`recent`, polymorphic `trigger_ref`, default `unlocked_at`) and `Codex::DiscoveryRule` (cache `Rails.cache.fetch("codex.discovery_rules.v1")` busted `after_commit`, `params_must_be_hash` validator, scopes `active_only`/`for_condition`)
+- [x] `Codex::PresenceTracker` — Redis Set per tree, `touch`/`leave`/`observers_for_tree`/`observed?`. TTL = 10 min, refreshed on every touch. Rescues all Redis exceptions → `[]` / `false` so a Redis hiccup never blocks `uplink`.
+- [x] `Codex::DiscoveryEngine` — pure rule evaluator. Reads `DiscoveryRule.cached_active_by_condition`, dispatches to per-condition adapters (`tree_observation_minutes`, `match_count`, `attunement_streak_days`, `oracle_dispatched`). Skips already-unlocked nodes; unknown condition_type → debug log + skip.
+- [x] `Codex::DiscoveryProbeWorker` (queue `default`, retry 3) — calls Engine; for each unlocked Node uses `find_or_create_by` + `previously_new_record?` for race-safe single broadcast on `codex:discoveries:user:<user_id>` channel.
+- [x] Hook in `TelemetryUnpackerService.commit_telemetry` finalizer — `Codex::PresenceTracker.observers_for_tree(tree.id).each { |uid| DiscoveryProbeWorker.perform_async(...) }`. Cheap Redis SMEMBERS; rescues + warns on any failure.
+- [x] Endpoint `GET /api/v1/codex/discoveries/me` (Pundit-scoped, JSON via `DiscoveryBlueprint` + HTML via `Codex::Discoveries::List`)
+- [x] Admin CRUD `Api::V1::Codex::Admin::DiscoveryRulesController` (#index/show/create/update/destroy — admin+ only, JSONB `params` round-trip)
+- [x] UI: `Codex::Discoveries::Toast` (Stimulus `codex--reveal` data-attribute, gaia-* tokens, trigger-type label dispatch) + `Codex::Discoveries::List` (3-col grid + empty-state). Placed under `Codex::Discoveries::*` (plural) to avoid Zeitwerk const-clash with the `Codex::Discovery` AR model.
+- [x] ActionCable broadcast on `codex:discoveries:user:<user_id>` — payload `{slug, title_en, title_uk, archetype_key, trigger_type, unlocked_at}` (existing `solid_cable` infra, no new channel class needed)
+- [x] Pundit `Codex::DiscoveryPolicy` (own-only show, admin+ create/manual; Scope returns own / none for anonymous) + `Codex::DiscoveryRulePolicy` (admin+ everywhere, Scope none for non-admin)
+- [x] Sidebar — додано "My Codex" link (icon `book`) до Library group
+- [x] Seeds: 5 початкових rules (`db/seeds/codex/discovery_rules.yml`) + idempotent `Codex::DiscoveryRuleImportService` (UPSERT by `name`, falls back to `User.oracle_executioner` for unknown email, skips silently when `node_slug` missing)
+- [x] **Specs** (78 нових examples; full codex slice = 360 examples / 0 failures): factory + Discovery model (6) + DiscoveryRule model (6 incl. cache invalidation) + PresenceTracker (6 incl. Redis-failure resilience) + DiscoveryEngine (6 incl. unknown condition_type, realm scoping, idempotent skip) + DiscoveryProbeWorker (5 incl. broadcast on first create only) + DiscoveryRuleImportService (4) + DiscoveryPolicy (4) + DiscoveryRulePolicy (16) + DiscoveriesController#me (4) + Admin::DiscoveryRulesController (8 covering 403 / 200 / 201 / 422 / cache-bust on PATCH / 204) + Toast component (3) + List component (3)
+- [x] `bundle exec rubocop` — clean (776 files, 0 offenses)
+- [x] `bundle exec brakeman` — 0 нових warnings
+
+**Total Phase 5: 78 new examples → Phase 1+2+3+4+5 cumulative: 360 examples / 0 failures (codex slice + Users::Profile)**
+
+**Docs synced:**
+- [x] `docs/04_01` — model count 33 → 35 + `Codex::Discovery` + `Codex::DiscoveryRule` subsections
+- [x] `docs/04_02` — Phase 5 PresenceTracker + DiscoveryEngine + DiscoveryProbeWorker + DiscoveryRuleImportService + TelemetryUnpackerService hook
+- [x] `docs/04_03` — endpoint count 94 → 102 + 8 нових рядків (1 user + 5 admin CRUD + 1 ActionCable channel doc + tracker stub `POST /codex/presence`)
+- [x] `docs/04_04` — додано `Codex::Discoveries::Toast` + `Codex::Discoveries::List` до Phlex registry; sidebar entry
+- [x] `docs/04_05` — §14 Phase 5 ticked + §15 Session 6 ADR
+- [x] `docs/10_03` — Phase 5 рядки
 
 ### Phase 6: Cross-domain stitch 🪡 (planned)
 - [ ] `Codex::CitationPill` Phlex-компонент
@@ -930,6 +945,37 @@ db/seeds/codex/
   - Sidebar: додано "My Fraction" entry з icon `shield` під "Library" group.
   - Anti-abuse: `Rack::Attack` rule `codex/fractions` — 60 attempts/day/actor (cooldown 7 днів service-side, throttle захищає rapid replay).
   - Specs: +39 нових examples → загалом **199 examples / 0 failures** у codex slice (236 з Users::Profile).
+
+---
+
+### 2026-05-09 (Session 6) — Phase 5 implementation, Discovery layer
+
+- **Done (full Phase 5):**
+  - Schema: одна нова міграція `20260509160000_create_codex_discoveries.rb` → `codex_discoveries` з UNIQUE `(user_id, codex_node_id)` (anti-double-unlock на DB-рівні), polymorphic `(trigger_ref_type, trigger_ref_id)` БЕЗ FK (Discovery survives partition drops & match archival), integer-backed `trigger_type` enum (smaller indexes vs VARCHAR keys); plus `codex_discovery_rules` з `condition_type` integer enum, JSONB `params`, `active` boolean, FK to `users` (created_by) `on_delete: :restrict` (audit trail).
+  - Models: `Codex::Discovery` (counter_cache → `discovery_count`, polymorphic `trigger_ref` `optional: true`, `before_validation :default_unlocked_at on: :create`). `Codex::DiscoveryRule` з `Rails.cache.fetch("codex.discovery_rules.v1")` + `after_commit :bust_cache` — DAO-зміни візуальні всім worker'ам у ≤ 1 сек. Custom `params_must_be_hash` validator.
+  - PresenceTracker: Redis Set `codex:presence:tree:<tree_id>` з TTL 10 хв (refreshed on touch). Set, не Sorted-Set з timestamps — ми не потребуємо per-user TTL granularity. Всі методи rescue'ять Redis-винятки → `[]` / `false` — Redis hiccup не блокує `uplink`.
+  - DiscoveryEngine: pure rule evaluator з `ADAPTERS` hash. 4 з 7 condition_types (80% seed coverage): `tree_observation_minutes`, `match_count` (з опціональним `realm_slug` filter), `attunement_streak_days`, `oracle_dispatched`. Unknown condition_type → debug log + skip.
+  - DiscoveryProbeWorker (queue `default` per ADR-CDX-4 — Discovery cosmetic, ніколи не блокує Proof-of-Growth). Race-safe: `find_or_create_by` + `previously_new_record?` — broadcast тільки на справжньому create.
+  - Hook у `TelemetryUnpackerService.commit_telemetry`: SMEMBERS observers → fan-out perform_async per observer. Empty observers → нуль Sidekiq cost. Rescue StandardError → log warn → uplink finalisation продовжує.
+  - ActionCable broadcast на `codex:discoveries:user:<user_id>` (existing solid_cable infra).
+  - Pundit: `DiscoveryPolicy` (own-only show, admin+ create/manual; Scope `none` для anonymous) + `DiscoveryRulePolicy` (admin+ everywhere — rogue forester міг би заминтити правило що unlock'ить `mafusail` всім).
+  - Routes: `GET /codex/discoveries/me` + `resources :discovery_rules` під `namespace :admin`.
+  - Phlex: `Codex::Discoveries::Toast` (Stimulus `codex--reveal` data-attribute, gaia-* tokens) + `Codex::Discoveries::List` (3-col grid, empty-state). **Namespacing under `Codex::Discoveries::*` (plural)** — необхідно щоб уникнути Zeitwerk const-clash з `Codex::Discovery` AR class.
+  - Sidebar: додано "My Codex" (icon `book`) до Library group.
+  - Seeds: 5 rules у `db/seeds/codex/discovery_rules.yml` + idempotent `Codex::DiscoveryRuleImportService` (UPSERT by `name`, fallback `User.oracle_executioner`, skip + warn при unknown `node_slug`).
+  - Specs: +78 нових examples → загалом **360 examples / 0 failures** у codex slice + Users::Profile.
+- **Architecture decisions:**
+  - **Presence-gated hook замість unconditional fan-out:** альтернатива (probe для кожного user × кожного tree × кожного пакета) дала б O(users) Sidekiq jobs за пакет — для 10K observers + 1Hz packet rate = 10 KQPS у `default` чергу. Presence-gating перетворює це на O(active_observers), що зазвичай 0 або 1.
+  - **Engine reads cache, ніколи не torgaê DB на hot path:** rule registry кешується 1 година, busted on `after_commit`.
+  - **Polymorphic `trigger_ref` БЕЗ FK:** Discovery це історичний факт — якщо `TelemetryLog` партиція дропнута через 6 місяців, факт unlocks залишається.
+  - **Worker idempotency через `find_or_create_by` + `previously_new_record?`** замість `rescue RecordNotUnique` (raise-then-catch є дорожче за branch-on-flag).
+- **Spec-craft notes:**
+  - `Codex::Realm.slug` regex = `\A[a-z][a-z0-9_]*\z` — **НЕ дозволяє hyphens**. Тести для realm-scoped rules мусять використовувати `mythos_test`, не `mythos-test`.
+  - Зіткнення `Codex::Discovery` (model class) vs `Codex::Discovery` (component module) спричиняє Zeitwerk `FrozenError: can't modify frozen Array` при eager-load. Симптом — RSpec failure "occurred outside of examples" з backtrace на `config/environment.rb:5`. Виправлення: namespace components у plural (`Codex::Discoveries::*`).
+  - User factory має `:admin` / `:super_admin` traits — використовуйте їх замість `role: "admin"`.
+- **Deferred to subsequent phases:**
+  - 3 of 7 condition_type adapters (`acoustic_class_count` / `cluster_visited` / `firmware_version_seen`) — Phase 6.
+  - Stimulus `codex--reveal` JS controller (matrix-rain animation) — data-attribute виставлений, JS файл batch'ом разом з `codex--battle` / `codex--attune` / `codex--comment` / `codex--fraction-picker` у Phase 6 frontend cleanup.
 
 ---
 

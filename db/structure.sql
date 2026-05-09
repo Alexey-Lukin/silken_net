@@ -824,6 +824,79 @@ ALTER SEQUENCE public.codex_comments_id_seq OWNED BY public.codex_comments.id;
 
 
 --
+-- Name: codex_discoveries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_discoveries (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    codex_node_id bigint NOT NULL,
+    trigger_type integer DEFAULT 0 NOT NULL,
+    trigger_ref_type character varying,
+    trigger_ref_id bigint,
+    unlocked_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_discoveries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.codex_discoveries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: codex_discoveries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.codex_discoveries_id_seq OWNED BY public.codex_discoveries.id;
+
+
+--
+-- Name: codex_discovery_rules; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codex_discovery_rules (
+    id bigint NOT NULL,
+    name character varying NOT NULL,
+    codex_node_id bigint NOT NULL,
+    condition_type integer NOT NULL,
+    threshold_value integer DEFAULT 1 NOT NULL,
+    params jsonb DEFAULT '{}'::jsonb NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_by_user_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: codex_discovery_rules_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.codex_discovery_rules_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: codex_discovery_rules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.codex_discovery_rules_id_seq OWNED BY public.codex_discovery_rules.id;
+
+
+--
 -- Name: codex_fractions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2539,6 +2612,20 @@ ALTER TABLE ONLY public.codex_comments ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: codex_discoveries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_discoveries ALTER COLUMN id SET DEFAULT nextval('public.codex_discoveries_id_seq'::regclass);
+
+
+--
+-- Name: codex_discovery_rules id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_discovery_rules ALTER COLUMN id SET DEFAULT nextval('public.codex_discovery_rules_id_seq'::regclass);
+
+
+--
 -- Name: codex_fractions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2809,6 +2896,22 @@ ALTER TABLE ONLY public.codex_citations
 
 ALTER TABLE ONLY public.codex_comments
     ADD CONSTRAINT codex_comments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: codex_discoveries codex_discoveries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_discoveries
+    ADD CONSTRAINT codex_discoveries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: codex_discovery_rules codex_discovery_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_discovery_rules
+    ADD CONSTRAINT codex_discovery_rules_pkey PRIMARY KEY (id);
 
 
 --
@@ -3998,6 +4101,34 @@ CREATE UNIQUE INDEX idx_codex_citations_unique_per_user ON public.codex_citation
 
 
 --
+-- Name: idx_codex_discoveries_trigger_ref; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_discoveries_trigger_ref ON public.codex_discoveries USING btree (trigger_ref_type, trigger_ref_id);
+
+
+--
+-- Name: idx_codex_discoveries_user_node_uniq; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_codex_discoveries_user_node_uniq ON public.codex_discoveries USING btree (user_id, codex_node_id);
+
+
+--
+-- Name: idx_codex_discoveries_user_recent; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_discoveries_user_recent ON public.codex_discoveries USING btree (user_id, unlocked_at DESC);
+
+
+--
+-- Name: idx_codex_discovery_rules_active_condition; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_codex_discovery_rules_active_condition ON public.codex_discovery_rules USING btree (active, condition_type);
+
+
+--
 -- Name: idx_codex_nodes_geo_point; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4317,6 +4448,34 @@ CREATE INDEX index_codex_comments_on_parent_id ON public.codex_comments USING bt
 --
 
 CREATE INDEX index_codex_comments_on_user_id ON public.codex_comments USING btree (user_id);
+
+
+--
+-- Name: index_codex_discoveries_on_codex_node_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_discoveries_on_codex_node_id ON public.codex_discoveries USING btree (codex_node_id);
+
+
+--
+-- Name: index_codex_discoveries_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_discoveries_on_user_id ON public.codex_discoveries USING btree (user_id);
+
+
+--
+-- Name: index_codex_discovery_rules_on_codex_node_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_discovery_rules_on_codex_node_id ON public.codex_discovery_rules USING btree (codex_node_id);
+
+
+--
+-- Name: index_codex_discovery_rules_on_created_by_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_codex_discovery_rules_on_created_by_user_id ON public.codex_discovery_rules USING btree (created_by_user_id);
 
 
 --
@@ -6449,6 +6608,14 @@ ALTER TABLE ONLY public.codex_fractions
 
 
 --
+-- Name: codex_discovery_rules fk_rails_1c0d6ca984; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_discovery_rules
+    ADD CONSTRAINT fk_rails_1c0d6ca984 FOREIGN KEY (created_by_user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: wallets fk_rails_1c72cbc225; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6521,6 +6688,14 @@ ALTER TABLE ONLY public.ews_alerts
 
 
 --
+-- Name: codex_discoveries fk_rails_332a83846f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_discoveries
+    ADD CONSTRAINT fk_rails_332a83846f FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: trees fk_rails_3349fced79; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6566,6 +6741,14 @@ ALTER TABLE ONLY public.identities
 
 ALTER TABLE ONLY public.codex_citations
     ADD CONSTRAINT fk_rails_54273725c2 FOREIGN KEY (codex_node_id) REFERENCES public.codex_nodes(id);
+
+
+--
+-- Name: codex_discovery_rules fk_rails_5aeeda74be; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_discovery_rules
+    ADD CONSTRAINT fk_rails_5aeeda74be FOREIGN KEY (codex_node_id) REFERENCES public.codex_nodes(id) ON DELETE RESTRICT;
 
 
 --
@@ -6753,6 +6936,14 @@ ALTER TABLE public.codex_matches
 
 
 --
+-- Name: codex_discoveries fk_rails_f1f7a56a7d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codex_discoveries
+    ADD CONSTRAINT fk_rails_f1f7a56a7d FOREIGN KEY (codex_node_id) REFERENCES public.codex_nodes(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: parametric_insurances fk_rails_f74e36606e; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6799,6 +6990,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260509160000'),
 ('20260509150000'),
 ('20260509140000'),
 ('20260509130000'),

@@ -7,7 +7,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Впроваджено Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
-- **Кількість ендпоінтів:** 94 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`, `GET /api/v1/system_audits`; плюс Codex-група: 3 read-ендпоінти + 3 community write-ендпоінти Phase 2 + 3 identity-ендпоінти Phase 3 + 3 battle-ендпоінти Phase 4)
+- **Кількість ендпоінтів:** 103 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`, `GET /api/v1/system_audits`; плюс Codex-група: 3 read-ендпоінти + 3 community write-ендпоінти Phase 2 + 3 identity-ендпоінти Phase 3 + 3 battle-ендпоінти Phase 4 + 6 discovery-ендпоінтів Phase 5 (1 user + 5 admin CRUD))
 - **Базовий URL:** `https://<host>/api/v1`
 - **Формат відповідей:** JSON (якщо не вказано інше)
 - **Пов'язані модулі:**
@@ -286,6 +286,12 @@ POST /api/v1/auth/m2m_token
 | 95 | GET | `/api/v1/codex/battle/pair` | `codex/battle#pair` | 🔑 Auth | **Phase 4:** Turbo Frame Arena з парою + HMAC-signed `pair_seed` (TTL 5 хв у Redis). `?realm=<slug>`. Підбір через `Codex::PairSelectorService` (anchor weighted by inverse match_count, opponent у Elo bucket ±200). 422 коли в realm < 2 pickable nodes. |
 | 96 | POST | `/api/v1/codex/battle/votes` | `codex/battle#vote` | 🔑 Auth | **Phase 4:** body `{ pair_seed, winner_slug?, skip? }`. `Codex::VoteRecorderService` consume'ить seed (DEL → replay-proof) + створює Match + enqueue `EloRecomputeWorker` (queue `low`). 201 + Blueprint при успіху; 403 `seed_invalid_or_consumed` при replay; 422 при `winner_not_in_pair`. Rack::Attack: 60 / 1min / actor. |
 | 97 | GET | `/api/v1/codex/leaderboard` | `codex/leaderboard#index` | 🌐 Public | **Phase 4:** top-N Elo для realm (`?realm=<slug>&limit=<N≤100, default 25>`). HTML — `Codex::Leaderboard::Table` Phlex; JSON — масив `{slug, title_uk, title_en, attunement_elo, match_count, lifecycle_status}`. Виключає `destroyed`/`extinct`. |
+| 98 | GET | `/api/v1/codex/discoveries/me` | `codex/discoveries#me` | 🔑 Auth | **Phase 5:** paginated own unlock collection (`?page=N&limit≤21`). HTML — `Codex::Discoveries::List` Phlex (3-col grid + empty-state); JSON — `{ data: [DiscoveryBlueprint], meta: { count, page, pages } }`. Pundit-scoped до own user. |
+| 99 | GET | `/api/v1/codex/admin/discovery_rules` | `codex/admin/discovery_rules#index` | 🛡️ Admin+ | **Phase 5:** список усіх DAO-правил unlock'у. JSON масив `DiscoveryRuleBlueprint`. 403 для `forester`/`investor`. |
+| 100 | POST | `/api/v1/codex/admin/discovery_rules` | `codex/admin/discovery_rules#create` | 🛡️ Admin+ | **Phase 5:** body `{name, codex_node_id, condition_type, threshold_value, params: {...}, active}`. Зберігає `created_by_user_id = current_user.id`; busts engine cache на `after_commit`. 201 / 422. |
+| 101 | GET | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#show` | 🛡️ Admin+ | **Phase 5:** показує одне правило. |
+| 102 | PATCH/PUT | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#update` | 🛡️ Admin+ | **Phase 5:** часткове оновлення (`active`, threshold, params); busts engine cache → DAO change visible to workers ≤ 1 sec. 200 / 422. |
+| 103 | DELETE | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#destroy` | 🛡️ Admin+ | **Phase 5:** 204; busts engine cache. |
 
 **Легенда:**
 

@@ -37,6 +37,7 @@ module Navigation
             nav_item("Codex Atlas", api_v1_codex_nodes_path, "book")
             nav_item("Battle Arena", api_v1_codex_pair_battle_path, "swords")
             nav_item("Leaderboard", api_v1_codex_leaderboard_path, "trophy")
+            nav_item("My Codex", api_v1_codex_my_discoveries_path, "book")
             nav_item("My Fraction", api_v1_codex_my_fraction_path, "shield")
           end
 
