@@ -61,9 +61,42 @@ RSpec.describe Codex::DiscoveryEngine, type: :service do
     end
   end
 
-  describe "unknown condition_type → no-op" do
-    it "skips rules whose condition_type has no adapter" do
+  describe "inert rule (below threshold) → no-op" do
+    # Phase 6 — every condition_type now has an adapter, so the
+    # historical "unknown condition" guard is exercised by stubbing
+    # the ADAPTERS hash. The adapter still skips rules whose Node is
+    # already unlocked (covered above) and whose count is below the
+    # threshold (covered here for `acoustic_class_count`).
+    it "skips rules whose threshold has not been crossed" do
       create(:codex_discovery_rule, node: node, condition_type: :acoustic_class_count, threshold_value: 1)
+      expect(described_class.evaluate(user: user, trigger_type: :telemetry_observation)).to eq([])
+    end
+
+    it "logs and skips when the adapter for a rule is missing" do
+      create(:codex_discovery_rule, node: node, condition_type: :match_count, threshold_value: 1)
+      stub_const("#{described_class}::ADAPTERS", {})
+      expect(Rails.logger).to receive(:debug).at_least(:once)
+      expect(described_class.evaluate(user: user, trigger_type: :match_milestone)).to eq([])
+    end
+  end
+
+  describe "Phase 6 adapters" do
+    it "acoustic_class_count is inert when user has no organization" do
+      user.update!(organization_id: nil)
+      create(:codex_discovery_rule, node: node, condition_type: :acoustic_class_count, threshold_value: 1)
+      expect(described_class.evaluate(user: user, trigger_type: :telemetry_observation)).to eq([])
+    end
+
+    it "cluster_visited is inert when params['cluster_name'] is missing" do
+      create(:codex_discovery_rule,
+             node: node, condition_type: :cluster_visited, threshold_value: 1, params: {})
+      expect(described_class.evaluate(user: user, trigger_type: :telemetry_observation)).to eq([])
+    end
+
+    it "firmware_version_seen is inert when no firmware row matches" do
+      create(:codex_discovery_rule,
+             node: node, condition_type: :firmware_version_seen,
+             threshold_value: 1, params: { "version" => "v9.999.999" })
       expect(described_class.evaluate(user: user, trigger_type: :telemetry_observation)).to eq([])
     end
   end

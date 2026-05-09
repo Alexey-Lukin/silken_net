@@ -64,6 +64,7 @@ module Codex
       end
 
       enqueue_audit(fraction, previous_node_id: previous_node_id)
+      enqueue_discovery_probe(fraction, previous_node_id: previous_node_id)
       Result.new(
         success: true, fraction: fraction, cooldown_until: nil,
         previous_node_id: previous_node_id, errors: []
@@ -100,6 +101,30 @@ module Codex
     rescue StandardError
       # The audit trail is async by design. A transient enqueue failure
       # must not roll back a legitimate user-facing fraction change.
+      nil
+    end
+
+    # Phase 6 cross-domain stitch — fraction choice triggers a Discovery
+    # probe. Inert until DAO ships a `condition_type: fraction_choice`
+    # adapter (none yet — Phase 6+), but enqueueing now means the wire-up
+    # is in place and rule activation is a one-line DAO config change.
+    # Fail-open like the audit enqueue: never rolls back the user-facing
+    # fraction change.
+    def enqueue_discovery_probe(fraction, previous_node_id:)
+      return unless defined?(::Codex::DiscoveryProbeWorker)
+
+      ::Codex::DiscoveryProbeWorker.perform_async(
+        fraction.user_id,
+        "fraction_choice",
+        {
+          "fraction_id"      => fraction.id,
+          "codex_node_id"    => fraction.codex_node_id,
+          "previous_node_id" => previous_node_id,
+          "trigger_ref_type" => "Codex::Fraction",
+          "trigger_ref_id"   => fraction.id
+        }
+      )
+    rescue StandardError
       nil
     end
   end

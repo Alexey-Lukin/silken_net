@@ -26,6 +26,7 @@ module Api
 
           if attunement.save
             ::Codex::AttunementBroadcastWorker.perform_async(@node.id, current_user.id)
+            enqueue_discovery_probe(attunement)
             respond_to do |format|
               format.json do
                 render json: { data: ::Codex::AttunementBlueprint.render_as_hash(attunement) },
@@ -68,6 +69,26 @@ module Api
         def render_validation(record)
           render json: { errors: record.errors.full_messages },
                  status: :unprocessable_entity
+        end
+
+        # Phase 6 cross-domain stitch — every successful attune fans out
+        # a Discovery probe so the `attunement_streak_days` rule can fire
+        # the moment the user crosses N consecutive days. Fail-open: a
+        # Sidekiq enqueue hiccup must never roll back the attune.
+        def enqueue_discovery_probe(attunement)
+          return unless defined?(::Codex::DiscoveryProbeWorker)
+
+          ::Codex::DiscoveryProbeWorker.perform_async(
+            attunement.user_id,
+            "attunement_streak",
+            {
+              "codex_node_id"    => attunement.codex_node_id,
+              "trigger_ref_type" => "Codex::Attunement",
+              "trigger_ref_id"   => attunement.id
+            }
+          )
+        rescue StandardError => e
+          Rails.logger.warn "[Codex::AttunementsController] probe enqueue failed: #{e.class}: #{e.message}"
         end
       end
     end

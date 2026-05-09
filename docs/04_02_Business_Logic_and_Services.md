@@ -647,7 +647,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Файл** | `app/services/codex/discovery_engine.rb` |
 | **API** | `Codex::DiscoveryEngine.evaluate(user:, trigger_type:, payload: {})` → `Array<Codex::Node>` (nodes the user just unlocked) |
 | **Reads** | `Codex::DiscoveryRule.cached_active_by_condition` (1-hour TTL, busted on rule mutation). |
-| **Adapters** | Hash `ADAPTERS` keyed by `condition_type` symbol. Phase 5 ships 4 of 7: `tree_observation_minutes` (Wallet→Tree→TelemetryLog count proxy), `match_count` (with optional `realm_slug` filter), `attunement_streak_days` (consecutive trailing days), `oracle_dispatched` (TelemetryLog `oracle_status IN (dispatched, fulfilled)`). |
+| **Adapters** | Hash `ADAPTERS` keyed by `condition_type` symbol. **Phase 6 ships all 7**: `tree_observation_minutes` (Wallet→Tree→TelemetryLog count proxy, org-scoped), `match_count` (with optional `realm_slug` filter), `attunement_streak_days` (consecutive trailing days), `oracle_dispatched` (TelemetryLog `oracle_status IN (dispatched, fulfilled)`, org-scoped), `acoustic_class_count` (TelemetryLog `acoustic_events ≥ params['min_events']` proxy for high-class CMSIS-NN activity, org-scoped), `cluster_visited` (TelemetryLog from user's org's trees inside cluster matching `params['cluster_name']`), `firmware_version_seen` (TelemetryLog whose `BioContractFirmware.version` matches `params['version']`). All telemetry-joined adapters short-circuit when `user.organization_id.blank?`. |
 | **Skips** | rules whose Node is already in this user's `Codex::Discovery`; unknown `condition_type` → debug log + skip; unsaved user → `[]`. |
 
 ### `Codex::DiscoveryProbeWorker` (Phase 5)
@@ -686,6 +686,44 @@ The finalizer `commit_telemetry` ends with a fire-and-forget `enqueue_codex_disc
 - `#create` — `Codex::FractionChangeService.call(user:, node:)`. Success → 201 + Blueprint. Cooldown → 429 + `cooldown_until`. Validation → 422.
 - `#me` — рендерить `Codex::Fractions::Card` (HTML) або 204 (JSON, коли fraction nil).
 - `#picker` — рендерить `Codex::Fractions::Picker` Turbo Frame для `?realm=<slug>`.
+
+### `Api::V1::Codex::CitationsController` (Phase 6)
+
+| | |
+|---|---|
+| **Файл** | `app/controllers/api/v1/codex/citations_controller.rb` |
+| **POST** | `forester+` (Pundit `Codex::CitationPolicy#create?`). Required body: `codex_node_slug`, `citable_type`, `citable_id`. Optional: `note` (≤140). `Idempotency-Key` обов'язкова для JSON; replay returns the cached payload. DB-UNIQUE on `(codex_node_id, citable_type, citable_id, created_by_user_id)` is the second line of defence — duplicate → 422. |
+| **DELETE** | own ≤ 24 h grace (`record.created_by_user_id == user.id && created_at >= 24.hours.ago`), admin+ bypass. |
+| **Type whitelist** | `CITABLE_CLASS_MAP` lambda registry inside the controller — Brakeman-clean (no `safe_constantize` on user input). Bogus `citable_type` → 400. Allowed: `Tree`, `Cluster`, `AiInsight`, `EwsAlert`, `OracleVision` (falls back to `AiInsight` if `OracleVision` const missing), `NaasContract`. |
+| **Broadcast** | `codex_citations:<Type>:<id>` envelope `{ op: "append" \| "remove", data \| id }`. Failure rescued — never rolls back the write. |
+
+### `Api::V1::Codex::Admin::NodesController` (Phase 6)
+
+| | |
+|---|---|
+| **Файл** | `app/controllers/api/v1/codex/admin/nodes_controller.rb` |
+| **Policy** | `Codex::Admin::NodePolicy` — asymmetric: `index?`/`show?`/`update?` admin+, `create?`/`destroy?` super_admin only. |
+| **Use-case** | DAO node curation: publish toggle (set `published_at`), geo correction (`latitude`/`longitude`/`geo_region`), copy fix (`title_*`/`subtitle_*`/`*_md`). New DAO entries get `seed_origin: :dao_proposal` server-side (immutable on update). |
+| **External refs** | JSONB `external_refs` is passed through unmodified — `Codex::Node#external_refs_must_be_array_of_links` is the SSOT validator. |
+| **Rails 8 enums** | `lifecycle_status` invalid value raises `ArgumentError`; controller rescues into 422 with the underlying message. |
+
+### Phase 6 cross-domain Discovery probes
+
+Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async` after the primary write commits. **All three are fail-open** — a Sidekiq enqueue hiccup never rolls back the user-facing operation.
+
+| Caller | Trigger | Payload |
+|---|---|---|
+| `Codex::EloRecomputeWorker#perform` | `match_milestone` | `match_id`, `trigger_ref_type: "Codex::Match"`, `trigger_ref_id`. Resolves the most-recent Match referencing either node (delta-only `perform` doesn't carry `user_id`). |
+| `Codex::FractionChangeService#enqueue_discovery_probe` | `fraction_choice` | `fraction_id`, `codex_node_id`, `previous_node_id`, `trigger_ref_type: "Codex::Fraction"`, `trigger_ref_id`. Initial pick → `previous_node_id: nil`. |
+| `Api::V1::Codex::AttunementsController#enqueue_discovery_probe` | `attunement_streak` | `codex_node_id`, `trigger_ref_type: "Codex::Attunement"`, `trigger_ref_id`. Fired alongside `AttunementBroadcastWorker`. |
+
+### `Codex::Citation` model helpers (Phase 6)
+
+| Helper | Use |
+|---|---|
+| `Codex::Citation.for_target(target)` | per-page render — `where(citable_type: target.class.base_class.name, citable_id: target.id)`. |
+| `Codex::Citation.bulk_for(targets)` | N+1-free table render — returns `Hash[[type, id]] = [citations…]` keyed for O(1) lookup; eager-loads `:node` once per type batch. Used by `Alerts::Index` etc. |
+| `Codex::Citation#within_edit_grace?` | mirrors Comment 24 h grace; returns `false` when `created_at` is nil (unsaved). |
 
 ---
 

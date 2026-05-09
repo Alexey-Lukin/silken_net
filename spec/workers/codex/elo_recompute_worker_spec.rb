@@ -35,4 +35,33 @@ RSpec.describe Codex::EloRecomputeWorker, type: :worker do
       described_class.new.perform(0, 0, 16, -16)
     }.not_to raise_error
   end
+
+  describe "Phase 6 cross-domain Discovery probe" do
+    let(:user) { create(:user) }
+
+    it "enqueues a match_milestone probe for the voting user" do
+      match = create(:codex_match, user: user, realm: realm, left: left, right: right)
+      expect(Codex::DiscoveryProbeWorker).to receive(:perform_async).with(
+        match.user_id, "match_milestone",
+        hash_including("match_id" => match.id, "trigger_ref_type" => "Codex::Match")
+      )
+      described_class.new.perform(left.id, right.id, 8, -8)
+    end
+
+    it "no-ops cleanly when there is no Match referencing the nodes" do
+      expect(Codex::DiscoveryProbeWorker).not_to receive(:perform_async)
+      expect {
+        described_class.new.perform(left.id, right.id, 8, -8)
+      }.not_to raise_error
+    end
+
+    it "swallows probe enqueue errors (Elo update is the contract)" do
+      create(:codex_match, user: user, realm: realm, left: left, right: right)
+      allow(Codex::DiscoveryProbeWorker).to receive(:perform_async).and_raise(Redis::CannotConnectError)
+      expect {
+        described_class.new.perform(left.id, right.id, 8, -8)
+      }.not_to raise_error
+      expect(left.reload.attunement_elo).to eq(1508)
+    end
+  end
 end

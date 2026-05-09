@@ -35,6 +35,22 @@ class User < ApplicationRecord
           class_name: "Codex::Fraction",
           dependent: :destroy
 
+  # Phase 6: citations authored by this user. `dependent: :restrict_with_error`
+  # — citations are audit-grade lore stitches (an EwsAlert citing the
+  # `chainsaw_protocol` Node is part of forensic record). The
+  # `created_by_user_id` is NOT NULL at schema level (see structure.sql):
+  # forcing explicit cleanup mirrors `codex_comments` (also audit-grade).
+  has_many :codex_citations,
+           class_name: "Codex::Citation",
+           foreign_key: :created_by_user_id,
+           dependent: :restrict_with_error,
+           inverse_of: :created_by_user
+
+  # Phase 5: own collection of unlocked Codex Nodes.
+  has_many :codex_discoveries,
+           class_name: "Codex::Discovery",
+           dependent: :destroy
+
   # --- НОРМАЛІЗАЦІЯ ТА ВАЛІДАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }

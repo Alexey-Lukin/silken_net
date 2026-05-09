@@ -84,4 +84,17 @@ RSpec.describe "Api::V1::Codex::Attunements", type: :request do
       expect(Codex::Attunement.exists?(foreign.id)).to be(true)
     end
   end
+
+  describe "Phase 6 — Discovery probe wire-up on attune" do
+    it "enqueues an attunement_streak probe alongside the broadcast" do
+      expect(Codex::DiscoveryProbeWorker).to receive(:perform_async).with(
+        user.id, "attunement_streak",
+        hash_including("codex_node_id" => node.id, "trigger_ref_type" => "Codex::Attunement")
+      )
+      post "/api/v1/codex/nodes/#{node.slug}/attunements",
+           params: { attunement: { intensity: 4 } },
+           headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+    end
+  end
 end

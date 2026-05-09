@@ -54,4 +54,33 @@ RSpec.describe Codex::Citation do
       expect(described_class.where(citable_type: "Tree", citable_id: 42)).to include(cit)
     end
   end
+
+  describe ".bulk_for (Phase 6)" do
+    let(:tree)    { create(:tree) }
+    let(:cluster) { create(:cluster) }
+
+    it "returns citations grouped by [type, id]" do
+      on_tree    = create(:codex_citation, node: node, created_by_user: user, citable_type: "Tree", citable_id: tree.id)
+      on_cluster = create(:codex_citation, node: node, created_by_user: user, citable_type: "Cluster", citable_id: cluster.id)
+      result = described_class.bulk_for([ tree, cluster ])
+      expect(result[[ "Tree", tree.id ]]).to contain_exactly(on_tree)
+      expect(result[[ "Cluster", cluster.id ]]).to contain_exactly(on_cluster)
+    end
+
+    it "returns an empty hash for blank input" do
+      expect(described_class.bulk_for(nil)).to eq({})
+      expect(described_class.bulk_for([])).to eq({})
+    end
+  end
+
+  describe "#within_edit_grace? (Phase 6)" do
+    it "is true within 24 h, false past it, nil-safe" do
+      cit = build(:codex_citation, created_at: 1.hour.ago)
+      expect(cit.within_edit_grace?).to be true
+      cit.created_at = 25.hours.ago
+      expect(cit.within_edit_grace?).to be false
+      cit.created_at = nil
+      expect(cit.within_edit_grace?).to be false
+    end
+  end
 end

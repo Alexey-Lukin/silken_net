@@ -223,9 +223,19 @@ Rails.application.routes.draw do
         # never via an end-user POST.
         get "discoveries/me", to: "discoveries#me", as: :my_discoveries
 
+        # Phase 6 — Cross-domain stitch. Citations are forester+ create,
+        # own/admin+ destroy. Read happens in-line in target view
+        # components (Tree::Show, Cluster::Show, ForecastCard, Alerts::Row)
+        # via `Citation.bulk_for(targets)` — no read endpoint needed.
+        resources :citations, only: [ :create, :destroy ]
+
         namespace :admin do
           # DAO-editable unlock-rule registry. `admin_or_above?` only.
           resources :discovery_rules
+          # Phase 6 — DAO node curation. Create restricted to super_admin
+          # in `Codex::Admin::NodePolicy`; update/destroy admin+.
+          resources :nodes, param: :slug,
+                    constraints: { slug: %r{[a-z0-9][a-z0-9-]*} }
         end
       end
     end

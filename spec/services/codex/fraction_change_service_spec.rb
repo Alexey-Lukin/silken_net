@@ -71,4 +71,34 @@ RSpec.describe Codex::FractionChangeService, type: :service do
       expect(r2.success?).to be(false)
     end
   end
+
+  describe "Phase 6 cross-domain Discovery probe" do
+    let(:user) { create(:user) }
+    let(:node) { create(:codex_node, lifecycle_status: :thriving) }
+
+    it "enqueues a fraction_choice probe on initial pick" do
+      expect(Codex::DiscoveryProbeWorker).to receive(:perform_async).with(
+        user.id, "fraction_choice",
+        hash_including("codex_node_id" => node.id, "previous_node_id" => nil,
+                       "trigger_ref_type" => "Codex::Fraction")
+      )
+      described_class.call(user: user, node: node)
+    end
+
+    it "carries previous_node_id on re-pick" do
+      first = create(:codex_node, lifecycle_status: :thriving)
+      described_class.call(user: user, node: first, now: 8.days.ago)
+      expect(Codex::DiscoveryProbeWorker).to receive(:perform_async).with(
+        user.id, "fraction_choice",
+        hash_including("codex_node_id" => node.id, "previous_node_id" => first.id)
+      )
+      described_class.call(user: user, node: node)
+    end
+
+    it "swallows probe enqueue errors (fraction change is the contract)" do
+      allow(Codex::DiscoveryProbeWorker).to receive(:perform_async).and_raise(Redis::CannotConnectError)
+      result = described_class.call(user: user, node: node)
+      expect(result.success?).to be true
+    end
+  end
 end

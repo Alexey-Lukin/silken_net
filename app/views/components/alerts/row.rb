@@ -12,13 +12,31 @@ module Alerts
         td(class: "p-4") { severity_badge }
         td(class: "p-4 text-mini uppercase text-gray-400 tracking-widest") { @alert.alert_type.to_s.humanize }
         td(class: "p-4 text-emerald-500") { "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}" }
-        td(class: "p-4 text-gray-400") { @alert.message }
+        td(class: "p-4 text-gray-400") do
+          div { @alert.message }
+          render_codex_citations
+        end
         td(class: "p-4 text-tiny text-gray-600") { @alert.created_at.strftime("%H:%M:%S") }
         td(class: "p-4 text-right") { action_button }
       end
     end
 
     private
+
+    # Phase 6 — Codex citation strip beneath the alert message. A
+    # forester citing `chainsaw_protocol` on a `chainsaw_detected`
+    # alert turns the row into auditable, lore-linked forensic data.
+    # Wrapped in a `gaia-*` island so the surrounding emerald palette
+    # of the alerts table doesn't bleed through.
+    def render_codex_citations
+      return unless defined?(::Codex::Citation)
+      citations = ::Codex::Citation.for_target(@alert).includes(:node).limit(10)
+      return if citations.empty?
+
+      div(class: "mt-2") do
+        render ::Codex::Citations::Strip.new(target: @alert, citations: citations)
+      end
+    end
 
     def severity_badge
       color = case @alert.severity.to_s

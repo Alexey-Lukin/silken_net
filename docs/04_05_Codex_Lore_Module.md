@@ -860,14 +860,20 @@ db/seeds/codex/
 - [x] `docs/04_05` — §14 Phase 5 ticked + §15 Session 6 ADR
 - [x] `docs/10_03` — Phase 5 рядки
 
-### Phase 6: Cross-domain stitch 🪡 (planned)
-- [ ] `Codex::CitationPill` Phlex-компонент
-- [ ] Endpoint: `POST /api/v1/codex/citations` (forester+)
-- [ ] Інтеграція у `Tree::Show`, `Cluster::Show`, `OracleVisions::ForecastCard`, `EwsAlert::Row`
-- [ ] Admin endpoint: `POST/PATCH /api/v1/codex/admin/nodes`
-- [ ] Документ `docs/04_02` — Codex Services розділ
-- [ ] Документ `docs/04_03` — повна таблиця ендпоінтів
+### Phase 6: Cross-domain stitch 🪡
+- [x] `Codex::Citations::Pill` + `Codex::Citations::Strip` Phlex-компоненти (gaia-* токени, focus-visible ring, ActionCable stream `codex_citations:<Type>:<id>`)
+- [x] Endpoints: `POST /api/v1/codex/citations` (forester+, Idempotency-Key обов'язкова, DB-UNIQUE → 422), `DELETE /api/v1/codex/citations/:id` (own ≤ 24h або admin+)
+- [x] Інтеграція strip у `Trees::Show`, `Clusters::Show`, `OracleVisions::ForecastCard`, `Alerts::Row` (lazy `Codex::Citation.for_target(target).includes(:node)`; `Codex::Citation.bulk_for(targets)` для table-style рендерів)
+- [x] Admin endpoints: `GET/POST/PATCH/DELETE /api/v1/codex/admin/nodes/:slug` (admin+ read/update; super_admin only create/destroy → `seed_origin: :dao_proposal`); `Codex::Admin::NodePolicy`
+- [x] User has_many :codex_citations (`dependent: :restrict_with_error` — audit-grade, mirrors comments)
+- [x] DiscoveryEngine — додано 3 решта adapters: `acoustic_class_count`, `cluster_visited`, `firmware_version_seen` (всі org-scoped через `wallets.organization_id`; existing `tree_observation_minutes`/`oracle_dispatched` теж виправлено від `wallets.user_id` bug)
+- [x] Cross-domain Discovery probes (`Codex::DiscoveryProbeWorker.perform_async`): `EloRecomputeWorker` (match_milestone), `FractionChangeService` (fraction_choice), `AttunementsController#create` (attunement_streak) — всі fail-open
+- [x] Документ `docs/04_02` — Codex Services розділ (Citations + Cross-domain probes + новi adapters)
+- [x] Документ `docs/04_03` — Citations + Admin Nodes endpoints (103 → 109)
+- [x] Документ `docs/04_04` — Citations::Pill + Citations::Strip у Phlex registry
 - [ ] Wiki update + README "Lore layer" line
+- [ ] Stimulus `codex--reveal` JS контролер для Toast анімації (data-attribute уже стоїть, JS файл — frontend cleanup)
+- [ ] "Choose your fraction" onboarding wizard для нових користувачів
 
 ---
 
@@ -1027,3 +1033,28 @@ db/seeds/codex/
   - "What is your fraction?" onboarding wizard для нових користувачів — Phase 6 cross-domain stitch.
 
 ---
+
+### 2026-05-09 (Session 7) — Phase 6 implementation, Cross-domain stitch
+
+- **Done (full Phase 6):**
+  - **Citations end-to-end** — model assoc on `User has_many :codex_citations, dependent: :restrict_with_error, foreign_key: :created_by_user_id` (matches `comments` since `created_by_user_id` is NOT NULL — citation rows are audit-grade lore stitches and require explicit cleanup). Added `Codex::Citation.bulk_for(targets)` for N+1-free table renders + `#within_edit_grace?` (24 h, mirrors Comment grace).
+  - **`POST /api/v1/codex/citations`** (forester+, `Idempotency-Key` required for JSON, 24 h Rails.cache TTL replay-window). DB-UNIQUE `(codex_node_id, citable_type, citable_id, created_by_user_id)` is the second line of defence — duplicates → 422. Bogus `citable_type` → 400 (resolved through static `CITABLE_CLASS_MAP` of lambdas — Brakeman-clean, no `safe_constantize` of user input).
+  - **`DELETE /api/v1/codex/citations/:id`** (own ≤ 24 h grace, admin+ bypass) — broadcasts `op: "remove"` on `codex_citations:<Type>:<id>` channel.
+  - **`Codex::Citations::Pill`** + **`Codex::Citations::Strip`** Phlex components — gaia-* tokens only, slug-href anchor, archetype glyph, focus-visible ring, hover-title with note. Strip has empty-state copy ("No lore citations yet") so a freshly-cited entity has a stable DOM target for ActionCable `append`.
+  - **Wired into 4 view components**: `Trees::Show` / `Clusters::Show` / `Alerts::Row` / `OracleVisions::ForecastCard` — each calls `Codex::Citation.for_target(target).includes(:node).limit(N)` only when the citation slice is non-empty, so legacy emerald-palette pages stay untouched when nobody has cited them yet.
+  - **Admin Nodes CRUD** (`/api/v1/codex/admin/nodes`) — `Codex::Admin::NodePolicy` is asymmetric: admin+ can read/update (publish toggle, geo correction, copy fix), only super_admin can mint/retire (DAO node creation sets `seed_origin: :dao_proposal`). `node_params` whitelist passes `external_refs` through unmodified — model validator `external_refs_must_be_array_of_links` is the SSOT. Rails 8 enum `ArgumentError` on invalid `lifecycle_status` is rescue'd to a proper 422.
+  - **3 missing DiscoveryEngine adapters** (`acoustic_class_count`, `cluster_visited`, `firmware_version_seen`) — all org-scoped via `wallets.organization_id`. **Bug-fix bonus**: existing Phase 5 adapters `tree_observation_minutes` / `oracle_dispatched` referenced `wallets.user_id` (column doesn't exist — Wallet is org-scoped, not user-scoped); they were never exercised in Phase 5 specs because no telemetry data was set up. Phase 6 fixes them all to `wallets.organization_id` with explicit `user.organization_id.blank?` short-circuit.
+  - **Cross-domain Discovery probes** — `EloRecomputeWorker.perform` resolves the most-recent `Codex::Match` referencing either node and enqueues `DiscoveryProbeWorker.perform_async(user_id, "match_milestone", payload)`; `FractionChangeService` enqueues `"fraction_choice"` after the audit enqueue (not inside the AR transaction); `AttunementsController#create` enqueues `"attunement_streak"` alongside `AttunementBroadcastWorker`. **All three are fail-open** — a Sidekiq enqueue hiccup never rolls back the user-facing operation (Elo update, fraction change, attune save).
+  - Routes: `resources :citations, only: [:create, :destroy]` + `namespace :admin do resources :nodes, param: :slug end` (slug constraint mirrors public Nodes endpoint).
+  - Specs: +87 нових examples → загалом **377 examples / 0 failures** у codex slice (449 з Users::Profile + telemetry_unpacker hook). Rubocop clean. Brakeman 0 warnings.
+- **Spec-craft notes:**
+  - Phlex view-spec invocation pattern in this repo is **NOT** the universal `render_component(**kwargs)` helper — it's a `Class.new(described_class) { define_method(:helpers) { ... } }.new(**kw).call` pattern (see `Codex::Discoveries::Toast` spec). Phlex 2.x components without an `ApplicationController.renderer` context raise on URL-helper resolution; spec-time stub of `:helpers` is the lightweight workaround.
+  - `Codex::Node` validations to remember when crafting test payloads: `archetype_key` must be in `Codex::ARCHETYPES` registry (use `Codex::ARCHETYPES.first` in admin specs, not invented strings like `"dao_rune"`); `codex_uid` must match `/\A(CDX-(?:ECO|TRE|PRT|MYT)-\d{4,6})\z/` (use `"CDX-ECO-9999"` for new DAO entries).
+  - Strong Parameters for JSONB fields validated by model: prefer pass-through (`permitted[:external_refs] = params[:node][:external_refs] if key?`) over hardcoded `permit(external_refs: [[:label, :url]])` syntactic dance — the model validator is already the SSOT, and the controller stays declarative.
+- **Phase 5 bug-fixes folded into Phase 6:**
+  - `Codex::DiscoveryEngine` `wallets.user_id` → `wallets.organization_id` across 5 adapters (was inert because no Phase 5 spec set up org-scoped telemetry; surfaced when Phase 6 added the missing 3 adapters). Documented in adapter-level comments so future contributors see the data-model rationale.
+  - `Codex::Citation` had `belongs_to :created_by_user, class_name: "User"` without `inverse_of` — added so the new `User has_many :codex_citations` association resolves both directions cleanly.
+- **Deferred to subsequent phases (none break Phase 6 contract):**
+  - Stimulus `codex--reveal` JS controller (matrix-rain animation for Discovery Toast) — data-attribute is set, JS file batch'ом разом з `codex--battle` / `codex--attune` / `codex--comment` / `codex--fraction-picker` (frontend cleanup PR).
+  - "Choose your fraction" onboarding wizard для нових користувачів — Phase 6+ as a standalone cross-domain UX stitch.
+  - Wiki update + README "Lore layer" line.

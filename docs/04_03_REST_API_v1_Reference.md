@@ -7,7 +7,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 (System Qualified / Production Ready). Впроваджено Zero-Trust (HKDF, Ed25519, HMAC), асинхронну розшифровку телеметрії та Rate Limiting (Rack::Attack).
-- **Кількість ендпоінтів:** 103 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`, `GET /api/v1/system_audits`; плюс Codex-група: 3 read-ендпоінти + 3 community write-ендпоінти Phase 2 + 3 identity-ендпоінти Phase 3 + 3 battle-ендпоінти Phase 4 + 6 discovery-ендпоінтів Phase 5 (1 user + 5 admin CRUD))
+- **Кількість ендпоінтів:** 110 (включно з `POST /api/v1/auth/m2m_token`, `POST /api/v1/auth/m2m_token/refresh`, `POST /api/v1/gateways/:id/telemetry`, `GET /api/v1/users/:id`, `GET /api/v1/system_audits`; плюс Codex-група: 3 read-ендпоінти + 3 community write-ендпоінти Phase 2 + 3 identity-ендпоінти Phase 3 + 3 battle-ендпоінти Phase 4 + 6 discovery-ендпоінтів Phase 5 (1 user + 5 admin CRUD) + 7 cross-domain stitch-ендпоінтів Phase 6 (2 citations + 5 admin nodes CRUD))
 - **Базовий URL:** `https://<host>/api/v1`
 - **Формат відповідей:** JSON (якщо не вказано інше)
 - **Пов'язані модулі:**
@@ -292,6 +292,13 @@ POST /api/v1/auth/m2m_token
 | 101 | GET | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#show` | 🛡️ Admin+ | **Phase 5:** показує одне правило. |
 | 102 | PATCH/PUT | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#update` | 🛡️ Admin+ | **Phase 5:** часткове оновлення (`active`, threshold, params); busts engine cache → DAO change visible to workers ≤ 1 sec. 200 / 422. |
 | 103 | DELETE | `/api/v1/codex/admin/discovery_rules/:id` | `codex/admin/discovery_rules#destroy` | 🛡️ Admin+ | **Phase 5:** 204; busts engine cache. |
+| 104 | POST | `/api/v1/codex/citations` | `codex/citations#create` | 🌿 Forester+ | **Phase 6:** body `{codex_node_slug, citable_type, citable_id, note?}`. `citable_type ∈ {Tree, Cluster, AiInsight, EwsAlert, OracleVision, NaasContract}`. Idempotency-Key обов'язкова для JSON; replay → 200 з тим самим payload. DB-UNIQUE → 422 для дублікатів. Bogus type → 400. Broadcasts `codex_citations:<Type>:<id>` (Turbo `append`). 201 / 200 (replay) / 400 / 403 / 422. |
+| 105 | DELETE | `/api/v1/codex/citations/:id` | `codex/citations#destroy` | 🌿 Forester+ | **Phase 6:** видалення власної цитати у 24-год вікні; admin+ обходить grace. Broadcasts `op: "remove"`. 204 / 403 / 404. |
+| 106 | GET | `/api/v1/codex/admin/nodes` | `codex/admin/nodes#index` | 🛡️ Admin+ | **Phase 6:** усі Node-рядки (включно з draft `published_at IS NULL`) для DAO-модерації. JSON `{ data: [NodeBlueprint] }`. 403 для forester/investor. |
+| 107 | GET | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#show` | 🛡️ Admin+ | **Phase 6:** один Node з full `:show` view (lore, external_refs, view_count). |
+| 108 | POST | `/api/v1/codex/admin/nodes` | `codex/admin/nodes#create` | 👑 Super Admin only | **Phase 6:** мінтить новий DAO Node з `seed_origin: :dao_proposal`. Атомарне створення; `archetype_key` має бути в `Codex::ARCHETYPES`, `codex_uid` має формат `CDX-(ECO\|TRE\|PRT\|MYT)-NNNN`. 201 / 403 (admin) / 422. |
+| 109 | PATCH/PUT | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#update` | 🛡️ Admin+ | **Phase 6:** часткове оновлення (publish toggle, geo correction, lore copy). Invalid `lifecycle_status` → 422 (Rails 8 enum ArgumentError ловиться). 200 / 403 / 422. |
+| 110 | DELETE | `/api/v1/codex/admin/nodes/:slug` | `codex/admin/nodes#destroy` | 👑 Super Admin only | **Phase 6:** retire Node; cascades through `dependent: :destroy` на `citations`/`comments`/`attunements`/`discoveries`/`fractions`. 204 / 403 (admin). |
 
 **Легенда:**
 

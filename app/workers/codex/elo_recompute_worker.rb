@@ -24,6 +24,8 @@ module Codex
         bump(left_node_id, delta_left)
         bump(right_node_id, delta_right)
       end
+
+      probe_for_match_milestone(left_node_id, right_node_id)
     end
 
     private
@@ -33,6 +35,43 @@ module Codex
         .where(id: node_id)
         .update_all([ "attunement_elo = attunement_elo + ?, match_count = match_count + 1, updated_at = ?",
                       delta.to_i, Time.current ])
+    end
+
+    # Phase 6 cross-domain stitch — every Elo-applied match probes the
+    # voting user's Discovery rules (`condition_type: match_count`).
+    # We resolve the user via the most recent Match referencing either
+    # node — pre-computed deltas don't carry the user_id, but the row
+    # was already written by `VoteRecorderService` moments before this
+    # worker runs. Fail open: any error path here must NOT roll back
+    # the Elo update (cosmetic).
+    #
+    # Partition pruning: `codex_matches` is RANGE-partitioned by
+    # `created_at`. We bound the lookup to the last hour so PG only
+    # scans the live partition (Sidekiq picks up jobs within seconds;
+    # an hour window is forgiving even under retry backoff).
+    def probe_for_match_milestone(left_id, right_id)
+      return unless defined?(::Codex::DiscoveryProbeWorker)
+
+      ids = [ left_id, right_id ]
+      match = ::Codex::Match
+                .where("created_at >= ?", 1.hour.ago)
+                .where("left_node_id IN (?) OR right_node_id IN (?)", ids, ids)
+                .order(created_at: :desc)
+                .limit(1)
+                .first
+      return if match.nil?
+
+      ::Codex::DiscoveryProbeWorker.perform_async(
+        match.user_id,
+        "match_milestone",
+        {
+          "match_id"         => match.id,
+          "trigger_ref_type" => "Codex::Match",
+          "trigger_ref_id"   => match.id
+        }
+      )
+    rescue StandardError => e
+      Rails.logger.warn "[Codex::EloRecomputeWorker] probe enqueue failed: #{e.class}: #{e.message}"
     end
   end
 end

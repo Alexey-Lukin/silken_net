@@ -159,6 +159,19 @@
 - `Codex::Discoveries::Toast` (3) — title + archetype_key + trigger label dispatch + `data-controller="codex--reveal"` data-attribute + slug-based href + `HH:MM UTC` formatted unlocked_at; gaia-* tokens compliance (no `bg-white`/`text-gray-*`); each trigger_type → label mapping (Observed/Battle/Pact/Streak/Oracle/Granted)
 - `Codex::Discoveries::List` (3) — empty-state copy ("Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction") + `Unlocked: 0` counter, populated grid renders title/archetype/trigger_type per discovery card + `Unlocked: 2` counter, gaia-* tokens compliance
 
+**Codex Phase 6 (нове, ~87 examples):**
+- `Codex::Citation` (+5) — `for_target` polymorphic scope, `bulk_for(targets)` N+1-free Hash[[type, id]], `within_edit_grace?` 24 h boundary (nil-safe), User has_many :codex_citations restrict_with_error
+- `Codex::CitationBlueprint` (2) — denormalised node_slug/title_en/archetype_key, defensive nil-safe коли `citation.node` зник
+- `Codex::Admin::NodePolicy` (10) — index/show admin+ allow / forester+investor deny, update? admin+ allow, create?/destroy? super_admin only (admin denied), Scope returns all для admin / none для investor/forester/anonymous
+- `Api::V1::Codex::Citations` (8) — unauthenticated 401, investor 403, forester+ 201 з broadcast `codex_citations:Tree:<id>` + counter increment, replay 200 з cached payload, Idempotency-Key 400, bogus citable_type 400, DB-UNIQUE 422, DELETE own ≤24h 204 + broadcast op:remove, non-author forester 403, admin+ bypass past grace
+- `Api::V1::Codex::Admin::Nodes` (7) — forester GET 403, admin GET 200 list, admin PATCH 200 update, invalid lifecycle 422 (Rails 8 enum ArgumentError rescued), forester PATCH 403, plain admin POST 403 (super_admin only), super_admin POST 201 з seed_origin: dao_proposal, plain admin DELETE 403
+- `Codex::Citations::Pill` (5) — slug-href anchor + title + archetype glyph, aria-label з note, defensive nil-node noop, gaia-* tokens (no `bg-white`/`text-gray-*`), focus-visible:ring-2
+- `Codex::Citations::Strip` (3) — empty-state copy + DOM id `codex_citations_<type>_<id>`, populated render Pills with slug-href, gaia-* tokens compliance
+- `Codex::DiscoveryEngine` (+4) — `acoustic_class_count` inert when no organization_id, `cluster_visited` inert when params['cluster_name'] missing, `firmware_version_seen` inert when no firmware row matches version, replaced "unknown condition_type" gate з "inert below-threshold" + ADAPTERS-stubbed missing-adapter path
+- `Codex::EloRecomputeWorker` (+3) — Phase 6 cross-domain probe enqueues match_milestone з most-recent Match resolved by left/right id, no-op коли немає Match, swallows Redis::CannotConnectError (Elo update is the contract)
+- `Codex::FractionChangeService` (+3) — Phase 6 fraction_choice probe on initial pick (previous_node_id: nil), carries previous_node_id on re-pick, swallows Redis::CannotConnectError
+- `Api::V1::Codex::Attunements` (+1) — Phase 6 attunement_streak probe enqueued alongside AttunementBroadcastWorker
+
 ### 1.7 Integration Tests
 
 | Тест | Покриття | Критичність |
