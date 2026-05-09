@@ -88,9 +88,11 @@ module Codex
     scope :published, -> { where.not(published_at: nil) }
     scope :for_realm, ->(realm_or_slug) {
       case realm_or_slug
+      when nil          then all
       when Codex::Realm then where(codex_realm_id: realm_or_slug.id)
       when String, Symbol
-        joins(:realm).where(codex_realms: { slug: realm_or_slug.to_s })
+        slug = realm_or_slug.to_s
+        slug.blank? ? all : joins(:realm).where(codex_realms: { slug: slug })
       else
         none
       end

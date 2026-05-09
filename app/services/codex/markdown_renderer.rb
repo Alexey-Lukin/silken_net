@@ -21,8 +21,11 @@ module Codex
   module MarkdownRenderer
     module_function
 
+    # rel/target attrs needed for safe outbound links emitted by the
+    # markdown converter; the inline replacement strips dangerous schemes
+    # before the sanitiser runs.
     SAFE_TAGS = %w[p h2 h3 h4 ul ol li strong em blockquote code pre a br].freeze
-    SAFE_ATTRS = %w[href].freeze
+    SAFE_ATTRS = %w[href rel target].freeze
 
     def render(markdown)
       return "".html_safe if markdown.blank?
