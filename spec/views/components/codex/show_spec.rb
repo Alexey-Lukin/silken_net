@@ -89,17 +89,19 @@ RSpec.describe Codex::Show do
 
   describe "aside / metadata panel" do
     it "renders Realm, Archetype, Geo Region and the four counters" do
-      expect(html).to include("Realm")
-      expect(html).to include("Archetype")
-      expect(html).to include("Geo Region")
-      expect(html).to include("cherkasy-bir")
-      expect(html).to include("Discovered")
-      expect(html).to include(">4<")          # discovery_count
-      expect(html).to include("Cited By")
-      expect(html).to include(">2<")          # citation_count
-      expect(html).to include("Attunement")
-      expect(html).to include("Elo")
-      expect(html).to include(">1700<")       # attunement_elo
+      aggregate_failures do
+        expect(html).to include("Realm")
+        expect(html).to include("Archetype")
+        expect(html).to include("Geo Region")
+        expect(html).to include("cherkasy-bir")
+        expect(html).to include("Discovered")
+        expect(html).to include(">4<")          # discovery_count
+        expect(html).to include("Cited By")
+        expect(html).to include(">2<")          # citation_count
+        expect(html).to include("Attunement")
+        expect(html).to include("Elo")
+        expect(html).to include(">1700<")       # attunement_elo
+      end
     end
 
     it "shows an em-dash when geo_region is blank" do

@@ -107,10 +107,8 @@ RSpec.describe Codex::RealmTabs do
 
     it "applies focus-visible:ring-2 + focus-visible:ring-gaia-primary on every tab (a11y)" do
       anchors = html.scan(/<a [^>]+>/)
-      anchors.each do |a|
-        expect(a).to include("focus-visible:ring-2")
-        expect(a).to include("focus-visible:ring-gaia-primary")
-      end
+      expect(anchors).to all(include("focus-visible:ring-2"))
+      expect(anchors).to all(include("focus-visible:ring-gaia-primary"))
     end
   end
 end
