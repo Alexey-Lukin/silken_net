@@ -63,10 +63,16 @@ module Alerts
         end
 
         @alerts.each do |alert|
-          key = [ ::Codex::Citation.polymorphic_type_for(alert), alert.id ]
+          row_citations = if citations_by_target.any?
+            key = [ ::Codex::Citation.polymorphic_type_for(alert), alert.id ]
+            citations_by_target[key] || []
+          else
+            []
+          end
+
           render Alerts::Row.new(
             alert: alert,
-            citations: citations_by_target[key] || []
+            citations: row_citations
           )
         end
       end

@@ -35,3 +35,9 @@ uk:
       destroyed: знищено
       unknown: невідомо
       aria_label: "Статус: %{status}"
+    data_table:
+      empty: "Записів не знайдено."
+    photo_card:
+      view_photo: "Переглянути фото: %{filename}"
+      remove_photo: "Видалити фото: %{filename}"
+      confirm_remove: "Видалити це фото з документації обслуговування?"

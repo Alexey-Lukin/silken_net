@@ -32,8 +32,10 @@ module LocaleSettable
     ]
 
     candidates.each do |candidate|
-      symbol = candidate&.to_sym
-      return symbol if symbol && I18n.available_locales.include?(symbol)
+      next unless candidate.is_a?(String) && candidate.present?
+
+      symbol = candidate.to_sym
+      return symbol if I18n.available_locales.include?(symbol)
     end
 
     I18n.default_locale

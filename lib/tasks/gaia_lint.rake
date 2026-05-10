@@ -23,9 +23,9 @@ namespace :gaia do
 
     # Patterns that indicate a class slipped past gaia-token migration.
     raw_patterns = [
-      /\bbg-(white|black|gray-\d+)\b/,
-      /\btext-(white|gray-\d+|emerald-(400|500|600|700|800|900))\b/,
-      /\bborder-(gray-\d+|emerald-(700|800|900))\b/
+      /\b(bg-(?:white|black|gray-\d+))\b/,
+      /\b(text-(?:white|gray-\d+|emerald-(?:400|500|600|700|800|900)))\b/,
+      /\b(border-(?:gray-\d+|emerald-(?:700|800|900)))\b/
     ]
 
     # Decorative / brand allowlist — these are intentional and not migrated.

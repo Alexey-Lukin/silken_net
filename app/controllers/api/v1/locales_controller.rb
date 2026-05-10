@@ -12,9 +12,10 @@ module Api
     # token, so the endpoint is safe to expose to unauthenticated visitors.
     class LocalesController < ApplicationController
       def update
-        requested = params[:locale]&.to_sym
+        raw = params[:locale]
+        requested = raw.to_sym if raw.is_a?(String) && raw.present?
 
-        if I18n.available_locales.include?(requested)
+        if requested && I18n.available_locales.include?(requested)
           cookies.permanent[:locale] = {
             value: requested.to_s,
             same_site: :lax,
@@ -45,6 +46,7 @@ module Api
         return nil if ref.blank?
 
         uri = URI.parse(ref)
+        return nil unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS) || (uri.host.nil? && !uri.opaque)
         return nil unless uri.host.nil? || uri.host == request.host
 
         ref

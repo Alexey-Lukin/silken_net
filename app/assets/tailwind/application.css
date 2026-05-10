@@ -15,6 +15,7 @@
   --color-gaia-surface-base: var(--gaia-surface-base);
   --color-gaia-surface-elevated: var(--gaia-surface-elevated);
   --color-gaia-surface-sunken: var(--gaia-surface-sunken);
+  --color-gaia-surface-overlay: var(--gaia-surface-overlay);
   --color-gaia-text: var(--gaia-text);
   --color-gaia-text-strong: var(--gaia-text-strong);
   --color-gaia-text-muted: var(--gaia-text-muted);
@@ -66,12 +67,15 @@
    * For page titles and hero sections. Use these instead of fixed-rem h1/h2
    * to get fluid scaling between mobile and desktop without media queries. */
   --font-size-display-sm: clamp(1.25rem, 1.6vw + 0.5rem, 1.5rem);
+  --font-size-display-sm--line-height: 1.2;
   --font-size-display-md: clamp(1.5rem,  2vw   + 0.75rem, 2rem);
+  --font-size-display-md--line-height: 1.2;
   --font-size-display-lg: clamp(1.875rem, 3vw  + 1rem,    2.75rem);
+  --font-size-display-lg--line-height: 1.15;
 
   /* ── Motion Tokens ──
    * Standardise transition durations / easings so animations feel coherent.
-   * Use as `transition-duration:var(--motion-base) var(--ease-out-soft)`. */
+   * Use as `transition: all var(--motion-base) var(--ease-out-soft)`. */
   --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
   --motion-fast:  150ms;
@@ -88,6 +92,7 @@
   --gaia-surface:          #ffffff;  /* cards, panels */
   --gaia-surface-elevated: #ffffff;  /* modals, popovers, dropdowns (paired with shadow-lg) */
   --gaia-surface-sunken:   #f3f4f6;  /* table-row alt, code blocks, input bg */
+  --gaia-surface-overlay:  rgba(0, 0, 0, 0.80);  /* photo overlay, tooltip backdrop */
 
   --gaia-text-strong:  #0f172a;
   --gaia-text:         #1f2937;
@@ -144,6 +149,7 @@
   --gaia-surface:          #0b0f0e;
   --gaia-surface-elevated: #11161a;
   --gaia-surface-sunken:   #070a09;
+  --gaia-surface-overlay:  rgba(0, 0, 0, 0.85);  /* photo overlay, tooltip backdrop */
 
   --gaia-text-strong:  #e6fff4;
   --gaia-text:         #a7f3d0;

@@ -78,7 +78,7 @@ def replace_tokens(content)
     # space / colon / start-of-string boundary on both sides. This keeps
     # `text-gray-900` from being matched inside `text-gray-9000` (none exists,
     # but we stay defensive) and keeps `dark:text-gray-900` matching too.
-    pattern = /(?<=[\s"':>])#{Regexp.escape(from)}(?=[\s"'<])/
+    pattern = /(?<=[\s"':>\[])#{Regexp.escape(from)}(?=[\s"'<\]])/
     new_content = content.gsub(pattern) do
       changed += 1
       to

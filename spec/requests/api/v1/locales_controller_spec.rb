@@ -39,6 +39,25 @@ RSpec.describe Api::V1::LocalesController, type: :request do
            headers: { "HTTP_REFERER" => "http://attacker.example.com/phish" }
       expect(response).to redirect_to(api_v1_root_path)
     end
+
+    it "handles array locale param without crashing" do
+      post "/api/v1/locale", params: { locale: %w[en uk] }
+      expect(response).not_to have_http_status(:internal_server_error)
+      expect(cookies[:locale]).to be_blank
+    end
+
+    it "handles hash locale param without crashing" do
+      post "/api/v1/locale", params: { locale: { foo: "bar" } }
+      expect(response).not_to have_http_status(:internal_server_error)
+      expect(cookies[:locale]).to be_blank
+    end
+
+    it "rejects javascript: scheme referer (open-redirect guard)" do
+      post "/api/v1/locale",
+           params: { locale: "en" },
+           headers: { "HTTP_REFERER" => "javascript:alert(1)" }
+      expect(response).to redirect_to(api_v1_root_path)
+    end
   end
 
   describe "LocaleSettable concern (resolution priority)" do

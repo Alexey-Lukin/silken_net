@@ -44,3 +44,9 @@ en:
       destroyed: destroyed
       unknown: unknown
       aria_label: "Status: %{status}"
+    data_table:
+      empty: "No records found."
+    photo_card:
+      view_photo: "View photo: %{filename}"
+      remove_photo: "Remove photo: %{filename}"
+      confirm_remove: "Remove this photo from the evidence record?"

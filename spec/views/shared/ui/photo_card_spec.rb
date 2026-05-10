@@ -212,14 +212,14 @@ RSpec.describe Views::Shared::UI::PhotoCard do
       it "renders the delete button" do
         html = render_card(editable: true)
         expect(html).to include("×")
-        expect(html).to include("Remove photo")
+        expect(html).to include(I18n.t("ui.photo_card.remove_photo", filename: mock_photo.filename))
       end
     end
 
     context "with editable false" do
       it "does not render the delete button" do
         html = render_card(editable: false)
-        expect(html).not_to include("Remove photo")
+        expect(html).not_to include(I18n.t("ui.photo_card.remove_photo", filename: mock_photo.filename))
       end
     end
   end

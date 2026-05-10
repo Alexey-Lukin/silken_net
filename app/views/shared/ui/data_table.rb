@@ -4,9 +4,9 @@ module Views
   module Shared
     module UI
       class DataTable < ApplicationComponent
-        def initialize(columns:, empty_message: "No records found.", **attrs, &block)
+        def initialize(columns:, empty_message: nil, **attrs, &block)
           @columns = columns
-          @empty_message = empty_message
+          @empty_message = empty_message || I18n.t("ui.data_table.empty")
           @extra_class = attrs[:class]
           @rows_block = block
         end
