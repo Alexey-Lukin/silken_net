@@ -128,6 +128,28 @@ module Codex
     biological_raid_redundancy
     border_gateway_protocol
     proof_of_authority_node
+    # ── Phase-8c: Cherkasy L4+L5 — ecosystem archetypes ──────────────────
+    linear_topology_backbone
+    secure_enclave_vpn
+    thermal_runaway_hidden_state
+    immutable_anchor_zone
+    cross_chain_bridge
+    high_risk_network_bridge
+    layer1_archaeology
+    periodic_interference_overload
+    sinkhole_computing
+    bare_metal_recovery
+    # ── Phase-8c: Cherkasy L4+L5 — unique tree archetypes ────────────────
+    timestamp_oracle
+    solo_verifier_node
+    legacy_api_endpoints
+    deep_sleep_adapter
+    dark_fiber
+    zero_day_exploit
+    orphaned_smart_contract
+    edge_router_frontier
+    vendor_lock_in
+    baseline_idle_state
   ].freeze
 
   def self.archetype_keys
