@@ -216,17 +216,41 @@ end
 
 ### 3.1 Поверхневі, Текстові та Основні Токени (`gaia-*`)
 
+> **Phase 1 of the frontend overhaul (Tailwind v4 SSOT).** Палітра розширена
+> до 4-tier surface depth scale (Material 3 elevation pattern) і 3-level text
+> hierarchy для адекватного контрасту в light/dark. Перемикання теми тепер
+> змінює усі поверхні, а не лише текст. Legacy `--gaia-surface-alt` видалено —
+> усі call-sites мігровано на `--gaia-surface-sunken`.
+
+#### Surfaces (4-tier depth)
+
 | Токен | Tailwind Клас | Light `#` | Dark `#` | Призначення |
 |---|---|---|---|---|
-| `--color-gaia-surface` | `bg-gaia-surface` | `#ffffff` | `#000000` | Фон карток, панелей, форм |
-| `--color-gaia-surface-alt` | `bg-gaia-surface-alt` | `#f3f4f6` | `#0a0a0a` | Заголовки таблиць, вторинні панелі |
-| `--color-gaia-text` | `text-gaia-text` | `#111827` | `#10b981` | Основний текст |
-| `--color-gaia-text-muted` | `text-gaia-text-muted` | `#6b7280` | `#065f46` | Мітки, метадані, плейсхолдери |
-| `--color-gaia-primary` | `text-gaia-primary` / `bg-gaia-primary` | `#10b981` | `#10b981` | Бренд-emerald (однаковий в обох режимах) |
-| `--color-gaia-primary-hover` | `hover:bg-gaia-primary-hover` | `#059669` | `#34d399` | Hover основної кнопки |
-| `--color-gaia-border` | `border-gaia-border` | `#e5e7eb` | `rgba(16,185,129,0.2)` | Межі, роздільники |
+| `--color-gaia-surface-base` | `bg-gaia-surface-base` | `#fafafa` | `#050607` | Page background (під `<body>`) |
+| `--color-gaia-surface` | `bg-gaia-surface` | `#ffffff` | `#0b0f0e` | Картки, панелі, форми |
+| `--color-gaia-surface-elevated` | `bg-gaia-surface-elevated` | `#ffffff` (+`shadow-lg`) | `#11161a` | Modals, popovers, dropdowns |
+| `--color-gaia-surface-sunken` | `bg-gaia-surface-sunken` | `#f3f4f6` | `#070a09` | Table-row alt, code blocks, input bg, table headers |
 
-> **Legacy-кольори `gaia-green`, `gaia-dark`, `gaia-muted` видалені.** `--color-gaia-green`, `--color-gaia-dark`, `--color-gaia-muted` було видалено з `@theme` блоку `application.css` (Sprint 1, S1.7). Аудит підтвердив: жоден компонент їх не використовував — вони були присутні лише як визначення без відповідних utility-класів у коді. Семантичні токени `gaia-primary`, `gaia-text-muted`, `gaia-text` залишаються.
+#### Text (3-level hierarchy)
+
+| Токен | Tailwind Клас | Light `#` | Dark `#` | Призначення |
+|---|---|---|---|---|
+| `--color-gaia-text-strong` | `text-gaia-text-strong` | `#0f172a` | `#e6fff4` | Headings, primary numbers |
+| `--color-gaia-text` | `text-gaia-text` | `#1f2937` | `#a7f3d0` | Body |
+| `--color-gaia-text-muted` | `text-gaia-text-muted` | `#52525b` | `#6ee7b7` | Labels, metadata |
+| `--color-gaia-text-subtle` | `text-gaia-text-subtle` | `#9ca3af` | `rgba(52,211,153,0.55)` | Placeholders, watermarks, disabled |
+
+#### Primary + borders
+
+| Токен | Tailwind Клас | Light `#` | Dark `#` | Призначення |
+|---|---|---|---|---|
+| `--color-gaia-primary` | `text-gaia-primary` / `bg-gaia-primary` | `#10b981` | `#10b981` | Бренд-emerald (однаковий) |
+| `--color-gaia-primary-hover` | `hover:bg-gaia-primary-hover` | `#059669` | `#34d399` | Hover primary |
+| `--color-gaia-primary-soft` | `bg-gaia-primary-soft` | `#d1fae5` | `rgba(16,185,129,0.12)` | Chips, pills, low-emphasis bg, active-nav highlight |
+| `--color-gaia-border` | `border-gaia-border` | `#e5e7eb` | `rgba(16,185,129,0.18)` | Default межі |
+| `--color-gaia-border-strong` | `border-gaia-border-strong` | `#cbd5e1` | `rgba(16,185,129,0.40)` | Hover-borders, dividers, focus-ring backup |
+
+> **Legacy-кольори `gaia-green`, `gaia-dark`, `gaia-muted` видалені.** Семантичні токени `gaia-primary`, `gaia-text-muted`, `gaia-text` залишаються.
 
 ### 3.2 Статусні Токени (`status-*`)
 
@@ -316,10 +340,36 @@ end
 | `--font-size-mini` | `text-mini` | `0.5625rem` (9px¹) | `1rem` | Елементи навігації верхнього регістру, текст статус-бейджів |
 | `--font-size-tiny` | `text-tiny` | `0.625rem` (10px¹) | `1rem` | Малі мітки, метадані, заголовки секцій |
 | `--font-size-compact` | `text-compact` | `0.6875rem` (11px¹) | `1.25rem` | Таблиці даних, адреси, значення метрик |
+| `--font-size-display-sm` | `text-display-sm` | `clamp(1.25rem, 1.6vw + 0.5rem, 1.5rem)` | — | Responsive H3 / section headers |
+| `--font-size-display-md` | `text-display-md` | `clamp(1.5rem, 2vw + 0.75rem, 2rem)` | — | Responsive H2 / page sub-titles |
+| `--font-size-display-lg` | `text-display-lg` | `clamp(1.875rem, 3vw + 1rem, 2.75rem)` | — | Responsive H1 / hero titles |
 
 > ¹ px-значення розраховані при root font-size = 16px (стандарт браузера). Оскільки токени задані у `rem`, вони масштабуються разом з налаштуваннями доступності браузера.
+>
+> ² **`text-display-*` через `clamp()`** — fluid typography (Google Web Vitals
+> friendly: уникає CLS-перерозкладок при зміні vw). Реєструються в
+> `ApplicationComponent::CUSTOM_TEXT_SCALE` як font-size (а не як text-color).
 
 Стандартні розміри Tailwind продовжують застосовуватись для більшого тексту (наприклад, `text-xs`, `text-sm`, `text-2xl`) — вони співіснують з кастомною шкалою. Кастомні токени зокрема усувають довільні значення на кшталт `text-[9px]` для розмірів менших за `text-xs`.
+
+### Motion Tokens (Phase 1)
+
+| CSS Токен | Значення | Призначення |
+|---|---|---|
+| `--motion-fast` | `150ms` | Hover/focus transitions |
+| `--motion-base` | `220ms` | Standard UI transitions (drawers, modals) |
+| `--motion-slow` | `320ms` | Page-level entrances |
+| `--ease-out-soft` | `cubic-bezier(0.22, 0.61, 0.36, 1)` | Default easing для UI |
+| `--ease-spring` | `cubic-bezier(0.34, 1.56, 0.64, 1)` | Playful overshoot (badges, micro-interactions) |
+
+**Глобальний `prefers-reduced-motion`** (WCAG 2.3.3) — у `@layer base`:
+усі `animation-duration` та `transition-duration` примусово зводяться до 0.01ms,
+коли OS повідомляє про reduced-motion. Сторінкам нічого додавати не треба —
+правило діє автоматично.
+
+**`@utility animate-fade-in`** — keyframe `gaia-fade-in` (translateY 4px → 0 +
+opacity 0 → 1) тривалістю `--motion-base`. Використовуйте для entrance-анімацій
+карток / алертів.
 
 ### Базові Стилі Типографіки
 
@@ -1143,3 +1193,135 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
 `protect_from_forgery with: :exception` (найсуворіша стратегія). Bearer-token запити обходять CSRF
 через `handle_unverified_request` — браузери ніколи не прикріплюють `Authorization` header автоматично
 при cross-origin запитах, тому Bearer-token запити імунні до CSRF за дизайном.
+
+---
+
+## 12. Інтернаціоналізація (i18n) — UA / EN
+
+> **Phase 1 + 2 frontend overhaul.** Двомовний інтерфейс (UA — default,
+> EN — secondary), розширюваний до N мов додаванням рядка в
+> `config.i18n.available_locales` + одного YAML-набору.
+
+### 12.1 Конфігурація
+
+`config/application.rb`:
+```ruby
+config.i18n.available_locales       = %i[uk en]
+config.i18n.default_locale          = :uk
+config.i18n.fallbacks               = { en: :uk, uk: :en }
+config.i18n.load_path              += Dir[Rails.root.join("config/locales/**/*.yml")]
+```
+
+> **Чому `uk`, а не `ua`?** `uk` — IETF BCP 47 / ISO 639-1 код **мови**
+> (Ukrainian). `ua` — ISO 3166-1 код **країни** Україна. `<html lang="uk">`
+> — єдиний валідний варіант для browser/screen-reader negotiation. UI-label
+> для користувача — `UA / Українська` (див. `locale.short` у YAML).
+
+### 12.2 Структура локалей (по доменах, не по файлах-портянках)
+
+```
+config/locales/
+├── defaults/{uk,en}.yml      # app-level: name, theme, locale-switcher, accessibility, flash
+├── components/{uk,en}.yml    # cross-cutting UI components
+└── navigation/{uk,en}.yml    # sidebar, top bar, breadcrumb
+```
+
+Один файл = один домен × одна мова. Завжди парний (uk + en).
+
+### 12.3 Resolution priority (`LocaleSettable` concern)
+
+```
+params[:locale] → cookies[:locale] → request.preferred_language → I18n.default_locale
+```
+
+Усі джерела whitelist'яться проти `I18n.available_locales` —
+adversarial input просто провалюється на default. Concern підмішаний у
+`ApplicationController`.
+
+### 12.4 LocaleSwitcher (`Views::Shared::UI::LocaleSwitcher`)
+
+Native-disclosure (`<details>` + `<summary>`) — **жодних ARIA-menu плумінгів,
+жодних JS-required патернів**. Stimulus `locale` controller — пуре
+progressive enhancement (outside-click, Escape).
+
+```ruby
+# layout
+render Views::Shared::UI::LocaleSwitcher.new
+```
+
+Активна локаль маркується `aria-current="true"` + `disabled`.
+Endpoint: `POST /api/v1/locale` → cookie `locale=<uk|en>` (httponly,
+same_site=lax, secure-in-prod), open-redirect guard перевіряє
+`request.host == referer.host`.
+
+### 12.5 Lazy-lookup pattern у Phlex
+
+Замість повторюваних повних шляхів `I18n.t("navigation.items.foo")` —
+короткий приватний хелпер scoped до домену компонента:
+
+```ruby
+class Navigation::Sidebar < ApplicationComponent
+  def view_template
+    section_group(:strategic_insight) do
+      nav_item(:oracle_visions, api_v1_oracle_visions_path, "eye")
+    end
+  end
+
+  private
+
+  # Lazy-lookup helper — analog to Rails view-helper `t(".key")` adapted for Phlex.
+  def tr(key) = I18n.t("navigation.#{key}")
+end
+```
+
+Call-sites лишаються лаконічними: `tr("logo.title")`, `tr("items.#{key}")`,
+`tr("sections.#{key}")`. Якщо компонент має >5 викликів — додавайте
+такий `tr` хелпер. Менше — викликайте `I18n.t` напряму.
+
+### 12.6 Чек-ліст для нових компонентів
+
+- [ ] Всі user-facing strings проходять через `I18n.t` (або `tr` хелпер)
+- [ ] YAML-ключі є для **обох** локалей (`uk` + `en`)
+- [ ] ARIA-label з `I18n.t` (бо screen-reader читає його)
+- [ ] Зарезервовані ключі не перетинаються (`:locale`, `:scope`, `:default` — не використовувати як interpolation)
+- [ ] Pluralization через `t(..., count:)` + CLDR rules (UA — 4 форми, EN — 2)
+- [ ] Spec покриває обидві локалі через `I18n.with_locale(:en) { ... }`
+
+---
+
+## 13. Mobile Drawer (Phase 2)
+
+> Off-canvas mobile-only sidebar drawer з backdrop, scroll-lock,
+> focus-trap, Escape-to-close. Сумісний з `prefers-reduced-motion`
+> через motion tokens.
+
+### 13.1 Архітектура
+
+| Шар | Файл | Відповідальність |
+|---|---|---|
+| Trigger | `Views::Shared::UI::MobileNavToggle` | Бургер-кнопка `<button>` (mobile-only, `md:hidden`) |
+| Drawer | `DashboardLayout#render_mobile_drawer` | `<aside role="dialog">` slide-in panel + `<div>` backdrop |
+| Behaviour | `app/javascript/controllers/mobile_nav_controller.js` | open/close, scroll-lock, focus-trap, Escape, Turbo-visit close |
+
+### 13.2 Поведінка
+
+- **Open/close** — translate-x-full ↔ translate-x-0 (CSS transform, GPU).
+- **Backdrop** — `bg-black/60` + `opacity-0 ↔ opacity-100`, fade-in.
+- **Scroll-lock** — `body.style.overflow = "hidden"` поки drawer відкритий.
+- **Focus management:**
+  - на open → фокус на перший focusable у drawer
+  - на close → фокус повертається на trigger (WCAG 2.4.3)
+  - Tab/Shift+Tab закільцьовуються всередині drawer (focus-trap)
+- **Escape** → close.
+- **Backdrop click** → close.
+- **Turbo `turbo:visit`** → close (щоб наступна сторінка не успадкувала open-state).
+
+### 13.3 Адаптивність
+
+| Viewport | Sidebar | Toggle |
+|---|---|---|
+| `< md` (mobile) | Hidden, відкривається через drawer | Visible (`md:hidden`) |
+| `≥ md` (tablet+) | Static visible (`hidden md:block`) | Hidden |
+
+Десктопний sidebar — Turbo-permanent (не перерендериться між сторінками).
+Мобільний drawer — звичайний рендер (стан синхронізується JS-ом).
