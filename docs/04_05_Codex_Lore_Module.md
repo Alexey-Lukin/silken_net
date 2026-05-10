@@ -129,21 +129,42 @@ O(active_users), не O(all_users).
   Серверна cooldown-валідація залишається авторитетною.
 - [x] **`codex--battle`** — ❌ видалений (deferred). Keyboard-шорткати (←/→/space)
   без видимої підказки = discoverability fail. Повернути коли буде tooltip/legend.
-- [ ] **"Choose your fraction" onboarding wizard** — first-login модалка, що
-  перенаправляє нових юзерів на `/api/v1/codex/fractions/picker`.
+- [x] **"Choose your Fraction" onboarding wizard** — рендериться як банер у
+  `DashboardLayout` (`Codex::Fractions::OnboardingWizard`) для будь-якого
+  юзера з `organization_id` і без `codex_fraction`. Server-only; натискання
+  CTA виконує нативну Turbo-Drive навігацію на
+  `GET /api/v1/codex/fractions/picker` — без нового Stimulus-контролера
+  (узгоджено з результатами Phase-8 audit вище). Layout-хук обгорнутий у
+  `rescue StandardError` згідно з ADR-CDX-7 fail-open: збій рендеру
+  Codex-шару НІКОЛИ не валить дашборд (помилка лишається у Rails logger
+  для подальшого Sentry-звіту, не «глитається» тихо).
 
 ### 3.2 Wiki + README
 
-- [ ] Додати **"Lore Layer"** one-liner до `README.md` проєкту.
-- [ ] Оновити бічну панель GitHub Wiki з top-level "Codex" записом:
-  `04_01 §7b → 04_02 → 04_03 → 04_04 → 04_05`.
+- [x] Додано **"Lore Layer (Codex)"** one-liner до `README.md` (під
+  Proof of Growth Pipeline, з прямим лінком на цей документ).
+- [x] Оновлено `docs/00_00_SSOT_Index.md` — Модуль 04 тепер містить
+  явне посилання на `04_05_Codex_Lore_Module`. Sidebar GitHub Wiki
+  оновлюється з тієї ж SSOT-сторінки.
 
 ### 3.3 Sidekiq Pro (cross-cuts весь проєкт)
 
 Codex використовує `Sidekiq::Batch` callbacks там, де сьогодні
-`sidekiq_pro.rb` shim робить `on(:success)` no-op. Це ОК для Phase 1–6
-(жоден Codex-шлях не залежить від Batch callback), але **наступна** ітерація
-Codex з multi-step Battle settlement *буде* залежати. Див. `04_02` § DOC.10.
+`config/initializers/sidekiq_pro.rb` shim робить `on(:success)` no-op.
+Це ОК для Phase 1–8 (жоден Codex-шлях не залежить від Batch callback —
+`AttunementBroadcastWorker`, `FractionAuditWorker`,
+`DiscoveryProbeWorker`, `EloRecomputeWorker` усі fire-and-forget),
+але інші воркери моноліту вже **активно використовують** Pro-фічі
+(`Sidekiq::Batch` у `InsightGeneratorOrchestratorWorker` /
+`TokenomicsEvaluatorWorker`, `Sidekiq::Limiter` для web3-RPC, `expires_in:`
+TTL у hot-path uplink). Це проєктне рішення, не бюджетне:
+ліцензія `sidekiq-pro` додається у Gemfile + `BUNDLE_GEMS__CONTRIBSYS__COM`
+як частина production hardening (повний чекліст у `04_02` § DOC.10:
+розщеплення на 4 процеси, `super_fetch`, `reliable_push`, Redis pool +5).
+Codex-фази не блокують це — просто отримають `on(:success)` коли він
+з'явиться. Multi-step Battle settlement (наступна ітерація Codex поза
+TRL 8) **буде** вимагати справжнього Batch callback — тоді й слід
+ув'язати Codex-merge із production hardening треком.
 
 ### 3.4 Майбутнє бачення (не заплановано)
 
@@ -180,6 +201,7 @@ Codex з multi-step Battle settlement *буде* залежати. Див. `04_0
 | 7 — PR cleanup pass | ✅ done | — | migration squash, N+1 fix, citation `polymorphic_type_for` |
 | 8 — Stimulus-аудит + баг-фікси | ✅ done | — | EloMath `\|\|`, Redis GETDEL, PII, TOCTOU fraction, nil-safe audit |
 | 8a — REST/CoC рефактор | ✅ done | — | `BattleController` → `MatchesController#new/#create`; `destroy_me` → `destroy`; `me` → `index`/`show`; Phlex `Codex::Battle::Arena` UI-назва лишилась |
+| 8b — Onboarding wizard + Wiki/README | ✅ done | +6 (`Codex::Fractions::OnboardingWizard`) | First-login банер у `DashboardLayout`, Lore Layer one-liner у `README.md`, `04_05` посилання у `00_00_SSOT_Index.md` (Модуль 04) |
 
 > Історія посесійних ADR-нотаток для Phases 1–6 зберігається в git log
 > `docs/04_05_Codex_Lore_Module.md` (`git log -p --follow`) та в merged PR.

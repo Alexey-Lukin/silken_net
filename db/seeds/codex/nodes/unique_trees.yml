@@ -1,4 +1,4 @@
-# Codex::Node corpus — Realm: unique_tree (29 records).
+# Codex::Node corpus — Realm: unique_tree (48 records).
 # `cyber_meaning_md` is the verbatim canonical interpretation from the
 # lore appendix.
 
@@ -565,3 +565,443 @@
     різні крони, що є готовим полігоном для перевірки реакції наших
     сенсорів на шину даних (ксилему), яку ділять між собою два різні
     генетичні коди.
+
+# ── Черкаський кластер — унікальні дерева (рівень 1) ───────────────────────
+
+- slug: sosnovy-bor-terrace-pines
+  realm: unique_tree
+  codex_uid: CDX-TRE-0030
+  title_uk: Терасні сосни парку «Сосновий Бір» (м. Черкаси)
+  title_en: Terrace Pines of Sosnovy Bor Park (Cherkasy)
+  subtitle_uk: Load-Bearing Nodes (Несучі вузли / Critical QoS)
+  subtitle_en: Load-Bearing Nodes (Critical QoS)
+  archetype_key: load_bearing_critical_qos
+  lifecycle_status: 3
+  geo_region: cherkasy-bir
+  latitude: 49.4350
+  longitude: 31.9950
+  context_md: |
+    Сосни, штучно висаджені на крутих піщаних схилах-терасах над Дніпром у
+    Черкасах. Їхня коренева система утримує схил від обвалу та сповзання.
+    Є невід'ємною частиною інженерної протиерозійної системи міста.
+  cyber_meaning_md: |
+    Телеметрія цих дерев отримує найвищий пріоритет QoS у мережі, адже
+    відмова вузла означає фізичне руйнування всього кластера: зсув ґрунту та
+    втрату берегової лінії. Load-Bearing Node у прямому сенсі — критична
+    структурна одиниця, без якої падає вся система.
+
+- slug: cherkasy-bor-fused-trees
+  realm: unique_tree
+  codex_uid: CDX-TRE-0031
+  title_uk: Зрощені дерева / Мутанти Черкаського бору
+  title_en: Fused Trees / Mutants of Cherkasy Forest
+  subtitle_uk: Hardware Mutex (IPC без дедлоку)
+  subtitle_en: Hardware Mutex (Inter-Process Communication)
+  archetype_key: hardware_mutex_ipc
+  lifecycle_status: 3
+  geo_region: cherkasy-bir
+  latitude: 49.4420
+  longitude: 32.0010
+  context_md: |
+    Унікальні випадки в Черкаському бору, де сосна і дуб зростаються
+    стовбурами, ділячи спільну площу кореневого живлення. Задокументовані
+    зразки інтровидового зрощення (інозуляції) в міських лісових масивах.
+  cyber_meaning_md: |
+    Феномен Inter-Process Communication (IPC): два абсолютно різні генетичні
+    коди (процеси) обмінюються ресурсами без колізій і взаємного блокування
+    (Deadlock). Бінарний мьютекс, що управляє доступом до спільного каналу
+    живлення без класичного «Обідаючого Філософа».
+
+- slug: didovi-duby-kozatske
+  realm: unique_tree
+  codex_uid: CDX-TRE-0032
+  title_uk: «Дідові дуби» (с. Козацьке, Звенигородщина)
+  title_en: '"Didovi Duby" (Kozatske Village, Zvenyhorodshchyna)'
+  subtitle_uk: Decentralized Governance Archive (Genesis Block DAO)
+  subtitle_en: Decentralized Governance Archive (DAO Genesis Block)
+  archetype_key: dao_genesis_block
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 48.9000
+  longitude: 30.8000
+  context_md: |
+    Залишки стародавньої діброви (вік окремих дерев 500–800 років) поблизу
+    с. Козацьке Звенигородського р-ну. Ця діброва слугувала місцем козацьких
+    рад та була свідком ключових подій Гетьманщини.
+  cyber_meaning_md: |
+    Метафора генезис-блоку в DAO: найстаріші вузли мережі, які накопичили
+    максимальний Proof-of-Authority завдяки обсягу даних, збережених у
+    ксилемі за 500–800 років. Їхній голос у мережевому консенсусі має
+    найбільшу вагу Trust Score просто через незаперечний факт виживання.
+
+- slug: tyasmyn-willow-patriarchs
+  realm: unique_tree
+  codex_uid: CDX-TRE-0033
+  title_uk: Верби-патріархи на берегах Тясмину
+  title_en: Willow Patriarchs on the Banks of the Tyasmyn
+  subtitle_uk: Peripheral Edge Sensors (Переривання від токсинів)
+  subtitle_en: Peripheral Edge Sensors (Interrupt-Driven Toxin Detection)
+  archetype_key: peripheral_edge_interrupt_sensor
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.0500
+  longitude: 32.4200
+  context_md: |
+    Вікові верби у гирлі річки Тясмин, чиє коріння повністю занурене в мул
+    берега, а крони нахилені над водою. Першими поглинають зміни хімічного
+    складу річкової води.
+  cyber_meaning_md: |
+    Ідеальні периферійні датчики-сторожі: генерують переривання (interrupts)
+    при виявленні зовнішніх токсинів у воді до того, як забруднення досягне
+    основного лісового масиву. У архітектурі EWS Silken Net — це вузли
+    першого рівня реагування, які тригерять AlertNotificationWorker раніше
+    за всіх інших.
+
+# ── Черкаський кластер — унікальні дерева (рівень 3) ───────────────────────
+
+- slug: cherkasy-twisted-coastal-pines
+  realm: unique_tree
+  codex_uid: CDX-TRE-0034
+  title_uk: Кручені сосни на берегах Дніпра (пляжна зона, Черкаси)
+  title_en: Twisted Coastal Pines on the Dnipro Banks (Cherkasy Beach Zone)
+  subtitle_uk: Kinetic Stress Tolerance (Торсійна стійкість)
+  subtitle_en: Kinetic Stress Tolerance (Torsional Load Test)
+  archetype_key: kinetic_torsion_tolerance
+  lifecycle_status: 3
+  geo_region: cherkasy-bir
+  latitude: 49.4280
+  longitude: 31.9800
+  context_md: |
+    Сосни на березі Кременчуцького водосховища в Черкасах, стовбури яких
+    фізично скручені спіраллю через постійні зимові вітри та шторми з боку
+    водойми. Дерева не ламаються — адаптують геометрію.
+  cyber_meaning_md: |
+    Іспит на міцність кріплення титанового гіроїда: анкер мусить
+    витримувати постійні торсійні (скручувальні) навантаження від стовбура без
+    руйнування PEEK-купола. Якщо кріплення тримає тут — воно тримає у будь-якому
+    вітровому навантаженні. Тест Kinetic Stress Tolerance для механічної
+    конструкції Soldier.
+
+- slug: oak-maksymovych-prokhorivka
+  realm: unique_tree
+  codex_uid: CDX-TRE-0035
+  title_uk: Дуб Максимовича (с. Прохорівка, Канівщина)
+  title_en: Maksymovych Oak (Prokhorivka Village, Kaniv Region)
+  subtitle_uk: Genesis Data Vault (Архів першоджерел)
+  subtitle_en: Genesis Data Vault (Read-Only Mainframe)
+  archetype_key: genesis_data_vault
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.7900
+  longitude: 31.5100
+  context_md: |
+    Велетенський дуб у с. Прохорівка, під яким перший ректор Київського
+    університету (ботанік і поет Михайло Максимович) писав наукові праці.
+    Тут бували Тарас Шевченко та Микола Гоголь.
+  cyber_meaning_md: |
+    У архітектурі Codex це не просто вузол — це Read-Only мейнфрейм: дерево,
+    що стало свідком перших спроб людини систематизувати та оцифрувати знання
+    про українську природу. Genesis Data Vault, з якого розпочалася наукова
+    систематизація біосфери цього регіону.
+
+- slug: tryzub-pine-cherkasy-bor
+  realm: unique_tree
+  codex_uid: CDX-TRE-0036
+  title_uk: Сосна-тризуб (Черкаський бір)
+  title_en: Tryzub Pine (Cherkasy Pine Forest)
+  subtitle_uk: Redundant Architecture (RAID 5 в біології)
+  subtitle_en: Redundant Architecture (Biological RAID 5)
+  archetype_key: biological_raid_redundancy
+  lifecycle_status: 3
+  geo_region: cherkasy-bir
+  latitude: 49.4460
+  longitude: 32.0050
+  context_md: |
+    Рідкісна мутація в Черкаському бору: один корінь живить відразу три
+    рівноцінні масивні стовбури-верхівки, що ростуть зі спільної основи у
+    формі тризуба. Біологічна аномалія, задокументована місцевими
+    натуралістами.
+  cyber_meaning_md: |
+    Біологічна реалізація RAID 5 або потрійного резервування: якщо
+    блискавка знищить один стовбур, система не переходить у PANIC_STATE,
+    оскільки має ще дві ідентичні копії сервера на тій самій апаратній
+    базі. Архетип Redundant Architecture для проектування відмовостійкості
+    Queen-шлюзів.
+
+- slug: diyevo-island-willows
+  realm: unique_tree
+  codex_uid: CDX-TRE-0037
+  title_uk: Верби острова Дієво (злиття Росі та Дніпра)
+  title_en: Willows of Diyevo Island (Confluence of Ros and Dnipro)
+  subtitle_uk: Border Gateway Protocol (BGP Router)
+  subtitle_en: Border Gateway Protocol (BGP Router)
+  archetype_key: border_gateway_protocol
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.6200
+  longitude: 31.4500
+  context_md: |
+    Дерева острова Дієво поблизу Хрещатика Черкаської обл., що стоять у
+    місці злиття річки Рось з Дніпром. Поглинають змішаний хімічний склад
+    двох великих гідрологічних систем і реагують на їх різні ритми.
+  cyber_meaning_md: |
+    Класичний Border Gateway Protocol вузол: транслює дані з однієї великої
+    автономної системи (басейн Росі / AS-РОСІ) в іншу (басейн Дніпра /
+    AS-ДНІПРО). Обробляє конкурентні routing-таблиці двох гідрологічних
+    мереж, виконуючи адаптацію протоколів на межі AS-кордонів.
+
+- slug: sacred-oak-bohdanova-hora
+  realm: unique_tree
+  codex_uid: CDX-TRE-0038
+  title_uk: Священний дуб на Богдановій горі (Чигирин)
+  title_en: Sacred Oak on Bohdanova Hora (Chyhyryn)
+  subtitle_uk: Proof-of-Authority Node (Максимальна соціальна вага)
+  subtitle_en: Proof-of-Authority Node (Maximum Trust Score)
+  archetype_key: proof_of_authority_node
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.0700
+  longitude: 32.6600
+  context_md: |
+    Дуб на Богдановій горі в Чигирині — поблизу резиденції Богдана
+    Хмельницького та Чигиринського замку. Навіть якщо дерево не є
+    найстарішим фізично, воно має максимальну «соціальну вагу» в
+    контексті національної та козацької пам'яті.
+  cyber_meaning_md: |
+    Тест на роботу з вузлами, яким мережа надає вищий пріоритет довіри
+    (Trust Score) під час прийняття рішень щодо достовірності екологічних
+    тригерів. Навіть без найбільшого delta_t — його Proof-of-Authority
+    визначається обсягом верифікованих подій, підтверджених рештою
+    мережі впродовж століть.
+
+# ── Черкаський кластер — унікальні дерева (рівень 4) ───────────────────────
+
+- slug: lipa-maksymovycha-subotiv
+  realm: unique_tree
+  codex_uid: CDX-TRE-0039
+  title_uk: Липа Максимовича / Хмельницького (Суботів / Прохорівка)
+  title_en: Maksymovych / Khmelnytskyi Linden (Subotiv / Prokhorivka)
+  subtitle_uk: Timestamp Oracle (Оракул мітки часу)
+  subtitle_en: Timestamp Oracle / Vegetative Cycle Trigger Node
+  archetype_key: timestamp_oracle
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.0300
+  longitude: 31.9500
+  context_md: |
+    Велетенські старі липи козацьких часів у районі Суботова і Прохорівки.
+    Липа (*Tilia*) має меншу гідравлічну щільність деревини ніж дуб чи
+    сосна і першою реагує на весняне потепління, розпускаючи бруньки.
+  cyber_meaning_md: |
+    Ідеальний Trigger Node для мережі: першою «прокидається» і генерує
+    timestamp початку нового вегетаційного циклу для всього кластера. Це
+    живий NTP-оракул, що синхронізує біологічний годинник мережі за
+    фактичними кліматичними даними — точніше будь-якого метеорологічного
+    прогнозу.
+
+- slug: oak-krasytskyi-zelena-dibrova
+  realm: unique_tree
+  codex_uid: CDX-TRE-0040
+  title_uk: Дуб Красицького (с. Зелена Діброва)
+  title_en: Krasytskyi Oak (Zelena Dibrova Village)
+  subtitle_uk: Solo Verifier Node (Самотній вузол-валідатор)
+  subtitle_en: Solo Verifier Node / Maximum Range Limit Test
+  archetype_key: solo_verifier_node
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.1500
+  longitude: 31.5000
+  context_md: |
+    Велетенський дуб, що стоїть абсолютно ізольовано серед відкритого
+    простору далеко від будь-яких лісових масивів. Повна відсутність
+    сусідніх дерев у радіусі кількох кілометрів.
+  cyber_meaning_md: |
+    Найскладніший виклик для LoRa-антени: чи зможе самотній Soldier
+    «докричатися» до найближчої Queen за кілька кілометрів? Цей вузол
+    тестує Maximum Range Limit радіомодуля в ідеально чистому полі без
+    жодних перешкод і ретрансляторів. Результати калібрують теоретичний
+    максимум дальності мережі.
+
+- slug: ash-trees-davydovs-park-kamyanka
+  realm: unique_tree
+  codex_uid: CDX-TRE-0041
+  title_uk: Старі ясени парку Давидових (м. Кам'янка)
+  title_en: Old Ash Trees of Davydov Park (Kamyanka)
+  subtitle_uk: Legacy API Endpoints (Точки доступу до культурної пам'яті)
+  subtitle_en: Legacy API Endpoints / Urban Sensor Noise Filter
+  archetype_key: legacy_api_endpoints
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.0200
+  longitude: 32.1000
+  context_md: |
+    Вікові ясени в маєтку Давидових у Кам'янці — місці, де працювали
+    Петро Чайковський і Олександр Пушкін. Парк є частиною діючого
+    культурного об'єкту з туристичним навантаженням.
+  cyber_meaning_md: |
+    Перевірка роботи хардверу в парковій архітектурі з високим антропогенним
+    навантаженням: туристи, музика, шум. «Міські» сенсори лісу, що вчаться
+    фільтрувати культурний шум від реального біологічного стресу. Тест
+    алгоритму шумозаглушення для акустичного класифікатора TinyML.
+
+- slug: dune-pines-ruska-polyana
+  realm: unique_tree
+  codex_uid: CDX-TRE-0042
+  title_uk: Сосни на піщаних дюнах (с. Руська Поляна)
+  title_en: Dune Pines (Ruska Polyana Village)
+  subtitle_uk: Deep Sleep Adapters (Адаптери глибокого сну)
+  subtitle_en: Deep Sleep Adapters / Ultra-Low Power Mode Reference
+  archetype_key: deep_sleep_adapter
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.3500
+  longitude: 31.9000
+  context_md: |
+    Сосни, що ростуть на чистих річкових пісках, де ґрунтова вода зникає
+    миттєво після дощу. Живуть у стані постійного водного дефіциту, значно
+    уповільнюючи всі фізіологічні процеси.
+  cyber_meaning_md: |
+    Природний еталон Ultra-Low Power Mode: delta_t показує, як зупинити
+    майже всі процеси (ріст, транспірацію) і залишити лише базовий heartbeat
+    для виживання. Це ТЗ для оптимізації режиму STOP2 на STM32 — скільки
+    мікроватів мінімально потрібно системі для підтримки живого стану.
+
+- slug: dark-charred-oak-bor
+  realm: unique_tree
+  codex_uid: CDX-TRE-0043
+  title_uk: «Темний Дуб» / Обвуглені дерева (зони пожеж у Бору)
+  title_en: '"Dark Oak" / Charred Trees (Fire Zones in the Pine Forest)'
+  subtitle_uk: Dark Fiber (Темне волокно / RF-поглинач)
+  subtitle_en: Dark Fiber / Charcoal RF Absorber Test
+  archetype_key: dark_fiber
+  lifecycle_status: 3
+  geo_region: cherkasy-bir
+  latitude: 49.4500
+  longitude: 32.0200
+  context_md: |
+    Дерева Черкаського бору, які пережили локальні низові пожежі. Їхня
+    зовнішня кора перетворилася на вугілля, але серцевина залишилася
+    живою. Деревне вугілля є ефективним поглиначем радіохвиль.
+  cyber_meaning_md: |
+    Перевірка телеметрії на здатність пробиватися крізь фізичні RF-absorbers:
+    якщо сигнал виходить з-під обвугленої кори — антена спроєктована бездоганно.
+    Це також метафора Dark Fiber: канал, що існує але вважається «мертвим»,
+    однак усередині продовжує нести сигнал. Тест радіопроникності для
+    нетипових фізичних умов.
+
+# ── Черкаський кластер — унікальні дерева (рівень 5) ───────────────────────
+
+- slug: pine-burst-concrete-dot-kaniv
+  realm: unique_tree
+  codex_uid: CDX-TRE-0044
+  title_uk: Сосна, що розірвала бетонний ДОТ (Канівщина)
+  title_en: Pine That Burst a Concrete Bunker (Kaniv Region)
+  subtitle_uk: Zero-Day Exploit (Апаратний злам архітектури)
+  subtitle_en: Zero-Day Exploit / Privilege Escalation by Biology
+  archetype_key: zero_day_exploit
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.7400
+  longitude: 31.5200
+  context_md: |
+    Сосна на Канівщині, насіння якої потрапило в мікроскопічну тріщину
+    монолітного військового бункера 1941 року. З часом корінь і стовбур
+    повністю розірвали залізобетонну конструкцію.
+  cyber_meaning_md: |
+    Privilege Escalation у природі: біологія знайшла Zero-Day вразливість
+    у найміцнішій людській архітектурі і переписала її код. Символ того,
+    що Дерево завжди переможе Метал, якщо Метал не буде гнучким. Наш
+    PEEK-купол повинен «піддаватися» дереву, а не воювати з ним — інакше
+    дерево розчавить його, як цей ДОТ.
+
+- slug: wild-pear-abandoned-khutory
+  realm: unique_tree
+  codex_uid: CDX-TRE-0045
+  title_uk: Груша-дичка на місці зниклих хуторів (Чигиринщина)
+  title_en: Wild Pear at Abandoned Farmsteads (Chyhyryn Region)
+  subtitle_uk: Orphaned Smart Contract (Покинутий смарт-контракт)
+  subtitle_en: Orphaned Smart Contract / Autonomous Code Execution
+  archetype_key: orphaned_smart_contract
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.0600
+  longitude: 32.5000
+  context_md: |
+    Дикі фруктові дерева, що залишилися в лісі на місці сіл і хуторів,
+    які зникли покоління тому на Чигиринщині. Їх ніхто не доглядає —
+    але вони продовжують плодоносити кожного сезону.
+  cyber_meaning_md: |
+    Покинуті API Endpoints: розробники (люди), що створили гібридну систему
+    (посадили сад), зникли. Але «код» дерева виконується бездоганно, продукуючи
+    плоди без оновлень і підтримки. Метафора того, що Silken Net має
+    продовжувати генерувати екологічну вартість (SCC-токени) навіть тоді,
+    коли компанія-розробник перестане існувати.
+
+- slug: black-poplar-panske-dam
+  realm: unique_tree
+  codex_uid: CDX-TRE-0046
+  title_uk: Чорна тополя на краю дамби (с. Панське)
+  title_en: Black Poplar at the Edge of the Dam (Panske Village)
+  subtitle_uk: Edge Router (Граничний маршрутизатор)
+  subtitle_en: Edge Router / Frontier Node (Maximum Entropy)
+  archetype_key: edge_router_frontier
+  lifecycle_status: 2
+  geo_region: cherkasy
+  latitude: 49.4600
+  longitude: 32.1100
+  context_md: |
+    Самотня чорна тополя (*Populus nigra*) на самому краю штучного острова
+    у Кременчуцькому водосховищі поблизу с. Панське. Постійно обдувається
+    штормовими вітрами і приймає прямі удари хвиль.
+  cyber_meaning_md: |
+    Frontier Node — вузол у стані максимальної ентропії: немає сусідів,
+    щоб збалансувати навантаження або захиститися від вітру. Дані з цього
+    вузла найцінніші для прогнозування погоди — він першим фіксує зміну
+    атмосферного тиску та кінетичний удар бурі. Класичний Edge Router
+    на межі мережевого периметра.
+
+- slug: walnut-alley-soviet-roads
+  realm: unique_tree
+  codex_uid: CDX-TRE-0047
+  title_uk: Алеї волоського горіха вздовж старих трас (Черкащина)
+  title_en: Walnut Alleys along Old Roads (Cherkasy Region)
+  subtitle_uk: Vendor Lock-in (Хімічний ізольований протокол)
+  subtitle_en: Vendor Lock-in / Chemical Sandbox Isolation
+  archetype_key: vendor_lock_in
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.2500
+  longitude: 31.6000
+  context_md: |
+    Алеї волоського горіха (*Juglans regia*), висаджені за радянських часів
+    уздовж доріг Черкащини. Горіх виділяє юглон — алелопатичний токсин,
+    що пригнічує ріст більшості інших рослин у радіусі крони.
+  cyber_meaning_md: |
+    Апаратний Vendor Lock-in або Sandbox Isolation: дерево свідомо блокує
+    інтеграцію інших біологічних «протоколів» у свою підмережу через хімічний
+    фаєрвол. Тест телеметрії в стерильній монокультурній зоні, де дерево
+    повністю контролює периметр. Алгоритм повинен врахувати відсутність
+    мікоризних сигналів у ґрунті як норму, а не збій.
+
+- slug: veteran-pines-sosnivka-hospital
+  realm: unique_tree
+  codex_uid: CDX-TRE-0048
+  title_uk: Сосни-ветерани Соснівки (біля санаторіїв, Черкащина)
+  title_en: Veteran Pines of Sosnivka (near Sanatoriums, Cherkasy Region)
+  subtitle_uk: Baseline / IDLE State (Еталонний стан спокою)
+  subtitle_en: Baseline / IDLE State Reference (System Health Zero)
+  archetype_key: baseline_idle_state
+  lifecycle_status: 3
+  geo_region: cherkasy-bir
+  latitude: 49.4380
+  longitude: 32.0070
+  context_md: |
+    Старі доглянуті сосни в санаторній зоні Черкас — ідеальні умови
+    зростання без конкуренції, рубок і стресів. Регулярний полив та
+    догляд протягом десятиліть.
+  cyber_meaning_md: |
+    Еталонний «Нуль» для метрик здоров'я: щоб зрозуміти «хворе дерево»
+    або «стрес», нейромережі потрібно знати ідеальний IDLE-стан. Телеметрія
+    цих дерев — чиста синусоїда без аномалій, з якою порівнюватимуться
+    дані з усього світу. Це калібрувальний стандарт для всього pipeline
+    TelemetryUnpackerService.

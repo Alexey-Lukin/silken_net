@@ -1,4 +1,4 @@
-# Codex::Node corpus — Realm: ecosystem (32 records).
+# Codex::Node corpus — Realm: ecosystem (52 records).
 # Source-of-truth: doc plan §1 (lore appendix). Idempotent UPSERT by slug.
 # `cyber_meaning_md` is the verbatim canonical interpretation from the lore
 # bundle; `context_md` carries factual baseline data.
@@ -609,3 +609,464 @@
   cyber_meaning_md: |
     Всесвітня P2P-мережа, що здійснює транзакції ресурсів через ідеальні
     "смарт-контракти" симбіозу.
+
+# ── Черкаський кластер — рівень 1 (нові полігони) ──────────────────────────
+
+- slug: butskyi-canyon
+  realm: ecosystem
+  codex_uid: CDX-ECO-0033
+  title_uk: Буцький каньйон / Ліси над Гірським Тікичем
+  title_en: Butskyi Canyon / Forests above Hirskyi Tykych
+  subtitle_uk: Polígon теплового дроселювання
+  subtitle_en: Microclimate Sandbox / Thermal Throttling
+  archetype_key: thermal_throttling_testbed
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 48.6300
+  longitude: 30.2500
+  context_md: |
+    Глибокий гранітний каньйон річки Гірський Тікич на Черкащині. Дерева
+    ростуть безпосередньо на скелях над бурхливою водою. Граніт інтенсивно
+    нагрівається вдень і різко охолоджується вночі, створюючи унікальний
+    мікроклімат із великою амплітудою добових температур.
+  cyber_meaning_md: |
+    Ідеальний полігон для вивчення температурних шоків на апаратуру Silken Net:
+    тест акумуляторів STM32 та delta_t ксилеми на швидкість реакції до
+    мікрокліматичних перепадів. Якщо вузол витримує добовий цикл каньйону —
+    він пройде Thermal Throttling у будь-якій кліматичній зоні.
+
+- slug: buchak-lake-forests
+  realm: ecosystem
+  codex_uid: CDX-ECO-0034
+  title_uk: Озеро Бучак та навколишні ліси (Канівщина)
+  title_en: Lake Buchak and Surrounding Forests (Kaniv Region)
+  subtitle_uk: Graceful Degradation та відновлення після збою
+  subtitle_en: Graceful Degradation & Fallback Recovery
+  archetype_key: graceful_degradation_recovery
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.6800
+  longitude: 31.5200
+  context_md: |
+    Колишній майданчик ГАЕС (гідроакумулювальної електростанції), де
+    гігантський індустріальний кратер поступово заповнився водою, а ліс
+    агресивно поглинув залишки бетонних конструкцій і фундаментів.
+  cyber_meaning_md: |
+    Еталонна демонстрація Graceful Degradation: природа виконує «відкат
+    системи» після масштабного збою людського Master Plan, відновлюючи
+    топологію мережі поверх промислових руїн. Dosліджуємо, як вузли Silken
+    Net мають вести себе при частковій деградації інфраструктури.
+
+- slug: dnipro-plavni-islands
+  realm: ecosystem
+  codex_uid: CDX-ECO-0035
+  title_uk: Дніпровські плавні / Острови Кединої Гори
+  title_en: Dnipro Floodplains / Kedyna Hora Islands
+  subtitle_uk: Динамічна топологія (Floating Nodes)
+  subtitle_en: Dynamic Topology (Floating Nodes)
+  archetype_key: dynamic_floating_topology
+  lifecycle_status: 2
+  geo_region: cherkasy
+  latitude: 49.7500
+  longitude: 32.0000
+  context_md: |
+    Мережа дрібних піщаних островів, густо порослих лісом, у заплаві
+    Дніпра нижче Черкас. Форма і розмір островів змінюються щодня залежно
+    від об'ємів скидання води Кременчуцькою ГЕС.
+  cyber_meaning_md: |
+    Тест на динамічну маршрутизацію у нестабільному фізичному середовищі:
+    вузли (дерева/острови) постійно перереєстровуються в мережі, бо їхнє
+    фізичне становище (суша/вода) нестабільне. Прямий аналог Floating Node
+    у Mesh із непередбачуваним uplink.
+
+- slug: try-krynytsi-subotiv
+  realm: ecosystem
+  codex_uid: CDX-ECO-0036
+  title_uk: Урочище «Три Криниці» та ліси Суботова
+  title_en: Urochyshche "Try Krynytsi" and Forests of Subotiv
+  subtitle_uk: Load-Balanced Data Lakes
+  subtitle_en: Load-Balanced Data Lakes (High Availability)
+  archetype_key: load_balanced_high_availability
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.0400
+  longitude: 31.9800
+  context_md: |
+    Урочище біля с. Суботів (Чигиринщина) з трьома підземними джерелами,
+    які живлять навколишню флору з єдиного водоносного горизонту. Поряд —
+    місце гетьманської резиденції Богдана Хмельницького.
+  cyber_meaning_md: |
+    Природний приклад балансування навантаження з HA-гарантіями: якщо один
+    канал (джерело) пересихає, інші перехоплюють трафік (воду), забезпечуючи
+    безперебійне живлення екосистеми. Архетип для проектування резервних
+    каналів телеметрії та упlink-пулів у мережі Queen-шлюзів.
+
+- slug: stebliv-forests-ros
+  realm: ecosystem
+  codex_uid: CDX-ECO-0037
+  title_uk: Стеблівські ліси над Россю
+  title_en: Stebliv Forests above the Ros River
+  subtitle_uk: Зона ЕМ-перешкод (EMF Interference Zone)
+  subtitle_en: EMF Interference Zone
+  archetype_key: emf_interference_zone
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.4000
+  longitude: 31.1500
+  context_md: |
+    Ліси, що ростуть безпосередньо поруч зі стародавньою діючою
+    Стеблівською ГЕС і лініями електропередачі. Постійна промислова
+    електромагнітна активність на межі з заповідними масивами.
+  cyber_meaning_md: |
+    Готовий стенд для EMF-тестування: дослідження впливу
+    електромагнітного випромінювання ВЛ (високовольтних ліній) на
+    стабільність LoRa-передачі пакетів даних між вузлами Soldier та Queen.
+    Якщо SNR прийнятний тут — прийнятний скрізь.
+
+# ── Черкаський кластер — рівень 3 (нові полігони) ──────────────────────────
+
+- slug: maryianivka-central-hub
+  realm: ecosystem
+  codex_uid: CDX-ECO-0038
+  title_uk: Географічний центр України (ліси Шполянщини)
+  title_en: Geographic Center of Ukraine (Shpola Forests)
+  subtitle_uk: Central Timing Hub (NTP-вузол мережі)
+  subtitle_en: Central Timing Hub / NTP Server Node
+  archetype_key: central_timing_hub
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.0100
+  longitude: 31.4600
+  context_md: |
+    Лісистий ландшафт поблизу с. Мар'янівка Шполянського р-ну, що
+    знаходиться в районі географічного центру України. Не найбільший
+    масив, але унікальне топологічне розташування.
+  cyber_meaning_md: |
+    Ідеальний кандидат на роль NTP Server (Network Time Protocol) для
+    глобальної мережі Silken Net: точка рівноваги, де затримка сигналу до
+    будь-якого кутка країни теоретично найменша і найбільш збалансована.
+    Майстер-годинник, від якого решта вузлів синхронізують свої
+    мікроконтролери.
+
+- slug: talnivskyi-park-shuvalovs
+  realm: ecosystem
+  codex_uid: CDX-ECO-0039
+  title_uk: Тальнівський лісопарк (Маєток Шувалових)
+  title_en: Talnivskyi Forest Park (Shuvalov Estate)
+  subtitle_uk: Hardware-Software Co-design
+  subtitle_en: Hardware-Software Co-design Polygon
+  archetype_key: hardware_software_codesign
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 48.8900
+  longitude: 30.6800
+  context_md: |
+    Старовинний пейзажний парк маєтку Шувалових у Тальному (Черкащина),
+    що зрісся зі стародавніми гідротехнічними спорудами: водоспадами та
+    шлюзами на скелястих берегах річки Гірський Тікич.
+  cyber_meaning_md: |
+    Полігон для дослідження того, як лісова коренева система використовує
+    антропогенну інженерію для оптимізації водного живлення. Ідеальний
+    патерн для інтеграції сенсорів Silken Net у систему сокоруху дерева:
+    Hardware (гідроспоруди) і Software (коренева мережа) спільно
+    оптимізують потік ресурсу.
+
+- slug: teklynska-dacha
+  realm: ecosystem
+  codex_uid: CDX-ECO-0040
+  title_uk: Теклинська дача (Смілянщина)
+  title_en: Teklynska Dacha (Smila Region)
+  subtitle_uk: LoRa Attenuation Testbed (SNR-полігон)
+  subtitle_en: LoRa Attenuation Testbed (SNR Stress Test)
+  archetype_key: lora_attenuation_testbed
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.1700
+  longitude: 31.6000
+  context_md: |
+    Надзвичайно старий і щільний дубово-грабовий ліс у Смілянському
+    р-ні. Одна з найстаріших природоохоронних ділянок Черкащини.
+    Широколистяні дерева цього віку тримають колосальну масу вологи у
+    кронах упродовж усього літа.
+  cyber_meaning_md: |
+    Найжорсткіший стенд для тестування пропускної здатності LoRa та
+    Signal-to-Noise Ratio: якщо пакет від Soldier до Queen стабільно
+    проходить крізь літню Теклинську дачу — він пройде через будь-які
+    джунглі планети. Еталонне значення затухання для калібрування
+    мережевого стеку.
+
+- slug: kaniv-reservoir-islands
+  realm: ecosystem
+  codex_uid: CDX-ECO-0041
+  title_uk: Затоплені острови Канівського водосховища (Круглик, Шелестів)
+  title_en: Submerged Islands of Kaniv Reservoir (Kruhlyk, Shelestiv)
+  subtitle_uk: Network Partitioning (Мережева ізоляція)
+  subtitle_en: Network Partitioning (Islands of Compute)
+  archetype_key: network_partitioning
+  lifecycle_status: 2
+  geo_region: cherkasy
+  latitude: 49.8000
+  longitude: 31.5500
+  context_md: |
+    Лісисті острови Круглик і Шелестів у Канівському водосховищі —
+    залишки сіл та урочищ, затоплених при створенні водосховища. Відрізані
+    від материка водою, без постійного населення.
+  cyber_meaning_md: |
+    Еталон для вивчення роботи ізольованих мікро-кластерів (Islands of
+    Compute): підтримання внутрішнього консенсусу та локальної цілісності
+    даних через ZK-докази навіть коли зв'язок з материковим бек-ендом
+    обривається через шторми або паводки. Архетип Network Partition
+    Tolerance у теоремі CAP.
+
+- slug: chyhyryn-bayrak-forests
+  realm: ecosystem
+  codex_uid: CDX-ECO-0042
+  title_uk: Степи та байрачні ліси Чигиринщини
+  title_en: Steppe and Ravine Forests of Chyhyryn Region
+  subtitle_uk: Edge Computing Frontier (Межа екосистем)
+  subtitle_en: Edge Computing Frontier (Perimeter Firewall)
+  archetype_key: edge_computing_frontier
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.0800
+  longitude: 32.6500
+  context_md: |
+    Байрачні (балочні) ліси Чигиринського р-ну: острівці деревної
+    рослинності у байраках серед відкритого злакового степу. Постійно
+    перебувають на межі посухи і відновлення.
+  cyber_meaning_md: |
+    Вузли-розвідники на передовому краю: фіксують перші ознаки наступу
+    пустелі або зміни вітрових патернів, слугуючи зовнішнім контуром
+    безпеки (Perimeter Firewall) для великих лісових масивів. Класика Edge
+    Computing — обробка подій безпосередньо на межі, без очікування
+    відповіді від центрального бек-енду.
+
+# ── Черкаський кластер — рівень 4 (нові полігони) ──────────────────────────
+
+- slug: cherkasy-field-shelterbelts
+  realm: ecosystem
+  codex_uid: CDX-ECO-0043
+  title_uk: Мережа лісосмуг Черкащини (Аграрний каркас)
+  title_en: Cherkasy Shelterbelt Network (Agrarian Framework)
+  subtitle_uk: The Network Backbone (Магістральні шини даних)
+  subtitle_en: Network Backbone / Linear Topology Data Buses
+  archetype_key: linear_topology_backbone
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.3000
+  longitude: 31.8000
+  context_md: |
+    Штучні захисні лісосмуги, що розрізають поля Черкащини. Лінійні
+    посадки тягнуться на кілометри між ізольованими лісовими масивами,
+    виконуючи агрономічну роль захисту від ерозії та суховіїв.
+  cyber_meaning_md: |
+    Ідеальні Data Buses (шини даних) у природі: пакети стрибають від
+    одного дерева до іншого вздовж ідеально прямої лінії на кілометри,
+    передаючи трафік між великими масивами. Полігон Linear Topology
+    маршрутизації — мінімальна затримка, максимальна пропускна здатність
+    у відкритому полі.
+
+- slug: lebedynskyi-forest-shpola
+  realm: ecosystem
+  codex_uid: CDX-ECO-0044
+  title_uk: Лебединський ліс (Шполянщина)
+  title_en: Lebedyn Forest (Shpola Region)
+  subtitle_uk: Secure Enclave / VPN (Захищений анклав)
+  subtitle_en: Secure Enclave / Virtual Private Network
+  archetype_key: secure_enclave_vpn
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 48.9500
+  longitude: 31.3500
+  context_md: |
+    Густий, практично непрохідний лісовий масив на Шполянщині, у центрі
+    якого, за переказами, віками існував схований жіночий монастир, ізольований
+    від зовнішнього світу щільним деревним покривом.
+  cyber_meaning_md: |
+    Еталон Virtual Private Network у природі: екосистема навмисно ізолювала
+    своє серце від зовнішнього світу, використовуючи ліс як криптографічний
+    тунель та фізичний фаєрвол. Полігон тестування прихованих підмереж, які
+    не повинні «пінгуватися» ззовні. Зовнішня межа приймає трафік, внутрішнє
+    ядро — ні.
+
+- slug: irdyn-peat-fire-zones
+  realm: ecosystem
+  codex_uid: CDX-ECO-0045
+  title_uk: Підземні торфовища Ірдиня (Зони тліючих згарищ)
+  title_en: Irdyn Underground Peatlands (Smoldering Fire Zones)
+  subtitle_uk: Thermal Runaway & Hidden State (Прихований тепловий колапс)
+  subtitle_en: Thermal Runaway & Hidden Markov State
+  archetype_key: thermal_runaway_hidden_state
+  lifecycle_status: 2
+  geo_region: cherkasy
+  latitude: 49.4000
+  longitude: 31.7000
+  context_md: |
+    Торфовища Ірдинського болота, де підземна пожежа може тліти роками під
+    поверхнею ґрунту, не виходячи назовні. Один із найскладніших сценаріїв
+    лісової пожежі — невидима загроза.
+  cyber_meaning_md: |
+    Найскладніший тест на виявлення прихованих апаратних загроз. Сенсори
+    мають працювати з Hidden Markov Models, аналізуючи температуру коріння
+    та хімію ґрунту, аби передбачити катастрофу до того, як вона знищить
+    систему. Аналог теплового колапсу (thermal runaway) акумулятора, що не
+    проявляє зовнішніх симптомів до вибуху.
+
+- slug: tarasova-hora-kaniv
+  realm: ecosystem
+  codex_uid: CDX-ECO-0046
+  title_uk: Ліси Тарасової Гори (Канів)
+  title_en: Forests of Tarasova Hora (Kaniv)
+  subtitle_uk: Immutable Anchor Zone (Зона незмінної фінальності)
+  subtitle_en: Immutable Anchor Zone / Blockchain Finality Point
+  archetype_key: immutable_anchor_zone
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.7500
+  longitude: 31.5400
+  context_md: |
+    Лісовий масив навколо Тарасової гори в Каневі (могила Тараса Шевченка),
+    що має статус абсолютної недоторканості — національна святиня з
+    найсуворішим режимом охорони в Україні.
+  cyber_meaning_md: |
+    В архітектурі блокчейну це точка Finality: вузли, телеметрія яких є
+    гарантованою еталонною базою. Дані звідси є генезис-блоком для порівняння:
+    «Як має виглядати ліс, коли антропогенне втручання дорівнює нулю». Абсолютна
+    reference point для калібрування решти мережі.
+
+- slug: chornyi-lis-border
+  realm: ecosystem
+  codex_uid: CDX-ECO-0047
+  title_uk: Чорний ліс (межа Черкащини та Кіровоградщини)
+  title_en: Chornyi Lis (Border of Cherkasy and Kirovohrad regions)
+  subtitle_uk: Cross-Chain Bridge (Крос-чейн міст)
+  subtitle_en: Cross-Chain Bridge / Protocol Translation Zone
+  archetype_key: cross_chain_bridge
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.1000
+  longitude: 31.6000
+  context_md: |
+    Стародавній лісовий масив на межі двох областей, що географічно та
+    екологічно з'єднує лісостепову зону (північ) і степову (південь).
+    Перехідна зона між двома різними кліматичними доменами.
+  cyber_meaning_md: |
+    Зона трансформації протоколів: система навчається передавати дані з
+    одного екологічного домену (вологий лісостеп) в інший (сухий степ),
+    динамічно змінюючи параметри тригерів та алертів залежно від того, на
+    якому боці «мосту» знаходиться вузол. Архетип Cross-Chain Bridge між
+    двома екологічними блокчейнами.
+
+# ── Черкаський кластер — рівень 5 (нові полігони) ──────────────────────────
+
+- slug: cherkasy-dam-shelterbelts
+  realm: ecosystem
+  codex_uid: CDX-ECO-0048
+  title_uk: Лісозахисні смуги на Черкаській дамбі
+  title_en: Protective Shelterbelts on the Cherkasy Dam
+  subtitle_uk: High-Risk Network Bridge (Мережевий міст підвищеного ризику)
+  subtitle_en: High-Risk Network Bridge / Wind Shear Gateway
+  archetype_key: high_risk_network_bridge
+  lifecycle_status: 2
+  geo_region: cherkasy-bir
+  latitude: 49.4500
+  longitude: 32.0500
+  context_md: |
+    Вузька смуга дерев на 15-кілометровому штучному насипі посеред
+    Кременчуцького водосховища — єдиний фізичний міст між масивами
+    Лівобережжя та Правобережжя в районі Черкас. Постійно під ударом
+    штормових вітрів із водосховища.
+  cyber_meaning_md: |
+    Еталонний Gateway в умовах екстремального Wind Shear та обледеніння.
+    Тест утримання зв'язку Bridge Topology, коли вузли фізично розгойдуються
+    з амплітудою кілька метрів — кут нахилу антен змінюється щосекунди.
+    Найважчі умови для LoRa-передачі з усього кластера.
+
+- slug: bilohrudivskyi-forest-uman
+  realm: ecosystem
+  codex_uid: CDX-ECO-0049
+  title_uk: Білогрудівський ліс (Уманщина)
+  title_en: Bilohrudivskyi Forest (Uman Region)
+  subtitle_uk: Layer 1 Archaeology (Глибоке читання даних)
+  subtitle_en: Layer 1 Archaeology / Deep Storage Interaction
+  archetype_key: layer1_archaeology
+  lifecycle_status: 3
+  geo_region: uman
+  latitude: 48.7000
+  longitude: 30.4000
+  context_md: |
+    Лісовий масив Уманщини, під корінням якого збереглися рештки трипільських
+    поселень (віком ~6 000 років) — одних із найбільших протоміст давнини.
+    Коріння дерев пронизує шари давньої кераміки та попелу.
+  cyber_meaning_md: |
+    Тест Deep Storage Interaction: коріння фізично взаємодіє з керамікою
+    зниклої цивілізації, змінюючи хімічний склад ксилемного соку. Алгоритм
+    повинен дозволити мікроконтролеру прочитати delta_t дерева і побачити в
+    ньому сліди антропогенного втручання часів енеоліту — Layer 1 даних
+    планети.
+
+- slug: railway-forests-smila
+  realm: ecosystem
+  codex_uid: CDX-ECO-0050
+  title_uk: Залізничні ліси (Вузол Сміла / ім. Т. Шевченка)
+  title_en: Railway Forests (Smila Junction / T. Shevchenko)
+  subtitle_uk: Periodic Interference Overload (DDoS від залізниці)
+  subtitle_en: Periodic Interference Overload / Acoustic DDoS Testbed
+  archetype_key: periodic_interference_overload
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.2300
+  longitude: 31.8700
+  context_md: |
+    Ліси, що ростуть впритул до найбільшого залізничного вузла Черкащини —
+    станції Сміла. Вантажні потяги проходять регулярно, генеруючи масивні
+    акустичні та сейсмічні хвилі.
+  cyber_meaning_md: |
+    Найжорсткіший полігон для ML-акустики на STM32: коли проходить вантажний
+    потяг, він створює акустичну та вібраційну DDoS-атаку на сенсори. Нейромережа
+    повинна навчитися ігнорувати колосальний періодичний шум і розпізнати звук
+    бензопили або кавітації навіть на тлі гуркоту вагонів.
+
+- slug: monastyryshchenske-yary
+  realm: ecosystem
+  codex_uid: CDX-ECO-0051
+  title_uk: Монастирищенські яри (Парк Поділля)
+  title_en: Monastyryshche Ravines (Podillia Park)
+  subtitle_uk: Sinkhole Computing (Ізольовані обчислювальні кратери)
+  subtitle_en: Sinkhole Computing / Natural Faraday Cage
+  archetype_key: sinkhole_computing
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 48.9900
+  longitude: 29.7900
+  context_md: |
+    Глибокі мікро-каньйони з виходами базальту та граніту на
+    Монастирищині, де ліс росте ніби у чаші, ізольованій від
+    навколишніх вітрів та радіосигналів.
+  cyber_meaning_md: |
+    Природна Faraday Cage: радіосигнал не виходить за межі яру. Ідеальний
+    стенд для розробки протоколів ретрансляції — вузли на дні мають знайти
+    єдиний правильний шлях «викиду» пакета даних наверх, до Queen-шлюзу,
+    що стоїть на краю урвища. Тест алгоритмів виходу з мертвої зони RF.
+
+- slug: dakhnivka-young-regrowth
+  realm: ecosystem
+  codex_uid: CDX-ECO-0052
+  title_uk: Молоді згарища біля Дахнівки (Черкаський бір)
+  title_en: Young Regrowth near Dakhnivka (Cherkasy Pine Forest)
+  subtitle_uk: Bare-Metal Recovery (Відновлення мережі з нуля)
+  subtitle_en: Bare-Metal Recovery / Bootstrap Network Testbed
+  archetype_key: bare_metal_recovery
+  lifecycle_status: 3
+  geo_region: cherkasy-bir
+  latitude: 49.4200
+  longitude: 32.0800
+  context_md: |
+    Ділянки Черкаського бору біля Дахнівки, що повністю вигоріли під час
+    верхових пожеж кілька років тому і зараз відновлюються рядами молодих
+    сосен. Абсолютна протилежність старим реліктовим масивам.
+  cyber_meaning_md: |
+    Спостереження за Bootstrap-процесом мережі: молоді дерева мають інший
+    метаболізм і vcap, ніж старі гіганти. Тут тестується робота системи на
+    «молодому залізі» — тонкі стовбури, мінімальний опір вітру, максимально
+    швидкий рух соків. Еталон Bare-Metal Recovery після катастрофічного збою.
