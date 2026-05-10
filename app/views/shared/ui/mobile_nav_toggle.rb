@@ -3,15 +3,18 @@
 module Views
   module Shared
     module UI
-      # Mobile-only hamburger button that opens the off-canvas Sidebar drawer
-      # via the `mobile-nav` Stimulus controller. Hidden on `md+` viewports —
-      # the desktop sidebar is statically visible there.
+      # Mobile-only hamburger button that opens the off-canvas Sidebar drawer.
       #
-      # Renders a real <button> (not a link) so it inherits keyboard-activation
-      # semantics for free. ARIA-controls / aria-expanded are kept in sync by
-      # the Stimulus controller on each open/close.
+      # The drawer itself is a native `<dialog>` element rendered by the
+      # `DashboardLayout`. Opening it goes through the `mobile-nav` Stimulus
+      # controller (a thin shim that calls `dialog.showModal()`) — once the
+      # dialog is open, the browser handles focus-trap, Escape-to-close, the
+      # top-layer stacking, and the `::backdrop` pseudo-element natively.
+      #
+      # Renders a real <button> so it inherits keyboard-activation semantics
+      # for free.
       class MobileNavToggle < ApplicationComponent
-        # @param target_id [String] DOM id of the drawer element this toggle controls
+        # @param target_id [String] DOM id of the <dialog> drawer element this toggle controls
         def initialize(target_id: "mobile-nav-drawer")
           @target_id = target_id
         end
@@ -19,10 +22,7 @@ module Views
         def view_template
           button(
             type: "button",
-            data: {
-              action: "click->mobile-nav#open",
-              mobile_nav_target: "openButton"
-            },
+            data: { action: "click->mobile-nav#open" },
             aria_controls: @target_id,
             aria_expanded: "false",
             aria_label: I18n.t("accessibility.open_navigation"),

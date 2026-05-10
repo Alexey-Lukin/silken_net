@@ -1405,3 +1405,50 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 | Micro-bounces | `--motion-base` | `--ease-spring` | Badge "new!" pop, error shake |
 
 > Не плодьте кастомні durations / easings — використовуйте токени.
+
+---
+
+## 15. Native HTML over Stimulus (де доречно)
+
+> **Filozofia:** використовуй Web Platform де він уже дозрів — це менше JS,
+> менше bugs, краща a11y "з коробки", forward-compatible. Stimulus залишай
+> для речей, де нативу або немає, або він ще не Baseline.
+
+### 15.1 Що використовуємо нативно (без JS)
+
+| Нативний API | Що дає | Замість чого | Підтримка |
+|---|---|---|---|
+| **HTML Popover API** (`popover="auto"`, `popovertarget`) | Outside-click close, Escape close, top-layer стек, focus restore | `locale_controller` (видалений) | Baseline 2024 — Chromium 114+, Safari 17+, Firefox 125+ |
+| **`<dialog>` + `.showModal()`** | Focus-trap, Escape, top-layer, `::backdrop`, inert page below, focus restore | Manual focus-trap код у `mobile_nav_controller` (~150→~25 рядків) | Baseline 2022 — всі evergreen |
+| **`@starting-style` CSS** | "From"-frame для transition без JS-flush reflow | Manual rAF в JS | Baseline 2024 |
+| **View Transitions API** (`document.startViewTransition`) | Smooth crossfade між DOM-станами | Manual CSS transitions на кожному елементі | Chromium 111+, Safari 18+ (graceful fallback) |
+| **`prefers-reduced-motion`** (CSS) | Глобально вимикає анімації | JS feature-detection у кожному компоненті | Baseline |
+| **`<details>` / `<summary>`** | Disclosure pattern + keyboard | Custom accordion JS | Baseline |
+
+### 15.2 Що залишилось у Stimulus (виправдано)
+
+| Controller | Чому не нативно |
+|---|---|
+| `theme_controller` | Stateful: localStorage + system preference listener + View Transitions wrapper + icon swap target. Це класичний Stimulus use-case. |
+| `mobile_nav_controller` (тонкий шим) | Native `<dialog>` не закривається на backdrop-click + scroll-lock у Safari через `.showModal()` не завжди — лишаємо ~25 рядків шіма. |
+| `reveal_controller` | CSS `animation-timeline: view()` ще НЕ Baseline (Safari/Firefox в роботі) — IntersectionObserver лишається оптимальним до ~2027. |
+| `clipboard_controller`, `map_controller`, `matrix_rain_controller`, `codex/*` | Інтеграція з 3rd-party / Canvas / складна логіка. |
+
+### 15.3 Чек-ліст: коли можна **не** писати Stimulus controller
+
+Перш ніж писати новий Stimulus controller — пройдіть цей список. Якщо
+**будь-яке** "так" — спробуйте нативний шлях:
+
+- [ ] Це dropdown / menu / tooltip → **HTML Popover API** (`popover="auto"`)
+- [ ] Це modal / dialog / sheet / off-canvas drawer → **`<dialog>`** + `.showModal()`
+- [ ] Це collapsible accordion → **`<details>`** з опційним `name="..."` для exclusive
+- [ ] Це form submission з UI feedback → **Turbo Forms** + Turbo Stream response
+- [ ] Це validation помилки → **Constraint Validation API** + `:user-invalid` CSS
+- [ ] Це date/time picker → **`<input type="date">`**, **`type="time">`**
+- [ ] Це color picker → **`<input type="color">`**
+- [ ] Це search з autocomplete → **`<input list>` + `<datalist>`**
+- [ ] Це auto-resize textarea → **`field-sizing: content`** CSS (Baseline 2024)
+- [ ] Це smooth scroll / scroll-snap → **`scroll-behavior: smooth`** + `scroll-snap-*`
+- [ ] Це responsive container — →  **CSS container queries** `@container`
+
+Якщо **жодне** не підходить — Stimulus це нормальний вибір.

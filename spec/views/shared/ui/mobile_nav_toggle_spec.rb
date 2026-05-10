@@ -14,12 +14,8 @@ RSpec.describe Views::Shared::UI::MobileNavToggle do
       expect(html).to include("md:hidden")
     end
 
-    it "wires the Stimulus open action" do
+    it "registers itself as a mobile-nav#open click target" do
       expect(html).to include('data-action="click-&gt;mobile-nav#open"').or include('data-action="click->mobile-nav#open"')
-    end
-
-    it "registers itself as the openButton target" do
-      expect(html).to include('data-mobile-nav-target="openButton"')
     end
 
     it "controls the drawer via aria-controls" do

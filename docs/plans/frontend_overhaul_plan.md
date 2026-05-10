@@ -288,27 +288,31 @@ Domain-specific term glossary (UA→EN): "Цитадель" → Citadel, "Вій
 
 ## 9. Реалізація — фази
 
-### Phase 1 — Foundation (поточна сесія, скільки встигнемо)
-1. ✅ Зберегти план (`docs/plans/frontend_overhaul_plan.md`).
-2. i18n config: `available_locales`, `default_locale`, `load_path`, `LocaleSettable` concern, `LocalesController`, route.
-3. Базові locale файли (`config/locales/defaults/{uk,en}.yml`, `navigation/{uk,en}.yml`, `components/{uk,en}.yml`).
-4. `Views::Shared::UI::LocaleSwitcher` + Stimulus `locale_controller`.
-5. Розширення палітри в `application.css` (4-рівневі поверхні, текстова ієрархія, motion tokens, reduced-motion media-query).
-6. `dashboard_layout` — заміна raw Tailwind на gaia-токени, інтеграція LocaleSwitcher, додавання `<html lang>`.
-7. RSpec: `locale_switcher_spec`, smoke-spec на `LocalesController`.
-8. Перевірка `bundle exec rubocop && bundle exec rspec spec/views/shared/ui/locale_switcher_spec.rb spec/requests/api/v1/locales_spec.rb`.
+### Phase 1 — Foundation ✅ DONE
+1. ✅ Зберегти план.
+2. ✅ i18n config + `LocaleSettable` concern + `LocalesController` + route.
+3. ✅ Базові locale файли по доменах (`defaults`, `navigation`, `components`).
+4. ✅ `LocaleSwitcher` + Stimulus `locale_controller` *(пізніше переведено на нативний HTML Popover API — Phase 3.5)*.
+5. ✅ Розширення палітри (4-рівневі поверхні, 3-level text, motion tokens, reduced-motion).
+6. ✅ `dashboard_layout` gaia-токени + `<html lang>` + LocaleSwitcher.
+7. ✅ RSpec coverage.
 
-### Phase 2 — Mobile drawer + nav i18n
-1. `MobileNavToggle` + `mobile_nav_controller.js`.
-2. `Navigation::Sidebar` — i18n labels, gaia-токени, drawer-mode rendering.
-3. `dashboard_layout` — інтеграція drawer slot.
-4. Auth layout — responsive + LocaleSwitcher.
+### Phase 2 — Mobile drawer + nav i18n ✅ DONE
+1. ✅ `MobileNavToggle` + `mobile_nav_controller.js` *(пізніше спрощено до 25-line shim над `<dialog>` — Phase 3.5)*.
+2. ✅ `Navigation::Sidebar` — повна i18n + symbol-DSL `nav_item(:foo, ...)` + `tr` lazy-lookup helper + gaia tokens.
+3. ✅ `dashboard_layout` — drawer slot + breadcrumb i18n.
 
-### Phase 3 — Animations + typography
-1. Motion tokens: глобальний `prefers-reduced-motion` handling.
-2. `reveal_controller` + CSS keyframes.
-3. View Transitions API у `theme_controller`.
-4. Typography scale: додати `text-display-*`, оновити `<h1..h4>` у `@layer base` на `clamp()`.
+### Phase 3 — Animations + typography ✅ DONE
+1. ✅ Motion tokens + глобальний `prefers-reduced-motion`.
+2. ✅ `reveal_controller` (IntersectionObserver, reduced-motion-aware).
+3. ✅ View Transitions API у `theme_controller`.
+4. ✅ `text-display-*` + `<h1..h3>` `@layer base` на `clamp()` (fluid).
+
+### Phase 3.5 — Native HTML over Stimulus ✅ DONE
+1. ✅ `LocaleSwitcher` → HTML Popover API (`popover="auto"` + `popovertarget`). `locale_controller.js` видалено.
+2. ✅ Mobile drawer → нативний `<dialog>` + `.showModal()`. `mobile_nav_controller` спрощено зі 150 → 25 рядків (тільки backdrop-click + body scroll-lock + Turbo cleanup).
+3. ✅ `@starting-style` CSS для smooth dialog/popover entrance (no JS-flushed reflow).
+4. ✅ `docs/04_04 § 15` — філософія "Native HTML over Stimulus" + чек-ліст.
 
 ### Phase 4 — Component-by-component migration
 - Page components переводимо по одному, з оновленням spec (gaia-tokens compliance + i18n).
@@ -320,7 +324,7 @@ Domain-specific term glossary (UA→EN): "Цитадель" → Citadel, "Вій
 
 ### Phase 6 — Polish & verification
 - axe-core run, contrast audit (Lighthouse).
-- Documentation update: `docs/04_04_Phlex_UI_and_Tailwind.md` (сек. 3.1, 4) + новий розділ "Internationalization".
+- Final docs review.
 
 ---
 

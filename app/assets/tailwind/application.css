@@ -229,6 +229,28 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Native <dialog> + Popover entrance animations ──
+ * `@starting-style` defines the "from" frame so the slide/fade plays the
+ * first time the element is promoted to the top layer. Combined with the
+ * `transition` declared on the element, this gives a JS-free entrance —
+ * the browser handles focus-trap, Escape, `::backdrop`, etc.
+ *
+ * `prefers-reduced-motion` already neuters all transition-duration values
+ * via the global rule below, so no separate guard is needed here. */
+dialog[open]::backdrop {
+  animation: gaia-fade-in var(--motion-base, 220ms) var(--ease-out-soft, ease-out);
+}
+
+@starting-style {
+  dialog[open] {
+    transform: translateX(-100%);
+  }
+}
+
+[popover]:popover-open {
+  animation: gaia-fade-in var(--motion-fast, 150ms) var(--ease-out-soft, ease-out);
+}
+
 /* ── View Transitions (theme switcher) ──
  * Smooth crossfade when document.startViewTransition() animates the
  * `dark` class swap on <html>. Disabled automatically by the browser

@@ -7,44 +7,48 @@ module Views
       # interface languages. Submits a POST to `LocalesController#update`,
       # which writes a permanent cookie and bounces back to the referer.
       #
-      # Progressive enhancement: works without JS (button_to renders a real
-      # form). Stimulus `locale` controller upgrades the click to optimistic
-      # UI when JS is available.
+      # ── Architecture ────────────────────────────────────────────────────
+      # Built on the **HTML Popover API** (Baseline 2024 — Chromium 114+,
+      # Safari 17+, Firefox 125+). The browser handles outside-click close,
+      # Escape close, focus-restore-to-trigger, and stacks the popover on
+      # the top-layer above everything else — without a single line of JS.
       #
-      # Renders as a compact `<details>`-driven menu — no external dropdown
-      # library required, no focus-trap complexity, and `<details>` provides
-      # native keyboard support out of the box.
+      # Progressive enhancement: each option is a real Rails `button_to`
+      # form, so language switching keeps working when JS is disabled or
+      # the popover API isn't supported (the `<button popovertarget>`
+      # gracefully degrades to a non-interactive button — the layout still
+      # renders, the form below it still posts).
       class LocaleSwitcher < ApplicationComponent
+        POPOVER_ID = "locale-switcher-popover"
+
         # @param current_locale [Symbol] the active locale (defaults to I18n.locale)
         def initialize(current_locale: nil)
           @current_locale = (current_locale || I18n.locale).to_sym
         end
 
         def view_template
-          details(
-            class: "relative",
-            data: { controller: "locale", turbo_permanent: "" },
-            id: "locale-switcher"
-          ) do
-            render_summary
-            render_menu
+          # Wrapper is `inline-block` + `relative` so the popover (which is
+          # absolutely positioned via the top-layer) anchors near the trigger.
+          div(class: "relative inline-block") do
+            render_trigger
+            render_popover
           end
         end
 
         private
 
-        def render_summary
-          summary(
+        def render_trigger
+          button(
+            type: "button",
+            popovertarget: POPOVER_ID,
+            aria_label: I18n.t("locale.switcher_label", default: "Language"),
             class: tokens(
-              "list-none cursor-pointer select-none",
               "inline-flex items-center gap-2 px-2 py-1.5",
               "border border-gaia-border text-gaia-text-muted",
               "hover:text-gaia-primary hover:border-gaia-primary",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary",
               "transition-colors duration-200"
-            ),
-            aria_label: I18n.t("locale.switcher_label", default: "Language"),
-            aria_haspopup: "menu"
+            )
           ) do
             span(class: "text-tiny font-mono uppercase tracking-widest", aria_hidden: "true") do
               short_label(@current_locale)
@@ -56,15 +60,19 @@ module Views
           end
         end
 
-        def render_menu
+        def render_popover
+          # `popover="auto"` (the default) gives light-dismiss for free:
+          # outside click and Escape both close the popover natively.
           ul(
-            class: tokens(
-              "absolute right-0 mt-2 min-w-[10rem] z-50",
-              "bg-gaia-surface-elevated border border-gaia-border shadow-lg",
-              "py-1 origin-top-right"
-            ),
+            id: POPOVER_ID,
+            popover: "auto",
             role: "menu",
-            data: { locale_target: "menu" }
+            class: tokens(
+              # Reset UA popover defaults (margin, border, padding) and
+              # re-anchor next to the trigger via inset.
+              "m-0 p-1 border border-gaia-border bg-gaia-surface-elevated shadow-lg",
+              "min-w-[10rem] origin-top-right"
+            )
           ) do
             I18n.available_locales.each do |locale|
               li(role: "none") { render_option(locale) }
@@ -78,7 +86,6 @@ module Views
             type: "submit",
             role: "menuitem",
             disabled: active,
-            data: { action: "locale#submit" },
             class: tokens(
               "w-full text-left px-3 py-2 text-tiny font-mono uppercase tracking-widest",
               "transition-colors duration-150",
@@ -107,10 +114,7 @@ module Views
         end
 
         def short_label(locale)
-          {
-            uk: "UA",
-            en: "EN"
-          }[locale.to_sym] || locale.to_s.upcase
+          { uk: "UA", en: "EN" }[locale.to_sym] || locale.to_s.upcase
         end
 
         def chevron_icon

@@ -6,31 +6,27 @@ RSpec.describe Views::Shared::UI::LocaleSwitcher do
   describe "rendering" do
     let(:html) { render_component }
 
-    it "wraps in a <details> element with data-controller=locale" do
-      expect(html).to include('data-controller="locale"')
-      expect(html).to include("<details")
+    it "renders a real <button> trigger that opens the popover" do
+      expect(html).to include('popovertarget="locale-switcher-popover"')
+      expect(html).to include('type="button"')
     end
 
-    it "marks the wrapper data-turbo-permanent for cross-Turbo persistence" do
-      expect(html).to include("data-turbo-permanent")
+    it "renders the popover as a <ul popover='auto'> for native light-dismiss" do
+      expect(html).to include('popover="auto"')
+      expect(html).to include('id="locale-switcher-popover"')
     end
 
-    it "exposes a stable id for theme/locale switcher pairing" do
-      expect(html).to include('id="locale-switcher"')
-    end
-
-    it "renders a <summary> trigger with aria-haspopup=menu" do
-      expect(html).to include("<summary")
-      expect(html).to include('aria-haspopup="menu"')
-    end
-
-    it "renders a menu list with role=menu" do
+    it "renders the popover with role=menu" do
       expect(html).to include('role="menu"')
+    end
+
+    it "no longer requires a Stimulus controller (native HTML Popover API)" do
+      expect(html).not_to include('data-controller="locale"')
     end
 
     it "renders one form per available locale" do
       I18n.available_locales.each do |locale|
-        expect(html).to include("name=\"locale\"")
+        expect(html).to include('name="locale"')
         expect(html).to include("value=\"#{locale}\"")
       end
     end

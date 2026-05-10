@@ -1,155 +1,80 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Off-canvas Sidebar drawer for mobile / tablet-portrait viewports.
+// Thin shim around the native <dialog> element for the mobile sidebar drawer.
 //
-// Responsibilities:
-//   * open()/close() the drawer with slide-in transform + backdrop fade
-//   * sync aria-expanded on the trigger button
-//   * Escape key + outside click + backdrop click close the drawer
-//   * scroll-lock <body> while drawer is open (prevents background scroll)
-//   * minimal focus management: move focus into the drawer on open, restore
-//     to the trigger on close; trap Tab inside the drawer while it's open
-//   * close on Turbo navigation so the next page doesn't inherit open state
+// What the browser handles for free (no JS needed):
+//   * focus-trap inside the dialog while it's open
+//   * Escape-to-close (with `cancel`/`close` events)
+//   * stacking on the top-layer above all other content
+//   * `::backdrop` pseudo-element for the dim overlay
+//   * inert page contents underneath
+//   * focus restoration to the trigger when the dialog closes
+//
+// What we still need JS for:
+//   * calling `dialog.showModal()` (the only way to open a modal <dialog>)
+//   * closing on backdrop click (native dialogs don't do this by default)
+//   * scroll-locking the body (Chromium does it automatically with showModal,
+//     Safari does not — belt-and-braces lock keeps behaviour consistent)
+//   * closing on Turbo navigations (so the next page doesn't inherit open state)
+//   * keeping the trigger's aria-expanded in sync
 //
 // Targets:
-//   - drawer        the slide-in panel (translate-x-full when closed)
-//   - backdrop      the fixed overlay covering the page
-//   - openButton    the hamburger trigger (kept in sync via aria-expanded)
+//   - dialog        the native <dialog id="mobile-nav-drawer"> element
 //
 // Usage (markup):
 //   <div data-controller="mobile-nav">
-//     <%# trigger lives in the top bar %>
-//     <%= render Views::Shared::UI::MobileNavToggle.new %>
-//
-//     <div data-mobile-nav-target="backdrop"
-//          class="fixed inset-0 bg-black/60 opacity-0 pointer-events-none
-//                 transition-opacity duration-[var(--motion-base)] md:hidden z-40"
-//          data-action="click->mobile-nav#close"></div>
-//
-//     <aside id="mobile-nav-drawer"
-//            data-mobile-nav-target="drawer"
-//            class="fixed inset-y-0 left-0 w-64 z-50 -translate-x-full
-//                   transition-transform duration-[var(--motion-base)]
-//                   ease-[var(--ease-out-soft)] md:hidden">
+//     <button data-action="click->mobile-nav#open" aria-controls="mobile-nav-drawer">…</button>
+//     <dialog id="mobile-nav-drawer" data-mobile-nav-target="dialog"
+//             data-action="click->mobile-nav#backdropClick close->mobile-nav#onClose">
 //       <%= render Navigation::Sidebar.new(...) %>
-//     </aside>
+//     </dialog>
 //   </div>
 export default class extends Controller {
-  static targets = ["drawer", "backdrop", "openButton"]
+  static targets = ["dialog"]
 
   connect() {
-    this.handleKeydown = this.handleKeydown.bind(this)
     this.handleTurboVisit = this.close.bind(this)
-    document.addEventListener("keydown", this.handleKeydown)
     document.addEventListener("turbo:visit", this.handleTurboVisit)
-    this._lastFocused = null
   }
 
   disconnect() {
-    document.removeEventListener("keydown", this.handleKeydown)
     document.removeEventListener("turbo:visit", this.handleTurboVisit)
     this._unlockScroll()
   }
 
   open(event) {
     if (event) event.preventDefault()
-    if (this._isOpen()) return
+    if (!this.hasDialogTarget || this.dialogTarget.open) return
 
-    this._lastFocused = document.activeElement
-
-    if (this.hasDrawerTarget) {
-      this.drawerTarget.classList.remove("-translate-x-full")
-      this.drawerTarget.classList.add("translate-x-0")
-      this.drawerTarget.setAttribute("aria-hidden", "false")
-    }
-    if (this.hasBackdropTarget) {
-      this.backdropTarget.classList.remove("opacity-0", "pointer-events-none")
-      this.backdropTarget.classList.add("opacity-100")
-    }
-    if (this.hasOpenButtonTarget) {
-      this.openButtonTarget.setAttribute("aria-expanded", "true")
-    }
-
+    this.dialogTarget.showModal()
+    this._syncTrigger(true)
     this._lockScroll()
-
-    // Move focus into the drawer (first focusable element).
-    requestAnimationFrame(() => {
-      const focusable = this._focusableElements()
-      if (focusable.length) focusable[0].focus()
-    })
   }
 
-  close(event) {
-    if (event) event.preventDefault()
-    if (!this._isOpen()) return
+  close() {
+    if (!this.hasDialogTarget || !this.dialogTarget.open) return
+    this.dialogTarget.close()
+  }
 
-    if (this.hasDrawerTarget) {
-      this.drawerTarget.classList.add("-translate-x-full")
-      this.drawerTarget.classList.remove("translate-x-0")
-      this.drawerTarget.setAttribute("aria-hidden", "true")
-    }
-    if (this.hasBackdropTarget) {
-      this.backdropTarget.classList.add("opacity-0", "pointer-events-none")
-      this.backdropTarget.classList.remove("opacity-100")
-    }
-    if (this.hasOpenButtonTarget) {
-      this.openButtonTarget.setAttribute("aria-expanded", "false")
-    }
-
+  // Wired via `close->mobile-nav#onClose`. Fires when the dialog closes for
+  // any reason (Escape, programmatic .close(), backdrop-click handler).
+  onClose() {
+    this._syncTrigger(false)
     this._unlockScroll()
-
-    // Restore focus to whichever element opened the drawer.
-    if (this._lastFocused && document.contains(this._lastFocused)) {
-      this._lastFocused.focus()
-    }
   }
 
-  handleKeydown(event) {
-    if (!this._isOpen()) return
-
-    if (event.key === "Escape") {
-      event.preventDefault()
-      this.close()
-      return
-    }
-
-    // Manual focus-trap on Tab so keyboard users can't escape the drawer.
-    if (event.key === "Tab") {
-      const focusable = this._focusableElements()
-      if (!focusable.length) return
-
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-      const active = document.activeElement
-
-      if (event.shiftKey && active === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
+  // Native <dialog> doesn't dismiss on backdrop click. We approximate it by
+  // checking whether the click landed on the dialog element itself (the
+  // backdrop bubbles up to the dialog node, but inner content does not).
+  backdropClick(event) {
+    if (event.target === this.dialogTarget) this.close()
   }
 
   // ── Internals ────────────────────────────────────────────────────────────
 
-  _isOpen() {
-    return this.hasDrawerTarget && !this.drawerTarget.classList.contains("-translate-x-full")
-  }
-
-  _focusableElements() {
-    if (!this.hasDrawerTarget) return []
-    const selector = [
-      "a[href]",
-      "button:not([disabled])",
-      "input:not([disabled])",
-      "select:not([disabled])",
-      "textarea:not([disabled])",
-      "[tabindex]:not([tabindex='-1'])"
-    ].join(",")
-    return Array.from(this.drawerTarget.querySelectorAll(selector))
-      .filter((el) => el.offsetParent !== null)
+  _syncTrigger(open) {
+    const trigger = this.element.querySelector("[aria-controls='mobile-nav-drawer']")
+    if (trigger) trigger.setAttribute("aria-expanded", open ? "true" : "false")
   }
 
   _lockScroll() {

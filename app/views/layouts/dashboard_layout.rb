@@ -164,28 +164,30 @@ class DashboardLayout < ApplicationComponent
     end
   end
 
-  # Off-canvas mobile drawer + backdrop. Hidden on `md+` (sidebar is static there).
-  # The Stimulus `mobile-nav` controller (declared on the wrapping div) opens /
-  # closes via translate-x classes — see app/javascript/controllers/mobile_nav_controller.js.
+  # Off-canvas mobile drawer built on the native `<dialog>` element.
+  # Browser handles focus-trap, Escape-to-close, top-layer stacking and the
+  # `::backdrop` pseudo-element. The Stimulus `mobile-nav` controller is a
+  # thin shim that calls `.showModal()` and bridges backdrop-click + Turbo
+  # navigation cleanup. See app/javascript/controllers/mobile_nav_controller.js.
   def render_mobile_drawer
-    # Backdrop sits below the drawer (z-40) but above page content.
-    div(
-      data: { mobile_nav_target: "backdrop", action: "click->mobile-nav#close" },
-      class: "fixed inset-0 bg-black/60 opacity-0 pointer-events-none " \
-             "transition-opacity duration-[var(--motion-base)] md:hidden z-40",
-      aria_hidden: "true"
-    )
-
-    aside(
+    dialog(
       id: "mobile-nav-drawer",
-      data: { mobile_nav_target: "drawer" },
-      role: "dialog",
-      aria_modal: "true",
-      aria_hidden: "true",
+      data: {
+        mobile_nav_target: "dialog",
+        action: "click->mobile-nav#backdropClick close->mobile-nav#onClose"
+      },
       aria_label: I18n.t("accessibility.open_navigation"),
-      class: "fixed inset-y-0 left-0 w-72 max-w-[85vw] z-50 -translate-x-full " \
+      # Reset UA dialog defaults (centered + max-content) and slide it in
+      # from the left. `open:` variants animate the slide once the browser
+      # promotes the dialog to the top layer; `@starting-style` (in
+      # application.css) handles the off-screen → on-screen entrance frame
+      # without a JS-flushed forced reflow.
+      class: "md:hidden p-0 m-0 h-full max-h-none w-72 max-w-[85vw] " \
+             "fixed inset-y-0 left-0 right-auto bg-transparent " \
+             "open:translate-x-0 -translate-x-full " \
              "transition-transform duration-[var(--motion-base)] " \
-             "ease-[var(--ease-out-soft)] md:hidden shadow-2xl"
+             "ease-[var(--ease-out-soft)] backdrop:bg-black/60 " \
+             "backdrop:backdrop-blur-sm"
     ) do
       render Navigation::Sidebar.new(
         current_path: @current_path,
