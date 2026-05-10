@@ -54,6 +54,19 @@ RSpec.configure do |config|
     end
   end
 
+  # Reset I18n.locale between examples — the LocalesController#update endpoint
+  # mutates I18n.locale globally (Thread-local), so without this reset a single
+  # POST /api/v1/locale spec leaks the locale into every subsequent example
+  # that doesn't explicitly wrap itself in I18n.with_locale.
+  #
+  # Use `after` (not `before`) so per-example `around { I18n.with_locale(:en) }`
+  # blocks remain in force during the example — `around` wraps `before`/`after`
+  # hooks, so a `before { I18n.locale = ... }` would override the around block
+  # and break specs that locked themselves to :en.
+  config.after do
+    I18n.locale = I18n.default_locale
+  end
+
   # Prosopite: N+1 query detection in request specs.
   # Raises Prosopite::NPlusOneQueriesError when duplicate queries detected.
   config.before(:each, type: :request) do
