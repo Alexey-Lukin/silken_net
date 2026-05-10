@@ -3,6 +3,9 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::Pagination do
+  # Component is i18n-aware. Existing assertions match the English copy.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   let(:url_helper) { ->(page:) { "/items?page=#{page}" } }
 
   describe "with a middle page" do

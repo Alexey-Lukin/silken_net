@@ -1,0 +1,17 @@
+uk:
+  telemetry:
+    live_stream:
+      header_eyebrow: Вихідний нейроканал
+      header_title: Глобальний потік телеметрії
+      carrier_label: "Канал: Direct-to-Cell"
+      awaiting: "Очікування Starlink Uplink... CoAP:5683 слухає..."
+    table:
+      timestamp: Час
+      gateway: Королева / Шлюз
+      payload: "Сирий CoAP-пейлоад (HEX-потік)"
+      status: Статус
+    log_entry:
+      unknown_relay: НЕВІДОМИЙ_ШЛЮЗ
+      unknown_ip: "?.?.?.?"
+      ip_label: "IP: %{ip}"
+      batch_received: ПАКЕТ_ОТРИМАНО

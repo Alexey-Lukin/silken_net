@@ -3,6 +3,9 @@
 require "rails_helper"
 
 RSpec.describe Views::Shared::UI::StatusBadge do
+  # Component is i18n-aware. Existing assertions match the English copy.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   describe "AASM state color mapping" do
     it "maps pending to warning semantic token" do
       html = render_component(status: "pending")

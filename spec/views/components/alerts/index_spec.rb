@@ -3,6 +3,9 @@
 require "rails_helper"
 
 RSpec.describe Alerts::Index do
+  # Component is i18n-aware. Existing assertions match the English copy.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   def mock_alert(id: 1, alert_type: "fire_detected", severity: "critical", status: "active")
     alert = OpenStruct.new(id: id, alert_type: alert_type, severity: severity, status: status, created_at: Time.current)
     alert.define_singleton_method(:model_name) { ActiveModel::Name.new(EwsAlert) }

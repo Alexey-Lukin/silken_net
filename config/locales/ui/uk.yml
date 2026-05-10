@@ -1,0 +1,37 @@
+uk:
+  ui:
+    status:
+      pending: очікування
+      processing: обробка
+      sent: надіслано
+      confirmed: підтверджено
+      failed: збій
+      manual_review: ручний розгляд
+      issued: видано
+      acknowledged: підтверджено
+      active: активний
+      resolved: локалізовано
+      ignored: проігноровано
+      triggered: спрацьовано
+      paid: виплачено
+      expired: прострочено
+      draft: чернетка
+      fulfilled: виконано
+      breached: порушено
+      cancelled: скасовано
+      idle: простій
+      updating: оновлення
+      maintenance: обслуговування
+      faulty: несправний
+      dormant: сплячий
+      removed: видалено
+      deceased: загинув
+      offline: офлайн
+      maintenance_needed: потрібне обслуговування
+      mythical: міфічний
+      extinct: вимерлий
+      endangered: під загрозою
+      thriving: процвітає
+      destroyed: знищено
+      unknown: невідомо
+      aria_label: "Статус: %{status}"

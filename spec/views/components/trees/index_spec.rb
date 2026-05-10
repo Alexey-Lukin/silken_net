@@ -3,6 +3,9 @@
 require "rails_helper"
 
 RSpec.describe Trees::Index do
+  # Component is i18n-aware. Existing assertions match the English copy.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   let(:cluster) { mock_cluster }
   let(:trees) { [ mock_tree ] }
   let(:pagy) { mock_pagy(count: 1, last: 1) }
@@ -75,44 +78,44 @@ RSpec.describe Trees::Index do
     it "shows red pulsing LED when under threat" do
       trees = [ mock_tree(under_threat: true) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("bg-red-600")
+      expect(rendered).to include("bg-status-danger")
       expect(rendered).to include("animate-pulse")
     end
 
     it "shows gray LED when silent for over 24 hours" do
       trees = [ mock_tree(last_seen_at: 25.hours.ago) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("bg-gray-800")
+      expect(rendered).to include("bg-gaia-text-subtle")
     end
 
     it "shows gray LED when last_seen_at is nil" do
       trees = [ mock_tree(last_seen_at: nil) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("bg-gray-800")
+      expect(rendered).to include("bg-gaia-text-subtle")
     end
   end
 
   describe "status text colors" do
     it "renders active status with emerald text" do
-      expect(html).to include("text-emerald-700")
+      expect(html).to include("text-gaia-text-muted")
     end
 
     it "renders dormant status with gray text" do
       trees = [ mock_tree(status: "dormant") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("text-gray-600")
+      expect(rendered).to include("text-gaia-text-muted")
     end
 
     it "renders removed status with red text" do
       trees = [ mock_tree(status: "removed") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("text-red-800")
+      expect(rendered).to include("text-status-danger-text")
     end
 
     it "renders deceased status with red text" do
       trees = [ mock_tree(status: "deceased") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("text-red-800")
+      expect(rendered).to include("text-status-danger-text")
     end
   end
 
@@ -130,7 +133,7 @@ RSpec.describe Trees::Index do
     it "shows red pulsing bar when charge < 30%" do
       trees = [ mock_tree(charge_percentage: 20) ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("bg-red-600")
+      expect(rendered).to include("bg-status-danger")
       expect(rendered).to include("animate-pulse")
     end
   end
@@ -169,7 +172,7 @@ RSpec.describe Trees::Index do
     it "renders unknown status with default gray text" do
       trees = [ mock_tree(status: "unknown_status") ]
       rendered = render_component(cluster: cluster, trees: trees, pagy: pagy)
-      expect(rendered).to include("text-gray-700")
+      expect(rendered).to include("text-gaia-text")
     end
   end
 

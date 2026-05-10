@@ -1532,3 +1532,79 @@ config/locales/
 
 Each domain = one folder × two files (`uk.yml` + `en.yml`). Keep nesting
 shallow (≤ 4 levels). See § 12.2 — same rules for new domains.
+
+---
+
+## 17. Responsive Tables — CSS-only Card Flip (Phase 5)
+
+> Tables that work as a real `<table>` on desktop and become a stack of
+> labelled cards on mobile — without JS, without dual-render, without
+> losing semantics. Pattern crystallised in Phase 5 to ship `Alerts::Index`
+> and `Telemetry::LiveStream` to mobile users without breaking Turbo
+> Streams or screen readers.
+
+### 17.1 Why not JavaScript?
+
+Three options were evaluated:
+
+| Option | Verdict |
+|---|---|
+| **Heavy refactor on `DataTable` shared component** with `mobile_layout:` prop | Rejected — `DataTable` is orphan (only one consumer, and it bypasses the component). Would require rewriting Turbo-Stream wiring + bulk citation lookup. |
+| **JS-driven dual-render** (Stimulus controller swaps markup) | Rejected — duplicates the source of truth, ships extra JS, breaks `prefers-reduced-motion` simplicity, fights Turbo Stream row replace. |
+| **CSS-only flip via `attr(data-label)`** ✅ | Single semantic HTML, 0 JS, 0 new components, screen reader friendly, Turbo Streams keep working unchanged. |
+
+The chosen pattern is documented in [A11Y Project — Accessible Data Tables](https://www.a11yproject.com/posts/accessible-data-tables/) and Heydon Pickering's *Inclusive Components* (Responsive Tables chapter).
+
+### 17.2 Markup contract
+
+```ruby
+# Wrap any <table> with `gaia-responsive-table`. Mark <thead> with
+# `gaia-sticky-thead` for sticky headers on desktop. Each <td> gets
+# `data-label` matching its column header — that becomes the visible
+# label on mobile.
+table(class: "gaia-responsive-table w-full text-left font-mono", role: "table") do
+  thead(class: "gaia-sticky-thead bg-gaia-surface-sunken text-gaia-text-subtle uppercase") do
+    tr do
+      th(scope: "col", class: "p-4") { t_("table.severity") }
+      # …
+    end
+  end
+  tbody do
+    @alerts.each do |alert|
+      tr do
+        td(class: "p-4", data_label: t_("table.severity")) { severity_badge }
+        # …
+        # Action cells WITHOUT data_label collapse into a centred footer
+        # block on mobile (no duplicate column heading).
+        td(class: "p-4 text-right") { action_button }
+      end
+    end
+  end
+end
+```
+
+CSS lives in `app/assets/tailwind/application.css` § "Responsive Table Pattern".
+
+### 17.3 What changes on mobile (`< 768px`)
+
+- `<thead>` is **visually hidden** (clip-path), not removed — assistive tech in browse mode still sees the real table.
+- Each `<tr>` becomes a bordered card (`bg-gaia-surface`, `border-gaia-border`).
+- Each `<td>` becomes a flex row with `attr(data-label)` rendered via `::before` as the left-side label and the cell value on the right.
+- Cells without `data-label` (action buttons) become centred footer blocks.
+- The `md:min-w-[640px]` and `md:overflow-x-auto` classes on the wrapper drop the horizontal-scroll fallback on mobile so the card layout occupies full width.
+
+### 17.4 Sticky-bottom pagination on mobile
+
+Pair the responsive table with `Views::Shared::UI::Pagination.new(sticky_mobile: true)` to stick prev/next to the bottom of the viewport on mobile, honouring iOS notch / Android gesture bar via `env(safe-area-inset-bottom)`.
+
+```ruby
+render Views::Shared::UI::Pagination.new(
+  pagy: @pagy,
+  url_helper: ->(page:) { api_v1_alerts_path(page: page) },
+  sticky_mobile: true   # adds `gaia-pagination-sticky` CSS class
+)
+```
+
+### 17.5 i18n
+
+The mobile labels come from `data-label`, which itself is i18n'd through the standard `t_("table.severity")` helper. Switch `:en` ↔ `:uk` and the card labels switch with the desktop column headers — no parallel translation surface.

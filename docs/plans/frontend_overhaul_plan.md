@@ -327,13 +327,22 @@ Domain-specific term glossary (UA→EN): "Цитадель" → Citadel, "Вій
 6. ✅ **`docs/04_04 § 16`** — повна документація migration workflow + mapping table + allowlist + i18n convention
 7. ✅ Backlog: 60 файлів × 824 violations задокументовано — кожен наступний PR використовує `bin/migrate-tailwind-tokens` + `t_(key)` pattern + spec wrap
 
-### Phase 5 — DataTable mobile cards + table-heavy pages
-- `DataTable` prop `mobile_layout`.
-- `Trees::Index`, `Wallets::Index`, `Alerts::Index`, `Telemetry::LiveStream`.
+### Phase 5 — Responsive tables + Pagination/StatusBadge i18n ✅ DONE
+1. ✅ **CSS-only "card-flip" pattern** — `.gaia-responsive-table` + `.gaia-sticky-thead` + `.gaia-pagination-sticky` у `application.css`. Single semantic `<table>`, на mobile `<thead>` clip-path hidden (AT still sees), `<tr>` стає карткою, `<td>` отримує label через `attr(data-label)::before`. **0 JS, screen reader friendly, Turbo Streams не зачеплено**.
+2. ✅ **`Alerts::Index` + `Alerts::Row`** — responsive table + sticky thead + sticky-bottom pagination + 7+10 token replacements + повна i18n (filter aria, severity aria, resolve confirm).
+3. ✅ **`Telemetry::LiveStream` + `Telemetry::LogEntry`** — те саме, Canvas + matrix-rain + sticky thead збережено, 17 token replacements.
+4. ✅ **`Pagination` upgrade** — i18n labels (Previous/Next/Page X of Y), `compact_mobile` mode (`sr-only md:not-sr-only` для verbose; `md:hidden` для "1 / 7"), `sticky_mobile` → `gaia-pagination-sticky` (safe-area-inset-bottom).
+5. ✅ **`StatusBadge` i18n** — `aria_label` через `I18n.t("ui.status.aria_label", status: …)`, статус-текст translated з default fallback.
+6. ✅ **`Trees::Index` + `Wallets::Index`** — codemod tokens (29 replacements) + i18n + responsive header (flex-col→sm:flex-row).
+7. ✅ **i18n locale files** — `config/locales/{alerts,telemetry,wallets,trees,pagination,ui}/{uk,en}.yml`. UI status namespace покриває 36 AASM статусів.
+8. ✅ **Spec pattern** — `around { |ex| I18n.with_locale(:en) { ex.run } }` додано в 8 spec файлів. 1543/1543 specs зелено.
+9. ✅ **`gaia:lint_tokens` зелено** для всіх 6 цільових файлів (зменшено backlog 824→**~765**).
+10. ✅ **`docs/04_04 § 17`** — повний "Responsive tables" pattern з options-comparison, markup contract, mobile behaviour, sticky pagination, i18n.
 
 ### Phase 6 — Polish & verification
 - axe-core run, contrast audit (Lighthouse).
 - Final docs review.
+- Sentry DSN unblock (BLOCKER — `.kamal/secrets`).
 
 ---
 

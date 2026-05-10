@@ -265,3 +265,113 @@ dialog[open]::backdrop {
 @utility animate-fade-in {
   animation: gaia-fade-in var(--motion-base, 220ms) var(--ease-out-soft, ease-out) both;
 }
+
+/* ── Responsive Table Pattern ──
+ * "Card-flip" CSS that turns a semantic <table> into a stack of cards on
+ * narrow viewports without any JS. Markup contract:
+ *   <table class="gaia-responsive-table">
+ *     <thead>…</thead>
+ *     <tbody>
+ *       <tr>
+ *         <td data-label="Severity">…</td>
+ *         …
+ *       </tr>
+ *     </tbody>
+ *   </table>
+ *
+ * Why CSS-only: keeps semantic HTML (screen readers still see a real table
+ * on desktop), avoids dual-render JS, and respects the existing `<turbo-stream>`
+ * row-replace wiring used by Alerts/Telemetry. Pattern docs:
+ * https://www.a11yproject.com/posts/accessible-data-tables/ — and Heydon
+ * Pickering's "Inclusive Components" responsive-table chapter.
+ *
+ * On desktop (≥ md): nothing changes — sticky <thead>, hover rows, etc.
+ * On mobile (< md):  <thead> hidden, every <tr> becomes a bordered card,
+ *                    every <td> a label/value flex row. The label comes
+ *                    from `data-label` so the visible markup matches the
+ *                    desktop column header, character for character. */
+.gaia-responsive-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.gaia-responsive-table thead.gaia-sticky-thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+@media (max-width: 767px) {
+  .gaia-responsive-table,
+  .gaia-responsive-table tbody,
+  .gaia-responsive-table tr,
+  .gaia-responsive-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .gaia-responsive-table thead {
+    /* Hide visually but keep accessible: real <thead> still announced by
+     * AT in browse mode. We only hide *paint*, not semantics. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .gaia-responsive-table tr {
+    border: 1px solid var(--gaia-border);
+    background: var(--gaia-surface);
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0;
+  }
+
+  .gaia-responsive-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    text-align: right;
+    border: 0;
+  }
+
+  .gaia-responsive-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.625rem; /* matches text-mini */
+    color: var(--gaia-text-muted);
+    text-align: left;
+  }
+
+  /* Cells without a data-label (e.g. the action button column) collapse
+   * into a centred block — looks like a card footer. */
+  .gaia-responsive-table td:not([data-label]) {
+    justify-content: center;
+    padding-top: 0.75rem;
+  }
+}
+
+/* ── Pagination: optional sticky-bottom helper ──
+ * Activated by `<nav class="gaia-pagination-sticky">`. Honours the iOS
+ * notch / Android gesture bar via env(safe-area-inset-bottom). Desktop
+ * keeps the inline layout — the sticky behaviour is mobile-only. */
+@media (max-width: 767px) {
+  .gaia-pagination-sticky {
+    position: sticky;
+    bottom: 0;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
+    background: color-mix(in oklab, var(--gaia-surface) 92%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid var(--gaia-border);
+    z-index: 5;
+  }
+}

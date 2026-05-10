@@ -3,6 +3,9 @@
 require "rails_helper"
 
 RSpec.describe Alerts::Row do
+  # Component is i18n-aware. Existing assertions match the English copy.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   def mock_alert(id: 7, severity: "medium", alert_type: "fire_detected", status: "active",
                  cluster_name: "Carpathian-7", tree_did: "TREE::0xBEEF", message: "Thermal anomaly detected")
     alert = EwsAlert.allocate
@@ -41,7 +44,7 @@ RSpec.describe Alerts::Row do
 
     it "renders low severity with emerald styles" do
       html = render_component(alert: mock_alert(severity: "low"))
-      expect(html).to include("bg-emerald-900")
+      expect(html).to include("bg-status-info")
     end
 
     it "includes aria-label for accessibility" do
@@ -88,14 +91,14 @@ RSpec.describe Alerts::Row do
     end
 
     it "includes hover transition styles" do
-      expect(html).to include("hover:bg-emerald-950/10")
+      expect(html).to include("hover:bg-gaia-surface-sunken")
     end
   end
 
   describe "severity badge else branch" do
     it "renders unknown severity with zinc fallback style" do
       html = render_component(alert: mock_alert(severity: "unknown"))
-      expect(html).to include("bg-zinc-900")
+      expect(html).to include("bg-status-neutral")
     end
   end
 end

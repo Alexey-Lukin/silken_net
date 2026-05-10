@@ -1,0 +1,12 @@
+en:
+  wallets:
+    index:
+      title: Treasury Matrix
+      subtitle: Monitoring the flow of Silken Carbon Coins across the network.
+      total_liquidity: "Total Liquidity:"
+      kind_soldier: Soldier Wallet
+      kind_clan: Clan Treasury
+      system_reserve: System Reserve
+      locked_label: "🔒 %{amount} locked"
+      retired_label: "♻ %{amount} retired"
+      audit_link: "Audit Ledger →"

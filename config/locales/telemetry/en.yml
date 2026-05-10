@@ -1,0 +1,17 @@
+en:
+  telemetry:
+    live_stream:
+      header_eyebrow: Neural Link Output
+      header_title: Global Telemetry Stream
+      carrier_label: "Carrier: Direct-to-Cell"
+      awaiting: "Awaiting Starlink Uplink... CoAP:5683 Listening..."
+    table:
+      timestamp: Timestamp
+      gateway: Queen / Gateway
+      payload: "Raw CoAP Payload (Hex Stream)"
+      status: Status
+    log_entry:
+      unknown_relay: UNKNOWN_RELAY
+      unknown_ip: "?.?.?.?"
+      ip_label: "IP: %{ip}"
+      batch_received: BATCH_RECEIVED

@@ -1,5 +1,12 @@
 en:
   trees:
+    index:
+      eyebrow: Sector Matrix Deployment
+      header_population: Population
+      header_population_unit: Soldiers
+      header_operational: Operational
+      header_operational_unit: Nodes
+      ionic_pulse: Ionic Pulse
     show:
       headings:
         biometrics: Live Biometric Matrix

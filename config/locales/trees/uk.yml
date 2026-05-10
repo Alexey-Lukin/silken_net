@@ -1,5 +1,12 @@
 uk:
   trees:
+    index:
+      eyebrow: Розгортання матриці сектору
+      header_population: Популяція
+      header_population_unit: Солдати
+      header_operational: Операційні
+      header_operational_unit: Вузли
+      ionic_pulse: Іонний пульс
     show:
       headings:
         biometrics: Жива біометрична матриця
