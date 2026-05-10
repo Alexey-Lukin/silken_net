@@ -16,6 +16,8 @@ module Codex
   # The Phase-1 corpus (79 records: 32 ecosystems + 29 unique trees +
   # 8 protocols + 10 mythos) treats every archetype as the cybernetic
   # tagline of one specific lore card — so the registry IS the canon.
+  # Phase-8b added 19 new Cherkasy-cluster records (10 ecosystems + 9
+  # unique trees), expanding the total to 98 records.
   # Subsequent DAO submissions may either reuse an existing key or, by
   # governance vote, append a new one here.
   #
@@ -105,6 +107,27 @@ module Codex
     passive_monitoring
     planetary_supercomputer
     first_cyborg
+    # ── Phase-8b: Cherkasy cluster — ecosystem archetypes ─────────────────
+    thermal_throttling_testbed
+    graceful_degradation_recovery
+    dynamic_floating_topology
+    load_balanced_high_availability
+    emf_interference_zone
+    central_timing_hub
+    hardware_software_codesign
+    lora_attenuation_testbed
+    network_partitioning
+    edge_computing_frontier
+    # ── Phase-8b: Cherkasy cluster — unique tree archetypes ───────────────
+    load_bearing_critical_qos
+    hardware_mutex_ipc
+    dao_genesis_block
+    peripheral_edge_interrupt_sensor
+    kinetic_torsion_tolerance
+    genesis_data_vault
+    biological_raid_redundancy
+    border_gateway_protocol
+    proof_of_authority_node
   ].freeze
 
   def self.archetype_keys
