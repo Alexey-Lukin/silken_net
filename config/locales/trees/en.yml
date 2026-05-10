@@ -1,0 +1,24 @@
+en:
+  trees:
+    show:
+      headings:
+        biometrics: Live Biometric Matrix
+        impedance_flux: "Impedance Flux (Last 10 Cycles)"
+        maintenance: "Maintenance Rituals & Healing History"
+        hardware_vault: Hardware Security Vault
+        economic_yield: Economic Yield
+        deployment_matrix: Deployment Matrix
+      labels:
+        family: "Family: %{name}"
+        family_unknown: Unknown
+        uplink_state: Uplink State
+        verified_balance: Verified Balance
+      table:
+        technician: Technician
+        action: Action
+        observations: Observations
+        timestamp: Timestamp
+        empty: No physical interventions recorded
+      actions:
+        rotate_key_aria: Rotate hardware encryption key
+        locate_node: "Locate Node →"

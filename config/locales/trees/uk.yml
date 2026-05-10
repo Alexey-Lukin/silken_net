@@ -1,0 +1,24 @@
+uk:
+  trees:
+    show:
+      headings:
+        biometrics: Жива біометрична матриця
+        impedance_flux: "Імпедансний потік (останні 10 циклів)"
+        maintenance: "Ритуали обслуговування та історія зцілення"
+        hardware_vault: Апаратне сховище безпеки
+        economic_yield: Економічна віддача
+        deployment_matrix: Матриця розгортання
+      labels:
+        family: "Родина: %{name}"
+        family_unknown: Невідома
+        uplink_state: Стан зв'язку
+        verified_balance: Підтверджений баланс
+      table:
+        technician: Технік
+        action: Дія
+        observations: Спостереження
+        timestamp: Часова мітка
+        empty: Фізичних втручань не зафіксовано
+      actions:
+        rotate_key_aria: Ротація апаратного ключа шифрування
+        locate_node: "Локалізувати вузол →"

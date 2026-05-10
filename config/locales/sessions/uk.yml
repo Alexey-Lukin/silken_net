@@ -1,0 +1,14 @@
+uk:
+  sessions:
+    new:
+      title: Цитадель
+      subtitle: Встановлення нейронного зв'язку
+      identity_label: "Ідентифікатор (email)"
+      identity_placeholder: operator@silken.net
+      access_code_label: "Код доступу (пароль)"
+      access_code_placeholder: "● ● ● ● ● ● ● ●"
+      submit: Автентифікувати
+      forgot_link: Забули код доступу?
+      provider_separator: Або увійдіть через провайдера
+      provider_aria: "Увійти через %{provider}"
+      footer_status: "Цілісність системи підтверджено // AES-256 активний"

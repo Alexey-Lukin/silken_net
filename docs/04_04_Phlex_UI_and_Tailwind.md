@@ -1452,3 +1452,83 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 - [ ] Це responsive container — →  **CSS container queries** `@container`
 
 Якщо **жодне** не підходить — Stimulus це нормальний вибір.
+
+---
+
+## 16. Codemod-Driven Migration (Phase 4)
+
+> Page-component migration from raw Tailwind to gaia tokens is automated
+> through a deterministic Ruby codemod. The migration is **incremental**:
+> each PR migrates a domain (trees / wallets / alerts / …), the codemod
+> guarantees consistent mapping, and the CI lint task prevents regressions.
+
+### 16.1 Tooling
+
+| Tool | Purpose |
+|---|---|
+| `bin/migrate-tailwind-tokens` | Word-boundary `gsub` codemod with `--dry-run` and `--report` modes. Mapping table mirrors § 3.1 (4-tier surfaces + 3-level text + primary tokens). |
+| `bundle exec rake gaia:lint_tokens` | CI-grade compliance check. Exits 1 if any raw Tailwind colour utility is found in `app/views/components/`. Brand-glow allowlist baked in (see source). |
+
+### 16.2 Migration workflow per domain
+
+```bash
+# 1. preview
+bin/migrate-tailwind-tokens --dry-run app/views/components/wallets/
+
+# 2. apply
+bin/migrate-tailwind-tokens app/views/components/wallets/
+
+# 3. add i18n
+mkdir -p config/locales/wallets && touch config/locales/wallets/{uk,en}.yml
+# … wire `def t_(key)` helper into each component (see § 12.5)
+
+# 4. update specs
+# wrap English assertions in `around { |ex| I18n.with_locale(:en) { ex.run } }`
+# add `default locale (uk)` describe-block
+
+# 5. verify
+bundle exec rspec spec/views/components/wallets/
+COMPONENTS=app/views/components/wallets/ bundle exec rake gaia:lint_tokens
+```
+
+### 16.3 Mapping table (codemod)
+
+| Raw Tailwind | Gaia token | Notes |
+|---|---|---|
+| `bg-black`, `bg-white` | `bg-gaia-surface` | Card / panel base |
+| `bg-gray-50` | `bg-gaia-surface-base` | Page background |
+| `bg-gray-100`, `bg-emerald-950/{10,20}` | `bg-gaia-surface-sunken` | Inset rows / hover backdrop |
+| `bg-gray-900` | `bg-gaia-surface-elevated` | Modal / popover surface |
+| `border-gray-200`, `border-emerald-900` | `border-gaia-border` | Default panel border |
+| `border-gray-300`, `border-emerald-{700,800,900}/50` | `border-gaia-border-strong` | Hover/focus border |
+| `text-gray-900`, `text-white` | `text-gaia-text-strong` | Headings, primary copy |
+| `text-gray-700`, `text-emerald-400` | `text-gaia-text` | Body |
+| `text-gray-{500,600}`, `text-emerald-700` | `text-gaia-text-muted` | Labels, captions |
+| `text-gray-{300,400}`, `text-emerald-{800,900}` | `text-gaia-text-subtle` | Watermarks, placeholders |
+| `text-emerald-500` | `text-gaia-primary` | Brand accent |
+| `text-emerald-600` | `text-gaia-primary-hover` | Brand hover |
+
+### 16.4 Allowlist — what stays raw on purpose
+
+Brand-glow / decorative Tailwind utilities never go through the codemod:
+
+- `bg-emerald-500/10`, `bg-emerald-500/20` — login submit + impedance bar fill
+- `bg-emerald-500` (with `animate-ping` / `animate-pulse`) — pulse accents
+- `border-emerald-500/20` (with `animate-spin`) — spinner ring
+
+These encode brand expression, not theme intent — leave them alone.
+
+### 16.5 i18n locale-file convention
+
+```
+config/locales/
+├── defaults/      # app-shell, accessibility, theme, locale-switcher
+├── components/    # cross-cutting UI components
+├── navigation/    # sidebar, top bar, breadcrumb
+├── sessions/      # login screen
+├── dashboard/     # dashboard home
+└── trees/         # tree show page
+```
+
+Each domain = one folder × two files (`uk.yml` + `en.yml`). Keep nesting
+shallow (≤ 4 levels). See § 12.2 — same rules for new domains.

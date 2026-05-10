@@ -1,0 +1,15 @@
+uk:
+  dashboard:
+    home:
+      stats:
+        forest_vitality: Життєздатність лісу
+        active_soldiers: Активні солдати
+        carbon_treasury: Вуглецева скарбниця
+        ionic_potential: Іонний потенціал
+      map:
+        loading: Ініціалізація геопросторової матриці...
+        coordinates_label: "LAT: %{lat} // LON: %{lon} // ALT: %{alt}м"
+      feed:
+        title: Стрічка передач у реальному часі
+        empty: Немає недавньої активності
+        view_all: "Відкрити журнал місій →"

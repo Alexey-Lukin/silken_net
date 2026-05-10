@@ -314,9 +314,18 @@ Domain-specific term glossary (UA→EN): "Цитадель" → Citadel, "Вій
 3. ✅ `@starting-style` CSS для smooth dialog/popover entrance (no JS-flushed reflow).
 4. ✅ `docs/04_04 § 15` — філософія "Native HTML over Stimulus" + чек-ліст.
 
-### Phase 4 — Component-by-component migration
-- Page components переводимо по одному, з оновленням spec (gaia-tokens compliance + i18n).
-- Чек-лист: див. § 6.
+### Phase 4 — Page components migration ✅ FOUNDATION DONE
+1. ✅ **Codemod** `bin/migrate-tailwind-tokens` — детермінований word-boundary mapping (`--dry-run`, `--report` режими). 30+ маппінгів з § 3.1.
+2. ✅ **Compliance lint** `bundle exec rake gaia:lint_tokens` — CI-grade перевірка на raw Tailwind у `app/views/components/`. Brand-glow allowlist baked-in. Exits 1 при violations.
+3. ✅ **Top-3 critical pages migrated** (gaia-tokens + i18n + spec):
+   - `Dashboard::Home` (entry point) — 10 token replacements + 7 i18n keys + extracted constants
+   - `Sessions::New` (public face) — 20 token replacements + 11 i18n keys + status flash tokens
+   - `Trees::Show` (289 lines, 51 token replacements + 16 i18n keys)
+   - `Dashboard::EventRow` (4 token replacements)
+4. ✅ **i18n locale files** — `config/locales/{sessions,dashboard,trees}/{uk,en}.yml` (по доменах, не портянками)
+5. ✅ **Spec pattern** — `around { |ex| I18n.with_locale(:en) { ex.run } }` для existing англійських assert'ів + окремий `default locale (uk)` describe-block
+6. ✅ **`docs/04_04 § 16`** — повна документація migration workflow + mapping table + allowlist + i18n convention
+7. ✅ Backlog: 60 файлів × 824 violations задокументовано — кожен наступний PR використовує `bin/migrate-tailwind-tokens` + `t_(key)` pattern + spec wrap
 
 ### Phase 5 — DataTable mobile cards + table-heavy pages
 - `DataTable` prop `mobile_layout`.

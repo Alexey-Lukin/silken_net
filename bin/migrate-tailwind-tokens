@@ -1,0 +1,156 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Migrates raw Tailwind colour utilities to gaia design tokens in Phlex
+# components. Runs deterministic word-boundary substitutions from the table
+# below. Always preview the diff before staging — colour intent (status
+# badges, brand accents) is sometimes encoded in raw classes that this
+# script intentionally leaves alone.
+#
+# Usage:
+#   bin/migrate-tailwind-tokens app/views/components/dashboard/home.rb
+#   bin/migrate-tailwind-tokens app/views/components/dashboard/        # whole dir
+#   bin/migrate-tailwind-tokens --dry-run app/views/components/        # preview
+#   bin/migrate-tailwind-tokens --report app/views/components/         # stats only
+#
+# Mapping rationale: see docs/04_04_Phlex_UI_and_Tailwind.md § 3.1
+# (4-tier surfaces + 3-level text hierarchy + primary tokens).
+
+require "pathname"
+
+# Order matters — longer/more-specific keys first so they don't get clobbered
+# by shorter prefix matches (e.g. `bg-emerald-950/20` before `bg-emerald-950`).
+MAPPING = [
+  # ── Surfaces (page backgrounds, panels) ──
+  ["bg-emerald-950/20",        "bg-gaia-surface-sunken"],
+  ["bg-emerald-950/10",        "bg-gaia-surface-sunken"],
+  ["bg-emerald-950",           "bg-gaia-surface-sunken"],
+  ["hover:bg-emerald-950",     "hover:bg-gaia-surface-sunken"],
+  ["bg-gray-900",              "bg-gaia-surface-elevated"],
+  ["bg-gray-100",              "bg-gaia-surface-sunken"],
+  ["bg-gray-50",               "bg-gaia-surface-base"],
+  ["bg-white",                 "bg-gaia-surface"],
+  ["bg-black",                 "bg-gaia-surface"],
+
+  # ── Borders ──
+  ["border-emerald-900/50",    "border-gaia-border-strong"],
+  ["border-emerald-900/30",    "border-gaia-border"],
+  ["border-emerald-900",       "border-gaia-border"],
+  ["border-emerald-800",       "border-gaia-border-strong"],
+  ["border-emerald-700",       "border-gaia-border-strong"],
+  ["hover:border-emerald-700", "hover:border-gaia-border-strong"],
+  ["hover:border-emerald-500", "hover:border-gaia-primary"],
+  ["border-gray-300",          "border-gaia-border-strong"],
+  ["border-gray-200",          "border-gaia-border"],
+
+  # ── Text (3-level hierarchy + primary) ──
+  ["text-gray-900",            "text-gaia-text-strong"],
+  ["text-gray-700",            "text-gaia-text"],
+  ["text-gray-600",            "text-gaia-text-muted"],
+  ["text-gray-500",            "text-gaia-text-muted"],
+  ["text-gray-400",            "text-gaia-text-subtle"],
+  ["text-gray-300",            "text-gaia-text-subtle"],
+  ["text-white",               "text-gaia-text-strong"],
+  ["text-emerald-400",         "text-gaia-text"],
+  ["text-emerald-500",         "text-gaia-primary"],
+  ["text-emerald-600",         "text-gaia-primary-hover"],
+  ["text-emerald-700",         "text-gaia-text-muted"],
+  ["text-emerald-800",         "text-gaia-text-subtle"],
+  ["text-emerald-900",         "text-gaia-text-subtle"]
+].freeze
+
+# Patterns we never touch — they encode semantics that aren't colour-only.
+PROTECTED = [
+  /bg-status-/, /text-status-/, /border-status-/,
+  /bg-token-/, /text-token-/,
+  /bg-gaia-/, /text-gaia-/, /border-gaia-/,
+  # Brand emerald (primary) — keep the `bg-emerald-500` alone, that's brand.
+  # Status reds/yellows/blues — those go through the status-* tokens layer in
+  # a separate refactor, not this codemod.
+  /bg-(red|yellow|amber|blue|green|teal|orange|rose)-\d+/,
+  /text-(red|yellow|amber|blue|green|teal|orange|rose)-\d+/
+]
+
+def replace_tokens(content)
+  changed = 0
+  MAPPING.each do |from, to|
+    # Word-boundary regex: match the class only when surrounded by quote /
+    # space / colon / start-of-string boundary on both sides. This keeps
+    # `text-gray-900` from being matched inside `text-gray-9000` (none exists,
+    # but we stay defensive) and keeps `dark:text-gray-900` matching too.
+    pattern = /(?<=[\s"':>])#{Regexp.escape(from)}(?=[\s"'<])/
+    new_content = content.gsub(pattern) do
+      changed += 1
+      to
+    end
+    content = new_content
+  end
+  [content, changed]
+end
+
+def process_file(path, dry_run:, report_only:)
+  return [0, false] unless path.extname == ".rb"
+
+  original = path.read
+  updated, changes = replace_tokens(original.dup)
+  return [0, false] if changes.zero? || updated == original
+
+  if report_only
+    puts "  #{path}: #{changes} replacements"
+  elsif dry_run
+    puts "── #{path} (#{changes} changes) ──"
+    print_diff(original, updated)
+  else
+    path.write(updated)
+    puts "✓ #{path} — #{changes} replacements"
+  end
+  [changes, true]
+end
+
+def print_diff(a, b)
+  a_lines = a.lines
+  b_lines = b.lines
+  a_lines.zip(b_lines).each_with_index do |(left, right), idx|
+    next if left == right
+
+    puts "  L#{idx + 1}:"
+    puts "  - #{left&.chomp}"
+    puts "  + #{right&.chomp}"
+  end
+end
+
+def collect_paths(args)
+  args.flat_map do |arg|
+    pn = Pathname.new(arg)
+    if pn.directory?
+      pn.glob("**/*.rb")
+    elsif pn.file?
+      [pn]
+    else
+      warn "skip (not found): #{arg}"
+      []
+    end
+  end
+end
+
+# ── main ─────────────────────────────────────────────────────────────────────
+dry_run = ARGV.delete("--dry-run") || ARGV.delete("-n")
+report_only = ARGV.delete("--report")
+
+if ARGV.empty?
+  warn "Usage: bin/migrate-tailwind-tokens [--dry-run|--report] PATH [PATH ...]"
+  exit 1
+end
+
+paths = collect_paths(ARGV)
+total_changes = 0
+total_files = 0
+
+paths.each do |p|
+  changes, touched = process_file(p, dry_run: dry_run, report_only: report_only)
+  total_changes += changes
+  total_files += 1 if touched
+end
+
+mode = dry_run ? "[dry-run] " : (report_only ? "[report] " : "")
+puts "\n#{mode}Total: #{total_changes} replacements across #{total_files} file(s)"

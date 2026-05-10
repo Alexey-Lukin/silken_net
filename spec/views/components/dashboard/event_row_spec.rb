@@ -47,8 +47,8 @@ RSpec.describe Dashboard::EventRow do
       expect(html).to include("TREE::0xDEAD")
     end
 
-    it "uses emerald color for blockchain events" do
-      expect(html).to include("text-emerald-400")
+    it "uses the gaia text token for blockchain events" do
+      expect(html).to include("text-gaia-text")
     end
   end
 
@@ -81,8 +81,8 @@ RSpec.describe Dashboard::EventRow do
       expect(html).to include("System pulse detected")
     end
 
-    it "uses gray color for unknown events" do
-      expect(html).to include("text-gray-400")
+    it "uses the gaia subtle text token for unknown events" do
+      expect(html).to include("text-gaia-text-subtle")
     end
   end
 

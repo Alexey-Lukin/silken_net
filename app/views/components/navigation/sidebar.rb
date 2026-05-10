@@ -19,7 +19,7 @@ module Navigation
           "transition-colors duration-300"
         ),
         role: "navigation",
-        aria_label: tr("logo.title")
+        aria_label: t_("logo.title")
       ) do
         render_logo
         render_status_pulse
@@ -74,16 +74,16 @@ module Navigation
     private
 
     # Lazy-lookup helper scoped to the `navigation.*` namespace so call-sites
-    # stay terse: `tr("logo.title")` instead of `I18n.t("navigation.logo.title")`.
+    # stay terse: `t_("logo.title")` instead of `I18n.t("navigation.logo.title")`.
     # Mirrors the Rails view-helper convention `t(".key")` adapted for Phlex.
-    def tr(key)
+    def t_(key)
       I18n.t("navigation.#{key}")
     end
 
     def render_logo
       div(class: "px-6 py-8 border-b border-gaia-border transition-colors duration-300") do
-        h1(class: "text-gaia-primary font-extralight tracking-[0.4em] uppercase text-lg leading-tight") { tr("logo.title") }
-        p(class: "text-micro text-gaia-text-subtle mt-1 uppercase tracking-widest")                   { tr("logo.subtitle") }
+        h1(class: "text-gaia-primary font-extralight tracking-[0.4em] uppercase text-lg leading-tight") { t_("logo.title") }
+        p(class: "text-micro text-gaia-text-subtle mt-1 uppercase tracking-widest")                   { t_("logo.subtitle") }
       end
     end
 
@@ -91,21 +91,21 @@ module Navigation
       div(class: "px-6 py-4 bg-gaia-surface-sunken flex items-center justify-between border-b border-gaia-border transition-colors duration-300") do
         div(class: "flex items-center gap-2") do
           div(class: "h-1.5 w-1.5 rounded-full bg-gaia-primary animate-pulse", aria_hidden: "true")
-          span(class: "text-mini text-gaia-text-muted uppercase tracking-widest") { tr("status.sync_label") }
+          span(class: "text-mini text-gaia-text-muted uppercase tracking-widest") { t_("status.sync_label") }
         end
-        span(class: "text-mini text-gaia-text-subtle") { tr("status.version") }
+        span(class: "text-mini text-gaia-text-subtle") { t_("status.version") }
       end
     end
 
     def section_group(key, &block)
       div(class: "space-y-4") do
-        h3(class: "text-mini uppercase tracking-[0.3em] text-gaia-text-subtle px-2") { tr("sections.#{key}") }
+        h3(class: "text-mini uppercase tracking-[0.3em] text-gaia-text-subtle px-2") { t_("sections.#{key}") }
         div(class: "space-y-1", &block)
       end
     end
 
     def nav_item(key, path, icon, badge: nil, pulse: false)
-      label  = tr("items.#{key}")
+      label  = t_("items.#{key}")
       active = @current_path.start_with?(path.split("?").first)
 
       a(
@@ -157,8 +157,8 @@ module Navigation
         div(class: "flex items-center gap-3 px-2") do
           div(class: "h-8 w-8 border border-gaia-primary flex items-center justify-center text-gaia-primary text-tiny") { "A" }
           div(class: "flex-1 overflow-hidden") do
-            p(class: "text-tiny text-gaia-text-strong truncate")                          { tr("footer.role") }
-            p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest")        { tr("footer.access") }
+            p(class: "text-tiny text-gaia-text-strong truncate")                          { t_("footer.role") }
+            p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest")        { t_("footer.access") }
           end
         end
       end
