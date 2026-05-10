@@ -106,7 +106,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     services:
       postgres:
@@ -145,7 +145,19 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/silken_net_test
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare && bundle exec rspec
+        run: bin/rails db:test:prepare && bundle exec rspec --format progress
+
+      - name: Upload SimpleCov coverage report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: simplecov-coverage
+          path: |
+            coverage/index.html
+            coverage/coverage.json
+            coverage/.resultset.json
+          retention-days: 30
+          if-no-files-found: ignore
 
   feature-test:
     runs-on: ubuntu-latest
