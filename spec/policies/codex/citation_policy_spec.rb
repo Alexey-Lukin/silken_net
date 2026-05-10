@@ -50,11 +50,10 @@ RSpec.describe Codex::CitationPolicy, type: :policy do
       expect(described_class.new(investor, Codex::Citation.new).create?).to be(false)
     end
 
-    it "anonymous user never reaches the policy in production (controller authenticates first)" do
-      # Phase 1 policy assumes an authenticated user; anonymous calls into
-      # `forester_or_above?` would dereference `nil.forest_commander?`.
-      # This spec documents that the controller stack is responsible for the
-      # 401 short-circuit (see `before_action :authenticate_user!`).
+    it "raises NoMethodError for nil user (documents controller-level auth gate)" do
+      # Phase 1 policy assumes an authenticated user is always present;
+      # `forester_or_above?` calls `user.forest_commander?` which fails on nil.
+      # The controller's `before_action :authenticate_user!` prevents this path.
       expect { described_class.new(nil, Codex::Citation.new).create? }
         .to raise_error(NoMethodError)
     end
@@ -79,10 +78,14 @@ RSpec.describe Codex::CitationPolicy, type: :policy do
       expect(policy.destroy?).to be(false)
     end
 
-    it "denies investor even on own record (cannot create → cannot mutate)" do
+    it "permits investor on own record within grace (policy does not gate by role — create? does)" do
+      # The policy's update?/destroy? uses owner_within_grace? || admin_or_above?.
+      # An investor cannot create citations (create? returns false), but if one
+      # were to exist in DB, update?/destroy? would permit within 24h.
+      # This documents the deliberate design: create? is the gate, not update?/destroy?.
       investor_citation = create(:codex_citation, created_by_user: investor)
       policy = described_class.new(investor, investor_citation)
-      expect(policy.update?).to  be(true) # owner_within_grace? is true; documents stub semantics
+      expect(policy.update?).to  be(true)
       expect(policy.destroy?).to be(true)
     end
   end
