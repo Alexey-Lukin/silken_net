@@ -40,6 +40,20 @@ RSpec.describe Codex::Comments::Thread do
     expect(html).to include("Be the first to share")
   end
 
+  it "renders each comment item when comments are present" do
+    comment = OpenStruct.new(
+      id: 1,
+      body_md: "Great tree!",
+      hidden?: false,
+      created_at: Time.utc(2026, 5, 10, 8, 0, 0),
+      user: OpenStruct.new(email_address: "user@example.com")
+    )
+    html = render_thread(node: node, comments: [ comment ], current_user: nil)
+    expect(html).not_to include("Be the first to share")
+    expect(html).to include("Great tree!")
+    expect(html).to include("user@example.com")
+  end
+
   it "omits the composer when there is no current_user" do
     html = render_thread(node: node, comments: [], current_user: nil)
     expect(html).not_to include("Post")

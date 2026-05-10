@@ -79,6 +79,14 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       expect(telemetry_log.verified_by_iotex).to be false
     end
 
+    it "re-raises CircuitOpenError so Sidekiq retries later" do
+      allow_any_instance_of(described_class).to receive(:with_circuit_breaker)
+        .and_raise(Web3CircuitBreaker::CircuitOpenError, "Circuit OPEN")
+      expect {
+        described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+      }.to raise_error(Web3CircuitBreaker::CircuitOpenError)
+    end
+
     it "uses web3_critical queue" do
       expect(described_class.get_sidekiq_options["queue"]).to eq("web3_critical")
     end

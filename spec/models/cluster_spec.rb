@@ -404,4 +404,70 @@ RSpec.describe Cluster, type: :model do
       expect(cluster.geojson_polygon).to eq("not-a-hash")
     end
   end
+
+  describe "#validate_lorenz_overrides_by_species" do
+    it "is valid with a well-formed overrides hash" do
+      c = build(:cluster, lorenz_overrides_by_species: {
+        "Pinus sylvestris" => { "min" => 2.0, "max" => 45.0, "optimal" => 29.0 }
+      })
+      expect(c).to be_valid
+    end
+
+    it "accepts nil / empty hash (no overrides)" do
+      expect(build(:cluster, lorenz_overrides_by_species: {})).to be_valid
+      expect(build(:cluster, lorenz_overrides_by_species: nil)).to be_valid
+    end
+
+    it "rejects a blank species key" do
+      c = build(:cluster, lorenz_overrides_by_species: { " " => { "min" => 1.0 } })
+      expect(c).not_to be_valid
+      expect(c.errors[:lorenz_overrides_by_species]).to include(/blank species key/)
+    end
+
+    it "rejects when bounds value is not a Hash" do
+      c = build(:cluster, lorenz_overrides_by_species: { "Pinus sylvestris" => "bad" })
+      expect(c).not_to be_valid
+      expect(c.errors[:lorenz_overrides_by_species].join).to include("must be a Hash")
+    end
+
+    it "rejects unknown keys inside a bounds Hash" do
+      c = build(:cluster, lorenz_overrides_by_species: {
+        "Pinus sylvestris" => { "min" => 1.0, "unknown_key" => 9 }
+      })
+      expect(c).not_to be_valid
+      expect(c.errors[:lorenz_overrides_by_species].join).to include("unknown key")
+    end
+
+    it "rejects non-numeric values for min/max/optimal" do
+      c = build(:cluster, lorenz_overrides_by_species: {
+        "Pinus sylvestris" => { "min" => "notanumber", "max" => 45.0 }
+      })
+      expect(c).not_to be_valid
+      expect(c.errors[:lorenz_overrides_by_species].join).to include("must be numeric")
+    end
+
+    it "rejects min >= max" do
+      c = build(:cluster, lorenz_overrides_by_species: {
+        "Pinus sylvestris" => { "min" => 30.0, "max" => 10.0 }
+      })
+      expect(c).not_to be_valid
+      expect(c.errors[:lorenz_overrides_by_species].join).to include("'min' must be < 'max'")
+    end
+
+    it "rejects optimal <= min" do
+      c = build(:cluster, lorenz_overrides_by_species: {
+        "Pinus sylvestris" => { "min" => 5.0, "max" => 45.0, "optimal" => 5.0 }
+      })
+      expect(c).not_to be_valid
+      expect(c.errors[:lorenz_overrides_by_species].join).to include("'optimal' must be > 'min'")
+    end
+
+    it "rejects optimal >= max" do
+      c = build(:cluster, lorenz_overrides_by_species: {
+        "Pinus sylvestris" => { "min" => 2.0, "max" => 45.0, "optimal" => 45.0 }
+      })
+      expect(c).not_to be_valid
+      expect(c.errors[:lorenz_overrides_by_species].join).to include("'optimal' must be < 'max'")
+    end
+  end
 end

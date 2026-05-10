@@ -75,6 +75,23 @@ RSpec.describe Codex::NodeCard do
       expect(html).to include("🌲")
     end
 
+    it "renders an img tag when cover_image is attached and representable" do
+      variant = double("variant")
+      cover = OpenStruct.new(attached?: true, representable?: true)
+      cover.define_singleton_method(:variant) { |**_opts| variant }
+      node_with_cover = mock_node(cover_image: cover)
+
+      comp = Class.new(Codex::NodeCard) do
+        define_method(:helpers) { ActionController::Base.helpers }
+        define_method(:api_v1_codex_node_path) { |_n| "/api/v1/codex/nodes/stub" }
+        define_method(:rails_representation_path) { |_v, **| "/rails/img.webp" }
+      end.new(node: node_with_cover)
+
+      html = comp.call
+      expect(html).to include("<img")
+      expect(html).to include('loading="lazy"')
+    end
+
     it "renders an em dash when geo_region is blank" do
       html = render_component(node: mock_node(geo_region: nil))
       expect(html).to include("—")

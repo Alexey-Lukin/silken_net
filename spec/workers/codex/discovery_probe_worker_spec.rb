@@ -52,4 +52,32 @@ RSpec.describe Codex::DiscoveryProbeWorker, type: :worker do
       described_class.new.perform(0, "match_milestone", {})
     }.not_to raise_error
   end
+
+  it "swallows RecordNotUnique from a concurrent insert race (idempotency guard)" do
+    allow(::Codex::DiscoveryEngine).to receive(:evaluate).and_return([ node ])
+    allow(::Codex::Discovery).to receive(:create_with).and_call_original
+    allow_any_instance_of(ActiveRecord::Relation).to receive(:find_or_create_by)
+      .and_raise(ActiveRecord::RecordNotUnique)
+    expect(ActionCable.server).not_to receive(:broadcast)
+    expect { described_class.new.perform(user.id, "match_milestone", {}) }.not_to raise_error
+  end
+
+  it "swallows ArgumentError from an invalid trigger_type string" do
+    allow(::Codex::DiscoveryEngine).to receive(:evaluate).and_return([ node ])
+    # The create_with block uses trigger_type.to_s — patch find_or_create_by to raise ArgumentError
+    allow_any_instance_of(ActiveRecord::Relation).to receive(:find_or_create_by)
+      .and_raise(ArgumentError, "bad enum value")
+    expect(ActionCable.server).not_to receive(:broadcast)
+    expect { described_class.new.perform(user.id, "match_milestone", {}) }.not_to raise_error
+  end
+
+  it "swallows a broadcast StandardError so the DB record is not rolled back" do
+    allow(::Codex::DiscoveryEngine).to receive(:evaluate).and_return([ node ])
+    allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "cable error")
+    expect {
+      described_class.new.perform(user.id, "match_milestone", {})
+    }.not_to raise_error
+    # Discovery record was still created
+    expect(Codex::Discovery.where(user_id: user.id, codex_node_id: node.id)).to exist
+  end
 end

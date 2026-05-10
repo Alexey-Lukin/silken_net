@@ -43,6 +43,14 @@ RSpec.describe Codex::Match, type: :model do
       expect(m).not_to be_valid
       expect(m.errors[:right_node_id]).to include("must share the same realm as left_node")
     end
+
+    it "rejects a mismatched codex_realm_id (realm envelope ≠ pair realm)" do
+      other_realm = create(:codex_realm)
+      m = build(:codex_match, realm: other_realm, left: left, right: right,
+                codex_realm_id: other_realm.id, winner_node_id: left.id)
+      expect(m).not_to be_valid
+      expect(m.errors[:codex_realm_id]).to include("must match the pair realm")
+    end
   end
 
   describe "scopes" do
