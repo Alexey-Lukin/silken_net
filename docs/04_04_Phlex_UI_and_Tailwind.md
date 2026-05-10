@@ -1325,3 +1325,83 @@ Call-sites лишаються лаконічними: `tr("logo.title")`, `tr("i
 
 Десктопний sidebar — Turbo-permanent (не перерендериться між сторінками).
 Мобільний drawer — звичайний рендер (стан синхронізується JS-ом).
+
+---
+
+## 14. Animations & Motion (Phase 3)
+
+> Узагальнена motion-система побудована поверх токенів з § 4 (motion tokens).
+> WCAG 2.3.3 / Web Vitals friendly — усі анімації автоматично вимикаються
+> під `prefers-reduced-motion: reduce`.
+
+### 14.1 Fluid base typography
+
+`@layer base` тепер використовує `clamp()` для `<h1..h3>`, замість фіксованих
+rem-розмірів. Заголовки масштабуються плавно між мобайлом і десктопом без
+`@media`-сходинок. Зніжує CLS до нуля при зміні vw.
+
+```css
+h1 { font-size: clamp(1.5rem,  2.5vw + 0.75rem, 1.875rem); }
+h2 { font-size: clamp(1.25rem, 1.6vw + 0.5rem,  1.5rem);   }
+h3 { font-size: clamp(1.125rem, 1vw + 0.5rem,   1.25rem);  }
+```
+
+Для page-level hero-заголовків — використовуйте `text-display-*` токени
+(`display-sm/md/lg`, див. § 4) явно через клас.
+
+### 14.2 View Transitions API (Theme Switcher)
+
+`theme_controller.toggle()` обгортає зміну `.dark` класу у
+`document.startViewTransition()`. Браузер робить плавний crossfade між
+світлою і темною темами — без DOM-flicker, без необхідності CSS-transitions
+на кожному елементі.
+
+```js
+if (typeof document.startViewTransition === "function") {
+  document.startViewTransition(() => this.applyTheme(next))
+} else {
+  this.applyTheme(next)  // fallback для старих браузерів
+}
+```
+
+CSS у `application.css`:
+```css
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-base, 220ms);
+  animation-timing-function: var(--ease-out-soft, ease-out);
+}
+```
+
+Підтримка: Chromium 111+, Safari 18+. Fallback — миттєвий apply
+(існуюча поведінка). API сам поважає `prefers-reduced-motion`.
+
+### 14.3 `reveal_controller` (appear-on-scroll)
+
+Stimulus controller, який скидає `opacity-0 translate-y-2` коли елемент
+вперше з'являється у viewport. One-shot (`unobserve` після першого спрацювання).
+
+```html
+<article data-controller="reveal"
+         class="opacity-0 translate-y-2 transition-all
+                duration-[var(--motion-slow)] ease-[var(--ease-out-soft)]">
+  ...
+</article>
+```
+
+Поведінка:
+- **`prefers-reduced-motion: reduce`** → reveal негайно, observer не створюється
+- **No IntersectionObserver** (старі браузери) → reveal негайно
+- **Поріг видимості:** 15% (тюниться через `data-reveal-threshold-value`)
+- **Root margin:** `0px 0px -10% 0px` — спрацьовує трохи раніше за повний enter
+
+### 14.4 Анімаційний бюджет
+
+| Тип | Тривалість | Easing | Приклад |
+|---|---|---|---|
+| Hover/focus | `--motion-fast` (150ms) | `--ease-out-soft` | LocaleSwitcher hover |
+| UI transitions | `--motion-base` (220ms) | `--ease-out-soft` | Mobile drawer slide-in, theme crossfade |
+| Page entrance | `--motion-slow` (320ms) | `--ease-out-soft` | `reveal_controller` |
+| Micro-bounces | `--motion-base` | `--ease-spring` | Badge "new!" pop, error shake |
+
+> Не плодьте кастомні durations / easings — використовуйте токени.

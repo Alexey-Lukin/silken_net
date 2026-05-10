@@ -195,9 +195,13 @@
 
 /* ── Typography Base ── */
 @layer base {
-  h1 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 300; letter-spacing: 0.05em; }
-  h2 { font-size: 1.5rem;   line-height: 2rem;    font-weight: 300; letter-spacing: 0.05em; }
-  h3 { font-size: 1.25rem;  line-height: 1.75rem;  font-weight: 400; }
+  /* Base typography uses fluid clamp() so headings scale smoothly between
+   * mobile and desktop without media-query "stairsteps". The fixed-rem
+   * branch on the right of clamp() bounds growth so 4K monitors don't
+   * blow up display copy. (Web Vitals friendly: zero CLS at any vw.) */
+  h1 { font-size: clamp(1.5rem,  2.5vw + 0.75rem, 1.875rem); line-height: 1.2;  font-weight: 300; letter-spacing: 0.05em; }
+  h2 { font-size: clamp(1.25rem, 1.6vw + 0.5rem,  1.5rem);   line-height: 1.25; font-weight: 300; letter-spacing: 0.05em; }
+  h3 { font-size: clamp(1.125rem, 1vw + 0.5rem,   1.25rem);  line-height: 1.4;  font-weight: 400; }
   h4 { font-size: 1rem;     line-height: 1.5rem;   font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; }
 
   /* Custom scrollbar for dark terminal aesthetic */
@@ -223,6 +227,17 @@
 @keyframes gaia-fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── View Transitions (theme switcher) ──
+ * Smooth crossfade when document.startViewTransition() animates the
+ * `dark` class swap on <html>. Disabled automatically by the browser
+ * when prefers-reduced-motion is set. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-base, 220ms);
+  animation-timing-function: var(--ease-out-soft, ease-out);
+  mix-blend-mode: normal;
 }
 
 @utility animate-fade-in {
