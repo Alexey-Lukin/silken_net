@@ -90,7 +90,7 @@ module Codex
       def pill_classes(node)
         tokens(
           "inline-flex items-center gap-1 px-2 py-0.5",
-          "text-mini bg-gaia-surface-alt",
+          "text-mini bg-gaia-surface-sunken",
           "border border-gaia-border border-l-2 rounded-sm",
           accent_border_class(node),
           "hover:-translate-y-px hover:border-gaia-primary",

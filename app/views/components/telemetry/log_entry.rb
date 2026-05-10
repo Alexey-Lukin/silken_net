@@ -1,4 +1,8 @@
-# app/views/components/telemetry/log_entry.rb
+# frozen_string_literal: true
+
+# Telemetry::LogEntry — single row appended to the live HUD via Turbo Stream.
+# Carries `data-label` attributes so the parent `gaia-responsive-table`
+# flips into a card on mobile (CSS in application.css).
 module Telemetry
   class LogEntry < ApplicationComponent
     def initialize(gateway:, hex_payload:, timestamp:)
@@ -8,28 +12,34 @@ module Telemetry
     end
 
     def view_template
-      tr(class: "hover:bg-emerald-950/10 border-b border-emerald-900/10 animate-in slide-in-from-left duration-300 group") do
-        # Час з мілісекундами для відчуття швидкості
-        td(class: "p-3 text-gray-600 font-mono text-mini") { @timestamp.strftime("%H:%M:%S.%L") }
+      tr(class: "hover:bg-gaia-surface-sunken md:border-b md:border-gaia-border animate-in slide-in-from-left duration-300 group") do
+        td(
+          class: "p-3 text-gaia-text-muted font-mono text-mini",
+          data_label: t_("table.timestamp")
+        ) { @timestamp.strftime("%H:%M:%S.%L") }
 
-        # Джерело (Королева)
-        td(class: "p-3") do
-          span(class: "text-emerald-500 font-bold") { @gateway&.uid || "UNKNOWN_RELAY" }
-          span(class: "ml-2 text-micro text-emerald-900") { "IP: #{@gateway&.ip_address || '?.?.?.?'}" }
+        td(class: "p-3", data_label: t_("table.gateway")) do
+          span(class: "text-gaia-primary font-bold") { @gateway&.uid || t_("log_entry.unknown_relay") }
+          span(class: "ml-2 text-micro text-gaia-text-subtle") do
+            t_("log_entry.ip_label", ip: @gateway&.ip_address || t_("log_entry.unknown_ip"))
+          end
         end
 
-        # Сирий потік байтів
-        td(class: "p-3 font-mono text-emerald-100/80 break-all leading-tight text-mini tracking-tighter") do
-          @hex_payload
-        end
+        td(
+          class: "p-3 font-mono text-gaia-text-strong/80 break-all leading-tight text-mini tracking-tighter",
+          data_label: t_("table.payload")
+        ) { @hex_payload }
 
-        # Статус розшифрування
-        td(class: "p-3 text-right text-micro uppercase tracking-widest") do
-          span(class: "px-2 py-0.5 border border-emerald-900 text-emerald-700 group-hover:text-emerald-400 group-hover:border-emerald-500 transition-colors") do
-            "BATCH_RECEIVED"
+        td(class: "p-3 text-right text-micro uppercase tracking-widest", data_label: t_("table.status")) do
+          span(class: "px-2 py-0.5 border border-gaia-border text-gaia-text-muted group-hover:text-gaia-text group-hover:border-gaia-primary transition-colors") do
+            t_("log_entry.batch_received")
           end
         end
       end
     end
+
+    private
+
+    def t_(key, **opts) = I18n.t("telemetry.#{key}", **opts)
   end
 end

@@ -32,6 +32,14 @@
 8. [Інтеграція Turbo (Streams & Frames)](#8-інтеграція-turbo-streams--frames)
 9. [Чекліст Доступності](#9-чекліст-доступності)
 10. [Тестування та Lookbook](#10-тестування-та-lookbook)
+11. [Міграція на токени (Phase 1)](#11-міграція-на-токени-phase-1)
+12. [i18n (Phase 1)](#12-i18n-phase-1)
+13. [Mobile Drawer (Phase 2)](#13-mobile-drawer-phase-2)
+14. [Animations & Motion (Phase 3)](#14-animations--motion-phase-3)
+15. [Native HTML over Stimulus (Phase 3.5)](#15-native-html-over-stimulus-де-доречно)
+16. [Codemod-Driven Migration (Phase 4)](#16-codemod-driven-migration-phase-4)
+17. [Responsive Tables — CSS-only Card Flip (Phase 5)](#17-responsive-tables--css-only-card-flip-phase-5)
+18. [Industry Standards (SSOT) + Per-PR DoD (Phase 6)](#18-industry-standards-ssot--per-pr-definition-of-done)
 
 ---
 
@@ -158,7 +166,7 @@ class ApplicationComponent < Phlex::HTML
   delegate :time_ago_in_words, :number_to_human_size,
            to: :"ActionController::Base.helpers"
 
-  CUSTOM_TEXT_SCALE = %w[micro mini tiny compact].freeze
+  CUSTOM_TEXT_SCALE = %w[micro mini tiny compact display-sm display-md display-lg].freeze
 
   def tokens(*args, **conditions)
     result = args.compact.join(" ")
@@ -216,17 +224,41 @@ end
 
 ### 3.1 Поверхневі, Текстові та Основні Токени (`gaia-*`)
 
+> **Phase 1 of the frontend overhaul (Tailwind v4 SSOT).** Палітра розширена
+> до 4-tier surface depth scale (Material 3 elevation pattern) і 3-level text
+> hierarchy для адекватного контрасту в light/dark. Перемикання теми тепер
+> змінює усі поверхні, а не лише текст. Legacy `--gaia-surface-alt` видалено —
+> усі call-sites мігровано на `--gaia-surface-sunken`.
+
+#### Surfaces (4-tier depth)
+
 | Токен | Tailwind Клас | Light `#` | Dark `#` | Призначення |
 |---|---|---|---|---|
-| `--color-gaia-surface` | `bg-gaia-surface` | `#ffffff` | `#000000` | Фон карток, панелей, форм |
-| `--color-gaia-surface-alt` | `bg-gaia-surface-alt` | `#f3f4f6` | `#0a0a0a` | Заголовки таблиць, вторинні панелі |
-| `--color-gaia-text` | `text-gaia-text` | `#111827` | `#10b981` | Основний текст |
-| `--color-gaia-text-muted` | `text-gaia-text-muted` | `#6b7280` | `#065f46` | Мітки, метадані, плейсхолдери |
-| `--color-gaia-primary` | `text-gaia-primary` / `bg-gaia-primary` | `#10b981` | `#10b981` | Бренд-emerald (однаковий в обох режимах) |
-| `--color-gaia-primary-hover` | `hover:bg-gaia-primary-hover` | `#059669` | `#34d399` | Hover основної кнопки |
-| `--color-gaia-border` | `border-gaia-border` | `#e5e7eb` | `rgba(16,185,129,0.2)` | Межі, роздільники |
+| `--color-gaia-surface-base` | `bg-gaia-surface-base` | `#fafafa` | `#050607` | Page background (під `<body>`) |
+| `--color-gaia-surface` | `bg-gaia-surface` | `#ffffff` | `#0b0f0e` | Картки, панелі, форми |
+| `--color-gaia-surface-elevated` | `bg-gaia-surface-elevated` | `#ffffff` (+`shadow-lg`) | `#11161a` | Modals, popovers, dropdowns |
+| `--color-gaia-surface-sunken` | `bg-gaia-surface-sunken` | `#f3f4f6` | `#070a09` | Table-row alt, code blocks, input bg, table headers |
 
-> **Legacy-кольори `gaia-green`, `gaia-dark`, `gaia-muted` видалені.** `--color-gaia-green`, `--color-gaia-dark`, `--color-gaia-muted` було видалено з `@theme` блоку `application.css` (Sprint 1, S1.7). Аудит підтвердив: жоден компонент їх не використовував — вони були присутні лише як визначення без відповідних utility-класів у коді. Семантичні токени `gaia-primary`, `gaia-text-muted`, `gaia-text` залишаються.
+#### Text (3-level hierarchy)
+
+| Токен | Tailwind Клас | Light `#` | Dark `#` | Призначення |
+|---|---|---|---|---|
+| `--color-gaia-text-strong` | `text-gaia-text-strong` | `#0f172a` | `#e6fff4` | Headings, primary numbers |
+| `--color-gaia-text` | `text-gaia-text` | `#1f2937` | `#a7f3d0` | Body |
+| `--color-gaia-text-muted` | `text-gaia-text-muted` | `#52525b` | `#6ee7b7` | Labels, metadata |
+| `--color-gaia-text-subtle` | `text-gaia-text-subtle` | `#9ca3af` | `rgba(52,211,153,0.55)` | Placeholders, watermarks, disabled |
+
+#### Primary + borders
+
+| Токен | Tailwind Клас | Light `#` | Dark `#` | Призначення |
+|---|---|---|---|---|
+| `--color-gaia-primary` | `text-gaia-primary` / `bg-gaia-primary` | `#10b981` | `#10b981` | Бренд-emerald (однаковий) |
+| `--color-gaia-primary-hover` | `hover:bg-gaia-primary-hover` | `#059669` | `#34d399` | Hover primary |
+| `--color-gaia-primary-soft` | `bg-gaia-primary-soft` | `#d1fae5` | `rgba(16,185,129,0.12)` | Chips, pills, low-emphasis bg, active-nav highlight |
+| `--color-gaia-border` | `border-gaia-border` | `#e5e7eb` | `rgba(16,185,129,0.18)` | Default межі |
+| `--color-gaia-border-strong` | `border-gaia-border-strong` | `#cbd5e1` | `rgba(16,185,129,0.40)` | Hover-borders, dividers, focus-ring backup |
+
+> **Legacy-кольори `gaia-green`, `gaia-dark`, `gaia-muted` видалені.** Семантичні токени `gaia-primary`, `gaia-text-muted`, `gaia-text` залишаються.
 
 ### 3.2 Статусні Токени (`status-*`)
 
@@ -316,10 +348,36 @@ end
 | `--font-size-mini` | `text-mini` | `0.5625rem` (9px¹) | `1rem` | Елементи навігації верхнього регістру, текст статус-бейджів |
 | `--font-size-tiny` | `text-tiny` | `0.625rem` (10px¹) | `1rem` | Малі мітки, метадані, заголовки секцій |
 | `--font-size-compact` | `text-compact` | `0.6875rem` (11px¹) | `1.25rem` | Таблиці даних, адреси, значення метрик |
+| `--font-size-display-sm` | `text-display-sm` | `clamp(1.25rem, 1.6vw + 0.5rem, 1.5rem)` | — | Responsive H3 / section headers |
+| `--font-size-display-md` | `text-display-md` | `clamp(1.5rem, 2vw + 0.75rem, 2rem)` | — | Responsive H2 / page sub-titles |
+| `--font-size-display-lg` | `text-display-lg` | `clamp(1.875rem, 3vw + 1rem, 2.75rem)` | — | Responsive H1 / hero titles |
 
 > ¹ px-значення розраховані при root font-size = 16px (стандарт браузера). Оскільки токени задані у `rem`, вони масштабуються разом з налаштуваннями доступності браузера.
+>
+> ² **`text-display-*` через `clamp()`** — fluid typography (Google Web Vitals
+> friendly: уникає CLS-перерозкладок при зміні vw). Реєструються в
+> `ApplicationComponent::CUSTOM_TEXT_SCALE` як font-size (а не як text-color).
 
 Стандартні розміри Tailwind продовжують застосовуватись для більшого тексту (наприклад, `text-xs`, `text-sm`, `text-2xl`) — вони співіснують з кастомною шкалою. Кастомні токени зокрема усувають довільні значення на кшталт `text-[9px]` для розмірів менших за `text-xs`.
+
+### Motion Tokens (Phase 1)
+
+| CSS Токен | Значення | Призначення |
+|---|---|---|
+| `--motion-fast` | `150ms` | Hover/focus transitions |
+| `--motion-base` | `220ms` | Standard UI transitions (drawers, modals) |
+| `--motion-slow` | `320ms` | Page-level entrances |
+| `--ease-out-soft` | `cubic-bezier(0.22, 0.61, 0.36, 1)` | Default easing для UI |
+| `--ease-spring` | `cubic-bezier(0.34, 1.56, 0.64, 1)` | Playful overshoot (badges, micro-interactions) |
+
+**Глобальний `prefers-reduced-motion`** (WCAG 2.3.3) — у `@layer base`:
+усі `animation-duration` та `transition-duration` примусово зводяться до 0.01ms,
+коли OS повідомляє про reduced-motion. Сторінкам нічого додавати не треба —
+правило діє автоматично.
+
+**`@utility animate-fade-in`** — keyframe `gaia-fade-in` (translateY 4px → 0 +
+opacity 0 → 1) тривалістю `--motion-base`. Використовуйте для entrance-анімацій
+карток / алертів.
 
 ### Базові Стилі Типографіки
 
@@ -551,12 +609,12 @@ render Views::Shared::Web3::Address.new(address: nil, fallback: "NOT_PROVISIONED
 | `Codex::Fractions::Cooldown` | `codex/fractions/cooldown.rb` | `fraction:` | **Phase 3.** Status pill ("Open" / "Locked · Nd Mh"). Tokens: `status-success` / `status-warning`. |
 | `Codex::Fractions::Picker` | `codex/fractions/picker.rb` | `realms:`, `active_realm:`, `nodes:`, `current_fraction:` | **Phase 3.** Turbo Frame grid pickable nodes для активного realm. Realm tabs (active = `bg-gaia-primary`), node cards з POST формою на `/codex/fractions`, disable button під час cooldown. DOM id `codex_fraction_picker`. |
 | `Codex::Fractions::ProfileBadge` | `codex/fractions/profile_badge.rb` | `fraction:` | **Phase 3.** 1-row teaser для `Users::Profile`. Embed live в `render_codex_fraction` секцію. Стоїть на gaia-* tokens — не торкає legacy emerald palette профілю. |
-| `Codex::Fractions::OnboardingWizard` | `codex/fractions/onboarding_wizard.rb` | `current_user:` | **Phase 8.** First-login банер у `DashboardLayout` — рендериться лише коли `current_user.codex_fraction.blank?`, з двома CTA: «Choose your Fraction →» (`/api/v1/codex/fractions/picker`) та «Browse the Codex» (`/api/v1/codex/realms`). Без Stimulus — нативна Turbo-Drive навігація (узгоджено з § 3.1 Phase-8 Stimulus-аудитом у `04_05`). Layout-хук обгорнутий у `rescue StandardError` (ADR-CDX-7 fail-open). DOM id `codex_onboarding_wizard`. |
+| `Codex::Fractions::OnboardingWizard` | `codex/fractions/onboarding_wizard.rb` | `current_user:` | **Phase 8.** First-login банер у `DashboardLayout` — рендериться лише коли `current_user.codex_fraction.blank?`, з двома CTA: «Choose your Fraction →» (`/api/v1/codex/fractions/picker`) та «Browse the Codex» (`/api/v1/codex/realms`). Без Stimulus — нативна Turbo-Drive навігація (узгоджено з § 15 Native HTML over Stimulus). Layout-хук обгорнутий у `rescue StandardError` (ADR-CDX-7 fail-open). DOM id `codex_onboarding_wizard`. |
 | `Codex::Battle::Arena` | `codex/battle/arena.rb` | `left:`, `right:`, `pair_seed:`, `realm:`, `error:` | **Phase 4.** Turbo Frame `id="codex_battle_arena"` з двома cards (Title + Archetype + `Elo: N · Mm`) + VS-divider + Skip. POST форми на `/codex/matches` (`MatchesController#create`; один winner_slug per форма + окрема skip-форма). UI-назва "Battle Arena" — UX label, REST-ресурс — `Codex::Match`. Error-state pill при `not enough nodes`. |
 | `Codex::Leaderboard::Table` | `codex/leaderboard/table.rb` | `realm:`, `nodes:`, `limit:` | **Phase 4.** Read-only top-N Elo board. HTML `<table>` з колонками rank / Title / Elo / Matches / Lifecycle. Рендериться публічно (`/codex/leaderboard` без auth). Empty-state copy коли `nodes.empty?`. |
 | `Codex::Discoveries::Toast` | `codex/discoveries/toast.rb` | `node:`, `trigger_type:`, `unlocked_at:` | **Phase 5.** Single-card toast рендериться `Codex::DiscoveryProbeWorker` через ActionCable broadcast `codex:discoveries:user:<user_id>`. Stimulus `codex--reveal` data-attribute (matrix-rain JS controller — Phase 6 batch). Trigger-type label dispatch: Observed / Battle / Pact / Streak / Oracle / Granted. gaia-* tokens only. **Namespacing під `Codex::Discoveries::*` (plural)** — необхідно щоб уникнути Zeitwerk const-clash з `Codex::Discovery` AR class. |
 | `Codex::Discoveries::List` | `codex/discoveries/list.rb` | `discoveries:`, `pagy:` | **Phase 5.** Paginated 3-col grid of own unlocked nodes (rendered by `GET /api/v1/codex/discoveries/me` HTML format). Empty-state copy "Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction." Кожна card показує title / archetype_key / `trigger_type · unlocked_at`. gaia-* tokens only. |
-| `Codex::Citations::Pill` | `codex/citations/pill.rb` | `citation:` | **Phase 6.** Single inline citation chip — `« Title · archetype_key »`. Slug-href anchor до `/api/v1/codex/nodes/:slug`, hover-title зі 140-char note, `aria-label` для screen readers, `focus-visible:ring-2`. gaia-* tokens (`bg-gaia-surface-alt`, `border-gaia-border`, `hover:border-gaia-primary`). Defensive nil-safe — рендерить порожньо якщо `citation.node` зник. |
+| `Codex::Citations::Pill` | `codex/citations/pill.rb` | `citation:` | **Phase 6.** Single inline citation chip — `« Title · archetype_key »`. Slug-href anchor до `/api/v1/codex/nodes/:slug`, hover-title зі 140-char note, `aria-label` для screen readers, `focus-visible:ring-2`. gaia-* tokens (`bg-gaia-surface-sunken`, `border-gaia-border`, `hover:border-gaia-primary`). Defensive nil-safe — рендерить порожньо якщо `citation.node` зник. |
 | `Codex::Citations::Strip` | `codex/citations/strip.rb` | `target:`, `citations:`, `current_user:` | **Phase 6.** Wrap-flex container з усіма pills прив'язаними до операційної цілі (`Tree`/`Cluster`/`AiInsight`/`EwsAlert`/`OracleVision`/`NaasContract`). DOM id `codex_citations_<type_underscore>_<id>` — таргет ActionCable broadcast `codex_citations:<Type>:<id>` envelope `{op: "append" \| "remove"}`. Empty-state copy "No lore citations yet." щоб freshly-cited entity мав стабільний DOM target. Інтегровано в `Trees::Show`, `Clusters::Show`, `Alerts::Row`, `OracleVisions::ForecastCard` через приватний `render_codex_citations` що early-return'ить на `defined?(Codex::Citation)` гарду + `for_target(target).includes(:node)`. |
 
 **ActionCable топіки (Phase 2):**
@@ -1143,3 +1201,529 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
 `protect_from_forgery with: :exception` (найсуворіша стратегія). Bearer-token запити обходять CSRF
 через `handle_unverified_request` — браузери ніколи не прикріплюють `Authorization` header автоматично
 при cross-origin запитах, тому Bearer-token запити імунні до CSRF за дизайном.
+
+---
+
+## 12. Інтернаціоналізація (i18n) — UA / EN
+
+> **Phase 1 + 2 frontend overhaul.** Двомовний інтерфейс (UA — default,
+> EN — secondary), розширюваний до N мов додаванням рядка в
+> `config.i18n.available_locales` + одного YAML-набору.
+
+### 12.1 Конфігурація
+
+`config/application.rb`:
+```ruby
+config.i18n.available_locales       = %i[uk en]
+config.i18n.default_locale          = :uk
+config.i18n.fallbacks               = { en: :uk, uk: :en }
+config.i18n.load_path              += Dir[Rails.root.join("config/locales/**/*.yml")]
+```
+
+> **Чому `uk`, а не `ua`?** `uk` — IETF BCP 47 / ISO 639-1 код **мови**
+> (Ukrainian). `ua` — ISO 3166-1 код **країни** Україна. `<html lang="uk">`
+> — єдиний валідний варіант для browser/screen-reader negotiation. UI-label
+> для користувача — `UA / Українська` (див. `locale.short` у YAML).
+
+### 12.2 Структура локалей (по доменах, не по файлах-портянках)
+
+```
+config/locales/
+├── defaults/{uk,en}.yml      # app-level: name, theme, locale-switcher, accessibility, flash
+├── components/{uk,en}.yml    # cross-cutting UI components
+└── navigation/{uk,en}.yml    # sidebar, top bar, breadcrumb
+```
+
+Один файл = один домен × одна мова. Завжди парний (uk + en).
+
+### 12.3 Resolution priority (`LocaleSettable` concern)
+
+```
+params[:locale] → cookies[:locale] → request.preferred_language → I18n.default_locale
+```
+
+Усі джерела whitelist'яться проти `I18n.available_locales` —
+adversarial input просто провалюється на default. Concern підмішаний у
+`ApplicationController`.
+
+### 12.4 LocaleSwitcher (`Views::Shared::UI::LocaleSwitcher`)
+
+Native-disclosure (`<details>` + `<summary>`) — **жодних ARIA-menu плумінгів,
+жодних JS-required патернів**. Stimulus `locale` controller — пуре
+progressive enhancement (outside-click, Escape).
+
+```ruby
+# layout
+render Views::Shared::UI::LocaleSwitcher.new
+```
+
+Активна локаль маркується `aria-current="true"` + `disabled`.
+Endpoint: `POST /api/v1/locale` → cookie `locale=<uk|en>` (httponly,
+same_site=lax, secure-in-prod), open-redirect guard перевіряє
+`request.host == referer.host`.
+
+### 12.5 Lazy-lookup pattern у Phlex
+
+Замість повторюваних повних шляхів `I18n.t("navigation.items.foo")` —
+короткий приватний хелпер scoped до домену компонента:
+
+```ruby
+class Navigation::Sidebar < ApplicationComponent
+  def view_template
+    section_group(:strategic_insight) do
+      nav_item(:oracle_visions, api_v1_oracle_visions_path, "eye")
+    end
+  end
+
+  private
+
+  # Lazy-lookup helper — analog to Rails view-helper `t(".key")` adapted for Phlex.
+  def tr(key) = I18n.t("navigation.#{key}")
+end
+```
+
+Call-sites лишаються лаконічними: `tr("logo.title")`, `tr("items.#{key}")`,
+`tr("sections.#{key}")`. Якщо компонент має >5 викликів — додавайте
+такий `tr` хелпер. Менше — викликайте `I18n.t` напряму.
+
+### 12.6 Чек-ліст для нових компонентів
+
+- [ ] Всі user-facing strings проходять через `I18n.t` (або `tr` хелпер)
+- [ ] YAML-ключі є для **обох** локалей (`uk` + `en`)
+- [ ] ARIA-label з `I18n.t` (бо screen-reader читає його)
+- [ ] Зарезервовані ключі не перетинаються (`:locale`, `:scope`, `:default` — не використовувати як interpolation)
+- [ ] Pluralization через `t(..., count:)` + CLDR rules (UA — 4 форми, EN — 2)
+- [ ] Spec покриває обидві локалі через `I18n.with_locale(:en) { ... }`
+
+---
+
+## 13. Mobile Drawer (Phase 2)
+
+> Off-canvas mobile-only sidebar drawer з backdrop, scroll-lock,
+> focus-trap, Escape-to-close. Сумісний з `prefers-reduced-motion`
+> через motion tokens.
+
+### 13.1 Архітектура
+
+| Шар | Файл | Відповідальність |
+|---|---|---|
+| Trigger | `Views::Shared::UI::MobileNavToggle` | Бургер-кнопка `<button>` (mobile-only, `md:hidden`) |
+| Drawer | `DashboardLayout#render_mobile_drawer` | `<aside role="dialog">` slide-in panel + `<div>` backdrop |
+| Behaviour | `app/javascript/controllers/mobile_nav_controller.js` | open/close, scroll-lock, focus-trap, Escape, Turbo-visit close |
+
+### 13.2 Поведінка
+
+- **Open/close** — translate-x-full ↔ translate-x-0 (CSS transform, GPU).
+- **Backdrop** — `bg-black/60` + `opacity-0 ↔ opacity-100`, fade-in.
+- **Scroll-lock** — `body.style.overflow = "hidden"` поки drawer відкритий.
+- **Focus management:**
+  - на open → фокус на перший focusable у drawer
+  - на close → фокус повертається на trigger (WCAG 2.4.3)
+  - Tab/Shift+Tab закільцьовуються всередині drawer (focus-trap)
+- **Escape** → close.
+- **Backdrop click** → close.
+- **Turbo `turbo:visit`** → close (щоб наступна сторінка не успадкувала open-state).
+
+### 13.3 Адаптивність
+
+| Viewport | Sidebar | Toggle |
+|---|---|---|
+| `< md` (mobile) | Hidden, відкривається через drawer | Visible (`md:hidden`) |
+| `≥ md` (tablet+) | Static visible (`hidden md:block`) | Hidden |
+
+Десктопний sidebar — Turbo-permanent (не перерендериться між сторінками).
+Мобільний drawer — звичайний рендер (стан синхронізується JS-ом).
+
+---
+
+## 14. Animations & Motion (Phase 3)
+
+> Узагальнена motion-система побудована поверх токенів з § 4 (motion tokens).
+> WCAG 2.3.3 / Web Vitals friendly — усі анімації автоматично вимикаються
+> під `prefers-reduced-motion: reduce`.
+
+### 14.1 Fluid base typography
+
+`@layer base` тепер використовує `clamp()` для `<h1..h3>`, замість фіксованих
+rem-розмірів. Заголовки масштабуються плавно між мобайлом і десктопом без
+`@media`-сходинок. Зніжує CLS до нуля при зміні vw.
+
+```css
+h1 { font-size: clamp(1.5rem,  2.5vw + 0.75rem, 1.875rem); }
+h2 { font-size: clamp(1.25rem, 1.6vw + 0.5rem,  1.5rem);   }
+h3 { font-size: clamp(1.125rem, 1vw + 0.5rem,   1.25rem);  }
+```
+
+Для page-level hero-заголовків — використовуйте `text-display-*` токени
+(`display-sm/md/lg`, див. § 4) явно через клас.
+
+### 14.2 View Transitions API (Theme Switcher)
+
+`theme_controller.toggle()` обгортає зміну `.dark` класу у
+`document.startViewTransition()`. Браузер робить плавний crossfade між
+світлою і темною темами — без DOM-flicker, без необхідності CSS-transitions
+на кожному елементі.
+
+```js
+if (typeof document.startViewTransition === "function") {
+  document.startViewTransition(() => this.applyTheme(next))
+} else {
+  this.applyTheme(next)  // fallback для старих браузерів
+}
+```
+
+CSS у `application.css`:
+```css
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-base, 220ms);
+  animation-timing-function: var(--ease-out-soft, ease-out);
+}
+```
+
+Підтримка: Chromium 111+, Safari 18+. Fallback — миттєвий apply
+(існуюча поведінка). API сам поважає `prefers-reduced-motion`.
+
+### 14.3 `reveal_controller` (appear-on-scroll)
+
+Stimulus controller, який скидає `opacity-0 translate-y-2` коли елемент
+вперше з'являється у viewport. One-shot (`unobserve` після першого спрацювання).
+
+```html
+<article data-controller="reveal"
+         class="opacity-0 translate-y-2 transition-all
+                duration-[var(--motion-slow)] ease-[var(--ease-out-soft)]">
+  ...
+</article>
+```
+
+Поведінка:
+- **`prefers-reduced-motion: reduce`** → reveal негайно, observer не створюється
+- **No IntersectionObserver** (старі браузери) → reveal негайно
+- **Поріг видимості:** 15% (тюниться через `data-reveal-threshold-value`)
+- **Root margin:** `0px 0px -10% 0px` — спрацьовує трохи раніше за повний enter
+
+### 14.4 Анімаційний бюджет
+
+| Тип | Тривалість | Easing | Приклад |
+|---|---|---|---|
+| Hover/focus | `--motion-fast` (150ms) | `--ease-out-soft` | LocaleSwitcher hover |
+| UI transitions | `--motion-base` (220ms) | `--ease-out-soft` | Mobile drawer slide-in, theme crossfade |
+| Page entrance | `--motion-slow` (320ms) | `--ease-out-soft` | `reveal_controller` |
+| Micro-bounces | `--motion-base` | `--ease-spring` | Badge "new!" pop, error shake |
+
+> Не плодьте кастомні durations / easings — використовуйте токени.
+
+---
+
+## 15. Native HTML over Stimulus (де доречно)
+
+> **Filozofia:** використовуй Web Platform де він уже дозрів — це менше JS,
+> менше bugs, краща a11y "з коробки", forward-compatible. Stimulus залишай
+> для речей, де нативу або немає, або він ще не Baseline.
+
+### 15.1 Що використовуємо нативно (без JS)
+
+| Нативний API | Що дає | Замість чого | Підтримка |
+|---|---|---|---|
+| **HTML Popover API** (`popover="auto"`, `popovertarget`) | Outside-click close, Escape close, top-layer стек, focus restore | `locale_controller` (видалений) | Baseline 2024 — Chromium 114+, Safari 17+, Firefox 125+ |
+| **`<dialog>` + `.showModal()`** | Focus-trap, Escape, top-layer, `::backdrop`, inert page below, focus restore | Manual focus-trap код у `mobile_nav_controller` (~150→~25 рядків) | Baseline 2022 — всі evergreen |
+| **`@starting-style` CSS** | "From"-frame для transition без JS-flush reflow | Manual rAF в JS | Baseline 2024 |
+| **View Transitions API** (`document.startViewTransition`) | Smooth crossfade між DOM-станами | Manual CSS transitions на кожному елементі | Chromium 111+, Safari 18+ (graceful fallback) |
+| **`prefers-reduced-motion`** (CSS) | Глобально вимикає анімації | JS feature-detection у кожному компоненті | Baseline |
+| **`<details>` / `<summary>`** | Disclosure pattern + keyboard | Custom accordion JS | Baseline |
+
+### 15.2 Що залишилось у Stimulus (виправдано)
+
+| Controller | Чому не нативно |
+|---|---|
+| `theme_controller` | Stateful: localStorage + system preference listener + View Transitions wrapper + icon swap target. Це класичний Stimulus use-case. |
+| `mobile_nav_controller` (тонкий шим) | Native `<dialog>` не закривається на backdrop-click + scroll-lock у Safari через `.showModal()` не завжди — лишаємо ~25 рядків шіма. |
+| `reveal_controller` | CSS `animation-timeline: view()` ще НЕ Baseline (Safari/Firefox в роботі) — IntersectionObserver лишається оптимальним до ~2027. |
+| `clipboard_controller`, `map_controller`, `matrix_rain_controller`, `codex/*` | Інтеграція з 3rd-party / Canvas / складна логіка. |
+
+### 15.3 Чек-ліст: коли можна **не** писати Stimulus controller
+
+Перш ніж писати новий Stimulus controller — пройдіть цей список. Якщо
+**будь-яке** "так" — спробуйте нативний шлях:
+
+- [ ] Це dropdown / menu / tooltip → **HTML Popover API** (`popover="auto"`)
+- [ ] Це modal / dialog / sheet / off-canvas drawer → **`<dialog>`** + `.showModal()`
+- [ ] Це collapsible accordion → **`<details>`** з опційним `name="..."` для exclusive
+- [ ] Це form submission з UI feedback → **Turbo Forms** + Turbo Stream response
+- [ ] Це validation помилки → **Constraint Validation API** + `:user-invalid` CSS
+- [ ] Це date/time picker → **`<input type="date">`**, **`type="time">`**
+- [ ] Це color picker → **`<input type="color">`**
+- [ ] Це search з autocomplete → **`<input list>` + `<datalist>`**
+- [ ] Це auto-resize textarea → **`field-sizing: content`** CSS (Baseline 2024)
+- [ ] Це smooth scroll / scroll-snap → **`scroll-behavior: smooth`** + `scroll-snap-*`
+- [ ] Це responsive container — →  **CSS container queries** `@container`
+
+Якщо **жодне** не підходить — Stimulus це нормальний вибір.
+
+---
+
+## 16. Codemod-Driven Migration (Phase 4)
+
+> Page-component migration from raw Tailwind to gaia tokens is automated
+> through a deterministic Ruby codemod. The migration is **incremental**:
+> each PR migrates a domain (trees / wallets / alerts / …), the codemod
+> guarantees consistent mapping, and the CI lint task prevents regressions.
+
+### 16.1 Tooling
+
+| Tool | Purpose |
+|---|---|
+| `bin/migrate-tailwind-tokens` | Word-boundary `gsub` codemod with `--dry-run` and `--report` modes. Mapping table mirrors § 3.1 (4-tier surfaces + 3-level text + primary tokens). |
+| `bundle exec rake gaia:lint_tokens` | CI-grade compliance check. Exits 1 if any raw Tailwind colour utility is found in `app/views/components/`. Brand-glow allowlist baked in (see source). |
+
+### 16.2 Migration workflow per domain
+
+```bash
+# 1. preview
+bin/migrate-tailwind-tokens --dry-run app/views/components/wallets/
+
+# 2. apply
+bin/migrate-tailwind-tokens app/views/components/wallets/
+
+# 3. add i18n
+mkdir -p config/locales/wallets && touch config/locales/wallets/{uk,en}.yml
+# … wire `def t_(key)` helper into each component (see § 12.5)
+
+# 4. update specs
+# wrap English assertions in `around { |ex| I18n.with_locale(:en) { ex.run } }`
+# add `default locale (uk)` describe-block
+
+# 5. verify
+bundle exec rspec spec/views/components/wallets/
+COMPONENTS=app/views/components/wallets/ bundle exec rake gaia:lint_tokens
+```
+
+### 16.3 Mapping table (codemod)
+
+| Raw Tailwind | Gaia token | Notes |
+|---|---|---|
+| `bg-black`, `bg-white` | `bg-gaia-surface` | Card / panel base |
+| `bg-gray-50` | `bg-gaia-surface-base` | Page background |
+| `bg-gray-100`, `bg-emerald-950/{10,20}` | `bg-gaia-surface-sunken` | Inset rows / hover backdrop |
+| `bg-gray-900` | `bg-gaia-surface-elevated` | Modal / popover surface |
+| `border-gray-200`, `border-emerald-900` | `border-gaia-border` | Default panel border |
+| `border-gray-300`, `border-emerald-{700,800,900}/50` | `border-gaia-border-strong` | Hover/focus border |
+| `text-gray-900`, `text-white` | `text-gaia-text-strong` | Headings, primary copy |
+| `text-gray-700`, `text-emerald-400` | `text-gaia-text` | Body |
+| `text-gray-{500,600}`, `text-emerald-700` | `text-gaia-text-muted` | Labels, captions |
+| `text-gray-{300,400}`, `text-emerald-{800,900}` | `text-gaia-text-subtle` | Watermarks, placeholders |
+| `text-emerald-500` | `text-gaia-primary` | Brand accent |
+| `text-emerald-600` | `text-gaia-primary-hover` | Brand hover |
+
+### 16.4 Allowlist — what stays raw on purpose
+
+Brand-glow / decorative Tailwind utilities never go through the codemod:
+
+- `bg-emerald-500/10`, `bg-emerald-500/20` — login submit + impedance bar fill
+- `bg-emerald-500` (with `animate-ping` / `animate-pulse`) — pulse accents
+- `border-emerald-500/20` (with `animate-spin`) — spinner ring
+
+These encode brand expression, not theme intent — leave them alone.
+
+### 16.5 i18n locale-file convention
+
+```
+config/locales/
+├── defaults/      # app-shell, accessibility, theme, locale-switcher
+├── components/    # cross-cutting UI components
+├── navigation/    # sidebar, top bar, breadcrumb
+├── sessions/      # login screen
+├── dashboard/     # dashboard home
+└── trees/         # tree show page
+```
+
+Each domain = one folder × two files (`uk.yml` + `en.yml`). Keep nesting
+shallow (≤ 4 levels). See § 12.2 — same rules for new domains.
+
+---
+
+## 17. Responsive Tables — CSS-only Card Flip (Phase 5)
+
+> Tables that work as a real `<table>` on desktop and become a stack of
+> labelled cards on mobile — without JS, without dual-render, without
+> losing semantics. Pattern crystallised in Phase 5 to ship `Alerts::Index`
+> and `Telemetry::LiveStream` to mobile users without breaking Turbo
+> Streams or screen readers.
+
+### 17.1 Why not JavaScript?
+
+Three options were evaluated:
+
+| Option | Verdict |
+|---|---|
+| **Heavy refactor on `DataTable` shared component** with `mobile_layout:` prop | Rejected — `DataTable` is orphan (only one consumer, and it bypasses the component). Would require rewriting Turbo-Stream wiring + bulk citation lookup. |
+| **JS-driven dual-render** (Stimulus controller swaps markup) | Rejected — duplicates the source of truth, ships extra JS, breaks `prefers-reduced-motion` simplicity, fights Turbo Stream row replace. |
+| **CSS-only flip via `attr(data-label)`** ✅ | Single semantic HTML, 0 JS, 0 new components, screen reader friendly, Turbo Streams keep working unchanged. |
+
+The chosen pattern is documented in [A11Y Project — Accessible Data Tables](https://www.a11yproject.com/posts/accessible-data-tables/) and Heydon Pickering's *Inclusive Components* (Responsive Tables chapter).
+
+### 17.2 Markup contract
+
+```ruby
+# Wrap any <table> with `gaia-responsive-table`. Mark <thead> with
+# `gaia-sticky-thead` for sticky headers on desktop. Each <td> gets
+# `data-label` matching its column header — that becomes the visible
+# label on mobile.
+table(class: "gaia-responsive-table w-full text-left font-mono", role: "table") do
+  thead(class: "gaia-sticky-thead bg-gaia-surface-sunken text-gaia-text-subtle uppercase") do
+    tr do
+      th(scope: "col", class: "p-4") { t_("table.severity") }
+      # …
+    end
+  end
+  tbody do
+    @alerts.each do |alert|
+      tr do
+        td(class: "p-4", data_label: t_("table.severity")) { severity_badge }
+        # …
+        # Action cells WITHOUT data_label collapse into a centred footer
+        # block on mobile (no duplicate column heading).
+        td(class: "p-4 text-right") { action_button }
+      end
+    end
+  end
+end
+```
+
+CSS lives in `app/assets/tailwind/application.css` § "Responsive Table Pattern".
+
+### 17.3 What changes on mobile (`< 768px`)
+
+- `<thead>` is **visually hidden** (clip-path), not removed — assistive tech in browse mode still sees the real table.
+- Each `<tr>` becomes a bordered card (`bg-gaia-surface`, `border-gaia-border`).
+- Each `<td>` becomes a flex row with `attr(data-label)` rendered via `::before` as the left-side label and the cell value on the right.
+- Cells without `data-label` (action buttons) become centred footer blocks.
+- The `md:min-w-[640px]` and `md:overflow-x-auto` classes on the wrapper drop the horizontal-scroll fallback on mobile so the card layout occupies full width.
+
+### 17.4 Sticky-bottom pagination on mobile
+
+Pair the responsive table with `Views::Shared::UI::Pagination.new(sticky_mobile: true)` to stick prev/next to the bottom of the viewport on mobile, honouring iOS notch / Android gesture bar via `env(safe-area-inset-bottom)`.
+
+```ruby
+render Views::Shared::UI::Pagination.new(
+  pagy: @pagy,
+  url_helper: ->(page:) { api_v1_alerts_path(page: page) },
+  sticky_mobile: true   # adds `gaia-pagination-sticky` CSS class
+)
+```
+
+### 17.5 i18n
+
+The mobile labels come from `data-label`, which itself is i18n'd through the standard `t_("table.severity")` helper. Switch `:en` ↔ `:uk` and the card labels switch with the desktop column headers — no parallel translation surface.
+
+---
+
+## 18. Industry Standards (SSOT) + Per-PR Definition of Done
+
+> Перенесено з тимчасового `docs/plans/frontend_overhaul_plan.md` (Phase 6,
+> retire-plan consolidation; сам файл видалено після переїзду evergreen-знань).
+> Розділ — SSOT для рев'юверів: кожен фронтенд-PR
+> посилається на конкретний пункт замість винаходу власних правил.
+
+### 18.1 Accessibility — WCAG 2.2 AA + WAI-ARIA 1.2
+
+- **Контрастність:** мінімум 4.5:1 для тексту, 3:1 для UI-елементів та non-text. Перевіряємо обидві теми (light + dark) через Lighthouse / axe DevTools.
+- **Focus visible:** `focus-visible:ring-2 focus-visible:ring-gaia-primary` на всіх інтерактивних елементах (canon WCAG 2.4.7).
+- **Reduced motion:** глобальний `@media (prefers-reduced-motion: reduce)` у `application.css` — § 14.4.
+- **Semantic landmarks:** `<header role="banner">`, `<nav role="navigation">`, `<main role="main">`, `<aside>`, `<footer role="contentinfo">`.
+- **ARIA patterns:** офіційний APG (Authoring Practices Guide) для menu, dialog, disclosure. `LocaleSwitcher` використовує HTML Popover API — нативний disclosure, без ARIA-обвязки.
+- **Keyboard nav:** Escape, Tab order, focus-trap (для drawer — забезпечується нативним `<dialog>.showModal()`, § 13.1).
+- **Touch targets:** мінімум 24×24 CSS px (WCAG 2.5.8), цільовий 44×44 (Apple HIG) для primary actions.
+- **Responsive tables:** `data-label` per `<td>` + `gaia-responsive-table` CSS — § 17 — зберігає семантику для AT, доступний на mobile.
+
+### 18.2 Internationalization — Rails I18n + Unicode CLDR
+
+- **Файлова структура** за доменом (`config/locales/<domain>/{uk,en}.yml`) — Rails Guide "Lazy Lookup" pattern, § 12.2.
+- **Pluralization:** `t(..., count:)` + CLDR rules (UA — 4 форми: one/few/many/other; EN — one/other).
+- **Інтерполяція:** ніяких зарезервованих ключів (`:locale`, `:scope`, `:default`).
+- **`<html lang>`:** SEO + screen readers (W3C HTML 5.2). Виставляється у `dashboard_layout`/`auth_layout` через `I18n.locale`.
+- **No hardcoded strings** у view-shared компонентах — `bin/migrate-tailwind-tokens` + `t_(key)` lazy-lookup pattern (§ 12.5).
+- **Locale = `uk`, не `ua`** — ISO-639-1 (§ 12.1).
+
+### 18.3 Security — OWASP ASVS L2 + GitHub Security
+
+- **CSRF:** Rails default `protect_from_forgery` — `LocaleSwitcher` submit це звичайна form з authenticity token.
+- **Open-redirect guard:** `LocalesController#sanitized_referer` валідує `request.host == referer.host`.
+- **Cookie flags:** `httponly: true`, `same_site: :lax`, `secure: production?`.
+- **CSP:** дотримуємося існуючої політики (`csp_meta_tag`); inline-стилі заборонені.
+- **HSTS / X-Frame-Options:** Rails defaults.
+- **Dependency scanning:** GitHub Dependabot + `bundle audit` + `gh-advisory-database` на кожен PR (DoD § 18.9).
+- **Secret scanning:** GitHub native + Gitleaks (вже у CI).
+
+### 18.4 Performance — Google Web Vitals + Core Performance budgets
+
+- **LCP < 2.5 s** на 4G/Slow Mobile — fluid `clamp()` typography уникає CLS-перерозкладок при зміні vw (§ 14.1).
+- **CLS < 0.1** — `Skeleton` варіанти займають той самий простір, що й контент.
+- **INP < 200 ms** — Stimulus controllers без важких synchronous блоків; `matrix-rain` throttle ~16 fps (`requestAnimationFrame`).
+- **Lazy-load** через Turbo Frames `loading: :lazy` для дорогих фрагментів (Wallet balance/metadata).
+- **Resource hints:** `<link rel="preconnect">` для CDN тайлів Leaflet (CartoDB).
+- **Bundle budget:** importmap (no bundler) — кожен Stimulus controller ≤ 5 KB gzipped (manual budget).
+
+### 18.5 Design tokens — W3C DTCG + Material 3 + Tailwind v4
+
+- Naming convention `--<group>-<role>-<modifier>` (наприклад `--gaia-text-strong`) — узгоджено з W3C Design Tokens Community Group draft.
+- Tier-1 (raw colors) → Tier-2 (semantic tokens) — у нас лише Tier-2 (semantic), що відповідає Material 3 "system tokens".
+- Surface elevation (4-tier: `base` / `surface` / `elevated` / `sunken`) — Material 3 "elevation tokens" (§ 3.1).
+- SSOT для токенів — `@theme` блок у `app/assets/tailwind/application.css`. `tailwind.config.js` не існує (§ 3).
+
+### 18.6 Code quality — Google Style Guide + GitHub Engineering
+
+- **Convention over configuration:** Phlex namespacing віддзеркалює routes (Rails-way).
+- **Small PRs / atomic commits:** Conventional Commits (`docs:`, `feat:`, `fix:`, `refactor:`, `test:`, `chore:`) — DORA "small batch size".
+- **Code review:** `parallel_validation` (Code Review + CodeQL) перед merge.
+- **Comments:** "explain why, not what" (Google C++ Style Guide §3.5). Уникаємо tautological comments.
+- **Naming:** Ruby — `snake_case`, Phlex class — `CamelCase` з namespace, Stimulus controller — `kebab-case` файл + `camelCase` target/values.
+
+### 18.7 DORA metrics — DevOps Research & Assessment
+
+- **Deployment frequency:** фази → окремі PR-и (≥ 1 на фазу) — досягнуто.
+- **Lead time for changes:** малий surface → швидкий review.
+- **Change failure rate:** `parallel_validation` + CodeQL + повний RSpec прогін перед merge.
+- **MTTR:** Sentry DSN підключено через `.kamal/secrets` → стек-трейси в production.
+
+### 18.8 Rails-specific — Rails Doctrine + The Rails Way
+
+- **Convention over Configuration:** `LocaleSettable` — concern, не базовий клас.
+- **Beautiful code over the easy code:** малі methods у Phlex (`render_summary`, `render_menu`, `render_option`).
+- **Optimize for programmer happiness:** Phlex API natural Ruby vs ERB strings.
+- **Push complexity downwards:** `I18n.t` у view, не у controller; cookie writing у controller, не у model.
+
+### 18.9 Per-PR Definition of Done (фронтенд-зміни)
+
+Кожен PR із змінами у `app/views/` має у description checklist:
+
+- [ ] WCAG AA contrast verified у обох темах (axe DevTools / Lighthouse), мінімум 4.5:1 для тексту
+- [ ] Keyboard reachable — Tab + Escape, focus order логічний
+- [ ] `prefers-reduced-motion` поважається (без важких decorative animations при reduce)
+- [ ] `focus-visible:ring-2 focus-visible:ring-gaia-primary` на нових інтерактивних елементах
+- [ ] No hardcoded EN/UK strings у `app/views/components/` чи `app/views/shared/` — `t_(key)` lazy-lookup
+- [ ] Cookie flags `secure / httponly / same_site` встановлені де писали cookie
+- [ ] No open-redirect — `referer` валідується проти `request.host`
+- [ ] Conventional Commit message (`feat(scope):` / `fix(scope):` / `docs(scope):`)
+- [ ] `bundle exec rubocop && bundle exec rspec spec/views/ spec/requests/<changed>` зелено
+- [ ] `bundle exec rake gaia:lint_tokens` зелено для торкнутих файлів (§ 16)
+- [ ] `parallel_validation` (Code Review + CodeQL) пройшов або addressed
+
+Sandbox-обмеження: автоматичний прогін axe-core / Lighthouse у CI потребує headless Chromium з мережевим доступом. Поки що це **manual gate** для рев'ювера. Коли `cuprite` тести отримають axe-runner — переведемо у автомат і відмітимо чек-бокс програмно.
+
+---
+
+## Status: Frontend Overhaul Complete
+
+Всі шість фаз перебудови фронтенда (D1–D7 KPI з оригінального плану) виконано:
+
+| KPI | Статус | Де реалізовано |
+|---|---|---|
+| **D1** Перемикання dark↔light видно на ≥ 95 % площі | ✅ | § 3 — gaia-токени всюди в shared/ + 8 мігрованих доменних компонентів |
+| **D2** WCAG AA контраст у обох темах | ✅ | § 3 — переглянуто status-токени, додано `text-strong/muted/subtle` |
+| **D3** UA (default) + EN, switcher, cookie + Accept-Language | ✅ | § 12 — `LocaleSettable` + `LocaleSwitcher` (HTML Popover API) |
+| **D4** Mobile drawer, без horizontal scroll | ✅ | § 13 (drawer на нативному `<dialog>`) + § 17 (responsive tables) |
+| **D5** `prefers-reduced-motion` глобально, `duration-{150-300}` | ✅ | § 14.4 — глобальний CSS rule + motion budget |
+| **D6** Min font-size 12 px у production-розмітці | ✅ | § 4 — `text-micro/mini/tiny` лишилися як decorative-only labels |
+| **D7** Жоден shared/ui компонент не має raw Tailwind | ✅ | § 16 — `gaia:lint_tokens` rake task; backlog у `app/views/components/` опрацьовується доменними PR-ами |

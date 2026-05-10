@@ -1,0 +1,23 @@
+uk:
+  app:
+    name: Silken Net
+    tagline: Центральна Цитадель Управління
+  locale:
+    name: Українська
+    short: UA
+    switcher_label: Мова
+    available:
+      uk: Українська
+      en: English
+  theme:
+    toggle_label: Перемкнути світлу / темну тему
+    light: Світла
+    dark: Темна
+    system: Системна
+  accessibility:
+    skip_to_content: Перейти до основного контенту
+    open_navigation: Відкрити навігацію
+    close_navigation: Закрити навігацію
+  flash:
+    locale_changed: "Мову перемкнено на %{lang}"
+    unsupported_locale: "Непідтримувана мова"

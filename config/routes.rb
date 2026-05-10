@@ -18,6 +18,10 @@ Rails.application.routes.draw do
       post   "login",  to: "sessions#create"
       delete "logout", to: "sessions#destroy", as: :logout
 
+      # 🌐 LOCALE SWITCHER — persists UI language in a permanent cookie.
+      # Public (unauthenticated visitors on /login also need to switch).
+      post "locale", to: "locales#update", as: :locale
+
       # M2M Auth (Machine-to-Machine — Gateway/Device authentication via Ed25519)
       post "auth/m2m_token", to: "m2m_auth#create", as: :m2m_token
       post "auth/m2m_token/refresh", to: "m2m_auth#refresh", as: :m2m_token_refresh

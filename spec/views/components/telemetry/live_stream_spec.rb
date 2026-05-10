@@ -3,6 +3,9 @@
 require "rails_helper"
 
 RSpec.describe Telemetry::LiveStream do
+  # Component is i18n-aware. Existing assertions match the English copy.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   describe "rendering" do
     let(:html) { render_component }
 

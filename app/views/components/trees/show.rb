@@ -45,8 +45,12 @@ module Trees
 
     private
 
+    # Lazy-lookup helper scoped to the `trees.show.*` namespace.
+    def t_(key) = I18n.t("trees.show.#{key}")
+
+
     def render_chronicle_frame
-      div(class: "p-8 border border-emerald-900 bg-black/40") do
+      div(class: "p-8 border border-gaia-border bg-black/40") do
         turbo_frame_tag("tree_chronicle", src: chronicle_api_v1_tree_path(@tree), loading: :lazy) do
           render Views::Shared::UI::Skeleton.new(variant: :table)
         end
@@ -54,22 +58,22 @@ module Trees
     end
 
     def render_header
-      div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
+      div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-gaia-border bg-gaia-surface shadow-2xl relative overflow-hidden") do
         # Декоративний фон
         div(class: "absolute top-0 right-0 p-4 text-[100px] font-bold text-emerald-900/5 select-none") { "SOLDIER" }
 
         div do
-          h2(class: "text-4xl font-extralight tracking-tighter text-emerald-400") { @tree.did }
+          h2(class: "text-4xl font-extralight tracking-tighter text-gaia-text") { @tree.did }
           div(class: "flex items-center gap-3 mt-2") do
             span(class: tokens("text-tiny px-2 py-0.5 border font-mono uppercase tracking-widest", status_color_class)) { @tree.status }
-            span(class: "text-tiny text-emerald-900 font-mono") { "Family: #{@family&.name || 'Unknown'}" }
+            span(class: "text-tiny text-gaia-text-subtle font-mono") { I18n.t("trees.show.labels.family", name: @family&.name || t_("labels.family_unknown")) }
           end
           render_codex_citations
         end
 
         div(class: "mt-6 md:mt-0 flex items-center gap-12") do
           div(class: "text-right") do
-            p(class: "text-mini text-gray-600 uppercase tracking-widest") { "Uplink State" }
+            p(class: "text-mini text-gaia-text-muted uppercase tracking-widest") { t_("labels.uplink_state") }
             p(class: "text-sm font-mono text-emerald-100") { @latest_log&.created_at&.strftime("%H:%M:%S // %d.%m.%y") || "SILENT" }
           end
           div(class: tokens("h-4 w-4 rounded-sm rotate-45", status_led_class))
@@ -92,15 +96,15 @@ module Trees
     end
 
     def render_biometric_panel
-      div(class: "p-8 border border-emerald-900 bg-zinc-950") do
-        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-10") { "Live Biometric Matrix" }
+      div(class: "p-8 border border-gaia-border bg-zinc-950") do
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-10") { t_("headings.biometrics") }
 
         div(class: "grid grid-cols-1 md:grid-cols-2 gap-12 items-center") do
           div(class: "relative h-56 w-56 mx-auto") do
             render_radial_svg
             div(class: "absolute inset-0 flex flex-col items-center justify-center") do
-              span(class: "text-6xl font-extralight text-white") { @latest_log&.z_value || "---" }
-              span(class: "text-tiny text-emerald-800 font-mono uppercase") { "kΩ Impedance" }
+              span(class: "text-6xl font-extralight text-gaia-text-strong") { @latest_log&.z_value || "---" }
+              span(class: "text-tiny text-gaia-text-subtle font-mono uppercase") { "kΩ Impedance" }
             end
           end
 
@@ -115,24 +119,24 @@ module Trees
     end
 
     def render_impedance_history
-      div(class: "p-8 border border-emerald-900 bg-black/40") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Impedance Flux (Last 10 Cycles)" }
+      div(class: "p-8 border border-gaia-border bg-black/40") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t_("headings.impedance_flux") }
 
         # Візуалізація міні-графіка через висоту барів
-        div(class: "flex items-end gap-2 h-32 border-b border-emerald-900/30 pb-2") do
+        div(class: "flex items-end gap-2 h-32 border-b border-gaia-border pb-2") do
           @recent_logs.reverse_each do |log|
             baseline = @family&.baseline_impedance
             next unless baseline&.positive?
 
             height = [ (log.z_value.to_f / baseline * 100), 100 ].min
             div(
-              class: "flex-1 bg-emerald-500/20 border-t border-emerald-500 hover:bg-emerald-500 transition-all",
+              class: "flex-1 bg-emerald-500/20 border-t border-gaia-primary hover:bg-emerald-500 transition-all",
               style: "height: #{height}%",
               title: "#{log.z_value} kΩ at #{log.created_at.to_fs(:short)}"
             )
           end
         end
-        div(class: "flex justify-between mt-2 text-micro font-mono text-emerald-900 uppercase") do
+        div(class: "flex justify-between mt-2 text-micro font-mono text-gaia-text-subtle uppercase") do
           span { "T-10 Cycles" }
           span { "Real-time Sampling" }
           span { "Current" }
@@ -142,30 +146,30 @@ module Trees
 
     def render_maintenance_ledger
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Maintenance Rituals & Healing History" }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t_("headings.maintenance") }
 
-        div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
+        div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
           table(role: "table", class: "w-full text-left font-mono text-tiny") do
-            thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-micro") do
+            thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-micro") do
               tr do
-                th(scope: "col", class: "p-4") { "Technician" }
-                th(scope: "col", class: "p-4") { "Action" }
-                th(scope: "col", class: "p-4") { "Observations" }
-                th(scope: "col", class: "p-4 text-right") { "Timestamp" }
+                th(scope: "col", class: "p-4") { t_("table.technician") }
+                th(scope: "col", class: "p-4") { t_("table.action") }
+                th(scope: "col", class: "p-4") { t_("table.observations") }
+                th(scope: "col", class: "p-4 text-right") { t_("table.timestamp") }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
               if @maintenance_history.any?
                 @maintenance_history.each do |record|
-                  tr(class: "hover:bg-emerald-950/10 transition-colors") do
+                  tr(class: "hover:bg-gaia-surface-sunken transition-colors") do
                     td(class: "p-4 text-emerald-100") { record.user&.full_name || "Unknown" }
-                    td(class: "p-4 uppercase text-emerald-500") { record.action_type }
-                    td(class: "p-4 text-gray-500 italic") { record.notes&.truncate(50) || "—" }
-                    td(class: "p-4 text-right text-gray-600") { record.performed_at&.strftime("%d.%m.%y") || "—" }
+                    td(class: "p-4 uppercase text-gaia-primary") { record.action_type }
+                    td(class: "p-4 text-gaia-text-muted italic") { record.notes&.truncate(50) || "—" }
+                    td(class: "p-4 text-right text-gaia-text-muted") { record.performed_at&.strftime("%d.%m.%y") || "—" }
                   end
                 end
               else
-                tr { td(colspan: 4, class: "p-10 text-center text-emerald-900 uppercase tracking-widest") { "No physical interventions recorded" } }
+                tr { td(colspan: 4, class: "p-10 text-center text-gaia-text-subtle uppercase tracking-widest") { t_("table.empty") } }
               end
             end
           end
@@ -174,9 +178,9 @@ module Trees
     end
 
     def render_hardware_security_vault
-      div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
         div(class: "flex justify-between items-center") do
-          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Hardware Security Vault" }
+          h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t_("headings.hardware_vault") }
           span(class: "h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]")
         end
 
@@ -187,8 +191,8 @@ module Trees
           security_item("OTA Status", "Channel Encrypted")
         end
 
-        div(class: "pt-4 border-t border-emerald-900/30") do
-          button(class: "w-full py-2 border border-emerald-900 text-mini uppercase text-emerald-700 hover:border-emerald-500 hover:text-emerald-500 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Rotate hardware encryption key") do
+        div(class: "pt-4 border-t border-gaia-border") do
+          button(class: "w-full py-2 border border-gaia-border text-mini uppercase text-gaia-text-muted hover:border-gaia-primary hover:text-gaia-primary transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary", aria_label: t_("actions.rotate_key_aria")) do
             "Rotate Hardware Key →"
           end
         end
@@ -196,14 +200,14 @@ module Trees
     end
 
     def render_economic_panel
-      div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Economic Yield" }
+      div(class: "p-6 border border-gaia-border bg-emerald-950/5") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t_("headings.economic_yield") }
         div(class: "space-y-4") do
           div do
-            p(class: "text-mini text-gray-600 uppercase") { "Verified Balance" }
+            p(class: "text-mini text-gaia-text-muted uppercase") { t_("labels.verified_balance") }
             div(class: "flex items-baseline gap-2") do
-              span(class: "text-3xl font-light text-white") { @tree.wallet&.scc_balance || "0.0" }
-              span(class: "text-xs text-emerald-600 font-mono") { "SCC" }
+              span(class: "text-3xl font-light text-gaia-text-strong") { @tree.wallet&.scc_balance || "0.0" }
+              span(class: "text-xs text-gaia-primary-hover font-mono") { "SCC" }
             end
           end
           wallet_address = @tree.wallet&.crypto_public_address
@@ -214,8 +218,8 @@ module Trees
     end
 
     def render_metadata_panel
-      div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Deployment Matrix" }
+      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-4") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t_("headings.deployment_matrix") }
         div(class: "space-y-3 text-tiny font-mono") do
           meta_row("Cluster", @tree.cluster&.name)
           meta_row("Coordinates", "#{@tree.latitude}, #{@tree.longitude}")
@@ -223,9 +227,9 @@ module Trees
           a(
             href: "https://www.google.com/maps?q=#{@tree.latitude},#{@tree.longitude}",
             target: "_blank",
-            class: "block mt-4 text-center p-2 border border-emerald-800 text-emerald-600 hover:bg-emerald-900 hover:text-white transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+            class: "block mt-4 text-center p-2 border border-gaia-border-strong text-gaia-primary-hover hover:bg-gaia-surface-sunken hover:text-gaia-text-strong transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary",
             aria_label: "Locate tree node on Google Maps"
-          ) { "Locate Node →" }
+          ) { t_("actions.locate_node") }
         end
       end
     end
@@ -233,10 +237,10 @@ module Trees
     # --- HELPERS ---
 
     def metric_row(label, value, sub: nil, danger: false)
-      div(class: "flex justify-between items-end border-b border-emerald-900/30 pb-2") do
+      div(class: "flex justify-between items-end border-b border-gaia-border pb-2") do
         div do
-          p(class: "text-mini text-gray-600 uppercase") { label }
-          p(class: "text-micro text-emerald-900 font-mono") { sub } if sub
+          p(class: "text-mini text-gaia-text-muted uppercase") { label }
+          p(class: "text-micro text-gaia-text-subtle font-mono") { sub } if sub
         end
         span(class: tokens("text-lg font-mono", "text-red-500 animate-pulse": danger, "text-emerald-300": !danger)) { value }
       end
@@ -244,15 +248,15 @@ module Trees
 
     def security_item(label, value, full: nil)
       div do
-        p(class: "text-micro text-gray-600 uppercase mb-1") { label }
-        p(class: "text-emerald-500 truncate", title: full) { value }
+        p(class: "text-micro text-gaia-text-muted uppercase mb-1") { label }
+        p(class: "text-gaia-primary truncate", title: full) { value }
       end
     end
 
     def meta_row(label, value)
       div(class: "flex justify-between") do
-        span(class: "text-gray-600") { "#{label}:" }
-        span(class: "text-emerald-400") { value }
+        span(class: "text-gaia-text-muted") { "#{label}:" }
+        span(class: "text-gaia-text") { value }
       end
     end
 
@@ -275,7 +279,7 @@ module Trees
 
     def status_color_class
       case @tree.status
-      when "active" then "border-emerald-500 text-emerald-500"
+      when "active" then "border-gaia-primary text-gaia-primary"
       when "dormant" then "border-status-warning text-status-warning-text"
       else "border-red-800 text-red-800"
       end

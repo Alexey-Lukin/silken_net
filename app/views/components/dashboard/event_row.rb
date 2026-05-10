@@ -7,9 +7,9 @@ module Dashboard
     end
 
     def view_template
-      div(class: "flex items-start gap-4 border-l border-emerald-900/30 pl-4 py-1") do
+      div(class: "flex items-start gap-4 border-l border-gaia-border pl-4 py-1") do
         div(class: "flex flex-col flex-1 font-mono text-tiny") do
-          span(class: "text-emerald-900 text-micro mb-1") { time_ago_text }
+          span(class: "text-gaia-text-subtle text-micro mb-1") { time_ago_text }
           span(class: tokens("leading-relaxed", event_color)) { event_summary }
         end
       end
@@ -29,9 +29,9 @@ module Dashboard
     def event_color
       case @event
       when EwsAlert then "text-red-400"
-      when BlockchainTransaction then "text-emerald-400"
+      when BlockchainTransaction then "text-gaia-text"
       when MaintenanceRecord then "text-status-warning-text"
-      else "text-gray-400"
+      else "text-gaia-text-subtle"
       end
     end
 

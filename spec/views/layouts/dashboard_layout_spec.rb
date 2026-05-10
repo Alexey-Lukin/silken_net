@@ -77,8 +77,12 @@ RSpec.describe DashboardLayout do
   end
 
   describe "breadcrumb from path" do
-    it "renders Citadel as the root breadcrumb" do
-      expect(html).to include("Citadel")
+    it "renders the localized root breadcrumb (Цитадель за замовчуванням)" do
+      expect(html).to include("Цитадель")
+    end
+
+    it "renders the English root breadcrumb under :en locale" do
+      I18n.with_locale(:en) { expect(render_layout).to include("Citadel") }
     end
 
     it "renders path segments from current_path" do
@@ -148,19 +152,22 @@ RSpec.describe DashboardLayout do
 
     it "renders without errors when content is nil" do
       html = render_layout(content: nil)
-      expect(html).to include("Citadel")
+      expect(html).to include("Цитадель")
     end
   end
 
   describe "ews_alert_count" do
-    it "renders without errors when ews_alert_count is 0" do
+    it "does not render an alert badge when ews_alert_count is 0" do
       html = render_layout(ews_alert_count: 0, content: content_stub)
-      expect(html).to include("Citadel")
+      # Badge is only rendered when badge&.positive? — so zero means no bg-status-danger span
+      expect(html).not_to include("bg-status-danger text-status-danger-text text-micro px-1.5")
     end
 
-    it "renders without errors when ews_alert_count is positive" do
+    it "renders a visible alert badge with the count when ews_alert_count is positive" do
       html = render_layout(ews_alert_count: 7, content: content_stub)
-      expect(html).to include("Citadel")
+      # The sidebar nav_item renders a <span> badge when badge.positive?
+      expect(html).to include("bg-status-danger")
+      expect(html).to include(">7<")
     end
   end
 end

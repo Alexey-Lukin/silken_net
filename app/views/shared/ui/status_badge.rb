@@ -59,13 +59,16 @@ module Views
 
         def view_template
           style = STYLES.fetch(@status, DEFAULT_STYLE)
+          # i18n with safe fallback to the raw status (so DB-stored or new
+          # AASM states render uniformly even before a translation lands).
+          label = I18n.t("ui.status.#{@status}", default: @status)
 
           span(
             id: @id,
             role: "status",
-            aria_label: "Status: #{@status}",
+            aria_label: I18n.t("ui.status.aria_label", status: label),
             class: tokens(badge_classes, style, @extra_class)
-          ) { @status }
+          ) { label }
         end
 
         private

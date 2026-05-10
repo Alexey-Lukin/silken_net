@@ -63,7 +63,7 @@ module Codex
       if @node.cyber_meaning_md.present?
         section(class: "space-y-2") do
           h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-primary") { "Cyber Meaning" }
-          div(class: "bg-gaia-surface-alt p-4 border-l-2 border-gaia-primary") do
+          div(class: "bg-gaia-surface-sunken p-4 border-l-2 border-gaia-primary") do
             div(class: "prose prose-sm dark:prose-invert max-w-none text-gaia-text") do
               raw safe(Codex::MarkdownRenderer.render(@node.cyber_meaning_md))
             end

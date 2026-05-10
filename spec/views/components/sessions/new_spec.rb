@@ -3,6 +3,11 @@
 require "rails_helper"
 
 RSpec.describe Sessions::New do
+  # The component is i18n-aware. Existing assertions target the English copy,
+  # so we render under :en. The `default locale (uk)` describe-block below
+  # covers the Ukrainian fallback path explicitly.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   let(:html) { render_component(flash_alert: nil, flash_notice: nil) }
 
   describe "portal header" do
@@ -84,6 +89,17 @@ RSpec.describe Sessions::New do
   describe "security footer" do
     it "renders AES-256 Enabled text" do
       expect(html).to include("AES-256")
+    end
+  end
+
+  describe "default locale (uk)" do
+    it "falls back to Ukrainian copy when no locale override is active" do
+      I18n.with_locale(:uk) do
+        ua_html = render_component(flash_alert: nil, flash_notice: nil)
+        expect(ua_html).to include("Цитадель")
+        expect(ua_html).to include("АВТЕНТИФІКУВАТИ")
+        expect(ua_html).to include("Забули код доступу?")
+      end
     end
   end
 end

@@ -18,21 +18,16 @@ class DashboardLayout < ApplicationComponent
 
   def view_template
     doctype
-    html(class: "h-full") do
+    html(class: "h-full", lang: I18n.locale.to_s) do
       render_head
-      body(class: "h-full font-mono antialiased bg-white text-gray-900 dark:bg-black dark:text-emerald-500 overflow-hidden transition-colors duration-300") do
-        div(class: "flex h-full overflow-hidden") do
-          # ЦЕНТРАЛЬНА НАВІГАЦІЯ — hidden on mobile, visible on md+
-          div(class: "hidden md:block", id: "sidebar-navigation", data: { turbo_permanent: "" }) do
-            render Navigation::Sidebar.new(
-              current_path: @current_path,
-              ews_alert_count: @ews_alert_count
-            )
-          end
+      body(class: "h-full font-mono antialiased bg-gaia-surface-base text-gaia-text overflow-hidden transition-colors duration-300") do
+        div(class: "flex h-full overflow-hidden", data: { controller: "mobile-nav" }) do
+          render_desktop_sidebar
+          render_mobile_drawer
 
           # ГОЛОВНИЙ ТЕРМІНАЛ
-          main(class: "flex-1 flex flex-col min-w-0 bg-gray-50 dark:bg-black relative transition-colors duration-300", role: "main") do
-            # Фоновий шум (текстура Цитаделі)
+          main(class: "flex-1 flex flex-col min-w-0 bg-gaia-surface-base relative transition-colors duration-300", role: "main") do
+            # Фоновий шум (текстура Цитаделі) — лише в dark, тонко.
             div(class: "absolute inset-0 opacity-5 pointer-events-none dark:bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]", aria_hidden: "true")
 
             render_top_bar
@@ -89,12 +84,17 @@ class DashboardLayout < ApplicationComponent
 
   def render_top_bar
     header(class: top_bar_classes, role: "banner") do
-      div(class: "flex flex-col min-w-0") do
-        render_breadcrumbs
-        h1(class: "text-base md:text-xl font-light tracking-[0.2em] uppercase text-gray-900 dark:text-white mt-1 truncate leading-tight") { @title }
+      div(class: "flex items-center gap-3 min-w-0") do
+        # Mobile-only burger toggle (drawer trigger).
+        render Views::Shared::UI::MobileNavToggle.new
+        div(class: "flex flex-col min-w-0") do
+          render_breadcrumbs
+          h1(class: "text-base md:text-display-sm font-light tracking-[0.2em] uppercase text-gaia-text-strong mt-1 truncate leading-tight") { @title }
+        end
       end
 
-      div(class: "flex items-center gap-4 md:gap-6") do
+      div(class: "flex items-center gap-3 md:gap-6") do
+        render Views::Shared::UI::LocaleSwitcher.new
         render Views::Shared::UI::ThemeSwitcher.new
         render_system_telemetry
         render_user_avatar
@@ -103,18 +103,18 @@ class DashboardLayout < ApplicationComponent
   end
 
   def top_bar_classes
-    "h-16 md:h-20 border-b border-gray-200 dark:border-emerald-900/30 flex items-center justify-between " \
-      "px-4 md:px-8 bg-white/80 dark:bg-black/50 backdrop-blur-md z-20 transition-colors duration-300"
+    "h-14 md:h-20 border-b border-gaia-border flex items-center justify-between " \
+      "px-4 md:px-8 bg-gaia-surface/80 backdrop-blur-md z-20 transition-colors duration-300"
   end
 
   def render_breadcrumbs
-    nav(aria_label: "Breadcrumb", class: "flex text-mini uppercase tracking-widest text-gray-400 dark:text-emerald-900 font-bold") do
+    nav(aria_label: I18n.t("navigation.breadcrumb.root"), class: "flex text-mini uppercase tracking-widest text-gaia-text-subtle font-bold") do
       ol(class: "flex items-center gap-2") do
         li do
           a(
             href: api_v1_dashboard_index_path,
-            class: "hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors duration-200"
-          ) { "Citadel" }
+            class: "hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors duration-200"
+          ) { I18n.t("navigation.breadcrumb.root") }
         end
 
         # Парсинг шляху для крихт — використовуємо @current_path замість request.path
@@ -122,8 +122,8 @@ class DashboardLayout < ApplicationComponent
 
         path_segments.each_with_index do |segment, index|
           li(class: "flex items-center gap-2") do
-            span { "//" }
-            span(class: index == path_segments.size - 1 ? "text-gray-600 dark:text-emerald-700" : "") { segment.humanize }
+            span(aria_hidden: "true") { "//" }
+            span(class: index == path_segments.size - 1 ? "text-gaia-text-muted" : "") { segment.humanize }
           end
         end
       end
@@ -131,24 +131,68 @@ class DashboardLayout < ApplicationComponent
   end
 
   def render_system_telemetry
-    div(class: "hidden md:flex items-center gap-4 px-4 py-1.5 border border-gray-200 dark:border-emerald-900/50 bg-gray-50 dark:bg-emerald-950/10 transition-colors duration-300") do
+    div(class: "hidden md:flex items-center gap-4 px-4 py-1.5 border border-gaia-border bg-gaia-surface-sunken transition-colors duration-300") do
       div(class: "flex flex-col text-right") do
-        span(class: "text-micro text-gray-400 dark:text-emerald-800 uppercase tracking-widest") { "Core Sync" }
-        span(class: "text-tiny text-gray-700 dark:text-emerald-400") { "1.12 THz" }
+        span(class: "text-micro text-gaia-text-subtle uppercase tracking-widest") { I18n.t("navigation.top_bar.core_sync_label") }
+        span(class: "text-tiny text-gaia-text-strong") { I18n.t("navigation.top_bar.core_sync_value") }
       end
-      div(class: "h-1 w-1 rounded-full bg-gaia-primary animate-pulse")
+      div(class: "h-1 w-1 rounded-full bg-gaia-primary animate-pulse", aria_hidden: "true")
     end
   end
 
   def render_user_avatar
     div(class: "flex items-center gap-3") do
       div(class: "text-right hidden lg:block") do
-        p(class: "text-tiny text-gray-900 dark:text-white leading-none") { @current_user&.full_name }
-        p(class: "text-micro text-gray-400 dark:text-emerald-900 uppercase tracking-widest mt-1") { @current_user&.role }
+        p(class: "text-tiny text-gaia-text-strong leading-none") { @current_user&.full_name }
+        p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest mt-1") { @current_user&.role }
       end
-      div(class: "h-10 w-10 border border-gaia-primary flex items-center justify-center text-gaia-primary bg-gray-50 dark:bg-emerald-950/20 shadow-[0_0_10px_rgba(16,185,129,0.1)] transition-colors duration-300") do
+      div(class: "h-10 w-10 border border-gaia-primary flex items-center justify-center text-gaia-primary bg-gaia-surface-sunken transition-colors duration-300") do
         @current_user&.first_name&.first || "A"
       end
+    end
+  end
+
+  # ── Sidebar slots ──────────────────────────────────────────────────────────
+
+  # Static sidebar for `md+` viewports — Turbo-permanent so it survives navigations.
+  def render_desktop_sidebar
+    div(class: "hidden md:block", id: "sidebar-navigation", data: { turbo_permanent: "" }) do
+      render Navigation::Sidebar.new(
+        current_path: @current_path,
+        ews_alert_count: @ews_alert_count
+      )
+    end
+  end
+
+  # Off-canvas mobile drawer built on the native `<dialog>` element.
+  # Browser handles focus-trap, Escape-to-close, top-layer stacking and the
+  # `::backdrop` pseudo-element. The Stimulus `mobile-nav` controller is a
+  # thin shim that calls `.showModal()` and bridges backdrop-click + Turbo
+  # navigation cleanup. See app/javascript/controllers/mobile_nav_controller.js.
+  def render_mobile_drawer
+    dialog(
+      id: "mobile-nav-drawer",
+      data: {
+        mobile_nav_target: "dialog",
+        action: "click->mobile-nav#backdropClick close->mobile-nav#onClose"
+      },
+      aria_label: I18n.t("accessibility.open_navigation"),
+      # Reset UA dialog defaults (centered + max-content) and slide it in
+      # from the left. `open:` variants animate the slide once the browser
+      # promotes the dialog to the top layer; `@starting-style` (in
+      # application.css) handles the off-screen → on-screen entrance frame
+      # without a JS-flushed forced reflow.
+      class: "md:hidden p-0 m-0 h-full max-h-none w-72 max-w-[85vw] " \
+             "fixed inset-y-0 left-0 right-auto bg-transparent " \
+             "open:translate-x-0 -translate-x-full " \
+             "transition-transform duration-[var(--motion-base)] " \
+             "ease-[var(--ease-out-soft)] backdrop:bg-black/60 " \
+             "backdrop:backdrop-blur-sm"
+    ) do
+      render Navigation::Sidebar.new(
+        current_path: @current_path,
+        ews_alert_count: @ews_alert_count
+      )
     end
   end
 end

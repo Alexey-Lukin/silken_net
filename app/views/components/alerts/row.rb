@@ -16,19 +16,33 @@ module Alerts
 
     def view_template
       tr(id: dom_id(@alert), class: row_classes) do
-        td(class: "p-4") { severity_badge }
-        td(class: "p-4 text-mini uppercase text-gray-400 tracking-widest") { @alert.alert_type.to_s.humanize }
-        td(class: "p-4 text-emerald-500") { "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}" }
-        td(class: "p-4 text-gray-400") do
+        # `data-label` powers the CSS-only mobile card flip in
+        # application.css § "Responsive Table Pattern". Each label mirrors
+        # the column header in `Alerts::Index` so the visible text matches
+        # what a desktop user would see in the <th>.
+        td(class: "p-4", data_label: t_("table.severity")) { severity_badge }
+        td(class: "p-4 text-mini uppercase text-gaia-text-subtle tracking-widest", data_label: t_("table.alert_type")) do
+          @alert.alert_type.to_s.humanize
+        end
+        td(class: "p-4 text-gaia-primary", data_label: t_("table.source")) do
+          "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}"
+        end
+        td(class: "p-4 text-gaia-text-subtle", data_label: t_("table.message")) do
           div { @alert.message }
           render_codex_citations
         end
-        td(class: "p-4 text-tiny text-gray-600") { @alert.created_at.strftime("%H:%M:%S") }
+        td(class: "p-4 text-tiny text-gaia-text-muted", data_label: t_("table.timestamp")) do
+          @alert.created_at.strftime("%H:%M:%S")
+        end
+        # Action cell intentionally has no data-label — the CSS rule turns
+        # it into a centred footer block on mobile (no column heading dupe).
         td(class: "p-4 text-right") { action_button }
       end
     end
 
     private
+
+    def t_(key, **opts) = I18n.t("alerts.#{key}", **opts)
 
     # Phase 6 — Codex citation strip beneath the alert message. A
     # forester citing `chainsaw_protocol` on a `chainsaw_detected`
@@ -49,28 +63,30 @@ module Alerts
       color = case @alert.severity.to_s
       when "critical" then "bg-status-danger text-status-danger-text animate-pulse"
       when "medium" then "bg-status-warning text-status-warning-text"
-      when "low" then "bg-emerald-900 text-emerald-200"
-      else "bg-zinc-900 text-zinc-200"
+      when "low" then "bg-status-info text-status-info-text"
+      else "bg-status-neutral text-status-neutral-text"
       end
       span(
         role: "status",
-        aria_label: "Severity: #{@alert.severity}",
+        aria_label: t_("row.severity_aria", severity: @alert.severity),
         class: tokens("px-2 py-0.5 rounded-sm text-mini uppercase font-bold", color)
       ) { @alert.severity }
     end
 
     def action_button
       if @alert.status_resolved?
-        span(class: "text-emerald-700 text-mini uppercase tracking-widest", role: "status") { "V Resolved" }
+        span(class: "text-gaia-text-muted text-mini uppercase tracking-widest", role: "status") do
+          t_("row.resolved")
+        end
       else
-        # Форма для "Втихомирення" через Turbo Stream
+        # Acknowledge form posts via Turbo Stream — single-row replace.
         button_to(
-          "Acknowledge & Resolve →",
+          t_("row.acknowledge"),
           resolve_api_v1_alert_path(@alert),
           method: :patch,
-          aria: { label: "Resolve alert ##{@alert.id}" },
+          aria: { label: t_("row.resolve_aria", id: @alert.id) },
           class: resolve_button_classes,
-          data: { turbo_confirm: "Ви підтверджуєте локалізацію загрози ##{@alert.id}?" }
+          data: { turbo_confirm: t_("row.resolve_confirm", id: @alert.id) }
         )
       end
     end
@@ -78,15 +94,15 @@ module Alerts
     def row_classes
       tokens(
         "transition-all duration-700",
-        "bg-emerald-950/5 opacity-40": @alert.status_resolved?,
-        "hover:bg-emerald-950/10": !@alert.status_resolved?
+        "bg-gaia-surface-sunken opacity-40": @alert.status_resolved?,
+        "hover:bg-gaia-surface-sunken": !@alert.status_resolved?
       )
     end
 
     def resolve_button_classes
-      "text-mini uppercase tracking-tighter border border-red-900 text-red-500 " \
-        "hover:bg-red-900 hover:text-white " \
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 " \
+      "text-mini uppercase tracking-tighter border border-status-danger text-status-danger-text " \
+        "hover:bg-status-danger hover:text-gaia-text-strong " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger " \
         "px-3 py-1 transition-all"
     end
   end

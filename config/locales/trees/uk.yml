@@ -1,0 +1,31 @@
+uk:
+  trees:
+    index:
+      eyebrow: Розгортання матриці сектору
+      header_population: Популяція
+      header_population_unit: Солдати
+      header_operational: Операційні
+      header_operational_unit: Вузли
+      ionic_pulse: Іонний пульс
+    show:
+      headings:
+        biometrics: Жива біометрична матриця
+        impedance_flux: "Імпедансний потік (останні 10 циклів)"
+        maintenance: "Ритуали обслуговування та історія зцілення"
+        hardware_vault: Апаратне сховище безпеки
+        economic_yield: Економічна віддача
+        deployment_matrix: Матриця розгортання
+      labels:
+        family: "Родина: %{name}"
+        family_unknown: Невідома
+        uplink_state: Стан зв'язку
+        verified_balance: Підтверджений баланс
+      table:
+        technician: Технік
+        action: Дія
+        observations: Спостереження
+        timestamp: Часова мітка
+        empty: Фізичних втручань не зафіксовано
+      actions:
+        rotate_key_aria: Ротація апаратного ключа шифрування
+        locate_node: "Локалізувати вузол →"

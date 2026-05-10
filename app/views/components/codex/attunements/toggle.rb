@@ -57,7 +57,7 @@ module Codex
         if @attuned
           "bg-status-success text-status-success-text border-status-success"
         else
-          "bg-gaia-surface-alt text-gaia-text border-gaia-border hover:bg-gaia-primary hover:text-gaia-primary-text"
+          "bg-gaia-surface-sunken text-gaia-text border-gaia-border hover:bg-gaia-primary hover:text-gaia-primary-text"
         end
       end
 

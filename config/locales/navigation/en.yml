@@ -1,0 +1,49 @@
+en:
+  navigation:
+    logo:
+      title: Silken Net
+      subtitle: Central Command Citadel
+    status:
+      sync_label: "Sync: 1.12 THz"
+      version: v8.0.ocean
+    sections:
+      strategic_insight: Strategic Insight
+      library: Library
+      forest_operations: Forest Operations
+      neural_network: Neural Network
+      administration: Administration
+    items:
+      oracle_visions: Oracle Visions
+      treasury_matrix: Treasury Matrix
+      naas_contracts: NaaS Contracts
+      blockchain_ledger: Blockchain Ledger
+      reports_archive: Reports Archive
+      codex_atlas: Codex Atlas
+      battle_arena: Battle Arena
+      leaderboard: Leaderboard
+      my_codex: My Codex
+      my_fraction: My Fraction
+      threat_alerts: Threat Alerts
+      soldier_fleet: Soldier Fleet
+      maintenance_log: Maintenance Log
+      crew_registry: Crew Registry
+      clan_hierarchy: Clan Hierarchy
+      queen_relays: Queen Relays
+      species_dna: Species DNA
+      firmware_ota: Firmware OTA
+      live_telemetry: Live Telemetry
+      initiate_node: Initiate Node
+      account_security: Account Security
+      notifications: Notifications
+      org_settings: Org Settings
+      audit_log: Audit Log
+      system_audits: System Audits
+      system_health: System Health
+    footer:
+      role: Architect
+      access: Full Access Link
+    breadcrumb:
+      root: Citadel
+    top_bar:
+      core_sync_label: Core Sync
+      core_sync_value: 1.12 THz

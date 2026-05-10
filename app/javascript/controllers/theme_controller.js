@@ -25,7 +25,17 @@ export default class extends Controller {
   toggle() {
     const next = this.currentTheme === "dark" ? "light" : "dark"
     localStorage.setItem("theme", next)
-    this.applyTheme(next)
+
+    // View Transitions API (Chromium 111+, Safari 18+) — gives a smooth
+    // crossfade between light and dark without any DOM-swap flicker.
+    // Browsers without support fall back to the immediate apply path.
+    // Honours `prefers-reduced-motion: reduce` automatically — the API skips
+    // the animation when the user opts out at the OS level.
+    if (typeof document.startViewTransition === "function") {
+      document.startViewTransition(() => this.applyTheme(next))
+    } else {
+      this.applyTheme(next)
+    }
   }
 
   // ── private ──

@@ -4,18 +4,22 @@ module Views
   module Shared
     module UI
       class DataTable < ApplicationComponent
-        def initialize(columns:, empty_message: "No records found.", **attrs, &block)
+        def initialize(columns:, empty_message: nil, empty: false, **attrs)
           @columns = columns
-          @empty_message = empty_message
+          @empty_message = empty_message || I18n.t("ui.data_table.empty")
           @extra_class = attrs[:class]
-          @rows_block = block
+          @empty = empty
         end
 
         def view_template
           div(class: tokens(wrapper_classes, @extra_class)) do
             table(class: table_classes, role: "table") do
               render_thead
-              tbody(class: "divide-y divide-gaia-border", &@rows_block)
+              if @empty
+                render_empty_state
+              else
+                tbody(class: "divide-y divide-gaia-border") { yield if block_given? }
+              end
             end
           end
         end
@@ -30,6 +34,17 @@ module Views
           "w-full text-left font-mono text-compact"
         end
 
+        def render_empty_state
+          tbody do
+            tr do
+              td(colspan: @columns.size,
+                 class: "p-8 text-center text-gaia-text-subtle text-compact") do
+                @empty_message
+              end
+            end
+          end
+        end
+
         def render_thead
           thead(class: thead_classes) do
             tr do
@@ -41,7 +56,7 @@ module Views
         end
 
         def thead_classes
-          "bg-gaia-surface-alt text-gaia-text-muted uppercase text-mini tracking-widest transition-colors duration-300"
+          "bg-gaia-surface-sunken text-gaia-text-muted uppercase text-mini tracking-widest transition-colors duration-300"
         end
       end
     end

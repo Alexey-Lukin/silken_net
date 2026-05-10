@@ -3,6 +3,10 @@
 require "rails_helper"
 
 RSpec.describe Trees::Show do
+  # Component is i18n-aware. Assertions reference English copy, so render
+  # under :en. UA fallback is exercised in the `default locale` describe-block.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   let(:tree) { mock_tree }
   let(:latest_log) { mock_latest_log }
   let(:recent_logs) { [ mock_recent_log ] }
@@ -108,9 +112,9 @@ RSpec.describe Trees::Show do
   end
 
   describe "status badge colors" do
-    it "renders active with emerald style" do
-      expect(html).to include("border-emerald-500")
-      expect(html).to include("text-emerald-500")
+    it "renders active with the gaia primary token" do
+      expect(html).to include("border-gaia-primary")
+      expect(html).to include("text-gaia-primary")
     end
 
     it "renders dormant with warning style" do

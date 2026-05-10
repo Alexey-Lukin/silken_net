@@ -88,7 +88,7 @@ module Codex
         div(
           class: tokens(
             "border p-3 space-y-2 flex flex-col justify-between",
-            "bg-gaia-surface-alt",
+            "bg-gaia-surface-sunken",
             active ? "border-gaia-primary" : "border-gaia-border"
           )
         ) do

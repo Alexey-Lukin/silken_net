@@ -51,7 +51,7 @@ module Codex
     end
 
     def active_classes
-      "border-gaia-primary text-gaia-primary bg-gaia-surface-alt"
+      "border-gaia-primary text-gaia-primary bg-gaia-surface-sunken"
     end
 
     def inactive_classes

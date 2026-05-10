@@ -3,6 +3,9 @@
 require "rails_helper"
 
 RSpec.describe Wallets::Index do
+  # Component is i18n-aware. Existing assertions match the English copy.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   def mock_wallet(id: 1, scc_balance: 42.5, locked_balance: 0, esg_retired_balance: 0, tree_did: "SNET-AABBCCDD", org_name: nil, crypto_public_address: "0xDEAD1234BEEF5678")
     tree = tree_did ? OpenStruct.new(did: tree_did) : nil
     org  = org_name ? OpenStruct.new(name: org_name) : nil
@@ -128,7 +131,7 @@ RSpec.describe Wallets::Index do
     end
 
     it "uses emerald color scheme" do
-      expect(html).to include("text-emerald-700")
+      expect(html).to include("text-gaia-text-muted")
     end
   end
 end

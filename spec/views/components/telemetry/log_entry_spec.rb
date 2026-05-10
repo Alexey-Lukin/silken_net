@@ -3,6 +3,9 @@
 require "rails_helper"
 
 RSpec.describe Telemetry::LogEntry do
+  # Component is i18n-aware. Existing assertions match the English copy.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   def mock_gateway(uid: "SNET-Q-AABB0011", ip_address: "192.168.1.100")
     OpenStruct.new(uid: uid, ip_address: ip_address)
   end
@@ -35,7 +38,7 @@ RSpec.describe Telemetry::LogEntry do
     end
 
     it "applies hover effect" do
-      expect(html).to include("hover:bg-emerald-950/10")
+      expect(html).to include("hover:bg-gaia-surface-sunken")
     end
 
     it "applies slide-in animation" do
@@ -84,7 +87,7 @@ RSpec.describe Telemetry::LogEntry do
     end
 
     it "uses emerald color scheme" do
-      expect(html).to include("text-emerald-500")
+      expect(html).to include("text-gaia-primary")
     end
 
     it "uses tracking-widest for status text" do

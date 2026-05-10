@@ -6,49 +6,81 @@ module Views
       class Pagination < ApplicationComponent
         # @param pagy [Pagy] pagination metadata (must respond to :last, :previous, :next, :page)
         # @param url_helper [#call] lambda that builds page URL, e.g. ->(page:) { path(page: page) }
-        def initialize(pagy:, url_helper:)
+        # @param sticky_mobile [Boolean] when true the nav becomes sticky-bottom on mobile,
+        #   honouring iOS safe-area-inset (CSS class `gaia-pagination-sticky` in application.css).
+        # @param compact_mobile [Boolean] when true the indicator switches to a compact
+        #   "X / Y" form on narrow viewports so prev/next buttons stay reachable.
+        def initialize(pagy:, url_helper:, sticky_mobile: false, compact_mobile: true)
           raise ArgumentError, "pagy must respond to :page" unless pagy.respond_to?(:page)
 
           @pagy = pagy
           @url_helper = url_helper
+          @sticky_mobile = sticky_mobile
+          @compact_mobile = compact_mobile
         end
 
         def view_template
           return if @pagy.last <= 1
 
           nav(
-            aria_label: "Pagination",
+            aria_label: I18n.t("pagination.aria_label"),
             role: "navigation",
-            class: nav_classes
+            class: tokens(nav_classes, "gaia-pagination-sticky": @sticky_mobile)
           ) do
-            if @pagy.previous
-              a(
-                href: @url_helper.call(page: @pagy.previous),
-                aria_label: "Go to previous page",
-                class: page_link_classes
-              ) { "← Previous" }
-            else
-              div
-            end
-
-            div(class: "text-gaia-text-muted", aria_current: "page") { "Page #{@pagy.page} / #{@pagy.last}" }
-
-            if @pagy.next
-              a(
-                href: @url_helper.call(page: @pagy.next),
-                aria_label: "Go to next page",
-                class: page_link_classes
-              ) { "Next →" }
-            else
-              div
-            end
+            render_previous
+            render_indicator
+            render_next
           end
         end
 
         private
 
+        def render_previous
+          if @pagy.previous
+            a(
+              href: @url_helper.call(page: @pagy.previous),
+              aria_label: I18n.t("pagination.previous_aria"),
+              class: page_link_classes,
+              rel: "prev"
+            ) { I18n.t("pagination.previous") }
+          else
+            # Empty placeholder keeps the flex layout symmetrical.
+            div(aria_hidden: "true")
+          end
+        end
+
+        def render_next
+          if @pagy.next
+            a(
+              href: @url_helper.call(page: @pagy.next),
+              aria_label: I18n.t("pagination.next_aria"),
+              class: page_link_classes,
+              rel: "next"
+            ) { I18n.t("pagination.next") }
+          else
+            div(aria_hidden: "true")
+          end
+        end
+
+        def render_indicator
+          # Two parallel labels: full text on `md+`, compact "1 / 7" on mobile
+          # (when `compact_mobile`). Both render so screen readers always get
+          # the verbose copy via `sr-only`; sighted users see whatever the
+          # active breakpoint reveals.
+          div(class: "text-gaia-text-muted", aria_current: "page") do
+            full = I18n.t("pagination.page_indicator", current: @pagy.page, total: @pagy.last)
+            if @compact_mobile
+              compact = I18n.t("pagination.page_indicator_compact", current: @pagy.page, total: @pagy.last)
+              span(class: "sr-only md:not-sr-only md:inline") { full }
+              span(class: "md:hidden", aria_hidden: "true") { compact }
+            else
+              span { full }
+            end
+          end
+        end
+
         def nav_classes
-          "flex justify-between items-center font-mono text-mini uppercase"
+          "flex justify-between items-center font-mono text-mini uppercase gap-3"
         end
 
         def page_link_classes

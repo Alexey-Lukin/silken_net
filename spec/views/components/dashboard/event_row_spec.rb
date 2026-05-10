@@ -3,6 +3,11 @@
 require "rails_helper"
 
 RSpec.describe Dashboard::EventRow do
+  # Render under :en so hardcoded English text in event_summary is matched correctly.
+  # The component strings are intentional display text (not i18n-keyed), so we
+  # lock the locale to avoid order-dependent failures if the default changes.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   # Use allocate to bypass ActiveRecord initialization but keep class identity
   # so case/when (Module#===) pattern matching works correctly.
 
@@ -47,8 +52,8 @@ RSpec.describe Dashboard::EventRow do
       expect(html).to include("TREE::0xDEAD")
     end
 
-    it "uses emerald color for blockchain events" do
-      expect(html).to include("text-emerald-400")
+    it "uses the gaia text token for blockchain events" do
+      expect(html).to include("text-gaia-text")
     end
   end
 
@@ -81,8 +86,8 @@ RSpec.describe Dashboard::EventRow do
       expect(html).to include("System pulse detected")
     end
 
-    it "uses gray color for unknown events" do
-      expect(html).to include("text-gray-400")
+    it "uses the gaia subtle text token for unknown events" do
+      expect(html).to include("text-gaia-text-subtle")
     end
   end
 

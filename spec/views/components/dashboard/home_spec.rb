@@ -3,6 +3,10 @@
 require "rails_helper"
 
 RSpec.describe Dashboard::Home do
+  # Component is i18n-aware. Existing assertions match the English copy,
+  # so we render under :en across this file.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   def mock_stats(health_avg: 92, active_trees: 38, total_trees: 40,
                  total_scc: "1250 SCC", avg_voltage: 3800)
     {
