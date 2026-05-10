@@ -29,6 +29,18 @@ module Navigation
             nav_item("Reports Archive", api_v1_reports_path, "clipboard")
           end
 
+          # КУЛЬТУРНИЙ КОНТУР (Codex / «Кодекс Архетипів»)
+          # See docs/04_05_Codex_Lore_Module.md §7. Phase 1 ships only the
+          # read-only Atlas; Battle/Fraction/Leaderboard pages light up in
+          # subsequent phases (their nav entries land alongside).
+          section_group("Library") do
+            nav_item("Codex Atlas", api_v1_codex_nodes_path, "book")
+            nav_item("Battle Arena", new_api_v1_codex_match_path, "swords")
+            nav_item("Leaderboard", api_v1_codex_leaderboard_path, "trophy")
+            nav_item("My Codex", api_v1_codex_my_discoveries_path, "book")
+            nav_item("My Fraction", api_v1_codex_my_fraction_path, "shield")
+          end
+
           # ОПЕРАЦІЙНИЙ КОНТУР
           section_group("Forest Operations") do
             nav_item("Threat Alerts", api_v1_alerts_path, "zap", badge: @ews_alert_count)
@@ -151,6 +163,10 @@ module Navigation
       when "activity" then "〰"
       when "tree" then "🌳"
       when "clipboard" then "▤"
+      when "book" then "📖"
+      when "shield" then "🛡"
+      when "swords" then "⚔"
+      when "trophy" then "🏆"
       else "○"
       end
     end

@@ -275,6 +275,7 @@ kamal deploy
 - [`04_02`](docs/04_02_Business_Logic_and_Services.md) — 29+ сервісів та 31 воркер
 - [`04_03`](docs/04_03_REST_API_v1_Reference.md) — 82 REST API ендпоінти
 - [`04_04`](docs/04_04_Phlex_UI_and_Tailwind.md) — дизайн-система Phlex + Tailwind
+- [`04_05`](docs/04_05_Codex_Lore_Module.md) — Codex / Lore-шар (read-only Atlas з 79 архетипів: екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки)
 
 **Web3 та Економіка (Модуль 05)**
 - [`05_01`](docs/05_01_Multichain_Architecture.md) — 12-chain DePIN стек

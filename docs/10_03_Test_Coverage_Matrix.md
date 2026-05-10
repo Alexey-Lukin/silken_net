@@ -33,6 +33,15 @@
 | Cluster | ✅ 380L+ | 🟢 **Повне** | **lorenz_overrides_by_species validation (FW.8), lorenz_overrides_for, Associations, store_accessor validations, recalculate_health_index! with AiInsight, alphabetical scope** |
 | AuditLog | ✅ 400L+ | 🟢 **Повне** | **chain_payload determinism, metadata ordering, tamper detection, deleted record chain break, bulk advisory lock** |
 | **Firmwareable (concern)** | ✅ 230L+ | 🟢 **Повне** | **AASM transitions тестуються: всі 7 подій, invalid transitions, lifecycle** |
+| **Codex::Realm** [Codex Phase 1] | ✅ part of 38 examples | 🟢 **Нове** | **`ordered` scope, bilingual `name(locale)`, slug uniqueness, accent_token validation, has_many :nodes** |
+| **Codex::Node** [Codex Phase 1] | ✅ part of 38 examples | 🟢 **Нове** | **slug normalization (downcase, `_` → `-`), CODEX_UID format guard (CDX-{ECO\|TRE\|PRT\|MYT}-NNNN), bilingual title helpers, lifecycle/seed_origin enums (prefix), `for_realm`/`search_title` (pg_trgm ILIKE)/`by_archetype`/`by_lifecycle`/`ordered_by_elo` scopes, `sync_geo_point` PostGIS hook (lat/lng → SRID=4326 POINT), `external_refs` array-of-hashes validator, archetype_key inclusion in `Codex::ARCHETYPES` (79 keys), Active Storage `cover_image`+`gallery`** |
+| **Codex::Citation** [Codex Phase 1] | ✅ part of 38 examples | 🟢 **Нове** | **polymorphic citable, anti-dup unique index (codex_node_id, citable_type, citable_id), counter cache → Codex::Node.citation_count** |
+| **Codex::Comment** [Codex Phase 2] | ✅ 15 examples | 🟢 **Нове** | **polymorphic commentable, BODY_MAX (2 KiB) cap, FLAG_REASONS allow-list, parent_must_be_top_level (rejects reply-to-reply), parent_must_share_commentable (rejects cross-node parent), counter cache → comments_count, scopes (visible/hidden/top_level/chronological), `editable_by?(user)` 24h grace, soft-hide via hidden_at + hidden_by_admin** |
+| **Codex::Attunement** [Codex Phase 2] | ✅ 10 examples | 🟢 **Нове** | **INTENSITY_RANGE (1..5) валідація + DB CHECK, QUOTE_MAX (280) length, UNIQUE (user_id, codex_node_id) на model + DB, counter cache → attunement_count, before_validation default_started_at, scopes (for_node/for_user/ordered)** |
+| **Codex::Fraction** [Codex Phase 3] | ✅ 8 examples | 🟢 **Нове** | **UNIQUE user_id (DB-level race-proof), node_lifecycle_pickable validator (rejects destroyed/extinct, allows mythical), `COOLDOWN = 7.days`, helpers cooldown_active?/cooldown_until/seconds_until_unlocked, scopes ordered/by_archetype, archetype_key denormalisation** |
+| **Codex::Match** [Codex Phase 4] | ✅ 8 examples | 🟢 **Нове** | **Composite PK `(id, created_at)` (RANGE-partitioned), 4 валідатори (winner_in_pair, left ≠ right, same-realm, pair_seed presence), scopes for_user/for_realm/recent, skip? helper, FKs without cascade (audit-grade)** |
+| **Codex::Discovery** [Codex Phase 5] | ✅ 6 examples | 🟢 **Нове** | **valid factory, UNIQUE `(user_id, codex_node_id)` validation message, `trigger_type` enum prefix `triggered_by_*`, polymorphic `trigger_ref` (loose, no FK), `before_validation :default_unlocked_at on: :create`, scopes `for_user`/`recent`, counter_cache increments `codex_nodes.discovery_count`** |
+| **Codex::DiscoveryRule** [Codex Phase 5] | ✅ 6 examples | 🟢 **Нове** | **valid factory, presence + `≥ 1` threshold validation, `params_must_be_hash` rejects non-Hash, scopes `active_only`/`for_condition`, `cached_active_by_condition` lazy `Rails.cache.fetch` returns rules grouped by condition_type (active-only), `after_commit :bust_cache` invalidates the cache** |
 
 ### 1.2 Services
 
@@ -56,6 +65,15 @@
 | **OtaHmacKeyService [FW.23]** | ✅ 9 examples | 🟢 **Нове** | **HKDF-SHA256 derivation з info `"silken-ota-hmac-v1"` (domain separation від HardwareKeyService AES key); deterministic per cluster_id; ArgumentError на blank cluster_id; SecurityError без `PROVISIONING_MASTER_KEY` (SEC.11 hard cutover, no SecureRandom fallback); fetch_binary_for повертає 32-byte ASCII-8BIT** |
 | Etherisc::ClaimService | ✅ 120L+ | 🟢 **Повне** | **nil policy_id, missing ENV keys, ABI validation** |
 | Ed25519Crypto::SigningService | ✅ 270L+ | 🟢 **Повне** | **Empty/large messages, hex validation edges, uppercase hex, nil/integer message coercion** |
+| **Codex::NodeImportService** [Codex Phase 1] | ✅ 7 examples | 🟢 **Нове** | **empty seed dir Result success?, minimal YAML upsert, idempotent re-run (no duplicates), DAO `seed_origin` preservation, per-file error isolation, full 79-record corpus load (4 realms + 79 nodes from default SEED_ROOT)** |
+| **Codex::MarkdownRenderer** [Codex Phase 1] | ✅ 11 examples | 🟢 **Нове** | **nil/blank → html_safe empty, paragraphs, h1/h2/h3 → h2/h3/h4 mapping, bold/italic/code/lists/blockquotes, safe http(s) links з `rel="noopener noreferrer" target="_blank"`, `javascript:` scheme rewrite to `#`, `<script>` tag stripping via `Rails::HTML5::SafeListSanitizer`, raw HTML escape-then-transform** |
+| **Codex::FractionChangeService** [Codex Phase 3] | ✅ 6 examples | 🟢 **Нове** | **happy path initial pick (denorm archetype_key + house_color_token, enqueue audit, chosen_at = last_changed_at), happy path re-pick (chosen_at immutable, last_changed_at refreshed, previous_node_id captured), cooldown_blocked Result-struct API, lifecycle rejection (extinct/destroyed), unsaved user/node guards** |
+| **Codex::EloMath** [Codex Phase 4] | ✅ 5 examples | 🟢 **Нове** | **expected(left, right) win probability (0.5 для рівних, > 0.6 при +200 Elo), zero-sum deltas, upset reward (delta_underdog > delta_favourite), decay threshold (K halves once both nodes pass match_count > 30), ArgumentError for bad winner symbol** |
+| **Codex::PairSelectorService** [Codex Phase 4] | ✅ 7 examples | 🟢 **Нове** | **happy path (HMAC seed shape `\A[0-9a-f]{64}\z` + same-realm distinct nodes), Redis seed storage під codex:pair_seed:<seed> + TTL 5 хв, default realm fallback, < 2 pickable nodes failure, no-realm failure, unsaved user, Elo bucketing invariant (для cluster anchors діє ±200)** |
+| **Codex::VoteRecorderService** [Codex Phase 4] | ✅ 8 examples | 🟢 **Нове** | **winner pick → Match.create + EloRecomputeWorker enqueue + zero-sum deltas, skip recording (0/0 deltas + row), replay protection (seed DEL on first use, second call → seed_invalid_or_consumed), missing seed, winner_not_in_pair, seed_user_mismatch (stolen-seed defence)** |
+| **Codex::PresenceTracker** [Codex Phase 5] | ✅ 6 examples | 🟢 **Нове** | **touch + observers SET semantics (idempotent on duplicate), `leave`, TTL refresh (between 1 and `TTL.to_i` seconds), Redis `CannotConnectError` resilience (returns `[]`/`false`, never raises), blank-input no-op** |
+| **Codex::DiscoveryEngine** [Codex Phase 5] | ✅ 6 examples | 🟢 **Нове** | **no-rules baseline → `[]`, `match_count` adapter happy + below-threshold + `realm_slug` filter, idempotent skip when Discovery already exists, unknown `condition_type` → no-op (no raise), guard rail: unsaved user → `[]`** |
+| **Codex::DiscoveryRuleImportService** [Codex Phase 5] | ✅ 4 examples | 🟢 **Нове** | **missing YAML returns zeros, idempotent UPSERT-by-name (re-run flips created → updated counter, no row count change), unknown `node_slug` skipped + warn-logged, fallback to `User.oracle_executioner` коли `created_by_user_email` не знайдений** |
 
 ### 1.3 Workers
 
@@ -67,18 +85,92 @@
 | ActuatorCommandWorker | ✅ 320L+ | 🟢 **Повне** | **dispatch! AASM transition, mark_active!, encryption roundtrip, ResetActuatorStateWorker scheduling, sidekiq config** |
 | **Web3CircuitBreaker (concern)** | ✅ 320L+ | 🟢 **Повне** | **transient_cause?, reset_circuit!, remaining_open_seconds, all error types, record_failure! threshold** |
 | **CoapEncryption (concern)** | ✅ 175L+ | 🟢 **Повне** | **[FW.20] TIME_SYNC envelope (0x9C marker + ts:4 big-endian), All mod-16 payload sizes (1,15,17,31,32,33), binary data, null-byte padding, IV uniqueness** |
+| **Codex::AttunementBroadcastWorker** [Codex Phase 2] | ✅ 5 examples | 🟢 **Нове** | **sidekiq_options queue=`default` retry=3, public broadcast `codex_node_<id>_attunements` з пост-commit лічильником, private envelope `codex_node_<id>_attunements_user_<uid>` з `attuned: bool`, no-op для unknown node, `attuned: false` після видалення attunement** |
+| **Codex::FractionAuditWorker** [Codex Phase 3] | ✅ 4 examples | 🟢 **Нове** | **sidekiq_options queue=`default` retry=3, AuditLog write з action="codex.fraction.chosen" + auditable_type=Codex::Fraction + metadata (codex_node_id, archetype_key, previous_node_id, changed_at), no-op для users without organization_id (per-org ledger guarantee), no-op для unknown user/fraction id** |
+| **Codex::EloRecomputeWorker** [Codex Phase 4] | ✅ 4 examples | 🟢 **Нове** | **sidekiq_options queue=`low` retry=3 (ADR-CDX-4 — Battle never blocks Proof-of-Growth), atomic `UPDATE … SET col = col + ?` для обох nodes у транзакції (no SELECT-then-UPDATE race), sequential calls accumulate коректно, unknown id no-op (update_all returns 0)** |
+| **Codex::DiscoveryProbeWorker** [Codex Phase 5] | ✅ 5 examples | 🟢 **Нове** | **sidekiq_options queue=`default` retry=3 (ADR-CDX-4 — Discovery cosmetic), no-op коли Engine returns `[]` (Discovery.count unchanged), happy path → `find_or_create_by` Discovery + ActionCable broadcast on `codex:discoveries:user:<id>` з payload `{slug, title_en, title_uk, archetype_key, trigger_type, unlocked_at}` + payload polymorphic ref persisted, race-safe idempotency через `previously_new_record?` (no double-broadcast при concurrent perform), unknown user_id swallowed without raise** |
 
 ### 1.4 Controllers
 
 Усі API v1 контролерів мають відповідні request spec файли. Покриття: 🟢 Повне.
 
+**Codex Phase 1 (нове, 12 request examples):**
+- `Api::V1::Codex::RealmsController#index` — 401 без token, ordered by `position`, bilingual JSON shape
+- `Api::V1::Codex::NodesController#index` — 401 guard, sorted `attunement_elo DESC`, фільтри `realm` / `lifecycle_status` / `q` (trigram)
+- `Api::V1::Codex::NodesController#show` — slug-routing, atomic `view_count` increment, 404 для unknown slug + draft-приховування для не-super_admin
+
+**Codex Phase 2 (нове, 14 request examples):**
+- `Api::V1::Codex::AttunementsController#create` (8 examples) — 401 guard, idempotent re-POST оновлює row (не дублює), counter cache інкремент, worker enqueue, validation 422 для intensity > 5, 404 для unknown slug
+- `Api::V1::Codex::AttunementsController#destroy` — DELETE removes own + broadcasts; safe no-op коли немає рядка; ніколи не видаляє чужий attunement
+- `Api::V1::Codex::CommentsController#create` (6 examples) — 401 guard, comments_count інкремент, ActionCable broadcast у `codex_node_<id>_comments`, body_html у відповіді (sanitised markdown), `Idempotency-Key` 400 коли пропущено для JSON, retry з тим же ключем повертає cached response, 422 для body > BODY_MAX, parent_id support
+
+**Codex Phase 3 (нове, 10 request examples):**
+- `Api::V1::Codex::FractionsController#create` (5 examples) — 401 guard, 201 + Blueprint на initial pick, FractionAuditWorker enqueue, 429 + cooldown_until ISO коли cooldown active, 404 unknown slug, 422 на extinct/destroyed lifecycle
+- `Api::V1::Codex::FractionsController#me` (3 examples) — 401 guard, 204 коли fraction nil, 200 + Blueprint payload коли set
+- `Api::V1::Codex::FractionsController#picker` (2 examples) — 401 guard, HTML frame render з активним realm + node title
+
+**Codex Phase 4 (нове, 10 request examples):**
+- `Api::V1::Codex::MatchesController#new` (3 examples) — 401 guard, frame render з hidden `pair_seed` 64-hex, empty-state 422 коли realm < 2 pickable nodes
+- `Api::V1::Codex::MatchesController#create` (4 examples) — 401 guard, 201 + Blueprint + EloRecomputeWorker enqueue + Match.count change, 403 `seed_invalid_or_consumed` на replay, skip=true support
+- `Api::V1::Codex::LeaderboardController#index` (3 examples) — public (no auth), JSON sorted by Elo desc, HTML table render, limit clamp
+
+**Codex Phase 5 (нове, 12 request examples):**
+- `Api::V1::Codex::DiscoveriesController#me` (4 examples) — 401 guard, JSON sorted by `unlocked_at DESC` (own-only via Pundit Scope), HTML render з `codex_discoveries_collection` DOM id, empty-state copy "Nothing unlocked yet"
+- `Api::V1::Codex::Admin::DiscoveryRulesController` (8 examples) — index 403 для non-admin / 200 для admin, create 403 / 201 + JSONB `params` round-trip + `created_by_user_id` set / 422 на invalid `threshold_value`, update 200 + cache bust verified (engine returns no rules після `active=false`), destroy 204
+
 ### 1.5 Policies
 
 Усі Pundit policies покриті. Покриття: 🟢 Повне.
 
+**Codex Phase 1 (нове, 7 examples):** `Codex::NodePolicy` — index?/show? для будь-якого автентифікованого, anonymous deny, write-операції тільки для super_admin, `Scope#resolve` приховує чернетки (`published_at IS NULL`) для не-super_admin.
+
+**Codex Phase 2 (нове, 12 examples):**
+- `Codex::CommentPolicy` (8) — index/show only for auth, hidden ховається від не-admin, create для всіх auth, update/destroy для автора в межах EDIT_GRACE або admin+, hide? тільки admin+, Scope ховає hidden від non-admin
+- `Codex::AttunementPolicy` (4) — read для auth, write own-only, anonymous deny на create
+
+**Codex Phase 3 (нове, 3 examples):** `Codex::FractionPolicy` — index/show/create для будь-якого автентифікованого, anonymous deny, update/destroy own-only. Cooldown business-rule НЕ в policy (живе в `FractionChangeService`).
+
+**Codex Phase 4 (нове, 4 examples):** `Codex::MatchPolicy` — index/create для будь-якого autenticated; anonymous deny на index/create; show only on own record; Scope ховає чужі матчі та returns none для anonymous. Throttling — Rack::Attack, не policy.
+
+**Codex Phase 5 (нове, 20 examples):**
+- `Codex::DiscoveryPolicy` (4) — index? auth-only, show? own-only, create?/manual? admin+ only, Scope returns own collection / none для anonymous
+- `Codex::DiscoveryRulePolicy` (16, parameterised) — usual / admin / super_admin × index/show/create/update/destroy → 403 для non-admin, 200 для admin+, Scope returns all для admin / none для non-admin / none для anonymous
+
 ### 1.6 Views
 
 Усі Phlex-компоненти покриті згідно з `docs/10_01_View_Component_Testing_Guide.md`.
+
+**Codex Phase 1 (нове, 10 examples):** `Codex::NodeCard` — bilingual title rendering, codex_uid + realm pill + lifecycle badge (status-* token), slug-based href, footer (Elo + geo_region), edge cases (placeholder glyph коли `cover_image` не attached, `—` коли `geo_region` blank, suppress subtitle), design system compliance (no raw `bg-white`/`text-gray-*`, custom text-scale `mini`/`tiny`/`micro`, `focus-visible:ring-2`).
+
+**Codex Phase 2 (нове, 19 examples):**
+- `Codex::Attunements::Toggle` (8) — DOM id `codex_node_<id>_attunement_count`, "Attune"/"Attuned" label switch + POST/DELETE method override, Stimulus `codex--attune` data values, success token коли attuned, focus-visible accessibility, no raw `bg-white`/`text-gray-*`
+- `Codex::Comments::Thread` (6) — DOM id `codex_node_<id>_comments` (broadcast target), empty-state copy, composer renders only коли current_user present, Stimulus controller wiring, gaia-* tokens
+- `Codex::Comments::Item` (5) — DOM id `codex_comment_<id>`, sanitised markdown render, ISO timestamp, hidden-state notice (без body), gaia-* tokens
+
+**Codex Phase 3 (нове, 9 examples):**
+- `Codex::Fractions::Card` (3) — empty-state CTA коли fraction nil, filled state з archetype + Since-date + "Change" + Cooldown pill, gaia-* tokens compliance (no `bg-white`/`text-gray-*`)
+- `Codex::Fractions::Picker` (6) — header/realm-tabs/grid render, active realm highlight (`bg-gaia-primary`), Current marker для own fraction, disable-button + "Locked" коли cooldown active на іншому node, empty-state для пустого realm, tokens compliance
+
+**Codex Phase 4 (нове, 7 examples):**
+- `Codex::Battle::Arena` (4) — frame render з двома cards + VS divider + hidden seed inputs + Elo & match counters, error-state pill коли service signals "not enough nodes" (без winner_slug форм), gaia-* tokens compliance, Stimulus `codex--battle` controller + `card`/`form`/`skip` targets wired
+- `Codex::Leaderboard::Table` (3) — header + Top-N caption + ordered rows ("Apex" before "Mid"), empty-state copy ("No ranked nodes yet."), gaia-* tokens compliance
+
+**Codex Phase 5 (нове, 6 examples):**
+- `Codex::Discoveries::Toast` (3) — title + archetype_key + trigger label dispatch + `data-controller="codex--reveal"` data-attribute + slug-based href + `HH:MM UTC` formatted unlocked_at; gaia-* tokens compliance (no `bg-white`/`text-gray-*`); each trigger_type → label mapping (Observed/Battle/Pact/Streak/Oracle/Granted)
+- `Codex::Discoveries::List` (3) — empty-state copy ("Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction") + `Unlocked: 0` counter, populated grid renders title/archetype/trigger_type per discovery card + `Unlocked: 2` counter, gaia-* tokens compliance
+
+**Codex Phase 6 (нове, ~87 examples):**
+- `Codex::Citation` (+5) — `for_target` polymorphic scope, `bulk_for(targets)` N+1-free Hash[[type, id]], `within_edit_grace?` 24 h boundary (nil-safe), User has_many :codex_citations restrict_with_error
+- `Codex::CitationBlueprint` (2) — denormalised node_slug/title_en/archetype_key, defensive nil-safe коли `citation.node` зник
+- `Codex::Admin::NodePolicy` (10) — index/show admin+ allow / forester+investor deny, update? admin+ allow, create?/destroy? super_admin only (admin denied), Scope returns all для admin / none для investor/forester/anonymous
+- `Api::V1::Codex::Citations` (8) — unauthenticated 401, investor 403, forester+ 201 з broadcast `codex_citations:Tree:<id>` + counter increment, replay 200 з cached payload, Idempotency-Key 400, bogus citable_type 400, DB-UNIQUE 422, DELETE own ≤24h 204 + broadcast op:remove, non-author forester 403, admin+ bypass past grace
+- `Api::V1::Codex::Admin::Nodes` (7) — forester GET 403, admin GET 200 list, admin PATCH 200 update, invalid lifecycle 422 (Rails 8 enum ArgumentError rescued), forester PATCH 403, plain admin POST 403 (super_admin only), super_admin POST 201 з seed_origin: dao_proposal, plain admin DELETE 403
+- `Codex::Citations::Pill` (5) — slug-href anchor + title + archetype glyph, aria-label з note, defensive nil-node noop, gaia-* tokens (no `bg-white`/`text-gray-*`), focus-visible:ring-2
+- `Codex::Citations::Strip` (3) — empty-state copy + DOM id `codex_citations_<type>_<id>`, populated render Pills with slug-href, gaia-* tokens compliance
+- `Codex::DiscoveryEngine` (+4) — `acoustic_class_count` inert when no organization_id, `cluster_visited` inert when params['cluster_name'] missing, `firmware_version_seen` inert when no firmware row matches version, replaced "unknown condition_type" gate з "inert below-threshold" + ADAPTERS-stubbed missing-adapter path
+- `Codex::EloRecomputeWorker` (+3) — Phase 6 cross-domain probe enqueues match_milestone з most-recent Match resolved by left/right id, no-op коли немає Match, swallows Redis::CannotConnectError (Elo update is the contract)
+- `Codex::FractionChangeService` (+3) — Phase 6 fraction_choice probe on initial pick (previous_node_id: nil), carries previous_node_id on re-pick, swallows Redis::CannotConnectError
+- `Api::V1::Codex::Attunements` (+1) — Phase 6 attunement_streak probe enqueued alongside AttunementBroadcastWorker
 
 ### 1.7 Integration Tests
 

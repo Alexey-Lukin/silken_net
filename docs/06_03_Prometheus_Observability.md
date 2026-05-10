@@ -132,11 +132,15 @@ ALL_QUEUES = %w[uplink alerts critical downlink default web3_critical web3 web3_
 | `alerts` | 2 | `EwsAlertWorker` | ✅ Моніториться |
 | `critical` | 3 | `SlashingProtocolWorker` | ✅ Моніториться |
 | `downlink` | 4 | `OtaTransmissionWorker` | ✅ Моніториться |
-| `default` | 5 | Агрегація, health checks | ✅ Моніториться |
+| `default` | 5 | Агрегація, health checks, **Codex** (`Codex::AttunementBroadcastWorker`, `Codex::FractionAuditWorker`, `Codex::DiscoveryProbeWorker`, `PartitionMaintenanceWorker`) | ✅ Моніториться |
 | `web3_critical` | 6 | Мінтинг, Oracle, ZK | ✅ Моніториться |
 | `web3` | 7 | Celo, Solana, peaq | ✅ Моніториться |
 | `web3_low` | 8 | L1 anchoring, KlimaDAO | ✅ Моніториться |
-| `low` | 9 (найнижчий) | Audit logging, analytics | ✅ Моніториться |
+| `low` | 9 (найнижчий) | Audit logging, analytics, **Codex** (`Codex::EloRecomputeWorker`) | ✅ Моніториться |
+
+> **Phase 7:** Codex воркери (Phase 1–6) приземляються виключно у `default` та `low` — вони ніколи не конкурують з `uplink`/`alerts`/`critical`/`web3_critical`. Це гарантує що геймифікація Lore-шару не може застрянути телеметрії дерев. Окремих `codex_*` черг немає за дизайном (ADR-CDX-3).
+>
+> **PartitionMaintenanceWorker alert:** Phase 7 додав `Sentry.capture_exception` у rescue. Рекомендований Grafana alert: `sidekiq_jobs_failed_total{queue="default", class="PartitionMaintenanceWorker"} > 0` triggers PagerDuty. Без цього silent failure означає `no partition of relation` PostgreSQL крах 1-го числа місяця для всіх 4 RANGE-таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`, `codex_matches`).
 
 ---
 

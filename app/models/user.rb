@@ -16,6 +16,41 @@ class User < ApplicationRecord
   has_many :maintenance_records, dependent: :restrict_with_error
   has_many :audit_logs, dependent: :restrict_with_error
 
+  # --- CODEX (Lore Layer) ---
+  # Phase 2: User-authored social activity in the Codex.
+  # `restrict_with_error` keeps the moderation history intact: deleting a
+  # user with active comments/attunements requires explicit cleanup, never
+  # an accidental cascade.
+  has_many :codex_comments,
+           class_name: "Codex::Comment",
+           dependent: :restrict_with_error
+  has_many :codex_attunements,
+           class_name: "Codex::Attunement",
+           dependent: :destroy
+
+  # Phase 3: a user has at most one active fraction (DB-level UNIQUE).
+  # `dependent: :destroy` is safe — a fraction is not a moderation
+  # artefact; deleting the user erases their identity claim cleanly.
+  has_one :codex_fraction,
+          class_name: "Codex::Fraction",
+          dependent: :destroy
+
+  # Phase 6: citations authored by this user. `dependent: :restrict_with_error`
+  # — citations are audit-grade lore stitches (an EwsAlert citing the
+  # `chainsaw_protocol` Node is part of forensic record). The
+  # `created_by_user_id` is NOT NULL at schema level (see structure.sql):
+  # forcing explicit cleanup mirrors `codex_comments` (also audit-grade).
+  has_many :codex_citations,
+           class_name: "Codex::Citation",
+           foreign_key: :created_by_user_id,
+           dependent: :restrict_with_error,
+           inverse_of: :created_by_user
+
+  # Phase 5: own collection of unlocked Codex Nodes.
+  has_many :codex_discoveries,
+           class_name: "Codex::Discovery",
+           dependent: :destroy
+
   # --- НОРМАЛІЗАЦІЯ ТА ВАЛІДАЦІЯ ---
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }

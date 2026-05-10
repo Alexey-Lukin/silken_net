@@ -524,6 +524,209 @@ peaq_node_url: "https://peaq-node.example.com"
 
 ---
 
+## 📖 10b. Codex (Lore Layer) Сервіси
+
+Сервіси Lore-шару Gaia 2.0. Повна специфікація: **`docs/04_05_Codex_Lore_Module.md`**.
+
+### `Codex::NodeImportService`
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/node_import_service.rb` |
+| **Вхід** | `root:` (Pathname, default `Rails.root.join("db/seeds/codex")`), `logger:` (default `Rails.logger`) |
+| **Що робить** | Idempotent UPSERT seed-корпусу: 4 `Codex::Realm` + 79 `Codex::Node` з YAML-файлів. Ключ — `slug`. Зберігає DAO-промотовані `seed_origin`. Помилки на одному файлі не зривають весь імпорт (per-file `transaction` + isolated rescue). |
+| **Зовнішні виклики** | — (file I/O + DB) |
+| **Вихід** | `Result` (Struct) з полями `realms_upserted`, `nodes_upserted`, `errors` + `success?` |
+| **Інвокери** | `bin/rails codex:seed` (rake), `db/seeds.rb` (dev only) |
+
+### `Codex::MarkdownRenderer`
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/markdown_renderer.rb` |
+| **Вхід** | `markdown` (String, nullable) |
+| **Що робить** | Мінімальний markdown→HTML рендер з білим списком тегів (`p`, `h2..h4`, `ul/ol/li`, `strong`, `em`, `blockquote`, `code`, `pre`, `a`, `br`) і атрибутів (`href`, `rel`, `target`). `<script>` та інші теги стрипаються `Rails::HTML5::SafeListSanitizer`. URL-схеми `javascript:` / `data:` переписуються на `#` ще до санітайзера. Завжди повертає `html_safe`. |
+| **Зовнішні виклики** | — (in-memory) |
+| **Вихід** | `ActiveSupport::SafeBuffer` (html_safe) |
+| **Інвокери** | `Codex::Show` Phlex компонент (для `context_md`/`cyber_meaning_md`/`lore_md`), `Codex::Comments::Item` (для `body_md`), `Codex::CommentBlueprint#body_html`. |
+
+### `Codex::AttunementBroadcastWorker` (Phase 2)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/codex/attunement_broadcast_worker.rb` |
+| **Черга** | `default` (#5) — ADR-CDX-4 (UI broadcasts ніколи не на hot path) |
+| **Retry** | 3 |
+| **Вхід** | `node_id` (Integer), `user_id` (Integer) |
+| **Що робить** | Re-load Node (post-commit `attunement_count`) → `ActionCable.server.broadcast` на public `codex_node_<id>_attunements` (з лічильником) + private `codex_node_<id>_attunements_user_<uid>` (з `attuned: bool`). |
+| **Інвокери** | `Codex::AttunementsController#create / #destroy` |
+| **Тригер** | toggle attunement → live counter via Solid Cable |
+
+### Phase 2 controllers (без окремого Service-шару — логіка тонка)
+
+- `Api::V1::Codex::AttunementsController` — `find_or_initialize_by` + counter cache + worker enqueue. Idempotent toggle: re-POST оновлює `intensity`/`quote`, ніколи не дублює.
+- `Api::V1::Codex::CommentsController` — `Idempotency-Key` обов'язковий для JSON writes (24h TTL у `Rails.cache`); inline `ActionCable.server.broadcast` на `codex_node_<id>_comments` з `Codex::CommentBlueprint`-серіалізацією.
+
+### `Codex::FractionChangeService` (Phase 3)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/fraction_change_service.rb` |
+| **Вхід** | `user:` (User), `node:` (Codex::Node), `now:` (Time, injectable for specs) |
+| **Що робить** | Єдина точка мутації фракції. Two outcomes (success): **initial pick** — створює рядок з `chosen_at` = `last_changed_at` = now; **re-pick** — оновлює `codex_node_id` + `archetype_key` (денормалізація) + `last_changed_at`, `chosen_at` залишається immutable. Перед мутацією перевіряє cooldown (7 днів). Денормалізує `archetype_key` з Node і `house_color_token` з realm.accent_token. Enqueue `FractionAuditWorker` тільки після успішного save. |
+| **Failure** (handled) | Cooldown active → `Result(success: false, errors: ["cooldown_active"], cooldown_until: ...)`. Lifecycle blocked → `Result(success: false, errors: ["node is not pickable"])`. Всі handled, не raise. |
+| **Зовнішні виклики** | `Codex::FractionAuditWorker.perform_async` (transient enqueue failure не rollback'ить мутацію — audit є async by design) |
+| **Вихід** | `Result` Struct (`success?`, `fraction`, `cooldown_until`, `previous_node_id`, `errors`) |
+| **Інвокери** | `Api::V1::Codex::FractionsController#create` |
+
+### `Codex::FractionAuditWorker` (Phase 3)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/codex/fraction_audit_worker.rb` |
+| **Черга** | `default` (#5) — ADR-CDX-4 |
+| **Retry** | 3 |
+| **Вхід** | `user_id` (Integer), `fraction_id` (Integer), `previous_node_id` (Integer or nil) |
+| **Що робить** | Записує `AuditLog(action: "codex.fraction.chosen", auditable: fraction, metadata: {codex_node_id, archetype_key, previous_node_id, changed_at})` через звичайний `create!` (immutable chain hash compute через before_create callback). |
+| **No-op коли** | user не має `organization_id` (системні боти типу `oracle.executioner@system`); user/fraction не знайдено в DB. |
+| **Інвокери** | `Codex::FractionChangeService` |
+
+### `Codex::PairSelectorService` (Phase 4)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/pair_selector_service.rb` |
+| **Вхід** | `user:`, `realm:` (default first ordered), `now:` (injectable clock) |
+| **Що робить** | Pickable nodes у realm (lifecycle ∉ destroyed/extinct) → anchor через `ORDER BY RANDOM() LIMIT 8` + min `match_count` → opponent з Elo bucket ±200; fallback на будь-який інший вузол. Підписує `pair_seed = HMAC-SHA256(secret_key_base, "user_id|realm_id|ts|left_id|right_id")[0..64]`. Зберігає у Redis `codex:pair_seed:<seed>` TTL 5 хв з payload `"user_id|realm_id|left_id|right_id|ts"`. |
+| **Failure** | `not enough nodes`, `no realm available`, unsaved user — handled через `Result(success: false, error: ...)`. |
+| **Інвокери** | `MatchesController#new`, `MatchesController#create` (для next-pair after vote) |
+
+### `Codex::VoteRecorderService` (Phase 4)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/vote_recorder_service.rb` |
+| **Вхід** | `user:`, `pair_seed:`, `winner_slug:` (or nil for skip), `skip:` (Boolean) |
+| **Що робить** | Атомарно DEL'ить Redis seed (replay-proof), створює `Codex::Match` + обчислює Elo deltas через `EloMath` (K=32, decay при `match_count > 30` на обох sides), enqueue `EloRecomputeWorker`. Skip → 0/0 deltas, але рядок все одно зберігається (для PairSelector avoidance heuristics). |
+| **Failure** | `seed_invalid_or_consumed`, `seed_user_mismatch`, `winner_not_in_pair`, `nodes_missing`, validation — handled via Result struct. |
+| **Інвокери** | `MatchesController#create` |
+
+### `Codex::EloMath` (Phase 4 — pure module)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/elo_math.rb` |
+| **API** | `EloMath.deltas(left_elo:, right_elo:, winner:, match_count_left:, match_count_right:)` → `[delta_left, delta_right]`. `EloMath.expected(left, right)` → win probability. |
+| **Constants** | `K_BASE = 32`, `K_DECAY = 16`, `DECAY_THRESHOLD = 30`. K halves once both nodes pass the threshold (settled archetypes don't yo-yo). |
+
+### `Codex::EloRecomputeWorker` (Phase 4)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/codex/elo_recompute_worker.rb` |
+| **Черга** | `low` (#9) — ADR-CDX-4 (Battle never blocks Proof-of-Growth hot-path) |
+| **Retry** | 3 |
+| **Вхід** | `left_node_id`, `right_node_id`, `delta_left`, `delta_right` |
+| **Що робить** | Pre-computed deltas передаються як args (не recompute у воркері — what the Arena UI showed at vote-time is what gets persisted). Атомарно `UPDATE codex_nodes SET attunement_elo = attunement_elo + ?, match_count = match_count + 1` для обох вузлів у транзакції. No SELECT-then-UPDATE race. |
+| **Інвокери** | `Codex::VoteRecorderService` |
+
+### `Codex::PresenceTracker` (Phase 5)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/presence_tracker.rb` |
+| **API** | `.touch(user_id:, tree_id:)` / `.leave(user_id:, tree_id:)` / `.observers_for_tree(tree_id) → Array<Integer>` / `.observed?(tree_id) → Boolean` |
+| **Storage** | Redis Set `codex:presence:tree:<tree_id>` of user_ids, TTL 10 min refreshed on every `touch`. |
+| **Що робить** | Records "user U is currently observing tree T" so the Discovery hook in `TelemetryUnpackerService` can fan out probes only when someone is watching. Cheap `SMEMBERS`/`EXISTS` calls; rescues all Redis exceptions → `[]` / `false`. **Never blocks `uplink`.** |
+| **Caller** | A future Stimulus heartbeat controller on `Tree::Show` (every 60 s while page is visible). |
+
+### `Codex::DiscoveryEngine` (Phase 5 — pure rule evaluator)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/discovery_engine.rb` |
+| **API** | `Codex::DiscoveryEngine.evaluate(user:, trigger_type:, payload: {})` → `Array<Codex::Node>` (nodes the user just unlocked) |
+| **Reads** | `Codex::DiscoveryRule.cached_active_by_condition` (1-hour TTL, busted on rule mutation). |
+| **Adapters** | Hash `ADAPTERS` keyed by `condition_type` symbol. **Phase 6 ships all 7**: `tree_observation_minutes` (Wallet→Tree→TelemetryLog count proxy, org-scoped), `match_count` (with optional `realm_slug` filter), `attunement_streak_days` (consecutive trailing days), `oracle_dispatched` (TelemetryLog `oracle_status IN (dispatched, fulfilled)`, org-scoped), `acoustic_class_count` (TelemetryLog `acoustic_events ≥ params['min_events']` proxy for high-class CMSIS-NN activity, org-scoped), `cluster_visited` (TelemetryLog from user's org's trees inside cluster matching `params['cluster_name']`), `firmware_version_seen` (TelemetryLog whose `BioContractFirmware.version` matches `params['version']`). All telemetry-joined adapters short-circuit when `user.organization_id.blank?`. |
+| **Skips** | rules whose Node is already in this user's `Codex::Discovery`; unknown `condition_type` → debug log + skip; unsaved user → `[]`. |
+
+### `Codex::DiscoveryProbeWorker` (Phase 5)
+
+| | |
+|---|---|
+| **Файл** | `app/workers/codex/discovery_probe_worker.rb` |
+| **Черга** | `default` (#5) — ADR-CDX-4 (Discovery is cosmetic; never blocks Proof-of-Growth) |
+| **Retry** | 3 |
+| **Вхід** | `user_id`, `trigger_type` (string), `payload` (hash with optional `trigger_ref_type` / `trigger_ref_id` / `tree_id`) |
+| **Що робить** | Calls `Codex::DiscoveryEngine.evaluate`; for each unlocked Node, atomically `find_or_create_by(user_id:, codex_node_id:)`; broadcasts on `codex:discoveries:user:<user_id>` only when `previously_new_record?` → race-safe single broadcast across concurrent workers. Rescues `RecordNotUnique` / `RecordInvalid` from concurrent inserts. |
+| **Інвокери** | `TelemetryUnpackerService.commit_telemetry` (presence-gated fan-out), `Codex::EloRecomputeWorker` (match_milestone — Phase 6 wire-up), `Codex::FractionChangeService` (fraction_choice — Phase 6 wire-up), `Codex::AttunementsController` (attunement_streak — Phase 6 wire-up). |
+
+### `Codex::DiscoveryRuleImportService` (Phase 5)
+
+| | |
+|---|---|
+| **Файл** | `app/services/codex/discovery_rule_import_service.rb` |
+| **API** | `Codex::DiscoveryRuleImportService.call(path: SEED_PATH)` → `Result(created:, updated:, skipped:)` |
+| **Що робить** | Idempotent UPSERT loader for `db/seeds/codex/discovery_rules.yml`. UPSERT key = `name`. Resolves `node_slug` to `Codex::Node` (skip + warn if missing — supports any seed-run order). Resolves `created_by_user_email` to `User`, falls back to `User.oracle_executioner` for system-owned seeds. |
+| **Caller** | `db/seeds.rb` (after `Codex::NodeImportService`). |
+
+### TelemetryUnpackerService Discovery hook (Phase 5)
+
+The finalizer `commit_telemetry` ends with a fire-and-forget `enqueue_codex_discovery_probes(tree, log)` that:
+
+1. `defined?(::Codex::PresenceTracker)` guard (graceful in Phase-1-only deploys).
+2. `observers = Codex::PresenceTracker.observers_for_tree(tree.id)` — cheap Redis `SMEMBERS`.
+3. `return if observers.empty?` — most packets fire **zero** Sidekiq jobs.
+4. `observers.each { |uid| Codex::DiscoveryProbeWorker.perform_async(uid, "telemetry_observation", payload) }` with `payload` containing `tree_id`, `trigger_ref_type: "TelemetryLog"`, `trigger_ref_id: log.id_value`.
+5. `rescue StandardError` → log warn → uplink finalisation continues. Discovery is cosmetic; Redis/Sidekiq hiccup must never abort the uplink batch.
+
+### Phase 3 controller (FractionsController)
+
+`Api::V1::Codex::FractionsController` — 3 ендпоінти, всі делегують до сервісу:
+- `#create` — `Codex::FractionChangeService.call(user:, node:)`. Success → 201 + Blueprint. Cooldown → 429 + `cooldown_until`. Validation → 422.
+- `#me` — рендерить `Codex::Fractions::Card` (HTML) або 204 (JSON, коли fraction nil).
+- `#picker` — рендерить `Codex::Fractions::Picker` Turbo Frame для `?realm=<slug>`.
+
+### `Api::V1::Codex::CitationsController` (Phase 6)
+
+| | |
+|---|---|
+| **Файл** | `app/controllers/api/v1/codex/citations_controller.rb` |
+| **POST** | `forester+` (Pundit `Codex::CitationPolicy#create?`). Required body: `codex_node_slug`, `citable_type`, `citable_id`. Optional: `note` (≤140). `Idempotency-Key` обов'язкова для JSON; replay returns the cached payload. DB-UNIQUE on `(codex_node_id, citable_type, citable_id, created_by_user_id)` is the second line of defence — duplicate → 422. |
+| **DELETE** | own ≤ 24 h grace (`record.created_by_user_id == user.id && created_at >= 24.hours.ago`), admin+ bypass. |
+| **Type whitelist** | `CITABLE_CLASS_MAP` lambda registry inside the controller — Brakeman-clean (no `safe_constantize` on user input). Bogus `citable_type` → 400. Allowed: `Tree`, `Cluster`, `AiInsight`, `EwsAlert`, `OracleVision` (falls back to `AiInsight` if `OracleVision` const missing), `NaasContract`. |
+| **Broadcast** | `codex_citations:<Type>:<id>` envelope `{ op: "append" \| "remove", data \| id }`. Failure rescued — never rolls back the write. |
+
+### `Api::V1::Codex::Admin::NodesController` (Phase 6)
+
+| | |
+|---|---|
+| **Файл** | `app/controllers/api/v1/codex/admin/nodes_controller.rb` |
+| **Policy** | `Codex::Admin::NodePolicy` — asymmetric: `index?`/`show?`/`update?` admin+, `create?`/`destroy?` super_admin only. |
+| **Use-case** | DAO node curation: publish toggle (set `published_at`), geo correction (`latitude`/`longitude`/`geo_region`), copy fix (`title_*`/`subtitle_*`/`*_md`). New DAO entries get `seed_origin: :dao_proposal` server-side (immutable on update). |
+| **External refs** | JSONB `external_refs` is passed through unmodified — `Codex::Node#external_refs_must_be_array_of_links` is the SSOT validator. |
+| **Rails 8 enums** | `lifecycle_status` invalid value raises `ArgumentError`; controller rescues into 422 with the underlying message. |
+
+### Phase 6 cross-domain Discovery probes
+
+Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async` after the primary write commits. **All three are fail-open** — a Sidekiq enqueue hiccup never rolls back the user-facing operation.
+
+| Caller | Trigger | Payload |
+|---|---|---|
+| `Codex::EloRecomputeWorker#perform` | `match_milestone` | `match_id`, `trigger_ref_type: "Codex::Match"`, `trigger_ref_id`. Resolves the most-recent Match referencing either node (delta-only `perform` doesn't carry `user_id`). |
+| `Codex::FractionChangeService#enqueue_discovery_probe` | `fraction_choice` | `fraction_id`, `codex_node_id`, `previous_node_id`, `trigger_ref_type: "Codex::Fraction"`, `trigger_ref_id`. Initial pick → `previous_node_id: nil`. |
+| `Api::V1::Codex::AttunementsController#enqueue_discovery_probe` | `attunement_streak` | `codex_node_id`, `trigger_ref_type: "Codex::Attunement"`, `trigger_ref_id`. Fired alongside `AttunementBroadcastWorker`. |
+
+### `Codex::Citation` model helpers (Phase 6)
+
+| Helper | Use |
+|---|---|
+| `Codex::Citation.for_target(target)` | per-page render — `where(citable_type: target.class.base_class.name, citable_id: target.id)`. |
+| `Codex::Citation.bulk_for(targets)` | N+1-free table render — returns `Hash[[type, id]] = [citations…]` keyed for O(1) lookup; eager-loads `:node` once per type batch. Used by `Alerts::Index` etc. |
+| `Codex::Citation#within_edit_grace?` | mirrors Comment 24 h grace; returns `false` when `created_at` is nil (unsaved). |
+
+---
+
 ## ⚙️ 11. Реєстр Воркерів (Workers Registry)
 
 ### Пріоритети черг (9 рівнів, строге дотримання)
@@ -543,6 +746,16 @@ peaq_node_url: "https://peaq-node.example.com"
 > **Примітка:** Sidekiq `:strict: true` дренує черги послідовно згори-донизу. Числа — порядок дренування, не ваги.
 
 > ⚠️ **DOC.8 — Cleanup constraint (TelemetryLog):** Будь-який cleanup-воркер на `telemetry_logs` **зобов'язаний** виключати `oracle_status = 'dispatched'`. Ці записи знаходяться в open Chainlink-callback flight; їх видалення зламає `OracleCallbacksController` (RecordNotFound + 5 retry без мінтингу). Канонічне виконання — `InsightGeneratorService.cleanup_old_logs!` (тригериться з `InsightBatchCallbacks` після успішного денного циклу). Не реалізуйте паралельні cleanup-job'и — викликайте сервіс. Cross-ref: [04_01 TelemetryLog model warning](04_01_Data_Models_and_Entities.md#telemetrylog--сирий-пакет-телеметрії).
+
+> ⚠️ **DOC.10 — Sidekiq Pro shims active (Phase 7 deferred upgrade):** Кодова база викликає `Sidekiq::Batch`, `Sidekiq::Limiter`, `expires_in:`, але ліцензований гем `sidekiq-pro` поки що **не в Gemfile**. `config/initializers/sidekiq_pro.rb` надає no-op shim-и щоб тести й dev-середовище не падали — у production це означає що `on(:success)` колбеки **не спрацьовують**, rate-limiter `web3_rpc 50/sec` **не діє**, а `expires_in: 5.minutes` на uplink-задачах **не TTL-ить** stale jobs. Перед billion-tree запуском треба:
+> 1. Додати `gem "sidekiq-pro", "~> 8.1"` (потребує license token у `BUNDLE_GEMS__CONTRIBSYS__COM`).
+> 2. Видалити shim і замість нього у `sidekiq_pro.rb` зробити `raise "sidekiq-pro required" unless defined?(Sidekiq::Pro)`.
+> 3. Розщепити Sidekiq на 4 процеси з queue-pinning (uplink окремо, web3_* окремо, critical/alerts/downlink окремо, default/low окремо) — single-process × 15 threads не витягне peak ~ N_trees / 3600 jobs/sec.
+> 4. Увімкнути `super_fetch` (zero job-loss на SIGKILL/OOM) для `uplink`, `web3_critical`, `critical`.
+> 5. Увімкнути `reliable_push` у клієнті (захист enqueue-у від Redis failover).
+> 6. Збільшити Redis pool: `pool_size = concurrency + 5` (зараз буфер = 0).
+
+> ✅ **DOC.11 — Cron / partition guardian:** `PartitionMaintenanceWorker` запускається `30 0 * * *` UTC (cron у `config/sidekiq.yml`), створює партиції на поточний + наступний місяць для **4 RANGE-таблиць**: `telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`, `codex_matches` (Phase 4 — Codex Battle Arena). Phase 7 додав `Sentry.capture_exception` у `rescue` блок щоб тиха помилка партиціювання не призвела до `no partition of relation` PostgreSQL крешу 1-го числа місяця. Якщо додаєте нову RANGE-таблицю — внесіть її в `PartitionMaintenanceWorker::PARTITIONED_TABLES` І оновіть `spec/workers/partition_maintenance_worker_spec.rb` (очікуване число OK-ліній = `tables × 2 months`).
 
 ---
 

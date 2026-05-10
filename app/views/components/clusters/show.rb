@@ -45,6 +45,7 @@ module Clusters
             p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { "Cluster Matrix" }
             h2(class: "text-3xl font-extralight tracking-tighter text-white") { @cluster.name }
             p(class: "text-tiny font-mono text-gray-600 mt-2") { "#{@cluster.region} // ID: #{@cluster.id}" }
+            render_codex_citations
           end
           div(class: "flex items-center gap-4") do
             div(class: tokens(
@@ -57,6 +58,19 @@ module Clusters
             end
           end
         end
+      end
+    end
+
+    # Phase 6 — Codex citation strip. Surfaces forester+ lore stitches
+    # attached to this cluster (e.g. tying `Cherkasy_Bir` to the
+    # `cherkasy-bir` Codex Node). Inert when no citations exist.
+    def render_codex_citations
+      return unless defined?(::Codex::Citation)
+      citations = ::Codex::Citation.for_target(@cluster).includes(node: :realm).limit(20)
+      return if citations.empty?
+
+      div(class: "mt-3") do
+        render ::Codex::Citations::Strip.new(target: @cluster, citations: citations)
       end
     end
 

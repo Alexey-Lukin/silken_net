@@ -1,0 +1,135 @@
+# Codex::Node corpus — Realm: protocol (8 records).
+
+- slug: protocol-codit
+  realm: protocol
+  codex_uid: CDX-PRT-0001
+  title_uk: Протокол CODIT
+  title_en: CODIT — Compartmentalisation of Decay in Trees
+  subtitle_uk: Containerization Of Decay
+  subtitle_en: Containerisation of decay
+  archetype_key: containerization
+  lifecycle_status: 3
+  context_md: |
+    Модель Алекса Шіго (1979): дерево не "лікує" поранення, а ізолює
+    його чотирма стінами тиску, ферментів і вторинних метаболітів.
+  cyber_meaning_md: |
+    Compartmentalization Of Decay; контейнеризація помилок (Docker), де
+    система ізолює збійний сектор, аби врятувати ядро.
+
+- slug: protocol-ethylene-broadcast
+  realm: protocol
+  codex_uid: CDX-PRT-0002
+  title_uk: Етиленовий Бродкаст
+  title_en: Ethylene Broadcast
+  subtitle_uk: UDP-протокол безпеки
+  subtitle_en: UDP-style security broadcast
+  archetype_key: udp_broadcast
+  lifecycle_status: 3
+  context_md: |
+    Етилен (C₂H₄) — летючий рослинний гормон, що поширюється повітрям;
+    одне атаковане дерево накопичує таніни, а сусіди реагують ще до
+    того, як до них дістається шкідник.
+  cyber_meaning_md: |
+    Газовий сигнал тривоги, що переводить сусідні вузли в режим
+    Zero Trust ще до початку фізичної атаки.
+
+- slug: protocol-darwin-root-brain
+  realm: protocol
+  codex_uid: CDX-PRT-0003
+  title_uk: Кореневий мозок Дарвіна
+  title_en: Darwin's Root-Brain
+  subtitle_uk: Distributed Edge Computing
+  subtitle_en: Distributed edge computing
+  archetype_key: distributed_edge_computing
+  lifecycle_status: 3
+  context_md: |
+    Гіпотеза Чарльза Дарвіна (1880, "The Power of Movement in Plants"):
+    кінчик кореня поводиться як "мозок нижчих тварин".
+  cyber_meaning_md: |
+    Концепція, де кожен кінчик кореня є автономним мікропроцесором, що
+    приймає рішення на місці.
+
+- slug: protocol-ratatosk-entropy
+  realm: protocol
+  codex_uid: CDX-PRT-0004
+  title_uk: Рататоск та ентропія
+  title_en: Ratatoskr & Channel Entropy
+  subtitle_uk: Шум каналу зв'язку
+  subtitle_en: Channel noise
+  archetype_key: channel_noise
+  lifecycle_status: 0
+  context_md: |
+    У скандинавській міфології Рататоск — білка, що бігає по Іґґдрасілю
+    і передає (часто перекручені) повідомлення між орлом на верхівці та
+    змієм Нідгеґґом біля коріння.
+  cyber_meaning_md: |
+    Міфічна білка-посередник, що спотворює дані, нагадуючи про
+    необхідність CRC та MAC-підписів у LoRa.
+
+- slug: protocol-quantum-coherence
+  realm: protocol
+  codex_uid: CDX-PRT-0005
+  title_uk: Квантова когерентність хлорофілу
+  title_en: Quantum Coherence in Chlorophyll
+  subtitle_uk: Quantum Routing
+  subtitle_en: Quantum routing
+  archetype_key: quantum_routing
+  lifecycle_status: 3
+  context_md: |
+    Експерименти Engel et al. (2007, Nature) показали квантову
+    когерентність у хлоросомах фотосинтезуючих бактерій — фотон
+    одночасно "пробує" всі шляхи до реакційного центру.
+  cyber_meaning_md: |
+    Листок, що тестує всі маршрути фотона одночасно, аби вибрати
+    найшвидший шлях до реакційного центру.
+
+- slug: protocol-crown-shyness
+  realm: protocol
+  codex_uid: CDX-PRT-0006
+  title_uk: Кронна сором'язливість
+  title_en: Crown Shyness
+  subtitle_uk: Collision Avoidance
+  subtitle_en: Collision avoidance
+  archetype_key: collision_avoidance
+  lifecycle_status: 3
+  context_md: |
+    Феномен, за яким крони деяких видів дерев (евкаліпт, сосна Ламберта,
+    ягельниця японська) залишають видимі проміжки між собою — точна
+    причина дискутується (механічне тертя, фоторецепція).
+  cyber_meaning_md: |
+    Алгоритм, за яким дерева не торкаються кронами, ідеально ділячи
+    простір та світло без центрального сервера.
+
+- slug: protocol-serotiny
+  realm: protocol
+  codex_uid: CDX-PRT-0007
+  title_uk: Серотинія та пірофіти
+  title_en: Serotiny & Pyrophytes
+  subtitle_uk: Trigger Function
+  subtitle_en: Trigger function
+  archetype_key: trigger_function
+  lifecycle_status: 3
+  context_md: |
+    Серотинія — стратегія розмноження пірофітів (евкаліпт, секвоя
+    velutina, банксія), за якою шишки відкриваються лише при
+    температурі вогню.
+  cyber_meaning_md: |
+    Насіння, що чекає вогню (високої температури), аби розкритися, —
+    метафора готовності системи до екстремальних навантажень.
+
+- slug: protocol-ultrasonic-cavitation
+  realm: protocol
+  codex_uid: CDX-PRT-0008
+  title_uk: Ультразвукова кавітація
+  title_en: Xylem Ultrasonic Cavitation
+  subtitle_uk: Акустичний PANIC_STATE
+  subtitle_en: Acoustic PANIC_STATE
+  archetype_key: acoustic_panic_state
+  lifecycle_status: 3
+  context_md: |
+    Під час засухи стовп води в ксилемі рветься (cavitation event),
+    утворюючи ультразвукові імпульси (~100-300 кГц), що поширюються
+    стовбуром.
+  cyber_meaning_md: |
+    Ультразвуковий тріск розриву водних ланцюгів у дереві, який ми маємо
+    навчитися чути як сигнал SOS.

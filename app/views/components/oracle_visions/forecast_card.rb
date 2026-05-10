@@ -16,11 +16,26 @@ module OracleVisions
         header_section
         render_mini_trend
         impact_assessment # Новий блок оцінки впливу на SCC
+        render_codex_citations
         footer_actions
       end
     end
 
     private
+
+    # Phase 6 — Codex citation strip on the forecast card. Lets foresters
+    # tie an oracle prediction (`emergency`/`yield_drop`) back to the
+    # archetype that explains it (e.g. `relict_oracle` for a centennial
+    # prophecy). Inert when no citations exist.
+    def render_codex_citations
+      return unless defined?(::Codex::Citation)
+      citations = ::Codex::Citation.for_target(@insight).includes(node: :realm).limit(10)
+      return if citations.empty?
+
+      div(class: "mt-3 pt-3 border-t border-emerald-900/50") do
+        render ::Codex::Citations::Strip.new(target: @insight, citations: citations)
+      end
+    end
 
     def header_section
       div(class: "mb-4") do

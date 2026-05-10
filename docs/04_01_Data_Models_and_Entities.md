@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 26 моделей, 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
+Зафіксувати повну структуру реляційної бази даних (PostgreSQL) та ActiveRecord моделей для моноліту Ruby on Rails 8.1. Цей документ є **вичерпним довідником** всіх 35 моделей (26 ядра + 9 шар Codex / Lore — Realm, Node, Citation у Phase 1; Comment, Attunement у Phase 2; Fraction у Phase 3; Match у Phase 4; Discovery, DiscoveryRule у Phase 5), 6 concerns, ключових індексів, AASM-машин стану та seeds-стану системи. Визначає, як фізичні об'єкти (дерева, шлюзи) та абстрактні концепції (контракти, токени, аудит, lore-вузли) пов'язані між собою в єдину Кіберфізичну Державу Gaia 2.0.
 
 ---
 
@@ -25,6 +25,7 @@
 | `postgis` | Геопросторові запити (ST_Contains, ST_MakePoint, GIST-індекси) |
 | `pgcrypto` | Криптографічні функції на рівні БД |
 | `uuid-ossp` | UUID генерація |
+| `pg_trgm` | Trigram-нечіткий пошук назв (`codex_nodes.title_uk/_en` через GIN) |
 
 ### Тригери
 
@@ -1201,6 +1202,126 @@ active/draft ──cancel──► cancelled
 
 ---
 
+## 📖 7b. Codex — Lore Layer (Кодекс Архетипів)
+
+Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки) + соціальний шар (коментарі, attunements). Повна специфікація: **`docs/04_05_Codex_Lore_Module.md`**. Phase 1 додає 3 моделі (Realm/Node/Citation), Phase 2 — 2 моделі (Comment/Attunement) + ActionCable broadcast. Phase 3-5 розширять цей шар (`Match`, `Discovery`, `Fraction`).
+
+### `Codex::Realm` — Шар (4 семантичні групи)
+
+**Атрибути:** `slug` (UNIQUE), `name_uk`, `name_en`, `glyph` (`forest`/`tree`/`protocol`/`mythos`), `accent_token` (gaia-* design token), `position`, `description_md`, `is_active`. Лежить у таблиці `codex_realms`.
+
+**Методи:**
+- `Codex::Realm.ordered` — за `position ASC, name_en ASC`
+- `name(locale)` — bilingual switch
+
+**Сидиться через:** `bin/rails codex:seed` (idempotent UPSERT за `slug`). 4 рядки: ecosystem, unique_tree, protocol, mythos.
+
+### `Codex::Node` — Запис у Кодексі
+
+**Атрибути:** `codex_realm_id` (FK), `slug` (UNIQUE), `codex_uid` (`CDX-{ECO|TRE|PRT|MYT}-NNNN`, UNIQUE), bilingual `title_uk`/`title_en`/`subtitle_uk`/`subtitle_en`, `archetype_key` (з реєстру `Codex::ARCHETYPES`, 79 значень), markdown лор `context_md`, `cyber_meaning_md`, `lore_md` (рендериться через `Codex::MarkdownRenderer`), геопросторові `latitude`/`longitude`/`geo_point` (PostGIS GEOGRAPHY(POINT, 4326)) + `geo_region`, лічильники-каунтери (`attunement_count`, `comments_count`, `view_count`, `discovery_count`, `citation_count`, `match_count`), `attunement_elo` (battle rating, default 1500, range 0..4000), `lifecycle_status` enum (`mythical`/`extinct`/`endangered`/`thriving`/`destroyed`/`unknown`), `seed_origin` enum (`seed`/`dao_proposal`/`community_submission`), `external_refs` (JSONB `[{label, url}]`), `discoverable_after_minutes`, `published_at`. Active Storage: `cover_image`, `gallery`.
+
+**Concerns:** `GeoLocatable`. **Sync:** `before_save :sync_geo_point` — оновлює PostGIS точку при зміні lat/lng.
+
+**Scopes:** `published`, `for_realm(realm_or_slug)`, `search_title(q)` (ILIKE по обох locale, GIN-pg_trgm), `by_archetype(key)`, `by_lifecycle(status)`, `ordered_by_elo`.
+
+**Helpers:** `title(locale)`, `subtitle(locale)`, `to_param` → `slug`.
+
+**Партиціонування:** немає (79 базових записів + поступовий ріст; коли `codex_matches` досягне сотень тисяч у Phase 4 — партиціонується сам).
+
+### `Codex::Citation` — Полі-морфне Посилання
+
+**Атрибути:** `codex_node_id` (FK), `citable_type` + `citable_id` (поліморфне), `created_by_user_id`, `note`, `created_at`. Унікальний індекс `(codex_node_id, citable_type, citable_id)` запобігає дублюванню. Counter cache → `Codex::Node.citation_count`.
+
+**Призначення:** будь-яка доменна сутність (`Tree`, `Cluster`, `EwsAlert`, `OracleVision`, `BlockchainTransaction`) може отримати "пілюлю-посилання" на Codex-запис. Phase 6 додасть `CitationPill` UI-примітив.
+
+### `Codex::Comment` — Коментар (Phase 2)
+
+**Атрибути:** `commentable_type` + `commentable_id` (поліморфне; Phase 2 пише лише `"Codex::Node"`), `user_id` (FK), `parent_id` (self-FK, **один рівень вкладеності** — модельна валідація, не DB-CHECK), `body_md` (≤ 2 KiB), модераційні поля `flagged_at`/`flag_reason` (з `FLAG_REASONS = %w[spam abuse offtopic other]`), soft-hide пара `hidden_at`/`hidden_by_admin_id`. Counter cache → `Codex::Node.comments_count`.
+
+**Scopes:** `visible` (`hidden_at IS NULL`), `hidden`, `top_level` (`parent_id IS NULL`), `chronological`. **Helper:** `editable_by?(user)` — true якщо користувач = автор ∧ створено ≤ 24 годин тому (`EDIT_GRACE`).
+
+**Валідації:** `parent_must_be_top_level` (rejects reply-to-reply), `parent_must_share_commentable` (rejects cross-node parent).
+
+**ActionCable:** `Codex::CommentsController#create` після `comment.save` робить `ActionCable.server.broadcast("codex_node_<id>_comments", { node_id, comment_id, data: serialized })` через `Codex::CommentBlueprint`.
+
+**Модерація:** автор може edit/destroy ≤ 24h, admin+ може **hide** (`hidden_at` set), але **не destroy** — журнал модерації лишається tamper-evident.
+
+### `Codex::Attunement` — Семантична Прив'язка (Phase 2)
+
+**Атрибути:** `user_id` (FK), `codex_node_id` (FK), `intensity` (1..5, DB CHECK + model validation), `quote` (≤ 280 chars, optional особистий девіз), `started_at` (default = `now()`).
+
+**Унікальність:** UNIQUE `(user_id, codex_node_id)` — на DB-рівні + на моделі. Re-POST оновлює існуючий рядок (idempotent toggle), ніколи не дублює.
+
+**Counter cache:** `Codex::Node.attunement_count`.
+
+**Constants:** `INTENSITY_RANGE = (1..5)`, `QUOTE_MAX = 280`.
+
+**Scopes:** `for_node(node)`, `for_user(user)`, `ordered` (за `created_at DESC`).
+
+**Workflow:** `Codex::AttunementsController` (create/destroy) → `Codex::AttunementBroadcastWorker.perform_async(node_id, user_id)` (queue: `default`) → broadcasts `attunement_count` на public-канал `codex_node_<id>_attunements` + `attuned: bool` на private-канал `codex_node_<id>_attunements_user_<uid>`.
+
+### `Codex::Fraction` — Особиста Ідентичність (Phase 3)
+
+**Атрибути:** `user_id` (FK UNIQUE — DB-рівень), `codex_node_id` (FK), `archetype_key` (string ≤ 64, денормалізація з Node для index-only фільтрів), `chosen_at` / `last_changed_at` (timestamps), `house_color_token` (≤ 64 chars, optional Tailwind токен типу `gaia-primary`).
+
+**Унікальність:** UNIQUE `(user_id)` — користувач має максимум одну активну фракцію. UNIQUE на DB-рівні (а не лише в моделі) ⇒ жодний race-condition між контролером та сервісом не може лишити дві активні фракції.
+
+**Constants:** `COOLDOWN = 7.days`. Helpers: `cooldown_active?`, `cooldown_until`, `seconds_until_unlocked`.
+
+**Validations:** lifecycle вузла НЕ повинен бути `destroyed` чи `extinct` (вшито в `node_lifecycle_pickable` валідатор). `mythical` дозволяється — міф є валідною ідентичністю.
+
+**Association:** `User has_one :codex_fraction, dependent: :destroy`. Безпечний destroy — фракція не є модераційним артефактом, видалення користувача чисто стирає його identity claim.
+
+**Workflow:** `Codex::FractionChangeService` — єдина точка мутації. Перевіряє cooldown, атомарно `find_or_initialize_by(user_id:)` → save → enqueue `Codex::FractionAuditWorker` (queue `default`, ADR-CDX-4) → AuditLog `action: "codex.fraction.chosen"` (тільки коли user має organization, бо ledger є per-org).
+
+### `Codex::Match` — Battle Arena Duel (Phase 4) — `codex_matches` (PARTITIONED RANGE by `created_at`)
+
+**Атрибути:** `id` + `created_at` (composite PK, як у `blockchain_transactions`), `user_id` (FK), `codex_realm_id` (FK — denormalised для leaderboard scoping без JOIN), `left_node_id` / `right_node_id` (FKs), `winner_node_id` (FK, nullable — NULL = skip), `pair_seed` (varchar 64, HMAC-SHA256), `elo_delta_left` / `elo_delta_right` (integer, K=32 — `EloMath.deltas`).
+
+**Партиціювання:** RANGE по `created_at`. `_default` партиція + 6 monthly windows seeded inline у міграції; `PartitionMaintenanceWorker` додає нові партиції щомісяця (включено `codex_matches` у `PARTITIONED_TABLES` список).
+
+**Індекси:** BTREE `(user_id, created_at DESC)` (own-history feed), BTREE `(left_node_id, right_node_id)` (replay-protection lookups), BTREE `codex_realm_id` (leaderboard), BTREE `pair_seed` (unique-by-seed scrub queries).
+
+**Validations:** `winner_node_id ∈ [left, right, nil]`, `left ≠ right`, обидва nodes мають належати тому ж realm що і `codex_realm_id`.
+
+**Scopes:** `for_user(user)`, `for_realm(realm_id)`, `recent` (created_at DESC).
+
+**FKs БЕЗ cascade на user/realm/node delete** — battle history є audit-grade; `_default` партиція рятує від data loss при clock-skew рядках.
+
+**Workflow:**
+1. `MatchesController#new` → `PairSelectorService` обирає anchor (weighted by inverse `match_count`) + opponent в Elo-bucket ±200 → HMAC-SHA256 seed зберігається у Redis з TTL 5 хв.
+2. `MatchesController#create` → `VoteRecorderService` consume'ить seed (atomic GETDEL → replay-proof), створює Match-row, обчислює Elo deltas, enqueue `EloRecomputeWorker.perform_async(left_id, right_id, delta_left, delta_right)`.
+3. `EloRecomputeWorker` (queue `low`) атомарно `UPDATE codex_nodes SET attunement_elo = attunement_elo + ?, match_count = match_count + 1` для обох вузлів у транзакції.
+
+### `Codex::Discovery` — Unlock Log (Phase 5) — `codex_discoveries`
+
+**Атрибути:** `user_id` (FK, `on_delete: :cascade`), `codex_node_id` (FK, `on_delete: :restrict` — counter_cache → `discovery_count`), `trigger_type` (integer enum: `telemetry_observation` / `manual_unlock` / `match_milestone` / `fraction_choice` / `attunement_streak` / `oracle_seasonal`, prefix `triggered_by`), polymorphic `(trigger_ref_type, trigger_ref_id)` (БЕЗ FK — Discovery survives partition drops & match archival), `unlocked_at` (timestamp).
+
+**Індекси:** UNIQUE `(user_id, codex_node_id)` (anti-double-unlock на DB-рівні), BTREE `(trigger_ref_type, trigger_ref_id)`, BTREE `(user_id, unlocked_at DESC)` (own-collection feed).
+
+**Validations:** `unlocked_at` presence; `before_validation :default_unlocked_at on: :create` для зручності API.
+
+**Scopes:** `for_user(user)`, `recent` (unlocked_at DESC).
+
+**Workflow:**
+1. Trigger fires (TelemetryUnpackerService finalizer / EloRecomputeWorker / FractionChangeService / AttunementsController) → `Codex::DiscoveryProbeWorker.perform_async(user_id, trigger_type, payload)`.
+2. Worker → `Codex::DiscoveryEngine.evaluate(user:, trigger_type:, payload:)` → `Array<Codex::Node>` (skips already-unlocked).
+3. Worker `find_or_create_by(user_id:, codex_node_id:)` + `previously_new_record?` → ActionCable broadcast тільки на справжньому create (race-safe).
+
+### `Codex::DiscoveryRule` — DAO Rule Registry (Phase 5) — `codex_discovery_rules`
+
+**Атрибути:** `name` (varchar, ≤ 120, унікальний на logical level), `codex_node_id` (FK, на яку картку правило unlocks), `condition_type` (integer enum: `tree_observation_minutes` / `acoustic_class_count` / `cluster_visited` / `match_count` / `attunement_streak_days` / `firmware_version_seen` / `oracle_dispatched`, prefix `condition`), `threshold_value` (integer, ≥ 1), `params` (JSONB, default `{}`), `active` (boolean), `created_by_user_id` (FK to users, `on_delete: :restrict` — audit trail).
+
+**Індекс:** BTREE `(active, condition_type)` (hot-path `active_only` filter for `cached_active_by_condition`).
+
+**Validations:** `name`/`threshold_value` presence; `params_must_be_hash`.
+
+**Caching:** `Rails.cache.fetch("codex.discovery_rules.v1", expires_in: 1.hour)` busted `after_commit` (create/update/destroy). DAO-зміни візуальні всім worker'ам у ≤ 1 сек.
+
+**CRUD:** admin+ через `Api::V1::Codex::Admin::DiscoveryRulesController`. Seeds через `Codex::DiscoveryRuleImportService` (idempotent UPSERT by `name`, `db/seeds/codex/discovery_rules.yml`).
+
+---
+
 ## 🌱 8. Seeds — Початковий Стан Системи
 
 Порядок видалення при очищенні (від листя до кореня):
@@ -1228,6 +1349,17 @@ Cluster, User, Organization
 - `investor@ecofuture.fund` — investor (access_level :read_only)
 
 **Початковий Cluster:** "Черкаський бір" — `region: "Центральна Україна"`, timezone: `Europe/Kyiv`, fire threshold: 60°C.
+
+**Codex (Lore Layer):**
+
+Сидиться **окремою idempotent rake-таскою** (НЕ через `db:seeds.rb`, бо `seeds.rb` не виконується на проді):
+
+```bash
+bin/rails codex:seed              # UPSERT 4 realms + 79 nodes (за slug)
+bin/rails governance:seed_parameters  # UPSERT dynamic_tax_rate + insurance_pool_threshold
+```
+
+Обидві таски ідемпотентні (повторний запуск не дублює та зберігає DAO-промотовані поля). Джерело: `db/seeds/codex/realms.yml` + `db/seeds/codex/nodes/{ecosystems,unique_trees,protocols,mythos}.yml`.
 
 ---
 
@@ -1310,6 +1442,12 @@ Polymorphic:
   BlockchainTransaction.sourceable → NaasContract | ParametricInsurance
   AuditLog.auditable → any model
   HardwareKey → Tree (via did) | Gateway (via uid)
+  Codex::Citation.citable → Tree | Cluster | EwsAlert | OracleVision | BlockchainTransaction | … (read-only outbound)
+
+Codex (Lore — read-only):
+  Codex::Realm
+    └── Codex::Nodes (destroy on realm removal — admin-only path)
+          └── Codex::Citations (destroy)
 ```
 
 ---

@@ -1,0 +1,567 @@
+# Codex::Node corpus — Realm: unique_tree (29 records).
+# `cyber_meaning_md` is the verbatim canonical interpretation from the
+# lore appendix.
+
+- slug: oak-zalizniaka-buda
+  realm: unique_tree
+  codex_uid: CDX-TRE-0001
+  title_uk: Дуб Максима Залізняка
+  title_en: Maksym Zalizniak Oak
+  subtitle_uk: Legacy Master Node
+  subtitle_en: Legacy master node
+  archetype_key: legacy_master_node
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.1333
+  longitude: 31.4500
+  context_md: |
+    1100-річний дуб у с. Буда (Кам'янський р-н, Черкащина); живий
+    свідок козацької доби, об'єкт національного значення.
+  cyber_meaning_md: |
+    1100-річний "сервер", що дає еталонний показник життєстійкості
+    (`delta_t`) тисячолітньої ксилеми.
+
+- slug: pando
+  realm: unique_tree
+  codex_uid: CDX-TRE-0002
+  title_uk: Пандо
+  title_en: Pando
+  subtitle_uk: Єдина коренева система на 47 000 стовбурів
+  subtitle_en: Single root system across 47 000 stems
+  archetype_key: distributed_immortality
+  lifecycle_status: 2
+  geo_region: utah-fishlake
+  latitude: 38.5253
+  longitude: -111.7493
+  context_md: |
+    Клон тополі осикової у штаті Юта; ~6000 тонн біомаси, вік ~14 тис.
+    років. Найбільший і найважчий відомий організм планети.
+  cyber_meaning_md: |
+    Доказ того, що безсмертя системи — це її повна децентралізація та
+    спільний баланс.
+
+- slug: methuselah
+  realm: unique_tree
+  codex_uid: CDX-TRE-0003
+  title_uk: Мафусаїл
+  title_en: Methuselah
+  subtitle_uk: Втілення режиму STOP2
+  subtitle_en: Embodiment of STOP2 mode
+  archetype_key: ultra_low_power_mode
+  lifecycle_status: 3
+  geo_region: white-mountains-ca
+  latitude: 37.3856
+  longitude: -118.1786
+  context_md: |
+    Бристлекоунська сосна (*Pinus longaeva*) у White Mountains,
+    Каліфорнія; вік ~4855 років. Точна локація — таємниця USFS.
+  cyber_meaning_md: |
+    Дерево, що живе 4800 років завдяки граничному сповільненню всіх
+    процесів та економії кожного мікровата.
+
+- slug: albino-redwoods
+  realm: unique_tree
+  codex_uid: CDX-TRE-0004
+  title_uk: Секвої-альбіноси
+  title_en: Albino Redwoods
+  subtitle_uk: Вузли-пастки (Honeypots)
+  subtitle_en: Honeypot nodes
+  archetype_key: honeypot_node
+  lifecycle_status: 3
+  geo_region: california
+  latitude: 37.2200
+  longitude: -122.0800
+  context_md: |
+    Рідкісні білі мутації *Sequoia sempervirens* (~400 відомих особин).
+    Не мають хлорофілу — паразитують на сусідньому "материнському"
+    дереві, поглинаючи його токсини (важкі метали).
+  cyber_meaning_md: |
+    Білі дерева, що отруюють себе токсинами, аби вся інша мережа
+    залишалася здоровою та чистою.
+
+- slug: subfossil-kauri
+  realm: unique_tree
+  codex_uid: CDX-TRE-0005
+  title_uk: Субфосильні Каурі
+  title_en: Subfossil Kauri
+  subtitle_uk: Магнітний ROM
+  subtitle_en: Magnetic ROM record
+  archetype_key: magnetic_rom
+  lifecycle_status: 1
+  geo_region: north-island-nz
+  latitude: -35.7000
+  longitude: 174.3000
+  context_md: |
+    Стовбури *Agathis australis*, законсервовані торфом понад 42 тис.
+    років тому в Нгавха, Нова Зеландія; зафіксували інверсію магнітного
+    поля Землі (Laschamps event).
+  cyber_meaning_md: |
+    Дерево, що записало зміну полюсів планети 42 000 років тому у свої
+    кільця без жодного багу.
+
+- slug: tree-of-tenere
+  realm: unique_tree
+  codex_uid: CDX-TRE-0006
+  title_uk: Дерево Тенере
+  title_en: Tree of Ténéré
+  subtitle_uk: Single Point of Failure
+  subtitle_en: Single point of failure
+  archetype_key: single_point_of_failure
+  lifecycle_status: 4
+  geo_region: tenere-niger
+  latitude: 17.7570
+  longitude: 10.0707
+  context_md: |
+    Самотня акація у пустелі Тенере, Нігер; >400 км до найближчого
+    дерева. Збита п'яним водієм у 1973.
+  cyber_meaning_md: |
+    Трагічний приклад того, як один вузол на 400 км стає критично
+    вразливим, що виправдовує нашу Mesh-архітектуру.
+
+- slug: wollemi-pine
+  realm: unique_tree
+  codex_uid: CDX-TRE-0007
+  title_uk: Сосна Воллемі
+  title_en: Wollemi Pine
+  subtitle_uk: Air Gap резервна копія
+  subtitle_en: Air-gap backup
+  archetype_key: air_gap_backup
+  lifecycle_status: 2
+  geo_region: blue-mountains-au
+  latitude: -33.0833
+  longitude: 150.5167
+  context_md: |
+    *Wollemia nobilis* — "живий дикінозавр", виявлений 1994 у глибокій
+    ущелині Блакитних гір; популяція <100 дорослих особин.
+  cyber_meaning_md: |
+    Вид, що зник на 2 млн років і вижив лише завдяки фізичній ізоляції в
+    глибокій ущелині-бункері.
+
+- slug: hibakujumoku
+  realm: unique_tree
+  codex_uid: CDX-TRE-0008
+  title_uk: Хібакудзю
+  title_en: Hibakujumoku (A-bombed Trees)
+  subtitle_uk: Radiation-Hardened Nodes
+  subtitle_en: Radiation-hardened nodes
+  archetype_key: radiation_hardened
+  lifecycle_status: 3
+  geo_region: hiroshima
+  latitude: 34.3955
+  longitude: 132.4596
+  context_md: |
+    ~170 дерев у Хіросімі, що пережили ядерний вибух 1945 на радіусі
+    <2 км; усі дали нову паросль.
+  cyber_meaning_md: |
+    Дерева, що виконали `cold boot` після ядерного вибуху, надихаючи на
+    створення "невбивного" хардверу.
+
+- slug: great-banyan
+  realm: unique_tree
+  codex_uid: CDX-TRE-0009
+  title_uk: Великий Баньян
+  title_en: Great Banyan
+  subtitle_uk: P2P стійкість
+  subtitle_en: P2P resilience
+  archetype_key: p2p_resilience
+  lifecycle_status: 3
+  geo_region: kolkata
+  latitude: 22.5505
+  longitude: 88.2867
+  context_md: |
+    *Ficus benghalensis* в ботанічному саду Ачаря, Колката; ~3600
+    повітряних коренів, площа крони ~1.9 га. Головний стовбур видалено
+    1925 через хворобу — дерево вижило.
+  cyber_meaning_md: |
+    Дерево, що крокує новими стовбурами і продовжує розширюватися навіть
+    після повної ампутації головного Master-вузла.
+
+- slug: whistling-acacia
+  realm: unique_tree
+  codex_uid: CDX-TRE-0010
+  title_uk: Акація свистяча
+  title_en: Whistling Acacia
+  subtitle_uk: Активний Firewall
+  subtitle_en: Active firewall
+  archetype_key: active_firewall
+  lifecycle_status: 3
+  geo_region: east-africa
+  latitude: -1.0000
+  longitude: 36.0000
+  context_md: |
+    *Vachellia drepanolobium* з порожнистими шипами; виділяє нектар і
+    житло для агресивних мурах *Crematogaster*, які захищають дерево.
+  cyber_meaning_md: |
+    Дерево, що "наймає" армію мурах для захисту, — ідеальна аналогія для
+    аутсорсингу безпеки в Silken Net.
+
+- slug: tree-of-life-bahrain
+  realm: unique_tree
+  codex_uid: CDX-TRE-0011
+  title_uk: Дерево Життя (Бахрейн)
+  title_en: Tree of Life, Bahrain
+  subtitle_uk: Zero-Knowledge виживання
+  subtitle_en: Zero-knowledge survival
+  archetype_key: zero_knowledge_survival
+  lifecycle_status: 3
+  geo_region: bahrain
+  latitude: 25.9990
+  longitude: 50.6018
+  context_md: |
+    *Prosopis cineraria* у пустелі Бахрейну; ~400 років, без видимого
+    джерела води в радіусі 2 км.
+  cyber_meaning_md: |
+    Дерево доводить системі, що воно живе серед пустелі, не розкриваючи
+    таємницю свого джерела води.
+
+- slug: welwitschia
+  realm: unique_tree
+  codex_uid: CDX-TRE-0012
+  title_uk: Вельвічія
+  title_en: Welwitschia mirabilis
+  subtitle_uk: Infinite Loop без GC
+  subtitle_en: Infinite loop without GC
+  archetype_key: infinite_loop_optimised
+  lifecycle_status: 3
+  geo_region: namib
+  latitude: -23.0000
+  longitude: 14.5000
+  context_md: |
+    Реліктова голонасінна рослина пустелі Наміб; має лише два листки, що
+    ростуть всю свою тривалість життя (1500-2000 років).
+  cyber_meaning_md: |
+    Два листки, що ростуть 2000 років, — маніфест ідеально оптимізованої
+    прошивки без зайвих операцій.
+
+- slug: hyperion
+  realm: unique_tree
+  codex_uid: CDX-TRE-0013
+  title_uk: Гіперіон
+  title_en: Hyperion
+  subtitle_uk: Hardware Limit
+  subtitle_en: Hardware limit
+  archetype_key: hardware_limit
+  lifecycle_status: 3
+  geo_region: redwood-national-park
+  latitude: 41.2132
+  longitude: -124.0046
+  context_md: |
+    Секвоя вічнозелена у Redwood National Park, Каліфорнія; висота
+    115.92 м (виміряна 2006). Точна локація закрита.
+  cyber_meaning_md: |
+    Найвище дерево у світі, що демонструє фізичну межу гідравліки,
+    подібну до затухання радіосигналу на максимальній дальності.
+
+- slug: tule-tree
+  realm: unique_tree
+  codex_uid: CDX-TRE-0014
+  title_uk: Дерево Туле
+  title_en: Árbol del Tule
+  subtitle_uk: Bandwidth мега-каналу
+  subtitle_en: Mega-channel bandwidth
+  archetype_key: mega_bandwidth
+  lifecycle_status: 3
+  geo_region: oaxaca
+  latitude: 17.0467
+  longitude: -96.6361
+  context_md: |
+    *Taxodium mucronatum* у Санта-Марія-дель-Туле, Мексика; обхват
+    стовбура ~42 м — найбільший у світі.
+  cyber_meaning_md: |
+    Стовбур з найбільшим обхватом, що здатний пропускати колосальні
+    потоки даних/соків без перегріву.
+
+- slug: llangernyw-yew
+  realm: unique_tree
+  codex_uid: CDX-TRE-0015
+  title_uk: Тисове дерево Ллангернів
+  title_en: Llangernyw Yew
+  subtitle_uk: Rolling Update
+  subtitle_en: Rolling update
+  archetype_key: rolling_update
+  lifecycle_status: 3
+  geo_region: wales
+  latitude: 53.2256
+  longitude: -3.7733
+  context_md: |
+    *Taxus baccata* біля церкви у Ллангернів, Уельс; вік ~4000-5000
+    років, серцевина повністю згнила, дерево — "коло" з зовнішніх шарів.
+  cyber_meaning_md: |
+    Дерево, що 4000 років заміщує старе згниле ядро новими зовнішніми
+    шарами, підтримуючи роботу системи.
+
+- slug: general-sherman
+  realm: unique_tree
+  codex_uid: CDX-TRE-0016
+  title_uk: Генерал Шерман
+  title_en: General Sherman
+  subtitle_uk: Monolithic Data Center
+  subtitle_en: Monolithic data center
+  archetype_key: monolithic_data_center
+  lifecycle_status: 3
+  geo_region: sequoia-national-park
+  latitude: 36.5817
+  longitude: -118.7515
+  context_md: |
+    Гігантський секвоядендрон у Sequoia National Park; об'єм стовбура
+    ~1487 м³ — найбільший за об'ємом організм планети.
+  cyber_meaning_md: |
+    Найбільший об'єм біомаси в одному вузлі — приклад максимальної
+    концентрації ресурсів та пам'яті.
+
+- slug: major-oak
+  realm: unique_tree
+  codex_uid: CDX-TRE-0017
+  title_uk: Майорський дуб
+  title_en: Major Oak
+  subtitle_uk: Legacy System з екзоскелетом
+  subtitle_en: Legacy system with exoskeleton
+  archetype_key: legacy_with_exoskeleton
+  lifecycle_status: 2
+  geo_region: sherwood-forest
+  latitude: 53.2061
+  longitude: -1.0726
+  context_md: |
+    Дуб Шервудського лісу, Англія; ~1000 років, маса ~23 тонни,
+    більшість гілок тримається на сталевих підпорах з 1908.
+  cyber_meaning_md: |
+    1000-річне дерево на сталевих підпорках — нагадування, як важливо
+    вчасно оновлювати код, щоб не жити на "милицях".
+
+- slug: baobab
+  realm: unique_tree
+  codex_uid: CDX-TRE-0018
+  title_uk: Баобаб
+  title_en: Baobab
+  subtitle_uk: Локальний Vcap
+  subtitle_en: Local Vcap storage
+  archetype_key: local_vcap_storage
+  lifecycle_status: 2
+  geo_region: madagascar
+  latitude: -20.2500
+  longitude: 44.4167
+  context_md: |
+    *Adansonia* spp. — африканські та мадагаскарські баобаби. Стовбур
+    зберігає до ~120 тис. літрів води у вологий сезон.
+  cyber_meaning_md: |
+    Дерево-губка, що зберігає 120 000 літрів води, дозволяючи системі
+    переживати тривалі періоди повної відсутності зовнішнього живлення.
+
+- slug: ta-prohm-trees
+  realm: unique_tree
+  codex_uid: CDX-TRE-0019
+  title_uk: Дерева Та Пром
+  title_en: Ta Prohm Trees
+  subtitle_uk: Hardware Merge
+  subtitle_en: Hardware merge
+  archetype_key: hardware_merge
+  lifecycle_status: 3
+  geo_region: angkor
+  latitude: 13.4350
+  longitude: 103.8893
+  context_md: |
+    Дерева *Tetrameles nudiflora* і *Ficus altissima*, що проростали
+    крізь храм Та Пром (Камбоджа); коріння стало конструктивною частиною
+    стін.
+  cyber_meaning_md: |
+    Коріння, що стало несучою конструкцією для каміння храму, — ідеал
+    вживлення нашого анкера в живу тканину.
+
+- slug: strangler-fig
+  realm: unique_tree
+  codex_uid: CDX-TRE-0020
+  title_uk: Фікус-душитель
+  title_en: Strangler Fig
+  subtitle_uk: Overlay Network
+  subtitle_en: Overlay network
+  archetype_key: overlay_network
+  lifecycle_status: 3
+  context_md: |
+    Кілька видів *Ficus* з гемі-епіфітним способом життя; проростають у
+    кроні господаря, спускають коріння до землі і поступово витісняють
+    оригінальне дерево.
+  cyber_meaning_md: |
+    Мережа, що виростає поверх старої системи і поступово заміщує її, —
+    стратегія впровадження Silken Net у лісництва.
+
+- slug: trembling-aspen
+  realm: unique_tree
+  codex_uid: CDX-TRE-0021
+  title_uk: Осика тремтяча
+  title_en: Trembling Aspen
+  subtitle_uk: Пасивна мехатроніка
+  subtitle_en: Passive mechatronic sensor
+  archetype_key: passive_mechatronic_sensor
+  lifecycle_status: 3
+  geo_region: north-america
+  latitude: 50.0000
+  longitude: -100.0000
+  context_md: |
+    *Populus tremuloides*; черешок листка плоский і перпендикулярний
+    площині пластинки, тому листя тремтить навіть при найменших
+    повітряних коливаннях.
+  cyber_meaning_md: |
+    Плоский черешок листка, що ловить мікро-вібрації повітря без витрат
+    енергії, — патент для наших акустичних сенсорів.
+
+- slug: ginkgo-biloba
+  realm: unique_tree
+  codex_uid: CDX-TRE-0022
+  title_uk: Гінкго Білоба
+  title_en: Ginkgo biloba
+  subtitle_uk: Immutable Kernel
+  subtitle_en: Immutable kernel
+  archetype_key: immutable_kernel
+  lifecycle_status: 3
+  geo_region: china
+  latitude: 31.0000
+  longitude: 117.0000
+  context_md: |
+    Єдиний живий вид родини Ginkgoaceae; копальні форми відомі з юри
+    (~270 млн років тому). Майже не має природних шкідників.
+  cyber_meaning_md: |
+    Вид, що не змінився за 270 млн років і не має ворогів, — еталон
+    коду, який не потребує патчів і оновлень.
+
+- slug: shevchenko-oaks-budyshche
+  realm: unique_tree
+  codex_uid: CDX-TRE-0023
+  title_uk: Шевченкові дуби (с. Будище)
+  title_en: Shevchenko Oaks (Budyshche)
+  subtitle_uk: Hardware Vault (захищений анклав)
+  subtitle_en: Hardware vault — secure enclave
+  archetype_key: hardware_vault
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.1083
+  longitude: 31.5028
+  context_md: |
+    Три 1000-літні дуби на Звенигородщині, Черкаська обл. У дуплах
+    Тарас Шевченко (за переказами) ховав свої малюнки від поміщика.
+  cyber_meaning_md: |
+    Три 1000-літні дуби з величезними дуплами, де Тарас Шевченко ховав
+    свої малюнки від пана — ідеальна метафора фізичного вузла, який
+    слугує надійним офлайн-сховищем (Cold Wallet) для критично важливих
+    даних у ворожому середовищі.
+
+- slug: hohols-pine-mykhailova-hora
+  realm: unique_tree
+  codex_uid: CDX-TRE-0024
+  title_uk: Сосна Гоголя (Михайлова Гора)
+  title_en: Hohol's Pine (Mykhailova Hora)
+  subtitle_uk: Anti-Erosion Anchor Node
+  subtitle_en: Anti-erosion anchor node
+  archetype_key: anti_erosion_anchor
+  lifecycle_status: 2
+  geo_region: cherkasy
+  latitude: 49.6858
+  longitude: 31.4839
+  context_md: |
+    300-річна сосна звичайна на Михайловій горі біля с. Прохорівка над
+    Дніпром; коріння повністю оголене ерозією, тримає дерево над прірвою.
+  cyber_meaning_md: |
+    300-річна сосна з оголеним, переплетеним корінням на самісінькому
+    краю урвища, яка доводить, що бекенд (коріння) набагато важливіший
+    за фронтенд (крону), коли система тримає баланс на межі прірви.
+
+- slug: cherkasy-bir-giant-oaks
+  realm: unique_tree
+  codex_uid: CDX-TRE-0025
+  title_uk: Велетенські дуби Черкаського бору
+  title_en: Giant Oaks of Cherkasy Pine Forest
+  subtitle_uk: Backward Compatibility Nodes
+  subtitle_en: Backward-compatibility nodes
+  archetype_key: backward_compatibility_node
+  lifecycle_status: 3
+  geo_region: cherkasy-bir
+  latitude: 49.4500
+  longitude: 31.9833
+  context_md: |
+    400-річні дуби в районах Соснівки і Дахнівки серед суцільно
+    хвойного Черкаського бору.
+  cyber_meaning_md: |
+    400-річні широколистяні гіганти, що ідеально працюють всередині
+    виключно хвойного масиву, демонструючи крос-протокольну взаємодію
+    різних видів в одній локальній Mesh-мережі.
+
+- slug: lopukhin-platan-korsun
+  realm: unique_tree
+  codex_uid: CDX-TRE-0026
+  title_uk: Платан Лопухіних
+  title_en: Lopukhin's Plane Tree
+  subtitle_uk: Granite Island Router
+  subtitle_en: Granite-island router
+  archetype_key: granite_island_router
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.4167
+  longitude: 31.2667
+  context_md: |
+    Платан XVIII ст. на острові Коцюбинського посеред річки Рось у
+    Корсунь-Шевченківському; коріння вросло у гранітну скелю.
+  cyber_meaning_md: |
+    Велетенське дерево 18-го століття, що вросло прямо в гранітну скелю
+    посеред річки Рось — еталонний стенд для тестування стійкості наших
+    STM32 до постійних вібрацій та акустичного білого шуму від порогів.
+
+- slug: sofiivka-tulip-tree
+  realm: unique_tree
+  codex_uid: CDX-TRE-0027
+  title_uk: Тюльпанове дерево Софіївки
+  title_en: Sofiyivka Tulip Tree
+  subtitle_uk: Successful Code Porting
+  subtitle_en: Successful code porting
+  archetype_key: successful_code_porting
+  lifecycle_status: 3
+  geo_region: uman
+  latitude: 48.7592
+  longitude: 30.2225
+  context_md: |
+    *Liriodendron tulipifera*, висаджене у дендропарку "Софіївка"
+    (Умань) понад 200 років тому; північноамериканський екзот.
+  cyber_meaning_md: |
+    Північноамериканський екзот, висаджений понад 200 років тому, що
+    працює без багів — доказ того, що "іноземний апаратний код" може
+    ідеально виконуватися в локальному середовищі виконання (Runtime)
+    без відторгнення системою.
+
+- slug: motronyn-monastery-oaks
+  realm: unique_tree
+  codex_uid: CDX-TRE-0028
+  title_uk: Монастирські дуби (Мотронинський монастир)
+  title_en: Motronyn Monastery Oaks
+  subtitle_uk: Encrypted Relay Nodes
+  subtitle_en: Encrypted relay nodes
+  archetype_key: encrypted_relay_node
+  lifecycle_status: 3
+  geo_region: kholodnyi-yar
+  latitude: 49.0500
+  longitude: 32.0167
+  context_md: |
+    Багатовікові дуби на лінії стародавніх валів Холодного Яру біля
+    Мотронинського монастиря; орієнтири і схованки гайдамак.
+  cyber_meaning_md: |
+    Багатовікові дерева, що стоять на лінії стародавніх валів і
+    слугували орієнтирами та схованками для повстанців, — метафора
+    вузлів зв'язку, що стоять на критичних маршрутах передачі даних.
+
+- slug: snake-spruce-mliyiv
+  realm: unique_tree
+  codex_uid: CDX-TRE-0029
+  title_uk: Ялина-змія (Мліївський інститут помології)
+  title_en: Snake Spruce (Mliyiv Pomology Institute)
+  subtitle_uk: Hardware Forking
+  subtitle_en: Hardware forking
+  archetype_key: hardware_forking
+  lifecycle_status: 3
+  geo_region: cherkasy
+  latitude: 49.2667
+  longitude: 31.7000
+  context_md: |
+    Унікальні мутації та штучні щеплення у Мліївському інституті
+    помології ім. Симиренка; на одному корені — різні крони.
+  cyber_meaning_md: |
+    Унікальні мутації та штучні щеплення, де на одному корені працюють
+    різні крони, що є готовим полігоном для перевірки реакції наших
+    сенсорів на шину даних (ксилему), яку ділять між собою два різні
+    генетичні коди.

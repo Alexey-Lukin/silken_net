@@ -8,15 +8,17 @@ class PartitionMaintenanceWorker
   sidekiq_options queue: "default", retry: 3
 
   # Таблиці з декларативним партиціюванням RANGE за created_at.
-  PARTITIONED_TABLES = %w[telemetry_logs gateway_telemetry_logs blockchain_transactions].freeze
+  # Phase 4 додав codex_matches (гра Battle Arena, 100M+ rows очікувано).
+  # Якщо додаєте нову RANGE-партиційну таблицю — внесіть її сюди І перевірте
+  # `spec/workers/partition_maintenance_worker_spec.rb` (очікуване число логів).
+  PARTITIONED_TABLES = %w[telemetry_logs gateway_telemetry_logs blockchain_transactions codex_matches].freeze
 
   def perform
     today = Time.current.utc.to_date
     months = [ today.beginning_of_month, (today + 1.month).beginning_of_month ]
+    created = 0  # initialised early so the Sentry rescue payload is always defined
 
     Rails.logger.info "🗂️ [Partition Maintenance] Перевірка партицій для #{months.map { _1.strftime('%Y-%m') }.join(', ')}..."
-
-    created = 0
 
     PARTITIONED_TABLES.each do |table_name|
       months.each do |month_start|
@@ -25,6 +27,21 @@ class PartitionMaintenanceWorker
     end
 
     Rails.logger.info "✅ [Partition Maintenance] Завершено. Створено нових партицій: #{created}"
+  rescue StandardError => e
+    # CRITICAL: silent partition-creation failure is catastrophic — the very next
+    # INSERT against the affected table on day-1 of the new month crashes with
+    # `no partition of relation "<table>" found for row`. We re-raise so Sidekiq
+    # picks it up for the configured `retry: 3`, AND we report to Sentry so the
+    # operator gets paged BEFORE the partition window expires.
+    if defined?(Sentry)
+      Sentry.capture_exception(
+        e,
+        tags: { worker: "PartitionMaintenanceWorker", severity: "critical" },
+        extra: { tables: PARTITIONED_TABLES, months: months.map(&:to_s), created_so_far: created }
+      )
+    end
+    Rails.logger.error "🛑 [Partition Maintenance CRITICAL] #{e.class}: #{e.message}"
+    raise
   end
 
   private

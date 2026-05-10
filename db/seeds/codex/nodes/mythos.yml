@@ -1,0 +1,165 @@
+# Codex::Node corpus — Realm: mythos (10 records).
+
+- slug: jianmu
+  realm: mythos
+  codex_uid: CDX-MYT-0001
+  title_uk: Цзяньму (Світове дерево)
+  title_en: Jianmu (World Tree)
+  subtitle_uk: Кіберфізичний міст
+  subtitle_en: Cyber-physical bridge
+  archetype_key: cyber_physical_bridge
+  lifecycle_status: 0
+  context_md: |
+    У давньокитайській космогонії — священне дерево, що з'єднувало
+    Небо і Землю; за легендою, по ньому піднімалися імператори і
+    шамани. Згадане у "Шан хай цзін".
+  cyber_meaning_md: |
+    Відновлення втраченого каналу зв'язку між Небом (аналітикою) та
+    Землею (деревом) через наш титан.
+
+- slug: fusang
+  realm: mythos
+  codex_uid: CDX-MYT-0002
+  title_uk: Фусан
+  title_en: Fusang
+  subtitle_uk: Load Balancing
+  subtitle_en: Load balancing
+  archetype_key: load_balancing
+  lifecycle_status: 0
+  context_md: |
+    Міфічне дерево східного моря у китайській традиції; на ньому
+    жило десять сонць, що по черзі вилітали на небо.
+  cyber_meaning_md: |
+    Алгоритм черговості світіння десяти сонць, який вчить нас не
+    спалити ефір колізіями даних.
+
+- slug: yggdrasil
+  realm: mythos
+  codex_uid: CDX-MYT-0003
+  title_uk: Іґґдрасіль
+  title_en: Yggdrasil
+  subtitle_uk: Топологія Всесвіту
+  subtitle_en: Universe topology
+  archetype_key: universe_topology
+  lifecycle_status: 0
+  context_md: |
+    Велетенський ясен у скандинавській міфології; тримає на собі
+    дев'ять світів. Корені сягають Асгарду, Йотунхейму, Ніфльхейму.
+  cyber_meaning_md: |
+    Дерево як каркас реальності, де кожен світ — це окремий сегмент
+    нашої глобальної Mesh-мережі.
+
+- slug: yorishiro
+  realm: mythos
+  codex_uid: CDX-MYT-0004
+  title_uk: Йорісіро
+  title_en: Yorishiro
+  subtitle_uk: Священний хардвер
+  subtitle_en: Sacred hardware
+  archetype_key: sacred_hardware
+  lifecycle_status: 0
+  context_md: |
+    У синтоїстській традиції — фізичний об'єкт (часто дерево), у
+    якому тимчасово оселяється дух (камі); зазвичай маркується
+    шіменавою — солом'яним мотузком з паперовими стрічками.
+  cyber_meaning_md: |
+    Концепція об'єкта (дерева), що стає анкером для вищих
+    сутностей/даних через спеціальне маркування (наш PEEK-купол).
+
+- slug: sefirot
+  realm: mythos
+  codex_uid: CDX-MYT-0005
+  title_uk: Сефірот (Дерево Життя)
+  title_en: Sefirot (Tree of Life)
+  subtitle_uk: DAG-архітектура
+  subtitle_en: DAG architecture
+  archetype_key: dag_architecture
+  lifecycle_status: 0
+  context_md: |
+    У каббалі — каскад з 10 сефірот (атрибутів Творця), з'єднаних 22
+    шляхами; еманація Безкінечного у фізичний світ.
+  cyber_meaning_md: |
+    Каскад фільтрів та трансформаторів, що перетворюють енергію лісу у
+    тверду валюту — токени на блокчейні.
+
+- slug: trees-of-valinor
+  realm: mythos
+  codex_uid: CDX-MYT-0006
+  title_uk: Два Дерева Валінору
+  title_en: Two Trees of Valinor
+  subtitle_uk: Бінарний тактовий генератор
+  subtitle_en: Binary clock
+  archetype_key: binary_clock
+  lifecycle_status: 0
+  context_md: |
+    Лауреліні (золоте) і Тельперіон (срібне) — джерело світла Валінору
+    у легендаріумі Толкіна; цикли по 12 годин.
+  cyber_meaning_md: |
+    Срібло та золото як 0 та 1, що задають ідеальний ритм коливань
+    (RTC) для всієї системи.
+
+- slug: mellorn-lothlorien
+  realm: mythos
+  codex_uid: CDX-MYT-0007
+  title_uk: Меллорни Лотлоріену
+  title_en: Mellorn of Lothlórien
+  subtitle_uk: Ідеал сродної праці
+  subtitle_en: Timeless craftsmanship
+  archetype_key: timeless_artisan
+  lifecycle_status: 0
+  context_md: |
+    "Срібнолисті дерева" Лотлоріену у Толкіна; ростуть лише у володіннях
+    Галадріелі завдяки магії Кільця Ненья.
+  cyber_meaning_md: |
+    Дерева, що існують поза часом і ентропією завдяки волі та інтелекту
+    архітектора-ельфа.
+
+- slug: ents-fangorn
+  realm: mythos
+  codex_uid: CDX-MYT-0008
+  title_uk: Енти Фангорна
+  title_en: Ents of Fangorn
+  subtitle_uk: Пасивний моніторинг
+  subtitle_en: Passive monitoring
+  archetype_key: passive_monitoring
+  lifecycle_status: 0
+  context_md: |
+    Деревоподібні раси-пастирі лісу у Толкіна; реагують повільно, але
+    нищівно (битва за Ізенгард).
+  cyber_meaning_md: |
+    Могутні пастирі лісу, що прокидаються лише у критичні моменти, —
+    аналог нашого режиму параметричних алертів.
+
+- slug: eywa-pandora
+  realm: mythos
+  codex_uid: CDX-MYT-0009
+  title_uk: Ейва Пандори
+  title_en: Eywa of Pandora
+  subtitle_uk: Планетарний суперкомп'ютер
+  subtitle_en: Planetary supercomputer
+  archetype_key: planetary_supercomputer
+  lifecycle_status: 0
+  context_md: |
+    Колективна свідомість екосистеми Пандори у фільмі "Аватар" (2009);
+    нейронна мережа з ~10¹² зв'язків на кв.км — більше ніж у людському
+    мозку.
+  cyber_meaning_md: |
+    Метафора того, чим має стати Silken Net — єдиною свідомістю лісу з
+    інтерфейсом для кожного мешканця.
+
+- slug: barometz
+  realm: mythos
+  codex_uid: CDX-MYT-0010
+  title_uk: Баромець (Рослинний агнець)
+  title_en: Barometz (Vegetable Lamb)
+  subtitle_uk: Перший кіборг
+  subtitle_en: First cyborg
+  archetype_key: first_cyborg
+  lifecycle_status: 0
+  context_md: |
+    Середньовічна європейська легенда про "татарського агнця" — рослину
+    з плодом у формі вівці, з'єднану з ягнятком пуповиною. Описана у
+    Mandeville's Travels (XIV ст.).
+  cyber_meaning_md: |
+    Прадавня ідея симбіозу живої істоти та рослини, що живляться з
+    однієї пуповини/анкера.
