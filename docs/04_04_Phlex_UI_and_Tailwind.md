@@ -1608,3 +1608,114 @@ render Views::Shared::UI::Pagination.new(
 ### 17.5 i18n
 
 The mobile labels come from `data-label`, which itself is i18n'd through the standard `t_("table.severity")` helper. Switch `:en` ↔ `:uk` and the card labels switch with the desktop column headers — no parallel translation surface.
+
+---
+
+## 18. Industry Standards (SSOT) + Per-PR Definition of Done
+
+> Перенесено з тимчасового `docs/plans/frontend_overhaul_plan.md` (Phase 6,
+> retire-plan consolidation; сам файл видалено після переїзду evergreen-знань).
+> Розділ — SSOT для рев'юверів: кожен фронтенд-PR
+> посилається на конкретний пункт замість винаходу власних правил.
+
+### 18.1 Accessibility — WCAG 2.2 AA + WAI-ARIA 1.2
+
+- **Контрастність:** мінімум 4.5:1 для тексту, 3:1 для UI-елементів та non-text. Перевіряємо обидві теми (light + dark) через Lighthouse / axe DevTools.
+- **Focus visible:** `focus-visible:ring-2 focus-visible:ring-gaia-primary` на всіх інтерактивних елементах (canon WCAG 2.4.7).
+- **Reduced motion:** глобальний `@media (prefers-reduced-motion: reduce)` у `application.css` — § 14.4.
+- **Semantic landmarks:** `<header role="banner">`, `<nav role="navigation">`, `<main role="main">`, `<aside>`, `<footer role="contentinfo">`.
+- **ARIA patterns:** офіційний APG (Authoring Practices Guide) для menu, dialog, disclosure. `LocaleSwitcher` використовує HTML Popover API — нативний disclosure, без ARIA-обвязки.
+- **Keyboard nav:** Escape, Tab order, focus-trap (для drawer — забезпечується нативним `<dialog>.showModal()`, § 13.1).
+- **Touch targets:** мінімум 24×24 CSS px (WCAG 2.5.8), цільовий 44×44 (Apple HIG) для primary actions.
+- **Responsive tables:** `data-label` per `<td>` + `gaia-responsive-table` CSS — § 17 — зберігає семантику для AT, доступний на mobile.
+
+### 18.2 Internationalization — Rails I18n + Unicode CLDR
+
+- **Файлова структура** за доменом (`config/locales/<domain>/{uk,en}.yml`) — Rails Guide "Lazy Lookup" pattern, § 12.2.
+- **Pluralization:** `t(..., count:)` + CLDR rules (UA — 4 форми: one/few/many/other; EN — one/other).
+- **Інтерполяція:** ніяких зарезервованих ключів (`:locale`, `:scope`, `:default`).
+- **`<html lang>`:** SEO + screen readers (W3C HTML 5.2). Виставляється у `dashboard_layout`/`auth_layout` через `I18n.locale`.
+- **No hardcoded strings** у view-shared компонентах — `bin/migrate-tailwind-tokens` + `t_(key)` lazy-lookup pattern (§ 12.5).
+- **Locale = `uk`, не `ua`** — ISO-639-1 (§ 12.1).
+
+### 18.3 Security — OWASP ASVS L2 + GitHub Security
+
+- **CSRF:** Rails default `protect_from_forgery` — `LocaleSwitcher` submit це звичайна form з authenticity token.
+- **Open-redirect guard:** `LocalesController#sanitized_referer` валідує `request.host == referer.host`.
+- **Cookie flags:** `httponly: true`, `same_site: :lax`, `secure: production?`.
+- **CSP:** дотримуємося існуючої політики (`csp_meta_tag`); inline-стилі заборонені.
+- **HSTS / X-Frame-Options:** Rails defaults.
+- **Dependency scanning:** GitHub Dependabot + `bundle audit` + `gh-advisory-database` на кожен PR (DoD § 18.9).
+- **Secret scanning:** GitHub native + Gitleaks (вже у CI).
+
+### 18.4 Performance — Google Web Vitals + Core Performance budgets
+
+- **LCP < 2.5 s** на 4G/Slow Mobile — fluid `clamp()` typography уникає CLS-перерозкладок при зміні vw (§ 14.1).
+- **CLS < 0.1** — `Skeleton` варіанти займають той самий простір, що й контент.
+- **INP < 200 ms** — Stimulus controllers без важких synchronous блоків; `matrix-rain` throttle ~16 fps (`requestAnimationFrame`).
+- **Lazy-load** через Turbo Frames `loading: :lazy` для дорогих фрагментів (Wallet balance/metadata).
+- **Resource hints:** `<link rel="preconnect">` для CDN тайлів Leaflet (CartoDB).
+- **Bundle budget:** importmap (no bundler) — кожен Stimulus controller ≤ 5 KB gzipped (manual budget).
+
+### 18.5 Design tokens — W3C DTCG + Material 3 + Tailwind v4
+
+- Naming convention `--<group>-<role>-<modifier>` (наприклад `--gaia-text-strong`) — узгоджено з W3C Design Tokens Community Group draft.
+- Tier-1 (raw colors) → Tier-2 (semantic tokens) — у нас лише Tier-2 (semantic), що відповідає Material 3 "system tokens".
+- Surface elevation (4-tier: `base` / `surface` / `elevated` / `sunken`) — Material 3 "elevation tokens" (§ 3.1).
+- SSOT для токенів — `@theme` блок у `app/assets/tailwind/application.css`. `tailwind.config.js` не існує (§ 3).
+
+### 18.6 Code quality — Google Style Guide + GitHub Engineering
+
+- **Convention over configuration:** Phlex namespacing віддзеркалює routes (Rails-way).
+- **Small PRs / atomic commits:** Conventional Commits (`docs:`, `feat:`, `fix:`, `refactor:`, `test:`, `chore:`) — DORA "small batch size".
+- **Code review:** `parallel_validation` (Code Review + CodeQL) перед merge.
+- **Comments:** "explain why, not what" (Google C++ Style Guide §3.5). Уникаємо tautological comments.
+- **Naming:** Ruby — `snake_case`, Phlex class — `CamelCase` з namespace, Stimulus controller — `kebab-case` файл + `camelCase` target/values.
+
+### 18.7 DORA metrics — DevOps Research & Assessment
+
+- **Deployment frequency:** фази → окремі PR-и (≥ 1 на фазу) — досягнуто.
+- **Lead time for changes:** малий surface → швидкий review.
+- **Change failure rate:** `parallel_validation` + CodeQL + повний RSpec прогін перед merge.
+- **MTTR:** Sentry DSN підключено через `.kamal/secrets` → стек-трейси в production.
+
+### 18.8 Rails-specific — Rails Doctrine + The Rails Way
+
+- **Convention over Configuration:** `LocaleSettable` — concern, не базовий клас.
+- **Beautiful code over the easy code:** малі methods у Phlex (`render_summary`, `render_menu`, `render_option`).
+- **Optimize for programmer happiness:** Phlex API natural Ruby vs ERB strings.
+- **Push complexity downwards:** `I18n.t` у view, не у controller; cookie writing у controller, не у model.
+
+### 18.9 Per-PR Definition of Done (фронтенд-зміни)
+
+Кожен PR із змінами у `app/views/` має у description checklist:
+
+- [ ] WCAG AA contrast verified у обох темах (axe DevTools / Lighthouse), мінімум 4.5:1 для тексту
+- [ ] Keyboard reachable — Tab + Escape, focus order логічний
+- [ ] `prefers-reduced-motion` поважається (без важких decorative animations при reduce)
+- [ ] `focus-visible:ring-2 focus-visible:ring-gaia-primary` на нових інтерактивних елементах
+- [ ] No hardcoded EN/UK strings у `app/views/components/` чи `app/views/shared/` — `t_(key)` lazy-lookup
+- [ ] Cookie flags `secure / httponly / same_site` встановлені де писали cookie
+- [ ] No open-redirect — `referer` валідується проти `request.host`
+- [ ] Conventional Commit message (`feat(scope):` / `fix(scope):` / `docs(scope):`)
+- [ ] `bundle exec rubocop && bundle exec rspec spec/views/ spec/requests/<changed>` зелено
+- [ ] `bundle exec rake gaia:lint_tokens` зелено для торкнутих файлів (§ 16)
+- [ ] `parallel_validation` (Code Review + CodeQL) пройшов або addressed
+
+Sandbox-обмеження: автоматичний прогін axe-core / Lighthouse у CI потребує headless Chromium з мережевим доступом. Поки що це **manual gate** для рев'ювера. Коли `cuprite` тести отримають axe-runner — переведемо у автомат і відмітимо чек-бокс програмно.
+
+---
+
+## Status: Frontend Overhaul Complete
+
+Всі шість фаз перебудови фронтенда (D1–D7 KPI з оригінального плану) виконано:
+
+| KPI | Статус | Де реалізовано |
+|---|---|---|
+| **D1** Перемикання dark↔light видно на ≥ 95 % площі | ✅ | § 3 — gaia-токени всюди в shared/ + 8 мігрованих доменних компонентів |
+| **D2** WCAG AA контраст у обох темах | ✅ | § 3 — переглянуто status-токени, додано `text-strong/muted/subtle` |
+| **D3** UA (default) + EN, switcher, cookie + Accept-Language | ✅ | § 12 — `LocaleSettable` + `LocaleSwitcher` (HTML Popover API) |
+| **D4** Mobile drawer, без horizontal scroll | ✅ | § 13 (drawer на нативному `<dialog>`) + § 17 (responsive tables) |
+| **D5** `prefers-reduced-motion` глобально, `duration-{150-300}` | ✅ | § 14.4 — глобальний CSS rule + motion budget |
+| **D6** Min font-size 12 px у production-розмітці | ✅ | § 4 — `text-micro/mini/tiny` лишилися як decorative-only labels |
+| **D7** Жоден shared/ui компонент не має raw Tailwind | ✅ | § 16 — `gaia:lint_tokens` rake task; backlog у `app/views/components/` опрацьовується доменними PR-ами |
