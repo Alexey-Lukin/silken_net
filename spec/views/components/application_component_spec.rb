@@ -11,8 +11,12 @@ RSpec.describe ApplicationComponent, type: :view do
       expect(described_class::CUSTOM_TEXT_SCALE).to include("micro", "mini", "tiny", "compact")
     end
 
-    it "has exactly 4 custom text scale tokens" do
-      expect(described_class::CUSTOM_TEXT_SCALE.size).to eq(4)
+    it "includes the display typography tokens" do
+      expect(described_class::CUSTOM_TEXT_SCALE).to include("display-sm", "display-md", "display-lg")
+    end
+
+    it "has exactly 7 custom text scale tokens (4 terminal + 3 display)" do
+      expect(described_class::CUSTOM_TEXT_SCALE.size).to eq(7)
     end
   end
 

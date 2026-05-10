@@ -337,11 +337,80 @@ Domain-specific term glossary (UA→EN): "Цитадель" → Citadel, "Вій
 
 ---
 
-## 11. Definition of Done (per phase)
+## 11. Industry standards & best-practice references (SSOT)
 
-- [ ] `bundle exec rubocop` зелений.
-- [ ] `bundle exec rspec spec/views/ spec/requests/` зелений у межах зачеплених файлів.
-- [ ] Lookbook рендериться без помилок у обох локалях.
-- [ ] Manual smoke: dark↔light дає ≥ 95% візуальної різниці на dashboard, /trees, /wallets, /alerts.
-- [ ] Mobile (375 px) — sidebar drawer працює, контент без horizontal scroll.
-- [ ] `docs/04_04_Phlex_UI_and_Tailwind.md` оновлено для змінених токенів/компонентів.
+> Усі рішення цього плану свідомо узгоджуються з нижченаведеними галузевими
+> стандартами та best-practice підбірками. Кожен PR у фазах має у DoD-чек-листі
+> "відповідає [стандарт]" замість винаходу власних правил.
+
+### 11.1 Accessibility (WCAG 2.2 AA + WAI-ARIA 1.2)
+- **Контрастність:** мінімум 4.5:1 для тексту, 3:1 для UI-елементів та non-text — перевіряємо обидві теми (Lighthouse + axe).
+- **Focus visible:** `focus-visible:` на всіх інтерактивних елементах (canon WCAG 2.4.7).
+- **Reduced motion:** глобальний `@media (prefers-reduced-motion: reduce)` — § 2.6.
+- **Semantic landmarks:** `<header role="banner">`, `<nav role="navigation">`, `<main role="main">`, `<aside>`, `<footer role="contentinfo">`.
+- **ARIA patterns:** офіційний APG (Authoring Practices Guide) для menu, dialog, disclosure. LocaleSwitcher використовує `<details>`/`<summary>` — нативний disclosure, не потребує ARIA-обвязки.
+- **Keyboard nav:** Escape, Tab order, focus trap (для drawer).
+- **Touch targets:** мінімум 24×24 CSS px (WCAG 2.5.8), цільовий 44×44 (Apple HIG) для primary actions.
+
+### 11.2 Internationalization (Rails I18n + Unicode CLDR)
+- **Файлова структура** за доменом (defaults / navigation / components / flash) — рекомендація Rails Guide, "Lazy Lookup" pattern.
+- **Pluralization:** через `t(..., count:)` + CLDR rules (UA має 4 форми: one/few/many/other; EN — one/other).
+- **Інтерполяція:** ніяких зарезервованих ключів (`:locale`, `:scope`, `:default`).
+- **`<html lang>`:** SEO + screen readers (W3C HTML 5.2).
+- **HTTP `Content-Language`** заголовок — додаємо у Phase 4 коли всі сторінки мігровані.
+- **No hardcoded strings** у view-shared компонентах (RuboCop кастомне правило — TODO Phase 6).
+
+### 11.3 Security (OWASP ASVS L2 + GitHub Security)
+- **CSRF:** Rails default `protect_from_forgery` лишається ввімкненим всюди; LocaleSwitcher submit — звичайна form з authenticity token.
+- **Open-redirect guard:** `LocalesController#sanitized_referer` валідує `request.host == referer.host`.
+- **Cookie flags:** `httponly: true`, `same_site: :lax`, `secure: production?`.
+- **CSP:** дотримуємося існуючої політики (`csp_meta_tag`); inline-стилі заборонені.
+- **HSTS / X-Frame-Options:** Rails defaults.
+- **Dependency scanning:** GitHub Dependabot + `bundle audit` + `gh-advisory-database` на кожен PR (DoD).
+- **Secret scanning:** GitHub native + Gitleaks (вже у CI).
+
+### 11.4 Performance (Google Web Vitals + Core Performance budgets)
+- **LCP < 2.5 s** на 4G/Slow Mobile — fluid `clamp()` typography уникає CLS-перерозкладок при зміні vw.
+- **CLS < 0.1** — Skeleton-варіанти займають той самий простір, що й контент.
+- **INP < 200 ms** — Stimulus controllers без важких syncronous блоків; Matrix Rain throttle 16 fps.
+- **Lazy-load** через Turbo Frames `loading: :lazy` для дорогих фрагментів (вже вживається).
+- **Resource hints:** `<link rel="preconnect">` для CDN тайлів Leaflet (TODO Phase 6).
+- **Bundle budget:** importmap (no bundler) — кожен Stimulus контролер ≤ 5 KB, gzipped (manual budget).
+
+### 11.5 Design tokens (W3C Design Tokens Community Group, Material 3, Tailwind v4)
+- Naming convention `--<group>-<role>-<modifier>` (e.g. `--gaia-text-strong`) — виправдано W3C DTCG draft.
+- Tier-1 (raw colors) → Tier-2 (semantic tokens) — у нас є тільки Tier-2 (semantic), що відповідає Material 3 "system tokens".
+- Surface elevation (4-tier) — паттерн з Material 3 "elevation tokens".
+
+### 11.6 Code quality (Google Style Guide + GitHub Engineering)
+- **Convention over configuration:** Phlex-namespacing віддзеркалює routes (Rails-way).
+- **Small PRs / atomic commits:** Conventional Commits (`docs:`, `feat:`, `fix:`, `refactor:`, `test:`, `chore:`) — DORA "small batch size" (deployment frequency, lead time).
+- **Code review:** GitHub суsuggested-changes, `parallel_validation` тулом перед merge.
+- **Comments:** "explain why, not what" (Google C++ Style Guide §3.5) — застосовуємо до всіх коментарів. Уникаємо tautological comments (RuboCop `Lint/RedundantCopDisableDirective`).
+- **Naming:** Ruby — snake_case, Phlex class — CamelCase з namespace, Stimulus controller — `kebab-case` файл + camelCase target/values (Stimulus convention).
+
+### 11.7 DORA metrics (DevOps Research & Assessment)
+- **Deployment frequency:** фази → окремі PR-и (≥ 1 на фазу).
+- **Lead time for changes:** малий surface → швидкий review.
+- **Change failure rate:** parallel_validation + CodeQL + повний RSpec прогін перед merge.
+- **MTTR:** Sentry DSN (BLOCKER, відкрито) → Phase 6 закриває; локальні зміни не вводять нових error-paths без `rescue` + log.
+
+### 11.8 Rails-specific (Rails Doctrine + The Rails Way)
+- **Convention over Configuration:** `LocaleSettable` — concern, не базовий клас.
+- **Beautiful code over the easy code:** малі methods у Phlex (`render_summary`, `render_menu`, `render_option`).
+- **Optimize for programmer happiness:** Phlex API natural Ruby vs ERB strings.
+- **Push complexity downwards:** I18n.t у view, не у controller; cookie writing у controller, не у model.
+
+### 11.9 Per-PR Definition of Done
+Кожен PR з фази має у description:
+- [ ] WCAG AA contrast verified (axe / Lighthouse)
+- [ ] Keyboard reachable (Tab + Escape)
+- [ ] `prefers-reduced-motion` поважається
+- [ ] No hardcoded English/Ukrainian strings у shared/ui компонентах
+- [ ] Cookie flags secure / httponly / same_site set де писали cookie
+- [ ] No open-redirect (referer validated проти `request.host`)
+- [ ] Conventional Commit message (`feat(scope):` / `fix(scope):` тощо)
+- [ ] `bundle exec rubocop && bundle exec rspec spec/views/ spec/requests/<changed>` зелено
+- [ ] Lookbook рендериться (manual smoke)
+- [ ] `parallel_validation` (Code Review + CodeQL) пройшов або addressed
+

@@ -18,7 +18,7 @@ class DashboardLayout < ApplicationComponent
 
   def view_template
     doctype
-    html(class: "h-full") do
+    html(class: "h-full", lang: I18n.locale.to_s) do
       render_head
       body(class: "h-full font-mono antialiased bg-white text-gray-900 dark:bg-black dark:text-emerald-500 overflow-hidden transition-colors duration-300") do
         div(class: "flex h-full overflow-hidden") do
@@ -95,6 +95,7 @@ class DashboardLayout < ApplicationComponent
       end
 
       div(class: "flex items-center gap-4 md:gap-6") do
+        render Views::Shared::UI::LocaleSwitcher.new
         render Views::Shared::UI::ThemeSwitcher.new
         render_system_telemetry
         render_user_avatar

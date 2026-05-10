@@ -58,7 +58,7 @@ module Views
         end
 
         def render_file_fallback
-          div(class: "w-full h-full flex flex-col items-center justify-center gap-1 p-2 bg-gaia-surface-alt") do
+          div(class: "w-full h-full flex flex-col items-center justify-center gap-1 p-2 bg-gaia-surface-sunken") do
             span(class: "text-gaia-primary text-2xl", aria_hidden: "true") { "📎" }
             span(class: "text-mini text-gaia-primary font-mono truncate text-center") { @photo.filename.to_s }
             span(class: "text-micro text-gaia-text-muted") { number_to_human_size(@photo.byte_size) }

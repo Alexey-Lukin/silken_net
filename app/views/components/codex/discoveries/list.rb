@@ -48,7 +48,7 @@ module Codex
 
       def render_card(discovery)
         node = discovery.node
-        div(class: "border border-gaia-border bg-gaia-surface-alt p-3 space-y-1") do
+        div(class: "border border-gaia-border bg-gaia-surface-sunken p-3 space-y-1") do
           p(class: "text-tiny text-gaia-text") { node&.title_en.to_s }
           p(class: "text-mini text-gaia-text-muted font-mono uppercase tracking-widest") do
             node&.archetype_key.to_s

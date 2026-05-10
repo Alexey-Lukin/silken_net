@@ -63,7 +63,7 @@ module Codex
         a(
           href: api_v1_codex_fraction_picker_path,
           class: tokens(
-            "inline-flex items-center gap-2 px-3 py-1 border border-gaia-border bg-gaia-surface-alt",
+            "inline-flex items-center gap-2 px-3 py-1 border border-gaia-border bg-gaia-surface-sunken",
             "text-tiny uppercase tracking-[0.3em] text-gaia-text",
             "hover:bg-gaia-primary hover:text-gaia-primary-text",
             "focus-visible:ring-2 focus-visible:ring-gaia-primary"

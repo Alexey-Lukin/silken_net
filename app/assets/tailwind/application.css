@@ -12,12 +12,18 @@
 
   /* Semantic surface / text / primary (CSS-variable driven for light/dark) */
   --color-gaia-surface: var(--gaia-surface);
-  --color-gaia-surface-alt: var(--gaia-surface-alt);
+  --color-gaia-surface-base: var(--gaia-surface-base);
+  --color-gaia-surface-elevated: var(--gaia-surface-elevated);
+  --color-gaia-surface-sunken: var(--gaia-surface-sunken);
   --color-gaia-text: var(--gaia-text);
+  --color-gaia-text-strong: var(--gaia-text-strong);
   --color-gaia-text-muted: var(--gaia-text-muted);
+  --color-gaia-text-subtle: var(--gaia-text-subtle);
   --color-gaia-primary: var(--gaia-primary);
   --color-gaia-primary-hover: var(--gaia-primary-hover);
+  --color-gaia-primary-soft: var(--gaia-primary-soft);
   --color-gaia-border: var(--gaia-border);
+  --color-gaia-border-strong: var(--gaia-border-strong);
 
   /* Status colors (CSS-variable driven for light/dark) */
   --color-status-danger: var(--status-danger);
@@ -55,20 +61,45 @@
   --font-size-tiny--line-height: 1rem;
   --font-size-compact: 0.6875rem;  /* 11px — data tables, addresses */
   --font-size-compact--line-height: 1.25rem;
+
+  /* ── Display Typography (responsive headings via clamp) ──
+   * For page titles and hero sections. Use these instead of fixed-rem h1/h2
+   * to get fluid scaling between mobile and desktop without media queries. */
+  --font-size-display-sm: clamp(1.25rem, 1.6vw + 0.5rem, 1.5rem);
+  --font-size-display-md: clamp(1.5rem,  2vw   + 0.75rem, 2rem);
+  --font-size-display-lg: clamp(1.875rem, 3vw  + 1rem,    2.75rem);
+
+  /* ── Motion Tokens ──
+   * Standardise transition durations / easings so animations feel coherent.
+   * Use as `transition-duration:var(--motion-base) var(--ease-out-soft)`. */
+  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-fast:  150ms;
+  --motion-base:  220ms;
+  --motion-slow:  320ms;
 }
 
 /* ── Light / Dark CSS custom properties ── */
 
 /* ── Light Mode (default) ── */
 :root {
-  /* Surface / Layout */
-  --gaia-surface: #ffffff;
-  --gaia-surface-alt: #f3f4f6;
-  --gaia-text: #111827;
-  --gaia-text-muted: #6b7280;
-  --gaia-primary: #10b981;
-  --gaia-primary-hover: #059669;
-  --gaia-border: #e5e7eb;
+  /* Surface / Layout — 4-tier depth scale */
+  --gaia-surface-base:     #fafafa;  /* page background */
+  --gaia-surface:          #ffffff;  /* cards, panels */
+  --gaia-surface-elevated: #ffffff;  /* modals, popovers, dropdowns (paired with shadow-lg) */
+  --gaia-surface-sunken:   #f3f4f6;  /* table-row alt, code blocks, input bg */
+
+  --gaia-text-strong:  #0f172a;
+  --gaia-text:         #1f2937;
+  --gaia-text-muted:   #52525b;
+  --gaia-text-subtle:  #9ca3af;
+
+  --gaia-primary:        #10b981;
+  --gaia-primary-hover:  #059669;
+  --gaia-primary-soft:   #d1fae5;
+
+  --gaia-border:         #e5e7eb;
+  --gaia-border-strong:  #cbd5e1;
 
   /* Status: danger — deep red on soft pink */
   --status-danger: #fee2e2;
@@ -108,14 +139,23 @@
 
 /* ── Dark Mode ── */
 .dark {
-  /* Surface / Layout */
-  --gaia-surface: #000000;
-  --gaia-surface-alt: #0a0a0a;
-  --gaia-text: #10b981;
-  --gaia-text-muted: #065f46;
-  --gaia-primary: #10b981;
-  --gaia-primary-hover: #34d399;
-  --gaia-border: rgba(16, 185, 129, 0.2);
+  /* Surface / Layout — 4-tier depth scale (cyber-emerald, with nuance) */
+  --gaia-surface-base:     #050607;
+  --gaia-surface:          #0b0f0e;
+  --gaia-surface-elevated: #11161a;
+  --gaia-surface-sunken:   #070a09;
+
+  --gaia-text-strong:  #e6fff4;
+  --gaia-text:         #a7f3d0;
+  --gaia-text-muted:   #6ee7b7;
+  --gaia-text-subtle:  rgba(52, 211, 153, 0.55);
+
+  --gaia-primary:        #10b981;
+  --gaia-primary-hover:  #34d399;
+  --gaia-primary-soft:   rgba(16, 185, 129, 0.12);
+
+  --gaia-border:         rgba(16, 185, 129, 0.18);
+  --gaia-border-strong:  rgba(16, 185, 129, 0.40);
 
   /* Status: danger — neon on dark red */
   --status-danger: #7f1d1d;
@@ -165,4 +205,26 @@
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 3px; }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.4); }
+
+  /* Honour OS-level "reduce motion" preference globally — disables heavy
+   * decorative animations (Matrix rain pulse, ping rings, smooth scrolls)
+   * while keeping focus-ring transitions snappy enough to remain visible. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ── Component-level keyframes ── */
+@keyframes gaia-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@utility animate-fade-in {
+  animation: gaia-fade-in var(--motion-base, 220ms) var(--ease-out-soft, ease-out) both;
 }

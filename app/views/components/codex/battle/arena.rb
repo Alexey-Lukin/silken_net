@@ -69,7 +69,7 @@ module Codex
       def render_card(node, side:)
         div(
           class: tokens(
-            "border border-gaia-border bg-gaia-surface-alt p-3 space-y-2",
+            "border border-gaia-border bg-gaia-surface-sunken p-3 space-y-2",
             "flex flex-col justify-between"
           ),
 
@@ -122,7 +122,7 @@ module Codex
             class: tokens(
               "inline-flex items-center gap-2 px-3 py-1 border border-gaia-border",
               "bg-gaia-surface text-gaia-text-muted",
-              "hover:bg-gaia-surface-alt",
+              "hover:bg-gaia-surface-sunken",
               "text-mini uppercase tracking-[0.3em] font-mono",
               "focus-visible:ring-2 focus-visible:ring-gaia-primary"
             )

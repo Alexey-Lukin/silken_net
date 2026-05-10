@@ -45,7 +45,7 @@ module Codex
     end
 
     def render_cover
-      div(class: "relative aspect-[4/3] bg-gaia-surface-alt overflow-hidden") do
+      div(class: "relative aspect-[4/3] bg-gaia-surface-sunken overflow-hidden") do
         if @node.cover_image.attached? && @node.cover_image.representable?
           img(
             src: rails_representation_path(@node.cover_image.variant(resize_to_fill: [ 480, 360 ])),

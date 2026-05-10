@@ -123,7 +123,7 @@ module Maintenance
                 accept: "image/jpeg,image/png,image/webp,image/heic,image/heif",
                 direct_upload: true,
                 class: "w-full bg-gaia-input-bg border border-gaia-input-border text-gaia-input-text p-3 font-mono text-xs " \
-                       "file:mr-3 file:border file:border-gaia-border file:bg-gaia-surface-alt " \
+                       "file:mr-3 file:border file:border-gaia-border file:bg-gaia-surface-sunken " \
                        "file:text-gaia-primary file:text-mini file:uppercase file:px-3 file:py-1 " \
                        "focus-visible:border-gaia-primary outline-none transition-all"
             end
@@ -133,7 +133,7 @@ module Maintenance
               id: "direct-upload-progress",
               data: { "direct-upload-progress-bar": "" }
             ) do
-              div(class: "h-1 bg-gaia-surface-alt overflow-hidden") do
+              div(class: "h-1 bg-gaia-surface-sunken overflow-hidden") do
                 div(class: "h-full bg-gaia-primary transition-all", style: "width:0%", id: "direct-upload-bar")
               end
             end

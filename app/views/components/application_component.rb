@@ -18,7 +18,7 @@ class ApplicationComponent < Phlex::HTML
 
   # Custom font-size tokens defined in app/assets/tailwind/application.css @theme.
   # Registered here so TailwindMerge treats them as font-size (not text-color).
-  CUSTOM_TEXT_SCALE = %w[micro mini tiny compact].freeze
+  CUSTOM_TEXT_SCALE = %w[micro mini tiny compact display-sm display-md display-lg].freeze
 
   def tokens(*args, **conditions)
     result = args.compact.join(" ")

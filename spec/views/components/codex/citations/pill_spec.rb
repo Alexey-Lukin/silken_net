@@ -34,7 +34,7 @@ RSpec.describe Codex::Citations::Pill, type: :view_component do
 
   it "uses gaia-* tokens (no raw bg-white / text-gray)" do
     html = render_pill(citation: citation)
-    expect(html).to include("bg-gaia-surface-alt")
+    expect(html).to include("bg-gaia-surface-sunken")
     expect(html).not_to include("bg-white")
     expect(html).not_to match(/text-gray-\d/)
   end

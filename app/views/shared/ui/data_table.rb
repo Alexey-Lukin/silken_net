@@ -41,7 +41,7 @@ module Views
         end
 
         def thead_classes
-          "bg-gaia-surface-alt text-gaia-text-muted uppercase text-mini tracking-widest transition-colors duration-300"
+          "bg-gaia-surface-sunken text-gaia-text-muted uppercase text-mini tracking-widest transition-colors duration-300"
         end
       end
     end

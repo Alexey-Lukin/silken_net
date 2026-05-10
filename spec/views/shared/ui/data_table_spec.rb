@@ -80,8 +80,8 @@ RSpec.describe Views::Shared::UI::DataTable do
       expect(html).to include("dark:shadow-none")
     end
 
-    it "uses bg-gaia-surface-alt for thead" do
-      expect(html).to include("bg-gaia-surface-alt")
+    it "uses bg-gaia-surface-sunken for thead" do
+      expect(html).to include("bg-gaia-surface-sunken")
     end
 
     it "uses text-gaia-text-muted for thead" do
