@@ -93,7 +93,7 @@ module Codex
         window  = (rule.params["window_days"] || 30).to_i.days.ago
         per_log = (rule.params["effective_period_minutes"] || 5).to_i
         observed_logs = TelemetryLog
-                          .where("created_at >= ?", window)
+                          .where("telemetry_logs.created_at >= ?", window)
                           .joins(tree: :wallet)
                           .where(wallets: { organization_id: user.organization_id })
                           .count
