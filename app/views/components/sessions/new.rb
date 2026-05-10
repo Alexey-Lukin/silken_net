@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Sessions
   class New < ApplicationComponent
     # @param flash_alert [String, nil] alert message to display

@@ -16,7 +16,10 @@ RSpec.describe Views::Shared::UI::DataTable do
   end
 
   describe "with columns and rows" do
-    let(:html) { render_component(columns: columns) }
+    # Pass a block so the rows path (tbody with divide styling) is exercised.
+    let(:html) do
+      component_class.new(columns: columns).call { "row content" }
+    end
 
     it "renders a table element" do
       expect(html).to include("<table")
@@ -43,21 +46,39 @@ RSpec.describe Views::Shared::UI::DataTable do
     end
   end
 
-  describe "with empty rows" do
-    let(:html) { render_component(columns: columns) }
+  describe "with empty: true (no rows)" do
+    let(:html) { render_component(columns: columns, empty: true) }
 
-    it "renders the table structure even without rows" do
+    it "renders the table structure" do
       expect(html).to include("<table")
       expect(html).to include("<thead")
       expect(html).to include("<tbody")
     end
+
+    it "renders the default i18n empty message" do
+      I18n.with_locale(:en) do
+        expect(render_component(columns: columns, empty: true)).to include(I18n.t("ui.data_table.empty"))
+      end
+    end
   end
 
   describe "with custom empty_message" do
-    let(:component) { component_class.new(columns: columns, empty_message: "Nothing here.") }
+    it "renders the custom empty message when empty: true" do
+      html = render_component(columns: columns, empty_message: "Nothing here.", empty: true)
+      expect(html).to include("Nothing here.")
+      expect(html).to include("<td")
+    end
 
-    it "stores the custom empty message" do
-      expect(component.instance_variable_get(:@empty_message)).to eq("Nothing here.")
+    it "renders the default i18n empty message when empty: true with no custom message" do
+      I18n.with_locale(:en) do
+        html = render_component(columns: columns, empty: true)
+        expect(html).to include(I18n.t("ui.data_table.empty"))
+      end
+    end
+
+    it "spans all columns in the empty row" do
+      html = render_component(columns: columns, empty_message: "Nope.", empty: true)
+      expect(html).to include("colspan=\"#{columns.size}\"")
     end
   end
 

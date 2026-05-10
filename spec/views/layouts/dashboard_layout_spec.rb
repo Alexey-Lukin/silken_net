@@ -157,14 +157,17 @@ RSpec.describe DashboardLayout do
   end
 
   describe "ews_alert_count" do
-    it "renders without errors when ews_alert_count is 0" do
+    it "does not render an alert badge when ews_alert_count is 0" do
       html = render_layout(ews_alert_count: 0, content: content_stub)
-      expect(html).to include("Цитадель")
+      # Badge is only rendered when badge&.positive? — so zero means no bg-status-danger span
+      expect(html).not_to include("bg-status-danger text-status-danger-text text-micro px-1.5")
     end
 
-    it "renders without errors when ews_alert_count is positive" do
+    it "renders a visible alert badge with the count when ews_alert_count is positive" do
       html = render_layout(ews_alert_count: 7, content: content_stub)
-      expect(html).to include("Цитадель")
+      # The sidebar nav_item renders a <span> badge when badge.positive?
+      expect(html).to include("bg-status-danger")
+      expect(html).to include(">7<")
     end
   end
 end

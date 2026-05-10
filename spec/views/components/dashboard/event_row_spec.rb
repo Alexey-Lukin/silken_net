@@ -3,6 +3,11 @@
 require "rails_helper"
 
 RSpec.describe Dashboard::EventRow do
+  # Render under :en so hardcoded English text in event_summary is matched correctly.
+  # The component strings are intentional display text (not i18n-keyed), so we
+  # lock the locale to avoid order-dependent failures if the default changes.
+  around { |ex| I18n.with_locale(:en) { ex.run } }
+
   # Use allocate to bypass ActiveRecord initialization but keep class identity
   # so case/when (Module#===) pattern matching works correctly.
 

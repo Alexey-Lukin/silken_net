@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Trees
   class Index < ApplicationComponent
     def initialize(cluster:, trees:, pagy: nil)

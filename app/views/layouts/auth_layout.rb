@@ -15,7 +15,7 @@ class AuthLayout < ApplicationComponent
 
   def view_template
     doctype
-    html(class: "h-full", lang: I18n.locale.to_s) do
+    html(class: "h-full dark", lang: I18n.locale.to_s) do
       head do
         title { "Silken Net // #{@title}" }
         meta(name: "viewport", content: "width=device-width,initial-scale=1")
@@ -28,7 +28,7 @@ class AuthLayout < ApplicationComponent
         javascript_importmap_tags
       end
 
-      body(class: "h-full font-mono antialiased bg-black text-emerald-500") do
+      body(class: "h-full font-mono antialiased bg-gaia-surface-base text-gaia-primary") do
         render @content if @content
       end
     end
