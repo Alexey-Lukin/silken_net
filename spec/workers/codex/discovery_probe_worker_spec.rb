@@ -64,7 +64,8 @@ RSpec.describe Codex::DiscoveryProbeWorker, type: :worker do
 
   it "swallows ArgumentError from an invalid trigger_type string" do
     allow(::Codex::DiscoveryEngine).to receive(:evaluate).and_return([ node ])
-    # The create_with block uses trigger_type.to_s — patch find_or_create_by to raise ArgumentError
+    # Simulate ArgumentError from enum validation when an invalid trigger_type
+    # value reaches the DB layer (e.g. ActiveRecord rejects unknown enum values).
     allow_any_instance_of(ActiveRecord::Relation).to receive(:find_or_create_by)
       .and_raise(ArgumentError, "bad enum value")
     expect(ActionCable.server).not_to receive(:broadcast)

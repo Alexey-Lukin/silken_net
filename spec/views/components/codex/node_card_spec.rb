@@ -76,9 +76,15 @@ RSpec.describe Codex::NodeCard do
     end
 
     it "renders an img tag when cover_image is attached and representable" do
-      variant = double("variant")
-      cover = OpenStruct.new(attached?: true, representable?: true)
-      cover.define_singleton_method(:variant) { |**_opts| variant }
+      # Exercise the img branch of render_cover by stubbing the ActiveStorage-like
+      # cover_image. We use a plain double with the exact interface the component
+      # queries (attached?, representable?, variant) so the stub stays honest
+      # while avoiding a full blob/variant database setup.
+      variant = double("ActiveStorage::VariantRecord")
+      cover = double("ActiveStorage::Attached::One",
+                     attached?: true,
+                     representable?: true)
+      allow(cover).to receive(:variant).and_return(variant)
       node_with_cover = mock_node(cover_image: cover)
 
       comp = Class.new(Codex::NodeCard) do

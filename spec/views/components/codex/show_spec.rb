@@ -53,8 +53,11 @@ RSpec.describe Codex::Show do
       expect(html).to include("Pine cathedral of the Dnipro")
     end
 
-    it "uses the realm name_en as the watermark inside the hero (decorative)" do
-      # name_en appears twice: watermark + meta panel "Realm" row.
+    it "renders the realm name_en in the hero watermark and in the meta Realm row" do
+      # The realm name appears in at least two distinct contexts:
+      # 1. The decorative watermark inside the hero section
+      # 2. The "Realm" label row in the metadata panel
+      expect(html).to include("Ecosystems")
       expect(html.scan("Ecosystems").length).to be >= 2
     end
 
