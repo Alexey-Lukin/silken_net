@@ -122,6 +122,11 @@
 
 Усі Pundit policies покриті. Покриття: 🟢 Повне.
 
+**Codex base (нове, 23 examples):**
+- `Codex::ApplicationPolicy` (8) — read-all default для будь-якого autenticated, anonymous deny на index?/show?, `create?/update?/destroy?` deny-by-default для всіх ролей включно з super_admin (потребує opt-in від subclass), `Scope#resolve` повертає `scope.all` без неявного фільтра, наслідує `::ApplicationPolicy::Scope` initializer
+- `Codex::RealmPolicy` (5) — read auth-only, `Scope#resolve` ховає `is_active = false` realm'и в т.ч. від super_admin (no admin escape hatch у Phase 1), writes inherited deny defaults
+- `Codex::CitationPolicy` (10) — read auth-only / anonymous deny, `create?` обмежений forester+ (operational-tier guard, investor deny), `update?/destroy?` owner-within-24h grace OR admin+ override (стара цитата без admin → deny, чужа цитата без admin → deny, admin bypass на foreign + post-grace), документує: anonymous user не повинен досягати policy в production (controller `:authenticate_user!` короткозамикає 401)
+
 **Codex Phase 1 (нове, 7 examples):** `Codex::NodePolicy` — index?/show? для будь-якого автентифікованого, anonymous deny, write-операції тільки для super_admin, `Scope#resolve` приховує чернетки (`published_at IS NULL`) для не-super_admin.
 
 **Codex Phase 2 (нове, 12 examples):**
@@ -139,6 +144,11 @@
 ### 1.6 Views
 
 Усі Phlex-компоненти покриті згідно з `docs/10_01_View_Component_Testing_Guide.md`.
+
+**Codex Atlas page-level components (нове, 33 examples):**
+- `Codex::RealmTabs` (11) — `aria-label="Codex realm filter"` `<nav>` shell, `All`-tab count = sum(nodes_counts.values), per-realm tabs link to `api_v1_codex_nodes_path(realm: slug)`, active-state `aria-current="page"` + `border-gaia-primary`/`text-gaia-primary` token swap, default counts to `0` для realm'ів відсутніх у `nodes_counts`, empty-realm collection renders just `All`-tab, design system compliance (no `bg-white`/`text-gray-*`), `focus-visible:ring-2 focus-visible:ring-gaia-primary` on every anchor (a11y)
+- `Codex::Index` (8) — header (`Lore Layer` eyebrow + `Codex of Archetypes` heading + `<n> archetypes catalogued` from `pagy.count`), EmptyState branch ("Codex is silent…", grid suppressed), populated grid (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4` + one `Codex::NodeCard` per node), RealmTabs sub-component wired with both realms + active slug, `realm_counts` fallback to `Codex::Node.group(:codex_realm_id).count` when `nodes_counts: nil`, design-system tokens compliance (`border-gaia-border`)
+- `Codex::Show` (14) — hero (codex_uid eyebrow, bilingual title `title_uk`/`title_en`, `subtitle_en` opt-out when blank, `realm.name_en` watermark), three-column lore (`Context`/`Cyber Meaning`/`Lore` headings only when `*_md` present, transforms via `Codex::MarkdownRenderer` → `<strong>` + `rel="noopener noreferrer"`), aside metadata panel (`Realm`/`Archetype`/`Geo Region`/`Discovered`/`Cited By`/`Attunement`/`Elo` rows + em-dash коли `geo_region` blank), external_refs list (`<a target="_blank" rel="noopener noreferrer">` per ref, label-or-URL fallback, block hidden when array empty), `Codex::Attunements::Toggle` wiring (`Attune` ↔ `Attuned` label switch driven by `current_user_attuned`, `attunement_count` round-trip), gaia-* tokens compliance (`border-gaia-border`, `bg-gaia-surface`, no raw `bg-white`)
 
 **Codex Phase 1 (нове, 10 examples):** `Codex::NodeCard` — bilingual title rendering, codex_uid + realm pill + lifecycle badge (status-* token), slug-based href, footer (Elo + geo_region), edge cases (placeholder glyph коли `cover_image` не attached, `—` коли `geo_region` blank, suppress subtitle), design system compliance (no raw `bg-white`/`text-gray-*`, custom text-scale `mini`/`tiny`/`micro`, `focus-visible:ring-2`).
 

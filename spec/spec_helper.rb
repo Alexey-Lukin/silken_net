@@ -1,8 +1,17 @@
 # SimpleCov — аналіз покриття тестами.
 # Має бути на самому початку, до завантаження будь-якого коду додатка.
 require "simplecov"
+require "simplecov_json_formatter"
 SimpleCov.start "rails" do
   enable_coverage :branch
+
+  # Emit both human-readable HTML and machine-readable JSON so CI can upload
+  # both as artifacts and downstream tooling (e.g. PR comments, dashboards)
+  # can parse coverage without HTML scraping.
+  formatter SimpleCov::Formatter::MultiFormatter.new([
+    SimpleCov::Formatter::HTMLFormatter,
+    SimpleCov::Formatter::JSONFormatter
+  ])
 
   add_filter "/spec/"
   add_filter "/config/"
@@ -25,7 +34,7 @@ SimpleCov.start "rails" do
 
   # Feature-тести запускаються окремим CI job і мають свій скоуп.
   # Мінімальний кавередж застосовується тільки до unit/integration спеків.
-  # Виміряне покриття (з урахуванням Phlex-компонентів): line 98.22%, branch 89.3%
+  # Виміряне покриття (з урахуванням Phlex-компонентів): line 99.08%, branch 90.83%
   if ENV["FEATURE_TEST"]
     minimum_coverage line: 0, branch: 0
   else

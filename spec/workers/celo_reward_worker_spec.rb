@@ -39,6 +39,14 @@ RSpec.describe CeloRewardWorker, type: :worker do
         described_class.new.perform(cluster.id, "2026-03-10")
       }.to raise_error(StandardError, "Celo RPC Error")
     end
+
+    it "re-raises CircuitOpenError so Sidekiq retries later" do
+      allow_any_instance_of(described_class).to receive(:with_circuit_breaker)
+        .and_raise(Web3CircuitBreaker::CircuitOpenError, "Circuit OPEN")
+      expect {
+        described_class.new.perform(cluster.id, "2026-03-10")
+      }.to raise_error(Web3CircuitBreaker::CircuitOpenError)
+    end
   end
 
   describe "sidekiq options" do

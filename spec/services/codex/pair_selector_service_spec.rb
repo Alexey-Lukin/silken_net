@@ -81,4 +81,18 @@ RSpec.describe Codex::PairSelectorService, type: :service do
       end
     end
   end
+
+  describe "Redis unavailability" do
+    before do
+      5.times { create(:codex_node, realm: realm, lifecycle_status: :thriving) }
+    end
+
+    it "returns a successful result even when Redis is unavailable (graceful degradation)" do
+      allow(Kredis).to receive(:redis).and_raise(StandardError, "Redis connection refused")
+      result = described_class.call(user: user, realm: realm)
+      # Pair is still selected — seed storage failure is swallowed silently
+      expect(result.success?).to be(true)
+      expect(result.pair_seed).to match(/\A[0-9a-f]{64}\z/)
+    end
+  end
 end

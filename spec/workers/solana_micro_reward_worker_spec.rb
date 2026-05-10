@@ -45,6 +45,14 @@ RSpec.describe SolanaMicroRewardWorker, type: :worker do
       }.to raise_error(StandardError, "Solana RPC Error")
     end
 
+    it "re-raises CircuitOpenError so Sidekiq retries later" do
+      allow_any_instance_of(described_class).to receive(:with_circuit_breaker)
+        .and_raise(Web3CircuitBreaker::CircuitOpenError, "Circuit OPEN")
+      expect {
+        described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+      }.to raise_error(Web3CircuitBreaker::CircuitOpenError)
+    end
+
     it "uses partition pruning with created_at_iso" do
       # Verify it can find with correct created_at
       mock_service = instance_double(Solana::MintingService)

@@ -410,4 +410,14 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       expect(tx.status).to eq("failed")
     end
   end
+
+  describe "circuit breaker (Polygon RPC)" do
+    it "re-raises CircuitOpenError so Sidekiq retries later" do
+      allow_any_instance_of(described_class).to receive(:with_circuit_breaker)
+        .and_raise(Web3CircuitBreaker::CircuitOpenError, "Circuit OPEN for polygon_rpc")
+      expect {
+        described_class.new.perform
+      }.to raise_error(Web3CircuitBreaker::CircuitOpenError, /polygon_rpc/)
+    end
+  end
 end

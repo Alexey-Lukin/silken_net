@@ -61,4 +61,12 @@ RSpec.describe Codex::AttunementBroadcastWorker do
     expect(ActionCable.server).not_to receive(:broadcast)
     described_class.new.perform(0, user.id)
   end
+
+  it "re-raises StandardError from ActionCable so Sidekiq can retry" do
+    create(:codex_attunement, user: user, node: node)
+    allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "cable down")
+    expect {
+      described_class.new.perform(node.id, user.id)
+    }.to raise_error(StandardError, "cable down")
+  end
 end
