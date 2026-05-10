@@ -53,6 +53,7 @@ _Rails 8.1 Omakase, моделі даних та бізнес-логіка._
 - [04\_02\_Business\_Logic\_and\_Services](04_02_Business_Logic_and_Services)
 - [04\_03\_REST\_API\_v1\_Reference](04_03_REST_API_v1_Reference)
 - [04\_04\_Phlex\_UI\_and\_Tailwind](04_04_Phlex_UI_and_Tailwind)
+- [04\_05\_Codex\_Lore\_Module](04_05_Codex_Lore_Module) (Lore Layer: ADR-CDX-1…7, відкладена робота, Quality Gates)
 
 ## 🟠 Модуль 05: Web3 та Економіка (The Ledger)
 

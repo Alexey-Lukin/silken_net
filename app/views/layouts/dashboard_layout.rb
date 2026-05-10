@@ -39,6 +39,7 @@ class DashboardLayout < ApplicationComponent
 
             div(class: "flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar relative z-10") do
               div(class: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8") do
+                render_codex_onboarding_wizard
                 render @content if @content
               end
             end
@@ -49,6 +50,23 @@ class DashboardLayout < ApplicationComponent
   end
 
   private
+
+  def render_codex_onboarding_wizard
+    return unless @current_user&.organization_id
+    return unless defined?(::Codex::Fraction)
+    return if @current_user.codex_fraction.present?
+
+    render Codex::Fractions::OnboardingWizard.new(current_user: @current_user)
+  rescue StandardError => e
+    # Codex is a non-blocking lore layer — never let a wizard rendering hiccup
+    # take down the dashboard (ADR-CDX-4 / ADR-CDX-7 fail-open posture).
+    # We still log the failure so it surfaces in Sentry / Rails logs instead of
+    # silently rotting; the dashboard render itself proceeds untouched.
+    Rails.logger.warn(
+      "[CodexOnboardingWizard] render skipped: #{e.class}: #{e.message}"
+    )
+    nil
+  end
 
   def render_head
     fouc_script = 'var t=localStorage.getItem("theme")||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");' \
