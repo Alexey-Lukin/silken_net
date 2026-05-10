@@ -20,3 +20,4 @@ en:
     close_navigation: Close navigation
   flash:
     locale_changed: "Language switched to %{lang}"
+    unsupported_locale: "Unsupported locale"

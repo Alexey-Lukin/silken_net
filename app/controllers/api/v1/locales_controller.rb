@@ -24,7 +24,7 @@ module Api
           I18n.locale = requested
           flash[:notice] = I18n.t("flash.locale_changed", lang: I18n.t("locale.available.#{requested}"))
         else
-          flash[:alert] = "Unsupported locale"
+          flash[:alert] = I18n.t("flash.unsupported_locale")
         end
 
         redirect_back_or_to api_v1_root_path, status: :see_other

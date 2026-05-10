@@ -20,3 +20,4 @@ uk:
     close_navigation: Закрити навігацію
   flash:
     locale_changed: "Мову перемкнено на %{lang}"
+    unsupported_locale: "Непідтримувана мова"
