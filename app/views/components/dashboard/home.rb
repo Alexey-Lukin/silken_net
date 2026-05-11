@@ -36,7 +36,7 @@ module Dashboard
     private
 
     # Lazy-lookup helper scoped to the `dashboard.home.*` namespace.
-    def t_(key) = I18n.t("dashboard.home.#{key}")
+    def t_(key) = t(".#{key}")
 
     def render_geospatial_matrix
       div(class: "lg:col-span-2 p-1 border border-gaia-border bg-gaia-surface h-[500px] relative group overflow-hidden") do
@@ -50,7 +50,7 @@ module Dashboard
 
         # Overlay для координат
         div(class: "absolute bottom-4 left-4 font-mono text-micro text-gaia-text-subtle") do
-          I18n.t("dashboard.home.map.coordinates_label", **DEFAULT_COORDINATES)
+          t(".map.coordinates_label", **DEFAULT_COORDINATES)
         end
       end
     end

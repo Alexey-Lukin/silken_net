@@ -28,9 +28,9 @@ module Clusters
 
     def render_empty_state
       render Views::Shared::UI::EmptyState.new(
-        title: t("clusters.grid.empty_title"),
+        title: t(".empty_title"),
         icon: "◎",
-        description: t("clusters.grid.empty_description")
+        description: t(".empty_description")
       )
     end
   end

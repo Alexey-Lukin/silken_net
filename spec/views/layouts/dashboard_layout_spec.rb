@@ -2,17 +2,7 @@
 
 require "rails_helper"
 
-# DashboardLayout includes Phlex::Rails::Layout which provides real Rails view helpers.
-# However, stylesheet_link_tag and javascript_importmap_tags require compiled assets
-# (Propshaft/Tailwind) that are not available in the test environment.
-# We stub only the asset-resolving helpers to avoid Propshaft::MissingAssetError.
-unless DashboardLayout.instance_variable_get(:@test_patched)
-  DashboardLayout.prepend(Module.new do
-    def stylesheet_link_tag(*_args, **_opts) = ""
-    def javascript_importmap_tags(*_args, **_opts) = ""
-  end)
-  DashboardLayout.instance_variable_set(:@test_patched, true)
-end
+# Asset-resolving stubs are applied globally via spec/support/layout_asset_stubs.rb.
 
 RSpec.describe DashboardLayout do
   def mock_user(first_name: "Olena", last_name: "Kovalenko",
@@ -77,8 +67,8 @@ RSpec.describe DashboardLayout do
   end
 
   describe "breadcrumb from path" do
-    it "renders the localized root breadcrumb (Цитадель за замовчуванням)" do
-      expect(html).to include("Цитадель")
+    it "renders the localized root breadcrumb (Цитадель under :uk locale)" do
+      I18n.with_locale(:uk) { expect(render_layout).to include("Цитадель") }
     end
 
     it "renders the English root breadcrumb under :en locale" do
@@ -152,7 +142,7 @@ RSpec.describe DashboardLayout do
 
     it "renders without errors when content is nil" do
       html = render_layout(content: nil)
-      expect(html).to include("Цитадель")
+      expect(html).to include("Citadel")
     end
   end
 

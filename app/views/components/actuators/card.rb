@@ -25,7 +25,7 @@ module Actuators
         div do
           span(class: "text-micro px-2 py-0.5 border border-gaia-border text-gaia-text-muted uppercase font-mono tracking-widest") { @actuator.device_type }
           h4(class: "text-lg font-light text-gaia-text mt-2 tracking-tighter") { @actuator.name }
-          p(class: "text-micro text-gaia-text-muted font-mono mt-1") { t("actuators.card.gateway", uid: @actuator.gateway&.uid) }
+          p(class: "text-micro text-gaia-text-muted font-mono mt-1") { t(".gateway", uid: @actuator.gateway&.uid) }
         end
         div(class: tokens("h-2 w-2 rounded-full", status_led_class))
       end
@@ -34,34 +34,34 @@ module Actuators
     def render_status_matrix
       div(class: "space-y-2 mb-6 font-mono text-tiny uppercase tracking-tighter") do
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
-          span(class: "text-gaia-text-muted") { t("actuators.card.physical_state") }
+          span(class: "text-gaia-text-muted") { t(".physical_state") }
           span(class: "text-gaia-primary") { @actuator.state }
         end
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
-          span(class: "text-gaia-text-muted") { t("actuators.card.endpoint") }
+          span(class: "text-gaia-text-muted") { t(".endpoint") }
           span(class: "text-gaia-primary") { @actuator.endpoint }
         end
         if @actuator.max_active_duration_s
           div(class: "flex justify-between border-b border-gaia-border pb-1") do
-            span(class: "text-gaia-text-muted") { t("actuators.card.max_duration") }
-            span(class: "text-gaia-primary") { t("actuators.card.max_duration_value", seconds: @actuator.max_active_duration_s) }
+            span(class: "text-gaia-text-muted") { t(".max_duration") }
+            span(class: "text-gaia-primary") { t(".max_duration_value", seconds: @actuator.max_active_duration_s) }
           end
         end
         if @actuator.estimated_mj_per_action
           div(class: "flex justify-between border-b border-gaia-border pb-1") do
-            span(class: "text-gaia-text-muted") { t("actuators.card.energy_budget") }
-            span(class: "text-gaia-primary") { t("actuators.card.energy_budget_value", mj: @actuator.estimated_mj_per_action) }
+            span(class: "text-gaia-text-muted") { t(".energy_budget") }
+            span(class: "text-gaia-primary") { t(".energy_budget_value", mj: @actuator.estimated_mj_per_action) }
           end
         end
         div(class: "flex justify-between border-b border-gaia-border pb-1") do
-          span(class: "text-gaia-text-muted") { t("actuators.card.last_activated") }
-          span(class: "text-gaia-primary") { @actuator.last_activated_at&.strftime("%d.%m.%y %H:%M") || t("actuators.card.never") }
+          span(class: "text-gaia-text-muted") { t(".last_activated") }
+          span(class: "text-gaia-primary") { @actuator.last_activated_at&.strftime("%d.%m.%y %H:%M") || t(".never") }
         end
         div(class: "flex justify-between") do
-          span(class: "text-gaia-text-muted") { t("actuators.card.last_sync_status") }
+          span(class: "text-gaia-text-muted") { t(".last_sync_status") }
           failed = @last_command&.status == "failed"
           span(class: tokens("text-status-danger-accent": failed, "text-gaia-text-muted": !failed)) do
-            @last_command&.status || t("actuators.card.idle")
+            @last_command&.status || t(".idle")
           end
         end
       end
@@ -77,17 +77,17 @@ module Actuators
         button_to(
           execute_api_v1_actuator_path(@actuator, action_payload: "open"),
           method: :post,
-          aria: { label: t("actuators.card.execute_on_aria", device_type: @actuator.device_type) },
+          aria: { label: t(".execute_on_aria", device_type: @actuator.device_type) },
           class: execute_on_classes
-        ) { t("actuators.card.execute_on") }
+        ) { t(".execute_on") }
 
         # Кнопка Вимкнення/Закриття (Execute Close/OFF)
         button_to(
           execute_api_v1_actuator_path(@actuator, action_payload: "close"),
           method: :post,
-          aria: { label: t("actuators.card.execute_off_aria", device_type: @actuator.device_type) },
+          aria: { label: t(".execute_off_aria", device_type: @actuator.device_type) },
           class: execute_off_classes
-        ) { t("actuators.card.execute_off") }
+        ) { t(".execute_off") }
       end
     end
 

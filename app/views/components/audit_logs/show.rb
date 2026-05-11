@@ -26,12 +26,12 @@ module AuditLogs
 
     def render_header
       div(class: "p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
-        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t("audit_logs.show.decoration") }
+        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t(".decoration") }
         div(class: "flex justify-between items-start") do
           div do
-            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t("audit_logs.show.event_record") }
+            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".event_record") }
             h2(class: "text-3xl font-extralight tracking-tighter text-white") { @log.action }
-            p(class: "text-tiny font-mono text-gray-600 mt-2") { t("audit_logs.show.tx_id_line", id: @log.id, at: @log.created_at.strftime("%d.%m.%Y %H:%M:%S UTC")) }
+            p(class: "text-tiny font-mono text-gray-600 mt-2") { t(".tx_id_line", id: @log.id, at: @log.created_at.strftime("%d.%m.%Y %H:%M:%S UTC")) }
           end
           render Views::Shared::UI::ActionBadge.new(action: @log.action)
         end
@@ -43,16 +43,16 @@ module AuditLogs
         table(role: "table", class: "w-full text-left font-mono text-compact") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
-              th(scope: "col", class: "p-4") { t("audit_logs.show.details.field") }
-              th(scope: "col", class: "p-4") { t("audit_logs.show.details.value") }
+              th(scope: "col", class: "p-4") { t(".details.field") }
+              th(scope: "col", class: "p-4") { t(".details.value") }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
-            detail_row(t("audit_logs.show.details.action"), @log.action)
-            detail_row(t("audit_logs.show.details.performed_by"), @log.user&.full_name || t("audit_logs.show.system_user"))
-            detail_row(t("audit_logs.show.details.target_type"), @log.auditable_type || "—")
-            detail_row(t("audit_logs.show.details.target_id"), @log.auditable_id || "—")
-            detail_row(t("audit_logs.show.details.timestamp"), @log.created_at.strftime("%d.%m.%Y %H:%M:%S UTC"))
+            detail_row(t(".details.action"), @log.action)
+            detail_row(t(".details.performed_by"), @log.user&.full_name || t(".system_user"))
+            detail_row(t(".details.target_type"), @log.auditable_type || "—")
+            detail_row(t(".details.target_id"), @log.auditable_id || "—")
+            detail_row(t(".details.timestamp"), @log.created_at.strftime("%d.%m.%Y %H:%M:%S UTC"))
           end
         end
       end
@@ -67,7 +67,7 @@ module AuditLogs
 
     def render_metadata_panel
       div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t("audit_logs.show.metadata.title") }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".metadata.title") }
         if @log.metadata.present? && @log.metadata.any?
           div(class: "space-y-2 font-mono text-tiny") do
             @log.metadata.each do |key, value|
@@ -78,49 +78,49 @@ module AuditLogs
             end
           end
         else
-          p(class: "text-compact text-gray-700 italic") { t("audit_logs.show.metadata.empty") }
+          p(class: "text-compact text-gray-700 italic") { t(".metadata.empty") }
         end
       end
     end
 
     def render_actor_info
       div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t("audit_logs.show.actor.title") }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".actor.title") }
         if @log.user.present?
           div do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { t("audit_logs.show.actor.name") }
+            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".actor.name") }
             p(class: "text-compact text-emerald-400 font-mono") { @log.user.full_name }
           end
           div(class: "pt-3 border-t border-emerald-900/30") do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { t("audit_logs.show.actor.email") }
+            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".actor.email") }
             p(class: "text-compact text-gray-400") { @log.user.email_address }
           end
           div(class: "pt-3 border-t border-emerald-900/30") do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { t("audit_logs.show.actor.role") }
+            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".actor.role") }
             span(class: "px-2 py-0.5 bg-emerald-900 text-emerald-200 text-mini uppercase font-bold") { @log.user.role }
           end
         else
-          p(class: "text-compact text-gray-700 italic") { t("audit_logs.show.actor.system") }
+          p(class: "text-compact text-gray-700 italic") { t(".actor.system") }
         end
       end
     end
 
     def render_target_info
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t("audit_logs.show.target.title") }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".target.title") }
         if @log.auditable_type.present?
           div(class: "space-y-3 font-mono text-tiny") do
             div(class: "flex justify-between items-center") do
-              span(class: "text-gray-600 uppercase") { t("audit_logs.show.target.type") }
+              span(class: "text-gray-600 uppercase") { t(".target.type") }
               span(class: "text-emerald-400") { @log.auditable_type }
             end
             div(class: "flex justify-between items-center") do
-              span(class: "text-gray-600 uppercase") { t("audit_logs.show.target.id") }
+              span(class: "text-gray-600 uppercase") { t(".target.id") }
               span(class: "text-emerald-400") { @log.auditable_id.to_s }
             end
           end
         else
-          p(class: "text-compact text-gray-700 italic") { t("audit_logs.show.target.empty") }
+          p(class: "text-compact text-gray-700 italic") { t(".target.empty") }
         end
       end
     end

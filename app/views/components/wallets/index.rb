@@ -32,7 +32,7 @@ module Wallets
 
     private
 
-    def t_(key, **opts) = I18n.t("wallets.index.#{key}", **opts)
+    def t_(key, **opts) = t(".#{key}", **opts)
 
     def render_header
       div(class: "flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-6") do

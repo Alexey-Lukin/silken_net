@@ -17,7 +17,7 @@ module Actuators
     def view_template
       status = @command.status.to_s
       style  = STATUS_STYLES.fetch(status, "bg-zinc-800 text-zinc-300")
-      label  = I18n.t("actuators.command_status_badge.#{status}", default: status)
+      label  = t(".#{status}", default: status)
 
       span(
         id: "command_status_#{@command.id}",

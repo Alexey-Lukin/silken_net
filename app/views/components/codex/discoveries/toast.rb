@@ -43,7 +43,7 @@ module Codex
       def render_header
         div(class: "flex items-center justify-between") do
           span(class: "text-mini uppercase tracking-[0.3em] font-mono text-gaia-text-muted") do
-            I18n.t("codex.discoveries.toast.kicker")
+            t(".kicker")
           end
           span(class: tokens(
             "text-mini font-mono uppercase tracking-widest",
@@ -69,7 +69,7 @@ module Codex
             "inline-block text-mini uppercase tracking-[0.3em]",
             "text-gaia-primary hover:underline focus-visible:ring-2 focus-visible:ring-gaia-primary"
           )
-        ) { I18n.t("codex.discoveries.toast.visit") }
+        ) { t(".visit") }
       end
 
       def trigger_label
@@ -80,7 +80,7 @@ module Codex
         else
           "default"
         end
-        I18n.t("codex.discoveries.toast.triggers.#{key}")
+        t(".triggers.#{key}")
       end
     end
   end

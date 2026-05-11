@@ -40,6 +40,6 @@ module Telemetry
 
     private
 
-    def t_(key, **opts) = I18n.t("telemetry.#{key}", **opts)
+    def t_(key, **opts) = t("telemetry.#{key}", **opts)
   end
 end

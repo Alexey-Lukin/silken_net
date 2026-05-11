@@ -6,7 +6,7 @@ module Views
       class DataTable < ApplicationComponent
         def initialize(columns:, empty_message: nil, empty: false, **attrs)
           @columns = columns
-          @empty_message = empty_message || I18n.t("ui.data_table.empty")
+          @empty_message = empty_message || t("ui.data_table.empty")
           @extra_class = attrs[:class]
           @empty = empty
         end

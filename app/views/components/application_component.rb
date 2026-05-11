@@ -22,7 +22,8 @@ class ApplicationComponent < Phlex::HTML
 
   def t(key, **options)
     if key.to_s.start_with?(".")
-      scope = self.class.name.underscore.gsub("/", ".")
+      klass_name = self.class.name || self.class.ancestors.lazy.filter_map(&:name).first
+      scope = klass_name&.underscore&.gsub("/", ".") || ""
       I18n.t("#{scope}#{key}", **options)
     else
       I18n.t(key, **options)

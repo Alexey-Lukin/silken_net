@@ -30,8 +30,8 @@ module Gateways
     def render_header
       div(class: "flex justify-between items-end mb-6") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t("gateways.index.title") }
-          p(class: "text-xs text-gray-600 mt-1") { t("gateways.index.subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".title") }
+          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
 
         div(class: "text-right font-mono text-tiny text-emerald-900") do

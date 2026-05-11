@@ -52,7 +52,7 @@ module Trees
       end
     end
 
-    def t_(key, **opts) = I18n.t("trees.index.#{key}", **opts)
+    def t_(key, **opts) = t(".#{key}", **opts)
 
     def render_soldier_node(tree)
       voltage = tree.ionic_voltage
@@ -74,7 +74,7 @@ module Trees
         # Індикатор заряду іоністора (Streaming Potential Reserve)
         div(class: "space-y-1") do
           div(class: "flex justify-between text-micro uppercase text-gaia-text font-mono") do
-            span { I18n.t("trees.index.ionic_pulse") }
+            span { t(".ionic_pulse") }
             span { "#{voltage}mV" }
           end
           div(class: "w-full h-0.5 bg-gaia-surface-sunken overflow-hidden") do

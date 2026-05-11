@@ -42,7 +42,7 @@ module Alerts
 
     private
 
-    def t_(key, **opts) = I18n.t("alerts.#{key}", **opts)
+    def t_(key, **opts) = t("alerts.#{key}", **opts)
 
     # Phase 6 — Codex citation strip beneath the alert message. A
     # forester citing `chainsaw_protocol` on a `chainsaw_detected`

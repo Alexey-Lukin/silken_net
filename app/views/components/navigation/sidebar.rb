@@ -74,10 +74,10 @@ module Navigation
     private
 
     # Lazy-lookup helper scoped to the `navigation.*` namespace so call-sites
-    # stay terse: `t_("logo.title")` instead of `I18n.t("navigation.logo.title")`.
+    # stay terse: `t_("logo.title")` instead of `t("navigation.logo.title")`.
     # Mirrors the Rails view-helper convention `t(".key")` adapted for Phlex.
     def t_(key)
-      I18n.t("navigation.#{key}")
+      t("navigation.#{key}")
     end
 
     def render_logo

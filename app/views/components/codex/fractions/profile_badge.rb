@@ -18,7 +18,7 @@ module Codex
           ),
           id: "codex_fraction_profile_badge"
         ) do
-          span(class: "text-mini uppercase tracking-[0.3em] text-gaia-text-muted") { I18n.t("codex.fractions.label") }
+          span(class: "text-mini uppercase tracking-[0.3em] text-gaia-text-muted") { t("codex.fractions.label") }
           if @fraction
             span(class: "text-tiny font-mono uppercase tracking-widest") do
               @fraction.archetype_key
@@ -31,7 +31,7 @@ module Codex
                 "text-mini uppercase tracking-[0.3em] underline",
                 "hover:text-gaia-primary focus-visible:ring-2 focus-visible:ring-gaia-primary"
               )
-            ) { I18n.t("codex.fractions.choose_short") }
+            ) { t("codex.fractions.choose_short") }
           end
         end
       end

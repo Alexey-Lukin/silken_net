@@ -33,9 +33,9 @@ module Codex
 
       def render_header
         div(class: "space-y-1") do
-          h3(class: "text-tiny uppercase tracking-[0.3em] text-gaia-text-muted") { I18n.t("codex.fractions.picker.heading") }
+          h3(class: "text-tiny uppercase tracking-[0.3em] text-gaia-text-muted") { t(".heading") }
           p(class: "text-mini text-gaia-text-muted") do
-            I18n.t("codex.fractions.picker.subtitle")
+            t(".subtitle")
           end
         end
       end
@@ -72,7 +72,7 @@ module Codex
 
       def render_grid
         if @nodes.blank?
-          p(class: "text-mini text-gaia-text-muted italic") { I18n.t("codex.fractions.picker.empty") }
+          p(class: "text-mini text-gaia-text-muted italic") { t(".empty") }
           return
         end
 
@@ -104,7 +104,7 @@ module Codex
 
       def render_pick_button(node, active:, cooldown_locked:)
         if active
-          span(class: "text-mini uppercase tracking-[0.3em] text-status-success-text") { I18n.t("codex.fractions.current") }
+          span(class: "text-mini uppercase tracking-[0.3em] text-status-success-text") { t("codex.fractions.current") }
           return
         end
 
@@ -122,8 +122,8 @@ module Codex
               "focus-visible:ring-2 focus-visible:ring-gaia-primary",
               cooldown_locked ? locked_classes : open_classes
             ),
-            data: cooldown_locked ? {} : { turbo_confirm: I18n.t("codex.fractions.picker.confirm", slug: node.slug) }
-          ) { cooldown_locked ? I18n.t("codex.fractions.picker.locked") : I18n.t("codex.fractions.picker.pick") }
+            data: cooldown_locked ? {} : { turbo_confirm: t(".confirm", slug: node.slug) }
+          ) { cooldown_locked ? t(".locked") : t(".pick") }
         end
       end
 

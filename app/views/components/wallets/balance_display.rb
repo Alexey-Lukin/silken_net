@@ -9,9 +9,9 @@ module Wallets
     def view_template
       # ⚡ [СИНХРОНІЗАЦІЯ]: target ID для BlockchainMintingService
       div(id: "wallet_balance_#{@wallet.id}", class: container_classes) do
-        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t("wallets.balance_display.decoration") }
+        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t(".decoration") }
 
-        p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-4") { t("wallets.balance_display.verified_balance") }
+        p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-4") { t(".verified_balance") }
         div(class: "flex items-baseline gap-4") do
           span(class: "text-7xl font-extralight text-white tracking-tighter") { @wallet.scc_balance.to_f.round(6) }
           span(class: "text-xl text-emerald-500 font-mono animate-pulse") { "SCC" }
@@ -30,7 +30,7 @@ module Wallets
             span(class: "text-gray-500") { @wallet.esg_retired_balance.to_f.round(4) }
           end
         end
-        p(class: "mt-4 text-xs font-mono text-gray-500") { t("wallets.balance_display.locked_for", owner: @wallet.tree&.did || @wallet.organization&.name) }
+        p(class: "mt-4 text-xs font-mono text-gray-500") { t(".locked_for", owner: @wallet.tree&.did || @wallet.organization&.name) }
       end
     end
 

@@ -1742,6 +1742,8 @@ Sandbox-обмеження: автоматичний прогін axe-core / Lig
    - `t(".key")` всередині `Codex::Show` резолвить у `I18n.t("codex.show.key")`
    - Абсолютний ключ (`t("flash.errors.unauthorized")`) працює без autoscope
    - Працює як у controller-render контексті, так і в `Component.new(...).call` (specs/Turbo broadcasts)
+   - Для анонімних subclasses (`Class.new(Component)` у тестах) scope обчислюється по першому named ancestor
+   - **Міграція завершена:** всі 54 компоненти переведені на `t(".key")` relative-lookup. Абсолютні `t("codex.fractions.current")` залишаються тільки для cross-scope ключів (ключ із сусіднього компонента). `I18n.t()` у view-шарі повністю замінено на `t()` — 0 залишків.
 4. **Контролер-side strings.** Flash, error JSON, redirect notice — всі через `I18n.t("flash.<controller>.<action>")` / `I18n.t("errors.api.<code>")`. Hardcoded UA рядки у контролерах = CI failure.
 5. **Mailer та service-worker.** Mailer templates (`app/views/<mailer>/*.erb`) та `pwa/service-worker.js` поки **out of scope** для авто-перевірки — їх локалізують вручну за тим самим патерном (`config/locales/mailers/...`, `pwa/...`). Service-worker не йде через I18n (це JS у браузері).
 

@@ -36,7 +36,7 @@ module Views
             href: rails_blob_path(@photo, disposition: "inline"),
             target: "_blank",
             rel: "noopener noreferrer",
-            aria_label: I18n.t("ui.photo_card.view_photo", filename: @photo.filename),
+            aria_label: t("ui.photo_card.view_photo", filename: @photo.filename),
             class: preview_link_classes
           ) do
             if @photo.representable?
@@ -78,9 +78,9 @@ module Views
               "×",
               api_v1_maintenance_record_photo_path(@record, @photo),
               method: :delete,
-              aria: { label: I18n.t("ui.photo_card.remove_photo", filename: @photo.filename) },
+              aria: { label: t("ui.photo_card.remove_photo", filename: @photo.filename) },
               class: delete_button_classes,
-              data: { turbo_confirm: I18n.t("ui.photo_card.confirm_remove") }
+              data: { turbo_confirm: t("ui.photo_card.confirm_remove") }
             )
           end
         end

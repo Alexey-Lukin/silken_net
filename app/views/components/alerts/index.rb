@@ -25,7 +25,7 @@ module Alerts
 
     private
 
-    def t_(key, **opts) = I18n.t("alerts.#{key}", **opts)
+    def t_(key, **opts) = t("alerts.#{key}", **opts)
 
     def render_table
       # `gaia-responsive-table` flips into card-list on mobile via CSS only

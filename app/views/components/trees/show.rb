@@ -46,7 +46,7 @@ module Trees
     private
 
     # Lazy-lookup helper scoped to the `trees.show.*` namespace.
-    def t_(key) = I18n.t("trees.show.#{key}")
+    def t_(key) = t(".#{key}")
 
 
     def render_chronicle_frame
@@ -66,7 +66,7 @@ module Trees
           h2(class: "text-4xl font-extralight tracking-tighter text-gaia-text") { @tree.did }
           div(class: "flex items-center gap-3 mt-2") do
             span(class: tokens("text-tiny px-2 py-0.5 border font-mono uppercase tracking-widest", status_color_class)) { @tree.status }
-            span(class: "text-tiny text-gaia-text-subtle font-mono") { I18n.t("trees.show.labels.family", name: @family&.name || t_("labels.family_unknown")) }
+            span(class: "text-tiny text-gaia-text-subtle font-mono") { t(".labels.family", name: @family&.name || t_("labels.family_unknown")) }
           end
           render_codex_citations
         end

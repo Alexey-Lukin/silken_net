@@ -25,12 +25,12 @@ module SystemHealth
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t("system_health.show.title") }
-          p(class: "text-xs text-gray-600 mt-1") { t("system_health.show.subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".title") }
+          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
         div(class: "flex items-center gap-2") do
           div(class: tokens("h-2 w-2 rounded-full", "bg-emerald-500 shadow-[0_0_8px_#10b981]": all_healthy?, "bg-red-500 animate-pulse": !all_healthy?))
-          span(class: tokens("text-mini uppercase font-bold", "text-emerald-500": all_healthy?, "text-red-500": !all_healthy?)) { all_healthy? ? t("system_health.show.all_systems_go") : t("system_health.show.degraded") }
+          span(class: tokens("text-mini uppercase font-bold", "text-emerald-500": all_healthy?, "text-red-500": !all_healthy?)) { all_healthy? ? t(".all_systems_go") : t(".degraded") }
         end
       end
     end
@@ -39,13 +39,13 @@ module SystemHealth
       if all_healthy?
         div(class: "border border-emerald-900 bg-emerald-950/20 p-4") do
           p(class: "text-emerald-500 text-xs font-mono uppercase tracking-widest") do
-            t("system_health.show.all_operational", at: @health[:checked_at])
+            t(".all_operational", at: @health[:checked_at])
           end
         end
       else
         div(class: "border border-red-700 bg-red-950/30 p-4") do
           p(class: "text-red-400 text-xs font-mono font-bold uppercase tracking-widest") do
-            t("system_health.show.system_degraded")
+            t(".system_degraded")
           end
         end
       end
@@ -55,11 +55,11 @@ module SystemHealth
       coap = @health[:coap_listener] || {}
       alive = coap[:alive]
 
-      service_card(t("system_health.show.coap.name"), alive) do
+      service_card(t(".coap.name"), alive) do
         div(class: "space-y-2 font-mono text-tiny") do
-          meta_row(t("system_health.show.coap.port"), coap[:port] || "5683")
-          meta_row(t("system_health.show.coap.protocol"), t("system_health.show.coap.protocol_value"))
-          meta_row(t("system_health.show.coap.status"), alive ? t("system_health.show.coap.listening") : t("system_health.show.coap.offline"))
+          meta_row(t(".coap.port"), coap[:port] || "5683")
+          meta_row(t(".coap.protocol"), t(".coap.protocol_value"))
+          meta_row(t(".coap.status"), alive ? t(".coap.listening") : t(".coap.offline"))
           if coap[:error]
             div(class: "mt-2 p-2 border border-red-900/30 bg-red-950/10") do
               p(class: "text-mini text-red-400") { coap[:error] }
@@ -73,12 +73,12 @@ module SystemHealth
       sidekiq = @health[:sidekiq] || {}
       healthy = sidekiq[:error].blank?
 
-      service_card(t("system_health.show.sidekiq.name"), healthy) do
+      service_card(t(".sidekiq.name"), healthy) do
         div(class: "space-y-2 font-mono text-tiny") do
-          meta_row(t("system_health.show.sidekiq.enqueued"), sidekiq[:enqueued] || "—")
-          meta_row(t("system_health.show.sidekiq.processed"), sidekiq[:processed] || "—")
-          meta_row(t("system_health.show.sidekiq.failed"), sidekiq[:failed] || "—")
-          meta_row(t("system_health.show.sidekiq.active_workers"), sidekiq[:workers_size] || "—")
+          meta_row(t(".sidekiq.enqueued"), sidekiq[:enqueued] || "—")
+          meta_row(t(".sidekiq.processed"), sidekiq[:processed] || "—")
+          meta_row(t(".sidekiq.failed"), sidekiq[:failed] || "—")
+          meta_row(t(".sidekiq.active_workers"), sidekiq[:workers_size] || "—")
           if sidekiq[:error]
             div(class: "mt-2 p-2 border border-red-900/30 bg-red-950/10") do
               p(class: "text-mini text-red-400") { sidekiq[:error] }
@@ -92,10 +92,10 @@ module SystemHealth
       db = @health[:database] || {}
       connected = db[:connected]
 
-      service_card(t("system_health.show.database.name"), connected) do
+      service_card(t(".database.name"), connected) do
         div(class: "space-y-2 font-mono text-tiny") do
-          meta_row(t("system_health.show.database.engine"), t("system_health.show.database.engine_value"))
-          meta_row(t("system_health.show.database.connection"), connected ? t("system_health.show.database.active") : t("system_health.show.database.disconnected"))
+          meta_row(t(".database.engine"), t(".database.engine_value"))
+          meta_row(t(".database.connection"), connected ? t(".database.active") : t(".database.disconnected"))
           if db[:error]
             div(class: "mt-2 p-2 border border-red-900/30 bg-red-950/10") do
               p(class: "text-mini text-red-400") { db[:error] }
@@ -111,7 +111,7 @@ module SystemHealth
           h4(class: "text-sm font-light text-emerald-100") { name }
           div(class: "flex items-center gap-2") do
             div(class: tokens("h-1.5 w-1.5 rounded-full", "bg-emerald-500 shadow-[0_0_6px_#10b981]": healthy, "bg-red-500 animate-pulse": !healthy))
-            span(class: tokens("text-mini uppercase font-bold", "text-emerald-500": healthy, "text-red-500": !healthy)) { healthy ? t("system_health.show.status.ok") : t("system_health.show.status.down") }
+            span(class: tokens("text-mini uppercase font-bold", "text-emerald-500": healthy, "text-red-500": !healthy)) { healthy ? t(".status.ok") : t(".status.down") }
           end
         end
         yield
@@ -122,13 +122,13 @@ module SystemHealth
       queues = @health[:sidekiq][:queues]
 
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t("system_health.show.sidekiq.queues_title") }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".sidekiq.queues_title") }
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
           table(role: "table", class: "w-full text-left font-mono text-compact") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
-                th(scope: "col", class: "p-4") { t("system_health.show.sidekiq.queue_name") }
-                th(scope: "col", class: "p-4 text-right") { t("system_health.show.sidekiq.jobs_enqueued") }
+                th(scope: "col", class: "p-4") { t(".sidekiq.queue_name") }
+                th(scope: "col", class: "p-4 text-right") { t(".sidekiq.jobs_enqueued") }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -153,7 +153,7 @@ module SystemHealth
 
     def render_footer
       div(class: "text-mini text-gray-600 text-right mt-2 font-mono") do
-        t("system_health.show.last_checked", at: @health[:checked_at])
+        t(".last_checked", at: @health[:checked_at])
       end
     end
 

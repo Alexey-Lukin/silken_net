@@ -28,13 +28,13 @@ module TreeFamilies
         if @family.scientific_name.present?
           p(class: "text-sm italic text-emerald-500 mt-2") { @family.scientific_name }
         end
-        p(class: "text-tiny font-mono text-emerald-700 uppercase tracking-[0.4em] mt-4") { t("tree_families.show.baseline_info", baseline: @family.baseline_impedance, coef: @family.carbon_sequestration_coefficient) }
+        p(class: "text-tiny font-mono text-emerald-700 uppercase tracking-[0.4em] mt-4") { t(".baseline_info", baseline: @family.baseline_impedance, coef: @family.carbon_sequestration_coefficient) }
       end
     end
 
     def render_threshold_viz
       div(class: "p-8 border border-emerald-900 bg-black space-y-8") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t("tree_families.show.scale_title") }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".scale_title") }
 
         # Візуальна шкала
         div(class: "relative pt-10 pb-4") do
@@ -42,10 +42,10 @@ module TreeFamilies
           div(class: "h-px w-full bg-emerald-900/50")
 
           # Маркери
-          marker(@family.death_threshold_impedance, t("tree_families.show.markers.death"), "bg-red-900")
-          marker(@family.critical_z_min, t("tree_families.show.markers.safe_min"), "bg-emerald-500")
-          marker(@family.baseline_impedance, t("tree_families.show.markers.baseline"), "bg-white", active: true)
-          marker(@family.critical_z_max, t("tree_families.show.markers.safe_max"), "bg-emerald-500")
+          marker(@family.death_threshold_impedance, t(".markers.death"), "bg-red-900")
+          marker(@family.critical_z_min, t(".markers.safe_min"), "bg-emerald-500")
+          marker(@family.baseline_impedance, t(".markers.baseline"), "bg-white", active: true)
+          marker(@family.critical_z_max, t(".markers.safe_max"), "bg-emerald-500")
         end
       end
     end
@@ -54,7 +54,7 @@ module TreeFamilies
       # Дуже спрощена логіка позиціонування для прикладу
       left = [ (value.to_f / (@family.critical_z_max * 1.2) * 100), 100 ].min
       div(class: "absolute top-0 flex flex-col items-center", style: "left: #{left}%") do
-         span(class: "text-micro text-gray-600 mb-2 font-mono") { t("tree_families.show.marker_value", value: value) }
+         span(class: "text-micro text-gray-600 mb-2 font-mono") { t(".marker_value", value: value) }
          div(class: tokens("h-3 w-px", "bg-white": active, "bg-emerald-900": !active))
          span(class: tokens("mt-4 text-micro uppercase tracking-tighter", "text-white": active, "text-gray-700": !active)) { label }
       end
@@ -62,13 +62,13 @@ module TreeFamilies
 
     def render_biological_props
       div(class: "p-8 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t("tree_families.show.props_title") }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".props_title") }
         div(class: "space-y-4 font-mono text-compact") do
-          prop_row(t("tree_families.show.props.co2"), @family.carbon_sequestration_coefficient)
-          prop_row(t("tree_families.show.props.sap_flow"), @family.sap_flow_index || t("tree_families.show.defaults.zero"))
-          prop_row(t("tree_families.show.props.bark_thickness"), t("tree_families.show.props.bark_thickness_value", value: @family.bark_thickness || 0))
-          prop_row(t("tree_families.show.props.foliage_density"), t("tree_families.show.props.foliage_density_value", value: @family.foliage_density || 0))
-          prop_row(t("tree_families.show.props.fire_rating"), @family.fire_resistance_rating || t("tree_families.show.defaults.not_available"))
+          prop_row(t(".props.co2"), @family.carbon_sequestration_coefficient)
+          prop_row(t(".props.sap_flow"), @family.sap_flow_index || t(".defaults.zero"))
+          prop_row(t(".props.bark_thickness"), t(".props.bark_thickness_value", value: @family.bark_thickness || 0))
+          prop_row(t(".props.foliage_density"), t(".props.foliage_density_value", value: @family.foliage_density || 0))
+          prop_row(t(".props.fire_rating"), @family.fire_resistance_rating || t(".defaults.not_available"))
         end
       end
     end

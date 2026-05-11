@@ -46,8 +46,8 @@ module Sessions
     private
 
     # Lazy-lookup helper scoped to the `sessions.new.*` namespace so call-sites
-    # stay terse: `t_("submit")` instead of `I18n.t("sessions.new.submit")`.
-    def t_(key) = I18n.t("sessions.new.#{key}")
+    # stay terse: `t_("submit")` instead of `t(".submit")`.
+    def t_(key) = t(".#{key}")
 
     def render_portal_header
       div(class: "text-center mb-10 space-y-2") do
@@ -113,7 +113,7 @@ module Sessions
     def provider_button(provider, label, icon)
       a(
         href: "/auth/#{provider}",
-        aria_label: I18n.t("sessions.new.provider_aria", provider: label),
+        aria_label: t(".provider_aria", provider: label),
         class: "flex items-center justify-center gap-2 py-3 border border-gaia-border-strong text-gaia-text-muted text-tiny uppercase tracking-widest hover:border-gaia-primary hover:text-gaia-text hover:bg-gaia-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-all"
       ) do
         span(aria_hidden: "true") { icon }

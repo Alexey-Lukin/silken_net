@@ -19,11 +19,11 @@ module Firmwares
 
     def render_inventory_summary
       div(class: "p-6 border border-emerald-900 bg-zinc-950 shadow-2xl") do
-        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-6") { t("firmwares.index.inventory_title") }
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-6") { t(".inventory_title") }
 
         div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do
-          inventory_block(t("firmwares.index.queens"), @inventory_stats[:gateways])
-          inventory_block(t("firmwares.index.soldiers"), @inventory_stats[:trees])
+          inventory_block(t(".queens"), @inventory_stats[:gateways])
+          inventory_block(t(".soldiers"), @inventory_stats[:trees])
         end
       end
     end
@@ -34,9 +34,9 @@ module Firmwares
         div(class: "space-y-2") do
           stats.each do |version, count|
             div(class: "flex justify-between items-center text-compact font-mono") do
-              span(class: "text-emerald-400") { t("firmwares.index.version_label", version: version || "0.0.0") }
+              span(class: "text-emerald-400") { t(".version_label", version: version || "0.0.0") }
               div(class: "flex-1 mx-4 h-px bg-emerald-900/30 border-dotted")
-              span(class: "text-emerald-100") { t("firmwares.index.units", count: count) }
+              span(class: "text-emerald-100") { t(".units", count: count) }
             end
           end
         end
@@ -46,25 +46,25 @@ module Firmwares
     def render_firmware_registry
       div(class: "space-y-4") do
         div(class: "flex justify-between items-end") do
-          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t("firmwares.index.registry_title") }
+          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".registry_title") }
 
           # Кнопка переходу до порталу завантаження
           a(
             href: new_api_v1_firmware_path,
             class: "text-tiny border border-emerald-500 px-4 py-1 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-            aria_label: t("firmwares.index.upload_aria")
-          ) { t("firmwares.index.upload") }
+            aria_label: t(".upload_aria")
+          ) { t(".upload") }
         end
 
         div(class: "overflow-x-auto w-full border border-emerald-900 bg-black") do
           table(role: "table", class: "w-full text-left font-mono text-xs") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
-                th(scope: "col", class: "p-4") { t("firmwares.index.columns.version") }
-                th(scope: "col", class: "p-4") { t("firmwares.index.columns.target_hardware") }
-                th(scope: "col", class: "p-4") { t("firmwares.index.columns.checksum") }
-                th(scope: "col", class: "p-4") { t("firmwares.index.columns.uploaded") }
-                th(scope: "col", class: "p-4 text-right") { t("firmwares.index.columns.command") }
+                th(scope: "col", class: "p-4") { t(".columns.version") }
+                th(scope: "col", class: "p-4") { t(".columns.target_hardware") }
+                th(scope: "col", class: "p-4") { t(".columns.checksum") }
+                th(scope: "col", class: "p-4") { t(".columns.uploaded") }
+                th(scope: "col", class: "p-4 text-right") { t(".columns.command") }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -93,7 +93,7 @@ module Firmwares
             button(
               type: "submit",
               class: "text-emerald-500 hover:text-white border border-emerald-900 hover:border-emerald-500 px-4 py-1 uppercase text-mini tracking-widest transition-all group-hover:shadow-[0_0_10px_rgba(16,185,129,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-              aria_label: t("firmwares.index.deploy_aria", version: firmware.version),
+              aria_label: t(".deploy_aria", version: firmware.version),
               data: { turbo_confirm: t("firmwares.row.confirm", version: firmware.version) }
             ) { t("firmwares.row.order_evolution") }
           end

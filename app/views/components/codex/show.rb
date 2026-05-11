@@ -53,7 +53,7 @@ module Codex
     def render_lore_columns
       if @node.context_md.present?
         section(class: "space-y-2") do
-          h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { I18n.t("codex.show.sections.context") }
+          h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { t(".sections.context") }
           div(class: "prose prose-sm dark:prose-invert max-w-none text-gaia-text") do
             raw safe(Codex::MarkdownRenderer.render(@node.context_md))
           end
@@ -62,7 +62,7 @@ module Codex
 
       if @node.cyber_meaning_md.present?
         section(class: "space-y-2") do
-          h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-primary") { I18n.t("codex.show.sections.cyber_meaning") }
+          h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-primary") { t(".sections.cyber_meaning") }
           div(class: "bg-gaia-surface-sunken p-4 border-l-2 border-gaia-primary") do
             div(class: "prose prose-sm dark:prose-invert max-w-none text-gaia-text") do
               raw safe(Codex::MarkdownRenderer.render(@node.cyber_meaning_md))
@@ -73,7 +73,7 @@ module Codex
 
       if @node.lore_md.present?
         section(class: "space-y-2") do
-          h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { I18n.t("codex.show.sections.lore") }
+          h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { t(".sections.lore") }
           div(class: "prose prose-sm dark:prose-invert max-w-none text-gaia-text") do
             raw safe(Codex::MarkdownRenderer.render(@node.lore_md))
           end
@@ -83,23 +83,23 @@ module Codex
 
     def render_meta_panel
       div(class: "border border-gaia-border bg-gaia-surface p-4 space-y-2 text-tiny font-mono") do
-        h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted mb-2") { I18n.t("codex.show.sections.metadata") }
-        render Views::Shared::UI::MetaRow.new(label: I18n.t("codex.show.meta.realm"), value: (@node.realm&.name_en || "—"))
-        render Views::Shared::UI::MetaRow.new(label: I18n.t("codex.show.meta.archetype"), value: @node.archetype_key)
+        h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted mb-2") { t(".sections.metadata") }
+        render Views::Shared::UI::MetaRow.new(label: t(".meta.realm"), value: (@node.realm&.name_en || "—"))
+        render Views::Shared::UI::MetaRow.new(label: t(".meta.archetype"), value: @node.archetype_key)
         div(class: "flex justify-between gap-2") do
-          span(class: "text-gaia-text-muted") { I18n.t("codex.show.meta.lifecycle") }
+          span(class: "text-gaia-text-muted") { t(".meta.lifecycle") }
           render Views::Shared::UI::StatusBadge.new(status: @node.lifecycle_status)
         end
-        render Views::Shared::UI::MetaRow.new(label: I18n.t("codex.show.meta.geo_region"), value: (@node.geo_region.presence || "—"))
-        render Views::Shared::UI::MetaRow.new(label: I18n.t("codex.show.meta.discovered"), value: @node.discovery_count.to_s)
-        render Views::Shared::UI::MetaRow.new(label: I18n.t("codex.show.meta.cited_by"), value: @node.citation_count.to_s)
-        render Views::Shared::UI::MetaRow.new(label: I18n.t("codex.show.meta.attunement"), value: @node.attunement_count.to_s)
-        render Views::Shared::UI::MetaRow.new(label: I18n.t("codex.show.meta.elo"), value: @node.attunement_elo.to_s)
+        render Views::Shared::UI::MetaRow.new(label: t(".meta.geo_region"), value: (@node.geo_region.presence || "—"))
+        render Views::Shared::UI::MetaRow.new(label: t(".meta.discovered"), value: @node.discovery_count.to_s)
+        render Views::Shared::UI::MetaRow.new(label: t(".meta.cited_by"), value: @node.citation_count.to_s)
+        render Views::Shared::UI::MetaRow.new(label: t(".meta.attunement"), value: @node.attunement_count.to_s)
+        render Views::Shared::UI::MetaRow.new(label: t(".meta.elo"), value: @node.attunement_elo.to_s)
       end
 
       if @node.external_refs.present?
         div(class: "border border-gaia-border bg-gaia-surface p-4 space-y-2") do
-          h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted mb-1") { I18n.t("codex.show.sections.external_references") }
+          h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted mb-1") { t(".sections.external_references") }
           ul(class: "space-y-1 text-tiny") do
             @node.external_refs.each do |ref|
               li do

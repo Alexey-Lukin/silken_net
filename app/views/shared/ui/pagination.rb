@@ -23,7 +23,7 @@ module Views
           return if @pagy.last <= 1
 
           nav(
-            aria_label: I18n.t("pagination.aria_label"),
+            aria_label: t("pagination.aria_label"),
             role: "navigation",
             class: tokens(nav_classes, "gaia-pagination-sticky": @sticky_mobile)
           ) do
@@ -39,10 +39,10 @@ module Views
           if @pagy.previous
             a(
               href: @url_helper.call(page: @pagy.previous),
-              aria_label: I18n.t("pagination.previous_aria"),
+              aria_label: t("pagination.previous_aria"),
               class: page_link_classes,
               rel: "prev"
-            ) { I18n.t("pagination.previous") }
+            ) { t("pagination.previous") }
           else
             # Empty placeholder keeps the flex layout symmetrical.
             div(aria_hidden: "true")
@@ -53,10 +53,10 @@ module Views
           if @pagy.next
             a(
               href: @url_helper.call(page: @pagy.next),
-              aria_label: I18n.t("pagination.next_aria"),
+              aria_label: t("pagination.next_aria"),
               class: page_link_classes,
               rel: "next"
-            ) { I18n.t("pagination.next") }
+            ) { t("pagination.next") }
           else
             div(aria_hidden: "true")
           end
@@ -68,9 +68,9 @@ module Views
           # the verbose copy via `sr-only`; sighted users see whatever the
           # active breakpoint reveals.
           div(class: "text-gaia-text-muted", aria_current: "page") do
-            full = I18n.t("pagination.page_indicator", current: @pagy.page, total: @pagy.last)
+            full = t("pagination.page_indicator", current: @pagy.page, total: @pagy.last)
             if @compact_mobile
-              compact = I18n.t("pagination.page_indicator_compact", current: @pagy.page, total: @pagy.last)
+              compact = t("pagination.page_indicator_compact", current: @pagy.page, total: @pagy.last)
               span(class: "sr-only md:not-sr-only md:inline") { full }
               span(class: "md:hidden", aria_hidden: "true") { compact }
             else

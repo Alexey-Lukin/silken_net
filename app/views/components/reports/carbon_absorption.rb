@@ -20,21 +20,21 @@ module Reports
 
     def header_section
       div(class: "p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
-        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t("reports.carbon_absorption.decoration") }
+        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t(".decoration") }
         div do
-          p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t("reports.carbon_absorption.title") }
+          p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".title") }
           h2(class: "text-3xl font-extralight tracking-tighter text-white") { @organization.name }
-          p(class: "text-tiny font-mono text-gray-600 mt-2") { t("reports.carbon_absorption.generated", at: Time.current.strftime("%d.%m.%Y %H:%M UTC")) }
+          p(class: "text-tiny font-mono text-gray-600 mt-2") { t(".generated", at: Time.current.strftime("%d.%m.%Y %H:%M UTC")) }
         end
       end
     end
 
     def render_metrics
       div(class: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6") do
-        render Views::Shared::UI::StatCard.new(label: t("reports.carbon_absorption.metrics.total_carbon_points"), value: @data[:total_carbon_points], sub: t("reports.carbon_absorption.metrics.total_carbon_points_sub"))
-        render Views::Shared::UI::StatCard.new(label: t("reports.carbon_absorption.metrics.active_wallets"), value: @data[:wallets_count], sub: t("reports.carbon_absorption.metrics.active_wallets_sub"))
-        render Views::Shared::UI::StatCard.new(label: t("reports.carbon_absorption.metrics.active_trees"), value: @data[:trees_active], sub: t("reports.carbon_absorption.metrics.active_trees_sub"))
-        render Views::Shared::UI::StatCard.new(label: t("reports.carbon_absorption.metrics.total_trees"), value: @data[:trees_total], sub: t("reports.carbon_absorption.metrics.total_trees_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".metrics.total_carbon_points"), value: @data[:total_carbon_points], sub: t(".metrics.total_carbon_points_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".metrics.active_wallets"), value: @data[:wallets_count], sub: t(".metrics.active_wallets_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".metrics.active_trees"), value: @data[:trees_active], sub: t(".metrics.active_trees_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".metrics.total_trees"), value: @data[:trees_total], sub: t(".metrics.total_trees_sub"))
       end
     end
 
@@ -43,15 +43,15 @@ module Reports
         table(role: "table", class: "w-full text-left font-mono text-compact") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
-              th(scope: "col", class: "p-4") { t("reports.carbon_absorption.table.metric") }
-              th(scope: "col", class: "p-4 text-right") { t("reports.carbon_absorption.table.value") }
+              th(scope: "col", class: "p-4") { t(".table.metric") }
+              th(scope: "col", class: "p-4 text-right") { t(".table.value") }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
-            data_row(t("reports.carbon_absorption.table.total_points"), @data[:total_carbon_points])
-            data_row(t("reports.carbon_absorption.table.active_wallets"), @data[:wallets_count])
-            data_row(t("reports.carbon_absorption.table.trees_online"), @data[:trees_active])
-            data_row(t("reports.carbon_absorption.table.trees_deployed"), @data[:trees_total])
+            data_row(t(".table.total_points"), @data[:total_carbon_points])
+            data_row(t(".table.active_wallets"), @data[:wallets_count])
+            data_row(t(".table.trees_online"), @data[:trees_active])
+            data_row(t(".table.trees_deployed"), @data[:trees_total])
           end
         end
       end
@@ -66,7 +66,7 @@ module Reports
 
     def render_footer
       div(class: "text-mini text-gray-600 text-right mt-2 font-mono") do
-        t("reports.carbon_absorption.footer", at: Time.current.strftime("%Y-%m-%d %H:%M:%S UTC"), org: @organization.name)
+        t(".footer", at: Time.current.strftime("%Y-%m-%d %H:%M:%S UTC"), org: @organization.name)
       end
     end
   end

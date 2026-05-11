@@ -39,10 +39,10 @@ module Codex
 
       def render_header
         div(class: "space-y-1") do
-          h3(class: "text-tiny uppercase tracking-[0.3em] text-gaia-text-muted") { I18n.t("codex.battle_arena.heading") }
+          h3(class: "text-tiny uppercase tracking-[0.3em] text-gaia-text-muted") { t("codex.battle_arena.heading") }
           p(class: "text-mini text-gaia-text-muted") do
-            realm_label = @realm ? @realm.name_en : I18n.t("codex.battle_arena.realm_unknown")
-            "#{I18n.t('codex.battle_arena.realm_prefix')} #{realm_label}"
+            realm_label = @realm ? @realm.name_en : t("codex.battle_arena.realm_unknown")
+            "#{t('codex.battle_arena.realm_prefix')} #{realm_label}"
           end
         end
       end
@@ -60,7 +60,7 @@ module Codex
         div(class: "grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-stretch") do
           render_card(@left, side: :left)
           div(class: "flex items-center justify-center") do
-            span(class: "text-tiny uppercase tracking-[0.3em] font-mono text-gaia-text-muted") { I18n.t("codex.battle_arena.vs") }
+            span(class: "text-tiny uppercase tracking-[0.3em] font-mono text-gaia-text-muted") { t("codex.battle_arena.vs") }
           end
           render_card(@right, side: :right)
         end
@@ -81,7 +81,7 @@ module Codex
               node.archetype_key
             end
             p(class: "text-mini text-gaia-text-muted font-mono") do
-              I18n.t("codex.battle_arena.elo_summary", elo: node.attunement_elo, matches: node.match_count)
+              t("codex.battle_arena.elo_summary", elo: node.attunement_elo, matches: node.match_count)
             end
           end
           render_pick_form(node)
@@ -105,7 +105,7 @@ module Codex
               "text-tiny uppercase tracking-[0.3em]",
               "focus-visible:ring-2 focus-visible:ring-gaia-primary"
             )
-          ) { I18n.t("codex.battle_arena.pick") }
+          ) { t("codex.battle_arena.pick") }
         end
       end
 
@@ -127,7 +127,7 @@ module Codex
               "text-mini uppercase tracking-[0.3em] font-mono",
               "focus-visible:ring-2 focus-visible:ring-gaia-primary"
             )
-          ) { I18n.t("codex.battle_arena.skip") }
+          ) { t("codex.battle_arena.skip") }
         end
       end
     end

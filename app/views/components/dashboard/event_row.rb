@@ -19,10 +19,10 @@ module Dashboard
 
     def event_summary
       case @event
-      when EwsAlert then t("dashboard.event_row.threat", type: @event.alert_type, cluster: @event.cluster&.name || t("dashboard.event_row.unknown_cluster"))
+      when EwsAlert then t(".threat", type: @event.alert_type, cluster: @event.cluster&.name || t(".unknown_cluster"))
       when BlockchainTransaction then blockchain_transaction_summary
-      when MaintenanceRecord then t("dashboard.event_row.maintenance", action: @event.action_type&.capitalize, user: @event.user&.first_name || t("dashboard.event_row.system_user"))
-      else t("dashboard.event_row.system_pulse")
+      when MaintenanceRecord then t(".maintenance", action: @event.action_type&.capitalize, user: @event.user&.first_name || t(".system_user"))
+      else t(".system_pulse")
       end
     end
 
@@ -42,14 +42,14 @@ module Dashboard
     def blockchain_transaction_summary
       sourceable = @event.sourceable
       if sourceable.is_a?(ParametricInsurance) && sourceable.uses_etherisc?
-        t("dashboard.event_row.etherisc_claim", amount: @event.amount, address: short_address(@event.to_address))
+        t(".etherisc_claim", amount: @event.amount, address: short_address(@event.to_address))
       else
-        t("dashboard.event_row.minted", amount: @event.amount, target: @event.wallet&.tree&.did || t("dashboard.event_row.system_user"))
+        t(".minted", amount: @event.amount, target: @event.wallet&.tree&.did || t(".system_user"))
       end
     end
 
     def short_address(address)
-      return t("dashboard.event_row.pool") unless address.present? && address.length > 10
+      return t(".pool") unless address.present? && address.length > 10
 
       "#{address[0..5]}…#{address[-4..]}"
     end

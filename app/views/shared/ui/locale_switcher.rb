@@ -51,7 +51,7 @@ module Views
           # text the browser draws.
           form.label(
             :locale,
-            I18n.t("locale.switcher_label", default: "Language"),
+            t("locale.switcher_label", default: "Language"),
             class: "sr-only"
           )
         end
@@ -74,7 +74,7 @@ module Views
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary",
               "transition-colors duration-200"
             ),
-            aria: { label: I18n.t("locale.switcher_label", default: "Language") },
+            aria: { label: t("locale.switcher_label", default: "Language") },
             onchange: "this.form.requestSubmit()"
           )
         end
@@ -91,13 +91,13 @@ module Views
                 "text-tiny font-mono uppercase tracking-widest",
                 "hover:text-gaia-primary hover:border-gaia-primary"
               )
-            ) { I18n.t("locale.apply", default: "Apply") }
+            ) { t("locale.apply", default: "Apply") }
           end
         end
 
         def option_label(locale)
           short = { uk: "UA", en: "EN" }[locale.to_sym] || locale.to_s.upcase
-          long  = I18n.t("locale.available.#{locale}", default: locale.to_s)
+          long  = t("locale.available.#{locale}", default: locale.to_s)
           "#{short} · #{long}"
         end
       end

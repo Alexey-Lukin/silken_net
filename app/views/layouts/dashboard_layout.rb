@@ -108,13 +108,13 @@ class DashboardLayout < ApplicationComponent
   end
 
   def render_breadcrumbs
-    nav(aria_label: I18n.t("navigation.breadcrumb.root"), class: "flex text-mini uppercase tracking-widest text-gaia-text-subtle font-bold") do
+    nav(aria_label: t("navigation.breadcrumb.root"), class: "flex text-mini uppercase tracking-widest text-gaia-text-subtle font-bold") do
       ol(class: "flex items-center gap-2") do
         li do
           a(
             href: api_v1_dashboard_index_path,
             class: "hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors duration-200"
-          ) { I18n.t("navigation.breadcrumb.root") }
+          ) { t("navigation.breadcrumb.root") }
         end
 
         # Парсинг шляху для крихт — використовуємо @current_path замість request.path
@@ -133,8 +133,8 @@ class DashboardLayout < ApplicationComponent
   def render_system_telemetry
     div(class: "hidden md:flex items-center gap-4 px-4 py-1.5 border border-gaia-border bg-gaia-surface-sunken transition-colors duration-300") do
       div(class: "flex flex-col text-right") do
-        span(class: "text-micro text-gaia-text-subtle uppercase tracking-widest") { I18n.t("navigation.top_bar.core_sync_label") }
-        span(class: "text-tiny text-gaia-text-strong") { I18n.t("navigation.top_bar.core_sync_value") }
+        span(class: "text-micro text-gaia-text-subtle uppercase tracking-widest") { t("navigation.top_bar.core_sync_label") }
+        span(class: "text-tiny text-gaia-text-strong") { t("navigation.top_bar.core_sync_value") }
       end
       div(class: "h-1 w-1 rounded-full bg-gaia-primary animate-pulse", aria_hidden: "true")
     end
@@ -176,7 +176,7 @@ class DashboardLayout < ApplicationComponent
         mobile_nav_target: "dialog",
         action: "click->mobile-nav#backdropClick close->mobile-nav#onClose"
       },
-      aria_label: I18n.t("accessibility.open_navigation"),
+      aria_label: t("accessibility.open_navigation"),
       # Reset UA dialog defaults (centered + max-content) and slide it in
       # from the left. `open:` variants animate the slide once the browser
       # promotes the dialog to the top layer; `@starting-style` (in

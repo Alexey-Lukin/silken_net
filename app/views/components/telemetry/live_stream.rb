@@ -46,7 +46,7 @@ module Telemetry
 
     private
 
-    def t_(key, **opts) = I18n.t("telemetry.#{key}", **opts)
+    def t_(key, **opts) = t("telemetry.#{key}", **opts)
 
     def header_section
       div(class: "flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 border-b border-gaia-border pb-4") do

@@ -11,7 +11,7 @@ module OracleVisions
       div(class: "p-6 border border-emerald-900 bg-black shadow-[0_0_20px_rgba(6,78,59,0.3)]") do
         h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6 flex items-center gap-2") do
           i(class: "ph ph-cpu")
-          plain t("oracle_visions.simulation_panel.title")
+          plain t(".title")
         end
 
         form(action: simulate_api_v1_oracle_visions_path, method: "post", data: { turbo_frame: "simulation_results" }) do
@@ -19,20 +19,20 @@ module OracleVisions
 
           # Вибір контексту симуляції (Кластер)
           div(class: "mb-6") do
-            label(class: "text-mini text-emerald-800 uppercase block mb-2") { t("oracle_visions.simulation_panel.target_sector") }
+            label(class: "text-mini text-emerald-800 uppercase block mb-2") { t(".target_sector") }
             select(name: "cluster_id", class: "w-full bg-zinc-950 border border-emerald-900 text-emerald-400 text-xs p-2 outline-none focus-visible:border-emerald-500") do
               @clusters.each do |cluster|
-                option(value: cluster.id) { t("oracle_visions.simulation_panel.sector_option", name: cluster.name) }
+                option(value: cluster.id) { t(".sector_option", name: cluster.name) }
               end
             end
           end
 
-          render_slider(t("oracle_visions.simulation_panel.sliders.temp_offset"), "variables[temp_offset]", "-10", "10", "0")
-          render_slider(t("oracle_visions.simulation_panel.sliders.humidity_drop"), "variables[humidity_drop]", "-50", "0", "-5")
-          render_slider(t("oracle_visions.simulation_panel.sliders.sap_flow_bias"), "variables[sap_bias]", "-20", "20", "0")
+          render_slider(t(".sliders.temp_offset"), "variables[temp_offset]", "-10", "10", "0")
+          render_slider(t(".sliders.humidity_drop"), "variables[humidity_drop]", "-50", "0", "-5")
+          render_slider(t(".sliders.sap_flow_bias"), "variables[sap_bias]", "-20", "20", "0")
 
           button(type: "submit", class: "w-full mt-6 py-3 bg-emerald-950/40 border border-emerald-500 text-emerald-500 uppercase text-tiny tracking-widest hover:bg-emerald-500 hover:text-black transition-all font-bold") do
-            t("oracle_visions.simulation_panel.submit")
+            t(".submit")
           end
         end
       end

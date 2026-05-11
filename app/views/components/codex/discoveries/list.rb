@@ -26,17 +26,17 @@ module Codex
 
       def render_header
         div(class: "space-y-1") do
-          h3(class: "text-tiny uppercase tracking-[0.3em] text-gaia-text-muted") { I18n.t("codex.discoveries.heading") }
+          h3(class: "text-tiny uppercase tracking-[0.3em] text-gaia-text-muted") { t("codex.discoveries.heading") }
           p(class: "text-mini text-gaia-text-muted font-mono") do
             count = @pagy ? @pagy.count : @discoveries.size
-            I18n.t("codex.discoveries.counter", count: count)
+            t("codex.discoveries.counter", count: count)
           end
         end
       end
 
       def render_empty
         p(class: "text-mini text-gaia-text-muted italic") do
-          I18n.t("codex.discoveries.empty")
+          t("codex.discoveries.empty")
         end
       end
 
@@ -54,7 +54,7 @@ module Codex
             node&.archetype_key.to_s
           end
           p(class: "text-mini text-gaia-text-muted") do
-            I18n.t(
+            t(
               "codex.discoveries.meta",
               trigger: discovery.trigger_type,
               timestamp: discovery.unlocked_at&.strftime("%Y-%m-%d %H:%M UTC")

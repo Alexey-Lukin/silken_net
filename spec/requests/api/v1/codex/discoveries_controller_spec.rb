@@ -37,7 +37,7 @@ RSpec.describe "Api::V1::Codex::Discoveries", type: :request do
 
     it "shows empty-state copy" do
       get "/api/v1/codex/discoveries/me", headers: headers
-      expect(response.body).to include("Nothing unlocked yet")
+      expect(response.body).to include("Поки нічого не розблоковано")
     end
   end
 end

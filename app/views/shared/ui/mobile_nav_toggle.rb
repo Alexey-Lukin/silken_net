@@ -25,7 +25,7 @@ module Views
             data: { action: "click->mobile-nav#open" },
             aria_controls: @target_id,
             aria_expanded: "false",
-            aria_label: I18n.t("accessibility.open_navigation"),
+            aria_label: t("accessibility.open_navigation"),
             class: tokens(
               "md:hidden inline-flex items-center justify-center",
               "h-10 w-10 -ml-2",
