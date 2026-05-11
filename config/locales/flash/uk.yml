@@ -1,0 +1,36 @@
+---
+uk:
+  flash:
+    actuators:
+      command_in_flight: Актуатор вже має активну команду. Зачекайте на її завершення.
+      idempotency_required: Заголовок Idempotency-Key обов'язковий для виконання команд актуатора.
+    alerts:
+      acknowledged: 'Тривогу #%{id} втихомирено.'
+      resolved: Загрозу локалізовано.
+    firmwares:
+      deployment_dispatched: Наказ на еволюцію v%{version} відправлено в ефір.
+      file_too_large: Розмір файлу перевищує ліміт %{limit} МБ.
+      target_all: Весь ліс
+      target_cluster: 'Кластер #%{id}'
+      uploaded: Нову еволюцію v%{version} завантажено в Океан.
+    maintenance:
+      photo_deleted: Фото видалено з Evidence Matrix.
+      photo_not_found: Фото не знайдено.
+      record_created: Запис про зцілення зафіксовано. Екосистема оновлена.
+      record_updated: Запис оновлено.
+    notifications:
+      updated: Налаштування сповіщень оновлено.
+    oracle:
+      simulation_started: Оракул почав симуляцію.
+    provisioning:
+      defective_uid: Це резервоване firmware значення для defective STM32 UID — реєстрація заборонена. Перепрошийте пристрій та повторно зчитайте unique ID.
+      node_initiated: 'Ініціація вузла завершена. DID: %{did}. Hardware UID: %{uid}'
+      uid_taken: Пристрій з UID %{uid} вже зареєстрований в системі.
+    sessions:
+      blocked_provider: Цей метод входу заблоковано. Зверніться до адміністратора або використайте інший метод.
+      invalid_credentials: Невірні координати доступу.
+      logout_success: Вихід успішний. Брама закрита.
+      rate_limited: Забагато спроб входу. Спробуйте через хвилину.
+    settings:
+      org_updated: Налаштування Організації оновлено.
+      updated: Налаштування оновлено.

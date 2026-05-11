@@ -1,0 +1,24 @@
+---
+uk:
+  account_security:
+    identity:
+      cannot_unlink_last: Неможливо відв'язати останній метод входу без пароля.
+      locked_flash: "%{provider} заблоковано."
+      locked_json: Ідентичність %{provider} заблоковано.
+      set_password_first: Встановіть пароль перед відв'язкою останнього провайдера.
+      unlinked_flash: "%{provider} відв'язано."
+      unlinked_json: Провайдер %{provider} відв'язано.
+      unlocked_flash: "%{provider} розблоковано."
+      unlocked_json: Ідентичність %{provider} розблоковано.
+    mfa:
+      disabled: MFA вимкнено.
+      enabled: MFA увімкнено.
+      enabled_with_codes: MFA увімкнено. Збережіть recovery codes!
+    password:
+      current_invalid: Поточний пароль невірний.
+      mismatch: Паролі не співпадають.
+      too_short_flash: Пароль повинен містити мінімум 12 символів.
+      too_short_json: Новий пароль повинен містити мінімум 12 символів.
+      updated_flash: Пароль успішно оновлено.
+      updated_json: Пароль оновлено.
+    title: Безпека акаунту

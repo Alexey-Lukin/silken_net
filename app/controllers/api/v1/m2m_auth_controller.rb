@@ -29,12 +29,12 @@ module Api
         hardware_key = HardwareKey.find_by(device_uid: did)
 
         unless hardware_key
-          render json: { error: "Пристрій не знайдено в системі." }, status: :not_found
+          render json: { error: I18n.t("m2m_auth.device_not_found") }, status: :not_found
           return
         end
 
         unless hardware_key.ed25519_public_key_hex.present?
-          render json: { error: "Ed25519 public key не зареєстровано для пристрою." }, status: :unprocessable_content
+          render json: { error: I18n.t("m2m_auth.no_public_key") }, status: :unprocessable_content
           return
         end
 
@@ -42,12 +42,12 @@ module Api
         begin
           request_time = Time.iso8601(timestamp)
         rescue ArgumentError
-          render json: { error: "Невалідний формат timestamp (ISO 8601)." }, status: :bad_request
+          render json: { error: I18n.t("m2m_auth.invalid_timestamp") }, status: :bad_request
           return
         end
 
         if (Time.current - request_time).abs > 5.minutes
-          render json: { error: "Timestamp прострочено. Синхронізуйте годинник пристрою." }, status: :unauthorized
+          render json: { error: I18n.t("m2m_auth.timestamp_expired") }, status: :unauthorized
           return
         end
 
@@ -72,7 +72,7 @@ module Api
 
           unless nonce_acquired
             Rails.logger.warn "⚠️ [M2M Replay] Blocked duplicate M2M auth for #{did} (signature reuse)"
-            render json: { error: "Replay attack detected" }, status: :unauthorized
+            render json: { error: I18n.t("m2m_auth.replay_detected") }, status: :unauthorized
             return
           end
         rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
@@ -90,7 +90,7 @@ module Api
 
           if Rails.cache.exist?(fallback_key)
             Rails.logger.warn "⚠️ [M2M Replay] Blocked duplicate M2M auth for #{did} (DB fallback, signature reuse)"
-            render json: { error: "Replay attack detected" }, status: :unauthorized
+            render json: { error: I18n.t("m2m_auth.replay_detected") }, status: :unauthorized
             return
           end
 
@@ -113,7 +113,7 @@ module Api
 
         unless valid
           Rails.logger.error "🚨 [M2M Auth] Невалідний Ed25519 підпис для #{did}."
-          render json: { error: "Невалідний підпис." }, status: :unauthorized
+          render json: { error: I18n.t("m2m_auth.invalid_signature") }, status: :unauthorized
           return
         end
 
@@ -122,7 +122,7 @@ module Api
         organization = owner&.cluster&.organization
 
         unless organization
-          render json: { error: "Пристрій не прив'язано до організації." }, status: :unprocessable_content
+          render json: { error: I18n.t("m2m_auth.device_no_organization") }, status: :unprocessable_content
           return
         end
 
@@ -131,7 +131,7 @@ module Api
         system_user = organization.users.role_admin.first || organization.users.first
 
         unless system_user
-          render json: { error: "Організація не має користувачів для видачі токена." }, status: :unprocessable_content
+          render json: { error: I18n.t("m2m_auth.no_users_in_organization") }, status: :unprocessable_content
           return
         end
 

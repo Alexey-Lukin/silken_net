@@ -64,7 +64,7 @@ module Api
           respond_to do |format|
             format.json do
               render json: {
-                message: "Запис про зцілення зафіксовано. Екосистема оновлена.",
+                message: I18n.t("flash.maintenance.record_created"),
                 record: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show)
               }, status: :created
             end
@@ -129,7 +129,7 @@ module Api
           respond_to do |format|
             format.json do
               render json: {
-                message: "Запис оновлено.",
+                message: I18n.t("flash.maintenance.record_updated"),
                 record: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show)
               }
             end

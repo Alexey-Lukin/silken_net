@@ -133,12 +133,12 @@ module Api
 
         respond_to do |format|
           format.json do
-            render json: { error: "No organization assigned to this account.", code: "no_organization" },
+            render json: { error: I18n.t("errors.api.no_organization"), code: "no_organization" },
                    status: :unprocessable_content
           end
           format.html do
             render_auth_page(
-              title: "Access Denied",
+              title: I18n.t("errors.api.no_organization_title"),
               component: Errors::NoOrganization.new,
               status: :unprocessable_content
             )
@@ -148,23 +148,23 @@ module Api
 
       # 4. СТАНДАРТИ ВІДПОВІДЕЙ (The Oracle's Voice)
       def render_unauthorized
-        render json: { error: "Необхідна автентифікація. Брама закрита." }, status: :unauthorized
+        render json: { error: I18n.t("errors.api.unauthorized") }, status: :unauthorized
       end
 
       def render_forbidden
-        render json: { error: "Недостатньо прав для цієї еволюції." }, status: :forbidden
+        render json: { error: I18n.t("errors.api.forbidden") }, status: :forbidden
       end
 
       def render_forbidden_pundit(_exception)
-        render json: { error: "Недостатньо прав для цієї еволюції." }, status: :forbidden
+        render json: { error: I18n.t("errors.api.forbidden") }, status: :forbidden
       end
 
       def render_not_found(exception)
-        render json: { error: "#{exception.model} не знайдено в матриці лісу." }, status: :not_found
+        render json: { error: I18n.t("errors.api.not_found", model: exception.model) }, status: :not_found
       end
 
       def render_parameter_missing(exception)
-        render json: { error: "Відсутній обов'язковий параметр: #{exception.param}" }, status: :bad_request
+        render json: { error: I18n.t("errors.api.missing_parameter", param: exception.param) }, status: :bad_request
       end
 
       def render_validation_error(record)
@@ -174,7 +174,7 @@ module Api
       def render_internal_server_error(exception)
         # Логуємо детальну помилку в консоль/файл, але не показуємо її клієнту
         Rails.logger.fatal "🚨 [API CRITICAL] #{exception.message}\n#{exception.backtrace.first(5).join("\n")}"
-        render json: { error: "Збій у ядрі Океану. Повідомте Архітектора." }, status: :internal_server_error
+        render json: { error: I18n.t("errors.api.internal") }, status: :internal_server_error
       end
 
       # 5. PAGINATION METADATA (Pagy Helper)

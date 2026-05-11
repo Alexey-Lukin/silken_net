@@ -43,7 +43,7 @@ module Api
           respond_to do |format|
             format.json do
               render json: {
-                message: "Налаштування Організації оновлено.",
+                message: I18n.t("flash.settings.org_updated"),
                 organization: {
                   id: org.id,
                   name: org.name,
@@ -55,7 +55,7 @@ module Api
                 }
               }
             end
-            format.html { redirect_to api_v1_settings_path, notice: "Налаштування оновлено." }
+            format.html { redirect_to api_v1_settings_path, notice: I18n.t("flash.settings.updated") }
           end
         else
           respond_to do |format|

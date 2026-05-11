@@ -67,14 +67,14 @@ module Api
       def resolve
         if @alert.resolve!(user: current_user, notes: params[:notes])
           respond_to do |format|
-            format.json { render json: { message: "Тривогу ##{@alert.id} втихомирено.", alert: @alert } }
+            format.json { render json: { message: I18n.t("flash.alerts.acknowledged", id: @alert.id), alert: @alert } }
             format.turbo_stream do
               render turbo_stream: turbo_stream.replace(
                 "alert_#{@alert.id}",
                 Alerts::Row.new(alert: @alert).call
               )
             end
-            format.html { redirect_to api_v1_alerts_path, notice: "Загрозу локалізовано." }
+            format.html { redirect_to api_v1_alerts_path, notice: I18n.t("flash.alerts.resolved") }
           end
         else
           render_validation_error(@alert)

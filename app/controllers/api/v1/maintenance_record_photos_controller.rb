@@ -12,7 +12,7 @@ module Api
       def destroy
         @photo.purge_later # async — не блокуємо запит, S3 deletion в Sidekiq
         respond_to do |format|
-          format.json { render json: { message: "Фото видалено з Evidence Matrix." }, status: :ok }
+          format.json { render json: { message: I18n.t("flash.maintenance.photo_deleted") }, status: :ok }
           format.html { redirect_to api_v1_maintenance_record_path(@record), notice: "Photo removed." }
         end
       end
@@ -33,7 +33,7 @@ module Api
       def set_photo
         @photo = @record.photos.find(params[:id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: "Фото не знайдено." }, status: :not_found
+        render json: { error: I18n.t("flash.maintenance.photo_not_found") }, status: :not_found
       end
     end
   end

@@ -1,0 +1,11 @@
+---
+en:
+  errors:
+    api:
+      forbidden: Insufficient privileges for this evolution.
+      internal: Core fault in the Ocean. Notify the Architect.
+      missing_parameter: 'Missing required parameter: %{param}'
+      no_organization: No organization assigned to this account.
+      no_organization_title: Access Denied
+      not_found: "%{model} not found in the forest matrix."
+      unauthorized: Authentication required. The Gate is closed.

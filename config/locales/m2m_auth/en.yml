@@ -1,0 +1,11 @@
+---
+en:
+  m2m_auth:
+    device_no_organization: Device is not linked to any organization.
+    device_not_found: Device not found in the system.
+    invalid_signature: Invalid signature.
+    invalid_timestamp: Invalid timestamp format (ISO 8601 required).
+    no_public_key: Ed25519 public key not registered for this device.
+    no_users_in_organization: Organization has no users to issue a token to.
+    replay_detected: Replay attack detected.
+    timestamp_expired: Timestamp expired. Synchronize the device clock.

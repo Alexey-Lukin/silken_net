@@ -1,0 +1,24 @@
+---
+en:
+  account_security:
+    identity:
+      cannot_unlink_last: Cannot unlink the last login method without a password.
+      locked_flash: "%{provider} locked."
+      locked_json: Identity %{provider} locked.
+      set_password_first: Set a password before unlinking the last provider.
+      unlinked_flash: "%{provider} unlinked."
+      unlinked_json: Provider %{provider} unlinked.
+      unlocked_flash: "%{provider} unlocked."
+      unlocked_json: Identity %{provider} unlocked.
+    mfa:
+      disabled: MFA disabled.
+      enabled: MFA enabled.
+      enabled_with_codes: MFA enabled. Save your recovery codes!
+    password:
+      current_invalid: Current password is incorrect.
+      mismatch: Passwords do not match.
+      too_short_flash: Password must be at least 12 characters long.
+      too_short_json: New password must be at least 12 characters long.
+      updated_flash: Password successfully updated.
+      updated_json: Password updated.
+    title: Account Security

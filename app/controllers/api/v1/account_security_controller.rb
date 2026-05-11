@@ -29,7 +29,7 @@ module Api
           end
           format.html do
             render_dashboard(
-              title: "Account Security",
+              title: t("account_security.title"),
               component: AccountSecurity::Show.new(user: @user, identities: @identities)
             )
           end
@@ -42,15 +42,15 @@ module Api
         if current_user.mfa_enabled?
           current_user.update!(otp_required_for_login: false, recovery_codes: nil)
           respond_to do |format|
-            format.json { render json: { message: "MFA вимкнено.", mfa_enabled: false }, status: :ok }
-            format.html { redirect_to api_v1_account_security_path, notice: "MFA вимкнено." }
+            format.json { render json: { message: t("account_security.mfa.disabled"), mfa_enabled: false }, status: :ok }
+            format.html { redirect_to api_v1_account_security_path, notice: t("account_security.mfa.disabled") }
           end
         else
           codes = current_user.generate_recovery_codes!
           current_user.update!(otp_required_for_login: true)
           respond_to do |format|
-            format.json { render json: { message: "MFA увімкнено.", mfa_enabled: true, recovery_codes: codes }, status: :ok }
-            format.html { redirect_to api_v1_account_security_path, notice: "MFA увімкнено. Збережіть recovery codes!" }
+            format.json { render json: { message: t("account_security.mfa.enabled"), mfa_enabled: true, recovery_codes: codes }, status: :ok }
+            format.html { redirect_to api_v1_account_security_path, notice: t("account_security.mfa.enabled_with_codes") }
           end
         end
       end
@@ -63,8 +63,8 @@ module Api
         # Не можна відв'язати всіх провайдерів, якщо немає пароля
         if current_user.password_digest.blank? && current_user.identities.active.count <= 1
           respond_to do |format|
-            format.json { render json: { error: "Неможливо відв'язати останній метод входу без пароля." }, status: :unprocessable_content }
-            format.html { redirect_to api_v1_account_security_path, alert: "Встановіть пароль перед відв'язкою останнього провайдера." }
+            format.json { render json: { error: t("account_security.identity.cannot_unlink_last") }, status: :unprocessable_content }
+            format.html { redirect_to api_v1_account_security_path, alert: t("account_security.identity.set_password_first") }
           end
           return
         end
@@ -72,8 +72,8 @@ module Api
         identity.destroy!
 
         respond_to do |format|
-          format.json { render json: { message: "Провайдер #{identity.provider} відв'язано." }, status: :ok }
-          format.html { redirect_to api_v1_account_security_path, notice: "#{identity.provider.titleize} відв'язано." }
+          format.json { render json: { message: t("account_security.identity.unlinked_json", provider: identity.provider) }, status: :ok }
+          format.html { redirect_to api_v1_account_security_path, notice: t("account_security.identity.unlinked_flash", provider: identity.provider.titleize) }
         end
       end
 
@@ -84,8 +84,8 @@ module Api
         identity.lock!
 
         respond_to do |format|
-          format.json { render json: { message: "Ідентичність #{identity.provider} заблоковано." }, status: :ok }
-          format.html { redirect_to api_v1_account_security_path, notice: "#{identity.provider.titleize} заблоковано." }
+          format.json { render json: { message: t("account_security.identity.locked_json", provider: identity.provider) }, status: :ok }
+          format.html { redirect_to api_v1_account_security_path, notice: t("account_security.identity.locked_flash", provider: identity.provider.titleize) }
         end
       end
 
@@ -96,8 +96,8 @@ module Api
         identity.unlock!
 
         respond_to do |format|
-          format.json { render json: { message: "Ідентичність #{identity.provider} розблоковано." }, status: :ok }
-          format.html { redirect_to api_v1_account_security_path, notice: "#{identity.provider.titleize} розблоковано." }
+          format.json { render json: { message: t("account_security.identity.unlocked_json", provider: identity.provider) }, status: :ok }
+          format.html { redirect_to api_v1_account_security_path, notice: t("account_security.identity.unlocked_flash", provider: identity.provider.titleize) }
         end
       end
 
@@ -106,24 +106,24 @@ module Api
       def change_password
         if current_user.password_digest.present? && !current_user.authenticate(params[:current_password])
           respond_to do |format|
-            format.json { render json: { error: "Поточний пароль невірний." }, status: :unprocessable_content }
-            format.html { redirect_to api_v1_account_security_path, alert: "Поточний пароль невірний." }
+            format.json { render json: { error: t("account_security.password.current_invalid") }, status: :unprocessable_content }
+            format.html { redirect_to api_v1_account_security_path, alert: t("account_security.password.current_invalid") }
           end
           return
         end
 
         if params[:new_password].to_s.length < 12
           respond_to do |format|
-            format.json { render json: { error: "Новий пароль повинен містити мінімум 12 символів." }, status: :unprocessable_content }
-            format.html { redirect_to api_v1_account_security_path, alert: "Пароль повинен містити мінімум 12 символів." }
+            format.json { render json: { error: t("account_security.password.too_short_json") }, status: :unprocessable_content }
+            format.html { redirect_to api_v1_account_security_path, alert: t("account_security.password.too_short_flash") }
           end
           return
         end
 
         if params[:new_password] != params[:new_password_confirmation]
           respond_to do |format|
-            format.json { render json: { error: "Паролі не співпадають." }, status: :unprocessable_content }
-            format.html { redirect_to api_v1_account_security_path, alert: "Паролі не співпадають." }
+            format.json { render json: { error: t("account_security.password.mismatch") }, status: :unprocessable_content }
+            format.html { redirect_to api_v1_account_security_path, alert: t("account_security.password.mismatch") }
           end
           return
         end
@@ -131,8 +131,8 @@ module Api
         current_user.update!(password: params[:new_password])
 
         respond_to do |format|
-          format.json { render json: { message: "Пароль оновлено." }, status: :ok }
-          format.html { redirect_to api_v1_account_security_path, notice: "Пароль успішно оновлено." }
+          format.json { render json: { message: t("account_security.password.updated_json") }, status: :ok }
+          format.html { redirect_to api_v1_account_security_path, notice: t("account_security.password.updated_flash") }
         end
       end
     end

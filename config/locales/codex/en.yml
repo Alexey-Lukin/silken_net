@@ -1,114 +1,115 @@
+---
 en:
   codex:
     atlas:
-      page_title: Codex Atlas
-      kicker: Lore Layer
-      title: Codex of Archetypes
       count:
         one: "%{count} archetype catalogued"
         other: "%{count} archetypes catalogued"
       empty:
-        title: "Codex is silent. No archetypes match this filter."
-        description: "Try a broader realm or clear the search."
-    realm_tabs:
-      aria_label: Codex realm filter
-      all: All
-    node_card:
-      aria_label: "Open Codex card: %{title}"
-      elo: "Elo %{value}"
-      no_region: "—"
-    show:
-      sections:
-        context: Context
-        cyber_meaning: Cyber Meaning
-        lore: Lore
-        external_references: External References
-        metadata: Metadata
-      meta:
-        realm: Realm
-        archetype: Archetype
-        lifecycle: "Lifecycle:"
-        geo_region: Geo Region
-        discovered: Discovered
-        cited_by: Cited By
-        attunement: Attunement
-        elo: Elo
+        description: Try a broader realm or clear the search.
+        title: Codex is silent. No archetypes match this filter.
+      kicker: Lore Layer
+      page_title: Codex Atlas
+      title: Codex of Archetypes
     attunements:
-      title: Attunement
       attune: Attune
       attuned: Attuned
-    comments:
-      heading: Discussion
-      empty: "Be the first to share what this archetype means to you."
-      hidden: "Hidden by moderator."
-      placeholder: "Write a comment in Markdown…"
-      post: Post
+      title: Attunement
     battle_arena:
-      page_title: "Codex · Battle Arena"
+      elo_summary: 'Elo: %{elo} · %{matches}m'
       heading: Battle of the Nodes
-      realm_prefix: "Realm:"
-      realm_unknown: "—"
-      vs: VS
+      page_title: Codex · Battle Arena
       pick: Pick
+      realm_prefix: 'Realm:'
+      realm_unknown: "—"
       skip: Skip
-      elo_summary: "Elo: %{elo} · %{matches}m"
-    leaderboard:
-      page_title: "Codex · Leaderboard"
-      heading: Codex Leaderboard
-      realm_prefix: "Realm: %{realm} · "
-      top_n: "Top %{limit}"
-      empty: "No ranked nodes yet."
-      columns:
-        rank: "#"
-        title: Title
-        elo: Elo
-        matches: Matches
-        lifecycle: Lifecycle
+      vs: VS
+    comments:
+      empty: Be the first to share what this archetype means to you.
+      heading: Discussion
+      hidden: Hidden by moderator.
+      placeholder: Write a comment in Markdown…
+      post: Post
     discoveries:
-      page_title: "Codex · My Discoveries"
+      counter: 'Unlocked: %{count}'
+      empty: Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction.
       heading: My Codex
-      counter: "Unlocked: %{count}"
-      empty: "Nothing unlocked yet — observe a tree, vote in the Arena, choose a fraction."
       meta: "%{trigger} · %{timestamp}"
+      page_title: Codex · My Discoveries
       toast:
         kicker: Codex Unlocked
-        visit: "→ Visit"
         triggers:
-          telemetry_observation: Observed
-          match_milestone: Battle
-          fraction_choice: Pact
           attunement_streak: Streak
-          oracle_seasonal: Oracle
-          manual_unlock: Granted
           default: Unlocked
+          fraction_choice: Pact
+          manual_unlock: Granted
+          match_milestone: Battle
+          oracle_seasonal: Oracle
+          telemetry_observation: Observed
+        visit: "→ Visit"
     fractions:
-      my_page_title: "Codex · My Fraction"
-      picker_page_title: "Codex · Choose a Fraction"
-      my_heading: My Fraction
-      empty: "You have not aligned with a Codex archetype yet."
+      change: Change →
       choose: Choose a Fraction
       choose_short: Choose
-      change: "Change →"
-      since: "Since %{date}"
-      updated: "Updated %{date}"
-      current: Current
-      label: Fraction
       cooldown:
         locked: Locked
         open: Open
-        title: "Next change unlocks at %{timestamp}"
-      picker:
-        heading: Pick a Fraction
-        subtitle: "One archetype, one identity. Re-pick available every 7 days."
-        empty: "No pickable nodes in this realm."
-        pick: Pick
-        locked: Locked
-        confirm: "Pick \"%{slug}\"? Re-pick is locked for 7 days."
+        title: Next change unlocks at %{timestamp}
+      current: Current
+      empty: You have not aligned with a Codex archetype yet.
+      label: Fraction
+      my_heading: My Fraction
+      my_page_title: Codex · My Fraction
       onboarding:
-        kicker: "Codex // Onboarding"
-        aria_label: "Codex onboarding"
-        welcome: "Welcome to the Codex."
-        welcome_named: "Welcome to the Codex, %{name}."
-        body: "Align your account with a Codex archetype to unlock the lore layer, join the Battle Arena, and reveal Discoveries as your forest grows."
-        cta_primary: "Choose your Fraction →"
+        aria_label: Codex onboarding
+        body: Align your account with a Codex archetype to unlock the lore layer, join the Battle Arena, and reveal Discoveries as your forest grows.
+        cta_primary: Choose your Fraction →
         cta_secondary: Browse the Codex
+        kicker: Codex // Onboarding
+        welcome: Welcome to the Codex.
+        welcome_named: Welcome to the Codex, %{name}.
+      picker:
+        confirm: Pick "%{slug}"? Re-pick is locked for 7 days.
+        empty: No pickable nodes in this realm.
+        heading: Pick a Fraction
+        locked: Locked
+        pick: Pick
+        subtitle: One archetype, one identity. Re-pick available every 7 days.
+      picker_page_title: Codex · Choose a Fraction
+      since: Since %{date}
+      updated: Updated %{date}
+    leaderboard:
+      columns:
+        elo: Elo
+        lifecycle: Lifecycle
+        matches: Matches
+        rank: "#"
+        title: Title
+      empty: No ranked nodes yet.
+      heading: Codex Leaderboard
+      page_title: Codex · Leaderboard
+      realm_prefix: 'Realm: %{realm} · '
+      top_n: Top %{limit}
+    node_card:
+      aria_label: 'Open Codex card: %{title}'
+      elo: Elo %{value}
+      no_region: "—"
+    realm_tabs:
+      all: All
+      aria_label: Codex realm filter
+    show:
+      meta:
+        archetype: Archetype
+        attunement: Attunement
+        cited_by: Cited By
+        discovered: Discovered
+        elo: Elo
+        geo_region: Geo Region
+        lifecycle: 'Lifecycle:'
+        realm: Realm
+      sections:
+        context: Context
+        cyber_meaning: Cyber Meaning
+        external_references: External References
+        lore: Lore
+        metadata: Metadata
