@@ -13,6 +13,14 @@ module Api
 
       include Pagy::Method
       include Pundit::Authorization
+      # Resolve `I18n.locale` from params → cookie → Accept-Language → default.
+      # Without this every Dashboard request fell back to `default_locale`
+      # because `Api::V1::BaseController` does NOT inherit from
+      # `ApplicationController` (which is the one that included the concern
+      # historically). The user-visible symptom was "switching the language
+      # needs two clicks": the first POST wrote the cookie but the redirected
+      # GET ignored it.
+      include LocaleSettable
 
       # --- ПОРЯДОК ЗАХИСТУ ---
       before_action :authenticate_user!

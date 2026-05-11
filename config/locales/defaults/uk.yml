@@ -6,6 +6,7 @@ uk:
     name: Українська
     short: UA
     switcher_label: Мова
+    apply: Застосувати
     available:
       uk: Українська
       en: English

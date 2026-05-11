@@ -6,6 +6,7 @@ en:
     name: English
     short: EN
     switcher_label: Language
+    apply: Apply
     available:
       uk: Українська
       en: English
