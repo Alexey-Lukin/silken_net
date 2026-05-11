@@ -1,0 +1,33 @@
+---
+en:
+  provisioning:
+    new:
+      errors_title: 'Initiation Failed:'
+      fields:
+        cluster: Sector Assignment (Cluster)
+        family: Biological Family
+        hardware_uid: Physical Crystal ID (Hardware UID)
+        hardware_uid_placeholder: 00E4...BF12
+        latitude: Latitude
+        latitude_placeholder: 49.44...
+        longitude: Longitude
+        longitude_placeholder: 32.06...
+        node_class: Node Class
+        queen: Queen (Gateway)
+        soldier: Soldier (Tree)
+      submit: BIND HARDWARE TO MATRIX
+      subtitle: Establishing 40-year biometric link
+      title: Hardware Initiation
+    success:
+      assigned_did: Assigned DID
+      hardware_uid: Hardware UID
+      hkdf:
+        algorithm: HKDF-SHA256
+        description_after: " on both backend and firmware. No key transmission required."
+        description_before: 'AES-256 key and Lorenz K_seed are derived independently via '
+        note: Ensure PROVISIONING_MASTER_KEY is programmed into device during Factory Provisioning.
+        title: 'HKDF MODE: ZERO-TRUST KEY DERIVATION'
+      not_available: N/A
+      ritual_complete: Ritual Complete
+      view_in_matrix: View Node in Matrix →
+      woven: Node has been woven into the Silken Net.

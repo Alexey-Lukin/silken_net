@@ -1,0 +1,19 @@
+---
+en:
+  system_audits:
+    index:
+      badges:
+        critical: critical
+        ok: ok
+      checked_at: Checked at %{at}
+      columns:
+        source: Source
+        total: SCC Total
+      critical: "🚨 CRITICAL — Delta %{delta} SCC exceeds threshold 0.0001"
+      ok: "✓ INTEGRITY OK — Delta %{delta} SCC within tolerance"
+      sources:
+        delta: Δ Delta
+        polygon: Polygon Smart Contract (totalSupply)
+        postgres: Postgres DB (confirmed transactions)
+      subtitle: Comparison of SCC sum in Postgres DB vs total emission in Polygon smart contract.
+      title: "⛓️ Chain Audit — System Integrity"

@@ -15,3 +15,30 @@ en:
       subtitle: 'Log of administrator actions: who, when and what changed.'
       system_user: System
       title: "👁️ The Watcher — Audit Log"
+    show:
+      actor:
+        email: Email
+        name: Name
+        role: Role
+        system: System actor.
+        title: Actor Identity
+      decoration: LOG
+      details:
+        action: Action
+        field: Field
+        performed_by: Performed By
+        target_id: Target ID
+        target_type: Target Type
+        timestamp: Timestamp
+        value: Value
+      event_record: Audit Event Record
+      metadata:
+        empty: No additional metadata.
+        title: Event Metadata
+      system_user: System
+      target:
+        empty: No specific target.
+        id: ID
+        title: Auditable Target
+        type: Type
+      tx_id_line: "#%{id} // %{at}"

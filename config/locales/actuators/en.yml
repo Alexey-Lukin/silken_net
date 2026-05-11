@@ -31,3 +31,13 @@ en:
       sector_matrix: Sector Matrix // %{name}
       title: Hardware Interaction Layer
       total_units: Total Units
+    show:
+      columns:
+        executed_at: Executed At
+        id: ID
+        operator: Operator
+        payload: Payload
+        status: Status
+      log_title: Command Execution Log
+      not_executed: "---"
+      system_operator: SYSTEM

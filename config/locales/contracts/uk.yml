@@ -22,3 +22,38 @@ uk:
         total_injected: Всього інвестовано
         total_minted: Всього створено
       unassigned: НЕ ПРИЗНАЧЕНО
+    show:
+      backing:
+        active_soldiers: Активних солдатів
+        danger: НЕБЕЗПЕКА
+        nominal: НОРМА
+        threat_status: Статус загрози
+        title: Здоров'я забезпечуючого активу
+        vitality: Життєздатність кластера
+      current_yield: Поточний врожай
+      decoration: NaaS
+      identity: Ідентичність контракту
+      ledger:
+        amount: Сума
+        amount_value: "+ %{amount} SCC"
+        empty: Емісій не зафіксовано.
+        pending_block: ОЧІКУЄ_БЛОК
+        timestamp: Час
+        title: Історія блокчейн-емісій
+        tx_hash: TX Hash
+      legal:
+        burn_no: Ні
+        burn_points: Спалити накопичені пункти
+        burn_yes: Так
+        cancellation_title: Умови розірвання
+        early_exit_fee: Комісія за достроковий вихід
+        early_exit_value: "%{value}%"
+        min_days: Мін. днів до виходу
+        title: Дані смартконтракту
+        verified: Перевірено Silken Net Oracle. Ефективність індексована до стабільності атрактора LorentzA.
+      organization: 'Організація: %{name}'
+      period: 'Період: %{start} → %{end}'
+      status: 'Статус: %{value}'
+      title: "#%{id} // СЕК_%{sector}"
+      total_funding: 'Загальне фінансування: %{amount} SCC'
+      yield_unit: SCC

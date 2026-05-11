@@ -1,0 +1,55 @@
+---
+en:
+  tree_families:
+    form:
+      bark_thickness: Bark Thickness (mm)
+      baseline_impedance: Baseline Impedance (kΩ)
+      co2_coefficient: CO₂ Sequestration Coefficient
+      co2_placeholder: '1.0'
+      critical_z_max: Critical Z Max
+      critical_z_min: Critical Z Min
+      sap_flow: Sap Flow Index
+      scientific_name: Scientific Name (Latin)
+      scientific_placeholder: e.g. Quercus robur
+      species_identity: Species Identity
+      species_placeholder: e.g. Дуб звичайний
+      submit: WRITE GENETIC CODE
+    index:
+      audit: AUDIT
+      audit_aria: Audit %{name} species
+      baseline_value: "%{value} kΩ"
+      columns:
+        baseline_z: Baseline Z
+        command: Command
+        population: Population
+        safe_range: Safe Range
+        species_name: Species Name
+      define_aria: Define new tree species
+      define_dna: "+ Define DNA"
+      edit: EDIT
+      edit_aria: Edit %{name} species
+      kicker: Biological Matrix
+      range_value: "%{min} - %{max} kΩ"
+      soldiers_count: "%{count} Soldiers"
+      title: Global Species Constants
+    show:
+      baseline_info: 'Baseline Impedance: %{baseline} kOhm // CO₂ Coefficient: %{coef}'
+      defaults:
+        not_available: N/A
+        zero: '0.0'
+      marker_value: "%{value}kΩ"
+      markers:
+        baseline: BASELINE
+        death: DEATH
+        safe_max: SAFE_MAX
+        safe_min: SAFE_MIN
+      props:
+        bark_thickness: Bark Thickness
+        bark_thickness_value: "%{value} mm"
+        co2: CO₂ Sequestration Coeff.
+        fire_rating: Fire Rating
+        foliage_density: Foliage Density
+        foliage_density_value: "%{value} %"
+        sap_flow: Sap Flow Index
+      props_title: TinyML Biological Features
+      scale_title: The Homeostasis Scale

@@ -1,0 +1,55 @@
+---
+uk:
+  tree_families:
+    form:
+      bark_thickness: Товщина кори (мм)
+      baseline_impedance: Базовий імпеданс (кΩ)
+      co2_coefficient: Коеф. поглинання CO₂
+      co2_placeholder: '1.0'
+      critical_z_max: Критичний Z Макс
+      critical_z_min: Критичний Z Мін
+      sap_flow: Індекс потоку соку
+      scientific_name: Наукова назва (латиною)
+      scientific_placeholder: напр. Quercus robur
+      species_identity: Ідентичність виду
+      species_placeholder: напр. Дуб звичайний
+      submit: ЗАПИСАТИ ГЕНЕТИЧНИЙ КОД
+    index:
+      audit: АУДИТ
+      audit_aria: Аудит виду %{name}
+      baseline_value: "%{value} кΩ"
+      columns:
+        baseline_z: Базовий Z
+        command: Команда
+        population: Популяція
+        safe_range: Безпечний діапазон
+        species_name: Назва виду
+      define_aria: Визначити новий вид дерева
+      define_dna: "+ Визначити ДНК"
+      edit: РЕДАГ
+      edit_aria: Редагувати вид %{name}
+      kicker: Біологічна матриця
+      range_value: "%{min} - %{max} кΩ"
+      soldiers_count: "%{count} солдатів"
+      title: Глобальні константи видів
+    show:
+      baseline_info: 'Базовий імпеданс: %{baseline} кОм // CO₂ коефіцієнт: %{coef}'
+      defaults:
+        not_available: Н/Д
+        zero: '0.0'
+      marker_value: "%{value}кΩ"
+      markers:
+        baseline: БАЗА
+        death: СМЕРТЬ
+        safe_max: БЕЗПЕЧНИЙ_МАКС
+        safe_min: БЕЗПЕЧНИЙ_МІН
+      props:
+        bark_thickness: Товщина кори
+        bark_thickness_value: "%{value} мм"
+        co2: Коеф. поглинання CO₂
+        fire_rating: Вогнестійкість
+        foliage_density: Густина листя
+        foliage_density_value: "%{value} %"
+        sap_flow: Індекс потоку соку
+      props_title: Біологічні характеристики TinyML
+      scale_title: Шкала гомеостазу

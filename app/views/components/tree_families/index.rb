@@ -15,11 +15,11 @@ module TreeFamilies
           table(role: "table", class: "w-full text-left font-mono text-compact") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
-                th(scope: "col", class: "p-4") { "Species Name" }
-                th(scope: "col", class: "p-4") { "Baseline Z" }
-                th(scope: "col", class: "p-4") { "Safe Range" }
-                th(scope: "col", class: "p-4") { "Population" }
-                th(scope: "col", class: "p-4 text-right") { "Command" }
+                th(scope: "col", class: "p-4") { t("tree_families.index.columns.species_name") }
+                th(scope: "col", class: "p-4") { t("tree_families.index.columns.baseline_z") }
+                th(scope: "col", class: "p-4") { t("tree_families.index.columns.safe_range") }
+                th(scope: "col", class: "p-4") { t("tree_families.index.columns.population") }
+                th(scope: "col", class: "p-4 text-right") { t("tree_families.index.columns.command") }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -40,14 +40,14 @@ module TreeFamilies
     def render_header
       div(class: "flex justify-between items-end") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700") { "Biological Matrix" }
-          h2(class: "text-2xl font-light text-emerald-400 mt-1") { "Global Species Constants" }
+          h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700") { t("tree_families.index.kicker") }
+          h2(class: "text-2xl font-light text-emerald-400 mt-1") { t("tree_families.index.title") }
         end
         a(
           href: new_api_v1_tree_family_path,
           class: "px-4 py-2 border border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all uppercase text-tiny tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-          aria_label: "Define new tree species"
-        ) { "+ Define DNA" }
+          aria_label: t("tree_families.index.define_aria")
+        ) { t("tree_families.index.define_dna") }
       end
     end
 
@@ -60,12 +60,12 @@ module TreeFamilies
             span(class: "text-mini italic text-emerald-700") { family.scientific_name }
           end
         end
-        td(class: "p-4 text-emerald-500") { "#{family.baseline_impedance} kΩ" }
-        td(class: "p-4 text-gray-500") { "#{family.critical_z_min} - #{family.critical_z_max} kΩ" }
-        td(class: "p-4 text-emerald-900") { "#{family.trees_count} Soldiers" }
+        td(class: "p-4 text-emerald-500") { t("tree_families.index.baseline_value", value: family.baseline_impedance) }
+        td(class: "p-4 text-gray-500") { t("tree_families.index.range_value", min: family.critical_z_min, max: family.critical_z_max) }
+        td(class: "p-4 text-emerald-900") { t("tree_families.index.soldiers_count", count: family.trees_count) }
         td(class: "p-4 text-right space-x-4") do
-          a(href: api_v1_tree_family_path(family), class: "text-emerald-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Audit #{family.name} species") { "AUDIT" }
-          a(href: edit_api_v1_tree_family_path(family), class: "text-zinc-700 hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Edit #{family.name} species") { "EDIT" }
+          a(href: api_v1_tree_family_path(family), class: "text-emerald-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t("tree_families.index.audit_aria", name: family.name)) { t("tree_families.index.audit") }
+          a(href: edit_api_v1_tree_family_path(family), class: "text-zinc-700 hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t("tree_families.index.edit_aria", name: family.name)) { t("tree_families.index.edit") }
         end
       end
     end

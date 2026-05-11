@@ -1,9 +1,26 @@
 ---
 uk:
   oracle_visions:
+    forecast_card:
+      deploy_shield: Розгорнути превентивний щит
+      economic_impact: Економічний вплив
+      ignore: Ігнорувати сингулярність
+      impact_value: "%{value} SCC"
+      predicted_window: Прогнозоване вікно події
+      probability: "%{value}%"
+      yield_impact_default: "-0.04%"
     index:
       active_simulations: Активні симуляції
       confidence: 'Впевненість ШІ: %{value}'
       expected_yield: Очікуваний 24-год врожай
       title: Стратегічна матриця прогнозів
       yield_unit: SCC
+    simulation_panel:
+      sector_option: 'Сектор: %{name}'
+      sliders:
+        humidity_drop: Падіння вологості (%)
+        sap_flow_bias: Зсув потоку соку
+        temp_offset: Зсув температури (Δt)
+      submit: Запустити нейронну симуляцію
+      target_sector: Цільовий сектор
+      title: Двигун симуляції // What-If?

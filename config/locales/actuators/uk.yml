@@ -31,3 +31,13 @@ uk:
       sector_matrix: Матриця сектору // %{name}
       title: Шар взаємодії з обладнанням
       total_units: Всього юнітів
+    show:
+      columns:
+        executed_at: Час виконання
+        id: ID
+        operator: Оператор
+        payload: Payload
+        status: Статус
+      log_title: Журнал виконання команд
+      not_executed: "---"
+      system_operator: СИСТЕМА

@@ -1,0 +1,33 @@
+---
+uk:
+  provisioning:
+    new:
+      errors_title: 'Ініціалізація не вдалася:'
+      fields:
+        cluster: Призначення сектору (Кластер)
+        family: Біологічна родина
+        hardware_uid: ID фізичного кристала (Hardware UID)
+        hardware_uid_placeholder: 00E4...BF12
+        latitude: Широта
+        latitude_placeholder: 49.44...
+        longitude: Довгота
+        longitude_placeholder: 32.06...
+        node_class: Клас вузла
+        queen: Королева (Шлюз)
+        soldier: Солдат (Дерево)
+      submit: ПРИВ'ЯЗАТИ ОБЛАДНАННЯ ДО МАТРИЦІ
+      subtitle: Встановлення 40-річного біометричного зв'язку
+      title: Ініціалізація обладнання
+    success:
+      assigned_did: Призначений DID
+      hardware_uid: Hardware UID
+      hkdf:
+        algorithm: HKDF-SHA256
+        description_after: " і на бекенді, і на прошивці. Передача ключа не потрібна."
+        description_before: 'Ключ AES-256 та Lorenz K_seed виводяться незалежно через '
+        note: Переконайтесь, що PROVISIONING_MASTER_KEY запрограмовано в пристрій під час Factory Provisioning.
+        title: 'РЕЖИМ HKDF: ZERO-TRUST ДЕРИВАЦІЯ КЛЮЧІВ'
+      not_available: Н/Д
+      ritual_complete: Ритуал завершено
+      view_in_matrix: Переглянути вузол у матриці →
+      woven: Вузол вплетено у Silken Net.

@@ -1,9 +1,26 @@
 ---
 en:
   oracle_visions:
+    forecast_card:
+      deploy_shield: Deploy Pre-emptive Shield
+      economic_impact: Economic Impact
+      ignore: Ignore Singularity
+      impact_value: "%{value} SCC"
+      predicted_window: Predicted Event Window
+      probability: "%{value}%"
+      yield_impact_default: "-0.04%"
     index:
       active_simulations: Active Simulations
       confidence: 'AI Confidence: %{value}'
       expected_yield: Expected 24h Yield
       title: Strategic Forecast Matrix
       yield_unit: SCC
+    simulation_panel:
+      sector_option: 'Sector: %{name}'
+      sliders:
+        humidity_drop: Humidity Drop (%)
+        sap_flow_bias: Sap Flow Bias
+        temp_offset: Temp Offset (Δt)
+      submit: Invoke Neural Simulation
+      target_sector: Target Sector
+      title: Simulation Engine // What-If?

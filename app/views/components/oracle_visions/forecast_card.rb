@@ -10,7 +10,7 @@ module OracleVisions
       div(class: "p-6 border border-emerald-900 bg-zinc-950 group relative overflow-hidden transition-all hover:border-emerald-500") do
         # Неоновий індикатор впевненості Оракула
         div(class: "absolute top-0 right-0 p-4 font-mono text-2xl opacity-40 group-hover:opacity-100 transition-opacity", style: "color: #{confidence_color}") do
-          plain "#{@insight.probability_score}%"
+          plain t("oracle_visions.forecast_card.probability", value: @insight.probability_score)
         end
 
         header_section
@@ -40,7 +40,7 @@ module OracleVisions
     def header_section
       div(class: "mb-4") do
         span(class: "text-mini px-2 py-0.5 border border-emerald-800 text-emerald-600 uppercase tracking-tighter") { @insight.insight_type }
-        h4(class: "text-lg font-light text-emerald-100 mt-2") { "Predicted Event Window" }
+        h4(class: "text-lg font-light text-emerald-100 mt-2") { t("oracle_visions.forecast_card.predicted_window") }
         p(class: "text-tiny text-gray-500 font-mono flex items-center gap-2") do
           i(class: "ph ph-clock")
           plain @insight.target_date.strftime("%d.%m.%Y // %H:%M UTC")
@@ -59,9 +59,9 @@ module OracleVisions
     def impact_assessment
       # Якщо це негативна подія (стрес), показуємо червоним
       div(class: "mt-4 pt-4 border-t border-emerald-900/50 flex justify-between items-center") do
-        span(class: "text-mini uppercase text-gray-600") { "Economic Impact" }
+        span(class: "text-mini uppercase text-gray-600") { t("oracle_visions.forecast_card.economic_impact") }
         span(class: tokens("text-xs font-mono", impact_text_color)) do
-          plain "#{@insight.prediction_data&.dig('yield_impact') || '-0.04%'} SCC"
+          plain t("oracle_visions.forecast_card.impact_value", value: @insight.prediction_data&.dig("yield_impact") || t("oracle_visions.forecast_card.yield_impact_default"))
         end
       end
     end
@@ -69,10 +69,10 @@ module OracleVisions
     def footer_actions
       div(class: "mt-6 flex gap-3") do
         button(class: "px-4 py-1.5 border border-emerald-500 text-mini uppercase text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all font-bold") do
-          "Deploy Pre-emptive Shield"
+          t("oracle_visions.forecast_card.deploy_shield")
         end
         button(class: "px-4 py-1.5 border border-zinc-700 text-mini uppercase text-zinc-500 hover:border-zinc-500 transition-all") do
-          "Ignore Singularity"
+          t("oracle_visions.forecast_card.ignore")
         end
       end
     end

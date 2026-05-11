@@ -14,33 +14,33 @@ module Provisioning
           render_errors if @device&.errors&.any?
 
           div(class: "grid grid-cols-1 md:grid-cols-2 gap-8") do
-            field_container("Physical Crystal ID (Hardware UID)") do
-              f.text_field :hardware_uid, class: input_classes, placeholder: "00E4...BF12", required: true
+            field_container(t("provisioning.new.fields.hardware_uid")) do
+              f.text_field :hardware_uid, class: input_classes, placeholder: t("provisioning.new.fields.hardware_uid_placeholder"), required: true
             end
 
-            field_container("Node Class") do
-              f.select :device_type, [ [ "Soldier (Tree)", "tree" ], [ "Queen (Gateway)", "gateway" ] ], {}, class: input_classes
+            field_container(t("provisioning.new.fields.node_class")) do
+              f.select :device_type, [ [ t("provisioning.new.fields.soldier"), "tree" ], [ t("provisioning.new.fields.queen"), "gateway" ] ], {}, class: input_classes
             end
 
-            field_container("Sector Assignment (Cluster)") do
+            field_container(t("provisioning.new.fields.cluster")) do
               f.collection_select :cluster_id, @clusters, :id, :name, {}, class: input_classes
             end
 
-            field_container("Biological Family") do
+            field_container(t("provisioning.new.fields.family")) do
               f.collection_select :family_id, @families, :id, :name, {}, class: input_classes
             end
 
-            field_container("Latitude") do
-              f.text_field :latitude, class: input_classes, placeholder: "49.44...", required: true
+            field_container(t("provisioning.new.fields.latitude")) do
+              f.text_field :latitude, class: input_classes, placeholder: t("provisioning.new.fields.latitude_placeholder"), required: true
             end
 
-            field_container("Longitude") do
-              f.text_field :longitude, class: input_classes, placeholder: "32.06...", required: true
+            field_container(t("provisioning.new.fields.longitude")) do
+              f.text_field :longitude, class: input_classes, placeholder: t("provisioning.new.fields.longitude_placeholder"), required: true
             end
           end
 
           div(class: "pt-10 border-t border-emerald-900/30") do
-            f.submit "BIND HARDWARE TO MATRIX", class: "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-[0.3em] hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+            f.submit t("provisioning.new.submit"), class: "w-full py-4 bg-emerald-500/10 border border-emerald-500 text-emerald-500 uppercase text-xs tracking-[0.3em] hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-[0_0_30px_rgba(16,185,129,0.1)]"
           end
         end
       end
@@ -50,8 +50,8 @@ module Provisioning
 
     def header_section
       div(class: "text-center mb-10 space-y-2") do
-        h2(class: "text-3xl font-extralight text-emerald-400 tracking-widest uppercase") { "Hardware Initiation" }
-        p(class: "text-tiny font-mono text-emerald-900 uppercase tracking-[0.5em]") { "Establishing 40-year biometric link" }
+        h2(class: "text-3xl font-extralight text-emerald-400 tracking-widest uppercase") { t("provisioning.new.title") }
+        p(class: "text-tiny font-mono text-emerald-900 uppercase tracking-[0.5em]") { t("provisioning.new.subtitle") }
       end
     end
 
@@ -68,7 +68,7 @@ module Provisioning
 
     def render_errors
       div(class: "p-4 border border-red-900 bg-red-950/20 text-red-500 text-xs font-mono") do
-        p { "Initiation Failed:" }
+        p { t("provisioning.new.errors_title") }
         ul(class: "list-disc ml-4 mt-2") do
           @device.errors.full_messages.each { |msg| li { msg } }
         end
