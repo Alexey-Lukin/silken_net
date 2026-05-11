@@ -1,0 +1,33 @@
+---
+en:
+  actuators:
+    card:
+      endpoint: 'Endpoint:'
+      energy_budget: 'Energy Budget:'
+      energy_budget_value: "%{mj} mJ"
+      execute_off: EXECUTE_OFF
+      execute_off_aria: Execute OFF command for actuator %{device_type}
+      execute_on: EXECUTE_ON
+      execute_on_aria: Execute ON command for actuator %{device_type}
+      gateway: 'Gateway: %{uid}'
+      idle: IDLE
+      last_activated: 'Last Activated:'
+      last_sync_status: 'Last Sync Status:'
+      max_duration: 'Max Duration:'
+      max_duration_value: "%{seconds}s"
+      never: NEVER
+      physical_state: 'Physical State:'
+    command_status_badge:
+      acknowledged: acknowledged
+      confirmed: confirmed
+      failed: failed
+      issued: issued
+      sent: sent
+    index:
+      active_nodes: Active Nodes
+      decoration: ACTUATORS
+      empty_description: Deploy hardware to begin monitoring.
+      empty_title: No actuator nodes provisioned in this sector.
+      sector_matrix: Sector Matrix // %{name}
+      title: Hardware Interaction Layer
+      total_units: Total Units

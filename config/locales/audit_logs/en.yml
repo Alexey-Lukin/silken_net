@@ -1,0 +1,17 @@
+---
+en:
+  audit_logs:
+    index:
+      columns:
+        action: Action
+        details: Details
+        target: Target
+        timestamp: Timestamp
+        user: User
+      empty_title: No audit events recorded.
+      inspect: Inspect →
+      inspect_aria: 'Inspect audit log #%{id}'
+      records: 'Records:'
+      subtitle: 'Log of administrator actions: who, when and what changed.'
+      system_user: System
+      title: "👁️ The Watcher — Audit Log"

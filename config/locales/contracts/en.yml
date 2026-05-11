@@ -1,0 +1,24 @@
+---
+en:
+  contracts:
+    index:
+      audit_aria: 'View contract #%{id} details'
+      audit_details: AUDIT_DETAILS →
+      columns:
+        command: Command
+        current_yield: Current Yield
+        id_status: ID / Status
+        investment: Investment
+        organization: Organization
+        performance: Performance
+        period: Period
+        target_cluster: Target Cluster
+      portfolio_title: Active Asset Portfolio
+      stats:
+        biogenic_yield: Biogenic Yield
+        network_health: Network Health
+        portfolio_avg: Portfolio Avg
+        portfolio_capital: Portfolio Capital
+        total_injected: Total Injected
+        total_minted: Total Minted
+      unassigned: UNASSIGNED

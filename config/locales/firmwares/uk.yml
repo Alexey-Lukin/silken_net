@@ -1,0 +1,8 @@
+---
+uk:
+  firmwares:
+    row:
+      confirm: Ініціювати еволюцію до v%{version} для обраного обладнання?
+      not_available: Н/Д
+      order_evolution: Замовити еволюцію →
+      version: v%{version}

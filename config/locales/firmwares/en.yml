@@ -1,0 +1,8 @@
+---
+en:
+  firmwares:
+    row:
+      confirm: Initiate evolution to v%{version} for the selected hardware?
+      not_available: N/A
+      order_evolution: Order Evolution →
+      version: v%{version}

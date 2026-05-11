@@ -1,0 +1,17 @@
+---
+uk:
+  audit_logs:
+    index:
+      columns:
+        action: Дія
+        details: Деталі
+        target: Об'єкт
+        timestamp: Час
+        user: Користувач
+      empty_title: Подій аудиту не зафіксовано.
+      inspect: Переглянути →
+      inspect_aria: 'Переглянути запис аудиту #%{id}'
+      records: 'Записів:'
+      subtitle: 'Журнал дій адміністраторів: хто, коли та що змінив.'
+      system_user: Система
+      title: "👁️ Спостерігач — Журнал аудиту"
