@@ -43,8 +43,8 @@ module Users
             h2(class: "text-4xl font-extralight text-white tracking-tighter") { "#{@user.first_name} #{@user.last_name}" }
             p(class: "text-emerald-800 font-mono text-xs uppercase tracking-widest mt-2") { @user.email_address }
             div(class: "mt-6 flex justify-center md:justify-start gap-4") do
-              badge("Role: #{@user.role.upcase}")
-              badge("ID: ##{@user.id}")
+              badge(t("users.profile.role", role: @user.role.upcase))
+              badge(t("users.profile.id", id: @user.id))
             end
           end
         end
@@ -53,21 +53,21 @@ module Users
 
     def render_access_privileges
       div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Neural Access Privileges" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t("users.profile.sections.access_privileges") }
         div(class: "space-y-4 font-mono text-compact") do
-          access_item("Organization Access", @user.organization&.name || "None")
-          access_item("Command Execution", @user.role == "admin" ? "Full" : "Limited")
-          access_item("Encryption Level", "AES-256-GCM")
+          access_item(t("users.profile.access.organization"), @user.organization&.name || t("users.profile.none"))
+          access_item(t("users.profile.access.command_execution"), @user.role == "admin" ? t("users.profile.access.full") : t("users.profile.access.limited"))
+          access_item(t("users.profile.access.encryption"), "AES-256-GCM")
         end
       end
     end
 
     def render_activity_stats
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5 space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Operational Activity" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t("users.profile.sections.activity") }
         div(class: "grid grid-cols-2 gap-4 text-center") do
-          stat_box("Records", @maintenance_count)
-          stat_box("Last Sync", @user.last_seen_at ? "ONLINE" : "OFFLINE")
+          stat_box(t("users.profile.activity.records"), @maintenance_count)
+          stat_box(t("users.profile.activity.last_sync"), @user.last_seen_at ? t("users.profile.activity.online") : t("users.profile.activity.offline"))
         end
       end
     end
@@ -75,14 +75,14 @@ module Users
     def render_security_status
       div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
         div(class: "flex justify-between items-center") do
-          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Security Status" }
-          a(href: api_v1_account_security_path, class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-400 transition-colors border border-emerald-900 px-3 py-1") { "Manage →" }
+          h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t("users.profile.sections.security") }
+          a(href: api_v1_account_security_path, class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-400 transition-colors border border-emerald-900 px-3 py-1") { t("users.profile.security.manage") }
         end
 
         div(class: "grid grid-cols-3 gap-4 font-mono text-compact") do
-          security_indicator("2FA / MFA", @user.mfa_enabled?, @user.mfa_enabled? ? "Active" : "Disabled")
-          security_indicator("Password", @user.password_digest.present?, @user.password_digest.present? ? "Set" : "Not Set")
-          security_indicator("Providers", @active_identities.any?, "#{@active_identities.size} linked")
+          security_indicator(t("users.profile.security.mfa"), @user.mfa_enabled?, @user.mfa_enabled? ? t("users.profile.security.active") : t("users.profile.security.disabled"))
+          security_indicator(t("users.profile.security.password"), @user.password_digest.present?, @user.password_digest.present? ? t("users.profile.security.set") : t("users.profile.security.not_set"))
+          security_indicator(t("users.profile.security.providers"), @active_identities.any?, t("users.profile.security.linked_count", count: @active_identities.size))
         end
       end
     end
@@ -91,7 +91,7 @@ module Users
       return if @active_identities.empty?
 
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5 space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Linked Identity Providers" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t("users.profile.sections.linked_providers") }
         div(class: "flex flex-wrap gap-3") do
           @active_identities.each do |identity|
             provider_badge(identity)
@@ -131,7 +131,7 @@ module Users
         span { icon }
         span(class: "text-tiny text-emerald-500 font-mono") { identity.provider.titleize }
         if identity.primary?
-          span(class: "text-micro px-1 bg-emerald-900/30 text-emerald-600 uppercase") { "Primary" }
+          span(class: "text-micro px-1 bg-emerald-900/30 text-emerald-600 uppercase") { t("users.profile.provider.primary") }
         end
       end
     end

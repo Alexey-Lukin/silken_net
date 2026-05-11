@@ -1,0 +1,11 @@
+---
+uk:
+  clusters:
+    grid:
+      empty_description: Розгорніть сенсори для ініціалізації кластерної сітки.
+      empty_title: Матриця порожня. Кластери не виявлено.
+    item:
+      health: Здоров'я
+      id: 'ID: %{id}'
+      open_matrix: Відкрити матрицю →
+      trees: Дерева

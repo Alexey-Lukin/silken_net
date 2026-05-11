@@ -1,6 +1,15 @@
 ---
 en:
   dashboard:
+    event_row:
+      etherisc_claim: "🛡️ Etherisc DIP claim %{amount} USDC → %{address}"
+      maintenance: "🔧 %{action}: by %{user}"
+      minted: "⬢ Minted %{amount} SCC → %{target}"
+      pool: Pool
+      system_pulse: "● System pulse detected"
+      system_user: System
+      threat: "⚠ Threat: %{type} in %{cluster}"
+      unknown_cluster: Unknown
     home:
       feed:
         empty: No recent activity

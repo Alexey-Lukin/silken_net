@@ -1,0 +1,47 @@
+---
+en:
+  organizations:
+    index:
+      columns:
+        audit: Audit
+        identity: On-Chain Identity
+        investment: Investment (SCC)
+        name: Organization Name
+        sectors: Sectors
+      investment_value: "%{amount} SCC"
+      subtitle: Management of multi-tenant entities and their environmental capital.
+      title: Global Clan Registry
+      view_aria: View %{name} profile
+      view_profile: VIEW_PROFILE →
+    show:
+      activity:
+        asset_expansion: Asset Expansion
+        carbon_audit: Carbon Audit
+        contract_renewal: Contract Renewal
+        pending: PENDING
+        title: Global Events
+      clusters:
+        matrix: Matrix
+        open_aria: Open %{name} cluster matrix
+        open_matrix: Open Matrix →
+        population: Population
+        sector_name: Sector Name
+        soldiers_count: "%{count} Soldiers"
+        title: Assigned Sectors (Clusters)
+        vitality: Vitality
+      fully_synced: FULLY_SYNCED
+      hero_decoration: CLAN
+      identity_vault:
+        billing_contact: Billing Contact
+        not_available: N/A
+        public_address: Public Crypto Address
+        title: On-Chain Identity Vault
+      member_since: 'Member Since: %{date}'
+      operational_status: Operational Status
+      performance:
+        biological_assets: Biological Assets
+        biological_assets_sub: Soldier Trees
+        capital_injected: Capital Injected
+        capital_injected_sub: SCC Total
+        carbon_yield: Carbon Yield
+        carbon_yield_sub: SCC Minted

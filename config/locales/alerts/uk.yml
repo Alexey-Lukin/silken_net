@@ -1,6 +1,17 @@
 ---
 uk:
   alerts:
+    badge:
+      severities:
+        critical: критична
+        high: висока
+        low: низька
+        medium: середня
+      statuses:
+        active: активна
+        ignored: ігнорована
+        resolved: вирішена
+      summary: "%{severity} — %{status}"
     index:
       filter_all: усі
       filter_aria_all: Показати всі попередження

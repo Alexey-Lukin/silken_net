@@ -15,11 +15,11 @@ module Organizations
           table(role: "table", class: "w-full text-left font-mono text-compact") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
-                th(scope: "col", class: "p-4") { "Organization Name" }
-                th(scope: "col", class: "p-4") { "Sectors" }
-                th(scope: "col", class: "p-4") { "Investment (SCC)" }
-                th(scope: "col", class: "p-4") { "On-Chain Identity" }
-                th(scope: "col", class: "p-4 text-right") { "Audit" }
+                th(scope: "col", class: "p-4") { t("organizations.index.columns.name") }
+                th(scope: "col", class: "p-4") { t("organizations.index.columns.sectors") }
+                th(scope: "col", class: "p-4") { t("organizations.index.columns.investment") }
+                th(scope: "col", class: "p-4") { t("organizations.index.columns.identity") }
+                th(scope: "col", class: "p-4 text-right") { t("organizations.index.columns.audit") }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -41,12 +41,12 @@ module Organizations
       tr(class: "hover:bg-emerald-950/10 transition-colors group") do
         td(class: "p-4 text-emerald-400 font-bold") { org.name }
         td(class: "p-4 text-gray-400") { org.total_clusters }
-        td(class: "p-4 text-emerald-100") { "#{org.total_invested} SCC" }
+        td(class: "p-4 text-emerald-100") { t("organizations.index.investment_value", amount: org.total_invested) }
         td(class: "p-4 text-tiny text-gray-600 font-mono") do
           render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end
         td(class: "p-4 text-right") do
-          a(href: api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View #{org.name} profile") { "VIEW_PROFILE →" }
+          a(href: api_v1_organization_path(org), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t("organizations.index.view_aria", name: org.name)) { t("organizations.index.view_profile") }
         end
       end
     end
@@ -54,8 +54,8 @@ module Organizations
     def header_section
       div(class: "flex justify-between items-end") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "Global Clan Registry" }
-          p(class: "text-xs text-gray-600 mt-1") { "Management of multi-tenant entities and their environmental capital." }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t("organizations.index.title") }
+          p(class: "text-xs text-gray-600 mt-1") { t("organizations.index.subtitle") }
         end
       end
     end

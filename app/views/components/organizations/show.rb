@@ -33,19 +33,19 @@ module Organizations
     def render_header
       div(class: "flex flex-col md:flex-row justify-between items-start md:items-center p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
         # Декоративний фон для ідентифікації
-        div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-emerald-900/5 select-none") { "CLAN" }
+        div(class: "absolute top-0 right-0 p-4 text-[80px] font-bold text-emerald-900/5 select-none") { t("organizations.show.hero_decoration") }
 
         div do
           h2(class: "text-4xl font-extralight tracking-tighter text-emerald-400") { @organization.name }
           p(class: "text-tiny font-mono text-emerald-800 uppercase mt-2 tracking-[0.3em]") do
-            "Member Since: #{@organization.created_at.strftime('%d.%m.%Y')}"
+            t("organizations.show.member_since", date: @organization.created_at.strftime("%d.%m.%Y"))
           end
         end
 
         div(class: "mt-6 md:mt-0 flex items-center gap-4") do
           div(class: "text-right") do
-            p(class: "text-mini text-gray-600 uppercase tracking-widest") { "Operational Status" }
-            p(class: "text-sm font-mono text-emerald-500") { "FULLY_SYNCED" }
+            p(class: "text-mini text-gray-600 uppercase tracking-widest") { t("organizations.show.operational_status") }
+            p(class: "text-sm font-mono text-emerald-500") { t("organizations.show.fully_synced") }
           end
           div(class: "h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_12px_#10b981]")
         end
@@ -54,24 +54,24 @@ module Organizations
 
     def render_performance_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        render Views::Shared::UI::StatCard.new(label: "Biological Assets", value: @performance[:total_trees], sub: "Soldier Trees")
-        render Views::Shared::UI::StatCard.new(label: "Carbon Yield", value: @performance[:carbon_minted], sub: "SCC Minted")
-        render Views::Shared::UI::StatCard.new(label: "Capital Injected", value: @organization.total_invested, sub: "SCC Total")
+        render Views::Shared::UI::StatCard.new(label: t("organizations.show.performance.biological_assets"), value: @performance[:total_trees], sub: t("organizations.show.performance.biological_assets_sub"))
+        render Views::Shared::UI::StatCard.new(label: t("organizations.show.performance.carbon_yield"), value: @performance[:carbon_minted], sub: t("organizations.show.performance.carbon_yield_sub"))
+        render Views::Shared::UI::StatCard.new(label: t("organizations.show.performance.capital_injected"), value: @organization.total_invested, sub: t("organizations.show.performance.capital_injected_sub"))
       end
     end
 
     def render_clusters_registry
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Assigned Sectors (Clusters)" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t("organizations.show.clusters.title") }
 
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
           table(role: "table", class: "w-full text-left font-mono text-compact") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
-                th(scope: "col", class: "p-4") { "Sector Name" }
-                th(scope: "col", class: "p-4") { "Vitality" }
-                th(scope: "col", class: "p-4") { "Population" }
-                th(scope: "col", class: "p-4 text-right") { "Matrix" }
+                th(scope: "col", class: "p-4") { t("organizations.show.clusters.sector_name") }
+                th(scope: "col", class: "p-4") { t("organizations.show.clusters.vitality") }
+                th(scope: "col", class: "p-4") { t("organizations.show.clusters.population") }
+                th(scope: "col", class: "p-4 text-right") { t("organizations.show.clusters.matrix") }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -86,13 +86,13 @@ module Organizations
                       span(class: "text-tiny text-emerald-500") { "#{(cluster.health_index * 100).round}%" }
                     end
                   end
-                  td(class: "p-4 text-gray-400") { "#{cluster.total_active_trees} Soldiers" }
+                  td(class: "p-4 text-gray-400") { t("organizations.show.clusters.soldiers_count", count: cluster.total_active_trees) }
                   td(class: "p-4 text-right") do
                     a(
                       href: api_v1_cluster_path(cluster),
                       class: "text-emerald-600 hover:text-white transition-all uppercase text-mini focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-                      aria_label: "Open #{cluster.name} cluster matrix"
-                    ) { "Open Matrix →" }
+                      aria_label: t("organizations.show.clusters.open_aria", name: cluster.name)
+                    ) { t("organizations.show.clusters.open_matrix") }
                   end
                 end
               end
@@ -104,28 +104,32 @@ module Organizations
 
     def render_identity_vault
       div(class: "p-6 border border-emerald-900 bg-black space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "On-Chain Identity Vault" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t("organizations.show.identity_vault.title") }
 
         div do
-          p(class: "text-mini text-gray-600 uppercase mb-2") { "Public Crypto Address" }
+          p(class: "text-mini text-gray-600 uppercase mb-2") { t("organizations.show.identity_vault.public_address") }
           render Views::Shared::Web3::Address.new(address: @organization.crypto_public_address)
         end
 
         div(class: "pt-4 border-t border-emerald-900/30") do
-          p(class: "text-mini text-gray-600 uppercase mb-2") { "Billing Contact" }
-          p(class: "text-compact text-gray-400") { @organization.billing_email || "N/A" }
+          p(class: "text-mini text-gray-600 uppercase mb-2") { t("organizations.show.identity_vault.billing_contact") }
+          p(class: "text-compact text-gray-400") { @organization.billing_email || t("organizations.show.identity_vault.not_available") }
         end
       end
     end
 
     def render_recent_activity_placeholder
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Global Events" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t("organizations.show.activity.title") }
         div(class: "space-y-3") do
-          [ "Contract Renewal", "Asset Expansion", "Carbon Audit" ].each do |event|
+          [
+            t("organizations.show.activity.contract_renewal"),
+            t("organizations.show.activity.asset_expansion"),
+            t("organizations.show.activity.carbon_audit")
+          ].each do |event|
             div(class: "flex justify-between items-center") do
               span(class: "text-tiny text-gray-500 uppercase font-mono") { event }
-              span(class: "text-mini text-emerald-900") { "PENDING" }
+              span(class: "text-mini text-emerald-900") { t("organizations.show.activity.pending") }
             end
           end
         end

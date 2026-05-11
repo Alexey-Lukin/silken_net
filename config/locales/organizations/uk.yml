@@ -1,0 +1,47 @@
+---
+uk:
+  organizations:
+    index:
+      columns:
+        audit: Аудит
+        identity: On-Chain ідентичність
+        investment: Інвестиції (SCC)
+        name: Назва організації
+        sectors: Сектори
+      investment_value: "%{amount} SCC"
+      subtitle: Управління multi-tenant сутностями та їхнім екологічним капіталом.
+      title: Глобальний реєстр кланів
+      view_aria: Переглянути профіль %{name}
+      view_profile: ВІДКРИТИ_ПРОФІЛЬ →
+    show:
+      activity:
+        asset_expansion: Розширення активів
+        carbon_audit: Вуглецевий аудит
+        contract_renewal: Поновлення контракту
+        pending: В ОЧІКУВАННІ
+        title: Глобальні події
+      clusters:
+        matrix: Матриця
+        open_aria: Відкрити матрицю кластера %{name}
+        open_matrix: Відкрити матрицю →
+        population: Популяція
+        sector_name: Назва сектору
+        soldiers_count: "%{count} солдатів"
+        title: Призначені сектори (кластери)
+        vitality: Життєздатність
+      fully_synced: СИНХРОНІЗОВАНО
+      hero_decoration: КЛАН
+      identity_vault:
+        billing_contact: Контакт для рахунків
+        not_available: Н/Д
+        public_address: Публічна крипто-адреса
+        title: Сховище On-Chain ідентичності
+      member_since: 'Учасник з: %{date}'
+      operational_status: Операційний статус
+      performance:
+        biological_assets: Біологічні активи
+        biological_assets_sub: Дерева-солдати
+        capital_injected: Внесений капітал
+        capital_injected_sub: Всього SCC
+        carbon_yield: Вуглецева віддача
+        carbon_yield_sub: Створено SCC

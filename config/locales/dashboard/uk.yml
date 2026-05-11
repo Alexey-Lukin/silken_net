@@ -1,6 +1,15 @@
 ---
 uk:
   dashboard:
+    event_row:
+      etherisc_claim: "🛡️ Etherisc DIP виплата %{amount} USDC → %{address}"
+      maintenance: "🔧 %{action}: від %{user}"
+      minted: "⬢ Створено %{amount} SCC → %{target}"
+      pool: Пул
+      system_pulse: "● Виявлено пульс системи"
+      system_user: Система
+      threat: "⚠ Загроза: %{type} в %{cluster}"
+      unknown_cluster: Невідомо
     home:
       feed:
         empty: Немає недавньої активності

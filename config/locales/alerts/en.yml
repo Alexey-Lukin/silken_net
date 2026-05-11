@@ -1,6 +1,17 @@
 ---
 en:
   alerts:
+    badge:
+      severities:
+        critical: critical
+        high: high
+        low: low
+        medium: medium
+      statuses:
+        active: active
+        ignored: ignored
+        resolved: resolved
+      summary: "%{severity} — %{status}"
     index:
       filter_all: all
       filter_aria_all: Show all alerts
