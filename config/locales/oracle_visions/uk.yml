@@ -1,0 +1,9 @@
+---
+uk:
+  oracle_visions:
+    index:
+      active_simulations: Активні симуляції
+      confidence: 'Впевненість ШІ: %{value}'
+      expected_yield: Очікуваний 24-год врожай
+      title: Стратегічна матриця прогнозів
+      yield_unit: SCC

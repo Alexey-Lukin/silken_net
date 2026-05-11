@@ -1,0 +1,9 @@
+---
+en:
+  oracle_visions:
+    index:
+      active_simulations: Active Simulations
+      confidence: 'AI Confidence: %{value}'
+      expected_yield: Expected 24h Yield
+      title: Strategic Forecast Matrix
+      yield_unit: SCC

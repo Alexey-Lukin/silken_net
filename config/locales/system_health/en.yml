@@ -1,0 +1,38 @@
+---
+en:
+  system_health:
+    show:
+      all_operational: "✓ ALL SUBSYSTEMS OPERATIONAL — Checked %{at}"
+      all_systems_go: ALL SYSTEMS GO
+      coap:
+        listening: LISTENING
+        name: CoAP Listener
+        offline: OFFLINE
+        port: Port
+        protocol: Protocol
+        protocol_value: UDP / RFC 7252
+        status: Status
+      database:
+        active: ACTIVE
+        connection: Connection
+        disconnected: DISCONNECTED
+        engine: Engine
+        engine_value: PostgreSQL
+        name: PostgreSQL
+      degraded: DEGRADED
+      last_checked: Last checked at %{at}
+      sidekiq:
+        active_workers: Active Workers
+        enqueued: Enqueued
+        failed: Failed
+        jobs_enqueued: Jobs Enqueued
+        name: Sidekiq Workers
+        processed: Processed
+        queue_name: Queue Name
+        queues_title: Sidekiq Queue Distribution
+      status:
+        down: DOWN
+        ok: OK
+      subtitle: Status of CoAP listener, Sidekiq queues and database connection.
+      system_degraded: "🚨 SYSTEM DEGRADED — One or more subsystems require attention"
+      title: "💓 System Health — Pulse Monitor"

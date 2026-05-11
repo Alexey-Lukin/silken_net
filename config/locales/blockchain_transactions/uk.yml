@@ -1,0 +1,34 @@
+---
+uk:
+  blockchain_transactions:
+    show:
+      decoration: TX
+      details:
+        amount: Сума
+        block_number: Номер блоку
+        blockchain_network: Блокчейн-мережа
+        confirmed_at: Підтверджено
+        created: Створено
+        field: Поле
+        gas_price: Ціна газу
+        gas_used: Використано газу
+        locked_points: Заблоковані пункти
+        nonce: Nonce
+        sent_at: Надіслано
+        status: Статус
+        to_address: Адреса отримувача
+        token_type: Тип токена
+        updated: Оновлено
+        value: Значення
+      notes:
+        empty: Нотатки не додано.
+        error_message: Повідомлення про помилку
+        title: Нотатки транзакції
+      transaction_record: Запис транзакції
+      tx_id_line: "#%{id} // %{at}"
+      wallet:
+        no_wallet: Гаманець не прив'язано.
+        not_available: Н/Д
+        title: Прив'язаний гаманець
+        tree_did: DID дерева
+        wallet_balance: Баланс гаманця
