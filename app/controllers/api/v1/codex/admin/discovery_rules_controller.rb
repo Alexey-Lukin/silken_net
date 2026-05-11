@@ -28,7 +28,7 @@ module Api
               render json: { data: ::Codex::DiscoveryRuleBlueprint.render_as_hash(rule) },
                      status: :created
             else
-              render json: { errors: rule.errors.full_messages }, status: :unprocessable_entity
+              render json: { errors: rule.errors.full_messages }, status: :unprocessable_content
             end
           end
 
@@ -37,7 +37,7 @@ module Api
             if @rule.update(rule_params)
               render json: { data: ::Codex::DiscoveryRuleBlueprint.render_as_hash(@rule) }
             else
-              render json: { errors: @rule.errors.full_messages }, status: :unprocessable_entity
+              render json: { errors: @rule.errors.full_messages }, status: :unprocessable_content
             end
           end
 

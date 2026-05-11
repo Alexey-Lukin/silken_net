@@ -22,7 +22,7 @@ RSpec.describe Navigation::Sidebar do
     end
 
     it "renders the subtitle in Ukrainian by default" do
-      expect(render_component).to include("Центральна Цитадель Управління")
+      expect(I18n.with_locale(:uk) { render_component }).to include("Центральна Цитадель Управління")
     end
 
     it "uses gaia primary color for logo" do
@@ -205,7 +205,7 @@ RSpec.describe Navigation::Sidebar do
     end
 
     it "translates the footer role into Ukrainian by default" do
-      expect(render_component).to include("Архітектор")
+      expect(I18n.with_locale(:uk) { render_component }).to include("Архітектор")
     end
   end
 

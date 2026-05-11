@@ -66,16 +66,13 @@ module Views
             options,
             { selected: @current_locale.to_s },
             class: tokens(
+              "gaia-select",
               "appearance-none pr-7 pl-2 py-1 cursor-pointer",
               "border border-gaia-border bg-gaia-surface text-gaia-text",
               "text-tiny font-mono uppercase tracking-widest",
               "hover:text-gaia-primary hover:border-gaia-primary",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary",
-              "transition-colors duration-200",
-              # Custom chevron via background-image so we can drop UA arrow
-              # styling without losing the visual cue.
-              "bg-[length:0.6rem] bg-[right_0.5rem_center] bg-no-repeat",
-              "bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22currentColor%22 stroke-width=%222%22><path stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22/></svg>')]"
+              "transition-colors duration-200"
             ),
             aria: { label: I18n.t("locale.switcher_label", default: "Language") },
             onchange: "this.form.requestSubmit()"

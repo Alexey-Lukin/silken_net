@@ -39,7 +39,7 @@ module Api
             end
           else
             render json: { errors: comment.errors.full_messages },
-                   status: :unprocessable_entity
+                   status: :unprocessable_content
           end
         end
 

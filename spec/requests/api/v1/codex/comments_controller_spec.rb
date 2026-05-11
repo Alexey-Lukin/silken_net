@@ -65,7 +65,7 @@ RSpec.describe "Api::V1::Codex::Comments", type: :request do
       post "/api/v1/codex/nodes/#{node.slug}/comments",
            params: { comment: { body_md: "x" * (Codex::Comment::BODY_MAX + 1) } },
            headers: headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "404s on unknown slug" do

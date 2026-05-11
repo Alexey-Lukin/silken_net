@@ -26,24 +26,19 @@ data:
 # Where to look for `t("...")` / `t(".key")` references. Phlex components
 # live under app/views/components/**/*.rb — the default `app/**/*.rb` glob
 # already covers them.
+#
+# Note: `relative_roots` is omitted intentionally. Phlex's `t(".key")` autoscope
+# is derived from the component's class name (e.g. `Codex::Show#t(".heading")` →
+# `codex.show.heading`), not from the file path, so i18n-tasks' default
+# path-based relative-key resolution would only produce false positives. We
+# rely on `i18n-tasks missing` / `check-consistent-interpolations` against the
+# fully-qualified keys we author in YAML — which is sufficient because at
+# runtime Rails resolves the same class-name-based scope.
 search:
   paths:
     - app/
     - config/locales/
     - lib/
-  relative_roots:
-    # Phlex `t(".key")` autoscope is derived from the component's class name
-    # via `Codex::Show#translation_path → "codex.show"`, not the file path,
-    # so the i18n-tasks default `app/views`/`app/controllers` heuristic does
-    # not apply cleanly. Disable relative-key auto-resolution; we rely on
-    # full keys appearing somewhere in the codebase (which they do, because
-    # Phlex's `t(".x")` is still recorded as a literal `".x"` string in
-    # source — i18n-tasks reports the partial key with its prefix unresolved
-    # rather than as a false-positive missing key).
-    - app/views
-    - app/views/components
-    - app/views/layouts
-    - app/views/shared
   exclude:
     - app/assets
     - app/javascript

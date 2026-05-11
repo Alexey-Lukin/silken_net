@@ -103,20 +103,20 @@ module Api
       # Content component передається як параметр — НЕ через блок,
       # оскільки блок виконується в контексті контролера (Ruby closure),
       # і `render` всередині блоку викликає контролерний render (DoubleRenderError).
-      def render_dashboard(title:, component:, status: :ok)
+      def render_dashboard(title:, component:)
         render DashboardLayout.new(
           title: title,
           current_user: current_user,
           current_path: request.path,
           ews_alert_count: ews_alert_count_cached,
           content: component
-        ), status: status
+        )
       end
 
       # Метод для рендерингу standalone auth-сторінок (login, forgot/reset password).
       # Забезпечує повний HTML-документ з CSS/JS includes без sidebar/DashboardLayout.
-      def render_auth_page(title: "Access Portal", component:, status: :ok)
-        render AuthLayout.new(title: title, content: component), status: status
+      def render_auth_page(title: "Access Portal", component:)
+        render AuthLayout.new(title: title, content: component)
       end
 
       # Гарантує, що у поточного користувача є призначена організація.

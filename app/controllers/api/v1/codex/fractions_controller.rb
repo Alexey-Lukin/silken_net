@@ -49,7 +49,7 @@ module Api
               end
             end
           else
-            render json: { errors: result.errors }, status: :unprocessable_entity
+            render json: { errors: result.errors }, status: :unprocessable_content
           end
         end
 

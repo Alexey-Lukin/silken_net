@@ -62,7 +62,7 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
       post "/api/v1/codex/admin/discovery_rules",
            params: valid_payload.merge(threshold_value: 0),
            headers: headers_admin, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["errors"]).to be_present
     end
   end

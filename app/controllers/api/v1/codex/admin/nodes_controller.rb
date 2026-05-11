@@ -42,7 +42,7 @@ module Api
               render json: { data: ::Codex::NodeBlueprint.render_as_hash(node, view: :show) },
                      status: :created
             else
-              render json: { errors: node.errors.full_messages }, status: :unprocessable_entity
+              render json: { errors: node.errors.full_messages }, status: :unprocessable_content
             end
           end
 
@@ -53,13 +53,13 @@ module Api
             if @node.update(node_params)
               render json: { data: ::Codex::NodeBlueprint.render_as_hash(@node, view: :show) }
             else
-              render json: { errors: @node.errors.full_messages }, status: :unprocessable_entity
+              render json: { errors: @node.errors.full_messages }, status: :unprocessable_content
             end
           rescue ArgumentError => e
             # Rails 8 enums raise `ArgumentError` when an invalid value is
             # assigned (e.g. `lifecycle_status: "imaginary"`). Convert to a
             # proper 422 instead of the generic 500.
-            render json: { errors: [ e.message ] }, status: :unprocessable_entity
+            render json: { errors: [ e.message ] }, status: :unprocessable_content
           end
 
           # DELETE /api/v1/codex/admin/nodes/:slug — super_admin only

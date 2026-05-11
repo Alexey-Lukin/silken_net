@@ -28,7 +28,7 @@ module Api
                 left: nil, right: nil, pair_seed: nil,
                 realm: realm, error: result.error
               ),
-              status: :unprocessable_entity
+              status: :unprocessable_content
             )
           end
 
@@ -83,7 +83,7 @@ module Api
               end
             end
           else
-            status = result.error == "seed_invalid_or_consumed" ? :forbidden : :unprocessable_entity
+            status = result.error == "seed_invalid_or_consumed" ? :forbidden : :unprocessable_content
             render json: { error: result.error }, status: status
           end
         end
