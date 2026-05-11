@@ -27,7 +27,8 @@ module Api
               component: ::Codex::Battle::Arena.new(
                 left: nil, right: nil, pair_seed: nil,
                 realm: realm, error: result.error
-              )
+              ),
+              status: :unprocessable_entity
             )
           end
 
@@ -76,7 +77,8 @@ module Api
                     pair_seed: next_pair.success? ? next_pair.pair_seed : nil,
                     realm: next_pair.realm || result.match.realm,
                     error: next_pair.success? ? nil : next_pair.error
-                  )
+                  ),
+                  status: :created
                 )
               end
             end

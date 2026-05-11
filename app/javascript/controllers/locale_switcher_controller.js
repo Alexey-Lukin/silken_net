@@ -28,27 +28,46 @@ export default class extends Controller {
   connect() {
     if (!this.hasPopoverTarget) return
     this.boundReposition = this._reposition.bind(this)
-    this.popoverTarget.addEventListener("toggle", this.boundReposition)
-    window.addEventListener("resize", this.boundReposition)
-    window.addEventListener("scroll", this.boundReposition, true)
+    this.boundOnToggle = this._onToggle.bind(this)
+    this.popoverTarget.addEventListener("toggle", this.boundOnToggle)
   }
 
   disconnect() {
-    if (!this.boundReposition) return
-    this.popoverTarget.removeEventListener("toggle", this.boundReposition)
-    window.removeEventListener("resize", this.boundReposition)
-    window.removeEventListener("scroll", this.boundReposition, true)
+    if (!this.hasPopoverTarget || !this.boundOnToggle) return
+    this.popoverTarget.removeEventListener("toggle", this.boundOnToggle)
+    this._unbindWindowListeners()
   }
 
-  _reposition(event) {
-    // Only run when the popover is open. The `toggle` event exposes
-    // `newState`; resize/scroll listeners don't, so fall back to matching
-    // on the `:popover-open` pseudo-state.
-    const opening = event?.newState
-      ? event.newState === "open"
-      : this.popoverTarget.matches(":popover-open")
-    if (!opening) return
-    if (!this.hasTriggerTarget) return
+  // Toggle handler — only attach window listeners while the popover is
+  // open. This avoids running resize/scroll callbacks on every page (the
+  // LocaleSwitcher lives in the top bar and is mounted everywhere) when
+  // the popover isn't even visible.
+  _onToggle(event) {
+    if (event.newState === "open") {
+      this._reposition()
+      this._bindWindowListeners()
+    } else {
+      this._unbindWindowListeners()
+    }
+  }
+
+  _bindWindowListeners() {
+    if (this._windowBound) return
+    this._windowBound = true
+    window.addEventListener("resize", this.boundReposition, { passive: true })
+    window.addEventListener("scroll", this.boundReposition, { capture: true, passive: true })
+  }
+
+  _unbindWindowListeners() {
+    if (!this._windowBound) return
+    this._windowBound = false
+    window.removeEventListener("resize", this.boundReposition)
+    window.removeEventListener("scroll", this.boundReposition, { capture: true })
+  }
+
+  _reposition() {
+    if (!this.hasTriggerTarget || !this.hasPopoverTarget) return
+    if (!this.popoverTarget.matches(":popover-open")) return
 
     const rect = this.triggerTarget.getBoundingClientRect()
     const popover = this.popoverTarget

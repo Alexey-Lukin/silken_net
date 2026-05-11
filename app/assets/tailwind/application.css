@@ -204,13 +204,15 @@
   /* Tailwind v4 Preflight follows the native UA cursor (`auto` on buttons),
    * but the Gaia terminal UI relies on `pointer` as the universal "this is
    * interactive" affordance. Restore it globally for all real and ARIA
-   * buttons, summary toggles, popover triggers and label-for controls.
-   * Disabled elements keep the default cursor. */
+   * buttons, summary toggles, popover triggers and form controls.
+   * Disabled elements keep the default cursor. `<label>` is intentionally
+   * left alone — a label wrapping (or `for=`-bound to) an input already
+   * delegates clicks to the control, and adding `pointer` here would
+   * sometimes conflict with `<label>` used purely as a form section title. */
   button:not(:disabled),
   [role="button"]:not(:disabled),
   summary,
   [popovertarget]:not(:disabled),
-  label[for]:not(.cursor-default),
   select:not(:disabled),
   [type="submit"]:not(:disabled),
   [type="reset"]:not(:disabled),
