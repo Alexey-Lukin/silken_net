@@ -1,6 +1,8 @@
 ---
 en:
   blockchain_transactions:
+    index:
+      subtitle: Minting, slashing, and all on-chain events for your Organization.
     show:
       decoration: TX
       details:

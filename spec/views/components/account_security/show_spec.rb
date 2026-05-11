@@ -47,13 +47,13 @@ RSpec.describe AccountSecurity::Show do
     end
 
     it "shows MFA disabled warning when mfa is off" do
-      expect(html).to include("MFA вимкнено")
+      expect(html).to include("MFA disabled")
     end
 
     it "shows MFA enabled status when mfa is active" do
       user_with_mfa = mock_user(mfa_enabled: true, recovery_codes_remaining: 8)
       html = render_component(user: user_with_mfa, identities: identities)
-      expect(html).to include("MFA увімкнено")
+      expect(html).to include("MFA enabled")
     end
 
     it "shows recovery codes count when mfa enabled" do

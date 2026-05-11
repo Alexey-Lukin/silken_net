@@ -1,6 +1,8 @@
 ---
 uk:
   blockchain_transactions:
+    index:
+      subtitle: Minting, slashing та всі on-chain події вашої Організації.
     show:
       decoration: TX
       details:

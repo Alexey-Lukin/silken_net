@@ -26,7 +26,7 @@ module Notifications
       div(class: "flex justify-between items-end mb-4") do
         div do
           h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "🔔 Neural Web — Notification Channels" }
-          p(class: "text-xs text-gray-600 mt-1") { "Налаштування каналів зв'язку: куди надсилати сповіщення про тривоги та події." }
+          p(class: "text-xs text-gray-600 mt-1") { t("notifications.settings.subtitle") }
         end
       end
     end
@@ -39,7 +39,7 @@ module Notifications
           input(type: "hidden", name: "_method", value: "patch")
           input(type: "hidden", name: "authenticity_token", value: form_authenticity_token)
 
-          render_field("Email Address", "email", @user.email_address, disabled: true, hint: "Змінити email можна в профілі.")
+          render_field("Email Address", "email", @user.email_address, disabled: true, hint: t("notifications.settings.email_hint"))
           render_field("Phone Number (E.164)", "phone_number", @user.phone_number, placeholder: "+380501234567")
           render_field("Telegram Chat ID", "telegram_chat_id", @user.telegram_chat_id, placeholder: "123456789")
           render_field("Push Token", "push_token", @user.push_token, placeholder: "FCM or APNs token")

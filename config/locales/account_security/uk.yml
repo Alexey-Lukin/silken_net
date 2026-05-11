@@ -21,4 +21,36 @@ uk:
       too_short_json: Новий пароль повинен містити мінімум 12 символів.
       updated_flash: Пароль успішно оновлено.
       updated_json: Пароль оновлено.
+    show:
+      heading: "🔐 Безпека акаунту"
+      identities:
+        available_heading: Доступні провайдери
+        heading: Підключені провайдери
+        link_provider: Підключити %{provider}
+        lock: Заблокувати
+        locked: Заблоковано
+        none_linked: Жоден провайдер не прив'язаний.
+        primary: Основний
+        uid_line: 'UID: %{prefix}...'
+        unlink: Відв'язати
+        unlink_confirm: Відв'язати %{provider}?
+        unlink_disabled_title: Встановіть пароль перед відв'язкою.
+        unlock: Розблокувати
+      mfa:
+        disable_button: Вимкнути MFA
+        disabled_hint: "⚠️ MFA вимкнено. Рекомендуємо увімкнути для захисту акаунту."
+        enable_button: Увімкнути MFA
+        enabled_with_remaining: "✅ MFA увімкнено. Recovery codes залишилось: %{count}"
+        heading: Двофакторна автентифікація (2FA)
+        recovery_warning: Recovery codes збережіть в безпечному місці. Вони потрібні для входу при втраті TOTP.
+      password:
+        change_submit: Змінити пароль
+        confirm_label: Підтвердьте новий пароль
+        current_label: Поточний пароль
+        heading: Пароль
+        new_label: Новий пароль (мін. 12 символів)
+        not_set: "⚠️ Пароль не встановлено. Встановіть пароль для можливості відв'язки провайдерів."
+        set_ok: "✅ Пароль встановлено"
+        set_submit: Встановити пароль
+      subtitle: Керуйте методами входу, двофакторною автентифікацією та зв'язаними провайдерами.
     title: Безпека акаунту

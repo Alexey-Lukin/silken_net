@@ -1727,3 +1727,134 @@ Sandbox-обмеження: автоматичний прогін axe-core / Lig
 | **D5** `prefers-reduced-motion` глобально, `duration-{150-300}` | ✅ | § 14.4 — глобальний CSS rule + motion budget |
 | **D6** Min font-size 12 px у production-розмітці | ✅ | § 4 — `text-micro/mini/tiny` лишилися як decorative-only labels |
 | **D7** Жоден shared/ui компонент не має raw Tailwind | ✅ | § 16 — `gaia:lint_tokens` rake task; backlog у `app/views/components/` опрацьовується доменними PR-ами |
+
+---
+
+## 19. i18n — стандарт локалізації (Convention over Configuration)
+
+Платформа підтримує дві locales: `:uk` (default, ринковий) та `:en` (інженерна/демо). Цей розділ — SSOT для додавання нових перекладів та налаштування CI-гейтів.
+
+### 19.1 Архітектурні правила
+
+1. **Жодних hardcoded user-facing strings.** Все, що користувач бачить (UI текст, flash, error JSON, mailer body) — через `I18n.t`. Hardcoded UA/EN рядки у `app/views/components/**/*.rb` та `app/controllers/api/v1/**/*.rb` блокуються CI.
+2. **Per-domain YAML layout.** Файли локалізації лежать як `config/locales/<domain>/{en,uk}.yml`. Кожен «домен» = верхньокореневий namespace (`wallets`, `codex`, `actuators`, `flash`, `errors`, ...). Це масштабовано до десятків доменів без monolithic `en.yml`.
+3. **Class-name autoscope для Phlex.** `ApplicationComponent` має кастомний `t` (override від `Phlex::Rails::Helpers::Translate`):
+   - `t(".key")` всередині `Codex::Show` резолвить у `I18n.t("codex.show.key")`
+   - Абсолютний ключ (`t("flash.errors.unauthorized")`) працює без autoscope
+   - Працює як у controller-render контексті, так і в `Component.new(...).call` (specs/Turbo broadcasts)
+4. **Контролер-side strings.** Flash, error JSON, redirect notice — всі через `I18n.t("flash.<controller>.<action>")` / `I18n.t("errors.api.<code>")`. Hardcoded UA рядки у контролерах = CI failure.
+5. **Mailer та service-worker.** Mailer templates (`app/views/<mailer>/*.erb`) та `pwa/service-worker.js` поки **out of scope** для авто-перевірки — їх локалізують вручну за тим самим патерном (`config/locales/mailers/...`, `pwa/...`). Service-worker не йде через I18n (це JS у браузері).
+
+### 19.2 Як додати нову локалізовану строку
+
+```ruby
+# app/views/components/wallets/show.rb
+module Wallets
+  class Show < ApplicationComponent
+    def view_template
+      h2 { t(".heading") }                          # → "wallets.show.heading"
+      p  { t(".intro", balance: @wallet.balance) }  # interpolation
+    end
+  end
+end
+```
+
+```yaml
+# config/locales/wallets/en.yml
+en:
+  wallets:
+    show:
+      heading: "Wallet"
+      intro: "Current balance: %{balance} SCC"
+```
+
+```yaml
+# config/locales/wallets/uk.yml
+uk:
+  wallets:
+    show:
+      heading: "Гаманець"
+      intro: "Поточний баланс: %{balance} SCC"
+```
+
+### 19.3 Pluralization
+
+```yaml
+en:
+  alerts:
+    badge:
+      count:
+        one:   "1 alert"
+        other: "%{count} alerts"
+uk:
+  alerts:
+    badge:
+      count:
+        one:   "1 тривога"
+        few:   "%{count} тривоги"     # 2-4
+        many:  "%{count} тривог"      # 5-20, 25-30, ...
+        other: "%{count} тривоги"
+```
+
+`uk` має 4 plural форми (one/few/many/other) проти 2 у EN — це нормально, `i18n-tasks check-consistent-interpolations` цього не валить.
+
+### 19.4 Locale switcher — Rails-canonical pattern
+
+`Views::Shared::UI::LocaleSwitcher` — native `<form>` + `<select>` + `onchange="this.form.requestSubmit()"`. Один клік → POST `/api/v1/locale` → cookie + redirect. **Без Stimulus / Popover-API** — браузер сам анкорує dropdown.
+
+Bug, який раніше вимагав 2 кліки: `Api::V1::BaseController < ActionController::Base` не інклудив `LocaleSettable` (інклудив тільки `ApplicationController`), тому після redirect Dashboard ігнорував щойно записану cookie і відкочувався на `default_locale = :uk`. Виправлено: `LocaleSettable` тепер у обох контролерах.
+
+### 19.5 CI-гейт
+
+`.github/workflows/ci.yml` запускає job `i18n_check`:
+
+```bash
+bundle exec i18n-tasks missing                       # ключ у одній locale, відсутній в іншій
+bundle exec i18n-tasks check-consistent-interpolations  # %{var} drift між locales
+bundle exec i18n-tasks check-normalized              # YAML не у нормалізованій формі
+```
+
+Будь-який з цих → red build. Runtime safety net (test env): `config.i18n.raise_on_missing_translations = true` — будь-який spec, що проходить по missing-ключу, валить CI.
+
+Конфіг: `config/i18n-tasks.yml` (base locale `:en`, scan `app/` + `lib/`, `app/javascript` + `app/assets` excluded).
+
+Запуск авто-нормалізації локально:
+```bash
+bundle exec i18n-tasks normalize    # сортує ключі, фіксить indent
+bundle exec i18n-tasks unused       # довідково: не gated у CI (false positives від dynamic keys)
+```
+
+### 19.6 Spec convention
+
+Default locale у production = `:uk`, але component specs пишемо англійською (як код). У `spec/rails_helper.rb`:
+
+```ruby
+config.before(:each, file_path: %r{spec/views/components/}) { I18n.locale = :en }
+```
+
+Спеки, які явно перевіряють UK-default — обгортають у `I18n.with_locale(:uk) { … }`. Це задокументовано у топ-кометі sidebar spec як приклад.
+
+### 19.7 Backend localization
+
+Усі рядки у `app/controllers/api/v1/**/*.rb` йдуть через `I18n.t`:
+
+| Domain | YAML файл | Приклад ключа |
+|---|---|---|
+| Flash messages | `flash/{en,uk}.yml` | `flash.sessions.signed_in` |
+| Error JSON | `errors/{en,uk}.yml` | `errors.api.forbidden` |
+| Account Security | `account_security/{en,uk}.yml` | `account_security.mfa.enabled` |
+| Passwords | `passwords/{en,uk}.yml` | `passwords.reset.email_sent` |
+| M2M auth | `m2m_auth/{en,uk}.yml` | `m2m_auth.token.issued` |
+
+### 19.8 Rack deprecation: `:unprocessable_entity` → `:unprocessable_content`
+
+Усі `render status: :unprocessable_entity` замінено на `:unprocessable_content` (RFC 9110 / Rack 3.2+). Старий символ deprecation-warning'ить і буде видалений у Rack 4.0.
+
+### 19.9 Що ще не локалізовано (опрацьовується інкрементально)
+
+CI-гейт ловить майбутні regressions. Поточний backlog (поза цим PR):
+- `app/views/<mailer>/*.{erb,text.erb}` — `password_mailer/reset_instructions.text.erb`, `alert_mailer/critical_notification.text.erb`
+- `app/views/pwa/service-worker.js` — manifest + offline сторінка JS-string'и (не через Rails I18n)
+- Окремі inline UA коментарі у `.rb` файлах — не user-facing, не блокують гейт
+
+Додаючи нові компоненти, дотримуйтесь конвенції з § 19.2 та `i18n-tasks missing` залишиться зеленим.
