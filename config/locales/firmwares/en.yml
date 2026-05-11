@@ -1,6 +1,39 @@
 ---
 en:
   firmwares:
+    form:
+      binary_label: Binary Artifact (.bin)
+      notes_label: Release Notes / Logical Changes
+      notes_placeholder: Describing the changes in the biogenic firmware...
+      submit: COMMIT EVOLUTION
+      target_label: Target Hardware Architecture
+      target_queen: ESP32-S3 (Queen)
+      target_soldier: STM32-L0 (Soldier)
+      version_label: Evolution Version
+      version_placeholder: e.g. 1.4.2
+    index:
+      columns:
+        checksum: Checksum (MD5)
+        command: Command
+        target_hardware: Target Hardware
+        uploaded: Uploaded
+        version: Version
+      deploy_aria: Deploy firmware v%{version}
+      inventory_title: Forest Inventory (Version Distribution)
+      queens: Queens (Gateways)
+      registry_title: Available Binary Evolutions
+      soldiers: Soldiers (Trees)
+      units: "%{count} units"
+      upload: "+ Inject New Code"
+      upload_aria: Upload new firmware binary
+      version_label: v%{version}
+    new:
+      subtitle: Prepare the binary artifact for OTA deployment
+      title: New Code Injection
+    ota_progress_bar:
+      chunk: 'CHUNK: %{current} / %{total}'
+      complete: "%{percent}% COMPLETE"
+      link_label: 'OTA_LINK: %{uid}'
     row:
       confirm: Initiate evolution to v%{version} for the selected hardware?
       not_available: N/A

@@ -1,0 +1,73 @@
+---
+uk:
+  reports:
+    carbon_absorption:
+      decoration: CO₂
+      footer: Звіт згенеровано %{at} для %{org}
+      generated: 'Згенеровано: %{at}'
+      metrics:
+        active_trees: Активні дерева
+        active_trees_sub: Онлайн
+        active_wallets: Активні гаманці
+        active_wallets_sub: Гаманці
+        total_carbon_points: Всього вуглецевих пунктів
+        total_carbon_points_sub: SCC
+        total_trees: Всього дерев
+        total_trees_sub: Розгорнуто
+      table:
+        active_wallets: Активних гаманців, що генерують пункти
+        metric: Метрика
+        total_points: Накопичено вуглецевих пунктів
+        trees_deployed: Розгорнутих дерев (всі статуси)
+        trees_online: Дерев онлайн зараз
+        value: Значення
+      title: "🌿 Звіт про поглинання вуглецю"
+    financial_summary:
+      breakdown:
+        category: Категорія
+        confirmed: Підтверджених
+        count: Кількість
+        failed: Невдалих
+        pending: В очікуванні
+        title: Розподіл блокчейн-транзакцій
+        total_transactions: Всього транзакцій
+      decoration: FIN
+      footer: Звіт згенеровано %{at} для %{org}
+      generated: 'Згенеровано: %{at}'
+      metrics:
+        active_contracts: Активні контракти
+        active_contracts_sub: NaaS
+        total_contracts: Всього контрактів
+        total_contracts_sub: За весь час
+        total_invested: Всього інвестовано
+        total_invested_sub: SCC
+      title: "💎 Звіт фінансового зведення"
+    index:
+      actions:
+        csv: CSV ↓
+        pdf: PDF ↓
+        view: Переглянути →
+      available: Доступні звіти
+      carbon:
+        description: Поглинання CO₂ та екологічний аудит.
+        title: Звіт про поглинання вуглецю
+      financial:
+        description: Фінансова ефективність та блокчейн-транзакції.
+        title: Звіт фінансового зведення
+      hero:
+        biological_assets: Біологічні активи
+        biological_assets_sub: Дерева
+        capital_injected: Внесений капітал
+        capital_injected_sub: Інвестовано SCC
+        carbon_yield: Вуглецева віддача
+        carbon_yield_sub: Всього SCC
+        health_score: Індекс здоров'я
+        health_score_sub: Індекс
+        sectors: Сектори
+        sectors_sub: Кластери
+        threat_active: АКТИВНА
+        threat_clear: ЧИСТО
+        threat_level: Рівень загрози
+      organization: 'Організація:'
+      subtitle: 'Зведена звітність для інвесторів: екологічні аудити та фінансова ефективність.'
+      title: "📊 Архів — Центр звітів"

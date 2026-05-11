@@ -24,6 +24,11 @@ en:
       realm_unknown: "—"
       skip: Skip
       vs: VS
+    citations:
+      aria_with_note: "%{base} — %{note}"
+      aria_with_realm: 'Codex citation: %{title} (%{realm})'
+      title_with_note: "%{base} — %{note}"
+      unknown_realm: unknown realm
     comments:
       empty: Be the first to share what this archetype means to you.
       heading: Discussion
