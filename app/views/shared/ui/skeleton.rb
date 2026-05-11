@@ -46,7 +46,7 @@ module Views
           div(
             class: tokens(container_classes, @extra_class),
             role: "status",
-            aria_label: "Loading…"
+            aria_label: t("ui.skeleton.loading")
           ) do
             skeleton_lines.each do |line|
               div(class: tokens("rounded bg-gaia-border animate-pulse", line[:height], line[:width]))

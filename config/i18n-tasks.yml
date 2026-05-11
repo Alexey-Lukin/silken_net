@@ -57,6 +57,14 @@ ignore_missing:
 ignore_unused:
   # Cross-cutting flash messages used from outside the static view tree.
   - 'flash.*'
+  # Navigation items and section headers are looked up dynamically by key
+  # (e.g. `t("navigation.items.#{key}")`) — i18n-tasks cannot statically
+  # resolve symbol-keyed iterations, but the keys are exhaustively defined.
+  - 'navigation.items.*'
+  - 'navigation.sections.*'
+  # Alert severity filter chips are built from FILTER_SEVERITIES array
+  # (e.g. `t("alerts.index.filter_#{s}")`) — same pattern, fully defined.
+  - 'alerts.index.filter_*'
 
 # Don't flag these as missing in non-base locales — they're intentionally
 # only set where needed (e.g. UK has pluralisation forms en does not need).

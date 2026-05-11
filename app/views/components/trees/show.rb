@@ -46,7 +46,6 @@ module Trees
     private
 
     # Lazy-lookup helper scoped to the `trees.show.*` namespace.
-    def t_(key) = t(".#{key}")
 
 
     def render_chronicle_frame
@@ -66,14 +65,14 @@ module Trees
           h2(class: "text-4xl font-extralight tracking-tighter text-gaia-text") { @tree.did }
           div(class: "flex items-center gap-3 mt-2") do
             span(class: tokens("text-tiny px-2 py-0.5 border font-mono uppercase tracking-widest", status_color_class)) { @tree.status }
-            span(class: "text-tiny text-gaia-text-subtle font-mono") { t(".labels.family", name: @family&.name || t_("labels.family_unknown")) }
+            span(class: "text-tiny text-gaia-text-subtle font-mono") { t(".labels.family", name: @family&.name || t(".labels.family_unknown")) }
           end
           render_codex_citations
         end
 
         div(class: "mt-6 md:mt-0 flex items-center gap-12") do
           div(class: "text-right") do
-            p(class: "text-mini text-gaia-text-muted uppercase tracking-widest") { t_("labels.uplink_state") }
+            p(class: "text-mini text-gaia-text-muted uppercase tracking-widest") { t(".labels.uplink_state") }
             p(class: "text-sm font-mono text-emerald-100") { @latest_log&.created_at&.strftime("%H:%M:%S // %d.%m.%y") || "SILENT" }
           end
           div(class: tokens("h-4 w-4 rounded-sm rotate-45", status_led_class))
@@ -97,7 +96,7 @@ module Trees
 
     def render_biometric_panel
       div(class: "p-8 border border-gaia-border bg-zinc-950") do
-        h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-10") { t_("headings.biometrics") }
+        h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-10") { t(".headings.biometrics") }
 
         div(class: "grid grid-cols-1 md:grid-cols-2 gap-12 items-center") do
           div(class: "relative h-56 w-56 mx-auto") do
@@ -120,7 +119,7 @@ module Trees
 
     def render_impedance_history
       div(class: "p-8 border border-gaia-border bg-black/40") do
-        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t_("headings.impedance_flux") }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".headings.impedance_flux") }
 
         # Візуалізація міні-графіка через висоту барів
         div(class: "flex items-end gap-2 h-32 border-b border-gaia-border pb-2") do
@@ -146,16 +145,16 @@ module Trees
 
     def render_maintenance_ledger
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t_("headings.maintenance") }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".headings.maintenance") }
 
         div(class: "border border-gaia-border bg-gaia-surface overflow-x-auto w-full") do
           table(role: "table", class: "w-full text-left font-mono text-tiny") do
             thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-micro") do
               tr do
-                th(scope: "col", class: "p-4") { t_("table.technician") }
-                th(scope: "col", class: "p-4") { t_("table.action") }
-                th(scope: "col", class: "p-4") { t_("table.observations") }
-                th(scope: "col", class: "p-4 text-right") { t_("table.timestamp") }
+                th(scope: "col", class: "p-4") { t(".table.technician") }
+                th(scope: "col", class: "p-4") { t(".table.action") }
+                th(scope: "col", class: "p-4") { t(".table.observations") }
+                th(scope: "col", class: "p-4 text-right") { t(".table.timestamp") }
               end
             end
             tbody(class: "divide-y divide-emerald-900/30") do
@@ -169,7 +168,7 @@ module Trees
                   end
                 end
               else
-                tr { td(colspan: 4, class: "p-10 text-center text-gaia-text-subtle uppercase tracking-widest") { t_("table.empty") } }
+                tr { td(colspan: 4, class: "p-10 text-center text-gaia-text-subtle uppercase tracking-widest") { t(".table.empty") } }
               end
             end
           end
@@ -180,7 +179,7 @@ module Trees
     def render_hardware_security_vault
       div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
         div(class: "flex justify-between items-center") do
-          h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t_("headings.hardware_vault") }
+          h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".headings.hardware_vault") }
           span(class: "h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]")
         end
 
@@ -192,7 +191,7 @@ module Trees
         end
 
         div(class: "pt-4 border-t border-gaia-border") do
-          button(class: "w-full py-2 border border-gaia-border text-mini uppercase text-gaia-text-muted hover:border-gaia-primary hover:text-gaia-primary transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary", aria_label: t_("actions.rotate_key_aria")) do
+          button(class: "w-full py-2 border border-gaia-border text-mini uppercase text-gaia-text-muted hover:border-gaia-primary hover:text-gaia-primary transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary", aria_label: t(".actions.rotate_key_aria")) do
             "Rotate Hardware Key →"
           end
         end
@@ -201,10 +200,10 @@ module Trees
 
     def render_economic_panel
       div(class: "p-6 border border-gaia-border bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t_("headings.economic_yield") }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".headings.economic_yield") }
         div(class: "space-y-4") do
           div do
-            p(class: "text-mini text-gaia-text-muted uppercase") { t_("labels.verified_balance") }
+            p(class: "text-mini text-gaia-text-muted uppercase") { t(".labels.verified_balance") }
             div(class: "flex items-baseline gap-2") do
               span(class: "text-3xl font-light text-gaia-text-strong") { @tree.wallet&.scc_balance || "0.0" }
               span(class: "text-xs text-gaia-primary-hover font-mono") { "SCC" }
@@ -219,7 +218,7 @@ module Trees
 
     def render_metadata_panel
       div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t_("headings.deployment_matrix") }
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".headings.deployment_matrix") }
         div(class: "space-y-3 text-tiny font-mono") do
           meta_row("Cluster", @tree.cluster&.name)
           meta_row("Coordinates", "#{@tree.latitude}, #{@tree.longitude}")
@@ -229,7 +228,7 @@ module Trees
             target: "_blank",
             class: "block mt-4 text-center p-2 border border-gaia-border-strong text-gaia-primary-hover hover:bg-gaia-surface-sunken hover:text-gaia-text-strong transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary",
             aria_label: "Locate tree node on Google Maps"
-          ) { t_("actions.locate_node") }
+          ) { t(".actions.locate_node") }
         end
       end
     end

@@ -32,29 +32,27 @@ module Wallets
 
     private
 
-    def t_(key, **opts) = t(".#{key}", **opts)
-
     def render_header
       div(class: "flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-6") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t_("title") }
-          p(class: "text-xs text-gaia-text-muted mt-1") { t_("subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".title") }
+          p(class: "text-xs text-gaia-text-muted mt-1") { t(".subtitle") }
         end
         div(class: "text-right font-mono text-tiny text-gaia-text-subtle") do
-          plain "#{t_('total_liquidity')} "
+          plain "#{t('.total_liquidity')} "
           span(class: "text-gaia-primary") { "#{@total_liquidity.to_f.round(2)} SCC" }
         end
       end
     end
 
     def render_wallet_card(wallet)
-      owner_name = wallet.tree&.did || wallet.organization&.name || t_("system_reserve")
+      owner_name = wallet.tree&.did || wallet.organization&.name || t(".system_reserve")
 
       div(class: "group p-6 border border-gaia-border bg-gaia-surface hover:bg-gaia-surface-sunken transition-all duration-500") do
         div(class: "flex justify-between items-start mb-6") do
           div do
             p(class: "text-mini uppercase text-gaia-text-subtle tracking-tighter") do
-              wallet.tree ? t_("kind_soldier") : t_("kind_clan")
+              wallet.tree ? t(".kind_soldier") : t(".kind_clan")
             end
             h4(class: "text-lg font-light text-gaia-text-strong mt-1") { owner_name }
           end
@@ -66,12 +64,12 @@ module Wallets
           span(class: "ml-2 text-xs text-gaia-primary-hover font-mono") { "SCC" }
           if wallet.locked_balance.to_f > 0
             div(class: "mt-1 text-micro font-mono text-status-warning-text") do
-              t_("locked_label", amount: wallet.locked_balance.to_f.round(2))
+              t(".locked_label", amount: wallet.locked_balance.to_f.round(2))
             end
           end
           if wallet.esg_retired_balance.to_f > 0
             div(class: "mt-1 text-micro font-mono text-gaia-text-muted") do
-              t_("retired_label", amount: wallet.esg_retired_balance.to_f.round(2))
+              t(".retired_label", amount: wallet.esg_retired_balance.to_f.round(2))
             end
           end
         end
@@ -81,7 +79,7 @@ module Wallets
           a(
             href: api_v1_wallet_path(wallet),
             class: "text-tiny uppercase tracking-widest text-gaia-primary-hover hover:text-gaia-text-strong transition-colors"
-          ) { t_("audit_link") }
+          ) { t(".audit_link") }
         end
       end
     end

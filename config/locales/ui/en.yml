@@ -7,6 +7,8 @@ en:
       confirm_remove: Remove this photo from the evidence record?
       remove_photo: 'Remove photo: %{filename}'
       view_photo: 'View photo: %{filename}'
+    skeleton:
+      loading: Loading…
     status:
       acknowledged: acknowledged
       active: active

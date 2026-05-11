@@ -23,10 +23,10 @@ module Telemetry
             table(class: "gaia-responsive-table w-full text-left font-mono text-tiny md:min-w-[640px]", role: "table") do
               thead(class: "gaia-sticky-thead bg-gaia-surface-sunken/80 backdrop-blur-md text-gaia-text-muted uppercase tracking-widest border-b border-gaia-border shadow-md") do
                 tr do
-                  th(scope: "col", class: "p-4 w-32 font-medium") { t_("table.timestamp") }
-                  th(scope: "col", class: "p-4 w-40 font-medium") { t_("table.gateway") }
-                  th(scope: "col", class: "p-4 font-medium") { t_("table.payload") }
-                  th(scope: "col", class: "p-4 w-24 text-right font-medium") { t_("table.status") }
+                  th(scope: "col", class: "p-4 w-32 font-medium") { t("telemetry.table.timestamp") }
+                  th(scope: "col", class: "p-4 w-40 font-medium") { t("telemetry.table.gateway") }
+                  th(scope: "col", class: "p-4 font-medium") { t("telemetry.table.payload") }
+                  th(scope: "col", class: "p-4 w-24 text-right font-medium") { t("telemetry.table.status") }
                 end
               end
 
@@ -34,7 +34,7 @@ module Telemetry
                 tr(id: "feed_placeholder") do
                   td(colspan: 4, class: "p-12 text-center text-gaia-text-subtle flex flex-col items-center justify-center") do
                     div(class: "w-8 h-8 rounded-full border-b-2 border-gaia-border-strong animate-spin mb-4", aria_hidden: "true")
-                    p(class: "italic tracking-widest text-mini") { t_("live_stream.awaiting") }
+                    p(class: "italic tracking-widest text-mini") { t(".awaiting") }
                   end
                 end
               end
@@ -46,16 +46,15 @@ module Telemetry
 
     private
 
-    def t_(key, **opts) = t("telemetry.#{key}", **opts)
 
     def header_section
       div(class: "flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 border-b border-gaia-border pb-4") do
         div do
           h3(class: "text-tiny uppercase tracking-[0.5em] text-gaia-text-muted flex items-center gap-2") do
             i(class: "ph ph-broadcast", aria_hidden: "true")
-            plain t_("live_stream.header_eyebrow")
+            plain t(".header_eyebrow")
           end
-          h2(class: "text-2xl font-light text-gaia-text mt-2") { t_("live_stream.header_title") }
+          h2(class: "text-2xl font-light text-gaia-text mt-2") { t(".header_title") }
         end
 
         div(class: "flex items-center gap-3 bg-gaia-surface-sunken px-4 py-2 border border-gaia-border shadow-[inset_0_0_10px_rgba(6,78,59,0.5)]") do
@@ -63,7 +62,7 @@ module Telemetry
             span(class: "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75")
             span(class: "relative inline-flex rounded-full h-2 w-2 bg-emerald-500")
           end
-          span(class: "font-mono text-mini text-gaia-primary uppercase tracking-widest") { t_("live_stream.carrier_label") }
+          span(class: "font-mono text-mini text-gaia-primary uppercase tracking-widest") { t(".carrier_label") }
         end
       end
     end

@@ -37,7 +37,7 @@ RSpec.describe Views::Shared::UI::ThemeSwitcher do
 
     it "includes aria-label for the toggle button" do
       expect(html).to include("aria-label")
-      expect(html).to include("Toggle light/dark theme")
+      expect(html).to include(I18n.t("theme.toggle_label"))
     end
 
     it "renders a button element" do

@@ -25,7 +25,6 @@ module Alerts
 
     private
 
-    def t_(key, **opts) = t("alerts.#{key}", **opts)
 
     def render_table
       # `gaia-responsive-table` flips into card-list on mobile via CSS only
@@ -42,12 +41,12 @@ module Alerts
     def render_thead
       thead(class: "gaia-sticky-thead bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
         tr do
-          th(scope: "col", class: "p-4") { t_("table.severity") }
-          th(scope: "col", class: "p-4") { t_("table.alert_type") }
-          th(scope: "col", class: "p-4") { t_("table.source") }
-          th(scope: "col", class: "p-4") { t_("table.message") }
-          th(scope: "col", class: "p-4") { t_("table.timestamp") }
-          th(scope: "col", class: "p-4 text-right") { t_("table.command") }
+          th(scope: "col", class: "p-4") { t("alerts.table.severity") }
+          th(scope: "col", class: "p-4") { t("alerts.table.alert_type") }
+          th(scope: "col", class: "p-4") { t("alerts.table.source") }
+          th(scope: "col", class: "p-4") { t("alerts.table.message") }
+          th(scope: "col", class: "p-4") { t("alerts.table.timestamp") }
+          th(scope: "col", class: "p-4 text-right") { t("alerts.table.command") }
         end
       end
     end
@@ -89,21 +88,21 @@ module Alerts
     def header_section
       div(class: "flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t_("index.title") }
-          p(class: "text-xs text-gaia-text-muted mt-1") { t_("index.subtitle") }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted") { t(".title") }
+          p(class: "text-xs text-gaia-text-muted mt-1") { t(".subtitle") }
         end
         div(class: "flex flex-wrap gap-2") do
           a(
             href: api_v1_alerts_path,
-            aria_label: t_("index.filter_aria_all"),
+            aria_label: t(".filter_aria_all"),
             class: filter_link_classes
-          ) { t_("index.filter_all") }
+          ) { t(".filter_all") }
           FILTER_SEVERITIES.each do |s|
             a(
               href: api_v1_alerts_path(severity: s),
-              aria_label: t_("index.filter_aria_severity", severity: s),
+              aria_label: t(".filter_aria_severity", severity: s),
               class: filter_link_classes
-            ) { t_("index.filter_#{s}") }
+            ) { t("alerts.index.filter_#{s}") }
           end
         end
       end
