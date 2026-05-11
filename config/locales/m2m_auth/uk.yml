@@ -4,6 +4,7 @@ uk:
     device_no_organization: Пристрій не прив'язано до організації.
     device_not_found: Пристрій не знайдено в системі.
     invalid_signature: Невалідний підпис.
+    invalid_signature_format: Невалідний формат підпису.
     invalid_timestamp: Невалідний формат timestamp (ISO 8601).
     no_public_key: Ed25519 public key не зареєстровано для пристрою.
     no_users_in_organization: Організація не має користувачів для видачі токена.

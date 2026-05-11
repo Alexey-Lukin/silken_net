@@ -55,7 +55,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
              as: :json
 
         expect(response).to have_http_status(:unauthorized)
-        expect(response.parsed_body["error"]).to include("підпис")
+        expect(response.parsed_body["error"]).to eq(I18n.t("m2m_auth.invalid_signature"))
       end
     end
 
@@ -70,7 +70,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
              as: :json
 
         expect(response).to have_http_status(:unauthorized)
-        expect(response.parsed_body["error"]).to include("Timestamp")
+        expect(response.parsed_body["error"]).to eq(I18n.t("m2m_auth.timestamp_expired"))
       end
     end
 
@@ -93,7 +93,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
              as: :json
 
         expect(response).to have_http_status(:unprocessable_content)
-        expect(response.parsed_body["error"]).to include("Ed25519")
+        expect(response.parsed_body["error"]).to eq(I18n.t("m2m_auth.no_public_key"))
       end
     end
 
@@ -114,7 +114,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
              as: :json
 
         expect(response).to have_http_status(:unauthorized)
-        expect(response.parsed_body["error"]).to include("signature")
+        expect(response.parsed_body["error"]).to eq(I18n.t("m2m_auth.invalid_signature_format"))
       end
     end
 
@@ -131,7 +131,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
              params: { did: gateway.uid, timestamp: timestamp, signature: signature },
              as: :json
         expect(response).to have_http_status(:unauthorized)
-        expect(response.parsed_body["error"]).to include("replay")
+        expect(response.parsed_body["error"]).to eq(I18n.t("m2m_auth.replay_detected"))
       end
 
       it "allows new auth with different timestamp and signature" do
@@ -180,7 +180,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
              params: { did: gateway.uid, timestamp: timestamp, signature: signature },
              as: :json
         expect(response).to have_http_status(:unauthorized)
-        expect(response.parsed_body["error"]).to include("replay")
+        expect(response.parsed_body["error"]).to eq(I18n.t("m2m_auth.replay_detected"))
       end
 
       it "allows different signatures during Redis outage" do
@@ -225,7 +225,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
              as: :json
 
         expect(response).to have_http_status(:unprocessable_content)
-        expect(response.parsed_body["error"]).to include("організації")
+        expect(response.parsed_body["error"]).to eq(I18n.t("m2m_auth.device_no_organization"))
       end
     end
 
@@ -248,7 +248,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
              as: :json
 
         expect(response).to have_http_status(:unprocessable_content)
-        expect(response.parsed_body["error"]).to include("користувачів")
+        expect(response.parsed_body["error"]).to eq(I18n.t("m2m_auth.no_users_in_organization"))
       end
     end
   end

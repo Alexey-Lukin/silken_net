@@ -107,7 +107,7 @@ module Api
           )
         rescue Ed25519Crypto::SigningService::SigningError => e
           Rails.logger.error "🚨 [M2M Auth] Invalid signature format for #{did}: #{e.message}"
-          render json: { error: "Invalid signature format." }, status: :unauthorized
+          render json: { error: I18n.t("m2m_auth.invalid_signature_format") }, status: :unauthorized
           return
         end
 
