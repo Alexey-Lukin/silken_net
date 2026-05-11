@@ -17,9 +17,9 @@ module Codex
             "bg-status-warning text-status-warning-text border-status-warning",
             "text-mini uppercase tracking-[0.2em] font-mono"
           ),
-          title: "Next change unlocks at #{@fraction.cooldown_until.iso8601}"
+          title: I18n.t("codex.fractions.cooldown.title", timestamp: @fraction.cooldown_until.iso8601)
         ) do
-          span { "Locked" }
+          span { I18n.t("codex.fractions.cooldown.locked") }
           span { "·" }
           span { format_remaining(@fraction.seconds_until_unlocked) }
         end
@@ -34,7 +34,7 @@ module Codex
             "bg-status-success text-status-success-text border-status-success",
             "text-mini uppercase tracking-[0.2em] font-mono"
           )
-        ) { "Open" }
+        ) { I18n.t("codex.fractions.cooldown.open") }
       end
 
       def format_remaining(seconds)

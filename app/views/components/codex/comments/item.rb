@@ -23,7 +23,7 @@ module Codex
           end
 
           if @comment.hidden?
-            p(class: "text-tiny text-status-warning-text") { "Hidden by moderator." }
+            p(class: "text-tiny text-status-warning-text") { I18n.t("codex.comments.hidden") }
           else
             div(class: "prose prose-sm dark:prose-invert max-w-none text-gaia-text") do
               raw safe(Codex::MarkdownRenderer.render(@comment.body_md))

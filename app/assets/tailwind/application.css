@@ -201,6 +201,23 @@
 
 /* ── Typography Base ── */
 @layer base {
+  /* Tailwind v4 Preflight follows the native UA cursor (`auto` on buttons),
+   * but the Gaia terminal UI relies on `pointer` as the universal "this is
+   * interactive" affordance. Restore it globally for all real and ARIA
+   * buttons, summary toggles, popover triggers and label-for controls.
+   * Disabled elements keep the default cursor. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  summary,
+  [popovertarget]:not(:disabled),
+  label[for]:not(.cursor-default),
+  select:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  [type="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
   /* Base h1-h3: standard content hierarchy, fluid clamp() so headings
    * scale smoothly between mobile and desktop without media-query
    * "stairsteps". For hero/landing sections with wider scaling range,

@@ -1,0 +1,116 @@
+uk:
+  codex:
+    atlas:
+      page_title: Атлас Кодексу
+      kicker: Шар Лору
+      title: Кодекс Архетипів
+      count:
+        one: "%{count} архетип каталогізовано"
+        few: "%{count} архетипи каталогізовано"
+        many: "%{count} архетипів каталогізовано"
+        other: "%{count} архетипів каталогізовано"
+      empty:
+        title: "Кодекс мовчить. Жоден архетип не підходить під цей фільтр."
+        description: "Спробуйте обрати ширший realm або очистити пошук."
+    realm_tabs:
+      aria_label: Фільтр realm Кодексу
+      all: Усі
+    node_card:
+      aria_label: "Відкрити картку Кодексу: %{title}"
+      elo: "Elo %{value}"
+      no_region: "—"
+    show:
+      sections:
+        context: Контекст
+        cyber_meaning: Кіберзначення
+        lore: Лор
+        external_references: Зовнішні посилання
+        metadata: Метадані
+      meta:
+        realm: Realm
+        archetype: Архетип
+        lifecycle: "Життєвий цикл:"
+        geo_region: Геозона
+        discovered: Знайдено
+        cited_by: Цитовано
+        attunement: Резонанс
+        elo: Elo
+    attunements:
+      title: Резонанс
+      attune: Резонувати
+      attuned: У резонансі
+    comments:
+      heading: Обговорення
+      empty: "Будьте першим, хто поділиться, що означає цей архетип для вас."
+      hidden: "Приховано модератором."
+      placeholder: "Напишіть коментар у Markdown…"
+      post: Опублікувати
+    battle_arena:
+      page_title: "Кодекс · Арена битв"
+      heading: Битва Вузлів
+      realm_prefix: "Realm:"
+      realm_unknown: "—"
+      vs: ПРОТИ
+      pick: Обрати
+      skip: Пропустити
+      elo_summary: "Elo: %{elo} · %{matches} боїв"
+    leaderboard:
+      page_title: "Кодекс · Таблиця лідерів"
+      heading: Таблиця лідерів Кодексу
+      realm_prefix: "Realm: %{realm} · "
+      top_n: "Топ %{limit}"
+      empty: "Ще немає ранжованих вузлів."
+      columns:
+        rank: "#"
+        title: Назва
+        elo: Elo
+        matches: Бої
+        lifecycle: Стан
+    discoveries:
+      page_title: "Кодекс · Мої відкриття"
+      heading: Мій Кодекс
+      counter: "Розблоковано: %{count}"
+      empty: "Поки нічого не розблоковано — спостерігайте за деревом, голосуйте на Арені, оберіть фракцію."
+      meta: "%{trigger} · %{timestamp}"
+      toast:
+        kicker: Кодекс розблоковано
+        visit: "→ Перейти"
+        triggers:
+          telemetry_observation: Спостереження
+          match_milestone: Битва
+          fraction_choice: Пакт
+          attunement_streak: Серія
+          oracle_seasonal: Оракул
+          manual_unlock: Надано
+          default: Розблоковано
+    fractions:
+      my_page_title: "Кодекс · Моя фракція"
+      picker_page_title: "Кодекс · Вибір фракції"
+      my_heading: Моя фракція
+      empty: "Ви ще не приєдналися до жодного архетипу Кодексу."
+      choose: Обрати фракцію
+      choose_short: Обрати
+      change: "Змінити →"
+      since: "З %{date}"
+      updated: "Оновлено %{date}"
+      current: Поточна
+      label: Фракція
+      cooldown:
+        locked: Заблоковано
+        open: Відкрито
+        title: "Наступна зміна доступна %{timestamp}"
+      picker:
+        heading: Оберіть фракцію
+        subtitle: "Один архетип — одна ідентичність. Зміна доступна кожні 7 днів."
+        empty: "У цьому realm немає доступних для вибору вузлів."
+        pick: Обрати
+        locked: Заблоковано
+        confirm: "Обрати «%{slug}»? Повторний вибір буде заблоковано на 7 днів."
+      onboarding:
+        kicker: "Кодекс // Початок"
+        aria_label: "Знайомство з Кодексом"
+        welcome: "Ласкаво просимо до Кодексу."
+        welcome_named: "Ласкаво просимо до Кодексу, %{name}."
+        body: "Узгодьте свій акаунт з архетипом Кодексу, щоб відкрити шар лору, приєднатися до Арени битв і розкривати Відкриття, поки ваш ліс росте."
+        cta_primary: "Оберіть свою фракцію →"
+        cta_secondary: Переглянути Кодекс

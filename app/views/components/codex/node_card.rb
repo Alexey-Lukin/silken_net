@@ -15,7 +15,7 @@ module Codex
     def view_template
       a(
         href: api_v1_codex_node_path(@node),
-        aria_label: "Open Codex card: #{@node.title_en}",
+        aria_label: I18n.t("codex.node_card.aria_label", title: @node.title_en),
         class: tokens(card_classes)
       ) do
         div(class: "relative") do
@@ -78,11 +78,11 @@ module Codex
 
     def render_footer
       div(class: "px-4 py-2 border-t border-gaia-border flex justify-between text-mini text-gaia-text-muted font-mono") do
-        span { "Elo #{@node.attunement_elo}" }
+        span { I18n.t("codex.node_card.elo", value: @node.attunement_elo) }
         if @node.geo_region.present?
           span(class: "truncate") { @node.geo_region }
         else
-          span { "—" }
+          span { I18n.t("codex.node_card.no_region") }
         end
       end
     end

@@ -43,7 +43,7 @@ module Codex
       def render_header
         div(class: "flex items-center justify-between") do
           span(class: "text-mini uppercase tracking-[0.3em] font-mono text-gaia-text-muted") do
-            "Codex Unlocked"
+            I18n.t("codex.discoveries.toast.kicker")
           end
           span(class: tokens(
             "text-mini font-mono uppercase tracking-widest",
@@ -69,19 +69,18 @@ module Codex
             "inline-block text-mini uppercase tracking-[0.3em]",
             "text-gaia-primary hover:underline focus-visible:ring-2 focus-visible:ring-gaia-primary"
           )
-        ) { "→ Visit" }
+        ) { I18n.t("codex.discoveries.toast.visit") }
       end
 
       def trigger_label
-        case @trigger_type
-        when "telemetry_observation" then "Observed"
-        when "match_milestone"       then "Battle"
-        when "fraction_choice"       then "Pact"
-        when "attunement_streak"     then "Streak"
-        when "oracle_seasonal"       then "Oracle"
-        when "manual_unlock"         then "Granted"
-        else "Unlocked"
+        key = case @trigger_type
+        when "telemetry_observation", "match_milestone", "fraction_choice",
+             "attunement_streak", "oracle_seasonal", "manual_unlock"
+          @trigger_type
+        else
+          "default"
         end
+        I18n.t("codex.discoveries.toast.triggers.#{key}")
       end
     end
   end

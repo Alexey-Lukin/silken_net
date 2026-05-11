@@ -66,8 +66,9 @@ module Api
               end
             end
             format.html do
-              render(
-                ::Codex::Fractions::Card.new(
+              render_dashboard(
+                title: I18n.t("codex.fractions.my_page_title", default: "Codex · My Fraction"),
+                component: ::Codex::Fractions::Card.new(
                   fraction: fraction, current_user: current_user
                 )
               )
@@ -92,8 +93,9 @@ module Api
                     .order(:title_en)
                     .limit(48)
 
-          render(
-            ::Codex::Fractions::Picker.new(
+          render_dashboard(
+            title: I18n.t("codex.fractions.picker_page_title", default: "Codex · Choose a Fraction"),
+            component: ::Codex::Fractions::Picker.new(
               realms: realms,
               active_realm: active_realm,
               nodes: nodes,

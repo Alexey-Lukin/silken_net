@@ -27,9 +27,14 @@ module Views
         end
 
         def view_template
-          # Wrapper is `inline-block` + `relative` so the popover (which is
-          # absolutely positioned via the top-layer) anchors near the trigger.
-          div(class: "relative inline-block") do
+          # Wrapper hosts the Stimulus controller that re-positions the
+          # native popover under the trigger on each open (the Popover API
+          # promotes it to the top layer, so CSS `position: relative` here
+          # has no effect on its own).
+          div(
+            class: "relative inline-block",
+            data: { controller: "locale-switcher" }
+          ) do
             render_trigger
             render_popover
           end
@@ -42,6 +47,7 @@ module Views
             type: "button",
             popovertarget: POPOVER_ID,
             aria_label: I18n.t("locale.switcher_label", default: "Language"),
+            data: { locale_switcher_target: "trigger" },
             class: tokens(
               "inline-flex items-center gap-2 px-2 py-1.5",
               "border border-gaia-border text-gaia-text-muted",
@@ -67,9 +73,12 @@ module Views
             id: POPOVER_ID,
             popover: "auto",
             role: "menu",
+            data: { locale_switcher_target: "popover" },
             class: tokens(
               # Reset UA popover defaults (margin, border, padding) and
-              # re-anchor next to the trigger via inset.
+              # re-anchor next to the trigger via the Stimulus controller
+              # (the Popover API places this on the top layer, so wrapper
+              # `position: relative` is intentionally bypassed).
               "m-0 p-1 border border-gaia-border bg-gaia-surface-elevated shadow-lg",
               "min-w-[10rem] origin-top-right"
             )
