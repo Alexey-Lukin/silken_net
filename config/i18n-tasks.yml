@@ -1,0 +1,67 @@
+# i18n-tasks SSOT configuration.
+# Docs: https://github.com/glebm/i18n-tasks
+# Runs in CI via `.github/workflows/ci.yml` → job `i18n_check`.
+
+# Base locale: every key here must exist; other locales are diffed against it.
+# We use English as the base because the source code conventions
+# (class names, error keys, comments) are all in English — keeping the
+# base aligned with the source minimises diff noise.
+base_locale: en
+locales: [en, uk]
+
+# YAML files live under config/locales/**/{en,uk}.yml. The pattern below
+# matches the sub-directory layout we already use (per-domain folders).
+data:
+  read:
+    - config/locales/%{locale}.yml
+    - config/locales/**/%{locale}.yml
+  write:
+    # Default destination for `i18n-tasks add-missing` — drop missing keys
+    # into a generic catch-all so human review can place them properly.
+    - config/locales/%{locale}.yml
+  yaml:
+    write:
+      line_width: -1   # Disable line wrapping (keeps long Ukrainian strings on one line)
+
+# Where to look for `t("...")` / `t(".key")` references. Phlex components
+# live under app/views/components/**/*.rb — the default `app/**/*.rb` glob
+# already covers them.
+search:
+  paths:
+    - app/
+    - config/locales/
+    - lib/
+  relative_roots:
+    # Phlex `t(".key")` autoscope is derived from the component's class name
+    # via `Codex::Show#translation_path → "codex.show"`, not the file path,
+    # so the i18n-tasks default `app/views`/`app/controllers` heuristic does
+    # not apply cleanly. Disable relative-key auto-resolution; we rely on
+    # full keys appearing somewhere in the codebase (which they do, because
+    # Phlex's `t(".x")` is still recorded as a literal `".x"` string in
+    # source — i18n-tasks reports the partial key with its prefix unresolved
+    # rather than as a false-positive missing key).
+    - app/views
+    - app/views/components
+    - app/views/layouts
+    - app/views/shared
+  exclude:
+    - app/assets
+    - app/javascript
+
+# Suppress noise — these are dynamic interpolated lookups that i18n-tasks
+# can't statically resolve, but we know they exist.
+ignore_missing:
+  # locale.available.<locale_code> — populated for every entry in
+  # I18n.available_locales by the LocaleSwitcher component.
+  - 'locale.available.*'
+  # Trigger labels are looked up dynamically by Codex::Discoveries::Toast.
+  - 'codex.discoveries.toast.triggers.*'
+
+ignore_unused:
+  # Cross-cutting flash messages used from outside the static view tree.
+  - 'flash.*'
+
+# Don't flag these as missing in non-base locales — they're intentionally
+# only set where needed (e.g. UK has pluralisation forms en does not need).
+ignore_inconsistent_interpolations:
+  - '*'

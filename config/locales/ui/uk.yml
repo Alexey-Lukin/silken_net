@@ -1,43 +1,44 @@
+---
 uk:
   ui:
+    data_table:
+      empty: Записів не знайдено.
+    photo_card:
+      confirm_remove: Видалити це фото з документації обслуговування?
+      remove_photo: 'Видалити фото: %{filename}'
+      view_photo: 'Переглянути фото: %{filename}'
     status:
-      pending: очікування
-      processing: обробка
-      sent: надіслано
-      confirmed: підтверджено
-      failed: збій
-      manual_review: ручний розгляд
-      issued: видано
       acknowledged: підтверджено
       active: активний
-      resolved: локалізовано
-      ignored: проігноровано
-      triggered: спрацьовано
-      paid: виплачено
-      expired: прострочено
-      draft: чернетка
-      fulfilled: виконано
+      aria_label: 'Статус: %{status}'
       breached: порушено
       cancelled: скасовано
-      idle: простій
-      updating: оновлення
-      maintenance: обслуговування
-      faulty: несправний
-      dormant: сплячий
-      removed: видалено
+      confirmed: підтверджено
       deceased: загинув
-      offline: офлайн
-      maintenance_needed: потрібне обслуговування
-      mythical: міфічний
-      extinct: вимерлий
-      endangered: під загрозою
-      thriving: процвітає
       destroyed: знищено
+      dormant: сплячий
+      draft: чернетка
+      endangered: під загрозою
+      expired: прострочено
+      extinct: вимерлий
+      failed: збій
+      faulty: несправний
+      fulfilled: виконано
+      idle: простій
+      ignored: проігноровано
+      issued: видано
+      maintenance: обслуговування
+      maintenance_needed: потрібне обслуговування
+      manual_review: ручний розгляд
+      mythical: міфічний
+      offline: офлайн
+      paid: виплачено
+      pending: очікування
+      processing: обробка
+      removed: видалено
+      resolved: локалізовано
+      sent: надіслано
+      thriving: процвітає
+      triggered: спрацьовано
       unknown: невідомо
-      aria_label: "Статус: %{status}"
-    data_table:
-      empty: "Записів не знайдено."
-    photo_card:
-      view_photo: "Переглянути фото: %{filename}"
-      remove_photo: "Видалити фото: %{filename}"
-      confirm_remove: "Видалити це фото з документації обслуговування?"
+      updating: оновлення

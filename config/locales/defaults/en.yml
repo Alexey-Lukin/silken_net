@@ -1,24 +1,25 @@
+---
 en:
+  accessibility:
+    close_navigation: Close navigation
+    open_navigation: Open navigation
+    skip_to_content: Skip to main content
   app:
     name: Silken Net
     tagline: Central Command Citadel
+  flash:
+    locale_changed: Language switched to %{lang}
+    unsupported_locale: Unsupported locale
   locale:
+    apply: Apply
+    available:
+      en: English
+      uk: Українська
     name: English
     short: EN
     switcher_label: Language
-    apply: Apply
-    available:
-      uk: Українська
-      en: English
   theme:
-    toggle_label: Toggle light / dark theme
-    light: Light
     dark: Dark
+    light: Light
     system: System
-  accessibility:
-    skip_to_content: Skip to main content
-    open_navigation: Open navigation
-    close_navigation: Close navigation
-  flash:
-    locale_changed: "Language switched to %{lang}"
-    unsupported_locale: "Unsupported locale"
+    toggle_label: Toggle light / dark theme

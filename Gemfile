@@ -61,6 +61,10 @@ group :development, :test do
   gem "bundler-audit", require: false
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "factory_bot_rails"
+  # Catches missing / unused / inconsistent translations across all locale
+  # files. Runs in CI as a hard gate (`bin/i18n-tasks health`) so PRs that
+  # add a key in one locale but forget the other fail the build.
+  gem "i18n-tasks", require: false
   gem "pg_query"
   gem "prosopite"
   gem "rspec-rails"

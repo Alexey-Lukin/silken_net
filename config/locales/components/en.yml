@@ -1,12 +1,13 @@
+---
 en:
   components:
-    pagination:
-      previous: Previous
-      next: Next
-      page: "Page %{page}"
-      of_total: "of %{total}"
     empty_state:
-      default_title: Nothing here yet
       default_description: Once data arrives it will surface here.
+      default_title: Nothing here yet
+    pagination:
+      next: Next
+      of_total: of %{total}
+      page: Page %{page}
+      previous: Previous
     skeleton:
       loading: Loading…

@@ -8,6 +8,11 @@ class ApplicationComponent < Phlex::HTML
   include Phlex::Rails::Helpers::ButtonTo
   include Phlex::Rails::Helpers::AssetPath
   include Phlex::Rails::Helpers::FormAuthenticityToken
+  # Adds `t(".key")` with class-name-based autoscope (Rails Convention
+  # over Configuration). `Codex::Show#t(".heading")` resolves to
+  # `I18n.t("codex.show.heading")`. Absolute keys (e.g. `t("flash.x")`)
+  # still work as a fallback for cross-cutting messages.
+  include Phlex::Rails::Helpers::Translate
   include Phlex::SVG::StandardElements
   include ActionView::RecordIdentifier
 

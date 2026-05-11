@@ -1,9 +1,10 @@
+---
 uk:
   pagination:
     aria_label: Пагінація
-    previous: "← Попередня"
-    next: "Наступна →"
-    previous_aria: Перейти на попередню сторінку
+    next: Наступна →
     next_aria: Перейти на наступну сторінку
-    page_indicator: "Сторінка %{current} / %{total}"
+    page_indicator: Сторінка %{current} / %{total}
     page_indicator_compact: "%{current} / %{total}"
+    previous: "← Попередня"
+    previous_aria: Перейти на попередню сторінку

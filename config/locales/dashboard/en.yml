@@ -1,15 +1,16 @@
+---
 en:
   dashboard:
     home:
+      feed:
+        empty: No recent activity
+        title: Live Transmission Feed
+        view_all: Open Mission Log →
+      map:
+        coordinates_label: 'LAT: %{lat} // LON: %{lon} // ALT: %{alt}m'
+        loading: Initializing Geospatial Matrix...
       stats:
-        forest_vitality: Forest Vitality
         active_soldiers: Active Soldiers
         carbon_treasury: Carbon Treasury
+        forest_vitality: Forest Vitality
         ionic_potential: Ionic Potential
-      map:
-        loading: Initializing Geospatial Matrix...
-        coordinates_label: "LAT: %{lat} // LON: %{lon} // ALT: %{alt}m"
-      feed:
-        title: Live Transmission Feed
-        empty: No recent activity
-        view_all: "Open Mission Log →"

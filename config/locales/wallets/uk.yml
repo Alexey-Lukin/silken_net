@@ -1,12 +1,13 @@
+---
 uk:
   wallets:
     index:
-      title: Скарбнична матриця
-      subtitle: Моніторинг потоку Silken Carbon Coins у мережі.
-      total_liquidity: "Загальна ліквідність:"
-      kind_soldier: Гаманець солдата
+      audit_link: Аудит реєстру →
       kind_clan: Скарбниця клану
-      system_reserve: Системний резерв
+      kind_soldier: Гаманець солдата
       locked_label: "🔒 %{amount} заблоковано"
       retired_label: "♻ %{amount} погашено"
-      audit_link: "Аудит реєстру →"
+      subtitle: Моніторинг потоку Silken Carbon Coins у мережі.
+      system_reserve: Системний резерв
+      title: Скарбнична матриця
+      total_liquidity: 'Загальна ліквідність:'
