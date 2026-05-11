@@ -131,7 +131,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
              params: { did: gateway.uid, timestamp: timestamp, signature: signature },
              as: :json
         expect(response).to have_http_status(:unauthorized)
-        expect(response.parsed_body["error"]).to include("Replay")
+        expect(response.parsed_body["error"]).to include("replay")
       end
 
       it "allows new auth with different timestamp and signature" do
@@ -180,7 +180,7 @@ RSpec.describe Api::V1::M2mAuthController, type: :request do
              params: { did: gateway.uid, timestamp: timestamp, signature: signature },
              as: :json
         expect(response).to have_http_status(:unauthorized)
-        expect(response.parsed_body["error"]).to include("Replay")
+        expect(response.parsed_body["error"]).to include("replay")
       end
 
       it "allows different signatures during Redis outage" do

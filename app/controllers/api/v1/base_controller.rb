@@ -103,14 +103,14 @@ module Api
       # Content component передається як параметр — НЕ через блок,
       # оскільки блок виконується в контексті контролера (Ruby closure),
       # і `render` всередині блоку викликає контролерний render (DoubleRenderError).
-      def render_dashboard(title:, component:)
+      def render_dashboard(title:, component:, status: :ok)
         render DashboardLayout.new(
           title: title,
           current_user: current_user,
           current_path: request.path,
           ews_alert_count: ews_alert_count_cached,
           content: component
-        )
+        ), status: status
       end
 
       # Метод для рендерингу standalone auth-сторінок (login, forgot/reset password).

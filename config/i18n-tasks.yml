@@ -51,6 +51,11 @@ ignore_missing:
   - 'locale.available.*'
   # Trigger labels are looked up dynamically by Codex::Discoveries::Toast.
   - 'codex.discoveries.toast.triggers.*'
+  # Phlex component autoscope: i18n-tasks resolves t(".key") using file path +
+  # method name, producing keys like `components.wallets.show.render_header.title`.
+  # Our ApplicationComponent#t resolves via class name only (e.g. `wallets.show.title`).
+  # All `components.*` detected keys are false positives — suppress them.
+  - 'components.*'
 
 ignore_unused:
   # Cross-cutting flash messages used from outside the static view tree.
