@@ -1,0 +1,35 @@
+---
+uk:
+  users:
+    profile:
+      access:
+        command_execution: Виконання команд
+        encryption: Рівень шифрування
+        full: Повний
+        limited: Обмежений
+        organization: Доступ до організації
+      activity:
+        last_sync: Остання синхронізація
+        offline: ОФЛАЙН
+        online: ОНЛАЙН
+        records: Записи
+      id: 'ID: #%{id}'
+      none: Немає
+      provider:
+        primary: Основний
+      role: 'Роль: %{role}'
+      sections:
+        access_privileges: Нейронні привілеї доступу
+        activity: Операційна активність
+        linked_providers: Прив'язані провайдери
+        security: Стан безпеки
+      security:
+        active: Активний
+        disabled: Вимкнено
+        linked_count: "%{count} прив'язано"
+        manage: Керувати →
+        mfa: 2FA / MFA
+        not_set: Не встановлено
+        password: Пароль
+        providers: Провайдери
+        set: Встановлено

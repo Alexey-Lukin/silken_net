@@ -20,8 +20,8 @@ module Gateways
     def header_section
       div(class: "flex justify-between items-start mb-6") do
         div do
-          h3(class: "text-lg font-light tracking-widest text-emerald-400 uppercase") { "Queen // #{@gateway.uid}" }
-          p(class: "text-tiny font-mono text-emerald-800") { "Cluster: #{@gateway.cluster&.name || 'UNASSIGNED'}" }
+          h3(class: "text-lg font-light tracking-widest text-emerald-400 uppercase") { t(".label", uid: @gateway.uid) }
+          p(class: "text-tiny font-mono text-emerald-800") { t(".cluster", name: @gateway.cluster&.name || t(".unassigned")) }
         end
 
         # Живий індикатор зв'язку
@@ -34,8 +34,8 @@ module Gateways
 
     def stats_section
       div(class: "grid grid-cols-2 gap-4 mb-6") do
-        stat_block("Soldiers", @gateway.cluster&.active_trees_count || 0)
-        stat_block("Signal", "#{@latest_log&.signal_quality_percentage || 0}%")
+        stat_block(t(".soldiers"), @gateway.cluster&.active_trees_count || 0)
+        stat_block(t(".signal"), "#{@latest_log&.signal_quality_percentage || 0}%")
       end
     end
 
@@ -48,11 +48,11 @@ module Gateways
 
     def footer_section
       div(class: "flex justify-between items-center mt-4 pt-4 border-t border-emerald-900/50") do
-        p(class: "text-mini font-mono text-gray-600") { @gateway.last_seen_at&.strftime("%H:%M // %d.%m") || "SILENT" }
+        p(class: "text-mini font-mono text-gray-600") { @gateway.last_seen_at&.strftime("%H:%M // %d.%m") || t(".silent") }
         a(
           href: api_v1_gateway_path(@gateway),
           class: "text-tiny uppercase tracking-widest text-emerald-600 hover:text-emerald-300 transition-colors"
-        ) { "Open Relay →" }
+        ) { t(".open") }
       end
     end
 

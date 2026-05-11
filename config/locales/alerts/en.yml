@@ -1,24 +1,36 @@
+---
 en:
   alerts:
+    badge:
+      severities:
+        critical: critical
+        high: high
+        low: low
+        medium: medium
+      statuses:
+        active: active
+        ignored: ignored
+        resolved: resolved
+      summary: "%{severity} — %{status}"
     index:
-      title: Active Threats Matrix
-      subtitle: Monitoring live telemetry for anomalies and baseline deviations.
       filter_all: all
-      filter_critical: critical
-      filter_medium: medium
-      filter_low: low
       filter_aria_all: Show all alerts
-      filter_aria_severity: "Filter alerts by %{severity} severity"
-    table:
-      severity: Severity
-      alert_type: Alert Type
-      source: Source
-      message: Event / Message
-      timestamp: Timestamp
-      command: Command
+      filter_aria_severity: Filter alerts by %{severity} severity
+      filter_critical: critical
+      filter_low: low
+      filter_medium: medium
+      subtitle: Monitoring live telemetry for anomalies and baseline deviations.
+      title: Active Threats Matrix
     row:
+      acknowledge: Acknowledge & Resolve →
+      resolve_aria: 'Resolve alert #%{id}'
+      resolve_confirm: 'Confirm threat localisation for alert #%{id}?'
       resolved: "✓ Resolved"
-      acknowledge: "Acknowledge & Resolve →"
-      resolve_aria: "Resolve alert #%{id}"
-      resolve_confirm: "Confirm threat localisation for alert #%{id}?"
-      severity_aria: "Severity: %{severity}"
+      severity_aria: 'Severity: %{severity}'
+    table:
+      alert_type: Alert Type
+      command: Command
+      message: Event / Message
+      severity: Severity
+      source: Source
+      timestamp: Timestamp

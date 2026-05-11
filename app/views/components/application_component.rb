@@ -8,6 +8,28 @@ class ApplicationComponent < Phlex::HTML
   include Phlex::Rails::Helpers::ButtonTo
   include Phlex::Rails::Helpers::AssetPath
   include Phlex::Rails::Helpers::FormAuthenticityToken
+  # Adds `t(".key")` with class-name-based autoscope (Rails Convention
+  # over Configuration). `Codex::Show#t(".heading")` resolves to
+  # `I18n.t("codex.show.heading")`. Absolute keys (e.g. `t("flash.x")`)
+  # still work as a fallback for cross-cutting messages.
+  #
+  # We override the Phlex::Rails helper because it requires a Rails view
+  # context (`helpers.translate`), which is `nil` in component specs that
+  # render via `Component.new(...).call` and in Turbo Stream broadcasts
+  # (where Phlex is invoked outside a controller). Falling back to `I18n.t`
+  # for absolute keys (`"foo.bar"`) keeps both call sites working.
+  include Phlex::Rails::Helpers::Translate
+
+  def t(key, **options)
+    if key.to_s.start_with?(".")
+      klass_name = self.class.name || self.class.ancestors.lazy.filter_map(&:name).first
+      scope = klass_name&.underscore&.gsub("/", ".") || ""
+      I18n.t("#{scope}#{key}", **options)
+    else
+      I18n.t(key, **options)
+    end
+  end
+  alias_method :translate, :t
   include Phlex::SVG::StandardElements
   include ActionView::RecordIdentifier
 

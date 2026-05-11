@@ -27,7 +27,7 @@ module Settings
       div(class: "flex justify-between items-end mb-4") do
         div do
           h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "🧠 Brain Map — Organization Settings" }
-          p(class: "text-xs text-gray-600 mt-1") { "Конфігурація Організації: назва, білінг, крипто-адреса, пороги тривоги та AI-чутливість." }
+          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
       end
     end

@@ -1,12 +1,43 @@
+---
 en:
   wallets:
+    balance_display:
+      available: 'Available:'
+      decoration: SCC
+      esg_retired: 'ESG Retired:'
+      locked: 'Locked:'
+      locked_for: 'Locked for: %{owner}'
+      verified_balance: Verified Balance
     index:
-      title: Treasury Matrix
-      subtitle: Monitoring the flow of Silken Carbon Coins across the network.
-      total_liquidity: "Total Liquidity:"
-      kind_soldier: Soldier Wallet
+      audit_link: Audit Ledger →
       kind_clan: Clan Treasury
-      system_reserve: System Reserve
+      kind_soldier: Soldier Wallet
       locked_label: "🔒 %{amount} locked"
       retired_label: "♻ %{amount} retired"
-      audit_link: "Audit Ledger →"
+      subtitle: Monitoring the flow of Silken Carbon Coins across the network.
+      system_reserve: System Reserve
+      title: Treasury Matrix
+      total_liquidity: 'Total Liquidity:'
+    metadata_frame:
+      available_balance: Available Balance
+      esg_retired: ESG Retired
+      locked_balance: Locked Balance
+      network: Network
+      not_provisioned: NOT_PROVISIONED
+      polygon_address: Polygon Address
+      polygon_mainnet: Polygon PoS (Mainnet)
+      title: Blockchain Identity
+    show:
+      actions: Actions
+      columns:
+        amount: Amount
+        status: Status
+        timestamp: Timestamp
+        tx_hash: TX Hash
+        type: Type
+      empty: No transactions detected.
+      export_csv: Export CSV Ledger
+      export_csv_aria: Export transaction ledger as CSV
+      ledger_title: On-Chain Transaction Ledger
+      sync_polygon: Sync with Polygon
+      sync_polygon_aria: Sync wallet with Polygon blockchain

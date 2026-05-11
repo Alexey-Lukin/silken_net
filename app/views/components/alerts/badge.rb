@@ -22,10 +22,13 @@ module Alerts
       severity_class = SEVERITY_STYLES.fetch(@alert.severity.to_s, "bg-zinc-800 text-zinc-300")
       status_class   = STATUS_STYLES.fetch(@alert.status.to_s, "")
 
+      severity_label = t(".severities.#{@alert.severity}", default: @alert.severity.to_s)
+      status_label   = t(".statuses.#{@alert.status}", default: @alert.status.to_s)
+
       span(
         id: "alert_badge_#{@alert.id}",
         class: tokens("px-2 py-0.5 rounded text-tiny font-bold uppercase", severity_class, status_class)
-      ) { "#{@alert.severity} — #{@alert.status}" }
+      ) { t(".summary", severity: severity_label, status: status_label) }
     end
   end
 end

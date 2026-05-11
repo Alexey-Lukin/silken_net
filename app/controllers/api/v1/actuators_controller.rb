@@ -53,7 +53,7 @@ module Api
         idempotency_key = request.headers["Idempotency-Key"]
 
         if request.format.json? && idempotency_key.blank?
-          return render json: { error: "Заголовок Idempotency-Key обов'язковий для виконання команд актуатора." },
+          return render json: { error: I18n.t("flash.actuators.idempotency_required") },
                         status: :bad_request
         end
 
@@ -67,7 +67,7 @@ module Api
         end
 
         if @actuator.commands.pending.exists?
-          return render json: { error: "Актуатор вже має активну команду. Зачекайте на її завершення." },
+          return render json: { error: I18n.t("flash.actuators.command_in_flight") },
                         status: :conflict
         end
 

@@ -1,0 +1,56 @@
+---
+en:
+  account_security:
+    identity:
+      cannot_unlink_last: Cannot unlink the last login method without a password.
+      locked_flash: "%{provider} locked."
+      locked_json: Identity %{provider} locked.
+      set_password_first: Set a password before unlinking the last provider.
+      unlinked_flash: "%{provider} unlinked."
+      unlinked_json: Provider %{provider} unlinked.
+      unlocked_flash: "%{provider} unlocked."
+      unlocked_json: Identity %{provider} unlocked.
+    mfa:
+      disabled: MFA disabled.
+      enabled: MFA enabled.
+      enabled_with_codes: MFA enabled. Save your recovery codes!
+    password:
+      current_invalid: Current password is incorrect.
+      mismatch: Passwords do not match.
+      too_short_flash: Password must be at least 12 characters long.
+      too_short_json: New password must be at least 12 characters long.
+      updated_flash: Password successfully updated.
+      updated_json: Password updated.
+    show:
+      heading: "🔐 Account Security"
+      identities:
+        available_heading: Available Providers
+        heading: Linked Identity Providers
+        link_provider: Link %{provider}
+        lock: Lock
+        locked: Locked
+        none_linked: No providers linked.
+        primary: Primary
+        uid_line: 'UID: %{prefix}...'
+        unlink: Unlink
+        unlink_confirm: Unlink %{provider}?
+        unlink_disabled_title: Set a password before unlinking.
+        unlock: Unlock
+      mfa:
+        disable_button: Disable MFA
+        disabled_hint: "⚠️ MFA disabled. We recommend enabling it to protect your account."
+        enable_button: Enable MFA
+        enabled_with_remaining: "✅ MFA enabled. Recovery codes remaining: %{count}"
+        heading: Two-Factor Authentication (2FA)
+        recovery_warning: Save your recovery codes in a safe place. They are required to log in if you lose your TOTP device.
+      password:
+        change_submit: Change Password
+        confirm_label: Confirm New Password
+        current_label: Current Password
+        heading: Password
+        new_label: New Password (min 12 chars)
+        not_set: "⚠️ Password not set. Set a password to be able to unlink providers."
+        set_ok: "✅ Password set"
+        set_submit: Set Password
+      subtitle: Manage sign-in methods, two-factor authentication, and linked providers.
+    title: Account Security

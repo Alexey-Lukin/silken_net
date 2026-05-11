@@ -1,49 +1,50 @@
+---
 uk:
   navigation:
-    logo:
-      title: Silken Net
-      subtitle: Центральна Цитадель Управління
-    status:
-      sync_label: "Синхр.: 1.12 ТГц"
-      version: v8.0.ocean
-    sections:
-      strategic_insight: Стратегічний контур
-      library: Бібліотека
-      forest_operations: Лісові операції
-      neural_network: Нейронна мережа
-      administration: Адміністрування
-    items:
-      oracle_visions: Видіння Оракула
-      treasury_matrix: Скарбнична матриця
-      naas_contracts: NaaS-контракти
-      blockchain_ledger: Реєстр блокчейну
-      reports_archive: Архів звітів
-      codex_atlas: Атлас Кодексу
-      battle_arena: Арена битв
-      leaderboard: Таблиця лідерів
-      my_codex: Мій Кодекс
-      my_fraction: Моя фракція
-      threat_alerts: Сигнали загрози
-      soldier_fleet: Флот солдатів
-      maintenance_log: Журнал обслуговування
-      crew_registry: Реєстр екіпажу
-      clan_hierarchy: Ієрархія кланів
-      queen_relays: Ретранслятори Королеви
-      species_dna: ДНК видів
-      firmware_ota: Прошивка OTA
-      live_telemetry: Жива телеметрія
-      initiate_node: Ініціювати вузол
-      account_security: Безпека акаунту
-      notifications: Сповіщення
-      org_settings: Налаштування організації
-      audit_log: Журнал аудиту
-      system_audits: Системні перевірки
-      system_health: Стан системи
-    footer:
-      role: Архітектор
-      access: Канал повного доступу
     breadcrumb:
       root: Цитадель
+    footer:
+      access: Канал повного доступу
+      role: Архітектор
+    items:
+      account_security: Безпека акаунту
+      audit_log: Журнал аудиту
+      battle_arena: Арена битв
+      blockchain_ledger: Реєстр блокчейну
+      clan_hierarchy: Ієрархія кланів
+      codex_atlas: Атлас Кодексу
+      crew_registry: Реєстр екіпажу
+      firmware_ota: Прошивка OTA
+      initiate_node: Ініціювати вузол
+      leaderboard: Таблиця лідерів
+      live_telemetry: Жива телеметрія
+      maintenance_log: Журнал обслуговування
+      my_codex: Мій Кодекс
+      my_fraction: Моя фракція
+      naas_contracts: NaaS-контракти
+      notifications: Сповіщення
+      oracle_visions: Видіння Оракула
+      org_settings: Налаштування організації
+      queen_relays: Ретранслятори Королеви
+      reports_archive: Архів звітів
+      soldier_fleet: Флот солдатів
+      species_dna: ДНК видів
+      system_audits: Системні перевірки
+      system_health: Стан системи
+      threat_alerts: Сигнали загрози
+      treasury_matrix: Скарбнична матриця
+    logo:
+      subtitle: Центральна Цитадель Управління
+      title: Silken Net
+    sections:
+      administration: Адміністрування
+      forest_operations: Лісові операції
+      library: Бібліотека
+      neural_network: Нейронна мережа
+      strategic_insight: Стратегічний контур
+    status:
+      sync_label: 'Синхр.: 1.12 ТГц'
+      version: v8.0.ocean
     top_bar:
       core_sync_label: Синхр. ядра
       core_sync_value: 1.12 ТГц

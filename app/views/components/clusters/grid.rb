@@ -28,9 +28,9 @@ module Clusters
 
     def render_empty_state
       render Views::Shared::UI::EmptyState.new(
-        title: "Matrix is empty. No clusters detected.",
+        title: t(".empty_title"),
         icon: "◎",
-        description: "Deploy sensors to initialize cluster grid."
+        description: t(".empty_description")
       )
     end
   end

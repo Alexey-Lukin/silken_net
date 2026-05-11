@@ -20,18 +20,18 @@ module Alerts
         # application.css § "Responsive Table Pattern". Each label mirrors
         # the column header in `Alerts::Index` so the visible text matches
         # what a desktop user would see in the <th>.
-        td(class: "p-4", data_label: t_("table.severity")) { severity_badge }
-        td(class: "p-4 text-mini uppercase text-gaia-text-subtle tracking-widest", data_label: t_("table.alert_type")) do
+        td(class: "p-4", data_label: t("alerts.table.severity")) { severity_badge }
+        td(class: "p-4 text-mini uppercase text-gaia-text-subtle tracking-widest", data_label: t("alerts.table.alert_type")) do
           @alert.alert_type.to_s.humanize
         end
-        td(class: "p-4 text-gaia-primary", data_label: t_("table.source")) do
+        td(class: "p-4 text-gaia-primary", data_label: t("alerts.table.source")) do
           "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}"
         end
-        td(class: "p-4 text-gaia-text-subtle", data_label: t_("table.message")) do
+        td(class: "p-4 text-gaia-text-subtle", data_label: t("alerts.table.message")) do
           div { @alert.message }
           render_codex_citations
         end
-        td(class: "p-4 text-tiny text-gaia-text-muted", data_label: t_("table.timestamp")) do
+        td(class: "p-4 text-tiny text-gaia-text-muted", data_label: t("alerts.table.timestamp")) do
           @alert.created_at.strftime("%H:%M:%S")
         end
         # Action cell intentionally has no data-label — the CSS rule turns
@@ -42,7 +42,6 @@ module Alerts
 
     private
 
-    def t_(key, **opts) = I18n.t("alerts.#{key}", **opts)
 
     # Phase 6 — Codex citation strip beneath the alert message. A
     # forester citing `chainsaw_protocol` on a `chainsaw_detected`
@@ -68,7 +67,7 @@ module Alerts
       end
       span(
         role: "status",
-        aria_label: t_("row.severity_aria", severity: @alert.severity),
+        aria_label: t(".severity_aria", severity: @alert.severity),
         class: tokens("px-2 py-0.5 rounded-sm text-mini uppercase font-bold", color)
       ) { @alert.severity }
     end
@@ -76,17 +75,17 @@ module Alerts
     def action_button
       if @alert.status_resolved?
         span(class: "text-gaia-text-muted text-mini uppercase tracking-widest", role: "status") do
-          t_("row.resolved")
+          t(".resolved")
         end
       else
         # Acknowledge form posts via Turbo Stream — single-row replace.
         button_to(
-          t_("row.acknowledge"),
+          t(".acknowledge"),
           resolve_api_v1_alert_path(@alert),
           method: :patch,
-          aria: { label: t_("row.resolve_aria", id: @alert.id) },
+          aria: { label: t(".resolve_aria", id: @alert.id) },
           class: resolve_button_classes,
-          data: { turbo_confirm: t_("row.resolve_confirm", id: @alert.id) }
+          data: { turbo_confirm: t(".resolve_confirm", id: @alert.id) }
         )
       end
     end

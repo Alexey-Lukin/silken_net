@@ -33,9 +33,9 @@ module Codex
           )
         else
           render Views::Shared::UI::EmptyState.new(
-            title: "Codex is silent. No archetypes match this filter.",
+            title: t("codex.atlas.empty.title"),
             icon: "📖",
-            description: "Try a broader realm or clear the search."
+            description: t("codex.atlas.empty.description")
           )
         end
       end
@@ -46,10 +46,12 @@ module Codex
     def render_header
       div(class: "flex justify-between items-end gap-4 border-b border-gaia-border pb-3") do
         div do
-          p(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { "Lore Layer" }
-          h2(class: "text-2xl font-extralight tracking-tight text-gaia-text") { "Codex of Archetypes" }
+          p(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { t("codex.atlas.kicker") }
+          h2(class: "text-2xl font-extralight tracking-tight text-gaia-text") { t("codex.atlas.title") }
         end
-        p(class: "text-tiny font-mono text-gaia-text-muted") { "#{@pagy.count} archetypes catalogued" }
+        p(class: "text-tiny font-mono text-gaia-text-muted") do
+          t("codex.atlas.count", count: @pagy.count)
+        end
       end
     end
 

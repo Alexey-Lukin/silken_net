@@ -14,7 +14,7 @@ module Codex
 
       def view_template
         section(class: "space-y-3") do
-          h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { "Discussion" }
+          h3(class: "text-mini uppercase tracking-[0.4em] text-gaia-text-muted") { t("codex.comments.heading") }
 
           div(
             id: list_dom_id,
@@ -22,7 +22,7 @@ module Codex
             data: { controller: "codex--comment", "codex--comment-target": "list" }
           ) do
             if @comments.empty?
-              p(class: "text-tiny text-gaia-text-muted italic") { "Be the first to share what this archetype means to you." }
+              p(class: "text-tiny text-gaia-text-muted italic") { t("codex.comments.empty") }
             else
               @comments.each do |comment|
                 render Codex::Comments::Item.new(comment: comment)

@@ -1,0 +1,16 @@
+---
+uk:
+  gateways:
+    index:
+      nodes_online: 'Вузлів онлайн:'
+      subtitle: Моніторинг нейронних синапсів лісової мережі.
+      title: Реєстр Королев // Глобальні ретранслятори
+    item:
+      cluster: 'Кластер: %{name}'
+      label: Королева // %{uid}
+      open: Відкрити ретранслятор →
+      open_aria: Відкрити деталі шлюзу %{uid}
+      signal: Сигнал
+      silent: ТИША
+      soldiers: Солдати
+      unassigned: НЕ ПРИЗНАЧЕНО

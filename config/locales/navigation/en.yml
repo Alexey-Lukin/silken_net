@@ -1,49 +1,50 @@
+---
 en:
   navigation:
-    logo:
-      title: Silken Net
-      subtitle: Central Command Citadel
-    status:
-      sync_label: "Sync: 1.12 THz"
-      version: v8.0.ocean
-    sections:
-      strategic_insight: Strategic Insight
-      library: Library
-      forest_operations: Forest Operations
-      neural_network: Neural Network
-      administration: Administration
-    items:
-      oracle_visions: Oracle Visions
-      treasury_matrix: Treasury Matrix
-      naas_contracts: NaaS Contracts
-      blockchain_ledger: Blockchain Ledger
-      reports_archive: Reports Archive
-      codex_atlas: Codex Atlas
-      battle_arena: Battle Arena
-      leaderboard: Leaderboard
-      my_codex: My Codex
-      my_fraction: My Fraction
-      threat_alerts: Threat Alerts
-      soldier_fleet: Soldier Fleet
-      maintenance_log: Maintenance Log
-      crew_registry: Crew Registry
-      clan_hierarchy: Clan Hierarchy
-      queen_relays: Queen Relays
-      species_dna: Species DNA
-      firmware_ota: Firmware OTA
-      live_telemetry: Live Telemetry
-      initiate_node: Initiate Node
-      account_security: Account Security
-      notifications: Notifications
-      org_settings: Org Settings
-      audit_log: Audit Log
-      system_audits: System Audits
-      system_health: System Health
-    footer:
-      role: Architect
-      access: Full Access Link
     breadcrumb:
       root: Citadel
+    footer:
+      access: Full Access Link
+      role: Architect
+    items:
+      account_security: Account Security
+      audit_log: Audit Log
+      battle_arena: Battle Arena
+      blockchain_ledger: Blockchain Ledger
+      clan_hierarchy: Clan Hierarchy
+      codex_atlas: Codex Atlas
+      crew_registry: Crew Registry
+      firmware_ota: Firmware OTA
+      initiate_node: Initiate Node
+      leaderboard: Leaderboard
+      live_telemetry: Live Telemetry
+      maintenance_log: Maintenance Log
+      my_codex: My Codex
+      my_fraction: My Fraction
+      naas_contracts: NaaS Contracts
+      notifications: Notifications
+      oracle_visions: Oracle Visions
+      org_settings: Org Settings
+      queen_relays: Queen Relays
+      reports_archive: Reports Archive
+      soldier_fleet: Soldier Fleet
+      species_dna: Species DNA
+      system_audits: System Audits
+      system_health: System Health
+      threat_alerts: Threat Alerts
+      treasury_matrix: Treasury Matrix
+    logo:
+      subtitle: Central Command Citadel
+      title: Silken Net
+    sections:
+      administration: Administration
+      forest_operations: Forest Operations
+      library: Library
+      neural_network: Neural Network
+      strategic_insight: Strategic Insight
+    status:
+      sync_label: 'Sync: 1.12 THz'
+      version: v8.0.ocean
     top_bar:
       core_sync_label: Core Sync
       core_sync_value: 1.12 THz

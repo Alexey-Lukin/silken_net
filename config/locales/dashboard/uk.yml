@@ -1,15 +1,25 @@
+---
 uk:
   dashboard:
+    event_row:
+      etherisc_claim: "🛡️ Etherisc DIP виплата %{amount} USDC → %{address}"
+      maintenance: "🔧 %{action}: від %{user}"
+      minted: "⬢ Створено %{amount} SCC → %{target}"
+      pool: Пул
+      system_pulse: "● Виявлено пульс системи"
+      system_user: Система
+      threat: "⚠ Загроза: %{type} в %{cluster}"
+      unknown_cluster: Невідомо
     home:
+      feed:
+        empty: Немає недавньої активності
+        title: Стрічка передач у реальному часі
+        view_all: Відкрити журнал місій →
+      map:
+        coordinates_label: 'LAT: %{lat} // LON: %{lon} // ALT: %{alt}м'
+        loading: Ініціалізація геопросторової матриці...
       stats:
-        forest_vitality: Життєздатність лісу
         active_soldiers: Активні солдати
         carbon_treasury: Вуглецева скарбниця
+        forest_vitality: Життєздатність лісу
         ionic_potential: Іонний потенціал
-      map:
-        loading: Ініціалізація геопросторової матриці...
-        coordinates_label: "LAT: %{lat} // LON: %{lon} // ALT: %{alt}м"
-      feed:
-        title: Стрічка передач у реальному часі
-        empty: Немає недавньої активності
-        view_all: "Відкрити журнал місій →"

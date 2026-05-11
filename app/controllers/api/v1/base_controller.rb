@@ -13,6 +13,14 @@ module Api
 
       include Pagy::Method
       include Pundit::Authorization
+      # Resolve `I18n.locale` from params → cookie → Accept-Language → default.
+      # Without this every Dashboard request fell back to `default_locale`
+      # because `Api::V1::BaseController` does NOT inherit from
+      # `ApplicationController` (which is the one that included the concern
+      # historically). The user-visible symptom was "switching the language
+      # needs two clicks": the first POST wrote the cookie but the redirected
+      # GET ignored it.
+      include LocaleSettable
 
       # --- ПОРЯДОК ЗАХИСТУ ---
       before_action :authenticate_user!
@@ -95,20 +103,20 @@ module Api
       # Content component передається як параметр — НЕ через блок,
       # оскільки блок виконується в контексті контролера (Ruby closure),
       # і `render` всередині блоку викликає контролерний render (DoubleRenderError).
-      def render_dashboard(title:, component:)
+      def render_dashboard(title:, component:, status: :ok)
         render DashboardLayout.new(
           title: title,
           current_user: current_user,
           current_path: request.path,
           ews_alert_count: ews_alert_count_cached,
           content: component
-        )
+        ), status: status
       end
 
       # Метод для рендерингу standalone auth-сторінок (login, forgot/reset password).
       # Забезпечує повний HTML-документ з CSS/JS includes без sidebar/DashboardLayout.
-      def render_auth_page(title: "Access Portal", component:, status: :ok)
-        render AuthLayout.new(title: title, content: component), status: status
+      def render_auth_page(title: "Access Portal", component:)
+        render AuthLayout.new(title: title, content: component)
       end
 
       # Гарантує, що у поточного користувача є призначена організація.
@@ -125,12 +133,12 @@ module Api
 
         respond_to do |format|
           format.json do
-            render json: { error: "No organization assigned to this account.", code: "no_organization" },
+            render json: { error: I18n.t("errors.api.no_organization"), code: "no_organization" },
                    status: :unprocessable_content
           end
           format.html do
             render_auth_page(
-              title: "Access Denied",
+              title: I18n.t("errors.api.no_organization_title"),
               component: Errors::NoOrganization.new,
               status: :unprocessable_content
             )
@@ -140,23 +148,23 @@ module Api
 
       # 4. СТАНДАРТИ ВІДПОВІДЕЙ (The Oracle's Voice)
       def render_unauthorized
-        render json: { error: "Необхідна автентифікація. Брама закрита." }, status: :unauthorized
+        render json: { error: I18n.t("errors.api.unauthorized") }, status: :unauthorized
       end
 
       def render_forbidden
-        render json: { error: "Недостатньо прав для цієї еволюції." }, status: :forbidden
+        render json: { error: I18n.t("errors.api.forbidden") }, status: :forbidden
       end
 
       def render_forbidden_pundit(_exception)
-        render json: { error: "Недостатньо прав для цієї еволюції." }, status: :forbidden
+        render json: { error: I18n.t("errors.api.forbidden") }, status: :forbidden
       end
 
       def render_not_found(exception)
-        render json: { error: "#{exception.model} не знайдено в матриці лісу." }, status: :not_found
+        render json: { error: I18n.t("errors.api.not_found", model: exception.model) }, status: :not_found
       end
 
       def render_parameter_missing(exception)
-        render json: { error: "Відсутній обов'язковий параметр: #{exception.param}" }, status: :bad_request
+        render json: { error: I18n.t("errors.api.missing_parameter", param: exception.param) }, status: :bad_request
       end
 
       def render_validation_error(record)
@@ -166,7 +174,7 @@ module Api
       def render_internal_server_error(exception)
         # Логуємо детальну помилку в консоль/файл, але не показуємо її клієнту
         Rails.logger.fatal "🚨 [API CRITICAL] #{exception.message}\n#{exception.backtrace.first(5).join("\n")}"
-        render json: { error: "Збій у ядрі Океану. Повідомте Архітектора." }, status: :internal_server_error
+        render json: { error: I18n.t("errors.api.internal") }, status: :internal_server_error
       end
 
       # 5. PAGINATION METADATA (Pagy Helper)

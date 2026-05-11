@@ -1,0 +1,73 @@
+---
+en:
+  reports:
+    carbon_absorption:
+      decoration: CO₂
+      footer: Report generated at %{at} for %{org}
+      generated: 'Generated: %{at}'
+      metrics:
+        active_trees: Active Trees
+        active_trees_sub: Online
+        active_wallets: Active Wallets
+        active_wallets_sub: Wallets
+        total_carbon_points: Total Carbon Points
+        total_carbon_points_sub: SCC
+        total_trees: Total Trees
+        total_trees_sub: Deployed
+      table:
+        active_wallets: Active Wallets Generating Points
+        metric: Metric
+        total_points: Total Carbon Points Accumulated
+        trees_deployed: Trees Deployed (All Statuses)
+        trees_online: Trees Currently Online
+        value: Value
+      title: "🌿 Carbon Absorption Report"
+    financial_summary:
+      breakdown:
+        category: Category
+        confirmed: Confirmed
+        count: Count
+        failed: Failed
+        pending: Pending
+        title: Blockchain Transactions Breakdown
+        total_transactions: Total Transactions
+      decoration: FIN
+      footer: Report generated at %{at} for %{org}
+      generated: 'Generated: %{at}'
+      metrics:
+        active_contracts: Active Contracts
+        active_contracts_sub: NaaS
+        total_contracts: Total Contracts
+        total_contracts_sub: Lifetime
+        total_invested: Total Invested
+        total_invested_sub: SCC
+      title: "💎 Financial Summary Report"
+    index:
+      actions:
+        csv: CSV ↓
+        pdf: PDF ↓
+        view: View →
+      available: Available Reports
+      carbon:
+        description: CO₂ absorption and environmental audit.
+        title: Carbon Absorption Report
+      financial:
+        description: Financial performance and blockchain transactions.
+        title: Financial Summary Report
+      hero:
+        biological_assets: Biological Assets
+        biological_assets_sub: Trees
+        capital_injected: Capital Injected
+        capital_injected_sub: SCC Invested
+        carbon_yield: Carbon Yield
+        carbon_yield_sub: SCC Total
+        health_score: Health Score
+        health_score_sub: Index
+        sectors: Sectors
+        sectors_sub: Clusters
+        threat_active: ACTIVE
+        threat_clear: CLEAR
+        threat_level: Threat Level
+      organization: 'Organization:'
+      subtitle: 'Consolidated reporting for investors: environmental audits and financial performance.'
+      title: "📊 The Archive — Reports Hub"

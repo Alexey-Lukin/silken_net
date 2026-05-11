@@ -34,7 +34,7 @@ module Api
           respond_to do |format|
             format.json do
               render json: {
-                message: "Налаштування сповіщень оновлено.",
+                message: I18n.t("flash.notifications.updated"),
                 channels: {
                   email: current_user.email_address,
                   phone: current_user.phone_number,
@@ -43,7 +43,7 @@ module Api
                 }
               }
             end
-            format.html { redirect_to api_v1_notifications_settings_path, notice: "Налаштування оновлено." }
+            format.html { redirect_to api_v1_notifications_settings_path, notice: I18n.t("flash.settings.updated") }
           end
         else
           respond_to do |format|

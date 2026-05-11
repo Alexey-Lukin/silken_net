@@ -29,8 +29,9 @@ module Api
               render json: { data: nodes.map { |n| serialize(n) } }
             end
             format.html do
-              render(
-                ::Codex::Leaderboard::Table.new(
+              render_dashboard(
+                title: I18n.t("codex.leaderboard.page_title", default: "Codex · Leaderboard"),
+                component: ::Codex::Leaderboard::Table.new(
                   realm: realm, nodes: nodes, limit: limit
                 )
               )

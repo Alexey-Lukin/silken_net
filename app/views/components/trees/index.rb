@@ -33,13 +33,13 @@ module Trees
     def render_header
       div(class: "flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-6 border-b border-gaia-border pb-6") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.5em] text-gaia-text-muted") { t_("eyebrow") }
+          h3(class: "text-tiny uppercase tracking-[0.5em] text-gaia-text-muted") { t(".eyebrow") }
           h2(class: "text-3xl font-extralight text-gaia-text mt-1") { @cluster.name }
         end
 
         div(class: "flex gap-8 text-right font-mono text-tiny") do
-          header_stat(t_("header_population"), @pagy&.count || @trees.size, t_("header_population_unit"))
-          header_stat(t_("header_operational"), @cluster.active_trees_count, t_("header_operational_unit"))
+          header_stat(t(".header_population"), @pagy&.count || @trees.size, t(".header_population_unit"))
+          header_stat(t(".header_operational"), @cluster.active_trees_count, t(".header_operational_unit"))
         end
       end
     end
@@ -51,8 +51,6 @@ module Trees
         span(class: "ml-1 text-gaia-text-subtle") { unit }
       end
     end
-
-    def t_(key, **opts) = I18n.t("trees.index.#{key}", **opts)
 
     def render_soldier_node(tree)
       voltage = tree.ionic_voltage
@@ -74,7 +72,7 @@ module Trees
         # Індикатор заряду іоністора (Streaming Potential Reserve)
         div(class: "space-y-1") do
           div(class: "flex justify-between text-micro uppercase text-gaia-text font-mono") do
-            span { I18n.t("trees.index.ionic_pulse") }
+            span { t(".ionic_pulse") }
             span { "#{voltage}mV" }
           end
           div(class: "w-full h-0.5 bg-gaia-surface-sunken overflow-hidden") do

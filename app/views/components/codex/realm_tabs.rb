@@ -14,10 +14,10 @@ module Codex
 
     def view_template
       nav(
-        aria_label: "Codex realm filter",
+        aria_label: t(".aria_label"),
         class: "flex flex-wrap gap-2 border-b border-gaia-border pb-3"
       ) do
-        render_tab(label: "All", slug: nil, count: @nodes_counts.values.sum)
+        render_tab(label: t(".all"), slug: nil, count: @nodes_counts.values.sum)
         @realms.each do |realm|
           render_tab(
             label: realm.name_en,

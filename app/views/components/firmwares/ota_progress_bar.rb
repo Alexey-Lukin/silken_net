@@ -11,7 +11,7 @@ module Firmwares
     def view_template
       div(id: "ota_progress_#{@uid}", class: "p-4 border border-emerald-900 bg-black font-mono") do
         div(class: "flex justify-between items-center mb-2") do
-          span(class: "text-mini text-emerald-700 uppercase tracking-widest") { "OTA_LINK: #{@uid}" }
+          span(class: "text-mini text-emerald-700 uppercase tracking-widest") { t(".link_label", uid: @uid) }
           span(class: tokens("text-mini", status_color)) { @status }
         end
 
@@ -20,8 +20,8 @@ module Firmwares
         end
 
         div(class: "flex justify-between mt-2 text-micro text-gray-600") do
-          span { "CHUNK: #{@current} / #{@total}" }
-          span { "#{@percent}% COMPLETE" }
+          span { t(".chunk", current: @current, total: @total) }
+          span { t(".complete", percent: @percent) }
         end
       end
     end

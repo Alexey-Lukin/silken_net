@@ -201,6 +201,25 @@
 
 /* ── Typography Base ── */
 @layer base {
+  /* Tailwind v4 Preflight follows the native UA cursor (`auto` on buttons),
+   * but the Gaia terminal UI relies on `pointer` as the universal "this is
+   * interactive" affordance. Restore it globally for all real and ARIA
+   * buttons, summary toggles, popover triggers and form controls.
+   * Disabled elements keep the default cursor. `<label>` is intentionally
+   * left alone — a label wrapping (or `for=`-bound to) an input already
+   * delegates clicks to the control, and adding `pointer` here would
+   * sometimes conflict with `<label>` used purely as a form section title. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  summary,
+  [popovertarget]:not(:disabled),
+  select:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  [type="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
   /* Base h1-h3: standard content hierarchy, fluid clamp() so headings
    * scale smoothly between mobile and desktop without media-query
    * "stairsteps". For hero/landing sections with wider scaling range,
@@ -381,4 +400,15 @@ dialog[open]::backdrop {
     border-top: 1px solid var(--gaia-border);
     z-index: 5;
   }
+}
+
+/* ── Native <select> chevron ──
+ * Replaces the user-agent default arrow with a Gaia-themed chevron so
+ * `appearance-none` selects (e.g. LocaleSwitcher, future filter dropdowns)
+ * still surface a visual cue. Apply via the `.gaia-select` utility class. */
+.gaia-select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 0.6rem;
 }

@@ -1,0 +1,19 @@
+---
+uk:
+  system_audits:
+    index:
+      badges:
+        critical: критично
+        ok: ok
+      checked_at: Перевірено %{at}
+      columns:
+        source: Джерело
+        total: SCC всього
+      critical: "🚨 КРИТИЧНО — Дельта %{delta} SCC перевищує поріг 0.0001"
+      ok: "✓ ЦІЛІСНІСТЬ В НОРМІ — Дельта %{delta} SCC у межах норми"
+      sources:
+        delta: Δ Дельта
+        polygon: Polygon смартконтракт (totalSupply)
+        postgres: Postgres DB (підтверджені транзакції)
+      subtitle: Порівняння суми SCC у БД Postgres та загальної емісії в смартконтракті Polygon.
+      title: "⛓️ Аудит ланцюга — Цілісність системи"

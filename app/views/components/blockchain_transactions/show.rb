@@ -34,12 +34,12 @@ module BlockchainTransactions
 
     def render_header
       div(class: "p-8 border border-emerald-900 bg-black shadow-2xl relative overflow-hidden") do
-        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { "TX" }
+        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t(".decoration") }
         div(class: "flex justify-between items-start") do
           div do
-            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { "Transaction Record" }
+            p(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700 mb-2") { t(".transaction_record") }
             h2(class: "text-3xl font-extralight tracking-tighter text-white") { "#{@tx.amount} SCC" }
-            p(class: "text-tiny font-mono text-gray-600 mt-2") { "##{@tx.id} // #{@tx.created_at.strftime('%d.%m.%Y %H:%M:%S UTC')}" }
+            p(class: "text-tiny font-mono text-gray-600 mt-2") { t(".tx_id_line", id: @tx.id, at: @tx.created_at.strftime("%d.%m.%Y %H:%M:%S UTC")) }
           end
           div(class: "flex items-center gap-3") do
             span(class: tokens("px-3 py-1 text-mini font-bold uppercase", status_badge_styles)) { @tx.status }
@@ -54,25 +54,25 @@ module BlockchainTransactions
         table(role: "table", class: "w-full text-left font-mono text-compact") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
-              th(scope: "col", class: "p-4") { "Field" }
-              th(scope: "col", class: "p-4") { "Value" }
+              th(scope: "col", class: "p-4") { t(".details.field") }
+              th(scope: "col", class: "p-4") { t(".details.value") }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
-            detail_row("Amount", "#{@tx.amount} SCC")
-            detail_row("Token Type", @tx.token_type)
-            detail_row("Status", @tx.status)
-            detail_row("Blockchain Network", @tx.blockchain_network&.upcase || "—")
-            detail_row("Locked Points", @tx.locked_points || "—")
-            detail_row("To Address", @tx.to_address)
-            detail_row("Gas Price", @tx.gas_price ? "#{@tx.gas_price} wei" : "—")
-            detail_row("Gas Used", @tx.gas_used || "—")
-            detail_row("Block Number", @tx.block_number || "—")
-            detail_row("Nonce", @tx.nonce || "—")
-            detail_row("Sent At", @tx.sent_at&.strftime("%d.%m.%Y %H:%M:%S") || "—")
-            detail_row("Confirmed At", @tx.confirmed_at&.strftime("%d.%m.%Y %H:%M:%S") || "—")
-            detail_row("Created", @tx.created_at.strftime("%d.%m.%Y %H:%M:%S"))
-            detail_row("Updated", @tx.updated_at.strftime("%d.%m.%Y %H:%M:%S"))
+            detail_row(t(".details.amount"), "#{@tx.amount} SCC")
+            detail_row(t(".details.token_type"), @tx.token_type)
+            detail_row(t(".details.status"), @tx.status)
+            detail_row(t(".details.blockchain_network"), @tx.blockchain_network&.upcase || "—")
+            detail_row(t(".details.locked_points"), @tx.locked_points || "—")
+            detail_row(t(".details.to_address"), @tx.to_address)
+            detail_row(t(".details.gas_price"), @tx.gas_price ? "#{@tx.gas_price} wei" : "—")
+            detail_row(t(".details.gas_used"), @tx.gas_used || "—")
+            detail_row(t(".details.block_number"), @tx.block_number || "—")
+            detail_row(t(".details.nonce"), @tx.nonce || "—")
+            detail_row(t(".details.sent_at"), @tx.sent_at&.strftime("%d.%m.%Y %H:%M:%S") || "—")
+            detail_row(t(".details.confirmed_at"), @tx.confirmed_at&.strftime("%d.%m.%Y %H:%M:%S") || "—")
+            detail_row(t(".details.created"), @tx.created_at.strftime("%d.%m.%Y %H:%M:%S"))
+            detail_row(t(".details.updated"), @tx.updated_at.strftime("%d.%m.%Y %H:%M:%S"))
           end
         end
       end
@@ -87,15 +87,15 @@ module BlockchainTransactions
 
     def render_notes_panel
       div(class: "p-6 border border-emerald-900 bg-black") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Transaction Notes" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".notes.title") }
         if @tx.notes.present?
           p(class: "text-compact text-gray-400 font-mono leading-relaxed") { @tx.notes }
         else
-          p(class: "text-compact text-gray-700 italic") { "No notes attached." }
+          p(class: "text-compact text-gray-700 italic") { t(".notes.empty") }
         end
         if @tx.error_message.present?
           div(class: "mt-4 p-3 border border-red-900 bg-red-950/20") do
-            p(class: "text-mini uppercase text-red-500 tracking-widest mb-1") { "Error Message" }
+            p(class: "text-mini uppercase text-red-500 tracking-widest mb-1") { t(".notes.error_message") }
             p(class: "text-compact text-red-400 font-mono") { @tx.error_message }
           end
         end
@@ -104,21 +104,21 @@ module BlockchainTransactions
 
     def render_wallet_info
       div(class: "p-6 border border-emerald-900 bg-black space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Linked Wallet" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".wallet.title") }
         if @tx.wallet.present?
           div do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { "Tree DID" }
-            p(class: "text-compact text-emerald-400 font-mono") { @tx.wallet.tree&.did || "N/A" }
+            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".wallet.tree_did") }
+            p(class: "text-compact text-emerald-400 font-mono") { @tx.wallet.tree&.did || t(".wallet.not_available") }
           end
           div(class: "pt-3 border-t border-emerald-900/30") do
-            p(class: "text-mini text-gray-600 uppercase mb-1") { "Wallet Balance" }
+            p(class: "text-mini text-gray-600 uppercase mb-1") { t(".wallet.wallet_balance") }
             p(class: "text-lg text-white font-light") do
               plain @tx.wallet.balance.to_f.round(4).to_s
               span(class: "text-xs text-emerald-600 ml-2") { "SCC" }
             end
           end
         else
-          p(class: "text-compact text-gray-700 italic") { "No wallet linked." }
+          p(class: "text-compact text-gray-700 italic") { t(".wallet.no_wallet") }
         end
       end
     end

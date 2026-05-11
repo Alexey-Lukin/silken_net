@@ -20,11 +20,11 @@ module Reports
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "📊 The Archive — Reports Hub" }
-          p(class: "text-xs text-gray-600 mt-1") { "Зведена звітність для інвесторів: екологічні аудити та фінансова ефективність." }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".title") }
+          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
         div(class: "text-right font-mono text-tiny text-emerald-900") do
-          plain "Organization: "
+          plain "#{t('.organization')} "
           span(class: "text-emerald-500") { @organization.name }
         end
       end
@@ -32,30 +32,30 @@ module Reports
 
     def render_performance_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        render Views::Shared::UI::StatCard.new(label: "Biological Assets", value: @summary[:total_trees], sub: "Trees")
-        render Views::Shared::UI::StatCard.new(label: "Health Score", value: @summary[:health_score], sub: "Index")
-        render Views::Shared::UI::StatCard.new(label: "Carbon Yield", value: @summary[:total_carbon_points], sub: "SCC Total")
+        render Views::Shared::UI::StatCard.new(label: t(".hero.biological_assets"), value: @summary[:total_trees], sub: t(".hero.biological_assets_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".hero.health_score"), value: @summary[:health_score], sub: t(".hero.health_score_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".hero.carbon_yield"), value: @summary[:total_carbon_points], sub: t(".hero.carbon_yield_sub"))
       end
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6 mt-6") do
-        render Views::Shared::UI::StatCard.new(label: "Capital Injected", value: @summary[:total_invested], sub: "SCC Invested")
-        render Views::Shared::UI::StatCard.new(label: "Sectors", value: @summary[:total_clusters], sub: "Clusters")
-        render Views::Shared::UI::StatCard.new(label: "Threat Level", value: @summary[:under_threat] ? "ACTIVE" : "CLEAR", danger: @summary[:under_threat])
+        render Views::Shared::UI::StatCard.new(label: t(".hero.capital_injected"), value: @summary[:total_invested], sub: t(".hero.capital_injected_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".hero.sectors"), value: @summary[:total_clusters], sub: t(".hero.sectors_sub"))
+        render Views::Shared::UI::StatCard.new(label: t(".hero.threat_level"), value: @summary[:under_threat] ? t(".hero.threat_active") : t(".hero.threat_clear"), danger: @summary[:under_threat])
       end
     end
 
     def render_available_reports
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Available Reports" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".available") }
         div(class: "grid grid-cols-1 md:grid-cols-2 gap-6") do
           report_card(
-            "Carbon Absorption Report",
-            "Поглинання CO₂ та екологічний аудит.",
+            t(".carbon.title"),
+            t(".carbon.description"),
             carbon_absorption_api_v1_reports_path,
             "🌿"
           )
           report_card(
-            "Financial Summary Report",
-            "Фінансова ефективність та блокчейн-транзакції.",
+            t(".financial.title"),
+            t(".financial.description"),
             financial_summary_api_v1_reports_path,
             "💎"
           )
@@ -71,9 +71,9 @@ module Reports
         h4(class: "text-sm font-light text-emerald-100 mb-2") { title }
         p(class: "text-tiny text-gray-600 mb-4") { description }
         div(class: "flex items-center gap-4 pt-4 border-t border-emerald-900/30") do
-          a(href: path, class: "text-mini text-emerald-500 uppercase tracking-widest hover:underline") { "View →" }
-          a(href: "#{path}.csv", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { "CSV ↓" }
-          a(href: "#{path}.pdf", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { "PDF ↓" }
+          a(href: path, class: "text-mini text-emerald-500 uppercase tracking-widest hover:underline") { t(".actions.view") }
+          a(href: "#{path}.csv", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { t(".actions.csv") }
+          a(href: "#{path}.pdf", class: "text-mini text-emerald-700 uppercase tracking-widest hover:text-emerald-500") { t(".actions.pdf") }
         end
       end
     end

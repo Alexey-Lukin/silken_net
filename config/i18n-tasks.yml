@@ -1,0 +1,72 @@
+# i18n-tasks SSOT configuration.
+# Docs: https://github.com/glebm/i18n-tasks
+# Runs in CI via `.github/workflows/ci.yml` → job `i18n_check`.
+
+# Base locale: every key here must exist; other locales are diffed against it.
+# We use English as the base because the source code conventions
+# (class names, error keys, comments) are all in English — keeping the
+# base aligned with the source minimises diff noise.
+base_locale: en
+locales: [en, uk]
+
+# YAML files live under config/locales/**/{en,uk}.yml. The pattern below
+# matches the sub-directory layout we already use (per-domain folders).
+data:
+  read:
+    - config/locales/%{locale}.yml
+    - config/locales/**/%{locale}.yml
+  write:
+    # Default destination for `i18n-tasks add-missing` — drop missing keys
+    # into a generic catch-all so human review can place them properly.
+    - config/locales/%{locale}.yml
+  yaml:
+    write:
+      line_width: -1   # Disable line wrapping (keeps long Ukrainian strings on one line)
+
+# Phlex components live under app/views/components/**/*.rb and use a custom
+# `ApplicationComponent#t(".key")` that derives scope from the Ruby class name
+# (e.g. `AccountSecurity::Show#t(".heading")` → `account_security.show.heading`).
+#
+# Because file layout mirrors the class namespace (convention over configuration),
+# setting `relative_roots` to `app/views/components` makes i18n-tasks resolve
+# relative keys using the same path-based scope. `relative_exclude_method_name_paths`
+# prevents i18n-tasks from inserting the enclosing method name into the scope —
+# our runtime `t` does not use method names, only the class hierarchy.
+search:
+  paths:
+    - app/
+    - config/locales/
+    - lib/
+  relative_roots:
+    - app/views/components
+  relative_exclude_method_name_paths:
+    - app/views/components
+  exclude:
+    - app/assets
+    - app/javascript
+
+# Suppress noise — these are dynamic interpolated lookups that i18n-tasks
+# can't statically resolve, but we know they exist.
+ignore_missing:
+  # locale.available.<locale_code> — populated for every entry in
+  # I18n.available_locales by the LocaleSwitcher component.
+  - 'locale.available.*'
+  # Trigger labels are looked up dynamically by Codex::Discoveries::Toast.
+  - 'codex.discoveries.toast.triggers.*'
+
+ignore_unused:
+  # Cross-cutting flash messages used from outside the static view tree.
+  - 'flash.*'
+  # Navigation items and section headers are looked up dynamically by key
+  # (e.g. `t("navigation.items.#{key}")`) — i18n-tasks cannot statically
+  # resolve symbol-keyed iterations, but the keys are exhaustively defined.
+  - 'navigation.items.*'
+  - 'navigation.sections.*'
+  # Alert severity filter chips are built from FILTER_SEVERITIES array
+  # (e.g. `t("alerts.index.filter_#{s}")`) — same pattern, fully defined.
+  - 'alerts.index.filter_*'
+
+# Don't flag these as missing in non-base locales — they're intentionally
+# only set where needed (e.g. UK has pluralisation forms en does not need).
+ignore_inconsistent_interpolations:
+  - '*'

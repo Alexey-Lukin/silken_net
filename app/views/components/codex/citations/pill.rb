@@ -124,10 +124,11 @@ module Codex
       end
 
       def aria_label(node)
-        realm_name = node.realm&.name_en.presence || "unknown realm"
-        base = "Codex citation: #{node.title_en} (#{realm_name})"
+        realm_name = node.realm&.name_en.presence || t("codex.citations.unknown_realm")
+        base = t("codex.citations.aria_with_realm", title: node.title_en, realm: realm_name)
         return base if @citation.note.blank?
-        "#{base} — #{@citation.note}"
+
+        t("codex.citations.aria_with_note", base: base, note: @citation.note)
       end
 
       # Shown on hover. Note can be up to 140 chars; this surfaces forester
@@ -135,7 +136,8 @@ module Codex
       def full_title(node)
         base = node.title_en.to_s
         return base if @citation.note.blank?
-        "#{base} — #{@citation.note}"
+
+        t("codex.citations.title_with_note", base: base, note: @citation.note)
       end
     end
   end

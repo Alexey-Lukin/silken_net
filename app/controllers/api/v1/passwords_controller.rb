@@ -9,8 +9,8 @@ module Api
       # Захист від перебору: обмеження кількості спроб запиту скидання
       rate_limit to: 3, within: 5.minutes, only: :create, with: -> {
         respond_to do |format|
-          format.json { render json: { error: "Забагато спроб. Спробуйте через 5 хвилин." }, status: :too_many_requests }
-          format.html { redirect_to api_v1_forgot_password_path, alert: "Забагато спроб. Спробуйте через 5 хвилин." }
+          format.json { render json: { error: I18n.t("passwords.rate_limited") }, status: :too_many_requests }
+          format.html { redirect_to api_v1_forgot_password_path, alert: I18n.t("passwords.rate_limited") }
         end
       }
 
@@ -18,7 +18,7 @@ module Api
       # GET /api/v1/forgot_password
       def new
         respond_to do |format|
-          format.html { render_auth_page(title: "Recovery", component: Passwords::Forgot.new) }
+          format.html { render_auth_page(title: I18n.t("passwords.forgot_title"), component: Passwords::Forgot.new) }
         end
       end
 
@@ -33,8 +33,8 @@ module Api
         end
 
         respond_to do |format|
-          format.json { render json: { message: "Якщо email існує в системі, ви отримаєте інструкції для скидання пароля." }, status: :ok }
-          format.html { redirect_to api_v1_login_path, notice: "Якщо email існує, ви отримаєте лист з інструкціями." }
+          format.json { render json: { message: I18n.t("passwords.forgot_sent_json") }, status: :ok }
+          format.html { redirect_to api_v1_login_path, notice: I18n.t("passwords.forgot_sent_flash") }
         end
       end
 
@@ -42,7 +42,7 @@ module Api
       # GET /api/v1/reset_password?token=xxx
       def edit
         respond_to do |format|
-          format.html { render_auth_page(title: "Reset Password", component: Passwords::Reset.new(token: params[:token])) }
+          format.html { render_auth_page(title: I18n.t("passwords.reset_title"), component: Passwords::Reset.new(token: params[:token])) }
         end
       end
 
@@ -53,19 +53,19 @@ module Api
 
         if user.nil?
           respond_to do |format|
-            format.json { render json: { error: "Токен скидання невалідний або протермінований." }, status: :unprocessable_content }
-            format.html { redirect_to api_v1_forgot_password_path, alert: "Токен протермінований. Запросіть скидання повторно." }
+            format.json { render json: { error: I18n.t("passwords.reset.invalid_token_json") }, status: :unprocessable_content }
+            format.html { redirect_to api_v1_forgot_password_path, alert: I18n.t("passwords.reset.invalid_token_flash") }
           end
           return
         end
 
         if params[:password].to_s.length < 12
           respond_to do |format|
-            format.json { render json: { error: "Пароль повинен містити мінімум 12 символів." }, status: :unprocessable_content }
+            format.json { render json: { error: I18n.t("passwords.reset.too_short") }, status: :unprocessable_content }
             format.html do
               render_auth_page(
-                title: "Reset Password",
-                component: Passwords::Reset.new(token: params[:token], flash_alert: "Пароль повинен містити мінімум 12 символів.")
+                title: I18n.t("passwords.reset_title"),
+                component: Passwords::Reset.new(token: params[:token], flash_alert: I18n.t("passwords.reset.too_short"))
               )
             end
           end
@@ -74,11 +74,11 @@ module Api
 
         if params[:password] != params[:password_confirmation]
           respond_to do |format|
-            format.json { render json: { error: "Паролі не співпадають." }, status: :unprocessable_content }
+            format.json { render json: { error: I18n.t("passwords.reset.mismatch") }, status: :unprocessable_content }
             format.html do
               render_auth_page(
-                title: "Reset Password",
-                component: Passwords::Reset.new(token: params[:token], flash_alert: "Паролі не співпадають.")
+                title: I18n.t("passwords.reset_title"),
+                component: Passwords::Reset.new(token: params[:token], flash_alert: I18n.t("passwords.reset.mismatch"))
               )
             end
           end
@@ -88,8 +88,8 @@ module Api
         user.update!(password: params[:password])
 
         respond_to do |format|
-          format.json { render json: { message: "Пароль успішно оновлено." }, status: :ok }
-          format.html { redirect_to api_v1_login_path, notice: "Пароль оновлено. Увійдіть з новим паролем." }
+          format.json { render json: { message: I18n.t("passwords.reset.updated_json") }, status: :ok }
+          format.html { redirect_to api_v1_login_path, notice: I18n.t("passwords.reset.updated_flash") }
         end
       end
     end

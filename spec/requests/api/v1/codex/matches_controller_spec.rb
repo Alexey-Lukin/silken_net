@@ -23,14 +23,14 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
       get "/api/v1/codex/matches/new", params: { realm: realm.slug }, headers: headers
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("codex_battle_arena")
-      expect(response.body).to include("VS")
+      expect(response.body).to include(I18n.t("codex.battle_arena.vs"))
       expect(response.body).to match(/name="pair_seed" value="[0-9a-f]{64}"/)
     end
 
     it "renders an empty-state when realm has too few nodes" do
       ::Codex::Node.where(codex_realm_id: realm.id).update_all(lifecycle_status: "extinct")
       get "/api/v1/codex/matches/new", params: { realm: realm.slug }, headers: headers
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("not enough nodes")
     end
   end

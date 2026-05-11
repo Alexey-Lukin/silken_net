@@ -45,17 +45,17 @@ module Wallets
 
     def render_transaction_ledger
       div(class: "space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "On-Chain Transaction Ledger" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".ledger_title") }
 
         div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
           table(class: "w-full text-left font-mono text-compact min-w-[640px]", role: "table") do
             thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
               tr do
-                th(scope: "col", class: "p-4") { "Type" }
-                th(scope: "col", class: "p-4") { "Amount" }
-                th(scope: "col", class: "p-4") { "Status" }
-                th(scope: "col", class: "p-4") { "TX Hash" }
-                th(scope: "col", class: "p-4 text-right") { "Timestamp" }
+                th(scope: "col", class: "p-4") { t(".columns.type") }
+                th(scope: "col", class: "p-4") { t(".columns.amount") }
+                th(scope: "col", class: "p-4") { t(".columns.status") }
+                th(scope: "col", class: "p-4") { t(".columns.tx_hash") }
+                th(scope: "col", class: "p-4 text-right") { t(".columns.timestamp") }
               end
             end
             # ⚡ [СИНХРОНІЗАЦІЯ]: ID для вставки нових транзакцій
@@ -64,7 +64,7 @@ module Wallets
                 @transactions.each { |tx| render Wallets::TransactionRow.new(tx: tx) }
               else
                 tr(id: "empty_ledger") do
-                  td(colspan: 5, class: "p-10 text-center text-gray-700 italic") { "No transactions detected." }
+                  td(colspan: 5, class: "p-10 text-center text-gray-700 italic") { t(".empty") }
                 end
               end
             end
@@ -82,18 +82,18 @@ module Wallets
 
     def render_on_chain_actions
       div(class: "p-6 border border-emerald-900 bg-emerald-950/5") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { "Actions" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-4") { t(".actions") }
         div(class: "space-y-2") do
           button(
-            aria_label: "Sync wallet with Polygon blockchain",
+            aria_label: t(".sync_polygon_aria"),
             class: "w-full py-2 border border-emerald-500 text-tiny uppercase text-emerald-500 hover:bg-emerald-500 " \
                    "hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
-          ) { "Sync with Polygon" }
+          ) { t(".sync_polygon") }
           button(
-            aria_label: "Export transaction ledger as CSV",
+            aria_label: t(".export_csv_aria"),
             class: "w-full py-2 border border-emerald-900 text-tiny uppercase text-emerald-900 hover:border-emerald-700 " \
                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-all"
-          ) { "Export CSV Ledger" }
+          ) { t(".export_csv") }
         end
       end
     end

@@ -1,52 +1,46 @@
+---
 en:
   ui:
+    data_table:
+      empty: No records found.
+    photo_card:
+      confirm_remove: Remove this photo from the evidence record?
+      remove_photo: 'Remove photo: %{filename}'
+      view_photo: 'View photo: %{filename}'
+    skeleton:
+      loading: Loading…
     status:
-      # AASM: BlockchainTransaction
-      pending: pending
-      processing: processing
-      sent: sent
-      confirmed: confirmed
-      failed: failed
-      manual_review: manual review
-      # AASM: ActuatorCommand
-      issued: issued
       acknowledged: acknowledged
-      # AASM: EwsAlert
       active: active
-      resolved: resolved
-      ignored: ignored
-      # AASM: ParametricInsurance
-      triggered: triggered
-      paid: paid
-      expired: expired
-      # AASM: NaasContract
-      draft: draft
-      fulfilled: fulfilled
+      aria_label: 'Status: %{status}'
       breached: breached
       cancelled: cancelled
-      # AASM: Gateway
-      idle: idle
-      updating: updating
-      maintenance: maintenance
-      faulty: faulty
-      # AASM: Tree
-      dormant: dormant
-      removed: removed
+      confirmed: confirmed
       deceased: deceased
-      # AASM: Actuator
-      offline: offline
-      maintenance_needed: maintenance needed
-      # Codex::Node
-      mythical: mythical
-      extinct: extinct
-      endangered: endangered
-      thriving: thriving
       destroyed: destroyed
+      dormant: dormant
+      draft: draft
+      endangered: endangered
+      expired: expired
+      extinct: extinct
+      failed: failed
+      faulty: faulty
+      fulfilled: fulfilled
+      idle: idle
+      ignored: ignored
+      issued: issued
+      maintenance: maintenance
+      maintenance_needed: maintenance needed
+      manual_review: manual review
+      mythical: mythical
+      offline: offline
+      paid: paid
+      pending: pending
+      processing: processing
+      removed: removed
+      resolved: resolved
+      sent: sent
+      thriving: thriving
+      triggered: triggered
       unknown: unknown
-      aria_label: "Status: %{status}"
-    data_table:
-      empty: "No records found."
-    photo_card:
-      view_photo: "View photo: %{filename}"
-      remove_photo: "Remove photo: %{filename}"
-      confirm_remove: "Remove this photo from the evidence record?"
+      updating: updating

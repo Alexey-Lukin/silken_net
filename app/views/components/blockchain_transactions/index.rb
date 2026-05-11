@@ -24,7 +24,7 @@ module BlockchainTransactions
       div(class: "flex justify-between items-end mb-4") do
         div do
           h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "📒 Blockchain Ledger — Global Audit" }
-          p(class: "text-xs text-gray-600 mt-1") { "Minting, slashing та всі on-chain події вашої Організації." }
+          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
         div(class: "flex gap-2") do
           %w[carbon_coin forest_coin].each do |t|

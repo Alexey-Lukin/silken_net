@@ -43,15 +43,14 @@ module Api
         if normalized_suffix == FIRMWARE_FALLBACK_DID_MAGIC
           render json: {
             error: "Hardware UID закінчується магічним fallback значенням (#{FIRMWARE_FALLBACK_DID_MAGIC}). " \
-                   "Це резервоване firmware значення для defective STM32 UID — реєстрація заборонена. " \
-                   "Перепрошийте пристрій та повторно зчитайте unique ID."
+                   "#{I18n.t('flash.provisioning.defective_uid')}"
           }, status: :unprocessable_content
           return
         end
 
         # [ЗАХИСТ ВІД ПОДВІЙНОЇ ІНІЦІАЦІЇ]: Перевіряємо чи hardware_uid вже зареєстрований
         if HardwareKey.exists?(device_uid: uid.to_s.strip.upcase)
-          render json: { error: "Пристрій з UID #{uid} вже зареєстрований в системі." }, status: :conflict
+          render json: { error: I18n.t("flash.provisioning.uid_taken", uid: uid) }, status: :conflict
           return
         end
 
@@ -84,7 +83,7 @@ module Api
               user: current_user,
               action_type: :installation,
               performed_at: Time.current,
-              notes: "Ініціація вузла завершена. DID: #{device_identifier}. Hardware UID: #{provisioning_params[:hardware_uid]}",
+              notes: I18n.t("flash.provisioning.node_initiated", did: device_identifier, uid: provisioning_params[:hardware_uid]),
               skip_photo_validation: true
             )
 
@@ -122,7 +121,7 @@ module Api
         end
       rescue StandardError => e
         Rails.logger.error "🚨 [Provisioning] Збій ініціації: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
-        render json: { error: "Збій у ядрі Океану. Повідомте Архітектора." }, status: :internal_server_error
+        render json: { error: I18n.t("errors.api.internal") }, status: :internal_server_error
       end
 
       private

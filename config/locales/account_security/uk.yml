@@ -1,0 +1,56 @@
+---
+uk:
+  account_security:
+    identity:
+      cannot_unlink_last: Неможливо відв'язати останній метод входу без пароля.
+      locked_flash: "%{provider} заблоковано."
+      locked_json: Ідентичність %{provider} заблоковано.
+      set_password_first: Встановіть пароль перед відв'язкою останнього провайдера.
+      unlinked_flash: "%{provider} відв'язано."
+      unlinked_json: Провайдер %{provider} відв'язано.
+      unlocked_flash: "%{provider} розблоковано."
+      unlocked_json: Ідентичність %{provider} розблоковано.
+    mfa:
+      disabled: MFA вимкнено.
+      enabled: MFA увімкнено.
+      enabled_with_codes: MFA увімкнено. Збережіть recovery codes!
+    password:
+      current_invalid: Поточний пароль невірний.
+      mismatch: Паролі не співпадають.
+      too_short_flash: Пароль повинен містити мінімум 12 символів.
+      too_short_json: Новий пароль повинен містити мінімум 12 символів.
+      updated_flash: Пароль успішно оновлено.
+      updated_json: Пароль оновлено.
+    show:
+      heading: "🔐 Безпека акаунту"
+      identities:
+        available_heading: Доступні провайдери
+        heading: Підключені провайдери
+        link_provider: Підключити %{provider}
+        lock: Заблокувати
+        locked: Заблоковано
+        none_linked: Жоден провайдер не прив'язаний.
+        primary: Основний
+        uid_line: 'UID: %{prefix}...'
+        unlink: Відв'язати
+        unlink_confirm: Відв'язати %{provider}?
+        unlink_disabled_title: Встановіть пароль перед відв'язкою.
+        unlock: Розблокувати
+      mfa:
+        disable_button: Вимкнути MFA
+        disabled_hint: "⚠️ MFA вимкнено. Рекомендуємо увімкнути для захисту акаунту."
+        enable_button: Увімкнути MFA
+        enabled_with_remaining: "✅ MFA увімкнено. Recovery codes залишилось: %{count}"
+        heading: Двофакторна автентифікація (2FA)
+        recovery_warning: Recovery codes збережіть в безпечному місці. Вони потрібні для входу при втраті TOTP.
+      password:
+        change_submit: Змінити пароль
+        confirm_label: Підтвердьте новий пароль
+        current_label: Поточний пароль
+        heading: Пароль
+        new_label: Новий пароль (мін. 12 символів)
+        not_set: "⚠️ Пароль не встановлено. Встановіть пароль для можливості відв'язки провайдерів."
+        set_ok: "✅ Пароль встановлено"
+        set_submit: Встановити пароль
+      subtitle: Керуйте методами входу, двофакторною автентифікацією та зв'язаними провайдерами.
+    title: Безпека акаунту

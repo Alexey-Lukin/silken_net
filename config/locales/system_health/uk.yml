@@ -1,0 +1,38 @@
+---
+uk:
+  system_health:
+    show:
+      all_operational: "✓ ВСІ ПІДСИСТЕМИ ОПЕРАЦІЙНІ — Перевірено %{at}"
+      all_systems_go: ВСІ СИСТЕМИ В НОРМІ
+      coap:
+        listening: СЛУХАЄ
+        name: CoAP Listener
+        offline: ОФЛАЙН
+        port: Порт
+        protocol: Протокол
+        protocol_value: UDP / RFC 7252
+        status: Статус
+      database:
+        active: АКТИВНЕ
+        connection: З'єднання
+        disconnected: ВІДКЛЮЧЕНО
+        engine: Двигун
+        engine_value: PostgreSQL
+        name: PostgreSQL
+      degraded: ДЕГРАДОВАНО
+      last_checked: Остання перевірка %{at}
+      sidekiq:
+        active_workers: Активних воркерів
+        enqueued: В черзі
+        failed: Невдалих
+        jobs_enqueued: Завдань у черзі
+        name: Sidekiq Workers
+        processed: Оброблено
+        queue_name: Назва черги
+        queues_title: Розподіл черг Sidekiq
+      status:
+        down: DOWN
+        ok: OK
+      subtitle: Статус CoAP listener, черг Sidekiq та з'єднання з базою даних.
+      system_degraded: "🚨 СИСТЕМА ДЕГРАДОВАНА — Одна або кілька підсистем потребують уваги"
+      title: "💓 Стан системи — Pulse Monitor"

@@ -21,7 +21,7 @@ module Codex
             name: "comment[body_md]",
             rows: 3,
             required: true,
-            placeholder: "Write a comment in Markdown…",
+            placeholder: t("codex.comments.placeholder"),
             maxlength: ::Codex::Comment::BODY_MAX,
             class: tokens(
               "w-full p-2 border border-gaia-input-border bg-gaia-input-bg text-gaia-input-text",
@@ -39,7 +39,7 @@ module Codex
                 "focus-visible:ring-2 focus-visible:ring-gaia-primary"
               )
             ) do
-              span(class: "text-tiny uppercase tracking-[0.3em]") { "Post" }
+              span(class: "text-tiny uppercase tracking-[0.3em]") { t("codex.comments.post") }
             end
           end
         end

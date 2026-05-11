@@ -50,7 +50,7 @@ module Api
         job_id = SimulationWorker.perform_async(params[:cluster_id], permitted_variables&.to_h)
 
         render json: {
-          message: "Оракул почав симуляцію.",
+          message: I18n.t("flash.oracle.simulation_started"),
           job_id: job_id
         }, status: :accepted
       end

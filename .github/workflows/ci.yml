@@ -104,6 +104,44 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
+  i18n_check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      # Hard gate: PR fails if a key exists in one locale but not another,
+      # or if any locale YAML file isn't normalized (sorted, consistent
+      # indentation, no duplicate keys). `unused` is intentionally NOT
+      # gated — several components use a private `t_(key)` helper that
+      # i18n-tasks cannot statically resolve, which would cause false
+      # positives. The runtime safety net is
+      # `config.i18n.raise_on_missing_translations = true` in test env
+      # (already set) — any spec touching a missing key fails the build.
+      - name: Check translations parity (i18n-tasks missing)
+        run: bundle exec i18n-tasks missing
+
+      - name: Check interpolation parity across locales
+        run: bundle exec i18n-tasks check-consistent-interpolations
+
+      - name: Check locale YAML files are normalized
+        # `check-normalized` always exits 0 (upstream quirk). Gate the
+        # build by grepping the output — non-empty list of files = failure.
+        run: |
+          output=$(bundle exec i18n-tasks check-normalized 2>&1)
+          echo "$output"
+          if echo "$output" | grep -q "requires normalization"; then
+            echo "::error::Some locale files are not normalized. Run \`bundle exec i18n-tasks normalize\`."
+            exit 1
+          fi
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15

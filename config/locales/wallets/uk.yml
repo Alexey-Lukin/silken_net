@@ -1,12 +1,43 @@
+---
 uk:
   wallets:
+    balance_display:
+      available: 'Доступно:'
+      decoration: SCC
+      esg_retired: 'ESG погашено:'
+      locked: 'Заблоковано:'
+      locked_for: 'Заблоковано для: %{owner}'
+      verified_balance: Перевірений баланс
     index:
-      title: Скарбнична матриця
-      subtitle: Моніторинг потоку Silken Carbon Coins у мережі.
-      total_liquidity: "Загальна ліквідність:"
-      kind_soldier: Гаманець солдата
+      audit_link: Аудит реєстру →
       kind_clan: Скарбниця клану
-      system_reserve: Системний резерв
+      kind_soldier: Гаманець солдата
       locked_label: "🔒 %{amount} заблоковано"
       retired_label: "♻ %{amount} погашено"
-      audit_link: "Аудит реєстру →"
+      subtitle: Моніторинг потоку Silken Carbon Coins у мережі.
+      system_reserve: Системний резерв
+      title: Скарбнична матриця
+      total_liquidity: 'Загальна ліквідність:'
+    metadata_frame:
+      available_balance: Доступний баланс
+      esg_retired: ESG погашено
+      locked_balance: Заблокований баланс
+      network: Мережа
+      not_provisioned: НЕ_ПРОВІЖНОВАНО
+      polygon_address: Адреса Polygon
+      polygon_mainnet: Polygon PoS (Mainnet)
+      title: Блокчейн-ідентичність
+    show:
+      actions: Дії
+      columns:
+        amount: Сума
+        status: Статус
+        timestamp: Час
+        tx_hash: TX Hash
+        type: Тип
+      empty: Транзакцій не виявлено.
+      export_csv: Експорт CSV реєстру
+      export_csv_aria: Експорт реєстру транзакцій у CSV
+      ledger_title: Реєстр On-Chain транзакцій
+      sync_polygon: Синхронізувати з Polygon
+      sync_polygon_aria: Синхронізувати гаманець з блокчейном Polygon

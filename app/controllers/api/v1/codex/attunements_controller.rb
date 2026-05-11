@@ -68,7 +68,7 @@ module Api
 
         def render_validation(record)
           render json: { errors: record.errors.full_messages },
-                 status: :unprocessable_entity
+                 status: :unprocessable_content
         end
 
         # Phase 6 cross-domain stitch — every successful attune fans out

@@ -1,15 +1,25 @@
+---
 en:
   dashboard:
+    event_row:
+      etherisc_claim: "🛡️ Etherisc DIP claim %{amount} USDC → %{address}"
+      maintenance: "🔧 %{action}: by %{user}"
+      minted: "⬢ Minted %{amount} SCC → %{target}"
+      pool: Pool
+      system_pulse: "● System pulse detected"
+      system_user: System
+      threat: "⚠ Threat: %{type} in %{cluster}"
+      unknown_cluster: Unknown
     home:
+      feed:
+        empty: No recent activity
+        title: Live Transmission Feed
+        view_all: Open Mission Log →
+      map:
+        coordinates_label: 'LAT: %{lat} // LON: %{lon} // ALT: %{alt}m'
+        loading: Initializing Geospatial Matrix...
       stats:
-        forest_vitality: Forest Vitality
         active_soldiers: Active Soldiers
         carbon_treasury: Carbon Treasury
+        forest_vitality: Forest Vitality
         ionic_potential: Ionic Potential
-      map:
-        loading: Initializing Geospatial Matrix...
-        coordinates_label: "LAT: %{lat} // LON: %{lon} // ALT: %{alt}m"
-      feed:
-        title: Live Transmission Feed
-        empty: No recent activity
-        view_all: "Open Mission Log →"

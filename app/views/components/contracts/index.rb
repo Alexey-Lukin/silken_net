@@ -13,20 +13,20 @@ module Contracts
         render_stats_hero
 
         div(class: "space-y-4") do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "Active Asset Portfolio" }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".portfolio_title") }
 
           div(class: "border border-emerald-900 bg-black overflow-x-auto w-full") do
             table(role: "table", class: "w-full text-left font-mono text-compact") do
               thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
                 tr do
-                  th(scope: "col", class: "p-4") { "ID / Status" }
-                  th(scope: "col", class: "p-4") { "Organization" }
-                  th(scope: "col", class: "p-4") { "Target Cluster" }
-                  th(scope: "col", class: "p-4") { "Investment" }
-                  th(scope: "col", class: "p-4") { "Current Yield" }
-                  th(scope: "col", class: "p-4") { "Period" }
-                  th(scope: "col", class: "p-4") { "Performance" }
-                  th(scope: "col", class: "p-4 text-right") { "Command" }
+                  th(scope: "col", class: "p-4") { t(".columns.id_status") }
+                  th(scope: "col", class: "p-4") { t(".columns.organization") }
+                  th(scope: "col", class: "p-4") { t(".columns.target_cluster") }
+                  th(scope: "col", class: "p-4") { t(".columns.investment") }
+                  th(scope: "col", class: "p-4") { t(".columns.current_yield") }
+                  th(scope: "col", class: "p-4") { t(".columns.period") }
+                  th(scope: "col", class: "p-4") { t(".columns.performance") }
+                  th(scope: "col", class: "p-4 text-right") { t(".columns.command") }
                 end
               end
               tbody(class: "divide-y divide-emerald-900/30") do
@@ -47,9 +47,9 @@ module Contracts
 
     def render_stats_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        render Views::Shared::UI::StatCard.new(label: "Portfolio Capital", value: "#{@stats[:total_invested].to_f.round(2)} SCC", sub: "Total Injected")
-        render Views::Shared::UI::StatCard.new(label: "Biogenic Yield", value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: "Total Minted")
-        render Views::Shared::UI::StatCard.new(label: "Network Health", value: "#{@stats[:avg_health]}%", sub: "Portfolio Avg")
+        render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{@stats[:total_invested].to_f.round(2)} SCC", sub: t(".stats.total_injected"))
+        render Views::Shared::UI::StatCard.new(label: t(".stats.biogenic_yield"), value: "#{@stats[:total_minted].to_f.round(2)} SCC", sub: t(".stats.total_minted"))
+        render Views::Shared::UI::StatCard.new(label: t(".stats.network_health"), value: "#{@stats[:avg_health]}%", sub: t(".stats.portfolio_avg"))
       end
     end
 
@@ -62,7 +62,7 @@ module Contracts
           end
         end
         td(class: "p-4 text-gaia-text-muted") { contract.organization&.name || "—" }
-        td(class: "p-4 text-gaia-primary") { contract.cluster&.name || "UNASSIGNED" }
+        td(class: "p-4 text-gaia-primary") { contract.cluster&.name || t(".unassigned") }
         td(class: "p-4 text-gaia-text-muted") { "#{contract.total_value} SCC" }
         td(class: "p-4 text-gaia-text") { "#{contract.emitted_tokens} SCC" }
         td(class: "p-4 text-tiny text-gaia-text-muted") do
@@ -74,7 +74,7 @@ module Contracts
           render_performance_gauge(contract.current_yield_performance)
         end
         td(class: "p-4 text-right") do
-          a(href: api_v1_contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "View contract ##{contract.id} details") { "AUDIT_DETAILS →" }
+          a(href: api_v1_contract_path(contract), class: "text-emerald-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".audit_aria", id: contract.id)) { t(".audit_details") }
         end
       end
     end

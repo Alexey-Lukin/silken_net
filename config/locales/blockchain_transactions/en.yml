@@ -1,0 +1,36 @@
+---
+en:
+  blockchain_transactions:
+    index:
+      subtitle: Minting, slashing, and all on-chain events for your Organization.
+    show:
+      decoration: TX
+      details:
+        amount: Amount
+        block_number: Block Number
+        blockchain_network: Blockchain Network
+        confirmed_at: Confirmed At
+        created: Created
+        field: Field
+        gas_price: Gas Price
+        gas_used: Gas Used
+        locked_points: Locked Points
+        nonce: Nonce
+        sent_at: Sent At
+        status: Status
+        to_address: To Address
+        token_type: Token Type
+        updated: Updated
+        value: Value
+      notes:
+        empty: No notes attached.
+        error_message: Error Message
+        title: Transaction Notes
+      transaction_record: Transaction Record
+      tx_id_line: "#%{id} // %{at}"
+      wallet:
+        no_wallet: No wallet linked.
+        not_available: N/A
+        title: Linked Wallet
+        tree_did: Tree DID
+        wallet_balance: Wallet Balance

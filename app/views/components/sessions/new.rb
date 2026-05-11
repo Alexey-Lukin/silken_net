@@ -22,17 +22,17 @@ module Sessions
             render_flash_messages
 
             div(class: "space-y-6") do
-              field_container(t_("identity_label")) do
-                f.email_field :email, class: input_classes, placeholder: t_("identity_placeholder"), required: true
+              field_container(t(".identity_label")) do
+                f.email_field :email, class: input_classes, placeholder: t(".identity_placeholder"), required: true
               end
 
-              field_container(t_("access_code_label")) do
-                f.password_field :password, class: input_classes, placeholder: t_("access_code_placeholder"), required: true
+              field_container(t(".access_code_label")) do
+                f.password_field :password, class: input_classes, placeholder: t(".access_code_placeholder"), required: true
               end
             end
 
             div(class: "pt-4") do
-              f.submit t_("submit").upcase, class: submit_classes
+              f.submit t(".submit").upcase, class: submit_classes
             end
 
             render_forgot_password_link
@@ -46,16 +46,15 @@ module Sessions
     private
 
     # Lazy-lookup helper scoped to the `sessions.new.*` namespace so call-sites
-    # stay terse: `t_("submit")` instead of `I18n.t("sessions.new.submit")`.
-    def t_(key) = I18n.t("sessions.new.#{key}")
+    # stay terse: `t(".submit")` instead of `t(".submit")`.
 
     def render_portal_header
       div(class: "text-center mb-10 space-y-2") do
         div(class: "inline-block h-12 w-12 border border-gaia-primary rotate-45 mb-4 relative", aria_hidden: "true") do
           div(class: "absolute inset-1 bg-emerald-500 animate-pulse")
         end
-        h1(class: "text-3xl font-extralight text-gaia-text-strong tracking-[0.3em] uppercase") { t_("title") }
-        p(class: "text-tiny text-gaia-text-muted uppercase tracking-[0.5em]") { t_("subtitle") }
+        h1(class: "text-3xl font-extralight text-gaia-text-strong tracking-[0.3em] uppercase") { t(".title") }
+        p(class: "text-tiny text-gaia-text-muted uppercase tracking-[0.5em]") { t(".subtitle") }
       end
     end
 
@@ -92,14 +91,14 @@ module Sessions
     def render_forgot_password_link
       div(class: "text-right") do
         a(href: api_v1_forgot_password_path, class: "text-tiny text-gaia-text-subtle uppercase tracking-widest hover:text-gaia-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-colors") do
-          t_("forgot_link")
+          t(".forgot_link")
         end
       end
     end
 
     def render_social_providers
       div(class: "space-y-4 pt-4 border-t border-gaia-border") do
-        p(class: "text-mini uppercase tracking-widest text-gaia-text-subtle text-center") { t_("provider_separator") }
+        p(class: "text-mini uppercase tracking-widest text-gaia-text-subtle text-center") { t(".provider_separator") }
 
         div(class: "grid grid-cols-2 gap-3") do
           provider_button("google_oauth2", "Google", "🔵")
@@ -113,7 +112,7 @@ module Sessions
     def provider_button(provider, label, icon)
       a(
         href: "/auth/#{provider}",
-        aria_label: I18n.t("sessions.new.provider_aria", provider: label),
+        aria_label: t(".provider_aria", provider: label),
         class: "flex items-center justify-center gap-2 py-3 border border-gaia-border-strong text-gaia-text-muted text-tiny uppercase tracking-widest hover:border-gaia-primary hover:text-gaia-text hover:bg-gaia-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary transition-all"
       ) do
         span(aria_hidden: "true") { icon }
@@ -123,7 +122,7 @@ module Sessions
 
     def render_footer_seal
       div(class: "text-center") do
-        p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest") { t_("footer_status") }
+        p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest") { t(".footer_status") }
       end
     end
   end

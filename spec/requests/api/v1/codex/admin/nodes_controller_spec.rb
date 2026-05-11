@@ -39,7 +39,7 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
       patch "/api/v1/codex/admin/nodes/#{node.slug}",
             params: { node: { lifecycle_status: "imaginary" } },
             headers: headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
     it "is forbidden for foresters" do

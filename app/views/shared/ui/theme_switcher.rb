@@ -8,7 +8,7 @@ module Views
           div(id: "theme-switcher", data: { controller: "theme", turbo_permanent: "" }) do
             button(
               type: "button",
-              aria_label: "Toggle light/dark theme",
+              aria_label: t("theme.toggle_label"),
               class: "p-2 border border-gaia-border text-gaia-text-muted " \
                      "hover:text-gaia-primary hover:border-gaia-primary " \
                      "focus:outline-none focus:ring-2 focus:ring-gaia-primary " \

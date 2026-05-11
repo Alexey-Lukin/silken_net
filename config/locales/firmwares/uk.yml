@@ -1,0 +1,41 @@
+---
+uk:
+  firmwares:
+    form:
+      binary_label: Бінарний артефакт (.bin)
+      notes_label: Нотатки релізу / Логічні зміни
+      notes_placeholder: Опис змін у біогенній прошивці...
+      submit: ЗАФІКСУВАТИ ЕВОЛЮЦІЮ
+      target_label: Цільова архітектура обладнання
+      target_queen: ESP32-S3 (Королева)
+      target_soldier: STM32-L0 (Солдат)
+      version_label: Версія еволюції
+      version_placeholder: напр. 1.4.2
+    index:
+      columns:
+        checksum: Контрольна сума (MD5)
+        command: Команда
+        target_hardware: Цільове обладнання
+        uploaded: Завантажено
+        version: Версія
+      deploy_aria: Розгорнути прошивку v%{version}
+      inventory_title: Інвентар лісу (Розподіл версій)
+      queens: Королеви (Шлюзи)
+      registry_title: Доступні бінарні еволюції
+      soldiers: Солдати (Дерева)
+      units: "%{count} одиниць"
+      upload: "+ Ввести новий код"
+      upload_aria: Завантажити нову бінарну прошивку
+      version_label: v%{version}
+    new:
+      subtitle: Підготуйте бінарний артефакт для OTA-розгортання
+      title: Введення нового коду
+    ota_progress_bar:
+      chunk: 'ЧАНК: %{current} / %{total}'
+      complete: "%{percent}% ЗАВЕРШЕНО"
+      link_label: 'OTA_ЛІНК: %{uid}'
+    row:
+      confirm: Ініціювати еволюцію до v%{version} для обраного обладнання?
+      not_available: Н/Д
+      order_evolution: Замовити еволюцію →
+      version: v%{version}

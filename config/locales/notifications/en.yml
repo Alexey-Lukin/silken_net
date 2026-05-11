@@ -1,0 +1,6 @@
+---
+en:
+  notifications:
+    settings:
+      email_hint: Email can be changed in your profile.
+      subtitle: Configure notification channels — where to deliver alerts and events.

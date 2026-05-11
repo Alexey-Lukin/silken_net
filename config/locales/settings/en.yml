@@ -1,0 +1,5 @@
+---
+en:
+  settings:
+    show:
+      subtitle: 'Organization configuration: name, billing, crypto address, alert thresholds, and AI sensitivity.'

@@ -87,7 +87,7 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       post "/api/v1/codex/citations",
            params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id },
            headers: headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

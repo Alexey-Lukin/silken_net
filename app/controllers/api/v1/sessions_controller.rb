@@ -8,7 +8,7 @@ module Api
 
       # Захист від перебору (Brute Force): обмеження кількості спроб входу
       rate_limit to: 5, within: 1.minute, only: :create, with: -> {
-        render json: { error: "Забагато спроб входу. Спробуйте через хвилину." }, status: :too_many_requests
+        render json: { error: I18n.t("flash.sessions.rate_limited") }, status: :too_many_requests
       }
 
       # --- ПОРТАЛ ВХОДУ ---
@@ -50,7 +50,7 @@ module Api
         # 2. Перевіряємо чи ідентичність заблокована (Account Takeover Protection)
         existing_identity = Identity.find_by(provider: auth.provider, uid: auth.uid)
         if existing_identity&.locked?
-          redirect_to api_v1_login_path, alert: "Цей метод входу заблоковано. Зверніться до адміністратора або використайте інший метод."
+          redirect_to api_v1_login_path, alert: I18n.t("flash.sessions.blocked_provider")
           return
         end
 
@@ -69,7 +69,7 @@ module Api
         session[:user_id] = nil
 
         respond_to do |format|
-          format.json { render json: { message: "Вихід успішний. Брама закрита." }, status: :ok }
+          format.json { render json: { message: I18n.t("flash.sessions.logout_success") }, status: :ok }
           format.html { redirect_to api_v1_login_path, notice: "Neural Link Severed." }
         end
       end
@@ -111,7 +111,7 @@ module Api
 
       def render_login_failure
         respond_to do |format|
-          format.json { render json: { error: "Невірні координати доступу." }, status: :unauthorized }
+          format.json { render json: { error: I18n.t("flash.sessions.invalid_credentials") }, status: :unauthorized }
           format.html do
             render_auth_page(
               title: "Login Portal",

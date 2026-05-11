@@ -35,16 +35,16 @@ module Actuators
     def header_section
       div(class: "p-8 border border-emerald-900 bg-black flex flex-col md:flex-row justify-between items-start md:items-center relative overflow-hidden shadow-2xl") do
         # Декоративний фон
-        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { "ACTUATORS" }
+        div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none") { t(".decoration") }
 
         div do
-          h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700 mb-2") { "Hardware Interaction Layer" }
-          h2(class: "text-3xl font-extralight text-emerald-400 tracking-tighter") { "Sector Matrix // #{@cluster.name}" }
+          h3(class: "text-tiny uppercase tracking-[0.5em] text-emerald-700 mb-2") { t(".title") }
+          h2(class: "text-3xl font-extralight text-emerald-400 tracking-tighter") { t(".sector_matrix", name: @cluster.name) }
         end
 
         div(class: "mt-4 md:mt-0 flex gap-6 text-tiny font-mono") do
-          stat_label("Active Nodes", @active_count)
-          stat_label("Total Units", @pagy.count)
+          stat_label(t(".active_nodes"), @active_count)
+          stat_label(t(".total_units"), @pagy.count)
         end
       end
     end
@@ -58,9 +58,9 @@ module Actuators
 
     def render_empty_state
       render Views::Shared::UI::EmptyState.new(
-        title: "No actuator nodes provisioned in this sector.",
+        title: t(".empty_title"),
         icon: "⚙",
-        description: "Deploy hardware to begin monitoring."
+        description: t(".empty_description")
       )
     end
   end

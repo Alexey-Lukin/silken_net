@@ -22,17 +22,19 @@ module Api
           result = ::Codex::PairSelectorService.call(user: current_user, realm: realm)
 
           unless result.success?
-            return render(
-              ::Codex::Battle::Arena.new(
+            return render_dashboard(
+              title: I18n.t("codex.battle_arena.page_title", default: "Codex · Battle Arena"),
+              component: ::Codex::Battle::Arena.new(
                 left: nil, right: nil, pair_seed: nil,
                 realm: realm, error: result.error
               ),
-              status: :unprocessable_entity
+              status: :unprocessable_content
             )
           end
 
-          render(
-            ::Codex::Battle::Arena.new(
+          render_dashboard(
+            title: I18n.t("codex.battle_arena.page_title", default: "Codex · Battle Arena"),
+            component: ::Codex::Battle::Arena.new(
               left: result.left, right: result.right,
               pair_seed: result.pair_seed, realm: result.realm,
               error: nil
@@ -67,8 +69,9 @@ module Api
                 next_pair = ::Codex::PairSelectorService.call(
                   user: current_user, realm: result.match.realm
                 )
-                render(
-                  ::Codex::Battle::Arena.new(
+                render_dashboard(
+                  title: I18n.t("codex.battle_arena.page_title", default: "Codex · Battle Arena"),
+                  component: ::Codex::Battle::Arena.new(
                     left: next_pair.success? ? next_pair.left  : nil,
                     right: next_pair.success? ? next_pair.right : nil,
                     pair_seed: next_pair.success? ? next_pair.pair_seed : nil,
@@ -80,7 +83,7 @@ module Api
               end
             end
           else
-            status = result.error == "seed_invalid_or_consumed" ? :forbidden : :unprocessable_entity
+            status = result.error == "seed_invalid_or_consumed" ? :forbidden : :unprocessable_content
             render json: { error: result.error }, status: status
           end
         end

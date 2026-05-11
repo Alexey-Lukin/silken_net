@@ -23,11 +23,11 @@ module AuditLogs
     def header_section
       div(class: "flex justify-between items-end mb-4") do
         div do
-          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { "👁️ The Watcher — Audit Log" }
-          p(class: "text-xs text-gray-600 mt-1") { "Журнал дій адміністраторів: хто, коли та що змінив." }
+          h3(class: "text-tiny uppercase tracking-[0.4em] text-emerald-700") { t(".title") }
+          p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
         div(class: "text-right font-mono text-tiny text-emerald-900") do
-          plain "Records: "
+          plain "#{t('.records')} "
           span(class: "text-emerald-500") { @pagy.count.to_s }
         end
       end
@@ -38,11 +38,11 @@ module AuditLogs
         table(role: "table", class: "w-full text-left font-mono text-compact") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-mini tracking-widest") do
             tr do
-              th(scope: "col", class: "p-4") { "Timestamp" }
-              th(scope: "col", class: "p-4") { "User" }
-              th(scope: "col", class: "p-4") { "Action" }
-              th(scope: "col", class: "p-4") { "Target" }
-              th(scope: "col", class: "p-4 text-right") { "Details" }
+              th(scope: "col", class: "p-4") { t(".columns.timestamp") }
+              th(scope: "col", class: "p-4") { t(".columns.user") }
+              th(scope: "col", class: "p-4") { t(".columns.action") }
+              th(scope: "col", class: "p-4") { t(".columns.target") }
+              th(scope: "col", class: "p-4 text-right") { t(".columns.details") }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
@@ -50,7 +50,7 @@ module AuditLogs
               @logs.each { |log| render_log_row(log) }
             else
               render Views::Shared::UI::EmptyState.new(
-                title: "No audit events recorded.",
+                title: t(".empty_title"),
                 icon: "👁️",
                 colspan: 5
               )
@@ -63,7 +63,7 @@ module AuditLogs
     def render_log_row(log)
       tr(class: "hover:bg-emerald-950/10 transition-colors") do
         td(class: "p-4 text-tiny text-gray-600") { log.created_at.strftime("%H:%M:%S // %d.%m.%y") }
-        td(class: "p-4 text-emerald-400") { log.user&.full_name || "System" }
+        td(class: "p-4 text-emerald-400") { log.user&.full_name || t(".system_user") }
         td(class: "p-4") do
           render Views::Shared::UI::ActionBadge.new(action: log.action)
         end
@@ -75,7 +75,7 @@ module AuditLogs
           end
         end
         td(class: "p-4 text-right") do
-          a(href: api_v1_audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-mini uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: "Inspect audit log ##{log.id}") { "Inspect →" }
+          a(href: api_v1_audit_log_path(log), class: "text-emerald-600 hover:text-white transition-all text-mini uppercase tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", aria_label: t(".inspect_aria", id: log.id)) { t(".inspect") }
         end
       end
     end

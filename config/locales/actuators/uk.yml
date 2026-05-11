@@ -1,0 +1,43 @@
+---
+uk:
+  actuators:
+    card:
+      endpoint: 'Endpoint:'
+      energy_budget: 'Енергетичний бюджет:'
+      energy_budget_value: "%{mj} мДж"
+      execute_off: ВИКОНАТИ_ВИМКНУТИ
+      execute_off_aria: Виконати команду ВИМКНУТИ для актуатора %{device_type}
+      execute_on: ВИКОНАТИ_УВІМКНУТИ
+      execute_on_aria: Виконати команду УВІМКНУТИ для актуатора %{device_type}
+      gateway: 'Шлюз: %{uid}'
+      idle: ОЧІКУВАННЯ
+      last_activated: 'Остання активація:'
+      last_sync_status: 'Статус останньої синхронізації:'
+      max_duration: 'Макс. тривалість:'
+      max_duration_value: "%{seconds}с"
+      never: НІКОЛИ
+      physical_state: 'Фізичний стан:'
+    command_status_badge:
+      acknowledged: підтверджено
+      confirmed: підтверджено
+      failed: невдало
+      issued: видано
+      sent: надіслано
+    index:
+      active_nodes: Активних вузлів
+      decoration: АКТУАТОРИ
+      empty_description: Розгорніть обладнання для початку моніторингу.
+      empty_title: У цьому секторі не розгорнуто актуаторів.
+      sector_matrix: Матриця сектору // %{name}
+      title: Шар взаємодії з обладнанням
+      total_units: Всього юнітів
+    show:
+      columns:
+        executed_at: Час виконання
+        id: ID
+        operator: Оператор
+        payload: Payload
+        status: Статус
+      log_title: Журнал виконання команд
+      not_executed: "---"
+      system_operator: СИСТЕМА

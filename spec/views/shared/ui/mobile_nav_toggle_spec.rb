@@ -38,8 +38,10 @@ RSpec.describe Views::Shared::UI::MobileNavToggle do
   end
 
   describe "i18n" do
-    it "labels the trigger via I18n in Ukrainian by default" do
-      expect(html).to include('aria-label="Відкрити навігацію"')
+    it "labels the trigger via I18n in Ukrainian" do
+      I18n.with_locale(:uk) do
+        expect(render_component).to include('aria-label="Відкрити навігацію"')
+      end
     end
 
     it "switches the label to English under :en locale" do

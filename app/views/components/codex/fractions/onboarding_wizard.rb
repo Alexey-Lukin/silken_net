@@ -29,7 +29,7 @@ module Codex
         section(
           id: "codex_onboarding_wizard",
           role: "region",
-          aria_label: "Codex onboarding",
+          aria_label: t("codex.fractions.onboarding.aria_label"),
           class: tokens(
             "border border-gaia-border bg-gaia-surface text-gaia-text",
             "px-4 py-4 md:px-6 md:py-5 mb-6 md:mb-8",
@@ -46,14 +46,13 @@ module Codex
       def render_message
         div(class: "space-y-1") do
           p(class: "text-mini uppercase tracking-[0.3em] text-gaia-text-muted") do
-            "Codex // Onboarding"
+            t("codex.fractions.onboarding.kicker")
           end
           h2(class: "text-base md:text-lg font-light tracking-wide text-gaia-text") do
             greeting
           end
           p(class: "text-tiny text-gaia-text-muted max-w-2xl") do
-            "Align your account with a Codex archetype to unlock the lore layer, " \
-              "join the Battle Arena, and reveal Discoveries as your forest grows."
+            t("codex.fractions.onboarding.body")
           end
         end
       end
@@ -69,7 +68,7 @@ module Codex
               "hover:bg-gaia-surface hover:text-gaia-primary",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
             )
-          ) { "Choose your Fraction →" }
+          ) { t("codex.fractions.onboarding.cta_primary") }
 
           a(
             href: api_v1_codex_realms_path,
@@ -79,16 +78,16 @@ module Codex
               "hover:text-gaia-text hover:border-gaia-primary",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary"
             )
-          ) { "Browse the Codex" }
+          ) { t("codex.fractions.onboarding.cta_secondary") }
         end
       end
 
       def greeting
         first = @current_user.first_name.to_s.strip
         if first.empty?
-          "Welcome to the Codex."
+          t("codex.fractions.onboarding.welcome")
         else
-          "Welcome to the Codex, #{first}."
+          t("codex.fractions.onboarding.welcome_named", name: first)
         end
       end
     end

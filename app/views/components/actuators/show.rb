@@ -15,7 +15,7 @@ module Actuators
 
           # Реєстр команд
           div(class: "lg:col-span-2 space-y-4") do
-            h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { "Command Execution Log" }
+            h3(class: "text-tiny uppercase tracking-widest text-emerald-700") { t(".log_title") }
             render_command_table
           end
         end
@@ -29,23 +29,23 @@ module Actuators
         table(class: "w-full text-left font-mono text-tiny min-w-[640px]", role: "table") do
           thead(class: "bg-emerald-950/20 text-emerald-800 uppercase text-micro tracking-widest") do
             tr do
-              th(scope: "col", class: "p-4") { "ID" }
-              th(scope: "col", class: "p-4") { "Operator" }
-              th(scope: "col", class: "p-4") { "Payload" }
-              th(scope: "col", class: "p-4") { "Status" }
-              th(scope: "col", class: "p-4 text-right") { "Executed At" }
+              th(scope: "col", class: "p-4") { t(".columns.id") }
+              th(scope: "col", class: "p-4") { t(".columns.operator") }
+              th(scope: "col", class: "p-4") { t(".columns.payload") }
+              th(scope: "col", class: "p-4") { t(".columns.status") }
+              th(scope: "col", class: "p-4 text-right") { t(".columns.executed_at") }
             end
           end
           tbody(class: "divide-y divide-emerald-900/30") do
             @commands.each do |cmd|
               tr(class: "hover:bg-emerald-950/10") do
                 td(class: "p-4 text-emerald-900") { "##{cmd.id}" }
-                td(class: "p-4 text-emerald-100") { cmd.user&.first_name || "SYSTEM" }
+                td(class: "p-4 text-emerald-100") { cmd.user&.first_name || t(".system_operator") }
                 td(class: "p-4 font-bold text-white") { cmd.command_payload }
                 td(class: "p-4") do
                   span(class: tokens("px-2 py-0.5 border text-micro uppercase", cmd_status_class(cmd))) { cmd.status }
                 end
-                td(class: "p-4 text-right text-gray-600") { cmd.executed_at&.strftime("%d.%m.%y // %H:%M:%S") || "---" }
+                td(class: "p-4 text-right text-gray-600") { cmd.executed_at&.strftime("%d.%m.%y // %H:%M:%S") || t(".not_executed") }
               end
             end
           end

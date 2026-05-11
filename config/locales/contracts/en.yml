@@ -1,0 +1,59 @@
+---
+en:
+  contracts:
+    index:
+      audit_aria: 'View contract #%{id} details'
+      audit_details: AUDIT_DETAILS →
+      columns:
+        command: Command
+        current_yield: Current Yield
+        id_status: ID / Status
+        investment: Investment
+        organization: Organization
+        performance: Performance
+        period: Period
+        target_cluster: Target Cluster
+      portfolio_title: Active Asset Portfolio
+      stats:
+        biogenic_yield: Biogenic Yield
+        network_health: Network Health
+        portfolio_avg: Portfolio Avg
+        portfolio_capital: Portfolio Capital
+        total_injected: Total Injected
+        total_minted: Total Minted
+      unassigned: UNASSIGNED
+    show:
+      backing:
+        active_soldiers: Active Soldiers
+        danger: DANGER
+        nominal: NOMINAL
+        threat_status: Threat Status
+        title: Backing Asset Health
+        vitality: Cluster Vitality
+      current_yield: Current Yield
+      decoration: NaaS
+      identity: Contract Identity
+      ledger:
+        amount: Amount
+        amount_value: "+ %{amount} SCC"
+        empty: No emissions recorded.
+        pending_block: PENDING_BLOCK
+        timestamp: Timestamp
+        title: Blockchain Emission History
+        tx_hash: TX Hash
+      legal:
+        burn_no: 'No'
+        burn_points: Burn Accrued Points
+        burn_yes: 'Yes'
+        cancellation_title: Cancellation Terms
+        early_exit_fee: Early Exit Fee
+        early_exit_value: "%{value}%"
+        min_days: Min Days Before Exit
+        title: Smart Contract Data
+        verified: Verified by Silken Net Oracle. Performance indexed to LorentzA attractor stability.
+      organization: 'Organization: %{name}'
+      period: 'Period: %{start} → %{end}'
+      status: 'Status: %{value}'
+      title: "#%{id} // SEC_%{sector}"
+      total_funding: 'Total Funding: %{amount} SCC'
+      yield_unit: SCC

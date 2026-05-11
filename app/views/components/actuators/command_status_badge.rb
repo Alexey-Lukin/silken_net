@@ -17,11 +17,12 @@ module Actuators
     def view_template
       status = @command.status.to_s
       style  = STATUS_STYLES.fetch(status, "bg-zinc-800 text-zinc-300")
+      label  = t(".#{status}", default: status)
 
       span(
         id: "command_status_#{@command.id}",
         class: tokens("px-2 py-0.5 rounded text-tiny font-bold uppercase", style)
-      ) { status }
+      ) { label }
     end
   end
 end

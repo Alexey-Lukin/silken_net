@@ -1,0 +1,44 @@
+---
+uk:
+  audit_logs:
+    index:
+      columns:
+        action: Дія
+        details: Деталі
+        target: Об'єкт
+        timestamp: Час
+        user: Користувач
+      empty_title: Подій аудиту не зафіксовано.
+      inspect: Переглянути →
+      inspect_aria: 'Переглянути запис аудиту #%{id}'
+      records: 'Записів:'
+      subtitle: 'Журнал дій адміністраторів: хто, коли та що змінив.'
+      system_user: Система
+      title: "👁️ Спостерігач — Журнал аудиту"
+    show:
+      actor:
+        email: Email
+        name: Ім'я
+        role: Роль
+        system: Системний актор.
+        title: Ідентичність актора
+      decoration: LOG
+      details:
+        action: Дія
+        field: Поле
+        performed_by: Виконано
+        target_id: ID об'єкта
+        target_type: Тип об'єкта
+        timestamp: Час
+        value: Значення
+      event_record: Запис події аудиту
+      metadata:
+        empty: Додаткових метаданих немає.
+        title: Метадані події
+      system_user: Система
+      target:
+        empty: Конкретного об'єкта немає.
+        id: ID
+        title: Об'єкт аудиту
+        type: Тип
+      tx_id_line: "#%{id} // %{at}"

@@ -50,7 +50,7 @@ RSpec.describe "Api::V1::Codex::Attunements", type: :request do
       post "/api/v1/codex/nodes/#{node.slug}/attunements",
            params: { attunement: { intensity: 99 } },
            headers: headers, as: :json
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["errors"]).to be_an(Array).and(be_present)
     end
 

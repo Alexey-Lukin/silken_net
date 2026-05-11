@@ -67,7 +67,7 @@ module Api
         if params[:firmware][:binary_file].present?
           uploaded_file = params[:firmware][:binary_file]
           if uploaded_file.size > MAX_FIRMWARE_SIZE
-            render json: { error: "Розмір файлу перевищує ліміт #{MAX_FIRMWARE_SIZE / 1.megabyte} МБ." }, status: :unprocessable_content
+            render json: { error: I18n.t("flash.firmwares.file_too_large", limit: MAX_FIRMWARE_SIZE / 1.megabyte) }, status: :unprocessable_content
             return
           end
 
@@ -79,7 +79,7 @@ module Api
           respond_to do |format|
             format.json do
               render json: {
-                message: "Нову еволюцію v#{@firmware.version} завантажено в Океан.",
+                message: I18n.t("flash.firmwares.uploaded", version: @firmware.version),
                 firmware: @firmware
               }, status: :created
             end
@@ -130,8 +130,8 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              message: "Наказ на еволюцію v#{@firmware.version} відправлено в ефір.",
-              target: params[:cluster_id] ? "Кластер ##{params[:cluster_id]}" : "Весь ліс",
+              message: I18n.t("flash.firmwares.deployment_dispatched", version: @firmware.version),
+              target: params[:cluster_id] ? I18n.t("flash.firmwares.target_cluster", id: params[:cluster_id]) : I18n.t("flash.firmwares.target_all"),
               canary_percentage: canary_percentage
             }, status: :accepted
           end

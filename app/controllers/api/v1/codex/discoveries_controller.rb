@@ -31,7 +31,10 @@ module Api
               }
             end
             format.html do
-              render(::Codex::Discoveries::List.new(discoveries: @discoveries, pagy: @pagy))
+              render_dashboard(
+                title: I18n.t("codex.discoveries.page_title", default: "Codex · My Discoveries"),
+                component: ::Codex::Discoveries::List.new(discoveries: @discoveries, pagy: @pagy)
+              )
             end
           end
         end

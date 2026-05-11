@@ -16,30 +16,30 @@ module Wallets
 
     def render_wallet_metadata
       div(class: "p-6 border border-emerald-900 bg-black shadow-xl") do
-        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { "Blockchain Identity" }
+        h3(class: "text-tiny uppercase tracking-widest text-emerald-700 mb-6") { t(".title") }
         div(class: "space-y-4 font-mono text-tiny") do
           div do
-            p(class: "text-gray-600 mb-1 uppercase") { "Polygon Address" }
+            p(class: "text-gray-600 mb-1 uppercase") { t(".polygon_address") }
             if @wallet.crypto_public_address.present?
               render Views::Shared::Web3::Address.new(address: @wallet.crypto_public_address)
             else
-              p(class: "text-gaia-text-muted italic") { "NOT_PROVISIONED" }
+              p(class: "text-gaia-text-muted italic") { t(".not_provisioned") }
             end
           end
           div do
-            p(class: "text-gray-600 mb-1 uppercase") { "Network" }
-            p(class: "text-white") { "Polygon PoS (Mainnet)" }
+            p(class: "text-gray-600 mb-1 uppercase") { t(".network") }
+            p(class: "text-white") { t(".polygon_mainnet") }
           end
           div(class: "pt-3 border-t border-emerald-900/30") do
-            p(class: "text-gaia-text-muted mb-1 uppercase") { "Locked Balance" }
+            p(class: "text-gaia-text-muted mb-1 uppercase") { t(".locked_balance") }
             p(class: "text-status-warning-text") { "#{@wallet.locked_balance.to_f.round(4)} SCC" }
           end
           div do
-            p(class: "text-gaia-text-muted mb-1 uppercase") { "Available Balance" }
+            p(class: "text-gaia-text-muted mb-1 uppercase") { t(".available_balance") }
             p(class: "text-gaia-primary") { "#{@wallet.available_balance.to_f.round(4)} SCC" }
           end
           div do
-            p(class: "text-gaia-text-muted mb-1 uppercase") { "ESG Retired" }
+            p(class: "text-gaia-text-muted mb-1 uppercase") { t(".esg_retired") }
             p(class: "text-gaia-text-muted") { "#{@wallet.esg_retired_balance.to_f.round(4)} SCC" }
           end
         end

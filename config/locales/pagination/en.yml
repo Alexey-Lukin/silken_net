@@ -1,9 +1,10 @@
+---
 en:
   pagination:
     aria_label: Pagination
-    previous: "← Previous"
-    next: "Next →"
-    previous_aria: Go to previous page
+    next: Next →
     next_aria: Go to next page
-    page_indicator: "Page %{current} / %{total}"
+    page_indicator: Page %{current} / %{total}
     page_indicator_compact: "%{current} / %{total}"
+    previous: "← Previous"
+    previous_aria: Go to previous page
