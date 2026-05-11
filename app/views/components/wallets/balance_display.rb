@@ -18,15 +18,15 @@ module Wallets
         end
         div(class: "mt-6 flex gap-8 text-xs font-mono") do
           div do
-            span(class: "text-gray-600 uppercase") { "#{t('wallets.balance_display.locked')} " }
+            span(class: "text-gray-600 uppercase") { "#{t('.locked')} " }
             span(class: "text-status-warning-text") { @wallet.locked_balance.to_f.round(4) }
           end
           div do
-            span(class: "text-gray-600 uppercase") { "#{t('wallets.balance_display.available')} " }
+            span(class: "text-gray-600 uppercase") { "#{t('.available')} " }
             span(class: "text-emerald-400") { @wallet.available_balance.to_f.round(4) }
           end
           div do
-            span(class: "text-gray-600 uppercase") { "#{t('wallets.balance_display.esg_retired')} " }
+            span(class: "text-gray-600 uppercase") { "#{t('.esg_retired')} " }
             span(class: "text-gray-500") { @wallet.esg_retired_balance.to_f.round(4) }
           end
         end

@@ -27,7 +27,7 @@ module AuditLogs
           p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
         div(class: "text-right font-mono text-tiny text-emerald-900") do
-          plain "#{t('audit_logs.index.records')} "
+          plain "#{t('.records')} "
           span(class: "text-emerald-500") { @pagy.count.to_s }
         end
       end

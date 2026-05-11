@@ -35,7 +35,7 @@ module Gateways
         end
 
         div(class: "text-right font-mono text-tiny text-emerald-900") do
-          plain "#{t('gateways.index.nodes_online')} "
+          plain "#{t('.nodes_online')} "
           span(class: "text-emerald-500") { "#{@online_count} / #{@pagy.count}" }
         end
       end

@@ -24,7 +24,7 @@ module Reports
           p(class: "text-xs text-gray-600 mt-1") { t(".subtitle") }
         end
         div(class: "text-right font-mono text-tiny text-emerald-900") do
-          plain "#{t('reports.index.organization')} "
+          plain "#{t('.organization')} "
           span(class: "text-emerald-500") { @organization.name }
         end
       end
