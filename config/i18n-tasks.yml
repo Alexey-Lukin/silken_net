@@ -23,22 +23,24 @@ data:
     write:
       line_width: -1   # Disable line wrapping (keeps long Ukrainian strings on one line)
 
-# Where to look for `t("...")` / `t(".key")` references. Phlex components
-# live under app/views/components/**/*.rb — the default `app/**/*.rb` glob
-# already covers them.
+# Phlex components live under app/views/components/**/*.rb and use a custom
+# `ApplicationComponent#t(".key")` that derives scope from the Ruby class name
+# (e.g. `AccountSecurity::Show#t(".heading")` → `account_security.show.heading`).
 #
-# Note: `relative_roots` is omitted intentionally. Phlex's `t(".key")` autoscope
-# is derived from the component's class name (e.g. `Codex::Show#t(".heading")` →
-# `codex.show.heading`), not from the file path, so i18n-tasks' default
-# path-based relative-key resolution would only produce false positives. We
-# rely on `i18n-tasks missing` / `check-consistent-interpolations` against the
-# fully-qualified keys we author in YAML — which is sufficient because at
-# runtime Rails resolves the same class-name-based scope.
+# Because file layout mirrors the class namespace (convention over configuration),
+# setting `relative_roots` to `app/views/components` makes i18n-tasks resolve
+# relative keys using the same path-based scope. `relative_exclude_method_name_paths`
+# prevents i18n-tasks from inserting the enclosing method name into the scope —
+# our runtime `t` does not use method names, only the class hierarchy.
 search:
   paths:
     - app/
     - config/locales/
     - lib/
+  relative_roots:
+    - app/views/components
+  relative_exclude_method_name_paths:
+    - app/views/components
   exclude:
     - app/assets
     - app/javascript
@@ -51,11 +53,6 @@ ignore_missing:
   - 'locale.available.*'
   # Trigger labels are looked up dynamically by Codex::Discoveries::Toast.
   - 'codex.discoveries.toast.triggers.*'
-  # Phlex component autoscope: i18n-tasks resolves t(".key") using file path +
-  # method name, producing keys like `components.wallets.show.render_header.title`.
-  # Our ApplicationComponent#t resolves via class name only (e.g. `wallets.show.title`).
-  # All `components.*` detected keys are false positives — suppress them.
-  - 'components.*'
 
 ignore_unused:
   # Cross-cutting flash messages used from outside the static view tree.
