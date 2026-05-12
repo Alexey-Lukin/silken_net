@@ -20,6 +20,10 @@
 
 ---
 
+---
+
+### ⚙️ Стан Реалізації
+
 | Компонент | Стан |
 |-----------|------|
 | **AES-256 апаратний модуль** (`MX_CRYP_Init` / `HAL_CRYP_Init`) | ✅ Реалізовано (обидва вузли) |
@@ -528,10 +532,10 @@ uint32_t aes_key[8] = {
 
 Щоб історична регресія FIPS-197 Appendix B не повторилась тихою підстановкою тест-вектора у `PROVISIONING_MASTER_KEY` під час майбутньої ротації, додано автоматичний детектор слабких master-ключів:
 
-* **Сервіс:** `app/services/security/weak_key_detector.rb` (`Security::WeakKeyDetector.detect(value, hint:)`).
-* **Boot-time guard:** `config/initializers/master_key_strength_check.rb` — у `RAILS_ENV=production` (включно з canopy) перевіряє `ENV["PROVISIONING_MASTER_KEY"]` і **raise'ить `SecurityError`** до запуску додатку, якщо ключ співпадає з відомим патерном.
-* **Bypass:** `SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK=1` для аварійного rescue-boot (логується гучно, не для рутини).
-* **Тест/dev:** перевірка пропускається — `spec/rails_helper.rb` піннить детермінований fixture (`silken-net-test-master-key-32b!!`), який сам по собі позначений у блок-листі.
+- **Сервіс:** `app/services/security/weak_key_detector.rb` (`Security::WeakKeyDetector.detect(value, hint:)`).
+- **Boot-time guard:** `config/initializers/master_key_strength_check.rb` — у `RAILS_ENV=production` (включно з canopy) перевіряє `ENV["PROVISIONING_MASTER_KEY"]` і **raise'ить `SecurityError`** до запуску додатку, якщо ключ співпадає з відомим патерном.
+- **Bypass:** `SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK=1` для аварійного rescue-boot (логується гучно, не для рутини).
+- **Тест/dev:** перевірка пропускається — `spec/rails_helper.rb` піннить детермінований fixture (`silken-net-test-master-key-32b!!`), який сам по собі позначений у блок-листі.
 
 **Що блокує детектор:**
 
