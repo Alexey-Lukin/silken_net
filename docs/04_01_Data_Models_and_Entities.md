@@ -14,6 +14,43 @@
   - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
   - Web3-економіка → [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC)
 
+### Конвенція впорядкування розділів
+
+1. **§0 PostgreSQL Інфраструктура** — extensions, тригери, партиціонування (horizontal infra, не модель).
+2. **§1 Concerns** — повторно вживані mixins (`include` у моделях). Свідомо перед моделями: модель може посилатися на concern у власному рядку.
+3. **§2–§7** — domain-grouped моделі за **онтологічними шарами** реальної системи:
+   - §2 Біологічний (TreeFamily, Tree, Cluster) — фізичний об'єкт моніторингу
+   - §3 Апаратний (Gateway, HardwareKey, DeviceCalibration, TelemetryLog, GatewayTelemetryLog) — IoT-edge
+   - §4 AI / OTA / Актуатори (TinyMlModel, BioContractFirmware, Actuator, ActuatorCommand) — інтелект та фізична відповідь
+   - §5 Люди та Організації (Organization, User, Session, Identity) — соціальний шар
+   - §6 Економічний (Wallet, BlockchainTransaction, NaasContract, ParametricInsurance) — токеноміка
+   - §7 Інтелект та Аудит (AiInsight, EwsAlert, AuditLog, MaintenanceRecord, EthereumAnchor, SystemParameter) — спостережуваність + governance
+4. **§7b Codex (Lore Layer)** — окремий шар, не на критичному шляху телеметрії. Read-only outbound полі-морфні посилання на core-моделі.
+5. **§8 Seeds, §9 Індекси, §10 Карта зв'язків, §11 Архітектурні Принципи, §12 SSOT Drift Register** — horizontal cross-cuts (не належать до конкретного домену; стосуються всіх моделей одразу).
+
+> **Anti-pattern, якого уникаємо:** змішувати моделі з різних доменів в одній секції лише за схожою назвою (наприклад, `BlockchainTransaction` живе в §6 Економіка, а `EthereumAnchor` — в §7 Аудит, хоч обидва "blockchain-related", бо відповідальність різна: одна — фінансовий tx, інша — read-only L1 evidence).
+
+---
+
+## 📑 Зміст
+
+- [0. PostgreSQL Інфраструктура](#️-0-postgresql-інфраструктура) — extensions, тригери, партиціонування (4 таблиці), TimescaleDB rationale
+- [1. Concerns](#-1-concerns) — 6 mixin'ів (EthAddressValidatable, Firmwareable, GeoLocatable, HasArgon2Password, NormalizeIdentifier, OtaChunkable)
+- [2. Біологічний Рівень](#-2-біологічний-рівень) — TreeFamily, **Tree** (Soldier), Cluster
+- [3. Апаратний Рівень](#️-3-апаратний-рівень) — **Gateway** (Queen), HardwareKey, DeviceCalibration, **TelemetryLog** (partitioned), GatewayTelemetryLog (partitioned)
+- [4. AI / OTA / Актуатори](#-4-ai--ota--актуатори) — TinyMlModel, BioContractFirmware, Actuator, ActuatorCommand
+- [5. Люди та Організації](#-5-люди-та-організації) — Organization, User, Session, Identity
+- [6. Економічний Рівень](#-6-економічний-рівень) — Wallet, **BlockchainTransaction** (partitioned), NaasContract, ParametricInsurance
+- [7. Інтелект та Аудит](#-7-інтелект-та-аудит) — AiInsight, EwsAlert, AuditLog, MaintenanceRecord, EthereumAnchor, SystemParameter
+- [7b. Codex — Lore Layer](#-7b-codex--lore-layer-кодекс-архетипів) — Realm, Node, Citation, Comment, Attunement, Fraction, **Match** (partitioned), Discovery, DiscoveryRule
+- [8. Seeds — Початковий Стан Системи](#-8-seeds--початковий-стан-системи)
+- [9. Ключові Індекси](#-9-ключові-індекси)
+- [10. Карта Зв'язків](#️-10-карта-звязків)
+- [11. Архітектурні Принципи БД](#️-11-архітектурні-принципи-бд)
+- [12. SSOT Drift Register (Doc ↔ Schema Sync)](#-12-ssot-drift-register-doc--schema-sync)
+
+> **Bold** = модель/таблиця з партиціонуванням RANGE BY `created_at`. Завжди передавайте `created_at_iso` у відповідні воркери для partition pruning.
+
 ---
 
 ## 🏛️ 0. PostgreSQL Інфраструктура
@@ -40,10 +77,11 @@
 | `telemetry_logs` | RANGE by month | Мільйони рядків/місяць від Солдатів |
 | `gateway_telemetry_logs` | RANGE by month | Тисячі рядків/місяць від Королев |
 | `blockchain_transactions` | RANGE by month | ≈ 12B рядків/рік при 1B дерев × щомісячний SCC мінтинг; composite PK `(id, created_at)` |
+| `codex_matches` | RANGE by month | Codex Battle Arena (Phase 4) — 100M+ duel-рядків очікувано на масштабі. Додано в `PartitionMaintenanceWorker.PARTITIONED_TABLES` (див. `04_02` §11 DOC.11) |
 
-Поточні партиції: `y2026m01` → `y2026m06` + `_default` (для старих/нових даних).
+Поточні партиції: для трьох core-таблиць — `y2026m01` → `y2026m06` + `_default`. Для `codex_matches` (Phase 4) — `y2026m04` → `y2026m09` (запущена пізніше) + `_default`.
 
-**Автоматизація:** `PartitionMaintenanceWorker` (черга `default`) щодня о 02:30 UTC гарантує існування партицій для **поточного та наступного місяця** для всіх трьох таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`). Назва партиції формується за шаблоном `<table>_y<YYYY>m<MM>` (напр. `blockchain_transactions_y2026m04`). Операція ідемпотентна — `CREATE TABLE IF NOT EXISTS`.
+**Автоматизація:** `PartitionMaintenanceWorker` (черга `default`) щодня о 02:30 UTC гарантує існування партицій для **поточного та наступного місяця** для всіх **чотирьох** партиційованих таблиць (`telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`, `codex_matches`). Назва партиції формується за шаблоном `<table>_y<YYYY>m<MM>` (напр. `blockchain_transactions_y2026m04`). Операція ідемпотентна — `CREATE TABLE IF NOT EXISTS`. SSOT константа: `PartitionMaintenanceWorker::PARTITIONED_TABLES`. При додаванні нової RANGE-таблиці — внесіть її **і сюди (§0)**, і у `PARTITIONED_TABLES`, і у `spec/workers/partition_maintenance_worker_spec.rb` (очікуване число OK-ліній = `tables × 2 months`).
 
 > **📝 Розглянута альтернатива — TimescaleDB (E.37):**
 > Для IoT-телеметрії такого масштабу розглядалось розширення TimescaleDB (hypertables, continuous aggregates, автоматична компресія до 90% економії місця). **Чому відхилено для поточного TRL:**
@@ -1461,10 +1499,46 @@ Codex (Lore — read-only):
 | **GREATEST для race conditions** | `mark_seen!` в Tree та Gateway — атомарне оновлення без дублів |
 | **delete_all для масових таблиць** | Телеметрія, тривоги, логи, ActuatorCommands — уникнення OOM при DELETE |
 | **restrict_with_error для фінансів** | NaasContract, ParametricInsurance, Users — захист аудит-слідів |
-| **Партиціонування по місяцях** | telemetry_logs, gateway_telemetry_logs, blockchain_transactions — прунінг старих даних |
+| **Партиціонування по місяцях** | telemetry_logs, gateway_telemetry_logs, blockchain_transactions, codex_matches — прунінг старих даних. SSOT — `PartitionMaintenanceWorker::PARTITIONED_TABLES` (4 таблиці) |
 | **Counter Cache** | `active_trees_count` в Cluster — уникнення COUNT на мільйонах рядків |
 | **Поліморфізм** | AiInsight, MaintenanceRecord, AuditLog, BlockchainTransaction |
 | **PostGIS GIST** | Cluster.geo_boundary — O(log n) геопросторовий пошук |
 | **AR Encryption + In-Process LRU Cache** | HardwareKey.aes_key_hex — шифрування в БД + `cached_binary_key` у in-process LRU (SinLruRedux, max 10 000 entries). Ключі не залишають Ruby-процес (Zero Network Exposure) |
 | **BigDecimal в JSONB** | TinyMlModel accuracy_score/threshold — уникнення Float похибок |
 | **Partial Index для sparse поля** | `blockchain_transactions.tx_hash WHERE tx_hash IS NOT NULL` — виключає рядки без tx_hash (pending/processing) |
+
+---
+
+## 🧭 12. SSOT Drift Register (Doc ↔ Schema Sync)
+
+> **Принцип:** Цей документ — SSOT схеми БД. Тобто:
+> - якщо **схема випередила документ** (нова таблиця/колонка/індекс/тригер є у `db/structure.sql`, але не описана) — оновлюємо документ;
+> - якщо **документ випередив схему** (модель/таблиця документована як існуюча, але немає у `structure.sql` чи `app/models/`) — створюємо/оновлюємо запис у `docs/10_02_Action_Plan_Tracker.md` як невиконану задачу;
+> - якщо **нема ні там, ні там** — приймаємо рішення (потрібне → реєструємо в `10_02`; не потрібне → видаляємо плани з 04_01).
+>
+> Дзеркало `04_02` §13b — спільна методологія, але різний скоуп: тут — БД-шар (таблиці, колонки, індекси, тригери, партиції); в 04_02 — service-шар (сервіси, воркери, ENV).
+> Періодичний аудит — кожен Cool-down цикл Shape Up (`09_01` §5.5).
+
+| Дата | Зона | Тип drift | Що зроблено | Cross-ref |
+|------|------|-----------|-------------|-----------|
+| 2026-05-12 | `codex_matches` партиціонування | Schema ahead of doc (таблиця партиціонована у `db/structure.sql`, `PartitionMaintenanceWorker::PARTITIONED_TABLES` містить 4 елементи, але §0 04_01 і §11 row "Партиціонування по місяцях" перераховували лише 3 таблиці) | Додано `codex_matches` row у §0; виправлено "трьох" → "чотирьох таблиць"; §11 row оновлено; cross-ref на SSOT-константу | §7b Codex::Match, §11, `app/workers/partition_maintenance_worker.rb` |
+| — (відкрите) | Active Storage таблиці (`active_storage_attachments`, `active_storage_blobs`, `active_storage_variant_records`) | Schema (framework) — НЕ documented як окремі таблиці | Status: framework infrastructure, не domain. Inline-згадки у моделях (`Organization.logo`, `MaintenanceRecord.photos`, `Codex::Node.cover_image/gallery`) — достатньо. Не реєструвати як drift | — |
+| — (відкрите) | `schema_migrations`, `ar_internal_metadata` | Framework infra | Same as вище — не реєструвати | — |
+
+### Як додавати нові записи
+
+1. Виявили divergence (нова таблиця у міграціях, нова колонка, новий індекс, новий тригер, нова партиціонована таблиця) — додайте рядок у таблицю з датою.
+2. Якщо drift вимагає коду (наприклад, треба додати колонку у модель, бо схема її має, а AR не знає) — заведіть запис у `docs/10_02` з UID (`E.NN` / `S6.NN`) і посиланням сюди.
+3. Drift register **не замінює** оновлення відповідної секції моделі — обидва місця мають бути синхронізовані.
+
+> **Anti-pattern:** "Додам колонку у міграцію, а до 04_01 запишу потім". `structure.sql` після `bin/rails db:migrate` — це authoritative reality; будь-яке `bin/rails db:schema:dump` яке не супроводжується оновленням `04_01` (модель + індекс) створює silent drift, який ловиться лише при наступному аудиті.
+
+### Інваріанти для перевірки на cool-down аудиті
+
+| Інваріант | Як перевірити |
+|-----------|---------------|
+| Кількість моделей у 04_01 = кількість файлів у `app/models/` (мінус ApplicationRecord + namespace-shims типу `app/models/codex.rb`) | `find app/models -name "*.rb" \| wc -l` vs ToC count |
+| Усі `PARTITION BY RANGE` таблиці зі `structure.sql` присутні у §0 + у `PartitionMaintenanceWorker::PARTITIONED_TABLES` + у §11 row | `grep "PARTITION BY RANGE" db/structure.sql` |
+| Concerns у 04_01 §1 = `app/models/concerns/*.rb` | `ls app/models/concerns/` vs §1 subheadings |
+| AASM-моделі: `Gateway`, `NaasContract`, `Wallet`, `BlockchainTransaction`, `EthereumAnchor`, `ParametricInsurance`, `ActuatorCommand`, `Tree` (декомісіонування) — кожна повинна мати state-таблицю/перелік у відповідному §-розділі | grep `include AASM` |
+| Поліморфні асоціації у §10 "Карта Зв'язків" = реальні `_type/_id` пари у `structure.sql` | `grep "_type.*character varying" db/structure.sql` |

@@ -273,5 +273,69 @@ RSpec.describe Celo::CommunityRewardService do
         }.not_to change(BlockchainTransaction, :count)
       end
     end
+
+    context "with RPC fallback cascade [E.49]" do
+      let!(:insight) do
+        create(:ai_insight,
+          analyzable: cluster,
+          insight_type: :daily_health_summary,
+          target_date: target_date,
+          stress_index: 0.05,
+          fraud_detected: false
+        )
+      end
+
+      it "exposes both fallback ENV keys in cascade order" do
+        expect(described_class::RPC_FALLBACK_ENV_KEYS).to eq(
+          %w[CELO_RPC_URL_FALLBACK_1 CELO_RPC_URL_FALLBACK_2]
+        )
+      end
+
+      it "passes RPC_FALLBACK_ENV_KEYS to Web3::RpcConnectionPool" do
+        mock_client = instance_double(Eth::Client,
+          get_balance: 1 * 10**18,
+          transact: "0x" + SecureRandom.hex(32)
+        )
+        allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
+        allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
+        allow(Kredis).to receive(:lock).and_yield
+        allow(Web3::RpcConnectionPool).to receive(:client_for).with(
+          "CELO_RPC_URL",
+          fallback: described_class::DEFAULT_RPC_URL,
+          fallback_env_keys: described_class::RPC_FALLBACK_ENV_KEYS
+        ).and_return(mock_client)
+
+        described_class.new(cluster, target_date).reward_community!
+
+        expect(Web3::RpcConnectionPool).to have_received(:client_for).with(
+          "CELO_RPC_URL",
+          fallback: described_class::DEFAULT_RPC_URL,
+          fallback_env_keys: described_class::RPC_FALLBACK_ENV_KEYS
+        )
+      end
+
+      it "builds a ResilientClient when fallback URLs are populated", :aggregate_failures do
+        Web3::RpcConnectionPool.reset!
+        stub_const("ENV", ENV.to_hash.merge(
+          "CELO_RPC_URL"             => "https://forno.celo.org",
+          "CELO_RPC_URL_FALLBACK_1"  => "https://rpc.ankr.com/celo",
+          "CELO_RPC_URL_FALLBACK_2"  => "https://1rpc.io/celo"
+        ))
+
+        client = Web3::RpcConnectionPool.client_for(
+          "CELO_RPC_URL",
+          fallback: described_class::DEFAULT_RPC_URL,
+          fallback_env_keys: described_class::RPC_FALLBACK_ENV_KEYS
+        )
+
+        expect(client).to be_a(Web3::ResilientClient)
+        urls = client.provider_health.map { |h| h[:provider] }
+        expect(urls).to include(match(/forno\.celo\.org/))
+        expect(urls).to include(match(/rpc\.ankr\.com/))
+        expect(urls).to include(match(/1rpc\.io/))
+      ensure
+        Web3::RpcConnectionPool.reset!
+      end
+    end
   end
 end

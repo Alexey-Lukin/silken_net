@@ -121,6 +121,135 @@ SDL визначає порти `80`, `443` та `5683`. Порт `443` прис
 - **Де в коді:** `deploy/akash/deploy.yaml` → `services.web.expose` — порт `443` є, `accept`-домен не вказаний.
 - **Потрібно:** Або налаштувати Akash hostname operator (ingress), або проксіювати через Cloudflare (Ingress Anchor → HTTPS).
 
+#### Runbook: TLS Termination Strategy [INF.4]
+
+> **Архітектурне рішення (рекомендоване):** **Cloudflare Proxy для HTTPS + direct UDP для CoAP**. Cloudflare DOES NOT proxy UDP у безкоштовному/Pro тарифах — для CoAP/UDP:5683 потрібен **окремий шлях через Ingress Anchor (статичний GCP IP)**, який і так уже існує в архітектурі. Akash hostname operator + Let's Encrypt — fallback варіант, якщо Cloudflare недоступний для проекту (санкції, gov-policy).
+>
+> Cross-ref: 10_02 INF.4 (P1), INF.6 (CoAP Proxy verification).
+
+##### Опція A (рекомендована): Cloudflare Proxy для HTTPS + Direct UDP для CoAP
+
+**Архітектура:**
+```
+Browser / API client                Queen Gateway (LoRa→CoAP)
+        │                                   │
+        ▼ HTTPS :443 (Cloudflare termin.)   ▼ CoAP/UDP :5683 (NO TLS)
+┌───────────────────────────────┐    ┌───────────────────────────────┐
+│ Cloudflare Edge (Proxy ON,    │    │ Ingress Anchor (e2-micro,     │
+│ TLS termination, DDoS/WAF)    │    │ статичний GCP IP, HAProxy)    │
+└────────┬──────────────────────┘    └──────────┬────────────────────┘
+         │ HTTPS / Cloudflare Tunnel*           │ UDP forward
+         │ (origin: Akash deployment)           │
+         ▼                                      ▼
+                  ┌─────────────────────────────────┐
+                  │  Akash Provider                 │
+                  │  web :80 (Rails)  :5683 (CoAP)  │
+                  └─────────────────────────────────┘
+```
+\* Origin: або (a) `*.ingress.akash.pub` як CF origin (Akash сам видає http URL), або (b) Cloudflare Tunnel `cloudflared` як sidecar.
+
+**Pre-flight checklist (👤 admin):**
+
+- [ ] **Cloudflare account** з активним Pro/Business планом (для proxied CNAME + WAF rules).
+- [ ] **Домен у Cloudflare** (DNS-only або full proxy режим — для silken net має бути `silkennet.app` або обраний продакшн-домен).
+- [ ] **SSL/TLS режим**: `Full (strict)` — Cloudflare→origin вимагає валідного сертифіката на Akash. Якщо origin це `*.ingress.akash.pub`, Akash provider автоматично надає Let's Encrypt → strict mode OK.
+- [ ] **Origin URL відомий:** після `akash provider lease-status`, скопіювати URL виду `https://<lease-id>.ingress.akash.pub`.
+- [ ] **CNAME-запис створено:** `silkennet.app` (або subdomain) → `<lease-id>.ingress.akash.pub`, Proxy status: 🟠 **Proxied** (через CF).
+- [ ] **Ingress Anchor running:** `gcloud compute instances list --filter="name=ingress-anchor"` повертає running. Статичний IP закріплено (`gcloud compute addresses list`).
+- [ ] **Queens сконфігуровані** на `<INGRESS_ANCHOR_IP>:5683` (не на Cloudflare!) у firmware `QUEEN_BACKEND_HOST` або downlink config block.
+- [ ] **Rails-side ENVs** не вимикати: `force_ssl=true`, `assume_ssl=true`, `HSTS` активні. CF додає `X-Forwarded-Proto: https`, Rails з `assume_ssl` чесно це поважає.
+- [ ] **`DISABLE_SSL` ENV не встановлений** у `deploy/akash/deploy.yaml` (інакше Rails сам не форсуватиме HTTPS — false sense of security).
+
+**Verification commands (виконати після deploy):**
+
+```bash
+# 1. TLS handshake через Cloudflare → перевірити SNI, ALPN, версію TLS
+openssl s_client -connect silkennet.app:443 -servername silkennet.app -alpn h2,http/1.1 -brief </dev/null
+# Очікуємо: "Protocol  : TLSv1.3", "Cipher    : TLS_AES_256_GCM_SHA384", "ALPN protocol: h2"
+
+# 2. HSTS header + Cloudflare присутній + Rails redirect HTTP→HTTPS
+curl -sI https://silkennet.app/up | head -15
+# Очікуємо: HTTP/2 200, strict-transport-security: max-age=…, server: cloudflare,
+#           cf-ray: <id>, x-frame-options: SAMEORIGIN
+
+# 3. HTTP має бути redirected на HTTPS (Rails force_ssl)
+curl -sI http://silkennet.app/up | head -5
+# Очікуємо: HTTP/1.1 301 Moved Permanently або 308, location: https://silkennet.app/up
+
+# 4. Cloudflare proxy ACTIVE (cf-ray header має бути)
+curl -sI https://silkennet.app/ | grep -i "cf-ray\|server"
+# Очікуємо обидва: server: cloudflare + cf-ray header
+
+# 5. Origin server вже НЕ доступний напряму по HTTP (security perimeter)
+# Знайти origin: dig +short silkennet.app, потім перевірити що direct hit blocked WAF/IP rules
+# або повертає Cloudflare 403
+
+# 6. WebSocket / Turbo Stream підключення (важливо для Hotwire)
+# Браузер DevTools → Network → WS → ws://… → має бути wss://
+# Або через cli:
+curl -sI -H "Upgrade: websocket" -H "Connection: Upgrade" \
+  -H "Sec-WebSocket-Key: $(openssl rand -base64 16)" \
+  -H "Sec-WebSocket-Version: 13" \
+  https://silkennet.app/cable
+# Очікуємо: HTTP/2 101 Switching Protocols (або 426 з deeper handshake)
+
+# 7. CoAP UDP — ОКРЕМИЙ шлях. Cloudflare НЕ задіяний. Тестуємо direct UDP до Ingress Anchor:
+INGRESS_IP=$(gcloud compute addresses describe ingress-anchor-ip --region europe-west1 --format='value(address)')
+nc -u -w2 $INGRESS_IP 5683 < /dev/null && echo "UDP reachable" || echo "UDP blocked"
+# Або через coap-client (libcoap-tools):
+coap-client -m get coap://$INGRESS_IP:5683/health -v 6
+# Очікуємо: 2.05 Content або response від Rails CoAP daemon
+
+# 8. SSL Labs grade (виконати один раз після deploy)
+# https://www.ssllabs.com/ssltest/analyze.html?d=silkennet.app
+# Очікуємо: A або A+ (HSTS + TLS 1.3 + secure ciphers Cloudflare = grade A+)
+```
+
+**Failure modes та діагностика:**
+
+| Симптом | Ймовірна причина | Виправлення |
+|---------|------------------|-------------|
+| `curl https://… → 525 SSL handshake failed` | Cloudflare→origin не може встановити TLS | Перевірити Akash `*.ingress.akash.pub` URL валідний (`akash provider lease-status`); CF SSL/TLS режим знизити до `Full` (без strict) на час діагностики |
+| `301 → http://...` нескінченний loop | Rails бачить `X-Forwarded-Proto: http`, hot-redirect-loop | Перевірити CF Page Rules — має бути `Always Use HTTPS`. У Rails — `config.force_ssl = true`, `config.ssl_options = { redirect: { exclude: ->(req) { req.path == "/up" } } }` для health-check |
+| WebSocket падає одразу | Hotwire/ActionCable через CF Free плану лімітується | Upgrade до CF Pro (WebSocket unlimited) АБО використати Cloudflare Tunnel з sticky origin |
+| CoAP запити від Queen не доходять | Queen прошитий на CF домен замість Ingress Anchor IP | OTA flash оновити `QUEEN_BACKEND_HOST` через `CMD_SET_BACKEND` downlink config block |
+| TLS grade B-C на SSL Labs | CF SSL/TLS режим = `Flexible` (CF→origin по HTTP) | Перемкнути на `Full (strict)`; примусово вимкнути TLS 1.0/1.1 в CF Edge Certificates |
+
+##### Опція B (fallback): Akash hostname operator + Let's Encrypt
+
+Якщо Cloudflare недоступний для проекту:
+
+**Pre-flight checklist (👤 admin):**
+
+- [ ] DNS-запис `silkennet.app A <PROVIDER_IP>` створено у власному DNS (Route53 / Namecheap / etc.).
+- [ ] У `deploy/akash/deploy.yaml` додати `accept` секцію в expose:443:
+  ```yaml
+  - port: 443
+    as: 443
+    accept:
+      - silkennet.app
+    to:
+      - global: true
+  ```
+- [ ] Provider у placement має `attributes.host: akash` (більшість public provider'ів підтримують hostname operator).
+- [ ] Перевірити TLS-сертифікат після провіжна (Akash auto-issues Let's Encrypt через ~5 хв):
+  ```bash
+  openssl s_client -connect silkennet.app:443 -servername silkennet.app -brief </dev/null
+  # Очікуємо: subject=CN = silkennet.app, issuer=CN = R3 (Let's Encrypt)
+  ```
+- [ ] CoAP UDP по тому ж домену **не пройде** через Akash hostname operator (тільки TCP/HTTP) — для UDP завжди потрібен Ingress Anchor.
+
+##### Automation note (🤖 чекбокс)
+
+Якщо обрана Опція B — додати `terraform/akash/hostname-operator.tf` з automation для `accept`-домену у SDL template (`deploy.yaml.tpl`). Для Опції A automation не потрібна — Cloudflare DNS налаштовується вручну один раз. Поточний deploy template (`deploy.yaml.tpl`) НЕ містить hostname operator block — це OK, бо Опція A рекомендована.
+
+##### Cross-ref
+
+- [10_02 INF.4](10_02_Action_Plan_Tracker.md) — оригінальна задача.
+- [10_02 INF.6](10_02_Action_Plan_Tracker.md) — CoAP Proxy verification (Ingress Anchor лежить у тій же площині, бо CoAP UDP не йде через Cloudflare).
+- [06_01](06_01_Production_Infrastructure_GCP.md) — Ingress Anchor (e2-micro, статичний IP, HAProxy).
+- [10_02 DOC.5](10_02_Action_Plan_Tracker.md) — `DISABLE_SSL` ENV documented як небезпечний override.
+
 ---
 
 ### 🟡 BLOCKER-6: GCS bucket для Terraform State — потрібно створити вручну

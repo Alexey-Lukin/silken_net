@@ -122,10 +122,23 @@ class MintingRollbackService < ApplicationService
 
   # EVM-мережі (Polygon, Celo): eth_getTransactionReceipt
   def fetch_evm_transaction_receipt(tx)
-    rpc_env_key = tx.celo_network? ? "CELO_RPC_URL" : "ALCHEMY_POLYGON_RPC_URL"
-    client = Web3::RpcConnectionPool.client_for(rpc_env_key,
-                                                fallback: "https://polygon-rpc.com",
-                                                fallback_env_keys: [ "INFURA_POLYGON_RPC_URL" ])
+    # [E.49]: для Celo використовуємо Celo-specific cascade, не Polygon.
+    # Раніше для Celo-транзакцій fallback вказував на polygon-rpc.com (баг).
+    if tx.celo_network?
+      rpc_env_key       = "CELO_RPC_URL"
+      fallback_url      = Celo::CommunityRewardService::DEFAULT_RPC_URL
+      fallback_env_keys = Celo::CommunityRewardService::RPC_FALLBACK_ENV_KEYS
+    else
+      rpc_env_key       = "ALCHEMY_POLYGON_RPC_URL"
+      fallback_url      = "https://polygon-rpc.com"
+      fallback_env_keys = [ "INFURA_POLYGON_RPC_URL" ]
+    end
+
+    client = Web3::RpcConnectionPool.client_for(
+      rpc_env_key,
+      fallback: fallback_url,
+      fallback_env_keys: fallback_env_keys
+    )
     receipt = client.eth_get_transaction_receipt(tx.tx_hash)
 
     if receipt.nil? || receipt == {}

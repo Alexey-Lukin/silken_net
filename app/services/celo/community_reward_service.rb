@@ -32,6 +32,17 @@ module Celo
     # Celo Alfajores Testnet RPC (перемикається на Mainnet через ENV)
     DEFAULT_RPC_URL = "https://alfajores-forno.celo-testnet.org"
 
+    # [E.49] RPC FALLBACK CASCADE для Celo. Якщо `CELO_RPC_URL` недоступний
+    # (Net::ReadTimeout / HTTP 429 / Errno::ECONNREFUSED), Web3::ResilientClient
+    # автоматично переключиться на наступний URL з цього списку. Циркуіт-брейкер
+    # вимикає провайдера після 3 послідовних збоїв на 60 секунд
+    # (див. `Web3::ResilientClient`). Адміністратор заповнює відповідні ENV-змінні
+    # реальними endpoint'ами (Ankr / 1RPC / OnFinality / приватний node).
+    RPC_FALLBACK_ENV_KEYS = %w[
+      CELO_RPC_URL_FALLBACK_1
+      CELO_RPC_URL_FALLBACK_2
+    ].freeze
+
     # Фіксована винагорода за ідеальний стан кластера (5 cUSD)
     REWARD_AMOUNT = "5.0"
 
@@ -59,8 +70,12 @@ module Celo
       organization = @cluster.organization
       return unless organization&.crypto_public_address.present?
 
-      # Підключення до Celo RPC — Thread-cached RPC client
-      client = Web3::RpcConnectionPool.client_for("CELO_RPC_URL", fallback: DEFAULT_RPC_URL)
+      # Підключення до Celo RPC — Thread-cached RPC client з fallback cascade [E.49]
+      client = Web3::RpcConnectionPool.client_for(
+        "CELO_RPC_URL",
+        fallback: DEFAULT_RPC_URL,
+        fallback_env_keys: RPC_FALLBACK_ENV_KEYS
+      )
       oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PRIVATE_KEY"))
 
       # [BLOCKER-1 FIX]: Guard clause — перевірка балансу оракула перед відправкою транзакції.

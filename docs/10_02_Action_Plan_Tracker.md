@@ -103,8 +103,9 @@
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
 - **P1** | `06_02` BLOCKER-5, `06_01` | **Складність: S** | **🔧 Операційна + Док**
 - **Опис:** Розширення INF.3. Не прийнято архітектурне рішення: (a) Akash hostname operator + Let's Encrypt автоматизація, (b) Cloudflare Proxy перед Akash (DDoS + WAF, але ще одна mw залежність), (c) Traefik у Kamal (тільки GCP path). Вибір впливає на CoAP UDP (Cloudflare НЕ proxies UDP — потребує separate Spectrum або direct ingress)
+- **Статус (🤖, 2026-05-12):** Документація runbook завершена у `docs/06_02` BLOCKER-5 → "Runbook: TLS Termination Strategy [INF.4]". Покрито: рекомендоване рішення (Опція A — Cloudflare Proxy для HTTPS + direct UDP для CoAP через Ingress Anchor) з повним pre-flight checklist (8 пунктів) та 8 verification commands (openssl, curl, websocket handshake, coap-client, SSL Labs); failure modes таблиця (5 типових проблем + діагностика); fallback Опція B (Akash hostname operator + Let's Encrypt). Залишається 👤 архітектурне approve + (опційно) 🤖 Terraform automation якщо обрана Опція B.
 - [ ] 👤 Прийняти архітектурне рішення (Cloudflare Proxy для HTTPS + direct UDP для CoAP — рекомендовано)
-- [ ] 🤖 Документувати у `06_02` runbook: pre-flight checklist + verification commands
+- [x] 🤖 Документувати у `06_02` runbook: pre-flight checklist + verification commands
 - [ ] 🤖 Якщо Akash hostname — додати automation у `terraform/`
 
 #### S4.3 — Akash SDL secrets
@@ -742,8 +743,9 @@ DOC.9 — потребує лабораторного вимірювання TX-
 #### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
 - **Джерело:** `08_01` §1.1-1.3, `08_02` §1, `08_03`, `09_01` | **Складність: L** | **🤖 Методологія + Док**
 - **Опис:** 25+ паралельних R&D-задач розподілені між 8+ науковцями (ChNU FOTIUS + ChDTU + ChIPB + ChMA + СЄУ). Поточно — ad-hoc розподіл. Запропоновано: 4-кластерна структура (A: Hardware/EBFC, B: Verification/Math, C: Scaling/Cloud, D: Compliance/Legal) + Shape Up 6-week cycles + Convolution Method для скорочення PN-state explosion 10-100×
-- [ ] 🤖 Дизайн kanban-mapping: 4 кластери у GitHub Projects V2 + label conventions
-- [ ] 🤖 Документувати у `09_01` Shape Up cycle template + betting table процедуру
+- **Статус (🤖, 2026-05-12):** ✅ Документація готова. (1) `docs/09_01` §5 — повна Shape Up cycle template: 4 кластери з ролями та командами, 8-тижневий timeline (6+2), shaping document template, betting table процедура (6 steps × конкретний час), cool-down checklist. (2) `docs/09_03` §6 — kanban-mapping 4 кластерів у Projects V2: нові fields (`R&D Cluster`, `Shape Up Stage`, `Cycle`), label conventions (4 primary cluster labels + 4 cross-ref + 6 shape lifecycle labels з hex-кольорами), auto-routing rules для `actions/labeler@v5`, первинний betting cycle checklist для UNI.1 / UNI.8. Залишається 👤 перший betting cycle після UNI.1/UNI.8 confirms.
+- [x] 🤖 Дизайн kanban-mapping: 4 кластери у GitHub Projects V2 + label conventions — `docs/09_03` §6
+- [x] 🤖 Документувати у `09_01` Shape Up cycle template + betting table процедуру — `docs/09_01` §5
 - [ ] 👤 Перший betting cycle після UNI.1 (декан) та UNI.8 (СЄУ)
 
 #### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
@@ -1007,7 +1009,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.45 | **SCC/SFC contract addresses** = `0x0000...0` в subgraph.yaml — блокує deploy subgraph на testnet/mainnet | `05_03` | Пов'язано з S3.5 |
 | E.47 | **Solana RPC defaults to Devnet** — production мінтинг USDC мікро-винагород піде на Devnet якщо не встановлений `SOLANA_RPC_URL` | `05_01` | ⚠️ Перевірити ENV перед mainnet |
 | E.48 | **The Graph subgraph на testnet `polygon-amoy`** — потребує mainnet deploy перед production | `05_01` | Post mainnet deploy |
-| E.49 | **Celo RPC fallback mechanism** не вказаний — при збої primary RPC немає автоматичного переключення | `05_01` | P3: додати fallback RPC |
+| ✅ E.49 | **Celo RPC fallback mechanism** не вказаний — при збої primary RPC немає автоматичного переключення. **Статус (🤖, 2026-05-12):** ✅ Реалізовано. `Celo::CommunityRewardService::RPC_FALLBACK_ENV_KEYS = %w[CELO_RPC_URL_FALLBACK_1 CELO_RPC_URL_FALLBACK_2]` через `Web3::RpcConnectionPool.client_for(..., fallback_env_keys:)` → `Web3::ResilientClient` (3 fail / 60s cooldown). `MintingRollbackService` Celo гілка тепер використовує той самий cascade (виправлено баг: раніше Celo TX rollback вживав polygon-rpc.com fallback). `.env.example` оновлений. Спеки: 3 нові expectations у `community_reward_service_spec.rb`, 16/16 pass. Док: `04_02` §10 (Celo service row + External API row) + §13b Drift Register | `05_01`, `04_02` | ✅ Done (E.49) |
 | E.50 | **Edge fuzzy_distance dedup function** на STM32WLE5JC: <1 мс CPU, <128 байт RAM, ціль — 30-40% TX зниження за рахунок suppression near-duplicate пакетів | `08_02` §1.3 (Vector 1, Ярмілко) | Post-TRL 7 (R&D — Ярмілко) |
 | E.51 | **Monte Carlo TTL-flood симуляція** для обґрунтування `PANIC_TTL=5` та `DEFAULT_TTL=3`: цільовий P_delivery ≥ 0.99 при 20-30% одночасних відмов вузлів. Виходи: math-обґрунтування для seed deck | `08_02` §1.2 (Vector 2) | Post-TRL 6 (Порубльов, ЧНУ) |
 | E.52 | **GA-оптимізація ваг `silken_forest.marshal`** ML моделі на Akash GPU кластері — генетичний алгоритм для `InsightGeneratorService` stress_index класифікації | `08_02` §1.6 (Любченко) | Post-TRL 7 |
