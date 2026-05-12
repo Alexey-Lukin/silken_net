@@ -664,8 +664,9 @@
 - **Джерело:** `03_05` | **Пріоритет: P0 (до будь-якого field deploy)**
 - **Опис:** Аудит виявив: перші 4 слова production AES key **ідентичні публічно відомому** FIPS-197 Appendix B AES-128 test vector (стандартний тест-вектор зі специфікації NIST). Будь-який фахівець з криптографії може впізнати цей паттерн. При RDP Level 0 — trivial key extraction
 - **Важливо:** Це ОКРЕМЕ від FW.1 (hardcoded key) — навіть після per-device provisioning, якщо master seed базується на цьому ключі, весь derivation tree скомпрометований
+- **Статус (🤖 verification, 2026-05-12):** ✅ Автоматизовано через `Security::WeakKeyDetector` (`app/services/security/weak_key_detector.rb`) + boot-time guard `config/initializers/master_key_strength_check.rb`. Production refuses to boot якщо `PROVISIONING_MASTER_KEY` співпадає з: FIPS-197 App.B/C.1-C.3, NIST SP 800-38A F.5, RFC 3686/4231 HMAC test cases, FIPS 198-1, виродженими патернами (all-zero/all-0xFF/single-byte repeat/монотонна), плейсхолдерами (`CHANGEME`, `your-master-…`, `<…>`). Перевіряє raw + hex-decoded + base64-decoded інтерпретації. 30 specs (`spec/services/security/weak_key_detector_spec.rb`). Bypass: `SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK=1` (rescue-boot, логується гучно). Документація у `03_05` §3.1а
 - [ ] 👤 Негайно замінити seed key на криптографічно стійкий random (hardware RNG або аудитований генератор)
-- [ ] 🤖 Верифікувати що новий master key НЕ є жодним відомим test vector (FIPS-197, NIST, RFC)
+- [x] 🤖 Верифікувати що новий master key НЕ є жодним відомим test vector (FIPS-197, NIST, RFC) — автоматичний boot-time guard, див. статус вище
 - [ ] 👤 Задокументувати процес генерації нового master key у vault (Bitwarden/1Password) — **без коміту ключа в репозиторій**
 - [ ] 👤 Після заміни: re-flash всі існуючі прототипи
 

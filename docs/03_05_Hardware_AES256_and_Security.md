@@ -524,6 +524,45 @@ uint32_t aes_key[8] = {
 ```
 > ⚠️ **Увага:** Аудит виявив, що перші 4 слова ключа збігаються зі стандартним тестовим ключем AES-128 з FIPS-197 (Appendix B) — загальновідомими тестовими векторами. Точні значення навмисно не публікуються в цьому документі. Для аудиту безпеки — дивись `firmware/soldier/main.c:66-67` та `firmware/queen/main.c:81-82`. Ключ **підлягає негайній заміні** відповідно до BLOCKER-1.
 
+#### 3.1а Boot-time guard: `Security::WeakKeyDetector` (SEC.9 mitigation)
+
+Щоб історична регресія FIPS-197 Appendix B не повторилась тихою підстановкою тест-вектора у `PROVISIONING_MASTER_KEY` під час майбутньої ротації, додано автоматичний детектор слабких master-ключів:
+
+* **Сервіс:** `app/services/security/weak_key_detector.rb` (`Security::WeakKeyDetector.detect(value, hint:)`).
+* **Boot-time guard:** `config/initializers/master_key_strength_check.rb` — у `RAILS_ENV=production` (включно з canopy) перевіряє `ENV["PROVISIONING_MASTER_KEY"]` і **raise'ить `SecurityError`** до запуску додатку, якщо ключ співпадає з відомим патерном.
+* **Bypass:** `SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK=1` для аварійного rescue-boot (логується гучно, не для рутини).
+* **Тест/dev:** перевірка пропускається — `spec/rails_helper.rb` піннить детермінований fixture (`silken-net-test-master-key-32b!!`), який сам по собі позначений у блок-листі.
+
+**Що блокує детектор:**
+
+| Категорія | Приклади |
+|----------|---------|
+| Публічні тест-вектори AES | FIPS-197 Appendix B / C.1–C.3, NIST SP 800-38A F.5 (AES-256 CTR), RFC 3686 §6 vector #1 |
+| Публічні HMAC тест-вектори | RFC 4231 Test Cases 1 / 3 / 6-7 (20×0x0b, 20×0xaa, 131×0xaa), FIPS 198-1 §A.1 |
+| Префіксні співпадіння | 32-байтний master, перші 16 байт якого = опубліковане 16-байтне FIPS значення (історична форма BLOCKER-а) |
+| Виродженні патерни | all-zero, all-0xFF, single-byte repeat, монотонна послідовність (Δ=±1) |
+| Плейсхолдери | `CHANGEME`, `placeholder`, `your-master-…`, `<your-key>`, `TODO`, `secret-here`, сам spec-fixture |
+
+Детектор перевіряє і raw-bytes, і hex-decoded, і base64-decoded інтерпретації — той самий тест-вектор не може непомітно зайти через "інший спосіб набору" (історично у репозиторії одне місце мало raw bytes, інше — hex).
+
+**Як ротувати master-ключ (operator runbook):**
+
+1. Згенерувати: `bundle exec ruby -rsecurerandom -e 'puts SecureRandom.hex(32)'` (або апаратний HRNG).
+2. **Локальна перевірка перед записом у vault:**
+   ```bash
+   bundle exec ruby -rdotenv -e '
+     require_relative "app/services/security/weak_key_detector"
+     k = STDIN.read.strip
+     r = Security::WeakKeyDetector.detect(k, hint: "PROVISIONING_MASTER_KEY")
+     abort "WEAK: #{r}" if r
+     puts "OK"
+   ' < /path/to/new_key.txt
+   ```
+3. Записати у Bitwarden / 1Password / Kamal secrets / Akash SDL (див. `docs/06_04`).
+4. Re-deploy — initializer перезапустить guard з боку production.
+
+**Сервіс автоматично запускається при кожному production boot — будь-яка ротація, яка пройшла повз runbook, буде заблокована до старту HTTP сервера.** Це й закриває SEC.9 line 668 🤖.
+
 ### 3.2 Відсутній Secure Element
 
 Поточна архітектура не використовує зовнішнього Secure Element або Trust Platform Module (TPM). Ключ зберігається у звичайній Flash-пам'яті MCU, яка за замовчуванням (RDP Level 0) доступна через JTAG/SWD.
