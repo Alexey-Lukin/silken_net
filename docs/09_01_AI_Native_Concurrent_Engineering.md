@@ -10,6 +10,10 @@
 
 - **Поточний TRL:** TRL 8 — методологія інтегрована в операційні процеси, інструментарій MCP налаштований
 - **Контекст:** Синхронізація двох потоків: **Атоми** (Hardware: лабораторія ЧНУ, заводи DMLS) та **Байти** (Software: Rails, прошивка, смарт-контракти)
+- **Пов'язані модулі:**
+  - Концептуальна основа (NASA TRL, AI pipeline) → [`00_03_AI_Native_Concurrent_Engineering`](00_03_AI_Native_Concurrent_Engineering)
+  - Стратегічна дорожня карта та TRL матриця → [`09_02_Strategic_Roadmap_and_TRL_Matrix`](09_02_Strategic_Roadmap_and_TRL_Matrix)
+  - GitHub Projects автоматизація → [`09_03_GitHub_Projects_and_Ops_Automation`](09_03_GitHub_Projects_and_Ops_Automation)
 
 ---
 

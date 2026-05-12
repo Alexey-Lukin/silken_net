@@ -1,14 +1,29 @@
 # 00_01: System Architecture and Layers
 
 ## 🎯 Мета
+
 Зафіксувати 8-рівневу кіберфізичну архітектуру екосистеми Gaia 2.0 (Silken Net). Цей документ є базовою конституцією для маршрутизації даних від біохімічної реакції в дереві до криптографічної фіналізації в Ethereum L1.
 
+---
+
 ## ✅ Статус
-* **Поточний TRL:** TRL 4 (Архітектура затверджена, інтеграційні компоненти тестуються локально).
-* **Оновлення:** Проведено півот апаратної частини. Повністю видалено рівень електрокінетики (Streaming Potential / LTC3108). Затверджено нову біохімічну базу (EBFC).
+
+- **Поточний TRL:** TRL 4 — Архітектура затверджена, інтеграційні компоненти тестуються локально.
+- **Оновлення:** Проведено півот апаратної частини. Повністю видалено рівень електрокінетики (Streaming Potential / LTC3108). Затверджено нову біохімічну базу (EBFC).
+- **Пов'язані модулі:**
+  - Біомеханіка та анкер → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
+  - Апаратура та BOM → [`02_01_Hardware_Architecture_and_BOM`](02_01_Hardware_Architecture_and_BOM)
+  - Прошивка та Edge AI → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
+  - Backend та моделі → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
+  - Web3 мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
+  - DevOps та деплой → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
+  - Бізнес-контракти → [`07_01_Nature_as_a_Service_Contracts`](07_01_Nature_as_a_Service_Contracts)
+
+---
 
 ## 🛑 Блокери
-* Відсутні на рівні макроархітектури. Успіх системи залежить від розблокування TRL 4 у хіміків (Модуль 01).
+
+- Відсутні на рівні макроархітектури. Успіх системи залежить від розблокування TRL 4 у хіміків (Модуль 01).
 
 ---
 

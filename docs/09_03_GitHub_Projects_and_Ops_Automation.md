@@ -14,6 +14,10 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження
+- **Пов'язані модулі:**
+  - AI-Native методологія → [`09_01_AI_Native_Concurrent_Engineering`](09_01_AI_Native_Concurrent_Engineering)
+  - Стратегічна дорожня карта → [`09_02_Strategic_Roadmap_and_TRL_Matrix`](09_02_Strategic_Roadmap_and_TRL_Matrix)
+  - Деплой та CI/CD → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
 
 ---
 

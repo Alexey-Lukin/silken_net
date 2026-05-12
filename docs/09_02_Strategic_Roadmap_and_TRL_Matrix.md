@@ -9,6 +9,10 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 4 — (TRL-Lock: загальний TRL обмежений найнижчим модулем — матеріали/EBFC на TRL 3-4). Методологія управління затверджена, інтеграція з GitHub Projects V2 завершена
+- **Пов'язані модулі:**
+  - Бізнес-візія та фази масштабування → [`00_02_Project_Vision_and_Roadmap`](00_02_Project_Vision_and_Roadmap)
+  - AI-Native методологія → [`09_01_AI_Native_Concurrent_Engineering`](09_01_AI_Native_Concurrent_Engineering)
+  - GitHub Projects автоматизація → [`09_03_GitHub_Projects_and_Ops_Automation`](09_03_GitHub_Projects_and_Ops_Automation)
 
 ---
 

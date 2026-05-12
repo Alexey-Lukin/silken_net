@@ -1,7 +1,18 @@
-# 10_01 — View Component Testing Guide (30 Best Practices)
+# 10_01: View Component Testing Guide (30 Best Practices)
 
-> Каноничний набір конвенцій для RSpec тестів Phlex-компонентів у SilkenNet.
-> Всі нові та існуючі спеки ПОВИННІ слідувати цим правилам.
+## 🎯 Мета
+
+Зафіксувати канонічний набір конвенцій для RSpec тестів Phlex-компонентів у SilkenNet. Всі нові та існуючі спеки ПОВИННІ слідувати цим правилам.
+
+---
+
+## ✅ Статус
+
+- **Поточний TRL:** TRL 8 — 30 best practices задокументовані та застосовуються у всіх нових спеках.
+- **Пов'язані модулі:**
+  - Phlex UI та Tailwind → [`04_04_Phlex_UI_and_Tailwind`](04_04_Phlex_UI_and_Tailwind)
+  - Бізнес-логіка та сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+  - Матриця покриття тестами → [`10_03_Test_Coverage_Matrix`](10_03_Test_Coverage_Matrix)
 
 ---
 

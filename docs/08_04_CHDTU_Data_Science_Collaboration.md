@@ -20,9 +20,11 @@
 
 - **Поточний TRL:** TRL 3 — контакт встановлений, формальну співпрацю не розпочато
 - **Стратегічний пріоритет:** P1 — математична статистика та Data Science критичні для верифікації Proof of Growth pipeline та масштабування на мільйони дерев
-- **Партнерство ЧНУ:** Фізико-хімічна верифікація (хардвер) → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
-- **Партнерство ЧНУ ФОТІУС:** Кіберфізична валідація (firmware/backend) → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation)
-- **ЧДТУ:** Data Science, статистика, оптимізація (дані/моделі) → **цей документ**
+- **Пов'язані модулі:**
+  - Університетські протоколи ЧНУ → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
+  - Кібернетична валідація ФОТІУС → [`08_02_Cybernetic_and_Mathematical_Validation`](08_02_Cybernetic_and_Mathematical_Validation)
+  - Спільні публікації та IP → [`08_03_Joint_Publications_and_IP_Strategy`](08_03_Joint_Publications_and_IP_Strategy)
+  - Біомедична інтеграція ЧМА → [`08_06_CHMA_Biomedical_Integration`](08_06_CHMA_Biomedical_Integration)
 
 ---
 

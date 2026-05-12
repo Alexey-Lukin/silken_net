@@ -17,11 +17,11 @@
 ## ✅ Статус
 
 - **Поточний стан:** Backend код підтримує всі секрети, але production значення **не встановлені** в GitHub repository та `.kamal/secrets`. Це блокує весь CI/CD pipeline.
-- **Пов'язані документи:**
-  - `06_01_Deployment_Kamal_Terraform` — BLOCKER-3 (вихідний опис проблеми)
-  - `06_02_Akash_Network_Integration` — BLOCKER-5 (`REQUIRED_SECRET_NOT_SET` плейсхолдери)
-  - `06_03_Prometheus_Observability` — Grafana Cloud та Sentry DSN
-  - `10_02_Action_Plan_Tracker` — S1.1, S4.3, S5.6
+- **Пов'язані модулі:**
+  - Деплой → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform) — BLOCKER-3 (вихідний опис проблеми)
+  - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration) — BLOCKER-5 (`REQUIRED_SECRET_NOT_SET` плейсхолдери)
+  - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability) — Grafana Cloud та Sentry DSN
+  - Action Plan → [`10_02_Action_Plan_Tracker`](10_02_Action_Plan_Tracker) — S1.1, S4.3, S5.6
 
 ---
 
