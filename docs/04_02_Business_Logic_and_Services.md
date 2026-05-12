@@ -10,6 +10,38 @@
 * **Обґрунтування:** Всі заглушки (dClimate, Puro.earth) замінено на бойові Web3/HTTP інтеграції. Бізнес-логіка пройшла параноїдальний AI-аудит: повністю усунуто пастки `Network-in-Transaction`, витоки пам'яті (OOM) та ризики подвійної витрати (Double-Spend). Воркери ідемпотентні та fault-tolerant. **Примітка:** Chainlink dispatch має dev/test stub-режим (ENV-gated: при відсутності `CHAINLINK_FUNCTIONS_ROUTER` генерується локальний request ID); production вимагає `CHAINLINK_FUNCTIONS_ROUTER` та `CHAINLINK_SUBSCRIPTION_ID`.
 * **Пов'язані модулі:** Схема БД — `04_01_Database_Schema`. Proof of Growth — `05_02_Proof_of_Growth_Pipeline`. Апаратне шифрування — `03_05_Hardware_AES256`.
 
+### Конвенція впорядкування розділів
+
+1. **Spine** (§1–§9): Service Objects, згруповані за **доменом відповідальності** (Telemetry → AI/Analytics → Polygon → Verification → Contracts → Emergency → Hardware/Security → Finance Oracles). Усередині домену — за порядком виконання у Proof-of-Growth pipeline (раніше зустрічається у потоці → раніше у документі).
+2. **Multi-chain rails** (§10): сервіси для не-Polygon мереж (Solana, Celo, Ethereum L1, Filecoin, Streamr, The Graph, dClimate, Toucan, Klima, Hadron) — окремою секцією, бо вони побудовані по тому ж API-патерну (`Web3::RpcConnectionPool` + `Eth::Contract` / `Web3::HttpClient`).
+3. **Lore-layer** (§10b): Codex-сервіси — окремий шар, не на критичному шляху телеметрії.
+4. **Workers Registry** (§11): з групуванням за **чергами Sidekiq** у строгому порядку дренування (uplink → … → low), а не за доменом. Це навмисне — спрощує діагностику hot path.
+5. **Call Chains, External Deps, Planned, Math/Security** (§12–кінець): horizontal cross-cuts і RFC-секції.
+
+> **Anti-pattern, якого уникаємо:** змішувати порядок «домен» та «черга» в одній секції. Якщо сервіс і воркер живуть в одному домені — сервіс описаний у §1–§10, воркер — у §11, поєднані cross-reference у `Тригер` / `Сервіси`.
+
+---
+
+## 📑 Зміст
+
+- [1. Архітектурні Засади](#️-1-архітектурні-засади) — базові класи, Web3 utility layer
+- [2. Домен: Телеметрія](#️-2-домен-телеметрія-telemetry) — `TelemetryUnpackerService`, `AlertDispatchService`
+- [3. Домен: AI та Аналітика](#-3-домен-ai-та-аналітика-ai--analytics) — Insights, Attractor, SeedDerivation, GeoUtils, Entropy, Chronicle
+- [4. Домен: Блокчейн — Polygon (Primary Chain)](#-4-домен-блокчейн--polygon-primary-chain) — Minting, Burning, Audit, Rollback, Puro.earth, Etherisc
+- [5. Домен: Верифікація та Ідентичність](#️-5-домен-верифікація-та-ідентичність-verification--identity) — IoTeX, peaq, Chainlink, Ed25519
+- [6. Домен: NaaS Контракти](#-6-домен-naas-контракти-contract-management) — Contract health/termination
+- [7. Домен: Надзвичайне Реагування](#-7-домен-надзвичайне-реагування-emergency-response) — `EmergencyResponseService`
+- [8. Домен: Апаратне Забезпечення та Безпека](#-8-домен-апаратне-забезпечення-та-безпека-hardware-iot--security) — HardwareKey, OTA HMAC, OtaPackager, **WeakKeyDetector**
+- [9. Домен: Фінансові Оракули](#-9-домен-фінансові-оракули-finance-oracles) — `PriceOracleService`
+- [10. Домен: Мультичейн — Паралельні Рейки](#-10-домен-мультичейн--паралельні-рейки-multi-chain) — Solana, Celo, Klima, Hadron, Ethereum L1, Filecoin, Streamr, The Graph, dClimate, Toucan, Treasury
+- [10b. Codex (Lore Layer) Сервіси](#-10b-codex-lore-layer-сервіси)
+- [11. Реєстр Воркерів (Workers Registry)](#️-11-реєстр-воркерів-workers-registry) — групування за чергами
+- [12. Карта Ланцюгів Викликів (Call Chains)](#-12-карта-ланцюгів-викликів-call-chains)
+- [13. Зовнішні API Залежності](#-13-зовнішні-api-залежності)
+- [13b. SSOT Drift Register (Doc ↔ Code Sync)](#-13b-ssot-drift-register-doc--code-sync)
+- [Planned: Forester Guild, Cross-Registry, Federated Learning](#-planned-forester-guild--proof-of-physical-work-міністерство-праці)
+- [Додаткові Матеріали](#додаткові-матеріали) — math, security principles, RSpec coverage
+
 ---
 
 ## 🏗️ 1. Архітектурні Засади
@@ -176,7 +208,7 @@
 |---|---|
 | **Файл** | `app/services/minting_rollback_service.rb` |
 | **Вхід** | `telemetry_log_id:`, `created_at_iso:` або `transactions:` (AR relation) |
-| **Що робить** | **[DOUBLE-SPEND GUARD]** Rollback при вичерпанні всіх Sidekiq-ретраїв у `MintCarbonCoinWorker`. Логіка вирішення: (1) `tx_hash` відсутній → безпечний rollback (транзакція не покинула бекенд): розблоковує `locked_balance`, маркує `status = :failed`; (2) `tx_hash` існує → перевіряє стан on-chain через RPC: а) receipt підтверджено → `tx.confirm!` (НЕ rollback); б) receipt null (pending) → `escalate_to_review!` (кошти залишаються заблокованими); в) RPC timeout → `escalate_to_review!`. Multichain: EVM-мережі (Polygon, Celo) використовують `eth_getTransactionReceipt`; Solana — `getTransaction` через прямий HTTP-запит. Fallback RPC cascade через `Web3::RpcConnectionPool` з `fallback_env_keys`. |
+| **Що робить** | **[DOUBLE-SPEND GUARD]** Rollback при вичерпанні всіх Sidekiq-ретраїв у `MintCarbonCoinWorker`. Логіка вирішення: (1) `tx_hash` відсутній → безпечний rollback (транзакція не покинула бекенд): розблоковує `locked_balance`, маркує `status = :failed`; (2) `tx_hash` існує → перевіряє стан on-chain через RPC: а) receipt підтверджено → `tx.confirm!` (НЕ rollback); б) receipt null (pending) → `escalate_to_review!` (кошти залишаються заблокованими); в) RPC timeout → `escalate_to_review!`. Multichain: EVM-мережі використовують `eth_getTransactionReceipt`; Solana — `getTransaction` через прямий HTTP-запит. **[E.49]** Per-chain fallback cascade: для Polygon — `fallback: "https://polygon-rpc.com"` + `fallback_env_keys: ["INFURA_POLYGON_RPC_URL"]`; для Celo — `fallback: Celo::CommunityRewardService::DEFAULT_RPC_URL` + `fallback_env_keys: Celo::CommunityRewardService::RPC_FALLBACK_ENV_KEYS` (раніше fallback для Celo вказував на polygon-rpc.com — баг виправлено). |
 | **Вихід** | `nil`. Side effects: `wallet.release_locked_funds!` + `tx.update!(status: :failed)` + Turbo broadcast (при safe rollback); або `tx.escalate_to_review!(reason)` (при manual_review). |
 
 ### `PuroEarth::PassportService`
@@ -333,7 +365,7 @@ peaq_node_url: "https://peaq-node.example.com"
 
 ---
 
-## 🔧 8. Домен: Апаратне Забезпечення (Hardware & IoT)
+## 🔧 8. Домен: Апаратне Забезпечення та Безпека (Hardware, IoT & Security)
 
 ### `HardwareKeyService`
 
@@ -372,6 +404,28 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Вихід (без cluster_id)** | `{ manifest: { version, total_size, checksum, sha256, total_chunks }, packages: Enumerator<16-byte blocks> }` |
 | **Вихід (з cluster_id)** | `{ manifest: { version, total_size, checksum, sha256, total_chunks, lora_total_chunks, total_packages, hmac_signed: true, hmac_cluster_id }, packages: Enumerator<bytecode_chunks + 3 trailer_chunks> }` — `total_packages = total_chunks + 3`; `OtaTransmissionWorker` ітерує по `packages` без змін у логіці pacing. |
 
+### `Security::WeakKeyDetector` 🔐 [SEC.9]
+
+| | |
+|---|---|
+| **Файл** | `app/services/security/weak_key_detector.rb` |
+| **Вхід** | `value` (String, nullable — типово вміст ENV-змінної), `hint:` (String, опц. — назва секрету для повідомлень) |
+| **Що робить** | Виявляє слабкі / відомі test-vector master-секрети. Перевіряє три інтерпретації введеного значення (raw bytes, hex-decoded, base64-decoded — лише якщо round-trip lossless) проти трьох категорій патернів: **(1) Known test vectors** — FIPS-197 Appendix B (AES-128, той самий вектор, що мав firmware ключ в оригінальному BLOCKER), FIPS-197 C.1/C.2/C.3, NIST SP 800-38A F.5, RFC 3686 §6, RFC 4231 Test Cases 1/3/6/7, FIPS 198-1; перевіряє і exact match, і prefix match (≥8 байт overlap). **(2) Degenerate patterns** — all-zero, all-0xFF, single-byte repeat, strictly monotonic byte run (delta ±1). **(3) Placeholder substrings** (ASCII only) — `CHANGEME`, `PLACEHOLDER`, `TODO`, `your-master-…`, `replace-me`, `not-a-real-key`, `<…>` template artefacts тощо. |
+| **Зовнішні виклики** | — (in-memory). Залежить від `OpenSSL`, `Base64`. |
+| **Публічні методи** | `.detect(value, hint:) → nil \| String` (повертає reason-string з опц. префіксом hint, якщо знайдено патерн); `.weak?(value, hint:) → Boolean` |
+| **Тест coverage** | `spec/services/security/weak_key_detector_spec.rb` — 30+ examples, fuzz через RFC vectors, edge-cases для round-trip base64 та bytestring-encoding |
+| **Інвокери** | `config/initializers/master_key_strength_check.rb` (boot-time guard, див. нижче) |
+| **Cross-ref** | [03_05 §3.1а](03_05_Hardware_AES256_and_Security.md), [10_02 SEC.9](10_02_Action_Plan_Tracker.md). Закриває оригінальний BLOCKER (firmware AES key перших 16 байт співпадали з FIPS-197 Appendix B). |
+
+#### Boot-time master key guard (initializer)
+
+| | |
+|---|---|
+| **Файл** | `config/initializers/master_key_strength_check.rb` |
+| **Що робить** | У `Rails.env.production?` (включно з canopy) після `after_initialize` перевіряє `ENV["PROVISIONING_MASTER_KEY"]`: (1) blank → raise `SecurityError` з посиланням на `docs/03_05 §3.4а`; (2) непустий, але `Security::WeakKeyDetector.detect` повертає reason → raise `SecurityError` з cause. У dev/test guard вимкнений (там зафіксований стабільний non-secret fixture у `spec/rails_helper.rb` — інакше весь suite не завантажиться). |
+| **Bypass** | `SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK=1` — для one-off rescue-boot при флеші zaжатого кластера. Логується гучно, не може стати рутиною. |
+| **Зв'язок з HKDF tree** | Captured-критично: master-ключ є коренем для `HardwareKeyService` (AES-256 device key, info `silken-aes-256-device-key`), `OtaHmacKeyService` (K_ota, info `silken-ota-hmac-v1`), `SilkenNet::SeedDerivation` (Lorenz `K_seed`, info `silken-lorenz-seed`). Компрометація master = каскадна компрометація всіх трьох — тому guard працює fail-closed до запуску HTTP-сервера. |
+
 ---
 
 ## 💰 9. Домен: Фінансові Оракули (Finance Oracles)
@@ -406,8 +460,8 @@ peaq_node_url: "https://peaq-node.example.com"
 |---|---|
 | **Файл** | `app/services/celo/community_reward_service.rb` |
 | **Вхід** | `cluster` (Cluster AR instance), `target_date` (Date) |
-| **Що робить** | ReFi incentive: відправляє 5 cUSD організації якщо `stress_index <= 0.2` та немає fraud. ERC-20 `transfer` на Celo. `Kredis.lock` проти race conditions. **[BLOCKER-1]** `verify_oracle_balance!` — перевіряє баланс CELO оракула через `get_balance`; raises при `< MIN_ORACLE_BALANCE_WEI` (0.05 CELO). |
-| **Зовнішні виклики** | Celo RPC (`CELO_RPC_URL`), `Web3::RpcConnectionPool`, `Web3::WeiConverter` |
+| **Що робить** | ReFi incentive: відправляє 5 cUSD організації якщо `stress_index <= 0.2` та немає fraud. ERC-20 `transfer` на Celo. `Kredis.lock` проти race conditions. **[BLOCKER-1]** `verify_oracle_balance!` — перевіряє баланс CELO оракула через `get_balance`; raises при `< MIN_ORACLE_BALANCE_WEI` (0.05 CELO). **[E.49]** RPC fallback cascade: `Web3::RpcConnectionPool.client_for("CELO_RPC_URL", fallback: DEFAULT_RPC_URL, fallback_env_keys: RPC_FALLBACK_ENV_KEYS)` де `RPC_FALLBACK_ENV_KEYS = %w[CELO_RPC_URL_FALLBACK_1 CELO_RPC_URL_FALLBACK_2]`. При наявності щонайменше двох заповнених URL'ів повертається `Web3::ResilientClient` з circuit breaker (3 збої / 60с cooldown) — автоматичний failover при HTTP 429 / `Net::ReadTimeout` / `Errno::ECONNREFUSED`. Якщо fallback ENV порожні — поведінка без змін (одиночний `Eth::Client`). |
+| **Зовнішні виклики** | Celo RPC (`CELO_RPC_URL` + опц. fallback ENVs), `Web3::RpcConnectionPool`, `Web3::WeiConverter` |
 | **Вихід** | `tx_hash` (String) або `nil`. Створює `BlockchainTransaction`. |
 
 ### `KlimaDao::RetirementService`
@@ -974,6 +1028,8 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Тригер** | `InsightGeneratorOrchestratorWorker` (реєструє через `batch.on(:success, InsightBatchCallbacks, "date" => ...)`) |
 | **`on_success`** | Спрацьовує тільки якщо **всі** `GenerateClusterInsightWorker` jobs завершились успішно. Запускає: 1) `ClusterHealthCheckWorker.perform_async(date_string)` — аудит NaaS-контрактів; 2) `InsightGeneratorService.cleanup_old_logs!` — видаляє `TelemetryLog` старше 7 днів (крім `oracle_status='dispatched'`). |
 
+#### `ClusterHealthCheckWorker`
+
 | Параметр | Значення |
 |----------|----------|
 | **Черга** | `default` |
@@ -1135,6 +1191,18 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Сервіси** | Phase 1: `PuroEarth::PassportService.new(payload).anchor!` (on-chain anchoring → Polygon D-MRV Registry). Phase 2: `PuroEarth::RegistryApiService.new(payload, tx_hash:).submit!` (REST API → Puro.earth CORC) |
 | **Side Effects** | `record.update!(biomass_passport_tx_hash: tx_hash)`. `record.update!(puro_earth_corc_ref: corc_ref)` (якщо REST API успішний). `BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash)`. Phase 2 non-blocking: REST API failure не скасовує on-chain anchoring. |
 
+#### `MintBatchCollectorWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `web3` |
+| **Retry** | 3 |
+| **Lock** | `until_executed` |
+| **Тригер** | Sidekiq cron: `*/5 * * * *` (кожні 5 хвилин) |
+| **Вхід** | — |
+| **Сервіси** | `Treasury::MintBatchCollectorService.call` |
+| **Side Effects** | Збирає pending TX та відправляє через `BlockchainMintingService.call_batch`. Gas savings ~30-40%. |
+
 ---
 
 ### 💤 Web3 Low — Не Критичний Блокчейн
@@ -1192,18 +1260,6 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 | **Сервіси** | `Eth::Contract` (ProtocolParameters ABI) через `Web3::RpcConnectionPool` |
 | **ENV** | `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS`, `ALCHEMY_POLYGON_RPC_URL` |
 | **Side Effects** | Зчитує 13 on-chain параметрів (8 Lorenz + 3 tokenomics + 2 slashing) з `ProtocolParameters.sol`. Fixed-point conversion (uint256/1e18 → BigDecimal). Порівнює з `SystemParameter` і оновлює змінені (source: `"governance"`, updated_by: `User.oracle_executioner`). Timeout 10s per RPC call. |
-
-#### `MintBatchCollectorWorker`
-
-| Параметр | Значення |
-|----------|----------|
-| **Черга** | `web3` |
-| **Retry** | 3 |
-| **Lock** | `until_executed` |
-| **Тригер** | Sidekiq cron: `*/5 * * * *` (кожні 5 хвилин) |
-| **Вхід** | — |
-| **Сервіси** | `Treasury::MintBatchCollectorService.call` |
-| **Side Effects** | Збирає pending TX та відправляє через `BlockchainMintingService.call_batch`. Gas savings ~30-40%. |
 
 ---
 
@@ -1404,7 +1460,7 @@ Financial action
 | **Polygon RPC** (Alchemy) | EVM JSON-RPC | `ALCHEMY_POLYGON_RPC_URL` | BlockchainMintingService, BlockchainBurningService, ChainAuditService, ChainlinkDispatchService, KlimaDao, ToucanBridgeService, PriceOracleService |
 | **Ethereum L1 RPC** | EVM JSON-RPC | `ALCHEMY_ETHEREUM_RPC_URL` | StateAnchorService |
 | **Solana RPC** | JSON-RPC 2.0 | `SOLANA_RPC_URL`, `SOLANA_WALLET_KEYPAIR` (mandatory), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS` | Solana::MintingService |
-| **Celo RPC** | EVM JSON-RPC | `CELO_RPC_URL` | Celo::CommunityRewardService |
+| **Celo RPC** | EVM JSON-RPC | `CELO_RPC_URL` (primary) + опц. `CELO_RPC_URL_FALLBACK_1`, `CELO_RPC_URL_FALLBACK_2` (E.49 cascade через `Web3::ResilientClient`) | Celo::CommunityRewardService, MintingRollbackService |
 | **IoTeX W3bstream** | HTTPS REST | `iotex_w3bstream_url`, `iotex_api_key` | Iotex::W3bstreamVerificationService |
 | **peaq Network** | HTTPS REST | `peaq_node_url`, `peaq_signing_key` | Peaq::DidRegistryService |
 | **Chainlink Functions** | On-chain (Polygon) | `CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_SUBSCRIPTION_ID` | Chainlink::OracleDispatchService |
@@ -1419,6 +1475,34 @@ Financial action
 | **Toucan Protocol** | On-chain (Polygon) | `TOUCAN_BRIDGE_CONTRACT_ADDRESS` | Toucan::BridgeService |
 | **Uniswap V3 Quoter** | On-chain (Polygon) | `POLYGON_RPC_URL` | PriceOracleService |
 | **CoAP Gateway** | CoAP/UDP | `gateway.ip_address` (dynamic) | ActuatorCommandWorker, OtaTransmissionWorker |
+
+---
+
+## 🧭 13b. SSOT Drift Register (Doc ↔ Code Sync)
+
+> **Принцип:** Цей документ — SSOT. Тобто:
+> - якщо **код випередив документ** — оновлюємо документ (тут, у `04_02`) щоб реальність відображалася;
+> - якщо **документ випередив код** — створюємо/оновлюємо запис у `docs/10_02_Action_Plan_Tracker.md` як невиконану задачу;
+> - якщо **нема ні там, ні там** — приймаємо рішення (потрібне → реєструємо в `10_02`; не потрібне → видаляємо плани з `04_02`).
+>
+> Цей реєстр фіксує **відомі divergence-точки** та їх статус. Періодичний аудит — кожен Cool-down цикл Shape Up (`09_01`).
+
+| Дата | Зона | Тип drift | Що зроблено | Cross-ref |
+|------|------|-----------|-------------|-----------|
+| 2026-05-12 | `Security::WeakKeyDetector` + `master_key_strength_check.rb` initializer | Code ahead of doc (були в `10_02`/`03_05`, але §8 04_02 їх не описувала) | Додано в §8 (renamed → "Hardware, IoT & Security") | [SEC.9](10_02_Action_Plan_Tracker.md), [03_05 §3.1а](03_05_Hardware_AES256_and_Security.md) |
+| 2026-05-12 | `Celo::CommunityRewardService` RPC fallback cascade | Code matched doc (E.49 синхронно виконано: код + 04_02 + .env.example + 10_02) | `RPC_FALLBACK_ENV_KEYS` додано, External API row оновлено | [E.49](10_02_Action_Plan_Tracker.md) |
+| 2026-05-12 | `MintingRollbackService` (Celo branch) | Code bug + doc gap (fallback указував на polygon-rpc.com для Celo TX) | Виправлено per-chain dispatch; doc оновлено | [E.49](10_02_Action_Plan_Tracker.md) |
+| 2026-05-12 | `MintBatchCollectorWorker` секція | Doc misplacement (queue `web3` був у "💤 Web3 Low") | Перенесено у "🌐 Web3 — Стандартні Мультичейн" | §11 |
+| 2026-05-12 | `ClusterHealthCheckWorker` heading | Doc structure bug (таблиця без `####` заголовка) | Додано `#### ClusterHealthCheckWorker` | §11 |
+| — (відкрите) | Forester Guild / Cross-Registry / Federated Learning | Doc-only "Planned" — в коді **відсутні**; статус нормальний (Post-TRL 6/7) | Зберігати як design RFC; не маркувати code drift | §"Planned" |
+
+### Як додавати нові записи
+
+1. Виявили divergence (наприклад, нову константу, новий guard clause, новий ENV у коді який не описаний тут) — додайте рядок у таблицю з датою.
+2. Якщо drift вимагає коду — заведіть запис у `docs/10_02` з тим самим UID (`E.NN` / `SEC.NN` / `S6.NN`) і посиланням сюди.
+3. Drift register **не замінює** оновлення відповідної секції — обидва місця мають бути синхронізовані.
+
+> **Anti-pattern:** "Тимчасово впишу у 04_02, а виправлю код пізніше". Якщо завдання потребує > 1 PR — заведіть `10_02` запис, не блюрте тут.
 
 ---
 
