@@ -749,9 +749,11 @@ DOC.9 — потребує лабораторного вимірювання TX-
 #### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
 - **Джерело:** `09_03`, `08_01` | **Складність: M** | **🤖 Код**
 - **Опис:** TRL-матриця прив'язана до seasons (Q1/Q2/Q3/Q4), але навчальний рік ChNU/ChDTU має семестри (вересень-грудень, лютий-травень). Без mapping — milestone-deadlines не синхронізовані з академічним календарем (наприклад, фінальні захисти магістерських у червні)
-- [ ] 🤖 Додати у `09_03` mapping: семестр ↔ TRL milestone
-- [ ] 🤖 Розширити `trl_sync.yml` на запис академічних semestriv як окремий field у Projects V2
+- **Статус (🤖, 2026-05-12):** ✅ Mapping + automation готові. (1) `docs/09_03` §5 додано — таблиці семестрів (Fall 1.IX–31.I / Spring 1.II–30.VI / літня перерва) + мапінг TRL milestones на семестри + hard deadline 15.VI для фінальних захистів. (2) `.github/workflows/trl_sync.yml` розширено: при кожному `issues.closed` скрипт обчислює completion semester з `closed_at` (UTC) і пише у single-select поле `Academic Semester` Projects V2, якщо воно існує. Graceful no-op якщо поле/опція відсутні (TRL Auto-Advancement залишається первинним інваріантом). Опції створюються адміністратором один раз (`Fall 2025-2026`, `Spring 2025-2026`, … на 3-5 років наперед). **Cron-driven "Current Semester"** (1.IX / 1.II) свідомо не входить у цей цикл — `issues.closed` штампує *completion*, не *active*
+- [x] 🤖 Додати у `09_03` mapping: семестр ↔ TRL milestone — `docs/09_03` §5
+- [x] 🤖 Розширити `trl_sync.yml` на запис академічних semestriv як окремий field у Projects V2 — gracefully optional, не ламає TRL sync
 - [ ] 👤 Узгодити календар з 8 науковцями (UNI.5)
+- [ ] 👤 Створити single-select field `Academic Semester` у Projects V2 + опції `Fall {Y}-{Y+1}` / `Spring {Y-1}-{Y}` на 3-5 років наперед
 
 #### OPS.5 — EU DMLS quotes від 2-3 backup підрядників
 - **Джерело:** `07_02` §8.1.1 | **Складність: S** | **🔧 Операційна**

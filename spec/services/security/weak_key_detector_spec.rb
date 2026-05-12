@@ -4,12 +4,10 @@ require "spec_helper"
 require "securerandom"
 require "openssl"
 require "base64"
-require Rails.root.join("app/services/security/weak_key_detector") if defined?(Rails)
-# Direct load when Rails is not booted (keeps the suite runnable on machines
-# without a Postgres connection — this service has zero DB dependencies).
-unless defined?(Security::WeakKeyDetector)
-  require_relative "../../../app/services/security/weak_key_detector"
-end
+
+# The service has zero Rails / DB dependencies — load it directly so the
+# suite runs on machines without a Postgres connection.
+require_relative "../../../app/services/security/weak_key_detector"
 
 RSpec.describe Security::WeakKeyDetector do
   # NB: every "weak" sample below is a *publicly published* test vector from

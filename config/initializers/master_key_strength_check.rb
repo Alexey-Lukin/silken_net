@@ -41,7 +41,7 @@ Rails.application.config.after_initialize do
     raise SecurityError,
           "[SEC.9] Refusing to boot: master key is weak — #{reason}. " \
           "Generate a fresh value via `SecureRandom.hex(32)` (or hardware RNG) " \
-          "and store it in the secrets vault. See docs/03_05 §3.1 and " \
+          "and store it in the secrets vault. See docs/03_05 §3.1а and " \
           "docs/10_02 SEC.9 for the full rotation runbook."
   end
 end

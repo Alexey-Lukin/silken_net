@@ -89,26 +89,21 @@ module Security
 
       # Hex interpretation — only if the *whole* string is hex and length is
       # even. Accept any length so we catch 16/24/32-byte AES keys plus the
-      # 20-/32-byte RFC HMAC vectors. The raw bytes might not be valid UTF-8
-      # (`\xFF * 32`), so probe on the ASCII-8BIT view.
-      probe = raw
-      stripped = probe.sub(/\A0[xX]/, "")
-      if stripped.bytesize >= 2 &&
-         stripped.bytesize.even? &&
-         stripped.each_byte.all? { |b| (0x30..0x39).cover?(b) || (0x41..0x46).cover?(b) || (0x61..0x66).cover?(b) }
+      # 20-/32-byte RFC HMAC vectors. Use `.b` (ASCII-8BIT) before regex so
+      # non-UTF-8 raw bytes (e.g. `\xFF * 32`) don't blow up `String#match?`.
+      stripped = raw.sub(/\A0[xX]/, "")
+      if stripped.bytesize >= 2 && stripped.bytesize.even? && stripped.match?(/\A[0-9A-Fa-f]+\z/)
         decoded = [ stripped ].pack("H*")
         out << decoded unless decoded == raw
       end
 
-      # Base64 interpretation — only if it round-trips losslessly. Rejects
-      # ordinary passphrases that happen to use a-z0-9 only.
-      ascii = value.to_s
-      if ascii.length >= 4 &&
-         ascii.each_byte.all? { |b| (0x30..0x39).cover?(b) || (0x41..0x5A).cover?(b) || (0x61..0x7A).cover?(b) || b == 0x2B || b == 0x2F || b == 0x3D }
+      # Base64 interpretation — only if it round-trips losslessly. This
+      # rejects ordinary passphrases that happen to use a-z0-9 only.
+      if raw.bytesize >= 4 && raw.match?(%r{\A[A-Za-z0-9+/=]+\z})
         begin
-          decoded = Base64.strict_decode64(ascii)
+          decoded = Base64.strict_decode64(raw)
           encoded_back = Base64.strict_encode64(decoded)
-          out << decoded if encoded_back == ascii && !out.include?(decoded)
+          out << decoded if encoded_back == raw && !out.include?(decoded)
         rescue ArgumentError
           # not base64 — ignore
         end
