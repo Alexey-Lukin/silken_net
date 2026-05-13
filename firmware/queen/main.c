@@ -58,7 +58,7 @@
 #define FLUSH_JITTER_MAX_MS   60000    // Максимальний джиттер для десинхронізації (0-60 секунд)
 #define RNG_FALLBACK_XOR_MASK 0xA5A5A5A5UL // XOR-маска для fallback-ентропії при відмові HRNG
 #define FLUSH_HEADROOM        5         // Кількість вільних слотів до примусового скидання
-#define QUEEN_HEALTH_GP_MAX   63        // Максимальне значення growth_points
+#define QUEEN_HEALTH_GP_MAX   31        // [FW.29-PACK] Макс. growth_points (5-біт wire)
 #define OTA_MAX_CHUNKS        16        // 8192 / 512 = максимальна кількість OTA-чанків
 
 // [PLAN 2.4] Queen UID — read from dedicated Flash region instead of hardcoding.
@@ -831,8 +831,11 @@ void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, int8_t 
             // [FIX: AUDIT] Перевіряємо is_active щоб не порівнювати неініціалізовані RSSI
             if (!forest_cache[i].is_active) continue;
 
-            // bio_status з байта 10 пейлоада: біти [7:6]
-            uint8_t bio_status = (forest_cache[i].payload[10] >> 6) & 0x03;
+            // [FW.29-PACK] bio_status з байта 10: біти [6:5] (status:2),
+            // після того як FW.29 PANIC_FLAG_BIT займає бит 7. Старий `>> 6`
+            // видавав bits [7:6], що тихо демотувало status=2/3 у
+            // нормальних пакетах через `lora_payload[10] &= ~PANIC_FLAG_BIT`.
+            uint8_t bio_status = (forest_cache[i].payload[10] >> 5) & 0x03;
 
             // Абсолютний fallback — найгірший RSSI (з SNR tiebreaker) серед усіх
             if (forest_cache[i].rssi < fallback_rssi ||

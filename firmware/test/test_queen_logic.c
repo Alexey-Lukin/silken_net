@@ -193,7 +193,7 @@ static void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, 
     for (int i = 0; i < CACHE_MAX_ENTRIES; i++) {
         if (!forest_cache[i].is_active) continue; /* [FIX] skip inactive */
 
-        uint8_t bio_status = (forest_cache[i].payload[10] >> 6) & 0x03;
+        uint8_t bio_status = (forest_cache[i].payload[10] >> 5) & 0x03;  /* [FW.29-PACK] bits 6..5 */
 
         if (forest_cache[i].rssi < fallback_rssi ||
             (forest_cache[i].rssi == fallback_rssi && forest_cache[i].snr < fallback_snr)) {
@@ -674,7 +674,7 @@ TEST(test_cache_cifo_evicts_worst_rssi) {
 TEST(test_cache_cifo_protects_critical_stress) {
     reset_cache();
     uint8_t critical[16] = {0};
-    critical[10] = (1 << 6);
+    critical[10] = (1 << 5);  /* [FW.29-PACK] status=1 (stress) at bits 6..5 */
     Process_And_Cache_Data(0xC1, critical, -90, 0);
 
     uint8_t healthy[16] = {0};
@@ -692,7 +692,7 @@ TEST(test_cache_cifo_protects_critical_stress) {
 TEST(test_cache_cifo_protects_anomaly) {
     reset_cache();
     uint8_t anomaly[16] = {0};
-    anomaly[10] = (2 << 6);
+    anomaly[10] = (2 << 5);  /* [FW.29-PACK] status=2 (anomaly) at bits 6..5 */
     Process_And_Cache_Data(0xA1, anomaly, -95, 0);
 
     uint8_t healthy[16] = {0};
@@ -710,7 +710,7 @@ TEST(test_cache_cifo_protects_anomaly) {
 TEST(test_cache_cifo_protects_tamper) {
     reset_cache();
     uint8_t tamper[16] = {0};
-    tamper[10] = (3 << 6);
+    tamper[10] = (3 << 5);  /* [FW.29-PACK] status=3 (tamper) at bits 6..5 */
     Process_And_Cache_Data(0xDA, tamper, -100, 0);
 
     uint8_t healthy[16] = {0};
@@ -728,7 +728,7 @@ TEST(test_cache_cifo_protects_tamper) {
 TEST(test_cache_cifo_fallback_all_critical) {
     reset_cache();
     uint8_t critical[16] = {0};
-    critical[10] = (2 << 6);
+    critical[10] = (2 << 5);  /* [FW.29-PACK] status=2 (anomaly) */
 
     for (uint32_t i = 0; i < 50; i++)
         Process_And_Cache_Data(i + 1, critical, (int8_t)(-(int8_t)(50 + i)), 0);
@@ -870,7 +870,7 @@ TEST(test_e8_snr_tiebreaker_respects_critical_priority) {
     reset_cache();
     uint8_t healthy[16] = {0};
     uint8_t critical[16] = {0};
-    critical[10] = (uint8_t)(1 << 6);  /* status=1 (stress) */
+    critical[10] = (uint8_t)(1 << 5);  /* [FW.29-PACK] status=1 (stress) */
 
     /* 1 critical з найгіршими RSSI+SNR. */
     Process_And_Cache_Data(0xC1, critical, -95, -20);
@@ -897,7 +897,7 @@ TEST(test_e8_snr_fallback_tiebreaker_when_all_critical) {
      * Тут також SNR є tiebreaker для однакових (worst) RSSI. */
     reset_cache();
     uint8_t critical[16] = {0};
-    critical[10] = (uint8_t)(1 << 6);  /* status=1 */
+    critical[10] = (uint8_t)(1 << 5);  /* [FW.29-PACK] status=1 */
 
     /* 50 critical записів усі з RSSI=-70, slot 7 — з найгіршим SNR. */
     for (uint32_t i = 0; i < 50; i++) {
@@ -1345,8 +1345,9 @@ static void Build_Queen_Health(uint8_t* payload, uint8_t tree_count, uint16_t up
     payload[5] = (uint8_t)(uptime_sec & 0xFF);
     /* Byte 7: number of trees in cache */
     payload[7] = tree_count;
-    /* Byte 10: status=homeostasis(0), growth_points = tree_count (capped at 63) */
-    payload[10] = (tree_count < 63) ? tree_count : 63;
+    /* [FW.29-PACK] Byte 10: status=homeostasis(0), growth_points = tree_count
+     * (capped at 31 — 5-bit wire, QUEEN_HEALTH_GP_MAX). */
+    payload[10] = (tree_count < 31) ? tree_count : 31;
 }
 
 TEST(test_queen_health_did_zero) {
@@ -1375,8 +1376,8 @@ TEST(test_queen_health_tree_count) {
 TEST(test_queen_health_growth_points_clamped) {
     uint8_t p[16];
     Build_Queen_Health(p, 100, 100);
-    /* growth_points max is 63 */
-    ASSERT_EQ(p[10], 63);
+    /* [FW.29-PACK] growth_points max is 31 (5-bit wire) */
+    ASSERT_EQ(p[10], 31);
 }
 
 TEST(test_queen_health_in_cache) {

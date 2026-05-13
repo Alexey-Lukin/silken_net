@@ -201,8 +201,8 @@ static UnpackedPayload Unpack_Soldier_Payload(const uint8_t* p)
     u.temp      = (int8_t)p[6];
     u.acoustic  = p[7];
     u.metabolism = ((uint16_t)p[8] << 8) | p[9];
-    u.bio_status    = (p[10] >> 6) & 0x03;
-    u.growth_points = p[10] & 0x3F;
+    u.bio_status    = (p[10] >> 5) & 0x03;  /* [FW.29-PACK] bits 6..5 */
+    u.growth_points = p[10] & 0x1F;          /* [FW.29-PACK] bits 4..0 */
     u.ttl       = p[11];
     u.firmware_version = ((uint16_t)p[12] << 8) | p[13];
     return u;
@@ -366,17 +366,18 @@ static uint8_t OTA_Verify_CRC(uint16_t total_size)
 }
 
 /* ---------- Bio-contract byte packing/unpacking ---------- */
+/* [FW.29-PACK] Wire layout: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)]. */
 static uint8_t Pack_BioContract(uint8_t status, uint8_t growth_points)
 {
     if (status > 3) status = 3;
-    if (growth_points > 63) growth_points = 63;
-    return (uint8_t)((status << 6) | growth_points);
+    if (growth_points > 31) growth_points = 31;
+    return (uint8_t)((status << 5) | growth_points);
 }
 
 static void Unpack_BioContract(uint8_t packed, uint8_t* status, uint8_t* growth_points)
 {
-    *status = (packed >> 6) & 0x03;
-    *growth_points = packed & 0x3F;
+    *status = (packed >> 5) & 0x03;
+    *growth_points = packed & 0x1F;
 }
 
 /* ---------- Panic payload builder ---------- */
@@ -523,9 +524,12 @@ TEST(test_pack_max_values) {
     ASSERT_EQ(u.temp, 127);
     ASSERT_EQ(u.acoustic, 255);
     ASSERT_EQ(u.metabolism, 0xFFFF);
-    /* [FW.29] Bit 7 masked: Pack_BioContract(3,63)=0xFF & 0x7F=0x7F → status=1, gp=63 */
-    ASSERT_EQ(u.bio_status, 1);
-    ASSERT_EQ(u.growth_points, 63);
+    /* [FW.29-PACK] Pack_BioContract(3, 63) → gp clamped to 31 → (3<<5)|31 = 0x7F.
+     * Mask `& 0x7F` залишає 0x7F. Unpack: status = 3 (tamper) ✓, gp = 31.
+     * До FW.29-PACK старе packing (3<<6)|63 = 0xFF → mask = 0x7F → unpack
+     * `>>6 = 1` (stress) — silent tamper demotion. Зараз status=3 коректно зберігається. */
+    ASSERT_EQ(u.bio_status, 3);
+    ASSERT_EQ(u.growth_points, 31);
     ASSERT_EQ(u.ttl, 255);
     ASSERT_EQ(u.firmware_version, 0xFFFF);
 }
@@ -882,27 +886,27 @@ TEST(test_ota_crc_too_small) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
- * 6. BIO-CONTRACT BYTE TESTS
+ * 6. BIO-CONTRACT BYTE TESTS [FW.29-PACK: status<<5, gp 5-bit]
  * ════════════════════════════════════════════════════════════════════ */
 
 TEST(test_bio_pack_homeostasis) {
-    uint8_t b = Pack_BioContract(0, 50);
-    ASSERT_EQ(b, 50); /* 0x00 | 50 = 50 */
+    uint8_t b = Pack_BioContract(0, 25);
+    ASSERT_EQ(b, 25); /* 0x00 | 25 = 25 */
 }
 
 TEST(test_bio_pack_stress) {
     uint8_t b = Pack_BioContract(1, 1);
-    ASSERT_EQ(b, (1 << 6) | 1); /* 65 */
+    ASSERT_EQ(b, (1 << 5) | 1); /* 33 */
 }
 
 TEST(test_bio_pack_anomaly) {
     uint8_t b = Pack_BioContract(2, 0);
-    ASSERT_EQ(b, (2 << 6)); /* 128 */
+    ASSERT_EQ(b, (2 << 5)); /* 64 — bit 7 clear, не конфліктує з PANIC_FLAG_BIT */
 }
 
 TEST(test_bio_pack_tamper) {
-    uint8_t b = Pack_BioContract(3, 63);
-    ASSERT_EQ(b, (3 << 6) | 63); /* 255 */
+    uint8_t b = Pack_BioContract(3, 31);
+    ASSERT_EQ(b, (3 << 5) | 31); /* 0x7F = 127 — bit 7 clear */
 }
 
 TEST(test_bio_pack_clamp_status) {
@@ -914,16 +918,16 @@ TEST(test_bio_pack_clamp_status) {
 }
 
 TEST(test_bio_pack_clamp_growth) {
-    uint8_t b = Pack_BioContract(0, 100); /* gp > 63 → clamped */
+    uint8_t b = Pack_BioContract(0, 100); /* gp > 31 → clamped */
     uint8_t s, g;
     Unpack_BioContract(b, &s, &g);
     ASSERT_EQ(s, 0);
-    ASSERT_EQ(g, 63);
+    ASSERT_EQ(g, 31);
 }
 
 TEST(test_bio_unpack_roundtrip) {
     for (uint8_t status = 0; status <= 3; status++) {
-        for (uint8_t gp = 0; gp <= 63; gp++) {
+        for (uint8_t gp = 0; gp <= 31; gp++) {
             uint8_t packed = Pack_BioContract(status, gp);
             uint8_t s, g;
             Unpack_BioContract(packed, &s, &g);
@@ -934,11 +938,29 @@ TEST(test_bio_unpack_roundtrip) {
 }
 
 TEST(test_bio_byte_0xFF_means_vm_error) {
-    /* If mruby VM fails, soldier sends 0xFF */
+    /* [FW.29-PACK] BIO_STATUS_VM_ERROR = 0xFF. У normal payload firmware
+     * виконує `lora_payload[10] &= ~PANIC_FLAG_BIT` → 0x7F. Backend декодує
+     * 0x7F: status = (0x7F >> 5) & 0x03 = 3 (tamper) ✓; gp = 0x7F & 0x1F = 31 ✓.
+     * До FW.29-PACK старе декодування `>> 6` давало status=1 (stress) — silent
+     * tamper demotion на crashed mruby VM. */
     uint8_t s, g;
-    Unpack_BioContract(0xFF, &s, &g);
-    ASSERT_EQ(s, 3);   /* status=3 */
-    ASSERT_EQ(g, 63);  /* growth_points=63 */
+    Unpack_BioContract(0xFF & 0x7F, &s, &g);  /* simulate firmware mask */
+    ASSERT_EQ(s, 3);   /* status=3 = tamper */
+    ASSERT_EQ(g, 31);  /* growth_points=31 (max 5-bit) */
+}
+
+TEST(test_bio_anomaly_survives_panic_mask) {
+    /* [FW.29-PACK regression]: Pack_BioContract(2, 0) = 0x40 (bit 7 = 0).
+     * Старе packing давало (2<<6)|0 = 0x80 → mask `& 0x7F` → 0x00 → backend
+     * читав homeostasis. Anomaly events були тихо втрачені! */
+    uint8_t b = Pack_BioContract(2, 0);
+    ASSERT_FALSE(b & PANIC_FLAG_BIT);  /* bit 7 МАЄ бути 0 для нормального байту */
+    uint8_t masked = b & 0x7F;
+    ASSERT_EQ(masked, b);  /* mask нічого не змінює — anomaly зберігається */
+    uint8_t s, g;
+    Unpack_BioContract(masked, &s, &g);
+    ASSERT_EQ(s, 2);  /* anomaly survives */
+    ASSERT_EQ(g, 0);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3885,20 +3907,23 @@ TEST(test_fw20s2_gossip_apply_drift_within_cap_corrects) {
  */
 
 TEST(test_fw29_status_byte_panic_with_max_growth_points) {
-    /* Boundary: bio_contract_byte = Pack_BioContract(3, 63) = 0xFF.
-     * У normal payload bit 7 МАЄ бути зачищений → 0x7F (status=1, gp=63
-     * за маскою 0x7F: high 2 bits = 01 = 1, low 6 bits = 0x3F = 63).
-     * У panic payload bit 7 МАЄ горіти (PANIC_FLAG_BIT) — без status/gp. */
+    /* [FW.29-PACK] Boundary: bio_contract_byte = Pack_BioContract(3, 63).
+     * У новому 5-bit packing gp=63 clamps до 31 → byte = (3<<5)|31 = 0x7F
+     * (bit 7 = 0). У normal payload mask `& 0x7F` нічого не змінює.
+     * Backend читає status = (0x7F >> 5) & 3 = 3 (tamper) ✓, gp = 0x7F & 0x1F = 31. */
     uint8_t normal[16];
     Pack_Soldier_Payload(normal, 0xCAFEBABE, 3000, 25, 0, 120,
                           Pack_BioContract(3, 63), 3, 0);
     ASSERT_FALSE(normal[10] & PANIC_FLAG_BIT);
-    ASSERT_EQ(normal[10], 0x7F);  /* 0xFF & 0x7F */
+    ASSERT_EQ(normal[10], 0x7F);  /* (3<<5)|31 = 0x7F, bit 7 уже 0 */
+    /* Decoded values: tamper survives PANIC_FLAG_BIT mask без demotion. */
+    ASSERT_EQ((normal[10] >> 5) & 0x03, 3);  /* status=3 (tamper) */
+    ASSERT_EQ(normal[10] & 0x1F, 31);         /* gp=31 (max 5-bit) */
 
     uint8_t panic[16];
     Build_Panic_Payload(panic, 0xCAFEBABE);
     ASSERT_TRUE(panic[10] & PANIC_FLAG_BIT);
-    ASSERT_EQ(panic[10], PANIC_FLAG_BIT);  /* exact 0x80 — без residual gp */
+    ASSERT_EQ(panic[10], PANIC_FLAG_BIT);  /* exact 0x80 — без residual status/gp */
 }
 
 TEST(test_fw29_panic_does_not_corrupt_acoustic_saturation) {
@@ -3911,7 +3936,7 @@ TEST(test_fw29_panic_does_not_corrupt_acoustic_saturation) {
     /* Normal payload: acoustic[7] = 255 (saturated), StatusByte clean */
     uint8_t normal[16];
     Pack_Soldier_Payload(normal, 0x12345678, 3000, 25, acoustic_events_local,
-                          120, Pack_BioContract(0, 50), 3, 0);
+                          120, Pack_BioContract(0, 25), 3, 0);  /* [FW.29-PACK] gp 5-bit */
     ASSERT_EQ(normal[7], 255);  /* FW.22 saturation проходить як є */
     ASSERT_FALSE(normal[10] & PANIC_FLAG_BIT);
 
@@ -3997,6 +4022,7 @@ int main(void)
     RUN(test_bio_pack_clamp_growth);
     RUN(test_bio_unpack_roundtrip);
     RUN(test_bio_byte_0xFF_means_vm_error);
+    RUN(test_bio_anomaly_survives_panic_mask);  /* [FW.29-PACK] regression guard */
 
     printf("\n  Panic Payload:\n");
     RUN(test_panic_did_packed);

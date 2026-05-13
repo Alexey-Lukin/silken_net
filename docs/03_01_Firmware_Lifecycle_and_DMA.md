@@ -1282,22 +1282,28 @@ else                           # Гомеостаз
   status = 0
   deviation = (OPTIMAL_Z_TARGET - z_val).abs
   reward = 50 - deviation.round          # FW.13: .round замість .to_i (математично коректне округлення)
-  growth_points = reward.clamp(10, 63)   # FW.13: clamp(10,63) замість [reward,10].max + clamp(0,63)
+  # [FW.29-PACK] Wire-діапазон скорочено з 6-біт (10..63) до 5-біт (5..31)
+  # щоб звільнити bit 7 під PANIC_FLAG_BIT (FW.29). Backend ×2 upscale зберігає
+  # tokenomic emission rate (effective stored 10..62 vs old 10..63).
+  growth_points = (reward / 2).clamp(5, 31)
 end
 
-payload_byte = (status << 6) | growth_points
+# [FW.29-PACK] Layout: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)].
+# Status переїхав з bits 7..6 на bits 6..5 для уникнення колізії з bit 7,
+# який FW.29 зарезервував під однозначне маркування panic-frame'у.
+payload_byte = (status << 5) | growth_points
 ```
 
-**Reward Formula:** базова нагорода 50, мінус штраф за відхилення від `OPTIMAL_Z_TARGET=29.0`. Максимум 50 балів (при z=29.0). Мінімум 10 балів (при гомеостазі з великим відхиленням).
+**Reward Formula:** базова нагорода 50, мінус штраф за відхилення від `OPTIMAL_Z_TARGET=29.0`. Wire-значення масштабується ÷2 (для 5-бітного простору 5..31), backend ×2 upscale при unpack для збереження tokenomic invariant.
 
-**Відображення на байт BioContract (байт 10 payload):**
+**Відображення на байт BioContract (байт 10 payload, після FW.29-PACK):**
 
-| z_val | Status | Growth Points | Hex (приклад) |
-|-------|--------|---------------|---------------|
-| < 2.0 | 1 (stress) | 1 | `0x41` |
-| > 45.0 | 2 (anomaly) | 0 | `0x80` |
-| ≈ 29.0 | 0 (homeostasis) | 50 | `0x32` |
-| mruby VM error | 3 (tamper) | 63 | `0xFF` |
+| z_val | Status | Wire GP | Hex (приклад) |
+|-------|--------|---------|---------------|
+| < 2.0 | 1 (stress) | 1 | `0x21` |
+| > 45.0 | 2 (anomaly) | 0 | `0x40` |
+| ≈ 29.0 | 0 (homeostasis) | 25 | `0x19` |
+| mruby VM error | 3 (tamper) | 31 (after `& 0x7F`) | `0x7F` |
 
 > **Синхронізація з сервером:** `app/services/silken_net/attractor.rb` обчислює той самий z-val за тими самими константами. Якщо значення розходяться → Dual Computation Integrity Alert. **[FIX: R-11]** Виправлено: `BASE_BETA` уніфіковано як `8.0/3.0` (не `2.666`), sigma/rho clamp синхронізовано з сервером.
 

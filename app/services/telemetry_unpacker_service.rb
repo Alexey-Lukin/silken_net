@@ -146,10 +146,16 @@ class TelemetryUnpackerService < ApplicationService
       temperature_c: calibration.normalize_temperature(parsed_data[2]),
       acoustic_events: parsed_data[3],
       metabolism_s: parsed_data[4],
-      growth_points: status_byte & 0x3F, # Нижні 6 біт — бали росту
+      # [FW.29-PACK] Wire-формат байту 10: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)].
+      # Wire growth_points (0..31) ×2 upscale щоб stored growth_points
+      # залишалося у звичному 0..62 діапазоні (≤1.6% resolution loss vs
+      # legacy 0..63). Так зберігається tokenomic invariant
+      # (`Wallet#lock_and_mint!` поріг 10000 SCC), а wire-байт виправлено
+      # під дизайн з docs/03_01 §1.6 і docs/03_05 §FW.2.
+      growth_points: (status_byte & 0x1F) * 2,
       mesh_ttl: parsed_data[6],
       firmware_version_id: (firmware_id.positive? ? firmware_id : nil),
-      bio_status: interpret_status(status_byte >> 6) # Верхні 2 біти — статус
+      bio_status: interpret_status((status_byte >> 5) & 0x03) # bits 6..5 — статус (FW.29-PACK)
     }
 
     # [FW.22] Firmware saturates acoustic_events at 255 (uint16 → uint8 clamped).
