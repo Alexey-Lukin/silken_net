@@ -1566,6 +1566,162 @@ FilecoinArchiveWorker → immutable proof archive
 
 **Пріоритет:** Post-TRL 6. Не блокує прототип.
 
+### Архітектурний дизайн: Task Assignment Algorithm 🤖 (S6.10)
+
+> **Cross-ref:** [10_02 S6.10](10_02_Action_Plan_Tracker), [10_02 E.20](10_02_Action_Plan_Tracker), [10_02 E.34](10_02_Action_Plan_Tracker) (dClimate fallback → Forester Guild).
+
+Workflow вище показує **створення** bounty та **claim**, але **алгоритм матчингу ranger↔bounty** і пріоритезація не визначені. Без цього система деградує до first-come-first-served race (далекий ranger може вкрасти bounty у локального) або silent expiry (життєво-критична `EwsAlert :critical` залишається без виконавця, бо нікому не повідомили). Цей розділ закриває S6.10.
+
+#### Етап 1 — Bounty Creation (з `EwsAlert`)
+
+`ForestBountyService.create_bounty!(ews_alert, type:)` створює `Bounty` запис з полями:
+
+| Поле | Тип | Призначення |
+|------|-----|-------------|
+| `ews_alert_id` | FK | Зв'язок з тригерною тривогою |
+| `geo_location` | PostGIS POINT | Координати дерева/Queen (для distance scoring) |
+| `severity` | enum | `:critical` (час життя 6 год) / `:high` (24 год) / `:medium` (72 год) / `:low` (7 днів) |
+| `task_type` | enum | `:fire_response` / `:drone_verification` / `:hardware_replacement` / `:vandalism_inspection` / `:routine_maintenance` |
+| `payout_usdc_cents` | bigint | Розмір винагороди (пов'язано з `severity` + `task_type` через `BountyPricingService`) |
+| `required_skills` | array<enum> | `[:drone_pilot, :climbing, :electronics, :firefighting]` — capability bitmap |
+| `required_certifications` | array<string> | `["EWS_RESPONSE_L1", "DRONE_FAA_PART107"]` (cross-ref `Forester#certifications`) |
+| `expires_at` | timestamp | `created_at + severity_ttl(severity)` |
+| `state` | AASM | `pending → assigned → in_progress → submitted → verified → paid` (або `expired/disputed`) |
+| `assigned_ranger_id` | FK nullable | Заповнюється після матчингу (Етап 3) |
+| `assignment_attempt` | int | Лічильник fallback-розширень радіусу (Етап 4) |
+
+#### Етап 2 — Candidate Pool (фільтрація)
+
+`BountyAssignmentService.candidates(bounty)` повертає ranked-list `Forester` записів, **відфільтрованих** за наступними hard constraints:
+
+```
+candidates = Forester.active
+                     .verified                      # KYC через Hadron pipeline
+                     .with_capabilities(bounty.required_skills)
+                     .with_certifications(bounty.required_certifications)
+                     .within_radius(bounty.geo_location, max_radius_km(bounty.severity))
+                     .not_currently_busy            # ranger без open assigned bounty
+                     .not_blacklisted_for(bounty.ews_alert.tree.cluster)
+```
+
+`max_radius_km(severity)` — escalation-friendly:
+
+| Severity | Початковий радіус | Експонентне розширення (Етап 4) |
+|----------|-------------------|----------------------------------|
+| `:critical` | 25 км | 50 → 100 → unlimited (через 30 хв each) |
+| `:high` | 50 км | 100 → 200 → unlimited (через 2 год each) |
+| `:medium` | 100 км | 200 → unlimited (через 12 год each) |
+| `:low` | 200 км | unlimited після 24 год |
+
+#### Етап 3 — Scoring & Ranking (matching algorithm)
+
+Кожен candidate отримує **composite score** ∈ [0, 1]:
+
+```
+score(ranger, bounty) =
+    0.40 × distance_score(ranger.last_known_location, bounty.geo_location)
+  + 0.25 × reputation_score(ranger.success_rate, ranger.completed_count)
+  + 0.20 × responsiveness_score(ranger.median_ack_time_minutes)
+  + 0.10 × specialization_match(ranger.preferred_task_types, bounty.task_type)
+  + 0.05 × cluster_familiarity(ranger.cluster_history, bounty.ews_alert.tree.cluster)
+```
+
+де:
+
+- `distance_score = max(0, 1 - distance_km / max_radius_km)` (haversine + PostGIS `ST_Distance_Sphere`)
+- `reputation_score = success_rate × log10(completed_count + 1) / log10(101)` (Wilson score lower bound для bounty count < 30 — захист від "lucky beginner"-overweight)
+- `responsiveness_score = exp(-median_ack_time_minutes / 30)` (швидкість реакції на попередні bounty notifications)
+- `specialization_match = 1.0` якщо ranger робив >5 bounty цього task_type, 0.5 якщо 1-5, 0.0 якщо 0
+- `cluster_familiarity = 1.0` якщо ranger робив >3 bounty у тому ж `Cluster`, 0.5 — у сусідньому, 0.0 — нове місце
+
+Ваги (`0.40 / 0.25 / 0.20 / 0.10 / 0.05`) — стартові, налаштовуються через `SystemParameter(:forester_assignment_weights, ...)` (динамічно через `BIZ.4` DAO Governance, не hardcoded).
+
+#### Етап 4 — Notification Cascade (escalation)
+
+```
+ForestBountyService.assign_and_notify!(bounty):
+  candidates = BountyAssignmentService.candidates(bounty).rank_by_score
+  top_n = candidates.first(N_for_severity(bounty.severity))
+                                              # critical=1, high=3, medium=5, low=10
+
+  if top_n.empty?
+    bounty.escalate!                          # експонентне розширення радіусу
+    ForestBountyExpansionWorker.perform_in(retry_delay(bounty), bounty.id)
+    return
+  end
+
+  if bounty.severity == :critical
+    # Single best ranger — exclusive lock на 10 хвилин
+    bounty.assign_to!(top_n.first, exclusive_until: 10.minutes.from_now)
+    SinglePushNotificationWorker.perform_async(top_n.first.id, bounty.id, :urgent)
+  else
+    # Top-N notification — first to claim wins
+    bounty.offer_to!(top_n)                   # state: pending → offered
+    top_n.each do |ranger|
+      SinglePushNotificationWorker.perform_async(ranger.id, bounty.id, :standard)
+    end
+  end
+```
+
+**Escalation тригери (через `ForestBountyExpansionWorker`):**
+
+| Подія | Дія |
+|-------|-----|
+| Top-1 critical не ack'нув за 10 хв | Розблокувати exclusive lock, escalate radius, повторно запустити assignment |
+| Top-N standard ніхто не claim'ив за 30 хв | Escalate radius, повторно notify (з fresh top-N) |
+| Bounty досягло `expires_at` | Залежно від severity: critical → SMS-fallback на регіонального координатора + emergency dispatcher webhook (E.34); інші → fail з notification до `EwsAlert.user` |
+
+#### Етап 5 — Conflict Resolution (race condition при concurrent claim)
+
+При `severity ≠ :critical` Top-N rangers отримують одночасну notification → race на `claim_bounty!`. Pessimistic-lock на DB рівні:
+
+```ruby
+# ForestBountyService.claim_bounty!(bounty_id, ranger_id, gps_proof)
+ActiveRecord::Base.transaction do
+  bounty = Bounty.lock("FOR UPDATE NOWAIT").find(bounty_id)
+  raise BountyAlreadyClaimedError if bounty.state != "offered"
+  raise BountyExpiredError if bounty.expired?
+  raise UnauthorizedClaimError unless bounty.offered_to?(ranger_id)
+
+  bounty.assign_to!(ranger_id, exclusive_until: nil)
+  bounty.start_in_progress!(gps_check_in: gps_proof)
+end
+```
+
+`NOWAIT` гарантує: лузер race миттєво отримає `LockWaitTimeout` → конвертується у `BountyAlreadyClaimedError` з friendly UI message «Цю задачу щойно взяв інший ranger» (без блокування Sidekiq worker'а на DB lock).
+
+#### Етап 6 — Verification & Payout
+
+`ForestBountyService.verify_and_payout!(bounty)`:
+
+1. **Submission validation:** `proof_cid` (IPFS) існує + GPS-точка у радіусі 100 м від `bounty.geo_location` + `submitted_at <= expires_at + 1.hour` grace
+2. **EXIF/timestamp check:** Photo metadata не tampered (cross-ref `EXIF::ProofValidator` — окремий сервіс)
+3. **Optional second-pair-of-eyes** (для `:critical` payouts > $100): manual review forester admin + PostgreSQL row-level lock
+4. **On-chain payout:** `BlockchainTransaction(:pending)` → `PolygonUsdcTransferWorker` (queue: `web3`) → ranger wallet
+5. **`MaintenanceRecord.create!(bounty_tx_hash:, proof_cid:, ranger_id:, payout_amount_usdc:)`** — закриває цикл (cross-ref існуюча `MaintenanceRecord` модель)
+6. **`FilecoinArchiveWorker`** для immutable proof archive
+7. **Reputation update:** `ranger.update!(success_rate: ..., completed_count: ..., median_ack_time_minutes: ...)` — feedback в Етап 3 scoring
+
+#### Crash Recovery & Idempotency
+
+| Сценарій | Recovery |
+|----------|----------|
+| Ranger не submit'нув до `expires_at + grace` | `BountyExpirationSweepWorker` (cron 5 хв) → state = expired → reputation penalty + re-assign до наступного top-N |
+| Backend crash між `claim_bounty!` та `start_in_progress!` | Sidekiq retry → AASM ідемпотентний (re-applies same transition); Pessimistic lock не утримується між requests |
+| Подвійний payout (race у Етапі 6) | `BlockchainTransaction(unique_constraint: bounty_id)` + `MintingRollbackService` гарантує single-shot payout (cross-ref §4.2.2 BlockchainMintingService) |
+| Ranger підтримує kill switch (екстрена відмова) | `bounty.abandon!(ranger_id, reason)` → reputation penalty залежно від `severity` × `time_since_assigned` → re-assign до next top-N |
+
+#### Anti-Gaming & Sybil Resistance
+
+- **KYC через Hadron** (`Wallet#hadron_kyc_status == "approved"`) — обов'язкова попередня умова для `Forester#verified`
+- **Geo-staking:** ranger ставить депозит (refundable USDC) пропорційний радіусу свого operating area; reputation penalty списується з depo, при exhaustion → `Forester#suspended`
+- **Cluster blacklist:** `Cluster.exclude_forester!(ranger_id, reason)` — тривалий бан з конкретного кластера (наприклад, після проваленої verification або disputed proof)
+- **Captcha-style on-site challenges (Post-TRL 7):** для drone_verification — система генерує специфічну фото-pose-check (наприклад, "сфотографуй конкретний QR на анкері + ваше обличчя"), щоб ускладнити proof-replay attacks
+
+#### Інтеграція з dClimate Fallback (E.34)
+
+При `EwsAlert :critical` + `:obscured_by_clouds` (супутник не може verify) — `ForestBountyService.create_bounty!(ews_alert, type: :drone_verification)` стає **Резервним Оракулом**: ranger летить з дроном, фотографує/знімає відео, IPFS upload → `EwsAlert.resolve_via_bounty!(bounty)` закриває тривогу швидше за наступний clear satellite pass (24-48 год).
+
 ---
 
 ## 🌍 Planned: Cross-Registry API (Міністерство Закордонних Справ)

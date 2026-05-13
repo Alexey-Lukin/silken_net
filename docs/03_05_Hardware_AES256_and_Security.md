@@ -119,31 +119,87 @@ hcryp.Init.Algorithm = CRYP_AES_ECB; // ECB для LoRa-трафіку між К
 
 Найефективніший шлях вирішення BLOCKER-2 та BLOCKER-3 одночасно — перехід на **AES-256-CCM** (Counter with CBC-MAC), який **апаратно підтримується STM32WLE5JC** (`CRYP_AES_CCM` у HAL). CCM надає конфіденційність + автентифікацію + захист від replay в одній операції.
 
-**Нова структура 24-байтного LoRa-пакета (замість поточних 16-байтних):**
+**Нова структура 24-байтного LoRa-пакета (замість поточних 16-байтних) — фінальний дизайн 🤖 (FW.2):**
 
 ```
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| Byte 0 | Byte 1 | Byte 2 | Byte 3 | Byte 4 | Byte 5 | Byte 6 | Byte 7 |
-|       DID (Device ID, 4 байти)     |    Сенсорні дані (8 байтів)       |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| Byte 8 | Byte 9 |Byte 10 |Byte 11 |Byte 12 |Byte 13 |Byte 14 |Byte 15 |
-|    ...сенсорні дані...    | Frame Counter (4 байти, Nonce для CCM)     |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-|Byte 16 |Byte 17 |Byte 18 |Byte 19 |Byte 20 |Byte 21 |Byte 22 |Byte 23 |
-|        MIC (4 байти, AES-CCM MAC)  |         Зарезервовано              |
-+--------+--------+--------+--------+--------+--------+--------+--------+
+┌─ Header (cleartext, AAD) ─────────────────────────────────────────────┐
+│ Byte 0 │ Byte 1 │ Byte 2 │ Byte 3 │ Byte 4 │ Byte 5 │ Byte 6 │ Byte 7 │
+│      DID (Device ID, 4 байти)     │    Frame Counter (4 байти, BE)    │
+└────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
+┌─ Encrypted payload (sensor data, 8 байтів) ───────────────────────────┐
+│ Byte 8 │ Byte 9 │Byte 10 │Byte 11 │Byte 12 │Byte 13 │Byte 14 │Byte 15 │
+│    Vcap (mV, BE)  │  Temp  │ Acous. │  delta_t (sec, BE)│ Status │ Ctrl│
+└────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
+┌─ MIC (Message Integrity Code, 8 байтів) ──────────────────────────────┐
+│Byte 16 │Byte 17 │Byte 18 │Byte 19 │Byte 20 │Byte 21 │Byte 22 │Byte 23 │
+│                    AES-CCM MAC (8 байтів — 64-bit)                    │
+└────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
 ```
 
-- **Frame Counter (4B):** Зберігається в RTC Backup Domain (наприклад, `RTC_BKP_DR1`). Інкрементується при кожній відправці. Використовується як Nonce для AES-CCM. Queen запам'ятовує останній Frame Counter для кожного DID. Якщо приходить пакет з меншим або рівним лічильником — це **Replay Attack**, пакет ігнорується.
-- **MIC (4B):** Message Integrity Code, апаратно генерується AES-CCM. Захищає від **Bit-flip та Injection** атак.
+**8-байтний sensor payload (bytes 8..15) — компресія з поточних 16:**
+
+| Зсув | Поле | Тип | Діапазон / Кодування | Походження |
+|------|------|-----|----------------------|------------|
+| 0..1 | `Vcap_mv` | uint16 BE | 0..65535 мВ (фактично 0..5500) | повна 1 мВ-роздільність, як у поточному 16B |
+| 2 | `temp_c` | int8 | −128..+127 °C | без змін |
+| 3 | `acoustic_events` | uint8 (saturating) | 0..255 | FW.22 — saturating increment, без overflow ambiguity |
+| 4..5 | `delta_t_s` | uint16 BE | 0..65535 сек (≈ 18 год) | повна роздільність — критично для FW.5 B+ β-перетурбації |
+| 6 | `status_byte` | bitfield | `[panic:1 \| status:2 \| growth_points:5]` | FW.29 PANIC_FLAG_BIT (bit 7) + status (bits 6..5) + growth (bits 4..0); зменшено growth з 6 → 5 бітів (0..31), масштабований діапазон у `bio_contract.rb` |
+| 7 | `mesh_ctrl` | bitfield | `[ttl:4 \| fw_version_id_low:4]` | TTL у верхніх 4 бітах (FW.10, max 15 hop), FW low-nibble (16-version rotation epoch керується OTA config) |
+
+**Поля, які видалено / переміщено з поточного 16-байтного payload:**
+
+| Поле (16B) | Куди подівся | Причина |
+|------------|--------------|---------|
+| `firmware_version_id` (2B → 4 bits) | spliced у `mesh_ctrl[3..0]`; epoch керується OTA | повна 16-bit version_id занадто щедра — на практиці одночасно живуть ≤ 16 версій fleet-wide; epoch у OTA config block (FW.8 канал) подовжує rotation |
+| `panic_frame_counter` (2B, SEC.10) | замінено CCM Frame Counter (header) + MIC | **CCM nonce + MIC = криптографічний anti-replay**; SEC.10 RTC counter був тимчасовою сторожею панічного каналу до приходу FW.2 (явно так задокументовано в §3.5а) |
+| `gossip_ts_byte` (1B, FW.20-S2 5/5) | переходить в окремий tail-byte AAD або у downlink (ARCH.26 TDMA beacon) | gossip-piggyback не критичний для homeostasis pipeline; deferred до FW.20-S3 mesh-relay TDMA узгодження |
+| `PAD` (2B) | усунено повністю | 24B пакет щільніший за 16B+5B header |
+
+**Header (cleartext, AAD-authenticated):**
+
+- **DID (4B):** Незмінений — Queen-side filter та lookup ключа. Передається як AAD у CCM, тому MIC покриває і його (підміна DID → MIC fail).
+- **Frame Counter (4B BE):** monotonic uint32 у `RTC_BKP_DR2` (вільний слот після packing'у DR0/DR12 — див. ARCH.21 / FW.21 RTC map). Інкрементується перед кожним TX. **4 байти ≈ 4.3 млрд значень** — за бюджету 1 TX/година × 8760 год/рік × 25 років = ~219 тис. TX/пристрій життєвий цикл = `21 bit` зайнято, **запас 11 bit ≈ 2048× longevity margin**. Cold-boot після VBAT-loss → re-flash з backend через `POST /api/v1/provisioning/reset_frame_counter` (нова endpoint, обмежена RBAC `forester+`).
+
+**MIC (8B = 64-bit MAC) — обґрунтування розширення з 4B:**
+
+CCM специфікація (NIST SP 800-38C) дозволяє `t ∈ {4, 6, 8, 10, 12, 14, 16}` байтів. Початкова чорнетка містила 4B (32-bit), що дає **forge probability ≈ 1/2³² ≈ 2.3×10⁻¹⁰ на спробу**. Для billion-tree-scale мережі з 10⁶ вузлами та активним adversary:
+- 4B MIC: атакер з ~4 млрд forge-attempts (~14 годин при LoRa duty cycle) має ймовірність успіху ≈ 1
+- 8B MIC: forge probability ≈ 1/2⁶⁴ ≈ 5.4×10⁻²⁰ — **криптографічно безпечно** на 25-річний горизонт навіть проти optimal-attack
+
+Зайняття 4 додаткових байтів **звільняється** від видалення «Зарезервовано» поля (попередня чорнетка) — total залишається 24B без перевитрат.
+
+**Nonce конструкція (CCM B0 block):**
+
+```
+nonce[12] = DID[0..3] || FrameCounter[0..3] || flag_byte || zero_pad[1..3]
+            ↑              ↑
+            из header      monotonic per-DID
+
+Унікальність: pair (key, nonce) гарантовано унікальний:
+  - Якщо ключ per-device (FW.1 HKDF після SEC.11) — DID константа,
+    FrameCounter monotonic → кожна (key, nonce) пара унікальна за конструкцією.
+  - Якщо ключ shared (legacy pre-FW.1) — DID розрізняє пристрої,
+    FrameCounter monotonic per-device → теж унікально.
+```
 
 **Конфігурація `hcryp` для CCM:**
+
 ```c
-hcryp.Init.Algorithm = CRYP_AES_CCM;
-// Nonce формується з DID (4B) + Frame Counter (4B) + padding
+hcryp.Init.Algorithm    = CRYP_AES_CCM;
+hcryp.Init.HeaderSize   = 8;                   // AAD = DID(4) + FC(4)
+hcryp.Init.Header       = (uint32_t*)header;   // bytes [0..7] of packet
+hcryp.Init.B0           = b0_block;            // CCM B0 (formatted nonce + length flags)
+// Encrypt: input = sensor_payload[8], output = ciphertext[8] + MIC[8]
+HAL_CRYPEx_AESCCM_Encrypt(&hcryp, sensor_payload, 8, ciphertext_with_mic, 100);
+// → ciphertext_with_mic[0..7] = encrypted sensor, [8..15] = MIC
 ```
 
-> **Примітка:** 24-байтний пакет збільшує LoRa airtime на ~50% порівняно з 16B, але залишається в межах duty-cycle бюджету (< 1% при DR2 SF10, 868 МГц). Детальний розрахунок airtime — нижче.
+> **Примітка airtime:** 24-байтний пакет збільшує LoRa airtime на **+10%** vs поточних 21B (включаючи 5-байтний LoRa header), але залишається в межах duty-cycle бюджету EU868 (< 0.013% при 1 TX/година, SF10/DR2). Детальний розрахунок — нижче.
+
+> **Cross-ref для backend:** `TelemetryUnpackerService` потрібно оновити (FW.2 backend checkbox): (a) parse 24B замість 21B, (b) AES-CCM decrypt + verify MIC замість AES-ECB decrypt, (c) per-DID Frame Counter strictly-monotonic check у Redis SETNX (TTL = 25 год, як SEC.10 panic guard), (d) extract growth_points як 5-bit (0..31) і апскейлити у tokenomics шарі за per-species multiplier (cross-ref `Wallet#lock_and_mint!` + `tree_family.carbon_sequestration_coefficient`).
+
+> **Cross-ref для firmware:** RTC Backup Domain розширення — Frame Counter у DR2 (поки вільний; перевірити після ARCH.27 g_node_role який лежить у Flash, не RTC). FW.20-S2 (4/5) anti-storm bitmap залишається у DR15 — **не конфліктує**.
 
 #### 🤖 Верифікація LoRa Airtime Budget: 16B (ECB) vs 24B (CCM) vs 21B (поточний raw)
 
@@ -618,7 +674,9 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 
 ### 3.4 Стратегія Масового Виробництва (Factory Flashing Pipeline)
 
-При переході від прототипу до партії 10 000+ вузлів конвеєр на заводі виглядає так:
+При переході від прототипу до партії 10 000+ вузлів конвеєр на заводі виглядає так. **Дві альтернативні гілки:** (A) ключ у protected Flash sector STM32 (TRL 6/7, mass production до ~10k unit), (B) ключ у Secure Element ATECC608B/STSAFE-A110 (mass production > 10k або high-value urban deployments — див. §3.7 для повної оцінки SE).
+
+#### Гілка A — Protected Flash Sector (TRL 6/7, baseline)
 
 ```
 [Завод]
@@ -628,22 +686,98 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
   2. Provisioning: унікальний ключ для конкретного MCU
      Rails Backend → POST /api/v1/provisioning/register → {device_uid}
      Backend → генерує unique_key (HKDF від master_key + device_uid)
-     Robot → записує unique_key у захищений сектор Flash
+     Robot → записує unique_key у захищений сектор Flash (0x0803E000)
 
   3. Lock: апаратне блокування
      STM32CubeProgrammer (CLI) → Set RDP Level 1 (або Level 2)
      → необоротне блокування SWD зчитування
+     → активація WRPROT на key sector + seed sector + role sector
 
   4. Пакування
      Нанести лак → Встановити магніт Shipping Mode → Пакет → Ліс
 ```
 
-**Переваги цієї схеми:**
-- Компрометація одного Солдата не розкриває ключі сусідів (per-device HKDF)
-- Фізичне вилучення ключа з чіпа неможливе після RDP Lock
-- Ключ ніколи не існує в коді репозиторію — лише в Rails Vault (`HardwareKey`, encrypted at rest)
+#### Гілка B — ATECC608B / STSAFE-A110 Secure Element (mass production > 10k, SEC.6)
 
-**Для поточного прототипу (TRL 6):** hardcoded ключ залишається правильним вибором — він економить тижні часу на інфраструктуру Provisioning. Перехід до per-device provisioning — після підтвердження архітектури в полі.
+```
+[Завод]
+  1. Reflow PCBA (ATECC608B запаяний; config zone та data zone обидві unlocked)
+     Robot Programmer → Flash base firmware (без AES key, з ATCA-комуникатором) → Board
+
+  2. Power-up self-test:
+     STM32 → I²C ping ATECC608B → перевірити serial_number (унікальний 9 байт)
+     Якщо ATECC608B не відповідає → fail → reject board (заводський QC)
+
+  3. Provisioning (один HTTPS round-trip):
+     STM32 → POST /api/v1/provisioning/register
+       { device_uid: HAL_GetUID(), atecc_serial: <9-byte hex>, firmware_version: <ver> }
+     Rails Backend:
+       - Зберігає (device_uid, atecc_serial) у HardwareKey (для tamper-detect: підміна
+         чіпа на іншому boards тригерить mismatch при наступному провіженінгу)
+       - Деривує HKDF як у §3.4а:
+           aes_key  = HKDF_SHA256(master_key, device_uid, "silkennet-v1-aes256")
+           ota_hmac = HKDF_SHA256(master_key, device_uid, "silken-ota-hmac-v1")
+       - Генерує ECC P-256 keypair (для майбутнього peaq DID signing, ARCH.27 evolution)
+       - Видає device cert (X.509, підписаний intermediate CA Silken Net)
+     Response: { aes_key, ota_hmac_key, ecc_priv, ecc_pub_cert_pem }
+
+  4. STM32 → ATECC608B: write keys per slot mapping (cross-ref §3.7):
+     atcab_write_zone(SLOT 0, aes_key,  32B)    # AES LoRa session key
+     atcab_write_zone(SLOT 1, ecc_priv, 32B)    # ECC P-256 private (peaq DID signing)
+     atcab_write_zone(SLOT 2, cert_der, 64B)    # X.509 device cert
+     atcab_write_zone(SLOT 3, ota_hmac, 32B)    # FW.23 OTA image HMAC verification
+     # Slot 4..15 — reserved for key rotation (FW.17 Hash Ratchet KDF)
+
+  5. Lock (irreversible на ASIC рівні):
+     atcab_lock_config_zone()    # Config (slot policies) → permanent
+     atcab_lock_data_zone()      # All slot writes → forbidden forever
+     # ⚠️ Після цього кроку ключі НЕ можуть бути ні прочитані, ні переписані —
+     # навіть з фізичним доступом, navigate ASIC шар.
+
+  6. Lock STM32:
+     STM32CubeProgrammer → Set RDP Level 1 (або Level 2 після SEC.2 верифікації OTA)
+     → SWD заблоковано → firmware не змінити
+
+  7. Пакування (як у Гілці A):
+     Лак → Shipping Mode магніт → Box → Field
+```
+
+**Подвійний lock (defense in depth, тільки Гілка B):**
+
+| Шар захисту | Що блокує | Атака, від якої захищає |
+|-------------|-----------|--------------------------|
+| **ATECC608B data zone lock** | Read/write ключів | DPA/EM side-channel, fault injection (chip self-erase при detection), chip swap |
+| **STM32 RDP Level 1/2** | SWD flash dump | Прямий read firmware через debug port |
+| **Backend (atecc_serial pin)** | ATECC swap на іншому board | Адверсар викрадає ATECC з одного board і ставить на інший — backend reject при провіженінгу через mismatch (device_uid, atecc_serial) пари |
+
+**Latency impact (Гілка B vs A):** ATECC608B AES-ECB ~1.5 мс/блок vs MCU HAL_CRYP ~10 µs. Для одного 16/24-байтного LoRa пакета — нехтовно. Для CBC batch 50 × 16 байт = 800 байт — додаткові ~75 мс на flush (CoAP flush триває кілька секунд у будь-якому разі).
+
+**Power impact (Гілка B):** ATECC active 14 мА × 1.5 мс = 70 мкДж/пакет → ~0.1% до енергобюджету Soldier. ATECC sleep 150 нА — нехтовно.
+
+**Cost impact (Гілка B):** +$0.60/unit (ATECC608B 10k MOQ) або +$0.85/unit (STSAFE-A110). Cross-ref §7.2 unit economics.
+
+**Вибір гілки — критерії прийняття рішення:**
+
+| Сценарій | Рекомендована гілка | Обґрунтування |
+|----------|---------------------|---------------|
+| Pilot batch (< 1 000 unit), TRL 6 | **A** (Protected Flash) | Економія часу та BOM; RDP Level 1 + WRPROT достатньо для pilot |
+| Mass production 1k–10k unit, TRL 7 | **A**, з планом міграції на B | RDP Level 2 + WRPROT забезпечує proportional захист |
+| Mass production > 10k unit | **B** (Secure Element) | Side-channel attractive target; tamper-resistance ROI > $0.60/unit |
+| High-value deployments (urban, commercial, regulated) | **B** | Compliance: NIST FIPS 140-2 Level 3, ISO 27001, GDPR Article 32 |
+
+**Переваги обох гілок:**
+- Компрометація одного Soldier не розкриває ключі сусідів (per-device HKDF)
+- Фізичне вилучення ключа з чіпа неможливе після RDP Lock (Гілка A) або data-zone lock (Гілка B)
+- Ключ ніколи не існує в коді репозиторію — лише в Rails Vault (`HardwareKey`, encrypted at rest)
+- Якщо Backend-side master key компрометовано → перевипуск всіх ключів через field re-flash (Гілка A) або re-provisioning + ATECC re-lock через RMA (Гілка B, болючіше)
+
+**Для поточного прототипу (TRL 6):** Гілка A з protected Flash sector. Гілка B активується перед першим mass production batch (рішення прив'язане до BOM freeze, cross-ref `07_02` §8.1).
+
+**Зворотність:**
+- Гілка A → B: можлива (re-flash MCU + добавити ATECC до PCBA = новий PCB revision)
+- Гілка B → A: **неможлива** (ATECC config zone locked permanently — board залишається B forever)
+
+> **Cross-ref:** §3.4а HKDF derivation (детальна криптографія), §3.6 RDP Level 2 procedure (irreversible lock checklist), §3.7 ATECC608B integration assessment (slot mapping, alternatives, BOM impact), [10_02 SEC.3](10_02_Action_Plan_Tracker), [10_02 SEC.6](10_02_Action_Plan_Tracker), [10_02 FW.1](10_02_Action_Plan_Tracker).
 
 ---
 
@@ -1446,7 +1580,7 @@ atca_status_t status = atcab_aes_encrypt(
 **Дорожня карта:**
 
 - [ ] 🤖 (наступний цикл) Завершити оцінку: ATECC608B vs STSAFE-A110 матриця, узгоджена з KiCad floorplan
-- [ ] 🤖 Update §3.4 Factory Flashing pipeline з SE-варіантом
+- [x] 🤖 Update §3.4 Factory Flashing pipeline з SE-варіантом — ✅ Виконано: §3.4 розділено на Гілку A (Protected Flash, TRL 6/7) та Гілку B (ATECC608B/STSAFE-A110, mass production > 10k); додано двошаровий defense-in-depth (data zone lock + RDP), latency/power/cost impact, criteria для вибору гілки, та irreversibility note (B → A неможливо)
 - [ ] 🤖 Інтеграція з Backend `Provisioning::HardwareKeyService` (генерація ECC keypair + cert)
 - [ ] 🤖 Firmware HAL: drop-in replacement `Crypto_AES_Encrypt_Block()` що внутрішньо викликає ATECC або HAL_CRYP залежно від `#define USE_SECURE_ELEMENT`
 - [ ] 👤 Замовити evaluation kit (Microchip ATECC608B-MAH-DAO або ST STSAFE-A110) для bench-test
