@@ -1,14 +1,29 @@
 # 00_01: System Architecture and Layers
 
 ## 🎯 Мета
+
 Зафіксувати 8-рівневу кіберфізичну архітектуру екосистеми Gaia 2.0 (Silken Net). Цей документ є базовою конституцією для маршрутизації даних від біохімічної реакції в дереві до криптографічної фіналізації в Ethereum L1.
 
+---
+
 ## ✅ Статус
-* **Поточний TRL:** TRL 4 (Архітектура затверджена, інтеграційні компоненти тестуються локально).
-* **Оновлення:** Проведено півот апаратної частини. Повністю видалено рівень електрокінетики (Streaming Potential / LTC3108). Затверджено нову біохімічну базу (EBFC).
+
+- **Поточний TRL:** TRL 4 — Архітектура затверджена, інтеграційні компоненти тестуються локально.
+- **Оновлення:** Проведено півот апаратної частини. Повністю видалено рівень електрокінетики (Streaming Potential / LTC3108). Затверджено нову біохімічну базу (EBFC).
+- **Пов'язані модулі:**
+  - Біомеханіка та анкер → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
+  - Апаратура та BOM → [`02_01_Hardware_Architecture_and_BOM`](02_01_Hardware_Architecture_and_BOM)
+  - Прошивка та Edge AI → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
+  - Backend та моделі → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
+  - Web3 мультичейн → [`05_01_Multichain_Architecture`](05_01_Multichain_Architecture)
+  - DevOps та деплой → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
+  - Бізнес-контракти → [`07_01_Nature_as_a_Service_Contracts`](07_01_Nature_as_a_Service_Contracts)
+
+---
 
 ## 🛑 Блокери
-* Відсутні на рівні макроархітектури. Успіх системи залежить від розблокування TRL 4 у хіміків (Модуль 01).
+
+- Відсутні на рівні макроархітектури. Успіх системи залежить від розблокування TRL 4 у хіміків (Модуль 01).
 
 ---
 
@@ -17,26 +32,26 @@
 Система працює за принципом безперервного, детермінованого конвеєра (Zero-Trust pipeline). Дані рухаються знизу вгору.
 
 ### 🌳 Рівень 1: Біофізика та Механіка (The Root)
-* **Сутність:** Коаксіальний титановий імплантат (Ti-6Al-4V) із гіроїдною пористістю. Розділений діелектриком PEEK.
-* **Енергетика:** Ензимний біопаливний елемент (EBFC). Глюкозооксидаза на аноді генерує >500 mV безпосередньо з метаболізму дерева. Жодних зовнішніх дротів.
+- **Сутність:** Коаксіальний титановий імплантат (Ti-6Al-4V) із гіроїдною пористістю. Розділений діелектриком PEEK.
+- **Енергетика:** Ензимний біопаливний елемент (EBFC). Глюкозооксидаза на аноді генерує >500 mV безпосередньо з метаболізму дерева. Жодних зовнішніх дротів.
 
 ### ⚙️ Рівень 2: Апаратне Забезпечення (The Capsule)
-* **Сутність:** Герметична капсула з PCB, що підключається до анкера наосліп через Pogo Pins.
-* **Живлення:** BQ25570 MPPT + Іоністор (0.47F / 5.5V). 
-* **Активація:** Акустичний п'єзо-тригер для апаратного пробудження при вібраціях.
+- **Сутність:** Герметична капсула з PCB, що підключається до анкера наосліп через Pogo Pins.
+- **Живлення:** BQ25570 MPPT + Іоністор (0.47F / 5.5V).
+- **Активація:** Акустичний п'єзо-тригер для апаратного пробудження при вібраціях.
 
 ### 🧠 Рівень 3: Прошивка та Edge AI (The Brain)
-* **Ядро:** STM32WLE5JC (ARM Cortex-M4). Стан "Нульового Лагу" (Deep sleep STOP2: 2.1 µA).
-* **Сенсорика:** Апаратний DMA-буфер мікрофона.
-* **TinyML:** Нейромережа на пристрої для класифікації аудіо (Тиша / Вітер / Пилка).
-* **Математика:** mruby VM розраховує Атрактор Лоренца (гомеостаз) на базі часу заряду іоністора.
-* **Безпека:** Апаратне шифрування AES-256 (пакети EwsAlert).
+- **Ядро:** STM32WLE5JC (ARM Cortex-M4). Стан "Нульового Лагу" (Deep sleep STOP2: 2.1 µA).
+- **Сенсорика:** Апаратний DMA-буфер мікрофона.
+- **TinyML:** Нейромережа на пристрої для класифікації аудіо (Тиша / Вітер / Пилка).
+- **Математика:** mruby VM розраховує Атрактор Лоренца (гомеостаз) на базі часу заряду іоністора.
+- **Безпека:** Апаратне шифрування AES-256 (пакети EwsAlert).
 
 ### 📡 Рівень 4: Мережа (The Veins)
-* **Протокол:** LoRa mesh 868 МГц (custom TTL-based, DEFAULT_TTL=3). Binary payload 21 bytes (4 DID + 1 RSSI + 16 encrypted).
-* **Топологія:** Directed Mesh (Солдати передають пакети через сусідів).
-* **Шлюз (Королева):** Агрегує пакети та відправляє їх у хмару (опціонально через Starlink Direct-to-Cell).
-* **Резерв:** Helium Network (HNT) як fallback при втраті Queen — будь-який роутер Helium у радіусі 15 км ловить пакет ([деталі → 02_05](02_05_Queen_Hardware_and_Starlink)).
+- **Протокол:** LoRa mesh 868 МГц (custom TTL-based, DEFAULT_TTL=3). Binary payload 21 bytes (4 DID + 1 RSSI + 16 encrypted).
+- **Топологія:** Directed Mesh (Солдати передають пакети через сусідів).
+- **Шлюз (Королева):** Агрегує пакети та відправляє їх у хмару (опціонально через Starlink Direct-to-Cell).
+- **Резерв:** Helium Network (HNT) як fallback при втраті Queen — будь-який роутер Helium у радіусі 15 км ловить пакет ([деталі → 02_05](02_05_Queen_Hardware_and_Starlink)).
 
 #### Проблема Рандеву (Rendezvous Problem)
 
@@ -55,10 +70,10 @@
 > **Деталі реалізації:** [03_01 Phase 4.5](03_01_Firmware_Lifecycle_and_DMA) (RX Window + Проблема Рандеву), [03_02 §1](03_02_Queen_Gateway_Firmware) (LoRa Reception)
 
 ### 🖥️ Рівень 5: Серверне Ядро (The Engine)
-* **Стек:** Ruby on Rails 8.1 Omakase, PostgreSQL, Redis, Sidekiq (37 Workers).
-* **Деплой:** Kamal, Docker, Prometheus (Observability).
-* **Роль:** Декодування (L3), маршрутизація API (31 Controllers), управління бізнес-логікою контрактів (Nature-as-a-Service).
-* **Вхідний шар IoT:** CoAP/UDP listener (порт 5683) — для планетарного масштабу потребує Ingress Proxy перед Rails ([деталі → 06_01](06_01_Deployment_Kamal_Terraform)).
+- **Стек:** Ruby on Rails 8.1 Omakase, PostgreSQL, Redis, Sidekiq (37 Workers).
+- **Деплой:** Kamal, Docker, Prometheus (Observability).
+- **Роль:** Декодування (L3), маршрутизація API (31 Controllers), управління бізнес-логікою контрактів (Nature-as-a-Service).
+- **Вхідний шар IoT:** CoAP/UDP listener (порт 5683) — для планетарного масштабу потребує Ingress Proxy перед Rails ([деталі → 06_01](06_01_Deployment_Kamal_Terraform)).
 
 ---
 
@@ -154,25 +169,25 @@ Route metric = f(hop_count, remaining_energy, bio_potential)
 ---
 
 ### 🔐 Рівень 6: Мережі Даних та Верифікації (The Truth)
-* **peaq Network:** Надання кожному дереву Machine DID паспорта.
-* **IoTeX W3bstream:** Генерація ZK-proofs, що доводять походження даних з реального кремнію (Real Silicon).
-* **Streamr & Filecoin:** P2P трансляція телеметрії та вічне зберігання на IPFS.
+- **peaq Network:** Надання кожному дереву Machine DID паспорта.
+- **IoTeX W3bstream:** Генерація ZK-proofs, що доводять походження даних з реального кремнію (Real Silicon).
+- **Streamr & Filecoin:** P2P трансляція телеметрії та вічне зберігання на IPFS.
 
 ### 💰 Рівень 7: Фінансова Логіка (The Ledger)
-* **Primary Chain:** Polygon EVM. Смарт-контракти для мінтингу SCC (Silken Carbon Coin) та SFC (Governance).
-* **Оракул:** Chainlink DON (передає верифіковані бали росту з Rails у Polygon).
-* **Паралельні фінанси:** Solana (мікро-нагороди лісникам), Celo (ReFi для громад), KlimaDAO (спалювання ESG).
-* **Compliance:** Polygon Hadron (KYC/KYB за стандартом ERC-3643).
+- **Primary Chain:** Polygon EVM. Смарт-контракти для мінтингу SCC (Silken Carbon Coin) та SFC (Governance).
+- **Оракул:** Chainlink DON (передає верифіковані бали росту з Rails у Polygon).
+- **Паралельні фінанси:** Solana (мікро-нагороди лісникам), Celo (ReFi для громад), KlimaDAO (спалювання ESG).
+- **Compliance:** Polygon Hadron (KYC/KYB за стандартом ERC-3643).
 
 ### 🗳️ Рівень 7.5: Governance DAO (The Parliament)
-* **Контракти (Polygon):** `SilkenGovernor.sol` (OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction 4%), `SilkenTimelock.sol` (48h мінімальна затримка), `ProtocolParameters.sol` (on-chain registry 13 параметрів: Lorenz σ/ρ/β/dt/iterations/z_min/z_max/z_target, tokenomics, slashing).
-* **Voting Power:** SFC (ERC20Votes) — snapshot-based `getPastVotes()` + votingDelay 43200 блоків (~1 день на Polygon) для Flash Loan defense.
-* **Pipeline:** SFC Holders → `SilkenGovernor` (propose/vote) → `SilkenTimelock` (48h delay) → `ProtocolParameters` (setParameter) → `Governance::ParameterSyncWorker` (щоденний sync on-chain → `SystemParameter` модель).
-* **CI/CD:** `solidity_audit.yml` — Foundry build/test/coverage + Slither static analysis на кожен push/PR.
+- **Контракти (Polygon):** `SilkenGovernor.sol` (OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction 4%), `SilkenTimelock.sol` (48h мінімальна затримка), `ProtocolParameters.sol` (on-chain registry 13 параметрів: Lorenz σ/ρ/β/dt/iterations/z_min/z_max/z_target, tokenomics, slashing).
+- **Voting Power:** SFC (ERC20Votes) — snapshot-based `getPastVotes()` + votingDelay 43200 блоків (~1 день на Polygon) для Flash Loan defense.
+- **Pipeline:** SFC Holders → `SilkenGovernor` (propose/vote) → `SilkenTimelock` (48h delay) → `ProtocolParameters` (setParameter) → `Governance::ParameterSyncWorker` (щоденний sync on-chain → `SystemParameter` модель).
+- **CI/CD:** `solidity_audit.yml` — Foundry build/test/coverage + Slither static analysis на кожен push/PR.
 
 ### 🏛️ Рівень 8: Фіналізація (The Anchor)
-* **Стек:** Ethereum L1.
-* **Роль:** Щотижневе закріплення кореня стану (State Root — 32-byte SHA-256 hash) всієї економіки Gaia 2.0. Гарантія Rollup-рівня від катастрофічних збоїв сайдчейнів.
+- **Стек:** Ethereum L1.
+- **Роль:** Щотижневе закріплення кореня стану (State Root — 32-byte SHA-256 hash) всієї економіки Gaia 2.0. Гарантія Rollup-рівня від катастрофічних збоїв сайдчейнів.
 
 ---
 

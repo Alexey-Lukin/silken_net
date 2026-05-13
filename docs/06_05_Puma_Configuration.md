@@ -4,12 +4,19 @@
 
 Зафіксувати архітектурні рішення та операційні runbook'и для Puma 8.0.1 — production HTTP-сервера SilkenNet. Документ описує **поточний стан** конфігурації та причини кожного вибору.
 
+---
+
 ## ✅ Статус
 
+- **Поточний TRL:** TRL 6 — конфігурація відповідає SSOT; IO-bound пул, cluster hooks та graceful shutdown верифіковані в Canopy.
 - **Версія:** `puma (8.0.1)` (`Gemfile.lock`)
 - **Конфігураційний SSOT:** `config/puma.rb`
 - **Runtime-архітектура:** `Thruster (HTTP/2, TLS) → Puma (clustered, preload_app!) → Rails 8.1`
 - **Puma middleware:** `MarkWeb3RequestsAsIoBound` (`app/middleware/mark_web3_requests_as_io_bound.rb`)
+- **Пов'язані модулі:**
+  - Kamal деплой → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
+  - Akash SDL → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration)
+  - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability)
 
 ---
 

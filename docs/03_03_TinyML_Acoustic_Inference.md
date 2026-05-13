@@ -22,6 +22,8 @@
 
 ---
 
+### ⚙️ Стан Реалізації
+
 | Компонент | Стан |
 |-----------|------|
 | **Piezoelectric EXTI trigger** | ✅ Реалізовано (`HAL_GPIO_EXTI_Callback`, GPIO_PIN_0) |

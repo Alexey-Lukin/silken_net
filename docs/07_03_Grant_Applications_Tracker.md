@@ -16,7 +16,6 @@
   - Університетські протоколи → [`08_01_University_R_and_D_Protocols`](08_01_University_R_and_D_Protocols)
   - СЄУ (консорціум, гранти Horizon Europe) → [`08_07_SEU_Economics_and_Legal_Integration`](08_07_SEU_Economics_and_Legal_Integration)
 - **Готові артефакти:** Технічна документація Wiki, BOM, демо Attractor, збірна інструкція
-- **Пов'язані модулі:** Мультичейн — `05_01_Multichain_Architecture`, Токеноміка — `05_03_Tokenomics_SCC_and_SFC`
 
 ---
 

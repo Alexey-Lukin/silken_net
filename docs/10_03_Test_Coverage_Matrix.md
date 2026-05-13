@@ -1,17 +1,22 @@
-# 10_03 — Test Coverage Matrix & Gap Analysis
+# 10_03: Test Coverage Matrix & Gap Analysis
 
-> Карта покриття тестами SilkenNet Gaia 2.0 — усі шари (RSpec, Firmware C, Foundry Solidity).
-> Оновлюється при додаванні нових сервісів, воркерів або смарт-контрактів.
+## 🎯 Мета
+
+Зафіксувати повну карту покриття тестами SilkenNet Gaia 2.0 — усіх шарів (RSpec, Firmware C, Foundry Solidity). Документ оновлюється при додаванні нових сервісів, воркерів або смарт-контрактів і є базою для аудиту якості.
 
 ---
 
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8
-- **тести:**
-  - RSpec (Ruby)
-  - Firmware (C)
+- **Охоплені фреймворки:**
+  - RSpec (Ruby / Rails)
+  - Firmware C (host-based, Make)
   - Foundry (Solidity)
+- **Пов'язані модулі:**
+  - View Component Testing Guide → [`10_01_View_Component_Testing_Guide`](10_01_View_Component_Testing_Guide)
+  - Action Plan Tracker → [`10_02_Action_Plan_Tracker`](10_02_Action_Plan_Tracker)
+  - Бізнес-логіка та сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
 
 ---
 
