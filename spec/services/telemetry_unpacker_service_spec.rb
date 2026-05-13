@@ -85,10 +85,11 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   end
 
   it "credits wallet with growth points" do
+    # [FW.29-PACK] wire status_byte = 10 (homeostasis, gp=10) → stored gp = 20 (×2 backend upscale)
     status_byte = 10
     chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, status_byte, 3)
 
-    expect { described_class.call(chunk) }.to change { tree.wallet.reload.balance }.by(10)
+    expect { described_class.call(chunk) }.to change { tree.wallet.reload.balance }.by(20)
   end
 
   it "calls AlertDispatchService to analyze telemetry" do
@@ -152,21 +153,21 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
   describe "interpret_status" do
     it "maps status codes 1, 2, 3 to stress, anomaly, tamper_detected" do
-      # Status byte upper 2 bits: code = status_byte >> 6
-      # code 1 → :stress (status_byte = 0b01_000000 = 64)
-      chunk_stress = build_chunk(did_hex, -70, 3500, 25, 5, 100, 64, 3)
+      # [FW.29-PACK] Status byte layout: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GP:5 (bits 4..0)]
+      # code 1 → :stress (status_byte = 0b010_00000 = 32)
+      chunk_stress = build_chunk(did_hex, -70, 3500, 25, 5, 100, 32, 3)
       described_class.call(chunk_stress)
       log = TelemetryLog.last
       expect(log.bio_status).to eq("stress")
 
-      # code 2 → :anomaly (status_byte = 0b10_000000 = 128)
-      chunk_anomaly = build_chunk(did_hex, -70, 3500, 25, 5, 100, 128, 3)
+      # code 2 → :anomaly (status_byte = 0b100_00000 = 64)
+      chunk_anomaly = build_chunk(did_hex, -70, 3500, 25, 5, 100, 64, 3)
       described_class.call(chunk_anomaly)
       log = TelemetryLog.last
       expect(log.bio_status).to eq("anomaly")
 
-      # code 3 → :tamper_detected (status_byte = 0b11_000000 = 192)
-      chunk_tamper = build_chunk(did_hex, -70, 3500, 25, 5, 100, 192, 3)
+      # code 3 → :tamper_detected (status_byte = 0b110_00000 = 96)
+      chunk_tamper = build_chunk(did_hex, -70, 3500, 25, 5, 100, 96, 3)
       described_class.call(chunk_tamper)
       log = TelemetryLog.last
       expect(log.bio_status).to eq("tamper_detected")
@@ -189,17 +190,19 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     let(:cluster) { create(:cluster, organization: organization) }
     let(:gateway) { create(:gateway, :online, cluster: cluster) }
 
-    # Keyword-argument variant of build_chunk for coverage enhancement tests
+    # Keyword-argument variant of build_chunk for coverage enhancement tests.
+    # [FW.29-PACK] status_byte input is treated as a literal wire value
+    # (PanicFlag:1 | Status:2 | GrowthPoints:5). The previous implementation
+    # re-mangled it (`(status_byte << 6) | growth_points`) which made no
+    # semantic sense; tests that depended on that quirk pass `status_byte: 0`.
     def build_chunk_with_params(did_hex:, rssi: 65, voltage: 4200, temp: 22, acoustic: 5, metabolism: 120, status_byte: 0, ttl: 5, firmware_id: 0)
       did_int = did_hex.to_i(16)
       did_bytes = [ did_int ].pack("N")
       rssi_byte = [ rssi ].pack("C")
 
-      growth_points = status_byte & 0x3F
-      combined_status = (status_byte << 6) | growth_points
       pad = [ firmware_id ].pack("n") + "\x00\x00"
 
-      payload = [ did_int, voltage, temp, acoustic, metabolism, combined_status, ttl ].pack("N n c C n C C") + pad
+      payload = [ did_int, voltage, temp, acoustic, metabolism, status_byte, ttl ].pack("N n c C n C C") + pad
       did_bytes + rssi_byte + payload
     end
 
@@ -679,9 +682,10 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     end
 
     describe "growth_points extraction from status_byte" do
-      it "extracts growth_points from lower 6 bits" do
-        # status_byte = 0b00_101010 = 42 → bio_status=homeostasis(0), growth_points=42
-        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 42, 3)
+      it "extracts growth_points from lower 5 bits with 2x backend upscale" do
+        # [FW.29-PACK] status_byte = 0b000_10101 = 21 → bio_status=homeostasis(0),
+        # wire growth=21 → stored growth_points = 21 * 2 = 42 (preserves tokenomic invariant)
+        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 21, 3)
 
         described_class.call(chunk)
         log = TelemetryLog.last
@@ -689,23 +693,46 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         expect(log.bio_status).to eq("homeostasis")
       end
 
-      it "extracts max growth_points (63) correctly" do
-        # status_byte = 0b00_111111 = 63
-        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 63, 3)
+      it "extracts max growth_points (62) correctly" do
+        # [FW.29-PACK] status_byte = 0b000_11111 = 31 (max 5-bit) → stored = 62
+        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 31, 3)
 
         described_class.call(chunk)
         log = TelemetryLog.last
-        expect(log.growth_points).to eq(63)
+        expect(log.growth_points).to eq(62)
       end
 
       it "extracts both status and growth_points from combined byte" do
-        # status_byte = 0b01_001010 = 74 → bio_status=stress(1), growth_points=10
-        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 74, 3)
+        # [FW.29-PACK] status_byte = 0b001_00101 = 37 → bio_status=stress(1),
+        # wire growth=5 → stored = 10
+        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 37, 3)
 
         described_class.call(chunk)
         log = TelemetryLog.last
         expect(log.growth_points).to eq(10)
         expect(log.bio_status).to eq("stress")
+      end
+
+      it "anomaly (status=2) survives PANIC_FLAG_BIT mask without being demoted to homeostasis" do
+        # [FW.29-PACK regression]: pre-fix, anomaly was packed as `(2<<6)|gp = 0x80|gp`,
+        # then masked by `& 0x7F` in firmware → bit 7 cleared → backend read homeostasis(0).
+        # After FW.29-PACK: anomaly is `(2<<5)|gp = 0x40|gp`, bit 7 already 0,
+        # mask is a no-op, backend reads anomaly(2) correctly.
+        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0b010_00000, 3)
+        described_class.call(chunk)
+        log = TelemetryLog.last
+        expect(log.bio_status).to eq("anomaly")
+      end
+
+      it "tamper (status=3) survives PANIC_FLAG_BIT mask without being demoted to stress" do
+        # [FW.29-PACK regression]: BIO_STATUS_VM_ERROR = 0xFF, masked to 0x7F.
+        # Pre-fix decoding: `0x7F >> 6 = 1` (stress) — silent tamper demotion.
+        # Post-fix: `(0x7F >> 5) & 0x03 = 3` (tamper).
+        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0x7F, 3)
+        described_class.call(chunk)
+        log = TelemetryLog.last
+        expect(log.bio_status).to eq("tamper_detected")
+        expect(log.growth_points).to eq(62)  # (0x7F & 0x1F) * 2 = 31 * 2
       end
     end
   end

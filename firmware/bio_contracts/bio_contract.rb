@@ -106,7 +106,15 @@ module SilkenNet
       [ payload_byte, x_final, y_final, z_final ]
     end
 
-    # Спільна логіка пакування Z → status_byte.
+    # [FW.29-PACK] Спільна логіка пакування Z → status_byte.
+    # Wire-формат байту 10: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)].
+    # PanicFlag заповнюється C-side (firmware/soldier/main.c), а нормальні
+    # пакети завжди виконують `lora_payload[10] &= ~PANIC_FLAG_BIT`. Тому
+    # mruby тут гарантує, що pack_status_byte НІКОЛИ не встановлює bit 7 —
+    # status (2 біти) лежить у bits 6..5, growth_points (5 біт) — у bits 4..0.
+    # До FW.29-PACK status паковано як `<< 6` → bit 7 status'у конфліктував
+    # з PANIC_FLAG_BIT mask'ом і status=2 (anomaly) / status=3 (tamper) тихо
+    # деградували до homeostasis / stress на бекенді.
     def self.pack_status_byte(z_val)
       status = 0
       growth_points = 0  # Бали росту (Proof of Growth)
@@ -121,17 +129,20 @@ module SilkenNet
         status = 0  # Гомеостаз (здоровий хаос)
         deviation = (OPTIMAL_Z_TARGET - z_val).abs
         # Базова нагорода 50 балів мінус штраф за відхилення від OPTIMAL_Z_TARGET.
-        # [FIX FW.13] Explicit clamp замість окремих guard'ів — в homeostasis
-        # deviation ∈ [0, 27], reward ∈ [23, 50]; clamp(10, 63) захищає від edge cases.
+        # [FIX FW.13] Explicit clamp замість окремих guard'ів.
+        # [FW.29-PACK] Перейшли з 6-бітного wire-діапазону (10..63) на 5-бітний
+        # (5..31): значення масштабоване ÷2 щоб зберегти приблизно ту ж саму
+        # tokenomic емісію після backend ×2 upscale (effective stored 10..62
+        # vs old 10..63 — <2% resolution loss).
         reward = 50 - deviation.round
-        growth_points = reward.clamp(10, 63)
+        growth_points = (reward / 2).clamp(5, 31)
       end
 
-      # Захист від переповнення для 6-бітного простору (максимум 63)
-      growth_points = growth_points.clamp(0, 63)
+      # Захист від переповнення для 5-бітного wire-простору (максимум 31).
+      growth_points = growth_points.clamp(0, 31)
 
-      # [ Status (2 bits) | Growth Points (6 bits) ]
-      (status << 6) | growth_points
+      # [PanicFlag:1 (bit 7, 0 у нормальному пакеті) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)]
+      (status << 5) | growth_points
     end
   end
 end

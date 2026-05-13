@@ -133,7 +133,7 @@ Silken Net використовує **Lorenz Attractor** ([`03_04`](03_04_mruby_
 # Поріг слешингу: stress_index ≥ 0.83
 
 # firmware/bio_contracts/bio_contract.rb — firmware класифікація
-# growth_points = clamp(50 - deviation.round, 10, 63) при homeostasis
+# growth_points = (reward / 2).clamp(5, 31) при homeostasis  [FW.29-PACK 5-bit wire]
 ```
 
 **Проблема:** Модель «прихованого стресу» (коли дерево зовні здорове, але внутрішньо вже деградує) працює лише через `delta_t` (час заряду іоністора від EBFC). Боєчко може транспонувати медичні маркери «латентного виснаження» на рослинну систему:

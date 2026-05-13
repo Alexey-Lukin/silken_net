@@ -7,7 +7,7 @@
  *   - Sigma/Rho clamping boundaries
  *   - Z-axis bounds (CRITICAL_Z_MIN=2.0, CRITICAL_Z_MAX=45.0)
  *   - Growth points calculation and 6-bit packing
- *   - StatusByte encoding: [status:2 | growth_points:6]
+ *   - StatusByte encoding: [PanicFlag:1 | status:2 | growth_points:5] (FW.29-PACK)
  *   - Edge cases: extreme temperatures, extreme acoustics, zero seed
  *
  * Build: make -C firmware/test bio_contract
@@ -125,7 +125,10 @@ static double calculate_z_axis_from_seed(uint32_t seed, int8_t temp, uint8_t aco
 }
 
 /* StatusByte packing (matches bio_contract.rb BioContract.pack_status_byte).
- * `seed` is just a deterministic test-input generator (see seed_to_xyz). */
+ * `seed` is just a deterministic test-input generator (see seed_to_xyz).
+ * [FW.29-PACK] Wire layout: [PanicFlag:1 (bit 7, 0 у normal) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)].
+ * growth_points у homeostasis отримує (reward / 2) щоб зберегти tokenomic
+ * invariant після backend ×2 upscale (effective stored 10..62 vs old 10..63). */
 static uint8_t evaluate_and_pack(uint32_t seed, int8_t temp, uint8_t acoustic) {
     double z_val = calculate_z_axis_from_seed(seed, temp, acoustic,
                                               BASELINE_DELTA_T_S, NOMINAL_VCAP_MV);
@@ -143,12 +146,12 @@ static uint8_t evaluate_and_pack(uint32_t seed, int8_t temp, uint8_t acoustic) {
         status = BIO_STATUS_HOMEOSTASIS;
         double deviation = fabs(OPTIMAL_Z_TARGET - z_val);
         int reward = 50 - (int)round(deviation);
-        growth_points = clamp_i(reward, 10, 63);
+        growth_points = clamp_i(reward / 2, 5, 31);
     }
 
-    growth_points = clamp_i(growth_points, 0, 63);
+    growth_points = clamp_i(growth_points, 0, 31);
 
-    return (uint8_t)((status << 6) | growth_points);
+    return (uint8_t)((status << 5) | growth_points);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -233,49 +236,57 @@ static void test_z_axis_max_seed(void) {
 }
 
 static void test_status_byte_encoding(void) {
-    /* Verify bit layout: [status:2 | growth_points:6] */
-    uint8_t byte1 = (BIO_STATUS_HOMEOSTASIS << 6) | 50;
-    ASSERT((byte1 >> 6) == 0 && (byte1 & 0x3F) == 50,
-           "test_status_byte_homeostasis_50pts");
+    /* [FW.29-PACK] Verify bit layout: [PanicFlag:1 | status:2 | growth_points:5] */
+    uint8_t byte1 = (BIO_STATUS_HOMEOSTASIS << 5) | 25;
+    ASSERT(((byte1 >> 5) & 0x03) == 0 && (byte1 & 0x1F) == 25,
+           "test_status_byte_homeostasis_25pts");
 
-    uint8_t byte2 = (BIO_STATUS_STRESS << 6) | 1;
-    ASSERT((byte2 >> 6) == 1 && (byte2 & 0x3F) == 1,
+    uint8_t byte2 = (BIO_STATUS_STRESS << 5) | 1;
+    ASSERT(((byte2 >> 5) & 0x03) == 1 && (byte2 & 0x1F) == 1,
            "test_status_byte_stress_1pt");
 
-    uint8_t byte3 = (BIO_STATUS_ANOMALY << 6) | 0;
-    ASSERT((byte3 >> 6) == 2 && (byte3 & 0x3F) == 0,
+    uint8_t byte3 = (BIO_STATUS_ANOMALY << 5) | 0;
+    ASSERT(((byte3 >> 5) & 0x03) == 2 && (byte3 & 0x1F) == 0,
            "test_status_byte_anomaly_0pts");
+
+    /* Critical regression: status=2 (anomaly) survives PANIC_FLAG_BIT mask
+     * (& 0x7F). До FW.29-PACK старе `<< 6` packing давало 0x80 → masked
+     * до 0x00 → backend читав homeostasis. Тепер 0x40 → bit 7 чистий → анomaly. */
+    ASSERT((byte3 & 0x80) == 0, "test_status_anomaly_no_panic_bit_collision");
 }
 
-static void test_growth_points_max_63(void) {
-    /* growth_points must never exceed 63 (6 bits) */
-    int reward = 50 - 0; /* deviation=0 → reward=50 */
-    int gp = clamp_i(reward, 10, 63);
-    ASSERT(gp <= 63 && gp >= 10,
-           "test_growth_points_max_63_min_10");
+static void test_growth_points_max_31(void) {
+    /* [FW.29-PACK] growth_points must never exceed 31 (5 bits) */
+    int reward = 50 - 0; /* deviation=0 → reward=50, scaled /2 = 25, clamp to 5..31 */
+    int gp = clamp_i(reward / 2, 5, 31);
+    ASSERT(gp <= 31 && gp >= 5,
+           "test_growth_points_max_31_min_5");
 }
 
-static void test_growth_points_min_10_homeostasis(void) {
-    /* In homeostasis, minimum growth_points = 10 */
-    /* deviation = 40 → reward = 50-40 = 10, clamped to 10 */
+static void test_growth_points_min_5_homeostasis(void) {
+    /* [FW.29-PACK] In homeostasis, minimum growth_points = 5 (after /2 scale) */
+    /* deviation = 40 → reward = 50-40 = 10, scaled /2 = 5, clamped to 5..31 */
     int reward = 50 - 40;
-    int gp = clamp_i(reward, 10, 63);
-    ASSERT(gp == 10,
-           "test_growth_points_min_10_in_homeostasis");
+    int gp = clamp_i(reward / 2, 5, 31);
+    ASSERT(gp == 5,
+           "test_growth_points_min_5_in_homeostasis");
 }
 
 static void test_evaluate_pack_normal(void) {
     /* Normal conditions should produce valid StatusByte */
     uint8_t result = evaluate_and_pack(12345, 20, 5);
-    uint8_t status = result >> 6;
-    uint8_t gp = result & 0x3F;
+    uint8_t status = (result >> 5) & 0x03;
+    uint8_t gp = result & 0x1F;
 
     /* Status should be one of 0,1,2 */
     ASSERT(status <= 2,
            "test_evaluate_pack_valid_status");
     /* Growth points should be in valid range */
-    ASSERT(gp <= 63,
+    ASSERT(gp <= 31,
            "test_evaluate_pack_valid_growth_points");
+    /* PanicFlag (bit 7) must be clear in normal packets */
+    ASSERT((result & 0x80) == 0,
+           "test_evaluate_pack_panic_flag_clear");
 }
 
 static void test_evaluate_pack_stress_low_z(void) {
@@ -286,17 +297,21 @@ static void test_evaluate_pack_stress_low_z(void) {
      * The actual Z depends on chaotic dynamics; test that result is valid.
      */
     uint8_t result = evaluate_and_pack(0, -45, 0);
-    uint8_t status = result >> 6;
-    uint8_t gp = result & 0x3F;
-    ASSERT(status <= 2 && gp <= 63,
+    uint8_t status = (result >> 5) & 0x03;
+    uint8_t gp = result & 0x1F;
+    ASSERT(status <= 2 && gp <= 31,
            "test_evaluate_pack_cold_zero_valid_result");
 }
 
 static void test_evaluate_pack_vm_error_byte(void) {
-    /* BIO_STATUS_VM_ERROR = 0xFF means status=3 (tamper) + gp=63 */
-    uint8_t vm_error = 0xFF;
-    ASSERT((vm_error >> 6) == 3 && (vm_error & 0x3F) == 63,
-           "test_vm_error_byte_0xFF_decodes_correctly");
+    /* [FW.29-PACK] BIO_STATUS_VM_ERROR = 0xFF — після backend `& 0x7F` mask
+     * (PANIC_FLAG_BIT clear) залишається 0x7F, що декодує як status=3
+     * (tamper, bits 6..5 = 11) + growth=31 (bits 4..0 = 11111).
+     * До FW.29-PACK старе декодування давало status=1 (stress, bit 7 був 0
+     * після mask, bits 7..6 = 01) + growth=63 — silent tamper demotion.  */
+    uint8_t vm_error_masked = 0xFF & 0x7F;  /* normal mask in firmware */
+    ASSERT(((vm_error_masked >> 5) & 0x03) == 3 && (vm_error_masked & 0x1F) == 31,
+           "test_vm_error_byte_0xFF_decodes_as_tamper_after_mask");
 }
 
 static void test_beta_precision(void) {
@@ -435,7 +450,7 @@ static void test_growth_points_at_boundary_z(void) {
         status = BIO_STATUS_HOMEOSTASIS;
         double deviation = fabs(OPTIMAL_Z_TARGET - z_val);
         int reward = 50 - (int)round(deviation);
-        growth_points = clamp_i(reward, 10, 63);
+        growth_points = clamp_i(reward / 2, 5, 31);  /* [FW.29-PACK] 5-bit wire */
     }
     /* z_val == 2.0 is NOT < 2.0, so it's homeostasis */
     ASSERT(status == BIO_STATUS_HOMEOSTASIS,
@@ -453,7 +468,7 @@ static void test_growth_points_at_boundary_z(void) {
         status = BIO_STATUS_HOMEOSTASIS;
         double deviation = fabs(OPTIMAL_Z_TARGET - z_val);
         int reward = 50 - (int)round(deviation);
-        growth_points = clamp_i(reward, 10, 63);
+        growth_points = clamp_i(reward / 2, 5, 31);  /* [FW.29-PACK] 5-bit wire */
     }
     /* z_val == 45.0 is NOT > 45.0, so it's homeostasis */
     ASSERT(status == BIO_STATUS_HOMEOSTASIS,
@@ -580,8 +595,8 @@ int main(void) {
     test_evaluate_pack_vm_error_byte();
 
     printf("\n  Growth Points Logic:\n");
-    test_growth_points_max_63();
-    test_growth_points_min_10_homeostasis();
+    test_growth_points_max_31();
+    test_growth_points_min_5_homeostasis();
     test_status_stress_growth_points_is_1();
     test_status_anomaly_growth_points_is_0();
     test_homeostasis_optimal_z();

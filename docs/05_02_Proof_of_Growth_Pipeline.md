@@ -69,7 +69,8 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║          ↳ identifier-as-key антипатерн (raw DID seed) ВИДАЛЕНО      ║
 ║     250 ітерацій Lorenz Euler → (x_final,y_final,z_final) → DR16-18  ║
 ║     bio_contract.rb :: BioContract.evaluate_and_pack → status_byte  ║
-║     status_byte = [bio_status:2 bits | growth_points:6 bits]        ║
+║     status_byte = [PanicFlag:1 | bio_status:2 | growth_points:5]    ║
+║                    [FW.29 PANIC_FLAG_BIT | FW.29-PACK status bits 6..5 | gp bits 4..0]║
 ║                                                                      ║
 ║   ФАЗА 3: PACK + ENCRYPT                                             ║
 ║     Payload [16 bytes]: DID(N) Vcap(n) Temp(c) Acoustic(C)          ║
@@ -116,8 +117,8 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║      └─ cold: SeedDerivation.derive_initial_state(K_seed, epoch_day) ║
 ║              + telemetry_log.cold_start_flag = true                  ║
 ║    persist tail → telemetry_log.lorenz_state_x/y/z (mirror RTC)     ║
-║    growth_points = status_byte & 0x3F (нижні 6 бітів)              ║
-║    bio_status = status_byte >> 6 (верхні 2 біти)                    ║
+║    growth_points = (status_byte & 0x1F) * 2 (×2 upscale, FW.29-PACK)║
+║    bio_status = (status_byte >> 5) & 0x03 (bits 6..5, FW.29-PACK)   ║
 ║    AlertDispatchService.analyze_and_trigger!(log)                    ║
 ║    tree.wallet.credit!(log.growth_points)                           ║
 ║    ├──► IotexVerificationWorker.perform_async(id, created_at_iso)   ║
@@ -244,9 +245,9 @@ def self.evaluate_and_pack(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vc
   elsif z_val > CRITICAL_Z_MAX  → status=2, growth_points=0  # anomaly
   else                          → status=0                    # homeostasis
     deviation = (OPTIMAL_Z_TARGET - z_val).abs
-    growth_points = clamp(50 - deviation.round, 10, 63)  # FW.13: .round замість .to_i
+    growth_points = (reward / 2).clamp(5, 31)  # FW.29-PACK: 5-bit wire, halved reward
   end
-  payload_byte = (status << 6) | growth_points  # [ 2 bits | 6 bits ]
+  payload_byte = (status << 5) | growth_points  # [PanicFlag:1 (FW.29) | Status:2 | GP:5]
 end
 ```
 
@@ -812,7 +813,7 @@ trees
 
 telemetry_logs  [PARTITION BY RANGE(created_at)]
   ├─ z_value              :decimal           Lorenz Z (BigDecimal 18 precision)
-  ├─ growth_points        :integer           bits [5:0] з status_byte (0–63)
+  ├─ growth_points        :integer           [FW.29-PACK] stored 0..62 = wire bits [4:0] (0..31) × 2 backend upscale
   ├─ bio_status           :integer enum      0=homeostasis|1=stress|2=anomaly|3=tamper
   ├─ verified_by_iotex    :boolean  NOT NULL DEFAULT false
   ├─ zk_proof_ref         :string            "proof_id" або "receipt_id" від W3bstream
