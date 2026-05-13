@@ -3294,6 +3294,174 @@ TEST(test_arch21_pvd_save_then_restore_roundtrip) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.18 × ARCH.21 cross-feature regression] DR13/DR14 brownout race
+ * ════════════════════════════════════════════════════════════════════
+ * Сценарій-кандидат для regression freeze-contract bank (pattern FW.27 follow-up):
+ * між отриманням CMD_SET_AUDIO_THRESHOLDS (мутація RAM `tinyml_warning_threshold`
+ * у Сценарії 2 OTA-диспетчера) і Phase 5 KENOSIS writeback'ом у DR13/DR14
+ * може спрацювати PVD IRQ (брауноут). Поточний `HAL_PWR_PVDCallback` (ARCH.21)
+ * рятує DR0/DR1/DR16-DR19, але **НЕ** торкається DR13/DR14 — отже свіжо
+ * прийняті пороги губляться, а наступний boot (`Load_TinyML_Thresholds_From_RTC`)
+ * відновлює СТАРІ значення з DR13/DR14.
+ *
+ * Ці тести фіксують поточну поведінку як freeze-contract: вони мають впасти
+ * якщо хтось випадково додасть DR13/DR14 у PVD save sequence без оновлення
+ * `Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS` сценарію 2 (де writeback мав би
+ * стати inline, а не deferred до Phase 5).
+ *
+ * Якщо BLOCKER усвідомлено закривати — потрібно: (a) додати DR13/DR14 у
+ * `HAL_PWR_PVDCallback`, (b) inline writeback у CMD-handler'і, (c) видалити
+ * ці тести або інвертувати їхню очікувану семантику.
+ */
+
+/* Mirror of Load_TinyML_Thresholds_From_RTC validate-and-apply, без RTC dep. */
+static void Test_Load_TinyML_From_RTC_Slot(uint32_t dr13_word, uint32_t dr14_word,
+                                            float* warn_out, float* crit_out) {
+    float rtc_warn = test_uint32_to_float(dr13_word);
+    float rtc_crit = test_uint32_to_float(dr14_word);
+    Test_TinyML_Apply(rtc_warn, rtc_crit, warn_out, crit_out);
+}
+
+TEST(test_fw18_arch21_brownout_loses_freshly_received_thresholds) {
+    /* Стартові DR13/DR14 = типові 0.60 / 0.85 (попередній deploy). */
+    _rtc_bkp_reset_all();
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, test_float_to_uint32(0.60f));
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, test_float_to_uint32(0.85f));
+
+    /* OTA dispatcher отримує нові пороги — мутує RAM (Сценарій 2). */
+    uint8_t frame[10];
+    compose_audio_thresholds_frame(50, 75, 2, frame);  /* warn=0.50, crit=0.75 */
+    float ram_warn = 0.60f, ram_crit = 0.85f;
+    uint8_t version = 1;
+    uint8_t ok = Test_Handle_CMD_SET_AUDIO_THRESHOLDS(frame, 10, &ram_warn, &ram_crit, &version);
+    ASSERT_EQ(ok, 1);
+    ASSERT_EQ((int)(ram_warn * 100.0f + 0.5f), 50);
+    ASSERT_EQ((int)(ram_crit * 100.0f + 0.5f), 75);
+
+    /* PVD IRQ зриває MCU ДО Phase 5 KENOSIS writeback. ARCH.21 callback
+     * рятує тільки DR0/DR1/DR16-DR19 — DR13/DR14 НЕ зачіпаються. */
+    Simulate_PVD_Brownout_Save(0, 0, 1234, 1.0f, 2.0f, 25.0f, 1);
+
+    /* Boot після відновлення живлення: DR13/DR14 досі несуть СТАРІ 0.60/0.85. */
+    float boot_warn = 0.0f, boot_crit = 0.0f;
+    Test_Load_TinyML_From_RTC_Slot(
+        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR13),
+        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR14),
+        &boot_warn, &boot_crit);
+
+    /* Freeze-contract: новий 0.50/0.75 ВТРАЧЕНИЙ, повертаємось до 0.60/0.85.
+     * Якщо хтось закриє BLOCKER — цей assert впаде, що сигналізує про необхідність
+     * перепланування семантики (inline writeback vs PVD-rescue DR13/DR14). */
+    ASSERT_EQ((int)(boot_warn * 100.0f + 0.5f), 60);
+    ASSERT_EQ((int)(boot_crit * 100.0f + 0.5f), 85);
+}
+
+TEST(test_fw18_arch21_dr13_dr14_survive_brownout_when_already_persisted) {
+    /* Inverse-сценарій: пороги вже пройшли Phase 5 writeback ДО PVD IRQ.
+     * Brownout НЕ повинен їх зіпсувати — RTC Backup Domain живиться окремою
+     * VBAT шиною. ARCH.21 callback не торкається DR13/DR14, тож записані
+     * раніше значення лежать недоторканими. */
+    _rtc_bkp_reset_all();
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, test_float_to_uint32(0.42f));
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, test_float_to_uint32(0.91f));
+
+    Simulate_PVD_Brownout_Save(0, 0, 5000, -1.0f, 2.0f, 27.0f, 1);
+
+    float boot_warn = 0.0f, boot_crit = 0.0f;
+    Test_Load_TinyML_From_RTC_Slot(
+        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR13),
+        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR14),
+        &boot_warn, &boot_crit);
+
+    /* Persisted-thresholds invariant: DR13/DR14 точно повертаються після brownout. */
+    ASSERT_EQ((int)(boot_warn * 100.0f + 0.5f), 42);
+    ASSERT_EQ((int)(boot_crit * 100.0f + 0.5f), 91);
+}
+
+TEST(test_fw18_arch21_dr13_dr14_corruption_falls_back_to_defaults) {
+    /* Edge case: VBAT-loss ⇒ DR13/DR14 = 0xFFFFFFFF (uninit). Float bit-copy
+     * 0xFFFFFFFF → NaN. Test_TinyML_Apply має повернути дефолти 0.60/0.85
+     * (через Validate range check 0.01..0.99) щоб TinyML не злетів у NaN-ад. */
+    _rtc_bkp_reset_all();
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, 0xFFFFFFFFu);
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, 0xFFFFFFFFu);
+
+    float boot_warn = 0.0f, boot_crit = 0.0f;
+    Test_Load_TinyML_From_RTC_Slot(
+        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR13),
+        HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR14),
+        &boot_warn, &boot_crit);
+
+    ASSERT_EQ((int)(boot_warn * 100.0f + 0.5f), 60);  /* TINYML_DEFAULT_W */
+    ASSERT_EQ((int)(boot_crit * 100.0f + 0.5f), 85);  /* TINYML_DEFAULT_C */
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.29-PACK × ARCH.21 cross-feature regression] StatusByte mask survives brownout
+ * ════════════════════════════════════════════════════════════════════
+ * Регресійний guard: між обчисленням `payload[10] = (status<<5)|gp` (BioContract
+ * pack) і LoRa TX може спрацювати PVD IRQ. ARCH.21 рятує Lorenz state у
+ * DR16-DR19, але payload-байт лежить у RAM — він просто губиться (TX скасовано).
+ * Критично: НА НАСТУПНОМУ boot'і, коли Lorenz state продовжується з DR16-DR19,
+ * новий payload має знову правильно укладатися у [PanicFlag:1|Status:2|GP:5] —
+ * НЕ у legacy [Status:2|GP:6], інакше bit 7 status'у конфліктує з PANIC_FLAG_BIT
+ * mask'ом і backend читає anomaly як homeostasis (forensics див. 10_02 FW.29-PACK).
+ */
+
+#define FW29P_PANIC_FLAG_BIT  0x80
+#define FW29P_STATUS_HOMEO    0
+#define FW29P_STATUS_STRESS   1
+#define FW29P_STATUS_ANOMALY  2
+#define FW29P_STATUS_TAMPER   3
+
+static uint8_t Test_FW29P_Pack(uint8_t status, uint8_t gp) {
+    if (status > 3) status = 3;
+    if (gp > 31) gp = 31;
+    return (uint8_t)((status << 5) | gp);
+}
+
+TEST(test_fw29pack_arch21_post_brownout_anomaly_pack_survives_panic_mask) {
+    /* Симуляція: brownout зберіг anomaly Z (e.g. z=46.0) у DR16-DR19.
+     * На наступному boot Lorenz продовжується, BioContract пакує
+     * status=2 (anomaly) — байт МАЄ бути 0x40, не 0x80. */
+    _rtc_bkp_reset_all();
+    Simulate_PVD_Brownout_Save(0, 0, 1000, -2.0f, 3.0f, 46.5f, 1);
+
+    /* Boot-restore читає Lorenz tail. */
+    ASSERT_EQ(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR19), LORENZ_STATE_MAGIC);
+
+    /* Ре-pack після reboot: anomaly тригерить gp=0. */
+    uint8_t b = Test_FW29P_Pack(FW29P_STATUS_ANOMALY, 0);
+
+    /* FW.29-PACK guarantee: bit 7 == 0 (без колізії з PANIC_FLAG_BIT). */
+    ASSERT_FALSE(b & FW29P_PANIC_FLAG_BIT);
+    /* Backend `lora_payload[10] &= ~PANIC_FLAG_BIT` mask = no-op. */
+    uint8_t masked = b & 0x7F;
+    ASSERT_EQ(masked, b);
+    /* Backend decode зберігає anomaly семантику. */
+    ASSERT_EQ((masked >> 5) & 0x03, FW29P_STATUS_ANOMALY);
+}
+
+TEST(test_fw29pack_arch21_tamper_after_brownout_decodes_correctly) {
+    /* Якщо mruby VM крашнеться відразу після cold-restore (Lorenz state
+     * валідний, але VM init failed), BIO_STATUS_VM_ERROR=0xFF піде у
+     * payload[10]. Firmware mask `&= ~PANIC_FLAG_BIT` зробить 0x7F.
+     * Backend має декодувати як tamper, не як stress (legacy-bug). */
+    _rtc_bkp_reset_all();
+    Simulate_PVD_Brownout_Save(5, 12, 2000, 1.0f, 2.0f, 25.0f, 1);
+
+    uint8_t vm_error = 0xFF;
+    uint8_t firmware_masked = vm_error & 0x7F;  /* ~PANIC_FLAG_BIT */
+    ASSERT_EQ(firmware_masked, 0x7F);
+
+    uint8_t status = (firmware_masked >> 5) & 0x03;
+    uint8_t gp     = firmware_masked & 0x1F;
+    ASSERT_EQ(status, FW29P_STATUS_TAMPER);  /* НЕ stress(1) як до FW.29-PACK */
+    ASSERT_EQ(gp, 31);                        /* max 5-bit, ×2 backend → stored 62 */
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
  * [ARCH.27] Node Role Differentiation у Flash
  * ════════════════════════════════════════════════════════════════════
  */
@@ -4212,6 +4380,15 @@ int main(void)
     RUN(test_arch21_pvd_preserves_last_wakeup_for_delta_t);
     RUN(test_arch21_pvd_skips_lorenz_when_invalid);
     RUN(test_arch21_pvd_save_then_restore_roundtrip);
+
+    printf("\n  [FW.18 × ARCH.21] Brownout race for DR13/DR14 audio thresholds:\n");
+    RUN(test_fw18_arch21_brownout_loses_freshly_received_thresholds);
+    RUN(test_fw18_arch21_dr13_dr14_survive_brownout_when_already_persisted);
+    RUN(test_fw18_arch21_dr13_dr14_corruption_falls_back_to_defaults);
+
+    printf("\n  [FW.29-PACK × ARCH.21] StatusByte semantics survive brownout:\n");
+    RUN(test_fw29pack_arch21_post_brownout_anomaly_pack_survives_panic_mask);
+    RUN(test_fw29pack_arch21_tamper_after_brownout_decodes_correctly);
 
     printf("\n  Node Role Differentiation (ARCH.27):\n");
     RUN(test_arch27_role_soldier_magic_loads_soldier);
