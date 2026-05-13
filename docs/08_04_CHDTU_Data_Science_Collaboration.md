@@ -318,7 +318,7 @@ Silken Net будує багаторівневу академічну екоси
 
 ### 3.5. Методи Оптимізації та Функції Корисності
 
-**Поточний стан:** Евристичні пороги (`CRITICAL_Z_MIN=2.0`, `CRITICAL_Z_MAX=45.0`, `OPTIMAL_Z_TARGET=29.0`). Лінійний growth_points: `clamp(50 - deviation.to_i, 10, 63)`. Dynamic tax: 2% до `DAO_TREASURY` якщо `insurance_pool < 100,000 SCC`.
+**Поточний стан:** Евристичні пороги (`CRITICAL_Z_MIN=2.0`, `CRITICAL_Z_MAX=45.0`, `OPTIMAL_Z_TARGET=29.0`). Лінійний growth_points: `(reward / 2).clamp(5, 31)` (wire, 5-bit після [FW.29-PACK]); backend ×2 upscale → stored 10..62. Dynamic tax: 2% до `DAO_TREASURY` якщо `insurance_pool < 100,000 SCC`.
 
 **Код:** `firmware/bio_contracts/bio_contract.rb`, `app/services/blockchain_minting_service.rb`, `contracts/ProtocolParameters.sol`
 

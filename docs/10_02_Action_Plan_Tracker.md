@@ -410,6 +410,24 @@
 - [x] 🤖 АБО: panic packets мають окремий destination header byte
 - [ ] 🔗 Інтегрувати з FW.2 CCM transition
 
+#### FW.29-PACK — StatusByte layout collision з PANIC_FLAG_BIT (silent corruption fix)
+- `firmware/bio_contracts/bio_contract.rb`, `firmware/queen/main.c`, `app/services/telemetry_unpacker_service.rb` | **P1** | 🔗 closure для FW.29
+- **Опис:** SSOT-аудит (2026-05-13) виявив, що FW.29 додав `PANIC_FLAG_BIT = 0x80` у bit 7 StatusByte і нормальні пакети маскують `lora_payload[10] &= ~PANIC_FLAG_BIT`, але `bio_contract.rb` продовжував пакувати `(status << 6) | growth_points` (status у bits 7..6). Bit 7 status'у конфліктував з PANIC_FLAG_BIT mask'ом → backend читав:
+  - `status=2` (anomaly) → `0x80 | gp` → mask → `0x00` → `(0x00 >> 6) = 0` (homeostasis) — **anomaly events silently lost**
+  - `status=3` (tamper) → `0xC0 | gp` → mask → `0x40` → `(0x40 >> 6) = 1` (stress) — **tamper events demoted**
+  - `BIO_STATUS_VM_ERROR=0xFF` (crashed mruby) → mask → `0x7F` → `(0x7F >> 6) = 1` (stress), `gp=63` — **crashed VM мінтить SCC як здорове "stressed" дерево**
+  - Queen CIFO eviction (`firmware/queen/main.c:835`) використовує той самий `>> 6` → anomaly/tamper trees не отримували cache-pressure protection
+- **Документи з canonical layout** (`docs/03_01 §1.6` line 443, `docs/03_05 §FW.2` line 147) уже описували правильний `[PanicFlag:1 | Status:2 | GrowthPoints:5]` — лише код від нього відстав.
+- **Статус:** ✅ Виконано (2026-05-13). Wire format узгоджено з документованим дизайном:
+  - **Firmware mruby (`bio_contract.rb`):** `(status << 5) | growth_points`, gp clamped до 0..31, reward `(50 - dev) / 2` для 5-bit wire space
+  - **Firmware Queen (`main.c`):** `QUEEN_HEALTH_GP_MAX = 31`, sentinel cap, eviction `(payload[10] >> 5) & 0x03`
+  - **Backend ×2 upscale** на unpack: `growth_points: (status_byte & 0x1F) * 2` → stored 0..62 (vs old 0..63, **≤1.6% resolution loss**); `bio_status: (status_byte >> 5) & 0x03`. **Tokenomic invariant збережений** — `Wallet#lock_and_mint!` 10 000-point threshold та emission rate без змін.
+  - **Tests:** 504 firmware host tests + 74 RSpec examples pass. Додано 2 firmware regression guards (`test_bio_anomaly_survives_panic_mask`, `test_status_anomaly_no_panic_bit_collision`, `test_vm_error_byte_0xFF_decodes_as_tamper_after_mask`) + 2 backend regression specs (anomaly/tamper survive PANIC_FLAG_BIT mask).
+  - **Doc cleanup:** `03_01 §11.5` (packing example), `03_02 §6.4` (Queen CIFO + Sentinel cap), `03_04 §4.3/§4.4/§5.2` (formula + bit diagram + verification flow), `05_02` (3 діаграми pipeline + storage layout), `04_02` Solana reward range, `07_02` GP/SCC unit economics, `08_06`/`08_04` cross-refs.
+- [x] 🤖 Firmware fix (3 files: bio_contract.rb, queen/main.c, telemetry_unpacker_service.rb)
+- [x] 🤖 Test updates (3 firmware test files + 1 RSpec) + 5 нових regression guards
+- [x] 🤖 SSOT cross-doc audit + cleanup (8 documents)
+
 #### FW.30 — SEC.11 C-bridge gap: `firmware/soldier/main.c` mruby виклик не оновлено
 - `firmware/soldier/main.c:685-740`, `firmware/bio_contracts/bio_contract.rb` | **P1** | 🔗 Блокує FW.5 B+
 - **Опис:** SEC.11 cutover змінив API `bio_contract.rb` (видалено `calculate_state_continued` і старий 3-arg `calculate_state(seed, ...)`; залишена лише єдина сигнатура `calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)`). Проте `firmware/soldier/main.c` **не було оновлено** разом з mruby-скриптом:

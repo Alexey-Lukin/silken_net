@@ -504,19 +504,22 @@ end
 |---|---|---|---|---|
 | `z < 2.0` | `1` | ⚠️ Stress (Посуха) | `1` | Мінімальна генерація — дерево виживає, але не росте |
 | `z > 45.0` | `2` | 🚨 Anomaly (Критичний стрес) | `0` | Емісія зупиняється повністю |
-| `2.0 ≤ z ≤ 45.0` | `0` | ✅ Homeostasis (Здоровий Хаос) | `10 .. 50` | Нараховуються бали росту |
+| `2.0 ≤ z ≤ 45.0` | `0` | ✅ Homeostasis (Здоровий Хаос) | `5 .. 31` (wire); `10 .. 62` (stored after backend ×2 upscale) | Нараховуються бали росту |
 
 ### 4.3 Функція Нарахування Балів у Зоні Гомеостазу
 
 ```
 deviation      = |OPTIMAL_Z_TARGET - z|  =  |29.0 - z|
-reward         = 50 - deviation.round     ← .round, не .to_i (коректне заокруглення: 0.5 → 1)
-growth_points  = clamp(reward, 10, 63)    ← об'єднує guard ≥10 та overflow protection ≤63
+reward         = 50 - deviation.round              ← .round, не .to_i (коректне заокруглення: 0.5 → 1)
+# [FW.29-PACK] Wire-діапазон скорочено з 6-біт (10..63) до 5-біт (5..31)
+# щоб звільнити bit 7 під PANIC_FLAG_BIT (FW.29). Backend ×2 upscale при unpack
+# зберігає tokenomic emission rate (effective stored 10..62 vs old 10..63).
+growth_points  = (reward / 2).clamp(5, 31)
 ```
 
-> **Примітка `.round` vs `.to_i`:** `.to_i` усікає (`0.9.to_i == 0`), `.round` округляє (`0.9.round == 1`). Зона максимального балу — z ∈ [28.5, 29.5): `deviation ∈ [0, 0.5)` → `deviation.round == 0` → `growth_points == 50`. При `.to_i` зона була б ширша (±1.0), що математично некоректно.
+> **Примітка `.round` vs `.to_i`:** `.to_i` усікає (`0.9.to_i == 0`), `.round` округляє (`0.9.round == 1`). Зона максимального балу — z ∈ [28.5, 29.5): `deviation ∈ [0, 0.5)` → `deviation.round == 0` → wire `growth_points == 25` → stored `50`. При `.to_i` зона була б ширша (±1.0), що математично некоректно.
 
-> **`clamp(10, 63)` замість `(reward > 0) ? reward : 10`:** В зоні гомеостазу `reward_min = 50 − |45.0 − 29.0| = 34 > 0` завжди — тернарний `:10` ніколи не спрацьовував. `clamp(10, 63)` об'єднує обидва guard'и в єдину операцію.
+> **`(reward / 2).clamp(5, 31)` замість `clamp(reward, 10, 63)`:** [FW.29-PACK] StatusByte layout після FW.29 — `[PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)]`. Wire-діапазон growth_points = 5 біт = 0..31. `(reward / 2)` масштабує тіло homeostasis [10..50] → [5..25]; clamp(5, 31) залишає margin зверху. Backend `(status_byte & 0x1F) * 2` повертає до stored 0..62.
 
 **Графік нарахування growth_points залежно від Z:**
 
@@ -559,30 +562,35 @@ growth_points
 ### 4.4 Bit-Packing: Структура Байту BioContract
 
 ```ruby
-payload_byte = (status << 6) | growth_points
+# [FW.29-PACK] Wire layout: [PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)].
+# Bit 7 (PANIC_FLAG_BIT, FW.29) для нормальних пакетів завжди 0
+# (`lora_payload[10] &= ~PANIC_FLAG_BIT`), для panic-пакетів завжди 1.
+payload_byte = (status << 5) | growth_points
 ```
 
 ```
  Bit 7   Bit 6   Bit 5   Bit 4   Bit 3   Bit 2   Bit 1   Bit 0
 ┌───────┬───────┬───────┬───────┬───────┬───────┬───────┬───────┐
-│  S1   │  S0   │ GP5   │ GP4   │ GP3   │ GP2   │ GP1   │ GP0   │
+│PANIC  │  S1   │  S0   │ GP4   │ GP3   │ GP2   │ GP1   │ GP0   │
 └───────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┘
-│◄ Status (2) ►│◄────────── Growth Points (6 bits, 0-63) ──────►│
+│PanicFlag│◄ Status (2) ►│◄────── Growth Points (5 bits, 0-31) ──►│
+   FW.29       FW.29-PACK
 ```
 
-| Bits [7:6] | Status | Значення |
+| Bits [6:5] | Status | Значення |
 |---|---|---|
 | `00` | `0` | Гомеостаз (Healthy Chaos) |
 | `01` | `1` | Стрес (Посуха / Low Turgidity) |
 | `10` | `2` | Аномалія (Critical Stress) |
-| `11` | `3` | Tamper (mruby VM помилка → `0xFF`) |
+| `11` | `3` | Tamper (mruby VM помилка → `0xFF` після firmware mask `& 0x7F` = `0x7F`) |
 
 **Розпакування на backend:**
 
 ```ruby
 # app/services/telemetry_unpacker_service.rb
-growth_points = status_byte & 0x3F   # маска нижніх 6 бітів
-bio_status    = status_byte >> 6      # верхні 2 біти
+# [FW.29-PACK] +×2 upscale зберігає tokenomic invariant — stored 0..62 vs wire 0..31
+growth_points = (status_byte & 0x1F) * 2     # bits 4..0 (×2 backend upscale)
+bio_status    = (status_byte >> 5) & 0x03    # bits 6..5
 ```
 
 ---
@@ -632,8 +640,8 @@ firmware/bio_contracts/bio_contract.rb    app/services/silken_net/attractor.rb
        ▼                                           ▼
   lora_payload[10]  ──── LoRa → CoAP ──── TelemetryUnpackerService
                                                │
-                                               ├── growth_points = payload[10] & 0x3F (від firmware)
-                                               ├── bio_status = payload[10] >> 6 (від firmware)
+                                               ├── growth_points = (payload[10] & 0x1F) * 2  [FW.29-PACK ×2 upscale]
+                                               ├── bio_status = (payload[10] >> 5) & 0x03   [FW.29-PACK bits 6..5]
                                                ├── z_server, x_f, y_f, z_f =
                                                │     Attractor.calculate_z_from_state(x_prev,…,
                                                │                metabolism_s, voltage_mv)

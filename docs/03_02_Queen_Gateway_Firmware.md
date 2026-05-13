@@ -423,7 +423,7 @@ uint8_t cache_count = 0;
   Мета: витіснити некритичне (homeostasis, bio_status==0) дерево з найгіршим RSSI.
   Fallback: якщо ВСІ записи критичні → витіснити абсолютно найгірший RSSI.
 
-  bio_status = (payload[10] >> 6) & 0x03
+  bio_status = (payload[10] >> 5) & 0x03   // [FW.29-PACK] bits 6..5 (status), bit 7 = PANIC_FLAG_BIT
     0 = homeostasis (кандидат на витіснення)
     1 = stress      (захищений)
     2 = anomaly     (захищений)
@@ -1080,7 +1080,7 @@ queen_health[5] = (uint8_t)(uptime_sec & 0xFF);
 // Byte 7:  кількість дерев у кеші (навантаження шлюзу, 0–50)
 queen_health[7] = cache_count;
 // Bytes 8-9: зарезервовано (0x00) — майбутнє: CSQ модему (0–31)
-// Byte 10: growth_points = cache_count (cap at 63, QUEEN_HEALTH_GP_MAX)
+// [FW.29-PACK] Byte 10: growth_points = cache_count (cap at 31, QUEEN_HEALTH_GP_MAX)
 queen_health[10] = (cache_count < QUEEN_HEALTH_GP_MAX) ? cache_count : QUEEN_HEALTH_GP_MAX;
 // Bytes 11-15: зарезервовано (0x00) — майбутнє: напруга батареї, версія прошивки
 Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пакет)
