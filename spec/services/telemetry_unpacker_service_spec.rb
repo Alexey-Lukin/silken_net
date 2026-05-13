@@ -85,10 +85,11 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   end
 
   it "credits wallet with growth points" do
+    # [FW.29-PACK] wire status_byte = 10 (homeostasis, gp=10) → stored gp = 20 (×2 backend upscale)
     status_byte = 10
     chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, status_byte, 3)
 
-    expect { described_class.call(chunk) }.to change { tree.wallet.reload.balance }.by(10)
+    expect { described_class.call(chunk) }.to change { tree.wallet.reload.balance }.by(20)
   end
 
   it "calls AlertDispatchService to analyze telemetry" do
@@ -702,9 +703,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       end
 
       it "extracts both status and growth_points from combined byte" do
-        # [FW.29-PACK] status_byte = 0b010_00101 = 69 → bio_status=stress(1),
+        # [FW.29-PACK] status_byte = 0b001_00101 = 37 → bio_status=stress(1),
         # wire growth=5 → stored = 10
-        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 69, 3)
+        chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 37, 3)
 
         described_class.call(chunk)
         log = TelemetryLog.last
