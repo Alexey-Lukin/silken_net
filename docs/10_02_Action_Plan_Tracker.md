@@ -151,7 +151,8 @@
 #### S6.10 — MaintenanceRecord — лише лог
 - **P3** | `04_02` | **Складність: L** | **Архітектурна**
 - **Опис:** MaintenanceRecord — лише запис логу. Немає: призначення задач, оплати, верифікації. Потребує Forester Guild (E.20)
-- [ ] 🤖 Архітектурний дизайн task assignment
+- **Статус (🤖, 2026-05-13):** ✅ Архітектурний дизайн task assignment завершено та задокументовано у `04_02` §"Forester Guild" → "Архітектурний дизайн: Task Assignment Algorithm 🤖 (S6.10)". Покриває 6 етапів: (1) Bounty fields (severity TTL: critical=6h…low=7d, required_skills/certifications bitmap, AASM state machine); (2) Candidate filtering (KYC-verified Hadron, in-radius з severity-driven exponential escalation, not-busy, not-cluster-blacklisted); (3) Composite scoring — 0.40·distance + 0.25·reputation + 0.20·responsiveness + 0.10·specialization + 0.05·cluster_familiarity (weights tunable через SystemParameter→BIZ.4 DAO); (4) Notification cascade — exclusive 10-хв lock для :critical, top-N race для інших, ForestBountyExpansionWorker для escalation; (5) Race conflict resolution через `lock("FOR UPDATE NOWAIT")`; (6) Verification (GPS/EXIF/IPFS) → USDC on-chain payout → MaintenanceRecord → reputation feedback. Включено: crash recovery/idempotency таблицю, anti-Sybil (geo-staking + KYC), dClimate fallback integration (E.34).
+- [x] 🤖 Архітектурний дизайн task assignment — ✅ `04_02` §Forester Guild (2026-05-13)
 - [ ] 🔗 Зв'язати з Forester Guild PoPhW (E.20)
 
 #### S6.12 — TokenomicsEvaluatorWorker: oracle-guards bypass для не-oracle flow
@@ -222,10 +223,11 @@
 #### FW.2 — AES-256-ECB без MAC/MIC
 - `03_05` | `firmware/soldier/main.c:747`, `firmware/queen/main.c:781`
 - **Опис:** Детерміністичний шифротекст, replay/bit-flip attacks можливі. Немає автентифікації пакетів
-- **Рішення (рекомендоване):** **AES-256-CCM** (апаратно підтримується STM32WLE5JC) з новим 24-байтним пакетом: `[DID:4][SensorData:8][FrameCounter:4][MIC:4][Reserved:4]`. Frame Counter у RTC Backup Domain як Nonce. MIC апаратно генерується CCM. Вирішує BLOCKER-2 та BLOCKER-3 одночасно
+- **Рішення (рекомендоване):** **AES-256-CCM** (апаратно підтримується STM32WLE5JC) з новим 24-байтним пакетом. Вирішує BLOCKER-2 та BLOCKER-3 одночасно
 - **Альтернативи:** AES-256-GCM, AES-256-CTR + HMAC-SHA256 MIC (4-byte suffix)
+- **Статус (🤖, 2026-05-13):** Дизайн пакету завершено та задокументовано у `03_05` §3.2 BLOCKER-2. Фінальна структура: Header cleartext AAD `[DID:4][FrameCounter:4 BE]` + encrypted sensor payload `[Vcap_mv:2][temp:1][acoustic:1][delta_t_s:2][status_byte:1][mesh_ctrl:1]` + MIC `[8B 64-bit MAC]` = 24B без wasted Reserved-полів. Покращення проти чернетки: (1) MIC розширено до 8B (64-bit) замість 4B — forge probability ≈ 5.4×10⁻²⁰ vs 2.3×10⁻¹⁰, безпечний на 25-річний горизонт при billion-tree scale; (2) `mesh_ctrl` byte компресує TTL:4 + fw_version_epoch:4 (замість витраченого `firmware_version_id` uint16); (3) Frame Counter = CCM nonce (4B monotonic uint32, RTC DR2) субструє SEC.10 RTC panic counter і gossip_ts_byte — обидва interim workarounds до повного CCM; (4) backend cross-ref: per-DID FC monotonic check через Redis SETNX TTL=25h, growth_points апскейл з 5-bit (0..31) через species multiplier. Firmware (Soldier CCM encrypt, Queen CCM decrypt+FC validation) та backend parser — наступні ітерації.
 - [ ] 🤖 Верифікувати `CRYP_AES_CCM` підтримку на цільовій ревізії STM32WLE5JC
-- [ ] 🤖 Дизайн 24-байтного пакету (8 байт sensor data vs поточних 16 — оптимізувати поля)
+- [x] 🤖 Дизайн 24-байтного пакету (8 байт sensor data vs поточних 16 — оптимізувати поля) — ✅ Виконано (2026-05-13). Повна специфікація у `03_05` §3.2 BLOCKER-2 (фінальний дизайн 🤖 FW.2): field layout, nonce construction, MIC rationale, removed-fields migration table, HAL_CRYP config, backend cross-refs
 - [ ] 🤖 Firmware Soldier: CCM encrypt + Frame Counter інкремент + MIC append
 - [ ] 🤖 Firmware Queen: CCM decrypt + Frame Counter validation (anti-replay)
 - [ ] 🤖 Backend: оновити `TelemetryUnpackerService` для 24-байтного формату
@@ -646,7 +648,8 @@
 - **Джерело:** `03_05` NOTE-2
 - **Опис:** Multi-step factory process: (1) Flash firmware з placeholder key, (2) Backend → HKDF(master_key, device_uid) → unique_key, (3) Robot пише key у protected Flash sector, (4) STM32CubeProgrammer → RDP Level 1/2
 - **Блокує:** Mass production
-- [ ] 🤖 Дизайн завершений
+- **Статус (🤖, 2026-05-13):** ✅ Дизайн Factory Flashing pipeline завершено та задокументовано у `03_05` §3.4 у вигляді двох гілок: Гілка A (Protected Flash Sector, TRL 6/7, ≤10k unit) та Гілка B (ATECC608B/STSAFE-A110 Secure Element, mass production >10k або high-value). Включено: decision matrix (pilot / 1-10k / >10k / regulated), defense-in-depth таблицю, двошарову схему lock (data zone lock + RDP), latency/power/cost impact, irreversibility note (B→A неможливо). Cross-ref до §3.4а (HKDF) та §3.7 (SE оцінка).
+- [x] 🤖 Дизайн завершений — ✅ `03_05` §3.4 Гілка A + Гілка B (2026-05-13)
 - [ ] 🤖 Реалізація Factory Flashing tool
 - [ ] 🤖 Integration тест з provisioning API
 
@@ -660,10 +663,10 @@
 - **Джерело:** `03_05` | Firmware architecture
 - **Опис:** AES-256 ключ зберігається у plain Flash STM32 (навіть з RDP Level 1 — key extraction можливий через glitching/side-channel). ATECC608B забезпечує hardware-protected key storage з tamper-detection. Ціна ~$0.60/unit
 - **Пріоритет:** P2 (Post-TRL 7, перед mass production >1000 units)
-- **Статус:** 🤖 ✅ Інтеграційна оцінка ATECC608B з STM32WLE5JC задокументована в `03_05` §3.7 «ATECC608B Secure Element — оцінка інтеграції»: I²C interface (PB6/PB7), slot mapping (slot 0=AES, 1=ECC priv, 2=cert, 3=HMAC OTA), latency impact (~1.5 мс/блок vs 10 µs HAL_CRYP — нехтовно), power impact (+0.1% energy budget), Factory Flashing pipeline з ATECC, альтернатива STSAFE-A110 (native CubeMX, переважна для unified ST toolchain), OPTIGA Trust M (overkill), NXP A71CH (EOL — уникати). Firmware HAL drop-in API окреслено
+- **Статус:** 🤖 ✅ Інтеграційна оцінка ATECC608B з STM32WLE5JC задокументована в `03_05` §3.7 «ATECC608B Secure Element — оцінка інтеграції»: I²C interface (PB6/PB7), slot mapping (slot 0=AES, 1=ECC priv, 2=cert, 3=HMAC OTA), latency impact (~1.5 мс/блок vs 10 µs HAL_CRYP — нехтовно), power impact (+0.1% energy budget), Factory Flashing pipeline з ATECC, альтернатива STSAFE-A110 (native CubeMX, переважна для unified ST toolchain), OPTIGA Trust M (overkill), NXP A71CH (EOL — уникати). Firmware HAL drop-in API окреслено. Factory Flashing pipeline §3.4 оновлено (2026-05-13) з Гілкою B що включає повний I²C provisioning sequence, `(device_uid, atecc_serial)` pinning (tamper-detect chip swap), slot write послідовність та dual lock strategy.
 - [x] 🤖 Оцінити ATECC608B integration з STM32WLE5JC (I²C interface)
 - [x] 🤖 Дизайн key storage: ATECC608B slot 0 = AES key, slot 1 = device certificate
-- [ ] 🤖 Оновити Factory Flashing pipeline (SEC.3) для ATECC608B provisioning — наступний цикл
+- [x] 🤖 Оновити Factory Flashing pipeline (SEC.3) для ATECC608B provisioning — ✅ Виконано (2026-05-13). `03_05` §3.4 містить повну Гілку B з ATECC608B/STSAFE-A110: I²C provisioning sequence (7 steps), (device_uid, atecc_serial) pinning для chip-swap tamper detection, slot mapping cross-ref до §3.7, irreversibility note, decision matrix pilot/1-10k/>10k/regulated
 - [x] 🤖 Оцінити альтернативи: STSAFE-A110 (ST ecosystem), Infineon OPTIGA Trust M
 
 #### SEC.7 — OTA image автентифікація (cross-ref FW.23)
