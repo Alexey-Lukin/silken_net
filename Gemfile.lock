@@ -120,7 +120,7 @@ GEM
     bls12-381 (0.3.0)
       h2c (~> 0.2.0)
     blueprinter (1.3.0)
-    bootsnap (1.24.3)
+    bootsnap (1.24.4)
       msgpack (~> 1.2)
     brakeman (8.0.4)
       racc
