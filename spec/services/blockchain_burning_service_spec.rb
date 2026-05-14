@@ -14,7 +14,7 @@ RSpec.describe BlockchainBurningService do
 
   before do
     ENV["ALCHEMY_POLYGON_RPC_URL"] ||= "https://polygon-rpc.example.com"
-    ENV["ORACLE_PRIVATE_KEY"] ||= "0x#{'a' * 64}"
+    ENV["ORACLE_PRIVATE_KEY"] = "0x#{'a' * 64}"
     ENV["CARBON_COIN_CONTRACT_ADDRESS"] ||= "0x#{'0' * 40}"
 
     # Kredis може бути відсутнім у тестовому середовищі

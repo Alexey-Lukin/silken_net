@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require "sidekiq/testing"
 
 RSpec.describe "Api::V1::Codex::Fractions", type: :request do
   let(:org)   { create(:organization) }

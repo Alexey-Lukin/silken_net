@@ -85,7 +85,7 @@ class PrometheusCollector
     expected_pass = ENV["PROMETHEUS_AUTH_PASSWORD"]
 
     # If no credentials configured, skip auth (rely on IP allowlist alone)
-    return true unless expected_user && expected_pass
+    return true unless expected_user.present? && expected_pass.present?
 
     auth = Rack::Auth::Basic::Request.new(env)
     return false unless auth.provided? && auth.basic?

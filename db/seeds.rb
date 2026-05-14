@@ -676,7 +676,24 @@ Session.create!(
 )
 
 # =========================================================================
-# 15. ОНОВЛЕННЯ COUNTER CACHE
+# 15. CODEX LORE MODULE (realms, nodes, discovery rules)
+# =========================================================================
+puts "📖 Імпорт Codex (realms/nodes/rules)..."
+
+codex_result = Codex::NodeImportService.call
+if codex_result.success?
+  puts "   📚 Codex realms upserted: #{codex_result.realms_upserted}"
+  puts "   📚 Codex nodes upserted:  #{codex_result.nodes_upserted}"
+else
+  codex_result.errors.each { |err| warn "   ❌ Codex seed error: #{err}" }
+  abort("❌ Codex seeding failed. Aborting db:seed.")
+end
+
+codex_rules_result = Codex::DiscoveryRuleImportService.call
+puts "   🔍 Codex discovery rules: +#{codex_rules_result.created} / ~#{codex_rules_result.updated} / skipped=#{codex_rules_result.skipped}"
+
+# =========================================================================
+# 16. ОНОВЛЕННЯ COUNTER CACHE
 # =========================================================================
 puts "🔄 Синхронізація counter cache..."
 Cluster.find_each do |cluster|
@@ -685,7 +702,7 @@ Cluster.find_each do |cluster|
 end
 
 # =========================================================================
-# 16. ПІДСУМОК
+# 17. ПІДСУМОК
 # =========================================================================
 puts ""
 puts "✅ [PROJECT SILKEN NET] Екосистему ініціалізовано."
@@ -715,3 +732,6 @@ puts "   📡 Телеметрія:          #{TelemetryLog.count}"
 puts "   🔐 Апаратні ключі:      #{HardwareKey.count}"
 puts "   🔑 Сесії:               #{Session.count}"
 puts "   ⚙️  Системні параметри:   #{SystemParameter.count}"
+puts "   📖 Codex realms:         #{Codex::Realm.count}"
+puts "   📖 Codex nodes:          #{Codex::Node.count}"
+puts "   📖 Codex rules:          #{Codex::DiscoveryRule.count}"

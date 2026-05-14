@@ -7,7 +7,7 @@ RSpec.describe Treasury::MonitorService do
     ENV["ALCHEMY_POLYGON_RPC_URL"] ||= "https://polygon-rpc.example.com"
     ENV["ORACLE_PRIVATE_KEY"] ||= "0x" + "a" * 64
     ENV["SOLANA_RPC_URL"] ||= "https://api.devnet.solana.com"
-    ENV["SOLANA_FEE_PAYER_PUBKEY"] ||= "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+    ENV["SOLANA_FEE_PAYER_PUBKEY"] = "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
     ENV["CELO_RPC_URL"] ||= "https://alfajores-forno.celo-testnet.org"
     ENV["ALCHEMY_ETHEREUM_RPC_URL"] ||= "https://eth-mainnet.example.com"
     ENV["ETHEREUM_ANCHOR_PRIVATE_KEY"] ||= "0x" + "b" * 64

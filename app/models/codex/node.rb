@@ -113,13 +113,18 @@ module Codex
         none
       end
     }
-    # Trigram-fuzzy search across both bilingual title columns. ILIKE keeps
-    # GIN-pg_trgm indexes hot — no Elasticsearch needed.
+    # Trigram-fuzzy search across both bilingual title columns. GIN-pg_trgm
+    # indexes accelerate the LIKE. lower(col COLLATE "und-x-icu") normalises
+    # non-ASCII casing (Cyrillic, etc.) — necessary because the DB cluster was
+    # initialised with the C locale, which skips Unicode case folding.
     scope :search_title, ->(query) {
       next all if query.blank?
 
-      pattern = "%#{sanitize_sql_like(query.to_s.strip)}%"
-      where("title_uk ILIKE ? OR title_en ILIKE ?", pattern, pattern)
+      pattern = "%#{sanitize_sql_like(query.to_s.strip.downcase)}%"
+      where(
+        'lower(title_uk COLLATE "und-x-icu") LIKE ? OR lower(title_en COLLATE "und-x-icu") LIKE ?',
+        pattern, pattern
+      )
     }
     scope :by_archetype, ->(key) { where(archetype_key: key) if key.present? }
     scope :by_lifecycle, ->(status) {
