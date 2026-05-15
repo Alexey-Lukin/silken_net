@@ -109,7 +109,7 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 | Параметр | Без MOIC | З MOIC |
 |----------|----------|--------|
 | Кожен параметр смарт-контракту (`OPTIMAL_Z_TARGET=29.0`, `MAX_SUPPLY=1B SCC`, `FRAUD_DEVIATION_THRESHOLD=30%`, `Dynamic Tax=2%`) | Код стартапу | + Q1-публікація + лабораторний тест профільного інституту |
-| Кожен хардверний вузол (Ti-6Al-4V гіроїд, EBFC, BQ25570 MPPT, SX1262 LoRa, PEEK-радом) | Концепт | + DFT/FEM/ICP-MS/VNA/EMC дані з акредитованих лабораторій |
+| Кожен хардверний вузол (тризонний Ti-6Al-4V анкер з Zone 1 гіроїд / Zone 2 PEEK / Zone 3 фланець, Combi-CLEA + Laccase-AuNP EBFC, BQ25570 MPPT, SX1262 LoRa, PEEK-радом IoT-капсули) | Концепт | + DFT/FEM/ICP-MS/VNA/EMC дані з акредитованих лабораторій |
 | D-MRV pipeline як замінник Verra/Gold Standard | Вимога довіри | + ISO 14064 / ICROA mapping (Гедз, [`08_07` §1.5](08_07_SEU_Economics_and_Legal_Integration)) |
 | Біорізноманіттєвий шар | NDVI-only | + acoustic ground-truth (Mongabay pivot, Стаття 24a) + ботанічна валідація (Спрягайло) |
 
@@ -264,9 +264,9 @@ _(Запропонована тема; студент визначається �
 
 | Автор | Внесок |
 |-------|--------|
-| **Косенюк Г.В.** | VSWR/КСВ оптимізація SMD-антени під PEEK-радомом (Деталь 4); 3D-діаграма спрямованості з Ti-анкером як Ground Plane; Link Budget LoRa у лісі (SF=7–9 балансування, → `02_01` §5.3); Reed-Solomon FEC для 21-байтового пакету; Kalman/EMA фільтри для delta\_t Edge AI; CE/FCC compliance roadmap |
+| **Косенюк Г.В.** | VSWR/КСВ оптимізація SMD-антени під PEEK-радомом (окрема деталь IoT-капсули, ∅20–30 мм, **не плутати з PEEK-втулкою Zone 2** тризонного анкера); 3D-діаграма спрямованості з Ti-анкером (Zone 1 + Zone 3 фланець) як Ground Plane; Link Budget LoRa у лісі (SF=7–9 балансування, → `02_01` §5.3); Reed-Solomon FEC для 21-байтового пакету; Kalman/EMA фільтри для delta\_t Edge AI; CE/FCC compliance roadmap |
 | **Ярмілко А.В.** | Lightweight cryptography integration (AES-256-ECB для LoRa Soldier→Queen, AES-256-CBC для CoAP batch Queen→Rails, HAL\_CRYP); firmware архітектура SPI/DMA для фільтрованих сигналів |
-| Архітектор (Silken Net) | EBFC-джерело живлення (>500 мВ, <500 мкВт), STM32WLE5JC RF-конфігурація, 21-байтовий пакет, IP68 механічна специфікація (Деталь 4 — PEEK Crown) |
+| Архітектор (Silken Net) | EBFC-джерело живлення (>500 мВ, <500 мкВт; Combi-CLEA `GOx+Catalase` + Laccase-AuNP DET — деталі [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)), STM32WLE5JC RF-конфігурація, 21-байтовий пакет, IP68 механічна специфікація (PEEK Crown капсули — окрема деталь, не Zone 2 анкера) |
 
 **Магістерська робота (Науковий керівник — Косенюк):**
 _«Радіотехнічна оптимізація мікропотужних IoT-пристроїв у лісовому середовищі: узгодження антенних систем, завадостійке кодування та стохастична фільтрація сигналів EBFC-джерел»_
