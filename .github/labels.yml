@@ -1,0 +1,143 @@
+# SSOT for repository labels — Labels-as-Code.
+# Synced by .github/workflows/labels_sync.yml (uses EndBug/label-sync@v2 with delete-other-labels: true).
+# Doc reference: docs/00_07_GitHub_Projects_and_IaC_Automation.md §4 Label Conventions.
+
+# ─────────────────────────────────────────────────────────────────────────
+# Cluster routing (primary, mutually exclusive)
+# Each issue/PR has exactly one of these.
+# ─────────────────────────────────────────────────────────────────────────
+- name: "cluster:A-hardware"
+  color: "FF6B35"
+  description: "Primary cluster — Hardware/EBFC (atoms, materials, biofuel cell)"
+
+- name: "cluster:B-verification"
+  color: "4ECDC4"
+  description: "Primary cluster — Verification/Math (proofs, attractor, ZK, Solidity)"
+
+- name: "cluster:C-scaling"
+  color: "3D5A80"
+  description: "Primary cluster — Scaling/Cloud (Rails, infra, web3 stack)"
+
+- name: "cluster:D-compliance"
+  color: "7209B7"
+  description: "Primary cluster — Compliance/Legal (KYC, MSA, IP, regulation)"
+
+# ─────────────────────────────────────────────────────────────────────────
+# Cluster cross-reference (secondary, optional)
+# ─────────────────────────────────────────────────────────────────────────
+- name: "cluster-ref:A"
+  color: "D3D3D3"
+  description: "Secondary RACI — Hardware/EBFC consulted"
+- name: "cluster-ref:B"
+  color: "D3D3D3"
+  description: "Secondary RACI — Verification/Math consulted"
+- name: "cluster-ref:C"
+  color: "D3D3D3"
+  description: "Secondary RACI — Scaling/Cloud consulted"
+- name: "cluster-ref:D"
+  color: "D3D3D3"
+  description: "Secondary RACI — Compliance/Legal consulted"
+
+# ─────────────────────────────────────────────────────────────────────────
+# Shape Up lifecycle
+# ─────────────────────────────────────────────────────────────────────────
+- name: "shape:shaping"
+  color: "FFE066"
+  description: "Shaping document being authored, not yet on Betting Table"
+- name: "shape:bet-active"
+  color: "06D6A0"
+  description: "Active bet in the current cycle"
+- name: "shape:hill-uphill"
+  color: "FFB627"
+  description: "Hill chart uphill — exploration, risks not resolved"
+- name: "shape:hill-downhill"
+  color: "06D6A0"
+  description: "Hill chart downhill — execution, routine"
+- name: "shape:park"
+  color: "9C9C9C"
+  description: "Parked, review in 6+ weeks"
+- name: "shape:drop"
+  color: "E63946"
+  description: "Dropped; do not resurrect without re-shaping"
+
+# ─────────────────────────────────────────────────────────────────────────
+# Priority
+# ─────────────────────────────────────────────────────────────────────────
+- name: "priority:P0"
+  color: "B60205"
+  description: "Critical, blocks production or safety"
+- name: "priority:P1"
+  color: "D93F0B"
+  description: "High priority"
+- name: "priority:P2"
+  color: "FBCA04"
+  description: "Medium priority"
+- name: "priority:P3"
+  color: "0E8A16"
+  description: "Low priority / backlog"
+
+# ─────────────────────────────────────────────────────────────────────────
+# Complexity
+# ─────────────────────────────────────────────────────────────────────────
+- name: "complexity:XS"
+  color: "C2E0C6"
+  description: "<1 hour"
+- name: "complexity:S"
+  color: "BFD4F2"
+  description: "1–4 hours"
+- name: "complexity:M"
+  color: "FEF2C0"
+  description: "4–8 hours"
+- name: "complexity:L"
+  color: "F9D0C4"
+  description: "1–3 days"
+- name: "complexity:XL"
+  color: "E99695"
+  description: ">3 days; reshape mandatory"
+
+# ─────────────────────────────────────────────────────────────────────────
+# Agent
+# ─────────────────────────────────────────────────────────────────────────
+- name: "agent:ai"
+  color: "1D76DB"
+  description: "AI-completable (Copilot/Cursor)"
+- name: "agent:human"
+  color: "5319E7"
+  description: "Requires human operator"
+- name: "agent:ops"
+  color: "0E8A16"
+  description: "Ops/manual setup task"
+- name: "agent:hybrid"
+  color: "BFD4F2"
+  description: "Mixed AI + human"
+
+# ─────────────────────────────────────────────────────────────────────────
+# Module (matches Project V2 Module field)
+# ─────────────────────────────────────────────────────────────────────────
+- name: "module:00-codex"
+  color: "5319E7"
+  description: "Module 00 — Architecture & Vision (The Codex)"
+- name: "module:01-anchor"
+  color: "B60205"
+  description: "Module 01 — Biomechanics & Chemistry (The Anchor)"
+- name: "module:02-capsule"
+  color: "D93F0B"
+  description: "Module 02 — Hardware (The Capsule)"
+- name: "module:03-firmware"
+  color: "FBCA04"
+  description: "Module 03 — Firmware & Edge AI (The Brain)"
+- name: "module:04-server-core"
+  color: "0E8A16"
+  description: "Module 04 — Server Core (Rails Backend)"
+- name: "module:05-ledger"
+  color: "1D76DB"
+  description: "Module 05 — Web3 & Tokenomics (The Ledger)"
+- name: "module:06-matrix"
+  color: "5319E7"
+  description: "Module 06 — DevOps & Infra (The Matrix)"
+- name: "module:07-naas"
+  color: "BFD4F2"
+  description: "Module 07 — Economics & NaaS"
+- name: "module:08-academic"
+  color: "FBCA04"
+  description: "Module 08 — Academic Integration"

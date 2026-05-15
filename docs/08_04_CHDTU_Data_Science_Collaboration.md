@@ -734,7 +734,7 @@ end
 
 3. **Quarterly Sync:** Щоквартальна зустріч Архітектор + Карапетян (ЧДТУ) + Гончаров (ЧДТУ ФЕТР) + Базіло (ЧДТУ ПМКТ) + Онищенко/Супруненко (ФОТІУС) для синхронізації результатів та планування спільних публікацій.
 
-4. **Git-based Collaboration:** ЧДТУ R-скрипти → `lib/analytics/r/`, ФОТІУС Python/C → `lib/analytics/python/`, ФЕТР RF-вимірювальні дані (S11, path loss, EMC) → `lib/measurements/rf/`, ПМКТ акустичні калібрувальні дані → `lib/datasets/acoustic_training/`. Всі інтегруються через CI/CD ([`09_03`](09_03_GitHub_Projects_and_Ops_Automation)).
+4. **Git-based Collaboration:** ЧДТУ R-скрипти → `lib/analytics/r/`, ФОТІУС Python/C → `lib/analytics/python/`, ФЕТР RF-вимірювальні дані (S11, path loss, EMC) → `lib/measurements/rf/`, ПМКТ акустичні калібрувальні дані → `lib/datasets/acoustic_training/`. Всі інтегруються через CI/CD ([`00_07`](00_07_GitHub_Projects_and_IaC_Automation)).
 
 5. **Потрійна Спіраль 2.0:** Модель Осауленка (08_02 §1.7) розширюється з ЧНУ → ЧНУ + ЧДТУ як наукова вершина спіралі. Три кафедри ЧДТУ + ЧНУ ФОТІУС = ширша академічна база для грантових заявок (Horizon Europe, NFDI).
 

@@ -2,10 +2,10 @@
 
 ## SSOT — читати перед будь-якими архітектурними рішеннями
 1. GitHub Wiki: https://github.com/Alexey-Lukin/silken_net/wiki
-2. `docs/00_00_Gaia_2_0_System_Overview.md` -> `docs/09_03_GitHub_Projects_and_Ops_Automation.md`
+2. `docs/00_00_SSOT_Index.md` -> `docs/08_07_SEU_Economics_and_Legal_Integration.md` (повна послідовність пронумерованих docs)
 3. `README.md`
 
-При конфліктах між джерелами: пріоритет мають нові пронумеровані docs (`00_00` -> `09_03`), потім Wiki.
+При конфліктах між джерелами: пріоритет мають нові пронумеровані docs (`00_00` -> `08_07`), потім Wiki.
 
 ---
 

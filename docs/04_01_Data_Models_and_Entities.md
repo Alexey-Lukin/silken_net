@@ -534,7 +534,7 @@ any ──report_fault──► faulty
 
 > ⚡ **KENOSIS TITAN:** Валідації видалено з hot path. Перевірка відбувається в `TelemetryUnpackerService.valid_sensor_data?` до INSERT.
 
-> ⚠️ **CLEANUP CONSTRAINT [DOC.8]:** Будь-який cleanup-скрипт або ad-hoc DELETE на `telemetry_logs` **повинен виключати** записи з `oracle_status = 'dispatched'`. Ці записи очікують callback від Chainlink DON; видалення призведе до `RecordNotFound` у `OracleCallbacksController` → 5 марних retry → loss of mint. Канонічне виконання cleanup — `InsightGeneratorService.cleanup_old_logs!` (викликається з `InsightBatchCallbacks` на завершенні денного циклу). Не дублюйте логіку в нових воркерах — викликайте сервіс. Cross-ref: [04_02 §3 InsightGeneratorService](04_02_Business_Logic_and_Services.md#insightgeneratorservice), [05_02 PATH 1 Oracle-driven](05_02_Proof_of_Growth_Pipeline.md#усі-шляхи-до-walletlock_and_mint-guard-inventory-doc7).
+> ⚠️ **CLEANUP CONSTRAINT [DOC.8]:** Будь-який cleanup-скрипт або ad-hoc DELETE на `telemetry_logs` **повинен виключати** записи з `oracle_status = 'dispatched'`. Ці записи очікують callback від Chainlink DON; видалення призведе до `RecordNotFound` у `OracleCallbacksController` → 5 марних retry → loss of mint. Канонічне виконання cleanup — `InsightGeneratorService.cleanup_old_logs!` (викликається з `InsightBatchCallbacks` на завершенні денного циклу). Не дублюйте логіку в нових воркерах — викликайте сервіс. Cross-ref: [04_02 §3 InsightGeneratorService](04_02_Business_Logic_and_Services#insightgeneratorservice), [05_02 PATH 1 Oracle-driven](05_02_Proof_of_Growth_Pipeline#усі-шляхи-до-walletlock_and_mint-guard-inventory-doc7).
 
 > ⚡ **PARTITION PRUNING INVARIANT [S6.16]:** `telemetry_logs` — RANGE-партиціонована по `created_at` (місячні партиції). PostgreSQL застосовує partition pruning **тільки** коли `WHERE` містить literal/parameter на `created_at`. Без цього → Global Partition Scan (`O(P × log N)`) — на масштабі мільярдів рядків це секунди замість мілісекунд.
 >
@@ -1242,7 +1242,7 @@ active/draft ──cancel──► cancelled
 
 ## 📖 7b. Codex — Lore Layer (Кодекс Архетипів)
 
-Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки) + соціальний шар (коментарі, attunements). Повна специфікація: **`docs/04_05_Codex_Lore_Module.md`**. Phase 1 додає 3 моделі (Realm/Node/Citation), Phase 2 — 2 моделі (Comment/Attunement) + ActionCable broadcast. Phase 3-5 розширять цей шар (`Match`, `Discovery`, `Fraction`).
+Lore-шар Gaia 2.0 — read-only бібліотека "архетипів" (екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки) + соціальний шар (коментарі, attunements). Повна специфікація: **`docs/04_05_Codex_Lore_Module`**. Phase 1 додає 3 моделі (Realm/Node/Citation), Phase 2 — 2 моделі (Comment/Attunement) + ActionCable broadcast. Phase 3-5 розширять цей шар (`Match`, `Discovery`, `Fraction`).
 
 ### `Codex::Realm` — Шар (4 семантичні групи)
 
@@ -1513,11 +1513,11 @@ Codex (Lore — read-only):
 
 > **Принцип:** Цей документ — SSOT схеми БД. Тобто:
 > - якщо **схема випередила документ** (нова таблиця/колонка/індекс/тригер є у `db/structure.sql`, але не описана) — оновлюємо документ;
-> - якщо **документ випередив схему** (модель/таблиця документована як існуюча, але немає у `structure.sql` чи `app/models/`) — створюємо/оновлюємо запис у `docs/10_02_Action_Plan_Tracker.md` як невиконану задачу;
-> - якщо **нема ні там, ні там** — приймаємо рішення (потрібне → реєструємо в `10_02`; не потрібне → видаляємо плани з 04_01).
+> - якщо **документ випередив схему** (модель/таблиця документована як існуюча, але немає у `structure.sql` чи `app/models/`) — створюємо/оновлюємо запис у `docs/00_08_Action_Plan_Tracker` як невиконану задачу;
+> - якщо **нема ні там, ні там** — приймаємо рішення (потрібне → реєструємо в `00_08`; не потрібне → видаляємо плани з 04_01).
 >
 > Дзеркало `04_02` §13b — спільна методологія, але різний скоуп: тут — БД-шар (таблиці, колонки, індекси, тригери, партиції); в 04_02 — service-шар (сервіси, воркери, ENV).
-> Періодичний аудит — кожен Cool-down цикл Shape Up (`09_01` §5.5).
+> Періодичний аудит — кожен Cool-down цикл Shape Up (`00_05` §5.5).
 
 | Дата | Зона | Тип drift | Що зроблено | Cross-ref |
 |------|------|-----------|-------------|-----------|
@@ -1528,7 +1528,7 @@ Codex (Lore — read-only):
 ### Як додавати нові записи
 
 1. Виявили divergence (нова таблиця у міграціях, нова колонка, новий індекс, новий тригер, нова партиціонована таблиця) — додайте рядок у таблицю з датою.
-2. Якщо drift вимагає коду (наприклад, треба додати колонку у модель, бо схема її має, а AR не знає) — заведіть запис у `docs/10_02` з UID (`E.NN` / `S6.NN`) і посиланням сюди.
+2. Якщо drift вимагає коду (наприклад, треба додати колонку у модель, бо схема її має, а AR не знає) — заведіть запис у `docs/00_08` з UID (`E.NN` / `S6.NN`) і посиланням сюди.
 3. Drift register **не замінює** оновлення відповідної секції моделі — обидва місця мають бути синхронізовані.
 
 > **Anti-pattern:** "Додам колонку у міграцію, а до 04_01 запишу потім". `structure.sql` після `bin/rails db:migrate` — це authoritative reality; будь-яке `bin/rails db:schema:dump` яке не супроводжується оновленням `04_01` (модель + індекс) створює silent drift, який ловиться лише при наступному аудиті.

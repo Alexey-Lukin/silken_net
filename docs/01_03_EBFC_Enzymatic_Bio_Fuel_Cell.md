@@ -156,7 +156,7 @@
 | **Мікропориста тейп-ізоляція + модифікований Nafion (міцелярний)** | Самозбірка міцел навколо ферменту → бар'єр від агресивних молекул соку без блокування H⁺ | **> 1 рік (літературні дані для лабораторного EBFC)** | **Bridge між Gen 1.0 і Gen 2.0** |
 | ZIF-інкапсуляція (Gen 2.0) | Кристалічний каркас навколо ферменту | 20–25 років (ціль) | R&D |
 
-> Цей підхід узгоджено зі стратегією HW.5 у [`10_02`](10_02_Action_Plan_Tracker) (трирівневий roadmap: baseline → Chitosan/Nafion → micellar Nafion bridge → ZIF). Не замінює ZIF як кінцеву мету, а дає проміжний результат для seed-демонстрації.
+> Цей підхід узгоджено зі стратегією HW.5 у [`00_08`](00_08_Action_Plan_Tracker) (трирівневий roadmap: baseline → Chitosan/Nafion → micellar Nafion bridge → ZIF). Не замінює ZIF як кінцеву мету, а дає проміжний результат для seed-демонстрації.
 
 ---
 
@@ -262,7 +262,7 @@ Combi-CLEA вирішує гостру проблему H₂O₂ токсичн�
 
 **Cross-references:**
 - Електрична інтеграція (об'єднання з EBFC через BQ25570 multi-input): [`02_03_BQ25570_MPPT_Nano_Power`](02_03_BQ25570_MPPT_Nano_Power)
-- Тепловий бюджет та сезонність: [`02_05_Queen_Hardware_Architecture`](02_05_Queen_Hardware_Architecture) (Phase 3 winter deficit — HW.14 у `10_02`)
+- Тепловий бюджет та сезонність: [`02_05_Queen_Hardware_and_Starlink`](02_05_Queen_Hardware_and_Starlink) (Phase 3 winter deficit — HW.14 у `00_08`)
 
 **Статус:** Future R&D. TEG не входить у поточний BOM Soldier-вузла (TRL 4–5). Розглядається як опція для Phase 2.5+ (TRL 7+) для усунення зимового енергодефіциту без збільшення суперконденсатора.
 

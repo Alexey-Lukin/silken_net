@@ -58,7 +58,7 @@ class HardwareKeyService
       raise SecurityError,
             "PROVISIONING_MASTER_KEY ENV is required. Backend cannot derive " \
             "device AES key without it (would silently diverge from firmware " \
-            "HKDF). See SEC.11 in docs/10_02_Action_Plan_Tracker.md."
+            "HKDF). See SEC.11 in docs/00_08_Action_Plan_Tracker.md."
     end
 
     derived = OpenSSL::KDF.hkdf(

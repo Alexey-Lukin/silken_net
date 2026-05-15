@@ -30,7 +30,7 @@ jobs:
             echo "::error::PROVISIONING_MASTER_KEY secret is missing." \
                  "Production deploy without this ENV would force HardwareKeyService" \
                  "into deterministic-seed fallback (lab-only mode), enabling trivial" \
-                 "AES key extraction. Refusing to deploy. See SEC.11 in docs/10_02."
+                 "AES key extraction. Refusing to deploy. See SEC.11 in docs/00_08."
             exit 1
           fi
           KEY_LEN=${#PROVISIONING_MASTER_KEY}

@@ -40,7 +40,7 @@ class OtaHmacKeyService
       raise SecurityError,
             "PROVISIONING_MASTER_KEY ENV is required. Backend cannot derive " \
             "OTA HMAC key without it (would silently diverge from firmware " \
-            "K_ota deriviation). See SEC.11 in docs/10_02_Action_Plan_Tracker.md."
+            "K_ota deriviation). See SEC.11 in docs/00_08_Action_Plan_Tracker.md."
     end
 
     derived = OpenSSL::KDF.hkdf(

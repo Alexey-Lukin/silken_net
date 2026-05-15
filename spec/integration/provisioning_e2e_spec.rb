@@ -33,7 +33,7 @@ require "rails_helper"
 #     effects, regardless of HKDF/TRL4 mode.
 #   * Duplicate `hardware_uid` → 409 Conflict with no side effects.
 #
-# Cross-refs: docs/10_02 §FW.1, docs/03_05 §3.4а, docs/04_03 §POST register.
+# Cross-refs: docs/00_08 §FW.1, docs/03_05 §3.4а, docs/04_03 §POST register.
 # =============================================================================
 RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
   # Negated matcher used in compound expectations (`change ... .and not_change ...`)

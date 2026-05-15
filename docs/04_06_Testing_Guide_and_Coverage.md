@@ -1,28 +1,308 @@
-# 10_03: Test Coverage Matrix & Gap Analysis
+# 04_06: Testing Guide & Coverage Matrix
 
 ## 🎯 Мета
 
-Зафіксувати повну карту покриття тестами SilkenNet Gaia 2.0 — усіх шарів (RSpec, Firmware C, Foundry Solidity). Документ оновлюється при додаванні нових сервісів, воркерів або смарт-контрактів і є базою для аудиту якості.
+Об'єднати у єдиному документі (а) канонічний набір конвенцій для RSpec тестів Phlex-компонентів SilkenNet та (б) повну карту покриття тестами всіх шарів (RSpec, Firmware C, Foundry Solidity). Документ оновлюється при додаванні нових сервісів, воркерів, компонентів або смарт-контрактів і є базою для аудиту якості.
 
 ---
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8
+- **Поточний TRL:** TRL 8 — 30 best practices задокументовані та застосовуються у всіх нових спеках; покриття тестами для backend / firmware / contracts на operationally-ready рівні.
 - **Охоплені фреймворки:**
   - RSpec (Ruby / Rails)
   - Firmware C (host-based, Make)
   - Foundry (Solidity)
 - **Пов'язані модулі:**
-  - View Component Testing Guide → [`10_01_View_Component_Testing_Guide`](10_01_View_Component_Testing_Guide)
-  - Action Plan Tracker → [`10_02_Action_Plan_Tracker`](10_02_Action_Plan_Tracker)
+  - Phlex UI та Tailwind → [`04_04_Phlex_UI_and_Tailwind`](04_04_Phlex_UI_and_Tailwind)
   - Бізнес-логіка та сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
+  - Action Plan Tracker → [`00_08_Action_Plan_Tracker`](00_08_Action_Plan_Tracker)
 
 ---
 
-## 🗺️ 1. RSpec Coverage Matrix
+# Частина A — View Component Testing Guide (30 Best Practices)
 
-### 1.1 Models
+Всі нові та існуючі спеки ПОВИННІ слідувати цим правилам.
+
+## A.1 Структура та конвенції (Convention over Configuration)
+
+### 1. Один файл — один компонент
+Шлях спеки дзеркалить шлях компонента:
+```
+app/views/components/trees/show.rb  →  spec/views/components/trees/show_spec.rb
+app/views/shared/ui/stat_card.rb    →  spec/views/shared/ui/stat_card_spec.rb
+app/views/layouts/dashboard_layout.rb → spec/views/layouts/dashboard_layout_spec.rb
+```
+
+### 2. Використовуй `PhlexComponentHelper` (DRY rendering)
+Модуль `spec/support/phlex_component_helper.rb` автоматично підключається до
+всіх файлів у `spec/views/`. Він надає:
+- `render_component(**kwargs)` — автоматично обирає `.call` чи `ApplicationController.renderer.render`
+- `component_class` — синонім `described_class`
+- `mock_pagy(count:, page:, last:)` — стандартний Pagy double (uses `previous:` not `prev:` — Pagy 43+)
+- `mock_model(klass, id:, **attrs)` — OpenStruct з model_name/to_key/to_param
+
+### 3. Рендеринг: renderer vs .call
+- **`.call`** — для компонентів БЕЗ route helpers, turbo tags, form builders
+- **`ApplicationController.renderer.render`** — для компонентів з `_path`, `turbo_frame_tag`, `form_with`, `button_to`
+- `render_component` з хелпера обирає автоматично за аналізом вихідного файлу
+- Якщо перевизначаєш `render_component` у спеці — ЗАВЖДИ пиши коментар чому
+
+### 4. Не перевизначай `render_component` без потреби
+Хелпер працює для 95% випадків. Перевизначай тільки коли:
+- Компонент приймає блок (DataTable)
+- Потрібна кастомна логіка рендерингу (layout wrapping)
+- Layout-компоненти (`DashboardLayout`, `AuthLayout`) потребують `content:` параметр
+- Сигнатура `initialize` конфліктує з `**kwargs`
+
+### 5. `let(:component_class)` — видалити (deprecated)
+Хелпер надає метод `component_class`. Якщо спека ще має
+`let(:component_class) { described_class }` — це не помилка, але зайвий рядок.
+
+---
+
+## A.2 Моки та тестові дані
+
+### 6. OpenStruct для моків, НЕ FactoryBot (для view спек)
+View спеки тестують HTML-розмітку, не ORM. `OpenStruct` швидший за `build()`.
+Виняток: `Maintenance::Form` потребує валідну AR-модель для `form_with`.
+
+### 7. `mock_model(klass, id:, **attrs)` для моделей з route helpers
+Якщо компонент використовує `api_v1_tree_path(tree)` або `dom_id(tx)` —
+mock ПОВИНЕН мати `model_name`, `to_key`, `to_param`. Використовуй `mock_model`.
+
+### 8. Кожен mock-метод — іменований за domain entity
+```ruby
+# ✅ Добре
+def mock_tree(...) end
+def mock_gateway(...) end
+def mock_wallet(...) end
+
+# ❌ Погано
+def make_data(...) end
+def build_mock(...) end
+```
+
+### 9. Параметри mock-методів мають розумні дефолти
+```ruby
+def mock_tree(did: "SNET-00000042", status: "active", ...)
+```
+Кожен параметр — з дефолтом. Тест перевизначає тільки те, що тестує.
+
+### 10. `define_singleton_method` для предикатів
+```ruby
+t = OpenStruct.new(status: status)
+t.define_singleton_method(:active?) { status == "active" }
+```
+OpenStruct не генерує `?`-методи автоматично.
+
+---
+
+## A.3 Організація describe/context/it
+
+### 11. Стандартна ієрархія describe-блоків
+```ruby
+RSpec.describe Trees::Show do
+  # Mock helpers
+  # let/render
+
+  describe "header section" do ... end
+  describe "status indicators" do ... end
+  describe "data table" do ... end
+  describe "empty state" do ... end
+  describe "edge cases" do ... end
+  describe "accessibility" do ... end
+  describe "design system compliance" do ... end
+end
+```
+
+### 12. `describe "rendering"` — для базової перевірки (чи рендериться взагалі)
+Перший describe-блок. Мінімум 2-3 it-блоки: ключовий заголовок, структурний елемент, анімація.
+
+### 13. `describe "edge cases"` — nil handling, empty collections, boundary values
+```ruby
+describe "edge cases" do
+  it "handles nil gateway gracefully" do ...
+  it "shows empty state when logs are empty" do ...
+end
+```
+
+### 14. `describe "accessibility"` — role, aria, focus-visible
+```ruby
+describe "accessibility" do
+  it "renders table with role=table" do ...
+  it "renders th with scope=col" do ...
+  it "has focus-visible ring on interactive elements" do ...
+end
+```
+
+### 15. `describe "design system compliance"` — gaia tokens, custom text scale
+```ruby
+describe "design system compliance" do
+  it "uses gaia design tokens, not raw Tailwind colors" do
+    expect(html).not_to include("bg-white")
+    expect(html).not_to include("text-gray-900")
+  end
+
+  it "uses custom text scale (text-tiny/mini/micro/compact)" do
+    expect(html).to include("text-tiny")
+  end
+end
+```
+
+---
+
+## A.4 Assertions
+
+### 16. `include` для HTML content assertions
+```ruby
+expect(html).to include("SNET-00000042")
+```
+Не парсь HTML через Nokogiri — це view spec, не integration test.
+
+### 17. НЕ тестуй повний HTML-рядок
+```ruby
+# ❌ Крихкий
+expect(html).to include('<div class="p-6 border border-emerald-900 bg-black">')
+
+# ✅ Стійкий
+expect(html).to include("border-emerald-900")
+expect(html).to include("bg-black")
+```
+
+### 18. Тестуй CSS-класи окремо, не разом
+```ruby
+# ✅ Кожен клас — окрема перевірка
+expect(html).to include("text-emerald-500")
+expect(html).to include("animate-pulse")
+```
+
+### 19. Тестуй наявність gaia-токенів, не hardcoded значень
+```ruby
+# ✅
+expect(html).to include("text-gaia-primary")
+expect(html).to include("bg-gaia-surface")
+expect(html).to include("border-gaia-border")
+
+# ❌ (дозволено тільки в domain-specific page components)
+expect(html).to include("text-emerald-500")
+```
+Для shared UI компонентів — ТІЛЬКИ gaia-токени.
+Для page components (Trees::Show, etc.) — допускається raw Tailwind.
+
+### 20. Перевіряй data-атрибути для Stimulus/Turbo
+```ruby
+expect(html).to include('data-controller="clipboard"')
+expect(html).to include("turbo-frame")
+```
+
+---
+
+## A.5 Turbo & ActionCable
+
+### 21. Turbo Frame: перевіряй ID
+```ruby
+describe "turbo frame" do
+  it "renders turbo frame with correct id" do
+    expect(html).to include("wallet_metadata_frame_1")
+  end
+end
+```
+
+### 22. Turbo Stream: НЕ перевіряй signed stream name
+Turbo підписує stream names (base64). Перевіряй наявність `<turbo-cable-stream-source`,
+але НЕ конкретний signed token.
+```ruby
+expect(html).to include("turbo-cable-stream-source")
+```
+
+---
+
+## A.6 Pagination
+
+### 23. `mock_pagy(last: 3)` для тестування пагінації
+`last: 1` — пагінація не рендериться (Pagination returns early).
+Завжди використовуй `last: 3` або вище.
+
+### 24. Тестуй і наявність, і відсутність пагінації
+```ruby
+describe "pagination" do
+  it "renders pagination when pagy.last > 1" do ...
+  it "does not render pagination on single page" do ...
+end
+```
+
+---
+
+## A.7 Performance & DRY
+
+### 25. Один `let(:html)` на describe-блок
+Не рендери компонент у кожному `it`. Шаріть через `let`.
+```ruby
+describe "header" do
+  let(:html) { render_component(tree: mock_tree) }
+
+  it "displays the DID" do ...
+  it "shows status badge" do ...
+end
+```
+
+### 26. Не дублюй mock helpers між спеками одного namespace
+Якщо `Trees::Show` і `Trees::Index` шарять `mock_tree` — DRY це не потрібно.
+Кожна спека автономна. Дублювання моків між файлами — ОК.
+DRY застосовується ВСЕРЕДИНІ одного файлу.
+
+### 27. Не тестуй дочірні компоненти через батьківські
+```ruby
+# ❌ Trees::Index spec не повинен тестувати деталі Pagination
+# ✅ Trees::Index spec перевіряє "pagination renders", деталі — в Pagination spec
+```
+
+---
+
+## A.8 Документація та стиль
+
+### 28. `# frozen_string_literal: true` + `require "rails_helper"` — завжди
+Перші два рядки кожного файлу. Без виключень.
+
+### 29. Опис `it` — англійською, декларативно
+```ruby
+# ✅
+it "renders the gateway UID" do
+it "displays BATCH_RECEIVED status" do
+it "shows empty state when no logs" do
+
+# ❌
+it "should render gateway UID" do
+it "test that status works" do
+```
+
+### 30. Мінімум 8 examples на компонент
+Менше — означає недостатнє покриття. Виняток: тривіальні wrapper-компоненти
+(BalanceFrame, OtaProgressBar) можуть мати 5-7.
+
+---
+
+## A.9 Checklist для code review
+
+- [ ] Файл дзеркалить шлях компонента (BP #1)
+- [ ] Використовує `render_component` з хелпера або обґрунтовано перевизначає (BP #2-4)
+- [ ] Моки через OpenStruct з розумними дефолтами (BP #6-10)
+- [ ] Є describe-блоки: rendering, edge cases, accessibility, design system (BP #11-15)
+- [ ] Assertions через `include`, не повні HTML-рядки (BP #16-18)
+- [ ] Gaia токени в shared components (BP #19)
+- [ ] Turbo frame/stream перевірено (BP #21-22)
+- [ ] Пагінація з `mock_pagy(last: 3)` (BP #23-24)
+- [ ] `let(:html)` шариться в describe-блоці (BP #25)
+- [ ] Мінімум 8 examples (BP #30)
+
+---
+
+# Частина B — Test Coverage Matrix & Gap Analysis
+
+## B.1 RSpec Coverage Matrix
+
+### B.1.1 Models
 
 | Модель | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
@@ -48,7 +328,7 @@
 | **Codex::Discovery** [Codex Phase 5] | ✅ 6 examples | 🟢 **Нове** | **valid factory, UNIQUE `(user_id, codex_node_id)` validation message, `trigger_type` enum prefix `triggered_by_*`, polymorphic `trigger_ref` (loose, no FK), `before_validation :default_unlocked_at on: :create`, scopes `for_user`/`recent`, counter_cache increments `codex_nodes.discovery_count`** |
 | **Codex::DiscoveryRule** [Codex Phase 5] | ✅ 6 examples | 🟢 **Нове** | **valid factory, presence + `≥ 1` threshold validation, `params_must_be_hash` rejects non-Hash, scopes `active_only`/`for_condition`, `cached_active_by_condition` lazy `Rails.cache.fetch` returns rules grouped by condition_type (active-only), `after_commit :bust_cache` invalidates the cache** |
 
-### 1.2 Services
+### B.1.2 Services
 
 | Сервіс | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
@@ -80,7 +360,7 @@
 | **Codex::DiscoveryEngine** [Codex Phase 5] | ✅ 6 examples | 🟢 **Нове** | **no-rules baseline → `[]`, `match_count` adapter happy + below-threshold + `realm_slug` filter, idempotent skip when Discovery already exists, unknown `condition_type` → no-op (no raise), guard rail: unsaved user → `[]`** |
 | **Codex::DiscoveryRuleImportService** [Codex Phase 5] | ✅ 4 examples | 🟢 **Нове** | **missing YAML returns zeros, idempotent UPSERT-by-name (re-run flips created → updated counter, no row count change), unknown `node_slug` skipped + warn-logged, fallback to `User.oracle_executioner` коли `created_by_user_email` не знайдений** |
 
-### 1.3 Workers
+### B.1.3 Workers
 
 | Воркер | Спека | Покриття | Примітки |
 |--------|-------|----------|----------|
@@ -95,7 +375,7 @@
 | **Codex::EloRecomputeWorker** [Codex Phase 4] | ✅ 4 examples | 🟢 **Нове** | **sidekiq_options queue=`low` retry=3 (ADR-CDX-4 — Battle never blocks Proof-of-Growth), atomic `UPDATE … SET col = col + ?` для обох nodes у транзакції (no SELECT-then-UPDATE race), sequential calls accumulate коректно, unknown id no-op (update_all returns 0)** |
 | **Codex::DiscoveryProbeWorker** [Codex Phase 5] | ✅ 5 examples | 🟢 **Нове** | **sidekiq_options queue=`default` retry=3 (ADR-CDX-4 — Discovery cosmetic), no-op коли Engine returns `[]` (Discovery.count unchanged), happy path → `find_or_create_by` Discovery + ActionCable broadcast on `codex:discoveries:user:<id>` з payload `{slug, title_en, title_uk, archetype_key, trigger_type, unlocked_at}` + payload polymorphic ref persisted, race-safe idempotency через `previously_new_record?` (no double-broadcast при concurrent perform), unknown user_id swallowed without raise** |
 
-### 1.4 Controllers
+### B.1.4 Controllers
 
 Усі API v1 контролерів мають відповідні request spec файли. Покриття: 🟢 Повне.
 
@@ -123,7 +403,7 @@
 - `Api::V1::Codex::DiscoveriesController#me` (4 examples) — 401 guard, JSON sorted by `unlocked_at DESC` (own-only via Pundit Scope), HTML render з `codex_discoveries_collection` DOM id, empty-state copy "Nothing unlocked yet"
 - `Api::V1::Codex::Admin::DiscoveryRulesController` (8 examples) — index 403 для non-admin / 200 для admin, create 403 / 201 + JSONB `params` round-trip + `created_by_user_id` set / 422 на invalid `threshold_value`, update 200 + cache bust verified (engine returns no rules після `active=false`), destroy 204
 
-### 1.5 Policies
+### B.1.5 Policies
 
 Усі Pundit policies покриті. Покриття: 🟢 Повне.
 
@@ -146,9 +426,9 @@
 - `Codex::DiscoveryPolicy` (4) — index? auth-only, show? own-only, create?/manual? admin+ only, Scope returns own collection / none для anonymous
 - `Codex::DiscoveryRulePolicy` (16, parameterised) — usual / admin / super_admin × index/show/create/update/destroy → 403 для non-admin, 200 для admin+, Scope returns all для admin / none для non-admin / none для anonymous
 
-### 1.6 Views
+### B.1.6 Views
 
-Усі Phlex-компоненти покриті згідно з `docs/10_01_View_Component_Testing_Guide.md`.
+Усі Phlex-компоненти покриті згідно з Частиною A цього документа.
 
 **Codex Atlas page-level components (нове, 33 examples):**
 - `Codex::RealmTabs` (11) — `aria-label="Codex realm filter"` `<nav>` shell, `All`-tab count = sum(nodes_counts.values), per-realm tabs link to `api_v1_codex_nodes_path(realm: slug)`, active-state `aria-current="page"` + `border-gaia-primary`/`text-gaia-primary` token swap, default counts to `0` для realm'ів відсутніх у `nodes_counts`, empty-realm collection renders just `All`-tab, design system compliance (no `bg-white`/`text-gray-*`), `focus-visible:ring-2 focus-visible:ring-gaia-primary` on every anchor (a11y)
@@ -187,7 +467,7 @@
 - `Codex::FractionChangeService` (+3) — Phase 6 fraction_choice probe on initial pick (previous_node_id: nil), carries previous_node_id on re-pick, swallows Redis::CannotConnectError
 - `Api::V1::Codex::Attunements` (+1) — Phase 6 attunement_streak probe enqueued alongside AttunementBroadcastWorker
 
-### 1.7 Integration Tests
+### B.1.7 Integration Tests
 
 | Тест | Покриття | Критичність |
 |------|----------|------------|
@@ -205,9 +485,9 @@
 
 ---
 
-## 🔧 2. Firmware Test Coverage
+## B.2 Firmware Test Coverage
 
-### 2.1 Soldier (test_soldier_logic.c)
+### B.2.1 Soldier (test_soldier_logic.c)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -233,13 +513,13 @@
 | **[FW.20-S2] Authoritativeness Flag (Soldier RX)** | **3** | 🟢 **Нове (2026-05-03)** — beacon byte 9 bit 7: authoritative beacon sets flag, relay beacon clears, legacy byte9=0 clears |
 | **[FW.20-S2] Drift-Monitor + Panic Sync Request** | **9** | 🟢 **Нове (2026-05-03)** — `Soldier_Should_Request_Time_Sync` cold-boot grace silence (10 хв), cold-boot post-grace request, warm recently-synced silence (1 год), warm past-threshold trigger (>12 год), cooldown suppression + post-cooldown release (1 год); `Soldier_Seconds_Since_Last_Sync` zero-when-never-synced + warm-computed; `Build_Time_Sync_Request_Payload` layout (0x56 marker + DID BE + secs BE + PANIC_TTL + magic 'S' + PAD zeroed); marker disambiguation від OTA_REQ (0x55/'R') |
 | **[FW.20-S2] Mesh-Relay Per-Hop Drift Compensation** | **13** | 🟢 **Нове (2026-05-03)** — `Soldier_Try_Relay_Time_Beacon` freeze-contract: happy path drift +5 sec; zero-hold ts unchanged; TDMA-резерв (bytes 5..8) + padding (11..15) pass-through; 6 reason'ів дропу через `BeaconRelayResult` enum (NOT_PROVISIONER, BAD_FRAME×2 marker+magic, NULL_TS, NOT_AUTHORITATIVE anti-storm, TTL_EXHAUSTED, HOP_TOO_LONG); boundary hold == 3600 sec passes; HAL_GetTick wrap-overflow safety (modular arithmetic); two-hop chain (relayed beacon's auth=0 → reject повторного relay'у — критичний anti-storm інваріант) |
-| **[FW.20-S2 #5] Gossip-Piggyback (freeze-contract)** | **7** | 🟢 **Нове (2026-05-03)** — `Soldier_Pack_Gossip_Ts_Byte`: zero ts→0, low-byte extraction для `1714000000` (0x80) і `0xDEADBEEF` (0xEF); `Soldier_Try_Apply_Gossip_Ts`: cold-boot returns 0, within-window refines (drift -72 sec → bumps to neighbour's ts), drift cap (>127 sec → returns local unchanged), prev-window selection при clock-jump (256 sec ahead, beyond cap → no change), next-window selection при near-boundary local (LSB=0x7A → gossip 0x05 → +139 sec wraps to candidate@-117 sec wins as closest), drift -60 sec corrects to +60. Активація потребує hot-path вшивання у Phase 2 + RX-обробник. SSOT: [`03_02 §5а`](03_02_Queen_Gateway_Firmware.md). |
+| **[FW.20-S2 #5] Gossip-Piggyback (freeze-contract)** | **7** | 🟢 **Нове (2026-05-03)** — `Soldier_Pack_Gossip_Ts_Byte`: zero ts→0, low-byte extraction для `1714000000` (0x80) і `0xDEADBEEF` (0xEF); `Soldier_Try_Apply_Gossip_Ts`: cold-boot returns 0, within-window refines (drift -72 sec → bumps to neighbour's ts), drift cap (>127 sec → returns local unchanged), prev-window selection при clock-jump (256 sec ahead, beyond cap → no change), next-window selection при near-boundary local (LSB=0x7A → gossip 0x05 → +139 sec wraps to candidate@-117 sec wins as closest), drift -60 sec corrects to +60. Активація потребує hot-path вшивання у Phase 2 + RX-обробник. SSOT: [`03_02 §5а`](03_02_Queen_Gateway_Firmware). |
 | **[FW.27 follow-up] OTA edge cases (anti-tamper + STOP2 cross-cycle)** | **4** | 🟢 **Нове (2026-05-03)** — duplicate з ІНШИМ payload не перезаписує оригінал (anti-tamper guard `!ota_chunk_received[chunk_idx]`); STOP2 simulation з out-of-order chunks (0/2/1 + offset integrity); duplicate after sleep still rejected (counter не подвоюється); total_chunks=0 malformed rejected gracefully (defence-in-depth для CRC32) |
 | **[FW.27 follow-up] HMAC trailer cross-cycle persistence** | **2** | 🟢 **Нове (2026-05-03)** — bitmask survives simulated STOP2 between segments (1→3→2 OR-aggregates to 0x07); duplicate same-segment idempotent (counter stays bit 0, bytes intact) |
-| **[FW.10 follow-up] TX deferral edge cases** | **3** | 🟢 **Нове (2026-05-03)** — extreme cold (-40°C) + battery-backed vcap (5500 mV) → NOT defer; warm (-5°C) + low vcap (1000 mV) → NOT defer (threshold -15°C); exact boundary @ -15°C з 0 mV → NOT defer (`<` strict, freeze-contract). SSOT: [`03_01 §1.8а`](03_01_Firmware_Lifecycle_and_DMA.md) |
+| **[FW.10 follow-up] TX deferral edge cases** | **3** | 🟢 **Нове (2026-05-03)** — extreme cold (-40°C) + battery-backed vcap (5500 mV) → NOT defer; warm (-5°C) + low vcap (1000 mV) → NOT defer (threshold -15°C); exact boundary @ -15°C з 0 mV → NOT defer (`<` strict, freeze-contract). SSOT: [`03_01 §1.8а`](03_01_Firmware_Lifecycle_and_DMA) |
 | **[FW.29] Follow-up boundary (StatusByte + panic/saturation)** | **2** | 🟢 **Нове (2026-05-03)** — Pack_BioContract(3,63)=0xFF: normal payload masks bit 7 → 0x7F, panic payload sets exact PANIC_FLAG_BIT (0x80) без residual gp; FW.22 saturation @ 255 в acoustic_events + панічна плоть byte 7 = 0xFF marker — два незалежні поля без перетину |
 
-### 2.2 Queen (test_queen_logic.c)
+### B.2.2 Queen (test_queen_logic.c)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -258,7 +538,7 @@
 | **[FW.20-S2] Authoritativeness Flag (Queen TX)** | **2** | 🟢 **Нове (2026-05-03)** — `Build_Time_Beacon_Plaintext` byte 9 = `BEACON_BYTE9_AUTHORITATIVE` (0x81 = auth bit \| TTL=1); regression-точка на exact byte value |
 | **[E.8] CIFO SNR Tiebreaker** | **7** | 🟢 **Нове (2026-05-03)** — `LoRaRxSlot.snr` + `EdgeCache.snr` plumbing + tiebreaker logic у `Process_And_Cache_Data` коли два non-critical записи мають однаковий RSSI: persisted у cache, dedup updates SNR, tiebreaker triggers on equal RSSI, doesn't override worse RSSI (RSSI primary, SNR tiebreaker), respects critical priority (status≠0 captain rule undisturbed), fallback path tiebreaker (all-critical scenario), ring carries SNR ISR→consumer end-to-end. 128 → 135 queen tests. SX1262 SNR більше не `(void)snr` |
 
-### 2.3 Bio-Contract (test_bio_contract.c)
+### B.2.3 Bio-Contract (test_bio_contract.c)
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -271,7 +551,7 @@
 | Boundary Conditions | 5 | 🟢 Повне |
 | **[FW.5] β-Perturbation** | **4** | 🟢 **Нове** — `test_beta_nominal_no_perturbation`, `test_beta_fast_charge_increases_beta`, `test_beta_high_vcap_increases_beta`, `test_beta_clamp_upper_limit` |
 
-### 2.4 Encryption (test_encryption.c)
+### B.2.4 Encryption (test_encryption.c)
 
 | Область | Тести | Покриття | ⚠️ |
 |---------|-------|----------|-----|
@@ -282,7 +562,7 @@
 | Encrypt/Decrypt Verify | 3 | 🟢 | Mock HAL |
 | **[FW.1] Flash Key Integration** | **3** | 🟢 **Нове** | `Load_AES_Key()` → CRYP init integration, key-zero rejection, magic validation |
 
-### 2.6 Seed Derivation Host-Parity (test_seed_derivation.c) [SEC.11] 🆕
+### B.2.5 Seed Derivation Host-Parity (test_seed_derivation.c) [SEC.11] 🆕
 
 | Область | Тести | Покриття |
 |---------|-------|----------|
@@ -294,7 +574,7 @@
 | Mixed-seed shape (різні `K_seed` → різні координати) | 1 | 🟢 Distinct seeds → distinct trajectories |
 | Initial state shape для відомого `(K_seed, epoch_day)` (mixed seed) | 3 | 🟢 Backend-firmware parity vector |
 
-### 2.5 TinyML Pipeline (test_tinyml_pipeline.c)
+### B.2.6 TinyML Pipeline (test_tinyml_pipeline.c)
 
 | Область | Тести | Покриття | ⚠️ |
 |---------|-------|----------|-----|
@@ -313,7 +593,7 @@
 
 ---
 
-## ⛓️ 3. Solidity Test Coverage (Foundry)
+## B.3 Solidity Test Coverage (Foundry)
 
 | Контракт | Тестів | Покриття | Примітки |
 |----------|--------|----------|----------|
@@ -326,9 +606,9 @@
 
 ---
 
-## 🔴 4. Відомі обмеження та відкриті ризики
+## B.4 Відомі обмеження та відкриті ризики
 
-### 4.1 Firmware
+### B.4.1 Firmware
 
 | Ризик | Серйозність | Опис |
 |-------|------------|------|
@@ -337,14 +617,14 @@
 | AT Command UART | 🟡 MEDIUM | SIM7070G modem I/O не тестується повністю (апаратна залежність). Константи retry та таймаутів верифіковані `test_coap_retry_constants` (FW.9) |
 | DMA Audio Timing | 🟠 HIGH | 512-sample DMA transfer timing не верифікується на host |
 
-### 4.2 Solidity
+### B.4.2 Solidity
 
 | Ризик | Серйозність | Опис |
 |-------|------------|------|
 | ERC20Permit | 🟡 MEDIUM | Permit/signature tests є базовими; cross-chain replay не тестується |
 | Governor Integration | 🟡 MEDIUM | Governor + SCC mint interaction тестується окремо |
 
-### 4.3 Backend
+### B.4.3 Backend
 
 | Ризик | Серйозність | Опис |
 |-------|------------|------|
@@ -353,11 +633,11 @@
 
 ---
 
-## 🎯 6. Рекомендації для нових фіч
+## B.5 Рекомендації для нових фіч
 
 1. **Кожен новий Service/Worker** ПОВИНЕН мати spec файл з ratio ≥ 1.5x.
 2. **AASM state machines** ПОВИННІ тестувати всі transitions + invalid transitions.
 3. **Web3 сервіси** ПОВИННІ тестувати: stub mode, strict mode, missing credentials, RPC errors.
-4. **Phlex компоненти** — слідувати `docs/10_01_View_Component_Testing_Guide.md` (min 8 examples).
+4. **Phlex компоненти** — слідувати Частині A цього документа (min 8 examples).
 5. **Firmware** — кожна нова функція потребує host-based test у `firmware/test/`.
 6. **Solidity** — naming: `test_` (happy), `testRevert_` (error), `testFuzz_` (fuzz).

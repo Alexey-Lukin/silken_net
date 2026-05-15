@@ -1,18 +1,19 @@
-# 10_02: Action Plan Tracker (Залишок робіт)
+# 00_08: Action Plan Tracker (Залишок робіт)
 
 ## 🎯 Мета
 
-Зберігати ТІЛЬКИ незавершені задачі з пріоритетами, виконавцями та статусами. Виконана робота задокументована у відповідних docs (`00_00` → `10_01`). Документ є живим операційним інструментом — оновлюється при кожному завершенні задачі.
+Зберігати ТІЛЬКИ незавершені задачі з пріоритетами, виконавцями та статусами. Виконана робота задокументована у відповідних docs (`00_00` → `08_07`). Документ є живим операційним інструментом — оновлюється при кожному завершенні задачі.
 
 ---
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — (TRL-Lock: загальний TRL обмежений найнижчим модулем). Операційний трекер активний.
+- **Поточний TRL:** TRL 4 (System) / per-domain decoupled через HIL Simulators ([`00_06`](00_06_Strategic_Roadmap_and_HIL_Simulators)). Операційний трекер активний.
 - **Пов'язані модулі:**
   - SSOT індекс → [`00_00_SSOT_Index`](00_00_SSOT_Index)
-  - Матриця покриття тестами → [`10_03_Test_Coverage_Matrix`](10_03_Test_Coverage_Matrix)
+  - Матриця покриття тестами → [`04_06_Testing_Guide_and_Coverage`](04_06_Testing_Guide_and_Coverage)
   - Деплой та інфраструктура → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
+  - Resilience & failover policy → [`00_03_Resilience_and_Failover_Policy`](00_03_Resilience_and_Failover_Policy)
 
 ---
 
@@ -67,7 +68,7 @@
 #### S1.1 — GitHub Secrets заповнення
 - **P0** | `06_01` | **Складність: XS** | **🔧 Операційна** — ручне заповнення в GitHub UI, без коду
 - **Опис:** 12 критичних секретів не встановлені: `GCP_SA_KEY`, `DATABASE_PASSWORD`, `DATABASE_URL`, `SSH_PRIVATE_KEY`, тощо. Блокує весь CI/CD pipeline.
-- **Статус:** ✅ Checklist створено у `docs/06_04_Secrets_Checklist.md` — повна інвентаризація 4 місць зберігання (GitHub Secrets, `.kamal/secrets`, Akash SDL, `terraform.tfvars`)
+- **Статус:** ✅ Checklist створено у `docs/06_04_Secrets_Checklist` — повна інвентаризація 4 місць зберігання (GitHub Secrets, `.kamal/secrets`, Akash SDL, `terraform.tfvars`)
 - [ ] 👤 Заповнити GitHub repository secrets
 - [ ] 👤 Верифікувати CI pipeline проходить
 
@@ -198,7 +199,7 @@
 - **Опис:** Puma 8.0+ за замовчуванням bind'иться на `tcp://[::]:3000` (dual-stack) якщо є non-loopback IPv6 інтерфейс. Thruster конектиться до Puma по `127.0.0.1:3000`. Linux `IPV6_V6ONLY=0` = `[::]:3000` приймає і v4, і v6 → має працювати. Перевірка потрібна для впевненості.
 - [ ] 👤 Після першого деплою canopy: `kamal app exec -i 'ss -tlnp | grep 3000'` — очікуємо `tcp6 LISTEN [::]:3000`
 - [ ] 👤 `curl -fsS http://127.0.0.1:3000/up` і `curl -fsS http://[::1]:3000/up` — обидва 200
-- [ ] 👤 Задокументувати результат у `06_05_Puma_Configuration.md` (IPv6 runbook section)
+- [ ] 👤 Задокументувати результат у `06_05_Puma_Configuration` (IPv6 runbook section)
 
 #### PUMA-RACK-1 — Idempotency-Key write поза response path
 - **Low** | `06_05` | **Складність: S** | **🤖 Код** — актуально при planetary scale
@@ -258,7 +259,7 @@
 - [ ] 🔗 Verify Tensor Arena size (< 54 KB)
 - [ ] 🔗 Розкоментувати `Run_Inference()`
 - [ ] 🔗 Host-based тести
-- [ ] 🌿 **FW.4-EXT (Mongabay pivot, post-TRL 7):** Розширення моделі з 4 → **5 класів** з додаванням `4 = fauna_activity` (циркадний dawn/dusk soundscape) — див. [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference.md). Залежить від калібрувального датасету ЧДТУ ПМКТ + ЧНУ Біо-хабу (UNI.11 + UNI.13a). Альтернативна архітектура: спектральний descriptor ACI (Acoustic Complexity Index) на STM32 без NN, як TRL-7 інкремент
+- [ ] 🌿 **FW.4-EXT (Mongabay pivot, post-TRL 7):** Розширення моделі з 4 → **5 класів** з додаванням `4 = fauna_activity` (циркадний dawn/dusk soundscape) — див. [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference). Залежить від калібрувального датасету ЧДТУ ПМКТ + ЧНУ Біо-хабу (UNI.11 + UNI.13a). Альтернативна архітектура: спектральний descriptor ACI (Acoustic Complexity Index) на STM32 без NN, як TRL-7 інкремент
 
 ### 🟠 P1 — Важливі
 
@@ -313,7 +314,7 @@
 - [x] 🤖 Дизайн dual-threshold: WARNING (0.60) → event counter; CRITICAL (0.85) → Emergency TX
 - [x] 🤖 Реалізація dual-threshold zones з warning_counter ескалацією (3× → fallback Emergency для chainsaw)
 - [x] 🤖 19 host-тестів: 9 zones + 10 validation/RTC roundtrip
-- [x] 🤖 Doc оновлено: `03_03` BLOCKER-6 (DR6/DR7 → DR13/DR14, ✅ partial), `03_01` §2 (RTC map), `10_03` §2.5 (test count 25→44)
+- [x] 🤖 Doc оновлено: `03_03` BLOCKER-6 (DR6/DR7 → DR13/DR14, ✅ partial), `03_01` §2 (RTC map), `04_06` §2.5 (test count 25→44)
 - [x] 🤖 Soldier OTA CMD dispatcher (`CMD_SET_AUDIO_THRESHOLDS` 0x9D) + 7 host-тестів (2026-05-02)
 
 #### FW.19 — Float32 vs Float64 mruby compile flags
@@ -324,7 +325,7 @@
 - [ ] 👤 Верифікувати mruby compile flags (`MRB_USE_FLOAT` у Makefile або mrbconf.h) при lab-тестуванні
 
 #### FW.20 + FW.20-S2 — Time Sync (Rails ↔ Queen ↔ Soldier)
-- **SSOT (повний контекст, wire-формати, регресійний бенч):** [`03_02 §5а Time Sync — Канонічний хаб`](03_02_Queen_Gateway_Firmware.md). Цей запис у 10_02 — лише чек-лист прогресу.
+- **SSOT (повний контекст, wire-формати, регресійний бенч):** [`03_02 §5а Time Sync — Канонічний хаб`](03_02_Queen_Gateway_Firmware). Цей запис у 00_08 — лише чек-лист прогресу.
 - **TRL impact:** P2 для TRL-6 (`Derive_Cold_Start_State` живе з ±12 год толерантністю); блокер для TRL-7 (ARCH.26 TDMA, HMAC nonce replay-protection, корельовані події fire detection ±1 сек).
 
 **FW.20 (Rails+Queen+Soldier 1-hop) — ✅ Done:**
@@ -339,7 +340,7 @@
 - [x] 🤖 (1/5) Authoritativeness flag — `BEACON_AUTH_FLAG=0x80` у byte 9 + Soldier RX зчитування у `time_source_authoritative` (5 host-тестів)
 - [x] 🤖 (2/5) Drift-monitor + panic sync request — `Soldier_Should_Request_Time_Sync` + `Build_Time_Sync_Request_Payload` (опкод 0x56 + magic 'S'); 9 host-тестів. Активація потребує hot-path вшивання у RX TX queue (окрема ітерація).
 - [x] 🤖 (3/5) Per-hop drift compensation — `Soldier_Try_Relay_Time_Beacon` (Provisioner-only, 6 reasons of drop, freeze-contract callable); 13 host-тестів. Активація потребує Queen TTL≥2 + anti-storm bitmap.
-- [ ] 🟡 (4/5) Anti-storm dedup bitmap — потребує вільного RTC регістра (DR15 наразі резерв; стратегія див. [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA.md))
+- [ ] 🟡 (4/5) Anti-storm dedup bitmap — потребує вільного RTC регістра (DR15 наразі резерв; стратегія див. [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA))
 - [x] 🤖 (5/5) Gossip-piggyback freeze-contract — `Soldier_Pack_Gossip_Ts_Byte` / `Soldier_Try_Apply_Gossip_Ts` у byte 14 normal-telemetry payload (2026-05-03); 7 host-тестів. ±128 sec window, не cold-start sync — refines local drift через сусідні uplink'и без TDMA. Активація потребує hook у Phase 2 (1 рядок) + RX-обробник для нормальних telemetry-кадрів.
 
 **Cross-ref:** ARCH.26 (TDMA Sync Windows), FW.30 (cold-start `epoch_day` consumer), SEC.10 (panic frame counter — disambiguator FW.29 PANIC_FLAG_BIT для нормал/паніка байтів 14-15).
@@ -381,7 +382,7 @@
 - [ ] 🟡 mbedTLS HMAC-SHA256 compute on STM32 HASH peripheral — deferred до lab integration (analog FW.30 mbedTLS deferred TODO)
 
 #### FW.25 — TinyML DSP preprocessing (FFT/MFCC) — undefined
-- `03_03` BLOCKER-5 | `firmware/soldier/main.c` | **P0 (Mongabay pivot)** — раніше P1, переведено у P0 після [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference.md): без MFCC принципово неможливо розрізнити layered soundscape (комахи + птахи + амфібії dawn/dusk) від шуму вітру у часовій області. Блокує FW.4-EXT (5-class fauna)
+- `03_03` BLOCKER-5 | `firmware/soldier/main.c` | **P0 (Mongabay pivot)** — раніше P1, переведено у P0 після [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference): без MFCC принципово неможливо розрізнити layered soundscape (комахи + птахи + амфібії dawn/dusk) від шуму вітру у часовій області. Блокує FW.4-EXT (5-class fauna)
 - **Опис:** Поточна архітектура передає лише лінійну нормалізацію [0.0, 1.0] до TinyML моделі. **Невідомо**, чи модель очікує raw time-domain, чи частотні ознаки (FFT/MFCC). Залежить від `silken_net_audio_model.h` (відсутній). Якщо потрібен MFCC — це додає ~5-15 KB Flash + ~40 µs CPU на inference. **Mongabay підсилення (травень 2026):** Delgado et al. на 119 ділянках Коста-Ріки інструментально показали, що `forest cover ≠ forest function` — і це розрізнення доступне лише через спектральну структуру звуку, а не часову. MFCC стає обов'язковим компонентом, не опціональним
 - [ ] 👤 Узгодити з ML-партнером (Бушин ЧНУ ФОТІУС або Любченко): який preprocessing вбудований у модель?
 - [ ] 🤖 Якщо MFCC — оцінити Flash/RAM/CPU budget і інтегрувати CMSIS-DSP (`arm_rfft_fast_f32`, `arm_dct4_f32`)
@@ -404,7 +405,7 @@
 - [x] 🤖 Magic re-request: Soldier при detected gap → request specific chunks via uplink (vector OTA, `03_02` §5.X.3)
 - [ ] 🔗 Залежить від ARCH.26 (TDMA для координованого RX вікна) — лише для Дизайну A; B реалізовано незалежно
 - [x] 🤖 Магічна Re-Request Дизайн B — повна імплементація (firmware/soldier + firmware/queen + 22 host-тести) — 2026-05-02
-- [x] 🤖 **Edge cases follow-up (2026-05-03):** 6 додаткових host-тестів — anti-tamper duplicate з іншим payload, STOP2 between OTA chunks (out-of-order + duplicate after sleep), HMAC trailer cross-cycle persistence + idempotent overwrite, total_chunks=0 malformed packet. Деталі: [`03_02 §5.X.5 FW.27 follow-up`](03_02_Queen_Gateway_Firmware.md). Жодних змін у production firmware — це freeze-contract regression bank.
+- [x] 🤖 **Edge cases follow-up (2026-05-03):** 6 додаткових host-тестів — anti-tamper duplicate з іншим payload, STOP2 between OTA chunks (out-of-order + duplicate after sleep), HMAC trailer cross-cycle persistence + idempotent overwrite, total_chunks=0 malformed packet. Деталі: [`03_02 §5.X.5 FW.27 follow-up`](03_02_Queen_Gateway_Firmware). Жодних змін у production firmware — це freeze-contract regression bank.
 
 #### FW.29 — Panic packet (0xFF) vs saturated acoustic_events (255) — disambiguation
 - `03_03` §5.3 | **P1**
@@ -792,7 +793,7 @@
   - [x] 🔥 `firmware/test/test_bio_contract.c` — нова сигнатура `calculate_z_axis(x, y, z, …)`; `seed_to_xyz()` test helper для детермінованих фікстур
   - [x] 🔥 `firmware/test/test_seed_derivation.c` — host-based parity test (OpenSSL HKDF/HMAC = mbedTLS на MCU), 13 examples
   - [x] 🤖 `db/seeds.rb` + `spec/factories/hardware_keys.rb` — populate `lorenz_seed_hex`
-  - [x] 🤖 `docs/03_06_Lorenz_Seed_Provenance.md` — DELETED, контент розподілено в `03_04`/`03_05`/`04_02`/`05_02` (див. вище)
+  - [x] 🤖 `docs/03_06_Lorenz_Seed_Provenance` — DELETED, контент розподілено в `03_04`/`03_05`/`04_02`/`05_02` (див. вище)
 - **Свідомо НЕ робимо** (pre-prod, no field devices, no prototypes, no firmware in flight): `POST ty6/api/v1/provisioning/upgrade_seed` field-migration endpoint, TRL4 lab-mode response, SecureRandom fallback в `Rails.env != production`.
 
 ---
@@ -806,7 +807,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | ID | Невідповідність | Документи / Файли | Дія | Статус |
 |----|----------------|-------------------|-----|--------|
 | DOC.1 | Документація AES master key суперечлива: `03_05` лінія 531-537 каже «навмисно не публікується», а лінія 538 натякає що перші 4 слова збігаються з FIPS-197 Appendix B test vector. Скоординувати після SEC.9 (заміна seed key) | `03_05`, `firmware/soldier/main.c:66-67` | Після SEC.9 видалити test-vector згадку, оновити обидва параграфи | ⏸️ Заблоковано SEC.9 |
-| DOC.7 | `04_02` §4.2.2 (BlockchainMintingService) описує що guards активні тільки для oracle-driven flow, але tokenomics flow проходить **без явного guard chain**. Зв'язок між цими шляхами не пояснений у `05_02_Proof_of_Growth_Pipeline.md` | `04_02`, `05_02` | Об'єднати у `05_02` §4: діаграма «всі шляхи до `Wallet#lock_and_mint!`» з invariant'ами кожного | ✅ Виконано (`05_02` нова секція «Усі Шляхи до `Wallet#lock_and_mint!`» з 5 шляхами + інваріанти) |
+| DOC.7 | `04_02` §4.2.2 (BlockchainMintingService) описує що guards активні тільки для oracle-driven flow, але tokenomics flow проходить **без явного guard chain**. Зв'язок між цими шляхами не пояснений у `05_02_Proof_of_Growth_Pipeline` | `04_02`, `05_02` | Об'єднати у `05_02` §4: діаграма «всі шляхи до `Wallet#lock_and_mint!`» з invariant'ами кожного | ✅ Виконано (`05_02` нова секція «Усі Шляхи до `Wallet#lock_and_mint!`» з 5 шляхами + інваріанти) |
 | DOC.9 | Documentation `02_03` §9.3 raніше використовувала 15 mA/50 ms для LoRa TX. Виправлено на 120 mA/100 ms (~39 мДж) per SX1262 datasheet. Firmware energy accounting **не верифіковано незалежно** | `02_03`, `firmware/soldier/main.c` | Лабораторне вимірювання поточного TX (HW.x) + cross-ref у `02_03` після верифікації | ⏸️ Заблоковано лаб-стендом |
 
 ---
@@ -814,7 +815,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 ## ⚙️ Операційна автоматизація (OPS)
 
 #### OPS.1 — TRL Auto-Advancement GitHub Action
-- **Джерело:** `09_03` | **Складність: M**
+- **Джерело:** `00_07` | **Складність: M**
 - **Опис:** `trl_sync.yml` — GitHub Action що автоматично переміщує картки на Project Board при закритті issues з TRL-labels. Описаний як "на стадії впровадження" (TRL 7), але не реалізований. Потребує `secrets.PROJECT_PAT` з GraphQL project board permissions
 - **Статус:** ✅ Виконано. `.github/workflows/trl_sync.yml` створено з GraphQL API для GitHub Projects v2 (user + org fallback)
 - [x] Створити `.github/workflows/trl_sync.yml`
@@ -823,7 +824,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [ ] 👤 Тестування з тестовими issues
 
 #### OPS.2 — SSOT Integrity Guard
-- **Джерело:** `09_03` | **Складність: M**
+- **Джерело:** `00_07` | **Складність: M**
 - **Опис:** GitHub Action що блокує merge PRs якщо зміни в `app/models/` або `firmware/` не супроводжуються відповідними оновленнями в `docs/` або Wiki. Запобігає context drift між кодом та документацією
 - **Статус:** ✅ Виконано (Сесія 18). `.github/workflows/ssot_guard.yml` створено. Перевіряє: `app/models/`, `firmware/soldier/`, `firmware/queen/`, `firmware/bio_contracts/`, `contracts/`, `app/services/`. Bypass через label `ssot-bypass`. Виводить деталізований звіт у PR check.
 - [x] Створити `.github/workflows/ssot_guard.yml`
@@ -831,18 +832,18 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [ ] 👤 Налаштувати як required check на `main` branch
 
 #### OPS.3 — R&D Portfolio Management: Shape Up + cluster routing
-- **Джерело:** `08_01` §1.1-1.3, `08_02` §1, `08_03`, `09_01` | **Складність: L** | **🤖 Методологія + Док**
+- **Джерело:** `08_01` §1.1-1.3, `08_02` §1, `08_03`, `00_05` | **Складність: L** | **🤖 Методологія + Док**
 - **Опис:** 25+ паралельних R&D-задач розподілені між 8+ науковцями (ChNU FOTIUS + ChDTU + ChIPB + ChMA + СЄУ). Поточно — ad-hoc розподіл. Запропоновано: 4-кластерна структура (A: Hardware/EBFC, B: Verification/Math, C: Scaling/Cloud, D: Compliance/Legal) + Shape Up 6-week cycles + Convolution Method для скорочення PN-state explosion 10-100×
-- **Статус (🤖, 2026-05-12):** ✅ Документація готова. (1) `docs/09_01` §5 — повна Shape Up cycle template: 4 кластери з ролями та командами, 8-тижневий timeline (6+2), shaping document template, betting table процедура (6 steps × конкретний час), cool-down checklist. (2) `docs/09_03` §6 — kanban-mapping 4 кластерів у Projects V2: нові fields (`R&D Cluster`, `Shape Up Stage`, `Cycle`), label conventions (4 primary cluster labels + 4 cross-ref + 6 shape lifecycle labels з hex-кольорами), auto-routing rules для `actions/labeler@v5`, первинний betting cycle checklist для UNI.1 / UNI.8. Залишається 👤 перший betting cycle після UNI.1/UNI.8 confirms.
-- [x] 🤖 Дизайн kanban-mapping: 4 кластери у GitHub Projects V2 + label conventions — `docs/09_03` §6
-- [x] 🤖 Документувати у `09_01` Shape Up cycle template + betting table процедуру — `docs/09_01` §5
+- **Статус (🤖, 2026-05-12):** ✅ Документація готова. (1) `docs/00_05` §5 — повна Shape Up cycle template: 4 кластери з ролями та командами, 8-тижневий timeline (6+2), shaping document template, betting table процедура (6 steps × конкретний час), cool-down checklist. (2) `docs/00_07` §6 — kanban-mapping 4 кластерів у Projects V2: нові fields (`R&D Cluster`, `Shape Up Stage`, `Cycle`), label conventions (4 primary cluster labels + 4 cross-ref + 6 shape lifecycle labels з hex-кольорами), auto-routing rules для `actions/labeler@v5`, первинний betting cycle checklist для UNI.1 / UNI.8. Залишається 👤 перший betting cycle після UNI.1/UNI.8 confirms.
+- [x] 🤖 Дизайн kanban-mapping: 4 кластери у GitHub Projects V2 + label conventions — `docs/00_07` §6
+- [x] 🤖 Документувати у `00_05` Shape Up cycle template + betting table процедуру — `docs/00_05` §5
 - [ ] 👤 Перший betting cycle після UNI.1 (декан) та UNI.8 (СЄУ)
 
 #### OPS.4 — GitHub Projects V2: семестрова синхронізація з ChNU/ChDTU
-- **Джерело:** `09_03`, `08_01` | **Складність: M** | **🤖 Код**
+- **Джерело:** `00_07`, `08_01` | **Складність: M** | **🤖 Код**
 - **Опис:** TRL-матриця прив'язана до seasons (Q1/Q2/Q3/Q4), але навчальний рік ChNU/ChDTU має семестри (вересень-грудень, лютий-травень). Без mapping — milestone-deadlines не синхронізовані з академічним календарем (наприклад, фінальні захисти магістерських у червні)
-- **Статус (🤖, 2026-05-12):** ✅ Mapping + automation готові. (1) `docs/09_03` §5 додано — таблиці семестрів (Fall 1.IX–31.I / Spring 1.II–30.VI / літня перерва) + мапінг TRL milestones на семестри + hard deadline 15.VI для фінальних захистів. (2) `.github/workflows/trl_sync.yml` розширено: при кожному `issues.closed` скрипт обчислює completion semester з `closed_at` (UTC) і пише у single-select поле `Academic Semester` Projects V2, якщо воно існує. Graceful no-op якщо поле/опція відсутні (TRL Auto-Advancement залишається первинним інваріантом). Опції створюються адміністратором один раз (`Fall 2025-2026`, `Spring 2025-2026`, … на 3-5 років наперед). **Cron-driven "Current Semester"** (1.IX / 1.II) свідомо не входить у цей цикл — `issues.closed` штампує *completion*, не *active*
-- [x] 🤖 Додати у `09_03` mapping: семестр ↔ TRL milestone — `docs/09_03` §5
+- **Статус (🤖, 2026-05-12):** ✅ Mapping + automation готові. (1) `docs/00_07` §5 додано — таблиці семестрів (Fall 1.IX–31.I / Spring 1.II–30.VI / літня перерва) + мапінг TRL milestones на семестри + hard deadline 15.VI для фінальних захистів. (2) `.github/workflows/trl_sync.yml` розширено: при кожному `issues.closed` скрипт обчислює completion semester з `closed_at` (UTC) і пише у single-select поле `Academic Semester` Projects V2, якщо воно існує. Graceful no-op якщо поле/опція відсутні (TRL Auto-Advancement залишається первинним інваріантом). Опції створюються адміністратором один раз (`Fall 2025-2026`, `Spring 2025-2026`, … на 3-5 років наперед). **Cron-driven "Current Semester"** (1.IX / 1.II) свідомо не входить у цей цикл — `issues.closed` штампує *completion*, не *active*
+- [x] 🤖 Додати у `00_07` mapping: семестр ↔ TRL milestone — `docs/00_07` §5
 - [x] 🤖 Розширити `trl_sync.yml` на запис академічних semestriv як окремий field у Projects V2 — gracefully optional, не ламає TRL sync
 - [ ] 👤 Узгодити календар з 8 науковцями (UNI.5)
 - [ ] 👤 Створити single-select field `Academic Semester` у Projects V2 + опції `Fall {Y}-{Y+1}` / `Spring {Y-1}-{Y}` на 3-5 років наперед
@@ -1004,7 +1005,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 #### UNI.11 — ChDTU Базіло+Бондаренко (ПМКТ): акустична валідація фононної лінзи
 - **Джерело:** `08_04` §1.3 | **Пріоритет: P2 (P1 для Mongabay pivot)**
-- **Опис:** ПМКТ (Прикладна механіка + комп'ютерні технології) ChDTU — спеціалізація п'єзоелектрика + акустичні метаматеріали. Потрібно: EIS-характеризація п'єзодиска 25-150 кГц (TinyML cavitation detection), верифікація гіроїдного фокусування (phonon lens) для кавітації ксилеми. Цільовий результат: стаття Q1 *IEEE Transactions on Biomedical Engineering*. **🌿 Mongabay pivot (травень 2026):** ТЗ розширено — калібрувальний акустичний датасет повинен включати **записи лісового фону на світанку та в сутінках** (Cherkasy Soundscape Library) для тренування 5-го класу TinyML «Fauna Activity» (див. [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference.md), [`08_03` Стаття 24a](../docs/08_03_Joint_Publications_and_IP_Strategy.md))
+- **Опис:** ПМКТ (Прикладна механіка + комп'ютерні технології) ChDTU — спеціалізація п'єзоелектрика + акустичні метаматеріали. Потрібно: EIS-характеризація п'єзодиска 25-150 кГц (TinyML cavitation detection), верифікація гіроїдного фокусування (phonon lens) для кавітації ксилеми. Цільовий результат: стаття Q1 *IEEE Transactions on Biomedical Engineering*. **🌿 Mongabay pivot (травень 2026):** ТЗ розширено — калібрувальний акустичний датасет повинен включати **записи лісового фону на світанку та в сутінках** (Cherkasy Soundscape Library) для тренування 5-го класу TinyML «Fauna Activity» (див. [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference), [`08_03` Стаття 24a](../docs/08_03_Joint_Publications_and_IP_Strategy))
 - [ ] 👤 Формальна зустріч з Базіло + Бондаренко
 - [ ] 👤 EIS-протокол для п'єзодиска (постачання зразка)
 - [ ] 👤 Acoustic стенд-тест для гіроїда (cross-ref HW.1)
@@ -1012,7 +1013,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 #### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay pivot)
 - **Джерело:** `08_01` §1.3 + §2 (Homeostasis Baseline крок 5) | **Пріоритет: P1 (новий, Mongabay)**
-- **Опис:** Стаття Delgado et al. (Nicoya Peninsula, Costa Rica, 119 ділянок, 16 000 годин аудіо; огляд: *Mongabay News*, травень 2026) інструментально довела: NDVI бачить покрив, але не функцію екосистеми; dawn/dusk piіки фауни — надійний маркер реального біорізноманіття. Українським аналогом цього дослідження стає **«Cherkasy Soundscape Library»** — польові записи на світанку та в сутінках Черкаського бору в усі 4 сезони, спільно з кафедрою ПМКТ ЧДТУ (UNI.11). Результат: ground truth для тренування 5-class TinyML моделі (FW.4-EXT) + co-authored Q1 publication ([`08_03` Стаття 24a](../docs/08_03_Joint_Publications_and_IP_Strategy.md))
+- **Опис:** Стаття Delgado et al. (Nicoya Peninsula, Costa Rica, 119 ділянок, 16 000 годин аудіо; огляд: *Mongabay News*, травень 2026) інструментально довела: NDVI бачить покрив, але не функцію екосистеми; dawn/dusk piіки фауни — надійний маркер реального біорізноманіття. Українським аналогом цього дослідження стає **«Cherkasy Soundscape Library»** — польові записи на світанку та в сутінках Черкаського бору в усі 4 сезони, спільно з кафедрою ПМКТ ЧДТУ (UNI.11). Результат: ground truth для тренування 5-class TinyML моделі (FW.4-EXT) + co-authored Q1 publication ([`08_03` Стаття 24a](../docs/08_03_Joint_Publications_and_IP_Strategy))
 - [ ] 👤 Формальна зустріч з О.В. Спрягайлом (проректор з науки) + М.В. Гаврилюком (директор ННІ природничих та аграрних наук)
 - [ ] 👤 Узгодити участь студентів-біологів у польових експедиціях (наукова практика)
 - [ ] 👤 Joint methodology workshop: ЧНУ біо-хаб + ЧДТУ ПМКТ — узгодження протоколу польових записів (рекордер, висота, тривалість, метадані)
@@ -1066,7 +1067,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.4 | Helium Network fallback — concept є, реалізації немає | `02_05` | Дизайн + реалізація |
 | E.5 | CoAP listener Ruby — масштабується до ~10k вузлів | `06_01` | Series D: Rust/Go proxy |
 | E.7 | dClimate mock mode — потрібна реальна інтеграція для Production | `05_01` | Пов'язано з S3.2 |
-| E.8 | ✅ SNR parameter wired into Queen CIFO eviction (tiebreaker) | `03_02`, `10_03` | Реалізовано (2026-05-03): `LoRaRxSlot.snr` + `EdgeCache.snr` + `OnRxDone` plumbing + tiebreaker logic у `Process_And_Cache_Data` (нижчий SNR при рівному RSSI = preferred to evict). 7 нових host-тестів: persisted, dedup updates SNR, tiebreaker triggers on equal RSSI, doesn't override worse RSSI, respects critical priority, fallback path tiebreaker, ring carries SNR ISR→consumer. 128 → 135 queen tests; всі test_soldier/test_bio_contract/test_tinyml/test_encryption/test_seed_derivation залишилися зеленими. RAM budget (.bss + .data) у межах 50 KB gate. |
+| E.8 | ✅ SNR parameter wired into Queen CIFO eviction (tiebreaker) | `03_02`, `04_06` | Реалізовано (2026-05-03): `LoRaRxSlot.snr` + `EdgeCache.snr` + `OnRxDone` plumbing + tiebreaker logic у `Process_And_Cache_Data` (нижчий SNR при рівному RSSI = preferred to evict). 7 нових host-тестів: persisted, dedup updates SNR, tiebreaker triggers on equal RSSI, doesn't override worse RSSI, respects critical priority, fallback path tiebreaker, ring carries SNR ISR→consumer. 128 → 135 queen tests; всі test_soldier/test_bio_contract/test_tinyml/test_encryption/test_seed_derivation залишилися зеленими. RAM budget (.bss + .data) у межах 50 KB gate. |
 | E.9 | DMA SPI optimization — зменшення енергоспоживання (Vector 1 — Ярмілко) | `08_02` | R&D partnership |
 | E.10 | Kalman/EMA filtering для delta_t noise suppression (±8% → ±1.2%) | `08_02` | R&D partnership |
 | E.11 | CE/FCC/EMC/IP68 certification roadmap не розпочато | `08_02` | Потребує Косенюк (RF) |
@@ -1093,7 +1094,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.39 | **EBFC Gen 2.0:** FAD-GDH + Laccase/nanozymes + ZIF (20-25 років) | `01_03` §3 | ЧНУ lab testing |
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
 | DIFF.1 | `Wallet#lock_and_mint!` threshold = runtime param (не hardcoded) | `04_02` | Informational, no action |
-| DIFF.7 | ✅ SNR parameter wired into Queen CIFO eviction as tiebreaker — див. E.8 | `03_02`, `10_03` | Реалізовано (2026-05-03) |
+| DIFF.7 | ✅ SNR parameter wired into Queen CIFO eviction as tiebreaker — див. E.8 | `03_02`, `04_06` | Реалізовано (2026-05-03) |
 | E.41 | **Fire events delayed 48h** via dClimate satellite obscuration — **⚠️ life-safety risk**. Mitigation: Forester Guild as Fallback Oracle (E.20) + immediate local broadcast via panic TX (не чекати satellite clearance при chainsaw detection). **Пріоритет: P1** (не відкладати на Post-TRL 6) | `04_02`, `05_01` | P1: interim emergency fallback |
 | E.42 | **TelemetryLog cleanup safety**: видалення записів з `oracle_status='dispatched'` ламає Chainlink callbacks. Cleanup job MUST exclude `dispatched` status — підтверджено в коді | `04_02` | ⚠️ Не видаляти dispatched records |
 | E.45 | **SCC/SFC contract addresses** = `0x0000...0` в subgraph.yaml — блокує deploy subgraph на testnet/mainnet | `05_03` | Пов'язано з S3.5 |
@@ -1145,7 +1146,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | ARCH.29 | **RTOS Deadlock-Free верифікація через Petri Nets** — формальна PN-модель firmware tasks (Sensing/Compute/TX/OTA/WDT) на Soldier + reachability graph аналіз для доведення відсутності circular wait. Відрізняється від ARCH.20 (Petri Net Rails моноліт) тим що моделює embedded RTOS scheduling | `08_02` §1.2 (Ярмілко) | Post-TRL 6 (R&D — Ярмілко, ЧНУ) |
 | ARCH.30 | **Parallel CFD gyroid simulation на Akash GPU** — domain decomposition алгоритм для 3D TPMS-симуляцій на heterogeneous GPU вузлах Akash. Скорочує CFD lead-time з ~2 годин до real-time валідації геометрії перед DMLS order. Cross-ref ARCH.25 (gyroid validation scripts) | `08_02` §1.4 (Онищенко) | Post-TRL 7 (методологія + Akash GPU integration) |
 | ARCH.31 | **SOP-в-Phlex inline UI для EwsAlert** — інтеграція 7 SOP документів (drought/epidemic/vandalism/fire/seismic/fault/entropy) як inline-інструкцій, що показуються при кліку на EwsAlert у дашборді. UX: forester отримує немедіане runbook замість пошуку у документах | `08_05` + `04_02` | Post-TRL 6, cross-ref E.54 + UNI.12 |
-| ARCH.32 | **Shape Up 6-week cycle Petri Net formalization** — формальна верифікація фази Shape Up (betting table → build → cool-down) щоб довести: будь-яка фіча може бути завершена у межах cycle constraints. Цільова стаття Q1 *IEEE Transactions on Software Engineering* | `08_02`, `09_01` | Post-TRL 7 (методологія + R&D, Супруненко ЧНУ) |
+| ARCH.32 | **Shape Up 6-week cycle Petri Net formalization** — формальна верифікація фази Shape Up (betting table → build → cool-down) щоб довести: будь-яка фіча може бути завершена у межах cycle constraints. Цільова стаття Q1 *IEEE Transactions on Software Engineering* | `08_02`, `00_05` | Post-TRL 7 (методологія + R&D, Супруненко ЧНУ) |
 | ARCH.33 | **ECDH P-256 key exchange як альтернатива HKDF-only provisioning** — мерехтливий розгляд: замість per-device HKDF (FW.1) використати ECDH у factory або field provisioning. Plus: Perfect Forward Secrecy без shared master key. Minus: Curve25519/P-256 потребує ~512 байт SRAM + 50 мс CPU на handshake | `08_02` §1.1 (Vector 2, Ярмілко), `03_05` | Research alternative (узгодити з FW.17 Hash Ratchet) |
 
 ---

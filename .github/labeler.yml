@@ -1,0 +1,72 @@
+# PR Auto-Labeler config (actions/labeler@v5).
+# Drives cluster routing per docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.6.
+
+"cluster:A-hardware":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'firmware/**'
+          - 'docs/01_*'
+          - 'docs/02_*'
+          - 'docs/08_*'
+
+"cluster:B-verification":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'contracts/**'
+          - 'app/services/iotex/**'
+          - 'app/services/web3/chainlink_router_version*'
+          - 'app/services/silken_net/attractor*'
+          - 'app/services/silken_net/seed_derivation*'
+          - 'docs/05_*'
+
+"cluster:C-scaling":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'app/**'
+          - 'config/**'
+          - 'lib/**'
+          - 'db/**'
+          - 'spec/**'
+          - 'deploy/**'
+          - 'terraform/**'
+          - 'docs/04_*'
+          - 'docs/06_*'
+
+"cluster:D-compliance":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'app/services/polygon/hadron_*'
+          - 'docs/07_*'
+
+"cluster-ref:B":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'app/services/blockchain_*'
+          - 'app/services/celo/**'
+          - 'app/services/solana/**'
+
+"module:03-firmware":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'firmware/**'
+
+"module:04-server-core":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'app/**'
+          - 'config/**'
+          - 'lib/**'
+          - 'db/**'
+
+"module:06-matrix":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'deploy/**'
+          - '.kamal/**'
+          - 'terraform/**'
+          - '.github/workflows/**'
+
+"module:00-codex":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/00_*'

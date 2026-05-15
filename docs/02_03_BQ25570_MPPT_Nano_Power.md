@@ -764,5 +764,5 @@ EBFC (Ti-6Al-4V anchor)  >500 мВ
 
 **Документація:**
 - [ ] Оновити цей документ з верифікованими значеннями
-- [ ] Оновити BOM `02_01_Hardware_Architecture_and_BOM.md` (TX power, sleep current, cap spec)
-- [ ] Оновити firmware `03_01_Firmware_Lifecycle_and_DMA.md` (STOP2 RTC-only flag)
+- [ ] Оновити BOM `02_01_Hardware_Architecture_and_BOM` (TX power, sleep current, cap spec)
+- [ ] Оновити firmware `03_01_Firmware_Lifecycle_and_DMA` (STOP2 RTC-only flag)

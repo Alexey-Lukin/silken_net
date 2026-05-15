@@ -1,16 +1,18 @@
-# 00_01: System Architecture and Layers
+# 00_02: System Architecture and 12-Chain Pipeline
 
 ## 🎯 Мета
 
-Зафіксувати 8-рівневу кіберфізичну архітектуру екосистеми Gaia 2.0 (Silken Net). Цей документ є базовою конституцією для маршрутизації даних від біохімічної реакції в дереві до криптографічної фіналізації в Ethereum L1.
+Зафіксувати 8-рівневу кіберфізичну архітектуру екосистеми Gaia 2.0 (Silken Net) та повний 12-крокового конвеєр Proof of Growth — від біохімічної реакції в дереві до криптографічної фіналізації в Ethereum L1. Цей документ є базовою конституцією для маршрутизації даних, але не містить політику резервування — для неї див. [`00_03_Resilience_and_Failover_Policy`](00_03_Resilience_and_Failover_Policy).
 
 ---
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — Архітектура затверджена, інтеграційні компоненти тестуються локально.
+- **Поточний TRL:** TRL 4 — Архітектура затверджена, інтеграційні компоненти тестуються локально (загальний TRL обмежений `EBFC` на TRL 3-4; програмні домени можуть рухатись паралельно через HIL-симулятори, див. [`00_06`](00_06_Strategic_Roadmap_and_HIL_Simulators)).
 - **Оновлення:** Проведено півот апаратної частини. Повністю видалено рівень електрокінетики (Streaming Potential / LTC3108). Затверджено нову біохімічну базу (EBFC).
 - **Пов'язані модулі:**
+  - Бізнес-візія та slashing → [`00_01_Vision_Market_and_Slashing_Policy`](00_01_Vision_Market_and_Slashing_Policy)
+  - Failover та fallback → [`00_03_Resilience_and_Failover_Policy`](00_03_Resilience_and_Failover_Policy)
   - Біомеханіка та анкер → [`01_01_Coaxial_Gyroid_Topology_and_PEEK`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
   - Апаратура та BOM → [`02_01_Hardware_Architecture_and_BOM`](02_01_Hardware_Architecture_and_BOM)
   - Прошивка та Edge AI → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
@@ -23,11 +25,11 @@
 
 ## 🛑 Блокери
 
-- Відсутні на рівні макроархітектури. Успіх системи залежить від розблокування TRL 4 у хіміків (Модуль 01).
+- Відсутні на рівні макроархітектури. Успіх системи залежить від розблокування TRL 4 у хіміків (Модуль 01) — але цей блокер тепер **не блокує програмні домени**, які мають paralлельний шлях через HIL-симулятори ([`00_06 §HIL`](00_06_Strategic_Roadmap_and_HIL_Simulators)).
 
 ---
 
-## 📎 Технічна Специфікація: 8 Рівнів Gaia 2.0
+## 📎 1. Технічна Специфікація: 8 Рівнів Gaia 2.0
 
 Система працює за принципом безперервного, детермінованого конвеєра (Zero-Trust pipeline). Дані рухаються знизу вгору.
 
@@ -54,7 +56,7 @@
 - **Протокол:** LoRa mesh 868 МГц (custom TTL-based, DEFAULT_TTL=3). Binary payload 21 bytes (4 DID + 1 RSSI + 16 encrypted).
 - **Топологія:** Directed Mesh (Солдати передають пакети через сусідів).
 - **Шлюз (Королева):** Агрегує пакети та відправляє їх у хмару (опціонально через Starlink Direct-to-Cell).
-- **Резерв:** Helium Network (HNT) як fallback при втраті Queen — будь-який роутер Helium у радіусі 15 км ловить пакет ([деталі → 02_05](02_05_Queen_Hardware_and_Starlink)).
+- **Резерв:** Helium Network (HNT) як fallback при втраті Queen — будь-який роутер Helium у радіусі 15 км ловить пакет ([деталі → 02_05](02_05_Queen_Hardware_and_Starlink), політика — [`00_03 §Queen Failover`](00_03_Resilience_and_Failover_Policy)).
 
 #### Проблема Рандеву (Rendezvous Problem)
 
@@ -65,8 +67,8 @@
 | Рівень | Механізм | Статус |
 |--------|----------|--------|
 | **L1: Зона Королеви** | Queen `Radio.Rx(LORA_RX_INFINITE)` — ніколи не спить, приймач SX1262 завжди активний. Живиться від сонячної панелі/акумулятора. Будь-який Солдат у радіусі 150–200 м може передати в будь-яку секунду — Королева завжди зловить. | ✅ Реалізовано |
-| **L2: Синхронні Вікна (TDMA)** | Координоване пробудження вузлів за RTC-розкладом. Queen beacon → Time Sync → спільне "Вікно Зв'язку" кожні 15 хвилин (2 секунди RX). Усуває необхідність постійного прослуховування. | ❌ Не реалізовано ([ARCH.26](10_02_Action_Plan_Tracker)) |
-| **L3: CAD (Channel Activity Detection)** | Апаратна фіча SX1262: вузол прокидається на ~2 мс кожну секунду, "нюхає" ефір на наявність LoRa-преамбули. Якщо є — залишається слухати. Якщо ні — миттєво засинає (витративши ~0.0001% заряду). Критично для PANIC mode (chainsaw detection). | ❌ Не реалізовано ([ARCH.26](10_02_Action_Plan_Tracker)) |
+| **L2: Синхронні Вікна (TDMA)** | Координоване пробудження вузлів за RTC-розкладом. Queen beacon → Time Sync → спільне "Вікно Зв'язку" кожні 15 хвилин (2 секунди RX). Усуває необхідність постійного прослуховування. | ❌ Не реалізовано ([ARCH.26](00_08_Action_Plan_Tracker)) |
+| **L3: CAD (Channel Activity Detection)** | Апаратна фіча SX1262: вузол прокидається на ~2 мс кожну секунду, "нюхає" ефір на наявність LoRa-преамбули. Якщо є — залишається слухати. Якщо ні — миттєво засинає (витративши ~0.0001% заряду). Критично для PANIC mode (chainsaw detection). | ❌ Не реалізовано ([ARCH.26](00_08_Action_Plan_Tracker)) |
 
 **Поточний mesh relay (Soldier↔Soldier)** працює стохастично: Солдат А TX → якщо Солдат Б випадково слухає ефір у своїх 600 мс RX-вікна (Phase 4.5) → пакет ретранслюється. Без TDMA/CAD mesh relay **ненадійний** за межами прямої видимості Королеви.
 
@@ -78,9 +80,53 @@
 - **Роль:** Декодування (L3), маршрутизація API (31 Controllers), управління бізнес-логікою контрактів (Nature-as-a-Service).
 - **Вхідний шар IoT:** CoAP/UDP listener (порт 5683) — для планетарного масштабу потребує Ingress Proxy перед Rails ([деталі → 06_01](06_01_Deployment_Kamal_Terraform)).
 
+### 🔐 Рівень 6: Мережі Даних та Верифікації (The Truth)
+- **peaq Network:** Надання кожному дереву Machine DID паспорта.
+- **IoTeX W3bstream:** Генерація ZK-proofs, що доводять походження даних з реального кремнію (Real Silicon).
+- **Streamr & Filecoin:** P2P трансляція телеметрії та вічне зберігання на IPFS.
+
+### 💰 Рівень 7: Фінансова Логіка (The Ledger)
+- **Primary Chain:** Polygon EVM. Смарт-контракти для мінтингу SCC (Silken Carbon Coin) та SFC (Governance).
+- **Оракул:** Chainlink DON (передає верифіковані бали росту з Rails у Polygon).
+- **Паралельні фінанси:** Solana (мікро-нагороди лісникам), Celo (ReFi для громад), KlimaDAO (спалювання ESG).
+- **Compliance:** Polygon Hadron (KYC/KYB за стандартом ERC-3643).
+
+### 🗳️ Рівень 7.5: Governance DAO (The Parliament)
+- **Контракти (Polygon):** `SilkenGovernor.sol` (OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction 4%), `SilkenTimelock.sol` (48h мінімальна затримка), `ProtocolParameters.sol` (on-chain registry 13 параметрів: Lorenz σ/ρ/β/dt/iterations/z_min/z_max/z_target, tokenomics, slashing).
+- **Voting Power:** SFC (ERC20Votes) — snapshot-based `getPastVotes()` + votingDelay 43200 блоків (~1 день на Polygon) для Flash Loan defense.
+- **Pipeline:** SFC Holders → `SilkenGovernor` (propose/vote) → `SilkenTimelock` (48h delay) → `ProtocolParameters` (setParameter) → `Governance::ParameterSyncWorker` (щоденний sync on-chain → `SystemParameter` модель).
+- **CI/CD:** `solidity_audit.yml` — Foundry build/test/coverage + Slither static analysis на кожен push/PR.
+
+### 🏛️ Рівень 8: Фіналізація (The Anchor)
+- **Стек:** Ethereum L1.
+- **Роль:** Щотижневе закріплення кореня стану (State Root — 32-byte SHA-256 hash) всієї економіки Gaia 2.0. Гарантія Rollup-рівня від катастрофічних збоїв сайдчейнів.
+
 ---
 
-## 🚀 Gaia 2.0 Scaling Roadmap — Фрактальна Топологія
+## 🗄️ 2. Redis Infrastructure — DB Isolation
+
+Система використовує єдиний Redis-інстанс із **ізоляцією через логічні бази даних**:
+
+| БД | Призначення | ENV-змінна | Gem |
+|----|-------------|-----------|-----|
+| **DB 0** | Sidekiq черги задач та планувальник | `REDIS_URL` | `sidekiq` + `redis-client` |
+| **DB 1** | Kredis distributed locks (Web3 nonce management) | `KREDIS_REDIS_URL` | `kredis` + `redis` |
+
+### Чому одночасно використовуються `redis` і `kredis` gems?
+
+- **`sidekiq`** (8.x) використовує `redis-client` внутрішньо для черг — він **не потребує** gem `redis`.
+- **`kredis`** (Rails high-level Redis data structures) залежить від gem `redis` і надає типізовані проксі (scalars, lists, sets).
+- Kredis не має вбудованого distributed lock, тому `config/initializers/kredis.rb` розширює модуль через `Kredis.lock` — crash-safe `SET NX EX` lock із UUID-власністю та атомарним Lua-скриптом звільнення.
+
+### Чому ізоляція DB є критично важливою?
+
+Ізоляція **запобігає витісненню** (eviction) критичних Web3-даних телеметричними чергами:
+
+> При мільйонах IoT-пакетів на годину потік телеметрії (DB 0 — Sidekiq) може заповнити пам'ять Redis, змусивши eviction policy (`allkeys-lru`) видаляти ключі. Якби Web3 nonce locks знаходилися в тій самій базі — вони б видалялися, що призвело б до **EVM nonce collisions** і вразливостей **double-spend** на Polygon. Ізоляція через логічні бази даних усуває цей ризик без додаткових Redis-інстансів.
+
+---
+
+## 🚀 3. Gaia 2.0 Scaling Roadmap — Фрактальна Топологія
 
 > Поточна плоска LoRa-меш архітектура задихнеться від колізій та затримок вже на кількох тисячах вузлів. Для мільйонів дерев необхідна **фрактальна топологія**.
 
@@ -104,7 +150,7 @@ L1: Soldier Nodes (Листя) — поточна архітектура
 
 **Ключова зміна:** Солдати більше не спілкуються з усім світом — лише з найближчим Сержантом. Зменшення радіочастотних колізій на порядки.
 
-> **Передумова для L2 Sergeant:** Рівень Сержантів потребує вирішеної Проблеми Рандеву між Солдатом і Сержантом. Сержант не може бути always-on (як Queen) — його живлення обмежене, хоча й більше ніж у Солдата. Рішення: TDMA Синхронні Вікна (ARCH.26) + CAD Preamble Detection. Сержант прокидається на координовані RX-вікна та/або використовує CAD для детекції передач від Солдатів з мінімальним енерговитратою.
+> **Передумова для L2 Sergeant:** Рівень Сержантів потребує вирішеної Проблеми Рандеву між Солдатом і Сержантом. Сержант не може бути always-on (як Queen) — його живлення обмежене, хоча й більше ніж у Солдата. Рішення: TDMA Синхронні Вікна (ARCH.26) + CAD Preamble Detection.
 
 ### H-LDSE — Ієрархічний Протокол Маршрутизації
 
@@ -149,7 +195,7 @@ Gaia 2.0 підхід:      2 байти lambda → описує стан всь
                          не "кладе" сусідні кластери
 ```
 
-**Queen-to-Queen Backhaul Mesh:** Королеви з'єднані між собою через LoRa SF12. Якщо одна Queen втрачає Starlink → передає дані сусідній Queen через LoRa-магістраль.
+**Queen-to-Queen Backhaul Mesh:** Королеви з'єднані між собою через LoRa SF12. Якщо одна Queen втрачає Starlink → передає дані сусідній Queen через LoRa-магістраль. Деталі — [`00_03 §Queen Failover`](00_03_Resilience_and_Failover_Policy).
 
 ### Energy-Aware Routing
 
@@ -171,59 +217,13 @@ Route metric = f(hop_count, remaining_energy, bio_potential)
 
 ---
 
-### 🔐 Рівень 6: Мережі Даних та Верифікації (The Truth)
-- **peaq Network:** Надання кожному дереву Machine DID паспорта.
-- **IoTeX W3bstream:** Генерація ZK-proofs, що доводять походження даних з реального кремнію (Real Silicon).
-- **Streamr & Filecoin:** P2P трансляція телеметрії та вічне зберігання на IPFS.
-
-### 💰 Рівень 7: Фінансова Логіка (The Ledger)
-- **Primary Chain:** Polygon EVM. Смарт-контракти для мінтингу SCC (Silken Carbon Coin) та SFC (Governance).
-- **Оракул:** Chainlink DON (передає верифіковані бали росту з Rails у Polygon).
-- **Паралельні фінанси:** Solana (мікро-нагороди лісникам), Celo (ReFi для громад), KlimaDAO (спалювання ESG).
-- **Compliance:** Polygon Hadron (KYC/KYB за стандартом ERC-3643).
-
-### 🗳️ Рівень 7.5: Governance DAO (The Parliament)
-- **Контракти (Polygon):** `SilkenGovernor.sol` (OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction 4%), `SilkenTimelock.sol` (48h мінімальна затримка), `ProtocolParameters.sol` (on-chain registry 13 параметрів: Lorenz σ/ρ/β/dt/iterations/z_min/z_max/z_target, tokenomics, slashing).
-- **Voting Power:** SFC (ERC20Votes) — snapshot-based `getPastVotes()` + votingDelay 43200 блоків (~1 день на Polygon) для Flash Loan defense.
-- **Pipeline:** SFC Holders → `SilkenGovernor` (propose/vote) → `SilkenTimelock` (48h delay) → `ProtocolParameters` (setParameter) → `Governance::ParameterSyncWorker` (щоденний sync on-chain → `SystemParameter` модель).
-- **CI/CD:** `solidity_audit.yml` — Foundry build/test/coverage + Slither static analysis на кожен push/PR.
-
-### 🏛️ Рівень 8: Фіналізація (The Anchor)
-- **Стек:** Ethereum L1.
-- **Роль:** Щотижневе закріплення кореня стану (State Root — 32-byte SHA-256 hash) всієї економіки Gaia 2.0. Гарантія Rollup-рівня від катастрофічних збоїв сайдчейнів.
-
----
-
-## 🗄️ Redis Infrastructure — Архітектурне Рішення (DB Isolation)
-
-Система використовує єдиний Redis-інстанс із **ізоляцією через логічні бази даних**:
-
-| БД | Призначення | ENV-змінна | Gem |
-|----|-------------|-----------|-----|
-| **DB 0** | Sidekiq черги задач та планувальник | `REDIS_URL` | `sidekiq` + `redis-client` |
-| **DB 1** | Kredis distributed locks (Web3 nonce management) | `KREDIS_REDIS_URL` | `kredis` + `redis` |
-
-### Чому одночасно використовуються `redis` і `kredis` gems?
-
-- **`sidekiq`** (8.x) використовує `redis-client` внутрішньо для черг — він **не потребує** gem `redis`.
-- **`kredis`** (Rails high-level Redis data structures) залежить від gem `redis` і надає типізовані проксі (scalars, lists, sets).
-- Kredis не має вбудованого distributed lock, тому `config/initializers/kredis.rb` розширює модуль через `Kredis.lock` — crash-safe `SET NX EX` lock із UUID-власністю та атомарним Lua-скриптом звільнення.
-
-### Чому ізоляція DB є критично важливою?
-
-Ізоляція **запобігає витісненню** (eviction) критичних Web3-даних телеметричними чергами:
-
-> При мільйонах IoT-пакетів на годину потік телеметрії (DB 0 — Sidekiq) може заповнити пам'ять Redis, змусивши eviction policy (`allkeys-lru`) видаляти ключі. Якби Web3 nonce locks знаходилися в тій самій базі — вони б видалялися, що призвело б до **EVM nonce collisions** і вразливостей **double-spend** на Polygon. Ізоляція через логічні бази даних усуває цей ризик без додаткових Redis-інстансів.
-
----
-
-## 🌐 Анатомія Кіберфізичного Стану Gaia 2.0 — Повний 12-Крокової Конвеєр
+## 🌐 4. Анатомія Кіберфізичного Стану — Повний 12-Крокової Конвеєр
 
 > *"Ми не просто спостерігаємо за лісом. Ми даємо йому цифрову волю."*
 
 Цей розділ описує повний життєвий цикл одного "серцебиття" через кіберфізичний стан Silken Net — від моменту, коли дерево "дихає", до миті, коли його внесок закарбовується в Ethereum назавжди.
 
-**12 кроків. 12 мереж. Одна жива система.**
+**12 кроків. 12 мереж. Одна жива система.** Резервування для кожної ланки — [`00_03 §Web3 Chain Fallback`](00_03_Resilience_and_Failover_Policy).
 
 ---
 
@@ -508,7 +508,7 @@ state_root = Digest::SHA256.hexdigest(
 
 ---
 
-### 📊 Ключові Параметри Системи
+## 📊 5. Ключові Параметри Системи
 
 | Метрика | Значення |
 |---|---|
@@ -525,3 +525,44 @@ state_root = Digest::SHA256.hexdigest(
 | Поріг емісії | **10,000 growth points = 1 SCC** |
 | Закріплення state root | **Щотижня** (понеділок 03:00 UTC) |
 | Цільовий масштаб | **Мільйони → Мільярди → Трильйони** дерев |
+
+---
+
+## 🌐 6. Топологія Мережі (High-Level)
+
+```
+Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
+      │ LoRa                │ LoRa mesh            │ LoRa
+      ▼                     ▼                      ▼
+   Queen (Gateway) ◄──── Mesh Relay ────► Queen (Gateway)
+      │ LTE/Starlink                          │ LTE/Starlink
+      ▼                                       ▼
+   ┌──────────────────────────────────────────────┐
+   │  Rails Backend (Akash Network / GCP)          │
+   │  CoAP Listener + Sidekiq (31 workers)         │
+   │                                                │
+   │  ┌── Verification ─────────────────────────┐  │
+   │  │ peaq DID → IoTeX ZK-proof → Chainlink   │  │
+   │  └─────────────────────────────────────────┘  │
+   │                                                │
+   │  ┌── Data Streams ─────────────────────────┐  │
+   │  │ Streamr (P2P real-time forest pulse)     │  │
+   │  └─────────────────────────────────────────┘  │
+   └──────────────────┬───────────────────────────┘
+                      │ Multi-RPC
+       ┌──────────────┼──────────────────────────┐
+       ▼              ▼                          ▼
+   ┌────────┐   ┌──────────┐            ┌──────────┐
+   │Polygon │   │  Solana  │            │   Celo   │
+   │SCC/SFC │   │  micro-  │            │  cUSD    │
+   │Hadron  │   │  rewards │            │  ReFi    │
+   │Chainlnk│   └──────────┘            └──────────┘
+   └───┬────┘
+       │
+   ┌───┴────────────────────────────────────────────┐
+   │  The Graph (subgraph indexing)                  │
+   │  KlimaDAO (ESG carbon retirement)              │
+   │  Filecoin/IPFS (immutable archive)             │
+   │  Ethereum L1 (weekly state root finality)      │
+   └────────────────────────────────────────────────┘
+```

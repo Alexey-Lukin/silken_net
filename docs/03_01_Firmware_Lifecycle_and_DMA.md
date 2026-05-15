@@ -553,7 +553,7 @@ Radio.Send(encrypted_payload, 16);
 | Екстремальний холод + battery | -40 | 5500 | ❌ | `test_tx_defer_extreme_cold_high_vcap_battery_backed` (✨ 2026-05-03) |
 | Warm -5°C + low vcap | -5 | 1000 | ❌ | `test_tx_defer_warm_minus5_low_vcap` (✨ 2026-05-03) |
 
-> **Cross-ref:** `10_02 FW.10` — закрито через цю секцію.
+> **Cross-ref:** `00_08 FW.10` — закрито через цю секцію.
 
 ---
 
@@ -605,8 +605,8 @@ _rx_payload[0] == OTA_MARKER (0x99)
 | Рівень | Механізм | Статус | Задача |
 |--------|----------|--------|--------|
 | L1: Зона Королеви | `Radio.Rx(LORA_RX_INFINITE)` — Queen завжди слухає | ✅ Реалізовано | — |
-| L2: Синхронні Вікна (TDMA) | RTC-координоване пробудження: кожні N хвилин, ~2 сек RX. Queen beacon → Time Sync → спільний розклад | ❌ Не реалізовано | [ARCH.26](10_02_Action_Plan_Tracker), [FW.20](10_02_Action_Plan_Tracker) |
-| L3: CAD Preamble Detection | SX1262 `Radio.StartCad()`: wake кожну секунду на ~2 мс, "нюхає" LoRa-преамбулу. Для PANIC mode (chainsaw) | ❌ Не реалізовано | [ARCH.26](10_02_Action_Plan_Tracker) |
+| L2: Синхронні Вікна (TDMA) | RTC-координоване пробудження: кожні N хвилин, ~2 сек RX. Queen beacon → Time Sync → спільний розклад | ❌ Не реалізовано | [ARCH.26](00_08_Action_Plan_Tracker), [FW.20](00_08_Action_Plan_Tracker) |
+| L3: CAD Preamble Detection | SX1262 `Radio.StartCad()`: wake кожну секунду на ~2 мс, "нюхає" LoRa-преамбулу. Для PANIC mode (chainsaw) | ❌ Не реалізовано | [ARCH.26](00_08_Action_Plan_Tracker) |
 
 ---
 
@@ -698,7 +698,7 @@ HAL_CRYP_Init(&hcryp);
 
 > **SSOT (єдина точка істини):** ця таблиця — **єдине** канонічне джерело розкладки RTC Backup Domain Soldier'а. Будь-яка зміна (додавання нового поля, перепакування біт-полів, новий магічний маркер) **повинна** починатися з оновлення цієї таблиці. Документація `03_04` (Lorenz state), `03_03` (TinyML EMA) та firmware-код посилаються на цю таблицю, а не дублюють її.
 
-> **Політика розширення (cross-ref [ARCH.28](10_02_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). Після [FW.18] вільний залишився **лише DR15**. Перед додаванням нової фічі: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні.
+> **Політика розширення (cross-ref [ARCH.28](00_08_Action_Plan_Tracker)):** STM32WLE5 має лише 20 backup регістрів (DR0..DR19). Після [FW.18] вільний залишився **лише DR15**. Перед додаванням нової фічі: (1) огляд цієї таблиці на конфлікти, (2) ASCII bit-field діаграма для будь-якого packed-регістру, (3) новий магічний маркер у §2.1, (4) обов'язковий `isfinite()`/magic check при відновленні.
 
 RTC Backup Domain не скидається при STOP2 та більшості реботів (окрім повного знеструмлення або `HAL_RTCEx_BKUPWrite` з нулями).
 
@@ -729,7 +729,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 > **DR16-DR19 — Стан Лоренца (FW.6):** Зберігається/відновлюється при кожному циклі STOP2. При первинному старті або після повного знеструмлення (DR19 ≠ `0x4C5A5354`) система переходить у режим cold-start від K_seed через HKDF/HMAC деривацію `(x₀,y₀,z₀)` (**[SEC.11 / FW.30]** — замість старого `chaos_seed`). K_seed зчитується з Protected Flash Sector (`FLASH_SEED_ADDR = FLASH_KEY_ADDR + 36`, magic `"LSED"` = `0x4C534544`). NaN/Inf перевірка через `isfinite()` захищає від бітових помилок у Backup Domain. STM32WLE5 підтримує 20 backup registers (DR0-DR19). Після [FW.18] DR13/DR14 зайнято TinyML-порогами; DR15 — єдиний вільний резерв.
 
-> **DR13/DR14 — TinyML confidence thresholds (FW.18):** Замість hardcoded `0.80` у `firmware/soldier/main.c` Phase 1.5 використовуються два пороги, що зчитуються на boot з RTC (IEEE 754 bit-copy через `uint32_to_float`) та валідуються діапазоном `[TINYML_THRESHOLD_MIN_VALID=0.01, TINYML_THRESHOLD_MAX_VALID=0.99]`. Magic-маркер не використовується (cold boot DR=0x00000000 → float 0.0f → invalid → fallback на дефолт). Інваріант `warning < critical` гарантується через `TinyML_Apply_Thresholds()` — при інверсії або рівності обидва пороги атомарно відкочуються на дефолти 0.60/0.85. Phase 5 writeback (`DR13/DR14`) персистить OTA-set значення через STOP2; деталі логіки і таблиця зон — [03_03 §214 BLOCKER-6](03_03_TinyML_Acoustic_Inference.md#-blocker-6-хардкодований-поріг-впевненості-080).
+> **DR13/DR14 — TinyML confidence thresholds (FW.18):** Замість hardcoded `0.80` у `firmware/soldier/main.c` Phase 1.5 використовуються два пороги, що зчитуються на boot з RTC (IEEE 754 bit-copy через `uint32_to_float`) та валідуються діапазоном `[TINYML_THRESHOLD_MIN_VALID=0.01, TINYML_THRESHOLD_MAX_VALID=0.99]`. Magic-маркер не використовується (cold boot DR=0x00000000 → float 0.0f → invalid → fallback на дефолт). Інваріант `warning < critical` гарантується через `TinyML_Apply_Thresholds()` — при інверсії або рівності обидва пороги атомарно відкочуються на дефолти 0.60/0.85. Phase 5 writeback (`DR13/DR14`) персистить OTA-set значення через STOP2; деталі логіки і таблиця зон — [03_03 §214 BLOCKER-6](03_03_TinyML_Acoustic_Inference#-blocker-6-хардкодований-поріг-впевненості-080).
 
 ### 2.1 Magic Markers (Канонічна Таблиця) [DOC.3]
 
@@ -737,7 +737,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 | Магічний маркер | Значення (hex) | ASCII | Регістр-прапор | Захищає блок | Документ |
 |-----------------|----------------|-------|----------------|--------------|----------|
-| `LORENZ_STATE_MAGIC` | `0x4C5A5354` | `"LZST"` | `DR19` | `DR16/DR17/DR18` (lorenz_x/y/z) | [03_04 §2.1](03_04_mruby_Lorenz_Attractor.md#21-звідки-беруться-вхідні-параметри) |
+| `LORENZ_STATE_MAGIC` | `0x4C5A5354` | `"LZST"` | `DR19` | `DR16/DR17/DR18` (lorenz_x/y/z) | [03_04 §2.1](03_04_mruby_Lorenz_Attractor#21-звідки-беруться-вхідні-параметри) |
 | `EMA_VALID_FLAG` (8 біт у DR12) | `0xA5` (high byte) | — | `DR12[31:24]` | `DR10` (ema_delta_t), `DR12[15:0]` (ema_vcap_x10) | [§14.3](#143-persistence--rtc-backup-registers-dr10--dr12-packed) |
 | `tree_did != 0` | будь-яке non-zero | — | `DR7` (self) | `DR7` (захист від перезапису DID при OTA) | [§7](#-7-did-generation-народження) |
 
@@ -770,7 +770,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 4. **Magic marker policy.** Якщо `0` — валідне значення поля (як `(0.0, 0.0, 0.0)` для Lorenz state), то ОБОВ'ЯЗКОВО потрібен окремий 32-бітний marker у сусідньому регістрі АБО 8-бітний sentinel у packed-регістрі. Маркер додати у §2.1. Якщо `0` валідно інтерпретується як «cold-boot default» (як `tinyml_warning_threshold == 0.0f` → fallback `TINYML_DEFAULT_WARNING`), маркер не потрібен — достатньо range-check.
 5. **Restore guard.** При читанні з RTC ПЕРЕД використанням — `isfinite()` для float, magic-check для structured fields, range-validation для цілочисельних. Захищає від bit-flip у backup domain (рідкісне, але документоване ST явище у high-radiation environments).
 6. **Host-test bank.** Кожна нова фіча, що торкається RTC, повинна мати ≥3 host-тести: (a) cold-boot fallback, (b) warm-boot roundtrip, (c) corruption/bit-flip відкочується на default. Приклади: `test_arch21_pvd_*` (5 тестів), `test_sec10_dr0_*` (13 тестів).
-7. **Doc update.** Оновити §2 канонічну таблицю + §2.1 magic markers + cross-link з 10_02 (відповідний ID).
+7. **Doc update.** Оновити §2 канонічну таблицю + §2.1 magic markers + cross-link з 00_08 (відповідний ID).
 
 **Якщо DR15 виявиться зайнятий:** перейти до §2.3 — Flash-based KV store як overflow strategy.
 
@@ -805,7 +805,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 > **Чому НЕ застосовуємо зараз:** заміна 15 викликів торкається hot path (Phase 5 STOP2-write і ARCH.21 PVD callback) — кожне торкання потребує перевірки усіх 5 host-тестів `test_arch21_pvd_*` + 13 `test_sec10_*` + усього існуючого test-bank. Користь — лише консистентність + опційне трасування. ROI на TRL-6 негативний; повернутися до цього при рефакторингу під RTOS (ARCH.29) або при першому реальному debug-сесії з польового пристрою.
 
-> **Cross-link:** `10_02 ARCH.28` — RTC Backup Domain allocation policy.
+> **Cross-link:** `00_08 ARCH.28` — RTC Backup Domain allocation policy.
 
 ---
 
@@ -928,12 +928,12 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 
 | Опкод | Назва | Напрямок | Лінк | Документ | Статус |
 |-------|-------|----------|------|----------|--------|
-| `0x55` | OTA_REQ_MARKER (Magic Re-Request) | Soldier→Queen | LoRa **uplink** | [03_02 §5.X.3](03_02_Queen_Gateway_Firmware.md) | ✅ FW.27-B (2026-05-02) |
+| `0x55` | OTA_REQ_MARKER (Magic Re-Request) | Soldier→Queen | LoRa **uplink** | [03_02 §5.X.3](03_02_Queen_Gateway_Firmware) | ✅ FW.27-B (2026-05-02) |
 | `0x99` | OTA_MARKER (bytecode chunks) | Rails→Queen→Soldier | CoAP/LoRa | §4.4 + 03_02 §5 | ✅ |
-| `0x9A` | CMD_SET_THRESHOLDS (Lorenz Z per-tree) | Rails→Queen→Soldier | CoAP/LoRa | [05_02 §4а.1](05_02_Web3_Pipeline_and_Tokenomics.md) | 🟡 FW.8 (Queen-side; Soldier dispatcher TBD) |
-| `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [03_05 §3.4б](03_05_Hardware_AES256_and_Security.md) | ✅ FW.23 (2026-05-02) |
+| `0x9A` | CMD_SET_THRESHOLDS (Lorenz Z per-tree) | Rails→Queen→Soldier | CoAP/LoRa | [05_02 §4а.1](05_02_Proof_of_Growth_Pipeline) | 🟡 FW.8 (Queen-side; Soldier dispatcher TBD) |
+| `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [03_05 §3.4б](03_05_Hardware_AES256_and_Security) | ✅ FW.23 (2026-05-02) |
 | `0x9C` | CMD_TIME_SYNC (envelope) | Rails→Queen | CoAP | §11 (FW.20) | ✅ FW.20 |
-| `0x9D` | CMD_SET_AUDIO_THRESHOLDS (TinyML per-Soldier) | Rails→Queen→Soldier | CoAP/LoRa | [03_03 BLOCKER-6](03_03_TinyML_Acoustic_Inference.md) | ✅ FW.18 (2026-05-02) |
+| `0x9D` | CMD_SET_AUDIO_THRESHOLDS (TinyML per-Soldier) | Rails→Queen→Soldier | CoAP/LoRa | [03_03 BLOCKER-6](03_03_TinyML_Acoustic_Inference) | ✅ FW.18 (2026-05-02) |
 | `0x9E` | _reserved_ | — | — | — | вільний |
 | `0x9F` | _reserved_ | — | — | — | вільний |
 
@@ -1430,7 +1430,7 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 
 ## 📈 14. EMA (Exponential Moving Average) на Soldier — FW.21 🤖
 
-> **Cross-ref:** [10_02 FW.21](10_02_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + 8 тестів у `firmware/test/test_soldier_logic.c`)
+> **Cross-ref:** [00_08 FW.21](00_08_Action_Plan_Tracker) — ✅ реалізовано (`firmware/soldier/main.c` + 8 тестів у `firmware/test/test_soldier_logic.c`)
 
 ### 14.1 Мета та контекст
 

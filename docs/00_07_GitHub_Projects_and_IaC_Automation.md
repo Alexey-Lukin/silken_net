@@ -1,0 +1,303 @@
+# 00_07: GitHub Projects and IaC Automation
+
+## 🎯 Мета
+
+Звести когнітивне навантаження на Архітектора до нуля шляхом автоматизації рутинних процесів через **Infrastructure-as-Code**. Labels, fields, workflows та routing — все живе у репозиторії як `.yml` файли, а не як ручні чек-листи. SSOT — лише `.github/labels.yml`, `.github/labeler.yml`, `.github/workflows/*.yml` та цей документ.
+
+Ключові компоненти автоматизації:
+- **TRL Auto-Advancement:** Автоматична синхронізація рівнів зрілості технологій при завершенні циклів (Shape Up, [`00_05`](00_05_Shape_Up_Operations_and_RnD_Clusters)).
+- **SSOT Integrity Guard:** Жорстка прив'язка коду до архітектурної документації (Wiki).
+- **Parallel Workload Matrix:** Візуальний поділ потоків між фізичними (Лабораторія / Завод) та цифровими (ШІ) агентами.
+- **Labels-as-Code:** `.github/labels.yml` + GitHub Actions workflow синхронізує лейбли при кожному push.
+
+---
+
+## ✅ Статус
+
+- **Поточний TRL:** TRL 7 — CI/CD пайплайн TRL Auto-Advancement на стадії впровадження.
+- **Пов'язані модулі:**
+  - AI-Native методологія (philosophy) → [`00_04_AI_Native_Engineering_and_TRL`](00_04_AI_Native_Engineering_and_TRL)
+  - Shape Up operations → [`00_05_Shape_Up_Operations_and_RnD_Clusters`](00_05_Shape_Up_Operations_and_RnD_Clusters)
+  - Стратегічна дорожня карта → [`00_06_Strategic_Roadmap_and_HIL_Simulators`](00_06_Strategic_Roadmap_and_HIL_Simulators)
+  - Деплой та CI/CD → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
+
+---
+
+## ⚙️ 1. Налаштування GitHub Projects V2
+
+### 1.1 Custom Fields (SSOT)
+
+| Поле | Тип | Опис / Функція |
+| :--- | :--- | :--- |
+| **Current TRL** | Single Select | Поточний рівень (1-9). Головна колонка на дошці "Матриця TRL". |
+| **Target TRL** | Single Select | Цільовий рівень (1-9) для поточного циклу розробки. |
+| **Assigned Agent** | Single Select | Виконавець: `Architect`, `AI Agent`, `Lab (ChNU)`, `Factory`, `nTop Expert`. |
+| **Module** | Single Select | Компонент екосистеми (наприклад, `04: Server Core`). Формує Swimlanes. |
+| **Appetite** | Single Select | `Small Batch` (1-2w) або `Big Bet` (6w) згідно з методологією Shape Up. |
+| **SSOT Link** | URL | Пряме посилання на сторінку Wiki або звіт (Лабораторна валідація). |
+| **R&D Cluster** | Single Select | Primary кластер відповідальності | `A — Hardware/EBFC`, `B — Verification/Math`, `C — Scaling/Cloud`, `D — Compliance/Legal`, `Cross-cluster` |
+| **Shape Up Stage** | Single Select | Стадія всередині 8-тижневого циклу | `Shaping`, `Bet (active)`, `Building`, `Hill (uphill)`, `Hill (downhill)`, `Park`, `Drop`, `Done` |
+| **Cycle** | Single Select | Cycle milestone (формат `YYYY.QN`) | `Cycle 2026.Q2`, `Cycle 2026.Q3`, … |
+| **Academic Semester** | Single Select | Прив'язка до семестру партнерських ВНЗ | `Fall 2025-2026`, `Spring 2025-2026`, `Fall 2026-2027`, … |
+
+### 1.2 Створення полів через GitHub CLI (IaC)
+
+> Замість ручного клікання у Projects V2 UI, поля створюються скриптом `bin/setup_github_project.sh` (планований). Поточний gh CLI не підтримує `project add-field` повністю — workaround через GraphQL.
+
+```bash
+# bin/setup_github_project.sh — заплановано як частина IaC bootstrap
+PROJECT_ID="PVT_xxxx"  # отримати через `gh project list --owner Alexey-Lukin --format json`
+for FIELD in "Current TRL" "Target TRL" "Assigned Agent" "Module" "Appetite" "R&D Cluster" "Shape Up Stage" "Cycle" "Academic Semester"; do
+  echo "Ensuring field: $FIELD"
+  # gh api graphql -f query='mutation { addProjectV2Field(...) }'
+done
+```
+
+---
+
+## ⚙️ 2. Автоматизація через GitHub Actions
+
+### 2.1 Workflow Inventory
+
+| Workflow | Файл | Тригер | Статус |
+|----------|------|--------|--------|
+| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | 🟡 Заплановано |
+| Labels Sync (IaC) | `.github/workflows/labels_sync.yml` | `push` на `.github/labels.yml` | 🟡 Заплановано |
+| PR Auto-Labeler | `.github/workflows/labeler.yml` | `pull_request` | 🟡 Заплановано |
+| SSOT Integrity Guard | `.github/workflows/ssot_guard.yml` | `pull_request` | 🟡 Заплановано |
+| Solidity Audit | `.github/workflows/solidity_audit.yml` | `push` / PR з `contracts/**` | ✅ Реалізовано |
+
+### 2.2 Протокол "TRL Auto-Advancement" (`trl_sync.yml`)
+
+Автоматизує рух карток по матриці готовності технологій.
+
+- **Тригер:** `issues: types: [closed]`
+- **Умова:** Завдання закрите (Done).
+- **Дія:** GraphQL скрипт зчитує значення поля `Target TRL` закритого Issue і перезаписує ним значення `Current TRL` на дошці Project V2. Картка автоматично "перелітає" у нову колонку. Додатково: обчислює `completion_semester` із `closed_at` (UTC) — записує `Academic Semester` опцію.
+- **Авторизація:** Здійснюється через спеціальний токен Архітектора (`secrets.PROJECT_PAT`).
+
+```yaml
+# .github/workflows/trl_sync.yml — skeleton
+name: TRL Auto-Advancement
+on:
+  issues:
+    types: [closed]
+jobs:
+  sync_trl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Advance TRL on Project V2
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_PAT }}
+          PROJECT_NUMBER: 1
+          OWNER: Alexey-Lukin
+        run: bin/ci/trl_sync.rb ${{ github.event.issue.number }}
+```
+
+### 2.3 Протокол "SSOT Integrity Guard" (`ssot_guard.yml`)
+
+Автоматична перевірка актуальності документації (The Codex).
+
+- **Умова:** Pull Request вносить зміни в `app/models/` або ядро прошивки.
+- **Дія:** Action перевіряє наявність відповідних змін у папці `docs/` (або заповненого поля `SSOT Link` у linked issue). Мердж блокується, якщо документація не оновлена.
+
+```yaml
+# .github/workflows/ssot_guard.yml — skeleton
+name: SSOT Integrity Guard
+on:
+  pull_request:
+    paths:
+      - 'app/models/**'
+      - 'app/services/**'
+      - 'firmware/**'
+      - 'contracts/**'
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Check docs/ changes
+        run: |
+          BASE=${{ github.event.pull_request.base.sha }}
+          HEAD=${{ github.event.pull_request.head.sha }}
+          CODE_CHANGED=$(git diff --name-only $BASE $HEAD | grep -E '^(app|firmware|contracts)/' | wc -l)
+          DOCS_CHANGED=$(git diff --name-only $BASE $HEAD | grep -E '^docs/' | wc -l)
+          if [ "$CODE_CHANGED" -gt 0 ] && [ "$DOCS_CHANGED" -eq 0 ]; then
+            echo "❌ Code changed but no docs/* updated. Update SSOT before merge."
+            exit 1
+          fi
+```
+
+### 2.4 Протокол "Solidity Audit" (`solidity_audit.yml`) ✅
+
+Автоматизована перевірка та аудит смарт-контрактів Solidity (6 контрактів: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters).
+
+- **Тригер:** Push до `main` або PR з змінами у `contracts/**`
+- **Job 1: Foundry Tests & Coverage** (`foundry-tests`, timeout: 15 хв):
+  - `npm ci` → `forge build --sizes` → `forge test -vvv --gas-report` → `forge coverage --ir-minimum --report lcov --report summary`
+  - Coverage artifact: `lcov.info` (retention 14 днів)
+- **Job 2: Slither Static Analysis** (`slither`, timeout: 10 хв):
+  - `crytic/slither-action@v0.4.0`, solc 0.8.28, `fail-on: high`
+- **Конфігурація Foundry** (`contracts/foundry.toml`):
+  - solc 0.8.28, EVM cancun, optimizer 200 runs (default), 1000 runs (production profile)
+  - Gas reports: SCC, SFC, StateRootAnchor, SilkenGovernor, SilkenTimelock, ProtocolParameters
+  - Fuzz: 512 runs (default), 256 (ci profile). Invariant: 128 runs, depth 64
+- **Тестове покриття:** 171 тест у 6 test suites (`contracts/test/*.t.sol`)
+
+### 2.5 Labels Sync (IaC) — `.github/labels.yml` + `labels_sync.yml`
+
+> **Чому Labels-as-Code:** ручні інструкції типу "створи 12 лейблів через UI" — це не автоматизація. Файл `.github/labels.yml` — SSOT; workflow `labels_sync.yml` синхронізує лейбли при кожному push, що змінює цей файл. Видалення лейбла з YAML → автоматичне видалення з репозиторію (з `delete: true` опцією).
+
+```yaml
+# .github/workflows/labels_sync.yml — skeleton
+name: Labels Sync (IaC)
+on:
+  push:
+    branches: [main]
+    paths: ['.github/labels.yml']
+  workflow_dispatch:
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EndBug/label-sync@v2
+        with:
+          config-file: .github/labels.yml
+          delete-other-labels: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### 2.6 PR Auto-Labeler — `.github/labeler.yml` + `labeler.yml` workflow
+
+Routes PRs автоматично у відповідні кластери на основі шляхів файлів.
+
+```yaml
+# .github/labeler.yml — config
+'cluster:C-scaling':
+  - any: ['app/**', 'config/**', 'lib/**', 'db/**', 'spec/**']
+'cluster:D-compliance':
+  - any: ['app/services/polygon/hadron_*', 'docs/07_*']
+'cluster:A-hardware':
+  - any: ['firmware/**', 'docs/01_*', 'docs/02_*', 'docs/08_*']
+'cluster:B-verification':
+  - any: ['contracts/**', 'app/services/iotex/**', 'app/services/web3/chainlink_router_version*', 'app/services/silken_net/attractor*', 'app/services/silken_net/seed_derivation*']
+'cluster-ref:B':
+  - any: ['app/services/blockchain_*', 'app/services/celo/**', 'app/services/solana/**']
+'module:04-server-core':
+  - any: ['app/models/**', 'app/controllers/**', 'app/services/**', 'app/workers/**', 'app/views/**']
+'module:03-firmware':
+  - any: ['firmware/**']
+'module:06-infra':
+  - any: ['deploy/**', '.kamal/**', 'terraform/**']
+```
+
+```yaml
+# .github/workflows/labeler.yml
+name: PR Auto-Labeler
+on: [pull_request]
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+---
+
+## 🗂️ 3. Репозиторії Екосистеми
+
+Кожен репозиторій керується єдиними правилами контекстного управління:
+
+- **silken_net:** Ядро системи (Rails 8.1, PostgreSQL, Sidekiq). Включає смарт-контракти у `contracts/` (Solidity, Foundry toolchain).
+- **silken-soldier-fw:** Низькорівнева прошивка (C, mruby) для STM32 та LoRa.
+- **silken-contracts:** ⚠️ Архівний. Активні контракти тепер у `silken_net/contracts/` з повним Foundry CI.
+
+---
+
+## 🏷️ 4. Label Conventions (SSOT)
+
+Файл `.github/labels.yml` — Single Source of Truth для всіх лейблів. Будь-яке нове label має бути занесене сюди до використання. Видалення з файла → видаленне з репозиторію через `labels_sync.yml`.
+
+### 4.1 Cluster routing (primary, mutually exclusive)
+
+| Label | Колір (hex) | Семантика |
+|-------|-------------|-----------|
+| `cluster:A-hardware` | `#FF6B35` (orange) | Primary кластер — Hardware/EBFC |
+| `cluster:B-verification` | `#4ECDC4` (teal) | Primary кластер — Verification/Math |
+| `cluster:C-scaling` | `#3D5A80` (blue) | Primary кластер — Scaling/Cloud |
+| `cluster:D-compliance` | `#7209B7` (purple) | Primary кластер — Compliance/Legal |
+
+### 4.2 Cluster cross-reference (secondary, optional)
+
+| Label | Колір | Семантика |
+|-------|-------|-----------|
+| `cluster-ref:A` / `cluster-ref:B` / `cluster-ref:C` / `cluster-ref:D` | `#D3D3D3` | Інший кластер, з яким задача має RACI-консультацію |
+
+### 4.3 Shape Up lifecycle
+
+| Label | Колір | Семантика |
+|-------|-------|-----------|
+| `shape:shaping` | `#FFE066` | Shaping document створюється |
+| `shape:bet-active` | `#06D6A0` | Bet у поточному циклі |
+| `shape:hill-uphill` | `#FFB627` | ще exploration |
+| `shape:hill-downhill` | `#06D6A0` | downhill execution |
+| `shape:park` | `#9C9C9C` | Park'ed |
+| `shape:drop` | `#E63946` | Drop'ped |
+
+### 4.4 Cross-cuts (наявні)
+
+- `priority:P0` / `P1` / `P2` / `P3` (`00_08`)
+- `complexity:XS/S/M/L/XL`
+- `agent:🤖 ai` / `agent:👤 human` / `agent:🔧 ops` / `agent:🔗 hybrid`
+- `module:04-server-core` / `module:03-firmware` / `module:06-infra` / etc.
+
+---
+
+## ✔️ 5. Верифікація та Критерії Виходу
+
+- **Протокол тестування:** Закриття тестового Issue повинно фізично перемістити його колонку на дошці "Матриця TRL" — без ручного втручання.
+- **Критерій Виходу:** Жодного ручного перетягування карток або зміни статусів Архітектором.
+- **Критерій IaC:** Жодного ручного клікання у GitHub UI для створення / видалення labels (все через `.github/labels.yml`).
+- **Результат валідації:** `[Dashboard: Gaia 2.0 Command Center]` (URL TBD)
+
+---
+
+## 🎯 6. Первинне налаштування репозиторію (Bootstrap)
+
+> Раніше тут був ручний 7-point checklist ("👤 Створити single-select field …"). Замість цього — single script + автоматизовані workflows.
+
+```bash
+# bin/bootstrap_github.sh — заплановано
+set -euo pipefail
+
+# 1. Створити лейбли з .github/labels.yml
+# (виконується автоматично через labels_sync.yml на push)
+git push origin main
+
+# 2. Створити Projects V2 fields
+bin/setup_github_project.sh
+
+# 3. Створити перший Betting Table milestone
+gh api repos/Alexey-Lukin/silken_net/milestones \
+  -f title="Cycle 2026.Q2" \
+  -f description="First betting cycle after UNI.1 & UNI.8 onboarding"
+
+# 4. Створити baseline shaping documents
+mkdir -p docs/shaping
+echo "Stub shape for cluster C: First Akash production deploy" > docs/shaping/akash-prod-deploy.md
+```
+
+---
+
+## 🔗 7. Cross-ref
+
+- `docs/00_05` §5.2 — Betting Table процедура.
+- `docs/00_05` §6 — Academic Semester мапінг.
+- `docs/00_08` — open backlog задач (OPS.3 / OPS.4).
+- `docs/06_01` — Kamal / Terraform CI integration.
+- `docs/04_02 §13b` — Drift Register, який живиться SSOT Integrity Guard результатами.

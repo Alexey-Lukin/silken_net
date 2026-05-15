@@ -835,7 +835,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests. OTA CMD dispatcher на Soldier — deferred до FW.8 cycle |
 | 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | 🟡 Відкрито |
 | 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment, 8 тестів) |
-| 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 08_01/08_02/08_03/10_02) |
+| 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 08_01/08_02/08_03/00_08) |
 
 ---
 
@@ -915,7 +915,7 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 | GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`08_02` §1.8](08_02_Cybernetic_and_Mathematical_Validation) | Akash GPU кластер, фітнес-функція з ground truth |
 | Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | Бушин (ЧНУ ФОТІУС, CNN) | [`08_02` §1.5](08_02_Cybernetic_and_Mathematical_Validation) | Pipeline злиття супутника + TinyML; AiInsight#biodiversity_trend |
 | Статистика розподілів `fauna_activity_index` між ділянками | Карапетян (ЧДТУ Data Science) | [`08_04` §1.1](08_04_CHDTU_Data_Science_Collaboration) | R-аналіз, ANOVA dawn/dusk peak amplitude між ландшафтами |
-| Грантовий вектор Horizon Europe CLUSTER 6 (Biodiversity Monitoring) | СЄУ + усі академічні партнери | [`10_02` BIZ section](10_02_Action_Plan_Tracker), [`08_03` Стаття 24a/34](08_03_Joint_Publications_and_IP_Strategy) | Заявка з акцентом на acoustic D-MRV |
+| Грантовий вектор Horizon Europe CLUSTER 6 (Biodiversity Monitoring) | СЄУ + усі академічні партнери | [`00_08` BIZ section](00_08_Action_Plan_Tracker), [`08_03` Стаття 24a/34](08_03_Joint_Publications_and_IP_Strategy) | Заявка з акцентом на acoustic D-MRV |
 
 ### 10.6 Дорожня карта (TRL крок за кроком)
 

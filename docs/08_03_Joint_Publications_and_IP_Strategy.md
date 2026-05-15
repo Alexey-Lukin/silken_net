@@ -76,7 +76,7 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 **Ролі трьох вершин:**
 
 1. **Бізнес-інтегратор як Mission Controller (TRL 8).**
-   Silken Net (IP holder + system integrator) разом з ActiveBridge (software development) діють як **Mission Controller**: перетворюють фундаментальні дослідження п'яти університетів на робочий код (`app/services/`, [`05_02`](05_02_Proof_of_Growth_Pipeline)), мікросхеми (STM32WLE5JC firmware, [`03_01`](03_01_Soldier_Firmware_Architecture)) та смарт-контракти (`contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`). Mission Controller володіє правом ухвалення рішень про напрям R&D, розподіл ресурсів між WP та фінальною інтеграцією; академічні партнери постачають верифіковані модулі.
+   Silken Net (IP holder + system integrator) разом з ActiveBridge (software development) діють як **Mission Controller**: перетворюють фундаментальні дослідження п'яти університетів на робочий код (`app/services/`, [`05_02`](05_02_Proof_of_Growth_Pipeline)), мікросхеми (STM32WLE5JC firmware, [`03_01`](03_01_Firmware_Lifecycle_and_DMA)) та смарт-контракти (`contracts/SilkenCarbonCoin.sol`, `contracts/SilkenForestCoin.sol`). Mission Controller володіє правом ухвалення рішень про напрям R&D, розподіл ресурсів між WP та фінальною інтеграцією; академічні партнери постачають верифіковані модулі.
 
 2. **Академічний консорціум — ортогональний.**
    Кожен з п'яти університетів закриває **виключно свою** ланку без дублювання. Розподіл нижче (§0.3) є **інваріантом MOIC** — будь-яке нове залучення (наприклад, додатковий університет або дослідницький інститут) повинно або займати порожню комірку, або еволюціонувати існуючу без перекриття.
@@ -568,7 +568,7 @@ _«Дослідження акустичних властивостей пори
 - [`08_02` §1.5 Macro-Micro Verification](08_02_Cybernetic_and_Mathematical_Validation) — Бушин CNN + fauna feature
 - [`08_02` §1.8 NSGA-II GA](08_02_Cybernetic_and_Mathematical_Validation) — Любченко 5-class оптимізація
 - [`08_04` §1.3 Завдання В](08_04_CHDTU_Data_Science_Collaboration) — ПМКТ калібрувальний датасет
-- [`10_02 UNI.11`](10_02_Action_Plan_Tracker) — операційний tracker
+- [`00_08 UNI.11`](00_08_Action_Plan_Tracker) — операційний tracker
 
 **Грантовий вектор:** Стаття 24a є **науковим обґрунтуванням** заявки на **Horizon Europe CLUSTER 6 — Food, Bioeconomy, Natural Resources, Agriculture and Environment**, тематика _Biodiversity Monitoring_ (бюджет одного гранту 2–6 М€). Submission прив'язана до моменту, коли стаття приймається до Q1-журналу — це переводить заявку з категорії «концепт» у категорію «published research» (вирішальна різниця для Horizon evaluators).
 

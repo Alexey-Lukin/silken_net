@@ -6,7 +6,7 @@
 # and `OtaHmacKeyService` (K_ota). If it matches a publicly-known test vector
 # (FIPS-197, NIST SP 800-38A, RFC 3686 / 4231) or a degenerate / placeholder
 # pattern, the entire downstream key tree collapses — SEC.9 in
-# `docs/10_02_Action_Plan_Tracker.md` and §3.1 of `docs/03_05` document the
+# `docs/00_08_Action_Plan_Tracker.md` and §3.1 of `docs/03_05` document the
 # original BLOCKER (firmware key sharing first 16 bytes with the FIPS-197
 # Appendix B test vector).
 #
@@ -34,7 +34,7 @@ Rails.application.config.after_initialize do
     raise SecurityError,
           "[SEC.9] #{hint} is not set. HardwareKeyService and OtaHmacKeyService " \
           "both require it to derive device keys via HKDF. See docs/03_05 §3.4а " \
-          "and docs/10_02 SEC.9."
+          "and docs/00_08 SEC.9."
   end
 
   if (reason = Security::WeakKeyDetector.detect(master_key, hint: hint))
@@ -42,6 +42,6 @@ Rails.application.config.after_initialize do
           "[SEC.9] Refusing to boot: master key is weak — #{reason}. " \
           "Generate a fresh value via `SecureRandom.hex(32)` (or hardware RNG) " \
           "and store it in the secrets vault. See docs/03_05 §3.1а and " \
-          "docs/10_02 SEC.9 for the full rotation runbook."
+          "docs/00_08 SEC.9 for the full rotation runbook."
   end
 end

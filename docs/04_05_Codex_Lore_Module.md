@@ -22,10 +22,10 @@
 >
 > | Аспект | Канонічний документ |
 > |---|---|
-> | DB-таблиці / моделі / enum'и / партиціювання | `04_01_Data_Models_and_Entities.md` § 7b |
-> | Сервіси / воркери / призначення черг Sidekiq | `04_02_Business_Logic_and_Services.md` (підрозділи Codex) |
-> | REST API `/api/v1/codex/*` (≈ 25 маршрутів) | `04_03_REST_API_v1_Reference.md` § 4 (рядки #86–#109) |
-> | Phlex-компоненти / дизайн-токени / ActionCable-канали | `04_04_Phlex_UI_and_Tailwind.md` § 6.4 + § 8.1 |
+> | DB-таблиці / моделі / enum'и / партиціювання | `04_01_Data_Models_and_Entities` § 7b |
+> | Сервіси / воркери / призначення черг Sidekiq | `04_02_Business_Logic_and_Services` (підрозділи Codex) |
+> | REST API `/api/v1/codex/*` (≈ 25 маршрутів) | `04_03_REST_API_v1_Reference` § 4 (рядки #86–#109) |
+> | Phlex-компоненти / дизайн-токени / ActionCable-канали | `04_04_Phlex_UI_and_Tailwind` § 6.4 + § 8.1 |
 > | Seed-дані | `db/seeds/codex/*.rb` + `lib/seeds/codex/*.yml` |
 >
 > Тут залишається **тільки** те, чого *ще немає* в коді: філософія дизайну
@@ -160,7 +160,7 @@ O(active_users), не O(all_users).
 
 - [x] Додано **"Lore Layer (Codex)"** one-liner до `README.md` (під
   Proof of Growth Pipeline, з прямим лінком на цей документ).
-- [x] Оновлено `docs/00_00_SSOT_Index.md` — Модуль 04 тепер містить
+- [x] Оновлено `docs/00_00_SSOT_Index` — Модуль 04 тепер містить
   явне посилання на `04_05_Codex_Lore_Module`. Sidebar GitHub Wiki
   оновлюється з тієї ж SSOT-сторінки.
 
@@ -218,8 +218,8 @@ TRL 8) **буде** вимагати справжнього Batch callback — �
 | 7 — PR cleanup pass | ✅ done | — | migration squash, N+1 fix, citation `polymorphic_type_for` |
 | 8 — Stimulus-аудит + баг-фікси | ✅ done | — | EloMath `\|\|`, Redis GETDEL, PII, TOCTOU fraction, nil-safe audit |
 | 8a — REST/CoC рефактор | ✅ done | — | `BattleController` → `MatchesController#new/#create`; `destroy_me` → `destroy`; `me` → `index`/`show`; Phlex `Codex::Battle::Arena` UI-назва лишилась |
-| 8b — Onboarding wizard + Wiki/README | ✅ done | +6 (`Codex::Fractions::OnboardingWizard`) | First-login банер у `DashboardLayout`, Lore Layer one-liner у `README.md`, `04_05` посилання у `00_00_SSOT_Index.md` (Модуль 04) |
+| 8b — Onboarding wizard + Wiki/README | ✅ done | +6 (`Codex::Fractions::OnboardingWizard`) | First-login банер у `DashboardLayout`, Lore Layer one-liner у `README.md`, `04_05` посилання у `00_00_SSOT_Index` (Модуль 04) |
 
 > Історія посесійних ADR-нотаток для Phases 1–6 зберігається в git log
-> `docs/04_05_Codex_Lore_Module.md` (`git log -p --follow`) та в merged PR.
+> `docs/04_05_Codex_Lore_Module` (`git log -p --follow`) та в merged PR.
 > Дублювати тут — означає дублювати `04_01..04_04`.

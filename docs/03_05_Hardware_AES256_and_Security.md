@@ -777,13 +777,13 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 - Гілка A → B: можлива (re-flash MCU + добавити ATECC до PCBA = новий PCB revision)
 - Гілка B → A: **неможлива** (ATECC config zone locked permanently — board залишається B forever)
 
-> **Cross-ref:** §3.4а HKDF derivation (детальна криптографія), §3.6 RDP Level 2 procedure (irreversible lock checklist), §3.7 ATECC608B integration assessment (slot mapping, alternatives, BOM impact), [10_02 SEC.3](10_02_Action_Plan_Tracker), [10_02 SEC.6](10_02_Action_Plan_Tracker), [10_02 FW.1](10_02_Action_Plan_Tracker).
+> **Cross-ref:** §3.4а HKDF derivation (детальна криптографія), §3.6 RDP Level 2 procedure (irreversible lock checklist), §3.7 ATECC608B integration assessment (slot mapping, alternatives, BOM impact), [00_08 SEC.3](00_08_Action_Plan_Tracker), [00_08 SEC.6](00_08_Action_Plan_Tracker), [00_08 FW.1](00_08_Action_Plan_Tracker).
 
 ---
 
 ### 3.4а HKDF Key Derivation Protocol Design 🤖
 
-> **Cross-ref:** [10_02 FW.1](10_02_Action_Plan_Tracker) — дизайн завершено ✅
+> **Cross-ref:** [00_08 FW.1](00_08_Action_Plan_Tracker) — дизайн завершено ✅
 
 **Мета:** замінити один hardcoded `aes_key[8]` на МЕРЕЖУ унікальних ключів, де кожен пристрій має свій ключ, а компрометація одного не розкриває решту. Весь дизайн базується на HKDF (RFC 5869) — стандартному HMAC-based Key Derivation Function.
 
@@ -1024,7 +1024,7 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
 
 ### 3.4в Lorenz K_seed Derivation (SEC.11) 🤖
 
-> **Cross-ref:** [10_02 SEC.11](10_02_Action_Plan_Tracker) — ✅ DONE 2026-05-02 (hard cutover, pre-prod)
+> **Cross-ref:** [00_08 SEC.11](00_08_Action_Plan_Tracker) — ✅ DONE 2026-05-02 (hard cutover, pre-prod)
 
 **Мета:** криптографічно стійкий механізм виведення початкової точки `(x₀, y₀, z₀)` атрактора Лоренца для кожного Soldier-вузла. Замінює попередній підхід "raw DID як seed", який мав фундаментальні безпекові вади і робив `check_z_divergence!` категоричним замість числового. Деталі — у [03_04 §2.1 + §3 Крок 1](03_04_mruby_Lorenz_Attractor); тут — лише cryptographic protocol layer.
 
@@ -1154,7 +1154,7 @@ log.update!(lorenz_state_x: x_f, lorenz_state_y: y_f, lorenz_state_z: z_f,
 **Залишковий TODO (не блокує цикл):** реальна mbedTLS HMAC-SHA256 деривація на STM32 HASH-peripheral у Soldier (`Phase 4.5 OTA assembly` має `TODO: Compute expected HMAC via mbedTLS` — потребує лабораторної ARM-збірки з mbedTLS link integration; до того гейт-логіка перевірена host-tests, runtime call вимкнений у бойовій збірці. Аналог FW.30 cold-start mbedTLS placeholder.).
 
 
-> **Cross-ref:** [10_02 FW.23](10_02_Action_Plan_Tracker) — дизайн завершено ✅
+> **Cross-ref:** [00_08 FW.23](00_08_Action_Plan_Tracker) — дизайн завершено ✅
 > **Залежність:** Реалізація staging'ується після FW.1 (per-device HKDF) — потребує спільної master-secret інфраструктури.
 
 **Мета:** усунути BLOCKER §6 «Queen → Soldier (OTA LoRa) — MAC/MIC відсутній». Зловмисник у радіусі Queen може:
@@ -1391,7 +1391,7 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 ### 3.6 Процедура активації RDP Level 2 (необоротна) 🤖
 
-**Cross-ref:** [10_02 SEC.2](10_02_Action_Plan_Tracker), §3.3 «Апаратний Захист Flash».
+**Cross-ref:** [00_08 SEC.2](00_08_Action_Plan_Tracker), §3.3 «Апаратний Захист Flash».
 
 > ⚠️ **Активація RDP Level 2 — одностороння, незворотна дія.** Після `Apply` чіп фізично втрачає SWD інтерфейс назавжди. Цю процедуру виконують **тільки** після того, як OTA-пайплайн повністю верифікований у полі.
 
@@ -1449,13 +1449,13 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 | Field pilot (пілотний ліс) | Level 1 | 100–500 | Field sanity, OTA verification, recovery still possible |
 | Mass production batch | Level 2 | 10,000+ | **Тільки** після ≥3 місяців stable OTA на Level-1 партії |
 
-**Документ-tracker:** після кожного batch активації — оновити `docs/10_02` SEC.2 (👤 — secrets / process).
+**Документ-tracker:** після кожного batch активації — оновити `docs/00_08` SEC.2 (👤 — secrets / process).
 
 ---
 
 ### 3.7 ATECC608B Secure Element — оцінка інтеграції 🤖
 
-**Cross-ref:** [10_02 SEC.6](10_02_Action_Plan_Tracker), §3.2 «Відсутній Secure Element».
+**Cross-ref:** [00_08 SEC.6](00_08_Action_Plan_Tracker), §3.2 «Відсутній Secure Element».
 
 **Контекст:** навіть з RDP Level 2, key extraction теоретично можливий через **side-channel attacks** (DPA, EM analysis) або **fault injection** (voltage/clock glitching). Для batches > 1000 одиниць — це attractive target. Виділений Secure Element зберігає ключ у tamper-resistant ASIC з вбудованим detection.
 

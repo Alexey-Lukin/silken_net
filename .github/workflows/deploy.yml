@@ -32,7 +32,7 @@ jobs:
           if [ -z "$PROVISIONING_MASTER_KEY" ]; then
             echo "::error::PROVISIONING_MASTER_KEY secret is missing." \
                  "Canopy/staging deploy without this ENV would force HardwareKeyService" \
-                 "into deterministic-seed fallback. See SEC.11 in docs/10_02."
+                 "into deterministic-seed fallback. See SEC.11 in docs/00_08."
             exit 1
           fi
           KEY_LEN=${#PROVISIONING_MASTER_KEY}

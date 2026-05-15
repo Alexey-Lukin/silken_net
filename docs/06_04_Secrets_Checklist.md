@@ -21,7 +21,7 @@
   - Деплой → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform) — BLOCKER-3 (вихідний опис проблеми)
   - Akash → [`06_02_Akash_Network_Integration`](06_02_Akash_Network_Integration) — BLOCKER-5 (`REQUIRED_SECRET_NOT_SET` плейсхолдери)
   - Observability → [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability) — Grafana Cloud та Sentry DSN
-  - Action Plan → [`10_02_Action_Plan_Tracker`](10_02_Action_Plan_Tracker) — S1.1, S4.3, S5.6
+  - Action Plan → [`00_08_Action_Plan_Tracker`](00_08_Action_Plan_Tracker) — S1.1, S4.3, S5.6
 
 ---
 
@@ -68,7 +68,7 @@
 - [ ] `DATABASE_URL` — те саме значення що й GitHub Secret
 - [ ] `REDIS_URL` — те саме значення
 - [ ] `KREDIS_REDIS_URL` — Redis DB 1 (Kredis locks для Web3 nonce)
-- [ ] `SENTRY_DSN` — Sentry project DSN. Без цього Sentry **інертний** — production помилки не репортуються (BLOCKER у `10_02`). Отримати: Sentry → Project Settings → Client Keys (DSN).
+- [ ] `SENTRY_DSN` — Sentry project DSN. Без цього Sentry **інертний** — production помилки не репортуються (BLOCKER у `00_08`). Отримати: Sentry → Project Settings → Client Keys (DSN).
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF master key для per-device AES key derivation. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. ⚠️ **Production guard:** provisioning endpoint **MUST** raise/refuse при відсутності ENV у production (`Rails.env.production?`) — будь-який fallback на raw AES key є **критичною security regression** і допустимий ТІЛЬКИ у TRL4 lab mode (`RAILS_ENV=development|test`). Recommended controller-level guard: `raise "PROVISIONING_MASTER_KEY required in production" if Rails.env.production? && ENV["PROVISIONING_MASTER_KEY"].blank?`
 - [ ] `CHAINLINK_FUNCTIONS_ROUTER` — адреса Chainlink Functions Router contract на Polygon
 - [ ] `CHAINLINK_SUBSCRIPTION_ID` — ID Chainlink Functions subscription (з https://functions.chain.link)
@@ -85,7 +85,7 @@
 - [ ] `ALCHEMY_POLYGON_RPC_URL` — Alchemy/Infura RPC для Polygon (Primary). `Web3::ResilientClient` підтримує fallback cascade — також встанови `ALCHEMY_POLYGON_RPC_URL_FALLBACK_*` за потреби.
 - [ ] `ALCHEMY_ETHEREUM_RPC_URL` — Alchemy RPC для Ethereum L1
 - [ ] `CELO_RPC_URL` — Celo RPC endpoint (без значення — `Forno`-public; для production — Infura/Alchemy)
-- [ ] `SOLANA_RPC_URL` — Solana RPC. ⚠️ **БЕЗ цього ENV дефолт = Solana Devnet** — мікро-винагороди USDC підуть на тестову мережу (`E.47` у `10_02`)! Mainnet: Helius/QuickNode.
+- [ ] `SOLANA_RPC_URL` — Solana RPC. ⚠️ **БЕЗ цього ENV дефолт = Solana Devnet** — мікро-винагороди USDC підуть на тестову мережу (`E.47` у `00_08`)! Mainnet: Helius/QuickNode.
 - [ ] `CARBON_COIN_CONTRACT_ADDRESS` — адреса SCC контракту після deploy
 - [ ] `KLIMA_RETIREMENT_CONTRACT` — адреса KlimaDAO Retirement Aggregator
 - [ ] `SOLANA_USDC_MINT_ADDRESS` — SPL Token mint USDC (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`)
@@ -151,7 +151,7 @@
 
 ### 5.1. Перед першим деплоєм Production
 
-1. [ ] 👤 Створити GCS bucket для Terraform state (S5.6 в `10_02`): `gsutil mb -l europe-west1 gs://<project>-terraform-state`. Включити versioning: `gsutil versioning set on gs://<project>-terraform-state`.
+1. [ ] 👤 Створити GCS bucket для Terraform state (S5.6 в `00_08`): `gsutil mb -l europe-west1 gs://<project>-terraform-state`. Включити versioning: `gsutil versioning set on gs://<project>-terraform-state`.
 2. [ ] 👤 Створити `terraform/terraform.tfvars` з §4
 3. [ ] 👤 Виконати `terraform init && terraform apply`
 4. [ ] 👤 Заповнити GitHub Secrets з §1
@@ -167,7 +167,7 @@
 - **Sentry DSN**: rotate у Sentry UI → оновити `SENTRY_DSN` → redeploy.
 - **Chainlink HMAC**: координовано з backend deploy (зміна на льоту викличе rejected callbacks).
 - **Oracle/Anchor private keys**: deploy новий гаманець → revoke старий → перевести залишок газу → redeploy.
-- **peaq_signing_key** (Ed25519 DID signing): планова ротація кожні 90 днів або при зміні персоналу. Dual-Key Grace Period 72 години (див. §5.4 нижче та `04_02_Business_Logic_and_Services.md` §S6.14).
+- **peaq_signing_key** (Ed25519 DID signing): планова ротація кожні 90 днів або при зміні персоналу. Dual-Key Grace Period 72 години (див. §5.4 нижче та `04_02_Business_Logic_and_Services` §S6.14).
 
 ### 5.3. Аудит виконання
 
@@ -298,7 +298,7 @@ bin/rails runner "
    - Налаштувати alerting на аномальні provisioning патерни
    - Розглянути HSM/Vault для зберігання signing keys замість Rails credentials
 
-> **Зв'язок:** Key Rotation Policy → `docs/04_02_Business_Logic_and_Services.md` §S6.14
+> **Зв'язок:** Key Rotation Policy → `docs/04_02_Business_Logic_and_Services` §S6.14
 
 ---
 
@@ -310,4 +310,4 @@ bin/rails runner "
 | `06_02_Akash_Network_Integration` | BLOCKER-5 (REQUIRED_SECRET_NOT_SET) |
 | `06_03_Prometheus_Observability` | `SENTRY_DSN`, Grafana Cloud tokens |
 | `05_01_Multichain_Architecture` | Web3 ENV variables (§5) |
-| `10_02_Action_Plan_Tracker` | S1.1, S4.3, S5.2, S5.6 |
+| `00_08_Action_Plan_Tracker` | S1.1, S4.3, S5.2, S5.6 |

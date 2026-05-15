@@ -4,7 +4,7 @@
 # accompanied by corresponding documentation updates.
 #
 # This prevents context drift between implementation and the SSOT docs.
-# Ref: docs/09_03_GitHub_Projects_and_Ops_Automation.md
+# Ref: docs/00_07_GitHub_Projects_and_IaC_Automation.md
 
 name: SSOT Guard
 
@@ -144,7 +144,7 @@ jobs:
               '',
               'If documentation changes are intentionally not needed, add the `ssot-bypass` label to this PR.',
               '',
-              '> Ref: [09_03 SSOT Integrity Guard](../docs/09_03_GitHub_Projects_and_Ops_Automation.md)',
+              '> Ref: [00_07 SSOT Integrity Guard](../docs/00_07_GitHub_Projects_and_IaC_Automation.md)',
             ].join('\n');
 
             core.setFailed(message);

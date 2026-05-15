@@ -465,7 +465,7 @@ STM32WLE5JC
 
 **Production breadboard wiring** і протокол першого холодного старту з реальним EBFC — `02_03 §10`.
 
-**Legacy LTC3108-based educational stand** (44 мВ симулятор + Coilcraft xfmr + Meissner oscillator) для студентських робіт ЧНУ — `02_03_appendix_legacy_breadboard.md`.
+**Legacy LTC3108-based educational stand** (44 мВ симулятор + Coilcraft xfmr + Meissner oscillator) для студентських робіт ЧНУ — `02_03_appendix_legacy_breadboard`.
 
 **SWD/UART debug-підключення** ST-LINK-V3MINIE та FT232RL до LoRa-E5 — `03_01_Firmware_Lifecycle_and_DMA` §"Фізичне Підключення Апаратного Відладчика".
 

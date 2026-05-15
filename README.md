@@ -250,11 +250,16 @@ kamal deploy
 
 Детальна документація в директорії [`docs/`](docs/):
 
-**Архітектура та Візія (Модуль 00)**
+**Архітектура, Стратегія та Операції (Модуль 00)**
 - [`00_00`](docs/00_00_SSOT_Index.md) — єдине джерело істини (SSOT), головний реєстр
-- [`00_01`](docs/00_01_System_Architecture_and_Layers.md) — 8-рівнева кіберфізична архітектура
-- [`00_02`](docs/00_02_Project_Vision_and_Roadmap.md) — місія та roadmap масштабування
-- [`00_03`](docs/00_03_AI_Native_Concurrent_Engineering.md) — AI-Native парадигма управління та TRL
+- [`00_01`](docs/00_01_Vision_Market_and_Slashing_Policy.md) — місія, проблема VCM, NaaS та Slashing v2 (negligence vs force-majeure)
+- [`00_02`](docs/00_02_System_Architecture_and_12_Chain_Pipeline.md) — 8-рівнева кіберфізична архітектура + 12-крокової конвеєр
+- [`00_03`](docs/00_03_Resilience_and_Failover_Policy.md) — Queen failover + Per-Chain Fallback Matrix
+- [`00_04`](docs/00_04_AI_Native_Engineering_and_TRL.md) — AI-Native філософія: TRL метрика, Intent-First, Wiki-First
+- [`00_05`](docs/00_05_Shape_Up_Operations_and_RnD_Clusters.md) — Shape Up 6+2 цикли, 4 R&D кластери, Betting Table, Async-Review
+- [`00_06`](docs/00_06_Strategic_Roadmap_and_HIL_Simulators.md) — TRL Matrix + HIL-симулятори (per-domain TRL)
+- [`00_07`](docs/00_07_GitHub_Projects_and_IaC_Automation.md) — Projects V2 + Labels-as-Code + GitHub Actions workflows
+- [`00_08`](docs/00_08_Action_Plan_Tracker.md) — 🔴 живий трекер незавершених задач (DOC/SW/SEC/ARCH/UNI аудит)
 
 **Біомеханіка та Хімія (Модуль 01)**
 - [`01_01`](docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md) — 3-складовий Ti-6Al-4V анкер
@@ -282,6 +287,7 @@ kamal deploy
 - [`04_03`](docs/04_03_REST_API_v1_Reference.md) — 82 REST API ендпоінти
 - [`04_04`](docs/04_04_Phlex_UI_and_Tailwind.md) — дизайн-система Phlex + Tailwind
 - [`04_05`](docs/04_05_Codex_Lore_Module.md) — Codex / Lore-шар (read-only Atlas з 79 архетипів: екосистеми, унікальні дерева, біо/інженерні протоколи, міфо-фреймворки)
+- [`04_06`](docs/04_06_Testing_Guide_and_Coverage.md) — 30 RSpec best practices + повна Coverage Matrix (RSpec / Firmware C / Foundry Solidity)
 
 **Web3 та Економіка (Модуль 05)**
 - [`05_01`](docs/05_01_Multichain_Architecture.md) — 12-chain DePIN стек
@@ -310,15 +316,7 @@ kamal deploy
 - [`08_06`](docs/08_06_CHMA_Biomedical_Integration.md) — ЧМА: біомедична валідація EBFC, токсикологія Ti-6Al-4V, ксилемоінтеграція
 - [`08_07`](docs/08_07_SEU_Economics_and_Legal_Integration.md) — СЄУ: макроекономіка NaaS, RWA-легалізація, промисловий дизайн PEEK-радому
 
-**Управління та Масштабування (Модуль 09)**
-- [`09_01`](docs/09_01_AI_Native_Concurrent_Engineering.md) — AI-Native Concurrent Engineering (Shape Up)
-- [`09_02`](docs/09_02_Strategic_Roadmap_and_TRL_Matrix.md) — матриця TRL та roadmap
-- [`09_03`](docs/09_03_GitHub_Projects_and_Ops_Automation.md) — GitHub Projects V2 + CI/CD автоматизація
-
-**Тестування (Модуль 10)**
-- [`10_01`](docs/10_01_View_Component_Testing_Guide.md) — 30 best practices для тестування Phlex-компонентів
-- [`10_02`](docs/10_02_Action_Plan_Tracker.md) — трекер незавершених задач (DOC/SW/SEC/ARCH аудит)
-- [`10_03`](docs/10_03_Test_Coverage_Matrix.md) — карта покриття тестами (RSpec, Firmware C, Foundry Solidity)
+> **Модуль 09 (Управління)** та **Модуль 10 (Тестування)** консолідовані у Модуль 00 (`00_04`/`00_05`/`00_06`/`00_07`/`00_08`) та Модуль 04 (`04_06`) відповідно.
 
 ---
 

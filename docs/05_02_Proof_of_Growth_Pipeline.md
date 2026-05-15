@@ -257,7 +257,7 @@ end
 
 #### 🤖 FW.8 — OTA Sync для Per-Species Lorenz Thresholds (Дизайн)
 
-> **Cross-ref:** [10_02 FW.8](10_02_Action_Plan_Tracker) — дизайн завершено ✅
+> **Cross-ref:** [00_08 FW.8](00_08_Action_Plan_Tracker) — дизайн завершено ✅
 
 **Проблема:** `CRITICAL_Z_MIN`, `CRITICAL_Z_MAX`, `OPTIMAL_Z_TARGET` hardcoded у Flash. Сосна (*Pinus sylvestris*) і дуб (*Quercus robur*) мають різний діапазон нормальної конвективної активності — один пороговий набір дає хибні anomaly alerts для одного виду при нормальному стані іншого.
 
@@ -857,7 +857,7 @@ blockchain_transactions
 
 ## 🔬 SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity
 
-> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation-); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [10_02 SEC.11](10_02_Action_Plan_Tracker).
+> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation-); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [00_08 SEC.11](00_08_Action_Plan_Tracker).
 
 ### Чому це частина Proof of Growth, а не суто security task
 

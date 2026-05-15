@@ -341,7 +341,7 @@ if (current_ota_chunk_idx >= total_chunks) {
 
 ## 📡 1. LoRa Reception та ISR
 
-> **Роль у вирішенні Проблеми Рандеву:** Королева є **єдиним always-on listener** у мережі. Її SX1262 завжди в `Radio.Rx(LORA_RX_INFINITE)` — нескінченний таймаут прийому. Це вирішує фундаментальну Проблему Рандеву (Rendezvous Problem) для всіх вузлів у прямій видимості (150–200 м): Солдат може "вистрілити" пакетом у будь-яку мілісекунду — Королева завжди зловить. Це можливо завдяки зовнішньому живленню (сонячна панель / акумулятор), на відміну від Солдатів з EBFC біобатарейкою. Для вузлів за межами прямої видимості Queen потрібні Синхронні Вікна (TDMA) та CAD — нереалізовані механізми рівнів L2/L3 ([ARCH.26](10_02_Action_Plan_Tracker), [деталі → 00_01 §Рівень 4](00_01_System_Architecture_and_Layers)).
+> **Роль у вирішенні Проблеми Рандеву:** Королева є **єдиним always-on listener** у мережі. Її SX1262 завжди в `Radio.Rx(LORA_RX_INFINITE)` — нескінченний таймаут прийому. Це вирішує фундаментальну Проблему Рандеву (Rendezvous Problem) для всіх вузлів у прямій видимості (150–200 м): Солдат може "вистрілити" пакетом у будь-яку мілісекунду — Королева завжди зловить. Це можливо завдяки зовнішньому живленню (сонячна панель / акумулятор), на відміну від Солдатів з EBFC біобатарейкою. Для вузлів за межами прямої видимості Queen потрібні Синхронні Вікна (TDMA) та CAD — нереалізовані механізми рівнів L2/L3 ([ARCH.26](00_08_Action_Plan_Tracker), [деталі → 00_01 §Рівень 4](00_02_System_Architecture_and_12_Chain_Pipeline)).
 
 ### OnRxDone (Апаратне переривання)
 
@@ -733,7 +733,7 @@ Guard 5: if (offset + payload_len > sizeof(pending_ota_bytecode)=8192) → retur
 
 ### 5.X [FW.27] OTA Broadcast Reliability — ACK-Aggregation + Magic Re-Request (DESIGN)
 
-> **Статус:** 🤖 Дизайн завершено. Повна імплементація залежить від [ARCH.26 TDMA Sync Windows](10_02_Action_Plan_Tracker) — без скоординованого RX-вікна на Soldier'ах ACK-aggregation марна. Поточний broadcast — fire-and-forget, що документується тут чесно.
+> **Статус:** 🤖 Дизайн завершено. Повна імплементація залежить від [ARCH.26 TDMA Sync Windows](00_08_Action_Plan_Tracker) — без скоординованого RX-вікна на Soldier'ах ACK-aggregation марна. Поточний broadcast — fire-and-forget, що документується тут чесно.
 
 #### 5.X.1 Проблема, яку вирішує
 
@@ -920,13 +920,13 @@ if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
 | HMAC trailer state cross-cycle | `test_hmac_trailer_state_survives_simulated_stop2_between_segments` | bitmask `ota_hmac_segments_received` OR-агрегується через STOP2 між сегментами 1/3/2 |
 | HMAC trailer idempotent overwrite | `test_hmac_trailer_duplicate_segment_overwrites_idempotently` | Дубль того самого сегменту не корумпує `received_hmac_tag[]` |
 
-> **Cross-ref:** `10_02 FW.27` — повний контекст; `10_03 §2.1` — тест-список.
+> **Cross-ref:** `00_08 FW.27` — повний контекст; `04_06 §2.1` — тест-список.
 
 ---
 
 ## 📡 5а. Time Sync (FW.20, FW.20-S2) — Канонічний хаб
 
-> **SSOT для Time Sync:** ця секція — єдина точка розкладки часо-синхронізаційного протоколу між Rails ↔ Queen ↔ Soldier. Усі деталі реалізації, статуси чек-боксів і регресійні тести зведені тут; `10_02 FW.20` / `FW.20-S2` тримає лише посилання сюди.
+> **SSOT для Time Sync:** ця секція — єдина точка розкладки часо-синхронізаційного протоколу між Rails ↔ Queen ↔ Soldier. Усі деталі реалізації, статуси чек-боксів і регресійні тести зведені тут; `00_08 FW.20` / `FW.20-S2` тримає лише посилання сюди.
 
 ### 5а.1 Архітектура (3 рівні reach)
 
@@ -968,7 +968,7 @@ Soldier — gossip-uplift (3-hop reach)
 
 ### 5а.3 Опкод-карта (SSOT)
 
-> **Канонічна таблиця опкодів LoRa/CoAP** живе в [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA.md#-45а-downlink-opcode-map). Узагальнено для Time Sync контексту:
+> **Канонічна таблиця опкодів LoRa/CoAP** живе в [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA#-45а-downlink-opcode-map). Узагальнено для Time Sync контексту:
 
 | Опкод | Призначення | Канал | Магія | Статус |
 |-------|------------|-------|-------|--------|
@@ -1017,12 +1017,12 @@ Soldier — gossip-uplift (3-hop reach)
 
 ### 5а.6 Що ще лежить як freeze-contract (deferred TRL-7)
 
-- **Anti-storm dedup bitmap** для повного активного mesh-relay'у (потребує вільного RTC регістра — DR15 наразі резерв; cross-ref [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA.md#23-overflow-strategy-flash-based-kv-store-arch28))
+- **Anti-storm dedup bitmap** для повного активного mesh-relay'у (потребує вільного RTC регістра — DR15 наразі резерв; cross-ref [`03_01 §2.3 ARCH.28`](03_01_Firmware_Lifecycle_and_DMA#23-overflow-strategy-flash-based-kv-store-arch28))
 - **Queen beacon TTL≥2** (зараз hardcoded TTL=1 у `BEACON_BYTE9_AUTHORITATIVE = 0x81`; перемикається коли реалізуємо anti-storm)
 - **Hot-path виклик** `Soldier_Pack_Gossip_Ts_Byte` у Phase 2 normal-telemetry pack + RX-обробник для прийому
 - **Drift compensation** при ΔT = ±60°C lab-вимірювання (потребує термокамери, відсутня @ TRL-6)
 
-> **Закриття 10_02:** після цього хабу записи `FW.20`, `FW.20-S2 (1/5..5/5)` у `10_02 §Firmware` шорткозамкнено — лишилося лише посилання сюди для аудиту прогресу.
+> **Закриття 00_08:** після цього хабу записи `FW.20`, `FW.20-S2 (1/5..5/5)` у `00_08 §Firmware` шорткозамкнено — лишилося лише посилання сюди для аудиту прогресу.
 
 ---
 

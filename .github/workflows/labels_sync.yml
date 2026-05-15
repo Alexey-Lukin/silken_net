@@ -1,0 +1,34 @@
+# Labels Sync (IaC)
+#
+# Synchronises the repository labels with the SSOT defined in
+# `.github/labels.yml`. Deleting a label entry from the YAML removes it from
+# the repository on the next sync (delete-other-labels: true).
+#
+# Doc reference: docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.5.
+
+name: Labels Sync (IaC)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/labels.yml'
+      - '.github/workflows/labels_sync.yml'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync labels from .github/labels.yml
+        uses: EndBug/label-sync@v2
+        with:
+          config-file: .github/labels.yml
+          delete-other-labels: true
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -121,7 +121,7 @@
 
 #### 🤖 4а. Queen BOM — Phase 3 (Starlink Mini) — HW.14
 
-> **Cross-ref:** [10_02 HW.14](10_02_Action_Plan_Tracker) — оновлення Unit Economics ✅
+> **Cross-ref:** [00_08 HW.14](00_08_Action_Plan_Tracker) — оновлення Unit Economics ✅
 
 **Phase 3** застосовується для ультра-віддалених локацій (Амазонія, Тайга, Африка) де Starlink DTC (Phase 2.5) недоступний або потрібна вища пропускна здатність. Конфігурація використовує фізичний Starlink Mini термінал (20–40 Вт) з ESP32-S3 або SIM8200G-M2 co-processor.
 
@@ -162,7 +162,7 @@
 
 #### 🤖 5а. Phase 3 (Starlink Mini) Cluster Economics — HW.14
 
-> **Cross-ref:** [10_02 HW.14](10_02_Action_Plan_Tracker), `02_05` §4 Power Tree, BLOCKER-2.
+> **Cross-ref:** [00_08 HW.14](00_08_Action_Plan_Tracker), `02_05` §4 Power Tree, BLOCKER-2.
 
 Для ультра-віддалених локацій де LTE-M / Starlink DTC недоступний (Phase 3):
 

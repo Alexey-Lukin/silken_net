@@ -749,4 +749,4 @@ Silken Net = Digital MRV (Measurement, Reporting, Verification):
 | Tokenomics Summary | PDF з `05_03` | ✅ Існує |
 | Список 5 академічних партнерів | Таблиця | ✅ У `08_01`-`08_06` |
 
-> **Cross-ref:** [10_02 UNI.8](10_02_Action_Plan_Tracker) — підготовка pitch для ректора СЄУ ✅
+> **Cross-ref:** [00_08 UNI.8](00_08_Action_Plan_Tracker) — підготовка pitch для ректора СЄУ ✅

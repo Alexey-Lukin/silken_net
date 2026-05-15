@@ -184,7 +184,7 @@
 | **Файл** | `app/services/blockchain_minting_service.rb` |
 | **Інтерфейс** | Два методи: `.call(id: Integer, telemetry_log: nil)` — одиночний мінтинг; `.call_batch(ids: Array<Integer>, telemetry_log: nil)` — пакетний мінтинг |
 | **Вхід** | `.call`: `id` (Integer); `.call_batch`: `ids` (Array\<Integer>); `telemetry_log:` (опціонально, для oracle-driven flow) |
-| **Що робить** | Пакетна емісія SCC/SFC на Polygon через `mint` або `batchMint`. Guard clauses: `verified_by_iotex?`, `oracle_status_fulfilled?` (enum method), `hadron_kyc_status == "approved"`. **[BLOCKER-11 / S6.12]** Guards `verified_by_iotex?` + `oracle_status_fulfilled?` активні **лише** при `telemetry_log:` (oracle-driven flow Path 1). У tokenomics-flow Path 2 (`TokenomicsEvaluatorWorker → EvaluateTreeBatchWorker → wallet.lock_and_mint! → process_batch → call_batch(ids)` без `telemetry_log:`) ці перевірки **свідомо пропускаються** — `growth_points` вже зараховані через `Wallet#credit!` після AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService` (per-packet integrity perimeter). `hadron_kyc_status == "approved"` — **єдиний обов'язковий guard для всіх шляхів** (security perimeter проти non-compliant wallets). При `hadron_kyc_status != "approved"` — raise `Compliance Breach` без виклику `transact`; transaction залишається `:pending`, `locked_points` не звільняються (потребують admin-розблокування або повторної KYC). Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]" (3 examples). Cross-ref: [05_02 Усі Шляхи до lock_and_mint! [DOC.7]](../docs/05_02_Proof_of_Growth_Pipeline.md#усі-шляхи-до-walletlock_and_mint-guard-inventory-doc7). Dynamic Tax 2% при carbon_coin + недофінансований страховий пул (→ DAO Treasury). `Kredis.lock(expires_in: 120.seconds)` проти race conditions (120s покриває worst-case: dry-run + binary search isolation до 6 рівнів ≈ ~130s). `transact` (fire-and-forget). Prometheus metric `SCC_MINTED_TOTAL`. **[B-05]** `insurance_pool_requires_funding?` — cached on-chain `balanceOf` oracle: `INSURANCE_POOL_THRESHOLD = 100_000 SCC`; кеш 15 хв (`dao_treasury_needs_funding`); timeout 10 сек; failsafe → `true` при збої RPC. **[DRY-RUN GUARD]** Перед кожним `batchMint` виконується `eth_call` симуляція (`batch_dry_run_reverts?`) — zero-gas виконання на поточному блоці. Якщо симуляція повертає EVM revert (ознаки: `"revert"`, `"execution reverted"`, `"out of gas"`), активується **Binary Search Poisoned Record Isolation** (Divide & Conquer): замість наївного fallback на N×`mint()`, алгоритм розбиває батч навпіл і тестує кожну половину через `eth_call` dry-run. "Чисті" половини відправляються через `batchMint`, "отруйні" — далі діляться рекурсивно до `MIN_BINARY_SEARCH_SIZE=4` або `MAX_BINARY_SEARCH_DEPTH=6`. Результат: для типового сценарію (1-2 отруйних з 100) ~14 `eth_call` + 2-3 `batchMint` замість 100 `mint()`. `POISONED_RATIO_THRESHOLD=0.3` — при >30% отруйних binary search неефективний → fallback на індивідуальні mints. `send_clean_batch` відправляє чисті підбатчі через `batchMint` з fallback на `mint_individual` при збої transact. Мережеві помилки (RPC timeout) не рахуються як revert — оптимістичний фолбек на `transact`. |
+| **Що робить** | Пакетна емісія SCC/SFC на Polygon через `mint` або `batchMint`. Guard clauses: `verified_by_iotex?`, `oracle_status_fulfilled?` (enum method), `hadron_kyc_status == "approved"`. **[BLOCKER-11 / S6.12]** Guards `verified_by_iotex?` + `oracle_status_fulfilled?` активні **лише** при `telemetry_log:` (oracle-driven flow Path 1). У tokenomics-flow Path 2 (`TokenomicsEvaluatorWorker → EvaluateTreeBatchWorker → wallet.lock_and_mint! → process_batch → call_batch(ids)` без `telemetry_log:`) ці перевірки **свідомо пропускаються** — `growth_points` вже зараховані через `Wallet#credit!` після AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService` (per-packet integrity perimeter). `hadron_kyc_status == "approved"` — **єдиний обов'язковий guard для всіх шляхів** (security perimeter проти non-compliant wallets). При `hadron_kyc_status != "approved"` — raise `Compliance Breach` без виклику `transact`; transaction залишається `:pending`, `locked_points` не звільняються (потребують admin-розблокування або повторної KYC). Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]" (3 examples). Cross-ref: [05_02 Усі Шляхи до lock_and_mint! [DOC.7]](../docs/05_02_Proof_of_Growth_Pipeline#усі-шляхи-до-walletlock_and_mint-guard-inventory-doc7). Dynamic Tax 2% при carbon_coin + недофінансований страховий пул (→ DAO Treasury). `Kredis.lock(expires_in: 120.seconds)` проти race conditions (120s покриває worst-case: dry-run + binary search isolation до 6 рівнів ≈ ~130s). `transact` (fire-and-forget). Prometheus metric `SCC_MINTED_TOTAL`. **[B-05]** `insurance_pool_requires_funding?` — cached on-chain `balanceOf` oracle: `INSURANCE_POOL_THRESHOLD = 100_000 SCC`; кеш 15 хв (`dao_treasury_needs_funding`); timeout 10 сек; failsafe → `true` при збої RPC. **[DRY-RUN GUARD]** Перед кожним `batchMint` виконується `eth_call` симуляція (`batch_dry_run_reverts?`) — zero-gas виконання на поточному блоці. Якщо симуляція повертає EVM revert (ознаки: `"revert"`, `"execution reverted"`, `"out of gas"`), активується **Binary Search Poisoned Record Isolation** (Divide & Conquer): замість наївного fallback на N×`mint()`, алгоритм розбиває батч навпіл і тестує кожну половину через `eth_call` dry-run. "Чисті" половини відправляються через `batchMint`, "отруйні" — далі діляться рекурсивно до `MIN_BINARY_SEARCH_SIZE=4` або `MAX_BINARY_SEARCH_DEPTH=6`. Результат: для типового сценарію (1-2 отруйних з 100) ~14 `eth_call` + 2-3 `batchMint` замість 100 `mint()`. `POISONED_RATIO_THRESHOLD=0.3` — при >30% отруйних binary search неефективний → fallback на індивідуальні mints. `send_clean_batch` відправляє чисті підбатчі через `batchMint` з fallback на `mint_individual` при збої transact. Мережеві помилки (RPC timeout) не рахуються як revert — оптимістичний фолбек на `transact`. |
 | **Зовнішні виклики** | Polygon RPC (`ALCHEMY_POLYGON_RPC_URL`), `Web3::RpcConnectionPool`, `Web3::WeiConverter`, `BlockchainConfirmationWorker.perform_in` |
 | **Вихід** | `tx_hash` (String). Оновлює `BlockchainTransaction.status = :sent`. Turbo Stream broadcast балансу гаманця. |
 
@@ -298,7 +298,7 @@
 |--------|----------|
 | Планова ротація | Кожні **90 днів** |
 | Зміна персоналу | Негайно (при звільненні/зміні ролі інженера з доступом до credentials) |
-| Підозра на компрометацію | Негайно (див. Emergency Revocation Runbook у `06_04_Secrets_Checklist.md` §5.4) |
+| Підозра на компрометацію | Негайно (див. Emergency Revocation Runbook у `06_04_Secrets_Checklist` §5.4) |
 
 **4. Credentials Layout (після ротації)**
 
@@ -309,7 +309,7 @@ peaq_signing_key_previous: "old_key_hex_64_chars"  # видалити через
 peaq_node_url: "https://peaq-node.example.com"
 ```
 
-> **Зв'язок:** Emergency Revocation Runbook → `docs/06_04_Secrets_Checklist.md` §5.4
+> **Зв'язок:** Emergency Revocation Runbook → `docs/06_04_Secrets_Checklist` §5.4
 
 ### `Chainlink::OracleDispatchService`
 
@@ -392,7 +392,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Зовнішні виклики** | `OpenSSL::KDF.hkdf` |
 | **Публічні методи** | `.fetch_for(cluster_id) → String` (64-символьний HEX, upper); `.fetch_binary_for(cluster_id) → String` (32 binary bytes) — для прямого `OpenSSL::HMAC.digest` |
 | **Вихід** | 64-символьний HEX або 32-байтна binary-string. |
-| **Cross-ref** | [03_05 §3.4б](03_05_Hardware_AES256_and_Security.md) — повний протокол OTA HMAC dual-gate. |
+| **Cross-ref** | [03_05 §3.4б](03_05_Hardware_AES256_and_Security) — повний протокол OTA HMAC dual-gate. |
 
 ### `OtaPackagerService`
 
@@ -404,7 +404,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **[FW.8] `build_threshold_config_block(tree)`** | Клас-метод. Будує `CMD_SET_THRESHOLDS` (0x9A) OTA Config Block для передачі per-species Lorenz порогів на Soldier без перекомпіляції. Читає `tree.effective_lorenz_thresholds` → упаковує у 10-байтовий payload: `[z_min×100:int16_le][z_max×100:int16_le][z_opt×100:int16_le][species_id:uint8][config_version:uint8][crc16:uint16_le]`. Prefixed: `[CMD_SET_THRESHOLDS:1][len:uint16_le][payload]`. |
 | **[FW.23] `compute_hmac_tag(bytecode, version_id, lora_total_chunks, cluster_id:)`** | Клас-метод. Обчислює HMAC-SHA256 по `bytecode \|\| version_id_be(4) \|\| lora_total_chunks_be(2)`. Anti-replay: `version_id` прив'язує тег до конкретної ревізії. Anti-truncation: `lora_total_chunks` в тезі — скидання будь-якого trailing-чанку детектується як HMAC mismatch на Soldier. Повертає 32-byte binary digest. |
 | **[FW.23] `build_hmac_trailer_chunks(hmac_tag, lora_total_chunks)`** | Клас-метод. Розбиває 32-байтний тег на 3 LoRa-форматованих 16-байтових блоки: `[0x9B][seg_idx:2 BE][lora_total:2 BE][hmac_seg:11]`. Сегмент 3 має 10 реальних байт + 1 NUL PAD. Queen relay-ює їх stateless; Soldier збирає через `Parse_HMAC_Trailer_Chunk`. |
-| **OTA Command Constants (SSOT)** | `CMD_OTA_BYTECODE=0x99` (mruby chunks), `CMD_SET_THRESHOLDS=0x9A` (FW.8 Lorenz Z), `CMD_HMAC_TRAILER=0x9B` (FW.23 OTA HMAC печатка), `CMD_TIME_SYNC=0x9C` (FW.20 RTC correction), `CMD_SET_AUDIO_THRESHOLDS=0x9D` (FW.18 TinyML confidence thresholds). Повна карта опкодів: [03_01 §4.5а](03_01_Firmware_Lifecycle_and_DMA.md). |
+| **OTA Command Constants (SSOT)** | `CMD_OTA_BYTECODE=0x99` (mruby chunks), `CMD_SET_THRESHOLDS=0x9A` (FW.8 Lorenz Z), `CMD_HMAC_TRAILER=0x9B` (FW.23 OTA HMAC печатка), `CMD_TIME_SYNC=0x9C` (FW.20 RTC correction), `CMD_SET_AUDIO_THRESHOLDS=0x9D` (FW.18 TinyML confidence thresholds). Повна карта опкодів: [03_01 §4.5а](03_01_Firmware_Lifecycle_and_DMA). |
 | **HMAC Constants** | `HMAC_TAG_BYTES=32`, `HMAC_TRAILER_SEGMENTS=3`, `HMAC_SEG_BYTES=11`, `HMAC_TRAILER_BLOCK=16` |
 | **Вихід (без cluster_id)** | `{ manifest: { version, total_size, checksum, sha256, total_chunks }, packages: Enumerator<16-byte blocks> }` |
 | **Вихід (з cluster_id)** | `{ manifest: { version, total_size, checksum, sha256, total_chunks, lora_total_chunks, total_packages, hmac_signed: true, hmac_cluster_id }, packages: Enumerator<bytecode_chunks + 3 trailer_chunks> }` — `total_packages = total_chunks + 3`; `OtaTransmissionWorker` ітерує по `packages` без змін у логіці pacing. |
@@ -420,7 +420,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Публічні методи** | `.detect(value, hint:) → nil \| String` (повертає reason-string з опц. префіксом hint, якщо знайдено патерн); `.weak?(value, hint:) → Boolean` |
 | **Тест coverage** | `spec/services/security/weak_key_detector_spec.rb` — 30+ examples, fuzz через RFC vectors, edge-cases для round-trip base64 та bytestring-encoding |
 | **Інвокери** | `config/initializers/master_key_strength_check.rb` (boot-time guard, див. нижче) |
-| **Cross-ref** | [03_05 §3.1а](03_05_Hardware_AES256_and_Security.md), [10_02 SEC.9](10_02_Action_Plan_Tracker.md). Закриває оригінальний BLOCKER (firmware AES key перших 16 байт співпадали з FIPS-197 Appendix B). |
+| **Cross-ref** | [03_05 §3.1а](03_05_Hardware_AES256_and_Security), [00_08 SEC.9](00_08_Action_Plan_Tracker). Закриває оригінальний BLOCKER (firmware AES key перших 16 байт співпадали з FIPS-197 Appendix B). |
 
 #### Boot-time master key guard (initializer)
 
@@ -585,7 +585,7 @@ peaq_node_url: "https://peaq-node.example.com"
 
 ## 📖 10b. Codex (Lore Layer) Сервіси
 
-Сервіси Lore-шару Gaia 2.0. Повна специфікація: **`docs/04_05_Codex_Lore_Module.md`**.
+Сервіси Lore-шару Gaia 2.0. Повна специфікація: **`docs/04_05_Codex_Lore_Module`**.
 
 ### `Codex::NodeImportService`
 
@@ -804,7 +804,7 @@ Three lore-aware operations now call `Codex::DiscoveryProbeWorker.perform_async`
 
 > **Примітка:** Sidekiq `:strict: true` дренує черги послідовно згори-донизу. Числа — порядок дренування, не ваги.
 
-> ⚠️ **DOC.8 — Cleanup constraint (TelemetryLog):** Будь-який cleanup-воркер на `telemetry_logs` **зобов'язаний** виключати `oracle_status = 'dispatched'`. Ці записи знаходяться в open Chainlink-callback flight; їх видалення зламає `OracleCallbacksController` (RecordNotFound + 5 retry без мінтингу). Канонічне виконання — `InsightGeneratorService.cleanup_old_logs!` (тригериться з `InsightBatchCallbacks` після успішного денного циклу). Не реалізуйте паралельні cleanup-job'и — викликайте сервіс. Cross-ref: [04_01 TelemetryLog model warning](04_01_Data_Models_and_Entities.md#telemetrylog--сирий-пакет-телеметрії).
+> ⚠️ **DOC.8 — Cleanup constraint (TelemetryLog):** Будь-який cleanup-воркер на `telemetry_logs` **зобов'язаний** виключати `oracle_status = 'dispatched'`. Ці записи знаходяться в open Chainlink-callback flight; їх видалення зламає `OracleCallbacksController` (RecordNotFound + 5 retry без мінтингу). Канонічне виконання — `InsightGeneratorService.cleanup_old_logs!` (тригериться з `InsightBatchCallbacks` після успішного денного циклу). Не реалізуйте паралельні cleanup-job'и — викликайте сервіс. Cross-ref: [04_01 TelemetryLog model warning](04_01_Data_Models_and_Entities#telemetrylog--сирий-пакет-телеметрії).
 
 > ⚠️ **DOC.10 — Sidekiq Pro shims active (Phase 7 deferred upgrade):** Кодова база викликає `Sidekiq::Batch`, `Sidekiq::Limiter`, `expires_in:`, але ліцензований гем `sidekiq-pro` поки що **не в Gemfile**. `config/initializers/sidekiq_pro.rb` надає no-op shim-и щоб тести й dev-середовище не падали — у production це означає що `on(:success)` колбеки **не спрацьовують**, rate-limiter `web3_rpc 50/sec` **не діє**, а `expires_in: 5.minutes` на uplink-задачах **не TTL-ить** stale jobs. Перед billion-tree запуском треба:
 > 1. Додати `gem "sidekiq-pro", "~> 8.1"` (потребує license token у `BUNDLE_GEMS__CONTRIBSYS__COM`).
@@ -1487,16 +1487,16 @@ Financial action
 
 > **Принцип:** Цей документ — SSOT. Тобто:
 > - якщо **код випередив документ** — оновлюємо документ (тут, у `04_02`) щоб реальність відображалася;
-> - якщо **документ випередив код** — створюємо/оновлюємо запис у `docs/10_02_Action_Plan_Tracker.md` як невиконану задачу;
-> - якщо **нема ні там, ні там** — приймаємо рішення (потрібне → реєструємо в `10_02`; не потрібне → видаляємо плани з `04_02`).
+> - якщо **документ випередив код** — створюємо/оновлюємо запис у `docs/00_08_Action_Plan_Tracker` як невиконану задачу;
+> - якщо **нема ні там, ні там** — приймаємо рішення (потрібне → реєструємо в `00_08`; не потрібне → видаляємо плани з `04_02`).
 >
-> Цей реєстр фіксує **відомі divergence-точки** та їх статус. Періодичний аудит — кожен Cool-down цикл Shape Up (`09_01`).
+> Цей реєстр фіксує **відомі divergence-точки** та їх статус. Періодичний аудит — кожен Cool-down цикл Shape Up (`00_05`).
 
 | Дата | Зона | Тип drift | Що зроблено | Cross-ref |
 |------|------|-----------|-------------|-----------|
-| 2026-05-12 | `Security::WeakKeyDetector` + `master_key_strength_check.rb` initializer | Code ahead of doc (були в `10_02`/`03_05`, але §8 04_02 їх не описувала) | Додано в §8 (renamed → "Hardware, IoT & Security") | [SEC.9](10_02_Action_Plan_Tracker.md), [03_05 §3.1а](03_05_Hardware_AES256_and_Security.md) |
-| 2026-05-12 | `Celo::CommunityRewardService` RPC fallback cascade | Code matched doc (E.49 синхронно виконано: код + 04_02 + .env.example + 10_02) | `RPC_FALLBACK_ENV_KEYS` додано, External API row оновлено | [E.49](10_02_Action_Plan_Tracker.md) |
-| 2026-05-12 | `MintingRollbackService` (Celo branch) | Code bug + doc gap (fallback указував на polygon-rpc.com для Celo TX) | Виправлено per-chain dispatch; doc оновлено | [E.49](10_02_Action_Plan_Tracker.md) |
+| 2026-05-12 | `Security::WeakKeyDetector` + `master_key_strength_check.rb` initializer | Code ahead of doc (були в `00_08`/`03_05`, але §8 04_02 їх не описувала) | Додано в §8 (renamed → "Hardware, IoT & Security") | [SEC.9](00_08_Action_Plan_Tracker), [03_05 §3.1а](03_05_Hardware_AES256_and_Security) |
+| 2026-05-12 | `Celo::CommunityRewardService` RPC fallback cascade | Code matched doc (E.49 синхронно виконано: код + 04_02 + .env.example + 00_08) | `RPC_FALLBACK_ENV_KEYS` додано, External API row оновлено | [E.49](00_08_Action_Plan_Tracker) |
+| 2026-05-12 | `MintingRollbackService` (Celo branch) | Code bug + doc gap (fallback указував на polygon-rpc.com для Celo TX) | Виправлено per-chain dispatch; doc оновлено | [E.49](00_08_Action_Plan_Tracker) |
 | 2026-05-12 | `MintBatchCollectorWorker` секція | Doc misplacement (queue `web3` був у "💤 Web3 Low") | Перенесено у "🌐 Web3 — Стандартні Мультичейн" | §11 |
 | 2026-05-12 | `ClusterHealthCheckWorker` heading | Doc structure bug (таблиця без `####` заголовка) | Додано `#### ClusterHealthCheckWorker` | §11 |
 | — (відкрите) | Forester Guild / Cross-Registry / Federated Learning | Doc-only "Planned" — в коді **відсутні**; статус нормальний (Post-TRL 6/7) | Зберігати як design RFC; не маркувати code drift | §"Planned" |
@@ -1504,10 +1504,10 @@ Financial action
 ### Як додавати нові записи
 
 1. Виявили divergence (наприклад, нову константу, новий guard clause, новий ENV у коді який не описаний тут) — додайте рядок у таблицю з датою.
-2. Якщо drift вимагає коду — заведіть запис у `docs/10_02` з тим самим UID (`E.NN` / `SEC.NN` / `S6.NN`) і посиланням сюди.
+2. Якщо drift вимагає коду — заведіть запис у `docs/00_08` з тим самим UID (`E.NN` / `SEC.NN` / `S6.NN`) і посиланням сюди.
 3. Drift register **не замінює** оновлення відповідної секції — обидва місця мають бути синхронізовані.
 
-> **Anti-pattern:** "Тимчасово впишу у 04_02, а виправлю код пізніше". Якщо завдання потребує > 1 PR — заведіть `10_02` запис, не блюрте тут.
+> **Anti-pattern:** "Тимчасово впишу у 04_02, а виправлю код пізніше". Якщо завдання потребує > 1 PR — заведіть `00_08` запис, не блюрте тут.
 
 ---
 
@@ -1568,7 +1568,7 @@ FilecoinArchiveWorker → immutable proof archive
 
 ### Архітектурний дизайн: Task Assignment Algorithm 🤖 (S6.10)
 
-> **Cross-ref:** [10_02 S6.10](10_02_Action_Plan_Tracker), [10_02 E.20](10_02_Action_Plan_Tracker), [10_02 E.34](10_02_Action_Plan_Tracker) (dClimate fallback → Forester Guild).
+> **Cross-ref:** [00_08 S6.10](00_08_Action_Plan_Tracker), [00_08 E.20](00_08_Action_Plan_Tracker), [00_08 E.34](00_08_Action_Plan_Tracker) (dClimate fallback → Forester Guild).
 
 Workflow вище показує **створення** bounty та **claim**, але **алгоритм матчингу ranger↔bounty** і пріоритезація не визначені. Без цього система деградує до first-come-first-served race (далекий ranger може вкрасти bounty у локального) або silent expiry (життєво-критична `EwsAlert :critical` залишається без виконавця, бо нікому не повідомили). Цей розділ закриває S6.10.
 

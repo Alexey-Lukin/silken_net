@@ -144,7 +144,7 @@ z0 = bytes_to_signed_unit_float(digest[16,  8])
 
 **Вплив на DCI:** обидві сторони стартують з byte-identical `(x₀,y₀,z₀)`. Float divergence між ARM↔x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` зберігає категоричну невідповідність як default; **[FW.31, 2026-05-02]** числовий tolerance band (`< 0.001`) реалізовано під feature-flag `GAIA_DCI_NUMERIC_TOLERANCE` + `GAIA_DCI_NUMERIC_EPSILON` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON = 0.001`, malformed ENV → graceful fallback). Numeric branch виконується ON-TOP-OF категоричного (не замінює) і лише коли `attributes[:device_z]` присутній — сьогодні LoRa packet 21B не несе raw Z, тож branch інертний у production. Стає активним після post-FW.2 packet revision АБО після лабораторного вимірювання реального drift на target HW (STM32WLE5JC vs GCP x86-64) → flip `GAIA_DCI_NUMERIC_TOLERANCE=true` через Kamal env, без code change. 6 spec examples (`[FW.31] numeric tolerance band` describe).
 
-**Cross-ref:** [10_02 SEC.11](10_02_Action_Plan_Tracker), [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-), [04_02 SilkenNet::SeedDerivation](04_02_Business_Logic_and_Services), [05_02 Dual Computation Integrity](05_02_Proof_of_Growth_Pipeline).
+**Cross-ref:** [00_08 SEC.11](00_08_Action_Plan_Tracker), [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-), [04_02 SilkenNet::SeedDerivation](04_02_Business_Logic_and_Services), [05_02 Dual Computation Integrity](05_02_Proof_of_Growth_Pipeline).
 
 ---
 
@@ -221,14 +221,14 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 
 > **First-Boot vs Continuation — канонічна логіка [DOC.4] [SEC.11 hard cutover]**
 >
-> Bio-Contract має **єдину точку входу** після SEC.11 cutover. C-сторона завжди викликає `BioContract.calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)`. Розкладка регістрів та магічний маркер `LZST = 0x4C5A5354` — у [03_01 §2 + §2.1 (Canonical SSOT)](03_01_Firmware_Lifecycle_and_DMA.md#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3); тут описано лише **звідки беруться `(x_prev, y_prev, z_prev)`**:
+> Bio-Contract має **єдину точку входу** після SEC.11 cutover. C-сторона завжди викликає `BioContract.calculate_state(x_prev, y_prev, z_prev, temp, acoustic, delta_t_s, vcap_mv)`. Розкладка регістрів та магічний маркер `LZST = 0x4C5A5354` — у [03_01 §2 + §2.1 (Canonical SSOT)](03_01_Firmware_Lifecycle_and_DMA#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3); тут описано лише **звідки беруться `(x_prev, y_prev, z_prev)`**:
 >
 > | Умова | Джерело `(x_prev, y_prev, z_prev)` | Призначення |
 > |-------|------------------------------------|-------------|
 > | `DR19 == 0x4C5A5354` AND `isfinite(x,y,z)` | RTC DR16-DR18 (warm restart, FW.6) | **Continuation:** продовження безперервної траєкторії після STOP2 wake-up. |
 > | `DR19 ≠ 0x4C5A5354` OR `!isfinite(x,y,z)` | `(x₀,y₀,z₀) = unpack_signed_unit_floats(HMAC-SHA256(K_seed, "init\|" \|\| epoch_day_be)[0..23])` | **Cold start (rare):** після VBAT loss. K_seed зберігається у Flash (Soldier) і `hardware_keys.lorenz_seed_hex` (backend), деривується при provisioning через `HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed\|<DID>", len=32)`. Daily epoch_day rotation дає forward secrecy ≤ 24 год. |
 >
-> **Чому K_seed замість chaos_seed/DID:** `chaos_seed` (HRNG) недетермінований — backend не зміг би відтворити Z. DID-as-seed (`SilkenNet::Attractor.calculate_z(did, …)`) був public-input → атакер з open-source формулою Лоренца передбачає очікуваний Z для будь-якого дерева. K_seed — **private**, ніколи не залишає пристрій/сервер у відкритому вигляді (HKDF деривується незалежно з `PROVISIONING_MASTER_KEY`). Закриває чотири фундаментальні вади (sniff/correlation/identifier-as-key/forward-secrecy) — див. SEC.11 у `docs/10_02_Action_Plan_Tracker.md`.
+> **Чому K_seed замість chaos_seed/DID:** `chaos_seed` (HRNG) недетермінований — backend не зміг би відтворити Z. DID-as-seed (`SilkenNet::Attractor.calculate_z(did, …)`) був public-input → атакер з open-source формулою Лоренца передбачає очікуваний Z для будь-якого дерева. K_seed — **private**, ніколи не залишає пристрій/сервер у відкритому вигляді (HKDF деривується незалежно з `PROVISIONING_MASTER_KEY`). Закриває чотири фундаментальні вади (sniff/correlation/identifier-as-key/forward-secrecy) — див. SEC.11 у `docs/00_08_Action_Plan_Tracker`.
 >
 > **[FW.5]** `delta_t_s` та `vcap_mv` визначають β-пертурбацію в обох гілках. Default-значення (`BASELINE_DELTA_T_S=60`, `NOMINAL_VCAP_MV=3300`) роблять β=BASE_BETA при відсутності фізичного сигналу.
 >
