@@ -1,19 +1,12 @@
 source "https://rubygems.org"
 
-# = ===================================================================
-# 💎 RUBY & RAILS (Core Platform)
-# = ===================================================================
 ruby "4.0.2"
-
 gem "rails", "~> 8.1.3"
 
-# = ===================================================================
-# 📦 PRODUCTION GEMS (Alphabetical)
-# = ===================================================================
 gem "aasm"
 gem "active_storage_validations"
 gem "argon2id"
-gem "aws-sdk-s3", require: false            # Active Storage: S3-compatible (AWS, MinIO, DigitalOcean Spaces, Backblaze B2)
+gem "aws-sdk-s3", require: false
 gem "blueprinter"
 gem "bootsnap", require: false
 gem "csv"
@@ -26,8 +19,6 @@ gem "image_processing"
 gem "importmap-rails"
 gem "kamal", require: false
 gem "kredis"
-# numo-narray is intentionally omitted: rumale pulls in numo-narray-alt (drop-in replacement).
-# Having both gems installed simultaneously triggers a runtime conflict warning.
 gem "oj"
 gem "pagy"
 gem "pg"
@@ -75,7 +66,6 @@ end
 group :development do
   gem "dotenv-rails"
   gem "lookbook"
-  gem "rails-schema"
   gem "view_component"
   gem "web-console"
 end
