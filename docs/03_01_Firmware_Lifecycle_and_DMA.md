@@ -133,7 +133,7 @@ void OnRxDone(uint8_t *p, uint16_t sz, int16_t rssi, int8_t snr) {
 | **Призначення** | Повноцінна C/C++ IDE для STM32WLE5JC (ARM Cortex-M4 + SX1262 LoRa) |
 | **Включає** | STM32CubeMX — графічний конфігуратор GPIO, тактових дерев, периферії |
 | **Порт** | Налаштування GPIO pinout (PA9/PA10 UART, ADC, TIM2 DMA, RNG, CRYP) до отримання плат |
-| **Clock Tree** | Конфігурація HSE/LSE для STOP2 ultra-low-power режиму (2.1 µA) |
+| **Clock Tree** | Конфігурація HSE/LSE для STOP2 ultra-low-power режиму (цільове: 300 nA RTC-only — `02_03 §9.6`; на TRL 6 baseline: 2.1 µA з SRAM2 retention) |
 | **HAL drivers** | Auto-генерація ініціалізаційного коду для I2C/SPI/ADC/UART/RTC/CRYP |
 | **Debugger** | Інтеграція з ST-LINK-V3MINIE: breakpoints, live variable watch, SWO trace |
 | **Збірка** | GCC ARM Embedded toolchain (вбудований у CubeIDE); той самий компілятор що й для host-тестів |
@@ -654,28 +654,38 @@ on_lora_rx(payload, did_from_packet):
 
 ---
 
-### 1.10 Phase 5: STOP2 Deep Sleep (2.1 µA)
+### 1.10 Phase 5: STOP2 Deep Sleep (target: 300 nA RTC-only)
+
+> **⚠️ Power optimization target:** Раніше документ декларував STOP2 sleep current **2.1 µA**. Перерахунок енергобалансу (`02_03 §9.5`) показав, що при 2.1 µA система йде у мінус навіть з TX @ +14 dBm SF9. **Цільове значення для виходу у позитивний баланс — STOP2 у RTC-only mode (300 nA)** — `02_03 §9.6` Сценарій C. Це досягається відключенням SRAM2 retention (`PWR.CR1 RRSTP=1`) і збереженням стану ТІЛЬКИ у RTC Backup registers (20 × uint32). Реалізація — наступний firmware-цикл.
 
 ```c
-// 1. Зберігаємо стан у RTC Backup Domain (16 регістрів)
+// 1. Зберігаємо стан у RTC Backup Domain (20 регістрів — повне розкладання §2)
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, acoustic_events);
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, last_wakeup_timestamp);
-// ... DR2..DR15 (mesh state)
+// ... DR2..DR19 (mesh state, Lorenz state, TinyML thresholds)
 
 // 2. Відключаємо периферію для мінімального споживання
 HAL_RNG_DeInit(&hrng);
 __HAL_RCC_CRYP_CLK_DISABLE();
 
-// 3. Зупиняємо SysTick та входимо в STOP2
+// 3. Цільова конфігурація для 300 nA (RTC-only mode):
+//    SRAM2 retention OFF — стан тільки в RTC BKP registers
+__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+// PWR->CR3 |= PWR_CR3_RRS  // RRSTP=0: SRAM2 OFF у STOP2 → -800 nA
+// Watchdog: IWDG продовжує працювати з LSI 32 kHz (~200 nA)
+
+// 4. Зупиняємо SysTick та входимо в STOP2
 HAL_SuspendTick();
 HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
 HAL_ResumeTick(); // Виконується після пробудження
 
-// 4. Відновлюємо периферію після wake
+// 5. Відновлюємо периферію після wake
 HAL_RNG_Init(&hrng);
 __HAL_RCC_CRYP_CLK_ENABLE();
 HAL_CRYP_Init(&hcryp);
 ```
+
+**Trade-off RTC-only vs SRAM2 retention:** При SRAM2 OFF втрачається весь runtime-стан (mesh routing cache, EMA, OTA chunk buffer). Усе, що має пережити STOP2, **повинно бути у RTC Backup** (§2 канонічна таблиця DR0-DR19). Перевага: економія ~800 nA × 3.3V × 3600s × η_buck(0.5) = 19 мДж/год → дозволяє +1 TX cycle на 2 години.
 
 **Джерела пробудження:**
 - RTC Alarm (основний — за розкладом заряду іоністора)

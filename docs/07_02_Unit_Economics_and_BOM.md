@@ -52,7 +52,7 @@
 | **Анкер Zone 1 + Zone 3 (Anode + Cathode)** | Ti-6Al-4V Grade 5. SLM+HIP друк (Zone 1) + SLM/EBM (Zone 3). Маса ~9 г сумарно (пористість гіроїда 65%). Включає Hard Gold pogo-площадку та PTFE-GDL катодну мембрану. | $20.00–$25.00 |
 | **Анкер Zone 2 (PEEK-терморозрив)** | Medical Grade PEEK. ЧПУ-фрезерування з annealing 200–250°C, допуски H7/s6. Press-fit з Zone 1 і Zone 3. | $3.00 |
 | **Радом (PCBA housing)** | Medical Grade PEEK купол ∅20–30 мм, термолиття. O-ring EPDM. IP68. Окрема деталь, **НЕ Zone 2**. | $2.50 |
-| **Power Deck (PCBA)** | BQ25570 (MPPT) + EDLC Supercapacitor 0.47 F + Pogo Pins + пасивна обв'язка 0402. | $6.20 |
+| **Power Deck (PCBA)** | BQ25570 (MPPT) + EDLC Supercapacitor 0.47 F + Pogo Pins + 47µF/25V/X7R/1210 buffer cap (`02_03 §6.1`) + **LTC3108 DNP footprint** для cold-start fallback (`02_03 BLOCKER-3`) + пасивна обв'язка 0402. | $6.35 |
 | **RF Deck (PCBA)** | STM32WLE5JC (LoRa SoC) + Ceramic SMD Antenna 868 МГц + TCXO (±1 ppm). | $5.80 |
 | **Біоелектрохімічна функціоналізація** | MWCNT + Os redox polymer + Combi-CLEA GOx+CAT (Zone 1); MWCNT + AuNPs + Laccase (Zone 3); Chitosan + Nafion захисні шари | $3.00–$5.00 (Gen 1.0) |
 | **Стерилізація (no EtO)** | Гамма-опромінення Co-60 25 кГр в запакованому стані, або UV-C + 70% EtOH. Деталі — [`01_04 §6`](01_04_CODIT_and_Xylemointegration). | $0.50–$1.00 |
@@ -71,7 +71,9 @@
 | 6 | PCB | FR4, 4 шари, 1.6 мм (Power Deck + RF Deck) | ~$0.65 |
 | 7 | Пасивні | 0402/0603 резистори, конденсатори X5R/C0G | ~$0.20 |
 | 8 | Pogo Pins | Mill-Max 0906 Series (2 шт, spring-loaded) | ~$0.40 |
-| — | **Electronics TOTAL** | | **~$11.15** |
+| 9 | Buffer cap VOUT | 47 µF / **25V X7R 1210** (Murata GRM32E70J476ME20), **НЕ 6.3V** — `02_03 §6.1` | ~$0.18 |
+| — | **Electronics TOTAL** | | **~$11.33** |
+| — | _LTC3108 + Coilcraft xfmr 1:100 (DNP footprint)_ | _Cold-start fallback, не populated за замовчуванням — `02_03 BLOCKER-3`. PCB pads ~$0._ | _$0 / +$1.20 якщо populated після lab R_int test_ |
 
 ---
 
