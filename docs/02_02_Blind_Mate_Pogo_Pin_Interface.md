@@ -451,5 +451,3 @@ R_interface < 50 мОм + 1 мОм + 50 мОм + 1 мОм ≈ 102 мОм (гір
 - **Wiki:** [01_03 EBFC Enzymatic Bio-Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) — джерело >500 мВ
 - **Wiki:** [02_01 Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) — BOM капсули
 - **Wiki:** [02_03 BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) — споживач струму
-- **Docs:** `docs/HARDWARE.md` — загальна апаратна архітектура (BOM, енергобюджет)
-- **Issue:** [#205 Reverse Shaping Blind Mate Pogo Pin Interface](https://github.com/Alexey-Lukin/silken_net/issues/205)
