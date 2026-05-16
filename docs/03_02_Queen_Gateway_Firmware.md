@@ -1151,15 +1151,15 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 | Змінна | Тип | Розмір | Призначення |
 |--------|-----|--------|-------------|
 | `aes_key[8]` | `uint32_t` | 32 B | AES-256 ключ (однаковий з Soldiers) |
-| `forest_cache[50]` | `EdgeCache` | 1100 B | CIFO EdgeCache (50 × 22 байти) |
+| `forest_cache[50]` | `EdgeCache` | 1150 B | CIFO EdgeCache (50 × 23 байти, після **[E.8]** додано `snr` 1 байт) |
 | `binary_batch_buffer[2048]` | `uint8_t` | 2048 B | Бінарний буфер перед шифруванням |
 | `encrypted_batch_buffer[2064]` | `uint8_t static` | 2064 B | **static** (IV + зашифровані дані) |
 | `pending_ota_bytecode[8192]` | `uint8_t` | 8192 B | RAM-буфер збірки OTA від Rails |
 | `at_tx_buffer[256]` | `char` | 256 B | Формування AT-команд (`snprintf`) |
 | `cmd_dedup_ring[16]` | `uint32_t` | 64 B | DJB2 хеші idempotency токенів |
 | `cmd_decrypt_buf[544]` | `uint8_t` | 544 B | Decrypt buffer для CoAP команд/OTA |
-| `incoming_lora_payload` (видалено в FW.3) | — | 0 B | Замінено на `lora_rx_ring[16]` (272 B) |
-| `lora_rx_ring[16]` | `volatile LoRaRxSlot` | 272 B | **[FW.3]** FIFO ring для ISR-пакетів (16 × 17 байтів = payload + rssi) |
+| `incoming_lora_payload` (видалено в FW.3) | — | 0 B | Замінено на `lora_rx_ring[16]` (288 B) |
+| `lora_rx_ring[16]` | `volatile LoRaRxSlot` | 288 B | **[FW.3 + E.8]** FIFO ring для ISR-пакетів (16 × 18 байтів = payload + rssi + snr) |
 | `decrypted_payload[16]` | `uint8_t` | 16 B | Розшифрований пакет |
 | `ota_chunk_bitmap` | `uint16_t` | 2 B | Bitmap отриманих OTA-чанків (16 біт) |
 | `ota_chunks_received` | `uint16_t` | 2 B | Лічильник отриманих CoAP-чанків |

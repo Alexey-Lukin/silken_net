@@ -566,23 +566,31 @@ CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
 
 ### 3.1 Джерело AES-Ключа при Старті
 
-| Параметр | Значення |
-|----------|---------|
-| **Тип зберігання** | C-масив у Flash-пам'яті MCU (`uint32_t aes_key[8]`) |
-| **Адреса** | Визначається лінкером (`.rodata` або `.data` секція) |
-| **Розмір** | 256 біт (32 байти, 8 × uint32_t) |
-| **Захист** | RDP Level 0 (⚠️ нема захисту) або RDP Level 1/2 (потребує явного активування) |
-| **Ротація** | Відсутня (static const) |
-| **Унікальність** | Ідентичний на ВСІХ вузлах мережі |
+> ✅ **Post-FW.1 status (2026-05-02):** Hardcoded ідентичний ключ **видалено**. Кожен Soldier і Queen отримує **унікальний** per-device AES-256 ключ через HKDF-SHA256 деривацію з `PROVISIONING_MASTER_KEY` під час factory provisioning. Ключ зберігається у **Protected Flash Sector** (`FLASH_KEY_ADDR`, RDP Level 1/2-захищений) і завантажується у RAM функцією `Load_AES_Key()` при boot. Деталі деривації — §3.4а HKDF Key Derivation Protocol Design; backend mirror — `HardwareKey#aes_key_hex` (AR Encryption non-deterministic).
 
-**Поточний AES-256 ключ (hardcoded, зберігається у Flash-пам'яті — детальні значення у `firmware/soldier/main.c:66-67`):**
+| Параметр | Значення (post-FW.1) |
+|----------|---------|
+| **Тип зберігання** | Protected Flash Sector (32 байти, magic marker `"KEYS"` = `0x4B455953`) |
+| **Адреса** | `FLASH_KEY_ADDR` (визначено лінкером, поза `.rodata`) |
+| **Розмір** | 256 біт (32 байти, 8 × uint32_t) |
+| **Захист** | RDP Level 1 (виробництво) / RDP Level 2 (необоротний final lock) — див. §3.3 |
+| **Ротація** | Hash Ratchet KDF — див. [FW.17 у 00_08](00_08_Action_Plan_Tracker) (placeholder, P3) |
+| **Унікальність** | **Унікальний per-device** через HKDF(`PROVISIONING_MASTER_KEY`, salt, `info="silken-aes\|<DID>"`) — див. §3.4а |
+| **Завантаження у RAM** | `Load_AES_Key()` на boot читає Flash → `aes_key[8]` (RAM); після `HAL_CRYP_Init()` ключ доступний у крипто-периферії |
+
+**Поточний код ініціалізації (`firmware/soldier/main.c` + `firmware/queen/main.c`):**
 ```c
-uint32_t aes_key[8] = {
-    0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,  // 128 біт (частина 1)
-    0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX   // 128 біт (частина 2)
-};
+// Boot-time RAM-mirror; реальне значення зчитується з Flash у Load_AES_Key()
+uint32_t aes_key[8] = {0};
+
+// У main() перед MX_CRYP_Init():
+Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYS",
+                 // populates aes_key[8] in RAM with per-device key
 ```
-> ⚠️ **Увага:** Аудит виявив, що перші 4 слова ключа збігаються зі стандартним тестовим ключем AES-128 з FIPS-197 (Appendix B) — загальновідомими тестовими векторами. Точні значення навмисно не публікуються в цьому документі. Для аудиту безпеки — дивись `firmware/soldier/main.c:66-67` та `firmware/queen/main.c:81-82`. Ключ **підлягає негайній заміні** відповідно до BLOCKER-1.
+
+> 🚫 **Архітектурний baseline:** "ідентичний на ВСІХ вузлах" — **історична форма BLOCKER-1**, закрита FW.1. Цей блок документа явно зберігає згадку як warning для аудиторів, що інспектують стару прошивку до FW.1. При відсутності magic `"KEYS"` у Flash (raw чіп з фабрики) — `Load_AES_Key()` відмовляє у boot і enter'ить infinite reset loop (захист від випуску партії без provisioning). Цей invariant перевіряється у `firmware/test/test_soldier_logic.c::test_aes_key_load_fail_no_magic`.
+
+> ⚠️ **Audit-trail (історичний BLOCKER-1):** До FW.1 перші 4 слова ключа збігалися зі стандартним тестовим ключем AES-128 з FIPS-197 (Appendix B). Поточна верифікація — `Security::WeakKeyDetector` (§3.1а нижче) + boot-time HKDF derivation гарантують, що цей вектор більше **не може потрапити** у production. Якщо інженер бачить hardcoded `0xXXXXXXXX` константи у будь-якій робочій копії — це означає, що FW.1 patch був відкочений; **stop and escalate**.
 
 #### 3.1а Boot-time guard: `Security::WeakKeyDetector` (SEC.9 mitigation)
 
@@ -1455,7 +1463,19 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 
 ### 3.7 ATECC608B Secure Element — оцінка інтеграції 🤖
 
-**Cross-ref:** [00_08 SEC.6](00_08_Action_Plan_Tracker), §3.2 «Відсутній Secure Element».
+**Cross-ref:** [00_08 SEC.6](00_08_Action_Plan_Tracker), [00_08 ARCH.42](00_08_Action_Plan_Tracker), §3.2 «Відсутній Secure Element».
+
+> 🚫 **CRITICAL ARCHITECTURAL CONFLICT (ARCH.42, 2026-05-16):** ATECC608B апаратний симетричний рушій **підтримує виключно AES-128** (datasheet DS40002239, §6.2). Поточна архітектура Gaia 2.0 використовує **AES-256** на всіх рівнях (`MX_CRYP_Init` у `firmware/soldier/main.c:741` та `firmware/queen/main.c:770` встановлюють `CRYP_KEYSIZE_256B`; `HardwareKey#aes_key_hex` — 64 HEX символи). **Не можна одночасно** використати ATECC608B як AES-engine AND зберегти AES-256.
+>
+> **Архітектурне рішення (відкрите, потребує stakeholder review):**
+>
+> | Шлях | Pro | Contra | Рекомендація |
+> |------|-----|--------|--------------|
+> | **(A) Змінити SE на NXP EdgeLock SE050** (підтримує AES-128/192/256 GCM/CBC/CTR/CCM/CMAC apparatно) | Зберігає AES-256 SSOT; додатково AES-GCM в HW → елегантний апгрейд після BLOCKER-2 | Ціна +$2.40/unit (vs ATECC ~$0.85); менш зріле ecosystem для STM32 (NXP libraries натиснуті на Kinetis/LPC) | Якщо security margin важливіша за BOM |
+> | **(B) Даунгрейд LoRa-каналу до AES-128** + зберегти ATECC608B | LoRaWAN industry-standard (AES-128-CMAC); зберігає ATECC ecosystem + DPA-захист; ECC P-256 (signing/ECDH) залишається 256-біт | Глобальний SSOT-патч: `CRYP_KEYSIZE_256B → CRYP_KEYSIZE_128B`, `HardwareKey.aes_key_hex` 64 hex → 32 hex, всі docs `AES-256` → `AES-128`, HKDF output length 32 → 16 байт, всі тести | ⭐ **Рекомендовано** — AES-128 практично нездоланний (2¹²⁸), вже стандарт LoRaWAN, дешевший BOM, легший bridging до LoRaWAN/Helium fallback (ARCH.34) |
+> | **(C) Гібрид: HW-CRYP MCU для AES-256 LoRa + ATECC608B тільки для ECC/HMAC/cert storage** | Зберігає AES-256 без зміни SE; ATECC використовується за прямим призначенням (asymmetric + HMAC OTA) | Втрачаємо DPA-захист саме для AES-LoRa ключа — він залишається у MCU SRAM під час `HAL_CRYP_Init()` | Якщо хочемо швидкого compromise — але **тоді ATECC608B як AES-сейф безглуздий** |
+>
+> **Поточна рекомендація:** Гілка (B) — AES-128 для LoRa каналу + збереження ATECC608B для ECC/HMAC. Аргументи: (i) AES-128 — золотий стандарт IoT (LoRaWAN, Sigfox, Helium); (ii) дешевший BOM; (iii) практично нездоланна security margin для лісового IoT; (iv) спрощує LoRaWAN fallback (ARCH.34). Імпакт: ~2 тижні firmware/backend rework. **До прийняття рішення** — таблиця Slot mapping нижче зі словами "AES-128 key" та `atcab_aes_encrypt(...)` приклад **узгоджені з варіантом B** і не є помилкою.
 
 **Контекст:** навіть з RDP Level 2, key extraction теоретично можливий через **side-channel attacks** (DPA, EM analysis) або **fault injection** (voltage/clock glitching). Для batches > 1000 одиниць — це attractive target. Виділений Secure Element зберігає ключ у tamper-resistant ASIC з вбудованим detection.
 

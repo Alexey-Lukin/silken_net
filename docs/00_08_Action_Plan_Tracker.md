@@ -467,6 +467,71 @@
 - [x] 🤖 Після вимірювання: flip `check_z_divergence!` до числового `|server_z - device_z| < ε` під ENV feature-flag (`GAIA_DCI_NUMERIC_TOLERANCE`) — ✅ Code-ready (2026-05-02). `TelemetryUnpackerService#check_z_divergence!` тепер має numeric-branch під двома ENV: `GAIA_DCI_NUMERIC_TOLERANCE=true` (off за замовчанням → нульова поведінкова зміна для production) + `GAIA_DCI_NUMERIC_EPSILON` (Float, default = `DEFAULT_DCI_EPSILON = 0.001`, malformed value graceful fallback). Numeric branch виконується **лише** коли `attributes[:device_z]` присутній — сьогодні LoRa packet (21B) не несе raw Z, тож branch інертний у production до post-FW.2 packet revision. 6 нових spec examples у `spec/services/telemetry_unpacker_service_spec.rb` describe `[FW.31] numeric tolerance band`: toggle off / within ε silent / drift > ε fraud / default ε constant / malformed ENV fallback / device_z missing. Awaits 👤 lab measurement реального ARM↔x86 IEEE-754 drift.
 - [ ] 🤖 Специфікація: оновити `03_04` §BLOCKER-2 з виміряним drift + обраним ε (потребує лабораторних даних, попередньо ε=0.001)
 
+#### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
+- `firmware/soldier/main.c` (FW.4 fauna sampler), `docs/03_03` §10.3 | **P1**
+- **Опис:** Після audit-fix енергетичного бюджету (`03_03 §10.3`, патч 2026-05-16) реальна вартість одного fauna-сесійного циклу = **~78.3 мДж** (× 20 від попередньої оцінки `3.3 мДж/доба`). Активний CPU під час 156 MFCC+inference вікон тягне ~12 мА × 1.56 с → транзієнтна просадка V_cap. При `V_cap ≈ 3.5 V` (margin ~100 мВ над `VBAT_OK ON = 3.4V`) просадка ~37 мВ ставить EDLC на межу — будь-який concurrent TX = brownout посеред інференсу.
+- **Рішення:** Додати guard clause перед запуском fauna-семплінгу:
+  ```c
+  #define FAUNA_VCAP_MIN_MV 4500
+  if (vcap_voltage < FAUNA_VCAP_MIN_MV) {
+      fauna_skipped_low_vcap++;  // saturating uint8 у RTC або acoustic_events sentinel
+      goto skip_fauna;
+  }
+  ```
+- **Backend:** Додати метрику `fauna_skipped_low_vcap_total` у Prometheus + альерт для дерев, де skip rate > 50% (можливий деградований EBFC або hibernation period).
+- [ ] 🤖 Firmware — додати `FAUNA_VCAP_MIN_MV` guard у функцію fauna sampling (після Run_Inference розкоментується у FW.4)
+- [ ] 🤖 Прометей метрика + Grafana panel "Fauna skip rate per cluster"
+- [ ] 🔗 Залежить від FW.4 (TinyML inference розкоментовано) — guard має сенс лише коли fauna-pivot реалізовано
+
+#### FW.43 — 03_05 §3.1 SSOT drift (привид hardcoded AES-key після FW.1)
+- `docs/03_05_Hardware_AES256_and_Security.md` §3.1 | **P3**
+- **Опис:** Hot-fix doc-only. FW.1 (Per-device HKDF provisioning) вже реалізовано — `Load_AES_Key()` зчитує унікальний ключ з Protected Flash. Проте §3.1 досі описує "ідентичний на ВСІХ вузлах" + hardcoded `uint32_t aes_key[8] = { 0xXXXXXXXX, ... }`. Це SSOT-drift, який вводить в оману нових інженерів.
+- [ ] 🤖 Замінити блок §3.1 на актуальний (`uint32_t aes_key[8] = {0};` + посилання на `Load_AES_Key()` у §3.4а HKDF derivation)
+- [ ] 🤖 Прибрати фразу "Ідентичний на ВСІХ вузлах мережі" — поточна архітектура per-device unique через HKDF
+
+---
+
+## 🧭 Architecture / SSOT-drift fixes (2026-05-16 cross-doc audit)
+
+> Знахідки з рев'ю модулів 00_, 01_, 02_, 03_, 03_05 (інженерний аудит, 2026-05-16). Слоти ARCH.39–ARCH.42 зарезервовано під цей патч-комплект.
+
+#### ARCH.39 — Fauna acoustic energy budget — арифметична + системна корекція
+- `docs/03_03_TinyML_Acoustic_Inference.md` §10.3 | **P2** | ✅ **Doc-fix вкочено 2026-05-16**
+- **Опис:** Перша редакція §10.3 містила (1) арифметичну помилку `1 мА × 3.3V × 10 с = 3.3 мДж` (правильно 33 мДж — у 10× нижче), (2) ігнорування активного CPU під час MFCC+inference (~12 мА × 1.56 с). Реальна вартість fauna-сесії ≈ 78.3 мДж/сесію, ~156.6 мДж/добу (× 20 від оригінальної оцінки). Все ще сумісно з EDLC бюджетом, але імпульсна потужність потребує V_cap guard'у — див. **FW.42**.
+- [x] 🤖 Перерахувати таблицю енергобюджету у `03_03` §10.3 (1 мА wait + 12 мА active phases)
+- [ ] 🔗 Узгодити sensitivity-модель `02_03 §9.6 Сценарій C` з новими цифрами
+
+#### ARCH.40 — Fauna 5-секундне вікно: монолітне awake-обчислення (SRAM2 wipe constraint)
+- `docs/03_03_TinyML_Acoustic_Inference.md` §10.2 | **P1** | ✅ **Doc-fix вкочено 2026-05-16**
+- **Опис:** Architecture v3 використовує STOP2 RTC-only з `PWR_CR1_RRSTP=1` → SRAM2 wipe при кожному переході в сон. Декомпозиція 5 с акумульованого вікна (156 MFCC-векторів `mean+std`) на «32 мс → STOP2 → 32 мс» неможлива: проміжна float-матриця у RAM не переживе сну, DR15 (єдиний вільний RTC регістр) не вміщає float[156][N_mfcc].
+- **Рішення:** Явно зафіксовано у §10.2 — fauna-сесія мусить виконуватись монолітно за один цикл активного пробудження (156 циклів TIM2+DMA послідовно).
+- [x] 🤖 Додати constraint-блок у `03_03` §10.2
+- [ ] 🔗 При імплементації FW.4 fauna-pivot: вимагати unit-тест `test_fauna_sampling_no_stop2_in_session()`
+
+#### ARCH.41 — Cold-start Time Paradox для Dual Computation Integrity
+- `docs/03_04_mruby_Lorenz_Attractor.md` §2.1, `firmware/soldier/main.c` `Derive_Cold_Start_State`, `app/services/telemetry_unpacker_service.rb#compute_server_z` | **P2**
+- **Опис:** Після VBAT loss Soldier'ський RTC скидається на default-дату (2000-01-01) → `Derive_Cold_Start_State()` обчислює `epoch_day ≈ 10 951` замість серверного ≈ 20 585. Server при дереві з історією chain'ить з попереднього `lorenz_state_tail` (не cold-derive) → траєкторії розходяться категорично доки `CMD_TIME_SYNC` beacon від Queen не оновить RTC Soldier'а.
+- **Поточний імпакт:** Категоричний DCI можуть тригерити false-positives на cold-boot пакетах (≤ 50 wake-up циклів до ergodicity ~2 доби). Numeric DCI branch (FW.31) інертний у production (LoRa packet 21B не несе raw Z) — стане критичним після post-FW.2 packet revision.
+- **План мітигації (вибрати один):**
+  - **(A) Server-side fallback** (рекомендовано, без firmware change): У `compute_server_z` при категоричному DCI mismatch + tree має історію → retry через cold-start derivation з трьома кандидатами `epoch_day` (today, today−1, firmware RTC-default ≈ 10 951). При збігу — позначити `TelemetryLog#time_unsynced_fallback = true`, queue `CMD_TIME_SYNC` через downlink, не падати DCI.
+  - **(B) Soldier-side sentinel** (потрібен координований firmware rollout): При cold-boot Soldier шле `acoustic_events = 0xFE` як sentinel у першому uplink. Backend трактує як «time uncertain».
+  - **(C) Defer first uplink** (потребує firmware redesign): Soldier у grace-вікні (10 хв) шле спрощений «hello» пакет без Lorenz state — тільки DID + Vcap + TIME_REQ маркер.
+- [ ] 🤖 (A) Реалізувати `compute_server_z` retry logic + `time_unsynced_fallback` колонка
+- [ ] 🤖 (A) Trigger CMD_TIME_SYNC downlink → можна reuse OtaTransmissionWorker з порожнім payload (envelope-only)
+- [ ] 🔗 (B/C) Розглянути після стабілізації (A) — потребують координованого firmware rollout
+
+#### ARCH.42 — ATECC608B AES-128 vs system AES-256 апаратний конфлікт
+- `docs/03_05_Hardware_AES256_and_Security.md` §3.7 | **P1**
+- **Опис:** §3.7 пропонує мапінг Slot 0 → "AES-128 key", але вся мережа Gaia 2.0 використовує AES-256 (`CRYP_KEYSIZE_256B` у STM32WLE5JC + `MX_CRYP_Init` у `soldier/main.c`). Microchip ATECC608B апаратно **не підтримує AES-256** — лише AES-128. Якщо перенести шифрування всередину чипа (key never leaves SE), доведеться даунгрейдити всю мережу до AES-128. Якщо ж зберегти AES-256, потрібно витягувати ключ із SE у RAM MCU — це нівелює DPA/EM захист, заради якого вводився SE.
+- **Архітектурне рішення (вибрати):**
+  - **(A) Змінити Secure Element** на NXP EdgeLock SE050 або STSAFE-A110 з підтвердженою підтримкою AES-256 у HW. Збільшує BOM (~$2–4 vs ATECC ~$0.85), але зберігає крипто-консистентність.
+  - **(B) Даунгрейд LoRa-каналу до AES-128.** AES-128 — золотий стандарт IoT (LoRaWAN використовує саме його). Оновити `MX_CRYP_Init` (`CRYP_KEYSIZE_256B → CRYP_KEYSIZE_128B`), всі doc-посилання, HKDF output length, AES key column у `HardwareKey` (64 hex → 32 hex). Коштує меншу security margin (`2^128` все ще практично нездоланно) і зберігає DPA-захист SE.
+- **Рекомендація:** Варіант (B) — AES-128 для LoRa каналу. Аргументи: (i) industry-standard для constrained IoT, (ii) дешевший BOM, (iii) `ATECC608B` вже у плані як комбо-SE для ECC P-256 signing + ECDH, (iv) симетричний AES-128 переважає у LoRaWAN/Helium/Sigfox-екосистемах — простіше bridging. **Вплив:** ~2 тижні firmware/backend rework + переписати всі `MX_CRYP_Init` тести.
+- **Cross-ref:** SEC.6 (Secure Element не використовується) — вирішується разом з ARCH.42.
+- [ ] 👤 Архітектурне рішення A vs B (потребує stakeholder review — security margin vs BOM cost)
+- [ ] 🤖 Після рішення: глобальний SSOT-патч (03_05 + 03_01 + 04_01 HardwareKey schema + firmware AES init + всі тести)
+- [ ] 🔗 Блокує: SEC.6 (Secure Element integration), будь-який BOM freeze з ATECC608B
+
 ---
 
 ## 🧪 Hardware / Lab

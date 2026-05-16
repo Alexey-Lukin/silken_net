@@ -234,6 +234,19 @@ C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 >
 > **Інваріант:** після кожного успішного циклу C-код **зобов'язаний** записати нові `(x, y, z)` у DR16/DR17/DR18 і встановити `DR19 = 0x4C5A5354`.
 
+> ⚠️ **Cold-Start Time Paradox (ARCH.41, відкрите питання):** Cold-start деривація `(x₀,y₀,z₀)` залежить від `epoch_day`. Після **VBAT loss** RTC Soldier'а скидається на default-дату (2000-01-01 у поточному firmware), тож `approx_days ≈ 10 951` замість сьогоднішнього серверного `≈ 20 585` (на 2026-05-16). Перший uplink після cold-boot використає «застарілий» epoch_day, поки Soldier не отримає `CMD_TIME_SYNC` beacon від Queen (FW.20). Це означає:
+>
+> - **Firmware:** `Derive_Cold_Start_State()` у `firmware/soldier/main.c:2242` свідомо документує цей gap (`TEMPORARY: Month*30 approximation` + `cross-month boot drift`).
+> - **Backend:** `TelemetryUnpackerService#compute_server_z` сьогодні **уникає** проблеми у >99% випадків через `previous_lorenz_state_for(tree)` chaining (server бере хвіст останнього TelemetryLog, не cold-derive). Cold-derive виконується лише коли у дерева **немає історії** (вперше підключений вузол). У такому сценарії server бере `Time.now.utc.to_i / 86_400` — і Soldier з RTC=2000-01-01 не співпаде з server-day.
+> - **Сценарій тонкого розриву:** VBAT loss у дерева **з історією** → Soldier cold-restart'ить Lorenz з RTC-default epoch_day, server chain'ить з попереднього хвоста → траєкторії розходяться категорично на ергодичному горизонті ~50 циклів (≈ 2 доби), доки `CMD_TIME_SYNC` не дочекається наступного CoAP downlink'у. Сьогодні numeric DCI branch (`GAIA_DCI_NUMERIC_TOLERANCE`) інертний у production (LoRa packet 21B не несе device_z), тож на DCI це поки **не валиться** — але блокує майбутній numeric tolerance band, якщо `device_z` додасться у wire-формат.
+>
+> **Мітигація (план, не реалізовано):**
+> 1. **Server-side detect-and-recover** — коли `cold_start_flag == false` (є історія) АЛЕ категоричний DCI сильно розходиться, спробувати додатковий fallback: re-compute Z через cold-start derivation з K_seed для трьох кандидатів `epoch_day` (today, today−1, firmware RTC-default day ≈ 10 951). Якщо будь-який кандидат повертає Z, який збігається категорично з device — позначити `TelemetryLog#time_unsynced_fallback = true` (нова колонка), запросити `CMD_TIME_SYNC` через найближчий CoAP downlink, не падати DCI.
+> 2. **Soldier-side explicit signal** — забронювати 1 біт у Status Byte (наразі лише `[PanicFlag:1 | Status:2 | GrowthPoints:5]` — все зайнято) АБО у Pad (наразі firmware_version_id у байтах 0..1 + panic_counter у байтах 2..3 — все зайнято) під `time_uncertain_flag`. Це wire-format change → blocked by наступним packet revision. Простіше: при cold-boot Soldier інкрементує спеціальне значення в `acoustic_events` (наприклад, `0xFE` — щоб не сплутати з `255 = saturated`) як sentinel; backend трактує як «time uncertain». Не ламає wire-format, але вимагає координованого rollout firmware.
+> 3. **Architectural альтернатива — defer first uplink** — Soldier при cold-boot не відсилає uplink до отримання `CMD_TIME_SYNC` beacon (max 10 хв grace, `TIME_SYNC_COLD_BOOT_GRACE_MS`). Просто, але ламає OTA Reflex Shot первинний trigger (Queen чекає uplink Soldier'а щоб надіслати OTA). Можна обійти: Soldier у grace-вікні шле **спрощений «hello» пакет** без Lorenz state, тільки DID + Vcap + `TIME_REQ` маркер.
+>
+> Найдешевший плановий шлях для TRL 7 — варіант 1 (server-side fallback) + опційно варіант 2 (sentinel у acoustic_events). Tracker: див. **ARCH.41** у [00_08](00_08_Action_Plan_Tracker).
+
 ```
 firmware/soldier/main.c — ФАЗА 1 (SENSE + State Restore)
 │
@@ -521,10 +534,12 @@ growth_points  = (reward / 2).clamp(5, 31)
 
 > **`(reward / 2).clamp(5, 31)` замість `clamp(reward, 10, 63)`:** [FW.29-PACK] StatusByte layout після FW.29 — `[PanicFlag:1 (bit 7) | Status:2 (bits 6..5) | GrowthPoints:5 (bits 4..0)]`. Wire-діапазон growth_points = 5 біт = 0..31. `(reward / 2)` масштабує тіло homeostasis [10..50] → [5..25]; clamp(5, 31) залишає margin зверху. Backend `(status_byte & 0x1F) * 2` повертає до stored 0..62.
 
-**Графік нарахування growth_points залежно від Z:**
+**Графік нарахування `reward` (= stored growth_points) залежно від Z:**
+
+> Графік показує **stored**-значення (0..50) — це Wire ×2 після backend upscale. Wire-значення у пакеті — це Stored / 2 (діапазон 5..25 у homeostasis після `(reward / 2).clamp(5, 31)`).
 
 ```
-growth_points
+reward / stored growth_points
 50 ┤                         ████
 49 ┤                       ██    ██
 45 ┤                     ██        ██
@@ -545,19 +560,21 @@ growth_points
 
 **Числові приклади:**
 
-| Z-значення | `deviation` | `deviation.round` | `reward` | `growth_points` |
-|---|---|---|---|---|
-| 1.5 | — | — | — | **1** (status=1, stress) |
-| 2.0 | 27.0 | 27 | 23 | **23** |
-| 10.0 | 19.0 | 19 | 31 | **31** |
-| 20.0 | 9.0 | 9 | 41 | **41** |
-| 28.5 | 0.5 | 1 | 49 | **49** ← .round округлює |
-| 29.0 | 0.0 | 0 | 50 | **50** (ідеал) |
-| 30.0 | 1.0 | 1 | 49 | **49** |
-| 40.0 | 11.0 | 11 | 39 | **39** |
-| 44.5 | 15.5 | 16 | 34 | **34** |
-| 45.0 | 16.0 | 16 | 34 | **34** |
-| 46.0 | — | — | — | **0** (status=2, anomaly) |
+> 📐 **Wire vs Stored:** Wire `growth_points` (те, що йде в LoRa-пакеті) — це 5-бітне поле `(reward / 2).clamp(5, 31)`. Backend `TelemetryUnpackerService` робить `(status_byte & 0x1F) * 2`, повертаючи Stored. Колонка **Wire** — це що Soldier пакує у Status Byte; **Stored** — те, що бачить `TelemetryLog#growth_points`.
+
+| Z-значення | `deviation` | `deviation.round` | `reward` | **Wire `growth_points`** (5-bit, packed) | **Stored** (backend ×2) |
+|---|---|---|---|---|---|
+| 1.5 | — | — | — | **1** (status=1, stress) | 2 |
+| 2.0 | 27.0 | 27 | 23 | **11** (`23/2 → clamp`) | 22 |
+| 10.0 | 19.0 | 19 | 31 | **15** | 30 |
+| 20.0 | 9.0 | 9 | 41 | **20** | 40 |
+| 28.5 | 0.5 | 1 | 49 | **24** ← .round округлює | 48 |
+| 29.0 | 0.0 | 0 | 50 | **25** (ідеал) | 50 |
+| 30.0 | 1.0 | 1 | 49 | **24** | 48 |
+| 40.0 | 11.0 | 11 | 39 | **19** | 38 |
+| 44.5 | 15.5 | 16 | 34 | **17** | 34 |
+| 45.0 | 16.0 | 16 | 34 | **17** | 34 |
+| 46.0 | — | — | — | **0** (status=2, anomaly) | 0 |
 
 ### 4.4 Bit-Packing: Структура Байту BioContract
 

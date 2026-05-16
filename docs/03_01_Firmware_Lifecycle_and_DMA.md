@@ -902,7 +902,7 @@ EdgeCache forest_cache[50]; // 50 слотів = 1150 байт RAM
 | Байти | Поле | Значення |
 |-------|------|---------|
 | 0-3 | DID | `0x00000000` (sentinel, "це Queen") |
-| 4-5 | Vcap → Uptime | `HAL_GetTick() / 1000` (uint16, wraps ~65s) |
+| 4-5 | Vcap → Uptime | `HAL_GetTick() / 1000` (uint16, wraps ~18.2 год = 65 535 с) |
 | 7 | Acoustic → Cache Load | `cache_count` (кількість дерев у кеші) |
 | 10 | BioContract → Health | `min(cache_count, 63)` |
 
@@ -1529,13 +1529,15 @@ static inline uint8_t  EMA_Is_Warmed_Up(void) {
 **BOOT — відновлення EMA з RTC** (одразу після відновлення Lorenz state):
 
 ```c
-// [FW.21] ВІДНОВЛЕННЯ EMA-ФІЛЬТРА (RTC DR10-DR12)
+// [FW.21] ВІДНОВЛЕННЯ EMA-ФІЛЬТРА (RTC DR10 + DR12 packed)
+// УВАГА: DR11 НЕ ЧЕПАЄМО — це recent_mesh_dids[2]. ema_vcap_x10 живе у low 16 біт DR12.
+#define EMA_VCAP_X10_MASK 0xFFFFu
 {
     uint32_t ema_meta = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR12);
     uint8_t  v        = (uint8_t)((ema_meta >> 24) & 0xFFu);
     if (v == EMA_VALID_MAGIC) {
         ema_delta_t_x100 = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR10);
-        ema_vcap_x10     = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR11);
+        ema_vcap_x10     = (uint32_t)(ema_meta & EMA_VCAP_X10_MASK); // НЕ DR11!
         ema_valid        = v;
         ema_count        = (uint8_t)((ema_meta >> 16) & 0xFFu);
     }
@@ -1545,10 +1547,12 @@ static inline uint8_t  EMA_Is_Warmed_Up(void) {
 **SAVE — збереження EMA перед STOP2** (одразу після збереження mesh DIDs):
 
 ```c
+// УВАГА: DR11 належить recent_mesh_dids[2] (§2 canonical SSOT). НЕ перезаписуємо.
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR10, ema_delta_t_x100);
-HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR11, ema_vcap_x10);
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR12,
-    ((uint32_t)ema_valid << 24) | ((uint32_t)ema_count << 16));
+      ((uint32_t)ema_valid  << 24)
+    | ((uint32_t)ema_count  << 16)
+    | (ema_vcap_x10 & EMA_VCAP_X10_MASK));
 ```
 
 **Інтеграція в Phase 1 (SENSE)** — викликається після зчитування `vcap_voltage`:
