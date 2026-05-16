@@ -203,6 +203,25 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
     end
   end
 
+  describe "format_health_message — freezing branch (LiFePO4 risk, docs/02_05 §4а.5)" do
+    it "returns the ❄️ freezing message when temperature is below LOW_TEMPERATURE_THRESHOLD" do
+      log = create(:gateway_telemetry_log, :freezing, gateway: gateway, queen_uid: gateway.uid)
+      worker = described_class.new
+      message = worker.send(:format_health_message, gateway, log)
+      expect(message).to include("заморожена")
+      expect(message).to include(gateway.uid)
+      expect(message).to include("LiFePO4")
+    end
+
+    it "prefers overheat over freezing when both branches would match (overheat first)" do
+      # Practically impossible state, but exercises branch ordering.
+      log = build(:gateway_telemetry_log, :overheated, gateway: gateway, queen_uid: gateway.uid)
+      message = described_class.new.send(:format_health_message, gateway, log)
+      expect(message).to include("перегріта")
+      expect(message).not_to include("заморожена")
+    end
+  end
+
   describe "StandardError rescue branch" do
     it "re-raises StandardError after logging" do
       gateway = create(:gateway, :online, cluster: cluster)

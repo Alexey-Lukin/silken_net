@@ -540,10 +540,11 @@ Starlink Mini — компактний термінал LEO-супутника �
 | Sun load mitigation | Світлий корпус (RAL 7035 / metallic) АБО sunshade | P1 (літо) |
 | Charge protection T-sensor | DS18B20 на корпусі LiFePO4 | **P0 (зима)** |
 | Charge MOSFET cut-off | P-MOSFET у charge path, NTC-driven або MCU GPIO | **P0 (зима)** |
+| Backend critical_fault? for T < −20°C | `GatewayTelemetryLog::LOW_TEMPERATURE_THRESHOLD` + ❄️ EwsAlert message — ✅ виконано | **P0 (зима)** |
 | Active cooling | Не потрібно при T_зовн ≤ +40°C | — |
 | Heater для LiFePO4 | Опційно для T_зовн < −20°C deployments | P3 |
 
-**Висновок:** теплова архітектура **проходить** для нормальних кліматичних зон Європи (Карпати, Полісся). Зимовий charge-protection обов'язковий (👤 — фізична інтеграція DS18B20 + MOSFET).
+**Висновок:** теплова архітектура **проходить** для нормальних кліматичних зон Європи (Карпати, Полісся). Зимовий charge-protection обов'язковий: hardware-частина (DS18B20 + MOSFET) — 👤; backend-частина (`GatewayTelemetryLog#critical_fault?` детектує `temperature_c < −20°C` → ❄️ EwsAlert) — ✅ реалізовано (HW.16).
 
 ---
 

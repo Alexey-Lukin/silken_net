@@ -470,18 +470,12 @@
 #### FW.42 — Vcap guard для fauna acoustic sampling (brownout protection)
 - `firmware/soldier/main.c` (FW.4 fauna sampler), `docs/03_03` §10.3 | **P1**
 - **Опис:** Після audit-fix енергетичного бюджету (`03_03 §10.3`, патч 2026-05-16) реальна вартість одного fauna-сесійного циклу = **~78.3 мДж** (× 20 від попередньої оцінки `3.3 мДж/доба`). Активний CPU під час 156 MFCC+inference вікон тягне ~12 мА × 1.56 с → транзієнтна просадка V_cap. При `V_cap ≈ 3.5 V` (margin ~100 мВ над `VBAT_OK ON = 3.4V`) просадка ~37 мВ ставить EDLC на межу — будь-який concurrent TX = brownout посеред інференсу.
-- **Рішення:** Додати guard clause перед запуском fauna-семплінгу:
-  ```c
-  #define FAUNA_VCAP_MIN_MV 4500
-  if (vcap_voltage < FAUNA_VCAP_MIN_MV) {
-      fauna_skipped_low_vcap++;  // saturating uint8 у RTC або acoustic_events sentinel
-      goto skip_fauna;
-  }
-  ```
-- **Backend:** Додати метрику `fauna_skipped_low_vcap_total` у Prometheus + альерт для дерев, де skip rate > 50% (можливий деградований EBFC або hibernation period).
-- [ ] 🤖 Firmware — додати `FAUNA_VCAP_MIN_MV` guard у функцію fauna sampling (після Run_Inference розкоментується у FW.4)
-- [ ] 🤖 Прометей метрика + Grafana panel "Fauna skip rate per cluster"
-- [ ] 🔗 Залежить від FW.4 (TinyML inference розкоментовано) — guard має сенс лише коли fauna-pivot реалізовано
+- **Рішення:** Guard clause `Fauna_Should_Sample(uint16_t vcap_mv)` — повертає 1 коли V_cap ≥ FAUNA_VCAP_MIN_MV, інакше 0 і інкрементує saturating uint8 counter `fauna_skipped_low_vcap`.
+- **Статус (✅ firmware-side, 2026-05-16):** Helper реалізовано як **freeze-contract** у `firmware/soldier/main.c` (поряд із TinyML threshold-блоком). 8 host-тестів у `firmware/test/test_soldier_logic.c` (constant=4500 / allowed at threshold / allowed above / blocked below / blocked deep-brownout / counter increments / counter saturates uint8 / mixed calls preserve count). 260/260 soldier tests pass. **Активація** — 2 рядки у fauna-pathway, коли FW.4 розкоментує `Run_Inference()`.
+- [x] 🤖 Firmware — `Fauna_Should_Sample()` helper + `fauna_skipped_low_vcap` saturating counter (2026-05-16)
+- [x] 🤖 Host tests — 8 examples у `test_soldier_logic.c` секція "Fauna Vcap Guard (FW.42, freeze-contract)"
+- [ ] 🔗 Активація: викликати `Fauna_Should_Sample()` всередині fauna-pathway після FW.4 uncomment
+- [ ] 🤖 Прометей метрика + Grafana panel "Fauna skip rate per cluster" — після FW.4 (метрика без даних = шум)
 
 #### FW.43 — 03_05 §3.1 SSOT drift (привид hardcoded AES-key після FW.1)
 - `docs/03_05_Hardware_AES256_and_Security.md` §3.1 | **P3**
@@ -688,9 +682,10 @@
 
 #### HW.16 — Thermal management в IP67 enclosure
 - **Джерело:** `02_05` BLOCKER-5
-- **Опис:** SIM7070G + MCU при TX: ~500 mW × 5 sec. Літній interior temp до 60-70°C. LiFePO4 charging при T < 0°C пошкоджує батарею
-- **Статус:** 🤖 ✅ Тепловий бюджет розраховано та задокументовано в `02_05` §4а «Тепловий бюджет IP67 корпусу» — Phase 1/2.5 (~130 мВт середнє → ΔT < 1 K) та Phase 3 (3 Вт burst → ΔT ~4.5 K), sun load — головний внесок (+15 K). Активне охолодження не потрібне при T_зовн ≤ +40°C. Sun-shade / світлий корпус — рекомендовано
+- **Опис:** SIM7070G + MCU при TX: ~500 mW × 5 sec. Літній interior temp до 60-70°C. LiFePO4 charging при T < 0°C пошкоджує батарею; розряд нижче −20°C → graphite plating damage
+- **Статус:** 🤖 ✅ Тепловий бюджет розраховано та задокументовано в `02_05` §4а «Тепловий бюджет IP67 корпусу» — Phase 1/2.5 (~130 мВт середнє → ΔT < 1 K) та Phase 3 (3 Вт burst → ΔT ~4.5 K), sun load — головний внесок (+15 K). Активне охолодження не потрібне при T_зовн ≤ +40°C. Sun-shade / світлий корпус — рекомендовано. Backend критична-температура гілка реалізована (2026-05-16).
 - [x] 🤖 Розрахувати thermal budget для enclosure (T_ext = +40°C)
+- [x] 🤖 Backend: `GatewayTelemetryLog::LOW_TEMPERATURE_THRESHOLD = -20` + scope `:freezing` + `critical_fault?` branch + `GatewayTelemetryWorker#format_health_message` ❄️ message + factory `:freezing` trait + specs (51/51 ✅) — 2026-05-16. Symmetry для overheat/freeze, спрацьовує до hardware charge MOSFET cut-off (рання попередня тривога операторам).
 - [ ] 👤 Додати temperature sensor (NTC або DS18B20)
 - [ ] 👤 Реалізувати hardware charge protection при T < 0°C
 
@@ -993,10 +988,28 @@ DOC.9 — потребує лабораторного вимірювання TX-
 #### OPS.6 — Bootstrap scripts для GitHub Projects V2 + IaC initial sync
 - **Джерело:** `00_07` §1.2 + §6 | **Пріоритет: P2** | **Складність: M** | **🤖 Код**
 - **Опис:** `00_07` посилається на два планований скрипти, яких **не існує**: (1) `bin/setup_github_project.sh` — створює Projects V2 fields (`Current TRL`, `Target TRL`, `Assigned Agent`, `Module`, `Appetite`, `R&D Cluster`, `Shape Up Stage`, `Cycle`, `Academic Semester`) через `gh api graphql` (gh CLI не підтримує `project add-field` повністю); (2) `bin/bootstrap_github.sh` — orchestrate: label sync (через push, що тригерить `labels_sync.yml`) → fields create → first milestone (`Cycle 2026.QN`) → baseline shaping docs. Без них нові ВНЗ-партнери або deploy у форкований репозиторій вимагає ручного клікання у GitHub UI, що суперечить IaC філософії `00_07`.
-- [ ] 🤖 Написати `bin/setup_github_project.sh` (graphql mutation `addProjectV2Field` × 9 + ідемпотентність)
-- [ ] 🤖 Написати `bin/bootstrap_github.sh` (orchestration: labels push → fields create → milestone create → shaping doc stubs)
-- [ ] 🤖 Hooks у `Rakefile`: `bin/rake github:bootstrap` як user-facing entry-point
-- [ ] 🤖 Spec/тест: запуск проти sandbox-репо
+- **Статус (✅ виконано 2026-05-16):** Ядро логіки винесене у `lib/github_bootstrap.rb` (testable Ruby), bash-скрипти — тонкі обгортки. Field schema у `GithubBootstrap::FIELDS` — SSOT для 10 полів (9 single-select + 1 TEXT), TRL шкала 1–12 під `Beyond TRL 9` (00_06 §7). Idempotency через GraphQL fetch + diff by name. Rake tasks `github:project_fields` і `github:bootstrap` (з auto-default `Cycle YYYY.QN`). 16 RSpec прикладів покривають: idempotent skip, error paths, milestone create-or-skip, field schema invariants. Без живого `gh` CLI — executor мокається.
+- [x] 🤖 Написати `bin/setup_github_project.sh` (тонка обгортка над `rake github:project_fields`)
+- [x] 🤖 Написати `bin/bootstrap_github.sh` (orchestration: gh auth check → fields create → milestone create)
+- [x] 🤖 Hooks у `Rakefile`: `rake github:bootstrap[cycle_title]` як user-facing entry-point
+- [x] 🤖 Spec/тест: 16 прикладів у `spec/lib/github_bootstrap_spec.rb` з stubbed executor (без потреби живого репо)
+- [ ] 👤 Запустити `bin/bootstrap_github.sh` проти живого Projects V2 при першому setup'і / в новому fork'у
+
+#### OPS.8 — TreeFamily seed drift vs Lorenz attractor SSOT (`db/seeds.rb`)
+- **Джерело:** Cross-doc audit 01_01–01_04 + 03_04 (2026-05-16) | **Пріоритет: P1** (silent — fail-shut, не fail-fast) | **Складність: XS** | **🤖 Код**
+- **Опис:** Рядки 196–212 `db/seeds.rb` сіяли `Pinus sylvestris` з `critical_z_min: -2.5, critical_z_max: 2.5` і `Quercus robur` з `-3.0 .. 3.0`. Ці значення — реліквія impedance-based bio_status моделі до Lorenz cutover'а. Природний Lorenz Z сидить ~9..50 (≈ ρ−1 при ρ_eff ∈ [10, 50]), тож після `db:seed`:
+  - `Tree#effective_lorenz_thresholds` повертав [-2.5, 2.5];
+  - `SilkenNet::Attractor.homeostatic?` повертав `false` для **усіх** Lorenz Z;
+  - `TelemetryUnpackerService#check_z_divergence!` flag'ив fraud на КОЖНОМУ пакеті (device-claim homeostasis vs server-classified anomaly);
+  - `OtaPackagerService` відправляв `CMD_SET_THRESHOLDS [-2.5, 2.5]` → firmware класифікував всі живі дерева як anomaly → growth_points=0 → ніякого мінтингу.
+- **Виправлено (2026-05-16):**
+  - `db/seeds.rb` тепер сіє Pine `5.0 .. 45.0` (`optimal_z_target: 29.0`) і Oak `8.0 .. 40.0` (`optimal_z_target: 24.0`) — узгоджено з `Tree::GLOBAL_LORENZ_Z_MIN/MAX/OPTIMAL` і `spec/factories/tree_families.rb`.
+  - Regression spec `spec/integration/seeded_tree_families_lorenz_alignment_spec.rb` (14 examples) фіксує SSOT: optimal_z_target homeostatic, off-band non-homeostatic, band всередині глобального Lorenz envelope, raw seed source match. Якщо seed колись відкотять — спек впаде голосно.
+  - Production rebaseline rake task НЕ потрібен — підтверджено що seed ніколи не запускався проти живої БД.
+- [x] 🤖 Виправити seeds.rb (Pine + Oak + optimal_z_target)
+- [x] 🤖 Regression spec для catch майбутніх регресій seed
+- [x] 🤖 Перевірити що `spec/models/tree_family_spec.rb`, `spec/integration/cluster_tree_family_spec.rb`, `spec/integration/fw8_threshold_governance_spec.rb` все ще зелені (177/177 ✅)
+- **Cross-ref:** `03_04 §4.1` (Lorenz Decision Table), `04_01 §TreeFamily`, `firmware/bio_contracts/bio_contract.rb:97-99` (firmware-side CRITICAL_Z_*).
 
 #### OPS.7 — Sync labels.yml + Projects V2 fields with 00_07 §4
 - **Джерело:** `00_07` §4 audit (2026-05-16) | **Пріоритет: P2** | **Складність: XS** | **🤖 Код**

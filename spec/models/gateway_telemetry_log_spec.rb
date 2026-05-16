@@ -18,6 +18,10 @@ RSpec.describe GatewayTelemetryLog, type: :model do
     it "defines LOW_SIGNAL_THRESHOLD" do
       expect(described_class::LOW_SIGNAL_THRESHOLD).to eq(5)
     end
+
+    it "defines LOW_TEMPERATURE_THRESHOLD (LiFePO4 discharge floor, 02_05 §4а.5)" do
+      expect(described_class::LOW_TEMPERATURE_THRESHOLD).to eq(-20)
+    end
   end
 
   # =========================================================================
@@ -74,6 +78,20 @@ RSpec.describe GatewayTelemetryLog, type: :model do
 
         expect(described_class.overheated).to include(hot_log)
         expect(described_class.overheated).not_to include(cool_log)
+      end
+    end
+
+    describe ".freezing" do
+      it "returns logs below LOW_TEMPERATURE_THRESHOLD" do
+        gateway     = create(:gateway)
+        cold_log    = create(:gateway_telemetry_log, :freezing, gateway: gateway, queen_uid: gateway.uid)
+        edge_log    = create(:gateway_telemetry_log, gateway: gateway, queen_uid: gateway.uid,
+                             temperature_c: GatewayTelemetryLog::LOW_TEMPERATURE_THRESHOLD)
+        normal_log  = create(:gateway_telemetry_log, gateway: gateway, queen_uid: gateway.uid,
+                             temperature_c: 5.0)
+
+        expect(described_class.freezing).to include(cold_log)
+        expect(described_class.freezing).not_to include(edge_log, normal_log)
       end
     end
 
@@ -153,6 +171,11 @@ RSpec.describe GatewayTelemetryLog, type: :model do
 
     it "returns true when temperature exceeds OVERHEAT_THRESHOLD" do
       log = build(:gateway_telemetry_log, :overheated)
+      expect(log.critical_fault?).to be true
+    end
+
+    it "returns true when temperature is below LOW_TEMPERATURE_THRESHOLD (LiFePO4 risk)" do
+      log = build(:gateway_telemetry_log, :freezing)
       expect(log.critical_fault?).to be true
     end
 

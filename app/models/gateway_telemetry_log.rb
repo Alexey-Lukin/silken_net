@@ -2,9 +2,14 @@
 
 class GatewayTelemetryLog < ApplicationRecord
   # --- КОНСТАНТИ ПОРОГІВ (Single Source of Truth) ---
-  LOW_BATTERY_THRESHOLD = 3300  # mV: нижче цього — виснаження батареї/сонячної панелі
-  OVERHEAT_THRESHOLD    = 65    # °C: SIM7070G починає деградувати при перевищенні
-  LOW_SIGNAL_THRESHOLD  = 5     # CSQ: нижче 5 — ризик втрати батчів телеметрії
+  LOW_BATTERY_THRESHOLD     = 3300  # mV: нижче цього — виснаження батареї/сонячної панелі
+  OVERHEAT_THRESHOLD        = 65    # °C: SIM7070G починає деградувати при перевищенні
+  LOW_SIGNAL_THRESHOLD      = 5     # CSQ: нижче 5 — ризик втрати батчів телеметрії
+  # SSOT — docs/02_05 §4а.5: LiFePO4 розряд безпечний до −20°C; нижче
+  # графітове плакування деградує і Queen уходить offline у найгірший
+  # момент (зимова буря — коли HIL-симуляція не врятує). Hardware
+  # доповнення (NTC + charge MOSFET cut-off) — HW.16 у docs/00_08.
+  LOW_TEMPERATURE_THRESHOLD = -20   # °C: нижче — ризик відмови LiFePO4 / brownout
 
   # --- ЗВ'ЯЗКИ ---
   # Зв'язок через UID дозволяє зберігати логіку ідентифікації заліза
@@ -21,6 +26,7 @@ class GatewayTelemetryLog < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :critical_battery, -> { where("voltage_mv < ?", LOW_BATTERY_THRESHOLD) }
   scope :overheated, -> { where("temperature_c > ?", OVERHEAT_THRESHOLD) }
+  scope :freezing, -> { where("temperature_c < ?", LOW_TEMPERATURE_THRESHOLD) }
   scope :weak_signal, -> { where("cellular_signal_csq < ? AND cellular_signal_csq != 99", LOW_SIGNAL_THRESHOLD) }
 
   # --- МЕТОДИ (Health Intelligence) ---
@@ -47,6 +53,7 @@ class GatewayTelemetryLog < ApplicationRecord
 
     voltage_mv < LOW_BATTERY_THRESHOLD ||
       temperature_c > OVERHEAT_THRESHOLD ||
+      temperature_c < LOW_TEMPERATURE_THRESHOLD ||
       (cellular_signal_csq != 99 && cellular_signal_csq < LOW_SIGNAL_THRESHOLD)
   end
 end

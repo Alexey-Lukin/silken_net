@@ -207,6 +207,38 @@ uint8_t warning_counter           = 0;   // Послідовні WARNING-под�
                                           // SRAM зберігається в STOP2, скидається
                                           // лише при VBAT-loss / IWDG / NVIC reset.
 
+// [FW.42] Vcap guard для fauna acoustic sampling.
+//
+// SSOT — docs/03_03 §10.3 + docs/00_08 FW.42.
+//
+// Один fauna-сеанс (5 с моноліт @ 16 кГц = 156 послідовних MFCC+INT8
+// inference вікон) коштує ~78 мДж: ~16 мДж wait + ~62 мДж активного CPU
+// при ~12 мА протягом ~1.56 с. Це **імпульсне** навантаження ~40 мВт,
+// яке просаджує EDLC. Якщо сесія стартує при V_cap, близькому до
+// VBAT_OK ON (~3.4 V), просадка може кинути напругу нижче порогу
+// Buck'а посеред інференсу → reset. Тому fauna sampling запускається
+// лише коли V_cap ≥ FAUNA_VCAP_MIN_MV (margin ~1.1 V над VBAT_OK ON).
+//
+// Цей блок — **freeze-contract helper**: викликається з fauna-pathway,
+// яку FW.4 (Run_Inference) розкоментує після інтеграції моделі.
+// До того моменту функція компілюється і покрита host-тестами, тож
+// активація — це 2 рядки виклику у TinyML гілці без додаткової роботи.
+//
+// Backend-симетрія (опційно, post-FW.4): метрика
+// `fauna_skipped_low_vcap_total` у Prometheus → Grafana панель
+// "Fauna skip rate per cluster" → дерева з skip rate > 50% мають
+// деградований EBFC або зимовий період.
+#define FAUNA_VCAP_MIN_MV  4500u   // мВ — мін. V_cap для безпечного сеансу
+
+uint8_t fauna_skipped_low_vcap = 0; // saturating uint8 counter (SRAM)
+
+static uint8_t Fauna_Should_Sample(uint16_t vcap_mv)
+{
+    if (vcap_mv >= FAUNA_VCAP_MIN_MV) return 1;
+    if (fauna_skipped_low_vcap < 255) fauna_skipped_low_vcap++;
+    return 0;
+}
+
 // === 1.8. ПАМ'ЯТЬ ЕСТАФЕТИ (Directed Mesh) ТА OTA ===
 uint8_t mesh_relay_payload[16] = {0}; // Буфер для чужого 16-байтного пакета
 uint8_t has_mesh_relay = 0;           // Прапорець: 1 - є пакет для ретрансляції

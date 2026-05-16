@@ -193,12 +193,19 @@ amazon_sector = Cluster.create!(
 )
 
 # Синхронізація з межами Атрактора Лоренца
+# Z band — це гомеостатичний коридор для Lorenz Z (`SilkenNet::Attractor`).
+# Lorenz Z природно сидить ~9..50 (≈ ρ−1) при ρ_eff ∈ [10, 50]; стандартний
+# глобальний коридор — `Tree::GLOBAL_LORENZ_Z_MIN=2.0`, `MAX=45.0`,
+# `OPTIMAL=29.0`. Per-species — звужений (`spec/factories/tree_families.rb`
+# тримає той самий контракт). Сосна — ширше вікно толерантності (хвойні
+# витримують ширший Z drift); дуб — вужче, центр зміщено нижче.
 pine = TreeFamily.create!(
   name: "Сосна звичайна",
   scientific_name: "Pinus sylvestris",
   baseline_impedance: 1500,
-  critical_z_min: -2.5,
-  critical_z_max: 2.5,
+  critical_z_min: 5.0,
+  critical_z_max: 45.0,
+  optimal_z_target: 29.0,
   carbon_sequestration_coefficient: 0.8
 )
 
@@ -206,8 +213,9 @@ oak = TreeFamily.create!(
   name: "Дуб звичайний",
   scientific_name: "Quercus robur",
   baseline_impedance: 2200,
-  critical_z_min: -3.0,
-  critical_z_max: 3.0,
+  critical_z_min: 8.0,
+  critical_z_max: 40.0,
+  optimal_z_target: 24.0,
   carbon_sequestration_coefficient: 1.5
 )
 

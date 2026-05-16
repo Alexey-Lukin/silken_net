@@ -4067,6 +4067,88 @@ TEST(test_fw20s2_gossip_apply_drift_within_cap_corrects) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * [FW.42] Fauna acoustic-sampling Vcap guard (freeze-contract)
+ * ════════════════════════════════════════════════════════════════════
+ * Source SSOT: docs/03_03 §10.3 + docs/00_08 FW.42.
+ *
+ * Pure-logic mirror of `Fauna_Should_Sample` from firmware/soldier/main.c.
+ * Decoupled from FW.4 (Run_Inference still commented) — when the fauna
+ * sampling pathway lights up, the guard is already validated.
+ */
+#define TEST_FAUNA_VCAP_MIN_MV 4500u
+
+static uint8_t test_fauna_skipped_low_vcap = 0;
+
+static void Reset_Fauna_Skip_Counter(void) {
+    test_fauna_skipped_low_vcap = 0;
+}
+
+static uint8_t Test_Fauna_Should_Sample(uint16_t vcap_mv) {
+    if (vcap_mv >= TEST_FAUNA_VCAP_MIN_MV) return 1;
+    if (test_fauna_skipped_low_vcap < 255) test_fauna_skipped_low_vcap++;
+    return 0;
+}
+
+TEST(test_fw42_fauna_threshold_constant_matches_doc) {
+    /* docs/03_03 §10.3 audit-fix: ΔV @ V_cap=4.5V ≈ -29 мВ — comfortable
+     * margin above VBAT_OK ON (3.4V). Constant must be 4500 mV. */
+    ASSERT_EQ((unsigned)TEST_FAUNA_VCAP_MIN_MV, 4500u);
+}
+
+TEST(test_fw42_fauna_sample_allowed_at_exact_threshold) {
+    Reset_Fauna_Skip_Counter();
+    ASSERT_EQ(Test_Fauna_Should_Sample(TEST_FAUNA_VCAP_MIN_MV), 1);
+    ASSERT_EQ(test_fauna_skipped_low_vcap, 0);
+}
+
+TEST(test_fw42_fauna_sample_allowed_above_threshold) {
+    Reset_Fauna_Skip_Counter();
+    ASSERT_EQ(Test_Fauna_Should_Sample(5000), 1);
+    ASSERT_EQ(test_fauna_skipped_low_vcap, 0);
+}
+
+TEST(test_fw42_fauna_sample_blocked_below_threshold) {
+    Reset_Fauna_Skip_Counter();
+    ASSERT_EQ(Test_Fauna_Should_Sample(4499), 0);
+    ASSERT_EQ(test_fauna_skipped_low_vcap, 1);
+}
+
+TEST(test_fw42_fauna_sample_blocked_deep_brownout) {
+    /* V_cap == VBAT_OK ON (3.4V) — the very margin we are protecting. */
+    Reset_Fauna_Skip_Counter();
+    ASSERT_EQ(Test_Fauna_Should_Sample(3400), 0);
+    ASSERT_EQ(test_fauna_skipped_low_vcap, 1);
+}
+
+TEST(test_fw42_fauna_skip_counter_increments_per_block) {
+    Reset_Fauna_Skip_Counter();
+    Test_Fauna_Should_Sample(4000);
+    Test_Fauna_Should_Sample(3800);
+    Test_Fauna_Should_Sample(3600);
+    ASSERT_EQ(test_fauna_skipped_low_vcap, 3);
+}
+
+TEST(test_fw42_fauna_skip_counter_saturates_at_uint8_max) {
+    Reset_Fauna_Skip_Counter();
+    for (int i = 0; i < 300; i++) {
+        Test_Fauna_Should_Sample(3000);
+    }
+    /* Saturating uint8 — 300 calls but counter stops at 255. */
+    ASSERT_EQ(test_fauna_skipped_low_vcap, 255);
+}
+
+TEST(test_fw42_fauna_mixed_calls_do_not_decrement_counter) {
+    /* Allowed calls must NOT decrement the counter; the metric tracks
+     * cumulative skips, not "consecutive". */
+    Reset_Fauna_Skip_Counter();
+    Test_Fauna_Should_Sample(3000); /* skip → 1 */
+    Test_Fauna_Should_Sample(5000); /* allowed */
+    Test_Fauna_Should_Sample(3000); /* skip → 2 */
+    Test_Fauna_Should_Sample(4500); /* allowed (exact threshold) */
+    ASSERT_EQ(test_fauna_skipped_low_vcap, 2);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * [FW.29] Follow-up boundary tests
  * ════════════════════════════════════════════════════════════════════
  * Закриваємо edge-case прогалини з `10_02 FW.29 follow-ups`:
@@ -4436,6 +4518,16 @@ int main(void)
     RUN(test_fw20s2_gossip_apply_picks_next_window);
     RUN(test_fw20s2_gossip_apply_picks_prev_window_when_clock_jumped);
     RUN(test_fw20s2_gossip_apply_drift_within_cap_corrects);
+
+    printf("\n  Fauna Vcap Guard (FW.42, freeze-contract):\n");
+    RUN(test_fw42_fauna_threshold_constant_matches_doc);
+    RUN(test_fw42_fauna_sample_allowed_at_exact_threshold);
+    RUN(test_fw42_fauna_sample_allowed_above_threshold);
+    RUN(test_fw42_fauna_sample_blocked_below_threshold);
+    RUN(test_fw42_fauna_sample_blocked_deep_brownout);
+    RUN(test_fw42_fauna_skip_counter_increments_per_block);
+    RUN(test_fw42_fauna_skip_counter_saturates_at_uint8_max);
+    RUN(test_fw42_fauna_mixed_calls_do_not_decrement_counter);
 
     printf("\n  FW.29 Follow-ups (StatusByte + panic boundary):\n");
     RUN(test_fw29_status_byte_panic_with_max_growth_points);

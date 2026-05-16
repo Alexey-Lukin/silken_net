@@ -27,6 +27,10 @@ FactoryBot.define do
       temperature_c { GatewayTelemetryLog::OVERHEAT_THRESHOLD + 1 }
     end
 
+    trait :freezing do
+      temperature_c { GatewayTelemetryLog::LOW_TEMPERATURE_THRESHOLD - 1 }
+    end
+
     trait :weak_signal do
       cellular_signal_csq { GatewayTelemetryLog::LOW_SIGNAL_THRESHOLD - 1 }
     end

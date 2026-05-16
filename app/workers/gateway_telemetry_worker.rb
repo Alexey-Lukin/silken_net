@@ -93,6 +93,10 @@ class GatewayTelemetryWorker
       "🔋 КРИТИЧНО: Королева #{gateway.uid} виснажена (#{log.voltage_mv}mV). Скоро відключення!"
     elsif log.temperature_c > GatewayTelemetryLog::OVERHEAT_THRESHOLD
       "🔥 УВАГА: Королева #{gateway.uid} перегріта (#{log.temperature_c}°C). Можлива деформація корпусу."
+    elsif log.temperature_c < GatewayTelemetryLog::LOW_TEMPERATURE_THRESHOLD
+      # docs/02_05 §4а.5 — LiFePO4 розряд нижче −20°C руйнує графітове
+      # плакування → Queen піде offline у найгірший момент.
+      "❄️ КРИТИЧНО: Королева #{gateway.uid} заморожена (#{log.temperature_c}°C). LiFePO4 нижче −20°C — ризик відмови!"
     elsif log.cellular_signal_csq.to_i < GatewayTelemetryLog::LOW_SIGNAL_THRESHOLD
       "📡 ЗВ'ЯЗОК: Слабкий сигнал на #{gateway.uid} (CSQ: #{log.cellular_signal_csq}). Ризик втрати батчів."
     else
