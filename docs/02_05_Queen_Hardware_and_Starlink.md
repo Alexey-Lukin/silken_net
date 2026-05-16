@@ -702,8 +702,8 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 | 8 | **BMS** | 12V / 20А continuous / 50А peak, температурний захист | 1/2.5/3 | 🟡 Модель не зафіксована |
 | 9 | **DC-DC buck 12V→3.7V** | ≥3А continuous, ≥5А peak | 1/2.5 | ✅ Архітектурно |
 | 10 | **DC-DC buck 12V→3.3V** | ≥500 мА | 1/2.5/3 | ✅ Архітектурно |
-| 11 | **LTE-M антена** | 868/LTE-M dual-band SMA (зовнішня, IP67) | 1/2.5 | ✅ Архітектурно |
-| 12 | **LoRa антена** | 868 МГц, 5 dBi, зовнішня SMA | 1/2.5/3 | ✅ Архітектурно |
+| 11 | **LTE-M / NB-IoT антена** | Wideband Cellular **700–2700 МГц** (покриває Kyivstar B1/B3/B7/B8/B20). Зовнішня SMA, IP67. **БЕЗ суміщення з 868 МГц LoRa** — окремі чіпи (STM32WLE5JC vs SIM7070G), окремі RF-порти. Опційно: LTE+Active GNSS combo (Taoglas FXUB63, Pulse W3007) — додає GPS L1 1575 МГц для PPS time-sync SIM7070G. Раніше «868/LTE-M dual-band» — **виключено** (поганий VSWR на вузькому 868, низьке gain). | 1/2.5 | ✅ Архітектурно (REVISED 2026-05-16) |
+| 12 | **LoRa антена** | 868 МГц **tuned** (вузькодіапазонна, 863–870 EU ISM), 5 dBi Fiberglass collinear omni (Mobilemark OD8-868, Taoglas ALL.4101 або еквівалент). Зовнішня SMA, IP67. Призначена для пробивання вологого лісу 150+ м до Soldiers. **НЕ використовувати dual-band/wideband** — VSWR > 2.5 на 868, втрата ~3-5 дБ EIRP → втрата покриття. | 1/2.5/3 | ✅ Архітектурно |
 | 13 | **IP67 корпус** | ABS/PC + ущільнення, ≥2.5L | 1/2.5/3 | 📋 Не специфіковано |
 | 14 | **SWD програматор** | ST-LINK-V3MINIE | — | ✅ |
 | 15 | **UART адаптер** | FT232RL, 3.3V режим | — | ✅ |

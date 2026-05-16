@@ -540,7 +540,7 @@
 - [ ] 👤 **Microfrezing** (`01_04` §3.3): закупити прецизійні кінцеві фрези типу MicroX (карбід вольфраму + TiN-покриття), стендовий тест на колодах vs стандартні шнекові свердла — порівняння resinosis intensity
 - [ ] 👤 30° installation angle verification (узгоджено з Flush Mount)
 - [ ] 👤 Hydrophilic coating test
-- [ ] 👤 PEG обробка гіроїда: смола зісковзує з PEG-покритих пор — додано в `01_03`
+- [ ] 👤 PEG обробка гіроїда (Шар 5 анодного стеку, `01_03 §2.1 Крок 5`, REVISED 2026-05-16): PEG MW 4000–8000 dip-coat поверх Nafion 117, ~1–2 µm; смола зісковзує з PEG-покритих пор; H⁺-провідність Nafion зберігається >95%
 - [ ] 👤 Hydrophobic/hydrophilic gradient test (PTFE знизу, гідрофільний верх) — додано в `01_04` §3.4
 - [ ] 👤 Thermal installation test: T° нагріву (150-200°C), час витримки — додано в `01_04` §3.5 (резервний метод, тільки для нефункціоналізованих анкерів)
 - [ ] 👤 FEM-моделювання теплового поля в Ti-6Al-4V анкері (λ = 6.7 W/m·K)
@@ -558,14 +558,15 @@
 - [ ] 👤 Замінити SMD резистори якщо мисматч
 - [ ] 👤 Задокументувати фінальні номінали
 
-#### HW.8 — Pogo pin specification (6 блокерів)
+#### HW.8 — Pogo pin specification (7 блокерів)
 - **Джерело:** `02_02`
 - [ ] 👤 BLOCKER-1: Матеріал напилення piн → Gold (Hard Gold, Au 0.76 µm)
 - [ ] 👤 **BLOCKER-1a (NEW 2026-05-16): Hard Gold ENIG на центральній площадці анкера** (торець виводу шини Zone 1, ø 4–5 мм) — **обов'язково**, інакше золотий pogo притискається до голого Ti → гальванічна пара Ti↔Au → Rc drift > 500 мОм за 18–36 міс → cold-start fail. Передати specмапу селективного gold-plating заводу (~$0.05/анкер). Деталі — `02_02 §1.2` ⚠️ блок.
 - [ ] 👤 BLOCKER-2: Сила пружини → ~100 г/пін, Travel ≥ 1.5 мм
 - [ ] 👤 BLOCKER-3: Механізм фіксації → Quarter-turn bayonet (рекомендовано)
 - [ ] 👤 BLOCKER-4: O-ring → EPDM, CS 1.5-2.0 мм, 15-25% compression
-- [ ] 👤 BLOCKER-5: Допуски соосності → Lead-in chamfer
+- [ ] 👤 BLOCKER-5: Допуски соосності (XY-площина) → Lead-in chamfer
+- [ ] 👤 **BLOCKER-6 (NEW 2026-05-16): 1D Tolerance Stack-Up по Z-осі** — обов'язковий розрахунок RSS або worst-case envelope для PCB→Radome→O-ring→Zone3 stack так, щоб O-ring завжди компресував 15-25% **і** Pogo Pin завжди в 50-70% страйку (0.76-1.06 мм з 1.52). Без цього ~10-30% капсул йде у брак (О-ring under-compressed → water ingress, АБО Pogo under-engaged → Cold-Start Fail). Деталі — `02_02 BLOCKER-6`. **P0** для PCBA/анкер/Радом freeze.
 
 #### HW.9 — PCB KiCad layouts
 - **Джерело:** `02_01`
@@ -676,17 +677,22 @@
 - [ ] 👤 Stacking: оцінка впливу на провіженінг (групова реєстрація DID) та Lorenz-аналітику (декомпозиція V_OC)
 - [ ] 🔗 Залежить від HW.13 (P-V крива EBFC) для правильного бюджетування доповнення
 
-#### HW.22 — Sterilization protocol (No EtO)
-- **Джерело:** `01_04` §6
-- **Опис:** Іммобілізовані ферменти (GOx, Catalase, Laccase) **незворотно денатуруються** етиленоксидом (EtO) — стандартом медичної стерилізації. Без альтернативного протоколу: (1) контамінація рани при імплантації, (2) знищення EBFC-стеку до експлуатації.
-- **Дозволено:** Гамма-опромінення (Co-60, 25 кГр) в запакованому стані; UV-C 254 nm + 70% EtOH. **Заборонено:** EtO, автоклав (для зразків з ферментами).
+#### HW.22 — Sterilization protocol (No EtO, Split-cycle + Aseptic, REVISED 2026-05-16)
+- **Джерело:** `01_04` §6 (REVISED)
+- **Опис:** Раніше — single-cycle terminal gamma 25 кГр в запакованому стані. **Виявлений архітектурний конфлікт:** PTFE-GDL мембрана (HW.25, Zone 3) зазнає chain scission при ≥10 кГр → крихкість, втрата bubble point → катод затоплюється першим дощем. Terminal gamma 25 кГр **неможлива** на готовому виробі з PTFE.
+- **Нова стратегія (Split-cycle + Aseptic Assembly, `01_04 §6.3`):**
+  - **ГІЛКА A — Ti-анкер з ферментами (без PTFE):** UV-C + 70% EtOH → low-dose gamma **15 кГр** (не 25) → SAL 10⁻⁶
+  - **ГІЛКА B — PTFE-GDL + O-ring (окремо):** autoclave 121°C / 15 psi АБО EtO (без ферментів — EtO дозволено)
+  - **ФІНАЛЬНА ЗБІРКА:** аcептична ламінація PTFE на Zone 3 у ISO Class 5 cleanroom; параметричний випуск за ISO 13408-1
 - **Блокує:** Перехід від stage 3 (лабораторний прототип) до Stage 4 (польові випробування).
-- [ ] 👤 Стендовий тест активності ферментів **до та після** UV-C + 70% EtOH циклу
-- [ ] 👤 Стендовий тест активності ферментів **до та після** гамма 25 кГр опромінення
-- [ ] 👤 CV-вимірювання EBFC-струму до/після — деградація має бути ≤ 20%
-- [ ] 👤 Стерильність-тест USP <71>: TSB + FTM, 14 діб, відсутність росту
+- [ ] 👤 ГІЛКА A: Тест активності ферментів **до та після** UV-C + 70% EtOH + **gamma 15 кГр** (не 25 кГр) — деградація ≤ 20%
+- [ ] 👤 ГІЛКА B: PTFE-GDL bubble-point test до та після autoclave 121°C / EtO — Δ ≤ 5% (інтегральність мікропор)
+- [ ] 👤 Фінальна збірка: ISO Class 5 cleanroom validation (particle counts, settle plates, finger dabs); bioburden ≤ 100 CFU перед F1
+- [ ] 👤 CV-вимірювання EBFC-струму до/після ПОВНОГО циклу (A + B + Final) — деградація ≤ 25%
+- [ ] 👤 Стерильність-тест USP <71>: TSB + FTM, 14 діб, відсутність росту фінального виробу
 - [ ] 👤 LAL-тест на ендотоксини USP <85>: ≤ 0.5 EU/мл
-- [ ] 👤 Обладнання: контакт з постачальником Co-60 послуг (Чорнобиль НДІ радіаційної медицини? Київ ІРОНЦ?)
+- [ ] 👤 Обладнання: low-dose Co-60 (15 кГр) для ГІЛКИ A; autoclave або EtO chamber для ГІЛКИ B; ISO Class 5 LAF cabinet для аcептичної фінальної ламінації
+- [ ] 👤 Постачальник Co-60: Чорнобиль НДІ радіаційної медицини / Київ ІРОНЦ — підтвердити можливість low-dose 15 кГр (не стандартної 25)
 
 #### HW.23 — HIP postprocess specification for SLM anode
 - **Джерело:** `01_02` §1.7 BLOCKER-3
@@ -752,6 +758,23 @@
 - [ ] 👤 Field protocol для forester visit: процедура зачистки приростаючої тканини без traumatic surgery
 - [ ] 👤 12-місячний польовий тест на тестовому дереві (Черкаський бір)
 - [ ] 👤 Update `07_02` OPEX: 1 visit / 5–7 років × $20/visit = ~$3–4/рік/анкер (форестер у Черкаському борі)
+
+#### HW.29 — Board-to-Board Connector pair: Power Deck ↔ RF Deck (NEW 2026-05-16)
+- **Джерело:** `02_01` §3.1 (BOM поз. 12), §5.3
+- **Опис:** Multi-deck PCB архітектура (Power Deck + RF Deck, standoff 8–10 мм) була специфікована у §5.3 без відповідного компонента у BOM. Без B2B-конектора RF Deck не отримує живлення 3V3 (Pogo Pins зайняті VIN_DC+GND). Тепер BOM включає Samtec FTSH header + CLT socket (1.27 мм pitch SMD, 8–10 мм stack) ~$0.85/пара.
+- **Альтернатива (дорожча):** rigid-flex PCB замість двох плат + B2B (~+$1.50, але усуває механічну точку відмови).
+- [ ] 👤 KiCad: place B2B footprints на обидві деки + перевірка signal integrity для 6-8 сигналів (3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 EN)
+- [ ] 👤 Виміряти insertion loss + height variation на 5 зразках першої партії
+- [ ] 👤 Pre-fabrication sanity check vs `HW.8 BLOCKER-6` (B2B stack height впливає на Z-tolerance envelope)
+
+#### HW.30 — SMD Piezo + Acoustic Pad (Zero-Touch Wake) (NEW 2026-05-16)
+- **Джерело:** `02_01` §6.2 (REVISED 2026-05-16)
+- **Опис:** Раніше — клеєний ZP-3/ZP-5 ∅27 мм через-отворний з дротами до GPIO. **Порушення Zero-Touch §5.2:** клеєння + дроти ≠ робот pick-and-place. Pogo Pins вже зайняті VIN_DC+GND.
+- **Нове рішення:** SMD-piezo (Murata 7BB-15-6L0 / TDK B-Series / Mallory MSR205P) на нижній стороні Power Deck + Bergquist Sil-Pad 1500ST (0.5–1.0 мм, Z_acoustic ≈ 1.5 МRayl ~ Ti) як coupling до Ti Zone 3. Сигнал через B2B (HW.29) до RF Deck → BAT54S → EXTI GPIO. Усе SMD; робот installs everything.
+- [ ] 👤 Вибрати SMD-piezo з 3 кандидатів (Murata/TDK/Mallory), компроміс sensitivity vs пасивний voltage swing на резонансі ~4 кГц
+- [ ] 👤 Acoustic coupling test: SMD-piezo + Sil-Pad + Ti-coin → подаючи 16 кГц tone через анкер → виміряти voltage spike на p'єзо vs стара ZP-3 архітектура
+- [ ] 👤 Verify EXTI wake-on-vibration latency vs ZP-3 baseline (target < 5 мс)
+- [ ] 👤 Lifecycle test: Sil-Pad creep під 30-40% compression × 20 років (Arrhenius accelerated)
 
 ---
 
@@ -1206,6 +1229,8 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.61 | **Solana micro-rewards batch payouts** — поточний `SolanaMicroRewardWorker` робить окрему транзакцію на кожен fulfilled telemetry (10,000 + growth_points*100 lamports = 0.01–0.016 USDC), де gas-fee на одну Solana tx (~0.000005 SOL ≈ 0.0007 USD) може зрівнятись із самою винагородою при низьких growth_points. Рішення: акумулювати fulfilled-винагороди в Kredis (`solana_pending_payouts:<wallet_id>`) до досягнення порогу 0.10–1.00 USDC (`SOLANA_BATCH_THRESHOLD_USDC` ENV), потім один `transferChecked()` ATA → ATA batch. Cron `SolanaBatchPayoutWorker` (every 1h) дренує накопичені. Backward-compat: при `SOLANA_BATCH_THRESHOLD_USDC=0` — поведінка як зараз (per-event). | `04_02 §Solana` + `05_01` | P1, economic correctness fix |
 | ARCH.34 | **Queen-side LoRaWAN Helium Fallback** — переніс Helium fallback з Soldier (фундаментально несумісно з flash/RAM/topology STM32WLE5JC) на Queen. Queen інтегрує LoRaMac-node (Semtech BSD-3) stack + персистентний OTAA join state (DevEUI/AppEUI/AppKey у Queen Flash) + FCntUp counter survive reboot. Aggregated lambda-summary 11 байт (ARCH.22) пакується у LoRaWAN frame і доставляється через будь-який Helium hotspot у радіусі ~15 км → Helium LNS → HTTP Integration webhook → Rails `POST /api/v1/telemetry/helium`. Активація: own Starlink/LTE-M down + Q2Q backhaul недоступний + buffer fill > 50%. Soldier-side `helium_compat_emit()` (попередній план) **відкинуто**. | `00_03 §1.2 L3` + `02_05 §6.1` | P2, blocker для повної resilience policy (без нього L3 fallback архітектурно неможливий) |
 | ARCH.35 | **Queen Flash Ring Buffer (W25Q32 overflow tier)** — поточний CIFO 50-slot RAM cache переповнюється за ~30 хв при 100 Soldiers/Queen × 1 пакет/год (на 200 Soldiers/Queen — за 15 хв). Додати SPI NOR Flash чип Winbond W25Q32JV (~$0.50, 4 MB, SOIC-8) до Queen BOM як overflow tier: ~190k слотів × 21 байт = ~7 діб буферизації при 100 Soldiers/год. Ring-buffer pointer (`write_ptr`/`read_ptr`) у RTC backup DR20-DR21. Drain order: спочатку Flash (FIFO), потім RAM. Енерго-impact: ~700 µA·s/добу (negligible проти 3.2 Вт·год/добу LTE-M phase 2.5). | `00_03 §1.2 L1` + `02_05 §2.1` + `02_05 §BOM` | P1, blocker для resilience policy на верхньому краю scaling |
+| HW.31 | **Queen Antenna Split (REVISED 2026-05-16)** — раніше BOM Queen позиція 11 була «868/LTE-M dual-band SMA», що шкодить покриттю на 868 МГц (high VSWR на вузькому ISM). Розділено на: **поз. 11** = wideband LTE-M/NB-IoT cellular (700-2700 МГц, покриває Kyivstar B1/B3/B7/B8/B20), опційно LTE+GNSS combo для SIM7070G PPS time sync; **поз. 12** = LoRa 868 МГц **tuned** 5 dBi fiberglass omni (Mobilemark OD8-868, Taoglas ALL.4101). Окремі RF-порти SX1262 vs SIM7070G — жодного combining. | `02_05 §7 BOM` | P0, blocked by 02_05 BOM freeze; вплив: ~5 dBi gain regain on LoRa link to Soldiers |
+| OPS.5 | **Projects V2 TRL field schema 1-9 → 1-12 (REVISED 2026-05-16)** — `00_07 §1.1` Custom Fields `Current TRL` / `Target TRL` розширено до 1-12, щоб відповідати `00_04 §1` (Beyond TRL 9) і `00_06 §7` (Planetary Intelligence Gaps TRL 10-12). Якщо `bin/setup_github_project.sh` створював лише 1-9 — оновити TRL_OPTIONS=(TRL:1..TRL:12) перед першим API-write. TRL labels у `.github/labels.yml` наразі не використовуються — Projects V2 SingleSelect є SSOT. | `00_07 §1.1` + `00_04 §1` + `00_06 §7` | P1, bootstrap blocker для R&D-эпіків TRL 10-12 |
 
 ---
 
@@ -1216,7 +1241,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | ARCH.1 | Fractal topology: L2 Sergeant nodes (H-LDSE hierarchical routing, geohashing) | `00_01` | Post-TRL 7 |
 | ARCH.2 | Ingress Proxy (Rust/Go) + Kafka для >1M packets/hour | `00_01`, `06_01` | Series D |
 | ARCH.5 | Cross-Registry Export (Verra, Gold Standard, UNFCCC) | `04_02` | Post-TRL 7 |
-| ARCH.6 | Federated Learning auto-retraining (monthly cycle, A/B testing) | `04_02` | Post-TRL 7 |
+| ARCH.6 | Federated Learning auto-retraining (monthly cycle, A/B testing) — **обмежено L2 Sergeants / L3 Queens; ніколи на L1 Soldier** (compute budget paradox, `00_06 §7.2` revised 2026-05-16: 0.47F supercap + STOP2 300 nA не витримує жодного gradient epoch'у) | `04_02`, `00_06 §7.1-7.2` | Post-TRL 7 |
 | ARCH.7 | Edge Data Fusion: transmit 2-byte λ-exponent замість 16-byte Z payload | `00_01` | Post-TRL 7 |
 | ARCH.8 | Event-Triggered Reporting: heartbeat 1/day normal, continuous on anomaly | `00_01` | Post-TRL 6 |
 | ARCH.9 | Network Sharding: isolate anomalous clusters to prevent storm propagation | `00_01` | Post-TRL 7 |

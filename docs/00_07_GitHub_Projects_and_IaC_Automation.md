@@ -29,8 +29,8 @@
 
 | Поле | Тип | Опис / Функція |
 | :--- | :--- | :--- |
-| **Current TRL** | Single Select | Поточний рівень (1-9). Головна колонка на дошці "Матриця TRL". |
-| **Target TRL** | Single Select | Цільовий рівень (1-9) для поточного циклу розробки. |
+| **Current TRL** | Single Select | Поточний рівень (1-12). Шкала розширена до 1-12 згідно з [`00_04 §1`](00_04_AI_Native_Engineering_and_TRL) та [`00_06 §7`](00_06_Strategic_Roadmap_and_HIL_Simulators) "Beyond TRL 9 — Planetary Intelligence". Головна колонка на дошці "Матриця TRL". |
+| **Target TRL** | Single Select | Цільовий рівень (1-12) для поточного циклу розробки. TRL 10–12 опційні, використовуються для R&D-епіків (forest-level emergence, edge self-evolution, cross-biome generalization, AI-adversarial security). |
 | **Assigned Agent** | Single Select | Виконавець: `Architect`, `AI Agent`, `Lab (ChNU)`, `Factory`, `nTop Expert`. |
 | **Module** | Single Select | Компонент екосистеми (наприклад, `04: Server Core`). Формує Swimlanes. |
 | **Appetite** | Single Select | `Small Batch` (1-2w) або `Big Bet` (6w) згідно з методологією Shape Up. |
@@ -47,9 +47,16 @@
 ```bash
 # bin/setup_github_project.sh — заплановано як частина IaC bootstrap
 PROJECT_ID="PVT_xxxx"  # отримати через `gh project list --owner Alexey-Lukin --format json`
+
+# Single-select option sets (SSOT — синхронізувати з §1.1)
+TRL_OPTIONS=(TRL:1 TRL:2 TRL:3 TRL:4 TRL:5 TRL:6 TRL:7 TRL:8 TRL:9 TRL:10 TRL:11 TRL:12)
+# ↑ Шкала 1-12 (а не 1-9): TRL 10-12 = Beyond TRL 9 / Planetary Intelligence (00_04 §1, 00_06 §7).
+#   Якщо API/CI відмовить через "TRL:10" не в whitelist — це симптом застарілого schema; синхронізувати тут.
+
 for FIELD in "Current TRL" "Target TRL" "Assigned Agent" "Module" "Appetite" "R&D Cluster" "Shape Up Stage" "Cycle" "Academic Semester"; do
   echo "Ensuring field: $FIELD"
   # gh api graphql -f query='mutation { addProjectV2Field(...) }'
+  # Для Current TRL / Target TRL передавати TRL_OPTIONS[@] як SingleSelect options.
 done
 ```
 

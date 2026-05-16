@@ -157,6 +157,13 @@
 
 **TRL шлях:** TRL 10 (concept formulated) → TRL 11 (Q1 publication "Chimera states in tree-borne IoT sensors of Cherkasy Pine Forest") → TRL 12 (deployed as opt-in firmware extension у кластерах ≥ 100 дерев).
 
+> ⚠️ **Ієрархічне делегування інтелекту (Compute Budget Constraint).** L1 Soldier (STM32WLE5JC + 0.47F supercap, енергобаланс `02_03 §9.6 Сценарій C` = +1.4 мДж/год запасу) **фізично не може** тренувати моделі або агрегувати градієнти — будь-який Federated Learning epoch, обчислення Chimera coupling або forest-wide attractor inversion утримуватиме MCU в active-режимі (≥12 mA × ≥секунди) і **гарантовано виведе supercap у brownout** ще до завершення першої епохи. Тому:
+>
+> - **L1 Soldiers (STM32 + 0.47F):** залишаються наївними виконавцями (Inference only). Емітують 1-bit stigmergic сигнали (рядок «Stigmergic Communication» — це **єдина дешева опція** на L1, ~110 ms LoRa TX @ +14 dBm).
+> - **L2 Sergeants (LiFePO4 + Solar) / L3 Queens:** тут відбуваються Federated Learning, Chimera coupling math та network-level Lorenz координація. Queen має 20Ah батарею і Cortex-M4 + LTE backbone — обчислювально на 4-5 порядків багатший за Soldier.
+>
+> Solidiers отримують результат як **скомпільований mruby bytecode через OTA-канал** (`03_02` Queen → broadcast chunks по 11 байт), що зберігається у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`. Жодного "self-training" на L1.
+
 ### 7.2. Gap #2 — Self-Evolving Behaviour (On-Device Edge AI)
 
 **Поточний стан:** OTA bytecode update існує (`03_02` mruby flash slot `0x0803F000`), але всі зміни приходять **зверху** (Rails backend → Queen → broadcast). Soldier — це **виконавець**, не **навчач**. Немає механізмів адаптації **без human-in-loop**.
@@ -177,7 +184,23 @@
 
 **Безпекова прірва:** Self-evolution + Web3-economic incentives = **attack surface для adversarial evolution**. Зловмисник може спровокувати «вигідну для нього» мутацію через підставні sensor patterns. Mitigation — `7.4 Apex Predator Defense`.
 
-**TRL шлях:** TRL 10 (Q1 paper "Edge evolutionary Lorenz parameter tuning") → TRL 11 (opt-in firmware feature for select клумбоів cluster owners) → TRL 12 (default behavior після формальної верифікації безпеки).
+> ⚠️ **Compute Budget Paradox — L1 не "self-evolves" фізично.** Стовпчик «Виклики на STM32WLE5JC» вище **не** є інженерним планом запуску GA/RL/online-backprop на Soldier — це інвентаризація причин, **чому це неможливо** у поточному hardware envelope:
+>
+> - **mini-GA (4 candidate sets × multi-epoch fitness):** кожна fitness-епоха = повний цикл sense+Lorenz+TX (≈58 мДж/cycle, `02_03 §9.4`). 10 generations/тиждень × 4 candidates × 58 мДж = **2.3 Дж/тиждень додатково** при загальному робочому вікні supercap **3.87 Дж** (`02_03 §8`). → Перевищує бюджет у 4-6× після врахування sleep drain.
+> - **Tabular Q-learning (12-state × 4-action):** сам lookup дешевий, але **reward сигнал = "days-to-next-VBAT_OK"** вимагає тижневих епізодів — ε-greedy exploration з 0.1 ймовірністю "sample_extra" з'їсть весь energy headroom Сценарію C (+1.4 мДж/год).
+> - **TinyML on-device incremental learning:** full backprop на Cortex-M4 без AI-accelerator потребує seconds × 12 mA, що **гарантовано brownout**.
+>
+> **Ієрархічне делегування інтелекту (HW envelope перерозподіл):**
+>
+> | Рівень | Що відбувається | Hardware envelope |
+> |--------|----------------|-------------------|
+> | **L1 Soldier** | Inference-only: запуск **попередньо скомпільованого** mruby bytecode (Lorenz constants, fitness evaluation, threshold lookup). Періодична відправка `lambda_exponent` + 1-bit stigmergic сигналу. | STM32WLE5JC + 0.47F, +1.4 мДж/год headroom |
+> | **L2 Sergeant** | Кластерний агрегатор: збирає 50-200 Soldiers lambda-stream, обчислює **локальний GA** на (σ, ρ, β) для свого кластера, відправляє candidate sets до Queen. | Solar + LiFePO4 (TBD spec, `00_02 §3` L2 placeholder) |
+> | **L3 Queen** | Federated Learning aggregator: обмінюється gradient updates з сусідніми Queens (privacy-preserving), компілює нові mruby contracts, broadcast'ить chunked OTA до Sergeants → Soldiers. | 20Ah LiFePO4 + Solar + LTE backbone (`02_05`) |
+>
+> Q-learning, GA-evolution, online TinyML training **відбуваються на L2/L3 з обмеженням енергії на 4-5 порядків легшим**, ніж у Soldier. До Soldier приходить **готовий compiled bytecode через OTA** (магік `0x45544952 "RITE"` у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`, `03_02`). Це усуває "self-training on edge" парадокс і зберігає TRL 11+ roadmap реалістичним.
+
+**TRL шлях:** TRL 10 (Q1 paper "Edge evolutionary Lorenz parameter tuning **за делегованою L2/L3 архітектурою**") → TRL 11 (opt-in firmware feature for select клумбоів cluster owners) → TRL 12 (default behavior після формальної верифікації безпеки).
 
 ### 7.3. Gap #3 — Cross-Species / Cross-Biome Generalization
 

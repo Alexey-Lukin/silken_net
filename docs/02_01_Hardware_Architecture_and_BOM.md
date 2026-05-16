@@ -148,14 +148,15 @@ STM32WLE5JC
 | 2 | **PMIC** | Texas Instruments BQ25570RGRR | MPPT + Boost + Buck; живлення від EBFC | ~$2.80 |
 | 3 | **Supercapacitor** | Eaton HV0H474AEJ-R або KEMET FG0H474ZF (0.47 F / 5.5 В, Radial) | Енергетичний буфер | ~$1.10 |
 | 4 | **Ceramic SMD Antenna** | Yageo ANT1608LLC00R2400A, Taoglas FXP73 або Ignion NN02-310 (868 МГц, SMD) | RF-випромінювання | ~$0.35 |
-| 5 | **П'єзоелемент** | ZP-3 або ZP-5 (∅27 мм, пасивний) | Акустичний тригер (пилка, вогонь, кавітація) | ~$0.15 |
+| 5 | **П'єзоелемент (SMD)** | Murata 7BB-15-6L0 (∅15 мм, SMD flex-tab) АБО TDK B-Series piezo bender АБО Mallory MSR205P (PCB-mount). Раніше згаданий ZP-3/ZP-5 ∅27 мм через-отворний — **виключено** (несумісно з Zero-Touch §6.2). Монтується на **нижню сторону Power Deck** + Bergquist Sil-Pad 1500ST (0.5–1.0 мм) як acoustic coupling до Ti Zone 3. | Пасивний акустичний тригер (пилка, вогонь, кавітація) | ~$0.20 (piezo) + ~$0.10 (pad) |
 | 6 | **Schottky Clamp** | BAT54S (Dual Schottky, SOT-23) | Захист GPIO від п'єзо-сплесків (0–3.3 В) | ~$0.05 |
 | 7 | **Pogo Pins** | Mill-Max 0906 Series (2 шт, spring-loaded) | Сліпе з'єднання до коаксіального анкера | ~$0.40 |
 | 8 | **PCB** | FR4, 4 шари, 1.6 мм, HASL/ENIG | Power Deck + RF Deck (2-поверховий дизайн) | ~$0.65 |
 | 9 | **Buffer Cap (VOUT)** | 47 µF / **25V X7R 1210** (Murata GRM32ER70J476ME20 або еквівалент) | Buffer для LoRa TX peak; **НЕ 6.3V** (`02_03 §6.1` — DC bias derating) | ~$0.18 |
 | 10 | **Пасивні компоненти** | 0402/0603 резистори (1% E96), C0G/X7R cap; **резистори BQ25570 OV/UV/OK** перепрограмовано на 5.5V supercap (`02_03 §4`) | Фільтрація, розв'язка, MPPT резисторна мережа | ~$0.20 |
 | 11 | **LTC3108 DNP footprint** (опційно) | `02_03 BLOCKER-3`: pads на PCB для LTC3108 cold-start preboost, **Do Not Populate** за замовчуванням; припаюється тільки якщо lab R_int EBFC > 12 кΩ | Cold-start fallback при високому R_int EBFC | $0.00 (pads) / +$1.20 якщо populated |
-| — | **Electronics TOTAL** | | **Собівартість лише електроніки** | **~$11.20** |
+| 12 | **Board-to-Board Connector Pair** | Samtec FTSH/CLT 1.27 мм pitch (10-pin, SMD, vertical, stack height 8–10 мм) — **header на Power Deck + socket на RF Deck**. Альтернативи: Hirose DF40 (0.4 мм, 6 мм stack), Molex SlimStack 0.50/0.635 мм | Mezzanine з'єднання Power Deck ↔ RF Deck (§5.3: standoff 8–10 мм). Передає 3V3, GND, VSTOR_sense, EBFC_sense, piezo_EXTI, BQ25570 enable lines (6–8 сигналів) | ~$0.85 (пара) |
+| — | **Electronics TOTAL** | | **Собівартість лише електроніки** | **~$12.05** |
 
 **Повна вартість вузла Soldier (по підсистемах):**
 
@@ -395,7 +396,7 @@ STM32WLE5JC
 
 **Конкретні дії для PCB layout:**
 
-1. **RF Deck = окремий шар плати у багатоповерховій збірці**, розташований через **standoff/PCB spacer 8–10 мм** над Power Deck, який вже стоїть на ~2 мм поверх Ti-фланця Zone 3. Сумарний Z-зазор антена↔Ti: ~12 мм ✓
+1. **RF Deck = окремий шар плати у багатоповерховій збірці**, розташований через **standoff/PCB spacer 8–10 мм** над Power Deck, який вже стоїть на ~2 мм поверх Ti-фланця Zone 3. Сумарний Z-зазор антена↔Ti: ~12 мм ✓. **Електричний міст Power↔RF — Board-to-Board connector pair (BOM поз. 12)**: Samtec FTSH header (Power Deck) + CLT socket (RF Deck), 1.27 мм pitch SMD, 8–10 мм stack height. Без B2B Power Deck виходить «голим» через Pogo Pins (зайняті VIN_DC+GND), а RF Deck не отримує живлення 3V3 — для multi-deck архітектури B2B є обов'язковим. Альтернатива (дорожча): rigid-flex PCB замість двох плат + B2B (~+$1.50, але усуває механічну точку відмови з'єднувача).
 2. **PCB outline у зоні антени виступає за периметр Ti-фланця ≥ 3 мм** — оверхенг означає, що під антеною лише PEEK-радом (ε_r = 3.2, низькі втрати), а металу немає взагалі.
 3. **Pre-fabrication: HFSS-симуляція** з 3D-моделями Ti-фланця + PEEK-радома + чіп-антени. Цільові метрики: VSWR < 1.8 @ 868 МГц, return loss < −10 дБ, gain ≥ −2 dBi на горизонтальній півсфері.
 4. **DC-з'єднання Ti↔PCB** через Pogo Pins (`02_02`) — це лише GND-bond, не RF-шлях. Pogo Pin pads розташовуються у NE/SW кутах PCB, далеко від антени.
@@ -425,7 +426,19 @@ STM32WLE5JC
 
 1. **Температура:** Внутрішній ADC-канал STM32 (температурний сенсор у кристалі). Точність ±1 °C. Калібрується по двох точках (30 °C та 110 °C — константи в Flash STM32, TSENSE_CAL1/CAL2).
 
-2. **Акустика без живлення (Zero-Power Wake):** П'єзодиск ZP-3/ZP-5 приклеєний до металевого дна капсули (акустичний контакт через анкер). Вібрація від бензопили або пожежі генерує сплеск напруги → BAT54S обмежує до 0–3.3 В → EXTI GPIO переривання → MCU прокидається з STOP2 апаратно, без постійного опитування.
+2. **Акустика без живлення (Zero-Power Wake) — SMD-piezo + acoustic pad (REVISED 2026-05-16):**
+
+   > 🔴 **Раніше:** «П'єзодиск ZP-3/ZP-5 **приклеєний** до металевого дна капсули, з дротами до GPIO». Це **порушує Zero-Touch Assembly (§5.2 крок 1-4):** клеєння + два дроти ≠ робот pick-and-place; Pogo Pins (BOM поз. 7) **повністю зайняті** VIN_DC + GND і не можуть нести piezo-сигнал; ZP-3/ZP-5 не виготовляються у SMD-форматі.
+
+   **Правильна архітектура (Zero-Touch-сумісна):**
+   - **П'єзоелемент** — SMD-варіант: Murata 7BB-15-6L0 (∅15 мм, SMD-pads через flex-tab) АБО TDK B-Series piezo bender SMD АБО PCB-mount piezo buzzer (Mallory MSR205P), використаний як **пасивний sensor**. Робот pick-and-place встановлює його на **нижню сторону Power Deck**.
+   - **Acoustic coupling pad** — м'який thermo-acoustic pad (Bergquist Sil-Pad 1500ST або Gap Filler 2500S35, товщина 0.5–1.0 мм, T_k ~3 Вт/м·К, акустичний імпеданс ~1.5 МRayl — близький до Ti). Pad обернений у sandwich між нижньою стороною Power Deck (з piezo SMD) та верхньою площиною Ti-фланця Zone 3 (Деталь 3, `02_02 §3`).
+   - **Механічне притиснення:** компресія pad на ~30–40% забезпечується спрямованим зусиллям O-ring + байонетної фіксації PEEK-радома (Деталь 4) на катод-фланець (Деталь 3). Pogo Pins (BOM поз. 7) забезпечують паралельне DC-з'єднання — їхній spring-load додатково сприяє рівномірному тиску на pad.
+   - **Електричний шлях сигналу:** piezo SMD-pad → траси на Power Deck → B2B connector (BOM поз. 12) → траси RF Deck → BAT54S clamp (0–3.3 V) → EXTI GPIO STM32WLE5JC.
+
+   **Результат:** Жодного дроту, клею чи пайки в полі. Робот встановлює piezo + B2B на заводі; pad наклеюється на Power Deck або кладеться в Деталь 3 під час Zero-Touch монтажу. Акустика з Ti-фланця → pad → piezo → MCU EXTI працює як раніше: вібрація бензопили/пожежі генерує сплеск напруги → пробудження зі STOP2 апаратно, без постійного опитування.
+
+   > **Чому НЕ використати Pogo Pin як piezo-канал:** Pogo Pins спеціфіковано (BOM поз. 7 + `02_02`) як DC-канал EBFC → BQ25570 → MCU. Розширення з 2 на 3+ пінів додає механічну складність, ще одну точку відмови IP67 та збільшує contact-resistance budget (`02_02 BLOCKER-2 Cold-Start Fail`). Аcустичний pad через B2B — простіше і безпечніше.
 
 3. **MPPT без зовнішнього сенсора:** BQ25570 сам вимірює VOC кожні 16 с (внутрішня логіка). Не потребує зовнішнього датчика напруги → економія BOM і площі плати.
 
