@@ -91,3 +91,4 @@ contracts/cache/
 contracts/broadcast/
 
 coverage/
+.gitnexus
