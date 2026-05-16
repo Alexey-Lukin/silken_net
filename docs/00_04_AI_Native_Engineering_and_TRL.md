@@ -27,6 +27,7 @@
 - **TRL 4-5 (Prototyping):** Створення MVP. Макетні плати (Breadboards), написання першого коду, симуляції. *(Головний агент: Cursor/Copilot).*
 - **TRL 6-7 (Field Testing):** Анкер вкручено в справжнє дерево. Дані йдуть через тестову мережу (Canopy Environment).
 - **TRL 8-9 (Planetary Scale):** Серійне виробництво. Mainnet (Polygon/Ethereum). Заводське штампування.
+- **TRL 10-12 (Planetary Intelligence, vision):** Шкала NASA закінчується на TRL 9 («Actual system proven in operational environment»). Silken Net **розширює її** до TRL 10–12, оскільки ціль проєкту — **не просто IoT-продукт**, а **самоорганізована кібер-екосистема планетарного масштабу** (forest-level emergence, edge self-evolution, cross-biome generalization, AI-adversarial security). Деталі — [`00_06 §7`](00_06_Strategic_Roadmap_and_HIL_Simulators) Beyond TRL 9 — Planetary Intelligence Gaps.
 
 ### Суть паралельного інжинірингу
 

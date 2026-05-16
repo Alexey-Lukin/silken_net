@@ -663,7 +663,7 @@ float ema_update(float prev, float measurement) {
 - **RF Regulatory Mapping:** Ідентифікація всіх релевантних стандартів для 868/915 МГц ISM-діапазону по регіонах (EU, US, CA, AU, JP); аналіз duty cycle обмежень (LoRa EU: 1% duty cycle)
 - **Pre-compliance тестування:** Методологія само-тестування EMI emission перед відправкою у сертифікаційну лабораторію (анти-резонансні конденсатори, ferrite bead фільтри)
 - **Technical Documentation Package:** Структура Technical File (RF Declaration of Conformity, Test Reports, BOM, circuit diagrams) для нотифікованого органу (Notified Body)
-- **IP68 Protocol:** Специфікація процедури заливки (potting compound — Sylgard 184) та методологія 100% вихідного контролю герметичності на виробництві
+- **IP67 Protocol (REVISED 2026-05-16):** Специфікація конформного покриття **Parylene C 10 µm (CVD)** замість full-potting Sylgard 184 — Sylgard 184 відхилено через акустичне глушіння (3-bands attenuation 15–25 dB @ 16 kHz) п'єзодиска для TinyML-детекції (`02_02 §3.4`). Plus O-ring EPDM на з'єднанні Радом↔Деталь 3 (катод). Методологія 100% вихідного контролю герметичності на виробництві
 
 **Конкретний запит (зведений):**
 
@@ -1816,7 +1816,7 @@ Guard clauses перед мінтингом:
 - RF Regulatory Mapping: 868 МГц (EU ETSI EN 300 220, 1% duty cycle), 915 МГц (FCC Part 15.247), AU/JP ISM-діапазони → матриця регіон × вимога
 - Pre-compliance тестування EMI: методологія само-тестування перед відправкою у Notified Body (антирезонансні конденсатори, ferrite bead фільтри на живленні)
 - Technical File: RF Declaration of Conformity, BOM, схеми, test reports — структура та шаблони для EU CE RED (Radio Equipment Directive)
-- IP68 протокол: специфікація potting compound (Sylgard 184), методологія 100% вихідного контролю герметичності на виробничій лінії
+- IP67 протокол (revised 2026-05-16): **Parylene C 10 µm conformal coating** замість full-potting Sylgard 184 (Sylgard відхилено — глушить TinyML акустику, `02_02 §3.4`); методологія 100% вихідного контролю герметичності на виробничій лінії
 
 ### Завдання для групи Онищенка (Стохастична Оптимізація, Паралельні Алгоритми)
 

@@ -787,6 +787,21 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 
 > **✅ Реалізовано:** SFC має `ERC20Votes` з auto-delegation — checkpoint система працює. Governor + Timelock контракти реалізовано.
 
+### Beyond TRL 9: Apex Predator Defense — Проактивний Захист від AI-Driven Economic Attack
+
+> **Контекст:** Поточні захисти (Snapshot Voting, Timelock, Quorum, Flash Loan defense) — **реактивні** і **достатні для TRL 9**. Але як тільки SCC market cap перевищить ~$100M, система стане апетитною ціллю для **AI-driven trading bots** і **adversarial ML attacks** (синтетичні telemetry-патерни, які проходять Dual Computation Integrity).
+>
+> **Майбутній напрям (TRL 10+) — Proactive AI Sentinel:**
+> - **Cluster-level statistical fingerprints:** замість per-tree fraud detection — federated anomaly detection. Якщо 100 дерев кластера раптом видають «too perfect» Z-curves (lower variance than physically possible) → suspicious activity flag.
+> - **Honeypot Trees:** 1 з кожних 100 — honeypot (справжній анкер, але SCC-emission заблокований). Будь-яка mint-спроба = доведена адресна атака → instant slashing + 12-chain rotation.
+> - **Red Team Adversarial Telemetry Generators:** GAN-вироблені синтетичні patterns як частина CI/CD (`04_06`) — знаходимо вразливості до того, як їх знайде зовнішній attacker.
+> - **Quantum-Resistant Oracle Migration:** перехід Chainlink + всього 12-chain stack на NIST PQC standards (Kyber/Dilithium) до 2030+.
+> - **AI Sentinel Service:** окремий ML-сервіс 24/7 у режимі "hunting for hunters" — корелює trading volume на SCC DEXs з telemetry-аномаліями та oracle response patterns.
+>
+> **Філософська позиція:** SCC — це **критична інфраструктура планетарного клімату**. Стандарт безпеки має бути **на рівні national-grid SCADA**, а не «не гірше за DeFi 2020–2024».
+>
+> **Деталі повної R&D-програми:** [`00_06 §7.4`](00_06_Strategic_Roadmap_and_HIL_Simulators) — Apex Predator Defense Gap. Партнери: Аблязов Д. (СЄУ, правова рамка), Карапетян (ChDTU, статистика fraud detection), Ярмілко (firmware PQC integration).
+
 ### Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
 
 Поточна модель: фіксований курс 10,000 growth_points = 1 SCC. Для планетарного масштабу можна розглянути алгоритмічне ціноутворення:

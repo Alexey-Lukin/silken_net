@@ -516,9 +516,10 @@
 #### HW.5 — Enzyme lifespan + H₂O₂ neutralization
 - **Джерело:** `01_03` § 1–3 + Legacy notes
 - **Опис:** Деградація ферментів у кислому ксилемному середовищі (pH 4.5–5.5) + токсичність H₂O₂ від GOx
-- **Gen 1.0 baseline (нова архітектура):** Combi-CLEA `GOx + Catalase + Os-полімер + MWCNT` на аноді (`01_03` §1, §2.1) — нейтралізує H₂O₂ + регенерує O₂; `Laccase + AuNPs + MWCNT` DET на катоді (`01_03` §2.2). Ціль 3–5 років з Chitosan + Nafion захистом
-- **Gen 2.0 ціль:** 20–25 років (GDH мутанти + Laccase/nanozyme + ZIF інкапсуляція)
-- [ ] 👤 **Gen 1.0 anode:** ко-іммобілізація GOx + Catalase (Combi-CLEAs з глутаральдегідом + BSA) — `01_03` §2.1
+- **Gen 1.0 baseline (REVISED 2026-05-16 — двошарова архітектура):** Двошаровий стек на аноді (`01_03` §2.1) — внутрішній електроактивний шар `fMWCNT + Os-полімер + GOx ONLY` (без катализи, щоб уникнути electron shunting через heme b group катализи + steric blocking FAD-центру GOx); зовнішній захисний шар `chitosan hydrogel + Catalase ALONE` (перехоплює H₂O₂ через diffusion barrier, регенерує O₂ назад у GOx); зовнішня Nafion-мембрана. На катоді — `Laccase + AuNPs + MWCNT` DET (`01_03` §2.2). Ціль 3–5 років.
+- **Gen 2.0 ціль:** 20–25 років (GDH мутанти — без H₂O₂, стек спрощується до одного шару + Laccase/nanozyme + ZIF інкапсуляція)
+- [ ] 👤 **Gen 1.0 anode (двошарова — пріоритет):** внутрішній GOx+Os electroactive layer + зовнішній Catalase-in-chitosan protective layer — `01_03` §2.1
+- [ ] 👤 **Gen 1.0 anode (Combi-CLEA — NEGATIVE CONTROL):** одношарова Combi-CLEA для прямого порівняння (підтвердження ефекту shunting via CV/EIS) — `01_03` §2.1
 - [ ] 👤 **Gen 1.0 cathode:** Laccase-AuNP DET stack замість Os-полімерного MET — `01_03` §2.2
 - [ ] 👤 Розробка protective polymer matrix
 - [ ] 👤 Тест Chitosan-шару (pH-буферизація) — додано в `01_03`
@@ -557,9 +558,10 @@
 - [ ] 👤 Замінити SMD резистори якщо мисматч
 - [ ] 👤 Задокументувати фінальні номінали
 
-#### HW.8 — Pogo pin specification (5 блокерів)
+#### HW.8 — Pogo pin specification (6 блокерів)
 - **Джерело:** `02_02`
-- [ ] 👤 BLOCKER-1: Матеріал напилення → Gold (Hard Gold, Au 0.76 µm)
+- [ ] 👤 BLOCKER-1: Матеріал напилення piн → Gold (Hard Gold, Au 0.76 µm)
+- [ ] 👤 **BLOCKER-1a (NEW 2026-05-16): Hard Gold ENIG на центральній площадці анкера** (торець виводу шини Zone 1, ø 4–5 мм) — **обов'язково**, інакше золотий pogo притискається до голого Ti → гальванічна пара Ti↔Au → Rc drift > 500 мОм за 18–36 міс → cold-start fail. Передати specмапу селективного gold-plating заводу (~$0.05/анкер). Деталі — `02_02 §1.2` ⚠️ блок.
 - [ ] 👤 BLOCKER-2: Сила пружини → ~100 г/пін, Travel ≥ 1.5 мм
 - [ ] 👤 BLOCKER-3: Механізм фіксації → Quarter-turn bayonet (рекомендовано)
 - [ ] 👤 BLOCKER-4: O-ring → EPDM, CS 1.5-2.0 мм, 15-25% compression
@@ -572,13 +574,15 @@
 - [ ] 👤 Queen PCB layout (KiCad)
 - [ ] 👤 RF Keep-Out Zone verification
 
-#### HW.11 — Potting material selection (quartz resonator risk)
-- **Джерело:** `02_01` BLOCKER-1
-- **Опис:** Потрібно обрати epoxy compound що НЕ знищить quartz resonator LoRa модуля при -20°C. Rigid compound при температурному стисненні → тріщини кварцу → RF loss
-- **Рішення:** Soft compound Shore A < 50 (Dow Sylgard 184 або аналог)
-- **Блокує:** Hardware freeze, IP67 certification
-- [ ] 👤 Обрати compound (Sylgard 184 рекомендовано)
-- [ ] 👤 Верифікувати з кварцовим резонатором при -20°C / +60°C
+#### HW.11 — Conformal Coating (REVISED 2026-05-16: Sylgard відхилено через TinyML)
+- **Джерело:** `02_01` BLOCKER-1, `02_02` §3.4
+- **Опис:** Раніше планувався full-potting Sylgard 184 (Shore A < 50 проти crack кварцу при -20°C). Архітектурна рецензія виявила **критичний конфлікт**: Sylgard 184 — відомий **акустичний демпфер** (3-bands attenuation 15–25 dB @ 16 kHz), який глушить п'єзодиск Soldier для TinyML-детекції бензопили та кавітації ксилеми (`03_03`).
+- **Нове рішення (v3):** **Parylene C 10 µm (CVD)** для серійного виробництва — конформне покриття всіх SMD-компонентів та припою через CVD-деposition; selective masking п'єзодиска (відкрита поверхня або тонка PDMS ≤ 10 µm); внутрішній об'єм капсули — повітря (опційно desiccant). Для прототипів TRL 4–5 — acrylic conformal (Humiseal 1A33) easily reworkable. ✅ Acoustically transparent, ✅ IP67 з O-ring.
+- **Блокує:** Hardware freeze, IP67 certification, TinyML функціональність
+- [ ] 👤 Обрати coating: Parylene C (production) + Humiseal 1A33 (prototypes)
+- [ ] 👤 Контакт з CVD-сервісом Parylene-deposition (Київ / Львів — пошукати спеціалізовані PCB-house)
+- [ ] 👤 Верифікувати п'єзо-attenuation: тест 16 kHz tone з/без coating на калібрувальному стенді
+- [ ] 👤 Верифікувати з кварцовим резонатором при -20°C / +60°C (Parylene Shore D ~50, м'якший за air-gap воду)
 
 #### HW.12 — EBFC upper voltage limit >5.5V protection
 - **Джерело:** `02_01` BLOCKER-2
@@ -589,13 +593,13 @@
 
 #### HW.13 — MPPT coefficient verification for EBFC
 - **Джерело:** `02_03` BLOCKER-2 + Legacy notes
-- **Опис:** Поточний MPPT = 50% VOC (ROC1=ROC2=10MΩ) — **занадто низько для EBFC**. EBFC (GOx/Laccase) має специфічну поляризаційну криву (Міхаеліс-Ментен + Тафель), MPP лежить у діапазоні 60-70% VOC. При 50% — зона масо-транспортних обмежень ферменту
-- **Рекомендація:** Почати з 65% (ROC1=5.36 MΩ, ROC2=10 MΩ)
+- **Опис:** Поточний MPPT = 50% VOC (R_OC1=R_OC2=10MΩ) — **занадто низько для EBFC**. EBFC (GOx/Laccase) має специфічну поляризаційну криву (Міхаеліс-Ментен + Тафель), MPP лежить у діапазоні 60-70% VOC. При 50% — зона масо-транспортних обмежень ферменту
+- **Рекомендація (REVISED 2026-05-16 — TI convention):** Почати з 65%, з іменуванням за TI BQ25570 datasheet SLUSBH2G §8.2.3.2: **R_OC1 = 10.0 MΩ** (нижнє плече, VOC_SAMP → GND), **R_OC2 = 5.36 MΩ** (верхнє плече, VSTOR → VOC_SAMP). Формула: V_MPP / V_OC = R_OC1 / (R_OC1 + R_OC2). ⚠️ Не плутати позначення — якщо запаяти за зворотньою конвенцією, фракція стане 35% замість 65% → знекровлення ферменту.
 - **Блокує:** Max EBFC power, optimal charge speed
 - [ ] 👤 Зняти повну P-V криву (потужність-напруга) EBFC
 - [ ] 👤 Виміряти VOC та VMP при різному освітленні (ранок/день/вечір, сезонно)
 - [ ] 👤 Визначити оптимальну фракцію (починати з 65%)
-- [ ] 👤 Якщо потрібно — замінити ROC1/ROC2
+- [ ] 👤 Якщо потрібно — замінити R_OC1/R_OC2 (звіряти з TI Figure 42 та `02_03 §4.А` SSOT Convention block)
 
 #### HW.14 — Winter energy deficit for Queen Phase 3 (Starlink Mini)
 - **Джерело:** `02_05` BLOCKER-2
@@ -606,12 +610,15 @@
 - [ ] 👤 Встановити 100W solar panel
 - [x] 🤖 Оновити Unit Economics (07_02) — ✅ Phase 3 BOM таблиця (Queen ~$825 + $599 Starlink = $1,424/cluster), Phase 3 cluster economics ($5,404 CAPEX, $179/міс OPEX), ROI сценарії (breakeven SCC $0.41 standalone / $0.18 при 3-cluster sharing / $0.07 duty-cycle), стратегія Starlink sharing через ARCH.10 додано в `07_02` §4а + §5а
 
-#### HW.15 — BMS not specified for Queen
-- **Джерело:** `02_05` BLOCKER-4
-- **Опис:** SIM7070G TX peak current до 2A. BMS model не вказано в BOM
+#### HW.15 — BMS + VBAT decoupling для SIM7070G
+- **Джерело:** `02_05` BLOCKER-4, §2.2.1 (новий блок)
+- **Опис:** SIM7070G TX peak current до 2A. Дві окремі проблеми: (1) BMS model не вказано в BOM (system-level); (2) транзієнтна просадка VBAT модему при 2A burst → brownout reboot (module-level). Тепер з обома вирішеннями.
+- **Module-level fix (✅ specification зафіксовано 2026-05-16):** 5-cap tank bank біля VBAT pin SIM7070G — 470 µF aluminum polymer SP-Cap (Panasonic EEFCX0J471R) + 100 µF MLCC X7R 25V 1210 + 10 µF X7R 0805 + 100 nF X7R 0402 + 33 pF NP0 0402. Розрахункова просадка: 8 mV (margin > 35× проти 700 mV brownout). Деталі — `02_05 §2.2.1`.
 - [ ] 👤 Обрати BMS: мінімум 12V / 20A continuous / 50A peak
 - [ ] 👤 Обрати MPPT: мінімум Victron SmartSolar MPPT 75/15
-- [ ] 👤 Оновити BOM
+- [x] 🤖 Специфікувати tank cap bank біля SIM7070G VBAT pin (`02_05 §2.2.1`, BOM позиції 17–20)
+- [ ] 👤 PCB layout: розмістити C_BULK ≤ 10 мм від VBAT pin, HF caps впритул
+- [ ] 👤 Оновити BOM (закупка 5 нових компонентів)
 
 #### HW.16 — Thermal management в IP67 enclosure
 - **Джерело:** `02_05` BLOCKER-5
@@ -621,15 +628,18 @@
 - [ ] 👤 Додати temperature sensor (NTC або DS18B20)
 - [ ] 👤 Реалізувати hardware charge protection при T < 0°C
 
-#### HW.17 — PEEK radome prototype (Деталь 4)
-- **Джерело:** `02_01` §5.2 + Legacy notes
-- **Опис:** Деталь 4 (PEEK Crown / Капсула-Радом) — радіопрозорий купол ∅20–30 мм, який «насаджується» на зовнішню різьбу Деталі 3 (Анод). Різьба або байонет + O-ring EPDM → IP68. Керамічна SMD-антена в міліметрі від внутрішньої стінки PEEK. Прототип "Не розпочато"
-- **Блокує:** Ceramic antenna protection, RF performance validation, Zero-Touch Assembly validation
+#### HW.17 — PEEK radome prototype (Деталь 4) — REVISED 2026-05-16
+- **Джерело:** `02_01` §5.2 + `01_04` §5.5 + Legacy notes
+- **Опис:** Деталь 4 (PEEK Crown / Капсула-Радом) — радіопрозорий купол ∅20–30 мм, який «насаджується» на зовнішню різьбу **Деталі 3 = Zone 3 = КАТОДНОГО ФЛАНЦЯ** (раніше документ помилково писав «Деталь 3 (Анод)» — критичний SSOT-bug, виправлено). Різьба або байонет + O-ring EPDM → IP68. Керамічна SMD-антена в ≥ 8 мм Z-clearance від Ti-фланця (`02_01 §5.3` revised — 2D ≥3мм, **3D ≥8мм** вертикально + overhang за периметр Ti). Anti-overgrowth shield: виступ ≥ 3 мм + R ≥ 5 мм + super-hydrophobic coating (Fluoropel PFC-1601V) — `01_04 §5.5`.
+- **Блокує:** Ceramic antenna protection, RF performance validation, Zero-Touch Assembly validation, long-term cathode O₂ access
 - [ ] 👤 KiCad PCB layout (HW.9) → PEEK radome dimensions
-- [ ] 👤 Визначити тип кріплення: різьба на Деталь 3 vs байонет
+- [ ] 👤 Визначити тип кріплення: різьба на **Деталь 3 = Катод** (НЕ Анод!) vs байонет
 - [ ] 👤 Визначити матеріал O-ring (EPDM vs FKM) для ксилемного середовища
-- [ ] 👤 Замовити PEEK прототип (CNC або injection molding)
-- [ ] 👤 Верифікувати RF performance (VSWR, КСВ) з антеною під радомом
+- [ ] 👤 **HFSS-симуляція** з 3D-моделями Ti-фланця + PEEK-радома + чіп-антени (нова вимога 02_01 §5.3 revised) — VSWR < 1.8, gain ≥ −2 dBi
+- [ ] 👤 Замовити PEEK прототип з виступаючим конусом ≥ 3 мм над корою + R заокруглення ≥ 5 мм (anti-overgrowth shield, `01_04 §5.5`)
+- [ ] 👤 Super-hydrophobic coating: контакт із постачальником Fluoropel PFC-1601V або еквівалент, технологія nano-texturing
+- [ ] 👤 Верифікувати RF performance (VSWR, КСВ) з антеною під радомом + з Ti-фланцем нижче (overhang тест)
+- [ ] 👤 12-місячний польовий тест anti-overgrowth shield на тестовому дереві — фотодокументація щоквартально
 
 #### HW.18 — Starlink DTC: ESP32-S3 vs SIM8200G-M2 WiFi co-processor
 - **Джерело:** `02_05` BLOCKER-1
@@ -692,7 +702,7 @@
 - **Джерело:** `01_01` §6.1 BLOCKER-2
 - **Опис:** Тризонний анкер — складна збірка. Передчасний перехід на DMLS-партію 100 шт. без верифікації базових принципів був методологічною помилкою. Цей блокер фіксує гейт: 100 анкерів замовляємо **тільки** після проходження двох попередніх етапів.
 - [ ] 👤 **Stage 1 — SLA макети (5 шт):** друк прозорого фотополімеру (Form 3 або SLA-сервіс) для перевірки form & fit, ергономіки, Flush Mount step drilling, допусків press-fit «пластик-в-пластик»
-- [ ] 👤 **Stage 2 — Ti-coins (10 шт, 10×10×1 мм):** SLM-друк + кислотне травлення → іммобілізація Combi-CLEA та Laccase-AuNP стеків → in vitro CV/EIS у синтетичному ксилемному соку (рецептура від біо-хабу ЧНУ, [`08_01`](08_01_University_R_and_D_Protocols))
+- [ ] 👤 **Stage 2 — Ti-coins (10 шт, 10×10×1 мм):** SLM-друк + EAAE (з обов'язковим dehydrogenation bake `01_02 §1.3 Крок 5b`) → паралельне тестування **трьох** анодних архітектур: (a) двошаровий GOx+Os внутрішній / Catalase-chitosan зовнішній (priority, `01_03 §2.1`), (b) Combi-CLEA одношарова (negative control), (c) GDH (Bacillus megaterium Q252L/E170K) одношарова; + Laccase-AuNP DET катодний стек → in vitro CV/EIS у синтетичному ксилемному соку (рецептура від біо-хабу ЧНУ, [`08_01`](08_01_University_R_and_D_Protocols))
 - [ ] 👤 **Stage 3 — Full anchor (3–5 шт):** SLM+HIP анодних секцій, CNC PEEK-втулок, SLM/EBM катодних фланців, повний press-fit + EBFC у синтетичному соку
 - [ ] 👤 **Stage 4 — Партія 100 шт:** після підтвердження Stage 3 — оптове замовлення для польових випробувань
 
@@ -706,6 +716,42 @@
 - [ ] 👤 12-тижневий тест з імітацією дощу/росі — резистентність до flooding
 - [ ] 👤 Сумісність O-ring (EPDM vs FKM) з PTFE та pH 4.5–5.5
 - [ ] 👤 Метод ламінації PTFE на катодний фланець (без клеїв — механічний обтиск по периметру)
+
+#### HW.26 — PEEK Cold-Flow Creep: Mechanical Lock (NEW 2026-05-16)
+- **Джерело:** `01_01` BLOCKER-3 + §4.3
+- **Опис:** PEEK як термопласт **повзе** під постійним hoop-stress press-fit на 5–10 років. Без mechanical lock через 10 років contact pressure падає на 60% → втрата герметичності O-ring + ризик вириву Zone 3 при штормі. Mandatory complementary fix до §4.2 ΔCTE розрахунку натягу.
+- **Параметри:** Annular barbs (трикутні, h=0.25-0.4mm, α=30°/β=70°) на Zone 1 та Zone 3 контактних поверхнях + DIN 471 Ti retaining ring у канавках ∅0.8×0.6mm + hex tolerance ≤ 0.05mm radial. Press-fit при T = 150°C (>T_g PEEK 143°C) для barb engagement.
+- **Cost impact:** ~$0.30/анкер (negligible vs $15-18 base DMLS cost)
+- **Блокує:** Long-term reliability (20+ років), TRL 7→8 gate
+- [ ] 👤 Update nTop CAD-моделі: додати annular barbs на циліндричних частинах Zone 1 та Zone 3
+- [ ] 👤 Update CNC-чертежі: retaining ring grooves на anchor end Zone 1 + flange end Zone 3
+- [ ] 👤 Закупка DIN 471 internal retaining rings Ti grade 2 (або 316SS) у відповідних розмірах
+- [ ] 👤 Update press-fit процедуру: temp 150°C (>T_g PEEK 143°C для Victrex 450G) + контрольована сила 800–1200 N
+- [ ] 👤 **FEA-валідація** ANSYS LS-DYNA з visco-elastic PEEK Prony model — simulation 10y creep, residual pull-out > 200 N
+- [ ] 👤 Stage 1 SLA-mock (HW.24): включити barb-detail у фотополімерну збірку для перевірки клацання
+
+#### HW.27 — Dehydrogenation Bake: Hydrogen Embrittlement Mitigation (NEW 2026-05-16)
+- **Джерело:** `01_02` §1.3 Крок 5b + Failure Mode C
+- **Опис:** EAAE (Крок 4) генерує атомарний H через реакції Ti+HCl/H₂SO₄; ультразвукова кавітація прискорює дифузію H у кристалічну ґратку Ti. Без вакуумного відпалу між промивкою (Крок 5) та пасивацією (Крок 6) поверхневий шар TPMS-гіроїда стає brittle (TiH₂) на глибину 5–50 µm → втомне руйнування при першому ж шторм-навантаженні.
+- **Параметри:** Вакуумна піч 250°C ± 25°C, 10⁻³ mbar, 3 год (range: 200–300°C / 2–4 год). Обов'язково within 2 hours of rinse (H мігрує глибше при кімнатній T).
+- **Контроль:** LECO RH404 vacuum hot extraction → H content < 100 ppm (ASTM B348 grade 5 ліміт 150 ppm).
+- **Блокує:** Втомну міцність TPMS-гіроїда, заявлений термін служби 20+ років, TRL 4→5
+- [ ] 👤 Передати специфікацію Крок 5b заводу-підряднику (Київ/Дніпро) разом із протоколом EAAE
+- [ ] 👤 Перевірити наявність вакуумної печі 200–300°C у заводу-кандидата (або стороннього subcontractor)
+- [ ] 👤 LECO RH404 hot extraction analysis на тестовому купоні з кожної партії
+- [ ] 👤 Втомне тестування Ti-coin Stage 2 (HW.24) — порівняння з/без dehydrogenation bake для підтвердження ефекту
+
+#### HW.28 — Anti-Overgrowth Shield для Zone 3 (NEW 2026-05-16)
+- **Джерело:** `01_04` §5.5 + §2 Фаза 4 revision
+- **Опис:** Поправка Фази 4 ксилемоінтеграції — анкер **НЕ повинен** повністю поглинатися стовбуром. Лише Zone 1 (анод) інтегрується; Zone 3 (катод) має залишатися постійно експонованим атмосфері для ORR (Laccase + AuNPs + O₂). Без shield через 3–5+ років нова кора накриває PTFE-GDL → дифузія O₂ зупиняється → EBFC мертва за 2–3 додаткових роки.
+- **Три захисти (complementary):** (A) виступаючий PEEK Radome conus ≥ 3 мм + R заокруглення ≥ 5 мм; (B) super-hydrophobic fluoropolymer coating (CA > 150°, Fluoropel PFC-1601V); (C) periodic forester maintenance every 5–7 років (мікрорізець для зчищення приростаючої тканини).
+- **Cross-ref:** Інтегровано у HW.17 (PEEK radome prototype) + OPEX додано у `07_02`
+- **Блокує:** 20-річний термін служби EBFC, OPEX-розрахунок (`07_02`)
+- [ ] 👤 Update PEEK Radome CAD з виступаючим конусом — у HW.17
+- [ ] 👤 Закупка/тест super-hydrophobic coating (Fluoropel PFC-1601V або аналог)
+- [ ] 👤 Field protocol для forester visit: процедура зачистки приростаючої тканини без traumatic surgery
+- [ ] 👤 12-місячний польовий тест на тестовому дереві (Черкаський бір)
+- [ ] 👤 Update `07_02` OPEX: 1 visit / 5–7 років × $20/visit = ~$3–4/рік/анкер (форестер у Черкаському борі)
 
 ---
 
@@ -1135,7 +1181,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.35 | ✅ Flash Loan defense реалізовано в `SilkenGovernor.sol`: GovernorVotes (`getPastVotes`), GovernorSettings (votingDelay=43200 блоків ~1 day, votingPeriod=302400 ~7 days), GovernorVotesQuorumFraction (4%), GovernorTimelockControl (48h через `SilkenTimelock.sol`) | `05_03` | ✅ Реалізовано |
 | E.36 | PostGIS Generated Column (geo_boundary) замість тригера | `04_01` | Post-TRL 8 |
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates | `04_01` | >100M рядків/місяць |
-| E.38 | Press-Fit фаски: R ≥ 0.2 мм для зняття напружень у PEEK | `01_01` | Включити у nTop (HW.1) |
+| E.38 | Press-Fit фаски: R ≥ 0.2 мм для зняття напружень у PEEK + **annular barbs (h=0.3mm)** на Zone 1 та Zone 3 контактних поверхнях для PEEK creep mechanical lock (`01_01 §4.3`, HW.26) | `01_01` | Включити у nTop (HW.1, HW.26) |
 | E.39 | **EBFC Gen 2.0:** FAD-GDH + Laccase/nanozymes + ZIF (20-25 років) | `01_03` §3 | ЧНУ lab testing |
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
 | DIFF.1 | `Wallet#lock_and_mint!` threshold = runtime param (не hardcoded) | `04_02` | Informational, no action |
@@ -1149,7 +1195,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.50 | **Edge fuzzy_distance dedup function** на STM32WLE5JC: <1 мс CPU, <128 байт RAM, ціль — 30-40% TX зниження за рахунок suppression near-duplicate пакетів | `08_02` §1.3 (Vector 1, Ярмілко) | Post-TRL 7 (R&D — Ярмілко) |
 | E.51 | **Monte Carlo TTL-flood симуляція** для обґрунтування `PANIC_TTL=5` та `DEFAULT_TTL=3`: цільовий P_delivery ≥ 0.99 при 20-30% одночасних відмов вузлів. Виходи: math-обґрунтування для seed deck | `08_02` §1.2 (Vector 2) | Post-TRL 6 (Порубльов, ЧНУ) |
 | E.52 | **GA-оптимізація ваг `silken_forest.marshal`** ML моделі на Akash GPU кластері — генетичний алгоритм для `InsightGeneratorService` stress_index класифікації | `08_02` §1.6 (Любченко) | Post-TRL 7 |
-| E.53 | **VNA-вимір SMD-антени під PEEK радомом** — VSWR <1.5 на 868 МГц для 3-5 варіантів товщини PEEK (1.5/2.0/2.5 мм) у вологому/сухому стані. Лабораторна задача (cross-ref UNI.10 ChDTU Гончаров) | `08_02` §1.3 + `02_01` | P1, blocked by HW.17 + UNI.10 |
+| E.53 | **VNA-вимір SMD-антени під PEEK радомом** — VSWR <1.5 на 868 МГц для 3-5 варіантів товщини PEEK (1.5/2.0/2.5 мм) у вологому/сухому стані + **3D Keep-Out з Ti-фланцем нижче** (Z-clearance 5/8/12 мм, з/без overhang за периметр Ti). Лабораторна задача (cross-ref UNI.10 ChDTU Гончаров, нова вимога `02_01 §5.3` revised) | `08_02` §1.3 + `02_01` | P1, blocked by HW.17 + UNI.10 |
 | E.54 | **SOP документи для 7 типів EwsAlert** — стандартизовані інструкції UA+EN: severe_drought, insect_epidemic, vandalism_breach, fire_detected, seismic_anomaly, system_fault, entropy_anomaly. Інтеграція як inline UI у Phlex (cross-ref ARCH.31) | `08_05` | P1, joint with ChIPB-NUTSU (UNI.12) |
 | E.55 | **Multi-party NDA + IP framework** для 5-сторонньої академічної співпраці (ChNU + ChDTU + ChIPB + ChMA + СЄУ + Silken Net) — base-line для всіх UNI.x публікацій | `08_03`, `08_05`, `08_06`, `08_07` | P1, cross-ref BIZ.10 |
 | E.56 | **DSP preprocessing для TinyML** — невідомо чи модель очікує raw time-domain чи MFCC. Якщо MFCC → +5-15 KB Flash + 40 µs CPU (CMSIS-DSP) | `03_03` BLOCKER-5 | P1, cross-ref FW.25 |

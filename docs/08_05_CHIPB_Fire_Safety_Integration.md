@@ -345,7 +345,7 @@ Silken Net використовує **параметричне страхува�
 Обмеження:
   - Тризонний анкер: Zone 1 (гіроїд Ti-6Al-4V, 30–50 мм у заболоні) + Zone 2 (PEEK-втулка, 40–60 мм) + Zone 3 (Ti-фланець, ∅20–30 мм на межі кори/повітря). Загальна L ~80–120 мм. Деталі — [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK)
   - Інтерфейс: 2-пінове Pogo Pin Blind Mate ([`02_02`](02_02_Blind_Mate_Pogo_Pin_Interface))
-  - Кріплення: press-fit Ti-PEEK-Ti (H7/s6) + CODIT-інкапсуляція калюсом навколо PEEK-фланця + ущільнення силіконовим O-ring
+  - Кріплення (REVISED 2026-05-16): press-fit Ti-PEEK-Ti (H7/s6) **+ annular barbs (h=0.3 mm) на Zone 1 та Zone 3 контактних поверхнях + DIN 471 Ti retaining rings** у канавках 0.8×0.6 mm на anchor end Zone 1 та flange end Zone 3 (`01_01 §4.3` BLOCKER-3 mechanical lock проти PEEK creep) + CODIT-інкапсуляція калюсом навколо PEEK-фланця + ущільнення силіконовим O-ring. **Інструмент екстракції повинен:** (a) знати про retaining rings — їх треба механічно зняти спочатку, інакше неможливо роз'єднати Ti-зони з PEEK; (b) врахувати, що barbs створюють асиметричну сила вириву (ratchet геометрія, легко увійти / складно вийти — потрібен спеціальний inverse-direction puller).
   - Установка: Flush Mount step drilling + microfrezing ([`01_04 §3`](01_04_CODIT_and_Xylemointegration)) — катодний фланець врівень із корою
   - Вимога: мінімальне пошкодження ксилеми (дерево має вижити після екстракції)
   - Вимога: збереження електроніки Soldier для діагностики / refurbishment

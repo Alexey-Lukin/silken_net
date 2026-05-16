@@ -97,7 +97,7 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 | **ЧДТУ (3 кафедри)** | Hard Science | Data Science та статистика (Карапетян, кафедра статистики), радіофізика та EMC (Гончаров, ФЕТР), акустична мехатроніка та п'єзохарактеризація (Базіло, Бондаренко, ПМКТ) | [`08_04`](08_04_CHDTU_Data_Science_Collaboration) | [§1B](#-1b-публікації-чдту-data-science-радіотехніка-та-акустика) |
 | **ЧМА** | Hard Science | Біохімія EBFC та ферментна стабільність (Бушуєва, Глущенко), токсикологія Ti-6Al-4V (Суховой), ксилемоінтеграція як аналогія остеоінтеграції (Губенко, Боєчко) | [`08_06`](08_06_CHMA_Biomedical_Integration) | [§1E](#-1e-публікації-чма-біохімія-ebfc-токсикологія-ксилемоінтеграція) |
 | **ЧІПБ** | Business (regulated safety) | QRA для тригерів параметричного страхування (Зобенко), предиктивна fire-модель delta_t→FWI (Куліца), SOP конверсії EwsAlert→ДСНС (Биченко, Ротар, Несен) | [`08_05`](08_05_CHIPB_Fire_Safety_Integration) | [§1D](#-1d-публікації-чіпб-пожежна-безпека-параметричне-страхування-та-sop) |
-| **СЄУ** | Business | Макроекономіка SCC-ринку (Чудаєва), правова архітектура RWA / MiCA / ERC-3643 (Аблязов Д.), ISO 14064 / ICROA D-MRV аудит (Гедз), unit-економіка та ESG-Accounting (Ус), консорціум-governance (Аблязова Н.), промисловий дизайн PEEK-радому (Денисенко, Теліженко) | [`08_07`](08_07_SEU_Economics_and_Legal_Integration) | [§1F](#-1f-публікації-сєу-токеноміка-право-промисловий-дизайн) |
+| **СЄУ** | Business | Макроекономіка SCC-ринку (Чудаєва), правова архітектура RWA / MiCA / ERC-3643 (Аблязов Д.), ISO 14064 / ICROA D-MRV аудит (Гедз), unit-економіка та ESG-Accounting (Ус), консорціум-governance (Аблязова Н.), промисловий дизайн PEEK-радому з **anti-overgrowth shield + super-hydrophobic surface** (Денисенко, Теліженко) | [`08_07`](08_07_SEU_Economics_and_Legal_Integration) | [§1F](#-1f-публікації-сєу-токеноміка-право-промисловий-дизайн) |
 | **Silken Net + ActiveBridge** | Mission Controller | IP holder, system integrator, firmware/backend/contracts, фінальна інтеграція WP1–WP9 у TRL 8 продукт | [`08_07` §1.4](08_07_SEU_Economics_and_Legal_Integration), [`07_03`](07_03_Grant_Applications_Tracker) | — |
 
 > **Принцип ортогональності:** жодна комірка `(ВНЗ, ніша)` не дублюється. Якщо два університети потенційно претендують на одну тему (наприклад, статистика — ЧДТУ Карапетян vs ФОТІУС Осауленко DBSCAN), то межа проходить за об'єктом аналізу: ФОТІУС — Data Mining патернів метаболізму у backend, ЧДТУ — статистичне виявлення аномалій та шахрайства; перетин фіксується як **міжуніверситетська синергія** (зони §1C, §1G). Десять формалізованих міжуніверситетських зон описані в [`08_04` §8](08_04_CHDTU_Data_Science_Collaboration#8-міжуніверситетська-синергія-чдту--чну-фотіус).
@@ -109,7 +109,7 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 | Параметр | Без MOIC | З MOIC |
 |----------|----------|--------|
 | Кожен параметр смарт-контракту (`OPTIMAL_Z_TARGET=29.0`, `MAX_SUPPLY=1B SCC`, `FRAUD_DEVIATION_THRESHOLD=30%`, `Dynamic Tax=2%`) | Код стартапу | + Q1-публікація + лабораторний тест профільного інституту |
-| Кожен хардверний вузол (тризонний Ti-6Al-4V анкер з Zone 1 гіроїд / Zone 2 PEEK / Zone 3 фланець, Combi-CLEA + Laccase-AuNP EBFC, BQ25570 MPPT, SX1262 LoRa, PEEK-радом IoT-капсули) | Концепт | + DFT/FEM/ICP-MS/VNA/EMC дані з акредитованих лабораторій |
+| Кожен хардверний вузол (тризонний Ti-6Al-4V анкер з Zone 1 гіроїд / Zone 2 PEEK + mechanical lock barbs / Zone 3 фланець з anti-overgrowth shield, двошарова GOx+Os/Catalase-chitosan + Laccase-AuNP EBFC, BQ25570 MPPT, SX1262 LoRa, PEEK-радом IoT-капсули з super-hydrophobic coating) | Концепт | + DFT/FEM/ICP-MS/VNA/EMC дані з акредитованих лабораторій |
 | D-MRV pipeline як замінник Verra/Gold Standard | Вимога довіри | + ISO 14064 / ICROA mapping (Гедз, [`08_07` §1.5](08_07_SEU_Economics_and_Legal_Integration)) |
 | Біорізноманіттєвий шар | NDVI-only | + acoustic ground-truth (Mongabay pivot, Стаття 24a) + ботанічна валідація (Спрягайло) |
 
@@ -266,7 +266,7 @@ _(Запропонована тема; студент визначається �
 |-------|--------|
 | **Косенюк Г.В.** | VSWR/КСВ оптимізація SMD-антени під PEEK-радомом (окрема деталь IoT-капсули, ∅20–30 мм, **не плутати з PEEK-втулкою Zone 2** тризонного анкера); 3D-діаграма спрямованості з Ti-анкером (Zone 1 + Zone 3 фланець) як Ground Plane; Link Budget LoRa у лісі (SF=7–9 балансування, → `02_01` §5.3); Reed-Solomon FEC для 21-байтового пакету; Kalman/EMA фільтри для delta\_t Edge AI; CE/FCC compliance roadmap |
 | **Ярмілко А.В.** | Lightweight cryptography integration (AES-256-ECB для LoRa Soldier→Queen, AES-256-CBC для CoAP batch Queen→Rails, HAL\_CRYP); firmware архітектура SPI/DMA для фільтрованих сигналів |
-| Архітектор (Silken Net) | EBFC-джерело живлення (>500 мВ, <500 мкВт; Combi-CLEA `GOx+Catalase` + Laccase-AuNP DET — деталі [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)), STM32WLE5JC RF-конфігурація, 21-байтовий пакет, IP68 механічна специфікація (PEEK Crown капсули — окрема деталь, не Zone 2 анкера) |
+| Архітектор (Silken Net) | EBFC-джерело живлення (>500 мВ, <500 мкВт; **двошарова GOx+Os/Catalase-chitosan анодна архітектура** + Laccase-AuNP DET — деталі [`01_03 §2.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) revised), STM32WLE5JC RF-конфігурація, 21-байтовий пакет, IP68 механічна специфікація (PEEK Crown капсули — окрема деталь, не Zone 2 анкера; з anti-overgrowth shield + 3D RF Keep-Out ≥ 8mm Z-clearance проти Ti-фланця) |
 
 **Магістерська робота (Науковий керівник — Косенюк):**
 _«Радіотехнічна оптимізація мікропотужних IoT-пристроїв у лісовому середовищі: узгодження антенних систем, завадостійке кодування та стохастична фільтрація сигналів EBFC-джерел»_
@@ -727,12 +727,12 @@ _«Дослідження акустичних властивостей пори
 
 | Автор | Внесок |
 |-------|--------|
-| **Денисенко Ю.М.** (СЄУ) | 3D CAD-модель PEEK-радому з текстурою кори Pinus sylvestris, stress concentration analysis, FDM-прототип |
-| **Теліженко О.В.** (СЄУ) | Кольорове/композиційне кодування, візуалізація для pitch deck |
-| **Гусак А.М.** (ЧНУ) | FEM-моделювання stress-strain текстурованої поверхні PEEK |
-| Архітектор (Silken Net) | 01_01 Деталь 4 (PEEK радом), 02_01 §5 (SMD антена, Keep-Out Zone), IP68 вимоги |
+| **Денисенко Ю.М.** (СЄУ) | 3D CAD-модель PEEK-радому з текстурою кори Pinus sylvestris, **виступаючий "дзвін" ≥ 3 мм + R заокруглення ≥ 5 мм** як anti-overgrowth shield (`01_04 §5.5`), stress concentration analysis, FDM-прототип |
+| **Теліженко О.В.** (СЄУ) | Кольорове/композиційне кодування, візуалізація для pitch deck, **selection super-hydrophobic coating** (Fluoropel PFC-1601V або еквівалент, CA > 150°) для запобігання адгезії клітин калюсу до катода |
+| **Гусак А.М.** (ЧНУ) | FEM-моделювання stress-strain текстурованої поверхні PEEK + **PEEK creep simulation** (ANSYS LS-DYNA Prony series, 10-y cyclic ±35°C) для confirm-ня необхідності annular barbs mechanical lock у пресsfit з Ti-зонами (`01_01 §4.3`) |
+| Архітектор (Silken Net) | 01_01 Деталь 4 (PEEK радом, тепер з anti-overgrowth shield), 02_01 §5 (SMD антена, **3D Keep-Out ≥ 8 мм Z-clearance** revised + PCB overhang за периметр Ti), IP67 з conformal Parylene C (НЕ повне Sylgard-potting через TinyML акустику, `02_02 §3.4`) |
 
-**Тип зв'язку:** Послідовний — ЧНУ (Гусак): матеріалознавчі обмеження → СЄУ (Денисенко): дизайн у межах обмежень → СЄУ (Теліженко): візуалізація
+**Тип зв'язку:** Послідовний — ЧНУ (Гусак): матеріалознавчі обмеження + PEEK creep simulation → СЄУ (Денисенко): дизайн у межах обмежень + anti-overgrowth geometry → СЄУ (Теліженко): візуалізація + surface treatment selection
 
 ---
 

@@ -169,19 +169,24 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 ---
 
-### 🟡 BLOCKER-4: Пікові струми SIM7070G — BMS не специфікований
+### 🟡 BLOCKER-4: Пікові струми SIM7070G — BMS не специфікований + VBAT decoupling
 
-**Статус:** Відкрито.
+**Статус:** Часткове рішення зафіксовано (VBAT tank-cap bank — §2.2.1, BOM 17–20). BMS/MPPT моделі залишаються відкритими.
 
-SIM7070G у режимі LTE-M TX може споживати імпульсно до **2A** пікового значення. BMS (Battery Management System) не специфікований в поточному BOM.
+SIM7070G у режимі LTE-M TX може споживати імпульсно до **2A** пікового значення. Це створює дві окремі проблеми:
+
+1. **Системний рівень:** BMS (Battery Management System) має витримувати ці спалахи без срабатывания захисту від перетоку.
+2. **Module рівень:** Транзієнтна просадка `VBAT` модему під час 2А burst → brownout reboot (`§2.2.1`).
 
 - **BMS:** захист від перетоку має бути ≥ 5А (з 2.5× запасом)
 - **Провідники:** AWG16 або AWG18 для L < 30 см
 - **MPPT:** Victron SmartSolar 75/10 (вихідний струм 10А > 2А ✅), але модель не зафіксована в BOM
+- **VBAT decoupling:** ✅ Специфіковано — 5-cap tier у §2.2.1 та BOM позиції 17–20
 
 **Необхідна дія:**
 - Зафіксувати модель BMS: мінімум 12V / 20A continuous / 50A peak
 - Зафіксувати модель MPPT: мінімум Victron SmartSolar MPPT 75/15
+- ✅ Фінальний layout SIM7070G ділянки PCB: bulk cap ≤ 10 мм від VBAT pin, HF caps впритул
 
 **Блокує:** Фінальний BOM, підготовка до масового виробництва.
 
@@ -307,6 +312,43 @@ SIM7070_SendATCommand("AT+CCOAPDEL=0\r\n", 500);
 | NB-IoT TX | ~100–150 мА | 3.7V | 370–555 мВт |
 
 > ⚠️ Пікові 2А тривають мікросекунди (RF burst). Але BMS та провідники **повинні** витримувати 2А без просадки.
+
+#### 2.2.1 VBAT Decoupling Network (захист від brownout reboot)
+
+> 🔴 **Класична IoT-пастка:** DC-DC конвертер 12V→3.7V специфіковано на ≥3А continuous / ≥5А peak (`§3 Power Tree`, `BLOCKER-4`). Але **час реакції регулятора + паразитна індуктивність доріжок плати** означають, що при наносекундному переході модему з 10 мА (idle) у 2 А (LTE-M TX burst) напруга на піні `VBAT` модему **миттєво просідає** перш ніж DC-DC встигне піднятися. Якщо просадка перевищує brownout-поріг SIM7070G (~3.0–3.2 В) навіть на мілісекунди — **модем апаратно перезавантажується посеред CoAP-пакету**. Симптом: Queen «втрачає» Starlink DTC з'єднання раз на ~1–10 spike-frames, незрозумілі gaps у telemetry.
+>
+> Рішення — локальна «батарея» конденсаторів **безпосередньо біля пінів VBAT модему** (як можна ближче, доріжка ≤ 5 мм), яка віддає заряд миттєво поки DC-DC «розганяється».
+
+**Tank Cap Bank — обов'язкова специфікація біля SIM7070G VBAT pins:**
+
+| Поз. | Компонент | Призначення | Розташування |
+|------|-----------|-------------|--------------|
+| C_BULK | **470 µF, 6.3V, low-ESR aluminum polymer** (Panasonic SP-Cap EEFCX0J471R або Kemet T520B477M006ATE015), ESR ≤ 15 мΩ | Основний бункер для 1–10 мс TX-burst | 5–10 мм від VBAT pin |
+| C_MID | **100 µF, 25V, X7R, 1210** (Murata GRM32ER71E107K), C_eff @ 3.7V ≈ 85 µF після derating | Мід-частотний buffer (kHz range RF chopping) | ≤ 5 мм від VBAT pin |
+| C_HF1 | **10 µF, 25V, X7R, 0805** | HF фільтр живлення | ≤ 3 мм від VBAT pin |
+| C_HF2 | **100 nF, 50V, X7R, 0402** | HF decoupling MCU bus | впритул до VBAT pin |
+| C_RF | **33 pF, 50V, NP0, 0402** | Фільтр антенного RF-сплеску у живлення | впритул до VBAT pin |
+
+**Розрахунок transient response (підтвердження достатності):**
+
+```
+ESR_parallel ≈ ESR_bulk ∥ ESR_MLCCs ≈ 15 mΩ ∥ ~5 mΩ ≈ 4 mΩ
+ΔV_peak_ESR = I_peak × ESR_parallel = 2 A × 4 mΩ = 8 mV   ✓ (далеко від brownout)
+
+ΔV_droop за 1 мс burst (до того, як DC-DC підхопить):
+  ΔV = (I_peak − I_DCDC_response) × t / C_bulk_eff
+       = (2 − 0.3) × 0.001 / 470e-6 = 3.6 mV   ✓
+```
+
+Поріг brownout SIM7070G — **3.0 В** (datasheet SIM7070_Series_Hardware_Design_V1.05). Margin від 3.7 В номіналу — 700 мВ. Сумарна просадка з tank bank: < 20 мВ навіть при найгіршому 2А спалаху. **Запас > 35×.** ✓
+
+**❌ Анти-патерни (типові помилки):**
+- ❌ Тільки 10 µF MLCC біля модему без bulk cap — derating + малий C дає просадку 200+ mV
+- ❌ Танталовий cap без полімерного покриття — failure mode «short circuit on overvoltage» при випадковому 12V spike
+- ❌ Bulk cap далі ніж 15 мм від модему — паразитна індуктивність доріжки (~10 нГн/см) формує LC-tank, що дзвенить на спадаючому фронті
+- ❌ Економія на C_RF — без 33 pF cap RF-burst антени потрапляє назад у VBAT та збиває MCU UART (виглядає як «AT command no response»)
+
+> **Cross-ref:** додати ці п'ять компонентів у BOM §7 (рядки 16–20, нові). Специфікація узгоджена з SIMCom Hardware Design Guide §3.4.1 (Power Supply Design) та принципом tiered-decoupling, описаним у [`02_03 §6.3`](02_03_BQ25570_MPPT_Nano_Power).
 
 ---
 
@@ -666,6 +708,10 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 | 14 | **SWD програматор** | ST-LINK-V3MINIE | — | ✅ |
 | 15 | **UART адаптер** | FT232RL, 3.3V режим | — | ✅ |
 | 16 | **SPI NOR Flash** (ARCH.35) | Winbond **W25Q32JV** (4 MB, SPI, SOIC-8), 100k erase cycles | 1/2.5/3 | 🟡 Заплановано — overflow tier для CIFO; ~$0.50/од; 190k+ telemetry slots; ~10 мА × 0.7 мс/page write |
+| 17 | **C_BULK (SIM7070G VBAT tank)** | 470 µF / 6.3V / aluminum polymer, ESR ≤ 15 мΩ (Panasonic EEFCX0J471R або Kemet T520B477M006ATE015) | 1/2.5 | 🔴 **Обов'язково** — без нього brownout reboot SIM7070G при 2А LTE-M burst (§2.2.1) |
+| 18 | **C_MID (SIM7070G VBAT)** | 100 µF / 25V / X7R / 1210 (Murata GRM32ER71E107K) | 1/2.5 | 🔴 Обов'язково — С_eff ≈ 85 µF після DC bias derating |
+| 19 | **C_HF1 (SIM7070G VBAT)** | 10 µF / 25V / X7R / 0805 | 1/2.5 | 🔴 Обов'язково |
+| 20 | **C_HF2 + C_RF (SIM7070G VBAT)** | 100 nF / 50V / X7R / 0402 + 33 pF / 50V / NP0 / 0402 | 1/2.5 | 🔴 Обов'язково — HF фільтр + RF-burst guard |
 
 ---
 
