@@ -13,7 +13,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 4 — політика затверджена; реалізація задокументована inline у відповідних сервісах (`Web3CircuitBreaker` concern, `IngressBufferService`, `Queen-to-Queen Backhaul`). Production-rollout — Phase 2 (`00_06`).
+- **Поточний TRL:** TRL 6 — політика затверджена, **6 з 10 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state — див. §3). Залишаються 🟡: Queen-to-Queen Backhaul Mesh, Helium Queen-side LoRaWAN (ARCH.34), Ingress Proxy (INF.4/INF.6), Sergeant L2 (HW.27). Production-rollout — Phase 2 (`00_06`).
 - **Пов'язані модулі:**
   - 8-рівнева архітектура + конвеєр → [`00_02_System_Architecture_and_12_Chain_Pipeline`](00_02_System_Architecture_and_12_Chain_Pipeline)
   - Hardware Queen → [`02_05_Queen_Hardware_and_Starlink`](02_05_Queen_Hardware_and_Starlink)
@@ -30,6 +30,8 @@
 - **ARCH.26** (TDMA Sync Windows + CAD) — без них Queen-to-Queen Backhaul fallback неможливий для Soldier'ів за межами Queen RX, документується відкрито у [`00_08`](00_08_Action_Plan_Tracker).
 - **INF.4 / INF.6** — Ingress Proxy / CoAP Proxy перед Rails — критично для буферизації uplink при недоступності backend pods на Akash.
 - **HW.27** (Sergeant L2) — повноцінний failover на L2 cluster heads потребує Sergeant вузлів (TRL 1, концепція).
+- **ARCH.35** (Queen Flash Ring Buffer) — без SPI NOR Flash overflow tier, CIFO 50-slot RAM cache переповнюється за ~30 хв при 100 Soldiers/Queen × 1 пакет/год → дані стираються. SPI flash чип (W25Q32, ~$0.50) знімає це обмеження.
+- **ARCH.34** (Queen-side LoRaWAN Helium fallback) — без LoRaWAN MAC stack на Queen, L3 Helium резерв архітектурно неможливий. Soldier-side `helium_compat_emit` (попередній план) відкинуто через flash/RAM constraints STM32WLE5JC + Soldier не повинен знати про uplink topology.
 
 ---
 
@@ -43,9 +45,9 @@
 
 | Рівень | Механізм | Trigger | Latency | Реалізація |
 |--------|----------|---------|---------|------------|
-| **L1: Queen Local Buffer** | CIFO EdgeCache до 50 slots, flush на 1 год TTL або при ≥ 45 entries. Якщо Starlink/LTE недоступні — повторити flush експоненційно (1, 2, 4, 8, 16 хв cap = 60 хв). | `AT+CCOAPSEND` timeout або UART fail | Seconds | `firmware/queen/main.c` CoAP retry (FW.9), 4 host-tests `test_coap_retry_constants` |
+| **L1: Queen Local Buffer (Two-Tier)** | **Hot tier:** CIFO EdgeCache до 50 slots in-RAM (дедуплікація за DID + priority-aware eviction), flush на 1 год TTL або при ≥ 45 entries. **Overflow tier:** при `AT+CCOAPSEND` fail після N retry — drain CIFO у SPI NOR Flash Ring Buffer (W25Q32, 4 МБ, ~190k слотів × 21 байт; ARCH.35). Якщо Starlink/LTE недоступні — повторити flush експоненційно (1, 2, 4, 8, 16 хв cap = 60 хв). При відновленні uplink — спочатку drain Flash Ring Buffer (FIFO), потім CIFO. | `AT+CCOAPSEND` timeout або UART fail | Seconds (RAM tier) / Hours-days (Flash tier) | `firmware/queen/main.c` CoAP retry (FW.9), 4 host-tests `test_coap_retry_constants`; Flash Ring Buffer — ARCH.35 planned |
 | **L2: Queen-to-Queen LoRa Backhaul** | Сусідня Queen у радіусі 5–15 км (SF12 спред-фактор, ~6 кбіт/с) приймає `delegate_uplink_frame` від основної Queen. Якщо власний Starlink також впав — пересилає далі по LoRa-магістралі до Queen з активним uplink. | Local Starlink/LTE down >5 хв OR `coap_health = false` | Minutes | `Queen → Queen` через `RELAY_QUEEN` фрейм (DEFAULT_TTL=4); планується [`02_05 §Q2Q Mesh`](02_05_Queen_Hardware_and_Starlink) |
-| **L3: Helium Network Fallback** | Будь-який Helium router у радіусі 15 км отримує LoRa-пакет з Soldier'а напряму (Soldier не знає що Queen down), пакет потрапляє в Helium Console через HNT DePIN. Console webhook → Rails endpoint `POST /api/v1/helium_uplink` (HMAC-signed). | Optional: Soldier emits Helium-shaped payload (compatible LoRa modulation) one-in-N для редундатності | Tens of seconds | Soldier firmware `helium_compat_emit()` (ARCH.30, planned); деталі — [`02_05 §Helium Fallback`](02_05_Queen_Hardware_and_Starlink) |
+| **L3: Helium Network Fallback (Queen-side)** | Queen формує валідний **LoRaWAN** frame (DevEUI/AppEUI/AppKey, FCntUp counter, OTAA join state) і передає його у радіусі своєї антени (+22 dBm SF12). Будь-який Helium hotspot у радіусі ~15 км приймає frame через стандартний LoRaWAN MAC-stack → Helium LNS → HTTP Integration webhook → Rails `POST /api/v1/telemetry/helium` (HMAC-signed). **NB:** Soldier лишається на raw LoRa P2P (AES-256-ECB, 21-байт payload); LoRaWAN stack живе ТІЛЬКИ на Queen. | Власний Starlink/LTE-M down + Q2Q backhaul недоступний (всі сусідні Queen теж offline) | Tens of seconds | Queen firmware `queen_helium_lorawan_uplink()` (ARCH.34, planned); деталі — [`02_05 §6.1 Helium Fallback`](02_05_Queen_Hardware_and_Starlink) |
 | **L4: Field Operator Pull (Forester app)** | Лісник з мобільним пристроєм підходить до фізичної Queen, підключається через BLE (Forester app) і вручну дренує CIFO буфер на 4G/Wi-Fi. | Manual escalation коли L1-L3 fail >24 год | Hours-Days | Forester mobile app (UI заплановано Phase 2) |
 
 ### 1.3 Queen Health Heartbeat → Rails
@@ -152,7 +154,7 @@ end
 | Chainlink router version probe | `Web3::ChainlinkRouterVersion` [S6.15] | ✅ Реалізовано (17 examples spec) |
 | Manual review terminal state | `BlockchainTransaction` AASM | ✅ Реалізовано |
 | Queen-to-Queen Backhaul Mesh | Concept у [`02_05 §Q2Q`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
-| Helium fallback emit | Soldier firmware `helium_compat_emit()` | 🟡 ARCH.30 planned |
+| Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34 planned (Soldier-side `helium_compat_emit` відкинуто — Soldier не несе LoRaWAN MAC stack) |
 | Ingress Proxy (CoAP buffer) | INF.4 / INF.6 | 🟡 Planned (P1) |
 | Sergeant L2 cluster heads | [`00_02 §Fractal Stack`](00_02_System_Architecture_and_12_Chain_Pipeline) | 🟡 Concept (HW.27, TRL 1) |
 
@@ -160,7 +162,7 @@ end
 
 ## 4. 🔗 Cross-ref
 
-- `docs/00_08 INF.4 / INF.6 / ARCH.26 / HW.27 / ARCH.30` — open tasks для повної реалізації цієї політики.
+- `docs/00_08 INF.4 / INF.6 / ARCH.26 / HW.27 / ARCH.34 / ARCH.35` — open tasks для повної реалізації цієї політики (Helium Queen-side LoRaWAN та Flash Ring Buffer overflow tier).
 - `docs/04_02 §13b Drift Register` — як приземлити цю SSOT policy у код (E.49 Celo cascade, S6.15 Chainlink router probe).
 - `docs/05_02 §Dynamic Tax` — як cap `insurance_pool` підтримує fallback economics (slashing/insurance політика — [`00_01 §6`](00_01_Vision_Market_and_Slashing_Policy)).
 - `docs/06_02 §Akash Deploy` — multi-provider SDL та fallback на GCP/Kamal.

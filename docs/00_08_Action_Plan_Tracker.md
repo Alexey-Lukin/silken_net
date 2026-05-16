@@ -119,6 +119,14 @@
 - **Опис:** SDL відкриває HTTP (port 80), CoAP UDP (5683), та port 443 (додано Сесія 6). Але TLS termination не налаштовано. Browsers block WebSocket from HTTPS → HTTP
 - [ ] 👤 Налаштувати TLS (Akash ingress `*.ingress.akash.pub` або Cloudflare)
 
+#### INF.6 — CoAP UDP smoke test через Ingress Anchor (post-deploy gate)
+- **P1** | `06_01` §6 рядок 113, `06_02` runbook, `00_03` §🛑 | **Складність: XS** | **🤖 Код + 👤 верифікація**
+- **Опис:** Без end-to-end UDP smoke перевірки `Queen → Ingress Anchor (HAProxy/socat) → Akash → CoAP daemon` silent UDP failure не помітний з HTTP-only health checks — це блокер для будь-якої uplink-resilience політики у [`00_03 §1.2 L1`](00_03_Resilience_and_Failover_Policy). **Що зроблено:** workflow `.github/workflows/coap_smoke.yml` (`workflow_dispatch` для ad-hoc + `workflow_call` від `deploy.yml` як post-deploy gate); приймає inputs `host`/`port`/`path`/`timeout_seconds`. **Що залишається:** активувати як required post-deploy gate у `deploy.yml`, виконати перший boundary-test з реальної Queen Soldier-симулятором (`bin/forest_simulator`).
+- **Статус:** ✅ workflow реалізований (`coap_smoke.yml`). 🟡 не активований як required gate у `deploy.yml`.
+- [x] 🤖 `coap_smoke.yml` як `workflow_call` від `deploy.yml`
+- [ ] 👤 Активувати як required post-deploy gate (set `coap-smoke` як `needs:` у production job після першого зеленого прогону)
+- [ ] 👤 Перший boundary smoke з реальної Queen або `bin/forest_simulator`
+
 #### INF.4 — Akash TLS strategy decision: hostname operator vs Cloudflare
 - **P1** | `06_02` BLOCKER-5, `06_01` | **Складність: S** | **🔧 Операційна + Док**
 - **Опис:** Розширення INF.3. Не прийнято архітектурне рішення: (a) Akash hostname operator + Let's Encrypt автоматизація, (b) Cloudflare Proxy перед Akash (DDoS + WAF, але ще одна mw залежність), (c) Traefik у Kamal (тільки GCP path). Вибір впливає на CoAP UDP (Cloudflare НЕ proxies UDP — потребує separate Spectrum або direct ingress)
@@ -845,8 +853,25 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - **Статус (🤖, 2026-05-12):** ✅ Mapping + automation готові. (1) `docs/00_07` §5 додано — таблиці семестрів (Fall 1.IX–31.I / Spring 1.II–30.VI / літня перерва) + мапінг TRL milestones на семестри + hard deadline 15.VI для фінальних захистів. (2) `.github/workflows/trl_sync.yml` розширено: при кожному `issues.closed` скрипт обчислює completion semester з `closed_at` (UTC) і пише у single-select поле `Academic Semester` Projects V2, якщо воно існує. Graceful no-op якщо поле/опція відсутні (TRL Auto-Advancement залишається первинним інваріантом). Опції створюються адміністратором один раз (`Fall 2025-2026`, `Spring 2025-2026`, … на 3-5 років наперед). **Cron-driven "Current Semester"** (1.IX / 1.II) свідомо не входить у цей цикл — `issues.closed` штампує *completion*, не *active*
 - [x] 🤖 Додати у `00_07` mapping: семестр ↔ TRL milestone — `docs/00_07` §5
 - [x] 🤖 Розширити `trl_sync.yml` на запис академічних semestriv як окремий field у Projects V2 — gracefully optional, не ламає TRL sync
-- [ ] 👤 Узгодити календар з 8 науковцями (UNI.5)
+- [ ] 👤 Узгодити календар з 8 науковцями ФОТІУС (UNI.2 — 8 зустрічей)
 - [ ] 👤 Створити single-select field `Academic Semester` у Projects V2 + опції `Fall {Y}-{Y+1}` / `Spring {Y-1}-{Y}` на 3-5 років наперед
+
+#### OPS.6 — Bootstrap scripts для GitHub Projects V2 + IaC initial sync
+- **Джерело:** `00_07` §1.2 + §6 | **Пріоритет: P2** | **Складність: M** | **🤖 Код**
+- **Опис:** `00_07` посилається на два планований скрипти, яких **не існує**: (1) `bin/setup_github_project.sh` — створює Projects V2 fields (`Current TRL`, `Target TRL`, `Assigned Agent`, `Module`, `Appetite`, `R&D Cluster`, `Shape Up Stage`, `Cycle`, `Academic Semester`) через `gh api graphql` (gh CLI не підтримує `project add-field` повністю); (2) `bin/bootstrap_github.sh` — orchestrate: label sync (через push, що тригерить `labels_sync.yml`) → fields create → first milestone (`Cycle 2026.QN`) → baseline shaping docs. Без них нові ВНЗ-партнери або deploy у форкований репозиторій вимагає ручного клікання у GitHub UI, що суперечить IaC філософії `00_07`.
+- [ ] 🤖 Написати `bin/setup_github_project.sh` (graphql mutation `addProjectV2Field` × 9 + ідемпотентність)
+- [ ] 🤖 Написати `bin/bootstrap_github.sh` (orchestration: labels push → fields create → milestone create → shaping doc stubs)
+- [ ] 🤖 Hooks у `Rakefile`: `bin/rake github:bootstrap` як user-facing entry-point
+- [ ] 🤖 Spec/тест: запуск проти sandbox-репо
+
+#### OPS.7 — Sync labels.yml + Projects V2 fields with 00_07 §4
+- **Джерело:** `00_07` §4 audit (2026-05-16) | **Пріоритет: P2** | **Складність: XS** | **🤖 Код**
+- **Опис:** SSOT audit виявив 3 невідповідності між `00_07 §4`/§1.1 і `.github/labels.yml`: (1) `cluster:cross-cluster` був у Projects V2 R&D Cluster field option, але не у `labels.yml`; (2) `shape:building` та `shape:done` були у Shape Up Stage field options, але не у `labels.yml`; (3) `agent:*` labels у `00_07 §4.4` показувалися з emoji prefix у назві (`agent:🤖 ai`), але `labels.yml` має `agent:ai` без emoji. **Що зроблено (2026-05-16):** додано 3 нові labels (`cluster:cross-cluster`, `shape:building`, `shape:done`) у `labels.yml`; виправлено `00_07 §4.4` emoji rationale (emoji — лише візуальні маркери у 00_08, не у label names); додано mapping table label ↔ Projects V2 field option у §4.3.
+- **Статус:** ✅ Done.
+- [x] 🤖 Додати `cluster:cross-cluster` label у `labels.yml` (color `#F1E05A`)
+- [x] 🤖 Додати `shape:building` (color `#0E8A16`) + `shape:done` (color `#1D76DB`)
+- [x] 🤖 Виправити `00_07 §4.4` emoji rationale
+- [x] 🤖 Додати mapping table label ↔ Projects V2 field у `00_07 §4.3`
 
 #### OPS.5 — EU DMLS quotes від 2-3 backup підрядників
 - **Джерело:** `07_02` §8.1.1 | **Складність: S** | **🔧 Операційна**
@@ -1013,7 +1038,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 #### 🌿 UNI.13a — ChNU Біо-хаб (Спрягайло+Гаврилюк): Acoustic Biodiversity Baseline (Mongabay pivot)
 - **Джерело:** `08_01` §1.3 + §2 (Homeostasis Baseline крок 5) | **Пріоритет: P1 (новий, Mongabay)**
-- **Опис:** Стаття Delgado et al. (Nicoya Peninsula, Costa Rica, 119 ділянок, 16 000 годин аудіо; огляд: *Mongabay News*, травень 2026) інструментально довела: NDVI бачить покрив, але не функцію екосистеми; dawn/dusk piіки фауни — надійний маркер реального біорізноманіття. Українським аналогом цього дослідження стає **«Cherkasy Soundscape Library»** — польові записи на світанку та в сутінках Черкаського бору в усі 4 сезони, спільно з кафедрою ПМКТ ЧДТУ (UNI.11). Результат: ground truth для тренування 5-class TinyML моделі (FW.4-EXT) + co-authored Q1 publication ([`08_03` Стаття 24a](../docs/08_03_Joint_Publications_and_IP_Strategy))
+- **Опис:** Стаття Delgado et al. (Nicoya Peninsula, Costa Rica, 119 ділянок, 16 000 годин аудіо; огляд: *Mongabay News*, травень 2026) інструментально довела: NDVI бачить покрив, але не функцію екосистеми; dawn/dusk піки фауни — надійний маркер реального біорізноманіття. Українським аналогом цього дослідження стає **«Cherkasy Soundscape Library»** — польові записи на світанку та в сутінках Черкаського бору в усі 4 сезони, спільно з кафедрою ПМКТ ЧДТУ (UNI.11). Результат: ground truth для тренування 5-class TinyML моделі (FW.4-EXT) + co-authored Q1 publication ([`08_03` Стаття 24a](../docs/08_03_Joint_Publications_and_IP_Strategy))
 - [ ] 👤 Формальна зустріч з О.В. Спрягайлом (проректор з науки) + М.В. Гаврилюком (директор ННІ природничих та аграрних наук)
 - [ ] 👤 Узгодити участь студентів-біологів у польових експедиціях (наукова практика)
 - [ ] 👤 Joint methodology workshop: ЧНУ біо-хаб + ЧДТУ ПМКТ — узгодження протоколу польових записів (рекордер, висота, тривалість, метадані)
@@ -1056,6 +1081,26 @@ DOC.9 — потребує лабораторного вимірювання TX-
 - [ ] 👤 Підписати Меморандум про співпрацю між СЄУ та Silken Net
 - [ ] 👤 Організувати спільну зустріч: Аблязов Д. (право) + юрист Silken Net → MSA шаблони
 - [ ] 👤 Організувати спільну зустріч: Ус Г.О. (облік) → ESG Accounting Framework
+
+#### UNI.15 — ЧНУ TISC engagement (патентний захист анкера + торгові марки)
+- **Джерело:** `08_03 §2.1.1` | **Пріоритет: P1** | **Складність: M** | 🔗 **Заблоковано:** UNI.1 (парасольовий MoU ЧНУ↔Silken Net)
+- **Опис:** Замість найму комерційного патентного бюро (~$3–8k за UA заявку), використати **TISC при ЧНУ** (Technology and Innovation Support Center, WIPO-мережа, координує УкрНОІВІ). Сервіси: (1) prior art search для коаксіального гіроїдного анкера Ti-6Al-4V + PEEK у Espacenet/PATENTSCOPE/Google Patents; (2) консультації з оформлення патентних заявок UA→PCT→EU/US; (3) реєстрація торгових марок (SilkenNet™, Gaia 2.0™, SCC™); (4) тренінги команди з патентного аналізу. Вартість: лише офіційний збір УкрНОІВІ (~5–10k UAH). **Caveat:** TISC консультує, але саму подачу заявки робить **патентний повірений** — TISC може порадити кандидата зі своєї мережі за rate нижчий за комерційний.
+- [ ] 👤 Перший контакт з директором TISC ЧНУ (через ректорат, проректора Спрягайла)
+- [ ] 👤 Auxiliary MoU про послуги TISC у рамках парасольового MoU ЧНУ↔Silken Net
+- [ ] 🤖 Зібрати prior art search query-set (коаксіальний гіроїд, EBFC mediator, LoRa mesh)
+- [ ] 👤 Запросити TISC prior art search для дизайну анкера
+- [ ] 👤 Знайти патентного повіреного через TISC мережу
+- [ ] 👤 Подати UA utility model на дизайн анкера (пріоритетна дата фіксована)
+- [ ] 👤 PCT-розширення через 12 місяців (Phase 2, post-TRL 6)
+
+#### UNI.16 — ЧНУ Кафедра ІВ engagement (юридична експертиза RWA + токеноміки)
+- **Джерело:** `08_03 §2.1.2` | **Пріоритет: P1** | **Складність: L** | 🔗 **Заблоковано:** UNI.1 (MoU)
+- **Опис:** Кафедра Інтелектуальної Власності та Цивільно-Правових Дисциплін ЧНУ дає UA-юрисдикційну верифікацію двох доменів, де СЄУ §1F дає макро/regulatory shape, але потрібен **точковий UA-юридичний review**: (1) RWA-токенізація лісу через ERC-3643 — сумісність з Лісовим Кодексом та Законом «Про природно-заповідний фонд»; (2) класифікація SCC/SFC за Законом «Про віртуальні активи» 2022 + MiCA-imports 2024; (3) юридична природа NaaS-контрактів у UA Civil Code; (4) авторське право на `bio_contract.rb` / `SilkenNet::Attractor` як комп'ютерної програми. Очікувані результати: 2 меморандуми (RWA + Tokenomics).
+- [ ] 👤 Перший контакт з зав. кафедри ІВ ЧНУ (через ректорат)
+- [ ] 👤 Joint workshop з Аблязовим Д.Е. (СЄУ) для координації UA × EU/MiCA рамок
+- [ ] 👤 Меморандум "Юридична допустимість токенізації UA-лісу через ERC-3643" — розблоковує `07_01` BLOCKER-6
+- [ ] 👤 Меморандум "Класифікація SCC за Законом про віртуальні активи; compliance roadmap"
+- [ ] 👤 Sui generis review NaaS-контракту як цивільно-правового інституту
 
 ---
 
@@ -1111,6 +1156,10 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.57 | **TENSOR_ARENA_SIZE budget verification** — ніколи не виміряно через `arm-none-eabi-size`. Ризик stack overflow якщо > 46 KB | `03_03` BLOCKER-3 | P1, cross-ref FW.26 |
 | E.58 | **Lorenz state continuity** після brownout: документація specifies повний (x,y,z) save в RTC Backup, але недостатня формалізація first-boot vs continuation logic. Магічний marker `LZST` (0x4C5A5354) реалізовано — потребує канонічної таблиці RTC layout | `03_04`, `03_01` | P2, cross-ref DOC.3, DOC.4 |
 | 🌿 E.59 | **Mongabay biodiversity pivot — acoustic D-MRV** — стратегічний pivot Silken Net від карбонового MRV до повноцінного D-MRV біорізноманіття після Delgado et al. (Nicoya Peninsula, 119 ділянок, 16 000 год аудіо; *Mongabay News*, травень 2026). Включає: (1) FW.4-EXT 5-class TinyML модель з класом `fauna_activity`; (2) FW.25 DSP MFCC з P1→P0; (3) UNI.11+UNI.13a Cherkasy Soundscape Library (ЧДТУ ПМКТ + ЧНУ Біо-хаб); (4) 08_02 §1.5 Macro-Micro verification (Бушин CNN + fauna feature); (5) 08_02 §1.8 NSGA-II multi-objective GA (Любченко); (6) 08_03 Стаття 24a co-authored Q1 publication; (7) Horizon Europe CLUSTER 6 (Biodiversity Monitoring) grant vector; (8) AiInsight#biodiversity_trend → ForestNFT metadata "biodiversity_score"; (9) ринкова диференціація — defensible moat проти Pachama/Sylvera/NCX (тільки Silken Net має micro-acoustic verification layer) | `03_03` §10 + `08_01` §1.3+§2 + `08_02` §1.5+§1.8 + `08_03` Стаття 24a | **P1 strategic** — координує FW.4-EXT, FW.25, UNI.11, UNI.13a |
+| E.60 | **CID witness у IoTeX ZK-proof** — bidirectional integrity bridge Polygon ↔ Filecoin. Раніше Filecoin pin (крок #11) йшов **після** мінту Polygon (крок #8), створюючи gap: зловмисник міг ex-post підмінити archive у Pinata. Виправлення: `archive_cid_preimage` детерміністично обчислюється з batch payload через `Filecoin::CidGenerator.cidv1()` ще на кроці #5 (IoTeX W3bstream) і включається у ZK-witness. Polygon `mint()` отримує `archive_cid` як `bytes32` metadata. `FilecoinArchiveWorker` fail-fast якщо Pinata-CID не збігається з очікуваним → `manual_review`. | `00_02` §5.1 (новий розділ) | P1, новий `Filecoin::CidGenerator` service |
+| E.61 | **Solana micro-rewards batch payouts** — поточний `SolanaMicroRewardWorker` робить окрему транзакцію на кожен fulfilled telemetry (10,000 + growth_points*100 lamports = 0.01–0.016 USDC), де gas-fee на одну Solana tx (~0.000005 SOL ≈ 0.0007 USD) може зрівнятись із самою винагородою при низьких growth_points. Рішення: акумулювати fulfilled-винагороди в Kredis (`solana_pending_payouts:<wallet_id>`) до досягнення порогу 0.10–1.00 USDC (`SOLANA_BATCH_THRESHOLD_USDC` ENV), потім один `transferChecked()` ATA → ATA batch. Cron `SolanaBatchPayoutWorker` (every 1h) дренує накопичені. Backward-compat: при `SOLANA_BATCH_THRESHOLD_USDC=0` — поведінка як зараз (per-event). | `04_02 §Solana` + `05_01` | P1, economic correctness fix |
+| ARCH.34 | **Queen-side LoRaWAN Helium Fallback** — переніс Helium fallback з Soldier (фундаментально несумісно з flash/RAM/topology STM32WLE5JC) на Queen. Queen інтегрує LoRaMac-node (Semtech BSD-3) stack + персистентний OTAA join state (DevEUI/AppEUI/AppKey у Queen Flash) + FCntUp counter survive reboot. Aggregated lambda-summary 11 байт (ARCH.22) пакується у LoRaWAN frame і доставляється через будь-який Helium hotspot у радіусі ~15 км → Helium LNS → HTTP Integration webhook → Rails `POST /api/v1/telemetry/helium`. Активація: own Starlink/LTE-M down + Q2Q backhaul недоступний + buffer fill > 50%. Soldier-side `helium_compat_emit()` (попередній план) **відкинуто**. | `00_03 §1.2 L3` + `02_05 §6.1` | P2, blocker для повної resilience policy (без нього L3 fallback архітектурно неможливий) |
+| ARCH.35 | **Queen Flash Ring Buffer (W25Q32 overflow tier)** — поточний CIFO 50-slot RAM cache переповнюється за ~30 хв при 100 Soldiers/Queen × 1 пакет/год (на 200 Soldiers/Queen — за 15 хв). Додати SPI NOR Flash чип Winbond W25Q32JV (~$0.50, 4 MB, SOIC-8) до Queen BOM як overflow tier: ~190k слотів × 21 байт = ~7 діб буферизації при 100 Soldiers/год. Ring-buffer pointer (`write_ptr`/`read_ptr`) у RTC backup DR20-DR21. Drain order: спочатку Flash (FIFO), потім RAM. Енерго-impact: ~700 µA·s/добу (negligible проти 3.2 Вт·год/добу LTE-M phase 2.5). | `00_03 §1.2 L1` + `02_05 §2.1` + `02_05 §BOM` | P1, blocker для resilience policy на верхньому краю scaling |
 
 ---
 

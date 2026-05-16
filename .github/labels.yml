@@ -22,6 +22,10 @@
   color: "7209B7"
   description: "Primary cluster — Compliance/Legal (KYC, MSA, IP, regulation)"
 
+- name: "cluster:cross-cluster"
+  color: "F1E05A"
+  description: "Task does not architecturally belong to one cluster — needs resolution into a primary or stays cross-cluster by design"
+
 # ─────────────────────────────────────────────────────────────────────────
 # Cluster cross-reference (secondary, optional)
 # ─────────────────────────────────────────────────────────────────────────
@@ -47,6 +51,9 @@
 - name: "shape:bet-active"
   color: "06D6A0"
   description: "Active bet in the current cycle"
+- name: "shape:building"
+  color: "0E8A16"
+  description: "Active implementation phase (Week 3-4 of Shape Up cycle)"
 - name: "shape:hill-uphill"
   color: "FFB627"
   description: "Hill chart uphill — exploration, risks not resolved"
@@ -59,6 +66,9 @@
 - name: "shape:drop"
   color: "E63946"
   description: "Dropped; do not resurrect without re-shaping"
+- name: "shape:done"
+  color: "1D76DB"
+  description: "Big Bet completed within the current cycle"
 
 # ─────────────────────────────────────────────────────────────────────────
 # Priority
@@ -110,6 +120,38 @@
 - name: "agent:hybrid"
   color: "BFD4F2"
   description: "Mixed AI + human"
+
+# ─────────────────────────────────────────────────────────────────────────
+# Change type (SSOT Guard bypass whitelist)
+# Doc reference: docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.3.
+# A PR with ANY of these labels skips the SSOT Guard documentation check —
+# the label is a force-function: the author must classify the change as
+# genuinely non-architectural. Generic skip-label was rejected (00_07 §2.3
+# rationale) because it would be abused without classification.
+# ─────────────────────────────────────────────────────────────────────────
+- name: "type:bugfix"
+  color: "D73A4A"
+  description: "Defect fix without architectural/contract change — SSOT bypass"
+
+- name: "type:refactor"
+  color: "A2EEEF"
+  description: "Refactor (rename, extract, no behavior change) — SSOT bypass"
+
+- name: "type:chore"
+  color: "CFCFCF"
+  description: "Build/CI/tooling change (Gemfile bump, .github maintenance) — SSOT bypass"
+
+- name: "type:deps"
+  color: "0366D6"
+  description: "Dependency version bump (Gemfile.lock, package.json) — SSOT bypass"
+
+- name: "type:perf"
+  color: "FFAA33"
+  description: "Performance optimization without functional change — SSOT bypass"
+
+- name: "type:test"
+  color: "0E8A16"
+  description: "Test addition/correction without production code change — SSOT bypass"
 
 # ─────────────────────────────────────────────────────────────────────────
 # Module (matches Project V2 Module field)

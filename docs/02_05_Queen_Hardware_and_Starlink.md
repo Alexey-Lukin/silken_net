@@ -227,7 +227,7 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 | ISR | `OnRxDone()` — апаратне переривання від SX1262 |
 | Обробка пакету | `Process_And_Cache_Data()` → CIFO cache (50 слотів) |
 
-**CIFO Cache (Forest Cache):**
+**CIFO Cache (Forest Cache) — Hot Tier:**
 ```c
 // firmware/queen/main.c:87-97
 typedef struct {
@@ -241,6 +241,31 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 ```
 
 **Flush trigger:** кожні 3600 сек (+0–60 сек HRNG jitter) АБО при заповненні ≥ 45/50 слотів.
+
+⚠️ **Capacity math (2026):** 50 слотів × 1 пакет/Soldier/год × 100 Soldiers/Queen ⇒ переповнення за **30 хв** при втраті Starlink. На верхньому краю scaling roadmap (`00_02 §3`, 200 Soldiers/Queen) — переповнення за **15 хв**. Це **критичний gap**, який маскувався тестами в стенді з <50 Soldiers.
+
+**Flash Ring Buffer — Overflow Tier (ARCH.35):**
+```c
+// firmware/queen/flash_buffer.c — пропозиція ARCH.35
+// W25Q32 SPI NOR Flash (4 MB) → 4096 sectors × 1 KB = ~190k слотів × 21 байт
+// Ring buffer: write_ptr / read_ptr в RTC backup registers (DR20-DR21)
+
+void cifo_overflow_to_flash(EdgeCache* slot) {
+    w25q32_write_page(write_ptr, slot, 21);
+    write_ptr = (write_ptr + 21) % FLASH_BUFFER_SIZE;
+    if (write_ptr == read_ptr) read_ptr = (read_ptr + 21) % FLASH_BUFFER_SIZE; // FIFO drop oldest
+}
+
+void cifo_drain_from_flash(void) {
+    while (read_ptr != write_ptr && uplink_available()) {
+        w25q32_read_page(read_ptr, &slot, 21);
+        if (coap_send(&slot) == OK) read_ptr = (read_ptr + 21) % FLASH_BUFFER_SIZE;
+        else break;
+    }
+}
+```
+
+**Енерго-бюджет flash write:** W25Q32 page write ~10 мА × 0.7 мс/page = 7 µA·s. При середньому 100 overflow-events/добу на Queen — ~700 µA·s/добу, що нижче добового нойзу LiFePO4 12V/20Ah (~3.2 Вт·год/добу phase 2.5, див. §1.2 BLOCKER-2). **Не змінює зимовий енергобюджет.**
 
 ---
 
@@ -521,7 +546,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 | **Phase 1** | LTE-M (наземні вишки) | ❌ | Там де є 4G | ~370 мВт | ~$10–30 (SIM) |
 | **Phase 2.5** | Starlink DTC (Київстар) | ❌ | Розширене (DTC footprint) | ~370 мВт | ~$10–30 (SIM) |
 | **Phase 3** | Starlink Mini | ✅ ($599 одноразово) | Глобальне | 20–40 Вт | ~$50/міс |
-| **Phase 4 (Backup)** | Helium Network (HNT) | ❌ | Там де є роутери Helium (~15 км) | ~37 мВт (SF9) | частки цента/пакет |
+| **Phase 4 (Backup)** | Helium Network (HNT) — **Queen-side LoRaWAN** | ❌ | Там де є hotspot-и Helium (~15 км) | ~37 мВт (SF9, агрегат-frame) | частки цента/frame |
 
 **Рекомендація:** Розпочати з Phase 1, перейти на Phase 2.5 (без апаратних змін!) для лісів поза 4G-покриттям. Phase 3 — лише для Амазонії, Тайги, Африки де DTC недоступний.
 
@@ -531,74 +556,93 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 ---
 
-## 🌐 6.1 Helium Network (HNT) — Резервна Нервова Система
+## 🌐 6.1 Helium Network (HNT) — Резервна Нервова Система (Queen-side)
 
-**Проблема:** Queen — єдина точка відмови між лісом та інтернетом. При пожежі, повені або втраті живлення — зв'язок з кластером обривається повністю. Усі Солдати продовжують генерувати дані, але ніхто не слухає.
+**Проблема:** Queen — єдина точка відмови між лісом та інтернетом. При втраті власного Starlink/LTE та одночасній недоступності Queen-to-Queen LoRa backhaul (всі сусідні Queen також offline) — зв'язок з кластером обривається повністю. Усі Солдати продовжують генерувати дані, але ніхто не слухає.
 
-**Рішення:** [Helium Network](https://www.helium.com/) — найбільша у світі децентралізована мережа LoRaWAN. Сотні тисяч роутерів у 180+ країнах, встановлених звичайними людьми на балконах та дахах.
+**Рішення:** [Helium Network](https://www.helium.com/) — найбільша у світі децентралізована мережа **LoRaWAN**. Сотні тисяч hotspot-ів у 180+ країнах, встановлених звичайними людьми на балконах та дахах.
 
-### Архітектура Helium Fallback
+> ⚠️ **Архітектурне уточнення (2026):** Helium працює на протоколі **LoRaWAN MAC-layer**, а Soldier використовує **raw LoRa P2P** (фізичний рівень) з AES-256-ECB поверх 21-байтного binary payload. Helium hotspot **не прийме** прямий пакет з Soldier — для валідного uplink потрібен LoRaWAN frame з DevEUI/AppEUI/AppKey, FCntUp counter, MIC та OTAA/ABP join state. Тому Helium fallback архітектурно **переноситься з Soldier на Queen**.
+
+### Архітектура Helium Fallback (правильна)
 
 ```
 [Нормальна робота]
-  Soldier ──LoRa──▶ Queen (власна) ──CoAP──▶ Rails Backend
+  Soldier ──raw LoRa──▶ Queen ──CoAP/LTE-M──▶ Rails Backend
 
-[Queen недоступна (пожежа / відключення живлення)]
-  Soldier ──LoRa──▶ 🌐 Будь-який Helium роутер у радіусі 15 км
-                         │ (відкрита мережа, чужий пристрій)
-                         ▼
-                    Helium Network (LNS)
-                         │
-                         ▼
-                    api.silkennet.com (через Helium HTTP Integration)
+[Власний Starlink/LTE-M Queen впав + Q2Q backhaul недоступний]
+  Soldier ──raw LoRa──▶ Queen
+                          │ (CIFO + Flash Ring Buffer накопичує дані)
+                          │
+                          │ Queen збирає batch і формує валідний LoRaWAN frame
+                          ▼
+              🌐 Будь-який Helium hotspot у радіусі ~15 км
+                          │ (стандартний LoRaWAN MAC)
+                          ▼
+                    Helium LNS / Console
+                          │
+                          ▼ HTTP Integration webhook
+                    api.silkennet.com/api/v1/telemetry/helium (HMAC-signed)
 ```
+
+### Чому LoRaWAN живе тільки на Queen
+
+| Чинник | Soldier (STM32WLE5JC, EBFC) | Queen (STM32WLE5JC + LiFePO4 12V/20Ah) |
+|--------|-----------------------------|------------------------------------------|
+| Flash budget для LoRaWAN-стека (LoRaMac-node ≈ 30 KB) | ❌ Конкурує з mruby VM + TinyML | ✅ Достатньо ресурсу |
+| TX power для +15 dBm (Helium SF12 reach 15 км) | ❌ EBFC vcap ~500 мВ — без запасу потужності | ✅ +22 dBm з власної мережі живлення |
+| Знання uplink topology | ❌ Soldier має бути topology-agnostic | ✅ Queen вже є topology-aware |
+| OTAA join state + FCntUp counter persistence | ❌ Cold sleep STOP2 ускладнює state mgmt | ✅ Завжди живий під час кризи |
 
 ### Умови активації Fallback
 
-Солдат переходить у режим Helium fallback автоматично при відсутності ACK від Queen протягом N циклів (конфігурується). Логіка в `firmware/soldier/main.c`:
+Queen переходить у Helium режим автоматично коли:
+1. Власний Starlink/LTE-M uplink fail після N retry (`L1 → L2` exhausted)
+2. Queen-to-Queen LoRa backhaul (SF12) не знаходить online-сусіда у радіусі 5–15 км
+3. CIFO + Flash Ring Buffer fill > 50% (загроза втрати даних, якщо все ще нема uplink)
 
 ```c
-// Псевдокод — пропозиція для майбутнього циклу
-// HELIUM_FALLBACK_THRESHOLD: 3 цикли (~3 години без ACK від Queen)
-// Стиснення: замість 16-байт повного payload → 8 байт (DID:4 + lambda:2 + status:1 + CRC:1)
-#define HELIUM_FALLBACK_THRESHOLD 3     // пропущені ACK перед активацією fallback
-#define HELIUM_PAYLOAD_SIZE       8     // стиснений пакет: DID + lambda_exponent + status + CRC8
+// firmware/queen/main.c — пропозиція ARCH.34
+#define HELIUM_FALLBACK_THRESHOLD_MIN  30   // хв без uplink перед активацією
+#define HELIUM_PAYLOAD_AGGREGATE_MAX   11   // байт корисного payload у LoRaWAN frame
 
-if (queen_ack_timeout_count >= HELIUM_FALLBACK_THRESHOLD) {
-    // Перемикаємо DevEUI/AppKey на Helium credentials (з захищеної зони Flash)
-    // lora_payload_compressed: [DID:4][lambda_exp:2][bio_status:1][CRC8:1]
-    Send_Via_Helium_LoRaWAN(lora_payload_compressed, HELIUM_PAYLOAD_SIZE);
-    queen_ack_timeout_count = 0;
+if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
+    q2q_backhaul_unavailable &&
+    buffer_fill_pct >= 50) {
+    // Стиснути batch до lambda-summary (ARCH.22) для вписування в обмежений LoRaWAN payload
+    queen_helium_lorawan_uplink(aggregated_lambda_summary, count);
 }
 ```
 
 ### Економіка Helium
 
-- **Вартість:** кожен переданий пакет (Data Credit, DC) = $0.00001 USD
-- **Оплата:** з Treasury DAO — Солдати, що звертаються до Helium, оплачують мікротранзакції токенами IOT з Гаманця кластера
-- **Формат пакету:** той самий 21-байтний payload (можливо стиснутий до 12 байт через lambda-summary замість повного Lorenz)
+- **Вартість:** кожен переданий LoRaWAN frame (Data Credit, DC) = $0.00001 USD
+- **Оплата:** з Treasury DAO — Queen, що звертається до Helium, оплачує DC токенами IOT з гаманця кластера
+- **Формат пакету:** агрегований lambda-summary 11 байт замість повного 21-байтного Lorenz payload (ARCH.22 Edge Data Fusion). 1 LoRaWAN frame несе summary 50+ Soldier'ів за останні хвилини.
 
 ### Що потрібно для реалізації
 
 | Крок | Дія | Де |
 |------|-----|----|
-| DevEUI / AppKey | Зареєструвати кожен Soldat у [Helium Console](https://console.helium.com/) | Helium |
+| LoRaWAN MAC-stack | Інтегрувати LoRaMac-node (Semtech BSD-3) у Queen firmware | `firmware/queen/lorawan/` (новий) |
+| DevEUI / AppEUI / AppKey | Зареєструвати **кожну Queen** (не Soldier!) у [Helium Console](https://console.helium.com/) | Helium |
 | HTTP Integration | Налаштувати webhook → `https://api.silkennet.com/api/v1/telemetry/helium` | Helium Console |
-| Firmware | Додати LoRaWAN stack (OTAA join) як fallback шлях поруч із raw AES LoRa | `firmware/soldier/main.c` |
-| Rails | Новий endpoint `POST /api/v1/telemetry/helium` → `UnpackHeliumTelemetryWorker` | Rails API |
-| BOM | Helium credentials (DevEUI + AppKey) зберігати в `HardwareKey` моделі | Backend |
+| Rails endpoint | `POST /api/v1/telemetry/helium` → `UnpackHeliumLambdaSummaryWorker` (HMAC-signed) | Rails API |
+| BOM | Queen Helium credentials у новій моделі `GatewayLoraWanCredentials` (AR Encryption) | Backend |
+| OTAA join state | Persistent зберігання у Queen Flash (FCntUp counter survives reboot) | `firmware/queen/main.c` |
 
 ### Статус Helium Fallback
 
 | Компонент | Стан |
 |-----------|------|
-| Концепт і архітектура | ✅ Визначено (цей документ) |
-| Firmware зміни | 🔴 Не реалізовано |
-| Rails endpoint | 🔴 Не реалізовано |
-| Реєстрація у Helium Console | 🔴 Не виконано |
-| BOM (credentials storage) | 🟡 Потребує уточнення схеми |
+| Концепт і архітектура (Queen-side LoRaWAN) | ✅ Визначено (правка 2026) |
+| LoRaWAN MAC-stack у Queen firmware | 🔴 Не реалізовано (ARCH.34) |
+| Rails endpoint `/api/v1/telemetry/helium` | 🔴 Не реалізовано |
+| Реєстрація Queen у Helium Console | 🔴 Не виконано |
+| GatewayLoraWanCredentials model | 🔴 Не створено |
+| Soldier-side `helium_compat_emit()` (попередній план) | ❌ **Відкинуто** — фундаментально несумісно з flash/RAM/topology constraints STM32WLE5JC у Soldier |
 
-> **Стратегічна цінність:** Helium перетворює систему на фізично невбивану мережу. Навіть якщо всі Королеви згорять у лісовій пожежі — Солдати продовжуватимуть передавати сигнали SOS через чужі роутери. Для pitch deck: _"The forest cannot go dark — it has a global backup nervous system."_
+> **Стратегічна цінність:** Helium перетворює систему на фізично невбивану мережу. Навіть якщо всі власні Starlink-канали Queen упадуть одночасно з Q2Q backhaul — Queen продовжуватиме викидати агрегований lambda-summary через чужі Helium hotspot-и. Для pitch deck: _"The forest cannot go dark — even when our own sky falls, the Helium hotspots of strangers keep the canopy alive."_
 
 ---
 
@@ -621,6 +665,7 @@ if (queen_ack_timeout_count >= HELIUM_FALLBACK_THRESHOLD) {
 | 13 | **IP67 корпус** | ABS/PC + ущільнення, ≥2.5L | 1/2.5/3 | 📋 Не специфіковано |
 | 14 | **SWD програматор** | ST-LINK-V3MINIE | — | ✅ |
 | 15 | **UART адаптер** | FT232RL, 3.3V режим | — | ✅ |
+| 16 | **SPI NOR Flash** (ARCH.35) | Winbond **W25Q32JV** (4 MB, SPI, SOIC-8), 100k erase cycles | 1/2.5/3 | 🟡 Заплановано — overflow tier для CIFO; ~$0.50/од; 190k+ telemetry slots; ~10 мА × 0.7 мс/page write |
 
 ---
 

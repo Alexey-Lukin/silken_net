@@ -304,11 +304,12 @@ DID доводить: це не підроблений сенсор, не про
 
 ---
 
-### 5. 🔬 Абсолютна Істина — IoTeX W3bstream (ZK-Proofs) + Математика Лоренца
+### 5. 🔬 Абсолютна Істина — IoTeX W3bstream (ZK-Proofs) + Математика Лоренца + CID witness
 
 **IoTeX W3bstream** генерує zero-knowledge proof того, що:
 1. Телеметрія прийшла з **реального кремнію** (верифікація апаратного підпису)
 2. Математика атрактора Лоренца підтверджує **гомеостаз** дерева
+3. **CID архіву telemetry-батча** є частиною ZK-witness — гарантує, що дані, які мінтить Polygon на кроці #8, посилаються на той самий незмінний Filecoin-архів (крок #11), і неможливо підмінити archive ex-post.
 
 Серверний `SilkenNet::Attractor` незалежно обчислює те саме Z-значення з **BigDecimal** (18-значна точність) — для крос-платформної детермінованості та юридичної аудитопридатності.
 
@@ -321,8 +322,38 @@ beta  = BigDecimal("8") / BigDecimal("3")
 
 Якщо Z-значення пристрою відхиляється від серверного більш ніж на 30%, `InsightGeneratorService` позначає це як **шахрайство** — запобігання підробці на математичному рівні.
 
+#### 5.1 CID як witness у ZK-proof (data integrity bridge до Filecoin)
+
+> ⚠️ **Архітектурне посилення (2026):** Раніше Filecoin/IPFS pin (крок #11) відбувався **після** мінту в Polygon (крок #8) — це означало, що блокчейн-транзакція не мала криптографічного зв'язку з архівом. Зловмисник міг ex-post підмінити archive у Pinata (надавши новий CID), і ніхто би не помітив, що SCC-token насправді посилається на інший набір даних.
+
+**Виправлення:** На кроці #5 (IoTeX W3bstream) до ZK-proof включається `archive_cid_preimage` — IPFS CID **майбутнього** Filecoin-архіву telemetry batch. CID обчислюється **детерміністично** з payload до того, як архів буде запінений:
+
+```ruby
+# Iotex::W3bstreamVerificationService — пропозиція E.60
+archive_payload = {
+  telemetry_log_ids: batch.map(&:id),
+  z_values: batch.map(&:z_value),
+  bio_statuses: batch.map(&:bio_status),
+  created_at_range: [batch.first.created_at, batch.last.created_at]
+}.to_json
+
+# CIDv1 derivation — same algorithm as IPFS would compute on pin
+archive_cid = Filecoin::CidGenerator.cidv1(archive_payload)  # multihash sha256 → base32
+
+zk_witness = {
+  device_uid: tree.device_uid,
+  attractor_z: server_z_value,
+  lambda_exp: lyapunov_exponent,
+  archive_cid: archive_cid  # ← новий witness field
+}
+proof = Iotex.generate_zk_proof(zk_witness)
+log.update!(zk_proof_ref: proof.id, archive_cid: archive_cid)
+```
+
+На кроці #8 (Polygon mint) `archive_cid` передається у `mint()` як `bytes32` metadata. На кроці #11 (Filecoin) `FilecoinArchiveWorker` пінить **той самий** payload — Pinata повертає CID, який має збігатися з `archive_cid`, інакше worker fail-fast і запис іде в `manual_review`. Це форсує **bidirectional integrity** між Polygon SCC і Filecoin archive.
+
 > **Worker:** `IotexVerificationWorker` (черга `web3`, retry: 5)
-> **Service:** `Iotex::W3bstreamVerificationService` · `SilkenNet::Attractor`
+> **Service:** `Iotex::W3bstreamVerificationService` · `SilkenNet::Attractor` · `Filecoin::CidGenerator` (новий, E.60)
 
 ---
 

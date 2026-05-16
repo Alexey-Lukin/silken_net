@@ -91,9 +91,9 @@ Week 7-8 (Cool-down, 2 тижні) — рефакторинг, SSOT-аудит, 
 
 Розробка відбувається синхронно у трьох вимірах (детально — у [`00_04 §Triple Stream`](00_04_AI_Native_Engineering_and_TRL)):
 
-1. **Hardware Stream (Atoms)** — рев'ю клстера A.
-2. **Logic Stream (Bytes)** — рев'ю клстера C + cross-ref B для Solidity / ZK.
-3. **Verification Stream (Proofs)** — рев'ю клстера B + cross-ref C для Rails-інтеграції.
+1. **Hardware Stream (Atoms)** — рев'ю кластера A.
+2. **Logic Stream (Bytes)** — рев'ю кластера C + cross-ref B для Solidity / ZK.
+3. **Verification Stream (Proofs)** — рев'ю кластера B + cross-ref C для Rails-інтеграції.
 
 **Agent Handoff Protocol:** Architect (Vision) ➔ Gemini (Shaping) ➔ Wiki (SSOT) ➔ Cursor (Implementation) ➔ ChNU Lab (Validation) — все автоматизовано через `MCP` (Model Context Protocol) індексацію відповідних `docs/*.md`.
 
@@ -198,7 +198,7 @@ TRL-матриця крокує "квартально-функціональни
 
 | TRL | Очікуваний семестр | Академічний deliverable | Прив'язка |
 | :--- | :--- | :--- | :--- |
-| TRL 4-5 (lab validation) | Fall (вересень — січень) | Лабораторні протоколи, перший draft публікації | UNI.1 / UNI.5 декан ChNU FOTIUS |
+| TRL 4-5 (lab validation) | Fall (вересень — січень) | Лабораторні протоколи, перший draft публікації | UNI.1 (декан Онищенко) + UNI.4 (школа Мінаєва) + UNI.5 (школа Гусака) |
 | TRL 5-6 (relevant environment) | Spring (лютий — травень) | Магістерські та дипломні **захисти у червні** | UNI.13 / UNI.14 верифікація науковців |
 | TRL 6-7 (pilot deploy) | Літня перерва + Fall | Pilot installation, conference paper draft | UNI.8 СЄУ MSA |
 | TRL 7-8 (operational) | Spring | Peer-reviewed публікація | UNI.* IP strategy (`08_03`) |

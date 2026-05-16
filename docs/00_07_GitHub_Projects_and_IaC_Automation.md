@@ -61,11 +61,12 @@ done
 
 | Workflow | Файл | Тригер | Статус |
 |----------|------|--------|--------|
-| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | 🟡 Заплановано |
-| Labels Sync (IaC) | `.github/workflows/labels_sync.yml` | `push` на `.github/labels.yml` | 🟡 Заплановано |
-| PR Auto-Labeler | `.github/workflows/labeler.yml` | `pull_request` | 🟡 Заплановано |
-| SSOT Integrity Guard | `.github/workflows/ssot_guard.yml` | `pull_request` | 🟡 Заплановано |
+| TRL Auto-Advancement | `.github/workflows/trl_sync.yml` | `issues: [closed]` | ✅ Реалізовано (OPS.1; чекає `PROJECT_PAT` secret) |
+| Labels Sync (IaC) | `.github/workflows/labels_sync.yml` | `push` на `.github/labels.yml` | ✅ Реалізовано |
+| PR Auto-Labeler | `.github/workflows/labeler.yml` | `pull_request` | ✅ Реалізовано |
+| SSOT Integrity Guard | `.github/workflows/ssot_guard.yml` | `pull_request` | ✅ Реалізовано (OPS.2; semantic `type:*` bypass — §2.3) |
 | Solidity Audit | `.github/workflows/solidity_audit.yml` | `push` / PR з `contracts/**` | ✅ Реалізовано |
+| CoAP Smoke Test | `.github/workflows/coap_smoke.yml` | `workflow_dispatch` / `workflow_call` від `deploy.yml` | ✅ Реалізовано (INF.6 post-deploy gate) |
 
 ### 2.2 Протокол "TRL Auto-Advancement" (`trl_sync.yml`)
 
@@ -99,11 +100,14 @@ jobs:
 
 Автоматична перевірка актуальності документації (The Codex).
 
-- **Умова:** Pull Request вносить зміни в `app/models/` або ядро прошивки.
+- **Умова:** Pull Request вносить зміни в `app/models/`, `app/services/`, `firmware/` або `contracts/`.
 - **Дія:** Action перевіряє наявність відповідних змін у папці `docs/` (або заповненого поля `SSOT Link` у linked issue). Мердж блокується, якщо документація не оновлена.
+- **Bypass:** PR із semantic-label з whitelist (`type:bugfix`, `type:refactor`, `type:chore`, `type:deps`, `type:perf`, `type:test`) автоматично пропускається — ці зміни не змінюють архітектуру. Не-архітектурний характер змін підтверджується явним вибором label автором PR (форс-функція: автор зобов'язаний класифікувати зміну, а не просто додавати порожній коміт у `docs/`).
+
+> **Чому семантичні label замість `skip-ssot-guard`:** Generic skip-label буде зловживатись (натиснув-обійшов). Семантичні `type:*` змушують автора публічно класифікувати зміну. Якщо PR має `type:bugfix`, але насправді міняє схему — code reviewer одразу побачить mismatch у заголовку та назві label.
 
 ```yaml
-# .github/workflows/ssot_guard.yml — skeleton
+# .github/workflows/ssot_guard.yml
 name: SSOT Integrity Guard
 on:
   pull_request:
@@ -118,17 +122,51 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+
+      - name: Check bypass labels
+        id: bypass
+        env:
+          LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+        run: |
+          # Whitelist non-architectural change types
+          BYPASS_LABELS="type:bugfix type:refactor type:chore type:deps type:perf type:test"
+          for label in $BYPASS_LABELS; do
+            if echo "$LABELS" | grep -q "\"$label\""; then
+              echo "✅ Bypass: PR has label '$label' — non-architectural change, SSOT update not required."
+              echo "skip=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          done
+          echo "skip=false" >> $GITHUB_OUTPUT
+
       - name: Check docs/ changes
+        if: steps.bypass.outputs.skip == 'false'
         run: |
           BASE=${{ github.event.pull_request.base.sha }}
           HEAD=${{ github.event.pull_request.head.sha }}
           CODE_CHANGED=$(git diff --name-only $BASE $HEAD | grep -E '^(app|firmware|contracts)/' | wc -l)
           DOCS_CHANGED=$(git diff --name-only $BASE $HEAD | grep -E '^docs/' | wc -l)
           if [ "$CODE_CHANGED" -gt 0 ] && [ "$DOCS_CHANGED" -eq 0 ]; then
-            echo "❌ Code changed but no docs/* updated. Update SSOT before merge."
+            echo "❌ Code changed but no docs/* updated."
+            echo ""
+            echo "Either:"
+            echo "  (a) Update relevant SSOT file in docs/, or"
+            echo "  (b) Add one of: type:bugfix, type:refactor, type:chore, type:deps, type:perf, type:test"
+            echo "      if this PR genuinely does not alter architecture."
             exit 1
           fi
 ```
+
+**Whitelist `type:*` labels потрібно додати у `.github/labels.yml`** як частину Labels-as-Code SSOT (див. §2.5). Запропоновані визначення:
+
+| Label | Колір | Семантика |
+|-------|-------|-----------|
+| `type:bugfix` | `#D73A4A` | Виправлення дефекту без зміни архітектури/контрактів |
+| `type:refactor` | `#A2EEEF` | Рефакторинг (renaming, extract method, без зміни поведінки) |
+| `type:chore` | `#CFCFCF` | Build/CI/tooling зміни (Gemfile bump, .github maintenance) |
+| `type:deps` | `#0366D6` | Bump dependency versions (Gemfile.lock, package.json) |
+| `type:perf` | `#FFAA33` | Оптимізація без зміни функціональної семантики |
+| `type:test` | `#0E8A16` | Додавання/корекція тестів без зміни production code |
 
 ### 2.4 Протокол "Solidity Audit" (`solidity_audit.yml`) ✅
 
@@ -231,6 +269,7 @@ jobs:
 | `cluster:B-verification` | `#4ECDC4` (teal) | Primary кластер — Verification/Math |
 | `cluster:C-scaling` | `#3D5A80` (blue) | Primary кластер — Scaling/Cloud |
 | `cluster:D-compliance` | `#7209B7` (purple) | Primary кластер — Compliance/Legal |
+| `cluster:cross-cluster` | `#F1E05A` (yellow) | 5-та опція Projects V2 для задач, що **архітектурно не належать** одному кластеру (наприклад, MOIC governance, cross-cluster refactors). Має наступним кроком резолвитись у конкретний primary — або документуватися як свідомо cross-cluster |
 
 ### 4.2 Cluster cross-reference (secondary, optional)
 
@@ -244,17 +283,22 @@ jobs:
 |-------|-------|-----------|
 | `shape:shaping` | `#FFE066` | Shaping document створюється |
 | `shape:bet-active` | `#06D6A0` | Bet у поточному циклі |
+| `shape:building` | `#0E8A16` | Активна імплементація (Week 3-4 циклу) |
 | `shape:hill-uphill` | `#FFB627` | ще exploration |
 | `shape:hill-downhill` | `#06D6A0` | downhill execution |
 | `shape:park` | `#9C9C9C` | Park'ed |
 | `shape:drop` | `#E63946` | Drop'ped |
+| `shape:done` | `#1D76DB` | Завершена Big Bet (закрита у поточному циклі) |
+
+> **Mapping label ↔ Projects V2 field `Shape Up Stage`:** `Shaping → shape:shaping`, `Bet (active) → shape:bet-active`, `Building → shape:building`, `Hill (uphill) → shape:hill-uphill`, `Hill (downhill) → shape:hill-downhill`, `Park → shape:park`, `Drop → shape:drop`, `Done → shape:done`. Label sync — через `trl_sync.yml` (опційне розширення) або вручну при зміні стадії.
 
 ### 4.4 Cross-cuts (наявні)
 
 - `priority:P0` / `P1` / `P2` / `P3` (`00_08`)
 - `complexity:XS/S/M/L/XL`
-- `agent:🤖 ai` / `agent:👤 human` / `agent:🔧 ops` / `agent:🔗 hybrid`
-- `module:04-server-core` / `module:03-firmware` / `module:06-infra` / etc.
+- `agent:ai` / `agent:human` / `agent:ops` / `agent:hybrid` _(назви labels без emoji у [`.github/labels.yml`](../.github/labels.yml); emoji `🤖 / 👤 / 🔧 / 🔗` використовуються лише як **візуальні маркери у `00_08`** для swimlane-навігації)_
+- `module:00-codex` / `module:01-anchor` / `module:02-capsule` / `module:03-firmware` / `module:04-server-core` / `module:05-ledger` / `module:06-matrix` / `module:07-naas` / `module:08-academic`
+- `type:bugfix` / `type:refactor` / `type:chore` / `type:deps` / `type:perf` / `type:test` — **SSOT Guard bypass** (див. §2.3)
 
 ---
 

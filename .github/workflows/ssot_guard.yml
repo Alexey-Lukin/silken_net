@@ -109,14 +109,30 @@ jobs:
               f === 'CLAUDE.md'
             );
 
-            // ── Check for SSOT bypass label ───────────────────────────
+            // ── Check for semantic type:* bypass labels ───────────────
+            // Doc reference: docs/00_07_GitHub_Projects_and_IaC_Automation.md §2.3.
+            // Force-function: author must classify the change as non-architectural.
+            // Generic skip-label was rejected because it would be abused without
+            // forcing classification. Semantic labels are visible in PR title/UI,
+            // so a mismatch (e.g. `type:bugfix` on a schema change) is caught by reviewers.
+            const BYPASS_LABELS = [
+              'type:bugfix',
+              'type:refactor',
+              'type:chore',
+              'type:deps',
+              'type:perf',
+              'type:test',
+            ];
             const labels = context.payload.pull_request.labels.map(l => l.name);
-            const hasBypass = labels.includes('ssot-bypass');
+            const bypassMatch = labels.find(l => BYPASS_LABELS.includes(l));
 
-            if (hasBypass) {
-              core.info('⚠️ SSOT bypass label detected — skipping documentation check.');
+            if (bypassMatch) {
+              core.info(
+                `⚠️ SSOT bypass via semantic label "${bypassMatch}" — skipping documentation check.`
+              );
               core.warning(
-                'PR has "ssot-bypass" label. Documentation may need updating.'
+                `PR classified as "${bypassMatch}" (non-architectural). ` +
+                `Reviewer: verify the label matches the actual change.`
               );
               return;
             }
@@ -139,12 +155,20 @@ jobs:
               '### Modified areas:',
               areas,
               '',
-              '### Required action:',
-              'Add corresponding updates to `docs/` (or `README.md` / `CLAUDE.md`).',
+              '### Required action — pick ONE:',
               '',
-              'If documentation changes are intentionally not needed, add the `ssot-bypass` label to this PR.',
+              '**(a)** Update relevant SSOT file in `docs/` (or `README.md` / `CLAUDE.md`), OR',
               '',
-              '> Ref: [00_07 SSOT Integrity Guard](../docs/00_07_GitHub_Projects_and_IaC_Automation.md)',
+              '**(b)** Add one of these semantic labels if the PR genuinely does not alter architecture:',
+              '   - `type:bugfix` — defect fix, no architectural change',
+              '   - `type:refactor` — rename/extract, no behavior change',
+              '   - `type:chore` — build/CI/tooling',
+              '   - `type:deps` — dependency bump',
+              '   - `type:perf` — performance optimization',
+              '   - `type:test` — test-only change',
+              '',
+              '> Generic skip-label was deliberately rejected — the semantic label forces classification.',
+              '> Ref: [00_07 §2.3 SSOT Integrity Guard](../docs/00_07_GitHub_Projects_and_IaC_Automation.md)',
             ].join('\n');
 
             core.setFailed(message);
