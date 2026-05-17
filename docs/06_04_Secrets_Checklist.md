@@ -185,7 +185,7 @@
 
 **Akash deployment app/infra (`terraform/akash/terraform.tfvars` рендериться у `deploy.yaml.tpl`):**
 
-> Mirror зі списку `env.secret` Kamal — повний breakdown див. [`06_02 §3.2 Змінні Terraform`](06_02_Akash_Network_Integration). 22 sensitive variables нижче.
+> Mirror зі списку `env.secret` Kamal — повний breakdown див. [`06_02 §3.2 Змінні Terraform`](06_02_Akash_Network_Integration). 29 sensitive variables нижче.
 
 *Application core:*
 - [ ] `rails_master_key`
@@ -200,6 +200,7 @@
 
 *Observability:*
 - [ ] `sentry_dsn`
+- [ ] `alloy_config_base64` — base64-encoded Grafana Alloy config (містить вбудований `grafana_remote_write_token` — sensitive!)
 - [ ] `grafana_remote_write_url` — Grafana Cloud Prometheus `remote_write` endpoint (`https://prometheus-prod-XX-XX.grafana.net/api/prom/push`)
 - [ ] `grafana_remote_write_username` — Grafana Cloud Stack ID
 - [ ] `grafana_remote_write_token` — Grafana Cloud API ключ зі scope `metrics:write`
