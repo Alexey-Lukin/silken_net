@@ -61,6 +61,7 @@ _Rails 8.1 Omakase, моделі, бізнес-логіка, REST API, Phlex UI 
 - [04\_04\_Phlex\_UI\_and\_Tailwind](04_04_Phlex_UI_and_Tailwind) (Phlex компоненти + Tailwind 4 + gaia design tokens)
 - [04\_05\_Codex\_Lore\_Module](04_05_Codex_Lore_Module) (Lore Layer Codex: 4 Realm × 79 Nodes, Fractions, Battle, Discovery)
 - [04\_06\_Testing\_Guide\_and\_Coverage](04_06_Testing_Guide_and_Coverage) (30 RSpec best practices + повна Coverage Matrix: RSpec/Firmware C/Foundry Solidity)
+- [04\_07\_Cultural\_Layer\_External\_Stakeholders](04_07_Cultural_Layer_External_Stakeholders) (Social API Registry: 16 митців + folk master + журналісти + диригенти; Genesis NFT + Data Sonification — deferred)
 
 ## 🟠 Модуль 05: Web3 та Економіка (The Ledger)
 
@@ -88,6 +89,7 @@ _Юриспруденція, юніт-економіка та портфель �
 - [07\_01\_Nature\_as\_a\_Service\_Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти + параметричне страхування)
 - [07\_02\_Unit\_Economics\_and\_BOM](07_02_Unit_Economics_and_BOM) (Юніт-економіка + ROI через SCC)
 - [07\_03\_Grant\_Applications\_Tracker](07_03_Grant_Applications_Tracker) (Трекер грантових заявок — Horizon Europe, Verra, Gold Standard)
+- [07\_04\_B2G\_External\_Stakeholders](07_04_B2G_External_Stakeholders) (Social API Registry: лісівник Дзюбенко + природоохоронець Сегеда + ДСНС + B2B-клієнти; 6-tier outreach pool)
 
 ## 🎓 Модуль 08: Академічна Інтеграція (University Research Hub)
 
