@@ -725,7 +725,9 @@ verify_oracle_balance!(rpc_url, fee_payer_pubkey)
 ```ruby
 base  = 10_000          # 0.01 USDC у lamports
 bonus = growth_points * 100   # 100 lamports / growth_point = 0.0001 USDC
-total = base + bonus    # max: 10_000 + 63×100 = 16_300 lamports = 0.016 USDC
+total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
+# Stored max = 62 (Wire 5-bit max 31 × backend ×2 upscale, FW.29-PACK).
+# Solana::MintingService ОЧІКУЄ growth_points у stored-діапазоні 10..62.
 ```
 
 **Trustless Guards:** Ідентичні до EVM (`verified_by_iotex?` + `oracle_status_fulfilled?` — enum method).
@@ -1018,7 +1020,7 @@ P1 = Потрібно вирішити до Mainnet deployment
 
 | Крок | Компонент | Статус | Примітка |
 |------|-----------|--------|----------|
-| Firmware Soldier | STM32WLE5JC + mruby BioContract | ⚠️ Open | BLOCKER-01,02,03 |
+| Firmware Soldier | STM32WLE5JC + mruby BioContract | ⚠️ Open | BLOCKER-01, BLOCKER-03 (BLOCKER-02 закрито FW.7 + SEC.11, 2026-05-02) |
 | Firmware Queen | STM32WLE5JC + SIM7070G CIFO | ⚠️ Open | BLOCKER-01 |
 
-**Загальний висновок:** Пайплайн повністю реалізовано та покрито RSpec-тестами. Відкрито 3 блокери — всі пов'язані з firmware (AES key, Lorenz precision, per-species thresholds). Backend-шар готовий до Mainnet.
+**Загальний висновок:** Пайплайн повністю реалізовано та покрито RSpec-тестами. Відкрито 2 блокери, пов'язані з firmware: BLOCKER-01 (hardware AES key) + BLOCKER-03 (per-species CRITICAL_Z thresholds). BLOCKER-02 (Float vs BigDecimal divergence + DID-as-seed) закрито спільно FW.7 (Float-as-numeric-mirror) та SEC.11 (K_seed-derived cold start). Backend-шар готовий до Mainnet.

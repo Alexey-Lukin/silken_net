@@ -1540,5 +1540,5 @@ Codex (Lore — read-only):
 | Кількість моделей у 04_01 = кількість файлів у `app/models/` (мінус ApplicationRecord + namespace-shims типу `app/models/codex.rb`) | `find app/models -name "*.rb" \| wc -l` vs ToC count |
 | Усі `PARTITION BY RANGE` таблиці зі `structure.sql` присутні у §0 + у `PartitionMaintenanceWorker::PARTITIONED_TABLES` + у §11 row | `grep "PARTITION BY RANGE" db/structure.sql` |
 | Concerns у 04_01 §1 = `app/models/concerns/*.rb` | `ls app/models/concerns/` vs §1 subheadings |
-| AASM-моделі: `Gateway`, `NaasContract`, `Wallet`, `BlockchainTransaction`, `EthereumAnchor`, `ParametricInsurance`, `ActuatorCommand`, `Tree` (декомісіонування) — кожна повинна мати state-таблицю/перелік у відповідному §-розділі | grep `include AASM` |
+| AASM-моделі: `Gateway`, `NaasContract`, `BlockchainTransaction`, `ParametricInsurance`, `Actuator`, `ActuatorCommand`, `Tree` (декомісіонування), `EwsAlert` — кожна повинна мати state-таблицю/перелік у відповідному §-розділі. `Wallet` керує балансом через прямі методи (`lock_funds!`, `finalize_spend!`), `EthereumAnchor` використовує integer enum без AASM-машини. | `grep -l "include AASM" app/models/*.rb` |
 | Поліморфні асоціації у §10 "Карта Зв'язків" = реальні `_type/_id` пари у `structure.sql` | `grep "_type.*character varying" db/structure.sql` |

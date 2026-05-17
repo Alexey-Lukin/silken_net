@@ -59,7 +59,7 @@ make -C firmware/test
    end
    payload_byte = (status << 6) | growth_points  # C entry: calculate_state → uint8_t
    ```
-   **Важливо:** Float vs BigDecimal — на прошивці `BASE_BETA = 8.0/3.0` → `2.6666666666666665` (IEEE 754), на сервері `("8.0".to_d / "3.0".to_d).round(18)` → `2.666666666666666667`. Це є джерелом природного divergence між device Z і server Z.
+   **Важливо [FIX FW.7]:** Backend переведено з BigDecimal на **Float (IEEE 754 double)** — ідентично firmware mruby. Раніше `("8.0".to_d / "3.0".to_d).round(18)` давав інший результат після 250 ітерацій; зараз обидві сторони використовують `8.0/3.0` → `2.6666666666666665` і Z **бітово ідентичний** (верифіковано 50,000 random parity-тестами). Майбутній hardening через integer/fixed-point Q-format — `[FW.45]`, deferred до ZK-circuit milestone (див. `docs/03_04_mruby_Lorenz_Attractor.md`).
 
 4. **PACK**: 16-байтний payload.
 5. **ENCRYPT**: AES-256-ECB (апаратний CRYP модуль, без IV). 1 блок = 1 AES operation.

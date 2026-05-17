@@ -305,7 +305,7 @@ end
 | `silkennet_sidekiq_queue_size` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_SIZE` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Поточна кількість задач у кожній Sidekiq черзі |
 | `silkennet_sidekiq_queue_latency_seconds` | `SilkenNet::Metrics::SIDEKIQ_QUEUE_LATENCY` | `queue` (всі 9 черг) | `PrometheusCollector#refresh_sidekiq_gauges` | Вік найстарішої задачі в черзі (секунди) |
 
-**Підсумок реєстру: 5 Counters + 2 Gauges = 7 кастомних метрик (всі 9 черг покриті).**
+> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (25 метрик).
 
 ### 2.4 Реалізовані додаткові метрики (Sprint 2, S2.4)
 
@@ -320,7 +320,7 @@ end
 | `silkennet_coap_packets_received_total` | Counter | `UnpackTelemetryWorker` | `status` |
 | `silkennet_streamr_broadcast_failures_total` | Counter | `StreamrBroadcastWorker` | — |
 
-**Підсумок реєстру: 10 кастомних метрик (7 оригінальних + 5 нових = 10: 7 counters + 1 histogram + 2 gauges).**
+> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (25 метрик).
 
 ### 2.4.1 RSpec покриття нових метрик (S2.4 — Виконано)
 
@@ -344,7 +344,7 @@ end
 
 Обидві метрики зареєстровані в `config/initializers/prometheus.rb` та інструментовані у відповідних класах. `ORACLE_DISPATCH_DURATION` вимірює повний цикл dispatch (від виклику до отримання request_id). `LORENZ_COMPUTATION_DURATION` вимірює час серверного розрахунку 250 ітерацій Лоренца (Float арифметика).
 
-**Підсумок реєстру: 22 кастомні метрики (12 counters + 8 gauges + 2 histograms).**
+> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (25 метрик).
 
 ### 2.6 Entropy Monitor Metric (Quantum Pre-Stress Detector)
 
@@ -363,7 +363,7 @@ end
     summary: "Передстресовий сигнал: кластер {{ $labels.cluster_id }} — ентропія {{ $value }}"
 ```
 
-**Підсумок реєстру: 23 кастомні метрики (12 counters + 9 gauges + 2 histograms) до Sprint S2.2/FW.22.**
+> Проміжний підсумок видалено — див. фінальну цифру у §2.8 (25 метрик).
 
 ### 2.7 Governance Parameter Sync Observability
 
@@ -405,7 +405,7 @@ end
     summary: "RPC provider {{ $labels.provider }} circuit breaker open"
 ```
 
-**Підсумок реєстру: 25 кастомних метрик (13 counters + 10 gauges + 2 histograms).**
+**📊 Загальний підсумок реєстру (SSOT): 25 кастомних метрик = 13 counters + 10 gauges + 2 histograms.**
 
 ---
 

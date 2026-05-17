@@ -42,7 +42,7 @@ Authorization: Bearer <token>
 - Реалізація: `User.find_by_token_for(:api_access, token)` — Rails 8 `generates_token_for`.
 - Токен має термін дії 30 днів.
 - **Обмеження на вхід:** rate limit — 5 спроб за 1 хвилину (HTTP 429 при перевищенні).
-- **M2M Auth (Gateway):** прошивка шлюзу не може інтерактивно оновити токен. Для цього використовується `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (§1.4 та §5.14).
+- **M2M Auth (Gateway):** прошивка шлюзу не може інтерактивно оновити токен. Для цього використовується `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (§1.4 та §5.15).
 
 ### 1.2 Session Cookie (для браузерного Dashboard)
 
@@ -80,7 +80,7 @@ POST /api/v1/auth/m2m_token
 - Бекенд перевіряє підпис та timestamp (±5 хвилин) перед видачею токена.
 - **Replay-захист (nonce):** SHA256-дайджест підпису зберігається в Redis із TTL 10 хв (`SET NX`). Повторне використання тієї ж `signature` повертає `401 Unauthorized` із повідомленням `"Replay attack detected"`. **[S6.1]** При Redis outage: fallback на Solid Cache (DB) — шлюзи не отримують `503`.
 - Токен дійсний 30 днів. Для оновлення: `POST /api/v1/auth/m2m_token/refresh` з поточним Bearer token (§5.15.1), або повторний `POST /api/v1/auth/m2m_token` з Ed25519-підписом.
-- Детальний опис: §5.14.
+- Детальний опис: §5.15.
 
 ### 1.5 Тестове Покриття Безпеки
 
@@ -355,7 +355,7 @@ POST /api/v1/auth/m2m_token
 
 > **Rate Limit:** 5 запитів за 1 хвилину. При перевищенні — HTTP 429.
 
-> **M2M Gateway:** для прошивки шлюзу реалізовано `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (§5.14). Токен оновлюється перед закінченням 30-денного терміну.
+> **M2M Gateway:** для прошивки шлюзу реалізовано `POST /api/v1/auth/m2m_token` — Ed25519-підпис DID без логіна/пароля (§5.15). Токен оновлюється перед закінченням 30-денного терміну.
 
 ---
 
@@ -525,7 +525,7 @@ POST /api/v1/auth/m2m_token
 
 ### 5.5 GET `/api/v1/gateways/:id/telemetry` — Читання Телеметрії Gateway (Queen)
 
-> **Важливо:** Цей ендпоінт призначений **лише для читання** збереженої телеметрії (Dashboard / Monitoring). Основний канал uplink — **CoAP/UDP на порт 5683** (CoAP listener daemon). Для HTTP fallback використовується `POST /api/v1/gateways/:id/telemetry` (§5.15).
+> **Важливо:** Цей ендпоінт призначений **лише для читання** збереженої телеметрії (Dashboard / Monitoring). Основний канал uplink — **CoAP/UDP на порт 5683** (CoAP listener daemon). Для HTTP fallback використовується `POST /api/v1/gateways/:id/telemetry` (§5.16).
 
 **Query Parameters:**
 
@@ -1170,4 +1170,4 @@ if (days_until_token_expiry() < 7) {
 | `Content-Type` | ✅ (для POST/PATCH з body) | `application/json` або `multipart/form-data` |
 | `Accept` | Опційно | `application/json` (за замовчуванням) |
 | `X-Chainlink-Signature` | ✅ (Production) для `/oracle_callbacks` | `HMAC-SHA256(raw_body, CHAINLINK_HMAC_SECRET)` — підпис від Chainlink DON |
-| `Idempotency-Key` | ✅ (JSON) для `POST /actuators/:id/execute` | Унікальний клієнтський ключ (UUID рекомендовано). Запобігає дублюванню фізичних команд при retry. |
+| `Idempotency-Key` | ✅ (JSON) для `POST /actuators/:id/execute`, `POST /codex/nodes/:slug/comments`, `POST /codex/citations` | Унікальний клієнтський ключ (UUID рекомендовано). Запобігає дублюванню фізичних команд та доменних мутацій при retry. Replay JSON-запиту з тим самим ключем повертає закешовану відповідь (TTL 24 год). Турбо-стрім запити (`format.turbo_stream`) виключені. |

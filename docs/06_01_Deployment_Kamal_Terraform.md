@@ -409,16 +409,42 @@ registry:
 
 env:
   secret:
+    # --- Application core ---
     - RAILS_MASTER_KEY
     - DATABASE_URL
     - REDIS_URL
     - KREDIS_REDIS_URL
+    # --- Observability ---
+    - SENTRY_DSN
+    # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---
+    - PROVISIONING_MASTER_KEY
+    # --- Web3 oracle / minter / slasher (dual-key split, B-02 resolved) ---
+    - ORACLE_PRIVATE_KEY           # legacy fallback для existing services
+    - ORACLE_MINTER_PRIVATE_KEY    # SCC/SFC batch mint (BlockchainMintingService)
+    - ORACLE_SLASHER_PRIVATE_KEY   # token burn (BlockchainBurningService)
+    - ETHEREUM_ANCHOR_PRIVATE_KEY  # weekly state-root anchor (Ethereum::StateAnchorService)
+    # --- RPC endpoints (SSOT names expected by Web3::RpcConnectionPool) ---
+    - ALCHEMY_POLYGON_RPC_URL
+    - ALCHEMY_ETHEREUM_RPC_URL
+    - SOLANA_RPC_URL
+    # --- Solana minting (Solana::MintingService raises without these) ---
+    - SOLANA_WALLET_KEYPAIR
+    - SOLANA_FEE_PAYER_PUBKEY
+    - SOLANA_FEE_PAYER_TOKEN_ACCOUNT
+    - SOLANA_USDC_MINT_ADDRESS
+    # --- Chainlink Functions Router v1 (Proof of Growth pipeline) ---
+    - CHAINLINK_FUNCTIONS_ROUTER
+    - CHAINLINK_SUBSCRIPTION_ID
+    - CHAINLINK_HMAC_SECRET
+    - CHAINLINK_DON_ID
   clear:
     WEB_CONCURRENCY: 2
     RAILS_ALLOWED_HOSTS: api.silkennet.com,.silkennet.com  # DNS rebinding protection
     # DISABLE_SSL: "true"   # розкоментувати якщо Akash ingress або Cloudflare термінує TLS
     # CSP_ENFORCE: "true"   # розкоментувати після burn-in спостереження CSP violation репортів
 ```
+
+> **🔴 Boot-time guard rationale:** Container injects ТІЛЬКИ ті secrets, що явно перелічені у `env: secret:`. Відсутність `PROVISIONING_MASTER_KEY` → `SecurityError` від `config/initializers/master_key_strength_check.rb` → Puma crash до accept. Відсутність `ORACLE_*_PRIVATE_KEY` → `KeyError` від `ENV.fetch` у `BlockchainMintingService`/`BlockchainBurningService` → web3-критичні воркери у DeadSet. Відсутність `ALCHEMY_ETHEREUM_RPC_URL` → `StateAnchorService` падає при tижневому anchor TX → `EthereumAnchor.status = failed`. **Bind these in `.kamal/secrets` first**, потім додавай у `env: secret:` блок.
 
 > **Нові ENV змінні безпеки** (деталі у `06_04_Secrets_Checklist §2.1`):
 >
@@ -663,10 +689,25 @@ Series D архітектура (>1M вузлів):
 | Компонент | Поточний стан | Необхідна дія |
 |-----------|--------------|--------------|
 | CoAP Listener | `lib/daemons/coap_listener.rb` (Ruby) | Достатньо до ~10k вузлів |
+| Ingress Anchor (`e2-micro`) | ✅ Виправлено (`terraform/compute.tf`) | Bottleneck при >10M дерев — див. нижче |
 | Ingress Proxy (Rust/Go) | 🔴 Не реалізовано | Series D milestone |
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
 | Read-Only Replicas | 🔴 Не налаштовано | Terraform: `google_sql_database_instance` replica |
 | conntrack + UDP rate limit | ✅ Виправлено | `terraform/compute.tf` startup_script |
+
+#### 🌍 Front-Door Bottleneck — Ingress Anchor на `e2-micro` (Series D)
+
+**Проблема.** Ingress Anchor (`compute.tf`, `silken-net-ingress`) — це один `e2-micro` (2 vCPU shared, 1 GB RAM, обмежений egress). HAProxy/socat на ньому проксують UDP/5683 на Akash. При >10M дерев → мільйони Queens → один процесор стає вузьким горлом для CoAP/UDP.
+
+**Опції еволюції (упорядковані за зростанням інвазивності):**
+
+| # | Підхід | Що дає | Що потрібно |
+|---|--------|--------|-------------|
+| 1 | **GCP L4 Network Load Balancer + MIG `e2-small`** | Горизонтальний autoscaling, безмежний throughput, та сама статична IP (forwarding rule) | Terraform: `google_compute_forwarding_rule` (L4 UDP) + `google_compute_region_instance_group_manager` з autoscaler; стартап-скрипт ідентичний існуючому (socat → Akash). DNS A не змінюється. |
+| 2 | **Cloudflare Spectrum (UDP forwarding)** | Глобальний anycast → найближча PoP-нода, DDoS-фільтрація, без власної VM-інфраструктури | Cloudflare Enterprise (Spectrum — paid add-on); CNAME `api.silkennet.com` на Spectrum endpoint; whitelist Akash origin IP. GCP Ingress Anchor можна вимкнути. |
+| 3 | **Ingress Proxy (Rust/Go) + Kafka** (нижче) | Stateless дешифрування AES-CBC + батч у Kafka до того, як Rails побачить пакет | Власна розробка (див. наступний підрозділ). Поєднується з #1 або #2 — L4/Spectrum дають мережевий шар, Proxy дає прикладний. |
+
+> **Рекомендований шлях:** #1 (L4 NLB + MIG) як проміжний крок — мінімум коду, лише Terraform. Якщо у вас уже є Cloudflare Enterprise — #2 дешевший за операцію. #3 (Proxy + Kafka, нижче) обов'язковий при пакетних потоках >1M/год незалежно від мережевого шару.
 
 ---
 
@@ -689,8 +730,9 @@ FOREST_COIN_CONTRACT_ADDRESS=0x...  # SFC
 ### Мультичейн (Gaia 2.0)
 
 ```bash
-# Ethereum L1 (State Anchoring)
-ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+# Ethereum L1 (State Anchoring) — SSOT name expected by app/services/ethereum/state_anchor_service.rb:146 та treasury/monitor_service.rb:54.
+ALCHEMY_ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+ETHEREUM_ANCHOR_PRIVATE_KEY=0x...  # Окремий гаманець для тижневого state-root anchoring (НЕ дорівнює ORACLE_PRIVATE_KEY).
 
 # IoTeX W3bstream (ZK Verification)
 W3BSTREAM_API_URL=https://w3bstream-api.iotex.io

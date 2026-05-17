@@ -701,8 +701,9 @@ state_root = Digest::SHA256.hexdigest("#{total_scc}|#{total_sfc}|#{active_tree_c
 **Graceful degradation при IoTeX down:**
 
 1. **TelemetryLog `verified_by_iotex: false`** залишається unverified.
-2. **MintCarbonCoinWorker НЕ запускає мінт** (guard clause failure) — це **бажана поведінка**: краще нульова емісія, ніж unverified мінтинг.
-3. **Multi-day outage policy:** для збереження user trust розглянути **temporary reduced minting** через альтернативну верифікацію (наприклад, server-side attestation + Forester Guild Proof-of-Physical-Work, E.20). Реалізація — post-TRL 7.
+2. **ChainlinkDispatchWorker не запускається** (раннє виходить через `return unless log.verified_by_iotex?`) — Oracle-driven гілка Path 1 [DOC.7] зупиняється на початку pipeline, до того як `MintCarbonCoinWorker.perform_async(log.id_value, ...)` (oracle callback) встигне поставитись у чергу. Це **бажана поведінка**: краще нульова емісія, ніж unverified мінтинг.
+3. **Tokenomics-flow Path 2 продовжує працювати** (`TokenomicsEvaluatorWorker` → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService.call(batch, telemetry_log: nil)`) — для цього шляху guards `verified_by_iotex?` / `oracle_status_fulfilled?` **свідомо пропускаються** (per-packet integrity perimeter забезпечується AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService`, а **єдиний обов'язковий guard** — `hadron_kyc_status == "approved"`). Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline) + [`04_02 BlockchainMintingService`](04_02_Business_Logic_and_Services).
+4. **Multi-day outage policy:** для збереження user trust розглянути **temporary reduced minting** через альтернативну верифікацію (наприклад, server-side attestation + Forester Guild Proof-of-Physical-Work, E.20). Реалізація — post-TRL 7.
 
 ### 8.5. Important Tier: Solana, Hadron, peaq
 

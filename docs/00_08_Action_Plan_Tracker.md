@@ -15,6 +15,38 @@
   - Деплой та інфраструктура → [`06_01_Deployment_Kamal_Terraform`](06_01_Deployment_Kamal_Terraform)
   - Resilience & failover policy → [`00_03_Resilience_and_Failover_Policy`](00_03_Resilience_and_Failover_Policy)
 
+### 📝 Cross-doc audit sweep — 2026-05-17 (SSOT drift cleanup)
+
+Виправлено 15 SSOT-дрейфів, виявлених при наскрізному читанні модулів 00–07. Деталі та посилання на коміти — у відповідних документах.
+
+| # | Дрейф | Доказ | Документ-ціль | Статус |
+|---|------|------|---------------|--------|
+| 1 | `hspi1` (W25Q32JV) відсутній у HAL-таблиці Queen | компіляція `flash_buffer.c` → undefined `hspi1` | `03_02 §10 HAL Периферія` | ✅ Додано |
+| 2 | ARCH.34 не задокументував radio-blindness в Helium uplink window | втрата chainsaw-пакетів | `02_05 §6.1 Helium Fallback` | ✅ Додано Hard Rule + IWDG-bounded бюджет 20 с |
+| 3 | M2M token cross-ref §5.14 → carbon report (помилка) | actual location §5.15 | `04_03 §1.1/1.4/§5.5` | ✅ Виправлено всі 3 посилання + §5.16 для gateway telemetry |
+| 4 | Idempotency-Key Section 7 не покривала Codex endpoints | фронтенд 400 на `/codex/nodes/:slug/comments`, `/codex/citations` | `04_03 §7` | ✅ Розширено |
+| 5 | AASM invariant list містив phantoms Wallet/EthereumAnchor, забув EwsAlert/Actuator | `grep -l "include AASM" app/models/*.rb` | `04_01 §12 Інваріанти` | ✅ Виправлено + grep command |
+| 6 | Navigation::Sidebar vs Layout::Sidebar drift | code uses `Navigation::Sidebar` | `04_04 §1 Дерево/Поток рендерингу` | ✅ (вже зроблено в попередніх ітераціях) |
+| 7 | AuditLog chain_hash race condition mitigation не задокументовано | code uses `pg_advisory_xact_lock(827549841, org_id)` | `04_02 AuditLogWorker` | ✅ Додано Concurrency Guard блок |
+| 8 | 03_03 каже OTA CMD 0x9D "deferred", тоді як код реалізовано | `firmware/soldier/main.c:1003-1108` + 7 host-tests | `03_03 §6 + §10` | ✅ Виправлено 4 згадки `deferred` |
+| 9 | codex--attune Stimulus у 04_04 vs ADR у 04_05 | `04_05 §3.1 Phase 6` каже видалений | `04_04 §6.4 Codex` | ✅ Видалено optimistic UI |
+| 10 | BLOCKER-02 status `Open` після SEC.11 fix | `03_04 §K_seed-derived` + `04_05 BLOCKER-02 ЗАКРИТО` | `05_02 §Статус Імплементації` | ✅ Списано до 2 блокерів |
+| 11 | IoTeX guard clause §8.4 не розрізняв Path 1 vs Path 2 | Path 2 без oracle працює при IoTeX down | `05_01 §8.4 Critical Path` | ✅ Уточнено wording |
+| 12 | Kamal `env: secret:` упустив `PROVISIONING_MASTER_KEY` + всі Web3 oracles | boot guard у `master_key_strength_check.rb` падає | `06_01 §Kamal Detailed` | ✅ Документ оновлено (код-фікс — окрема задача) |
+| 13 | `ETHEREUM_RPC_URL` vs реальний `ALCHEMY_ETHEREUM_RPC_URL` | `state_anchor_service.rb:146` | `06_01 §Мультичейн ENV` | ✅ Перейменовано |
+| 14 | Growth Points max math `63×100` (старий 6-bit) vs реальний 5-bit ×2 = 62 | `bio_contract.rb` `clamp(5, 31)` × 2 = 62 | `05_02 §Крок F Solana` | ✅ Виправлено на 16_200 lamports |
+| 15 | state_root ASCII діаграма не включала sfc/active_tree_count | E.53 + E.54 patches | `05_04 §8 Pipeline` | ✅ Розширено payload |
+| 16 | GCP_SA_KEY_BASE64 в Akash SDL без Security Exception документу | конфлікт з WIF SSOT у 06_04 | `06_02 BLOCKER-3` | ✅ Додано Security Exception блок |
+| 17 | Prometheus metric counts: 7/10/22/23/25 дрейф | арифметика 7+5=10 (хибно) | `06_03 §2.3-2.8` | ✅ Залишено єдиний фінальний підсумок 25 |
+| 18 | Grafana Cloud secrets відсутні у tfvars чек-лісті | Alloy sidecar потребує 5 ENV | `06_04 §4 terraform.tfvars` | ✅ Додано |
+| 19 | NaaS SLA схема "ClusterHealthCheck 02:00 UTC" vs реальний callback | `InsightBatchCallbacks#on_success` | `07_01 §2/§4` | ✅ Виправлено chain |
+| 20 | 07_01 §6 містив phantom B-02 (oracle shared key) | dual-key split імплементовано у коді | `07_01 §6` | ✅ Marked RESOLVED |
+| 21 | 07_02 CAPEX/ROI рахувався за v2 ціною ($35) попри v3 BOM ($46) | §1.2 декларує $42.50–$50 v3 | `07_02 §5.1-9` | ✅ Перерахунок (Payback baseline ~44 міс, BIZ.7 ~52 міс) |
+| 22 | 04_06 phantom 0x9D — НЕ дрейф (тести існують, код є) | `test_soldier_logic.c:4436-4442` (7 RUN()) | — | ❌ False positive (user assumption wrong) |
+| 23 | 04_06 delta_t/vcap у TelemetryUnpackerService — НЕ дрейф | вже задокументовано на рядку 336 | — | ❌ False positive |
+
+> **Метод:** перед правкою кожного дрейфу — `grep`/`Read` верифікація проти коду; запропоновані користувачем рішення скориговано там, де код вказував на іншу істину (AuditLog: `pg_advisory_xact_lock` замість Kredis.lock; 0x9D: фікс у 03_03, не 04_06).
+
 ---
 
 > **Розмітка виконавців:**

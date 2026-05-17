@@ -1179,8 +1179,11 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 | `hcryp` | AES | ECB для LoRa, CBC для CoAP батчів та команд |
 | `hrng` | RNG | HRNG для CBC IV та Thundering Herd jitter |
 | `hiwdg` | IWDG | Апаратний Watchdog (~26.6 с timeout, auto-reset при зависанні) |
+| `hspi1` | SPI1 | Зовнішня NOR Flash **Winbond W25Q32JV** (4 MB) — Overflow Tier CIFO ([ARCH.35](00_08_Action_Plan_Tracker), [BOM поз. 16 → 02_05 §BOM](02_05_Queen_Hardware_and_Starlink)). Піни: `PB3=SCK`, `PB4=MISO`, `PB5=MOSI`, `PA4=CS` (GPIO software-driven). Driver: `firmware/queen/flash_buffer.c` (`w25q32_write_page`, `w25q32_read_sector`, `w25q32_erase_sector`). |
 
-**Примітка:** Queen **не має** ADC, TIM, RTC — на відміну від Soldier. HRNG та IWDG ініціалізуються при старті. HRNG де-ініціалізується "on-demand" (Wu-Wei підхід — нульове споживання між використаннями).
+**Примітка:** Queen **не має** ADC, TIM, RTC — на відміну від Soldier. HRNG та IWDG ініціалізуються при старті. HRNG де-ініціалізується "on-demand" (Wu-Wei підхід — нульове споживання між використаннями). `hspi1` ініціалізується тільки в момент drain CIFO→Flash (overflow event) і де-ініціалізується одразу після — енерго-нейтральний підхід (W25Q32JV power-down 1 µA, page write ~10 мА × 0.7 мс).
+
+> **Compile-time guard:** при відсутності `hspi1` у `main.h` (CubeMX) функції `w25q32_*` повертають `STATUS_NOT_AVAILABLE`, CIFO залишається в RAM-only режимі, але система не падає. Це SSOT-bridge між картою периферії (`03_02 §10`) та overflow-логікою (`02_05 §2.1 Flash Ring Buffer`).
 
 ---
 

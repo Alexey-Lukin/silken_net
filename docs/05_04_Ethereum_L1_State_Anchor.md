@@ -460,10 +460,12 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 ║       ▼                                                              ║
 ║    generate_state_root():                                            ║
 ║      [REPEATABLE READ transaction]                                   ║
-║      total_scc    = Wallet.sum(:scc_balance)         [PostgreSQL]   ║
-║      chain_hash   = AuditLog.last.chain_hash         [PostgreSQL]   ║
-║      anchored_at  = Time.current.utc                 [Runtime]      ║
-║      state_root   = SHA256(scc|hash|ts)              [CPU]          ║
+║      total_scc           = Wallet.sum(:scc_balance)  [PostgreSQL]   ║
+║      total_sfc           = Wallet.sum(:sfc_balance)  [PostgreSQL]   ║
+║      active_tree_count   = Tree.where(...).count     [PostgreSQL]   ║
+║      chain_hash          = AuditLog.last.chain_hash  [PostgreSQL]   ║
+║      anchored_at         = Time.current.utc          [Runtime]      ║
+║      state_root          = SHA256(scc|sfc|trees|hash|ts) [CPU]      ║
 ║       │                                                              ║
 ║       ▼                                                              ║
 ║    EthereumAnchor.create!(status: :pending)          [PostgreSQL]   ║

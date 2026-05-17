@@ -94,10 +94,10 @@ NaaS — це модель підписки, де клієнти (Організ
 
 | Юридична Подія | D-MRV Тригер | Rails Worker | Смарт-Контракт | Функція | Наслідок |
 |---|---|---|---|---|---|
-| **Послуга надана** (дерево здорове, Z в межах норми) | `growth_points` ≥ 0, `stress_index < 0.83` | `TokenomicsEvaluatorWorker` → `MintCarbonCoinWorker` | `SilkenCarbonCoin.sol` | `mint(to, amount, treeDid)` | Інвестор отримує SCC на `Wallet.crypto_public_address`. **Guard clauses:** `verified_by_iotex? = true`, `oracle_status = "fulfilled"`, `hadron_kyc_status = "approved"` |
+| **Послуга надана** (дерево здорове, Z в межах норми) | `growth_points` ≥ 0, `stress_index < 0.83` | `TokenomicsEvaluatorWorker` (щогодинний cron) → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService` (`telemetry_log: nil` для Path 2) | `SilkenCarbonCoin.sol` | `mint(to, amount, treeDid)` / `batchMint` | Інвестор отримує SCC на `Wallet.crypto_public_address`. **Guards (Path 2 — tokenomics aggregate):** `hadron_kyc_status = "approved"` (єдиний обов'язковий perimeter); `verified_by_iotex?` / `oracle_status` свідомо пропускаються — `growth_points` вже зараховані через AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService` (per-packet integrity). Альтернативний Path 1 (oracle-driven per-telemetry mint) тригериться `ChainlinkDispatchWorker` → `MintCarbonCoinWorker`. Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline). |
 | **Пакетна емісія** (ціла лісова ділянка) | Batch з ≤200 дерев | `MintCarbonCoinWorker` (Gas Saving Mode) | `SilkenCarbonCoin.sol` | `batchMint(recipients[], amounts[], treeDids[])` | Масова емісія для всього кластера |
 | **Дерево під стресом** (`stress_index ≥ 0.83`) | AiInsight.stress_index | `ClusterHealthCheckWorker` | — | Облік у D-MRV арбітражі | Якщо >20% кластера — тригер слешингу |
-| **Порушення контракту** (>20% дерев аномальні) | `critical_insights_count > total_active_count / 5` | `ClusterHealthCheckWorker` → `BurnCarbonTokensWorker` | `SilkenCarbonCoin.sol` | `slash(investor, amount)` | SCC спалюються, `NaasContract.status = :breached`, EwsAlert створено |
+| **Порушення контракту** (>20% дерев аномальні) | `critical_insights_count > total_active_count / 5` | `ClusterHealthCheckWorker` (тригериться через `InsightBatchCallbacks#on_success` — коли всі `GenerateClusterInsightWorker` за добу зелені) → `BurnCarbonTokensWorker` | `SilkenCarbonCoin.sol` | `slash(investor, amount)` | SCC спалюються, `NaasContract.status = :breached`, EwsAlert створено |
 | **Відсутність даних** (>24 год без телеметрії, Starlink-блекаут) | `AiInsight.empty?` для кластера | `ContractHealthCheckService` | `SilkenCarbonCoin.sol` | `slash(investor, amount)` | Ідентично порушенню контракту |
 | **Дерево згоріло** (`AiInsight.insight_type = :critical_fire`) | TinyML: `fire` клас | `EcosystemHealingWorker` → `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметричне страхування активується |
 | **Посуха** (`extreme_drought`) | `AiInsight.insight_type = :extreme_drought` | `InsurancePayoutWorker` | `SilkenCarbonCoin.sol` або Etherisc DIP | `mint(to, payout)` або `triggerClaim()` | Параметрична виплата |
@@ -150,9 +150,10 @@ Organization funds cluster
      ┌─────┴──────────────────┐
      │                        │
      ▼                        ▼
-Daily Health Check        Catastrophic Event
-(ClusterHealthCheck       (critical_fire, drought,
-  Worker 02:00 UTC)        insect_epidemic)
+Daily Health Check         Catastrophic Event
+(ClusterHealthCheck        (critical_fire, drought,
+ Worker via                 insect_epidemic)
+ InsightBatchCallbacks)
      │                        │
      │ >20% critical           │
      │ stress_index            │
@@ -255,12 +256,13 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 **Права на смарт-контракт (Polygon):**
 
-| Роль | SCC `MINTER_ROLE` | SCC `SLASHER_ROLE` | SCC `DEFAULT_ADMIN_ROLE` | SFC `MINTER_ROLE` |
-|---|---|---|---|---|
-| Backend Oracle (`ORACLE_PRIVATE_KEY`) | ✅ | ✅ | ❌ | ✅ |
-| Platform Admin (`ADMIN_ADDRESS`) | ❌ | ❌ | ✅ | ❌ (окремий admin) |
+| Роль | SCC `MINTER_ROLE` | SCC `SLASHER_ROLE` | SCC `DEFAULT_ADMIN_ROLE` | SFC `MINTER_ROLE` | SFC `SLASHER_ROLE` |
+|---|---|---|---|---|---|
+| Minter Oracle (`ORACLE_MINTER_PRIVATE_KEY`) | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Slasher Oracle (`ORACLE_SLASHER_PRIVATE_KEY`) | ❌ | ✅ | ❌ | ❌ | ✅ |
+| Platform Admin (`ADMIN_ADDRESS`) | ❌ | ❌ | ✅ | ❌ (окремий admin) | ❌ |
 
-> ⚠️ **Архітектурна проблема (зовнішній модуль):** Той самий oracle отримує і `MINTER_ROLE`, і `SLASHER_ROLE` в конструкторі SCC. Компрометація `ORACLE_PRIVATE_KEY` — повний контроль над токеноекономікою. Задокументовано як **B-02** в зовнішньому модулі [05_03_Tokenomics_SCC_and_SFC](05_03_Tokenomics_SCC_and_SFC) (поза нумерацією блокерів цього документа).
+> ✅ **B-02 ВИРІШЕНО (2026):** SCC та SFC контракти приймають `minterOracle` і `slasherOracle` як **окремі параметри конструктора** ([`05_03 §SCC Constructor`](05_03_Tokenomics_SCC_and_SFC), рядки 108-111). Backend використовує два фізично розділені приватні ключі — `ORACLE_MINTER_PRIVATE_KEY` у `BlockchainMintingService` (`app/services/blockchain_minting_service.rb:107`) та `ORACLE_SLASHER_PRIVATE_KEY` у `BlockchainBurningService` (`app/services/blockchain_burning_service.rb:58`). Компрометація одного гаманця не дає повного контролю над токеноекономікою — мінтер не може спалити, слешер не може емітувати. Backward-compatible fallback на старий `ORACLE_PRIVATE_KEY` залишається лише для legacy/migration сервісів (Celo, Etherisc, Toucan тощо).
 
 ---
 

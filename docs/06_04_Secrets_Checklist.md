@@ -141,9 +141,23 @@
 
 > **Шлях:** `terraform/terraform.tfvars` (`*.tfvars` у `.gitignore` — **ніколи не комітити!**)
 
+**Інфраструктура GCP:**
 - [ ] `project_id` — GCP project ID
 - [ ] `db_password` — пароль Cloud SQL (≥16 символів)
 - [ ] `ssh_source_ranges` — список CIDR для SSH allowlist (напр., `["1.2.3.4/32"]`)
+
+**Akash deployment (рендеряться у `deploy.yaml.tpl`):**
+- [ ] `cloud_sql_instance_connection_name` — output `terraform output database_connection_name`
+- [ ] `gcp_sa_key_base64` — base64-encoded SA JSON ключ (роль `roles/cloudsql.client` only, див. [`06_02 §Security Exception`](06_02_Akash_Network_Integration))
+
+**Grafana Cloud / Prometheus (Alloy sidecar — `06_02 §3.3`):**
+- [ ] `grafana_remote_write_url` — Grafana Cloud Prometheus `remote_write` endpoint (`https://prometheus-prod-XX-XX.grafana.net/api/prom/push`)
+- [ ] `grafana_remote_write_username` — Grafana Cloud Stack ID
+- [ ] `grafana_remote_write_token` — Grafana Cloud API ключ зі scope `metrics:write`
+- [ ] `prometheus_auth_user` — Basic Auth user для `/metrics` endpoint
+- [ ] `prometheus_auth_password` — Basic Auth password (`Rails.application.config.prometheus_auth`)
+
+> **🔴 Drift guard:** Усі п'ять Grafana-секретів **обов'язково** на момент `terraform apply` — без них рендер `deploy.yaml.tpl` падає або, гірше, рендерить порожні рядки і Alloy запускається німим (метрики не доходять у Grafana Cloud). Не перетинається з `06_01 .kamal/secrets` (Kamal-деплой використовує власний шлях для `SENTRY_DSN` + Prometheus Basic Auth — окремо).
 
 ---
 

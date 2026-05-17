@@ -61,6 +61,8 @@
 
 При спробі запустити Rails без `RAILS_MASTER_KEY` — процес аварійно завершується ще до старту Puma. `DATABASE_URL` без реального значення — ActiveRecord не підключається. `CLOUD_SQL_INSTANCE_CONNECTION_NAME` та `GCP_SA_KEY_BASE64` необхідні для Cloud SQL Auth Proxy — без них проксі не стартує і `DATABASE_URL=127.0.0.1:5432` не працює. Це зроблено навмисно для безпеки (секрети не комітяться в git), але потребує чіткого процесу перед деплоєм.
 
+> **⚠️ Security Exception — GCP_SA_KEY_BASE64 (Akash-only):** На TRL 5-6 Akash-вузли автентифікуються до Cloud SQL Auth Proxy довгоживучим Service Account JSON ключем у форматі `GCP_SA_KEY_BASE64`. Це **архітектурний виняток** з принципу `06_04 §Workload Identity Federation` (WIF), де всі GCP-сервіси повинні використовувати короткоживучі OIDC токени. Akash як зовнішній провайдер не має доступу до GCE метаданих та не може напряму використовувати WIF без додаткового OIDC provider'а. **Mitigation:** SA з якого згенеровано ключ має **тільки** роль `roles/cloudsql.client` (нічого більше — ні Storage, ні Secret Manager), key rotation кожні 90 днів через Terraform pipeline. На TRL 7+ розглянути міграцію на WIF через зовнішній OIDC provider (наприклад, GitHub Actions як trust anchor для Akash deployment manifests). Cross-ref: [`06_04 §Workload Identity Federation`](06_04_Secrets_Checklist).
+
 **Варіанти вирішення:**
 1. **Рекомендовано:** Terraform-шаблон `deploy.yaml.tpl` через `terraform/akash/` — секрети підставляються з `terraform.tfvars` (в `.gitignore`).
 2. Akash Console UI — ручне введення ENV змінних через веб-інтерфейс перед деплоєм.

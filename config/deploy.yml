@@ -38,13 +38,35 @@ registry:
     - GCP_ARTIFACT_REGISTRY_KEY
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
+# Drift guard: each entry below MUST also be declared in .kamal/secrets — otherwise
+# Kamal injects nothing and the container crashes at boot. See docs/06_01 §Kamal Detailed
+# and docs/00_08 cross-doc audit sweep entry #12.
 env:
   secret:
+    # --- Application core ---
     - RAILS_MASTER_KEY
     - DATABASE_URL
     - REDIS_URL
     - KREDIS_REDIS_URL
+    # --- Observability ---
     - SENTRY_DSN
+    # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---
+    - PROVISIONING_MASTER_KEY
+    # --- Web3 oracle / minter / slasher (dual-key split, B-02 resolved) ---
+    - ORACLE_PRIVATE_KEY
+    - ORACLE_MINTER_PRIVATE_KEY
+    - ORACLE_SLASHER_PRIVATE_KEY
+    - ETHEREUM_ANCHOR_PRIVATE_KEY
+    # --- RPC endpoints (SSOT names expected by Web3::RpcConnectionPool) ---
+    - ALCHEMY_POLYGON_RPC_URL
+    - ALCHEMY_ETHEREUM_RPC_URL
+    - SOLANA_RPC_URL
+    # --- Solana minting (Solana::MintingService raises without these) ---
+    - SOLANA_WALLET_KEYPAIR
+    - SOLANA_FEE_PAYER_PUBKEY
+    - SOLANA_FEE_PAYER_TOKEN_ACCOUNT
+    - SOLANA_USDC_MINT_ADDRESS
+    # --- Chainlink Functions Router v1 (Proof of Growth pipeline) ---
     - CHAINLINK_FUNCTIONS_ROUTER
     - CHAINLINK_SUBSCRIPTION_ID
     - CHAINLINK_HMAC_SECRET

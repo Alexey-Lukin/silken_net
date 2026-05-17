@@ -648,14 +648,29 @@ Queen переходить у Helium режим автоматично коли:
 // firmware/queen/main.c — пропозиція ARCH.34
 #define HELIUM_FALLBACK_THRESHOLD_MIN  30   // хв без uplink перед активацією
 #define HELIUM_PAYLOAD_AGGREGATE_MAX   11   // байт корисного payload у LoRaWAN frame
+#define HELIUM_BLIND_WINDOW_MAX_MS     20000  // верхній ліміт сліпоти (< IWDG ~26.6 с)
 
 if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
     q2q_backhaul_unavailable &&
     buffer_fill_pct >= 50) {
     // Стиснути batch до lambda-summary (ARCH.22) для вписування в обмежений LoRaWAN payload
-    queen_helium_lorawan_uplink(aggregated_lambda_summary, count);
+    HAL_IWDG_Refresh(&hiwdg);                           // refresh ДО входу в сліпу зону
+    queen_helium_lorawan_uplink(aggregated_lambda_summary, count);  // multi-channel hop, OTAA
+    Radio_Reinit_RawLoRa_868MHz();                      // повернути PHY у raw LoRa P2P 868.0 MHz, AES-256-ECB
+    Radio.Rx(LORA_RX_INFINITE);                         // одразу примусово відкрити RX-вікно
+    HAL_IWDG_Refresh(&hiwdg);                           // та одразу після виходу
 }
 ```
+
+> **🔴 Hard Rule (Radio-blindness mitigation, ARCH.34):**
+> Будь-який виклик `queen_helium_lorawan_uplink()` ОБОВ'ЯЗКОВО супроводжується:
+> 1. **Pre-flight IWDG refresh** + захоплення `helium_session_start_tick = HAL_GetTick()`.
+> 2. **Multi-channel hopping** Helium-сесії на каналах 868.1/868.3/868.5 МГц (LoRaWAN MAC), під час якої raw-LoRa preamble на 868.0 МГц апаратно не детектується — будь-який панічний пакет від Soldier (chainsaw alert) втрачається.
+> 3. **Жорстка post-condition:** одразу після `LoRaMacMlmeRequest/MCPS` (або при таймауті) виклик `Radio_Reinit_RawLoRa_868MHz()` → `Radio.SetChannel(868000000)` → `Radio.SetModem(MODEM_LORA)` → `Radio.Rx(LORA_RX_INFINITE)`.
+> 4. **Бюджет сліпоти:** `helium_session_elapsed = HAL_GetTick() - helium_session_start_tick` має бути `< HELIUM_BLIND_WINDOW_MAX_MS (20 с)`. Перевищення → форсований hardware reset через IWDG (~26.6 с), оскільки кластер краще перезавантажити, ніж довго не слухати.
+> 5. **AES контекст:** Helium uplink використовує LoRaWAN AES-128 CMAC/CTR (інший ключ — `AppSKey`/`NwkSKey`). Після виходу з Helium-сесії `hcryp` має бути перевипадково ініціалізований у `AES-256-ECB` режим для `radio_decrypt_lora()`.
+>
+> Втрата chainsaw-пакета у Helium-вікні — прийнятний ризик (Edge Data Fusion агрегує lambda-summary, а Soldier ретрансмітить панік-пакет з TTL=5 reflex broadcast). Цей risk acceptance задокументований як ALARP — At-Least-As-Reasonably-Practical mitigation: коротке вікно (≤ 20 с) + soldier-side TTL retry + IWDG fallback.
 
 ### Економіка Helium
 

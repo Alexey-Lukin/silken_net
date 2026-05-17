@@ -37,7 +37,7 @@
 | **`silken_net_audio_model.h`** | 🔴 BLOCKER — **відсутній у репозиторії** |
 | **Tensor Arena (SRAM budget)** | 🔴 BLOCKER — розмір невідомий з коду (визначений у `.h`) |
 | **DSP preprocessing (FFT/MFCC)** | 🟡 ВІДСУТНІЙ — тільки лінійна нормалізація |
-| **Confidence threshold (0.80)** | ✅ FW.18: dual-threshold у RTC DR13/DR14 (defaults 0.60/0.85), OTA-tunable (dispatcher deferred до FW.8) |
+| **Confidence threshold (0.80)** | ✅ FW.18: dual-threshold у RTC DR13/DR14 (defaults 0.60/0.85), OTA-tunable через `CMD_SET_AUDIO_THRESHOLDS` (опкод `0x9D`) — Soldier dispatcher та 7 host-тестів імплементовано (`firmware/soldier/main.c:1003-1108`, `firmware/test/test_soldier_logic.c:4436-4442`). |
 | **Decision: Cavitation → acoustic_events++** | ✅ Реалізовано (але мертве: inference закоментована) |
 | **Decision: Chainsaw → Emergency LoRa TX** | ✅ Реалізовано (але мертве: inference закоментована) |
 | **Host-based tests для аудіо-пайплайну** | ✅ Реалізовано (`firmware/test/test_tinyml_pipeline.c`, 25 тестів) |
@@ -199,17 +199,17 @@ for(int i = 0; i < 512; i++) {
 
 ### 🟡 BLOCKER-6: Хардкодований поріг впевненості `0.80`
 
-**Статус:** 🤖 ✅ **Реалізовано (FW.18, partial)** — RTC-storage та dual-threshold decision logic у `firmware/soldier/main.c` (секція 1.5а + Phase 1.5). Деривація OTA CMD dispatcher на Soldier — deferred до спільного циклу з FW.8 (`CMD_SET_THRESHOLDS` 0x9A потребує єдиного CMD-фреймворку, який поки існує лише в Queen-firmware, див. `03_02` §6).
+**Статус:** 🤖 ✅ **Реалізовано (FW.18, повний)** — RTC-storage, dual-threshold decision logic та OTA CMD dispatcher (опкод `0x9D = CMD_SET_AUDIO_THRESHOLDS`) у `firmware/soldier/main.c` (секції 1.5а + 1.14, Phase 1.5). 7 host-тестів покривають happy-path/wrong-marker/CRC/inversion/short-frame/zero-warn/over-crit (`firmware/test/test_soldier_logic.c:4436-4442`). Спільний CMD-фреймворк з FW.8 (`CMD_SET_THRESHOLDS 0x9A`) залишається на Queen-стороні.
 
 **Файл (історичний):** `firmware/soldier/main.c:357` — рядок `if (ml_confidence > 0.80)` замінено на dual-threshold zone-логіку.
 
 **Проблема (вирішено для firmware-частини):**
 1. ~~Поріг 80% хардкодований у Flash. Зміна вимагає повної перекомпіляції та перепрошивки.~~ → Тепер обидва пороги завантажуються з RTC `DR13/DR14` на boot, дефолти 0.60/0.85.
-2. ~~Неможливо дистанційно налаштувати (через OTA), що критично для польових умов.~~ → RTC-storage готовий, OTA CMD dispatcher на Soldier deferred до FW.8 cycle.
+2. ~~Неможливо дистанційно налаштувати (через OTA), що критично для польових умов.~~ → Soldier dispatcher `CMD_SET_AUDIO_THRESHOLDS` (опкод `0x9D`) імплементовано: парсить 10-байтний фрейм, валідує CRC16/range/inversion, пише в RAM + DR13/DR14 через Phase 5 writeback. 7 host-тестів зелені.
 3. ~~Відсутня градація: бінарне `так/ні`.~~ → Реалізовано SILENCE / WARNING / CRITICAL зони з ескалацією.
 
 **Необхідна дія (виконана):**
-- ✅ Зберігати поріг у RTC Backup регістрі (оновлюється через OTA-команду — інфраструктура готова, dispatcher deferred).
+- ✅ Зберігати поріг у RTC Backup регістрі — оновлюється через OTA-команду `0x9D` (Soldier `Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS`, [код](../firmware/soldier/main.c)).
 - ✅ Дворівневий поріг: `WARNING_THRESHOLD (0.60)` → лічильник події; `CRITICAL_THRESHOLD (0.85)` → Emergency TX.
 
 #### 🤖 Дизайн Dual-Threshold System (FW.18)
@@ -319,12 +319,14 @@ if (ml_confidence >= tinyml_critical_threshold) {
 //     }
 ```
 
-**Стан:** Soldier-side OTA CMD dispatcher на момент FW.18 не реалізовано.
-Поточний Soldier-firmware обробляє лише `OTA_MARKER (0x99)` (bytecode chunks
-у Flash) — виділеного `CMD:` фреймворку для Soldier немає (тоді як Queen
-має його у вигляді `if cmd_decrypt_buf starts "CMD:"`, див. `03_02` §6).
-Імплементація CMD-dispatcher на Soldier очікує спільного циклу з [FW.8] —
-обидва завдання потребують одного й того ж downlink-фреймворку.
+**Стан:** Soldier-side OTA CMD dispatcher для `CMD_SET_AUDIO_THRESHOLDS` (`0x9D`)
+**реалізовано** у `firmware/soldier/main.c` (секція 1.14: `Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS`,
+10-байтний frame layout: marker / warn:2 / crit:2 / version:1 / reserved:1 / crc16:2).
+Парсер інтегровано в основний RX-цикл після AES-256-ECB decrypt.
+Поточний Soldier-firmware обробляє опкоди: `0x99` OTA bytecode, `0x55/'R'` OTA-ReRequest,
+`0x56/'S'` Time-Sync Request, **`0x9D` Audio Thresholds** (FW.18 imp).
+Спільний CMD-фреймворк (`CMD:` prefix) залишається на Queen-стороні (`03_02` §6) —
+Soldier використовує per-opcode dispatch для мінімізації RAM/flash overhead.
 
 **Backend mirror (для серверного аналізу):**
 
@@ -832,7 +834,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`, 25 тестів) |
 | 6 | Smoke-тест: class 2 → `acoustic_events++` верифіковано | 🔴 Відкрито |
 | 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | 🔴 Відкрито |
-| 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests. OTA CMD dispatcher на Soldier — deferred до FW.8 cycle |
+| 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests + Soldier OTA CMD dispatcher `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`) з 7 host-tests |
 | 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | 🟡 Відкрито |
 | 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment, 8 тестів) |
 | 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 08_01/08_02/08_03/00_08) |
