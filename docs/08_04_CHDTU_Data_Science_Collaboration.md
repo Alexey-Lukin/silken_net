@@ -199,6 +199,7 @@ Silken Net використовує **LoRa 868 МГц** у найскладні�
      - Class 1: wind (генератор шуму + вентилятор)
      - Class 2: cavitation (ультразвуковий генератор 25–150 кГц через воду)
      - Class 3: chainsaw (запис реальної бензопили, відтворення через динамік)
+     - Class 4: fauna_activity (відтворення польових dawn/dusk записів лісового фону для калібрування чутливості; джерело: «Cherkasy Soundscape Library» від ЧНУ біо-хаб, див. [`08_01` §1.3](08_01_University_R_and_D_Protocols)) — необхідний для GA-оптимізації D-MRV біорізноманіття (Любченко)
   2. Формат: 512 семплів × 16 кГц = 32 мс вікно (як у firmware DMA)
   3. По 500+ записів на клас → достатньо для навчання INT8 quantized NN
   4. Передача датасету: CSV / WAV → lib/datasets/acoustic_training/
@@ -278,7 +279,7 @@ Silken Net будує багаторівневу академічну екоси
 
 **Поточний стан:**
 - **Random Forest** (Rumale gem, 100 estimators): бінарна класифікація stress vs healthy за 5 ознаками (`avg_temp`, `avg_vcap`, `avg_z`, `sap_deviation`, `max_acoustic`)
-- **TinyML** (INT8 quantized NN): 4-класова акустична класифікація на MCU (silence/wind/cavitation/chainsaw) — **BLOCKER: модель відсутня, inference закоментований**
+- **TinyML** (INT8 quantized NN): 5-класова акустична класифікація на MCU (silence/wind/cavitation/chainsaw/fauna_activity) — **BLOCKER: модель відсутня, inference закоментований**
 - **Stress Index:** гібридний (RF predict_proba + rule-based fallback), поріг слешингу: 0.83
 
 **Код:** `lib/tasks/ai_train.rake`, `app/models/tiny_ml_model.rb`, `app/services/insight_generator_service.rb` (рядки 235–258)

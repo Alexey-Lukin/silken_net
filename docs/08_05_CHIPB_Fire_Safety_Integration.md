@@ -95,16 +95,35 @@ Silken Net генерує два типи аварійних сигналів, �
 **Завдання Б: Інтеграція з дронами розвідки**
 
 ```
-Контекст: EmergencyResponseService підтримує actuator_type :drone_launcher
-          (app/models/actuator.rb). Поточна імплементація — stub.
+Архітектурно існують ДВА сценарії дронової розвідки — Биченко розробляє SOP
+для обох:
 
-Завдання:
-  1. Визначити тактичний протокол: EwsAlert(fire_detected) →
-     drone_launcher(DEPLOY) → FPV/тепловізійний огляд → підтвердження/спростування
-  2. Це вирішує проблему Cosmic Eye: коли satellite_status = :inconclusive
-     (хмарність), дрон-розвідник дає ground truth за 10-15 хвилин
-  3. Інтеграція з firmware Queen downlink:
-     CoAP → ActuatorCommandWorker → drone_launcher → Turbo Stream OTA progress
+СЦЕНАРІЙ A — Forester Guild Fallback Oracle (ПРІОРИТЕТНИЙ, Post-TRL 6):
+  Тригер: EwsAlert(fire_detected, severity: :critical)
+           + satellite_status = :obscured_by_clouds
+           (dClimate не бачить через хмари → cloud_cover > 70%)
+  Архітектура:
+    DclimateVerificationWorker → :obscured_by_clouds →
+    ForestBountyService.create_bounty!(ews_alert, type: :drone_verification) →
+    ForestBountyWorker (queue: alerts) →
+    Forester/Ranger отримує Bounty у dashboard →
+    Фізичний виліт з дроном (Proof-of-Physical-Work) →
+    Відеозапис/фото → IPFS upload → EwsAlert.resolve_via_bounty!(bounty)
+  Статус: [PLANNED — blocked by ForestBountyService, Post-TRL 6, E.20/E.34]
+  SOP для Биченка:
+    - Хто з лісників отримує Bounty-нотифікацію та за який час?
+    - Вимоги до proof: відеофіксація GPS-координат + таймштамп + зона пожежі
+    - Критерії підтвердження/спростування тривоги рейнджером
+    - Час реагування: target < 60 хвилин від Bounty до resolve
+
+СЦЕНАРІЙ B — Автоматизований лончер (STUB, Phase N, майбутнє):
+  Тригер: EwsAlert(fire_detected) + satellite_status: verified
+           (супутник підтвердив, потрібен детальний огляд ділянки)
+  Архітектура (поки stub):
+    EmergencyResponseService → actuator_type :drone_launcher (stub) →
+    ActuatorCommandWorker → CoAP downlink → Queen → Turbo Stream progress
+  Статус: [STUB — не імплементований, відкладено до Phase N]
+  Примітка: ЧІПБ НЕ розробляє SOP для автолончера до його реальної імплементації
 ```
 
 ---

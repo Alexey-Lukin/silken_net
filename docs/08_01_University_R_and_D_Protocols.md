@@ -349,7 +349,7 @@ t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 1. Збір 10-річних даних ЧНУ про стрес *Pinus sylvestris* Черкаського бору (посухи, пожежі, кліматичні аномалії)
 2. Визначення точного хімічного складу ксилемного соку (сезонні варіації)
 3. Калібрування порогових значень Атрактора: `CRITICAL_Z_MIN`, `CRITICAL_Z_MAX`, `OPTIMAL_Z_TARGET` для Черкаського регіону
-4. Опис "Золотого Датасету" для навчання TinyML-моделей аудіоклікасифікації (4 базові класи: silence/wind/cavitation/chainsaw)
+4. Опис "Золотого Датасету" для навчання TinyML-моделей аудіоклікасифікації (5 класів: silence/wind/cavitation/chainsaw/fauna_activity)
 5. **🌿 «Cherkasy Soundscape Library»** — польові аудіозаписи на світанку та в сутінках (4 сезони × N ділянок, узгоджена з ПМКТ ЧДТУ методологія) для тренування 5-го класу TinyML «Fauna Activity» (див. [`03_03` §10](03_03_TinyML_Acoustic_Inference)). Очікуваний результат: емпірично виміряні distribution dawn/dusk peak amplitude для protected forest vs регенерація vs монокультура — український аналог Delgado et al. для лісостепу.
 6. **🧬 In vitro адгезія клітин паренхіми Pinus sylvestris до біоміметичних покриттів** (Batch Integration Session 3) — порівняльне дослідження адгезії та проліферації клітин паренхіми сосни на наступних поверхнях: (a) нативний TiO₂ (контроль), (b) Zn-HAp, (c) хітозан, (d) PEDOT:PSS гідрогель, (e) лігнін-покриття. Мета: верифікувати застосовність біоміметичних покриттів, обґрунтованих у [`01_04`](01_04_CODIT_and_Xylemointegration) §4. **Кількісні success criteria для інтеграції в HW-roadmap:**
    - Адгезія: density клітин ≥ 1.5× порівняно з TiO₂-контролем (через 7 діб культивування) — методика fluorescence imaging + cell counting
@@ -592,7 +592,7 @@ HARDWARE (TRL 4-5):
 
 FIRMWARE (TRL 6):
   mruby Lorenz Attractor → 250 ітерацій Ейлера → bio_status
-  TinyML CMSIS-NN → 4 класи звуку (silence/wind/cavitation/chainsaw)
+  TinyML CMSIS-NN → 5 класів звуку (silence/wind/cavitation/chainsaw/fauna_activity)
   LoRa mesh TTL-based → Queen gateway → CoAP UDP → Backend
 
 BACKEND (TRL 8):
