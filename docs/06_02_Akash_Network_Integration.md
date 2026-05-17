@@ -789,7 +789,6 @@ silken-net-terraform-state/ (GCS bucket)
 | `chainlink_subscription_id` | Numeric subscription ID |
 | `chainlink_don_id` | bytes32 (e.g. `fun-polygon-mainnet-1`) |
 | `chainlink_hmac_secret` | HMAC-SHA256 secret для callback signature |
-| `prometheus_auth_password` | Basic Auth password для `/metrics` endpoint |
 
 **Observability — Grafana Cloud (OBS.1):**
 
