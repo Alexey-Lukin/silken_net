@@ -386,7 +386,7 @@ static void MX_CRYP_Init(void)
   hcryp.Instance = AES;
   hcryp.Init.DataType    = CRYP_DATATYPE_32B;   // 32-бітний порядок слів
   hcryp.Init.KeySize     = CRYP_KEYSIZE_256B;    // Gaia 2.0 Standard: 256-бітний ключ
-  hcryp.Init.pKey        = aes_key;              // Вказівник на hardcoded ключ у Flash
+  hcryp.Init.pKey        = aes_key;              // Per-device HKDF-derived key (RAM mirror, populated by Load_AES_Key() at boot — see §3.4а)
   hcryp.Init.Algorithm   = CRYP_AES_ECB;         // Electronic Codebook для 1 блоку LoRa TX
   HAL_CRYP_Init(&hcryp);
 }
@@ -400,7 +400,7 @@ static void MX_CRYP_Init(void)
   hcryp.Instance = AES;
   hcryp.Init.DataType    = CRYP_DATATYPE_32B;   // 32-бітний порядок слів
   hcryp.Init.KeySize     = CRYP_KEYSIZE_256B;    // Gaia 2.0 Standard: 256-бітний ключ
-  hcryp.Init.pKey        = aes_key;              // Вказівник на hardcoded ключ у Flash
+  hcryp.Init.pKey        = aes_key;              // Per-device HKDF-derived key (RAM mirror, populated by Load_AES_Key() at boot — see §3.4а)
   hcryp.Init.Algorithm   = CRYP_AES_ECB;         // ECB базовий режим для LoRa RX
   // Примітка: CBC для батч-флашингу та downlink команд встановлюється динамічно
   HAL_CRYP_Init(&hcryp);
@@ -415,7 +415,7 @@ static void MX_CRYP_Init(void)
 |----------|----------|---------|
 | `KeySize` | `CRYP_KEYSIZE_256B` | 256-бітний ключ (32 байти, 8 × uint32_t) |
 | `DataType` | `CRYP_DATATYPE_32B` | Endianness: 32-бітний порядок байтів |
-| `pKey` | `&aes_key[0]` | Вказівник на Flash-адресу hardcoded ключа |
+| `pKey` | `&aes_key[0]` | RAM-адреса per-device HKDF-derived ключа (завантажується з Protected Flash Sector через `Load_AES_Key()` — §3.4а, BLOCKER-1 closed via FW.1) |
 
 ---
 
@@ -1927,7 +1927,7 @@ HAL_CRYP_Init(&hcryp);
 | `firmware/queen/main.c:632-662` | `Handle_CoAP_Command()` CBC decrypt + ECB restore |
 | `firmware/queen/main.c:770-782` | `MX_CRYP_Init()` Queen |
 | `app/services/telemetry_unpacker_service.rb` | Rails-сторона дешифрування батча |
-| [03_01 Firmware Lifecycle](03_01_Firmware_Lifecycle_and_DMA) | Фази 0-5, RTC, IWDG, Hardcoded Key BLOCKER |
+| [03_01 Firmware Lifecycle](03_01_Firmware_Lifecycle_and_DMA) | Фази 0-5, RTC, IWDG, ✅ BLOCKER-1 (Hardcoded Key — Firmware CLOSED via FW.1) |
 | [04_02 Business Logic](04_02_Business_Logic_and_Services) | TelemetryUnpackerService, ActuatorCommandWorker |
 | `POST /api/v1/provisioning/register` | ✅ Реалізовано — `Api::V1::ProvisioningController#register` (Zero-Trust, no keys in response — `04_03 §5.2`). Internal admin tool: §3.4г |
 

@@ -148,6 +148,80 @@ z0 = bytes_to_signed_unit_float(digest[16,  8])
 
 ---
 
+### 🧮 [FW.31] Numeric Tolerance Band — Flip Procedure (deferred to lab measurement)
+
+**Контекст:** SEC.11 закрив BLOCKER-2 і відкрив технічну можливість використовувати **числовий** DCI-перевірний крок (`|server_z − device_z| < ε`) замість суто **категоричного** enum-match'у. Числова перевірка значно потужніша: дозволяє ловити replay-атаки з правильним StatusByte, але неправильною Z-magnitude (наприклад, attacker викликав легітимний enum через clamp-логіку, але справжня траєкторія розійшлася). Категорична перевірка пропускає такі сценарії.
+
+**Стан коду (✅ ready, awaits lab data):** Feature-flag реалізовано у [`TelemetryUnpackerService#check_z_divergence!`](04_02_Business_Logic_and_Services) (2026-05-02). У production-середовищі branch неактивний — це навмисно. Активація через Kamal env, **без code change та без redeploy** контейнера.
+
+**ENV-контракт:**
+
+| ENV | Default | Тип | Семантика |
+|-----|---------|-----|-----------|
+| `GAIA_DCI_NUMERIC_TOLERANCE` | unset → `false` | Boolean (`true`/`1`/`yes`) | Вмикає numeric branch **on top of** категоричної перевірки (не замінює). Категоричний enum-match завжди виконується першим. |
+| `GAIA_DCI_NUMERIC_EPSILON` | `0.001` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON`) | Float (parsed via `Float()`) | Tolerance threshold. Malformed/non-numeric value → graceful fallback до DEFAULT_DCI_EPSILON + `Rails.logger.warn`. |
+
+**Гейт активації — `device_z` має бути в payload:**
+
+Numeric branch виконується **лише** коли `attributes[:device_z]` присутній. Сьогодні LoRa packet 21B (`Soldier → Queen`) **не несе** raw Z — фірмварний `bio_contract.rb#calculate_state` повертає тільки `status_byte = [PanicFlag:1 | Status:2 | GrowthPoints:5]` (FW.29-PACK). Branch стає активним після одного з:
+
+1. **FW.2 CCM transition** (24-байтний пакет, [`03_05 §3.2 BLOCKER-2`](03_05_Hardware_AES256_and_Security)) — якщо при перепакуванні зарезервувати ≥2 байти на стиснутий Z (наприклад, [E.7 ARCH.22 lambda-exponent](05_02_Proof_of_Growth_Pipeline)).
+2. **Окремий пакет-варіант ML2** — рідкісний uplink (~1/добу) із повним Z-snapshot для калібровки.
+3. **Server-side surrogate** — backend сам обчислює `device_z` зі збереженого `(x_prev, y_prev, z_prev)` chain'у + telemetry inputs, як референс для self-check (це робить numeric branch ефективно lab-only).
+
+До цього часу — branch інертний, але код вже staged у production без поведінкової зміни.
+
+**Lab measurement protocol (pre-flip gate):**
+
+Потрібно фактично виміряти ARM↔x86 IEEE-754 drift на цільовому залізі, перш ніж довірити numeric ε фінансовим рішенням (slashing, mint). Емпірика [FW.7](../00_08_Action_Plan_Tracker.md) дала `< 1e-12` теоретично — але без instrumented testing цифру не можна "закладати в конституцію".
+
+| Крок | Дія | Артефакт |
+|------|-----|----------|
+| 1 | Згенерувати N=10 000 детермінованих тест-векторів через `SilkenNet::SeedDerivation` для синтетичних `K_seed` (різні per-vector) + випадкові `(temp, acoustic, delta_t_s, vcap_mv)` у валідних діапазонах | `firmware/test/test_dci_drift_vectors.json` (gitignored, recreatable) |
+| 2 | Прогнати ті самі вектори через `Attractor.calculate_z_from_state` на GCP x86-64 (production-mirror Docker image) | CSV: `vector_id, server_z` |
+| 3 | Прошити test-фірмвар на STM32WLE5JC (REVB silicon, той самий що у Pilot Site), прогнати вектори через mruby `calculate_state`, прочитати Z через SWD/RTT | CSV: `vector_id, device_z` |
+| 4 | Diff: `device_z − server_z` distribution. Скласти histogram (logspace bins для tail), розрахувати p50/p99/p99.9/p99.99/max | Jupyter notebook `analysis/dci_drift_distribution.ipynb` (deferred) |
+| 5 | Перевірити нульовий drift на subset, де `chaos_seed → byte-identical (x₀,y₀,z₀)` (SEC.11 invariant) — будь-який non-zero drift тут = баг в seed derivation, не Float | Assertion у notebook |
+| 6 | Обрати ε := max(p99.99, 2 × max_observed_drift). Якщо ε ≥ 0.1 — Lorenz dynamics зламана й треба окремо розбиратися (ARCH.18 fixed-point). Якщо ε < 0.0001 — поставити `0.001` як conservative default (надлишок margin) | Кеп ε у `DEFAULT_DCI_EPSILON` constant + PR |
+
+**Rollout gates (порядок активації):**
+
+1. **Gate L (Lab):** Lab measurement виконано, ε обраний, distribution stored.
+2. **Gate D (Device coverage):** `device_z` доступний у ≥ 95% telemetry packets (після FW.2 wire revision АБО після ML2 variant).
+3. **Gate C (Canary):** Активація в `WEB3_STRICT_MODE=false` staging кластері на 24 год. Watch `silkennet_dci_numeric_rejections_total` (новий Prometheus counter, додати в [`06_03`](06_03_Prometheus_Observability) після Gate D). Очікувано: 0 rejections (бо ε > max observed drift у Gate L). Будь-яке non-zero rejection → analiza root cause (seed corruption? RTC drift? overflow?) перед production.
+4. **Gate P (Production canary):** Single Genesis cluster, `GAIA_DCI_NUMERIC_TOLERANCE=true` через `kamal env push`, моніторинг 72 год.
+5. **Gate G (Global):** Flip всіх production кластерів.
+
+**Rollback procedure:**
+
+```bash
+# Kamal env push без redeploy:
+kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
+# АБО видалити з .kamal/secrets, тоді next deploy картки залишиться без флагу
+```
+
+Жоден код-rollback не потрібен — feature-flag перетворює numeric branch на no-op. Категорична перевірка продовжує захищати DCI.
+
+**Side effects після flip:**
+
+- Fraud detection стає **числовим**: ловить replay-атаки з правильним enum, неправильним magnitude — як написано у §145 вище.
+- `TelemetryLog#fraud_flagged` зростає на ~0.001-0.01% legitimate traffic (false positives на ε boundary) — це **acceptable noise**, бо `fraud_flagged` тригерить ручний review, не automatic slashing.
+- Mint pipeline ([`05_02`](05_02_Proof_of_Growth_Pipeline)) НЕ блокується numeric divergence — це лише signal для AML/risk layer.
+
+**Specs (вже в коді):**
+
+`spec/services/telemetry_unpacker_service_spec.rb` describe `[FW.31] numeric tolerance band` — 6 examples:
+1. toggle off (default) → numeric branch inert, тільки категорична перевірка
+2. within ε → silent pass (no fraud flag)
+3. drift > ε → fraud flag + structured log entry
+4. default ε constant — pin `DEFAULT_DCI_EPSILON = 0.001`
+5. malformed `GAIA_DCI_NUMERIC_EPSILON="abc"` → graceful fallback + warn
+6. `device_z` missing → numeric branch skipped (Gate D guard)
+
+**Cross-ref:** [00_08 FW.31](00_08_Action_Plan_Tracker), [03_05 §3.2 BLOCKER-2 FW.2 CCM wire format](03_05_Hardware_AES256_and_Security), [04_02 TelemetryUnpackerService](04_02_Business_Logic_and_Services), [06_03 Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
+
+---
+
 ### 🟡 BLOCKER-5: Чисельна Нестабільність Методу Ейлера при DT=0.01
 
 **Опис:** Метод Ейлера першого порядку застосовується для інтегрування системи Лоренца:
