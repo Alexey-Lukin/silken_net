@@ -28,7 +28,7 @@
 | **Mesh Anti-Pingpong (3 слоти)** | ✅ Реалізовано (DR8, DR9, DR11; зменшено з 8 до 3 у FW.21, DR10/DR12 під EMA, DR13..DR15 — резерв) |
 | **CIFO Priority-Aware Eviction** | ✅ Виправлено (критичні записи захищені від витіснення) |
 | **OTA Integrity (CRC32)** | ✅ Виправлено (ISO 3309 перевірка перед flash write) |
-| **AES Key — зашитий у Flash** | 🔴 BLOCKER (hardcoded, не обертається) |
+| **AES Key — per-device HKDF provisioning (FW.1)** | ✅ Firmware CLOSED (2026-05-02). `Load_AES_Key()` + Protected Flash. Залишається: Factory Flashing Pipeline (SEC.3) + RDP Level 2 (SEC.2). Key rotation — FW.17 (Post-FW.1, P3) |
 | **AT Command Blocking (~25 s flush)** | 🟡 Частково виправлено — CoAP retry з UART RX парсингом (FW.9) + LoRa RX **ring buffer** (FW.3, 2026-05-02) → під час flush'у Queen більше НЕ губить пакети ≤ 15 burst; повна async UART DMA — відкрито |
 | **Starlink Latency Gap** | 🟡 OPEN (HAL_Delay(1000) для CoAP session може бути замало) |
 | **Error_Handler** | ✅ Виправлено — `NVIC_SystemReset()` через 100 мс замість вічного циклу (FW.14) |
@@ -39,10 +39,9 @@
 
 ## 🛑 Блокери
 
-### 🔴 BLOCKER-1: Hardcoded AES-256 Key у Flash-пам'яті
+### ✅ BLOCKER-1: Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
 
-**Статус:** Відкрито. Критичний ризик безпеки для масового виробництва.
-> 🟡 Firmware part completed: `Load_AES_Key()` reads per-device key from Protected Flash Sector (0x0803E000). Hardcoded key removed. `Error_Handler()` if not provisioned. Залишається: factory flashing pipeline, RDP Level 2 activation.
+**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR = 0x0803E000`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Залишається: Factory Flashing Pipeline tool (SEC.3 — threat model: `03_05 §3.4г`) та RDP Level 2 activation (SEC.2).
 
 **Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
 
@@ -51,18 +50,18 @@
 uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init()
 ```
 
-**Ризики:**
-1. **~~Єдина точка відмови:~~** ✅ Firmware тепер підтримує per-device key (Flash-based). Залишається factory provisioning pipeline.
-2. **Неможливість ротації:** Замінити ключ без перепрошивки всіх вузлів неможливо.
-3. **Flash читається через JTAG/SWD:** Якщо не активований RDP Level 2 (Readout Protection), ключ тривіально витягується.
+**Виконані дії (FW.1, 2026-05-02):**
+- ✅ Per-device key через `HKDF(PROVISIONING_MASTER_KEY, device_uid, "silkennet-v1-aes256")` → Protected Flash.
+- ✅ `Load_AES_Key()` + magic `"KEYS"` guard — boot відмовляє без provisioning (infinite reset loop).
+- ✅ Per-device ізоляція: компрометація одного Soldier не розкриває ключі сусідів.
+- ✅ `Security::WeakKeyDetector` (SEC.9) — FIPS-197 test vector не може потрапити у production.
 
-**Необхідна дія:**
-- ~~Провізіонувати унікальний ключ на кожен пристрій через захищений канал (`POST /api/v1/provisioning/register`) під час Factory Flashing.~~ ✅ Firmware ready — `Load_AES_Key()` реалізовано.
-- Активувати RDP Level 2 як фінальний крок Factory Flashing (необоротно блокує JTAG).
-- Перенести ключ у `FLASH_KEYR`-захищену зону або окремий secure element.
-- Реалізувати механізм ротації ключів через OTA (окрема задача `03_05`).
+**Залишається:**
+- [ ] SEC.3: Factory Flashing Pipeline tool (реалізація + integration тест; threat model задокументований у `03_05 §3.4г`).
+- [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment).
+- [ ] FW.17: Hash Ratchet KDF key rotation без перепрошивки (Post-FW.1, P3).
 
-**Блокує:** Factory Flashing, масове виробництво.
+> Cross-ref: [`03_05 §3.1 Джерело AES-Ключа при Старті`](03_05_Hardware_AES256_and_Security#31-джерело-aes-ключа-при-старті), [`03_05 §3.4 Factory Flashing Pipeline`](03_05_Hardware_AES256_and_Security), [`03_05 §3.4а HKDF Derivation`](03_05_Hardware_AES256_and_Security), [`03_05 §3.4г Operations Security`](03_05_Hardware_AES256_and_Security).
 
 ---
 

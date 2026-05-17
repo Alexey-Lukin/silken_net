@@ -260,7 +260,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 
 | BLOCKER | Файл | Суть |
 |---------|------|------|
-| HW-AES-KEY | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82` | Hardcoded AES key — єдиний ключ для всіх вузлів мережі |
+| HW-AES-KEY | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82` | ✅ Firmware CLOSED (FW.1, 2026-05-02): `Load_AES_Key()` + per-device HKDF + Protected Flash. Залишається: Factory Flashing Pipeline (SEC.3, threat model: `03_05 §3.4г`) + RDP Level 2 (SEC.2) |
 | AES-ECB | `firmware/soldier/main.c:747` | ECB без MAC -> replay/bit-flip attacks |
 | TINYML-COMMENT | `firmware/soldier/main.c:413` | `Run_Inference()` закоментована; model header відсутній |
 | LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | `delta_t`/`vcap` не передаються як входи атрактора |

@@ -118,22 +118,18 @@
 #### S2.2 — Grafana Cloud dashboards
 - **P0** | `06_03` | **Складність: S** | **🔧 Операційна** — налаштування в Grafana Cloud UI, без коду
 - **Опис:** Grafana Cloud SaaS — метрики доступні, дашборди створюються в UI
-- [ ] 👤 Dashboard: Sidekiq queues (9 черг, size + latency)
-- [ ] 👤 Dashboard: Web3 RPC errors by network
-- [ ] 👤 Dashboard: Telemetry ingest rate + fraud detection
-- [ ] 👤 Dashboard: Treasury / Oracle balance monitoring
-- [ ] 👤 Dashboard: Database connection pool stats
+- **Статус (🤖, 2026-05-17):** ✅ IaC JSON згенеровано: `deploy/grafana/dashboards/silkennet-overview.json` — один dashboard з 5 секціями (Telemetry, Sidekiq, Web3, Treasury, DB Pool), 15 панелів. Імпортується через Grafana UI або HTTP API. Інструкції: `deploy/grafana/README.md`.
+- [x] 🤖 `deploy/grafana/dashboards/silkennet-overview.json` — Dashboard IaC (Telemetry + Sidekiq + Web3 + Treasury + DB Pool)
+- [ ] 👤 Імпортувати dashboard у Grafana Cloud (UI або API — інструкції у `deploy/grafana/README.md`)
 
 #### S2.3 — Grafana Cloud alerting rules
 - **P0** | `06_03` | **Складність: S** | **🔧 Операційна** — налаштування в Grafana Cloud UI, без коду
 - **Опис:** Grafana Cloud Alerting замінює потребу в self-hosted Alertmanager
+- **Статус (🤖, 2026-05-17):** ✅ IaC YAML згенеровано: `deploy/grafana/alerts/silkennet-alerts.yaml` — 12 alert rules (4 P0 critical + 5 P1 warning + 3 P2 info). Grafana Unified Alerting формат (Grafana 9+). Інструкції та `sed` команда для `${DATASOURCE_UID}`: `deploy/grafana/README.md`.
 - [x] Backend: `silkennet_telemetry_acoustic_overflow_total` counter реалізований в `TelemetryUnpackerService` (інкрементується при `acoustic_events == 255`) — готовий для alert rule `rate() > 0`
-- [ ] 👤 Alert: `web3_critical` queue depth > 100
-- [ ] 👤 Alert: `silkennet_telemetry_fraud_detected_total` rate > 0
-- [ ] 👤 Alert: `silkennet_rpc_errors_total` rate > 10/min
-- [ ] 👤 Alert: Oracle balance < threshold
-- [ ] 👤 Alert: Sidekiq queue latency > 5 min
-- [ ] 👤 Налаштувати notification channel (Slack / Email / PagerDuty)
+- [x] 🤖 `deploy/grafana/alerts/silkennet-alerts.yaml` — Alert rules IaC (12 rules: P0/P1/P2)
+- [ ] 👤 Замінити `${DATASOURCE_UID}` на реальний UID і застосувати через API або Grafana UI
+- [ ] 👤 Налаштувати notification channel (Slack / Email / PagerDuty) — інструкції у README
 
 #### S3.2 — dClimate Real API verification
 - **P1** | `05_01` | **Складність: S** | **🔧 Операційна** - отримати та встановити API key, сервіс реалізований, потрібна staging верифікація
@@ -512,8 +508,9 @@
 #### FW.43 — 03_05 §3.1 SSOT drift (привид hardcoded AES-key після FW.1)
 - `docs/03_05_Hardware_AES256_and_Security.md` §3.1 | **P3**
 - **Опис:** Hot-fix doc-only. FW.1 (Per-device HKDF provisioning) вже реалізовано — `Load_AES_Key()` зчитує унікальний ключ з Protected Flash. Проте §3.1 досі описує "ідентичний на ВСІХ вузлах" + hardcoded `uint32_t aes_key[8] = { 0xXXXXXXXX, ... }`. Це SSOT-drift, який вводить в оману нових інженерів.
-- [ ] 🤖 Замінити блок §3.1 на актуальний (`uint32_t aes_key[8] = {0};` + посилання на `Load_AES_Key()` у §3.4а HKDF derivation)
-- [ ] 🤖 Прибрати фразу "Ідентичний на ВСІХ вузлах мережі" — поточна архітектура per-device unique через HKDF
+- [x] 🤖 Замінити блок §3.1 на актуальний (`uint32_t aes_key[8] = {0};` + посилання на `Load_AES_Key()` у §3.4а HKDF derivation) — ✅ BLOCKER-1 оновлено до `✅ Firmware CLOSED (FW.1)`, historical code анотовано, status table виправлено (2026-05-17)
+- [x] 🤖 Прибрати фразу "Ідентичний на ВСІХ вузлах мережі" — поточна архітектура per-device unique через HKDF — ✅ header змінено на `✅ BLOCKER-1: ... Firmware CLOSED`; historical блок чітко анотований `[PRE-FW.1 HISTORICAL]` (2026-05-17)
+- [x] 🤖 **Розширено scope (2026-05-17):** Той самий SSOT-drift виправлено у `03_01 BLOCKER-1` + `03_02 BLOCKER-1` + status tables (03_01, 03_02, 03_05 §10) + `03_05 §9 Resources` (provisioning endpoint `Майбутній` → `✅ Реалізовано`) + `03_02 §BLOCKER-7 Footer` (IV reuse mitigation note) + `03_02 §13 Cross-ref` (Factory Flashing row) + `CLAUDE.md §12 HW-AES-KEY`. Усі посилання cross-ref на новий `03_05 §3.4г`.
 
 ---
 
@@ -895,12 +892,12 @@
 - [x] 🤖 Дизайн завершений — ✅ `03_05` §3.4 Гілка A + Гілка B (2026-05-13)
 - [ ] 🤖 Реалізація Factory Flashing tool
 - [ ] 🤖 Integration тест з provisioning API
-- [ ] 🤖 **Задокументувати Factory Flashing pipeline як окрему секцію** з явною позначкою **"Internal Admin Tool, поза публічним REST API"** (запит: 2026-05-17). Розмежування з `/api/v1/provisioning/register` (registration-after-deployment) має бути нерозмитим: `04_03 §5.2` залишається Zero-Trust (no keys in response), нова секція описує **окремий канал** доставки ключів програматору. Проектування з нуля з повним threat model:
+- [x] 🤖 **Задокументувати Factory Flashing pipeline як окрему секцію** з явною позначкою **"Internal Admin Tool, поза публічним REST API"** (запит: 2026-05-17). Розмежування з `/api/v1/provisioning/register` (registration-after-deployment) має бути нерозмитим: `04_03 §5.2` залишається Zero-Trust (no keys in response), нова секція описує **окремий канал** доставки ключів програматору. Проектування з нуля з повним threat model:
   - **Access control до `PROVISIONING_MASTER_KEY`:** хто (роль/особа) має право запускати tool, як master key потрапляє у tool (HSM injection / envelope encryption / short-lived token + KMS), як ротується, fail-closed boot guard (cross-ref `master_key_strength_check.rb` SEC.11)
   - **Anti-key-leak via factory operator:** operator UI показує тільки `status: key_burned` (без raw key), key flow `tool → SWD/JTAG → protected Flash sector` без проходження через operator screen / clipboard / logfile, secure RAM wipe після write, відсутність персистентного key cache на factory machine, screen-recording mitigations
   - **Audit-trail provisioning сесій:** append-only chain-hashed log (паттерн `AuditLog` з `pg_advisory_xact_lock`) — operator_id + supervisor_id + device_uid + timestamp + ATECC serial (Гілка B); інтеграція з `MaintenanceRecord(action_type: :installation)` у backend (закриває loop "fizzично прошито ↔ DB-зареєстровано"); tamper-evident retention policy
   - **Гілка A vs Гілка B threat model diff:** як змінюється attack surface при переході Protected Flash → ATECC608B (chip-swap detection через `(device_uid, atecc_serial)` pinning — вже згадано у §3.4, але threat model має це formalізувати)
-  - **Цільова секція:** TBD при виконанні — кандидати: новий §X у `04_02` (Internal Admin Services секція) АБО окрема нота `06_xx` (infrastructure / supply-chain ops). Не публічний REST endpoint в `04_03`
+  - **Цільова секція:** ✅ `03_05 §3.4г Factory Flashing Operations Security` (2026-05-17) — покриває всі 4 вимоги: A. Access Control, B. Anti-Key-Leak, C. Audit-Trail, D. Threat Model Гілка A vs B
   - **Cross-ref:** SEC.1 (Multisig для admin role), SEC.2 (RDP Level 2), SEC.6 (ATECC608B), SEC.9 (FIPS test vector guard), `03_05 §3.4` (existing pipeline design — extend, not duplicate)
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)

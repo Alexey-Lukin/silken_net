@@ -38,7 +38,7 @@
 | **RSSI Clamp (int16 → int8)** | ✅ Виправлено (SX1262 може давати < -128 dBm) |
 | **Thundering Herd Jitter (HRNG)** | ✅ Виправлено (0–60 секунд рандомне зміщення) |
 | **AT Command Timeout (blind delay)** | 🔴 BLOCKER (немає парсингу відповіді модему) |
-| **Hardcoded AES Key у Flash** | 🟡 BLOCKER (firmware fixed — `Load_AES_Key()`, needs factory pipeline + RDP L2) |
+| **Hardcoded AES Key у Flash** | ✅ Firmware CLOSED (FW.1, 2026-05-02). Залишається: Factory Flashing Pipeline (SEC.3) + RDP Level 2 (SEC.2) |
 | **Queen UID hardcoded "QUEEN-001"** | ✅ Виправлено (Flash-based provisioning з fallback на STM32 HW UID) |
 | **Error_Handler без IWDG у Queen** | ✅ Виправлено (IWDG додано з timeout ~26 с + refresh у main loop) |
 | **No CoAP retry logic** | ✅ Виправлено (FW.9) — `SIM7070_SendATCommand_WithResponse`, max 3 retry, парсинг `OK`/`ERROR` |
@@ -51,10 +51,9 @@
 
 ## 🛑 Блокери
 
-### 🔴 BLOCKER-1: Hardcoded AES-256 Key у Flash-пам'яті
+### ✅ BLOCKER-1: Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
 
-**Статус:** Відкрито. Критичний ризик безпеки для масового виробництва.
-> 🟡 Firmware part completed: `Load_AES_Key()` reads per-device key from Protected Flash Sector (0x0803E000). Hardcoded key removed. `Error_Handler()` if not provisioned. Залишається: factory flashing pipeline, RDP Level 2 activation.
+**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). Queen `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR = 0x0803E000`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Залишається: Factory Flashing Pipeline tool (SEC.3 — threat model: `03_05 §3.4г`) та RDP Level 2 activation (SEC.2).
 
 **Файл:** `firmware/queen/main.c:81-82`
 
@@ -63,17 +62,17 @@
 uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init()
 ```
 
-**Ризики:**
-1. **~~Єдина точка відмови:~~** ✅ Firmware тепер підтримує per-device key (Flash-based). Залишається factory provisioning pipeline.
-2. **JTAG/SWD читання Flash:** Без активованого RDP Level 2 ключ тривіально витягується.
-3. **Неможливість ротації без перепрошивки:** При компрометації треба рефлешити всі вузли.
+**Виконані дії (FW.1, 2026-05-02):**
+- ✅ Queen-side `HKDF(PROVISIONING_MASTER_KEY, queen_uid, "silkennet-v1-aes256")` → Protected Flash.
+- ✅ `Load_AES_Key()` + magic `"KEYS"` guard — boot відмовляє без provisioning.
+- ✅ Per-Soldier ключі для cluster decrypt — Queen знає ключ кожного свого Soldier (`HardwareKey#binary_key` cache).
 
-**Необхідна дія:**
-- ~~Провізіонувати унікальний ключ на кожну Королеву через `POST /api/v1/provisioning/register` (Factory Flashing).~~ ✅ Firmware ready — `Load_AES_Key()` реалізовано.
-- Активувати RDP Level 2 як фінальний крок флешингу (блокує JTAG назавжди).
-- Перенести ключ у захищений регіон Flash або окремий secure element.
+**Залишається:**
+- [ ] SEC.3: Factory Flashing Pipeline tool (реалізація + integration тест; threat model: `03_05 §3.4г`).
+- [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment).
+- [ ] Опційно (mass production >10k): ATECC608B Secure Element — SEC.6 / `03_05 §3.7`.
 
-**Блокує:** Factory Flashing, масове виробництво, безпеку мережі.
+> Cross-ref: [`03_05 §3.1 Джерело AES-Ключа`](03_05_Hardware_AES256_and_Security), [`03_05 §3.4 Factory Flashing Pipeline`](03_05_Hardware_AES256_and_Security), [`03_05 §3.4г Operations Security`](03_05_Hardware_AES256_and_Security), [`03_01 BLOCKER-1`](03_01_Firmware_Lifecycle_and_DMA).
 
 ---
 
@@ -229,7 +228,7 @@ batch_iv[i] = tick ^ (uid_hash << i) ^ ((uint32_t)i * RNG_FALLBACK_XOR_MASK)
 
 Оскільки STM32 HW UID унікальний для кожного чіпу, IV більше не буде однаковим навіть при масовому blackout-відновленні. Повністю усуває IV Reuse Attack у сценарії "всі Queens перезавантажились одночасно".
 
-**Примітка:** Залишкова вразливість (BLOCKER-1: однаковий AES ключ) збережена — IV reuse повністю неможлива лише при унікальних ключах.
+**Примітка:** ✅ BLOCKER-1 (однаковий AES ключ) закрито через FW.1 — кожен вузол має per-device HKDF-derived ключ; IV reuse тепер дійсно неможлива.
 
 **Закриває:** IV Reuse Attack при blackout-відновленні.
 
@@ -1239,6 +1238,6 @@ make -C firmware/test queen    # 128 тестів, ~0.1 секунди
 |--------|----------------|
 | [05_02 Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Втрата пакетів на Queen → ZK-proof не формується → мінтинг SCC блокується |
 | [04_02 Business Logic and Services](04_02_Business_Logic_and_Services) | `UnpackTelemetryWorker` очікує батч формату `[IV:16][CBC ciphertext]` |
-| Factory Flashing | BLOCKER-1 (AES key) блокує масове виробництво |
+| Factory Flashing | BLOCKER-1 firmware-частина закрита (FW.1); SEC.3 — tool implementation залишається, threat model: `03_05 §3.4г` |
 
 ---

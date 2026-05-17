@@ -33,7 +33,7 @@
 | **ECB Restoration після CBC операцій (Queen)** | ✅ Виправлено (`[FIX: CRITICAL — ECB Restoration]`) |
 | **HRNG Fallback (безпечна деградація)** | ✅ Реалізовано (XOR tick + index) |
 | **Emergency TX (EwsAlert / Panic): AES-256-ECB** | ✅ Реалізовано |
-| **AES Key — захардкоджений у Flash** | 🔴 BLOCKER (ідентичний для всіх вузлів) |
+| **AES Key — per-device HKDF provisioning (FW.1)** | ✅ Firmware CLOSED (2026-05-02). Factory Flashing Pipeline (SEC.3) + RDP Level 2 (SEC.2) — залишаються |
 | **ECB Mode для Soldier ↔ Queen (відсутність IV)** | 🔴 BLOCKER (рекомендовано AES-256-CCM з 24-байтним пакетом) |
 | **Відсутність MAC/MIC для LoRa-пакетів** | 🔴 BLOCKER (вирішується CCM — апаратний MIC + Frame Counter) |
 | **HRNG Fallback — передбачуваний seed** | ✅ Виправлено (djb2 STM32 HW UID XOR tick — унікальний на кожній Queen) |
@@ -46,44 +46,37 @@
 
 ---
 
-### 🔴 BLOCKER-1: Hardcoded AES-256 Key у Flash-пам'яті (Ідентичний на всіх вузлах)
+### ✅ BLOCKER-1: Hardcoded AES-256 Key — Firmware CLOSED (FW.1, 2026-05-02)
 
-**Статус:** Відкрито. **Критичний ризик безпеки для масового виробництва.**
-> 🟡 Firmware part completed: `Load_AES_Key()` reads per-device key from Protected Flash Sector (0x0803E000). Hardcoded key removed. `Error_Handler()` if not provisioned. Залишається: factory flashing pipeline, RDP Level 2 activation.
+**Статус:** ✅ Firmware ЗАКРИТО (FW.1, 2026-05-02). `Load_AES_Key()` зчитує per-device HKDF-derived ключ з Protected Flash Sector (`FLASH_KEY_ADDR`, magic `"KEYS"`). Hardcoded ідентичний ключ видалено. Factory Flashing Pipeline (SEC.3) та RDP Level 2 activation (SEC.2) — залишаються.
 
-**Файли:** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
+**Файли (historical pre-FW.1):** `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82`
+
+> ⚠️ **[PRE-FW.1 HISTORICAL — до 2026-05-02]** Код нижче — аудит-артефакт. Поточний стан: `uint32_t aes_key[8] = {0};` + `Load_AES_Key()` → §3.1.
 
 ```c
-// Однаковий ключ у ВСІХ вузлах мережі Silken Net — Soldier та Queen
-// (Актуальні значення — у firmware/soldier/main.c:66-67, навмисно не дублюються тут)
+// [HISTORICAL] Однаковий ключ у ВСІХ вузлах мережі — Soldier та Queen.
+// Post-FW.1: замінено на Load_AES_Key() з Protected Flash Sector.
+// Якщо бачиш 0xXXXXXXXX у живій копії — FW.1 відкочений → СТОП та ескалюй.
 uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
                        0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX};
 ```
 
-Також у `firmware/queen/main.c:63-64` прямо зазначено:
-```c
-// МАЄ БУТИ ІДЕНТИЧНИМ ключу, зашитому в усіх Солдатах.
-```
+> [HISTORICAL] `firmware/queen/main.c:63-64` до FW.1: `// МАЄ БУТИ ІДЕНТИЧНИМ ключу, зашитому в усіх Солдатах.`
 
-**Ризики:**
+**Виконані дії (FW.1, 2026-05-02):**
 
-1. **Єдина точка відмови (Single Point of Failure):** Злам одного Солдата → витяг ключа → дешифрування трафіку **всієї мережі** (мільйони вузлів).
-2. **Flash читається через JTAG/SWD:** Якщо не активовано RDP Level 2 (Readout Protection), ключ тривіально витягується стандартним програматором за 30 секунд.
-3. **Неможливість ротації (No Key Rotation):** Замінити ключ без перепрошивки **кожного** вузла в полі — практично нездійснено при мільярдах дерев.
-4. **Відсутня ізоляція між вузлами:** Відсутній механізм Per-Device Key Derivation (PKDF) — усі дерева в одній мережі розшифровують пакети одне одного.
+- ✅ `HKDF(PROVISIONING_MASTER_KEY, device_uid, "silkennet-v1-aes256")` → Protected Flash (`FLASH_KEY_ADDR`) — per-device unique key.
+- ✅ `Load_AES_Key()` + magic `"KEYS"` guard — boot відмовляє без provisioning (infinite reset loop; тест: `test_aes_key_load_fail_no_magic`).
+- ✅ Per-device ізоляція: злам одного Soldier не розкриває ключі сусідів.
+- ✅ `Security::WeakKeyDetector` + boot-time guard (§3.1а, SEC.9) — FIPS-197 test vector не може потрапити в production.
 
-**Необхідна дія:**
+**Залишається:**
 
-- Провізіонувати унікальний ключ на кожен пристрій через захищений канал (`POST /api/v1/provisioning/register`) під час Factory Flashing.
-- Активувати **RDP Level 2** як фінальний крок Factory Flashing (необоротно блокує JTAG/SWD).
-- Перенести ключ у `FLASH_KEYR`-захищену зону або окремий Secure Element (наприклад, ATECC608B).
-- Реалізувати Per-Device Key Derivation: `device_key = HKDF(master_key, device_uid)`.
+- [ ] SEC.3: Factory Flashing Pipeline tool (реалізація, integration тест, threat model → §3.4г)
+- [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment)
 
-**Блокує:** Factory Flashing, масове виробництво, Hardware Security Audit.
-> **⚠️ ОПЕРАЦІЙНИЙ РИЗИК (Deployment Pre-Flight):** Навіть при правильному provisioning, якщо `aes_key[8]` у `firmware/soldier/main.c` та `firmware/queen/main.c` відрізняється хоча б одним бітом, наслідки непомітні але катастрофічні:
-> - **Симптом:** Queen декриптує кожен Soldier-пакет у беззмістовний сміттєвий масив. Ліс виглядатиме абсолютно мовчазним.
-> - **Причина:** Відсутня MAC/MIC автентифікація (BLOCKER-3) — Rails не отримає жодної помилки, логи будуть порожніми.
-> - **Правило:** Перевіряй симетрію ключів перед кожним циклом прошивки. Виробничий ключ зберігай в єдиному vault (Bitwarden/1Password) — не в двох різних місцях одночасно.
+> **⚠️ ОПЕРАЦІЙНИЙ РИЗИК (Pre-Flight Checklist):** При кожному циклі прошивки — верифікувати що firmware binary отримує ключ з vault (не хардкоджений placeholder). Симптом помилки: Queen бачить щойно декриптований Soldier-пакет як хаотичний сміттєвий масив, ліс мовчазний, жодних помилок у Rails. Причина — ключ не синхронізований між Soldier і Queen Flash секторами.
 
 ---
 
@@ -1368,6 +1361,154 @@ Queen МОЖЕ верифікувати HMAC перед relay (якщо знає
 
 ---
 
+### 3.4г Factory Flashing Operations Security 🤖 (SEC.3, 2026-05-17)
+
+> ⚠️ **Internal Admin Tool — поза публічним REST API.** Цей розділ описує **окремий канал** доставки ключів від Rails Backend до програматора (SWD/JTAG). Він НЕ є описом `POST /api/v1/provisioning/register` (реєстрація після деплою, Zero-Trust, без ключа у відповіді — `04_03 §5.2` залишається незмінним). Threat model нижче розроблений з нуля з урахуванням фізичного доступу на заводі.
+
+**Cross-ref:** [SEC.3 у 00_08](00_08_Action_Plan_Tracker) | §3.4 (pipeline design) | §3.4а (HKDF derivation) | §3.6 (RDP Level 2) | §3.7 (ATECC608B) | SEC.1 (Gnosis Safe multisig) | SEC.2 (RDP activation) | SEC.6 (Secure Element) | SEC.9 (WeakKeyDetector)
+
+---
+
+#### A. Access Control до `PROVISIONING_MASTER_KEY`
+
+**Хто має право запускати Factory Flashing Tool:**
+
+| Роль | Право | Умова |
+|------|-------|-------|
+| `super_admin` | Ініціювати provisioning сесію | З MFA + HSM presence |
+| `admin` | Спостерігати за прогресом | Read-only audit view |
+| Factory Operator (без Rails-ролі) | Виконувати фізичне підключення | Лише після авторизації supervisor'а; UI показує тільки статус, не ключ |
+
+**Як master key потрапляє до інструменту (три варіанти, від кращого до гіршого):**
+
+1. **HSM injection (рекомендовано для > 1 000 unit):** `PROVISIONING_MASTER_KEY` ніколи не покидає HSM (AWS CloudHSM / Thales Luna). Інструмент викликає HSM API для деривації `device_key = HKDF(master_key, device_uid)` всередині апаратного модуля → отримує лише готовий `device_key`. `master_key` у RAM інструменту не з'являється жодного разу.
+
+2. **Envelope encryption (TRL 6/7, pilot batch):** `PROVISIONING_MASTER_KEY` зберігається у Bitwarden Secrets Manager або 1Password Secrets Automation. Перед кожною сесією — short-lived token (TTL 15 хв) генерується через API і передається інструменту через `PROVISIONING_SESSION_TOKEN` ENV. Після закінчення TTL — інструмент не може деривувати нові ключі без нового токена.
+
+3. **Direct ENV (development/lab only):** `PROVISIONING_MASTER_KEY` встановлюється в ENV вручну перед запуском. Недопустимо у field-batch. `Security::WeakKeyDetector` блокує запуск з тест-векторами (§3.1а, SEC.9).
+
+**Ротація master key:**
+
+- Нова сесія починається лише після верифікації нового ключа через `Security::WeakKeyDetector` (CLI runbook у §3.1а).
+- `previous_aes_key_hex` (Dual-Key Grace Period у `HardwareKey`) активний до підтвердження прошивки всіх пристроїв у партії.
+- Fail-closed boot guard: `config/initializers/master_key_strength_check.rb` відмовляє у запуску Rails якщо `PROVISIONING_MASTER_KEY` = тест-вектор (SEC.9).
+
+---
+
+#### B. Anti-Key-Leak via Factory Operator
+
+**Принцип нульового доступу оператора до сирого ключа:**
+
+```
+PROVISIONING_MASTER_KEY
+        │
+        ▼
+  Backend (Rails)          ← оператор не бачить цей шар
+  HKDF(master, uid) ──────→ device_key (32 байти)
+        │
+        ▼ (через захищений канал: USB/SWD adapter)
+  STM32 Protected Flash    ← оператор бачить: Status: "key_burned"
+  FLASH_KEY_ADDR (0x0803E000)
+```
+
+**Що показує UI оператору:**
+```json
+{ "status": "key_burned", "device_uid": "SNET-A1B2C3D4", "timestamp": "..." }
+```
+Ніколи: `aes_key`, `lorenz_seed`, `master_key`, байтове значення.
+
+**Технічні заходи проти витоку:**
+
+| Загроза | Захід |
+|---------|-------|
+| Скріншот/відеозапис ключа | UI не рендерить ключ; Backend повертає лише `{ status }` |
+| Clipboard intercept | Кнопки Copy відсутні на сторінці provisioning UI |
+| Logfile з ключем | `filter_parameters += [:aes_key, :lorenz_seed, :device_key, :binary_key]` у Rails; `Sentry` scrub_patterns покривають `aes_key` |
+| Persistent key cache на factory machine | `device_key` у RAM інструменту — zero-copy підхід: передається прямо в SWD write call, після якого `SecureRandom.random_bytes(32)` → overwrite буфера |
+| Shoulder surfing / screen recording | Factory laptop з privacy screen filter; Provisioning Tool запускається у fullscreen kiosk mode без title bar |
+| Key exposure через SWD/JTAG replay | Після Flash write → `HAL_FLASH_Lock()` → RDP Level 1 програмується одразу тим самим сеансом (`--rdp 1` прапорець у STM32CubeProgrammer CLI) |
+
+**Secure RAM wipe після Flash write (Гілка A):**
+```c
+// Після успішного HAL_FLASH_Program_Word() виклику:
+memset(temp_key_buffer, 0, sizeof(temp_key_buffer));
+// АБО (більш надійно на ARM):
+volatile uint8_t *p = temp_key_buffer;
+for (size_t i = 0; i < 32; i++) p[i] = 0;
+__DSB(); __ISB();  // barrier — унеможливлює оптимізацію компілятора
+```
+
+---
+
+#### C. Audit-Trail Provisioning Сесій
+
+**Кожна provisioning сесія генерує append-only записи в двох місцях:**
+
+**1. `AuditLog` (chain-hashed, `pg_advisory_xact_lock(827549841, org_id)`):**
+```ruby
+AuditLog.create!(
+  action:        "factory_flash",
+  actor_id:      operator_user.id,          # supervisor_id у metadata
+  target_type:   "HardwareKey",
+  target_id:     hardware_key.id,
+  metadata: {
+    device_uid:    device_uid,               # "SNET-XXXXXXXX"
+    operator_id:   operator_user.id,
+    supervisor_id: supervisor_user.id,       # 2-person rule
+    atecc_serial:  atecc_serial_hex,         # Гілка B: 9-байт serial (nil для Гілки A)
+    rdp_level:     1,                        # рівень RDP після flash
+    batch_id:      batch_identifier,         # для групового аудиту
+    flash_addr:    "0x0803E000",
+    firmware_ver:  firmware_version_string
+  }
+)
+```
+
+**2. `MaintenanceRecord(action_type: :installation)`** — закриває loop «фізично прошито ↔ DB-зареєстровано»:
+```ruby
+MaintenanceRecord.create!(
+  tree_or_gateway: device,
+  action_type:     :installation,
+  performed_by:    operator_user,
+  notes:           "Factory Flash. Batch: #{batch_id}. RDP Level: #{rdp_level}. #{atecc_note}"
+)
+```
+
+**Tamper-evident retention policy:**
+- `AuditLog` — заборонено видаляти (Rails guard: `before_destroy { raise "AuditLog is immutable" }`).
+- Chain hash перевіряється при кожному audit export (`AuditLog.verify_chain_integrity!`).
+- Мінімальний retention: 7 років (GDPR Article 17(3)(b) — legal obligation exception).
+
+**2-Person Rule (рекомендовано для > 100 unit batch):** supervisor має підтвердити сесію через окремий Rails UI перед тим як інструмент отримає session token. Реалізується через `ProvisioningSession` AASM: `pending → supervisor_approved → active → completed/failed`.
+
+---
+
+#### D. Гілка A vs Гілка B Threat Model Diff
+
+| Вектор атаки | Гілка A (Protected Flash STM32) | Гілка B (ATECC608B / STSAFE-A110) |
+|-------------|----------------------------------|-----------------------------------|
+| **Фізичне вилучення ключа з чіпа** | RDP Level 1: ускладнено (voltage glitching можливий на старих ревізіях); RDP Level 2: практично неможливо | ATECC data zone lock + DPA-hardened silicon: key never leaves chip в plaintext; fault injection → self-erase |
+| **Chip swap (ворог замінює STM32/ATECC на інший)** | STM32 не має унікального hardware ID прив'язаного до DB — swap непомітний до першого uplink (DID mismatch детектує Rails) | ATECC serial (9 байт, factory-burned) pin'ується у `(device_uid, atecc_serial)` парі в `HardwareKey`. Чужий ATECC → provisioning API reject з 409 |
+| **Replay provisioning request** | `POST /api/v1/provisioning/register` — ідемпотентний через duplicate DID check (409) | Те саме + ATECC serial pinning |
+| **Factory insider attack (оператор копіює ключ)** | Ризик: SWD adapter може перехопити байти під час write якщо не використовується HSM injection | Ризик нижчий: ATECC write через I²C, ключ загружається через `atcab_write_zone()` — не проходить через user-space буфер у стандартній реалізації |
+| **Cold-boot attack на factory laptop RAM** | Ризик: `device_key` у RAM до wipe (~мс) | Ризик нижчий: HSM injection → `device_key` ніколи не в laptop RAM |
+| **Перехід Гілка A → Гілка B** | Можливо (re-flash MCU + добавити ATECC до PCBA = новий PCB revision) | — |
+| **Перехід Гілка B → Гілка A** | ❌ Неможливо (ATECC config zone locked permanently) | — |
+
+**Рекомендований мінімум для TRL 6 (pilot batch ≤ 100 unit):**
+- Гілка A + envelope encryption (Bitwarden Secrets Automation, short-lived token TTL 15 хв)
+- 2-person rule (operator + supervisor)
+- AuditLog chain-hash + MaintenanceRecord :installation
+- RDP Level 1 відразу після Flash write
+
+**Перехід на Гілка B** активується перед першим mass production batch (рішення прив'язане до BOM freeze — cross-ref `07_02 §8.1`, SEC.6, ARCH.42).
+
+---
+
+> **Cross-ref:** §3.4 (pipeline design Гілка A + B), §3.4а (HKDF derivation), §3.6 (RDP Level 2 — необоротна процедура), §3.7 (ATECC608B slot mapping), [00_08 SEC.3](00_08_Action_Plan_Tracker), [00_08 SEC.1](00_08_Action_Plan_Tracker) (Gnosis Safe multisig для admin role).
+
+---
+
 ### 3.5 Режим Транспортування — Shipping Mode (Геркон / Reed Switch)
 
 **Проблема:** Між заводом та лісом Солдат лежить у коробці тижнями. Якщо він прокинеться від вібрації під час перевезення — марно витратить енергію іоністора (якого може не вистачити для першого TX).
@@ -1780,7 +1921,7 @@ HAL_CRYP_Init(&hcryp);
 | `firmware/soldier/main.c:458` | `HAL_CRYP_Encrypt` Phase 4 TX |
 | `firmware/soldier/main.c:477` | `HAL_CRYP_Decrypt` Mesh RX |
 | `firmware/soldier/main.c:720` | `HAL_CRYP_Encrypt` Emergency TX |
-| `firmware/queen/main.c:81-82` | Hardcoded `aes_key` (ідентичний Soldier) |
+| `firmware/queen/main.c:81-82` | `aes_key[8] = {0}` (RAM mirror); `Load_AES_Key()` → per-device key з Protected Flash (post-FW.1) |
 | `firmware/queen/main.c:247` | `HAL_CRYP_Decrypt` LoRa RX |
 | `firmware/queen/main.c:493-576` | `Flush_Cache_To_Rails()` CBC batch encrypt |
 | `firmware/queen/main.c:632-662` | `Handle_CoAP_Command()` CBC decrypt + ECB restore |
@@ -1788,7 +1929,7 @@ HAL_CRYP_Init(&hcryp);
 | `app/services/telemetry_unpacker_service.rb` | Rails-сторона дешифрування батча |
 | [03_01 Firmware Lifecycle](03_01_Firmware_Lifecycle_and_DMA) | Фази 0-5, RTC, IWDG, Hardcoded Key BLOCKER |
 | [04_02 Business Logic](04_02_Business_Logic_and_Services) | TelemetryUnpackerService, ActuatorCommandWorker |
-| `POST /api/v1/provisioning/register` | Майбутній endpoint для унікального provisioning |
+| `POST /api/v1/provisioning/register` | ✅ Реалізовано — `Api::V1::ProvisioningController#register` (Zero-Trust, no keys in response — `04_03 §5.2`). Internal admin tool: §3.4г |
 
 ---
 
@@ -1800,12 +1941,12 @@ HAL_CRYP_Init(&hcryp);
 | **Розмір ключа** | ✅ 256 біт | Відповідає Gaia 2.0 Standard |
 | **Апаратне прискорення** | ✅ STM32 AES Block | Без програмної крипто-бібліотеки |
 | **CBC IV для CoAP** | ✅ HRNG (тепловий шум) | Унікальний IV на кожен батч |
-| **Зберігання ключа** | 🔴 Flash (hardcoded) | КРИТИЧНО: потрібен Secure Element або provisioning |
-| **Унікальність ключа** | 🔴 Спільний для всіх вузлів | КРИТИЧНО: one-key compromise = total network compromise |
+| **Зберігання ключа** | ✅ Protected Flash Sector | `FLASH_KEY_ADDR` (0x0803E000), magic `"KEYS"`, RDP Level 1/2 protected. Secure Element (ATECC608B/STSAFE-A110) — §3.7, для mass production >10k |
+| **Унікальність ключа** | ✅ Per-device HKDF (FW.1) | `HKDF-SHA256(PROVISIONING_MASTER_KEY, device_uid, "silkennet-v1-aes256")` — §3.4а. Компрометація одного вузла не розкриває сусідів |
 | **ECB для LoRa** | 🔴 Детермінований | Рекомендовано: AES-256-CCM з 24-байтним пакетом (Frame Counter + MIC) |
 | **MAC/MIC** | 🔴 Відсутній | Вирішується переходом на CCM (MIC апаратно генерується) |
 | **RDP Protection** | 🟡 OPEN | Level 0 (розробка). Level 1/2 — фінальний крок Factory Flashing (розділ 3.3). Pre-flight checklist та незворотна процедура задокументовані у §3.6 🤖 |
-| **Factory Flashing Pipeline** | 🟡 OPEN | Архітектура визначена (розділ 3.4), provisioning endpoint (`/api/v1/provisioning/register`) існує |
+| **Factory Flashing Pipeline** | 🟡 OPEN (SEC.3) | Архітектура (§3.4) + HKDF (§3.4а) + Operations Security threat model (§3.4г, 2026-05-17). Залишається: tool implementation + integration test |
 | **Shipping Mode (Геркон)** | 🟡 OPEN | Концепт визначено (розділ 3.5); компонент не доданий до BOM |
 | **Secure Element (ATECC608B)** | 🟡 OPEN (P2) | Оцінка інтеграції завершена у §3.7 🤖 — рекомендовано перед mass production >10k unit; альтернатива STSAFE-A110 |
 | **Key Rotation** | 🔴 Відсутній | Рекомендовано: Hash Ratchet KDF (PFS без передачі ключа по мережі) |

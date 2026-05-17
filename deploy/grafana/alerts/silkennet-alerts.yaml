@@ -1,0 +1,455 @@
+# =============================================================================
+# SilkenNet Gaia 2.0 — Grafana Unified Alerting Rules
+# =============================================================================
+#
+# Формат: Grafana Alerting YAML (Grafana 9+, Unified Alerting).
+# Як застосувати:
+#   1. Grafana Cloud UI: Alerting → Alert rules → Import (paste YAML)
+#   2. Grafana HTTP API: POST /api/ruler/grafana/api/v1/rules/{namespace}
+#   3. Terraform grafana provider (рекомендовано для IaC):
+#      resource "grafana_rule_group" "silkennet" { ... }
+#
+# Notification channel (налаштувати в Grafana Cloud):
+#   Alerting → Contact points → New: Slack / PagerDuty / Email
+#   Alerting → Notification policies → Default policy → Contact point: <обраний>
+#
+# Datasource: замінити {DATASOURCE_UID} на UID Prometheus datasource
+#   (знайти: Grafana → Configuration → Data Sources → Prometheus → UID у URL)
+# =============================================================================
+
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: silkennet-p0-critical
+    folder: SilkenNet
+    interval: 1m
+    rules:
+
+      # -----------------------------------------------------------------------
+      # P0: web3_critical queue overflow — мінтинг SCC заблокований
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-web3-queue-critical
+        title: "🔴 web3_critical queue overflow (SCC minting blocked)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: silkennet_sidekiq_queue_size{queue="web3_critical"}
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [100], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "web3_critical queue = {{ $values.A.Value }} jobs (>100). SCC minting pipeline заблокований."
+          description: "Черга web3_critical переповнена. Chainlink/IoTeX workers не встигають дренувати. Перевір: Sidekiq workers running, Web3 RPC healthy, no poison pill job."
+          runbook_url: "docs/04_02_Business_Logic_and_Services.md#BlockchainMintingService"
+        labels:
+          severity: critical
+          component: sidekiq
+          team: backend
+
+      # -----------------------------------------------------------------------
+      # P0: Fraud detected — атака або hardware tamper
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-fraud-detected
+        title: "🔴 Telemetry fraud detected"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_telemetry_fraud_detected_total[5m])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Fraud rate = {{ $values.A.Value | printf \"%.4f\" }}/s. Можлива атака або hardware tamper."
+          description: "TelemetryUnpackerService відхилив пакети: sensor noise, unknown DID, DCI mismatch (Lorenz Z divergence) або invalid AES decrypt. Перевір: чи це відомий новий Soldier (треба provisioning), чи mass replay attack."
+          runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
+        labels:
+          severity: critical
+          component: telemetry
+          team: security
+
+      # -----------------------------------------------------------------------
+      # P0: Oracle balance ratio критично низький
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-oracle-balance-critical
+        title: "🔴 Oracle wallet balance critically low"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: silkennet_oracle_balance_ratio
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0.2], type: lt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Oracle balance ratio = {{ $values.A.Value | printf \"%.2f\" }} на мережі {{ $labels.network }} (поріг: 1.0, критично: < 0.2)."
+          description: "Oracle wallet вичерпує кошти. Мінтинг SCC заблокується при 0. Поповни wallet через multisig: docs/05_03_Smart_Contracts_and_Tokenomics.md"
+          runbook_url: "docs/05_03_Smart_Contracts_and_Tokenomics.md#OracleBalance"
+        labels:
+          severity: critical
+          component: web3
+          team: ops
+
+      # -----------------------------------------------------------------------
+      # P0: Panic replay attack spike
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-panic-replay
+        title: "🔴 Panic packet replay attack detected"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_panic_replay_rejected_total[5m])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0.1], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Panic replay rate = {{ $values.A.Value | printf \"%.4f\" }}/s. Можливий forged panic packet injection."
+          description: "SEC.10 Frame Counter SETNX nonce відхиляє дублікати. Різкий стрибок означає або attacker (replay forged panic = false fire alert) або LoRa mesh duplicate storm. Перевір DID pattern."
+          runbook_url: "docs/03_05_Hardware_AES256_and_Security.md#SEC10"
+        labels:
+          severity: critical
+          component: security
+          team: security
+
+  # ---------------------------------------------------------------------------
+  - orgId: 1
+    name: silkennet-p1-warning
+    folder: SilkenNet
+    interval: 1m
+    rules:
+
+      # -----------------------------------------------------------------------
+      # P1: RPC errors spike
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-rpc-errors
+        title: "⚠️ Web3 RPC error spike"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_rpc_errors_total[5m]) * 60"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [10], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "RPC errors = {{ $values.A.Value | printf \"%.1f\" }}/хв на {{ $labels.network }} / {{ $labels.error_type }}."
+          description: "RPC провайдер деградує. Перевір: Alchemy status page, circuit breaker state (silkennet_rpc_circuit_breaker_open). При відкритому circuit breaker — fallback RPC може бути також нестабільний."
+        labels:
+          severity: warning
+          component: web3
+          team: backend
+
+      # -----------------------------------------------------------------------
+      # P1: Sidekiq queue latency > 5 min
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-sidekiq-latency
+        title: "⚠️ Sidekiq queue latency high (oldest job > 5 min)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: silkennet_sidekiq_queue_latency_seconds
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [300], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Sidekiq queue {{ $labels.queue }} latency = {{ $values.A.Value | printf \"%.0f\" }}s (> 5 хв)."
+          description: "Найстаріша задача в черзі {{ $labels.queue }} не виконується > 5 хвилин. Можливі причини: Sidekiq worker crashed, poison pill job, RPC timeout loop."
+        labels:
+          severity: warning
+          component: sidekiq
+          team: backend
+
+      # -----------------------------------------------------------------------
+      # P1: RPC Circuit Breaker Open
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-circuit-breaker
+        title: "⚠️ RPC circuit breaker open"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: silkennet_rpc_circuit_breaker_open
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [1], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Circuit breaker OPEN для провайдера {{ $labels.provider }}. Fallback RPC активний."
+          description: "Web3::ResilientClient вимкнув провайдер {{ $labels.provider }} після 3 consecutive failures. Fallback URL активний. Перевір provider status page та відновлення."
+        labels:
+          severity: warning
+          component: web3
+          team: backend
+
+      # -----------------------------------------------------------------------
+      # P1: Cluster entropy pre-stress signal
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-cluster-entropy
+        title: "⚠️ Forest cluster pre-stress (low entropy)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1800, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: silkennet_cluster_entropy_score
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0.65], type: lt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 30m
+        annotations:
+          summary: "Кластер {{ $labels.cluster_id }} — ентропія {{ $values.A.Value | printf \"%.3f\" }} (< 0.65 = передстресовий сигнал)."
+          description: "Shannon entropy Z-розподілу кластера низька. Можливі причини: drought, pest epidemic, synchronized stress event. Ліс потребує перевірки форестером. EwsAlert може бути відправлений незабаром."
+        labels:
+          severity: warning
+          component: forest
+          team: ops
+
+      # -----------------------------------------------------------------------
+      # P1: Acoustic overflow (firmware data loss)
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-acoustic-overflow
+        title: "⚠️ Acoustic sensor overflow (firmware data loss)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_telemetry_acoustic_overflow_total[5m])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Acoustic overflow rate = {{ $values.A.Value | printf \"%.4f\" }}/s. Firmware uint8 saturated at 255."
+          description: "Дерева фіксують > 255 акустичних подій між TX-циклами (uint8 cap). Реальна кількість chainsaw/cavitation подій вища — дані втрачені. Можлива chainsaw activity. FW.22 saturating counter активний."
+        labels:
+          severity: warning
+          component: firmware
+          team: backend
+
+  # ---------------------------------------------------------------------------
+  - orgId: 1
+    name: silkennet-p2-info
+    folder: SilkenNet
+    interval: 5m
+    rules:
+
+      # -----------------------------------------------------------------------
+      # P2: Oracle balance warning (before critical)
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-oracle-balance-warning
+        title: "ℹ️ Oracle wallet balance low"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: silkennet_oracle_balance_ratio
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [1.0], type: lt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: "Oracle balance ratio = {{ $values.A.Value | printf \"%.2f\" }} на {{ $labels.network }} (нижче мінімального порогу)."
+          description: "Баланс oracle wallet нижче мінімуму. Ще не критично, але потребує поповнення до виснаження."
+        labels:
+          severity: info
+          component: web3
+          team: ops
+
+      # -----------------------------------------------------------------------
+      # P2: DB pool saturation warning
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-db-pool-saturation
+        title: "ℹ️ Database connection pool saturation"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: silkennet_db_pool_waiting
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [5], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} threads чекають на DB connection ({{ $labels.database }})."
+          description: "Connection pool вичерпаний. Sidekiq concurrency=15 + pessimistic locks можуть спричинити деадлок. Розгляни збільшення pool size або зменшення Sidekiq concurrency для web3_critical."
+        labels:
+          severity: info
+          component: database
+          team: backend
+
+      # -----------------------------------------------------------------------
+      # P2: W3bstream signature fallback (security degradation)
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-w3bstream-fallback
+        title: "ℹ️ W3bstream using SHA256 fallback (not Ed25519)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_w3bstream_signature_fallback_total[5m])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "W3bstream підписує SHA256 замість Ed25519 ({{ $labels.reason }})."
+          description: "IoTeX W3bstream verification не може використати апаратний Ed25519 ключ. В production (WEB3_STRICT_MODE=true) це raise VerificationError — перевір, чому цей counter ненульовий: або HardwareKey не provisioned, або WEB3_STRICT_MODE=false."
+        labels:
+          severity: info
+          component: web3
+          team: security
