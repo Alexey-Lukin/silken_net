@@ -98,29 +98,66 @@
 
 ---
 
-## 3. Akash SDL (`deploy/akash/deploy.yaml`)
+## 3. Akash SDL (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`)
 
-> **Статус:** SDL містить `REQUIRED_SECRET_NOT_SET` плейсхолдери для критичних змінних (BLOCKER-5 у `06_01`).
+> **Статус:** SDL містить `REQUIRED_SECRET_NOT_SET` плейсхолдери для критичних змінних (BLOCKER-5 у `06_01`, BLOCKER-3 у `06_02`).
 >
 > **Рекомендований workflow:** використовувати `deploy/akash/deploy.yaml.tpl` Terraform-шаблон — секрети підставляються автоматично з `terraform.tfvars`.
+>
+> **Принцип:** SDL `web` та `job` сервіси повинні мати **ідентичні** ENV-блоки (окрім `WEB_CONCURRENCY` / `PORT` — web-specific). Sidekiq у `job`-сервісі ходить через ті ж Rails initializers, що вимагають boot-critical guards.
 
-### 3.1. Web service env
+### 3.1. Web service env (та дзеркало в Job service env)
 
+**Application core (boot):**
 - [ ] `RAILS_MASTER_KEY` — те саме що в Kamal
 - [ ] `DATABASE_URL` — Cloud SQL (через Cloud SQL Auth Proxy sidecar)
-- [ ] `REDIS_URL` — Upstash Redis DB 0
-- [ ] `KREDIS_REDIS_URL` — Upstash Redis DB 1
-- [ ] `GCP_SA_KEY_BASE64` — base64-encoded GCP SA JSON (для Cloud SQL Auth Proxy)
 - [ ] `CLOUD_SQL_INSTANCE_CONNECTION_NAME` — `<project>:<region>:<instance>`
+- [ ] `GCP_SA_KEY_BASE64` — base64-encoded GCP SA JSON (роль `roles/cloudsql.client` only)
+- [ ] `REDIS_URL` — Upstash Redis DB 0 (`rediss://`)
+- [ ] `KREDIS_REDIS_URL` — Upstash Redis DB 1 (`rediss://`)
 - [ ] `RAILS_ENV` — `production` або `canopy`
-- [ ] `RAILS_MAX_THREADS` — типово `5`
-- [ ] `WEB_CONCURRENCY` — кількість Puma workers
-- [ ] `PORT` — типово `3000`
-- [ ] `RELEASE_VERSION` — git SHA для Sentry
+- [ ] `RAILS_MAX_THREADS` — типово `3` (узгоджено з `database.yml` pool)
+- [ ] `WEB_CONCURRENCY` — кількість Puma workers (web only, типово `4`)
+- [ ] `PORT` — типово `80` (Thruster)
+
+**🛑 Boot-critical (Puma crash до accept loop без значення):**
+- [ ] `PROVISIONING_MASTER_KEY` — HKDF root key. `config/initializers/master_key_strength_check.rb` raises `SecurityError` у `after_initialize`. Generate: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`
+
+**Observability:**
+- [ ] `SENTRY_DSN` — без неї Sentry inert (silent prod errors)
+- [ ] `RELEASE_VERSION` — git SHA / release tag для Sentry release tracking
+- [ ] `PROMETHEUS_AUTH_USER` / `PROMETHEUS_AUTH_PASSWORD` — Basic Auth для `/metrics`
+
+**Web3 oracle keys (dual-key split, B-02 — без них Sidekiq DeadSet):**
+- [ ] `ORACLE_PRIVATE_KEY` — legacy fallback (Celo/Toucan/Klima/PuroEarth/Etherisc)
+- [ ] `ORACLE_MINTER_PRIVATE_KEY` — MINTER_ROLE на SCC/SFC (`BlockchainMintingService:107`)
+- [ ] `ORACLE_SLASHER_PRIVATE_KEY` — SLASHER_ROLE (`BlockchainBurningService:58`)
+- [ ] `ETHEREUM_ANCHOR_PRIVATE_KEY` — окремий wallet для weekly L1 anchor (`Ethereum::StateAnchorService:147`)
+
+**RPC endpoints (`Web3::RpcConnectionPool` — `ENV.fetch` raises KeyError без значення):**
+- [ ] `ALCHEMY_POLYGON_RPC_URL`
+- [ ] `ALCHEMY_ETHEREUM_RPC_URL`
+- [ ] `SOLANA_RPC_URL`
+
+**Solana minting (`Solana::MintingService` raises explicit errors):**
+- [ ] `SOLANA_WALLET_KEYPAIR` — 64-byte hex keypair
+- [ ] `SOLANA_FEE_PAYER_PUBKEY` — base58
+- [ ] `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` — USDC ATA, base58
+- [ ] `SOLANA_USDC_MINT_ADDRESS` — base58 (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`)
+
+**Chainlink Functions Router v1 (Proof of Growth — S6.2):**
+- [ ] `CHAINLINK_FUNCTIONS_ROUTER` — Polygon contract address
+- [ ] `CHAINLINK_SUBSCRIPTION_ID` — numeric subscription ID
+- [ ] `CHAINLINK_DON_ID` — bytes32, наприклад `fun-polygon-mainnet-1`
+- [ ] `CHAINLINK_HMAC_SECRET` — HMAC-SHA256 для callback signature verification
+- [ ] `CHAINLINK_DATA_VERSION` — default `1` (не sensitive)
+- [ ] `CHAINLINK_CALLBACK_GAS_LIMIT` — default `300000` (не sensitive)
 
 ### 3.2. Job (Sidekiq) service env
 
-- [ ] Усе вище ж + ті самі Web3 / Chainlink ENV змінні з §2.1
+- [ ] **Усе з §3.1** (Sidekiq потребує boot-critical guards так само як Puma) — окрім `PORT` / `WEB_CONCURRENCY`.
+
+> **⚠️ AKASH ENV plaintext exposure:** Akash не шифрує ENV-блок SDL — значення видимі провайдеру через `lease-logs`/kubectl. Mitigation: scoped on-chain roles (MINTER/SLASHER only, ніколи DEFAULT_ADMIN), 90-day key rotation, audited providers (`signedBy.anyOf`). Детальніше: [`06_02 §BLOCKER-3 Akash ENV plaintext exposure`](06_02_Akash_Network_Integration).
 
 ### 3.3. Grafana Alloy sidecar (observability)
 
@@ -146,18 +183,53 @@
 - [ ] `db_password` — пароль Cloud SQL (≥16 символів)
 - [ ] `ssh_source_ranges` — список CIDR для SSH allowlist (напр., `["1.2.3.4/32"]`)
 
-**Akash deployment (рендеряться у `deploy.yaml.tpl`):**
-- [ ] `cloud_sql_instance_connection_name` — output `terraform output database_connection_name`
-- [ ] `gcp_sa_key_base64` — base64-encoded SA JSON ключ (роль `roles/cloudsql.client` only, див. [`06_02 §Security Exception`](06_02_Akash_Network_Integration))
+**Akash deployment app/infra (`terraform/akash/terraform.tfvars` рендериться у `deploy.yaml.tpl`):**
 
-**Grafana Cloud / Prometheus (Alloy sidecar — `06_02 §3.3`):**
+> Mirror зі списку `env.secret` Kamal — повний breakdown див. [`06_02 §3.2 Змінні Terraform`](06_02_Akash_Network_Integration). 22 sensitive variables нижче.
+
+*Application core:*
+- [ ] `rails_master_key`
+- [ ] `database_url` — `postgres://...@127.0.0.1:5432/silken_net_production`
+- [ ] `cloud_sql_instance_connection_name` — `terraform output database_connection_name`
+- [ ] `gcp_sa_key_base64` — base64-encoded SA JSON (роль `roles/cloudsql.client` only, див. [`06_02 §Security Exception`](06_02_Akash_Network_Integration))
+- [ ] `redis_url` — Upstash `rediss://...:6379` (DB 0)
+- [ ] `kredis_redis_url` — Upstash DB 1 (опц. — auto-derive з `redis_url` коли empty)
+
+*🛑 Boot-critical:*
+- [ ] `provisioning_master_key` — `SecureRandom.hex(32)`, валідація `length >= 32`
+
+*Observability:*
+- [ ] `sentry_dsn`
 - [ ] `grafana_remote_write_url` — Grafana Cloud Prometheus `remote_write` endpoint (`https://prometheus-prod-XX-XX.grafana.net/api/prom/push`)
 - [ ] `grafana_remote_write_username` — Grafana Cloud Stack ID
 - [ ] `grafana_remote_write_token` — Grafana Cloud API ключ зі scope `metrics:write`
 - [ ] `prometheus_auth_user` — Basic Auth user для `/metrics` endpoint
 - [ ] `prometheus_auth_password` — Basic Auth password (`Rails.application.config.prometheus_auth`)
 
-> **🔴 Drift guard:** Усі п'ять Grafana-секретів **обов'язково** на момент `terraform apply` — без них рендер `deploy.yaml.tpl` падає або, гірше, рендерить порожні рядки і Alloy запускається німим (метрики не доходять у Grafana Cloud). Не перетинається з `06_01 .kamal/secrets` (Kamal-деплой використовує власний шлях для `SENTRY_DSN` + Prometheus Basic Auth — окремо).
+*Web3 oracle keys (dual-key split, B-02):*
+- [ ] `oracle_private_key` — hex `0x…`
+- [ ] `oracle_minter_private_key` — hex `0x…`
+- [ ] `oracle_slasher_private_key` — hex `0x…`
+- [ ] `ethereum_anchor_private_key` — hex `0x…` (MUST differ from `oracle_private_key`)
+
+*RPC endpoints:*
+- [ ] `alchemy_polygon_rpc_url`
+- [ ] `alchemy_ethereum_rpc_url`
+- [ ] `solana_rpc_url`
+
+*Solana minting:*
+- [ ] `solana_wallet_keypair`
+- [ ] `solana_fee_payer_pubkey`
+- [ ] `solana_fee_payer_token_account`
+- [ ] `solana_usdc_mint_address`
+
+*Chainlink Functions Router v1:*
+- [ ] `chainlink_functions_router`
+- [ ] `chainlink_subscription_id`
+- [ ] `chainlink_don_id`
+- [ ] `chainlink_hmac_secret`
+
+> **🔴 Drift guard:** Кожен sensitive у `terraform.tfvars` **обов'язково** на момент `terraform apply` — без нього `templatefile()` рендерить порожні рядки → SDL отримує `=` без value → Rails отримує `nil` ENV. Для boot-critical (`provisioning_master_key`) це Puma crash; для Web3 — Sidekiq DeadSet; для Alloy — німі метрики. Drift у будь-яку сторону між `.kamal/secrets`, Kamal `env.secret`, SDL (`web` + `job`), `deploy.yaml.tpl`, `variables.tf`, та `main.tf` `templatefile()` — критичний bug. **Single source of truth: `config/deploy.yml env.secret` блок** (Kamal canonical list).
 
 ---
 

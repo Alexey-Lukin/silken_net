@@ -47,3 +47,54 @@ grafana_remote_write_token    = "CHANGE_ME_grafana_cloud_api_token"
 # Basic Auth for Rails /metrics endpoint (must match web service ENV vars)
 prometheus_auth_user     = "prometheus"
 prometheus_auth_password = "CHANGE_ME_metrics_password"
+
+# =============================================================================
+# 🛑 BOOT-CRITICAL — Rails refuses to boot in production without this
+# =============================================================================
+# HKDF root key for hardware provisioning (HardwareKeyService, OtaHmacKeyService).
+# Generate: ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"
+provisioning_master_key = "CHANGE_ME_64_hex_chars_from_SecureRandom_hex_32"
+
+# =============================================================================
+# Observability — Sentry
+# =============================================================================
+# From: https://<your-org>.sentry.io/settings/projects/silken-net/keys/
+sentry_dsn = "https://CHANGE_ME@o000000.ingest.sentry.io/0000000"
+
+# =============================================================================
+# Web3 Oracle Keys (dual-key split, B-02 resolved)
+# =============================================================================
+# ⚠️ AKASH SECURITY NOTE: ENV vars are visible to the provider in plaintext.
+# Rotate every 90 days. Prefer minimal on-chain roles (MINTER_ROLE only, never
+# DEFAULT_ADMIN_ROLE) for Akash-deployment keys. See docs/06_02 BLOCKER-3.
+# Generate hex private key: openssl rand -hex 32 (then prepend 0x).
+oracle_private_key           = "0xCHANGE_ME_legacy_fallback_oracle_key"
+oracle_minter_private_key    = "0xCHANGE_ME_holds_MINTER_ROLE_on_SCC_SFC"
+oracle_slasher_private_key   = "0xCHANGE_ME_holds_SLASHER_ROLE_on_SCC_SFC"
+ethereum_anchor_private_key  = "0xCHANGE_ME_separate_wallet_for_weekly_L1_anchor"
+
+# =============================================================================
+# RPC Endpoints (Web3::RpcConnectionPool)
+# =============================================================================
+alchemy_polygon_rpc_url  = "https://polygon-mainnet.g.alchemy.com/v2/CHANGE_ME"
+alchemy_ethereum_rpc_url = "https://eth-mainnet.g.alchemy.com/v2/CHANGE_ME"
+solana_rpc_url           = "https://api.mainnet-beta.solana.com"
+
+# =============================================================================
+# Solana Minting (Solana::MintingService)
+# =============================================================================
+# 64-byte private key, hex-encoded.
+solana_wallet_keypair          = "CHANGE_ME_solana_keypair_hex"
+solana_fee_payer_pubkey        = "CHANGE_ME_base58_fee_payer_pubkey"
+solana_fee_payer_token_account = "CHANGE_ME_base58_usdc_ata_for_fee_payer"
+# Mainnet USDC mint:
+solana_usdc_mint_address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+
+# =============================================================================
+# Chainlink Functions Router v1 (Proof of Growth pipeline — S6.2)
+# =============================================================================
+# From: https://docs.chain.link/chainlink-functions/supported-networks
+chainlink_functions_router = "0xCHANGE_ME_polygon_router_address"
+chainlink_subscription_id  = "CHANGE_ME_numeric_subscription_id"
+chainlink_don_id           = "fun-polygon-mainnet-1"
+chainlink_hmac_secret      = "CHANGE_ME_hmac_secret_for_callback_signature_verification"

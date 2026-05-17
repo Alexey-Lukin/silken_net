@@ -63,11 +63,23 @@ services:
     # IMPORTANT: Replace placeholder values before deploying. In production,
     # use Akash Console UI or `akash tx deployment update` to inject secrets.
     # Never commit real secrets to this file.
+    #
+    # ⚠️ AKASH SECURITY NOTE: ENV variables are visible to the provider in plaintext
+    # (Akash does not encrypt SDL ENV blocks). For long-lived deployments, prefer
+    # Web3 keys with minimal on-chain permissions (e.g., MINTER_ROLE without
+    # DEFAULT_ADMIN_ROLE), rotate keys on a 90-day cadence, and consider a Vault
+    # sidecar for TRL 8+. See docs/06_02 § "Akash ENV plaintext exposure".
     env:
+      # ════════════════════════════════════════════════════════════════════════
+      # Application core — required for Rails to boot
+      # ════════════════════════════════════════════════════════════════════════
       # Rails application port — Thruster listens on this port inside the
       # container. The Dockerfile EXPOSEs port 80 (Thruster default).
       # Maps to: Kamal boot.proxy.publish "80:80"
       - PORT=80
+
+      # Rails production environment.
+      - RAILS_ENV=production
 
       # Rails encrypted credentials master key.
       # Maps to: Kamal env.secret RAILS_MASTER_KEY
@@ -76,66 +88,100 @@ services:
       # PostgreSQL connection URL — connects through Cloud SQL Auth Proxy at 127.0.0.1.
       # The proxy runs inside the container (started by bin/docker-entrypoint) and
       # tunnels traffic through Google Cloud API (outbound HTTPS — Akash allows this).
-      # No public IP on Cloud SQL required. No VPN/Tailscale needed.
       # Format: postgres://silken_net:<password>@127.0.0.1:5432/silken_net_production
       # Maps to: Kamal env.secret DATABASE_URL
       - DATABASE_URL=REQUIRED_SECRET_NOT_SET
 
       # Cloud SQL Auth Proxy — connection name for the proxy to target.
-      # Format: project-id:region:instance-name (from `terraform output database_connection_name`)
-      # When set, bin/docker-entrypoint starts cloud-sql-proxy in background.
-      # When unset (Kamal/GCP VPC deployments), proxy is skipped.
+      # Format: project-id:region:instance-name
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=REQUIRED_SECRET_NOT_SET
 
       # GCP Service Account key (base64-encoded JSON) for Cloud SQL Auth Proxy.
-      # The entrypoint decodes this to /tmp/gcp-sa-key.json at startup.
       # Generate: cat gcp-sa-key.json | base64 -w0
       - GCP_SA_KEY_BASE64=REQUIRED_SECRET_NOT_SET
 
-      # Redis URL for Sidekiq background job processing.
-      # Uses Upstash (serverless Redis with TLS public endpoints) instead of
-      # GCP Memorystore (which has no public IP and is unreachable from Akash).
+      # Redis URL for Sidekiq background job processing (Upstash, TLS).
       # Format: rediss://default:password@endpoint.upstash.io:6379
-      # Note: rediss:// (double s) enables TLS. Free tier sufficient through TRL 8.
       # Maps to: Kamal env.secret REDIS_URL
       - REDIS_URL=REQUIRED_SECRET_NOT_SET
 
       # Redis URL for Kredis distributed locks (Web3 nonce management).
       # Same Upstash instance, DB 1 to isolate locks from Sidekiq queue data.
-      # Format: rediss://default:password@endpoint.upstash.io:6379/1
       # Maps to: Kamal env.secret KREDIS_REDIS_URL
       - KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
 
-      # Rails production environment.
-      - RAILS_ENV=production
-
-      # Sentry release tracking — set to git SHA or release tag at deploy time.
-      # Enables Sentry to group errors by deploy and track regressions.
-      - RELEASE_VERSION=
-
       # Puma thread count per worker — keep low (3-5) to limit GVL contention.
-      # Must align with database.yml pool size calculation.
       - RAILS_MAX_THREADS=3
 
       # Puma concurrency — adjust based on 4 vCPU allocation.
-      # Maps to: Kamal env.clear WEB_CONCURRENCY (commented out, default: 1)
       - WEB_CONCURRENCY=4
+
+      # ════════════════════════════════════════════════════════════════════════
+      # 🛑 BOOT-CRITICAL — Rails refuses to boot in production without this
+      # ════════════════════════════════════════════════════════════════════════
+      # HKDF root key for hardware provisioning. Guard in
+      # config/initializers/master_key_strength_check.rb raises SecurityError at
+      # `after_initialize` if blank/weak → Puma crashes before accept loop.
+      # Maps to: Kamal env.secret PROVISIONING_MASTER_KEY
+      - PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+
+      # ════════════════════════════════════════════════════════════════════════
+      # Observability
+      # ════════════════════════════════════════════════════════════════════════
+      # Sentry DSN — without it Sentry is inert and prod errors are silent.
+      # Maps to: Kamal env.secret SENTRY_DSN
+      - SENTRY_DSN=REQUIRED_SECRET_NOT_SET
+
+      # Sentry release tracking — set to git SHA or release tag at deploy time.
+      - RELEASE_VERSION=
 
       # Basic Auth credentials for /metrics endpoint (Prometheus scraping).
       # Alloy sidecar uses these same credentials to authenticate when scraping.
-      # If not set, /metrics relies on IP allowlist only (less secure).
       - PROMETHEUS_AUTH_USER=REQUIRED_SECRET_NOT_SET
       - PROMETHEUS_AUTH_PASSWORD=REQUIRED_SECRET_NOT_SET
 
-      # Chainlink Functions Router v1 — required for oracle dispatch (S6.2).
-      # CHAINLINK_DON_ID: bytes32 identifier, e.g. "fun-polygon-mainnet-1"
-      # CHAINLINK_DATA_VERSION: Functions API version (default: 1)
-      # CHAINLINK_CALLBACK_GAS_LIMIT: gas limit for oracle callback (default: 300000)
-      # CHAINLINK_HMAC_SECRET: secret for X-Chainlink-Signature header verification
+      # ════════════════════════════════════════════════════════════════════════
+      # Web3 oracle keys (dual-key split, B-02 resolved)
+      # ════════════════════════════════════════════════════════════════════════
+      # Legacy fallback used by Celo/Etherisc/Toucan/Klima/PuroEarth services.
+      # Maps to: Kamal env.secret ORACLE_PRIVATE_KEY
+      - ORACLE_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
+      # Holds MINTER_ROLE on SCC & SFC contracts (BlockchainMintingService:107).
+      - ORACLE_MINTER_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
+      # Holds SLASHER_ROLE on SCC & SFC contracts (BlockchainBurningService:58).
+      - ORACLE_SLASHER_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
+      # Separate wallet for weekly Ethereum L1 state-root anchor
+      # (Ethereum::StateAnchorService:147).
+      - ETHEREUM_ANCHOR_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
+
+      # ════════════════════════════════════════════════════════════════════════
+      # RPC endpoints (Web3::RpcConnectionPool — required by ENV.fetch)
+      # ════════════════════════════════════════════════════════════════════════
+      - ALCHEMY_POLYGON_RPC_URL=REQUIRED_SECRET_NOT_SET
+      - ALCHEMY_ETHEREUM_RPC_URL=REQUIRED_SECRET_NOT_SET
+      - SOLANA_RPC_URL=REQUIRED_SECRET_NOT_SET
+
+      # ════════════════════════════════════════════════════════════════════════
+      # Solana minting (Solana::MintingService raises explicit errors)
+      # ════════════════════════════════════════════════════════════════════════
+      - SOLANA_WALLET_KEYPAIR=REQUIRED_SECRET_NOT_SET
+      - SOLANA_FEE_PAYER_PUBKEY=REQUIRED_SECRET_NOT_SET
+      - SOLANA_FEE_PAYER_TOKEN_ACCOUNT=REQUIRED_SECRET_NOT_SET
+      - SOLANA_USDC_MINT_ADDRESS=REQUIRED_SECRET_NOT_SET
+
+      # ════════════════════════════════════════════════════════════════════════
+      # Chainlink Functions Router v1 (Proof of Growth pipeline — S6.2)
+      # ════════════════════════════════════════════════════════════════════════
+      # Router contract address on Polygon (mainnet or Amoy testnet).
+      - CHAINLINK_FUNCTIONS_ROUTER=REQUIRED_SECRET_NOT_SET
+      # Chainlink Functions subscription ID.
+      - CHAINLINK_SUBSCRIPTION_ID=REQUIRED_SECRET_NOT_SET
+      # bytes32 identifier, e.g. "fun-polygon-mainnet-1"
       - CHAINLINK_DON_ID=REQUIRED_SECRET_NOT_SET
+      # HMAC-SHA256 secret for verifying X-Chainlink-Signature in callbacks.
+      - CHAINLINK_HMAC_SECRET=REQUIRED_SECRET_NOT_SET
       - CHAINLINK_DATA_VERSION=1
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
-      - CHAINLINK_HMAC_SECRET=REQUIRED_SECRET_NOT_SET
 
     # --- Exposed Ports -------------------------------------------------------
     # Maps to: config/deploy.yml → boot.proxy.publish
@@ -202,22 +248,55 @@ services:
       - "config/sidekiq.yml"
     env:
       # REQUIRED: Replace placeholder values before deploying.
-      # In production, use Akash Console UI or `akash tx deployment update` to inject secrets.
-      # Never commit real secrets to this file.
+      # The `job` service runs Sidekiq workers — Web3 minting/burning/anchoring
+      # all live here. Must mirror the `web` env: block (Rails initializers
+      # require the same boot-critical guards), plus all Web3/Solana/Chainlink
+      # secrets that workers fetch via ENV.fetch.
+      # ⚠️ AKASH SECURITY NOTE: ENV vars are plaintext to providers — rotate
+      # keys on a 90-day cadence; prefer scoped on-chain roles.
+
+      # --- Application core ---
+      - RAILS_ENV=production
       - RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
       - DATABASE_URL=REQUIRED_SECRET_NOT_SET
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=REQUIRED_SECRET_NOT_SET
       - GCP_SA_KEY_BASE64=REQUIRED_SECRET_NOT_SET
       - REDIS_URL=REQUIRED_SECRET_NOT_SET
       - KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
-      - RAILS_ENV=production
-      - RELEASE_VERSION=
       - RAILS_MAX_THREADS=3
-      # Chainlink Functions Router v1 — required for ChainlinkDispatchWorker (S6.2)
+
+      # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb raises without this ---
+      - PROVISIONING_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+
+      # --- Observability ---
+      - SENTRY_DSN=REQUIRED_SECRET_NOT_SET
+      - RELEASE_VERSION=
+
+      # --- Web3 oracle keys (BlockchainMintingService, BlockchainBurningService,
+      #     Ethereum::StateAnchorService, Celo/Etherisc/Toucan/Klima/PuroEarth) ---
+      - ORACLE_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
+      - ORACLE_MINTER_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
+      - ORACLE_SLASHER_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
+      - ETHEREUM_ANCHOR_PRIVATE_KEY=REQUIRED_SECRET_NOT_SET
+
+      # --- RPC endpoints (Web3::RpcConnectionPool) ---
+      - ALCHEMY_POLYGON_RPC_URL=REQUIRED_SECRET_NOT_SET
+      - ALCHEMY_ETHEREUM_RPC_URL=REQUIRED_SECRET_NOT_SET
+      - SOLANA_RPC_URL=REQUIRED_SECRET_NOT_SET
+
+      # --- Solana minting (SolanaMicroRewardWorker → Solana::MintingService) ---
+      - SOLANA_WALLET_KEYPAIR=REQUIRED_SECRET_NOT_SET
+      - SOLANA_FEE_PAYER_PUBKEY=REQUIRED_SECRET_NOT_SET
+      - SOLANA_FEE_PAYER_TOKEN_ACCOUNT=REQUIRED_SECRET_NOT_SET
+      - SOLANA_USDC_MINT_ADDRESS=REQUIRED_SECRET_NOT_SET
+
+      # --- Chainlink Functions Router v1 (ChainlinkDispatchWorker — S6.2) ---
+      - CHAINLINK_FUNCTIONS_ROUTER=REQUIRED_SECRET_NOT_SET
+      - CHAINLINK_SUBSCRIPTION_ID=REQUIRED_SECRET_NOT_SET
       - CHAINLINK_DON_ID=REQUIRED_SECRET_NOT_SET
+      - CHAINLINK_HMAC_SECRET=REQUIRED_SECRET_NOT_SET
       - CHAINLINK_DATA_VERSION=1
       - CHAINLINK_CALLBACK_GAS_LIMIT=300000
-      - CHAINLINK_HMAC_SECRET=REQUIRED_SECRET_NOT_SET
 
   # ---------------------------------------------------------------------------
   # Alloy Service — Grafana Alloy Metrics Agent (OBS.1)

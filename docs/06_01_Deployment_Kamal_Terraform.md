@@ -83,9 +83,12 @@ ssh_source_ranges = ["<your-ip>/32"]
 
 ### 🟡 BLOCKER-5: Akash SDL має `REQUIRED_SECRET_NOT_SET` плейсхолдери
 
-**Статус:** `deploy/akash/deploy.yaml` потребує ручного редагування перед деплоєм.
+**Статус:** `deploy/akash/deploy.yaml` потребує ручного редагування перед деплоєм. SDL дзеркалює повний список `env.secret` з Kamal (`config/deploy.yml`), включно з:
+- 🛑 **Boot-critical:** `PROVISIONING_MASTER_KEY` (Puma crash без значення — `master_key_strength_check.rb`)
+- **Web3 worker (DeadSet без значення):** `ORACLE_PRIVATE_KEY`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY`, `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`, `SOLANA_WALLET_KEYPAIR`/`FEE_PAYER_PUBKEY`/`FEE_PAYER_TOKEN_ACCOUNT`/`USDC_MINT_ADDRESS`, `CHAINLINK_FUNCTIONS_ROUTER`/`SUBSCRIPTION_ID`/`DON_ID`/`HMAC_SECRET`
+- **Observability (silent failure):** `SENTRY_DSN`
 
-**Дія (рекомендовано):** Використати Terraform-шаблон `deploy/akash/deploy.yaml.tpl` — секрети підставляються автоматично з `terraform.tfvars`.
+**Дія (рекомендовано):** Використати Terraform-шаблон `deploy/akash/deploy.yaml.tpl` — секрети підставляються автоматично з `terraform.tfvars`. Повний список Terraform-змінних та per-секрет breakdown див. [`06_02 §BLOCKER-3`](06_02_Akash_Network_Integration) та [`06_02 §Розділ 2 ENV Variables`](06_02_Akash_Network_Integration). Drift guard: будь-який новий ENV у `env.secret` Kamal має паралельно з'явитись у `.kamal/secrets`, обох сервісах SDL (`web` + `job`), `deploy.yaml.tpl`, `terraform/akash/variables.tf`, та `terraform/akash/main.tf` (`templatefile()` map). Інакше Akash deployment отримає boot crash або тиху Web3 відмову.
 
 ---
 
@@ -106,7 +109,7 @@ ssh_source_ranges = ["<your-ip>/32"]
 | # | Перевірка | Деталі |
 |---|-----------|--------|
 | **1** | **DNS propagation до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: Traefik використовує Let's Encrypt HTTP-01 challenge. Без DNS — сертифікат не видасться, Traefik не підніметься. |
-| **2** | **`.kamal/secrets` файл існує** | Kamal читає секрети з `.kamal/secrets` (не з environment). Заповни: `RAILS_MASTER_KEY`, `DATABASE_URL`, `REDIS_URL`, `KREDIS_REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY`. Без нього контейнери стартують і одразу падають (немає доступу до БД або ключа дешифрування). |
+| **2** | **`.kamal/secrets` файл існує + повний** | Kamal читає секрети з `.kamal/secrets` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `DATABASE_URL`, `REDIS_URL`, `KREDIS_REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY`. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_PRIVATE_KEY`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY`. **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_FUNCTIONS_ROUTER`, `CHAINLINK_SUBSCRIPTION_ID`, `CHAINLINK_HMAC_SECRET`, `CHAINLINK_DON_ID`. **Той самий список застосовується для Akash SDL** (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`) та Terraform (`terraform/akash/terraform.tfvars`) — див. [`06_02 §BLOCKER-3`](06_02_Akash_Network_Integration). |
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
 | **5** | **Симетрія AES-ключів** | `aes_key[8]` у `soldier/main.c` та `queen/main.c` — **побітово ідентичні**. Один відмінний біт → Queen читає сміття з кожного пакету. Ліс мовчить без помилок. Перевіряй перед кожним flash-циклом. Детальніше: `03_05_Hardware_AES256_and_Security`. |
@@ -150,12 +153,34 @@ terraform apply
 # api.silkennet.com → $(terraform output -raw ingress_ip)
 # Дочекатися: dig api.silkennet.com → правильний IP
 
-# Крок 5: Налаштувати Akash SDL
-# Заповнити секрети в deploy/akash/deploy.yaml або terraform/akash/terraform.tfvars:
-#   RAILS_MASTER_KEY, DATABASE_URL, CLOUD_SQL_INSTANCE_CONNECTION_NAME
-#   REDIS_URL=rediss://<upstash-host>:6379  (Upstash TLS)
-#   KREDIS_REDIS_URL=rediss://<upstash-host>:6379/1
-#   GCP_SA_KEY (для Cloud SQL Auth Proxy)
+# Крок 5: Налаштувати Akash SDL — повний список секретів (дзеркало .kamal/secrets)
+# Заповнити в deploy/akash/deploy.yaml АБО terraform/akash/terraform.tfvars
+# (рекомендовано — Terraform: cp terraform.tfvars.example terraform.tfvars)
+#
+# Application core:
+#   RAILS_MASTER_KEY, DATABASE_URL, CLOUD_SQL_INSTANCE_CONNECTION_NAME,
+#   GCP_SA_KEY_BASE64, REDIS_URL=rediss://<upstash>:6379,
+#   KREDIS_REDIS_URL=rediss://<upstash>:6379/1
+# 🛑 Boot-critical (інакше Puma crash):
+#   PROVISIONING_MASTER_KEY=$(ruby -e "require 'securerandom'; puts SecureRandom.hex(32)")
+# Observability:
+#   SENTRY_DSN, PROMETHEUS_AUTH_USER, PROMETHEUS_AUTH_PASSWORD
+#   GRAFANA_REMOTE_WRITE_URL/USERNAME/TOKEN (тільки в alloy сервісі)
+# Web3 oracle keys (інакше Sidekiq DeadSet):
+#   ORACLE_PRIVATE_KEY, ORACLE_MINTER_PRIVATE_KEY, ORACLE_SLASHER_PRIVATE_KEY,
+#   ETHEREUM_ANCHOR_PRIVATE_KEY
+# RPC endpoints (Web3::RpcConnectionPool):
+#   ALCHEMY_POLYGON_RPC_URL, ALCHEMY_ETHEREUM_RPC_URL, SOLANA_RPC_URL
+# Solana minting:
+#   SOLANA_WALLET_KEYPAIR, SOLANA_FEE_PAYER_PUBKEY,
+#   SOLANA_FEE_PAYER_TOKEN_ACCOUNT, SOLANA_USDC_MINT_ADDRESS
+# Chainlink Functions Router v1:
+#   CHAINLINK_FUNCTIONS_ROUTER, CHAINLINK_SUBSCRIPTION_ID,
+#   CHAINLINK_DON_ID, CHAINLINK_HMAC_SECRET
+#
+# ⚠️ AKASH SECURITY NOTE: ENV vars видимі провайдеру у plaintext.
+# Ротуй keys кожні 90 днів. Akash-deployment keys — тільки з MINTER_ROLE/
+# SLASHER_ROLE (ніколи з DEFAULT_ADMIN_ROLE). Детальніше: 06_02 BLOCKER-3.
 
 # Крок 6: Деплой на Akash Network
 cd terraform/akash
@@ -565,8 +590,22 @@ Stage 3: final         — COPY gems + app + Cloud SQL Auth Proxy, USER rails:10
 
 ```bash
 cd terraform/akash
-# Створити terraform.tfvars:
-# akash_key_name, docker_image, rails_master_key, database_url, redis_url
+# Створити terraform.tfvars з prefer-фuller exemплара:
+#   cp terraform.tfvars.example terraform.tfvars
+# Повний набір змінних (мірор .kamal/secrets, ~25 sensitive):
+#   akash_key_name, docker_image
+#   rails_master_key, database_url, cloud_sql_instance_connection_name,
+#     gcp_sa_key_base64, redis_url, kredis_redis_url
+#   provisioning_master_key  ← 🛑 BOOT-CRITICAL
+#   sentry_dsn, prometheus_auth_user/password
+#   grafana_remote_write_url/username/token
+#   oracle_private_key, oracle_minter_private_key, oracle_slasher_private_key,
+#     ethereum_anchor_private_key
+#   alchemy_polygon_rpc_url, alchemy_ethereum_rpc_url, solana_rpc_url
+#   solana_wallet_keypair, solana_fee_payer_pubkey,
+#     solana_fee_payer_token_account, solana_usdc_mint_address
+#   chainlink_functions_router, chainlink_subscription_id,
+#     chainlink_don_id, chainlink_hmac_secret
 
 terraform init
 terraform apply

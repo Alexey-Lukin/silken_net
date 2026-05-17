@@ -44,22 +44,74 @@
 
 > Вирішені блокери (BLOCKER-1, 2, 4, 8) перенесені у секцію **"✅ Архів вирішених блокерів"** наприкінці документа.
 
-### 🔴 BLOCKER-3: Секрети SDL не заповнені — Rails не стартує
+### 🔴 BLOCKER-3: Секрети SDL не заповнені — Rails не стартує + Web3 воркери у DeadSet
 
 **Статус:** Критичний. Блокує будь-який тест деплою.
 
-Статичний SDL `deploy/akash/deploy.yaml` містить `REQUIRED_SECRET_NOT_SET` для чотирьох критичних змінних:
+Статичний SDL `deploy/akash/deploy.yaml` (та шаблон `deploy.yaml.tpl`) містить `REQUIRED_SECRET_NOT_SET` плейсхолдери. Список секретів розширено для повного дзеркала Kamal `config/deploy.yml` (`env.secret`), щоб уникнути паралітичних відмов після першого деплою.
 
-```yaml
-- RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
-- DATABASE_URL=REQUIRED_SECRET_NOT_SET
-- REDIS_URL=REQUIRED_SECRET_NOT_SET
-- KREDIS_REDIS_URL=REQUIRED_SECRET_NOT_SET
-- CLOUD_SQL_INSTANCE_CONNECTION_NAME=REQUIRED_SECRET_NOT_SET
-- GCP_SA_KEY_BASE64=REQUIRED_SECRET_NOT_SET
-```
+#### Категорія A — 🛑 Boot-critical (Puma crash до accept loop)
 
-При спробі запустити Rails без `RAILS_MASTER_KEY` — процес аварійно завершується ще до старту Puma. `DATABASE_URL` без реального значення — ActiveRecord не підключається. `CLOUD_SQL_INSTANCE_CONNECTION_NAME` та `GCP_SA_KEY_BASE64` необхідні для Cloud SQL Auth Proxy — без них проксі не стартує і `DATABASE_URL=127.0.0.1:5432` не працює. Це зроблено навмисно для безпеки (секрети не комітяться в git), але потребує чіткого процесу перед деплоєм.
+| ENV | Файл-guard | Поведінка без значення |
+|-----|-----------|------------------------|
+| `RAILS_MASTER_KEY` | `config/credentials.yml.enc` | Rails refuses to load credentials |
+| `DATABASE_URL` | `config/database.yml` | `ActiveRecord::AdapterNotSpecified` |
+| `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `bin/docker-entrypoint` | Cloud SQL Auth Proxy не стартує → `127.0.0.1:5432` недоступний |
+| `GCP_SA_KEY_BASE64` | `bin/docker-entrypoint` | Auth Proxy не може автентифікуватися до Google Cloud API |
+| `REDIS_URL` | `config/initializers/sidekiq.rb` | Sidekiq client не підключиться |
+| `KREDIS_REDIS_URL` | `config/initializers/kredis.rb` | Distributed locks не працюють |
+| `PROVISIONING_MASTER_KEY` | `config/initializers/master_key_strength_check.rb:33-37` | **`SecurityError` у `after_initialize` → Puma crash до accept loop** |
+
+#### Категорія B — Web3 worker DeadSet (всі Sidekiq-воркери `web3_critical`)
+
+Без цих ENV `ENV.fetch` raises `KeyError` при першому виконанні воркера. Sidekiq перекидає job у DeadSet після retry exhaustion → жоден SCC не мінтиться, жоден slashing не виконується, weekly L1 anchor падає.
+
+| ENV | Сервіс / Worker | Поведінка |
+|-----|-----------------|-----------|
+| `ORACLE_PRIVATE_KEY` | `Celo::CommunityRewardService`, `Toucan::BridgeService`, `Klima::RetirementService`, `Etherisc::ClaimService`, `PuroEarth::PassportService`, fallback для minter/slasher | `KeyError` при першому виклику |
+| `ORACLE_MINTER_PRIVATE_KEY` | `BlockchainMintingService:107` (MINTER_ROLE) | SCC/SFC mint неможливий |
+| `ORACLE_SLASHER_PRIVATE_KEY` | `BlockchainBurningService:58` (SLASHER_ROLE) | Slashing зривається |
+| `ETHEREUM_ANCHOR_PRIVATE_KEY` | `Ethereum::StateAnchorService:147` | Weekly state-root anchor падає |
+| `ALCHEMY_POLYGON_RPC_URL` | `Web3::RpcConnectionPool.client_for` | Усі Polygon-операції недоступні |
+| `ALCHEMY_ETHEREUM_RPC_URL` | `Ethereum::StateAnchorService:146` | L1 anchor TX зривається |
+| `SOLANA_RPC_URL` | `Solana::MintingService:112` | Defaults to devnet — не критично, але неправильна мережа |
+| `SOLANA_WALLET_KEYPAIR` | `Solana::MintingService:116` | `nil`-check невдалий |
+| `SOLANA_FEE_PAYER_PUBKEY` | `Solana::MintingService:119` | Raises `🛑 [Solana] SOLANA_FEE_PAYER_PUBKEY is required` |
+| `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` | `Solana::MintingService:125` | Raises explicit error |
+| `SOLANA_USDC_MINT_ADDRESS` | `Solana::MintingService:127` | Raises explicit error |
+| `CHAINLINK_FUNCTIONS_ROUTER` | `Chainlink::OracleDispatchService:67` | Fallback на stub (або raise у `WEB3_STRICT_MODE`) |
+| `CHAINLINK_SUBSCRIPTION_ID` | `Chainlink::OracleDispatchService:68` | Те саме |
+| `CHAINLINK_DON_ID` | `Chainlink::OracleDispatchService:95` | Raises `DispatchError` для on-chain dispatch |
+| `CHAINLINK_HMAC_SECRET` | `Api::V1::OracleCallbacksController` | Підпис callback не перевіряється |
+
+#### Категорія C — Observability (silent failures)
+
+| ENV | Файл | Поведінка без значення |
+|-----|------|------------------------|
+| `SENTRY_DSN` | `config/initializers/sentry.rb:15` | Sentry inert → production errors невидимі |
+
+> **Чому критично:** Akash provider реструктує контейнер у нескінченному hot loop при boot-crash. Це означає що навіть найменша помилка у Категорії A зробить deployment **постійно недоступним** при тому що ескроу AKT продовжує згорати. Категорія B веде до «тихої» поломки Proof of Growth pipeline — Rails запускається, телеметрія приймається, але токени ніколи не мінтяться.
+
+#### ⚠️ Akash ENV plaintext exposure — security note
+
+Akash Network **не шифрує** ENV-блок SDL на стороні провайдера. Зміст `services.web.env` зберігається у форматі, аналогічному Kubernetes ConfigMap, і доступний:
+- через `akash provider lease-logs` адміністратору провайдера,
+- через kubectl/k9s, якщо провайдер скомпрометований,
+- у самому SDL-маніфесті, який Terraform рендерить у `terraform/akash/generated-deploy.yaml` (`file_permission = "0600"`, але існує на диску деплоєра).
+
+Це **слабша гарантія**, ніж у GCP Secret Manager (HSM-backed) або Kamal `.kamal/secrets` (тільки на машинах деплоєра, не на серверах).
+
+**Mitigation (TRL 6-7, поточний пріоритет):**
+1. **Scoped on-chain roles:** Akash-deployment ORACLE keys повинні мати **тільки** `MINTER_ROLE`/`SLASHER_ROLE` на SCC/SFC контрактах — **ніколи** `DEFAULT_ADMIN_ROLE`. Це обмежує blast radius при витоку до конкретної операції (mint/burn), без можливості змінити contract owner або вкрасти treasury.
+2. **Key rotation:** 90-денний цикл ротації через Terraform pipeline. Старі ключі revoke-ються на контрактах (revoke role).
+3. **Окремі гаманці per chain:** `ETHEREUM_ANCHOR_PRIVATE_KEY` ≠ `ORACLE_PRIVATE_KEY` (вже зроблено через B-02 split).
+4. **Audited Akash providers only:** `signedBy.anyOf` обмежує deployment до провайдерів, перевірених Akash community auditor — зменшує ризик зловмисного провайдера.
+
+**Mitigation (TRL 8+, deferred):**
+- Vault/Doppler sidecar агент, який тягне секрети у runtime memory без появи у SDL ENV (потрібен окремий identity для Akash → Vault auth).
+- Hardware Security Module (HSM) для підпису транзакцій без експорту приватного ключа (наприклад, через AWS KMS asymmetric keys або Fireblocks API).
+
+Cross-ref: [`06_04_Secrets_Checklist §2.1`](06_04_Secrets_Checklist) — повний список секретів, [`06_01 §Boot-time guard rationale`](06_01_Deployment_Kamal_Terraform) — eqv. пояснення для Kamal.
 
 > **⚠️ Security Exception — GCP_SA_KEY_BASE64 (Akash-only):** На TRL 5-6 Akash-вузли автентифікуються до Cloud SQL Auth Proxy довгоживучим Service Account JSON ключем у форматі `GCP_SA_KEY_BASE64`. Це **архітектурний виняток** з принципу `06_04 §Workload Identity Federation` (WIF), де всі GCP-сервіси повинні використовувати короткоживучі OIDC токени. Akash як зовнішній провайдер не має доступу до GCE метаданих та не може напряму використовувати WIF без додаткового OIDC provider'а. **Mitigation:** SA з якого згенеровано ключ має **тільки** роль `roles/cloudsql.client` (нічого більше — ні Storage, ні Secret Manager), key rotation кожні 90 днів через Terraform pipeline. На TRL 7+ розглянути міграцію на WIF через зовнішній OIDC provider (наприклад, GitHub Actions як trust anchor для Akash deployment manifests). Cross-ref: [`06_04 §Workload Identity Federation`](06_04_Secrets_Checklist).
 
@@ -515,27 +567,91 @@ params:
 
 ## 2. Змінні Середовища (Environment Variables)
 
-**Розділ SDL:** `services.web.env`  
-**Відповідність:** `config/deploy.yml` → `env.secret` + `env.clear`
+**Розділ SDL:** `services.web.env` + `services.job.env`  
+**Відповідність:** `config/deploy.yml` → `env.secret` + `env.clear`  
+**Кількість:** ~30 ENV-змінних (мірор `.kamal/secrets`)
 
-Всі 10 ENV змінних, які маніфест передає в контейнер при старті:
+ENV-блоки `web` та `job` сервісів **дзеркалюють** один одного — Sidekiq у `job`-сервісі ходить через ті ж Rails initializers, які перевіряють boot-critical секрети. Колонка **«Required for»** показує, де змінна *критично* необхідна:
+- **boot** — Rails не стартує без неї (Puma crash до accept loop).
+- **web3-worker** — Sidekiq worker впаде у DeadSet при першому виконанні.
+- **observability** — silent failure, продакшн працює, але без видимості.
+- **runtime** — використовується у звичайних запитах.
 
-| Змінна | Значення в SDL | Тип | Обов'язкова | Опис |
-|--------|---------------|-----|------------|------|
-| `PORT` | `80` | Відкрита | ✅ | Порт, на якому слухає Thruster всередині контейнера |
-| `RAILS_MASTER_KEY` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Ключ розшифровки `config/credentials.yml.enc`. Rails не стартує без нього |
-| `DATABASE_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | PostgreSQL URL. Формат: `postgres://user:pass@127.0.0.1:5432/db`. Вказує на локальний Cloud SQL Auth Proxy |
-| `REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Redis URL для Sidekiq (DB 0). Формат: `rediss://...@host:port/0` (Upstash, TLS) |
-| `KREDIS_REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Redis URL для Kredis distributed locks (DB 1). Формат: `rediss://...@host:port/1` (Upstash, TLS) |
-| `RACK_ATTACK_REDIS_URL` | — (auto-derive) | **Секрет** | — | Redis URL для rate-limiting (DB 2). Опц.: auto-derive з `REDIS_URL` → `/2` |
-| `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Cloud SQL instance connection name (з `terraform output database_connection_name`). Формат: `project:region:instance` |
-| `GCP_SA_KEY_BASE64` | `REQUIRED_SECRET_NOT_SET` | **Секрет** | ✅ | Base64-encoded GCP service account JSON key для Cloud SQL Auth Proxy |
-| `RAILS_ENV` | `production` | Відкрита | ✅ | Rails environment — production режим обов'язковий |
-| `RAILS_MAX_THREADS` | `3` | Відкрита | — | Кількість Puma threads на worker. Має відповідати `pool` у `database.yml` |
-| `WEB_CONCURRENCY` | `4` | Відкрита | — | Кількість Puma worker processes. Встановлено рівним CPU units (4 vCPU) |
-| `RAILS_ALLOWED_HOSTS` | *(потрібно встановити)* | Відкрита | ⚠️ | Comma-separated allowlist хостів (DNS-rebinding захист). Напр. `api.silkennet.com,.silkennet.com`. Без цього Rails логує `[SECURITY]` при старті. |
-| `DISABLE_SSL` | *(не встановлювати)* | Відкрита | — | `true` лише якщо Akash ingress або Cloudflare термінує TLS і Rails сам не повинен форсувати HTTPS. За замовчуванням `force_ssl`/`assume_ssl` активні. |
-| `CSP_ENFORCE` | *(не встановлювати)* | Відкрита | — | `true` для переводу CSP з report-only у enforced. Рекомендується після burn-in (1–2 тижні спостережень). |
+### 2.1 Application core (boot)
+
+| Змінна | Значення в SDL | Required for | Опис |
+|--------|---------------|-------------|------|
+| `PORT` | `80` | runtime | Порт Thruster |
+| `RAILS_ENV` | `production` | boot | Rails environment |
+| `RAILS_MASTER_KEY` | `REQUIRED_SECRET_NOT_SET` | **boot** | Ключ розшифровки `config/credentials.yml.enc` |
+| `DATABASE_URL` | `REQUIRED_SECRET_NOT_SET` | **boot** | PostgreSQL URL → Cloud SQL Auth Proxy `127.0.0.1:5432` |
+| `CLOUD_SQL_INSTANCE_CONNECTION_NAME` | `REQUIRED_SECRET_NOT_SET` | **boot** | Cloud SQL instance connection (`project:region:instance`) |
+| `GCP_SA_KEY_BASE64` | `REQUIRED_SECRET_NOT_SET` | **boot** | Base64 SA JSON для Auth Proxy |
+| `REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **boot** | Sidekiq + ActionCable (Upstash `rediss://`) |
+| `KREDIS_REDIS_URL` | `REQUIRED_SECRET_NOT_SET` | **boot** | Distributed locks (DB 1) |
+| `RACK_ATTACK_REDIS_URL` | — (auto-derive з `REDIS_URL` → `/2`) | runtime | Rate-limiting (опц.) |
+| `RAILS_MAX_THREADS` | `3` | runtime | Puma threads/worker — узгоджено з `database.yml` pool |
+| `WEB_CONCURRENCY` | `4` | runtime | Puma worker processes (web only) |
+
+### 2.2 🛑 Boot-critical security guards
+
+| Змінна | Значення в SDL | Required for | Опис |
+|--------|---------------|-------------|------|
+| `PROVISIONING_MASTER_KEY` | `REQUIRED_SECRET_NOT_SET` | **boot** | HKDF root key. `config/initializers/master_key_strength_check.rb` raises `SecurityError` у `after_initialize` → Puma crash. Generate: `SecureRandom.hex(32)` |
+
+### 2.3 Observability
+
+| Змінна | Значення в SDL | Required for | Опис |
+|--------|---------------|-------------|------|
+| `SENTRY_DSN` | `REQUIRED_SECRET_NOT_SET` | **observability** | Без неї Sentry inert → production errors невидимі |
+| `RELEASE_VERSION` | `` (empty) | observability | Git SHA/release tag для Sentry grouping |
+| `PROMETHEUS_AUTH_USER` | `REQUIRED_SECRET_NOT_SET` | observability | Basic Auth для `/metrics` (Alloy scrape) |
+| `PROMETHEUS_AUTH_PASSWORD` | `REQUIRED_SECRET_NOT_SET` | observability | — |
+
+### 2.4 Web3 oracle keys (dual-key split, B-02 resolved)
+
+| Змінна | Значення в SDL | Required for | Сервіс |
+|--------|---------------|-------------|--------|
+| `ORACLE_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Legacy fallback (Celo/Toucan/Klima/PuroEarth/Etherisc) |
+| `ORACLE_MINTER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainMintingService:107` (MINTER_ROLE) |
+| `ORACLE_SLASHER_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `BlockchainBurningService:58` (SLASHER_ROLE) |
+| `ETHEREUM_ANCHOR_PRIVATE_KEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | `Ethereum::StateAnchorService:147` (окремий гаманець!) |
+
+### 2.5 RPC endpoints (`Web3::RpcConnectionPool`)
+
+| Змінна | Значення в SDL | Required for | Призначення |
+|--------|---------------|-------------|-------------|
+| `ALCHEMY_POLYGON_RPC_URL` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Усі SCC/SFC операції на Polygon |
+| `ALCHEMY_ETHEREUM_RPC_URL` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Weekly L1 state-root anchor |
+| `SOLANA_RPC_URL` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Solana мікро-винагороди |
+
+### 2.6 Solana minting
+
+| Змінна | Значення в SDL | Required for | Опис |
+|--------|---------------|-------------|------|
+| `SOLANA_WALLET_KEYPAIR` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | 64-byte hex keypair |
+| `SOLANA_FEE_PAYER_PUBKEY` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Base58 fee payer |
+| `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | USDC ATA |
+| `SOLANA_USDC_MINT_ADDRESS` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Base58 mint (mainnet USDC) |
+
+### 2.7 Chainlink Functions Router v1 (Proof of Growth — S6.2)
+
+| Змінна | Значення в SDL | Required for | Опис |
+|--------|---------------|-------------|------|
+| `CHAINLINK_FUNCTIONS_ROUTER` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Router contract address |
+| `CHAINLINK_SUBSCRIPTION_ID` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | Functions subscription |
+| `CHAINLINK_DON_ID` | `REQUIRED_SECRET_NOT_SET` | **web3-worker** | bytes32, наприклад `fun-polygon-mainnet-1` |
+| `CHAINLINK_HMAC_SECRET` | `REQUIRED_SECRET_NOT_SET` | runtime (web) | Перевірка `X-Chainlink-Signature` у callback |
+| `CHAINLINK_DATA_VERSION` | `1` | runtime | Functions API version |
+| `CHAINLINK_CALLBACK_GAS_LIMIT` | `300000` | runtime | Gas limit для callback |
+
+### 2.8 Security knobs (Rails hardening)
+
+| Змінна | Значення | Required for | Опис |
+|--------|---------|-------------|------|
+| `RAILS_ALLOWED_HOSTS` | *(потрібно встановити)* | runtime ⚠️ | Comma-separated allowlist (DNS-rebinding захист) — напр. `api.silkennet.com,.silkennet.com` |
+| `DISABLE_SSL` | *(не встановлювати)* | runtime | `true` лише якщо Akash ingress / Cloudflare термінує TLS |
+| `CSP_ENFORCE` | *(не встановлювати)* | runtime | `true` після burn-in CSP report-only (1–2 тижні) |
 
 **Terraform-шаблон додає змінні динамічно** (`deploy.yaml.tpl`):
 
@@ -612,6 +728,10 @@ silken-net-terraform-state/ (GCS bucket)
 
 **Секрети (sensitive = true):**
 
+> Усі секрети нижче передаються у `templatefile()` у `terraform/akash/main.tf` та рендеряться у `generated-deploy.yaml` (`file_permission = "0600"`). Mirror зі списку `env.secret` в `config/deploy.yml` (Kamal) — окрім `GCP_ARTIFACT_REGISTRY_KEY` (не потрібен для GHCR public image).
+
+**Application core:**
+
 | Змінна | Валідація |
 |--------|-----------|
 | `rails_master_key` | — |
@@ -620,7 +740,55 @@ silken-net-terraform-state/ (GCS bucket)
 | `kredis_redis_url` | — (auto-derived if empty) |
 | `cloud_sql_instance_connection_name` | Формат: `project:region:instance` |
 | `gcp_sa_key_base64` | Base64-encoded GCP service account JSON key |
+
+**🛑 Boot-critical (Puma crash без значення):**
+
+| Змінна | Валідація |
+|--------|-----------|
+| `provisioning_master_key` | length ≥ 32 chars (recommend 64 hex = 256-bit). Generate: `ruby -e 'require "securerandom"; puts SecureRandom.hex(32)'` |
+
+**Observability:**
+
+| Змінна | Валідація |
+|--------|-----------|
+| `sentry_dsn` | Sentry DSN URL |
 | `grafana_remote_write_token` | Grafana Cloud API token (metrics:write scope) |
+| `prometheus_auth_password` | Basic Auth password для `/metrics` |
+
+**Web3 oracle keys (dual-key split, B-02):**
+
+| Змінна | Валідація |
+|--------|-----------|
+| `oracle_private_key` | Hex `0x…` (legacy fallback для Celo/Toucan/Klima/PuroEarth/Etherisc) |
+| `oracle_minter_private_key` | Hex `0x…` (MINTER_ROLE на SCC/SFC) |
+| `oracle_slasher_private_key` | Hex `0x…` (SLASHER_ROLE на SCC/SFC) |
+| `ethereum_anchor_private_key` | Hex `0x…` (окремий wallet для L1 anchor — MUST differ from `oracle_private_key`) |
+
+**RPC endpoints (Web3::RpcConnectionPool — ENV.fetch raises KeyError без значення):**
+
+| Змінна | Валідація |
+|--------|-----------|
+| `alchemy_polygon_rpc_url` | HTTPS URL (sensitive — містить API key у path) |
+| `alchemy_ethereum_rpc_url` | HTTPS URL |
+| `solana_rpc_url` | HTTPS URL Solana JSON-RPC |
+
+**Solana minting (Solana::MintingService raises explicit errors):**
+
+| Змінна | Валідація |
+|--------|-----------|
+| `solana_wallet_keypair` | 64-byte hex keypair |
+| `solana_fee_payer_pubkey` | Base58 pubkey |
+| `solana_fee_payer_token_account` | Base58 USDC ATA |
+| `solana_usdc_mint_address` | Base58 (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`) |
+
+**Chainlink Functions Router v1:**
+
+| Змінна | Валідація |
+|--------|-----------|
+| `chainlink_functions_router` | Polygon contract address `0x…` |
+| `chainlink_subscription_id` | Numeric subscription ID |
+| `chainlink_don_id` | bytes32 (e.g. `fun-polygon-mainnet-1`) |
+| `chainlink_hmac_secret` | HMAC-SHA256 secret для callback signature |
 | `prometheus_auth_password` | Basic Auth password для `/metrics` endpoint |
 
 **Observability — Grafana Cloud (OBS.1):**
@@ -772,24 +940,92 @@ akash tx deployment close \
 
 ## 6. Відповідність Kamal → Akash
 
-Mapping між конфігурацією Kamal (`config/deploy.yml`) та SDL (`deploy/akash/deploy.yaml`):
+Mapping між конфігурацією Kamal (`config/deploy.yml` + `.kamal/secrets`) та SDL (`deploy/akash/deploy.yaml` + `deploy/akash/deploy.yaml.tpl`). Список повністю синхронізовано — кожен запис у Kamal `env.secret` повинен мати відповідник у обох сервісах SDL (`web` + `job`).
+
+### Структурні відповідники
 
 | Kamal (config/deploy.yml) | Akash SDL (deploy/akash/deploy.yaml) |
 |--------------------------|--------------------------------------|
 | `servers.web` | `services.web` |
-| `image` (Artifact Registry) | `services.web.image` |
+| `servers.job` (Sidekiq) | `services.job` (✅ BLOCKER-2 виправлено) |
+| `image` (Artifact Registry) | `services.web.image` (GHCR public) |
 | `boot.proxy.publish "80:80"` | `expose[0]: port: 80, global: true` |
-| `boot.proxy.publish "5683:5683/udp"` | `expose[1]: port: 5683, proto: udp, global: true` |
-| `env.secret RAILS_MASTER_KEY` | `env: RAILS_MASTER_KEY=...` |
-| `env.secret DATABASE_URL` | `env: DATABASE_URL=...` |
-| `env.secret REDIS_URL` | `env: REDIS_URL=...` |
-| `env.secret KREDIS_REDIS_URL` | `env: KREDIS_REDIS_URL=...` |
+| `boot.proxy.publish "443:443"` | `expose[1]: port: 443, global: true` (🟡 BLOCKER-5: TLS термінація) |
+| `boot.proxy.publish "5683:5683/udp"` | `expose[2]: port: 5683, proto: udp, global: true` |
 | `env.clear RAILS_ENV=production` | `env: RAILS_ENV=production` |
+| `env.clear WEB_CONCURRENCY=2` | `env: WEB_CONCURRENCY=4` (більше CPU на Akash) |
 | `env.clear RAILS_MAX_THREADS=3` | `env: RAILS_MAX_THREADS=3` |
 | `volumes: silken_net_storage:/rails/storage` | `params.storage.data.mount: /rails/storage` |
 | `builder.arch: amd64` | `profiles.compute.web.resources.cpu.units: 4` |
-| `servers.job` (Sidekiq) | ✅ Додано (BLOCKER-2 виправлено) |
-| — (Grafana Alloy sidecar) | ✅ `alloy` сервіс (OBS.1 — Grafana Cloud) |
+| — | ✅ `alloy` сервіс (OBS.1 — Grafana Cloud sidecar) |
+| `password: GCP_ARTIFACT_REGISTRY_KEY` | ❌ Не потрібен (GHCR public image) |
+
+### Mapping `env.secret` → SDL `env:`
+
+> **Принцип:** кожна змінна нижче повинна бути одночасно у `.kamal/secrets`, `config/deploy.yml env.secret`, `deploy/akash/deploy.yaml` (обидва сервіси), `deploy/akash/deploy.yaml.tpl` (обидва сервіси), `terraform/akash/variables.tf` (як `sensitive = true`), та `terraform/akash/main.tf` (у `templatefile()` map). Drift = boot crash або тиха відмова Web3 pipeline.
+
+**Application core (boot):**
+
+| Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
+|-------------------|----------------------|---------------------|
+| `RAILS_MASTER_KEY` | `RAILS_MASTER_KEY=${rails_master_key}` | `var.rails_master_key` |
+| `DATABASE_URL` | `DATABASE_URL=${database_url}` | `var.database_url` |
+| `REDIS_URL` | `REDIS_URL=${redis_url}` | `var.redis_url` |
+| `KREDIS_REDIS_URL` | `KREDIS_REDIS_URL=${kredis_redis_url}` | `var.kredis_redis_url` (auto-derive) |
+| — (Cloud SQL Auth Proxy) | `CLOUD_SQL_INSTANCE_CONNECTION_NAME=...` | `var.cloud_sql_instance_connection_name` |
+| — (Cloud SQL Auth Proxy) | `GCP_SA_KEY_BASE64=...` | `var.gcp_sa_key_base64` |
+
+**🛑 Boot-critical security guard:**
+
+| Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
+|-------------------|----------------------|---------------------|
+| `PROVISIONING_MASTER_KEY` | `PROVISIONING_MASTER_KEY=${provisioning_master_key}` | `var.provisioning_master_key` |
+
+**Observability:**
+
+| Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
+|-------------------|----------------------|---------------------|
+| `SENTRY_DSN` | `SENTRY_DSN=${sentry_dsn}` | `var.sentry_dsn` |
+| — | `PROMETHEUS_AUTH_USER=...` (web + alloy) | `var.prometheus_auth_user` |
+| — | `PROMETHEUS_AUTH_PASSWORD=...` (web + alloy) | `var.prometheus_auth_password` |
+| — | `GRAFANA_REMOTE_WRITE_*` (alloy only) | `var.grafana_remote_write_*` |
+
+**Web3 oracle keys (dual-key split, B-02):**
+
+| Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
+|-------------------|----------------------|---------------------|
+| `ORACLE_PRIVATE_KEY` | `ORACLE_PRIVATE_KEY=${oracle_private_key}` | `var.oracle_private_key` |
+| `ORACLE_MINTER_PRIVATE_KEY` | `ORACLE_MINTER_PRIVATE_KEY=${oracle_minter_private_key}` | `var.oracle_minter_private_key` |
+| `ORACLE_SLASHER_PRIVATE_KEY` | `ORACLE_SLASHER_PRIVATE_KEY=${oracle_slasher_private_key}` | `var.oracle_slasher_private_key` |
+| `ETHEREUM_ANCHOR_PRIVATE_KEY` | `ETHEREUM_ANCHOR_PRIVATE_KEY=${ethereum_anchor_private_key}` | `var.ethereum_anchor_private_key` |
+
+**RPC endpoints:**
+
+| Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
+|-------------------|----------------------|---------------------|
+| `ALCHEMY_POLYGON_RPC_URL` | `ALCHEMY_POLYGON_RPC_URL=${alchemy_polygon_rpc_url}` | `var.alchemy_polygon_rpc_url` |
+| `ALCHEMY_ETHEREUM_RPC_URL` | `ALCHEMY_ETHEREUM_RPC_URL=${alchemy_ethereum_rpc_url}` | `var.alchemy_ethereum_rpc_url` |
+| `SOLANA_RPC_URL` | `SOLANA_RPC_URL=${solana_rpc_url}` | `var.solana_rpc_url` |
+
+**Solana minting:**
+
+| Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
+|-------------------|----------------------|---------------------|
+| `SOLANA_WALLET_KEYPAIR` | `SOLANA_WALLET_KEYPAIR=${solana_wallet_keypair}` | `var.solana_wallet_keypair` |
+| `SOLANA_FEE_PAYER_PUBKEY` | `SOLANA_FEE_PAYER_PUBKEY=${solana_fee_payer_pubkey}` | `var.solana_fee_payer_pubkey` |
+| `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` | `SOLANA_FEE_PAYER_TOKEN_ACCOUNT=${solana_fee_payer_token_account}` | `var.solana_fee_payer_token_account` |
+| `SOLANA_USDC_MINT_ADDRESS` | `SOLANA_USDC_MINT_ADDRESS=${solana_usdc_mint_address}` | `var.solana_usdc_mint_address` |
+
+**Chainlink Functions Router v1:**
+
+| Kamal `env.secret` | Akash SDL (web + job) | Terraform variable |
+|-------------------|----------------------|---------------------|
+| `CHAINLINK_FUNCTIONS_ROUTER` | `CHAINLINK_FUNCTIONS_ROUTER=${chainlink_functions_router}` | `var.chainlink_functions_router` |
+| `CHAINLINK_SUBSCRIPTION_ID` | `CHAINLINK_SUBSCRIPTION_ID=${chainlink_subscription_id}` | `var.chainlink_subscription_id` |
+| `CHAINLINK_HMAC_SECRET` | `CHAINLINK_HMAC_SECRET=${chainlink_hmac_secret}` | `var.chainlink_hmac_secret` |
+| `CHAINLINK_DON_ID` | `CHAINLINK_DON_ID=${chainlink_don_id}` | `var.chainlink_don_id` |
+
+> **🔴 Drift guard:** при додаванні нового ENV у Kamal `env.secret` **ОБОВ'ЯЗКОВО** додати у всі 5 локацій вище. Інакше Akash deployment отримає boot crash (категорія A) або тиху Web3 відмову (категорія B). Див. також **BLOCKER-3** для повного списку категорій.
 
 ---
 

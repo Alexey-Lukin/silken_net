@@ -90,6 +90,143 @@ variable "kredis_redis_url" {
 }
 
 # -----------------------------------------------------------------------------
+# 🛑 BOOT-CRITICAL Secrets — Rails refuses to boot in production without these
+# -----------------------------------------------------------------------------
+# These secrets are checked by Rails initializers at `after_initialize` time.
+# Missing values cause Puma to crash before the accept loop — Akash provider
+# will restart the container in a hot loop, never accepting requests.
+
+variable "provisioning_master_key" {
+  description = "HKDF root key for hardware provisioning (HardwareKeyService, OtaHmacKeyService). Generate: ruby -e \"require 'securerandom'; puts SecureRandom.hex(32)\". Without this, config/initializers/master_key_strength_check.rb raises SecurityError at boot."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.provisioning_master_key) >= 32
+    error_message = "PROVISIONING_MASTER_KEY must be at least 32 chars (recommend 64 hex chars = 256-bit entropy)."
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Observability — Sentry
+# -----------------------------------------------------------------------------
+
+variable "sentry_dsn" {
+  description = "Sentry DSN for production error tracking (config/initializers/sentry.rb). Without it Sentry is inert — silent failures in production."
+  type        = string
+  sensitive   = true
+}
+
+# -----------------------------------------------------------------------------
+# Web3 Oracle Keys (dual-key split — B-02 resolved)
+# -----------------------------------------------------------------------------
+# Plaintext on Akash providers — rotate every 90 days. Prefer minimal on-chain
+# roles (MINTER_ROLE only, never DEFAULT_ADMIN_ROLE) for the per-Akash-deployment
+# keys. See docs/06_02 § "Akash ENV plaintext exposure".
+
+variable "oracle_private_key" {
+  description = "Legacy fallback Web3 oracle key (Celo/Etherisc/Toucan/Klima/PuroEarth services). Hex-encoded, with 0x prefix. Used as fallback by BlockchainMintingService and BlockchainBurningService if dedicated keys absent."
+  type        = string
+  sensitive   = true
+}
+
+variable "oracle_minter_private_key" {
+  description = "Web3 minter key — holds MINTER_ROLE on SCC & SFC contracts (BlockchainMintingService:107). Hex-encoded, with 0x prefix."
+  type        = string
+  sensitive   = true
+}
+
+variable "oracle_slasher_private_key" {
+  description = "Web3 slasher key — holds SLASHER_ROLE on SCC & SFC contracts (BlockchainBurningService:58). Hex-encoded, with 0x prefix."
+  type        = string
+  sensitive   = true
+}
+
+variable "ethereum_anchor_private_key" {
+  description = "Dedicated Ethereum L1 wallet for weekly state-root anchor (Ethereum::StateAnchorService:147). MUST differ from oracle_private_key. Hex-encoded, with 0x prefix."
+  type        = string
+  sensitive   = true
+}
+
+# -----------------------------------------------------------------------------
+# RPC Endpoints (Web3::RpcConnectionPool requires these via ENV.fetch)
+# -----------------------------------------------------------------------------
+
+variable "alchemy_polygon_rpc_url" {
+  description = "Alchemy Polygon RPC URL for SCC/SFC minting, burning, Chainlink Functions dispatch, treasury monitoring, Toucan/Klima/PuroEarth bridges. Without it Web3::RpcConnectionPool.client_for raises KeyError."
+  type        = string
+  sensitive   = true
+}
+
+variable "alchemy_ethereum_rpc_url" {
+  description = "Alchemy Ethereum L1 RPC URL for weekly state-root anchoring (Ethereum::StateAnchorService:146)."
+  type        = string
+  sensitive   = true
+}
+
+variable "solana_rpc_url" {
+  description = "Solana RPC URL for micro-reward minting (Solana::MintingService:112). Defaults to DEVNET_RPC_URL in code if blank — set explicitly in prod."
+  type        = string
+  sensitive   = true
+}
+
+# -----------------------------------------------------------------------------
+# Solana Minting (Solana::MintingService raises explicit errors)
+# -----------------------------------------------------------------------------
+
+variable "solana_wallet_keypair" {
+  description = "Solana wallet keypair (hex-encoded 64-byte private key) for fee-payer signing (Solana::MintingService:116)."
+  type        = string
+  sensitive   = true
+}
+
+variable "solana_fee_payer_pubkey" {
+  description = "Solana fee-payer public key (base58). Solana::MintingService:119 raises if absent."
+  type        = string
+  sensitive   = true
+}
+
+variable "solana_fee_payer_token_account" {
+  description = "Solana fee-payer USDC SPL token account (ATA, base58). Solana::MintingService:125 raises if absent."
+  type        = string
+  sensitive   = true
+}
+
+variable "solana_usdc_mint_address" {
+  description = "Solana USDC mint address (base58, e.g. EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v for mainnet). Solana::MintingService:127 raises if absent."
+  type        = string
+  sensitive   = true
+}
+
+# -----------------------------------------------------------------------------
+# Chainlink Functions Router v1 (ChainlinkDispatchWorker — S6.2)
+# -----------------------------------------------------------------------------
+
+variable "chainlink_functions_router" {
+  description = "Chainlink Functions Router v1 contract address on Polygon (mainnet or Amoy testnet). Without it Chainlink::OracleDispatchService falls back to stubbed mode (or raises in WEB3_STRICT_MODE)."
+  type        = string
+  sensitive   = true
+}
+
+variable "chainlink_subscription_id" {
+  description = "Chainlink Functions subscription ID (numeric). Required alongside CHAINLINK_FUNCTIONS_ROUTER for on-chain dispatch."
+  type        = string
+  sensitive   = true
+}
+
+variable "chainlink_don_id" {
+  description = "Chainlink Functions DON ID (bytes32 identifier, e.g. \"fun-polygon-mainnet-1\"). Required for on-chain dispatch — Chainlink::OracleDispatchService:95 raises without it."
+  type        = string
+  sensitive   = true
+}
+
+variable "chainlink_hmac_secret" {
+  description = "HMAC-SHA256 secret for verifying X-Chainlink-Signature header in /api/v1/oracle_callbacks (replay protection)."
+  type        = string
+  sensitive   = true
+}
+
+# -----------------------------------------------------------------------------
 # Compute Resources — maps to Akash SDL profiles.compute
 # -----------------------------------------------------------------------------
 

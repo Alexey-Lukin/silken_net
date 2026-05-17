@@ -10,18 +10,44 @@ services:
   web:
     image: ${docker_image}
     env:
+      # --- Application core ---
       - PORT=80
+      - RAILS_ENV=production
       - RAILS_MASTER_KEY=${rails_master_key}
       - DATABASE_URL=${database_url}
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=${cloud_sql_instance_connection_name}
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}
       - KREDIS_REDIS_URL=${kredis_redis_url}
-      - RAILS_ENV=production
       - RAILS_MAX_THREADS=${rails_max_threads}
       - WEB_CONCURRENCY=${web_concurrency}
+      # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---
+      - PROVISIONING_MASTER_KEY=${provisioning_master_key}
+      # --- Observability ---
+      - SENTRY_DSN=${sentry_dsn}
       - PROMETHEUS_AUTH_USER=${prometheus_auth_user}
       - PROMETHEUS_AUTH_PASSWORD=${prometheus_auth_password}
+      # --- Web3 oracle keys (dual-key split) ---
+      - ORACLE_PRIVATE_KEY=${oracle_private_key}
+      - ORACLE_MINTER_PRIVATE_KEY=${oracle_minter_private_key}
+      - ORACLE_SLASHER_PRIVATE_KEY=${oracle_slasher_private_key}
+      - ETHEREUM_ANCHOR_PRIVATE_KEY=${ethereum_anchor_private_key}
+      # --- RPC endpoints (Web3::RpcConnectionPool) ---
+      - ALCHEMY_POLYGON_RPC_URL=${alchemy_polygon_rpc_url}
+      - ALCHEMY_ETHEREUM_RPC_URL=${alchemy_ethereum_rpc_url}
+      - SOLANA_RPC_URL=${solana_rpc_url}
+      # --- Solana minting ---
+      - SOLANA_WALLET_KEYPAIR=${solana_wallet_keypair}
+      - SOLANA_FEE_PAYER_PUBKEY=${solana_fee_payer_pubkey}
+      - SOLANA_FEE_PAYER_TOKEN_ACCOUNT=${solana_fee_payer_token_account}
+      - SOLANA_USDC_MINT_ADDRESS=${solana_usdc_mint_address}
+      # --- Chainlink Functions Router v1 ---
+      - CHAINLINK_FUNCTIONS_ROUTER=${chainlink_functions_router}
+      - CHAINLINK_SUBSCRIPTION_ID=${chainlink_subscription_id}
+      - CHAINLINK_DON_ID=${chainlink_don_id}
+      - CHAINLINK_HMAC_SECRET=${chainlink_hmac_secret}
+      - CHAINLINK_DATA_VERSION=1
+      - CHAINLINK_CALLBACK_GAS_LIMIT=300000
     expose:
       - port: 80
         as: 80
@@ -52,14 +78,41 @@ services:
       - "-C"
       - "config/sidekiq.yml"
     env:
+      # --- Application core ---
+      - RAILS_ENV=production
       - RAILS_MASTER_KEY=${rails_master_key}
       - DATABASE_URL=${database_url}
       - CLOUD_SQL_INSTANCE_CONNECTION_NAME=${cloud_sql_instance_connection_name}
       - GCP_SA_KEY_BASE64=${gcp_sa_key_base64}
       - REDIS_URL=${redis_url}
       - KREDIS_REDIS_URL=${kredis_redis_url}
-      - RAILS_ENV=production
       - RAILS_MAX_THREADS=${rails_max_threads}
+      # --- 🛑 BOOT-CRITICAL: master_key_strength_check.rb ---
+      - PROVISIONING_MASTER_KEY=${provisioning_master_key}
+      # --- Observability ---
+      - SENTRY_DSN=${sentry_dsn}
+      # --- Web3 oracle keys (BlockchainMintingService, BlockchainBurningService,
+      #     Ethereum::StateAnchorService — all Sidekiq workers) ---
+      - ORACLE_PRIVATE_KEY=${oracle_private_key}
+      - ORACLE_MINTER_PRIVATE_KEY=${oracle_minter_private_key}
+      - ORACLE_SLASHER_PRIVATE_KEY=${oracle_slasher_private_key}
+      - ETHEREUM_ANCHOR_PRIVATE_KEY=${ethereum_anchor_private_key}
+      # --- RPC endpoints ---
+      - ALCHEMY_POLYGON_RPC_URL=${alchemy_polygon_rpc_url}
+      - ALCHEMY_ETHEREUM_RPC_URL=${alchemy_ethereum_rpc_url}
+      - SOLANA_RPC_URL=${solana_rpc_url}
+      # --- Solana minting (SolanaMicroRewardWorker) ---
+      - SOLANA_WALLET_KEYPAIR=${solana_wallet_keypair}
+      - SOLANA_FEE_PAYER_PUBKEY=${solana_fee_payer_pubkey}
+      - SOLANA_FEE_PAYER_TOKEN_ACCOUNT=${solana_fee_payer_token_account}
+      - SOLANA_USDC_MINT_ADDRESS=${solana_usdc_mint_address}
+      # --- Chainlink Functions Router v1 (ChainlinkDispatchWorker) ---
+      - CHAINLINK_FUNCTIONS_ROUTER=${chainlink_functions_router}
+      - CHAINLINK_SUBSCRIPTION_ID=${chainlink_subscription_id}
+      - CHAINLINK_DON_ID=${chainlink_don_id}
+      - CHAINLINK_HMAC_SECRET=${chainlink_hmac_secret}
+      - CHAINLINK_DATA_VERSION=1
+      - CHAINLINK_CALLBACK_GAS_LIMIT=300000
 
   alloy:
     image: grafana/alloy:latest
