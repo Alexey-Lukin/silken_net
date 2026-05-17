@@ -895,6 +895,13 @@
 - [x] 🤖 Дизайн завершений — ✅ `03_05` §3.4 Гілка A + Гілка B (2026-05-13)
 - [ ] 🤖 Реалізація Factory Flashing tool
 - [ ] 🤖 Integration тест з provisioning API
+- [ ] 🤖 **Задокументувати Factory Flashing pipeline як окрему секцію** з явною позначкою **"Internal Admin Tool, поза публічним REST API"** (запит: 2026-05-17). Розмежування з `/api/v1/provisioning/register` (registration-after-deployment) має бути нерозмитим: `04_03 §5.2` залишається Zero-Trust (no keys in response), нова секція описує **окремий канал** доставки ключів програматору. Проектування з нуля з повним threat model:
+  - **Access control до `PROVISIONING_MASTER_KEY`:** хто (роль/особа) має право запускати tool, як master key потрапляє у tool (HSM injection / envelope encryption / short-lived token + KMS), як ротується, fail-closed boot guard (cross-ref `master_key_strength_check.rb` SEC.11)
+  - **Anti-key-leak via factory operator:** operator UI показує тільки `status: key_burned` (без raw key), key flow `tool → SWD/JTAG → protected Flash sector` без проходження через operator screen / clipboard / logfile, secure RAM wipe після write, відсутність персистентного key cache на factory machine, screen-recording mitigations
+  - **Audit-trail provisioning сесій:** append-only chain-hashed log (паттерн `AuditLog` з `pg_advisory_xact_lock`) — operator_id + supervisor_id + device_uid + timestamp + ATECC serial (Гілка B); інтеграція з `MaintenanceRecord(action_type: :installation)` у backend (закриває loop "fizzично прошито ↔ DB-зареєстровано"); tamper-evident retention policy
+  - **Гілка A vs Гілка B threat model diff:** як змінюється attack surface при переході Protected Flash → ATECC608B (chip-swap detection через `(device_uid, atecc_serial)` pinning — вже згадано у §3.4, але threat model має це formalізувати)
+  - **Цільова секція:** TBD при виконанні — кандидати: новий §X у `04_02` (Internal Admin Services секція) АБО окрема нота `06_xx` (infrastructure / supply-chain ops). Не публічний REST endpoint в `04_03`
+  - **Cross-ref:** SEC.1 (Multisig для admin role), SEC.2 (RDP Level 2), SEC.6 (ATECC608B), SEC.9 (FIPS test vector guard), `03_05 §3.4` (existing pipeline design — extend, not duplicate)
 
 #### SEC.4 — Reed Switch shipping mode (not in BOM)
 - **Джерело:** `03_05` NOTE-3
