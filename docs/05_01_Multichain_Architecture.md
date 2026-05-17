@@ -489,13 +489,27 @@ HadronAssetRegistrationWorker → Polygon::HadronComplianceService → hadron_ky
 
 ### Крок 7: Емісія (Polygon Mint)
 
-Якщо накопичено `10,000 growth_points`, викликається функція `mintForTree`. Народжується 1 SCC.
+SCC мінтинг ініціюється двома незалежними шляхами — в обох випадках народжується 1 SCC за кожні 10,000 growth_points. Детально: [`05_02 §DOC.7`](05_02_Proof_of_Growth_Pipeline).
+
+**Шлях A — Oracle-driven (ініціюється `OracleCallbacksController`):**
+
+```
+OracleCallbacksController → oracle_status = "fulfilled"
+  → MintCarbonCoinWorker → BlockchainMintingService
+  → Guard: verified_by_iotex? + oracle_status_fulfilled? + hadron_kyc_status
+  → Polygon: mint(to_address, amount, tree_did)
+  → BlockchainConfirmationWorker (+30s) → confirm!(tx_hash)
+```
+
+**Шлях Б — Tokenomics-driven (ініціюється cron-воркером):**
 
 ```
 TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
-  → Wallet.balance >= 10,000? → lock_and_mint!
-  → MintCarbonCoinWorker → BlockchainMintingService
-  → Guard: verified_by_iotex? + oracle_status + hadron_kyc_status
+  → EvaluateTreeBatchWorker → Wallet.balance >= 10,000? → lock_and_mint!
+  → BlockchainMintingService.call(batch, telemetry_log: nil)
+  → Guard: hadron_kyc_status (тільки)
+         (verified_by_iotex? + oracle_status свідомо пропускаються —
+          per-packet integrity вже забезпечена AES-CBC decrypt + valid_sensor_data?)
   → Polygon: mint(to_address, amount, tree_did)
   → BlockchainConfirmationWorker (+30s) → confirm!(tx_hash)
 ```
