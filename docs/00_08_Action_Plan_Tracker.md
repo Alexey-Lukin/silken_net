@@ -30,20 +30,21 @@
 
 ### Перед будь-яким польовим деплоєм (life-safety + security)
 1. **SEC.9** — замінити master AES key (FIPS-197 test vector) на криптостійкий random — **P0**
-3. **FW.1 + SEC.3** — Per-device HKDF provisioning + Factory Flashing pipeline — **P0**
-4. **FW.2** — AES-256-CCM (вирішує одразу: ECB→CCM, MIC, FW.23 OTA auth, SEC.10 panic auth, FW.29 disambiguation) — **P0**
-5. **SEC.1** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet — **P0**
+2. **FW.1 + SEC.3** — Per-device HKDF provisioning + Factory Flashing pipeline — **P0**
+3. **FW.2** — AES-256-CCM (вирішує одразу: ECB→CCM, MIC, FW.23 OTA auth, SEC.10 panic auth, FW.29 disambiguation) — **P0**
+4. **SEC.1** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet — **P0**
+5. **ARCH.42** — архітектурне рішення AES-128 vs AES-256 (ATECC608B апаратно підтримує лише AES-128 — конфлікт з системним AES-256; блокує SEC.6 Secure Element integration та BOM freeze) — **P1 (до BOM freeze)**
 
 ### Перед production-запуском Web3 mintingу
 6. **S1.1** — заповнити GitHub Secrets (`DATABASE_PASSWORD`, `GCP_SA_KEY`, `SSH_PRIVATE_KEY`, ...) — **P0**
 7. **E.45 / S3.5** — підставити реальну адресу SCC/SFC у `subgraph.yaml` — **P0**
 8. **E.47** — встановити `SOLANA_RPC_URL` mainnet (інакше Devnet за замовчуванням) — **P0**
-9. **S6.12** — аудит `TokenomicsEvaluatorWorker` оракул-guards bypass для не-oracle flow — **P1**
+9. ✅ ~~**S6.12**~~ — аудит `TokenomicsEvaluatorWorker` оракул-guards bypass — **виконано** (аудит + spec coverage + документація завершено)
 10. **INF.4 + INF.6** — TLS termination + CoAP Proxy verification на Akash ingress — **P1**
 
 ### Парк аналітики/спостережуваності перед першим Akash deploy
 11. **S2.1 + S2.2 + S2.3** — Grafana Cloud dashboards & alerts після першого `/metrics` пуш — **P0** (ops)
-12. **S5.2** — `RELEASE_VERSION` ENV для Sentry release tracking (вже інстальовано — потрібна верифікація) — **P2**
+12. ✅ ~~**S5.2**~~ — `RELEASE_VERSION` ENV додано у Kamal/Akash/CI config — **реалізовано** (залишилось: 👤 верифікувати Sentry release tracking після першого деплою)
 
 ### Лабораторно-критичний шлях (TRL 4→6 hardware)
 13. **HW.24** — Staged validation gate (SLA → Ti-coin → full anchor) — **P0** (блокує замовлення 100 шт. DMLS до проходження попередніх етапів)
@@ -55,9 +56,9 @@
 19. **HW.25** — PTFE-GDL membrane для катода (Zone 3) — **P1** (блокує EBFC у новій тризонній архітектурі)
 
 ### Академічний critical path
-16. **UNI.1** — Перша зустріч з деканом Онищенком (ChNU FOTIUS) — **P0** (блокує всі публікації Q1)
-17. **UNI.8** — Перший контакт з ректоратом СЄУ — **P0** (блокує MSA / B2B legal)
-18. **UNI.13 / UNI.14** — Верифікувати посади науковців ЧМА і СЄУ через офіційні сайти — **P0**
+20. **UNI.1** — Перша зустріч з деканом Онищенком (ChNU FOTIUS) — **P0** (блокує всі публікації Q1)
+21. **UNI.8** — Перший контакт з ректоратом СЄУ — **P0** (блокує MSA / B2B legal)
+22. **UNI.13 / UNI.14** — Верифікувати посади науковців ЧМА і СЄУ через офіційні сайти — **P0**
 
 ---
 
@@ -878,6 +879,7 @@
 - **Джерело:** `03_05` | Firmware architecture
 - **Опис:** AES-256 ключ зберігається у plain Flash STM32 (навіть з RDP Level 1 — key extraction можливий через glitching/side-channel). ATECC608B забезпечує hardware-protected key storage з tamper-detection. Ціна ~$0.60/unit
 - **Пріоритет:** P2 (Post-TRL 7, перед mass production >1000 units)
+- **⚠️ Cross-ref ARCH.42:** ATECC608B апаратно підтримує лише AES-128, але система Gaia 2.0 використовує AES-256. Вибір Secure Element і вибір cipher strength — взаємозалежні рішення. **Не реалізовувати SEC.6 до архітектурного рішення ARCH.42** (A: змінити SE на NXP SE050/STSAFE-A110 з AES-256, B: даунгрейд LoRa-каналу до AES-128).
 - **Статус:** 🤖 ✅ Інтеграційна оцінка ATECC608B з STM32WLE5JC задокументована в `03_05` §3.7 «ATECC608B Secure Element — оцінка інтеграції»: I²C interface (PB6/PB7), slot mapping (slot 0=AES, 1=ECC priv, 2=cert, 3=HMAC OTA), latency impact (~1.5 мс/блок vs 10 µs HAL_CRYP — нехтовно), power impact (+0.1% energy budget), Factory Flashing pipeline з ATECC, альтернатива STSAFE-A110 (native CubeMX, переважна для unified ST toolchain), OPTIGA Trust M (overkill), NXP A71CH (EOL — уникати). Firmware HAL drop-in API окреслено. Factory Flashing pipeline §3.4 оновлено (2026-05-13) з Гілкою B що включає повний I²C provisioning sequence, `(device_uid, atecc_serial)` pinning (tamper-detect chip swap), slot write послідовність та dual lock strategy.
 - [x] 🤖 Оцінити ATECC608B integration з STM32WLE5JC (I²C interface)
 - [x] 🤖 Дизайн key storage: ATECC608B slot 0 = AES key, slot 1 = device certificate
@@ -886,12 +888,12 @@
 
 #### SEC.7 — OTA image автентифікація (cross-ref FW.23)
 - **Джерело:** `03_05`, `03_02`
-- **Опис:** OTA broadcast (mruby bytecode та потенційно firmware updates) не має цифрового підпису. Пов'язано з FW.23 але виділено як окремий security item через критичність. Поточний захист — лише AES-256-ECB шифрування (яке буде замінено на CCM в FW.2)
+- **Опис:** OTA broadcast (mruby bytecode та потенційно firmware updates) не має цифрового підпису. Пов'язано з FW.23 але виділено як окремий security item через критичність.
 - **Пріоритет:** P1 (перед першою OTA в полі)
-- [ ] 🤖 Ed25519 key pair: private на backend, public у Soldier/Queen Flash (protected sector)
-- [ ] 🤖 Backend: `OtaPackagerService` → sign(bytecode) → append signature
-- [ ] 🤖 Firmware: verify signature перед Flash write
-- [ ] 🤖 Fallback: HMAC-SHA256 якщо Ed25519 не вміщується в SRAM budget
+- **Статус (🟡 частково вирішено через FW.23, 2026-05-02):** HMAC-SHA256 dual-gate реалізовано: `OtaHmacKeyService` (HKDF-SHA256, domain separation від FW.1 AES key) + `OtaPackagerService.compute_hmac_tag / build_hmac_trailer_chunks` (backend) + Soldier dual-gate (magic `"RITE"` + HMAC constant-time verify) + Queen stateless relay `[0x9B]` chunks. HMAC обраний як основний підхід (Ed25519 потребує ~512 байт SRAM + 50 мс — критично для STM32WLE5JC). **Залишається:** mbedTLS HMAC-SHA256 compute на STM32 HASH peripheral — deferred до lab integration (placeholder у `OTA_Verify_Dual_Gate`). Ed25519 — відкладено Post-TRL 7.
+- [x] 🤖 **HMAC-SHA256 dual-gate (обраний підхід):** `OtaHmacKeyService` + `OtaPackagerService` + Soldier/Queen firmware — ✅ виконано через FW.23
+- [ ] 🟡 mbedTLS HMAC-SHA256 compute на STM32 HASH peripheral — deferred до lab build (cross-ref FW.23)
+- [ ] 🔗 Ed25519 key pair (Post-TRL 7, якщо SRAM бюджет дозволить після RTOS/FW.2 оптимізацій)
 
 #### SEC.9 — Production AES Key містить FIPS-197 Appendix B Test Vector
 - **Джерело:** `03_05` | **Пріоритет: P0 (до будь-якого field deploy)**
