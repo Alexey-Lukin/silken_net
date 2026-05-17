@@ -160,11 +160,11 @@
 
 ---
 
-### 🟡 BLOCKER-5: Відсутній DSP крок — тільки лінійна нормалізація
+### 🟡 BLOCKER-5: DSP-шлях не обраний (FW.25 choice gate)
 
-**Статус:** Відкрито. Архітектурне обмеження.
+**Статус:** Відкрито. **Choice gate** — рішення про DSP-шлях downstream від ML-партнера (FW.4).
 
-**Файл:** `firmware/soldier/main.c:350-353`
+**Файл:** `firmware/soldier/main.c:1417-1419`
 
 ```c
 // 4. Швидко переводимо 12-бітні RAW-дані у Float для TinyML
@@ -173,27 +173,31 @@ for(int i = 0; i < 512; i++) {
 }
 ```
 
-**Поточний пайплайн:** `ADC raw (12-bit) → linear normalization [0.0, 1.0] → model input`
+**Поточний пайплайн:** `ADC raw (12-bit) → linear normalization [0.0, 1.0] → model input`. Це валідний вхід для Path A (raw 1D CNN), але **не достатній** для Path B/C з частотним аналізом — див. §3.2 Decision Matrix.
 
-**Проблема:**
-1. Відсутній FFT / MFCC (Mel-frequency cepstral coefficients) — стандартний підхід для аудіо-класифікації.
-2. Модель отримує сирий time-domain сигнал замість частотних ознак.
-3. Без частотного аналізу складно відрізнити шум бензопили (2–8 kHz) від кавітаційних мікротріщин (5–20 kHz) та вітру (< 1 kHz).
-4. Ефективність класифікації залежить від того, чи `silken_net_audio_model.h` реалізує DSP внутрішньо (наприклад, перший шар — STFT), що невідомо без файлу (BLOCKER-2).
+**Реальна проблема (re-framed 2026-05-17):** Не "відсутній FFT/MFCC", а **відсутнє рішення про DSP-шлях**:
+
+1. **Для класів 0–3** (silence/wind/cavitation/chainsaw) — кожен з трьох шляхів §3.2 принципово працює. Path A (raw 1D CNN, поточна нормалізація) може дати робочу 4-class модель для MVP без частотного аналізу.
+2. **Для класу 4 fauna** (Mongabay pivot, §10) — Path A **не оптимальний**: без spectral structure layered soundscape (комахи 4–8 кГц + птахи 1–6 кГц + амфібії 0.5–3 кГц) важко відрізнити від хаотичного шуму вітру. Path B (log-mel) або C (TFLM microfrontend) дають перевагу. Це сучасний bioacoustic-ESC консенсус (Salamon & Bello 2015; BirdNET 2021).
+3. **Чи `silken_net_audio_model.h` буде Path A/B/C** — невідомо без файлу (BLOCKER-2) та без рішення ML-партнера (Бушин або Любченко, [`08_02 §1.5/§1.8`](08_02_Cybernetic_and_Mathematical_Validation)).
 
 **Розрахунок тривалості вікна:**
 - 512 семплів × (1 / 16 000 Hz) = **32 мс** вікно
 - Для бензопили (F0 ~ 100 Hz) → 32 мс = 3.2 повних цикли (достатньо для виявлення)
 - Для кавітації (broadband noise) → 32 мс достатньо для енергетичного детектора
+- Для fauna soundscape — 32 мс **недостатньо** окремо; потрібне 5 s акумульоване вікно (§10.2, ARCH.40)
 
 **Необхідна дія (за пріоритетом):**
-1. Перевірити, чи `silken_net_audio_model.h` включає DSP preprocessing (CMSIS-DSP FFT → MFCC).
-2. Якщо ні — додати `arm_rfft_fast_f32()` (CMSIS-DSP) перед `audio_buffer[]` для отримання 256-point spectrum.
-3. Задокументувати фактичну архітектуру моделі у Wiki.
+1. **Узгодити з ML-партнером** (Бушин/Любченко) обраний шлях за §3.2 Decision Matrix — це передує будь-якій CMSIS-DSP роботі.
+2. **Залежно від обраного шляху:**
+   - **Path A:** залишити поточну нормалізацію; перевести зусилля на більшу INT8 модель.
+   - **Path B:** додати `arm_rfft_fast_f32()` + `arm_cmplx_mag_f32()` + custom Mel-filterbank + `arm_vlog_f32()`. **НЕ додавати `arm_mfcc_f32`** (повний MFCC з DCT — не оптимальний для CNN).
+   - **Path C:** інтегрувати TFLM `signal::microfrontend` op у TFLite runtime; firmware DSP — нуль рядків коду.
+3. Задокументувати фактичну архітектуру моделі у `silken_net_audio_model.h` (BLOCKER-2).
 
-**Блокує:** Точність класифікації, особливо у польових умовах з фоновим шумом.
+**Блокує:** Точність класифікації, особливо для класу 4 fauna. Класи 0–3 можуть бути MVP-сумісними з Path A (раннє розкоментування `Run_Inference()`).
 
-> **🌿 Підсилення критичності (Mongabay/Delgado 2026):** Стаття Delgado et al. описує лісовий звуковий ландшафт як **«багатошаровий» (layered soundscape)** — одночасні шари комах, птахів, амфібій з характерними піками на світанку та в сутінках. У часовій області (поточна лінійна нормалізація) ці шари **принципово неможливо** відрізнити від рівномірного шуму вітру або хаотичного дощу — вони мають подібну енергетичну огинаючу, але абсолютно різну спектральну структуру (гармонічні комахи 4–8 кГц + птахи 1–6 кГц + амфібії 0.5–3 кГц). Це переводить FW.25 (DSP preprocessing FFT/MFCC, CMSIS-DSP) **з категорії "P1, бажано" у категорію "P0, обов'язково"** для майбутнього класу 4 «Fauna Activity» (§10). Без частотних ознак біорізноманіття не вимірюється — сенсор бачить лише «шум», як супутник бачить лише «зелений піксель» (стратегічна паралель Бушин ↔ TinyML, див. [`08_02` §1.5 Macro-Micro verification](08_02_Cybernetic_and_Mathematical_Validation)).
+> **🌿 Mongabay/Delgado 2026 — практичне посилення:** Стаття Delgado et al. описує лісовий звуковий ландшафт як **«багатошаровий» (layered soundscape)** — одночасні шари комах, птахів, амфібій з характерними піками на світанку та в сутінках. У часовій області ці шари **складно** відрізнити від рівномірного шуму вітру/дощу — подібна енергетична огинаюча, абсолютно різна спектральна структура. Це робить **Path B (log-mel) або Path C (TFLM microfrontend) сильно бажаним** для класу 4. Path A може давати робочі класи 0–3, але fauna потребує spectral features. Це переводить FW.25 з "повинні зробити MFCC" на "повинні узгодити шлях за §3.2 Decision Matrix" — стратегічна паралель Бушин ↔ TinyML, див. [`08_02` §1.5 Macro-Micro verification](08_02_Cybernetic_and_Mathematical_Validation). **Без частотних ознак біорізноманіття не вимірюється** — сенсор бачить лише «шум», як супутник бачить лише «зелений піксель».
 
 ---
 
@@ -550,29 +554,123 @@ for(int i = 0; i < 512; i++) {
 
 **Жодного частотного аналізу:** Відсутні FFT, MFCC, Mel-bank, window function (Hann/Hamming). Модель отримує сирий time-domain сигнал. Чи є DSP preprocessing всередині `silken_net_audio_model.h` — невідомо (BLOCKER-2).
 
-### 3.2 Стандартний Пайплайн для Аудіо-класифікації (Reference)
+### 3.2 Decision Matrix: Три шляхи DSP (FW.25)
 
-| Крок | Алгоритм | CMSIS-DSP функція |
-|------|----------|-------------------|
-| Window function | Hann (зменшує спектральний витік) | `arm_mult_f32()` з precomputed coeffs |
-| FFT | 512-point Real FFT | `arm_rfft_fast_f32()` |
-| Magnitude | `|Re| + j|Im|` → magnitude | `arm_cmplx_mag_f32()` |
-| Mel filterbank | 40 фільтрів 0–8 kHz | Custom implementation |
-| Log | `log(energy + 1e-6)` | `arm_vlog_f32()` |
-| MFCC | DCT type-II | `arm_dct4_f32()` |
+> **⚠️ Архітектурна корекція (2026-05-17):** Попередня редакція цього розділу
+> декларувала **MFCC обов'язковим** як єдиний DSP-шлях. Аудит показав, що:
+>
+> 1. Для CNN-based Environmental Sound Classification (наш use case, не speech
+>    recognition) сучасна література (Salamon & Bello 2015 — ESC-50 benchmark;
+>    Piczak 2015; **BirdNET** — найближчий аналог для fauna detection) системно
+>    показує: **log-mel spectrogram > MFCC** для CNN-входу. DCT-крок MFCC
+>    декорелює ознаки для GMM-HMM, але **знищує просторову структуру**, яку
+>    CNN-згортки експлуатують.
+> 2. CMSIS-DSP **не має готової мел-функції** — `arm_mfcc_f32` робить повний
+>    MFCC pipeline до DCT (не зупиняючись на mel). Mel-bank — custom.
+> 3. TensorFlow Lite Micro має офіційний **`signal::microfrontend`** op, який
+>    виконує FFT+mel+log **всередині TFLite-графа** — firmware не потребує
+>    жодного custom DSP коду.
+>
+> Тому **рішення про DSP — upstream від ML-партнера**, не firmware'у. Нижче
+> наведено три повноцінні шляхи з honest cost analysis. Default-рекомендація:
+> **Path B (log-mel spectrogram)** для CNN-based 5-class з fauna, з fallback
+> на Path C, якщо ML-партнер обирає TFLM з audio frontend.
 
-**Час виконання FFT 512-point @ 48 MHz Cortex-M4 з FPU:** ~1.1 мс (за даними CMSIS-DSP benchmarks).
+#### Path A — Raw Audio + 1D CNN
 
-### 3.3 Загальний час DSP (оцінка)
+Модель приймає `float32[512]` напряму (поточна нормалізація `[0.0, 1.0]`).
+1D-CNN-шари вчаться шукати features з time-domain сигналу. Це
+**Google's keyword spotting** підхід (HotwordNet style).
 
-| Операція | Час @ 48 MHz |
-|----------|--------------|
-| DMA fill (512 semples @ 16kHz) | 32.0 мс |
-| Нормалізація (поточна) | ~0.05 мс |
-| FFT 512-point (якщо додати) | ~1.1 мс |
-| MFCC (якщо додати) | ~3.0 мс |
-| **Разом (поточний стан)** | **~32.05 мс** |
-| **Разом (з FFT+MFCC)** | **~36.1 мс** |
+| Аспект | Значення |
+|--------|----------|
+| Firmware DSP code | **0 KB** (поточна нормалізація достатня) |
+| Tensor Arena estimate | **~20–40 KB** (більший — без feature compression) |
+| Model size (INT8) | ~30–60 KB Flash |
+| CPU per inference | ~10–25 мс @ 48 MHz |
+| Сильні сторони | Нуль firmware-DSP; найшвидший шлях до FW.4 розкоментованого `Run_Inference()`. Може спрацювати для класів 0–3 (silence/wind/cavitation/chainsaw) з достатньо великим вікном (32 мс достатньо для chainsaw F0~100 Hz: 3.2 цикли) |
+| Слабкі сторони | **Не оптимальний для класу 4 (fauna soundscape)** — без частотного аналізу важко відрізнити layered спектр комах+птахів+амфібій від хаотичного шуму. Модель буде більшою на 30-50%, бо вчиться "FFT-features" з нуля |
+| Коли обрати | Якщо ML-партнер хоче швидкий MVP для 4 класів без fauna; або як baseline для GA-оптимізації Любченка |
+
+#### Path B — Log-Mel Spectrogram + 2D CNN ⭐ Default recommendation
+
+Firmware виконує FFT → power spectrum → mel filterbank → log. Модель — 2D-CNN
+на ~40×N mel-spectrogram. Це **сучасний ESC-стандарт** (ESC-50, UrbanSound8K,
+BirdNET). **Зупиняється до DCT** — це ключова відмінність від MFCC.
+
+| Аспект | Значення |
+|--------|----------|
+| Firmware DSP code | **~3–5 KB Flash** (FFT twiddle tables + mel-bank coeffs) |
+| Firmware DSP RAM | **~1.5 KB scratch** (FFT buffer + mel output) |
+| Tensor Arena estimate | **~15–30 KB** (менший — features pre-extracted) |
+| Model size (INT8) | ~15–30 KB Flash |
+| CPU per inference | ~12–18 мс @ 48 MHz (DSP ~1.5 мс + CNN ~10–16 мс) |
+| Сильні сторони | **Оптимальний для bioacoustic (fauna)** — log-mel зберігає spectral structure для CNN. Найкращі benchmarks на ESC-датасетах. Менша модель, менший inference |
+| Слабкі сторони | Custom Mel filterbank implementation — CMSIS-DSP **не має** прямої функції (`arm_mfcc_*` робить full MFCC; для mel-only треба зупинитися на проміжному кроці). ~50 рядків C для Mel-bank матриці |
+| Коли обрати | **Default для 5-class з fauna**. Якщо ML-партнер тренує модель на TF/Keras з `librosa.feature.melspectrogram` (стандарт для ESC tutorial) — це Path B |
+
+#### Path C — TFLM `signal::microfrontend` op (TF Audio Frontend)
+
+TFLite Micro має офіційний op `signal::microfrontend` (TensorFlow Audio
+Frontend, [google/tflite-micro](https://github.com/tensorflow/tflite-micro)),
+який виконує FFT + mel + log **всередині TFLite-графа**. Firmware подає raw
+audio, frontend op виконує DSP як layer.
+
+| Аспект | Значення |
+|--------|----------|
+| Firmware DSP code | **0 KB** (frontend op part of TFLM runtime) |
+| Tensor Arena estimate | **~25–35 KB** (включає frontend scratch) |
+| Model size (INT8) | ~20–35 KB Flash (frontend params + downstream layers) |
+| CPU per inference | ~15–22 мс @ 48 MHz (frontend ~2 мс + CNN ~13–20 мс) |
+| Сильні сторони | **Нуль custom DSP коду** у firmware. Офіційно підтримано Google, well-tested, identical floating-point behavior між training (Python) та inference (firmware). Standard для STM32 keyword spotting (Google Speech Commands tutorial) |
+| Слабкі сторони | Лочить на TFLM runtime (вже наш runtime choice, тож не реальний lock). Tensor Arena трохи більший (frontend scratch). Менше control над DSP параметрами |
+| Коли обрати | Якщо ML-партнер використовує Edge Impulse, Google TF Speech tutorial, або хоче "config-only" approach без firmware DSP коду |
+
+#### Реалізаційні наслідки кожного шляху
+
+| Артефакт | Path A | Path B | Path C |
+|----------|--------|--------|--------|
+| `audio_buffer[512]` normalization | ✅ як зараз | Замінити на FFT scratch | Залишити (frontend читає raw) |
+| `silken_net_audio_model.h` content | Великий 1D CNN | Менший 2D CNN | CNN + frontend params |
+| Mel-bank матриця у Flash | — | `const float mel_bank[40][257]` ~40 KB АБО sparse triplet ~3 KB | Embedded у TFLite graph |
+| CMSIS-DSP залежність | — | `arm_rfft_fast_f32` + `arm_vlog_f32` + custom mel | — |
+| FW.42 Vcap guard поведінка | Без змін (поточний 4.5 V threshold) | Без змін | Без змін |
+| `fauna_feature_accumulator` shape | `float[512]` raw window | `float[40 × N_frames]` log-mel | `float[40]` per-frame від frontend |
+
+#### Default-рекомендація та open question
+
+**Default:** Path B (log-mel) для 5-class з fauna. Друга найкраща опція:
+Path C, якщо ML-партнер обирає TFLM frontend (легше підтримувати
+training↔inference parity).
+
+**Path A** доцільний як проміжний крок: спершу 4-class MVP (без fauna)
+на raw audio → потім міграція на Path B при додаванні fauna.
+
+**Path C** — найбезпечніший вибір при наявності будь-яких сумнівів,
+бо elimінує firmware-side DSP complexity та decouples ML-партнера від
+firmware-роботи.
+
+**MFCC (повний — з DCT)** — **не рекомендовано**. Усі три шляхи вище
+кращі за повний MFCC для CNN-based ESC. MFCC залишається валідним
+для класичного speech recognition (GMM-HMM), що не наш use case.
+
+### 3.3 Час DSP та inference latency per path
+
+| Операція | Path A | Path B | Path C |
+|----------|--------|--------|--------|
+| DMA fill (512 семплів @ 16 kHz) | 32.0 мс | 32.0 мс | 32.0 мс |
+| Normalization (firmware) | ~0.05 мс | вбудовано у FFT scaling | — (frontend читає raw) |
+| Window function (Hann) | — | ~0.1 мс (`arm_mult_f32`) | — |
+| FFT 512-point | — | ~1.1 мс | — (вбудовано у frontend op) |
+| Magnitude | — | ~0.3 мс (`arm_cmplx_mag_f32`) | — |
+| Mel filterbank (40 bins) | — | ~0.4 мс (custom matrix-vector) | — |
+| Log (`arm_vlog_f32`) | — | ~0.1 мс | — |
+| TFLM microfrontend op | — | — | ~2.0 мс (FFT+mel+log у TFLM) |
+| CNN inference | ~15–25 мс | ~10–16 мс | ~13–20 мс |
+| **Загальний awake-time** | **~47–57 мс** | **~44–50 мс** | **~47–54 мс** |
+
+Жоден з шляхів не перевищує бюджет одного awake-циклу (потрібен <250 мс для
+PVD safety, з запасом). Path B має найменшу sum, але різниця < 10%.
 
 ---
 
@@ -745,8 +843,8 @@ void Trigger_Emergency_LoRa_TX(void)
 | `ml_confidence` | `float` | 4 B | Ймовірність (0.0–1.0) |
 | `audio_ready` | `volatile uint8_t` | 1 B | Прапорець DMA complete |
 | **Tensor Arena** | (невідомо) | **~8–16 KB** | SRAM для TFLM runtime |
-| `fauna_mfcc_accumulator` *(transient, fauna-only)* | `float[]` + scalar | **~256 B** | Welford `mean+M2` для 156 MFCC-векторів (5 с моноліт, §10.2 / ARCH.40) |
-| **Разом TinyML** | | **~11–19 KB** | З урахуванням Tensor Arena; +~256 B transient під час fauna-сесії |
+| `fauna_feature_accumulator` *(transient, fauna-only, path-dependent — see §3.2)* | `float[]` + scalar | **~256 B** (Path B/C) або **~2 KB** (Path A: raw window memory) | Welford `mean+M2` агрегація 156 feature-векторів за 5 с (Path B: log-mel coefs; Path C: frontend output; Path A: raw audio statistics). 256 B залишається валідною оцінкою для Path B/C; Path A потребує ширшої статистики (`mean+std+kurtosis` на raw envelope) — TBD |
+| **Разом TinyML** | | **~11–19 KB** (Path B/C) / **~13–21 KB** (Path A) | З урахуванням Tensor Arena; +~256 B–2 KB transient під час fauna-сесії |
 
 ### 6.2 Загальний SRAM-бюджет Soldier (відомі змінні)
 
@@ -764,14 +862,19 @@ void Trigger_Emergency_LoRa_TX(void)
 | Decrypted RX buffer (256 B) | 256 B |
 | mruby VM heap (~4 KB) | 4 096 B |
 | Tensor Arena (оцінка) | ~12 288 B |
-| fauna_mfcc_accumulator *(transient, лише під час fauna-сесії — §10.2)* | ~256 B |
+| fauna_feature_accumulator *(transient, path-dependent — §3.2; лише під час fauna-сесії — §10.2)* | ~256 B (Path B/C) / ~2 KB (Path A raw window) |
 | Stack (оцінка) | ~4 096 B |
 | **Разом (оцінка)** | **~25 KB** *(peak з fauna-вікном)* |
 | **Залишок (з 64 KB)** | **~39 KB** |
 
 > ⚠️ Точний розмір Tensor Arena невідомий. Потрібна верифікація через `arm-none-eabi-size`.
 
-> 🌿 **`fauna_mfcc_accumulator` (audit-fix, ARCH.40 / §10.2):** Welford running `mean+M2` для агрегації 156 MFCC-векторів у межах **одного** awake-циклу (5 с моноліт — STOP2 wipe'не SRAM2, тому декомпозиція "сон-між-вікнами" заборонена). Розклад при `N_mfcc = 13` (preliminary baseline): `mean[13] = 52 B` + `M2[13] = 52 B` + `count (uint32) = 4 B` + `inference_input[mean‖std][26] = 104 B` ≈ **212 B**, округлено до **~256 B** із запасом на `arm_mfcc_instance_f32` workspace. RAM виділяється тільки на час fauna-сесії і звільняється перед STOP2 — звичайні класи 0–3 (32 мс post-EXTI) цей блок не використовують. Точний розмір зафіксується після калібрувального датасету ЧДТУ ПМКТ (див. §10.5) та фінального вибору `N_mfcc` для 5-class моделі.
+> 🌿 **`fauna_feature_accumulator` (audit-fix, ARCH.40 / §10.2 / FW.25 path-dependent):** Welford running `mean+M2` для агрегації 156 feature-векторів у межах **одного** awake-циклу (5 с моноліт — STOP2 wipe'не SRAM2, тому декомпозиція "сон-між-вікнами" заборонена). **Розмір залежить від обраного DSP-шляху (§3.2 Decision Matrix):**
+> - **Path B (log-mel, default-рекомендація)** при `N_mel = 13`: `mean[13] = 52 B` + `M2[13] = 52 B` + `count (uint32) = 4 B` + `inference_input[mean‖std][26] = 104 B` ≈ **212 B**, округлено до **~256 B** з запасом на FFT scratch buffer.
+> - **Path C (TFLM frontend)** при `N_features = 40` mel bins: `mean[40] = 160 B` + `M2[40] = 160 B` + `count = 4 B` + `inference_input[80] = 320 B` ≈ **644 B**, округлено до **~768 B**.
+> - **Path A (raw window memory)**: ширша статистика на time-domain envelope (`mean+std+kurtosis+RMS+ZCR`), ~**2 KB** з повним 512-семпловим reference window для cross-correlation.
+>
+> RAM виділяється тільки на час fauna-сесії і звільняється перед STOP2 — звичайні класи 0–3 (32 мс post-EXTI) цей блок не використовують. Точний розмір зафіксується після (1) вибору DSP-шляху ML-партнером (Бушин/Любченко), (2) калібрувального датасету ЧДТУ ПМКТ (див. §10.5), (3) фінального вибору `N_features` для 5-class моделі.
 
 ---
 
@@ -866,8 +969,8 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | Компонент | Поточний стан (TRL 6) | Цільовий стан (post-Mongabay pivot) |
 |-----------|----------------------|--------------------------------------|
 | Кількість класів | 4 (silence/wind/cavitation/chainsaw) | **5+** (додається `4 = fauna_activity`) АБО окрема паралельна метрика «Fauna Activity Index» (0–63) |
-| Pre-processing | Лінійна нормалізація `[0.0, 1.0]` | **MFCC або mel-spectrogram (CMSIS-DSP `arm_rfft_fast_f32`)** — обов'язково, оскільки часова область не дозволяє відрізнити layered soundscape від шуму вітру |
-| Вікно семплінгу | 32 мс (512 семплів @ 16 кГц) | Залишається 32 мс для класів 0–3; для класу 4 — **монолітне 5-секундне акумульоване вікно** (156 послідовних 32 мс вікон → агрегація MFCC через mean+std). **Обов'язково в одному awake-циклі без STOP2 між вікнами** — див. примітку ⚠️ нижче |
+| Pre-processing | Лінійна нормалізація `[0.0, 1.0]` | **Path B (log-mel spectrogram) або Path C (TFLM microfrontend op)** — див. §3.2 Decision Matrix. Path A (raw audio) теоретично можливий для класів 0–3, але субоптимальний для класу 4 fauna, бо часова область погано розрізняє layered soundscape від шуму вітру. Default-рекомендація — Path B (log-mel, без DCT); MFCC з повним DCT-кроком **не рекомендовано** для CNN-based ESC |
+| Вікно семплінгу | 32 мс (512 семплів @ 16 кГц) | Залишається 32 мс для класів 0–3; для класу 4 — **монолітне 5-секундне акумульоване вікно** (156 послідовних 32 мс вікон → агрегація feature-векторів через Welford mean+M2; формат feature-вектора залежить від обраного DSP-шляху §3.2: Path B/C log-mel coefs ~13–40 bins, Path A time-domain статистика). **Обов'язково в одному awake-циклі без STOP2 між вікнами** — див. примітку ⚠️ нижче |
 | Тригер | П'єзо-EXTI на вібрацію | Класи 0–3 — як зараз; для класу 4 — **щогодинні «акустичні семплінги»** (без вібраційного тригера) на світанку (солар-час+0..2 год) та сутінках (солар-час−2..0 год) |
 | Бюджет TX | 1 байт `acoustic_events` (saturating uint8) | Без змін у packet layout; «Fauna Activity Index» транслюється через **той самий байт** у режимі fauna-семплінгу (не змішується з кавітацією — режим маркується через окремий біт у Status Byte або через циркадне вікно на backend) |
 
@@ -923,7 +1026,7 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 | Залежність | Партнер | Документ | Що потрібно |
 |------------|---------|----------|-------------|
 | FW.4 (`Run_Inference()`) розкоментувати, додати модель | ML-партнер (Бушин/Любченко ЧНУ або ChDTU) | `03_03` §1, [`08_02` §1.5/§1.8](08_02_Cybernetic_and_Mathematical_Validation) | Натренована TFLite модель з 5 класами (INT8) |
-| FW.25 (DSP MFCC) — переведено P1→P0 | Ярмілко (ЧНУ ФОТІУС, SPI/DMA) | [`08_02` §1.1](08_02_Cybernetic_and_Mathematical_Validation) | CMSIS-DSP інтеграція + tensor_arena recheck |
+| FW.25 (DSP-шлях choice gate) — переведено P1→P0 | **Primary owner: Бушин або Любченко (ЧНУ ФОТІУС, ML)** — рішення про шлях A/B/C (§3.2 Decision Matrix). **Secondary: Ярмілко (ЧНУ ФОТІУС, SPI/DMA)** — integration consultant після вибору шляху, якщо обрано Path B з CMSIS-DSP | [`08_02` §1.5/§1.8](08_02_Cybernetic_and_Mathematical_Validation) | (1) Узгодити шлях A/B/C; (2) Path A: збільшити INT8 модель; Path B: CMSIS-DSP `arm_rfft_fast_f32` + custom Mel-bank + `arm_vlog_f32` (НЕ повний MFCC); Path C: TFLM `signal::microfrontend` op; (3) tensor_arena recheck per path |
 | Калібрувальний датасет з dawn/dusk записами Черкаського бору | Базіло + Бондаренко (ЧДТУ ПМКТ) + Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`08_04` §1.3 Завдання В](08_04_CHDTU_Data_Science_Collaboration), [`08_01` §2 Homeostasis Baseline](08_01_University_R_and_D_Protocols) | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
 | GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`08_02` §1.8](08_02_Cybernetic_and_Mathematical_Validation) | Akash GPU кластер, фітнес-функція з ground truth |
 | Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | Бушин (ЧНУ ФОТІУС, CNN) | [`08_02` §1.5](08_02_Cybernetic_and_Mathematical_Validation) | Pipeline злиття супутника + TinyML; AiInsight#biodiversity_trend |
@@ -934,13 +1037,16 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 
 ```
 TRL 6 → 7  (поточний, FW.4 + FW.25):
+  - Узгодити з ML-партнером шлях A/B/C за §3.2 Decision Matrix
+    (default-рекомендація: Path B log-mel; fallback: Path C TFLM frontend)
   - Розкоментувати Run_Inference() з 4-class моделлю
-  - Додати CMSIS-DSP MFCC pre-processing
-  - Верифікувати TENSOR_ARENA + RAM бюджет
+    (Path A — без DSP; Path B — після інтеграції FFT+Mel; Path C — TFLM frontend op)
+  - Верифікувати TENSOR_ARENA + RAM бюджет per chosen path
 
 TRL 7 → 8  (Mongabay pivot, blocked by ChDTU PMKT dataset):
   - Калібрувальний датасет dawn/dusk (Черкаський бір)
   - Re-train модель → 5-class (silence/wind/cavitation/chainsaw/fauna)
+    — для fauna class B/C критично кращі за A
   - OTA-deploy через TinyMlModel + OtaPackagerService
 
 TRL 8 → 9  (production biodiversity D-MRV):
@@ -951,10 +1057,11 @@ TRL 8 → 9  (production biodiversity D-MRV):
 
 ### 10.7 Ризики та відкриті питання
 
-1. **Tensor Arena зростання** для 5-class CNN з MFCC — потенційно +20–30% RAM. Залежить від BLOCKER-3.
-2. **Шум вітру 0.5–2 кГц перетинається з амфібіями** — ризик false positives для класу 4. Mitigation: акумульоване вікно + dawn/dusk timing constraint (вночі/на світанку вітер слабший).
+1. **Tensor Arena зростання** для 5-class CNN — масштаб залежить від обраного DSP-шляху (§3.2): Path A: +30–50% RAM (~20–40 KB; модель сама вчиться features); Path B: +10–20% (~15–30 KB; features pre-extracted, менша модель); Path C: +15–25% (~25–35 KB; включає frontend scratch). Залежить від BLOCKER-3.
+2. **Шум вітру 0.5–2 кГц перетинається з амфібіями** — ризик false positives для класу 4. Mitigation: акумульоване вікно + dawn/dusk timing constraint (вночі/на світанку вітер слабший). Path B/C дають кращу spectral discrimination ніж Path A.
 3. **Регіональна специфіка soundscape** — модель, натренована на Черкаському борі, може не узагальнюватись на тропіки. Potential solution: Federated Learning (вже описаний у §9).
-4. **Чи буде fauna класифікуватись через TinyML, чи через окремий DSP-only метричний модуль (без NN)?** — alternative architecture: спектральний descriptor (ACI — Acoustic Complexity Index, Pieretti et al. 2011) обчислюється на STM32 без NN, завжди вписується у RAM. Це може стати TRL-7 інкрементом до повноцінної 5-class моделі.
+4. **Чи буде fauna класифікуватись через TinyML, чи через окремий DSP-only метричний модуль (без NN)?** — alternative architecture: спектральний descriptor **(ACI — Acoustic Complexity Index, Pieretti et al. 2011) обчислюється на STM32 з FFT (тобто потребує Path B-style DSP), без NN**. Це може стати TRL-7 інкрементом до повноцінної 5-class моделі. ACI **не є** "no-FFT alternative" — це спектральний показник, не часовий; виконується на тому ж FFT-output, що й Path B mel-bank.
+5. **DSP-path lock-in ризик:** якщо обрати Path B (custom Mel-bank у firmware), а потім ML-партнер мігрує на Path C (TFLM frontend) — firmware DSP код стає мертвим вантажем у Flash. Mitigation: обирати Path C з самого початку при будь-яких сумнівах щодо архітектурного контракту з ML-партнером.
 
 ### 10.8 Резонансні концепти Silken Net (поза статтею)
 

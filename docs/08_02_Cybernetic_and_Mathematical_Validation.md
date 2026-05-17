@@ -951,6 +951,8 @@ Synthesis  (Спільно з Любченком §1.8 — GA + Random Forest):
 
 > **Запит до Бушина (Mongabay extension):** додати у Random Forest ансамбль (§Вектор 2) **`fauna_activity_index`** як ключову feature з ваговим коефіцієнтом, виведеним через GA-оптимізацію Любченком (див. §1.8). Очікуваний приріст F1-score для класифікації «справжнього лісу» vs «green-washing монокультура»: +15–25% (попередня оцінка, потребує валідації на українському лісостеповому датасеті — спільно з біо-хабом ЧНУ та ПМКТ ЧДТУ, див. [`08_01` §2 Acoustic Biodiversity Baseline](08_01_University_R_and_D_Protocols)). Спільна публікація: Стаття 24a/34 у [`08_03`](08_03_Joint_Publications_and_IP_Strategy).
 
+> **🔄 FW.25 ownership clarification (2026-05-17):** Бушин (CNN) є **co-owner FW.25 DSP-path choice** разом з Любченком (GA, §1.8). DSP-шлях (A: raw 1D CNN / B: log-mel + 2D CNN / C: TFLM `signal::microfrontend`) — це **ML-архітектурне** рішення, що передує firmware-інтеграції — див. [`03_03 §3.2 Decision Matrix`](03_03_TinyML_Acoustic_Inference). Default-рекомендація: **Path B (log-mel spectrogram)** для bioacoustic CNN; повний MFCC з DCT-кроком **не рекомендовано** (декорреляція знищує spatial structure, яку CNN exploit'ить). Якщо Бушин обирає TF Audio Frontend pipeline (Edge Impulse style) → Path C (нуль firmware DSP). Якщо custom 2D CNN на log-mel → Path B (CMSIS-DSP FFT + custom Mel-bank). Ярмілко лишається **integration consultant** після вибору шляху (SPI/DMA та CMSIS-DSP плумбінг), не власник архітектурного рішення.
+
 **Завдання В: Попередня Обробка Супутникових Знімків**
 
 - Cloud masking (SCL band Sentinel-2): видалення хмарних пікселів перед класифікацією
@@ -1538,6 +1540,8 @@ Ground truth для f2 (Mongabay-pivot critical):
 4. **Master of Logic для smart-contract guard'ів** — після введення `biodiversity_trend` як критерію мінтингу SCC, Любченко формально верифікує, що `Wallet#lock_and_mint!` не пропустить токен у green-washing випадку (NDVI=high & fauna=low). Це гарантія для регуляторів та інвесторів, що token semantics стійка до атак на оракул-pipeline.
 
 > **Запит до Любченка (Mongabay extension):** Розширити GA-навчання з `population=100, generations=50` (поточна оцінка) до `NSGA-II population=200, generations=100` для multi-objective оптимізації — оцінка Akash GPU compute: ~10–20 GPU-годин на повний цикл, що еквівалентно ~$5–15 за ринковими цінами Akash. Дозволяє щомісячне re-tuning при появі нових labeled samples з акустичної експедиції ЧДТУ ПМКТ + ЧНУ Біо-хабу.
+
+> **🔄 FW.25 ownership clarification (2026-05-17):** Любченко є **co-owner FW.25 DSP-path choice** разом з Бушиним (CNN, §1.5). Для NSGA-II multi-objective оптимізації хромосоми (вище) feature space залежить від DSP-шляху — див. [`03_03 §3.2 Decision Matrix`](03_03_TinyML_Acoustic_Inference): Path A (raw audio): хромосома працює з time-domain CNN weights (вища dimensionality, повільніше GA); Path B (log-mel + 2D CNN): спектральні features (стандартний bioacoustic-ESC підхід); Path C (TFLM frontend): аналогічно Path B але з вбудованим у TFLite-граф DSP. **Default-рекомендація**: Path B для оптимальної bioacoustic discrimination. Якщо Любченко обирає GA з time-domain raw audio → Path A; інакше Path B/C. **Повний MFCC з DCT не рекомендовано** — DCT-декорреляція знищує feature variance, що ускладнює GA-оптимізацію.
 
 **Workflow: Akash навчання → Backend деплой**
 

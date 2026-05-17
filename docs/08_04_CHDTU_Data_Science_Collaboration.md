@@ -146,9 +146,10 @@ Silken Net використовує **LoRa 868 МГц** у найскладні�
 | Компонент Pipeline | Учасник | Роль |
 |--------------------|---------|------|
 | Фононна лінза (гіроїд → п'єзосенсор) | **Базіло + Бондаренко (ЧДТУ ПМКТ)** | Інструментальна валідація Compute-by-Geometry |
-| ADC/DMA 16 кГц → TinyML inference | Ярмілко (ЧНУ, [`08_02`](08_02_Cybernetic_and_Mathematical_Validation) §1.1) | SPI/DMA оптимізація firmware |
+| DSP-path choice (A/B/C) → 5-class TinyML CNN | **Бушин (ЧНУ ФОТІУС, [`08_02`](08_02_Cybernetic_and_Mathematical_Validation) §1.5)** + **Любченко (NSGA-II, §1.8)** | FW.25 choice gate — див. [`03_03 §3.2 Decision Matrix`](03_03_TinyML_Acoustic_Inference); default Path B (log-mel) |
+| ADC/DMA 16 кГц + CMSIS-DSP integration (Path B) | Ярмілко (ЧНУ, [`08_02`](08_02_Cybernetic_and_Mathematical_Validation) §1.1) | Integration consultant **після** вибору шляху ML-партнером; SPI/DMA + custom Mel-bank якщо Path B |
 | Стохастична фільтрація delta_t | Косенюк (ЧНУ, [`08_02`](08_02_Cybernetic_and_Mathematical_Validation) §1.3) | Kalman Filter для шумозниження |
-| Статистичний аналіз акустичних даних | Карапетян (ЧДТУ, §1.1) | Характеризація розподілів acoustic_events |
+| Статистичний аналіз акустичних даних + fauna_activity_index distributions | Карапетян (ЧДТУ, §1.1) | Характеризація розподілів `acoustic_events` (класи 0–3) + ANOVA dawn/dusk peak amplitude для класу 4 (Mongabay) — feature semantics залежать від обраного DSP-шляху |
 
 **Чому саме Базіло + Бондаренко:**
 - Базіло визначає **резонансну частоту та чутливість п'єзосенсора** через EIS (завдання Б) — без цього невідомо, на якій частоті налаштовувати TinyML-вікно ADC 16 кГц
@@ -749,17 +750,28 @@ end
   │ • CE/FCC compliance     │                │ • EMC pre-compliance    │
   └─────────────────────────┘                └─────────────────────────┘
 
-ЛАНЦЮГ 6: Acoustic Hardware → Firmware → Data Pipeline
-  ЧДТУ ПМКТ (Базіло, Бондаренко)   ЧНУ ФОТІУС (Ярмілко)        ЧДТУ (Карапетян)
-  ┌──────────────────────┐         ┌──────────────────────┐      ┌──────────────────────┐
-  │ Акустичний стенд:    │         │ Firmware pipeline:   │      │ Статистика:          │
-  │ • АЧХ фононної лінзи│────────>│ • SPI/DMA 16 кГц     │─────>│ • Характеризація     │
-  │ • Калібрувальний     │ верифі- │ • TinyML inference   │ кла- │   acoustic_events    │
-  │   датасет 4 класів   │ кований│ • MFCC/FFT           │ сифі-│ • Статистичне         │
-  │ • Рекомендація       │ сенсор │ • Confidence thresh.  │ ковані│   виявлення аномалій │
-  │   п'єзоелемента      │         │                      │ події│                      │
-  └──────────────────────┘         └──────────────────────┘      └──────────────────────┘
+ЛАНЦЮГ 6: Acoustic Hardware → ML Architecture → Firmware → Data Pipeline
+                                  ┌─────────────────────────┐
+  ЧДТУ ПМКТ (Базіло, Бондаренко) │ ЧНУ ФОТІУС (Бушин/Любч.)│  ЧНУ ФОТІУС (Ярмілко)    ЧДТУ (Карапетян)
+  ┌──────────────────────┐       │ ML model architecture:  │  ┌──────────────────────┐  ┌──────────────────────┐
+  │ Акустичний стенд:    │       │ • DSP path A/B/C        │  │ Firmware integration:│  │ Статистика:          │
+  │ • АЧХ фононної лінзи│──────>│   choice (FW.25, §3.2)  │─>│ • SPI/DMA 16 кГц     │─>│ • Характеризація     │
+  │ • Калібрувальний     │ верифі │ • 5-class CNN training  │  │ • Path A: norm only  │ кл │   acoustic_events    │
+  │   датасет 5 класів   │ кований│ • INT8 quantization     │  │ • Path B: FFT+Mel    │ ас │ • Статистичне        │
+  │ • Рекомендація       │ сенсор │ • TFLite Micro deploy   │  │ • Path C: TFLM frontend│ ифі│   виявлення аномалій │
+  │   п'єзоелемента      │       └─────────────────────────┘  │ • Confidence thresh. │ ко │                      │
+  └──────────────────────┘                                     └──────────────────────┘  └──────────────────────┘
+                                                              FW.25 owner: Бушин/Любченко (ML)
+                                                              Ярмілко: integration consultant
 ```
+
+> **🔄 ЛАНЦЮГ 6 update (FW.25, 2026-05-17):** Цей ланцюг було перерозподілено
+> після SSOT-аудиту FW.25. ML-архітектурне рішення (DSP path A/B/C — див.
+> [`03_03 §3.2 Decision Matrix`](03_03_TinyML_Acoustic_Inference)) тепер
+> явно належить **Бушин або Любченко (ЧНУ ФОТІУС ML)**, а не Ярмілку
+> (SPI/DMA — embedded не ML). Ярмілко залишається integration consultant
+> після того, як ML-партнер обере шлях. Датасет розширено до 5 класів
+> (Mongabay pivot, [`03_03 §10`](03_03_TinyML_Acoustic_Inference)).
 
 ### 8.3. Завдання Виключно для ЧДТУ (без перетину з ФОТІУС)
 

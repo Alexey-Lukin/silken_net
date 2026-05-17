@@ -558,7 +558,7 @@ _«Дослідження акустичних властивостей пори
 | **Карапетян А.Р.** (ЧДТУ) | Math statistics, R, Data Science | ANOVA dawn/dusk peak amplitude між ландшафтами; Pareto-front Pareto аналіз GA-результатів; Permutation tests для biodiversity_trend |
 | **Спрягайло О.В.** (ЧНУ біо-хаб) | Ботаніка, фітоценологія, екологія | Польові експедиції Черкаського бору, ground-truth labeling таксономічних груп, 10-річні дані стресових подій як external validation |
 | **Гаврилюк М.В.** (ЧНУ біо-хаб) | Зоологія, remote sensing, GIS | Cross-validation soundscape ↔ зоологічні обліки птахів та амфібій; GIS-інтеграція ділянок |
-| Архітектор (Silken Net) | TinyML, firmware, Web3 | Едж AI архітектура (CMSIS-DSP MFCC + 5-class CNN), AiInsight#biodiversity_trend integration, ForestNFT metadata |
+| Архітектор (Silken Net) | TinyML, firmware, Web3 | Едж AI архітектура — DSP-шлях A/B/C координується з ML-партнером (default-рекомендація: Path B log-mel spectrogram, fallback: Path C TFLM `signal::microfrontend`; повний MFCC з DCT **не рекомендовано** для CNN-ESC — див. [`03_03 §3.2 Decision Matrix`](03_03_TinyML_Acoustic_Inference)); 5-class CNN INT8 inference; AiInsight#biodiversity_trend integration; ForestNFT metadata |
 
 **Тип зв'язку:** Багатошарова паралель з фінальним синтезом — ЧНУ біо-хаб (ground truth) + ЧДТУ ПМКТ (hardware acoustic) працюють паралельно з ЧНУ ФОТІУС (CNN + GA) + ЧДТУ Карапетян (статистика); архітектор інтегрує firmware і backend; усі шари сходяться на одному датасеті ("Cherkasy Soundscape Library") та одній публікації.
 
