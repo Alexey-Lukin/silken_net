@@ -745,7 +745,8 @@ void Trigger_Emergency_LoRa_TX(void)
 | `ml_confidence` | `float` | 4 B | Ймовірність (0.0–1.0) |
 | `audio_ready` | `volatile uint8_t` | 1 B | Прапорець DMA complete |
 | **Tensor Arena** | (невідомо) | **~8–16 KB** | SRAM для TFLM runtime |
-| **Разом TinyML** | | **~11–19 KB** | З урахуванням Tensor Arena |
+| `fauna_mfcc_accumulator` *(transient, fauna-only)* | `float[]` + scalar | **~256 B** | Welford `mean+M2` для 156 MFCC-векторів (5 с моноліт, §10.2 / ARCH.40) |
+| **Разом TinyML** | | **~11–19 KB** | З урахуванням Tensor Arena; +~256 B transient під час fauna-сесії |
 
 ### 6.2 Загальний SRAM-бюджет Soldier (відомі змінні)
 
@@ -763,11 +764,14 @@ void Trigger_Emergency_LoRa_TX(void)
 | Decrypted RX buffer (256 B) | 256 B |
 | mruby VM heap (~4 KB) | 4 096 B |
 | Tensor Arena (оцінка) | ~12 288 B |
+| fauna_mfcc_accumulator *(transient, лише під час fauna-сесії — §10.2)* | ~256 B |
 | Stack (оцінка) | ~4 096 B |
-| **Разом (оцінка)** | **~25 KB** |
+| **Разом (оцінка)** | **~25 KB** *(peak з fauna-вікном)* |
 | **Залишок (з 64 KB)** | **~39 KB** |
 
 > ⚠️ Точний розмір Tensor Arena невідомий. Потрібна верифікація через `arm-none-eabi-size`.
+
+> 🌿 **`fauna_mfcc_accumulator` (audit-fix, ARCH.40 / §10.2):** Welford running `mean+M2` для агрегації 156 MFCC-векторів у межах **одного** awake-циклу (5 с моноліт — STOP2 wipe'не SRAM2, тому декомпозиція "сон-між-вікнами" заборонена). Розклад при `N_mfcc = 13` (preliminary baseline): `mean[13] = 52 B` + `M2[13] = 52 B` + `count (uint32) = 4 B` + `inference_input[mean‖std][26] = 104 B` ≈ **212 B**, округлено до **~256 B** із запасом на `arm_mfcc_instance_f32` workspace. RAM виділяється тільки на час fauna-сесії і звільняється перед STOP2 — звичайні класи 0–3 (32 мс post-EXTI) цей блок не використовують. Точний розмір зафіксується після калібрувального датасету ЧДТУ ПМКТ (див. §10.5) та фінального вибору `N_mfcc` для 5-class моделі.
 
 ---
 
