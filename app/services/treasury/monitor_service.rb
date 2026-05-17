@@ -156,6 +156,10 @@ module Treasury
 
     # Solana: getBalance через JSON RPC
     def fetch_solana_balance(config)
+      if ENV[config[:env_rpc_key]].blank? && Rails.env.production?
+        Rails.logger.warn "[Treasury] #{config[:env_rpc_key]} not set in production — Solana balance check skipped"
+        return 0
+      end
       rpc_url = ENV.fetch(config[:env_rpc_key], "https://api.devnet.solana.com")
       fee_payer = ENV[config[:env_public_key]]
       return 0 if fee_payer.blank?

@@ -69,6 +69,19 @@ RSpec.describe Solana::MintingService do
           described_class.new(log).mint_micro_reward!
         }.to raise_error(RuntimeError, /Chainlink Oracle consensus not fulfilled/)
       end
+
+      it "raises in production when SOLANA_RPC_URL is not set [E.47]" do
+        log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        ENV.delete("SOLANA_RPC_URL")
+
+        allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
+
+        expect {
+          described_class.new(log).mint_micro_reward!
+        }.to raise_error(RuntimeError, /SOLANA_RPC_URL is required in production/)
+      ensure
+        ENV.delete("SOLANA_RPC_URL")
+      end
     end
 
     context "with fully verified telemetry" do

@@ -288,6 +288,19 @@ RSpec.describe Treasury::MonitorService do
       expect(result).to eq(0)
     end
 
+    it "returns 0 and logs a warning in production when RPC URL ENV is not set [E.47]" do
+      config = described_class::NETWORK_CONFIG[:solana].merge(
+        currency: "SOL", decimals: 9, min_balance_wei: 50_000_000
+      )
+      stub_const("ENV", ENV.to_h.except(config[:env_rpc_key].to_s))
+      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
+
+      expect(Rails.logger).to receive(:warn).with(/not set in production/)
+
+      result = described_class.new.send(:fetch_solana_balance, config)
+      expect(result).to eq(0)
+    end
+
     it "handles malformed response (missing result key)" do
       allow(Web3::HttpClient).to receive(:post).and_return(
         double("response", parsed_body: { "error" => { "message" => "bad request" } })

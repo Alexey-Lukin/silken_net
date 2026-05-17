@@ -109,6 +109,9 @@ module Solana
     # =========================================================================
     # Формує бінарну Solana-транзакцію, підписує Ed25519 і відправляє через sendTransaction.
     def send_transfer_request(recipient, amount_lamports)
+      if ENV["SOLANA_RPC_URL"].blank? && Rails.env.production?
+        raise "🛑 [Solana] SOLANA_RPC_URL is required in production — refusing Devnet fallback"
+      end
       rpc_url = ENV.fetch("SOLANA_RPC_URL", DEVNET_RPC_URL)
 
       # [SECURITY]: SOLANA_WALLET_KEYPAIR обов'язковий для підпису транзакцій.
