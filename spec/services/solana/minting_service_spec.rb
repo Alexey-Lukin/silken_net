@@ -72,6 +72,7 @@ RSpec.describe Solana::MintingService do
 
       it "raises in production when SOLANA_RPC_URL is not set [E.47]" do
         log = create(:telemetry_log, :verified_telemetry, tree: tree)
+        wallet.update!(solana_public_address: recipient_solana_address)
         ENV.delete("SOLANA_RPC_URL")
 
         allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
