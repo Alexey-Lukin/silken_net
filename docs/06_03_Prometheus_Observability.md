@@ -153,7 +153,7 @@ ALL_QUEUES = %w[uplink alerts critical downlink default web3_critical web3 web3_
 | `sentry-sidekiq` gem | `Gemfile` | ✅ 6.5.0 (auto-instruments Sidekiq) |
 | `prometheus-client` gem | `Gemfile` | ✅ 4.2.5 |
 | Sentry initializer | `config/initializers/sentry.rb` | ✅ Повністю налаштований |
-| Prometheus initializer | `config/initializers/prometheus.rb` | ✅ 7 Counters + 3 Histograms + 2 Gauges визначені |
+| Prometheus initializer | `config/initializers/prometheus.rb` | ✅ 25 метрик (13 Counters + 10 Gauges + 2 Histograms) визначені |
 | `/metrics` endpoint | `app/middleware/prometheus_collector.rb` | ✅ Реалізований (IP allowlist + Basic Auth) |
 | Middleware registration | `config/application.rb` | ✅ `config.middleware.use PrometheusCollector` |
 | `SCC_MINTED_TOTAL` instrumentation | `app/services/blockchain_minting_service.rb` | ✅ Реалізовано |
@@ -538,7 +538,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 |------|------|--------|
 | `Gemfile` | `prometheus-client` 4.2.5, `sentry-ruby/rails/sidekiq` 6.5.0 | ✅ |
 | `config/initializers/sentry.rb` | Ініціалізація Sentry (DSN, sampling, exclusions, scrubbing) | ✅ |
-| `config/initializers/prometheus.rb` | Визначення `SilkenNet::Metrics` (7 Counters + 1 Histogram + 2 Gauges = 10 метрик) | ✅ |
+| `config/initializers/prometheus.rb` | Визначення `SilkenNet::Metrics` (13 Counters + 10 Gauges + 2 Histograms = 25 метрик) | ✅ |
 | `app/middleware/prometheus_collector.rb` | Rack middleware: `/metrics` endpoint, IP allowlist, Basic Auth, Sidekiq gauge refresh | ✅ |
 | `config/application.rb` (рядок 31) | `config.middleware.use PrometheusCollector` | ✅ |
 | `app/services/blockchain_minting_service.rb` (р.162) | `SCC_MINTED_TOTAL.increment(labels: {token_type:})` | ✅ |
