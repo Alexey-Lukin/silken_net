@@ -1206,13 +1206,27 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
 
 ---
 
-## 12. Інтернаціоналізація (i18n) — UA / EN
+## 12. Інтернаціоналізація та Локалізація (i18n)
 
-> **Phase 1 + 2 frontend overhaul.** Двомовний інтерфейс (UA — default,
-> EN — secondary), розширюваний до N мов додаванням рядка в
-> `config.i18n.available_locales` + одного YAML-набору.
+> SSOT для двомовного UI (UA — default, EN — secondary; розширюваний до N мов
+> додаванням рядка в `config.i18n.available_locales` + одного YAML-набору) та
+> для Phlex `t(".key")` autoscope, CI-гейтів, controller/backend локалізації.
+> Об'єднує колишні §12 (Phase 1-2) та §19 (Convention over Configuration).
 
-### 12.1 Конфігурація
+### 12.1 Архітектурні правила (foundational)
+
+1. **Жодних hardcoded user-facing strings.** Все, що користувач бачить (UI текст, flash, error JSON, mailer body) — через `I18n.t`. Hardcoded UA/EN рядки у `app/views/components/**/*.rb` та `app/controllers/api/v1/**/*.rb` блокуються CI.
+2. **Per-domain YAML layout.** Файли локалізації лежать як `config/locales/<domain>/{uk,en}.yml`. Кожен «домен» = верхньокореневий namespace (`wallets`, `codex`, `actuators`, `flash`, `errors`, ...). Масштабовано до десятків доменів без monolithic `en.yml`. Детальна структура — §12.3.
+3. **Class-name autoscope для Phlex.** `ApplicationComponent` override'ить `t` (від `Phlex::Rails::Helpers::Translate`):
+   - `t(".key")` всередині `Codex::Show` резолвить у `I18n.t("codex.show.key")`
+   - Абсолютний ключ (`t("flash.errors.unauthorized")`) працює без autoscope
+   - Працює як у controller-render контексті, так і в `Component.new(...).call` (specs/Turbo broadcasts)
+   - Для анонімних subclasses (`Class.new(Component)` у тестах) scope обчислюється по першому named ancestor
+   - **Міграція завершена:** всі 54 компоненти переведені на `t(".key")` relative-lookup. Абсолютні `t("codex.fractions.current")` залишаються тільки для cross-scope ключів (ключ із сусіднього компонента). `I18n.t()` у view-шарі повністю замінено на `t()` — 0 залишків. Detail-pattern та приклади — §12.6.
+4. **Controller-side strings.** Flash, error JSON, redirect notice — всі через `I18n.t("flash.<controller>.<action>")` / `I18n.t("errors.api.<code>")`. Hardcoded UA рядки у контролерах = CI failure. Детальний мапінг доменів — §12.8.
+5. **Mailer та service-worker.** Mailer templates (`app/views/<mailer>/*.erb`) та `pwa/service-worker.js` поки **out of scope** для авто-перевірки — їх локалізують вручну за тим самим патерном (`config/locales/mailers/...`, `pwa/...`). Service-worker не йде через I18n (це JS у браузері). Поточний backlog — §12.13.
+
+### 12.2 Конфігурація
 
 `config/application.rb`:
 ```ruby
@@ -1227,75 +1241,160 @@ config.i18n.load_path              += Dir[Rails.root.join("config/locales/**/*.y
 > — єдиний валідний варіант для browser/screen-reader negotiation. UI-label
 > для користувача — `UA / Українська` (див. `locale.short` у YAML).
 
-### 12.2 Структура локалей (по доменах, не по файлах-портянках)
+### 12.3 Структура локалей (per-domain, не файли-портянки)
 
 ```
 config/locales/
-├── defaults/{uk,en}.yml      # app-level: name, theme, locale-switcher, accessibility, flash
-├── components/{uk,en}.yml    # cross-cutting UI components
-└── navigation/{uk,en}.yml    # sidebar, top bar, breadcrumb
+├── defaults/{uk,en}.yml       # app-shell: name, theme, locale-switcher, accessibility
+├── components/{uk,en}.yml     # cross-cutting UI components
+├── navigation/{uk,en}.yml     # sidebar, top bar, breadcrumb
+├── sessions/{uk,en}.yml       # login screen
+├── dashboard/{uk,en}.yml      # dashboard home
+├── trees/{uk,en}.yml          # tree show page
+├── wallets/{uk,en}.yml        # wallet page
+├── flash/{uk,en}.yml          # controller flash messages
+└── errors/{uk,en}.yml         # error JSON
 ```
 
-Один файл = один домен × одна мова. Завжди парний (uk + en).
+Один домен = одна папка × дві мови (`uk.yml` + `en.yml`). Завжди парний. Nesting тримати shallow (≤ 4 рівнів). Додавання нового домену — створіть пару `{uk.yml, en.yml}`, `i18n-tasks missing` має лишатися зеленим.
 
-### 12.3 Resolution priority (`LocaleSettable` concern)
+### 12.4 Resolution priority (`LocaleSettable` concern)
 
 ```
 params[:locale] → cookies[:locale] → request.preferred_language → I18n.default_locale
 ```
 
-Усі джерела whitelist'яться проти `I18n.available_locales` —
-adversarial input просто провалюється на default. Concern підмішаний у
-`ApplicationController`.
+Усі джерела whitelist'яться проти `I18n.available_locales` — adversarial input просто провалюється на default. Concern підмішаний у **обидва** `ApplicationController` і `Api::V1::BaseController` — інакше після POST `/api/v1/locale` + redirect Dashboard ігнорує щойно записану cookie і відкочується на `default_locale = :uk` (legacy 2-кліки-щоб-змінити-locale bug, фікснутий саме інклудом у обох контролерах).
 
-### 12.4 LocaleSwitcher (`Views::Shared::UI::LocaleSwitcher`)
+### 12.5 LocaleSwitcher (`Views::Shared::UI::LocaleSwitcher`)
 
-Native-disclosure (`<details>` + `<summary>`) — **жодних ARIA-menu плумінгів,
-жодних JS-required патернів**. Stimulus `locale` controller — пуре
-progressive enhancement (outside-click, Escape).
+Native `<form>` + `<select>` + `onchange="this.form.requestSubmit()"` — Rails-canonical pattern. Браузер сам обробляє позиціонування, keyboard navigation, focus management та accessibility — **нуль custom JS**, **без Stimulus**, **без Popover API**. Коли JS вимкнено, `<noscript>` показує submit button — форма працює end-to-end.
 
 ```ruby
 # layout
 render Views::Shared::UI::LocaleSwitcher.new
 ```
 
-Активна локаль маркується `aria-current="true"` + `disabled`.
-Endpoint: `POST /api/v1/locale` → cookie `locale=<uk|en>` (httponly,
-same_site=lax, secure-in-prod), open-redirect guard перевіряє
-`request.host == referer.host`.
+Endpoint: `POST /api/v1/locale` → cookie `locale=<uk|en>` (httponly, same_site=lax, secure-in-prod), open-redirect guard перевіряє `request.host == referer.host`.
 
-### 12.5 Lazy-lookup pattern у Phlex
+> **Історія еволюції (для контексту, не для повторення).** Ранні ітерації використовували `<details>`+`<summary>` + Stimulus `locale` controller (outside-click/Escape handlers), потім HTML Popover API. Popover був видалений, бо він промотує dropdown у top-layer і відриває його від нормального containing block — CSS `position: relative` на wrapper'і не може анкорити dropdown поруч з тригером без re-positioning JS (Stimulus з `getBoundingClientRect`). Це fragile (resize/scroll handlers, z-index edge cases, focus quirks) для меню з 2 опцій. Натомість нативний `<select>` — obvious correct primitive. Повний rationale-блок зафіксовано у `app/views/shared/ui/locale_switcher.rb:11-25`. Cross-ref у §15.1 (Native HTML over Stimulus) — Popover API лишається рекомендацією для майбутніх dropdown patterns, але в проекті ще не застосований.
 
-Замість повторюваних повних шляхів `I18n.t("navigation.items.foo")` —
-короткий приватний хелпер scoped до домену компонента:
+### 12.6 Phlex `t(".key")` pattern — як додати нову локалізовану строку
 
 ```ruby
-class Navigation::Sidebar < ApplicationComponent
-  def view_template
-    section_group(:strategic_insight) do
-      nav_item(:oracle_visions, api_v1_oracle_visions_path, "eye")
+# app/views/components/wallets/show.rb
+module Wallets
+  class Show < ApplicationComponent
+    def view_template
+      h2 { t(".heading") }                          # → "wallets.show.heading"
+      p  { t(".intro", balance: @wallet.balance) }  # interpolation
     end
   end
-
-  private
-
-  # Lazy-lookup helper — analog to Rails view-helper `t(".key")` adapted for Phlex.
-  def tr(key) = I18n.t("navigation.#{key}")
 end
 ```
 
-Call-sites лишаються лаконічними: `tr("logo.title")`, `tr("items.#{key}")`,
-`tr("sections.#{key}")`. Якщо компонент має >5 викликів — додавайте
-такий `tr` хелпер. Менше — викликайте `I18n.t` напряму.
+```yaml
+# config/locales/wallets/en.yml
+en:
+  wallets:
+    show:
+      heading: "Wallet"
+      intro: "Current balance: %{balance} SCC"
+```
 
-### 12.6 Чек-ліст для нових компонентів
+```yaml
+# config/locales/wallets/uk.yml
+uk:
+  wallets:
+    show:
+      heading: "Гаманець"
+      intro: "Поточний баланс: %{balance} SCC"
+```
 
-- [ ] Всі user-facing strings проходять через `I18n.t` (або `tr` хелпер)
+Cross-scope keys (потрібен ключ із сусіднього компонента) — використовуйте абсолютний `t("codex.fractions.current")`. Не вводьте `tr()` private helper — це попередній паттерн, замінений на `t(".key")` (537+ викликів у проекті vs 5 legacy `tr` визначень).
+
+### 12.7 Pluralization
+
+```yaml
+en:
+  alerts:
+    badge:
+      count:
+        one:   "1 alert"
+        other: "%{count} alerts"
+uk:
+  alerts:
+    badge:
+      count:
+        one:   "1 тривога"
+        few:   "%{count} тривоги"     # 2-4
+        many:  "%{count} тривог"      # 5-20, 25-30, ...
+        other: "%{count} тривоги"
+```
+
+`uk` має 4 plural форми (one/few/many/other) проти 2 у EN — це нормально, `i18n-tasks check-consistent-interpolations` цього не валить.
+
+### 12.8 Backend localization
+
+Усі рядки у `app/controllers/api/v1/**/*.rb` йдуть через `I18n.t`:
+
+| Domain | YAML файл | Приклад ключа |
+|---|---|---|
+| Flash messages | `flash/{en,uk}.yml` | `flash.sessions.signed_in` |
+| Error JSON | `errors/{en,uk}.yml` | `errors.api.forbidden` |
+| Account Security | `account_security/{en,uk}.yml` | `account_security.mfa.enabled` |
+| Passwords | `passwords/{en,uk}.yml` | `passwords.reset.email_sent` |
+| M2M auth | `m2m_auth/{en,uk}.yml` | `m2m_auth.token.issued` |
+
+### 12.9 Spec convention
+
+Default locale у production = `:uk`, але component specs пишемо англійською (як код). У `spec/rails_helper.rb`:
+
+```ruby
+config.before(:each, file_path: %r{spec/views/components/}) { I18n.locale = :en }
+```
+
+Спеки, які явно перевіряють UK-default — обгортають у `I18n.with_locale(:uk) { … }`. Це задокументовано у топ-комменті sidebar spec як приклад.
+
+### 12.10 CI-гейт
+
+`.github/workflows/ci.yml` запускає job `i18n_check`:
+
+```bash
+bundle exec i18n-tasks missing                          # ключ у одній locale, відсутній в іншій
+bundle exec i18n-tasks check-consistent-interpolations  # %{var} drift між locales
+bundle exec i18n-tasks check-normalized                 # YAML не у нормалізованій формі
+```
+
+Будь-який з цих → red build. Runtime safety net (test env): `config.i18n.raise_on_missing_translations = true` — будь-який spec, що проходить по missing-ключу, валить CI.
+
+Конфіг: `config/i18n-tasks.yml` (base locale `:en`, scan `app/` + `lib/`, `app/javascript` + `app/assets` excluded).
+
+Запуск авто-нормалізації локально:
+```bash
+bundle exec i18n-tasks normalize    # сортує ключі, фіксить indent
+bundle exec i18n-tasks unused       # довідково: не gated у CI (false positives від dynamic keys)
+```
+
+### 12.11 Rack deprecation: `:unprocessable_entity` → `:unprocessable_content`
+
+Усі `render status: :unprocessable_entity` замінено на `:unprocessable_content` (RFC 9110 / Rack 3.2+). Старий символ deprecation-warning'ить і буде видалений у Rack 4.0.
+
+### 12.12 Чек-ліст для нових компонентів
+
+- [ ] Всі user-facing strings проходять через `t(".key")` (relative-lookup), `tr()` helper не використовувати
 - [ ] YAML-ключі є для **обох** локалей (`uk` + `en`)
-- [ ] ARIA-label з `I18n.t` (бо screen-reader читає його)
+- [ ] ARIA-label з `t(...)` (бо screen-reader читає його)
 - [ ] Зарезервовані ключі не перетинаються (`:locale`, `:scope`, `:default` — не використовувати як interpolation)
 - [ ] Pluralization через `t(..., count:)` + CLDR rules (UA — 4 форми, EN — 2)
-- [ ] Spec покриває обидві локалі через `I18n.with_locale(:en) { ... }`
+- [ ] Spec покриває обидві локалі через `I18n.with_locale(:en) { ... }` / `I18n.with_locale(:uk) { ... }`
+
+### 12.13 Backlog: що ще не локалізовано (інкрементально)
+
+CI-гейт ловить майбутні regressions. Поточний backlog (поза скоупом цього merge):
+- `app/views/<mailer>/*.{erb,text.erb}` — `password_mailer/reset_instructions.text.erb`, `alert_mailer/critical_notification.text.erb`
+- `app/views/pwa/service-worker.js` — manifest + offline сторінка JS-string'и (не через Rails I18n)
+- Окремі inline UA коментарі у `.rb` файлах — не user-facing, не блокують гейт
 
 ---
 
@@ -1428,7 +1527,7 @@ Stimulus controller, який скидає `opacity-0 translate-y-2` коли е
 
 | Нативний API | Що дає | Замість чого | Підтримка |
 |---|---|---|---|
-| **HTML Popover API** (`popover="auto"`, `popovertarget`) | Outside-click close, Escape close, top-layer стек, focus restore | `locale_controller` (видалений) | Baseline 2024 — Chromium 114+, Safari 17+, Firefox 125+ |
+| **HTML Popover API** (`popover="auto"`, `popovertarget`) | Outside-click close, Escape close, top-layer стек, focus restore | Рекомендований default для нових dropdown / menu / tooltip patterns; **у проекті ще не застосований** — `locale_controller` був видалений, але locale switcher використовує нативний `<select>` (top-layer detachment Popover ламав CSS anchor positioning для 2-опцій-кейсу, див. §12.5) | Baseline 2024 — Chromium 114+, Safari 17+, Firefox 125+ |
 | **`<dialog>` + `.showModal()`** | Focus-trap, Escape, top-layer, `::backdrop`, inert page below, focus restore | Manual focus-trap код у `mobile_nav_controller` (~150→~25 рядків) | Baseline 2022 — всі evergreen |
 | **`@starting-style` CSS** | "From"-frame для transition без JS-flush reflow | Manual rAF в JS | Baseline 2024 |
 | **View Transitions API** (`document.startViewTransition`) | Smooth crossfade між DOM-станами | Manual CSS transitions на кожному елементі | Chromium 111+, Safari 18+ (graceful fallback) |
@@ -1724,141 +1823,9 @@ Sandbox-обмеження: автоматичний прогін axe-core / Lig
 |---|---|---|
 | **D1** Перемикання dark↔light видно на ≥ 95 % площі | ✅ | § 3 — gaia-токени всюди в shared/ + 8 мігрованих доменних компонентів |
 | **D2** WCAG AA контраст у обох темах | ✅ | § 3 — переглянуто status-токени, додано `text-strong/muted/subtle` |
-| **D3** UA (default) + EN, switcher, cookie + Accept-Language | ✅ | § 12 — `LocaleSettable` + `LocaleSwitcher` (HTML Popover API) |
+| **D3** UA (default) + EN, switcher, cookie + Accept-Language | ✅ | § 12 — `LocaleSettable` (concern у обох контролерах) + `LocaleSwitcher` (native `<form>` + `<select>` + auto-submit, no JS) |
 | **D4** Mobile drawer, без horizontal scroll | ✅ | § 13 (drawer на нативному `<dialog>`) + § 17 (responsive tables) |
 | **D5** `prefers-reduced-motion` глобально, `duration-{150-300}` | ✅ | § 14.4 — глобальний CSS rule + motion budget |
 | **D6** Min font-size 12 px у production-розмітці | ✅ | § 4 — `text-micro/mini/tiny` лишилися як decorative-only labels |
 | **D7** Жоден shared/ui компонент не має raw Tailwind | ✅ | § 16 — `gaia:lint_tokens` rake task; backlog у `app/views/components/` опрацьовується доменними PR-ами |
 
----
-
-## 19. i18n — стандарт локалізації (Convention over Configuration)
-
-Платформа підтримує дві locales: `:uk` (default, ринковий) та `:en` (інженерна/демо). Цей розділ — SSOT для додавання нових перекладів та налаштування CI-гейтів.
-
-### 19.1 Архітектурні правила
-
-1. **Жодних hardcoded user-facing strings.** Все, що користувач бачить (UI текст, flash, error JSON, mailer body) — через `I18n.t`. Hardcoded UA/EN рядки у `app/views/components/**/*.rb` та `app/controllers/api/v1/**/*.rb` блокуються CI.
-2. **Per-domain YAML layout.** Файли локалізації лежать як `config/locales/<domain>/{en,uk}.yml`. Кожен «домен» = верхньокореневий namespace (`wallets`, `codex`, `actuators`, `flash`, `errors`, ...). Це масштабовано до десятків доменів без monolithic `en.yml`.
-3. **Class-name autoscope для Phlex.** `ApplicationComponent` має кастомний `t` (override від `Phlex::Rails::Helpers::Translate`):
-   - `t(".key")` всередині `Codex::Show` резолвить у `I18n.t("codex.show.key")`
-   - Абсолютний ключ (`t("flash.errors.unauthorized")`) працює без autoscope
-   - Працює як у controller-render контексті, так і в `Component.new(...).call` (specs/Turbo broadcasts)
-   - Для анонімних subclasses (`Class.new(Component)` у тестах) scope обчислюється по першому named ancestor
-   - **Міграція завершена:** всі 54 компоненти переведені на `t(".key")` relative-lookup. Абсолютні `t("codex.fractions.current")` залишаються тільки для cross-scope ключів (ключ із сусіднього компонента). `I18n.t()` у view-шарі повністю замінено на `t()` — 0 залишків.
-4. **Контролер-side strings.** Flash, error JSON, redirect notice — всі через `I18n.t("flash.<controller>.<action>")` / `I18n.t("errors.api.<code>")`. Hardcoded UA рядки у контролерах = CI failure.
-5. **Mailer та service-worker.** Mailer templates (`app/views/<mailer>/*.erb`) та `pwa/service-worker.js` поки **out of scope** для авто-перевірки — їх локалізують вручну за тим самим патерном (`config/locales/mailers/...`, `pwa/...`). Service-worker не йде через I18n (це JS у браузері).
-
-### 19.2 Як додати нову локалізовану строку
-
-```ruby
-# app/views/components/wallets/show.rb
-module Wallets
-  class Show < ApplicationComponent
-    def view_template
-      h2 { t(".heading") }                          # → "wallets.show.heading"
-      p  { t(".intro", balance: @wallet.balance) }  # interpolation
-    end
-  end
-end
-```
-
-```yaml
-# config/locales/wallets/en.yml
-en:
-  wallets:
-    show:
-      heading: "Wallet"
-      intro: "Current balance: %{balance} SCC"
-```
-
-```yaml
-# config/locales/wallets/uk.yml
-uk:
-  wallets:
-    show:
-      heading: "Гаманець"
-      intro: "Поточний баланс: %{balance} SCC"
-```
-
-### 19.3 Pluralization
-
-```yaml
-en:
-  alerts:
-    badge:
-      count:
-        one:   "1 alert"
-        other: "%{count} alerts"
-uk:
-  alerts:
-    badge:
-      count:
-        one:   "1 тривога"
-        few:   "%{count} тривоги"     # 2-4
-        many:  "%{count} тривог"      # 5-20, 25-30, ...
-        other: "%{count} тривоги"
-```
-
-`uk` має 4 plural форми (one/few/many/other) проти 2 у EN — це нормально, `i18n-tasks check-consistent-interpolations` цього не валить.
-
-### 19.4 Locale switcher — Rails-canonical pattern
-
-`Views::Shared::UI::LocaleSwitcher` — native `<form>` + `<select>` + `onchange="this.form.requestSubmit()"`. Один клік → POST `/api/v1/locale` → cookie + redirect. **Без Stimulus / Popover-API** — браузер сам анкорує dropdown.
-
-Bug, який раніше вимагав 2 кліки: `Api::V1::BaseController < ActionController::Base` не інклудив `LocaleSettable` (інклудив тільки `ApplicationController`), тому після redirect Dashboard ігнорував щойно записану cookie і відкочувався на `default_locale = :uk`. Виправлено: `LocaleSettable` тепер у обох контролерах.
-
-### 19.5 CI-гейт
-
-`.github/workflows/ci.yml` запускає job `i18n_check`:
-
-```bash
-bundle exec i18n-tasks missing                       # ключ у одній locale, відсутній в іншій
-bundle exec i18n-tasks check-consistent-interpolations  # %{var} drift між locales
-bundle exec i18n-tasks check-normalized              # YAML не у нормалізованій формі
-```
-
-Будь-який з цих → red build. Runtime safety net (test env): `config.i18n.raise_on_missing_translations = true` — будь-який spec, що проходить по missing-ключу, валить CI.
-
-Конфіг: `config/i18n-tasks.yml` (base locale `:en`, scan `app/` + `lib/`, `app/javascript` + `app/assets` excluded).
-
-Запуск авто-нормалізації локально:
-```bash
-bundle exec i18n-tasks normalize    # сортує ключі, фіксить indent
-bundle exec i18n-tasks unused       # довідково: не gated у CI (false positives від dynamic keys)
-```
-
-### 19.6 Spec convention
-
-Default locale у production = `:uk`, але component specs пишемо англійською (як код). У `spec/rails_helper.rb`:
-
-```ruby
-config.before(:each, file_path: %r{spec/views/components/}) { I18n.locale = :en }
-```
-
-Спеки, які явно перевіряють UK-default — обгортають у `I18n.with_locale(:uk) { … }`. Це задокументовано у топ-кометі sidebar spec як приклад.
-
-### 19.7 Backend localization
-
-Усі рядки у `app/controllers/api/v1/**/*.rb` йдуть через `I18n.t`:
-
-| Domain | YAML файл | Приклад ключа |
-|---|---|---|
-| Flash messages | `flash/{en,uk}.yml` | `flash.sessions.signed_in` |
-| Error JSON | `errors/{en,uk}.yml` | `errors.api.forbidden` |
-| Account Security | `account_security/{en,uk}.yml` | `account_security.mfa.enabled` |
-| Passwords | `passwords/{en,uk}.yml` | `passwords.reset.email_sent` |
-| M2M auth | `m2m_auth/{en,uk}.yml` | `m2m_auth.token.issued` |
-
-### 19.8 Rack deprecation: `:unprocessable_entity` → `:unprocessable_content`
-
-Усі `render status: :unprocessable_entity` замінено на `:unprocessable_content` (RFC 9110 / Rack 3.2+). Старий символ deprecation-warning'ить і буде видалений у Rack 4.0.
-
-### 19.9 Що ще не локалізовано (опрацьовується інкрементально)
-
-CI-гейт ловить майбутні regressions. Поточний backlog (поза цим PR):
-- `app/views/<mailer>/*.{erb,text.erb}` — `password_mailer/reset_instructions.text.erb`, `alert_mailer/critical_notification.text.erb`
-- `app/views/pwa/service-worker.js` — manifest + offline сторінка JS-string'и (не через Rails I18n)
-- Окремі inline UA коментарі у `.rb` файлах — не user-facing, не блокують гейт
-
-Додаючи нові компоненти, дотримуйтесь конвенції з § 19.2 та `i18n-tasks missing` залишиться зеленим.
