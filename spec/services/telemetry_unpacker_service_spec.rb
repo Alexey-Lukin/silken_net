@@ -574,6 +574,175 @@ RSpec.describe TelemetryUnpackerService, type: :service do
           service.send(:check_z_divergence!, tree_with_family, attributes)
         end
       end
+
+      # [ARCH.41] Cold-Start Time Paradox — time-sync recovery fallback.
+      # When a warm-start (has history) categorical DCI mismatch is detected,
+      # the service tries to re-derive Z from three epoch_day candidates.
+      # A match means the Soldier's RTC was stale after VBAT loss, not fraud.
+      describe "[ARCH.41] time-sync fallback in check_z_divergence!" do
+        let!(:seed_hex) { SecureRandom.hex(32).upcase }
+        let!(:recovery_tree) do
+          t = create(:tree,
+            did: format("SNET-%08X", "0000AC10".to_i(16)),
+            cluster: cluster,
+            tree_family: tree_family)
+          t.create_device_calibration! if t.device_calibration.nil?
+          HardwareKey.create!(device_uid: t.did,
+            aes_key_hex: SecureRandom.hex(32).upcase,
+            lorenz_seed_hex: seed_hex)
+          t
+        end
+        let(:service) { described_class.new("", nil) }
+
+        it "sets time_unsynced_fallback and enqueues TimeSyncDownlinkWorker on candidate match" do
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.1, 0.2, 0.3 ])
+          allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
+          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+
+          attributes = {
+            z_value: 0.5, bio_status: :homeostasis,
+            cold_start_flag: false,
+            temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
+          }
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+          service.send(:check_z_divergence!, recovery_tree, attributes)
+
+          expect(attributes[:time_unsynced_fallback]).to be(true)
+          expect(TimeSyncDownlinkWorker).to have_received(:perform_async).with(recovery_tree.cluster_id)
+        end
+
+        it "increments fraud when no candidate matches (genuine mismatch)" do
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.1, 0.2, 0.3 ])
+          allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.1, 0.2, 0.3 ])
+          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+
+          attributes = {
+            z_value: 0.5, bio_status: :homeostasis,
+            cold_start_flag: false,
+            temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
+          }
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          service.send(:check_z_divergence!, recovery_tree, attributes)
+
+          expect(attributes[:time_unsynced_fallback]).to be_falsey
+          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
+        end
+
+        it "skips recovery and increments fraud when cold_start_flag is true" do
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.1, 0.2, 0.3 ])
+          allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
+          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+
+          attributes = {
+            z_value: 0.5, bio_status: :homeostasis,
+            cold_start_flag: true,
+            temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
+          }
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          service.send(:check_z_divergence!, recovery_tree, attributes)
+
+          expect(attributes[:time_unsynced_fallback]).to be_falsey
+          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
+        end
+
+        it "skips recovery when tree has no hardware_key" do
+          no_key_tree = create(:tree,
+            did: format("SNET-%08X", "0000AC11".to_i(16)),
+            cluster: cluster,
+            tree_family: tree_family)
+          no_key_tree.create_device_calibration!
+          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+
+          attributes = {
+            z_value: 0.5, bio_status: :homeostasis,
+            cold_start_flag: false,
+            temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
+          }
+
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          service.send(:check_z_divergence!, no_key_tree, attributes)
+          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
+        end
+      end
+
+      describe "[ARCH.41] try_time_sync_recovery unit" do
+        let!(:seed_hex) { SecureRandom.hex(32).upcase }
+        let!(:recovery_tree) do
+          t = create(:tree,
+            did: format("SNET-%08X", "0000AC20".to_i(16)),
+            cluster: cluster,
+            tree_family: tree_family)
+          t.create_device_calibration! if t.device_calibration.nil?
+          HardwareKey.create!(device_uid: t.did,
+            aes_key_hex: SecureRandom.hex(32).upcase,
+            lorenz_seed_hex: seed_hex)
+          t
+        end
+        let(:service) { described_class.new("", nil) }
+        let(:thresholds) { { min: 2.0, max: 45.0 } }
+
+        it "returns false when tree has no hardware_key" do
+          bare_tree = create(:tree, did: format("SNET-%08X", "0000AC21".to_i(16)), cluster: cluster)
+          bare_tree.create_device_calibration!
+          attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
+
+          expect(service.send(:try_time_sync_recovery, bare_tree, attributes, thresholds, true)).to be(false)
+          expect(attributes[:time_unsynced_fallback]).to be_nil
+        end
+
+        it "tries exactly three epoch_day candidates" do
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.0, 0.0, 0.0 ])
+          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+          attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
+
+          expect(SilkenNet::SeedDerivation).to receive(:initial_state).exactly(3).times.and_return([ 0.1, 0.2, 0.3 ])
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, thresholds, true)
+        end
+
+        it "includes FIRMWARE_RTC_DEFAULT_EPOCH_DAY as one of the candidates" do
+          captured = []
+          allow(SilkenNet::SeedDerivation).to receive(:initial_state) do |_seed, epoch_day|
+            captured << epoch_day
+            [ 0.1, 0.2, 0.3 ]
+          end
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 0.5, 0.0, 0.0, 0.0 ])
+          attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
+
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, thresholds, true)
+
+          expect(captured).to include(described_class::FIRMWARE_RTC_DEFAULT_EPOCH_DAY)
+        end
+
+        it "short-circuits at the first matching candidate" do
+          call_count = 0
+          allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state) do
+            call_count += 1
+            [ 25.0, 0.0, 0.0, 0.0 ]
+          end
+          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+          attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
+
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, thresholds, true)
+
+          expect(call_count).to eq(1)
+        end
+
+        it "does not enqueue TimeSyncDownlinkWorker when cluster_id is nil" do
+          allow(recovery_tree).to receive(:cluster_id).and_return(nil)
+          allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.5, 0.5, 0.5 ])
+          allow(SilkenNet::Attractor).to receive(:calculate_z_from_state).and_return([ 25.0, 0.0, 0.0, 0.0 ])
+          allow(TimeSyncDownlinkWorker).to receive(:perform_async)
+          attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
+
+          service.send(:try_time_sync_recovery, recovery_tree, attributes, thresholds, true)
+
+          expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
+        end
+      end
     end
 
     describe "update_health_streak!" do

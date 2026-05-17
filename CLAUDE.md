@@ -263,9 +263,9 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 | HW-AES-KEY | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82` | ✅ Firmware CLOSED (FW.1, 2026-05-02): `Load_AES_Key()` + per-device HKDF + Protected Flash. Залишається: Factory Flashing Pipeline (SEC.3, threat model: `03_05 §3.4г`) + RDP Level 2 (SEC.2) |
 | AES-ECB | `firmware/soldier/main.c:747` | ECB без MAC -> replay/bit-flip attacks |
 | TINYML-COMMENT | `firmware/soldier/main.c:413` | `Run_Inference()` закоментована; model header відсутній |
-| LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | `delta_t`/`vcap` не передаються як входи атрактора |
+| LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | ✅ Виправлено (FW.5 B+, 2026-05-02): `delta_t_s`/`vcap_mv` передаються як β-пертурбація через `BETA_DELTA_T_COEFF`/`BETA_VCAP_COEFF`; EMA-згладжені значення з firmware. 500-case parity fuzz — 0 mismatches |
 | LORENZ-STATE | firmware | ✅ Виправлено: Стан (x,y,z) зберігається в RTC DR16-DR18 + magic marker `0x4C5A5354` (`"LZST"` = "Lorenz State"). Підтверджено в `firmware/soldier/main.c:239-249,746-749` |
-| OPTIMAL-Z | `bio_contract.rb:83` | Коментар каже 20.0, константа 29.0 |
+| OPTIMAL-Z | `bio_contract.rb:99` | ✅ Виправлено (2026-05-17): `OPTIMAL_Z_TARGET = 29.0` — коментар та константа узгоджені. Обґрунтування: +2 зміщення від z_eq=27.0 для кращої розрізненності класів. Задокументовано у `docs/03_04 §BLOCKER` |
 | QUEEN-UID | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.4): Flash-based UID з fallback |
 | QUEEN-OTA-LOOP | `firmware/queen/main.c` | ✅ Виправлено (PLAN 2.5): `ota_is_active` скидається після повного циклу |
 | QUEEN-AT-BLIND | `firmware/queen/main.c:542` | ~25 сек blind wait під час CoAP flush |

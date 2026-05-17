@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/oleksiilukin/silken_net/.claude/hooks/doc_drift_check.sh",
+            "timeout": 10,
+            "statusMessage": "Checking doc drift..."
+          }
+        ]
+      }
+    ]
+  }
+}

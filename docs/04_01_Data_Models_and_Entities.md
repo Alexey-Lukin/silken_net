@@ -519,6 +519,9 @@ any ──report_fault──► faulty
 | `zk_proof_ref` | string | Посилання на ZK-proof IoTeX |
 | `chainlink_request_id` | string | ID запиту Chainlink Oracle |
 | `tamper_detected` | boolean | Спроба відкриття корпусу капсули |
+| `cold_start_flag` | boolean | `true` якщо пакет перший після VBAT loss (initial_state від K_seed, не warm chain) |
+| `lorenz_state_x/y/z` | float | Хвіст траєкторії Лоренца для chain-старту наступного пакету |
+| `time_unsynced_fallback` | boolean | `true` якщо DCI mismatch відновлено через ARCH.41 epoch_day fallback (Soldier мав застарілий RTC після VBAT loss); `CMD_TIME_SYNC` downlink поставлено в чергу автоматично |
 
 **Ключові методи:**
 

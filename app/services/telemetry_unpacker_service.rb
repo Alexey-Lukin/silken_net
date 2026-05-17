@@ -34,6 +34,13 @@ class TelemetryUnpackerService < ApplicationService
   # asserts that |server_z − device_z| stays inside a tight tolerance
   # band on top of the categorical bio_status check.
 
+  # [ARCH.41] Firmware RTC-default epoch_day after VBAT loss.
+  # STM32WLE5JC RTC resets to 2000-01-01 00:00:00 UTC → day 10_957 since
+  # Unix epoch. Firmware initializes unix_ts = 946684800 (2000-01-01 UTC)
+  # which gives epoch_day = 946684800 / 86400 = 10951. We try this as one
+  # of three cold-start re-derivation candidates in the time-sync fallback.
+  FIRMWARE_RTC_DEFAULT_EPOCH_DAY = 10_951
+
   # DID-сентинел: Королева передає власну телеметрію з DID = 0x00000000
   QUEEN_SENTINEL_DID = "0"
 
@@ -341,6 +348,18 @@ class TelemetryUnpackerService < ApplicationService
     end
 
     if device_healthy != server_healthy
+      # [ARCH.41] Before flagging fraud on a warm-start packet, attempt
+      # cold-start re-derivation with three epoch_day candidates. A VBAT-loss
+      # cold-boot uses firmware's RTC default (≈day 10951) as epoch_day instead
+      # of today's, producing a different (x₀,y₀,z₀) that diverges from the
+      # server's warm-start chain. If any candidate matches categorically,
+      # the packet is legitimate — mark time_unsynced_fallback and request RTC
+      # correction via TimeSyncDownlinkWorker instead of counting fraud.
+      if !attributes[:cold_start_flag] &&
+          try_time_sync_recovery(tree, attributes, thresholds, device_healthy)
+        return
+      end
+
       Rails.logger.warn(
         "🔍 [Z Divergence] DID #{tree.did}: device=#{device_bio_status}, " \
         "server_z=#{server_z}, healthy_range=#{thresholds[:min]}..#{thresholds[:max]}. " \
@@ -348,6 +367,46 @@ class TelemetryUnpackerService < ApplicationService
       )
       SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
     end
+  end
+
+  # [ARCH.41] Attempt cold-start re-derivation with three epoch_day candidates
+  # to recover from VBAT-loss mismatch (firmware boots with stale RTC default).
+  # Returns true and mutates +attributes+ when a candidate matches categorically,
+  # preventing a false-positive fraud increment for a legitimate node that simply
+  # hasn't received CMD_TIME_SYNC yet.
+  #
+  # Side effects on match:
+  #   * sets attributes[:time_unsynced_fallback] = true
+  #   * enqueues TimeSyncDownlinkWorker for the tree's cluster
+  def try_time_sync_recovery(tree, attributes, thresholds, device_healthy)
+    seed_bytes = tree.hardware_key&.binary_lorenz_seed
+    return false if seed_bytes.nil?
+
+    today = SilkenNet::SeedDerivation.current_epoch_day
+    candidates = [ today, today - 1, FIRMWARE_RTC_DEFAULT_EPOCH_DAY ]
+
+    temp     = attributes[:temperature_c]
+    acoustic = attributes[:acoustic_events]
+    delta_t  = attributes[:metabolism_s]
+    vcap     = attributes[:voltage_mv]
+
+    candidates.each do |epoch_day|
+      x0, y0, z0 = SilkenNet::SeedDerivation.initial_state(seed_bytes, epoch_day)
+      z_candidate, = SilkenNet::Attractor.calculate_z_from_state(x0, y0, z0, temp, acoustic, delta_t, vcap)
+      candidate_healthy = z_candidate.between?(thresholds[:min], thresholds[:max])
+
+      next unless candidate_healthy == device_healthy
+
+      attributes[:time_unsynced_fallback] = true
+      Rails.logger.info(
+        "[ARCH.41] DID #{tree.did}: epoch_day=#{epoch_day} cold-start candidate matched — " \
+        "time_unsynced_fallback set, CMD_TIME_SYNC queued."
+      )
+      TimeSyncDownlinkWorker.perform_async(tree.cluster_id) if tree.cluster_id.present?
+      return true
+    end
+
+    false
   end
 
   # [FW.31] Feature-flag — defaults to false so production behaviour

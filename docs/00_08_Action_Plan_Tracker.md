@@ -539,8 +539,8 @@
   - **(A) Server-side fallback** (рекомендовано, без firmware change): У `compute_server_z` при категоричному DCI mismatch + tree має історію → retry через cold-start derivation з трьома кандидатами `epoch_day` (today, today−1, firmware RTC-default ≈ 10 951). При збігу — позначити `TelemetryLog#time_unsynced_fallback = true`, queue `CMD_TIME_SYNC` через downlink, не падати DCI.
   - **(B) Soldier-side sentinel** (потрібен координований firmware rollout): При cold-boot Soldier шле `acoustic_events = 0xFE` як sentinel у першому uplink. Backend трактує як «time uncertain».
   - **(C) Defer first uplink** (потребує firmware redesign): Soldier у grace-вікні (10 хв) шле спрощений «hello» пакет без Lorenz state — тільки DID + Vcap + TIME_REQ маркер.
-- [ ] 🤖 (A) Реалізувати `compute_server_z` retry logic + `time_unsynced_fallback` колонка
-- [ ] 🤖 (A) Trigger CMD_TIME_SYNC downlink → можна reuse OtaTransmissionWorker з порожнім payload (envelope-only)
+- [x] 🤖 (A) Реалізувати `compute_server_z` retry logic + `time_unsynced_fallback` колонка — ✅ Виконано (2026-05-17). `TelemetryUnpackerService#try_time_sync_recovery` + `FIRMWARE_RTC_DEFAULT_EPOCH_DAY=10_951`. Колонка `time_unsynced_fallback boolean NOT NULL DEFAULT false` squash'нута в `db/structure.sql` (parent + 7 partitions, O(1) PG16). 9 нових spec examples. Документовано: `04_01` (TelemetryLog fields), `04_02` (ARCH.41 fallback row).
+- [x] 🤖 (A) Trigger CMD_TIME_SYNC downlink — ✅ Виконано (2026-05-17). `TimeSyncDownlinkWorker` (queue: downlink, retry: 2). Envelope-only CoAP: `coap_encrypt("".b, key)` → Queen `Handle_CoAP_Command` line 1203-1204 → `inner_aligned==0` → `return` після `Apply_Server_Time`. Endpoint: `/cmd/time_sync`.
 - [ ] 🔗 (B/C) Розглянути після стабілізації (A) — потребують координованого firmware rollout
 
 #### ARCH.42 — ATECC608B AES-128 vs system AES-256 апаратний конфлікт

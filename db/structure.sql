@@ -1,6 +1,7 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -1853,7 +1854,8 @@ CREATE TABLE public.telemetry_logs (
     lorenz_state_x double precision,
     lorenz_state_y double precision,
     lorenz_state_z double precision,
-    cold_start_flag boolean DEFAULT false NOT NULL
+    cold_start_flag boolean DEFAULT false NOT NULL,
+    time_unsynced_fallback boolean DEFAULT false NOT NULL
 )
 PARTITION BY RANGE (created_at);
 
@@ -1907,7 +1909,8 @@ CREATE TABLE public.telemetry_logs_default (
     lorenz_state_x double precision,
     lorenz_state_y double precision,
     lorenz_state_z double precision,
-    cold_start_flag boolean DEFAULT false NOT NULL
+    cold_start_flag boolean DEFAULT false NOT NULL,
+    time_unsynced_fallback boolean DEFAULT false NOT NULL
 );
 
 
@@ -1941,7 +1944,8 @@ CREATE TABLE public.telemetry_logs_y2026m01 (
     lorenz_state_x double precision,
     lorenz_state_y double precision,
     lorenz_state_z double precision,
-    cold_start_flag boolean DEFAULT false NOT NULL
+    cold_start_flag boolean DEFAULT false NOT NULL,
+    time_unsynced_fallback boolean DEFAULT false NOT NULL
 );
 
 
@@ -1975,7 +1979,8 @@ CREATE TABLE public.telemetry_logs_y2026m02 (
     lorenz_state_x double precision,
     lorenz_state_y double precision,
     lorenz_state_z double precision,
-    cold_start_flag boolean DEFAULT false NOT NULL
+    cold_start_flag boolean DEFAULT false NOT NULL,
+    time_unsynced_fallback boolean DEFAULT false NOT NULL
 );
 
 
@@ -2009,7 +2014,8 @@ CREATE TABLE public.telemetry_logs_y2026m03 (
     lorenz_state_x double precision,
     lorenz_state_y double precision,
     lorenz_state_z double precision,
-    cold_start_flag boolean DEFAULT false NOT NULL
+    cold_start_flag boolean DEFAULT false NOT NULL,
+    time_unsynced_fallback boolean DEFAULT false NOT NULL
 );
 
 
@@ -2043,7 +2049,8 @@ CREATE TABLE public.telemetry_logs_y2026m04 (
     lorenz_state_x double precision,
     lorenz_state_y double precision,
     lorenz_state_z double precision,
-    cold_start_flag boolean DEFAULT false NOT NULL
+    cold_start_flag boolean DEFAULT false NOT NULL,
+    time_unsynced_fallback boolean DEFAULT false NOT NULL
 );
 
 
@@ -2077,7 +2084,8 @@ CREATE TABLE public.telemetry_logs_y2026m05 (
     lorenz_state_x double precision,
     lorenz_state_y double precision,
     lorenz_state_z double precision,
-    cold_start_flag boolean DEFAULT false NOT NULL
+    cold_start_flag boolean DEFAULT false NOT NULL,
+    time_unsynced_fallback boolean DEFAULT false NOT NULL
 );
 
 
@@ -2111,7 +2119,8 @@ CREATE TABLE public.telemetry_logs_y2026m06 (
     lorenz_state_x double precision,
     lorenz_state_y double precision,
     lorenz_state_z double precision,
-    cold_start_flag boolean DEFAULT false NOT NULL
+    cold_start_flag boolean DEFAULT false NOT NULL,
+    time_unsynced_fallback boolean DEFAULT false NOT NULL
 );
 
 
