@@ -275,7 +275,7 @@ if (current_ota_chunk_idx >= total_chunks) {
 ║                                                                          ║
 ║  [MAIN LOOP]                                                             ║
 ║    ┌─────────────────────────────────────────────────────────┐          ║
-║    │  while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi)):  [FW.3]│          ║
+║    │  while (LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi, &rx_snr)):  [FW.3]│  ║
 ║    │    ├── HAL_CRYP_Decrypt(ECB, rx_payload[16])           │          ║
 ║    │    │     → decrypted_payload[16]                        │          ║
 ║    │    │                                                     │          ║
@@ -286,7 +286,7 @@ if (current_ota_chunk_idx >= total_chunks) {
 ║    │    │                                                     │          ║
 ║    │    ├── Extract DID (decrypted_payload[0..3])           │          ║
 ║    │    │                                                     │          ║
-║    │    ├── Process_And_Cache_Data(uid, payload, rssi)      │          ║
+║    │    ├── Process_And_Cache_Data(uid, payload, rssi, snr) │          ║
 ║    │    │     1. DEDUP: знайти UID → оновити payload+RSSI   │          ║
 ║    │    │     2. INSERT: вільний слот → cache_count++        │          ║
 ║    │    │     3. CIFO EVICT: evict non-critical worst RSSI  │          ║
@@ -1190,7 +1190,7 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 ## 🧪 11. Тестове Покриття (Host-Based, x86)
 
 ```bash
-make -C firmware/test queen    # 126 тестів, ~0.1 секунди
+make -C firmware/test queen    # 128 тестів, ~0.1 секунди
 ```
 
 | Модуль | Тестів | Що покривається |
@@ -1213,7 +1213,7 @@ make -C firmware/test queen    # 126 тестів, ~0.1 секунди
 | **[FW.27-B] Magic Re-Request Handler** | **10** | Bitmap accept/dedup, total mismatch, no-active-OTA |
 | **[FW.23] HMAC Trailer Relay** | **4** | 3 segs storage, seg_idx>3 reject, marker mismatch |
 | **[FW.3] LoRa RX Ring Buffer** | **13** | FIFO семантика, capacity 15, переповнення → drop counter, RSSI clamp passthrough, 25-сек flush сценарій (30 ISR пакетів → 15 уцілілих + 15 видимих втрат) |
-| **Всього** | **126** | *(queen-specific: 126; раніше 113)* |
+| **Всього** | **128** | *(queen-specific: 128; раніше 113)* |
 
 **Не покрито host-тестами (потребує hardware-in-loop):**
 - AT command response parsing на реальному SIM7070G (boot-time CNMP/CPSMS/CEDRXS)
