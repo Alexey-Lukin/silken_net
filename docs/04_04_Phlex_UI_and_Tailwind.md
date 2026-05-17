@@ -35,7 +35,7 @@
 9. [Чекліст Доступності](#9-чекліст-доступності)
 10. [Тестування та Lookbook](#10-тестування-та-lookbook)
 11. [Міграція на токени (Phase 1)](#11-міграція-на-токени-phase-1)
-12. [i18n (Phase 1)](#12-i18n-phase-1)
+12. [Інтернаціоналізація та Локалізація (i18n)](#12-інтернаціоналізація-та-локалізація-i18n)
 13. [Mobile Drawer (Phase 2)](#13-mobile-drawer-phase-2)
 14. [Animations & Motion (Phase 3)](#14-animations--motion-phase-3)
 15. [Native HTML over Stimulus (Phase 3.5)](#15-native-html-over-stimulus-де-доречно)
@@ -1589,7 +1589,7 @@ bin/migrate-tailwind-tokens app/views/components/wallets/
 
 # 3. add i18n
 mkdir -p config/locales/wallets && touch config/locales/wallets/{uk,en}.yml
-# … wire `def t_(key)` helper into each component (see § 12.5)
+# … use t(".key") in each component (see § 12.5)
 
 # 4. update specs
 # wrap English assertions in `around { |ex| I18n.with_locale(:en) { ex.run } }`
@@ -1674,14 +1674,14 @@ The chosen pattern is documented in [A11Y Project — Accessible Data Tables](ht
 table(class: "gaia-responsive-table w-full text-left font-mono", role: "table") do
   thead(class: "gaia-sticky-thead bg-gaia-surface-sunken text-gaia-text-subtle uppercase") do
     tr do
-      th(scope: "col", class: "p-4") { t_("table.severity") }
+      th(scope: "col", class: "p-4") { t("table.severity") }
       # …
     end
   end
   tbody do
     @alerts.each do |alert|
       tr do
-        td(class: "p-4", data_label: t_("table.severity")) { severity_badge }
+        td(class: "p-4", data_label: t("table.severity")) { severity_badge }
         # …
         # Action cells WITHOUT data_label collapse into a centred footer
         # block on mobile (no duplicate column heading).
@@ -1716,7 +1716,7 @@ render Views::Shared::UI::Pagination.new(
 
 ### 17.5 i18n
 
-The mobile labels come from `data-label`, which itself is i18n'd through the standard `t_("table.severity")` helper. Switch `:en` ↔ `:uk` and the card labels switch with the desktop column headers — no parallel translation surface.
+The mobile labels come from `data-label`, which itself is i18n'd through the standard `t("table.severity")` helper. Switch `:en` ↔ `:uk` and the card labels switch with the desktop column headers — no parallel translation surface.
 
 ---
 
@@ -1744,7 +1744,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - **Pluralization:** `t(..., count:)` + CLDR rules (UA — 4 форми: one/few/many/other; EN — one/other).
 - **Інтерполяція:** ніяких зарезервованих ключів (`:locale`, `:scope`, `:default`).
 - **`<html lang>`:** SEO + screen readers (W3C HTML 5.2). Виставляється у `dashboard_layout`/`auth_layout` через `I18n.locale`.
-- **No hardcoded strings** у view-shared компонентах — `bin/migrate-tailwind-tokens` + `t_(key)` lazy-lookup pattern (§ 12.5).
+- **No hardcoded strings** у view-shared компонентах — `bin/migrate-tailwind-tokens` + `t(".key")` lazy-lookup pattern (§ 12.5).
 - **Locale = `uk`, не `ua`** — ISO-639-1 (§ 12.1).
 
 ### 18.3 Security — OWASP ASVS L2 + GitHub Security
@@ -1803,7 +1803,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - [ ] Keyboard reachable — Tab + Escape, focus order логічний
 - [ ] `prefers-reduced-motion` поважається (без важких decorative animations при reduce)
 - [ ] `focus-visible:ring-2 focus-visible:ring-gaia-primary` на нових інтерактивних елементах
-- [ ] No hardcoded EN/UK strings у `app/views/components/` чи `app/views/shared/` — `t_(key)` lazy-lookup
+- [ ] No hardcoded EN/UK strings у `app/views/components/` чи `app/views/shared/` — `t(".key")` lazy-lookup
 - [ ] Cookie flags `secure / httponly / same_site` встановлені де писали cookie
 - [ ] No open-redirect — `referer` валідується проти `request.host`
 - [ ] Conventional Commit message (`feat(scope):` / `fix(scope):` / `docs(scope):`)
