@@ -75,6 +75,49 @@ RSpec.describe Celo::CommunityRewardService do
         expect(Kredis).to receive(:lock).and_yield
         described_class.new(cluster, target_date).reward_community!
       end
+
+      # [DOUBLE-FIRE GUARD] ClusterHealthCheckWorker fires from both
+      # `InsightBatchCallbacks#on_success` and the 02:00 UTC cron — for healthy
+      # clusters that means `CeloRewardWorker.perform_async` lands twice the
+      # same morning. The oracle Kredis lock serialises broadcasts, it does
+      # NOT dedupe by (cluster, date). Without this guard the org gets paid
+      # 10 cUSD instead of 5 every healthy day.
+      it "skips when a sent reward already exists for the same target_date" do
+        create(:blockchain_transaction,
+          sourceable: cluster,
+          token_type: :cusd,
+          blockchain_network: "celo",
+          status: :sent,
+          to_address: organization.crypto_public_address,
+          amount: 5.0,
+          tx_hash: "0x" + SecureRandom.hex(32),
+          created_at: target_date.beginning_of_day + 30.minutes
+        )
+
+        expect(Eth::Client).not_to receive(:create)
+
+        expect {
+          result = described_class.new(cluster, target_date).reward_community!
+          expect(result).to be_nil
+        }.not_to change(BlockchainTransaction, :count)
+      end
+
+      it "still rewards when previous attempt is in failed status (admin retry path)" do
+        create(:blockchain_transaction,
+          sourceable: cluster,
+          token_type: :cusd,
+          blockchain_network: "celo",
+          status: :failed,
+          to_address: organization.crypto_public_address,
+          amount: 5.0,
+          tx_hash: nil,
+          created_at: target_date.beginning_of_day + 10.minutes
+        )
+
+        expect {
+          described_class.new(cluster, target_date).reward_community!
+        }.to change(BlockchainTransaction.where(status: :sent), :count).by(1)
+      end
     end
 
     context "without AiInsight for target_date" do

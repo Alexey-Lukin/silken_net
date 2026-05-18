@@ -70,6 +70,21 @@ module Celo
       organization = @cluster.organization
       return unless organization&.crypto_public_address.present?
 
+      # Guard Clause 3 — Idempotency for cluster_health_arbitration double-fire.
+      # `ClusterHealthCheckWorker` runs both from `InsightBatchCallbacks#on_success`
+      # AND from the 02:00 UTC `cluster_health_arbitration` cron — for healthy
+      # clusters that means `CeloRewardWorker.perform_async` is enqueued twice
+      # per day. The oracle Kredis lock serialises Celo TX broadcasts but does
+      # NOT dedupe by (cluster, date), so without this check the org would be
+      # paid 10 cUSD instead of 5 on every healthy day. We look at the audit
+      # ledger we just wrote (`BlockchainTransaction` with `sourceable=cluster`,
+      # `token_type=cusd`, status in `[:sent, :confirmed]`) for `@target_date`
+      # and short-circuit if found.
+      if reward_already_sent?
+        Rails.logger.info "🌿 [Celo ReFi] Пропускаю — кластер #{@cluster.name} вже отримав cUSD за #{@target_date}."
+        return
+      end
+
       # Підключення до Celo RPC — Thread-cached RPC client з fallback cascade [E.49]
       client = Web3::RpcConnectionPool.client_for(
         "CELO_RPC_URL",
@@ -133,6 +148,23 @@ module Celo
       return false if insight.fraud_detected?
 
       true
+    end
+
+    # True if we already wrote an audit-ledger entry for this cluster on the
+    # same target_date for cUSD. Uses the date window `[target_date 00:00,
+    # target_date+1 00:00)` against `created_at` so partition pruning kicks
+    # in (`blockchain_transactions` is RANGE-partitioned by `created_at`).
+    # `manual_review` and `failed` states do NOT count as a sent reward —
+    # an admin retry must be able to deliver them.
+    def reward_already_sent?
+      window_start = @target_date.is_a?(Date) ? @target_date.beginning_of_day : @target_date
+      window_end   = window_start + 1.day
+
+      BlockchainTransaction
+        .where(sourceable: @cluster, token_type: :cusd, blockchain_network: "celo")
+        .where(status: [ :sent, :confirmed, :processing ])
+        .where(created_at: window_start...window_end)
+        .exists?
     end
 
     def create_reward_transaction(tx_hash, recipient)

@@ -39,14 +39,26 @@
     
     # --- ЦИКЛ ХРОНОМЕТРИСТА (The Daily Reset) ---
     # Стиснення телеметрії в AiInsight. Має завершитися до початку аудиту.
+    # Sidekiq cron schedule keys to server time. The Rails app does not set
+    # `config.time_zone`, so Rails 8.1 default = UTC, and so do these crons.
+    # Kamal/Akash deployments run with TZ=UTC by Docker default, so the
+    # firing wall-clock matches what the docs describe (01:00 UTC).
     daily_telemetry_aggregation:
-      cron: '0 1 * * *' # О 01:00 за сервером (Kyiv Time в коді)
+      cron: '0 1 * * *' # 01:00 UTC щодня
       class: DailyAggregationWorker
 
     # --- ЦИКЛ АРБІТРАЖУ (The Justice Execution) ---
     # Перевірка NaaS контрактів та запуск Slashing Protocol (BurnCarbonTokens).
+    # NOTE: ClusterHealthCheckWorker is ALSO enqueued by
+    # `InsightBatchCallbacks#on_success` after the orchestrator batch
+    # finishes (≈01:00–02:00 UTC depending on tenant size). This 02:00 cron
+    # is a defensive fallback: it runs even if the batch had zero clusters
+    # with data and the callback never fired. The worker itself is safe to
+    # re-run (per-cluster idempotent recalculate_health_index!) but Celo
+    # rewards do double-fire today — see SSOT Drift Register row dated
+    # 2026-05-18 for the cleanup task.
     cluster_health_arbitration:
-      cron: '0 2 * * *' # О 02:00, одразу після агрегації
+      cron: '0 2 * * *' # 02:00 UTC щодня (одразу після агрегації)
       class: ClusterHealthCheckWorker
 
     # --- ЦИКЛ ПАРТИЦІЙ (The Partition Guardian) ---

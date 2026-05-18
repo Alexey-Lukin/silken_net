@@ -168,8 +168,6 @@ curl -fsS http://[::1]:3000/up               # health-check IPv6 loopback
 ## ✅ Валідація
 
 ```bash
-export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
-
 # 1. Синтаксична перевірка конфіга
 ruby -c config/puma.rb
 

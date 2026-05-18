@@ -12,7 +12,6 @@
 ## Оточення та інструменти
 
 ```bash
-export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
 ruby --version  # must be 4.0.2
 bundle exec rubocop    # завжди перед commit
 bundle exec rspec      # якщо DB/services доступні

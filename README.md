@@ -138,7 +138,6 @@ xcode-select --install   # або: brew install gcc
 ```bash
 git clone https://github.com/Alexey-Lukin/silken_net.git
 cd silken_net
-export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
 bundle install
 bin/rails db:prepare
 ```

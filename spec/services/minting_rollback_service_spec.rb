@@ -377,6 +377,87 @@ RSpec.describe MintingRollbackService do
       expect(tx.status).to eq("failed")
       expect(wallet.locked_balance).to eq(0)
     end
+
+    # [BUGFIX] Eth gem 0.5.x returns the full JSON-RPC envelope
+    # `{"id":…, "jsonrpc":"2.0", "result": {...}}` from `eth_get_transaction_receipt`.
+    # Previously `MintingRollbackService` accessed `receipt["status"]` directly,
+    # which is always nil on the envelope shape → every confirmed/pending TX
+    # was misclassified as :reverted, opening a double-spend window. These
+    # examples lock the wrapped-envelope path so the gem upgrade can't regress.
+    describe "JSON-RPC envelope shape (real eth gem 0.5.x)" do
+      it "confirms TX when wrapped envelope reports status 0x1" do
+        wallet.update!(balance: 20_000, locked_balance: 10_000)
+        tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                    tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000)
+
+        mock_client = instance_double(Eth::Client)
+        allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+        allow(mock_client).to receive(:eth_get_transaction_receipt)
+          .and_return({ "id" => 1, "jsonrpc" => "2.0",
+                        "result" => { "status" => "0x1", "blockNumber" => "0x123" } })
+
+        described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+        tx.reload
+        wallet.reload
+        expect(tx.status).to eq("confirmed")
+        expect(wallet.locked_balance).to eq(10_000)
+      end
+
+      it "rolls back when wrapped envelope reports status 0x0 (reverted)" do
+        wallet.update!(balance: 20_000, locked_balance: 10_000)
+        tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                    tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000)
+
+        mock_client = instance_double(Eth::Client)
+        allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+        allow(mock_client).to receive(:eth_get_transaction_receipt)
+          .and_return({ "id" => 1, "jsonrpc" => "2.0",
+                        "result" => { "status" => "0x0" } })
+
+        described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+        tx.reload
+        wallet.reload
+        expect(tx.status).to eq("failed")
+        expect(wallet.locked_balance).to eq(0)
+      end
+
+      it "escalates to manual_review when wrapped envelope has null result (mempool)" do
+        wallet.update!(balance: 20_000, locked_balance: 10_000)
+        tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                    tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000)
+
+        mock_client = instance_double(Eth::Client)
+        allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+        allow(mock_client).to receive(:eth_get_transaction_receipt)
+          .and_return({ "id" => 1, "jsonrpc" => "2.0", "result" => nil })
+
+        described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+        tx.reload
+        wallet.reload
+        expect(tx.status).to eq("manual_review")
+        expect(wallet.locked_balance).to eq(10_000)
+      end
+
+      it "confirms TX when wrapped envelope reports integer status 1" do
+        wallet.update!(balance: 20_000, locked_balance: 10_000)
+        tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                    tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000)
+
+        mock_client = instance_double(Eth::Client)
+        allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+        allow(mock_client).to receive(:eth_get_transaction_receipt)
+          .and_return({ "id" => 1, "jsonrpc" => "2.0",
+                        "result" => { "status" => 1 } })
+
+        described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+        tx.reload
+        expect(tx.status).to eq("confirmed")
+      end
+    end
   end
 
   describe "locked_points fallback" do

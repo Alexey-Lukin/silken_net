@@ -175,7 +175,6 @@ Dual Computation Integrity: server Z vs device Z (SilkenNet::Attractor). Diverge
 ## 7. Команди валідації
 
 ```bash
-export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
 bundle exec rubocop
 bundle exec rspec
 bundle exec brakeman

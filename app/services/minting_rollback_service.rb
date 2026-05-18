@@ -121,6 +121,13 @@ class MintingRollbackService < ApplicationService
   end
 
   # EVM-мережі (Polygon, Celo): eth_getTransactionReceipt
+  # [BUGFIX]: Eth gem (0.5.x) returns the full JSON-RPC envelope:
+  # `{ "id" => ..., "jsonrpc" => "2.0", "result" => { "status" => "0x1", ... } }`.
+  # Previously this method read `receipt["status"]` directly, which always
+  # returned nil → every confirmed/pending TX was misclassified as :reverted,
+  # triggering a safe_rollback that released `locked_balance` even when the
+  # mint had already landed on-chain. That is the exact double-spend window
+  # the service was supposed to close.
   def fetch_evm_transaction_receipt(tx)
     # [E.49]: для Celo використовуємо Celo-specific cascade, не Polygon.
     # Раніше для Celo-транзакцій fallback вказував на polygon-rpc.com (баг).
@@ -139,12 +146,26 @@ class MintingRollbackService < ApplicationService
       fallback: fallback_url,
       fallback_env_keys: fallback_env_keys
     )
-    receipt = client.eth_get_transaction_receipt(tx.tx_hash)
+    envelope = client.eth_get_transaction_receipt(tx.tx_hash)
+    classify_evm_receipt(envelope)
+  end
 
-    if receipt.nil? || receipt == {}
-      :pending
-    elsif receipt["status"] == "0x1" || receipt["status"] == 1
+  # Translates an Ethereum JSON-RPC envelope into our internal tri-state.
+  # Accepts both shapes for resilience:
+  #   - Wrapped (production / real gem): `{ "result" => { "status" => "0x1" } }`
+  #   - Flat (legacy fixtures / direct unwrap): `{ "status" => "0x1" }`
+  # Returns :pending when result is nil/empty (TX still in mempool).
+  def classify_evm_receipt(envelope)
+    return :pending if envelope.nil? || envelope == {}
+
+    receipt = envelope.is_a?(Hash) && envelope.key?("result") ? envelope["result"] : envelope
+    return :pending if receipt.nil? || receipt == {}
+
+    status = receipt["status"]
+    if status == "0x1" || status == 1 || status == "0x01"
       :confirmed
+    elsif status.nil?
+      :pending
     else
       :reverted
     end

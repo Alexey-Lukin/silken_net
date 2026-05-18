@@ -33,10 +33,26 @@ class OtaTransmissionWorker
     firmware_obj = fetch_firmware_record(firmware_type, record_id)
 
     # 2. ПАКУВАННЯ (Hardware-Aligned Packaging)
-    # Отримуємо нарізані пакети з заголовками [0x99][Index][Total]
-    ota_data = OtaPackagerService.prepare(firmware_obj, chunk_size: CHUNK_SIZE)
+    # Отримуємо нарізані пакети з заголовками [0x99][Index][Total].
+    # [FW.23] Forward gateway.cluster_id so OtaPackagerService appends the
+    # 3 HMAC-SHA256 trailer chunks (0x9B) after the bytecode stream.
+    # Soldier's dual-gate verifier rejects tampered or replayed images
+    # before flash write — without the trailer that defence is inactive.
+    # gateways.cluster_id is NOT NULL, so the trailer is always emitted
+    # on the production path.
+    ota_data = OtaPackagerService.prepare(
+      firmware_obj,
+      chunk_size: CHUNK_SIZE,
+      cluster_id: gateway.cluster_id
+    )
     packages = ota_data[:packages].to_a
-    total_chunks = ota_data[:manifest][:total_chunks]
+    # [FW.23] When HMAC trailer is appended, manifest exposes total_packages
+    # (= bytecode chunks + 3 trailer); the progress bar and the "done?"
+    # comparison below must follow the wire count, not just the bytecode
+    # chunks. Fallback to total_chunks keeps the helper safe to call from
+    # a non-cluster context (specs, future Rake tasks).
+    total_chunks = ota_data[:manifest][:total_packages] ||
+                   ota_data[:manifest][:total_chunks]
 
     # Переводимо Королеву в режим оновлення тільки при першому чанку
     gateway.update!(state: :updating) if chunk_index.zero?
