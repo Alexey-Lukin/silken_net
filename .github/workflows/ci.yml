@@ -163,19 +163,11 @@ jobs:
         options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev
-
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
-      - name: Build Tailwind CSS
-        run: bin/rails tailwindcss:build
+      - name: Setup Rails test environment
+        uses: ./.github/actions/setup-rails-test
 
       - name: Run tests
         env:
@@ -218,19 +210,11 @@ jobs:
         options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev
-
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
-      - name: Build Tailwind CSS
-        run: bin/rails tailwindcss:build
+      - name: Setup Rails test environment
+        uses: ./.github/actions/setup-rails-test
 
       - name: Run Feature Tests
         env:

@@ -1,0 +1,21 @@
+name: 'Setup Rails test environment'
+description: >-
+  Installs libpq, sets up Ruby via ruby/setup-ruby (with bundler cache), and
+  builds Tailwind CSS. Shared between the `test` and `feature-test` jobs to
+  keep their step lists in lockstep.
+
+runs:
+  using: composite
+  steps:
+    - name: Install packages
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+
+    - name: Build Tailwind CSS
+      shell: bash
+      run: bin/rails tailwindcss:build

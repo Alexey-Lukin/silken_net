@@ -641,3 +641,4 @@ it "test that status works" do
 4. **Phlex компоненти** — слідувати Частині A цього документа (min 8 examples).
 5. **Firmware** — кожна нова функція потребує host-based test у `firmware/test/`.
 6. **Solidity** — naming: `test_` (happy), `testRevert_` (error), `testFuzz_` (fuzz).
+7. **Per-group SimpleCov tripwire** — окрім глобального гейту (line ≥ 96 %, branch ≥ 85 %), `spec/spec_helper.rb` `SimpleCov.at_exit` падає, якщо покриття групи `Services` / `Models` < 90 % або `Workers` < 85 %. Пороги консервативні (фактично заміряно line ≈ 99 %); ціль — ловити випадкове видалення спек у hot path-ах. Підняти пороги до фактичного рівня — окремий PR після стабільного CI run.

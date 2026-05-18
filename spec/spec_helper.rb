@@ -43,6 +43,40 @@ SimpleCov.start "rails" do
   minimum_coverage_by_file 0
 end
 
+# Per-group coverage tripwire. SimpleCov ships with a global `minimum_coverage`
+# гейтом, але без per-group — отже падіння покриття у Services/Workers може
+# схуднути нижче критичного рівня, доки глобальний середній лишається ≈99%.
+# Гейт відключаємо для feature-test run (там покриття вимірюється окремо).
+unless ENV["FEATURE_TEST"]
+  SimpleCov.at_exit do
+    SimpleCov.result.format!
+
+    # Conservative thresholds — global coverage is ~99% (.last_run.json),
+    # but per-group baselines aren't pinned. Bump these up after a stable
+    # CI run measures actual numbers. The tripwire still catches large
+    # regressions (e.g. an accidentally-deleted spec dropping a group ≥10%).
+    minimums = {
+      "Services" => 90.0,
+      "Workers"  => 85.0,
+      "Models"   => 90.0
+    }
+
+    failures = SimpleCov.result.groups.filter_map do |name, files|
+      threshold = minimums[name]
+      next if threshold.nil? || files.empty?
+      actual = files.covered_percent
+      next if actual >= threshold
+      "  #{name}: #{actual.round(2)}% < #{threshold}%"
+    end
+
+    next if failures.empty?
+
+    warn "\nSimpleCov per-group coverage failures:"
+    failures.each { |line| warn line }
+    Kernel.exit SimpleCov::ExitCodes::MINIMUM_COVERAGE
+  end
+end
+
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|

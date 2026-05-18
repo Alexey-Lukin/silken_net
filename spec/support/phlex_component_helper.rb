@@ -100,29 +100,34 @@ module PhlexComponentHelper
 
   private
 
+  # Cache must outlive a single example — every spec example is a fresh
+  # instance, so an `@_renderer_cache` ivar would re-read the source file
+  # on every `render_component` call. Module-level Hash + Mutex makes the
+  # decision once per component class for the whole suite. Parallel
+  # examples (if/when enabled) read the same memoized verdict.
+  RENDERER_DECISION_CACHE = {}
+  RENDERER_DECISION_MUTEX = Mutex.new
+  RENDERER_HELPER_REGEX = /\b(turbo_frame_tag|turbo_stream_from|button_to|form_with|link_to)\b|\w+_(path|url)\b/
+
   # Determines whether the component class needs a full Rails renderer.
-  # True when the class (or any ancestor) includes Phlex::Rails helpers
-  # that require a request context (route helpers, Turbo tags, form builders).
+  # True when the source file references route helpers, Turbo tags, or
+  # form builders that require a request context.
   def needs_renderer?(klass)
-    # Components that use route helpers (_path/_url), turbo_frame_tag,
-    # turbo_stream_from, form_with, button_to — all of these come from
-    # Phlex::Rails::Helpers::* modules included in ApplicationComponent.
-    # We detect this by checking whether the class has overridden
-    # `call` to require a view context.
-    #
-    # Simpler heuristic: check if the source file references any route/turbo
-    # helper. But that's fragile. Instead we try .call and fall back.
-    #
-    # The most reliable approach: components that DON'T use any of these
-    # helpers can render without context. We maintain a class-level cache.
-    @_renderer_cache ||= {}
-    return @_renderer_cache[klass] if @_renderer_cache.key?(klass)
+    return RENDERER_DECISION_CACHE[klass] if RENDERER_DECISION_CACHE.key?(klass)
 
+    RENDERER_DECISION_MUTEX.synchronize do
+      # Double-checked inside the mutex so two threads don't both read the
+      # source file when entering the critical section simultaneously.
+      RENDERER_DECISION_CACHE[klass] = compute_needs_renderer(klass) unless RENDERER_DECISION_CACHE.key?(klass)
+      RENDERER_DECISION_CACHE[klass]
+    end
+  end
+
+  def compute_needs_renderer(klass)
     source_file = Object.const_source_location(klass.name)&.first
-    return @_renderer_cache[klass] = true unless source_file
+    return true unless source_file
 
-    source = File.read(source_file)
-    @_renderer_cache[klass] = source.match?(/\b(turbo_frame_tag|turbo_stream_from|button_to|form_with|link_to)\b|\w+_(path|url)\b/)
+    File.read(source_file).match?(RENDERER_HELPER_REGEX)
   end
 end
 
