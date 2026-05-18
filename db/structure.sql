@@ -2300,16 +2300,16 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 CREATE TABLE public.wallets (
     id bigint NOT NULL,
     tree_id bigint NOT NULL,
-    balance numeric,
+    balance numeric(24,6) DEFAULT 0.0 NOT NULL,
     crypto_public_address character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     organization_id bigint,
-    locked_balance numeric DEFAULT 0.0 NOT NULL,
+    locked_balance numeric(24,6) DEFAULT 0.0 NOT NULL,
     solana_public_address character varying,
     hadron_kyc_status character varying DEFAULT 'pending'::character varying,
     esg_retired_balance numeric(24,6) DEFAULT 0.0 NOT NULL,
-    toucan_bridged_balance numeric(18,4) DEFAULT 0.0 NOT NULL
+    toucan_bridged_balance numeric(24,6) DEFAULT 0.0 NOT NULL
 );
 
 

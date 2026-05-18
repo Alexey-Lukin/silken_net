@@ -14,8 +14,20 @@ class BioContractFirmware < ApplicationRecord
   HARDWARE_TYPES = %w[Tree Gateway].freeze
 
   # --- ЗВ'ЯЗКИ ---
-  # Кластери (Ліси), які зараз працюють на цій версії
-  has_many :clusters, foreign_key: :active_firmware_id
+  # [TODO E.62 — Per-cluster firmware tracking, не реалізовано]:
+  # Архітектурний намір — кожен Cluster мав би мати "активну" прошивку через
+  # колонку `clusters.active_firmware_id` (FK на `bio_contract_firmwares`).
+  # Колонки в `db/structure.sql` досі немає; асоціація ніким не викликається.
+  # Фактично tracking зараз йде через per-device SemVer string:
+  #   * `Tree.firmware_version` + `Gateway.firmware_version` (рядок SemVer)
+  #   * `BioContractFirmware.is_active` + `rollout_percentage` (global toggle)
+  #   * `deployment_count` рахує string-match: `Tree.where(firmware_version: ...)`
+  #
+  # Поки FK активно не використовується — асоціація закоментована (silent
+  # dead code = grep noise + ризик "хтось напише код проти неіснуючої колонки").
+  # Запис у `docs/00_08_Action_Plan_Tracker` (E.62) тримає намір видимим.
+  # has_many :clusters, foreign_key: :active_firmware_id
+
   # Специфікація породи (прошивка для Дуба != прошивка для Сосни)
   belongs_to :tree_family, optional: true
 

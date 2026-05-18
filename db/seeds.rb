@@ -389,7 +389,10 @@ cherkasy_trees = []
   is_anomaly = rand < 0.05
   status = is_anomaly ? :anomaly : :homeostasis
 
-  # [СИНХРОНІЗОВАНО]: Сира телеметрія (Uplink Pulse)
+  # [СИНХРОНІЗОВАНО]: Сира телеметрія (Uplink Pulse).
+  # Z values відповідають реальному діапазону Lorenz attractor:
+  #   homeostasis ∈ [critical_z_min, critical_z_max] (pine: 5..45, optimum 29),
+  #   anomaly = поза band (тут 48.5 → понад MAX, тобто перегрів атрактора).
   TelemetryLog.create!(
     tree: tree,
     queen_uid: gateway.uid,
@@ -400,7 +403,7 @@ cherkasy_trees = []
     growth_points: is_anomaly ? 0 : 5,
     mesh_ttl: 5,
     bio_status: status,
-    z_value: is_anomaly ? 4.2 : 0.1,
+    z_value: is_anomaly ? 48.5 : 28.5,
     rssi: -rand(60..90)
   )
 
@@ -412,7 +415,7 @@ cherkasy_trees = []
     average_temperature: is_anomaly ? 45.0 : 21.0,
     stress_index: is_anomaly ? 0.95 : 0.1,
     summary: is_anomaly ? "Критично: Виявлено аномальний тепловий фон." : "Стабільно: Вузол у стані гомеостазу.",
-    reasoning: { max_z: (is_anomaly ? 4.2 : 0.1), source: "Simulation" }
+    reasoning: { max_z: (is_anomaly ? 48.5 : 28.5), source: "Simulation" }
   )
 
   cherkasy_trees << tree
@@ -438,6 +441,7 @@ puts "🌴 Висаджуємо 20 Солдатів у Amazon Sector..."
     crypto_public_address: "0x#{SecureRandom.hex(20)}"
   )
 
+  # Дуб (oak): band 8..40, optimum 24 → ставимо homeostasis ~ 24.
   TelemetryLog.create!(
     tree: tree,
     queen_uid: amazon_gw.uid,
@@ -448,7 +452,7 @@ puts "🌴 Висаджуємо 20 Солдатів у Amazon Sector..."
     growth_points: 4,
     mesh_ttl: 5,
     bio_status: :homeostasis,
-    z_value: 0.2,
+    z_value: 24.0,
     rssi: -rand(55..80)
   )
 
@@ -459,7 +463,7 @@ puts "🌴 Висаджуємо 20 Солдатів у Amazon Sector..."
     average_temperature: 31.0,
     stress_index: 0.15,
     summary: "Стабільно: Тропічний вузол у нормі.",
-    reasoning: { max_z: 0.2, source: "Simulation" }
+    reasoning: { max_z: 24.0, source: "Simulation" }
   )
 end
 
@@ -576,7 +580,11 @@ MaintenanceRecord.create!(
 puts "⚙️ Відправка тестових команд актуаторам..."
 first_actuator = Actuator.first
 
-# [СИНХРОНІЗОВАНО]: priority обов'язковий (validates :priority, presence: true)
+# [СИНХРОНІЗОВАНО]: priority обов'язковий (validates :priority, presence: true).
+# Поле `executed_at` фіксується AASM `acknowledge`/`confirm` подіями у живому
+# flow; seeds-варіант обходить state machine (`status: :confirmed` напряму),
+# тож виставляємо мітку експліцитно — інакше UI Actuators::Show показав би
+# "—" для seed-команд.
 ActuatorCommand.create!(
   actuator: first_actuator,
   user: alexey,
@@ -585,7 +593,7 @@ ActuatorCommand.create!(
   priority: :low,
   status: :confirmed,
   sent_at: 2.hours.ago,
-  executed_at: 2.hours.ago,
+  executed_at: 90.minutes.ago,
   completed_at: 1.hour.ago
 )
 
@@ -636,7 +644,7 @@ AiInsight.create!(
   target_date: Date.yesterday,
   stress_index: 0.12,
   summary: "Кластер у стані гомеостазу. Середній рівень стресу мінімальний.",
-  reasoning: { avg_z: 0.15, max_temp: 24.0, source: "ClusterHealthCheckWorker" }
+  reasoning: { avg_z: 28.5, max_temp: 24.0, source: "ClusterHealthCheckWorker" }
 )
 
 AiInsight.create!(
@@ -645,7 +653,9 @@ AiInsight.create!(
   target_date: 1.week.from_now.to_date,
   probability_score: 35.0,
   summary: "Ймовірність посухи помірна. Рекомендовано моніторинг вологості ґрунту.",
-  reasoning: { source: "WeatherForecastService" }
+  reasoning: { source: "WeatherForecastService" },
+  # prediction_data: structured metric для OracleVisions::ForecastCard.
+  prediction_data: { "yield_impact" => -8.5, "confidence_interval" => [ 25.0, 45.0 ] }
 )
 
 AiInsight.create!(
@@ -654,7 +664,7 @@ AiInsight.create!(
   target_date: Date.yesterday,
   stress_index: 0.45,
   summary: "Підвищений стрес через виявлену пожежу на периферії.",
-  reasoning: { avg_z: 1.2, max_temp: 62.0, source: "ClusterHealthCheckWorker" }
+  reasoning: { avg_z: 41.5, max_temp: 62.0, source: "ClusterHealthCheckWorker" }
 )
 
 # Інсайт на рівні організації
@@ -664,7 +674,8 @@ AiInsight.create!(
   target_date: 1.month.from_now.to_date,
   probability_score: 78.0,
   summary: "Прогноз: 1200 SCC токенів за наступний місяць при поточній динаміці.",
-  reasoning: { source: "CarbonYieldService", projected_tokens: 1200 }
+  reasoning: { source: "CarbonYieldService", projected_tokens: 1200 },
+  prediction_data: { "yield_impact" => 12.0, "projected_scc" => 1200 }
 )
 
 # =========================================================================

@@ -43,10 +43,16 @@ class ActuatorCommand < ApplicationRecord
       transitions from: :issued, to: :sent
     end
 
-    # Підтвердження отримання від шлюзу (ACK)
+    # Підтвердження отримання від шлюзу (ACK).
+    # ACK означає, що edge-actuator прийняв команду до виконання — це той
+    # момент, коли фізично починається дія (відкриття клапана, активація
+    # сирени). UI Actuators::Show рендерить саме цю мітку у колонці
+    # "executed_at"; без присвоєння тут вона мовчки лишалась би nil
+    # (silent dead column — раніше встановлювалось лише через seeds.rb).
     event :acknowledge do
       before do
         self.sent_at ||= Time.current
+        self.executed_at ||= Time.current
       end
       transitions from: :sent, to: :acknowledged
     end
@@ -54,6 +60,7 @@ class ActuatorCommand < ApplicationRecord
     # Підтвердження виконання команди актуатором
     event :confirm do
       before do
+        self.executed_at ||= Time.current
         self.completed_at = Time.current
       end
       transitions from: :acknowledged, to: :confirmed

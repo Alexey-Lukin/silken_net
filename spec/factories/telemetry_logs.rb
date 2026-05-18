@@ -40,7 +40,10 @@ FactoryBot.define do
       voltage_mv { 4200 }
       temperature_c { 22.5 }
       acoustic_events { 5 }
-      z_value { 0.35 }
+      # Lorenz attractor optimum (FW.8 / BioContract::OPTIMAL_Z_TARGET).
+      # Раніше факторі вживали 0.35 — реліквія до-FW.8 normalised range;
+      # реальні Z значення йдуть у 2.0..45.0, з sweet spot ≈ 29.0.
+      z_value { 29.0 }
     end
 
     # Повністю верифікована телеметрія для trustless мінтингу.

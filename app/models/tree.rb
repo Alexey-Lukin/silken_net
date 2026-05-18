@@ -108,7 +108,7 @@ class Tree < ApplicationRecord
   after_update_commit :broadcast_map_update, if: :map_relevant_change?
 
   # --- СКОУПИ (The Watchers) ---
-  scope :active, -> { where(status: :active) }
+  # `Tree.active` автогенерується `enum :status, { active: 0, ... }`, не дублюємо.
   scope :geolocated, -> { where.not(latitude: nil, longitude: nil) }
 
   # [ОПТИМІЗАЦІЯ]: Використовуємо окрему колонку для швидкодії
@@ -261,21 +261,44 @@ class Tree < ApplicationRecord
     Cluster.where(id: cluster_id).where("active_trees_count > 0").update_all("active_trees_count = active_trees_count - 1")
   end
 
+  # Counter cache sync на cluster.active_trees_count. Покриває всі дельти:
+  #   * status change (active ↔ dormant/removed/deceased) → swap counter same cluster
+  #   * cluster change на active tree → decrement old, increment new
+  #   * both change → decrement old, conditionally increment new
+  #   * cluster: nil → A → increment A (after_create_commit handles initial set)
+  # `saved_change_to_*` повертає `[before, after]` коли поле змінилось,
+  # nil — якщо без змін. Прямо використовуємо before-значення замість
+  # ручного fallback на `*_before_type_cast` (Rails enum віддавав би
+  # integer там, де AASM/saved_change віддає string — старий шлях мав
+  # подвійний `|| 0` workaround).
   def update_cluster_active_trees_count
-    old_status, new_status = saved_change_to_status || [ status_before_type_cast, status_before_type_cast ]
-    old_cluster_id, new_cluster_id = saved_change_to_cluster_id || [ cluster_id, cluster_id ]
+    was_active =
+      if saved_change_to_status?
+        saved_change_to_status.first == "active"
+      else
+        active?
+      end
 
-    was_active = old_status == "active" || old_status == 0
-    is_active = active?
+    old_cluster_id =
+      if saved_change_to_cluster_id?
+        saved_change_to_cluster_id.first
+      else
+        cluster_id
+      end
 
-    # Декремент зі старого кластера, якщо дерево було активним
-    if was_active && old_cluster_id.present?
-      Cluster.where(id: old_cluster_id).where("active_trees_count > 0").update_all("active_trees_count = active_trees_count - 1")
+    # Декремент: дерево було активним і прив'язаним до кластера.
+    if was_active && old_cluster_id
+      Cluster
+        .where(id: old_cluster_id)
+        .where("active_trees_count > 0")
+        .update_all("active_trees_count = active_trees_count - 1")
     end
 
-    # Інкремент у новому кластері, якщо дерево стало/залишається активним
-    if is_active && new_cluster_id.present?
-      Cluster.where(id: new_cluster_id).update_all("active_trees_count = active_trees_count + 1")
+    # Інкремент: дерево зараз активне і прив'язане до кластера.
+    if active? && cluster_id
+      Cluster
+        .where(id: cluster_id)
+        .update_all("active_trees_count = active_trees_count + 1")
     end
   end
 end

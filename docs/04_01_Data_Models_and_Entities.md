@@ -582,7 +582,7 @@ any ──report_fault──► faulty
 | `temperature_c` | decimal | Температура корпусу (°C) |
 | `cellular_signal_csq` | integer | Сила сигналу LTE (0-31, 99=unknown) |
 
-**Константи:** `LOW_BATTERY_THRESHOLD=3300`, `OVERHEAT_THRESHOLD=65`, `LOW_SIGNAL_THRESHOLD=5`
+**Константи:** `LOW_BATTERY_THRESHOLD=3300` мВ, `OVERHEAT_THRESHOLD=65` °C, `LOW_TEMPERATURE_THRESHOLD=-20` °C (LiFePO4 cut-off), `LOW_SIGNAL_THRESHOLD=5` CSQ.
 
 **Ключові методи:**
 
@@ -590,7 +590,7 @@ any ──report_fault──► faulty
 |-------|------|
 | `signal_quality_percentage` | `(csq / 31.0) * 100` |
 | `signal_dbm` | `2 * csq - 113` (формула 3GPP) |
-| `critical_fault?` | Будь-яка з трьох констант перевищена |
+| `critical_fault?` | Будь-яка з **чотирьох** констант перевищена (battery low, overheat, freeze, weak signal). Nil-safe: повертає `false` коли voltage/temperature/csq ще не зафіксовано (insert_all hot path). |
 
 ---
 
@@ -615,8 +615,8 @@ any ──report_fault──► faulty
 | `min_firmware_version` | string | Мінімальна сумісна прошивка (SemVer) |
 | `tree_family_id` | bigint | Специфічна порода (сосна ≠ дуб) |
 | `metadata` | jsonb | `accuracy_score` (BigDecimal 0..1), `threshold` (BigDecimal), `input_shape` |
-| `true_positive_rate` | decimal | TPR (drift tracking) |
-| `false_positive_rate` | decimal | FPR (> 0.15 = drift) |
+| `true_positive_rate` | decimal | **Accuracy** (correct ÷ total). Імена колонок легасі від ранньої схеми; модель не зберігає TP/FP/TN/FN роздільно, тож справжня статистична TPR недоступна. Read-side віддає через `#accuracy`. |
+| `false_positive_rate` | decimal | **Error rate** (1 − accuracy). Поріг `drifting?` — > 0.15. Read-side віддає через `#error_rate`. |
 | `total_predictions` | integer | Лічильник передбачень |
 | `confirmed_predictions` | integer | Підтверджені передбачення |
 | `target_pest` | string | Вид шкідника, на якого налаштована модель |
@@ -627,10 +627,12 @@ any ──report_fault──► faulty
 | Метод | Опис |
 |-------|------|
 | `accuracy_score` / `threshold` | BigDecimal з JSONB (уникає Float похибок) |
+| `accuracy` | Read-side для `true_positive_rate` (correct ÷ total). Float, повертає `nil` якщо predictions ще не накопичено. |
+| `error_rate` | Read-side для `false_positive_rate` (1 − accuracy). |
 | `firmware_compatible?(version)` | `Gem::Version` порівняння |
 | `activate!(percentage:)` | Деактивує інші версії, активує цю з відсотком |
-| `record_prediction!(confirmed:)` | Drift tracking |
-| `drifting?` | `false_positive_rate > 0.15` |
+| `record_prediction!(confirmed:)` | Drift tracking (інкремент `total_predictions`/`confirmed_predictions` + перерахунок accuracy/error_rate) |
+| `drifting?` | `false_positive_rate > 0.15` (error_rate > 15% = drift) |
 | `chunks(512)` | OTA-сегменти (via OtaChunkable) |
 | `binary_sha256` | SHA-256 для OtaPackagerService |
 
@@ -1032,7 +1034,8 @@ active/draft ──cancel──► cancelled
 | `fraud_detected` | boolean | Прапор маніпуляції даними |
 | `model_source` | string | AI-модель (GPT-4, Claude, тощо) |
 | `recommendation` | jsonb | Рекомендації Оракула (`action_required`, `priority`) via `store_accessor` |
-| `analyzed_date` | date | Дата аналізу (партиціонування) |
+| `prediction_data` | jsonb | Структуровані прогнозні метрики (`yield_impact`, `confidence_interval`, тощо). Споживається `OracleVisions::ForecastCard` для рендеру `forecast?` карток. Окремо від `reasoning` (raw chain-of-thought) і `recommendation` (action). |
+| `analyzed_date` | date | Reserve-стовпець для майбутнього партиціонування за датою аналізу. Зараз у коді не читається — канонічна дата інсайту лежить у `target_date`. Лишається у схемі як точка розширення для багатоосей партиціонування post-TRL 8 (cross-ref E.37 TimescaleDB roadmap). |
 | `average_temperature` | decimal | Середня температура за аналізований день |
 | `total_growth_points` | bigint | Загальні очки зростання за день |
 | `summary` | text | Текстовий підсумок (human-readable) |

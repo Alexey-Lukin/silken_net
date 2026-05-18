@@ -43,23 +43,24 @@ class SystemParameter < ApplicationRecord
   #
   # Returns the typed value or the default if the key is not found.
   # Cache TTL: 24 hours (invalidated on update via after_commit).
+  #
+  # NB: `Rails.cache.fetch(cache_key) { … }` (single round-trip) замість
+  # exist?+read+write — усуває TOCTOU race коли запис expires між exist?
+  # і read (тоді read повертає nil, що б приймалося як "є в кеші → повернути").
+  # `MISS_SENTINEL` кешує missing keys теж, щоб не бомбити find_by на
+  # кожному `SystemParameter.current(:nonexistent_key)` виклику.
+  MISS_SENTINEL = :__sysparam_miss__
+
   def self.current(key, default: nil)
     key = key.to_s
     cache_key = cache_key_for(key)
 
-    if Rails.cache.exist?(cache_key)
-      return Rails.cache.read(cache_key)
+    cached = Rails.cache.fetch(cache_key, expires_in: CACHE_TTL) do
+      record = find_by(key: key)
+      record ? record.typed_value : MISS_SENTINEL
     end
 
-    record = find_by(key: key)
-
-    if record
-      typed = record.typed_value
-      Rails.cache.write(cache_key, typed, expires_in: CACHE_TTL)
-      typed
-    else
-      default
-    end
+    cached == MISS_SENTINEL ? default : cached
   end
 
   # Bulk fetch multiple parameters at once. Returns a Hash.

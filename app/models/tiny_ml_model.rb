@@ -82,29 +82,51 @@ class TinyMlModel < ApplicationRecord
   # MODEL DRIFT TRACKING (Feedback Loop)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-  # Реєстрація результату передбачення для drift tracking
-  # confirmed: true — модель була права, false — хибне спрацювання
+  # Реєстрація результату передбачення для drift tracking.
+  # confirmed: true — модель була права, false — хибне спрацювання.
   def record_prediction!(confirmed:)
     increment!(:total_predictions)
     increment!(:confirmed_predictions) if confirmed
     recalculate_drift_metrics!
   end
 
-  # Перерахунок TPR/FPR на основі накопичених даних
+  # Перерахунок drift метрик на основі накопичених даних.
+  #
+  # ⚠ Семантика стовпців:
+  #   `true_positive_rate`  фактично зберігає **accuracy**  (correct ÷ total)
+  #   `false_positive_rate` фактично зберігає **error_rate** (1 − accuracy)
+  #
+  # Це не статистичні TPR/FPR (для них треба окремо TP/FP/TN/FN — модель
+  # їх не розрізняє, лише сумарне "confirmed" vs "total"). Імена колонок
+  # лишилися від ранньої схеми; зміна імен потребує міграції + RR на API.
+  # Поки використовуємо їх як accuracy/error_rate і документуємо це
+  # експліцитно — `drifting?` нижче інтерпретує false_positive_rate як
+  # "error rate above 15%".
   def recalculate_drift_metrics!
     return if total_predictions.zero?
 
-    tp_rate = confirmed_predictions.to_f / total_predictions
-    fp_rate = 1.0 - tp_rate
+    accuracy   = confirmed_predictions.to_f / total_predictions
+    error_rate = 1.0 - accuracy
 
     update_columns(
-      true_positive_rate: tp_rate.round(4),
-      false_positive_rate: fp_rate.round(4),
+      true_positive_rate: accuracy.round(4),
+      false_positive_rate: error_rate.round(4),
       drift_checked_at: Time.current
     )
   end
 
-  # Чи модель демонструє drift (деградацію якості)?
+  # Read-only API з точним іменем — для blueprints / UI / governance.
+  # Стовпці залишаються старі (true_positive_rate / false_positive_rate),
+  # але read-side віддає правдиві імена.
+  def accuracy
+    true_positive_rate&.to_f
+  end
+
+  def error_rate
+    false_positive_rate&.to_f
+  end
+
+  # Чи модель демонструє drift (деградацію якості)? Поріг 15% помилок.
   def drifting?
     false_positive_rate.present? && false_positive_rate > BigDecimal("0.15")
   end

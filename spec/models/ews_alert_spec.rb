@@ -320,6 +320,23 @@ RSpec.describe EwsAlert, type: :model do
       coords = alert.coordinates
       expect(coords).to eq([ 0.0, 0.0 ])
     end
+
+    # Regression: cluster is optional (одиноке дерево / тестова інсталяція).
+    # Раніше друга гілка крашила NoMethodError: undefined method `geo_center'
+    # for nil, бо ішла через `cluster.geo_center` без safe-nav.
+    it "does not raise when both tree and cluster are nil" do
+      alert = build(:ews_alert, tree: nil, cluster: nil)
+      expect { alert.coordinates }.not_to raise_error
+      expect(alert.coordinates).to eq([ 0.0, 0.0 ])
+    end
+
+    it "falls back to [0.0, 0.0] when tree has no GPS and cluster is nil" do
+      tree = create(:tree, latitude: nil, longitude: nil)
+      alert = build(:ews_alert, tree: tree, cluster: nil)
+
+      expect { alert.coordinates }.not_to raise_error
+      expect(alert.coordinates).to eq([ 0.0, 0.0 ])
+    end
   end
 
   describe "#actionable?" do
@@ -382,6 +399,23 @@ RSpec.describe EwsAlert, type: :model do
   describe "broadcast throttling" do
     it "defines BROADCAST_THROTTLE_SECONDS constant" do
       expect(described_class::BROADCAST_THROTTLE_SECONDS).to eq(5)
+    end
+  end
+
+  # =========================================================================
+  # NIL-SAFE BROADCAST (regression for одиноке дерево / cluster: nil)
+  # =========================================================================
+  describe "#broadcast_alert_update (nil-safe)" do
+    it "is a silent no-op when cluster is nil (no NoMethodError on cluster.organization_id)" do
+      # Дозволяємо реальний broadcast_alert_update (знімаємо outer stub) лише
+      # для цього прикладу — інакше тест перевіряв би тільки stub.
+      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
+
+      alert = create(:ews_alert, tree: nil, cluster: nil)
+
+      # Без guard на `return unless cluster` `cluster.organization_id`
+      # підриває NoMethodError при будь-якому update.
+      expect { alert.update!(message: "rephrased") }.not_to raise_error
     end
   end
 

@@ -31,8 +31,12 @@ RSpec.describe PriceOracleService do
       expect(second_price).to eq(first_price)
     end
 
+    # Стаб таргетований на key "scc_market_price" — глобальний стаб на
+    # `Rails.cache.fetch` ловив би й `SystemParameter.current` (який сам
+    # використовує `Rails.cache.fetch`), що зруйнувало б fallback chain.
     it "returns fallback price of 25.5 on error" do
-      allow(Rails.cache).to receive(:fetch).and_raise(StandardError, "RPC connection failed")
+      allow(Rails.cache).to receive(:fetch).and_call_original
+      allow(Rails.cache).to receive(:fetch).with("scc_market_price", anything).and_raise(StandardError, "RPC connection failed")
 
       price = described_class.current_scc_price
 
@@ -40,7 +44,8 @@ RSpec.describe PriceOracleService do
     end
 
     it "returns fallback price on Timeout::Error" do
-      allow(Rails.cache).to receive(:fetch).and_raise(Timeout::Error, "execution expired")
+      allow(Rails.cache).to receive(:fetch).and_call_original
+      allow(Rails.cache).to receive(:fetch).with("scc_market_price", anything).and_raise(Timeout::Error, "execution expired")
 
       price = described_class.current_scc_price
 
@@ -48,7 +53,8 @@ RSpec.describe PriceOracleService do
     end
 
     it "logs an error when falling back" do
-      allow(Rails.cache).to receive(:fetch).and_raise(StandardError, "RPC connection failed")
+      allow(Rails.cache).to receive(:fetch).and_call_original
+      allow(Rails.cache).to receive(:fetch).with("scc_market_price", anything).and_raise(StandardError, "RPC connection failed")
 
       expect(Rails.logger).to receive(:error).with(/ORACLE ERROR.*RPC connection failed/)
 

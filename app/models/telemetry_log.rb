@@ -80,18 +80,29 @@ class TelemetryLog < ApplicationRecord
   # SELF-HEALING INTELLIGENCE (Recovery Protocols)
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-  # Визначає, чи є цей конкретний лог показником здоров'я
+  # Дерево вважається здоровим, якщо воно в гомеостазі,
+  # температура в межах норми і немає акустичного шторму шкідників.
+  # nil-safe: на hot path TelemetryLog може мати nil-fields коли запис
+  # створюється через insert_all (KENOSIS TITAN bypass валідацій).
   def healthy?
-    # Дерево вважається здоровим, якщо воно в гомеостазі,
-    # температура в межах норми і немає акустичного шторму шкідників.
     bio_status_homeostasis? &&
-      temperature_c < 50 &&
-      acoustic_events < 20
+      temperature_c.present? && temperature_c < 50 &&
+      acoustic_events.present? && acoustic_events < 20
   end
 
-  # Показник "ідеального стану" для фінансових бонусів (Extra Yield)
+  # "Optimal" стан Lorenz attractor: Z поряд із OPTIMAL_Z_TARGET (29.0).
+  # SSOT — `BioContract::OPTIMAL_Z_TARGET` (firmware) / `Tree::GLOBAL_LORENZ_Z_OPTIMAL`.
+  # Раніше використовував діапазон 0.1..0.5, що було залишком до-FW.8 нормалізації
+  # і ніколи не співпадало з реальними значеннями Z (2.0..45.0).
+  OPTIMAL_Z_BAND = 4.0
+
   def optimal?
-    healthy? && voltage_mv > 3600 && z_value.to_f.between?(0.1, 0.5)
+    return false unless healthy?
+    return false unless voltage_mv.present? && voltage_mv > 3600
+    return false unless z_value.present?
+
+    target = Tree::GLOBAL_LORENZ_Z_OPTIMAL
+    (z_value.to_f - target).abs <= OPTIMAL_Z_BAND
   end
 
   # [KENOSIS TITAN]: Перевірка на "Відновлення" (Anti-Flapping)

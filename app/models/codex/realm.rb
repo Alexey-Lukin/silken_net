@@ -29,7 +29,13 @@ module Codex
     scope :active,  -> { where(is_active: true) }
     scope :ordered, -> { order(:position, :id) }
 
-    def display_name(locale = I18n.locale)
+    # Bilingual switcher — uniform with `Codex::Node#title(locale)` /
+    # `Codex::Node#subtitle(locale)`. SSOT: `docs/04_01` §7b.
+    #
+    # `codex_realms` має лише `name_uk` / `name_en` стовпці (без plain
+    # `name`), тож метод `#name(locale)` тут безпечно перекриває default
+    # AR getter — він би все одно повертав nil.
+    def name(locale = I18n.locale)
       locale.to_s.start_with?("uk") ? name_uk : name_en
     end
 

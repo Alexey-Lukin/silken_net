@@ -115,10 +115,12 @@ class EwsAlert < ApplicationRecord
 
   # [ВИПРАВЛЕНО]: Навігація в тумані.
   # Якщо дерево втратило GPS, ми фокусуємо патруль на центрі сили кластера.
+  # nil-safe: cluster — optional (одиноке дерево / тестова інсталяція). Без
+  # `cluster&.geo_center` друга гілка крашне NoMethodError при cluster == nil.
   def coordinates
     if tree&.latitude.present? && tree&.longitude.present?
       [ tree.latitude, tree.longitude ]
-    elsif (center = cluster.geo_center)
+    elsif (center = cluster&.geo_center)
       [ center[:lat], center[:lng] ]
     else
       # Нульова точка для запобігання помилкам Leaflet.js
@@ -210,7 +212,10 @@ class EwsAlert < ApplicationRecord
   # [THROTTLED]: Real-time broadcast для всіх операторів організації.
   # При масових інцидентах WebSocket-канал може «лягти» від потоку оновлень.
   # Троттлінг гарантує мінімальний інтервал між некритичними broadcast.
+  # nil-safe: cluster — optional. Без cluster немає org-channel і немає
+  # [cluster, :alerts] stream — для одиноких дерев broadcast no-op.
   def broadcast_alert_update
+    return unless cluster
     return unless should_broadcast?
 
     alert_html = render_phlex(Alerts::Row.new(alert: self))

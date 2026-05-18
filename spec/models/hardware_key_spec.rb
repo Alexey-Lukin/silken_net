@@ -88,11 +88,24 @@ RSpec.describe HardwareKey, type: :model do
       expect(hw_key.binary_key).to eq([ key_hex ].pack("H*"))
     end
 
-    it "memoizes the result (returns same object on repeated calls)" do
+    it "returns equal value bytes on repeated calls (stable output)" do
       hw_key = build(:hardware_key)
       first  = hw_key.binary_key
       second = hw_key.binary_key
-      expect(first).to equal(second)
+      expect(first).to eq(second)
+    end
+
+    # Regression: ivar memoization (now removed) hid stale aes_key_hex updates.
+    # `binary_key` recomputes per-call so attribute changes are honored
+    # immediately without reload. Hot path goes through `cached_binary_key`
+    # (LRU keyed by `device_uid:updated_at` — self-invalidating).
+    it "reflects aes_key_hex changes without reload (no ivar memoization)" do
+      hw_key  = build(:hardware_key, aes_key_hex: "AA" * 32)
+      initial = hw_key.binary_key
+
+      hw_key.aes_key_hex = "BB" * 32
+      expect(hw_key.binary_key).not_to eq(initial)
+      expect(hw_key.binary_key).to eq([ "BB" * 32 ].pack("H*"))
     end
   end
 
@@ -191,11 +204,11 @@ RSpec.describe HardwareKey, type: :model do
       expect(hw_key.binary_previous_key).to eq([ prev_hex ].pack("H*"))
     end
 
-    it "memoizes the result" do
+    it "returns equal value bytes on repeated calls (stable output)" do
       hw_key = build(:hardware_key, :with_grace_period)
       first  = hw_key.binary_previous_key
       second = hw_key.binary_previous_key
-      expect(first).to equal(second)
+      expect(first).to eq(second)
     end
   end
 
@@ -215,11 +228,11 @@ RSpec.describe HardwareKey, type: :model do
       expect(hw_key.binary_lorenz_seed).to eq([ seed_hex ].pack("H*"))
     end
 
-    it "memoizes the unpacked bytes" do
+    it "returns equal 32 bytes on repeated calls (stable output)" do
       hw_key = build(:hardware_key, lorenz_seed_hex: "CD" * 32)
       first  = hw_key.binary_lorenz_seed
       second = hw_key.binary_lorenz_seed
-      expect(first).to equal(second)
+      expect(first).to eq(second)
     end
 
     it "validates lorenz_seed_hex length and HEX format when provided" do

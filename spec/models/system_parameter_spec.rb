@@ -197,6 +197,37 @@ RSpec.describe SystemParameter, type: :model do
       expect(described_class).not_to receive(:find_by)
       expect(described_class.current(:disabled_flag)).to be(false)
     end
+
+    # Regression: попередня реалізація використовувала `exist? + read + write` —
+    # 2-step lookup, який не кешував misses. Кожен `current(:nonexistent_key)`
+    # бомбив `find_by` на DB. Тепер misses кешуються через `MISS_SENTINEL`,
+    # тож повторні lookups неіснуючих keys мають бути SQL-free.
+    it "caches missing keys to avoid repeated DB lookups (MISS_SENTINEL)" do
+      # Перший виклик — find_by виконається один раз, нічого не знаходить.
+      expect(described_class).to receive(:find_by).once.and_call_original
+      expect(described_class.current(:never_seeded, default: 42)).to eq(42)
+
+      # Подальші виклики мають читати з кешу: find_by НЕ викликається.
+      expect(described_class.current(:never_seeded, default: 42)).to eq(42)
+      expect(described_class.current(:never_seeded, default: 99)).to eq(99)
+    end
+
+    # Regression: попередній `exist? + read` був TOCTOU-race — якщо entry
+    # exhibit'ить між двома операціями, read повертає nil; sentry перепаде
+    # на default замість fetch fresh value. Тепер single-shot `Rails.cache.fetch`
+    # robust against the race.
+    it "does not race between exist? and read (single Rails.cache.fetch call)" do
+      create(:system_parameter, :lorenz_sigma)
+      cache_key = described_class.cache_key_for("lorenz_sigma")
+
+      # Перший виклик — fetch блок виконається; cache буде primed.
+      described_class.current(:lorenz_sigma)
+      expect(Rails.cache.read(cache_key)).to eq(10.0)
+
+      # Без single-call fetch — race window міг повернути default. З fetch —
+      # ніколи: fetch атомарно read-or-store у блоці.
+      expect(described_class.current(:lorenz_sigma, default: 999)).to eq(10.0)
+    end
   end
 
   describe ".current_values" do

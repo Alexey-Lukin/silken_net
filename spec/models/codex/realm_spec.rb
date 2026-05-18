@@ -57,15 +57,27 @@ RSpec.describe Codex::Realm do
     end
   end
 
-  describe "#display_name" do
+  describe "#name (bilingual switch — canonical per docs/04_01 §7b)" do
     let(:realm) { build(:codex_realm, name_uk: "Екосистеми", name_en: "Ecosystems") }
 
     it "returns Ukrainian name for :uk locale" do
-      expect(realm.display_name(:uk)).to eq("Екосистеми")
+      expect(realm.name(:uk)).to eq("Екосистеми")
     end
 
     it "returns English name for any non-uk locale" do
-      expect(realm.display_name(:en)).to eq("Ecosystems")
+      expect(realm.name(:en)).to eq("Ecosystems")
+    end
+
+    it "defaults to current I18n locale when called without args" do
+      I18n.with_locale(:uk) { expect(realm.name).to eq("Екосистеми") }
+      I18n.with_locale(:en) { expect(realm.name).to eq("Ecosystems") }
+    end
+
+    # `codex_realms` table has no `name` column — only `name_uk` / `name_en`.
+    # Без цього guard test просто перевіряв би attribute getter, що ховало б
+    # регресії на bilingual switcher.
+    it "does not collide with an attribute named `name`" do
+      expect(described_class.column_names).not_to include("name")
     end
   end
 

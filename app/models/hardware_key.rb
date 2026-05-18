@@ -73,9 +73,12 @@ class HardwareKey < ApplicationRecord
   # КРИПТОГРАФІЧНІ МЕТОДИ
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-  # Повертає сирі байти поточного ключа
+  # Повертає сирі байти поточного ключа. Без ivar memoization — інакше
+  # `update!(aes_key_hex: ...)` мовчки повертатиме stale байти, поки інстанс
+  # не перезавантажиться. `pack("H*")` для 64 hex chars займає ~1µs, тож
+  # перерахунок per-call безпечний; hot path йде через `cached_binary_key`.
   def binary_key
-    @binary_key ||= [ aes_key_hex ].pack("H*")
+    [ aes_key_hex ].pack("H*")
   end
 
   # [A-7 FIX]: In-process LRU cache replaces Rails.cache (Redis).
@@ -87,18 +90,20 @@ class HardwareKey < ApplicationRecord
     HARDWARE_KEY_CACHE.getset(versioned_cache_key) { binary_key }
   end
 
-  # Повертає сирі байти попереднього ключа (для Grace Period)
+  # Повертає сирі байти попереднього ключа (для Grace Period).
+  # Без ivar memoization (див. binary_key).
   def binary_previous_key
     return nil if previous_aes_key_hex.blank?
-    @binary_previous_key ||= [ previous_aes_key_hex ].pack("H*")
+    [ previous_aes_key_hex ].pack("H*")
   end
 
   # [SEC.11] Raw 32 bytes of K_seed for SilkenNet::SeedDerivation.
   # Always present in steady state — `lorenz_seed_hex` is required. Nil
   # only on unsaved records that have not yet been provisioned.
+  # Без ivar memoization (див. binary_key).
   def binary_lorenz_seed
     return nil if lorenz_seed_hex.blank?
-    @binary_lorenz_seed ||= [ lorenz_seed_hex ].pack("H*")
+    [ lorenz_seed_hex ].pack("H*")
   end
 
   # [DEPRECATED]: Use HardwareKeyService.rotate(device_uid) instead.
@@ -116,10 +121,6 @@ class HardwareKey < ApplicationRecord
       rotated_at: Time.current
     )
 
-    # Скидаємо мемоізацію
-    @binary_key = nil
-    @binary_previous_key = nil
-
     binary_key
   end
 
@@ -128,7 +129,6 @@ class HardwareKey < ApplicationRecord
     return if previous_aes_key_hex.blank?
 
     update_columns(previous_aes_key_hex: nil)
-    @binary_previous_key = nil
     Rails.logger.info "✅ [KeyRotation] Синхронізація для #{device_uid} підтверджена. Резервний ключ видалено."
   end
 
