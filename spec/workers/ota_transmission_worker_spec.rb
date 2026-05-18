@@ -175,7 +175,6 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
       expect(gateway.state).to eq("idle")
       expect(gateway.firmware_version).to eq("2.0.0")
     end
-
   end
 
   describe "NACK when response is nil" do

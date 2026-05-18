@@ -38,8 +38,11 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
     it "completes OTA on last chunk" do
       # Small firmware that fits in one chunk
       small_fw = create(:bio_contract_firmware, version: "3.1.0", bytecode_payload: "BB" * 200)
-      ota_data = OtaPackagerService.prepare(small_fw, chunk_size: 512)
-      total = ota_data[:manifest][:total_chunks]
+      # [FW.23] Worker forwards gateway.cluster_id, so prepare() appends the
+      # 3-block HMAC trailer; the "last chunk" index must come from
+      # total_packages, not the bytecode-only total_chunks.
+      ota_data = OtaPackagerService.prepare(small_fw, chunk_size: 512, cluster_id: gateway.cluster_id)
+      total = ota_data[:manifest][:total_packages] || ota_data[:manifest][:total_chunks]
 
       # Simulate transmitting the last chunk (index = total - 1)
       OtaTransmissionWorker.new.perform(gateway.uid, "firmware", small_fw.id, total - 1, 0)
@@ -51,8 +54,8 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
 
     it "handles TinyML model OTA" do
       model = create(:tiny_ml_model, version: "v5.0.0", binary_weights_payload: "CC" * 200)
-      ota_data = OtaPackagerService.prepare(model, chunk_size: 512)
-      total = ota_data[:manifest][:total_chunks]
+      ota_data = OtaPackagerService.prepare(model, chunk_size: 512, cluster_id: gateway.cluster_id)
+      total = ota_data[:manifest][:total_packages] || ota_data[:manifest][:total_chunks]
 
       OtaTransmissionWorker.new.perform(gateway.uid, "tinyml", model.id, total - 1, 0)
 
