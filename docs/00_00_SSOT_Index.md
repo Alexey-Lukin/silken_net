@@ -8,7 +8,7 @@
 
 ---
 
-## 🧭 Модуль 00: Архітектура, Стратегія та Операції (The Codex)
+## 📜 Модуль 00: Архітектура, Стратегія та Операції (The Codex)
 
 _Бізнес-візія, кіберфізична архітектура, політики resilience, операційна система проєкту (Shape Up + TRL + GitHub IaC) та живий backlog задач._
 
@@ -21,7 +21,7 @@ _Бізнес-візія, кіберфізична архітектура, по�
 - [00\_07\_GitHub\_Projects\_and\_IaC\_Automation](00_07_GitHub_Projects_and_IaC_Automation) (Projects V2 fields + Labels-as-Code + GitHub Actions workflows)
 - [00\_08\_Action\_Plan\_Tracker](00_08_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
 
-## 🟢 Модуль 01: Біомеханіка та Хімія (The Anchor)
+## 🌱 Модуль 01: Біомеханіка та Хімія (The Anchor)
 
 _Все, що фізично інтегрується в живе дерево — тризонний коаксіальний анкер, EBFC та ксилемоінтеграція._
 
@@ -30,7 +30,7 @@ _Все, що фізично інтегрується в живе дерево �
 - [01\_03\_EBFC\_Enzymatic\_Bio\_Fuel\_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) (Двошарова GOx+Catalase / GDH-альтернатива + Laccase-AuNP DET — >500 mV з глюкози)
 - [01\_04\_CODIT\_and\_Xylemointegration](01_04_CODIT_and_Xylemointegration) (Біологічна реакція дерева на імплантат + anti-overgrowth shield катода)
 
-## 🟡 Модуль 02: Апаратне Забезпечення (The Capsule)
+## ⚡ Модуль 02: Апаратне Забезпечення (The Capsule)
 
 _Електроніка Soldier/Queen, енергетичні буфери, механіка blind-mate підключення та опціональна Starlink-uplink._
 
@@ -41,7 +41,7 @@ _Електроніка Soldier/Queen, енергетичні буфери, ме
 - [02\_04\_EDLC\_Supercapacitor\_Buffer](02_04_EDLC_Supercapacitor_Buffer) (Іоністор 0.47Ф / 5.5В)
 - [02\_05\_Queen\_Hardware\_and\_Starlink](02_05_Queen_Hardware_and_Starlink) (Шлюз Королева + SIM7070G + Starlink Direct-to-Cell)
 
-## 🔵 Модуль 03: Прошивка та Edge AI (The Brain)
+## 🧠 Модуль 03: Прошивка та Edge AI (The Brain)
 
 _Логіка STM32WLE5JC: STOP2 / DMA / TinyML / mruby Lorenz / апаратний AES — Soldier і Queen firmware._
 
@@ -51,7 +51,7 @@ _Логіка STM32WLE5JC: STOP2 / DMA / TinyML / mruby Lorenz / апаратн�
 - [03\_04\_mruby\_Lorenz\_Attractor](03_04_mruby_Lorenz_Attractor) (mruby VM атрактор хаосу — гомеостаз дерева)
 - [03\_05\_Hardware\_AES256\_and\_Security](03_05_Hardware_AES256_and_Security) (CRYP-блок AES-256 ECB/CBC + Flash Key + RDP Level 2)
 
-## 🟣 Модуль 04: Серверне Ядро (Web2 Backend)
+## 🗄️ Модуль 04: Серверне Ядро (Web2 Backend)
 
 _Rails 8.1 Omakase, моделі, бізнес-логіка, REST API, Phlex UI та тестова матриця._
 
@@ -63,7 +63,7 @@ _Rails 8.1 Omakase, моделі, бізнес-логіка, REST API, Phlex UI 
 - [04\_06\_Testing\_Guide\_and\_Coverage](04_06_Testing_Guide_and_Coverage) (30 RSpec best practices + повна Coverage Matrix: RSpec/Firmware C/Foundry Solidity)
 - [04\_07\_Cultural\_Layer\_External\_Stakeholders](04_07_Cultural_Layer_External_Stakeholders) (Social API Registry: 16 митців + folk master + журналісти + диригенти; Genesis NFT + Data Sonification — deferred)
 
-## 🟠 Модуль 05: Web3 та Економіка (The Ledger)
+## ⛓️ Модуль 05: Web3 та Економіка (The Ledger)
 
 _12-chain DePIN стек, Proof of Growth pipeline, токеноміка SCC/SFC та фіналізація в Ethereum L1._
 
@@ -72,7 +72,7 @@ _12-chain DePIN стек, Proof of Growth pipeline, токеноміка SCC/SFC
 - [05\_03\_Tokenomics\_SCC\_and\_SFC](05_03_Tokenomics_SCC_and_SFC) (SCC ERC-20 + SFC governance + slashing parameters)
 - [05\_04\_Ethereum\_L1\_State\_Anchor](05_04_Ethereum_L1_State_Anchor) (Щотижневий SHA-256 state root в Ethereum mainnet)
 
-## ⚙️ Модуль 06: DevOps та Інфраструктура (The Matrix)
+## 🚀 Модуль 06: DevOps та Інфраструктура (The Matrix)
 
 _Деплой, моніторинг, секрети та децентралізовані обчислення (Akash + GCP failover)._
 
@@ -82,7 +82,7 @@ _Деплой, моніторинг, секрети та децентраліз�
 - [06\_04\_Secrets\_Checklist](06_04_Secrets_Checklist) (Інвентаризація секретів: GitHub Secrets, Kamal, Akash, Terraform)
 - [06\_05\_Puma\_Configuration](06_05_Puma_Configuration) (Puma 8 IO-bound pool + кластерні хуки + runbook'и)
 
-## 🟤 Модуль 07: Економіка та Бізнес (Nature-as-a-Service)
+## 🌿 Модуль 07: Економіка та Бізнес (Nature-as-a-Service)
 
 _Юриспруденція, юніт-економіка та портфель грантових заявок._
 
@@ -91,7 +91,7 @@ _Юриспруденція, юніт-економіка та портфель �
 - [07\_03\_Grant\_Applications\_Tracker](07_03_Grant_Applications_Tracker) (Трекер грантових заявок — Horizon Europe, Verra, Gold Standard)
 - [07\_04\_B2G\_External\_Stakeholders](07_04_B2G_External_Stakeholders) (Social API Registry: лісівник Дзюбенко + природоохоронець Сегеда + ДСНС + B2B-клієнти; 6-tier outreach pool)
 
-## 🎓 Модуль 08: Академічна Інтеграція (University Research Hub)
+## 🔬 Модуль 08: Академічна Інтеграція (University Research Hub)
 
 _Завдання для лабораторій ЧНУ ФОТІУС, ЧДТУ, ЧІПБ, ЧМА та СЄУ (TRL 1-4)._
 

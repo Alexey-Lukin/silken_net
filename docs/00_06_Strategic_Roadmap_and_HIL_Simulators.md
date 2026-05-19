@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL (System):** TRL 4 — обмежений найнижчим модулем (EBFC TRL 3-4).
-- **Per-domain TRL (декаплінг):** Rails TRL 8, Web3 / Smart contracts TRL 8–9 (Solidity ready для mainnet), DevOps TRL 7 (Docker registry та TLS — open у [`00_08 §TRL Матриця`](00_08_Action_Plan_Tracker)), Firmware TRL 6, Security TRL 7 (Rails web layer ✅), Hardware TRL 4 (Stages 1-3 ще не закриті). **Канонічне джерело per-module TRL — `00_08 §TRL Матриця` (line ~1183-1192)**; цей рядок є снапшотом для швидкої навігації, оновлюється при кожному cool-down.
+- **Per-domain TRL (декаплінг):** Rails TRL 8, Web3 / Smart contracts TRL 8–9 (Solidity ready для mainnet), DevOps TRL 5–6 (06_01 Kamal=4, 06_02 Akash=5, 06_03/06_05=6; жодного production-деплою — open у [`00_08 §TRL Матриця`](00_08_Action_Plan_Tracker)), Firmware TRL 6, Security TRL 7 (Rails web layer ✅), Hardware capsule TRL 6, anchor/EBFC TRL 3 (Stages 1-3 ще не закриті). **Канонічне джерело per-module TRL — `00_08 §TRL Матриця` (line ~1183-1192)**; цей рядок є снапшотом для швидкої навігації, оновлюється при кожному cool-down.
 - **Пов'язані модулі:**
   - Бізнес-візія та slashing → [`00_01_Vision_Market_and_Slashing_Policy`](00_01_Vision_Market_and_Slashing_Policy)
   - AI-Native методологія (TRL philosophy) → [`00_04_AI_Native_Engineering_and_TRL`](00_04_AI_Native_Engineering_and_TRL)
