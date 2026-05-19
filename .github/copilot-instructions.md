@@ -20,7 +20,7 @@
 - **Packet format (21 байт):** `[DID:4][RSSI:1][AES-256-ECB payload:16]`. Payload: `[Vcap:2][Temp:1][Acoustic:1][dT:2][StatusByte:1][TTL:1][FW:2][PAD:2]`. `StatusByte = [bio_status:2 | growth_points:6]`.
 
 ### Backend стек
-- **Ruby 4.0.2** (path: `/opt/hostedtoolcache/Ruby/4.0.2/x64/bin`)
+- **Ruby 4.0.2**
 - **Rails 8.1** — thin controllers, бізнес-логіка тільки в services/workers
 - **PostgreSQL multi-DB** — `db/structure.sql` (не `schema.rb`), партиціювання RANGE по `created_at` для `telemetry_logs`, `gateway_telemetry_logs`, `blockchain_transactions`
 - **Sidekiq** strict-priority, 9 черг (суворий порядок дренування):

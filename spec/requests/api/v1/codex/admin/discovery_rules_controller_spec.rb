@@ -67,6 +67,21 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
     end
   end
 
+  describe "GET /api/v1/codex/admin/discovery_rules/:id" do
+    it "renders a single rule for admin+" do
+      rule = create(:codex_discovery_rule, node: node, created_by_user: admin, name: "show-me")
+      get "/api/v1/codex/admin/discovery_rules/#{rule.id}", headers: headers_admin, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.dig("data", "name")).to eq("show-me")
+    end
+
+    it "is forbidden for non-admin" do
+      rule = create(:codex_discovery_rule, node: node, created_by_user: admin)
+      get "/api/v1/codex/admin/discovery_rules/#{rule.id}", headers: headers_user, as: :json
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
   describe "PATCH /api/v1/codex/admin/discovery_rules/:id" do
     it "updates active flag and busts the engine cache" do
       rule = create(:codex_discovery_rule, node: node, created_by_user: admin)
@@ -78,6 +93,14 @@ RSpec.describe "Api::V1::Codex::Admin::DiscoveryRules", type: :request do
       expect(rule.reload.active).to be(false)
       # cache must be busted — re-read returns no rules of this condition
       expect(Codex::DiscoveryRule.cached_active_by_condition.values.flatten).to eq([])
+    end
+
+    it "returns 422 with model errors when update validation fails" do
+      rule = create(:codex_discovery_rule, node: node, created_by_user: admin)
+      patch "/api/v1/codex/admin/discovery_rules/#{rule.id}",
+            params: { threshold_value: 0 }, headers: headers_admin, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"]).to be_present
     end
   end
 

@@ -312,4 +312,56 @@ RSpec.describe Trees::Show do
       expect(html).to include('loading="lazy"')
     end
   end
+
+  describe "edge cases — nil-safe rendering of optional fields" do
+    it "renders 'Unknown' technician when maintenance record has no user" do
+      record = OpenStruct.new(user: nil, action_type: "calibration",
+                              notes: "Quick recalibration", performed_at: 1.day.ago)
+      rendered = render_component(tree: tree, latest_log: latest_log,
+                                  recent_logs: recent_logs, maintenance_history: [ record ])
+      expect(rendered).to include("Unknown")
+    end
+
+    it "renders '—' when maintenance notes are nil" do
+      record = OpenStruct.new(user: OpenStruct.new(full_name: "Olha"), action_type: "inspection",
+                              notes: nil, performed_at: 1.day.ago)
+      rendered = render_component(tree: tree, latest_log: latest_log,
+                                  recent_logs: recent_logs, maintenance_history: [ record ])
+      expect(rendered).to include("—")
+    end
+
+    it "renders '—' when maintenance performed_at is nil" do
+      record = OpenStruct.new(user: OpenStruct.new(full_name: "Olha"), action_type: "inspection",
+                              notes: "Sane", performed_at: nil)
+      rendered = render_component(tree: tree, latest_log: latest_log,
+                                  recent_logs: recent_logs, maintenance_history: [ record ])
+      expect(rendered).to include("—")
+    end
+
+    it "renders '0.0' SCC when tree has no wallet" do
+      t = mock_tree
+      t.wallet = nil
+      rendered = render_component(tree: t, latest_log: latest_log,
+                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      expect(rendered).to include("0.0")
+      expect(rendered).to include("NOT_PROVISIONED")
+    end
+
+    it "renders without a cluster when tree.cluster is nil" do
+      t = mock_tree
+      t.cluster = nil
+      rendered = render_component(tree: t, latest_log: latest_log,
+                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      # Should still render the metadata panel without crashing
+      expect(rendered).to include("Deployment")
+    end
+
+    it "skips impedance bars when family has no positive baseline_impedance" do
+      t = mock_tree(baseline_impedance: nil)
+      rendered = render_component(tree: t, latest_log: latest_log,
+                                  recent_logs: recent_logs, maintenance_history: maintenance_history)
+      # Header still renders; bars simply absent — no crash
+      expect(rendered).to include("Impedance Flux")
+    end
+  end
 end

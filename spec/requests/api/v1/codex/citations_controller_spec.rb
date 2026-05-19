@@ -89,6 +89,109 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
            headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
     end
+
+    it "resolves OracleVision citable_type to AiInsight when no STI subclass is defined" do
+      insight = create(:ai_insight)
+      expect(defined?(::OracleVision)).to be_nil
+
+      post "/api/v1/codex/citations",
+           params: { codex_node_slug: node.slug, citable_type: "OracleVision", citable_id: insight.id },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body.dig("data", "citable_type")).to eq("AiInsight")
+    end
+
+    it "supports citable_type=Cluster" do
+      cluster = create(:cluster)
+      post "/api/v1/codex/citations",
+           params: { codex_node_slug: node.slug, citable_type: "Cluster", citable_id: cluster.id },
+           headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body.dig("data", "citable_type")).to eq("Cluster")
+    end
+
+    it "supports citable_type=AiInsight" do
+      insight = create(:ai_insight)
+      post "/api/v1/codex/citations",
+           params: { codex_node_slug: node.slug, citable_type: "AiInsight", citable_id: insight.id },
+           headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body.dig("data", "citable_type")).to eq("AiInsight")
+    end
+
+    it "supports citable_type=EwsAlert" do
+      alert = create(:ews_alert)
+      post "/api/v1/codex/citations",
+           params: { codex_node_slug: node.slug, citable_type: "EwsAlert", citable_id: alert.id },
+           headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body.dig("data", "citable_type")).to eq("EwsAlert")
+    end
+
+    it "supports citable_type=NaasContract" do
+      contract = create(:naas_contract)
+      post "/api/v1/codex/citations",
+           params: { codex_node_slug: node.slug, citable_type: "NaasContract", citable_id: contract.id },
+           headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body.dig("data", "citable_type")).to eq("NaasContract")
+    end
+
+    it "honors an OracleVision STI subclass when present" do
+      stub_const("OracleVision", Class.new(AiInsight))
+      insight = OracleVision.create!(analyzable: create(:tree), insight_type: :daily_health_summary,
+                                     target_date: Date.current - 1, stress_index: 0.1, summary: "x")
+
+      post "/api/v1/codex/citations",
+           params: { codex_node_slug: node.slug, citable_type: "OracleVision", citable_id: insight.id },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body.dig("data", "citable_type")).to eq("AiInsight")
+    end
+
+    it "returns 400 when a CITABLE_CLASS_MAP lambda raises NameError" do
+      bogus_map = {
+        "Tree" => -> { Tree },
+        "Cluster" => -> { Cluster },
+        "AiInsight" => -> { AiInsight },
+        "EwsAlert" => -> { EwsAlert },
+        "OracleVision" => -> { raise NameError, "uninitialized constant ImaginaryClass" },
+        "NaasContract" => -> { NaasContract }
+      }.freeze
+      stub_const("Api::V1::Codex::CitationsController::CITABLE_CLASS_MAP", bogus_map)
+
+      post "/api/v1/codex/citations",
+           params: { codex_node_slug: node.slug, citable_type: "OracleVision", citable_id: 1 },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response.parsed_body["error"]).to eq("Unsupported citable_type")
+    end
+
+    it "swallows ActionCable broadcast errors and still returns 201" do
+      allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "redis down")
+      expect(Rails.logger).to receive(:warn).with(a_string_matching(/broadcast failed: StandardError: redis down/))
+
+      post "/api/v1/codex/citations",
+           params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id },
+           headers: headers, as: :json
+
+      expect(response).to have_http_status(:created)
+      expect(Codex::Citation.exists?(codex_node_id: node.id, citable_id: tree.id)).to be(true)
+    end
+
+    # Non-JSON requests bypass the Idempotency-Key gate; the cache helpers
+    # all early-return `nil` for blank keys (covers L124/L131/L137 branches).
+    it "creates the citation without Idempotency-Key for form-encoded requests" do
+      post "/api/v1/codex/citations",
+           params: { codex_node_slug: node.slug, citable_type: "Tree", citable_id: tree.id },
+           headers: { "Authorization" => "Bearer #{token}" }
+
+      expect(response).to have_http_status(:created)
+      expect(Codex::Citation.exists?(codex_node_id: node.id, citable_id: tree.id)).to be(true)
+    end
   end
 
   describe "DELETE /api/v1/codex/citations/:id" do
@@ -121,6 +224,23 @@ RSpec.describe "Api::V1::Codex::Citations", type: :request do
       delete "/api/v1/codex/citations/#{citation.id}",
              headers: headers.merge("Authorization" => "Bearer #{admin_token}")
       expect(response).to have_http_status(:no_content)
+    end
+
+    it "returns 204 and skips broadcast when the citable target has been destroyed" do
+      tree.destroy!
+      expect(ActionCable.server).not_to receive(:broadcast)
+
+      delete "/api/v1/codex/citations/#{citation.id}", headers: headers
+      expect(response).to have_http_status(:no_content)
+    end
+
+    it "swallows ActionCable broadcast errors during destroy" do
+      allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "boom")
+      expect(Rails.logger).to receive(:warn).with(a_string_matching(/broadcast remove failed: StandardError: boom/))
+
+      delete "/api/v1/codex/citations/#{citation.id}", headers: headers
+      expect(response).to have_http_status(:no_content)
+      expect(Codex::Citation.find_by(id: citation.id)).to be_nil
     end
   end
 end

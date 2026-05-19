@@ -210,5 +210,88 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
         end
       end
     end
+
+    context "when HardwareKey is present (Ed25519 signature path) [BLOCKER-06]" do
+      let(:hardware_key) do
+        create(:hardware_key, device_uid: tree.did,
+                              aes_key_hex: SecureRandom.hex(32).upcase,
+                              lorenz_seed_hex: SecureRandom.hex(32).upcase)
+      end
+
+      before do
+        hardware_key # ensure created
+        tree.reload
+        allow(Rails.application.credentials).to receive_messages(
+          iotex_w3bstream_url: "https://w3bstream.example.com",
+          iotex_api_key: "test-api-key-123"
+        )
+      end
+
+      it "signs the message with the hex-encoded hardware key via Ed25519" do
+        response = Web3::HttpClient::Response.new({ "proof_id" => "zk-proof-ed25519" }.to_json)
+        signed_payload = nil
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          signed_payload = kwargs[:body]
+          response
+        end
+
+        expected_hex = hardware_key.binary_key.unpack1("H*")
+        expect(Ed25519Crypto::SigningService).to receive(:sign)
+          .with(expected_hex, kind_of(String))
+          .and_call_original
+
+        described_class.new(telemetry_log).verify!
+        expect(signed_payload[:hardware_signature]).to be_present
+      end
+    end
+
+    context "with HardwareKey row present but binary_key blank [S6.13]" do
+      let(:hardware_key) do
+        instance_double(HardwareKey, binary_key: nil)
+      end
+
+      before do
+        allow(Rails.application.credentials).to receive_messages(
+          iotex_w3bstream_url: "https://w3bstream.example.com",
+          iotex_api_key: "test-api-key-123"
+        )
+        allow(tree).to receive(:hardware_key).and_return(hardware_key)
+        allow(Web3::HttpClient).to receive(:post).and_return(
+          Web3::HttpClient::Response.new({ "proof_id" => "zk-proof-blank-bin" }.to_json)
+        )
+      end
+
+      it "increments the fallback metric with reason=missing_binary_key" do
+        counter = SilkenNet::Metrics::W3BSTREAM_SIGNATURE_FALLBACK_TOTAL
+        before_count = counter.get(labels: { reason: "missing_binary_key" }) || 0
+
+        described_class.new(telemetry_log).verify!
+
+        expect(counter.get(labels: { reason: "missing_binary_key" })).to eq(before_count + 1)
+      end
+    end
+
+    context "with malformed W3bstream proof reference" do
+      before do
+        allow(Rails.application.credentials).to receive_messages(
+          iotex_w3bstream_url: "https://w3bstream.example.com",
+          iotex_api_key: "test-api-key-123"
+        )
+        allow(tree).to receive(:hardware_key).and_return(nil)
+        allow(Rails.logger).to receive(:warn)
+      end
+
+      it "rejects proof references that violate the ZK_PROOF_REF_PATTERN" do
+        response = Web3::HttpClient::Response.new(
+          { "proof_id" => "has spaces & symbols!" }.to_json
+        )
+        allow(Web3::HttpClient).to receive(:post).and_return(response)
+
+        expect { described_class.new(telemetry_log).verify! }.to raise_error(
+          Iotex::W3bstreamVerificationService::VerificationError,
+          /невалідний proof reference/
+        )
+      end
+    end
   end
 end

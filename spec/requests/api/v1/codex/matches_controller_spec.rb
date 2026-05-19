@@ -32,6 +32,18 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("not enough nodes")
     end
+
+    it "falls back to the first ordered realm when ?realm= is omitted" do
+      get "/api/v1/codex/matches/new", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to match(/name="pair_seed" value="[0-9a-f]{64}"/)
+    end
+
+    it "falls back to the first ordered realm when ?realm= is an unknown slug" do
+      get "/api/v1/codex/matches/new", params: { realm: "totally-fake-slug" }, headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to match(/name="pair_seed" value="[0-9a-f]{64}"/)
+    end
   end
 
   describe "POST /api/v1/codex/matches" do
@@ -85,6 +97,56 @@ RSpec.describe "Api::V1::Codex::Matches", type: :request do
            headers: headers, as: :json
       expect(response).to have_http_status(:created)
       expect(response.parsed_body.dig("data", "is_skip")).to be(true)
+    end
+
+    it "renders a fresh Arena frame on successful vote when client asks for HTML" do
+      # Spawn enough extra nodes so PairSelector can still return a fresh pair
+      # after the first one is consumed.
+      4.times { create(:codex_node, realm: realm, lifecycle_status: :thriving) }
+
+      seed = issue_seed
+      post "/api/v1/codex/matches",
+           params: { pair_seed: seed, winner_slug: left.slug },
+           headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:created)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("codex_battle_arena")
+      expect(response.body).to match(/name="pair_seed" value="[0-9a-f]{64}"/)
+    end
+
+    it "renders an Arena error frame when next pair cannot be produced after the vote" do
+      seed = issue_seed
+      # Leave only the two original nodes so the next PairSelector call after
+      # winner is recorded can no longer find a fresh distinct pair from a
+      # depleted realm.
+      ::Codex::Node.where(codex_realm_id: realm.id)
+                   .where.not(id: [ left.id, right.id ])
+                   .delete_all
+      ::Codex::Node.where(id: [ left.id, right.id ]).update_all(lifecycle_status: "extinct")
+
+      # Bypass selector exhaustion check for the original pair by stubbing
+      # only the second (post-vote) PairSelectorService call to fail.
+      original_call = ::Codex::PairSelectorService.method(:call)
+      call_count = 0
+      allow(::Codex::PairSelectorService).to receive(:call) do |**kwargs|
+        call_count += 1
+        if call_count == 1
+          # Pretend the user already had a valid seed — the controller does
+          # not re-run selector on POST, only on the followup HTML render.
+          original_call.call(**kwargs)
+        else
+          OpenStruct.new(success?: false, error: "not enough nodes", left: nil, right: nil,
+                         pair_seed: nil, realm: realm)
+        end
+      end
+
+      post "/api/v1/codex/matches",
+           params: { pair_seed: seed, winner_slug: left.slug },
+           headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:created)
+      expect(response.body).to include("not enough nodes")
     end
   end
 end

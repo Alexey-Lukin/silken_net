@@ -22,7 +22,6 @@ SilkenNet / Gaia 2.0 — планетарна кіберфізична плат�
 ## 2. Середовище розробки
 
 ```bash
-export PATH="/opt/hostedtoolcache/Ruby/4.0.2/x64/bin:$PATH"
 ruby --version  # must show 4.0.2
 bundle exec rubocop
 bundle exec rspec

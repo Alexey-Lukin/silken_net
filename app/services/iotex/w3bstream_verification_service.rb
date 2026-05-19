@@ -46,7 +46,10 @@ module Iotex
       hardware_key = @tree.hardware_key
       if hardware_key&.binary_key.present?
         message = "#{@tree.did}:#{@telemetry_log.id_value}:#{@telemetry_log.created_at.to_i}"
-        Ed25519Crypto::SigningService.sign(hardware_key.binary_key, message)
+        # `Ed25519Crypto::SigningService.sign` validates the seed as a 64-char
+        # hex string, so re-encode the 32 raw bytes from `binary_key` rather
+        # than passing them directly (would trip `must be a valid hex string`).
+        Ed25519Crypto::SigningService.sign(hardware_key.binary_key.unpack1("H*"), message)
       else
         # [S6.13]: Fallback допустимий ТІЛЬКИ для legacy/dev (TRL ≤ 5, lab benches).
         # У production / WEB3_STRICT_MODE — fail-closed: SHA256 не доводить апаратне

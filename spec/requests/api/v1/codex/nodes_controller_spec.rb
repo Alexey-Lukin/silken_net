@@ -47,6 +47,22 @@ RSpec.describe "Api::V1::Codex::Nodes", type: :request do
       slugs = response.parsed_body["data"].map { |n| n["slug"] }
       expect(slugs).to contain_exactly("methuselah")
     end
+
+    it "filters by archetype" do
+      get "/api/v1/codex/nodes",
+          params: { archetype: node1.archetype_key },
+          headers: headers, as: :json
+      slugs = response.parsed_body["data"].map { |n| n["slug"] }
+      expect(slugs).to include("cherkasy-bir")
+    end
+
+    it "renders the Atlas dashboard as HTML when format=html" do
+      get "/api/v1/codex/nodes", headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include("Codex Atlas")
+    end
   end
 
   describe "GET /api/v1/codex/nodes/:slug" do
@@ -74,6 +90,16 @@ RSpec.describe "Api::V1::Codex::Nodes", type: :request do
       draft = create(:codex_node, slug: "draft-node", published_at: nil)
       get "/api/v1/codex/nodes/#{draft.slug}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
+    end
+
+    it "renders the Show dashboard as HTML with comments + attunement state" do
+      create(:codex_comment, commentable: node1, user: user, body_md: "Lore note")
+
+      get "/api/v1/codex/nodes/#{node1.slug}", headers: headers.merge("Accept" => "text/html")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/html")
+      expect(response.body).to include(node1.title_en)
     end
   end
 end

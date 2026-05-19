@@ -26,6 +26,21 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
     end
   end
 
+  describe "GET /api/v1/codex/admin/nodes/:slug" do
+    it "is forbidden for foresters" do
+      bad = forester.generate_token_for(:api_access)
+      get "/api/v1/codex/admin/nodes/#{node.slug}",
+          headers: headers.merge("Authorization" => "Bearer #{bad}")
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "renders a single node payload for admin+" do
+      get "/api/v1/codex/admin/nodes/#{node.slug}", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.dig("data", "slug")).to eq(node.slug)
+    end
+  end
+
   describe "PATCH /api/v1/codex/admin/nodes/:slug" do
     it "updates the node for admin+" do
       patch "/api/v1/codex/admin/nodes/#{node.slug}",
@@ -40,6 +55,24 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
             params: { node: { lifecycle_status: "imaginary" } },
             headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "returns 422 with model validation errors on update failure" do
+      other_node = create(:codex_node, realm: realm)
+      patch "/api/v1/codex/admin/nodes/#{node.slug}",
+            params: { node: { slug: other_node.slug } },
+            headers: headers, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"]).to be_an(Array).and(be_present)
+    end
+
+    it "accepts external_refs JSONB array on update" do
+      refs = [ { "label" => "Wikipedia", "url" => "https://en.wikipedia.org/wiki/Foo" } ]
+      patch "/api/v1/codex/admin/nodes/#{node.slug}",
+            params: { node: { external_refs: refs } },
+            headers: headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(node.reload.external_refs).to eq(refs)
     end
 
     it "is forbidden for foresters" do
@@ -81,12 +114,32 @@ RSpec.describe "Api::V1::Codex::Admin::Nodes", type: :request do
       expect(created).not_to be_nil
       expect(created.seed_origin).to eq("dao_proposal")
     end
+
+    it "returns 422 with model validation errors when create fails" do
+      sa_token = super_admin.generate_token_for(:api_access)
+      bad_payload = payload.deep_dup
+      bad_payload[:node][:slug] = node.slug  # duplicate slug → validation error
+      post "/api/v1/codex/admin/nodes",
+           params: bad_payload,
+           headers: headers.merge("Authorization" => "Bearer #{sa_token}"), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"]).to be_an(Array).and(be_present)
+    end
   end
 
   describe "DELETE /api/v1/codex/admin/nodes/:slug" do
     it "is forbidden for plain admin" do
       delete "/api/v1/codex/admin/nodes/#{node.slug}", headers: headers
       expect(response).to have_http_status(:forbidden)
+    end
+
+    it "destroys the node and returns 204 for super_admin" do
+      sa_token = super_admin.generate_token_for(:api_access)
+      expect {
+        delete "/api/v1/codex/admin/nodes/#{node.slug}",
+               headers: headers.merge("Authorization" => "Bearer #{sa_token}")
+      }.to change(Codex::Node, :count).by(-1)
+      expect(response).to have_http_status(:no_content)
     end
   end
 end

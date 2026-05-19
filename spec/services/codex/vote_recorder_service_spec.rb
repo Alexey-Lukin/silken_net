@@ -73,5 +73,55 @@ RSpec.describe Codex::VoteRecorderService, type: :service do
       expect(result.success?).to be(false)
       expect(result.error).to eq("seed_user_mismatch")
     end
+
+    it "fails when the caller user is not persisted" do
+      unsaved = build(:user)
+      result = described_class.call(user: unsaved, pair_seed: "anything", winner_slug: left.slug)
+      expect(result.success?).to be(false)
+      expect(result.error).to eq("user is required")
+    end
+
+    it "fails when the seed references a node id that no longer exists" do
+      seed = issue_pair_seed
+      left.destroy!
+      result = described_class.call(user: user, pair_seed: seed, winner_slug: right.slug)
+      expect(result.success?).to be(false)
+      expect(result.error).to eq("nodes_missing")
+    end
+
+    it "treats Redis outages during seed lookup as seed_invalid" do
+      seed = "x" * 64
+      fake_redis = instance_double("Redis")
+      allow(fake_redis).to receive(:call).and_raise(StandardError, "redis down")
+      allow(Kredis).to receive(:redis).with(config: :shared).and_return(fake_redis)
+      allow(Rails.logger).to receive(:warn)
+
+      result = described_class.call(user: user, pair_seed: seed, winner_slug: left.slug)
+      expect(result.success?).to be(false)
+      expect(result.error).to eq("seed_invalid_or_consumed")
+      expect(Rails.logger).to have_received(:warn).with(a_string_matching(/redis unavailable/))
+    end
+
+    it "wraps an unexpected Match save failure into a Result failure" do
+      seed = issue_pair_seed
+      allow(Codex::Match).to receive(:create!)
+        .and_raise(ActiveRecord::RecordInvalid.new(
+          Codex::Match.new.tap { |m| m.errors.add(:base, "boom") }
+        ))
+
+      result = described_class.call(user: user, pair_seed: seed, winner_slug: left.slug)
+      expect(result.success?).to be(false)
+      expect(result.error).to include("boom")
+    end
+  end
+
+  describe "winner resolution edge cases" do
+    it "records the right node as winner when winner_slug matches right" do
+      seed = issue_pair_seed
+      result = described_class.call(user: user, pair_seed: seed, winner_slug: right.slug)
+      expect(result.success?).to be(true)
+      expect(result.match.winner_node_id).to eq(right.id)
+      expect(result.match.elo_delta_right).to be > 0
+    end
   end
 end

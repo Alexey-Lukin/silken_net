@@ -1055,4 +1055,63 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       described_class.call(build_panic_chunk(did_hex, 42))
     end
   end
+
+  describe "Codex Discovery probes hook [Codex Phase 5]" do
+    let(:chunk) { build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3) }
+
+    it "fans out a probe per observer when PresenceTracker reports watchers" do
+      allow(::Codex::PresenceTracker).to receive(:observers_for_tree)
+        .with(tree.id).and_return([ 101, 202 ])
+
+      expect(::Codex::DiscoveryProbeWorker).to receive(:perform_async)
+        .with(101, "telemetry_observation", hash_including("tree_id" => tree.id, "trigger_ref_type" => "TelemetryLog"))
+      expect(::Codex::DiscoveryProbeWorker).to receive(:perform_async)
+        .with(202, "telemetry_observation", hash_including("tree_id" => tree.id))
+
+      described_class.call(chunk)
+    end
+
+    it "is a no-op when nobody is observing the tree (empty observers)" do
+      allow(::Codex::PresenceTracker).to receive(:observers_for_tree)
+        .with(tree.id).and_return([])
+
+      expect(::Codex::DiscoveryProbeWorker).not_to receive(:perform_async)
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+    end
+
+    it "swallows StandardError from the probes and does not break uplink finalisation" do
+      allow(::Codex::PresenceTracker).to receive(:observers_for_tree)
+        .and_raise(StandardError, "redis exploded")
+      allow(Rails.logger).to receive(:warn)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(Rails.logger).to have_received(:warn)
+        .with(a_string_matching(/codex hook failed: StandardError: redis exploded/))
+    end
+  end
+
+  describe "#previous_lorenz_state_for [SEC.11]" do
+    it "returns nil when the last Lorenz state row has a non-finite coordinate" do
+      # Build a telemetry log with NaN in z to simulate corruption on disk.
+      log = create(:telemetry_log, tree: tree, lorenz_state_x: 0.1, lorenz_state_y: 0.2,
+                                   lorenz_state_z: Float::NAN, voltage_mv: 3500, temperature_c: 20)
+      service = described_class.new("ignored")
+      expect(service.send(:previous_lorenz_state_for, tree.reload)).to be_nil
+      log.destroy
+    end
+  end
+
+  describe "OTA firmware mismatch detection" do
+    it "is a no-op when the tree is mid-OTA (fw_downloading/verifying/flashing)" do
+      tree.update!(firmware_update_status: :fw_downloading)
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+      service = described_class.new(chunk)
+      reported = 99_999  # Differs from latest, but tree state blocks the flip.
+      allow(service).to receive(:latest_tree_firmware_id).and_return(42)
+
+      expect { service.send(:check_firmware_mismatch!, tree.reload, reported) }
+        .not_to change { tree.reload.firmware_update_status }
+    end
+  end
 end

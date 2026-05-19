@@ -323,5 +323,43 @@ RSpec.describe Chainlink::OracleDispatchService do
         service.dispatch!
       }.to raise_error(described_class::DispatchError, /не експортує очікуваний/)
     end
+
+    it "swallows StandardError raised by eth_get_code and falls through gracefully" do
+      allow(mock_client).to receive(:eth_get_code).and_raise(StandardError, "rpc nuked")
+      allow(Rails.logger).to receive(:warn)
+
+      service = described_class.new(telemetry_log)
+      expect { service.dispatch! }.to raise_error(described_class::DispatchError)
+      expect(Rails.logger).to have_received(:warn).with(a_string_matching(/eth_getCode probe failed: rpc nuked/))
+    end
+
+    it "unwraps a JSON-RPC envelope ({result: '0x...'}) when eth_get_code returns a Hash" do
+      allow(mock_client).to receive(:eth_get_code).and_return("result" => bytecode_with_v1)
+
+      service = described_class.new(telemetry_log)
+      expect(service.dispatch!).to eq("0xtx_hash_v1_ok")
+    end
+
+    it "uses the registered fallback when the active selector is absent but the fallback selector is present" do
+      fake_fallback_selector = "0xcafebabe"
+      bytecode_with_fallback = "0x6080604052#{fake_fallback_selector.delete_prefix("0x")}1461004f"
+      allow(mock_client).to receive(:eth_get_code).and_return(bytecode_with_fallback)
+
+      allow(Web3::ChainlinkRouterVersion).to receive(:selector_present_in_code?)
+        .with(bytecode_with_fallback, :v1).and_return(false)
+      allow(Web3::ChainlinkRouterVersion).to receive(:fallback_for).with(:v1).and_return(:v0_legacy)
+      allow(Web3::ChainlinkRouterVersion).to receive(:selector_present_in_code?)
+        .with(bytecode_with_fallback, :v0_legacy).and_return(true)
+      allow(Web3::ChainlinkRouterVersion).to receive(:selector_for).with(:v1).and_return(fake_fallback_selector)
+      allow(Web3::ChainlinkRouterVersion).to receive(:abi_for).with(:v0_legacy).and_return(
+        Web3::ChainlinkRouterVersion.abi_for(:v1)
+      )
+      allow(Rails.logger).to receive(:warn)
+
+      service = described_class.new(telemetry_log)
+      expect(service.dispatch!).to eq("0xtx_hash_v1_ok")
+      expect(Rails.logger).to have_received(:warn)
+        .with(a_string_matching(/falling back to v0_legacy/))
+    end
   end
 end

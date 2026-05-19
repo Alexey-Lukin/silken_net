@@ -91,6 +91,14 @@ RSpec.describe Hil::LorenzGenerator do
         expect(sample[:z_value]).to be_between(10.0, 35.0).inclusive
       end
     end
+
+    it "raises RuntimeError when max_attempts is exhausted without landing in band" do
+      # Force an impossible band so rejection sampling can never succeed.
+      family = build(:tree_family, critical_z_min: 9_999.0, critical_z_max: 10_000.0)
+      gen = described_class.new(tree_family: family, seed_hex: seed_hex, rng: Random.new(13))
+      expect { gen.sample_in_state(state: :homeostasis, max_attempts: 3) }
+        .to raise_error(RuntimeError, /could not land in homeostasis band/)
+    end
   end
 
   describe "#synthesize" do
@@ -117,6 +125,11 @@ RSpec.describe Hil::LorenzGenerator do
       expect { generator.synthesize(state: :homeostasis) }
         .to raise_error(ArgumentError, /only supports :stress or :anomaly/)
     end
+
+    it "rejects unknown states with a helpful list of valid keys" do
+      expect { generator.synthesize(state: :euphoria) }
+        .to raise_error(ArgumentError, /unknown state :euphoria/)
+    end
   end
 
   describe "#batch" do
@@ -137,6 +150,19 @@ RSpec.describe Hil::LorenzGenerator do
     it "routes :anomaly through synthesize automatically" do
       batch = generator.batch(state: :anomaly, count: 2)
       expect(batch.map { |s| s[:z_value] }).to all(be > described_class::DEFAULT_Z_MAX)
+    end
+
+    it "routes in_band: true to sample_in_state for :homeostasis" do
+      batch = generator.batch(state: :homeostasis, count: 2, in_band: true)
+      expect(batch.size).to eq(2)
+      expect(batch.map { |s| s[:z_value] }).to all(
+        be_between(described_class::DEFAULT_Z_MIN, described_class::DEFAULT_Z_MAX).inclusive
+      )
+    end
+
+    it "raises ArgumentError for unknown states" do
+      expect { generator.batch(state: :euphoria, count: 1) }
+        .to raise_error(ArgumentError, /unknown state :euphoria/)
     end
   end
 

@@ -13,7 +13,7 @@ module Api
                     .by_archetype(params[:archetype])
                     .search_title(params[:q])
                     .ordered_by_elo
-                    .includes(:realm)
+                    .includes(:realm, cover_image_attachment: :blob)
 
           @pagy, @nodes = pagy(scope, limit: 21)
 

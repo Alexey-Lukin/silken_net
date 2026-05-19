@@ -90,9 +90,17 @@ module Api
               :published_at
             )
             # `external_refs` is JSONB validated by `Codex::Node#external_refs_must_be_array_of_links`.
-            # Pass through as-is when present so the model validator is the single source of truth.
+            # Convert nested ActionController::Parameters back to plain Hash so the validator's
+            # `r.is_a?(Hash)` check passes — otherwise JSON-shaped refs round-trip through strong
+            # params as ACP and trip a 422 the caller can't predict.
             if params[:node]&.key?(:external_refs)
-              permitted[:external_refs] = params[:node][:external_refs]
+              raw = params[:node][:external_refs]
+              permitted[:external_refs] =
+                if raw.is_a?(Array)
+                  raw.map { |r| r.respond_to?(:to_unsafe_h) ? r.to_unsafe_h : r }
+                else
+                  raw
+                end
             end
             permitted
           end
