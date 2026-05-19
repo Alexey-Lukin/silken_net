@@ -91,7 +91,7 @@ RSpec.describe Codex::VoteRecorderService, type: :service do
 
     it "treats Redis outages during seed lookup as seed_invalid" do
       seed = "x" * 64
-      fake_redis = instance_double("Redis")
+      fake_redis = instance_double(Redis)
       allow(fake_redis).to receive(:call).and_raise(StandardError, "redis down")
       allow(Kredis).to receive(:redis).with(config: :shared).and_return(fake_redis)
       allow(Rails.logger).to receive(:warn)
