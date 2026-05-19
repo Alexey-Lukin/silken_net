@@ -62,8 +62,10 @@ class BlockchainConfirmationWorker
       end
 
       if status == "0x1" # Success (Успіх)
+        block_num = receipt["result"]["blockNumber"]&.then { |v| v.to_i(16) }
+        gas_used  = receipt["result"]["gasUsed"]&.then { |v| v.to_i(16) }
         ActiveRecord::Base.transaction do
-          txs.each(&:confirm!)
+          txs.each { |tx| tx.confirm!(block_num, gas_used) }
         end
         Rails.logger.info "💎 [Web3] Блокчейн підтвердив емісію: #{tx_hash}. Капітал легалізовано."
       else # Reverted (Провал на рівні смарт-контракту)

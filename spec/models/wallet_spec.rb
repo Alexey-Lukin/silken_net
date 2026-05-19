@@ -222,7 +222,7 @@ RSpec.describe Wallet, type: :model do
 
       expect {
         wallet.lock_for_toucan_bridge!(500)
-      }.to raise_error(RuntimeError, /Недостатньо коштів для Toucan Bridge/)
+      }.to raise_error(RuntimeError, /Недостатньо доступних коштів для Toucan Bridge/)
     end
 
     it "raises when no crypto address is available" do

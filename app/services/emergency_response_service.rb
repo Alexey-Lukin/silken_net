@@ -3,6 +3,7 @@
 class EmergencyResponseService
   def self.call(ews_alert)
     cluster = ews_alert.cluster
+    return unless cluster
 
     # Знаходимо всі працездатні актуатори в секторі (Кластері)
     # [СИНХРОНІЗОВАНО]: Враховуємо тільки ті шлюзи, що онлайн

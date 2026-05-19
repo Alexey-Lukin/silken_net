@@ -157,7 +157,7 @@ class Wallet < ApplicationRecord
     transaction do
       lock!
 
-      raise "⚠️ [Wallet] Недостатньо коштів для Toucan Bridge (Баланс: #{balance}, Потрібно: #{amount})" if balance < amount
+      raise "⚠️ [Wallet] Недостатньо доступних коштів для Toucan Bridge (Доступно: #{available_balance}, Потрібно: #{amount})" if available_balance < amount
 
       decrement!(:balance, amount)
       increment!(:locked_balance, amount)

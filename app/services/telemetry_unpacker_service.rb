@@ -431,8 +431,8 @@ class TelemetryUnpackerService < ApplicationService
   def commit_telemetry(tree, attributes)
     growth_points = attributes[:growth_points]
 
-    # Транзакція фіксує телеметрію, стан дерева та побічні ефекти як єдине ціле.
-    # Wallet credit та Sidekiq jobs винесено ЗА межі транзакції (див. нижче).
+    # Транзакція фіксує телеметрію та стан дерева як єдине ціле.
+    # Wallet credit, Sidekiq jobs та alert dispatch винесено ЗА межі транзакції (див. нижче).
     log = ActiveRecord::Base.transaction do
       record = tree.telemetry_logs.create!(attributes)
 
@@ -450,11 +450,17 @@ class TelemetryUnpackerService < ApplicationService
       # актуальної прошивки — позначаємо дерево як fw_pending для повторної роздачі OTA.
       check_firmware_mismatch!(tree, record.firmware_version_id)
 
-      # Аналіз аномалій Оракулом тривог
-      AlertDispatchService.analyze_and_trigger!(record)
-
       record
     end
+
+    # [BUG FIX: Phantom Sidekiq Jobs via EmergencyResponseService]:
+    # AlertDispatchService.analyze_and_trigger! виноситься ЗА межі транзакції.
+    # Всередині транзакції EmergencyResponseService.call → ActuatorCommand.insert_all
+    # → ActuatorCommandWorker.perform_async — воркери потрапляли в Redis ДО commit.
+    # При rollback TelemetryLog актуаторні команди вже в черзі, але записів немає.
+    # EwsAlert не має FK до TelemetryLog, тому його створення поза транзакцією безпечне:
+    # найгірший випадок — пропущений алерт (acceptable), а не phantom job (небезпечно).
+    AlertDispatchService.analyze_and_trigger!(log)
 
     # [P1-7 FIX: Phantom Sidekiq Jobs — Wiki 04_02 Audit §14]
     # perform_async виклики перенесено ПОЗА транзакцію. Якщо транзакція відкотиться

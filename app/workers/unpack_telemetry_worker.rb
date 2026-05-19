@@ -24,10 +24,6 @@ class UnpackTelemetryWorker
     # Отримуємо сирі байти, що прийшли через CoAP/UDP
     binary_payload = Base64.strict_decode64(encoded_payload)
 
-    # 1.1 ЖИВИЙ ПОТІК У МАТРИЦЮ (ActionCable — raw hex stream)
-    # Перенесено з UDP-петлі coap_listener для розвантаження UDP-сокета.
-    broadcast_raw_hex(binary_payload, sender_ip)
-
     # 2. ІДЕНТИФІКАЦІЯ ШЛЮЗУ (The Queen Node)
     # Пріоритет: UID з заголовка пакета (стабільний) → IP (може змінитись після NAT)
     gateway = gateway_uid.present? ? Gateway.find_by(uid: gateway_uid.to_s.strip.upcase) : nil
@@ -38,6 +34,10 @@ class UnpackTelemetryWorker
       SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "unknown_device" })
       return
     end
+
+    # 2.1 ЖИВИЙ ПОТІК У МАТРИЦЮ (ActionCable — raw hex stream)
+    # [BUG FIX]: перенесено після верифікації шлюзу — невідомі IP не повинні заповнювати UI.
+    broadcast_raw_hex(binary_payload, sender_ip)
 
     # Оновлюємо поточну IP-адресу (важливо для динамічних Starlink/LTE модемів)
     gateway.mark_seen!(new_ip: sender_ip)

@@ -94,6 +94,7 @@ class BlockchainMintingService < ApplicationService
     # Інституційні токени (SCC/SFC) мінтяться ТІЛЬКИ для верифікованих гаманців.
     @wallet_mapping.each_value do |tx|
       recipient_wallet = tx.wallet
+      raise "Compliance Breach: Missing wallet for TX ##{tx.id}" if recipient_wallet.nil?
       unless recipient_wallet.hadron_kyc_status == "approved"
         raise "Compliance Breach: Wallet is not Hadron KYC approved"
       end
@@ -417,8 +418,8 @@ class BlockchainMintingService < ApplicationService
   end
 
   def identifier_for(tx)
-    tree = tx.wallet.tree
-    tx.token_type == "carbon_coin" ? (tree&.did || "ORG_#{tx.wallet.organization_id}") : "CLUSTER_#{tree&.cluster_id || 'GLOBAL'}"
+    tree = tx.wallet&.tree
+    tx.token_type == "carbon_coin" ? (tree&.did || "ORG_#{tx.wallet&.organization_id}") : "CLUSTER_#{tree&.cluster_id || 'GLOBAL'}"
   end
 
   def to_wei(amount)
