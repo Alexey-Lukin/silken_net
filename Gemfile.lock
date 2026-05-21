@@ -730,7 +730,7 @@ GEM
     stringio (3.2.0)
     strong_migrations (2.7.0)
       activerecord (>= 7.2)
-    tailwind_merge (1.5.0)
+    tailwind_merge (1.5.1)
       sin_lru_redux (~> 2.5)
     tailwindcss-rails (4.4.0)
       railties (>= 7.0.0)
