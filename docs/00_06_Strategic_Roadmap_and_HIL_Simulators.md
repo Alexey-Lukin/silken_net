@@ -160,7 +160,7 @@
 > ⚠️ **Ієрархічне делегування інтелекту (Compute Budget Constraint).** L1 Soldier (STM32WLE5JC + 0.47F supercap, енергобаланс `02_03 §9.6 Сценарій C` = +1.4 мДж/год запасу) **фізично не може** тренувати моделі або агрегувати градієнти — будь-який Federated Learning epoch, обчислення Chimera coupling або forest-wide attractor inversion утримуватиме MCU в active-режимі (≥12 mA × ≥секунди) і **гарантовано виведе supercap у brownout** ще до завершення першої епохи. Тому:
 >
 > - **L1 Soldiers (STM32 + 0.47F):** залишаються наївними виконавцями (Inference only). Емітують 1-bit stigmergic сигнали (рядок «Stigmergic Communication» — це **єдина дешева опція** на L1, ~110 ms LoRa TX @ +14 dBm).
-> - **L2 Sergeants (LiFePO4 + Solar) / L3 Queens:** тут відбуваються Federated Learning, Chimera coupling math та network-level Lorenz координація. Queen має 20Ah батарею і Cortex-M4 + LTE backbone — обчислювально на 4-5 порядків багатший за Soldier.
+> - **L2 Conductors / L3 Queens (LiFePO4 + Solar):** тут відбуваються Federated Learning, Chimera coupling math та network-level Lorenz координація. Queen має 20Ah батарею і Cortex-M4 + LTE backbone — обчислювально на 4-5 порядків багатший за Soldier.
 >
 > Solidiers отримують результат як **скомпільований mruby bytecode через OTA-канал** (`03_02` Queen → broadcast chunks по 11 байт), що зберігається у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`. Жодного "self-training" на L1.
 
@@ -195,8 +195,8 @@
 > | Рівень | Що відбувається | Hardware envelope |
 > |--------|----------------|-------------------|
 > | **L1 Soldier** | Inference-only: запуск **попередньо скомпільованого** mruby bytecode (Lorenz constants, fitness evaluation, threshold lookup). Періодична відправка `lambda_exponent` + 1-bit stigmergic сигналу. | STM32WLE5JC + 0.47F, +1.4 мДж/год headroom |
-> | **L2 Sergeant** | Кластерний агрегатор: збирає 50-200 Soldiers lambda-stream, обчислює **локальний GA** на (σ, ρ, β) для свого кластера, відправляє candidate sets до Queen. | Solar + LiFePO4 (TBD spec, `00_02 §3` L2 placeholder) |
-> | **L3 Queen** | Federated Learning aggregator: обмінюється gradient updates з сусідніми Queens (privacy-preserving), компілює нові mruby contracts, broadcast'ить chunked OTA до Sergeants → Soldiers. | 20Ah LiFePO4 + Solar + LTE backbone (`02_05`) |
+> | **L2 Conductor** *(Hub Tree, formerly "Sergeant")* | Кластерний агрегатор: збирає 50-200 Soldiers lambda-stream, обчислює **локальний GA** на (σ, ρ, β) для свого кластера, відправляє candidate sets до Queen. Динамічно обирається на основі `vcap` та якості зв'язку. | Solar + LiFePO4 (TBD spec, `00_02 §3` L2 placeholder) |
+> | **L3 Queen** *(Mother Tree)* | Federated Learning aggregator: обмінюється gradient updates з сусідніми Queens (privacy-preserving), компілює нові mruby contracts, broadcast'ить chunked OTA до Conductors → Soldiers. | 20Ah LiFePO4 + Solar + LTE backbone (`02_05`) |
 >
 > Q-learning, GA-evolution, online TinyML training **відбуваються на L2/L3 з обмеженням енергії на 4-5 порядків легшим**, ніж у Soldier. До Soldier приходить **готовий compiled bytecode через OTA** (магік `0x45544952 "RITE"` у `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`, `03_02`). Це усуває "self-training on edge" парадокс і зберігає TRL 11+ roadmap реалістичним.
 

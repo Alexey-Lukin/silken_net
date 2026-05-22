@@ -13,7 +13,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — політика затверджена, **6 з 10 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state — див. §3). Залишаються 🟡: Queen-to-Queen Backhaul Mesh, Helium Queen-side LoRaWAN (ARCH.34), Ingress Proxy (INF.4/INF.6), Sergeant L2 (HW.27). Production-rollout — Phase 2 (`00_06`).
+- **Поточний TRL:** TRL 6 — політика затверджена, **6 з 10 Implementation Anchors ✅ Реалізовано** (Web3CircuitBreaker, Multi-RPC fallback, Queen self-telemetry, CoAP retry, Chainlink router probe, Manual review terminal state — див. §3). Залишаються 🟡: Queen-to-Queen Backhaul Mesh, Helium Queen-side LoRaWAN (ARCH.34), Ingress Proxy (INF.4/INF.6), Conductor L2 (HW.27, formerly "Sergeant"). Production-rollout — Phase 2 (`00_06`).
 - **Пов'язані модулі:**
   - 8-рівнева архітектура + конвеєр → [`00_02_System_Architecture_and_12_Chain_Pipeline`](00_02_System_Architecture_and_12_Chain_Pipeline)
   - Hardware Queen → [`02_05_Queen_Hardware_and_Starlink`](02_05_Queen_Hardware_and_Starlink)
@@ -29,7 +29,7 @@
 
 - **ARCH.26** (TDMA Sync Windows + CAD) — без них Queen-to-Queen Backhaul fallback неможливий для Soldier'ів за межами Queen RX, документується відкрито у [`00_08`](00_08_Action_Plan_Tracker).
 - **INF.4 / INF.6** — Ingress Proxy / CoAP Proxy перед Rails — критично для буферизації uplink при недоступності backend pods на Akash.
-- **HW.27** (Sergeant L2) — повноцінний failover на L2 cluster heads потребує Sergeant вузлів (TRL 1, концепція).
+- **HW.27** (Conductor L2, formerly "Sergeant") — повноцінний failover на L2 cluster heads потребує Conductor вузлів (Hub Trees, TRL 1, концепція).
 - **ARCH.35** (Queen Flash Ring Buffer) — без SPI NOR Flash overflow tier, CIFO 50-slot RAM cache переповнюється за ~30 хв при 100 Soldiers/Queen × 1 пакет/год → дані стираються. SPI flash чип (W25Q32, ~$0.50) знімає це обмеження.
 - **ARCH.34** (Queen-side LoRaWAN Helium fallback) — без LoRaWAN MAC stack на Queen, L3 Helium резерв архітектурно неможливий. Soldier-side `helium_compat_emit` (попередній план) відкинуто через flash/RAM constraints STM32WLE5JC + Soldier не повинен знати про uplink topology.
 
@@ -156,7 +156,7 @@ end
 | Queen-to-Queen Backhaul Mesh | Concept у [`02_05 §Q2Q`](02_05_Queen_Hardware_and_Starlink) | 🟡 Concept, planned Phase 2 |
 | Helium fallback emit (Queen-side LoRaWAN) | Queen firmware `queen_helium_lorawan_uplink()` | 🟡 ARCH.34 planned (Soldier-side `helium_compat_emit` відкинуто — Soldier не несе LoRaWAN MAC stack) |
 | Ingress Proxy (CoAP buffer) | INF.4 / INF.6 | 🟡 Planned (P1) |
-| Sergeant L2 cluster heads | [`00_02 §Fractal Stack`](00_02_System_Architecture_and_12_Chain_Pipeline) | 🟡 Concept (HW.27, TRL 1) |
+| Conductor L2 cluster heads (formerly "Sergeant") | [`00_02 §Fractal Stack`](00_02_System_Architecture_and_12_Chain_Pipeline) | 🟡 Concept (HW.27, TRL 1) |
 
 ---
 
