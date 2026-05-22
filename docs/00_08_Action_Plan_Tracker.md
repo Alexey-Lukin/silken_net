@@ -558,6 +558,16 @@
 - [ ] 👤 SEM criteria для приймання партії
 - [ ] 👤 µCT-сканування для верифікації градієнту розміру пор (центр 300–500 → периферія 100–150 µm) при пористості 65 ± 2%
 
+##### Підблокер HW.1.PicoGK — Code-as-CAD Alternative (paralleled R&D track) — `01_02 §6 PicoGK`
+> **Стратегія:** PicoGK (open-source SDF engine від LEAP 71) + C# як AI-агент-сумісна альтернатива nTop GUI. Усуває "GUI-blindness" Cursor/Claude/Copilot та робить геометрію Git-friendly. Не замінює nTop одразу — паралельний evaluation track.
+- [ ] 👤 **Setup C# проєкту:** Visual Studio 2022 або JetBrains Rider, .NET 7+, console project
+- [ ] 👤 **Build PicoGK з GitHub** (`github.com/leap71/PicoGK`) → підключити як бібліотеку
+- [ ] 👤 **Promt template для Claude/Copilot:** Senior C# інженер пише `Zone1Anode` клас з SDF гіроїда (формула sin(x)cos(y)+sin(y)cos(z)+sin(z)cos(x)=0), параметризованим діаметром/пор/wall thickness
+- [ ] 👤 **Stage 1 SLA generation через PicoGK** (паралельно з nTop reference) — порівняти STL output на topology errors
+- [ ] 👤 **Per-species CEM (5 SKU):** pine/oak/broadleaf/mangrove/tropical — параметрична генерація через зміну однієї змінної (`00_06 §7.3` cross-biome generalization)
+- [ ] 👤 **Migration decision gate (Q2 2026):** якщо PicoGK видає clean STL без BREP errors → почати міграцію SSOT з `.ntop` на `.cs` (Git-friendly)
+- [ ] 👤 **Annular barbs SDF:** реалізувати asymmetric triangle profile h=0.3mm у C# для PEEK mechanical lock (`01_01 §4.3`, HW.26)
+
 #### HW.2 — Dual-scale roughness spec
 - **Джерело:** `01_02`
 - **Опис:** Sa 0.5-5 µm, Sv 50-500 nm НЕ передана на завод
@@ -574,6 +584,16 @@
 - [ ] 👤 Запуск 12-тижневого тесту
 - [ ] 👤 ICP-MS аналіз: Ti < 0.1 µg/cm², V < 0.02 µg/cm²
 - [ ] 👤 EIS degradation < 50%
+
+##### Підблокер HW.3.IS — In Silico FEA Aging (Stage 0, mechanics) — `00_04 §4a` Trek C
+> **Стратегія:** Симуляція напружень Ti+PEEK при extreme температурах ще ДО фізичного 12-week теста. Використовуються рівняння Ляме для thick-walled cylinder (Zone 1 ↔ Zone 2 ↔ Zone 3 коаксіальний press-fit). Закриває (a) механічну цілісність PEEK creep на 20-річному horizon'і, (b) сезонні термоциклічні навантаження.
+- [ ] 👤 **FEA setup:** CalculiX (open source, .NET/Python wrappers) або Code_Aster (Python) — заміна ANSYS GUI для AI-агент-сумісного workflow
+- [ ] 👤 **Lamé equations для thick-walled cylinder** — аналітичний baseline для press-fit Zone 1 ↔ Zone 2 (стрес-радіальні/тангенціальні профілі)
+- [ ] 👤 **Thermal expansion mismatch:** α(Ti-6Al-4V) = 8.6 ×10⁻⁶ /K vs α(PEEK) = 47 ×10⁻⁶ /K → σ_thermal = E × Δα × ΔT, перевірка при +40°C/-30°C
+- [ ] 👤 **PEEK creep на 20 років:** Findley power law або Norton-Bailey extrapolation — чи витримає press-fit радіальне навантаження?
+- [ ] 👤 **DFT (PySCF) для іонного бар'єра:** енергія активації дифузії Ti²⁺/Ti⁴⁺/Al³⁺/V³⁺ через PEEK-матрицю → корозія НЕ отруїть ферменти за 20+ років
+- [ ] 👤 **Cross-link з MD (OpenMM):** деформація геніпін-хітозан-CNC матриці при ±5% strain (тигмоморфогенез) × 10,000 циклів — підтвердження псевдопластики
+- [ ] 👤 **Output:** report до Stage 2 in vitro тестів — `docs/protocols/anchor/fea_aging/`
 
 #### HW.4 — Self-healing coating (NEW: zone-restricted)
 - **Джерело:** `01_02` §3 + `01_02` §3.6

@@ -395,6 +395,7 @@ TPMS-гіроїд із періодичними каналами діє як **�
 
 - **LTspice** (безкоштовний): симуляція аналогового ланцюга EBFC → BQ25570 → Supercap — перевірка струмів витоку та кривої заряду
 - **KiCad** (open-source): проектування PCB; Gerber-файли для JLCPCB/PCBWay
-- **nTop** (✅ ліцензія отримана): параметрична генерація TPMS-геометрії анода
+- **nTop** (✅ ліцензія отримана): параметрична генерація TPMS-геометрії анода — **GUI-only workflow** (AI-агенти сліпі)
+- **PicoGK + C#** (open source, LEAP 71): Code-as-CAD альтернатива nTop. Voxel SDF engine, повністю Python/C#-кервана генерація гіроїда через математичні формули — Git-friendly, AI-readable. Деталі — [`01_02 §6 PicoGK`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS).
 - **ANSYS / Abaqus / COMSOL:** FEA press-fit, CFD ксилемного потоку, фононні bandgap
 - **Wokwi** (хмарний): симуляція логіки STM32 та периферії до отримання плат

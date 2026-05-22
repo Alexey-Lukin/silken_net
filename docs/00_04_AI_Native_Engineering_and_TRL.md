@@ -72,16 +72,30 @@ AI-агенти розглядаються як автономні інжене�
 
 ### 4a. In Silico як HIL-аналог для Hardware Stream (Zero-Lab підхід)
 
-Hardware Stream історично був "повільним" потоком (друк металу → лабораторія → in vitro → польові тести). Це **усувається** через `01_03 §3.4` Zero-Lab Pipeline, який є **HIL-еквівалентом для біоелектрохімії**:
+Hardware Stream історично був "повільним" потоком (друк металу → лабораторія → in vitro → польові тести). Це **усувається** через два паралельні Code-as-Engineering трекі:
+
+**Трек A — Code-as-Chemistry** (`01_03 §3.4`): AlphaFold 3 + OpenMM + PySCF + Cantera для EBFC ферментів та матриці.
+**Трек B — Code-as-CAD** (`01_02 §6 PicoGK`): PicoGK + C# для гіроїдної топології через SDF/вокселі.
+**Трек C — Code-as-Mechanics** (планується): FEA-симуляція напружень Ti+PEEK при +40°C/-30°C через open-source CalculiX або Code_Aster з Python wrapper'ами (закриває питання PEEK creep та механічної цілісності 20-річного horizon'у).
 
 | HIL для Logic/Verification | In Silico для Hardware |
 |---|---|
-| Симулюємо Soldier/Queen без фізичного MCU | Симулюємо EBFC без фізичних ферментів |
-| Прискорює backend/contracts до TRL 8 | Прискорює EBFC chemistry до TRL 4 |
-| Python/Ruby тести | Python (AlphaFold 3, OpenMM, PySCF, Cantera) |
-| Cursor/Copilot пишуть тести | AI-clones пишуть симуляційні скрипти |
+| Симулюємо Soldier/Queen без фізичного MCU | Симулюємо EBFC без фізичних ферментів + анкер без DMLS-партії |
+| Прискорює backend/contracts до TRL 8 | Прискорює Module 01 (Chemistry + CAD + Mechanics) до TRL 4 |
+| Python/Ruby тести | Python (AlphaFold 3, OpenMM, PySCF, Cantera) + C# (PicoGK) + Python (CalculiX) |
+| Cursor/Copilot пишуть тести | AI-clones пишуть симуляційні скрипти + CAD-як-код + FEA-меші |
 
-**Ефект:** Module 01 (Chemistry) тепер може досягати TRL 3.5–4 **до** першого Ti-monet у CRO. R&D-бюджет на хімію падає у 5–10 разів. ЧНУ Мінаєв (`08_01 §1.1`) переходить з Gaussian/ORCA на PySCF для повної Python-keros інтеграції з Silken Net AI-pipeline.
+**Архітектурний принцип "AI-агенти сліпі у GUI":** Cursor/Claude/Copilot не можуть клікати по нодах nTop, ANSYS Workbench, SolidWorks. Це **блокер AI-Native Engineering**. Усі CAD/FEA/chemistry інструменти Silken Net мігрують на **text-based code-driven API**:
+
+| Категорія | GUI-only (legacy) | Code-driven (Silken Net target) |
+|---|---|---|
+| Chemistry | Gaussian / ORCA (workflow GUI) | **PySCF** (Python) |
+| CAD parametric | nTop, SolidWorks, Fusion 360 | **PicoGK** (C#) |
+| FEA mechanical | ANSYS Workbench, Abaqus | **CalculiX / Code_Aster** (Python wrappers) |
+| Molecular Dynamics | VMD, NAMD GUI | **OpenMM** (Python) |
+| Кінетика | (Custom GUIs) | **Cantera / COPASI** (Python) |
+
+**Ефект:** Module 01 (Hardware) тепер може досягати TRL 3.5–4 **до** першого Ti-monet чи DMLS-партії. R&D-бюджет на хімію падає у 5–10 разів, на CAD-варіанти — у 10–20 разів (per-species 5 SKU генеруються за хвилини, не місяці). ЧНУ Мінаєв (`08_01 §1.1`) переходить з Gaussian/ORCA на PySCF для повної Python-керос інтеграції з Silken Net AI-pipeline.
 
 ---
 
