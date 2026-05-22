@@ -18,8 +18,17 @@
 #include <mruby/array.h>
 #include <math.h>     // [FW.6] isfinite() для валідації RTC Lorenz state
 
-// Підключаємо скомпільовану нейромережу TinyML
-#include "silken_net_audio_model.h"
+// Підключаємо скомпільовану нейромережу TinyML.
+// Якщо реальної моделі ще немає (BLOCKER-1+2, docs/03_03), fallback на
+// IP-friendly stub з контрактом (Run_Inference signature, TENSOR_ARENA_SIZE,
+// NUM_CLASSES) — це дозволяє make size-check / arm-none-eabi-size verify
+// RAM-budget без розкриття IP моделі.
+#if defined(__has_include) && __has_include("silken_net_audio_model.h")
+#  include "silken_net_audio_model.h"
+#else
+#  include "silken_net_audio_model_stub.h"
+#  warning "TinyML: using silken_net_audio_model_stub.h — production model not present (BLOCKER-1)"
+#endif
 
 // Підключаємо низькорівневий драйвер радіо (Radio Middleware)
 #include "radio.h"
@@ -842,14 +851,43 @@ static inline float TinyML_Validate_Threshold(float raw, float fallback_default)
     return raw;
 }
 
+// Production-visibility counter (saturating uint8) для випадків, коли
+// TinyML_Apply_Thresholds() відкинув OTA payload — або через NaN/out-of-range
+// окремого порогу, або через інверсію warn ≥ crit. Embedded LOG_ERR на
+// headless STM32 марний, тому замість printf — лічильник, який backend може
+// piggybacked'ити на телеметрію і будувати Grafana panel
+// "OTA threshold inversion rate per Soldier". Скидається на 0 тільки при
+// VBAT loss / cold-boot (SRAM ініціалізується нулями).
+//
+// Wiring до телеметрії — окрема задача (потребує перерозподілу бітів у
+// 21-байтному пакеті або додавання поля до status byte); до того часу
+// counter спостережний через GDB/SEGGER під час лабораторного debugging.
+uint8_t tinyml_threshold_invalid_count = 0;
+
 // Перевірка пари: гарантує warning < critical, інакше дефолти на обидва.
 // Зберігає інваріант зон (SILENCE < WARNING < CRITICAL) навіть при частково
 // корумпованому RTC або злочинно сформованому OTA payload.
+//
+// Side-effect: інкрементує tinyml_threshold_invalid_count, якщо raw input
+// не пройшов валідацію (NaN/out-of-range) АБО пара інвертована.
 static inline void TinyML_Apply_Thresholds(float warn_raw, float crit_raw,
                                             float* warn_out, float* crit_out) {
     float w = TinyML_Validate_Threshold(warn_raw, TINYML_DEFAULT_WARNING);
     float c = TinyML_Validate_Threshold(crit_raw, TINYML_DEFAULT_CRITICAL);
-    if (!(w < c)) {
+
+    // Детектуємо fallback: NaN != NaN (true), out-of-range raw → w != warn_raw.
+    // Інверсія детектується окремо через !(w < c).
+    uint8_t warn_rejected = (w != warn_raw);
+    uint8_t crit_rejected = (c != crit_raw);
+    uint8_t inverted      = !(w < c);
+
+    if (warn_rejected || crit_rejected || inverted) {
+        if (tinyml_threshold_invalid_count < 255) {
+            tinyml_threshold_invalid_count++;
+        }
+    }
+
+    if (inverted) {
         // Інверсія/рівність → відкочуємо обидва на дефолти
         w = TINYML_DEFAULT_WARNING;
         c = TINYML_DEFAULT_CRITICAL;

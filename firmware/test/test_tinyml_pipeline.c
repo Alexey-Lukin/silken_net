@@ -131,11 +131,26 @@ static float TinyML_Validate_Threshold(float raw, float fallback_default) {
     return raw;
 }
 
+/* Production-visibility counter mirror — see firmware/soldier/main.c §1.11
+ * (`tinyml_threshold_invalid_count`). Saturates at 255, reset by SRAM init. */
+static uint8_t tinyml_threshold_invalid_count = 0;
+
 static void TinyML_Apply_Thresholds(float warn_raw, float crit_raw,
                                      float* warn_out, float* crit_out) {
     float w = TinyML_Validate_Threshold(warn_raw, TINYML_DEFAULT_WARNING);
     float c = TinyML_Validate_Threshold(crit_raw, TINYML_DEFAULT_CRITICAL);
-    if (!(w < c)) {
+
+    uint8_t warn_rejected = (w != warn_raw);
+    uint8_t crit_rejected = (c != crit_raw);
+    uint8_t inverted      = !(w < c);
+
+    if (warn_rejected || crit_rejected || inverted) {
+        if (tinyml_threshold_invalid_count < 255) {
+            tinyml_threshold_invalid_count++;
+        }
+    }
+
+    if (inverted) {
         w = TINYML_DEFAULT_WARNING;
         c = TINYML_DEFAULT_CRITICAL;
     }
@@ -826,6 +841,79 @@ TEST(test_threshold_rtc_roundtrip_bit_exact)
 }
 
 /* ══════════════════════════════════════════════════════════════════
+ * 9. [FW.18 — production-visibility] Threshold Invalid Counter
+ *    Tracks how often TinyML_Apply_Thresholds rejected OTA payload
+ *    (NaN, out-of-range, pair inversion). Backend piggybacks on
+ *    telemetry → Grafana panel "OTA threshold corruption rate".
+ * ══════════════════════════════════════════════════════════════════ */
+
+TEST(test_invalid_count_valid_pair_no_increment)
+{
+    tinyml_threshold_invalid_count = 0;
+    float w = 0, c = 0;
+    TinyML_Apply_Thresholds(0.55f, 0.85f, &w, &c);
+    ASSERT_EQ(tinyml_threshold_invalid_count, 0);
+}
+
+TEST(test_invalid_count_increments_on_inversion)
+{
+    tinyml_threshold_invalid_count = 0;
+    float w = 0, c = 0;
+    TinyML_Apply_Thresholds(0.90f, 0.50f, &w, &c);  /* warn > crit */
+    ASSERT_EQ(tinyml_threshold_invalid_count, 1);
+}
+
+TEST(test_invalid_count_increments_on_nan_warn)
+{
+    tinyml_threshold_invalid_count = 0;
+    float w = 0, c = 0;
+    float nan_val = (float)NAN;
+    TinyML_Apply_Thresholds(nan_val, 0.85f, &w, &c);
+    ASSERT_EQ(tinyml_threshold_invalid_count, 1);
+}
+
+TEST(test_invalid_count_increments_on_out_of_range_crit)
+{
+    tinyml_threshold_invalid_count = 0;
+    float w = 0, c = 0;
+    TinyML_Apply_Thresholds(0.55f, 99.0f, &w, &c);  /* crit > MAX_VALID */
+    ASSERT_EQ(tinyml_threshold_invalid_count, 1);
+}
+
+TEST(test_invalid_count_increments_on_cold_boot_zeros)
+{
+    tinyml_threshold_invalid_count = 0;
+    float w = 0, c = 0;
+    float zero = test_uint32_to_float(0x00000000);  /* RTC fresh boot */
+    TinyML_Apply_Thresholds(zero, zero, &w, &c);
+    /* Both raw=0 → below MIN_VALID → both rejected. Counter +1 (one call). */
+    ASSERT_EQ(tinyml_threshold_invalid_count, 1);
+}
+
+TEST(test_invalid_count_accumulates_across_calls)
+{
+    tinyml_threshold_invalid_count = 0;
+    float w = 0, c = 0;
+    TinyML_Apply_Thresholds(0.55f, 0.85f, &w, &c);    /* valid → 0 */
+    TinyML_Apply_Thresholds(0.90f, 0.50f, &w, &c);    /* inverted → 1 */
+    TinyML_Apply_Thresholds(0.60f, 0.85f, &w, &c);    /* valid → 1 */
+    TinyML_Apply_Thresholds((float)NAN, 0.85f, &w, &c); /* NaN → 2 */
+    ASSERT_EQ(tinyml_threshold_invalid_count, 2);
+}
+
+TEST(test_invalid_count_saturates_at_255)
+{
+    tinyml_threshold_invalid_count = 254;
+    float w = 0, c = 0;
+    TinyML_Apply_Thresholds(0.90f, 0.50f, &w, &c);  /* +1 → 255 */
+    ASSERT_EQ(tinyml_threshold_invalid_count, 255);
+    TinyML_Apply_Thresholds(0.90f, 0.50f, &w, &c);  /* would be 256 → clamp */
+    ASSERT_EQ(tinyml_threshold_invalid_count, 255);
+    TinyML_Apply_Thresholds(0.90f, 0.50f, &w, &c);  /* still 255 */
+    ASSERT_EQ(tinyml_threshold_invalid_count, 255);
+}
+
+/* ══════════════════════════════════════════════════════════════════
  * MAIN
  * ══════════════════════════════════════════════════════════════════ */
 int main(void)
@@ -895,6 +983,15 @@ int main(void)
     RUN(test_apply_thresholds_valid_pair_passes_through);
     RUN(test_apply_thresholds_partial_corruption_one_default);
     RUN(test_threshold_rtc_roundtrip_bit_exact);
+
+    printf("\n  [FW.18] OTA Threshold Invalid Counter (production-visibility):\n");
+    RUN(test_invalid_count_valid_pair_no_increment);
+    RUN(test_invalid_count_increments_on_inversion);
+    RUN(test_invalid_count_increments_on_nan_warn);
+    RUN(test_invalid_count_increments_on_out_of_range_crit);
+    RUN(test_invalid_count_increments_on_cold_boot_zeros);
+    RUN(test_invalid_count_accumulates_across_calls);
+    RUN(test_invalid_count_saturates_at_255);
 
     (void)_prev;
 
