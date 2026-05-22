@@ -27,7 +27,7 @@ _Все, що фізично інтегрується в живе дерево �
 
 - [01\_01\_Coaxial\_Gyroid\_Topology\_and\_PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) (3-зонний дизайн анкера: Ti-гіроїд + PEEK-терморозрив + катодний фланець)
 - [01\_02\_Ti\_6Al\_4V\_Metallurgy\_and\_DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) (DMLS друк металу + HIP + відпал)
-- [01\_03\_EBFC\_Enzymatic\_Bio\_Fuel\_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) (Двошарова GOx+Catalase / GDH-альтернатива + Laccase-AuNP DET — >500 mV з глюкози)
+- [01\_03\_EBFC\_Enzymatic\_Bio\_Fuel\_Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) (EBFC Gen 2.0: dgrFAD-GDH анод + Laccase/ZIF-nanozyme катод + Genipin-Chitosan-CNC матриця + Nafion-g-PSBMA цвітеріонна мембрана — >500 mV з глюкози, 20–25 років)
 - [01\_04\_CODIT\_and\_Xylemointegration](01_04_CODIT_and_Xylemointegration) (Біологічна реакція дерева на імплантат + anti-overgrowth shield катода)
 
 ## ⚡ Модуль 02: Апаратне Забезпечення (The Capsule)

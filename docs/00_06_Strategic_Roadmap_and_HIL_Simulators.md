@@ -205,15 +205,15 @@
 ### 7.3. Gap #3 — Cross-Species / Cross-Biome Generalization
 
 **Поточний стан:** Архітектура жорстко заточена під **Pinus sylvestris** Черкаського бору:
-- Хімія EBFC (`01_03`): GOx + Catalase / Laccase оптимізовані під pH 4.5–5.5
+- Хімія EBFC (`01_03`): Gen 2.0 baseline — dgrFAD-GDH + Laccase/ZIF-nanozyme + Genipin-Chitosan-CNC + Nafion-g-PSBMA — оптимізовані під pH 4.5–5.5 (хвойні)
 - Геометрія анкера (`01_01 §5.5`): пори 100–500 µm — оптимум для трахеїд 20–50 µm
 - Lorenz-константи (`03_04`): σ=10, ρ=28, β=8/3, OPTIMAL_Z=29 — калібровано на pine baseline
 - Хірургічний протокол (`01_04 §3`): Flush Mount + microfrezing для м'якої soft-wood сосни
 
 **Чому це обмежує:**
 - Дуб (*Quercus*) — пори 200–400 µm (кільцепориста) → потрібна інша геометрія гіроїда
-- Береза (*Betula*) — pH ксилеми 5.5–6.5 (м'якше); GOx деградуватиме повільніше, але Laccase оптимум зсунутий
-- Мангрові (*Rhizophora*) — sapsap salinity 10–35 ppt → Cl⁻-інгібіція лаккази критична
+- Береза (*Betula*) — pH ксилеми 5.5–6.5 (м'якше); FAD-GDH pH-вікно 4.0–8.0 покриває, але потенціали Os та Laccase потребують перекалібрування
+- Мангрові (*Rhizophora*) — sap salinity 10–35 ppt → у Gen 2.0 ZIF-нанозим уже здатний нейтралізувати Cl⁻ (+7.5% активності), але потребує валідації на 30+ ppt
 - Тропічні евкаліпти (*Eucalyptus*) — phenolic compounds 2–5× вищі за pine → CODIT-реакція агресивніша
 - **«Planetary intelligence» означає biome-agnostic**, поточна архітектура — **species-specific instrument**
 

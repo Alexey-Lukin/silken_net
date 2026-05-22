@@ -585,24 +585,35 @@
 - [ ] 👤 Тест: 10× вищий Rct
 - [ ] 👤 **Thiol-Michael interphase** (`01_02` §1a.1): тест адгезії self-healing шару при ростовому навантаженні, порівняння з простою APTES-силанізацією — додано в `01_02`
 
-#### HW.5 — Enzyme lifespan + H₂O₂ neutralization
-- **Джерело:** `01_03` § 1–3 + Legacy notes
-- **Опис:** Деградація ферментів у кислому ксилемному середовищі (pH 4.5–5.5) + токсичність H₂O₂ від GOx
-- **Gen 1.0 baseline (REVISED 2026-05-16 — двошарова архітектура):** Двошаровий стек на аноді (`01_03` §2.1) — внутрішній електроактивний шар `fMWCNT + Os-полімер + GOx ONLY` (без катализи, щоб уникнути electron shunting через heme b group катализи + steric blocking FAD-центру GOx); зовнішній захисний шар `chitosan hydrogel + Catalase ALONE` (перехоплює H₂O₂ через diffusion barrier, регенерує O₂ назад у GOx); зовнішня Nafion-мембрана. На катоді — `Laccase + AuNPs + MWCNT` DET (`01_03` §2.2). Ціль 3–5 років.
-- **Gen 2.0 ціль:** 20–25 років (GDH мутанти — без H₂O₂, стек спрощується до одного шару + Laccase/nanozyme + ZIF інкапсуляція)
-- [ ] 👤 **Gen 1.0 anode (двошарова — пріоритет):** внутрішній GOx+Os electroactive layer + зовнішній Catalase-in-chitosan protective layer — `01_03` §2.1
-- [ ] 👤 **Gen 1.0 anode (Combi-CLEA — NEGATIVE CONTROL):** одношарова Combi-CLEA для прямого порівняння (підтвердження ефекту shunting via CV/EIS) — `01_03` §2.1
-- [ ] 👤 **Gen 1.0 cathode:** Laccase-AuNP DET stack замість Os-полімерного MET — `01_03` §2.2
-- [ ] 👤 Розробка protective polymer matrix
-- [ ] 👤 Тест Chitosan-шару (pH-буферизація) — додано в `01_03`
-- [ ] 👤 Тест Nafion-покриття (селективна мембрана) — додано в `01_03`
-- [ ] 👤 Тест комбінації Chitosan + Nafion (пріоритетний варіант)
-- [ ] 👤 Тест: 3–5 років функціонального ферменту (Gen 1.0)
-- [ ] 👤 **Gen 2.0:** GDH (Bacillus megaterium Q252L/E170K) замість GOx+CAT (взагалі без H₂O₂) — `01_03` §3.1
-- [ ] 👤 **Gen 2.0:** Laccase + laccase-like nanozymes (Cu/Ce/Au ZIF) на катоді — `01_03` §3.2
-- [ ] 👤 **Gen 2.0:** ZIF-інкапсуляція для 20–25 років — `01_03` §3.3
-- [ ] 👤 **Bridge Gen 1.0→2.0:** мікропориста тейп-ізоляція + міцелярний модифікований Nafion (>1 рік lab data) — додано в `01_03` §2
-- [ ] 👤 **Поліпірол (PPy)** як кополімерний підсилювач MET-стеку (паралельний з осмієвим полімером) — додано в `01_03` §2
+#### HW.5 — Enzyme lifespan + Gen 2.0 chemistry stack
+- **Джерело:** `01_03` § 1–3 (REWRITTEN 2026-05-22)
+- **Опис:** Довгострокова стабільність біоелектрохімічного стеку у кислому ксилемному середовищі (pH 4.5–5.5) при повній імунологічній невидимості для CODIT-каскаду. Цільовий термін **20–25 років**.
+- **Gen 2.0 baseline (REWRITTEN 2026-05-22 — одношарова FAD-GDH архітектура):** Архітектура `01_03` повністю переписана на Gen 2.0. Gen 1.0 (GOx + Catalase + глутаральдегід + PEG) **визнана нежиттєздатною** і виключена з усіх лабораторних протоколів — не використовується навіть як baseline. Новий стек:
+  - **Анод (Zone 1):** одношаровий `fMWCNT + Os-полімер + dgrFAD-GDH` (деглікозильована FAD-залежна глюкозодегідрогеназа з *Glomerella cingulata* або *Aspergillus*) → не виробляє H₂O₂, O₂-незалежна, повний pH 4.0–8.0 діапазон. Каталаза не потрібна.
+  - **Захисна матриця:** **Genipin-Chitosan-CNC** (геніпін як нетоксичний зшивач замість глутаральдегіду + целюлозні нанокристали 2–6% для псевдопластики проти тигмоморфогенезу).
+  - **Катод (Zone 3):** Гібрид `Laccase + ZIF-nanozyme` (nCoCuCeZIF/Lac або nCuCeAuZIF/Lac) — ×10 power density, 75% активності після 10 днів, **+7.5% з 0.25 М NaCl** (vs -41.7% для чистої Laccase), резервний безферментний каталізатор при денатурації.
+  - **Anti-biofouling мембрана (Шар 5):** **Nafion-g-PSBMA** (цвітеріонний полімер ковалентно прищеплений через SI-ATRP) — 8 молекул води/ланцюг, блокує абієтинову кислоту/смоли, σ(H⁺) = 45.2 мС/см, UCST winter-lock @ 5°C.
+- [ ] 👤 **Gen 2.0 anode (priority):** одношаровий dgrFAD-GDH+Os electroactive layer + geniпin-chitosan-CNC матриця — `01_03` §2.1
+- [ ] 👤 **Gen 2.0 cathode (priority):** Laccase + nCoCuCeZIF nanozyme гібрид на MWCNT — `01_03` §2.2
+- [ ] 👤 **Цвітеріонна мембрана:** SI-ATRP синтез Nafion-g-PSBMA (контрактна синтез-лабораторія) — `01_03` §2.1 Шар 5
+- [ ] 👤 **Геніпін постачання:** контракт з Challenge Bioproducts (~$50–80/г); тест cross-linking хітозану при pH 4.5 — `01_03` §2.1 Шар 4
+- [ ] 👤 **dgrFAD-GDH:** контрактна експресія у *Pichia pastoris* + ферментативне деглікозилювання (PNGase F або endo-H) — `01_03` §1
+- [ ] 👤 **ZIF-нанозим синтез:** сольвотермальний синтез nCoCuCeZIF (співпраця з нанохімією ЧНУ або НАН України) — `01_03` §1 Катод
+- [ ] 👤 **CNC (целюлозні нанокристали):** закупка з ENERON або синтез з alpha-целюлози кислотним гідролізом
+- [ ] 👤 **Поліпірол (PPy)** як опційний кополімерний підсилювач MET-стеку (паралельний з осмієвим полімером) — `01_03` §2.3
+- [ ] 👤 Test 30-day stability на Ti-coins у синтетичному ксилемному соку — `01_03` §3.5
+- [ ] 👤 UCST winter-lock тест PSBMA: -10°C → +25°C цикл, регідратація мембрани — `01_03` §2.1 Шар 5
+
+##### Підблокер HW.5.IS — In Silico Stage 0 (Zero-Lab) — `01_03 §3.4`
+> **Стратегія:** Computational reverse engineering хімії ДО першого Ti-monet. AlphaFold 3 + OpenMM + PySCF + Cantera повністю Python-кервані → інтеграція з AI-clones для масової вибірки варіацій. Гейт TRL 3 → 4: усі 4 рівні дають позитив ДО CRO contract.
+- [ ] 👤 **L1 AlphaFold 3 / ESMFold:** генерація `.pdb` деглікозильованої FAD-GDH (Glomerella cingulata, UniProt → simulate PNGase F)
+- [ ] 👤 **L2 OpenMM MD:** RMSD-тест dgrFAD-GDH у Genipin-Chitosan-CNC матриці при pH 4.5, 10–100 нс
+- [ ] 👤 **L3 PySCF DFT:** HOMO/LUMO Os-полімер vs FAD-кофактор — програмно довести OCV > 500 мВ за теорією Маркуса
+- [ ] 👤 **L3b PySCF:** hopping integrals для DET через nCoCuCeZIF — емуляція T1/T2/T3 кластеру лаккази
+- [ ] 👤 **L4 Cantera:** дифузія глюкози через Nafion-g-PSBMA + Michaelis-Menten → програмний `delta_t`
+- [ ] 👤 **Інфраструктура:** workstation NVIDIA RTX 4090 ($5–10K) АБО AWS p5.2xlarge / GCP g2-standard-12 ($2–5/год)
+- [ ] 👤 **Repo structure:** `docs/protocols/ebfc/in_silico/` — `dgrFAD_GDH_alphafold.pdb`, `openmm_genipin_stability.py`, `pyscf_os_fad_homo_lumo.ipynb`, `cantera_psbma_diffusion.py`
+- [ ] 👤 **Joint Q1-publication з ЧНУ Мінаєвим:** "In Silico Design of Long-Lived Enzymatic Bio-Fuel Cells for Tree-Integrated Energy Harvesting" — `08_03` Стаття 28
 
 #### HW.6 — Resin barrier + Flush Mount Installation
 - **Джерело:** `01_04` §3 + Legacy notes
@@ -612,7 +623,7 @@
 - [ ] 👤 **Microfrezing** (`01_04` §3.3): закупити прецизійні кінцеві фрези типу MicroX (карбід вольфраму + TiN-покриття), стендовий тест на колодах vs стандартні шнекові свердла — порівняння resinosis intensity
 - [ ] 👤 30° installation angle verification (узгоджено з Flush Mount)
 - [ ] 👤 Hydrophilic coating test
-- [ ] 👤 PEG обробка гіроїда (Шар 5 анодного стеку, `01_03 §2.1 Крок 5`, REVISED 2026-05-16): PEG MW 4000–8000 dip-coat поверх Nafion 117, ~1–2 µm; смола зісковзує з PEG-покритих пор; H⁺-провідність Nafion зберігається >95%
+- [ ] 👤 **Nafion-g-PSBMA анти-resin coating** (Шар 5 анодного стеку, `01_03 §2.1 Крок 5`, REWRITTEN 2026-05-22): цвітеріонний полі(сульфобетаїн метакрилат) ковалентно прищеплений до Nafion через SI-ATRP; 8 H₂O/ланцюг блокує абієтинову кислоту термодинамічно; протонна провідність зростає до 45.2 мС/см; UCST @ 5°C winter-lock. **PEG (Gen 1.0) повністю виключений** — недостатній гідратаційний шар, окислювальне розщеплення
 - [ ] 👤 Hydrophobic/hydrophilic gradient test (PTFE знизу, гідрофільний верх) — додано в `01_04` §3.4
 - [ ] 👤 Thermal installation test: T° нагріву (150-200°C), час витримки — додано в `01_04` §3.5 (резервний метод, тільки для нефункціоналізованих анкерів)
 - [ ] 👤 FEM-моделювання теплового поля в Ti-6Al-4V анкері (λ = 6.7 W/m·K)
@@ -781,7 +792,7 @@
 - **Джерело:** `01_01` §6.1 BLOCKER-2
 - **Опис:** Тризонний анкер — складна збірка. Передчасний перехід на DMLS-партію 100 шт. без верифікації базових принципів був методологічною помилкою. Цей блокер фіксує гейт: 100 анкерів замовляємо **тільки** після проходження двох попередніх етапів.
 - [ ] 👤 **Stage 1 — SLA макети (5 шт):** друк прозорого фотополімеру (Form 3 або SLA-сервіс) для перевірки form & fit, ергономіки, Flush Mount step drilling, допусків press-fit «пластик-в-пластик»
-- [ ] 👤 **Stage 2 — Ti-coins (10 шт, 10×10×1 мм):** SLM-друк + EAAE (з обов'язковим dehydrogenation bake `01_02 §1.3 Крок 5b`) → паралельне тестування **трьох** анодних архітектур: (a) двошаровий GOx+Os внутрішній / Catalase-chitosan зовнішній (priority, `01_03 §2.1`), (b) Combi-CLEA одношарова (negative control), (c) GDH (Bacillus megaterium Q252L/E170K) одношарова; + Laccase-AuNP DET катодний стек → in vitro CV/EIS у синтетичному ксилемному соку (рецептура від біо-хабу ЧНУ, [`08_01`](08_01_University_R_and_D_Protocols))
+- [ ] 👤 **Stage 2 — Ti-coins (10 шт, 10×10×1 мм):** SLM-друк + EAAE (з обов'язковим dehydrogenation bake `01_02 §1.3 Крок 5b`) → **Gen 2.0 анодний стек** (одношаровий dgrFAD-GDH + Os polymer в geniпin-chitosan-CNC матриці поверх fMWCNT, `01_03 §2.1`) + **Gen 2.0 катодний стек** (Laccase + nCoCuCeZIF nanozyme гібрид DET, `01_03 §2.2`) + **Nafion-g-PSBMA анти-resin coating** → in vitro CV/EIS у синтетичному ксилемному соку (рецептура від біо-хабу ЧНУ, [`08_01`](08_01_University_R_and_D_Protocols)). 30-day stability gate. Chloride tolerance test (0.25 М NaCl). UCST winter-lock тест (-10°C → +25°C цикл)
 - [ ] 👤 **Stage 3 — Full anchor (3–5 шт):** SLM+HIP анодних секцій, CNC PEEK-втулок, SLM/EBM катодних фланців, повний press-fit + EBFC у синтетичному соку
 - [ ] 👤 **Stage 4 — Партія 100 шт:** після підтвердження Stage 3 — оптове замовлення для польових випробувань
 
@@ -1224,7 +1235,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 
 #### UNI.13 — ChMA: біохімія EBFC + токсикологія
 - **Джерело:** `08_06` | **Пріоритет: P2**
-- **Опис:** Черкаська медична академія (ChMA). Потрібно: (1) валідація FAD-GDH + Laccase інгібіції при pH ксилеми (4.5-5.5), (2) токсикологічні тести іонів Ti/Al/V (поглинання деревом, безпека для ecosystem). **⚠️ Посади науковців у docs не верифіковані** через офіційний сайт ChMA — критичний блокер
+- **Опис:** Черкаська медична академія (ChMA). Потрібно: (1) валідація **dgrFAD-GDH + Laccase/ZIF-nanozyme** інгібіції при pH ксилеми (4.5-5.5) (Gen 2.0 baseline, `01_03`), (2) токсикологічні тести іонів Ti/Al/V (поглинання деревом, безпека для ecosystem), (3) **геніпін cross-linking** як нетоксична альтернатива глутаральдегіду — біосумісність тести. **⚠️ Посади науковців у docs не верифіковані** через офіційний сайт ChMA — критичний блокер
 - [ ] 👤 **СПОЧАТКУ:** Верифікувати посади всіх науковців ChMA через офіційний сайт
 - [ ] 👤 Cold contact з ректором ChMA
 - [ ] 👤 Joint biochemistry protocol для EBFC Gen 2.0 (cross-ref HW.5)
@@ -1391,7 +1402,7 @@ DOC.9 — потребує лабораторного вимірювання TX-
 | E.36 | PostGIS Generated Column (geo_boundary) замість тригера | `04_01` | Post-TRL 8 |
 | E.37 | TimescaleDB для telemetry_logs: hypertables + continuous aggregates | `04_01` | >100M рядків/місяць |
 | E.38 | Press-Fit фаски: R ≥ 0.2 мм для зняття напружень у PEEK + **annular barbs (h=0.3mm)** на Zone 1 та Zone 3 контактних поверхнях для PEEK creep mechanical lock (`01_01 §4.3`, HW.26) | `01_01` | Включити у nTop (HW.1, HW.26) |
-| E.39 | **EBFC Gen 2.0:** FAD-GDH + Laccase/nanozymes + ZIF (20-25 років) | `01_03` §3 | ЧНУ lab testing |
+| E.39 | **EBFC Gen 2.0 (BASELINE, REWRITTEN 2026-05-22):** dgrFAD-GDH (deglycosylated) + Laccase/ZIF-nanozyme + Genipin-Chitosan-CNC матриця + Nafion-g-PSBMA цвітеріонна мембрана. 20–25 років. Gen 1.0 (GOx+CAT+GA+PEG) виключена як нежиттєздатна. | `01_03` §1–3 | ЧНУ lab testing |
 | E.40 | **Ignion Virtual Antenna™:** NN02-310 як альтернатива Yageo/Taoglas 868 МГц | `02_01` §5 | Evaluation kit + VSWR тест |
 | DIFF.1 | `Wallet#lock_and_mint!` threshold = runtime param (не hardcoded) | `04_02` | Informational, no action |
 | DIFF.7 | ✅ SNR parameter wired into Queen CIFO eviction as tiebreaker — див. E.8 | `03_02`, `04_06` | Реалізовано (2026-05-03) |

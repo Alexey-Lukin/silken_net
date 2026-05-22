@@ -70,6 +70,19 @@ AI-агенти розглядаються як автономні інжене�
 
 > **Декаплінг через HIL:** Logic Stream і Verification Stream **не блокуються** Hardware Stream завдяки HIL-симуляторам ([`00_06 §HIL`](00_06_Strategic_Roadmap_and_HIL_Simulators)). Це підкреслює, що "Concurrent" у назві методології означає реальну паралельність, а не Waterfall з косметичними рев'ю.
 
+### 4a. In Silico як HIL-аналог для Hardware Stream (Zero-Lab підхід)
+
+Hardware Stream історично був "повільним" потоком (друк металу → лабораторія → in vitro → польові тести). Це **усувається** через `01_03 §3.4` Zero-Lab Pipeline, який є **HIL-еквівалентом для біоелектрохімії**:
+
+| HIL для Logic/Verification | In Silico для Hardware |
+|---|---|
+| Симулюємо Soldier/Queen без фізичного MCU | Симулюємо EBFC без фізичних ферментів |
+| Прискорює backend/contracts до TRL 8 | Прискорює EBFC chemistry до TRL 4 |
+| Python/Ruby тести | Python (AlphaFold 3, OpenMM, PySCF, Cantera) |
+| Cursor/Copilot пишуть тести | AI-clones пишуть симуляційні скрипти |
+
+**Ефект:** Module 01 (Chemistry) тепер може досягати TRL 3.5–4 **до** першого Ti-monet у CRO. R&D-бюджет на хімію падає у 5–10 разів. ЧНУ Мінаєв (`08_01 §1.1`) переходить з Gaussian/ORCA на PySCF для повної Python-keros інтеграції з Silken Net AI-pipeline.
+
 ---
 
 ## 📊 5. Управління через TRL-Ready Issues

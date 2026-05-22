@@ -109,7 +109,7 @@ Gaia 2.0 / Silken Net об'єднує сім академічних та інд�
 | Параметр | Без MOIC | З MOIC |
 |----------|----------|--------|
 | Кожен параметр смарт-контракту (`OPTIMAL_Z_TARGET=29.0`, `MAX_SUPPLY=1B SCC`, `FRAUD_DEVIATION_THRESHOLD=30%`, `Dynamic Tax=2%`) | Код стартапу | + Q1-публікація + лабораторний тест профільного інституту |
-| Кожен хардверний вузол (тризонний Ti-6Al-4V анкер з Zone 1 гіроїд / Zone 2 PEEK + mechanical lock barbs / Zone 3 фланець з anti-overgrowth shield, двошарова GOx+Os/Catalase-chitosan + Laccase-AuNP EBFC, BQ25570 MPPT, SX1262 LoRa, PEEK-радом IoT-капсули з super-hydrophobic coating) | Концепт | + DFT/FEM/ICP-MS/VNA/EMC дані з акредитованих лабораторій |
+| Кожен хардверний вузол (тризонний Ti-6Al-4V анкер з Zone 1 гіроїд / Zone 2 PEEK + mechanical lock barbs / Zone 3 фланець з anti-overgrowth shield, **EBFC Gen 2.0** — dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme DET, BQ25570 MPPT, SX1262 LoRa, PEEK-радом IoT-капсули з super-hydrophobic coating) | Концепт | + DFT/FEM/ICP-MS/VNA/EMC дані з акредитованих лабораторій |
 | D-MRV pipeline як замінник Verra/Gold Standard | Вимога довіри | + ISO 14064 / ICROA mapping (Гедз, [`08_07` §1.5](08_07_SEU_Economics_and_Legal_Integration)) |
 | Біорізноманіттєвий шар | NDVI-only | + acoustic ground-truth (Mongabay pivot, Стаття 24a) + ботанічна валідація (Спрягайло) |
 
@@ -266,7 +266,7 @@ _(Запропонована тема; студент визначається �
 |-------|--------|
 | **Косенюк Г.В.** | VSWR/КСВ оптимізація SMD-антени під PEEK-радомом (окрема деталь IoT-капсули, ∅20–30 мм, **не плутати з PEEK-втулкою Zone 2** тризонного анкера); 3D-діаграма спрямованості з Ti-анкером (Zone 1 + Zone 3 фланець) як Ground Plane; Link Budget LoRa у лісі (SF=7–9 балансування, → `02_01` §5.3); Reed-Solomon FEC для 21-байтового пакету; Kalman/EMA фільтри для delta\_t Edge AI; CE/FCC compliance roadmap |
 | **Ярмілко А.В.** | Lightweight cryptography integration (AES-256-ECB для LoRa Soldier→Queen, AES-256-CBC для CoAP batch Queen→Rails, HAL\_CRYP); firmware архітектура SPI/DMA для фільтрованих сигналів |
-| Архітектор (Silken Net) | EBFC-джерело живлення (>500 мВ, <500 мкВт; **двошарова GOx+Os/Catalase-chitosan анодна архітектура** + Laccase-AuNP DET — деталі [`01_03 §2.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) revised), STM32WLE5JC RF-конфігурація, 21-байтовий пакет, IP68 механічна специфікація (PEEK Crown капсули — окрема деталь, не Zone 2 анкера; з anti-overgrowth shield + 3D RF Keep-Out ≥ 8mm Z-clearance проти Ti-фланця) |
+| Архітектор (Silken Net) | EBFC Gen 2.0 джерело живлення (>500 мВ, <500 мкВт; **одношарова dgrFAD-GDH+Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA цвітеріонною мембраною** + Laccase/ZIF-nanozyme DET — деталі [`01_03 §2.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) Gen 2.0 rewrite), STM32WLE5JC RF-конфігурація, 21-байтовий пакет, IP68 механічна специфікація (PEEK Crown капсули — окрема деталь, не Zone 2 анкера; з anti-overgrowth shield + 3D RF Keep-Out ≥ 8mm Z-clearance проти Ti-фланця) |
 
 **Магістерська робота (Науковий керівник — Косенюк):**
 _«Радіотехнічна оптимізація мікропотужних IoT-пристроїв у лісовому середовищі: узгодження антенних систем, завадостійке кодування та стохастична фільтрація сигналів EBFC-джерел»_
@@ -642,7 +642,7 @@ _«Дослідження акустичних властивостей пори
 
 | Автор | Внесок |
 |-------|--------|
-| **Бушуєва І.** (ЧМА) | In vitro стабільність GOx/FAD-GDH/Laccase, оптимізація Chitosan+Nafion, 12-тижневий тест EBFC |
+| **Бушуєва І.** (ЧМА) | In vitro стабільність dgrFAD-GDH/Laccase, оптимізація Genipin-Chitosan-CNC + Nafion-g-PSBMA (Gen 2.0), 30-day тест EBFC, chloride tolerance @ 0.25M NaCl |
 | **Мінаєв Б.Ф.** (ЧНУ) | DFT-моделювання адсорбції ферментів на TiO₂, квантовий вихід charge transfer |
 | **Глущенко О.** (ЧМА) | Характеризація Os redox polymer стабільності, cross-linking оптимізація |
 | Архітектор (Silken Net) | EBFC архітектура (01_03), BQ25570 Cold Start вимоги, firmware delta_t специфіка |

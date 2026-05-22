@@ -16,7 +16,7 @@ L5  Rails Backend     Rails 8.1 API, PostgreSQL, Sidekiq (31+ воркерів)
 L4  LoRa Мережа       868 МГц меш, CoAP/UDP, шлюзи Королеви, Starlink/LTE
 L3  Прошивка + AI     STM32WLE5JC, TinyML (CMSIS-NN), mruby Лоренц, AES-256
 L2  Апаратна Капсула  BQ25570 MPPT, суперконденсатор 0.47Ф, Pogo Pin
-L1  Біофізика         Ti-6Al-4V гіроїдний анкер, EBFC (GOx анод + Laccase катод)
+L1  Біофізика         Ti-6Al-4V гіроїдний анкер, EBFC Gen 2.0 (dgrFAD-GDH анод + Laccase/ZIF-nanozyme катод)
 ```
 
 Кожен вузол («Солдат») — це STM32WLE5JC, вбудований у титановий гіроїдний анкер у стовбурі дерева. Ензимний біопаливний елемент (EBFC) перетворює глюкозу ксилемного соку на >500 мВ. Енергія заряджає суперконденсатор 0.47Ф, який живить мікроконтролер. Солдат класифікує звуки (пилка, кавітація, пожежа) через TinyML, обчислює гомеостаз дерева через Атрактор Лоренца (mruby) та відправляє 21-байтні AES-256 пакети через LoRa mesh (868 МГц) до шлюзу «Королева».
@@ -269,7 +269,7 @@ kamal deploy
 **Біомеханіка та Хімія (Модуль 01)**
 - [`01_01`](docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md) — 3-складовий Ti-6Al-4V анкер
 - [`01_02`](docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) — металургія Ti-6Al-4V, DMLS та біосумісність
-- [`01_03`](docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) — EBFC: >500 мВ з глюкози дерева
+- [`01_03`](docs/01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) — EBFC Gen 2.0: >500 мВ з глюкози дерева (dgrFAD-GDH + Laccase/ZIF + Genipin + PSBMA, 20–25 років)
 - [`01_04`](docs/01_04_CODIT_and_Xylemointegration.md) — CODIT та ксилемоінтеграція
 
 **Апаратне Забезпечення (Модуль 02)**
