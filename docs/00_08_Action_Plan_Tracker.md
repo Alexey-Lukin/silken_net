@@ -254,18 +254,26 @@
 - [x] 🤖 Додати CoAP response parsing (замість blind HAL_Delay) — ✅ Виконано через FW.9 (`SIM7070_SendATCommand_WithResponse` + `COAP_MAX_RETRIES=3` retry-логіка з парсингом `OK`/`ERROR` у `Flush_Cache_To_Rails`). Boot-time AT-команди (CNMP/CPSMS/CEDRXS) залишаються на blind delay — вони не у критичному 25-секундному вікні.
 - [x] 🤖 Тести — ✅ 13 host-тестів у `firmware/test/test_queen_logic.c` секція "LoRa RX Ring Buffer (FW.3)": initial empty, pop-on-empty, single push/pop roundtrip, FIFO order preserved, fill to capacity 15, overflow increments drop counter (existing voices preserved), drain+refill wraps correctly, RSSI -128 preserved, ISR simulator drops non-16B / clamps RSSI, **25-сек flush сценарій** (30 ISR пакетів → 15 уцілілих + 15 видимих втрат), count zero after full drain. Усі 126 queen tests зелені (113 baseline + 13 нові FW.3).
 
-#### FW.4 — TinyML `Run_Inference()` закоментований
-- `03_03` | `main.c:355`, `silken_net_audio_model.h` відсутній
-- **Опис:** `Run_Inference()` закоментована; model header відсутній
-- **Блокує:** Acoustic detection (chainsaw, cavitation, wind), Mongabay biodiversity pivot
-- [ ] 👤 Тренування моделі (4 класи: silence/wind/cavitation/chainsaw)
-- [ ] 👤 **IP-friendly stub:** Згенерувати `silken_net_audio_model_stub.h` з `TENSOR_ARENA_SIZE`, `NUM_CLASSES`, сигнатурою `Run_Inference()` — **до** отримання реальної моделі від Бушин/Любченка. Дозволяє пройти `make firmware_ram_budget` без розкриття IP моделі. Деталі — `03_03` BLOCKER-2 (review note 2026-05-22).
-- [ ] 👤 Генерація реального `silken_net_audio_model.h` (після узгодження DSP-шляху §3.2)
-- [ ] 🔗 DSP preprocessing (Path B log-mel default — review note 2026-05-22; fallback Path C TFLM frontend)
-- [ ] 🔗 Verify Tensor Arena size (< 54 KB) через `arm-none-eabi-size firmware.elf` — **обов'язкова перша дія після BLOCKER-1 розблокування**
-- [ ] 🔗 Розкоментувати `Run_Inference()`
-- [ ] 🔗 Host-based тести
+#### FW.4 — TinyML `Run_Inference()` — compilation unblocked, inference TBD
+- `03_03` | `main.c:1422` call-site закоментований; stub додано
+- **Опис:** Compilation більше не блокується (stub fallback 2026-05-22); реальна модель + uncomment call-site залишаються.
+- **Блокує:** Acoustic detection runtime (chainsaw, cavitation, wind), Mongabay biodiversity pivot
+- [x] 🤖 **IP-friendly stub (2026-05-22):** `firmware/soldier/silken_net_audio_model_stub.h` додано з повним контрактом (`Run_Inference` sig, `TENSOR_ARENA_SIZE=16K`, `NUM_CLASSES=5`, `ML_CLASS_*` enums). `main.c` використовує `__has_include` fallback. `make size-check` проходить (16 KB ≤ 50 KB).
+- [ ] 👤 Тренування моделі (Path B log-mel, 5 класів включно з fauna)
+- [ ] 👤 Генерація реального `silken_net_audio_model.h` від ML-партнера (Бушин/Любченко) — заміняє stub автоматично через `__has_include`
+- [ ] 🔗 Verify реальний Tensor Arena size через `arm-none-eabi-size firmware.elf` після інтеграції моделі
+- [ ] 🔗 Розкоментувати `ml_event_id = Run_Inference(...)` у `main.c:1422`
+- [ ] 🔗 Host-based golden vector тести
 - [ ] 🌿 **FW.4-EXT (Mongabay pivot, post-TRL 7):** Розширення моделі з 4 → **5 класів** з додаванням `4 = fauna_activity` (циркадний dawn/dusk soundscape) — див. [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference). Залежить від калібрувального датасету ЧДТУ ПМКТ + ЧНУ Біо-хабу (UNI.11 + UNI.13a). Альтернативна архітектура: спектральний descriptor ACI (Acoustic Complexity Index) на STM32 без NN, як TRL-7 інкремент
+
+#### ✅ FW.18b — OTA threshold invalid counter (production-visibility) — РЕАЛІЗОВАНО
+- `03_03` §FW.18 audit refinement | `firmware/soldier/main.c §1.11` | **P2**
+- **Опис:** Saturating uint8 counter `tinyml_threshold_invalid_count` інкрементується коли `TinyML_Apply_Thresholds` відкидає OTA payload (NaN, out-of-range, інверсія `warn >= crit`). Embedded LOG_ERR марний на headless STM32 — counter дає production visibility замість debugging-toy.
+- **Статус:** ✅ Реалізовано (2026-05-22). 7 host-тестів у `test_tinyml_pipeline.c` (`test_invalid_count_*`): happy-path / inversion / NaN / out-of-range / cold-boot zeros / accumulation / saturation @ 255. 51/51 TinyML тестів зелені.
+- [x] 🤖 Counter declaration + Apply_Thresholds side-effect
+- [x] 🤖 7 host-тестів
+- [ ] 🔗 Wiring до 21-byte LoRa packet (потребує перерозподілу бітів або додавання поля в Status Byte) — окрема задача
+- [ ] 🔗 Backend: Prometheus метрика `tinyml_threshold_invalid_total{soldier_did}` + Grafana panel "OTA threshold corruption rate per Soldier"
 
 ### 🟠 P1 — Важливі
 

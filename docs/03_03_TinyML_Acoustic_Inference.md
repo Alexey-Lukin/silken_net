@@ -33,22 +33,23 @@
 | **DMA Complete ISR (`audio_ready`)** | ✅ Реалізовано (`HAL_ADC_ConvCpltCallback`) |
 | **Memory barrier (`__DMB()`)** | ✅ Реалізовано (між DMA write та CPU read) |
 | **12-bit → float нормалізація** | ✅ Реалізовано (`/ 4095.0f`) |
-| **`Run_Inference()` виклик** | 🔴 BLOCKER — **закоментовано** (`main.c:355` — `// ml_event_id = Run_Inference(...)`) |
-| **`silken_net_audio_model.h`** | 🔴 BLOCKER — **відсутній у репозиторії** |
-| **Tensor Arena (SRAM budget)** | 🔴 BLOCKER — розмір невідомий з коду (визначений у `.h`) |
-| **DSP preprocessing (FFT/MFCC)** | 🟡 ВІДСУТНІЙ — тільки лінійна нормалізація |
+| **`Run_Inference()` виклик** | 🟡 BLOCKER-1 (частково) — оголошення доступне через stub, але call-site `main.c:1422` залишається закоментованим до інтеграції реальної моделі ML-партнером |
+| **`silken_net_audio_model.h`** | 🟡 BLOCKER-2 (compilation unblocked) — реального файлу немає, але `silken_net_audio_model_stub.h` додано (2026-05-22) з контрактом (`Run_Inference` sig, `TENSOR_ARENA_SIZE=16K`, `NUM_CLASSES=5`, `ML_CLASS_*`). main.c використовує `__has_include` fallback. Дозволяє `arm-none-eabi-size firmware.elf` для реальної RAM verification |
+| **Tensor Arena (SRAM budget)** | 🟡 BLOCKER-3 (estimate) — stub фіксує 16 KB (Path B baseline §3.2); реальне значення міряється після інтеграції моделі через `make size-check` або `arm-none-eabi-size firmware.elf` |
+| **DSP preprocessing (FFT/MFCC)** | 🟢 Path B (log-mel) **офіційно зафіксовано** (2026-05-22, §3.2 Decision Matrix). Implementation gate — ML-партнер тренує з `librosa.feature.melspectrogram` (без DCT) + firmware додає CMSIS-DSP Mel-bank |
 | **Confidence threshold (0.80)** | ✅ FW.18: dual-threshold у RTC DR13/DR14 (defaults 0.60/0.85), OTA-tunable через `CMD_SET_AUDIO_THRESHOLDS` (опкод `0x9D`) — Soldier dispatcher та 7 host-тестів імплементовано (`firmware/soldier/main.c:1003-1108`, `firmware/test/test_soldier_logic.c:4436-4442`). |
+| **OTA threshold invalid counter** | ✅ Реалізовано (2026-05-22): `tinyml_threshold_invalid_count` (saturating uint8) у `firmware/soldier/main.c §1.11` — інкрементується на NaN/out-of-range/inversion. 7 host-тестів у `test_tinyml_pipeline.c`. Wiring до 21-byte packet — TBD. |
 | **Decision: Cavitation → acoustic_events++** | ✅ Реалізовано (але мертве: inference закоментована) |
 | **Decision: Chainsaw → Emergency LoRa TX** | ✅ Реалізовано (але мертве: inference закоментована) |
-| **Host-based tests для аудіо-пайплайну** | ✅ Реалізовано (`firmware/test/test_tinyml_pipeline.c`, 25 тестів) |
+| **Host-based tests для аудіо-пайплайну** | ✅ Реалізовано (`firmware/test/test_tinyml_pipeline.c`, **51 тест** включно з 7 новими для invalid counter) |
 
 ---
 
 ## 🛑 Блокери
 
-### 🔴 BLOCKER-1: `Run_Inference()` — Виклик інференсу закоментовано
+### 🟡 BLOCKER-1: `Run_Inference()` — Виклик інференсу закоментовано
 
-**Статус:** Відкрито. Критичний. TinyML фактично не працює.
+**Статус:** Частково розблоковано (2026-05-22). Compilation більше не блокується (stub fallback закриває include), але call-site `main.c:1422` залишається закоментованим до інтеграції реальної моделі ML-партнером. TinyML inference поки що не виконується runtime.
 
 **Файл:** `firmware/soldier/main.c:355`
 
@@ -75,9 +76,9 @@
 
 ---
 
-### 🔴 BLOCKER-2: `silken_net_audio_model.h` відсутній у репозиторії
+### 🟡 BLOCKER-2: `silken_net_audio_model.h` — compilation unblocked via stub
 
-**Статус:** Відкрито. Критичний. Репозиторій не компілюється з TinyML.
+**Статус:** Compilation unblocked (2026-05-22). `firmware/soldier/silken_net_audio_model_stub.h` додано як IP-friendly fallback з повним контрактом (`Run_Inference` signature, `TENSOR_ARENA_SIZE=16K`, `NUM_CLASSES=5`, `ML_CLASS_*` enums). `main.c` використовує `__has_include` — якщо реальна модель є, бере її; інакше падає на stub з `#warning`. Реальний `silken_net_audio_model.h` від ML-партнера залишається TBD.
 
 **Файл:** `firmware/soldier/main.c:21`
 
@@ -92,22 +93,30 @@
 3. SSOT для Edge AI є неповним — Wiki не може зафіксувати ключові параметри.
 4. Будь-який розробник, що клонує репо, отримає помилку компіляції в режимі з TinyML.
 
-**Необхідна дія:**
-- Закомітити `silken_net_audio_model.h` у `firmware/soldier/` (якщо модель не є комерційною таємницею).
-- Або надати stub-версію `silken_net_audio_model_stub.h` з реальними константами (`TENSOR_ARENA_SIZE`, `NUM_CLASSES`, сигнатура `Run_Inference()`) — **IP-friendly стратегія**, що дозволяє команді розробляти логіку та фіксувати RAM-бюджет, не розкриваючи внутрішню структуру моделі (ваги, шари, тип квантизації). Stub підставляється в `#include` через `-D` flag компілятора або через `firmware/soldier/CMakeLists.txt` symlink.
-- Документувати архітектуру моделі в цій Wiki (кількість шарів, тип: TFLite/X-CUBE-AI, розмір).
+**Виконано (2026-05-22):**
+- ✅ `firmware/soldier/silken_net_audio_model_stub.h` додано — повний контракт без розкриття IP.
+- ✅ `main.c:22-27` використовує `__has_include` fallback: реальна модель має пріоритет, stub — fallback з `#warning`.
+- ✅ `make size-check` тепер проходить з stub (RAM budget verification без реальної моделі).
 
-**Блокує:** Компіляція firmware, повнота SSOT, будь-яка OTA оновлення моделі.
+**Залишається (для ML-партнера, Бушин/Любченко):**
+- Натренувати модель за Path B (log-mel, §3.2 Decision Matrix).
+- Згенерувати реальний `silken_net_audio_model.h` через X-CUBE-AI або вручну з TFLite Micro.
+- Розкоментувати `ml_event_id = Run_Inference(...)` у `main.c:1422`.
+- Виміряти фактичний `TENSOR_ARENA_SIZE` через `arm-none-eabi-size firmware.elf` та оновити stub baseline (16 KB).
 
-> 💡 **Stub файл — рекомендована структура:**
-> ```c
-> // firmware/soldier/silken_net_audio_model_stub.h
-> #define TENSOR_ARENA_SIZE      (16 * 1024)  // 16 KB — TBD ML-партнером
-> #define NUM_CLASSES            5            // silence/wind/cavitation/chainsaw/fauna
-> #define MODEL_INPUT_SIZE       512          // або 40×N для Path B/C
-> uint8_t Run_Inference(const float* input, float* confidence_out);
-> ```
-> Це дозволяє пройти крізь `arm-none-eabi-size firmware.elf` для RAM-budget верифікації **до** отримання реальної моделі від Бушин/Любченка.
+**Структура stub (актуальна):**
+```c
+// firmware/soldier/silken_net_audio_model_stub.h
+#define ML_CLASS_SILENCE         0u
+#define ML_CLASS_WIND            1u
+#define ML_CLASS_CAVITATION      2u
+#define ML_CLASS_CHAINSAW        3u
+#define ML_CLASS_FAUNA_ACTIVITY  4u   /* Mongabay pivot, post-TRL 7 */
+#define NUM_CLASSES              5u
+#define MODEL_INPUT_SIZE         40u  /* Path B log-mel bands */
+#define TENSOR_ARENA_SIZE        (16u * 1024u)
+uint8_t Run_Inference(const float* buffer, float* confidence);
+```
 
 ---
 
@@ -343,7 +352,7 @@ if (ml_confidence >= tinyml_critical_threshold) {
 //     }
 ```
 
-> **🔍 Audit refinement (review note 2026-05-22):** Хоча `TinyML_Apply_Thresholds` коректно атомарно відновлює інваріант `warning < critical` (та діапазон [0.01, 0.99]), **рекомендовано додати явне `LOG_ERR` повідомлення** у фазі валідації, коли OTA-команда пропонує `w >= c` або поза-діапазонні значення. Це робить debugging OTA-помилок прозорішим (наприклад, помилка байт-порядку чи коруптний CoAP-payload видасть себе одразу). Поточні 7 host-тестів покривають інваріант, але не перевіряють диагностичну видимість. Доповнити одним тестом `test_apply_thresholds_inversion_logs_error()`.
+> **✅ Audit refinement (implemented 2026-05-22):** Embedded LOG_ERR на headless STM32 марний (немає консолі), тому замість printf реалізовано **saturating uint8 counter** `tinyml_threshold_invalid_count` (`firmware/soldier/main.c §1.11`), який інкрементується коли `TinyML_Apply_Thresholds` відкидає OTA payload через NaN, out-of-range або інверсію `warn >= crit`. Це справжня production-visibility — backend може piggybacked'ити лічильник на телеметрію → Grafana panel "OTA threshold corruption rate per Soldier". 7 нових host-тестів у `test_tinyml_pipeline.c` (`test_invalid_count_*`) покривають happy-path, NaN, out-of-range, inversion, cold-boot zeros, accumulation, saturation @ 255. Wiring до 21-byte packet — окрема задача.
 
 **Стан:** Soldier-side OTA CMD dispatcher для `CMD_SET_AUDIO_THRESHOLDS` (`0x9D`)
 **реалізовано** у `firmware/soldier/main.c` (секція 1.14: `Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS`,
@@ -973,11 +982,11 @@ TinyML-результат безпосередньо впливає на Lorenz 
 
 | # | Критерій | Статус |
 |---|----------|--------|
-| 1 | `silken_net_audio_model.h` закоміщено в репозиторій | 🔴 Відкрито |
-| 2 | `Run_Inference()` розкоментовано та функціонує | 🔴 Відкрито |
-| 3 | `TENSOR_ARENA_SIZE` задокументовано з реального файлу | 🔴 Відкрито |
-| 4 | Memory Map верифіковано (`arm-none-eabi-size`) | 🔴 Відкрито |
-| 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`, 25 тестів) |
+| 1 | `silken_net_audio_model.h` закоміщено в репозиторій | 🟡 Stub додано (2026-05-22), реальна модель TBD ML-партнером |
+| 2 | `Run_Inference()` розкоментовано та функціонує | 🔴 Відкрито (потребує реальної моделі) |
+| 3 | `TENSOR_ARENA_SIZE` задокументовано з реального файлу | 🟡 Stub фіксує 16 KB (Path B baseline); реальна — TBD |
+| 4 | Memory Map верифіковано (`arm-none-eabi-size`) | 🟡 `make size-check` проходить зі stub; ARM elf — після інтеграції моделі |
+| 5 | Host-based тести TinyML pipeline додані | ✅ Реалізовано (`test_tinyml_pipeline.c`, **51 тест** включно з 7 для invalid counter) |
 | 6 | Smoke-тест: class 2 → `acoustic_events++` верифіковано | 🔴 Відкрито |
 | 7 | Smoke-тест: class 3 → `Trigger_Emergency_LoRa_TX()` верифіковано | 🔴 Відкрито |
 | 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests + Soldier OTA CMD dispatcher `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`) з 7 host-tests |
@@ -1200,6 +1209,7 @@ OtaPackagerService → 512-byte chunks → OtaTransmissionWorker → Queen → S
 - **[04_01 Data Models and Entities](04_01_Data_Models_and_Entities)** — модель `TelemetryLog`, поле `acoustic_events`
 - **[04_02 Business Logic and Services](04_02_Business_Logic_and_Services)** — `TelemetryUnpackerService`, `EwsAlertCreatorService`
 - **`firmware/soldier/main.c`** — реалізація Phase 1.5 (рядки 316–365) та ISR (рядки 731–737)
-- **`firmware/soldier/silken_net_audio_model.h`** — ⚠️ відсутній (BLOCKER-2)
+- **`firmware/soldier/silken_net_audio_model.h`** — TBD ML-партнером (реальна модель)
+- **`firmware/soldier/silken_net_audio_model_stub.h`** — ✅ IP-friendly stub (2026-05-22, BLOCKER-2 partial close)
 - **CMSIS-DSP Documentation** — `arm_rfft_fast_f32`, `arm_cmplx_mag_f32`
 - **TensorFlow Lite for Microcontrollers** — https://www.tensorflow.org/lite/microcontrollers

@@ -1148,12 +1148,12 @@ HAL_RNG_DeInit(&hrng);                                  // DeInit одразу �
 Firmware логіка тестується на x86 з GCC (не потребує ARM toolchain):
 
 ```bash
-make -C firmware/test             # Всі 264 тестів
-make -C firmware/test queen       # Queen-only (83 тестів)
-make -C firmware/test soldier     # Soldier-only (105 тестів)
-make -C firmware/test bio_contract # Bio-Contract (33 тестів)
-make -C firmware/test tinyml      # TinyML pipeline (25 тестів)
-make -C firmware/test encryption  # AES encryption (18 тестів)
+make -C firmware/test             # Всі 511 тестів (260 soldier + 135 queen + 44 bio_contract + 51 tinyml + 21 encryption)
+make -C firmware/test queen       # Queen-only (135 тестів)
+make -C firmware/test soldier     # Soldier-only (260 тестів)
+make -C firmware/test bio_contract # Bio-Contract (44 тестів)
+make -C firmware/test tinyml      # TinyML pipeline (51 тест, включно з 7 для FW.18 OTA invalid counter)
+make -C firmware/test encryption  # AES encryption (21 тестів)
 ```
 
 **CI:** Firmware тести інтегровані в GitHub Actions (`firmware_test` job у `.github/workflows/ci.yml`).
