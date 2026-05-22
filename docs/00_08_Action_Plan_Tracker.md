@@ -259,9 +259,10 @@
 - **Опис:** `Run_Inference()` закоментована; model header відсутній
 - **Блокує:** Acoustic detection (chainsaw, cavitation, wind), Mongabay biodiversity pivot
 - [ ] 👤 Тренування моделі (4 класи: silence/wind/cavitation/chainsaw)
-- [ ] 👤 Генерація `silken_net_audio_model.h`
-- [ ] 🔗 DSP preprocessing (FFT/MFCC або вбудований у модель)
-- [ ] 🔗 Verify Tensor Arena size (< 54 KB)
+- [ ] 👤 **IP-friendly stub:** Згенерувати `silken_net_audio_model_stub.h` з `TENSOR_ARENA_SIZE`, `NUM_CLASSES`, сигнатурою `Run_Inference()` — **до** отримання реальної моделі від Бушин/Любченка. Дозволяє пройти `make firmware_ram_budget` без розкриття IP моделі. Деталі — `03_03` BLOCKER-2 (review note 2026-05-22).
+- [ ] 👤 Генерація реального `silken_net_audio_model.h` (після узгодження DSP-шляху §3.2)
+- [ ] 🔗 DSP preprocessing (Path B log-mel default — review note 2026-05-22; fallback Path C TFLM frontend)
+- [ ] 🔗 Verify Tensor Arena size (< 54 KB) через `arm-none-eabi-size firmware.elf` — **обов'язкова перша дія після BLOCKER-1 розблокування**
 - [ ] 🔗 Розкоментувати `Run_Inference()`
 - [ ] 🔗 Host-based тести
 - [ ] 🌿 **FW.4-EXT (Mongabay pivot, post-TRL 7):** Розширення моделі з 4 → **5 класів** з додаванням `4 = fauna_activity` (циркадний dawn/dusk soundscape) — див. [`03_03` §10](../docs/03_03_TinyML_Acoustic_Inference). Залежить від калібрувального датасету ЧДТУ ПМКТ + ЧНУ Біо-хабу (UNI.11 + UNI.13a). Альтернативна архітектура: спектральний descriptor ACI (Acoustic Complexity Index) на STM32 без NN, як TRL-7 інкремент
@@ -386,25 +387,23 @@
 - [x] 🤖 Magic check + HMAC verification = dual gate (host-test framework + fail-safe RAM wipe)
 - [ ] 🟡 mbedTLS HMAC-SHA256 compute on STM32 HASH peripheral — deferred до lab integration (analog FW.30 mbedTLS deferred TODO)
 
-#### FW.25 — TinyML DSP-path choice gate (A/B/C)
-- `03_03` §3.2 Decision Matrix + BLOCKER-5 | `firmware/soldier/main.c:1417-1419` | **P0 (Mongabay pivot)** для класу 4 fauna; **P2** для класів 0–3 (Path A робочий)
-- **Owner (revised 2026-05-17):** **Primary: Бушин або Любченко (ЧНУ ФОТІУС, ML)** — DSP-path рішення upstream; **Secondary: Ярмілко (ЧНУ ФОТІУС, embedded)** — integration consultant після вибору шляху
-- **Опис (re-framed 2026-05-17):** Це **choice gate**, не "implement MFCC". Аудит SSOT показав, що:
-  1. Існує **3 принципово різних DSP-шляхи** для CNN-based ESC (див. [`03_03 §3.2`](../docs/03_03_TinyML_Acoustic_Inference)):
-     - **Path A** (raw 1D CNN, поточна нормалізація): 0 KB firmware DSP, ~20-40 KB Tensor Arena, ~10-25 ms inference. Робочий для класів 0–3, субоптимальний для fauna.
-     - **Path B** (log-mel + 2D CNN): ~3-5 KB Flash DSP, ~15-30 KB Tensor Arena, ~12-18 ms inference. **Default-рекомендація** для bioacoustic — стандарт ESC (Salamon & Bello 2015; BirdNET).
-     - **Path C** (TFLM `signal::microfrontend` op): 0 KB custom firmware DSP, ~25-35 KB Tensor Arena, ~15-22 ms inference. Frontend op вбудований у TFLite-граф.
-  2. **Повний MFCC з DCT** (попередня пропозиція) — **не рекомендовано** для CNN. DCT-декорреляція знищує spatial structure, яку згортки exploit'ить. Класичний speech-recognition вибір, не сучасний ESC.
-  3. CMSIS-DSP **не має готової мел-функції** (тільки повний MFCC). Path B потребує custom Mel-filterbank ~50 рядків C, або переходу на Path C (TFLM frontend) без custom коду.
-  4. **Mongabay підсилення:** Delgado et al. на 119 ділянках Коста-Ріки інструментально показали `forest cover ≠ forest function` — розрізнення доступне через **spectral structure**, не часову область. Це робить Path B/C **сильно бажаним** для класу 4 fauna, але не "MFCC категорично" як попередньо проголошувалось.
-- [ ] 👤 Узгодити з ML-партнером (Бушин CNN [`08_02 §1.5`](../docs/08_02_Cybernetic_and_Mathematical_Validation) + Любченко GA [`08_02 §1.8`](../docs/08_02_Cybernetic_and_Mathematical_Validation)): обраний шлях A/B/C; який preprocessing вбудований у модель?
-- [ ] 🤖 **Залежно від обраного шляху:**
-  - Path A → залишити нормалізацію, перевести зусилля на більшу INT8 модель
-  - Path B → CMSIS-DSP `arm_rfft_fast_f32` + custom Mel-filterbank + `arm_vlog_f32` (НЕ повний MFCC `arm_mfcc_f32`)
-  - Path C → інтегрувати TFLM `signal::microfrontend` op у runtime — нуль custom firmware DSP коду
-- [ ] 🤖 Verify TENSOR_ARENA budget per chosen path (cross-ref FW.26 + BLOCKER-3); найбільший — Path A; найменший — Path B
-- [ ] 🤖 Тести: золотий вектор inference (наперед відома класифікація) — формат залежить від обраного шляху
+#### FW.25 — TinyML DSP-path: **Path B (log-mel) SELECTED** [DECISION 2026-05-22]
+- `03_03` §3.2 Decision Matrix + BLOCKER-5 | `firmware/soldier/main.c:1417-1419` | **P0** — implementation gate, не choice gate
+- **Owner (revised 2026-05-22):** **Primary: Бушин або Любченко (ЧНУ ФОТІУС, ML)** — тренування 2D-CNN з log-mel features (`librosa.feature.melspectrogram` без DCT); **Secondary: Ярмілко (ЧНУ ФОТІУС, embedded)** — CMSIS-DSP integration (`arm_rfft_fast_f32` + custom Mel-bank + `arm_vlog_f32`)
+- **Опис (FINALIZED 2026-05-22):** Choice gate **закрито**. Архітектурне рішення: **Path B (log-mel spectrogram + 2D CNN)** як офіційний baseline. Обґрунтування:
+  1. **Path A провалюється на fauna (клас 4):** layered soundscape (комахи 4–8 кГц + птахи 1–6 кГц + амфібії 0.5–3 кГц) має ідентичну часову огинаючу з шумом вітру/дощу — розрізнення можливе тільки через spectral structure. Time-domain 1D CNN на STM32WLE5JC (64 KB SRAM) не вистачить ємності навчити FFT-features з нуля. Path A залишається fast-path MVP для 4-class (без fauna), якщо ML-партнер недоступний.
+  2. **Path C (TFLM microfrontend) має більший Tensor Arena overhead** (+5-10 KB vs Path B) — критично на 64 KB SRAM. Path C залишається fallback'ом, якщо ML-партнер натисне на TFLM end-to-end через Edge Impulse workflow.
+  3. **ESC консенсус:** Salamon & Bello 2015 (ESC-50), BirdNET 2021, UrbanSound8K — усі сходяться на log-mel для CNN-based ESC. DCT-крок MFCC декорелює ознаки для GMM/HMM (speech anachronism), але знищує spatial structure для 2D-CNN.
+  4. **CMSIS-DSP вже в стеку** (FW.21 EMA, FW.5 Lorenz). Custom Mel-bank ~50 рядків C додасться без зміни toolchain.
+  5. **Mongabay pivot** робить fauna стратегічним — рішення мусить бути fauna-ready з самого початку.
+- [x] 🤖 **Architectural decision (2026-05-22):** Path B як офіційний baseline зафіксовано в `03_03 §3.2` Decision Matrix + BLOCKER-5 closed
+- [ ] 👤 ML-партнер (Бушин/Любченко) формально підтверджує тренувальний pipeline на log-mel features (без DCT) — переведення FW.25 з "implementation gate" у "executing"
+- [ ] 🤖 **Path B implementation:** CMSIS-DSP `arm_rfft_fast_f32` + custom Mel-filterbank (40 bands, `sparse triplet` для Flash economy) + `arm_vlog_f32`. **НЕ використовувати `arm_mfcc_f32`** (повний MFCC з DCT — anti-pattern для CNN ESC).
+- [ ] 🤖 Verify TENSOR_ARENA budget для Path B (~15-30 KB target; cross-ref FW.26 + BLOCKER-3)
+- [ ] 🤖 Тести: золотий вектор inference (наперед відома класифікація) на log-mel input
 - [ ] 🌿 Cross-ref UNI.11 + UNI.13a: акустичний датасет dawn/dusk Черкаського бору
+- [ ] 🤖 Фалбек-план: якщо ML-партнер сильно натисне на Path C (Edge Impulse / TFLM end-to-end) — допустимо, але потребує повторної верифікації Tensor Arena
+- [x] 🤖 **SSOT update (2026-05-17):** Decision Matrix synchronized across `03_03 §3.2/§3.3/§10.2/§10.5/§10.6/§10.7`, `08_02 §1.5/§1.8`, `08_03` Стаття 24a, `08_04 §8.2 ЛАНЦЮГ 6` + `08_04 §3 Acoustic Hardware`
 - [x] 🤖 **SSOT update (2026-05-17):** `03_03 §3.2 Decision Matrix` + `03_03 §3.3 latency per path` + BLOCKER-5 re-framed як choice gate + §10.2/10.5/10.6/10.7 синхронізовано + `fauna_mfcc_accumulator` → `fauna_feature_accumulator` (path-agnostic) + `08_02 §1.5 Бушин` + `08_02 §1.8 Любченко` FW.25 ownership clarification + `08_03` Стаття 24a архітектор-роль оновлено + `08_04 §8.2 ЛАНЦЮГ 6` перерозподілено (ML upstream, Ярмілко secondary) + `08_04 §3 Acoustic Hardware` таблиця оновлена
 
 #### FW.26 — TENSOR_ARENA_SIZE ніколи не верифіковано

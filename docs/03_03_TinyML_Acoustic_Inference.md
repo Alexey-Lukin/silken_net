@@ -94,10 +94,20 @@
 
 **Необхідна дія:**
 - Закомітити `silken_net_audio_model.h` у `firmware/soldier/` (якщо модель не є комерційною таємницею).
-- Або надати stub-версію з реальними константами (`TENSOR_ARENA_SIZE`, `NUM_CLASSES` тощо) для документування.
+- Або надати stub-версію `silken_net_audio_model_stub.h` з реальними константами (`TENSOR_ARENA_SIZE`, `NUM_CLASSES`, сигнатура `Run_Inference()`) — **IP-friendly стратегія**, що дозволяє команді розробляти логіку та фіксувати RAM-бюджет, не розкриваючи внутрішню структуру моделі (ваги, шари, тип квантизації). Stub підставляється в `#include` через `-D` flag компілятора або через `firmware/soldier/CMakeLists.txt` symlink.
 - Документувати архітектуру моделі в цій Wiki (кількість шарів, тип: TFLite/X-CUBE-AI, розмір).
 
 **Блокує:** Компіляція firmware, повнота SSOT, будь-яка OTA оновлення моделі.
+
+> 💡 **Stub файл — рекомендована структура:**
+> ```c
+> // firmware/soldier/silken_net_audio_model_stub.h
+> #define TENSOR_ARENA_SIZE      (16 * 1024)  // 16 KB — TBD ML-партнером
+> #define NUM_CLASSES            5            // silence/wind/cavitation/chainsaw/fauna
+> #define MODEL_INPUT_SIZE       512          // або 40×N для Path B/C
+> uint8_t Run_Inference(const float* input, float* confidence_out);
+> ```
+> Це дозволяє пройти крізь `arm-none-eabi-size firmware.elf` для RAM-budget верифікації **до** отримання реальної моделі від Бушин/Любченка.
 
 ---
 
@@ -126,12 +136,17 @@
 | **Залишок для Tensor Arena** | **~54 000 B** |
 | **Залишок мінус типовий stack (8 KB)** | **~46 000 B** |
 
-Теоретично достатньо, але без фактичного значення `TENSOR_ARENA_SIZE` — ризик реальний.
+Теоретично достатньо (**~25 KB пік з fauna-вікном** — див. §7), але без фактичного `TENSOR_ARENA_SIZE` це залишається **"освіченим припущенням"**. Після розблокування `main.c` (BLOCKER-1) **першою дією** має бути:
 
-**Необхідна дія:**
-- Отримати та зафіксувати `TENSOR_ARENA_SIZE` з `silken_net_audio_model.h`.
-- Провести Memory Map аналіз (`arm-none-eabi-size firmware.elf`) та задокументувати результат.
-- Якщо Tensor Arena > 32 KB → розглянути зменшення `ota_buffer[1024]` (1 KB → 512 B) або зменшення аудіо-вікна.
+```bash
+make firmware_ram_budget   # custom target → arm-none-eabi-size firmware.elf
+```
+
+**Необхідна дія (порядок виконання):**
+1. Отримати stub або реальний `silken_net_audio_model.h` (BLOCKER-2 — stub-стратегія IP-friendly).
+2. Розкоментувати `Run_Inference()` (BLOCKER-1, `main.c:355`).
+3. Скомпілювати firmware → запустити `arm-none-eabi-size firmware.elf` → зафіксувати фактичні `.text/.data/.bss` сегменти.
+4. Порівняти з прогнозом §7 (~25 KB peak); якщо overshoot → зменшити `ota_buffer[1024]` (1 KB → 512 B) або аудіо-вікно.
 
 **Блокує:** Безпечна робота системи, SRAM planning, OTA updates.
 
@@ -160,9 +175,9 @@
 
 ---
 
-### 🟡 BLOCKER-5: DSP-шлях не обраний (FW.25 choice gate)
+### 🟢 BLOCKER-5: DSP-шлях обрано — Path B (log-mel) [CLOSED 2026-05-22]
 
-**Статус:** Відкрито. **Choice gate** — рішення про DSP-шлях downstream від ML-партнера (FW.4).
+**Статус:** ✅ Choice gate **closed**. Архітектурне рішення зафіксовано як **Path B (log-mel spectrogram)** — деталі §3.2 Decision Matrix. Очікує формального підтвердження від ML-партнера (Бушин/Любченко) у training pipeline + переходу від "choice gate" до "implementation gate".
 
 **Файл:** `firmware/soldier/main.c:1417-1419`
 
@@ -194,6 +209,11 @@ for(int i = 0; i < 512; i++) {
    - **Path B:** додати `arm_rfft_fast_f32()` + `arm_cmplx_mag_f32()` + custom Mel-filterbank + `arm_vlog_f32()`. **НЕ додавати `arm_mfcc_f32`** (повний MFCC з DCT — не оптимальний для CNN).
    - **Path C:** інтегрувати TFLM `signal::microfrontend` op у TFLite runtime; firmware DSP — нуль рядків коду.
 3. Задокументувати фактичну архітектуру моделі у `silken_net_audio_model.h` (BLOCKER-2).
+
+> 🎯 **Архітектурна рекомендація (review note 2026-05-22):** Враховуючи **Mongabay pivot** як стратегічний пріоритет (`§10`, 5-й клас fauna), **Path B (log-mel spectrogram) рекомендований як офіційний default**:
+> - **Чому НЕ Path A:** Raw audio працює для класів 0–3 (кавітація, бензопила), але **вкрай неефективний** для біоакустики, де ключова ознака — структура звуку у **частотній області** (layered soundscape).
+> - **Чому НЕ Path C:** TFLM `microfrontend` "чистіший" (firmware DSP = 0 рядків), але має **дещо більший RAM-overhead** ніж custom Mel-bank Path B. Path C залишається fallback'ом якщо ML-партнер обере його за simplicity.
+> - **Дія:** Зафіксувати Path B як baseline у *Firmware_Architecture_Audit* після формального підтвердження від Бушин/Любченко. Це переводить FW.25 з "choice gate" у "implementation gate".
 
 **Блокує:** Точність класифікації, особливо для класу 4 fauna. Класи 0–3 можуть бути MVP-сумісними з Path A (раннє розкоментування `Run_Inference()`).
 
@@ -322,6 +342,8 @@ if (ml_confidence >= tinyml_critical_threshold) {
 //         break;
 //     }
 ```
+
+> **🔍 Audit refinement (review note 2026-05-22):** Хоча `TinyML_Apply_Thresholds` коректно атомарно відновлює інваріант `warning < critical` (та діапазон [0.01, 0.99]), **рекомендовано додати явне `LOG_ERR` повідомлення** у фазі валідації, коли OTA-команда пропонує `w >= c` або поза-діапазонні значення. Це робить debugging OTA-помилок прозорішим (наприклад, помилка байт-порядку чи коруптний CoAP-payload видасть себе одразу). Поточні 7 host-тестів покривають інваріант, але не перевіряють диагностичну видимість. Доповнити одним тестом `test_apply_thresholds_inversion_logs_error()`.
 
 **Стан:** Soldier-side OTA CMD dispatcher для `CMD_SET_AUDIO_THRESHOLDS` (`0x9D`)
 **реалізовано** у `firmware/soldier/main.c` (секція 1.14: `Soldier_Handle_CMD_SET_AUDIO_THRESHOLDS`,
@@ -572,9 +594,26 @@ for(int i = 0; i < 512; i++) {
 >    жодного custom DSP коду.
 >
 > Тому **рішення про DSP — upstream від ML-партнера**, не firmware'у. Нижче
-> наведено три повноцінні шляхи з honest cost analysis. Default-рекомендація:
-> **Path B (log-mel spectrogram)** для CNN-based 5-class з fauna, з fallback
-> на Path C, якщо ML-партнер обирає TFLM з audio frontend.
+> наведено три повноцінні шляхи з honest cost analysis.
+>
+> ## ✅ DECISION (2026-05-22): **Path B (log-mel spectrogram) офіційно зафіксовано як baseline**
+>
+> Архітектурне рішення прийнято на основі: (1) Path A провалюється на класі 4
+> fauna через відсутність spectral structure для layered soundscape; (2) Path C
+> має більший Tensor Arena overhead на критично обмеженій SRAM (64 KB
+> STM32WLE5JC); (3) ESC-літературний консенсус (Salamon & Bello 2015, BirdNET,
+> ESC-50) однозначно: log-mel > MFCC > raw audio для CNN-based ESC; (4)
+> CMSIS-DSP вже в стеку (FW.21 EMA, FW.5 Lorenz) — додавання Mel-bank ~1-2 KB
+> коду без зміни toolchain.
+>
+> **Fallback на Path C** — лише якщо ML-партнер (Бушин/Любченко) сильно
+> натисне на TFLM end-to-end через тренувальний workflow (Edge Impulse).
+> **Path A — fast-path MVP** для 4-class без fauna, якщо ML-партнер недоступний
+> 2+ місяців; пізніше міграція на Path B.
+>
+> Path B = **log-mel БЕЗ DCT-кроку MFCC** (поширена помилка плутати ці терміни).
+> DCT декорелює ознаки для GMM/HMM, але **знищує просторову структуру**, яку
+> 2D-CNN експлуатує.
 
 #### Path A — Raw Audio + 1D CNN
 
@@ -969,7 +1008,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | Компонент | Поточний стан (TRL 6) | Цільовий стан (post-Mongabay pivot) |
 |-----------|----------------------|--------------------------------------|
 | Кількість класів | 4 (silence/wind/cavitation/chainsaw) | **5+** (додається `4 = fauna_activity`) АБО окрема паралельна метрика «Fauna Activity Index» (0–63) |
-| Pre-processing | Лінійна нормалізація `[0.0, 1.0]` | **Path B (log-mel spectrogram) або Path C (TFLM microfrontend op)** — див. §3.2 Decision Matrix. Path A (raw audio) теоретично можливий для класів 0–3, але субоптимальний для класу 4 fauna, бо часова область погано розрізняє layered soundscape від шуму вітру. Default-рекомендація — Path B (log-mel, без DCT); MFCC з повним DCT-кроком **не рекомендовано** для CNN-based ESC |
+| Pre-processing | Лінійна нормалізація `[0.0, 1.0]` | **Path B (log-mel spectrogram) — ✅ ОФІЦІЙНО ЗАФІКСОВАНО (DECISION 2026-05-22, §3.2 Decision Matrix)**. Path A залишається fast-path MVP для 4-class без fauna (якщо ML-партнер недоступний). Path C — fallback якщо ML-партнер натисне на TFLM end-to-end. MFCC з повним DCT-кроком **категорично не рекомендовано** для CNN-based ESC |
 | Вікно семплінгу | 32 мс (512 семплів @ 16 кГц) | Залишається 32 мс для класів 0–3; для класу 4 — **монолітне 5-секундне акумульоване вікно** (156 послідовних 32 мс вікон → агрегація feature-векторів через Welford mean+M2; формат feature-вектора залежить від обраного DSP-шляху §3.2: Path B/C log-mel coefs ~13–40 bins, Path A time-domain статистика). **Обов'язково в одному awake-циклі без STOP2 між вікнами** — див. примітку ⚠️ нижче |
 | Тригер | П'єзо-EXTI на вібрацію | Класи 0–3 — як зараз; для класу 4 — **щогодинні «акустичні семплінги»** (без вібраційного тригера) на світанку (солар-час+0..2 год) та сутінках (солар-час−2..0 год) |
 | Бюджет TX | 1 байт `acoustic_events` (saturating uint8) | Без змін у packet layout; «Fauna Activity Index» транслюється через **той самий байт** у режимі fauna-семплінгу (не змішується з кавітацією — режим маркується через окремий біт у Status Byte або через циркадне вікно на backend) |
@@ -999,9 +1038,18 @@ TinyML-результат безпосередньо впливає на Lorenz 
 ΔV @ V_cap = 4.5 V (margin 1100 мВ): ≈ −29 мВ → 4.471 V (комфортно)
 ```
 
-**Guard clause (FW.42, обов'язковий):** Запуск fauna-семплінгу дозволяється лише за умови `V_cap ≥ 4.5 V`. При `V_cap < 4.5 V` сесія пропускається; backend отримує метрику-маркер `fauna_skipped_low_vcap` (через `acoustic_events` saturating counter або окремий статус-біт у Status Byte режиму fauna). Це захищає систему від brownout під час циркадного вікна, коли EBFC ще не повністю зарядив EDLC після нічної просадки.
+**Guard clause (FW.42, обов'язковий) — дворівнева політика енергозбереження:**
 
-> 🔗 **Cross-ref [02_03 §9.6 Сценарій C](02_03_BQ25570_MPPT_Nano_Power#9-sensitivity-analysis):** математичні константи sensitivity-моделі EDLC потребують узгодження з 78.3 мДж/сесію та 4.5 V guard threshold після злиття цього патчу.
+| V_cap | Дія | Обґрунтування |
+|---|---|---|
+| **≥ 4.5 V** | ✅ Повна fauna-сесія (5 с моноліт, 156 вікон) | Margin 1100 мВ над VBAT_OK ON (3.4 V) — комфортно витримує імпульсне навантаження ~40 мВт |
+| **4.0–4.5 V** | ⚠️ **Skip fauna**, продовжувати класи 0–3 (security + physiology) | Margin 600 мВ — теоретично достатньо для fauna, але без запасу на нічну деградацію EDLC. Сесія пропускається; маркер `fauna_skipped_low_vcap` через статус-біт |
+| **< 4.0 V** | 🔴 Skip fauna + знизити частоту LoRa TX (energy conservation mode) | Margin < 600 мВ — критичний рівень, система зосереджується на security (chainsaw detection класу 3) |
+| **< 3.5 V** | 🛑 Skip усе крім watchdog | Margin < 100 мВ над VBAT_OK ON — brownout-protection |
+
+Це захищає систему від brownout під час циркадного вікна, коли EBFC ще не повністю зарядив EDLC після нічної просадки, **а також зберігає базову функціональність security/physiology навіть у низько-енергетичних умовах** (наприклад, тривала хмарна погода в Carpathian winter).
+
+> 🔗 **Cross-ref [02_03 §9.6 Сценарій C](02_03_BQ25570_MPPT_Nano_Power#9-sensitivity-analysis):** математичні константи sensitivity-моделі EDLC потребують узгодження з 78.3 мДж/сесію, дворівневим V_cap-порогом (4.5 V / 4.0 V / 3.5 V) та маркерами `fauna_skipped_low_vcap` після злиття цього патчу.
 
 ### 10.4 Маппінг на Backend та Web3
 
