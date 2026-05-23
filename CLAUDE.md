@@ -196,6 +196,19 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5)
 
 **Stimulus**: `theme`, `clipboard`, `map` (Leaflet CartoDB Dark Matter), `matrix-rain` (Canvas hex rain, ~16fps, GPU-compositing).
 
+**i18n** (04_04 §12):
+- 4 мови: `en` (default), `uk`, `lv`, `lt`. Конфіг:
+  ```ruby
+  config.i18n.available_locales = %i[uk en lv lt]
+  config.i18n.default_locale    = :en
+  config.i18n.fallbacks         = { uk: %i[uk en], en: %i[en], lv: %i[lv en], lt: %i[lt en] }
+  ```
+- Resolution priority: `params[:locale]` → `cookies[:locale]` → `Accept-Language` header → `default_locale (:en)`.
+- `Accept-Language` auto-detects `uk`/`lv`/`lt` для відповідних браузерів; решта — English.
+- Locale files: `config/locales/<domain>/{uk,en,lv,lt}.yml` — 34 домени.
+- `t(".key")` у Phlex autoscope до `<namespace>.<component>.<key>`. CI-гейти: `i18n-tasks missing`, `check-consistent-interpolations`, `check-normalized`.
+- Тести за замовчуванням — English (`default_locale = :en`). Перевірка Ukrainian/LV/LT — явно через `I18n.with_locale(:uk) { ... }`.
+
 ---
 
 ## 8. API — ключові ендпоінти
