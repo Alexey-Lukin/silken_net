@@ -23,13 +23,13 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
     it "returns success message for existing email (anti-enumeration)" do
       post "/api/v1/forgot_password", params: { email: user.email_address }, as: :json
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body["message"]).to include("email існує")
+      expect(response.parsed_body["message"]).to include("email exists")
     end
 
     it "returns the same success message for non-existing email (anti-enumeration)" do
       post "/api/v1/forgot_password", params: { email: "ghost@silken.net" }, as: :json
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body["message"]).to include("email існує")
+      expect(response.parsed_body["message"]).to include("email exists")
     end
 
     it "enqueues a password reset email for existing users" do
@@ -106,7 +106,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
       }, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.parsed_body["error"]).to include("не співпадають")
+      expect(response.parsed_body["error"]).to include("do not match")
     end
 
     context "with HTML format" do

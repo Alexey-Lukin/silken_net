@@ -47,7 +47,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
       post "/api/v1/provisioning/register", params: valid_params, headers: headers, as: :json
 
       expect(response).to have_http_status(:conflict)
-      expect(response.parsed_body["error"]).to include("вже зареєстрований")
+      expect(response.parsed_body["error"]).to include("already registered")
     end
 
     # =========================================================================
@@ -244,7 +244,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
         post "/api/v1/provisioning/register", params: bad_type_params, headers: headers, as: :json
 
         expect(response).to have_http_status(:internal_server_error)
-        expect(response.parsed_body["error"]).to include("Збій у ядрі Океану")
+        expect(response.parsed_body["error"]).to include("Core fault in the Ocean")
       end
     end
 

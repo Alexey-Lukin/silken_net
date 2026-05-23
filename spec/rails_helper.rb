@@ -59,24 +59,13 @@ RSpec.configure do |config|
   # POST /api/v1/locale spec leaks the locale into every subsequent example
   # that doesn't explicitly wrap itself in I18n.with_locale.
   #
-  # Use `after` (not `before`) so per-example `around { I18n.with_locale(:en) }`
+  # Use `after` (not `before`) so per-example `around { I18n.with_locale(:uk) }`
   # blocks remain in force during the example — `around` wraps `before`/`after`
   # hooks, so a `before { I18n.locale = ... }` would override the around block
-  # and break specs that locked themselves to :en.
+  # and break specs that locked themselves to a specific locale.
   config.after do
     I18n.locale = I18n.default_locale
   end
-
-  # ── Component / view specs: pin locale to :en ──────────────────────────────
-  # Application default_locale is :uk (production market). Component specs
-  # assert on the English source strings authored alongside the components,
-  # so without pinning every assertion would have to translate or accept
-  # both languages. This hook keeps assertions terse and English-first while
-  # request/feature specs that exercise the locale switcher itself remain
-  # free to override via `I18n.with_locale(:uk) { … }`.
-  config.before(type: :component) { I18n.locale = :en }
-  config.before(type: :view)      { I18n.locale = :en }
-  config.before(:each, file_path: %r{spec/views/components/}) { I18n.locale = :en }
 
   # Prosopite: N+1 query detection in request specs.
   # Raises Prosopite::NPlusOneQueriesError when duplicate queries detected.

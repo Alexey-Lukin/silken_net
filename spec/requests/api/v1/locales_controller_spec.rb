@@ -67,12 +67,12 @@ RSpec.describe Api::V1::LocalesController, type: :request do
     # cookie behaviour we already cover above. We additionally assert the
     # default-locale wiring directly from configuration to avoid coupling
     # to other controllers' rendering paths.
-    it "ships with :uk as the application default locale" do
-      expect(I18n.default_locale).to eq(:uk)
+    it "ships with :en as the application default locale" do
+      expect(I18n.default_locale).to eq(:en)
     end
 
-    it "ships with both :uk and :en in available_locales" do
-      expect(I18n.available_locales).to include(:uk, :en)
+    it "ships with :uk, :en, :lv and :lt in available_locales" do
+      expect(I18n.available_locales).to include(:uk, :en, :lv, :lt)
     end
 
     it "honours an explicit ?locale= param over the cookie" do

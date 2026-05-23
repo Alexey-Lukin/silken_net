@@ -194,7 +194,7 @@ RSpec.describe MaintenanceRecord, type: :model do
         record = build(:maintenance_record, :repair)
         expect(record).not_to be_valid
         expect(record.errors[:photos]).to include(
-          a_string_matching(/обов'язкові для типів 'repair' та 'installation'/)
+          a_string_matching(/required for 'repair' and 'installation'/)
         )
       end
 
@@ -202,7 +202,7 @@ RSpec.describe MaintenanceRecord, type: :model do
         record = build(:maintenance_record, :installation)
         expect(record).not_to be_valid
         expect(record.errors[:photos]).to include(
-          a_string_matching(/обов'язкові для типів 'repair' та 'installation'/)
+          a_string_matching(/required for 'repair' and 'installation'/)
         )
       end
 

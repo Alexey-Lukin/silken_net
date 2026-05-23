@@ -314,7 +314,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
 
         expect(response).to have_http_status(:unprocessable_content)
         json = response.parsed_body
-        expect(json["error"]).to include("ліміт")
+        expect(json["error"]).to include("limit")
 
         small_file.close
         small_file.unlink
@@ -432,7 +432,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
 
         expect(response).to have_http_status(:bad_request)
         json = response.parsed_body
-        expect(json["error"]).to include("параметр")
+        expect(json["error"]).to include("parameter")
       end
     end
 

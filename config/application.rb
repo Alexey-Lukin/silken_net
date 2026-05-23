@@ -19,13 +19,14 @@ module SilkenNet
     # [KENOSIS TITAN]: structure.sql зберігає партиціювання PostgreSQL (schema.rb не підтримує)
     config.active_record.schema_format = :sql
 
-    # [I18N]: Bilingual UI (UA primary, EN secondary). Locale files are
+    # [I18N]: Quadrilingual UI (EN default; UA/LV/LT auto-detected via
+    # Accept-Language header, or saved via locale cookie). Locale files are
     # organised by domain under config/locales/<group>/<locale>.yml — the
     # nested load_path picks them up automatically. New languages are added
     # by appending to `available_locales` and shipping a matching YAML set.
     config.i18n.load_path += Dir[Rails.root.join("config/locales/**/*.{rb,yml}")]
     config.i18n.available_locales = %i[uk en lv lt]
-    config.i18n.default_locale    = :uk
+    config.i18n.default_locale    = :en
     config.i18n.fallbacks         = { uk: %i[uk en], en: %i[en], lv: %i[lv en], lt: %i[lt en] }
 
     # [GAIA SHIELD]: Rack::Attack — DDoS / brute-force / bot-scanner protection.

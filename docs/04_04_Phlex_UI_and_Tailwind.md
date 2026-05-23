@@ -1208,9 +1208,10 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
 
 ## 12. Інтернаціоналізація та Локалізація (i18n)
 
-> SSOT для двомовного UI (UA — default, EN — secondary; розширюваний до N мов
-> додаванням рядка в `config.i18n.available_locales` + одного YAML-набору) та
-> для Phlex `t(".key")` autoscope, CI-гейтів, controller/backend локалізації.
+> SSOT для чотиримовного UI (EN — default; UA/LV/LT — auto-detect через
+> Accept-Language або explicit cookie; розширюваний до N мов додаванням рядка
+> в `config.i18n.available_locales` + одного YAML-набору) та для Phlex
+> `t(".key")` autoscope, CI-гейтів, controller/backend локалізації.
 > Об'єднує колишні §12 (Phase 1-2) та §19 (Convention over Configuration).
 
 ### 12.1 Архітектурні правила (foundational)
@@ -1230,12 +1231,19 @@ Layout-компоненти (`AuthLayout`, `DashboardLayout`) використо
 
 `config/application.rb`:
 ```ruby
-config.i18n.available_locales       = %i[uk en]
-config.i18n.default_locale          = :uk
-config.i18n.fallbacks               = { en: :uk, uk: :en }
-config.i18n.load_path              += Dir[Rails.root.join("config/locales/**/*.yml")]
+config.i18n.available_locales = %i[uk en lv lt]
+config.i18n.default_locale    = :en
+config.i18n.fallbacks         = { uk: %i[uk en], en: %i[en], lv: %i[lv en], lt: %i[lt en] }
+config.i18n.load_path        += Dir[Rails.root.join("config/locales/**/*.yml")]
 ```
 
+> **Пріоритет вибору мови (без збереженої cookie):**
+> `request.preferred_language(available_locales)` читає `Accept-Language`
+> браузера — `uk` → `:uk`, `lv` → `:lv`, `lt` → `:lt`, будь-що інше → `:en`.
+> Тобто українець, латвієць і литовець отримують свою мову автоматично;
+> решта світу — English. Явний вибір через switcher зберігається у постійній
+> cookie і має найвищий пріоритет.
+>
 > **Чому `uk`, а не `ua`?** `uk` — IETF BCP 47 / ISO 639-1 код **мови**
 > (Ukrainian). `ua` — ISO 3166-1 код **країни** Україна. `<html lang="uk">`
 > — єдиний валідний варіант для browser/screen-reader negotiation. UI-label
@@ -1256,7 +1264,7 @@ config/locales/
 └── errors/{uk,en}.yml         # error JSON
 ```
 
-Один домен = одна папка × дві мови (`uk.yml` + `en.yml`). Завжди парний. Nesting тримати shallow (≤ 4 рівнів). Додавання нового домену — створіть пару `{uk.yml, en.yml}`, `i18n-tasks missing` має лишатися зеленим.
+Один домен = одна папка × чотири мови (`uk.yml` + `en.yml` + `lv.yml` + `lt.yml`). Nesting тримати shallow (≤ 4 рівнів). Fallback-ланцюжок (`lv/lt → en`) гарантує, що частково перекладений файл не ламає UI. Додавання нового домену — створіть повний набір `{uk,en,lv,lt}.yml`, `i18n-tasks missing` має лишатися зеленим.
 
 ### 12.4 Resolution priority (`LocaleSettable` concern)
 
@@ -1264,7 +1272,7 @@ config/locales/
 params[:locale] → cookies[:locale] → request.preferred_language → I18n.default_locale
 ```
 
-Усі джерела whitelist'яться проти `I18n.available_locales` — adversarial input просто провалюється на default. Concern підмішаний у **обидва** `ApplicationController` і `Api::V1::BaseController` — інакше після POST `/api/v1/locale` + redirect Dashboard ігнорує щойно записану cookie і відкочується на `default_locale = :uk` (legacy 2-кліки-щоб-змінити-locale bug, фікснутий саме інклудом у обох контролерах).
+Усі джерела whitelist'яться проти `I18n.available_locales` — adversarial input просто провалюється на default. Concern підмішаний у **обидва** `ApplicationController` і `Api::V1::BaseController` — інакше після POST `/api/v1/locale` + redirect Dashboard ігнорує щойно записану cookie і відкочується на `default_locale` (legacy 2-кліки-щоб-змінити-locale bug, фікснутий саме інклудом у обох контролерах).
 
 ### 12.5 LocaleSwitcher (`Views::Shared::UI::LocaleSwitcher`)
 
@@ -1275,7 +1283,7 @@ Native `<form>` + `<select>` + `onchange="this.form.requestSubmit()"` — Rails-
 render Views::Shared::UI::LocaleSwitcher.new
 ```
 
-Endpoint: `POST /api/v1/locale` → cookie `locale=<uk|en>` (httponly, same_site=lax, secure-in-prod), open-redirect guard перевіряє `request.host == referer.host`.
+Endpoint: `POST /api/v1/locale` → cookie `locale=<en|uk|lv|lt>` (httponly, same_site=lax, secure-in-prod), open-redirect guard перевіряє `request.host == referer.host`. Форма сабмітить `data-turbo="false"` — повний page reload гарантує, що `data-turbo-permanent` sidebar теж перерендериться новою мовою.
 
 > **Історія еволюції (для контексту, не для повторення).** Ранні ітерації використовували `<details>`+`<summary>` + Stimulus `locale` controller (outside-click/Escape handlers), потім HTML Popover API. Popover був видалений, бо він промотує dropdown у top-layer і відриває його від нормального containing block — CSS `position: relative` на wrapper'і не може анкорити dropdown поруч з тригером без re-positioning JS (Stimulus з `getBoundingClientRect`). Це fragile (resize/scroll handlers, z-index edge cases, focus quirks) для меню з 2 опцій. Натомість нативний `<select>` — obvious correct primitive. Повний rationale-блок зафіксовано у `app/views/shared/ui/locale_switcher.rb:11-25`. Cross-ref у §15.1 (Native HTML over Stimulus) — Popover API лишається рекомендацією для майбутніх dropdown patterns, але в проекті ще не застосований.
 

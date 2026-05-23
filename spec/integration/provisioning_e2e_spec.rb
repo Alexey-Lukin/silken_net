@@ -314,7 +314,7 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
        .and not_change(MaintenanceRecord, :count)
 
       expect(response).to have_http_status(:conflict)
-      expect(response.parsed_body["error"]).to include("вже зареєстрований")
+      expect(response.parsed_body["error"]).to include("already registered")
       expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
     end
   end
