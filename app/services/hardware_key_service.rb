@@ -4,35 +4,46 @@ require "securerandom"
 require "openssl"
 
 class HardwareKeyService
-  KEY_SIZE_BYTES = 32
-  HKDF_INFO = "silken-aes-256-device-key"
+  # Gateway CoAP channel (Queen ↔ Rails): AES-256-CBC.
+  COAP_KEY_SIZE_BYTES = 32
+  COAP_HKDF_INFO      = "silken-aes-256-device-key"
+
+  # Tree LoRa channel (Soldier ↔ Queen): AES-128-CCM (post-ARCH.42 Variant B, 2026-05-23).
+  # Узгоджено з ATECC608B Secure Element apparatної AES-engine constraint.
+  LORA_KEY_SIZE_BYTES = 16
+  LORA_HKDF_INFO      = "silken-aes-128-lora-key"
+
+  # Backwards-compat aliases (CoAP keys — поточний default до повного code-side rollout).
+  KEY_SIZE_BYTES = COAP_KEY_SIZE_BYTES
+  HKDF_INFO      = COAP_HKDF_INFO
 
   # Помилка подвійної ротації: пристрій ще не підтвердив попереднє оновлення ключа.
   class RotationPendingError < StandardError; end
 
   # =========================================================================
-  # ПРОВІЗІОНУВАННЯ (Zero-Trust Key Derivation)
+  # ПРОВІЗІОНУВАННЯ (Zero-Trust Key Derivation, post-ARCH.42)
   # =========================================================================
-  # [P0 BLOCKER FIX]: Замість генерації випадкового ключа та передачі через мережу,
-  # використовуємо HKDF (HMAC-based Key Derivation Function) для деривації
-  # однакового AES-256 ключа на обох сторонах (бекенд + прошивка).
+  # [P0 BLOCKER FIX + ARCH.42]: Замість генерації випадкового ключа та передачі
+  # через мережу, використовуємо HKDF (HMAC-based Key Derivation Function) для
+  # деривації однакового AES ключа на обох сторонах (бекенд + прошивка).
+  #
+  # Post-ARCH.42 (2026-05-23, Variant B) — два різні info-strings за device type:
+  #   • Tree   → derive_lora_key  (16 bytes, info "silken-aes-128-lora-key")
+  #   • Gateway → derive_device_key (32 bytes, info "silken-aes-256-device-key")
   #
   # Обидві сторони знають:
   #   1. PROVISIONING_MASTER_KEY (встановлюється в env, прошивається при Factory Flashing)
   #   2. device_uid (унікальний серійник STM32)
-  #
-  # Формула: AES_KEY = HKDF-SHA256(ikm: master_key, salt: device_uid, info: "silken-aes-256-device-key")
   #
   # [SEC.11] Provisioning тепер також деривує Lorenz K_seed через
   # SilkenNet::SeedDerivation і зберігає його разом із AES ключем.
   # Метод повертає AES hex (для backwards-compat з існуючими callers);
   # K_seed читається з створеного `HardwareKey.lorenz_seed_hex`.
   #
-  # Ключ НІКОЛИ не передається по мережі. Якщо PROVISIONING_MASTER_KEY не встановлено,
-  # повертаємося до SecureRandom (TRL 4 lab mode) з попередженням у логах.
+  # Ключ НІКОЛИ не передається по мережі.
   def self.provision(device)
-    device_uid = device.respond_to?(:did) ? device.did : device.uid
-    new_hex_key = derive_device_key(device_uid)
+    device_uid  = device.respond_to?(:did) ? device.did : device.uid
+    new_hex_key = derive_key_for(device)
     lorenz_seed = SilkenNet::SeedDerivation.derive_seed(device_uid)
 
     HardwareKey.create!(
@@ -44,14 +55,37 @@ class HardwareKeyService
     new_hex_key
   end
 
-  # Деривація AES-256 ключа з master_key та device_uid через HKDF.
-  # Повертає 64-символьний HEX-рядок (32 байти).
+  # Post-ARCH.42 (2026-05-23): обираємо derivation за device type.
+  #   Tree    → LoRa AES-128 (16 bytes)
+  #   Gateway → CoAP AES-256 (32 bytes)
+  def self.derive_key_for(device)
+    device_uid = device.respond_to?(:did) ? device.did : device.uid
+    if device.is_a?(Tree) || device.respond_to?(:did)
+      derive_lora_key(device_uid)
+    else
+      derive_device_key(device_uid)
+    end
+  end
+
+  # Tree LoRa AES-128 key — post-ARCH.42 Variant B (16 bytes).
+  # HKDF info: "silken-aes-128-lora-key". Узгоджено з ATECC608B SE Slot 0.
+  def self.derive_lora_key(device_uid)
+    hkdf_derive(device_uid, info: LORA_HKDF_INFO, length: LORA_KEY_SIZE_BYTES)
+  end
+
+  # Gateway CoAP AES-256 key — без змін після ARCH.42 (32 bytes).
+  # HKDF info: "silken-aes-256-device-key". Зберігається у Queen Protected Flash.
   #
   # [SEC.11] Always requires PROVISIONING_MASTER_KEY — there is no
   # SecureRandom fallback. Without master_key the backend would generate
   # values that do NOT match firmware HKDF derivation → silent system
   # breakage. Tests pin a stable value in spec/rails_helper.rb.
   def self.derive_device_key(device_uid)
+    hkdf_derive(device_uid, info: COAP_HKDF_INFO, length: COAP_KEY_SIZE_BYTES)
+  end
+
+  # Private HKDF helper — shared by both LoRa та CoAP derivation paths.
+  def self.hkdf_derive(device_uid, info:, length:)
     master_key = ENV["PROVISIONING_MASTER_KEY"]
 
     if master_key.blank?
@@ -64,13 +98,14 @@ class HardwareKeyService
     derived = OpenSSL::KDF.hkdf(
       master_key,
       salt: device_uid.to_s,
-      info: HKDF_INFO,
-      length: KEY_SIZE_BYTES,
+      info: info,
+      length: length,
       hash: "SHA256"
     )
 
     derived.unpack1("H*").upcase
   end
+  private_class_method :hkdf_derive
 
   def self.rotate(device_uid)
     device = Tree.find_by(did: device_uid) || Gateway.find_by(uid: device_uid)
@@ -98,9 +133,12 @@ class HardwareKeyService
             "Дочекайтесь першого пакету на новому ключі або очистіть Grace Period вручну."
     end
 
-    # ⚡ [ЗАГАРТУВАННЯ]: Зберігаємо поточний ключ як попередній
+    # ⚡ [ЗАГАРТУВАННЯ]: Зберігаємо поточний ключ як попередній.
+    # Post-ARCH.42 (2026-05-23): rotate генерує ключ ТОЇ САМОЇ довжини, що поточний
+    # (Tree LoRa AES-128 = 16 bytes / 32 hex; Gateway CoAP AES-256 = 32 bytes / 64 hex).
     old_key = key_record.aes_key_hex
-    new_hex_key = SecureRandom.hex(KEY_SIZE_BYTES).upcase
+    byte_len = old_key.length / 2  # 16 для Tree LoRa, 32 для Gateway CoAP
+    new_hex_key = SecureRandom.hex(byte_len).upcase
 
     # ⚡ [АТОМАРНІСТЬ]: Оновлення БД та постановка Downlink в чергу відбуваються
     # в одній транзакції. Якщо Redis/Sidekiq недоступний — транзакція відкочується,

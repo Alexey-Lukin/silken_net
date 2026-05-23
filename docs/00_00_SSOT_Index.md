@@ -49,7 +49,7 @@ _Логіка STM32WLE5JC: STOP2 / DMA / TinyML / mruby Lorenz / апаратн�
 - [03\_02\_Queen\_Gateway\_Firmware](03_02_Queen_Gateway_Firmware) (Queen LoRa RX → CIFO → CoAP flush)
 - [03\_03\_TinyML\_Acoustic\_Inference](03_03_TinyML_Acoustic_Inference) (CMSIS-NN: класифікація пилки/кавітації/тиші)
 - [03\_04\_mruby\_Lorenz\_Attractor](03_04_mruby_Lorenz_Attractor) (mruby VM атрактор хаосу — гомеостаз дерева)
-- [03\_05\_Hardware\_AES256\_and\_Security](03_05_Hardware_AES256_and_Security) (CRYP-блок AES-256 ECB/CBC + Flash Key + RDP Level 2)
+- [03\_05\_Hardware\_Symmetric\_Crypto\_and\_Security](03_05_Hardware_Symmetric_Crypto_and_Security) (LoRa AES-128-CCM + CoAP AES-256-CBC + ATECC608B + Flash Key + RDP Level 2 + PQC migration roadmap)
 
 ## 🗄️ Модуль 04: Серверне Ядро (Web2 Backend)
 

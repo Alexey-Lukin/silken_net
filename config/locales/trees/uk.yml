@@ -45,7 +45,7 @@ uk:
       security:
         address: Адреса
         cipher_suite: Набір шифрів
-        cipher_value: AES-256-ECB (рівень CoAP)
+        cipher_value: AES-128-ECB (LoRa-канал, post-ARCH.42)
         integrity: Цілісність
         integrity_value: Верифікований апаратний анкер
         key_identity: Ідентифікатор ключа

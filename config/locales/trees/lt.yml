@@ -45,7 +45,7 @@ lt:
       security:
         address: Adresas
         cipher_suite: Šifro rinkinys
-        cipher_value: AES-256-ECB (CoAP lygis)
+        cipher_value: AES-128-ECB (LoRa kanalas, post-ARCH.42)
         integrity: Vientisumas
         integrity_value: Patikrintas aparatūros inkaras
         key_identity: Rakto tapatybė

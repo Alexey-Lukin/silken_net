@@ -13,7 +13,7 @@
 - **Пов'язані модулі:**
   - Схема БД → [`04_01_Data_Models_and_Entities`](04_01_Data_Models_and_Entities)
   - Proof of Growth пайплайн → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
-  - Апаратне шифрування → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+  - Апаратне шифрування → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
 
 ### Конвенція впорядкування розділів
 
@@ -131,7 +131,7 @@
 | **Алгоритм та парність** | OpenSSL HKDF-SHA256 (RFC 5869) + HMAC-SHA256. Host-parity test `firmware/test/test_seed_derivation.c` валідує OpenSSL ↔ mbedTLS байт-ідентичність на детермінованих векторах + 100-case fuzz. Backend ↔ firmware деривують `(x₀, y₀, z₀)` byte-identical для тієї самої пари `(K_seed, epoch_day)`. |
 | **Викликається з** | `HardwareKeyService#provision` (provisioning), `TelemetryUnpackerService` (cold-start dispatch) |
 | **Зовнішні виклики** | `OpenSSL::KDF.hkdf`, `OpenSSL::HMAC.digest("SHA256", …)` |
-| **Безпека** | `K_seed` ніколи не залишає Ruby-процес у відкритому вигляді (in-process derivation з `ENV["PROVISIONING_MASTER_KEY"]`). DID використовується лише як `info`-string у HKDF (namespace separator) — криптографічно безпечно. Cross-ref: [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-), [03_04 §3 Крок 1](03_04_mruby_Lorenz_Attractor#крок-1-походження-початкових-координат-x₀-y₀-z₀-sec11). |
+| **Безпека** | `K_seed` ніколи не залишає Ruby-процес у відкритому вигляді (in-process derivation з `ENV["PROVISIONING_MASTER_KEY"]`). DID використовується лише як `info`-string у HKDF (namespace separator) — криптографічно безпечно. Cross-ref: [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-), [03_04 §3 Крок 1](03_04_mruby_Lorenz_Attractor#крок-1-походження-початкових-координат-x₀-y₀-z₀-sec11). |
 
 ### `SilkenNet::GeoUtils`
 
@@ -379,9 +379,9 @@ peaq_node_url: "https://peaq-node.example.com"
 |---|---|
 | **Файл** | `app/services/hardware_key_service.rb` |
 | **Вхід** | `.provision(device)` або `.rotate(device_uid)` |
-| **Що робить** | **Provision**: атомарно деривує AES-256 ключ (`derive_device_key`) і `K_seed` для атрактора Лоренца (`SilkenNet::SeedDerivation.derive_seed`), зберігає обидва у `HardwareKey` (`aes_key_hex` + `lorenz_seed_hex` [SEC.11]). HKDF-only — raise `SecurityError` без `PROVISIONING_MASTER_KEY` (no SecureRandom fallback ANYWHERE; pre-prod hard cutover). **Rotate**: Dual-Key Handshake — старий AES ключ → `previous_aes_key_hex`, генерує новий, відправляє Downlink `sys/key_update` шифрований старим ключем. Захист від подвійної ротації (`RotationPendingError`). |
+| **Що робить** | **Provision** (post-ARCH.42 Variant B, 2026-05-23): атомарно деривує **AES ключ за device_type** — Tree → `derive_lora_key` (16 байт, info `"silken-aes-128-lora-key"`); Gateway → `derive_device_key` (32 байти, info `"silken-aes-256-device-key"`). Плюс `K_seed` для атрактора Лоренца (`SilkenNet::SeedDerivation.derive_seed`, 32 байти). Зберігає у `HardwareKey` (`aes_key_hex` conditional length + `lorenz_seed_hex` [SEC.11]). HKDF-only — raise `SecurityError` без `PROVISIONING_MASTER_KEY` (no SecureRandom fallback ANYWHERE; pre-prod hard cutover). **Rotate**: Dual-Key Handshake — старий AES ключ → `previous_aes_key_hex`, генерує новий тієї самої довжини, відправляє Downlink `sys/key_update` шифрований старим ключем. Захист від подвійної ротації (`RotationPendingError`). |
 | **Зовнішні виклики** | `OpenSSL::KDF.hkdf` (через `SilkenNet::SeedDerivation`), `ActuatorCommandWorker.perform_async` (для key update downlink) |
-| **Вихід** | Provision: `HardwareKey` instance з обома секретами. Rotate: `new_hex_key` (String, 64 символи). Raises `RotationPendingError`, `SecurityError`. |
+| **Вихід** | Provision: `HardwareKey` instance з обома секретами. Rotate: `new_hex_key` (String, **32 hex для Tree LoRa / 64 hex для Gateway CoAP** після ARCH.42). Raises `RotationPendingError`, `SecurityError`. |
 
 ### `OtaHmacKeyService` 🔐 [FW.23]
 
@@ -389,11 +389,11 @@ peaq_node_url: "https://peaq-node.example.com"
 |---|---|
 | **Файл** | `app/services/ota_hmac_key_service.rb` |
 | **Вхід** | `cluster_id` (Integer або String) |
-| **Що робить** | Per-cluster OTA HMAC ключ `K_ota` для аутентифікації bytecode на Soldier (dual-gate). Дериває `K_ota = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="cluster:#{id}", info="silken-ota-hmac-v1", len=32)`. **Domain separation** від `HardwareKeyService` AES device-key (info `"silken-aes-256-device-key"`) — компрометація одного K-вектора не розкриває інших. Слідує патерну SEC.11: raise `SecurityError` без `PROVISIONING_MASTER_KEY` (no SecureRandom fallback в production; dev/test pin-ять ключ у `spec/rails_helper.rb`). |
+| **Що робить** | Per-cluster OTA HMAC ключ `K_ota` для аутентифікації bytecode на Soldier (dual-gate). Дериває `K_ota = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="cluster:#{id}", info="silken-ota-hmac-v1", len=32)`. **Domain separation** від `HardwareKeyService` AES device-keys: info `"silken-aes-128-lora-key"` (Tree LoRa) та `"silken-aes-256-device-key"` (Gateway CoAP) — компрометація одного K-вектора не розкриває інших трьох. Слідує патерну SEC.11: raise `SecurityError` без `PROVISIONING_MASTER_KEY` (no SecureRandom fallback в production; dev/test pin-ять ключ у `spec/rails_helper.rb`). |
 | **Зовнішні виклики** | `OpenSSL::KDF.hkdf` |
 | **Публічні методи** | `.fetch_for(cluster_id) → String` (64-символьний HEX, upper); `.fetch_binary_for(cluster_id) → String` (32 binary bytes) — для прямого `OpenSSL::HMAC.digest` |
 | **Вихід** | 64-символьний HEX або 32-байтна binary-string. |
-| **Cross-ref** | [03_05 §3.4б](03_05_Hardware_AES256_and_Security) — повний протокол OTA HMAC dual-gate. |
+| **Cross-ref** | [03_05 §3.4б](03_05_Hardware_Symmetric_Crypto_and_Security) — повний протокол OTA HMAC dual-gate. |
 
 ### `OtaPackagerService`
 
@@ -421,7 +421,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Публічні методи** | `.detect(value, hint:) → nil \| String` (повертає reason-string з опц. префіксом hint, якщо знайдено патерн); `.weak?(value, hint:) → Boolean` |
 | **Тест coverage** | `spec/services/security/weak_key_detector_spec.rb` — 30+ examples, fuzz через RFC vectors, edge-cases для round-trip base64 та bytestring-encoding |
 | **Інвокери** | `config/initializers/master_key_strength_check.rb` (boot-time guard, див. нижче) |
-| **Cross-ref** | [03_05 §3.1а](03_05_Hardware_AES256_and_Security), [00_08 SEC.9](00_08_Action_Plan_Tracker). Закриває оригінальний BLOCKER (firmware AES key перших 16 байт співпадали з FIPS-197 Appendix B). |
+| **Cross-ref** | [03_05 §3.1а](03_05_Hardware_Symmetric_Crypto_and_Security), [00_08 SEC.9](00_08_Action_Plan_Tracker). Закриває оригінальний BLOCKER (firmware AES key перших 16 байт співпадали з FIPS-197 Appendix B). |
 
 #### Boot-time master key guard (initializer)
 
@@ -430,7 +430,7 @@ peaq_node_url: "https://peaq-node.example.com"
 | **Файл** | `config/initializers/master_key_strength_check.rb` |
 | **Що робить** | У `Rails.env.production?` (включно з canopy) після `after_initialize` перевіряє `ENV["PROVISIONING_MASTER_KEY"]`: (1) blank → raise `SecurityError` з посиланням на `docs/03_05 §3.4а`; (2) непустий, але `Security::WeakKeyDetector.detect` повертає reason → raise `SecurityError` з cause. У dev/test guard вимкнений (там зафіксований стабільний non-secret fixture у `spec/rails_helper.rb` — інакше весь suite не завантажиться). |
 | **Bypass** | `SILKENNET_SKIP_MASTER_KEY_STRENGTH_CHECK=1` — для one-off rescue-boot при флеші zaжатого кластера. Логується гучно, не може стати рутиною. |
-| **Зв'язок з HKDF tree** | Captured-критично: master-ключ є коренем для `HardwareKeyService` (AES-256 device key, info `silken-aes-256-device-key`), `OtaHmacKeyService` (K_ota, info `silken-ota-hmac-v1`), `SilkenNet::SeedDerivation` (Lorenz `K_seed`, info `silken-lorenz-seed`). Компрометація master = каскадна компрометація всіх трьох — тому guard працює fail-closed до запуску HTTP-сервера. |
+| **Зв'язок з HKDF tree** | Captured-критично: master-ключ є коренем для **чотирьох** info-strings (post-ARCH.42): `HardwareKeyService.derive_lora_key` (Tree AES-128 LoRa, info `"silken-aes-128-lora-key"`), `HardwareKeyService.derive_device_key` (Gateway AES-256 CoAP, info `"silken-aes-256-device-key"`), `OtaHmacKeyService` (K_ota, info `silken-ota-hmac-v1`), `SilkenNet::SeedDerivation` (Lorenz `K_seed`, info `silken-lorenz-seed`). Компрометація master = каскадна компрометація всіх чотирьох — тому guard працює fail-closed до запуску HTTP-сервера. |
 
 ---
 
@@ -1502,7 +1502,7 @@ Financial action
 
 | Дата | Зона | Тип drift | Що зроблено | Cross-ref |
 |------|------|-----------|-------------|-----------|
-| 2026-05-12 | `Security::WeakKeyDetector` + `master_key_strength_check.rb` initializer | Code ahead of doc (були в `00_08`/`03_05`, але §8 04_02 їх не описувала) | Додано в §8 (renamed → "Hardware, IoT & Security") | [SEC.9](00_08_Action_Plan_Tracker), [03_05 §3.1а](03_05_Hardware_AES256_and_Security) |
+| 2026-05-12 | `Security::WeakKeyDetector` + `master_key_strength_check.rb` initializer | Code ahead of doc (були в `00_08`/`03_05`, але §8 04_02 їх не описувала) | Додано в §8 (renamed → "Hardware, IoT & Security") | [SEC.9](00_08_Action_Plan_Tracker), [03_05 §3.1а](03_05_Hardware_Symmetric_Crypto_and_Security) |
 | 2026-05-12 | `Celo::CommunityRewardService` RPC fallback cascade | Code matched doc (E.49 синхронно виконано: код + 04_02 + .env.example + 00_08) | `RPC_FALLBACK_ENV_KEYS` додано, External API row оновлено | [E.49](00_08_Action_Plan_Tracker) |
 | 2026-05-12 | `MintingRollbackService` (Celo branch) | Code bug + doc gap (fallback указував на polygon-rpc.com для Celo TX) | Виправлено per-chain dispatch; doc оновлено | [E.49](00_08_Action_Plan_Tracker) |
 | 2026-05-12 | `MintBatchCollectorWorker` секція | Doc misplacement (queue `web3` був у "💤 Web3 Low") | Перенесено у "🌐 Web3 — Стандартні Мультичейн" | §11 |
@@ -1874,7 +1874,7 @@ $$\begin{cases} \dot{x} = \sigma(y - x) \\ \dot{y} = x(\rho - z) - y \\ \dot{z} 
 
 ### Принципи Безпеки
 
-1. **Zero-Trust:** Кожен пакет шифрується AES-256 (Hardware-bound ключ у `HardwareKey`).
+1. **Zero-Trust:** Кожен пакет шифрується hardware-bound AES ключем у `HardwareKey` (LoRa AES-128 для Tree↔Queen, CoAP AES-256 для Queen↔Rails — domain separation §3.4а у `03_05`).
 2. **Idempotency:** Всі фінансові воркери мають захист від повторного виконання (status guards / pessimistic lock).
 3. **Resilience:** Система підтримує 10+ ретраїв для Web3 операцій та 3–5 для апаратних команд.
 4. **Float Determinism:** Розрахунки Атрактора виконуються з Float (IEEE 754 double) ідентично firmware mruby для Dual Computation Integrity (BigDecimal вилучено — давав розбіжність Z після 250 ітерацій хаотичної системи).

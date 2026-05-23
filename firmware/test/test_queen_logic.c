@@ -22,14 +22,14 @@
 
 /* [FW.1] Flash-based AES key provisioning constants */
 #define FLASH_KEY_ADDR             ((uintptr_t)_mock_flash_key_region)
-#define FLASH_KEY_WORDS            8
-#define FLASH_KEY_MAGIC            0x534B4559UL  /* "SKEY" */
+#define FLASH_KEY_WORDS            4  /* ARCH.42 Variant B: 16 bytes = AES-128 LoRa */
+#define FLASH_KEY_MAGIC            0x4B45594CUL  /* "KEYL" — LoRa key (post-ARCH.42; was "SKEY" / 0x534B4559) */
 
 /* [FW.1] Error_Handler mock for Load_AES_Key tests */
 static void Error_Handler(void) { _mock_error_handler_called++; }
 
 /* [FW.1] AES key array (same as in queen/main.c) */
-static uint32_t aes_key[8] = {0};
+static uint32_t aes_key[4] = {0};  /* AES-128 LoRa (ARCH.42 Variant B) */
 
 /* ── Data structures (from queen/main.c) ────────────────────────────── */
 typedef struct {
@@ -1663,7 +1663,8 @@ TEST(test_queen_load_key_provisioned_success) {
     Load_AES_Key();
 
     ASSERT_EQ(_mock_error_handler_called, 0);
-    for (int i = 0; i < 8; i++) {
+    /* Post-ARCH.42: FLASH_KEY_WORDS=4 (AES-128 LoRa, 16 bytes) */
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
         ASSERT_EQ(aes_key[i], _queen_test_key[i]);
     }
 }
@@ -1676,7 +1677,7 @@ TEST(test_queen_load_key_unprovisioned_error) {
     Load_AES_Key();
 
     ASSERT_TRUE(_mock_error_handler_called > 0);
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
         ASSERT_EQ(aes_key[i], 0);
     }
 }
@@ -1702,7 +1703,7 @@ TEST(test_queen_load_key_wrong_magic_error) {
     Load_AES_Key();
 
     ASSERT_TRUE(_mock_error_handler_called > 0);
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < FLASH_KEY_WORDS; i++) {
         ASSERT_EQ(aes_key[i], 0);
     }
 }
@@ -1712,15 +1713,16 @@ TEST(test_queen_load_key_partial_key_accepted) {
     _mock_error_handler_reset();
     memset(aes_key, 0, sizeof(aes_key));
 
-    uint32_t partial_key[8] = {0, 0, 0, 0, 0, 0, 0, 0x00000001};
+    /* Post-ARCH.42: AES-128 (4 words). Non-zero у будь-якому з 4 → accepted. */
+    uint32_t partial_key[8] = {0, 0, 0, 0x00000001, 0, 0, 0, 0};
     _mock_flash_key_provision(FLASH_KEY_MAGIC, partial_key);
     Load_AES_Key();
 
     ASSERT_EQ(_mock_error_handler_called, 0);
-    ASSERT_EQ(aes_key[7], 0x00000001);
+    ASSERT_EQ(aes_key[3], 0x00000001);
 }
 
-TEST(test_queen_load_key_preserves_8_words) {
+TEST(test_queen_load_key_preserves_4_words) {
     _mock_flash_key_reset();
     _mock_error_handler_reset();
     memset(aes_key, 0xAA, sizeof(aes_key));
@@ -1729,13 +1731,15 @@ TEST(test_queen_load_key_preserves_8_words) {
     Load_AES_Key();
 
     ASSERT_EQ(_mock_error_handler_called, 0);
+    /* AES-128 LoRa key = first 4 words of test fixture (post-ARCH.42) */
     ASSERT_EQ(aes_key[0], 0xAABBCCDD);
+    ASSERT_EQ(aes_key[1], 0x11223344);
+    ASSERT_EQ(aes_key[2], 0x55667788);
     ASSERT_EQ(aes_key[3], 0x99AABBCC);
-    ASSERT_EQ(aes_key[7], 0xFEDCBA98);
 }
 
 TEST(test_queen_load_key_magic_value_correct) {
-    ASSERT_EQ(FLASH_KEY_MAGIC, 0x534B4559UL);
+    ASSERT_EQ(FLASH_KEY_MAGIC, 0x4B45594CUL);  /* "KEYL" post-ARCH.42 */
 }
 
 TEST(test_queen_load_key_overwrite) {
@@ -1751,7 +1755,7 @@ TEST(test_queen_load_key_overwrite) {
     _mock_flash_key_provision(FLASH_KEY_MAGIC, key2);
     Load_AES_Key();
     ASSERT_EQ(aes_key[0], 0x01010101);
-    ASSERT_EQ(aes_key[7], 0x08080808);
+    ASSERT_EQ(aes_key[3], 0x04040404);  /* Останнє слово AES-128 LoRa key */
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2456,7 +2460,7 @@ int main(void)
     RUN(test_queen_load_key_all_zeros_error);
     RUN(test_queen_load_key_wrong_magic_error);
     RUN(test_queen_load_key_partial_key_accepted);
-    RUN(test_queen_load_key_preserves_8_words);
+    RUN(test_queen_load_key_preserves_4_words);  /* post-ARCH.42: AES-128 LoRa = 4 words */
     RUN(test_queen_load_key_magic_value_correct);
     RUN(test_queen_load_key_overwrite);
 

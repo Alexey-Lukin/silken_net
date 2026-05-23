@@ -44,14 +44,33 @@ RSpec.describe HardwareKey, type: :model do
         expect(build(:hardware_key, aes_key_hex: nil)).not_to be_valid
       end
 
-      it "requires exactly 64 characters" do
-        short_key = "A" * 63
-        expect(build(:hardware_key, aes_key_hex: short_key)).not_to be_valid
+      it "rejects lengths outside the {32, 64} hex set" do
+        odd_length = "A" * 48
+        expect(build(:hardware_key, aes_key_hex: odd_length)).not_to be_valid
       end
 
-      it "accepts a valid 64-character hex key" do
+      it "accepts a 64-character hex key (Gateway CoAP AES-256, owner-less)" do
         valid_key = SecureRandom.hex(32).upcase
         expect(build(:hardware_key, aes_key_hex: valid_key)).to be_valid
+      end
+
+      it "accepts a 32-character hex key on a Tree owner (LoRa AES-128, post-ARCH.42)" do
+        valid_lora_key = SecureRandom.hex(16).upcase
+        expect(build(:hardware_key, :for_tree, aes_key_hex: valid_lora_key)).to be_valid
+      end
+
+      it "rejects a 64-character hex key on a Tree owner (must be AES-128 16-byte per ARCH.42)" do
+        wrong_key = SecureRandom.hex(32).upcase
+        record    = build(:hardware_key, :for_tree, aes_key_hex: wrong_key)
+        expect(record).not_to be_valid
+        expect(record.errors[:aes_key_hex].join).to include("Tree (LoRa AES-128)")
+      end
+
+      it "rejects a 32-character hex key on a Gateway owner (must be AES-256 32-byte)" do
+        wrong_key = SecureRandom.hex(16).upcase
+        record    = build(:hardware_key, :for_gateway, aes_key_hex: wrong_key)
+        expect(record).not_to be_valid
+        expect(record.errors[:aes_key_hex].join).to include("Gateway (CoAP AES-256)")
       end
 
       it "rejects non-hex characters" do
@@ -67,12 +86,12 @@ RSpec.describe HardwareKey, type: :model do
         expect(build(:hardware_key, previous_aes_key_hex: nil)).to be_valid
       end
 
-      it "requires exactly 64 characters when present" do
-        short_key = "B" * 32
+      it "rejects lengths outside the {32, 64} hex set" do
+        short_key = "B" * 33
         expect(build(:hardware_key, previous_aes_key_hex: short_key)).not_to be_valid
       end
 
-      it "accepts a valid 64-character hex previous key" do
+      it "accepts a valid hex previous key matching the active key length" do
         expect(build(:hardware_key, :with_grace_period)).to be_valid
       end
     end
@@ -253,7 +272,7 @@ RSpec.describe HardwareKey, type: :model do
       expect(hw_key.previous_aes_key_hex).to eq(original)
     end
 
-    it "generates a new aes_key_hex" do
+    it "generates a new aes_key_hex of the same length (Gateway-shaped default = 64 hex)" do
       hw_key   = create(:hardware_key)
       original = hw_key.aes_key_hex
 
@@ -261,7 +280,21 @@ RSpec.describe HardwareKey, type: :model do
       hw_key.reload
 
       expect(hw_key.aes_key_hex).not_to eq(original)
-      expect(hw_key.aes_key_hex.length).to eq(64)
+      expect(hw_key.aes_key_hex.length).to eq(original.length)
+      expect(hw_key.aes_key_hex.length).to eq(64) # Gateway shape (AES-256 CoAP)
+    end
+
+    it "rotates a Tree (AES-128 LoRa) key into another 32-hex key (post-ARCH.42)" do
+      hw_key   = create(:hardware_key, :for_tree)
+      original = hw_key.aes_key_hex
+      expect(original.length).to eq(32)
+
+      hw_key.rotate_key!
+      hw_key.reload
+
+      expect(hw_key.aes_key_hex).not_to eq(original)
+      expect(hw_key.aes_key_hex.length).to eq(32)
+      expect(hw_key.previous_aes_key_hex).to eq(original)
     end
 
     it "records rotated_at timestamp" do
@@ -318,7 +351,8 @@ RSpec.describe HardwareKey, type: :model do
   describe "#owner" do
     it "returns the tree when the device_uid matches a tree's DID" do
       tree   = create(:tree)
-      hw_key = create(:hardware_key, device_uid: tree.did)
+      # Post-ARCH.42: Tree-shaped HardwareKey має 32 hex (AES-128 LoRa).
+      hw_key = create(:hardware_key, device_uid: tree.did, aes_key_hex: SecureRandom.hex(16).upcase)
 
       expect(hw_key.owner).to eq(tree)
     end

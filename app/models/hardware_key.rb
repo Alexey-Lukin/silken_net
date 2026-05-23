@@ -47,14 +47,20 @@ class HardwareKey < ApplicationRecord
   # --- ВАЛІДАЦІЇ ---
   validates :device_uid, presence: true, uniqueness: true
 
-  # Основний ключ: строго 64 HEX символи (AES-256)
-  validates :aes_key_hex, presence: true, length: { is: 64 },
+  # Post-ARCH.42 (2026-05-23, Variant B): aes_key_hex має conditional length за owner type.
+  #   • Tree (Soldier LoRa channel) → 32 HEX chars (AES-128, 16 bytes) — ATECC608B SE constraint.
+  #   • Gateway (Queen CoAP-to-Rails channel) → 64 HEX chars (AES-256, 32 bytes) — без SE constraint.
+  # Format gate тільки на HEX-чарах; custom validator enforce довжину {32, 64} + owner-узгодженість.
+  validates :aes_key_hex, presence: true,
                           format: { with: /\A[0-9A-F]+\z/i }
+  validate  :aes_key_length_in_allowed_set
+  validate  :aes_key_length_matches_owner_type
 
-  # Попередній ключ: може бути порожнім, якщо ротації ще не було
-  validates :previous_aes_key_hex, length: { is: 64 },
-                                   format: { with: /\A[0-9A-F]+\z/i },
+  # Попередній ключ: може бути порожнім, якщо ротації ще не було.
+  # Та сама довжина, що і поточний (rotation у межах тієї самої device-type).
+  validates :previous_aes_key_hex, format: { with: /\A[0-9A-F]+\z/i },
                                    allow_nil: true
+  validate  :previous_aes_key_length_in_allowed_set
 
   # Ed25519 public key для M2M автентифікації (64 hex chars = 32 bytes)
   validates :ed25519_public_key_hex, length: { is: 64 },
@@ -109,11 +115,15 @@ class HardwareKey < ApplicationRecord
   # [DEPRECATED]: Use HardwareKeyService.rotate(device_uid) instead.
   # Service version includes downlink notification to the device.
   # This model method is kept for backward compatibility but logs a deprecation warning.
+  # Post-ARCH.42: rotate produces a key of the same length as the current one
+  # (16 bytes for Tree LoRa AES-128, 32 bytes for Gateway CoAP AES-256).
   def rotate_key!
     Rails.logger.warn "⚠️ [Deprecation] HardwareKey#rotate_key! called for #{device_uid}. " \
                       "Use HardwareKeyService.rotate(device_uid) for full rotation with downlink."
 
-    new_key_hex = SecureRandom.hex(32).upcase
+    # Match the existing key byte-length (Tree: 16 bytes / Gateway: 32 bytes)
+    byte_len = aes_key_hex.length / 2
+    new_key_hex = SecureRandom.hex(byte_len).upcase
 
     update!(
       previous_aes_key_hex: aes_key_hex,
@@ -144,5 +154,63 @@ class HardwareKey < ApplicationRecord
   # stale binary key is never served from cache.
   def versioned_cache_key
     "#{device_uid}:v:#{updated_at.to_f}"
+  end
+
+  ALLOWED_AES_HEX_LENGTHS = [ 32, 64 ].freeze
+  private_constant :ALLOWED_AES_HEX_LENGTHS
+
+  # Post-ARCH.42 (2026-05-23): дозволені довжини aes_key_hex — рівно 32 або 64 hex chars.
+  # 32 hex = 16 bytes = AES-128 (Tree LoRa); 64 hex = 32 bytes = AES-256 (Gateway CoAP).
+  def aes_key_length_in_allowed_set
+    return if aes_key_hex.blank?
+    return if ALLOWED_AES_HEX_LENGTHS.include?(aes_key_hex.length)
+
+    errors.add(
+      :aes_key_hex,
+      "must be 32 hex chars (AES-128 LoRa) or 64 hex chars (AES-256 CoAP), got #{aes_key_hex.length} [ARCH.42]"
+    )
+  end
+
+  def previous_aes_key_length_in_allowed_set
+    return if previous_aes_key_hex.blank?
+    return if ALLOWED_AES_HEX_LENGTHS.include?(previous_aes_key_hex.length)
+
+    errors.add(
+      :previous_aes_key_hex,
+      "must be 32 hex chars (AES-128 LoRa) or 64 hex chars (AES-256 CoAP), got #{previous_aes_key_hex.length} [ARCH.42]"
+    )
+  end
+
+  # Post-ARCH.42 (2026-05-23): enforce aes_key_hex довжина узгоджена з owner type.
+  # Tree (Soldier LoRa) → 32 hex (AES-128); Gateway (Queen CoAP) → 64 hex (AES-256).
+  # Skip перевірку, якщо owner ще не визначений (наприклад, build без associations) —
+  # довжина перевіряється `aes_key_length_in_allowed_set` валідатором незалежно.
+  def aes_key_length_matches_owner_type
+    return if aes_key_hex.blank?
+
+    # Associations attach via device_uid → tree.did / gateway.uid (not via FK columns).
+    # Use the in-memory association if it was set on the record (factory-style),
+    # otherwise fall back to a Tree / Gateway lookup by device_uid.
+    owner_kind = detect_owner_kind
+    return if owner_kind.nil?
+
+    expected = owner_kind == :tree ? 32 : 64
+    return if aes_key_hex.length == expected
+
+    actual_bits   = aes_key_hex.length * 4
+    expected_bits = expected * 4
+    owner_label   = owner_kind == :tree ? "Tree (LoRa AES-128)" : "Gateway (CoAP AES-256)"
+    errors.add(
+      :aes_key_hex,
+      "must be #{expected} hex chars (#{expected_bits} bits) for #{owner_label}, got #{aes_key_hex.length} hex (#{actual_bits} bits) [ARCH.42]"
+    )
+  end
+
+  def detect_owner_kind
+    return :tree    if association(:tree).loaded? && association(:tree).target.present?
+    return :gateway if association(:gateway).loaded? && association(:gateway).target.present?
+    return :tree    if device_uid.present? && Tree.exists?(did: device_uid)
+    return :gateway if device_uid.present? && Gateway.exists?(uid: device_uid)
+    nil
   end
 end

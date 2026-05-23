@@ -54,7 +54,7 @@
 #define OTA_REQ_MARKER            0x55       // [FW.27-B] Маркер зойку «повтори, Королево» (Soldier→Queen)
 #define OTA_REQ_HEADER_SIZE       7          // [FW.27-B] [0x55][DID:4][total_chunks:2 BE]
 #define OTA_REQ_BITMAP_MAX_BYTES  9          // [FW.27-B] 16 - 7 header = 9 байт ⇒ ≤72 чанки на один зойк
-#define OTA_REQ_PACKET_SIZE       16         // [FW.27-B] Один AES-256-ECB блок, як у телеметрії
+#define OTA_REQ_PACKET_SIZE       16         // [FW.27-B] Один AES блок (16 байт fixed, post-ARCH.42 LoRa AES-128), як у телеметрії
 #define OTA_REREQUEST_TIMEOUT_MS  300000UL   // [FW.27-B] 5 хв тиші → подати голос про пропуски
 #define BIO_STATUS_VM_ERROR       0xFF       // Мітка помилки mruby VM
 #define VCAP_LISTEN_THRESHOLD     2800       // Поріг напруги для прослуховування ефіру (мВ)
@@ -79,21 +79,25 @@
 #define PANIC_COUNTER_PAD_HI      14          // panic_payload[14] = counter MSB
 #define PANIC_COUNTER_PAD_LO      15          // panic_payload[15] = counter LSB
 
-// [FW.1] Flash-based AES key provisioning — per-device unique key via HKDF.
-// Factory Flashing writes device_key to protected Flash sector 0x0803E000
-// via SWD (STM32CubeProgrammer). Key is derived from master_key via HKDF-SHA256
-// on the backend (HardwareKeyService.derive_device_key).
-// See docs/03_05 §3.4а for full protocol design.
-#define FLASH_KEY_ADDR            0x0803E000UL  // Protected Flash sector for AES-256 key
-#define FLASH_KEY_WORDS           8             // 8 × uint32_t = 32 bytes = 256 bits
-#define FLASH_KEY_MAGIC           0x534B4559UL  // "SKEY" — magic marker for provisioned key
+// [FW.1 + ARCH.42 Variant B, 2026-05-23] Flash-based LoRa AES-128 key provisioning.
+// Per-device unique key derived via HKDF-SHA256 on backend with info
+// "silken-aes-128-lora-key" (HardwareKeyService.derive_lora_key). 16 bytes
+// (4 × uint32_t). Узгоджено з ATECC608B Secure Element Slot 0 (AES-128 hardware
+// constraint). See docs/03_05 §3.1, §3.4а for full protocol.
+//
+// Factory Flashing writes lora_key to protected Flash sector 0x0803E000 via SWD
+// (STM32CubeProgrammer). Magic marker "KEYL" guards against unprovisioned chips.
+#define FLASH_KEY_ADDR            0x0803E000UL  // Protected Flash sector for LoRa AES-128 key
+#define FLASH_KEY_WORDS           4             // 4 × uint32_t = 16 bytes = 128 bits (ARCH.42)
+#define FLASH_KEY_MAGIC           0x4B45594CUL  // "KEYL" — LoRa key magic (post-ARCH.42; was "SKEY")
 
 // [SEC.11 / FW.30] Flash-based Lorenz K_seed provisioning — per-device secret seed
 // for HKDF-derived (x₀,y₀,z₀) cold start. Stored in the same Protected Flash Sector
-// right after the AES key: [MAGIC:4][seed[0]:4]...[seed[7]:4] = 36 bytes.
+// right after the AES key: [MAGIC:4][lora_key:16] | [SEED_MAGIC:4][seed[0]:4]...[seed[7]:4]
+// = 20 + 36 = 56 bytes total before role byte (post-ARCH.42 layout, was 4+32=36 for AES-256).
 // Factory Flashing writes K_seed via HardwareKeyService.provision (HKDF-SHA256).
 // See docs/03_05 §3.4в for full protocol design.
-#define FLASH_SEED_ADDR           (FLASH_KEY_ADDR + 36)  // After AES key (4+32=36 bytes)
+#define FLASH_SEED_ADDR           (FLASH_KEY_ADDR + 20)  // After LoRa key (4 magic + 16 key = 20 bytes)
 #define FLASH_SEED_WORDS          8             // 8 × uint32_t = 32 bytes
 #define FLASH_SEED_MAGIC          0x4C534544UL  // "LSED" — Lorenz Seed magic marker
 #define EPOCH_SECONDS             86400UL       // Seconds per day for epoch_day calculation
@@ -105,9 +109,11 @@
 // носієм ролі — без додаткового sentinel-байту. Сторінка не provisioned
 // або корумпована → fallback на ROLE_SOLDIER (безпечний дефолт).
 //
-// Layout: [KEY_MAGIC:4][AES_KEY:32] | [SEED_MAGIC:4][K_SEED:32] | [ROLE_WORD:4]
-//          ^FLASH_KEY_ADDR (0x0803E000) ^FLASH_SEED_ADDR (+36)    ^FLASH_ROLE_ADDR (+72)
-#define FLASH_ROLE_ADDR           (FLASH_KEY_ADDR + 72)  // After K_seed (36+36=72 bytes)
+// Layout (post-ARCH.42 Variant B):
+//   [LORA_KEY_MAGIC:4][AES_KEY:16] | [SEED_MAGIC:4][K_SEED:32] | [ROLE_WORD:4]
+//   ^FLASH_KEY_ADDR (0x0803E000)     ^FLASH_SEED_ADDR (+20)      ^FLASH_ROLE_ADDR (+56)
+// Total: 4 + 16 + 4 + 32 + 4 = 60 bytes (was 4+32+4+32+4 = 76 before ARCH.42).
+#define FLASH_ROLE_ADDR           (FLASH_KEY_ADDR + 56)  // After K_seed (20 LoRa key block + 36 seed block = 56 bytes)
 #define ROLE_SOLDIER_MAGIC        0x534F4C44UL  // "SOLD" — звичайний Солдат-датчик
 #define ROLE_PROVISIONER_MAGIC    0x50524F56UL  // "PROV" — Провідник для CAD relay (ARCH.26)
 #define ROLE_SOLDIER              0
@@ -131,12 +137,14 @@ CRYP_HandleTypeDef hcryp; // Апаратний криптопроцесор AES
 /* USER CODE BEGIN PV */
 
 // === 0. КЛЮЧІ ОХОРОНИ (Trading Post) ===
-// [FW.1] AES-256 key — завантажується з Protected Flash Sector при boot.
-// Factory Flashing записує per-device ключ (HKDF-SHA256) на адресу FLASH_KEY_ADDR
-// через SWD. Формат Flash: [FLASH_KEY_MAGIC:4][key[0]:4]...[key[7]:4] = 36 байт.
+// [FW.1 + ARCH.42 Variant B, 2026-05-23] LoRa AES-128 key — завантажується з
+// Protected Flash Sector при boot. Factory Flashing записує per-device ключ
+// (HKDF-SHA256 з info "silken-aes-128-lora-key") на адресу FLASH_KEY_ADDR через
+// SWD. Формат Flash: [FLASH_KEY_MAGIC:4][key[0]:4]...[key[3]:4] = 20 байт
+// (post-ARCH.42; було 36 байт для AES-256).
 // Якщо ключ не provisioned — Error_Handler() (пристрій не може працювати без ключа).
 // Hardcoded значення нижче — ТІЛЬКИ для ініціалізації змінної до виклику Load_AES_Key().
-uint32_t aes_key[8] = {0};
+uint32_t aes_key[4] = {0};   // 16 bytes = AES-128 (ARCH.42; ATECC608B SE constraint)
 
 // [SEC.11 / FW.30] K_seed — per-device Lorenz seed for cold-start derivation.
 // Loaded from Protected Flash Sector via Load_Lorenz_Seed().
@@ -315,7 +323,7 @@ static inline float uint32_to_float(uint32_t u) {
 }
 
 // [FW.20-S1] LoRa-маяк синхронізації часу від Королеви.
-// 16-байтний відкритий текст (після AES-256-ECB decrypt):
+// 16-байтний відкритий текст (після AES-128-ECB decrypt, post-ARCH.42):
 //   [0x9C][unix_ts_be:u32][резерв:0×4][TTL][магія 'B'][padding:0×5]
 // Солдат дивиться на байт 0 розшифрованого RX-payload — відрізняється від
 // OTA (0x99), телеметрії (починається з DID, ніколи не 0x9C) та текстового
@@ -474,7 +482,7 @@ static uint8_t Soldier_Handle_CMD_SET_THRESHOLDS(const uint8_t* frame,
 // ітерація. Це freeze-контракт wire-формату для майбутнього hook'у.
 #define SYNC_REQ_MARKER                  0x56       // [FW.20-S2] Uplink: «Королево, час!»
 #define SYNC_REQ_MAGIC_BYTE              0x53       // [FW.20-S2] 'S' = sync — у байті 10
-#define SYNC_REQ_PACKET_SIZE             16         // Один AES-256-ECB блок
+#define SYNC_REQ_PACKET_SIZE             16         // Один AES-128-ECB блок (post-ARCH.42)
 #define TIME_SYNC_DRIFT_THRESHOLD_SEC    43200UL    // 12 год без beacon'а → панікуємо
 #define TIME_SYNC_REQUEST_COOLDOWN_MS    3600000UL  // 1 год між повторними зойками
 #define TIME_SYNC_COLD_BOOT_GRACE_MS     600000UL   // 10 хв після boot перш ніж панікувати
@@ -540,7 +548,7 @@ static uint32_t Soldier_Seconds_Since_Last_Sync(uint32_t now_tick)
 //                від 0x55 OTA_REQ (де байт 10 не визначений)
 //   Byte 11..15: PAD = 0 (резерв під майбутні поля: pkt_seq, last_known_ts, ...)
 //
-// Перед TX обгортаємо в AES-256-ECB як звичайний LoRa-пакет.
+// Перед TX обгортаємо в AES-128-ECB як звичайний LoRa-пакет (post-ARCH.42).
 static void Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
                                               uint32_t secs_since_sync)
 {
@@ -595,7 +603,7 @@ static void Build_Time_Sync_Request_Payload(uint8_t* out, uint32_t did,
 // рою. Дроп — безпечніший за обман.
 #define BEACON_RELAY_MAX_HOP_DELAY_SEC   3600UL
 #define BEACON_RELAY_MIN_TTL             2u   // TTL=1 не підлягає relay (decrement → 0)
-#define BEACON_FRAME_SIZE                16u  // Розмір AES-256-ECB блоку
+#define BEACON_FRAME_SIZE                16u  // Розмір AES блоку (128-bit fixed; post-ARCH.42 AES-128 LoRa)
 
 // Атомарне рішення «ретранслювати чи ні» з явною причиною дропу.
 // Готові точки для майбутніх Prometheus counters (`silkennet_beacon_relay_*_total`)
@@ -904,7 +912,7 @@ static inline void TinyML_Apply_Thresholds(float warn_raw, float crit_raw,
 // він подає голос: уплінк-зойк зі списком того, чого бракує. Королева
 // чує і повторює лише пропущене.
 //
-// Wire-формат (16 байт plaintext, 1× AES-256-ECB блок):
+// Wire-формат (16 байт plaintext, 1× AES-128-ECB блок, post-ARCH.42):
 //   [0]    0x55 marker
 //   [1..4] DID (big-endian) — Королева пам'ятає (DID, missing_bitmap)
 //   [5..6] total_chunks (big-endian) — перехресна перевірка
@@ -1133,7 +1141,7 @@ void Record_Audio_Wave(float* buffer, uint16_t length);
 void Trigger_Emergency_LoRa_TX(void);
 void Write_OTA_Contract_To_Flash(uint8_t* data, uint16_t size);
 
-// [FW.1] Завантаження AES-256 ключа з Protected Flash Sector.
+// [FW.1 + ARCH.42] Завантаження LoRa AES-128 ключа з Protected Flash Sector.
 // Викликається в main() ПЕРЕД MX_CRYP_Init().
 static void Load_AES_Key(void);
 
@@ -1621,7 +1629,7 @@ int main(void)
     lora_payload[10] &= ~PANIC_FLAG_BIT;
 
     // =========================================================================
-    // ФАЗА 4: ПЕРЕДАЧА ДАНИХ (AES-256 + Mesh)
+    // ФАЗА 4: ПЕРЕДАЧА ДАНИХ (AES-128 LoRa post-ARCH.42 + Mesh)
     // =========================================================================
 
     // [FW.10] Temperature-based TX deferral: at extreme cold (-15°C and below),
@@ -1957,7 +1965,7 @@ int main(void)
                                                                sizeof(ota_chunk_received),
                                                                req_payload);
             if (any_missing) {
-                // Шифруємо запит (1 AES-256-ECB block = 16 байт = 4 слова)
+                // Шифруємо запит (1 AES-128-ECB block = 16 байт = 4 слова, post-ARCH.42)
                 HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
                                   (uint32_t*)encrypted_req, 1000);
                 Radio.Send(encrypted_req, OTA_REQ_PACKET_SIZE);
@@ -2160,7 +2168,7 @@ void Trigger_Emergency_LoRa_TX(void)
         ((uint32_t)panic_frame_counter << PANIC_COUNTER_DR0_SHIFT) |
         (uint32_t)acoustic_events);
 
-    // 4. Шифруємо AES-256 і миттєво вистрілюємо
+    // 4. Шифруємо AES-128 (post-ARCH.42) і миттєво вистрілюємо
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)panic_payload, 4, (uint32_t*)encrypted_panic, 1000);
     Radio.Send(encrypted_panic, 16);
 
@@ -2182,11 +2190,14 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 }
 
 // =========================================================================
-// [FW.1] ЗАВАНТАЖЕННЯ AES-256 КЛЮЧА З PROTECTED FLASH SECTOR
+// [FW.1 + ARCH.42 Variant B, 2026-05-23] ЗАВАНТАЖЕННЯ LoRa AES-128 КЛЮЧА
+// З PROTECTED FLASH SECTOR
 // =========================================================================
-// Формат Flash-регіону на FLASH_KEY_ADDR (0x0803E000):
-//   [0] FLASH_KEY_MAGIC (0x534B4559 = "SKEY") — маркер provisioned ключа
-//   [1..8] aes_key[0..7] — 8 × uint32_t = 256 bits AES-256 key
+// Формат Flash-регіону на FLASH_KEY_ADDR (0x0803E000) — post-ARCH.42:
+//   [0] FLASH_KEY_MAGIC (0x4B45594C = "KEYL") — маркер provisioned LoRa-ключа
+//   [1..4] aes_key[0..3] — 4 × uint32_t = 128 bits AES-128 key
+//
+// Загальний розмір регіону = 4 + 16 = 20 байт (раніше 4 + 32 = 36 байт для AES-256).
 //
 // Якщо magic відсутній або ключ нульовий — пристрій не provisioned,
 // Error_Handler() викликає software reset. Пристрій не може працювати
@@ -2194,8 +2205,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 //
 // Записується при Factory Flashing через SWD:
 //   STM32CubeProgrammer --write key_payload.bin 0x0803E000
-// Ключ деривується на backend: HKDF-SHA256(master_key, device_uid, "silkennet-v1-aes256")
-// Див. docs/03_05 §3.4а для повного протоколу.
+// Ключ деривується на backend: HKDF-SHA256(master_key, device_uid, "silken-aes-128-lora-key")
+// — info-string відрізняється від CoAP-каналу (Gateway) "silken-aes-256-device-key"
+// для domain separation. Див. docs/03_05 §3.1, §3.4а для повного протоколу.
 static void Load_AES_Key(void)
 {
     const uint32_t *flash_ptr = (const uint32_t *)FLASH_KEY_ADDR;
@@ -2353,13 +2365,16 @@ static void Derive_Cold_Start_State(float *x0, float *y0, float *z0)
 }
 
 // Функція конфігурації апаратного AES (Створюється автоматично CubeMX)
+// Post-ARCH.42 Variant B (2026-05-23): LoRa-канал на AES-128 (ATECC608B SE constraint).
+// FW.2 target — `CRYP_AES_CCM` з 24-byte packet + 8-byte MIC; потребує hardware bench
+// для верифікації `HAL_CRYPEx_AESCCM_Encrypt` на STM32WLE5JC RM0461 §27.4.
 static void MX_CRYP_Init(void)
 {
   hcryp.Instance = AES;
   hcryp.Init.DataType = CRYP_DATATYPE_32B;
-  hcryp.Init.KeySize = CRYP_KEYSIZE_256B; // ЗМІНЕНО: Gaia 2.0 Standard
-  hcryp.Init.pKey = aes_key;
-  hcryp.Init.Algorithm = CRYP_AES_ECB; // Використовуємо базовий Electronic Codebook для простоти 1 блоку
+  hcryp.Init.KeySize = CRYP_KEYSIZE_128B; // ARCH.42 Variant B — даунгрейд 256→128 (ATECC608B SE constraint)
+  hcryp.Init.pKey = aes_key;              // 4 × uint32_t = 16 bytes (post-ARCH.42)
+  hcryp.Init.Algorithm = CRYP_AES_ECB;    // ECB transitional → TARGET: CRYP_AES_CCM (FW.2)
   HAL_CRYP_Init(&hcryp);
 }
 

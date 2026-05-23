@@ -118,9 +118,9 @@ HAL_PWR_EnterSTOP2Mode(PWR_STOPENTRY_WFI);  // негайно спати
 
 Анкери Silken Net вживлені у дерева у відкритому лісі — вони фізично вразливі до перехоплення. Водночас традиційна «важка» криптографія (RSA-2048) вимагає сотень тисяч тактів процесора та занадто дорога для системи з мікроватним живленням від EBFC. Поточна реалізація:
 
-- **Soldier → Queen (LoRa):** **AES-256-ECB** (`HAL_CRYP_Encrypt`, апаратний CRYP-модуль) — захищає тіло пакету, але **без IV** (режим ECB не забезпечує дифузію між блоками, BLOCKER-2 з 03_05)
-- **Queen → Rails (CoAP Batch):** AES-256-CBC + HRNG IV — батч зашифрований CBC
-- **Відсутнє:** автентифікація повідомлень — **немає MAC/MIC** (BLOCKER-3 з 03_05). Queen не може відрізнити легітимний пакет від підробленого. Також відсутнє per-device provisioning ключів (BLOCKER-1: єдиний hardcoded ключ для всієї мережі).
+- **Soldier → Queen (LoRa, post-ARCH.42 Variant B):** **AES-128-ECB** (`HAL_CRYP_Encrypt`, апаратний CRYP-модуль, `CRYP_KEYSIZE_128B`) — захищає тіло пакету, але **без IV** (режим ECB не забезпечує дифузію між блоками, BLOCKER-2 з 03_05). FW.2 target: **AES-128-CCM** (24B packet, 8-byte MIC, Frame Counter).
+- **Queen → Rails (CoAP Batch):** AES-256-CBC + HRNG IV — батч зашифрований CBC (без змін після ARCH.42 — окремий CoAP key)
+- **Відсутнє:** автентифікація повідомлень — **немає MAC/MIC** на LoRa (BLOCKER-3 з 03_05; закривається FW.2). Per-device provisioning ключів — **✅ Виправлено (FW.1, 2026-05-02)** через HKDF з різними info-strings (Tree LoRa AES-128 / Gateway CoAP AES-256).
 
 **Зв'язок з Публікаціями Ярмілка:**
 
@@ -128,12 +128,13 @@ HAL_PWR_EnterSTOP2Mode(PWR_STOPENTRY_WFI);  // негайно спати
 
 **Завдання А: ECC (Curve25519) для Вирішення BLOCKER-1 — Key Exchange**
 
-Поточний BLOCKER-1 (03_05): єдиний hardcoded AES-256 ключ у Flash всіх вузлів — один зламаний вузол компрометує всю мережу. Рішення — **ECDH (Elliptic Curve Diffie-Hellman)** для безпечного key exchange при Factory Flashing, замість pre-shared symmetric key:
+Історичний BLOCKER-1 (03_05): єдиний hardcoded AES ключ у Flash всіх вузлів — один зламаний вузол компрометує всю мережу. **✅ Закрито FW.1 (2026-05-02)** через per-device HKDF з `PROVISIONING_MASTER_KEY`. Майбутній upgrade — **ECDH (Curve25519)** для ephemeral key exchange (Perfect Forward Secrecy):
 
 | Алгоритм | Рівень безпеки | Розмір публічного ключа | Такти CPU |
 |----------|---------------|------------------------|-----------|
 | RSA-2048 (key exchange) | 112 bit | 256 байт | ~1,000,000 |
-| AES-256 (symmetric, поточно) | 256 bit | 32 байт | ~50,000 |
+| AES-256 (CoAP Queen↔Rails, current) | 256 bit (128 post-Grover) | 32 байт | ~50,000 |
+| **AES-128** (LoRa Soldier↔Queen, post-ARCH.42) | **128 bit (64 post-Grover, компенсується ratchet)** | **16 байт** | **~40,000** (10 раундів vs 14) |
 | **ECDH (Curve25519)** | **128 bit** | **32 байт** | **~10,000** |
 
 ECDH не замінює AES для шифрування пакетів — він забезпечує безпечний **обмін унікальним per-device ключем** при провізіонуванні (`POST /api/v1/provisioning/register`). Після ECDH кожен вузол отримує унікальний `device_key = HKDF(master_key, device_uid)`.
@@ -156,7 +157,7 @@ memcpy(packet + MAC_OFFSET, mac, 4);
 
 Цей MAC верифікується Queen-шлюзом та Rails backend (MAC mismatch → дроп пакету → EwsAlert) перед передачею в peaq DID pipeline (Модуль 05_02).
 
-> **Рекомендоване рішення (→ `03_05`):** AES-256-CCM для LoRa — апаратно підтримується STM32WLE5JC (`CRYP_AES_CCM` у HAL), надає одночасно confidentiality + MAC (MIC) + Frame Counter (захист від replay) в одній операції. Пакет розширюється до 24 байт (+ 3-байтний Frame Counter). Альтернатива: AES-256-GCM (потребує порівняльного аналізу такти/RAM). Порівняння CCM vs GCM vs окремий BLAKE2s MAC — завдання Ярмілка (Підгрупа Б).
+> **Рекомендоване рішення (→ `03_05`, post-ARCH.42 Variant B):** **AES-128-CCM** для LoRa — апаратно підтримується STM32WLE5JC (`CRYP_AES_CCM` у HAL), узгоджено з ATECC608B Secure Element (AES-128 hardware constraint), надає одночасно confidentiality + MAC (MIC, 8 байт) + Frame Counter (захист від replay) в одній операції. Пакет розширюється до 24 байт (+ 4-байтний Frame Counter як CCM nonce + 8-байтний MIC). Альтернатива: AES-128-GCM (потребує порівняльного аналізу такти/RAM). Порівняння CCM vs GCM vs окремий BLAKE2s MAC — завдання Ярмілка (Підгрупа Б).
 
 ---
 
@@ -544,7 +545,7 @@ Link Budget 'Silken Net':
   Незашифровані (5 байт):
     Bytes 0-3: DID (4B, uint32_t, Network byte order)
     Byte 4:    RSSI (1B, int8_t, додається Queen при ретрансляції)
-  AES-256-ECB зашифровані (16 байт = 1 блок):
+  AES-128-ECB зашифровані (16 байт = 1 блок, post-ARCH.42 Variant B):
     Bytes 5-6:   Vcap (2B, uint16_t, мілівольти)
     Byte 7:      Temp (1B, int8_t, °C)
     Byte 8:      Acoustic (1B, uint8_t, TinyML клас)
@@ -1725,7 +1726,7 @@ Guard clauses перед мінтингом:
 - Порівняльний аналіз ECC (Curve25519/ECDH), BLAKE2s, SipHash-2-4 на STM32WLE5JC: такти CPU, RAM footprint, рівень захисту
 - Імплементація lightweight MAC (BLAKE2s або SipHash-2-4) для автентифікації LoRa пакетів — вирішення BLOCKER-3 з 03_05 (відсутній MAC/MIC)
 - Розробка ECDH-based key exchange для Factory Flashing provisioning — вирішення BLOCKER-1 з 03_05 (hardcoded єдиний ключ на всю мережу). ECC не замінює AES-шифрування, а забезпечує безпечний обмін унікальними per-device ключами
-- Оцінка доцільності переходу ECB → **AES-256-CCM** для LoRa (рекомендоване рішення BLOCKER-2 + BLOCKER-3 з 03_05): CCM апаратно підтримується STM32WLE5JC (`CRYP_AES_CCM`), надає confidentiality + MIC + Frame Counter в одному режимі; порівняння CCM vs GCM vs окремий BLAKE2s по тактах/RAM/payload overhead (пакет 21 → 24 байти)
+- Оцінка доцільності переходу ECB → **AES-128-CCM** для LoRa (post-ARCH.42 Variant B; рекомендоване рішення BLOCKER-2 + BLOCKER-3 з 03_05): CCM апаратно підтримується STM32WLE5JC (`CRYP_AES_CCM`), узгоджено з ATECC608B Secure Element, надає confidentiality + MIC (8-byte) + Frame Counter (4-byte) в одному режимі; порівняння CCM vs GCM vs окремий BLAKE2s по тактах/RAM/payload overhead (пакет 21 → 24 байти)
 - Верифікація відповідності вимогам: ECDH < 10,000 тактів CPU на key exchange, MAC ≤ 4 байти у 21-байтовому пакеті
 
 #### Підгрупа В: Арифметичне Стиснення та Fuzzy Deduplication (Модуль 06)

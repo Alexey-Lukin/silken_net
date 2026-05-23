@@ -17,9 +17,12 @@ require "openssl"
 #     length: 32 bytes
 #   )
 #
-# Domain separation від HardwareKeyService AES-256 device-key (info
-# "silken-aes-256-device-key") — це гарантує, що навіть при компрометації
-# одного К-вектора, інші ключі залишаються непохитними.
+# Domain separation від HardwareKeyService AES device-keys — після ARCH.42
+# (2026-05-23) їх два, з різними info-strings:
+#   • "silken-aes-128-lora-key"   — Tree LoRa AES-128 (16 bytes)
+#   • "silken-aes-256-device-key" — Gateway CoAP AES-256 (32 bytes)
+# Це гарантує, що навіть при компрометації одного К-вектора, інші ключі
+# (включно з цим OTA HMAC) залишаються непохитними.
 #
 # Шифрові виклики (HKDF) тут слідують тому самому патерну, що й
 # HardwareKeyService: `SecurityError` без master key (SEC.11 hard cutover,

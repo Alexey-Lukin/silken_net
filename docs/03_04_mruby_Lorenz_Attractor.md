@@ -18,7 +18,7 @@
 - **Пов'язані модулі:**
   - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
   - TinyML Акустичний Інференс → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
-  - Апаратний AES-256 та Безпека → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+  - Апаратне симетричне шифрування та Безпека → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
   - Бізнес-Логіка та Сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
   - Proof of Growth Pipeline → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
 
@@ -144,7 +144,7 @@ z0 = bytes_to_signed_unit_float(digest[16,  8])
 
 **Вплив на DCI:** обидві сторони стартують з byte-identical `(x₀,y₀,z₀)`. Float divergence між ARM↔x86 IEEE-754 за 250 ітерацій < 1e-12 (емпірично, FW.7 closure). `check_z_divergence!` зберігає категоричну невідповідність як default; **[FW.31, 2026-05-02]** числовий tolerance band (`< 0.001`) реалізовано під feature-flag `GAIA_DCI_NUMERIC_TOLERANCE` + `GAIA_DCI_NUMERIC_EPSILON` (constant `TelemetryUnpackerService::DEFAULT_DCI_EPSILON = 0.001`, malformed ENV → graceful fallback). Numeric branch виконується ON-TOP-OF категоричного (не замінює) і лише коли `attributes[:device_z]` присутній — сьогодні LoRa packet 21B не несе raw Z, тож branch інертний у production. Стає активним після post-FW.2 packet revision АБО після лабораторного вимірювання реального drift на target HW (STM32WLE5JC vs GCP x86-64) → flip `GAIA_DCI_NUMERIC_TOLERANCE=true` через Kamal env, без code change. 6 spec examples (`[FW.31] numeric tolerance band` describe).
 
-**Cross-ref:** [00_08 SEC.11](00_08_Action_Plan_Tracker), [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-), [04_02 SilkenNet::SeedDerivation](04_02_Business_Logic_and_Services), [05_02 Dual Computation Integrity](05_02_Proof_of_Growth_Pipeline).
+**Cross-ref:** [00_08 SEC.11](00_08_Action_Plan_Tracker), [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-), [04_02 SilkenNet::SeedDerivation](04_02_Business_Logic_and_Services), [05_02 Dual Computation Integrity](05_02_Proof_of_Growth_Pipeline).
 
 ---
 
@@ -165,7 +165,7 @@ z0 = bytes_to_signed_unit_float(digest[16,  8])
 
 Numeric branch виконується **лише** коли `attributes[:device_z]` присутній. Сьогодні LoRa packet 21B (`Soldier → Queen`) **не несе** raw Z — фірмварний `bio_contract.rb#calculate_state` повертає тільки `status_byte = [PanicFlag:1 | Status:2 | GrowthPoints:5]` (FW.29-PACK). Branch стає активним після одного з:
 
-1. **FW.2 CCM transition** (24-байтний пакет, [`03_05 §3.2 BLOCKER-2`](03_05_Hardware_AES256_and_Security)) — якщо при перепакуванні зарезервувати ≥2 байти на стиснутий Z (наприклад, [E.7 ARCH.22 lambda-exponent](05_02_Proof_of_Growth_Pipeline)).
+1. **FW.2 CCM transition** (24-байтний пакет, [`03_05 §3.2 BLOCKER-2`](03_05_Hardware_Symmetric_Crypto_and_Security)) — якщо при перепакуванні зарезервувати ≥2 байти на стиснутий Z (наприклад, [E.7 ARCH.22 lambda-exponent](05_02_Proof_of_Growth_Pipeline)).
 2. **Окремий пакет-варіант ML2** — рідкісний uplink (~1/добу) із повним Z-snapshot для калібровки.
 3. **Server-side surrogate** — backend сам обчислює `device_z` зі збереженого `(x_prev, y_prev, z_prev)` chain'у + telemetry inputs, як референс для self-check (це робить numeric branch ефективно lab-only).
 
@@ -218,7 +218,7 @@ kamal env push --secret GAIA_DCI_NUMERIC_TOLERANCE=false
 5. malformed `GAIA_DCI_NUMERIC_EPSILON="abc"` → graceful fallback + warn
 6. `device_z` missing → numeric branch skipped (Gate D guard)
 
-**Cross-ref:** [00_08 FW.31](00_08_Action_Plan_Tracker), [03_05 §3.2 BLOCKER-2 FW.2 CCM wire format](03_05_Hardware_AES256_and_Security), [04_02 TelemetryUnpackerService](04_02_Business_Logic_and_Services), [06_03 Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
+**Cross-ref:** [00_08 FW.31](00_08_Action_Plan_Tracker), [03_05 §3.2 BLOCKER-2 FW.2 CCM wire format](03_05_Hardware_Symmetric_Crypto_and_Security), [04_02 TelemetryUnpackerService](04_02_Business_Logic_and_Services), [06_03 Prometheus](06_03_Prometheus_Observability) (після Gate D — додати `silkennet_dci_numeric_rejections_total`).
 
 ---
 
@@ -898,7 +898,7 @@ if (mrb) {
 | Firmware Lifecycle (Phase 1 Sensor Acquisition) | ✅ Синхронізовано | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA) |
 | TinyML Acoustic Inference (acoustic_events) | ⚠️ `Run_Inference()` закоментовано | [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) |
 | ADC Temperature Acquisition | ✅ Реалізовано | [02_03_BQ25570_MPPT_Nano_Power](02_03_BQ25570_MPPT_Nano_Power) |
-| **K_seed Provisioning + HKDF/HMAC bridge** [SEC.11] | ✅ Реалізовано — `K_seed = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed\|<DID>")`, mbedtls bridge для HMAC-SHA256 cold-start derivation | [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-) |
+| **K_seed Provisioning + HKDF/HMAC bridge** [SEC.11] | ✅ Реалізовано — `K_seed = HKDF-SHA256(PROVISIONING_MASTER_KEY, salt="silken-lorenz-v1", info="silken-lorenz-seed\|<DID>")`, mbedtls bridge для HMAC-SHA256 cold-start derivation | [03_05 §3.4в Lorenz K_seed Derivation](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-) |
 | RTC State Persistence (FW.6) | ✅ Реалізовано — DR16-DR18 + DR19 magic `"LZST"`, читається warm-restart-ом перед mruby | [03_01_Firmware_Lifecycle_and_DMA](03_01_Firmware_Lifecycle_and_DMA#-2-soldier-rtc-backup-register-map-dr0dr19--canonical-ssot-doc3) |
 
 ### 7.2 Downstream Dependencies (Що блокує ЦЕЙ модуль)

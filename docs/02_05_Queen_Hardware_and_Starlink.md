@@ -21,7 +21,7 @@
   - MPPT → [`02_03_BQ25570_MPPT_Nano_Power`](02_03_BQ25570_MPPT_Nano_Power)
   - Суперконденсатор → [`02_04_EDLC_Supercapacitor_Buffer`](02_04_EDLC_Supercapacitor_Buffer)
   - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
-  - AES-256 → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+  - Апаратне симетричне шифрування → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
   - Бізнес-логіка → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
 
 ---
@@ -227,7 +227,7 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 | Параметр | Значення |
 |---------|---------|
 | Частота | 868.0 МГц (EU ISM, `Radio.SetChannel(868000000)`) |
-| Розмір пакету | 16 байт (один AES-256 блок) |
+| Розмір пакету | 16 байт (один AES блок; block size 128 bit фіксований; key size = AES-128 для LoRa post-ARCH.42) |
 | Режим RX | Continuous (`LORA_RX_INFINITE`) |
 | ISR | `OnRxDone()` — апаратне переривання від SX1262 |
 | Обробка пакету | `Process_And_Cache_Data()` → CIFO cache (50 слотів) |
@@ -553,18 +553,20 @@ Starlink Mini — компактний термінал LEO-супутника �
 ```
 [Ліс: 1–5000 дерев у радіусі 3–5 км]
            │ LoRa 868 МГц
-           │ 16-байтні пакети (AES-256-ECB)
+           │ 16-байтні пакети (AES-128-ECB, post-ARCH.42)
            ▼
 [STM32WLE5JC: Continuous RX]
            │
-           │ 1. OnRxDone ISR → AES-ECB decrypt → Process_And_Cache_Data()
+           │ 1. OnRxDone ISR → AES-128-ECB decrypt (LoRa key) → Process_And_Cache_Data()
            │ 2. CIFO cache: дедуплікація + priority-aware eviction
            │ 3. 50 слотів × 21 байт → binary batch
            │
 [Flush trigger: 1 год або 45/50 слотів]
            │
-           │ 4. HRNG → 128-бітний IV
-           │ 5. AES-256-CBC шифрує весь батч
+           │ 4. MX_CRYP re-init → CRYP_KEYSIZE_256B + coap_key
+           │ 5. HRNG → 128-бітний IV
+           │ 6. AES-256-CBC шифрує весь батч (CoAP магістраль)
+           │ 7. Restore CRYP_KEYSIZE_128B + LoRa aes_key (SEC.8)
            │ 6. AT+CCOAPNEW + AT+CCOAPSEND → SIM7070G UART
            │
            ▼
@@ -605,7 +607,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 
 **Рішення:** [Helium Network](https://www.helium.com/) — найбільша у світі децентралізована мережа **LoRaWAN**. Сотні тисяч hotspot-ів у 180+ країнах, встановлених звичайними людьми на балконах та дахах.
 
-> ⚠️ **Архітектурне уточнення (2026):** Helium працює на протоколі **LoRaWAN MAC-layer**, а Soldier використовує **raw LoRa P2P** (фізичний рівень) з AES-256-ECB поверх 21-байтного binary payload. Helium hotspot **не прийме** прямий пакет з Soldier — для валідного uplink потрібен LoRaWAN frame з DevEUI/AppEUI/AppKey, FCntUp counter, MIC та OTAA/ABP join state. Тому Helium fallback архітектурно **переноситься з Soldier на Queen**.
+> ⚠️ **Архітектурне уточнення (2026, post-ARCH.42):** Helium працює на протоколі **LoRaWAN MAC-layer**, а Soldier використовує **raw LoRa P2P** (фізичний рівень) з **AES-128-ECB** (ARCH.42; transitional) → AES-128-CCM (FW.2 target) поверх 21-байтного binary payload. Helium hotspot **не прийме** прямий пакет з Soldier — для валідного uplink потрібен LoRaWAN frame з DevEUI/AppEUI/AppKey, FCntUp counter, MIC та OTAA/ABP join state. Однак LoRaWAN нативно використовує саме AES-128 (AppSKey/NwkSKey), тому ARCH.42 спрощує future Helium bridging — той самий ключ-розмір. Helium fallback архітектурно **переноситься з Soldier на Queen**.
 
 ### Архітектура Helium Fallback (правильна)
 
@@ -656,7 +658,7 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
     // Стиснути batch до lambda-summary (ARCH.22) для вписування в обмежений LoRaWAN payload
     HAL_IWDG_Refresh(&hiwdg);                           // refresh ДО входу в сліпу зону
     queen_helium_lorawan_uplink(aggregated_lambda_summary, count);  // multi-channel hop, OTAA
-    Radio_Reinit_RawLoRa_868MHz();                      // повернути PHY у raw LoRa P2P 868.0 MHz, AES-256-ECB
+    Radio_Reinit_RawLoRa_868MHz();                      // повернути PHY у raw LoRa P2P 868.0 MHz, AES-128-ECB (post-ARCH.42)
     Radio.Rx(LORA_RX_INFINITE);                         // одразу примусово відкрити RX-вікно
     HAL_IWDG_Refresh(&hiwdg);                           // та одразу після виходу
 }
@@ -668,7 +670,7 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 > 2. **Multi-channel hopping** Helium-сесії на каналах 868.1/868.3/868.5 МГц (LoRaWAN MAC), під час якої raw-LoRa preamble на 868.0 МГц апаратно не детектується — будь-який панічний пакет від Soldier (chainsaw alert) втрачається.
 > 3. **Жорстка post-condition:** одразу після `LoRaMacMlmeRequest/MCPS` (або при таймауті) виклик `Radio_Reinit_RawLoRa_868MHz()` → `Radio.SetChannel(868000000)` → `Radio.SetModem(MODEM_LORA)` → `Radio.Rx(LORA_RX_INFINITE)`.
 > 4. **Бюджет сліпоти:** `helium_session_elapsed = HAL_GetTick() - helium_session_start_tick` має бути `< HELIUM_BLIND_WINDOW_MAX_MS (20 с)`. Перевищення → форсований hardware reset через IWDG (~26.6 с), оскільки кластер краще перезавантажити, ніж довго не слухати.
-> 5. **AES контекст:** Helium uplink використовує LoRaWAN AES-128 CMAC/CTR (інший ключ — `AppSKey`/`NwkSKey`). Після виходу з Helium-сесії `hcryp` має бути перевипадково ініціалізований у `AES-256-ECB` режим для `radio_decrypt_lora()`.
+> 5. **AES контекст (post-ARCH.42):** Helium uplink використовує LoRaWAN AES-128 CMAC/CTR (інший ключ — `AppSKey`/`NwkSKey`). Наш raw LoRa тепер також AES-128-ECB (ARCH.42 Variant B). Після виходу з Helium-сесії `hcryp` має бути перевипадково ініціалізований у `CRYP_KEYSIZE_128B` + `CRYP_AES_ECB` режим з нашим LoRa-ключем (`aes_key[4]`) для `radio_decrypt_lora()`. Спрощений context-switch — обидві сесії на тій самій key-size.
 >
 > Втрата chainsaw-пакета у Helium-вікні — прийнятний ризик (Edge Data Fusion агрегує lambda-summary, а Soldier ретрансмітить панік-пакет з TTL=5 reflex broadcast). Цей risk acceptance задокументований як ALARP — At-Least-As-Reasonably-Practical mitigation: коротке вікно (≤ 20 с) + soldier-side TTL retry + IWDG fallback.
 
@@ -736,6 +738,6 @@ if (uplink_down_minutes >= HELIUM_FALLBACK_THRESHOLD_MIN &&
 | Модуль | Зміст |
 |--------|-------|
 | [03_02 Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) | Детальна логіка прошивки: CIFO, дедуплікація, OTA, AT-команди |
-| [03_05 Hardware AES256 and Security](03_05_Hardware_AES256_and_Security) | Повний аудит безпеки: ECB vs CBC, управління ключами |
+| [03_05 Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Повний аудит безпеки: ECB vs CBC, управління ключами |
 | [02_03 BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | MPPT для Soldier |
 | [07_02 Unit Economics and BOM](07_02_Unit_Economics_and_BOM) | Вартість розгортання (блокується цим документом) |

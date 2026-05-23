@@ -1,16 +1,23 @@
-# 03_05: Апаратний AES-256 та Безпека (Криптографія Пакетів)
+# 03_05: Апаратне симетричне шифрування та Безпека (Криптографія Пакетів)
+
+> 📜 **Архітектурна нота (2026-05-23):** Документ перейменовано з `03_05_Hardware_AES256_and_Security` після прийняття **ARCH.42 Варіант B**. Силова частина криптостеку розділена на дві категорії:
+> 1. **LoRa-канал (Soldier ↔ Queen + OTA broadcast):** AES-128-CCM (constraint Microchip ATECC608B — апаратний AES-engine SE підтримує лише 128-бітні ключі)
+> 2. **CoAP-магістраль (Queen ↔ Rails) + AR-Encryption у Postgres:** AES-256-CBC / AES-256-GCM (без апаратного SE-constraint; ключ Queen зберігається у Protected Flash MCU)
+>
+> Постквантовий горизонт + ratchet-rotation описано у новому **§11 PQC Migration Roadmap**.
 
 ---
 
 ## 🎯 Мета
 
-Зафіксувати детальний криптографічний пайплайн вузлів **Soldier** (датчик дерева) та **Queen** (шлюз-агрегатор): режим роботи AES, структуру зашифрованих пакетів, управління ключами та генерацію вектора ініціалізації (IV). Документ є SSOT для Hardware Security Audit перед масовим виробничим розгортанням.
+Зафіксувати детальний криптографічний пайплайн вузлів **Soldier** (датчик дерева) та **Queen** (шлюз-агрегатор): режими роботи AES (CCM для LoRa, CBC для CoAP), структуру зашифрованих пакетів, управління ключами (HKDF per-device + ATECC608B Secure Element для LoRa), генерацію вектора ініціалізації (IV/Nonce) та довгостроковий PQC migration roadmap. Документ є SSOT для Hardware Security Audit перед масовим виробничим розгортанням.
 
 ---
 
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — апаратне шифрування налаштовано, 137 host-based тестів проходять
+- **Архітектурне рішення ARCH.42 (2026-05-23):** Варіант B — LoRa-канал переведено на **AES-128-CCM** (constraint ATECC608B); CoAP-магістраль залишається на **AES-256-CBC**. Глобальний SSOT-патч виконано.
 - **Пов'язані модулі:**
   - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
   - Прошивка Шлюзу Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
@@ -26,19 +33,24 @@
 
 | Компонент | Стан |
 |-----------|------|
-| **AES-256 апаратний модуль** (`MX_CRYP_Init` / `HAL_CRYP_Init`) | ✅ Реалізовано (обидва вузли) |
-| **Soldier → Queen (LoRa): AES-256-ECB** | ✅ Реалізовано |
-| **Queen → Rails (CoAP Batch): AES-256-CBC + HRNG IV** | ✅ Реалізовано |
-| **Rails → Queen (CoAP Command): AES-256-CBC + IV** | ✅ Реалізовано |
+| **Апаратний AES-модуль** (`MX_CRYP_Init` / `HAL_CRYP_Init`) | ✅ Реалізовано (обидва вузли). Підтримує `CRYP_KEYSIZE_128B` (LoRa) та `CRYP_KEYSIZE_256B` (CoAP — лише Queen) |
+| **Soldier → Queen (LoRa): AES-128-ECB** [ARCH.42 transitional] | ✅ Реалізовано (key-size flip 256→128 виконано 2026-05-23). CCM-mode upgrade — окремий FW.2 subtask |
+| **Soldier → Queen (LoRa): AES-128-CCM 24B packet** [FW.2 target] | 🟡 SPEC OPEN — дизайн зафіксовано (BLOCKER-2 нижче); firmware implementation потребує STM32 hardware bench для `CRYP_AES_CCM` верифікації |
+| **Queen → Rails (CoAP Batch): AES-256-CBC + HRNG IV** | ✅ Реалізовано (без змін після ARCH.42 — CoAP не зачіпається) |
+| **Rails → Queen (CoAP Command): AES-256-CBC + IV** | ✅ Реалізовано (без змін після ARCH.42) |
 | **ECB Restoration після CBC операцій (Queen)** | ✅ Виправлено (`[FIX: CRITICAL — ECB Restoration]`) |
 | **HRNG Fallback (безпечна деградація)** | ✅ Реалізовано (XOR tick + index) |
-| **Emergency TX (EwsAlert / Panic): AES-256-ECB** | ✅ Реалізовано |
+| **Emergency TX (EwsAlert / Panic): AES-128-ECB [transitional] / AES-128-CCM [FW.2]** | ✅ Реалізовано (key-size 128). CCM-mode сторожа панічного каналу — після FW.2 transition |
 | **AES Key — per-device HKDF provisioning (FW.1)** | ✅ Firmware CLOSED (2026-05-02). Factory Flashing Pipeline (SEC.3) + RDP Level 2 (SEC.2) — залишаються |
-| **ECB Mode для Soldier ↔ Queen (відсутність IV)** | 🔴 BLOCKER (рекомендовано AES-256-CCM з 24-байтним пакетом) |
-| **Відсутність MAC/MIC для LoRa-пакетів** | 🔴 BLOCKER (вирішується CCM — апаратний MIC + Frame Counter) |
+| **Per-device LoRa AES-128 key (16-byte) [ARCH.42]** | ✅ Backend `HardwareKeyService.derive_lora_key` (info `"silken-aes-128-lora-key"`) + Firmware `Load_AES_Key()` 4 words |
+| **Per-device CoAP AES-256 key (32-byte) — Gateway only** | ✅ Backend `HardwareKeyService.derive_device_key` (info `"silken-aes-256-device-key"`) + Queen Flash 8 words |
+| **ECB Mode для Soldier ↔ Queen (відсутність IV)** | 🟡 OPEN — transitional AES-128-ECB після ARCH.42; повне закриття після FW.2 CCM rollout |
+| **Відсутність MAC/MIC для LoRa-пакетів** | 🟡 OPEN — закривається разом з FW.2 CCM (8-byte MIC + 4-byte Frame Counter) |
 | **HRNG Fallback — передбачуваний seed** | ✅ Виправлено (djb2 STM32 HW UID XOR tick — унікальний на кожній Queen) |
-| **Відсутність ротації ключів (Key Rotation)** | 🟡 OPEN (рекомендовано Hash Ratchet KDF — PFS без передачі ключа) |
+| **Відсутність ротації ключів (Key Rotation)** | 🟡 OPEN (рекомендовано Hash Ratchet KDF — PFS без передачі ключа; PQC bridge через §11) |
 | **ECB Restoration Race (HAL_CRYP_Init failure)** | ✅ Виправлено (SEC.8) — RCC reset + `NVIC_SystemReset()` при апаратному збої |
+| **ATECC608B Secure Element — LoRa AES-128 + ECC P-256 [ARCH.42 enabler]** | 🟡 OPEN — slot mapping + I²C integration spec'нуто у §3.7; bench eval kit замовлення = HW-task |
+| **PQC migration roadmap (2026 → 2028 → 2035)** | 🟢 NEW — задокументовано у §11 (TRL-stratified layering для Soldier↔Queen, Queen↔Rails, OTA, peaq DID) |
 
 ---
 
@@ -80,18 +92,22 @@ uint32_t aes_key[8] = {0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX, 0xXXXXXXXX,
 
 ---
 
-### 🔴 BLOCKER-2: ECB Mode для LoRa Soldier → Queen (Відсутній IV, немає дифузії між блоками)
+### 🟡 BLOCKER-2: ECB Mode для LoRa Soldier → Queen (transitional після ARCH.42)
 
-**Статус:** Відкрито. **Архітектурна вразливість шифрування.**
+**Статус:** 🟡 Частково мітиговано через ARCH.42 (key-size 128). **Повне закриття — після FW.2 CCM rollout.**
 
-**Файли:** `firmware/soldier/main.c:747`, `firmware/queen/main.c:781`
+**Файли:** `firmware/soldier/main.c` (MX_CRYP_Init), `firmware/queen/main.c` (MX_CRYP_Init)
 
 ```c
-// Soldier MX_CRYP_Init():
-hcryp.Init.Algorithm = CRYP_AES_ECB; // Використовуємо базовий Electronic Codebook для простоти 1 блоку
+// Soldier MX_CRYP_Init() — поточний стан (ARCH.42 transitional):
+hcryp.Init.KeySize   = CRYP_KEYSIZE_128B;     // ARCH.42 — даунгрейд з 256 → 128 (ATECC608B SE constraint)
+hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CRYP_AES_CCM після FW.2
 
-// Queen MX_CRYP_Init():
-hcryp.Init.Algorithm = CRYP_AES_ECB; // ECB для LoRa-трафіку між Королевою та Солдатами
+// Queen MX_CRYP_Init() — поточний стан:
+hcryp.Init.KeySize   = CRYP_KEYSIZE_128B;     // LoRa-канал з Soldiers (per-device 128-bit key)
+hcryp.Init.Algorithm = CRYP_AES_ECB;          // ECB transitional — TARGET: CRYP_AES_CCM
+
+// CoAP до Rails — Queen залишається на AES-256-CBC, окремий init context (HardwareKey Gateway-row).
 ```
 
 **ECB (Electronic Codebook) — детермінований режим:**
@@ -108,11 +124,11 @@ hcryp.Init.Algorithm = CRYP_AES_ECB; // ECB для LoRa-трафіку між К
 
 **Пом'якшуюча обставина (Mitigation):** Оскільки LoRa-пакет є рівно одним AES-блоком (16 байт), ECB еквівалентний CBC для одного блоку — дифузія між блоками не має значення. Але проблема детермінізму та replay залишається.
 
-**Необхідна дія (рекомендоване рішення — AES-256-CCM):**
+**Необхідна дія (рекомендоване рішення — AES-128-CCM, після ARCH.42 Варіант B):**
 
-Найефективніший шлях вирішення BLOCKER-2 та BLOCKER-3 одночасно — перехід на **AES-256-CCM** (Counter with CBC-MAC), який **апаратно підтримується STM32WLE5JC** (`CRYP_AES_CCM` у HAL). CCM надає конфіденційність + автентифікацію + захист від replay в одній операції.
+Найефективніший шлях вирішення BLOCKER-2 та BLOCKER-3 одночасно — перехід на **AES-128-CCM** (Counter with CBC-MAC), який **апаратно підтримується STM32WLE5JC** (`CRYP_AES_CCM` у HAL) та **повністю узгоджений з ATECC608B Secure Element** (AES-engine SE підтримує лише 128-бітні ключі). CCM надає конфіденційність + автентифікацію + захист від replay в одній операції. Силова margin: $2^{128}$ комбінацій — золотий стандарт LoRaWAN/Zigbee/Thread/BLE (індустріальне підтвердження "достатньо" для constrained IoT на 25-річний горизонт). Постквантовий розгляд — у §11.
 
-**Нова структура 24-байтного LoRa-пакета (замість поточних 16-байтних) — фінальний дизайн 🤖 (FW.2):**
+**Нова структура 24-байтного LoRa-пакета (замість поточних 16-байтних) — фінальний дизайн 🤖 (FW.2, AES-128-CCM):**
 
 ```
 ┌─ Header (cleartext, AAD) ─────────────────────────────────────────────┐
@@ -169,16 +185,17 @@ nonce[12] = DID[0..3] || FrameCounter[0..3] || flag_byte || zero_pad[1..3]
             ↑              ↑
             из header      monotonic per-DID
 
-Унікальність: pair (key, nonce) гарантовано унікальний:
-  - Якщо ключ per-device (FW.1 HKDF після SEC.11) — DID константа,
+Унікальність: pair (key_128, nonce) гарантовано унікальний:
+  - Per-device LoRa key (FW.1 HKDF "silken-aes-128-lora-key") — DID константа,
     FrameCounter monotonic → кожна (key, nonce) пара унікальна за конструкцією.
-  - Якщо ключ shared (legacy pre-FW.1) — DID розрізняє пристрої,
-    FrameCounter monotonic per-device → теж унікально.
+  - DID розрізняє пристрої, FrameCounter monotonic per-device → перетин ймовірний 0.
 ```
 
-**Конфігурація `hcryp` для CCM:**
+**Конфігурація `hcryp` для CCM (AES-128):**
 
 ```c
+hcryp.Init.KeySize      = CRYP_KEYSIZE_128B;   // ARCH.42 — ATECC608B SE constraint
+hcryp.Init.pKey         = aes_key;             // uint32_t aes_key[4] (16 bytes, AES-128)
 hcryp.Init.Algorithm    = CRYP_AES_CCM;
 hcryp.Init.HeaderSize   = 8;                   // AAD = DID(4) + FC(4)
 hcryp.Init.Header       = (uint32_t*)header;   // bytes [0..7] of packet
@@ -190,7 +207,7 @@ HAL_CRYPEx_AESCCM_Encrypt(&hcryp, sensor_payload, 8, ciphertext_with_mic, 100);
 
 > **Примітка airtime:** 24-байтний пакет збільшує LoRa airtime на **+10%** vs поточних 21B (включаючи 5-байтний LoRa header), але залишається в межах duty-cycle бюджету EU868 (< 0.013% при 1 TX/година, SF10/DR2). Детальний розрахунок — нижче.
 
-> **Cross-ref для backend:** `TelemetryUnpackerService` потрібно оновити (FW.2 backend checkbox): (a) parse 24B замість 21B, (b) AES-CCM decrypt + verify MIC замість AES-ECB decrypt, (c) per-DID Frame Counter strictly-monotonic check у Redis SETNX (TTL = 25 год, як SEC.10 panic guard), (d) extract growth_points як 5-bit (0..31) і апскейлити у tokenomics шарі за per-species multiplier (cross-ref `Wallet#lock_and_mint!` + `tree_family.carbon_sequestration_coefficient`).
+> **Cross-ref для backend:** `TelemetryUnpackerService` потрібно оновити (FW.2 backend checkbox): (a) parse 24B замість 21B, (b) **AES-128-CCM** decrypt + verify MIC замість AES-256-ECB decrypt (`HardwareKey#lora_binary_key` — 16 bytes після ARCH.42), (c) per-DID Frame Counter strictly-monotonic check у Redis SETNX (TTL = 25 год, як SEC.10 panic guard), (d) extract growth_points як 5-bit (0..31) і апскейлити у tokenomics шарі за per-species multiplier (cross-ref `Wallet#lock_and_mint!` + `tree_family.carbon_sequestration_coefficient`).
 
 > **Cross-ref для firmware:** RTC Backup Domain розширення — Frame Counter у DR2 (поки вільний; перевірити після ARCH.27 g_node_role який лежить у Flash, не RTC). FW.20-S2 (4/5) anti-storm bitmap залишається у DR15 — **не конфліктує**.
 
@@ -254,12 +271,13 @@ Duty cycle = T_airtime / T_period
 
 Для EDLC 0.47F × 5.5V (E_stored = ½CV² = 7.1 Дж): один TX CCM-пакет споживає 130 мДж = **1.8% заряду суперконденсатора**. При одному TX/годину та EBFC > 500 мВ генерації — бюджет **з великим запасом**.
 
-**Висновок:** Перехід з 21B ECB → 24B CCM збільшує airtime на **+10%** (+41 мс), duty cycle на **+0.002%**, енергоспоживання на **+12 мДж/TX**. Усі параметри залишаються **далеко в межах** EU868 duty cycle (1%) та енергобюджету Soldier (1.8% заряду EDLC per TX). **LoRa airtime budget верифіковано: перехід на AES-256-CCM 24B схвалений.** ✅
+**Висновок:** Перехід з 21B ECB → 24B CCM збільшує airtime на **+10%** (+41 мс), duty cycle на **+0.002%**, енергоспоживання на **+12 мДж/TX**. Зміна key size з 256→128 (ARCH.42) **не змінює** airtime (block-cipher block size = 128 bit обох випадках; зменшується лише кількість Round-функцій з 14→10, що дає ~25% швидший AES-операцію — нехтовно). Усі параметри залишаються **далеко в межах** EU868 duty cycle (1%) та енергобюджету Soldier (1.8% заряду EDLC per TX). **LoRa airtime budget верифіковано: перехід на AES-128-CCM 24B схвалений.** ✅
 
-**Альтернативні рішення (якщо CCM не підтвердиться при тестуванні):**
-- **AES-256-GCM** — аналогічно CCM, але може не підтримуватися апаратно на всіх ревізіях STM32WLE5.
-- **AES-256-CTR + окремий HMAC-SHA256 MIC** — потребує більше коду, але гнучкіше.
-- **Збереження ECB + 4-байтний HMAC суфікс** — мінімальні зміни, але без захисту від pattern analysis.
+**Альтернативні рішення (якщо `CRYP_AES_CCM` не підтвердиться при STM32WLE5JC bench-тестуванні):**
+- **AES-128-GCM** — аналогічно CCM, але апаратна підтримка на цій ревізії може відрізнятися (треба перевірити RM0461 §27.4).
+- **AES-128-CTR + окремий HMAC-SHA256 MIC** — потребує більше коду, але гнучкіше; CTR не вимагає nonce-padding як CCM.
+- **AES-128 CMAC-LoRaWAN-style** — нативний LoRaWAN формат, готовий ecosystem (Helium/Sigfox bridge через ARCH.34).
+- **Збереження ECB + 4-байтний HMAC суфікс** — мінімальні зміни, але без захисту від pattern analysis (не рекомендовано).
 
 Рішення архітектурно узгодити з [03_01 Firmware Lifecycle](03_01_Firmware_Lifecycle_and_DMA) та [04_02 Business Logic](04_02_Business_Logic_and_Services).
 
@@ -281,10 +299,10 @@ Duty cycle = T_airtime / T_period
 
 **Необхідна дія:**
 
-- **Рекомендоване рішення:** Перейти на **AES-256-CCM** з 24-байтним пакетом — вирішує BLOCKER-2 та BLOCKER-3 одночасно (див. BLOCKER-2 вище для повної специфікації 24-байтного формату з Frame Counter + MIC).
-- Альтернатива: **AES-256-GCM** (надає одночасно конфіденційність + автентифікацію + nonce). Це найбільш ефективне рішення для обмежених STM32-ресурсів.
+- **Рекомендоване рішення (після ARCH.42 Варіант B):** Перейти на **AES-128-CCM** з 24-байтним пакетом — вирішує BLOCKER-2 та BLOCKER-3 одночасно (див. BLOCKER-2 вище для повної специфікації 24-байтного формату з Frame Counter + MIC).
+- Альтернатива: **AES-128-GCM** (надає одночасно конфіденційність + автентифікацію + nonce).
 - Або: додати **HMAC-SHA256 MIC** (4 байти суфіксу) до кожного LoRa-пакету, скоротивши сенсорний payload до 12 корисних байтів.
-- LoRaWAN також забезпечує MIC через AES-128-CMAC — розглянути перехід на LoRaWAN замість сирого LoRa.
+- LoRaWAN-нативний вибір: **AES-128-CMAC** (стандарт LoRaWAN MAC layer) — спрощує bridging до Helium/Sigfox/Things Network (ARCH.34).
 
 **Блокує:** Довіра до телеметрії, Proof of Growth Pipeline (05_02), Hardware Security Audit.
 
@@ -378,52 +396,61 @@ if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
 
 ## 🔐 1. Ініціалізація Крипто-Модуля (MX_CRYP_Init)
 
-### 1.1 Soldier — `firmware/soldier/main.c:741-748`
+### 1.1 Soldier — `firmware/soldier/main.c` (MX_CRYP_Init)
 
 ```c
 static void MX_CRYP_Init(void)
 {
   hcryp.Instance = AES;
   hcryp.Init.DataType    = CRYP_DATATYPE_32B;   // 32-бітний порядок слів
-  hcryp.Init.KeySize     = CRYP_KEYSIZE_256B;    // Gaia 2.0 Standard: 256-бітний ключ
-  hcryp.Init.pKey        = aes_key;              // Per-device HKDF-derived key (RAM mirror, populated by Load_AES_Key() at boot — see §3.4а)
-  hcryp.Init.Algorithm   = CRYP_AES_ECB;         // Electronic Codebook для 1 блоку LoRa TX
+  hcryp.Init.KeySize     = CRYP_KEYSIZE_128B;    // ARCH.42 (2026-05-23): даунгрейд 256→128 (ATECC608B SE constraint)
+  hcryp.Init.pKey        = aes_key;              // Per-device HKDF-derived LoRa key (RAM mirror, populated by Load_AES_Key() at boot — see §3.4а; uint32_t aes_key[4] = 16 bytes)
+  hcryp.Init.Algorithm   = CRYP_AES_ECB;         // ECB transitional — TARGET: CRYP_AES_CCM після FW.2 24B-packet rollout
   HAL_CRYP_Init(&hcryp);
 }
 ```
 
-### 1.2 Queen — `firmware/queen/main.c:770-782`
+### 1.2 Queen — `firmware/queen/main.c` (MX_CRYP_Init для LoRa) + динамічне переключення на CBC AES-256 для CoAP
 
 ```c
 static void MX_CRYP_Init(void)
 {
   hcryp.Instance = AES;
   hcryp.Init.DataType    = CRYP_DATATYPE_32B;   // 32-бітний порядок слів
-  hcryp.Init.KeySize     = CRYP_KEYSIZE_256B;    // Gaia 2.0 Standard: 256-бітний ключ
-  hcryp.Init.pKey        = aes_key;              // Per-device HKDF-derived key (RAM mirror, populated by Load_AES_Key() at boot — see §3.4а)
-  hcryp.Init.Algorithm   = CRYP_AES_ECB;         // ECB базовий режим для LoRa RX
-  // Примітка: CBC для батч-флашингу та downlink команд встановлюється динамічно
+  hcryp.Init.KeySize     = CRYP_KEYSIZE_128B;    // ARCH.42 — LoRa-сесія за замовчуванням AES-128 (per-Soldier key lookup)
+  hcryp.Init.pKey        = aes_key;              // Per-Soldier HKDF-derived 128-bit LoRa key (CIFO cache); during CoAP flush — пересувається на coap_key[8] (AES-256)
+  hcryp.Init.Algorithm   = CRYP_AES_ECB;         // ECB transitional — TARGET: CRYP_AES_CCM
+  // Примітка: для CoAP batch flush та downlink Queen ДИНАМІЧНО переключається на CRYP_KEYSIZE_256B + CRYP_AES_CBC + coap_key[8] + HRNG IV; після CoAP операції — restore назад до CRYP_KEYSIZE_128B/ECB/LoRa-key (SEC.8 ECB Restoration з force-reset RCC).
   HAL_CRYP_Init(&hcryp);
 }
 ```
 
-**Апаратна периферія:** AES-блок STM32WLE5JC (`hcryp.Instance = AES`) — апаратне прискорення без залучення ядра Cortex-M4. Не потребує програмних крипто-бібліотек.
+**Апаратна периферія:** AES-блок STM32WLE5JC (`hcryp.Instance = AES`) — апаратне прискорення без залучення ядра Cortex-M4. Не потребує програмних крипто-бібліотек. **Підтримує обидва KeySize** через runtime re-init.
 
-**Параметри ключа:**
+**Параметри ключа (LoRa-режим, Soldier + Queen за замовчуванням):**
 
 | Параметр | Значення | Примітка |
 |----------|----------|---------|
-| `KeySize` | `CRYP_KEYSIZE_256B` | 256-бітний ключ (32 байти, 8 × uint32_t) |
+| `KeySize` | `CRYP_KEYSIZE_128B` | 128-бітний ключ (16 байт, 4 × uint32_t) — ARCH.42 |
 | `DataType` | `CRYP_DATATYPE_32B` | Endianness: 32-бітний порядок байтів |
 | `pKey` | `&aes_key[0]` | RAM-адреса per-device HKDF-derived ключа (завантажується з Protected Flash Sector через `Load_AES_Key()` — §3.4а, BLOCKER-1 closed via FW.1) |
+
+**Параметри ключа (CoAP-режим, тільки Queen, для batch flush + downlink):**
+
+| Параметр | Значення | Примітка |
+|----------|----------|---------|
+| `KeySize` | `CRYP_KEYSIZE_256B` | 256-бітний ключ (32 байти, 8 × uint32_t) для AES-256-CBC |
+| `pKey` | `&coap_key[0]` | RAM-адреса CoAP HKDF-derived ключа (separate Flash slot, не плутати з LoRa-key) |
+| `Algorithm` | `CRYP_AES_CBC` + IV | Динамічна re-init перед flush; restore назад на ECB+128B після |
 
 ---
 
 ## 📦 2. Структура Зашифрованих Пакетів (Payload Structure)
 
-### 2.1 Soldier → Queen: LoRa Uplink (AES-256-ECB)
+### 2.1 Soldier → Queen: LoRa Uplink (AES-128-ECB transitional → AES-128-CCM target)
 
-**Режим:** AES-256-ECB · **Розмір:** 16 байт = 1 AES-блок · **IV:** відсутній
+**Поточний режим (transitional після ARCH.42, 2026-05-23):** AES-128-ECB · **Розмір:** 16 байт = 1 AES-блок · **IV:** відсутній
+**Цільовий режим (FW.2):** AES-128-CCM · **Розмір:** 24 байти (header 8B + ciphertext 8B + MIC 8B) — див. BLOCKER-2
 
 ```
 +--------+--------+--------+--------+--------+--------+--------+--------+
@@ -469,7 +496,7 @@ static void MX_CRYP_Init(void)
 
 **Backend-сторона:** `TelemetryUnpackerService` детектує panic через `status_byte & PANIC_FLAG_BIT`, читає counter з `pad_data[2..3].unpack1("n")`, виконує SETNX через `Rails.cache.write(unless_exist: true)` з ключем `silken:panic:nonce:{hex_did}:{counter}` і TTL 25 годин. При replay → log warning + Prometheus metric `silkennet_panic_replay_rejected_total` increment + early return (TelemetryLog не створюється, AlertDispatchService не викликається). Counter==0 (legacy firmware без SEC.10) пропускає перевірку — rate-limit на AlertDispatchService рівні залишається активним.
 
-**Не закриває повністю SEC.10:** counter не криптографічно прив'язаний до payload (немає MIC). Bit-flip атака на encrypted byte 10 може створити фальшивий panic flag, але новий counter буде передбачуваний (sequence) → backend SETNX зловить повторення; injection unique-counter packet з валідним AES-блоком майже неможливий (атакеру треба знати master AES key — тоді він уже виграв партію). Повний захист — FW.2 CCM з MIC, ця імплементація — мінімальний life-safety fix до того.
+**Не закриває повністю SEC.10:** counter не криптографічно прив'язаний до payload (немає MIC). Bit-flip атака на encrypted byte 10 може створити фальшивий panic flag, але новий counter буде передбачуваний (sequence) → backend SETNX зловить повторення; injection unique-counter packet з валідним AES-блоком майже неможливий (атакеру треба знати per-device LoRa AES-128 key — тоді він уже виграв партію). Повний захист — FW.2 CCM з MIC, ця імплементація — мінімальний life-safety fix до того.
 
 **Шифрування (однаковий алгоритм для обох типів пакетів):**
 ```c
@@ -559,26 +586,29 @@ CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
 
 ### 3.1 Джерело AES-Ключа при Старті
 
-> ✅ **Post-FW.1 status (2026-05-02):** Hardcoded ідентичний ключ **видалено**. Кожен Soldier і Queen отримує **унікальний** per-device AES-256 ключ через HKDF-SHA256 деривацію з `PROVISIONING_MASTER_KEY` під час factory provisioning. Ключ зберігається у **Protected Flash Sector** (`FLASH_KEY_ADDR`, RDP Level 1/2-захищений) і завантажується у RAM функцією `Load_AES_Key()` при boot. Деталі деривації — §3.4а HKDF Key Derivation Protocol Design; backend mirror — `HardwareKey#aes_key_hex` (AR Encryption non-deterministic).
+> ✅ **Post-FW.1 status (2026-05-02) + ARCH.42 update (2026-05-23):** Hardcoded ідентичний ключ **видалено**. Кожен Soldier отримує **унікальний** per-device LoRa AES-128 ключ (16 байт), а Queen додатково отримує AES-256 CoAP ключ (32 байти) — обидва через HKDF-SHA256 деривацію з `PROVISIONING_MASTER_KEY` під час factory provisioning. Ключ зберігається у **Protected Flash Sector** (`FLASH_KEY_ADDR`, RDP Level 1/2-захищений) і завантажується у RAM функцією `Load_AES_Key()` при boot. Деталі деривації — §3.4а HKDF Key Derivation Protocol Design; backend mirror — `HardwareKey#aes_key_hex` (AR Encryption non-deterministic, conditional length: 32 hex для Tree LoRa, 64 hex для Gateway CoAP).
 
-| Параметр | Значення (post-FW.1) |
-|----------|---------|
-| **Тип зберігання** | Protected Flash Sector (32 байти, magic marker `"KEYS"` = `0x4B455953`) |
-| **Адреса** | `FLASH_KEY_ADDR` (визначено лінкером, поза `.rodata`) |
-| **Розмір** | 256 біт (32 байти, 8 × uint32_t) |
-| **Захист** | RDP Level 1 (виробництво) / RDP Level 2 (необоротний final lock) — див. §3.3 |
-| **Ротація** | Hash Ratchet KDF — див. [FW.17 у 00_08](00_08_Action_Plan_Tracker) (placeholder, P3) |
-| **Унікальність** | **Унікальний per-device** через HKDF(`PROVISIONING_MASTER_KEY`, salt, `info="silken-aes\|<DID>"`) — див. §3.4а |
-| **Завантаження у RAM** | `Load_AES_Key()` на boot читає Flash → `aes_key[8]` (RAM); після `HAL_CRYP_Init()` ключ доступний у крипто-периферії |
+| Параметр | LoRa-ключ (Soldier + Queen) | CoAP-ключ (Queen only) |
+|----------|------------------------------|------------------------|
+| **Тип зберігання** | Protected Flash Sector, magic `"KEYL"` = `0x4B45594C` | Protected Flash Sector (окремий slot), magic `"KEYC"` = `0x4B455943` |
+| **Адреса** | `FLASH_LORA_KEY_ADDR` | `FLASH_COAP_KEY_ADDR` (тільки Queen) |
+| **Розмір** | **128 біт (16 байт, 4 × uint32_t)** — ARCH.42 | 256 біт (32 байти, 8 × uint32_t) |
+| **Захист** | RDP Level 1 (виробництво) / RDP Level 2 (необоротний final lock) — див. §3.3 | Те саме |
+| **Ротація** | Hash Ratchet KDF — див. [FW.17 у 00_08](00_08_Action_Plan_Tracker) (placeholder, P3) | Те саме |
+| **Унікальність** | **Унікальний per-device** через HKDF(`PROVISIONING_MASTER_KEY`, salt=`device_uid`, info=`"silken-aes-128-lora-key"`) | HKDF(`PROVISIONING_MASTER_KEY`, salt=`device_uid`, info=`"silken-aes-256-device-key"`) |
+| **Завантаження у RAM** | `Load_AES_Key()` на boot → `aes_key[4]` (LoRa-режим) | `Load_AES_Key()` на boot → `coap_key[8]` (динамічне MX_CRYP re-init для CoAP) |
 
-**Поточний код ініціалізації (`firmware/soldier/main.c` + `firmware/queen/main.c`):**
+**Поточний код ініціалізації (`firmware/soldier/main.c` + `firmware/queen/main.c` після ARCH.42):**
 ```c
 // Boot-time RAM-mirror; реальне значення зчитується з Flash у Load_AES_Key()
-uint32_t aes_key[8] = {0};
+uint32_t aes_key[4]  = {0};   // 16 bytes — LoRa AES-128 (Soldier + Queen)
+#ifdef QUEEN
+uint32_t coap_key[8] = {0};   // 32 bytes — CoAP AES-256 (тільки Queen)
+#endif
 
 // У main() перед MX_CRYP_Init():
-Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYS",
-                 // populates aes_key[8] in RAM with per-device key
+Load_AES_Key();  // reads from FLASH_LORA_KEY_ADDR, validates magic "KEYL",
+                 // populates aes_key[4] in RAM; on Queen also loads FLASH_COAP_KEY_ADDR → coap_key[8]
 ```
 
 > 🚫 **Архітектурний baseline:** "ідентичний на ВСІХ вузлах" — **історична форма BLOCKER-1**, закрита FW.1. Цей блок документа явно зберігає згадку як warning для аудиторів, що інспектують стару прошивку до FW.1. При відсутності magic `"KEYS"` у Flash (raw чіп з фабрики) — `Load_AES_Key()` відмовляє у boot і enter'ить infinite reset loop (захист від випуску партії без provisioning). Цей invariant перевіряється у `firmware/test/test_soldier_logic.c::test_aes_key_load_fail_no_magic`.
@@ -624,20 +654,23 @@ Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYS",
 
 **Сервіс автоматично запускається при кожному production boot — будь-яка ротація, яка пройшла повз runbook, буде заблокована до старту HTTP сервера.** Це й закриває SEC.9 line 668 🤖.
 
-### 3.2 Відсутній Secure Element
+### 3.2 Secure Element (ATECC608B) — після ARCH.42
 
-Поточна архітектура не використовує зовнішнього Secure Element або Trust Platform Module (TPM). Ключ зберігається у звичайній Flash-пам'яті MCU, яка за замовчуванням (RDP Level 0) доступна через JTAG/SWD.
+> 🎯 **ARCH.42 Variant B (2026-05-23) — ВИБРАНО:** ATECC608B Microchip (~$0.85/unit @ 10k MOQ) як єдиний SE для (а) LoRa AES-128 ключ у Slot 0, (б) ECC P-256 device identity у Slot 1, (в) device cert у Slot 2, (г) OTA HMAC-SHA256 ключ у Slot 3. AES-128 — апаратний maximum ATECC608B. Альтернативи (NXP SE050 / STSAFE-A110) розглядаються лише як future hedge у §11 PQC roadmap.
 
-**Цільова архітектура (майбутній цикл):**
+Поточна Гілка A (RDP Level 2 + Protected Flash) залишається активною baseline для pilot/<1000 unit deployments. Гілка B (ATECC608B) активується для mass production > 10k unit та urban deployments — див. §3.4 Гілка B та §3.7.
 
 ```
-Factory Flashing:
-  Rails Backend → POST /api/v1/provisioning/register → {device_uid, unique_key}
-  ST-Link/SWD → Flash unique_key до захищеної зони → RDP Level 2 Lock
+Factory Flashing (поточна Гілка A, TRL 6/7 — pilot ≤ 10k):
+  Rails Backend → POST /api/v1/provisioning/register → {device_uid}
+                  (Zero-Trust: aes_key НЕ повертається у відповіді)
+  STM32 ← HKDF(PROVISIONING_MASTER_KEY, device_uid, "silken-aes-128-lora-key") → aes_key[4]
+  ST-Link/SWD → Flash aes_key до Protected Sector → RDP Level 2 Lock
 
-Alternatively:
-  ATECC608B Secure Element → ключ ніколи не покидає чіп
-  STM32WLE5JC ↔ ATECC608B через I²C → підпис/шифрування без expose ключа
+Цільова Гілка B (post-bench, mass production > 10k — ARCH.42 enabler):
+  ATECC608B Slot 0 (AES-128) → ключ ніколи не покидає кремній SE
+  STM32WLE5JC ↔ ATECC608B через I²C (PB6/PB7) → atcab_aes_encrypt() для LoRa CCM
+  Defense-in-depth: ATECC data zone lock + STM32 RDP Level 2 → DPA/EM/glitch resilient
 ```
 
 ---
@@ -786,19 +819,25 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 
 > **Cross-ref:** [00_08 FW.1](00_08_Action_Plan_Tracker) — дизайн завершено ✅
 
-**Мета:** замінити один hardcoded `aes_key[8]` на МЕРЕЖУ унікальних ключів, де кожен пристрій має свій ключ, а компрометація одного не розкриває решту. Весь дизайн базується на HKDF (RFC 5869) — стандартному HMAC-based Key Derivation Function.
+**Мета:** замінити один hardcoded ключ на МЕРЕЖУ унікальних ключів, де кожен пристрій має свій, а компрометація одного не розкриває решту. Весь дизайн базується на HKDF (RFC 5869) — стандартному HMAC-based Key Derivation Function.
 
-#### Криптографічна основа: HKDF-SHA256
+#### Криптографічна основа: HKDF-SHA256 — два info-strings після ARCH.42
 
 ```
-HKDF(master_key, device_uid, info) → unique_device_key (32 bytes)
+LoRa-канал (Soldier + Queen LoRa-сесія) — ARCH.42 default:
+  HKDF(master_key, device_uid, "silken-aes-128-lora-key") → 16 bytes (AES-128)
+
+CoAP-магістраль (Queen ↔ Rails) — тільки на Gateway-рядках HardwareKey:
+  HKDF(master_key, device_uid, "silken-aes-256-device-key") → 32 bytes (AES-256)
 
 Де:
   master_key  = 32-байтний секрет (генерується HRNG, зберігається у Rails Vault)
   device_uid  = 8-байтний унікальний ідентифікатор пристрою (STM32 UID96 або DID)
-  info        = ASCII string "silkennet-v1-aes256" (context binding)
-  output len  = 32 байти (256 bits для AES-256)
+  info        = ASCII string (domain separation — два різні KDF outputs з одного master)
+  output len  = 16 байт (LoRa) АБО 32 байти (CoAP)
 ```
+
+> **Domain separation:** Два різні info-strings гарантують, що LoRa та CoAP ключі НЕ корелюють криптографічно — компрометація 16-байтного LoRa-ключа конкретного дерева **не дає жодної інформації** про 32-байтний CoAP-ключ Queen, який обслуговує це дерево. Те саме для `OtaHmacKeyService` (info `"silken-ota-hmac-v1"`) та `SilkenNet::SeedDerivation` (info `"silken-lorenz-seed|<DID>"`).
 
 **Властивості HKDF:**
 - Якщо зловмисник знає `unique_device_key[i]`, він не може відновити `master_key` або `unique_device_key[j]` — однонаправлена функція
@@ -833,29 +872,35 @@ STEP 2: Factory Flashing (конвеєр на заводі)
      POST /api/v1/provisioning/register
        { device_uid: "<hex_uid>", firmware_version: <ver> }
 
-  c) Backend: ProvisioningController#register
-     device_key = HKDF_SHA256(master_key, device_uid, "silkennet-v1-aes256")
-     HardwareKey.create!(device_uid:, aes_key_hex: device_key.unpack1("H*"))
-     Response: { did: "SNET-XXXXXXXX", aes_key: "<32-byte hex>" }
+  c) Backend: ProvisioningController#register (Zero-Trust — keys НЕ повертаються в response)
+     # LoRa key (Tree або Gateway):
+     lora_key  = HKDF_SHA256(master_key, device_uid, "silken-aes-128-lora-key")  # 16 bytes
+     # CoAP key (тільки Gateway — для batch flush до Rails):
+     coap_key  = HKDF_SHA256(master_key, device_uid, "silken-aes-256-device-key") # 32 bytes  [Gateway only]
+     HardwareKey.create!(device_uid:, aes_key_hex: lora_key.unpack1("H*"))   # 32 hex для Tree
+     # Gateway: HardwareKey.create!(aes_key_hex: coap_key.unpack1("H*"))     # 64 hex для Gateway
+     Response: { did: "SNET-XXXXXXXX" }   # Zero-Trust — NO keys у response
 
-  d) Заводський стенд записує унікальний ключ:
+  d) Заводський стенд записує унікальний ключ (Гілка A — Protected Flash):
      STM32CubeProgrammer --write-option-bytes key_address=0x0803E000 key=<hex>
-     # 0x0803E000 = FLASH_KEY_SECTOR (Protected Flash Sector, perma-protected)
-     # АБО ATECC608B slot 0 (якщо Secure Element присутній — SEC.6)
+     # 0x0803E000 = FLASH_LORA_KEY_ADDR (Protected Flash Sector, perma-protected)
+     # АБО ATECC608B Slot 0 (Гілка B після ARCH.42 — Secure Element §3.7)
 
   e) Lock:
      STM32CubeProgrammer --set-rdp-level 1    # Pilot batch
      # (Level 2 після верифікації OTA — SEC.2)
 
 ═══════════════════════════════════════════════════════════════════════
-STEP 3: Runtime — Soldier читає свій ключ
+STEP 3: Runtime — Soldier читає свій LoRa AES-128 ключ
 ═══════════════════════════════════════════════════════════════════════
 
-firmware/soldier/main.c:
-  // Замість hardcoded uint32_t aes_key[8] = {...}:
-  uint8_t aes_key[32] __attribute__((section(".key_sector")));  // mapped to 0x0803E000
+firmware/soldier/main.c (післі ARCH.42):
+  // Boot-time RAM mirror (заповнюється з Flash через Load_AES_Key()):
+  uint32_t aes_key[4] = {0};   // 16 bytes — LoRa AES-128
+  // FLASH_LORA_KEY_ADDR layout: [magic "KEYL":4][aes_key:16] = 20 bytes total
   // При ініціалізації:
-  memcpy(hcryp.Init.pKey, aes_key, 32);    // Читаємо з protected Flash
+  Load_AES_Key();              // populates aes_key[4] from Protected Flash
+  MX_CRYP_Init();              // hcryp.Init.KeySize = CRYP_KEYSIZE_128B; hcryp.Init.pKey = aes_key;
 
 ═══════════════════════════════════════════════════════════════════════
 STEP 4: Queen — знає ключі ВСІХ своїх Soldiers
@@ -879,55 +924,72 @@ STEP 4: Queen — знає ключі ВСІХ своїх Soldiers
   одна точка компрометації, але захищена апаратно.
 ```
 
-#### Rails Backend — API та зберігання
+#### Rails Backend — API та зберігання (post-ARCH.42)
 
 ```ruby
-# app/services/hardware_key_service.rb — доповнити:
+# app/services/hardware_key_service.rb — два derivation methods:
 
-# Генерація унікального ключа для нового пристрою
-def self.derive_device_key(device_uid)
-  master_key = fetch_master_key_from_vault!  # Rails Credentials або HashiCorp Vault
-  # HKDF (RFC 5869) pure-Ruby або OpenSSL
-  prk  = OpenSSL::HMAC.digest("SHA256", master_key, device_uid)  # Extract step
-  info = "silkennet-v1-aes256"
-  okm  = OpenSSL::HMAC.digest("SHA256", prk, info + "\x01")      # Expand step
-  okm[0, 32]  # 256 bits
+LORA_KEY_INFO = "silken-aes-128-lora-key".freeze   # ARCH.42 — Tree LoRa channel (16 bytes)
+COAP_KEY_INFO = "silken-aes-256-device-key".freeze # Gateway CoAP-to-Rails channel (32 bytes)
+
+# LoRa AES-128 ключ (Tree або Gateway LoRa-сесія)
+def self.derive_lora_key(device_uid)
+  master_key = fetch_master_key_from_vault!
+  prk  = OpenSSL::HMAC.digest("SHA256", master_key, device_uid)
+  okm  = OpenSSL::HMAC.digest("SHA256", prk, LORA_KEY_INFO + "\x01")
+  okm[0, 16]  # 128 bits — AES-128
 end
 
-# app/controllers/api/v1/provisioning_controller.rb
+# CoAP AES-256 ключ (тільки Gateway — для batch flush до Rails)
+def self.derive_device_key(device_uid)
+  master_key = fetch_master_key_from_vault!
+  prk  = OpenSSL::HMAC.digest("SHA256", master_key, device_uid)
+  okm  = OpenSSL::HMAC.digest("SHA256", prk, COAP_KEY_INFO + "\x01")
+  okm[0, 32]  # 256 bits — AES-256
+end
+
+# app/controllers/api/v1/provisioning_controller.rb (Zero-Trust — НЕ повертає keys)
 def register
   device_uid = params.require(:device_uid)
-  device_key = HardwareKeyService.derive_device_key(device_uid)
-  key = HardwareKey.create!(
-    device_uid: device_uid,
-    aes_key_hex: device_key.unpack1("H*")
-  )
-  render json: { did: tree.did, aes_key: device_key.unpack1("H*") }
+  device_type = params[:type] == "gateway" ? "gateway" : "tree"
+  hkdf_key   = device_type == "gateway" \
+                 ? HardwareKeyService.derive_device_key(device_uid)  # 32 bytes для Gateway
+                 : HardwareKeyService.derive_lora_key(device_uid)    # 16 bytes для Tree
+  HardwareKey.create!(device_uid:, aes_key_hex: hkdf_key.unpack1("H*"))
+  render json: { did: tree.did }  # NO key у response
 end
 ```
 
-#### Firmware — зчитування ключа з Protected Flash Sector
+#### Firmware — зчитування ключа з Protected Flash Sector (AES-128 LoRa)
 
 ```c
-// firmware/soldier/main.c — замінити hardcoded секцію:
+// firmware/soldier/main.c — post-ARCH.42 (4 words замість 8):
 
 // Flash Protected Key Sector (0x0803E000 — 4 KB, protected via WRPROT option bytes)
-#define FLASH_KEY_ADDR   0x0803E000UL
+#define FLASH_LORA_KEY_ADDR   0x0803E000UL
+#define FLASH_LORA_KEY_WORDS  4                // 4 × uint32_t = 16 bytes (AES-128)
+#define FLASH_KEY_MAGIC       0x4B45594CUL     // "KEYL" — LoRa key
+
+uint32_t aes_key[FLASH_LORA_KEY_WORDS] = {0};
 
 void Load_AES_Key(void)
 {
-    uint32_t *key_ptr = (uint32_t *)FLASH_KEY_ADDR;
-    // Перевірка що ключ не порожній (provisioned)
-    uint32_t key_sum = 0;
-    for (int i = 0; i < 8; i++) key_sum |= key_ptr[i];
-    if (key_sum == 0) {
-        // Ключ не записаний → ERROR_HANDLER (пристрій не provisioned)
-        Error_Handler();
+    const uint32_t *flash_ptr = (const uint32_t *)FLASH_LORA_KEY_ADDR;
+    // 1. Magic check (захист від unprovisioned chip)
+    if (flash_ptr[0] != FLASH_KEY_MAGIC) {
+        Error_Handler();   // infinite reset loop (захист від випуску партії без provisioning)
     }
-    memcpy(hcryp.Init.pKey, key_ptr, 32);  // Копіюємо у CRYP init структуру
+    // 2. Non-zero check
+    uint32_t key_sum = 0;
+    for (int i = 0; i < FLASH_LORA_KEY_WORDS; i++) key_sum |= flash_ptr[1 + i];
+    if (key_sum == 0) { Error_Handler(); }
+    // 3. Copy into RAM mirror
+    for (int i = 0; i < FLASH_LORA_KEY_WORDS; i++) {
+        aes_key[i] = flash_ptr[1 + i];
+    }
 }
 
-// HAL_CRYP_Init_With_Loaded_Key() — викликається в main() після Load_AES_Key()
+// MX_CRYP_Init() then sets: hcryp.Init.KeySize = CRYP_KEYSIZE_128B; hcryp.Init.pKey = aes_key;
 ```
 
 #### [FW.30] Lorenz K_seed — зчитування з Protected Flash Sector
@@ -937,9 +999,11 @@ K_seed зберігається одразу після AES ключа у тій
 ```c
 // firmware/soldier/main.c — [SEC.11 / FW.30]:
 
-// Flash layout: [KEY_MAGIC:4][AES_KEY:32] | [SEED_MAGIC:4][K_SEED:32]
-//               ^FLASH_KEY_ADDR (0x0803E000)  ^FLASH_SEED_ADDR (+36)
-#define FLASH_SEED_ADDR   (FLASH_KEY_ADDR + 36)  // 0x0803E024
+// Flash layout (post-ARCH.42 — AES-128 LoRa key only):
+//   [KEY_MAGIC:4][AES_KEY:16] | [SEED_MAGIC:4][K_SEED:32]
+//   ^FLASH_LORA_KEY_ADDR        ^FLASH_SEED_ADDR (+20)
+// (Gateway-only Queen також має окрему пару [COAP_MAGIC:4][COAP_KEY:32] у наступному slot)
+#define FLASH_SEED_ADDR   (FLASH_LORA_KEY_ADDR + 20)  // 0x0803E014 (4 magic + 16 key = 20)
 #define FLASH_SEED_WORDS  8                        // 8 × uint32_t = 32 bytes
 #define FLASH_SEED_MAGIC  0x4C534544UL             // "LSED" — Lorenz Seed
 
@@ -971,9 +1035,9 @@ void Load_Lorenz_Seed(void)
 `g_node_role` персистується у тому ж Protected Flash Sector одразу після K_seed — **без створення нового сектора**:
 
 ```c
-// Flash layout: [KEY_MAGIC:4][AES_KEY:32] | [SEED_MAGIC:4][K_SEED:32] | [ROLE:4]
-//               ^FLASH_KEY_ADDR (0x0803E000)  ^FLASH_SEED_ADDR (+36)    ^FLASH_ROLE_ADDR (+72 = 0x0803E048)
-#define FLASH_ROLE_ADDR        (FLASH_KEY_ADDR + 72)   // 0x0803E048
+// Flash layout (post-ARCH.42): [LORA_KEY_MAGIC:4][AES_KEY:16] | [SEED_MAGIC:4][K_SEED:32] | [ROLE:4]
+//   ^FLASH_LORA_KEY_ADDR (0x0803E000)  ^FLASH_SEED_ADDR (+20 = 0x0803E014)  ^FLASH_ROLE_ADDR (+56 = 0x0803E038)
+#define FLASH_ROLE_ADDR        (FLASH_LORA_KEY_ADDR + 56)   // 0x0803E038 (20 + 4 magic + 32 seed = 56)
 #define ROLE_SOLDIER_MAGIC     0x534F4C44UL            // "SOLD"
 #define ROLE_PROVISIONER_MAGIC 0x50524F56UL            // "PROV"
 #define ROLE_SOLDIER           0
@@ -1008,18 +1072,20 @@ STM32CubeProgrammer → Option Bytes → Write Protection:
   (зняття стирає відповідну сторінку Flash!)
 ```
 
-#### Безпекові параметри
+#### Безпекові параметри (post-ARCH.42)
 
-| Параметр | Значення | Обґрунтування |
-|----------|---------|---------------|
-| KDF алгоритм | HKDF-SHA256 (RFC 5869) | Стандарт NIST SP 800-56C, апаратний SHA256 у STM32 |
-| Master key size | 256 bits | AES-256 рівень безпеки |
-| Context string | `"silkennet-v1-aes256"` | Domain separation для різних ключів майбутніх протоколів |
-| Master key storage | Rails Vault (AR Encryption) + HSM у production | Never in-repo |
-| Device key storage | Protected Flash Sector + ATECC608B (post-TRL 7) | Фізичний захист |
-| Backup/rotate | Dual-key grace period (HardwareKey#previous_aes_key_hex) | Zero-downtime rotation |
+| Параметр | LoRa-канал (Tree + Queen) | CoAP-канал (Queen only) | Обґрунтування |
+|----------|---------------------------|--------------------------|---------------|
+| KDF алгоритм | HKDF-SHA256 (RFC 5869) | HKDF-SHA256 | Стандарт NIST SP 800-56C, апаратний SHA256 у STM32 |
+| Master key size | 256 bits | 256 bits | Master input — однаковий 256-bit secret для обох KDF-outputs |
+| Output key size | **128 bits (16 bytes)** — ARCH.42 | 256 bits (32 bytes) | LoRa: AES-128 (ATECC608B constraint); CoAP: AES-256 (Queen Flash, no SE constraint) |
+| Info string | `"silken-aes-128-lora-key"` | `"silken-aes-256-device-key"` | Domain separation — два різні KDF outputs ortho |
+| Master key storage | Rails Vault (AR Encryption) + HSM у production | Same | Never in-repo |
+| Device key storage | Protected Flash (LoRa magic `"KEYL"`) → ATECC608B Slot 0 (Гілка B) | Protected Flash (CoAP magic `"KEYC"`) — Queen MCU only | Фізичний захист; ATECC608B обмежений AES-128 → CoAP-key залишається у MCU Flash |
+| Backup/rotate | Dual-key grace period (HardwareKey#previous_aes_key_hex) | Same | Zero-downtime rotation |
+| Post-quantum margin | $2^{128}$ (post-Grover ≈ $2^{64}$ — захищається ratchet `[FW.17]` + PQC bridge §11) | $2^{256}$ (post-Grover ≈ $2^{128}$ — абсолютний квантовий імунітет) | Чому CoAP залишається 256: інфраструктурне TLS-termination через Cloudflare X25519+Kyber вже доступне (post-quantum hybrid) |
 
-> **Cross-ref:** SEC.3 Factory Flashing pipeline, SEC.6 ATECC608B, SEC.2 RDP Level 2.
+> **Cross-ref:** SEC.3 Factory Flashing pipeline, SEC.6 ATECC608B, SEC.2 RDP Level 2, **ARCH.42 ✅ resolved 2026-05-23 (Variant B)**, **§11 PQC Migration Roadmap**.
 
 ---
 
@@ -1602,21 +1668,24 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 
 ---
 
-### 3.7 ATECC608B Secure Element — оцінка інтеграції 🤖
+### 3.7 ATECC608B Secure Element — інтеграція (ARCH.42 ✅ resolved)
 
-**Cross-ref:** [00_08 SEC.6](00_08_Action_Plan_Tracker), [00_08 ARCH.42](00_08_Action_Plan_Tracker), §3.2 «Відсутній Secure Element».
+**Cross-ref:** [00_08 SEC.6](00_08_Action_Plan_Tracker), [00_08 ARCH.42](00_08_Action_Plan_Tracker) — **✅ DECIDED 2026-05-23 (Варіант B)**, §3.2 «Secure Element після ARCH.42».
 
-> 🚫 **CRITICAL ARCHITECTURAL CONFLICT (ARCH.42, 2026-05-16):** ATECC608B апаратний симетричний рушій **підтримує виключно AES-128** (datasheet DS40002239, §6.2). Поточна архітектура Gaia 2.0 використовує **AES-256** на всіх рівнях (`MX_CRYP_Init` у `firmware/soldier/main.c:741` та `firmware/queen/main.c:770` встановлюють `CRYP_KEYSIZE_256B`; `HardwareKey#aes_key_hex` — 64 HEX символи). **Не можна одночасно** використати ATECC608B як AES-engine AND зберегти AES-256.
+> ✅ **ARCH.42 RESOLVED (2026-05-23) — Варіант B обрано:** Мережа Gaia 2.0 переходить на **AES-128** для LoRa-каналу (Soldier ↔ Queen + OTA broadcast). ATECC608B Microchip залишається canonical SE — апаратний AES-engine SE підтримує лише 128-бітні ключі (datasheet DS40002239, §6.2), і це повністю узгоджено з новим LoRa-стеком (FW.2 24-byte AES-128-CCM packet). CoAP-магістраль (Queen ↔ Rails) залишається на AES-256-CBC — її ключ зберігається у Queen Protected Flash (не у SE), тому AES-128 SE-constraint не діє. Глобальний SSOT-патч виконано: `CRYP_KEYSIZE_256B → CRYP_KEYSIZE_128B` (LoRa MX_CRYP_Init), `HardwareKey.aes_key_hex` conditional length (Tree=32 hex, Gateway=64 hex), HKDF output 16 байт через info `"silken-aes-128-lora-key"`.
 >
-> **Архітектурне рішення (відкрите, потребує stakeholder review):**
+> **Альтернативи розглянуто та відхилено:**
 >
-> | Шлях | Pro | Contra | Рекомендація |
-> |------|-----|--------|--------------|
-> | **(A) Змінити SE на NXP EdgeLock SE050** (підтримує AES-128/192/256 GCM/CBC/CTR/CCM/CMAC apparatно) | Зберігає AES-256 SSOT; додатково AES-GCM в HW → елегантний апгрейд після BLOCKER-2 | Ціна +$2.40/unit (vs ATECC ~$0.85); менш зріле ecosystem для STM32 (NXP libraries натиснуті на Kinetis/LPC) | Якщо security margin важливіша за BOM |
-> | **(B) Даунгрейд LoRa-каналу до AES-128** + зберегти ATECC608B | LoRaWAN industry-standard (AES-128-CMAC); зберігає ATECC ecosystem + DPA-захист; ECC P-256 (signing/ECDH) залишається 256-біт | Глобальний SSOT-патч: `CRYP_KEYSIZE_256B → CRYP_KEYSIZE_128B`, `HardwareKey.aes_key_hex` 64 hex → 32 hex, всі docs `AES-256` → `AES-128`, HKDF output length 32 → 16 байт, всі тести | ⭐ **Рекомендовано** — AES-128 практично нездоланний (2¹²⁸), вже стандарт LoRaWAN, дешевший BOM, легший bridging до LoRaWAN/Helium fallback (ARCH.34) |
-> | **(C) Гібрид: HW-CRYP MCU для AES-256 LoRa + ATECC608B тільки для ECC/HMAC/cert storage** | Зберігає AES-256 без зміни SE; ATECC використовується за прямим призначенням (asymmetric + HMAC OTA) | Втрачаємо DPA-захист саме для AES-LoRa ключа — він залишається у MCU SRAM під час `HAL_CRYP_Init()` | Якщо хочемо швидкого compromise — але **тоді ATECC608B як AES-сейф безглуздий** |
+> | Шлях | Чому відхилено |
+> |------|----------------|
+> | **(A) Змінити SE на NXP EdgeLock SE050** (AES-128/192/256 у HW) | Ціна +$2.40/unit × мільйон вузлів = $2.4M переплати за 128 → 256 upgrade, який практично не змінює security margin для constrained IoT (LoRaWAN industry-standard = AES-128). Залишається як **future hedge** у §11 PQC roadmap — апгрейд до AES-256 + post-Grover margin при заміні PCB revision. |
+> | **(C) Гібрид: AES-256 у MCU SRAM + ATECC608B тільки ECC/HMAC** | Втрачаємо DPA/EM-захист саме для AES-LoRa ключа — він залишається у MCU SRAM під час `HAL_CRYP_Init()`. ATECC608B як "дорога флешка для асиметрики" — невиправдане ускладнення BOM. |
 >
-> **Поточна рекомендація:** Гілка (B) — AES-128 для LoRa каналу + збереження ATECC608B для ECC/HMAC. Аргументи: (i) AES-128 — золотий стандарт IoT (LoRaWAN, Sigfox, Helium); (ii) дешевший BOM; (iii) практично нездоланна security margin для лісового IoT; (iv) спрощує LoRaWAN fallback (ARCH.34). Імпакт: ~2 тижні firmware/backend rework. **До прийняття рішення** — таблиця Slot mapping нижче зі словами "AES-128 key" та `atcab_aes_encrypt(...)` приклад **узгоджені з варіантом B** і не є помилкою.
+> **Обґрунтування Варіанту B:**
+> 1. **AES-128 = золотий стандарт constrained IoT** — LoRaWAN, Helium, Sigfox, Zigbee, Thread, BLE усі нативно AES-128-CCM/CMAC. Bridging до LoRaWAN fallback (ARCH.34) спрощується.
+> 2. **DPA/EM-resistance збережено** — ключ ніколи не залишає кремній ATECC608B (Slot 0); шифрування виконується всередині SE; MCU отримує лише ciphertext.
+> 3. **BOM economy** — ATECC608B ~$0.85/unit @ 10k MOQ, vs SE050 ~$3.25/unit. На мільйон вузлів = $2.4M saved.
+> 4. **Quantum margin** — AES-128 під Grover'ом еквівалентний AES-64 = $2^{64}$ комбінацій; одного цього мало для довгого горизонту, але разом з **`[FW.17]` Hash Ratchet KDF** (key rotation кожні N днів → minimize accumulated ciphertext per key) + **§11 PQC bridge** через гібридний шар у Queen↔Rails — практично нездоланно на 25-річний горизонт.
 
 **Контекст:** навіть з RDP Level 2, key extraction теоретично можливий через **side-channel attacks** (DPA, EM analysis) або **fault injection** (voltage/clock glitching). Для batches > 1000 одиниць — це attractive target. Виділений Secure Element зберігає ключ у tamper-resistant ASIC з вбудованим detection.
 
@@ -1902,13 +1971,15 @@ HAL_CRYP_Init(&hcryp);
 
 | Тест | Файл | Покриття |
 |------|------|---------|
-| AES-256 block encrypt/decrypt round-trip | `firmware/test/test_queen_logic.c` | ✅ ECB single-block |
-| CBC batch encrypt + IV prepend | `firmware/test/test_queen_logic.c` | ✅ Часткове |
+| AES-128 LoRa block encrypt/decrypt round-trip [post-ARCH.42] | `firmware/test/test_encryption.c` | ✅ ECB single-block 128B |
+| AES-256 CoAP batch encrypt + IV prepend [Queen only] | `firmware/test/test_queen_logic.c` | ✅ Часткове |
+| Load_AES_Key() Flash magic guard | `firmware/test/test_soldier_logic.c::test_aes_key_load_fail_no_magic` | ✅ |
 | Emergency TX format | `firmware/test/` | ⚠️ Не верифіковано |
 | HRNG fallback behavior | Відсутній | 🔴 Не покрито |
-| Key hardcoding detection | Відсутній | 🔴 Не покрито |
+| Key hardcoding detection | `app/services/security/weak_key_detector.rb` + boot guard | ✅ Backend |
+| **AES-128-CCM encrypt + MIC verify [FW.2 target]** | TBD — STM32 hardware bench | 🟡 Pending |
 
-**Загальний статус:** 137 host-based тестів проходять (`make -C firmware/test`). Але тестове покриття **криптографічного пайплайну** є неповним — зокрема HRNG fallback та EwsAlert panic TX не тестуються.
+**Загальний статус:** 137 host-based тестів проходять (`make -C firmware/test`). Але тестове покриття **криптографічного пайплайну** є неповним — зокрема HRNG fallback, EwsAlert panic TX та **FW.2 CCM mode** не тестуються (CCM потребує hardware bench для верифікації `CRYP_AES_CCM` HAL модуля).
 
 ---
 
@@ -1937,17 +2008,116 @@ HAL_CRYP_Init(&hcryp);
 
 | Категорія | Стан | Деталі |
 |-----------|------|--------|
-| **Алгоритм** | ✅ AES-256 | Відповідає FIPS 197, NIST SP 800-38A |
-| **Розмір ключа** | ✅ 256 біт | Відповідає Gaia 2.0 Standard |
-| **Апаратне прискорення** | ✅ STM32 AES Block | Без програмної крипто-бібліотеки |
+| **Алгоритм LoRa** | ✅ AES-128 [ARCH.42] | Відповідає FIPS 197, IEEE 802.15.4 / LoRaWAN industry standard |
+| **Алгоритм CoAP** | ✅ AES-256 | Без змін — Queen MCU зберігає 256-bit key у Protected Flash (немає SE-constraint на цьому каналі) |
+| **Розмір ключа LoRa** | ✅ 128 біт | ARCH.42 Variant B — ATECC608B Secure Element compatibility |
+| **Розмір ключа CoAP** | ✅ 256 біт | Без змін |
+| **Апаратне прискорення** | ✅ STM32 AES Block | Без програмної крипто-бібліотеки; підтримує і 128B, і 256B через runtime re-init |
 | **CBC IV для CoAP** | ✅ HRNG (тепловий шум) | Унікальний IV на кожен батч |
-| **Зберігання ключа** | ✅ Protected Flash Sector | `FLASH_KEY_ADDR` (0x0803E000), magic `"KEYS"`, RDP Level 1/2 protected. Secure Element (ATECC608B/STSAFE-A110) — §3.7, для mass production >10k |
-| **Унікальність ключа** | ✅ Per-device HKDF (FW.1) | `HKDF-SHA256(PROVISIONING_MASTER_KEY, device_uid, "silkennet-v1-aes256")` — §3.4а. Компрометація одного вузла не розкриває сусідів |
-| **ECB для LoRa** | 🔴 Детермінований | Рекомендовано: AES-256-CCM з 24-байтним пакетом (Frame Counter + MIC) |
-| **MAC/MIC** | 🔴 Відсутній | Вирішується переходом на CCM (MIC апаратно генерується) |
+| **Зберігання ключа** | ✅ Protected Flash Sector (LoRa magic `"KEYL"`, CoAP magic `"KEYC"`), RDP Level 1/2 protected. ATECC608B Slot 0 (Гілка B) для mass production >10k |
+| **Унікальність ключа** | ✅ Per-device HKDF (FW.1 + ARCH.42) | LoRa: `HKDF-SHA256(MASTER, uid, "silken-aes-128-lora-key")`; CoAP: `HKDF-SHA256(MASTER, uid, "silken-aes-256-device-key")` — domain separation §3.4а |
+| **ECB для LoRa** | 🟡 Transitional після ARCH.42 | AES-128-ECB → AES-128-CCM (target FW.2, 24B packet + Frame Counter + 8B MIC) |
+| **MAC/MIC** | 🟡 OPEN — закривається з FW.2 CCM | 8-byte MIC (64-bit, forge probability $5.4×10^{-20}$) |
 | **RDP Protection** | 🟡 OPEN | Level 0 (розробка). Level 1/2 — фінальний крок Factory Flashing (розділ 3.3). Pre-flight checklist та незворотна процедура задокументовані у §3.6 🤖 |
 | **Factory Flashing Pipeline** | 🟡 OPEN (SEC.3) | Архітектура (§3.4) + HKDF (§3.4а) + Operations Security threat model (§3.4г, 2026-05-17). Залишається: tool implementation + integration test |
 | **Shipping Mode (Геркон)** | 🟡 OPEN | Концепт визначено (розділ 3.5); компонент не доданий до BOM |
-| **Secure Element (ATECC608B)** | 🟡 OPEN (P2) | Оцінка інтеграції завершена у §3.7 🤖 — рекомендовано перед mass production >10k unit; альтернатива STSAFE-A110 |
-| **Key Rotation** | 🔴 Відсутній | Рекомендовано: Hash Ratchet KDF (PFS без передачі ключа по мережі) |
+| **Secure Element (ATECC608B)** | ✅ Узгоджено з ARCH.42 (Variant B) | §3.7 — Slot 0 (AES-128 LoRa), Slot 1 (ECC P-256 ID), Slot 2 (cert), Slot 3 (HMAC OTA). Bench eval kit + I²C integration — HW track |
+| **Key Rotation** | 🟡 OPEN | Рекомендовано: Hash Ratchet KDF (PFS без передачі ключа по мережі) — `[FW.17]` |
 | **HRNG Fallback** | ✅ Виправлено | djb2(STM32_HW_UID) XOR tick — унікальний на кожній Queen (PR #273) |
+| **PQC Migration Roadmap** | ✅ Документовано | §11 — TRL-stratified layering (2026 → 2028 → 2035); LoRa поточно квантово-стійкий через симетрію + ratchet, асиметричні шари мігрують через hybrid Cloudflare X25519+Kyber → ML-KEM/ML-DSA |
+
+---
+
+## 🛡️ 11. PQC Migration Roadmap (TRL-Stratified Post-Quantum Layering)
+
+> **Cross-ref:** [ARCH.42](00_08_Action_Plan_Tracker) (ARCH-decision цього документа), [FW.17](00_08_Action_Plan_Tracker) (Hash Ratchet KDF — Perfect Forward Secrecy bridge), [05_01 Multichain Architecture](05_01_Multichain_Architecture) (peaq DID + IoTeX W3bstream рівні), [INF.4](00_08_Action_Plan_Tracker) (Cloudflare TLS termination), `manifest.md` §3 (Cryptographic Integrity).
+
+### 11.1 Чому це **не** аварійне питання, але **обов'язково** має план
+
+Квантовий комп'ютер достатньої потужності для злому ECC/RSA через алгоритм Шора — реальний ризик на горизонті 2035–2045. Для нашого 20–25-річного deployment-горизонту (2026–2046+) ми **зобов'язані** мати міграційний шлях, але **не зобов'язані** ламати поточну архітектуру у TRL 6.
+
+**Ключове рознесення:**
+
+| Тип крипто | Уразливість до квантовості | Наша поточна позиція |
+|------------|----------------------------|----------------------|
+| **Симетричне (AES)** | Лише **квадратний корінь** ослаблення через Гровера (Grover's algorithm). AES-128 → ефективна стійкість $2^{64}$; AES-256 → $2^{128}$. | LoRa AES-128 — `[FW.17]` Hash Ratchet KDF знижує per-key accumulated ciphertext до сотень пакетів; CoAP AES-256 — повний імунітет ($2^{128}$ під Grover'ом — більше енергії ніж є у всесвіті) |
+| **Хеш-функції (SHA-256, HMAC-SHA256)** | Гровер ослаблює аналогічно, але NIST SP 800-208 (LMS/XMSS) вже стандартизує stateful hash-based signatures для довгого життя | OTA dual-gate `[FW.23]` — поточний HMAC-SHA256 криптографічно стійкіший до квантової атаки ніж Ed25519 |
+| **Асиметричне (ECC P-256, Ed25519, RSA)** | **Повний злам Шор'ом за хвилини** на квантовому комп'ютері достатнього розміру | peaq DID (Ed25519), IoTeX ZK-proof, Chainlink ECDSA — usual асиметрія, мігрує через стандарти L1/L2 networks |
+
+### 11.2 Триетапна міграція (TRL-stratified)
+
+#### **Етап 1 (TRL 4–6, 2026–2028 — поточний)** — Криптографічний Схов
+
+| Контур | Алгоритм | Постквантова позиція |
+|--------|----------|----------------------|
+| Soldier ↔ Queen (LoRa) | **AES-128-CCM** (post-FW.2) | Стійкий через симетричну природу + Hash Ratchet `[FW.17]` rotation. Per-key cumulative ciphertext < 1000 пакетів → Grover-attack не накопичує плейнтексту |
+| Queen ↔ Rails (CoAP magistral) | **AES-256-CBC** | Повний квантовий імунітет ($2^{128}$ під Grover'ом) |
+| Queen ↔ Rails (TLS layer, INF.4) | **TLS 1.3 X25519** [поточний] → **X25519 + Kyber-768 hybrid** [Cloudflare default 2024+] | Cloudflare Edge Network вже proxies TLS handshake з гібридним PQC за замовчуванням — 0 коду для нас |
+| OTA Firmware Verification | **HMAC-SHA256** (FW.23 dual-gate) | Hash-based — стійкіший до квантового аналізу ніж Ed25519. Наш приховане перевага |
+| peaq DID (machine identity) | **Ed25519** | Делегуємо peaq Substrate (мережа сама мігрує на ML-DSA коли стандарт буде native у Substrate) |
+| Polygon SCC mint | **ECDSA secp256k1** | Делегуємо Polygon L2 (EVM-стек мігрує синхронно з Ethereum) |
+
+**Що ми НЕ робимо у TRL 4–6:**
+- ❌ НЕ пишемо жодного рядка PQC коду на Soldier (Dilithium підпис — 2420 байт, не вміщається у 24B LoRa packet; Kyber публічний ключ — 1184 байти, не вміщається у LoRa airtime budget)
+- ❌ НЕ міняємо STM32WLE5JC на чіп з апаратним Kyber acceleration (такі чіпи ще не існують у TRL 9 silicon @ low-power profile)
+- ❌ НЕ форсуємо peaq/Polygon DID міграцію — це залежить від upstream blockchain ecosystems
+
+#### **Етап 2 (TRL 7–8, 2028–2030)** — Hybrid Layering на Edge
+
+| Зміна | Контур | Деталі |
+|-------|--------|--------|
+| **Cloudflare PQC TLS** | Queen ↔ Rails (вже активно) | Нічого не робимо — Cloudflare auto-rolls hybrid Kyber-768 + X25519. Документація у `06_02 INF.4` |
+| **Hash Ratchet KDF** | LoRa AES-128 | `[FW.17]` — щотижнева ротація `K_LoRa[i+1] = AES_KDF(K_LoRa[i])`. PFS досягається: компрометація поточного ключа не розкриває минулих пакетів |
+| **W3bstream PQC anchoring** | IoTeX ZK-proof | Якщо IoTeX мігрує на PQC-friendly proving system (zk-STARK замість Groth16) — оновимо `Iotex::W3bstreamVerificationService` через RPC bump |
+| **Hybrid signature на provisioning** | peaq DID Ed25519 + Dilithium-2 | Подвійний підпис під час provisioning: Ed25519 (compat з peaq Substrate сьогодні) + Dilithium-2 (forward compat). При злам Ed25519 — Dilithium залишається валідним |
+
+#### **Етап 3 (TRL 9+, 2032–2035)** — Кристалічні Ґратки на Edge
+
+Коли silicon-вендори (STMicroelectronics, Microchip, NXP) випустять ультранизьковольтні MCU з апаратним прискоренням PQC ML-KEM/ML-DSA (приблизно 2032–2035 за поточним NIST roadmap):
+
+| Зміна | Як зробимо |
+|-------|------------|
+| **Заміна STM32WLE5JC на STM32 серії з апаратним Kyber** | Нова revision PCB Soldier; завдяки Blind-Mate `02_02` ліснику достатньо replace PEEK-капсулу — титановий анкер у заболоні залишається у дереві |
+| **AES-128 LoRa → AES-256 + post-Grover margin через SE upgrade** | Заміна ATECC608B на NXP SE050 (AES-128/192/256 hardware) — описано як future hedge у §3.7 |
+| **OTA HMAC-SHA256 → LMS/XMSS (stateful hash-based signature)** | NIST SP 800-208 стандарт; для billion-tree fleet — wholesale upgrade через factory re-flash під час planned maintenance windows |
+| **peaq DID Ed25519 → ML-DSA (Dilithium)** | peaq Substrate-нативний; ми оновлюємо лише `Peaq::DidRegistryService` RPC bibilio через Gemfile bump |
+
+### 11.3 Чому **не** робимо arithmetic compression / ASCON / повний PQC у Soldier зараз
+
+| Технологія | Перевага | Чому не зараз |
+|------------|----------|----------------|
+| **Arithmetic Coding** (Shannon-optimal compression) | Стискання payload з 21B → ~14B (34% airtime saving) | Потребує big-integer math на кожен біт → з'їдає більше мікроамперів CPU ніж економить на LoRa TX. Bit-flip в ефірі руйнує весь пакет (no FEC). Наш bit-packing у `03_01` ефективніший за енергією. |
+| **ASCON** (NIST Lightweight Crypto winner 2023) | Швидший за програмний AES на 8/32-bit MCU | STM32WLE5JC має **апаратний** AES (0 CPU cycles) — ASCON у софті повільніший за наш HW-AES. ASCON стане конкурентним лише коли silicon-вендори додадуть apparatне acceleration. |
+| **Dilithium-2 signature** (PQC) | Квантова невідрікальність на per-packet рівні | Підпис 2420 байт vs наш 24-byte LoRa packet → fundamental fit problem. Якщо рамку розширити — duty cycle EU868 (1%) порушиться на 2 порядки. |
+| **Kyber-768 KEM** (PQC key encapsulation) | Постквантовий ephemeral key exchange | Публічний ключ 1184 байти, ciphertext 1088 байт — LoRa SF10 payload max ~255 байт. Технологічно несумісно з constrained radio link. |
+
+### 11.4 SSOT-карта: де читати про PQC
+
+| Питання | Документ |
+|---------|----------|
+| Чому AES-128 LoRa достатньо на 25-річний горизонт | Цей §11 + ARCH.42 у `00_08` |
+| Як Cloudflare hybrid Kyber+X25519 інтегровано | `06_02 INF.4` (Akash TLS strategy) |
+| Hash Ratchet KDF дизайн | `[FW.17]` у `00_08` (placeholder, P3) |
+| peaq DID міграція на Substrate-PQC | `05_01 Multichain Architecture` §peaq |
+| OTA HMAC-SHA256 dual-gate | §3.4б цього файла + `[FW.23]` у `00_08` |
+| Chainlink HMAC vs ECDSA migration | `04_02 ChainlinkOracleService` (delegated до Chainlink DON) |
+
+### 11.5 Висновок
+
+> **Наше поточне рішення** — 24-байтний LoRa packet з AES-128-CCM + 8-байтним MIC + Hash Ratchet rotation — це ідеальна **інженерна точка паритету** (Sweet Spot) для фізичної реальності TRL 6:
+>
+> ```
+> [Абсолютна теорія: PQC + Ed25519 + Arithmetic] ─── Несумісно з EBFC батарейкою та 64KB SRAM
+>                      │
+>                      ▼ [Суворий інженерний компроміс]
+> [Наше рішення: 24B AES-128-CCM + 8B MIC] ─── ✅ 20 років автономності, 0% CPU overhead,
+>                                                  криптографічний anti-replay та anti-tamper.
+>                      │
+>                      ▼ [TRL 7-8 hybrid layering, 2028+]
+> [Cloudflare PQC TLS + Hash Ratchet PFS] ─── ✅ Edge-side post-quantum шар без firmware change.
+>                      │
+>                      ▼ [TRL 9+ silicon evolution, 2032+]
+> [STM32 PQC + LMS OTA + ML-DSA peaq DID] ─── ✅ Wholesale crypto refresh via PCB revision.
+> ```
+>
+> ARCH.42 (AES-128 baseline) + FW.2 (CCM upgrade) + §11 PQC layering plan разом утворюють криптографічну дорожню карту, яка **не зачіпає поточний firmware у TRL 6**, але **гарантує квантовий імунітет** до 2046+.

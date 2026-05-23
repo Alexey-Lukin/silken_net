@@ -44,9 +44,11 @@ typedef struct {
 /* ── Constants ─────────────────────────────────────────────────────── */
 #define RNG             ((void*)0x58001000UL) /* RNG peripheral base (mock) */
 #define CRYP_DATATYPE_32B   0
-#define CRYP_KEYSIZE_256B   1
+#define CRYP_KEYSIZE_256B   1   /* CoAP-канал AES-256 (Queen↔Rails) */
+#define CRYP_KEYSIZE_128B   2   /* LoRa-канал AES-128 (Soldier↔Queen) — post-ARCH.42 Variant B */
 #define CRYP_AES_ECB        0
 #define CRYP_AES_CBC        1
+#define CRYP_AES_CCM        2   /* FW.2 target: AES-128-CCM з 8-byte MIC (post-ARCH.42) */
 
 #define PWR_PVDLEVEL_7              7
 #define PWR_PVD_MODE_IT_RISING_FALLING 0
@@ -208,16 +210,21 @@ static inline void NVIC_SystemReset(void) {}
 /* Flash stubs for OTA */
 static inline void Write_OTA_Contract_To_Flash(uint8_t* d, uint16_t s) { (void)d; (void)s; }
 
-/* ── [FW.1] Flash Key Region Mock ──────────────────────────────────── */
+/* ── [FW.1 + ARCH.42] Flash Key Region Mock ─────────────────────────── */
 /*
  * Simulates the Protected Flash Sector at FLASH_KEY_ADDR (0x0803E000).
- * Layout: [magic:4][key[0]:4][key[1]:4]...[key[7]:4] = 9 × uint32_t = 36 bytes.
+ * Post-ARCH.42 layout (LoRa AES-128, 16 bytes):
+ *   [magic:4][key[0]:4][key[1]:4][key[2]:4][key[3]:4] = 5 × uint32_t = 20 bytes
+ * Pre-ARCH.42 layout was 9 × uint32_t = 36 bytes (AES-256).
+ *
+ * Mock allocates 9 words for backward-compat (test fixtures provide uint32_t[8]
+ * keys, але Load_AES_Key читає лише перші FLASH_KEY_WORDS=4 слова).
  *
  * Tests set _mock_flash_key_region[] directly, then call Load_AES_Key()
  * which reads from (const uint32_t *)FLASH_KEY_ADDR.
  * The FLASH_KEY_ADDR macro is redefined below to point to this array.
  */
-#define MOCK_FLASH_KEY_REGION_WORDS  9  /* 1 magic + 8 key words */
+#define MOCK_FLASH_KEY_REGION_WORDS  9  /* 1 magic + up to 8 key words (Load_AES_Key reads first 4) */
 static uint32_t _mock_flash_key_region[MOCK_FLASH_KEY_REGION_WORDS] = {0};
 
 static inline void _mock_flash_key_reset(void) {

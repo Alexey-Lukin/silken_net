@@ -11,7 +11,7 @@
 
 SilkenNet / Gaia 2.0 — планетарна кіберфізична платформа для моніторингу здоров'я лісів. Система поєднує:
 - **Hardware edge**: Ti-6Al-4V гіроїдний анкер (DMLS, пористість 65%, діапазон 60-70%) вживляється в дерево. EBFC (Enzymatic Bio-Fuel Cell) на межі метал-ксилема генерує ~500 мВ. BQ25570 MPPT -> EDLC суперконденсатор 0.47F/5.5V -> MCU 3.3V. Принцип "zero grid" — дерево живить власний монітор.
-- **Firmware**: Soldier (STM32WLE5JC) збирає дані, запускає mruby Lorenz attractor, упаковує 21-байтний пакет, шифрує AES-256-ECB, відправляє LoRa 868 МГц.
+- **Firmware**: Soldier (STM32WLE5JC) збирає дані, запускає mruby Lorenz attractor, упаковує 21-байтний пакет (FW.2 target: 24B з CCM MIC), шифрує **AES-128-ECB** (transitional після ARCH.42 Variant B; target — AES-128-CCM), відправляє LoRa 868 МГц.
 - **Backend**: Rails 8.1 / Ruby 4.0.2 / PostgreSQL / Sidekiq — декодує, верифікує через 12-chain Web3 pipeline, мінтить SCC.
 - **Tokenomics**: Proof of Growth — 10,000 growth_points = 1 SCC (Polygon ERC-20). Слешинг при деградації лісу.
 
@@ -60,39 +60,40 @@ make -C firmware/test
    ```
    **Важливо [FIX FW.7]:** Backend переведено з BigDecimal на **Float (IEEE 754 double)** — ідентично firmware mruby. Раніше `("8.0".to_d / "3.0".to_d).round(18)` давав інший результат після 250 ітерацій; зараз обидві сторони використовують `8.0/3.0` → `2.6666666666666665` і Z **бітово ідентичний** (верифіковано 50,000 random parity-тестами). Майбутній hardening через integer/fixed-point Q-format — `[FW.45]`, deferred до ZK-circuit milestone (див. `docs/03_04_mruby_Lorenz_Attractor.md`).
 
-4. **PACK**: 16-байтний payload.
-5. **ENCRYPT**: AES-256-ECB (апаратний CRYP модуль, без IV). 1 блок = 1 AES operation.
+4. **PACK**: 16-байтний payload (FW.2 target: 8-byte sensor payload у 24B AES-128-CCM frame).
+5. **ENCRYPT**: **AES-128-ECB** transitional (апаратний CRYP модуль, без IV) — ARCH.42 Variant B з 2026-05-23. 1 блок = 1 AES operation. Target FW.2: AES-128-CCM з 8-byte MIC + Frame Counter.
 6. **TX**: `Radio.Send(21 bytes)`. Mesh TTL-based. Emergency TX при chainsaw detection (PANIC_TTL=5).
 
-**21-байтний packet format**:
+**21-байтний packet format** (transitional; FW.2 target — 24-byte CCM):
 ```
 [DID:4][RSSI:1] | [Vcap:2][Temp:1][Acoustic:1][dT:2][StatusByte:1][TTL:1][FW:2][PAD:2]
-  unencrypted   |  AES-256-ECB encrypted (16 bytes = 1 block)
+  unencrypted   |  AES-128-ECB encrypted (16 bytes = 1 block)
 ```
 Ruby unpack: `"N n c C n C C a4"`.
 
 ### Queen (STM32WLE5JC + SIM7070G)
 **Файл**: `firmware/queen/main.c` (550 рядків C)
 
-- LoRa RX -> AES-256-ECB decrypt -> CIFO EdgeCache (50 slots, дедуплікація за DID).
+- LoRa RX -> **AES-128-ECB** decrypt (per-Soldier 128-bit key) -> CIFO EdgeCache (50 slots, дедуплікація за DID).
 - **Queen Sentinel:** `DID == 0x00000000` → власна телеметрія Королеви → `GatewayTelemetryWorker` (не `TelemetryLog`).
 - Flush trigger: >= 45 entries OR 1 година + HRNG jitter (0-60 сек).
-- Flush process: CBC encrypt (HRNG IV) -> AT+CCOAPSEND -> CoAP PUT `/telemetry/batch/<QUEEN_UID>` -> SIM7070G.
-- **BLOCKER: ECB restore** після CBC flush — якщо не відновити, наступні LoRa decrypt ламаються.
+- Flush process: **AES-256-CBC** encrypt (CoAP key, окремий MX_CRYP re-init на `CRYP_KEYSIZE_256B`, HRNG IV) -> AT+CCOAPSEND -> CoAP PUT `/telemetry/batch/<QUEEN_UID>` -> SIM7070G.
+- **BLOCKER: ECB restore** після CBC flush — якщо не відновити (`CRYP_KEYSIZE_128B` + LoRa key), наступні LoRa decrypt ламаються.
 - **BLOCKER: `QUEEN-001` hardcoded** UID -> неможливий уніфікований флешинг.
 - **BLOCKER: AT command blind delay ~25 sec** під час flush (немає парсингу відповіді модему).
 - OTA downlink: CoAP -> RAM assembly (`pending_ota_bytecode[8192]`) -> reflex broadcast chunk by chunk (TTL).
-  - Chunk format: `[0x99][index:2][total:2][bytecode:11]`, AES-256-CBC, pacing 60ms між чанками.
+  - Chunk format: `[0x99][index:2][total:2][bytecode:11]`, **AES-128-ECB** (LoRa key, як інші Soldier-frames), pacing 60ms між чанками. (Queen→Rails CoAP transport — AES-256-CBC; Queen→Soldier OTA reflex — AES-128.)
   - `MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000`. Magic check: `0x45544952 ("RITE")` → load OTA bytecode, else → load embedded `lorenz_bytecode[]`.
 
-### AES режими
-| Напрямок | Режим | IV |
-|----------|-------|-----|
-| Soldier -> Queen (LoRa) | AES-256-ECB | немає |
-| Queen -> Rails (CoAP batch) | AES-256-CBC | HRNG |
-| Rails -> Queen (downlink) | AES-256-CBC | з payload |
+### AES режими (post-ARCH.42, 2026-05-23)
+| Напрямок | Режим | Key size | IV |
+|----------|-------|----------|-----|
+| Soldier -> Queen (LoRa) | AES-128-ECB [transitional] → AES-128-CCM [FW.2 target] | 128 bit | немає (ECB) / CCM B0 nonce (FW.2) |
+| Queen -> Soldier (OTA reflex) | AES-128-ECB | 128 bit | немає |
+| Queen -> Rails (CoAP batch) | AES-256-CBC | 256 bit | HRNG |
+| Rails -> Queen (downlink) | AES-256-CBC | 256 bit | з payload |
 
-**BLOCKER**: ECB без MAC/IV -> вразливість replay attack, bit-flip, chosen plaintext. Потрібен AES-256-GCM.
+**BLOCKER (LoRa channel)**: ECB без MAC/IV -> вразливість replay attack, bit-flip, chosen plaintext. Закривається переходом на **AES-128-CCM** (FW.2; апаратно `CRYP_AES_CCM` у HAL — потребує STM32 bench для верифікації). PQC roadmap — `docs/03_05 §11`.
 
 ---
 
@@ -113,8 +114,8 @@ Ruby unpack: `"N n c C n C C a4"`.
 - `mark_seen!(new_ip:, voltage_mv:)` — GREATEST атомарне оновлення
 - `online?` = `last_seen_at >= (sleep_interval * 1.2).seconds.ago`
 
-**`HardwareKey`**:
-- `aes_key_hex`: 64 HEX символи (AES-256), AR Encryption non-deterministic
+**`HardwareKey`** (conditional by device_type після ARCH.42):
+- `aes_key_hex`: **32 HEX символи** для Tree (AES-128 LoRa) / **64 HEX символи** для Gateway (AES-256 CoAP). AR Encryption non-deterministic. Domain separation у HKDF: info `"silken-aes-128-lora-key"` (Tree) vs `"silken-aes-256-device-key"` (Gateway).
 - `cached_binary_key`: in-process LRU (SinLruRedux), versioned_cache_key = `"#{device_uid}:v:#{updated_at.to_f}"`
 - Ключі не залишають Ruby-процес (немає Redis-serialize). Self-invalidation через `updated_at`.
 - Dual-Key Grace Period при ротації: `previous_aes_key_hex` активний поки не підтверджена синхронізація.
@@ -148,7 +149,7 @@ A. Provisioning: POST /provisioning/register
 
 B. Uplink: CoAP PUT UDP:5683
    -> UnpackTelemetryWorker (queue: uplink #1)
-   -> TelemetryUnpackerService: AES-256-CBC decrypt, 21-byte decode, Lorenz server-side
+   -> TelemetryUnpackerService: AES-256-CBC decrypt CoAP batch (Gateway key) → unwrap to inner AES-128-ECB records (per-Soldier LoRa key), 21-byte decode, Lorenz server-side
    -> IotexVerificationWorker (queue: web3_critical #6)
    -> Iotex::W3bstreamVerificationService: POST /verify
    -> log.update!(verified_by_iotex: true, zk_proof_ref: ...)
@@ -247,7 +248,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5)
 - **Docker**: `ruby:4.0.1-slim`, multi-stage, `thrust ./bin/rails server`.
 - **Prometheus** (`/metrics` endpoint): 20 метрик (10 counters + 8 gauges + 2 histograms). **BLOCKER: Prometheus Server відсутній у Terraform**.
 - **Sentry** 6.5.0: налаштований, але **`SENTRY_DSN` відсутній у `.kamal/secrets`**.
-- **Pre-flight**: антена ПЕРЕД живленням на SX1262 (згорить без антени). AES ключ симетричний на всіх вузлах.
+- **Pre-flight**: антена ПЕРЕД живленням на SX1262 (згорить без антени). Per-device унікальні AES ключі через HKDF (LoRa AES-128 для Tree+Queen LoRa-сесії, CoAP AES-256 для Queen↔Rails).
 
 ---
 
@@ -273,7 +274,8 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 | BLOCKER | Файл | Суть |
 |---------|------|------|
 | HW-AES-KEY | `firmware/soldier/main.c:66-67`, `firmware/queen/main.c:81-82` | ✅ Firmware CLOSED (FW.1, 2026-05-02): `Load_AES_Key()` + per-device HKDF + Protected Flash. Залишається: Factory Flashing Pipeline (SEC.3, threat model: `03_05 §3.4г`) + RDP Level 2 (SEC.2) |
-| AES-ECB | `firmware/soldier/main.c:747` | ECB без MAC -> replay/bit-flip attacks |
+| ARCH.42 LoRa AES-size | `firmware/soldier/main.c` MX_CRYP_Init, `firmware/queen/main.c` MX_CRYP_Init | ✅ DECIDED 2026-05-23 (Variant B = AES-128 LoRa + ATECC608B SE). LoRa channel: `CRYP_KEYSIZE_128B`, `aes_key[4]`; CoAP канал залишається AES-256. Деталі — `docs/03_05 §3.7` |
+| AES-ECB | `firmware/soldier/main.c` (MX_CRYP_Init) | 🟡 Transitional AES-128-ECB після ARCH.42; повне закриття через FW.2 (AES-128-CCM, 24B packet, 8B MIC, Frame Counter). Hardware bench needed для `CRYP_AES_CCM` HAL верифікації |
 | TINYML-COMMENT | `firmware/soldier/main.c:413` | `Run_Inference()` закоментована; model header відсутній |
 | LORENZ-INPUTS | `firmware/bio_contracts/bio_contract.rb` | ✅ Виправлено (FW.5 B+, 2026-05-02): `delta_t_s`/`vcap_mv` передаються як β-пертурбація через `BETA_DELTA_T_COEFF`/`BETA_VCAP_COEFF`; EMA-згладжені значення з firmware. 500-case parity fuzz — 0 mismatches |
 | LORENZ-STATE | firmware | ✅ Виправлено: Стан (x,y,z) зберігається в RTC DR16-DR18 + magic marker `0x4C5A5354` (`"LZST"` = "Lorenz State"). Підтверджено в `firmware/soldier/main.c:239-249,746-749` |
@@ -290,7 +292,7 @@ Solana: Ed25519 підпис, SPL Token Transfer, ATA резолюція чер�
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **silken_net** (9321 symbols, 17542 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **silken_net** (9386 symbols, 17611 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

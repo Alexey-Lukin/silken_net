@@ -45,7 +45,7 @@ lv:
       security:
         address: Adrese
         cipher_suite: Šifru komplekts
-        cipher_value: AES-256-ECB (CoAP līmenis)
+        cipher_value: AES-128-ECB (LoRa kanāls, post-ARCH.42)
         integrity: Integritāte
         integrity_value: Verificēts aparatūras enkurs
         key_identity: Atslēgas identitāte

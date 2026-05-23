@@ -31,9 +31,9 @@
 ### Перед будь-яким польовим деплоєм (life-safety + security)
 1. **SEC.9** — замінити master AES key (FIPS-197 test vector) на криптостійкий random — **P0**
 2. **FW.1 + SEC.3** — Per-device HKDF provisioning + Factory Flashing pipeline — **P0**
-3. **FW.2** — AES-256-CCM (вирішує одразу: ECB→CCM, MIC, FW.23 OTA auth, SEC.10 panic auth, FW.29 disambiguation) — **P0**
+3. **FW.2** — AES-128-CCM [post-ARCH.42] (вирішує одразу: ECB→CCM, MIC, FW.23 OTA auth, SEC.10 panic auth, FW.29 disambiguation) — **P0**
 4. **SEC.1** — Gnosis Safe multisig для `DEFAULT_ADMIN_ROLE` SCC/SFC до mainnet — **P0**
-5. **ARCH.42** — архітектурне рішення AES-128 vs AES-256 (ATECC608B апаратно підтримує лише AES-128 — конфлікт з системним AES-256; блокує SEC.6 Secure Element integration та BOM freeze) — **P1 (до BOM freeze)**
+5. ✅ ~~**ARCH.42**~~ — DECIDED 2026-05-23 (Variant B: AES-128 LoRa + ATECC608B SE; CoAP залишається AES-256). SSOT-патч виконано. Code-side firmware/Ruby rollout — see ARCH.42 row деталі
 
 ### Перед production-запуском Web3 mintingу
 6. **S1.1** — заповнити GitHub Secrets (`DATABASE_PASSWORD`, `GCP_SA_KEY`, `SSH_PRIVATE_KEY`, ...) — **P0**
@@ -230,19 +230,20 @@
 - [ ] 👤 Firmware: RDP Level 2 activation як final step
 - [x] 🤖 End-to-end тест provisioning flow — ✅ `spec/integration/provisioning_e2e_spec.rb` покриває без моків `HardwareKeyService`: (1) HKDF determinism — persisted `aes_key_hex` точно збігається з незалежно повторно деривованим ключем (firmware-equivalence assertion); (2) atomic creation Tree+HardwareKey+MaintenanceRecord з DID/UID у notes + enqueue `PeaqRegistrationWorker`; (3) gateway flow з Ed25519 public key persistence та БЕЗ peaq enqueue; (4) `binary_key.bytesize == 32` (firmware-readable AES-256); (5) Zero-Trust assertion — response НІКОЛИ не містить `aes_key`/`lorenz_seed`/`warning` (єдиний режим після SEC.11 cutover); (6) SEC.11 hard-cutover guard raise'ить `SecurityError` без DB side effects при відсутньому `PROVISIONING_MASTER_KEY`; (7) FW.24 magic UID rejection без DB side effects; (8) duplicate UID → 409 без DB side effects.
 
-#### FW.2 — AES-256-ECB без MAC/MIC
-- `03_05` | `firmware/soldier/main.c:747`, `firmware/queen/main.c:781`
-- **Опис:** Детерміністичний шифротекст, replay/bit-flip attacks можливі. Немає автентифікації пакетів
-- **Рішення (рекомендоване):** **AES-256-CCM** (апаратно підтримується STM32WLE5JC) з новим 24-байтним пакетом. Вирішує BLOCKER-2 та BLOCKER-3 одночасно
-- **Альтернативи:** AES-256-GCM, AES-256-CTR + HMAC-SHA256 MIC (4-byte suffix)
-- **Статус (🤖, 2026-05-13):** Дизайн пакету завершено та задокументовано у `03_05` §3.2 BLOCKER-2. Фінальна структура: Header cleartext AAD `[DID:4][FrameCounter:4 BE]` + encrypted sensor payload `[Vcap_mv:2][temp:1][acoustic:1][delta_t_s:2][status_byte:1][mesh_ctrl:1]` + MIC `[8B 64-bit MAC]` = 24B без wasted Reserved-полів. Покращення проти чернетки: (1) MIC розширено до 8B (64-bit) замість 4B — forge probability ≈ 5.4×10⁻²⁰ vs 2.3×10⁻¹⁰, безпечний на 25-річний горизонт при billion-tree scale; (2) `mesh_ctrl` byte компресує TTL:4 + fw_version_epoch:4 (замість витраченого `firmware_version_id` uint16); (3) Frame Counter = CCM nonce (4B monotonic uint32, RTC DR2) субструє SEC.10 RTC panic counter і gossip_ts_byte — обидва interim workarounds до повного CCM; (4) backend cross-ref: per-DID FC monotonic check через Redis SETNX TTL=25h, growth_points апскейл з 5-bit (0..31) через species multiplier. Firmware (Soldier CCM encrypt, Queen CCM decrypt+FC validation) та backend parser — наступні ітерації.
-- [ ] 🤖 Верифікувати `CRYP_AES_CCM` підтримку на цільовій ревізії STM32WLE5JC
-- [x] 🤖 Дизайн 24-байтного пакету (8 байт sensor data vs поточних 16 — оптимізувати поля) — ✅ Виконано (2026-05-13). Повна специфікація у `03_05` §3.2 BLOCKER-2 (фінальний дизайн 🤖 FW.2): field layout, nonce construction, MIC rationale, removed-fields migration table, HAL_CRYP config, backend cross-refs
-- [ ] 🤖 Firmware Soldier: CCM encrypt + Frame Counter інкремент + MIC append
+#### FW.2 — AES-128-ECB → AES-128-CCM (24B packet) [post-ARCH.42]
+- `03_05` | `firmware/soldier/main.c` (MX_CRYP_Init), `firmware/queen/main.c` (MX_CRYP_Init)
+- **Опис:** Детерміністичний шифротекст, replay/bit-flip attacks можливі. Немає автентифікації пакетів. Після ARCH.42 (Variant B, 2026-05-23) LoRa-канал на AES-128, але режим залишається transitional ECB до повного CCM rollout.
+- **Рішення (рекомендоване):** **AES-128-CCM** (апаратно підтримується STM32WLE5JC через `CRYP_AES_CCM` у HAL) з новим 24-байтним пакетом. Вирішує BLOCKER-2 та BLOCKER-3 одночасно. Узгоджено з ATECC608B Slot 0 (AES-128 SE constraint).
+- **Альтернативи:** AES-128-GCM, AES-128-CTR + HMAC-SHA256 MIC (4-byte suffix), AES-128-CMAC LoRaWAN-style.
+- **Статус (🤖, оновлено 2026-05-23 для ARCH.42 Variant B):** Дизайн пакету завершено та задокументовано у `03_05` §3.2 BLOCKER-2 (тепер AES-128-CCM). Фінальна структура: Header cleartext AAD `[DID:4][FrameCounter:4 BE]` + encrypted sensor payload `[Vcap_mv:2][temp:1][acoustic:1][delta_t_s:2][status_byte:1][mesh_ctrl:1]` + MIC `[8B 64-bit MAC]` = 24B без wasted Reserved-полів. Покращення проти чернетки: (1) MIC розширено до 8B (64-bit) замість 4B — forge probability ≈ 5.4×10⁻²⁰ vs 2.3×10⁻¹⁰, безпечний на 25-річний горизонт при billion-tree scale; (2) `mesh_ctrl` byte компресує TTL:4 + fw_version_epoch:4 (замість витраченого `firmware_version_id` uint16); (3) Frame Counter = CCM nonce (4B monotonic uint32, RTC DR2) субструє SEC.10 RTC panic counter і gossip_ts_byte — обидва interim workarounds до повного CCM; (4) backend cross-ref: per-DID FC monotonic check через Redis SETNX TTL=25h, growth_points апскейл з 5-bit (0..31) через species multiplier. **Key size зменшено з 256 → 128 (ARCH.42).** Firmware (Soldier CCM encrypt, Queen CCM decrypt+FC validation) та backend parser — наступні ітерації, потребують STM32 hardware bench.
+- [ ] 🤖 Верифікувати `CRYP_AES_CCM` підтримку на цільовій ревізії STM32WLE5JC (RM0461 §27.4 — needs hardware bench)
+- [x] 🤖 Дизайн 24-байтного пакету (8 байт sensor data vs поточних 16 — оптимізувати поля) — ✅ Виконано (2026-05-13, оновлено для AES-128 2026-05-23). Повна специфікація у `03_05` §3.2 BLOCKER-2 (фінальний дизайн 🤖 FW.2 AES-128-CCM): field layout, nonce construction, MIC rationale, removed-fields migration table, HAL_CRYP config, backend cross-refs
+- [x] 🤖 ARCH.42 narrow scope: firmware MX_CRYP_Init `CRYP_KEYSIZE_256B → CRYP_KEYSIZE_128B` для LoRa channel — ✅ Транзитивно після ARCH.42 patch (firmware code-side — окремий PR, див. ARCH.42 row)
+- [ ] 🤖 Firmware Soldier: CCM encrypt + Frame Counter інкремент + MIC append (`HAL_CRYPEx_AESCCM_Encrypt`)
 - [ ] 🤖 Firmware Queen: CCM decrypt + Frame Counter validation (anti-replay)
-- [ ] 🤖 Backend: оновити `TelemetryUnpackerService` для 24-байтного формату
-- [x] 🤖 LoRa airtime budget verification (24B vs 16B при SF10/DR2) — ✅ Розрахунок додано в `03_05` BLOCKER-2. Висновок: +10% airtime (+41 мс), duty cycle 0.013% (79× запас), енергоспоживання +12 мДж/TX (1.8% EDLC). **Перехід на CCM 24B схвалений**
-- [ ] 🤖 Тести
+- [ ] 🤖 Backend: оновити `TelemetryUnpackerService` для 24-байтного формату + AES-128-CCM decrypt + MIC verify (`HardwareKey#lora_binary_key` — 16 bytes after ARCH.42)
+- [x] 🤖 LoRa airtime budget verification (24B vs 16B при SF10/DR2) — ✅ Розрахунок додано в `03_05` BLOCKER-2. Висновок: +10% airtime (+41 мс), duty cycle 0.013% (79× запас), енергоспоживання +12 мДж/TX (1.8% EDLC). Key-size 256→128 не змінює airtime (block size фіксований 128 bit), AES операція ~25% швидша. **Перехід на AES-128-CCM 24B схвалений**
+- [ ] 🤖 Тести (firmware host-based + Ruby `TelemetryUnpackerService` spec)
 
 #### FW.3 — Queen AT Command Blocking (~25 сек)
 - `03_01`, `03_02`
@@ -496,7 +497,7 @@
 - [ ] 🤖 Прометей метрика + Grafana panel "Fauna skip rate per cluster" — після FW.4 (метрика без даних = шум)
 
 #### FW.43 — 03_05 §3.1 SSOT drift (привид hardcoded AES-key після FW.1)
-- `docs/03_05_Hardware_AES256_and_Security.md` §3.1 | **P3**
+- `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` §3.1 | **P3**
 - **Опис:** Hot-fix doc-only. FW.1 (Per-device HKDF provisioning) вже реалізовано — `Load_AES_Key()` зчитує унікальний ключ з Protected Flash. Проте §3.1 досі описує "ідентичний на ВСІХ вузлах" + hardcoded `uint32_t aes_key[8] = { 0xXXXXXXXX, ... }`. Це SSOT-drift, який вводить в оману нових інженерів.
 - [x] 🤖 Замінити блок §3.1 на актуальний (`uint32_t aes_key[8] = {0};` + посилання на `Load_AES_Key()` у §3.4а HKDF derivation) — ✅ BLOCKER-1 оновлено до `✅ Firmware CLOSED (FW.1)`, historical code анотовано, status table виправлено (2026-05-17)
 - [x] 🤖 Прибрати фразу "Ідентичний на ВСІХ вузлах мережі" — поточна архітектура per-device unique через HKDF — ✅ header змінено на `✅ BLOCKER-1: ... Firmware CLOSED`; historical блок чітко анотований `[PRE-FW.1 HISTORICAL]` (2026-05-17)
@@ -534,17 +535,24 @@
 - [x] 🤖 (A) Trigger CMD_TIME_SYNC downlink — ✅ Виконано (2026-05-17). `TimeSyncDownlinkWorker` (queue: downlink, retry: 2). Envelope-only CoAP: `coap_encrypt("".b, key)` → Queen `Handle_CoAP_Command` line 1203-1204 → `inner_aligned==0` → `return` після `Apply_Server_Time`. Endpoint: `/cmd/time_sync`.
 - [ ] 🔗 (B/C) Розглянути після стабілізації (A) — потребують координованого firmware rollout
 
-#### ARCH.42 — ATECC608B AES-128 vs system AES-256 апаратний конфлікт
-- `docs/03_05_Hardware_AES256_and_Security.md` §3.7 | **P1**
-- **Опис:** §3.7 пропонує мапінг Slot 0 → "AES-128 key", але вся мережа Gaia 2.0 використовує AES-256 (`CRYP_KEYSIZE_256B` у STM32WLE5JC + `MX_CRYP_Init` у `soldier/main.c`). Microchip ATECC608B апаратно **не підтримує AES-256** — лише AES-128. Якщо перенести шифрування всередину чипа (key never leaves SE), доведеться даунгрейдити всю мережу до AES-128. Якщо ж зберегти AES-256, потрібно витягувати ключ із SE у RAM MCU — це нівелює DPA/EM захист, заради якого вводився SE.
-- **Архітектурне рішення (вибрати):**
-  - **(A) Змінити Secure Element** на NXP EdgeLock SE050 або STSAFE-A110 з підтвердженою підтримкою AES-256 у HW. Збільшує BOM (~$2–4 vs ATECC ~$0.85), але зберігає крипто-консистентність.
-  - **(B) Даунгрейд LoRa-каналу до AES-128.** AES-128 — золотий стандарт IoT (LoRaWAN використовує саме його). Оновити `MX_CRYP_Init` (`CRYP_KEYSIZE_256B → CRYP_KEYSIZE_128B`), всі doc-посилання, HKDF output length, AES key column у `HardwareKey` (64 hex → 32 hex). Коштує меншу security margin (`2^128` все ще практично нездоланно) і зберігає DPA-захист SE.
-- **Рекомендація:** Варіант (B) — AES-128 для LoRa каналу. Аргументи: (i) industry-standard для constrained IoT, (ii) дешевший BOM, (iii) `ATECC608B` вже у плані як комбо-SE для ECC P-256 signing + ECDH, (iv) симетричний AES-128 переважає у LoRaWAN/Helium/Sigfox-екосистемах — простіше bridging. **Вплив:** ~2 тижні firmware/backend rework + переписати всі `MX_CRYP_Init` тести.
-- **Cross-ref:** SEC.6 (Secure Element не використовується) — вирішується разом з ARCH.42.
-- [ ] 👤 Архітектурне рішення A vs B (потребує stakeholder review — security margin vs BOM cost)
-- [ ] 🤖 Після рішення: глобальний SSOT-патч (03_05 + 03_01 + 04_01 HardwareKey schema + firmware AES init + всі тести)
-- [ ] 🔗 Блокує: SEC.6 (Secure Element integration), будь-який BOM freeze з ATECC608B
+#### ✅ ARCH.42 — ATECC608B AES-128 vs system AES-256 — DECIDED (Variant B, 2026-05-23)
+- `docs/03_05_Hardware_Symmetric_Crypto_and_Security.md` §3.7 | **P1** → **✅ Resolved**
+- **Опис:** §3.7 пропонує мапінг Slot 0 → "AES-128 key", але початкова Gaia 2.0 архітектура використовувала AES-256 (`CRYP_KEYSIZE_256B`). ATECC608B апаратно підтримує лише AES-128 → конфлікт.
+- **Рішення (2026-05-23 — Variant B обрано):** **Даунгрейд LoRa-каналу до AES-128-CCM**. CoAP-магістраль (Queen↔Rails) залишається на AES-256-CBC. Per-channel domain separation у HKDF info-strings.
+- **Обґрунтування:** (i) AES-128 — золотий стандарт constrained IoT (LoRaWAN/Helium/Sigfox/Thread/BLE/Zigbee нативно AES-128); (ii) BOM saving $2.40-3.25/unit × million-tree fleet = $2.4–3.25M; (iii) DPA/EM-захист SE збережено (ключ ніколи не покидає кремній ATECC608B Slot 0); (iv) post-Grover margin компенсується `[FW.17]` Hash Ratchet KDF + §11 PQC roadmap.
+- **Cross-ref:** SEC.6 (Secure Element integration) — узгоджено з ARCH.42 Variant B. §11 PQC Migration Roadmap у `03_05`.
+- **SSOT-патч виконано (2026-05-23):**
+  - [x] 🤖 docs/03_05 повністю переписано (status table, BLOCKER-2, §1, §2.1, §2.4, §3.1, §3.2, §3.4а, §3.7, §10) + новий §11 PQC roadmap
+  - [x] 🤖 docs/00_08 ARCH.42 + FW.2 оновлено (цей рядок + FW.2 нижче)
+  - [x] 🤖 docs/03_01, 03_02, 04_01, 04_02, 05_02, 02_05, 02_01, 06_01, 08_02, 08_03 surgical update — LoRa AES-256→AES-128
+  - [x] 🤖 CLAUDE.md §1, §3 AES table, §4 HardwareKey, §12 BLOCKER table — оновлено
+  - [x] 🤖 README.md + docs/00_00 SSOT index — оновлено описи та посилання
+  - [x] 🤖 Файл `03_05_Hardware_AES256_and_Security.md` → `03_05_Hardware_Symmetric_Crypto_and_Security.md` (git mv + всі internal links оновлено)
+- **Code-side TODO (виносяться як окремі підзадачі — FW + Ruby):**
+  - [ ] 🤖 **FW (firmware C):** `firmware/soldier/main.c` + `firmware/queen/main.c` — `CRYP_KEYSIZE_256B → CRYP_KEYSIZE_128B` (MX_CRYP_Init для LoRa); `aes_key[8] → aes_key[4]` (16 bytes); `FLASH_KEY_WORDS 8 → 4`; magic `"KEYS"` → `"KEYL"`; Queen додатково тримає `coap_key[8]` (32 bytes) для CoAP CBC, окремий MX_CRYP re-init на `CRYP_KEYSIZE_256B` під час `Flush_Cache_To_Rails()` + restore назад на 128B/ECB
+  - [ ] 🤖 **FW tests:** `firmware/test/test_encryption.c` (Load_AES_Key читає 4 words; CRYP_KEYSIZE_128B init), `test_soldier_logic.c`, `test_queen_logic.c`
+  - [ ] 🤖 **Backend Ruby:** `app/models/hardware_key.rb` — conditional length validation (Tree=32 hex, Gateway=64 hex); `app/services/hardware_key_service.rb` — додати `derive_lora_key(device_uid)` (16 bytes, info `"silken-aes-128-lora-key"`) + зберегти `derive_device_key` для Gateway; `app/services/security/weak_key_detector.rb` — додати 16-byte FIPS-197 Appendix B vector до weak-list (cover both 16B та 32B perspectives); `app/services/ota_hmac_key_service.rb` — оновити domain-separation коментар; `spec/factories/hardware_keys.rb` — conditional `aes_key_hex` довжина за `device_type`; `spec/models/hardware_key_spec.rb` — оновити length-assertions
+- [ ] 🔗 Розблоковує: SEC.6 (Secure Element integration), BOM freeze з ATECC608B
 
 ---
 

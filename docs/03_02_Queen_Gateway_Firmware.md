@@ -15,7 +15,7 @@
 - **Поточний TRL:** TRL 6 — C-код шлюзу написаний
 - **Пов'язані модулі:**
   - Життєвий Цикл Прошивки та DMA → [`03_01_Firmware_Lifecycle_and_DMA`](03_01_Firmware_Lifecycle_and_DMA)
-  - Апаратний AES-256 та Безпека → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+  - Апаратне симетричне шифрування та Безпека → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
   - Бізнес-Логіка та Сервіси → [`04_02_Business_Logic_and_Services`](04_02_Business_Logic_and_Services)
   - Proof of Growth Pipeline → [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline)
 
@@ -24,7 +24,7 @@
 | Компонент | Стан |
 |-----------|------|
 | **LoRa RX (OnRxDone ISR → main loop)** | ✅ Реалізовано (`firmware/queen/main.c`) |
-| **AES-256-ECB decrypt (HAL hardware)** | ✅ Реалізовано (апаратний CRYP модуль) |
+| **AES-128-ECB decrypt (HAL hardware, LoRa channel post-ARCH.42)** | ✅ Реалізовано (апаратний CRYP модуль) |
 | **CIFO EdgeCache (50 слотів)** | ✅ Реалізовано (`Process_And_Cache_Data`) |
 | **Priority-Aware CIFO Eviction** | ✅ Виправлено (критичні записи захищені) |
 | **Flush trigger (≥45 entries OR 1 год)** | ✅ Реалізовано з HRNG-джиттером |
@@ -72,7 +72,7 @@ uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init
 - [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment).
 - [ ] Опційно (mass production >10k): ATECC608B Secure Element — SEC.6 / `03_05 §3.7`.
 
-> Cross-ref: [`03_05 §3.1 Джерело AES-Ключа`](03_05_Hardware_AES256_and_Security), [`03_05 §3.4 Factory Flashing Pipeline`](03_05_Hardware_AES256_and_Security), [`03_05 §3.4г Operations Security`](03_05_Hardware_AES256_and_Security), [`03_01 BLOCKER-1`](03_01_Firmware_Lifecycle_and_DMA).
+> Cross-ref: [`03_05 §3.1 Джерело AES-Ключа`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_05 §3.4 Factory Flashing Pipeline`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_05 §3.4г Operations Security`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_01 BLOCKER-1`](03_01_Firmware_Lifecycle_and_DMA).
 
 ---
 
@@ -263,7 +263,7 @@ if (current_ota_chunk_idx >= total_chunks) {
 ║  [INIT]                                                                  ║
 ║    HAL_Init → SystemClock_Config → MX_GPIO_Init                         ║
 ║    MX_USART1_UART_Init (115200 baud → SIM7070G)                         ║
-║    MX_SUBGHZ_Init → MX_CRYP_Init (AES-256-ECB)                         ║
+║    MX_SUBGHZ_Init → MX_CRYP_Init (AES-128-ECB, LoRa channel)                         ║
 ║    Radio.Init → Radio.SetChannel(868 MHz)                                ║
 ║    memset(forest_cache) → memset(cmd_dedup_ring)                         ║
 ║    SIM7070_SendATCommand("AT\r\n", 500ms)                               ║
@@ -331,7 +331,7 @@ if (current_ota_chunk_idx >= total_chunks) {
 | `OTA_HEADER_SIZE` | `5` | main.c:30 | Маркер + idx:2 + total:2 |
 | `OTA_CRC_SIZE` | `2` | main.c:31 | CRC16-CCITT |
 | `OTA_OVERHEAD` | `7` | main.c:32 | `OTA_HEADER_SIZE + OTA_CRC_SIZE` |
-| `AES_BLOCK_SIZE` | `16` | main.c:33 | AES-256 block size |
+| `AES_BLOCK_SIZE` | `16` | main.c:33 | AES block size (128-bit, фіксований AES spec — рівне для AES-128 та AES-256) |
 | `MAX_OTA_CHUNK_PAYLOAD` | `512` | main.c:34 | Макс. байткод у CoAP-чанку |
 | `OTA_FULL_CHUNK_THRESH` | `514` | main.c:35 | `MAX_OTA_CHUNK_PAYLOAD + OTA_CRC_SIZE` |
 | `MIN_OTA_ALIGNED` | `23` | main.c:36 | `AES_BLOCK_SIZE + OTA_OVERHEAD` |
@@ -367,7 +367,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 | Параметр | Значення | Опис |
 |----------|----------|------|
 | Частота | 868 MHz | Регіон ЄС/Україна |
-| Розмір пакета | 16 байт | Повний AES-256 блок |
+| Розмір пакета | 16 байт | Повний AES-блок (block size = 128 bit; key size = AES-128 post-ARCH.42 LoRa) |
 | Таймаут RX | `LORA_RX_INFINITE = 0xFFFFFF` | Нескінченне очікування |
 | UART baud | 115200 | SIM7070G модем |
 | `snr` параметр | **використовується як CIFO tiebreaker (E.8)** | SX1262 SNR плюметься через ring buffer у `EdgeCache.snr`. У `Process_And_Cache_Data` він активується **лише** як tiebreaker: коли два non-critical (status=0) записи мають **однаковий** найгірший RSSI — той з нижчим SNR (шумніший канал → пакет імовірніше прийшов через інтерференцію та став stale) виганяється першим. RSSI залишається primary key, `bio_status` priority undisturbed. 7 host-тестів у `firmware/test/test_queen_logic.c` (`test_e8_*`). |
@@ -848,7 +848,7 @@ void Send_OTA_ReRequest(uint8_t* received_map, uint16_t total) {
     req_payload[12] = (uint8_t)(FIRMWARE_VERSION_ID >> 8);
     req_payload[13] = (uint8_t)(FIRMWARE_VERSION_ID & 0xFF);
 
-    // AES-256-ECB шифрування + TX (як стандартний uplink-пакет)
+    // AES-128-ECB шифрування + TX (як стандартний uplink-пакет, post-ARCH.42)
     HAL_CRYP_Encrypt(&hcryp, (uint32_t*)req_payload, 4,
                       (uint32_t*)encrypted_payload, 1000);
     Radio.Send(encrypted_payload, 16);
@@ -1103,12 +1103,12 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 
 ## 🔐 8. Шифрування: Режими та Переходи
 
-| Шлях | Алгоритм | Режим | IV |
+| Шлях | Алгоритм | Режим | IV/Nonce |
 |------|----------|-------|----|
-| Soldier → Queen (LoRa RX) | AES-256 | ECB | N/A (16-byte single block) |
+| Soldier → Queen (LoRa RX) [post-ARCH.42] | **AES-128** | ECB [transitional] → CCM [FW.2] | N/A (ECB) / CCM B0 nonce (FW.2) |
 | Queen → Rails (CoAP batch) | AES-256 | CBC | HRNG (prepended до ciphertext) |
 | Rails → Queen (CoAP command) | AES-256 | CBC | Витягується з payload[0..15] |
-| Queen → Soldier (OTA LoRa) | AES-256 | ECB | N/A |
+| Queen → Soldier (OTA LoRa) [post-ARCH.42] | **AES-128** | ECB | N/A |
 
 ### Критичний Transition Diagram
 
@@ -1149,7 +1149,8 @@ Process_And_Cache_Data(0, queen_health, 0); // RSSI=0 (локальний пак
 
 | Змінна | Тип | Розмір | Призначення |
 |--------|-----|--------|-------------|
-| `aes_key[8]` | `uint32_t` | 32 B | AES-256 ключ (однаковий з Soldiers) |
+| `aes_key[4]` | `uint32_t` | 16 B | **AES-128 LoRa ключ** (per-Soldier HKDF; CIFO key-cache) [post-ARCH.42] |
+| `coap_key[8]` | `uint32_t` | 32 B | **AES-256 CoAP ключ** Queen (для batch flush до Rails; окремий MX_CRYP re-init під час CoAP-сесії) |
 | `forest_cache[50]` | `EdgeCache` | 1150 B | CIFO EdgeCache (50 × 23 байти, після **[E.8]** додано `snr` 1 байт) |
 | `binary_batch_buffer[2048]` | `uint8_t` | 2048 B | Бінарний буфер перед шифруванням |
 | `encrypted_batch_buffer[2064]` | `uint8_t static` | 2064 B | **static** (IV + зашифровані дані) |
@@ -1230,7 +1231,7 @@ make -C firmware/test queen    # 128 тестів, ~0.1 секунди
 |--------|--------|--------|
 | [03_01 Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) | ✅ Синхронізовано | Soldier lifecycle, binary packet format, DID provisioning |
 | [02_05 Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) | — | Схема живлення Queen, антена SIM7070G |
-| [03_05 Hardware AES256 and Security](03_05_Hardware_AES256_and_Security) | — | Деталі ключової інфраструктури |
+| [03_05 Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | — | Деталі ключової інфраструктури |
 
 ### Низхідні (Blocks)
 

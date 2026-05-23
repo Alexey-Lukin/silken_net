@@ -831,7 +831,7 @@ end
 - [`02_01_Hardware_Architecture_and_BOM`](02_01_Hardware_Architecture_and_BOM) — апаратна архітектура (SMD-антена, PEEK-радом)
 - [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference) — TinyML акустична класифікація (BLOCKER: inference закоментована)
 - [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor) — математика атрактора Лоренца
-- [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security) — апаратна безпека (AES-ECB BLOCKER)
+- [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security) — апаратна безпека (AES-ECB BLOCKER)
 - [`05_02_Proof_of_Growth_Pipeline`](05_02_Proof_of_Growth_Pipeline) — Proof of Growth пайплайн
 - [`05_03_Tokenomics_SCC_and_SFC`](05_03_Tokenomics_SCC_and_SFC) — токеноміка SCC/SFC
 - [`06_03_Prometheus_Observability`](06_03_Prometheus_Observability) — метрики та моніторинг

@@ -101,7 +101,7 @@ Supercapacitor 0.47 F  ──── (енергетичний буфер: 4.14 �
 STM32WLE5JC
   ├──► TinyML Inference (CMSIS-NN, ~200 мс, 8 мДж)
   ├──► mruby Lorenz (250 ітерацій, float32/64)
-  ├──► AES-256 Encrypt (21-байтовий пакет)
+  ├──► AES-128 Encrypt (21-байтовий пакет, post-ARCH.42 Variant B)
   └──► SX1262 LoRa TX (+14 dBm SF9, ~165 мс, ~22 мДж)
        (zaмість +22 dBm для позитивного енергобалансу — `02_03 §9.6`)
             │
@@ -145,7 +145,7 @@ STM32WLE5JC
 
 | # | Компонент | Модель / Специфікація | Роль | Ціна (10k шт) |
 |---|---|---|---|---|
-| 1 | **MCU + LoRa SoC** | Seeed LoRa-E5 (STM32WLE5JC + SX1262) | Обчислення (mruby, TinyML, AES-256) + LoRa TX/RX | ~$5.50 |
+| 1 | **MCU + LoRa SoC** | Seeed LoRa-E5 (STM32WLE5JC + SX1262) | Обчислення (mruby, TinyML, AES-128 LoRa post-ARCH.42) + LoRa TX/RX | ~$5.50 |
 | 2 | **PMIC** | Texas Instruments BQ25570RGRR | MPPT + Boost + Buck; живлення від EBFC | ~$2.80 |
 | 3 | **Supercapacitor** | Eaton HV0H474AEJ-R або KEMET FG0H474ZF (0.47 F / 5.5 В, Radial) | Енергетичний буфер | ~$1.10 |
 | 4 | **Ceramic SMD Antenna** | Yageo ANT1608LLC00R2400A, Taoglas FXP73 або Ignion NN02-310 (868 МГц, SMD) | RF-випромінювання | ~$0.35 |

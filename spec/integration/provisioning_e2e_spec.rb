@@ -128,24 +128,26 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
         expect(record.notes).to include(hardware_uid)
       end
 
-      it "persists the AES key derived deterministically from PROVISIONING_MASTER_KEY + DID" do
+      it "persists the LoRa AES-128 key derived deterministically from PROVISIONING_MASTER_KEY + DID [post-ARCH.42]" do
         post "/api/v1/provisioning/register", params: tree_params, headers: headers, as: :json
         expect(response).to have_http_status(:created)
 
         hw_key = HardwareKey.find_by!(device_uid: expected_did)
 
         # Firmware-equivalence assertion: re-derive independently and compare.
+        # Post-ARCH.42 Variant B (2026-05-23): Tree LoRa channel — AES-128 (16 bytes,
+        # info "silken-aes-128-lora-key"). Узгоджено з ATECC608B Secure Element Slot 0.
         # If this ever fails, backend ↔ firmware AES keys would diverge silently
-        # and decryption of telemetry would break in production. See SEC.11.
-        expected_key = HardwareKeyService.derive_device_key(expected_did)
+        # and decryption of telemetry would break in production. See SEC.11 + ARCH.42.
+        expected_key = HardwareKeyService.derive_lora_key(expected_did)
         expect(hw_key.aes_key_hex).to eq(expected_key)
 
-        # 64 uppercase hex chars (AES-256, see HardwareKey validation).
-        expect(hw_key.aes_key_hex).to match(/\A[0-9A-F]{64}\z/)
+        # 32 uppercase hex chars (AES-128 post-ARCH.42, see HardwareKey conditional validator).
+        expect(hw_key.aes_key_hex).to match(/\A[0-9A-F]{32}\z/)
 
-        # binary_key must unhexify to exactly 32 bytes (firmware loads this
-        # via Load_AES_Key() into the STM32 CRYP module, see 03_05 §3.4а).
-        expect(hw_key.binary_key.bytesize).to eq(32)
+        # binary_key must unhexify to exactly 16 bytes (firmware loads this into
+        # CRYP_KEYSIZE_128B via Load_AES_Key() — see 03_05 §3.4а post-ARCH.42).
+        expect(hw_key.binary_key.bytesize).to eq(16)
       end
 
       it "produces the same key for identical UID and different keys for different UIDs (HKDF determinism)" do

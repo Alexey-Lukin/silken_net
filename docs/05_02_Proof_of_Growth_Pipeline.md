@@ -75,7 +75,8 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║   ФАЗА 3: PACK + ENCRYPT                                             ║
 ║     Payload [16 bytes]: DID(N) Vcap(n) Temp(c) Acoustic(C)          ║
 ║                          Metabolism(n) StatusByte(C) TTL(C) Pad(a4) ║
-║     AES-256-CBC hardware (CRYP module) → encrypted_payload[16]      ║
+║     AES-128-ECB hardware (CRYP module) → encrypted_payload[16]      ║
+║     [post-ARCH.42; FW.2 target: AES-128-CCM 24B з MIC]               ║
 ║     Prefix: DID[4] + RSSI_inverted[1] = L2 header (21 bytes total)  ║
 ║                                                                      ║
 ║   ФАЗА 4: LoRa TX / MESH RELAY                                       ║
@@ -99,7 +100,8 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║  L5: BACKEND (Rails 8.1 + Sidekiq)                                  ║
 ║                                                                      ║
 ║  [UnpackTelemetryWorker] queue: uplink (prio 1)                     ║
-║    Base64 decode → AES-256-CBC decrypt via HardwareKey.binary_key   ║
+║    Base64 decode → AES-256-CBC decrypt (Gateway CoAP key, 32B)      ║
+║    → unwrap batch → AES-128-ECB decrypt per record (Tree LoRa key)  ║
 ║    "Soft Key Rotation": new_key → fallback previous_key             ║
 ║    Gateway.find_by(uid:) → mark_seen!(new_ip:)                      ║
 ║    ▼                                                                 ║
@@ -195,7 +197,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 | `acoustic_events` | DMA 16 кГц → TinyML CMSIS-NN | uint8 (0–255) |
 | `delta_t_seconds` | `HAL_GetTick() - last_wakeup_timestamp` | uint32 (EBFC метаболізм) |
 
-> **[SEC.11]** `chaos_seed = HAL_RNG_GenerateRandomNumber()` як вхід Лоренца — **видалено** (hard cutover). Початкова точка `(x₀, y₀, z₀)` тепер деривується з per-device `K_seed` (Flash) через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` лише при cold-start після VBAT loss; у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init. HRNG залишається лише для AES IV jitter, mesh anti-pingpong та CoAP nonce. Деталі — [03_05 §3.4в](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-).
+> **[SEC.11]** `chaos_seed = HAL_RNG_GenerateRandomNumber()` як вхід Лоренца — **видалено** (hard cutover). Початкова точка `(x₀, y₀, z₀)` тепер деривується з per-device `K_seed` (Flash) через `HMAC-SHA256(K_seed, "init|" || epoch_day_be)` лише при cold-start після VBAT loss; у норму FW.6 RTC continuation (DR16-DR18 magic `"LZST"`) пропускає re-init. HRNG залишається лише для AES IV jitter, mesh anti-pingpong та CoAP nonce. Деталі — [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-).
 
 **TinyML класи** (`silken_net_audio_model.h`): 0=Тиша, 1=Вітер, 2=Кавітація, 3=Пилка.
 
@@ -291,7 +293,7 @@ OTA Batch Downlink Format (розширений):
 8–9    checksum               uint16 CRC16 байтів 0..7
 ```
 
-**Розшифровується AES-256-CCM (після FW.2) або AES-256-CBC (поточний).**
+**LoRa-канал (Soldier→Queen):** розшифровується **AES-128-CCM** (FW.2 target, post-ARCH.42) або AES-128-ECB (transitional). **CoAP-магістраль (Queen→Rails):** AES-256-CBC (без змін).
 
 ##### 4а.2 Firmware — зберігання у RTC Backup Domain
 
@@ -405,7 +407,7 @@ Backend вже має `TreeFamily#critical_z_min|max|optimal_z_target` чере�
 Байти  Поле               Тип    Опис
 0–3    DID (L2 header)    uint32 Апаратний ідентифікатор (SNET-XXXXXXXX raw)
 4      RSSI (інвертований) uint8  -RSSI (positive byte)
-────── L3 Payload (16 bytes, AES-256-CBC encrypted) ─────────────────
+────── L3 Payload (16 bytes, AES-128-ECB encrypted post-ARCH.42) ─────
 5–6    Vcap               uint16 Напруга суперконденсатора (мВ)
 7      Temperature         int8  Температура (зі знаком)
 8      Acoustic_events    uint8  Кількість акустичних подій
@@ -416,7 +418,7 @@ Backend вже має `TreeFamily#critical_z_min|max|optimal_z_target` чере�
 15–16  Reserved pad       uint16 Pad[2:3] (нулі, зарезервовано)
 ```
 
-**Шифрування:** AES-256-CBC апаратним модулем `CRYP` → `HAL_CRYP_Encrypt`.
+**Шифрування:** **AES-128-ECB** апаратним модулем `CRYP` (`CRYP_KEYSIZE_128B`, post-ARCH.42 Variant B) → `HAL_CRYP_Encrypt`. **FW.2 target:** AES-128-CCM (24B packet з 8-byte MIC + Frame Counter, апаратно через `HAL_CRYPEx_AESCCM_Encrypt`).
 Заголовок [DID:4][RSSI:1] передається відкрито; payload[16] зашифровано.
 
 #### Фаза 4 — LoRa TX + Mesh
@@ -471,7 +473,7 @@ Rails → CoAP downlink → queen RAM assembly (pending_ota_bytecode[8192])
 Queen → LoRa broadcast (рефлекторний постріл після кожного RX):
   Chunk size: 11 bytes payload + 5 bytes header = 16 bytes (1 AES block)
   Format: [0x99][index:2][total:2][bytecode:11]
-  AES-256-CBC encrypted before TX
+  AES-128-ECB encrypted before TX (LoRa OTA reflex використовує той самий LoRa key, post-ARCH.42)
   Pacing: 60ms delay між чанками
 Soldier:
   MRUBY_CONTRACT_FLASH_ADDR = 0x0803F000
@@ -797,11 +799,11 @@ total = base + bonus    # max: 10_000 + 62×100 = 16_200 lamports = 0.0162 USDC
 
 > **TokenomicsEvaluatorWorker bypass [S6.12] — фактичний інваріант:** Path 2 НЕ перевіряє `verified_by_iotex?` / `oracle_status_fulfilled?`. Це **навмисно**, але обґрунтування потребує точності:
 >
-> - `growth_points` зараховуються у `wallet.balance` через `Wallet#credit!` у `TelemetryUnpackerService.commit_telemetry` **до** проходження пакетом IoTeX/Chainlink. Тобто upstream-перевірка для Path 2 — це **AES-256-CBC decrypt + `valid_sensor_data?`** (per-packet integrity perimeter), а **не** повний oracle pipeline.
+> - `growth_points` зараховуються у `wallet.balance` через `Wallet#credit!` у `TelemetryUnpackerService.commit_telemetry` **до** проходження пакетом IoTeX/Chainlink. Тобто upstream-перевірка для Path 2 — це **AES-256-CBC decrypt CoAP batch (Gateway key) → AES-128-ECB decrypt per-record (Tree LoRa key) + `valid_sensor_data?`** (per-packet integrity perimeter, post-ARCH.42), а **не** повний oracle pipeline.
 > - Path 1 (oracle-driven mint per-telemetry) і Path 2 (hourly tokenomics aggregate) — **окремі шляхи мінтингу для тих самих growth_points**: Path 1 мінтить за конкретним verified `telemetry_log`, Path 2 агрегує накопичений `wallet.balance`. Без розмежування — циклічна залежність "не можна нарахувати tokenomics-bonus, доки oracle не підтвердив сам bonus".
 > - **Hadron KYC є справжнім security perimeter Path 2** — `BlockchainMintingService` raise `Compliance Breach` для будь-якого `hadron_kyc_status != "approved"` незалежно від присутності `telemetry_log`. Це блокує ескалацію fake-`growth_points` (з compromised AES-key) у мінт через non-KYC wallet.
 > - Spec coverage: `spec/services/blockchain_minting_service_spec.rb` → context "tokenomics flow without telemetry_log [S6.12]" (3 examples).
-> - **Залишковий ризик (документований):** компрометація AES-key конкретного дерева → fake `growth_points` зараховуються `Wallet#credit!` → Path 2 щогодини мінтить SCC якщо wallet KYC-approved. Mitigation track: per-device HKDF key provisioning (FW.1 / SEC.3) + AES-256-CCM з MIC (FW.2) — обидва P0 у roadmap до польового deploy.
+> - **Залишковий ризик (документований):** компрометація per-device LoRa AES-128 ключа конкретного дерева → fake `growth_points` зараховуються `Wallet#credit!` → Path 2 щогодини мінтить SCC якщо wallet KYC-approved. Mitigation track: per-device HKDF key provisioning (FW.1 / SEC.3) + **AES-128-CCM** з 8-byte MIC + Frame Counter (FW.2 post-ARCH.42) + Hash Ratchet KDF rotation (FW.17) — обидва P0 у roadmap до польового deploy.
 
 > **Path 3 raises замість silent-skip:** Slashing rollback — фінансово-критична операція. Беззвучне ігнорування призвело б до асиметрії "burn застосовано, mint-rollback пропущено → дисбаланс supply". Тому будь-який guard fail у Path 3 → exception + Sentry.
 
@@ -859,7 +861,7 @@ blockchain_transactions
 
 ## 🔬 SEC.11 — Lorenz Seed Provenance & Dual Computation Integrity
 
-> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation-); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [00_08 SEC.11](00_08_Action_Plan_Tracker).
+> **Cross-ref:** дизайн і threat model — [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-); сервіс — [04_02 `SilkenNet::SeedDerivation`](04_02_Business_Logic_and_Services#silkennetseedderivation-); poetics — [03_04 §2.1, §3 Крок 1](03_04_mruby_Lorenz_Attractor); SEC.11 в трекері — [00_08 SEC.11](00_08_Action_Plan_Tracker).
 
 ### Чому це частина Proof of Growth, а не суто security task
 

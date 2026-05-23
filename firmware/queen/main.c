@@ -30,7 +30,7 @@
 #define OTA_HEADER_SIZE       5      // [0x99][index:2][total:2]
 #define OTA_CRC_SIZE          2      // CRC16-CCITT в кінці чанка
 #define OTA_OVERHEAD          (OTA_HEADER_SIZE + OTA_CRC_SIZE)  // 7 байт
-#define AES_BLOCK_SIZE        16     // AES-256 block size
+#define AES_BLOCK_SIZE        16     // AES block size (128-bit fixed; рівне для AES-128 і AES-256)
 #define MAX_OTA_CHUNK_PAYLOAD 512    // Максимальний розмір байткоду в одному CoAP-чанку
 #define OTA_FULL_CHUNK_THRESH (MAX_OTA_CHUNK_PAYLOAD + OTA_CRC_SIZE) // 514: поріг повного чанка
 #define MIN_OTA_ALIGNED       (AES_BLOCK_SIZE + OTA_OVERHEAD)        // 23: мінімальний aligned
@@ -110,9 +110,22 @@
 // via SWD (STM32CubeProgrammer). Key is derived from master_key via HKDF-SHA256
 // on the backend (HardwareKeyService.derive_device_key).
 // See docs/03_05 §3.4а for full protocol design.
-#define FLASH_KEY_ADDR            0x0803E000UL  // Protected Flash sector for AES-256 key
-#define FLASH_KEY_WORDS           8             // 8 × uint32_t = 32 bytes = 256 bits
-#define FLASH_KEY_MAGIC           0x534B4559UL  // "SKEY" — magic marker for provisioned key
+// [ARCH.42 Variant B, 2026-05-23] Two protected Flash slots: LoRa AES-128 key
+// (per-Soldier lookup) + CoAP AES-256 key (Queen↔Rails magistral).
+//   FLASH_KEY_ADDR     → LoRa AES-128 key (16 bytes, magic "KEYL")
+//   FLASH_COAP_KEY_ADDR → CoAP AES-256 key (32 bytes, magic "KEYC") — slot after K_seed
+// Узгоджено з ATECC608B Secure Element: Slot 0 (AES-128 LoRa), Queen Protected Flash
+// (AES-256 CoAP — без SE constraint, бо CoAP канал не проходить через SE).
+#define FLASH_KEY_ADDR            0x0803E000UL  // Protected Flash sector for LoRa AES-128 key
+#define FLASH_KEY_WORDS           4             // 4 × uint32_t = 16 bytes = 128 bits (ARCH.42)
+#define FLASH_KEY_MAGIC           0x4B45594CUL  // "KEYL" — LoRa key magic (post-ARCH.42; was "SKEY")
+
+// [ARCH.42] Окремий CoAP AES-256 key — TODO follow-up: load from a separate
+// Protected Flash slot after K_seed via dedicated Factory Flashing step.
+// Поточно: zeroed at boot; Flush_Cache_To_Rails має використати цей буфер після
+// окремого Load_CoAP_Key() кроку у Factory Flashing pipeline.
+#define FLASH_COAP_KEY_WORDS      8             // 8 × uint32_t = 32 bytes = 256 bits CoAP
+#define FLASH_COAP_KEY_MAGIC      0x4B455943UL  // "KEYC" — CoAP key magic
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -129,14 +142,22 @@ IWDG_HandleTypeDef hiwdg; // [PLAN 2.6] Independent Watchdog для auto-recover
 /* USER CODE BEGIN PV */
 
 // =========================================================================
-// === 0. КЛЮЧІ ОХОРОНИ (Trading Post) ===
+// === 0. КЛЮЧІ ОХОРОНИ (Trading Post) — post-ARCH.42 Variant B (2026-05-23) ===
 // =========================================================================
-// [FW.1] AES-256 key — завантажується з Protected Flash Sector при boot.
-// Factory Flashing записує per-device ключ (HKDF-SHA256) на адресу FLASH_KEY_ADDR
-// через SWD. Формат Flash: [FLASH_KEY_MAGIC:4][key[0]:4]...[key[7]:4] = 36 байт.
+// [FW.1 + ARCH.42] LoRa AES-128 key — завантажується з Protected Flash Sector
+// при boot. Factory Flashing записує per-device LoRa ключ (HKDF-SHA256 з info
+// "silken-aes-128-lora-key") на адресу FLASH_KEY_ADDR через SWD. Формат Flash:
+// [FLASH_KEY_MAGIC:4][key[0]:4]...[key[3]:4] = 20 байт (post-ARCH.42; було 36 для AES-256).
 // Якщо ключ не provisioned — Error_Handler() (пристрій не може працювати без ключа).
 // Ініціалізація нулями — значення перезаписується Load_AES_Key() перед MX_CRYP_Init().
-uint32_t aes_key[8] = {0};
+uint32_t aes_key[4] = {0};   // 16 bytes = AES-128 LoRa (ATECC608B SE constraint)
+
+// [ARCH.42 follow-up] CoAP AES-256 key — для batch flush Queen↔Rails (AES-256-CBC).
+// TODO: завантажується з окремого FLASH_COAP_KEY_ADDR через дедікований Factory
+// Flashing крок (info "silken-aes-256-device-key"). До повної інтеграції зберігається
+// нулями — Flush_Cache_To_Rails має використовувати цей буфер після окремого
+// Load_CoAP_Key() pipeline (FW.2 follow-up subtask у 00_08 ARCH.42).
+uint32_t coap_key[8] __attribute__((unused)) = {0};  // 32 bytes = AES-256 CoAP magistral
 
 // Унікальний ідентифікатор цієї Королеви.
 // [PLAN 2.4] Replaced hardcoded "QUEEN-001" with Flash-based UID.
@@ -506,7 +527,7 @@ int main(void)
             current_snr  = rx_snr;   // [E.8] SNR-tiebreaker у CIFO
 
             // 1. РОЗШИФРОВУЄМО ПАКЕТ
-            // 4 слова × 32 біти = 16 байт = один AES-256-ECB блок.
+            // 4 слова × 32 біти = 16 байт = один AES-128-ECB блок (post-ARCH.42 LoRa).
             HAL_CRYP_Decrypt(&hcryp, (uint32_t*)rx_payload, 4, (uint32_t*)decrypted_payload, 1000);
 
         // =========================================================================
@@ -764,7 +785,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
     // як tiebreaker у CIFO eviction (Process_And_Cache_Data) коли два non-critical
     // записи мають однаковий RSSI. Нижчий SNR = шумніший канал = preferred to evict.
 
-    // Очікуємо рівно 16 байт (повний зашифрований блок AES-256)
+    // Очікуємо рівно 16 байт (повний зашифрований AES блок; post-ARCH.42 LoRa AES-128)
     if (size != 16) return;
 
     // [FIX: RSSI Truncation] SX1262 може повернути RSSI < -128.
@@ -866,7 +887,7 @@ void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, int8_t 
 }
 
 // =========================================================================
-// [FIX FW.16]: Безпечне відновлення AES-256-ECB після CBC операцій.
+// [FIX FW.16 + ARCH.42]: Безпечне відновлення CRYP_KEYSIZE_128B + AES-128-ECB + LoRa aes_key після CBC операцій (CoAP-канал використовує CRYP_KEYSIZE_256B + coap_key).
 // Після CBC шифрування/дешифрування ОБОВ'ЯЗКОВО повертаємо ECB для LoRa.
 // Якщо HAL_CRYP_Init зависне (hardware defect) — RCC reset + retry.
 // Якщо і після RCC reset невдача — NVIC_SystemReset (повний перезапуск MCU),
@@ -874,12 +895,18 @@ void Process_And_Cache_Data(uint32_t uid, uint8_t* payload, int8_t rssi, int8_t 
 // =========================================================================
 static void Restore_ECB_Mode(void)
 {
+    // Post-ARCH.42 (2026-05-23): restore LoRa context — CRYP_KEYSIZE_128B + aes_key (16 bytes).
+    // Без цього restore LoRa decrypt буде ламатися (KeySize залишилось 256B + coap_key з CBC сесії).
     hcryp.Init.Algorithm = CRYP_AES_ECB;
+    hcryp.Init.KeySize   = CRYP_KEYSIZE_128B;
+    hcryp.Init.pKey      = aes_key;
     hcryp.Init.pInitVect = NULL;
     if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
         __HAL_RCC_CRYP_FORCE_RESET();
         __HAL_RCC_CRYP_RELEASE_RESET();
         hcryp.Init.Algorithm = CRYP_AES_ECB;
+        hcryp.Init.KeySize   = CRYP_KEYSIZE_128B;
+        hcryp.Init.pKey      = aes_key;
         hcryp.Init.pInitVect = NULL;
         if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
             NVIC_SystemReset();
@@ -989,7 +1016,12 @@ void Flush_Cache_To_Rails(void)
 
     HAL_RNG_DeInit(&hrng);
 
-    // 3. Оновлюємо IV у конфігурації крипто-модуля та переініціалізуємо
+    // 3. Перемикаємо CRYP на CoAP context (post-ARCH.42 Variant B):
+    //    AES-256-CBC + coap_key[8] + batch_iv. Після CoAP-операції Restore_ECB_Mode()
+    //    повертає LoRa context (CRYP_KEYSIZE_128B + aes_key[4] + ECB).
+    hcryp.Init.Algorithm = CRYP_AES_CBC;
+    hcryp.Init.KeySize   = CRYP_KEYSIZE_256B;   // CoAP AES-256 (без SE constraint)
+    hcryp.Init.pKey      = coap_key;            // 8 × uint32_t = 32 bytes (TODO: load from FLASH_COAP_KEY_ADDR)
     hcryp.Init.pInitVect = batch_iv;
     HAL_CRYP_Init(&hcryp);
 
@@ -1153,8 +1185,11 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     uint32_t cmd_iv[4];
     memcpy(cmd_iv, payload, 16);
 
-    // 2. Перемикаємо CRYP на CBC для дешифрування команди
+    // 2. Перемикаємо CRYP на CoAP context (post-ARCH.42 Variant B):
+    //    AES-256-CBC + coap_key + cmd_iv. Restore_ECB_Mode() далі поверне LoRa context.
     hcryp.Init.Algorithm = CRYP_AES_CBC;
+    hcryp.Init.KeySize   = CRYP_KEYSIZE_256B;   // CoAP AES-256 (без SE constraint)
+    hcryp.Init.pKey      = coap_key;            // 8 × uint32_t = 32 bytes
     hcryp.Init.pInitVect = cmd_iv;
     HAL_CRYP_Init(&hcryp);
 
@@ -1319,11 +1354,14 @@ void Handle_CoAP_Command(uint8_t* payload, uint16_t len)
 }
 
 // =========================================================================
-// [FW.1] ЗАВАНТАЖЕННЯ AES-256 КЛЮЧА З PROTECTED FLASH SECTOR
+// [FW.1 + ARCH.42 Variant B, 2026-05-23] ЗАВАНТАЖЕННЯ LoRa AES-128 КЛЮЧА
+// З PROTECTED FLASH SECTOR
 // =========================================================================
-// Формат Flash-регіону на FLASH_KEY_ADDR (0x0803E000):
-//   [0] FLASH_KEY_MAGIC (0x534B4559 = "SKEY") — маркер provisioned ключа
-//   [1..8] aes_key[0..7] — 8 × uint32_t = 256 bits AES-256 key
+// Формат Flash-регіону на FLASH_KEY_ADDR (0x0803E000) — post-ARCH.42:
+//   [0] FLASH_KEY_MAGIC (0x4B45594C = "KEYL") — маркер LoRa-ключа
+//   [1..4] aes_key[0..3] — 4 × uint32_t = 128 bits LoRa AES-128 key
+// Загальний розмір регіону = 4 + 16 = 20 байт (було 4 + 32 = 36 для AES-256).
+// CoAP AES-256 ключ для Queen↔Rails — окремий FLASH_COAP_KEY_ADDR slot (TODO).
 //
 // Якщо magic відсутній або ключ нульовий — пристрій не provisioned,
 // Error_Handler() викликає software reset. Пристрій не може працювати
@@ -1369,13 +1407,16 @@ static void MX_CRYP_Init(void)
 {
   hcryp.Instance = AES;
   hcryp.Init.DataType = CRYP_DATATYPE_32B;
-  // Активовано стандарт Gaia 2.0 (256-бітне шифрування)
-  hcryp.Init.KeySize = CRYP_KEYSIZE_256B;
-  hcryp.Init.pKey = aes_key;
+  // Post-ARCH.42 Variant B (2026-05-23): LoRa-канал на AES-128 (ATECC608B SE constraint).
+  // CoAP-канал (Queen→Rails) залишається AES-256-CBC — динамічна re-init в
+  // Flush_Cache_To_Rails на CRYP_KEYSIZE_256B + coap_key, потім restore назад.
+  hcryp.Init.KeySize = CRYP_KEYSIZE_128B;
+  hcryp.Init.pKey = aes_key;              // LoRa AES-128 (4 × uint32_t = 16 bytes)
   // ECB для LoRa-трафіку між Королевою та Солдатами (одиночні 16-байтні блоки).
-  // Батч до сервера шифрується CBC динамічно в Flush_Cache_To_Rails,
-  // команди від сервера дешифруються CBC динамічно в Handle_CoAP_Command,
-  // після чого CRYP відновлюється до ECB.
+  // Батч до сервера шифрується CBC динамічно в Flush_Cache_To_Rails (з coap_key),
+  // команди від сервера дешифруються CBC динамічно в Handle_CoAP_Command (з coap_key),
+  // після чого CRYP відновлюється до ECB + KeySize_128B + aes_key (SEC.8 Restoration).
+  // FW.2 target — `CRYP_AES_CCM` 24B packet + 8B MIC (потребує hardware bench).
   hcryp.Init.Algorithm = CRYP_AES_ECB;
   HAL_CRYP_Init(&hcryp);
 }

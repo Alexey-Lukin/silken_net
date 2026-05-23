@@ -298,7 +298,8 @@ gateways = []
     last_seen_at: Time.current,
     state: :active
   )
-  # [СИНХРОНІЗОВАНО]: HardwareKey використовує aes_key_hex
+  # [СИНХРОНІЗОВАНО]: HardwareKey використовує aes_key_hex.
+  # Post-ARCH.42 (2026-05-23): Gateway CoAP channel — AES-256 (32 bytes / 64 hex) — без змін.
   HardwareKey.create!(device_uid: uid, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
   Actuator.create!(
@@ -377,7 +378,8 @@ cherkasy_trees = []
     tiny_ml_model: family == pine ? bark_beetle_model : nil
   )
 
-  HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
+  # Post-ARCH.42 (2026-05-23): Tree LoRa channel — AES-128 (16 bytes / 32 hex).
+  HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
   # Wallet створюється через after_create в Tree, тут лише оновлюємо
   tree.wallet.update!(
@@ -434,7 +436,8 @@ puts "🌴 Висаджуємо 20 Солдатів у Amazon Sector..."
     tree_family: family
   )
 
-  HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
+  # Post-ARCH.42 (2026-05-23): Tree LoRa channel — AES-128 (16 bytes / 32 hex).
+  HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
   tree.wallet.update!(
     balance: rand(2000..8000),

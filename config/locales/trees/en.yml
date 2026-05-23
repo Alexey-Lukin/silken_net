@@ -45,7 +45,7 @@ en:
       security:
         address: Address
         cipher_suite: Cipher Suite
-        cipher_value: AES-256-ECB (CoAP Level)
+        cipher_value: AES-128-ECB (LoRa Channel, post-ARCH.42)
         integrity: Integrity
         integrity_value: Verified Hardware Anchor
         key_identity: Key Identity

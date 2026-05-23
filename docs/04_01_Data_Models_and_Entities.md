@@ -421,7 +421,11 @@ any ──report_fault──► faulty
 
 **Включає:** `NormalizeIdentifier`
 
-**Призначення:** Per-device криптографічний матеріал — AES-256 ключ для LoRa/CoAP пакетів плюс **Lorenz `K_seed` [SEC.11]** для деривації стартових координат атрактора. Обидва секрети шифруються AR Encryption (non-deterministic) і деривуються незалежно firmware ↔ backend через HKDF з `PROVISIONING_MASTER_KEY` — ніколи не передаються через мережу.
+**Призначення:** Per-device криптографічний матеріал. Після **ARCH.42 Variant B (2026-05-23)** ключі розділені по каналах:
+- **Tree (Soldier) HardwareKey:** AES-128 ключ (16 байт = 32 HEX) для LoRa Soldier↔Queen каналу.
+- **Gateway (Queen) HardwareKey:** AES-256 ключ (32 байти = 64 HEX) для CoAP Queen↔Rails магістралі.
+
+Обидва секрети шифруються AR Encryption (non-deterministic) і деривуються незалежно firmware ↔ backend через HKDF з `PROVISIONING_MASTER_KEY` з різними info-strings (domain separation). Плюс **Lorenz `K_seed` [SEC.11]** (32 байти) — окрема per-device деривація для атрактора. Жоден з секретів не передається через мережу.
 
 **Асоціації:**
 - `belongs_to :tree` via `device_uid/did` (optional)
@@ -433,9 +437,9 @@ any ──report_fault──► faulty
 | Поле | Тип | Опис |
 |------|-----|------|
 | `device_uid` | string | Унікальний ідентифікатор пристрою |
-| `aes_key_hex` | string (encrypted) | 64 HEX символи (AES-256). AR Encryption non-deterministic. HKDF info-string: `"silken-aes-256-device-key"`. Cross-ref [03_05 §3.4а](03_05_Hardware_AES256_and_Security#34а-hkdf-key-derivation-protocol-design-) |
-| `previous_aes_key_hex` | string (encrypted) | Попередній AES ключ (Grace Period при ротації) |
-| `lorenz_seed_hex` | string (encrypted) | **[SEC.11]** 64 HEX символи `K_seed` для атрактора Лоренца. AR Encryption non-deterministic. HKDF info-string: `"silken-lorenz-seed\|<DID>"`, salt: `"silken-lorenz-v1"`. Validated `presence: true` (hard cutover — кожен пристрій ОБОВ'ЯЗКОВО має K_seed). Cross-ref [03_05 §3.4в](03_05_Hardware_AES256_and_Security#34в-lorenz-k_seed-derivation-sec11-) |
+| `aes_key_hex` | string (encrypted) | **Conditional length за `owner` type** (post-ARCH.42): **32 HEX символи** (AES-128, 16 байт) для Tree (LoRa, HKDF info `"silken-aes-128-lora-key"`); **64 HEX символи** (AES-256, 32 байти) для Gateway (CoAP, HKDF info `"silken-aes-256-device-key"`). AR Encryption non-deterministic. Cross-ref [03_05 §3.4а](03_05_Hardware_Symmetric_Crypto_and_Security#34а-hkdf-key-derivation-protocol-design-). Validation: `length: { in: [32, 64] }` + custom validator на узгодженість з owner type |
+| `previous_aes_key_hex` | string (encrypted) | Попередній AES ключ (Grace Period при ротації); same conditional length |
+| `lorenz_seed_hex` | string (encrypted) | **[SEC.11]** 64 HEX символи `K_seed` для атрактора Лоренца. AR Encryption non-deterministic. HKDF info-string: `"silken-lorenz-seed\|<DID>"`, salt: `"silken-lorenz-v1"`. Validated `presence: true` (hard cutover — кожен пристрій ОБОВ'ЯЗКОВО має K_seed). Cross-ref [03_05 §3.4в](03_05_Hardware_Symmetric_Crypto_and_Security#34в-lorenz-k_seed-derivation-sec11-) |
 | `ed25519_public_key_hex` | string | Публічний ключ Gateway для M2M JWT signing (`POST /api/v1/auth/m2m_token`). Тільки для Gateway, не Tree |
 | `rotated_at` | datetime | Час останньої ротації |
 
@@ -443,7 +447,7 @@ any ──report_fault──► faulty
 
 | Метод | Опис |
 |-------|------|
-| `binary_key` | `[aes_key_hex].pack("H*")` — мемоізовано (32 байти, AES-256) |
+| `binary_key` | `[aes_key_hex].pack("H*")` — мемоізовано (**16 байт AES-128 для Tree, 32 байти AES-256 для Gateway** після ARCH.42) |
 | `binary_lorenz_seed` | **[SEC.11]** `[lorenz_seed_hex].pack("H*")` — мемоізовано (32 байти `K_seed`); входить у `SilkenNet::SeedDerivation.derive_initial_state(seed_bin, epoch_day)` |
 | `cached_binary_key` | In-process LRU (SinLruRedux::ThreadSafeCache, max 10 000 entries). Ключ: `versioned_cache_key` — включає `updated_at` для самоінвалідації. Ключі не залишають Ruby-процес (немає Redis-serialize) |
 | `versioned_cache_key` | `"#{device_uid}:v:#{updated_at.to_f}"` — при будь-якому `update!` `updated_at` змінюється → новий ключ → стара запис ніколи не збігається (Cache Key Versioning). Усуває race condition між `COMMIT` і `after_commit` |

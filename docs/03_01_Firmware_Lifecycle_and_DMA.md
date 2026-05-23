@@ -14,7 +14,7 @@
   - Прошивка Королеви → [`03_02_Queen_Gateway_Firmware`](03_02_Queen_Gateway_Firmware)
   - TinyML Акустичний Інференс → [`03_03_TinyML_Acoustic_Inference`](03_03_TinyML_Acoustic_Inference)
   - mruby Атрактор Лоренца → [`03_04_mruby_Lorenz_Attractor`](03_04_mruby_Lorenz_Attractor)
-  - Апаратний AES-256 та Безпека → [`03_05_Hardware_AES256_and_Security`](03_05_Hardware_AES256_and_Security)
+  - Апаратне симетричне шифрування та Безпека → [`03_05_Hardware_Symmetric_Crypto_and_Security`](03_05_Hardware_Symmetric_Crypto_and_Security)
 
 ---
 
@@ -61,7 +61,7 @@ uint32_t aes_key[8] = {0};  // Overwritten by Load_AES_Key() before MX_CRYP_Init
 - [ ] SEC.2: RDP Level 2 activation (необоротний final lock перед field deployment).
 - [ ] FW.17: Hash Ratchet KDF key rotation без перепрошивки (Post-FW.1, P3).
 
-> Cross-ref: [`03_05 §3.1 Джерело AES-Ключа при Старті`](03_05_Hardware_AES256_and_Security#31-джерело-aes-ключа-при-старті), [`03_05 §3.4 Factory Flashing Pipeline`](03_05_Hardware_AES256_and_Security), [`03_05 §3.4а HKDF Derivation`](03_05_Hardware_AES256_and_Security), [`03_05 §3.4г Operations Security`](03_05_Hardware_AES256_and_Security).
+> Cross-ref: [`03_05 §3.1 Джерело AES-Ключа при Старті`](03_05_Hardware_Symmetric_Crypto_and_Security#31-джерело-aes-ключа-при-старті), [`03_05 §3.4 Factory Flashing Pipeline`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_05 §3.4а HKDF Derivation`](03_05_Hardware_Symmetric_Crypto_and_Security), [`03_05 §3.4г Operations Security`](03_05_Hardware_Symmetric_Crypto_and_Security).
 
 ---
 
@@ -287,7 +287,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 | `hrng` | RNG/TRNG | Істинна випадковість (тепловий шум кристала) |
 | `hrtc` | RTC | Real-time clock + Backup Domain (персистентний стан після STOP2) |
 | `hsubghz` | SUBGHZ | Інтегрований LoRa трансивер SX1262 (868 МГц) |
-| `hcryp` | AES | Апаратний AES-256-ECB (Hardware Crypto Engine) |
+| `hcryp` | AES | Апаратний AES (Hardware Crypto Engine). **LoRa-канал: AES-128-ECB** (post-ARCH.42 transitional → CCM target FW.2). Queen додатково динамічно re-init'ить на AES-256-CBC для CoAP-batch flush. |
 
 **Примітка:** Soldier — єдиний вузол, що має ADC, TIM2, RNG та RTC. Queen — не має ADC, TIM2 та RTC (окрім RNG, AES та IWDG, доданого у PR #273).
 
@@ -302,7 +302,7 @@ MacBook USB-A   ──── FT232RL                  ──── UART: TX→RX
 │      TIM2 + ADC DMA → CPU SLEEP → DMA ConvCplt ISR     │
 │  Phase 2: Bit-Pack (lora_payload[16])                   │
 │  Phase 3: mruby Lorenz Attractor (bio-contract)         │
-│  Phase 4: AES-256-ECB Encrypt → Radio.Send             │
+│  Phase 4: AES-128-ECB Encrypt → Radio.Send [ARCH.42]   │
 │      [optional] Mesh Relay TX first                     │
 │  Phase 4.5: RX Window (only if Vcap > 2800 mV)         │
 │      Scenario A: OTA (0x99 marker) → Flash write        │
@@ -429,7 +429,7 @@ if (ml_confidence > 0.80):
 
 ### 1.6 Phase 2: Bit-Pack (lora_payload[16])
 
-Формує 16-байтний payload для AES-256 шифрування:
+Формує 16-байтний payload для AES-128 шифрування (LoRa, post-ARCH.42):
 
 ```
 Offset | Size | Field            | Значення
@@ -515,7 +515,7 @@ if (*flash_check == 0x45544952) { // "RITE" в little-endian
 
 ---
 
-### 1.8 Phase 4: AES-256-ECB Encrypt + LoRa TX
+### 1.8 Phase 4: AES-128-ECB Encrypt + LoRa TX [post-ARCH.42]
 
 ```c
 // Anti-Collision Jitter (0-500 ms)
@@ -565,7 +565,7 @@ Radio.Rx(500ms) → Максимум 600ms очікування
        ↓
 [якщо lora_rx_flag == 1]
        ↓
-AES-256-ECB Decrypt → decrypted_rx_payload[]
+AES-128-ECB Decrypt → decrypted_rx_payload [post-ARCH.42][]
        ↓
 Сценарій А: decrypted
 
@@ -639,7 +639,7 @@ on_lora_rx(payload, did_from_packet):
     recent_mesh_dids[1] = recent_mesh_dids[0]
     recent_mesh_dids[0] = did_from_packet
     decrement(ttl)
-    re_encrypt(payload)                       # AES-256-ECB з нашим ключем
+    re_encrypt(payload)                       # AES-128-ECB з нашим ключем [post-ARCH.42]
     has_mesh_relay = 1                        # → буде відправлено у фазі 4
     persist_to_rtc(DR8, recent_mesh_dids[0])
     persist_to_rtc(DR9, recent_mesh_dids[1])
@@ -812,7 +812,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 | Змінна | Тип | Розмір | Призначення |
 |--------|-----|--------|-------------|
-| `aes_key[8]` | `uint32_t` | 32 B | AES-256 мережевий ключ |
+| `aes_key[4]` | `uint32_t` | 16 B | AES-128 LoRa ключ (post-ARCH.42; Soldier; per-device через HKDF) |
 | `lora_payload[16]` | `uint8_t` | 16 B | Вихідний payload перед шифруванням |
 | `encrypted_payload[16]` | `uint8_t` | 16 B | Зашифрований payload для Radio.Send |
 | `mesh_relay_payload[16]` | `uint8_t` | 16 B | Транзитний зашифрований mesh-пакет |
@@ -849,7 +849,7 @@ Queen **ніколи не спить** (continuous operation). Живиться 
 Init → Radio.Init → Radio.Rx(0xFFFFFF) [infinite]
 ┌─────────────────────────────────────────────────────────┐
 │  while LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi):  [FW.3]  │
-│    1. AES-256-ECB Decrypt (16 bytes)                   │
+│    1. AES-128-ECB Decrypt (16 bytes) [post-ARCH.42]    │
 │    2. OTA Reflex Shot (if ota_is_active)               │
 │    3. Extract sender DID (bytes 0-3)                   │
 │    4. Process_And_Cache_Data(DID, payload, RSSI)       │
@@ -857,7 +857,9 @@ Init → Radio.Init → Radio.Rx(0xFFFFFF) [infinite]
 │                                                         │
 │  if cache_count >= 45 OR timer >= 1hour + jitter:      │
 │    Inject Queen Health Sentinel (DID=0x00000000)       │
+│    [MX_CRYP re-init → CRYP_KEYSIZE_256B + coap_key]   │
 │    Flush_Cache_To_Rails() → CoAP PUT (AES-256-CBC)     │
+│    [restore → CRYP_KEYSIZE_128B + LoRa aes_key — SEC.8]│
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -892,9 +894,10 @@ EdgeCache forest_cache[50]; // 50 слотів = 1150 байт RAM
 **Послідовність:**
 1. Inject Queen Health Packet (DID=0x00000000 sentinel)
 2. Pack cache → `binary_batch_buffer` (21 байт/запис: 4 DID + 1 RSSI + 16 payload)
-3. AES-256-CBC encrypt з HRNG IV (prepend IV як перші 16 байт)
-4. `AT+CCOAPNEW` → `AT+CCOAPSEND` (hex-кодований) → `HAL_Delay(2000)` → `AT+CCOAPDEL`
-5. **Restore ECB mode** для LoRa-трафіку (критично!)
+3. **MX_CRYP re-init** → `CRYP_KEYSIZE_256B` + `coap_key[8]` (CoAP AES-256-CBC ключ Queen, окремий HKDF info `"silken-aes-256-device-key"`)
+4. AES-256-CBC encrypt з HRNG IV (prepend IV як перші 16 байт)
+5. `AT+CCOAPNEW` → `AT+CCOAPSEND` (hex-кодований) → `HAL_Delay(2000)` → `AT+CCOAPDEL`
+6. **Restore ECB+128B mode** → `CRYP_KEYSIZE_128B` + `aes_key[4]` (LoRa) для трафіку від Soldiers (критично — SEC.8 ECB Restoration)
 
 **Queen Sentinel Packet (DID = 0x00000000):**
 
@@ -915,7 +918,7 @@ Queen OnRxDone ISR → LoRa_Rx_Ring_Push (FIFO 15-slot, FW.3)
 Main loop: while pop → decrypt → if ota_is_active:
   Build OTA chunk (16 bytes):
     [0x99][chunk_idx_hi][chunk_idx_lo][total_hi][total_lo][bytecode:11]
-  AES-256-ECB Encrypt → Radio.Send(16)
+  AES-128-ECB Encrypt → Radio.Send [post-ARCH.42](16)
   HAL_Delay(60) → next_chunk_idx++
 ```
 
@@ -930,7 +933,7 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 | `0x55` | OTA_REQ_MARKER (Magic Re-Request) | Soldier→Queen | LoRa **uplink** | [03_02 §5.X.3](03_02_Queen_Gateway_Firmware) | ✅ FW.27-B (2026-05-02) |
 | `0x99` | OTA_MARKER (bytecode chunks) | Rails→Queen→Soldier | CoAP/LoRa | §4.4 + 03_02 §5 | ✅ |
 | `0x9A` | CMD_SET_THRESHOLDS (Lorenz Z per-tree) | Rails→Queen→Soldier | CoAP/LoRa | [05_02 §4а.1](05_02_Proof_of_Growth_Pipeline) | 🟡 FW.8 (Queen-side; Soldier dispatcher TBD) |
-| `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [03_05 §3.4б](03_05_Hardware_AES256_and_Security) | ✅ FW.23 (2026-05-02) |
+| `0x9B` | CMD_HMAC_TRAILER (OTA HMAC-SHA256 печатка) | Rails→Queen→Soldier | CoAP/LoRa | [03_05 §3.4б](03_05_Hardware_Symmetric_Crypto_and_Security) | ✅ FW.23 (2026-05-02) |
 | `0x9C` | CMD_TIME_SYNC (envelope) | Rails→Queen | CoAP | §11 (FW.20) | ✅ FW.20 |
 | `0x9D` | CMD_SET_AUDIO_THRESHOLDS (TinyML per-Soldier) | Rails→Queen→Soldier | CoAP/LoRa | [03_03 BLOCKER-6](03_03_TinyML_Acoustic_Inference) | ✅ FW.18 (2026-05-02) |
 | `0x9E` | _reserved_ | — | — | — | вільний |
@@ -946,8 +949,8 @@ Queen отримує великі OTA-пакети від Rails через CoAP 
 Rail CoAP PUT: [IV:16][CBC_encrypted: [0x99][chunk_idx:2][total:2][bytecode:≤512][CRC:2]]
        ↓
 Handle_CoAP_Command():
-  AES-256-CBC Decrypt (з IV з перших 16 байт)
-  Restore ECB mode
+  AES-256-CBC Decrypt (з IV з перших 16 байт; CRYP_KEYSIZE_256B + coap_key)
+  Restore ECB+128B mode (CRYP_KEYSIZE_128B + LoRa aes_key) — SEC.8
   OTA_MARKER detected (0x99):
     chunk_index, total_chunks (big-endian)
     Bitmap dedup: ota_chunk_bitmap
@@ -977,7 +980,8 @@ Cmd_Dedup_Check(hash):
 
 | Змінна | Тип | Розмір | Призначення |
 |--------|-----|--------|-------------|
-| `aes_key[8]` | `uint32_t` | 32 B | AES-256 ключ (ідентичний Soldiers) |
+| `aes_key[4]` | `uint32_t` | 16 B | AES-128 LoRa ключ (per-Soldier через HKDF, у CIFO key-cache) [post-ARCH.42] |
+| `coap_key[8]` | `uint32_t` | 32 B | AES-256 CoAP ключ Queen (для batch flush до Rails) — окремий MX_CRYP re-init |
 | `forest_cache[50]` | `EdgeCache` | 1150 B | CIFO кеш (50 × 23 байт) |
 | `binary_batch_buffer[2048]` | `uint8_t` | 2048 B | CoAP batch buffer |
 | `at_tx_buffer[256]` | `char` | 256 B | AT-команди для SIM7070G |
@@ -1037,7 +1041,7 @@ panic_payload[15] = (uint8_t)(panic_frame_counter & 0xFF);
 // Persist negайно у DR0 — до Phase 5 могло не дойти при PVD/reset
 HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0,
     ((uint32_t)panic_frame_counter << 16) | (uint32_t)acoustic_events);
-// AES-256-ECB Encrypt → Radio.Send → 100ms → Radio.Sleep
+// AES-128-ECB Encrypt → Radio.Send [post-ARCH.42] → 100ms → Radio.Sleep
 ```
 
 > **[FW.29] Навіщо окремий PANIC_FLAG_BIT?** До FW.29 backend розрізняв паніку лише за `acoustic_events == 0xFF`. Але `0xFF` може означати і реальне насичення кавітаційних подій за тривалий час. `PANIC_FLAG_BIT` у байті 10 (StatusByte, bit 7) є однозначним машинним маркером: у нормальному пакеті він завжди `0` (`lora_payload[10] &= ~PANIC_FLAG_BIT`), у panic-пакеті — завжди `1`.
@@ -1103,9 +1107,10 @@ Queen загортає кожен Soldier-пакет у 21-байтний outer 
 
 ## 🔒 9. Encryption Architecture
 
-| Шлях | Алгоритм | Режим | IV |
+| Шлях | Алгоритм | Режим | IV/Nonce |
 |------|-----------|-------|----|
-| Soldier ↔ Queen (LoRa) | AES-256 | ECB | N/A (єдиний 16-байтний блок) |
+| Soldier ↔ Queen (LoRa) [post-ARCH.42] | **AES-128** | ECB [transitional] → CCM [FW.2] | N/A (ECB) / CCM B0 nonce (FW.2 — DID:4 + FrameCounter:4) |
+| Queen → Soldier (OTA reflex) [post-ARCH.42] | **AES-128** | ECB | N/A |
 | Queen → Rails (CoAP batch) | AES-256 | CBC | HRNG-generated (prepended до ciphertext) |
 | Rails → Queen (CoAP commands) | AES-256 | CBC | Prepended у CoAP payload |
 
@@ -1350,7 +1355,7 @@ static inline int HAL_CRYP_Encrypt(CRYP_HandleTypeDef *h, uint32_t *in, uint16_t
 }
 ```
 
-> ⚠️ **Наслідок:** Тести CIFO eviction, OTA dedup, batch packing, ECB restoration — всі перевіряють **структурну логіку**, але не криптографічну коректність. Реальне AES-256 тестування потребує HIL з апаратним AES модулем.
+> ⚠️ **Наслідок:** Тести CIFO eviction, OTA dedup, batch packing, ECB restoration — всі перевіряють **структурну логіку**, але не криптографічну коректність. Реальне AES (128 LoRa / 256 CoAP) тестування потребує HIL з апаратним AES модулем.
 
 **HRNG Mock — завжди повертає 42:**
 
@@ -1422,7 +1427,7 @@ make -C firmware/test clean   # Remove test_queen, test_soldier binaries
 | [03_02_Queen_Gateway_Firmware](03_02_Queen_Gateway_Firmware) | Детальна документація Queen |
 | [03_03_TinyML_Acoustic_Inference](03_03_TinyML_Acoustic_Inference) | TinyML класифікатор звуку |
 | [03_04_mruby_Lorenz_Attractor](03_04_mruby_Lorenz_Attractor) | Математика Атрактора |
-| [03_05_Hardware_AES256_and_Security](03_05_Hardware_AES256_and_Security) | Деталі шифрування та RDP |
+| [03_05_Hardware_Symmetric_Crypto_and_Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Деталі шифрування та RDP |
 | [02_04_EDLC_Supercapacitor_Buffer](02_04_EDLC_Supercapacitor_Buffer) | EBFC та іоністор 0.47F |
 
 ---

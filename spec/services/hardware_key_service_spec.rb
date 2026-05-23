@@ -6,7 +6,8 @@ RSpec.describe HardwareKeyService, type: :service do
   let(:tree_family) { create(:tree_family) }
   let(:cluster) { create(:cluster) }
   let(:tree) { create(:tree, cluster: cluster, tree_family: tree_family) }
-  let(:original_key) { SecureRandom.hex(32).upcase }
+  # Post-ARCH.42 (2026-05-23): Tree-shaped HardwareKey має 32 hex (16-byte AES-128 LoRa key).
+  let(:original_key) { SecureRandom.hex(16).upcase }
 
   before do
     # Configure ActiveRecord Encryption for tests
@@ -39,7 +40,8 @@ RSpec.describe HardwareKeyService, type: :service do
     end
 
     it "raises error when previous rotation is still pending (dead-end protection)" do
-      hardware_key.update!(previous_aes_key_hex: SecureRandom.hex(32).upcase)
+      # Same byte-length as the active key (Tree LoRa AES-128 = 16 bytes / 32 hex)
+      hardware_key.update!(previous_aes_key_hex: SecureRandom.hex(16).upcase)
 
       service = described_class.new(tree)
       expect {
@@ -84,11 +86,12 @@ RSpec.describe HardwareKeyService, type: :service do
   end
 
   describe ".provision" do
+    # Post-ARCH.42: Tree provision повертає 32-hex AES-128 LoRa ключ.
     it "creates a HardwareKey and returns hex key" do
       result = described_class.provision(tree)
 
       expect(result).to be_a(String)
-      expect(result.length).to eq(64) # 32 bytes = 64 hex chars
+      expect(result.length).to eq(32) # 16 bytes = 32 hex chars (AES-128 LoRa, post-ARCH.42)
       expect(result).to match(/\A[0-9A-F]+\z/)
 
       hw_key = HardwareKey.find_by(device_uid: tree.did)
@@ -167,7 +170,8 @@ RSpec.describe HardwareKeyService, type: :service do
       new_key = described_class.rotate(tree.did)
 
       expect(new_key).to be_a(String)
-      expect(new_key.length).to eq(64)
+      # Post-ARCH.42: Tree LoRa AES-128 rotation повертає 32-hex (16 bytes).
+      expect(new_key.length).to eq(32)
 
       hardware_key.reload
       expect(hardware_key.aes_key_hex).to eq(new_key)
@@ -268,7 +272,8 @@ RSpec.describe HardwareKeyService, type: :service do
       # Tree model has neither ip_address nor gateway method,
       # so trigger_key_update_downlink returns early
       tree_device = create(:tree, cluster: cluster)
-      HardwareKey.create!(device_uid: tree_device.did, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
+      # Post-ARCH.42: Tree-shaped HardwareKey = 32 hex (16-byte AES-128 LoRa key).
+      HardwareKey.create!(device_uid: tree_device.did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
       new_key = described_class.rotate(tree_device.did)
       expect(new_key).to be_present

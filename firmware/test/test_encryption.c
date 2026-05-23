@@ -70,14 +70,14 @@ static void reset_crypto_mocks(void)
 
 /* [FW.1] Flash-based AES key provisioning constants */
 #define FLASH_KEY_ADDR             ((uintptr_t)_mock_flash_key_region)
-#define FLASH_KEY_WORDS            8
-#define FLASH_KEY_MAGIC            0x534B4559UL  /* "SKEY" */
+#define FLASH_KEY_WORDS            4  /* ARCH.42 Variant B: 16 bytes = AES-128 LoRa */
+#define FLASH_KEY_MAGIC            0x4B45594CUL  /* "KEYL" — LoRa key (post-ARCH.42; was "SKEY" / 0x534B4559) */
 
 /* [FW.1] Error_Handler for Load_AES_Key */
 static void Error_Handler(void) { _mock_error_handler_called++; }
 
 /* AES key — now loaded from Flash by Load_AES_Key() */
-static uint32_t test_aes_key[8] = {0};
+static uint32_t test_aes_key[4] = {0};  /* AES-128 LoRa (ARCH.42) */
 
 /* [FW.1] Load AES Key from Flash (extracted from soldier/queen main.c) */
 static void Load_AES_Key(void)
@@ -121,7 +121,7 @@ static void Init_CRYP_ECB(void)
     Load_AES_Key();
 
     test_cryp.Init.Algorithm = CRYP_AES_ECB;
-    test_cryp.Init.KeySize = CRYP_KEYSIZE_256B;
+    test_cryp.Init.KeySize = CRYP_KEYSIZE_128B;  /* ARCH.42 LoRa AES-128 */
     test_cryp.Init.DataType = CRYP_DATATYPE_32B;
     test_cryp.Init.pKey = test_aes_key;
     test_cryp.Init.pInitVect = NULL;
@@ -511,14 +511,15 @@ TEST(test_load_key_then_cryp_init_uses_flash_key)
 
     /* Simulate MX_CRYP_Init (same as in firmware) */
     test_cryp.Init.Algorithm = CRYP_AES_ECB;
-    test_cryp.Init.KeySize = CRYP_KEYSIZE_256B;
+    test_cryp.Init.KeySize = CRYP_KEYSIZE_128B;  /* ARCH.42 LoRa AES-128 */
     test_cryp.Init.DataType = CRYP_DATATYPE_32B;
     test_cryp.Init.pKey = test_aes_key;
     HAL_CRYP_Init(&test_cryp);
 
     /* pKey should point to test_aes_key which now has Flash-loaded values */
+    /* Post-ARCH.42: AES-128 LoRa key = first 4 words (was 8 для AES-256) */
     ASSERT_EQ(test_cryp.Init.pKey[0], 0x2B7E1516);
-    ASSERT_EQ(test_cryp.Init.pKey[7], 0x3A4B5C6D);
+    ASSERT_EQ(test_cryp.Init.pKey[3], 0x09CF4F3C);
 }
 
 TEST(test_no_key_means_no_cryp_init)
@@ -532,8 +533,9 @@ TEST(test_no_key_means_no_cryp_init)
     ASSERT_EQ(_mock_error_handler_called > 0, 1);
 
     /* test_aes_key should still be zeros — MX_CRYP_Init should NOT be called */
+    /* Post-ARCH.42: test_aes_key[4] (AES-128 LoRa, 16 bytes) */
     ASSERT_EQ(test_aes_key[0], 0);
-    ASSERT_EQ(test_aes_key[7], 0);
+    ASSERT_EQ(test_aes_key[3], 0);
 }
 
 TEST(test_key_loaded_before_ecb_restore_preserves_key)
@@ -559,8 +561,9 @@ TEST(test_key_loaded_before_ecb_restore_preserves_key)
         Mock_NVIC_SystemReset);
 
     /* Key should still be the provisioned one */
+    /* Post-ARCH.42: AES-128 LoRa key = first 4 words */
     ASSERT_EQ(test_cryp.Init.pKey[0], 0x2B7E1516);
-    ASSERT_EQ(test_cryp.Init.pKey[7], 0x3A4B5C6D);
+    ASSERT_EQ(test_cryp.Init.pKey[3], 0x09CF4F3C);
     ASSERT_EQ(test_cryp.Init.Algorithm, CRYP_AES_ECB);
 }
 
