@@ -32,19 +32,19 @@ uk:
       simulation_started: Оракул почав симуляцію.
     provisioning:
       defective_uid: Це резервоване firmware значення для defective STM32 UID — реєстрація заборонена. Перепрошийте пристрій та повторно зчитайте unique ID.
-      fallback_magic_rejected: 'Hardware UID закінчується магічним fallback значенням (%{magic}). %{detail}'
+      fallback_magic_rejected: Hardware UID закінчується магічним fallback значенням (%{magic}). %{detail}
       node_initiated: 'Ініціація вузла завершена. DID: %{did}. Hardware UID: %{uid}'
       uid_taken: Пристрій з UID %{uid} вже зареєстрований в системі.
     sessions:
-      authenticated_via: 'Автентифіковано через %{provider}.'
+      authenticated_via: Автентифіковано через %{provider}.
       blocked_provider: Цей метод входу заблоковано. Зверніться до адміністратора або використайте інший метод.
       invalid_credentials: Невірні координати доступу.
       logout_success: Вихід успішний. Брама закрита.
       neural_link_established: Нейронний зв'язок встановлено.
       neural_link_severed: Нейронний зв'язок розірвано.
       rate_limited: Забагато спроб входу. Спробуйте через хвилину.
-    telemetry:
-      payload_too_large: 'Payload перевищує ліміт %{limit} KiB.'
     settings:
       org_updated: Налаштування Організації оновлено.
       updated: Налаштування оновлено.
+    telemetry:
+      payload_too_large: Payload перевищує ліміт %{limit} KiB.

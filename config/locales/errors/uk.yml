@@ -1,21 +1,12 @@
 ---
 uk:
-  errors:
-    api:
-      forbidden: Недостатньо прав для цієї еволюції.
-      internal: Збій у ядрі Океану. Повідомте Архітектора.
-      missing_parameter: 'Відсутній обов''язковий параметр: %{param}'
-      no_organization: До цього акаунту не прив'язано організацію.
-      no_organization_title: Доступ заборонено
-      not_found: "%{model} не знайдено в матриці лісу."
-      unauthorized: Необхідна автентифікація. Брама закрита.
   activerecord:
     errors:
       models:
         actuator_command:
           attributes:
             duration_seconds:
-              exceeds_actuator_limit: 'перевищує безпечний ліміт актуатора (%{limit}с).'
+              exceeds_actuator_limit: перевищує безпечний ліміт актуатора (%{limit}с).
             expires_at:
               must_be_future: має бути в майбутньому
         bio_contract_firmware:
@@ -34,8 +25,17 @@ uk:
         tiny_ml_model:
           attributes:
             accuracy_score:
-              must_be_numeric: має бути коректним числовим значенням
               must_be_in_unit_range: має бути в діапазоні 0..1
+              must_be_numeric: має бути коректним числовим значенням
             threshold:
-              must_be_numeric: має бути коректним числовим значенням
               must_be_in_unit_range: має бути в діапазоні 0..1
+              must_be_numeric: має бути коректним числовим значенням
+  errors:
+    api:
+      forbidden: Недостатньо прав для цієї еволюції.
+      internal: Збій у ядрі Океану. Повідомте Архітектора.
+      missing_parameter: 'Відсутній обов''язковий параметр: %{param}'
+      no_organization: До цього акаунту не прив'язано організацію.
+      no_organization_title: Доступ заборонено
+      not_found: "%{model} не знайдено в матриці лісу."
+      unauthorized: Необхідна автентифікація. Брама закрита.

@@ -1,21 +1,12 @@
 ---
 en:
-  errors:
-    api:
-      forbidden: Insufficient privileges for this evolution.
-      internal: Core fault in the Ocean. Notify the Architect.
-      missing_parameter: 'Missing required parameter: %{param}'
-      no_organization: No organization assigned to this account.
-      no_organization_title: Access Denied
-      not_found: "%{model} not found in the forest matrix."
-      unauthorized: Authentication required. The Gate is closed.
   activerecord:
     errors:
       models:
         actuator_command:
           attributes:
             duration_seconds:
-              exceeds_actuator_limit: 'exceeds the actuator safety ceiling (%{limit}s).'
+              exceeds_actuator_limit: exceeds the actuator safety ceiling (%{limit}s).
             expires_at:
               must_be_future: must be in the future
         bio_contract_firmware:
@@ -34,8 +25,17 @@ en:
         tiny_ml_model:
           attributes:
             accuracy_score:
-              must_be_numeric: must be a valid numeric value
               must_be_in_unit_range: must be in the 0..1 range
+              must_be_numeric: must be a valid numeric value
             threshold:
-              must_be_numeric: must be a valid numeric value
               must_be_in_unit_range: must be in the 0..1 range
+              must_be_numeric: must be a valid numeric value
+  errors:
+    api:
+      forbidden: Insufficient privileges for this evolution.
+      internal: Core fault in the Ocean. Notify the Architect.
+      missing_parameter: 'Missing required parameter: %{param}'
+      no_organization: No organization assigned to this account.
+      no_organization_title: Access Denied
+      not_found: "%{model} not found in the forest matrix."
+      unauthorized: Authentication required. The Gate is closed.
